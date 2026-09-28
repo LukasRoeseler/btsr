@@ -223,7 +223,6 @@
     row.el.classList.add('menu-nav-sel');
     if (menuNavArmed) row.el.classList.add('menu-nav-armed');
     if (typeof row.el.scrollIntoView === 'function') row.el.scrollIntoView({ block: 'nearest' });
-    if (typeof konsoleFokus === 'function') konsoleFokus(row);
   }
 
   // ---- RAEUMLICH: der naechste Nachbar in der Richtung ------------------------------

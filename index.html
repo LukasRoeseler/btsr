@@ -364,6 +364,12 @@
     0%, 80%, 100% { transform: translate(4px, 0); clip-path: inset(62% 0 12% 0); }
     83% { transform: translate(-7px, 1px); clip-path: inset(70% 0 5% 0); }
     90% { transform: translate(9px, 0); clip-path: inset(30% 0 52% 0); } }
+  /* Links blau, rechts rot, wie die beiden Spuren der Bahn: jedes Wort glitcht nur in seiner
+     Farbe (beide Schnipsel und beide Schatten). */
+  .home-titel-text.k-glitch-blau { text-shadow: 3px 0 0 var(--glitch-c), -3px 0 0 var(--glitch-c); }
+  .home-titel-text.k-glitch-rot { text-shadow: 3px 0 0 var(--glitch-r), -3px 0 0 var(--glitch-r); margin-left: .45em; }
+  .home-titel-text.k-glitch-blau::after { color: var(--glitch-c); }
+  .home-titel-text.k-glitch-rot::before { color: var(--glitch-r); }
   @media (prefers-reduced-motion: reduce) {
     .home-titel-text::before, .home-titel-text::after { animation: none; } }
   .home-feat { margin: 0 auto; max-width: 1100px; }
@@ -2133,7 +2139,10 @@
      Abgenommen als Mock-up (mockup/menue.html). Grau fuer Ruhe, ROT fuer die angewaehlte
      Kachel, Weiss fuer Titelbaender - die drei Farben des Vorbilds. Die Schrift ist die
      schmale, fette Bahnschrift-Kette, Titel in Grossbuchstaben. */
-  :root { --k-rot: #d7182a; --k-grau: #3b3f48; --k-weiss: #f3f4f6; --k-tinte: #0b0c10;
+  /* BESTELLT: "Ersetze die rote Bannerfarbe durch das Carrera-Hybrid blau (wenn nötig, mach
+     dann die Schriftfarbe schwarz statt weiß)". Weiss auf diesem hellen Blau haette nur
+     knapp 3:1 Kontrast, Schwarz gut 7:1 - deshalb --k-blau-text. */
+  :root { --k-blau: #00a3e0; --k-blau-text: #04070c; --k-grau: #3b3f48; --k-weiss: #f3f4f6; --k-tinte: #0b0c10;
     --k-dim: #a3acbd;
     --k-font: "Bahnschrift SemiCondensed", "Bahnschrift", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif; }
   html { background: #05070c; }
@@ -2160,17 +2169,11 @@
   header#k-kopf::after { display: none; }
   #k-kopf .hdr-logo { border: 0; padding: 4px 6px; gap: 8px; background: transparent; }
   #k-kopf .hdr-logo:hover { background: transparent; }
-  .k-logo { font-weight: 900; letter-spacing: .16em; font-size: clamp(14px, 1.6vw, 22px); color: #fff;
-    text-shadow: 2px 0 0 var(--glitch-r), -2px 0 0 var(--glitch-c); white-space: nowrap; }
   .k-status { font-size: 12px; color: var(--k-dim); text-align: right; display: flex; gap: 8px; align-items: center; }
   .k-status .k-an { color: var(--good); }
   .k-leiste { display: flex; align-items: stretch; min-width: 0; }
   .k-leiste2 { grid-column: 1 / -1; margin-top: 3px; }
-  /* Die L1/R1-Hinweise nur an der Leiste, auf die die Schultertasten gerade wirken. */
-  .k-leiste:not(.k-l1r1) .k-sh { visibility: hidden; }
   .k-leiste[hidden] { display: none !important; }
-  .k-sh { display: flex; align-items: center; padding: 0 10px; font-size: 11px; color: var(--k-dim);
-    background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.2); border-radius: 4px; margin: 3px 4px; }
   .k-reiter { flex: 1; display: flex; background: rgba(12,14,20,.72); overflow: hidden; min-width: 0; }
   .k-reiter button { flex: 1; min-width: 0; background: transparent; border: 0; border-radius: 0; color: var(--k-dim);
     font-family: var(--k-font); font-size: clamp(11px, 1.1vw, 15px); letter-spacing: .08em; padding: 6px 6px;
@@ -2179,29 +2182,16 @@
   .k-reiter button.an { background: var(--k-weiss); color: var(--k-tinte); font-weight: 800; }
   .k-reiter button:hover { color: #fff; background: rgba(255,255,255,.08); }
   .k-reiter button.an:hover { color: var(--k-tinte); background: var(--k-weiss); }
-  body.race-mode .k-leiste, body.race-mode .k-status { display: none !important; }
-  body.k-titel-an header#k-kopf, body.k-titel-an #k-unten { display: none; }
+  /* COCKPIT OHNE KOPFZEILE. BESTELLT: "Cockpit screen: Den Header entfernen, der überlagert
+     alle wichtigen Dinge. Es soll wirklich nur der Cockpit screen ... da sein." Ins Menue
+     fuehren dort Options halten, Esc und der Knopf in der Ecke. */
+  body.race-mode header#k-kopf, body.k-titel-an header#k-kopf { display: none; }
 
   /* Buehne */
   main { max-width: 1320px; }
   .card { background: rgba(14,16,22,.9); }
   .card .card { background: rgba(255,255,255,.035); }
 
-  /* Beschreibung und Fussleiste */
-  #k-unten { position: sticky; bottom: 0; z-index: 55;
-    padding: 0 max(clamp(10px, 2.4vw, 32px), env(safe-area-inset-right)) 0 max(clamp(10px, 2.4vw, 32px), env(safe-area-inset-left));
-    font-family: var(--k-font); background: linear-gradient(rgba(5,7,12,0), rgba(5,7,12,.94) 22%); }
-  body.race-mode #k-unten { display: none; }
-  #k-beschr { max-width: 1320px; margin: 0 auto 4px; background: rgba(10,12,18,.9); border-left: 4px solid var(--k-rot);
-    padding: 7px 14px; font-size: clamp(12px, 1vw, 14px); line-height: 1.45; color: #dde1e8; }
-  #k-beschr b { color: #fff; letter-spacing: .04em; }
-  #k-fuss { max-width: 1320px; margin: 0 auto; display: flex; gap: clamp(10px, 2vw, 30px); flex-wrap: wrap;
-    align-items: center; border-top: 2px solid rgba(255,255,255,.35); padding: 7px 0 max(9px, env(safe-area-inset-bottom));
-    font-size: clamp(11px, 1vw, 14px); letter-spacing: .06em; text-transform: uppercase; color: #eef0f4; }
-  .k-h { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
-  .k-h svg { width: 21px; height: 21px; }
-  .k-taste { display: inline-block; min-width: 20px; padding: 1px 6px; border: 1.5px solid #cfd3db; border-radius: 4px;
-    font-size: 11px; text-align: center; text-transform: none; }
 
   /* Kacheln der Menues: dieselbe Gestalt fuer .misc-tile (Optionen, Info, Strecke,
      Entwickler) und .k-kachel (Hauptmenue, Fahren). Mehrspaltig wieder erlaubt: das
@@ -2215,7 +2205,7 @@
   .misc-tile:hover { background: rgba(14,16,22,.88); border-color: #fff; }
   .misc-tile.menu-nav-sel, .k-kachel.menu-nav-sel { outline: 0; border-color: #fff; transform: scale(1.02);
     box-shadow: 0 10px 30px rgba(0,0,0,.6); z-index: 2; position: relative; }
-  .misc-tile.menu-nav-sel b, .misc-tile:hover b { background: var(--k-rot); }
+  .misc-tile.menu-nav-sel b, .misc-tile:hover b { background: var(--k-blau); color: var(--k-blau-text); }
 
   .k-gitter { display: grid; gap: clamp(8px, 1vw, 14px); }
   .k-kachel { position: relative; display: flex; flex-direction: column; background: rgba(14,16,22,.88);
@@ -2224,26 +2214,36 @@
   .k-kachel:hover { border-color: #fff; }
   .k-kk { background: var(--k-grau); color: #fff; text-align: center; font-weight: 700; letter-spacing: .12em;
     padding: 6px 8px; font-size: clamp(11px, 1.05vw, 15px); text-transform: uppercase; }
-  .k-kachel.menu-nav-sel .k-kk, .k-kachel:hover .k-kk { background: var(--k-rot); }
+  .k-kachel.menu-nav-sel .k-kk, .k-kachel:hover .k-kk { background: var(--k-blau); color: var(--k-blau-text); }
   .k-kt { background: var(--k-weiss); color: var(--k-tinte); text-align: center; font-weight: 700; letter-spacing: .06em;
     padding: 8px; font-size: clamp(13px, 1.35vw, 20px); text-transform: uppercase; }
-  .k-kb { flex: 1; min-height: 90px; background-size: cover; background-position: center; }
-  .k-ki { padding: 8px 10px 14px; font-size: clamp(11px, .95vw, 13px); line-height: 1.55; display: grid;
-    grid-template-columns: 1fr auto; column-gap: 12px; }
+  /* BESTELLT: "Mach die Bilder kleiner und einen stärkeren Abdunklungs oder Glitch Effekt
+     drüber. Die verbrauchen viel Platz." Ein flaches, dunkles Band mit Zeilenraster und zwei
+     Farbversatz-Streifen; die Info-Zeilen darunter bekommen den Rest der Kachel. */
+  .k-kb { position: relative; flex: 0 0 auto; height: clamp(40px, 13vh, 140px); background-size: cover;
+    background-position: center; filter: brightness(.42) saturate(.6) contrast(1.15); transition: filter .15s; }
+  .k-kb::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+    background:
+      linear-gradient(transparent 34%, rgba(0,229,255,.35) 34% 36%, transparent 36% 68%, rgba(255,43,94,.4) 68% 70%, transparent 70%),
+      linear-gradient(90deg, rgba(255,43,94,.22), transparent 28%, transparent 72%, rgba(0,229,255,.22)),
+      repeating-linear-gradient(0deg, rgba(0,0,0,.5) 0 1px, transparent 1px 3px); }
+  .k-kachel.menu-nav-sel .k-kb, .k-kachel:hover .k-kb { filter: brightness(.62) saturate(.8) contrast(1.15); }
+  /* BESTELLT: "Das 2 Trocken 0 bei Rennoptionen ist nicht erkennbar, anders formatieren."
+     Wert gross und hell direkt neben der Beschriftung, statt klein am anderen Kachelrand. */
+  .k-ki { flex: 1 1 auto; padding: 8px 12px 10px; font-size: clamp(12px, 1.05vw, 15px); line-height: 1.35; display: grid;
+    grid-template-columns: auto minmax(0, 1fr); column-gap: 10px; row-gap: 5px; align-content: start; }
   .k-ki:empty { display: none; }
-  .k-l { color: var(--k-dim); text-transform: uppercase; letter-spacing: .08em; }
-  .k-w { text-align: right; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .k-l { color: #aeb4c0; text-transform: uppercase; letter-spacing: .06em; font-size: .82em; align-self: center; }
+  .k-w { color: #fff; font-weight: 800; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .k-punkt { display: inline-block; width: .7em; height: .7em; border-radius: 50%; margin-right: .4em; vertical-align: 0; }
-  .k-streifen { position: absolute; right: 8px; bottom: 5px; width: 46px; height: 7px; pointer-events: none;
-    background: repeating-linear-gradient(90deg, var(--k-rot) 0 5px, transparent 5px 9px); opacity: .7; }
   .k-knopfreihe { display: flex; gap: 6px; padding: 0 10px 12px; flex-wrap: wrap; }
   .k-knopf { background: var(--k-grau); color: #fff; border: 2px solid transparent; border-radius: 0; padding: 7px 12px;
     font-family: var(--k-font); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
-  .k-knopf:hover, .k-knopf.menu-nav-sel { border-color: #fff; background: var(--k-rot); outline: 0; }
+  .k-knopf:hover, .k-knopf.menu-nav-sel { border-color: #fff; background: var(--k-blau); color: var(--k-blau-text); outline: 0; }
   .k-klein .k-kt { font-size: clamp(12px, 1.1vw, 16px); }
   /* Die Kacheln mit schnellem Wechsel (Quadrat) zeigen die Pfeile des Vorbilds. */
-  .k-kachel[data-quad] .k-kt::before { content: '◀'; color: var(--k-rot); margin-right: 10px; font-size: .8em; }
-  .k-kachel[data-quad] .k-kt::after { content: '▶'; color: var(--k-rot); margin-left: 10px; font-size: .8em; }
+  .k-kachel[data-quad] .k-kt::before { content: '◀'; color: #0077a8; margin-right: 10px; font-size: .8em; }
+  .k-kachel[data-quad] .k-kt::after { content: '▶'; color: #0077a8; margin-left: 10px; font-size: .8em; }
 
   .k-fahren { grid-template-columns: repeat(3, 1fr); grid-template-rows: minmax(300px, 56vh) minmax(96px, 20vh); }
   .k-fahren-unten { grid-column: 1 / -1; grid-template-columns: 1fr 1fr 2fr; }
@@ -2256,7 +2256,7 @@
     height: clamp(26px, 3.6vw, 54px); transform: translateY(-50%) skewX(-18deg); opacity: .85;
     background: repeating-conic-gradient(#fff 0 25%, #111 0 50%) 0 0 / 14px 14px; }
   .k-start::before { left: 6%; } .k-start::after { right: 6%; }
-  .k-start.menu-nav-sel { box-shadow: 0 0 0 3px var(--k-rot), 0 12px 36px rgba(0,0,0,.6); }
+  .k-start.menu-nav-sel { box-shadow: 0 0 0 3px var(--k-blau), 0 12px 36px rgba(0,0,0,.6); }
 
   /* Titel */
   #tab-home.active { min-height: calc(100vh - 48px); display: flex; }
@@ -2277,18 +2277,18 @@
     font-size: 12px; color: var(--k-dim); margin-top: 4vh; }
 
   /* Optionszeilen: die angewaehlte Zeile rot hinterlegt wie bei ACC */
-  .opt-row.menu-nav-sel { outline: 2px solid #fff; background: rgba(215,24,42,.24); }
+  .opt-row.menu-nav-sel { outline: 2px solid #fff; background: rgba(0,163,224,.22); }
 
   /* Cockpit-Menue */
   .k-pause { position: fixed; inset: 0; z-index: 400; background: rgba(0,0,0,.66); display: flex;
     align-items: center; justify-content: center; font-family: var(--k-font); }
   .k-pause[hidden] { display: none !important; }
-  .k-pause-dialog { width: min(520px, 92vw); background: #111319; border-top: 4px solid var(--k-rot);
+  .k-pause-dialog { width: min(520px, 92vw); background: #111319; border-top: 4px solid var(--k-blau);
     padding: 14px 18px 18px; display: flex; flex-direction: column; gap: 6px; }
   .k-pause-dialog h2 { margin: 0 0 4px; letter-spacing: .14em; text-transform: uppercase; font-size: 18px; }
   .k-pause-dialog button { text-align: left; font-size: 17px; letter-spacing: .1em; text-transform: uppercase;
     background: var(--k-grau); color: #fff; border: 2px solid transparent; border-radius: 0; padding: 11px 16px; }
-  .k-pause-dialog button.menu-nav-sel, .k-pause-dialog button:hover { outline: 0; border-color: #fff; background: var(--k-rot); }
+  .k-pause-dialog button.menu-nav-sel, .k-pause-dialog button:hover { outline: 0; border-color: #fff; background: var(--k-blau); color: var(--k-blau-text); }
   .k-frage-knoepfe { display: flex; flex-direction: column; gap: 6px; }
   /* Der Grund bleibt auch auf dem niedrigen Telefon sichtbar (dort blendet .k-pause-dialog p
      die Erklaerzeilen des Cockpit-Menues aus). */
@@ -2322,11 +2322,11 @@
     .k-fahren { grid-template-rows: minmax(0, 1fr) minmax(40px, 21%); }
     .k-fahren-unten { min-height: 0; }
     .k-kachel { min-height: 0; overflow: hidden; }
-    .k-kb { min-height: 0; }
+    .k-kb { height: clamp(26px, 11vh, 120px); }
     /* BESTELLT: "Schriftgröße etwas kleiner". */
     .k-kk { font-size: clamp(9.5px, 1.7vh, 13px); padding: clamp(2px, .7vh, 6px) 8px; }
     .k-kt { font-size: clamp(10.5px, 2.3vh, 17px); padding: clamp(3px, .9vh, 8px) 8px; }
-    .k-ki { font-size: clamp(9px, 1.6vh, 12px); padding: clamp(3px, .8vh, 7px) 10px clamp(6px, 1.5vh, 13px); line-height: 1.4; }
+    .k-ki { font-size: clamp(11px, 2.9vh, 16px); padding: clamp(4px, 1.1vh, 9px) 10px; row-gap: clamp(2px, .8vh, 6px); }
     .k-knopfreihe { padding: 0 10px clamp(5px, 1.3vh, 12px); }
     .k-knopf { padding: clamp(3px, .8vh, 7px) 10px; font-size: clamp(10px, 1.7vh, 12px); }
     .k-start { min-height: 0; }
@@ -2339,17 +2339,9 @@
      Beschreibung und eine knappe Fussleiste - zusammen rund 110 px statt 190. */
   @media (max-height: 520px) {
     header#k-kopf { padding: max(3px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) 3px max(10px, env(safe-area-inset-left)); gap: 8px; }
-    #k-kopf .hdr-logo svg { width: 16px; height: 16px; }
-    .k-logo { font-size: 13px; letter-spacing: .12em; }
+    #k-kopf .hdr-logo svg { width: 20px; height: 20px; }
     .k-status { font-size: 10px; } .k-status .wip-tag { display: none; }
-    .k-sh { font-size: 9.5px; padding: 0 6px; margin: 2px 3px; }
     .k-reiter button { padding: 3px 4px; font-size: 10.5px; }
-    #k-unten { padding: 0 10px; }
-    #k-beschr { padding: 3px 10px; font-size: 11px; line-height: 1.35; margin-bottom: 2px;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left-width: 3px; }
-    #k-fuss { padding: 3px 0 max(4px, env(safe-area-inset-bottom)); font-size: 10px; gap: 12px; border-top-width: 1px; }
-    .k-h svg { width: 15px; height: 15px; } .k-h { gap: 5px; }
-    .k-taste { font-size: 9.5px; padding: 0 4px; min-width: 16px; }
     /* Kachelseiten (Optionen, Info, Strecke, Entwickler): kleinere Kacheln, damit eine
        ganze Reihe auf einen Blick passt. */
     .misc-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
@@ -2382,9 +2374,9 @@
     #k-leiste { grid-column: 1 / -1; order: 3; }
     .k-fahren, .k-fahren-unten { grid-template-columns: 1fr; grid-template-rows: none; }
     .k-fahren > * { grid-column: auto; }
-    .k-kb { min-height: 110px; max-height: 24vh; }
+    .k-kb { height: 70px; }
   }
-  .menu-nav-sel { outline: 3px solid var(--bad); outline-offset: -2px; }
+  .menu-nav-sel { outline: 3px solid var(--k-blau); outline-offset: -2px; }
   .opt-row.menu-nav-sel, .misc-tile.menu-nav-sel, .mw-row.menu-nav-sel { border-radius: 8px; }
   .menu-nav-armed { outline-color: var(--good); }
   .opt-label { font-size: 13.5px; line-height: 1.35; min-width: 0; }
@@ -3492,14 +3484,11 @@
 <header id="k-kopf">
   <button class="hdr-logo goto-tab" data-tab="fahren" title="Fahren" aria-label="Fahren">
     <svg viewBox="0 0 512 512" aria-hidden="true"><use href="#om"/></svg>
-    <span class="k-logo" data-i18n-skip>OMEGA SIM</span>
   </button>
   <!-- BESTELLT: "Tabs nach ganz oben und 'Hauptmenü' Zurückpfeil wegtun ... Oben links nur
        logo und rechts daneben alle tabs; ganz rechts oben Verbindungsstatus". -->
   <nav class="k-leiste" id="k-leiste">
-    <span class="k-sh" aria-hidden="true" data-i18n-skip>L1</span>
     <div class="k-reiter" id="k-reiter"></div>
-    <span class="k-sh" aria-hidden="true" data-i18n-skip>R1</span>
   </nav>
   <div class="k-status" id="k-status"></div>
   <div class="tabs-wrap" id="tabs-wrap" hidden>
@@ -3535,9 +3524,7 @@
   <!-- Die INNEREN Reiter (Optionen-Kategorien, Mehrspieler-Modi, BLE-Werkbank, ...) in einer
        zweiten, flachen Zeile; L1/R1 wirken auf die innerste sichtbare Leiste. -->
   <nav class="k-leiste k-leiste2" id="k-leiste2" hidden>
-    <span class="k-sh" aria-hidden="true" data-i18n-skip>L1</span>
     <div class="k-reiter" id="k-reiter2"></div>
-    <span class="k-sh" aria-hidden="true" data-i18n-skip>R1</span>
   </nav>
 </header>
 <div id="k-bg" aria-hidden="true"></div>
@@ -3565,7 +3552,11 @@
          (51-konsole.js). #lang-toggle, #app-version und #home-install behalten ihre ids. -->
     <div class="k-titel">
     <div class="home-titel" aria-label="OMEGA SIM" data-i18n-skip>
-      <span class="home-titel-text" data-text="OMEGA SIM">OMEGA SIM</span>
+      <!-- BESTELLT: "OMEGA blaue glitches und SIM rote (links blau, rechts rot, wie die
+           Strecke). Sonst sieht es aus wie die Niederländische Flagge" - vorher lag oben ein
+           blauer und unten ein roter Streifen quer ueber beiden Woertern. -->
+      <span class="home-titel-text k-glitch-blau" data-text="OMEGA">OMEGA</span><span
+        class="home-titel-text k-glitch-rot" data-text="SIM">SIM</span>
     </div>
       <h2 class="k-slogan">Vollst&auml;ndige Gestaltungsfreiheit f&uuml;r deine Carrera Hybrid&nbsp;Bahn</h2>
       <button type="button" id="lang-toggle" aria-label="Sprache wechseln / switch language">
@@ -3579,7 +3570,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.20</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.21</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3595,14 +3586,13 @@
        Abstimmung, Gegnerhaerte) - links/rechts bleibt fuer den Weg zur Nachbarkachel. -->
   <section class="tabpage k-schirm" id="tab-fahren">
     <div class="k-gitter k-fahren">
-      <div class="k-kachel " id="fa-auto" role="button" tabindex="0" data-d="Öffnet sofort die Bluetooth-Auswahl.">
+      <div class="k-kachel " id="fa-auto" role="button" tabindex="0">
         <span class="k-kk">Autos</span>
         <span class="k-kt" id="fa-auto-titel"></span>
         <span class="k-kb" style="background-image:url(img/auto.jpg)"></span>
         <span class="k-ki" id="fa-auto-info"></span>
-        <span class="k-streifen" aria-hidden="true"></span>
       </div>
-      <div class="k-kachel " id="fa-strecke" role="button" tabindex="0" data-d="Quadrat schaltet zwischen Auf der Bahn und Frei. Auf der Bahn: Streckenscan, Editor, Strecke laden. Frei: Druckvorlagen und Editor." data-quad="bahn">
+      <div class="k-kachel " id="fa-strecke" role="button" tabindex="0" data-quad="bahn">
         <span class="k-kk">Strecke</span>
         <span class="k-kt" id="fa-strecke-titel"></span>
         <span class="k-kb" id="fa-strecke-bild" style="background-image:url(img/strecke-bahn.jpg)"></span>
@@ -3613,30 +3603,25 @@
           <button type="button" class="k-knopf" id="fa-laden">Laden</button>
           <button type="button" class="k-knopf" id="fa-druck" hidden>Druckvorlagen</button>
         </span>
-        <span class="k-streifen" aria-hidden="true"></span>
       </div>
-      <div class="k-kachel " id="fa-renn" role="button" tabindex="0" data-d="Quadrat wechselt den Renntyp direkt hier, Kreuz öffnet alle Renneinstellungen, Ergebnisse und Sitzungen." data-quad="renntyp">
+      <div class="k-kachel " id="fa-renn" role="button" tabindex="0" data-quad="renntyp">
         <span class="k-kk">Rennoptionen</span>
         <span class="k-kt" id="fa-renn-titel"></span>
         <span class="k-kb" style="background-image:url(img/rennen.jpg)"></span>
         <span class="k-ki" id="fa-renn-info"></span>
-        <span class="k-streifen" aria-hidden="true"></span>
       </div>
       <div class="k-gitter k-fahren-unten">
-      <div class="k-kachel k-klein" id="fa-profil" role="button" tabindex="0" data-d="Quadrat blättert die Abstimmungen durch, Kreuz öffnet Optionen, Fahrgefühl." data-quad="profil">
+      <div class="k-kachel k-klein" id="fa-profil" role="button" tabindex="0" data-quad="profil">
         <span class="k-kk">Fahrgefühl</span>
         <span class="k-kt" id="fa-profil-titel"></span>
         <span class="k-ki"></span>
-        <span class="k-streifen" aria-hidden="true"></span>
       </div>
-      <div class="k-kachel k-klein" id="fa-gegner" role="button" tabindex="0" data-d="Quadrat stellt die Rennhärte der Ghosts, Kreuz öffnet Optionen, Autonome Gegner." data-quad="haerte">
+      <div class="k-kachel k-klein" id="fa-gegner" role="button" tabindex="0" data-quad="haerte">
         <span class="k-kk">Gegner</span>
         <span class="k-kt" id="fa-gegner-titel"></span>
         <span class="k-ki"></span>
-        <span class="k-streifen" aria-hidden="true"></span>
       </div>
-        <div class="k-kachel k-start" id="fa-start" role="button" tabindex="0"
-             data-d="Ins Cockpit, und die Startampel läuft. Fehlt noch ein Auto, kommt zuerst die Bluetooth-Auswahl.">
+        <div class="k-kachel k-start" id="fa-start" role="button" tabindex="0">
           <span class="k-start-innen"><b id="fa-start-titel">Rennen starten</b><small id="fa-start-unter"></small></span>
         </div>
       </div>
@@ -4460,6 +4445,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Men&uuml; aufger&auml;umt: ohne Tastenleiste und Hinweiszeile, kleinere abgedunkelte Bilder, gut lesbare Werte auf den Kacheln, Carrera-Hybrid-Blau statt Rot, oben nur das Omega, im Titel OMEGA blau und SIM rot. Im Cockpit keine Kopfzeile mehr.</li>
         <li>Android-App im Vollbild ohne Status- und Navigationsleiste. Reiter oben neben dem Logo statt Hauptmen&uuml;, Mehrspieler mit den Wegen PC und Android-App, &bdquo;Trotzdem starten&ldquo; ohne Auto zum Ausprobieren (experimentell), rechter Stick rollt die Seite.</li>
         <li>Neues Men&uuml; passt sich jeder Bildschirmgr&ouml;&szlig;e an und f&uuml;llt am Telefon quer genau den Schirm; die Android-App bleibt im Querformat.</li>
         <li>Neues Men&uuml; im Stil von Assetto Corsa Competizione (WIP): Titelbildschirm, Fahren-Schirm mit Autos, Strecke und Rennoptionen, PS5-Tasten (Kreuz, Kreis, L1/R1), Cockpit-Men&uuml; &uuml;ber Options halten.</li>
@@ -10015,10 +10001,6 @@
   </div>
 </main>
 <!-- BESCHREIBUNG UND FUSSLEISTE: was die angewaehlte Zeile tut, und welche Taste was macht. -->
-<div id="k-unten">
-  <div id="k-beschr" hidden></div>
-  <div id="k-fuss"></div>
-</div>
 
 <!-- Lightbox fuer Diagramme. Steht ausserhalb von main, damit kein Tab sie ausblendet. -->
 <div class="lb-wrap" id="lb-wrap" role="dialog" aria-modal="true" aria-label="Diagramm gross">
@@ -11044,6 +11026,9 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Menü aufgeräumt: ohne Tastenleiste und Hinweiszeile, kleinere abgedunkelte Bilder, gut lesbare Werte auf den Kacheln, Carrera-Hybrid-Blau statt Rot, oben nur das Omega, im Titel OMEGA blau und SIM rot. Im Cockpit keine Kopfzeile mehr.": "Menu tidied up: no button bar or hint line, smaller darkened pictures, easy-to-read values on the tiles, Carrera Hybrid blue instead of red, only the omega at the top, OMEGA blue and SIM red in the title. No header bar in the cockpit any more.",
+    "Dieser Browser kennt Web Bluetooth nicht. Chrome oder Edge auf Windows, Android oder ChromeOS - Safari und Firefox koennen es nicht.": "This browser does not support Web Bluetooth. Use Chrome or Edge on Windows, Android or ChromeOS - Safari and Firefox cannot do it.",
+    "Der Bluetooth-Adapter ist aus oder nicht verfuegbar. Auf Android ausserdem pruefen, ob Chrome die Berechtigung \"Geraete in der Naehe\" hat.": "The Bluetooth adapter is off or unavailable. On Android also check that Chrome has the \"Nearby devices\" permission.",
     "← Optionen": "← Options",
     "Autos verbinden": "Connect cars",
     "Über PC mit Python": "Via PC with Python",
@@ -11071,7 +11056,6 @@
     "Sitzungen": "Sessions",
     "Autos": "cars",
     "kein Auto": "no car",
-    "Neues Menü": "New menu",
     "Leer": "Space",
     "Bestätigen": "Confirm",
     "Navigieren": "Navigate",
@@ -12659,10 +12643,8 @@
     // und der Selbsttest konnte es nicht melden, weil er dieselbe Liste benutzt: ein
     // blinder Fleck, der sich selbst versteckt. Gefunden hat es ein Abzug ueber das ganze
     // body, nicht ueber diese Liste.
-    // #k-unten: Beschreibung und Fussleiste des ACC-Menues (51-konsole.js) stehen hinter
-    // main, damit sie am unteren Rand kleben - und muessen deshalb eigens mit hinein.
     return [document.querySelector('header'), document.querySelector('main'),
-            $('lb-wrap'), $('k-unten')].filter(Boolean);
+            $('lb-wrap')].filter(Boolean);
   }
 
   // Einen Teilbaum in die aktuelle Sprache bringen. Wird beim Umschalten fuer alles und
@@ -20234,7 +20216,6 @@
     row.el.classList.add('menu-nav-sel');
     if (menuNavArmed) row.el.classList.add('menu-nav-armed');
     if (typeof row.el.scrollIntoView === 'function') row.el.scrollIntoView({ block: 'nearest' });
-    if (typeof konsoleFokus === 'function') konsoleFokus(row);
   }
 
   // ---- RAEUMLICH: der naechste Nachbar in der Richtung ------------------------------
@@ -20522,7 +20503,6 @@
 
   let kStapel = [];
   let kZurueckLaeuft = false;
-  let kEingabe = 'maus';            // 'pad' | 'tasten' | 'maus' - fuer die Tastensymbole
   let kPauseOffen = false;
   let kFrageOffen = false;
   let kLetzterTab = 'home';
@@ -20555,9 +20535,6 @@
     // Nach dem Umschalten zeichnen, nicht davor: der neue Tab ist erst danach .active.
     setTimeout(() => {
       konsoleZeichnen();
-      // Die Beschreibung gehoerte zur Auswahl der vorigen Seite (gesehen: im Mehrspieler stand
-      // noch "AUTOS - Öffnet sofort die Bluetooth-Auswahl").
-      if (!menuNavGezeigt) konsoleFokus(null);
       // Auf dem Fahren-Schirm ist die Auswahl von Anfang an sichtbar: AUTO ohne Auto und
       // RENNEN STARTEN mit Auto.
       if (neu === 'fahren') {
@@ -20797,6 +20774,9 @@
     const d = $('k-frage');
     kFrageOffen = false;
     if (d) d.hidden = true;
+    // Leeren: der Text bliebe sonst unsichtbar im Dokument stehen, nach einem Sprachwechsel
+    // in der alten Sprache (der Sprachtest hat ihn gefunden).
+    ['k-frage-titel', 'k-frage-text', 'k-frage-knoepfe'].forEach((id) => { if ($(id)) $(id).textContent = ''; });
     document.querySelectorAll('.menu-nav-sel').forEach((el) => el.classList.remove('menu-nav-sel'));
     menuNavEnsureContext();
     if (kAktiverTab() === 'fahren') konsoleFokusAuf(playerCar ? 'fa-start' : 'fa-auto');
@@ -20895,19 +20875,15 @@
       a.className = n ? 'k-an' : '';
       a.textContent = n ? '● ' + n + ' ' + t(n === 1 ? 'Auto' : 'Autos') : '○ ' + t('kein Auto');
       st.appendChild(a);
-      const w = document.createElement('span');
-      w.className = 'wip-tag';
-      w.textContent = t('Neues Menü');
-      st.appendChild(w);
+      // Kein Etikett "Neues Menü" mehr daneben - BESTELLT: "Mach das 'Neues Menü' Label oben
+      // rechts weg". Als WIP gekennzeichnet bleibt das Menue in den Patchnotes.
     }
-    // Reiter: oben die Ebene 1, darunter die innere Leiste, falls es eine gibt. Die L1/R1-
-    // Hinweise stehen an der Leiste, auf die die Schultertasten gerade wirken.
+    // Reiter: oben die Ebene 1, darunter die innere Leiste, falls es eine gibt.
     const r1 = konsoleReiterEbene1();
     const r2 = konsoleReiterInnen();
-    const fuell = (leiste, host, r, schulter) => {
+    const fuell = (leiste, host, r) => {
       if (!leiste) return;
       leiste.hidden = !r;
-      leiste.classList.toggle('k-l1r1', !!(r && schulter));
       if (!r || !host) return;
       host.innerHTML = '';
       r.forEach((x) => {
@@ -20919,70 +20895,18 @@
         host.appendChild(b);
       });
     };
-    fuell($('k-leiste'), $('k-reiter'), r1, !r2);
-    fuell($('k-leiste2'), $('k-reiter2'), r2, true);
+    fuell($('k-leiste'), $('k-reiter'), r1);
+    fuell($('k-leiste2'), $('k-reiter2'), r2);
     document.body.classList.toggle('k-innen', !!r2);
-    if (tab === 'fahren') konsoleFahrenZeichnen();
+    // Immer, nicht nur auf dem Fahren-Schirm: sonst stuenden seine Kacheln nach einem
+    // Sprachwechsel anderswo noch in der alten Sprache da ("Härte 50 %" im Englischen).
+    konsoleFahrenZeichnen();
     if (tab === 'track') konsoleStreckeModus();
-    konsoleFussZeichnen();
   }
 
-  // Beschreibung und Fussleiste haengen am Fokus; menuNavRender() ruft das hier.
-  function konsoleFokus(row) {
-    const b = $('k-beschr');
-    if (!b) return;
-    let titel = '', text = '';
-    const el = row && row.el;
-    if (el) {
-      if (el.dataset && el.dataset.d) { text = t(el.dataset.d); titel = ((el.querySelector('.k-kk, b') || el).textContent || '').trim(); }
-      else if (el.classList.contains('misc-tile')) {
-        titel = (el.querySelector('b') || el).textContent.trim();
-        text = ((el.querySelector('span') || {}).textContent || '').trim();
-      } else if (el.classList.contains('opt-row')) {
-        const lab = el.querySelector('.opt-label');
-        const sm = lab && lab.querySelector('small');
-        titel = lab ? (lab.firstChild && lab.firstChild.textContent || '').trim() : '';
-        text = sm ? sm.textContent.replace(/\s+/g, ' ').trim() : '';
-      }
-    }
-    b.innerHTML = '';
-    b.hidden = !text;
-    if (text) {
-      const tb = document.createElement('b');
-      tb.textContent = titel.toUpperCase();
-      b.appendChild(tb);
-      b.appendChild(document.createTextNode(' · ' + text));
-    }
-    konsoleFussZeichnen(row);
-  }
-
-  function konsoleSymbol(n) {
-    if (kEingabe !== 'pad') {
-      const tt = { ok: 'Enter', zurueck: 'Esc', nav: '← ↑ ↓ →', l1: 'Q', r1: 'E', quad: t('Leer'), drei: 'O', lr: '← →' }[n];
-      return '<span class="k-taste">' + tt + '</span>';
-    }
-    const s = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">';
-    if (n === 'ok') return s + '<circle cx="12" cy="12" r="10.5"/><path d="M7.5 7.5l9 9M16.5 7.5l-9 9" stroke="#7fb2ff" stroke-width="2.2"/></svg>';
-    if (n === 'zurueck') return s + '<circle cx="12" cy="12" r="10.5"/><circle cx="12" cy="12" r="5" stroke="#ff6b7a" stroke-width="2.2"/></svg>';
-    if (n === 'quad') return s + '<circle cx="12" cy="12" r="10.5"/><rect x="7" y="7" width="10" height="10" stroke="#ff8ad8" stroke-width="2.2"/></svg>';
-    if (n === 'drei') return s + '<circle cx="12" cy="12" r="10.5"/><path d="M12 6.5l6 10.5H6z" stroke="#3ddc84" stroke-width="2.2"/></svg>';
-    if (n === 'nav' || n === 'lr') return s + '<path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/></svg>';
-    return '<span class="k-taste">' + n.toUpperCase() + '</span>';
-  }
-  function konsoleFussZeichnen(rowArg) {
-    const f = $('k-fuss');
-    if (!f) return;
-    const row = rowArg || (menuNavRows()[menuNavIndex]);
-    // "Zurück" steht im Woerterbuch als "Undo" (der Knopf im Streckeneditor nimmt einen Schritt
-    // zurueck) - hier ist es der Rueckweg, deshalb ein eigenes Wort statt t().
-    const teile = [[konsoleSymbol('ok'), t('Bestätigen')], [konsoleSymbol('zurueck'), lang === 'en' ? 'Back' : 'Zurück'],
-      [konsoleSymbol('nav'), t('Navigieren')]];
-    if (row && (row.kind === 'range' || row.kind === 'select' || row.kind === 'toggle')) teile.push([konsoleSymbol('lr'), t('Wert ändern')]);
-    if (row && row.el && row.el.dataset && row.el.dataset.quad) teile.push([konsoleSymbol('quad'), t('Wechseln')]);
-    if (row && row.el && row.el.querySelector && row.el.querySelector('.opt-info-btn')) teile.push([konsoleSymbol('drei'), t('Info')]);
-    if (konsoleReiter()) teile.push([konsoleSymbol('l1') + konsoleSymbol('r1'), t('Reiter')]);
-    f.innerHTML = teile.map(([g, tx]) => '<span class="k-h">' + g + '<span>' + tx + '</span></span>').join('');
-  }
+  // Keine Beschreibungszeile und keine Fussleiste mit Tastenbelegung mehr. BESTELLT: "Nimm den
+  // Footer mit den Tastenbelegungen weg und auch oben das L1 und R1. Entferne auch den Tipp
+  // unten". Die Tasten bleiben dieselben, nur ihre Anzeige entfaellt.
 
   // ---- Fahren: die Info-Zeilen aus dem echten Zustand ---------------------------------
   function kZeilen(host, paare) {
@@ -21019,9 +20943,6 @@
     kZeilen($('fa-auto-info'), autos.length
       ? autos.map((c) => [kPunkt(carColor(c).hex, garageLabel(c)), t(K_ROLLE[c.role] || c.role)])
       : [[t('Status'), t('nicht verbunden')], ['✕', t('Bluetooth-Auswahl öffnen')]]);
-    $('fa-auto').dataset.d = autos.length
-      ? 'Öffnet die Garage: Rollen, Namen, Farben, Ghost-Tempo, weitere Autos.'
-      : 'Öffnet sofort die Bluetooth-Auswahl. Das erste Auto steuerst du, weitere werden Ghosts.';
     const rm = $('race-mode');
     const modus = rm.selectedOptions[0] ? rm.selectedOptions[0].textContent : '';
     $('fa-renn-titel').textContent = modus;
@@ -21056,13 +20977,6 @@
     });
   }
 
-  // ---- Eingabegeraet merken (fuer die Tastensymbole) ---------------------------------
-  function konsoleEingabe(art) {
-    if (kEingabe === art) return;
-    kEingabe = art;
-    konsoleFussZeichnen();
-  }
-
   // ---- Gamepad: Titel und Options halten (aus pollGamepad, 90-ghosts.js) -------------
   const kPadVorher = [];
   let kOptionsSeit = 0, kOptionsGefeuert = false;
@@ -21088,7 +21002,6 @@
       if (n && !kPadVorher[i]) neu = i;
       kPadVorher[i] = n;
     }
-    if (neu !== false) konsoleEingabe('pad');
     if (kTitelSperre) {
       if (kPadVorher.some(Boolean)) return true;
       kTitelSperre = false;
@@ -21121,7 +21034,6 @@
   // sie sehen, und damit Esc/Q/E/Leertaste in Menues nicht zusaetzlich fahren.
   window.addEventListener('keydown', (e) => {
     const k = (e.key || '').toLowerCase();
-    konsoleEingabe('tasten');
     if (e.target && e.target.closest && e.target.closest('input[type="text"], input[type="number"], textarea, select')) return;
     if (kAktiverTab() === 'home' && !e.ctrlKey && !e.altKey && !e.metaKey && k !== 'tab' && k !== 'shift') {
       e.preventDefault(); e.stopImmediatePropagation();
@@ -21144,8 +21056,6 @@
       if (konsoleQuadrat()) { e.preventDefault(); e.stopImmediatePropagation(); }
     }
   }, true);
-  window.addEventListener('mousedown', () => konsoleEingabe('maus'), { passive: true, capture: true });
-  window.addEventListener('touchstart', () => konsoleEingabe('maus'), { passive: true, capture: true });
 
   // ---- Klicks ------------------------------------------------------------------------
   document.addEventListener('click', (e) => {

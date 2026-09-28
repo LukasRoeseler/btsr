@@ -757,6 +757,9 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Menü aufgeräumt: ohne Tastenleiste und Hinweiszeile, kleinere abgedunkelte Bilder, gut lesbare Werte auf den Kacheln, Carrera-Hybrid-Blau statt Rot, oben nur das Omega, im Titel OMEGA blau und SIM rot. Im Cockpit keine Kopfzeile mehr.": "Menu tidied up: no button bar or hint line, smaller darkened pictures, easy-to-read values on the tiles, Carrera Hybrid blue instead of red, only the omega at the top, OMEGA blue and SIM red in the title. No header bar in the cockpit any more.",
+    "Dieser Browser kennt Web Bluetooth nicht. Chrome oder Edge auf Windows, Android oder ChromeOS - Safari und Firefox koennen es nicht.": "This browser does not support Web Bluetooth. Use Chrome or Edge on Windows, Android or ChromeOS - Safari and Firefox cannot do it.",
+    "Der Bluetooth-Adapter ist aus oder nicht verfuegbar. Auf Android ausserdem pruefen, ob Chrome die Berechtigung \"Geraete in der Naehe\" hat.": "The Bluetooth adapter is off or unavailable. On Android also check that Chrome has the \"Nearby devices\" permission.",
     "← Optionen": "← Options",
     "Autos verbinden": "Connect cars",
     "Über PC mit Python": "Via PC with Python",
@@ -784,7 +787,6 @@
     "Sitzungen": "Sessions",
     "Autos": "cars",
     "kein Auto": "no car",
-    "Neues Menü": "New menu",
     "Leer": "Space",
     "Bestätigen": "Confirm",
     "Navigieren": "Navigate",
@@ -2372,10 +2374,8 @@
     // und der Selbsttest konnte es nicht melden, weil er dieselbe Liste benutzt: ein
     // blinder Fleck, der sich selbst versteckt. Gefunden hat es ein Abzug ueber das ganze
     // body, nicht ueber diese Liste.
-    // #k-unten: Beschreibung und Fussleiste des ACC-Menues (51-konsole.js) stehen hinter
-    // main, damit sie am unteren Rand kleben - und muessen deshalb eigens mit hinein.
     return [document.querySelector('header'), document.querySelector('main'),
-            $('lb-wrap'), $('k-unten')].filter(Boolean);
+            $('lb-wrap')].filter(Boolean);
   }
 
   // Einen Teilbaum in die aktuelle Sprache bringen. Wird beim Umschalten fuer alles und

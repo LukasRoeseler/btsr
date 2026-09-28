@@ -48,7 +48,6 @@
 
   let kStapel = [];
   let kZurueckLaeuft = false;
-  let kEingabe = 'maus';            // 'pad' | 'tasten' | 'maus' - fuer die Tastensymbole
   let kPauseOffen = false;
   let kFrageOffen = false;
   let kLetzterTab = 'home';
@@ -81,9 +80,6 @@
     // Nach dem Umschalten zeichnen, nicht davor: der neue Tab ist erst danach .active.
     setTimeout(() => {
       konsoleZeichnen();
-      // Die Beschreibung gehoerte zur Auswahl der vorigen Seite (gesehen: im Mehrspieler stand
-      // noch "AUTOS - Öffnet sofort die Bluetooth-Auswahl").
-      if (!menuNavGezeigt) konsoleFokus(null);
       // Auf dem Fahren-Schirm ist die Auswahl von Anfang an sichtbar: AUTO ohne Auto und
       // RENNEN STARTEN mit Auto.
       if (neu === 'fahren') {
@@ -323,6 +319,9 @@
     const d = $('k-frage');
     kFrageOffen = false;
     if (d) d.hidden = true;
+    // Leeren: der Text bliebe sonst unsichtbar im Dokument stehen, nach einem Sprachwechsel
+    // in der alten Sprache (der Sprachtest hat ihn gefunden).
+    ['k-frage-titel', 'k-frage-text', 'k-frage-knoepfe'].forEach((id) => { if ($(id)) $(id).textContent = ''; });
     document.querySelectorAll('.menu-nav-sel').forEach((el) => el.classList.remove('menu-nav-sel'));
     menuNavEnsureContext();
     if (kAktiverTab() === 'fahren') konsoleFokusAuf(playerCar ? 'fa-start' : 'fa-auto');
@@ -421,19 +420,15 @@
       a.className = n ? 'k-an' : '';
       a.textContent = n ? '● ' + n + ' ' + t(n === 1 ? 'Auto' : 'Autos') : '○ ' + t('kein Auto');
       st.appendChild(a);
-      const w = document.createElement('span');
-      w.className = 'wip-tag';
-      w.textContent = t('Neues Menü');
-      st.appendChild(w);
+      // Kein Etikett "Neues Menü" mehr daneben - BESTELLT: "Mach das 'Neues Menü' Label oben
+      // rechts weg". Als WIP gekennzeichnet bleibt das Menue in den Patchnotes.
     }
-    // Reiter: oben die Ebene 1, darunter die innere Leiste, falls es eine gibt. Die L1/R1-
-    // Hinweise stehen an der Leiste, auf die die Schultertasten gerade wirken.
+    // Reiter: oben die Ebene 1, darunter die innere Leiste, falls es eine gibt.
     const r1 = konsoleReiterEbene1();
     const r2 = konsoleReiterInnen();
-    const fuell = (leiste, host, r, schulter) => {
+    const fuell = (leiste, host, r) => {
       if (!leiste) return;
       leiste.hidden = !r;
-      leiste.classList.toggle('k-l1r1', !!(r && schulter));
       if (!r || !host) return;
       host.innerHTML = '';
       r.forEach((x) => {
@@ -445,70 +440,18 @@
         host.appendChild(b);
       });
     };
-    fuell($('k-leiste'), $('k-reiter'), r1, !r2);
-    fuell($('k-leiste2'), $('k-reiter2'), r2, true);
+    fuell($('k-leiste'), $('k-reiter'), r1);
+    fuell($('k-leiste2'), $('k-reiter2'), r2);
     document.body.classList.toggle('k-innen', !!r2);
-    if (tab === 'fahren') konsoleFahrenZeichnen();
+    // Immer, nicht nur auf dem Fahren-Schirm: sonst stuenden seine Kacheln nach einem
+    // Sprachwechsel anderswo noch in der alten Sprache da ("Härte 50 %" im Englischen).
+    konsoleFahrenZeichnen();
     if (tab === 'track') konsoleStreckeModus();
-    konsoleFussZeichnen();
   }
 
-  // Beschreibung und Fussleiste haengen am Fokus; menuNavRender() ruft das hier.
-  function konsoleFokus(row) {
-    const b = $('k-beschr');
-    if (!b) return;
-    let titel = '', text = '';
-    const el = row && row.el;
-    if (el) {
-      if (el.dataset && el.dataset.d) { text = t(el.dataset.d); titel = ((el.querySelector('.k-kk, b') || el).textContent || '').trim(); }
-      else if (el.classList.contains('misc-tile')) {
-        titel = (el.querySelector('b') || el).textContent.trim();
-        text = ((el.querySelector('span') || {}).textContent || '').trim();
-      } else if (el.classList.contains('opt-row')) {
-        const lab = el.querySelector('.opt-label');
-        const sm = lab && lab.querySelector('small');
-        titel = lab ? (lab.firstChild && lab.firstChild.textContent || '').trim() : '';
-        text = sm ? sm.textContent.replace(/\s+/g, ' ').trim() : '';
-      }
-    }
-    b.innerHTML = '';
-    b.hidden = !text;
-    if (text) {
-      const tb = document.createElement('b');
-      tb.textContent = titel.toUpperCase();
-      b.appendChild(tb);
-      b.appendChild(document.createTextNode(' · ' + text));
-    }
-    konsoleFussZeichnen(row);
-  }
-
-  function konsoleSymbol(n) {
-    if (kEingabe !== 'pad') {
-      const tt = { ok: 'Enter', zurueck: 'Esc', nav: '← ↑ ↓ →', l1: 'Q', r1: 'E', quad: t('Leer'), drei: 'O', lr: '← →' }[n];
-      return '<span class="k-taste">' + tt + '</span>';
-    }
-    const s = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">';
-    if (n === 'ok') return s + '<circle cx="12" cy="12" r="10.5"/><path d="M7.5 7.5l9 9M16.5 7.5l-9 9" stroke="#7fb2ff" stroke-width="2.2"/></svg>';
-    if (n === 'zurueck') return s + '<circle cx="12" cy="12" r="10.5"/><circle cx="12" cy="12" r="5" stroke="#ff6b7a" stroke-width="2.2"/></svg>';
-    if (n === 'quad') return s + '<circle cx="12" cy="12" r="10.5"/><rect x="7" y="7" width="10" height="10" stroke="#ff8ad8" stroke-width="2.2"/></svg>';
-    if (n === 'drei') return s + '<circle cx="12" cy="12" r="10.5"/><path d="M12 6.5l6 10.5H6z" stroke="#3ddc84" stroke-width="2.2"/></svg>';
-    if (n === 'nav' || n === 'lr') return s + '<path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/></svg>';
-    return '<span class="k-taste">' + n.toUpperCase() + '</span>';
-  }
-  function konsoleFussZeichnen(rowArg) {
-    const f = $('k-fuss');
-    if (!f) return;
-    const row = rowArg || (menuNavRows()[menuNavIndex]);
-    // "Zurück" steht im Woerterbuch als "Undo" (der Knopf im Streckeneditor nimmt einen Schritt
-    // zurueck) - hier ist es der Rueckweg, deshalb ein eigenes Wort statt t().
-    const teile = [[konsoleSymbol('ok'), t('Bestätigen')], [konsoleSymbol('zurueck'), lang === 'en' ? 'Back' : 'Zurück'],
-      [konsoleSymbol('nav'), t('Navigieren')]];
-    if (row && (row.kind === 'range' || row.kind === 'select' || row.kind === 'toggle')) teile.push([konsoleSymbol('lr'), t('Wert ändern')]);
-    if (row && row.el && row.el.dataset && row.el.dataset.quad) teile.push([konsoleSymbol('quad'), t('Wechseln')]);
-    if (row && row.el && row.el.querySelector && row.el.querySelector('.opt-info-btn')) teile.push([konsoleSymbol('drei'), t('Info')]);
-    if (konsoleReiter()) teile.push([konsoleSymbol('l1') + konsoleSymbol('r1'), t('Reiter')]);
-    f.innerHTML = teile.map(([g, tx]) => '<span class="k-h">' + g + '<span>' + tx + '</span></span>').join('');
-  }
+  // Keine Beschreibungszeile und keine Fussleiste mit Tastenbelegung mehr. BESTELLT: "Nimm den
+  // Footer mit den Tastenbelegungen weg und auch oben das L1 und R1. Entferne auch den Tipp
+  // unten". Die Tasten bleiben dieselben, nur ihre Anzeige entfaellt.
 
   // ---- Fahren: die Info-Zeilen aus dem echten Zustand ---------------------------------
   function kZeilen(host, paare) {
@@ -545,9 +488,6 @@
     kZeilen($('fa-auto-info'), autos.length
       ? autos.map((c) => [kPunkt(carColor(c).hex, garageLabel(c)), t(K_ROLLE[c.role] || c.role)])
       : [[t('Status'), t('nicht verbunden')], ['✕', t('Bluetooth-Auswahl öffnen')]]);
-    $('fa-auto').dataset.d = autos.length
-      ? 'Öffnet die Garage: Rollen, Namen, Farben, Ghost-Tempo, weitere Autos.'
-      : 'Öffnet sofort die Bluetooth-Auswahl. Das erste Auto steuerst du, weitere werden Ghosts.';
     const rm = $('race-mode');
     const modus = rm.selectedOptions[0] ? rm.selectedOptions[0].textContent : '';
     $('fa-renn-titel').textContent = modus;
@@ -582,13 +522,6 @@
     });
   }
 
-  // ---- Eingabegeraet merken (fuer die Tastensymbole) ---------------------------------
-  function konsoleEingabe(art) {
-    if (kEingabe === art) return;
-    kEingabe = art;
-    konsoleFussZeichnen();
-  }
-
   // ---- Gamepad: Titel und Options halten (aus pollGamepad, 90-ghosts.js) -------------
   const kPadVorher = [];
   let kOptionsSeit = 0, kOptionsGefeuert = false;
@@ -614,7 +547,6 @@
       if (n && !kPadVorher[i]) neu = i;
       kPadVorher[i] = n;
     }
-    if (neu !== false) konsoleEingabe('pad');
     if (kTitelSperre) {
       if (kPadVorher.some(Boolean)) return true;
       kTitelSperre = false;
@@ -647,7 +579,6 @@
   // sie sehen, und damit Esc/Q/E/Leertaste in Menues nicht zusaetzlich fahren.
   window.addEventListener('keydown', (e) => {
     const k = (e.key || '').toLowerCase();
-    konsoleEingabe('tasten');
     if (e.target && e.target.closest && e.target.closest('input[type="text"], input[type="number"], textarea, select')) return;
     if (kAktiverTab() === 'home' && !e.ctrlKey && !e.altKey && !e.metaKey && k !== 'tab' && k !== 'shift') {
       e.preventDefault(); e.stopImmediatePropagation();
@@ -670,8 +601,6 @@
       if (konsoleQuadrat()) { e.preventDefault(); e.stopImmediatePropagation(); }
     }
   }, true);
-  window.addEventListener('mousedown', () => konsoleEingabe('maus'), { passive: true, capture: true });
-  window.addEventListener('touchstart', () => konsoleEingabe('maus'), { passive: true, capture: true });
 
   // ---- Klicks ------------------------------------------------------------------------
   document.addEventListener('click', (e) => {
