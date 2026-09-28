@@ -753,6 +753,9 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Boxenstopp eingeleitet": "Pit stop initiated",
+    "Rennmodus: links/rechts wählen": "Race mode: choose with left/right",
+    "Rennmodus: Anwahl beendet": "Race mode: selection finished",
     "Verschiedene Rennmodi": "Several race modes",
     "KI-Überholmanöver": "AI overtaking",
     "Zwei Autos, zwei Controller, ein Rennen auf derselben Strecke. Angeschaltet bekommt jede Zeile in der Garage einen vierten Knopf „Spieler 2“, und im Cockpit kommt ein vierter Schirm „Beide“ dazu, der Tempo, Drehzahl, Tank, Zustand, Reifen, Bremse und Akku beider Autos nebeneinander zeigt. Der Hauptschirm bleibt Auto 1 vorbehalten. Beide Autos werden aus demselben 45-ms-Sendetakt bedient – getrennte Takte waren die Ursache des Stotterns mit echtem Controller, und dieser Modus wiederholt den Fehler nicht.":
@@ -1190,10 +1193,20 @@
     "Wo ist die Boxengasse?": "Where is the pit lane?",
     "Aus: kein Tempolimit, kein Service, auch nicht über einen Ausdruck.":
       "Off: no speed limit, no service, not even via a printout.",
-    "Runde beim Boxeneinfahren trotzdem zählen": "Count the lap on pit entry anyway",
-    "Sinnvoll, wenn die Boxengasse parallel zu Start/Ziel liegt. Nur bei „Doppelter Start-Ausdruck“.":
-      "Useful when the pit lane runs parallel to start/finish. Only with “Double start printout”.",
     "Wo die Boxengasse liegt": "Where the pit lane is",
+    "Boxeneinfahrt zählt": "Pit entry counts as",
+    "1 Runde: die erste Überfahrt zählt, die zweite nicht – richtig, wenn die Boxengasse parallel zu Start/Ziel liegt. 0 Runden: auch die erste wird wieder abgezogen. Nur bei „Doppelter Start-Ausdruck“.":
+      "1 lap: the first crossing counts, the second does not – right when the pit lane runs parallel to start/finish. 0 laps: the first one is taken back as well. Only with “Double start printout”.",
+    "1 Runde": "1 lap",
+    "Boxenstopp ansagen": "Announce pit stop",
+    "Wenn der Stopp über den doppelten Start-Ausdruck ausgelöst wird: „Boxenstopp eingeleitet“. Nicht beim Knopf.":
+      "When the stop is triggered by the double start printout: “Pit stop initiated”. Not for the button.",
+    "Zeitfenster des Doppel-Ausdrucks": "Double-printout time window",
+    "0 Runden": "0 laps",
+    "So lange nach dem ersten Muster zählt ein zweites als Boxeneinfahrt. Liegt der zweite Kontakt später als eine halbe beste Runde, ist er eine Runde und keine Box. Nur bei „Doppelter Start-Ausdruck“.":
+      "For this long after the first pattern, a second one counts as a pit entry. If the second contact comes later than half a best lap, it is a lap and not a pit entry. Only with “Double start printout”.",
+    ": zwei Ausdrucke im Abstand von 50 cm. Kommt der zweite Musterkontakt innerhalb des Zeitfensters (darunter einstellbar, mindestens 1 s nach dem ersten), ist er eine Boxeneinfahrt: keine Runde, keine Zeitansage. Danach piept es, das Tempolimit von 60 km/h gilt 4 s, und ein Anhalten in dieser Zeit startet den Service.":
+      ": two printouts 50 cm apart. If the second pattern contact comes within the time window (set below, at least 1 s after the first), it is a pit entry: no lap, no time announcement. Then it beeps, the 60 km/h limit holds for 4 s, and stopping within that time starts the service.",
     "und ob sie überhaupt aktiv ist, steht in den":
       "and whether it is active at all is set under",
     ", direkt unter dem Tankverbrauch: das sind Einstellungen. Hier stehen die Angaben zum":
@@ -1209,10 +1222,7 @@
       "is the default: a requested pit stop is served by stopping, anywhere. Needs no printout and no rail.",
     "nimmt Byte 12 = 0x00 als Boxengasse. Nur auf der CH-Schiene sinnvoll – ohne Schiene ist das Auto praktisch immer „abseits“, und dann wäre die ganze Strecke Boxengasse.":
       "takes byte 12 = 0x00 as the pit lane. Only meaningful on the CH rail – without a rail the car is off-track almost always, and then the whole course would be pit lane.",
-    ": zwei Ausdrucke im Abstand von 50 cm. Zwei Musterkontakte innerhalb von 3 s bei mindestens 1 s Abstand sind eine Boxeneinfahrt und keine Runde. Danach piept es, das Tempolimit von 60 km/h gilt 4 s, und ein Anhalten in dieser Zeit startet den Service. Der Mindestabstand ist der wichtigere Teil der Bedingung: ein einzelner Ausdruck hält bei Fahrt etwa eine Sekunde Kontakt, und ohne ihn würde das Flattern":
-      ": two printouts 50 cm apart. Two pattern contacts within 3 s and at least 1 s apart are a pit entry, not a lap. Then it beeps, the 60 km/h limit holds for 4 s, and stopping within that time starts the service. The minimum gap is the more important half of the condition: a single printout holds contact for about a second at speed, and without it the flutter of",
     "eines": "a single",
-    "Musters als Paar gelesen.": "pattern would be read as a pair.",
     "Gefahrene Sitzungen": "Sessions driven",
     "Nach jedem beendeten Rennen abgelegt, auf diesem Gerät. Gespeichert werden Rundenzeiten, Datum, Streckencode, Modus, die verwendete Abstimmung und die gefahrene Strecke – und zwar":
       "Stored after every finished race, on this device. Lap times, date, track code, mode, the setup used and the distance driven – and that",

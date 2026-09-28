@@ -11444,7 +11444,6 @@
       // Die zwei Boxenstopp-Schalter.
       ['ghost-pit', () => ghostCfg.pitAn],
       ['ghost-pit-free', () => ghostCfg.pitFrei],
-      ['pit-double-lap', () => pitDoubleCountsLap],
       ['pit-enable', () => pitLaneEnabled],
       ['race-flying', () => raceFlying],
       ['race-wx-change', () => raceWxChange],
@@ -14258,6 +14257,7 @@
     const merk = { sp: playerCar, tm: trackMode, pt: pitTrigger, ps: pitState,
                    rs: raceState, lt: raceLapTimes.slice(), ls: raceLapStart,
                    ple: pitLaneEnabled, pdf: pitDoubleFirstAt, pwi: PIT_DOUBLE_WINDOW_MS,
+                   pdr: pitDoubleRunden, dl: dashLapTimes.slice(),
                    ac: dashLastActedCode, aa: dashLastActedAt };
     try {
       const attrappe = { device: { id: 'st-pit', name: 'Pruefwagen' }, role: 'player',
@@ -14339,15 +14339,50 @@
       if (nachSchnell !== 2) schlecht.push('zu schnelles Paar wird als Einfahrt gelesen');
       if (pitState !== 'off') schlecht.push('zu schnelles Paar aktiviert die Boxengasse');
 
+      // 4. BESTELLT: "0 Runden zaehlen einstellen kann". Ein Paar laesst dann keine Runde
+      //    stehen - auch die erste Ueberfahrt wird zurueckgenommen.
+      pitDoubleRunden = 0;
+      raceLapTimes.length = 0;
+      raceLapStart = Date.now() - 5000;
+      pitDoubleFirstAt = 0;
+      setPitState('off');
+      kontakt();
+      raceLapStart = Date.now() - 1500;
+      alter(1500);
+      kontakt();
+      const nachNull = raceLapTimes.length;
+      teile.push('0-Runden-Paar: ' + nachNull + ' Runden, pitState ' + pitState);
+      if (nachNull !== 0) schlecht.push('0-Runden-Einstellung laesst ' + nachNull + ' Runden stehen');
+      if (pitState !== 'limited') schlecht.push('0-Runden-Paar aktiviert die Boxengasse nicht');
+      pitDoubleRunden = 1;
+
+      // 5. Eine KURZE Runde ist kein Paar: beste Runde 2 s, zweiter Kontakt nach 1,5 s -
+      //    das ist spaeter als eine halbe Runde, also die naechste Runde.
+      raceLapTimes.length = 0;
+      raceLapTimes.push({ lap: 1, ms: 2000 });
+      raceLapStart = Date.now() - 2000;
+      pitDoubleFirstAt = 0;
+      setPitState('off');
+      kontakt();
+      raceLapStart = Date.now() - 1500;
+      alter(1500);
+      kontakt();
+      const nachKurz = raceLapTimes.length;
+      teile.push('kurze Runde: ' + nachKurz + ' Runden, pitState ' + pitState);
+      if (nachKurz !== 3) schlecht.push('kurze Runde wird als Boxeneinfahrt gelesen');
+      if (pitState !== 'off') schlecht.push('kurze Runde aktiviert die Boxengasse');
+
       return { ok: !schlecht.length,
                mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
     } finally {
       playerCar = merk.sp; trackMode = merk.tm; pitTrigger = merk.pt;
       pitLaneEnabled = merk.ple; pitDoubleFirstAt = merk.pdf;
-      PIT_DOUBLE_WINDOW_MS = merk.pwi;
+      PIT_DOUBLE_WINDOW_MS = merk.pwi; pitDoubleRunden = merk.pdr;
       raceState = merk.rs; raceLapStart = merk.ls;
       raceLapTimes.length = 0;
       merk.lt.forEach(l => raceLapTimes.push(l));
+      dashLapTimes.length = 0;
+      merk.dl.forEach(l => dashLapTimes.push(l));
       dashLastActedCode = merk.ac; dashLastActedAt = merk.aa;
       setPitState(merk.ps);
     }
@@ -14369,7 +14404,7 @@
     }
     const merk = { sp: playerCar, tm: trackMode, pt: pitTrigger, ps: pitState,
                    rs: raceState, lt: raceLapTimes.slice(), ls: raceLapStart,
-                   ple: pitLaneEnabled, pdf: pitDoubleFirstAt, pdc: pitDoubleCountsLap,
+                   ple: pitLaneEnabled, pdf: pitDoubleFirstAt, pdc: pitDoubleRunden,
                    pwi: PIT_DOUBLE_WINDOW_MS,
                    ac: dashLastActedCode, aa: dashLastActedAt,
                    pc: dashPendingCode, pv: dashPendingSeen, tc: dashLastTileCounter };
@@ -14381,7 +14416,7 @@
       trackMode = 'off';
       pitLaneEnabled = true;
       pitTrigger = 'double';
-      pitDoubleCountsLap = false;
+      pitDoubleRunden = 1;
       // Fenster fest auf 3 s, siehe die andere Doppelausdruck-Pruefung.
       PIT_DOUBLE_WINDOW_MS = 3000;
       raceState = 'racing';
@@ -14438,7 +14473,7 @@
     } finally {
       playerCar = merk.sp; trackMode = merk.tm; pitTrigger = merk.pt;
       pitLaneEnabled = merk.ple; pitDoubleFirstAt = merk.pdf;
-      pitDoubleCountsLap = merk.pdc;
+      pitDoubleRunden = merk.pdc;
       PIT_DOUBLE_WINDOW_MS = merk.pwi;
       raceState = merk.rs; raceLapStart = merk.ls;
       raceLapTimes.length = 0;

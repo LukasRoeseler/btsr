@@ -3185,7 +3185,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.8.1</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.2</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7340,28 +7340,32 @@
           also, DASS ein Stopp kommt, die Bahnkante sagt, WO er anf&auml;ngt. Nur auf der
           CH-Schiene sinnvoll &ndash; ohne Schiene meldet das Auto st&auml;ndig
           &bdquo;abseits&ldquo;.<br>
-          <b>Doppelter Start-Ausdruck</b>: zwei Ausdrucke im Abstand von 50&nbsp;cm. Zwei
-          Musterkontakte zwischen 1&nbsp;s und <span id="pit-double-window-text2">3</span>&nbsp;s
-          Abstand sind eine Boxeneinfahrt und keine Runde. Danach piept es, das Tempolimit von
-          60&nbsp;km/h gilt 4&nbsp;s, und ein Anhalten in dieser Zeit startet den Service. Der
-          Mindestabstand ist der wichtigere Teil der Bedingung: ein einzelner Ausdruck
-          h&auml;lt bei Fahrt etwa eine Sekunde Kontakt, und ohne ihn w&uuml;rde das
-          Flattern <em>eines</em> Musters als Paar gelesen.</small></div>
+          <b>Doppelter Start-Ausdruck</b>: zwei Ausdrucke im Abstand von 50&nbsp;cm. Kommt der
+          zweite Musterkontakt innerhalb des Zeitfensters (darunter einstellbar, mindestens
+          1&nbsp;s nach dem ersten), ist er eine Boxeneinfahrt: keine Runde, keine
+          Zeitansage. Danach piept es, das Tempolimit von 60&nbsp;km/h gilt 4&nbsp;s, und ein
+          Anhalten in dieser Zeit startet den Service.</small></div>
         <select id="pit-trigger">
           <option value="anywhere" selected>&Uuml;berall halten</option>
           <option value="offtrack">Neben der Strecke (von Hand, Start erst abseits)</option>
           <option value="double">Doppelter Start-Ausdruck (experimentell)</option>
         </select></div>
-      <div class="opt-row" id="pit-double-lap-wrap"><div class="opt-label">Runde beim
-          Boxeneinfahren trotzdem z&auml;hlen
-          <small>Sinnvoll, wenn die Boxengasse parallel zu Start/Ziel liegt. Nur bei
-          &bdquo;Doppelter Start-Ausdruck&ldquo;.</small></div>
-        <label class="tgl"><input type="checkbox" id="pit-double-lap"><span></span></label></div>
+      <!-- BESTELLT: "standardmaessig 1 Runde fuer 2 Ueberfahrten (wenn 1x im Pit Window),
+           ich aber auch 0 Runden einstellen kann (falls die Boxengasse nicht parallel zur
+           Start/Zielgerade ist)". Ersetzt die fruehere Checkbox "Runde trotzdem zaehlen". -->
+      <div class="opt-row" id="pit-double-lap-wrap"><div class="opt-label">Boxeneinfahrt z&auml;hlt
+          <small>1&nbsp;Runde: die erste &Uuml;berfahrt z&auml;hlt, die zweite nicht &ndash;
+          richtig, wenn die Boxengasse parallel zu Start/Ziel liegt. 0&nbsp;Runden: auch die
+          erste wird wieder abgezogen. Nur bei &bdquo;Doppelter Start-Ausdruck&ldquo;.</small></div>
+        <select id="pit-double-laps">
+          <option value="1" selected>1 Runde</option>
+          <option value="0">0 Runden</option>
+        </select></div>
       <div class="opt-row" id="pit-double-window-wrap"><div class="opt-label">Zeitfenster des
           Doppel-Ausdrucks
-          <small>Das zweite Muster muss zwischen 1&nbsp;s und <span
-          id="pit-double-window-text">3</span>&nbsp;s nach dem ersten &uuml;berfahren werden.
-          Nur bei &bdquo;Doppelter Start-Ausdruck&ldquo;.</small></div>
+          <small>So lange nach dem ersten Muster z&auml;hlt ein zweites als Boxeneinfahrt.
+          Liegt der zweite Kontakt sp&auml;ter als eine halbe beste Runde, ist er eine Runde
+          und keine Box. Nur bei &bdquo;Doppelter Start-Ausdruck&ldquo;.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="setting-pit-double-window" min="3" max="10" step="1" value="3">

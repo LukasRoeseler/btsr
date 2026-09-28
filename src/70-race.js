@@ -1818,10 +1818,11 @@
         // "Boxengasse: doppelter Ausdruck nimmt die Runde zurueck", beide 0 Runden). Der
         // Aufruf steht deshalb jetzt fuer sich, ohne if - damit die naechste
         // Anzeigenaufraeumung ihn nicht wieder mitnimmt.
-        playerLapCrossed();
-        // Und DANACH die Doppelpruefung: die Runde ist gezaehlt, mit richtiger Zeit, und
-        // wird zurueckgenommen falls sich der Kontakt als zweiter eines Paares erweist.
-        pitDoubleCheck(jetzt);
+        // Die Doppelpruefung steht VOR dem Zaehlen: ist dieser Kontakt der zweite eines
+        // Paares (Boxeneinfahrt), wird er gar nicht erst als Runde gezaehlt und nicht
+        // angesagt - BESTELLT: "Rundenzeit nicht ansagen bei zweiter Ueberfahrt [...] und
+        // die Ueberfahrt, die den Pit Mode triggert, nicht als Runde zaehlen".
+        if (!pitDoubleCheck(jetzt)) playerLapCrossed();
       } else if (frei && code === pitMarkerCode) {
         dashLastActedCode = code; dashLastActedAt = jetzt;
         onPitMarkerCrossed();
@@ -1958,16 +1959,11 @@
     if (type === pitMarkerCode) onPitMarkerCrossed();
 
     if (isStartCode(type)) {
+      // Die Doppelpruefung auch hier, und genau wie auf dem Ausdruck-Weg VOR dem Zaehlen:
+      // bewegt sich der Kachelzaehler zwischen den beiden Kontakten eines Paares, laeuft
+      // der zweite ueber DIESEN Weg.
+      if (pitDoubleCheck(nowCode)) return;
       const gezaehlt = playerLapCrossed();
-      // Und DANACH die Doppelpruefung, genau wie auf dem Ausdruck-Weg. Sie stand hier
-      // nicht, und das war der Fehler: bewegt sich der Kachelzaehler zwischen den beiden
-      // Kontakten eines Paares - und das tut er, sobald das Auto ein Streckenteil
-      // weiterfaehrt -, laeuft der zweite Kontakt ueber DIESEN Weg, und die Runde wurde
-      // nie zurueckgenommen. Zwei Runden statt einer.
-      //
-      // VOR dem return, nicht danach: das return war die Stelle, an der die Pruefung
-      // uebersprungen wurde.
-      pitDoubleCheck(nowCode);
       if (gezaehlt) return;
     }
   }
@@ -1988,9 +1984,11 @@
   // Die Zeit muss mit zurueck: ohne das faengt die naechste Runde mitten in der
   // zurueckgenommenen an, und dann sind beide falsch.
   function retractLap(warum) {
-    if (!raceLapTimes.length) return false;
-    const weg = raceLapTimes.pop();
-    if (raceLapStart !== null) raceLapStart -= weg.ms;
+    // Im freien Fahren gibt es keine Rennrunden, aber sehr wohl die Anzeige-Runden
+    // (dashLapTimes). Vorher brach die Ruecknahme dort ab, und die Runde blieb stehen.
+    if (!raceLapTimes.length && !dashLapTimes.length) return false;
+    const weg = raceLapTimes.length ? raceLapTimes.pop() : null;
+    if (weg && raceLapStart !== null) raceLapStart -= weg.ms;
     if (dashLapTimes.length) {
       const d = dashLapTimes.pop();
       if (dashLapStart !== null) dashLapStart -= d;
@@ -2004,8 +2002,9 @@
       // Datei - dieselbe Vorsicht wie an der Stelle, die eine gefahrene Runde meldet.
       if (typeof mpRundeGefahren === 'function') mpRundeGefahren();
     }
-    $('race-status').textContent = t('Rennen läuft, Runde') + ' ' + raceLapTimes.length;
-    log('Runde zurueckgenommen (' + formatLapTime(weg.ms) + '): ' + warum, 'info');
+    if (weg) $('race-status').textContent = t('Rennen läuft, Runde') + ' ' + raceLapTimes.length;
+    log('Runde zurueckgenommen' + (weg ? ' (' + formatLapTime(weg.ms) + ')' : '') + ': '
+        + warum, 'info');
     showHudToast('KEINE RUNDE, BOXENEINFAHRT');
     return true;
   }
@@ -2842,9 +2841,10 @@
   //             damit war jeder Abflug eine Boxeneinfahrt.
   // 'double'    Experimentell: zwei Ausdrucke im Abstand von 50 cm.
   let pitTrigger = 'anywhere';
-  // Zaehlt die Runde beim Boxeneinfahren trotzdem? Vorgabe nein - eine Boxeneinfahrt ist
-  // keine Runde. Wer die Zaehlung lieber durchlaufen laesst, kann es umstellen.
-  let pitDoubleCountsLap = false;
+  // Wieviele Runden ein Paar (Boxeneinfahrt) zaehlt. 1 (Vorgabe): der erste Kontakt ist die
+  // Runde, der zweite loest nur die Box aus. 0: auch der erste wird zurueckgenommen - fuer
+  // eine Boxengasse, die NICHT parallel zu Start/Ziel liegt.
+  let pitDoubleRunden = 1;
 
   // Zwei Kontakte innerhalb des eingestellten Zeitfensters (Slider, 3-10 s, Vorgabe 3 s)
   // bei mindestens 1 s Abstand. Die untere Grenze ist der wichtigere Teil: ein einzelner
@@ -2968,41 +2968,48 @@
     updatePitUI();
   }
 
-  // Variante 'double': war das der zweite Kontakt eines Paares?
+  // Variante 'double': ist das der zweite Kontakt eines Paares?
   //
-  // Aufgerufen NACH playerLapCrossed(), damit die Runde mit ihrer richtigen Zeit gezaehlt
-  // ist, bevor hier ueber sie entschieden wird.
+  // Aufgerufen VOR playerLapCrossed(). Rueckgabe true: dieser Kontakt ist die
+  // Boxeneinfahrt und wird NICHT gezaehlt und nicht angesagt. false: ein gewoehnlicher
+  // Kontakt, der Aufrufer zaehlt ihn - und er wird als moeglicher ERSTER eines Paares
+  // gemerkt.
+  // Im Rennen die Rennrunden, sonst die Anzeige-Runden. Unter 2 s gibt es keine echte
+  // Runde - solche Werte (eine Anzeige-Runde direkt nach dem Start der Uhr) zaehlen nicht.
+  function pitDoubleBesteRundeMs() {
+    const alle = (raceState === 'racing' ? raceLapTimes.map((l) => l.ms) : dashLapTimes)
+      .filter((ms) => ms >= 2000);
+    return alle.length ? Math.min.apply(null, alle) : Infinity;
+  }
   function pitDoubleCheck(jetzt) {
-    if (!pitLaneEnabled || pitTrigger !== 'double') return;
+    if (!pitLaneEnabled || pitTrigger !== 'double') return false;
     const seit = jetzt - pitDoubleFirstAt;
-    if (pitDoubleFirstAt && seit >= PIT_DOUBLE_MIN_MS && seit <= PIT_DOUBLE_WINDOW_MS) {
-      // Paar erkannt. Der Boxenstopp beginnt erst JETZT, nach dem zweiten Muster - so
-      // steht es in der Anforderung, und es ist auch das Richtige: nach dem ersten weiss
-      // niemand, ob eine Einfahrt gemeint war.
+    // Eine sehr kurze Runde darf nicht als Paar gelten: liegt der zweite Kontakt spaeter
+    // als eine halbe beste Runde, ist er die naechste Runde und keine Boxeneinfahrt. Sonst
+    // wuerde bei einem 10-s-Fenster jede Runde unter 10 s zur Box.
+    const kurzGenug = seit < pitDoubleBesteRundeMs() / 2;
+    if (pitDoubleFirstAt && seit >= PIT_DOUBLE_MIN_MS && seit <= PIT_DOUBLE_WINDOW_MS
+        && kurzGenug) {
       pitDoubleFirstAt = 0;
-      if (!pitDoubleCountsLap) retractLap('doppelter Start-Ausdruck, Boxeneinfahrt');
+      // 0 Runden: die erste Ueberfahrt war schon gezaehlt und angesagt, sie wird jetzt
+      // zurueckgenommen (Nutzerentscheid: "sofort ansagen, dann zuruecknehmen").
+      if (pitDoubleRunden === 0) retractLap('doppelter Start-Ausdruck, Boxeneinfahrt');
       pitDoubleArmedUntil = jetzt + PIT_DOUBLE_LIMIT_MS;
       setPitState('limited');
-      // Die Ansage: "Boxenstopp eingeleitet" erst beim zweiten Muster. Die Rundenzeit, die
-      // playerLapCrossed() gerade fuer diese Ueberfahrt angesagt hat, ist eine Falschmeldung -
-      // die Runde wird zurueckgenommen. Bevor die Stimme sie sagt, abbrechen; das Abbrechen
-      // gehoert zur Ruecknahme und nicht zur Ansage, sonst redet es auch weiter, wenn der
-      // neue Schalter aus ist. Der Knopf sagt hier nichts: er loest im Doppelausdruck-Modus
-      // gar nicht aus (requestPitStop lehnt ab).
+      // Nur HIER abbrechen: eine noch laufende Rundenansage der ersten Ueberfahrt soll der
+      // Boxen-Ansage nicht im Weg stehen.
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-      ansage('pit', lang === 'de' ? 'Boxenstopp eingeleitet' : 'Pit stop initiated');
-      // Das Piepen: dasselbe wie die Boxengassen-Meldung, damit es nicht ein weiterer Ton
-      // ist, den man lernen muss.
+      ansage('pit', t('Boxenstopp eingeleitet'));
       playTone(880, 0.12, 'square', 0.16);
       setTimeout(() => playTone(880, 0.12, 'square', 0.16), 180);
       showHudToast('BOXENGASSE AKTIV, ' + PIT_DOUBLE_KMH + ' KM/H');
       log('Boxengasse per doppeltem Ausdruck: zweiter Kontakt nach ' + seit
           + ' ms, Tempolimit ' + PIT_DOUBLE_KMH + ' km/h fuer '
           + (PIT_DOUBLE_LIMIT_MS / 1000) + ' s. Anhalten startet den Service.', 'info');
-      return;
+      return true;
     }
-    // Kein Paar: dieser Kontakt ist der moegliche ERSTE eines neuen.
     pitDoubleFirstAt = jetzt;
+    return false;
   }
 
   function onPitMarkerCrossed() {
@@ -3174,9 +3181,11 @@
         : 'doppelter Start-Ausdruck, 2 Kontakte in ' + (PIT_DOUBLE_WINDOW_MS / 1000)
           + ' s bei mindestens ' + (PIT_DOUBLE_MIN_MS / 1000) + ' s Abstand'), 'info');
   });
-  $('pit-double-lap').addEventListener('change', (e) => {
-    pitDoubleCountsLap = e.target.checked;
-  });
+  if ($('pit-double-laps')) {
+    const pdl = () => { pitDoubleRunden = $('pit-double-laps').value === '0' ? 0 : 1; };
+    pdl();
+    $('pit-double-laps').addEventListener('change', pdl);
+  }
   // Das Fenster des doppelten Ausdrucks: der Slider steht in Sekunden, das Paar rechnet in
   // Millisekunden. Anfangs- und Laufzeitwert aus dem Markup, wie bei den anderen Schaltern.
   const pwd = $('setting-pit-double-window');
@@ -3185,10 +3194,6 @@
     const pwdAnwenden = () => {
       PIT_DOUBLE_WINDOW_MS = Math.round(parseFloat(pwd.value)) * 1000;
       if (pwdVal) pwdVal.textContent = pwd.value + ' s';
-      const t1 = $('pit-double-window-text');
-      if (t1) t1.textContent = pwd.value;
-      const t2 = $('pit-double-window-text2');
-      if (t2) t2.textContent = pwd.value;
     };
     pwdAnwenden();
     pwd.addEventListener('input', pwdAnwenden);
