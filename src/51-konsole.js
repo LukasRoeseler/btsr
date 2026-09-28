@@ -43,12 +43,11 @@
   };
   const K_BILD = {
     home: 'titel', fahren: 'fahren', garage: 'garage', control: 'rennen',
-    mp: 'mehrspieler', options: 'optionen', info: 'garage', misc: 'mehrspieler',
+    mp: 'mehrspieler', options: 'optionen', info: 'info', misc: 'mehrspieler',
   };
 
   let kStapel = [];
   let kZurueckLaeuft = false;
-  let kPauseOffen = false;
   let kFrageOffen = false;
   let kLetzterTab = 'home';
 
@@ -58,8 +57,7 @@
   }
   // MENUE statt FAHREN: ueberall ausser im Cockpit, und im Cockpit, solange dessen Menue
   // offen ist. Daran haengt, ob Kreuz/Kreis/Quadrat/L1/R1/Options Menue- oder Fahrtasten sind.
-  function konsoleMenue() { return kAktiverTab() !== 'race' || kPauseOffen || kFrageOffen; }
-  function konsolePauseOffen() { return kPauseOffen; }
+  function konsoleMenue() { return kAktiverTab() !== 'race' || kFrageOffen; }
   function konsoleFrageOffen() { return kFrageOffen; }
   function konsoleDev() {
     const cb = $('setting-dev');
@@ -76,7 +74,6 @@
       if (kStapel.length > 40) kStapel.shift();
     }
     kLetzterTab = neu;
-    if (neu !== 'race' && kPauseOffen) konsolePauseZu();
     // Nach dem Umschalten zeichnen, nicht davor: der neue Tab ist erst danach .active.
     setTimeout(() => {
       konsoleZeichnen();
@@ -112,7 +109,6 @@
     if (kFrageOffen) { konsoleFrageZu(); return true; }
     const lb = $('lb-wrap');
     if (lb && lb.classList.contains('on') && $('lb-close')) { $('lb-close').click(); return true; }
-    if (kPauseOffen) { konsolePauseZu(); return true; }
     const tab = kAktiverTab();
     if (document.querySelector('.tabpage.active .subpage.on')) { showSubpage(''); return true; }
     if (tab === 'home' || K_EBENE1.includes(tab)) return false;
@@ -218,16 +214,13 @@
       cb.dispatchEvent(new Event('change', { bubbles: true }));
     } else if (q === 'profil') {
       if ($('race-act-mode')) $('race-act-mode').click();
-    } else if (q === 'haerte') {
-      const r = $('ghost-hardness');
-      if (r) {
-        const min = +r.min || 0, max = +r.max || 1;
-        const stufe = (max - min) / 4;
-        let v = +r.value + stufe;
-        if (v > max + 1e-9) v = min;
-        r.value = String(Math.round(v * 1000) / 1000);
-        r.dispatchEvent(new Event('input', { bubbles: true }));
-        r.dispatchEvent(new Event('change', { bubbles: true }));
+    } else if (q === 'motor') {
+      const s = $('sound-profile');
+      const opts = s ? [...s.options].filter((o) => !o.disabled) : [];
+      if (opts.length) {
+        const n = opts[(opts.indexOf(s.selectedOptions[0]) + 1) % opts.length];
+        s.value = n.value;
+        s.dispatchEvent(new Event('change', { bubbles: true }));
       }
     }
     menuNavTonVerstellen();
@@ -280,7 +273,12 @@
   // kein Auto verbunden ist. Aktuell kommt 'Bluetooth Adapter ist aus...'. Das ist ok, aber
   // ich will eine Option 'trotzdem starten', damit ich dann sehen kann, ob das Cockpit da ist
   // und noch gut funktioniert." Statt alert() ein Dialog, der mit dem Pad bedienbar ist.
+  function kRennenLaeuft() {
+    try { return raceState === 'racing' || raceState === 'countdown' || raceState === 'finishing'; } catch (e) { return false; }
+  }
   async function konsoleLosfahren(ohneAuto) {
+    // Laeuft schon ein Rennen (Options fuehrt mitten im Rennen hierher), geht es nur zurueck.
+    if (kRennenLaeuft()) { konsoleInsCockpit(); return; }
     if (!playerCar && !ohneAuto) {
       const lage = await garageConnect({ stumm: true });
       if (!playerCar) {
@@ -355,7 +353,6 @@
     kRollRest -= ganz;
     const ziele = [
       kFrageOffen && document.querySelector('#k-frage .k-pause-dialog'),
-      kPauseOffen && document.querySelector('#k-pause .k-pause-dialog'),
       document.scrollingElement, document.body,
     ];
     for (const el of ziele) {
@@ -372,41 +369,22 @@
     if (i >= 0) { menuNavIndex = i; menuNavGezeigt = true; menuNavRender(); }
   }
 
-  // ---- Cockpit-Menue (Options 1 s halten, Esc, Knopf ☰) --------------------------------
-  function konsolePauseAuf() {
-    const p = $('k-pause');
-    if (!p) return;
-    kPauseOffen = true;
-    p.hidden = false;
-    menuNavEnsureContext();
-    menuNavIndex = 0; menuNavGezeigt = true;
-    menuNavRender();
-    menuNavTonAnwaehlen();
-    konsoleZeichnen();
+  // ---- Cockpit <-> Fahren-Menue (Options, Esc, Knopf ☰) ------------------------------
+  //
+  // BESTELLT: "Menü knopf soll direkt zum FAHREN menü führen, ohne Auswahl dazwischen" und
+  // "options 1x ins menü, nochmal zurück zum cockpit". Das Auswahlmenue (Weiterfahren,
+  // Boxenstopp, ...) ist damit weg: der Boxenstopp liegt auf Kreuz, Abbrechen auf dem
+  // Knopf im Cockpit, alles andere im Fahren-Menue. War das Cockpit im Vollbild, kommt es
+  // auf dem Rueckweg wieder so.
+  let kCockpitVollbild = false;
+  function konsoleZumMenue() {
+    kCockpitVollbild = document.body.classList.contains('race-fs');
+    if (kCockpitVollbild) exitRaceFullscreen();
+    konsoleZeige('fahren');
   }
-  function konsolePauseZu() {
-    const p = $('k-pause');
-    kPauseOffen = false;
-    if (p) p.hidden = true;
-    document.querySelectorAll('.menu-nav-sel').forEach((el) => el.classList.remove('menu-nav-sel'));
-    konsoleZeichnen();
-  }
-  function konsolePauseWahl(was) {
-    konsolePauseZu();
-    if (was === 'weiter') return;
-    if (was === 'box') { requestPitStop(); return; }
-    if (was === 'uebersicht') {
-      const i = COCKPIT_SCREENS.findIndex((s) => s.id === 'uebersicht');
-      if (i >= 0) cockpitScreenSet(i);
-      return;
-    }
-    if (was === 'abbrechen') {
-      if (raceState === 'racing' || raceState === 'countdown' || raceState === 'finishing') requestRaceStop();
-      return;
-    }
-    if (document.body.classList.contains('race-fs')) exitRaceFullscreen();
-    if (was === 'optionen') konsoleZeige('options');
-    else if (was === 'fahren') konsoleZeige('fahren');
+  function konsoleInsCockpit() {
+    showTab('race');
+    if (kCockpitVollbild && !document.body.classList.contains('race-fs')) enterRaceFullscreen();
   }
 
   // ---- Zeichnen: Kopf, Reiter, Beschreibung, Fuss, Hintergrund -----------------------
@@ -511,20 +489,68 @@
       [t('Pflichtboxenstopps'), ($('race-pit-required') || {}).value || '0'],
     ]);
     const bahn = ($('setting-ontrack') || {}).checked;
+    const foto = konsoleFoto();
     $('fa-strecke-titel').textContent = bahn ? t('Auf der Bahn') : t('Frei');
     const bild = $('fa-strecke-bild');
-    if (bild) bild.style.backgroundImage = 'url(img/' + (bahn ? 'strecke-bahn' : 'strecke-frei') + '.jpg)';
+    // Im Ausdruck-Modus zeigt das Band das eigene Streckenfoto, sobald es eines gibt. Nur neu
+    // setzen, wenn es sich geaendert hat: die Daten-URL ist einige hundert KB lang.
+    const bildNeu = !bahn && foto ? 'foto:' + foto.length : (bahn ? 'strecke-bahn' : 'strecke-frei');
+    if (bild && bild.dataset.bild !== bildNeu) {
+      bild.style.backgroundImage = !bahn && foto ? 'url("' + foto + '")' : 'url(img/' + bildNeu + '.jpg)';
+      bild.dataset.bild = bildNeu;
+    }
     kZeilen($('fa-strecke-info'), bahn
       ? [[t('Teile'), String(kTeile())], ['Code', kCode() || '–']]
-      : [[t('Modus'), t('Ausdruck, ohne Bahn')]]);
+      : [[t('Modus'), t('Ausdruck, ohne Bahn')], [t('Streckenfoto'), foto ? t('hochgeladen') : t('keins')]]);
     ['fa-scan', 'fa-laden'].forEach((id) => { if ($(id)) $(id).hidden = !bahn; });
     if ($('fa-druck')) $('fa-druck').hidden = bahn;
+    if ($('fa-foto')) $('fa-foto').hidden = bahn;
+    if ($('fa-foto-weg')) $('fa-foto-weg').hidden = bahn || !foto;
     $('fa-profil-titel').textContent = ($('race-act-mode-txt') || {}).textContent || '–';
-    const h = $('ghost-hardness');
-    $('fa-gegner-titel').textContent = t('Härte') + ' ' + (h ? Math.round(100 * (+h.value - (+h.min || 0)) / ((+h.max || 1) - (+h.min || 0))) : 0) + ' %';
+    const sp = $('sound-profile');
+    const motor = sp && sp.selectedOptions[0] ? sp.selectedOptions[0].textContent.split(':')[0].trim() : '–';
+    $('fa-motor-titel').textContent = motor;
     const training = rm.value === 'practice';
-    $('fa-start-titel').textContent = training ? t('Training starten') : t('Rennen starten');
+    $('fa-start-titel').textContent = kRennenLaeuft() ? t('Zurück ins Rennen')
+      : (training ? t('Training starten') : t('Rennen starten'));
     $('fa-start-unter').textContent = modus + ' · ' + (bahn ? t('auf der Bahn') : t('frei'));
+  }
+
+  // ---- Streckenfoto (Ausdruck-Modus, experimentell) --------------------------------
+  // Verkleinert auf hoechstens 1400 px und als JPEG im localStorage: so bleibt es ueber einen
+  // Neustart erhalten und passt mit einigen hundert KB in den Speicher. Die EXIF-Drehung
+  // wendet der Browser beim Zeichnen selbst an.
+  const K_FOTO = 'omegasim-streckenfoto';
+  function konsoleFoto() {
+    try { return localStorage.getItem(K_FOTO) || ''; } catch (e) { return ''; }
+  }
+  // Was der Uebersichtsschirm im Cockpit zeigt: das Foto nur im Ausdruck-Modus.
+  function konsoleStreckenfotoAktiv() {
+    return ($('setting-ontrack') || {}).checked ? '' : konsoleFoto();
+  }
+  function konsoleFotoSetzen(daten) {
+    try {
+      if (daten) localStorage.setItem(K_FOTO, daten); else localStorage.removeItem(K_FOTO);
+    } catch (e) { return false; }
+    konsoleZeichnen();
+    return true;
+  }
+  function konsoleFotoLesen(datei) {
+    return new Promise((ok, nein) => {
+      const url = URL.createObjectURL(datei);
+      const img = new Image();
+      img.onload = () => {
+        const f = Math.min(1, 1400 / Math.max(img.naturalWidth, img.naturalHeight));
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(img.naturalWidth * f));
+        c.height = Math.max(1, Math.round(img.naturalHeight * f));
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        ok(c.toDataURL('image/jpeg', 0.8));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); nein(new Error('kein Bild')); };
+      img.src = url;
+    });
   }
 
   // Strecke: auf der Bahn Scan/Editor/Laden, frei Druckvorlagen/Editor.
@@ -571,18 +597,14 @@
     if (neu !== false && neu !== 6 && neu !== 7) { konsoleTitelWeiter(); kTitelSperre = true; return true; }
     return true;
   }
-  // Options: kurz = Boxenstopp (beim LOSLASSEN, damit Halten unterscheidbar ist), 1 s
-  // halten = Cockpit-Menue. Ausserhalb des Cockpits tut die Taste nichts.
+  // Options: im Cockpit ins Fahren-Menue, in den Menues zurueck ins Cockpit. Nur die
+  // steigende Flanke zaehlt - eine gehaltene Taste springt nicht hin und her.
   function konsoleOptionsTaste(gedrueckt) {
-    const jetzt = performance.now();
-    const imCockpit = kAktiverTab() === 'race';
-    if (gedrueckt && !konsoleOptionsTaste.vorher) { kOptionsSeit = jetzt; kOptionsGefeuert = false; }
-    if (gedrueckt && imCockpit && !kPauseOffen && !kOptionsGefeuert && jetzt - kOptionsSeit >= 1000) {
-      kOptionsGefeuert = true;
-      konsolePauseAuf();
-    }
-    if (!gedrueckt && konsoleOptionsTaste.vorher && imCockpit && !kOptionsGefeuert && !kPauseOffen) {
-      requestPitStop();
+    if (gedrueckt && !konsoleOptionsTaste.vorher && !kFrageOffen
+        && !document.body.classList.contains('track-fs')) {
+      const tab = kAktiverTab();
+      if (tab === 'race') konsoleZumMenue();
+      else if (tab && tab !== 'home') konsoleInsCockpit();
     }
     konsoleOptionsTaste.vorher = gedrueckt;
   }
@@ -599,9 +621,9 @@
       else konsoleTitelWeiter();
       return;
     }
-    if (kAktiverTab() === 'race' && !kPauseOffen && k === 'escape' && !document.body.classList.contains('track-fs')) {
+    if (kAktiverTab() === 'race' && !kFrageOffen && k === 'escape' && !document.body.classList.contains('track-fs')) {
       e.preventDefault(); e.stopImmediatePropagation();
-      konsolePauseAuf();
+      konsoleZumMenue();
       return;
     }
     if (!konsoleMenue() || e.repeat) return;
@@ -654,12 +676,25 @@
     kn('fa-laden', () => { konsoleZeige('track', 'edit'); setTimeout(() => konsoleHinScrollen('track-list'), 30); });
     kn('fa-druck', () => konsoleZeige('track', 'print'));
     kn('fa-profil', () => konsoleZeige('options', 'opt-feel'));
-    kn('fa-gegner', () => konsoleZeige('options', 'opt-ghosts'));
-    kn('race-menue', () => konsolePauseAuf());
-    document.querySelectorAll('#k-pause [data-pause]').forEach((b) => {
-      b.addEventListener('click', () => konsolePauseWahl(b.dataset.pause));
+    kn('race-menue', () => konsoleZumMenue());
+    kn('fa-motor', () => konsoleZeige('options', 'opt-sound'));
+    kn('fa-foto', () => { const d = $('fa-foto-datei'); if (d) { d.value = ''; d.click(); } });
+    kn('fa-foto-weg', () => {
+      konsoleFrage(t('Streckenfoto löschen?'), '', [[t('Löschen'), () => { konsoleFotoSetzen(''); }], [t('Abbrechen'), null]]);
     });
-    for (const id of ['race-mode', 'setting-ontrack', 'ghost-hardness', 'race-limit', 'race-wx-start', 'setting-dev']) {
+    const datei = $('fa-foto-datei');
+    if (datei) {
+      datei.addEventListener('change', () => {
+        const f = datei.files && datei.files[0];
+        if (!f) return;
+        konsoleFotoLesen(f).then((daten) => {
+          if (!konsoleFotoSetzen(daten)) {
+            konsoleFrage(t('Foto zu groß'), t('Der Speicher des Browsers ist voll. Ein kleineres Bild versuchen.'), [[t('Schließen'), null]]);
+          }
+        }).catch(() => konsoleFrage(t('Kein Bild'), t('Diese Datei ließ sich nicht als Bild lesen.'), [[t('Schließen'), null]]));
+      });
+    }
+    for (const id of ['race-mode', 'setting-ontrack', 'sound-profile', 'race-limit', 'race-wx-start', 'setting-dev']) {
       const el = $(id);
       if (el) el.addEventListener('change', () => setTimeout(konsoleZeichnen, 0));
     }

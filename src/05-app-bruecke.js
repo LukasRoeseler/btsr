@@ -216,6 +216,27 @@
       filter.forEach((f) => (f.services || []).forEach((s) => d.push(uuid(s))));
       if (d.length) opt.services = d;
     }
+    // NOCH VERBUNDEN VOM LETZTEN MAL. GEMELDET: "Wenn ich die App schliesse und oeffne,
+    // zeigt das Auto an, es waere noch verbunden, ist es aber nicht. Und neu verbinden geht
+    // dann auch nicht." Das Plugin schliesst seine Verbindungen nicht, wenn die App zugeht:
+    // der Prozess lebt weiter, die alte Verbindung auch, nur die Seite ist neu und weiss
+    // nichts davon. Das Auto haelt sich fuer verbunden, wirbt deshalb nicht mehr - und die
+    // Suche findet es nie. Also zuerst nachsehen, ob das System ein passendes Auto schon
+    // verbunden hat, und das direkt nehmen; connect() legt darueber eine neue, eigene
+    // Verbindung an, und die Verbindung zum Auto selbst steht ja noch.
+    if (praefix) {
+      try {
+        const v = await ruf('getConnectedDevices', { services: [] });
+        const frei = ((v && v.devices) || []).find((d) => d && d.deviceId && d.name
+          && d.name.indexOf(praefix) === 0
+          && !(bekannte.get(d.deviceId) && bekannte.get(d.deviceId).gatt.connected));
+        if (frei) {
+          let g0 = bekannte.get(frei.deviceId);
+          if (!g0) { g0 = new Geraet(frei.deviceId, frei.name); bekannte.set(frei.deviceId, g0); }
+          return g0;
+        }
+      } catch (e) { /* aeltere Plugins oder ohne Recht: dann eben suchen */ }
+    }
     let r;
     try {
       r = await ruf('requestDevice', opt);

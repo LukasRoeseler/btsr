@@ -1953,6 +1953,8 @@
   .ov-karte .tp-karte { max-width: 100%; max-height: 100%; width: auto; height: auto;
     background: rgba(255, 255, 255, .07); border: 0; border-radius: 4px; }
   .ov-karte:empty { display: none; }
+  /* Das hochgeladene Streckenfoto (Ausdruck-Modus) statt des Editor-Layouts. */
+  .ov-karte .ov-foto { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px; display: block; }
   /* Ohne Strecke: die Tabelle ueber die ganze Breite, Diagramm und Sektoren darunter
      nebeneinander - die zweite Spalte darf dann nicht mehr auf null fallen, sonst
      verschwaende die Sektorentabelle mit ihr. */
@@ -2184,7 +2186,7 @@
   .k-reiter button.an:hover { color: var(--k-tinte); background: var(--k-weiss); }
   /* COCKPIT OHNE KOPFZEILE. BESTELLT: "Cockpit screen: Den Header entfernen, der überlagert
      alle wichtigen Dinge. Es soll wirklich nur der Cockpit screen ... da sein." Ins Menue
-     fuehren dort Options halten, Esc und der Knopf in der Ecke. */
+     fuehren dort Options, Esc und der Knopf in der Ecke. */
   body.race-mode header#k-kopf, body.k-titel-an header#k-kopf { display: none; }
 
   /* Buehne */
@@ -3570,7 +3572,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.22</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.23</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3585,6 +3587,10 @@
        starten." Quadrat wechselt auf den Kacheln den Wert direkt (Renntyp, Bahn/Frei,
        Abstimmung, Gegnerhaerte) - links/rechts bleibt fuer den Weg zur Nachbarkachel. -->
   <section class="tabpage k-schirm" id="tab-fahren">
+    <!-- BESTELLT: "Wenn ich Streckenmodus Ausdruck wähle, will ich dazu die Option haben, ein
+         Bild von der Strecke hochzuladen, was dann statt dem Layout aus dem Editor angezeigt
+         wird im Streckenscreen im Cockpit". Die Dateiwahl steht ausserhalb der Kachel. -->
+    <input type="file" id="fa-foto-datei" accept="image/*" hidden>
     <div class="k-gitter k-fahren">
       <div class="k-kachel " id="fa-auto" role="button" tabindex="0">
         <span class="k-kk">Autos</span>
@@ -3608,6 +3614,8 @@
           <button type="button" class="k-knopf" id="fa-editor">Editor</button>
           <button type="button" class="k-knopf" id="fa-laden">Laden</button>
           <button type="button" class="k-knopf" id="fa-druck" hidden>Druckvorlagen</button>
+          <button type="button" class="k-knopf" id="fa-foto" hidden>Foto <span class="wip-tag">WIP</span></button>
+          <button type="button" class="k-knopf" id="fa-foto-weg" hidden>Foto löschen</button>
         </span>
       </div>
       <div class="k-kachel " id="fa-renn" role="button" tabindex="0" data-quad="renntyp">
@@ -3622,9 +3630,11 @@
         <span class="k-kt" id="fa-profil-titel"></span>
         <span class="k-ki"></span>
       </div>
-      <div class="k-kachel k-klein" id="fa-gegner" role="button" tabindex="0" data-quad="haerte">
-        <span class="k-kk">Gegner</span>
-        <span class="k-kt" id="fa-gegner-titel"></span>
+      <!-- BESTELLT: "Statt Gegnerhärte Motorsound einstellen lassen im Fahren Menü". Quadrat
+           blaettert die Motoren durch (#sound-profile), Kreuz oeffnet Optionen, Ton. -->
+      <div class="k-kachel k-klein" id="fa-motor" role="button" tabindex="0" data-quad="motor">
+        <span class="k-kk">Motorsound</span>
+        <span class="k-kt" id="fa-motor-titel"></span>
         <span class="k-ki"></span>
       </div>
         <div class="k-kachel k-start" id="fa-start" role="button" tabindex="0">
@@ -3676,7 +3686,7 @@
         <span class="schirm-punkte" id="race-screen-dots" aria-hidden="true"></span>
       </div>
       <div class="race-corner">
-        <button type="button" id="race-menue" aria-label="Menü" title="Menü (Options 1 s halten, Esc)">&#9776;</button>
+        <button type="button" id="race-menue" aria-label="Menü" title="Menü (Options, Esc)">&#9776;</button>
       <button type="button" id="race-fs" title="Vollbild" aria-label="Vollbild">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                stroke-linecap="round" stroke-linejoin="round">
@@ -4451,6 +4461,8 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>App: nach Schlie&szlig;en und &Ouml;ffnen l&auml;sst sich das Auto wieder verbinden (es hing an der alten Verbindung fest); ab der n&auml;chsten APK trennt die App beim Schlie&szlig;en sauber.</li>
+        <li>Kreuz tippen = Boxenstopp (halten bleibt gelbe Flagge), Options springt direkt ins Fahren-Men&uuml; und wieder zur&uuml;ck ins Cockpit. Motorsound statt Gegnerh&auml;rte im Fahren-Men&uuml;. Streckenfoto f&uuml;r den Ausdruck-Modus (experimentell), neue eigene Fotos im Men&uuml;.</li>
         <li>Kachel Autos mit eigenen Kn&ouml;pfen Verbinden und Garage.</li>
         <li>Men&uuml; aufger&auml;umt: ohne Tastenleiste und Hinweiszeile, kleinere abgedunkelte Bilder, gut lesbare Werte auf den Kacheln, Carrera-Hybrid-Blau statt Rot, oben nur das Omega, im Titel OMEGA blau und SIM rot. Im Cockpit keine Kopfzeile mehr.</li>
         <li>Android-App im Vollbild ohne Status- und Navigationsleiste. Reiter oben neben dem Logo statt Hauptmen&uuml;, Mehrspieler mit den Wegen PC und Android-App, &bdquo;Trotzdem starten&ldquo; ohne Auto zum Ausprobieren (experimentell), rechter Stick rollt die Seite.</li>
@@ -7260,7 +7272,7 @@
                Eintrag und bleibt daher beim Sprachwechsel stehen, bis er sich das naechste
                Mal neu bildet - dann steht er richtig da. Veraltet, nicht falsch. -->
           <div class="muted">Status: <b data-i18n-skip id="race-status">Bereit</b></div>
-          <div class="muted" style="font-size:11.5px">L1: Bahn oder Ausdruck · R1: Automatik oder von Hand · Kreuz: gelbe Flagge (1 s halten) · Select: Wetter umschalten</div>
+          <div class="muted" style="font-size:11.5px">L1: Bahn oder Ausdruck · R1: Automatik oder von Hand · Kreuz: tippen Boxenstopp, 1 s halten gelbe Flagge · Options: Menü · Select: Wetter umschalten</div>
           <div class="muted" id="race-lap-current-row" style="display:none">Aktuelle Runde: <b id="race-lap-current">-</b></div>
         </div>
       </div>
@@ -9985,18 +9997,6 @@
   <!-- COCKPIT-MENUE. BESTELLT (Nutzerentscheid): "Options lang halten" oeffnet es; kurz
        druecken bleibt der Boxenstopp. Solange es offen ist, geht das Gas von Spieler 1 auf 0.
        In main und nicht in einem Tab, damit es ueber dem Cockpit-Vollbild liegen kann. -->
-  <div class="k-pause" id="k-pause" hidden>
-    <div class="k-pause-dialog">
-      <h2>Men&uuml;</h2>
-      <p class="muted">Gas ist aus, solange das Men&uuml; offen ist &ndash; das Auto rollt aus. Ghosts fahren im Rennen weiter.</p>
-      <button type="button" data-pause="weiter">Weiterfahren</button>
-      <button type="button" data-pause="box">Boxenstopp</button>
-      <button type="button" data-pause="uebersicht">Renn&uuml;bersicht</button>
-      <button type="button" data-pause="abbrechen">Rennen abbrechen</button>
-      <button type="button" data-pause="optionen">Optionen</button>
-      <button type="button" data-pause="fahren">Zum Fahren-Men&uuml;</button>
-    </div>
-  </div>
   <!-- FRAGE-DIALOG (51-konsole.js, konsoleFrage). Zuerst fuer "trotzdem starten": BESTELLT
        "erlaube mir zum Debuggen auch auf Starten zu drücken, wenn kein Auto verbunden ist". -->
   <div class="k-pause" id="k-frage" hidden>

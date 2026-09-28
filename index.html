@@ -1953,6 +1953,8 @@
   .ov-karte .tp-karte { max-width: 100%; max-height: 100%; width: auto; height: auto;
     background: rgba(255, 255, 255, .07); border: 0; border-radius: 4px; }
   .ov-karte:empty { display: none; }
+  /* Das hochgeladene Streckenfoto (Ausdruck-Modus) statt des Editor-Layouts. */
+  .ov-karte .ov-foto { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px; display: block; }
   /* Ohne Strecke: die Tabelle ueber die ganze Breite, Diagramm und Sektoren darunter
      nebeneinander - die zweite Spalte darf dann nicht mehr auf null fallen, sonst
      verschwaende die Sektorentabelle mit ihr. */
@@ -2184,7 +2186,7 @@
   .k-reiter button.an:hover { color: var(--k-tinte); background: var(--k-weiss); }
   /* COCKPIT OHNE KOPFZEILE. BESTELLT: "Cockpit screen: Den Header entfernen, der überlagert
      alle wichtigen Dinge. Es soll wirklich nur der Cockpit screen ... da sein." Ins Menue
-     fuehren dort Options halten, Esc und der Knopf in der Ecke. */
+     fuehren dort Options, Esc und der Knopf in der Ecke. */
   body.race-mode header#k-kopf, body.k-titel-an header#k-kopf { display: none; }
 
   /* Buehne */
@@ -3570,7 +3572,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.22</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.23</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3585,6 +3587,10 @@
        starten." Quadrat wechselt auf den Kacheln den Wert direkt (Renntyp, Bahn/Frei,
        Abstimmung, Gegnerhaerte) - links/rechts bleibt fuer den Weg zur Nachbarkachel. -->
   <section class="tabpage k-schirm" id="tab-fahren">
+    <!-- BESTELLT: "Wenn ich Streckenmodus Ausdruck wähle, will ich dazu die Option haben, ein
+         Bild von der Strecke hochzuladen, was dann statt dem Layout aus dem Editor angezeigt
+         wird im Streckenscreen im Cockpit". Die Dateiwahl steht ausserhalb der Kachel. -->
+    <input type="file" id="fa-foto-datei" accept="image/*" hidden>
     <div class="k-gitter k-fahren">
       <div class="k-kachel " id="fa-auto" role="button" tabindex="0">
         <span class="k-kk">Autos</span>
@@ -3608,6 +3614,8 @@
           <button type="button" class="k-knopf" id="fa-editor">Editor</button>
           <button type="button" class="k-knopf" id="fa-laden">Laden</button>
           <button type="button" class="k-knopf" id="fa-druck" hidden>Druckvorlagen</button>
+          <button type="button" class="k-knopf" id="fa-foto" hidden>Foto <span class="wip-tag">WIP</span></button>
+          <button type="button" class="k-knopf" id="fa-foto-weg" hidden>Foto löschen</button>
         </span>
       </div>
       <div class="k-kachel " id="fa-renn" role="button" tabindex="0" data-quad="renntyp">
@@ -3622,9 +3630,11 @@
         <span class="k-kt" id="fa-profil-titel"></span>
         <span class="k-ki"></span>
       </div>
-      <div class="k-kachel k-klein" id="fa-gegner" role="button" tabindex="0" data-quad="haerte">
-        <span class="k-kk">Gegner</span>
-        <span class="k-kt" id="fa-gegner-titel"></span>
+      <!-- BESTELLT: "Statt Gegnerhärte Motorsound einstellen lassen im Fahren Menü". Quadrat
+           blaettert die Motoren durch (#sound-profile), Kreuz oeffnet Optionen, Ton. -->
+      <div class="k-kachel k-klein" id="fa-motor" role="button" tabindex="0" data-quad="motor">
+        <span class="k-kk">Motorsound</span>
+        <span class="k-kt" id="fa-motor-titel"></span>
         <span class="k-ki"></span>
       </div>
         <div class="k-kachel k-start" id="fa-start" role="button" tabindex="0">
@@ -3676,7 +3686,7 @@
         <span class="schirm-punkte" id="race-screen-dots" aria-hidden="true"></span>
       </div>
       <div class="race-corner">
-        <button type="button" id="race-menue" aria-label="Menü" title="Menü (Options 1 s halten, Esc)">&#9776;</button>
+        <button type="button" id="race-menue" aria-label="Menü" title="Menü (Options, Esc)">&#9776;</button>
       <button type="button" id="race-fs" title="Vollbild" aria-label="Vollbild">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                stroke-linecap="round" stroke-linejoin="round">
@@ -4451,6 +4461,8 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>App: nach Schlie&szlig;en und &Ouml;ffnen l&auml;sst sich das Auto wieder verbinden (es hing an der alten Verbindung fest); ab der n&auml;chsten APK trennt die App beim Schlie&szlig;en sauber.</li>
+        <li>Kreuz tippen = Boxenstopp (halten bleibt gelbe Flagge), Options springt direkt ins Fahren-Men&uuml; und wieder zur&uuml;ck ins Cockpit. Motorsound statt Gegnerh&auml;rte im Fahren-Men&uuml;. Streckenfoto f&uuml;r den Ausdruck-Modus (experimentell), neue eigene Fotos im Men&uuml;.</li>
         <li>Kachel Autos mit eigenen Kn&ouml;pfen Verbinden und Garage.</li>
         <li>Men&uuml; aufger&auml;umt: ohne Tastenleiste und Hinweiszeile, kleinere abgedunkelte Bilder, gut lesbare Werte auf den Kacheln, Carrera-Hybrid-Blau statt Rot, oben nur das Omega, im Titel OMEGA blau und SIM rot. Im Cockpit keine Kopfzeile mehr.</li>
         <li>Android-App im Vollbild ohne Status- und Navigationsleiste. Reiter oben neben dem Logo statt Hauptmen&uuml;, Mehrspieler mit den Wegen PC und Android-App, &bdquo;Trotzdem starten&ldquo; ohne Auto zum Ausprobieren (experimentell), rechter Stick rollt die Seite.</li>
@@ -7260,7 +7272,7 @@
                Eintrag und bleibt daher beim Sprachwechsel stehen, bis er sich das naechste
                Mal neu bildet - dann steht er richtig da. Veraltet, nicht falsch. -->
           <div class="muted">Status: <b data-i18n-skip id="race-status">Bereit</b></div>
-          <div class="muted" style="font-size:11.5px">L1: Bahn oder Ausdruck · R1: Automatik oder von Hand · Kreuz: gelbe Flagge (1 s halten) · Select: Wetter umschalten</div>
+          <div class="muted" style="font-size:11.5px">L1: Bahn oder Ausdruck · R1: Automatik oder von Hand · Kreuz: tippen Boxenstopp, 1 s halten gelbe Flagge · Options: Menü · Select: Wetter umschalten</div>
           <div class="muted" id="race-lap-current-row" style="display:none">Aktuelle Runde: <b id="race-lap-current">-</b></div>
         </div>
       </div>
@@ -9985,18 +9997,6 @@
   <!-- COCKPIT-MENUE. BESTELLT (Nutzerentscheid): "Options lang halten" oeffnet es; kurz
        druecken bleibt der Boxenstopp. Solange es offen ist, geht das Gas von Spieler 1 auf 0.
        In main und nicht in einem Tab, damit es ueber dem Cockpit-Vollbild liegen kann. -->
-  <div class="k-pause" id="k-pause" hidden>
-    <div class="k-pause-dialog">
-      <h2>Men&uuml;</h2>
-      <p class="muted">Gas ist aus, solange das Men&uuml; offen ist &ndash; das Auto rollt aus. Ghosts fahren im Rennen weiter.</p>
-      <button type="button" data-pause="weiter">Weiterfahren</button>
-      <button type="button" data-pause="box">Boxenstopp</button>
-      <button type="button" data-pause="uebersicht">Renn&uuml;bersicht</button>
-      <button type="button" data-pause="abbrechen">Rennen abbrechen</button>
-      <button type="button" data-pause="optionen">Optionen</button>
-      <button type="button" data-pause="fahren">Zum Fahren-Men&uuml;</button>
-    </div>
-  </div>
   <!-- FRAGE-DIALOG (51-konsole.js, konsoleFrage). Zuerst fuer "trotzdem starten": BESTELLT
        "erlaube mir zum Debuggen auch auf Starten zu drücken, wenn kein Auto verbunden ist". -->
   <div class="k-pause" id="k-frage" hidden>
@@ -10239,6 +10239,27 @@
       const d = [];
       filter.forEach((f) => (f.services || []).forEach((s) => d.push(uuid(s))));
       if (d.length) opt.services = d;
+    }
+    // NOCH VERBUNDEN VOM LETZTEN MAL. GEMELDET: "Wenn ich die App schliesse und oeffne,
+    // zeigt das Auto an, es waere noch verbunden, ist es aber nicht. Und neu verbinden geht
+    // dann auch nicht." Das Plugin schliesst seine Verbindungen nicht, wenn die App zugeht:
+    // der Prozess lebt weiter, die alte Verbindung auch, nur die Seite ist neu und weiss
+    // nichts davon. Das Auto haelt sich fuer verbunden, wirbt deshalb nicht mehr - und die
+    // Suche findet es nie. Also zuerst nachsehen, ob das System ein passendes Auto schon
+    // verbunden hat, und das direkt nehmen; connect() legt darueber eine neue, eigene
+    // Verbindung an, und die Verbindung zum Auto selbst steht ja noch.
+    if (praefix) {
+      try {
+        const v = await ruf('getConnectedDevices', { services: [] });
+        const frei = ((v && v.devices) || []).find((d) => d && d.deviceId && d.name
+          && d.name.indexOf(praefix) === 0
+          && !(bekannte.get(d.deviceId) && bekannte.get(d.deviceId).gatt.connected));
+        if (frei) {
+          let g0 = bekannte.get(frei.deviceId);
+          if (!g0) { g0 = new Geraet(frei.deviceId, frei.name); bekannte.set(frei.deviceId, g0); }
+          return g0;
+        }
+      } catch (e) { /* aeltere Plugins oder ohne Recht: dann eben suchen */ }
     }
     let r;
     try {
@@ -11033,6 +11054,19 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "App: nach Schließen und Öffnen lässt sich das Auto wieder verbinden (es hing an der alten Verbindung fest); ab der nächsten APK trennt die App beim Schließen sauber.": "App: after closing and reopening, the car can be connected again (it was stuck on the old connection); from the next APK on the app disconnects cleanly when it closes.",
+    "Foto": "Photo",
+    "Foto löschen": "Delete photo",
+    "Streckenfoto": "Track photo",
+    "Streckenfoto löschen?": "Delete the track photo?",
+    "hochgeladen": "uploaded",
+    "keins": "none",
+    "Foto zu groß": "Photo too large",
+    "Der Speicher des Browsers ist voll. Ein kleineres Bild versuchen.": "The browser storage is full. Try a smaller picture.",
+    "Kein Bild": "Not a picture",
+    "Diese Datei ließ sich nicht als Bild lesen.": "This file could not be read as a picture.",
+    "Zurück ins Rennen": "Back to the race",
+    "Kreuz tippen = Boxenstopp (halten bleibt gelbe Flagge), Options springt direkt ins Fahren-Menü und wieder zurück ins Cockpit. Motorsound statt Gegnerhärte im Fahren-Menü. Streckenfoto für den Ausdruck-Modus (experimentell), neue eigene Fotos im Menü.": "Tap cross = pit stop (hold is still the yellow flag), Options jumps straight to the drive menu and back to the cockpit. Engine sound instead of opponent hardness in the drive menu. Track photo for printout mode (experimental), new own photos in the menu.",
     "Kachel Autos mit eigenen Knöpfen Verbinden und Garage.": "Cars tile with its own Connect and Garage buttons.",
     "Menü aufgeräumt: ohne Tastenleiste und Hinweiszeile, kleinere abgedunkelte Bilder, gut lesbare Werte auf den Kacheln, Carrera-Hybrid-Blau statt Rot, oben nur das Omega, im Titel OMEGA blau und SIM rot. Im Cockpit keine Kopfzeile mehr.": "Menu tidied up: no button bar or hint line, smaller darkened pictures, easy-to-read values on the tiles, Carrera Hybrid blue instead of red, only the omega at the top, OMEGA blue and SIM red in the title. No header bar in the cockpit any more.",
     "Dieser Browser kennt Web Bluetooth nicht. Chrome oder Edge auf Windows, Android oder ChromeOS - Safari und Firefox koennen es nicht.": "This browser does not support Web Bluetooth. Use Chrome or Edge on Windows, Android or ChromeOS - Safari and Firefox cannot do it.",
@@ -11115,7 +11149,7 @@
     "Rennübersicht": "Race overview",
     "Zum Fahren-Menü": "To the drive menu",
     "Zum Hauptmenü": "To the main menu",
-    "Menü (Options 1 s halten, Esc)": "Menu (hold Options 1 s, Esc)",
+    "Menü (Options, Esc)": "Menu (Options, Esc)",
     "Was du brauchst": "What you need",
     "Browser, Firmware, Controller – und was optional dazukommt.": "Browser, firmware, controller – and what is optional.",
     "Funktionen": "Features",
@@ -11980,7 +12014,8 @@
     "Zwei der drei Varianten sind am Auto unerprobt, und die Nummer des gedruckten Musters ist geraten und nicht entziffert – die Kodierregel ist nicht bekannt. „Überall halten“ trägt dagegen: es braucht kein Muster.": "Two of the three variants are untested on the car, and the number of the printed pattern is guessed rather than deciphered – the encoding rule is not known. “Stop anywhere” does hold up, though: it needs no pattern at all.",
     "Leseart: Bahn oder Ausdruck": "Reading mode: rail or printout",
     "Getriebe: Automatik oder von Hand": "Gearbox: automatic or manual",
-    "Gelbe Flagge (1 s halten)": "Yellow flag (hold 1 s)",
+    "Boxenstopp (tippen), gelbe Flagge (1 s halten)": "Pit stop (tap), yellow flag (hold 1 s)",
+    "Menü (Cockpit ↔ Fahren)": "Menu (cockpit ↔ drive)",
     "Kreuz (PS) / A (Xbox), 1 s halten": "Cross (PS) / A (Xbox), hold 1 s",
     "Select / Share (PS) / Back (Xbox)": "Select / Share (PS) / Back (Xbox)",
     // Lenkmessung (v0.5): Absaetze ohne inneres Markup, damit sie EIN Knoten sind.
@@ -12552,7 +12587,7 @@
     "Einführungsrunde: noch eine Runde": "Formation lap: one more lap",
     "Frei, volle Fahrt!": "Clear, full speed!",
     "Einführungsrunde mit Boxengassen-Tempo. Dein Auto fährt sie selbst, genau wie die Ghosts: es rollt mit an, schlängelt zum Reifenwärmen und hält die Seite seines Startplatzes, ohne dass du etwas anfassen musst – die Bremse gilt trotzdem, damit du anhalten kannst, wenn vor dir jemand steht. Im Cockpit steht dann „Einführungsrunde · Autopilot“. Frei ist es, wenn das erste Auto Start/Ziel zum zweiten Mal überfährt – ein Ghost darf es sein. Warum zweimal: zwischen der ersten und der zweiten Überfahrt desselben Autos liegt immer eine volle Runde, egal wo es gestanden hat. Bei einer einzigen Überfahrt war die Einführungsrunde vorbei, bevor sie anfing, wenn ein Auto auf oder kurz vor dem Zielstreifen stand. Danach fährt jeder nach seinen Einstellungen, und die Lenkung ist wieder deine. Nur in der Stellung „Auf der Bahn“: im Ausdruck-Modus hält sich das Auto nicht selbst auf der Bahn, und ein Autopilot ohne Querregelung würde es in die Bande fahren.": "Formation lap at pit-lane pace. Your car drives it itself, exactly like the ghosts: it rolls away with the field, weaves to warm the tyres and holds the side of its grid slot without you touching anything – the brake still works, so you can stop if someone is stranded ahead of you. The cockpit then reads “Formation lap · Autopilot”. It is released when the first car crosses start/finish for the SECOND time – a ghost may do it. Why twice: between the first and the second crossing by the same car there is always a full lap, wherever it was standing. With a single crossing the formation lap was over before it began whenever a car sat on or just before the finish stripe. After that everyone drives to their own settings and the steering is yours again. Only in the “On the track” position: in printout mode the car does not hold the track by itself, and an autopilot without lateral control would drive it into the barrier.",
-    "L1: Bahn oder Ausdruck · R1: Automatik oder von Hand · Kreuz: gelbe Flagge (1 s halten) · Select: Wetter umschalten": "L1: track or printout · R1: automatic or manual · Cross: yellow flag (hold for 1 s) · Select: switch the weather",
+    "L1: Bahn oder Ausdruck · R1: Automatik oder von Hand · Kreuz: tippen Boxenstopp, 1 s halten gelbe Flagge · Options: Menü · Select: Wetter umschalten": "L1: track or printout · R1: automatic or manual · Cross: tap for pit stop, hold 1 s for yellow flag · Options: menu · Select: switch the weather",
     "Drosselung jenseits der Fahrbahn": "Throttling off the track",
     "Meldet Byte 12 den Wert 0x00, ist das Auto neben der Bahn: dann wird das Gas auf 45 % gedeckelt. Das leichte Brummen dazu hängt allein am Schalter „Vibration“ darüber, dieser hier allein an der Drosselung – bis v0.4.55 war es eine Option mit zwei Hälften, und wer die Drosselung abschaltete, verlor auch die Rückmeldung. Wirkt nur in der Stellung „Auf der Bahn“: im Ausdruck-Modus ist der Streckensensor aus und Byte 12 stände dauernd auf 0x00.": "If byte 12 reports 0x00 the car is off the track: the throttle is then capped at 45 %. The gentle rumble that goes with it hangs on the “Vibration” switch above and this one only on the throttling – up to v0.4.55 it was one option with two halves, and switching the throttling off also cost you the feedback. Only takes effect in the “On the track” position: in printout mode the track sensor is off and byte 12 would sit at 0x00 permanently.",
     "Rückmeldung im Controller bei Gangwechsel, ABS, Aufprall, im Boxenstopp und neben der Bahn. Standard aus, weil nicht jeder Controller es kann und ein Dauerbrummen im Gelände Geschmackssache ist. Unabhängig von der Drosselung darunter. Das Handy vibriert nicht mit, das Protokoll kennt dafür nichts.": "Feedback in the controller on gear changes, ABS, impacts, in the pit stop and off the track. Off by default, because not every controller can do it and a constant rumble in the gravel is a matter of taste. Independent of the throttling below. The phone does not vibrate along, and the protocol knows nothing for it.",
@@ -20091,7 +20126,6 @@
     // Das Cockpit-Menue (Options 1 s halten, 51-konsole.js) liegt ueber allem und hat
     // Vorrang - auch im Cockpit, das sonst keine generische Zeilenliste bekommt.
     if (typeof konsoleFrageOffen === 'function' && konsoleFrageOffen()) return $('k-frage');
-    if (typeof konsolePauseOffen === 'function' && konsolePauseOffen()) return $('k-pause');
     const tab = document.querySelector('.tabpage.active');
     if (!tab || tab.id === 'tab-race') return null;
     // Der TITELBILDSCHIRM hat keine Zeilen: jede Taste fuehrt nach Fahren (51-konsole.js).
@@ -20506,12 +20540,11 @@
   };
   const K_BILD = {
     home: 'titel', fahren: 'fahren', garage: 'garage', control: 'rennen',
-    mp: 'mehrspieler', options: 'optionen', info: 'garage', misc: 'mehrspieler',
+    mp: 'mehrspieler', options: 'optionen', info: 'info', misc: 'mehrspieler',
   };
 
   let kStapel = [];
   let kZurueckLaeuft = false;
-  let kPauseOffen = false;
   let kFrageOffen = false;
   let kLetzterTab = 'home';
 
@@ -20521,8 +20554,7 @@
   }
   // MENUE statt FAHREN: ueberall ausser im Cockpit, und im Cockpit, solange dessen Menue
   // offen ist. Daran haengt, ob Kreuz/Kreis/Quadrat/L1/R1/Options Menue- oder Fahrtasten sind.
-  function konsoleMenue() { return kAktiverTab() !== 'race' || kPauseOffen || kFrageOffen; }
-  function konsolePauseOffen() { return kPauseOffen; }
+  function konsoleMenue() { return kAktiverTab() !== 'race' || kFrageOffen; }
   function konsoleFrageOffen() { return kFrageOffen; }
   function konsoleDev() {
     const cb = $('setting-dev');
@@ -20539,7 +20571,6 @@
       if (kStapel.length > 40) kStapel.shift();
     }
     kLetzterTab = neu;
-    if (neu !== 'race' && kPauseOffen) konsolePauseZu();
     // Nach dem Umschalten zeichnen, nicht davor: der neue Tab ist erst danach .active.
     setTimeout(() => {
       konsoleZeichnen();
@@ -20575,7 +20606,6 @@
     if (kFrageOffen) { konsoleFrageZu(); return true; }
     const lb = $('lb-wrap');
     if (lb && lb.classList.contains('on') && $('lb-close')) { $('lb-close').click(); return true; }
-    if (kPauseOffen) { konsolePauseZu(); return true; }
     const tab = kAktiverTab();
     if (document.querySelector('.tabpage.active .subpage.on')) { showSubpage(''); return true; }
     if (tab === 'home' || K_EBENE1.includes(tab)) return false;
@@ -20681,16 +20711,13 @@
       cb.dispatchEvent(new Event('change', { bubbles: true }));
     } else if (q === 'profil') {
       if ($('race-act-mode')) $('race-act-mode').click();
-    } else if (q === 'haerte') {
-      const r = $('ghost-hardness');
-      if (r) {
-        const min = +r.min || 0, max = +r.max || 1;
-        const stufe = (max - min) / 4;
-        let v = +r.value + stufe;
-        if (v > max + 1e-9) v = min;
-        r.value = String(Math.round(v * 1000) / 1000);
-        r.dispatchEvent(new Event('input', { bubbles: true }));
-        r.dispatchEvent(new Event('change', { bubbles: true }));
+    } else if (q === 'motor') {
+      const s = $('sound-profile');
+      const opts = s ? [...s.options].filter((o) => !o.disabled) : [];
+      if (opts.length) {
+        const n = opts[(opts.indexOf(s.selectedOptions[0]) + 1) % opts.length];
+        s.value = n.value;
+        s.dispatchEvent(new Event('change', { bubbles: true }));
       }
     }
     menuNavTonVerstellen();
@@ -20743,7 +20770,12 @@
   // kein Auto verbunden ist. Aktuell kommt 'Bluetooth Adapter ist aus...'. Das ist ok, aber
   // ich will eine Option 'trotzdem starten', damit ich dann sehen kann, ob das Cockpit da ist
   // und noch gut funktioniert." Statt alert() ein Dialog, der mit dem Pad bedienbar ist.
+  function kRennenLaeuft() {
+    try { return raceState === 'racing' || raceState === 'countdown' || raceState === 'finishing'; } catch (e) { return false; }
+  }
   async function konsoleLosfahren(ohneAuto) {
+    // Laeuft schon ein Rennen (Options fuehrt mitten im Rennen hierher), geht es nur zurueck.
+    if (kRennenLaeuft()) { konsoleInsCockpit(); return; }
     if (!playerCar && !ohneAuto) {
       const lage = await garageConnect({ stumm: true });
       if (!playerCar) {
@@ -20818,7 +20850,6 @@
     kRollRest -= ganz;
     const ziele = [
       kFrageOffen && document.querySelector('#k-frage .k-pause-dialog'),
-      kPauseOffen && document.querySelector('#k-pause .k-pause-dialog'),
       document.scrollingElement, document.body,
     ];
     for (const el of ziele) {
@@ -20835,41 +20866,22 @@
     if (i >= 0) { menuNavIndex = i; menuNavGezeigt = true; menuNavRender(); }
   }
 
-  // ---- Cockpit-Menue (Options 1 s halten, Esc, Knopf ☰) --------------------------------
-  function konsolePauseAuf() {
-    const p = $('k-pause');
-    if (!p) return;
-    kPauseOffen = true;
-    p.hidden = false;
-    menuNavEnsureContext();
-    menuNavIndex = 0; menuNavGezeigt = true;
-    menuNavRender();
-    menuNavTonAnwaehlen();
-    konsoleZeichnen();
+  // ---- Cockpit <-> Fahren-Menue (Options, Esc, Knopf ☰) ------------------------------
+  //
+  // BESTELLT: "Menü knopf soll direkt zum FAHREN menü führen, ohne Auswahl dazwischen" und
+  // "options 1x ins menü, nochmal zurück zum cockpit". Das Auswahlmenue (Weiterfahren,
+  // Boxenstopp, ...) ist damit weg: der Boxenstopp liegt auf Kreuz, Abbrechen auf dem
+  // Knopf im Cockpit, alles andere im Fahren-Menue. War das Cockpit im Vollbild, kommt es
+  // auf dem Rueckweg wieder so.
+  let kCockpitVollbild = false;
+  function konsoleZumMenue() {
+    kCockpitVollbild = document.body.classList.contains('race-fs');
+    if (kCockpitVollbild) exitRaceFullscreen();
+    konsoleZeige('fahren');
   }
-  function konsolePauseZu() {
-    const p = $('k-pause');
-    kPauseOffen = false;
-    if (p) p.hidden = true;
-    document.querySelectorAll('.menu-nav-sel').forEach((el) => el.classList.remove('menu-nav-sel'));
-    konsoleZeichnen();
-  }
-  function konsolePauseWahl(was) {
-    konsolePauseZu();
-    if (was === 'weiter') return;
-    if (was === 'box') { requestPitStop(); return; }
-    if (was === 'uebersicht') {
-      const i = COCKPIT_SCREENS.findIndex((s) => s.id === 'uebersicht');
-      if (i >= 0) cockpitScreenSet(i);
-      return;
-    }
-    if (was === 'abbrechen') {
-      if (raceState === 'racing' || raceState === 'countdown' || raceState === 'finishing') requestRaceStop();
-      return;
-    }
-    if (document.body.classList.contains('race-fs')) exitRaceFullscreen();
-    if (was === 'optionen') konsoleZeige('options');
-    else if (was === 'fahren') konsoleZeige('fahren');
+  function konsoleInsCockpit() {
+    showTab('race');
+    if (kCockpitVollbild && !document.body.classList.contains('race-fs')) enterRaceFullscreen();
   }
 
   // ---- Zeichnen: Kopf, Reiter, Beschreibung, Fuss, Hintergrund -----------------------
@@ -20974,20 +20986,68 @@
       [t('Pflichtboxenstopps'), ($('race-pit-required') || {}).value || '0'],
     ]);
     const bahn = ($('setting-ontrack') || {}).checked;
+    const foto = konsoleFoto();
     $('fa-strecke-titel').textContent = bahn ? t('Auf der Bahn') : t('Frei');
     const bild = $('fa-strecke-bild');
-    if (bild) bild.style.backgroundImage = 'url(img/' + (bahn ? 'strecke-bahn' : 'strecke-frei') + '.jpg)';
+    // Im Ausdruck-Modus zeigt das Band das eigene Streckenfoto, sobald es eines gibt. Nur neu
+    // setzen, wenn es sich geaendert hat: die Daten-URL ist einige hundert KB lang.
+    const bildNeu = !bahn && foto ? 'foto:' + foto.length : (bahn ? 'strecke-bahn' : 'strecke-frei');
+    if (bild && bild.dataset.bild !== bildNeu) {
+      bild.style.backgroundImage = !bahn && foto ? 'url("' + foto + '")' : 'url(img/' + bildNeu + '.jpg)';
+      bild.dataset.bild = bildNeu;
+    }
     kZeilen($('fa-strecke-info'), bahn
       ? [[t('Teile'), String(kTeile())], ['Code', kCode() || '–']]
-      : [[t('Modus'), t('Ausdruck, ohne Bahn')]]);
+      : [[t('Modus'), t('Ausdruck, ohne Bahn')], [t('Streckenfoto'), foto ? t('hochgeladen') : t('keins')]]);
     ['fa-scan', 'fa-laden'].forEach((id) => { if ($(id)) $(id).hidden = !bahn; });
     if ($('fa-druck')) $('fa-druck').hidden = bahn;
+    if ($('fa-foto')) $('fa-foto').hidden = bahn;
+    if ($('fa-foto-weg')) $('fa-foto-weg').hidden = bahn || !foto;
     $('fa-profil-titel').textContent = ($('race-act-mode-txt') || {}).textContent || '–';
-    const h = $('ghost-hardness');
-    $('fa-gegner-titel').textContent = t('Härte') + ' ' + (h ? Math.round(100 * (+h.value - (+h.min || 0)) / ((+h.max || 1) - (+h.min || 0))) : 0) + ' %';
+    const sp = $('sound-profile');
+    const motor = sp && sp.selectedOptions[0] ? sp.selectedOptions[0].textContent.split(':')[0].trim() : '–';
+    $('fa-motor-titel').textContent = motor;
     const training = rm.value === 'practice';
-    $('fa-start-titel').textContent = training ? t('Training starten') : t('Rennen starten');
+    $('fa-start-titel').textContent = kRennenLaeuft() ? t('Zurück ins Rennen')
+      : (training ? t('Training starten') : t('Rennen starten'));
     $('fa-start-unter').textContent = modus + ' · ' + (bahn ? t('auf der Bahn') : t('frei'));
+  }
+
+  // ---- Streckenfoto (Ausdruck-Modus, experimentell) --------------------------------
+  // Verkleinert auf hoechstens 1400 px und als JPEG im localStorage: so bleibt es ueber einen
+  // Neustart erhalten und passt mit einigen hundert KB in den Speicher. Die EXIF-Drehung
+  // wendet der Browser beim Zeichnen selbst an.
+  const K_FOTO = 'omegasim-streckenfoto';
+  function konsoleFoto() {
+    try { return localStorage.getItem(K_FOTO) || ''; } catch (e) { return ''; }
+  }
+  // Was der Uebersichtsschirm im Cockpit zeigt: das Foto nur im Ausdruck-Modus.
+  function konsoleStreckenfotoAktiv() {
+    return ($('setting-ontrack') || {}).checked ? '' : konsoleFoto();
+  }
+  function konsoleFotoSetzen(daten) {
+    try {
+      if (daten) localStorage.setItem(K_FOTO, daten); else localStorage.removeItem(K_FOTO);
+    } catch (e) { return false; }
+    konsoleZeichnen();
+    return true;
+  }
+  function konsoleFotoLesen(datei) {
+    return new Promise((ok, nein) => {
+      const url = URL.createObjectURL(datei);
+      const img = new Image();
+      img.onload = () => {
+        const f = Math.min(1, 1400 / Math.max(img.naturalWidth, img.naturalHeight));
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(img.naturalWidth * f));
+        c.height = Math.max(1, Math.round(img.naturalHeight * f));
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        ok(c.toDataURL('image/jpeg', 0.8));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); nein(new Error('kein Bild')); };
+      img.src = url;
+    });
   }
 
   // Strecke: auf der Bahn Scan/Editor/Laden, frei Druckvorlagen/Editor.
@@ -21034,18 +21094,14 @@
     if (neu !== false && neu !== 6 && neu !== 7) { konsoleTitelWeiter(); kTitelSperre = true; return true; }
     return true;
   }
-  // Options: kurz = Boxenstopp (beim LOSLASSEN, damit Halten unterscheidbar ist), 1 s
-  // halten = Cockpit-Menue. Ausserhalb des Cockpits tut die Taste nichts.
+  // Options: im Cockpit ins Fahren-Menue, in den Menues zurueck ins Cockpit. Nur die
+  // steigende Flanke zaehlt - eine gehaltene Taste springt nicht hin und her.
   function konsoleOptionsTaste(gedrueckt) {
-    const jetzt = performance.now();
-    const imCockpit = kAktiverTab() === 'race';
-    if (gedrueckt && !konsoleOptionsTaste.vorher) { kOptionsSeit = jetzt; kOptionsGefeuert = false; }
-    if (gedrueckt && imCockpit && !kPauseOffen && !kOptionsGefeuert && jetzt - kOptionsSeit >= 1000) {
-      kOptionsGefeuert = true;
-      konsolePauseAuf();
-    }
-    if (!gedrueckt && konsoleOptionsTaste.vorher && imCockpit && !kOptionsGefeuert && !kPauseOffen) {
-      requestPitStop();
+    if (gedrueckt && !konsoleOptionsTaste.vorher && !kFrageOffen
+        && !document.body.classList.contains('track-fs')) {
+      const tab = kAktiverTab();
+      if (tab === 'race') konsoleZumMenue();
+      else if (tab && tab !== 'home') konsoleInsCockpit();
     }
     konsoleOptionsTaste.vorher = gedrueckt;
   }
@@ -21062,9 +21118,9 @@
       else konsoleTitelWeiter();
       return;
     }
-    if (kAktiverTab() === 'race' && !kPauseOffen && k === 'escape' && !document.body.classList.contains('track-fs')) {
+    if (kAktiverTab() === 'race' && !kFrageOffen && k === 'escape' && !document.body.classList.contains('track-fs')) {
       e.preventDefault(); e.stopImmediatePropagation();
-      konsolePauseAuf();
+      konsoleZumMenue();
       return;
     }
     if (!konsoleMenue() || e.repeat) return;
@@ -21117,12 +21173,25 @@
     kn('fa-laden', () => { konsoleZeige('track', 'edit'); setTimeout(() => konsoleHinScrollen('track-list'), 30); });
     kn('fa-druck', () => konsoleZeige('track', 'print'));
     kn('fa-profil', () => konsoleZeige('options', 'opt-feel'));
-    kn('fa-gegner', () => konsoleZeige('options', 'opt-ghosts'));
-    kn('race-menue', () => konsolePauseAuf());
-    document.querySelectorAll('#k-pause [data-pause]').forEach((b) => {
-      b.addEventListener('click', () => konsolePauseWahl(b.dataset.pause));
+    kn('race-menue', () => konsoleZumMenue());
+    kn('fa-motor', () => konsoleZeige('options', 'opt-sound'));
+    kn('fa-foto', () => { const d = $('fa-foto-datei'); if (d) { d.value = ''; d.click(); } });
+    kn('fa-foto-weg', () => {
+      konsoleFrage(t('Streckenfoto löschen?'), '', [[t('Löschen'), () => { konsoleFotoSetzen(''); }], [t('Abbrechen'), null]]);
     });
-    for (const id of ['race-mode', 'setting-ontrack', 'ghost-hardness', 'race-limit', 'race-wx-start', 'setting-dev']) {
+    const datei = $('fa-foto-datei');
+    if (datei) {
+      datei.addEventListener('change', () => {
+        const f = datei.files && datei.files[0];
+        if (!f) return;
+        konsoleFotoLesen(f).then((daten) => {
+          if (!konsoleFotoSetzen(daten)) {
+            konsoleFrage(t('Foto zu groß'), t('Der Speicher des Browsers ist voll. Ein kleineres Bild versuchen.'), [[t('Schließen'), null]]);
+          }
+        }).catch(() => konsoleFrage(t('Kein Bild'), t('Diese Datei ließ sich nicht als Bild lesen.'), [[t('Schließen'), null]]));
+      });
+    }
+    for (const id of ['race-mode', 'setting-ontrack', 'sound-profile', 'race-limit', 'race-wx-start', 'setting-dev']) {
       const el = $(id);
       if (el) el.addEventListener('change', () => setTimeout(konsoleZeichnen, 0));
     }
@@ -30327,6 +30396,23 @@
   function ovKarteMalen() {
     const host = $('ov-karte');
     if (!host) return;
+    // AUSDRUCK-MODUS MIT EIGENEM FOTO (51-konsole.js): das Foto statt des Editor-Layouts.
+    // Ohne Autopunkte - auf einem Foto gibt es keine Geometrie, an die man sie setzen koennte.
+    const foto = typeof konsoleStreckenfotoAktiv === 'function' ? konsoleStreckenfotoAktiv() : '';
+    if (foto) {
+      const s = 'foto:' + foto.length + ':' + foto.slice(-24);
+      if (s !== ovKarteSchluessel) {
+        host.innerHTML = '';
+        const img = document.createElement('img');
+        img.className = 'ov-foto';
+        img.alt = '';
+        img.src = foto;
+        host.appendChild(img);
+        ovKarteSchluessel = s;
+        ovKarteGeo = null;
+      }
+      return;
+    }
     const tiles = currentTrackTiles;
     if (!tiles || tiles.length < 2) {
       if (host.firstChild) { host.innerHTML = ''; ovKarteSchluessel = null; ovKarteGeo = null; }
@@ -32820,12 +32906,12 @@
   const BIND_ACTION_LABELS = {
     throttle: 'Gas', brake: 'Bremse', steering: 'Lenkung',
     downshift: 'Runterschalten', upshift: 'Hochschalten',
-    headlights: 'Licht an/aus', lightflash: 'Lichthupe', pitstop: 'Boxenstopp',
+    headlights: 'Licht an/aus', lightflash: 'Lichthupe', pitstop: 'Menü (Cockpit ↔ Fahren)',
     schirmZurueck: 'Cockpit-Schirm zurück', schirmVor: 'Cockpit-Schirm vor',
     racestart: 'Rennen starten / abbrechen',
     tyreSelect: 'Reifenwahl weiter',
     fuelSelect: 'Tankmenge weiter',
-    yellowflag: 'Gelbe Flagge (1 s halten)',
+    yellowflag: 'Boxenstopp (tippen), gelbe Flagge (1 s halten)',
     trackReadMode: 'Bahn-Lesemodus umschalten',
     trackview: 'Streckenansicht',
     fullscreenToggle: 'Vollbild umschalten',
@@ -36727,6 +36813,7 @@
   // - Quadrat trug Runterschalten UND die Flagge - und ist als Fehler zurueckgenommen
   // worden. Der Ladebalken startet auf den anderen Schirmen gar nicht erst, statt bei 40
   // Prozent stehenzubleiben.
+  let padKreuzSeit = null;
   function flagTasteTick(flagNow) {
     // ALLERERSTE STUFE: ist das Info-Popup offen (98c-opt-info.js), schliesst dieselbe
     // Taste nur IHN - alles dahinter (Menuenavigation, Cockpit-Schirm, gelbe Flagge)
@@ -36744,13 +36831,21 @@
     } else if (cockpitScreenIst().id !== 'main') {
       if (flagNow && !prevYellowFlag) cockpitScreenWaehlen();
     } else {
-      if (flagNow && !prevYellowFlag) { padFlagFired = false; flagHoldPress(); }
+      // KREUZ TIPPEN = BOXENSTOPP, halten = gelbe Flagge wie bisher. BESTELLT: "X soll pit
+      // mode aktivieren (statt OPTIONS)". Getippt heisst: vor Ablauf der Haltesekunde
+      // losgelassen - gemessen an der eigenen Uhr des Drucks, weil flagHoldPress() waehrend
+      // der Neustart-Ampel gar nicht erst zu laden beginnt.
+      if (flagNow && !prevYellowFlag) { padFlagFired = false; padKreuzSeit = Date.now(); flagHoldPress(); }
       if (flagNow && !padFlagFired && flagHoldStart !== null
           && Date.now() - flagHoldStart >= FLAG_HOLD_MS) {
         padFlagFired = true;
         flagHoldRelease(true);
       }
-      if (!flagNow && prevYellowFlag) flagHoldRelease(false);
+      if (!flagNow && prevYellowFlag) {
+        flagHoldRelease(false);
+        if (!padFlagFired && padKreuzSeit !== null && Date.now() - padKreuzSeit < FLAG_HOLD_MS) requestPitStop();
+        padKreuzSeit = null;
+      }
     }
     // DIE SPERRE FAELLT BEIM LOSLASSEN, und das ist die Behebung eines gemeldeten Fehlers.
     // padFlagFired heisst "in DIESEM Druck ist die Sekunde schon voll gewesen", also endet
@@ -41236,10 +41331,7 @@
       // applyDeadzone already returns exactly 0 inside the deadzone, so a pad at rest is
       // silent here and no longer overwrites whatever the keyboard is holding.
       applySteerInput(SRC.PAD, steerRaw);
-      // Cockpit-Menue offen: Gas zu, Bremse bleibt (das Auto rollt aus, siehe 51-konsole.js).
-      const gasWunsch = throttleRaw - brakeRaw;
-      applyThrottleInput(SRC.PAD, (typeof konsolePauseOffen === 'function' && konsolePauseOffen())
-        ? Math.min(0, gasWunsch) : gasWunsch);
+      applyThrottleInput(SRC.PAD, throttleRaw - brakeRaw);
 
       // Headlight flash, edge-triggered: one press = one three-blink burst, the way GT3
       // drivers signal a pass. The handbrake that used to sit on this button is gone, and
@@ -41292,8 +41384,9 @@
       // LB und RB machen nur noch Autodinge. Sie blaetterten ausserhalb des Cockpits durch
       // die Tabs, und das war eine der Quellen der Fehlbedienungen: ein Griff zum
       // Boxenstopp-Knopf im falschen Moment sprang in einen anderen Tab.
-      // ACC-MENUE (Nutzerentscheid "Options lang halten"): kurz = Boxenstopp beim LOSLASSEN,
-      // 1 s halten = Cockpit-Menue. Ausserhalb des Cockpits tut die Taste nichts.
+      // ACC-MENUE: Options fuehrt aus dem Cockpit ins Fahren-Menue und von dort zurueck.
+      // BESTELLT: "X soll pit mode aktivieren (statt OPTIONS) und options 1x ins menü,
+      // nochmal zurück zum cockpit." Der Boxenstopp liegt auf Kreuz (flagTasteTick).
       const pitstopNow = readBindingValue(pad, bindings.pitstop) > BUTTON_CAPTURE_THRESHOLD;
       konsoleOptionsTaste(pitstopNow);
       prevPitstop = pitstopNow;
@@ -55168,6 +55261,12 @@
     const merk = OMEGA_TEST.schirmIst();
     const schlecht = [];
     let schritte = 0;
+    // KREUZ TIPPEN = BOXENSTOPP (seit v0.8.23). Gezaehlt statt ausgeloest: ein echter Stopp
+    // hinterliesse einen Zustand fuer den naechsten Test. Getippt wird auf dem Cockpitschirm
+    // in (a) und (c), also genau zwei; der Druck im Boxenmenue (b) waehlt nur.
+    const echtBox = requestPitStop;
+    let boxen = 0;
+    requestPitStop = () => { boxen++; };
     try {
       // (a) Auf dem Cockpitschirm nimmt sie den Druck an und laedt.
       OMEGA_TEST.schirmZu('main');
@@ -55226,10 +55325,12 @@
       if (OMEGA_TEST.flagLage().gesperrt) schlecht.push('c: Sperre steht noch');
       OMEGA_TEST.flagTaste(false);
       schritte++;
+      if (boxen !== 2) schlecht.push('Kreuz getippt gab ' + boxen + ' Boxenstopps statt 2');
     } catch (e) {
       schlecht.push('Ausnahme: ' + e.message);
     } finally {
       OMEGA_TEST.flagTaste(false);
+      requestPitStop = echtBox;
       OMEGA_TEST.schirmZu(merk);
     }
     return { ok: !schlecht.length,
@@ -61896,37 +61997,88 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') + ' | ' + weg.join(' ') : weg.join(' ') };
   });
 
-  stAdd('ACC-Menü: Cockpit-Menü nimmt das Gas, Options kurz = Box, lang = Menü', () => {
+  // BESTELLT: "Menü knopf soll direkt zum FAHREN menü führen, ohne Auswahl dazwischen" und
+  // "options 1x ins menü, nochmal zurück zum cockpit".
+  stAdd('ACC-Menü: Options wechselt Cockpit und Fahren, Esc und ☰ führen ins Menü', () => {
     const merk = kAktiverTab();
     const f = [];
-    const echtNow = performance.now;
-    const echtBox = requestPitStop;
-    let boxen = 0, uhr = 1000;
     try {
       showTab('race');
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-      if (!konsolePauseOffen() || $('k-pause').hidden) f.push('Esc im Cockpit oeffnet das Menue nicht');
-      if (menuNavContainer() !== $('k-pause')) f.push('die Menuezeilen gelten nicht fuer das Cockpit-Menue');
-      if (!konsoleMenue()) f.push('mit offenem Menue sind die Tasten noch Fahrtasten');
-      konsolePauseZu();
-      // Options: die Uhr wird gefaelscht, damit "1 s halten" ohne Warten pruefbar ist.
-      performance.now = () => uhr;
-      requestPitStop = () => { boxen++; };
-      konsoleOptionsTaste(true); uhr += 200; konsoleOptionsTaste(true); konsoleOptionsTaste(false);
-      if (boxen !== 1) f.push('kurzes Options gibt ' + boxen + ' Boxenstopps statt 1');
-      if (konsolePauseOffen()) f.push('kurzes Options oeffnet das Menue');
-      konsoleOptionsTaste(true); uhr += 1100; konsoleOptionsTaste(true);
-      if (!konsolePauseOffen()) f.push('1 s Options oeffnet das Menue nicht');
+      konsoleOptionsTaste(true); konsoleOptionsTaste(false);
+      if (kAktiverTab() !== 'fahren') f.push('Options im Cockpit fuehrt nach ' + kAktiverTab());
+      konsoleOptionsTaste(true); konsoleOptionsTaste(false);
+      if (kAktiverTab() !== 'race') f.push('Options im Fahren-Menue fuehrt nach ' + kAktiverTab());
+      konsoleOptionsTaste(true); konsoleOptionsTaste(true); konsoleOptionsTaste(true);
+      if (kAktiverTab() !== 'fahren') f.push('gehaltenes Options springt hin und her (' + kAktiverTab() + ')');
       konsoleOptionsTaste(false);
-      if (boxen !== 1) f.push('langes Options loest zusaetzlich einen Boxenstopp aus');
+      showTab('options');
+      konsoleOptionsTaste(true); konsoleOptionsTaste(false);
+      if (kAktiverTab() !== 'race') f.push('Options in den Optionen fuehrt nach ' + kAktiverTab());
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      if (kAktiverTab() !== 'fahren') f.push('Esc im Cockpit fuehrt nach ' + kAktiverTab());
+      showTab('race');
+      $('race-menue').click();
+      if (kAktiverTab() !== 'fahren') f.push('Knopf ☰ fuehrt nach ' + kAktiverTab());
     } finally {
-      performance.now = echtNow;
-      requestPitStop = echtBox;
-      konsolePauseZu();
       konsoleOptionsTaste.vorher = false;
       if (merk) showTab(merk);
     }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Esc und 1 s Options oeffnen, kurz = ein Boxenstopp, Gas zu' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Options hin und zurueck, gehalten nur einmal, Esc und ☰ ins Fahren-Menue' };
+  });
+
+  stAdd('ACC-Menü: Motorsound-Kachel blättert die Motoren, Quadrat', () => {
+    const s2 = $('sound-profile');
+    if (!s2 || !$('fa-motor')) return { ok: false, mass: 'Kachel oder Auswahl fehlt' };
+    const merk = kAktiverTab();
+    const merkWert = s2.value;
+    const f = [];
+    try {
+      showTab('fahren');
+      menuNavEnsureContext();
+      konsoleFokusAuf('fa-motor');
+      konsoleQuadrat();
+      if (s2.value === merkWert) f.push('Quadrat aendert den Motor nicht');
+      konsoleZeichnen();
+      const titel = $('fa-motor-titel').textContent;
+      if (!titel || s2.selectedOptions[0].textContent.indexOf(titel) !== 0) f.push('Titel "' + titel + '" passt nicht zum Motor');
+    } finally {
+      s2.value = merkWert;
+      s2.dispatchEvent(new Event('change', { bubbles: true }));
+      if (merk) showTab(merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Motor weitergeschaltet und zurueck' };
+  });
+
+  stAdd('ACC-Menü: Streckenfoto ersetzt im Ausdruck-Modus die Karte im Cockpit', () => {
+    const cb = $('setting-ontrack');
+    if (!cb || !$('ov-karte')) return { ok: false, mass: 'Schalter oder Karte fehlt' };
+    let alt = '';
+    try { alt = localStorage.getItem('omegasim-streckenfoto') || ''; } catch (e) { return { skip: true, mass: 'kein Speicher' }; }
+    const merkBahn = cb.checked;
+    const f = [];
+    // Ein 2x2-Pixel-JPEG als Foto: klein, echt, und ohne Datei-Dialog.
+    const c = document.createElement('canvas'); c.width = 2; c.height = 2;
+    const foto = c.toDataURL('image/jpeg', 0.8);
+    try {
+      if (!konsoleFotoSetzen(foto)) return { skip: true, mass: 'Speicher voll' };
+      cb.checked = false; cb.dispatchEvent(new Event('change', { bubbles: true }));
+      ovKarteMalen();
+      const img = $('ov-karte').querySelector('img.ov-foto');
+      if (!img) f.push('frei mit Foto: kein Foto in der Karte');
+      else if (img.src !== foto) f.push('falsches Bild');
+      konsoleFahrenZeichnen();
+      if ($('fa-foto').hidden || $('fa-foto-weg').hidden) f.push('Foto-Knoepfe fehlen im Ausdruck-Modus');
+      cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true }));
+      ovKarteMalen();
+      if ($('ov-karte').querySelector('img.ov-foto')) f.push('auf der Bahn steht noch das Foto');
+      konsoleFahrenZeichnen();
+      if (!$('fa-foto').hidden) f.push('Foto-Knopf auf der Bahn sichtbar');
+    } finally {
+      konsoleFotoSetzen(alt);
+      cb.checked = merkBahn; cb.dispatchEvent(new Event('change', { bubbles: true }));
+      ovKarteMalen();
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Foto frei gezeigt, auf der Bahn wieder die Karte' };
   });
 
   stAdd('ACC-Menü: Entwicklertools versteckt, Schalter blendet sie ein', () => {

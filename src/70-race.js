@@ -5124,6 +5124,23 @@
   function ovKarteMalen() {
     const host = $('ov-karte');
     if (!host) return;
+    // AUSDRUCK-MODUS MIT EIGENEM FOTO (51-konsole.js): das Foto statt des Editor-Layouts.
+    // Ohne Autopunkte - auf einem Foto gibt es keine Geometrie, an die man sie setzen koennte.
+    const foto = typeof konsoleStreckenfotoAktiv === 'function' ? konsoleStreckenfotoAktiv() : '';
+    if (foto) {
+      const s = 'foto:' + foto.length + ':' + foto.slice(-24);
+      if (s !== ovKarteSchluessel) {
+        host.innerHTML = '';
+        const img = document.createElement('img');
+        img.className = 'ov-foto';
+        img.alt = '';
+        img.src = foto;
+        host.appendChild(img);
+        ovKarteSchluessel = s;
+        ovKarteGeo = null;
+      }
+      return;
+    }
     const tiles = currentTrackTiles;
     if (!tiles || tiles.length < 2) {
       if (host.firstChild) { host.innerHTML = ''; ovKarteSchluessel = null; ovKarteGeo = null; }

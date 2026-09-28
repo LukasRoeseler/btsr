@@ -110,12 +110,12 @@
   const BIND_ACTION_LABELS = {
     throttle: 'Gas', brake: 'Bremse', steering: 'Lenkung',
     downshift: 'Runterschalten', upshift: 'Hochschalten',
-    headlights: 'Licht an/aus', lightflash: 'Lichthupe', pitstop: 'Boxenstopp',
+    headlights: 'Licht an/aus', lightflash: 'Lichthupe', pitstop: 'Menü (Cockpit ↔ Fahren)',
     schirmZurueck: 'Cockpit-Schirm zurück', schirmVor: 'Cockpit-Schirm vor',
     racestart: 'Rennen starten / abbrechen',
     tyreSelect: 'Reifenwahl weiter',
     fuelSelect: 'Tankmenge weiter',
-    yellowflag: 'Gelbe Flagge (1 s halten)',
+    yellowflag: 'Boxenstopp (tippen), gelbe Flagge (1 s halten)',
     trackReadMode: 'Bahn-Lesemodus umschalten',
     trackview: 'Streckenansicht',
     fullscreenToggle: 'Vollbild umschalten',
@@ -4017,6 +4017,7 @@
   // - Quadrat trug Runterschalten UND die Flagge - und ist als Fehler zurueckgenommen
   // worden. Der Ladebalken startet auf den anderen Schirmen gar nicht erst, statt bei 40
   // Prozent stehenzubleiben.
+  let padKreuzSeit = null;
   function flagTasteTick(flagNow) {
     // ALLERERSTE STUFE: ist das Info-Popup offen (98c-opt-info.js), schliesst dieselbe
     // Taste nur IHN - alles dahinter (Menuenavigation, Cockpit-Schirm, gelbe Flagge)
@@ -4034,13 +4035,21 @@
     } else if (cockpitScreenIst().id !== 'main') {
       if (flagNow && !prevYellowFlag) cockpitScreenWaehlen();
     } else {
-      if (flagNow && !prevYellowFlag) { padFlagFired = false; flagHoldPress(); }
+      // KREUZ TIPPEN = BOXENSTOPP, halten = gelbe Flagge wie bisher. BESTELLT: "X soll pit
+      // mode aktivieren (statt OPTIONS)". Getippt heisst: vor Ablauf der Haltesekunde
+      // losgelassen - gemessen an der eigenen Uhr des Drucks, weil flagHoldPress() waehrend
+      // der Neustart-Ampel gar nicht erst zu laden beginnt.
+      if (flagNow && !prevYellowFlag) { padFlagFired = false; padKreuzSeit = Date.now(); flagHoldPress(); }
       if (flagNow && !padFlagFired && flagHoldStart !== null
           && Date.now() - flagHoldStart >= FLAG_HOLD_MS) {
         padFlagFired = true;
         flagHoldRelease(true);
       }
-      if (!flagNow && prevYellowFlag) flagHoldRelease(false);
+      if (!flagNow && prevYellowFlag) {
+        flagHoldRelease(false);
+        if (!padFlagFired && padKreuzSeit !== null && Date.now() - padKreuzSeit < FLAG_HOLD_MS) requestPitStop();
+        padKreuzSeit = null;
+      }
     }
     // DIE SPERRE FAELLT BEIM LOSLASSEN, und das ist die Behebung eines gemeldeten Fehlers.
     // padFlagFired heisst "in DIESEM Druck ist die Sekunde schon voll gewesen", also endet
@@ -8526,10 +8535,7 @@
       // applyDeadzone already returns exactly 0 inside the deadzone, so a pad at rest is
       // silent here and no longer overwrites whatever the keyboard is holding.
       applySteerInput(SRC.PAD, steerRaw);
-      // Cockpit-Menue offen: Gas zu, Bremse bleibt (das Auto rollt aus, siehe 51-konsole.js).
-      const gasWunsch = throttleRaw - brakeRaw;
-      applyThrottleInput(SRC.PAD, (typeof konsolePauseOffen === 'function' && konsolePauseOffen())
-        ? Math.min(0, gasWunsch) : gasWunsch);
+      applyThrottleInput(SRC.PAD, throttleRaw - brakeRaw);
 
       // Headlight flash, edge-triggered: one press = one three-blink burst, the way GT3
       // drivers signal a pass. The handbrake that used to sit on this button is gone, and
@@ -8582,8 +8588,9 @@
       // LB und RB machen nur noch Autodinge. Sie blaetterten ausserhalb des Cockpits durch
       // die Tabs, und das war eine der Quellen der Fehlbedienungen: ein Griff zum
       // Boxenstopp-Knopf im falschen Moment sprang in einen anderen Tab.
-      // ACC-MENUE (Nutzerentscheid "Options lang halten"): kurz = Boxenstopp beim LOSLASSEN,
-      // 1 s halten = Cockpit-Menue. Ausserhalb des Cockpits tut die Taste nichts.
+      // ACC-MENUE: Options fuehrt aus dem Cockpit ins Fahren-Menue und von dort zurueck.
+      // BESTELLT: "X soll pit mode aktivieren (statt OPTIONS) und options 1x ins menü,
+      // nochmal zurück zum cockpit." Der Boxenstopp liegt auf Kreuz (flagTasteTick).
       const pitstopNow = readBindingValue(pad, bindings.pitstop) > BUTTON_CAPTURE_THRESHOLD;
       konsoleOptionsTaste(pitstopNow);
       prevPitstop = pitstopNow;

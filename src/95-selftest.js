@@ -3043,6 +3043,12 @@
     const merk = OMEGA_TEST.schirmIst();
     const schlecht = [];
     let schritte = 0;
+    // KREUZ TIPPEN = BOXENSTOPP (seit v0.8.23). Gezaehlt statt ausgeloest: ein echter Stopp
+    // hinterliesse einen Zustand fuer den naechsten Test. Getippt wird auf dem Cockpitschirm
+    // in (a) und (c), also genau zwei; der Druck im Boxenmenue (b) waehlt nur.
+    const echtBox = requestPitStop;
+    let boxen = 0;
+    requestPitStop = () => { boxen++; };
     try {
       // (a) Auf dem Cockpitschirm nimmt sie den Druck an und laedt.
       OMEGA_TEST.schirmZu('main');
@@ -3101,10 +3107,12 @@
       if (OMEGA_TEST.flagLage().gesperrt) schlecht.push('c: Sperre steht noch');
       OMEGA_TEST.flagTaste(false);
       schritte++;
+      if (boxen !== 2) schlecht.push('Kreuz getippt gab ' + boxen + ' Boxenstopps statt 2');
     } catch (e) {
       schlecht.push('Ausnahme: ' + e.message);
     } finally {
       OMEGA_TEST.flagTaste(false);
+      requestPitStop = echtBox;
       OMEGA_TEST.schirmZu(merk);
     }
     return { ok: !schlecht.length,
@@ -9771,37 +9779,88 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') + ' | ' + weg.join(' ') : weg.join(' ') };
   });
 
-  stAdd('ACC-Menü: Cockpit-Menü nimmt das Gas, Options kurz = Box, lang = Menü', () => {
+  // BESTELLT: "Menü knopf soll direkt zum FAHREN menü führen, ohne Auswahl dazwischen" und
+  // "options 1x ins menü, nochmal zurück zum cockpit".
+  stAdd('ACC-Menü: Options wechselt Cockpit und Fahren, Esc und ☰ führen ins Menü', () => {
     const merk = kAktiverTab();
     const f = [];
-    const echtNow = performance.now;
-    const echtBox = requestPitStop;
-    let boxen = 0, uhr = 1000;
     try {
       showTab('race');
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-      if (!konsolePauseOffen() || $('k-pause').hidden) f.push('Esc im Cockpit oeffnet das Menue nicht');
-      if (menuNavContainer() !== $('k-pause')) f.push('die Menuezeilen gelten nicht fuer das Cockpit-Menue');
-      if (!konsoleMenue()) f.push('mit offenem Menue sind die Tasten noch Fahrtasten');
-      konsolePauseZu();
-      // Options: die Uhr wird gefaelscht, damit "1 s halten" ohne Warten pruefbar ist.
-      performance.now = () => uhr;
-      requestPitStop = () => { boxen++; };
-      konsoleOptionsTaste(true); uhr += 200; konsoleOptionsTaste(true); konsoleOptionsTaste(false);
-      if (boxen !== 1) f.push('kurzes Options gibt ' + boxen + ' Boxenstopps statt 1');
-      if (konsolePauseOffen()) f.push('kurzes Options oeffnet das Menue');
-      konsoleOptionsTaste(true); uhr += 1100; konsoleOptionsTaste(true);
-      if (!konsolePauseOffen()) f.push('1 s Options oeffnet das Menue nicht');
+      konsoleOptionsTaste(true); konsoleOptionsTaste(false);
+      if (kAktiverTab() !== 'fahren') f.push('Options im Cockpit fuehrt nach ' + kAktiverTab());
+      konsoleOptionsTaste(true); konsoleOptionsTaste(false);
+      if (kAktiverTab() !== 'race') f.push('Options im Fahren-Menue fuehrt nach ' + kAktiverTab());
+      konsoleOptionsTaste(true); konsoleOptionsTaste(true); konsoleOptionsTaste(true);
+      if (kAktiverTab() !== 'fahren') f.push('gehaltenes Options springt hin und her (' + kAktiverTab() + ')');
       konsoleOptionsTaste(false);
-      if (boxen !== 1) f.push('langes Options loest zusaetzlich einen Boxenstopp aus');
+      showTab('options');
+      konsoleOptionsTaste(true); konsoleOptionsTaste(false);
+      if (kAktiverTab() !== 'race') f.push('Options in den Optionen fuehrt nach ' + kAktiverTab());
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      if (kAktiverTab() !== 'fahren') f.push('Esc im Cockpit fuehrt nach ' + kAktiverTab());
+      showTab('race');
+      $('race-menue').click();
+      if (kAktiverTab() !== 'fahren') f.push('Knopf ☰ fuehrt nach ' + kAktiverTab());
     } finally {
-      performance.now = echtNow;
-      requestPitStop = echtBox;
-      konsolePauseZu();
       konsoleOptionsTaste.vorher = false;
       if (merk) showTab(merk);
     }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Esc und 1 s Options oeffnen, kurz = ein Boxenstopp, Gas zu' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Options hin und zurueck, gehalten nur einmal, Esc und ☰ ins Fahren-Menue' };
+  });
+
+  stAdd('ACC-Menü: Motorsound-Kachel blättert die Motoren, Quadrat', () => {
+    const s2 = $('sound-profile');
+    if (!s2 || !$('fa-motor')) return { ok: false, mass: 'Kachel oder Auswahl fehlt' };
+    const merk = kAktiverTab();
+    const merkWert = s2.value;
+    const f = [];
+    try {
+      showTab('fahren');
+      menuNavEnsureContext();
+      konsoleFokusAuf('fa-motor');
+      konsoleQuadrat();
+      if (s2.value === merkWert) f.push('Quadrat aendert den Motor nicht');
+      konsoleZeichnen();
+      const titel = $('fa-motor-titel').textContent;
+      if (!titel || s2.selectedOptions[0].textContent.indexOf(titel) !== 0) f.push('Titel "' + titel + '" passt nicht zum Motor');
+    } finally {
+      s2.value = merkWert;
+      s2.dispatchEvent(new Event('change', { bubbles: true }));
+      if (merk) showTab(merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Motor weitergeschaltet und zurueck' };
+  });
+
+  stAdd('ACC-Menü: Streckenfoto ersetzt im Ausdruck-Modus die Karte im Cockpit', () => {
+    const cb = $('setting-ontrack');
+    if (!cb || !$('ov-karte')) return { ok: false, mass: 'Schalter oder Karte fehlt' };
+    let alt = '';
+    try { alt = localStorage.getItem('omegasim-streckenfoto') || ''; } catch (e) { return { skip: true, mass: 'kein Speicher' }; }
+    const merkBahn = cb.checked;
+    const f = [];
+    // Ein 2x2-Pixel-JPEG als Foto: klein, echt, und ohne Datei-Dialog.
+    const c = document.createElement('canvas'); c.width = 2; c.height = 2;
+    const foto = c.toDataURL('image/jpeg', 0.8);
+    try {
+      if (!konsoleFotoSetzen(foto)) return { skip: true, mass: 'Speicher voll' };
+      cb.checked = false; cb.dispatchEvent(new Event('change', { bubbles: true }));
+      ovKarteMalen();
+      const img = $('ov-karte').querySelector('img.ov-foto');
+      if (!img) f.push('frei mit Foto: kein Foto in der Karte');
+      else if (img.src !== foto) f.push('falsches Bild');
+      konsoleFahrenZeichnen();
+      if ($('fa-foto').hidden || $('fa-foto-weg').hidden) f.push('Foto-Knoepfe fehlen im Ausdruck-Modus');
+      cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true }));
+      ovKarteMalen();
+      if ($('ov-karte').querySelector('img.ov-foto')) f.push('auf der Bahn steht noch das Foto');
+      konsoleFahrenZeichnen();
+      if (!$('fa-foto').hidden) f.push('Foto-Knopf auf der Bahn sichtbar');
+    } finally {
+      konsoleFotoSetzen(alt);
+      cb.checked = merkBahn; cb.dispatchEvent(new Event('change', { bubbles: true }));
+      ovKarteMalen();
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Foto frei gezeigt, auf der Bahn wieder die Karte' };
   });
 
   stAdd('ACC-Menü: Entwicklertools versteckt, Schalter blendet sie ein', () => {

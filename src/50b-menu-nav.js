@@ -90,7 +90,6 @@
     // Das Cockpit-Menue (Options 1 s halten, 51-konsole.js) liegt ueber allem und hat
     // Vorrang - auch im Cockpit, das sonst keine generische Zeilenliste bekommt.
     if (typeof konsoleFrageOffen === 'function' && konsoleFrageOffen()) return $('k-frage');
-    if (typeof konsolePauseOffen === 'function' && konsolePauseOffen()) return $('k-pause');
     const tab = document.querySelector('.tabpage.active');
     if (!tab || tab.id === 'tab-race') return null;
     // Der TITELBILDSCHIRM hat keine Zeilen: jede Taste fuehrt nach Fahren (51-konsole.js).
