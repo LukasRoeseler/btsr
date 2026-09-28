@@ -43,3 +43,6 @@ target_practice.pptx
 # src/ wird getrackt: es ist die Quelle. index.html ist das Ergebnis von
 # tools/build.py und wird ebenfalls getrackt, damit die Datei per file:// und ueber
 # GitHub Pages ohne Bauschritt laeuft.
+
+# Originalfotos (bis 4080 px). Ins Repo kommen nur die verkleinerten Fassungen aus tools/bilder.py.
+photos/
