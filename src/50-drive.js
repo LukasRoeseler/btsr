@@ -658,6 +658,31 @@
   // Stand und im 1. Gang, gedeckelt bei vollem Einschlag. Gestrichelt daneben dieselbe
   // Verstaerkung ohne Kennlinie (linear) - liegt die Kurve darunter, reagiert ein leicht
   // angetippter Stick weniger als linear. Die Physik selbst ist unveraendert.
+  // ---- DER SIMULIERTE G-PUNKT QUER: aus der KURVE, nicht aus dem Stick -------------
+  //
+  // GEMELDET: "gyro: links/rechts wird beim simulierten nicht wie beim echten angezeigt: der
+  // simulierte geht kurz zur Seite und dann zurueck. Der echte bleibt an der Seite." st.gLat
+  // ist der GRIFFVERBRAUCH aus Lenkbefehl mal Tempo (40-physics.js) - lenkt man mitten in
+  // der Kurve zurueck, faellt er auf null, obwohl die Leitplanke das Auto weiter herum fuehrt.
+  // Ist die Strecke bekannt und das Auto geortet, kommt die Anzeige deshalb aus der
+  // Kruemmung der Kachel: v^2/R, mit der Drehrichtung als Vorzeichen, bezogen auf eine
+  // Normalkurve bei halbem Tempo. Ohne Ortung bleibt der bisherige Wert. Nur Anzeige.
+  function gLatAnzeige(st) {
+    try {
+      const g = playerCar && playerCar.ghost;
+      const tiles = currentTrackTiles;
+      if (g && tiles && tiles.length >= 3 && g.tileIndex !== null && g.tileIndex !== undefined) {
+        const typ = tiles[g.tileIndex % tiles.length].type;
+        const dreh = tileTurnDeg(typ);
+        if (!dreh) return 0;
+        const v = Math.abs(st.speedKmh) / (physEngine.config.topSpeedKmh || 1);
+        const bezug = TRACK_RADIUS / tileRadius(typ);
+        return Math.sign(dreh) * Math.min(1, v * v * bezug * 4);
+      }
+    } catch (e) { /* ohne Strecke: bisheriger Wert */ }
+    return st.gLat;
+  }
+
   function lenkWirksam(x, e) {
     const c = physEngine.config;
     const k = (c.steerResponse || 1) * (c.steerCalib || 1);
@@ -1909,7 +1934,7 @@
     // scaled independently on purpose: the real numbers are far noisier and much larger
     // relative to their range, so a shared scale would push one of them off the dial.
     const R = 42;
-    $('race-g-sim').setAttribute('cx', (50 + Math.max(-1, Math.min(1, st.gLat)) * R).toFixed(1));
+    $('race-g-sim').setAttribute('cx', (50 + Math.max(-1, Math.min(1, gLatAnzeige(st))) * R).toFixed(1));
     $('race-g-sim').setAttribute('cy', (50 + Math.max(-1, Math.min(1, -st.gLong)) * R).toFixed(1));
 
     // Das Einspurmodell in zwei Zahlen. Beide sind Instrument.

@@ -3672,8 +3672,9 @@
         }
       }
     };
-    im(trocken, 2 * 60000, 6 * 60000, 'trockene Phase');
-    im(regen, 1 * 60000, 3 * 60000, 'Regenphase');
+    // Seit "es hat bei mir bisher nie geregnet": 60-180 s trocken, 30-90 s Schauer.
+    im(trocken, 60000, 180000, 'trockene Phase');
+    im(regen, 30000, 90000, 'Regenphase');
     // GEZOGEN und nicht fest: bei sechs trockenen Phasen aus einem Fenster von vier Minuten
     // sind sechs identische Werte praktisch unmoeglich. Das ist die Pruefung, die ein
     // Metronom von Wetter unterscheidet.

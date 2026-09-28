@@ -3186,7 +3186,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.8.5</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.6</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -15937,6 +15937,31 @@
   // Stand und im 1. Gang, gedeckelt bei vollem Einschlag. Gestrichelt daneben dieselbe
   // Verstaerkung ohne Kennlinie (linear) - liegt die Kurve darunter, reagiert ein leicht
   // angetippter Stick weniger als linear. Die Physik selbst ist unveraendert.
+  // ---- DER SIMULIERTE G-PUNKT QUER: aus der KURVE, nicht aus dem Stick -------------
+  //
+  // GEMELDET: "gyro: links/rechts wird beim simulierten nicht wie beim echten angezeigt: der
+  // simulierte geht kurz zur Seite und dann zurueck. Der echte bleibt an der Seite." st.gLat
+  // ist der GRIFFVERBRAUCH aus Lenkbefehl mal Tempo (40-physics.js) - lenkt man mitten in
+  // der Kurve zurueck, faellt er auf null, obwohl die Leitplanke das Auto weiter herum fuehrt.
+  // Ist die Strecke bekannt und das Auto geortet, kommt die Anzeige deshalb aus der
+  // Kruemmung der Kachel: v^2/R, mit der Drehrichtung als Vorzeichen, bezogen auf eine
+  // Normalkurve bei halbem Tempo. Ohne Ortung bleibt der bisherige Wert. Nur Anzeige.
+  function gLatAnzeige(st) {
+    try {
+      const g = playerCar && playerCar.ghost;
+      const tiles = currentTrackTiles;
+      if (g && tiles && tiles.length >= 3 && g.tileIndex !== null && g.tileIndex !== undefined) {
+        const typ = tiles[g.tileIndex % tiles.length].type;
+        const dreh = tileTurnDeg(typ);
+        if (!dreh) return 0;
+        const v = Math.abs(st.speedKmh) / (physEngine.config.topSpeedKmh || 1);
+        const bezug = TRACK_RADIUS / tileRadius(typ);
+        return Math.sign(dreh) * Math.min(1, v * v * bezug * 4);
+      }
+    } catch (e) { /* ohne Strecke: bisheriger Wert */ }
+    return st.gLat;
+  }
+
   function lenkWirksam(x, e) {
     const c = physEngine.config;
     const k = (c.steerResponse || 1) * (c.steerCalib || 1);
@@ -17188,7 +17213,7 @@
     // scaled independently on purpose: the real numbers are far noisier and much larger
     // relative to their range, so a shared scale would push one of them off the dial.
     const R = 42;
-    $('race-g-sim').setAttribute('cx', (50 + Math.max(-1, Math.min(1, st.gLat)) * R).toFixed(1));
+    $('race-g-sim').setAttribute('cx', (50 + Math.max(-1, Math.min(1, gLatAnzeige(st))) * R).toFixed(1));
     $('race-g-sim').setAttribute('cy', (50 + Math.max(-1, Math.min(1, -st.gLong)) * R).toFixed(1));
 
     // Das Einspurmodell in zwei Zahlen. Beide sind Instrument.
@@ -23853,7 +23878,15 @@
     wxWechselAt = null;
     // WECHSELHAFT GEWINNT. Der einmalige Wechsel bleibt aus, siehe die Begruendung bei
     // wxWechselPlanen().
-    if (raceWxStart === 'wechsel') { wxWechselPlanen(false); return; }
+    if (raceWxStart === 'wechsel') {
+      wxWechselPlanen(false);
+      // In einem Zeitrennen faellt der erste Schauer sicher hinein: spaetestens bei der
+      // Haelfte der Renndauer.
+      if (RACE_MODES[raceMode].timed && raceMode !== 'laps') {
+        wxWechselAt = Math.min(wxWechselAt, Date.now() + raceLimit * 60000 * 0.5);
+      }
+      return;
+    }
     if (!raceWxChange) return;
     const total = RACE_MODES[raceMode].timed && raceMode !== 'laps'
       ? raceLimit * 60000
@@ -23875,10 +23908,16 @@
   // WARUM MINUTEN UND NICHT RUNDEN: ein Schauer haengt nicht daran, wie schnell jemand
   // faehrt. Bei einem Rennen ueber drei Runden wird man ihn moeglicherweise nie sehen - das
   // ist richtig so und keine Fehlfunktion.
-  const WX_TROCKEN_MIN_MS = 2 * 60000;
-  const WX_TROCKEN_MAX_MS = 6 * 60000;
-  const WX_REGEN_MIN_MS = 1 * 60000;
-  const WX_REGEN_MAX_MS = 3 * 60000;
+  // GEMELDET: "Regenwahrscheinlichkeit bei wechselhaftem Wetter erhoehen, es hat bei mir
+  // bisher nie geregnet (evtl ist da auch was kaputt)." Beides stimmte: wxWechselTick() lief
+  // nur im Renntakt (also nie im freien Fahren), und die kuerzeste Trockenphase von 2 min
+  // war so lang wie das Vorgabe-Zeitrennen. Jetzt 60-180 s trocken, 30-90 s Schauer - ein
+  // Schauer ist stets kuerzer als die Trockenphase davor (BESTELLT: "Schauer bitte kuerzer
+  // als Trockenphasen"), und der eigene Takt unten laeuft immer.
+  const WX_TROCKEN_MIN_MS = 60000;
+  const WX_TROCKEN_MAX_MS = 180000;
+  const WX_REGEN_MIN_MS = 30000;
+  const WX_REGEN_MAX_MS = 90000;
   let wxWechselAt = null;
 
   function wxWechselPlanen(nass) {
@@ -23887,6 +23926,9 @@
     wxWechselAt = Date.now() + min + Math.random() * (max - min);
   }
 
+  // Ein eigener Takt, unabhaengig vom Rennen. Der Aufruf aus raceClockTick() bleibt, er
+  // schadet nicht: nach dem ersten Umschalten liegt wxWechselAt in der Zukunft.
+  setInterval(() => { wxWechselTick(); }, 1000);
   function wxWechselTick() {
     if (raceWxStart !== 'wechsel' || wxWechselAt === null) return;
     if (Date.now() < wxWechselAt) return;
@@ -24487,7 +24529,13 @@
     if (Number.isFinite(v) && v >= 1) raceLimit = v;
   });
 
-  $('race-wx-start').addEventListener('change', (e) => { raceWxStart = e.target.value; });
+  $('race-wx-start').addEventListener('change', (e) => {
+    raceWxStart = e.target.value;
+    // Sofort planen, nicht erst bei der naechsten Rennvorbereitung - sonst passiert im
+    // freien Fahren nie etwas.
+    if (raceWxStart === 'wechsel' && wxWechselAt === null) wxWechselPlanen(weather === 'rain');
+    if (raceWxStart !== 'wechsel') wxWechselAt = null;
+  });
   $('race-wx-change').addEventListener('change', (e) => { raceWxChange = e.target.checked; });
   $('race-pit-required').addEventListener('change', (e) => {
     racePitRequired = parseInt(e.target.value, 10) || 0;
@@ -26912,6 +26960,13 @@
       // eingeschaltetem Licht waere "an" nichts Sichtbares. Ein kurzes Aus ist das, was ein
       // Ein-Bit-System an dieser Stelle zeigen kann.
       head = on ? !baseHead : baseHead;
+      // GEMELDET: "bei Lichthupe blinkt auch das Ruecklicht, soll es aber nicht." Das
+      // Protokoll kennt kein eigenes Ruecklicht-Bit (Byte 14, CARRERA_HYBRID.md: nur
+      // Scheinwerfer 0x02, Bremse 0x01, Blinken 0x04) - die Firmware schaltet das
+      // Ruecklicht offenbar mit dem Scheinwerfer. Solange die Hupe den Scheinwerfer
+      // AUSschaltet, haelt deshalb das Bremslicht-Bit das Heck hell. Am echten Auto zu
+      // bestaetigen.
+      if (baseHead && !head) brake = true;
     } else if (lightFx.damage) {
       head = Math.floor(now / 90) % 2 === 0;    // fast, agitated flicker
     } else if (lightFx.fuel) {
@@ -53261,8 +53316,9 @@
         }
       }
     };
-    im(trocken, 2 * 60000, 6 * 60000, 'trockene Phase');
-    im(regen, 1 * 60000, 3 * 60000, 'Regenphase');
+    // Seit "es hat bei mir bisher nie geregnet": 60-180 s trocken, 30-90 s Schauer.
+    im(trocken, 60000, 180000, 'trockene Phase');
+    im(regen, 30000, 90000, 'Regenphase');
     // GEZOGEN und nicht fest: bei sechs trockenen Phasen aus einem Fenster von vier Minuten
     // sind sechs identische Werte praktisch unmoeglich. Das ist die Pruefung, die ein
     // Metronom von Wetter unterscheidet.

@@ -754,7 +754,15 @@
     wxWechselAt = null;
     // WECHSELHAFT GEWINNT. Der einmalige Wechsel bleibt aus, siehe die Begruendung bei
     // wxWechselPlanen().
-    if (raceWxStart === 'wechsel') { wxWechselPlanen(false); return; }
+    if (raceWxStart === 'wechsel') {
+      wxWechselPlanen(false);
+      // In einem Zeitrennen faellt der erste Schauer sicher hinein: spaetestens bei der
+      // Haelfte der Renndauer.
+      if (RACE_MODES[raceMode].timed && raceMode !== 'laps') {
+        wxWechselAt = Math.min(wxWechselAt, Date.now() + raceLimit * 60000 * 0.5);
+      }
+      return;
+    }
     if (!raceWxChange) return;
     const total = RACE_MODES[raceMode].timed && raceMode !== 'laps'
       ? raceLimit * 60000
@@ -776,10 +784,16 @@
   // WARUM MINUTEN UND NICHT RUNDEN: ein Schauer haengt nicht daran, wie schnell jemand
   // faehrt. Bei einem Rennen ueber drei Runden wird man ihn moeglicherweise nie sehen - das
   // ist richtig so und keine Fehlfunktion.
-  const WX_TROCKEN_MIN_MS = 2 * 60000;
-  const WX_TROCKEN_MAX_MS = 6 * 60000;
-  const WX_REGEN_MIN_MS = 1 * 60000;
-  const WX_REGEN_MAX_MS = 3 * 60000;
+  // GEMELDET: "Regenwahrscheinlichkeit bei wechselhaftem Wetter erhoehen, es hat bei mir
+  // bisher nie geregnet (evtl ist da auch was kaputt)." Beides stimmte: wxWechselTick() lief
+  // nur im Renntakt (also nie im freien Fahren), und die kuerzeste Trockenphase von 2 min
+  // war so lang wie das Vorgabe-Zeitrennen. Jetzt 60-180 s trocken, 30-90 s Schauer - ein
+  // Schauer ist stets kuerzer als die Trockenphase davor (BESTELLT: "Schauer bitte kuerzer
+  // als Trockenphasen"), und der eigene Takt unten laeuft immer.
+  const WX_TROCKEN_MIN_MS = 60000;
+  const WX_TROCKEN_MAX_MS = 180000;
+  const WX_REGEN_MIN_MS = 30000;
+  const WX_REGEN_MAX_MS = 90000;
   let wxWechselAt = null;
 
   function wxWechselPlanen(nass) {
@@ -788,6 +802,9 @@
     wxWechselAt = Date.now() + min + Math.random() * (max - min);
   }
 
+  // Ein eigener Takt, unabhaengig vom Rennen. Der Aufruf aus raceClockTick() bleibt, er
+  // schadet nicht: nach dem ersten Umschalten liegt wxWechselAt in der Zukunft.
+  setInterval(() => { wxWechselTick(); }, 1000);
   function wxWechselTick() {
     if (raceWxStart !== 'wechsel' || wxWechselAt === null) return;
     if (Date.now() < wxWechselAt) return;
@@ -1388,7 +1405,13 @@
     if (Number.isFinite(v) && v >= 1) raceLimit = v;
   });
 
-  $('race-wx-start').addEventListener('change', (e) => { raceWxStart = e.target.value; });
+  $('race-wx-start').addEventListener('change', (e) => {
+    raceWxStart = e.target.value;
+    // Sofort planen, nicht erst bei der naechsten Rennvorbereitung - sonst passiert im
+    // freien Fahren nie etwas.
+    if (raceWxStart === 'wechsel' && wxWechselAt === null) wxWechselPlanen(weather === 'rain');
+    if (raceWxStart !== 'wechsel') wxWechselAt = null;
+  });
   $('race-wx-change').addEventListener('change', (e) => { raceWxChange = e.target.checked; });
   $('race-pit-required').addEventListener('change', (e) => {
     racePitRequired = parseInt(e.target.value, 10) || 0;
@@ -3813,6 +3836,13 @@
       // eingeschaltetem Licht waere "an" nichts Sichtbares. Ein kurzes Aus ist das, was ein
       // Ein-Bit-System an dieser Stelle zeigen kann.
       head = on ? !baseHead : baseHead;
+      // GEMELDET: "bei Lichthupe blinkt auch das Ruecklicht, soll es aber nicht." Das
+      // Protokoll kennt kein eigenes Ruecklicht-Bit (Byte 14, CARRERA_HYBRID.md: nur
+      // Scheinwerfer 0x02, Bremse 0x01, Blinken 0x04) - die Firmware schaltet das
+      // Ruecklicht offenbar mit dem Scheinwerfer. Solange die Hupe den Scheinwerfer
+      // AUSschaltet, haelt deshalb das Bremslicht-Bit das Heck hell. Am echten Auto zu
+      // bestaetigen.
+      if (baseHead && !head) brake = true;
     } else if (lightFx.damage) {
       head = Math.floor(now / 90) % 2 === 0;    // fast, agitated flicker
     } else if (lightFx.fuel) {
