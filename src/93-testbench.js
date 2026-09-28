@@ -2610,6 +2610,52 @@
       }
     },
 
+    // Gemerkte Autos: nur Geaendertes wird gespeichert, Rueckfall per Geraetename, und die
+    // Zuordnung per Klick. Mit Attrappen in der Garage, danach alles zurueck.
+    carProfilProbe() {
+      const echt = localStorage.getItem(CAR_STORE);
+      const merkGarage = garage.splice(0, garage.length);
+      const auto = (id, name) => ({ device: { id, name }, role: 'steuern', colorId: 'weiss',
+                                    alias: '', ghost: null });
+      try {
+        localStorage.removeItem(CAR_STORE);
+        const a = auto('neu-1', 'Carrera Hybrid A');
+        garage.push(a);
+        carRemember(a);
+        const leerGespeichert = Object.keys(carStore()).length;
+        a.alias = 'Blitz'; carRemember(a);
+        const mitName = !!carStore()['neu-1'];
+        // Neue Kennung, gleicher Name: der Rueckfall muss "Blitz" finden.
+        garage.length = 0;
+        const b = auto('neu-2', 'Carrera Hybrid A');
+        garage.push(b);
+        carAssign(b);
+        const perName = b.alias;
+        const umgezogen = !!carStore()['neu-2'] && !carStore()['neu-1'];
+        // Zuordnung per Klick: ein anderes Profil auf ein anderes Auto.
+        localStorage.setItem(CAR_STORE, JSON.stringify(Object.assign(carStore(),
+          { alt: { color: 'rot', alias: 'Rakete', farbe: true, name: 'X' } })));
+        const c = auto('neu-3', 'Carrera Hybrid C');
+        garage.push(c);
+        carAssign(c);
+        carStoreListeZeichnen();
+        const zeile = document.querySelector('.car-store-zeile[data-id="alt"]');
+        if (zeile) zeile.click();
+        const ziel = zeile ? [...zeile.querySelectorAll('.car-store-ziel')]
+          .find((btn) => btn.textContent.indexOf(garageLabel(c)) >= 0) : null;
+        if (ziel) ziel.click();
+        return { leerGespeichert, mitName, perName, umgezogen,
+                 klickAlias: c.alias, klickFarbe: c.colorId };
+      } finally {
+        garage.length = 0;
+        merkGarage.forEach((x) => garage.push(x));
+        if (echt === null) localStorage.removeItem(CAR_STORE);
+        else localStorage.setItem(CAR_STORE, echt);
+        carRetag();
+        carStoreListeZeichnen();
+      }
+    },
+
     // Die Getriebearten: was drinsteht, was daraus gerechnet wird, und die Pendelreserve.
     //
     // MITGEGEBEN WIRD AUCH DAS GERECHNETE - ratioRef und rpmScale -, genau darum: der Test

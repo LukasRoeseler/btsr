@@ -10627,6 +10627,25 @@
                  + (maengel.length ? ' | ' + maengel.join(', ') : '') };
   });
 
+  // ---- Gemerkte Autos: nur Geaendertes, Rueckfall per Name, Zuordnung per Klick ----
+  //
+  // BESTELLT: "keine Autos merken, das funktioniert nicht. Entweder reparieren [...] oder
+  // weglassen" und "nur speichern, wenn ich den default namen geaendert habe".
+  stAdd('Gemerkte Autos: nur Geaendertes, Rueckfall per Name, Zuordnung per Klick', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.carProfilProbe) return { skip: true, mass: 'Probe fehlt' };
+    const r = OMEGA_TEST.carProfilProbe();
+    const schlecht = [];
+    if (r.leerGespeichert !== 0) schlecht.push('unveraendertes Auto wurde gemerkt');
+    if (!r.mitName) schlecht.push('geaenderter Name wurde nicht gemerkt');
+    if (r.perName !== 'Blitz') schlecht.push('Rueckfall per Geraetename greift nicht (' + r.perName + ')');
+    if (!r.umgezogen) schlecht.push('Profil zog nicht auf die neue Kennung um');
+    if (r.klickAlias !== 'Rakete' || r.klickFarbe !== 'rot') {
+      schlecht.push('Zuordnung per Klick: ' + r.klickAlias + '/' + r.klickFarbe);
+    }
+    return { ok: !schlecht.length, mass: schlecht.length ? schlecht.join('; ')
+             : 'leer nicht gemerkt, Name gemerkt, per Name gefunden, per Klick zugeordnet' };
+  });
+
   // ---- Auto-Verwaltung: gemerkte Autos einzeln und gesammelt loeschen ----------------
   //
   // BESTELLT: "in garage weiterer button ... Auto-Verwaltung [...] nur eine manuelle

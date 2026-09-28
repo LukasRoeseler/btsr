@@ -2911,6 +2911,9 @@
     border: 1px solid rgba(255,255,255,.35); flex: none; }
   /* Auto-Verwaltung: dieselbe Farbpunkt-Idee wie .sich-farbe, nur als eigene Zeile mit
      Loeschknopf statt als Teil eines Fliesstexts. */
+  .car-store-ziele { display: inline-flex; gap: 4px; margin-left: 4px; }
+  .car-store-ziel { font-size: 11px; padding: 1px 7px; min-height: 0; }
+  .car-store-zeile { cursor: pointer; }
   .car-store-zeile { display: inline-flex; align-items: center; gap: 5px;
     background: var(--panel-2); border: 1px solid var(--border); border-radius: 20px;
     padding: 3px 3px 3px 9px; font-size: 12px; }
@@ -3183,7 +3186,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.8.4</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.5</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6504,9 +6507,9 @@
                 hidden>Alle l&ouml;schen</button>
       </div>
       <p class="muted" style="font-size:11px; margin-top:4px">
-        Karteileichen entstehen, weil der Browser Autos nicht dauerhaft stabil
-        wiedererkennt (neues Profil, anderer Browser) &ndash; hier lassen sie sich
-        einzeln oder alle auf einmal entfernen.
+        Gemerkt werden nur Autos mit ge&auml;ndertem Namen oder gew&auml;hlter Farbe. Der
+        Browser erkennt ein Auto nicht immer wieder &ndash; dann einen Eintrag antippen
+        und dem verbundenen Auto zuordnen. Mit &times; entfernen.
       </p>
       <div class="row" style="gap:8px; flex-wrap:wrap">
         <button class="primary" id="sich-export">Sicherung speichern</button>

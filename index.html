@@ -2911,6 +2911,9 @@
     border: 1px solid rgba(255,255,255,.35); flex: none; }
   /* Auto-Verwaltung: dieselbe Farbpunkt-Idee wie .sich-farbe, nur als eigene Zeile mit
      Loeschknopf statt als Teil eines Fliesstexts. */
+  .car-store-ziele { display: inline-flex; gap: 4px; margin-left: 4px; }
+  .car-store-ziel { font-size: 11px; padding: 1px 7px; min-height: 0; }
+  .car-store-zeile { cursor: pointer; }
   .car-store-zeile { display: inline-flex; align-items: center; gap: 5px;
     background: var(--panel-2); border: 1px solid var(--border); border-radius: 20px;
     padding: 3px 3px 3px 9px; font-size: 12px; }
@@ -3183,7 +3186,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.8.4</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.5</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6504,9 +6507,9 @@
                 hidden>Alle l&ouml;schen</button>
       </div>
       <p class="muted" style="font-size:11px; margin-top:4px">
-        Karteileichen entstehen, weil der Browser Autos nicht dauerhaft stabil
-        wiedererkennt (neues Profil, anderer Browser) &ndash; hier lassen sie sich
-        einzeln oder alle auf einmal entfernen.
+        Gemerkt werden nur Autos mit ge&auml;ndertem Namen oder gew&auml;hlter Farbe. Der
+        Browser erkennt ein Auto nicht immer wieder &ndash; dann einen Eintrag antippen
+        und dem verbundenen Auto zuordnen. Mit &times; entfernen.
       </p>
       <div class="row" style="gap:8px; flex-wrap:wrap">
         <button class="primary" id="sich-export">Sicherung speichern</button>
@@ -9816,8 +9819,8 @@
     "wartet auf die erste Bewegung": "waiting for the first movement",
     "Keine gemerkten Autos.": "No remembered cars.",
     "Alle gemerkten Autos wirklich löschen?": "Really delete all remembered cars?",
-    "Karteileichen entstehen, weil der Browser Autos nicht dauerhaft stabil wiedererkennt (neues Profil, anderer Browser) – hier lassen sie sich einzeln oder alle auf einmal entfernen.":
-      "Stale entries happen because the browser doesn't recognize cars reliably long-term (new profile, different browser) – here they can be removed one by one or all at once.",
+    "Gemerkt werden nur Autos mit geändertem Namen oder gewählter Farbe. Der Browser erkennt ein Auto nicht immer wieder – dann einen Eintrag antippen und dem verbundenen Auto zuordnen. Mit × entfernen.":
+      "Only cars with a changed name or a chosen colour are remembered. The browser does not always recognise a car again – then tap an entry and assign it to the connected car. Remove with ×.",
     "Zur Garage": "To the garage",
     "Zur Startseite": "To the home page",
     "Zum Cockpit →": "To the cockpit →",
@@ -9981,7 +9984,6 @@
     "Ergebnis": "Result",
     "Ergebnis, alle verbundenen Autos": "Result, all connected cars",
     "Erlaubt beim Anbremsen mehr Lenkung. Nicht die Gewichtsverlagerung, sondern ihr Gegenstück in der Lenkgrenze.": "Allows more steering while braking. Not the weight transfer, but its counterpart in the steering limit.",
-    "Erst ein Auto verbinden": "Connect a car first",
     "Erst simulieren, dann fahren. Der Knopf schickt die Kurven an ein verbundenes Auto und fährt sie einmal ab. Das ist bewusst ein": "Simulate first, then drive. The button sends the curves to a connected car and runs them once. That is deliberately one",
     "Es reproduziert die ältere DR!FT-Fassung zeichengenau, und von der ist berichtet, dass sie gelesen wird – auf beiden Fahrzeugfamilien. Damit ist es das eine Muster, bei dem ein Fehlschlag eindeutig ist: wird es nicht gelesen, kann es nicht am Muster liegen, sondern nur am Druck.": "It reproduces the older DR!FT version exactly, and that version is reported to be read on both car families. So it is the one pattern whose failure is unambiguous: if it is not read, the pattern cannot be the cause, only the printing.",
     "Fahr die Strecke einmal manuell (Tab \"Fahren\", Joystick/Gas oder Pfeiltasten). Während der Aufnahme werden Lenk- und Gaswerte mit Zeitstempel mitgeschrieben. Bei der Wiedergabe sendet die App exakt dieselbe Sequenz erneut an die Ziel-Characteristic.": "Drive the track once by hand (the \"Drive\" tab, joystick/throttle or arrow keys). During recording, steering and throttle values are written down with timestamps. On replay the app sends exactly the same sequence again to the target characteristic.",
@@ -10062,6 +10064,7 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Erst ein Auto verbinden": "Connect a car first",
     "Boxenstopp eingeleitet": "Pit stop initiated",
     "Rennmodus: links/rechts wählen": "Race mode: choose with left/right",
     "Rennmodus: Anwahl beendet": "Race mode: selection finished",
@@ -31242,10 +31245,23 @@
   // Reihenfolge, soll dasselbe Auto dieselbe Farbe und denselben Namen haben. Eine
   // Rennaufstellung einmal einzutragen und dann durch eine Funkstoerung zu verlieren waere
   // genau das, was diese Kennung verhindern soll.
+  // NUR GEAENDERTES IST EIN PROFIL. BESTELLT: "profile nur speichern, wenn ich den default
+  // namen geaendert habe" und in der Auswahl "nur die auflisten, bei denen Farbe oder Name
+  // oder beides geaendert wurde". Die automatisch vergebene Farbe haengt an der
+  // Verbindungsreihenfolge und ist deshalb keine Eigenschaft des Autos - gemerkt wird sie
+  // nur, wenn sie von Hand gewaehlt wurde (car.farbeGewaehlt). Ohne beides wird ein
+  // vorhandener Eintrag geloescht statt ein leerer angelegt.
+  function carProfilGeaendert(e) { return !!(e && (e.alias || e.farbe)); }
+  function carStoreSchreiben(all) {
+    try { localStorage.setItem(CAR_STORE, JSON.stringify(all)); } catch (e) { /* privat */ }
+  }
   function carRemember(car) {
     const all = carStore();
-    all[String(car.device.id)] = { color: car.colorId, alias: car.alias || '' };
-    try { localStorage.setItem(CAR_STORE, JSON.stringify(all)); } catch (e) { /* privat */ }
+    const e = { color: car.colorId, alias: car.alias || '', farbe: !!car.farbeGewaehlt,
+                name: car.device.name || '' };
+    if (carProfilGeaendert(e)) all[String(car.device.id)] = e;
+    else delete all[String(car.device.id)];
+    carStoreSchreiben(all);
     // Die Bestandszeile der Sicherung nennt die gemerkten Autos - sie muss also mitgehen,
     // sobald hier eines dazukommt oder seinen Namen aendert. Defensiv gerufen, weil
     // 98b-sicherung.js SPAETER gebaut wird: zur Laufzeit ist die Funktion da.
@@ -31265,11 +31281,49 @@
   // punkts oder Anfuehrungszeichens darin - eine BluetoothDevice.id ist ein UUID-artiger
   // String, aber ungeprueft von aussen), nie im sichtbaren Text: sie sagt niemandem etwas
   // und ist lang genug, um jede Zeile zu sprengen.
+  // Alte Eintraege, die nur Standardwerte tragen, einmal beim Laden entfernen - sie
+  // stammen aus der Zeit, in der jedes verbundene Auto sofort gemerkt wurde.
+  (function carStoreBereinigen() {
+    const all = carStore();
+    let weg = 0;
+    for (const id of Object.keys(all)) {
+      if (!carProfilGeaendert(all[id])) { delete all[id]; weg++; }
+    }
+    if (weg) carStoreSchreiben(all);
+  })();
+
+  // ---- EIN GEMERKTES PROFIL VON HAND ZUORDNEN ------------------------------------
+  //
+  // BESTELLT: "lass mich ein gemerktes Auto anklicken und je verbundenem Auto zuordnen"
+  // und "keine Autos merken, das funktioniert nicht. Entweder reparieren, sodass beim
+  // Verbinden Farbe und Name wieder da ist, oder weglassen". Der Grund, warum es nicht
+  // griff: BluetoothDevice.id ist je Herkunft und ohne dauerhafte Erlaubnis nicht stabil -
+  // ein neuer Browserstart gibt dem Auto eine neue Kennung. Die Zuordnung per Klick macht
+  // das Profil unabhaengig davon; die neue Kennung wird dazugemerkt.
+  function carProfilZuordnen(id, car) {
+    const all = carStore();
+    const e = all[id];
+    if (!e || !car) return;
+    const belegt = garage.find(c => c !== car && c.colorId === e.color);
+    if (belegt) belegt.colorId = car.colorId;          // tauschen statt doppelt vergeben
+    car.colorId = e.color;
+    car.alias = e.alias || '';
+    car.farbeGewaehlt = !!e.farbe;
+    delete all[id];
+    all[String(car.device.id)] = Object.assign({}, e, { name: car.device.name || e.name || '' });
+    carStoreSchreiben(all);
+    carRetag();
+    if (typeof renderGarage === 'function') renderGarage();
+    if (typeof renderRaceGrid === 'function') renderRaceGrid();
+    carStoreListeZeichnen();
+    log('Profil "' + (e.alias || e.color) + '" zugeordnet: ' + garageLabel(car) + '.', 'info');
+  }
+
   function carStoreListeZeichnen() {
     const host = $('car-store-liste');
     if (!host) return;
     const roh = carStore();
-    const ids = Object.keys(roh);
+    const ids = Object.keys(roh).filter((id) => carProfilGeaendert(roh[id]));
     const alleBtn = $('car-store-alle-loeschen');
     if (alleBtn) alleBtn.hidden = ids.length < 2;
     if (!ids.length) {
@@ -31287,6 +31341,30 @@
            + '<button type="button" class="car-store-loeschen" title="Löschen"'
            + ' data-i18n-skip>&times;</button></span>';
     }).join('');
+    // Klick auf die Zeile (nicht auf das x): verbundene Autos zur Auswahl zeigen. Ist nur
+    // eines verbunden, gleich zuordnen.
+    host.querySelectorAll('.car-store-zeile').forEach((zeile) => {
+      zeile.onclick = (ev) => {
+        if (ev.target.closest('.car-store-loeschen') || ev.target.closest('.car-store-ziel')) return;
+        const id = decodeURIComponent(zeile.dataset.id);
+        const verbunden = garage.filter(c => c.device);
+        if (!verbunden.length) { showHudToast(t('Erst ein Auto verbinden')); return; }
+        if (verbunden.length === 1) { carProfilZuordnen(id, verbunden[0]); return; }
+        const alt = zeile.querySelector('.car-store-ziele');
+        if (alt) { alt.remove(); return; }
+        const box = document.createElement('span');
+        box.className = 'car-store-ziele';
+        verbunden.forEach((c) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'car-store-ziel';
+          b.textContent = '\u2192 ' + garageLabel(c);
+          b.onclick = (e2) => { e2.stopPropagation(); carProfilZuordnen(id, c); };
+          box.appendChild(b);
+        });
+        zeile.appendChild(box);
+      };
+    });
     host.querySelectorAll('.car-store-loeschen').forEach((btn) => {
       btn.onclick = () => {
         const id = decodeURIComponent(btn.closest('.car-store-zeile').dataset.id);
@@ -31313,7 +31391,26 @@
   // Farbe fuer ein neu verbundenes Auto. Gemerktes hat Vorrang, sonst die naechste noch
   // freie Farbe der Reihe - zwei Autos in derselben Farbe waeren keine Zuordnung.
   function carAssign(car) {
-    const merk = carStore()[String(car.device.id)] || {};
+    const alle = carStore();
+    let merk = alle[String(car.device.id)];
+    // RUECKFALL PER GERAETENAME: passt keine Kennung (neuer Browserstart, andere Herkunft),
+    // aber GENAU EIN gemerktes Profil traegt denselben Bluetooth-Namen und ist keinem
+    // verbundenen Auto zugeordnet, gilt es. Bei zwei gleich heissenden Autos entscheidet
+    // der Name nichts - dann bleibt die Zuordnung per Klick.
+    if (!merk && car.device.name) {
+      const vergeben = new Set(garage.filter(c => c !== car && c.device)
+                                      .map(c => String(c.device.id)));
+      const treffer = Object.keys(alle).filter((id) => !vergeben.has(id)
+        && alle[id].name === car.device.name && carProfilGeaendert(alle[id]));
+      if (treffer.length === 1) {
+        merk = alle[treffer[0]];
+        delete alle[treffer[0]];
+        alle[String(car.device.id)] = merk;
+        carStoreSchreiben(alle);
+      }
+    }
+    merk = merk || {};
+    car.farbeGewaehlt = !!merk.farbe;
     const belegt = new Set(garage.filter(c => c !== car).map(c => c.colorId));
     car.colorId = (merk.color && CAR_COLORS.some(c => c.id === merk.color)
                    && !belegt.has(merk.color))
@@ -31694,6 +31791,7 @@
           b.onclick = (ev) => {
             ev.stopPropagation();
             car.colorId = fb.id;
+            car.farbeGewaehlt = true;
             carRemember(car);
             pal.remove();
             renderGarage();
@@ -43020,6 +43118,52 @@
         window.confirm = echtConfirm;
         if (echt === null) { try { localStorage.removeItem(CAR_STORE); } catch (e) { /* privat */ } }
         else { try { localStorage.setItem(CAR_STORE, echt); } catch (e) { /* privat */ } }
+        carStoreListeZeichnen();
+      }
+    },
+
+    // Gemerkte Autos: nur Geaendertes wird gespeichert, Rueckfall per Geraetename, und die
+    // Zuordnung per Klick. Mit Attrappen in der Garage, danach alles zurueck.
+    carProfilProbe() {
+      const echt = localStorage.getItem(CAR_STORE);
+      const merkGarage = garage.splice(0, garage.length);
+      const auto = (id, name) => ({ device: { id, name }, role: 'steuern', colorId: 'weiss',
+                                    alias: '', ghost: null });
+      try {
+        localStorage.removeItem(CAR_STORE);
+        const a = auto('neu-1', 'Carrera Hybrid A');
+        garage.push(a);
+        carRemember(a);
+        const leerGespeichert = Object.keys(carStore()).length;
+        a.alias = 'Blitz'; carRemember(a);
+        const mitName = !!carStore()['neu-1'];
+        // Neue Kennung, gleicher Name: der Rueckfall muss "Blitz" finden.
+        garage.length = 0;
+        const b = auto('neu-2', 'Carrera Hybrid A');
+        garage.push(b);
+        carAssign(b);
+        const perName = b.alias;
+        const umgezogen = !!carStore()['neu-2'] && !carStore()['neu-1'];
+        // Zuordnung per Klick: ein anderes Profil auf ein anderes Auto.
+        localStorage.setItem(CAR_STORE, JSON.stringify(Object.assign(carStore(),
+          { alt: { color: 'rot', alias: 'Rakete', farbe: true, name: 'X' } })));
+        const c = auto('neu-3', 'Carrera Hybrid C');
+        garage.push(c);
+        carAssign(c);
+        carStoreListeZeichnen();
+        const zeile = document.querySelector('.car-store-zeile[data-id="alt"]');
+        if (zeile) zeile.click();
+        const ziel = zeile ? [...zeile.querySelectorAll('.car-store-ziel')]
+          .find((btn) => btn.textContent.indexOf(garageLabel(c)) >= 0) : null;
+        if (ziel) ziel.click();
+        return { leerGespeichert, mitName, perName, umgezogen,
+                 klickAlias: c.alias, klickFarbe: c.colorId };
+      } finally {
+        garage.length = 0;
+        merkGarage.forEach((x) => garage.push(x));
+        if (echt === null) localStorage.removeItem(CAR_STORE);
+        else localStorage.setItem(CAR_STORE, echt);
+        carRetag();
         carStoreListeZeichnen();
       }
     },
@@ -60070,6 +60214,25 @@
              mass: 'P1 -> Knopf ' + r.p1Index + ', P2 -> Knopf ' + r.p2Index
                  + ', je unberuehrt von der anderen Zuweisung'
                  + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
+  // ---- Gemerkte Autos: nur Geaendertes, Rueckfall per Name, Zuordnung per Klick ----
+  //
+  // BESTELLT: "keine Autos merken, das funktioniert nicht. Entweder reparieren [...] oder
+  // weglassen" und "nur speichern, wenn ich den default namen geaendert habe".
+  stAdd('Gemerkte Autos: nur Geaendertes, Rueckfall per Name, Zuordnung per Klick', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.carProfilProbe) return { skip: true, mass: 'Probe fehlt' };
+    const r = OMEGA_TEST.carProfilProbe();
+    const schlecht = [];
+    if (r.leerGespeichert !== 0) schlecht.push('unveraendertes Auto wurde gemerkt');
+    if (!r.mitName) schlecht.push('geaenderter Name wurde nicht gemerkt');
+    if (r.perName !== 'Blitz') schlecht.push('Rueckfall per Geraetename greift nicht (' + r.perName + ')');
+    if (!r.umgezogen) schlecht.push('Profil zog nicht auf die neue Kennung um');
+    if (r.klickAlias !== 'Rakete' || r.klickFarbe !== 'rot') {
+      schlecht.push('Zuordnung per Klick: ' + r.klickAlias + '/' + r.klickFarbe);
+    }
+    return { ok: !schlecht.length, mass: schlecht.length ? schlecht.join('; ')
+             : 'leer nicht gemerkt, Name gemerkt, per Name gefunden, per Klick zugeordnet' };
   });
 
   // ---- Auto-Verwaltung: gemerkte Autos einzeln und gesammelt loeschen ----------------

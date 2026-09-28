@@ -512,8 +512,8 @@
     "wartet auf die erste Bewegung": "waiting for the first movement",
     "Keine gemerkten Autos.": "No remembered cars.",
     "Alle gemerkten Autos wirklich löschen?": "Really delete all remembered cars?",
-    "Karteileichen entstehen, weil der Browser Autos nicht dauerhaft stabil wiedererkennt (neues Profil, anderer Browser) – hier lassen sie sich einzeln oder alle auf einmal entfernen.":
-      "Stale entries happen because the browser doesn't recognize cars reliably long-term (new profile, different browser) – here they can be removed one by one or all at once.",
+    "Gemerkt werden nur Autos mit geändertem Namen oder gewählter Farbe. Der Browser erkennt ein Auto nicht immer wieder – dann einen Eintrag antippen und dem verbundenen Auto zuordnen. Mit × entfernen.":
+      "Only cars with a changed name or a chosen colour are remembered. The browser does not always recognise a car again – then tap an entry and assign it to the connected car. Remove with ×.",
     "Zur Garage": "To the garage",
     "Zur Startseite": "To the home page",
     "Zum Cockpit →": "To the cockpit →",
@@ -677,7 +677,6 @@
     "Ergebnis": "Result",
     "Ergebnis, alle verbundenen Autos": "Result, all connected cars",
     "Erlaubt beim Anbremsen mehr Lenkung. Nicht die Gewichtsverlagerung, sondern ihr Gegenstück in der Lenkgrenze.": "Allows more steering while braking. Not the weight transfer, but its counterpart in the steering limit.",
-    "Erst ein Auto verbinden": "Connect a car first",
     "Erst simulieren, dann fahren. Der Knopf schickt die Kurven an ein verbundenes Auto und fährt sie einmal ab. Das ist bewusst ein": "Simulate first, then drive. The button sends the curves to a connected car and runs them once. That is deliberately one",
     "Es reproduziert die ältere DR!FT-Fassung zeichengenau, und von der ist berichtet, dass sie gelesen wird – auf beiden Fahrzeugfamilien. Damit ist es das eine Muster, bei dem ein Fehlschlag eindeutig ist: wird es nicht gelesen, kann es nicht am Muster liegen, sondern nur am Druck.": "It reproduces the older DR!FT version exactly, and that version is reported to be read on both car families. So it is the one pattern whose failure is unambiguous: if it is not read, the pattern cannot be the cause, only the printing.",
     "Fahr die Strecke einmal manuell (Tab \"Fahren\", Joystick/Gas oder Pfeiltasten). Während der Aufnahme werden Lenk- und Gaswerte mit Zeitstempel mitgeschrieben. Bei der Wiedergabe sendet die App exakt dieselbe Sequenz erneut an die Ziel-Characteristic.": "Drive the track once by hand (the \"Drive\" tab, joystick/throttle or arrow keys). During recording, steering and throttle values are written down with timestamps. On replay the app sends exactly the same sequence again to the target characteristic.",
@@ -758,6 +757,7 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Erst ein Auto verbinden": "Connect a car first",
     "Boxenstopp eingeleitet": "Pit stop initiated",
     "Rennmodus: links/rechts wählen": "Race mode: choose with left/right",
     "Rennmodus: Anwahl beendet": "Race mode: selection finished",

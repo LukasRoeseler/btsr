@@ -886,10 +886,23 @@
   // Reihenfolge, soll dasselbe Auto dieselbe Farbe und denselben Namen haben. Eine
   // Rennaufstellung einmal einzutragen und dann durch eine Funkstoerung zu verlieren waere
   // genau das, was diese Kennung verhindern soll.
+  // NUR GEAENDERTES IST EIN PROFIL. BESTELLT: "profile nur speichern, wenn ich den default
+  // namen geaendert habe" und in der Auswahl "nur die auflisten, bei denen Farbe oder Name
+  // oder beides geaendert wurde". Die automatisch vergebene Farbe haengt an der
+  // Verbindungsreihenfolge und ist deshalb keine Eigenschaft des Autos - gemerkt wird sie
+  // nur, wenn sie von Hand gewaehlt wurde (car.farbeGewaehlt). Ohne beides wird ein
+  // vorhandener Eintrag geloescht statt ein leerer angelegt.
+  function carProfilGeaendert(e) { return !!(e && (e.alias || e.farbe)); }
+  function carStoreSchreiben(all) {
+    try { localStorage.setItem(CAR_STORE, JSON.stringify(all)); } catch (e) { /* privat */ }
+  }
   function carRemember(car) {
     const all = carStore();
-    all[String(car.device.id)] = { color: car.colorId, alias: car.alias || '' };
-    try { localStorage.setItem(CAR_STORE, JSON.stringify(all)); } catch (e) { /* privat */ }
+    const e = { color: car.colorId, alias: car.alias || '', farbe: !!car.farbeGewaehlt,
+                name: car.device.name || '' };
+    if (carProfilGeaendert(e)) all[String(car.device.id)] = e;
+    else delete all[String(car.device.id)];
+    carStoreSchreiben(all);
     // Die Bestandszeile der Sicherung nennt die gemerkten Autos - sie muss also mitgehen,
     // sobald hier eines dazukommt oder seinen Namen aendert. Defensiv gerufen, weil
     // 98b-sicherung.js SPAETER gebaut wird: zur Laufzeit ist die Funktion da.
@@ -909,11 +922,49 @@
   // punkts oder Anfuehrungszeichens darin - eine BluetoothDevice.id ist ein UUID-artiger
   // String, aber ungeprueft von aussen), nie im sichtbaren Text: sie sagt niemandem etwas
   // und ist lang genug, um jede Zeile zu sprengen.
+  // Alte Eintraege, die nur Standardwerte tragen, einmal beim Laden entfernen - sie
+  // stammen aus der Zeit, in der jedes verbundene Auto sofort gemerkt wurde.
+  (function carStoreBereinigen() {
+    const all = carStore();
+    let weg = 0;
+    for (const id of Object.keys(all)) {
+      if (!carProfilGeaendert(all[id])) { delete all[id]; weg++; }
+    }
+    if (weg) carStoreSchreiben(all);
+  })();
+
+  // ---- EIN GEMERKTES PROFIL VON HAND ZUORDNEN ------------------------------------
+  //
+  // BESTELLT: "lass mich ein gemerktes Auto anklicken und je verbundenem Auto zuordnen"
+  // und "keine Autos merken, das funktioniert nicht. Entweder reparieren, sodass beim
+  // Verbinden Farbe und Name wieder da ist, oder weglassen". Der Grund, warum es nicht
+  // griff: BluetoothDevice.id ist je Herkunft und ohne dauerhafte Erlaubnis nicht stabil -
+  // ein neuer Browserstart gibt dem Auto eine neue Kennung. Die Zuordnung per Klick macht
+  // das Profil unabhaengig davon; die neue Kennung wird dazugemerkt.
+  function carProfilZuordnen(id, car) {
+    const all = carStore();
+    const e = all[id];
+    if (!e || !car) return;
+    const belegt = garage.find(c => c !== car && c.colorId === e.color);
+    if (belegt) belegt.colorId = car.colorId;          // tauschen statt doppelt vergeben
+    car.colorId = e.color;
+    car.alias = e.alias || '';
+    car.farbeGewaehlt = !!e.farbe;
+    delete all[id];
+    all[String(car.device.id)] = Object.assign({}, e, { name: car.device.name || e.name || '' });
+    carStoreSchreiben(all);
+    carRetag();
+    if (typeof renderGarage === 'function') renderGarage();
+    if (typeof renderRaceGrid === 'function') renderRaceGrid();
+    carStoreListeZeichnen();
+    log('Profil "' + (e.alias || e.color) + '" zugeordnet: ' + garageLabel(car) + '.', 'info');
+  }
+
   function carStoreListeZeichnen() {
     const host = $('car-store-liste');
     if (!host) return;
     const roh = carStore();
-    const ids = Object.keys(roh);
+    const ids = Object.keys(roh).filter((id) => carProfilGeaendert(roh[id]));
     const alleBtn = $('car-store-alle-loeschen');
     if (alleBtn) alleBtn.hidden = ids.length < 2;
     if (!ids.length) {
@@ -931,6 +982,30 @@
            + '<button type="button" class="car-store-loeschen" title="Löschen"'
            + ' data-i18n-skip>&times;</button></span>';
     }).join('');
+    // Klick auf die Zeile (nicht auf das x): verbundene Autos zur Auswahl zeigen. Ist nur
+    // eines verbunden, gleich zuordnen.
+    host.querySelectorAll('.car-store-zeile').forEach((zeile) => {
+      zeile.onclick = (ev) => {
+        if (ev.target.closest('.car-store-loeschen') || ev.target.closest('.car-store-ziel')) return;
+        const id = decodeURIComponent(zeile.dataset.id);
+        const verbunden = garage.filter(c => c.device);
+        if (!verbunden.length) { showHudToast(t('Erst ein Auto verbinden')); return; }
+        if (verbunden.length === 1) { carProfilZuordnen(id, verbunden[0]); return; }
+        const alt = zeile.querySelector('.car-store-ziele');
+        if (alt) { alt.remove(); return; }
+        const box = document.createElement('span');
+        box.className = 'car-store-ziele';
+        verbunden.forEach((c) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'car-store-ziel';
+          b.textContent = '\u2192 ' + garageLabel(c);
+          b.onclick = (e2) => { e2.stopPropagation(); carProfilZuordnen(id, c); };
+          box.appendChild(b);
+        });
+        zeile.appendChild(box);
+      };
+    });
     host.querySelectorAll('.car-store-loeschen').forEach((btn) => {
       btn.onclick = () => {
         const id = decodeURIComponent(btn.closest('.car-store-zeile').dataset.id);
@@ -957,7 +1032,26 @@
   // Farbe fuer ein neu verbundenes Auto. Gemerktes hat Vorrang, sonst die naechste noch
   // freie Farbe der Reihe - zwei Autos in derselben Farbe waeren keine Zuordnung.
   function carAssign(car) {
-    const merk = carStore()[String(car.device.id)] || {};
+    const alle = carStore();
+    let merk = alle[String(car.device.id)];
+    // RUECKFALL PER GERAETENAME: passt keine Kennung (neuer Browserstart, andere Herkunft),
+    // aber GENAU EIN gemerktes Profil traegt denselben Bluetooth-Namen und ist keinem
+    // verbundenen Auto zugeordnet, gilt es. Bei zwei gleich heissenden Autos entscheidet
+    // der Name nichts - dann bleibt die Zuordnung per Klick.
+    if (!merk && car.device.name) {
+      const vergeben = new Set(garage.filter(c => c !== car && c.device)
+                                      .map(c => String(c.device.id)));
+      const treffer = Object.keys(alle).filter((id) => !vergeben.has(id)
+        && alle[id].name === car.device.name && carProfilGeaendert(alle[id]));
+      if (treffer.length === 1) {
+        merk = alle[treffer[0]];
+        delete alle[treffer[0]];
+        alle[String(car.device.id)] = merk;
+        carStoreSchreiben(alle);
+      }
+    }
+    merk = merk || {};
+    car.farbeGewaehlt = !!merk.farbe;
     const belegt = new Set(garage.filter(c => c !== car).map(c => c.colorId));
     car.colorId = (merk.color && CAR_COLORS.some(c => c.id === merk.color)
                    && !belegt.has(merk.color))
@@ -1338,6 +1432,7 @@
           b.onclick = (ev) => {
             ev.stopPropagation();
             car.colorId = fb.id;
+            car.farbeGewaehlt = true;
             carRemember(car);
             pal.remove();
             renderGarage();
