@@ -1464,6 +1464,7 @@
     // .aktiv/.car von Hand setzen, ohne den echten garageScanStart() durchlaufen zu
     // muessen) wirken direkt, weil hier keine Kopie herausgeht.
     garageScan,
+    padDpad,
 
     // ---- GARAGENSCAN: SCHLIESST DIE RUNDE, UND WENN NICHT, WIRD ES NOCHMAL VERSUCHT ---
     //

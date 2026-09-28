@@ -766,10 +766,46 @@
   // Also beides: erst die Knoepfe, dann als Rueckfall die Achsen ab Index 4 - die Achsen 0
   // bis 3 sind die beiden Sticks und duerfen das Kreuz nicht ausloesen.
   const DPAD_AXIS_THRESHOLD = 0.6;
+  // ---- HAT-SCHALTER (DualShock 4 ohne Standard-Mapping) ---------------------------
+  //
+  // GEMELDET: "d-pad auf DualSense zur Menue-Navigation klappt, aber auf DualShock 4
+  // nicht". Ein DS4 ohne 'standard'-Mapping meldet das Kreuz als EINE Achse mit acht
+  // Stufen (-1, -5/7, ... +5/7 im Uhrzeigersinn ab "hoch") und in Ruhe +9/7 = 1,286.
+  // Die Paar-Logik darunter las diese Ruhe als "runter gedrueckt" - und eine Taste, die
+  // nie losgelassen wird, loest nie aus. Dazu ruhen seine Trigger-Achsen bei -1, was die
+  // Paar-Logik als "links" las.
+  //
+  // Also je Pad gemerkt: eine Achse, die je ueber 1,05 stand, ist ein Hat; eine Achse,
+  // die beim ersten Blick bei -1 ruhte, ist ein Trigger und gehoert nicht zum Kreuz.
+  // (Aus Chromes HID-Abbildung abgeleitet, nicht an einem DS4 hier gemessen.)
+  const padAchsenInfo = new Map();
+  function padAchsen(pad) {
+    const key = pad.index + '|' + pad.id;
+    let info = padAchsenInfo.get(key);
+    const ax = pad.axes || [];
+    if (!info) {
+      info = { hat: new Set(), trigger: new Set() };
+      ax.forEach((v, i) => { if (i >= 4 && v < -0.9) info.trigger.add(i); });
+      padAchsenInfo.set(key, info);
+    }
+    ax.forEach((v, i) => { if (v > 1.05) info.hat.add(i); });
+    return info;
+  }
+  const HAT_RICHTUNGEN = [['up'], ['up', 'right'], ['right'], ['down', 'right'], ['down'],
+                          ['down', 'left'], ['left'], ['up', 'left']];
+  function hatRichtung(v, dir) {
+    if (!(v >= -1.05 && v <= 1.05)) return false;       // Ruhe (1,286) oder Unsinn
+    const k = Math.round((v + 1) * 3.5);
+    return !!HAT_RICHTUNGEN[k] && HAT_RICHTUNGEN[k].indexOf(dir) >= 0;
+  }
   function padDpad(pad, dir) {
     if (padButtonPressed(pad, DPAD[dir])) return true;
     const ax = pad.axes || [];
+    const info = padAchsen(pad);
+    for (const i of info.hat) if (hatRichtung(ax[i], dir)) return true;
     for (let i = 4; i + 1 < ax.length; i += 2) {
+      if (info.hat.has(i) || info.hat.has(i + 1)
+          || info.trigger.has(i) || info.trigger.has(i + 1)) continue;
       const x = ax[i] || 0, y = ax[i + 1] || 0;
       if (dir === 'left' && x < -DPAD_AXIS_THRESHOLD) return true;
       if (dir === 'right' && x > DPAD_AXIS_THRESHOLD) return true;

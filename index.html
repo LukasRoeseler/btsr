@@ -403,29 +403,25 @@
     display: grid; gap: 14px;
     grid-template-columns: 1fr;
   }
+  /* EINE ZEILE JE KACHEL: Symbol links, Titel daneben, kein Untertitel. BESTELLT: "die
+     Hoehe der Kacheln in den Menues noch mehr verringern. Dazu den Untertitel weglassen und
+     den Titel in dieselbe Zeile wie das Symbol tun. Im Quermodus sehe ich sonst immer nur 2
+     Kacheln." Vorher 150 px Mindesthoehe mit Symbol ueber dem Titel. Der Untertitel bleibt im
+     Markup (Wörterbuch, Vorlesen), wird nur nicht gezeigt. Einspaltig wie bisher, siehe oben. */
   .misc-tile {
-    display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
-    text-align: left; padding: 20px 18px; min-height: 150px;
+    display: flex; flex-direction: row; align-items: center; gap: 12px;
+    text-align: left; padding: 10px 14px; min-height: 0;
     background: var(--panel-2); border: 1px solid var(--border-strong); border-radius: 6px;
     color: inherit; font: inherit; cursor: pointer;
   }
   .misc-tile:hover { background: var(--panel-3); border-color: var(--bad); }
-  .misc-tile svg { width: 42px; height: 42px; flex-shrink: 0; }
+  .misc-tile svg { width: 26px; height: 26px; flex-shrink: 0; }
   .misc-tile b {
     font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .09em;
     text-shadow: 1px 0 0 var(--glitch-r), -1px 0 0 var(--glitch-c);
   }
-  .misc-tile span { font-size: 12.5px; color: var(--muted); font-weight: 400; }
-  /* Kacheln der Unterseiten auf dem Handy schmaler: die 150-px-Mindesthoehe und das grosse
-     Polster machen aus einer Menuezeile eine Karte, und auf einem 360-px-Schirm passt dann
-     nur eine Kachel auf den Bildschirm - Navigieren wird zum Scrollen. Kompakter werden
-     mehrere sichtbar, und das D-Pad (50b-menu-nav.js) kommt schneller von Kachel zu Kachel. */
-  @media (max-width: 560px) {
-    .misc-tile { min-height: 0; padding: 12px 14px; gap: 7px; }
-    .misc-tile svg { width: 30px; height: 30px; }
-    .misc-tile b { font-size: 12px; }
-    .misc-tile span { font-size: 11.5px; }
-  }
+  .misc-tile span { display: none; }
+  .misc-grid { gap: 8px; }
   /* Unterseiten innerhalb eines Tabs: eine Kachelseite, und je Kachel eine Karte.
      Dasselbe Muster wie "Sonstige", nur innerhalb eines Tabs statt zwischen Tabs - der
      Streckentab hatte sechs Karten untereinander, und man musste an fuenf vorbeiscrollen,
@@ -3185,7 +3181,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.8.2</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.3</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -31029,10 +31025,46 @@
   // Also beides: erst die Knoepfe, dann als Rueckfall die Achsen ab Index 4 - die Achsen 0
   // bis 3 sind die beiden Sticks und duerfen das Kreuz nicht ausloesen.
   const DPAD_AXIS_THRESHOLD = 0.6;
+  // ---- HAT-SCHALTER (DualShock 4 ohne Standard-Mapping) ---------------------------
+  //
+  // GEMELDET: "d-pad auf DualSense zur Menue-Navigation klappt, aber auf DualShock 4
+  // nicht". Ein DS4 ohne 'standard'-Mapping meldet das Kreuz als EINE Achse mit acht
+  // Stufen (-1, -5/7, ... +5/7 im Uhrzeigersinn ab "hoch") und in Ruhe +9/7 = 1,286.
+  // Die Paar-Logik darunter las diese Ruhe als "runter gedrueckt" - und eine Taste, die
+  // nie losgelassen wird, loest nie aus. Dazu ruhen seine Trigger-Achsen bei -1, was die
+  // Paar-Logik als "links" las.
+  //
+  // Also je Pad gemerkt: eine Achse, die je ueber 1,05 stand, ist ein Hat; eine Achse,
+  // die beim ersten Blick bei -1 ruhte, ist ein Trigger und gehoert nicht zum Kreuz.
+  // (Aus Chromes HID-Abbildung abgeleitet, nicht an einem DS4 hier gemessen.)
+  const padAchsenInfo = new Map();
+  function padAchsen(pad) {
+    const key = pad.index + '|' + pad.id;
+    let info = padAchsenInfo.get(key);
+    const ax = pad.axes || [];
+    if (!info) {
+      info = { hat: new Set(), trigger: new Set() };
+      ax.forEach((v, i) => { if (i >= 4 && v < -0.9) info.trigger.add(i); });
+      padAchsenInfo.set(key, info);
+    }
+    ax.forEach((v, i) => { if (v > 1.05) info.hat.add(i); });
+    return info;
+  }
+  const HAT_RICHTUNGEN = [['up'], ['up', 'right'], ['right'], ['down', 'right'], ['down'],
+                          ['down', 'left'], ['left'], ['up', 'left']];
+  function hatRichtung(v, dir) {
+    if (!(v >= -1.05 && v <= 1.05)) return false;       // Ruhe (1,286) oder Unsinn
+    const k = Math.round((v + 1) * 3.5);
+    return !!HAT_RICHTUNGEN[k] && HAT_RICHTUNGEN[k].indexOf(dir) >= 0;
+  }
   function padDpad(pad, dir) {
     if (padButtonPressed(pad, DPAD[dir])) return true;
     const ax = pad.axes || [];
+    const info = padAchsen(pad);
+    for (const i of info.hat) if (hatRichtung(ax[i], dir)) return true;
     for (let i = 4; i + 1 < ax.length; i += 2) {
+      if (info.hat.has(i) || info.hat.has(i + 1)
+          || info.trigger.has(i) || info.trigger.has(i + 1)) continue;
       const x = ax[i] || 0, y = ax[i + 1] || 0;
       if (dir === 'left' && x < -DPAD_AXIS_THRESHOLD) return true;
       if (dir === 'right' && x > DPAD_AXIS_THRESHOLD) return true;
@@ -41749,6 +41781,7 @@
     // .aktiv/.car von Hand setzen, ohne den echten garageScanStart() durchlaufen zu
     // muessen) wirken direkt, weil hier keine Kopie herausgeht.
     garageScan,
+    padDpad,
 
     // ---- GARAGENSCAN: SCHLIESST DIE RUNDE, UND WENN NICHT, WIRD ES NOCHMAL VERSUCHT ---
     //
@@ -57999,6 +58032,30 @@
              mass: mitOrt.length + ' Takte geortet, ' + mitBlick.length
                  + ' davon mit Vorausblick (muss 0 sein)'
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- D-Pad am DualShock 4: Hat-Achse statt Knoepfe ----
+  //
+  // GEMELDET: "d-pad auf dualshock 4 nicht" (DualSense und Billig-Pad gehen). Ein DS4 ohne
+  // Standard-Mapping meldet das Kreuz als EINE Achse (hier Achse 9), in Ruhe 9/7, und seine
+  // Trigger ruhen bei -1. Ruhe darf keine Richtung melden, jede Stufe genau ihre.
+  stAdd('D-Pad: DualShock-4-Hat-Achse ohne Standard-Mapping', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.padDpad) return { skip: true, mass: 'padDpad fehlt' };
+    const knoepfe = Array.from({ length: 14 }, () => ({ pressed: false, value: 0 }));
+    const pad = (hat) => ({ index: 7, id: 'Wireless Controller (Selbsttest DS4)', mapping: '',
+                            buttons: knoepfe, axes: [0, 0, 0, -1, -1, 0, 0, 0, 0, hat] });
+    const RICHT = ['up', 'down', 'left', 'right'];
+    const lies = (hat) => RICHT.filter((d) => OMEGA_TEST.padDpad(pad(hat), d)).join('+') || '-';
+    const soll = { '1.2857': '-', '-1': 'up', '-0.4286': 'right', '0.1429': 'down',
+                   '0.7143': 'left', '-0.7143': 'up+right' };
+    const schlecht = [], teile = [];
+    for (const [v, erwartet] of Object.entries(soll)) {
+      const ist = lies(parseFloat(v));
+      teile.push(v + ' -> ' + ist);
+      if (ist !== erwartet) schlecht.push(v + ': ' + ist + ' statt ' + erwartet);
+    }
+    return { ok: !schlecht.length,
+             mass: teile.join(', ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
   // ---- Streckenscan: Querlage 0 auch OHNE bekannte Strecke, und sauber abgeraeumt ----

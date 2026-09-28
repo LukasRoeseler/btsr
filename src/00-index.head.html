@@ -403,29 +403,25 @@
     display: grid; gap: 14px;
     grid-template-columns: 1fr;
   }
+  /* EINE ZEILE JE KACHEL: Symbol links, Titel daneben, kein Untertitel. BESTELLT: "die
+     Hoehe der Kacheln in den Menues noch mehr verringern. Dazu den Untertitel weglassen und
+     den Titel in dieselbe Zeile wie das Symbol tun. Im Quermodus sehe ich sonst immer nur 2
+     Kacheln." Vorher 150 px Mindesthoehe mit Symbol ueber dem Titel. Der Untertitel bleibt im
+     Markup (Wörterbuch, Vorlesen), wird nur nicht gezeigt. Einspaltig wie bisher, siehe oben. */
   .misc-tile {
-    display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
-    text-align: left; padding: 20px 18px; min-height: 150px;
+    display: flex; flex-direction: row; align-items: center; gap: 12px;
+    text-align: left; padding: 10px 14px; min-height: 0;
     background: var(--panel-2); border: 1px solid var(--border-strong); border-radius: 6px;
     color: inherit; font: inherit; cursor: pointer;
   }
   .misc-tile:hover { background: var(--panel-3); border-color: var(--bad); }
-  .misc-tile svg { width: 42px; height: 42px; flex-shrink: 0; }
+  .misc-tile svg { width: 26px; height: 26px; flex-shrink: 0; }
   .misc-tile b {
     font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .09em;
     text-shadow: 1px 0 0 var(--glitch-r), -1px 0 0 var(--glitch-c);
   }
-  .misc-tile span { font-size: 12.5px; color: var(--muted); font-weight: 400; }
-  /* Kacheln der Unterseiten auf dem Handy schmaler: die 150-px-Mindesthoehe und das grosse
-     Polster machen aus einer Menuezeile eine Karte, und auf einem 360-px-Schirm passt dann
-     nur eine Kachel auf den Bildschirm - Navigieren wird zum Scrollen. Kompakter werden
-     mehrere sichtbar, und das D-Pad (50b-menu-nav.js) kommt schneller von Kachel zu Kachel. */
-  @media (max-width: 560px) {
-    .misc-tile { min-height: 0; padding: 12px 14px; gap: 7px; }
-    .misc-tile svg { width: 30px; height: 30px; }
-    .misc-tile b { font-size: 12px; }
-    .misc-tile span { font-size: 11.5px; }
-  }
+  .misc-tile span { display: none; }
+  .misc-grid { gap: 8px; }
   /* Unterseiten innerhalb eines Tabs: eine Kachelseite, und je Kachel eine Karte.
      Dasselbe Muster wie "Sonstige", nur innerhalb eines Tabs statt zwischen Tabs - der
      Streckentab hatte sechs Karten untereinander, und man musste an fuenf vorbeiscrollen,
@@ -3185,7 +3181,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.8.2</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.3</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>

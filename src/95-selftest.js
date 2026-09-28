@@ -8686,6 +8686,30 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- D-Pad am DualShock 4: Hat-Achse statt Knoepfe ----
+  //
+  // GEMELDET: "d-pad auf dualshock 4 nicht" (DualSense und Billig-Pad gehen). Ein DS4 ohne
+  // Standard-Mapping meldet das Kreuz als EINE Achse (hier Achse 9), in Ruhe 9/7, und seine
+  // Trigger ruhen bei -1. Ruhe darf keine Richtung melden, jede Stufe genau ihre.
+  stAdd('D-Pad: DualShock-4-Hat-Achse ohne Standard-Mapping', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.padDpad) return { skip: true, mass: 'padDpad fehlt' };
+    const knoepfe = Array.from({ length: 14 }, () => ({ pressed: false, value: 0 }));
+    const pad = (hat) => ({ index: 7, id: 'Wireless Controller (Selbsttest DS4)', mapping: '',
+                            buttons: knoepfe, axes: [0, 0, 0, -1, -1, 0, 0, 0, 0, hat] });
+    const RICHT = ['up', 'down', 'left', 'right'];
+    const lies = (hat) => RICHT.filter((d) => OMEGA_TEST.padDpad(pad(hat), d)).join('+') || '-';
+    const soll = { '1.2857': '-', '-1': 'up', '-0.4286': 'right', '0.1429': 'down',
+                   '0.7143': 'left', '-0.7143': 'up+right' };
+    const schlecht = [], teile = [];
+    for (const [v, erwartet] of Object.entries(soll)) {
+      const ist = lies(parseFloat(v));
+      teile.push(v + ' -> ' + ist);
+      if (ist !== erwartet) schlecht.push(v + ': ' + ist + ' statt ' + erwartet);
+    }
+    return { ok: !schlecht.length,
+             mass: teile.join(', ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Streckenscan: Querlage 0 auch OHNE bekannte Strecke, und sauber abgeraeumt ----
   //
   // BESTELLT: "Wenn ich Strecke scannen druecke, muss sich mein Auto wie ein Ghost mit
