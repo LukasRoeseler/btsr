@@ -289,6 +289,8 @@
   function konsoleZeichnen() {
     const tab = kAktiverTab();
     document.body.classList.toggle('k-titel-an', tab === 'home');
+    // Die zwei Kachelschirme fuellen genau den Bildschirm (CSS: body.k-kacheln).
+    document.body.classList.toggle('k-kacheln', tab === 'haupt' || tab === 'fahren');
     // Hintergrund
     const bg = $('k-bg');
     if (bg) {

@@ -757,6 +757,7 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Neues Menü passt sich jeder Bildschirmgröße an und füllt am Telefon quer genau den Schirm; die Android-App bleibt im Querformat.": "The new menu adapts to every screen size and exactly fills a phone held sideways; the Android app stays in landscape.",
     "Neues Menü im Stil von Assetto Corsa Competizione (WIP): Titelbildschirm, Hauptmenü, Fahren-Schirm mit Auto, Rennoptionen und Strecke, PS5-Tasten (Kreuz, Kreis, L1/R1), Cockpit-Menü über Options halten.": "New menu in the style of Assetto Corsa Competizione (WIP): title screen, main menu, drive screen with car, race options and track, PS5 buttons (cross, circle, L1/R1), cockpit menu by holding Options.",
     "Nur in der Android-App: Version, Updates ohne neue APK.": "Android app only: version, updates without a new APK.",
     "Titel": "Title",
