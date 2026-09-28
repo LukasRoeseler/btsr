@@ -398,13 +398,18 @@
   //
   // Der Drift-Modus faehrt wie "Aus" - rohe Stickstellung, keine Gaenge -, deshalb ist
   // physicsEnabled dort false. Was ihn unterscheidet, sitzt im Sendeweg: das Gegensteuern.
+  // PACEJKA ist "Physik" plus ein Schritt: dieselbe Kette (Gaenge, Reibkreis, Kennlinien),
+  // danach formt pacejkaStep() den Lenkbefehl am Limit. Deshalb physicsEnabled = true, und
+  // der Unterschied sitzt allein in config.pacejka - fuer BEIDE Autos.
   function physModusAnwenden(melden) {
     const v = $('phys-mode') ? $('phys-mode').value : 'physik';
     driftModus = (v === 'drift');
-    physicsEnabled = (v === 'physik');
+    physicsEnabled = (v === 'physik' || v === 'pacejka');
+    physEngine.config.pacejka = physEngine2.config.pacejka = (v === 'pacejka');
     physLastTime = null;
     if (melden) {
       log('Steuerungsmodus: ' + (v === 'physik' ? 'Physik'
+                             : v === 'pacejka' ? 'Pacejka (experimentell)'
                              : v === 'drift' ? 'Drift (experimentell)'
                              : 'Aus, rohe Stickstellung'), 'info');
     }
@@ -442,6 +447,47 @@
       out.textContent = teile.join(' \u00b7 ');
       log('Drift-Probe: ' + teile.join(' | '), 'info');
     });
+  }
+
+  // Die zwei Stellschrauben des Pacejka-Modus, fuer beide Autos gleich.
+  if ($('setting-pac-ueber')) {
+    const ueber = () => {
+      physEngine.config.pacejkaUebersteuern = physEngine2.config.pacejkaUebersteuern
+        = $('setting-pac-ueber').checked;
+    };
+    $('setting-pac-ueber').addEventListener('change', ueber);
+    ueber();
+  }
+  if ($('setting-pac-grenze')) {
+    const grenze = (v) => {
+      physEngine.config.pacejkaGrenze = physEngine2.config.pacejkaGrenze = v;
+      $('setting-pac-grenze-val').textContent = Math.round(v * 100) + '%';
+    };
+    $('setting-pac-grenze').addEventListener('input', (e) => grenze(parseFloat(e.target.value)));
+    grenze(parseFloat($('setting-pac-grenze').value));
+  }
+
+  // ---- Rueckmeldung aus dem Pacejka-Modus: Vibration ------------------------------------
+  //
+  // BESTELLT: "Beim Unter- und Uebersteuern soll Controllervibration getriggert werden."
+  // Untersteuern ist ein ZUSTAND (die Front schiebt) - ein leises Brummen im weichen Motor,
+  // solange es anhaelt. Uebersteuern ist ein EREIGNIS (das Heck kommt) - ein kraeftiger
+  // Stoss im starken Motor. Hoechstens alle 250 ms ein Aufruf je Spieler, sonst stapeln
+  // sich die Effekte im Pad. `wer` sorgt dafuer, dass nur der eigene Pad ruettelt.
+  const pacRumbleZuletzt = { 1: 0, 2: 0 };
+  function pacejkaRueckmeldung(motor, wer) {
+    if (!motor.config.pacejka) return false;
+    const st = motor.state;
+    if (!st.pacZustand) return false;
+    const jetzt = performance.now();
+    if (jetzt - pacRumbleZuletzt[wer] < 250) return false;
+    pacRumbleZuletzt[wer] = jetzt;
+    if (st.pacZustand === 'ueber') {
+      const k = Math.min(1, st.pacUeber / motor.config.pacejkaUeberMax);
+      return padRumble(0.45 + 0.5 * k, 0.2, 240, 'rutschen', wer);
+    }
+    const k = Math.min(1, (1 - st.pacUnter) * 4);
+    return padRumble(0, 0.18 + 0.4 * k, 260, 'rutschen', wer);
   }
 
   if ($('setting-countersteer')) {
@@ -561,7 +607,7 @@
   // Schalter ergeben, und mit sechs Kaestchen waeren es sechs.
   const VIB_KAESTCHEN = { 'vib-schalt': 'schalt', 'vib-abs': 'abs', 'vib-crash': 'crash',
                           'vib-abseits': 'abseits', 'vib-box': 'box',
-                          'vib-meldung': 'meldung' };
+                          'vib-meldung': 'meldung', 'vib-rutschen': 'rutschen' };
   Object.keys(VIB_KAESTCHEN).forEach((id) => {
     const el = $(id);
     if (!el) return;
@@ -1962,8 +2008,12 @@
         const grad = Math.abs(st.yawRate * 180 / Math.PI);
         const soll = Math.abs(st.yawSteady);
         const anteil = soll > 0.02 ? Math.round(100 * Math.abs(st.yawRate) / soll) : null;
+        // Im Pacejka-Modus dazu, WAS gerade passiert - das ist dort die eigentliche Aussage.
+        const pac = physEngine.config.pacejka
+          ? (st.pacZustand === 'ueber' ? ' · ' + t('Übersteuern')
+            : st.pacZustand === 'unter' ? ' · ' + t('Untersteuern') : '') : '';
         yawEl.textContent = grad.toFixed(0) + '°/s'
-          + (anteil === null ? '' : ' · ' + Math.min(999, anteil) + '%');
+          + (anteil === null ? '' : ' · ' + Math.min(999, anteil) + '%') + pac;
       }
     }
     const gx = Math.max(-1, Math.min(1, gyroRaw.x / gyroRaw.span));
@@ -2754,6 +2804,7 @@
     ps.dirtyAir += (ziel - ps.dirtyAir) * Math.min(1, dt * 4);
     const out = physEngine.update({ steering: steer, throttle: rawThrottle, brake: rawBrake,
                                     headlights: headlightsOn }, dt);
+    pacejkaRueckmeldung(physEngine, 1);
     updateDashboard(out);
     // Gefahrene Strecke mitzaehlen, siehe 97-sessions.js. Hier und nicht dort, weil dies
     // der einzige Ort mit einem verlaesslichen dt ist - und ausdruecklich OHNE
@@ -2859,6 +2910,7 @@
     const out = physEngine2.update({ steering: lenkung, throttle: gas,
                                      brake: bremse,
                                      headlights: headlightsOn }, dt);
+    pacejkaRueckmeldung(physEngine2, 2);
     // Der Motorton von Auto 2, aus SEINER Drehzahl - dieselbe Zahl, die seine Anzeige
     // bekommt. Defensiv gerufen, weil 80-sound.js SPAETER gebaut wird: zur Laufzeit ist die
     // Funktion da, zur Ladezeit waere ein Zugriff die temporale Todeszone.

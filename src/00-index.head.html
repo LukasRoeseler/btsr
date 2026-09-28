@@ -3234,7 +3234,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.8.9</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.10</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7256,12 +7256,39 @@
           Stickstellung ohne G&auml;nge, wie ein Fernsteuerungsauto. Drift: rohes Gas wie
           bei &bdquo;Aus&ldquo;, dazu ein automatisches Gegensteuern gegen das gemessene
           Drehsignal des Autos und eine weichere Lenkung. Der Drift-Modus ist experimentell,
-          und die Zeile darunter sagt, warum.</small></div>
+          und die Zeile darunter sagt, warum.</small>
+          <small>Pacejka: wie Physik, dazu Reifen mit Haftgrenze nach der Magic Formula. Das
+          Einspurmodell beschreibt, wie sich das Auto dreht; Pacejka beschreibt, wie viel
+          Seitenkraft ein Reifen h&auml;lt, bevor er rutscht. Unterhalb der Grenze f&auml;hrt es
+          sich wie Physik. Schiebt die Vorderachse &uuml;ber die Grenze, kommt weniger
+          Einschlag an (Untersteuern); rutscht das Heck, gibt die App Einschlag in die Kurve
+          dazu, und man muss gegenlenken (&Uuml;bersteuern). Beides vibriert und quietscht.
+          Experimentell.</small></div>
         <select id="phys-mode">
           <option value="physik" selected>Physik</option>
+          <option value="pacejka">Pacejka (experimentell)</option>
           <option value="aus">Aus, rohe Stickstellung</option>
           <option value="drift">Drift (experimentell)</option>
         </select></div>
+      <!-- BESTELLT: "Eventuell sage ich spaeter, dass das Uebersteuern abgeschaltet werden
+           soll" - deshalb von Anfang an ein eigener Schalter. -->
+      <div class="opt-row"><div class="opt-label">&Uuml;bersteuern (Pacejka)
+          <span class="wip-tag">experimentell</span>
+          <small>Nur im Modus Pacejka. Aus: das Heck bricht nie aus, nur das Schieben
+          &uuml;ber die Vorderr&auml;der bleibt.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-pac-ueber" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Haftgrenze (Pacejka)
+          <span class="wip-tag">experimentell</span>
+          <small>Nur im Modus Pacejka. Wo der Scheitel der Reifenkurve liegt, gemessen an der
+          Querausnutzung des Reibkreises. Kleiner hei&szlig;t fr&uuml;her am Limit. Bei 70 %
+          ist voller Einschlag ab etwa 115 km/h zu viel. Regen und kalte Reifen senken die
+          Grenze zus&auml;tzlich.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-pac-grenze" min="0.4" max="1.2" step="0.05" value="0.7">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-pac-grenze-val">70%</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Gegensteuern im Drift
           <span class="wip-tag">experimentell</span>
           <small>Wie stark gegen das Ausbrechen gelenkt wird, gemessen am Drehsignal aus
@@ -7356,6 +7383,10 @@
           <small>Einfahrt, Beginn der Arbeit, fertig, und ein leiser Puls, solange man in
           der Gasse rollt.</small></div>
         <label class="tgl"><input type="checkbox" id="vib-box" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Unter- und &Uuml;bersteuern
+          <small>Nur im Modus Pacejka. Leises Brummen, solange die Front schiebt; ein
+          kr&auml;ftiger Sto&szlig;, wenn das Heck kommt.</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-rutschen" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Meldungen
           <small>Wetterwechsel und leerer Tank. Standard aus: das sind Nachrichten und
           keine Kr&auml;fte am Auto &ndash; wer sie will, bekommt sie hier.</small></div>

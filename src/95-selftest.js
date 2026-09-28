@@ -5031,6 +5031,101 @@
   // BESTELLT: "wie beschleunigungskurve auch lenkkurve einbauen als option mit slider."
   // Dieselben Zusicherungen wie bei der Gaskennlinie, bipolar: -1 bleibt -1, 0 bleibt 0,
   // 1 bleibt 1, fuer jeden Exponenten - und das Vorzeichen darf sich nie umdrehen.
+  // ---- PACEJKA-MODUS ----
+  //
+  // BESTELLT: "Bau es in dieser Runde mit ein. Nenn den 4. Modus Pacejka." Und seit Wochen:
+  // "Handling ist perfekt - daran nichts mehr aendern". Der erste Test haelt das zweite fest:
+  // die Summen stammen aus dem Stand VOR dem Pacejka-Code (v0.8.9), gemessen mit derselben
+  // Eingabefolge. Weicht "Physik" auch nur in der sechsten Stelle ab, ist das Handling
+  // veraendert worden.
+  stAdd('Pacejka: Modus "Physik" bitgleich mit dem Stand davor', () => {
+    const soll = [
+      [null, { servo: 140.952063, betrag: 314.834272, kmh: 1510.680251 }],
+      [{ steerCalib: 2.5, steerResponse: 3.0 },
+       { servo: 277.874076, betrag: 684.31507, kmh: 1510.690502 }],
+    ];
+    const schlecht = [];
+    for (const [patch, erwartet] of soll) {
+      const ist = OMEGA_TEST.physikFingerabdruck(patch);
+      for (const k of Object.keys(erwartet)) {
+        if (ist[k] !== erwartet[k]) {
+          schlecht.push((patch ? 'Pro ' : 'Vorgabe ') + k + ' ' + ist[k] + ' statt ' + erwartet[k]);
+        }
+      }
+    }
+    return { ok: !schlecht.length, mass: schlecht.length ? schlecht.join('; ') : 'Servo- und Temposummen unveraendert' };
+  });
+
+  stAdd('Pacejka: Moduswahl schaltet beide Autos, Physik-Kette bleibt an', () => {
+    const el = $('phys-mode');
+    if (!el || !el.querySelector('option[value="pacejka"]')) return { ok: false, mass: 'Option pacejka fehlt' };
+    const merk = el.value;
+    const schlecht = [];
+    try {
+      el.value = 'pacejka'; el.dispatchEvent(new Event('change', { bubbles: true }));
+      if (!physicsEnabled) schlecht.push('Physik-Kette aus');
+      if (!physEngine.config.pacejka) schlecht.push('Auto 1 nicht an');
+      if (!physEngine2.config.pacejka) schlecht.push('Auto 2 nicht an');
+      el.value = 'physik'; el.dispatchEvent(new Event('change', { bubbles: true }));
+      if (physEngine.config.pacejka || physEngine2.config.pacejka) schlecht.push('bleibt nach Physik an');
+    } finally {
+      el.value = merk; el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    return { ok: !schlecht.length, mass: schlecht.length ? schlecht.join('; ') : 'an und wieder aus, fuer beide' };
+  });
+
+  stAdd('Pacejka: unterhalb der Haftgrenze exakt wie Physik', () => {
+    const o = { kmh: 60, lenk: 0.5 };
+    const a = OMEGA_TEST.pacejkaFahrt(Object.assign({ pacejka: false }, o));
+    const b = OMEGA_TEST.pacejkaFahrt(Object.assign({ pacejka: true }, o));
+    const ok = a.servo === b.servo && !b.zustand && b.nutzV < 1 && b.nutzH < 1;
+    return { ok, mass: 'Servo ' + a.servo.toFixed(4) + ' / ' + b.servo.toFixed(4)
+                       + ', Ausnutzung vorn ' + b.nutzV.toFixed(2) + ', hinten ' + b.nutzH.toFixed(2) };
+  });
+
+  stAdd('Pacejka: Untersteuern kuerzt den Einschlag jenseits der Grenze', () => {
+    const o = { kmh: 200, lenk: 1, patch: { steerCalib: 2.5, steerResponse: 3.0,
+                                            pacejkaUebersteuern: false } };
+    const a = OMEGA_TEST.pacejkaFahrt(Object.assign({ pacejka: false }, o));
+    const b = OMEGA_TEST.pacejkaFahrt(Object.assign({ pacejka: true }, o));
+    const ok = b.servo < a.servo - 0.2 && b.zustand === 'unter';
+    return { ok, mass: '200 km/h, voller Einschlag: Physik ' + a.servo.toFixed(2)
+                       + ', Pacejka ' + b.servo.toFixed(2) + ' (' + (b.zustand || '-') + ')' };
+  });
+
+  stAdd('Pacejka: Uebersteuern beim Anbremsen, abschaltbar', () => {
+    const o = { kmh: 180, lenk: 0.6, bremse: 0.4, pacejka: true };
+    const an = OMEGA_TEST.pacejkaFahrt(Object.assign({ patch: { pacejkaUebersteuern: true } }, o));
+    const aus = OMEGA_TEST.pacejkaFahrt(Object.assign({ patch: { pacejkaUebersteuern: false } }, o));
+    const ok = an.maxUeber > 0.1 && aus.maxUeber === 0 && aus.zustand !== 'ueber';
+    return { ok, mass: 'Zuschlag an ' + an.maxUeber.toFixed(2) + ', aus ' + aus.maxUeber.toFixed(2)
+                       + ' (hinten ' + an.nutzH.toFixed(2) + ' gegen vorn ' + an.nutzV.toFixed(2) + ')' };
+  });
+
+  stAdd('Pacejka: Unter- und Uebersteuern vibrieren, eigener Schalter', () => {
+    const merkOn = rumbleOn, merkArt = RUMBLE_ARTEN.rutschen;
+    const schlecht = [];
+    const motor = (z, pac) => ({ config: { pacejka: pac, pacejkaUeberMax: 0.35 },
+                                 state: { pacZustand: z, pacUeber: 0.2, pacUnter: 0.8 } });
+    const ruf = (m) => { pacRumbleZuletzt[2] = 0; return pacejkaRueckmeldung(m, 2); };
+    try {
+      rumbleOn = true; RUMBLE_ARTEN.rutschen = true;
+      if (!ruf(motor('ueber', true))) schlecht.push('Uebersteuern still');
+      if (!ruf(motor('unter', true))) schlecht.push('Untersteuern still');
+      if (ruf(motor('', true))) schlecht.push('brummt ohne Zustand');
+      if (ruf(motor('ueber', false))) schlecht.push('brummt ausserhalb von Pacejka');
+      RUMBLE_ARTEN.rutschen = false;
+      if (ruf(motor('ueber', true))) schlecht.push('Schalter aus wirkt nicht');
+      RUMBLE_ARTEN.rutschen = true;
+      pacRumbleZuletzt[2] = performance.now();
+      if (pacejkaRueckmeldung(motor('ueber', true), 2)) schlecht.push('keine 250-ms-Drossel');
+      if (!$('vib-rutschen')) schlecht.push('#vib-rutschen fehlt');
+    } finally {
+      rumbleOn = merkOn; RUMBLE_ARTEN.rutschen = merkArt; pacRumbleZuletzt[2] = 0;
+    }
+    return { ok: !schlecht.length, mass: schlecht.length ? schlecht.join('; ') : 'beide Zustaende, Schalter und Drossel' };
+  });
+
   // ---- Bremskennlinie und die EINE Formel ----
   //
   // BESTELLT: "noch eine Bremskennlinie einfuegen" und "die fuer Lenkverhalten sollte dieselbe

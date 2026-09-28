@@ -756,7 +756,9 @@
       tyreNode.start();
     }
     if (!tyreGain) return;
-    tyreGain.gain.setTargetAtTime(Math.min(0.3, menge * 0.3) * tyreVolume,
+    // LAUTER: Deckel 0,3 -> 0,45. BESTELLT: "nimm die aktuellen, aber mach sie noch etwas
+    // hoerbarer; evtl. einfach Lautstaerke etwas hoeher". Gilt in allen Modi.
+    tyreGain.gain.setTargetAtTime(Math.min(0.45, menge * 0.45) * tyreVolume,
                                   audioCtx.currentTime, 0.05);
     // 1,0 bis 1,18: hoerbar, aber ohne dass der Ton nach Bandgeschwindigkeit klingt. Mehr
     // verschiebt auch die Schleifenlaenge und macht die Naht hoerbar.
@@ -1932,7 +1934,13 @@
       ? Math.max(0, Math.min(1, (Math.max(0, -throttleY) - 0.25) / 0.55)) : 0;
     setBrakeSqueal(brakeAmt);
     // Der Reibkreis-Querbedarf treibt es. Er steht im Zustand, weil er hier gebraucht wird.
-    setTyreSqueal(physEngine.state.latUse || 0);
+    // Im Pacejka-Modus zusaetzlich aus der Ausnutzung der staerker belasteten Achse: 1 ist
+    // dort der Scheitel, und 0,8 bildet ihn auf eine halbe Lautstaerke ab (Schwelle 0,6,
+    // voll bei 1,0). Wer ueber den Scheitel schiebt oder rutscht, HOERT es also.
+    const pst = physEngine.state;
+    const pacQuietsch = physEngine.config.pacejka
+      ? Math.max(pst.pacNutzV || 0, pst.pacNutzH || 0) * 0.8 : 0;
+    setTyreSqueal(Math.max(pst.latUse || 0, pacQuietsch));
 
     // VOR dem fruehen Ausstieg: die Zusaetze gelten in beiden Tonarten, nicht nur im
     // Schleifenzweig.

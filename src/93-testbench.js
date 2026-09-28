@@ -8191,6 +8191,51 @@
       }
     },
 
+    // FINGERABDRUCK DER FAHRPHYSIK. Eine frische Instanz faehrt eine feste Eingabefolge
+    // (anfahren, schalten, Lenkwelle, Vollbremsung, Kurve unter Gas) und gibt die Summen der
+    // zwei Groessen zurueck, die das Auto wirklich erreichen: Servowinkel und Tempo. Der
+    // Selbsttest vergleicht sie mit Werten, die VOR dem Pacejka-Modus gemessen wurden -
+    // BESTELLT war "Handling ist perfekt - daran nichts mehr aendern".
+    physikFingerabdruck(patch) {
+      const e = new CarreraPhysicsEngine();
+      Object.assign(e.config, patch || {});
+      let sSer = 0, sKmh = 0, sAbs = 0;
+      for (let i = 0; i < 900; i++) {
+        const t = i * 0.045;
+        const gas = i < 300 ? Math.min(1, i / 60) : (i < 420 ? 0 : (i < 600 ? 0.7 : 1));
+        const bremse = (i >= 420 && i < 480) ? 1 : 0;
+        const lenk = i < 300 ? 0.6 * Math.sin(t * 1.7) : (i < 600 ? 0.9 : -0.8 * Math.sin(t));
+        const out = e.update({ throttle: gas, brake: bremse, steering: lenk }, 0.045);
+        sSer += e.outputs.servoAngle;
+        sAbs += Math.abs(e.outputs.servoAngle);
+        sKmh += e.state.speedKmh;
+        if (out && typeof out.throttle === 'number') sAbs += out.throttle;
+      }
+      const r = (x) => Math.round(x * 1e6) / 1e6;
+      return { servo: r(sSer), betrag: r(sAbs), kmh: r(sKmh) };
+    },
+
+    // Eine frische Instanz bei festem Tempo und fester Eingabe, mit oder ohne Pacejka. Das
+    // Tempo wird jeden Takt zurueckgesetzt, damit Unter- und Uebersteuern bei GENAU diesem
+    // Tempo gemessen werden und nicht bei dem, auf das die Bremse es gerade gebracht hat.
+    pacejkaFahrt(o) {
+      const e = new CarreraPhysicsEngine();
+      Object.assign(e.config, o.patch || {});
+      e.config.pacejka = !!o.pacejka;
+      const st = e.state;
+      st.driveMode = 'forward';
+      st.currentGear = o.gear === undefined ? 3 : o.gear;
+      let maxUeber = 0, zustaende = {};
+      for (let i = 0; i < (o.takte || 30); i++) {
+        st.speedKmh = o.kmh / REAL_SCALE;
+        e.update({ throttle: o.gas || 0, brake: o.bremse || 0, steering: o.lenk || 0 }, 0.045);
+        maxUeber = Math.max(maxUeber, st.pacUeber);
+        zustaende[st.pacZustand || '-'] = (zustaende[st.pacZustand || '-'] || 0) + 1;
+      }
+      return { servo: e.outputs.servoAngle, unter: st.pacUnter, ueber: st.pacUeber, maxUeber,
+               nutzV: st.pacNutzV, nutzH: st.pacNutzH, zustand: st.pacZustand, zustaende };
+    },
+
     sampleLine(tiles, steps) {
       const keep = currentTrackTiles;
       currentTrackTiles = tiles;
