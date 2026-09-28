@@ -8716,6 +8716,20 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Rennuebersicht: Diagramm mit Punkten und Gitter, Sektorentabelle ----
+  //
+  // BESTELLT: Diagramm "x = Runde, y = Zeit in s, mit horizontalen Linien; Liniendiagramm
+  // und je Zeit ein Punkt", und die Sektoren als Tabelle. Fuenf Runden, eine davon eine
+  // Ausreisser-Runde (Boxenrunde) - die muss als Pfeil am oberen Rand erscheinen statt die
+  // Skala zu sprengen.
+  stAdd('Rennuebersicht: Rundendiagramm und Sektorentabelle', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ovDiagrammProbe) return { skip: true, mass: 'Probe fehlt' };
+    const r = OMEGA_TEST.ovDiagrammProbe(false);
+    const ok = r.punkte === 4 && r.pfeile === 1 && r.gitter === 4 && r.spalten === 5;
+    return { ok, mass: r.punkte + ' Punkte, ' + r.pfeile + ' Ausreisser-Pfeil, ' + r.gitter
+             + ' Gitterlinien, ' + r.spalten + ' Tabellenspalten' };
+  });
+
   // ---- Auto 2 wechselt beim Boxenstopp die Reifen ----
   //
   // GEMELDET: "die reifen von spieler 2 werden nicht gewechselt, sollten sie aber."

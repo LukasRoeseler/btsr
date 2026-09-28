@@ -2610,6 +2610,41 @@
       }
     },
 
+    // Rennuebersicht: Diagramm und Sektorentabelle mit gebauten Rundenzeiten. behalten=true
+    // laesst die Daten stehen (fuer einen Blick auf den Schirm), sonst wird alles zurueckgelegt.
+    ovDiagrammProbe(behalten) {
+      const merk = { sc: sectorCount, lt: raceLapTimes.slice(), sh: sectorHistory.slice(),
+                     art: ovDiagrammArt };
+      try {
+        sectorCount = 3;
+        raceLapTimes.length = 0;
+        sectorHistory.length = 0;
+        [[3.1, 4.2, 2.9], [3.0, 4.0, 3.1], [3.3, 4.4, 2.8], [3.0, 7.9, 3.0], [2.9, 4.1, 2.9]]
+          .forEach((sek, i) => {
+            const ms = sek.map((x) => x * 1000);
+            sectorHistory.push(ms);
+            raceLapTimes.push({ lap: i + 1, ms: ms.reduce((a, b) => a + b, 0) });
+          });
+        ovDiagrammArt = 0;
+        ovDiagrammMalen();
+        ovSektorenMalen();
+        const dia = $('ov-diagramm'), sek = $('ov-sektoren');
+        return { punkte: dia ? dia.querySelectorAll('circle').length : -1,
+                 pfeile: dia ? dia.querySelectorAll('path').length : -1,
+                 gitter: dia ? dia.querySelectorAll('.ov-dia-gitter').length : -1,
+                 spalten: sek ? sek.querySelectorAll('th').length : -1 };
+      } finally {
+        if (!behalten) {
+          sectorCount = merk.sc;
+          raceLapTimes.length = 0; merk.lt.forEach((l) => raceLapTimes.push(l));
+          sectorHistory.length = 0; merk.sh.forEach((l) => sectorHistory.push(l));
+          ovDiagrammArt = merk.art;
+          ovDiagrammMalen();
+          ovSektorenMalen();
+        }
+      }
+    },
+
     // Gemerkte Autos: nur Geaendertes wird gespeichert, Rueckfall per Geraetename, und die
     // Zuordnung per Klick. Mit Attrappen in der Garage, danach alles zurueck.
     carProfilProbe() {

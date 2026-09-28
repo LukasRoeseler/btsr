@@ -757,6 +757,7 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Zeiten je Runde": "Times per lap",
     "Tank auf": "Fuel to",
     "Reifen für den nächsten Stopp": "Tyres for the next stop",
     "Tankmenge für den nächsten Stopp": "Fuel for the next stop",
