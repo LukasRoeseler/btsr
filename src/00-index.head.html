@@ -3281,7 +3281,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.8.13</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.14</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4132,6 +4132,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Regenansage ab Werk aus: bei wechselhaftem Wetter kam sie alle paar Minuten. Der Hinweis auf dem Schirm bleibt.</li>
         <li>Android-App (experimentell): dieselbe App als APK, mit Bluetooth-Br&uuml;cke, Host ohne PC und Updates ohne Neuinstallation.</li>
         <li>Info-Screen: ein Tablet oder Fernseher zeigt Strecke, alle Autos und die Rangliste, ohne eigenes Auto.</li>
         <li>Neuer Steuerungsmodus Pacejka (experimentell): Reifen mit Haftgrenze, am Limit Unter- und &Uuml;bersteuern mit Vibration.</li>
@@ -8178,8 +8179,12 @@
         <label class="tgl"><input type="checkbox" id="setting-announce-fuel" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Reifen ansagen<small>Einmal, wenn der schlechteste der vier Reifen nur noch 10&nbsp;% hat. Der schlechteste z&auml;hlt: ein Auto mit drei guten Reifen und einem abgefahrenen f&auml;hrt nicht drei Viertel gut.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-tyre" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Regen ansagen<small>Wenn es anf&auml;ngt zu regnen und wenn es aufh&ouml;rt. Beim Laden wird nichts gesagt, erst beim Wechsel.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-announce-rain" checked><span></span></label></div>
+      <!-- BESTELLT: "Ich hoere dauernd 'der Regen hoert auf' usw. Mach, dass das aufhoert."
+           Seit wechselhaftes Wetter wirklich regnet, wechselt es alle ein bis drei Minuten, und
+           jeder Wechsel wurde gesprochen. Deshalb Standard aus; der Hinweis auf dem Schirm
+           bleibt. Eine bestehende Selbstsicherung wird einmal umgestellt (98b-sicherung.js). -->
+      <div class="opt-row"><div class="opt-label">Regen ansagen<small>Wenn es anf&auml;ngt zu regnen und wenn es aufh&ouml;rt. Standard aus: bei wechselhaftem Wetter w&auml;re das alle ein bis drei Minuten. Der Hinweis auf dem Schirm kommt auch ohne Ansage.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-rain"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Boxenstopp ansagen<small>Wenn der Stopp &uuml;ber den doppelten Start-Ausdruck ausgel&ouml;st wird: &bdquo;Boxenstopp eingeleitet&ldquo;. Nicht beim Knopf.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-pit" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Regen<small>Select oder W. Reifen kommen beim Boxenstopp passend.</small></div>
