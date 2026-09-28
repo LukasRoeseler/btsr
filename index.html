@@ -3234,7 +3234,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.8.10</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.11</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4401,6 +4401,75 @@
       </p>
     </div>
 
+    <!-- BESTELLT: "Doku aktualisieren, sodass sie den aktuellen Stand beschreibt" und die
+         Fragen "ist das Einspurmodell drin? das Reifenmodell? was koennte Pacejka
+         verbessern?". Diese Karte ist die Kurzfassung; die Abschnitte darunter vertiefen. -->
+    <div class="card">
+      <h2>Stand heute: was OmegaSim rechnet und was nicht</h2>
+      <p class="muted">
+        <b>Die App bewegt das Auto nicht, sie schickt ihm zwei Befehle:</b> Gas (Motorbyte)
+        und Lenkwinkel (Byte&nbsp;7, Servo). Alles, was in der Kurve seitlich passiert,
+        entsteht an den echten Reifen auf der echten Bahn. Die App rechnet deshalb vor allem
+        die L&auml;ngsdynamik &ndash; Tempo, Schub, Bremse, G&auml;nge, Tank, Reifenzustand &ndash;
+        und formt daraus die zwei Befehle so, dass sich das Modellauto wie ein schwerer
+        GT3 anf&uuml;hlt.
+      </p>
+      <div class="doc-table-wrap"><table class="doc-table">
+        <tr><th>Steuerungsmodus</th><th>Was gesendet wird</th></tr>
+        <tr><td>Physik (Vorgabe)</td><td>Gas und Lenkung aus der vollen Kette: Kennlinien,
+          Drehmoment, G&auml;nge, Reibkreis, Reifen, Tank, Schaden.</td></tr>
+        <tr><td>Pacejka <span class="wip-tag">experimentell</span></td><td>Wie Physik, dazu
+          Reifen mit Haftgrenze nach der Magic Formula: am Limit Unter- und &Uuml;bersteuern,
+          mit Vibration und Quietschen. Unterhalb der Grenze exakt wie Physik.</td></tr>
+        <tr><td>Aus</td><td>Rohe Stickstellung, keine G&auml;nge &ndash; wie ein
+          Fernsteuerungsauto.</td></tr>
+        <tr><td>Drift <span class="wip-tag">experimentell</span></td><td>Rohes Gas, dazu ein
+          automatisches Gegensteuern gegen das gemessene Drehsignal aus Byte&nbsp;3.</td></tr>
+      </table></div>
+      <p class="muted">
+        <b>Kennlinien.</b> Gas, Bremse und Lenkung laufen durch <em>eine</em> Formel,
+        y&nbsp;=&nbsp;sign(x)&nbsp;&middot;&nbsp;|x|<sup>g</sup>. Vorgaben: Lenkung 1,15, Bremse 1,3
+        (am Anfang etwas weniger empfindlich). g&nbsp;&gt;&nbsp;1 hei&szlig;t: kleine
+        Ausschl&auml;ge wirken schw&auml;cher als linear. Der Lenkplot zeigt die
+        <em>wirksame</em> Kurve bis zum Servowinkel, also mit Lenkansprechen und Kalibrierung;
+        ein Punkt darauf zeigt live Eingang und Ergebnis.
+      </p>
+      <p class="muted">
+        <b>Reifenmodell.</b> Ein Reibkreis je Auto: was die Kurve an Haftung verbraucht,
+        fehlt beim Beschleunigen und Bremsen, und Bremsen nimmt Lenkhaftung. Darauf
+        Lastverlagerung l&auml;ngs und quer, Lastempfindlichkeit, und je Rad Temperatur,
+        Verschlei&szlig; und Druck, dazu vier Mischungen (weich, mittel, hart, Regen) und
+        Aquaplaning. Eine Schr&auml;glauf-Kennlinie gibt es nur im Modus Pacejka.
+      </p>
+      <p class="muted">
+        <b>Einspurmodell.</b> Vorhanden, aber als <em>Instrument</em>: es rechnet Gierrate,
+        Schwimmwinkel und Eigenlenkverhalten aus dem gesendeten Lenkwinkel und zeigt das im
+        Cockpit. Es stellt die Lenkung nicht &ndash; das Auto dreht sich ohnehin selbst, und
+        gegen eine zweite, gerechnete Drehung anzulenken hie&szlig;e, die Wirklichkeit ein
+        zweites Mal zu simulieren und gegen sie zu arbeiten.
+      </p>
+      <p class="muted">
+        <b>Einspurmodell und Pacejka sind zwei Ebenen.</b> Das Einspurmodell ist ein
+        <em>Fahrzeugmodell</em>: aus den Seitenkr&auml;ften beider Achsen, Masse,
+        Tr&auml;gheitsmoment und Achsabst&auml;nden folgt, wie sich das Auto dreht. Pacejka ist
+        ein <em>Reifenmodell</em>: wie viel Seitenkraft ein Reifen bei welchem Schr&auml;glauf
+        tr&auml;gt &ndash; erst fast linear, dann ein Scheitel, danach f&auml;llt sie ab. Der
+        Abfall ist das Rutschen. Der Modus Pacejka nutzt diese Kurve je Achse, um den
+        Lenkbefehl am Limit zu formen (Abschnitt &bdquo;Das Einspurmodell&ldquo; unten).
+      </p>
+      <p class="muted">
+        <b>Gyro-Punkt.</b> Der rote, simulierte Punkt im G-Plot zeigt mit Streckenortung die
+        Querbeschleunigung aus der Kr&uuml;mmung des aktuellen Streckenteils (v&sup2;/R); ohne
+        Ortung die Querausnutzung des Reibkreises. Der gr&uuml;ne ist das echte Drehsignal.
+      </p>
+      <p class="muted">
+        <b>Au&szlig;erdem:</b> Ghosts mit Ideallinie und &Uuml;berholen, Boxengasse mit
+        Reifen- und Tankwahl (auch f&uuml;r Spieler&nbsp;2), wechselhaftes Wetter mit Schauern,
+        die k&uuml;rzer sind als die Trockenphasen, Rennen mit Sektorzeiten und
+        Rundenzeit-Diagramm, und ein Zwei-Spieler-Modus auf demselben Sendetakt.
+      </p>
+    </div>
+
     <div class="doc-sec">Hardware, Auto und Strecke</div>
 
     <div class="card">
@@ -4564,11 +4633,10 @@
         haben</b>.
       </p>
       <p class="muted">
-        In Byte&nbsp;14 stand hier eine Konstante <code>LIGHT_BASE = 0x80</code>, mit der
-        Begr&uuml;ndung &bdquo;Bit&nbsp;7 war in jedem aufgezeichneten Paket gesetzt&ldquo;.
-        Sie war aus den fr&uuml;hen Erkundungsmitschnitten abgelesen, und das waren
-        genau die Sitzungen, in denen nie etwas gelesen wurde. <b>Bit&nbsp;7 schaltet den
-        Sensor unter dem Auto ab.</b>
+        <b>Byte&nbsp;14 w&auml;hlt die Leseart.</b> Bit&nbsp;7 war in den fr&uuml;hen
+        Erkundungsmitschnitten in jedem Paket gesetzt, und in genau diesen Sitzungen auf der
+        echten Bahn wurde nie etwas gelesen: Bit&nbsp;7 liest gedruckte Muster, und auf der
+        Schiene gibt es keine. Die Schiene liest Bit&nbsp;5 (Einzelheiten unten).
       </p>
       <p class="muted">
         Gemessen innerhalb <em>einer</em> Aufzeichnung, und nur Meldungen gez&auml;hlt, deren
@@ -4587,8 +4655,7 @@
       <p class="muted">
         Gleiche Bahn, gleiches Auto, dieselbe Minute. Damit erkl&auml;rt weder &bdquo;das Auto
         stand&ldquo; noch &bdquo;anderer Tag, andere Bahn&ldquo; den Unterschied:
-        genau die beiden Erkl&auml;rungen, an denen zwei fr&uuml;here Vermutungen zu diesem
-        Thema gescheitert sind.
+        also keine der beiden naheliegenden Erkl&auml;rungen.
       </p>
       <p class="muted">
         <b>Berichtigt am 26.08.: es sind zwei LESEARTEN, kein Sensorschalter.</b><br>
@@ -4643,10 +4710,9 @@
         <tr><td>L&uuml;cke</td><td><b>3,514 mm</b></td><td><b>6,520 mm</b></td><td>1 : 1,86</td></tr>
       </table></div>
       <p class="muted">
-        <b>Balken und L&uuml;cken tragen beide Information.</b> Das ist leicht zu
-        &uuml;bersehen, eine fr&uuml;here Rekonstruktion dieses Blattes hat nur die
-        L&uuml;ckenfolge nachgebildet und war deshalb unbrauchbar, obwohl sie auf dem Papier
-        richtig aussah.
+        <b>Balken und L&uuml;cken tragen beide Information.</b> Eine Nachbildung, die nur
+        die L&uuml;ckenfolge trifft, sieht auf dem Papier richtig aus und wird trotzdem nicht
+        gelesen.
       </p>
 
       <h3 style="font-size:14px; margin:16px 0 6px 0">Das Beispiel Start/Ziel</h3>
@@ -4831,10 +4897,9 @@
         <tr><td>18</td><td>Pr&uuml;fsumme</td><td class="doc-guess">angenommen</td></tr>
       </table></div>
       <p class="muted">
-        Byte&nbsp;15 wurde in dieser App fr&uuml;her als &bdquo;abseits der Strecke&ldquo; ausgewertet. Die
-        Mitschnitte widerlegen das: es steht auf <code>0x08</code> in genau dem Paket, in dem auch der
-        &Uuml;berfahrtsz&auml;hler springt. Die Warnung leuchtete also ausgerechnet beim Passieren von
-        Start/Ziel.
+        Byte&nbsp;15 meldet <b>nicht</b> &bdquo;abseits der Strecke&ldquo;: es steht auf
+        <code>0x08</code> in genau dem Paket, in dem auch der &Uuml;berfahrtsz&auml;hler springt,
+        also beim Passieren von Start/Ziel. Abseits der Bahn erkennt die App an Byte&nbsp;12.
       </p>
     </div>
 
@@ -5053,10 +5118,9 @@
       <p class="muted">
         <code>0x05</code> und <code>0x06</code> kamen am 24.08. hinzu, unmittelbar nachdem
         Byte&nbsp;14 richtig gesetzt war (siehe &bdquo;Auf der Bahn oder ohne Bahn&ldquo;).
-        Vorher stand hier die Vermutung, die Haarnadel trage denselben Barcode wie eine
-        normale Kurve und sei nicht unterscheidbar. Sie war nicht pr&uuml;fbar, solange das
-        Auto &uuml;berhaupt nichts las: und sie war falsch. Die Codes ordnen sich
-        paarweise: gerade Zahl rechts, ungerade links, und die Enge steigt mit dem Wert.
+        Die Haarnadel tr&auml;gt also einen eigenen Code und ist von einer normalen Kurve
+        unterscheidbar. Die Codes ordnen sich paarweise: gerade Zahl rechts, ungerade links,
+        und die Enge steigt mit dem Wert.
       </p>
       <p class="muted">
         <code>0x03</code> war der letzte Unbekannte. Die gemeldete Codefolge lautete in
@@ -5075,16 +5139,14 @@
         (<code>0x0c</code>/<code>0x0e</code>). Das gesteuerte Auto bekam dagegen
         <code>0x60</code> und <code>0x04</code>. Bit&nbsp;1 von Byte&nbsp;15 folgt dem
         Fahren und nicht dem Modus (Gas in 100&nbsp;% der Pakete mit gesetztem Bit gegen
-        69,8&nbsp;% ohne) und wird deshalb nicht nachgebildet. <b>Korrektur:</b> das
-        fr&uuml;her hier genannte <code>0x30</code> war der Wert der <em>handgefahrenen</em>
-        Leitplanken-Sitzung, nicht des Autonom-Modus.
+        69,8&nbsp;% ohne) und wird deshalb nicht nachgebildet. <code>0x30</code> geh&ouml;rt
+        zur <em>handgefahrenen</em> Leitplanken-Sitzung, nicht zum Autonom-Modus.
       </p>
 
-      <h3 style="font-size:14px; margin:16px 0 6px 0">Berichtigung: Byte&nbsp;15 Bit&nbsp;3 ist kein Kantensignal</h3>
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Byte&nbsp;15 Bit&nbsp;3 ist kein Kantensignal</h3>
       <p class="muted">
-        Eine fr&uuml;here Fassung dieser Karte behauptete, dieses Bit melde, dass das Auto
-        am Bahnrand sei: also die lange gesuchte Querlage. <b>Das war falsch.</b>
-        Drei Messungen widerlegen es: die Blockdauer ist praktisch konstant (Median 0,91
+        Es sieht aus wie die lange gesuchte Querlage (&bdquo;Auto am Bahnrand&ldquo;), ist es
+        aber nicht. Drei Messungen zeigen das: die Blockdauer ist praktisch konstant (Median 0,91
         und 0,94&nbsp;s, 10.&ndash;90.&nbsp;Perzentil 0,84&ndash;1,01&nbsp;s), was ein
         Zeitglied ist und kein Kontakt; es gibt <b>17 Bl&ouml;cke bei 16 Runden</b>; und
         <b>jeder einzelne beginnt auf Kachelindex&nbsp;0 mit Code <code>0x01</code></b>
@@ -5164,8 +5226,8 @@
         einlenkt, wie es Grip findet: entscheidet weiterhin seine eigene Firmware.
       </p>
       <p class="muted">
-        Schaltet man die Physik in den Optionen ab, sendet die App wirklich nur noch die rohe
-        Stickstellung. Dann ist sie die dumme Leitung, als die sie hier früher beschrieben war.
+        Im Modus Pacejka formt die App zus&auml;tzlich den Lenkwinkel am Haftlimit. Im Modus
+        &bdquo;Aus&ldquo; sendet sie nur die rohe Stickstellung und ist eine reine Leitung.
       </p>
     </div>
 
@@ -5186,7 +5248,10 @@
       </p>
       <ul class="muted" style="padding-left:20px; line-height:1.7">
         <li><b>km/h, Drehzahl und Gangwahl</b>: das Auto meldet keine Geschwindigkeit zurück</li>
-        <li><b>Lenkverhalten</b>: Dämpfung, Expo-Kennlinie, Grip-Bonus beim Anbremsen</li>
+        <li><b>Lenkverhalten</b>: Lenkansprechen, D&auml;mpfung, Kennlinie, Reibkreis, im
+          Modus Pacejka Unter- und &Uuml;bersteuern</li>
+        <li><b>Einspurmodell</b>: Gierrate und Schwimmwinkel, nur als Anzeige</li>
+        <li><b>Reifen</b>: Temperatur, Verschlei&szlig;, Druck und Mischung je Rad</li>
         <li><b>ABS</b>, <b>Tank</b>, <b>Schaden</b> und die <b>Crash-Erkennung</b> <i>(Schwellwert auf
           Bytes 1/3, deren Bedeutung unbestätigt ist)</i></li>
         <li><b>Boxengasse</b>: Tempolimit und Service, der mit der Standzeit wächst</li>
@@ -5246,16 +5311,10 @@
         Stillstand sind es 4,25&nbsp;s.
       </p>
       <p class="muted" style="font-size:11.5px">
-        <b>Berichtigung:</b> hier stand fr&uuml;her, die Werte seien mit 1,5&nbsp;% mittlerem
-        Fehler an genau diese Tabelle angepasst, und der Bremsweg betrage 2,74&nbsp;s. Beides
-        passte nicht zusammen: 2,74&nbsp;s aus H&ouml;chstgeschwindigkeit ist rund
-        57&nbsp;% schneller als die 4,3&nbsp;s der Tabelle. Nachgerechnet mit der blanken
-        Formel <em>und</em> in der laufenden Schleife (die gleich rechnen, weil beim geraden
-        Bremsen auf trockener Bahn jeder Multiplikator 1,0 ist): die alten 0,98/1,00 ergaben
-        0,64 und 2,75&nbsp;s, eine sp&auml;tere Abschw&auml;chung auf 0,784/0,80 ergab 0,80 und
-        3,44&nbsp;s. Erst 0,627/0,64 treffen die Tabelle. Die Bremse ist damit schw&auml;cher
-        als zuvor, in derselben Richtung, in die der Wunsch nach 80&nbsp;% zeigte; der
-        Regler <em>Bremskraft</em> (Standard 1,0) bleibt f&uuml;r den Geschmack.
+        Die Beiwerte 0,627 und 0,64 treffen die Tabelle: aus H&ouml;chstgeschwindigkeit rund
+        4,3&nbsp;s bis zum Stand, nachgerechnet mit der blanken Formel <em>und</em> in der
+        laufenden Schleife (beim geraden Bremsen auf trockener Bahn ist jeder Multiplikator
+        1,0). Der Regler <em>Bremskraft</em> (Standard 1,0) bleibt f&uuml;r den Geschmack.
       </p>
       <ul class="muted">
         <li><strong>Reibungskreis</strong>: ein Reifen kann seine Haftung nur einmal vergeben.
@@ -5575,16 +5634,14 @@
         aus lizenzfreien Pixabay-Aufnahmen geschnitten, nicht gerechnet: die Pixabay-Lizenz
         erlaubt das, und es gab keinen Grund, nachzubauen, was eine gute Aufnahme schon liefert. Die
         unbearbeiteten Quelldateien sind nicht Teil des Repos, nur die geschnittenen Ableitungen.
-        Bei den Motoren gilt das seit v0.4.53 nicht mehr: dort sind inzwischen alle vierzehn
-        gerechnet, die zwei aufgenommenen sind mit dem Aufräumen herausgefallen. Dieser Absatz
-        nannte den Corvette-Motor bis v0.4.54 weiter eine Aufnahme.
+        Die Motoren dagegen sind alle gerechnet, keiner ist eine Aufnahme.
         Vollständige Aufschlüsselung, Datei für Datei: <code>audio/CREDITS.md</code>.
       </p>
     </div>
       <p class="muted" style="font-size:11.5px">
         Die einzelnen Effekte, Bremse, Crash, Schlagschrauber, Anlasser:
         stehen vollst&auml;ndig und mit Herkunftsangabe unter <b>T&ouml;ne</b> weiter
-        unten. Hier standen fr&uuml;her fünf von ihnen ein zweites Mal.
+        unten.
       </p>
 
     <div class="card">
@@ -5656,7 +5713,7 @@
         Je Motor vier Drehzahlb&auml;nder, die nach Drehzahl &uuml;berblendet werden, und
         eine Schubschleife, die parallel dazu nach <em>Last</em> eingeblendet wird. Die
         Drehzahl in Klammern ist die Basis: dort klingt die Schleife unverstimmt.
-        Das untere Band ist in v0.4.55 dazugekommen, und der Grund ist gemessen: die
+        Es sind vier und nicht drei B&auml;nder, und der Grund ist gemessen: die
         Abspielrate ist auf eine Oktave nach jeder Seite begrenzt, Leerlauf und Mittelband
         lagen aber 2,2 Oktaven auseinander. Im unteren ersten Gang war deshalb immer
         mindestens eine h&ouml;rbare Schleife am Anschlag und damit verstimmt &ndash; bei
@@ -5839,85 +5896,89 @@
     </div>
 
     <div class="card">
-      <h2>Das Einspurmodell <span class="wip-tag">experimentell</span></h2>
+      <h2>Das Einspurmodell und der Modus Pacejka</h2>
       <p class="muted">
-        Gebaut in v0.5. Was hier stand, war ein Bauplan; die Abschnitte darunter sind
-        unveraendert geblieben, damit nachpruefbar ist, was versprochen wurde. Dieser Abschnitt
-        sagt, was daraus geworden ist &ndash; und was die Messung dabei ergeben hat.
-      </p>
-      <p class="muted">
-        Die drei Proben aus dem Plan laufen als Selbsttests. Der Kleinwinkel-Grenzfall trifft
-        die reine Geometrie auf 0,01 bis 1,07 Prozent, der Sprungversuch schwingt ein und nicht
-        auf &ndash; auch mit einer absichtlich vierfach ueberhoehten Schraeglaufsteifigkeit, bei
-        der ein explizites Verfahren aufschwingen wuerde &ndash;, und der Eigenlenkgradient
-        faellt aus der stationaeren Kreisfahrt auf 1 bis 2&nbsp;&middot;&nbsp;10&#8315;&#8308;
-        genau heraus.
-      </p>
-      <p class="muted">
-        Eine Probe war zuerst falsch, und zwar meine und nicht das Modell: die Formel
-        &bdquo;Eigenlenkgradient aus zwei Punkten&ldquo; verlangt einen KONSTANTEN Radius bei
-        verschiedenem Tempo. Der erste Aufbau hielt das Tempo fest und veraenderte den
-        Lenkwinkel; damit blieb der geometrische Anteil im Unterschied stehen, und die Probe
-        meldete 0,021 statt 0. Aufgefallen ist es daran, dass der uebertragene Winkel und
-        L&nbsp;&middot;&nbsp;r/v auf 6&nbsp;&middot;&nbsp;10&#8315;&#8309; zusammenfielen &ndash;
-        das Modell hatte also recht.
+        Das Einspurmodell fasst je Achse beide R&auml;der zu einem zusammen und rechnet aus
+        Lenkwinkel und Tempo Gierrate, Schwimmwinkel und die Schr&auml;glaufwinkel beider
+        Achsen, halbimplizit im Sendetakt. Eingang ist der Winkel, der wirklich gesendet wird.
+        Die Proben laufen als Selbsttests: der Kleinwinkel-Grenzfall trifft die reine
+        Geometrie auf 0,01 bis 1,07 Prozent, der Sprungversuch schwingt ein und nicht auf
+        (auch mit vierfach &uuml;berh&ouml;hter Schr&auml;glaufsteifigkeit), und der
+        Eigenlenkgradient f&auml;llt aus der station&auml;ren Kreisfahrt genau heraus.
       </p>
 
-      <h3 style="font-size:14px; margin:16px 0 6px 0">Der Befund, der die Anzeige begrenzt</h3>
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Was die Anzeige zeigt, und warum nicht mehr</h3>
       <p class="muted">
-        Der BETRAG der gerechneten Querbeschleunigung ist keine brauchbare Anzeige, und das ist
-        eine Eigenschaft dieser App und kein Rechenfehler. Gemessen bei 120&nbsp;km/h und
-        28,8&nbsp;Grad Einschlag: 212&nbsp;m/s&sup2;, also 21&nbsp;g. Die Rechnung ist richtig
-        &ndash; 28,8&nbsp;Grad bei 120&nbsp;km/h IST ein Radius von fuenf Metern, und der IST
-        21&nbsp;g.
+        Der BETRAG der gerechneten Querbeschleunigung taugt nicht als Anzeige. Gemessen bei
+        120&nbsp;km/h und 28,8&nbsp;Grad Einschlag: 212&nbsp;m/s&sup2;, also 21&nbsp;g &ndash;
+        richtig gerechnet, denn 28,8&nbsp;Grad bei 120&nbsp;km/h sind ein Radius von f&uuml;nf
+        Metern. Der Widerspruch steckt in den Eing&auml;ngen: der Lenkbereich bis 45&nbsp;Grad
+        geh&ouml;rt zu einem Modellauto, die angezeigten km/h zu einem echten.
       </p>
       <p class="muted">
-        Der Widerspruch steckt in den Eingaengen: der Lenkbereich bis 45&nbsp;Grad gehoert zu
-        einem Modellauto, die angezeigten Kilometer je Stunde gehoeren zu einem echten. Ein
-        echtes Auto braucht bei 120&nbsp;km/h wenige Grad; schon vier Grad sind dort ein
-        36-Meter-Radius und damit 3,1&nbsp;g. Bei 25&nbsp;km/h und fuenf Grad kommen dagegen
-        0,17&nbsp;g heraus &ndash; im langsamen Bereich, in dem eine Wohnzimmerstrecke gefahren
-        wird, stimmen die Zahlen.
+        Das Cockpit zeigt deshalb die Gierrate in Grad je Sekunde und ihr Verh&auml;ltnis zum
+        station&auml;ren Wert: 100&nbsp;% hei&szlig;t eingeschwungen, mehr hei&szlig;t
+        &bdquo;dreht noch ein&ldquo;, weniger &bdquo;schiebt&ldquo;. Ein Verh&auml;ltnis zweier
+        Modellgr&ouml;&szlig;en ist vom Skalenwiderspruch unber&uuml;hrt. Im Modus Pacejka steht
+        dahinter, ob gerade unter- oder &uuml;bersteuert wird.
       </p>
       <p class="muted">
-        Deshalb zeigt das Cockpit nicht den Betrag, sondern die AUSNUTZUNG: wieviel von der
-        verfuegbaren Haftung das Manoever verlangt. Ueber 100&nbsp;Prozent steht ein
-        Groesserzeichen &ndash; die Anzeige sagt dann &bdquo;so faehrt kein Auto durch diese
-        Kurve&ldquo; und tut nicht so, als waere es eine feine Abstufung. Dieselbe Ausnutzung ist
-        das, was ein Grenzbereich-Quietschen braucht.
-      </p>
-      <p class="muted">
-        Und eine Stelle, an der das Modell ohne diesen Zusatz nichts gesagt haette: waere die
-        Schraeglaufsteifigkeit strikt proportional zur Achslast, kuerzte sich der
-        Eigenlenkgradient exakt weg &ndash; K<sub>u</sub> waere fuer JEDE Verteilung genau null,
-        und die Anzeige haette jedes Layout als neutral gemeldet. Ein Reifen traegt Seitenkraft
-        aber unterlinear zur Last, und erst dieser Exponent macht aus der Achslastverteilung ein
-        Eigenlenkverhalten.
+        Die Schr&auml;glaufsteifigkeit w&auml;chst unterlinear mit der Achslast. W&auml;re sie
+        strikt proportional, k&uuml;rzte sich der Eigenlenkgradient f&uuml;r JEDE Verteilung
+        weg, und jedes Layout w&auml;re als neutral gemeldet worden.
       </p>
 
-      <h3 style="font-size:14px; margin:16px 0 6px 0">Die tragende Entscheidung: Instrument,
-        nicht Aktor</h3>
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Instrument, nicht Aktor</h3>
       <p class="muted">
-        Das Einspurmodell rechnet Schwimmwinkel, Gierrate und Achsschraeglaufwinkel aus
-        Lenkwinkel und Tempo. Sein Ergebnis darf die Lenkung nicht stellen. Hier stand als
-        Begruendung &bdquo;das Modellauto rutscht nicht&ldquo;, und das ist seit v0.5.18
-        berichtigt: auf rutschigem Boden bricht es aus, wenn man aus dem Stand direkt Vollgas
-        gibt. Was gilt, ist eine feinere Aussage &ndash; dieses Modell rechnet den
-        Kurvenschraeglauf, also das Wegdriften aus Seitenkraft bei Kurvenfahrt, und beobachtet
-        sind durchdrehende Raeder aus dem Stand. Das sind zwei verschiedene Bewegungen, und
-        die eine gegen die andere zu regeln waere die Korrektur von etwas, das gerade nicht
-        stattfindet. Der Drift-Modus regelt deshalb gegen das gemessene Drehsignal des Autos
-        und nicht gegen dieses Modell.
+        Im Modus Physik stellt das Einspurmodell die Lenkung nicht. Es rechnet den
+        Kurvenschr&auml;glauf, also das Wegdriften aus Seitenkraft &ndash; das echte Auto macht
+        diese Bewegung selbst, und die App bek&auml;me sie nur als zweite, gerechnete Kopie. Wo
+        das Modellauto wirklich ausbricht (Vollgas aus dem Stand auf glattem Boden), sind es
+        durchdrehende R&auml;der und keine Kurvendrift. Der Drift-Modus regelt deshalb gegen das
+        gemessene Drehsignal des Autos und nicht gegen dieses Modell. Das
+        Reifenquietschen l&auml;uft &uuml;ber die Querausnutzung des Reibkreises und setzt bei
+        60&nbsp;Prozent ein.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Pacejka: die Reifenkennlinie <span class="wip-tag">experimentell</span></h3>
+      <p class="muted">
+        Die Magic Formula (Pacejka &amp; Bakker, 1992) beschreibt die Seitenkraft eines Reifens
+        &uuml;ber seinem Schr&auml;glauf. Hier normiert, sodass der Scheitel bei u&nbsp;=&nbsp;1
+        liegt:
+      </p>
+      <p class="formel" data-i18n-skip>y(u) = sin(C &middot; atan(B&middot;u &minus; E&middot;(B&middot;u
+        &minus; atan(B&middot;u)))), &nbsp;C = 1,3, E = &minus;0,5</p>
+      <p class="muted">
+        u ist die Ausnutzung einer Achse, geteilt durch die einstellbare Haftgrenze (Vorgabe
+        70&nbsp;%). Sie kommt aus der gefahren kalibrierten Querausnutzung des Reibkreises und
+        nicht aus dem Einspurmodell, weil dort der Skalenwiderspruch jeden Reifen weit hinter
+        den Scheitel legen w&uuml;rde. Je Achse verschieben Achslast und Antrieb die Grenze:
+        Gas entlastet vorn und kostet hinten Seitenhalt, Bremsen entlastet hinten, Regen und
+        kalte Reifen senken beide. Das Heck hat 20&nbsp;% Reserve &ndash; ab Werk leicht
+        untersteuernd, wie fast jedes Auto.
+      </p>
+      <div class="doc-table-wrap"><table class="doc-table">
+        <tr><th>Zustand</th><th>Was mit dem Lenkbefehl passiert</th><th>R&uuml;ckmeldung</th></tr>
+        <tr><td>unter der Grenze</td><td>nichts, exakt wie Physik</td><td>&ndash;</td></tr>
+        <tr><td>Untersteuern (vorn jenseits)</td><td>Winkel gek&uuml;rzt auf y(u)/u: mehr
+          Einschlag bringt nichts, jenseits des Scheitels sogar weniger</td><td>leises
+          Brummen, Quietschen</td></tr>
+        <tr><td>&Uuml;bersteuern (hinten weiter jenseits als vorn)</td><td>bis 0,35 Einschlag
+          in die Kurve dazu; Gegenlenken f&auml;ngt es, der Zuschlag klingt ab</td><td>kr&auml;ftiger
+          Sto&szlig;, Quietschen</td></tr>
+      </table></div>
+      <p class="muted">
+        <b>Was Pacejka am Fahrgef&uuml;hl &auml;ndert:</b> Im Modus Physik endet das Limit
+        weich &ndash; der Reibkreis nimmt Gas und Bremse weg, aber der Einschlag kommt an. Mit
+        Pacejka hat das Limit eine Kante: &uuml;berfahrene Kurven schieben geradeaus,
+        Anbremsen in die Kurve l&auml;sst das Heck kommen. Die Haftung des echten Modellautos
+        &auml;ndert sich dabei nicht, nur was es befohlen bekommt. Haftgrenze und
+        Heckreserve sind gesch&auml;tzt und am echten Auto abzustimmen; das &Uuml;bersteuern
+        hat einen eigenen Schalter.
       </p>
       <p class="muted">
-        Es darf zeigen und begrenzen. Beides ist ehrlich, und beides ist neu: ein
-        Gierratenzeiger im Cockpit sagt, wie weit das Auto vom stationaeren Zustand entfernt
-        ist, und eine Kurvengrenzgeschwindigkeit aus dem Reibkreis sagt, wie schnell man
-        durch eine bekannte Kurve kaeme. Die Rueckmeldung am Grenzbereich wird ein
-        Reifenquietschen im Stil von Gran Turismo: Lautstaerke und Tonhoehe laufen stetig mit
-        der Ausnutzung des Reibkreises, Einsatz ab etwa 85 Prozent. Das ist die ehrlichste
-        Ausgabe, die dieses Modell haben kann &ndash; das Auto rutscht nicht, aber die
-        Ausnutzung ist gerechnet.
+        Unver&auml;ndert geblieben ist der Modus Physik: ein Selbsttest vergleicht Servo- und
+        Temposummen einer festen Fahrt mit den Werten vor dem Einbau von Pacejka.
       </p>
 
       <h3 style="font-size:14px; margin:16px 0 6px 0">Die Gleichungen</h3>
@@ -5941,11 +6002,9 @@
       <p class="formel" data-i18n-skip>I<sub>z</sub> &middot; &#7771; = F<sub>y,v</sub>
         &middot; l<sub>v</sub> &minus; F<sub>y,h</sub> &middot; l<sub>h</sub></p>
       <p class="muted">
-        Die Achsquerkraefte kommen aus den Schraeglaufwinkeln. Linear reicht fuer den Anfang,
-        weil das Modell nur bis zum Grenzbereich zeigen soll und nicht darueber hinaus. Erst
-        wenn das trägt, lohnt eine Reifenkennlinie nach Pacejka &ndash; sie beschreibt genau
-        den Bereich JENSEITS des Maximums, und der ist auf einem Auto ohne Gripverlust ohnehin
-        nicht darstellbar.
+        Die Achsquerkr&auml;fte kommen im Einspurmodell linear aus den Schr&auml;glaufwinkeln
+        (F&nbsp;=&nbsp;C<sub>&alpha;</sub>&nbsp;&middot;&nbsp;&alpha;). Den Bereich jenseits des
+        Maximums beschreibt die Pacejka-Kennlinie darüber.
       </p>
 
       <h3 style="font-size:14px; margin:16px 0 6px 0">Die drei Layouts</h3>
@@ -5964,8 +6023,7 @@
         Der Heckmotor hat die groesste Hinterachslast und damit den kleinsten
         Eigenlenkgradienten: er dreht leichter ein und wird am Kurvenausgang unruhig. Der
         Mittelmotor hat das kleinste Traegheitsmoment und reagiert am schnellsten auf einen
-        Lenkbefehl. Das sind die zwei Unterschiede, die ein Gierratenzeiger sichtbar machen
-        koennte.
+        Lenkbefehl. Beides zeigt der Gierratenzeiger im Cockpit.
       </p>
 
       <h3 style="font-size:14px; margin:16px 0 6px 0">Schrittweite und Stabilitaet</h3>
@@ -5973,9 +6031,8 @@
         Gerechnet wird im Sendetakt, also mit 45 Millisekunden. Das ist grob: die
         Gierdynamik eines Fahrzeugs hat Zeitkonstanten um 0,2 bis 0,5 Sekunden, und ein
         explizites Euler-Verfahren wird bei 45 ms an der Grenze instabil, sobald die
-        Schraeglaufsteifigkeit hoch wird. Zwei Auswege, und der zweite ist der bessere:
-        entweder mehrere Teilschritte je Sendetakt, oder ein halbimpliziter Schritt, der bei
-        jeder Steifigkeit stabil bleibt. Die Physik kostet gemessen 6,7 Mikrosekunden je
+        Schraeglaufsteifigkeit hoch wird. Gerechnet wird deshalb halbimplizit: der Schritt
+        bleibt bei jeder Steifigkeit stabil. Die Physik kostet gemessen 6,7 Mikrosekunden je
         Takt, also 0,015 Prozent des Sendeintervalls &ndash; Rechenzeit ist hier keine
         Grenze, und deshalb waere ein Sparen an der Schrittweite falsch begruendet.
       </p>

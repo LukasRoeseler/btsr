@@ -86,9 +86,26 @@ Standardbibliothek. Die Klangwerkzeuge brauchen numpy, scipy und `ffmpeg` im Pfa
 
 Das Protokoll ist aus Bluetooth-HCI-Mitschnitten der Hersteller-App zurückgewonnen. Die
 Doku im Tab **Sonstige → Doku** unterscheidet durchgehend zwischen *belegt* und
-*unbestätigt* und nennt die Zahlen, auf denen eine Aussage steht. Wo eine Vermutung
-widerlegt wurde, steht sie mit ihrer Widerlegung dort — das ist nützlicher als eine
-aufgeräumte Doku, die nur das Endergebnis zeigt.
+*unbestätigt* und nennt die Zahlen, auf denen eine Aussage steht. Sie beschreibt den
+heutigen Stand; wo eine naheliegende Deutung falsch ist (etwa „Byte 15 heißt abseits“),
+steht das als Tatsache dort. Die Geschichte der Irrtümer steht in Code-Kommentaren und
+Commits.
+
+## Was die App rechnet
+
+Die App bewegt das Auto nicht, sie schickt ihm Gas und Lenkwinkel. Querkräfte entstehen an
+den echten Reifen; gerechnet wird vor allem die Längsdynamik, und daraus werden die zwei
+Befehle geformt.
+
+- **Vier Steuerungsmodi:** Physik (Vorgabe), Pacejka (experimentell: Physik plus
+  Magic-Formula-Reifen, die am Limit Unter- und Übersteuern erzeugen, mit Vibration und
+  Quietschen), Aus (rohe Stickstellung) und Drift (experimentell).
+- **Kennlinien:** Gas, Bremse und Lenkung über eine Formel, sign(x)·|x|^g.
+- **Reifen:** Reibkreis, Lastverlagerung, Lastempfindlichkeit, je Rad Temperatur,
+  Verschleiß und Druck, vier Mischungen, Aquaplaning.
+- **Einspurmodell:** vorhanden, als Anzeige (Gierrate, Eigenlenkverhalten); es stellt die
+  Lenkung nicht.
+- Ghosts mit Ideallinie, Boxengasse, Wetter, Rennen mit Sektorzeiten, zwei Spieler.
 
 Tank, Schaden, Reifen und Boxenstopp sind **Spiel**, keine Telemetrie: das echte Auto hat
 keinen Tankgeber und meldet keinen Schaden.
