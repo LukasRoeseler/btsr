@@ -22,23 +22,20 @@
   //
   // gamma > 1 streckt den unteren Bereich (mehr Weg fuer wenig Gas), gamma < 1 macht ihn
   // spitzer. 1 ist die Gerade und bitgleich zum Verhalten vor v0.5.10.
-  function gasKennlinie(x, gamma) {
-    const v = Math.max(0, Math.min(1, x));
-    if (!(gamma > 0) || gamma === 1) return v;
-    return Math.pow(v, gamma);
+  // EINE FORMEL FUER ALLE DREI KENNLINIEN (Gas, Bremse, Lenkung): x hoch g, mit dem
+  // Vorzeichen getrennt, weil ein negativer Betrag hoch einem nicht-ganzen Exponenten NaN
+  // waere. GEFRAGT: "warum sind die Kurven bei Lenkkennlinie und Gaskennlinie nicht
+  // dieselben mathematischen Formeln?" - sie waren es schon, nur als zwei Abschriften.
+  // Jetzt steht die Rechnung einmal; die zwei Namen sagen nur noch den Wertebereich.
+  function kennlinie(x, g) {
+    if (!(g > 0) || g === 1) return x;
+    return Math.sign(x) * Math.pow(Math.abs(x), g);
   }
-
-  // ---- Die Lenkkennlinie: dieselbe Kurve, mit Vorzeichen -----------------------------
-  //
-  // BESTELLT: "wie beschleunigungskurve auch lenkkurve einbauen als option mit slider."
-  // x^gamma ist nur fuer x >= 0 definiert (ein negativer Betrag hoch einem nicht-ganzen
-  // Exponenten ist NaN) - deshalb Betrag und Vorzeichen getrennt, wie es der Fahrtakt
-  // vorher schon inline tat. Herausgezogen, damit Kurve und Visualisierung (siehe
-  // kennlinienPlotZeichnen in 50-drive.js) und der Fahrtakt dieselbe Rechnung teilen.
+  function gasKennlinie(x, gamma) {
+    return kennlinie(Math.max(0, Math.min(1, x)), gamma);
+  }
   function lenkKennlinie(x, expo) {
-    const v = Math.max(-1, Math.min(1, x));
-    if (!(expo > 0) || expo === 1) return v;
-    return Math.sign(v) * Math.pow(Math.abs(v), expo);
+    return kennlinie(Math.max(-1, Math.min(1, x)), expo);
   }
 
   // Die Nickgrenzen, GERECHNET aus der statischen Achslast und dem Verlagerungsanteil.
@@ -312,6 +309,9 @@
         // braucht ein Trigger mit grosser Totzone, um ein Tempo zu HALTEN.
         // Die Enden liegen fuer jedes Gamma fest - 0 bleibt 0, 1 bleibt 1.
         throttleGamma: 1.0,
+        // BREMSKENNLINIE, dieselbe Formel wie die Gaskennlinie. BESTELLT: "noch eine
+        // Bremskennlinie einfuegen (standard: etwas unempfindlicher im Anfangsbereich)".
+        brakeGamma: 1.3,
         // 10 km/h on the racing display, which reads speedKmh * REAL_SCALE (71.25).
         // Below this the car is walking pace and should simply stop.
         crawlCutoffKmh: 10 / REAL_SCALE,

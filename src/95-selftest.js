@@ -5030,6 +5030,35 @@
   // BESTELLT: "wie beschleunigungskurve auch lenkkurve einbauen als option mit slider."
   // Dieselben Zusicherungen wie bei der Gaskennlinie, bipolar: -1 bleibt -1, 0 bleibt 0,
   // 1 bleibt 1, fuer jeden Exponenten - und das Vorzeichen darf sich nie umdrehen.
+  // ---- Bremskennlinie und die EINE Formel ----
+  //
+  // BESTELLT: "noch eine Bremskennlinie einfuegen" und "die fuer Lenkverhalten sollte dieselbe
+  // wie die fuer Beschleunigung sein". Geprueft: alle drei Namen rechnen dieselbe Formel,
+  // und der neue Regler setzt brakeGamma fuer beide Autos.
+  stAdd('Bremskennlinie: dieselbe Formel, Regler verdrahtet', () => {
+    const schlecht = [];
+    if (Math.abs(gasKennlinie(0.5, 2) - 0.25) > 1e-12) schlecht.push('Gas 0,5^2');
+    if (Math.abs(lenkKennlinie(-0.5, 2) + 0.25) > 1e-12) schlecht.push('Lenkung -0,5^2');
+    if (Math.abs(lenkKennlinie(0.3, 1.7) - gasKennlinie(0.3, 1.7)) > 1e-12) {
+      schlecht.push('Lenkung und Gas rechnen verschieden');
+    }
+    const el = $('setting-brake-gamma');
+    if (!el) return { ok: false, mass: '#setting-brake-gamma fehlt' };
+    const merk = el.value;
+    try {
+      el.value = '2.2';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      if (Math.abs(physEngine.config.brakeGamma - 2.2) > 1e-9) schlecht.push('Auto 1 nicht gesetzt');
+      if (typeof physEngine2 !== 'undefined' && physEngine2
+          && Math.abs(physEngine2.config.brakeGamma - 2.2) > 1e-9) schlecht.push('Auto 2 nicht gesetzt');
+    } finally {
+      el.value = merk;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    if (Math.abs(parseFloat(merk) - 1.3) > 1e-9) schlecht.push('Vorgabe ' + merk + ' statt 1,3');
+    return { ok: !schlecht.length, mass: schlecht.length ? schlecht.join('; ') : 'eine Formel, Regler wirkt' };
+  });
+
   stAdd('Lenkkennlinie: Enden fest, Vorzeichen erhalten, Regler verdrahtet', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.lenkKennlinie || !OMEGA_TEST.fahrgefuehlWerte) {
       return { skip: true, mass: 'lenkKennlinie nicht vorhanden' };

@@ -647,21 +647,80 @@
       g.toFixed(2) + (nah ? ' linear' : ' \u00b7 \u00bc Weg = ' + viertel + '%');
     kennlinienPlotZeichnen('setting-throttle-gamma-plot', (x) => gasKennlinie(x, g), 0, 1);
   }
-  // LENKKENNLINIE. BESTELLT: "wie beschleunigungskurve auch lenkkurve einbauen als
-  // option mit slider." Dieselbe Kurvenfamilie wie oben, bipolar - siehe expoSteer in
-  // 40-physics.js, das genau diese Rechnung (Vorzeichen mal Betrag hoch Exponent) im
-  // Fahrtakt schon ausfuehrt.
+  // LENKKENNLINIE, und der Plot zeigt jetzt, was das AUTO bekommt.
+  //
+  // GEMELDET: "Lenkkennlinie funktioniert, aber der Plot passt nicht zu dem, was passiert.
+  // Ich muss es umdrehen, damit es stimmt." Plot und Formel waren richtig - aber hinter der
+  // Kurve steht noch eine Verstaerkung: Lenkansprechen (steerResponse) mal Lenkkalibrierung
+  // (steerCalib), in der Vorgabe 3,0 x 2,5. Der volle Einschlag lag deshalb schon bei rund
+  // einem Sechstel Stick, und die gezeichnete Kurve (die nur die Form zeigte) sah dagegen
+  // "falsch herum" aus. Gezeichnet wird jetzt die WIRKSAME Kurve: Stick -> Lenkwinkel, im
+  // Stand und im 1. Gang, gedeckelt bei vollem Einschlag. Gestrichelt daneben dieselbe
+  // Verstaerkung ohne Kennlinie (linear) - liegt die Kurve darunter, reagiert ein leicht
+  // angetippter Stick weniger als linear. Die Physik selbst ist unveraendert.
+  function lenkWirksam(x, e) {
+    const c = physEngine.config;
+    const k = (c.steerResponse || 1) * (c.steerCalib || 1);
+    return Math.max(-1, Math.min(1, lenkKennlinie(x, e) * k));
+  }
   function lenkKennlinieAnwenden() {
     const el = $('setting-steer-expo');
     if (!el) return;
     const e = parseFloat(el.value);
     physEngine.config.steerExpo = e;
-    const nah = Math.abs(e - 1) < 0.001;
-    const viertel = Math.round(100 * Math.pow(0.25, e));
-    $('setting-steer-expo-val').textContent =
-      e.toFixed(2) + (nah ? ' linear' : ' \u00b7 \u00bc Weg = ' + viertel + '%');
-    kennlinienPlotZeichnen('setting-steer-expo-plot', (x) => lenkKennlinie(x, e), -1, 1);
+    const c = physEngine.config;
+    const k = (c.steerResponse || 1) * (c.steerCalib || 1);
+    // Ab welchem Stickweg der volle Einschlag erreicht ist - die Zahl, die man spuert.
+    const voll = Math.min(1, Math.pow(1 / Math.max(1, k), 1 / e));
+    $('setting-steer-expo-val').textContent = e.toFixed(2)
+      + ' \u00b7 ' + t('voll ab') + ' ' + Math.round(voll * 100) + '%';
+    kennlinienPlotZeichnen('setting-steer-expo-plot', (x) => lenkWirksam(x, e), -1, 1);
+    kennlinienPlotZeichnen('setting-steer-expo-ref', (x) => lenkWirksam(x, 1), -1, 1);
   }
+  // BREMSKENNLINIE, dieselbe Formel und dieselbe Darstellung wie die Gaskennlinie.
+  function bremsKennlinieAnwenden() {
+    const el = $('setting-brake-gamma');
+    if (!el) return;
+    const g = parseFloat(el.value);
+    physEngine.config.brakeGamma = g;
+    if (typeof physEngine2 !== 'undefined' && physEngine2) physEngine2.config.brakeGamma = g;
+    const nah = Math.abs(g - 1) < 0.001;
+    const viertel = Math.round(100 * Math.pow(0.25, g));
+    $('setting-brake-gamma-val').textContent =
+      g.toFixed(2) + (nah ? ' linear' : ' \u00b7 \u00bc Weg = ' + viertel + '%');
+    kennlinienPlotZeichnen('setting-brake-gamma-plot', (x) => gasKennlinie(x, g), 0, 1);
+  }
+
+  // ---- DER LIVE-PUNKT AUF DEN DREI KENNLINIEN --------------------------------------
+  //
+  // BESTELLT: "wenn ich dann den Stick oder die Trigger druecke, mir angezeigt wird, wie
+  // viel Input ich gebe und als was es dann interpretiert wird." steerX/throttleY sind die
+  // gemeinsamen Eingaenge aller Quellen (Pad, Tastatur, Touch); die Bremse ist dort der
+  // negative Teil von throttleY. Getaktet und nur bei offenem Optionen-Tab: der Punkt ist
+  // eine Anzeige, und eine Anzeige, die niemand sieht, braucht keinen Takt.
+  function kennlinienPunkt(dotId, liveId, x, y, xMin, xMax) {
+    const dot = $(dotId), live = $(liveId);
+    if (!dot || !live) return;
+    const spanne = xMax - xMin;
+    dot.setAttribute('cx', ((x - xMin) / spanne * 100).toFixed(1));
+    dot.setAttribute('cy', (60 - (y - xMin) / spanne * 60).toFixed(1));
+    live.textContent = t('Eingang') + ' ' + Math.round(x * 100) + '% \u2192 '
+      + Math.round(y * 100) + '%';
+  }
+  setInterval(() => {
+    const tab = document.querySelector('.tabpage.active');
+    if (!tab || tab.id !== 'tab-options') return;
+    const sx = typeof steerX === 'number' ? steerX : 0;
+    const ty = typeof throttleY === 'number' ? throttleY : 0;
+    const c = physEngine.config;
+    kennlinienPunkt('setting-steer-expo-dot', 'setting-steer-expo-live',
+                    sx, lenkWirksam(sx, c.steerExpo), -1, 1);
+    const gas = Math.max(0, ty), br = Math.max(0, -ty);
+    kennlinienPunkt('setting-throttle-gamma-dot', 'setting-throttle-gamma-live',
+                    gas, gasKennlinie(gas, c.throttleGamma), 0, 1);
+    kennlinienPunkt('setting-brake-gamma-dot', 'setting-brake-gamma-live',
+                    br, gasKennlinie(br, c.brakeGamma), 0, 1);
+  }, 66);
   function anfahrschubAnwenden() {
     const el = $('setting-minmove');
     if (!el) return;
@@ -678,6 +737,14 @@
   if ($('setting-steer-expo')) {
     lenkKennlinieAnwenden();
     $('setting-steer-expo').addEventListener('input', lenkKennlinieAnwenden);
+    // Die wirksame Kurve haengt auch an Lenkansprechen und Kalibrierung.
+    ['phys-steerresp', 'setting-steer-calib'].forEach((id) => {
+      if ($(id)) $(id).addEventListener('input', () => setTimeout(lenkKennlinieAnwenden, 0));
+    });
+  }
+  if ($('setting-brake-gamma')) {
+    bremsKennlinieAnwenden();
+    $('setting-brake-gamma').addEventListener('input', bremsKennlinieAnwenden);
   }
   if ($('setting-minmove')) {
     anfahrschubAnwenden();
@@ -2613,7 +2680,7 @@
     // je nach Gaseinstellung anders anfuehlt, waere eine Falle.
     const gasKurve = gasKennlinie(Math.max(0, throttleY), physEngine.config.throttleGamma);
     let rawThrottle = fuelDamageDerate(gasKurve, fuelCut);
-    let rawBrake = Math.max(0, -throttleY);
+    let rawBrake = gasKennlinie(Math.max(0, -throttleY), physEngine.config.brakeGamma);
     // Der rohe Lenk-Input geht unveraendert durch. Steht die Fahrhilfe auf 'quer' (siehe
     // driverAssistAktiv() oben), aendert das NICHT diese Zahl, sondern nur, wie das Auto
     // sie versteht: modeBytes gehen dann mit hinaus (spielerOrtTick in 90-ghosts.js), und
@@ -2746,7 +2813,7 @@
     // DIESELBE Reihenfolge wie bei Auto 1: der Autopilot setzt Gas und Bremse NACH Tank
     // und Schaden. Ein Notlauf bleibt ein Notlauf, auch unter Gelb.
     let lenkung = p2Steer;
-    let bremse = Math.max(0, -p2Throttle);
+    let bremse = gasKennlinie(Math.max(0, -p2Throttle), physEngine2.config.brakeGamma);
     const ap2 = autopilot(bremse, 2);
     if (ap2) {
       gas = ap2.throttle;
