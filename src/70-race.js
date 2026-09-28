@@ -322,13 +322,25 @@
       ghostAuslaufFertig();
       return;
     }
-    if (raceState !== 'racing' && raceState !== 'finishing') { r.lapStart = now; return; }
+    if (raceState !== 'racing' && raceState !== 'finishing') {
+      // Auch im freien Fahren hoert Spieler 2 seine Runde - wie Auto 1 (dashLapTimes).
+      if (typeof playerCar2 !== 'undefined' && car === playerCar2 && r.lapStart !== null
+          && now - r.lapStart > 2000) {
+        playLapChime(false, P2_TON_HOEHE);
+      }
+      r.lapStart = now;
+      return;
+    }
     // During the formation lap this crossing is the START of the race, not a lap.
     if (raceFormationLap) { formationUeberfahrt(String(car.device.id)); return; }
     const warFinishing = raceState === 'finishing';
     if (r.lapStart !== null) {
       const ms = now - r.lapStart, offs = r.offLap || 0;
       r.laps.push({ lap: r.laps.length + 1, ms, off: offs });
+      if (typeof playerCar2 !== 'undefined' && car === playerCar2) {
+        const beste2 = r.laps.every((l) => l.ms >= ms);
+        playLapChime(beste2 && r.laps.length > 1, P2_TON_HOEHE);
+      }
       // Genau hier liegen Rundenzeit und Abgangszahl zusammen vor, und beides braucht die
       // Annahmeregel des Lernens: schneller UND heil. Eine Runde ist eine Auswertung.
       learnSettle(car, ms, offs);
@@ -549,10 +561,13 @@
     return { noten: noten.length, dauer: +(noten[noten.length - 1][0] + noten[noten.length - 1][2] - t0).toFixed(2) };
   }
 
-  function playLapChime(beste) {
+  // `hoehe`: Faktor auf die Tonhoehe. BESTELLT: "Rundenton fuer Spieler 2 auch abspielen,
+  // aber die Toene sollen alle im selben Stil anders klingen (zB hoeher gepitcht)" - Auto 2
+  // bekommt denselben Ton eine Quinte hoeher (x1,5), die Bestzeit-Variante inklusive.
+  function playLapChime(beste, hoehe) {
     if (!soundEnabled || !audioCtx) return;
     const t = audioCtx.currentTime;
-    const f0 = beste ? LAP_TONE_HZ * LAP_BEST_RATIO : LAP_TONE_HZ;
+    const f0 = (beste ? LAP_TONE_HZ * LAP_BEST_RATIO : LAP_TONE_HZ) * (hoehe || 1);
 
     const lp = audioCtx.createBiquadFilter();
     lp.type = 'lowpass';
@@ -2665,6 +2680,12 @@
 
   let weather = 'dry';
   let tyres = 'mittel';
+  // Auto 2: eigene Mischung, eigene Wahl fuer den naechsten Stopp, eigenes Tankziel.
+  let tyres2 = 'mittel';
+  let mischungWunsch2 = null;
+  let tankZiel2 = 100;
+  const TANK_ZIELE_2 = [100, 75, 50, 25];
+  const P2_TON_HOEHE = 1.5;
 
   // ---- Die Mischung als Attribut am Koerper -----------------------------------------
   //
@@ -2688,6 +2709,22 @@
   }
   tyreMixAttribut();
 
+  // Griff, Aufschwimmen und Verschleiss EINER Mischung auf EINEN Motor. Fuer Auto 1 genau
+  // die Rechnung, die vorher in applySurface() stand.
+  function mischungAnwenden(motor, mix, griff) {
+    const e = TYRE_MIX[mix] || TYRE_MIX.mittel;
+    // Beide Zeilen der Tabelle laufen durch dieselbe Interpolation gegen mittel: bei
+    // Staerke 0 sind alle drei Slicks rechnerisch der Mittelreifen.
+    const trocken = mischungWert(mix, 'griff');
+    motor.config.gripScale = trocken + (e.nass - trocken) * griff;
+    // Nur Slicks schwimmen auf; Regenreifen sind geschnitten, um Wasser wegzufuehren.
+    motor.config.aquaplaning = e.aqua ? griff : 0;
+    // Der Verschleissfaktor der Mischung. Ein EIGENES Feld und nicht tyreWearRate selbst:
+    // sonst gaebe es zwei Orte fuer dieselbe Zahl, und der zweite gewaenne beim naechsten
+    // Reglerklick.
+    motor.config.tyreWearMix = mischungWert(mix, 'verschleiss');
+  }
+
   function applySurface() {
     // DAS PIKTOGRAMM ZEIGT DIE MISCHUNG. Hier und nicht bei fitTyresForWeather(): das ist
     // nur EIN Weg zu einem Reifenwechsel, applySurface() laeuft bei jedem - Boxenstopp,
@@ -2708,18 +2745,11 @@
     // soll das Handling reagieren".
     const lvl = wxRainLevel();
     const griff = lvl * lvl;
-    const e = TYRE_MIX[tyres] || TYRE_MIX.mittel;
-    // Beide Zeilen der Tabelle laufen durch dieselbe Interpolation gegen mittel: bei
-    // Staerke 0 sind alle drei Slicks rechnerisch der Mittelreifen.
-    const trocken = mischungWert(tyres, 'griff');
-    const nass = 1 + (e.nass - 1) * mischungStaerke() + (e.nass - 1) * 0;
-    physEngine.config.gripScale = trocken + (e.nass - trocken) * griff;
-    // Nur Slicks schwimmen auf; Regenreifen sind geschnitten, um Wasser wegzufuehren.
-    physEngine.config.aquaplaning = e.aqua ? griff : 0;
-    // Der Verschleissfaktor der Mischung. Ein EIGENES Feld und nicht tyreWearRate selbst:
-    // sonst gaebe es zwei Orte fuer dieselbe Zahl, und der zweite gewaenne beim naechsten
-    // Reglerklick.
-    physEngine.config.tyreWearMix = mischungWert(tyres, 'verschleiss');
+    mischungAnwenden(physEngine, tyres, griff);
+    // AUTO 2 MIT SEINER EIGENEN MISCHUNG. BESTELLT: "die Reifen von Spieler 2 werden nicht
+    // gewechselt, sollten sie aber." Vorher bekam physEngine2 hier gar nichts - weder
+    // Mischung noch Regen.
+    if (typeof physEngine2 !== 'undefined' && physEngine2) mischungAnwenden(physEngine2, tyres2, griff);
     setAmbienceRainLevel(lvl);
     // Das Regenlicht und die Tropfen haengen an der SICHTBAREN Front und nicht am
     // quadratischen Griff: man sieht Regen, bevor man ihn faehrt.
@@ -2822,6 +2852,27 @@
     mischungWunsch = MISCHUNG_FOLGE[(i + 1) % MISCHUNG_FOLGE.length];
     showHudToast(t('Reifenwahl') + ': ' + mischungName(mischungWunsch));
     return mischungWunsch;
+  }
+
+  // Dasselbe fuer Auto 2: Reifenwahl und Tankziel fuer den naechsten Stopp.
+  function pitMischungWahl2() { return mischungWunsch2 || tyres2; }
+  function pitMischungWeiter2() {
+    const i = MISCHUNG_FOLGE.indexOf(pitMischungWahl2());
+    mischungWunsch2 = MISCHUNG_FOLGE[(i + 1) % MISCHUNG_FOLGE.length];
+    showHudToast('P2 ' + t('Reifenwahl') + ': ' + mischungName(mischungWunsch2));
+    return mischungWunsch2;
+  }
+  function tankZiel2Weiter() {
+    const i = TANK_ZIELE_2.indexOf(tankZiel2);
+    tankZiel2 = TANK_ZIELE_2[(i + 1) % TANK_ZIELE_2.length];
+    showHudToast('P2 ' + t('Tank auf') + ' ' + tankZiel2 + ' %');
+    return tankZiel2;
+  }
+  function pitKachelStand2() {
+    const mix = pitMischungWahl2();
+    return { mix, mixName: mischungName(mix), mixFarbe: mischungFarbe(mix),
+             mixWarnung: (weather === 'rain') !== (mix === 'regen'),
+             tankWort: tankZiel2 + ' %' };
   }
 
   function fitTyresForWeather() {
@@ -3490,6 +3541,15 @@
       if (steht) {
         boxZwei.lage = 'service';
         showHudToast('P2: SERVICE LAEUFT');
+        // Reifen wie bei Auto 1: die gewaehlte Mischung, frisch und ungebraucht.
+        const neu = pitMischungWahl2();
+        if (neu !== tyres2) {
+          tyres2 = neu;
+          mischungAnwenden(physEngine2, tyres2, wxRainLevel() * wxRainLevel());
+          log('P2: ' + TYRE_MIX[tyres2].name + ' montiert.', 'info');
+        }
+        mischungWunsch2 = null;
+        resetTyres(physEngine2);
       }
       return;
     }
@@ -3509,13 +3569,13 @@
     // dieselbe Regel wie bei Auto 1s pitDone.refuel.
     if (!boxZwei.tankFertig) {
       const tank = tankZweiStand();
-      if (tank >= 100 - 0.05) {
+      if (tank >= tankZiel2 - 0.05) {
         boxZwei.tankFertig = true;
       } else {
-        const dazu = Math.min(100 - tank, PIT_FUEL_PER_SEC * dt);
+        const dazu = Math.min(tankZiel2 - tank, PIT_FUEL_PER_SEC * dt);
         tankZweiFuellen(tank + dazu);
         boxZwei.getankt += dazu;
-        if (tank + dazu >= 100 - 0.05) {
+        if (tank + dazu >= tankZiel2 - 0.05) {
           boxZwei.tankFertig = true;
           pitChimeFuel();
         }
@@ -3537,7 +3597,8 @@
       }
     }
 
-    const fertig = tankZweiStand() >= 100 - 0.05 && schadenVon(2) <= 0.05;
+    const fertig = (boxZwei.tankFertig || tankZweiStand() >= tankZiel2 - 0.05)
+                   && schadenVon(2) <= 0.05;
     // Und ein FLACHER MINDESTAUFENTHALT, wenn es nichts zu tun gab: sonst ist ein
     // Boxenstopp bei vollem Tank und heilem Auto kostenlos. Dieselbe Zahl wie bei Auto 1.
     const genug = boxZwei.standS >= PIT_EMPTY_STOP_S;
@@ -4311,21 +4372,22 @@
   // button now enters the same service, so there is one pit stop with two ways in.
   // Fresh rubber: cold and unworn. Called when the crew fits tyres and at the green light,
   // which is exactly when a real car leaves on new or cooled-down tyres.
-  function resetTyres() {
+  function resetTyres(motor) {
+    const m = motor || physEngine;
     // Mit Reifenwaermer auf Betriebstemperatur, ohne auf Umgebung. tyreOptimalC und nicht
     // ein eigener Wert: ein Waermer bringt den Reifen in sein Griff-Fenster, und zwei Zahlen
     // fuer dasselbe Fenster laufen auseinander.
-    const startTemp = physEngine.config.tyreBlankets
-      ? physEngine.config.tyreOptimalC : physEngine.config.tyreAmbientC;
-    physEngine.state.tyreTempC = startTemp;
-    physEngine.state.tyreWear = 0;
+    const startTemp = m.config.tyreBlankets
+      ? m.config.tyreOptimalC : m.config.tyreAmbientC;
+    m.state.tyreTempC = startTemp;
+    m.state.tyreWear = 0;
     // Links und rechts MUESSEN mit. Ohne diese zwei Zeilen setzt der Boxenstopp den
     // Mittelwert auf 0 und die Seiten stehen weiter bei 0,4: das Cockpit zeigt heile Reifen
     // und das Auto zieht immer noch. Genau so laufen zwei Darstellungen derselben Sache
     // auseinander.
-    physEngine.state.tyreWearL = 0;
-    physEngine.state.tyreWearR = 0;
-    physEngine.state.tyrePull = 0;
+    m.state.tyreWearL = 0;
+    m.state.tyreWearR = 0;
+    m.state.tyrePull = 0;
     // Die VIER Raeder muessen mit, sonst setzt der Boxenstopp die Mittelwerte auf 0 und die
     // vier Felder im Cockpit zeigen weiter Abnutzung. Genau diese Sorte Auslassung hat schon
     // einmal dazu gefuehrt, dass die Kachel dem Toast widersprach - und man glaubt dem, was
@@ -4336,10 +4398,10 @@
     // Zustandskopie in den Messaufbauten. Hier haelt gerade niemand eine; es so zu lassen
     // waere die Sorte Entscheidung, die beim naechsten Leser teuer wird.
     for (let i = 0; i < 4; i++) {
-      physEngine.state.tyreWear4[i] = 0;
-      physEngine.state.tyreTemp4[i] = startTemp;
+      m.state.tyreWear4[i] = 0;
+      m.state.tyreTemp4[i] = startTemp;
     }
-    physEngine.state.tyreGrip = 1;
+    m.state.tyreGrip = 1;
     // Die BREMSSCHEIBEN werden hier ausdruecklich NICHT gekuehlt. Ein Boxenstopp dauert
     // Sekunden, und Scheiben kuehlen darin nicht auf Umgebungstemperatur. Reifen werden
     // gewechselt, Scheiben nicht - wer nach dem Stopp mit heisser Bremse herausfaehrt, hat

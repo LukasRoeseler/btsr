@@ -8380,6 +8380,7 @@
   // Licht, Lichthupe, Boxenstopp - dieselbe Flankenerkennung wie beim Schalten oben,
   // eigene Merker, weil es Spieler 2s EIGENER Griff zum Knopf ist.
   let p2PrevHeadlights = false, p2PrevFlash = false, p2PrevPitstop = false;
+  let p2PrevTyre = false, p2PrevFuel = false;
   function pollPad2(pad) {
     if (!pad) {
       // Kein zweites Pad: Spieler 2 steht. Ohne diese zwei Zeilen behielte er den letzten
@@ -8457,6 +8458,17 @@
       boxZweiAnfordern();
     }
     p2PrevPitstop = pitstopNow2;
+    // Reifen- und Tankwahl fuer Auto 2 an SEINEM Pad, dieselben Tasten wie bei Auto 1.
+    if (bindings2.tyreSelect) {
+      const tyre2 = readBindingValue(pad, bindings2.tyreSelect) > BUTTON_CAPTURE_THRESHOLD;
+      if (tyre2 && !p2PrevTyre && typeof pitMischungWeiter2 === 'function') pitMischungWeiter2();
+      p2PrevTyre = tyre2;
+    }
+    if (bindings2.fuelSelect) {
+      const fuel2 = readBindingValue(pad, bindings2.fuelSelect) > BUTTON_CAPTURE_THRESHOLD;
+      if (fuel2 && !p2PrevFuel && typeof tankZiel2Weiter === 'function') tankZiel2Weiter();
+      p2PrevFuel = fuel2;
+    }
   }
 
   function pollGamepad() {

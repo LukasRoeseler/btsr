@@ -280,6 +280,8 @@
   .curve-diag { stroke: var(--border); stroke-width: 1; stroke-dasharray: 3 3; fill: none; }
   .curve-line { stroke: var(--info); stroke-width: 2; fill: none; }
   .curve-dot { fill: var(--bad); stroke: none; }
+  .vgl-wahl { display: inline-flex; align-items: center; gap: 6px; }
+  .vgl-reifen { width: 14px; height: 14px; border-radius: 50%; border: 3px solid var(--muted); box-sizing: border-box; display: inline-block; }
   .curve-live { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
   /* ---- Regenradar in der Wetterkachel ----
      Das Canvas liegt UNTER dem Symbol und fuellt die Kachel. Es ist nicht anklickbar, damit
@@ -3186,7 +3188,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.8.6</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.7</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3797,7 +3799,8 @@
                 <div class="gt3-val sm" id="vgl1-batt" data-i18n-skip>&ndash;</div></div>
             </div>
             <div class="vgl-aktionen">
-              <button type="button" class="gt3-act vgl-box" id="vgl1-act-pit">Boxenstopp</button>
+              <button type="button" class="gt3-act vgl-box vgl-wahl" id="vgl1-act-tyre" title="Reifen f&uuml;r den n&auml;chsten Stopp"><span class="vgl-reifen" id="vgl1-tyre-ring"></span><span id="vgl1-tyre-next" data-i18n-skip>&ndash;</span></button>
+              <button type="button" class="gt3-act vgl-box vgl-wahl" id="vgl1-act-fuel" title="Tankmenge f&uuml;r den n&auml;chsten Stopp"><span aria-hidden="true">&#9981;</span><span id="vgl1-fuel-next" data-i18n-skip>&ndash;</span></button>
               <button type="button" class="gt3-act gt3-act-ico gt3-act-zwei vgl-box"
                       id="vgl1-act-sound"
                       title="Motorklang Auto 1: rechte H&auml;lfte weiter, linke zur&uuml;ck">
@@ -3837,7 +3840,8 @@
                 <div class="gt3-val sm" id="vgl2-batt" data-i18n-skip>&ndash;</div></div>
             </div>
             <div class="vgl-aktionen">
-              <button type="button" class="gt3-act vgl-box" id="p2s-act-pit">Boxenstopp</button>
+              <button type="button" class="gt3-act vgl-box vgl-wahl" id="vgl2-act-tyre" title="Reifen f&uuml;r den n&auml;chsten Stopp"><span class="vgl-reifen" id="vgl2-tyre-ring"></span><span id="vgl2-tyre-next" data-i18n-skip>&ndash;</span></button>
+              <button type="button" class="gt3-act vgl-box vgl-wahl" id="vgl2-act-fuel" title="Tankmenge f&uuml;r den n&auml;chsten Stopp"><span aria-hidden="true">&#9981;</span><span id="vgl2-fuel-next" data-i18n-skip>&ndash;</span></button>
               <button type="button" class="gt3-act gt3-act-ico gt3-act-zwei vgl-box"
                       id="vgl-act-sound"
                       title="Motorklang Auto 2: rechte H&auml;lfte weiter, linke zur&uuml;ck">

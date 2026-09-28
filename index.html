@@ -280,6 +280,8 @@
   .curve-diag { stroke: var(--border); stroke-width: 1; stroke-dasharray: 3 3; fill: none; }
   .curve-line { stroke: var(--info); stroke-width: 2; fill: none; }
   .curve-dot { fill: var(--bad); stroke: none; }
+  .vgl-wahl { display: inline-flex; align-items: center; gap: 6px; }
+  .vgl-reifen { width: 14px; height: 14px; border-radius: 50%; border: 3px solid var(--muted); box-sizing: border-box; display: inline-block; }
   .curve-live { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
   /* ---- Regenradar in der Wetterkachel ----
      Das Canvas liegt UNTER dem Symbol und fuellt die Kachel. Es ist nicht anklickbar, damit
@@ -3186,7 +3188,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.8.6</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.7</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3797,7 +3799,8 @@
                 <div class="gt3-val sm" id="vgl1-batt" data-i18n-skip>&ndash;</div></div>
             </div>
             <div class="vgl-aktionen">
-              <button type="button" class="gt3-act vgl-box" id="vgl1-act-pit">Boxenstopp</button>
+              <button type="button" class="gt3-act vgl-box vgl-wahl" id="vgl1-act-tyre" title="Reifen f&uuml;r den n&auml;chsten Stopp"><span class="vgl-reifen" id="vgl1-tyre-ring"></span><span id="vgl1-tyre-next" data-i18n-skip>&ndash;</span></button>
+              <button type="button" class="gt3-act vgl-box vgl-wahl" id="vgl1-act-fuel" title="Tankmenge f&uuml;r den n&auml;chsten Stopp"><span aria-hidden="true">&#9981;</span><span id="vgl1-fuel-next" data-i18n-skip>&ndash;</span></button>
               <button type="button" class="gt3-act gt3-act-ico gt3-act-zwei vgl-box"
                       id="vgl1-act-sound"
                       title="Motorklang Auto 1: rechte H&auml;lfte weiter, linke zur&uuml;ck">
@@ -3837,7 +3840,8 @@
                 <div class="gt3-val sm" id="vgl2-batt" data-i18n-skip>&ndash;</div></div>
             </div>
             <div class="vgl-aktionen">
-              <button type="button" class="gt3-act vgl-box" id="p2s-act-pit">Boxenstopp</button>
+              <button type="button" class="gt3-act vgl-box vgl-wahl" id="vgl2-act-tyre" title="Reifen f&uuml;r den n&auml;chsten Stopp"><span class="vgl-reifen" id="vgl2-tyre-ring"></span><span id="vgl2-tyre-next" data-i18n-skip>&ndash;</span></button>
+              <button type="button" class="gt3-act vgl-box vgl-wahl" id="vgl2-act-fuel" title="Tankmenge f&uuml;r den n&auml;chsten Stopp"><span aria-hidden="true">&#9981;</span><span id="vgl2-fuel-next" data-i18n-skip>&ndash;</span></button>
               <button type="button" class="gt3-act gt3-act-ico gt3-act-zwei vgl-box"
                       id="vgl-act-sound"
                       title="Motorklang Auto 2: rechte H&auml;lfte weiter, linke zur&uuml;ck">
@@ -10064,6 +10068,9 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Tank auf": "Fuel to",
+    "Reifen für den nächsten Stopp": "Tyres for the next stop",
+    "Tankmenge für den nächsten Stopp": "Fuel for the next stop",
     "Erst ein Auto verbinden": "Connect a car first",
     "Boxenstopp eingeleitet": "Pit stop initiated",
     "Rennmodus: links/rechts wählen": "Race mode: choose with left/right",
@@ -16977,16 +16984,22 @@
         fuss.textContent = 'Boxenstopp: links f\u00fcr Auto 1, rechts f\u00fcr Auto 2.';
       }
     }
-    const knopf2 = $('p2s-act-pit');
-    if (knopf2) {
-      knopf2.classList.toggle('warn', lage !== 'aus');
-      knopf2.disabled = !zweiSpieler || !car2;
-    }
-    const knopf1 = $('vgl1-act-pit');
-    if (knopf1) {
-      knopf1.classList.toggle('warn',
-        typeof pitState !== 'undefined' && pitState !== 'off');
-    }
+    // BESTELLT: "Entferne in der 2-Spieler-Ansicht den Boxenstopp-Button und fuege
+    // stattdessen die Vorschaubilder fuer die naechsten Reifen und Menge Tankfuellung ein
+    // (Tasten sollten jeweils auch funktionieren)." Der Stopp selbst kommt weiter ueber die
+    // Boxentaste des jeweiligen Pads.
+    const wahlZeigen = (pre, st) => {
+      if (!st || !$(pre + '-tyre-next')) return;
+      $(pre + '-tyre-next').textContent = st.mixName;
+      $(pre + '-tyre-ring').style.borderColor = st.mixFarbe;
+      $(pre + '-act-tyre').classList.toggle('warn', !!st.mixWarnung);
+      $(pre + '-fuel-next').textContent = st.tankWort;
+    };
+    if (typeof pitKachelStand === 'function') wahlZeigen('vgl1', pitKachelStand());
+    if (typeof pitKachelStand2 === 'function') wahlZeigen('vgl2', pitKachelStand2());
+    ['vgl2-act-tyre', 'vgl2-act-fuel'].forEach((id) => {
+      if ($(id)) $(id).disabled = !zweiSpieler || !car2;
+    });
     // BESTELLT: "Spieler 1 und Spieler 2 sollen verschiedene Motorsounds haben duerfen."
     // Zwei Knoepfe statt einem - je einer zeigt SEIN EIGENES Auswahlfeld an.
     const ton1 = $('vgl1-act-sound-txt');
@@ -17003,23 +17016,17 @@
     }
   }
 
-  if ($('p2s-act-pit')) {
-    $('p2s-act-pit').addEventListener('click', () => {
-      // Defensiv gerufen: 70-race.js wird SPAETER gebaut. Zur Laufzeit ist die Funktion da.
-      if (typeof boxZweiAnfordern === 'function') boxZweiAnfordern();
-      p2ScreenRender();
-    });
-  }
+  // Die vier Wahlkacheln: Auto 1 ueber DIESELBEN Funktionen wie LB/RB, Auto 2 ueber seine.
+  // Defensiv gerufen: 70-race.js wird SPAETER gebaut. Zur Laufzeit sind die Funktionen da.
+  [['vgl1-act-tyre', () => pitMischungWeiter()],
+   ['vgl1-act-fuel', () => pitVorwahlSchalten('refuel')],
+   ['vgl2-act-tyre', () => pitMischungWeiter2()],
+   ['vgl2-act-fuel', () => tankZiel2Weiter()]].forEach(([id, fn]) => {
+    if ($(id)) $(id).addEventListener('click', () => { fn(); p2ScreenRender(); });
+  });
   // Die zwei Knoepfe fuer Auto 1 leiten auf die vorhandenen weiter, statt ihre Wirkung zu
   // verdoppeln: ein zweiter Weg in den Boxenstopp waere ein zweiter Ort, an dem die
   // Vorwahl entsteht - und die Vorwahl gibt es genau einmal, auf dem Boxenschirm.
-  if ($('vgl1-act-pit')) {
-    $('vgl1-act-pit').addEventListener('click', () => {
-      const q = $('race-act-pit');
-      if (q) q.click();
-      p2ScreenRender();
-    });
-  }
   // BESTELLT: eigener Motor-Knopf fuer Auto 1 auf dem Vergleichsschirm, neben dem fuer
   // Auto 2 - genau wie die zwei Boxenstopp-Knoepfe. Leitet weiter wie beim Boxenstopp-
   // Knopf: derselbe Klick-Ort (links/rechts) geht an #race-act-sound, damit es EINEN Weg
@@ -23446,13 +23453,25 @@
       ghostAuslaufFertig();
       return;
     }
-    if (raceState !== 'racing' && raceState !== 'finishing') { r.lapStart = now; return; }
+    if (raceState !== 'racing' && raceState !== 'finishing') {
+      // Auch im freien Fahren hoert Spieler 2 seine Runde - wie Auto 1 (dashLapTimes).
+      if (typeof playerCar2 !== 'undefined' && car === playerCar2 && r.lapStart !== null
+          && now - r.lapStart > 2000) {
+        playLapChime(false, P2_TON_HOEHE);
+      }
+      r.lapStart = now;
+      return;
+    }
     // During the formation lap this crossing is the START of the race, not a lap.
     if (raceFormationLap) { formationUeberfahrt(String(car.device.id)); return; }
     const warFinishing = raceState === 'finishing';
     if (r.lapStart !== null) {
       const ms = now - r.lapStart, offs = r.offLap || 0;
       r.laps.push({ lap: r.laps.length + 1, ms, off: offs });
+      if (typeof playerCar2 !== 'undefined' && car === playerCar2) {
+        const beste2 = r.laps.every((l) => l.ms >= ms);
+        playLapChime(beste2 && r.laps.length > 1, P2_TON_HOEHE);
+      }
       // Genau hier liegen Rundenzeit und Abgangszahl zusammen vor, und beides braucht die
       // Annahmeregel des Lernens: schneller UND heil. Eine Runde ist eine Auswertung.
       learnSettle(car, ms, offs);
@@ -23673,10 +23692,13 @@
     return { noten: noten.length, dauer: +(noten[noten.length - 1][0] + noten[noten.length - 1][2] - t0).toFixed(2) };
   }
 
-  function playLapChime(beste) {
+  // `hoehe`: Faktor auf die Tonhoehe. BESTELLT: "Rundenton fuer Spieler 2 auch abspielen,
+  // aber die Toene sollen alle im selben Stil anders klingen (zB hoeher gepitcht)" - Auto 2
+  // bekommt denselben Ton eine Quinte hoeher (x1,5), die Bestzeit-Variante inklusive.
+  function playLapChime(beste, hoehe) {
     if (!soundEnabled || !audioCtx) return;
     const t = audioCtx.currentTime;
-    const f0 = beste ? LAP_TONE_HZ * LAP_BEST_RATIO : LAP_TONE_HZ;
+    const f0 = (beste ? LAP_TONE_HZ * LAP_BEST_RATIO : LAP_TONE_HZ) * (hoehe || 1);
 
     const lp = audioCtx.createBiquadFilter();
     lp.type = 'lowpass';
@@ -25789,6 +25811,12 @@
 
   let weather = 'dry';
   let tyres = 'mittel';
+  // Auto 2: eigene Mischung, eigene Wahl fuer den naechsten Stopp, eigenes Tankziel.
+  let tyres2 = 'mittel';
+  let mischungWunsch2 = null;
+  let tankZiel2 = 100;
+  const TANK_ZIELE_2 = [100, 75, 50, 25];
+  const P2_TON_HOEHE = 1.5;
 
   // ---- Die Mischung als Attribut am Koerper -----------------------------------------
   //
@@ -25812,6 +25840,22 @@
   }
   tyreMixAttribut();
 
+  // Griff, Aufschwimmen und Verschleiss EINER Mischung auf EINEN Motor. Fuer Auto 1 genau
+  // die Rechnung, die vorher in applySurface() stand.
+  function mischungAnwenden(motor, mix, griff) {
+    const e = TYRE_MIX[mix] || TYRE_MIX.mittel;
+    // Beide Zeilen der Tabelle laufen durch dieselbe Interpolation gegen mittel: bei
+    // Staerke 0 sind alle drei Slicks rechnerisch der Mittelreifen.
+    const trocken = mischungWert(mix, 'griff');
+    motor.config.gripScale = trocken + (e.nass - trocken) * griff;
+    // Nur Slicks schwimmen auf; Regenreifen sind geschnitten, um Wasser wegzufuehren.
+    motor.config.aquaplaning = e.aqua ? griff : 0;
+    // Der Verschleissfaktor der Mischung. Ein EIGENES Feld und nicht tyreWearRate selbst:
+    // sonst gaebe es zwei Orte fuer dieselbe Zahl, und der zweite gewaenne beim naechsten
+    // Reglerklick.
+    motor.config.tyreWearMix = mischungWert(mix, 'verschleiss');
+  }
+
   function applySurface() {
     // DAS PIKTOGRAMM ZEIGT DIE MISCHUNG. Hier und nicht bei fitTyresForWeather(): das ist
     // nur EIN Weg zu einem Reifenwechsel, applySurface() laeuft bei jedem - Boxenstopp,
@@ -25832,18 +25876,11 @@
     // soll das Handling reagieren".
     const lvl = wxRainLevel();
     const griff = lvl * lvl;
-    const e = TYRE_MIX[tyres] || TYRE_MIX.mittel;
-    // Beide Zeilen der Tabelle laufen durch dieselbe Interpolation gegen mittel: bei
-    // Staerke 0 sind alle drei Slicks rechnerisch der Mittelreifen.
-    const trocken = mischungWert(tyres, 'griff');
-    const nass = 1 + (e.nass - 1) * mischungStaerke() + (e.nass - 1) * 0;
-    physEngine.config.gripScale = trocken + (e.nass - trocken) * griff;
-    // Nur Slicks schwimmen auf; Regenreifen sind geschnitten, um Wasser wegzufuehren.
-    physEngine.config.aquaplaning = e.aqua ? griff : 0;
-    // Der Verschleissfaktor der Mischung. Ein EIGENES Feld und nicht tyreWearRate selbst:
-    // sonst gaebe es zwei Orte fuer dieselbe Zahl, und der zweite gewaenne beim naechsten
-    // Reglerklick.
-    physEngine.config.tyreWearMix = mischungWert(tyres, 'verschleiss');
+    mischungAnwenden(physEngine, tyres, griff);
+    // AUTO 2 MIT SEINER EIGENEN MISCHUNG. BESTELLT: "die Reifen von Spieler 2 werden nicht
+    // gewechselt, sollten sie aber." Vorher bekam physEngine2 hier gar nichts - weder
+    // Mischung noch Regen.
+    if (typeof physEngine2 !== 'undefined' && physEngine2) mischungAnwenden(physEngine2, tyres2, griff);
     setAmbienceRainLevel(lvl);
     // Das Regenlicht und die Tropfen haengen an der SICHTBAREN Front und nicht am
     // quadratischen Griff: man sieht Regen, bevor man ihn faehrt.
@@ -25946,6 +25983,27 @@
     mischungWunsch = MISCHUNG_FOLGE[(i + 1) % MISCHUNG_FOLGE.length];
     showHudToast(t('Reifenwahl') + ': ' + mischungName(mischungWunsch));
     return mischungWunsch;
+  }
+
+  // Dasselbe fuer Auto 2: Reifenwahl und Tankziel fuer den naechsten Stopp.
+  function pitMischungWahl2() { return mischungWunsch2 || tyres2; }
+  function pitMischungWeiter2() {
+    const i = MISCHUNG_FOLGE.indexOf(pitMischungWahl2());
+    mischungWunsch2 = MISCHUNG_FOLGE[(i + 1) % MISCHUNG_FOLGE.length];
+    showHudToast('P2 ' + t('Reifenwahl') + ': ' + mischungName(mischungWunsch2));
+    return mischungWunsch2;
+  }
+  function tankZiel2Weiter() {
+    const i = TANK_ZIELE_2.indexOf(tankZiel2);
+    tankZiel2 = TANK_ZIELE_2[(i + 1) % TANK_ZIELE_2.length];
+    showHudToast('P2 ' + t('Tank auf') + ' ' + tankZiel2 + ' %');
+    return tankZiel2;
+  }
+  function pitKachelStand2() {
+    const mix = pitMischungWahl2();
+    return { mix, mixName: mischungName(mix), mixFarbe: mischungFarbe(mix),
+             mixWarnung: (weather === 'rain') !== (mix === 'regen'),
+             tankWort: tankZiel2 + ' %' };
   }
 
   function fitTyresForWeather() {
@@ -26614,6 +26672,15 @@
       if (steht) {
         boxZwei.lage = 'service';
         showHudToast('P2: SERVICE LAEUFT');
+        // Reifen wie bei Auto 1: die gewaehlte Mischung, frisch und ungebraucht.
+        const neu = pitMischungWahl2();
+        if (neu !== tyres2) {
+          tyres2 = neu;
+          mischungAnwenden(physEngine2, tyres2, wxRainLevel() * wxRainLevel());
+          log('P2: ' + TYRE_MIX[tyres2].name + ' montiert.', 'info');
+        }
+        mischungWunsch2 = null;
+        resetTyres(physEngine2);
       }
       return;
     }
@@ -26633,13 +26700,13 @@
     // dieselbe Regel wie bei Auto 1s pitDone.refuel.
     if (!boxZwei.tankFertig) {
       const tank = tankZweiStand();
-      if (tank >= 100 - 0.05) {
+      if (tank >= tankZiel2 - 0.05) {
         boxZwei.tankFertig = true;
       } else {
-        const dazu = Math.min(100 - tank, PIT_FUEL_PER_SEC * dt);
+        const dazu = Math.min(tankZiel2 - tank, PIT_FUEL_PER_SEC * dt);
         tankZweiFuellen(tank + dazu);
         boxZwei.getankt += dazu;
-        if (tank + dazu >= 100 - 0.05) {
+        if (tank + dazu >= tankZiel2 - 0.05) {
           boxZwei.tankFertig = true;
           pitChimeFuel();
         }
@@ -26661,7 +26728,8 @@
       }
     }
 
-    const fertig = tankZweiStand() >= 100 - 0.05 && schadenVon(2) <= 0.05;
+    const fertig = (boxZwei.tankFertig || tankZweiStand() >= tankZiel2 - 0.05)
+                   && schadenVon(2) <= 0.05;
     // Und ein FLACHER MINDESTAUFENTHALT, wenn es nichts zu tun gab: sonst ist ein
     // Boxenstopp bei vollem Tank und heilem Auto kostenlos. Dieselbe Zahl wie bei Auto 1.
     const genug = boxZwei.standS >= PIT_EMPTY_STOP_S;
@@ -27435,21 +27503,22 @@
   // button now enters the same service, so there is one pit stop with two ways in.
   // Fresh rubber: cold and unworn. Called when the crew fits tyres and at the green light,
   // which is exactly when a real car leaves on new or cooled-down tyres.
-  function resetTyres() {
+  function resetTyres(motor) {
+    const m = motor || physEngine;
     // Mit Reifenwaermer auf Betriebstemperatur, ohne auf Umgebung. tyreOptimalC und nicht
     // ein eigener Wert: ein Waermer bringt den Reifen in sein Griff-Fenster, und zwei Zahlen
     // fuer dasselbe Fenster laufen auseinander.
-    const startTemp = physEngine.config.tyreBlankets
-      ? physEngine.config.tyreOptimalC : physEngine.config.tyreAmbientC;
-    physEngine.state.tyreTempC = startTemp;
-    physEngine.state.tyreWear = 0;
+    const startTemp = m.config.tyreBlankets
+      ? m.config.tyreOptimalC : m.config.tyreAmbientC;
+    m.state.tyreTempC = startTemp;
+    m.state.tyreWear = 0;
     // Links und rechts MUESSEN mit. Ohne diese zwei Zeilen setzt der Boxenstopp den
     // Mittelwert auf 0 und die Seiten stehen weiter bei 0,4: das Cockpit zeigt heile Reifen
     // und das Auto zieht immer noch. Genau so laufen zwei Darstellungen derselben Sache
     // auseinander.
-    physEngine.state.tyreWearL = 0;
-    physEngine.state.tyreWearR = 0;
-    physEngine.state.tyrePull = 0;
+    m.state.tyreWearL = 0;
+    m.state.tyreWearR = 0;
+    m.state.tyrePull = 0;
     // Die VIER Raeder muessen mit, sonst setzt der Boxenstopp die Mittelwerte auf 0 und die
     // vier Felder im Cockpit zeigen weiter Abnutzung. Genau diese Sorte Auslassung hat schon
     // einmal dazu gefuehrt, dass die Kachel dem Toast widersprach - und man glaubt dem, was
@@ -27460,10 +27529,10 @@
     // Zustandskopie in den Messaufbauten. Hier haelt gerade niemand eine; es so zu lassen
     // waere die Sorte Entscheidung, die beim naechsten Leser teuer wird.
     for (let i = 0; i < 4; i++) {
-      physEngine.state.tyreWear4[i] = 0;
-      physEngine.state.tyreTemp4[i] = startTemp;
+      m.state.tyreWear4[i] = 0;
+      m.state.tyreTemp4[i] = startTemp;
     }
-    physEngine.state.tyreGrip = 1;
+    m.state.tyreGrip = 1;
     // Die BREMSSCHEIBEN werden hier ausdruecklich NICHT gekuehlt. Ein Boxenstopp dauert
     // Sekunden, und Scheiben kuehlen darin nicht auf Umgebungstemperatur. Reifen werden
     // gewechselt, Scheiben nicht - wer nach dem Stopp mit heisser Bremse herausfaehrt, hat
@@ -38794,6 +38863,7 @@
   // Licht, Lichthupe, Boxenstopp - dieselbe Flankenerkennung wie beim Schalten oben,
   // eigene Merker, weil es Spieler 2s EIGENER Griff zum Knopf ist.
   let p2PrevHeadlights = false, p2PrevFlash = false, p2PrevPitstop = false;
+  let p2PrevTyre = false, p2PrevFuel = false;
   function pollPad2(pad) {
     if (!pad) {
       // Kein zweites Pad: Spieler 2 steht. Ohne diese zwei Zeilen behielte er den letzten
@@ -38871,6 +38941,17 @@
       boxZweiAnfordern();
     }
     p2PrevPitstop = pitstopNow2;
+    // Reifen- und Tankwahl fuer Auto 2 an SEINEM Pad, dieselben Tasten wie bei Auto 1.
+    if (bindings2.tyreSelect) {
+      const tyre2 = readBindingValue(pad, bindings2.tyreSelect) > BUTTON_CAPTURE_THRESHOLD;
+      if (tyre2 && !p2PrevTyre && typeof pitMischungWeiter2 === 'function') pitMischungWeiter2();
+      p2PrevTyre = tyre2;
+    }
+    if (bindings2.fuelSelect) {
+      const fuel2 = readBindingValue(pad, bindings2.fuelSelect) > BUTTON_CAPTURE_THRESHOLD;
+      if (fuel2 && !p2PrevFuel && typeof tankZiel2Weiter === 'function') tankZiel2Weiter();
+      p2PrevFuel = fuel2;
+    }
   }
 
   function pollGamepad() {
@@ -58358,6 +58439,35 @@
              mass: mitOrt.length + ' Takte geortet, ' + mitBlick.length
                  + ' davon mit Vorausblick (muss 0 sein)'
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Auto 2 wechselt beim Boxenstopp die Reifen ----
+  //
+  // GEMELDET: "die reifen von spieler 2 werden nicht gewechselt, sollten sie aber."
+  stAdd('Zwei Spieler: Auto 2 zieht beim Stopp die gewaehlte Mischung auf', () => {
+    if (typeof physEngine2 === 'undefined' || !physEngine2) return { skip: true, mass: 'kein physEngine2' };
+    const merk = { t2: tyres2, w2: mischungWunsch2, lage: boxZwei.lage, v: physEngine2.state.speedKmh,
+                   thr: p2Throttle, g: physEngine2.config.gripScale, wear: physEngine2.state.tyreWear,
+                   tick: boxZwei.letzterTick };
+    try {
+      tyres2 = 'mittel';
+      mischungWunsch2 = null;
+      pitMischungWeiter2();
+      const gewaehlt = mischungWunsch2;
+      physEngine2.state.tyreWear = 0.6;
+      physEngine2.state.speedKmh = 0;
+      p2Throttle = 0;
+      boxZwei.lage = 'angefordert';
+      boxZweiTick();
+      const ok = tyres2 === gewaehlt && physEngine2.state.tyreWear === 0 && boxZwei.lage === 'service';
+      return { ok, mass: 'gewaehlt ' + gewaehlt + ', montiert ' + tyres2 + ', Verschleiss danach '
+               + physEngine2.state.tyreWear + ', Lage ' + boxZwei.lage };
+    } finally {
+      tyres2 = merk.t2; mischungWunsch2 = merk.w2; boxZwei.lage = merk.lage;
+      boxZwei.letzterTick = merk.tick;
+      physEngine2.state.speedKmh = merk.v; p2Throttle = merk.thr;
+      physEngine2.config.gripScale = merk.g; physEngine2.state.tyreWear = merk.wear;
+    }
   });
 
   // ---- D-Pad am DualShock 4: Hat-Achse statt Knoepfe ----

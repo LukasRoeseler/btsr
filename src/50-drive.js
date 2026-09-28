@@ -1698,16 +1698,22 @@
         fuss.textContent = 'Boxenstopp: links f\u00fcr Auto 1, rechts f\u00fcr Auto 2.';
       }
     }
-    const knopf2 = $('p2s-act-pit');
-    if (knopf2) {
-      knopf2.classList.toggle('warn', lage !== 'aus');
-      knopf2.disabled = !zweiSpieler || !car2;
-    }
-    const knopf1 = $('vgl1-act-pit');
-    if (knopf1) {
-      knopf1.classList.toggle('warn',
-        typeof pitState !== 'undefined' && pitState !== 'off');
-    }
+    // BESTELLT: "Entferne in der 2-Spieler-Ansicht den Boxenstopp-Button und fuege
+    // stattdessen die Vorschaubilder fuer die naechsten Reifen und Menge Tankfuellung ein
+    // (Tasten sollten jeweils auch funktionieren)." Der Stopp selbst kommt weiter ueber die
+    // Boxentaste des jeweiligen Pads.
+    const wahlZeigen = (pre, st) => {
+      if (!st || !$(pre + '-tyre-next')) return;
+      $(pre + '-tyre-next').textContent = st.mixName;
+      $(pre + '-tyre-ring').style.borderColor = st.mixFarbe;
+      $(pre + '-act-tyre').classList.toggle('warn', !!st.mixWarnung);
+      $(pre + '-fuel-next').textContent = st.tankWort;
+    };
+    if (typeof pitKachelStand === 'function') wahlZeigen('vgl1', pitKachelStand());
+    if (typeof pitKachelStand2 === 'function') wahlZeigen('vgl2', pitKachelStand2());
+    ['vgl2-act-tyre', 'vgl2-act-fuel'].forEach((id) => {
+      if ($(id)) $(id).disabled = !zweiSpieler || !car2;
+    });
     // BESTELLT: "Spieler 1 und Spieler 2 sollen verschiedene Motorsounds haben duerfen."
     // Zwei Knoepfe statt einem - je einer zeigt SEIN EIGENES Auswahlfeld an.
     const ton1 = $('vgl1-act-sound-txt');
@@ -1724,23 +1730,17 @@
     }
   }
 
-  if ($('p2s-act-pit')) {
-    $('p2s-act-pit').addEventListener('click', () => {
-      // Defensiv gerufen: 70-race.js wird SPAETER gebaut. Zur Laufzeit ist die Funktion da.
-      if (typeof boxZweiAnfordern === 'function') boxZweiAnfordern();
-      p2ScreenRender();
-    });
-  }
+  // Die vier Wahlkacheln: Auto 1 ueber DIESELBEN Funktionen wie LB/RB, Auto 2 ueber seine.
+  // Defensiv gerufen: 70-race.js wird SPAETER gebaut. Zur Laufzeit sind die Funktionen da.
+  [['vgl1-act-tyre', () => pitMischungWeiter()],
+   ['vgl1-act-fuel', () => pitVorwahlSchalten('refuel')],
+   ['vgl2-act-tyre', () => pitMischungWeiter2()],
+   ['vgl2-act-fuel', () => tankZiel2Weiter()]].forEach(([id, fn]) => {
+    if ($(id)) $(id).addEventListener('click', () => { fn(); p2ScreenRender(); });
+  });
   // Die zwei Knoepfe fuer Auto 1 leiten auf die vorhandenen weiter, statt ihre Wirkung zu
   // verdoppeln: ein zweiter Weg in den Boxenstopp waere ein zweiter Ort, an dem die
   // Vorwahl entsteht - und die Vorwahl gibt es genau einmal, auf dem Boxenschirm.
-  if ($('vgl1-act-pit')) {
-    $('vgl1-act-pit').addEventListener('click', () => {
-      const q = $('race-act-pit');
-      if (q) q.click();
-      p2ScreenRender();
-    });
-  }
   // BESTELLT: eigener Motor-Knopf fuer Auto 1 auf dem Vergleichsschirm, neben dem fuer
   // Auto 2 - genau wie die zwei Boxenstopp-Knoepfe. Leitet weiter wie beim Boxenstopp-
   // Knopf: derselbe Klick-Ort (links/rechts) geht an #race-act-sound, damit es EINEN Weg

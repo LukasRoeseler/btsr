@@ -8716,6 +8716,35 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Auto 2 wechselt beim Boxenstopp die Reifen ----
+  //
+  // GEMELDET: "die reifen von spieler 2 werden nicht gewechselt, sollten sie aber."
+  stAdd('Zwei Spieler: Auto 2 zieht beim Stopp die gewaehlte Mischung auf', () => {
+    if (typeof physEngine2 === 'undefined' || !physEngine2) return { skip: true, mass: 'kein physEngine2' };
+    const merk = { t2: tyres2, w2: mischungWunsch2, lage: boxZwei.lage, v: physEngine2.state.speedKmh,
+                   thr: p2Throttle, g: physEngine2.config.gripScale, wear: physEngine2.state.tyreWear,
+                   tick: boxZwei.letzterTick };
+    try {
+      tyres2 = 'mittel';
+      mischungWunsch2 = null;
+      pitMischungWeiter2();
+      const gewaehlt = mischungWunsch2;
+      physEngine2.state.tyreWear = 0.6;
+      physEngine2.state.speedKmh = 0;
+      p2Throttle = 0;
+      boxZwei.lage = 'angefordert';
+      boxZweiTick();
+      const ok = tyres2 === gewaehlt && physEngine2.state.tyreWear === 0 && boxZwei.lage === 'service';
+      return { ok, mass: 'gewaehlt ' + gewaehlt + ', montiert ' + tyres2 + ', Verschleiss danach '
+               + physEngine2.state.tyreWear + ', Lage ' + boxZwei.lage };
+    } finally {
+      tyres2 = merk.t2; mischungWunsch2 = merk.w2; boxZwei.lage = merk.lage;
+      boxZwei.letzterTick = merk.tick;
+      physEngine2.state.speedKmh = merk.v; p2Throttle = merk.thr;
+      physEngine2.config.gripScale = merk.g; physEngine2.state.tyreWear = merk.wear;
+    }
+  });
+
   // ---- D-Pad am DualShock 4: Hat-Achse statt Knoepfe ----
   //
   // GEMELDET: "d-pad auf dualshock 4 nicht" (DualSense und Billig-Pad gehen). Ein DS4 ohne
