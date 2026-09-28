@@ -14,6 +14,13 @@ nichts installiert, merkt nichts. Was es ausdrücklich NICHT löst, ist der Mehr
 der secure context hängt an der Herkunft, und die ist nach dem Installieren dieselbe.
 Einzelheiten in `CARRERA_HYBRID.md`.
 
+**Als Android-App (experimentell):** die APK aus den
+[Releases](https://github.com/LukasRoeseler/btsr/releases) ist dieselbe `index.html` mit einer
+Bluetooth-Brücke. Sie aktualisiert sich selbst von GitHub Pages (nur geänderte Dateien, alle
+Einstellungen bleiben), kann ohne PC **Mehrspieler-Host** sein, und ein Tablet im selben WLAN
+wird mit `http://<Host>:8080/?info` zum **Info-Screen** mit Strecke, Autos und Rangliste.
+Einzelheiten in `docs/plan-p2p-apk.md`.
+
 Der Cache wird **netz-zuerst** gefüllt: online immer aktuell, offline die letzte gesehene
 Fassung. Cache-zuerst wäre hier die schlechteste Wahl – bei mehreren Builds am Tag liefert
 er eine alte Fassung aus, während die neue schon daliegt. **Eine Ausnahme: die Tondateien

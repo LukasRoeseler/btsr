@@ -3126,7 +3126,7 @@
                      //
                      // UMGEDREHT, weil querSoll ein Lenkbefehl ist und diese Karte entlang
                      // der Normalen zeichnet - siehe querSollAlsLage().
-                     quer: querSollAlsLage(g.querSoll) });
+                     quer: querSollAlsLage(g.querSoll), rolle: 'ghost' });
         } else if (c.role === 'player' && typeof dashMinimapIndex === 'number') {
           // Das eigene Auto lenkt die App nicht, es gibt also keine angeforderte QUERLAGE -
           // quer bleibt 0, statt eine zu erfinden.
@@ -3137,7 +3137,7 @@
           out.push({ index: dashMinimapIndex,
                      phase: (typeof dashTilePhase === 'function') ? dashTilePhase() : 0.5,
                      farbe: carColor(c).hex,
-                     kuerzel: garageLabel(c).slice(0, 3), quer: 0 });
+                     kuerzel: garageLabel(c).slice(0, 3), quer: 0, rolle: 'player' });
         }
       });
     } catch (e) { return out; }

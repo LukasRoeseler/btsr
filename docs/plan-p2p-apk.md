@@ -1,9 +1,68 @@
-# Plan: OmegaSim als Android-App mit WLAN-Mehrspieler ohne PC
+# OmegaSim als Android-App mit WLAN-Mehrspieler ohne PC
 
-Stand: 28.09.2026, v0.8.11. **Nur Plan, noch nichts davon ist gebaut.**
+**Umgesetzt ab v0.8.12** (experimentell). Der ursprüngliche Plan steht darunter; dieser
+Abschnitt sagt, was gebaut ist und wo es liegt.
 
-BESTELLT: „Plan für P2P-Multiplayer für Handys im gleichen WLAN über eine .apk, die
-identisch zur HTML-App ist, als GitHub-Release.“
+## Stand
+
+| Teil | Wo | Stand |
+|---|---|---|
+| Capacitor-Hülle | `android-app/` (`npx cap sync android`) | gebaut, lokal kompiliert |
+| Bluetooth-Brücke | `src/05-app-bruecke.js`, also **in index.html** | fertig, auf dem Telefon zu bestätigen |
+| Selbstaktualisierung | `OmegaUpdatePlugin.java`, `tools/app_update.py`, `app-update.json` | fertig |
+| Host im Telefon | `OmegaHostPlugin.java`, `HostServer.java`, `OmegaHostService.java` | fertig |
+| Info-Screen | `src/97-sessions.js` (`mpi…`), `#mp-info` | fertig, im Browser getestet |
+| Release | `.github/workflows/android.yml`, Tag `apk-v<Version>` | wartet auf die Secrets |
+
+### Updates ohne neue APK
+
+BESTELLT: „Ich will, dass ich die App einfach updaten kann ohne die APK neu installieren zu
+müssen.“
+
+- `tools/build.py` schreibt bei jedem Bau `app-update.json`: Version, APK-Stufe und für jede
+  Datei (index.html, audio/, icons/ …) die SHA-256. Textdateien werden mit LF gehasht, so wie
+  GitHub Pages sie ausliefert.
+- Die App fragt beim Start `https://lukasroeseler.github.io/btsr/app-update.json` ab. Ist die
+  Version neuer, erscheint auf der Startseite „Update verfügbar“. Ein Tipp lädt **nur die
+  geänderten Dateien**, alles andere wird aus der laufenden Fassung kopiert. Danach zeigt die
+  WebView auf den neuen Ordner (Capacitor `serverBasePath`).
+- Die Herkunft bleibt `https://localhost`. Damit bleiben alle Einstellungen, gemerkten Autos
+  und Rekorde erhalten.
+- **Rückfall:** Die neue Fassung muss sich binnen 25 s melden (`bestaetigen()`). Tut sie das
+  nicht, schaltet die App zurück. Beim nächsten Start wird die Fassung nicht erneut angeboten.
+- **Neue APK nötig** ist nur, wenn `APK_STUFE` steigt (in `tools/app_update.py` und
+  `OmegaUpdatePlugin.java` gleichzeitig hochzählen, sobald index.html ein neues natives Plugin
+  braucht). Dann bietet die App den Download der APK an.
+- Quelle ist jeder Push auf `main` (Nutzerentscheid), sobald Pages ihn ausliefert.
+
+### Info-Screen
+
+BESTELLT: „Ich will ein Gerät sich einloggen lassen, das rein als Info-Screen fungiert
+(Streckenscreen, ohne eigenes Auto; zB ein Tablet).“
+
+- Die einfachste Variante braucht kein Installieren: Im Browser des Tablets
+  `http://<Host>:8080/?info` öffnen. Das geht mit dem Telefon-Host und mit
+  `tools/omegasim_host.py`, denn beide liefern die App selbst aus.
+- In der App: Mehrspieler → „Als Info-Screen“.
+- Der Info-Screen meldet sich mit `/mp/state?zuschauer=<id>`. Solange einer zusieht, schicken
+  die Fahrer dreimal je Sekunde ihre Kartenpunkte (eigenes Auto und Ghosts) und den Kurzcode
+  der Strecke. Ohne Zuschauer bleibt es bei Rundenschluss und Lebenszeichen.
+- Zwischen zwei Berichten rechnet der Info-Screen jedes Auto mit seinem Tempo bis zu 0,8 s
+  weiter.
+
+### Eine APK bauen
+
+Lokal (Werkzeuge in `%USERPROFILE%\.omegasim-android`, nicht im Repo):
+`python tools/build.py && python tools/apk_www.py`, dann in `android-app`
+`npx cap sync android`, dann `android\gradlew assembleRelease` mit den Umgebungsvariablen
+`OMEGA_KEYSTORE`, `OMEGA_KEYSTORE_PASSWORD`, `OMEGA_KEY_ALIAS` und `OMEGA_KEY_PASSWORD`.
+
+Über GitHub: einmal `gh auth login` und `tools/android_secrets.ps1`, danach baut jeder Tag
+`apk-v0.8.12` eine signierte APK und hängt sie ans Release.
+
+---
+
+# Ursprünglicher Plan (28.09.2026)
 
 ## Ziel
 

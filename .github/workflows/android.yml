@@ -1,0 +1,100 @@
+# ANDROID-APK ALS GITHUB-RELEASE.
+#
+# Ausgeloest durch einen Tag apk-v<Version> (z. B. apk-v0.8.12) oder von Hand. Baut index.html,
+# fuellt android-app/www, synchronisiert Capacitor und baut eine SIGNIERTE Release-APK, die ans
+# Release gehaengt wird.
+#
+# Eine neue APK ist nur noetig, wenn sich die NATIVE Schicht aendert (Plugins, Rechte). Alles
+# andere kommt ueber die Selbstaktualisierung aus GitHub Pages (app-update.json).
+#
+# Signiert wird mit einem Schluessel aus den Repository-Secrets - er liegt NIE im Repo:
+#   ANDROID_KEYSTORE_B64      der Keystore, base64-kodiert
+#   ANDROID_KEYSTORE_PASSWORD
+#   ANDROID_KEY_ALIAS
+#   ANDROID_KEY_PASSWORD
+# Einrichten mit tools/android_secrets.ps1 (nach `gh auth login`).
+name: Android-APK
+
+on:
+  push:
+    tags: ['apk-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: android-app/package-lock.json
+
+      - name: Web-App bauen und einpacken
+        run: |
+          python3 tools/build.py
+          python3 tools/apk_www.py
+
+      - name: Version bestimmen
+        id: v
+        run: |
+          if [[ "$GITHUB_REF_NAME" == apk-v* ]]; then V="${GITHUB_REF_NAME#apk-v}"; else
+            V=$(python3 -c "import json;print(json.load(open('app-update.json'))['version'])"); fi
+          # 0.<Woche>.<Push> -> Woche*1000 + Push: steigt streng, wie Android es fuer
+          # Aktualisierungen verlangt.
+          CODE=$(python3 -c "v='$V'.split('.');print(int(v[1])*1000+int(v[2]))")
+          echo "name=$V" >> "$GITHUB_OUTPUT"
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          echo "Version $V, versionCode $CODE"
+
+      - name: Capacitor synchronisieren
+        working-directory: android-app
+        run: |
+          npm ci
+          npx cap sync android
+
+      - name: Schluessel bereitstellen
+        env:
+          KS: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: |
+          if [ -z "$KS" ]; then
+            echo "::error::Secret ANDROID_KEYSTORE_B64 fehlt - siehe tools/android_secrets.ps1"
+            exit 1
+          fi
+          echo "$KS" | base64 -d > "$RUNNER_TEMP/omegasim.jks"
+
+      - name: APK bauen
+        working-directory: android-app/android
+        env:
+          OMEGA_KEYSTORE: ${{ runner.temp }}/omegasim.jks
+          OMEGA_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          OMEGA_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          OMEGA_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon \
+            -PomegaVersionCode=${{ steps.v.outputs.code }} \
+            -PomegaVersionName=${{ steps.v.outputs.name }}
+          cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/OmegaSim-${{ steps.v.outputs.name }}.apk"
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref_name, 'apk-v') && github.ref_name || format('apk-v{0}', steps.v.outputs.name) }}
+          name: OmegaSim ${{ steps.v.outputs.name }} (Android)
+          files: ${{ runner.temp }}/OmegaSim-${{ steps.v.outputs.name }}.apk
+          body: |
+            Android-App von OmegaSim, Web-Fassung ${{ steps.v.outputs.name }}.
+            Installieren: APK auf dem Telefon oeffnen, "Unbekannte Quellen" fuer den Browser erlauben.
+            Danach aktualisiert sich die App selbst (Info > App & Updates) - eine neue APK ist
+            nur noetig, wenn die App das meldet.

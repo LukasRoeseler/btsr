@@ -9597,6 +9597,71 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- ANDROID-APP UND INFO-SCREEN ----
+  //
+  // BESTELLT: "Setze den Android-App Plan um", mit Updates ohne neue APK und einem Geraet,
+  // das "rein als Info-Screen fungiert". Was davon ohne Telefon pruefbar ist, steht hier:
+  // die Umrechnungen der Bluetooth-Bruecke, der Positionstakt, der Info-Screen und die
+  // Update-Liste. Die nativen Teile (Plugins) prueft der Bau der APK.
+  stAdd('App-Bruecke: UUIDs und Bytes wie Web Bluetooth', () => {
+    const B = window.OMEGA_BRUECKE;
+    if (!B) return { ok: false, mass: 'OMEGA_BRUECKE fehlt' };
+    const f = [];
+    if (B.uuid(0x180f) !== '0000180f-0000-1000-8000-00805f9b34fb') f.push('Zahl ' + B.uuid(0x180f));
+    if (B.uuid('battery_service') !== '0000180f-0000-1000-8000-00805f9b34fb') f.push('Kurzname');
+    if (B.uuid('FFE0') !== '0000ffe0-0000-1000-8000-00805f9b34fb') f.push('16 Bit');
+    if (B.uuid('6E400001-B5A3-F393-E0A9-E50E24DCCA9E') !== '6e400001-b5a3-f393-e0a9-e50e24dcca9e') f.push('gross');
+    if (B.zuHex(new Uint8Array([0, 15, 255])) !== '000fff') f.push('zuHex ' + B.zuHex(new Uint8Array([0, 15, 255])));
+    const paket = new Uint8Array([0xaf, 1, 2, 3]);
+    if (B.zuHex(new DataView(paket.buffer, 1, 2)) !== '0102') f.push('DataView-Ausschnitt');
+    const dv = B.ausHex('AF 01 fe');
+    if (dv.byteLength !== 3 || dv.getUint8(0) !== 0xaf || dv.getUint8(2) !== 0xfe) f.push('ausHex');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Kurznamen, 16 Bit, Hex hin und zurueck' };
+  });
+
+  stAdd('Mehrspieler: Positionen nur, wenn ein Info-Screen zusieht', async () => {
+    if (!OMEGA_TEST.mpZuschauerProbe) return { skip: true, mass: 'Probe fehlt' };
+    const r = await OMEGA_TEST.mpZuschauerProbe();
+    const f = [];
+    if (!r.taktMit) f.push('mit Zuschauer kein Takt');
+    if (r.taktOhne) f.push('ohne Zuschauer laeuft der Takt weiter');
+    if (!r.posIstListe) f.push('Bericht ohne pos');
+    if (!r.strecke) f.push('Bericht ohne Strecke');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Takt an und aus, Strecke ' + r.strecke };
+  });
+
+  stAdd('Info-Screen: Strecke, alle Autos und Rangliste aus dem Host-Stand', () => {
+    if (!OMEGA_TEST.mpiProbe) return { skip: true, mass: 'Probe fehlt' };
+    const r = OMEGA_TEST.mpiProbe();
+    const f = [];
+    if (!r.svg) f.push('keine Karte');
+    if (r.autos !== 3) f.push(r.autos + ' Autos statt 3');
+    if (r.texte.join(',') !== 'Luu,G1,SeV') f.push('Kuerzel ' + r.texte.join(','));
+    if (r.zeilen !== 2) f.push(r.zeilen + ' Zeilen statt 2');
+    if (r.uhr !== '1:05') f.push('Uhr ' + r.uhr);
+    if (r.laenge !== '7 / 10') f.push('Rennlaenge ' + r.laenge);
+    return { ok: !f.length, mass: f.length ? f.join('; ') : '3 Autos, 2 Zeilen, Uhr ' + r.uhr };
+  });
+
+  // Die Update-Liste der App gehoert zu GENAU dieser Fassung: sonst laedt ein Telefon eine
+  // index.html, deren Pruefsumme nicht zur Liste passt, und verwirft jede Aktualisierung.
+  stAdd('App-Update: app-update.json passt zu dieser Fassung', async () => {
+    if (!/^https?:$/.test(location.protocol)) return { skip: true, mass: 'nur ueber http pruefbar' };
+    let d;
+    try {
+      const r = await fetch('app-update.json', { cache: 'no-store' });
+      if (!r.ok) return { skip: true, mass: 'HTTP ' + r.status };
+      d = await r.json();
+    } catch (e) { return { skip: true, mass: String(e.message || e) }; }
+    const v = ($('app-version') ? $('app-version').textContent : '').trim();
+    const f = [];
+    if (d.version !== v) f.push('Liste ' + d.version + ', App ' + v);
+    const ix = (d.dateien || []).find((e) => e.p === 'index.html');
+    if (!ix || !/^[0-9a-f]{64}$/.test(ix.h)) f.push('index.html fehlt oder ohne SHA-256');
+    if (!(d.dateien || []).some((e) => /^audio\//.test(e.p))) f.push('keine Tondateien');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : v + ', ' + d.dateien.length + ' Dateien' };
+  });
+
   // ---- Mehrspieler: die Leitung reisst ab ----
   //
   // Der haeufigste Fall in der Praxis, und der einzige, der beim Fahren wirklich schmerzt:

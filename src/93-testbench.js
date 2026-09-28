@@ -6890,6 +6890,86 @@
       }
     },
 
+    // ---- POSITIONEN NUR MIT ZUSCHAUER --------------------------------------------
+    //
+    // Der Host meldet, wie viele Info-Screens zusehen. Mit einem schickt die App drei Mal je
+    // Sekunde ihre Kartenpunkte und die Strecke, ohne keinen - sonst waere jede Sitzung
+    // eine Last auf dem Faden, der den 45-ms-Sendetakt haelt.
+    async mpZuschauerProbe() {
+      const echtFetch = window.fetch;
+      const merk = { host: mp.host, an: mp.an, timer: mp.timer, zu: mp.zuschauer,
+                     pos: mp.posTimer, tiles: currentTrackTiles };
+      const gesendet = [];
+      let zuschauer = 1;
+      try {
+        if (mp.timer) { clearInterval(mp.timer); mp.timer = null; }
+        if (mp.posTimer) { clearInterval(mp.posTimer); mp.posTimer = null; }
+        mp.host = 'http://pruefhost:8080';
+        mp.an = true;
+        currentTrackTiles = [{ type: TILE_TYPE.START }, { type: TILE_TYPE.STRAIGHT },
+                             { type: TILE_TYPE.STRAIGHT }];
+        window.fetch = (url, init) => {
+          gesendet.push({ url: String(url), rumpf: init && init.body ? JSON.parse(init.body) : null });
+          if (String(url).indexOf('/mp/state') >= 0) {
+            return Promise.resolve({ ok: true, json: () => Promise.resolve({
+              fahrer: [], rennen: {}, zeit: 1, zuschauer }) });
+          }
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ ok: true }) });
+        };
+        await mpHolen();
+        const taktMit = mp.posTimer !== null;
+        gesendet.length = 0;
+        mpPosBerichten();
+        const bericht = gesendet.find((g) => g.url.indexOf('/mp/report') >= 0);
+        zuschauer = 0;
+        await mpHolen();
+        const taktOhne = mp.posTimer !== null;
+        return { taktMit, taktOhne, strecke: bericht && bericht.rumpf ? bericht.rumpf.strecke : null,
+                 posIstListe: !!(bericht && bericht.rumpf && Array.isArray(bericht.rumpf.pos)) };
+      } finally {
+        window.fetch = echtFetch;
+        if (mp.posTimer) { clearInterval(mp.posTimer); }
+        mp.posTimer = merk.pos; mp.zuschauer = merk.zu;
+        mp.host = merk.host; mp.an = merk.an;
+        if (mp.timer) clearInterval(mp.timer);
+        mp.timer = merk.timer;
+        currentTrackTiles = merk.tiles;
+      }
+    },
+
+    // ---- DER INFO-SCREEN ZEICHNET, WAS DER HOST MELDET ---------------------------
+    mpiProbe() {
+      const code = 'SG2R2G2R2';
+      const d = {
+        strecke: code, zuschauer: 1, zeit: 1,
+        rennen: { start: 1, laps: 10, laufzeit: 65 },
+        fahrer: [
+          { id: 'a', name: 'Luuke', laps: 3, letzte: 8.4, beste: 8.1, alter: 0.2, posAlter: 0.1,
+            pos: [{ i: 2, f: 0.5, c: '#ff4040', k: 'Luu', g: 0 }, { i: 5, f: 0.2, c: '#40c0ff', k: 'G1', g: 1 }] },
+          { id: 'b', name: 'SeVen', laps: 2, letzte: 9.0, beste: 8.8, alter: 0.4, posAlter: 0.2,
+            pos: [{ i: 7, f: 0.9, c: '#3ddc84', k: 'SeV', g: 0 }] },
+        ],
+      };
+      const merk = { schl: mpi.schluessel, n: mpi.n, geo: mpi.geo, spur: new Map(mpi.spur) };
+      const karte = $('mpi-karte'), alt = karte ? karte.innerHTML : '';
+      try {
+        mpi.schluessel = null;
+        mpi.spur.clear();
+        mpiAufnehmen(d);
+        const autos = karte ? [...karte.querySelectorAll('g.karte-autos > g')]
+          .filter((g) => g.getAttribute('visibility') === 'visible').length : 0;
+        const texte = karte ? [...karte.querySelectorAll('g.karte-autos text')].map((t) => t.textContent) : [];
+        const zeilen = $('mpi-rows') ? $('mpi-rows').rows.length : 0;
+        return { svg: !!(karte && karte.querySelector('svg')), autos, texte, zeilen,
+                 uhr: $('mpi-uhr') ? $('mpi-uhr').textContent : '',
+                 laenge: $('mpi-laenge') ? $('mpi-laenge').textContent : '' };
+      } finally {
+        mpi.schluessel = merk.schl; mpi.n = merk.n; mpi.geo = merk.geo; mpi.spur = merk.spur;
+        if (karte) karte.innerHTML = alt;
+        if ($('mpi-rows')) $('mpi-rows').innerHTML = '';
+      }
+    },
+
     // ---- WAS WIRD AUS EINEM GEMELDETEN CODE? ------------------------------------
     //
     // codeZuTyp() ist die eine Stelle, an der aus einem Byte des Autos eine Kachelart der

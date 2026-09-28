@@ -537,6 +537,53 @@
      stehen: sie ist harmlos, und sie ist der Beleg dafuer, dass diese Falle in diesem
      Projekt schon einmal zugeschnappt hat. */
   [hidden] { display: none !important; }
+
+  /* ---- ANDROID-APP: Update-Hinweis und Info-Screen ------------------------------------ */
+  .app-update { max-width: 1052px; margin: 8px auto 0; padding: 10px 14px; box-sizing: border-box;
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    background: rgba(61,220,132,.10); border-left: 3px solid var(--good); }
+  .app-update b { flex: 1 1 200px; }
+  .app-fortschritt { width: 100%; height: 6px; background: rgba(255,255,255,.12); }
+  .app-fortschritt > i { display: block; height: 100%; width: 0; background: var(--good); }
+  .mp-app { border-left: 3px solid var(--good); padding: 8px 12px; margin: 10px 0;
+    background: rgba(61,220,132,.06); }
+  .mp-app-adresse { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums;
+    letter-spacing: .02em; word-break: break-all; }
+  .mp-gefunden { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  /* Der Info-Screen liegt ueber allem: er ist fuer ein Tablet am Streckenrand gedacht und hat
+     ausser dem Schliessen-Knopf keine Bedienung. Grosse Schrift, viel Kontrast. */
+  .mp-info { position: fixed; inset: 0; z-index: 9000; background: #05070c; color: #f4f6fb;
+    display: grid; grid-template-rows: auto 1fr; padding: clamp(8px, 1.6vw, 22px);
+    box-sizing: border-box; overflow: hidden; }
+  .mpi-kopf { display: flex; gap: clamp(10px, 2.4vw, 32px); align-items: baseline;
+    flex-wrap: wrap; border-bottom: 2px solid rgba(255,255,255,.18);
+    padding-bottom: clamp(4px, 1vw, 10px); }
+  .mpi-kopf h1 { margin: 0; font-size: clamp(18px, 3vw, 34px); letter-spacing: .14em;
+    text-shadow: 2px 0 0 var(--glitch-r), -2px 0 0 var(--glitch-c); }
+  .mpi-wert { display: grid; }
+  .mpi-wert span:first-child { font-size: clamp(9px, 1vw, 12px); letter-spacing: .18em;
+    color: #8b99b4; text-transform: uppercase; }
+  .mpi-wert b { font-size: clamp(20px, 3.6vw, 46px); font-variant-numeric: tabular-nums; }
+  .mpi-zu { margin-left: auto; align-self: center; }
+  .mpi-leib { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    gap: clamp(8px, 2vw, 26px); min-height: 0; padding-top: clamp(6px, 1.2vw, 16px); }
+  .mpi-karte { min-height: 0; display: flex; align-items: center; justify-content: center; }
+  .mpi-karte svg { width: 100%; height: 100%; max-height: 100%; }
+  .mpi-tab { width: 100%; border-collapse: collapse; align-self: start; }
+  .mpi-tab th { text-align: left; font-weight: 400; color: #8b99b4; letter-spacing: .14em;
+    font-size: clamp(9px, 1vw, 12px); text-transform: uppercase; padding: 0 8px 6px 0; }
+  .mpi-tab td { font-size: clamp(14px, 2.1vw, 28px); font-variant-numeric: tabular-nums;
+    padding: clamp(3px, .7vw, 8px) 8px clamp(3px, .7vw, 8px) 0;
+    border-top: 1px solid rgba(255,255,255,.14); }
+  .mpi-tab tr.fuehrt td { color: var(--good); }
+  .mpi-tab tr.alt td { opacity: .45; }
+  .mpi-punkt { display: inline-block; width: .7em; height: .7em; border-radius: 50%;
+    margin-right: .35em; vertical-align: .05em; }
+  .mpi-leer { color: #8b99b4; font-size: clamp(13px, 1.8vw, 22px); text-align: center; }
+  .mpi-status { color: #8b99b4; font-size: 12px; }
+  @media (orientation: portrait) {
+    .mpi-leib { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1.2fr) auto; }
+  }
   .tabpage { display: none; }
   .tabpage.active { display: block; }
   .card {
@@ -3234,7 +3281,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.8.11</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.13</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3248,6 +3295,12 @@
          zwei versetzte, zerschnittene Kopien, die in Stufen springen - im Stil des Omega. -->
     <div class="home-titel" aria-label="OMEGA SIM" data-i18n-skip>
       <span class="home-titel-text" data-text="OMEGA SIM">OMEGA SIM</span>
+    </div>
+    <!-- Nur in der Android-App: eine neue Web-Fassung liegt bereit (siehe 97b-app.js). -->
+    <div class="app-update" id="app-update" hidden>
+      <b id="app-update-text">Update verf&uuml;gbar</b>
+      <button type="button" class="primary" id="app-update-laden">Jetzt laden</button>
+      <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
     <div class="home-hero" id="home-hero">
       <div class="home-bg" id="home-bg"></div>
@@ -3966,7 +4019,39 @@
           <b>Patchnotes</b>
           <span>Was sich je Wochenversion ge&auml;ndert hat, kurz zusammengefasst.</span>
         </button>
+        <button class="misc-tile subpage-open" data-sub="app" id="info-app-kachel" hidden>
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="14" y="4" width="20" height="40" rx="3" stroke-width="2.8"/>
+            <path d="M24 14v12M19 21l5 5 5-5" stroke="var(--bad)"/>
+            <path d="M21 38h6"/>
+          </svg>
+          <b>App &amp; Updates</b>
+          <span>Version der Android-App, Updates ohne neue APK.</span>
+        </button>
       </div>
+    </div>
+    <!-- BESTELLT: "Ich will, dass ich die App einfach updaten kann ohne die APK neu
+         installieren zu muessen." Nur in der Android-App sichtbar. -->
+    <div class="card subpage" id="sub-app">
+      <button class="misc-back subpage-back" data-sub="">&larr; Info</button>
+      <h2>App &amp; Updates <span class="wip-tag">experimentell</span></h2>
+      <p class="muted">Die App l&auml;dt neue Fassungen selbst, direkt von der Projektseite. Geladen wird nur, was sich ge&auml;ndert hat, und alle Einstellungen bleiben erhalten. Startet eine neue Fassung nicht, schaltet die App von selbst auf die vorige zur&uuml;ck.</p>
+      <div class="doc-table-wrap"><table class="doc-table">
+        <tr><td>Web-Fassung</td><td id="app-stand-web" data-i18n-skip>&ndash;</td></tr>
+        <tr><td>APK</td><td id="app-stand-apk" data-i18n-skip>&ndash;</td></tr>
+        <tr><td>Quelle</td><td id="app-stand-quelle" data-i18n-skip>&ndash;</td></tr>
+      </table></div>
+      <p class="muted" id="app-stand-meldung"></p>
+      <div class="row" style="gap:10px; flex-wrap:wrap">
+        <button type="button" class="primary" id="app-pruefen">Nach Update suchen</button>
+        <button type="button" id="app-eingebaut">Mitgelieferte Fassung verwenden</button>
+        <a class="mp-datei" id="app-apk-link" href="https://github.com/LukasRoeseler/btsr/releases/latest"
+           target="_blank" rel="noopener noreferrer">Neueste APK auf GitHub</a>
+      </div>
+      <div class="opt-row"><div class="opt-label">Beim Start nach Updates suchen
+          <small>Fragt beim &Ouml;ffnen einmal die Projektseite. Geladen wird erst nach einem Tipp auf &bdquo;Jetzt laden&ldquo;.</small></div>
+        <label class="tgl"><input type="checkbox" id="app-auto" checked><span></span></label></div>
     </div>
     <div class="card subpage" id="sub-wozu">
       <button class="misc-back subpage-back" data-sub="">&larr; Info</button>
@@ -4045,6 +4130,23 @@
     <div class="card subpage" id="sub-patchnotes">
       <button class="misc-back subpage-back" data-sub="">&larr; Info</button>
       <h2>Patchnotes</h2>
+      <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
+      <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Android-App (experimentell): dieselbe App als APK, mit Bluetooth-Br&uuml;cke, Host ohne PC und Updates ohne Neuinstallation.</li>
+        <li>Info-Screen: ein Tablet oder Fernseher zeigt Strecke, alle Autos und die Rangliste, ohne eigenes Auto.</li>
+        <li>Neuer Steuerungsmodus Pacejka (experimentell): Reifen mit Haftgrenze, am Limit Unter- und &Uuml;bersteuern mit Vibration.</li>
+        <li>Reifenquietschen lauter, Porsche-Aufnahme entfernt.</li>
+        <li>Kennlinien: Gas, Bremse und Lenkung mit einer Formel, neue Bremskennlinie, Lenk-Plot zeigt die wirksame Kurve, Live-Punkt in allen Plots.</li>
+        <li>Renn&uuml;bersicht mit Rundenzeit-Diagramm und Sektortabelle (Bestwert gr&uuml;n, schlechtester rot).</li>
+        <li>Doppel-Ausdruck-Box: die Box-&Uuml;berfahrt z&auml;hlt nicht und wird nicht angesagt, w&auml;hlbar 1 oder 0 Runden.</li>
+        <li>Zwei Spieler: Reifenwechsel f&uuml;r Auto 2, Wahlkacheln f&uuml;r Reifen und Tank, eigener Rundenton.</li>
+        <li>Men&uuml;s: einzeilige Kacheln, Rennmodus und Rundenzahl im Cockpit exakt w&auml;hlbar, D-Pad am DualShock 4.</li>
+        <li>Wechselhaftes Wetter regnet jetzt wirklich, Schauer k&uuml;rzer als Trockenphasen.</li>
+        <li>Lichthupe l&auml;sst das R&uuml;cklicht an, simulierter Gyro-Punkt folgt der Kurve.</li>
+        <li>Gemerkte Autos: nur ge&auml;nderte Namen und Farben, Zuordnung per Klick.</li>
+        <li>Ghosts stoppen beim Rennabbruch und nach einem Abflug.</li>
+        <li>Startseite mit OMEGA-SIM-Schriftzug, Credits mit Quellen, Doku auf dem aktuellen Stand.</li>
+      </ul>
       <p class="muted"><b><span data-i18n-skip>0.7</span></b></p>
       <ul class="muted" style="padding-left:20px; line-height:1.7">
         <li>Navigation aufger&auml;umt (Startseite, feste Kopfzeile), Auto-Verwaltung in der Garage.</li>
@@ -6928,12 +7030,24 @@
         vertretbar, aber es ist eine Ausnahme von einer Sicherheitsregel und keine
         Einstellung.
       </p>
+      <!-- NUR IN DER ANDROID-APP: dieses Telefon wird Host, ohne PC. -->
+      <div class="mp-app" id="mp-app" hidden>
+        <p class="muted"><span class="wip-tag">experimentell</span> <b>Ohne PC: ein Telefon ist Host.</b> Die anderen Telefone suchen ihn im WLAN oder tragen die Adresse ein. Ein Tablet oder Fernseher &ouml;ffnet die Adresse mit /?info im Browser und wird Info-Screen, ganz ohne App.</p>
+        <div class="row" style="gap:10px; flex-wrap:wrap">
+          <button type="button" class="primary" id="mp-app-host">Dieses Telefon ist Host</button>
+          <button type="button" id="mp-app-suchen">Host im WLAN suchen</button>
+        </div>
+        <div id="mp-app-adresse" class="mp-app-adresse" data-i18n-skip></div>
+        <div id="mp-app-info" class="muted" data-i18n-skip></div>
+        <div id="mp-gefunden" class="mp-gefunden"></div>
+      </div>
       <div class="row" style="gap:10px; flex-wrap:wrap; align-items:flex-end">
         <label class="small" style="flex:1 1 200px">Host-Adresse
           <input type="text" id="mp-host" placeholder="http://192.168.1.50:8080"></label>
         <label class="small" style="flex:1 1 140px">Mein Name
           <input type="text" id="mp-name" maxlength="40" placeholder="z. B. Luuke"></label>
         <button class="primary" id="mp-join">Mitmachen</button>
+        <button id="mp-info-join" title="Ohne eigenes Auto: zeigt Strecke, Autos und Rangliste">Als Info-Screen <span class="wip-tag">experimentell</span></button>
         <button id="mp-leave" class="warn">Verlassen</button>
       </div>
       <div class="muted" id="mp-status" style="margin-top:8px">nicht verbunden</div>
@@ -6949,6 +7063,29 @@
       </p>
     </div>
   </section>
+
+  <!-- DER INFO-SCREEN. BESTELLT: "Ich will ein Geraet sich einloggen lassen, das rein als
+       Info-Screen fungiert (Streckenscreen, ohne eigenes Auto; zB ein Tablet)." Er meldet
+       sich beim Host als Zuschauer an; solange einer zusieht, schicken die Fahrer ihre
+       Position mit. Geoeffnet ueber "Als Info-Screen" oder direkt mit /?info in der Adresse. -->
+  <div class="mp-info" id="mp-info" hidden>
+    <div class="mpi-kopf">
+      <h1 data-i18n-skip>OMEGA SIM</h1>
+      <div class="mpi-wert"><span id="mpi-uhr-label">Laufzeit</span><b id="mpi-uhr" data-i18n-skip>&ndash;</b></div>
+      <div class="mpi-wert"><span>Rennl&auml;nge</span><b id="mpi-laenge" data-i18n-skip>&ndash;</b></div>
+      <div class="mpi-wert"><span>Fahrer</span><b id="mpi-anzahl" data-i18n-skip>0</b></div>
+      <div class="mpi-zu"><button type="button" id="mpi-zu">Schlie&szlig;en</button></div>
+    </div>
+    <div class="mpi-leib">
+      <div class="mpi-karte" id="mpi-karte"><p class="mpi-leer">Noch keine Strecke gemeldet.</p></div>
+      <div>
+        <table class="mpi-tab"><thead><tr>
+          <th></th><th>Fahrer</th><th>Runden</th><th>Letzte</th><th>Beste</th>
+        </tr></thead><tbody id="mpi-rows"></tbody></table>
+        <p class="mpi-status" id="mpi-status" data-i18n-skip></p>
+      </div>
+    </div>
+  </div>
 
   <section class="tabpage" id="tab-control">
     <button class="misc-back goto-tab" data-tab="options">&larr; Einstellungen</button>

@@ -537,6 +537,53 @@
      stehen: sie ist harmlos, und sie ist der Beleg dafuer, dass diese Falle in diesem
      Projekt schon einmal zugeschnappt hat. */
   [hidden] { display: none !important; }
+
+  /* ---- ANDROID-APP: Update-Hinweis und Info-Screen ------------------------------------ */
+  .app-update { max-width: 1052px; margin: 8px auto 0; padding: 10px 14px; box-sizing: border-box;
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    background: rgba(61,220,132,.10); border-left: 3px solid var(--good); }
+  .app-update b { flex: 1 1 200px; }
+  .app-fortschritt { width: 100%; height: 6px; background: rgba(255,255,255,.12); }
+  .app-fortschritt > i { display: block; height: 100%; width: 0; background: var(--good); }
+  .mp-app { border-left: 3px solid var(--good); padding: 8px 12px; margin: 10px 0;
+    background: rgba(61,220,132,.06); }
+  .mp-app-adresse { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums;
+    letter-spacing: .02em; word-break: break-all; }
+  .mp-gefunden { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  /* Der Info-Screen liegt ueber allem: er ist fuer ein Tablet am Streckenrand gedacht und hat
+     ausser dem Schliessen-Knopf keine Bedienung. Grosse Schrift, viel Kontrast. */
+  .mp-info { position: fixed; inset: 0; z-index: 9000; background: #05070c; color: #f4f6fb;
+    display: grid; grid-template-rows: auto 1fr; padding: clamp(8px, 1.6vw, 22px);
+    box-sizing: border-box; overflow: hidden; }
+  .mpi-kopf { display: flex; gap: clamp(10px, 2.4vw, 32px); align-items: baseline;
+    flex-wrap: wrap; border-bottom: 2px solid rgba(255,255,255,.18);
+    padding-bottom: clamp(4px, 1vw, 10px); }
+  .mpi-kopf h1 { margin: 0; font-size: clamp(18px, 3vw, 34px); letter-spacing: .14em;
+    text-shadow: 2px 0 0 var(--glitch-r), -2px 0 0 var(--glitch-c); }
+  .mpi-wert { display: grid; }
+  .mpi-wert span:first-child { font-size: clamp(9px, 1vw, 12px); letter-spacing: .18em;
+    color: #8b99b4; text-transform: uppercase; }
+  .mpi-wert b { font-size: clamp(20px, 3.6vw, 46px); font-variant-numeric: tabular-nums; }
+  .mpi-zu { margin-left: auto; align-self: center; }
+  .mpi-leib { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    gap: clamp(8px, 2vw, 26px); min-height: 0; padding-top: clamp(6px, 1.2vw, 16px); }
+  .mpi-karte { min-height: 0; display: flex; align-items: center; justify-content: center; }
+  .mpi-karte svg { width: 100%; height: 100%; max-height: 100%; }
+  .mpi-tab { width: 100%; border-collapse: collapse; align-self: start; }
+  .mpi-tab th { text-align: left; font-weight: 400; color: #8b99b4; letter-spacing: .14em;
+    font-size: clamp(9px, 1vw, 12px); text-transform: uppercase; padding: 0 8px 6px 0; }
+  .mpi-tab td { font-size: clamp(14px, 2.1vw, 28px); font-variant-numeric: tabular-nums;
+    padding: clamp(3px, .7vw, 8px) 8px clamp(3px, .7vw, 8px) 0;
+    border-top: 1px solid rgba(255,255,255,.14); }
+  .mpi-tab tr.fuehrt td { color: var(--good); }
+  .mpi-tab tr.alt td { opacity: .45; }
+  .mpi-punkt { display: inline-block; width: .7em; height: .7em; border-radius: 50%;
+    margin-right: .35em; vertical-align: .05em; }
+  .mpi-leer { color: #8b99b4; font-size: clamp(13px, 1.8vw, 22px); text-align: center; }
+  .mpi-status { color: #8b99b4; font-size: 12px; }
+  @media (orientation: portrait) {
+    .mpi-leib { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1.2fr) auto; }
+  }
   .tabpage { display: none; }
   .tabpage.active { display: block; }
   .card {
@@ -3234,7 +3281,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.8.11</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.13</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3248,6 +3295,12 @@
          zwei versetzte, zerschnittene Kopien, die in Stufen springen - im Stil des Omega. -->
     <div class="home-titel" aria-label="OMEGA SIM" data-i18n-skip>
       <span class="home-titel-text" data-text="OMEGA SIM">OMEGA SIM</span>
+    </div>
+    <!-- Nur in der Android-App: eine neue Web-Fassung liegt bereit (siehe 97b-app.js). -->
+    <div class="app-update" id="app-update" hidden>
+      <b id="app-update-text">Update verf&uuml;gbar</b>
+      <button type="button" class="primary" id="app-update-laden">Jetzt laden</button>
+      <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
     <div class="home-hero" id="home-hero">
       <div class="home-bg" id="home-bg"></div>
@@ -3966,7 +4019,39 @@
           <b>Patchnotes</b>
           <span>Was sich je Wochenversion ge&auml;ndert hat, kurz zusammengefasst.</span>
         </button>
+        <button class="misc-tile subpage-open" data-sub="app" id="info-app-kachel" hidden>
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="14" y="4" width="20" height="40" rx="3" stroke-width="2.8"/>
+            <path d="M24 14v12M19 21l5 5 5-5" stroke="var(--bad)"/>
+            <path d="M21 38h6"/>
+          </svg>
+          <b>App &amp; Updates</b>
+          <span>Version der Android-App, Updates ohne neue APK.</span>
+        </button>
       </div>
+    </div>
+    <!-- BESTELLT: "Ich will, dass ich die App einfach updaten kann ohne die APK neu
+         installieren zu muessen." Nur in der Android-App sichtbar. -->
+    <div class="card subpage" id="sub-app">
+      <button class="misc-back subpage-back" data-sub="">&larr; Info</button>
+      <h2>App &amp; Updates <span class="wip-tag">experimentell</span></h2>
+      <p class="muted">Die App l&auml;dt neue Fassungen selbst, direkt von der Projektseite. Geladen wird nur, was sich ge&auml;ndert hat, und alle Einstellungen bleiben erhalten. Startet eine neue Fassung nicht, schaltet die App von selbst auf die vorige zur&uuml;ck.</p>
+      <div class="doc-table-wrap"><table class="doc-table">
+        <tr><td>Web-Fassung</td><td id="app-stand-web" data-i18n-skip>&ndash;</td></tr>
+        <tr><td>APK</td><td id="app-stand-apk" data-i18n-skip>&ndash;</td></tr>
+        <tr><td>Quelle</td><td id="app-stand-quelle" data-i18n-skip>&ndash;</td></tr>
+      </table></div>
+      <p class="muted" id="app-stand-meldung"></p>
+      <div class="row" style="gap:10px; flex-wrap:wrap">
+        <button type="button" class="primary" id="app-pruefen">Nach Update suchen</button>
+        <button type="button" id="app-eingebaut">Mitgelieferte Fassung verwenden</button>
+        <a class="mp-datei" id="app-apk-link" href="https://github.com/LukasRoeseler/btsr/releases/latest"
+           target="_blank" rel="noopener noreferrer">Neueste APK auf GitHub</a>
+      </div>
+      <div class="opt-row"><div class="opt-label">Beim Start nach Updates suchen
+          <small>Fragt beim &Ouml;ffnen einmal die Projektseite. Geladen wird erst nach einem Tipp auf &bdquo;Jetzt laden&ldquo;.</small></div>
+        <label class="tgl"><input type="checkbox" id="app-auto" checked><span></span></label></div>
     </div>
     <div class="card subpage" id="sub-wozu">
       <button class="misc-back subpage-back" data-sub="">&larr; Info</button>
@@ -4045,6 +4130,23 @@
     <div class="card subpage" id="sub-patchnotes">
       <button class="misc-back subpage-back" data-sub="">&larr; Info</button>
       <h2>Patchnotes</h2>
+      <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
+      <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Android-App (experimentell): dieselbe App als APK, mit Bluetooth-Br&uuml;cke, Host ohne PC und Updates ohne Neuinstallation.</li>
+        <li>Info-Screen: ein Tablet oder Fernseher zeigt Strecke, alle Autos und die Rangliste, ohne eigenes Auto.</li>
+        <li>Neuer Steuerungsmodus Pacejka (experimentell): Reifen mit Haftgrenze, am Limit Unter- und &Uuml;bersteuern mit Vibration.</li>
+        <li>Reifenquietschen lauter, Porsche-Aufnahme entfernt.</li>
+        <li>Kennlinien: Gas, Bremse und Lenkung mit einer Formel, neue Bremskennlinie, Lenk-Plot zeigt die wirksame Kurve, Live-Punkt in allen Plots.</li>
+        <li>Renn&uuml;bersicht mit Rundenzeit-Diagramm und Sektortabelle (Bestwert gr&uuml;n, schlechtester rot).</li>
+        <li>Doppel-Ausdruck-Box: die Box-&Uuml;berfahrt z&auml;hlt nicht und wird nicht angesagt, w&auml;hlbar 1 oder 0 Runden.</li>
+        <li>Zwei Spieler: Reifenwechsel f&uuml;r Auto 2, Wahlkacheln f&uuml;r Reifen und Tank, eigener Rundenton.</li>
+        <li>Men&uuml;s: einzeilige Kacheln, Rennmodus und Rundenzahl im Cockpit exakt w&auml;hlbar, D-Pad am DualShock 4.</li>
+        <li>Wechselhaftes Wetter regnet jetzt wirklich, Schauer k&uuml;rzer als Trockenphasen.</li>
+        <li>Lichthupe l&auml;sst das R&uuml;cklicht an, simulierter Gyro-Punkt folgt der Kurve.</li>
+        <li>Gemerkte Autos: nur ge&auml;nderte Namen und Farben, Zuordnung per Klick.</li>
+        <li>Ghosts stoppen beim Rennabbruch und nach einem Abflug.</li>
+        <li>Startseite mit OMEGA-SIM-Schriftzug, Credits mit Quellen, Doku auf dem aktuellen Stand.</li>
+      </ul>
       <p class="muted"><b><span data-i18n-skip>0.7</span></b></p>
       <ul class="muted" style="padding-left:20px; line-height:1.7">
         <li>Navigation aufger&auml;umt (Startseite, feste Kopfzeile), Auto-Verwaltung in der Garage.</li>
@@ -6928,12 +7030,24 @@
         vertretbar, aber es ist eine Ausnahme von einer Sicherheitsregel und keine
         Einstellung.
       </p>
+      <!-- NUR IN DER ANDROID-APP: dieses Telefon wird Host, ohne PC. -->
+      <div class="mp-app" id="mp-app" hidden>
+        <p class="muted"><span class="wip-tag">experimentell</span> <b>Ohne PC: ein Telefon ist Host.</b> Die anderen Telefone suchen ihn im WLAN oder tragen die Adresse ein. Ein Tablet oder Fernseher &ouml;ffnet die Adresse mit /?info im Browser und wird Info-Screen, ganz ohne App.</p>
+        <div class="row" style="gap:10px; flex-wrap:wrap">
+          <button type="button" class="primary" id="mp-app-host">Dieses Telefon ist Host</button>
+          <button type="button" id="mp-app-suchen">Host im WLAN suchen</button>
+        </div>
+        <div id="mp-app-adresse" class="mp-app-adresse" data-i18n-skip></div>
+        <div id="mp-app-info" class="muted" data-i18n-skip></div>
+        <div id="mp-gefunden" class="mp-gefunden"></div>
+      </div>
       <div class="row" style="gap:10px; flex-wrap:wrap; align-items:flex-end">
         <label class="small" style="flex:1 1 200px">Host-Adresse
           <input type="text" id="mp-host" placeholder="http://192.168.1.50:8080"></label>
         <label class="small" style="flex:1 1 140px">Mein Name
           <input type="text" id="mp-name" maxlength="40" placeholder="z. B. Luuke"></label>
         <button class="primary" id="mp-join">Mitmachen</button>
+        <button id="mp-info-join" title="Ohne eigenes Auto: zeigt Strecke, Autos und Rangliste">Als Info-Screen <span class="wip-tag">experimentell</span></button>
         <button id="mp-leave" class="warn">Verlassen</button>
       </div>
       <div class="muted" id="mp-status" style="margin-top:8px">nicht verbunden</div>
@@ -6949,6 +7063,29 @@
       </p>
     </div>
   </section>
+
+  <!-- DER INFO-SCREEN. BESTELLT: "Ich will ein Geraet sich einloggen lassen, das rein als
+       Info-Screen fungiert (Streckenscreen, ohne eigenes Auto; zB ein Tablet)." Er meldet
+       sich beim Host als Zuschauer an; solange einer zusieht, schicken die Fahrer ihre
+       Position mit. Geoeffnet ueber "Als Info-Screen" oder direkt mit /?info in der Adresse. -->
+  <div class="mp-info" id="mp-info" hidden>
+    <div class="mpi-kopf">
+      <h1 data-i18n-skip>OMEGA SIM</h1>
+      <div class="mpi-wert"><span id="mpi-uhr-label">Laufzeit</span><b id="mpi-uhr" data-i18n-skip>&ndash;</b></div>
+      <div class="mpi-wert"><span>Rennl&auml;nge</span><b id="mpi-laenge" data-i18n-skip>&ndash;</b></div>
+      <div class="mpi-wert"><span>Fahrer</span><b id="mpi-anzahl" data-i18n-skip>0</b></div>
+      <div class="mpi-zu"><button type="button" id="mpi-zu">Schlie&szlig;en</button></div>
+    </div>
+    <div class="mpi-leib">
+      <div class="mpi-karte" id="mpi-karte"><p class="mpi-leer">Noch keine Strecke gemeldet.</p></div>
+      <div>
+        <table class="mpi-tab"><thead><tr>
+          <th></th><th>Fahrer</th><th>Runden</th><th>Letzte</th><th>Beste</th>
+        </tr></thead><tbody id="mpi-rows"></tbody></table>
+        <p class="mpi-status" id="mpi-status" data-i18n-skip></p>
+      </div>
+    </div>
+  </div>
 
   <section class="tabpage" id="tab-control">
     <button class="misc-back goto-tab" data-tab="options">&larr; Einstellungen</button>
@@ -9467,6 +9604,258 @@
 </div>
 
 <script>
+
+  // =========================================================================
+  // ANDROID-APP: Web Bluetooth aus dem nativen Plugin nachgebaut
+  // =========================================================================
+  //
+  // Laeuft NUR in der Android-App (Capacitor) und ist im Browser ein einziger Vergleich.
+  // Der Android-WebView hat kein Web Bluetooth; die App bringt dafuer das Plugin
+  // @capacitor-community/bluetooth-le mit. Dieser Abschnitt baut daraus genau das Stueck
+  // navigator.bluetooth nach, das OmegaSim benutzt - requestDevice, gatt.connect,
+  // getPrimaryService(s), getCharacteristic(s), writeValueWithoutResponse/WithResponse,
+  // startNotifications, die Ereignisse characteristicvaluechanged und gattserverdisconnected.
+  // Der ganze uebrige Code merkt nicht, dass er in einer App laeuft.
+  //
+  // WARUM IN index.html UND NICHT IN DER APK: so kommt jede Berichtigung hier mit der
+  // naechsten Web-Aktualisierung aufs Telefon, ohne neue APK (BESTELLT: "App einfach updaten,
+  // ohne die APK neu installieren zu muessen").
+  //
+  // EIGENE IIFE und VOR allem anderen: 10-ble-explorer.js und 90-ghosts.js fragen
+  // navigator.bluetooth schon beim Laden ab.
+(() => {
+  'use strict';
+
+  // Kurznamen, wie Web Bluetooth sie annimmt, auf volle 128-Bit-UUIDs. Das Plugin kennt nur
+  // die volle, kleingeschriebene Form.
+  const NAMEN = { battery_service: 0x180f, device_information: 0x180a,
+                  generic_access: 0x1800, generic_attribute: 0x1801,
+                  heart_rate: 0x180d, device_name: 0x2a00, appearance: 0x2a01 };
+  function uuid(u) {
+    if (typeof u === 'string' && NAMEN[u] !== undefined) u = NAMEN[u];
+    if (typeof u === 'number') {
+      return ('0000' + u.toString(16)).slice(-4).padStart(8, '0') + '-0000-1000-8000-00805f9b34fb';
+    }
+    const s = String(u).toLowerCase();
+    if (/^[0-9a-f]{4}$/.test(s)) return '0000' + s + '-0000-1000-8000-00805f9b34fb';
+    if (/^[0-9a-f]{8}$/.test(s)) return s + '-0000-1000-8000-00805f9b34fb';
+    return s;
+  }
+
+  function zuHex(daten) {
+    const b = daten instanceof ArrayBuffer ? new Uint8Array(daten)
+      : new Uint8Array(daten.buffer, daten.byteOffset || 0, daten.byteLength);
+    let s = '';
+    for (let i = 0; i < b.length; i++) s += (b[i] < 16 ? '0' : '') + b[i].toString(16);
+    return s;
+  }
+  function ausHex(hex) {
+    const s = String(hex || '').replace(/[^0-9a-fA-F]/g, '');
+    const b = new Uint8Array(s.length >> 1);
+    for (let i = 0; i < b.length; i++) b[i] = parseInt(s.substr(i * 2, 2), 16);
+    return new DataView(b.buffer);
+  }
+
+  // Die reinen Umrechnungen sind auch im Browser erreichbar - fuer den Selbsttest, der sie
+  // ohne Telefon pruefen soll. Sie tun nichts, solange niemand sie ruft.
+  window.OMEGA_BRUECKE = { uuid, zuHex, ausHex };
+
+  const C = window.Capacitor;
+  if (!C || typeof C.isNativePlatform !== 'function' || !C.isNativePlatform()
+      || typeof C.nativePromise !== 'function') return;
+  window.OMEGA_APP = { nativ: true, plattform: C.getPlatform ? C.getPlatform() : 'android' };
+  if (navigator.bluetooth) return;   // sollte ein WebView es einmal koennen: dann das echte
+
+  const PLUGIN = 'BluetoothLe';
+  const ruf = (methode, optionen) => C.nativePromise(PLUGIN, methode, optionen || {});
+
+  let bereit = null;
+  function starten() {
+    // androidNeverForLocation passt zum Manifest (BLUETOOTH_SCAN mit neverForLocation): ab
+    // Android 12 wird nicht nach dem Standort gefragt.
+    if (!bereit) {
+      bereit = ruf('initialize', { androidNeverForLocation: true }).catch((e) => {
+        bereit = null;
+        throw e;
+      });
+    }
+    return bereit;
+  }
+
+  class Merkmal extends EventTarget {
+    constructor(dienst, roh) {
+      super();
+      this.service = dienst;
+      this.uuid = roh.uuid;
+      this.properties = Object.assign({ read: false, write: false, writeWithoutResponse: false,
+                                        notify: false, indicate: false }, roh.properties || {});
+      this.value = null;
+      this._abo = null;
+    }
+    get _ziel() {
+      return { deviceId: this.service.device.id, service: this.service.uuid,
+               characteristic: this.uuid };
+    }
+    async writeValueWithoutResponse(daten) {
+      await ruf('writeWithoutResponse', Object.assign({ value: zuHex(daten) }, this._ziel));
+    }
+    async writeValueWithResponse(daten) {
+      await ruf('write', Object.assign({ value: zuHex(daten) }, this._ziel));
+    }
+    writeValue(daten) { return this.writeValueWithResponse(daten); }
+    async readValue() {
+      const r = await ruf('read', this._ziel);
+      this.value = ausHex(r && r.value);
+      return this.value;
+    }
+    async startNotifications() {
+      const z = this._ziel;
+      if (!this._abo) {
+        // Der Ereignisname ist der, unter dem das Plugin meldet (BluetoothLe.kt):
+        // notification|<Geraet>|<Dienst>|<Merkmal>, die UUIDs klein geschrieben.
+        this._abo = C.addListener(PLUGIN, 'notification|' + z.deviceId + '|' + z.service
+                                  + '|' + z.characteristic, (d) => {
+          this.value = ausHex(d && d.value);
+          this.dispatchEvent(new Event('characteristicvaluechanged'));
+        });
+      }
+      await ruf('startNotifications', z);
+      return this;
+    }
+    async stopNotifications() {
+      await ruf('stopNotifications', this._ziel);
+      if (this._abo) { this._abo.remove(); this._abo = null; }
+      return this;
+    }
+  }
+
+  class Dienst {
+    constructor(geraet, roh) {
+      this.device = geraet;
+      this.uuid = roh.uuid;
+      this.isPrimary = true;
+      this._merkmale = (roh.characteristics || []).map((c) => new Merkmal(this, c));
+    }
+    async getCharacteristic(u) {
+      const m = this._merkmale.find((c) => c.uuid === uuid(u));
+      if (!m) throw new DOMException('Merkmal ' + u + ' nicht gefunden', 'NotFoundError');
+      return m;
+    }
+    async getCharacteristics(u) {
+      if (u === undefined) return this._merkmale.slice();
+      return this._merkmale.filter((c) => c.uuid === uuid(u));
+    }
+  }
+
+  class Gatt {
+    constructor(geraet) { this.device = geraet; this.connected = false; this._dienste = null; }
+    async connect() {
+      await starten();
+      const id = this.device.id;
+      if (!this.device._trennAbo) {
+        this.device._trennAbo = C.addListener(PLUGIN, 'disconnected|' + id, () => {
+          this.connected = false;
+          this._dienste = null;
+          this.device.dispatchEvent(new Event('gattserverdisconnected'));
+        });
+      }
+      await ruf('connect', { deviceId: id, timeout: 15000 });
+      this.connected = true;
+      // SCHNELLES VERBINDUNGSINTERVALL. Android waehlt sonst 30-50 ms, und der Sendetakt ist
+      // 45 ms - dann faellt jedes zweite Paket auf das naechste Intervall. 1 = HIGH.
+      ruf('requestConnectionPriority', { deviceId: id, connectionPriority: 1 }).catch(() => {});
+      return this;
+    }
+    disconnect() {
+      if (!this.connected) return;
+      ruf('disconnect', { deviceId: this.device.id }).catch(() => {});
+      // Web Bluetooth meldet die Trennung auch dann, wenn man selbst trennt.
+      this.connected = false;
+      this._dienste = null;
+      setTimeout(() => this.device.dispatchEvent(new Event('gattserverdisconnected')), 0);
+    }
+    async _laden() {
+      if (!this._dienste) {
+        const r = await ruf('getServices', { deviceId: this.device.id });
+        this._dienste = ((r && r.services) || []).map((s) => new Dienst(this.device, s));
+      }
+      return this._dienste;
+    }
+    async getPrimaryService(u) {
+      const d = (await this._laden()).find((s) => s.uuid === uuid(u));
+      if (!d) throw new DOMException('Dienst ' + u + ' nicht gefunden', 'NotFoundError');
+      return d;
+    }
+    async getPrimaryServices(u) {
+      const alle = await this._laden();
+      return u === undefined ? alle.slice() : alle.filter((s) => s.uuid === uuid(u));
+    }
+  }
+
+  class Geraet extends EventTarget {
+    constructor(id, name) {
+      super();
+      // Die Kennung ist hier die MAC-Adresse - anders als im Browser STABIL ueber Neustarts.
+      // Gemerkte Autos (Name, Farbe) finden ihr Auto damit wieder.
+      this.id = id;
+      this.name = name || '';
+      this.gatt = new Gatt(this);
+    }
+  }
+
+  const bekannte = new Map();
+
+  // FILTER: Web Bluetooth verknuepft mehrere Filter mit ODER, das Plugin kennt einen. Steht
+  // irgendwo ein Namensanfang, gilt er allein (so findet es auch Autos, die ihren Dienst
+  // nicht bewerben); sonst die Dienste.
+  async function requestDevice(o) {
+    await starten();
+    o = o || {};
+    const filter = o.filters || [];
+    const praefix = (filter.find((f) => f.namePrefix) || {}).namePrefix;
+    const name = (filter.find((f) => f.name) || {}).name;
+    const opt = { optionalServices: (o.optionalServices || []).map(uuid) };
+    if (praefix) opt.namePrefix = praefix;
+    else if (name) opt.name = name;
+    else if (!o.acceptAllDevices) {
+      const d = [];
+      filter.forEach((f) => (f.services || []).forEach((s) => d.push(uuid(s))));
+      if (d.length) opt.services = d;
+    }
+    let r;
+    try {
+      r = await ruf('requestDevice', opt);
+    } catch (e) {
+      // Wie im Browser: Abbruch der Auswahl ist ein NotFoundError.
+      throw new DOMException(String((e && e.message) || e), 'NotFoundError');
+    }
+    let g = bekannte.get(r.deviceId);
+    if (!g) { g = new Geraet(r.deviceId, r.name); bekannte.set(r.deviceId, g); }
+    else if (r.name) g.name = r.name;
+    return g;
+  }
+
+  // getAvailability fragt NICHT nach Rechten: ein Info-Screen braucht kein Bluetooth, und eine
+  // Rechteabfrage beim Oeffnen der App waere fuer ihn nur laestig. Solange nicht gestartet
+  // wurde, heisst es "vorhanden"; der erste Klick auf Verbinden fragt dann.
+  async function getAvailability() {
+    if (!bereit) return true;
+    try {
+      await bereit;
+      const r = await ruf('isEnabled');
+      return !!(r && r.value);
+    } catch (e) { return false; }
+  }
+
+  const bt = new EventTarget();
+  bt.requestDevice = requestDevice;
+  bt.getAvailability = getAvailability;
+  bt.getDevices = async () => Array.from(bekannte.values());
+  try {
+    Object.defineProperty(navigator, 'bluetooth', { value: bt, configurable: true });
+  } catch (e) { /* ohne Bluetooth bleibt die App ein Info-Screen */ }
+})();
+
   // =========================================================================
   // BLE-Explorer: eigener Verbindungsweg, nur zum Erkunden
   // =========================================================================
@@ -10226,6 +10615,63 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Android-App (experimentell): dieselbe App als APK, mit Bluetooth-Brücke, Host ohne PC und Updates ohne Neuinstallation.": "Android app (experimental): the same app as an APK, with a Bluetooth bridge, a host without a PC and updates without reinstalling.",
+    "Info-Screen: ein Tablet oder Fernseher zeigt Strecke, alle Autos und die Rangliste, ohne eigenes Auto.": "Info screen: a tablet or TV shows the track, all cars and the standings, without a car of its own.",
+    "Neue APK nötig für Fassung": "New APK needed for version",
+    "APK holen": "Get APK",
+    "Aktuell.": "Up to date.",
+    "Neu verfügbar:": "New version available:",
+    "Dateien": "files",
+    "Lade": "Downloading",
+    "Fertig, starte neu …": "Done, restarting …",
+    "mitgeliefert": "bundled",
+    "geladen": "downloaded",
+    "Die Fassung": "Version",
+    "startete nicht und wurde verworfen.": "did not start and was discarded.",
+    "Update verworfen": "Update discarded",
+    "Host beenden": "Stop host",
+    "keine WLAN-Adresse": "no Wi-Fi address",
+    "Info-Screen im Browser:": "Info screen in the browser:",
+    "Suche …": "Searching …",
+    "Kein Host gefunden. Gleiches WLAN? Manche Router trennen Geräte voneinander.": "No host found. Same Wi-Fi? Some routers isolate devices from each other.",
+    "Restzeit": "Time left",
+    "offen": "open",
+    "Noch kein Fahrer angemeldet.": "No driver registered yet.",
+    "Update verfügbar": "Update available",
+    "Jetzt laden": "Download now",
+    "App & Updates": "App & updates",
+    "Version der Android-App, Updates ohne neue APK.": "Android app version, updates without a new APK.",
+    "Die App lädt neue Fassungen selbst, direkt von der Projektseite. Geladen wird nur, was sich geändert hat, und alle Einstellungen bleiben erhalten. Startet eine neue Fassung nicht, schaltet die App von selbst auf die vorige zurück.": "The app downloads new versions itself, straight from the project page. Only what changed is downloaded, and all settings are kept. If a new version does not start, the app switches back to the previous one on its own.",
+    "Web-Fassung": "Web version",
+    "Quelle": "Source",
+    "Nach Update suchen": "Check for updates",
+    "Mitgelieferte Fassung verwenden": "Use the bundled version",
+    "Neueste APK auf GitHub": "Latest APK on GitHub",
+    "Beim Start nach Updates suchen": "Check for updates at start",
+    "Fragt beim Öffnen einmal die Projektseite. Geladen wird erst nach einem Tipp auf „Jetzt laden“.": "Asks the project page once when opening. Nothing is downloaded until you tap “Download now”.",
+    "Ohne PC: ein Telefon ist Host.": "No PC: one phone is the host.",
+    "Die anderen Telefone suchen ihn im WLAN oder tragen die Adresse ein. Ein Tablet oder Fernseher öffnet die Adresse mit /?info im Browser und wird Info-Screen, ganz ohne App.": "The other phones search for it on the Wi-Fi or enter the address. A tablet or TV opens the address with /?info in the browser and becomes an info screen, without any app.",
+    "Dieses Telefon ist Host": "This phone is the host",
+    "Host im WLAN suchen": "Find host on Wi-Fi",
+    "Als Info-Screen": "As info screen",
+    "Ohne eigenes Auto: zeigt Strecke, Autos und Rangliste": "Without a car: shows track, cars and standings",
+    "Laufzeit": "Running time",
+    "Rennlänge": "Race length",
+    "Noch keine Strecke gemeldet.": "No track reported yet.",
+    "Letzte": "Last",
+    "APK": "APK",
+    "Neuer Steuerungsmodus Pacejka (experimentell): Reifen mit Haftgrenze, am Limit Unter- und Übersteuern mit Vibration.": "New control mode Pacejka (experimental): tyres with a grip limit, understeer and oversteer at the limit with vibration.",
+    "Reifenquietschen lauter, Porsche-Aufnahme entfernt.": "Tyre squeal louder, Porsche recording removed.",
+    "Kennlinien: Gas, Bremse und Lenkung mit einer Formel, neue Bremskennlinie, Lenk-Plot zeigt die wirksame Kurve, Live-Punkt in allen Plots.": "Curves: throttle, brake and steering share one formula, new brake curve, the steering plot shows the effective curve, live dot in all plots.",
+    "Rennübersicht mit Rundenzeit-Diagramm und Sektortabelle (Bestwert grün, schlechtester rot).": "Race overview with lap-time chart and sector table (best green, worst red).",
+    "Doppel-Ausdruck-Box: die Box-Überfahrt zählt nicht und wird nicht angesagt, wählbar 1 oder 0 Runden.": "Double-printout pit: the pit crossing does not count and is not announced, 1 or 0 laps selectable.",
+    "Zwei Spieler: Reifenwechsel für Auto 2, Wahlkacheln für Reifen und Tank, eigener Rundenton.": "Two players: tyre change for car 2, selection tiles for tyres and fuel, own lap chime.",
+    "Menüs: einzeilige Kacheln, Rennmodus und Rundenzahl im Cockpit exakt wählbar, D-Pad am DualShock 4.": "Menus: single-line tiles, race mode and lap count exactly selectable in the cockpit, D-pad on the DualShock 4.",
+    "Wechselhaftes Wetter regnet jetzt wirklich, Schauer kürzer als Trockenphasen.": "Changeable weather now really rains, showers shorter than dry spells.",
+    "Lichthupe lässt das Rücklicht an, simulierter Gyro-Punkt folgt der Kurve.": "Headlight flash keeps the tail light on, the simulated gyro dot follows the corner.",
+    "Gemerkte Autos: nur geänderte Namen und Farben, Zuordnung per Klick.": "Remembered cars: only changed names and colours, assignment by click.",
+    "Ghosts stoppen beim Rennabbruch und nach einem Abflug.": "Ghosts stop when a race is aborted and after leaving the track.",
+    "Startseite mit OMEGA-SIM-Schriftzug, Credits mit Quellen, Doku auf dem aktuellen Stand.": "Home page with OMEGA SIM title, credits with sources, docs brought up to date.",
     "Pacejka: wie Physik, dazu Reifen mit Haftgrenze nach der Magic Formula. Das Einspurmodell beschreibt, wie sich das Auto dreht; Pacejka beschreibt, wie viel Seitenkraft ein Reifen hält, bevor er rutscht. Unterhalb der Grenze fährt es sich wie Physik. Schiebt die Vorderachse über die Grenze, kommt weniger Einschlag an (Untersteuern); rutscht das Heck, gibt die App Einschlag in die Kurve dazu, und man muss gegenlenken (Übersteuern). Beides vibriert und quietscht. Experimentell.": "Pacejka: like Physics, plus tyres with a grip limit following the Magic Formula. The single-track model describes how the car rotates; Pacejka describes how much lateral force a tyre holds before it slides. Below the limit it drives like Physics. If the front axle goes past the limit, less steering reaches the car (understeer); if the rear slides, the app adds steering into the corner and you have to countersteer (oversteer). Both vibrate and squeal. Experimental.",
     "Pacejka (experimentell)": "Pacejka (experimental)",
     "Übersteuern (Pacejka)": "Oversteer (Pacejka)",
@@ -22541,7 +22987,7 @@
                      //
                      // UMGEDREHT, weil querSoll ein Lenkbefehl ist und diese Karte entlang
                      // der Normalen zeichnet - siehe querSollAlsLage().
-                     quer: querSollAlsLage(g.querSoll) });
+                     quer: querSollAlsLage(g.querSoll), rolle: 'ghost' });
         } else if (c.role === 'player' && typeof dashMinimapIndex === 'number') {
           // Das eigene Auto lenkt die App nicht, es gibt also keine angeforderte QUERLAGE -
           // quer bleibt 0, statt eine zu erfinden.
@@ -22552,7 +22998,7 @@
           out.push({ index: dashMinimapIndex,
                      phase: (typeof dashTilePhase === 'function') ? dashTilePhase() : 0.5,
                      farbe: carColor(c).hex,
-                     kuerzel: garageLabel(c).slice(0, 3), quer: 0 });
+                     kuerzel: garageLabel(c).slice(0, 3), quer: 0, rolle: 'player' });
         }
       });
     } catch (e) { return out; }
@@ -40732,8 +41178,11 @@
   // keinen - dort wird nicht angemeldet, und das ist kein Mangel: von der Platte ist die App
   // ohnehin ohne Netz da. Die Abfrage ist Pflicht, denn ein Wurf im Ladepfad nimmt die ganze
   // IIFE mit, und dann fehlt OMEGA_TEST und der Selbsttest zeigt null Zeilen.
+  // IN DER ANDROID-APP NICHT: dort liefert die App ihre Dateien selbst aus und aktualisiert
+  // sie selbst (OmegaUpdate). Ein Arbeiter daneben waere eine zweite Ablage, die nach einem
+  // Update die alte Fassung ausliefert.
   if ('serviceWorker' in navigator && window.isSecureContext
-      && location.protocol !== 'file:') {
+      && location.protocol !== 'file:' && !(window.OMEGA_APP && window.OMEGA_APP.nativ)) {
     // Nach dem Laden anmelden und nicht davor: die Anmeldung holt Dateien, und das soll
     // nicht mit dem ersten Aufbau des Cockpits um die Leitung streiten.
     window.addEventListener('load', () => {
@@ -48033,6 +48482,86 @@
         if (mp.timer) { clearInterval(mp.timer); }
         mp.timer = merk.timer;
         dashLapTimes = merk.runden;
+      }
+    },
+
+    // ---- POSITIONEN NUR MIT ZUSCHAUER --------------------------------------------
+    //
+    // Der Host meldet, wie viele Info-Screens zusehen. Mit einem schickt die App drei Mal je
+    // Sekunde ihre Kartenpunkte und die Strecke, ohne keinen - sonst waere jede Sitzung
+    // eine Last auf dem Faden, der den 45-ms-Sendetakt haelt.
+    async mpZuschauerProbe() {
+      const echtFetch = window.fetch;
+      const merk = { host: mp.host, an: mp.an, timer: mp.timer, zu: mp.zuschauer,
+                     pos: mp.posTimer, tiles: currentTrackTiles };
+      const gesendet = [];
+      let zuschauer = 1;
+      try {
+        if (mp.timer) { clearInterval(mp.timer); mp.timer = null; }
+        if (mp.posTimer) { clearInterval(mp.posTimer); mp.posTimer = null; }
+        mp.host = 'http://pruefhost:8080';
+        mp.an = true;
+        currentTrackTiles = [{ type: TILE_TYPE.START }, { type: TILE_TYPE.STRAIGHT },
+                             { type: TILE_TYPE.STRAIGHT }];
+        window.fetch = (url, init) => {
+          gesendet.push({ url: String(url), rumpf: init && init.body ? JSON.parse(init.body) : null });
+          if (String(url).indexOf('/mp/state') >= 0) {
+            return Promise.resolve({ ok: true, json: () => Promise.resolve({
+              fahrer: [], rennen: {}, zeit: 1, zuschauer }) });
+          }
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ ok: true }) });
+        };
+        await mpHolen();
+        const taktMit = mp.posTimer !== null;
+        gesendet.length = 0;
+        mpPosBerichten();
+        const bericht = gesendet.find((g) => g.url.indexOf('/mp/report') >= 0);
+        zuschauer = 0;
+        await mpHolen();
+        const taktOhne = mp.posTimer !== null;
+        return { taktMit, taktOhne, strecke: bericht && bericht.rumpf ? bericht.rumpf.strecke : null,
+                 posIstListe: !!(bericht && bericht.rumpf && Array.isArray(bericht.rumpf.pos)) };
+      } finally {
+        window.fetch = echtFetch;
+        if (mp.posTimer) { clearInterval(mp.posTimer); }
+        mp.posTimer = merk.pos; mp.zuschauer = merk.zu;
+        mp.host = merk.host; mp.an = merk.an;
+        if (mp.timer) clearInterval(mp.timer);
+        mp.timer = merk.timer;
+        currentTrackTiles = merk.tiles;
+      }
+    },
+
+    // ---- DER INFO-SCREEN ZEICHNET, WAS DER HOST MELDET ---------------------------
+    mpiProbe() {
+      const code = 'SG2R2G2R2';
+      const d = {
+        strecke: code, zuschauer: 1, zeit: 1,
+        rennen: { start: 1, laps: 10, laufzeit: 65 },
+        fahrer: [
+          { id: 'a', name: 'Luuke', laps: 3, letzte: 8.4, beste: 8.1, alter: 0.2, posAlter: 0.1,
+            pos: [{ i: 2, f: 0.5, c: '#ff4040', k: 'Luu', g: 0 }, { i: 5, f: 0.2, c: '#40c0ff', k: 'G1', g: 1 }] },
+          { id: 'b', name: 'SeVen', laps: 2, letzte: 9.0, beste: 8.8, alter: 0.4, posAlter: 0.2,
+            pos: [{ i: 7, f: 0.9, c: '#3ddc84', k: 'SeV', g: 0 }] },
+        ],
+      };
+      const merk = { schl: mpi.schluessel, n: mpi.n, geo: mpi.geo, spur: new Map(mpi.spur) };
+      const karte = $('mpi-karte'), alt = karte ? karte.innerHTML : '';
+      try {
+        mpi.schluessel = null;
+        mpi.spur.clear();
+        mpiAufnehmen(d);
+        const autos = karte ? [...karte.querySelectorAll('g.karte-autos > g')]
+          .filter((g) => g.getAttribute('visibility') === 'visible').length : 0;
+        const texte = karte ? [...karte.querySelectorAll('g.karte-autos text')].map((t) => t.textContent) : [];
+        const zeilen = $('mpi-rows') ? $('mpi-rows').rows.length : 0;
+        return { svg: !!(karte && karte.querySelector('svg')), autos, texte, zeilen,
+                 uhr: $('mpi-uhr') ? $('mpi-uhr').textContent : '',
+                 laenge: $('mpi-laenge') ? $('mpi-laenge').textContent : '' };
+      } finally {
+        mpi.schluessel = merk.schl; mpi.n = merk.n; mpi.geo = merk.geo; mpi.spur = merk.spur;
+        if (karte) karte.innerHTML = alt;
+        if ($('mpi-rows')) $('mpi-rows').innerHTML = '';
       }
     },
 
@@ -59900,6 +60429,71 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- ANDROID-APP UND INFO-SCREEN ----
+  //
+  // BESTELLT: "Setze den Android-App Plan um", mit Updates ohne neue APK und einem Geraet,
+  // das "rein als Info-Screen fungiert". Was davon ohne Telefon pruefbar ist, steht hier:
+  // die Umrechnungen der Bluetooth-Bruecke, der Positionstakt, der Info-Screen und die
+  // Update-Liste. Die nativen Teile (Plugins) prueft der Bau der APK.
+  stAdd('App-Bruecke: UUIDs und Bytes wie Web Bluetooth', () => {
+    const B = window.OMEGA_BRUECKE;
+    if (!B) return { ok: false, mass: 'OMEGA_BRUECKE fehlt' };
+    const f = [];
+    if (B.uuid(0x180f) !== '0000180f-0000-1000-8000-00805f9b34fb') f.push('Zahl ' + B.uuid(0x180f));
+    if (B.uuid('battery_service') !== '0000180f-0000-1000-8000-00805f9b34fb') f.push('Kurzname');
+    if (B.uuid('FFE0') !== '0000ffe0-0000-1000-8000-00805f9b34fb') f.push('16 Bit');
+    if (B.uuid('6E400001-B5A3-F393-E0A9-E50E24DCCA9E') !== '6e400001-b5a3-f393-e0a9-e50e24dcca9e') f.push('gross');
+    if (B.zuHex(new Uint8Array([0, 15, 255])) !== '000fff') f.push('zuHex ' + B.zuHex(new Uint8Array([0, 15, 255])));
+    const paket = new Uint8Array([0xaf, 1, 2, 3]);
+    if (B.zuHex(new DataView(paket.buffer, 1, 2)) !== '0102') f.push('DataView-Ausschnitt');
+    const dv = B.ausHex('AF 01 fe');
+    if (dv.byteLength !== 3 || dv.getUint8(0) !== 0xaf || dv.getUint8(2) !== 0xfe) f.push('ausHex');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Kurznamen, 16 Bit, Hex hin und zurueck' };
+  });
+
+  stAdd('Mehrspieler: Positionen nur, wenn ein Info-Screen zusieht', async () => {
+    if (!OMEGA_TEST.mpZuschauerProbe) return { skip: true, mass: 'Probe fehlt' };
+    const r = await OMEGA_TEST.mpZuschauerProbe();
+    const f = [];
+    if (!r.taktMit) f.push('mit Zuschauer kein Takt');
+    if (r.taktOhne) f.push('ohne Zuschauer laeuft der Takt weiter');
+    if (!r.posIstListe) f.push('Bericht ohne pos');
+    if (!r.strecke) f.push('Bericht ohne Strecke');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Takt an und aus, Strecke ' + r.strecke };
+  });
+
+  stAdd('Info-Screen: Strecke, alle Autos und Rangliste aus dem Host-Stand', () => {
+    if (!OMEGA_TEST.mpiProbe) return { skip: true, mass: 'Probe fehlt' };
+    const r = OMEGA_TEST.mpiProbe();
+    const f = [];
+    if (!r.svg) f.push('keine Karte');
+    if (r.autos !== 3) f.push(r.autos + ' Autos statt 3');
+    if (r.texte.join(',') !== 'Luu,G1,SeV') f.push('Kuerzel ' + r.texte.join(','));
+    if (r.zeilen !== 2) f.push(r.zeilen + ' Zeilen statt 2');
+    if (r.uhr !== '1:05') f.push('Uhr ' + r.uhr);
+    if (r.laenge !== '7 / 10') f.push('Rennlaenge ' + r.laenge);
+    return { ok: !f.length, mass: f.length ? f.join('; ') : '3 Autos, 2 Zeilen, Uhr ' + r.uhr };
+  });
+
+  // Die Update-Liste der App gehoert zu GENAU dieser Fassung: sonst laedt ein Telefon eine
+  // index.html, deren Pruefsumme nicht zur Liste passt, und verwirft jede Aktualisierung.
+  stAdd('App-Update: app-update.json passt zu dieser Fassung', async () => {
+    if (!/^https?:$/.test(location.protocol)) return { skip: true, mass: 'nur ueber http pruefbar' };
+    let d;
+    try {
+      const r = await fetch('app-update.json', { cache: 'no-store' });
+      if (!r.ok) return { skip: true, mass: 'HTTP ' + r.status };
+      d = await r.json();
+    } catch (e) { return { skip: true, mass: String(e.message || e) }; }
+    const v = ($('app-version') ? $('app-version').textContent : '').trim();
+    const f = [];
+    if (d.version !== v) f.push('Liste ' + d.version + ', App ' + v);
+    const ix = (d.dateien || []).find((e) => e.p === 'index.html');
+    if (!ix || !/^[0-9a-f]{64}$/.test(ix.h)) f.push('index.html fehlt oder ohne SHA-256');
+    if (!(d.dateien || []).some((e) => /^audio\//.test(e.p))) f.push('keine Tondateien');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : v + ', ' + d.dateien.length + ' Dateien' };
+  });
+
   // ---- Mehrspieler: die Leitung reisst ab ----
   //
   // Der haeufigste Fall in der Praxis, und der einzige, der beim Fahren wirklich schmerzt:
@@ -65765,7 +66359,12 @@
   const MP_STORE = 'chc.mp.v1';
   const MP_POLL_MS = 1500;      // Rangliste holen
   const MP_HEARTBEAT_MS = 5000; // Lebenszeichen, damit die eigene Zeile nicht blass wird
-  const mp = { host: '', name: '', id: '', an: false, timer: null, letzterBericht: 0 };
+  const mp = { host: '', name: '', id: '', an: false, timer: null, letzterBericht: 0,
+               zuschauer: 0, posTimer: null };
+  // POSITIONEN NUR, WENN JEMAND ZUSIEHT. Der Host zaehlt die Info-Screens (zuschauer in
+  // /mp/state); ist keiner da, bleibt es bei Rundenschluss und Lebenszeichen wie bisher.
+  // Mit Zuschauer drei Berichte je Sekunde - der Info-Screen rechnet dazwischen weiter.
+  const MP_POS_MS = 330;
 
   function mpLaden() {
     try {
@@ -65832,6 +66431,41 @@
     } catch (e) { /* die Rangliste zeigt es beim naechsten Holen */ }
   }
 
+  // Die Kartenpunkte dieses Telefons: das eigene Auto und seine Ghosts, knapp kodiert
+  // (i Kachel, f Anteil darin, c Farbe, k Kuerzel, g Ghost). Das eigene Auto traegt das
+  // Kuerzel des Fahrernamens, damit man es auf dem Info-Screen wiedererkennt.
+  function mpPositionen() {
+    const marken = (typeof trackCarMarks === 'function') ? trackCarMarks() : [];
+    return marken.filter((m) => m && m.index !== null && m.index !== undefined).slice(0, 8)
+      .map((m) => ({ i: m.index, f: Math.round((m.phase || 0) * 1000) / 1000,
+                     c: m.farbe || '#ffffff',
+                     k: String(m.rolle === 'player' ? (mp.name || m.kuerzel || '') : (m.kuerzel || ''))
+                          .slice(0, 3),
+                     g: m.rolle === 'ghost' ? 1 : 0 }));
+  }
+
+  function mpStreckenCode() {
+    try {
+      const tiles = currentTrackTiles;
+      return (tiles && tiles.length > 1 && typeof trackToCode === 'function') ? trackToCode(tiles) : '';
+    } catch (e) { return ''; }
+  }
+
+  function mpPosBerichten() {
+    if (!mp.an || mp.zuschauer <= 0) return;
+    fetch(mpUrl('/mp/report'), {
+      method: 'POST', cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: mp.id, pos: mpPositionen(), strecke: mpStreckenCode() }),
+    }).catch(() => { /* naechster Takt */ });
+  }
+
+  function mpPosTakt() {
+    const soll = mp.an && mp.zuschauer > 0;
+    if (soll && mp.posTimer === null) mp.posTimer = setInterval(mpPosBerichten, MP_POS_MS);
+    if (!soll && mp.posTimer !== null) { clearInterval(mp.posTimer); mp.posTimer = null; }
+  }
+
   // Aus playerLapCrossed gerufen. Eine Runde ist der Moment, in dem sich die Rangliste
   // wirklich aendert - alles andere ist Lebenszeichen.
   function mpRundeGefahren() {
@@ -65847,6 +66481,8 @@
       const r = await fetch(mpUrl('/mp/state'), { cache: 'no-store' });
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const d = await r.json();
+      mp.zuschauer = d.zuschauer || 0;
+      mpPosTakt();
       mpZeichnen(d);
       mpSay(t('verbunden') + ', ' + (d.fahrer || []).length + ' '
             + t('Fahrer'));
@@ -65886,10 +66522,205 @@
 
   function mpLeave() {
     mp.an = false;
+    mpPosTakt();
     if (mp.timer !== null) { clearInterval(mp.timer); mp.timer = null; }
     mpSay(t('nicht verbunden'));
     log('Mehrspieler verlassen.', 'info');
   }
+
+  // ============================== INFO-SCREEN ==============================
+  //
+  // BESTELLT: "Ich will ein Geraet sich einloggen lassen, das rein als Info-Screen fungiert
+  // (Streckenscreen, ohne eigenes Auto; zB ein Tablet)."
+  //
+  // Ein Info-Screen MELDET NICHTS als Fahrer. Er fragt /mp/state?zuschauer=<id> ab; damit
+  // weiss der Host, dass jemand zusieht, und die Fahrer schicken ihre Kartenpunkte mit. Die
+  // Strecke kommt als Kurzcode (trackToCode) vom Fahrer, der zuletzt eine gemeldet hat.
+  //
+  // ZWISCHEN DEN BERICHTEN WIRD WEITERGERECHNET: drei Berichte je Sekunde sind fuer eine Karte
+  // zu wenig, ein Punkt, der springt, liest sich als Stottern. Aus den letzten zwei Berichten
+  // je Auto folgt ein Tempo in Kacheln je Sekunde, und damit laeuft der Punkt bis zu 0,8 s
+  // weiter. Bleiben Berichte laenger aus, bleibt er stehen - das ist ehrlicher als Raten.
+  //
+  // KEIN BLUETOOTH NOETIG, also auch kein secure context: ein Tablet oeffnet einfach
+  // http://<Host>:8080/?info im Browser.
+  const MPI_POLL_MS = 400;
+  const mpi = { an: false, host: '', id: 'z' + Math.random().toString(36).slice(2, 10),
+                timer: null, rahmen: null, daten: null, empfangen: 0,
+                schluessel: null, geo: null, spur: new Map(), n: 0 };
+
+  function mpiHolen() {
+    if (!mpi.an) return;
+    fetch(mpBasis(mpi.host) + '/mp/state?zuschauer=' + encodeURIComponent(mpi.id),
+          { cache: 'no-store' })
+      .then((r) => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then((d) => { mpiAufnehmen(d); })
+      .catch((e) => {
+        if ($('mpi-status')) $('mpi-status').textContent = t('kein Kontakt zum Host') + ': ' + e.message;
+      });
+  }
+
+  function mpiAufnehmen(d) {
+    const jetzt = performance.now();
+    mpi.daten = d;
+    mpi.empfangen = jetzt;
+    // Strecke nur neu zeichnen, wenn sie sich aendert.
+    const code = d.strecke || '';
+    if (code !== mpi.schluessel) {
+      mpi.schluessel = code;
+      mpi.geo = null;
+      const host = $('mpi-karte');
+      let tiles = null;
+      try {
+        const gelesen = code && typeof codeToTrack === 'function' ? codeToTrack(code) : null;
+        tiles = gelesen ? gelesen.tiles : null;
+      } catch (e) { tiles = null; }
+      if (host) {
+        if (tiles && tiles.length > 1) {
+          const r = renderTrackPreview(tiles, null, { detailed: true, cars: [] });
+          host.innerHTML = r.html;
+          mpi.geo = r.geo || null;
+          mpi.n = tiles.length;
+        } else {
+          host.innerHTML = '<p class="mpi-leer">' + t('Noch keine Strecke gemeldet.') + '</p>';
+          mpi.n = 0;
+        }
+      }
+    }
+    // Stuetzpunkte je Auto: Ort (Kachel + Anteil) zu dem Zeitpunkt, an dem er gemeldet wurde.
+    const gesehen = new Set();
+    (d.fahrer || []).forEach((f) => {
+      if (!f.pos || f.posAlter === undefined || f.posAlter > 3) return;
+      const t0 = jetzt - f.posAlter * 1000;
+      f.pos.forEach((p, k) => {
+        const schl = f.id + ':' + k;
+        gesehen.add(schl);
+        const ort = (p.i || 0) + Math.max(0, Math.min(0.999, p.f || 0));
+        const alt = mpi.spur.get(schl);
+        let v = 0;
+        if (alt && t0 > alt.t + 50 && mpi.n) {
+          let d = ort - alt.ort;
+          if (d < -mpi.n / 2) d += mpi.n;          // ueber Start/Ziel
+          if (d > mpi.n / 2) d -= mpi.n;
+          v = d > 0 ? d / ((t0 - alt.t) / 1000) : 0;
+          if (v > 12) v = 0;                         // Sprung (Neustart, Abflug): nicht rechnen
+        }
+        // Nur ein NEUER Bericht zaehlt (derselbe kann zweimal abgeholt werden). Steht das
+        // Auto, ist v = 0, und der Punkt bleibt stehen.
+        if (!alt || t0 > alt.t + 50) {
+          mpi.spur.set(schl, { ort, t: t0, v, c: p.c, k: p.k, g: p.g });
+        }
+      });
+    });
+    for (const schl of Array.from(mpi.spur.keys())) if (!gesehen.has(schl)) mpi.spur.delete(schl);
+    mpiTabelle(d);
+    mpiBild();
+  }
+
+  function mpiUhr(sek) {
+    if (sek === null || sek === undefined) return '\u2013';
+    const m = Math.floor(sek / 60), r = Math.floor(sek % 60);
+    return m + ':' + String(r).padStart(2, '0');
+  }
+
+  function mpiTabelle(d) {
+    const leute = d.fahrer || [];
+    const rennen = d.rennen || {};
+    if ($('mpi-anzahl')) $('mpi-anzahl').textContent = leute.length;
+    if ($('mpi-uhr')) {
+      const rest = rennen.restSekunden !== undefined;
+      $('mpi-uhr-label').textContent = t(rest ? 'Restzeit' : 'Laufzeit');
+      $('mpi-uhr').textContent = mpiUhr(rest ? rennen.restSekunden : rennen.laufzeit);
+    }
+    if ($('mpi-laenge')) {
+      const fuehrend = leute.length ? leute[0].laps : 0;
+      $('mpi-laenge').textContent = rennen.laps ? Math.max(0, rennen.laps - fuehrend) + ' / ' + rennen.laps
+        : (rennen.minutes ? rennen.minutes + ' min' : t('offen'));
+    }
+    const zeit = (x) => (x === null || x === undefined) ? '\u2013' : x.toFixed(2) + 's';
+    const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+    if ($('mpi-rows')) {
+      $('mpi-rows').innerHTML = leute.map((f, i) => {
+        const eigen = (f.pos || []).find((p) => !p.g);
+        const farbe = eigen && /^#[0-9a-fA-F]{3,8}$/.test(eigen.c) ? eigen.c : '#8b99b4';
+        const kl = [];
+        if (i === 0 && f.laps > 0) kl.push('fuehrt');
+        if (f.alter > 10) kl.push('alt');
+        return '<tr class="' + kl.join(' ') + '"><td>' + (i + 1) + '</td><td><span class="mpi-punkt" style="background:'
+          + farbe + '"></span>' + esc(f.name) + '</td><td>' + f.laps + '</td><td>' + zeit(f.letzte)
+          + '</td><td>' + zeit(f.beste) + '</td></tr>';
+      }).join('') || ('<tr><td colspan="5" class="mpi-leer">' + t('Noch kein Fahrer angemeldet.') + '</td></tr>');
+    }
+    if ($('mpi-status')) {
+      $('mpi-status').textContent = mpBasis(mpi.host) + ' \u00b7 ' + t('verbunden');
+    }
+  }
+
+  // Der Takt ist requestAnimationFrame, dazu ein Bild je Abruf: rAF steht still, wenn der
+  // Browser die Seite fuer verdeckt haelt (manche Fernseher, Bildschirmschoner), und dann
+  // sollen die Autos wenigstens im Abruftakt weiterlaufen statt einzufrieren.
+  function mpiMalen() {
+    if (!mpi.an) return;
+    mpi.rahmen = requestAnimationFrame(mpiMalen);
+    mpiBild();
+  }
+
+  function mpiBild() {
+    const host = $('mpi-karte');
+    const svg = host && host.querySelector('svg');
+    if (!svg || !mpi.geo || !mpi.n || typeof karteAutosSetzen !== 'function') return;
+    const jetzt = performance.now();
+    const marken = [];
+    mpi.spur.forEach((s) => {
+      const dt = Math.min(0.8, Math.max(0, (jetzt - s.t) / 1000));
+      let ort = s.ort + s.v * dt;
+      ort = ((ort % mpi.n) + mpi.n) % mpi.n;
+      const i = Math.floor(ort);
+      marken.push({ index: i, phase: ort - i, farbe: s.c, kuerzel: s.k, quer: 0 });
+    });
+    karteAutosSetzen(svg, mpi.geo, marken);
+  }
+
+  function mpiStart(host) {
+    const h = mpBasis(host || ($('mp-host') ? $('mp-host').value : '') || mp.host);
+    if (!h) { mpSay(t('Ohne Host-Adresse geht es nicht.'), true); return false; }
+    mpi.host = h;
+    mpi.an = true;
+    mpi.schluessel = null;
+    mpi.spur.clear();
+    // Direkt unter <body>: <main> hat z-index 1 und damit einen eigenen Stapel - darin
+    // lag die Kopfzeile der App ueber dem Info-Screen, egal welcher z-index hier steht.
+    const schirm = $('mp-info');
+    if (schirm) {
+      if (schirm.parentElement !== document.body) document.body.appendChild(schirm);
+      schirm.hidden = false;
+    }
+    if (mpi.timer === null) mpi.timer = setInterval(mpiHolen, MPI_POLL_MS);
+    mpiHolen();
+    if (mpi.rahmen === null) mpi.rahmen = requestAnimationFrame(mpiMalen);
+    log('Info-Screen: zeigt ' + h + '.', 'info');
+    return true;
+  }
+
+  function mpiStop() {
+    mpi.an = false;
+    if (mpi.timer !== null) { clearInterval(mpi.timer); mpi.timer = null; }
+    if (mpi.rahmen !== null) { cancelAnimationFrame(mpi.rahmen); mpi.rahmen = null; }
+    if ($('mp-info')) $('mp-info').hidden = true;
+  }
+
+  if ($('mp-info-join')) $('mp-info-join').addEventListener('click', () => mpiStart());
+  if ($('mpi-zu')) $('mpi-zu').addEventListener('click', mpiStop);
+
+  // /?info in der Adresse: sofort Info-Screen, Host ist die Seite selbst (oder der Wert von
+  // info=, wenn einer dasteht). So genuegt auf dem Tablet ein Lesezeichen.
+  try {
+    const q = new URLSearchParams(location.search);
+    if (q.has('info')) {
+      const ziel = q.get('info') || (/^https?:$/.test(location.protocol) ? location.origin : '');
+      if (ziel) setTimeout(() => mpiStart(ziel), 0);
+    }
+  } catch (e) { /* ohne URLSearchParams kein Kurzweg */ }
 
   mpLaden();
   if ($('mp-host')) $('mp-host').value = mp.host;
@@ -65950,6 +66781,210 @@
     $('mp-host').addEventListener('change', zeigen);
     zeigen();
   }
+
+  // ============================== ANDROID-APP ==============================
+  //
+  // Alles hier schlaeft im Browser: window.OMEGA_APP setzt nur 05-app-bruecke.js, und nur
+  // in der App. Zwei Aufgaben:
+  //
+  // 1. SELBSTAKTUALISIERUNG (Plugin OmegaUpdate). BESTELLT: "Ich will, dass ich die App
+  //    einfach updaten kann ohne die APK neu installieren zu muessen." Beim Start einmal
+  //    fragen, einen Hinweis zeigen, auf Tipp laden. Die neue Fassung meldet sich mit
+  //    bestaetigen() - tut sie das nicht, schaltet die App von selbst zurueck.
+  //
+  // 2. HOST OHNE PC (Plugin OmegaHost): dieses Telefon traegt die Rangliste, die anderen
+  //    finden es per Suche im WLAN, ein Tablet oeffnet /?info im Browser.
+  (function appAnbinden() {
+    const APP = window.OMEGA_APP;
+    if (!APP || !APP.nativ) return;
+    const C = window.Capacitor;
+    const upd = (m, o) => C.nativePromise('OmegaUpdate', m, o || {});
+    const hst = (m, o) => C.nativePromise('OmegaHost', m, o || {});
+    const APP_STORE = 'chc.app.v1';
+    let einstellung = { auto: true };
+    try { einstellung = Object.assign(einstellung, JSON.parse(localStorage.getItem(APP_STORE) || '{}')); } catch (e) { /* privat */ }
+    const merken = () => { try { localStorage.setItem(APP_STORE, JSON.stringify(einstellung)); } catch (e) { /* privat */ } };
+
+    ['info-app-kachel', 'mp-app'].forEach((id) => { if ($(id)) $(id).hidden = false; });
+
+    // Die laufende Fassung ist hochgekommen: das ist die Bestaetigung, auf die der Wachhund
+    // wartet. So frueh wie moeglich und doch erst, wenn der ganze Code gelaufen ist - diese
+    // Datei steht fast am Ende des Aufbaus.
+    upd('bestaetigen').catch(() => { /* aeltere APK ohne Plugin */ });
+
+    const webVersion = () => (($('app-version') && $('app-version').textContent) || '').trim();
+    function neuer(a, b) {
+      const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number);
+      for (let i = 0; i < Math.max(x.length, y.length); i++) {
+        const d = (x[i] || 0) - (y[i] || 0);
+        if (d) return d > 0;
+      }
+      return false;
+    }
+    const mb = (b) => (b / 1e6).toFixed(b < 1e6 ? 2 : 1).replace('.', ',') + ' MB';
+    const meldung = (text, schlecht) => {
+      const el = $('app-stand-meldung');
+      if (el) { el.textContent = text; el.style.color = schlecht ? 'var(--bad)' : ''; }
+    };
+
+    let angebot = null;
+    function hinweis(r) {
+      const box = $('app-update');
+      if (!box) return;
+      angebot = r;
+      if (r.apkNoetig) {
+        $('app-update-text').textContent = t('Neue APK nötig für Fassung') + ' ' + r.version;
+        $('app-update-laden').textContent = t('APK holen');
+      } else {
+        $('app-update-text').textContent = t('Update verfügbar') + ': ' + r.version
+          + ' (' + mb(r.bytes) + ')';
+        $('app-update-laden').textContent = t('Jetzt laden');
+      }
+      box.hidden = false;
+    }
+
+    async function pruefen(still) {
+      try {
+        const r = await upd('pruefen');
+        if (!neuer(r.version, webVersion())) {
+          if (!still) meldung(t('Aktuell.') + ' ' + webVersion());
+          return null;
+        }
+        if (still && einstellung.verworfen === r.version) return null;   // startete nicht
+        hinweis(r);
+        meldung(t('Neu verfügbar:') + ' ' + r.version + ', ' + r.dateien + ' '
+                + t('Dateien') + ', ' + mb(r.bytes));
+        return r;
+      } catch (e) {
+        if (!still) meldung(String(e && e.message || e), true);
+        return null;
+      }
+    }
+
+    C.addListener('OmegaUpdate', 'fortschritt', (d) => {
+      const bar = $('app-update-balken');
+      if (!bar || !d || !d.gesamt) return;
+      bar.hidden = false;
+      bar.firstElementChild.style.width = Math.round(100 * d.fertig / d.gesamt) + '%';
+    });
+
+    if ($('app-update-laden')) {
+      $('app-update-laden').addEventListener('click', async () => {
+        if (!angebot) return;
+        if (angebot.apkNoetig) { window.open($('app-apk-link').href, '_blank'); return; }
+        const knopf = $('app-update-laden');
+        knopf.disabled = true;
+        $('app-update-text').textContent = t('Lade') + ' ' + angebot.version + ' …';
+        try {
+          await upd('laden');
+          $('app-update-text').textContent = t('Fertig, starte neu …');
+          // Die Seite laedt jetzt von selbst neu (setServerBasePath).
+        } catch (e) {
+          knopf.disabled = false;
+          $('app-update-text').textContent = String(e && e.message || e);
+        }
+      });
+    }
+
+    async function standZeigen() {
+      try {
+        const s = await upd('stand');
+        if ($('app-stand-web')) $('app-stand-web').textContent = webVersion()
+          + (s.eingebaut ? ' (' + t('mitgeliefert') + ')' : ' (' + t('geladen') + ')');
+        if ($('app-stand-apk')) $('app-stand-apk').textContent = s.apkVersion + ' · Stufe ' + s.apkStufe;
+        if ($('app-stand-quelle')) $('app-stand-quelle').textContent = s.quelle;
+        if (s.zurueckgerollt) {
+          // Nicht noch einmal anbieten, bis eine NOCH neuere Fassung da ist.
+          einstellung.verworfen = s.zurueckgerollt;
+          merken();
+          meldung(t('Die Fassung') + ' ' + s.zurueckgerollt + ' ' + t('startete nicht und wurde verworfen.'), true);
+          showHudToast(t('Update verworfen'));
+          upd('vergessen').catch(() => {});
+        }
+        if ($('app-eingebaut')) $('app-eingebaut').disabled = !!s.eingebaut;
+      } catch (e) { /* Plugin fehlt: aeltere APK */ }
+    }
+
+    if ($('app-pruefen')) $('app-pruefen').addEventListener('click', () => pruefen(false));
+    if ($('app-eingebaut')) {
+      $('app-eingebaut').addEventListener('click', () => {
+        upd('eingebaut').catch((e) => meldung(String(e && e.message || e), true));
+      });
+    }
+    if ($('app-auto')) {
+      $('app-auto').checked = einstellung.auto !== false;
+      $('app-auto').addEventListener('change', (e) => { einstellung.auto = e.target.checked; merken(); });
+    }
+    standZeigen();
+    if (einstellung.auto !== false) setTimeout(() => pruefen(true), 3000);
+
+    // ---- Host ohne PC ------------------------------------------------------------------
+    let hostLaeuft = false;
+    function hostZeigen(r) {
+      hostLaeuft = !!(r && r.laeuft);
+      const ip = r && r.adressen && r.adressen[0];
+      const url = ip ? 'http://' + ip + ':' + r.port : '';
+      if ($('mp-app-host')) $('mp-app-host').textContent = t(hostLaeuft ? 'Host beenden' : 'Dieses Telefon ist Host');
+      if ($('mp-app-adresse')) $('mp-app-adresse').textContent = hostLaeuft ? (url || t('keine WLAN-Adresse')) : '';
+      if ($('mp-app-info')) {
+        $('mp-app-info').textContent = hostLaeuft && url
+          ? t('Info-Screen im Browser:') + ' ' + url + '/?info' : '';
+      }
+    }
+
+    if ($('mp-app-host')) {
+      $('mp-app-host').addEventListener('click', async () => {
+        try {
+          if (hostLaeuft) {
+            hostZeigen(await hst('stop'));
+            return;
+          }
+          const r = await hst('start', { port: 8080, name: 'OmegaSim ' + (mp.name || 'Host') });
+          hostZeigen(r);
+          // Das Host-Telefon faehrt selbst mit, ueber die eigene Schleife.
+          if ($('mp-host')) $('mp-host').value = 'http://127.0.0.1:' + (r.port || 8080);
+          mpJoin();
+        } catch (e) {
+          mpSay(String(e && e.message || e), true);
+        }
+      });
+      hst('status').then(hostZeigen).catch(() => {});
+    }
+
+    if ($('mp-app-suchen')) {
+      $('mp-app-suchen').addEventListener('click', async () => {
+        const box = $('mp-gefunden');
+        const knopf = $('mp-app-suchen');
+        knopf.disabled = true;
+        if (box) box.textContent = t('Suche …');
+        try {
+          const r = await hst('suchen', { ms: 3500 });
+          const liste = (r && r.hosts) || [];
+          if (box) {
+            box.innerHTML = '';
+            if (!liste.length) box.textContent = t('Kein Host gefunden. Gleiches WLAN? Manche Router trennen Geräte voneinander.');
+            liste.forEach((h) => {
+              const b = document.createElement('button');
+              b.type = 'button';
+              b.textContent = h.name + ' · ' + h.adresse;
+              b.addEventListener('click', () => {
+                if ($('mp-host')) {
+                  $('mp-host').value = 'http://' + h.adresse + ':' + h.port;
+                  $('mp-host').dispatchEvent(new Event('input', { bubbles: true }));
+                }
+              });
+              box.appendChild(b);
+            });
+          }
+        } catch (e) {
+          if (box) box.textContent = String(e && e.message || e);
+        } finally {
+          knopf.disabled = false;
+        }
+      });
+    }
+  })();
+
   // ============================== VOREINSTELLUNGEN ==============================
   // presetControls() sucht NUR in #tab-options. Die Karte verspricht "nicht die
   // Rennlaenge, nicht das Wetter, nicht die Strecke", und dieses Versprechen hing einmal
