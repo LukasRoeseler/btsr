@@ -3185,7 +3185,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.65</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.1</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -10031,6 +10031,9 @@
       "Two cars, two controllers, both rev counters in the cockpit. Work in progress.",
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
+    "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Verschiedene Rennmodi": "Several race modes",
+    "KI-Überholmanöver": "AI overtaking",
     "Zwei Autos, zwei Controller, ein Rennen auf derselben Strecke. Angeschaltet bekommt jede Zeile in der Garage einen vierten Knopf „Spieler 2“, und im Cockpit kommt ein vierter Schirm „Beide“ dazu, der Tempo, Drehzahl, Tank, Zustand, Reifen, Bremse und Akku beider Autos nebeneinander zeigt. Der Hauptschirm bleibt Auto 1 vorbehalten. Beide Autos werden aus demselben 45-ms-Sendetakt bedient – getrennte Takte waren die Ursache des Stotterns mit echtem Controller, und dieser Modus wiederholt den Fehler nicht.":
       "Two cars, two controllers, one race on the same track. Switched on, every garage row gets a fourth button “Player 2”, and the cockpit gains a fourth screen “Both” showing speed, revs, fuel, condition, tyres, brakes and battery of both cars side by side. The main screen stays car 1's alone. Both cars are served from the same 45 ms send heartbeat – separate heartbeats were the cause of the stutter with a real controller, and this mode does not repeat that mistake.",
 
@@ -10989,7 +10992,6 @@
     "Rundenzeiten ansagen": "Announce lap times",
     "Nach jeder Runde die Zeit, und bei einer eigenen Bestzeit ein Wort dazu. Gesprochen von der eingebauten Stimme des Browsers – kein Dienst, kein Netz, nichts verlässt das Gerät. Absichtlich kurz gehalten, damit die Ansage vor der nächsten Kurve fertig ist. Kommt eine zweite Runde herein, während noch geredet wird, bricht die alte Ansage ab: die Zeit der Gegenwart ist wichtiger. Ob es überhaupt spricht, hängt an den Stimmen des Systems – unter Windows sind sie lokal vorhanden, auf Android können sie fehlen. Fehlt eine, steht das einmal im Protokoll und nicht bei jeder Runde.": "The time after every lap, and a word with it on a personal best. Spoken by the browser’s built-in voice – no service, no network, nothing leaves the device. Deliberately kept short so the announcement is finished before the next corner. If a second lap comes in while it is still talking, the old announcement is cut off: the time of the present matters more. Whether it speaks at all depends on the voices of the system – under Windows they are installed locally, on Android they can be missing. If one is missing, that goes into the log once and not on every lap.",
     "Alle sind aus Zylinderzahl, Kurbelwelle, Bankaufteilung und Zündfolge gerechnet – keine Aufnahme. Bei den aufgeladenen Originalen fehlt der Lader. Die sechs mit WIP sind noch nicht nach Gehör geprüft; beim Maserati kommt dazu, dass dieses Modell den Bankwinkel gar nicht darstellt, weshalb er sich vom Ferrari-V12 nur in Drehzahl und Rohrlänge unterscheidet. Der Boxer-Rumpel des Subaru kommt aus ungleich langen Krümmerrohren; das Modell trägt feste Zeitversätze je Zylinder und damit die richtige Art von Unregelmäßigkeit, aber ihr genaues Muster ist gewählt und nicht aus Rohrlängen gerechnet.": "All of them are computed from cylinder count, crankshaft, bank split and firing order – none is a recording. The forced-induction originals are missing their turbo. The six marked WIP have not been judged by ear; with the Maserati there is the added point that this model cannot represent bank angle at all, so it differs from the Ferrari V12 only in revs and pipe length. The Subaru boxer rumble comes from unequal-length headers; the model carries fixed per-cylinder timing offsets and therefore the right KIND of irregularity, but their exact pattern is chosen, not computed from pipe lengths.",
-    "Porsche 911 GT3 R: Anlasser als echte Aufnahme": "Porsche 911 GT3 R: starter as a real recording",
     "Trapez-Muster, randlos, ohne Strichcode": "Trapezoid pattern, borderless, no barcode",
     "Zum Auslegen und Fotografieren, ohne jede Behauptung, maschinenlesbar zu sein - anders als die Blätter oben, die trotz ihrer Warnung noch ein (falsches) Strichcode-Wort tragen. Senkrechte Trapez-Balken, randlos bis zum Blattrand: oben (bzw. innen in der Kurve) schmal, unten (aussen) breit, mit einer Lücke dazwischen, die genau dieselbe Form kopfueber hat. Die genaue Folge ist ERFUNDEN - das echte Wort ist weder für die Gerade (Byte 12 = 0x02) noch die Rechtskurve (0x04) entziffert, und ein bereits gemachter Messversuch an Infrarot-Fotos wie diesen ist dokumentiert gescheitert (CARRERA_HYBRID.md, Fluchtpunkt-Fit, 31.08.) - nur ein Flachbett-Scan gäbe echte Millimeter. Die Zahlen hier (5/20 mm) sind daher eine grobe Ausseneinschätzung, direkt übernommen, keine Messung.":
       "For laying out and photographing, without any claim to be machine-readable - unlike the sheets above, which despite their warning still carry a (wrong) barcode word. Vertical trapezoid bars, borderless to the sheet edge: narrow at the top (or inner edge in the curve), wide at the bottom (outer edge), with a gap between them that has exactly the same shape upside down. The exact sequence is MADE UP - the real word is decoded for neither the straight (byte 12 = 0x02) nor the right curve (0x04), and a measurement attempt already made on infrared photos like these is documented to have failed (CARRERA_HYBRID.md, vanishing-point fit, 31 Aug) - only a flatbed scan would give real millimetres. The numbers here (5/20 mm) are therefore a rough estimate from looking at the photo, taken directly, not a measurement.",
@@ -15364,10 +15366,6 @@
     const t = opt.textContent.trim();
     const kandidaten = [t.indexOf(':'), t.indexOf(',')].filter(i => i > 0);
     let kurz = kandidaten.length ? t.slice(0, Math.min.apply(null, kandidaten)).trim() : t;
-    // "Porsche" gibt es zweimal: als gerechneten Saugmotor und als Aufnahme. Beide auf
-    // denselben Kurznamen zu bringen ist schlechter als ein zu langer Text - dann zeigt der
-    // Knopf zwei verschiedene Motoren gleich an.
-    if (t.indexOf('Aufnahme') >= 0) kurz += ' (Aufn.)';
     return kurz;
   }
 
@@ -18889,6 +18887,12 @@
       menuNavAdjust(dir, false);
       return;
     }
+    // NUR REGLER WIEDERHOLEN BEIM HALTEN. Ein Auswahlfeld schaltete nach 300 ms Halten
+    // weiter - ein etwas laengerer Druck sprang so schon zwei Optionen. Gemeldet: "manche
+    // Menues schalten mehrere Optionen auf einmal durch". Auswahlfelder: ein Druck, ein Schritt.
+    const rows = menuNavRows();
+    const zeile = rows[menuNavIndex];
+    if (!zeile || zeile.kind !== 'range') return;
     const seitZugbeginn = jetzt - menuNavHoldStart;
     const beschleunigt = seitZugbeginn >= MENU_NAV_ACCEL_MS;
     const naechsterSchrittNach = menuNavLastStep === menuNavHoldStart
@@ -27801,8 +27805,13 @@
   let raceScreenLimitArmed = false;
   const RACE_MODE_ORDER = ['practice', 'endurance', 'qualifying', 'laps'];
 
+  // NUR WENN DAS COCKPIT AUCH ZU SEHEN IST. cockpitScreen bleibt beim Tabwechsel stehen -
+  // ohne diese Bedingung schluckte der Schirm auf JEDEM Tab die Pfeiltasten, und Fahren
+  // per Tastatur ging nicht mehr, sobald er einmal gewaehlt war.
   function raceScreenOffen() {
-    return typeof cockpitScreenIst === 'function'
+    const tab = document.querySelector('.tabpage.active');
+    return !!tab && tab.id === 'tab-race'
+           && typeof cockpitScreenIst === 'function'
            && cockpitScreenIst().id === 'renneinstellungen';
   }
 
@@ -27823,6 +27832,16 @@
     if (dir === 'left' || dir === 'right') {
       if (!raceScreenLimitArmed) return false;
       const zeile = RACE_SETTINGS_ROWS[raceScreenSel];
+      // BESTELLT: "rennmodi lassen sich noch nicht gut anwaehlen" - der Rennmodus geht jetzt
+      // wie die Rundenzahl: anwaehlen, dann links/rechts in BEIDE Richtungen, je ein Schritt.
+      if (zeile.id === 'mode') {
+        const n = RACE_MODE_ORDER.length;
+        const i = RACE_MODE_ORDER.indexOf(raceMode);
+        $('race-mode').value = RACE_MODE_ORDER[((i + (dir === 'right' ? 1 : -1)) % n + n) % n];
+        $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
+        raceScreenRender();
+        return true;
+      }
       if (zeile.id !== 'limit') return false;
       // Deaktiviert bei freiem Training, genau wie das Feld im Tab - eine Zahl, die dort
       // ohne Bedeutung ist, soll es hier auch bleiben.
@@ -27850,11 +27869,10 @@
       : RACE_SETTINGS_ROWS[raceScreenSel];
     if (!zeile) return false;
     if (zeile.id === 'mode') {
-      raceScreenLimitArmed = false;
-      const i = RACE_MODE_ORDER.indexOf(raceMode);
-      const naechster = RACE_MODE_ORDER[(i + 1) % RACE_MODE_ORDER.length];
-      $('race-mode').value = naechster;
-      $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
+      raceScreenLimitArmed = !raceScreenLimitArmed;
+      showHudToast(raceScreenLimitArmed
+        ? t('Rennmodus: links/rechts wählen')
+        : t('Rennmodus: Anwahl beendet'));
     } else if (zeile.id === 'limit') {
       // An- und abwaehlen statt "jeder Druck erhoeht um eins": erst anwaehlen, dann
       // links/rechts verstellt exakt (siehe raceScreenPad). So laesst sich die Rundenzahl
@@ -41547,10 +41565,13 @@
     // Kunstgriff wie pitScreenSelect(idVorgabe)).
     raceEinstellungenSchirmProbe() {
       const merk = { screen: cockpitScreen, sel: raceScreenSel,
-                     mode: $('race-mode').value, limit: raceLimit };
+                     mode: $('race-mode').value, limit: raceLimit,
+                     tab: (document.querySelector('.tabpage.active') || {}).id };
       const zeilen = ['rs-row-mode', 'rs-row-limit', 'rs-row-go'];
       const wer = () => zeilen.findIndex((id) => document.getElementById(id).classList.contains('pr-sel'));
       try {
+        // Der Schirm reagiert nur, wenn das Cockpit auch zu sehen ist (raceScreenOffen()).
+        showTab('race');
         cockpitScreenZu('renneinstellungen');
         const start = wer();
         raceScreenPad('down');
@@ -41559,9 +41580,17 @@
         const nachUmlauf = wer();
         $('race-mode').value = 'practice';
         $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
+        // Anwaehlen, dann EIN Schritt nach rechts und wieder zurueck nach links.
+        raceScreenSel = 0;
         raceScreenSelect('mode');
+        const armiert = raceScreenLimitArmed;
+        raceScreenPad('right');
         const modeNachWahl = $('race-mode').value;
+        raceScreenPad('left');
+        const modeZurueck = $('race-mode').value;
+        raceScreenSelect('mode');
         return {
+          armiert, modeZurueck,
           screenErreichbar: cockpitScreenIst().id === 'renneinstellungen',
           nurEineZeileVorher: [start].every((i) => i >= 0),
           bewegtSich: nachEinem !== start,
@@ -41569,7 +41598,9 @@
           modeVorWahl: 'practice', modeNachWahl,
         };
       } finally {
+        raceScreenLimitArmed = false;
         cockpitScreenSet(merk.screen);
+        if (merk.tab) showTab(merk.tab.replace(/^tab-/, ''));
         raceScreenSel = merk.sel;
         $('race-mode').value = merk.mode;
         $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
@@ -54397,7 +54428,7 @@
   // als Unterscheider. BESTELLT "stumpf, keine Querlage, bleiben einfach stehen": ein Ghost
   // soll anhalten, sobald die 0x00-Strecke ueber der Schwelle steht - die Kachelrate ist
   // dabei egal. Deshalb parken jetzt auch die Faelle mit laufendem Zaehler.
-  stAdd('Ghost haelt nur an, wenn es wirklich vorbei ist', () => {
+  stAdd('Ghost haelt an, sobald 0x00 steht - auch mit laufendem Zaehler', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostParkProbe) {
       return { skip: true, mass: 'ghostParkProbe nicht vorhanden' };
     }
@@ -59880,7 +59911,9 @@
     if (!r.nurEineZeileVorher) maengel.push('keine oder mehrere Zeilen ausgewaehlt');
     if (!r.bewegtSich) maengel.push('"runter" bewegt die Auswahl nicht');
     if (!r.umlaufKehrtZurueck) maengel.push('drei Schritte "runter" kehren nicht zur Ausgangszeile zurueck');
-    if (r.modeNachWahl === r.modeVorWahl) maengel.push('Waehltaste auf "Renntyp" aendert #race-mode nicht');
+    if (!r.armiert) maengel.push('Waehltaste auf "Renntyp" waehlt die Zeile nicht an');
+    if (r.modeNachWahl === r.modeVorWahl) maengel.push('rechts auf "Renntyp" aendert #race-mode nicht');
+    if (r.modeZurueck !== r.modeVorWahl) maengel.push('links geht nicht genau einen Schritt zurueck');
     return { ok: !maengel.length,
              mass: 'genau eine Zeile ausgewaehlt, hoch/runter bewegt sie mit Umlauf, '
                  + 'Renntyp ' + r.modeVorWahl + ' -> ' + r.modeNachWahl + ' auf #race-mode selbst'

@@ -5132,7 +5132,7 @@
   // als Unterscheider. BESTELLT "stumpf, keine Querlage, bleiben einfach stehen": ein Ghost
   // soll anhalten, sobald die 0x00-Strecke ueber der Schwelle steht - die Kachelrate ist
   // dabei egal. Deshalb parken jetzt auch die Faelle mit laufendem Zaehler.
-  stAdd('Ghost haelt nur an, wenn es wirklich vorbei ist', () => {
+  stAdd('Ghost haelt an, sobald 0x00 steht - auch mit laufendem Zaehler', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostParkProbe) {
       return { skip: true, mass: 'ghostParkProbe nicht vorhanden' };
     }
@@ -10615,7 +10615,9 @@
     if (!r.nurEineZeileVorher) maengel.push('keine oder mehrere Zeilen ausgewaehlt');
     if (!r.bewegtSich) maengel.push('"runter" bewegt die Auswahl nicht');
     if (!r.umlaufKehrtZurueck) maengel.push('drei Schritte "runter" kehren nicht zur Ausgangszeile zurueck');
-    if (r.modeNachWahl === r.modeVorWahl) maengel.push('Waehltaste auf "Renntyp" aendert #race-mode nicht');
+    if (!r.armiert) maengel.push('Waehltaste auf "Renntyp" waehlt die Zeile nicht an');
+    if (r.modeNachWahl === r.modeVorWahl) maengel.push('rechts auf "Renntyp" aendert #race-mode nicht');
+    if (r.modeZurueck !== r.modeVorWahl) maengel.push('links geht nicht genau einen Schritt zurueck');
     return { ok: !maengel.length,
              mass: 'genau eine Zeile ausgewaehlt, hoch/runter bewegt sie mit Umlauf, '
                  + 'Renntyp ' + r.modeVorWahl + ' -> ' + r.modeNachWahl + ' auf #race-mode selbst'

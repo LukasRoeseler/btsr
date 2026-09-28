@@ -1299,10 +1299,13 @@
     // Kunstgriff wie pitScreenSelect(idVorgabe)).
     raceEinstellungenSchirmProbe() {
       const merk = { screen: cockpitScreen, sel: raceScreenSel,
-                     mode: $('race-mode').value, limit: raceLimit };
+                     mode: $('race-mode').value, limit: raceLimit,
+                     tab: (document.querySelector('.tabpage.active') || {}).id };
       const zeilen = ['rs-row-mode', 'rs-row-limit', 'rs-row-go'];
       const wer = () => zeilen.findIndex((id) => document.getElementById(id).classList.contains('pr-sel'));
       try {
+        // Der Schirm reagiert nur, wenn das Cockpit auch zu sehen ist (raceScreenOffen()).
+        showTab('race');
         cockpitScreenZu('renneinstellungen');
         const start = wer();
         raceScreenPad('down');
@@ -1311,9 +1314,17 @@
         const nachUmlauf = wer();
         $('race-mode').value = 'practice';
         $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
+        // Anwaehlen, dann EIN Schritt nach rechts und wieder zurueck nach links.
+        raceScreenSel = 0;
         raceScreenSelect('mode');
+        const armiert = raceScreenLimitArmed;
+        raceScreenPad('right');
         const modeNachWahl = $('race-mode').value;
+        raceScreenPad('left');
+        const modeZurueck = $('race-mode').value;
+        raceScreenSelect('mode');
         return {
+          armiert, modeZurueck,
           screenErreichbar: cockpitScreenIst().id === 'renneinstellungen',
           nurEineZeileVorher: [start].every((i) => i >= 0),
           bewegtSich: nachEinem !== start,
@@ -1321,7 +1332,9 @@
           modeVorWahl: 'practice', modeNachWahl,
         };
       } finally {
+        raceScreenLimitArmed = false;
         cockpitScreenSet(merk.screen);
+        if (merk.tab) showTab(merk.tab.replace(/^tab-/, ''));
         raceScreenSel = merk.sel;
         $('race-mode').value = merk.mode;
         $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));

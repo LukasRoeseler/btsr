@@ -130,10 +130,6 @@
     const t = opt.textContent.trim();
     const kandidaten = [t.indexOf(':'), t.indexOf(',')].filter(i => i > 0);
     let kurz = kandidaten.length ? t.slice(0, Math.min.apply(null, kandidaten)).trim() : t;
-    // "Porsche" gibt es zweimal: als gerechneten Saugmotor und als Aufnahme. Beide auf
-    // denselben Kurznamen zu bringen ist schlechter als ein zu langer Text - dann zeigt der
-    // Knopf zwei verschiedene Motoren gleich an.
-    if (t.indexOf('Aufnahme') >= 0) kurz += ' (Aufn.)';
     return kurz;
   }
 

@@ -4816,8 +4816,13 @@
   let raceScreenLimitArmed = false;
   const RACE_MODE_ORDER = ['practice', 'endurance', 'qualifying', 'laps'];
 
+  // NUR WENN DAS COCKPIT AUCH ZU SEHEN IST. cockpitScreen bleibt beim Tabwechsel stehen -
+  // ohne diese Bedingung schluckte der Schirm auf JEDEM Tab die Pfeiltasten, und Fahren
+  // per Tastatur ging nicht mehr, sobald er einmal gewaehlt war.
   function raceScreenOffen() {
-    return typeof cockpitScreenIst === 'function'
+    const tab = document.querySelector('.tabpage.active');
+    return !!tab && tab.id === 'tab-race'
+           && typeof cockpitScreenIst === 'function'
            && cockpitScreenIst().id === 'renneinstellungen';
   }
 
@@ -4838,6 +4843,16 @@
     if (dir === 'left' || dir === 'right') {
       if (!raceScreenLimitArmed) return false;
       const zeile = RACE_SETTINGS_ROWS[raceScreenSel];
+      // BESTELLT: "rennmodi lassen sich noch nicht gut anwaehlen" - der Rennmodus geht jetzt
+      // wie die Rundenzahl: anwaehlen, dann links/rechts in BEIDE Richtungen, je ein Schritt.
+      if (zeile.id === 'mode') {
+        const n = RACE_MODE_ORDER.length;
+        const i = RACE_MODE_ORDER.indexOf(raceMode);
+        $('race-mode').value = RACE_MODE_ORDER[((i + (dir === 'right' ? 1 : -1)) % n + n) % n];
+        $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
+        raceScreenRender();
+        return true;
+      }
       if (zeile.id !== 'limit') return false;
       // Deaktiviert bei freiem Training, genau wie das Feld im Tab - eine Zahl, die dort
       // ohne Bedeutung ist, soll es hier auch bleiben.
@@ -4865,11 +4880,10 @@
       : RACE_SETTINGS_ROWS[raceScreenSel];
     if (!zeile) return false;
     if (zeile.id === 'mode') {
-      raceScreenLimitArmed = false;
-      const i = RACE_MODE_ORDER.indexOf(raceMode);
-      const naechster = RACE_MODE_ORDER[(i + 1) % RACE_MODE_ORDER.length];
-      $('race-mode').value = naechster;
-      $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
+      raceScreenLimitArmed = !raceScreenLimitArmed;
+      showHudToast(raceScreenLimitArmed
+        ? t('Rennmodus: links/rechts wählen')
+        : t('Rennmodus: Anwahl beendet'));
     } else if (zeile.id === 'limit') {
       // An- und abwaehlen statt "jeder Druck erhoeht um eins": erst anwaehlen, dann
       // links/rechts verstellt exakt (siehe raceScreenPad). So laesst sich die Rundenzahl

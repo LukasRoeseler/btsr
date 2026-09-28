@@ -344,6 +344,12 @@
       menuNavAdjust(dir, false);
       return;
     }
+    // NUR REGLER WIEDERHOLEN BEIM HALTEN. Ein Auswahlfeld schaltete nach 300 ms Halten
+    // weiter - ein etwas laengerer Druck sprang so schon zwei Optionen. Gemeldet: "manche
+    // Menues schalten mehrere Optionen auf einmal durch". Auswahlfelder: ein Druck, ein Schritt.
+    const rows = menuNavRows();
+    const zeile = rows[menuNavIndex];
+    if (!zeile || zeile.kind !== 'range') return;
     const seitZugbeginn = jetzt - menuNavHoldStart;
     const beschleunigt = seitZugbeginn >= MENU_NAV_ACCEL_MS;
     const naechsterSchrittNach = menuNavLastStep === menuNavHoldStart
