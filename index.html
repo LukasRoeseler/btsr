@@ -3570,7 +3570,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.21</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.22</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3591,6 +3591,12 @@
         <span class="k-kt" id="fa-auto-titel"></span>
         <span class="k-kb" style="background-image:url(img/auto.jpg)"></span>
         <span class="k-ki" id="fa-auto-info"></span>
+        <!-- BESTELLT: "Autos-Menü sollte auch Option für Garage haben zum Einstellen" - auch
+             ohne verbundenes Auto (gemerkte Autos, Farben, Rollen). -->
+        <span class="k-knopfreihe">
+          <button type="button" class="k-knopf" id="fa-verbinden">Verbinden</button>
+          <button type="button" class="k-knopf" id="fa-garage">Garage</button>
+        </span>
       </div>
       <div class="k-kachel " id="fa-strecke" role="button" tabindex="0" data-quad="bahn">
         <span class="k-kk">Strecke</span>
@@ -4445,6 +4451,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Kachel Autos mit eigenen Kn&ouml;pfen Verbinden und Garage.</li>
         <li>Men&uuml; aufger&auml;umt: ohne Tastenleiste und Hinweiszeile, kleinere abgedunkelte Bilder, gut lesbare Werte auf den Kacheln, Carrera-Hybrid-Blau statt Rot, oben nur das Omega, im Titel OMEGA blau und SIM rot. Im Cockpit keine Kopfzeile mehr.</li>
         <li>Android-App im Vollbild ohne Status- und Navigationsleiste. Reiter oben neben dem Logo statt Hauptmen&uuml;, Mehrspieler mit den Wegen PC und Android-App, &bdquo;Trotzdem starten&ldquo; ohne Auto zum Ausprobieren (experimentell), rechter Stick rollt die Seite.</li>
         <li>Neues Men&uuml; passt sich jeder Bildschirmgr&ouml;&szlig;e an und f&uuml;llt am Telefon quer genau den Schirm; die Android-App bleibt im Querformat.</li>
@@ -11026,6 +11033,7 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Kachel Autos mit eigenen Knöpfen Verbinden und Garage.": "Cars tile with its own Connect and Garage buttons.",
     "Menü aufgeräumt: ohne Tastenleiste und Hinweiszeile, kleinere abgedunkelte Bilder, gut lesbare Werte auf den Kacheln, Carrera-Hybrid-Blau statt Rot, oben nur das Omega, im Titel OMEGA blau und SIM rot. Im Cockpit keine Kopfzeile mehr.": "Menu tidied up: no button bar or hint line, smaller darkened pictures, easy-to-read values on the tiles, Carrera Hybrid blue instead of red, only the omega at the top, OMEGA blue and SIM red in the title. No header bar in the cockpit any more.",
     "Dieser Browser kennt Web Bluetooth nicht. Chrome oder Edge auf Windows, Android oder ChromeOS - Safari und Firefox koennen es nicht.": "This browser does not support Web Bluetooth. Use Chrome or Edge on Windows, Android or ChromeOS - Safari and Firefox cannot do it.",
     "Der Bluetooth-Adapter ist aus oder nicht verfuegbar. Auf Android ausserdem pruefen, ob Chrome die Berechtigung \"Geraete in der Naehe\" hat.": "The Bluetooth adapter is off or unavailable. On Android also check that Chrome has the \"Nearby devices\" permission.",
@@ -20715,6 +20723,19 @@
     }
     konsoleZeige('garage');
   }
+  // VERBINDEN: immer die Bluetooth-Auswahl, auch wenn schon Autos da sind (das naechste wird
+  // Ghost). Eine nicht bereite Bluetooth-Lage kommt in denselben Dialog wie bei AUTO.
+  async function konsoleVerbinden() {
+    const vorher = kAutos().length;
+    const lage = await garageConnect({ stumm: true });
+    konsoleFahrenZeichnen();
+    if (lage) {
+      konsoleFrage(t('Bluetooth nicht bereit'), t(bluetoothLageText(lage)),
+        [[t('Nochmal verbinden'), () => konsoleVerbinden()], [t('Schließen'), null]]);
+      return;
+    }
+    if (kAutos().length > vorher) konsoleFokusAuf('fa-start');
+  }
   // RENNEN STARTEN: fehlt das Auto, erst die Bluetooth-Auswahl, dann ins Cockpit und die
   // Startampel. Freies Training startet genauso (die Ampel gibt den Beginn der Sitzung).
   //
@@ -21085,7 +21106,9 @@
 
   function konsoleEinrichten() {
     const kn = (id, fn) => { const el = $(id); if (el) el.addEventListener('click', fn); };
-    kn('fa-auto', () => { konsoleAuto(); });
+    kn('fa-auto', (e) => { if (!e.target.closest('.k-knopf')) konsoleAuto(); });
+    kn('fa-verbinden', () => { konsoleVerbinden(); });
+    kn('fa-garage', () => konsoleZeige('garage'));
     kn('fa-start', () => { konsoleLosfahren(); });
     kn('fa-renn', () => konsoleZeige('control'));
     kn('fa-strecke', (e) => { if (!e.target.closest('.k-knopf')) konsoleZeige('track'); });
@@ -61746,7 +61769,8 @@
       if (kAktiverTab() !== 'mp') f.push('R1 im Fahren-Schirm fuehrt nach ' + kAktiverTab());
       if (konsoleZurueck() || kAktiverTab() !== 'mp') f.push('Kreis auf der Ebene 1 tut etwas (' + kAktiverTab() + ')');
       showTab('fahren');
-      showTab('garage');
+      $('fa-garage').click();
+      if (kAktiverTab() !== 'garage') f.push('Knopf Garage auf AUTO fuehrt nach ' + kAktiverTab());
       konsoleZurueck();
       if (kAktiverTab() !== 'fahren') f.push('Kreis in der Garage fuehrt nach ' + kAktiverTab() + ' statt nach Fahren');
       showTab('garage');
@@ -61864,7 +61888,10 @@
       konsoleFokusAuf('fa-start');
       if (schritt('right') !== 'fa-start') f.push('rechts am Rand springt weg');
       konsoleFokusAuf('fa-auto');
-      if (schritt('down') !== 'fa-profil') f.push('unter AUTO ist nicht FAHRGEFUEHL');
+      // Unter AUTO erst seine Knoepfe (Verbinden, Garage), dann FAHRGEFUEHL.
+      const knopf = schritt('down');
+      if (knopf !== 'fa-garage' && knopf !== 'fa-verbinden') f.push('unter AUTO liegen nicht seine Knoepfe (' + knopf + ')');
+      if (schritt('down') !== 'fa-profil') f.push('unter den AUTO-Knoepfen ist nicht FAHRGEFUEHL');
     } finally { if (merk) showTab(merk); }
     return { ok: !f.length, mass: f.length ? f.join('; ') + ' | ' + weg.join(' ') : weg.join(' ') };
   });

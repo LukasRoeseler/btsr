@@ -9644,7 +9644,8 @@
       if (kAktiverTab() !== 'mp') f.push('R1 im Fahren-Schirm fuehrt nach ' + kAktiverTab());
       if (konsoleZurueck() || kAktiverTab() !== 'mp') f.push('Kreis auf der Ebene 1 tut etwas (' + kAktiverTab() + ')');
       showTab('fahren');
-      showTab('garage');
+      $('fa-garage').click();
+      if (kAktiverTab() !== 'garage') f.push('Knopf Garage auf AUTO fuehrt nach ' + kAktiverTab());
       konsoleZurueck();
       if (kAktiverTab() !== 'fahren') f.push('Kreis in der Garage fuehrt nach ' + kAktiverTab() + ' statt nach Fahren');
       showTab('garage');
@@ -9762,7 +9763,10 @@
       konsoleFokusAuf('fa-start');
       if (schritt('right') !== 'fa-start') f.push('rechts am Rand springt weg');
       konsoleFokusAuf('fa-auto');
-      if (schritt('down') !== 'fa-profil') f.push('unter AUTO ist nicht FAHRGEFUEHL');
+      // Unter AUTO erst seine Knoepfe (Verbinden, Garage), dann FAHRGEFUEHL.
+      const knopf = schritt('down');
+      if (knopf !== 'fa-garage' && knopf !== 'fa-verbinden') f.push('unter AUTO liegen nicht seine Knoepfe (' + knopf + ')');
+      if (schritt('down') !== 'fa-profil') f.push('unter den AUTO-Knoepfen ist nicht FAHRGEFUEHL');
     } finally { if (merk) showTab(merk); }
     return { ok: !f.length, mass: f.length ? f.join('; ') + ' | ' + weg.join(' ') : weg.join(' ') };
   });

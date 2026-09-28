@@ -260,6 +260,19 @@
     }
     konsoleZeige('garage');
   }
+  // VERBINDEN: immer die Bluetooth-Auswahl, auch wenn schon Autos da sind (das naechste wird
+  // Ghost). Eine nicht bereite Bluetooth-Lage kommt in denselben Dialog wie bei AUTO.
+  async function konsoleVerbinden() {
+    const vorher = kAutos().length;
+    const lage = await garageConnect({ stumm: true });
+    konsoleFahrenZeichnen();
+    if (lage) {
+      konsoleFrage(t('Bluetooth nicht bereit'), t(bluetoothLageText(lage)),
+        [[t('Nochmal verbinden'), () => konsoleVerbinden()], [t('Schließen'), null]]);
+      return;
+    }
+    if (kAutos().length > vorher) konsoleFokusAuf('fa-start');
+  }
   // RENNEN STARTEN: fehlt das Auto, erst die Bluetooth-Auswahl, dann ins Cockpit und die
   // Startampel. Freies Training startet genauso (die Ampel gibt den Beginn der Sitzung).
   //
@@ -630,7 +643,9 @@
 
   function konsoleEinrichten() {
     const kn = (id, fn) => { const el = $(id); if (el) el.addEventListener('click', fn); };
-    kn('fa-auto', () => { konsoleAuto(); });
+    kn('fa-auto', (e) => { if (!e.target.closest('.k-knopf')) konsoleAuto(); });
+    kn('fa-verbinden', () => { konsoleVerbinden(); });
+    kn('fa-garage', () => konsoleZeige('garage'));
     kn('fa-start', () => { konsoleLosfahren(); });
     kn('fa-renn', () => konsoleZeige('control'));
     kn('fa-strecke', (e) => { if (!e.target.closest('.k-knopf')) konsoleZeige('track'); });
