@@ -5110,6 +5110,57 @@
                        + ' (hinten ' + an.nutzH.toFixed(2) + ' gegen vorn ' + an.nutzV.toFixed(2) + ')' };
   });
 
+  // BESTELLT (v0.8.24): Uebersteuern spuerbar - Vortrieb weg, Leistungsuebersteuern, der
+  // Rutsch haelt bis Gegenlenken oder Pedal weg, staerkere Vibration. Alles abschaltbar.
+  stAdd('Pacejka: Vollgas in der Kurve bringt das Heck, Vortrieb geht weg', () => {
+    if (!OMEGA_TEST.pacejkaFolge) return { skip: true, mass: 'Probe fehlt' };
+    const f = [];
+    const an = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [{ takte: 30, gas: 1, lenk: 0.8 }] })[0];
+    const aus = OMEGA_TEST.pacejkaFolge({ kmh: 150, patch: { pacejkaUebersteuern: false },
+                                          abschnitte: [{ takte: 30, gas: 1, lenk: 0.8 }] })[0];
+    if (an.maxUeber < 0.1) f.push('Vollgas bringt kein Uebersteuern (hinten ' + an.nutzH.toFixed(2) + ', vorn ' + an.nutzV.toFixed(2) + ')');
+    if (!(an.minVortrieb < 0.8)) f.push('Vortrieb bleibt ' + an.minVortrieb.toFixed(2));
+    if (!an.leistung) f.push('nicht als Leistungsuebersteuern erkannt');
+    if (aus.maxUeber !== 0 || aus.minVortrieb !== 1) f.push('Schalter aus: Zuschlag ' + aus.maxUeber.toFixed(2) + ', Vortrieb ' + aus.minVortrieb.toFixed(2));
+    const halb = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [{ takte: 30, gas: 0.5, lenk: 0.8 }] })[0];
+    if (halb.maxUeber > 0) f.push('schon bei halbem Gas: ' + halb.maxUeber.toFixed(2));
+    return { ok: !f.length, mass: f.length ? f.join('; ')
+      : 'Zuschlag ' + an.maxUeber.toFixed(2) + ', Vortrieb bis ' + an.minVortrieb.toFixed(2) + ', aus: nichts, halbes Gas: nichts' };
+  });
+
+  stAdd('Pacejka: der Rutsch haelt ohne Stick, Gegenlenken oder Pedal weg faengt', () => {
+    if (!OMEGA_TEST.pacejkaFolge) return { skip: true, mass: 'Probe fehlt' };
+    const f = [];
+    const rutsch = { takte: 25, gas: 1, lenk: 0.8 };
+    // Stick los, Gas bleibt: 0,7 s spaeter lenkt das Auto noch immer ein.
+    const a = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [rutsch, { takte: 16, gas: 1, lenk: 0 }] });
+    if (!(a[0].ueber > 0.1)) f.push('kein Rutsch vorher (' + a[0].ueber.toFixed(2) + ')');
+    if (!(a[1].ueber > 0.8 * a[0].ueber)) f.push('ohne Stick klingt es ab: ' + a[0].ueber.toFixed(2) + ' -> ' + a[1].ueber.toFixed(2));
+    if (!(Math.abs(a[1].servo) > 0.1)) f.push('ohne Stick lenkt das Auto nicht weiter (' + a[1].servo.toFixed(2) + ')');
+    // Gegenlenken faengt. MASSVOLL gegengelenkt: mit -0,5 bei Vollgas faengt es den Rutsch
+    // zwar, faehrt dann aber eine neue, scharfe Kurve in die andere Richtung - und die bringt
+    // unter Vollgas wieder das Heck (gemessen). Das ist das Pendeln, kein Fehler.
+    const b = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [rutsch, { takte: 10, gas: 1, lenk: -0.2 }] });
+    if (!(b[1].ueber < 0.02)) f.push('Gegenlenken faengt nicht: ' + b[1].ueber.toFixed(2));
+    // Pedal weg faengt.
+    const c = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [rutsch, { takte: 20, gas: 0, lenk: 0 }] });
+    if (!(c[1].ueber < 0.02)) f.push('vom Gas gehen faengt nicht: ' + c[1].ueber.toFixed(2));
+    // Deckel: hoechstens pacejkaHaltMax, dann klingt es ab.
+    const d = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [rutsch, { takte: 70, gas: 1, lenk: 0 }] });
+    if (!(d[1].ueber < 0.05)) f.push('haelt ueber den Deckel hinaus: ' + d[1].ueber.toFixed(2));
+    return { ok: !f.length, mass: f.length ? f.join('; ')
+      : 'haelt ' + a[0].ueber.toFixed(2) + ' -> ' + a[1].ueber.toFixed(2) + ' ohne Stick, Gegenlenken, Pedal und Deckel fangen' };
+  });
+
+  // BESTELLT: "keinen Text unter die Optionen, sondern immer hinter das i im Kreis".
+  stAdd('Optionen: keine Erklaerung steht offen unter einer Zeile, alles im Info-Knopf', () => {
+    const offen = [...document.querySelectorAll('#tab-options .opt-label small')]
+      .filter((x) => !x.classList.contains('opt-info-versteckt'));
+    return { ok: !offen.length, mass: offen.length
+      ? offen.length + ' offen, z. B. ' + offen.slice(0, 3).map((x) => '"' + x.textContent.trim().slice(0, 40) + '"').join(', ')
+      : 'alle Erklaerungen hinter dem Info-Knopf' };
+  });
+
   stAdd('Pacejka: Unter- und Uebersteuern vibrieren, eigener Schalter', () => {
     const merkOn = rumbleOn, merkArt = RUMBLE_ARTEN.rutschen;
     const schlecht = [];
@@ -5126,7 +5177,7 @@
       if (ruf(motor('ueber', true))) schlecht.push('Schalter aus wirkt nicht');
       RUMBLE_ARTEN.rutschen = true;
       pacRumbleZuletzt[2] = performance.now();
-      if (pacejkaRueckmeldung(motor('ueber', true), 2)) schlecht.push('keine 250-ms-Drossel');
+      if (pacejkaRueckmeldung(motor('ueber', true), 2)) schlecht.push('keine Drossel (150 ms)');
       if (!$('vib-rutschen')) schlecht.push('#vib-rutschen fehlt');
     } finally {
       rumbleOn = merkOn; RUMBLE_ARTEN.rutschen = merkArt; pacRumbleZuletzt[2] = 0;
@@ -9793,11 +9844,21 @@
       konsoleOptionsTaste(true); konsoleOptionsTaste(true); konsoleOptionsTaste(true);
       if (kAktiverTab() !== 'fahren') f.push('gehaltenes Options springt hin und her (' + kAktiverTab() + ')');
       konsoleOptionsTaste(false);
+      // RUECKWEG (v0.8.24): aus Optionen > Ton per Options ins Cockpit, mit Options zurueck
+      // genau dorthin - samt Unterseite.
       showTab('options');
+      showSubpage('opt-sound');
       konsoleOptionsTaste(true); konsoleOptionsTaste(false);
       if (kAktiverTab() !== 'race') f.push('Options in den Optionen fuehrt nach ' + kAktiverTab());
+      konsoleOptionsTaste(true); konsoleOptionsTaste(false);
+      const offen = document.querySelector('#tab-options .subpage.on');
+      if (kAktiverTab() !== 'options' || !offen || offen.id !== 'sub-opt-sound') {
+        f.push('Rueckweg fuehrt nach ' + kAktiverTab() + (offen ? ' / ' + offen.id : '') + ' statt Optionen > Ton');
+      }
+      showSubpage('');
+      showTab('race');
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-      if (kAktiverTab() !== 'fahren') f.push('Esc im Cockpit fuehrt nach ' + kAktiverTab());
+      if (kAktiverTab() !== 'fahren') f.push('Esc im Cockpit (ohne Rueckweg) fuehrt nach ' + kAktiverTab());
       showTab('race');
       $('race-menue').click();
       if (kAktiverTab() !== 'fahren') f.push('Knopf ☰ fuehrt nach ' + kAktiverTab());
@@ -9806,6 +9867,96 @@
       if (merk) showTab(merk);
     }
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Options hin und zurueck, gehalten nur einmal, Esc und ☰ ins Fahren-Menue' };
+  });
+
+  // Automatische Spruenge (v0.8.24, vom Nutzer bestaetigt): Rennende aus einem Menue springt
+  // nicht, sondern blendet ein; im Cockpit kommt die Uebersicht.
+  stAdd('ACC-Menü: Rennende im Menü blendet ein statt zu springen', () => {
+    const merk = kAktiverTab();
+    const f = [];
+    try {
+      showTab('options');
+      konsoleRennenBeendet();
+      if (kAktiverTab() !== 'options') f.push('springt nach ' + kAktiverTab());
+      if ($('k-ergebnis').hidden) f.push('keine Einblendung');
+      $('k-ergebnis').click();
+      if (kAktiverTab() !== 'race') f.push('Einblendung fuehrt nach ' + kAktiverTab());
+      if (cockpitScreenIst().id !== 'uebersicht') f.push('Cockpit zeigt ' + cockpitScreenIst().id + ' statt der Uebersicht');
+      if (!$('k-ergebnis').hidden) f.push('Einblendung bleibt stehen');
+      cockpitScreenZu('main');
+      konsoleRennenBeendet();
+      if (cockpitScreenIst().id !== 'uebersicht') f.push('im Cockpit keine Uebersicht');
+      if (!$('k-ergebnis').hidden) f.push('im Cockpit trotzdem eingeblendet');
+    } finally {
+      $('k-ergebnis').hidden = true;
+      cockpitScreenZu('main');
+      if (merk) showTab(merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Menue: Einblendung, Klick ins Cockpit auf die Uebersicht; Cockpit: direkt' };
+  });
+
+  stAdd('ACC-Menü: Vollbild verlassen behält den Cockpit-Schirm', () => {
+    const merk = kAktiverTab();
+    const f = [];
+    try {
+      showTab('race');
+      cockpitScreenZu('uebersicht');
+      document.body.classList.add('race-fs');
+      exitRaceFullscreen();
+      if (cockpitScreenIst().id !== 'uebersicht') f.push('im Cockpit faellt der Schirm auf ' + cockpitScreenIst().id);
+      document.body.classList.add('race-fs');
+      showTab('fahren');
+      if (cockpitScreenIst().id !== 'main') f.push('ausserhalb des Cockpits steht ' + cockpitScreenIst().id + ' (isst das Steuerkreuz)');
+      showTab('race');
+      if (cockpitScreenIst().id !== 'uebersicht') f.push('zurueck im Cockpit steht ' + cockpitScreenIst().id);
+    } finally {
+      document.body.classList.remove('race-fs');
+      cockpitScreenZu('main');
+      if (merk) showTab(merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Schirm bleibt, ausserhalb main, zurueck wieder da' };
+  });
+
+  stAdd('ACC-Menü: Nochmal startet nach dem Rennen dasselbe Rennen', () => {
+    const merkZ = raceState, echt = toggleRace;
+    let starts = 0;
+    const f = [];
+    try {
+      toggleRace = () => { starts++; };
+      raceState = 'racing';
+      if (ovNochmal()) f.push('startet waehrend des Rennens');
+      raceState = 'finished';
+      ovScreenRender();
+      if ($('ov-nochmal').hidden) f.push('Knopf nach dem Rennen verborgen');
+      cockpitScreenZu('uebersicht');
+      cockpitScreenWaehlen();
+      if (starts !== 1) f.push('Kreuz auf der Uebersicht startet ' + starts + ' mal');
+      $('ov-nochmal').click();
+      if (starts !== 2) f.push('Knopf startet nicht');
+    } finally {
+      toggleRace = echt; raceState = merkZ;
+      ovScreenRender();
+      cockpitScreenZu('main');
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'nur nach dem Rennen, Kreuz und Knopf' };
+  });
+
+  stAdd('ACC-Menü: die letzte Auswahl je Seite bleibt gemerkt', () => {
+    const merk = kAktiverTab();
+    const f = [];
+    try {
+      showTab('options');
+      menuNavEnsureContext();
+      const rows = menuNavRows();
+      if (rows.length < 3) return { skip: true, mass: 'zu wenige Kacheln' };
+      menuNavIndex = 2; menuNavGezeigt = true; menuNavRender();
+      showTab('fahren');
+      menuNavEnsureContext();
+      showTab('options');
+      menuNavEnsureContext();
+      if (menuNavIndex !== 2) f.push('Optionen stehen wieder auf ' + menuNavIndex + ' statt 2');
+    } finally { if (merk) showTab(merk); }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'dritte Kachel wieder angewaehlt' };
   });
 
   stAdd('ACC-Menü: Motorsound-Kachel blättert die Motoren, Quadrat', () => {
@@ -12758,6 +12909,10 @@
     }
     const merkTab = document.querySelector('.tab-btn.active');
     const merkTabName = merkTab ? merkTab.dataset.tab : null;
+    // Seit v0.8.24 merkt sich jede Seite ihre letzte Auswahl. Dieser Test prueft den ERSTEN
+    // Besuch einer Seite, also mit leerem Gedaechtnis - sonst misst er, was frueher im
+    // Durchlauf angewaehlt wurde.
+    menuNavMerkLeeren();
     // Ein Wechsel auf einen anderen Tab loest exitRaceFullscreen() aus (showTab(),
     // 10-ble-explorer.js), und ein blosser Klick zurueck stellt das Vollbild NICHT
     // wieder her - eine Einbahnstrasse. Vorsichtshalber gemerkt, auch wenn der
@@ -12842,7 +12997,12 @@
       // menuNavEnsureContext() auf und setzt damit den Index zurueck - eine reine
       // Zeilenabfrage tut das bewusst nicht (sie soll den Zustand nicht nebenbei
       // veraendern), und genau das hat dieser Test beim ersten Anlauf uebersehen.
+      // Gedaechtnis leeren: diese Seiten waren eben schon offen und gingen sonst auf ihrer
+      // letzten Zeile auf (so gewollt seit v0.8.24, eigener Test "letzte Auswahl").
+      // Zweimal: menuNavAktiv() verlaesst die Unterseite und legt dabei ihre Zeile ab.
+      menuNavMerkLeeren();
       OMEGA_TEST.menuNavAktiv();
+      menuNavMerkLeeren();
       document.querySelector('button.misc-tile.subpage-open[data-sub="opt-feel"]').click();
       if (OMEGA_TEST.menuNavIndexLesen() !== 0) fehler.push('Unterseite oeffnet nicht auf Index 0');
       OMEGA_TEST.menuNavAusloesen();

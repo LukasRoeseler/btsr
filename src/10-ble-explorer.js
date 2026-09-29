@@ -519,8 +519,6 @@
     "Zum Cockpit →": "To the cockpit →",
     "Jedes Auto einzeln per Klick verbinden – Web Bluetooth verlangt das so.":
       "Connect each car individually with its own click – Web Bluetooth requires it.",
-    "Klick auf eine Zeile lässt die Lichter blinken":
-      "Click a row to flash that car's lights",
     "Der Browser darf diesen Speicher jederzeit leeren – diese Datei ist die Rückversicherung. Laden führt zusammen statt zu ersetzen: nichts Neueres geht verloren, auch eine ältere Sicherung lädt noch.":
       "The browser may clear this storage at any time – this file is the fallback. Loading merges instead of replacing: nothing newer is lost, and an older backup still loads.",
     "Auf den neuen Blättern steht ein 100-mm-Kontrollmaß. Nachmessen ist der einzige Weg, den Druckmaßstab zu prüfen, denn eine Druckvorschau sagt dazu nichts.": "The new sheets carry a 100 mm check measure. Measuring it is the only way to verify the print scale, because a print preview says nothing about it.",
@@ -757,6 +755,11 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Menü: Kopf halb so hoch, flachere Knöpfe und Unterreiter, Kachelfotos als Hintergrund gut sichtbar, kleinere Titel, Erklärungen nur noch im ⓘ. Letzte Auswahl je Seite bleibt, nach dem Rennen „Nochmal“, in der Garage blinkt das Auto beim Darüberfahren. Weniger automatische Sprünge: Rennende im Menü nur als Einblendung, grüne Ampel und Vollbild-Ende behalten den Cockpit-Schirm, Options führt zurück auf die Seite, von der man kam.": "Menu: header half as tall, flatter buttons and sub-tabs, tile photos clearly visible as backgrounds, smaller titles, explanations only behind ⓘ. The last selection per page is kept, “Again” after the race, in the garage a car flashes when you point at it. Fewer automatic jumps: race end in a menu only as a banner, green light and leaving fullscreen keep the cockpit screen, Options returns to the page you came from.",
+    "Pacejka: Übersteuern spürbar – Vollgas in der Kurve bringt das Heck, der Vortrieb geht zurück, der Rutsch hält ohne Stick, bis man gegenlenkt oder vom Pedal geht, stärkere Vibration; mit dem Schalter „Übersteuern“ abschaltbar (experimentell).": "Pacejka: oversteer you can feel – full throttle in a corner brings the rear round, drive drops, the slide holds without the stick until you countersteer or come off the pedal, stronger vibration; can be switched off with the “Oversteer” switch (experimental).",
+    "Rennen beendet – Ergebnis ansehen": "Race finished – view the result",
+    "✕ Nochmal": "✕ Again",
+    "Zeigst du auf eine Zeile, blinken die Lichter": "Point at a row and that car's lights flash",
     "App: nach Schließen und Öffnen lässt sich das Auto wieder verbinden (es hing an der alten Verbindung fest); ab der nächsten APK trennt die App beim Schließen sauber.": "App: after closing and reopening, the car can be connected again (it was stuck on the old connection); from the next APK on the app disconnects cleanly when it closes.",
     "Foto": "Photo",
     "Foto löschen": "Delete photo",
@@ -769,7 +772,7 @@
     "Kein Bild": "Not a picture",
     "Diese Datei ließ sich nicht als Bild lesen.": "This file could not be read as a picture.",
     "Zurück ins Rennen": "Back to the race",
-    "Kreuz tippen = Boxenstopp (halten bleibt gelbe Flagge), Options springt direkt ins Fahren-Menü und wieder zurück ins Cockpit. Motorsound statt Gegnerhärte im Fahren-Menü. Streckenfoto für den Ausdruck-Modus (experimentell), neue eigene Fotos im Menü.": "Tap cross = pit stop (hold is still the yellow flag), Options jumps straight to the drive menu and back to the cockpit. Engine sound instead of opponent hardness in the drive menu. Track photo for printout mode (experimental), new own photos in the menu.",
+    "Kreuz tippen = Boxenstopp (halten bleibt gelbe Flagge), Options springt direkt ins Fahren-Menü und wieder zurück ins Cockpit. Motorsound statt Gegnerhärte im Fahren-Menü. Streckenfoto für den Ausdruck-Modus, neue eigene Fotos im Menü.": "Tap cross = pit stop (hold is still the yellow flag), Options jumps straight to the drive menu and back to the cockpit. Engine sound instead of opponent hardness in the drive menu. Track photo for printout mode, new own photos in the menu.",
     "Kachel Autos mit eigenen Knöpfen Verbinden und Garage.": "Cars tile with its own Connect and Garage buttons.",
     "Menü aufgeräumt: ohne Tastenleiste und Hinweiszeile, kleinere abgedunkelte Bilder, gut lesbare Werte auf den Kacheln, Carrera-Hybrid-Blau statt Rot, oben nur das Omega, im Titel OMEGA blau und SIM rot. Im Cockpit keine Kopfzeile mehr.": "Menu tidied up: no button bar or hint line, smaller darkened pictures, easy-to-read values on the tiles, Carrera Hybrid blue instead of red, only the omega at the top, OMEGA blue and SIM red in the title. No header bar in the cockpit any more.",
     "Dieser Browser kennt Web Bluetooth nicht. Chrome oder Edge auf Windows, Android oder ChromeOS - Safari und Firefox koennen es nicht.": "This browser does not support Web Bluetooth. Use Chrome or Edge on Windows, Android or ChromeOS - Safari and Firefox cannot do it.",
@@ -930,10 +933,10 @@
     "Gemerkte Autos: nur geänderte Namen und Farben, Zuordnung per Klick.": "Remembered cars: only changed names and colours, assignment by click.",
     "Ghosts stoppen beim Rennabbruch und nach einem Abflug.": "Ghosts stop when a race is aborted and after leaving the track.",
     "Startseite mit OMEGA-SIM-Schriftzug, Credits mit Quellen, Doku auf dem aktuellen Stand.": "Home page with OMEGA SIM title, credits with sources, docs brought up to date.",
-    "Pacejka: wie Physik, dazu Reifen mit Haftgrenze nach der Magic Formula. Das Einspurmodell beschreibt, wie sich das Auto dreht; Pacejka beschreibt, wie viel Seitenkraft ein Reifen hält, bevor er rutscht. Unterhalb der Grenze fährt es sich wie Physik. Schiebt die Vorderachse über die Grenze, kommt weniger Einschlag an (Untersteuern); rutscht das Heck, gibt die App Einschlag in die Kurve dazu, und man muss gegenlenken (Übersteuern). Beides vibriert und quietscht. Experimentell.": "Pacejka: like Physics, plus tyres with a grip limit following the Magic Formula. The single-track model describes how the car rotates; Pacejka describes how much lateral force a tyre holds before it slides. Below the limit it drives like Physics. If the front axle goes past the limit, less steering reaches the car (understeer); if the rear slides, the app adds steering into the corner and you have to countersteer (oversteer). Both vibrate and squeal. Experimental.",
+    "Pacejka: wie Physik, dazu Reifen mit Haftgrenze nach der Magic Formula. Das Einspurmodell beschreibt, wie sich das Auto dreht; Pacejka beschreibt, wie viel Seitenkraft ein Reifen hält, bevor er rutscht. Unterhalb der Grenze fährt es sich wie Physik. Schiebt die Vorderachse über die Grenze, kommt weniger Einschlag an (Untersteuern). Kommt das Heck – unter Vollgas in der Kurve oder beim Anbremsen –, lenkt die App in die Kurve dazu, auch wenn du den Stick loslässt, und der Vortrieb geht zurück (Übersteuern). Fangen: gegenlenken oder vom Pedal gehen. Beides vibriert und quietscht. Experimentell.": "Pacejka: like Physics, plus tyres with a grip limit following the Magic Formula. The single-track model describes how the car rotates; Pacejka describes how much lateral force a tyre holds before it slides. Below the limit it drives like Physics. If the front axle goes over the limit, less steering arrives (understeer). If the rear goes – at full throttle in a corner or when braking into it –, the app adds steering into the corner, even when you let go of the stick, and drive drops (oversteer). To catch it: countersteer or come off the pedal. Both vibrate and squeal. Experimental.",
     "Pacejka (experimentell)": "Pacejka (experimental)",
     "Übersteuern (Pacejka)": "Oversteer (Pacejka)",
-    "Nur im Modus Pacejka. Aus: das Heck bricht nie aus, nur das Schieben über die Vorderräder bleibt.": "Pacejka mode only. Off: the rear never steps out, only pushing over the front wheels remains.",
+    "Nur im Modus Pacejka. An: unter Vollgas in der Kurve und beim Anbremsen kommt das Heck, das Auto lenkt von selbst weiter ein und verliert Vortrieb, bis du gegenlenkst oder vom Pedal gehst (höchstens 2 s). Aus: das Heck bricht nie aus, nur das Schieben über die Vorderräder bleibt.": "Pacejka mode only. On: at full throttle in a corner and when braking into it the rear steps out, the car keeps turning in by itself and loses drive until you countersteer or come off the pedal (at most 2 s). Off: the rear never steps out, only pushing over the front wheels remains.",
     "Haftgrenze (Pacejka)": "Grip limit (Pacejka)",
     "Nur im Modus Pacejka. Wo der Scheitel der Reifenkurve liegt, gemessen an der Querausnutzung des Reibkreises. Kleiner heißt früher am Limit. Bei 70 % ist voller Einschlag ab etwa 115 km/h zu viel. Regen und kalte Reifen senken die Grenze zusätzlich.": "Pacejka mode only. Where the peak of the tyre curve sits, measured against the lateral use of the friction circle. Lower means reaching the limit earlier. At 70 % full lock is too much from about 115 km/h. Rain and cold tyres lower the limit further.",
     "Unter- und Übersteuern": "Understeer and oversteer",
@@ -2616,8 +2619,10 @@
 
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.onclick = () => {
-      // Fuer den Rueckweg (Kreis) des ACC-Menues: welcher Tab war vorher offen?
+      // Fuer den Rueckweg (Kreis) des ACC-Menues: welcher Tab war vorher offen, und welche
+      // Unterseite darin? (Sie schliesst gleich unten; der Rueckweg oeffnet sie wieder.)
       const vorher = document.querySelector('.tabpage.active');
+      const vorherSub = vorher ? vorher.querySelector('.subpage.on') : null;
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tabpage').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
@@ -2632,6 +2637,9 @@
       // Only hold the screen awake while the racing screen is actually the one on show.
       keepScreenAwake(btn.dataset.tab === 'race');
       document.body.classList.toggle('race-mode', btn.dataset.tab === 'race');
+      if (btn.dataset.tab === 'race' && typeof cockpitScreenWiederherstellen === 'function') {
+        cockpitScreenWiederherstellen();
+      }
       // Wer das Cockpit verlaesst, will nicht erst dorthin zurueck, um das Vollbild zu
       // schliessen - der Knopf dafuer liegt IM Vollbild, also auf dem Schirm, den man
       // gerade verlassen hat. Beim Tabwechsel geht es deshalb von selbst zu.
@@ -2650,7 +2658,8 @@
       scrollTabIntoView(btn.dataset.tab);
       refreshTabScrollHint();
       if (typeof konsoleNachTab === 'function') {
-        konsoleNachTab(btn.dataset.tab, vorher ? vorher.id.replace(/^tab-/, '') : null);
+        konsoleNachTab(btn.dataset.tab, vorher ? vorher.id.replace(/^tab-/, '') : null,
+                       vorherSub ? vorherSub.id.replace(/^sub-/, '') : '');
       }
     };
   });

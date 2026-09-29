@@ -1333,6 +1333,22 @@
          + ' · Box ' + versatz + '</b></div>';
   }
 
+  const garBlinkZuletzt = new WeakMap();
+  let garFokusZeile = null;
+  function garageBlinkSanft(car) {
+    if (!car || !car.device) return;
+    const jetzt = performance.now();
+    if (jetzt - (garBlinkZuletzt.get(car) || 0) < 1500) return;
+    garBlinkZuletzt.set(car, jetzt);
+    blinkCar(car);
+  }
+  function garageFokusZeile(el) {
+    const r = el && el.closest ? el.closest('.gar-row') : null;
+    if (r === garFokusZeile) return;
+    garFokusZeile = r;
+    if (r && r._car) garageBlinkSanft(r._car);
+  }
+
   function renderGarage() {
     const list = $('gar-list');
     if (!list) return;
@@ -1395,8 +1411,12 @@
                   title="Zurueck auf die Vorgabe aus den Optionen">&#8635;</button>
         </div>` : ''}
         ${charakterZeile(car)}`;
-      // Clicking the row itself identifies the car; the buttons must not also blink it.
-      row.onclick = (e) => { if (!e.target.closest('button')) blinkCar(car); };
+      // BLINKEN BEIM UEBERFAHREN, ohne Taste und ohne eigenen Knopf. BESTELLT: "Mach, dass
+      // Autos blinken, wenn ich mit dem Cursor in der Garage drueber hovere". Die Maus und
+      // die Menueauswahl (menuNavRender -> garageFokusZeile) loesen es aus, je Betreten der
+      // Zeile einmal und hoechstens alle 1,5 s.
+      row._car = car;
+      row.onmouseenter = () => garageBlinkSanft(car);
       row.querySelectorAll('button[data-role]').forEach(b => {
         b.onclick = () => setCarRole(car, b.dataset.role);
       });

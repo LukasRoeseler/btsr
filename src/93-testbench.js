@@ -8298,6 +8298,29 @@
     // Eine frische Instanz bei festem Tempo und fester Eingabe, mit oder ohne Pacejka. Das
     // Tempo wird jeden Takt zurueckgesetzt, damit Unter- und Uebersteuern bei GENAU diesem
     // Tempo gemessen werden und nicht bei dem, auf das die Bremse es gerade gebracht hat.
+    // Eine Folge von Abschnitten auf einer Instanz: [{takte, gas, bremse, lenk, kmh}]. Je
+    // Abschnitt der Stand am Ende - fuer "der Rutsch haelt, bis man faengt".
+    pacejkaFolge(o) {
+      const e = new CarreraPhysicsEngine();
+      Object.assign(e.config, o.patch || {});
+      e.config.pacejka = true;
+      const st = e.state;
+      st.driveMode = 'forward';
+      st.currentGear = o.gear === undefined ? 3 : o.gear;
+      return (o.abschnitte || []).map((a) => {
+        let maxUeber = 0, minVortrieb = 1;
+        for (let i = 0; i < (a.takte || 20); i++) {
+          st.speedKmh = (a.kmh || o.kmh || 150) / REAL_SCALE;
+          e.update({ throttle: a.gas || 0, brake: a.bremse || 0, steering: a.lenk || 0 }, 0.045);
+          maxUeber = Math.max(maxUeber, st.pacUeber);
+          minVortrieb = Math.min(minVortrieb, st.pacVortrieb);
+        }
+        return { ueber: st.pacUeber, maxUeber, minVortrieb, vortrieb: st.pacVortrieb,
+                 servo: e.outputs.servoAngle, zustand: st.pacZustand, halt: st.pacHaltSeit,
+                 nutzV: st.pacNutzV, nutzH: st.pacNutzH, leistung: st.pacLeistung };
+      });
+    },
+
     pacejkaFahrt(o) {
       const e = new CarreraPhysicsEngine();
       Object.assign(e.config, o.patch || {});

@@ -2370,6 +2370,56 @@
   body.k-titel-an { height: 100vh; height: 100dvh; overflow: hidden; }
   body.k-titel-an > main { padding: 0; display: flex; }
   body.k-titel-an #tab-home.active { flex: 1; min-height: 0; }
+  /* ---- FEINSCHLIFF v0.8.24 (Telefon quer) -----------------------------------------
+     BESTELLT: "graue Rechtecke im Fahren-Menü für Verbinden, Garage usw. nicht so hoch",
+     "Die Bilder in den Kacheln sind kaum erkennbar. Überleg dir da was", "Schriftgröße vom
+     PRO und Porsche ... kleiner, damit es in eine Zeile passt (lange Motorsound-Namen dürfen
+     auch 2 Zeilen brauchen)", "bei Submenüs ... Wenigstens die 2. Ebene viel flacher" und
+     "du kannst die Höhe der Navigationsleiste halbieren". Gemessen vorher bei 800 x 370:
+     Kopf 35 px, mit Unterseite 64, Knopf 22, Zurueck-Zeile 26, Inhalt ab 126 px. */
+  .k-knopfreihe { gap: 4px; padding: 0 8px clamp(3px, .8vh, 8px); }
+  .k-knopf { padding: 2px 9px; font-size: clamp(9.5px, 1.6vh, 11.5px); line-height: 1.2; border-width: 1px; }
+  /* Das Bild ist kein Band mehr, sondern der Grund des ganzen Infobereichs: es kostet keinen
+     Platz und ist trotzdem gross. Links ein dunkler Verlauf unter den Werten, rechts ist das
+     Foto hell zu sehen; die zwei Glitch-Linien nur noch im rechten Drittel. */
+  @media (orientation: landscape), (min-width: 761px) {
+    .k-kachel > .k-kb { position: absolute; inset: 0; height: auto; z-index: 0;
+      filter: brightness(.74) saturate(.95) contrast(1.05); }
+    .k-kachel > .k-kb::after { background:
+      linear-gradient(90deg, rgba(8,10,16,.92) 0, rgba(8,10,16,.8) 36%, rgba(8,10,16,.28) 72%, rgba(8,10,16,.12)),
+      linear-gradient(transparent 58%, rgba(0,229,255,.35) 58% 59.5%, transparent 59.5% 78%, rgba(255,43,94,.38) 78% 79.5%, transparent 79.5%) right / 32% 100% no-repeat; }
+    .k-kachel.menu-nav-sel > .k-kb, .k-kachel:hover > .k-kb { filter: brightness(.95) saturate(1) contrast(1.05); }
+    .k-kachel > .k-kk, .k-kachel > .k-kt, .k-kachel > .k-ki, .k-kachel > .k-knopfreihe { position: relative; z-index: 1; }
+    .k-kachel > .k-ki { text-shadow: 0 1px 3px rgba(0,0,0,.95); }
+    /* Kleine Kacheln: eine Zeile fuer "PRO" und "PORSCHE 911 GT3 R", lange Namen umbrechen. */
+    .k-klein .k-kt { font-size: clamp(9.5px, 1.9vh, 13.5px); white-space: normal; line-height: 1.15; }
+  }
+  .k-kachel[data-quad] .k-kt::before { margin-right: 6px; font-size: .7em; }
+  .k-kachel[data-quad] .k-kt::after { margin-left: 6px; font-size: .7em; }
+  /* Kopf halb so hoch: Reiter, Logo und Innenabstand. Info bleibt ein Reiter. */
+  header#k-kopf { padding-top: max(1px, env(safe-area-inset-top)); padding-bottom: 1px; row-gap: 0; }
+  #k-kopf .hdr-logo { padding: 0 4px; }
+  #k-kopf .hdr-logo svg { width: 14px; height: 14px; }
+  #k-leiste .k-reiter button { padding: 0 6px; font-size: clamp(9.5px, 1.7vh, 12px); line-height: 1.35; }
+  .k-status { font-size: 10.5px; }
+  /* Zweite Ebene: flach, ohne Schraege, der aktive Reiter nur unterstrichen. */
+  .k-leiste2 { margin-top: 1px; }
+  .k-leiste2 .k-reiter { background: transparent; }
+  .k-leiste2 .k-reiter button { padding: 0 6px; font-size: clamp(9px, 1.5vh, 11.5px); line-height: 1.35;
+    clip-path: none; border-bottom: 2px solid transparent; letter-spacing: .06em; }
+  .k-leiste2 .k-reiter button.an, .k-leiste2 .k-reiter button.an:hover { background: transparent; color: #fff; border-bottom-color: var(--k-blau); }
+  /* Offene Unterseite mit zweiter Leiste: die Ueberschrift steht dort schon, der
+     Zurueck-Knopf wird eine knappe Zeile. */
+  body.k-innen .subpage.on > h2 { display: none; }
+  body.k-innen .subpage.on > .subpage-back { font-size: 11px; padding: 0 0 4px; }
+  .k-ergebnis { position: fixed; top: max(24px, calc(env(safe-area-inset-top) + 22px)); left: 50%;
+    transform: translateX(-50%); z-index: 380; background: var(--k-blau); color: var(--k-blau-text);
+    border: 2px solid #fff; border-radius: 0; font-family: var(--k-font); font-weight: 800;
+    letter-spacing: .08em; text-transform: uppercase; font-size: 12px; padding: 5px 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.6); }
+  .k-ergebnis[hidden] { display: none; }
+  .ov-nochmal { justify-self: end; font-size: 12px; padding: 3px 12px; letter-spacing: .08em; }
+  .ov-nochmal[hidden] { display: none; }
   /* HOCHFORMAT, schmal (Telefon im Browser): untereinander, mit Bildlauf. */
   @media (max-width: 760px) and (orientation: portrait) {
     header#k-kopf { grid-template-columns: 1fr auto; }
@@ -3572,7 +3622,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.23</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.24</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3614,7 +3664,7 @@
           <button type="button" class="k-knopf" id="fa-editor">Editor</button>
           <button type="button" class="k-knopf" id="fa-laden">Laden</button>
           <button type="button" class="k-knopf" id="fa-druck" hidden>Druckvorlagen</button>
-          <button type="button" class="k-knopf" id="fa-foto" hidden>Foto <span class="wip-tag">WIP</span></button>
+          <button type="button" class="k-knopf" id="fa-foto" hidden>Foto</button>
           <button type="button" class="k-knopf" id="fa-foto-weg" hidden>Foto löschen</button>
         </span>
       </div>
@@ -4033,6 +4083,9 @@
         <div class="ov-diagramm" id="ov-diagramm" data-i18n-skip></div>
         <div class="ov-sektoren" id="ov-sektoren" data-i18n-skip></div>
         <div class="schirm-fuss" id="ov-fuss" data-i18n-skip></div>
+        <!-- NOCHMAL nach dem Rennen (Kreuz oder antippen): dasselbe Rennen, dieselben
+             Einstellungen. Nur sichtbar, wenn ein Rennen beendet ist. -->
+        <button type="button" id="ov-nochmal" class="ov-nochmal" hidden>✕ Nochmal</button>
       </div>
 
       <!-- ---- RENNEINSTELLUNGEN ALS EIGENER COCKPIT-SCHIRM --------------------------
@@ -4461,8 +4514,10 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Pacejka: &Uuml;bersteuern sp&uuml;rbar &ndash; Vollgas in der Kurve bringt das Heck, der Vortrieb geht zur&uuml;ck, der Rutsch h&auml;lt ohne Stick, bis man gegenlenkt oder vom Pedal geht, st&auml;rkere Vibration; mit dem Schalter &bdquo;&Uuml;bersteuern&ldquo; abschaltbar (experimentell).</li>
+        <li>Men&uuml;: Kopf halb so hoch, flachere Kn&ouml;pfe und Unterreiter, Kachelfotos als Hintergrund gut sichtbar, kleinere Titel, Erkl&auml;rungen nur noch im &#9432;. Letzte Auswahl je Seite bleibt, nach dem Rennen &bdquo;Nochmal&ldquo;, in der Garage blinkt das Auto beim Dar&uuml;berfahren. Weniger automatische Spr&uuml;nge: Rennende im Men&uuml; nur als Einblendung, gr&uuml;ne Ampel und Vollbild-Ende behalten den Cockpit-Schirm, Options f&uuml;hrt zur&uuml;ck auf die Seite, von der man kam.</li>
         <li>App: nach Schlie&szlig;en und &Ouml;ffnen l&auml;sst sich das Auto wieder verbinden (es hing an der alten Verbindung fest); ab der n&auml;chsten APK trennt die App beim Schlie&szlig;en sauber.</li>
-        <li>Kreuz tippen = Boxenstopp (halten bleibt gelbe Flagge), Options springt direkt ins Fahren-Men&uuml; und wieder zur&uuml;ck ins Cockpit. Motorsound statt Gegnerh&auml;rte im Fahren-Men&uuml;. Streckenfoto f&uuml;r den Ausdruck-Modus (experimentell), neue eigene Fotos im Men&uuml;.</li>
+        <li>Kreuz tippen = Boxenstopp (halten bleibt gelbe Flagge), Options springt direkt ins Fahren-Men&uuml; und wieder zur&uuml;ck ins Cockpit. Motorsound statt Gegnerh&auml;rte im Fahren-Men&uuml;. Streckenfoto f&uuml;r den Ausdruck-Modus, neue eigene Fotos im Men&uuml;.</li>
         <li>Kachel Autos mit eigenen Kn&ouml;pfen Verbinden und Garage.</li>
         <li>Men&uuml; aufger&auml;umt: ohne Tastenleiste und Hinweiszeile, kleinere abgedunkelte Bilder, gut lesbare Werte auf den Kacheln, Carrera-Hybrid-Blau statt Rot, oben nur das Omega, im Titel OMEGA blau und SIM rot. Im Cockpit keine Kopfzeile mehr.</li>
         <li>Android-App im Vollbild ohne Status- und Navigationsleiste. Reiter oben neben dem Logo statt Hauptmen&uuml;, Mehrspieler mit den Wegen PC und Android-App, &bdquo;Trotzdem starten&ldquo; ohne Auto zum Ausprobieren (experimentell), rechter Stick rollt die Seite.</li>
@@ -6963,7 +7018,7 @@
       <h2>Garage</h2>
       <p class="muted">
         Jedes Auto einzeln per Klick verbinden &ndash; Web Bluetooth verlangt das so.
-        <strong>Klick auf eine Zeile l&auml;sst die Lichter blinken</strong>, damit du siehst,
+        <strong>Zeigst du auf eine Zeile, blinken die Lichter</strong>, damit du siehst,
         welches Auto in der Liste welches auf dem Tisch ist.
       </p>
       <!-- Der Hinweis steht VOR dem Knopf und nicht in einer Fehlermeldung danach: wer
@@ -7615,9 +7670,10 @@
           Einspurmodell beschreibt, wie sich das Auto dreht; Pacejka beschreibt, wie viel
           Seitenkraft ein Reifen h&auml;lt, bevor er rutscht. Unterhalb der Grenze f&auml;hrt es
           sich wie Physik. Schiebt die Vorderachse &uuml;ber die Grenze, kommt weniger
-          Einschlag an (Untersteuern); rutscht das Heck, gibt die App Einschlag in die Kurve
-          dazu, und man muss gegenlenken (&Uuml;bersteuern). Beides vibriert und quietscht.
-          Experimentell.</small></div>
+          Einschlag an (Untersteuern). Kommt das Heck &ndash; unter Vollgas in der Kurve oder
+          beim Anbremsen &ndash;, lenkt die App in die Kurve dazu, auch wenn du den Stick
+          losl&auml;sst, und der Vortrieb geht zur&uuml;ck (&Uuml;bersteuern). Fangen: gegenlenken
+          oder vom Pedal gehen. Beides vibriert und quietscht. Experimentell.</small></div>
         <select id="phys-mode">
           <option value="physik" selected>Physik</option>
           <option value="pacejka">Pacejka (experimentell)</option>
@@ -7628,8 +7684,10 @@
            soll" - deshalb von Anfang an ein eigener Schalter. -->
       <div class="opt-row"><div class="opt-label">&Uuml;bersteuern (Pacejka)
           <span class="wip-tag">experimentell</span>
-          <small>Nur im Modus Pacejka. Aus: das Heck bricht nie aus, nur das Schieben
-          &uuml;ber die Vorderr&auml;der bleibt.</small></div>
+          <small>Nur im Modus Pacejka. An: unter Vollgas in der Kurve und beim Anbremsen
+          kommt das Heck, das Auto lenkt von selbst weiter ein und verliert Vortrieb, bis du
+          gegenlenkst oder vom Pedal gehst (h&ouml;chstens 2 s). Aus: das Heck bricht nie aus,
+          nur das Schieben &uuml;ber die Vorderr&auml;der bleibt.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-pac-ueber" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Haftgrenze (Pacejka)
           <span class="wip-tag">experimentell</span>
@@ -9997,6 +10055,8 @@
   <!-- COCKPIT-MENUE. BESTELLT (Nutzerentscheid): "Options lang halten" oeffnet es; kurz
        druecken bleibt der Boxenstopp. Solange es offen ist, geht das Gas von Spieler 1 auf 0.
        In main und nicht in einem Tab, damit es ueber dem Cockpit-Vollbild liegen kann. -->
+  <!-- RENNENDE AUS EINEM MENUE: eine Einblendung statt eines Sprungs ins Cockpit. -->
+  <button type="button" class="k-ergebnis" id="k-ergebnis" hidden>Rennen beendet – Ergebnis ansehen</button>
   <!-- FRAGE-DIALOG (51-konsole.js, konsoleFrage). Zuerst fuer "trotzdem starten": BESTELLT
        "erlaube mir zum Debuggen auch auf Starten zu drücken, wenn kein Auto verbunden ist". -->
   <div class="k-pause" id="k-frage" hidden>

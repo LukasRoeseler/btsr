@@ -65,12 +65,13 @@
   }
 
   // ---- Wechsel verfolgen: aus dem .tab-btn-Klick gerufen (10-ble-explorer.js) --------
-  function konsoleNachTab(neu, alt) {
+  function konsoleNachTab(neu, alt, altSub) {
     // Die Ebene 1 ist die Wurzel: wer dort ankommt, hat keinen Rueckweg mehr (Kreis tut
-    // dort nichts), also auch keinen Stapel. Der Titel kommt nie auf den Stapel.
+    // dort nichts), also auch keinen Stapel. Der Titel kommt nie auf den Stapel. Jeder
+    // Eintrag merkt die Unterseite, die beim Verlassen offen war - Kreis oeffnet sie wieder.
     if (K_EBENE1.includes(neu)) kStapel = [];
     else if (!kZurueckLaeuft && alt && alt !== neu && alt !== 'home') {
-      kStapel.push(alt);
+      kStapel.push({ tab: alt, sub: altSub || '' });
       if (kStapel.length > 40) kStapel.shift();
     }
     kLetzterTab = neu;
@@ -115,11 +116,12 @@
     let ziel = null;
     while (kStapel.length && !ziel) {
       const z = kStapel.pop();
-      if (z !== tab && z !== 'home') ziel = z;
+      const zt = typeof z === 'string' ? { tab: z, sub: '' } : z;
+      if (zt.tab !== tab && zt.tab !== 'home') ziel = zt;
     }
-    if (!ziel) ziel = K_ELTERN[tab] || 'fahren';
+    if (!ziel) ziel = { tab: K_ELTERN[tab] || 'fahren', sub: '' };
     kZurueckLaeuft = true;
-    try { showTab(ziel); } finally { kZurueckLaeuft = false; }
+    try { showTab(ziel.tab); if (ziel.sub) showSubpage(ziel.sub); } finally { kZurueckLaeuft = false; }
     menuNavTonAbwaehlen();
     return true;
   }
@@ -376,15 +378,41 @@
   // Boxenstopp, ...) ist damit weg: der Boxenstopp liegt auf Kreuz, Abbrechen auf dem
   // Knopf im Cockpit, alles andere im Fahren-Menue. War das Cockpit im Vollbild, kommt es
   // auf dem Rueckweg wieder so.
+  // RUECKWEG (v0.8.24): wer aus einer Menueseite per Options ins Cockpit ging, kommt mit
+  // Options genau dorthin zurueck, samt offener Unterseite; sonst nach Fahren.
   let kCockpitVollbild = false;
+  let kMenueRueck = null;
+  let kErgebnisWartet = false;
   function konsoleZumMenue() {
     kCockpitVollbild = document.body.classList.contains('race-fs');
     if (kCockpitVollbild) exitRaceFullscreen();
-    konsoleZeige('fahren');
+    const r = kMenueRueck;
+    kMenueRueck = null;
+    if (r && r.tab && r.tab !== 'race' && r.tab !== 'home') konsoleZeige(r.tab, r.sub || '');
+    else konsoleZeige('fahren');
   }
-  function konsoleInsCockpit() {
+  function konsoleInsCockpit(merken) {
+    if (merken) {
+      const offen = document.querySelector('.tabpage.active .subpage.on');
+      kMenueRueck = { tab: kAktiverTab(), sub: offen ? offen.id.replace(/^sub-/, '') : '' };
+    }
     showTab('race');
     if (kCockpitVollbild && !document.body.classList.contains('race-fs')) enterRaceFullscreen();
+    if (kErgebnisWartet) {
+      kErgebnisWartet = false;
+      if ($('k-ergebnis')) $('k-ergebnis').hidden = true;
+      if (typeof cockpitScreenZu === 'function') cockpitScreenZu('uebersicht');
+    }
+  }
+  // RENNENDE: im Cockpit die Uebersicht, sonst eine Einblendung statt eines harten Sprungs.
+  function konsoleRennenBeendet() {
+    if (kAktiverTab() === 'race') {
+      if (typeof cockpitScreenZu === 'function') cockpitScreenZu('uebersicht');
+      return;
+    }
+    kErgebnisWartet = true;
+    const b = $('k-ergebnis');
+    if (b) b.hidden = false;
   }
 
   // ---- Zeichnen: Kopf, Reiter, Beschreibung, Fuss, Hintergrund -----------------------
@@ -604,7 +632,7 @@
         && !document.body.classList.contains('track-fs')) {
       const tab = kAktiverTab();
       if (tab === 'race') konsoleZumMenue();
-      else if (tab && tab !== 'home') konsoleInsCockpit();
+      else if (tab && tab !== 'home') konsoleInsCockpit(true);
     }
     konsoleOptionsTaste.vorher = gedrueckt;
   }
@@ -677,6 +705,7 @@
     kn('fa-druck', () => konsoleZeige('track', 'print'));
     kn('fa-profil', () => konsoleZeige('options', 'opt-feel'));
     kn('race-menue', () => konsoleZumMenue());
+    kn('k-ergebnis', () => { kErgebnisWartet = true; konsoleInsCockpit(); });
     kn('fa-motor', () => konsoleZeige('options', 'opt-sound'));
     kn('fa-foto', () => { const d = $('fa-foto-datei'); if (d) { d.value = ''; d.click(); } });
     kn('fa-foto-weg', () => {

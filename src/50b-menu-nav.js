@@ -191,18 +191,32 @@
   // Wechselt der Kontext (Unterseite auf/zu, Kachel geoeffnet, Tab verlassen), faengt
   // ganz von vorn an - ein gemerkter Index aus einer anderen Zeilenliste zeigt sonst auf
   // eine zufaellige Stelle, sobald man zurueckkommt.
+  // LETZTE AUSWAHL JE SEITE (v0.8.24, BESTELLT): beim Verlassen eines Kontexts wird die
+  // Zeile gemerkt, beim Zurueckkommen steht die Auswahl wieder dort. Nicht fuer Dialoge
+  // (#k-frage, Tutorial): die fangen immer oben an.
+  const menuNavMerk = {};
+  const MENU_NAV_OHNE_MERK = ['k-frage', 'k-tour'];
+  function menuNavMerkLeeren() { Object.keys(menuNavMerk).forEach((k) => { delete menuNavMerk[k]; }); }
   function menuNavEnsureContext() {
     const key = menuNavContextNow();
     if (key !== menuNavContextKey) {
+      if (menuNavContextKey && menuNavGezeigt && !MENU_NAV_OHNE_MERK.includes(menuNavContextKey)) {
+        menuNavMerk[menuNavContextKey] = menuNavIndex;
+      }
       // Den Kontext verlassen: menuNavRender() scrollt document.body (nicht das
       // Fenster) fuer jede fokussierte Zeile, und dieser Bildlauf blieb sonst stehen -
       // ein anderer Tab konnte so scheinbar grundlos mitten im Bild aufschlagen, obwohl
       // niemand ihn dorthin gescrollt hat.
       if (menuNavContextKey !== null && key === null) document.body.scrollTop = 0;
       menuNavContextKey = key;
-      menuNavIndex = 0;
       menuNavArmed = false;
-      menuNavGezeigt = false;
+      if (key && menuNavMerk[key] !== undefined && !MENU_NAV_OHNE_MERK.includes(key)) {
+        menuNavIndex = menuNavMerk[key];
+        menuNavGezeigt = true;
+      } else {
+        menuNavIndex = 0;
+        menuNavGezeigt = false;
+      }
     }
   }
 
@@ -222,6 +236,7 @@
     row.el.classList.add('menu-nav-sel');
     if (menuNavArmed) row.el.classList.add('menu-nav-armed');
     if (typeof row.el.scrollIntoView === 'function') row.el.scrollIntoView({ block: 'nearest' });
+    if (typeof garageFokusZeile === 'function') garageFokusZeile(row.el);
   }
 
   // ---- RAEUMLICH: der naechste Nachbar in der Richtung ------------------------------

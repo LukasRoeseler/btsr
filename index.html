@@ -2370,6 +2370,56 @@
   body.k-titel-an { height: 100vh; height: 100dvh; overflow: hidden; }
   body.k-titel-an > main { padding: 0; display: flex; }
   body.k-titel-an #tab-home.active { flex: 1; min-height: 0; }
+  /* ---- FEINSCHLIFF v0.8.24 (Telefon quer) -----------------------------------------
+     BESTELLT: "graue Rechtecke im Fahren-Menü für Verbinden, Garage usw. nicht so hoch",
+     "Die Bilder in den Kacheln sind kaum erkennbar. Überleg dir da was", "Schriftgröße vom
+     PRO und Porsche ... kleiner, damit es in eine Zeile passt (lange Motorsound-Namen dürfen
+     auch 2 Zeilen brauchen)", "bei Submenüs ... Wenigstens die 2. Ebene viel flacher" und
+     "du kannst die Höhe der Navigationsleiste halbieren". Gemessen vorher bei 800 x 370:
+     Kopf 35 px, mit Unterseite 64, Knopf 22, Zurueck-Zeile 26, Inhalt ab 126 px. */
+  .k-knopfreihe { gap: 4px; padding: 0 8px clamp(3px, .8vh, 8px); }
+  .k-knopf { padding: 2px 9px; font-size: clamp(9.5px, 1.6vh, 11.5px); line-height: 1.2; border-width: 1px; }
+  /* Das Bild ist kein Band mehr, sondern der Grund des ganzen Infobereichs: es kostet keinen
+     Platz und ist trotzdem gross. Links ein dunkler Verlauf unter den Werten, rechts ist das
+     Foto hell zu sehen; die zwei Glitch-Linien nur noch im rechten Drittel. */
+  @media (orientation: landscape), (min-width: 761px) {
+    .k-kachel > .k-kb { position: absolute; inset: 0; height: auto; z-index: 0;
+      filter: brightness(.74) saturate(.95) contrast(1.05); }
+    .k-kachel > .k-kb::after { background:
+      linear-gradient(90deg, rgba(8,10,16,.92) 0, rgba(8,10,16,.8) 36%, rgba(8,10,16,.28) 72%, rgba(8,10,16,.12)),
+      linear-gradient(transparent 58%, rgba(0,229,255,.35) 58% 59.5%, transparent 59.5% 78%, rgba(255,43,94,.38) 78% 79.5%, transparent 79.5%) right / 32% 100% no-repeat; }
+    .k-kachel.menu-nav-sel > .k-kb, .k-kachel:hover > .k-kb { filter: brightness(.95) saturate(1) contrast(1.05); }
+    .k-kachel > .k-kk, .k-kachel > .k-kt, .k-kachel > .k-ki, .k-kachel > .k-knopfreihe { position: relative; z-index: 1; }
+    .k-kachel > .k-ki { text-shadow: 0 1px 3px rgba(0,0,0,.95); }
+    /* Kleine Kacheln: eine Zeile fuer "PRO" und "PORSCHE 911 GT3 R", lange Namen umbrechen. */
+    .k-klein .k-kt { font-size: clamp(9.5px, 1.9vh, 13.5px); white-space: normal; line-height: 1.15; }
+  }
+  .k-kachel[data-quad] .k-kt::before { margin-right: 6px; font-size: .7em; }
+  .k-kachel[data-quad] .k-kt::after { margin-left: 6px; font-size: .7em; }
+  /* Kopf halb so hoch: Reiter, Logo und Innenabstand. Info bleibt ein Reiter. */
+  header#k-kopf { padding-top: max(1px, env(safe-area-inset-top)); padding-bottom: 1px; row-gap: 0; }
+  #k-kopf .hdr-logo { padding: 0 4px; }
+  #k-kopf .hdr-logo svg { width: 14px; height: 14px; }
+  #k-leiste .k-reiter button { padding: 0 6px; font-size: clamp(9.5px, 1.7vh, 12px); line-height: 1.35; }
+  .k-status { font-size: 10.5px; }
+  /* Zweite Ebene: flach, ohne Schraege, der aktive Reiter nur unterstrichen. */
+  .k-leiste2 { margin-top: 1px; }
+  .k-leiste2 .k-reiter { background: transparent; }
+  .k-leiste2 .k-reiter button { padding: 0 6px; font-size: clamp(9px, 1.5vh, 11.5px); line-height: 1.35;
+    clip-path: none; border-bottom: 2px solid transparent; letter-spacing: .06em; }
+  .k-leiste2 .k-reiter button.an, .k-leiste2 .k-reiter button.an:hover { background: transparent; color: #fff; border-bottom-color: var(--k-blau); }
+  /* Offene Unterseite mit zweiter Leiste: die Ueberschrift steht dort schon, der
+     Zurueck-Knopf wird eine knappe Zeile. */
+  body.k-innen .subpage.on > h2 { display: none; }
+  body.k-innen .subpage.on > .subpage-back { font-size: 11px; padding: 0 0 4px; }
+  .k-ergebnis { position: fixed; top: max(24px, calc(env(safe-area-inset-top) + 22px)); left: 50%;
+    transform: translateX(-50%); z-index: 380; background: var(--k-blau); color: var(--k-blau-text);
+    border: 2px solid #fff; border-radius: 0; font-family: var(--k-font); font-weight: 800;
+    letter-spacing: .08em; text-transform: uppercase; font-size: 12px; padding: 5px 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.6); }
+  .k-ergebnis[hidden] { display: none; }
+  .ov-nochmal { justify-self: end; font-size: 12px; padding: 3px 12px; letter-spacing: .08em; }
+  .ov-nochmal[hidden] { display: none; }
   /* HOCHFORMAT, schmal (Telefon im Browser): untereinander, mit Bildlauf. */
   @media (max-width: 760px) and (orientation: portrait) {
     header#k-kopf { grid-template-columns: 1fr auto; }
@@ -3572,7 +3622,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.23</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.24</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3614,7 +3664,7 @@
           <button type="button" class="k-knopf" id="fa-editor">Editor</button>
           <button type="button" class="k-knopf" id="fa-laden">Laden</button>
           <button type="button" class="k-knopf" id="fa-druck" hidden>Druckvorlagen</button>
-          <button type="button" class="k-knopf" id="fa-foto" hidden>Foto <span class="wip-tag">WIP</span></button>
+          <button type="button" class="k-knopf" id="fa-foto" hidden>Foto</button>
           <button type="button" class="k-knopf" id="fa-foto-weg" hidden>Foto löschen</button>
         </span>
       </div>
@@ -4033,6 +4083,9 @@
         <div class="ov-diagramm" id="ov-diagramm" data-i18n-skip></div>
         <div class="ov-sektoren" id="ov-sektoren" data-i18n-skip></div>
         <div class="schirm-fuss" id="ov-fuss" data-i18n-skip></div>
+        <!-- NOCHMAL nach dem Rennen (Kreuz oder antippen): dasselbe Rennen, dieselben
+             Einstellungen. Nur sichtbar, wenn ein Rennen beendet ist. -->
+        <button type="button" id="ov-nochmal" class="ov-nochmal" hidden>✕ Nochmal</button>
       </div>
 
       <!-- ---- RENNEINSTELLUNGEN ALS EIGENER COCKPIT-SCHIRM --------------------------
@@ -4461,8 +4514,10 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Pacejka: &Uuml;bersteuern sp&uuml;rbar &ndash; Vollgas in der Kurve bringt das Heck, der Vortrieb geht zur&uuml;ck, der Rutsch h&auml;lt ohne Stick, bis man gegenlenkt oder vom Pedal geht, st&auml;rkere Vibration; mit dem Schalter &bdquo;&Uuml;bersteuern&ldquo; abschaltbar (experimentell).</li>
+        <li>Men&uuml;: Kopf halb so hoch, flachere Kn&ouml;pfe und Unterreiter, Kachelfotos als Hintergrund gut sichtbar, kleinere Titel, Erkl&auml;rungen nur noch im &#9432;. Letzte Auswahl je Seite bleibt, nach dem Rennen &bdquo;Nochmal&ldquo;, in der Garage blinkt das Auto beim Dar&uuml;berfahren. Weniger automatische Spr&uuml;nge: Rennende im Men&uuml; nur als Einblendung, gr&uuml;ne Ampel und Vollbild-Ende behalten den Cockpit-Schirm, Options f&uuml;hrt zur&uuml;ck auf die Seite, von der man kam.</li>
         <li>App: nach Schlie&szlig;en und &Ouml;ffnen l&auml;sst sich das Auto wieder verbinden (es hing an der alten Verbindung fest); ab der n&auml;chsten APK trennt die App beim Schlie&szlig;en sauber.</li>
-        <li>Kreuz tippen = Boxenstopp (halten bleibt gelbe Flagge), Options springt direkt ins Fahren-Men&uuml; und wieder zur&uuml;ck ins Cockpit. Motorsound statt Gegnerh&auml;rte im Fahren-Men&uuml;. Streckenfoto f&uuml;r den Ausdruck-Modus (experimentell), neue eigene Fotos im Men&uuml;.</li>
+        <li>Kreuz tippen = Boxenstopp (halten bleibt gelbe Flagge), Options springt direkt ins Fahren-Men&uuml; und wieder zur&uuml;ck ins Cockpit. Motorsound statt Gegnerh&auml;rte im Fahren-Men&uuml;. Streckenfoto f&uuml;r den Ausdruck-Modus, neue eigene Fotos im Men&uuml;.</li>
         <li>Kachel Autos mit eigenen Kn&ouml;pfen Verbinden und Garage.</li>
         <li>Men&uuml; aufger&auml;umt: ohne Tastenleiste und Hinweiszeile, kleinere abgedunkelte Bilder, gut lesbare Werte auf den Kacheln, Carrera-Hybrid-Blau statt Rot, oben nur das Omega, im Titel OMEGA blau und SIM rot. Im Cockpit keine Kopfzeile mehr.</li>
         <li>Android-App im Vollbild ohne Status- und Navigationsleiste. Reiter oben neben dem Logo statt Hauptmen&uuml;, Mehrspieler mit den Wegen PC und Android-App, &bdquo;Trotzdem starten&ldquo; ohne Auto zum Ausprobieren (experimentell), rechter Stick rollt die Seite.</li>
@@ -6963,7 +7018,7 @@
       <h2>Garage</h2>
       <p class="muted">
         Jedes Auto einzeln per Klick verbinden &ndash; Web Bluetooth verlangt das so.
-        <strong>Klick auf eine Zeile l&auml;sst die Lichter blinken</strong>, damit du siehst,
+        <strong>Zeigst du auf eine Zeile, blinken die Lichter</strong>, damit du siehst,
         welches Auto in der Liste welches auf dem Tisch ist.
       </p>
       <!-- Der Hinweis steht VOR dem Knopf und nicht in einer Fehlermeldung danach: wer
@@ -7615,9 +7670,10 @@
           Einspurmodell beschreibt, wie sich das Auto dreht; Pacejka beschreibt, wie viel
           Seitenkraft ein Reifen h&auml;lt, bevor er rutscht. Unterhalb der Grenze f&auml;hrt es
           sich wie Physik. Schiebt die Vorderachse &uuml;ber die Grenze, kommt weniger
-          Einschlag an (Untersteuern); rutscht das Heck, gibt die App Einschlag in die Kurve
-          dazu, und man muss gegenlenken (&Uuml;bersteuern). Beides vibriert und quietscht.
-          Experimentell.</small></div>
+          Einschlag an (Untersteuern). Kommt das Heck &ndash; unter Vollgas in der Kurve oder
+          beim Anbremsen &ndash;, lenkt die App in die Kurve dazu, auch wenn du den Stick
+          losl&auml;sst, und der Vortrieb geht zur&uuml;ck (&Uuml;bersteuern). Fangen: gegenlenken
+          oder vom Pedal gehen. Beides vibriert und quietscht. Experimentell.</small></div>
         <select id="phys-mode">
           <option value="physik" selected>Physik</option>
           <option value="pacejka">Pacejka (experimentell)</option>
@@ -7628,8 +7684,10 @@
            soll" - deshalb von Anfang an ein eigener Schalter. -->
       <div class="opt-row"><div class="opt-label">&Uuml;bersteuern (Pacejka)
           <span class="wip-tag">experimentell</span>
-          <small>Nur im Modus Pacejka. Aus: das Heck bricht nie aus, nur das Schieben
-          &uuml;ber die Vorderr&auml;der bleibt.</small></div>
+          <small>Nur im Modus Pacejka. An: unter Vollgas in der Kurve und beim Anbremsen
+          kommt das Heck, das Auto lenkt von selbst weiter ein und verliert Vortrieb, bis du
+          gegenlenkst oder vom Pedal gehst (h&ouml;chstens 2 s). Aus: das Heck bricht nie aus,
+          nur das Schieben &uuml;ber die Vorderr&auml;der bleibt.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-pac-ueber" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Haftgrenze (Pacejka)
           <span class="wip-tag">experimentell</span>
@@ -9997,6 +10055,8 @@
   <!-- COCKPIT-MENUE. BESTELLT (Nutzerentscheid): "Options lang halten" oeffnet es; kurz
        druecken bleibt der Boxenstopp. Solange es offen ist, geht das Gas von Spieler 1 auf 0.
        In main und nicht in einem Tab, damit es ueber dem Cockpit-Vollbild liegen kann. -->
+  <!-- RENNENDE AUS EINEM MENUE: eine Einblendung statt eines Sprungs ins Cockpit. -->
+  <button type="button" class="k-ergebnis" id="k-ergebnis" hidden>Rennen beendet – Ergebnis ansehen</button>
   <!-- FRAGE-DIALOG (51-konsole.js, konsoleFrage). Zuerst fuer "trotzdem starten": BESTELLT
        "erlaube mir zum Debuggen auch auf Starten zu drücken, wenn kein Auto verbunden ist". -->
   <div class="k-pause" id="k-frage" hidden>
@@ -10816,8 +10876,6 @@
     "Zum Cockpit →": "To the cockpit →",
     "Jedes Auto einzeln per Klick verbinden – Web Bluetooth verlangt das so.":
       "Connect each car individually with its own click – Web Bluetooth requires it.",
-    "Klick auf eine Zeile lässt die Lichter blinken":
-      "Click a row to flash that car's lights",
     "Der Browser darf diesen Speicher jederzeit leeren – diese Datei ist die Rückversicherung. Laden führt zusammen statt zu ersetzen: nichts Neueres geht verloren, auch eine ältere Sicherung lädt noch.":
       "The browser may clear this storage at any time – this file is the fallback. Loading merges instead of replacing: nothing newer is lost, and an older backup still loads.",
     "Auf den neuen Blättern steht ein 100-mm-Kontrollmaß. Nachmessen ist der einzige Weg, den Druckmaßstab zu prüfen, denn eine Druckvorschau sagt dazu nichts.": "The new sheets carry a 100 mm check measure. Measuring it is the only way to verify the print scale, because a print preview says nothing about it.",
@@ -11054,6 +11112,11 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Menü: Kopf halb so hoch, flachere Knöpfe und Unterreiter, Kachelfotos als Hintergrund gut sichtbar, kleinere Titel, Erklärungen nur noch im ⓘ. Letzte Auswahl je Seite bleibt, nach dem Rennen „Nochmal“, in der Garage blinkt das Auto beim Darüberfahren. Weniger automatische Sprünge: Rennende im Menü nur als Einblendung, grüne Ampel und Vollbild-Ende behalten den Cockpit-Schirm, Options führt zurück auf die Seite, von der man kam.": "Menu: header half as tall, flatter buttons and sub-tabs, tile photos clearly visible as backgrounds, smaller titles, explanations only behind ⓘ. The last selection per page is kept, “Again” after the race, in the garage a car flashes when you point at it. Fewer automatic jumps: race end in a menu only as a banner, green light and leaving fullscreen keep the cockpit screen, Options returns to the page you came from.",
+    "Pacejka: Übersteuern spürbar – Vollgas in der Kurve bringt das Heck, der Vortrieb geht zurück, der Rutsch hält ohne Stick, bis man gegenlenkt oder vom Pedal geht, stärkere Vibration; mit dem Schalter „Übersteuern“ abschaltbar (experimentell).": "Pacejka: oversteer you can feel – full throttle in a corner brings the rear round, drive drops, the slide holds without the stick until you countersteer or come off the pedal, stronger vibration; can be switched off with the “Oversteer” switch (experimental).",
+    "Rennen beendet – Ergebnis ansehen": "Race finished – view the result",
+    "✕ Nochmal": "✕ Again",
+    "Zeigst du auf eine Zeile, blinken die Lichter": "Point at a row and that car's lights flash",
     "App: nach Schließen und Öffnen lässt sich das Auto wieder verbinden (es hing an der alten Verbindung fest); ab der nächsten APK trennt die App beim Schließen sauber.": "App: after closing and reopening, the car can be connected again (it was stuck on the old connection); from the next APK on the app disconnects cleanly when it closes.",
     "Foto": "Photo",
     "Foto löschen": "Delete photo",
@@ -11066,7 +11129,7 @@
     "Kein Bild": "Not a picture",
     "Diese Datei ließ sich nicht als Bild lesen.": "This file could not be read as a picture.",
     "Zurück ins Rennen": "Back to the race",
-    "Kreuz tippen = Boxenstopp (halten bleibt gelbe Flagge), Options springt direkt ins Fahren-Menü und wieder zurück ins Cockpit. Motorsound statt Gegnerhärte im Fahren-Menü. Streckenfoto für den Ausdruck-Modus (experimentell), neue eigene Fotos im Menü.": "Tap cross = pit stop (hold is still the yellow flag), Options jumps straight to the drive menu and back to the cockpit. Engine sound instead of opponent hardness in the drive menu. Track photo for printout mode (experimental), new own photos in the menu.",
+    "Kreuz tippen = Boxenstopp (halten bleibt gelbe Flagge), Options springt direkt ins Fahren-Menü und wieder zurück ins Cockpit. Motorsound statt Gegnerhärte im Fahren-Menü. Streckenfoto für den Ausdruck-Modus, neue eigene Fotos im Menü.": "Tap cross = pit stop (hold is still the yellow flag), Options jumps straight to the drive menu and back to the cockpit. Engine sound instead of opponent hardness in the drive menu. Track photo for printout mode, new own photos in the menu.",
     "Kachel Autos mit eigenen Knöpfen Verbinden und Garage.": "Cars tile with its own Connect and Garage buttons.",
     "Menü aufgeräumt: ohne Tastenleiste und Hinweiszeile, kleinere abgedunkelte Bilder, gut lesbare Werte auf den Kacheln, Carrera-Hybrid-Blau statt Rot, oben nur das Omega, im Titel OMEGA blau und SIM rot. Im Cockpit keine Kopfzeile mehr.": "Menu tidied up: no button bar or hint line, smaller darkened pictures, easy-to-read values on the tiles, Carrera Hybrid blue instead of red, only the omega at the top, OMEGA blue and SIM red in the title. No header bar in the cockpit any more.",
     "Dieser Browser kennt Web Bluetooth nicht. Chrome oder Edge auf Windows, Android oder ChromeOS - Safari und Firefox koennen es nicht.": "This browser does not support Web Bluetooth. Use Chrome or Edge on Windows, Android or ChromeOS - Safari and Firefox cannot do it.",
@@ -11227,10 +11290,10 @@
     "Gemerkte Autos: nur geänderte Namen und Farben, Zuordnung per Klick.": "Remembered cars: only changed names and colours, assignment by click.",
     "Ghosts stoppen beim Rennabbruch und nach einem Abflug.": "Ghosts stop when a race is aborted and after leaving the track.",
     "Startseite mit OMEGA-SIM-Schriftzug, Credits mit Quellen, Doku auf dem aktuellen Stand.": "Home page with OMEGA SIM title, credits with sources, docs brought up to date.",
-    "Pacejka: wie Physik, dazu Reifen mit Haftgrenze nach der Magic Formula. Das Einspurmodell beschreibt, wie sich das Auto dreht; Pacejka beschreibt, wie viel Seitenkraft ein Reifen hält, bevor er rutscht. Unterhalb der Grenze fährt es sich wie Physik. Schiebt die Vorderachse über die Grenze, kommt weniger Einschlag an (Untersteuern); rutscht das Heck, gibt die App Einschlag in die Kurve dazu, und man muss gegenlenken (Übersteuern). Beides vibriert und quietscht. Experimentell.": "Pacejka: like Physics, plus tyres with a grip limit following the Magic Formula. The single-track model describes how the car rotates; Pacejka describes how much lateral force a tyre holds before it slides. Below the limit it drives like Physics. If the front axle goes past the limit, less steering reaches the car (understeer); if the rear slides, the app adds steering into the corner and you have to countersteer (oversteer). Both vibrate and squeal. Experimental.",
+    "Pacejka: wie Physik, dazu Reifen mit Haftgrenze nach der Magic Formula. Das Einspurmodell beschreibt, wie sich das Auto dreht; Pacejka beschreibt, wie viel Seitenkraft ein Reifen hält, bevor er rutscht. Unterhalb der Grenze fährt es sich wie Physik. Schiebt die Vorderachse über die Grenze, kommt weniger Einschlag an (Untersteuern). Kommt das Heck – unter Vollgas in der Kurve oder beim Anbremsen –, lenkt die App in die Kurve dazu, auch wenn du den Stick loslässt, und der Vortrieb geht zurück (Übersteuern). Fangen: gegenlenken oder vom Pedal gehen. Beides vibriert und quietscht. Experimentell.": "Pacejka: like Physics, plus tyres with a grip limit following the Magic Formula. The single-track model describes how the car rotates; Pacejka describes how much lateral force a tyre holds before it slides. Below the limit it drives like Physics. If the front axle goes over the limit, less steering arrives (understeer). If the rear goes – at full throttle in a corner or when braking into it –, the app adds steering into the corner, even when you let go of the stick, and drive drops (oversteer). To catch it: countersteer or come off the pedal. Both vibrate and squeal. Experimental.",
     "Pacejka (experimentell)": "Pacejka (experimental)",
     "Übersteuern (Pacejka)": "Oversteer (Pacejka)",
-    "Nur im Modus Pacejka. Aus: das Heck bricht nie aus, nur das Schieben über die Vorderräder bleibt.": "Pacejka mode only. Off: the rear never steps out, only pushing over the front wheels remains.",
+    "Nur im Modus Pacejka. An: unter Vollgas in der Kurve und beim Anbremsen kommt das Heck, das Auto lenkt von selbst weiter ein und verliert Vortrieb, bis du gegenlenkst oder vom Pedal gehst (höchstens 2 s). Aus: das Heck bricht nie aus, nur das Schieben über die Vorderräder bleibt.": "Pacejka mode only. On: at full throttle in a corner and when braking into it the rear steps out, the car keeps turning in by itself and loses drive until you countersteer or come off the pedal (at most 2 s). Off: the rear never steps out, only pushing over the front wheels remains.",
     "Haftgrenze (Pacejka)": "Grip limit (Pacejka)",
     "Nur im Modus Pacejka. Wo der Scheitel der Reifenkurve liegt, gemessen an der Querausnutzung des Reibkreises. Kleiner heißt früher am Limit. Bei 70 % ist voller Einschlag ab etwa 115 km/h zu viel. Regen und kalte Reifen senken die Grenze zusätzlich.": "Pacejka mode only. Where the peak of the tyre curve sits, measured against the lateral use of the friction circle. Lower means reaching the limit earlier. At 70 % full lock is too much from about 115 km/h. Rain and cold tyres lower the limit further.",
     "Unter- und Übersteuern": "Understeer and oversteer",
@@ -12913,8 +12976,10 @@
 
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.onclick = () => {
-      // Fuer den Rueckweg (Kreis) des ACC-Menues: welcher Tab war vorher offen?
+      // Fuer den Rueckweg (Kreis) des ACC-Menues: welcher Tab war vorher offen, und welche
+      // Unterseite darin? (Sie schliesst gleich unten; der Rueckweg oeffnet sie wieder.)
       const vorher = document.querySelector('.tabpage.active');
+      const vorherSub = vorher ? vorher.querySelector('.subpage.on') : null;
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tabpage').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
@@ -12929,6 +12994,9 @@
       // Only hold the screen awake while the racing screen is actually the one on show.
       keepScreenAwake(btn.dataset.tab === 'race');
       document.body.classList.toggle('race-mode', btn.dataset.tab === 'race');
+      if (btn.dataset.tab === 'race' && typeof cockpitScreenWiederherstellen === 'function') {
+        cockpitScreenWiederherstellen();
+      }
       // Wer das Cockpit verlaesst, will nicht erst dorthin zurueck, um das Vollbild zu
       // schliessen - der Knopf dafuer liegt IM Vollbild, also auf dem Schirm, den man
       // gerade verlassen hat. Beim Tabwechsel geht es deshalb von selbst zu.
@@ -12947,7 +13015,8 @@
       scrollTabIntoView(btn.dataset.tab);
       refreshTabScrollHint();
       if (typeof konsoleNachTab === 'function') {
-        konsoleNachTab(btn.dataset.tab, vorher ? vorher.id.replace(/^tab-/, '') : null);
+        konsoleNachTab(btn.dataset.tab, vorher ? vorher.id.replace(/^tab-/, '') : null,
+                       vorherSub ? vorherSub.id.replace(/^sub-/, '') : '');
       }
     };
   });
@@ -14717,6 +14786,19 @@
         // Einschlag (gemessen: 90 km/h, kein Gas) - das Schleppmoment belastet die Front, und
         // ein neutral verteiltes Auto waere damit immer zuerst hinten am Limit.
         pacejkaHeckReserve: 1.2,
+        // UEBERSTEUERN SPUERBAR (v0.8.24). BESTELLT, nach "ich habe nichts davon gemerkt ...
+        // Nimmt denn dabei die Beschleunigung ab?": alle vier Punkte, und nur mit dem
+        // Schalter "Uebersteuern" (pacejkaUebersteuern). Aus = das Pacejka von vorher.
+        //  - Rutscht das Heck, geht Vortrieb verloren: bis zu 55 Prozent weniger Antrieb.
+        //  - Leistungsuebersteuern: Vollgas nimmt hinten Seitenhalt. Ab 55 % Gas waechst die
+        //    Ausnutzung hinten, bei Vollgas auf das 2,4-fache - so kommt das Heck unter Gas
+        //    vor der Front (bei Vollgas ist die Front leicht, ihr Faktor ist auf 1,6
+        //    gedeckelt; unter 2,2 bliebe es Schieben). Ausgerechnet, nicht erfahren.
+        //  - Der Rutsch haelt, bis gegengelenkt oder vom Pedal gegangen wird (beide unter
+        //    20 %), hoechstens 2 s, und nicht unter 15 Prozent des Hoechsttempos.
+        pacejkaRutschVortrieb: 0.55,
+        pacejkaLeistung: 1.4,
+        pacejkaHaltMax: 2.0,
 
         // ---- Longitudinal weight transfer ----
         // Under braking the mass pitches onto the front axle, under power onto the rear.
@@ -15057,6 +15139,9 @@
         // Ausnutzung beider Achsen relativ zur Haftgrenze (1 = am Scheitel) und der Zustand
         // fuer Anzeige, Vibration und Quietschen: '' | 'unter' | 'ueber'.
         pacUnter: 1, pacUeber: 0, pacRichtung: 0, pacNutzV: 0, pacNutzH: 0, pacZustand: '',
+        // Antriebsfaktor waehrend des Rutschens (1 = voll), wie lange der Rutsch schon haelt,
+        // und ob er unter Gas kam (fuer die Vibration).
+        pacVortrieb: 1, pacHaltSeit: 0, pacLeistung: false,
         // ayUse und vLimitKmh standen hier und liest jetzt niemand mehr. Sie waren fuer eine
         // Anzeige gedacht, die gefahren gemessen dauerhaft am Anschlag stand - siehe den
         // Skalenwiderspruch in yawStep. Ein Zustandsfeld ohne Leser ist toter Ballast, und
@@ -15137,8 +15222,11 @@
     //     es: dann klingt der Zuschlag schnell ab.
     // Unterhalb des Scheitels aendert sich NICHTS, auch nicht ein bisschen: der Modus soll
     // sich im normalen Fahren anfuehlen wie "Physik" und erst am Limit anders werden.
-    pacejkaStep(dt) {
+    pacejkaStep(dt, inputs) {
       const st = this.state, cfg = this.config;
+      const heck = !!cfg.pacejkaUebersteuern;
+      const gas = inputs ? Math.max(0, inputs.throttle || 0) : 0;
+      const bremse = inputs ? Math.max(0, inputs.brake || 0) : 0;
       const kmhAnteil = Math.abs(st.speedKmh) / cfg.topSpeedKmh;
       const lenk = this.state.dampedSteering;
       const quer = Math.abs(lenk) * kmhAnteil * cfg.corneringLoad
@@ -15152,7 +15240,10 @@
       const antrieb = Math.max(0, Math.min(1, st.longUse)) * 0.7;
       const rest = Math.sqrt(Math.max(0.2, 1 - antrieb * antrieb));
       const uV = quer * vorn / grip;
-      const uH = quer * hinten / grip / rest / Math.max(0.5, cfg.pacejkaHeckReserve);
+      let uH = quer * hinten / grip / rest / Math.max(0.5, cfg.pacejkaHeckReserve);
+      // LEISTUNGSUEBERSTEUERN: viel Gas nimmt hinten zusaetzlich Seitenhalt (siehe config).
+      const leistung = heck && gas > 0.55;
+      if (leistung) uH *= 1 + cfg.pacejkaLeistung * Math.min(1, (gas - 0.55) / 0.45);
       st.pacNutzV = uV; st.pacNutzH = uH;
       const C = cfg.pacejkaC, E = cfg.pacejkaE, B = pacB(C, E);
       const wirk = (u) => (u <= 1 ? 1 : pacY(u, B, C, E) / u);
@@ -15161,16 +15252,32 @@
       st.pacUnter += (zielU - st.pacUnter) * (1 - Math.exp(-dt / 0.08));
       // Hinten: nur, wenn das Heck WEITER jenseits ist als die Front - sonst ist es Schieben.
       let zielO = 0;
-      if (cfg.pacejkaUebersteuern && uH > 1 && uH > uV) {
-        const richtung = Math.sign(lenk);
+      const richtung = Math.sign(lenk);
+      // Gegenlenken: Stick gegen die Rutschrichtung faengt das Auto.
+      const gegen = !!(st.pacRichtung && richtung && richtung !== st.pacRichtung);
+      if (heck && uH > 1 && uH > uV) {
         if (!st.pacRichtung && richtung) st.pacRichtung = richtung;
-        // Gegenlenken: Stick gegen die Rutschrichtung faengt das Auto.
-        const gegen = st.pacRichtung && richtung && richtung !== st.pacRichtung;
         if (!gegen) zielO = Math.min(cfg.pacejkaUeberMax, 1 - wirk(uH));
+        if (zielO > 0) st.pacLeistung = leistung;
       }
-      const tau = zielO > st.pacUeber ? 0.12 : 0.25;
+      // DER RUTSCH HAELT. Einmal gekommen, klingt das Heck nicht mehr von selbst ab - auch
+      // mit losgelassenem Stick lenkt das Auto weiter ein, bis man gegenlenkt oder vom Pedal
+      // geht. Deckel: pacejkaHaltMax Sekunden, und nicht bei Schritttempo.
+      const pedal = gas >= 0.2 || bremse >= 0.2;
+      if (heck && st.pacUeber > 0.05 && st.pacRichtung && !gegen && pedal
+          && kmhAnteil > 0.15 && st.pacHaltSeit < cfg.pacejkaHaltMax) {
+        zielO = Math.max(zielO, st.pacUeber);
+        st.pacHaltSeit += dt;
+      }
+      const tau = zielO > st.pacUeber ? 0.12 : (gegen ? 0.1 : 0.25);
       st.pacUeber += (zielO - st.pacUeber) * (1 - Math.exp(-dt / tau));
-      if (st.pacUeber < 0.005 && zielO === 0) { st.pacUeber = 0; st.pacRichtung = 0; }
+      if (st.pacUeber < 0.005 && zielO === 0) {
+        st.pacUeber = 0; st.pacRichtung = 0; st.pacHaltSeit = 0; st.pacLeistung = false;
+      }
+      // VORTRIEB: der Antrieb im naechsten Takt (update() liest ihn beim Schub).
+      st.pacVortrieb = heck
+        ? 1 - cfg.pacejkaRutschVortrieb * Math.min(1, st.pacUeber / Math.max(0.01, cfg.pacejkaUeberMax))
+        : 1;
       st.pacZustand = st.pacUeber > 0.03 ? 'ueber' : (st.pacUnter < 0.97 ? 'unter' : '');
       this.outputs.servoAngle = Math.max(-1, Math.min(1,
         this.outputs.servoAngle * st.pacUnter + st.pacRichtung * st.pacUeber));
@@ -15397,6 +15504,7 @@
       st.isShifting = false; st.engineLoad = 0; st.onLimiter = false;
       st.pacUnter = 1; st.pacUeber = 0; st.pacRichtung = 0;
       st.pacNutzV = 0; st.pacNutzH = 0; st.pacZustand = '';
+      st.pacVortrieb = 1; st.pacHaltSeit = 0; st.pacLeistung = false;
     }
 
     // rpm comes from the gear RATIO, not from the band edges. Consequence straight out of
@@ -15987,7 +16095,10 @@
           accel = st.isShifting
             ? -resist * cfg.shiftDragFactor // a brief lull, not a full coast-down
             : this.thrustAt(st.speedKmh, gearIdx, inputs.throttle, A)
-                * st.gripLong * surf * rearGrip * st.tyreGrip / st.massFactor - resist;
+                * st.gripLong * surf * rearGrip * st.tyreGrip / st.massFactor
+                // Pacejka: ein rutschendes Heck bringt weniger auf die Strasse. In "Physik"
+                // ist der Faktor genau 1 - x * 1 === x, der Fingerabdruck bleibt bitgleich.
+                * (cfg.pacejka ? st.pacVortrieb : 1) - resist;
         } else {
           st.engineLoad = 0;
           accel = -resist; // lift off and it rolls out
@@ -16164,7 +16275,7 @@
         st.steerDemand * cfg.steerCalib + zug));
       // Pacejka formt den Befehl NACH dem Deckel, siehe dort. Nur hinter dem Schalter:
       // "Physik" rechnet keinen Schritt davon.
-      if (cfg.pacejka) this.pacejkaStep(dt);
+      if (cfg.pacejka) this.pacejkaStep(dt, inputs);
 
       // ---- EINSPURMODELL, ein Schritt --------------------------------------------------
       //
@@ -17059,17 +17170,23 @@
   // solange es anhaelt. Uebersteuern ist ein EREIGNIS (das Heck kommt) - ein kraeftiger
   // Stoss im starken Motor. Hoechstens alle 250 ms ein Aufruf je Spieler, sonst stapeln
   // sich die Effekte im Pad. `wer` sorgt dafuer, dass nur der eigene Pad ruettelt.
+  // STAERKER SEIT v0.8.24 (BESTELLT: "Vibration staerker machen"): Uebersteuern alle
+  // 150 ms, 0,65 bis 1,0 im starken Motor, dazu der schwache; kam das Heck unter Gas, ein
+  // zusaetzlicher kurzer Stoss hinterher - das "Hinterrad".
   const pacRumbleZuletzt = { 1: 0, 2: 0 };
   function pacejkaRueckmeldung(motor, wer) {
     if (!motor.config.pacejka) return false;
     const st = motor.state;
     if (!st.pacZustand) return false;
     const jetzt = performance.now();
-    if (jetzt - pacRumbleZuletzt[wer] < 250) return false;
+    const takt = st.pacZustand === 'ueber' ? 150 : 250;
+    if (jetzt - pacRumbleZuletzt[wer] < takt) return false;
     pacRumbleZuletzt[wer] = jetzt;
     if (st.pacZustand === 'ueber') {
       const k = Math.min(1, st.pacUeber / motor.config.pacejkaUeberMax);
-      return padRumble(0.45 + 0.5 * k, 0.2, 240, 'rutschen', wer);
+      const ok = padRumble(0.65 + 0.35 * k, 0.35, 170, 'rutschen', wer);
+      if (ok && st.pacLeistung) setTimeout(() => padRumble(0.2, 0.9, 60, 'rutschen', wer), 90);
+      return ok;
     }
     const k = Math.min(1, (1 - st.pacUnter) * 4);
     return padRumble(0, 0.18 + 0.4 * k, 260, 'rutschen', wer);
@@ -17451,6 +17568,7 @@
       waehlen: () => pitScreenSelect(),
       malen: () => pitScreenRender() },
     { id: 'uebersicht', name: 'Rennen',
+      waehlen: () => ovNochmal(),
       malen: () => ovScreenRender() },
     // BESTELLT: "cockpit: weiteren screen mit Renneinstellungen einfuegen." waehlen()
     // ist generisch verdrahtet (cockpitScreenWaehlen()), pad() ist es NICHT - siehe die
@@ -18165,9 +18283,26 @@
     // NUR cockpitScreenIst().id, nicht ob tab-race ueberhaupt noch aktiv/im Vollbild ist -
     // ein Wechsel auf einen anderen Tab liess das D-Pad dort also weiter "essen", bevor
     // menuNavMove() es je sah. cockpitScreenZu('main') hier behebt das an der Quelle.
+    // SEIT v0.8.24 NUR NOCH VORUEBERGEHEND: der gewaehlte Schirm wird gemerkt. Bleibt man im
+    // Cockpit (Vollbild per Wischen oder Knopf verlassen), steht er sofort wieder da; wer
+    // den Tab verlaesst, bekommt ihn beim Zurueckkommen (cockpitScreenWiederherstellen,
+    // gerufen beim Tabwechsel in 10-ble-explorer.js). Der Grund fuer 'main' bleibt:
+    // ausserhalb des Cockpits darf kein Box- oder Rennschirm das Steuerkreuz essen.
+    const war = cockpitScreenIst().id;
     cockpitScreenZu('main');
+    if (war !== 'main') {
+      cockpitScreenMerk = war;
+      if (document.body.classList.contains('race-mode')) cockpitScreenWiederherstellen();
+    }
     cockpitPassung();
     setTimeout(() => cockpitPassung(), 120);
+  }
+  let cockpitScreenMerk = null;
+  function cockpitScreenWiederherstellen() {
+    if (!cockpitScreenMerk) return;
+    const id = cockpitScreenMerk;
+    cockpitScreenMerk = null;
+    cockpitScreenZu(id);
   }
 
   $('race-fs').addEventListener('click', enterRaceFullscreen);
@@ -20227,18 +20362,32 @@
   // Wechselt der Kontext (Unterseite auf/zu, Kachel geoeffnet, Tab verlassen), faengt
   // ganz von vorn an - ein gemerkter Index aus einer anderen Zeilenliste zeigt sonst auf
   // eine zufaellige Stelle, sobald man zurueckkommt.
+  // LETZTE AUSWAHL JE SEITE (v0.8.24, BESTELLT): beim Verlassen eines Kontexts wird die
+  // Zeile gemerkt, beim Zurueckkommen steht die Auswahl wieder dort. Nicht fuer Dialoge
+  // (#k-frage, Tutorial): die fangen immer oben an.
+  const menuNavMerk = {};
+  const MENU_NAV_OHNE_MERK = ['k-frage', 'k-tour'];
+  function menuNavMerkLeeren() { Object.keys(menuNavMerk).forEach((k) => { delete menuNavMerk[k]; }); }
   function menuNavEnsureContext() {
     const key = menuNavContextNow();
     if (key !== menuNavContextKey) {
+      if (menuNavContextKey && menuNavGezeigt && !MENU_NAV_OHNE_MERK.includes(menuNavContextKey)) {
+        menuNavMerk[menuNavContextKey] = menuNavIndex;
+      }
       // Den Kontext verlassen: menuNavRender() scrollt document.body (nicht das
       // Fenster) fuer jede fokussierte Zeile, und dieser Bildlauf blieb sonst stehen -
       // ein anderer Tab konnte so scheinbar grundlos mitten im Bild aufschlagen, obwohl
       // niemand ihn dorthin gescrollt hat.
       if (menuNavContextKey !== null && key === null) document.body.scrollTop = 0;
       menuNavContextKey = key;
-      menuNavIndex = 0;
       menuNavArmed = false;
-      menuNavGezeigt = false;
+      if (key && menuNavMerk[key] !== undefined && !MENU_NAV_OHNE_MERK.includes(key)) {
+        menuNavIndex = menuNavMerk[key];
+        menuNavGezeigt = true;
+      } else {
+        menuNavIndex = 0;
+        menuNavGezeigt = false;
+      }
     }
   }
 
@@ -20258,6 +20407,7 @@
     row.el.classList.add('menu-nav-sel');
     if (menuNavArmed) row.el.classList.add('menu-nav-armed');
     if (typeof row.el.scrollIntoView === 'function') row.el.scrollIntoView({ block: 'nearest' });
+    if (typeof garageFokusZeile === 'function') garageFokusZeile(row.el);
   }
 
   // ---- RAEUMLICH: der naechste Nachbar in der Richtung ------------------------------
@@ -20562,12 +20712,13 @@
   }
 
   // ---- Wechsel verfolgen: aus dem .tab-btn-Klick gerufen (10-ble-explorer.js) --------
-  function konsoleNachTab(neu, alt) {
+  function konsoleNachTab(neu, alt, altSub) {
     // Die Ebene 1 ist die Wurzel: wer dort ankommt, hat keinen Rueckweg mehr (Kreis tut
-    // dort nichts), also auch keinen Stapel. Der Titel kommt nie auf den Stapel.
+    // dort nichts), also auch keinen Stapel. Der Titel kommt nie auf den Stapel. Jeder
+    // Eintrag merkt die Unterseite, die beim Verlassen offen war - Kreis oeffnet sie wieder.
     if (K_EBENE1.includes(neu)) kStapel = [];
     else if (!kZurueckLaeuft && alt && alt !== neu && alt !== 'home') {
-      kStapel.push(alt);
+      kStapel.push({ tab: alt, sub: altSub || '' });
       if (kStapel.length > 40) kStapel.shift();
     }
     kLetzterTab = neu;
@@ -20612,11 +20763,12 @@
     let ziel = null;
     while (kStapel.length && !ziel) {
       const z = kStapel.pop();
-      if (z !== tab && z !== 'home') ziel = z;
+      const zt = typeof z === 'string' ? { tab: z, sub: '' } : z;
+      if (zt.tab !== tab && zt.tab !== 'home') ziel = zt;
     }
-    if (!ziel) ziel = K_ELTERN[tab] || 'fahren';
+    if (!ziel) ziel = { tab: K_ELTERN[tab] || 'fahren', sub: '' };
     kZurueckLaeuft = true;
-    try { showTab(ziel); } finally { kZurueckLaeuft = false; }
+    try { showTab(ziel.tab); if (ziel.sub) showSubpage(ziel.sub); } finally { kZurueckLaeuft = false; }
     menuNavTonAbwaehlen();
     return true;
   }
@@ -20873,15 +21025,41 @@
   // Boxenstopp, ...) ist damit weg: der Boxenstopp liegt auf Kreuz, Abbrechen auf dem
   // Knopf im Cockpit, alles andere im Fahren-Menue. War das Cockpit im Vollbild, kommt es
   // auf dem Rueckweg wieder so.
+  // RUECKWEG (v0.8.24): wer aus einer Menueseite per Options ins Cockpit ging, kommt mit
+  // Options genau dorthin zurueck, samt offener Unterseite; sonst nach Fahren.
   let kCockpitVollbild = false;
+  let kMenueRueck = null;
+  let kErgebnisWartet = false;
   function konsoleZumMenue() {
     kCockpitVollbild = document.body.classList.contains('race-fs');
     if (kCockpitVollbild) exitRaceFullscreen();
-    konsoleZeige('fahren');
+    const r = kMenueRueck;
+    kMenueRueck = null;
+    if (r && r.tab && r.tab !== 'race' && r.tab !== 'home') konsoleZeige(r.tab, r.sub || '');
+    else konsoleZeige('fahren');
   }
-  function konsoleInsCockpit() {
+  function konsoleInsCockpit(merken) {
+    if (merken) {
+      const offen = document.querySelector('.tabpage.active .subpage.on');
+      kMenueRueck = { tab: kAktiverTab(), sub: offen ? offen.id.replace(/^sub-/, '') : '' };
+    }
     showTab('race');
     if (kCockpitVollbild && !document.body.classList.contains('race-fs')) enterRaceFullscreen();
+    if (kErgebnisWartet) {
+      kErgebnisWartet = false;
+      if ($('k-ergebnis')) $('k-ergebnis').hidden = true;
+      if (typeof cockpitScreenZu === 'function') cockpitScreenZu('uebersicht');
+    }
+  }
+  // RENNENDE: im Cockpit die Uebersicht, sonst eine Einblendung statt eines harten Sprungs.
+  function konsoleRennenBeendet() {
+    if (kAktiverTab() === 'race') {
+      if (typeof cockpitScreenZu === 'function') cockpitScreenZu('uebersicht');
+      return;
+    }
+    kErgebnisWartet = true;
+    const b = $('k-ergebnis');
+    if (b) b.hidden = false;
   }
 
   // ---- Zeichnen: Kopf, Reiter, Beschreibung, Fuss, Hintergrund -----------------------
@@ -21101,7 +21279,7 @@
         && !document.body.classList.contains('track-fs')) {
       const tab = kAktiverTab();
       if (tab === 'race') konsoleZumMenue();
-      else if (tab && tab !== 'home') konsoleInsCockpit();
+      else if (tab && tab !== 'home') konsoleInsCockpit(true);
     }
     konsoleOptionsTaste.vorher = gedrueckt;
   }
@@ -21174,6 +21352,7 @@
     kn('fa-druck', () => konsoleZeige('track', 'print'));
     kn('fa-profil', () => konsoleZeige('options', 'opt-feel'));
     kn('race-menue', () => konsoleZumMenue());
+    kn('k-ergebnis', () => { kErgebnisWartet = true; konsoleInsCockpit(); });
     kn('fa-motor', () => konsoleZeige('options', 'opt-sound'));
     kn('fa-foto', () => { const d = $('fa-foto-datei'); if (d) { d.value = ''; d.click(); } });
     kn('fa-foto-weg', () => {
@@ -26482,11 +26661,8 @@
       updateFlagUi();
       showHudToast(t('Einführungsrunde'));
     }
-    // AUF WUNSCH SOFORT ZUR UEBERSICHT, und zwar im Vollbild genauso: der Schirm ist eine
-    // Ueberlagerung im Cockpit, also gilt derselbe Zustand in beiden Lagen. Wer lieber das
-    // Cockpit sieht, blaettert mit links zurueck - der Sprung nimmt nichts weg, er waehlt
-    // nur den Anfang.
-    if (typeof cockpitScreenZu === 'function') cockpitScreenZu('uebersicht');
+    // KEIN SPRUNG MEHR ZUR UEBERSICHT bei Gruen (v0.8.24, vom Nutzer bestaetigt: "alles so
+    // machen"): der Schirm, den man sich gewaehlt hat, bleibt stehen.
 
     // raceStartedAt bleibt null, bis raceClockTick() Bewegung sieht - siehe die
     // Begruendung oben bei raceLapStart.
@@ -26617,8 +26793,14 @@
     // BESTELLT: kein eigenes Ueberlagerungsfenster mehr - stattdessen ins Cockpit zum
     // Schirm "Rennen" springen, der die Tabelle ohnehin schon zeigt (ovScreenRender()
     // laeuft im 120-ms-Takt weiter und malt die Endstaende sofort).
-    if (typeof showTab === 'function') showTab('race');
-    if (typeof cockpitScreenZu === 'function') cockpitScreenZu('uebersicht');
+    // SEIT v0.8.24 KEIN HARTER SPRUNG MEHR aus einem Menue: ist man im Cockpit, kommt die
+    // Uebersicht; sonst eine Einblendung "Rennen beendet - Ergebnis ansehen", und Options
+    // bzw. ein Klick fuehrt dann ins Cockpit auf die Uebersicht (51-konsole.js).
+    if (typeof konsoleRennenBeendet === 'function') konsoleRennenBeendet();
+    else {
+      if (typeof showTab === 'function') showTab('race');
+      if (typeof cockpitScreenZu === 'function') cockpitScreenZu('uebersicht');
+    }
     // Und ablegen. Hier, weil dies die eine Stelle ist, an der ein Rennen wirklich vorbei
     // ist - und nach showRaceSummary(), damit ein Fehlschlag beim Speichern das Ergebnis
     // nicht verdeckt.
@@ -30432,9 +30614,19 @@
     }
   }
 
+  // NOCHMAL: nach dem Rennen dasselbe Rennen mit denselben Einstellungen, per Kreuz auf dem
+  // Uebersichtsschirm oder dem Knopf darin. Waehrend eines Rennens tut es nichts.
+  function ovNochmal() {
+    if (raceState !== 'finished') return false;
+    toggleRace();
+    return true;
+  }
+  if ($('ov-nochmal')) $('ov-nochmal').addEventListener('click', () => { ovNochmal(); });
+
   function ovScreenRender() {
     const tab = $('ov-tab');
     if (!tab) return;
+    if ($('ov-nochmal')) $('ov-nochmal').hidden = raceState !== 'finished';
     ovKarteMalen();
     const zeilen = ovDaten();
     // Die schnellste Runde des FELDES, violett wie in der Formel 1. Hier und nicht in
@@ -34129,6 +34321,22 @@
          + ' · Box ' + versatz + '</b></div>';
   }
 
+  const garBlinkZuletzt = new WeakMap();
+  let garFokusZeile = null;
+  function garageBlinkSanft(car) {
+    if (!car || !car.device) return;
+    const jetzt = performance.now();
+    if (jetzt - (garBlinkZuletzt.get(car) || 0) < 1500) return;
+    garBlinkZuletzt.set(car, jetzt);
+    blinkCar(car);
+  }
+  function garageFokusZeile(el) {
+    const r = el && el.closest ? el.closest('.gar-row') : null;
+    if (r === garFokusZeile) return;
+    garFokusZeile = r;
+    if (r && r._car) garageBlinkSanft(r._car);
+  }
+
   function renderGarage() {
     const list = $('gar-list');
     if (!list) return;
@@ -34191,8 +34399,12 @@
                   title="Zurueck auf die Vorgabe aus den Optionen">&#8635;</button>
         </div>` : ''}
         ${charakterZeile(car)}`;
-      // Clicking the row itself identifies the car; the buttons must not also blink it.
-      row.onclick = (e) => { if (!e.target.closest('button')) blinkCar(car); };
+      // BLINKEN BEIM UEBERFAHREN, ohne Taste und ohne eigenen Knopf. BESTELLT: "Mach, dass
+      // Autos blinken, wenn ich mit dem Cursor in der Garage drueber hovere". Die Maus und
+      // die Menueauswahl (menuNavRender -> garageFokusZeile) loesen es aus, je Betreten der
+      // Zeile einmal und hoechstens alle 1,5 s.
+      row._car = car;
+      row.onmouseenter = () => garageBlinkSanft(car);
       row.querySelectorAll('button[data-role]').forEach(b => {
         b.onclick = () => setCarRole(car, b.dataset.role);
       });
@@ -51279,6 +51491,29 @@
     // Eine frische Instanz bei festem Tempo und fester Eingabe, mit oder ohne Pacejka. Das
     // Tempo wird jeden Takt zurueckgesetzt, damit Unter- und Uebersteuern bei GENAU diesem
     // Tempo gemessen werden und nicht bei dem, auf das die Bremse es gerade gebracht hat.
+    // Eine Folge von Abschnitten auf einer Instanz: [{takte, gas, bremse, lenk, kmh}]. Je
+    // Abschnitt der Stand am Ende - fuer "der Rutsch haelt, bis man faengt".
+    pacejkaFolge(o) {
+      const e = new CarreraPhysicsEngine();
+      Object.assign(e.config, o.patch || {});
+      e.config.pacejka = true;
+      const st = e.state;
+      st.driveMode = 'forward';
+      st.currentGear = o.gear === undefined ? 3 : o.gear;
+      return (o.abschnitte || []).map((a) => {
+        let maxUeber = 0, minVortrieb = 1;
+        for (let i = 0; i < (a.takte || 20); i++) {
+          st.speedKmh = (a.kmh || o.kmh || 150) / REAL_SCALE;
+          e.update({ throttle: a.gas || 0, brake: a.bremse || 0, steering: a.lenk || 0 }, 0.045);
+          maxUeber = Math.max(maxUeber, st.pacUeber);
+          minVortrieb = Math.min(minVortrieb, st.pacVortrieb);
+        }
+        return { ueber: st.pacUeber, maxUeber, minVortrieb, vortrieb: st.pacVortrieb,
+                 servo: e.outputs.servoAngle, zustand: st.pacZustand, halt: st.pacHaltSeit,
+                 nutzV: st.pacNutzV, nutzH: st.pacNutzH, leistung: st.pacLeistung };
+      });
+    },
+
     pacejkaFahrt(o) {
       const e = new CarreraPhysicsEngine();
       Object.assign(e.config, o.patch || {});
@@ -57328,6 +57563,57 @@
                        + ' (hinten ' + an.nutzH.toFixed(2) + ' gegen vorn ' + an.nutzV.toFixed(2) + ')' };
   });
 
+  // BESTELLT (v0.8.24): Uebersteuern spuerbar - Vortrieb weg, Leistungsuebersteuern, der
+  // Rutsch haelt bis Gegenlenken oder Pedal weg, staerkere Vibration. Alles abschaltbar.
+  stAdd('Pacejka: Vollgas in der Kurve bringt das Heck, Vortrieb geht weg', () => {
+    if (!OMEGA_TEST.pacejkaFolge) return { skip: true, mass: 'Probe fehlt' };
+    const f = [];
+    const an = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [{ takte: 30, gas: 1, lenk: 0.8 }] })[0];
+    const aus = OMEGA_TEST.pacejkaFolge({ kmh: 150, patch: { pacejkaUebersteuern: false },
+                                          abschnitte: [{ takte: 30, gas: 1, lenk: 0.8 }] })[0];
+    if (an.maxUeber < 0.1) f.push('Vollgas bringt kein Uebersteuern (hinten ' + an.nutzH.toFixed(2) + ', vorn ' + an.nutzV.toFixed(2) + ')');
+    if (!(an.minVortrieb < 0.8)) f.push('Vortrieb bleibt ' + an.minVortrieb.toFixed(2));
+    if (!an.leistung) f.push('nicht als Leistungsuebersteuern erkannt');
+    if (aus.maxUeber !== 0 || aus.minVortrieb !== 1) f.push('Schalter aus: Zuschlag ' + aus.maxUeber.toFixed(2) + ', Vortrieb ' + aus.minVortrieb.toFixed(2));
+    const halb = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [{ takte: 30, gas: 0.5, lenk: 0.8 }] })[0];
+    if (halb.maxUeber > 0) f.push('schon bei halbem Gas: ' + halb.maxUeber.toFixed(2));
+    return { ok: !f.length, mass: f.length ? f.join('; ')
+      : 'Zuschlag ' + an.maxUeber.toFixed(2) + ', Vortrieb bis ' + an.minVortrieb.toFixed(2) + ', aus: nichts, halbes Gas: nichts' };
+  });
+
+  stAdd('Pacejka: der Rutsch haelt ohne Stick, Gegenlenken oder Pedal weg faengt', () => {
+    if (!OMEGA_TEST.pacejkaFolge) return { skip: true, mass: 'Probe fehlt' };
+    const f = [];
+    const rutsch = { takte: 25, gas: 1, lenk: 0.8 };
+    // Stick los, Gas bleibt: 0,7 s spaeter lenkt das Auto noch immer ein.
+    const a = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [rutsch, { takte: 16, gas: 1, lenk: 0 }] });
+    if (!(a[0].ueber > 0.1)) f.push('kein Rutsch vorher (' + a[0].ueber.toFixed(2) + ')');
+    if (!(a[1].ueber > 0.8 * a[0].ueber)) f.push('ohne Stick klingt es ab: ' + a[0].ueber.toFixed(2) + ' -> ' + a[1].ueber.toFixed(2));
+    if (!(Math.abs(a[1].servo) > 0.1)) f.push('ohne Stick lenkt das Auto nicht weiter (' + a[1].servo.toFixed(2) + ')');
+    // Gegenlenken faengt. MASSVOLL gegengelenkt: mit -0,5 bei Vollgas faengt es den Rutsch
+    // zwar, faehrt dann aber eine neue, scharfe Kurve in die andere Richtung - und die bringt
+    // unter Vollgas wieder das Heck (gemessen). Das ist das Pendeln, kein Fehler.
+    const b = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [rutsch, { takte: 10, gas: 1, lenk: -0.2 }] });
+    if (!(b[1].ueber < 0.02)) f.push('Gegenlenken faengt nicht: ' + b[1].ueber.toFixed(2));
+    // Pedal weg faengt.
+    const c = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [rutsch, { takte: 20, gas: 0, lenk: 0 }] });
+    if (!(c[1].ueber < 0.02)) f.push('vom Gas gehen faengt nicht: ' + c[1].ueber.toFixed(2));
+    // Deckel: hoechstens pacejkaHaltMax, dann klingt es ab.
+    const d = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [rutsch, { takte: 70, gas: 1, lenk: 0 }] });
+    if (!(d[1].ueber < 0.05)) f.push('haelt ueber den Deckel hinaus: ' + d[1].ueber.toFixed(2));
+    return { ok: !f.length, mass: f.length ? f.join('; ')
+      : 'haelt ' + a[0].ueber.toFixed(2) + ' -> ' + a[1].ueber.toFixed(2) + ' ohne Stick, Gegenlenken, Pedal und Deckel fangen' };
+  });
+
+  // BESTELLT: "keinen Text unter die Optionen, sondern immer hinter das i im Kreis".
+  stAdd('Optionen: keine Erklaerung steht offen unter einer Zeile, alles im Info-Knopf', () => {
+    const offen = [...document.querySelectorAll('#tab-options .opt-label small')]
+      .filter((x) => !x.classList.contains('opt-info-versteckt'));
+    return { ok: !offen.length, mass: offen.length
+      ? offen.length + ' offen, z. B. ' + offen.slice(0, 3).map((x) => '"' + x.textContent.trim().slice(0, 40) + '"').join(', ')
+      : 'alle Erklaerungen hinter dem Info-Knopf' };
+  });
+
   stAdd('Pacejka: Unter- und Uebersteuern vibrieren, eigener Schalter', () => {
     const merkOn = rumbleOn, merkArt = RUMBLE_ARTEN.rutschen;
     const schlecht = [];
@@ -57344,7 +57630,7 @@
       if (ruf(motor('ueber', true))) schlecht.push('Schalter aus wirkt nicht');
       RUMBLE_ARTEN.rutschen = true;
       pacRumbleZuletzt[2] = performance.now();
-      if (pacejkaRueckmeldung(motor('ueber', true), 2)) schlecht.push('keine 250-ms-Drossel');
+      if (pacejkaRueckmeldung(motor('ueber', true), 2)) schlecht.push('keine Drossel (150 ms)');
       if (!$('vib-rutschen')) schlecht.push('#vib-rutschen fehlt');
     } finally {
       rumbleOn = merkOn; RUMBLE_ARTEN.rutschen = merkArt; pacRumbleZuletzt[2] = 0;
@@ -62011,11 +62297,21 @@
       konsoleOptionsTaste(true); konsoleOptionsTaste(true); konsoleOptionsTaste(true);
       if (kAktiverTab() !== 'fahren') f.push('gehaltenes Options springt hin und her (' + kAktiverTab() + ')');
       konsoleOptionsTaste(false);
+      // RUECKWEG (v0.8.24): aus Optionen > Ton per Options ins Cockpit, mit Options zurueck
+      // genau dorthin - samt Unterseite.
       showTab('options');
+      showSubpage('opt-sound');
       konsoleOptionsTaste(true); konsoleOptionsTaste(false);
       if (kAktiverTab() !== 'race') f.push('Options in den Optionen fuehrt nach ' + kAktiverTab());
+      konsoleOptionsTaste(true); konsoleOptionsTaste(false);
+      const offen = document.querySelector('#tab-options .subpage.on');
+      if (kAktiverTab() !== 'options' || !offen || offen.id !== 'sub-opt-sound') {
+        f.push('Rueckweg fuehrt nach ' + kAktiverTab() + (offen ? ' / ' + offen.id : '') + ' statt Optionen > Ton');
+      }
+      showSubpage('');
+      showTab('race');
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-      if (kAktiverTab() !== 'fahren') f.push('Esc im Cockpit fuehrt nach ' + kAktiverTab());
+      if (kAktiverTab() !== 'fahren') f.push('Esc im Cockpit (ohne Rueckweg) fuehrt nach ' + kAktiverTab());
       showTab('race');
       $('race-menue').click();
       if (kAktiverTab() !== 'fahren') f.push('Knopf ☰ fuehrt nach ' + kAktiverTab());
@@ -62024,6 +62320,96 @@
       if (merk) showTab(merk);
     }
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Options hin und zurueck, gehalten nur einmal, Esc und ☰ ins Fahren-Menue' };
+  });
+
+  // Automatische Spruenge (v0.8.24, vom Nutzer bestaetigt): Rennende aus einem Menue springt
+  // nicht, sondern blendet ein; im Cockpit kommt die Uebersicht.
+  stAdd('ACC-Menü: Rennende im Menü blendet ein statt zu springen', () => {
+    const merk = kAktiverTab();
+    const f = [];
+    try {
+      showTab('options');
+      konsoleRennenBeendet();
+      if (kAktiverTab() !== 'options') f.push('springt nach ' + kAktiverTab());
+      if ($('k-ergebnis').hidden) f.push('keine Einblendung');
+      $('k-ergebnis').click();
+      if (kAktiverTab() !== 'race') f.push('Einblendung fuehrt nach ' + kAktiverTab());
+      if (cockpitScreenIst().id !== 'uebersicht') f.push('Cockpit zeigt ' + cockpitScreenIst().id + ' statt der Uebersicht');
+      if (!$('k-ergebnis').hidden) f.push('Einblendung bleibt stehen');
+      cockpitScreenZu('main');
+      konsoleRennenBeendet();
+      if (cockpitScreenIst().id !== 'uebersicht') f.push('im Cockpit keine Uebersicht');
+      if (!$('k-ergebnis').hidden) f.push('im Cockpit trotzdem eingeblendet');
+    } finally {
+      $('k-ergebnis').hidden = true;
+      cockpitScreenZu('main');
+      if (merk) showTab(merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Menue: Einblendung, Klick ins Cockpit auf die Uebersicht; Cockpit: direkt' };
+  });
+
+  stAdd('ACC-Menü: Vollbild verlassen behält den Cockpit-Schirm', () => {
+    const merk = kAktiverTab();
+    const f = [];
+    try {
+      showTab('race');
+      cockpitScreenZu('uebersicht');
+      document.body.classList.add('race-fs');
+      exitRaceFullscreen();
+      if (cockpitScreenIst().id !== 'uebersicht') f.push('im Cockpit faellt der Schirm auf ' + cockpitScreenIst().id);
+      document.body.classList.add('race-fs');
+      showTab('fahren');
+      if (cockpitScreenIst().id !== 'main') f.push('ausserhalb des Cockpits steht ' + cockpitScreenIst().id + ' (isst das Steuerkreuz)');
+      showTab('race');
+      if (cockpitScreenIst().id !== 'uebersicht') f.push('zurueck im Cockpit steht ' + cockpitScreenIst().id);
+    } finally {
+      document.body.classList.remove('race-fs');
+      cockpitScreenZu('main');
+      if (merk) showTab(merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Schirm bleibt, ausserhalb main, zurueck wieder da' };
+  });
+
+  stAdd('ACC-Menü: Nochmal startet nach dem Rennen dasselbe Rennen', () => {
+    const merkZ = raceState, echt = toggleRace;
+    let starts = 0;
+    const f = [];
+    try {
+      toggleRace = () => { starts++; };
+      raceState = 'racing';
+      if (ovNochmal()) f.push('startet waehrend des Rennens');
+      raceState = 'finished';
+      ovScreenRender();
+      if ($('ov-nochmal').hidden) f.push('Knopf nach dem Rennen verborgen');
+      cockpitScreenZu('uebersicht');
+      cockpitScreenWaehlen();
+      if (starts !== 1) f.push('Kreuz auf der Uebersicht startet ' + starts + ' mal');
+      $('ov-nochmal').click();
+      if (starts !== 2) f.push('Knopf startet nicht');
+    } finally {
+      toggleRace = echt; raceState = merkZ;
+      ovScreenRender();
+      cockpitScreenZu('main');
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'nur nach dem Rennen, Kreuz und Knopf' };
+  });
+
+  stAdd('ACC-Menü: die letzte Auswahl je Seite bleibt gemerkt', () => {
+    const merk = kAktiverTab();
+    const f = [];
+    try {
+      showTab('options');
+      menuNavEnsureContext();
+      const rows = menuNavRows();
+      if (rows.length < 3) return { skip: true, mass: 'zu wenige Kacheln' };
+      menuNavIndex = 2; menuNavGezeigt = true; menuNavRender();
+      showTab('fahren');
+      menuNavEnsureContext();
+      showTab('options');
+      menuNavEnsureContext();
+      if (menuNavIndex !== 2) f.push('Optionen stehen wieder auf ' + menuNavIndex + ' statt 2');
+    } finally { if (merk) showTab(merk); }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'dritte Kachel wieder angewaehlt' };
   });
 
   stAdd('ACC-Menü: Motorsound-Kachel blättert die Motoren, Quadrat', () => {
@@ -64976,6 +65362,10 @@
     }
     const merkTab = document.querySelector('.tab-btn.active');
     const merkTabName = merkTab ? merkTab.dataset.tab : null;
+    // Seit v0.8.24 merkt sich jede Seite ihre letzte Auswahl. Dieser Test prueft den ERSTEN
+    // Besuch einer Seite, also mit leerem Gedaechtnis - sonst misst er, was frueher im
+    // Durchlauf angewaehlt wurde.
+    menuNavMerkLeeren();
     // Ein Wechsel auf einen anderen Tab loest exitRaceFullscreen() aus (showTab(),
     // 10-ble-explorer.js), und ein blosser Klick zurueck stellt das Vollbild NICHT
     // wieder her - eine Einbahnstrasse. Vorsichtshalber gemerkt, auch wenn der
@@ -65060,7 +65450,12 @@
       // menuNavEnsureContext() auf und setzt damit den Index zurueck - eine reine
       // Zeilenabfrage tut das bewusst nicht (sie soll den Zustand nicht nebenbei
       // veraendern), und genau das hat dieser Test beim ersten Anlauf uebersehen.
+      // Gedaechtnis leeren: diese Seiten waren eben schon offen und gingen sonst auf ihrer
+      // letzten Zeile auf (so gewollt seit v0.8.24, eigener Test "letzte Auswahl").
+      // Zweimal: menuNavAktiv() verlaesst die Unterseite und legt dabei ihre Zeile ab.
+      menuNavMerkLeeren();
       OMEGA_TEST.menuNavAktiv();
+      menuNavMerkLeeren();
       document.querySelector('button.misc-tile.subpage-open[data-sub="opt-feel"]').click();
       if (OMEGA_TEST.menuNavIndexLesen() !== 0) fehler.push('Unterseite oeffnet nicht auf Index 0');
       OMEGA_TEST.menuNavAusloesen();
@@ -69690,16 +70085,19 @@
     document.querySelectorAll('.opt-row').forEach((row) => {
       const label = row.querySelector('.opt-label');
       if (!label) return;
-      const small = label.querySelector('small');
-      if (!small || small.classList.contains('opt-info-versteckt')) return;
+      // ALLE <small> eines Labels, nicht nur das erste. BESTELLT: "keinen Text unter die
+      // Optionen, sondern immer hinter das i im Kreis". Beim Steuerungsmodus stand der
+      // Pacejka-Absatz in einem zweiten <small> und blieb deshalb sichtbar unter der Zeile.
+      const smalls = [...label.querySelectorAll('small')];
+      if (!smalls.length || smalls.every((x) => x.classList.contains('opt-info-versteckt'))) return;
+      const small = smalls[0];
       // Nicht ueber childNodes[0] geraten: manche Titel stecken selbst in einem <span>
       // (z.B. id="race-limit-label" fuer Werte, die JS nachfuehrt), dann ist das erste
       // Kind kein Textknoten und label.textContent haette faelschlich auch die
       // Erklaerung mitgenommen. Stattdessen ein Klon OHNE die <small> - was danach an
       // Text uebrig ist, ist der Titel, unabhaengig davon, wie er aufgebaut ist.
       const klon = label.cloneNode(true);
-      const smallImKlon = klon.querySelector('small');
-      if (smallImKlon) smallImKlon.remove();
+      klon.querySelectorAll('small').forEach((x) => x.remove());
       const titel = klon.textContent.trim();
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -69708,10 +70106,12 @@
       btn.setAttribute('aria-label', t('Erklärung anzeigen') + (titel ? ': ' + titel : ''));
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        optInfoOeffnen(titel, small.innerHTML);
+        // Beim Klick gelesen, nicht beim Einrichten: so steht der Text in der Sprache, die
+        // gerade gilt (der Uebersetzer tauscht die Textknoten in den <small> selbst).
+        optInfoOeffnen(titel, smalls.map((x) => x.innerHTML).join('<br><br>'));
       });
       label.insertBefore(btn, small);
-      small.classList.add('opt-info-versteckt');
+      smalls.forEach((x) => x.classList.add('opt-info-versteckt'));
     });
   }
 

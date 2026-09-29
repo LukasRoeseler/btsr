@@ -1210,11 +1210,8 @@
       updateFlagUi();
       showHudToast(t('Einführungsrunde'));
     }
-    // AUF WUNSCH SOFORT ZUR UEBERSICHT, und zwar im Vollbild genauso: der Schirm ist eine
-    // Ueberlagerung im Cockpit, also gilt derselbe Zustand in beiden Lagen. Wer lieber das
-    // Cockpit sieht, blaettert mit links zurueck - der Sprung nimmt nichts weg, er waehlt
-    // nur den Anfang.
-    if (typeof cockpitScreenZu === 'function') cockpitScreenZu('uebersicht');
+    // KEIN SPRUNG MEHR ZUR UEBERSICHT bei Gruen (v0.8.24, vom Nutzer bestaetigt: "alles so
+    // machen"): der Schirm, den man sich gewaehlt hat, bleibt stehen.
 
     // raceStartedAt bleibt null, bis raceClockTick() Bewegung sieht - siehe die
     // Begruendung oben bei raceLapStart.
@@ -1345,8 +1342,14 @@
     // BESTELLT: kein eigenes Ueberlagerungsfenster mehr - stattdessen ins Cockpit zum
     // Schirm "Rennen" springen, der die Tabelle ohnehin schon zeigt (ovScreenRender()
     // laeuft im 120-ms-Takt weiter und malt die Endstaende sofort).
-    if (typeof showTab === 'function') showTab('race');
-    if (typeof cockpitScreenZu === 'function') cockpitScreenZu('uebersicht');
+    // SEIT v0.8.24 KEIN HARTER SPRUNG MEHR aus einem Menue: ist man im Cockpit, kommt die
+    // Uebersicht; sonst eine Einblendung "Rennen beendet - Ergebnis ansehen", und Options
+    // bzw. ein Klick fuehrt dann ins Cockpit auf die Uebersicht (51-konsole.js).
+    if (typeof konsoleRennenBeendet === 'function') konsoleRennenBeendet();
+    else {
+      if (typeof showTab === 'function') showTab('race');
+      if (typeof cockpitScreenZu === 'function') cockpitScreenZu('uebersicht');
+    }
     // Und ablegen. Hier, weil dies die eine Stelle ist, an der ein Rennen wirklich vorbei
     // ist - und nach showRaceSummary(), damit ein Fehlschlag beim Speichern das Ergebnis
     // nicht verdeckt.
@@ -5160,9 +5163,19 @@
     }
   }
 
+  // NOCHMAL: nach dem Rennen dasselbe Rennen mit denselben Einstellungen, per Kreuz auf dem
+  // Uebersichtsschirm oder dem Knopf darin. Waehrend eines Rennens tut es nichts.
+  function ovNochmal() {
+    if (raceState !== 'finished') return false;
+    toggleRace();
+    return true;
+  }
+  if ($('ov-nochmal')) $('ov-nochmal').addEventListener('click', () => { ovNochmal(); });
+
   function ovScreenRender() {
     const tab = $('ov-tab');
     if (!tab) return;
+    if ($('ov-nochmal')) $('ov-nochmal').hidden = raceState !== 'finished';
     ovKarteMalen();
     const zeilen = ovDaten();
     // Die schnellste Runde des FELDES, violett wie in der Formel 1. Hier und nicht in

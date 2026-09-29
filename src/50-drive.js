@@ -474,17 +474,23 @@
   // solange es anhaelt. Uebersteuern ist ein EREIGNIS (das Heck kommt) - ein kraeftiger
   // Stoss im starken Motor. Hoechstens alle 250 ms ein Aufruf je Spieler, sonst stapeln
   // sich die Effekte im Pad. `wer` sorgt dafuer, dass nur der eigene Pad ruettelt.
+  // STAERKER SEIT v0.8.24 (BESTELLT: "Vibration staerker machen"): Uebersteuern alle
+  // 150 ms, 0,65 bis 1,0 im starken Motor, dazu der schwache; kam das Heck unter Gas, ein
+  // zusaetzlicher kurzer Stoss hinterher - das "Hinterrad".
   const pacRumbleZuletzt = { 1: 0, 2: 0 };
   function pacejkaRueckmeldung(motor, wer) {
     if (!motor.config.pacejka) return false;
     const st = motor.state;
     if (!st.pacZustand) return false;
     const jetzt = performance.now();
-    if (jetzt - pacRumbleZuletzt[wer] < 250) return false;
+    const takt = st.pacZustand === 'ueber' ? 150 : 250;
+    if (jetzt - pacRumbleZuletzt[wer] < takt) return false;
     pacRumbleZuletzt[wer] = jetzt;
     if (st.pacZustand === 'ueber') {
       const k = Math.min(1, st.pacUeber / motor.config.pacejkaUeberMax);
-      return padRumble(0.45 + 0.5 * k, 0.2, 240, 'rutschen', wer);
+      const ok = padRumble(0.65 + 0.35 * k, 0.35, 170, 'rutschen', wer);
+      if (ok && st.pacLeistung) setTimeout(() => padRumble(0.2, 0.9, 60, 'rutschen', wer), 90);
+      return ok;
     }
     const k = Math.min(1, (1 - st.pacUnter) * 4);
     return padRumble(0, 0.18 + 0.4 * k, 260, 'rutschen', wer);
@@ -866,6 +872,7 @@
       waehlen: () => pitScreenSelect(),
       malen: () => pitScreenRender() },
     { id: 'uebersicht', name: 'Rennen',
+      waehlen: () => ovNochmal(),
       malen: () => ovScreenRender() },
     // BESTELLT: "cockpit: weiteren screen mit Renneinstellungen einfuegen." waehlen()
     // ist generisch verdrahtet (cockpitScreenWaehlen()), pad() ist es NICHT - siehe die
@@ -1580,9 +1587,26 @@
     // NUR cockpitScreenIst().id, nicht ob tab-race ueberhaupt noch aktiv/im Vollbild ist -
     // ein Wechsel auf einen anderen Tab liess das D-Pad dort also weiter "essen", bevor
     // menuNavMove() es je sah. cockpitScreenZu('main') hier behebt das an der Quelle.
+    // SEIT v0.8.24 NUR NOCH VORUEBERGEHEND: der gewaehlte Schirm wird gemerkt. Bleibt man im
+    // Cockpit (Vollbild per Wischen oder Knopf verlassen), steht er sofort wieder da; wer
+    // den Tab verlaesst, bekommt ihn beim Zurueckkommen (cockpitScreenWiederherstellen,
+    // gerufen beim Tabwechsel in 10-ble-explorer.js). Der Grund fuer 'main' bleibt:
+    // ausserhalb des Cockpits darf kein Box- oder Rennschirm das Steuerkreuz essen.
+    const war = cockpitScreenIst().id;
     cockpitScreenZu('main');
+    if (war !== 'main') {
+      cockpitScreenMerk = war;
+      if (document.body.classList.contains('race-mode')) cockpitScreenWiederherstellen();
+    }
     cockpitPassung();
     setTimeout(() => cockpitPassung(), 120);
+  }
+  let cockpitScreenMerk = null;
+  function cockpitScreenWiederherstellen() {
+    if (!cockpitScreenMerk) return;
+    const id = cockpitScreenMerk;
+    cockpitScreenMerk = null;
+    cockpitScreenZu(id);
   }
 
   $('race-fs').addEventListener('click', enterRaceFullscreen);
