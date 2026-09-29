@@ -2557,6 +2557,9 @@
     text-transform: uppercase; color: var(--muted); border-left: 3px solid var(--k-blau); }
   .subpage-home > .k-zwischen:first-of-type { margin-top: 2px; }
   /* ---- Challenges (v0.8.30) ---- */
+  .ch-sperre-hinweis { border-left: 3px solid var(--warn); padding: 4px 10px; margin: 0 0 8px; font-size: 12px;
+    background: rgba(255,180,0,.08); color: #f3d9a0; }
+  .ch-sperre-hinweis[hidden] { display: none; }
   .ch-kachel .ch-mini { display: grid; place-items: center; height: clamp(64px, 26vh, 170px); padding: 6px 6px 2px; }
   .ch-mini svg { max-width: 100%; max-height: 100%; width: auto; height: 100%; }
   .ch-detail { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 14px; align-items: start; }
@@ -3852,7 +3855,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.36</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.37</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4571,7 +4574,10 @@
     <div class="card subpage" id="sub-ch-online">
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
       <h2>Online-Bestenliste</h2>
-      <div class="opt-row"><div class="opt-label">Adresse der Web-App
+      <!-- Ausgeblendet (v0.8.37). BESTELLT: "Adresse der Web-App bitte aus dem Online-Menue
+           ausblenden." Die gemeinsame Adresse steht als Vorgabe im Code (CH_STANDARD_URL); das
+           Feld bleibt im Dokument, damit Speichern und Verbindungstest unveraendert arbeiten. -->
+      <div class="opt-row" hidden><div class="opt-label">Adresse der Web-App
           <small>Vorgabe ist die gemeinsame OmegaSim-Bestenliste. Wer eine eigene will: die Adresse, die Google beim Bereitstellen des Apps Script anzeigt (endet auf /exec), Anleitung in tools/challenges-apps-script.gs. Feld leer lassen hei&szlig;t: nur lokal.</small></div>
         <input type="url" id="ch-url" data-preset-skip data-i18n-skip placeholder="https://script.google.com/macros/s/.../exec"></div>
       <div class="opt-row"><div class="opt-label">Dein Name in der Liste
@@ -4816,6 +4822,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Challenges gegen Schummeln: jede Runde wird gegen die Strecke gepr&uuml;ft (mindestens 90 % der Teile erkannt), eine plausible Mindestrundenzeit gilt in App und Bestenliste, und die Einstellungen sind w&auml;hrend des Laufs gesperrt; wer sie doch &auml;ndert, bricht ab.</li>
         <li>Titelseite im Browser: Link zum Download der neuesten Android-App. Die APK-Release h&auml;ngt daf&uuml;r zus&auml;tzlich eine Datei mit festem Namen an; die Android-Schicht ist unver&auml;ndert, neu installieren ist nicht n&ouml;tig.</li>
         <li>Cockpit immer im Vollbild, der Men&uuml;-Knopf dort zeigt jetzt &bdquo;Zur&uuml;ck&ldquo;. Reiter oben: Fahren, Mehrspieler, Challenges, Optionen. Die Info-Kacheln stehen direkt in den Optionen unter einer eigenen Überschrift. Challenges: Strecken hei&szlig;en Monzetta, Suzuna, Monte Carlito und Silverbrook, der Name f&uuml;r die Bestenliste l&auml;sst sich auf jeder Strecken-Seite festlegen, das Perzentil z&auml;hlt je Spieler. Neue Kachel- und Hintergrundbilder im Fahren-Men&uuml;.</li>
         <li>Challenges: die Bestenliste kommt aus einem st&uuml;ndlichen Schnappschuss im Repo, dazu sofort die eigenen Zeiten; das Hochladen wiederholt bei Aussetzern.</li>
@@ -7871,6 +7878,7 @@
 
   <!-- OPTIONEN TAB: player-facing settings (feel, sound, controller bindings) -->
   <section class="tabpage" id="tab-options">
+    <div class="ch-sperre-hinweis" id="ch-sperre" hidden>W&auml;hrend einer Challenge sind die Einstellungen gesperrt.</div>
     <div class="card subpage-home" id="sub-home-options">
       <h2>Einstellungen</h2>
       <div class="k-zwischen">Einstellungen</div>
@@ -11553,6 +11561,18 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Runde {n}: {a} von {b} Teilen erkannt, zählt nicht": "Lap {n}: {a} of {b} pieces recognised, does not count",
+    "Runde {n} unter der Mindestzeit, zählt nicht": "Lap {n} below the minimum time, does not count",
+    "Einstellungen geändert, Challenge abgebrochen": "Settings changed, challenge aborted",
+    "Einstellungen während der Challenge geändert": "Settings changed during the challenge",
+    "Runde {n}: Strecke nicht erkannt": "Lap {n}: track not recognised",
+    "Runde {n} unter der Mindestzeit": "Lap {n} below the minimum time",
+    "keine gültige Runde: Strecke nicht erkannt oder unter der Mindestzeit": "no valid lap: track not recognised or below the minimum time",
+    "Mindestrunde": "Minimum lap",
+    "Jede Runde wird gegen die Strecke geprüft: mindestens 90 % der Teile müssen erkannt werden. Einstellungen sind gesperrt.": "Every lap is checked against the track: at least 90 % of the pieces must be recognised. Settings are locked.",
+    "Während der Challenge gesperrt": "Locked during the challenge",
+    "Während einer Challenge sind die Einstellungen gesperrt.": "Settings are locked during a challenge.",
+    "Challenges gegen Schummeln: jede Runde wird gegen die Strecke geprüft (mindestens 90 % der Teile erkannt), eine plausible Mindestrundenzeit gilt in App und Bestenliste, und die Einstellungen sind während des Laufs gesperrt; wer sie doch ändert, bricht ab.": "Challenges against cheating: every lap is checked against the track (at least 90 % of the pieces recognised), a plausible minimum lap time applies in the app and the leaderboard, and settings are locked during the run; changing them anyway aborts it.",
     "Installiere die App für Mehrspieler und Challenges": "Install the app for multiplayer and challenges",
     "Titelseite im Browser: Link zum Download der neuesten Android-App. Die APK-Release hängt dafür zusätzlich eine Datei mit festem Namen an; die Android-Schicht ist unverändert, neu installieren ist nicht nötig.": "Title page in the browser: link to download the newest Android app. The APK release now also attaches a file with a fixed name; the Android layer is unchanged, no reinstall needed.",
     "Zurück zum Menü": "Back to menu",
@@ -17430,6 +17450,8 @@
   let fahrmodusIdx = -1;
   if ($('race-act-mode')) {
     $('race-act-mode').addEventListener('click', () => {
+      // In einer Challenge ist die Abstimmung festgelegt (72-challenges.js).
+      if (typeof challengeLaeuft === 'function' && challengeLaeuft()) { showHudToast(t('Während der Challenge gesperrt')); return; }
       const keys = window.__presetKeys ? window.__presetKeys() : [];
       if (!keys.length) return;
       // Beim ersten Druck da anfangen, wo die Regler stehen: sonst springt der Knopf von
@@ -28747,6 +28769,8 @@
       if (ms > 60 && ms < 20000) dashTileMs = dashTileMs ? dashTileMs * 0.7 + ms * 0.3 : ms;
     }
     dashTileAt = jetztT;
+    // Challenges: jedes bestaetigte Teil fuer die Rundenpruefung (72-challenges.js).
+    if (typeof challengeTeilGelesen === 'function') challengeTeilGelesen(type);
 
     // Guard 2 applies only to the two codes that trigger something irreversible; the
     // ordinary straight and curve codes may repeat as often as the track says.
@@ -28939,6 +28963,7 @@
       const besteBisher = raceLapTimes.length
         ? Math.min.apply(null, raceLapTimes.map(l => l.ms)) : Infinity;
       raceLapTimes.push({ lap: raceLapTimes.length + 1, ms: rundeMs });
+      if (typeof challengeRundeFertig === 'function') challengeRundeFertig(raceLapTimes.length - 1);
       // Die Ereignisse DIESER Runde festhalten und den Zaehler leeren. Dieselbe Reihenfolge
       // wie raceLapTimes, damit der Index die Rundennummer bleibt.
       raceLapEvents.push({ pit: lapEventAkku.pit, crash: lapEventAkku.crash });
@@ -32473,6 +32498,52 @@
   const CH_STILL_KMH = 1;
   const CH_FRUEHSTART_KMH = 3;     // dieselbe Schwelle wie raceMoveErkannt()
 
+  // ---- GEGEN SCHUMMELN (v0.8.37) --------------------------------------------------------
+  // BESTELLT: "pro Runde pruefen, ob 90 % der Teile korrekt sind (ab und zu gibt es
+  // Fehllesungen). Sperre waehrend der Challenge die Einstellungen. Lege eine plausible
+  // Mindestzeit fest."
+  //
+  // RUNDENPRUEFUNG: Auf der Schiene meldet das Auto jedes ueberfahrene Teil (70-race.js,
+  // nach Bestaetigung und Kachelzaehler). Je Runde werden die gelesenen Teile gegen die
+  // Strecke der Challenge gelegt. Verglichen wird die ART - Gerade, Rechts-, Linksdreher -,
+  // nicht der genaue Code: die Hex-Codes stimmen noch nicht fuer alle Teile, und eine weite
+  // 30-Grad-Kurve, die als 60-Grad-Kurve gelesen wird, ist keine andere Strecke. Masszahl ist
+  // die laengste gemeinsame Folge geteilt durch die groessere der beiden Laengen: ein
+  // fehlendes, ein falsches oder ein zusaetzliches Teil kostet je eines. Eine kuerzere oder
+  // andere Bahn faellt damit heraus, eine einzelne Fehllesung nicht. Faehrt jemand die
+  // Strecke andersherum, gilt dieselbe Strecke gespiegelt und rueckwaerts.
+  const CH_PRUEF_QUOTE = 0.9;
+  // MINDESTZEIT: gemessen faehrt das Auto bei Vollgas etwa 5,9 km/h = 1,64 m/s (30-input.js,
+  // REAL_SCALE, hochgerechnet aus 20 und 40 % Gas). 2,5 m/s liegt rund 50 % darueber und ist
+  // damit auch fuer ein schnelleres Auto kein Hindernis; eine Runde, die schneller waere,
+  // ist keine ganze Runde dieser Strecke. Dieselben Zahlen stehen im Apps Script.
+  const CH_VMAX_MS = 2.5;
+  function chMinRundeMs(def) { return Math.round(trackLaengeM(chTiles(def)) / CH_VMAX_MS * 1000); }
+  function chKlasse(code) {
+    if (!(code in TILE_LABEL)) return 'X';
+    const d = tileTurnDeg(code);
+    return d > 0 ? 'R' : d < 0 ? 'L' : 'G';
+  }
+  function chLcs(a, b) {
+    const m = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+    for (let i = 1; i <= a.length; i++) {
+      for (let j = 1; j <= b.length; j++) {
+        m[i][j] = a[i - 1] === b[j - 1] ? m[i - 1][j - 1] + 1 : Math.max(m[i - 1][j], m[i][j - 1]);
+      }
+    }
+    return m[a.length][b.length];
+  }
+  // gelesen: die Codes einer Runde in Fahrreihenfolge (ohne Start/Ziel).
+  function chRundePruefen(def, gelesen) {
+    const soll = chTiles(def).slice(1).map((x) => chKlasse(x.type));
+    const ist = gelesen.filter((c) => !isStartCode(c) && c !== TILE_OFFTRACK).map(chKlasse);
+    const spiegel = soll.slice().reverse().map((k) => (k === 'R' ? 'L' : k === 'L' ? 'R' : k));
+    const erkannt = Math.max(chLcs(soll, ist), chLcs(spiegel, ist));
+    const quote = erkannt / Math.max(soll.length, ist.length, 1);
+    return { ok: quote >= CH_PRUEF_QUOTE, erkannt, soll: soll.length, gelesen: ist.length, quote };
+  }
+  function chGrundText(w) { return t(w.grund || '').replace('{n}', w.n || ''); }
+
   let chWahl = 'oval', chModus = 'hotlap', chPreset = 'pro';
   let chLauf = null;               // laufende Challenge, siehe challengeStarten()
   let chWaechter = null;
@@ -32518,16 +32589,27 @@
   }
 
   // ---- Wertung, Rang, Verteilung: reine Rechnungen (Selbsttest) ----
-  function chWertung(def, modus, rundenMs, flagge, fruehstart) {
+  // pruefung: je Runde das Ergebnis von chRundePruefen (fehlt es ganz, gilt jede Runde als
+  // geprueft - so rechnen die Tests die reine Zeitwertung). minMs: Mindestrundenzeit.
+  function chWertung(def, modus, rundenMs, flagge, fruehstart, pruefung, minMs, geaendert) {
     if (fruehstart) return { gueltig: false, zeit: null, grund: 'Frühstart' };
+    if (geaendert) return { gueltig: false, zeit: null, grund: 'Einstellungen während der Challenge geändert' };
+    const geprueft = (i) => !pruefung || !!(pruefung[i] && pruefung[i].ok);
+    const schnellGenug = (i) => !minMs || rundenMs[i] >= minMs;
     if (modus === 'rennen') {
       if (!flagge || rundenMs.length < def.runden) {
         return { gueltig: false, zeit: null, grund: 'abgebrochen, nicht alle Runden gefahren' };
       }
+      for (let i = 0; i < def.runden; i++) {
+        if (!geprueft(i)) return { gueltig: false, zeit: null, grund: 'Runde {n}: Strecke nicht erkannt', n: i + 1 };
+        if (!schnellGenug(i)) return { gueltig: false, zeit: null, grund: 'Runde {n} unter der Mindestzeit', n: i + 1 };
+      }
       return { gueltig: true, zeit: rundenMs.slice(0, def.runden).reduce((a, b) => a + b, 0), grund: '' };
     }
     if (!rundenMs.length) return { gueltig: false, zeit: null, grund: 'keine volle Runde' };
-    return { gueltig: true, zeit: Math.min(...rundenMs), grund: '' };
+    const gute = rundenMs.filter((ms, i) => geprueft(i) && schnellGenug(i));
+    if (!gute.length) return { gueltig: false, zeit: null, grund: 'keine gültige Runde: Strecke nicht erkannt oder unter der Mindestzeit' };
+    return { gueltig: true, zeit: Math.min(...gute), grund: '', gezaehlt: gute.length };
   }
   // Anteil der ANDEREN Zeiten, die langsamer sind als `zeit`, in Prozent.
   function chPerzentil(zeiten, zeit) {
@@ -32682,6 +32764,9 @@
     chSetzen('race-pit-required', '0');
     chSetzen('race-fuel-start', FUEL_TANK_LITERS);
     chSetzen('race-flying', false);
+    // Auf der Bahn: nur dort meldet das Auto jedes Teil, und nur dann laesst sich die Runde
+    // gegen die Strecke pruefen.
+    chSetzen('setting-ontrack', true);
     currentTrackTiles = chTiles(def);
     trackRotationDeg = 0;
     trackSel = null;
@@ -32717,8 +32802,11 @@
     }
     const def = chDef(chWahl);
     chLauf = { id: def.id, modus: chModus, preset: chPreset, phase: 'stehen', stillSeit: 0,
-               hinweisAt: 0, fruehstart: false, probe: !playerCar, merk: chMerken() };
+               hinweisAt: 0, fruehstart: false, probe: !playerCar, merk: chMerken(),
+               gelesen: [], pruefung: [], geaendert: false, pruefAt: 0 };
     chAnwenden(def, chModus, chPreset);
+    chLauf.soll = chWachWerte(chPreset);
+    chSperre(true);
     showTab('race');
     showHudToast(t('Auto auf Start/Ziel stellen und anhalten'));
     clearInterval(chWaechter);
@@ -32728,9 +32816,66 @@
   function chTempo() {
     try { return Math.abs(physEngine.state.speedKmh || 0); } catch (e) { return 0; }
   }
+  // Die Werte, die eine Challenge festlegt: das Preset, Steuerungsmodus, Bahn/Ausdruck.
+  function chWachWerte(preset) {
+    const ist = presetRead();
+    const ids = Object.keys((window.__presetValues && window.__presetValues(preset)) || {}).concat(['phys-mode', 'setting-ontrack']);
+    const o = {};
+    ids.forEach((id) => { o[id] = ist[id]; });
+    return o;
+  }
+  // SPERRE: die Regler der Optionen und der Fahrmodus-Knopf im Cockpit sind waehrend einer
+  // Challenge ausgegraut. Was trotzdem aendert (Tastenkuerzel, Konsole), faengt chWachen ab.
+  function chSperre(an) {
+    const els = presetControls();
+    ['phys-mode', 'setting-ontrack'].forEach((id) => { const e = $(id); if (e && els.indexOf(e) < 0) els.push(e); });
+    els.forEach((el) => {
+      if (an) {
+        if (el.dataset.chSperre === undefined) { el.dataset.chSperre = el.disabled ? '1' : '0'; el.disabled = true; }
+      } else if (el.dataset.chSperre !== undefined) {
+        el.disabled = el.dataset.chSperre === '1';
+        delete el.dataset.chSperre;
+      }
+    });
+    if ($('ch-sperre')) $('ch-sperre').hidden = !an;
+    if ($('race-act-mode')) $('race-act-mode').disabled = an;
+  }
+  // Aus 70-race.js: ein bestaetigtes Teil unter dem Auto (Schiene).
+  function challengeTeilGelesen(code) {
+    if (!chLauf) return;
+    if (raceState !== 'racing' && raceState !== 'finishing') { chLauf.gelesen = []; return; }
+    if (!isStartCode(code)) chLauf.gelesen.push(code);
+  }
+  // Aus playerLapCrossed(): Runde i ist gerade gezaehlt worden.
+  function challengeRundeFertig(i) {
+    if (!chLauf) return;
+    const def = chDef(chLauf.id);
+    const pr = chRundePruefen(def, chLauf.gelesen);
+    chLauf.pruefung[i] = pr;
+    chLauf.gelesen = [];
+    const ms = raceLapTimes[i] ? raceLapTimes[i].ms : 0;
+    if (!pr.ok) {
+      showHudToast(t('Runde {n}: {a} von {b} Teilen erkannt, zählt nicht').replace('{n}', i + 1)
+        .replace('{a}', pr.erkannt).replace('{b}', pr.soll));
+    } else if (ms < chMinRundeMs(def)) {
+      showHudToast(t('Runde {n} unter der Mindestzeit, zählt nicht').replace('{n}', i + 1));
+    }
+  }
   function chWachen() {
     if (!chLauf) { clearInterval(chWaechter); chWaechter = null; return; }
     const v = chTempo(), jetzt = Date.now();
+    // Einstellungen geaendert? Zweimal je Sekunde reicht.
+    if (jetzt - chLauf.pruefAt > 500 && chLauf.soll) {
+      chLauf.pruefAt = jetzt;
+      const ist = chWachWerte(chLauf.preset);
+      const anders = Object.keys(chLauf.soll).some((id) => String(ist[id]) !== String(chLauf.soll[id]));
+      if (anders) {
+        chLauf.geaendert = true;
+        showHudToast(t('Einstellungen geändert, Challenge abgebrochen'));
+        if (kRennenLaeuft()) requestRaceStop(); else challengeAbbrechen();
+        return;
+      }
+    }
     if (chLauf.phase === 'stehen') {
       if (v < CH_STILL_KMH) {
         if (!chLauf.stillSeit) chLauf.stillSeit = jetzt;
@@ -32764,6 +32909,7 @@
     const m = chLauf.merk;
     chLauf = null;
     clearInterval(chWaechter); chWaechter = null;
+    chSperre(false);
     chZuruecksetzen(m);
     showHudToast(t('Challenge abgebrochen'));
     chZeichneDetail();
@@ -32777,10 +32923,12 @@
     clearInterval(chWaechter); chWaechter = null;
     const def = chDef(lauf.id);
     const rundenMs = raceLapTimes.map((l) => l.ms);
-    const w = chWertung(def, lauf.modus, rundenMs, flagge, lauf.fruehstart);
+    const w = chWertung(def, lauf.modus, rundenMs, flagge, lauf.fruehstart,
+                        lauf.probe ? null : lauf.pruefung, chMinRundeMs(def), lauf.geaendert);
     if (lauf.probe && w.gueltig) { w.gueltig = false; w.grund = 'Probelauf ohne Auto'; }
     const erg = Object.assign({ id: lauf.id, modus: lauf.modus, preset: lauf.preset, runden: rundenMs,
       auto: playerCar ? garageLabel(playerCar) : '', fahrer: chOnline().fahrer, geraet: chGeraet() }, w);
+    chSperre(false);
     chZuruecksetzen(lauf.merk);
     chLetzt = erg;
     const schl = chSchluessel(erg.id, erg.modus, erg.preset);
@@ -32793,7 +32941,7 @@
       const titel = erg.gueltig
         ? (erg.modus === 'hotlap' ? t('Beste Runde') : t('Gesamtzeit')) + ': ' + chZeit(erg.zeit)
         : t('Nicht gewertet');
-      const text = erg.gueltig ? chRangText(schl, erg.zeit) : t(erg.grund);
+      const text = erg.gueltig ? chRangText(schl, erg.zeit) : chGrundText(erg);
       konsoleFrage(titel, text, [
         [t('Ergebnis ansehen'), () => konsoleZeige('challenges', 'ch-' + erg.id)],
         [t('Nochmal'), () => { chWahl = erg.id; chModus = erg.modus; chPreset = erg.preset; challengeStarten(); }],
@@ -32864,12 +33012,14 @@
     const [bw, bh] = chFlaeche(tiles);
     const m = trackLaengeM(tiles);
     $('ch-fakten').textContent = t('Länge') + ' ' + chZahl(m, 2) + ' m · 1:50 ' + chZahl(m * 50 / 1000, 2) + ' km · '
-      + t('Platzbedarf') + ' ' + chZahl(bw, 2) + ' × ' + chZahl(bh, 2) + ' m · ' + def.sets.map((s) => t(CH_SET_NAME[s])).join(' + ');
+      + t('Platzbedarf') + ' ' + chZahl(bw, 2) + ' × ' + chZahl(bh, 2) + ' m · ' + def.sets.map((s) => t(CH_SET_NAME[s])).join(' + ')
+      + ' · ' + t('Mindestrunde') + ' ' + chZahl(chMinRundeMs(def) / 1000, 2) + ' s';
     document.querySelectorAll('#ch-modus button').forEach((b) => b.classList.toggle('an', b.dataset.m === chModus));
     document.querySelectorAll('#ch-preset button').forEach((b) => b.classList.toggle('an', b.dataset.p === chPreset));
-    $('ch-modus-text').textContent = chModus === 'hotlap'
+    $('ch-modus-text').textContent = (chModus === 'hotlap'
       ? t('So viele Runden du willst, die schnellste zählt. Schluss mit der Rennen-Taste (R1).')
-      : t('{n} Runden ab stehendem Start, die Gesamtzeit zählt.').replace('{n}', def.runden);
+      : t('{n} Runden ab stehendem Start, die Gesamtzeit zählt.').replace('{n}', def.runden))
+      + ' ' + t('Jede Runde wird gegen die Strecke geprüft: mindestens 90 % der Teile müssen erkannt werden. Einstellungen sind gesperrt.');
     // Teile: nur, was unter Strecke > Meine Teile eingetragen ist.
     const bil = teileBilanz(tiles).filter((x) => x.hat !== null);
     const fehlt = bil.filter((x) => x.rest < 0);
@@ -32889,7 +33039,7 @@
       const schl = chSchluessel(chLetzt.id, chLetzt.modus, chLetzt.preset);
       $('ch-erg-titel').textContent = t(CH_MODUS_NAME[chLetzt.modus]) + ' · ' + (chLetzt.preset === 'pro' ? 'Pro' : 'Arcade');
       $('ch-erg-zeit').textContent = chLetzt.gueltig ? chZeit(chLetzt.zeit) : t('Nicht gewertet');
-      $('ch-erg-text').textContent = chLetzt.gueltig ? chRangText(schl, chLetzt.zeit) : t(chLetzt.grund);
+      $('ch-erg-text').textContent = chLetzt.gueltig ? chRangText(schl, chLetzt.zeit) : chGrundText(chLetzt);
     } else e.hidden = true;
     chZeichneListe();
   }
@@ -64920,6 +65070,56 @@
     } finally { trackRotationDeg = merkRot; }
     if (CHALLENGES.length !== 4) f.push(CHALLENGES.length + ' statt 4 Strecken');
     return { ok: !f.length, mass: f.length ? f.join('; ') : zeilen.join(' | ') };
+  });
+
+  stAdd('Challenges: Rundenpruefung (90 % der Teile), Mindestzeit, geaenderte Einstellungen', () => {
+    const f = [];
+    const def = chDef('kehre');                       // SGRRRLHJRRRRG: 12 Teile nach Start
+    const codes = chTiles(def).slice(1).map((x) => x.type);
+    if (!chRundePruefen(def, codes).ok) f.push('exakte Runde nicht erkannt');
+    const eins = codes.slice(); eins.splice(4, 1);
+    const p1 = chRundePruefen(def, eins);
+    if (!p1.ok) f.push('eine Fehllesung (11/12) gilt als falsch, Quote ' + p1.quote.toFixed(2));
+    const zwei = eins.slice(); zwei.splice(7, 1);
+    if (chRundePruefen(def, zwei).ok) f.push('zwei fehlende Teile (10/12) gelten noch als richtig');
+    const kurz = codeToTrack('SRRRGGRRRG').tiles.slice(1).map((x) => x.type);
+    if (chRundePruefen(def, kurz).ok) f.push('eine andere, kuerzere Bahn gilt als richtig');
+    const doppelt = codes.concat(codes);
+    if (chRundePruefen(def, doppelt).ok) f.push('zwei Runden in einer gelten als richtig');
+    const zurueck = codes.slice().reverse().map((c) => (c === TILE_TYPE.CURVE_RIGHT ? TILE_TYPE.CURVE_LEFT
+      : c === TILE_TYPE.CURVE_LEFT ? TILE_TYPE.CURVE_RIGHT : c === TILE_TYPE.HAIRPIN ? TILE_TYPE.HAIRPIN_LEFT
+      : c === TILE_TYPE.HAIRPIN_LEFT ? TILE_TYPE.HAIRPIN : c));
+    if (!chRundePruefen(def, zurueck).ok) f.push('gegen die Richtung gefahren nicht erkannt');
+    const weit = chDef('weitblick');
+    const wc = chTiles(weit).slice(1).map((x) => (x.type === TILE_TYPE.WEIT_RIGHT ? TILE_TYPE.CURVE_RIGHT
+      : x.type === TILE_TYPE.WEIT_LEFT ? TILE_TYPE.CURVE_LEFT : x.type));
+    if (!chRundePruefen(weit, wc).ok) f.push('30-Grad-Kurve als 60-Grad gelesen wird verworfen');
+    const min = chMinRundeMs(def);
+    if (!(min > 2000 && min < 3000)) f.push('Mindestrunde ' + min + ' ms unplausibel');
+    const ok = { ok: true }, nein = { ok: false };
+    const d3 = { runden: 3 };
+    if (chWertung(d3, 'rennen', [5000, 5000, 5000], true, false, [ok, nein, ok], 2000).gueltig) f.push('Rennen mit ungeprueft Runde gewertet');
+    if (chWertung(d3, 'rennen', [5000, 1500, 5000], true, false, [ok, ok, ok], 2000).gueltig) f.push('Rennen mit zu schneller Runde gewertet');
+    const hb = chWertung(d3, 'hotlap', [5000, 1500, 4800, 4000], false, false, [ok, ok, ok, nein], 2000);
+    if (!hb.gueltig || hb.zeit !== 4800) f.push('beste Runde ' + hb.zeit + ' statt 4800 (1500 zu schnell, 4000 ungeprueft)');
+    if (chWertung(d3, 'hotlap', [5000], false, false, [ok], 2000, true).gueltig) f.push('geaenderte Einstellungen gewertet');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'exakt/1 Fehler ok, 2 Fehler/kuerzer/doppelt nein, rueckwaerts und 30->60 ok, Mindestrunde ' + min + ' ms' };
+  });
+
+  stAdd('Challenges: Einstellungen waehrend des Laufs gesperrt und danach frei', () => {
+    const f = [];
+    const pm = $('phys-mode'), fm = $('race-act-mode');
+    const vorher = [pm.disabled, fm ? fm.disabled : null];
+    try {
+      chSperre(true);
+      if (!pm.disabled) f.push('Steuerungsmodus nicht gesperrt');
+      if (fm && !fm.disabled) f.push('Fahrmodus-Knopf im Cockpit nicht gesperrt');
+      if ($('ch-sperre').hidden) f.push('kein Hinweis in den Optionen');
+      if (presetControls().some((el) => !el.disabled)) f.push('nicht alle Regler gesperrt');
+    } finally { chSperre(false); }
+    if (pm.disabled !== vorher[0] || (fm && fm.disabled !== vorher[1])) f.push('danach nicht wieder frei');
+    if (!$('ch-sperre').hidden) f.push('Hinweis bleibt stehen');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : presetControls().length + ' Regler gesperrt und wieder frei' };
   });
 
   stAdd('Challenges: Wertung, Perzentil und Histogramm', () => {

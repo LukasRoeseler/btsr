@@ -33,7 +33,16 @@
 
 const BLATT = 'Zeiten';
 const KOPF = ['zeitpunkt', 'challenge', 'modus', 'preset', 'zeit_ms', 'runden_ms', 'auto', 'fahrer', 'geraet', 'version'];
-const CHALLENGES = { oval: 10, schlange: 8, kehre: 8, weitblick: 8 };   // id -> Runden im Rennen
+// id -> Runden im Rennen und Mindestrundenzeit in ms. Die App rechnet Streckenlaenge geteilt
+// durch 2,5 m/s - rund 50 % ueber dem gemessenen Hoechsttempo der Autos (1,64 m/s) - und
+// verwirft schnellere Runden selbst (72-challenges.js, chMinRundeMs). Hier stehen die Werte
+// um gut 2 % darunter, damit das Sheet nie eine Runde ablehnt, die die App knapp zaehlt.
+const CHALLENGES = {
+  oval: { runden: 10, min: 2050 },
+  schlange: { runden: 8, min: 2350 },
+  kehre: { runden: 8, min: 2340 },
+  weitblick: { runden: 8, min: 2160 },
+};
 const MODI = ['hotlap', 'rennen'];
 const PRESETS = ['pro', 'arcade'];
 const MAX_ZEILEN_ANTWORT = 500;
@@ -79,13 +88,15 @@ function pruefen(d) {
   if (!d || !(d.challenge in CHALLENGES)) return 'unbekannte Challenge';
   if (MODI.indexOf(d.modus) < 0) return 'unbekannter Modus';
   if (PRESETS.indexOf(d.preset) < 0) return 'unbekanntes Preset';
+  const c = CHALLENGES[d.challenge];
   const z = Number(d.zeit_ms);
-  if (!isFinite(z) || z < 1500 || z > 3600000) return 'Zeit unplausibel';
+  if (!isFinite(z) || z < c.min || z > 3600000) return 'Zeit unplausibel';
   const r = Array.isArray(d.runden_ms) ? d.runden_ms.map(Number) : [];
-  if (r.some((x) => !isFinite(x) || x < 1500)) return 'Rundenzeit unplausibel';
+  if (r.some((x) => !isFinite(x))) return 'Rundenzeit unplausibel';
   if (d.modus === 'rennen') {
-    if (r.length < CHALLENGES[d.challenge]) return 'Rundenzahl stimmt nicht';
-    const summe = r.slice(0, CHALLENGES[d.challenge]).reduce((a, b) => a + b, 0);
+    if (r.length < c.runden) return 'Rundenzahl stimmt nicht';
+    if (r.slice(0, c.runden).some((x) => x < c.min)) return 'Runde unter der Mindestzeit';
+    const summe = r.slice(0, c.runden).reduce((a, b) => a + b, 0);
     if (Math.abs(summe - z) > 50) return 'Gesamtzeit passt nicht zu den Runden';
   } else if (r.length && Math.abs(Math.min.apply(null, r) - z) > 50) {
     return 'beste Runde passt nicht zu den Runden';

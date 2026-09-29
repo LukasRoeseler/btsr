@@ -10358,6 +10358,56 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : zeilen.join(' | ') };
   });
 
+  stAdd('Challenges: Rundenpruefung (90 % der Teile), Mindestzeit, geaenderte Einstellungen', () => {
+    const f = [];
+    const def = chDef('kehre');                       // SGRRRLHJRRRRG: 12 Teile nach Start
+    const codes = chTiles(def).slice(1).map((x) => x.type);
+    if (!chRundePruefen(def, codes).ok) f.push('exakte Runde nicht erkannt');
+    const eins = codes.slice(); eins.splice(4, 1);
+    const p1 = chRundePruefen(def, eins);
+    if (!p1.ok) f.push('eine Fehllesung (11/12) gilt als falsch, Quote ' + p1.quote.toFixed(2));
+    const zwei = eins.slice(); zwei.splice(7, 1);
+    if (chRundePruefen(def, zwei).ok) f.push('zwei fehlende Teile (10/12) gelten noch als richtig');
+    const kurz = codeToTrack('SRRRGGRRRG').tiles.slice(1).map((x) => x.type);
+    if (chRundePruefen(def, kurz).ok) f.push('eine andere, kuerzere Bahn gilt als richtig');
+    const doppelt = codes.concat(codes);
+    if (chRundePruefen(def, doppelt).ok) f.push('zwei Runden in einer gelten als richtig');
+    const zurueck = codes.slice().reverse().map((c) => (c === TILE_TYPE.CURVE_RIGHT ? TILE_TYPE.CURVE_LEFT
+      : c === TILE_TYPE.CURVE_LEFT ? TILE_TYPE.CURVE_RIGHT : c === TILE_TYPE.HAIRPIN ? TILE_TYPE.HAIRPIN_LEFT
+      : c === TILE_TYPE.HAIRPIN_LEFT ? TILE_TYPE.HAIRPIN : c));
+    if (!chRundePruefen(def, zurueck).ok) f.push('gegen die Richtung gefahren nicht erkannt');
+    const weit = chDef('weitblick');
+    const wc = chTiles(weit).slice(1).map((x) => (x.type === TILE_TYPE.WEIT_RIGHT ? TILE_TYPE.CURVE_RIGHT
+      : x.type === TILE_TYPE.WEIT_LEFT ? TILE_TYPE.CURVE_LEFT : x.type));
+    if (!chRundePruefen(weit, wc).ok) f.push('30-Grad-Kurve als 60-Grad gelesen wird verworfen');
+    const min = chMinRundeMs(def);
+    if (!(min > 2000 && min < 3000)) f.push('Mindestrunde ' + min + ' ms unplausibel');
+    const ok = { ok: true }, nein = { ok: false };
+    const d3 = { runden: 3 };
+    if (chWertung(d3, 'rennen', [5000, 5000, 5000], true, false, [ok, nein, ok], 2000).gueltig) f.push('Rennen mit ungeprueft Runde gewertet');
+    if (chWertung(d3, 'rennen', [5000, 1500, 5000], true, false, [ok, ok, ok], 2000).gueltig) f.push('Rennen mit zu schneller Runde gewertet');
+    const hb = chWertung(d3, 'hotlap', [5000, 1500, 4800, 4000], false, false, [ok, ok, ok, nein], 2000);
+    if (!hb.gueltig || hb.zeit !== 4800) f.push('beste Runde ' + hb.zeit + ' statt 4800 (1500 zu schnell, 4000 ungeprueft)');
+    if (chWertung(d3, 'hotlap', [5000], false, false, [ok], 2000, true).gueltig) f.push('geaenderte Einstellungen gewertet');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'exakt/1 Fehler ok, 2 Fehler/kuerzer/doppelt nein, rueckwaerts und 30->60 ok, Mindestrunde ' + min + ' ms' };
+  });
+
+  stAdd('Challenges: Einstellungen waehrend des Laufs gesperrt und danach frei', () => {
+    const f = [];
+    const pm = $('phys-mode'), fm = $('race-act-mode');
+    const vorher = [pm.disabled, fm ? fm.disabled : null];
+    try {
+      chSperre(true);
+      if (!pm.disabled) f.push('Steuerungsmodus nicht gesperrt');
+      if (fm && !fm.disabled) f.push('Fahrmodus-Knopf im Cockpit nicht gesperrt');
+      if ($('ch-sperre').hidden) f.push('kein Hinweis in den Optionen');
+      if (presetControls().some((el) => !el.disabled)) f.push('nicht alle Regler gesperrt');
+    } finally { chSperre(false); }
+    if (pm.disabled !== vorher[0] || (fm && fm.disabled !== vorher[1])) f.push('danach nicht wieder frei');
+    if (!$('ch-sperre').hidden) f.push('Hinweis bleibt stehen');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : presetControls().length + ' Regler gesperrt und wieder frei' };
+  });
+
   stAdd('Challenges: Wertung, Perzentil und Histogramm', () => {
     const f = [];
     const def = { runden: 3 };

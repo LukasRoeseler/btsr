@@ -2025,6 +2025,8 @@
       if (ms > 60 && ms < 20000) dashTileMs = dashTileMs ? dashTileMs * 0.7 + ms * 0.3 : ms;
     }
     dashTileAt = jetztT;
+    // Challenges: jedes bestaetigte Teil fuer die Rundenpruefung (72-challenges.js).
+    if (typeof challengeTeilGelesen === 'function') challengeTeilGelesen(type);
 
     // Guard 2 applies only to the two codes that trigger something irreversible; the
     // ordinary straight and curve codes may repeat as often as the track says.
@@ -2217,6 +2219,7 @@
       const besteBisher = raceLapTimes.length
         ? Math.min.apply(null, raceLapTimes.map(l => l.ms)) : Infinity;
       raceLapTimes.push({ lap: raceLapTimes.length + 1, ms: rundeMs });
+      if (typeof challengeRundeFertig === 'function') challengeRundeFertig(raceLapTimes.length - 1);
       // Die Ereignisse DIESER Runde festhalten und den Zaehler leeren. Dieselbe Reihenfolge
       // wie raceLapTimes, damit der Index die Rundennummer bleibt.
       raceLapEvents.push({ pit: lapEventAkku.pit, crash: lapEventAkku.crash });

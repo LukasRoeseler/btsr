@@ -93,6 +93,8 @@
   let fahrmodusIdx = -1;
   if ($('race-act-mode')) {
     $('race-act-mode').addEventListener('click', () => {
+      // In einer Challenge ist die Abstimmung festgelegt (72-challenges.js).
+      if (typeof challengeLaeuft === 'function' && challengeLaeuft()) { showHudToast(t('Während der Challenge gesperrt')); return; }
       const keys = window.__presetKeys ? window.__presetKeys() : [];
       if (!keys.length) return;
       // Beim ersten Druck da anfangen, wo die Regler stehen: sonst springt der Knopf von
