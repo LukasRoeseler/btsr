@@ -2397,16 +2397,19 @@
   .k-kachel[data-quad] .k-kt::before { margin-right: 6px; font-size: .7em; }
   .k-kachel[data-quad] .k-kt::after { margin-left: 6px; font-size: .7em; }
   /* Kopf halb so hoch: Reiter, Logo und Innenabstand. Info bleibt ein Reiter. */
-  header#k-kopf { padding-top: max(1px, env(safe-area-inset-top)); padding-bottom: 1px; row-gap: 0; }
-  #k-kopf .hdr-logo { padding: 0 4px; }
-  #k-kopf .hdr-logo svg { width: 14px; height: 14px; }
-  #k-leiste .k-reiter button { padding: 0 6px; font-size: clamp(9.5px, 1.7vh, 12px); line-height: 1.35; }
-  .k-status { font-size: 10.5px; }
+  /* NOCH EINMAL HALBIERT (v0.8.27). BESTELLT: "Die zwei Tab-Leisten noch flacher machen (50%
+     der aktuellen Groesse), sonst ist der Bildschirm zu klein fuer die wichtigen Inhalte."
+     Vorher bei 800 x 370: Kopf 17 px, mit zweiter Leiste 32 px. */
+  header#k-kopf { padding-top: env(safe-area-inset-top); padding-bottom: 0; gap: 0 8px; }
+  #k-kopf .hdr-logo { padding: 0 3px; min-height: 0; }
+  #k-kopf .hdr-logo svg { width: 9px; height: 9px; }
+  #k-leiste .k-reiter button { padding: 0 5px; font-size: clamp(7.5px, 1.25vh, 10px); line-height: 1.1; min-height: 0; }
+  .k-status { font-size: 8px; line-height: 1.1; }
   /* Zweite Ebene: flach, ohne Schraege, der aktive Reiter nur unterstrichen. */
-  .k-leiste2 { margin-top: 1px; }
+  .k-leiste2 { margin-top: 0; }
   .k-leiste2 .k-reiter { background: transparent; }
-  .k-leiste2 .k-reiter button { padding: 0 6px; font-size: clamp(9px, 1.5vh, 11.5px); line-height: 1.35;
-    clip-path: none; border-bottom: 2px solid transparent; letter-spacing: .06em; }
+  .k-leiste2 .k-reiter button { padding: 0 5px; font-size: clamp(7px, 1.15vh, 9.5px); line-height: 1.05;
+    clip-path: none; border-bottom: 1px solid transparent; letter-spacing: .05em; min-height: 0; }
   .k-leiste2 .k-reiter button.an, .k-leiste2 .k-reiter button.an:hover { background: transparent; color: #fff; border-bottom-color: var(--k-blau); }
   /* Offene Unterseite mit zweiter Leiste: die Ueberschrift steht dort schon, der
      Zurueck-Knopf wird eine knappe Zeile. */
@@ -2465,6 +2468,10 @@
     aspect-ratio: 4 / 3; background: #161a24; border: 2px solid var(--k-blau); font-size: clamp(22px, 7vh, 46px);
     font-weight: 900; color: #fff; letter-spacing: .04em; text-align: center; line-height: 1.05; padding: 4px; }
   .k-tour-taste[hidden] { display: none; }
+  .k-tour-taste.gedrueckt { border-color: var(--good); box-shadow: 0 0 0 2px var(--good); }
+  .k-tour-live { grid-column: 2; font-size: 12px; color: var(--k-dim); letter-spacing: .06em; }
+  .k-tour-live.treffer { color: var(--good); font-weight: 800; }
+  .k-tour-live[hidden] { display: none; }
   /* Daneben: schmaler, senkrecht mittig, am freien Rand. */
   .k-tour-karte.links, .k-tour-karte.rechts { top: calc(50% + 10px); transform: translateY(-50%); width: min(46vw, 400px);
     grid-template-columns: minmax(0, 1fr); }
@@ -3644,7 +3651,8 @@
      Reiterleiste fuer L1/R1. Die alte Reiterleiste nav.tabs bleibt im DOM, verborgen:
      showTab() klickt genau diese Knoepfe, und viele Stellen rufen showTab(). -->
 <header id="k-kopf">
-  <button class="hdr-logo goto-tab" data-tab="fahren" title="Fahren" aria-label="Fahren">
+  <!-- BESTELLT: "Per Klick auf das Omega oben links ... zurueck zum Startbildschirm". -->
+  <button class="hdr-logo goto-tab" data-tab="home" title="Zum Startbildschirm" aria-label="Zum Startbildschirm">
     <svg viewBox="0 0 512 512" aria-hidden="true"><use href="#om"/></svg>
   </button>
   <!-- BESTELLT: "Tabs nach ganz oben und 'Hauptmenü' Zurückpfeil wegtun ... Oben links nur
@@ -3668,7 +3676,8 @@
        Entwickler/Selbsttest/Code-Sonde ueber Entwicklertools. -->
   <button class="tab-btn" data-tab="control" data-parent="options" hidden style="display:none">Renneinstellungen</button>
   <button class="tab-btn" data-tab="mp">Mehrspieler</button>
-  <button class="tab-btn" data-tab="info">Info</button>
+  <button class="tab-btn" data-tab="info" data-parent="options" hidden style="display:none">Info</button>
+  <button class="tab-btn" data-tab="challenges">Challenges</button>
   <button class="tab-btn" data-tab="misc">Entwicklertools</button>
   <!-- Nicht in der Leiste, aber weiter als Tab-Knopf vorhanden: showTab() sucht genau
        diese Knoepfe, und die drei Kacheln unter "Sonstige" rufen showTab() auf. Ein
@@ -3742,7 +3751,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.26</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.27</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4402,6 +4411,17 @@
        Fliesstext, und die Sprachtests nehmen tab-doc ausdruecklich aus. Ein Reiter
        mit halb uebersetztem Fliesstext waere schlechter als einer mit einem
        ehrlichen Hinweis darauf, dass er nur deutsch vorliegt. -->
+  <!-- CHALLENGES (WIP). BESTELLT: "Mach einen Plan und Mock-Up fuer einen neuen
+       Challenges-Modus". Bis zur Umsetzung steht hier, was kommt, und der Weg zum Mock-up. -->
+  <section class="tabpage" id="tab-challenges">
+    <div class="card">
+      <h2>Challenges <span class="wip-tag">WIP</span></h2>
+      <p class="muted">Feste Strecken zum Nachbauen, je zwei Presets (Pro und Arcade) und eine feste Rundenzahl.
+        Stehendes Auto, Ampel, los. Deine Zeit kommt in eine gemeinsame Bestenliste.</p>
+      <p><a href="mockup/challenges.html" target="_blank" rel="noopener">Mock-up ansehen</a></p>
+    </div>
+  </section>
+
   <section class="tabpage" id="tab-info">
     <!-- BESTELLT: "die abschnitte unter Info als eigene Kacheln wie bei den Optionen und
          Entwicklertools. (Wozu, danksagungen, und neu: patchnotes)." Dasselbe
@@ -4652,6 +4672,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Kopfzeile nochmals flacher, Omega oben links f&uuml;hrt zum Startbildschirm, Info unter Optionen, neuer Reiter Challenges (WIP). Tutorial-Texte k&uuml;rzer; Steuerung l&auml;uft auf dem Cockpit, zeigt gedr&uuml;ckte Tasten und f&auml;hrt dabei nicht. Neue Stimmungsbilder (KI) f&uuml;r Titel, Rennoptionen, Start, Strecke, Optionen, Info und Challenges.</li>
         <li>Garage als Karten mit eigenem Foto je Auto (sonst seine Farbe), Rolle mit &#9664; &#9654;, Einstellen klappt Farbe, Tempo und Charakter auf; ein Knopf startet und h&auml;lt die Ghosts. Titel: &#10005; startet, &#9651; Tutorial, &#9675; neue F&uuml;hrung &bdquo;Steuerung&ldquo; bis zur Controller-Belegung. Minigame: Fenster 0,1 s l&auml;nger, falsche Taste kostet Zeit. Freies Training zeigt &infin;. Mehrspieler-App wie Vorschlag A. App: Status- und Navigationsleiste werden zuverl&auml;ssiger ausgeblendet.</li>
         <li>Tutorial auf dem Titelbildschirm (experimentell): f&uuml;hrt in neun Schritten &uuml;ber die echten Schirme, mit Controller, Tastatur oder Finger.</li>
         <li>Boxen-Minigame (experimentell, ab Werk an, unter Optionen &gt; Allgemein &gt; Tank &amp; Schaden): alles wird gewechselt, losfahren erst am Ende, zehn Tasten &#9633;/&#9675; in der Mitte k&uuml;rzen den Stopp bis auf die H&auml;lfte.</li>
@@ -7775,6 +7796,13 @@
           <b>2&nbsp;Spieler</b>
           <span>Zwei Autos, zwei Controller, beide Drehzahlen im Cockpit. Im Aufbau.</span>
         </button>
+        <!-- Info: eine Ebene tiefer als vorher (v0.8.27). -->
+        <button class="misc-tile goto-tab" data-tab="info">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="24" r="17"/><path d="M24 22v11" stroke="var(--bad)"/><circle cx="24" cy="15.5" r="1.4" fill="currentColor"/></svg>
+          <b>Info</b>
+          <span>Wozu, Funktionen, Danksagungen, Patchnotes, Rechtliches.</span>
+        </button>
       </div>
     </div>
     <div class="card subpage" id="sub-opt-general">
@@ -10225,6 +10253,7 @@
     <div class="k-tour-karte unten" id="k-tour-karte">
       <img id="k-tour-bild" alt="">
       <span class="k-tour-taste" id="k-tour-taste" hidden data-i18n-skip></span>
+      <span class="k-tour-live" id="k-tour-live" hidden></span>
       <div class="k-tour-inhalt">
         <div class="k-tour-schritt" id="k-tour-schritt" data-i18n-skip></div>
         <h2 id="k-tour-titel"></h2>

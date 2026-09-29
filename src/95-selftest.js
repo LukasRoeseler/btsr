@@ -10210,6 +10210,30 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Karte mit Farbbild, Rolle mit Pfeil, Foto, Aufklappzeile, Ghost-Knopf auf Starten' };
   });
 
+  stAdd('Steuerung: läuft auf dem Cockpit, zeigt gedrückte Tasten, fährt dabei nicht', () => {
+    const merk = kAktiverTab();
+    const f = [];
+    const knopf = () => ({ pressed: false, touched: false, value: 0 });
+    const pad = { axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, knopf) };
+    const druck = (i) => { pad.buttons[i] = { pressed: true, touched: true, value: 1 }; const r = konsoleTourPad(pad); pad.buttons[i] = knopf(); konsoleTourPad(pad); return r; };
+    try {
+      konsoleTourStart(K_STEUERUNG);
+      if (kAktiverTab() !== 'race') f.push('Hintergrund ist ' + kAktiverTab() + ' statt Cockpit');
+      konsoleTourPad(pad);
+      if (!druck(15) || kTourSchritt !== 1) f.push('Steuerkreuz rechts blaettert nicht (Schritt ' + kTourSchritt + ')');
+      if (!druck(7)) f.push('R2 wird nicht verbraucht (wuerde fahren)');
+      if (!/R2/.test($('k-tour-live').textContent) || !$('k-tour-live').classList.contains('treffer')) f.push('R2 nicht als Treffer angezeigt: ' + $('k-tour-live').textContent);
+      druck(0);
+      if (!/✕/.test($('k-tour-live').textContent) || $('k-tour-live').classList.contains('treffer')) f.push('Kreuz im Gas-Schritt falsch angezeigt');
+      druck(14);
+      if (kTourSchritt !== 0) f.push('Steuerkreuz links blaettert nicht zurueck');
+    } finally {
+      if (konsoleTourOffen()) konsoleTourZu(false);
+      if (merk) showTab(merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Cockpit im Hintergrund, R2 erkannt, Kreuz als andere Taste, blaettern mit dem Steuerkreuz' };
+  });
+
   stAdd('ACC-Menü: Motorsound-Kachel blättert die Motoren, Quadrat', () => {
     const s2 = $('sound-profile');
     if (!s2 || !$('fa-motor')) return { ok: false, mass: 'Kachel oder Auswahl fehlt' };

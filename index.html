@@ -2397,16 +2397,19 @@
   .k-kachel[data-quad] .k-kt::before { margin-right: 6px; font-size: .7em; }
   .k-kachel[data-quad] .k-kt::after { margin-left: 6px; font-size: .7em; }
   /* Kopf halb so hoch: Reiter, Logo und Innenabstand. Info bleibt ein Reiter. */
-  header#k-kopf { padding-top: max(1px, env(safe-area-inset-top)); padding-bottom: 1px; row-gap: 0; }
-  #k-kopf .hdr-logo { padding: 0 4px; }
-  #k-kopf .hdr-logo svg { width: 14px; height: 14px; }
-  #k-leiste .k-reiter button { padding: 0 6px; font-size: clamp(9.5px, 1.7vh, 12px); line-height: 1.35; }
-  .k-status { font-size: 10.5px; }
+  /* NOCH EINMAL HALBIERT (v0.8.27). BESTELLT: "Die zwei Tab-Leisten noch flacher machen (50%
+     der aktuellen Groesse), sonst ist der Bildschirm zu klein fuer die wichtigen Inhalte."
+     Vorher bei 800 x 370: Kopf 17 px, mit zweiter Leiste 32 px. */
+  header#k-kopf { padding-top: env(safe-area-inset-top); padding-bottom: 0; gap: 0 8px; }
+  #k-kopf .hdr-logo { padding: 0 3px; min-height: 0; }
+  #k-kopf .hdr-logo svg { width: 9px; height: 9px; }
+  #k-leiste .k-reiter button { padding: 0 5px; font-size: clamp(7.5px, 1.25vh, 10px); line-height: 1.1; min-height: 0; }
+  .k-status { font-size: 8px; line-height: 1.1; }
   /* Zweite Ebene: flach, ohne Schraege, der aktive Reiter nur unterstrichen. */
-  .k-leiste2 { margin-top: 1px; }
+  .k-leiste2 { margin-top: 0; }
   .k-leiste2 .k-reiter { background: transparent; }
-  .k-leiste2 .k-reiter button { padding: 0 6px; font-size: clamp(9px, 1.5vh, 11.5px); line-height: 1.35;
-    clip-path: none; border-bottom: 2px solid transparent; letter-spacing: .06em; }
+  .k-leiste2 .k-reiter button { padding: 0 5px; font-size: clamp(7px, 1.15vh, 9.5px); line-height: 1.05;
+    clip-path: none; border-bottom: 1px solid transparent; letter-spacing: .05em; min-height: 0; }
   .k-leiste2 .k-reiter button.an, .k-leiste2 .k-reiter button.an:hover { background: transparent; color: #fff; border-bottom-color: var(--k-blau); }
   /* Offene Unterseite mit zweiter Leiste: die Ueberschrift steht dort schon, der
      Zurueck-Knopf wird eine knappe Zeile. */
@@ -2465,6 +2468,10 @@
     aspect-ratio: 4 / 3; background: #161a24; border: 2px solid var(--k-blau); font-size: clamp(22px, 7vh, 46px);
     font-weight: 900; color: #fff; letter-spacing: .04em; text-align: center; line-height: 1.05; padding: 4px; }
   .k-tour-taste[hidden] { display: none; }
+  .k-tour-taste.gedrueckt { border-color: var(--good); box-shadow: 0 0 0 2px var(--good); }
+  .k-tour-live { grid-column: 2; font-size: 12px; color: var(--k-dim); letter-spacing: .06em; }
+  .k-tour-live.treffer { color: var(--good); font-weight: 800; }
+  .k-tour-live[hidden] { display: none; }
   /* Daneben: schmaler, senkrecht mittig, am freien Rand. */
   .k-tour-karte.links, .k-tour-karte.rechts { top: calc(50% + 10px); transform: translateY(-50%); width: min(46vw, 400px);
     grid-template-columns: minmax(0, 1fr); }
@@ -3644,7 +3651,8 @@
      Reiterleiste fuer L1/R1. Die alte Reiterleiste nav.tabs bleibt im DOM, verborgen:
      showTab() klickt genau diese Knoepfe, und viele Stellen rufen showTab(). -->
 <header id="k-kopf">
-  <button class="hdr-logo goto-tab" data-tab="fahren" title="Fahren" aria-label="Fahren">
+  <!-- BESTELLT: "Per Klick auf das Omega oben links ... zurueck zum Startbildschirm". -->
+  <button class="hdr-logo goto-tab" data-tab="home" title="Zum Startbildschirm" aria-label="Zum Startbildschirm">
     <svg viewBox="0 0 512 512" aria-hidden="true"><use href="#om"/></svg>
   </button>
   <!-- BESTELLT: "Tabs nach ganz oben und 'Hauptmenü' Zurückpfeil wegtun ... Oben links nur
@@ -3668,7 +3676,8 @@
        Entwickler/Selbsttest/Code-Sonde ueber Entwicklertools. -->
   <button class="tab-btn" data-tab="control" data-parent="options" hidden style="display:none">Renneinstellungen</button>
   <button class="tab-btn" data-tab="mp">Mehrspieler</button>
-  <button class="tab-btn" data-tab="info">Info</button>
+  <button class="tab-btn" data-tab="info" data-parent="options" hidden style="display:none">Info</button>
+  <button class="tab-btn" data-tab="challenges">Challenges</button>
   <button class="tab-btn" data-tab="misc">Entwicklertools</button>
   <!-- Nicht in der Leiste, aber weiter als Tab-Knopf vorhanden: showTab() sucht genau
        diese Knoepfe, und die drei Kacheln unter "Sonstige" rufen showTab() auf. Ein
@@ -3742,7 +3751,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.26</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.27</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4402,6 +4411,17 @@
        Fliesstext, und die Sprachtests nehmen tab-doc ausdruecklich aus. Ein Reiter
        mit halb uebersetztem Fliesstext waere schlechter als einer mit einem
        ehrlichen Hinweis darauf, dass er nur deutsch vorliegt. -->
+  <!-- CHALLENGES (WIP). BESTELLT: "Mach einen Plan und Mock-Up fuer einen neuen
+       Challenges-Modus". Bis zur Umsetzung steht hier, was kommt, und der Weg zum Mock-up. -->
+  <section class="tabpage" id="tab-challenges">
+    <div class="card">
+      <h2>Challenges <span class="wip-tag">WIP</span></h2>
+      <p class="muted">Feste Strecken zum Nachbauen, je zwei Presets (Pro und Arcade) und eine feste Rundenzahl.
+        Stehendes Auto, Ampel, los. Deine Zeit kommt in eine gemeinsame Bestenliste.</p>
+      <p><a href="mockup/challenges.html" target="_blank" rel="noopener">Mock-up ansehen</a></p>
+    </div>
+  </section>
+
   <section class="tabpage" id="tab-info">
     <!-- BESTELLT: "die abschnitte unter Info als eigene Kacheln wie bei den Optionen und
          Entwicklertools. (Wozu, danksagungen, und neu: patchnotes)." Dasselbe
@@ -4652,6 +4672,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Kopfzeile nochmals flacher, Omega oben links f&uuml;hrt zum Startbildschirm, Info unter Optionen, neuer Reiter Challenges (WIP). Tutorial-Texte k&uuml;rzer; Steuerung l&auml;uft auf dem Cockpit, zeigt gedr&uuml;ckte Tasten und f&auml;hrt dabei nicht. Neue Stimmungsbilder (KI) f&uuml;r Titel, Rennoptionen, Start, Strecke, Optionen, Info und Challenges.</li>
         <li>Garage als Karten mit eigenem Foto je Auto (sonst seine Farbe), Rolle mit &#9664; &#9654;, Einstellen klappt Farbe, Tempo und Charakter auf; ein Knopf startet und h&auml;lt die Ghosts. Titel: &#10005; startet, &#9651; Tutorial, &#9675; neue F&uuml;hrung &bdquo;Steuerung&ldquo; bis zur Controller-Belegung. Minigame: Fenster 0,1 s l&auml;nger, falsche Taste kostet Zeit. Freies Training zeigt &infin;. Mehrspieler-App wie Vorschlag A. App: Status- und Navigationsleiste werden zuverl&auml;ssiger ausgeblendet.</li>
         <li>Tutorial auf dem Titelbildschirm (experimentell): f&uuml;hrt in neun Schritten &uuml;ber die echten Schirme, mit Controller, Tastatur oder Finger.</li>
         <li>Boxen-Minigame (experimentell, ab Werk an, unter Optionen &gt; Allgemein &gt; Tank &amp; Schaden): alles wird gewechselt, losfahren erst am Ende, zehn Tasten &#9633;/&#9675; in der Mitte k&uuml;rzen den Stopp bis auf die H&auml;lfte.</li>
@@ -7775,6 +7796,13 @@
           <b>2&nbsp;Spieler</b>
           <span>Zwei Autos, zwei Controller, beide Drehzahlen im Cockpit. Im Aufbau.</span>
         </button>
+        <!-- Info: eine Ebene tiefer als vorher (v0.8.27). -->
+        <button class="misc-tile goto-tab" data-tab="info">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="24" r="17"/><path d="M24 22v11" stroke="var(--bad)"/><circle cx="24" cy="15.5" r="1.4" fill="currentColor"/></svg>
+          <b>Info</b>
+          <span>Wozu, Funktionen, Danksagungen, Patchnotes, Rechtliches.</span>
+        </button>
       </div>
     </div>
     <div class="card subpage" id="sub-opt-general">
@@ -10225,6 +10253,7 @@
     <div class="k-tour-karte unten" id="k-tour-karte">
       <img id="k-tour-bild" alt="">
       <span class="k-tour-taste" id="k-tour-taste" hidden data-i18n-skip></span>
+      <span class="k-tour-live" id="k-tour-live" hidden></span>
       <div class="k-tour-inhalt">
         <div class="k-tour-schritt" id="k-tour-schritt" data-i18n-skip></div>
         <h2 id="k-tour-titel"></h2>
@@ -11294,6 +11323,42 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Kopfzeile nochmals flacher, Omega oben links führt zum Startbildschirm, Info unter Optionen, neuer Reiter Challenges (WIP). Tutorial-Texte kürzer; Steuerung läuft auf dem Cockpit, zeigt gedrückte Tasten und fährt dabei nicht. Neue Stimmungsbilder (KI) für Titel, Rennoptionen, Start, Strecke, Optionen, Info und Challenges.": "Header even flatter, the omega at the top left leads to the title screen, Info under Options, new Challenges tab (WIP). Shorter tutorial texts; the controls guide runs on the cockpit, shows pressed buttons and does not drive meanwhile. New mood pictures (AI) for title, race options, start, track, options, info and challenges.",
+    "OmegaSim steuert deine Carrera-Hybrid-Autos per Bluetooth. Mit echter Fahrphysik, simuliertem Motorsound und einem Cockpit wie im Rennsimulator.": "OmegaSim drives your Carrera Hybrid cars over Bluetooth. With real driving physics, simulated engine sound and a cockpit like a racing sim.",
+    "Verbinde hier dein Auto. Das erste steuerst du selbst, jedes weitere fährt als Ghost gegen dich. Namen, Farben und Fotos stellst du in der Garage ein.": "Connect your car here. You drive the first one yourself, every other one races you as a ghost. Names, colours and photos are set in the garage.",
+    "Auf der Bahn liest das Auto die Schiene. Scanne deine Strecke oder bau sie im Editor nach. Ohne Bahn druckst du Vorlagen aus.": "On the rail the car reads the track. Scan your layout or rebuild it in the editor. Without a rail you print templates.",
+    "Training, Qualifying, Rennen oder Endurance. Dazu Wetter, Pflichtstopps, Tank und Reifenverschleiß.": "Practice, qualifying, race or endurance. Plus weather, mandatory stops, fuel and tyre wear.",
+    "Links die Abstimmung, rechts der Motor. Jeder Klang kommt aus einer Motorsimulation.": "Setup on the left, engine on the right. Every sound comes from an engine simulation.",
+    "Ein Druck startet die Ampel. Im Cockpit fordert Kreuz den Boxenstopp an, Options öffnet das Menü.": "One press starts the lights. In the cockpit cross requests a pit stop, Options opens the menu.",
+    "Beim Stopp erscheinen zehn Tasten. Triffst du Quadrat oder Kreis rechtzeitig, ist die Crew schneller fertig. Abschalten kannst du es unter Optionen, Allgemein, Tank & Schaden.": "During the stop ten buttons appear. Hit square or circle in time and the crew is done sooner. You can switch it off under Options, General, Fuel & damage.",
+    "Mehrere Telefone fahren in einer gemeinsamen Rangliste. Ein Tablet zeigt als Info-Screen Strecke und Zeiten.": "Several phones race in one shared leaderboard. A tablet shows the track and times as an info screen.",
+    "Verbinde jetzt dein erstes Auto. Zum Tutorial kommst du jederzeit zurück: Klick auf das Omega oben links.": "Connect your first car now. You can get back to the tutorial any time: click the omega at the top left.",
+    "Diese Führung gilt nur mit Gamepad (PS5, PS4 oder Xbox). Drück ruhig die Tasten, die Karte zeigt, was du drückst. Weiter mit dem Steuerkreuz nach rechts.": "This guide only applies to a gamepad (PS5, PS4 or Xbox). Go ahead and press the buttons, the card shows what you press. Next with the D-pad to the right.",
+    "Steuerung beim Fahren": "Controls while driving",
+    "R2 gibt Gas, L2 bremst. Je tiefer du drückst, desto stärker.": "R2 accelerates, L2 brakes. The deeper you press, the stronger.",
+    "Gas und Bremse": "Throttle and brake",
+    "Der linke Stick lenkt.": "The left stick steers.",
+    "Lenken": "Steering",
+    "Kreis schaltet hoch, Quadrat runter. Im Stand geht Quadrat bis in den Rückwärtsgang.": "Circle shifts up, square down. At a standstill square goes down to reverse.",
+    "Schalten": "Shifting",
+    "Kreuz tippen fordert den Boxenstopp an. Eine Sekunde halten zeigt die gelbe Flagge.": "Tap cross to request a pit stop. Hold it for one second for the yellow flag.",
+    "Boxenstopp und Flagge": "Pit stop and flag",
+    "L1 wählt die Reifen, R1 die Tankmenge für den nächsten Stopp.": "L1 picks the tyres, R1 the fuel for the next stop.",
+    "Boxenstopp vorwählen": "Preselect the pit stop",
+    "Dreieck schaltet das Licht, R3 gibt Lichthupe.": "Triangle switches the lights, R3 flashes them.",
+    "Licht": "Lights",
+    "Das Steuerkreuz blättert die Schirme: Box, Rennen, Einstellungen. Hier blättert es die Schritte.": "The D-pad pages through the screens: pit, race, settings. Here it pages through the steps.",
+    "Cockpit-Schirme": "Cockpit screens",
+    "Options öffnet das Fahren-Menü und bringt dich zurück ins Cockpit.": "Options opens the drive menu and takes you back to the cockpit.",
+    "L3 schaltet das Vollbild, Share wechselt zwischen Bahn und Ausdruck.": "L3 toggles full screen, Share switches between track and printout.",
+    "Vollbild und Lesemodus": "Full screen and reading mode",
+    "Hier siehst du alle Tasten. Mit „Neu zuweisen“ belegst du jede Funktion um.": "Here you see all buttons. With “Reassign” you can remap every function.",
+    "Gedrückt": "Pressed",
+    "Challenges": "Challenges",
+    "Zum Startbildschirm": "To the title screen",
+    "Wozu, Funktionen, Danksagungen, Patchnotes, Rechtliches.": "Purpose, features, credits, patch notes, legal.",
+    "Feste Strecken zum Nachbauen, je zwei Presets (Pro und Arcade) und eine feste Rundenzahl. Stehendes Auto, Ampel, los. Deine Zeit kommt in eine gemeinsame Bestenliste.": "Fixed tracks to rebuild, two presets each (Pro and Arcade) and a fixed number of laps. Car standing still, start lights, go. Your time goes into a shared leaderboard.",
+    "Mock-up ansehen": "View the mock-up",
     "Garage als Karten mit eigenem Foto je Auto (sonst seine Farbe), Rolle mit ◀ ▶, Einstellen klappt Farbe, Tempo und Charakter auf; ein Knopf startet und hält die Ghosts. Titel: ✕ startet, △ Tutorial, ○ neue Führung „Steuerung“ bis zur Controller-Belegung. Minigame: Fenster 0,1 s länger, falsche Taste kostet Zeit. Freies Training zeigt ∞. Mehrspieler-App wie Vorschlag A. App: Status- und Navigationsleiste werden zuverlässiger ausgeblendet.": "Garage as cards with your own photo per car (otherwise its colour), role with ◀ ▶, Settings expands colour, pace and character; one button starts and stops the ghosts. Title: ✕ starts, △ tutorial, ○ new “Controls” guide leading to the controller mapping. Minigame: windows 0.1 s longer, a wrong button costs time. Free practice shows ∞. Multiplayer app page like proposal A. App: status and navigation bars are hidden more reliably.",
     "Foto ändern": "Change photo",
     "Einstellen ▾": "Settings ▾",
@@ -11307,41 +11372,23 @@
     "AUS": "OFF",
     "DU": "YOU",
     "Steuerung mit dem Controller": "Controls with the controller",
-    "Diese Führung gilt nur mit einem Gamepad – PS5, PS4 oder Xbox, per USB oder Bluetooth. Ohne Controller fährst du mit Tastatur oder Touch, und die Tasten hier gelten dann nicht.": "This guide only applies to a gamepad – PS5, PS4 or Xbox, over USB or Bluetooth. Without a controller you drive with keyboard or touch, and these buttons do not apply.",
     "Gas, Bremse, Lenkung": "Throttle, brake, steering",
-    "R2 gibt Gas, L2 bremst, der linke Stick lenkt. Fahren geht auch im Menü – zum Ausprobieren von Einstellungen.": "R2 accelerates, L2 brakes, the left stick steers. Driving also works in the menu – for trying out settings.",
     "Kreuz": "Cross",
-    "Im Menü: bestätigen. Im Cockpit: tippen für den Boxenstopp, eine Sekunde halten für die gelbe Flagge.": "In the menu: confirm. In the cockpit: tap for a pit stop, hold for one second for the yellow flag.",
     "Kreis und Quadrat": "Circle and square",
-    "Im Cockpit schalten sie: Kreis hoch, Quadrat runter. Im Menü geht Kreis eine Ebene zurück, Quadrat wechselt den Wert auf einer Kachel. Beim Boxen-Minigame sind sie die Spieltasten.": "In the cockpit they shift: circle up, square down. In the menu circle goes back one level, square changes the value on a tile. In the pit minigame they are the game buttons.",
     "Dreieck": "Triangle",
-    "Im Cockpit schaltet es das Licht. In den Optionen öffnet es die Erklärung einer Zeile, auf dem Titel das Tutorial.": "In the cockpit it switches the lights. In the options it opens the explanation of a row, on the title screen the tutorial.",
     "Schultertasten": "Shoulder buttons",
-    "Im Menü wechseln sie die Reiter. Im Cockpit wählen sie für den nächsten Boxenstopp Reifen (L1) und Tankmenge (R1) vor.": "In the menu they switch tabs. In the cockpit they preselect tyres (L1) and fuel (R1) for the next pit stop.",
     "Steuerkreuz und rechter Stick": "D-pad and right stick",
-    "Das Steuerkreuz wählt im Menü Kacheln und Zeilen und blättert im Cockpit die Schirme. Der rechte Stick rollt lange Seiten, R3 gibt Lichthupe.": "The D-pad selects tiles and rows in the menu and pages through the screens in the cockpit. The right stick scrolls long pages, R3 flashes the lights.",
     "Options, Share und L3": "Options, Share and L3",
-    "Options springt vom Cockpit ins Fahren-Menü und wieder zurück. Share schaltet zwischen Bahn und Ausdruck, L3 das Vollbild.": "Options jumps from the cockpit to the drive menu and back. Share switches between track and printout, L3 toggles full screen.",
     "Alle Tasten und die Belegung": "All buttons and the mapping",
-    "Hier siehst du den Controller mit allen Tasten. Darüber kannst du jede Funktion neu zuweisen: „Neu zuweisen“ drücken, dann die Taste am Controller.": "Here you see the controller with all its buttons. Above it you can reassign every function: press “Reassign”, then the button on the controller.",
     "Steuerung": "Controls",
     "Fertig": "Done",
     "Mehrspieler ist aktuell noch in der Entwicklung und funktioniert nicht fehlerfrei.": "Multiplayer is still in development and does not work without faults yet.",
     "Willkommen bei OmegaSim": "Welcome to OmegaSim",
-    "OmegaSim steuert deine Carrera-Hybrid-Autos per Bluetooth – mit echter Fahrphysik, Motorsound aus einer Motorsimulation und einem Cockpit wie im Rennsimulator. In einer Minute siehst du die wichtigsten Stellen.": "OmegaSim drives your Carrera Hybrid cars over Bluetooth – with real driving physics, engine sound from an engine simulation and a cockpit like a racing sim. In a minute you will see the most important places.",
-    "Hier verbindest du dein Auto per Bluetooth. Das erste steuerst du selbst, jedes weitere fährt als Ghost mit eigener Linie und eigenem Charakter gegen dich – Namen, Farben und Rollen gibt es in der Garage.": "Connect your car over Bluetooth here. You drive the first one yourself; every other one races against you as a ghost with its own line and character – names, colours and roles are in the garage.",
     "Deine Strecke": "Your track",
-    "Auf der Bahn liest das Auto die Schiene: scanne deine Strecke oder baue sie im Editor nach. Ohne Bahn druckst du Vorlagen aus und lädst ein Foto deiner Strecke hoch, das dann im Cockpit erscheint.": "On the rail the car reads the track: scan your layout or rebuild it in the editor. Without a rail you print templates and upload a photo of your track, which then appears in the cockpit.",
-    "Freies Training, Qualifying, Rennen über Runden oder Endurance – mit wechselndem Wetter, Pflichtboxenstopps, Tank und Reifenverschleiß.": "Free practice, qualifying, races over laps or endurance – with changing weather, mandatory pit stops, fuel and tyre wear.",
     "Fahrgefühl und Motorsound": "Driving feel and engine sound",
-    "Links die Abstimmung, rechts der Motor: vom Porsche-Boxer bis zum V12 kommt jeder Klang aus einer Motorsimulation. Die Physik rechnet Gänge und Reibkreis, im Modus Pacejka sogar Reifen am Limit.": "Setup on the left, engine on the right: from the Porsche flat-six to the V12, every sound comes from an engine simulation. The physics computes gears and the friction circle, and in Pacejka mode even tyres at the limit.",
-    "Ein Druck, und die Startampel läuft. Im Cockpit: Kreuz tippen für den Boxenstopp, halten für die gelbe Flagge, Options bringt dich ins Menü und wieder zurück.": "One press and the start lights run. In the cockpit: tap cross for a pit stop, hold it for the yellow flag, Options takes you to the menu and back.",
     "Boxenstopp als Minigame": "The pit stop as a minigame",
-    "Beim Stopp erscheinen nacheinander zehn Tasten in der Mitte. Drück Quadrat oder Kreis rechtzeitig, und die Crew ist bis zu doppelt so schnell fertig.": "During a stop, ten buttons appear one after another in the middle. Press square or circle in time and the crew is done up to twice as fast.",
     "Mehrspieler und Info-Screen": "Multiplayer and info screen",
-    "Mehrere Telefone, eine gemeinsame Rangliste – Host ist ein PC oder ein Telefon mit der App. Ein Tablet am Rand zeigt als Info-Screen Strecke, Autos und Zeiten.": "Several phones, one shared leaderboard – the host is a PC or a phone with the app. A tablet at the side shows the track, the cars and the times as an info screen.",
     "Los geht's": "Let's go",
-    "Verbinde jetzt dein erstes Auto. Das Tutorial findest du jederzeit wieder auf dem Titelbildschirm.": "Connect your first car now. You can find the tutorial again on the title screen at any time.",
     "Tutorial": "Tutorial",
     "Beenden": "Finish",
     "◀ Zurück": "◀ Back",
@@ -20923,24 +20970,27 @@
   // Todeszone - ein Zugriff wuerfe und naehme die ganze IIFE mit. Deshalb nur Funktionen und
   // Ereignisse; gestartet wird per setTimeout(konsoleStart, 0) am Ende dieser Datei.
 
-  const K_EBENE1 = ['fahren', 'mp', 'options', 'info', 'misc'];
+  // INFO steht seit v0.8.27 unter den Optionen, oben ist Platz fuer CHALLENGES. BESTELLT:
+  // "Schieb INFO in Optionen, sodass ich dort eine weitere Ebene habe und oben Platz habe
+  // fuer Challenges."
+  const K_EBENE1 = ['fahren', 'mp', 'options', 'challenges', 'misc'];
   const K_NAME = {
     home: 'Titel', fahren: 'Fahren', garage: 'Garage', race: 'Cockpit',
     options: 'Optionen', control: 'Renneinstellungen', track: 'Strecke', mp: 'Mehrspieler',
-    info: 'Info', misc: 'Entwickler', doc: 'Doku', school: 'Programmierschule',
+    info: 'Info', challenges: 'Challenges', misc: 'Entwickler', doc: 'Doku', school: 'Programmierschule',
     dev: 'BLE-Werkbank', selftest: 'Selbsttest', probe: 'Code-Sonde', numtrain: 'Zahlensysteme',
     record: 'Aufnahme-Modus',
   };
   // Zu welchem Reiter der Ebene 1 eine tiefe Seite gehoert: der Reiter bleibt hervorgehoben,
   // und Kreis fuehrt dorthin, wenn der Stapel leer ist.
   const K_ELTERN = {
-    garage: 'fahren', control: 'fahren', track: 'fahren',
+    garage: 'fahren', info: 'options', control: 'fahren', track: 'fahren',
     doc: 'misc', school: 'misc', dev: 'misc', selftest: 'misc', probe: 'misc',
     numtrain: 'misc', record: 'misc',
   };
   const K_BILD = {
     home: 'titel', fahren: 'fahren', garage: 'garage', control: 'rennen',
-    mp: 'mehrspieler', options: 'optionen', info: 'info', misc: 'mehrspieler',
+    mp: 'mehrspieler', options: 'optionen', info: 'info', challenges: 'challenges', misc: 'mehrspieler',
   };
 
   let kStapel = [];
@@ -20954,7 +21004,10 @@
   }
   // MENUE statt FAHREN: ueberall ausser im Cockpit, und im Cockpit, solange dessen Menue
   // offen ist. Daran haengt, ob Kreuz/Kreis/Quadrat/L1/R1/Options Menue- oder Fahrtasten sind.
-  function konsoleMenue() { return kAktiverTab() !== 'race' || kFrageOffen; }
+  function konsoleMenue() {
+    return kAktiverTab() !== 'race' || kFrageOffen
+      || (typeof konsoleTourOffen === 'function' && konsoleTourOffen());
+  }
   function konsoleFrageOffen() { return kFrageOffen; }
   function konsoleDev() {
     const cb = $('setting-dev');
@@ -21415,7 +21468,7 @@
     }
     kZeilen($('fa-auto-info'), autos.length
       ? autos.map((c) => [kPunkt(carColor(c).hex, garageLabel(c)), t(K_ROLLE[c.role] || c.role)])
-      : [[t('Status'), t('nicht verbunden')], ['✕', t('Bluetooth-Auswahl öffnen')]]);
+      : [[t('Status'), t('nicht verbunden')]]);
     const rm = $('race-mode');
     const modus = rm.selectedOptions[0] ? rm.selectedOptions[0].textContent : '';
     $('fa-renn-titel').textContent = modus;
@@ -21679,52 +21732,95 @@
   // Der erste Schritt steht schon auf FAHREN und nicht auf dem Titel: auf dem Titel
   // verbraucht konsolePadTitel() jede Taste, dort gaebe es kein Weiter.
 
+  // TEXTE KURZ UND OHNE GEDANKENSTRICHE (BESTELLT: "Emdashes rausnehmen aus den
+  // Tutorialtexten und bessere Formulierung nehmen. Moeglichst kurz und knapp.").
   const K_TOUR = [
     { tab: 'fahren', ziel: null, bild: 'titel', titel: 'Willkommen bei OmegaSim',
-      text: 'OmegaSim steuert deine Carrera-Hybrid-Autos per Bluetooth – mit echter Fahrphysik, Motorsound aus einer Motorsimulation und einem Cockpit wie im Rennsimulator. In einer Minute siehst du die wichtigsten Stellen.' },
+      text: 'OmegaSim steuert deine Carrera-Hybrid-Autos per Bluetooth. Mit echter Fahrphysik, simuliertem Motorsound und einem Cockpit wie im Rennsimulator.' },
     { tab: 'fahren', ziel: ['#fa-auto'], bild: 'auto', titel: 'Autos verbinden',
-      text: 'Hier verbindest du dein Auto per Bluetooth. Das erste steuerst du selbst, jedes weitere fährt als Ghost mit eigener Linie und eigenem Charakter gegen dich – Namen, Farben und Rollen gibt es in der Garage.' },
+      text: 'Verbinde hier dein Auto. Das erste steuerst du selbst, jedes weitere fährt als Ghost gegen dich. Namen, Farben und Fotos stellst du in der Garage ein.' },
     { tab: 'fahren', ziel: ['#fa-strecke'], bild: 'strecke-frei', titel: 'Deine Strecke',
-      text: 'Auf der Bahn liest das Auto die Schiene: scanne deine Strecke oder baue sie im Editor nach. Ohne Bahn druckst du Vorlagen aus und lädst ein Foto deiner Strecke hoch, das dann im Cockpit erscheint.' },
+      text: 'Auf der Bahn liest das Auto die Schiene. Scanne deine Strecke oder bau sie im Editor nach. Ohne Bahn druckst du Vorlagen aus.' },
     { tab: 'fahren', ziel: ['#fa-renn'], bild: 'rennen', titel: 'Rennoptionen',
-      text: 'Freies Training, Qualifying, Rennen über Runden oder Endurance – mit wechselndem Wetter, Pflichtboxenstopps, Tank und Reifenverschleiß.' },
+      text: 'Training, Qualifying, Rennen oder Endurance. Dazu Wetter, Pflichtstopps, Tank und Reifenverschleiß.' },
     { tab: 'fahren', ziel: ['#fa-profil', '#fa-motor'], bild: 'optionen', titel: 'Fahrgefühl und Motorsound',
-      text: 'Links die Abstimmung, rechts der Motor: vom Porsche-Boxer bis zum V12 kommt jeder Klang aus einer Motorsimulation. Die Physik rechnet Gänge und Reibkreis, im Modus Pacejka sogar Reifen am Limit.' },
+      text: 'Links die Abstimmung, rechts der Motor. Jeder Klang kommt aus einer Motorsimulation.' },
     { tab: 'fahren', ziel: ['#fa-start'], bild: 'start', titel: 'Losfahren',
-      text: 'Ein Druck, und die Startampel läuft. Im Cockpit: Kreuz tippen für den Boxenstopp, halten für die gelbe Flagge, Options bringt dich ins Menü und wieder zurück.' },
-    { tab: 'fahren', ziel: null, bild: 'garage', titel: 'Boxenstopp als Minigame',
-      text: 'Beim Stopp erscheinen nacheinander zehn Tasten in der Mitte. Drück Quadrat oder Kreis rechtzeitig, und die Crew ist bis zu doppelt so schnell fertig.' },
+      text: 'Ein Druck startet die Ampel. Im Cockpit fordert Kreuz den Boxenstopp an, Options öffnet das Menü.' },
+    { tab: 'fahren', ziel: null, bild: 'box', titel: 'Boxenstopp als Minigame',
+      text: 'Beim Stopp erscheinen zehn Tasten. Triffst du Quadrat oder Kreis rechtzeitig, ist die Crew schneller fertig. Abschalten kannst du es unter Optionen, Allgemein, Tank & Schaden.' },
     { tab: 'mp', ziel: ['#k-reiter button:nth-child(2)', '#sub-home-mp .misc-grid'], bild: 'mehrspieler', titel: 'Mehrspieler und Info-Screen',
-      text: 'Mehrere Telefone, eine gemeinsame Rangliste – Host ist ein PC oder ein Telefon mit der App. Ein Tablet am Rand zeigt als Info-Screen Strecke, Autos und Zeiten.' },
+      text: 'Mehrere Telefone fahren in einer gemeinsamen Rangliste. Ein Tablet zeigt als Info-Screen Strecke und Zeiten.' },
     { tab: 'fahren', ziel: ['#fa-auto'], bild: 'fahren', titel: "Los geht's",
-      text: 'Verbinde jetzt dein erstes Auto. Das Tutorial findest du jederzeit wieder auf dem Titelbildschirm.' },
+      text: 'Verbinde jetzt dein erstes Auto. Zum Tutorial kommst du jederzeit zurück: Klick auf das Omega oben links.' },
   ];
 
-  // DIE STEUERUNG (v0.8.26). BESTELLT: "neben dem Tutorial-Button noch einen Button zur
-  // Steuerung. Erklaere dabei, dass es nur mit Gamepad funktioniert, zeige die Tasten und am
-  // Ende, wo man das Bild vom Controller mit allen Tasten sieht und die Belegung aendern
-  // kann." Statt eines Fotos zeigt die Karte die Taste selbst (taste). Die Belegung ist die ab
-  // Werk (BIND_DEFAULTS in 90-ghosts.js); wer umbelegt, sieht seine im letzten Schritt.
+  // DIE STEUERUNG BEIM FAHREN. BESTELLT: "neben dem Tutorial-Button noch einen Button zur
+  // Steuerung ... nur mit Gamepad ... am Ende, wo man das Bild vom Controller sieht und die
+  // Belegung aendern kann", dann: "Bitte im Hintergrund den Cockpit Screen zeigen und auch
+  // sagen, dass man auf die Tasten druecken kann. Hier soll es nur um die Steuerung beim
+  // Fahren gehen." Also auf dem Cockpit, nur Fahrtasten, und jede gedrueckte Taste wird auf
+  // der Karte angezeigt (konsoleTourPad). Solange die Fuehrung offen ist, faehrt nichts: der
+  // Pad wird verbraucht, blaettern geht mit dem Steuerkreuz links/rechts. `knoepfe` sind die
+  // Tasten des Schritts (Standard-Belegung, BIND_DEFAULTS in 90-ghosts.js).
   const K_STEUERUNG = [
-    { tab: 'fahren', ziel: null, bild: 'optionen', titel: 'Steuerung mit dem Controller',
-      text: 'Diese Führung gilt nur mit einem Gamepad – PS5, PS4 oder Xbox, per USB oder Bluetooth. Ohne Controller fährst du mit Tastatur oder Touch, und die Tasten hier gelten dann nicht.' },
-    { tab: 'fahren', ziel: null, taste: 'L2 · R2', titel: 'Gas, Bremse, Lenkung',
-      text: 'R2 gibt Gas, L2 bremst, der linke Stick lenkt. Fahren geht auch im Menü – zum Ausprobieren von Einstellungen.' },
-    { tab: 'fahren', ziel: null, taste: '✕', titel: 'Kreuz',
-      text: 'Im Menü: bestätigen. Im Cockpit: tippen für den Boxenstopp, eine Sekunde halten für die gelbe Flagge.' },
-    { tab: 'fahren', ziel: null, taste: '○ □', titel: 'Kreis und Quadrat',
-      text: 'Im Cockpit schalten sie: Kreis hoch, Quadrat runter. Im Menü geht Kreis eine Ebene zurück, Quadrat wechselt den Wert auf einer Kachel. Beim Boxen-Minigame sind sie die Spieltasten.' },
-    { tab: 'fahren', ziel: null, taste: '△', titel: 'Dreieck',
-      text: 'Im Cockpit schaltet es das Licht. In den Optionen öffnet es die Erklärung einer Zeile, auf dem Titel das Tutorial.' },
-    { tab: 'fahren', ziel: ['#k-leiste'], taste: 'L1 · R1', titel: 'Schultertasten',
-      text: 'Im Menü wechseln sie die Reiter. Im Cockpit wählen sie für den nächsten Boxenstopp Reifen (L1) und Tankmenge (R1) vor.' },
-    { tab: 'fahren', ziel: null, taste: '✥', titel: 'Steuerkreuz und rechter Stick',
-      text: 'Das Steuerkreuz wählt im Menü Kacheln und Zeilen und blättert im Cockpit die Schirme. Der rechte Stick rollt lange Seiten, R3 gibt Lichthupe.' },
-    { tab: 'fahren', ziel: null, taste: 'OPTIONS', titel: 'Options, Share und L3',
-      text: 'Options springt vom Cockpit ins Fahren-Menü und wieder zurück. Share schaltet zwischen Bahn und Ausdruck, L3 das Vollbild.' },
-    { tab: 'options', sub: 'opt-pad', ziel: ['#pad-zoom'], bild: 'optionen', titel: 'Alle Tasten und die Belegung',
-      text: 'Hier siehst du den Controller mit allen Tasten. Darüber kannst du jede Funktion neu zuweisen: „Neu zuweisen“ drücken, dann die Taste am Controller.' },
+    { tab: 'race', ziel: null, bild: 'controller', titel: 'Steuerung beim Fahren',
+      text: 'Diese Führung gilt nur mit Gamepad (PS5, PS4 oder Xbox). Drück ruhig die Tasten, die Karte zeigt, was du drückst. Weiter mit dem Steuerkreuz nach rechts.' },
+    { tab: 'race', ziel: null, taste: 'R2 · L2', knoepfe: [7, 6], titel: 'Gas und Bremse',
+      text: 'R2 gibt Gas, L2 bremst. Je tiefer du drückst, desto stärker.' },
+    { tab: 'race', ziel: null, taste: 'L-STICK', knoepfe: ['lenk'], titel: 'Lenken',
+      text: 'Der linke Stick lenkt.' },
+    { tab: 'race', ziel: null, taste: '○ □', knoepfe: [1, 2], titel: 'Schalten',
+      text: 'Kreis schaltet hoch, Quadrat runter. Im Stand geht Quadrat bis in den Rückwärtsgang.' },
+    { tab: 'race', ziel: null, taste: '✕', knoepfe: [0], titel: 'Boxenstopp und Flagge',
+      text: 'Kreuz tippen fordert den Boxenstopp an. Eine Sekunde halten zeigt die gelbe Flagge.' },
+    { tab: 'race', ziel: null, taste: 'L1 · R1', knoepfe: [4, 5], titel: 'Boxenstopp vorwählen',
+      text: 'L1 wählt die Reifen, R1 die Tankmenge für den nächsten Stopp.' },
+    { tab: 'race', ziel: null, taste: '△ · R3', knoepfe: [3, 11], titel: 'Licht',
+      text: 'Dreieck schaltet das Licht, R3 gibt Lichthupe.' },
+    { tab: 'race', ziel: null, taste: '◀ ▶', knoepfe: [14, 15], titel: 'Cockpit-Schirme',
+      text: 'Das Steuerkreuz blättert die Schirme: Box, Rennen, Einstellungen. Hier blättert es die Schritte.' },
+    { tab: 'race', ziel: null, taste: 'OPTIONS', knoepfe: [9], titel: 'Menü',
+      text: 'Options öffnet das Fahren-Menü und bringt dich zurück ins Cockpit.' },
+    { tab: 'race', ziel: null, taste: 'L3 · SHARE', knoepfe: [10, 8], titel: 'Vollbild und Lesemodus',
+      text: 'L3 schaltet das Vollbild, Share wechselt zwischen Bahn und Ausdruck.' },
+    { tab: 'options', sub: 'opt-pad', ziel: ['#pad-zoom'], bild: 'controller', titel: 'Alle Tasten und die Belegung',
+      text: 'Hier siehst du alle Tasten. Mit „Neu zuweisen“ belegst du jede Funktion um.' },
   ];
+  const K_PAD_NAMEN = { 0: '✕', 1: '○', 2: '□', 3: '△', 4: 'L1', 5: 'R1', 6: 'L2', 7: 'R2', 8: 'SHARE',
+    9: 'OPTIONS', 10: 'L3', 11: 'R3', 12: '▲', 13: '▼', 14: '◀', 15: '▶', 16: 'PS' };
+  const kTourPadVorher = [];
+  let kTourLenkVorher = false;
+  // Aus pollGamepad (90-ghosts.js): waehrend der Steuerungs-Fuehrung gehoert der Pad ihr.
+  // Gibt true zurueck, wenn die Fuehrung den Pad verbraucht hat - dann faehrt nichts.
+  function konsoleTourPad(pad) {
+    if (!kTourOffen || kTourListe !== K_STEUERUNG) return false;
+    const neu = [];
+    for (let i = 0; i < pad.buttons.length; i++) {
+      const n = !!(pad.buttons[i] && (pad.buttons[i].pressed || pad.buttons[i].value > 0.4));
+      if (n && !kTourPadVorher[i]) neu.push(i);
+      kTourPadVorher[i] = n;
+    }
+    const lenk = Math.abs((pad.axes || [])[0] || 0) > 0.5;
+    if (lenk && !kTourLenkVorher) neu.push('lenk');
+    kTourLenkVorher = lenk;
+    if (neu.includes(15)) { konsoleTourWeiter(); return true; }
+    if (neu.includes(14)) { konsoleTourZurueck(); return true; }
+    if (neu.length) {
+      const s = kTourListe[kTourSchritt] || {};
+      const k = neu[neu.length - 1];
+      const name = k === 'lenk' ? 'L-STICK' : (K_PAD_NAMEN[k] || ('#' + k));
+      const treffer = (s.knoepfe || []).some((x) => neu.includes(x));
+      const live = $('k-tour-live');
+      if (live) {
+        live.hidden = false;
+        live.textContent = (treffer ? '✓ ' : '') + t('Gedrückt') + ': ' + name;
+        live.classList.toggle('treffer', treffer);
+      }
+      if (treffer) $('k-tour-taste').classList.add('gedrueckt');
+    }
+    return true;
+  }
   // Wo eine Fuehrung endet: das Tutorial auf Fahren, die Steuerung dort, wo sie hinfuehrt.
   const K_TOUR_ENDE = new Map([[K_TOUR, 'fahren'], [K_STEUERUNG, 'bleiben']]);
 
@@ -21786,6 +21882,8 @@
       try { konsoleZeige(s.tab || kAktiverTab(), s.sub || ''); } finally { kZurueckLaeuft = false; }
     }
     $('k-tour-schritt').textContent = (kTourSchritt + 1) + ' / ' + kTourListe.length;
+    if ($('k-tour-live')) { $('k-tour-live').hidden = true; $('k-tour-live').textContent = ''; }
+    $('k-tour-taste').classList.remove('gedrueckt');
     $('k-tour-titel').textContent = t(s.titel);
     $('k-tour-text').textContent = t(s.text);
     // Eine Taste statt eines Bildes (Steuerung), sonst das Foto.
@@ -42217,6 +42315,11 @@
     // Sprache. Solange danach noch eine Taste gehalten wird, tut dieser Takt nichts weiter -
     // sonst oeffnete dasselbe gehaltene Kreuz im Hauptmenue gleich die naechste Kachel.
     if (typeof konsolePadTitel === 'function' && konsolePadTitel(pad)) return;
+    // Steuerungs-Fuehrung offen: jede Taste wird dort angezeigt, gefahren wird nicht.
+    if (typeof konsoleTourPad === 'function' && konsoleTourPad(pad)) {
+      releaseInput(SRC.PAD);
+      return;
+    }
 
     // Nur abfangen, wenn hier auch wirklich Spieler 1s Belegung dran ist - waehrend
     // Spieler 2s Tabelle bearbeitet wird (bindEditSpieler === 2), soll Spieler 1
@@ -63368,6 +63471,30 @@
       renderGarage();
     }
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Karte mit Farbbild, Rolle mit Pfeil, Foto, Aufklappzeile, Ghost-Knopf auf Starten' };
+  });
+
+  stAdd('Steuerung: läuft auf dem Cockpit, zeigt gedrückte Tasten, fährt dabei nicht', () => {
+    const merk = kAktiverTab();
+    const f = [];
+    const knopf = () => ({ pressed: false, touched: false, value: 0 });
+    const pad = { axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, knopf) };
+    const druck = (i) => { pad.buttons[i] = { pressed: true, touched: true, value: 1 }; const r = konsoleTourPad(pad); pad.buttons[i] = knopf(); konsoleTourPad(pad); return r; };
+    try {
+      konsoleTourStart(K_STEUERUNG);
+      if (kAktiverTab() !== 'race') f.push('Hintergrund ist ' + kAktiverTab() + ' statt Cockpit');
+      konsoleTourPad(pad);
+      if (!druck(15) || kTourSchritt !== 1) f.push('Steuerkreuz rechts blaettert nicht (Schritt ' + kTourSchritt + ')');
+      if (!druck(7)) f.push('R2 wird nicht verbraucht (wuerde fahren)');
+      if (!/R2/.test($('k-tour-live').textContent) || !$('k-tour-live').classList.contains('treffer')) f.push('R2 nicht als Treffer angezeigt: ' + $('k-tour-live').textContent);
+      druck(0);
+      if (!/✕/.test($('k-tour-live').textContent) || $('k-tour-live').classList.contains('treffer')) f.push('Kreuz im Gas-Schritt falsch angezeigt');
+      druck(14);
+      if (kTourSchritt !== 0) f.push('Steuerkreuz links blaettert nicht zurueck');
+    } finally {
+      if (konsoleTourOffen()) konsoleTourZu(false);
+      if (merk) showTab(merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Cockpit im Hintergrund, R2 erkannt, Kreuz als andere Taste, blaettern mit dem Steuerkreuz' };
   });
 
   stAdd('ACC-Menü: Motorsound-Kachel blättert die Motoren, Quadrat', () => {

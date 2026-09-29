@@ -26,24 +26,27 @@
   // Todeszone - ein Zugriff wuerfe und naehme die ganze IIFE mit. Deshalb nur Funktionen und
   // Ereignisse; gestartet wird per setTimeout(konsoleStart, 0) am Ende dieser Datei.
 
-  const K_EBENE1 = ['fahren', 'mp', 'options', 'info', 'misc'];
+  // INFO steht seit v0.8.27 unter den Optionen, oben ist Platz fuer CHALLENGES. BESTELLT:
+  // "Schieb INFO in Optionen, sodass ich dort eine weitere Ebene habe und oben Platz habe
+  // fuer Challenges."
+  const K_EBENE1 = ['fahren', 'mp', 'options', 'challenges', 'misc'];
   const K_NAME = {
     home: 'Titel', fahren: 'Fahren', garage: 'Garage', race: 'Cockpit',
     options: 'Optionen', control: 'Renneinstellungen', track: 'Strecke', mp: 'Mehrspieler',
-    info: 'Info', misc: 'Entwickler', doc: 'Doku', school: 'Programmierschule',
+    info: 'Info', challenges: 'Challenges', misc: 'Entwickler', doc: 'Doku', school: 'Programmierschule',
     dev: 'BLE-Werkbank', selftest: 'Selbsttest', probe: 'Code-Sonde', numtrain: 'Zahlensysteme',
     record: 'Aufnahme-Modus',
   };
   // Zu welchem Reiter der Ebene 1 eine tiefe Seite gehoert: der Reiter bleibt hervorgehoben,
   // und Kreis fuehrt dorthin, wenn der Stapel leer ist.
   const K_ELTERN = {
-    garage: 'fahren', control: 'fahren', track: 'fahren',
+    garage: 'fahren', info: 'options', control: 'fahren', track: 'fahren',
     doc: 'misc', school: 'misc', dev: 'misc', selftest: 'misc', probe: 'misc',
     numtrain: 'misc', record: 'misc',
   };
   const K_BILD = {
     home: 'titel', fahren: 'fahren', garage: 'garage', control: 'rennen',
-    mp: 'mehrspieler', options: 'optionen', info: 'info', misc: 'mehrspieler',
+    mp: 'mehrspieler', options: 'optionen', info: 'info', challenges: 'challenges', misc: 'mehrspieler',
   };
 
   let kStapel = [];
@@ -57,7 +60,10 @@
   }
   // MENUE statt FAHREN: ueberall ausser im Cockpit, und im Cockpit, solange dessen Menue
   // offen ist. Daran haengt, ob Kreuz/Kreis/Quadrat/L1/R1/Options Menue- oder Fahrtasten sind.
-  function konsoleMenue() { return kAktiverTab() !== 'race' || kFrageOffen; }
+  function konsoleMenue() {
+    return kAktiverTab() !== 'race' || kFrageOffen
+      || (typeof konsoleTourOffen === 'function' && konsoleTourOffen());
+  }
   function konsoleFrageOffen() { return kFrageOffen; }
   function konsoleDev() {
     const cb = $('setting-dev');
@@ -518,7 +524,7 @@
     }
     kZeilen($('fa-auto-info'), autos.length
       ? autos.map((c) => [kPunkt(carColor(c).hex, garageLabel(c)), t(K_ROLLE[c.role] || c.role)])
-      : [[t('Status'), t('nicht verbunden')], ['✕', t('Bluetooth-Auswahl öffnen')]]);
+      : [[t('Status'), t('nicht verbunden')]]);
     const rm = $('race-mode');
     const modus = rm.selectedOptions[0] ? rm.selectedOptions[0].textContent : '';
     $('fa-renn-titel').textContent = modus;

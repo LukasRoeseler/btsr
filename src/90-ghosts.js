@@ -8628,6 +8628,11 @@
     // Sprache. Solange danach noch eine Taste gehalten wird, tut dieser Takt nichts weiter -
     // sonst oeffnete dasselbe gehaltene Kreuz im Hauptmenue gleich die naechste Kachel.
     if (typeof konsolePadTitel === 'function' && konsolePadTitel(pad)) return;
+    // Steuerungs-Fuehrung offen: jede Taste wird dort angezeigt, gefahren wird nicht.
+    if (typeof konsoleTourPad === 'function' && konsoleTourPad(pad)) {
+      releaseInput(SRC.PAD);
+      return;
+    }
 
     // Nur abfangen, wenn hier auch wirklich Spieler 1s Belegung dran ist - waehrend
     // Spieler 2s Tabelle bearbeitet wird (bindEditSpieler === 2), soll Spieler 1
