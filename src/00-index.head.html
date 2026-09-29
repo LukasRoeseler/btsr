@@ -2420,6 +2420,61 @@
   .k-ergebnis[hidden] { display: none; }
   .ov-nochmal { justify-self: end; font-size: 12px; padding: 3px 12px; letter-spacing: .08em; }
   .ov-nochmal[hidden] { display: none; }
+  /* ---- Boxen-Minigame ---- */
+  .pit-spiel { position: absolute; grid-row: left-start / strip-end; grid-column: left-start / right-end;
+    inset: 0; z-index: 6; display: grid; place-items: center; pointer-events: none; }
+  .pit-spiel[hidden] { display: none; }
+  /* Deckend und mit eigener Schriftfarbe: in der hellen Ansicht "Modern" stuende sonst
+     heller Text auf hellem Grund (Kontrasttest der Cockpit-Ansichten: 1,05). */
+  .ps-karte { pointer-events: auto; background: #06080c; border: 2px solid var(--k-blau);
+    padding: 8px 14px 10px; display: grid; gap: 6px; justify-items: center; min-width: 170px;
+    font-family: var(--k-font); color: #fff; box-shadow: 0 10px 40px rgba(0,0,0,.7); }
+  .ps-kopf, .ps-kopf span, .ps-fuss, .ps-fuss span { color: #eef0f4; }
+  .ps-kopf { display: flex; gap: 12px; align-items: baseline; font-size: 12px; letter-spacing: .1em; }
+  .ps-kopf b { color: var(--k-blau); font-size: 14px; }
+  .ps-mitte { position: relative; width: clamp(80px, 22vh, 150px); aspect-ratio: 1; display: grid; place-items: center; }
+  .ps-ring { position: absolute; inset: 0; transform: rotate(-90deg); }
+  .ps-ring circle { fill: none; stroke: var(--k-blau); stroke-width: 6; stroke-dasharray: 283;
+    stroke-dashoffset: calc(283 * (1 - var(--fenster, 0))); }
+  .ps-sym { width: 58%; height: 58%; fill: none; stroke-width: 2.4; display: none; }
+  .ps-quad { stroke: #ff8ad8; } .ps-kreis { stroke: #ff6b7a; }
+  .pit-spiel[data-symbol="quad"] .ps-quad, .pit-spiel[data-symbol="kreis"] .ps-kreis { display: block; }
+  .ps-fertig { display: none; font-size: 40px; color: var(--good); }
+  .pit-spiel[data-symbol=""] .ps-fertig { display: block; }
+  .pit-spiel[data-blitz="ok"] .ps-karte { border-color: var(--good); box-shadow: 0 0 0 3px var(--good), 0 10px 40px rgba(0,0,0,.7); }
+  .pit-spiel[data-blitz="falsch"] .ps-karte { border-color: var(--bad); box-shadow: 0 0 0 3px var(--bad), 0 10px 40px rgba(0,0,0,.7); }
+  .ps-fuss { display: flex; gap: 14px; align-items: center; font-size: 12px; }
+  .ps-fuss button { font-size: 20px; line-height: 1; padding: 4px 14px; background: var(--k-grau); color: #fff; border: 1px solid rgba(255,255,255,.3); }
+  /* ---- Tutorial ---- */
+  .k-tutorial-knopf { font-family: var(--k-font); letter-spacing: .12em; text-transform: uppercase; font-size: 13px;
+    background: rgba(10,12,18,.7); color: #fff; border: 2px solid var(--k-blau); border-radius: 0; padding: 6px 16px; }
+  .k-tutorial-knopf:hover { background: var(--k-blau); color: var(--k-blau-text); }
+  .k-tutorial-taste { margin-left: 8px; color: var(--k-dim); font-size: 11px; letter-spacing: .04em; }
+  .k-tour { position: fixed; inset: 0; z-index: 450; font-family: var(--k-font); }
+  .k-tour[hidden], .k-tour-spot[hidden] { display: none; }
+  .k-tour.ohne-spot { background: rgba(0,0,0,.72); }
+  .k-tour-spot { position: absolute; border: 2px solid var(--k-blau); box-shadow: 0 0 0 9999px rgba(0,0,0,.72);
+    pointer-events: none; transition: left .25s, top .25s, width .25s, height .25s; }
+  .k-tour-karte { position: absolute; left: 50%; transform: translateX(-50%); width: min(600px, 94vw);
+    background: #0c0f16; border-top: 3px solid var(--k-blau); box-shadow: 0 12px 40px rgba(0,0,0,.8);
+    display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; padding: 10px 12px; color: #eef0f4; }
+  .k-tour-karte.unten { bottom: max(8px, env(safe-area-inset-bottom)); }
+  .k-tour-karte.oben { top: max(8px, env(safe-area-inset-top)); }
+  /* Daneben: schmaler, senkrecht mittig, am freien Rand. */
+  .k-tour-karte.links, .k-tour-karte.rechts { top: 50%; transform: translateY(-50%); width: min(46vw, 400px);
+    grid-template-columns: minmax(0, 1fr); }
+  .k-tour-karte.links { left: max(8px, env(safe-area-inset-left)); }
+  .k-tour-karte.rechts { left: auto; right: max(8px, env(safe-area-inset-right)); }
+  .k-tour-karte.links img, .k-tour-karte.rechts img { display: none; }
+  .k-tour-karte img { width: clamp(64px, 17vh, 130px); aspect-ratio: 4 / 3; object-fit: cover; grid-row: span 2; }
+  .k-tour-schritt { font-size: 10.5px; color: var(--k-dim); letter-spacing: .12em; }
+  .k-tour-karte h2 { margin: 0; font-size: clamp(13px, 3.4vh, 18px); letter-spacing: .08em; text-transform: uppercase; }
+  .k-tour-karte p { margin: 2px 0 0; font-size: clamp(11px, 2.9vh, 13.5px); line-height: 1.4; }
+  .k-tour-knoepfe { grid-column: 1 / -1; display: flex; gap: 6px; justify-content: flex-end; margin-top: 4px; }
+  .k-tour-knoepfe button { font-family: var(--k-font); letter-spacing: .08em; text-transform: uppercase;
+    font-size: 12px; padding: 4px 12px; border-radius: 0; }
+  .k-tour-knoepfe .k-tour-leise { margin-right: auto; background: transparent; border-color: transparent; color: var(--k-dim); }
+  .k-tour-knoepfe button.menu-nav-sel { outline: 0; border-color: #fff; background: var(--k-blau); color: var(--k-blau-text); }
   /* HOCHFORMAT, schmal (Telefon im Browser): untereinander, mit Bildlauf. */
   @media (max-width: 760px) and (orientation: portrait) {
     header#k-kopf { grid-template-columns: 1fr auto; }
@@ -3614,6 +3669,9 @@
       <button type="button" id="lang-toggle" aria-label="Sprache wechseln / switch language">
         <b id="lang-de">DEUTSCH</b><b id="lang-en">ENGLISH</b>
       </button>
+      <!-- TUTORIAL (51b-tutorial.js): Klick, Dreieck oder T. -->
+      <button type="button" id="k-tutorial-start" class="k-tutorial-knopf">Tutorial <span class="wip-tag">WIP</span>
+        <span class="k-tutorial-taste" data-i18n-skip>&#9651; / T</span></button>
       <div class="k-druecken">Beliebige Taste dr&uuml;cken</div>
     <!-- Nur in der Android-App: eine neue Web-Fassung liegt bereit (siehe 97b-app.js). -->
     <div class="app-update" id="app-update" hidden>
@@ -3622,7 +3680,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.24</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.25</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4010,6 +4068,24 @@
            Selbsttest "Cockpit-Ansicht: sichtbar verschieden, funktional gleich" verlangt,
            dass die Zahl der Elemente mit id ueber alle Ansichten konstant ist. Gefuellt
            werden nur die Werte. -->
+      <!-- BOXEN-MINIGAME (70-race.js, pitSpielMalen): Symbol mittig, ein Ring als Zeitfenster,
+           Zaehler, Restzeit, Treffer, und zwei Tipp-Flaechen fuer Touch. Im Markup, damit
+           die Zahl der ids in allen Ansichten gleich bleibt. -->
+      <div class="pit-spiel" id="pit-spiel" hidden>
+        <div class="ps-karte">
+          <div class="ps-kopf"><span id="pit-spiel-zaehler" data-i18n-skip>1/10</span>
+            <b>BOX</b><span id="pit-spiel-rest" data-i18n-skip></span></div>
+          <div class="ps-mitte">
+            <svg class="ps-ring" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="45"/></svg>
+            <svg class="ps-sym ps-quad" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg>
+            <svg class="ps-sym ps-kreis" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/></svg>
+            <span class="ps-fertig" data-i18n-skip>&#10003;</span>
+          </div>
+          <div class="ps-fuss"><button type="button" id="pit-spiel-quad" aria-label="Quadrat">&#9633;</button>
+            <span id="pit-spiel-treffer" data-i18n-skip></span>
+            <button type="button" id="pit-spiel-kreis" aria-label="Kreis">&#9675;</button></div>
+        </div>
+      </div>
       <div class="gt3-schirm" id="race-pitscreen">
         <!-- DAS P IST DIE ZUSTANDSANZEIGE, nicht nur ein Zeichen: grau wenn nichts
              laeuft, gelb in der Boxengasse, gruen wenn fertig. Damit steht die Farbe dort,
@@ -4514,6 +4590,8 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Tutorial auf dem Titelbildschirm (experimentell): f&uuml;hrt in neun Schritten &uuml;ber die echten Schirme, mit Controller, Tastatur oder Finger.</li>
+        <li>Boxen-Minigame (experimentell, ab Werk an, unter Optionen &gt; Allgemein &gt; Tank &amp; Schaden): alles wird gewechselt, losfahren erst am Ende, zehn Tasten &#9633;/&#9675; in der Mitte k&uuml;rzen den Stopp bis auf die H&auml;lfte.</li>
         <li>Pacejka: &Uuml;bersteuern sp&uuml;rbar &ndash; Vollgas in der Kurve bringt das Heck, der Vortrieb geht zur&uuml;ck, der Rutsch h&auml;lt ohne Stick, bis man gegenlenkt oder vom Pedal geht, st&auml;rkere Vibration; mit dem Schalter &bdquo;&Uuml;bersteuern&ldquo; abschaltbar (experimentell).</li>
         <li>Men&uuml;: Kopf halb so hoch, flachere Kn&ouml;pfe und Unterreiter, Kachelfotos als Hintergrund gut sichtbar, kleinere Titel, Erkl&auml;rungen nur noch im &#9432;. Letzte Auswahl je Seite bleibt, nach dem Rennen &bdquo;Nochmal&ldquo;, in der Garage blinkt das Auto beim Dar&uuml;berfahren. Weniger automatische Spr&uuml;nge: Rennende im Men&uuml; nur als Einblendung, gr&uuml;ne Ampel und Vollbild-Ende behalten den Cockpit-Schirm, Options f&uuml;hrt zur&uuml;ck auf die Seite, von der man kam.</li>
         <li>App: nach Schlie&szlig;en und &Ouml;ffnen l&auml;sst sich das Auto wieder verbinden (es hing an der alten Verbindung fest); ab der n&auml;chsten APK trennt die App beim Schlie&szlig;en sauber.</li>
@@ -7868,6 +7946,17 @@
           <option value="offtrack">Neben der Strecke (von Hand, Start erst abseits)</option>
           <option value="double">Doppelter Start-Ausdruck (experimentell)</option>
         </select></div>
+      <div class="opt-row"><div class="opt-label">Boxenstopp-Modus <span class="wip-tag">experimentell</span>
+          <small>Standard: gemacht wird, was geplant ist, und losfahren beendet den Stopp.
+          Minigame: gewechselt wird alles, was simuliert wird &ndash; Reifen, Tank voll,
+          Reparatur &ndash;, und bis alles fertig ist, kommst du nicht los. In der Mitte
+          erscheinen nacheinander zehn Tasten, Quadrat oder Kreis (Tastatur: K und I).
+          Jede richtig gedr&uuml;ckte k&uuml;rzt den Stopp um 5 Prozent, alle zehn halbieren ihn;
+          wer nichts dr&uuml;ckt, wartet die volle Zeit. Abbrechen: Kreuz tippen.</small></div>
+        <select id="pit-modus" data-preset-skip>
+          <option value="standard">Standard</option>
+          <option value="minigame" selected>Minigame (experimentell)</option>
+        </select></div>
       <!-- BESTELLT: "standardmaessig 1 Runde fuer 2 Ueberfahrten (wenn 1x im Pit Window),
            ich aber auch 0 Runden einstellen kann (falls die Boxengasse nicht parallel zur
            Start/Zielgerade ist)". Ersetzt die fruehere Checkbox "Runde trotzdem zaehlen". -->
@@ -10055,6 +10144,23 @@
   <!-- COCKPIT-MENUE. BESTELLT (Nutzerentscheid): "Options lang halten" oeffnet es; kurz
        druecken bleibt der Boxenstopp. Solange es offen ist, geht das Gas von Spieler 1 auf 0.
        In main und nicht in einem Tab, damit es ueber dem Cockpit-Vollbild liegen kann. -->
+  <!-- TUTORIAL: Scheinwerfer auf das Ziel, Karte mit Bild und Text (51b-tutorial.js). -->
+  <div class="k-tour" id="k-tour" hidden>
+    <div class="k-tour-spot" id="k-tour-spot" hidden></div>
+    <div class="k-tour-karte unten" id="k-tour-karte">
+      <img id="k-tour-bild" alt="">
+      <div class="k-tour-inhalt">
+        <div class="k-tour-schritt" id="k-tour-schritt" data-i18n-skip></div>
+        <h2 id="k-tour-titel"></h2>
+        <p id="k-tour-text"></p>
+      </div>
+      <div class="k-tour-knoepfe">
+        <button type="button" id="k-tour-ende" class="k-tour-leise">Beenden</button>
+        <button type="button" id="k-tour-zurueck">&#9664; Zur&uuml;ck</button>
+        <button type="button" id="k-tour-weiter" class="primary">Weiter &#9654;</button>
+      </div>
+    </div>
+  </div>
   <!-- RENNENDE AUS EINEM MENUE: eine Einblendung statt eines Sprungs ins Cockpit. -->
   <button type="button" class="k-ergebnis" id="k-ergebnis" hidden>Rennen beendet – Ergebnis ansehen</button>
   <!-- FRAGE-DIALOG (51-konsole.js, konsoleFrage). Zuerst fuer "trotzdem starten": BESTELLT

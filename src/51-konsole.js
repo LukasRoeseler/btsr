@@ -108,6 +108,7 @@
   function konsoleZurueck() {
     if (typeof optInfoOffen === 'function' && optInfoOffen()) { optInfoSchliessen(); return true; }
     if (kFrageOffen) { konsoleFrageZu(); return true; }
+    if (typeof konsoleTourOffen === 'function' && konsoleTourOffen()) { konsoleTourZurueck(); return true; }
     const lb = $('lb-wrap');
     if (lb && lb.classList.contains('on') && $('lb-close')) { $('lb-close').click(); return true; }
     const tab = kAktiverTab();
@@ -191,6 +192,8 @@
     }));
   }
   function konsoleReiterSchritt(d) {
+    // Waehrend des Tutorials bleibt der Schirm, wo die Fuehrung ihn hinstellt.
+    if (typeof konsoleTourOffen === 'function' && konsoleTourOffen()) return true;
     const r = konsoleReiter();
     if (!r || !r.length) return false;
     let i = r.findIndex((x) => x.an);
@@ -621,6 +624,8 @@
     }
     if (kAktiverTab() !== 'home') return false;
     if (neu === 14 || neu === 15 || neu === 4 || neu === 5) { setLang(lang === 'de' ? 'en' : 'de'); return true; }
+    // Dreieck: das Tutorial (51b-tutorial.js).
+    if (neu === 3) { kTitelSperre = true; konsoleTourStart(); return true; }
     // Die Trigger (6/7) sind Gas und Bremse und zaehlen nicht als "Taste".
     if (neu !== false && neu !== 6 && neu !== 7) { konsoleTitelWeiter(); kTitelSperre = true; return true; }
     return true;
@@ -629,6 +634,7 @@
   // steigende Flanke zaehlt - eine gehaltene Taste springt nicht hin und her.
   function konsoleOptionsTaste(gedrueckt) {
     if (gedrueckt && !konsoleOptionsTaste.vorher && !kFrageOffen
+        && !(typeof konsoleTourOffen === 'function' && konsoleTourOffen())
         && !document.body.classList.contains('track-fs')) {
       const tab = kAktiverTab();
       if (tab === 'race') konsoleZumMenue();
@@ -646,6 +652,7 @@
     if (kAktiverTab() === 'home' && !e.ctrlKey && !e.altKey && !e.metaKey && k !== 'tab' && k !== 'shift') {
       e.preventDefault(); e.stopImmediatePropagation();
       if (k === 'arrowleft' || k === 'arrowright') setLang(lang === 'de' ? 'en' : 'de');
+      else if (k === 't') konsoleTourStart();
       else konsoleTitelWeiter();
       return;
     }

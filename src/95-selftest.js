@@ -9959,6 +9959,177 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'dritte Kachel wieder angewaehlt' };
   });
 
+  // ---- BOXEN-MINIGAME (70-race.js) ----
+  // Gefahren wird der echte pitLaneTick() mit gefaelschter Uhr, wie bei den Tank-Tests. Der
+  // Stand von Tank, Schaden, Boxengasse und Modus wird gemerkt und zurueckgestellt.
+  // Der echte Stopp montiert neue, kalte Reifen (resetTyres) und passt die Mischung an -
+  // das darf nicht im naechsten Test stehen bleiben (gefunden: "Wetterfront" sah dann
+  // weniger als vollen Griff).
+  function pitSpielReifenMerk() {
+    const st = physEngine.state;
+    return { mix: tyres, temp: st.tyreTempC, w: st.tyreWear, wl: st.tyreWearL, wr: st.tyreWearR, grip: st.tyreGrip };
+  }
+  function pitSpielReifenZurueck(m) {
+    const st = physEngine.state;
+    tyres = m.mix; st.tyreTempC = m.temp; st.tyreWear = m.w; st.tyreWearL = m.wl; st.tyreWearR = m.wr; st.tyreGrip = m.grip;
+    applySurface();
+  }
+  function pitSpielLauf(tippen) {
+    const reifen = pitSpielReifenMerk();
+    const merk = { modus: pitModus, an: pitLaneEnabled, trig: pitTrigger, fuel, damage,
+                   kmh: physEngine.state.speedKmh, gas: throttleY };
+    const echtNow = Date.now;
+    let uhr = echtNow.call(Date);
+    const r = { f: [] };
+    try {
+      Date.now = () => uhr;
+      pitModus = 'minigame'; pitLaneEnabled = true; pitTrigger = 'anywhere';
+      fuel = 30; damage = 20;
+      physEngine.state.speedKmh = 0; throttleY = 0;
+      setPitState('off');
+      pitRearmBlockedUntil = 0;
+      setPitState('limited');
+      pitLastTick = 0; pitLaneTick();
+      if (pitState !== 'servicing' || !pitSpiel) { r.f.push('kein Minigame-Stopp (' + pitState + ')'); return r; }
+      r.T = pitSpiel.T; r.plan = Object.assign({}, pitPlan);
+      // Gas und Rueckwaerts gesperrt, und Gas bricht nicht ab.
+      setThrottle(-1); r.gasGesperrt = throttleY === 0;
+      setThrottle(1); r.rueckGesperrt = throttleY === 0;
+      setThrottle(0);
+      let n = 0;
+      while (!pitReady && pitState === 'servicing' && n < 400) {
+        uhr += 50; pitLaneTick(); n++;
+        if (tippen && pitSpielAktiv() && pitSpiel.i < pitSpiel.folge.length) {
+          const soll = pitSpiel.folge[pitSpiel.i];
+          pitSpielTaste(tippen === 'richtig' ? soll : (soll === 'quad' ? 'kreis' : 'quad'));
+        }
+      }
+      r.dauer = pitStandElapsed; r.fertig = pitReady; r.stand = pitState;
+      r.i = pitSpiel ? pitSpiel.i : -1; r.treffer = pitSpiel ? pitSpiel.treffer : -1;
+      r.bonus = pitSpiel ? pitSpiel.bonus : -1;
+      r.fuel = fuel; r.damage = damage;
+    } catch (e) {
+      r.f.push('Ausnahme: ' + e.message);
+    } finally {
+      Date.now = echtNow;
+      setPitState('off');
+      pitRearmBlockedUntil = 0;
+      pitModus = merk.modus; pitLaneEnabled = merk.an; pitTrigger = merk.trig;
+      fuel = merk.fuel; damage = merk.damage;
+      physEngine.state.speedKmh = merk.kmh; throttleY = merk.gas;
+      pitSpielReifenZurueck(reifen);
+      updateDamageFuelUI(); updatePitUI();
+    }
+    return r;
+  }
+
+  stAdd('Boxen-Minigame: alles gewechselt, volle Zeit ohne Tasten, losfahren gesperrt', () => {
+    const r = pitSpielLauf(null);
+    const f = r.f.slice();
+    if (!f.length) {
+      if (fuelSimOn() && r.plan.refuel !== 100) f.push('Tank nicht auf voll geplant');
+      if (tyreSimOn() && !r.plan.tyres) f.push('Reifen nicht geplant');
+      if (!r.gasGesperrt) f.push('Gas nicht gesperrt');
+      if (!r.rueckGesperrt) f.push('Rueckwaerts nicht gesperrt');
+      if (!r.fertig) f.push('nicht fertig geworden (' + r.stand + ')');
+      if (Math.abs(r.dauer - r.T) > 0.15) f.push('Dauer ' + r.dauer.toFixed(2) + ' s statt ' + r.T.toFixed(2));
+      if (r.i < 9) f.push('nur ' + r.i + ' Symbole abgelaufen');
+      if (fuelSimOn() && r.fuel < 99.9) f.push('Tank am Ende ' + r.fuel.toFixed(1));
+      if (r.plan.repair && r.damage > 0.01) f.push('Schaden am Ende ' + r.damage.toFixed(1));
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'T ' + (r.T || 0).toFixed(1) + ' s, voll abgewartet, ' + r.i + ' Symbole abgelaufen, Gas und Rueckwaerts zu' };
+  });
+
+  stAdd('Boxen-Minigame: zehn richtige halbieren die Zeit, falsche geben nichts', () => {
+    const a = pitSpielLauf('richtig');
+    const b = pitSpielLauf('falsch');
+    const f = a.f.concat(b.f);
+    if (!f.length) {
+      if (a.treffer !== 10) f.push(a.treffer + ' Treffer statt 10');
+      if (Math.abs(a.dauer - a.T / 2) > 0.2) f.push('mit 10 Treffern ' + a.dauer.toFixed(2) + ' s statt ' + (a.T / 2).toFixed(2));
+      if (b.treffer !== 0 || b.bonus !== 0) f.push('falsche Tasten geben Bonus ' + b.bonus);
+      if (Math.abs(b.dauer - b.T) > 0.15) f.push('mit falschen Tasten ' + b.dauer.toFixed(2) + ' s statt ' + b.T.toFixed(2));
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'halbe Zeit mit 10 Treffern (' + a.dauer.toFixed(1) + ' von ' + a.T.toFixed(1) + ' s), falsch: volle Zeit' };
+  });
+
+  stAdd('Boxen-Minigame: Quadrat und Kreis schalten waehrenddessen nicht, Kreuz bricht ab', () => {
+    const merk = { modus: pitModus, an: pitLaneEnabled, trig: pitTrigger,
+                   kmh: physEngine.state.speedKmh, gang: physEngine.state.currentGear,
+                   mode: physEngine.state.driveMode };
+    const echt = navigator.getGamepads;
+    const reifen = pitSpielReifenMerk();
+    const f = [];
+    try {
+      pitModus = 'minigame'; pitLaneEnabled = true; pitTrigger = 'anywhere';
+      physEngine.state.speedKmh = 0; throttleY = 0;
+      setPitState('off'); pitRearmBlockedUntil = 0;
+      setPitState('limited'); pitLastTick = 0; pitLaneTick();
+      if (!pitSpielAktiv()) return { ok: false, mass: 'kein Minigame-Stopp' };
+      const vorher = pitSpiel.i;
+      const pad = { id: 'Selbsttest (STANDARD GAMEPAD)', index: 0, connected: true, mapping: 'standard',
+        timestamp: performance.now(), axes: [0, 0, 0, 0],
+        buttons: Array.from({ length: 17 }, () => ({ pressed: false, touched: false, value: 0 })) };
+      navigator.getGamepads = () => [pad, null, null, null];
+      pollGamepad();
+      pad.buttons[2] = { pressed: true, touched: true, value: 1 };   // Quadrat
+      pollGamepad();
+      pad.buttons[2] = { pressed: false, touched: false, value: 0 };
+      pollGamepad();
+      if (pitSpiel.i !== vorher + 1) f.push('Quadrat zaehlt nicht im Spiel');
+      if (physEngine.state.currentGear !== merk.gang || physEngine.state.driveMode !== merk.mode) {
+        f.push('Quadrat hat geschaltet (' + physEngine.state.driveMode + ' ' + physEngine.state.currentGear + ')');
+      }
+      requestPitStop();
+      if (pitState !== 'off') f.push('Kreuz/Abbruch laesst den Stopp stehen');
+      if (pitSpielAktiv()) f.push('Spiel laeuft nach dem Abbruch weiter');
+    } finally {
+      navigator.getGamepads = echt;
+      try { pollGamepad(); } catch (e) { /* ohne Pad */ }
+      setPitState('off'); pitRearmBlockedUntil = 0;
+      pitModus = merk.modus; pitLaneEnabled = merk.an; pitTrigger = merk.trig;
+      physEngine.state.speedKmh = merk.kmh;
+      physEngine.state.currentGear = merk.gang; physEngine.state.driveMode = merk.mode;
+      pitSpielReifenZurueck(reifen);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Quadrat gehoert dem Spiel, kein Gangwechsel, Abbruch beendet es' };
+  });
+
+  stAdd('Tutorial: startet vom Titel, führt durch alle Schritte, Kreis zurück', () => {
+    const merk = kAktiverTab();
+    const f = [];
+    const messbar = innerWidth > 0 && innerHeight > 0;
+    try {
+      showTab('home');
+      $('k-tutorial-start').click();
+      if (!konsoleTourOffen() || $('k-tour').hidden) f.push('Knopf oeffnet nicht');
+      if (kAktiverTab() !== 'fahren') f.push('erster Schritt auf ' + kAktiverTab() + ' statt Fahren');
+      if (menuNavContainer() !== $('k-tour-karte')) f.push('Menuezeilen gelten nicht fuer die Karte');
+      const sel = document.querySelector('.menu-nav-sel');
+      if (!sel || sel.id !== 'k-tour-weiter') f.push('vorgewaehlt ist nicht Weiter');
+      const fehlt = [];
+      for (let i = 0; i < K_TOUR.length; i++) {
+        if (kTourSchritt !== i) { f.push('Schritt ' + kTourSchritt + ' statt ' + i); break; }
+        if (!$('k-tour-titel').textContent) f.push('Schritt ' + i + ' ohne Titel');
+        if (messbar && K_TOUR[i].ziel && !kTourRechteck(K_TOUR[i].ziel)) fehlt.push(i + 1);
+        if (i < K_TOUR.length - 1) konsoleTourWeiter();
+      }
+      if (fehlt.length) f.push('Ziel nicht sichtbar in Schritt ' + fehlt.join(', '));
+      konsoleZurueck();
+      if (kTourSchritt !== K_TOUR.length - 2) f.push('Kreis geht nicht einen Schritt zurueck');
+      konsoleTourWeiter(); konsoleTourWeiter();
+      if (konsoleTourOffen()) f.push('nach dem letzten Schritt noch offen');
+      if (kAktiverTab() !== 'fahren') f.push('endet auf ' + kAktiverTab());
+      konsoleTourStart();
+      konsoleZurueck();
+      if (konsoleTourOffen()) f.push('Kreis im ersten Schritt schliesst nicht');
+    } finally {
+      if (konsoleTourOffen()) konsoleTourZu(false);
+      if (merk) showTab(merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : K_TOUR.length + ' Schritte, Ziele ' + (messbar ? 'sichtbar' : 'nicht messbar'), skip: false };
+  });
+
   stAdd('ACC-Menü: Motorsound-Kachel blättert die Motoren, Quadrat', () => {
     const s2 = $('sound-profile');
     if (!s2 || !$('fa-motor')) return { ok: false, mass: 'Kachel oder Auswahl fehlt' };

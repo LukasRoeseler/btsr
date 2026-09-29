@@ -2420,6 +2420,61 @@
   .k-ergebnis[hidden] { display: none; }
   .ov-nochmal { justify-self: end; font-size: 12px; padding: 3px 12px; letter-spacing: .08em; }
   .ov-nochmal[hidden] { display: none; }
+  /* ---- Boxen-Minigame ---- */
+  .pit-spiel { position: absolute; grid-row: left-start / strip-end; grid-column: left-start / right-end;
+    inset: 0; z-index: 6; display: grid; place-items: center; pointer-events: none; }
+  .pit-spiel[hidden] { display: none; }
+  /* Deckend und mit eigener Schriftfarbe: in der hellen Ansicht "Modern" stuende sonst
+     heller Text auf hellem Grund (Kontrasttest der Cockpit-Ansichten: 1,05). */
+  .ps-karte { pointer-events: auto; background: #06080c; border: 2px solid var(--k-blau);
+    padding: 8px 14px 10px; display: grid; gap: 6px; justify-items: center; min-width: 170px;
+    font-family: var(--k-font); color: #fff; box-shadow: 0 10px 40px rgba(0,0,0,.7); }
+  .ps-kopf, .ps-kopf span, .ps-fuss, .ps-fuss span { color: #eef0f4; }
+  .ps-kopf { display: flex; gap: 12px; align-items: baseline; font-size: 12px; letter-spacing: .1em; }
+  .ps-kopf b { color: var(--k-blau); font-size: 14px; }
+  .ps-mitte { position: relative; width: clamp(80px, 22vh, 150px); aspect-ratio: 1; display: grid; place-items: center; }
+  .ps-ring { position: absolute; inset: 0; transform: rotate(-90deg); }
+  .ps-ring circle { fill: none; stroke: var(--k-blau); stroke-width: 6; stroke-dasharray: 283;
+    stroke-dashoffset: calc(283 * (1 - var(--fenster, 0))); }
+  .ps-sym { width: 58%; height: 58%; fill: none; stroke-width: 2.4; display: none; }
+  .ps-quad { stroke: #ff8ad8; } .ps-kreis { stroke: #ff6b7a; }
+  .pit-spiel[data-symbol="quad"] .ps-quad, .pit-spiel[data-symbol="kreis"] .ps-kreis { display: block; }
+  .ps-fertig { display: none; font-size: 40px; color: var(--good); }
+  .pit-spiel[data-symbol=""] .ps-fertig { display: block; }
+  .pit-spiel[data-blitz="ok"] .ps-karte { border-color: var(--good); box-shadow: 0 0 0 3px var(--good), 0 10px 40px rgba(0,0,0,.7); }
+  .pit-spiel[data-blitz="falsch"] .ps-karte { border-color: var(--bad); box-shadow: 0 0 0 3px var(--bad), 0 10px 40px rgba(0,0,0,.7); }
+  .ps-fuss { display: flex; gap: 14px; align-items: center; font-size: 12px; }
+  .ps-fuss button { font-size: 20px; line-height: 1; padding: 4px 14px; background: var(--k-grau); color: #fff; border: 1px solid rgba(255,255,255,.3); }
+  /* ---- Tutorial ---- */
+  .k-tutorial-knopf { font-family: var(--k-font); letter-spacing: .12em; text-transform: uppercase; font-size: 13px;
+    background: rgba(10,12,18,.7); color: #fff; border: 2px solid var(--k-blau); border-radius: 0; padding: 6px 16px; }
+  .k-tutorial-knopf:hover { background: var(--k-blau); color: var(--k-blau-text); }
+  .k-tutorial-taste { margin-left: 8px; color: var(--k-dim); font-size: 11px; letter-spacing: .04em; }
+  .k-tour { position: fixed; inset: 0; z-index: 450; font-family: var(--k-font); }
+  .k-tour[hidden], .k-tour-spot[hidden] { display: none; }
+  .k-tour.ohne-spot { background: rgba(0,0,0,.72); }
+  .k-tour-spot { position: absolute; border: 2px solid var(--k-blau); box-shadow: 0 0 0 9999px rgba(0,0,0,.72);
+    pointer-events: none; transition: left .25s, top .25s, width .25s, height .25s; }
+  .k-tour-karte { position: absolute; left: 50%; transform: translateX(-50%); width: min(600px, 94vw);
+    background: #0c0f16; border-top: 3px solid var(--k-blau); box-shadow: 0 12px 40px rgba(0,0,0,.8);
+    display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; padding: 10px 12px; color: #eef0f4; }
+  .k-tour-karte.unten { bottom: max(8px, env(safe-area-inset-bottom)); }
+  .k-tour-karte.oben { top: max(8px, env(safe-area-inset-top)); }
+  /* Daneben: schmaler, senkrecht mittig, am freien Rand. */
+  .k-tour-karte.links, .k-tour-karte.rechts { top: 50%; transform: translateY(-50%); width: min(46vw, 400px);
+    grid-template-columns: minmax(0, 1fr); }
+  .k-tour-karte.links { left: max(8px, env(safe-area-inset-left)); }
+  .k-tour-karte.rechts { left: auto; right: max(8px, env(safe-area-inset-right)); }
+  .k-tour-karte.links img, .k-tour-karte.rechts img { display: none; }
+  .k-tour-karte img { width: clamp(64px, 17vh, 130px); aspect-ratio: 4 / 3; object-fit: cover; grid-row: span 2; }
+  .k-tour-schritt { font-size: 10.5px; color: var(--k-dim); letter-spacing: .12em; }
+  .k-tour-karte h2 { margin: 0; font-size: clamp(13px, 3.4vh, 18px); letter-spacing: .08em; text-transform: uppercase; }
+  .k-tour-karte p { margin: 2px 0 0; font-size: clamp(11px, 2.9vh, 13.5px); line-height: 1.4; }
+  .k-tour-knoepfe { grid-column: 1 / -1; display: flex; gap: 6px; justify-content: flex-end; margin-top: 4px; }
+  .k-tour-knoepfe button { font-family: var(--k-font); letter-spacing: .08em; text-transform: uppercase;
+    font-size: 12px; padding: 4px 12px; border-radius: 0; }
+  .k-tour-knoepfe .k-tour-leise { margin-right: auto; background: transparent; border-color: transparent; color: var(--k-dim); }
+  .k-tour-knoepfe button.menu-nav-sel { outline: 0; border-color: #fff; background: var(--k-blau); color: var(--k-blau-text); }
   /* HOCHFORMAT, schmal (Telefon im Browser): untereinander, mit Bildlauf. */
   @media (max-width: 760px) and (orientation: portrait) {
     header#k-kopf { grid-template-columns: 1fr auto; }
@@ -3614,6 +3669,9 @@
       <button type="button" id="lang-toggle" aria-label="Sprache wechseln / switch language">
         <b id="lang-de">DEUTSCH</b><b id="lang-en">ENGLISH</b>
       </button>
+      <!-- TUTORIAL (51b-tutorial.js): Klick, Dreieck oder T. -->
+      <button type="button" id="k-tutorial-start" class="k-tutorial-knopf">Tutorial <span class="wip-tag">WIP</span>
+        <span class="k-tutorial-taste" data-i18n-skip>&#9651; / T</span></button>
       <div class="k-druecken">Beliebige Taste dr&uuml;cken</div>
     <!-- Nur in der Android-App: eine neue Web-Fassung liegt bereit (siehe 97b-app.js). -->
     <div class="app-update" id="app-update" hidden>
@@ -3622,7 +3680,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.24</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.25</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4010,6 +4068,24 @@
            Selbsttest "Cockpit-Ansicht: sichtbar verschieden, funktional gleich" verlangt,
            dass die Zahl der Elemente mit id ueber alle Ansichten konstant ist. Gefuellt
            werden nur die Werte. -->
+      <!-- BOXEN-MINIGAME (70-race.js, pitSpielMalen): Symbol mittig, ein Ring als Zeitfenster,
+           Zaehler, Restzeit, Treffer, und zwei Tipp-Flaechen fuer Touch. Im Markup, damit
+           die Zahl der ids in allen Ansichten gleich bleibt. -->
+      <div class="pit-spiel" id="pit-spiel" hidden>
+        <div class="ps-karte">
+          <div class="ps-kopf"><span id="pit-spiel-zaehler" data-i18n-skip>1/10</span>
+            <b>BOX</b><span id="pit-spiel-rest" data-i18n-skip></span></div>
+          <div class="ps-mitte">
+            <svg class="ps-ring" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="45"/></svg>
+            <svg class="ps-sym ps-quad" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg>
+            <svg class="ps-sym ps-kreis" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/></svg>
+            <span class="ps-fertig" data-i18n-skip>&#10003;</span>
+          </div>
+          <div class="ps-fuss"><button type="button" id="pit-spiel-quad" aria-label="Quadrat">&#9633;</button>
+            <span id="pit-spiel-treffer" data-i18n-skip></span>
+            <button type="button" id="pit-spiel-kreis" aria-label="Kreis">&#9675;</button></div>
+        </div>
+      </div>
       <div class="gt3-schirm" id="race-pitscreen">
         <!-- DAS P IST DIE ZUSTANDSANZEIGE, nicht nur ein Zeichen: grau wenn nichts
              laeuft, gelb in der Boxengasse, gruen wenn fertig. Damit steht die Farbe dort,
@@ -4514,6 +4590,8 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Tutorial auf dem Titelbildschirm (experimentell): f&uuml;hrt in neun Schritten &uuml;ber die echten Schirme, mit Controller, Tastatur oder Finger.</li>
+        <li>Boxen-Minigame (experimentell, ab Werk an, unter Optionen &gt; Allgemein &gt; Tank &amp; Schaden): alles wird gewechselt, losfahren erst am Ende, zehn Tasten &#9633;/&#9675; in der Mitte k&uuml;rzen den Stopp bis auf die H&auml;lfte.</li>
         <li>Pacejka: &Uuml;bersteuern sp&uuml;rbar &ndash; Vollgas in der Kurve bringt das Heck, der Vortrieb geht zur&uuml;ck, der Rutsch h&auml;lt ohne Stick, bis man gegenlenkt oder vom Pedal geht, st&auml;rkere Vibration; mit dem Schalter &bdquo;&Uuml;bersteuern&ldquo; abschaltbar (experimentell).</li>
         <li>Men&uuml;: Kopf halb so hoch, flachere Kn&ouml;pfe und Unterreiter, Kachelfotos als Hintergrund gut sichtbar, kleinere Titel, Erkl&auml;rungen nur noch im &#9432;. Letzte Auswahl je Seite bleibt, nach dem Rennen &bdquo;Nochmal&ldquo;, in der Garage blinkt das Auto beim Dar&uuml;berfahren. Weniger automatische Spr&uuml;nge: Rennende im Men&uuml; nur als Einblendung, gr&uuml;ne Ampel und Vollbild-Ende behalten den Cockpit-Schirm, Options f&uuml;hrt zur&uuml;ck auf die Seite, von der man kam.</li>
         <li>App: nach Schlie&szlig;en und &Ouml;ffnen l&auml;sst sich das Auto wieder verbinden (es hing an der alten Verbindung fest); ab der n&auml;chsten APK trennt die App beim Schlie&szlig;en sauber.</li>
@@ -7868,6 +7946,17 @@
           <option value="offtrack">Neben der Strecke (von Hand, Start erst abseits)</option>
           <option value="double">Doppelter Start-Ausdruck (experimentell)</option>
         </select></div>
+      <div class="opt-row"><div class="opt-label">Boxenstopp-Modus <span class="wip-tag">experimentell</span>
+          <small>Standard: gemacht wird, was geplant ist, und losfahren beendet den Stopp.
+          Minigame: gewechselt wird alles, was simuliert wird &ndash; Reifen, Tank voll,
+          Reparatur &ndash;, und bis alles fertig ist, kommst du nicht los. In der Mitte
+          erscheinen nacheinander zehn Tasten, Quadrat oder Kreis (Tastatur: K und I).
+          Jede richtig gedr&uuml;ckte k&uuml;rzt den Stopp um 5 Prozent, alle zehn halbieren ihn;
+          wer nichts dr&uuml;ckt, wartet die volle Zeit. Abbrechen: Kreuz tippen.</small></div>
+        <select id="pit-modus" data-preset-skip>
+          <option value="standard">Standard</option>
+          <option value="minigame" selected>Minigame (experimentell)</option>
+        </select></div>
       <!-- BESTELLT: "standardmaessig 1 Runde fuer 2 Ueberfahrten (wenn 1x im Pit Window),
            ich aber auch 0 Runden einstellen kann (falls die Boxengasse nicht parallel zur
            Start/Zielgerade ist)". Ersetzt die fruehere Checkbox "Runde trotzdem zaehlen". -->
@@ -10055,6 +10144,23 @@
   <!-- COCKPIT-MENUE. BESTELLT (Nutzerentscheid): "Options lang halten" oeffnet es; kurz
        druecken bleibt der Boxenstopp. Solange es offen ist, geht das Gas von Spieler 1 auf 0.
        In main und nicht in einem Tab, damit es ueber dem Cockpit-Vollbild liegen kann. -->
+  <!-- TUTORIAL: Scheinwerfer auf das Ziel, Karte mit Bild und Text (51b-tutorial.js). -->
+  <div class="k-tour" id="k-tour" hidden>
+    <div class="k-tour-spot" id="k-tour-spot" hidden></div>
+    <div class="k-tour-karte unten" id="k-tour-karte">
+      <img id="k-tour-bild" alt="">
+      <div class="k-tour-inhalt">
+        <div class="k-tour-schritt" id="k-tour-schritt" data-i18n-skip></div>
+        <h2 id="k-tour-titel"></h2>
+        <p id="k-tour-text"></p>
+      </div>
+      <div class="k-tour-knoepfe">
+        <button type="button" id="k-tour-ende" class="k-tour-leise">Beenden</button>
+        <button type="button" id="k-tour-zurueck">&#9664; Zur&uuml;ck</button>
+        <button type="button" id="k-tour-weiter" class="primary">Weiter &#9654;</button>
+      </div>
+    </div>
+  </div>
   <!-- RENNENDE AUS EINEM MENUE: eine Einblendung statt eines Sprungs ins Cockpit. -->
   <button type="button" class="k-ergebnis" id="k-ergebnis" hidden>Rennen beendet – Ergebnis ansehen</button>
   <!-- FRAGE-DIALOG (51-konsole.js, konsoleFrage). Zuerst fuer "trotzdem starten": BESTELLT
@@ -11112,6 +11218,31 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Willkommen bei OmegaSim": "Welcome to OmegaSim",
+    "OmegaSim steuert deine Carrera-Hybrid-Autos per Bluetooth – mit echter Fahrphysik, Motorsound aus einer Motorsimulation und einem Cockpit wie im Rennsimulator. In einer Minute siehst du die wichtigsten Stellen.": "OmegaSim drives your Carrera Hybrid cars over Bluetooth – with real driving physics, engine sound from an engine simulation and a cockpit like a racing sim. In a minute you will see the most important places.",
+    "Hier verbindest du dein Auto per Bluetooth. Das erste steuerst du selbst, jedes weitere fährt als Ghost mit eigener Linie und eigenem Charakter gegen dich – Namen, Farben und Rollen gibt es in der Garage.": "Connect your car over Bluetooth here. You drive the first one yourself; every other one races against you as a ghost with its own line and character – names, colours and roles are in the garage.",
+    "Deine Strecke": "Your track",
+    "Auf der Bahn liest das Auto die Schiene: scanne deine Strecke oder baue sie im Editor nach. Ohne Bahn druckst du Vorlagen aus und lädst ein Foto deiner Strecke hoch, das dann im Cockpit erscheint.": "On the rail the car reads the track: scan your layout or rebuild it in the editor. Without a rail you print templates and upload a photo of your track, which then appears in the cockpit.",
+    "Freies Training, Qualifying, Rennen über Runden oder Endurance – mit wechselndem Wetter, Pflichtboxenstopps, Tank und Reifenverschleiß.": "Free practice, qualifying, races over laps or endurance – with changing weather, mandatory pit stops, fuel and tyre wear.",
+    "Fahrgefühl und Motorsound": "Driving feel and engine sound",
+    "Links die Abstimmung, rechts der Motor: vom Porsche-Boxer bis zum V12 kommt jeder Klang aus einer Motorsimulation. Die Physik rechnet Gänge und Reibkreis, im Modus Pacejka sogar Reifen am Limit.": "Setup on the left, engine on the right: from the Porsche flat-six to the V12, every sound comes from an engine simulation. The physics computes gears and the friction circle, and in Pacejka mode even tyres at the limit.",
+    "Ein Druck, und die Startampel läuft. Im Cockpit: Kreuz tippen für den Boxenstopp, halten für die gelbe Flagge, Options bringt dich ins Menü und wieder zurück.": "One press and the start lights run. In the cockpit: tap cross for a pit stop, hold it for the yellow flag, Options takes you to the menu and back.",
+    "Boxenstopp als Minigame": "The pit stop as a minigame",
+    "Beim Stopp erscheinen nacheinander zehn Tasten in der Mitte. Drück Quadrat oder Kreis rechtzeitig, und die Crew ist bis zu doppelt so schnell fertig.": "During a stop, ten buttons appear one after another in the middle. Press square or circle in time and the crew is done up to twice as fast.",
+    "Mehrspieler und Info-Screen": "Multiplayer and info screen",
+    "Mehrere Telefone, eine gemeinsame Rangliste – Host ist ein PC oder ein Telefon mit der App. Ein Tablet am Rand zeigt als Info-Screen Strecke, Autos und Zeiten.": "Several phones, one shared leaderboard – the host is a PC or a phone with the app. A tablet at the side shows the track, the cars and the times as an info screen.",
+    "Los geht's": "Let's go",
+    "Verbinde jetzt dein erstes Auto. Das Tutorial findest du jederzeit wieder auf dem Titelbildschirm.": "Connect your first car now. You can find the tutorial again on the title screen at any time.",
+    "Tutorial": "Tutorial",
+    "Beenden": "Finish",
+    "◀ Zurück": "◀ Back",
+    "Weiter": "Next",
+    "Tutorial auf dem Titelbildschirm (experimentell): führt in neun Schritten über die echten Schirme, mit Controller, Tastatur oder Finger.": "Tutorial on the title screen (experimental): nine steps across the real screens, with controller, keyboard or finger.",
+    "Boxenstopp-Modus": "Pit stop mode",
+    "Standard: gemacht wird, was geplant ist, und losfahren beendet den Stopp. Minigame: gewechselt wird alles, was simuliert wird – Reifen, Tank voll, Reparatur –, und bis alles fertig ist, kommst du nicht los. In der Mitte erscheinen nacheinander zehn Tasten, Quadrat oder Kreis (Tastatur: K und I). Jede richtig gedrückte kürzt den Stopp um 5 Prozent, alle zehn halbieren ihn; wer nichts drückt, wartet die volle Zeit. Abbrechen: Kreuz tippen.": "Standard: what is planned gets done, and driving off ends the stop. Minigame: everything that is simulated gets changed – tyres, a full tank, repairs –, and you cannot leave until it is all done. Ten buttons appear one after another in the middle, square or circle (keyboard: K and I). Each one pressed correctly cuts the stop by 5 per cent, all ten halve it; if you press nothing, you wait the full time. To abort: tap cross.",
+    "Minigame (experimentell)": "Minigame (experimental)",
+    "Boxen-Minigame: Quadrat und Kreis!": "Pit minigame: square and circle!",
+    "Boxen-Minigame (experimentell, ab Werk an, unter Optionen > Allgemein > Tank & Schaden): alles wird gewechselt, losfahren erst am Ende, zehn Tasten □/○ in der Mitte kürzen den Stopp bis auf die Hälfte.": "Pit minigame (experimental, on by default, under Options > General > Fuel & damage): everything gets changed, you can only leave at the end, ten buttons □/○ in the middle cut the stop down to half.",
     "Menü: Kopf halb so hoch, flachere Knöpfe und Unterreiter, Kachelfotos als Hintergrund gut sichtbar, kleinere Titel, Erklärungen nur noch im ⓘ. Letzte Auswahl je Seite bleibt, nach dem Rennen „Nochmal“, in der Garage blinkt das Auto beim Darüberfahren. Weniger automatische Sprünge: Rennende im Menü nur als Einblendung, grüne Ampel und Vollbild-Ende behalten den Cockpit-Schirm, Options führt zurück auf die Seite, von der man kam.": "Menu: header half as tall, flatter buttons and sub-tabs, tile photos clearly visible as backgrounds, smaller titles, explanations only behind ⓘ. The last selection per page is kept, “Again” after the race, in the garage a car flashes when you point at it. Fewer automatic jumps: race end in a menu only as a banner, green light and leaving fullscreen keep the cockpit screen, Options returns to the page you came from.",
     "Pacejka: Übersteuern spürbar – Vollgas in der Kurve bringt das Heck, der Vortrieb geht zurück, der Rutsch hält ohne Stick, bis man gegenlenkt oder vom Pedal geht, stärkere Vibration; mit dem Schalter „Übersteuern“ abschaltbar (experimentell).": "Pacejka: oversteer you can feel – full throttle in a corner brings the rear round, drive drops, the slide holds without the stick until you countersteer or come off the pedal, stronger vibration; can be switched off with the “Oversteer” switch (experimental).",
     "Rennen beendet – Ergebnis ansehen": "Race finished – view the result",
@@ -13646,11 +13777,14 @@
   // the temporal dead zone. That trap has been sprung in this file more than once, so the
   // dependency is inverted instead of ordered.
   let pitThrottleLock = false;
+  // Boxen-Minigame (70-race.js): waehrend des ganzen Stopps weder Gas noch Rueckwaerts.
+  let pitVollSperre = false;
 
   function setThrottle(ny) {
     // Wheels off: the request is dropped rather than damped, and the pedal snaps back to
     // zero so the display does not show a throttle the car is not getting.
     if (pitThrottleLock && -ny > 0) { ny = 0; }
+    if (pitVollSperre) { ny = 0; }
     throttleY = -ny; // up = positive
     const topPx = 93 + ny * TR;
     throttleInner.style.top = topPx + 'px';
@@ -14012,7 +14146,10 @@
   // the keydown listener rather than the polling interval, so one tap is one shift.
   window.addEventListener('keydown', (e) => {
     const k = (e.key || '').toLowerCase();
-    if ((k === 'i' || k === 'k') && !e.repeat && physicsEnabled && !physEngine.state.isShifting) {
+    // Boxen-Minigame: K ist Quadrat, I ist Kreis - dieselbe Lage wie Runter/Hoch.
+    if ((k === 'i' || k === 'k') && !e.repeat && pitSpielTaste(k === 'k' ? 'quad' : 'kreis')) {
+      /* vom Spiel verbraucht */
+    } else if ((k === 'i' || k === 'k') && !e.repeat && physicsEnabled && !physEngine.state.isShifting) {
       physEngine.triggerShift(k === 'i' ? 1 : -1);
     }
     if (k === 'l' && !e.repeat) triggerHeadlightFlash();
@@ -18909,9 +19046,12 @@
       $('race-pit-text').textContent = pitState === 'limited'
         ? 'PIT LIMITER ENGAGED \u00b7 '
           + Math.round(PIT_SPEED_FACTOR * physEngine.config.topSpeedKmh * REAL_SCALE) + ' KM/H'
-        : 'PIT STOP \u00b7 ' + ((Date.now() - (pitServiceStart || Date.now())) / 1000).toFixed(1) + 's'
+        : (pitSpielAktiv()
+          ? 'PIT GAME \u00b7 ' + pitSpielRest().toFixed(1) + 's \u00b7 \u2713 ' + pitSpiel.treffer
+            + '/' + PIT_SPIEL_ANZAHL
+          : 'PIT STOP \u00b7 ' + ((Date.now() - (pitServiceStart || Date.now())) / 1000).toFixed(1) + 's'
           + ' \u00b7 TANK +' + fuelLiters(pitFuelGained) + 'l'
-          + ' \u00b7 REP +' + Math.round(pitDamageRepaired) + '%';
+          + ' \u00b7 REP +' + Math.round(pitDamageRepaired) + '%');
     }
 
     if (raceState === 'finished' && racePartialMs !== null) {
@@ -20261,6 +20401,7 @@
     // Das Cockpit-Menue (Options 1 s halten, 51-konsole.js) liegt ueber allem und hat
     // Vorrang - auch im Cockpit, das sonst keine generische Zeilenliste bekommt.
     if (typeof konsoleFrageOffen === 'function' && konsoleFrageOffen()) return $('k-frage');
+    if (typeof konsoleTourOffen === 'function' && konsoleTourOffen()) return $('k-tour-karte');
     const tab = document.querySelector('.tabpage.active');
     if (!tab || tab.id === 'tab-race') return null;
     // Der TITELBILDSCHIRM hat keine Zeilen: jede Taste fuehrt nach Fahren (51-konsole.js).
@@ -20366,7 +20507,7 @@
   // Zeile gemerkt, beim Zurueckkommen steht die Auswahl wieder dort. Nicht fuer Dialoge
   // (#k-frage, Tutorial): die fangen immer oben an.
   const menuNavMerk = {};
-  const MENU_NAV_OHNE_MERK = ['k-frage', 'k-tour'];
+  const MENU_NAV_OHNE_MERK = ['k-frage', 'k-tour-karte'];
   function menuNavMerkLeeren() { Object.keys(menuNavMerk).forEach((k) => { delete menuNavMerk[k]; }); }
   function menuNavEnsureContext() {
     const key = menuNavContextNow();
@@ -20755,6 +20896,7 @@
   function konsoleZurueck() {
     if (typeof optInfoOffen === 'function' && optInfoOffen()) { optInfoSchliessen(); return true; }
     if (kFrageOffen) { konsoleFrageZu(); return true; }
+    if (typeof konsoleTourOffen === 'function' && konsoleTourOffen()) { konsoleTourZurueck(); return true; }
     const lb = $('lb-wrap');
     if (lb && lb.classList.contains('on') && $('lb-close')) { $('lb-close').click(); return true; }
     const tab = kAktiverTab();
@@ -20838,6 +20980,8 @@
     }));
   }
   function konsoleReiterSchritt(d) {
+    // Waehrend des Tutorials bleibt der Schirm, wo die Fuehrung ihn hinstellt.
+    if (typeof konsoleTourOffen === 'function' && konsoleTourOffen()) return true;
     const r = konsoleReiter();
     if (!r || !r.length) return false;
     let i = r.findIndex((x) => x.an);
@@ -21268,6 +21412,8 @@
     }
     if (kAktiverTab() !== 'home') return false;
     if (neu === 14 || neu === 15 || neu === 4 || neu === 5) { setLang(lang === 'de' ? 'en' : 'de'); return true; }
+    // Dreieck: das Tutorial (51b-tutorial.js).
+    if (neu === 3) { kTitelSperre = true; konsoleTourStart(); return true; }
     // Die Trigger (6/7) sind Gas und Bremse und zaehlen nicht als "Taste".
     if (neu !== false && neu !== 6 && neu !== 7) { konsoleTitelWeiter(); kTitelSperre = true; return true; }
     return true;
@@ -21276,6 +21422,7 @@
   // steigende Flanke zaehlt - eine gehaltene Taste springt nicht hin und her.
   function konsoleOptionsTaste(gedrueckt) {
     if (gedrueckt && !konsoleOptionsTaste.vorher && !kFrageOffen
+        && !(typeof konsoleTourOffen === 'function' && konsoleTourOffen())
         && !document.body.classList.contains('track-fs')) {
       const tab = kAktiverTab();
       if (tab === 'race') konsoleZumMenue();
@@ -21293,6 +21440,7 @@
     if (kAktiverTab() === 'home' && !e.ctrlKey && !e.altKey && !e.metaKey && k !== 'tab' && k !== 'shift') {
       e.preventDefault(); e.stopImmediatePropagation();
       if (k === 'arrowleft' || k === 'arrowright') setLang(lang === 'de' ? 'en' : 'de');
+      else if (k === 't') konsoleTourStart();
       else konsoleTitelWeiter();
       return;
     }
@@ -21390,6 +21538,140 @@
   }
   setTimeout(konsoleEinrichten, 0);
 
+  // ============================ TUTORIAL (experimentell) ================================
+  //
+  // BESTELLT: "To the title screen, also add a tutorial button. When I click it, it leads me
+  // through the steps and teases some of the capabilities of the app."
+  //
+  // Eine Bildfolge auf den ECHTEN Schirmen: je Schritt ein Scheinwerfer auf das Element, um
+  // das es geht (der Rest abgedunkelt), und eine Karte mit Bild, Titel und zwei Saetzen.
+  // Bedienbar wie jedes Menue: die Karte ist ein menuNav-Container (50b-menu-nav.js), Kreuz
+  // waehlt (vorgewaehlt: Weiter), Kreis geht einen Schritt zurueck, auf dem ersten schliesst
+  // er. Startet nie von selbst - nur ueber den Knopf, Dreieck oder T auf dem Titel.
+  //
+  // Der erste Schritt steht schon auf FAHREN und nicht auf dem Titel: auf dem Titel
+  // verbraucht konsolePadTitel() jede Taste, dort gaebe es kein Weiter.
+
+  const K_TOUR = [
+    { tab: 'fahren', ziel: null, bild: 'titel', titel: 'Willkommen bei OmegaSim',
+      text: 'OmegaSim steuert deine Carrera-Hybrid-Autos per Bluetooth – mit echter Fahrphysik, Motorsound aus einer Motorsimulation und einem Cockpit wie im Rennsimulator. In einer Minute siehst du die wichtigsten Stellen.' },
+    { tab: 'fahren', ziel: ['#fa-auto'], bild: 'auto', titel: 'Autos verbinden',
+      text: 'Hier verbindest du dein Auto per Bluetooth. Das erste steuerst du selbst, jedes weitere fährt als Ghost mit eigener Linie und eigenem Charakter gegen dich – Namen, Farben und Rollen gibt es in der Garage.' },
+    { tab: 'fahren', ziel: ['#fa-strecke'], bild: 'strecke-frei', titel: 'Deine Strecke',
+      text: 'Auf der Bahn liest das Auto die Schiene: scanne deine Strecke oder baue sie im Editor nach. Ohne Bahn druckst du Vorlagen aus und lädst ein Foto deiner Strecke hoch, das dann im Cockpit erscheint.' },
+    { tab: 'fahren', ziel: ['#fa-renn'], bild: 'rennen', titel: 'Rennoptionen',
+      text: 'Freies Training, Qualifying, Rennen über Runden oder Endurance – mit wechselndem Wetter, Pflichtboxenstopps, Tank und Reifenverschleiß.' },
+    { tab: 'fahren', ziel: ['#fa-profil', '#fa-motor'], bild: 'optionen', titel: 'Fahrgefühl und Motorsound',
+      text: 'Links die Abstimmung, rechts der Motor: vom Porsche-Boxer bis zum V12 kommt jeder Klang aus einer Motorsimulation. Die Physik rechnet Gänge und Reibkreis, im Modus Pacejka sogar Reifen am Limit.' },
+    { tab: 'fahren', ziel: ['#fa-start'], bild: 'start', titel: 'Losfahren',
+      text: 'Ein Druck, und die Startampel läuft. Im Cockpit: Kreuz tippen für den Boxenstopp, halten für die gelbe Flagge, Options bringt dich ins Menü und wieder zurück.' },
+    { tab: 'fahren', ziel: null, bild: 'garage', titel: 'Boxenstopp als Minigame',
+      text: 'Beim Stopp erscheinen nacheinander zehn Tasten in der Mitte. Drück Quadrat oder Kreis rechtzeitig, und die Crew ist bis zu doppelt so schnell fertig.' },
+    { tab: 'mp', ziel: ['#k-reiter button:nth-child(2)', '#sub-home-mp .misc-grid'], bild: 'mehrspieler', titel: 'Mehrspieler und Info-Screen',
+      text: 'Mehrere Telefone, eine gemeinsame Rangliste – Host ist ein PC oder ein Telefon mit der App. Ein Tablet am Rand zeigt als Info-Screen Strecke, Autos und Zeiten.' },
+    { tab: 'fahren', ziel: ['#fa-auto'], bild: 'fahren', titel: "Los geht's",
+      text: 'Verbinde jetzt dein erstes Auto. Das Tutorial findest du jederzeit wieder auf dem Titelbildschirm.' },
+  ];
+
+  let kTourOffen = false;
+  let kTourSchritt = 0;
+  function konsoleTourOffen() { return kTourOffen; }
+
+  function konsoleTourStart() {
+    kTourOffen = true;
+    kTourSchritt = 0;
+    const d = $('k-tour');
+    if (d) d.hidden = false;
+    konsoleTourZeigen();
+  }
+  function konsoleTourZu(fertig) {
+    kTourOffen = false;
+    const d = $('k-tour');
+    if (d) d.hidden = true;
+    document.querySelectorAll('.menu-nav-sel').forEach((el) => el.classList.remove('menu-nav-sel'));
+    menuNavEnsureContext();
+    if (fertig || kAktiverTab() !== 'fahren') konsoleZeige('fahren');
+    setTimeout(() => { menuNavEnsureContext(); konsoleFokusAuf('fa-auto'); }, 0);
+  }
+  function konsoleTourWeiter() {
+    if (kTourSchritt >= K_TOUR.length - 1) { konsoleTourZu(true); return; }
+    kTourSchritt++;
+    konsoleTourZeigen();
+  }
+  function konsoleTourZurueck() {
+    if (kTourSchritt <= 0) { konsoleTourZu(false); return; }
+    kTourSchritt--;
+    konsoleTourZeigen();
+  }
+
+  // Das Rechteck um alle Ziele eines Schritts; null, wenn keines sichtbar ist.
+  function kTourRechteck(ziele) {
+    let r = null;
+    for (const sel of ziele || []) {
+      const el = document.querySelector(sel);
+      if (!el) continue;
+      const b = el.getBoundingClientRect();
+      if (!b.width || !b.height) continue;
+      r = r ? { l: Math.min(r.l, b.left), o: Math.min(r.o, b.top), r: Math.max(r.r, b.right), u: Math.max(r.u, b.bottom) }
+            : { l: b.left, o: b.top, r: b.right, u: b.bottom };
+    }
+    return r;
+  }
+
+  function konsoleTourZeigen() {
+    const s = K_TOUR[kTourSchritt];
+    if (!s) return;
+    if (s.tab && kAktiverTab() !== s.tab) {
+      kZurueckLaeuft = true;
+      try { konsoleZeige(s.tab); } finally { kZurueckLaeuft = false; }
+    }
+    $('k-tour-schritt').textContent = (kTourSchritt + 1) + ' / ' + K_TOUR.length;
+    $('k-tour-titel').textContent = t(s.titel);
+    $('k-tour-text').textContent = t(s.text);
+    $('k-tour-bild').src = 'img/' + s.bild + '.jpg';
+    $('k-tour-zurueck').hidden = kTourSchritt === 0;
+    $('k-tour-weiter').textContent = kTourSchritt === K_TOUR.length - 1 ? t('Los geht\'s') + ' ▶' : t('Weiter') + ' ▶';
+    // Erst malen lassen, dann messen: der Schirm ist eben erst gewechselt.
+    setTimeout(konsoleTourSpot, 30);
+    menuNavEnsureContext();
+    const rows = menuNavRows();
+    const iw = rows.findIndex((r) => r.el.id === 'k-tour-weiter');
+    menuNavIndex = iw >= 0 ? iw : 0;
+    menuNavGezeigt = true;
+    menuNavRender();
+  }
+
+  function konsoleTourSpot() {
+    if (!kTourOffen) return;
+    const s = K_TOUR[kTourSchritt];
+    const spot = $('k-tour-spot'), karte = $('k-tour-karte'), d = $('k-tour');
+    const r = kTourRechteck(s.ziel);
+    d.classList.toggle('ohne-spot', !r);
+    spot.hidden = !r;
+    // Die Karte dorthin, wo das Ziel NICHT ist: darunter oder darueber, wenn dort Platz
+    // ist, sonst daneben (eine hohe Kachel am Telefon laesst oben und unten nichts frei -
+    // gesehen: die Karte lag ueber dem Knopf "Verbinden" der Kachel AUTOS).
+    karte.classList.remove('oben', 'unten', 'links', 'rechts');
+    if (!r) { karte.classList.add('unten'); return; }
+    const rand = 4;
+    spot.style.left = (r.l - rand) + 'px';
+    spot.style.top = (r.o - rand) + 'px';
+    spot.style.width = (r.r - r.l + 2 * rand) + 'px';
+    spot.style.height = (r.u - r.o + 2 * rand) + 'px';
+    const h = karte.offsetHeight + 16;
+    if (innerHeight - r.u >= h) karte.classList.add('unten');
+    else if (r.o >= h) karte.classList.add('oben');
+    else karte.classList.add(r.l > innerWidth - r.r ? 'links' : 'rechts');
+  }
+
+  (() => {
+    const kn = (id, fn) => { const el = $(id); if (el) el.addEventListener('click', fn); };
+    kn('k-tutorial-start', (e) => { e.stopPropagation(); konsoleTourStart(); });
+    kn('k-tour-weiter', () => konsoleTourWeiter());
+    kn('k-tour-zurueck', () => konsoleTourZurueck());
+    kn('k-tour-ende', () => konsoleTourZu(false));
+    window.addEventListener('resize', () => { if (kTourOffen) konsoleTourSpot(); });
+  })();
   // =========================================================================
   // Die Strecke: Modell, Geometrie, Editor, Scan
   // =========================================================================
@@ -28422,6 +28704,10 @@
   // reads speedKmh * REAL_SCALE (71.25), so 80 / 71.25 / 4.0 top speed = 0.2807.
   const PIT_SPEED_FACTOR = 80 / REAL_SCALE / 4.0;
   let pitState = 'off';        // off | limited | servicing
+  let pitModus = 'minigame';   // Boxen-Minigame, siehe pitSpielStart()
+  let pitSpiel = null;
+  const PIT_SPIEL_ANZAHL = 10;
+  const PIT_SPIEL_BONUS = 0.05;
   let pitServiceStart = null;
   let pitFuelGained = 0, pitDamageRepaired = 0;
   const PIT_FUEL_PER_SEC = 22;
@@ -28432,6 +28718,10 @@
   const PIT_STANDSTILL_KMH = 10 / REAL_SCALE;
 
   function setPitState(next) {
+    if (next !== 'servicing') {
+      pitSpiel = null;
+      if (typeof pitSpielMalen === 'function') setTimeout(pitSpielMalen, 0);
+    }
     if (pitState === next) return;
     pitState = next;
     // Die Variante 'double' nennt ausdruecklich 60 km/h, die anderen fahren mit den
@@ -28468,6 +28758,9 @@
       pitDone = { refuel: false, tyres: false, repair: false };
       pitTyreElapsed = 0; pitEmptyElapsed = 0; pitStandElapsed = 0; pitReady = false;
       pitTyreTarget = Math.max(1.5, gaussian(PIT_TYRE_CHANGE_S, PIT_TYRE_CHANGE_SD));
+      // MINIGAME: alles, was simuliert wird, und die Tastenfolge (siehe pitSpielStart).
+      pitSpiel = null;
+      if (pitModus === 'minigame') pitSpielStart();
       // The plan was chosen while rolling down the pit lane; only now is it locked in.
       if (!pitPlan) pitPlan = makePitPlan();
       if (pitPlan.tyres) {
@@ -28480,6 +28773,7 @@
       padRumble(0.25, 0.15, 120, 'box');
       log(`Boxenstopp: ${describePitPlan(pitPlan)}.`, 'info');
     } else if (next === 'limited') {
+      pitSpiel = null;
       // Arm the plan HERE, not at the service: the quick menu is meant to be used while
       // rolling in, which is the only time there is to think about it.
       pitPlan = makePitPlan();
@@ -28621,7 +28915,11 @@
     if (!stopped) pitOrtGemeldet = false;
 
     if (pitState === 'servicing') {
-      if (!stopped) { setPitState('off'); showHudToast('Boxengasse verlassen'); return; }
+      // Im Minigame kommt man vor dem Ende nicht los (Gas und Bremse sind gesperrt, siehe
+      // refreshPitThrottleLock), und eine Eingabe bricht den Stopp auch nicht ab - das tut
+      // nur Kreuz tippen (requestPitStop).
+      if (!stopped && !(pitSpiel && !pitReady)) { setPitState('off'); showHudToast('Boxengasse verlassen'); return; }
+      if (pitSpiel) { pitSpielTick(dt); return; }
       const p = pitPlan || {};
       pitStandElapsed += dt;
 
@@ -28672,22 +28970,139 @@
         ? pitEmptyElapsed >= PIT_EMPTY_STOP_S
         : (!p.refuel || pitDone.refuel) && (!p.tyres || pitDone.tyres) && (!p.repair || pitDone.repair);
 
-      if (allDone && !pitReady) {
-        pitReady = true;
-        // Beim FERTIGWERDEN und nicht beim Einfahren: wer abbricht, hatte keinen Stopp.
-        lapEventAkku.pit += 1;
-        stopAllPitLoops();
-        pitChimeReady();
-        padRumble(0.35, 0.2, 200, 'box');
-        showHudToast('Fertig, losfahren!');
-        log('Boxenstopp fertig.', 'info');
-      }
+      if (allDone && !pitReady) pitFertig();
 
       refreshPitThrottleLock();
       pitBoard();
       updateDamageFuelUI();
       updatePitUI();
     }
+  }
+
+  // Fertig: dieselbe Stelle fuer beide Modi.
+  function pitFertig() {
+    pitReady = true;
+    // Beim FERTIGWERDEN und nicht beim Einfahren: wer abbricht, hatte keinen Stopp.
+    lapEventAkku.pit += 1;
+    stopAllPitLoops();
+    pitChimeReady();
+    padRumble(0.35, 0.2, 200, 'box');
+    showHudToast('Fertig, losfahren!');
+    log('Boxenstopp fertig.', 'info');
+  }
+
+  // ---- BOXEN-MINIGAME (experimentell) -------------------------------------------------
+  //
+  // BESTELLT: "Weiterer Pit-Modus (aktueller Modus als Standard, neuer Modus Minigame
+  // [experimentell]). Wechselt alles, was simuliert wird und braucht dafuer die
+  // vollstaendige Zeit. Vorher kann nicht losgefahren werden. Die Zeit kann reduziert
+  // werden, wenn eine Reihe von Tasten gedrueckt werden ... Quadrat und Kreis. Eine
+  // zufaellige Folge an 10 Knoepfen, die in der Mitte des Bildschirms eins nach dem anderen
+  // angezeigt werden. Wenn ich nichts druecke, gehen sie automatisch weg, wenn die Zeit
+  // abgelaufen ist." Ab Werk an (fuer den Nutzer zum Testen).
+  //
+  // DIE ZEIT T ist die laengste Einzelarbeit, genau wie im Standardmodus: Reifen, Tanken
+  // auf voll, Reparatur ganz. Alles laeuft proportional zum Fortschritt p = (Standzeit +
+  // Bonus) / T. Jedes Symbol steht T/10 lang; richtig gedrueckt gibt 5 % von T gut, alle
+  // zehn also die halbe Zeit; falsch gibt nichts; nicht gedrueckt verschwindet es.
+  // Nur Auto 1 - Spieler 2 und die Ghosts fahren ihre eigenen Stopps.
+  // pitModus und pitSpiel stehen oben bei pitState (zeitliche Todeszone: setPitState liest
+  // pitSpiel, und das darf nie vor seiner Deklaration laufen).
+  function pitSpielAktiv() { return !!pitSpiel && pitState === 'servicing' && !pitReady; }
+  function pitSpielDauer(pl) {
+    let t = 0;
+    if (pl.tyres) t = Math.max(t, pitTyreTarget);
+    if (pl.refuel) t = Math.max(t, Math.max(0, tankZielNorm(pl.refuel) - fuel) / PIT_FUEL_PER_SEC);
+    if (pl.repair) {
+      let d = damage, sek = 0;
+      while (d > 0.05 && sek < 120) { d -= Math.max(0.01, repairRateAt(d)) * 0.05; sek += 0.05; }
+      t = Math.max(t, sek);
+    }
+    return Math.max(PIT_EMPTY_STOP_S, t);
+  }
+  function pitSpielStart() {
+    pitPlan = {
+      refuel: (pitJobAvailable('refuel') && fuel < 99.5) ? 100 : 0,
+      tyres: pitJobAvailable('tyres'),
+      repair: pitJobAvailable('repair') && damage > 0.05,
+    };
+    const T = pitSpielDauer(pitPlan);
+    const folge = [];
+    for (let i = 0; i < PIT_SPIEL_ANZAHL; i++) folge.push(Math.random() < 0.5 ? 'quad' : 'kreis');
+    pitSpiel = { T, bonus: 0, folge, i: 0, fensterAb: 0, fensterS: T / PIT_SPIEL_ANZAHL,
+                 treffer: 0, fehler: 0, blitz: '', blitzBis: 0, fuel0: fuel, dmg0: damage };
+    showHudToast(t('Boxen-Minigame: Quadrat und Kreis!'));
+  }
+  // welche: 'quad' | 'kreis'. true = die Taste gehoert dem Spiel (kein Schalten).
+  function pitSpielTaste(welche) {
+    if (!pitSpielAktiv()) return false;
+    const sp = pitSpiel;
+    if (sp.i >= sp.folge.length) return true;
+    if (welche === sp.folge[sp.i]) { sp.bonus += PIT_SPIEL_BONUS * sp.T; sp.treffer++; sp.blitz = 'ok'; }
+    else { sp.fehler++; sp.blitz = 'falsch'; }
+    sp.blitzBis = pitStandElapsed + 0.3;
+    sp.i++;
+    sp.fensterAb = pitStandElapsed;
+    pitSpielMalen();
+    return true;
+  }
+  function pitSpielTick(dt) {
+    const sp = pitSpiel, pl = pitPlan || {};
+    pitStandElapsed += dt;
+    if (sp.i < sp.folge.length && pitStandElapsed - sp.fensterAb >= sp.fensterS) {
+      sp.i++;
+      sp.fensterAb = pitStandElapsed;
+    }
+    const anteil = Math.min(1, (pitStandElapsed + sp.bonus) / sp.T);
+    if (pl.refuel) {
+      const neu = sp.fuel0 + (tankZielNorm(pl.refuel) - sp.fuel0) * anteil;
+      if (neu > fuel) { pitFuelGained += neu - fuel; fuel = neu; }
+    }
+    if (pl.repair) {
+      const neu = sp.dmg0 * (1 - anteil);
+      if (neu < damage) { pitDamageRepaired += damage - neu; damage = neu; }
+    }
+    if (pl.tyres) pitTyreElapsed = anteil * pitTyreTarget;
+    pitRumbleWhileWorking(anteil < 1);
+    if (anteil >= 1 && !pitReady) {
+      pitDone = { refuel: true, tyres: true, repair: true };
+      if (pl.repair) damage = 0;
+      if (pl.refuel) fuel = Math.max(fuel, tankZielNorm(pl.refuel));
+      pitFertig();
+      log('Boxen-Minigame: ' + sp.treffer + ' von ' + PIT_SPIEL_ANZAHL + ' getroffen, '
+          + pitStandElapsed.toFixed(1) + ' s statt ' + sp.T.toFixed(1) + ' s.', 'info');
+    }
+    refreshPitThrottleLock();
+    pitBoard();
+    updateDamageFuelUI();
+    updatePitUI();
+    pitSpielMalen();
+  }
+  function pitSpielRest() {
+    return pitSpiel ? Math.max(0, pitSpiel.T - pitStandElapsed - pitSpiel.bonus) : 0;
+  }
+  function pitSpielMalen() {
+    const el = $('pit-spiel');
+    if (!el) return;
+    const an = pitSpielAktiv();
+    el.hidden = !an;
+    if (!an) return;
+    const sp = pitSpiel;
+    const sym = sp.i < sp.folge.length ? sp.folge[sp.i] : '';
+    el.dataset.symbol = sym;
+    el.dataset.blitz = pitStandElapsed < sp.blitzBis ? sp.blitz : '';
+    el.style.setProperty('--fenster', sym
+      ? String(Math.max(0, 1 - (pitStandElapsed - sp.fensterAb) / sp.fensterS)) : '0');
+    $('pit-spiel-zaehler').textContent = Math.min(sp.i + 1, PIT_SPIEL_ANZAHL) + '/' + PIT_SPIEL_ANZAHL;
+    $('pit-spiel-rest').textContent = pitSpielRest().toFixed(1).replace('.', ',') + ' s';
+    $('pit-spiel-treffer').textContent = '✓ ' + sp.treffer;
+  }
+  if ($('pit-spiel-quad')) $('pit-spiel-quad').addEventListener('click', () => pitSpielTaste('quad'));
+  if ($('pit-spiel-kreis')) $('pit-spiel-kreis').addEventListener('click', () => pitSpielTaste('kreis'));
+  if ($('pit-modus')) {
+    const modusLesen = () => { pitModus = $('pit-modus').value === 'standard' ? 'standard' : 'minigame'; };
+    $('pit-modus').addEventListener('change', modusLesen);
+    modusLesen();
   }
 
   $('pit-enable').addEventListener('change', (e) => {
@@ -30105,6 +30520,10 @@
   function refreshPitThrottleLock() {
     pitThrottleLock = pitState === 'servicing' && !!pitPlan && pitPlan.tyres
                       && !!pitDone && !pitDone.tyres;
+    // Im Minigame: den ganzen Stopp, und auch Rueckwaerts/Bremse (BESTELLT: "Vorher kann
+    // nicht losgefahren werden").
+    pitVollSperre = pitState === 'servicing' && !!pitSpiel && !pitReady;
+    if (pitVollSperre) pitThrottleLock = true;
   }
 
 
@@ -41698,6 +42117,8 @@
       if (downshiftNow && !prevDownshift) {
         if (optInfoOffen()) {
           optInfoSchliessen();
+        } else if (pitSpielTaste('quad')) {
+          /* Boxen-Minigame: Quadrat gehoert dem Spiel, es wird nicht geschaltet */
         } else if (konsoleMenue()) {
           // Quadrat im Menue: schneller Wechsel auf einer Kachel (Renntyp, Bahn/Frei, ...).
           konsoleQuadrat();
@@ -41718,6 +42139,8 @@
           optInfoSchliessen();
         } else if (trackEditorPad('undo')) {
           /* vom Editor verbraucht */
+        } else if (pitSpielTaste('kreis')) {
+          /* Boxen-Minigame: Kreis gehoert dem Spiel */
         } else if (konsoleMenue()) {
           konsoleZurueck();
         } else if (physicsEnabled && !physEngine.state.isShifting) {
@@ -62410,6 +62833,177 @@
       if (menuNavIndex !== 2) f.push('Optionen stehen wieder auf ' + menuNavIndex + ' statt 2');
     } finally { if (merk) showTab(merk); }
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'dritte Kachel wieder angewaehlt' };
+  });
+
+  // ---- BOXEN-MINIGAME (70-race.js) ----
+  // Gefahren wird der echte pitLaneTick() mit gefaelschter Uhr, wie bei den Tank-Tests. Der
+  // Stand von Tank, Schaden, Boxengasse und Modus wird gemerkt und zurueckgestellt.
+  // Der echte Stopp montiert neue, kalte Reifen (resetTyres) und passt die Mischung an -
+  // das darf nicht im naechsten Test stehen bleiben (gefunden: "Wetterfront" sah dann
+  // weniger als vollen Griff).
+  function pitSpielReifenMerk() {
+    const st = physEngine.state;
+    return { mix: tyres, temp: st.tyreTempC, w: st.tyreWear, wl: st.tyreWearL, wr: st.tyreWearR, grip: st.tyreGrip };
+  }
+  function pitSpielReifenZurueck(m) {
+    const st = physEngine.state;
+    tyres = m.mix; st.tyreTempC = m.temp; st.tyreWear = m.w; st.tyreWearL = m.wl; st.tyreWearR = m.wr; st.tyreGrip = m.grip;
+    applySurface();
+  }
+  function pitSpielLauf(tippen) {
+    const reifen = pitSpielReifenMerk();
+    const merk = { modus: pitModus, an: pitLaneEnabled, trig: pitTrigger, fuel, damage,
+                   kmh: physEngine.state.speedKmh, gas: throttleY };
+    const echtNow = Date.now;
+    let uhr = echtNow.call(Date);
+    const r = { f: [] };
+    try {
+      Date.now = () => uhr;
+      pitModus = 'minigame'; pitLaneEnabled = true; pitTrigger = 'anywhere';
+      fuel = 30; damage = 20;
+      physEngine.state.speedKmh = 0; throttleY = 0;
+      setPitState('off');
+      pitRearmBlockedUntil = 0;
+      setPitState('limited');
+      pitLastTick = 0; pitLaneTick();
+      if (pitState !== 'servicing' || !pitSpiel) { r.f.push('kein Minigame-Stopp (' + pitState + ')'); return r; }
+      r.T = pitSpiel.T; r.plan = Object.assign({}, pitPlan);
+      // Gas und Rueckwaerts gesperrt, und Gas bricht nicht ab.
+      setThrottle(-1); r.gasGesperrt = throttleY === 0;
+      setThrottle(1); r.rueckGesperrt = throttleY === 0;
+      setThrottle(0);
+      let n = 0;
+      while (!pitReady && pitState === 'servicing' && n < 400) {
+        uhr += 50; pitLaneTick(); n++;
+        if (tippen && pitSpielAktiv() && pitSpiel.i < pitSpiel.folge.length) {
+          const soll = pitSpiel.folge[pitSpiel.i];
+          pitSpielTaste(tippen === 'richtig' ? soll : (soll === 'quad' ? 'kreis' : 'quad'));
+        }
+      }
+      r.dauer = pitStandElapsed; r.fertig = pitReady; r.stand = pitState;
+      r.i = pitSpiel ? pitSpiel.i : -1; r.treffer = pitSpiel ? pitSpiel.treffer : -1;
+      r.bonus = pitSpiel ? pitSpiel.bonus : -1;
+      r.fuel = fuel; r.damage = damage;
+    } catch (e) {
+      r.f.push('Ausnahme: ' + e.message);
+    } finally {
+      Date.now = echtNow;
+      setPitState('off');
+      pitRearmBlockedUntil = 0;
+      pitModus = merk.modus; pitLaneEnabled = merk.an; pitTrigger = merk.trig;
+      fuel = merk.fuel; damage = merk.damage;
+      physEngine.state.speedKmh = merk.kmh; throttleY = merk.gas;
+      pitSpielReifenZurueck(reifen);
+      updateDamageFuelUI(); updatePitUI();
+    }
+    return r;
+  }
+
+  stAdd('Boxen-Minigame: alles gewechselt, volle Zeit ohne Tasten, losfahren gesperrt', () => {
+    const r = pitSpielLauf(null);
+    const f = r.f.slice();
+    if (!f.length) {
+      if (fuelSimOn() && r.plan.refuel !== 100) f.push('Tank nicht auf voll geplant');
+      if (tyreSimOn() && !r.plan.tyres) f.push('Reifen nicht geplant');
+      if (!r.gasGesperrt) f.push('Gas nicht gesperrt');
+      if (!r.rueckGesperrt) f.push('Rueckwaerts nicht gesperrt');
+      if (!r.fertig) f.push('nicht fertig geworden (' + r.stand + ')');
+      if (Math.abs(r.dauer - r.T) > 0.15) f.push('Dauer ' + r.dauer.toFixed(2) + ' s statt ' + r.T.toFixed(2));
+      if (r.i < 9) f.push('nur ' + r.i + ' Symbole abgelaufen');
+      if (fuelSimOn() && r.fuel < 99.9) f.push('Tank am Ende ' + r.fuel.toFixed(1));
+      if (r.plan.repair && r.damage > 0.01) f.push('Schaden am Ende ' + r.damage.toFixed(1));
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'T ' + (r.T || 0).toFixed(1) + ' s, voll abgewartet, ' + r.i + ' Symbole abgelaufen, Gas und Rueckwaerts zu' };
+  });
+
+  stAdd('Boxen-Minigame: zehn richtige halbieren die Zeit, falsche geben nichts', () => {
+    const a = pitSpielLauf('richtig');
+    const b = pitSpielLauf('falsch');
+    const f = a.f.concat(b.f);
+    if (!f.length) {
+      if (a.treffer !== 10) f.push(a.treffer + ' Treffer statt 10');
+      if (Math.abs(a.dauer - a.T / 2) > 0.2) f.push('mit 10 Treffern ' + a.dauer.toFixed(2) + ' s statt ' + (a.T / 2).toFixed(2));
+      if (b.treffer !== 0 || b.bonus !== 0) f.push('falsche Tasten geben Bonus ' + b.bonus);
+      if (Math.abs(b.dauer - b.T) > 0.15) f.push('mit falschen Tasten ' + b.dauer.toFixed(2) + ' s statt ' + b.T.toFixed(2));
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'halbe Zeit mit 10 Treffern (' + a.dauer.toFixed(1) + ' von ' + a.T.toFixed(1) + ' s), falsch: volle Zeit' };
+  });
+
+  stAdd('Boxen-Minigame: Quadrat und Kreis schalten waehrenddessen nicht, Kreuz bricht ab', () => {
+    const merk = { modus: pitModus, an: pitLaneEnabled, trig: pitTrigger,
+                   kmh: physEngine.state.speedKmh, gang: physEngine.state.currentGear,
+                   mode: physEngine.state.driveMode };
+    const echt = navigator.getGamepads;
+    const reifen = pitSpielReifenMerk();
+    const f = [];
+    try {
+      pitModus = 'minigame'; pitLaneEnabled = true; pitTrigger = 'anywhere';
+      physEngine.state.speedKmh = 0; throttleY = 0;
+      setPitState('off'); pitRearmBlockedUntil = 0;
+      setPitState('limited'); pitLastTick = 0; pitLaneTick();
+      if (!pitSpielAktiv()) return { ok: false, mass: 'kein Minigame-Stopp' };
+      const vorher = pitSpiel.i;
+      const pad = { id: 'Selbsttest (STANDARD GAMEPAD)', index: 0, connected: true, mapping: 'standard',
+        timestamp: performance.now(), axes: [0, 0, 0, 0],
+        buttons: Array.from({ length: 17 }, () => ({ pressed: false, touched: false, value: 0 })) };
+      navigator.getGamepads = () => [pad, null, null, null];
+      pollGamepad();
+      pad.buttons[2] = { pressed: true, touched: true, value: 1 };   // Quadrat
+      pollGamepad();
+      pad.buttons[2] = { pressed: false, touched: false, value: 0 };
+      pollGamepad();
+      if (pitSpiel.i !== vorher + 1) f.push('Quadrat zaehlt nicht im Spiel');
+      if (physEngine.state.currentGear !== merk.gang || physEngine.state.driveMode !== merk.mode) {
+        f.push('Quadrat hat geschaltet (' + physEngine.state.driveMode + ' ' + physEngine.state.currentGear + ')');
+      }
+      requestPitStop();
+      if (pitState !== 'off') f.push('Kreuz/Abbruch laesst den Stopp stehen');
+      if (pitSpielAktiv()) f.push('Spiel laeuft nach dem Abbruch weiter');
+    } finally {
+      navigator.getGamepads = echt;
+      try { pollGamepad(); } catch (e) { /* ohne Pad */ }
+      setPitState('off'); pitRearmBlockedUntil = 0;
+      pitModus = merk.modus; pitLaneEnabled = merk.an; pitTrigger = merk.trig;
+      physEngine.state.speedKmh = merk.kmh;
+      physEngine.state.currentGear = merk.gang; physEngine.state.driveMode = merk.mode;
+      pitSpielReifenZurueck(reifen);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Quadrat gehoert dem Spiel, kein Gangwechsel, Abbruch beendet es' };
+  });
+
+  stAdd('Tutorial: startet vom Titel, führt durch alle Schritte, Kreis zurück', () => {
+    const merk = kAktiverTab();
+    const f = [];
+    const messbar = innerWidth > 0 && innerHeight > 0;
+    try {
+      showTab('home');
+      $('k-tutorial-start').click();
+      if (!konsoleTourOffen() || $('k-tour').hidden) f.push('Knopf oeffnet nicht');
+      if (kAktiverTab() !== 'fahren') f.push('erster Schritt auf ' + kAktiverTab() + ' statt Fahren');
+      if (menuNavContainer() !== $('k-tour-karte')) f.push('Menuezeilen gelten nicht fuer die Karte');
+      const sel = document.querySelector('.menu-nav-sel');
+      if (!sel || sel.id !== 'k-tour-weiter') f.push('vorgewaehlt ist nicht Weiter');
+      const fehlt = [];
+      for (let i = 0; i < K_TOUR.length; i++) {
+        if (kTourSchritt !== i) { f.push('Schritt ' + kTourSchritt + ' statt ' + i); break; }
+        if (!$('k-tour-titel').textContent) f.push('Schritt ' + i + ' ohne Titel');
+        if (messbar && K_TOUR[i].ziel && !kTourRechteck(K_TOUR[i].ziel)) fehlt.push(i + 1);
+        if (i < K_TOUR.length - 1) konsoleTourWeiter();
+      }
+      if (fehlt.length) f.push('Ziel nicht sichtbar in Schritt ' + fehlt.join(', '));
+      konsoleZurueck();
+      if (kTourSchritt !== K_TOUR.length - 2) f.push('Kreis geht nicht einen Schritt zurueck');
+      konsoleTourWeiter(); konsoleTourWeiter();
+      if (konsoleTourOffen()) f.push('nach dem letzten Schritt noch offen');
+      if (kAktiverTab() !== 'fahren') f.push('endet auf ' + kAktiverTab());
+      konsoleTourStart();
+      konsoleZurueck();
+      if (konsoleTourOffen()) f.push('Kreis im ersten Schritt schliesst nicht');
+    } finally {
+      if (konsoleTourOffen()) konsoleTourZu(false);
+      if (merk) showTab(merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : K_TOUR.length + ' Schritte, Ziele ' + (messbar ? 'sichtbar' : 'nicht messbar'), skip: false };
   });
 
   stAdd('ACC-Menü: Motorsound-Kachel blättert die Motoren, Quadrat', () => {

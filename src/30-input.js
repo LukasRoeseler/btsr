@@ -337,7 +337,10 @@
   // the keydown listener rather than the polling interval, so one tap is one shift.
   window.addEventListener('keydown', (e) => {
     const k = (e.key || '').toLowerCase();
-    if ((k === 'i' || k === 'k') && !e.repeat && physicsEnabled && !physEngine.state.isShifting) {
+    // Boxen-Minigame: K ist Quadrat, I ist Kreis - dieselbe Lage wie Runter/Hoch.
+    if ((k === 'i' || k === 'k') && !e.repeat && pitSpielTaste(k === 'k' ? 'quad' : 'kreis')) {
+      /* vom Spiel verbraucht */
+    } else if ((k === 'i' || k === 'k') && !e.repeat && physicsEnabled && !physEngine.state.isShifting) {
       physEngine.triggerShift(k === 'i' ? 1 : -1);
     }
     if (k === 'l' && !e.repeat) triggerHeadlightFlash();

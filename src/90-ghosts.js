@@ -8710,6 +8710,8 @@
       if (downshiftNow && !prevDownshift) {
         if (optInfoOffen()) {
           optInfoSchliessen();
+        } else if (pitSpielTaste('quad')) {
+          /* Boxen-Minigame: Quadrat gehoert dem Spiel, es wird nicht geschaltet */
         } else if (konsoleMenue()) {
           // Quadrat im Menue: schneller Wechsel auf einer Kachel (Renntyp, Bahn/Frei, ...).
           konsoleQuadrat();
@@ -8730,6 +8732,8 @@
           optInfoSchliessen();
         } else if (trackEditorPad('undo')) {
           /* vom Editor verbraucht */
+        } else if (pitSpielTaste('kreis')) {
+          /* Boxen-Minigame: Kreis gehoert dem Spiel */
         } else if (konsoleMenue()) {
           konsoleZurueck();
         } else if (physicsEnabled && !physEngine.state.isShifting) {

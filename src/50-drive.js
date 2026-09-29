@@ -2213,9 +2213,12 @@
       $('race-pit-text').textContent = pitState === 'limited'
         ? 'PIT LIMITER ENGAGED \u00b7 '
           + Math.round(PIT_SPEED_FACTOR * physEngine.config.topSpeedKmh * REAL_SCALE) + ' KM/H'
-        : 'PIT STOP \u00b7 ' + ((Date.now() - (pitServiceStart || Date.now())) / 1000).toFixed(1) + 's'
+        : (pitSpielAktiv()
+          ? 'PIT GAME \u00b7 ' + pitSpielRest().toFixed(1) + 's \u00b7 \u2713 ' + pitSpiel.treffer
+            + '/' + PIT_SPIEL_ANZAHL
+          : 'PIT STOP \u00b7 ' + ((Date.now() - (pitServiceStart || Date.now())) / 1000).toFixed(1) + 's'
           + ' \u00b7 TANK +' + fuelLiters(pitFuelGained) + 'l'
-          + ' \u00b7 REP +' + Math.round(pitDamageRepaired) + '%';
+          + ' \u00b7 REP +' + Math.round(pitDamageRepaired) + '%');
     }
 
     if (raceState === 'finished' && racePartialMs !== null) {

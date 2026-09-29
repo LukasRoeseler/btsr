@@ -2971,6 +2971,10 @@
   // reads speedKmh * REAL_SCALE (71.25), so 80 / 71.25 / 4.0 top speed = 0.2807.
   const PIT_SPEED_FACTOR = 80 / REAL_SCALE / 4.0;
   let pitState = 'off';        // off | limited | servicing
+  let pitModus = 'minigame';   // Boxen-Minigame, siehe pitSpielStart()
+  let pitSpiel = null;
+  const PIT_SPIEL_ANZAHL = 10;
+  const PIT_SPIEL_BONUS = 0.05;
   let pitServiceStart = null;
   let pitFuelGained = 0, pitDamageRepaired = 0;
   const PIT_FUEL_PER_SEC = 22;
@@ -2981,6 +2985,10 @@
   const PIT_STANDSTILL_KMH = 10 / REAL_SCALE;
 
   function setPitState(next) {
+    if (next !== 'servicing') {
+      pitSpiel = null;
+      if (typeof pitSpielMalen === 'function') setTimeout(pitSpielMalen, 0);
+    }
     if (pitState === next) return;
     pitState = next;
     // Die Variante 'double' nennt ausdruecklich 60 km/h, die anderen fahren mit den
@@ -3017,6 +3025,9 @@
       pitDone = { refuel: false, tyres: false, repair: false };
       pitTyreElapsed = 0; pitEmptyElapsed = 0; pitStandElapsed = 0; pitReady = false;
       pitTyreTarget = Math.max(1.5, gaussian(PIT_TYRE_CHANGE_S, PIT_TYRE_CHANGE_SD));
+      // MINIGAME: alles, was simuliert wird, und die Tastenfolge (siehe pitSpielStart).
+      pitSpiel = null;
+      if (pitModus === 'minigame') pitSpielStart();
       // The plan was chosen while rolling down the pit lane; only now is it locked in.
       if (!pitPlan) pitPlan = makePitPlan();
       if (pitPlan.tyres) {
@@ -3029,6 +3040,7 @@
       padRumble(0.25, 0.15, 120, 'box');
       log(`Boxenstopp: ${describePitPlan(pitPlan)}.`, 'info');
     } else if (next === 'limited') {
+      pitSpiel = null;
       // Arm the plan HERE, not at the service: the quick menu is meant to be used while
       // rolling in, which is the only time there is to think about it.
       pitPlan = makePitPlan();
@@ -3170,7 +3182,11 @@
     if (!stopped) pitOrtGemeldet = false;
 
     if (pitState === 'servicing') {
-      if (!stopped) { setPitState('off'); showHudToast('Boxengasse verlassen'); return; }
+      // Im Minigame kommt man vor dem Ende nicht los (Gas und Bremse sind gesperrt, siehe
+      // refreshPitThrottleLock), und eine Eingabe bricht den Stopp auch nicht ab - das tut
+      // nur Kreuz tippen (requestPitStop).
+      if (!stopped && !(pitSpiel && !pitReady)) { setPitState('off'); showHudToast('Boxengasse verlassen'); return; }
+      if (pitSpiel) { pitSpielTick(dt); return; }
       const p = pitPlan || {};
       pitStandElapsed += dt;
 
@@ -3221,22 +3237,139 @@
         ? pitEmptyElapsed >= PIT_EMPTY_STOP_S
         : (!p.refuel || pitDone.refuel) && (!p.tyres || pitDone.tyres) && (!p.repair || pitDone.repair);
 
-      if (allDone && !pitReady) {
-        pitReady = true;
-        // Beim FERTIGWERDEN und nicht beim Einfahren: wer abbricht, hatte keinen Stopp.
-        lapEventAkku.pit += 1;
-        stopAllPitLoops();
-        pitChimeReady();
-        padRumble(0.35, 0.2, 200, 'box');
-        showHudToast('Fertig, losfahren!');
-        log('Boxenstopp fertig.', 'info');
-      }
+      if (allDone && !pitReady) pitFertig();
 
       refreshPitThrottleLock();
       pitBoard();
       updateDamageFuelUI();
       updatePitUI();
     }
+  }
+
+  // Fertig: dieselbe Stelle fuer beide Modi.
+  function pitFertig() {
+    pitReady = true;
+    // Beim FERTIGWERDEN und nicht beim Einfahren: wer abbricht, hatte keinen Stopp.
+    lapEventAkku.pit += 1;
+    stopAllPitLoops();
+    pitChimeReady();
+    padRumble(0.35, 0.2, 200, 'box');
+    showHudToast('Fertig, losfahren!');
+    log('Boxenstopp fertig.', 'info');
+  }
+
+  // ---- BOXEN-MINIGAME (experimentell) -------------------------------------------------
+  //
+  // BESTELLT: "Weiterer Pit-Modus (aktueller Modus als Standard, neuer Modus Minigame
+  // [experimentell]). Wechselt alles, was simuliert wird und braucht dafuer die
+  // vollstaendige Zeit. Vorher kann nicht losgefahren werden. Die Zeit kann reduziert
+  // werden, wenn eine Reihe von Tasten gedrueckt werden ... Quadrat und Kreis. Eine
+  // zufaellige Folge an 10 Knoepfen, die in der Mitte des Bildschirms eins nach dem anderen
+  // angezeigt werden. Wenn ich nichts druecke, gehen sie automatisch weg, wenn die Zeit
+  // abgelaufen ist." Ab Werk an (fuer den Nutzer zum Testen).
+  //
+  // DIE ZEIT T ist die laengste Einzelarbeit, genau wie im Standardmodus: Reifen, Tanken
+  // auf voll, Reparatur ganz. Alles laeuft proportional zum Fortschritt p = (Standzeit +
+  // Bonus) / T. Jedes Symbol steht T/10 lang; richtig gedrueckt gibt 5 % von T gut, alle
+  // zehn also die halbe Zeit; falsch gibt nichts; nicht gedrueckt verschwindet es.
+  // Nur Auto 1 - Spieler 2 und die Ghosts fahren ihre eigenen Stopps.
+  // pitModus und pitSpiel stehen oben bei pitState (zeitliche Todeszone: setPitState liest
+  // pitSpiel, und das darf nie vor seiner Deklaration laufen).
+  function pitSpielAktiv() { return !!pitSpiel && pitState === 'servicing' && !pitReady; }
+  function pitSpielDauer(pl) {
+    let t = 0;
+    if (pl.tyres) t = Math.max(t, pitTyreTarget);
+    if (pl.refuel) t = Math.max(t, Math.max(0, tankZielNorm(pl.refuel) - fuel) / PIT_FUEL_PER_SEC);
+    if (pl.repair) {
+      let d = damage, sek = 0;
+      while (d > 0.05 && sek < 120) { d -= Math.max(0.01, repairRateAt(d)) * 0.05; sek += 0.05; }
+      t = Math.max(t, sek);
+    }
+    return Math.max(PIT_EMPTY_STOP_S, t);
+  }
+  function pitSpielStart() {
+    pitPlan = {
+      refuel: (pitJobAvailable('refuel') && fuel < 99.5) ? 100 : 0,
+      tyres: pitJobAvailable('tyres'),
+      repair: pitJobAvailable('repair') && damage > 0.05,
+    };
+    const T = pitSpielDauer(pitPlan);
+    const folge = [];
+    for (let i = 0; i < PIT_SPIEL_ANZAHL; i++) folge.push(Math.random() < 0.5 ? 'quad' : 'kreis');
+    pitSpiel = { T, bonus: 0, folge, i: 0, fensterAb: 0, fensterS: T / PIT_SPIEL_ANZAHL,
+                 treffer: 0, fehler: 0, blitz: '', blitzBis: 0, fuel0: fuel, dmg0: damage };
+    showHudToast(t('Boxen-Minigame: Quadrat und Kreis!'));
+  }
+  // welche: 'quad' | 'kreis'. true = die Taste gehoert dem Spiel (kein Schalten).
+  function pitSpielTaste(welche) {
+    if (!pitSpielAktiv()) return false;
+    const sp = pitSpiel;
+    if (sp.i >= sp.folge.length) return true;
+    if (welche === sp.folge[sp.i]) { sp.bonus += PIT_SPIEL_BONUS * sp.T; sp.treffer++; sp.blitz = 'ok'; }
+    else { sp.fehler++; sp.blitz = 'falsch'; }
+    sp.blitzBis = pitStandElapsed + 0.3;
+    sp.i++;
+    sp.fensterAb = pitStandElapsed;
+    pitSpielMalen();
+    return true;
+  }
+  function pitSpielTick(dt) {
+    const sp = pitSpiel, pl = pitPlan || {};
+    pitStandElapsed += dt;
+    if (sp.i < sp.folge.length && pitStandElapsed - sp.fensterAb >= sp.fensterS) {
+      sp.i++;
+      sp.fensterAb = pitStandElapsed;
+    }
+    const anteil = Math.min(1, (pitStandElapsed + sp.bonus) / sp.T);
+    if (pl.refuel) {
+      const neu = sp.fuel0 + (tankZielNorm(pl.refuel) - sp.fuel0) * anteil;
+      if (neu > fuel) { pitFuelGained += neu - fuel; fuel = neu; }
+    }
+    if (pl.repair) {
+      const neu = sp.dmg0 * (1 - anteil);
+      if (neu < damage) { pitDamageRepaired += damage - neu; damage = neu; }
+    }
+    if (pl.tyres) pitTyreElapsed = anteil * pitTyreTarget;
+    pitRumbleWhileWorking(anteil < 1);
+    if (anteil >= 1 && !pitReady) {
+      pitDone = { refuel: true, tyres: true, repair: true };
+      if (pl.repair) damage = 0;
+      if (pl.refuel) fuel = Math.max(fuel, tankZielNorm(pl.refuel));
+      pitFertig();
+      log('Boxen-Minigame: ' + sp.treffer + ' von ' + PIT_SPIEL_ANZAHL + ' getroffen, '
+          + pitStandElapsed.toFixed(1) + ' s statt ' + sp.T.toFixed(1) + ' s.', 'info');
+    }
+    refreshPitThrottleLock();
+    pitBoard();
+    updateDamageFuelUI();
+    updatePitUI();
+    pitSpielMalen();
+  }
+  function pitSpielRest() {
+    return pitSpiel ? Math.max(0, pitSpiel.T - pitStandElapsed - pitSpiel.bonus) : 0;
+  }
+  function pitSpielMalen() {
+    const el = $('pit-spiel');
+    if (!el) return;
+    const an = pitSpielAktiv();
+    el.hidden = !an;
+    if (!an) return;
+    const sp = pitSpiel;
+    const sym = sp.i < sp.folge.length ? sp.folge[sp.i] : '';
+    el.dataset.symbol = sym;
+    el.dataset.blitz = pitStandElapsed < sp.blitzBis ? sp.blitz : '';
+    el.style.setProperty('--fenster', sym
+      ? String(Math.max(0, 1 - (pitStandElapsed - sp.fensterAb) / sp.fensterS)) : '0');
+    $('pit-spiel-zaehler').textContent = Math.min(sp.i + 1, PIT_SPIEL_ANZAHL) + '/' + PIT_SPIEL_ANZAHL;
+    $('pit-spiel-rest').textContent = pitSpielRest().toFixed(1).replace('.', ',') + ' s';
+    $('pit-spiel-treffer').textContent = '✓ ' + sp.treffer;
+  }
+  if ($('pit-spiel-quad')) $('pit-spiel-quad').addEventListener('click', () => pitSpielTaste('quad'));
+  if ($('pit-spiel-kreis')) $('pit-spiel-kreis').addEventListener('click', () => pitSpielTaste('kreis'));
+  if ($('pit-modus')) {
+    const modusLesen = () => { pitModus = $('pit-modus').value === 'standard' ? 'standard' : 'minigame'; };
+    $('pit-modus').addEventListener('change', modusLesen);
+    modusLesen();
   }
 
   $('pit-enable').addEventListener('change', (e) => {
@@ -4654,6 +4787,10 @@
   function refreshPitThrottleLock() {
     pitThrottleLock = pitState === 'servicing' && !!pitPlan && pitPlan.tyres
                       && !!pitDone && !pitDone.tyres;
+    // Im Minigame: den ganzen Stopp, und auch Rueckwaerts/Bremse (BESTELLT: "Vorher kann
+    // nicht losgefahren werden").
+    pitVollSperre = pitState === 'servicing' && !!pitSpiel && !pitReady;
+    if (pitVollSperre) pitThrottleLock = true;
   }
 
 
