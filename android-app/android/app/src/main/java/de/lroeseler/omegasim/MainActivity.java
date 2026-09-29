@@ -7,6 +7,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.WebView;
+import androidx.activity.OnBackPressedCallback;
 import com.getcapacitor.PluginHandle;
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -45,6 +47,12 @@ import com.getcapacitor.BridgeActivity;
  *    bluetoothGatt - disconnect() und close(). Scheitert das (andere Plugin-Fassung), bleibt es
  *    beim alten Verhalten; die Web-Seite nimmt ein noch verbundenes Auto dann beim naechsten
  *    Verbinden direkt wieder auf (05-app-bruecke.js).
+ * 6. ZURUECK-TASTE. BESTELLT: "Der 'zurueck' Pfeil (neben dem Home-Button) von meinem Handy
+ *    soll, wenn ich ihn klicke, zum Startbildschirm fuehren." Ohne das App-Plugin faengt
+ *    Capacitor die Taste nicht ab, und sie beendete die App. Jetzt fragt sie zuerst die Seite
+ *    (window.omegaZurueck, 51-konsole.js): steht man nicht auf dem Startbildschirm, fuehrt die
+ *    Seite dorthin und meldet "true". Nur auf dem Startbildschirm selbst gilt die Taste wie
+ *    gewohnt (App schliessen).
  */
 public class MainActivity extends BridgeActivity {
 
@@ -62,6 +70,7 @@ public class MainActivity extends BridgeActivity {
                 : WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
             getWindow().setAttributes(lp);
         }
+        zurueckTasteAnbinden();
         vollbild();
         View d = getWindow().getDecorView();
         d.postDelayed(this::vollbild, 400);
@@ -108,6 +117,25 @@ public class MainActivity extends BridgeActivity {
                 } catch (Throwable e) { /* naechstes Geraet */ }
             }
         } catch (Throwable e) { /* andere Plugin-Fassung: nichts zu tun */ }
+    }
+
+    private void zurueckTasteAnbinden() {
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                WebView wv = getBridge() != null ? getBridge().getWebView() : null;
+                if (wv == null) { weiterReichen(); return; }
+                wv.evaluateJavascript(
+                    "(function(){try{return !!(window.omegaZurueck&&window.omegaZurueck());}catch(e){return false;}})()",
+                    (antwort) -> { if (!"true".equals(antwort)) weiterReichen(); });
+            }
+
+            private void weiterReichen() {
+                setEnabled(false);
+                getOnBackPressedDispatcher().onBackPressed();
+                setEnabled(true);
+            }
+        });
     }
 
     private void vollbild() { vollbildFuer(this); }

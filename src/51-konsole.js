@@ -109,6 +109,33 @@
     document.body.scrollTop = 0;
   }
 
+  // ---- ZURUECK-TASTE DES HANDYS: zum Startbildschirm (v0.8.29) ----
+  // BESTELLT: "Der 'zurueck' Pfeil (neben dem Home-Button) von meinem Handy soll, wenn ich ihn
+  // klicke, zum Startbildschirm fuehren." In der App fragt MainActivity diese Funktion; true
+  // heisst "erledigt", false (schon auf dem Startbildschirm) laesst die Taste die App schliessen.
+  // Im Browser dasselbe ueber einen Verlaufseintrag: Zurueck landet auf popstate statt die
+  // Seite zu verlassen, und auf dem Startbildschirm geht es wie gewohnt zurueck.
+  function omegaZurueck() {
+    const imEditor = document.body.classList.contains('track-fs');
+    const tour = typeof konsoleTourOffen === 'function' && konsoleTourOffen();
+    if (kAktiverTab() === 'home' && !imEditor && !tour && !kFrageOffen) return false;
+    if (typeof optInfoOffen === 'function' && optInfoOffen()) optInfoSchliessen();
+    if (kFrageOffen) konsoleFrageZu();
+    if (tour) konsoleTourZu(false);
+    if (imEditor && typeof exitTrackFullscreen === 'function') exitTrackFullscreen();
+    const logo = document.querySelector('#k-kopf .hdr-logo');
+    if (logo) logo.click(); else konsoleZeige('home');
+    return true;
+  }
+  window.omegaZurueck = omegaZurueck;
+  if (!(window.OMEGA_APP && window.OMEGA_APP.nativ) && window.history && history.pushState) {
+    try { history.pushState({ omega: 1 }, ''); } catch (e) { /* file:// o. ae. */ }
+    window.addEventListener('popstate', () => {
+      if (omegaZurueck()) { try { history.pushState({ omega: 1 }, ''); } catch (e) { /* egal */ } }
+      else history.back();
+    });
+  }
+
   // KREIS / Esc: eine Ebene zurueck. Erst was offen ist (Info-Fenster, Cockpit-Menue,
   // Unterseite), dann der Stapel, zuletzt die Eltern-Ebene.
   function konsoleZurueck() {

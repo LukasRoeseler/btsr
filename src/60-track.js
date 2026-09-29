@@ -2827,7 +2827,7 @@
       // One short segment per sample pair, each with its own colour. A single path with a
       // gradient cannot follow an arbitrary curve, so the curve is cut instead.
       const IDEAL_W = 1.1;   // was 2.2; halved on request, the line was heavier than the kerbs
-      for (let i = 0; i + 1 < ideal.length; i++) {
+      for (let i = 0; i + 1 < (o.ohneLinie ? 0 : ideal.length); i++) {
         const v = (brake[i] + brake[i + 1]) / 2;
         body += `<path d="M ${P2(ideal[i])} L ${P2(ideal[i + 1])}" fill="none" `
               + `stroke="${brakeColour(v)}" stroke-width="${IDEAL_W}" stroke-linecap="round"/>`;
@@ -3199,6 +3199,33 @@
   }, 250);
 
   let trackEditorGeo = null;
+  // ---- Editor-Schalter (v0.8.29): Ideallinie, Tastenkuerzel. Je Geraet gemerkt. ----
+  // var und nicht let: refreshTrackPreview() laeuft schon beim Laden, und ein let weiter unten
+  // stuende dann noch in der temporalen Todeszone.
+  var editorSchalter = (function () {
+    const z = { linie: true, tasten: true };
+    try {
+      const s = JSON.parse(localStorage.getItem('omegasim-editor-schalter') || '{}');
+      if (typeof s.linie === 'boolean') z.linie = s.linie;
+      if (typeof s.tasten === 'boolean') z.tasten = s.tasten;
+    } catch (e) { /* ohne Speicher: an */ }
+    return z;
+  })();
+  function editorSchalterZeigen() {
+    [['track-opt-linie', editorSchalter.linie], ['track-opt-tasten', editorSchalter.tasten]].forEach(([id, an]) => {
+      const b = $(id);
+      if (b) { b.classList.toggle('an', an); b.setAttribute('aria-pressed', an ? 'true' : 'false'); }
+    });
+    const host = $('track-fs-host');
+    if (host) host.classList.toggle('ohne-tasten', !editorSchalter.tasten);
+  }
+  function editorSchalterUm(was) {
+    editorSchalter[was] = !editorSchalter[was];
+    try { localStorage.setItem('omegasim-editor-schalter', JSON.stringify(editorSchalter)); } catch (e) { /* egal */ }
+    editorSchalterZeigen();
+    if (was === 'linie') refreshTrackPreview();
+  }
+
   function refreshTrackPreview() {
     // Die Kachelzahl entscheidet, ob der Windschatten ueberhaupt rechnen kann. Hier gerufen
     // und nicht in 50-drive.js beim Laden: dort ist currentTrackTiles noch in der temporalen
@@ -3210,10 +3237,12 @@
     if (trackSel !== null && trackSel >= currentTrackTiles.length) trackSel = null;
     const imEditor = document.body.classList.contains('track-fs');
     const result = renderTrackPreview(currentTrackTiles, null,
-      { detailed: true, cars: trackCarMarks(), echt: true, auswahl: imEditor ? trackSelIndex() : null });
+      { detailed: true, cars: trackCarMarks(), echt: true, auswahl: imEditor ? trackSelIndex() : null,
+        ohneLinie: !editorSchalter.linie });
     $('track-preview-svg').innerHTML = result.html;
     trackEditorGeo = result.geo || null;
     trackInfoZeichnen();
+    editorSchalterZeigen();
     renderTrackPalette();
     updateTrackSpace();
     $('track-code').value = trackToCode(currentTrackTiles, trackRotationDeg);
@@ -3496,9 +3525,14 @@
     const host = $('track-palette');
     if (!host) return;
     host.innerHTML = '';
+    // Gruppe je Teil: links drehend, gerade (auch Enge und Box), rechts drehend. Wechselt sie,
+    // steht ein feiner Strich davor (BESTELLT: "Trenne die Streckenteile im Editor jeweils
+    // nach Typ mit subtilen grauen vertikalen Strichen").
+    const gruppe = (p) => Math.sign(tileTurnDeg(p.type()));
     TRACK_PALETTE.forEach((p, i) => {
       const b = document.createElement('button');
-      b.className = 'tp-btn' + (i === trackPaletteSel ? ' sel' : '');
+      b.className = 'tp-btn' + (i === trackPaletteSel ? ' sel' : '')
+        + (i > 0 && gruppe(p) !== gruppe(TRACK_PALETTE[i - 1]) ? ' tp-trenn' : '');
       b.title = p.cap;
       b.setAttribute('aria-label', p.cap);
       const bil = teileBilanz(currentTrackTiles).find((x) => x.typ === p.type());
@@ -3619,6 +3653,8 @@
   // gelesen - renderTrackPadFocus und trackEditorPad nehmen beide ausschliesslich `id`.
   // Fuer den Umschalter waere sie ausserdem falsch geworden: er traegt jetzt zwei.
   const TRACK_ACTIONS = [
+    { id: 'track-opt-linie' },
+    { id: 'track-opt-tasten' },
     { id: 'track-undo' },
     { id: 'track-delete-sel' },
     { id: 'track-rotate-left' },
@@ -3691,6 +3727,8 @@
   // Rueckgaengig nimmt jetzt die letzte AENDERUNG zurueck (Verlauf), nicht nur das letzte
   // Teil. Start/Ziel bleibt dabei immer, weil jeder abgelegte Stand eine hatte.
   $('track-undo').onclick = () => { trackRueckgaengig(); };
+  $('track-opt-linie').onclick = () => { editorSchalterUm('linie'); };
+  $('track-opt-tasten').onclick = () => { editorSchalterUm('tasten'); };
   $('track-delete-sel').onclick = () => { trackTeilEntfernen(); };
   $('track-clear').onclick = () => { trackMerken(); currentTrackTiles = freshTrackTiles(); trackSel = null; refreshTrackPreview(); };
 

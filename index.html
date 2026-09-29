@@ -2411,6 +2411,14 @@
   .k-leiste2 .k-reiter button { padding: 0 5px; font-size: clamp(7px, 1.15vh, 9.5px); line-height: 1.05;
     clip-path: none; border-bottom: 1px solid transparent; letter-spacing: .05em; min-height: 0; }
   .k-leiste2 .k-reiter button.an, .k-leiste2 .k-reiter button.an:hover { background: transparent; color: #fff; border-bottom-color: var(--k-blau); }
+  /* AM HANDY DOPPELT SO HOCH (v0.8.29). BESTELLT: "Die Tabs im Handy nochmal etwas groesser
+     (2x so hoch wie aktuell, damit ich auch drauftippen kann)." Nur bei Touch: am Rechner
+     bleibt der Kopf so flach wie bestellt. */
+  @media (pointer: coarse) {
+    #k-kopf .hdr-logo svg { width: 15px; height: 15px; }
+    #k-leiste .k-reiter button { padding: 5px 8px; font-size: clamp(9px, 1.9vh, 12px); }
+    .k-leiste2 .k-reiter button { padding: 4px 8px; font-size: clamp(8.5px, 1.7vh, 11px); }
+  }
   /* Offene Unterseite mit zweiter Leiste: die Ueberschrift steht dort schon, der
      Zurueck-Knopf wird eine knappe Zeile. */
   body.k-innen .subpage.on > h2 { display: none; }
@@ -2555,6 +2563,18 @@
   .tp-rest { position: absolute; top: 2px; right: 3px; font-size: 9px; font-weight: 800; color: var(--good); }
   .tp-rest.fehlt { color: var(--bad); }
   #track-preview-svg { cursor: pointer; }
+  /* Teile nach Typ getrennt: Linkskurven | Geraden | Rechtskurven, mit einem feinen Strich. */
+  #track-palette .tp-trenn { margin-left: 9px; }
+  #track-palette .tp-trenn::before { content: ''; position: absolute; left: -8px; top: 8%; bottom: 8%;
+    width: 1px; background: rgba(200,206,218,.28); pointer-events: none; }
+  /* Schalter oben links: Ideallinie und Tastenkuerzel. Farbiger Rand an, grauer aus. */
+  .tp-actions .tp-schalter { border: 2px solid #5b6270; }
+  .tp-actions .tp-schalter .tp-akzent { stroke: #7d8698; }
+  .tp-actions .tp-schalter.an { border-color: #3ddc84; }
+  .tp-actions .tp-schalter.an .tp-akzent { stroke: #3ddc84; }
+  .tp-actions .tp-schalter.sel { border-color: var(--info); }
+  .tp-actions .tp-schalter + .tp-schalter { margin-right: 8px; }
+  #track-fs-host.ohne-tasten .tp-tasten { display: none; }
   .teile-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 4px 14px; margin-top: 10px; }
   .teile-zeile { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 6px;
     padding: 3px 4px; border-bottom: 1px solid rgba(255,255,255,.06); }
@@ -2912,8 +2932,13 @@
      welche -, ragt der Kasten unten hinaus, und was in der letzten Rasterzeile steht
      (die Teile) liegt ausserhalb des Bildes. Genau die gemeldete Gestalt.
      inset: 0 allein ist per Definition das Sichtfenster und kann nicht danebenliegen. */
+  /* Hintergrund: Asphalt, stark abgedunkelt und schwach (v0.8.29, BESTELLT: "beim Editor in
+     den Hintergrund ein stark abgedunkeltes, schwaches Bild mit Asphalt von einer Strecke").
+     Hier und nicht in einer eigenen Regel weiter oben: diese steht spaeter und gewann. */
   body.track-fs #track-fs-host { position: fixed; inset: 0; z-index: 200;
-    background: var(--bg); display: grid; grid-template-rows: 1fr auto;
+    background: linear-gradient(rgba(6,8,12,.86), rgba(6,8,12,.86)),
+      url(img/asphalt-bg.jpg) center / cover, var(--bg);
+    display: grid; grid-template-rows: 1fr auto;
     align-items: center; padding: 8px; gap: 6px;
     padding-bottom: max(8px, env(safe-area-inset-bottom)); }
   /* HOEHE ZURUECK AUF auto, und das war der zweite Fehler. Der Kasten traegt in der
@@ -2964,7 +2989,7 @@
      macht preserveAspectRatio - Vorgabe `xMidYMid meet`, also hineinpassen und zentrieren.
      Das ist bei einem viewBox-svg der Weg, der in beide Richtungen stimmt. */
   body.track-fs #track-fs-host > #track-preview-svg .tp-karte {
-    max-width: none; width: 100%; height: 100%; }
+    max-width: none; width: 100%; height: 100%; background: rgba(20,22,28,.45); }
   /* Everything outside the editor host is irrelevant while building. */
   body.track-fs > header, body.track-fs > nav.tabs { display: none; }
 
@@ -3774,7 +3799,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.28</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.29</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4652,6 +4677,11 @@
           <span class="muted">F&uuml;r das Finden und Berichten zahlreicher Bugs.</span></li>
       </ul>
 
+      <!-- BESTELLT: "in credits schreiben, dass manche der Bilder mit KI (Gemini Flash)
+           generiert wurden". -->
+      <h3 style="font-size:14px; margin:18px 0 6px 0">Woher die Bilder kommen</h3>
+      <p class="muted">Einige Bilder im Men&uuml; (Titel, Rennen, Start, Strecke, Optionen, Info, Challenges und Box) wurden mit KI generiert (Gemini Flash). Markenlogos darin sind entfernt. Die &uuml;brigen Bilder sind eigene Fotos.</p>
+
       <h3 style="font-size:14px; margin:18px 0 6px 0">Woher die Kl&auml;nge kommen</h3>
       <p class="muted">Der allergr&ouml;&szlig;te Teil der Kl&auml;nge ist gerechnet und nicht aufgenommen: alle f&uuml;nfundzwanzig Motoren mit ihren 132 Schleifen, dazu Bremsen- und Reifenquietschen, die Crash-Varianten, Schlagschrauber, Tankger&auml;usch, Karosseriereparatur und der Motorstart. Dort wird nichts abgespielt, sondern aus Zylinderzahl, Z&uuml;ndfolge und Kr&uuml;mmerl&auml;nge erzeugt.</p>
       <p class="muted">Die folgenden Kl&auml;nge sind die Ausnahme: sie stammen aus echten Aufnahmen. Alle von Pixabay und unter der Pixabay-Lizenz. Die unbearbeiteten Quelldateien sind nicht Teil dieses Projekts.</p>
@@ -4694,6 +4724,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Logos aus den KI-Bildern entfernt, die Credits nennen die KI-Bilder (Gemini Flash). Reiter am Handy doppelt so hoch. Die Zur&uuml;ck-Taste des Handys f&uuml;hrt zum Startbildschirm (in der App ab APK 0.8.29). Editor: Asphalt im Hintergrund, Teile nach Typ getrennt, Schalter f&uuml;r Ideallinie und Tastenk&uuml;rzel.</li>
         <li>Strecke aufger&auml;umt: Editor, Scan, Laden, Meine Teile und Ausdruck haben je eine eigene Seite. Der Editor startet im Vollbild, mit Tutorial und Tasten&uuml;bersicht: Teile anw&auml;hlen, mittendrin einf&uuml;gen und entfernen, r&uuml;ckg&auml;ngig, in 45&deg;-Schritten drehen, L&auml;nge in Metern und im Ma&szlig;stab 1:50, Pfeile an den Kanten in Fahrtrichtung. Meine Teile (experimentell) z&auml;hlt deinen Bestand und zeigt im Editor, was fehlt oder &uuml;brig ist. Challenges: Plan und Mock-up mit vier Strecken, je beste Runde und Rennen.</li>
         <li>Kopfzeile nochmals flacher, Omega oben links f&uuml;hrt zum Startbildschirm, Info unter Optionen, neuer Reiter Challenges (WIP). Tutorial-Texte k&uuml;rzer; Steuerung l&auml;uft auf dem Cockpit, zeigt gedr&uuml;ckte Tasten und f&auml;hrt dabei nicht. Neue Stimmungsbilder (KI) f&uuml;r Titel, Rennoptionen, Start, Strecke, Optionen, Info und Challenges.</li>
         <li>Garage als Karten mit eigenem Foto je Auto (sonst seine Farbe), Rolle mit &#9664; &#9654;, Einstellen klappt Farbe, Tempo und Charakter auf; ein Knopf startet und h&auml;lt die Ghosts. Titel: &#10005; startet, &#9651; Tutorial, &#9675; neue F&uuml;hrung &bdquo;Steuerung&ldquo; bis zur Controller-Belegung. Minigame: Fenster 0,1 s l&auml;nger, falsche Taste kostet Zeit. Freies Training zeigt &infin;. Mehrspieler-App wie Vorschlag A. App: Status- und Navigationsleiste werden zuverl&auml;ssiger ausgeblendet.</li>
@@ -9853,6 +9884,22 @@
            sondern 'Editor starten', und dann ist er im Vollbild"). -->
       <div id="track-fs-host">
         <div class="tp-bar tp-actions">
+          <!-- BESTELLT: "oben links eine Checkbox (so gross wie die Zurueck- und Entfernen-
+               Buttons) fuer Ideallinie und eine fuer Tastenkuerzel anzeigen ... ein
+               Idealliniensymbol mit farbigem Rand wenn aktiv und grauem Rand wenn inaktiv und
+               ein Button-Symbol im selben Stil". Knoepfe mit aria-pressed statt echter
+               Checkboxen: so laufen sie mit Pad und Tastatur wie die Knoepfe daneben. -->
+          <button class="tp-btn tp-schalter" id="track-opt-linie" title="Ideallinie anzeigen" aria-label="Ideallinie anzeigen" aria-pressed="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" aria-hidden="true"><path d="M3 22C3 12 9 5 20 3" stroke-opacity=".5"/>
+              <path d="M13 22c0-5 3-8 8-9" stroke-opacity=".5"/>
+              <path class="tp-akzent" d="M6 22C8 14 12 9 20.5 8" stroke-width="2.4" stroke-dasharray="3 2"/></svg>
+            <span class="tp-cap">Linie</span></button>
+          <button class="tp-btn tp-schalter" id="track-opt-tasten" title="Tastenk&uuml;rzel anzeigen" aria-label="Tastenk&uuml;rzel anzeigen" aria-pressed="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="3.5"/>
+              <path class="tp-akzent" d="M9 9l6 6M15 9l-6 6" stroke-width="2.4"/></svg>
+            <span class="tp-cap">Tasten</span></button>
           <button class="tp-btn" id="track-undo" title="R&uuml;ckg&auml;ngig" aria-label="R&uuml;ckg&auml;ngig">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                  stroke-linecap="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/>
@@ -11358,6 +11405,12 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Logos aus den KI-Bildern entfernt, die Credits nennen die KI-Bilder (Gemini Flash). Reiter am Handy doppelt so hoch. Die Zurück-Taste des Handys führt zum Startbildschirm (in der App ab APK 0.8.29). Editor: Asphalt im Hintergrund, Teile nach Typ getrennt, Schalter für Ideallinie und Tastenkürzel.": "Logos removed from the AI images, the credits name the AI images (Gemini Flash). Tabs on phones twice as tall. The phone's back button leads to the title screen (in the app from APK 0.8.29). Editor: asphalt in the background, pieces separated by type, toggles for racing line and shortcuts.",
+    "Woher die Bilder kommen": "Where the images come from",
+    "Einige Bilder im Menü (Titel, Rennen, Start, Strecke, Optionen, Info, Challenges und Box) wurden mit KI generiert (Gemini Flash). Markenlogos darin sind entfernt. Die übrigen Bilder sind eigene Fotos.": "Some images in the menu (title, race, start, track, options, info, challenges and pit) were generated with AI (Gemini Flash). Brand logos in them have been removed. The other images are my own photos.",
+    "Linie": "Line",
+    "Ideallinie anzeigen": "Show racing line",
+    "Tastenkürzel anzeigen": "Show shortcuts",
     "Strecke aufgeräumt: Editor, Scan, Laden, Meine Teile und Ausdruck haben je eine eigene Seite. Der Editor startet im Vollbild, mit Tutorial und Tastenübersicht: Teile anwählen, mittendrin einfügen und entfernen, rückgängig, in 45°-Schritten drehen, Länge in Metern und im Maßstab 1:50, Pfeile an den Kanten in Fahrtrichtung. Meine Teile (experimentell) zählt deinen Bestand und zeigt im Editor, was fehlt oder übrig ist. Challenges: Plan und Mock-up mit vier Strecken, je beste Runde und Rennen.": "Track tab tidied up: editor, scan, load, my parts and printout each have their own page. The editor starts in full screen, with a tutorial and key overview: select pieces, insert and remove in the middle, undo, rotate in 45° steps, length in metres and at 1:50 scale, arrows on the edges in driving direction. My parts (experimental) counts your inventory and shows in the editor what is missing or left over. Challenges: plan and mock-up with four tracks, each with best lap and race.",
     "Editor starten": "Start editor",
     "Meine Teile": "My parts",
@@ -21127,6 +21180,33 @@
     document.body.scrollTop = 0;
   }
 
+  // ---- ZURUECK-TASTE DES HANDYS: zum Startbildschirm (v0.8.29) ----
+  // BESTELLT: "Der 'zurueck' Pfeil (neben dem Home-Button) von meinem Handy soll, wenn ich ihn
+  // klicke, zum Startbildschirm fuehren." In der App fragt MainActivity diese Funktion; true
+  // heisst "erledigt", false (schon auf dem Startbildschirm) laesst die Taste die App schliessen.
+  // Im Browser dasselbe ueber einen Verlaufseintrag: Zurueck landet auf popstate statt die
+  // Seite zu verlassen, und auf dem Startbildschirm geht es wie gewohnt zurueck.
+  function omegaZurueck() {
+    const imEditor = document.body.classList.contains('track-fs');
+    const tour = typeof konsoleTourOffen === 'function' && konsoleTourOffen();
+    if (kAktiverTab() === 'home' && !imEditor && !tour && !kFrageOffen) return false;
+    if (typeof optInfoOffen === 'function' && optInfoOffen()) optInfoSchliessen();
+    if (kFrageOffen) konsoleFrageZu();
+    if (tour) konsoleTourZu(false);
+    if (imEditor && typeof exitTrackFullscreen === 'function') exitTrackFullscreen();
+    const logo = document.querySelector('#k-kopf .hdr-logo');
+    if (logo) logo.click(); else konsoleZeige('home');
+    return true;
+  }
+  window.omegaZurueck = omegaZurueck;
+  if (!(window.OMEGA_APP && window.OMEGA_APP.nativ) && window.history && history.pushState) {
+    try { history.pushState({ omega: 1 }, ''); } catch (e) { /* file:// o. ae. */ }
+    window.addEventListener('popstate', () => {
+      if (omegaZurueck()) { try { history.pushState({ omega: 1 }, ''); } catch (e) { /* egal */ } }
+      else history.back();
+    });
+  }
+
   // KREIS / Esc: eine Ebene zurueck. Erst was offen ist (Info-Fenster, Cockpit-Menue,
   // Unterseite), dann der Stapel, zuletzt die Eltern-Ebene.
   function konsoleZurueck() {
@@ -24886,7 +24966,7 @@
       // One short segment per sample pair, each with its own colour. A single path with a
       // gradient cannot follow an arbitrary curve, so the curve is cut instead.
       const IDEAL_W = 1.1;   // was 2.2; halved on request, the line was heavier than the kerbs
-      for (let i = 0; i + 1 < ideal.length; i++) {
+      for (let i = 0; i + 1 < (o.ohneLinie ? 0 : ideal.length); i++) {
         const v = (brake[i] + brake[i + 1]) / 2;
         body += `<path d="M ${P2(ideal[i])} L ${P2(ideal[i + 1])}" fill="none" `
               + `stroke="${brakeColour(v)}" stroke-width="${IDEAL_W}" stroke-linecap="round"/>`;
@@ -25258,6 +25338,33 @@
   }, 250);
 
   let trackEditorGeo = null;
+  // ---- Editor-Schalter (v0.8.29): Ideallinie, Tastenkuerzel. Je Geraet gemerkt. ----
+  // var und nicht let: refreshTrackPreview() laeuft schon beim Laden, und ein let weiter unten
+  // stuende dann noch in der temporalen Todeszone.
+  var editorSchalter = (function () {
+    const z = { linie: true, tasten: true };
+    try {
+      const s = JSON.parse(localStorage.getItem('omegasim-editor-schalter') || '{}');
+      if (typeof s.linie === 'boolean') z.linie = s.linie;
+      if (typeof s.tasten === 'boolean') z.tasten = s.tasten;
+    } catch (e) { /* ohne Speicher: an */ }
+    return z;
+  })();
+  function editorSchalterZeigen() {
+    [['track-opt-linie', editorSchalter.linie], ['track-opt-tasten', editorSchalter.tasten]].forEach(([id, an]) => {
+      const b = $(id);
+      if (b) { b.classList.toggle('an', an); b.setAttribute('aria-pressed', an ? 'true' : 'false'); }
+    });
+    const host = $('track-fs-host');
+    if (host) host.classList.toggle('ohne-tasten', !editorSchalter.tasten);
+  }
+  function editorSchalterUm(was) {
+    editorSchalter[was] = !editorSchalter[was];
+    try { localStorage.setItem('omegasim-editor-schalter', JSON.stringify(editorSchalter)); } catch (e) { /* egal */ }
+    editorSchalterZeigen();
+    if (was === 'linie') refreshTrackPreview();
+  }
+
   function refreshTrackPreview() {
     // Die Kachelzahl entscheidet, ob der Windschatten ueberhaupt rechnen kann. Hier gerufen
     // und nicht in 50-drive.js beim Laden: dort ist currentTrackTiles noch in der temporalen
@@ -25269,10 +25376,12 @@
     if (trackSel !== null && trackSel >= currentTrackTiles.length) trackSel = null;
     const imEditor = document.body.classList.contains('track-fs');
     const result = renderTrackPreview(currentTrackTiles, null,
-      { detailed: true, cars: trackCarMarks(), echt: true, auswahl: imEditor ? trackSelIndex() : null });
+      { detailed: true, cars: trackCarMarks(), echt: true, auswahl: imEditor ? trackSelIndex() : null,
+        ohneLinie: !editorSchalter.linie });
     $('track-preview-svg').innerHTML = result.html;
     trackEditorGeo = result.geo || null;
     trackInfoZeichnen();
+    editorSchalterZeigen();
     renderTrackPalette();
     updateTrackSpace();
     $('track-code').value = trackToCode(currentTrackTiles, trackRotationDeg);
@@ -25555,9 +25664,14 @@
     const host = $('track-palette');
     if (!host) return;
     host.innerHTML = '';
+    // Gruppe je Teil: links drehend, gerade (auch Enge und Box), rechts drehend. Wechselt sie,
+    // steht ein feiner Strich davor (BESTELLT: "Trenne die Streckenteile im Editor jeweils
+    // nach Typ mit subtilen grauen vertikalen Strichen").
+    const gruppe = (p) => Math.sign(tileTurnDeg(p.type()));
     TRACK_PALETTE.forEach((p, i) => {
       const b = document.createElement('button');
-      b.className = 'tp-btn' + (i === trackPaletteSel ? ' sel' : '');
+      b.className = 'tp-btn' + (i === trackPaletteSel ? ' sel' : '')
+        + (i > 0 && gruppe(p) !== gruppe(TRACK_PALETTE[i - 1]) ? ' tp-trenn' : '');
       b.title = p.cap;
       b.setAttribute('aria-label', p.cap);
       const bil = teileBilanz(currentTrackTiles).find((x) => x.typ === p.type());
@@ -25678,6 +25792,8 @@
   // gelesen - renderTrackPadFocus und trackEditorPad nehmen beide ausschliesslich `id`.
   // Fuer den Umschalter waere sie ausserdem falsch geworden: er traegt jetzt zwei.
   const TRACK_ACTIONS = [
+    { id: 'track-opt-linie' },
+    { id: 'track-opt-tasten' },
     { id: 'track-undo' },
     { id: 'track-delete-sel' },
     { id: 'track-rotate-left' },
@@ -25750,6 +25866,8 @@
   // Rueckgaengig nimmt jetzt die letzte AENDERUNG zurueck (Verlauf), nicht nur das letzte
   // Teil. Start/Ziel bleibt dabei immer, weil jeder abgelegte Stand eine hatte.
   $('track-undo').onclick = () => { trackRueckgaengig(); };
+  $('track-opt-linie').onclick = () => { editorSchalterUm('linie'); };
+  $('track-opt-tasten').onclick = () => { editorSchalterUm('tasten'); };
   $('track-delete-sel').onclick = () => { trackTeilEntfernen(); };
   $('track-clear').onclick = () => { trackMerken(); currentTrackTiles = freshTrackTiles(); trackSel = null; refreshTrackPreview(); };
 
