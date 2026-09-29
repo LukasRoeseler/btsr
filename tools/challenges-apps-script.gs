@@ -1,5 +1,11 @@
 /**
+ * @OnlyCurrentDoc
+ *
  * OmegaSim Challenges: Online-Bestenliste als Google Sheet (Apps Script Web-App).
+ *
+ * BERECHTIGUNG: Die Zeile @OnlyCurrentDoc oben beschränkt das Skript auf DIESES eine Sheet,
+ * in dem es steckt. Google fragt dann nur nach "Tabellen ansehen und verwalten, in denen
+ * diese App installiert ist", nicht nach allen Tabellen des Kontos.
  *
  * EINRICHTEN (einmal, etwa 5 Minuten):
  *  1. https://sheets.new öffnen (neues Google Sheet). Name z. B. "OmegaSim Challenges".
@@ -11,8 +17,9 @@
  *       Zugriff:         Jeder
  *     "Bereitstellen" klicken, Google fragt nach Berechtigungen: dein Konto wählen,
  *     "Erweitert" > "Zu OmegaSim Challenges (unsicher) wechseln" > "Zulassen".
- *     (Die Warnung kommt, weil das Skript nicht von Google geprüft ist. Es kann nur auf
- *     dieses eine Sheet zugreifen.)
+ *     (Die Warnung kommt, weil das Skript nicht von Google geprüft ist. Dank @OnlyCurrentDoc
+ *     bekommt es nur Zugriff auf dieses eine Sheet. Steht im Dialog "alle deine Tabellen",
+ *     fehlt die Zeile @OnlyCurrentDoc ganz oben: dann abbrechen und die Datei neu einfügen.)
  *  4. Die angezeigte Web-App-URL kopieren (endet auf /exec).
  *  5. In OmegaSim: Challenges > Online > "Adresse der Web-App" einfügen, Namen eintragen,
  *     "Verbindung testen". Fertig.
