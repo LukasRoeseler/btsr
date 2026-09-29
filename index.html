@@ -3829,7 +3829,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.32</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.34</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4544,7 +4544,7 @@
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
       <h2>Online-Bestenliste</h2>
       <div class="opt-row"><div class="opt-label">Adresse der Web-App
-          <small>Die Adresse, die Google beim Bereitstellen des Apps Script anzeigt. Sie endet auf /exec. Wie das Sheet angelegt wird, steht in der Anleitung in tools/challenges-apps-script.gs.</small></div>
+          <small>Vorgabe ist die gemeinsame OmegaSim-Bestenliste. Wer eine eigene will: die Adresse, die Google beim Bereitstellen des Apps Script anzeigt (endet auf /exec), Anleitung in tools/challenges-apps-script.gs. Feld leer lassen hei&szlig;t: nur lokal.</small></div>
         <input type="url" id="ch-url" data-preset-skip data-i18n-skip placeholder="https://script.google.com/macros/s/.../exec"></div>
       <div class="opt-row"><div class="opt-label">Dein Name in der Liste
           <small>H&ouml;chstens 16 Zeichen, frei w&auml;hlbar. Leer lassen geht auch, dann steht nur das Auto in der Liste.</small></div>
@@ -4837,6 +4837,8 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Challenges: die Bestenliste kommt aus einem st&uuml;ndlichen Schnappschuss im Repo, dazu sofort die eigenen Zeiten; das Hochladen wiederholt bei Aussetzern.</li>
+        <li>Challenges: gemeinsame Online-Bestenliste ab Werk eingetragen, f&uuml;r alle Kopien der App.</li>
         <li>Challenges (experimentell): vier feste Strecken, je beste Runde oder Rennen &uuml;ber feste Runden, Pro oder Arcade. Das Auto muss stehen, dann Ampel, dann los; ohne Ghosts, danach sind die eigenen Einstellungen wieder da. Bestenliste mit Histogramm und Perzentil, lokal und online &uuml;ber ein eigenes Google Sheet.</li>
         <li>Logos aus den KI-Bildern entfernt, die Credits nennen die KI-Bilder (Gemini Flash). Reiter am Handy doppelt so hoch. Die Zur&uuml;ck-Taste des Handys f&uuml;hrt zum Startbildschirm (in der App ab APK 0.8.29). Editor: Asphalt im Hintergrund, Teile nach Typ getrennt, Schalter f&uuml;r Ideallinie und Tastenk&uuml;rzel.</li>
         <li>Strecke aufger&auml;umt: Editor, Scan, Laden, Meine Teile und Ausdruck haben je eine eigene Seite. Der Editor startet im Vollbild, mit Tutorial und Tasten&uuml;bersicht: Teile anw&auml;hlen, mittendrin einf&uuml;gen und entfernen, r&uuml;ckg&auml;ngig, in 45&deg;-Schritten drehen, L&auml;nge in Metern und im Ma&szlig;stab 1:50, Pfeile an den Kanten in Fahrtrichtung. Meine Teile (experimentell) z&auml;hlt deinen Bestand und zeigt im Editor, was fehlt oder &uuml;brig ist. Challenges: Plan und Mock-up mit vier Strecken, je beste Runde und Rennen.</li>
@@ -11519,12 +11521,15 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Stand": "as of",
+    "Challenges: die Bestenliste kommt aus einem stündlichen Schnappschuss im Repo, dazu sofort die eigenen Zeiten; das Hochladen wiederholt bei Aussetzern.": "Challenges: the leaderboard comes from an hourly snapshot in the repo, plus your own times right away; uploading retries on dropouts.",
+    "Challenges: gemeinsame Online-Bestenliste ab Werk eingetragen, für alle Kopien der App.": "Challenges: shared online leaderboard set up by default, for all copies of the app.",
     "Challenges (experimentell): vier feste Strecken, je beste Runde oder Rennen über feste Runden, Pro oder Arcade. Das Auto muss stehen, dann Ampel, dann los; ohne Ghosts, danach sind die eigenen Einstellungen wieder da. Bestenliste mit Histogramm und Perzentil, lokal und online über ein eigenes Google Sheet.": "Challenges (experimental): four fixed tracks, each as best lap or a race over fixed laps, Pro or Arcade. The car must stand still, then start lights, then go; no ghosts, and your own settings come back afterwards. Leaderboard with histogram and percentile, locally and online via your own Google Sheet.",
     "Grundpackung · 10 Runden": "Basic set · 10 laps",
     "Grundpackung · 8 Runden": "Basic set · 8 laps",
     "Grundpackung und Haarnadel-Set · 8 Runden": "Basic set and hairpin set · 8 laps",
     "Grundpackung und 30°-Außenkurven-Set · 8 Runden": "Basic set and 30° outer curve set · 8 laps",
-    "Die Adresse, die Google beim Bereitstellen des Apps Script anzeigt. Sie endet auf /exec. Wie das Sheet angelegt wird, steht in der Anleitung in tools/challenges-apps-script.gs.": "The address Google shows when you deploy the Apps Script. It ends in /exec. How to set up the sheet is explained in tools/challenges-apps-script.gs.",
+    "Vorgabe ist die gemeinsame OmegaSim-Bestenliste. Wer eine eigene will: die Adresse, die Google beim Bereitstellen des Apps Script anzeigt (endet auf /exec), Anleitung in tools/challenges-apps-script.gs. Feld leer lassen heißt: nur lokal.": "The default is the shared OmegaSim leaderboard. For your own: the address Google shows when you deploy the Apps Script (ends in /exec), instructions in tools/challenges-apps-script.gs. Leave the field empty for local only.",
     "Höchstens 16 Zeichen, frei wählbar. Leer lassen geht auch, dann steht nur das Auto in der Liste.": "At most 16 characters, your choice. You can leave it empty, then only the car appears in the list.",
     "Gewertete Zeiten gehen an die Liste: Strecke, Modus, Preset, Zeit, Rundenzeiten, Autoname, dein Name und eine zufällige Gerätekennung. Keine E-Mail, kein Konto.": "Counted times go to the list: track, mode, preset, time, lap times, car name, your name and a random device ID. No e-mail, no account.",
     "Adresse der Web-App": "Web app address",
@@ -32407,6 +32412,10 @@
   const CH_MODUS_NAME = { hotlap: 'Beste Runde', rennen: 'Rennen' };
   const CH_STORE = 'omegasim-challenges';
   const CH_ONLINE_STORE = 'omegasim-ch-online';
+  // Die gemeinsame Bestenliste, fuer alle Kopien der App (btsr, omegasim, APK). BESTELLT: "Die
+  // URL soll von beiden Repos genutzt werden." Unter Challenges > Online laesst sie sich
+  // ueberschreiben; ein leeres Feld heisst "nur lokal".
+  const CH_STANDARD_URL = 'https://script.google.com/macros/s/AKfycbxCgxLcORkrqnp1QU_9d3r1x6HuBor2ZlB6vFQFf1cT_noiVm_ePWPMWcKfbDsB7G-C/exec';
   const CH_GERAET_STORE = 'omegasim-geraet';
   const CH_STILL_MS = 1000;        // so lange muss das Auto stehen, bevor die Ampel kommt
   const CH_STILL_KMH = 1;
@@ -32501,7 +32510,7 @@
     return g;
   }
   function chOnline() {
-    return Object.assign({ url: '', fahrer: '', hochladen: true }, chLesen(CH_ONLINE_STORE, {}));
+    return Object.assign({ url: CH_STANDARD_URL, fahrer: '', hochladen: true }, chLesen(CH_ONLINE_STORE, {}));
   }
   function chLokal(schl) { return (chLesen(CH_STORE, {})[schl] || []); }
   function chLokalSpeichern(erg) {
@@ -32526,21 +32535,69 @@
     };
     // text/plain und kein JSON-Kopf: so schickt der Browser keinen CORS-Vorabruf, den ein
     // Apps Script nicht beantworten kann.
-    return fetch(o.url, { method: 'POST', body: JSON.stringify(eintrag) })
+    //
+    // WIEDERHOLEN, GEMESSEN: Google leitet jede Antwort auf eine Echo-Seite um, und die kam im
+    // Test sporadisch als 404 zurueck (derselbe Aufruf: 200, 404, 200). Das Skript ist dann
+    // meist schon gelaufen, nur die Antwort fehlt. Deshalb bis zu zwei Wiederholungen, und
+    // "zu schnell hintereinander" (die 15-s-Drossel je Geraet im Skript) heisst beim Wiederholen:
+    // der erste Versuch ist angekommen. So entsteht keine doppelte Zeile.
+    const senden = (versuch) => fetch(o.url, { method: 'POST', body: JSON.stringify(eintrag) })
       .then((r) => r.json())
-      .then((j) => { if (!j || !j.ok) throw new Error((j && j.fehler) || 'abgelehnt'); return true; })
-      .catch((e) => { log('Challenge: Hochladen fehlgeschlagen: ' + e.message, 'warn'); return false; });
+      .then((j) => {
+        if (j && j.ok) return true;
+        if (versuch > 0 && j && j.fehler === 'zu schnell hintereinander') return true;
+        throw Object.assign(new Error((j && j.fehler) || 'abgelehnt'), { endgueltig: true });
+      })
+      .catch((e) => {
+        if (!e.endgueltig && versuch < 2) return new Promise((ok) => setTimeout(ok, 1500)).then(() => senden(versuch + 1));
+        log('Challenge: Hochladen fehlgeschlagen: ' + e.message, 'warn');
+        return false;
+      });
+    return senden(0);
   }
-  function chListeLaden(schl) {
+  // ---- SCHNAPPSCHUSS AUS DEM REPO (v0.8.34) ----
+  // BESTELLT: "das Google Sheet ab und zu in GitHub speichern per Action ... die lokalen + die
+  // in der letzten Stunde gefetchten". Die Action (.github/workflows/challenges.yml) legt
+  // stuendlich data/challenges.json ab; die App liest zuerst diese Datei (schnell, ohne Googles
+  // Echo-Umleitung) und mischt die eigenen Zeiten dazu (chAlleZeiten). Nur fuer die gemeinsame
+  // Liste - eine eigene Adresse steht nicht im Schnappschuss. Aelter als zwei Stunden, oder die
+  // Datei fehlt (die Kopie auf luuke42 hat keine Action, die APK nur die mitgelieferte): dann
+  // direkt beim Sheet fragen.
+  const CH_SCHNAPPSCHUSS_MAX_MS = 2 * 3600 * 1000;
+  let chSchnapp = null, chSchnappAt = 0;
+  function chSchnappschuss() {
+    if (chSchnapp && Date.now() - chSchnappAt < 10 * 60000) return chSchnapp;
+    chSchnappAt = Date.now();
+    chSchnapp = fetch('data/challenges.json?t=' + Math.floor(Date.now() / 600000))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => (j && j.listen && Date.now() - Date.parse(j.stand) < CH_SCHNAPPSCHUSS_MAX_MS ? j : null))
+      .catch(() => null);
+    return chSchnapp;
+  }
+  function chListeLaden(schl, frisch) {
     const o = chOnline();
     if (!o.url) { chListen[schl] = { zeiten: null, online: false }; return Promise.resolve(); }
-    const [id, modus, preset] = schl.split('|');
     chListen[schl] = Object.assign(chListen[schl] || {}, { laedt: true });
+    const schnapp = !frisch && o.url === CH_STANDARD_URL ? chSchnappschuss() : Promise.resolve(null);
+    return schnapp.then((j) => {
+      const l = j && j.listen[schl];
+      if (l) {
+        chListen[schl] = { zeiten: l.zeiten || [], online: true, anzahl: l.anzahl || 0, stand: j.stand };
+        if (chSeiteOffen()) chZeichneListe();
+        return undefined;
+      }
+      return chListeLive(schl, o);
+    });
+  }
+  function chListeLive(schl, o) {
+    const [id, modus, preset] = schl.split('|');
     const url = o.url + (o.url.indexOf('?') >= 0 ? '&' : '?') + 'challenge=' + encodeURIComponent(id)
       + '&modus=' + encodeURIComponent(modus) + '&preset=' + encodeURIComponent(preset);
-    return fetch(url).then((r) => r.json()).then((j) => {
+    // Einmal wiederholen: dieselbe sporadische 404 der Echo-Seite wie beim Hochladen.
+    const holen = () => fetch(url).then((r) => r.json());
+    return holen().catch(() => new Promise((ok) => setTimeout(ok, 1200)).then(holen)).then((j) => {
       if (!j || !j.ok) throw new Error((j && j.fehler) || 'keine Antwort');
-      chListen[schl] = { zeiten: j.zeiten || [], online: true, anzahl: j.anzahl || 0 };
+      chListen[schl] = { zeiten: j.zeiten || [], online: true, anzahl: j.anzahl || 0, stand: null };
     }).catch((e) => {
       chListen[schl] = { zeiten: null, online: false, fehler: e.message };
     }).then(() => { if (chSeiteOffen()) chZeichneListe(); });
@@ -32695,12 +32752,18 @@
   }
 
   // ---- Anzeige ----
+  // Online-Liste (Schnappschuss oder direkt) PLUS die eigenen Zeiten dieses Geraets, die dort
+  // noch fehlen - so steht ein eben gefahrener Lauf sofort in der Liste, auch wenn der
+  // Schnappschuss eine Stunde alt ist.
   function chAlleZeiten(schl) {
     const l = chListen[schl];
-    if (l && l.online && l.zeiten) return { zeiten: l.zeiten.map((z) => +z.zeit_ms), online: true, eintraege: l.zeiten };
-    const lok = chLokal(schl);
-    return { zeiten: lok.map((z) => z.zeit), online: false,
-             eintraege: lok.map((z) => ({ zeit_ms: z.zeit, auto: z.auto, fahrer: z.fahrer, geraet: z.geraet })) };
+    const lok = chLokal(schl).map((z) => ({ zeit_ms: z.zeit, auto: z.auto, fahrer: z.fahrer, geraet: z.geraet }));
+    if (l && l.online && l.zeiten) {
+      const da = (z) => l.zeiten.some((x) => x.geraet === z.geraet && Math.abs(+x.zeit_ms - z.zeit_ms) < 2);
+      const eintraege = l.zeiten.concat(lok.filter((z) => !da(z)));
+      return { zeiten: eintraege.map((z) => +z.zeit_ms), online: true, eintraege };
+    }
+    return { zeiten: lok.map((z) => z.zeit_ms), online: false, eintraege: lok };
   }
   function chRangText(schl, zeit) {
     const a = chAlleZeiten(schl);
@@ -32769,6 +32832,7 @@
     const st = $('ch-liste-status');
     st.textContent = l.laedt ? t('Lade Bestenliste …')
       : a.online ? t('Online-Bestenliste') + ': ' + a.zeiten.length + ' ' + t('Zeiten')
+        + (l.stand ? ' · ' + t('Stand') + ' ' + new Date(l.stand).toLocaleTimeString(lang === 'en' ? 'en-GB' : 'de-DE', { hour: '2-digit', minute: '2-digit' }) : '')
       : o.url ? t('Online-Bestenliste nicht erreichbar, hier stehen deine eigenen Zeiten.')
       : t('Deine Zeiten auf diesem Gerät. Für die gemeinsame Liste unter Challenges > Online eine Adresse eintragen.');
     // Eigene Bestzeit: aus dem letzten Lauf oder aus den lokalen Zeiten.
@@ -32841,7 +32905,7 @@
     if (!chOnline().url) { st.textContent = t('Erst die Adresse eintragen.'); return; }
     st.textContent = t('Prüfe …');
     const schl = chSchluessel('oval', 'hotlap', 'pro');
-    chListeLaden(schl).then(() => {
+    chListeLaden(schl, true).then(() => {
       const l = chListen[schl];
       st.textContent = l && l.online ? t('Verbunden.') + ' ' + (l.anzahl || 0) + ' ' + t('Zeiten auf der Liste.')
         : t('Keine Verbindung') + (l && l.fehler ? ': ' + l.fehler : '');

@@ -42,6 +42,10 @@
   const CH_MODUS_NAME = { hotlap: 'Beste Runde', rennen: 'Rennen' };
   const CH_STORE = 'omegasim-challenges';
   const CH_ONLINE_STORE = 'omegasim-ch-online';
+  // Die gemeinsame Bestenliste, fuer alle Kopien der App (btsr, omegasim, APK). BESTELLT: "Die
+  // URL soll von beiden Repos genutzt werden." Unter Challenges > Online laesst sie sich
+  // ueberschreiben; ein leeres Feld heisst "nur lokal".
+  const CH_STANDARD_URL = 'https://script.google.com/macros/s/AKfycbxCgxLcORkrqnp1QU_9d3r1x6HuBor2ZlB6vFQFf1cT_noiVm_ePWPMWcKfbDsB7G-C/exec';
   const CH_GERAET_STORE = 'omegasim-geraet';
   const CH_STILL_MS = 1000;        // so lange muss das Auto stehen, bevor die Ampel kommt
   const CH_STILL_KMH = 1;
@@ -136,7 +140,7 @@
     return g;
   }
   function chOnline() {
-    return Object.assign({ url: '', fahrer: '', hochladen: true }, chLesen(CH_ONLINE_STORE, {}));
+    return Object.assign({ url: CH_STANDARD_URL, fahrer: '', hochladen: true }, chLesen(CH_ONLINE_STORE, {}));
   }
   function chLokal(schl) { return (chLesen(CH_STORE, {})[schl] || []); }
   function chLokalSpeichern(erg) {
@@ -161,21 +165,69 @@
     };
     // text/plain und kein JSON-Kopf: so schickt der Browser keinen CORS-Vorabruf, den ein
     // Apps Script nicht beantworten kann.
-    return fetch(o.url, { method: 'POST', body: JSON.stringify(eintrag) })
+    //
+    // WIEDERHOLEN, GEMESSEN: Google leitet jede Antwort auf eine Echo-Seite um, und die kam im
+    // Test sporadisch als 404 zurueck (derselbe Aufruf: 200, 404, 200). Das Skript ist dann
+    // meist schon gelaufen, nur die Antwort fehlt. Deshalb bis zu zwei Wiederholungen, und
+    // "zu schnell hintereinander" (die 15-s-Drossel je Geraet im Skript) heisst beim Wiederholen:
+    // der erste Versuch ist angekommen. So entsteht keine doppelte Zeile.
+    const senden = (versuch) => fetch(o.url, { method: 'POST', body: JSON.stringify(eintrag) })
       .then((r) => r.json())
-      .then((j) => { if (!j || !j.ok) throw new Error((j && j.fehler) || 'abgelehnt'); return true; })
-      .catch((e) => { log('Challenge: Hochladen fehlgeschlagen: ' + e.message, 'warn'); return false; });
+      .then((j) => {
+        if (j && j.ok) return true;
+        if (versuch > 0 && j && j.fehler === 'zu schnell hintereinander') return true;
+        throw Object.assign(new Error((j && j.fehler) || 'abgelehnt'), { endgueltig: true });
+      })
+      .catch((e) => {
+        if (!e.endgueltig && versuch < 2) return new Promise((ok) => setTimeout(ok, 1500)).then(() => senden(versuch + 1));
+        log('Challenge: Hochladen fehlgeschlagen: ' + e.message, 'warn');
+        return false;
+      });
+    return senden(0);
   }
-  function chListeLaden(schl) {
+  // ---- SCHNAPPSCHUSS AUS DEM REPO (v0.8.34) ----
+  // BESTELLT: "das Google Sheet ab und zu in GitHub speichern per Action ... die lokalen + die
+  // in der letzten Stunde gefetchten". Die Action (.github/workflows/challenges.yml) legt
+  // stuendlich data/challenges.json ab; die App liest zuerst diese Datei (schnell, ohne Googles
+  // Echo-Umleitung) und mischt die eigenen Zeiten dazu (chAlleZeiten). Nur fuer die gemeinsame
+  // Liste - eine eigene Adresse steht nicht im Schnappschuss. Aelter als zwei Stunden, oder die
+  // Datei fehlt (die Kopie auf luuke42 hat keine Action, die APK nur die mitgelieferte): dann
+  // direkt beim Sheet fragen.
+  const CH_SCHNAPPSCHUSS_MAX_MS = 2 * 3600 * 1000;
+  let chSchnapp = null, chSchnappAt = 0;
+  function chSchnappschuss() {
+    if (chSchnapp && Date.now() - chSchnappAt < 10 * 60000) return chSchnapp;
+    chSchnappAt = Date.now();
+    chSchnapp = fetch('data/challenges.json?t=' + Math.floor(Date.now() / 600000))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => (j && j.listen && Date.now() - Date.parse(j.stand) < CH_SCHNAPPSCHUSS_MAX_MS ? j : null))
+      .catch(() => null);
+    return chSchnapp;
+  }
+  function chListeLaden(schl, frisch) {
     const o = chOnline();
     if (!o.url) { chListen[schl] = { zeiten: null, online: false }; return Promise.resolve(); }
-    const [id, modus, preset] = schl.split('|');
     chListen[schl] = Object.assign(chListen[schl] || {}, { laedt: true });
+    const schnapp = !frisch && o.url === CH_STANDARD_URL ? chSchnappschuss() : Promise.resolve(null);
+    return schnapp.then((j) => {
+      const l = j && j.listen[schl];
+      if (l) {
+        chListen[schl] = { zeiten: l.zeiten || [], online: true, anzahl: l.anzahl || 0, stand: j.stand };
+        if (chSeiteOffen()) chZeichneListe();
+        return undefined;
+      }
+      return chListeLive(schl, o);
+    });
+  }
+  function chListeLive(schl, o) {
+    const [id, modus, preset] = schl.split('|');
     const url = o.url + (o.url.indexOf('?') >= 0 ? '&' : '?') + 'challenge=' + encodeURIComponent(id)
       + '&modus=' + encodeURIComponent(modus) + '&preset=' + encodeURIComponent(preset);
-    return fetch(url).then((r) => r.json()).then((j) => {
+    // Einmal wiederholen: dieselbe sporadische 404 der Echo-Seite wie beim Hochladen.
+    const holen = () => fetch(url).then((r) => r.json());
+    return holen().catch(() => new Promise((ok) => setTimeout(ok, 1200)).then(holen)).then((j) => {
       if (!j || !j.ok) throw new Error((j && j.fehler) || 'keine Antwort');
-      chListen[schl] = { zeiten: j.zeiten || [], online: true, anzahl: j.anzahl || 0 };
+      chListen[schl] = { zeiten: j.zeiten || [], online: true, anzahl: j.anzahl || 0, stand: null };
     }).catch((e) => {
       chListen[schl] = { zeiten: null, online: false, fehler: e.message };
     }).then(() => { if (chSeiteOffen()) chZeichneListe(); });
@@ -330,12 +382,18 @@
   }
 
   // ---- Anzeige ----
+  // Online-Liste (Schnappschuss oder direkt) PLUS die eigenen Zeiten dieses Geraets, die dort
+  // noch fehlen - so steht ein eben gefahrener Lauf sofort in der Liste, auch wenn der
+  // Schnappschuss eine Stunde alt ist.
   function chAlleZeiten(schl) {
     const l = chListen[schl];
-    if (l && l.online && l.zeiten) return { zeiten: l.zeiten.map((z) => +z.zeit_ms), online: true, eintraege: l.zeiten };
-    const lok = chLokal(schl);
-    return { zeiten: lok.map((z) => z.zeit), online: false,
-             eintraege: lok.map((z) => ({ zeit_ms: z.zeit, auto: z.auto, fahrer: z.fahrer, geraet: z.geraet })) };
+    const lok = chLokal(schl).map((z) => ({ zeit_ms: z.zeit, auto: z.auto, fahrer: z.fahrer, geraet: z.geraet }));
+    if (l && l.online && l.zeiten) {
+      const da = (z) => l.zeiten.some((x) => x.geraet === z.geraet && Math.abs(+x.zeit_ms - z.zeit_ms) < 2);
+      const eintraege = l.zeiten.concat(lok.filter((z) => !da(z)));
+      return { zeiten: eintraege.map((z) => +z.zeit_ms), online: true, eintraege };
+    }
+    return { zeiten: lok.map((z) => z.zeit_ms), online: false, eintraege: lok };
   }
   function chRangText(schl, zeit) {
     const a = chAlleZeiten(schl);
@@ -404,6 +462,7 @@
     const st = $('ch-liste-status');
     st.textContent = l.laedt ? t('Lade Bestenliste …')
       : a.online ? t('Online-Bestenliste') + ': ' + a.zeiten.length + ' ' + t('Zeiten')
+        + (l.stand ? ' · ' + t('Stand') + ' ' + new Date(l.stand).toLocaleTimeString(lang === 'en' ? 'en-GB' : 'de-DE', { hour: '2-digit', minute: '2-digit' }) : '')
       : o.url ? t('Online-Bestenliste nicht erreichbar, hier stehen deine eigenen Zeiten.')
       : t('Deine Zeiten auf diesem Gerät. Für die gemeinsame Liste unter Challenges > Online eine Adresse eintragen.');
     // Eigene Bestzeit: aus dem letzten Lauf oder aus den lokalen Zeiten.
@@ -476,7 +535,7 @@
     if (!chOnline().url) { st.textContent = t('Erst die Adresse eintragen.'); return; }
     st.textContent = t('Prüfe …');
     const schl = chSchluessel('oval', 'hotlap', 'pro');
-    chListeLaden(schl).then(() => {
+    chListeLaden(schl, true).then(() => {
       const l = chListen[schl];
       st.textContent = l && l.online ? t('Verbunden.') + ' ' + (l.anzahl || 0) + ' ' + t('Zeiten auf der Liste.')
         : t('Keine Verbindung') + (l && l.fehler ? ': ' + l.fehler : '');

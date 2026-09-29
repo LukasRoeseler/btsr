@@ -3829,7 +3829,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.32</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.34</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4544,7 +4544,7 @@
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
       <h2>Online-Bestenliste</h2>
       <div class="opt-row"><div class="opt-label">Adresse der Web-App
-          <small>Die Adresse, die Google beim Bereitstellen des Apps Script anzeigt. Sie endet auf /exec. Wie das Sheet angelegt wird, steht in der Anleitung in tools/challenges-apps-script.gs.</small></div>
+          <small>Vorgabe ist die gemeinsame OmegaSim-Bestenliste. Wer eine eigene will: die Adresse, die Google beim Bereitstellen des Apps Script anzeigt (endet auf /exec), Anleitung in tools/challenges-apps-script.gs. Feld leer lassen hei&szlig;t: nur lokal.</small></div>
         <input type="url" id="ch-url" data-preset-skip data-i18n-skip placeholder="https://script.google.com/macros/s/.../exec"></div>
       <div class="opt-row"><div class="opt-label">Dein Name in der Liste
           <small>H&ouml;chstens 16 Zeichen, frei w&auml;hlbar. Leer lassen geht auch, dann steht nur das Auto in der Liste.</small></div>
@@ -4837,6 +4837,8 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Challenges: die Bestenliste kommt aus einem st&uuml;ndlichen Schnappschuss im Repo, dazu sofort die eigenen Zeiten; das Hochladen wiederholt bei Aussetzern.</li>
+        <li>Challenges: gemeinsame Online-Bestenliste ab Werk eingetragen, f&uuml;r alle Kopien der App.</li>
         <li>Challenges (experimentell): vier feste Strecken, je beste Runde oder Rennen &uuml;ber feste Runden, Pro oder Arcade. Das Auto muss stehen, dann Ampel, dann los; ohne Ghosts, danach sind die eigenen Einstellungen wieder da. Bestenliste mit Histogramm und Perzentil, lokal und online &uuml;ber ein eigenes Google Sheet.</li>
         <li>Logos aus den KI-Bildern entfernt, die Credits nennen die KI-Bilder (Gemini Flash). Reiter am Handy doppelt so hoch. Die Zur&uuml;ck-Taste des Handys f&uuml;hrt zum Startbildschirm (in der App ab APK 0.8.29). Editor: Asphalt im Hintergrund, Teile nach Typ getrennt, Schalter f&uuml;r Ideallinie und Tastenk&uuml;rzel.</li>
         <li>Strecke aufger&auml;umt: Editor, Scan, Laden, Meine Teile und Ausdruck haben je eine eigene Seite. Der Editor startet im Vollbild, mit Tutorial und Tasten&uuml;bersicht: Teile anw&auml;hlen, mittendrin einf&uuml;gen und entfernen, r&uuml;ckg&auml;ngig, in 45&deg;-Schritten drehen, L&auml;nge in Metern und im Ma&szlig;stab 1:50, Pfeile an den Kanten in Fahrtrichtung. Meine Teile (experimentell) z&auml;hlt deinen Bestand und zeigt im Editor, was fehlt oder &uuml;brig ist. Challenges: Plan und Mock-up mit vier Strecken, je beste Runde und Rennen.</li>
