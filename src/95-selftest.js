@@ -10234,6 +10234,105 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Cockpit im Hintergrund, R2 erkannt, Kreuz als andere Taste, blaettern mit dem Steuerkreuz' };
   });
 
+  // ---- STRECKENEDITOR (v0.8.28) ----
+  stAdd('Editor: auswählen, mittendrin einfügen, entfernen, rückgängig, 45 Grad', () => {
+    const merk = { tiles: currentTrackTiles, rot: trackRotationDeg, sel: trackSel, verlauf: trackVerlauf.length };
+    const f = [];
+    const code = () => trackToCode(currentTrackTiles, 0);
+    try {
+      currentTrackTiles = codeToTrack('SGR').tiles; trackRotationDeg = 0; trackSel = 1;
+      addTile(TILE_TYPE.CURVE_LEFT);
+      if (code() !== 'SGLR') f.push('Einfuegen hinter dem gewaehlten ergibt ' + code() + ' statt SGLR');
+      if (trackSel !== 2) f.push('danach gewaehlt ' + trackSel + ' statt 2');
+      trackSel = 1; trackTeilEntfernen();
+      if (code() !== 'SLR') f.push('Entfernen ergibt ' + code() + ' statt SLR');
+      trackSel = 0;
+      if (trackTeilEntfernen()) f.push('Start/Ziel liess sich entfernen');
+      trackRueckgaengig();
+      if (code() !== 'SGLR') f.push('Rueckgaengig ergibt ' + code() + ' statt SGLR');
+      trackRueckgaengig();
+      if (code() !== 'SGR') f.push('zweites Rueckgaengig ergibt ' + code() + ' statt SGR');
+      rotateTrack(45);
+      if (trackRotationDeg !== 45) f.push('Drehen gibt ' + trackRotationDeg + ' Grad');
+      rotateTrack(-90);
+      if (trackRotationDeg !== 315) f.push('links drehen gibt ' + trackRotationDeg + ' Grad');
+      const rund = codeToTrack(trackToCode(currentTrackTiles, 45));
+      if (!rund || rund.rotation !== 45) f.push('45 Grad ueberleben den Streckencode nicht (' + (rund && rund.rotation) + ')');
+      trackSel = null; trackAuswahlSchritt(-1);
+      if (trackSel !== currentTrackTiles.length - 2) f.push('L1 waehlt nicht das vorletzte Teil');
+    } finally {
+      currentTrackTiles = merk.tiles; trackRotationDeg = merk.rot; trackSel = merk.sel;
+      trackVerlauf.length = Math.min(trackVerlauf.length, merk.verlauf);
+      refreshTrackPreview();
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'einfuegen hinter der Auswahl, entfernen, Start bleibt, zweimal rueckgaengig, 45 Grad in beide Richtungen' };
+  });
+
+  stAdd('Editor: Länge in Metern und 1:50, Teilebilanz', () => {
+    const f = [];
+    const m = trackLaengeM(codeToTrack('SG3').tiles);
+    // Vier gerade Stuecke (Start ist eines) zu je 43 cm.
+    if (Math.abs(m - 4 * 0.43) > 0.005) f.push('SG3 ist ' + m.toFixed(3) + ' m statt 1,72');
+    if (!/1:50/.test(trackLaengeText(codeToTrack('SG3').tiles))) f.push('ohne Massstabsangabe');
+    let alt = null;
+    try { alt = localStorage.getItem('omegasim-teile'); } catch (e) { return { skip: true, mass: 'kein Speicher' }; }
+    try {
+      const b = {}; b[TILE_TYPE.STRAIGHT] = 2; b[TILE_TYPE.START] = 1;
+      localStorage.setItem('omegasim-teile', JSON.stringify(b));
+      const bil = teileBilanz(codeToTrack('SG3').tiles);
+      const g = bil.find((x) => x.typ === TILE_TYPE.STRAIGHT);
+      if (!g || g.rest !== -1) f.push('Geraden: Rest ' + (g && g.rest) + ' statt -1');
+      const st = bil.find((x) => x.typ === TILE_TYPE.START);
+      if (!st || st.rest !== 0) f.push('Start: Rest ' + (st && st.rest));
+      const r = bil.find((x) => x.typ === TILE_TYPE.CURVE_RIGHT);
+      if (!r || r.hat !== null) f.push('nicht eingetragene Sorte zaehlt trotzdem');
+    } finally {
+      try { if (alt === null) localStorage.removeItem('omegasim-teile'); else localStorage.setItem('omegasim-teile', alt); } catch (e) { /* egal */ }
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'SG3 = ' + m.toFixed(2) + ' m, fehlende Gerade erkannt, nicht gezaehlte Sorten frei' };
+  });
+
+  stAdd('Strecke: jede Unterseite hat nur, was sie bezeichnet', () => {
+    const f = [];
+    const drin = (sub, id) => { const s = $('sub-' + sub); return !!(s && $(id) && s.contains($(id))); };
+    if (!drin('laden', 'track-list') || drin('edit', 'track-list')) f.push('gespeicherte Strecken nicht (nur) unter Laden');
+    if (!drin('edit', 'track-preview-svg')) f.push('Editor-Karte nicht im Editor');
+    if (drin('laden', 'track-preview-svg')) f.push('Editor unter Laden');
+    if (!drin('scan', 'track-scan-start') || drin('edit', 'track-scan-start')) f.push('Live-Scan nicht (nur) im Scan');
+    if (!drin('teile', 'teile-liste')) f.push('Meine Teile fehlt');
+    const kacheln = [...document.querySelectorAll('#sub-home-track .subpage-open')].map((k) => k.dataset.sub);
+    if (new Set(kacheln).size !== kacheln.length) f.push('zwei Kacheln oeffnen dieselbe Unterseite: ' + kacheln.join(','));
+    return { ok: !f.length, mass: f.length ? f.join('; ') : kacheln.join(', ') };
+  });
+
+  stAdd('Editor-Tutorial: läuft im Editor-Vollbild durch und bleibt dort', () => {
+    const merk = kAktiverTab();
+    const f = [];
+    const warFs = document.body.classList.contains('track-fs');
+    try {
+      showTab('track'); showSubpage('edit');
+      document.body.classList.add('track-fs');
+      $('track-tour').click();
+      if (!konsoleTourOffen()) return { ok: false, mass: 'Hilfe-Knopf oeffnet nichts' };
+      const pad = { axes: [0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) };
+      konsoleTourPad(pad);
+      pad.buttons[0] = { pressed: true, value: 1 };
+      if (!konsoleTourPad(pad)) f.push('Pad wird nicht von der Fuehrung verbraucht');
+      pad.buttons[0] = { pressed: false, value: 0 }; konsoleTourPad(pad);
+      if (kTourSchritt !== 1) f.push('Kreuz blaettert nicht weiter');
+      while (konsoleTourOffen() && kTourSchritt < K_EDITOR.length - 1) konsoleTourWeiter();
+      konsoleTourWeiter();
+      if (konsoleTourOffen()) f.push('nach dem letzten Schritt offen');
+      if (kAktiverTab() !== 'track') f.push('endet auf ' + kAktiverTab());
+    } finally {
+      if (konsoleTourOffen()) konsoleTourZu(false);
+      if (!warFs) document.body.classList.remove('track-fs');
+      showSubpage('');
+      if (merk) showTab(merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : K_EDITOR.length + ' Schritte, Pad blaettert, bleibt im Editor' };
+  });
+
   stAdd('ACC-Menü: Motorsound-Kachel blättert die Motoren, Quadrat', () => {
     const s2 = $('sound-profile');
     if (!s2 || !$('fa-motor')) return { ok: false, mass: 'Kachel oder Auswahl fehlt' };

@@ -2454,6 +2454,7 @@
   .k-tutorial-knopf:hover { background: var(--k-blau); color: var(--k-blau-text); }
   .k-tutorial-taste { margin-left: 8px; color: var(--k-dim); font-size: 11px; letter-spacing: .04em; }
   .k-tour { position: fixed; inset: 0; z-index: 450; font-family: var(--k-font); }
+  body.track-fs .k-tour { z-index: 900; }
   .k-tour[hidden], .k-tour-spot[hidden] { display: none; }
   .k-tour.ohne-spot { background: rgba(0,0,0,.72); }
   .k-tour-spot { position: absolute; border: 2px solid var(--k-blau); box-shadow: 0 0 0 9999px rgba(0,0,0,.72);
@@ -2537,6 +2538,28 @@
   .gk-w > button:not(.gar-speed-reset) { background: none; border: 0; color: var(--k-blau); padding: 2px 6px; min-height: 0; }
   .gk-hinweis { color: var(--muted); font-size: 12px; padding: 4px; }
   .gk-aufzeile .gar-speed { padding: 3px 4px; }
+  /* ---- Streckeneditor (v0.8.28) ---- */
+  .te-warn { border-left: 3px solid var(--warn); padding: 3px 10px; font-size: 12px; color: #f3d9a0; background: rgba(255,180,0,.08); }
+  .te-start-reihe { gap: 10px; align-items: center; margin: 8px 0; }
+  .te-start { font-size: 15px; padding: 10px 22px; letter-spacing: .06em; text-transform: uppercase; }
+  /* Ausserhalb des Vollbilds nur die Karte: gebaut wird im Vollbild. */
+  body:not(.track-fs) #track-fs-host > .tp-bar { display: none; }
+  /* Im Editor-Vollbild kein Menuekopf: er lag ueber der Aktionsleiste (gesehen bei 800 x 370). */
+  body.track-fs header#k-kopf { display: none !important; }
+  .tp-info { font-size: 12px; color: #eef0f4; margin-left: 10px; white-space: nowrap; }
+  .tp-info .tp-fehlt { color: var(--bad); font-weight: 700; }
+  .tp-info .tp-da { color: var(--good); }
+  .tp-tasten { font-size: 10.5px; color: var(--muted); flex: 1 1 260px; text-align: right; line-height: 1.35; }
+  body:not(.track-fs) .tp-tasten, body:not(.track-fs) .tp-info { display: none; }
+  .tp-btn { position: relative; }
+  .tp-rest { position: absolute; top: 2px; right: 3px; font-size: 9px; font-weight: 800; color: var(--good); }
+  .tp-rest.fehlt { color: var(--bad); }
+  #track-preview-svg { cursor: pointer; }
+  .teile-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 4px 14px; margin-top: 10px; }
+  .teile-zeile { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 6px;
+    padding: 3px 4px; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .teile-zeile b { min-width: 2.2em; text-align: center; }
+  .teile-zeile button { min-height: 0; padding: 2px 9px; }
   /* HOCHFORMAT, schmal (Telefon im Browser): untereinander, mit Bildlauf. */
   @media (max-width: 760px) and (orientation: portrait) {
     header#k-kopf { grid-template-columns: 1fr auto; }
@@ -3751,7 +3774,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.27</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.28</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4416,8 +4439,7 @@
   <section class="tabpage" id="tab-challenges">
     <div class="card">
       <h2>Challenges <span class="wip-tag">WIP</span></h2>
-      <p class="muted">Feste Strecken zum Nachbauen, je zwei Presets (Pro und Arcade) und eine feste Rundenzahl.
-        Stehendes Auto, Ampel, los. Deine Zeit kommt in eine gemeinsame Bestenliste.</p>
+      <p class="muted">Feste Strecken zum Nachbauen, je zwei Modi (beste Runde, Rennen) und zwei Presets (Pro und Arcade). Stehendes Auto, Ampel, los. Deine Zeit kommt in eine gemeinsame Bestenliste.</p>
       <p><a href="mockup/challenges.html" target="_blank" rel="noopener">Mock-up ansehen</a></p>
     </div>
   </section>
@@ -4672,6 +4694,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Strecke aufger&auml;umt: Editor, Scan, Laden, Meine Teile und Ausdruck haben je eine eigene Seite. Der Editor startet im Vollbild, mit Tutorial und Tasten&uuml;bersicht: Teile anw&auml;hlen, mittendrin einf&uuml;gen und entfernen, r&uuml;ckg&auml;ngig, in 45&deg;-Schritten drehen, L&auml;nge in Metern und im Ma&szlig;stab 1:50, Pfeile an den Kanten in Fahrtrichtung. Meine Teile (experimentell) z&auml;hlt deinen Bestand und zeigt im Editor, was fehlt oder &uuml;brig ist. Challenges: Plan und Mock-up mit vier Strecken, je beste Runde und Rennen.</li>
         <li>Kopfzeile nochmals flacher, Omega oben links f&uuml;hrt zum Startbildschirm, Info unter Optionen, neuer Reiter Challenges (WIP). Tutorial-Texte k&uuml;rzer; Steuerung l&auml;uft auf dem Cockpit, zeigt gedr&uuml;ckte Tasten und f&auml;hrt dabei nicht. Neue Stimmungsbilder (KI) f&uuml;r Titel, Rennoptionen, Start, Strecke, Optionen, Info und Challenges.</li>
         <li>Garage als Karten mit eigenem Foto je Auto (sonst seine Farbe), Rolle mit &#9664; &#9654;, Einstellen klappt Farbe, Tempo und Charakter auf; ein Knopf startet und h&auml;lt die Ghosts. Titel: &#10005; startet, &#9651; Tutorial, &#9675; neue F&uuml;hrung &bdquo;Steuerung&ldquo; bis zur Controller-Belegung. Minigame: Fenster 0,1 s l&auml;nger, falsche Taste kostet Zeit. Freies Training zeigt &infin;. Mehrspieler-App wie Vorschlag A. App: Status- und Navigationsleiste werden zuverl&auml;ssiger ausgeblendet.</li>
         <li>Tutorial auf dem Titelbildschirm (experimentell): f&uuml;hrt in neun Schritten &uuml;ber die echten Schirme, mit Controller, Tastatur oder Finger.</li>
@@ -9778,87 +9801,86 @@
   <section class="tabpage" id="tab-track">
     <div class="card subpage-home" id="sub-home-track">
       <h2>Strecke</h2>
+      <!-- AUFGERAEUMT (v0.8.28). BESTELLT: "Etwas stimmt nicht im Strecke-Tab: da sind bei
+           Strecke laden auch der Editor. Jedes Sub-Menue sollte nur das haben, was es
+           bezeichnet." Editor, Scan, Laden, eigene Teile und Druckvorlagen sind jetzt je eine
+           eigene Unterseite. -->
       <div class="misc-grid">
         <button class="misc-tile subpage-open" data-sub="edit">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 40 40 8l6 6L14 46H8z"/><path d="M34 14l6 6" stroke="var(--bad)"/></svg>
-          <b>Editor <span class="wip-tag">WIP</span></b>
-          <span>Strecke aus Teilen bauen, drehen, als Code weitergeben. Alle elf
-            Teiletypen der Original-App sind dabei, auch die Engstelle.</span>
+          <b>Editor</b>
+          <span>Strecke aus Teilen bauen, &auml;ndern, drehen und als Code weitergeben.</span>
         </button>
         <button class="misc-tile subpage-open" data-sub="scan" data-modus="bahn">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 34c6-14 26-14 32 0"/><path d="M24 8v8M14 12l4 6M34 12l-4 6" stroke="var(--bad)"/></svg>
           <b>Streckenscan</b>
           <span>Das Auto f&auml;hrt eine Runde und liest dabei die Teile ein.</span>
         </button>
-        <button class="misc-tile subpage-open" data-sub="edit" data-k-scroll="track-list" data-modus="bahn">
+        <button class="misc-tile subpage-open" data-sub="laden">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10h32v28H8z"/><path d="M16 20h16M16 28h10" stroke="var(--bad)"/></svg>
           <b>Strecke laden</b>
           <span>Eine gespeicherte Strecke laden, speichern oder l&ouml;schen.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="teile">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="9" width="14" height="30" rx="2"/><path d="M27 39a14 14 0 0 1 14-14" /><path d="M27 31h14" stroke="var(--bad)"/></svg>
+          <b>Meine Teile</b>
+          <span>Wie viele Teile du von jeder Sorte hast. Der Editor zeigt, was fehlt.</span>
         </button>
         <button class="misc-tile subpage-open" data-sub="print" data-modus="frei">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V8h20v10"/><rect x="8" y="18" width="32" height="14" rx="2"/><path d="M14 32h20v10H14z" stroke="var(--bad)"/></svg>
           <b>Druckvorlagen</b>
-          <span>Start/Ziel und Boxengasse maßhaltig als SVG zum Ausdrucken.</span>
+          <span>Start/Ziel und Boxengasse ma&szlig;haltig als SVG zum Ausdrucken.</span>
         </button>
       </div>
     </div>
     <div class="card subpage" id="sub-edit">
       <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
       <h2>Streckeneditor</h2>
-      <p class="muted">
-        Baue eine Strecke manuell aus Teilen zusammen, oder scanne sie live, während das Auto einmal die
-        Runde fährt (Auto muss verbunden sein). Bekannte Teiltypen: Start/Ziel, Gerade, Rechtskurve
-        (bestätigt aus echten Streckendaten). Linkskurve ist eine <b>unbestätigte Annahme</b> (nicht real
-        getestet).
-      </p>
-      <!-- Die Teile- und Aktionsknoepfe standen doppelt da: einmal hier oben als
-           Textknoepfe, einmal unten am Bild als Leiste, die auch im Vollbild erreichbar
-           ist. Nur die unteren sind geblieben - sie liegen dort, wo gebaut wird, und sie
-           funktionieren in beiden Ansichten. Die Ausrichtung bleibt als ANZEIGE, gedreht
-           wird unten. -->
-      <div class="row" style="margin-top:10px">
-        <button class="primary" id="track-scan-start">Live-Scan starten</button>
-        <button id="track-scan-stop" disabled>Scan stoppen</button>
-        <span class="muted" id="track-scan-status">bereit</span>
+      <p class="muted">Bau deine Strecke aus Teilen: ausw&auml;hlen, einf&uuml;gen, entfernen, drehen.
+        Gebaut wird im Vollbild, mit Controller, Tastatur oder Maus.</p>
+      <p class="te-warn">Die Hex-Codes stimmen noch nicht f&uuml;r alle Streckenteile. Die Schikane
+        zum Beispiel scannt das Auto nicht richtig.</p>
+      <div class="row te-start-reihe">
+        <button class="primary te-start" id="track-fs">Editor starten</button>
+        <button id="track-edit-tour">Tutorial</button>
+        <span class="muted" id="track-laenge" data-i18n-skip></span>
       </div>
-
-      <div class="row" style="margin-top:10px">
-        <button id="track-fs">&#9974; Vollbild</button>
-        <span class="muted" style="font-size:11.5px">Im Vollbild: hoch/runter wechselt
-          zwischen Aktionen (oben) und Teilen (unten), links/rechts w&auml;hlt, X l&ouml;st
-          aus. O r&uuml;ckg&auml;ngig, Dreieck Reset, Quadrat dreht.</span>
-      </div>
-
-      <!-- Alles, was im Vollbild erreichbar sein muss, liegt IM Host. Ausserhalb verdeckt
-           ihn das fixierte Layout, und dann kann man bauen, aber nicht zurueckdrehen,
-           leeren oder verlassen. -->
+      <!-- Alles, was im Vollbild erreichbar sein muss, liegt IM Host (drei Rasterzeilen:
+           Aktionen und Anzeige, Karte, Teile). Ausserhalb des Vollbilds zeigt er nur die
+           Karte: gebaut wird im Vollbild (BESTELLT: "ich will nicht den Vollbild-Button,
+           sondern 'Editor starten', und dann ist er im Vollbild"). -->
       <div id="track-fs-host">
         <div class="tp-bar tp-actions">
-          <button class="tp-btn" id="track-undo" title="Letztes Teil entfernen"
-                  aria-label="Letztes Teil entfernen">
+          <button class="tp-btn" id="track-undo" title="R&uuml;ckg&auml;ngig" aria-label="R&uuml;ckg&auml;ngig">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                  stroke-linecap="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/>
               <path d="M4 9h9a7 7 0 0 1 0 14H8"/></svg>
             <span class="tp-cap">Zur&uuml;ck</span></button>
-          <button class="tp-btn" id="track-rotate-right" title="90&deg; rechts drehen"
-                  aria-label="90 Grad rechts drehen">
+          <button class="tp-btn" id="track-delete-sel" title="Gew&auml;hltes Teil entfernen" aria-label="Gew&auml;hltes Teil entfernen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                 stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            <span class="tp-cap">Entfernen</span></button>
+          <button class="tp-btn" id="track-rotate-left" title="45&deg; links drehen" aria-label="45 Grad links drehen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                 stroke-linecap="round" aria-hidden="true"><path d="M9 6 4 11l5 5"/>
+              <path d="M4 11h11a5 5 0 0 1 0 10h-3"/></svg>
+            <span class="tp-cap">45&deg; L</span></button>
+          <button class="tp-btn" id="track-rotate-right" title="45&deg; rechts drehen" aria-label="45 Grad rechts drehen">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                  stroke-linecap="round" aria-hidden="true"><path d="M15 6 20 11 15 16"/>
               <path d="M20 11H9a5 5 0 0 0 0 10h3"/></svg>
-            <span class="tp-cap">Drehen</span></button>
-          <button class="tp-btn" id="track-clear" title="Alles l&ouml;schen"
-                  aria-label="Alles loeschen">
+            <span class="tp-cap">45&deg; R</span></button>
+          <button class="tp-btn" id="track-clear" title="Alles l&ouml;schen" aria-label="Alles loeschen">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                  stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M9 7V4h6v3"/>
               <path d="M7 7l1 13h8l1-13"/></svg>
             <span class="tp-cap">Leeren</span></button>
-          <!-- EIN UMSCHALTER statt eines Schliessknopfs. Hier stand ein Knopf mit dem
-               Vollbild-Symbol und der Aufschrift "Schliessen", der ausserhalb des Vollbilds
-               sichtbar war - das hidden griff nicht - und dort nichts tat. Wer an dieser
-               Stelle das Vollbild erwartet, bekommt es jetzt auch: die Ecken zeigen nach
-               aussen, solange man hinein kann, und nach innen, wenn man heraus kann. -->
+          <button class="tp-btn" id="track-tour" title="Tutorial zum Editor" aria-label="Tutorial zum Editor">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                 stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1 .9-1 1.7M12 17h.01"/></svg>
+            <span class="tp-cap">Hilfe</span></button>
           <button class="tp-btn" id="track-fs-toggle" title="Vollbild umschalten"
                   aria-label="Vollbild umschalten">
             <svg class="tp-fs-ein" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -9869,11 +9891,28 @@
               <path d="M4 9h5V4M20 9h-5V4M4 15h5v5M20 15h-5v5"/></svg>
             <span class="tp-cap tp-fs-ein">Vollbild</span>
             <span class="tp-cap tp-fs-aus">Schlie&szlig;en</span></button>
+          <!-- Laenge, Teilebilanz und Tastenbelegung (BESTELLT: "Zeig mir auch an, wie lang
+               die Strecke ist in Metern und dahinter 50x die Laenge in km", "Die
+               Tastenbelegung darfst du hier einblenden"). -->
+          <span class="tp-info" id="track-fs-info" data-i18n-skip></span>
+          <span class="tp-tasten" id="track-fs-tasten"></span>
         </div>
         <div id="track-preview-svg"></div>
         <div class="tp-bar" id="track-palette"></div>
         <span class="tp-space" id="track-space"></span>
       </div>
+      <div class="row" style="align-items:center; gap:10px; margin-top:10px">
+        <!-- data-i18n-skip, wie #log und #hud-toast: diese drei Texte werden zur LAUFZEIT
+             geschrieben und gehen dabei durch t(). Der Uebersetzer laeuft ueber Textknoten
+             des Dokuments und wuerde hier nur das Ergebnis sehen - bei der Ideallinie ein
+             Satz MIT ZAHLEN darin, der als Woerterbuchschluessel genau eine einzige
+             Streckenlage traefe. Im Woerterbuch steht deshalb die VORLAGE mit
+             Platzhaltern, und nachgeschlagen wird sie im Code. -->
+        <span class="muted">Status: <b id="track-closed-badge" data-i18n-skip>-</b></span>
+        <span class="muted">Ausrichtung: <b id="track-rotation-val">0&deg;</b></span>
+        <span class="muted" id="track-line-info" data-i18n-skip></span>
+      </div>
+
       <p class="muted" style="font-size:11.5px; margin-top:6px">
         Schwarz ist die Fahrbahn, wei&szlig;e Striche trennen die Streckenteile. Randsteine in
         Fahrtrichtung: <b style="color:var(--info)">links blau-wei&szlig;</b>,
@@ -9889,31 +9928,6 @@
         keine Messung: dass ein Auto die Linie einh&auml;lt, kann die App nicht pr&uuml;fen,
         weil kein Byte die Querlage meldet.
       </p>
-      <div class="row" style="align-items:center; gap:10px; margin-top:10px">
-        <!-- data-i18n-skip, wie #log und #hud-toast: diese drei Texte werden zur LAUFZEIT
-             geschrieben und gehen dabei durch t(). Der Uebersetzer laeuft ueber Textknoten
-             des Dokuments und wuerde hier nur das Ergebnis sehen - bei der Ideallinie ein
-             Satz MIT ZAHLEN darin, der als Woerterbuchschluessel genau eine einzige
-             Streckenlage traefe. Im Woerterbuch steht deshalb die VORLAGE mit
-             Platzhaltern, und nachgeschlagen wird sie im Code. -->
-        <span class="muted">Status: <b id="track-closed-badge" data-i18n-skip>-</b></span>
-        <span class="muted">Ausrichtung: <b id="track-rotation-val">0&deg;</b></span>
-        <span class="muted" id="track-line-info" data-i18n-skip></span>
-      </div>
-
-      <!-- ---- HIER STAND "WO STEHT DAS AUTO" ---------------------------------
-           Entfernt, wie bestellt: "das ist ja schon im Cockpit screen eingebaut."
-
-           Das war die dritte Fassung derselben Anzeige. Sie sass einmal im Cockpit,
-           zog von dort hierher ("dort war unter dem Schirm alles doppelt"), und ist
-           inzwischen im Uebersichtsschirm des Cockpits wieder da - mit derselben
-           Karte, denselben Punkten und mehr Platz. Die Begruendung von damals gilt
-           also nicht mehr.
-
-           Die ORTUNG dahinter bleibt vollstaendig: dashMinimapIndex speist den
-           Vorausblick der Ghosts und die Rundenzaehlung. Der Name klingt nach
-           Anzeige, die Sache ist keine - deshalb steht das hier und nicht im
-           Loeschprotokoll. -->
       <div class="row" style="align-items:center; gap:8px; margin-top:14px">
         <label class="small" style="white-space:nowrap">Streckencode</label>
         <input type="text" id="track-code" readonly style="flex:1; min-width:120px; font-family:monospace">
@@ -9930,12 +9944,11 @@
 
       <ol class="muted" id="track-tile-list" style="padding-left:20px; line-height:1.9; max-height:200px; overflow-y:auto; margin-top:12px"></ol>
 
-      <!-- Aus einer eigenen Unterseite hierher. Sie hatte eine eigene Kachel fuer fuenf
-           Bedienelemente, von denen jedes den Editor betrifft - man baut eine Strecke und
-           will sie dann speichern, nicht erst zurueck und in ein anderes Menue. -->
-      <h3 style="font-size:14px; margin:20px 0 6px 0; padding-top:14px;
-                 border-top:1px solid var(--line)">Gespeicherte Strecken</h3>
-      
+      <ol class="muted" id="track-tile-list" style="padding-left:20px; line-height:1.9; max-height:200px; overflow-y:auto; margin-top:12px"></ol>
+    </div>
+    <div class="card subpage" id="sub-laden">
+      <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
+      <h2>Strecke laden</h2>
       <div class="row">
         <input type="text" id="track-name" placeholder="Name der Strecke">
         <button id="track-save">Speichern</button>
@@ -9943,11 +9956,33 @@
         <button id="track-load">Laden</button>
         <button id="track-delete">Löschen</button>
       </div>
-      <p class="muted" style="margin-top:8px">Strecken werden lokal im Browser gespeichert (localStorage).</p>
+    <div class="card subpage" id="sub-teile">
+      <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
+      <h2>Meine Teile</h2>
+      <!-- BESTELLT: "ein Menue, bei dem ich angeben kann, wie viel Teile ich von welcher
+           Sorte habe, und mir im Editor angezeigt wird, wie viele Teile ich uebrig habe oder
+           wie viele mir fehlen". Gespeichert im Browser (60-track.js, TEILE_KEY). -->
+      <p class="muted">Trag ein, was du im Karton hast. Der Editor zeigt dann, was &uuml;brig ist
+        und was fehlt. Leer lassen hei&szlig;t: nicht gez&auml;hlt.</p>
+      <div class="row" style="gap:6px; flex-wrap:wrap">
+        <button id="teile-grund">+ Grundpackung</button>
+        <button id="teile-haarnadel">+ Haarnadel-Set</button>
+        <button id="teile-dreissig">+ 30&deg;-Au&szlig;enkurven-Set</button>
+        <button id="teile-leer">Alles auf 0</button>
+      </div>
+      <div class="teile-liste" id="teile-liste"></div>
     </div>
     <div class="card subpage" id="sub-scan">
       <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
       <h2>Streckenscan</h2>
+      <!-- Der Live-Scan stand im Editor; er ist ein Scan und gehoert hierher. -->
+      <div class="row" style="margin-top:10px">
+        <button class="primary" id="track-scan-start">Live-Scan starten</button>
+        <button id="track-scan-stop" disabled>Scan stoppen</button>
+        <span class="muted" id="track-scan-status">bereit</span>
+      </div>
+
+
       <p class="muted">Das Auto f&auml;hrt mit mittlerem Tempo &uuml;ber die Bahn und h&auml;lt an, sobald ein geschlossener Rundkurs gemessen ist. Die Strecke steht danach im Editor.</p>
       <div class="row" style="gap:8px; flex-wrap:wrap">
         <button id="gar-scan-start" title="Faehrt automatisch eine Runde und uebernimmt sie, sobald sie als geschlossener Rundkurs erkannt ist">Streckenscan</button>
@@ -11323,6 +11358,45 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Strecke aufgeräumt: Editor, Scan, Laden, Meine Teile und Ausdruck haben je eine eigene Seite. Der Editor startet im Vollbild, mit Tutorial und Tastenübersicht: Teile anwählen, mittendrin einfügen und entfernen, rückgängig, in 45°-Schritten drehen, Länge in Metern und im Maßstab 1:50, Pfeile an den Kanten in Fahrtrichtung. Meine Teile (experimentell) zählt deinen Bestand und zeigt im Editor, was fehlt oder übrig ist. Challenges: Plan und Mock-up mit vier Strecken, je beste Runde und Rennen.": "Track tab tidied up: editor, scan, load, my parts and printout each have their own page. The editor starts in full screen, with a tutorial and key overview: select pieces, insert and remove in the middle, undo, rotate in 45° steps, length in metres and at 1:50 scale, arrows on the edges in driving direction. My parts (experimental) counts your inventory and shows in the editor what is missing or left over. Challenges: plan and mock-up with four tracks, each with best lap and race.",
+    "Editor starten": "Start editor",
+    "Meine Teile": "My parts",
+    "Wie viele Teile du von jeder Sorte hast. Der Editor zeigt, was fehlt.": "How many parts of each kind you own. The editor shows what is missing.",
+    "Strecke aus Teilen bauen, ändern, drehen und als Code weitergeben.": "Build a track from parts, change it, rotate it and share it as a code.",
+    "Bau deine Strecke aus Teilen: auswählen, einfügen, entfernen, drehen. Gebaut wird im Vollbild, mit Controller, Tastatur oder Maus.": "Build your track from parts: select, insert, remove, rotate. Building happens in full screen, with controller, keyboard or mouse.",
+    "Die Hex-Codes stimmen noch nicht für alle Streckenteile. Die Schikane zum Beispiel scannt das Auto nicht richtig.": "The hex codes are not correct for all track parts yet. The chicane, for example, is not scanned correctly by the car.",
+    "Trag ein, was du im Karton hast. Der Editor zeigt dann, was übrig ist und was fehlt. Leer lassen heißt: nicht gezählt.": "Enter what is in your box. The editor then shows what is left over and what is missing. Left empty means: not counted.",
+    "+ Grundpackung": "+ Basic pack",
+    "+ Haarnadel-Set": "+ Hairpin set",
+    "+ 30°-Außenkurven-Set": "+ 30° outer curve set",
+    "Alles auf 0": "All to 0",
+    "Entfernen": "Remove",
+    "45° L": "45° L",
+    "45° R": "45° R",
+    "Hilfe": "Help",
+    "Gewähltes Teil entfernen": "Remove the selected part",
+    "Rückgängig": "Undo",
+    "Tutorial zum Editor": "Editor tutorial",
+    "Start/Ziel bleibt": "Start/finish stays",
+    "Nichts rückgängig zu machen": "Nothing to undo",
+    "Länge": "Length",
+    "Fehlt": "Missing",
+    "Alle Teile da": "All parts there",
+    "übrig": "left over",
+    "✕/Enter einfügen · □/Entf entfernen · L1 R1/Q E Teil wählen · △/R drehen · ○/Z zurück · L3/Esc schließen": "✕/Enter insert · □/Del remove · L1 R1/Q E select part · △/R rotate · ○/Z undo · L3/Esc close",
+    "Der Streckeneditor": "The track editor",
+    "Hier baust du deine Strecke nach. Oben die Aktionen, in der Mitte die Karte, unten die Teile.": "Rebuild your track here. Actions at the top, the map in the middle, the parts at the bottom.",
+    "Teil auswählen": "Select a part",
+    "L1 und R1 (Tastatur Q und E) wählen das vorige oder nächste Teil. Tippen auf die Karte geht auch. Das gewählte Teil ist gelb.": "L1 and R1 (keyboard Q and E) select the previous or next part. Tapping the map works too. The selected part is yellow.",
+    "Teil einfügen": "Insert a part",
+    "Wähl unten ein Teil mit dem Steuerkreuz und drück Kreuz (Enter). Es kommt hinter das gewählte Teil.": "Pick a part at the bottom with the D-pad and press cross (Enter). It goes behind the selected part.",
+    "Teil entfernen": "Remove a part",
+    "Quadrat (Entf) nimmt das gewählte Teil heraus. Start und Ziel bleiben immer.": "Square (Del) takes out the selected part. Start/finish always stays.",
+    "Dreieck (R) dreht die ganze Strecke um 45 Grad, mit Umschalt andersherum.": "Triangle (R) rotates the whole track by 45 degrees, with Shift the other way.",
+    "Kreis (Z) nimmt die letzte Änderung zurück, auch mehrmals.": "Circle (Z) takes back the last change, also several times.",
+    "Länge und Teile": "Length and parts",
+    "Oben steht die Länge in Metern und im Maßstab 1:50. Hast du unter Meine Teile deinen Karton eingetragen, siehst du hier, was fehlt.": "At the top you see the length in metres and at 1:50 scale. If you entered your box under My parts, you see here what is missing.",
+    "L3 oder Esc schließt den Editor. Die Strecke bleibt, speichern kannst du sie unter Strecke laden.": "L3 or Esc closes the editor. The track stays; you can save it under Load track.",
     "Kopfzeile nochmals flacher, Omega oben links führt zum Startbildschirm, Info unter Optionen, neuer Reiter Challenges (WIP). Tutorial-Texte kürzer; Steuerung läuft auf dem Cockpit, zeigt gedrückte Tasten und fährt dabei nicht. Neue Stimmungsbilder (KI) für Titel, Rennoptionen, Start, Strecke, Optionen, Info und Challenges.": "Header even flatter, the omega at the top left leads to the title screen, Info under Options, new Challenges tab (WIP). Shorter tutorial texts; the controls guide runs on the cockpit, shows pressed buttons and does not drive meanwhile. New mood pictures (AI) for title, race options, start, track, options, info and challenges.",
     "OmegaSim steuert deine Carrera-Hybrid-Autos per Bluetooth. Mit echter Fahrphysik, simuliertem Motorsound und einem Cockpit wie im Rennsimulator.": "OmegaSim drives your Carrera Hybrid cars over Bluetooth. With real driving physics, simulated engine sound and a cockpit like a racing sim.",
     "Verbinde hier dein Auto. Das erste steuerst du selbst, jedes weitere fährt als Ghost gegen dich. Namen, Farben und Fotos stellst du in der Garage ein.": "Connect your car here. You drive the first one yourself, every other one races you as a ghost. Names, colours and photos are set in the garage.",
@@ -11357,7 +11431,7 @@
     "Challenges": "Challenges",
     "Zum Startbildschirm": "To the title screen",
     "Wozu, Funktionen, Danksagungen, Patchnotes, Rechtliches.": "Purpose, features, credits, patch notes, legal.",
-    "Feste Strecken zum Nachbauen, je zwei Presets (Pro und Arcade) und eine feste Rundenzahl. Stehendes Auto, Ampel, los. Deine Zeit kommt in eine gemeinsame Bestenliste.": "Fixed tracks to rebuild, two presets each (Pro and Arcade) and a fixed number of laps. Car standing still, start lights, go. Your time goes into a shared leaderboard.",
+    "Feste Strecken zum Nachbauen, je zwei Modi (beste Runde, Rennen) und zwei Presets (Pro und Arcade). Stehendes Auto, Ampel, los. Deine Zeit kommt in eine gemeinsame Bestenliste.": "Fixed tracks to rebuild, each with two modes (best lap, race) and two presets (Pro and Arcade). Car standing still, start lights, go. Your time goes into a shared leaderboard.",
     "Mock-up ansehen": "View the mock-up",
     "Garage als Karten mit eigenem Foto je Auto (sonst seine Farbe), Rolle mit ◀ ▶, Einstellen klappt Farbe, Tempo und Charakter auf; ein Knopf startet und hält die Ghosts. Titel: ✕ startet, △ Tutorial, ○ neue Führung „Steuerung“ bis zur Controller-Belegung. Minigame: Fenster 0,1 s länger, falsche Taste kostet Zeit. Freies Training zeigt ∞. Mehrspieler-App wie Vorschlag A. App: Status- und Navigationsleiste werden zuverlässiger ausgeblendet.": "Garage as cards with your own photo per car (otherwise its colour), role with ◀ ▶, Settings expands colour, pace and character; one button starts and stops the ghosts. Title: ✕ starts, △ tutorial, ○ new “Controls” guide leading to the controller mapping. Minigame: windows 0.1 s longer, a wrong button costs time. Free practice shows ∞. Multiplayer app page like proposal A. App: status and navigation bars are hidden more reliably.",
     "Foto ändern": "Change photo",
@@ -21673,7 +21747,7 @@
     kn('fa-strecke', (e) => { if (!e.target.closest('.k-knopf')) konsoleZeige('track'); });
     kn('fa-scan', () => konsoleZeige('track', 'scan'));
     kn('fa-editor', () => konsoleZeige('track', 'edit'));
-    kn('fa-laden', () => { konsoleZeige('track', 'edit'); setTimeout(() => konsoleHinScrollen('track-list'), 30); });
+    kn('fa-laden', () => konsoleZeige('track', 'laden'));
     kn('fa-druck', () => konsoleZeige('track', 'print'));
     kn('fa-profil', () => konsoleZeige('options', 'opt-feel'));
     kn('race-menue', () => konsoleZumMenue());
@@ -21787,6 +21861,28 @@
     { tab: 'options', sub: 'opt-pad', ziel: ['#pad-zoom'], bild: 'controller', titel: 'Alle Tasten und die Belegung',
       text: 'Hier siehst du alle Tasten. Mit „Neu zuweisen“ belegst du jede Funktion um.' },
   ];
+  // DER STRECKENEDITOR. BESTELLT: "Ueberarbeite den Streckeneditor und fuege dort auch ein
+  // Tutorial ein wie bei den anderen Sachen." Laeuft im Vollbild des Editors; der Pad
+  // gehoert solange der Fuehrung (Kreuz oder rechts weiter, Kreis oder links zurueck).
+  const K_EDITOR = [
+    { tab: 'track', sub: 'edit', ziel: null, bild: 'strecke-bahn', titel: 'Der Streckeneditor',
+      text: 'Hier baust du deine Strecke nach. Oben die Aktionen, in der Mitte die Karte, unten die Teile.' },
+    { tab: 'track', sub: 'edit', ziel: ['#track-preview-svg'], taste: 'L1 · R1', titel: 'Teil auswählen',
+      text: 'L1 und R1 (Tastatur Q und E) wählen das vorige oder nächste Teil. Tippen auf die Karte geht auch. Das gewählte Teil ist gelb.' },
+    { tab: 'track', sub: 'edit', ziel: ['#track-palette'], taste: '◀ ▶ ✕', titel: 'Teil einfügen',
+      text: 'Wähl unten ein Teil mit dem Steuerkreuz und drück Kreuz (Enter). Es kommt hinter das gewählte Teil.' },
+    { tab: 'track', sub: 'edit', ziel: ['#track-delete-sel'], taste: '□', titel: 'Teil entfernen',
+      text: 'Quadrat (Entf) nimmt das gewählte Teil heraus. Start und Ziel bleiben immer.' },
+    { tab: 'track', sub: 'edit', ziel: ['#track-rotate-left', '#track-rotate-right'], taste: '△', titel: 'Drehen',
+      text: 'Dreieck (R) dreht die ganze Strecke um 45 Grad, mit Umschalt andersherum.' },
+    { tab: 'track', sub: 'edit', ziel: ['#track-undo'], taste: '○', titel: 'Rückgängig',
+      text: 'Kreis (Z) nimmt die letzte Änderung zurück, auch mehrmals.' },
+    { tab: 'track', sub: 'edit', ziel: ['#track-fs-info'], bild: 'strecke-frei', titel: 'Länge und Teile',
+      text: 'Oben steht die Länge in Metern und im Maßstab 1:50. Hast du unter Meine Teile deinen Karton eingetragen, siehst du hier, was fehlt.' },
+    { tab: 'track', sub: 'edit', ziel: ['#track-fs-toggle'], taste: 'L3', titel: 'Schließen',
+      text: 'L3 oder Esc schließt den Editor. Die Strecke bleibt, speichern kannst du sie unter Strecke laden.' },
+  ];
+
   const K_PAD_NAMEN = { 0: '✕', 1: '○', 2: '□', 3: '△', 4: 'L1', 5: 'R1', 6: 'L2', 7: 'R2', 8: 'SHARE',
     9: 'OPTIONS', 10: 'L3', 11: 'R3', 12: '▲', 13: '▼', 14: '◀', 15: '▶', 16: 'PS' };
   const kTourPadVorher = [];
@@ -21794,7 +21890,20 @@
   // Aus pollGamepad (90-ghosts.js): waehrend der Steuerungs-Fuehrung gehoert der Pad ihr.
   // Gibt true zurueck, wenn die Fuehrung den Pad verbraucht hat - dann faehrt nichts.
   function konsoleTourPad(pad) {
-    if (!kTourOffen || kTourListe !== K_STEUERUNG) return false;
+    if (!kTourOffen) return false;
+    // Editor-Fuehrung: im Vollbild bedient sonst der Editor den Pad; hier blaettert er nur.
+    if (kTourListe === K_EDITOR) {
+      const neu = [];
+      for (let i = 0; i < pad.buttons.length; i++) {
+        const n = !!(pad.buttons[i] && pad.buttons[i].pressed);
+        if (n && !kTourPadVorher[i]) neu.push(i);
+        kTourPadVorher[i] = n;
+      }
+      if (neu.includes(0) || neu.includes(15)) konsoleTourWeiter();
+      else if (neu.includes(1) || neu.includes(14)) konsoleTourZurueck();
+      return true;
+    }
+    if (kTourListe !== K_STEUERUNG) return false;
     const neu = [];
     for (let i = 0; i < pad.buttons.length; i++) {
       const n = !!(pad.buttons[i] && (pad.buttons[i].pressed || pad.buttons[i].value > 0.4));
@@ -21822,7 +21931,7 @@
     return true;
   }
   // Wo eine Fuehrung endet: das Tutorial auf Fahren, die Steuerung dort, wo sie hinfuehrt.
-  const K_TOUR_ENDE = new Map([[K_TOUR, 'fahren'], [K_STEUERUNG, 'bleiben']]);
+  const K_TOUR_ENDE = new Map([[K_TOUR, 'fahren'], [K_STEUERUNG, 'bleiben'], [K_EDITOR, 'bleiben']]);
 
   let kTourOffen = false;
   let kTourSchritt = 0;
@@ -22190,7 +22299,7 @@
   // track without one can never register a lap.
   function freshTrackTiles() { return [{ type: TILE_TYPE.START }]; }
   let currentTrackTiles = freshTrackTiles(); // [{type}]
-  let trackRotationDeg = 0; // whole-track orientation, rotatable in 90° steps
+  let trackRotationDeg = 0; // whole-track orientation, rotatable in 45° steps (v0.8.28)
 
   // Turtle-graphics walk: each tile is a fixed-length/fixed-turn step, always
   // continuing from the previous tile's exact end position and heading — so tiles
@@ -24715,10 +24824,49 @@
       const kw = TRACK_KERB_W;
       // Brighter than the real kerb paint, on purpose: these are drawn on a dark track view
       // now, and the actual #b3131f / #1565c0 came out at under 3:1 against it.
-      [[kerbLeft, '#5aa9ff'], [kerbRight, '#ff5c5c']].forEach(([path, col]) => {
-        body += `<path d="${poly(path)}" fill="none" stroke="#ffffff" stroke-width="${kw}" stroke-linecap="butt"/>`;
-        body += `<path d="${poly(path)}" fill="none" stroke="${col}" stroke-width="${kw}" stroke-linecap="butt" stroke-dasharray="7 7"/>`;
-      });
+      if (!o.echt) {
+        [[kerbLeft, '#5aa9ff'], [kerbRight, '#ff5c5c']].forEach(([path, col]) => {
+          body += `<path d="${poly(path)}" fill="none" stroke="#ffffff" stroke-width="${kw}" stroke-linecap="butt"/>`;
+          body += `<path d="${poly(path)}" fill="none" stroke="${col}" stroke-width="${kw}" stroke-linecap="butt" stroke-dasharray="7 7"/>`;
+        });
+      } else {
+        // WIE DIE ECHTEN TEILE (Editor). BESTELLT: "Die Teile sollen wie die echten aussehen
+        // (also an den Raendern muessen so leichte Pfeile in die Fahrtrichtung sein)". Ein
+        // weisser Randstreifen, darauf Pfeilspitzen in Fahrtrichtung: links blau, rechts rot
+        // - dieselben Farben wie die Randsteine. Als einzelne Pfade und NICHT als
+        // <g transform>: der Selbsttest zaehlt jede verschobene Gruppe als Auto.
+        const kw2 = kw * 2.2;
+        const kL = offsetPath(pts, nrm, half + kw2 / 2), kR = offsetPath(pts, nrm, -(half + kw2 / 2));
+        [[kL, 1, '#5aa9ff'], [kR, -1, '#ff5c5c']].forEach(([path, seite, col]) => {
+          body += `<path d="${poly(path)}" fill="none" stroke="#f3f5f8" stroke-width="${kw2}" stroke-linecap="butt"/>`;
+          let d = '';
+          for (let q = 1; q < pts.length - 1; q += 2) {
+            const p = pts[q], n = nrm[q];
+            const rad = p.heading * Math.PI / 180;
+            const vx = Math.sin(rad), vy = -Math.cos(rad);
+            const cx = p.x + n.x * seite * (half + kw2 / 2), cy = p.y + n.y * seite * (half + kw2 / 2);
+            const s = kw2 * 0.5;
+            const tip = [cx + vx * s, cy + vy * s];
+            const a = [cx - vx * s * 0.5 + n.x * s * 0.8, cy - vy * s * 0.5 + n.y * s * 0.8];
+            const b = [cx - vx * s * 0.5 - n.x * s * 0.8, cy - vy * s * 0.5 - n.y * s * 0.8];
+            d += ` M ${P2(a)} L ${P2(tip)} L ${P2(b)}`;
+          }
+          body += `<path d="${d.trim()}" fill="none" stroke="${col}" stroke-width="${(kw2 * 0.28).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round"/>`;
+        });
+      }
+      // DAS GEWAEHLTE TEIL (Editor): gelb ueberzogen, damit man sieht, wo eingefuegt und was
+      // entfernt wird.
+      if (o.auswahl !== null && o.auswahl !== undefined && o.auswahl >= 0 && o.auswahl < tiles.length) {
+        const seg = [];
+        for (let q = kachelTab.start[o.auswahl]; q < pts.length && (pts[q].tile === o.auswahl || q === kachelTab.start[o.auswahl]); q++) {
+          seg.push([pts[q].x, pts[q].y]);
+        }
+        const naechster = kachelTab.start[o.auswahl + 1];
+        if (naechster !== undefined && pts[naechster]) seg.push([pts[naechster].x, pts[naechster].y]);
+        if (seg.length >= 2) {
+          body += `<path d="${poly(seg)}" fill="none" stroke="#ffd400" stroke-opacity=".5" stroke-width="${(half * 2).toFixed(1)}" stroke-linecap="butt"/>`;
+        }
+      }
 
       // 5) The ideal line, from the same geometry, coloured by whether a car would be
       //    braking there. Green = on the power, red = braking, and the transition is drawn
@@ -25010,7 +25158,7 @@
     // app, so importing something without it would break the lap counting.
     if (tiles[0].type !== TILE_TYPE.START) tiles.unshift({ type: TILE_TYPE.START });
     const rot = m[2] ? parseInt(m[2], 10) : 0;
-    return { tiles, rotation: (Math.round(rot / 90) * 90) % 360 };
+    return { tiles, rotation: (Math.round(rot / 45) * 45) % 360 };
   }
 
   $('track-code-copy').onclick = async () => {
@@ -25109,6 +25257,7 @@
     refreshTrackPreview();
   }, 250);
 
+  let trackEditorGeo = null;
   function refreshTrackPreview() {
     // Die Kachelzahl entscheidet, ob der Windschatten ueberhaupt rechnen kann. Hier gerufen
     // und nicht in 50-drive.js beim Laden: dort ist currentTrackTiles noch in der temporalen
@@ -25117,9 +25266,13 @@
     // MIT den Autos, seit v0.5.1. Vorher stand hier ausdruecklich null, also gar kein
     // Auto - und der gruene Strich auf der Startgeraden, den man dafuer hielt, ist die
     // Start/Ziel-Linie.
+    if (trackSel !== null && trackSel >= currentTrackTiles.length) trackSel = null;
+    const imEditor = document.body.classList.contains('track-fs');
     const result = renderTrackPreview(currentTrackTiles, null,
-      { detailed: true, cars: trackCarMarks() });
+      { detailed: true, cars: trackCarMarks(), echt: true, auswahl: imEditor ? trackSelIndex() : null });
     $('track-preview-svg').innerHTML = result.html;
+    trackEditorGeo = result.geo || null;
+    trackInfoZeichnen();
     renderTrackPalette();
     updateTrackSpace();
     $('track-code').value = trackToCode(currentTrackTiles, trackRotationDeg);
@@ -25173,8 +25326,8 @@
         // hier, weil die Liste die einzige Stelle ist, die nach Index loescht.
         const i = parseInt(btn.dataset.idx, 10);
         if (!(i > 0)) return;
-        currentTrackTiles.splice(i, 1);
-        refreshTrackPreview();
+        trackSel = i;
+        trackTeilEntfernen();
       };
     });
     $('track-rotation-val').textContent = trackRotationDeg + '°';
@@ -25184,13 +25337,161 @@
   // an, der Import und das Laden stellen sie voran - nur addTile() hatte keinen Schutz, und
   // der Start-Knopf in der Palette konnte sie beliebig oft hinten anhaengen. Eine zweite
   // Start-Kachel bricht die Rundenzaehlung, weil sie sich auf die eine Ueberfahrt stuetzt.
+  // ---- AUSWAHL, EINFUEGEN, ENTFERNEN, RUECKGAENGIG (v0.8.28) -----------------------
+  //
+  // BESTELLT: "Ich will einzelne Teile auswaehlen und entfernen koennen und mittendrin ein
+  // Teil einfuegen koennen." Gewaehlt ist ein Teil (trackSel, Index; null = das letzte).
+  // Neue Teile kommen HINTER das gewaehlte, und das neue ist danach gewaehlt - wer nie
+  // waehlt, baut also wie bisher hinten an. Jede Aenderung legt vorher den Stand ab
+  // (trackVerlauf); Rueckgaengig holt ihn zurueck, nicht nur "letztes Teil weg".
+  let trackSel = null;
+  const trackVerlauf = [];
+  function trackSelIndex() {
+    const n = currentTrackTiles.length;
+    if (!n) return null;
+    return trackSel === null || trackSel >= n || trackSel < 0 ? n - 1 : trackSel;
+  }
+  function trackMerken() {
+    trackVerlauf.push({ tiles: currentTrackTiles.map((x) => Object.assign({}, x)),
+                        rot: trackRotationDeg, sel: trackSel });
+    if (trackVerlauf.length > 80) trackVerlauf.shift();
+  }
   function addTile(type) {
     if (type === TILE_TYPE.START && currentTrackTiles.some(t => t.type === TILE_TYPE.START)) {
       showHudToast('Start/Ziel gibt es nur einmal');
       return;
     }
-    currentTrackTiles.push({ type });
+    trackMerken();
+    const at = currentTrackTiles.length ? trackSelIndex() + 1 : 0;
+    currentTrackTiles.splice(at, 0, { type });
+    trackSel = at;
     refreshTrackPreview();
+  }
+  function trackTeilEntfernen() {
+    const i = trackSelIndex();
+    if (!(i > 0)) { showHudToast(t('Start/Ziel bleibt')); return false; }
+    trackMerken();
+    currentTrackTiles.splice(i, 1);
+    trackSel = i - 1;
+    refreshTrackPreview();
+    return true;
+  }
+  function trackRueckgaengig() {
+    const s = trackVerlauf.pop();
+    if (!s) { showHudToast(t('Nichts rückgängig zu machen')); return false; }
+    currentTrackTiles = s.tiles;
+    trackRotationDeg = s.rot;
+    trackSel = s.sel;
+    refreshTrackPreview();
+    return true;
+  }
+  function trackAuswahlSchritt(d) {
+    const n = currentTrackTiles.length;
+    if (!n) return;
+    trackSel = ((trackSelIndex() + d) % n + n) % n;
+    refreshTrackPreview();
+  }
+  // LAENGE: die Summe der Teile, dieselbe Laenge, mit der Ghosts und Rundenzeit rechnen
+  // (tileLength, 90-ghosts.js). Dazu das 50-fache in km: die Autos sind 1:50.
+  function trackLaengeM(tiles) {
+    let u = 0;
+    for (const k of tiles || []) u += tileLength(k.type);
+    return u / TRACK_UNITS_PER_CM / 100;
+  }
+  function trackLaengeText(tiles) {
+    const m = trackLaengeM(tiles);
+    const fmt = (x, n) => x.toFixed(n).replace('.', lang === 'en' ? '.' : ',');
+    return t('Länge') + ' ' + fmt(m, 2) + ' m · 1:50 = ' + fmt(m * 50 / 1000, 2) + ' km';
+  }
+
+  // ---- MEINE TEILE: was im Karton ist, und was die Strecke davon braucht --------------
+  const TEILE_KEY = 'omegasim-teile';
+  const TEILE_SORTEN = [TILE_TYPE.START, TILE_TYPE.STRAIGHT, TILE_TYPE.CURVE_LEFT, TILE_TYPE.CURVE_RIGHT,
+    TILE_TYPE.HAIRPIN_LEFT, TILE_TYPE.HAIRPIN, TILE_TYPE.WEIT_LEFT, TILE_TYPE.WEIT_RIGHT,
+    TILE_TYPE.KLEIN_LEFT, TILE_TYPE.KLEIN_RIGHT, TILE_TYPE.PIT, TILE_TYPE.ENGE];
+  // Die Pakete, wie sie der Nutzer beschrieben hat: Grundpackung 8 rechts, 2 links,
+  // 4 Geraden, 1 Start; Haarnadel-Set links und rechts; 30-Grad-Aussenkurven 2 L, 2 R.
+  const TEILE_PAKETE = {
+    grund: [[TILE_TYPE.CURVE_RIGHT, 8], [TILE_TYPE.CURVE_LEFT, 2], [TILE_TYPE.STRAIGHT, 4], [TILE_TYPE.START, 1]],
+    haarnadel: [[TILE_TYPE.HAIRPIN_LEFT, 1], [TILE_TYPE.HAIRPIN, 1]],
+    dreissig: [[TILE_TYPE.WEIT_LEFT, 2], [TILE_TYPE.WEIT_RIGHT, 2]],
+  };
+  function teileBestand() {
+    try {
+      const x = JSON.parse(localStorage.getItem(TEILE_KEY) || 'null');
+      return x && typeof x === 'object' ? x : null;
+    } catch (e) { return null; }
+  }
+  function teileSpeichern(b) {
+    try { if (b) localStorage.setItem(TEILE_KEY, JSON.stringify(b)); else localStorage.removeItem(TEILE_KEY); } catch (e) { /* privat */ }
+    teileZeichnen();
+    refreshTrackPreview();
+  }
+  // Je Sorte: vorhanden (null = nicht gezaehlt), gebraucht, Rest.
+  function teileBilanz(tiles) {
+    const b = teileBestand();
+    const braucht = {};
+    for (const k of tiles || []) braucht[k.type] = (braucht[k.type] || 0) + 1;
+    return TEILE_SORTEN.map((typ) => {
+      const hat = b && b[typ] !== undefined && b[typ] !== null ? +b[typ] : null;
+      const n = braucht[typ] || 0;
+      return { typ, hat, braucht: n, rest: hat === null ? null : hat - n };
+    });
+  }
+  function teileZeichnen() {
+    const host = $('teile-liste');
+    if (!host) return;
+    const b = teileBestand() || {};
+    host.innerHTML = '';
+    for (const typ of TEILE_SORTEN) {
+      const z = document.createElement('div');
+      z.className = 'teile-zeile';
+      const wert = b[typ] === undefined || b[typ] === null ? '–' : String(b[typ]);
+      z.innerHTML = '<span></span><button type="button" data-d="-1" aria-label="weniger">&minus;</button><b></b>'
+                  + '<button type="button" data-d="1" aria-label="mehr">+</button>';
+      z.querySelector('span').textContent = t(TILE_LABEL[typ] || ('0x' + typ.toString(16)));
+      z.querySelector('b').textContent = wert;
+      z.querySelectorAll('button').forEach((k) => {
+        k.onclick = () => {
+          const neu = Object.assign({}, teileBestand() || {});
+          const alt = neu[typ] === undefined || neu[typ] === null ? 0 : +neu[typ];
+          neu[typ] = Math.max(0, Math.min(99, alt + +k.dataset.d));
+          teileSpeichern(neu);
+        };
+      });
+      host.appendChild(z);
+    }
+  }
+  function teilePaket(name) {
+    const neu = Object.assign({}, teileBestand() || {});
+    for (const [typ, n] of TEILE_PAKETE[name] || []) neu[typ] = (neu[typ] ? +neu[typ] : 0) + n;
+    teileSpeichern(neu);
+  }
+  const teileKnopf = (id, fn) => { const el = $(id); if (el) el.onclick = fn; };
+  teileKnopf('teile-grund', () => teilePaket('grund'));
+  teileKnopf('teile-haarnadel', () => teilePaket('haarnadel'));
+  teileKnopf('teile-dreissig', () => teilePaket('dreissig'));
+  teileKnopf('teile-leer', () => { const n = {}; TEILE_SORTEN.forEach((x) => { n[x] = 0; }); teileSpeichern(n); });
+  teileZeichnen();
+
+  // Anzeige oben im Vollbild: Laenge, Teilebilanz; dazu die Tastenbelegung.
+  function trackInfoZeichnen() {
+    const info = $('track-fs-info');
+    const bilanz = teileBilanz(currentTrackTiles).filter((x) => x.hat !== null);
+    const fehlt = bilanz.filter((x) => x.rest < 0);
+    let html = trackLaengeText(currentTrackTiles);
+    if (bilanz.length) {
+      const uebrig = bilanz.reduce((s, x) => s + Math.max(0, x.rest), 0);
+      html += ' · ' + (fehlt.length
+        ? '<span class="tp-fehlt">' + t('Fehlt') + ': ' + fehlt.map((x) => (-x.rest) + '× ' + t(TILE_LABEL[x.typ])).join(', ') + '</span>'
+        : '<span class="tp-da">' + t('Alle Teile da') + '</span>')
+        + ' · ' + uebrig + ' ' + t('übrig');
+    }
+    if (info) info.innerHTML = html;
+    const l = $('track-laenge');
+    if (l) l.textContent = trackLaengeText(currentTrackTiles) + ' · ' + currentTrackTiles.length + ' ' + t('Teile');
+    const k = $('track-fs-tasten');
+    if (k) k.textContent = t('✕/Enter einfügen · □/Entf entfernen · L1 R1/Q E Teil wählen · △/R drehen · ○/Z zurück · L3/Esc schließen');
   }
   // ---- Symbol palette ----
   // The same five actions as the text buttons above, as icons, so they still fit under the
@@ -25259,8 +25560,11 @@
       b.className = 'tp-btn' + (i === trackPaletteSel ? ' sel' : '');
       b.title = p.cap;
       b.setAttribute('aria-label', p.cap);
+      const bil = teileBilanz(currentTrackTiles).find((x) => x.typ === p.type());
+      const rest = bil && bil.hat !== null
+        ? `<span class="tp-rest${bil.rest < 0 ? ' fehlt' : ''}">${bil.rest}</span>` : '';
       b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${p.icon}</svg>`
-                  + `<span class="tp-cap">${p.cap}</span>`;
+                  + `<span class="tp-cap">${p.cap}</span>` + rest;
       b.onclick = () => { trackPaletteSel = i; renderTrackPalette(); addTile(p.type()); };
       host.appendChild(b);
     });
@@ -25375,8 +25679,11 @@
   // Fuer den Umschalter waere sie ausserdem falsch geworden: er traegt jetzt zwei.
   const TRACK_ACTIONS = [
     { id: 'track-undo' },
+    { id: 'track-delete-sel' },
+    { id: 'track-rotate-left' },
     { id: 'track-rotate-right' },
     { id: 'track-clear' },
+    { id: 'track-tour' },
     { id: 'track-fs-toggle' },
   ];
   let trackPadRow = 1;      // 0 = Aktionen oben, 1 = Teile unten
@@ -25417,11 +25724,14 @@
           addTile(TRACK_PALETTE[trackPaletteSel].type());
         }
         return true;
-      // Die drei Direkttasten bleiben, damit man fuer Zurueck nicht erst die Reihe wechseln
-      // muss - das ist die haeufigste Aktion beim Bauen.
-      case 'undo':  $('track-undo').click(); return true;
+      // Direkttasten (v0.8.28): Kreis rueckgaengig, Quadrat entfernt das gewaehlte Teil,
+      // Dreieck dreht um 45 Grad, L1/R1 waehlen das vorige/naechste Teil.
+      case 'undo':  trackRueckgaengig(); return true;
       case 'reset': trackReset(); return true;
-      case 'rotate': $('track-rotate-right').click(); return true;
+      case 'rotate': rotateTrack(45); return true;
+      case 'delete': trackTeilEntfernen(); return true;
+      case 'prev': trackAuswahlSchritt(-1); return true;
+      case 'next': trackAuswahlSchritt(1); return true;
       default: return false;
     }
   }
@@ -25437,20 +25747,77 @@
   // nicht mehr gibt (track-add-start und fuenf weitere). Sie prueften auf Vorhandensein und
   // taten deshalb nie etwas - toter Code, der wie eine Funktion aussieht. Gebaut wird mit
   // renderTrackPalette().
-  $('track-undo').onclick = () => {
-    // The first tile is the start/finish anchor and is not removable — the lap counting
-    // depends on it existing.
-    if (currentTrackTiles.length <= 1) { showHudToast('Nichts zu entfernen'); return; }
-    currentTrackTiles.pop();
-    refreshTrackPreview();
-  };
-  $('track-clear').onclick = () => { currentTrackTiles = freshTrackTiles(); refreshTrackPreview(); };
+  // Rueckgaengig nimmt jetzt die letzte AENDERUNG zurueck (Verlauf), nicht nur das letzte
+  // Teil. Start/Ziel bleibt dabei immer, weil jeder abgelegte Stand eine hatte.
+  $('track-undo').onclick = () => { trackRueckgaengig(); };
+  $('track-delete-sel').onclick = () => { trackTeilEntfernen(); };
+  $('track-clear').onclick = () => { trackMerken(); currentTrackTiles = freshTrackTiles(); trackSel = null; refreshTrackPreview(); };
 
+  // 45-Grad-Schritte in beide Richtungen. BESTELLT: "Ich will auch 45 Grad drehen koennen."
+  // Die Teile selbst haben keine eigene Richtung - sie ergibt sich aus der Reihenfolge -,
+  // gedreht wird deshalb die ganze Strecke (die Startrichtung, siehe trackCenterline).
   function rotateTrack(deltaDeg) {
+    trackMerken();
     trackRotationDeg = (trackRotationDeg + deltaDeg + 360) % 360;
     refreshTrackPreview();
   }
-  $('track-rotate-right').onclick = () => rotateTrack(90);
+  $('track-rotate-right').onclick = () => rotateTrack(45);
+  $('track-rotate-left').onclick = () => rotateTrack(-45);
+  $('track-tour').onclick = () => { if (typeof konsoleTourStart === 'function') konsoleTourStart(K_EDITOR); };
+  if ($('track-edit-tour')) {
+    $('track-edit-tour').onclick = async () => {
+      await enterTrackFullscreen();
+      if (typeof konsoleTourStart === 'function') konsoleTourStart(K_EDITOR);
+    };
+  }
+
+  // MAUS UND FINGER: ein Tipp auf die Karte waehlt das naechstgelegene Teil.
+  $('track-preview-svg').addEventListener('click', (e) => {
+    if (!document.body.classList.contains('track-fs') || !trackEditorGeo) return;
+    const svg = $('track-preview-svg').querySelector('svg');
+    if (!svg || !svg.getScreenCTM) return;
+    const m = svg.getScreenCTM();
+    if (!m) return;
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX; pt.y = e.clientY;
+    const q = pt.matrixTransform(m.inverse());
+    const g = trackEditorGeo;
+    let best = null, bestD = Infinity;
+    g.pts.forEach((p) => {
+      if (p.tile < 0) return;
+      const dx = p.x + g.ox - q.x, dy = p.y + g.oy - q.y, d = dx * dx + dy * dy;
+      if (d < bestD) { bestD = d; best = p.tile; }
+    });
+    if (best !== null && bestD < Math.pow(g.half * 3, 2)) { trackSel = best; refreshTrackPreview(); }
+  });
+
+  // TASTATUR IM EDITOR, im Erfassungslauf: die Pfeile sollen hier bauen und nicht fahren.
+  window.addEventListener('keydown', (e) => {
+    if (!document.body.classList.contains('track-fs')) return;
+    if (e.target && e.target.closest && e.target.closest('input, textarea, select')) return;
+    const k = (e.key || '').toLowerCase();
+    const weg = () => { e.preventDefault(); e.stopImmediatePropagation(); };
+    // Tutorial offen: blaettern, schliessen.
+    if (typeof konsoleTourOffen === 'function' && konsoleTourOffen()) {
+      if (k === 'enter' || k === 'arrowright' || k === ' ') { weg(); konsoleTourWeiter(); }
+      else if (k === 'arrowleft' || k === 'backspace') { weg(); konsoleTourZurueck(); }
+      else if (k === 'escape') { weg(); konsoleTourZu(false); }
+      return;
+    }
+    if (e.repeat && !['arrowleft', 'arrowright', 'q', 'e'].includes(k)) return;
+    if (k === 'arrowleft') { weg(); trackEditorPad('left'); }
+    else if (k === 'arrowright') { weg(); trackEditorPad('right'); }
+    else if (k === 'arrowup') { weg(); trackEditorPad('up'); }
+    else if (k === 'arrowdown') { weg(); trackEditorPad('down'); }
+    else if (k === 'enter' || k === ' ') { weg(); trackEditorPad('confirm'); }
+    else if (k === 'delete' || k === 'backspace') { weg(); trackTeilEntfernen(); }
+    else if (k === 'z' || (k === 'z' && e.ctrlKey)) { weg(); trackRueckgaengig(); }
+    else if (k === 'r') { weg(); rotateTrack(e.shiftKey ? -45 : 45); }
+    else if (k === 'q' || k === ',') { weg(); trackAuswahlSchritt(-1); }
+    else if (k === 'e' || k === '.') { weg(); trackAuswahlSchritt(1); }
+    else if (k === 'h' || k === '?') { weg(); if (typeof konsoleTourStart === 'function') konsoleTourStart(K_EDITOR); }
+    else if (k === 'escape') { weg(); exitTrackFullscreen(); }
+  }, true);
 
   function refreshTrackList() {
     const store = loadTrackStore();
@@ -42423,11 +42790,11 @@
       // BESTELLT (ACC-Menue): "schultertasten zum tab wechseln" - in den Menues wechseln
       // L1/R1 die Reiter der innersten Ebene, im Cockpit bleiben sie Reifen- und Tankvorwahl.
       const tyreNow = readBindingValue(pad, bindings.tyreSelect) > BUTTON_CAPTURE_THRESHOLD;
-      if (tyreNow && !prevTyreSelect) { if (konsoleMenue()) konsoleReiterSchritt(-1); else pitMischungWeiter(); }
+      if (tyreNow && !prevTyreSelect) { if (trackEditorPad('prev')) { /* Editor */ } else if (konsoleMenue()) konsoleReiterSchritt(-1); else pitMischungWeiter(); }
       prevTyreSelect = tyreNow;
 
       const fuelNow = readBindingValue(pad, bindings.fuelSelect) > BUTTON_CAPTURE_THRESHOLD;
-      if (fuelNow && !prevFuelSelect) { if (konsoleMenue()) konsoleReiterSchritt(1); else pitVorwahlSchalten('refuel'); }
+      if (fuelNow && !prevFuelSelect) { if (trackEditorPad('next')) { /* Editor */ } else if (konsoleMenue()) konsoleReiterSchritt(1); else pitVorwahlSchalten('refuel'); }
       prevFuelSelect = fuelNow;
 
       // L3: Vollbild umschalten - im Cockpit race-fs, im Streckeneditor track-fs. Nach
@@ -42504,6 +42871,8 @@
       if (downshiftNow && !prevDownshift) {
         if (optInfoOffen()) {
           optInfoSchliessen();
+        } else if (trackEditorPad('delete')) {
+          /* Streckeneditor: Quadrat entfernt das gewaehlte Teil */
         } else if (pitSpielTaste('quad')) {
           /* Boxen-Minigame: Quadrat gehoert dem Spiel, es wird nicht geschaltet */
         } else if (konsoleMenue()) {
@@ -63495,6 +63864,105 @@
       if (merk) showTab(merk);
     }
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Cockpit im Hintergrund, R2 erkannt, Kreuz als andere Taste, blaettern mit dem Steuerkreuz' };
+  });
+
+  // ---- STRECKENEDITOR (v0.8.28) ----
+  stAdd('Editor: auswählen, mittendrin einfügen, entfernen, rückgängig, 45 Grad', () => {
+    const merk = { tiles: currentTrackTiles, rot: trackRotationDeg, sel: trackSel, verlauf: trackVerlauf.length };
+    const f = [];
+    const code = () => trackToCode(currentTrackTiles, 0);
+    try {
+      currentTrackTiles = codeToTrack('SGR').tiles; trackRotationDeg = 0; trackSel = 1;
+      addTile(TILE_TYPE.CURVE_LEFT);
+      if (code() !== 'SGLR') f.push('Einfuegen hinter dem gewaehlten ergibt ' + code() + ' statt SGLR');
+      if (trackSel !== 2) f.push('danach gewaehlt ' + trackSel + ' statt 2');
+      trackSel = 1; trackTeilEntfernen();
+      if (code() !== 'SLR') f.push('Entfernen ergibt ' + code() + ' statt SLR');
+      trackSel = 0;
+      if (trackTeilEntfernen()) f.push('Start/Ziel liess sich entfernen');
+      trackRueckgaengig();
+      if (code() !== 'SGLR') f.push('Rueckgaengig ergibt ' + code() + ' statt SGLR');
+      trackRueckgaengig();
+      if (code() !== 'SGR') f.push('zweites Rueckgaengig ergibt ' + code() + ' statt SGR');
+      rotateTrack(45);
+      if (trackRotationDeg !== 45) f.push('Drehen gibt ' + trackRotationDeg + ' Grad');
+      rotateTrack(-90);
+      if (trackRotationDeg !== 315) f.push('links drehen gibt ' + trackRotationDeg + ' Grad');
+      const rund = codeToTrack(trackToCode(currentTrackTiles, 45));
+      if (!rund || rund.rotation !== 45) f.push('45 Grad ueberleben den Streckencode nicht (' + (rund && rund.rotation) + ')');
+      trackSel = null; trackAuswahlSchritt(-1);
+      if (trackSel !== currentTrackTiles.length - 2) f.push('L1 waehlt nicht das vorletzte Teil');
+    } finally {
+      currentTrackTiles = merk.tiles; trackRotationDeg = merk.rot; trackSel = merk.sel;
+      trackVerlauf.length = Math.min(trackVerlauf.length, merk.verlauf);
+      refreshTrackPreview();
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'einfuegen hinter der Auswahl, entfernen, Start bleibt, zweimal rueckgaengig, 45 Grad in beide Richtungen' };
+  });
+
+  stAdd('Editor: Länge in Metern und 1:50, Teilebilanz', () => {
+    const f = [];
+    const m = trackLaengeM(codeToTrack('SG3').tiles);
+    // Vier gerade Stuecke (Start ist eines) zu je 43 cm.
+    if (Math.abs(m - 4 * 0.43) > 0.005) f.push('SG3 ist ' + m.toFixed(3) + ' m statt 1,72');
+    if (!/1:50/.test(trackLaengeText(codeToTrack('SG3').tiles))) f.push('ohne Massstabsangabe');
+    let alt = null;
+    try { alt = localStorage.getItem('omegasim-teile'); } catch (e) { return { skip: true, mass: 'kein Speicher' }; }
+    try {
+      const b = {}; b[TILE_TYPE.STRAIGHT] = 2; b[TILE_TYPE.START] = 1;
+      localStorage.setItem('omegasim-teile', JSON.stringify(b));
+      const bil = teileBilanz(codeToTrack('SG3').tiles);
+      const g = bil.find((x) => x.typ === TILE_TYPE.STRAIGHT);
+      if (!g || g.rest !== -1) f.push('Geraden: Rest ' + (g && g.rest) + ' statt -1');
+      const st = bil.find((x) => x.typ === TILE_TYPE.START);
+      if (!st || st.rest !== 0) f.push('Start: Rest ' + (st && st.rest));
+      const r = bil.find((x) => x.typ === TILE_TYPE.CURVE_RIGHT);
+      if (!r || r.hat !== null) f.push('nicht eingetragene Sorte zaehlt trotzdem');
+    } finally {
+      try { if (alt === null) localStorage.removeItem('omegasim-teile'); else localStorage.setItem('omegasim-teile', alt); } catch (e) { /* egal */ }
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'SG3 = ' + m.toFixed(2) + ' m, fehlende Gerade erkannt, nicht gezaehlte Sorten frei' };
+  });
+
+  stAdd('Strecke: jede Unterseite hat nur, was sie bezeichnet', () => {
+    const f = [];
+    const drin = (sub, id) => { const s = $('sub-' + sub); return !!(s && $(id) && s.contains($(id))); };
+    if (!drin('laden', 'track-list') || drin('edit', 'track-list')) f.push('gespeicherte Strecken nicht (nur) unter Laden');
+    if (!drin('edit', 'track-preview-svg')) f.push('Editor-Karte nicht im Editor');
+    if (drin('laden', 'track-preview-svg')) f.push('Editor unter Laden');
+    if (!drin('scan', 'track-scan-start') || drin('edit', 'track-scan-start')) f.push('Live-Scan nicht (nur) im Scan');
+    if (!drin('teile', 'teile-liste')) f.push('Meine Teile fehlt');
+    const kacheln = [...document.querySelectorAll('#sub-home-track .subpage-open')].map((k) => k.dataset.sub);
+    if (new Set(kacheln).size !== kacheln.length) f.push('zwei Kacheln oeffnen dieselbe Unterseite: ' + kacheln.join(','));
+    return { ok: !f.length, mass: f.length ? f.join('; ') : kacheln.join(', ') };
+  });
+
+  stAdd('Editor-Tutorial: läuft im Editor-Vollbild durch und bleibt dort', () => {
+    const merk = kAktiverTab();
+    const f = [];
+    const warFs = document.body.classList.contains('track-fs');
+    try {
+      showTab('track'); showSubpage('edit');
+      document.body.classList.add('track-fs');
+      $('track-tour').click();
+      if (!konsoleTourOffen()) return { ok: false, mass: 'Hilfe-Knopf oeffnet nichts' };
+      const pad = { axes: [0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) };
+      konsoleTourPad(pad);
+      pad.buttons[0] = { pressed: true, value: 1 };
+      if (!konsoleTourPad(pad)) f.push('Pad wird nicht von der Fuehrung verbraucht');
+      pad.buttons[0] = { pressed: false, value: 0 }; konsoleTourPad(pad);
+      if (kTourSchritt !== 1) f.push('Kreuz blaettert nicht weiter');
+      while (konsoleTourOffen() && kTourSchritt < K_EDITOR.length - 1) konsoleTourWeiter();
+      konsoleTourWeiter();
+      if (konsoleTourOffen()) f.push('nach dem letzten Schritt offen');
+      if (kAktiverTab() !== 'track') f.push('endet auf ' + kAktiverTab());
+    } finally {
+      if (konsoleTourOffen()) konsoleTourZu(false);
+      if (!warFs) document.body.classList.remove('track-fs');
+      showSubpage('');
+      if (merk) showTab(merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : K_EDITOR.length + ' Schritte, Pad blaettert, bleibt im Editor' };
   });
 
   stAdd('ACC-Menü: Motorsound-Kachel blättert die Motoren, Quadrat', () => {

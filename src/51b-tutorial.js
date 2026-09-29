@@ -68,6 +68,28 @@
     { tab: 'options', sub: 'opt-pad', ziel: ['#pad-zoom'], bild: 'controller', titel: 'Alle Tasten und die Belegung',
       text: 'Hier siehst du alle Tasten. Mit „Neu zuweisen“ belegst du jede Funktion um.' },
   ];
+  // DER STRECKENEDITOR. BESTELLT: "Ueberarbeite den Streckeneditor und fuege dort auch ein
+  // Tutorial ein wie bei den anderen Sachen." Laeuft im Vollbild des Editors; der Pad
+  // gehoert solange der Fuehrung (Kreuz oder rechts weiter, Kreis oder links zurueck).
+  const K_EDITOR = [
+    { tab: 'track', sub: 'edit', ziel: null, bild: 'strecke-bahn', titel: 'Der Streckeneditor',
+      text: 'Hier baust du deine Strecke nach. Oben die Aktionen, in der Mitte die Karte, unten die Teile.' },
+    { tab: 'track', sub: 'edit', ziel: ['#track-preview-svg'], taste: 'L1 · R1', titel: 'Teil auswählen',
+      text: 'L1 und R1 (Tastatur Q und E) wählen das vorige oder nächste Teil. Tippen auf die Karte geht auch. Das gewählte Teil ist gelb.' },
+    { tab: 'track', sub: 'edit', ziel: ['#track-palette'], taste: '◀ ▶ ✕', titel: 'Teil einfügen',
+      text: 'Wähl unten ein Teil mit dem Steuerkreuz und drück Kreuz (Enter). Es kommt hinter das gewählte Teil.' },
+    { tab: 'track', sub: 'edit', ziel: ['#track-delete-sel'], taste: '□', titel: 'Teil entfernen',
+      text: 'Quadrat (Entf) nimmt das gewählte Teil heraus. Start und Ziel bleiben immer.' },
+    { tab: 'track', sub: 'edit', ziel: ['#track-rotate-left', '#track-rotate-right'], taste: '△', titel: 'Drehen',
+      text: 'Dreieck (R) dreht die ganze Strecke um 45 Grad, mit Umschalt andersherum.' },
+    { tab: 'track', sub: 'edit', ziel: ['#track-undo'], taste: '○', titel: 'Rückgängig',
+      text: 'Kreis (Z) nimmt die letzte Änderung zurück, auch mehrmals.' },
+    { tab: 'track', sub: 'edit', ziel: ['#track-fs-info'], bild: 'strecke-frei', titel: 'Länge und Teile',
+      text: 'Oben steht die Länge in Metern und im Maßstab 1:50. Hast du unter Meine Teile deinen Karton eingetragen, siehst du hier, was fehlt.' },
+    { tab: 'track', sub: 'edit', ziel: ['#track-fs-toggle'], taste: 'L3', titel: 'Schließen',
+      text: 'L3 oder Esc schließt den Editor. Die Strecke bleibt, speichern kannst du sie unter Strecke laden.' },
+  ];
+
   const K_PAD_NAMEN = { 0: '✕', 1: '○', 2: '□', 3: '△', 4: 'L1', 5: 'R1', 6: 'L2', 7: 'R2', 8: 'SHARE',
     9: 'OPTIONS', 10: 'L3', 11: 'R3', 12: '▲', 13: '▼', 14: '◀', 15: '▶', 16: 'PS' };
   const kTourPadVorher = [];
@@ -75,7 +97,20 @@
   // Aus pollGamepad (90-ghosts.js): waehrend der Steuerungs-Fuehrung gehoert der Pad ihr.
   // Gibt true zurueck, wenn die Fuehrung den Pad verbraucht hat - dann faehrt nichts.
   function konsoleTourPad(pad) {
-    if (!kTourOffen || kTourListe !== K_STEUERUNG) return false;
+    if (!kTourOffen) return false;
+    // Editor-Fuehrung: im Vollbild bedient sonst der Editor den Pad; hier blaettert er nur.
+    if (kTourListe === K_EDITOR) {
+      const neu = [];
+      for (let i = 0; i < pad.buttons.length; i++) {
+        const n = !!(pad.buttons[i] && pad.buttons[i].pressed);
+        if (n && !kTourPadVorher[i]) neu.push(i);
+        kTourPadVorher[i] = n;
+      }
+      if (neu.includes(0) || neu.includes(15)) konsoleTourWeiter();
+      else if (neu.includes(1) || neu.includes(14)) konsoleTourZurueck();
+      return true;
+    }
+    if (kTourListe !== K_STEUERUNG) return false;
     const neu = [];
     for (let i = 0; i < pad.buttons.length; i++) {
       const n = !!(pad.buttons[i] && (pad.buttons[i].pressed || pad.buttons[i].value > 0.4));
@@ -103,7 +138,7 @@
     return true;
   }
   // Wo eine Fuehrung endet: das Tutorial auf Fahren, die Steuerung dort, wo sie hinfuehrt.
-  const K_TOUR_ENDE = new Map([[K_TOUR, 'fahren'], [K_STEUERUNG, 'bleiben']]);
+  const K_TOUR_ENDE = new Map([[K_TOUR, 'fahren'], [K_STEUERUNG, 'bleiben'], [K_EDITOR, 'bleiben']]);
 
   let kTourOffen = false;
   let kTourSchritt = 0;

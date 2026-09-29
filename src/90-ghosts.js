@@ -8736,11 +8736,11 @@
       // BESTELLT (ACC-Menue): "schultertasten zum tab wechseln" - in den Menues wechseln
       // L1/R1 die Reiter der innersten Ebene, im Cockpit bleiben sie Reifen- und Tankvorwahl.
       const tyreNow = readBindingValue(pad, bindings.tyreSelect) > BUTTON_CAPTURE_THRESHOLD;
-      if (tyreNow && !prevTyreSelect) { if (konsoleMenue()) konsoleReiterSchritt(-1); else pitMischungWeiter(); }
+      if (tyreNow && !prevTyreSelect) { if (trackEditorPad('prev')) { /* Editor */ } else if (konsoleMenue()) konsoleReiterSchritt(-1); else pitMischungWeiter(); }
       prevTyreSelect = tyreNow;
 
       const fuelNow = readBindingValue(pad, bindings.fuelSelect) > BUTTON_CAPTURE_THRESHOLD;
-      if (fuelNow && !prevFuelSelect) { if (konsoleMenue()) konsoleReiterSchritt(1); else pitVorwahlSchalten('refuel'); }
+      if (fuelNow && !prevFuelSelect) { if (trackEditorPad('next')) { /* Editor */ } else if (konsoleMenue()) konsoleReiterSchritt(1); else pitVorwahlSchalten('refuel'); }
       prevFuelSelect = fuelNow;
 
       // L3: Vollbild umschalten - im Cockpit race-fs, im Streckeneditor track-fs. Nach
@@ -8817,6 +8817,8 @@
       if (downshiftNow && !prevDownshift) {
         if (optInfoOffen()) {
           optInfoSchliessen();
+        } else if (trackEditorPad('delete')) {
+          /* Streckeneditor: Quadrat entfernt das gewaehlte Teil */
         } else if (pitSpielTaste('quad')) {
           /* Boxen-Minigame: Quadrat gehoert dem Spiel, es wird nicht geschaltet */
         } else if (konsoleMenue()) {
