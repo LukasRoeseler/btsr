@@ -86,13 +86,18 @@ jobs:
             -PomegaVersionCode=${{ steps.v.outputs.code }} \
             -PomegaVersionName=${{ steps.v.outputs.name }}
           cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/OmegaSim-${{ steps.v.outputs.name }}.apk"
+          # Dieselbe Datei mit festem Namen: releases/latest/download/OmegaSim.apk ist damit
+          # immer die neueste APK (Link auf der Titelseite).
+          cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/OmegaSim.apk"
 
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ startsWith(github.ref_name, 'apk-v') && github.ref_name || format('apk-v{0}', steps.v.outputs.name) }}
           name: OmegaSim ${{ steps.v.outputs.name }} (Android)
-          files: ${{ runner.temp }}/OmegaSim-${{ steps.v.outputs.name }}.apk
+          files: |
+            ${{ runner.temp }}/OmegaSim-${{ steps.v.outputs.name }}.apk
+            ${{ runner.temp }}/OmegaSim.apk
           body: |
             Android-App von OmegaSim, Web-Fassung ${{ steps.v.outputs.name }}.
             Installieren: APK auf dem Telefon oeffnen, "Unbekannte Quellen" fuer den Browser erlauben.
