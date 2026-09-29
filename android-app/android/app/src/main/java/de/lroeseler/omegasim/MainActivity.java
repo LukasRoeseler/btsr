@@ -1,8 +1,11 @@
 package de.lroeseler.omegasim;
 
+import android.app.Activity;
 import android.bluetooth.BluetoothGatt;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
+import android.view.Window;
 import android.view.WindowManager;
 import com.getcapacitor.PluginHandle;
 import java.lang.reflect.Field;
@@ -26,6 +29,13 @@ import com.getcapacitor.BridgeActivity;
  *    env(safe-area-inset-*) selbst Abstand, wo es noetig ist (viewport-fit=cover).
  *    Nach jedem Fokuswechsel (Bluetooth-Auswahl, Benachrichtigung) wieder verstecken:
  *    Android zeigt die Leisten dabei von selbst wieder an.
+ *    NACHGESCHAERFT (v0.8.26), GEMELDET: "Kannst du meine Android-Tasten ausblenden am
+ *    Rand? Uhrzeit, Akkustand, aber auch Home-Button und Tab-Button." Ein einzelnes hide()
+ *    in onCreate kam auf manchen Geraeten zu frueh (die Leisten kamen mit dem Laden der Seite
+ *    wieder). Deshalb: zusaetzlich die alten Vollbild-Flaggen (bis Android 10), mehrfach
+ *    nachgelegt (0,4 / 1,5 / 4 s nach dem Start) und von der Web-Seite aus abrufbar
+ *    (OmegaHostPlugin.vollbild, gerufen beim Start, bei jedem Tabwechsel und nach dem
+ *    Zurueckkommen in die App).
  * 5. BLUETOOTH BEIM SCHLIESSEN TRENNEN. GEMELDET: "Wenn ich die App schliesse und oeffne, zeigt
  *    das Auto an, es waere noch verbunden, ist es aber nicht. Und neu verbinden geht dann auch
  *    nicht." Das Plugin (@capacitor-community/bluetooth-le) schliesst seine GATT-Verbindungen
@@ -53,6 +63,10 @@ public class MainActivity extends BridgeActivity {
             getWindow().setAttributes(lp);
         }
         vollbild();
+        View d = getWindow().getDecorView();
+        d.postDelayed(this::vollbild, 400);
+        d.postDelayed(this::vollbild, 1500);
+        d.postDelayed(this::vollbild, 4000);
     }
 
     @Override
@@ -96,9 +110,22 @@ public class MainActivity extends BridgeActivity {
         } catch (Throwable e) { /* andere Plugin-Fassung: nichts zu tun */ }
     }
 
-    private void vollbild() {
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-        WindowInsetsControllerCompat c = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+    private void vollbild() { vollbildFuer(this); }
+
+    @SuppressWarnings("deprecation")
+    static void vollbildFuer(Activity a) {
+        if (a == null) return;
+        Window w = a.getWindow();
+        if (w == null) return;
+        View d = w.getDecorView();
+        WindowCompat.setDecorFitsSystemWindows(w, false);
+        if (Build.VERSION.SDK_INT < 30) {
+            d.setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+        }
+        WindowInsetsControllerCompat c = WindowCompat.getInsetsController(w, d);
         c.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
         c.hide(WindowInsetsCompat.Type.systemBars());
     }

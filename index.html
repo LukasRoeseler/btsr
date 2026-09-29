@@ -2460,8 +2460,13 @@
     display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; padding: 10px 12px; color: #eef0f4; }
   .k-tour-karte.unten { bottom: max(8px, env(safe-area-inset-bottom)); }
   .k-tour-karte.oben { top: max(8px, env(safe-area-inset-top)); }
+  .k-tutorial-reihe { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .k-tour-taste { grid-row: span 2; display: grid; place-items: center; min-width: clamp(64px, 17vh, 130px);
+    aspect-ratio: 4 / 3; background: #161a24; border: 2px solid var(--k-blau); font-size: clamp(22px, 7vh, 46px);
+    font-weight: 900; color: #fff; letter-spacing: .04em; text-align: center; line-height: 1.05; padding: 4px; }
+  .k-tour-taste[hidden] { display: none; }
   /* Daneben: schmaler, senkrecht mittig, am freien Rand. */
-  .k-tour-karte.links, .k-tour-karte.rechts { top: 50%; transform: translateY(-50%); width: min(46vw, 400px);
+  .k-tour-karte.links, .k-tour-karte.rechts { top: calc(50% + 10px); transform: translateY(-50%); width: min(46vw, 400px);
     grid-template-columns: minmax(0, 1fr); }
   .k-tour-karte.links { left: max(8px, env(safe-area-inset-left)); }
   .k-tour-karte.rechts { left: auto; right: max(8px, env(safe-area-inset-right)); }
@@ -2475,6 +2480,56 @@
     font-size: 12px; padding: 4px 12px; border-radius: 0; }
   .k-tour-knoepfe .k-tour-leise { margin-right: auto; background: transparent; border-color: transparent; color: var(--k-dim); }
   .k-tour-knoepfe button.menu-nav-sel { outline: 0; border-color: #fff; background: var(--k-blau); color: var(--k-blau-text); }
+  /* ---- Mehrspieler (v0.8.26) ---- */
+  .mp-warnung { border-left: 3px solid var(--warn); padding: 3px 10px; margin: 6px 0 10px; font-size: 12px; color: #f3d9a0;
+    background: rgba(255,180,0,.08); }
+  .mp-gemeinsam-h .opt-info-btn { margin-left: 6px; vertical-align: 1px; }
+  /* App-Seite nach Vorschlag A: links Host werden / suchen, rechts Beitreten und Rangliste. */
+  #sub-mp-app.on { display: grid; grid-template-columns: minmax(170px, 30%) minmax(0, 1fr); gap: 6px 16px; align-items: start; }
+  #sub-mp-app.on:has(#mp-app[hidden]) { grid-template-columns: minmax(0, 1fr); }
+  #sub-mp-app > .subpage-back, #sub-mp-app > h2, #sub-mp-app > #mp-app-hinweis { grid-column: 1 / -1; }
+  #sub-mp-app .mp-app .row { flex-direction: column; align-items: stretch; gap: 6px; }
+  #sub-mp-app .mp-app .row button { width: 100%; padding: 8px 10px; }
+  #sub-mp-app #mp-gemeinsam { margin-top: 0; padding-top: 0; border-top: 0; }
+  #sub-mp-app #mp-gemeinsam .row { gap: 6px 8px; }
+  #sub-mp-app #mp-gemeinsam label.small { flex: 1 1 100%; display: grid; grid-template-columns: 110px minmax(0, 1fr);
+    align-items: center; gap: 8px; }
+  /* ---- Garage als Karten (v0.8.26, Vorschlag B) ---- */
+  #gar-list.gar-karten { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+  .gar-row.gar-karte { display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden; border-radius: 0;
+    background: rgba(14,16,22,.94); border: 2px solid transparent; }
+  .gar-row.gar-karte:hover, .gar-row.gar-karte.gk-auf { border-color: #fff; }
+  .gk-kopf { display: flex; justify-content: space-between; background: var(--k-grau); color: #fff; font-family: var(--k-font);
+    font-weight: 800; letter-spacing: .1em; font-size: 11px; padding: 2px 8px; }
+  .gar-karte.is-player .gk-kopf { background: var(--k-blau); color: var(--k-blau-text); }
+  .gk-kopf-rolle { opacity: .85; }
+  .gk-bild { position: relative; height: clamp(54px, 15vh, 110px); background-size: cover; background-position: center;
+    display: grid; place-items: center; }
+  .gk-zeichen { font-size: clamp(26px, 8vh, 48px); font-weight: 900; opacity: .85; }
+  .gk-foto { position: absolute; right: 6px; bottom: 6px; font-size: 10.5px; padding: 2px 8px; letter-spacing: .06em;
+    background: rgba(5,7,12,.8); color: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: 0; text-transform: uppercase; }
+  .gk-foto-weg { position: absolute; left: 6px; bottom: 6px; font-size: 11px; padding: 1px 6px; background: rgba(5,7,12,.8);
+    color: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: 0; }
+  .gk-name { padding: 6px 8px 2px; }
+  .gk-name .car-name-in { max-width: none; font-weight: 700; }
+  .gk-rolle { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 4px 8px; padding: 2px 4px;
+    background: var(--k-weiss); color: var(--k-tinte); font-family: var(--k-font); text-transform: uppercase; font-size: 12px; }
+  .gk-rolle button { background: none; border: 0; color: #0077a8; padding: 2px 6px; font-size: 11px; min-height: 0; }
+  .gk-rolle .wip-tag { font-size: 9px; }
+  .gk-fuss { display: flex; justify-content: space-between; gap: 6px; padding: 2px 8px 4px; }
+  .gk-fuss button { font-size: 11px; padding: 2px 9px; letter-spacing: .06em; text-transform: uppercase; border-radius: 0; }
+  .gar-karte .gar-id { padding: 0 8px 6px; font-size: 10px; }
+  .gar-karte-neu { min-height: 150px; border: 2px dashed rgba(255,255,255,.22); background: rgba(14,16,22,.5); color: var(--k-dim);
+    font-family: var(--k-font); font-size: 22px; font-weight: 800; letter-spacing: .1em; border-radius: 0; }
+  .gar-karte-neu:hover { color: #fff; border-color: #fff; }
+  .gk-aufzeile { grid-column: 1 / -1; background: rgba(14,16,22,.96); border-top: 2px solid var(--k-blau); padding: 4px 8px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 2px 14px; }
+  .gk-zeile { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 3px 4px;
+    border-bottom: 1px solid rgba(255,255,255,.06); }
+  .gk-w { display: flex; align-items: center; gap: 6px; font-weight: 800; }
+  .gk-w > button:not(.gar-speed-reset) { background: none; border: 0; color: var(--k-blau); padding: 2px 6px; min-height: 0; }
+  .gk-hinweis { color: var(--muted); font-size: 12px; padding: 4px; }
+  .gk-aufzeile .gar-speed { padding: 3px 4px; }
   /* HOCHFORMAT, schmal (Telefon im Browser): untereinander, mit Bildlauf. */
   @media (max-width: 760px) and (orientation: portrait) {
     header#k-kopf { grid-template-columns: 1fr auto; }
@@ -3670,9 +3725,16 @@
         <b id="lang-de">DEUTSCH</b><b id="lang-en">ENGLISH</b>
       </button>
       <!-- TUTORIAL (51b-tutorial.js): Klick, Dreieck oder T. -->
-      <button type="button" id="k-tutorial-start" class="k-tutorial-knopf">Tutorial <span class="wip-tag">WIP</span>
-        <span class="k-tutorial-taste" data-i18n-skip>&#9651; / T</span></button>
-      <div class="k-druecken">Beliebige Taste dr&uuml;cken</div>
+      <div class="k-tutorial-reihe">
+        <button type="button" id="k-tutorial-start" class="k-tutorial-knopf">Tutorial
+          <span class="k-tutorial-taste" data-i18n-skip>&#9651; / T</span></button>
+        <!-- BESTELLT: "neben dem Tutorial-Button noch einen Button zur Steuerung ... dass es nur
+             mit Gamepad funktioniert, zeige die Tasten und am Ende, wo man das Bild vom
+             Controller mit allen Tasten sieht und die Belegung aendern kann". -->
+        <button type="button" id="k-steuerung-start" class="k-tutorial-knopf">Steuerung
+          <span class="k-tutorial-taste" data-i18n-skip>&#9675; / S</span></button>
+      </div>
+      <div class="k-druecken"><span data-i18n-skip>&#10005;</span> zum Starten</div>
     <!-- Nur in der Android-App: eine neue Web-Fassung liegt bereit (siehe 97b-app.js). -->
     <div class="app-update" id="app-update" hidden>
       <b id="app-update-text">Update verf&uuml;gbar</b>
@@ -3680,7 +3742,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.25</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.26</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3703,7 +3765,7 @@
       <div class="k-kachel " id="fa-auto" role="button" tabindex="0">
         <span class="k-kk">Autos</span>
         <span class="k-kt" id="fa-auto-titel"></span>
-        <span class="k-kb" style="background-image:url(img/auto.jpg)"></span>
+        <span class="k-kb" id="fa-auto-bild" style="background-image:url(img/auto.jpg)"></span>
         <span class="k-ki" id="fa-auto-info"></span>
         <!-- BESTELLT: "Autos-Menü sollte auch Option für Garage haben zum Einstellen" - auch
              ohne verbundenes Auto (gemerkte Autos, Farben, Rollen). -->
@@ -4590,6 +4652,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Garage als Karten mit eigenem Foto je Auto (sonst seine Farbe), Rolle mit &#9664; &#9654;, Einstellen klappt Farbe, Tempo und Charakter auf; ein Knopf startet und h&auml;lt die Ghosts. Titel: &#10005; startet, &#9651; Tutorial, &#9675; neue F&uuml;hrung &bdquo;Steuerung&ldquo; bis zur Controller-Belegung. Minigame: Fenster 0,1 s l&auml;nger, falsche Taste kostet Zeit. Freies Training zeigt &infin;. Mehrspieler-App wie Vorschlag A. App: Status- und Navigationsleiste werden zuverl&auml;ssiger ausgeblendet.</li>
         <li>Tutorial auf dem Titelbildschirm (experimentell): f&uuml;hrt in neun Schritten &uuml;ber die echten Schirme, mit Controller, Tastatur oder Finger.</li>
         <li>Boxen-Minigame (experimentell, ab Werk an, unter Optionen &gt; Allgemein &gt; Tank &amp; Schaden): alles wird gewechselt, losfahren erst am Ende, zehn Tasten &#9633;/&#9675; in der Mitte k&uuml;rzen den Stopp bis auf die H&auml;lfte.</li>
         <li>Pacejka: &Uuml;bersteuern sp&uuml;rbar &ndash; Vollgas in der Kurve bringt das Heck, der Vortrieb geht zur&uuml;ck, der Rutsch h&auml;lt ohne Stick, bis man gegenlenkt oder vom Pedal geht, st&auml;rkere Vibration; mit dem Schalter &bdquo;&Uuml;bersteuern&ldquo; abschaltbar (experimentell).</li>
@@ -7096,9 +7159,11 @@
       <h2>Garage</h2>
       <p class="muted">
         Jedes Auto einzeln per Klick verbinden &ndash; Web Bluetooth verlangt das so.
-        <strong>Zeigst du auf eine Zeile, blinken die Lichter</strong>, damit du siehst,
-        welches Auto in der Liste welches auf dem Tisch ist.
+        <strong>Zeigst du auf eine Karte, blinkt das Auto</strong>, damit du siehst,
+        welches welches ist.
       </p>
+      <!-- Die Dateiwahl fuer die Autofotos (90-ghosts.js, garFotoFuer), ausserhalb der Karten. -->
+      <input type="file" id="gar-foto-datei" accept="image/*" hidden>
       <!-- Der Hinweis steht VOR dem Knopf und nicht in einer Fehlermeldung danach: wer
            die App ueber das WLAN vom Host-Programm holt, hat gar kein Web Bluetooth, und
            das soll er sehen, bevor er dreimal auf "Auto verbinden" drueckt. Leer und
@@ -7113,7 +7178,7 @@
              auto. Es soll dann mit querlage = 0 in mittlerem Tempo über die strecke
              fahren und anhalten, wenn ein geschlossener rundkurs gemessen wurde." -->
         <button id="gar-stop-ghosts" disabled>Ghosts anhalten</button>
-        <button class="primary" id="gar-go" disabled>Losfahren</button>
+        <button class="primary" id="gar-go" hidden disabled>Losfahren</button>
       </div>
       <!-- BESTELLT: "Im Garage Tab ueber den Autos Link zum Cockpit stattdessen einfuegen"
            (statt des entfernten Cockpit-Knopfs auf der Startseite). -->
@@ -7187,6 +7252,9 @@
         Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Host ist entweder
         ein PC mit einem kleinen Python-Programm oder ein Telefon mit der Android-App.
       </p>
+      <!-- BESTELLT: "In Mehrspieler schreib dazu: Mehrspieler ist aktuell noch in der
+           Entwicklung und funktioniert nicht fehlerfrei." -->
+      <p class="mp-warnung">Mehrspieler ist aktuell noch in der Entwicklung und funktioniert nicht fehlerfrei.</p>
 
       <div class="misc-grid">
         <button class="misc-tile subpage-open" data-sub="mp-pc">
@@ -7309,7 +7377,9 @@
       <p class="muted" id="mp-app-hinweis">Nur in der Android-App: dieses Telefon wird Host, die anderen finden es im WLAN. Im Browser geht das nicht &ndash; dort den Weg &uuml;ber den PC nehmen.</p>
       <!-- NUR IN DER ANDROID-APP: dieses Telefon wird Host, ohne PC. -->
       <div class="mp-app" id="mp-app" hidden>
-        <p class="muted"><span class="wip-tag">experimentell</span> <b>Ohne PC: ein Telefon ist Host.</b> Die anderen Telefone suchen ihn im WLAN oder tragen die Adresse ein. Ein Tablet oder Fernseher &ouml;ffnet die Adresse mit /?info im Browser und wird Info-Screen, ganz ohne App.</p>
+        <h3 class="mp-gemeinsam-h">Host <span class="wip-tag">experimentell</span>
+          <button type="button" class="opt-info-btn" id="mp-app-erkl-knopf" aria-label="Erklärung anzeigen">i</button></h3>
+        <p class="muted mp-erkl" id="mp-app-erkl" hidden><b>Ohne PC: ein Telefon ist Host.</b> Die anderen Telefone suchen ihn im WLAN oder tragen die Adresse ein. Ein Tablet oder Fernseher &ouml;ffnet die Adresse mit /?info im Browser und wird Info-Screen, ganz ohne App.</p>
         <div class="row" style="gap:10px; flex-wrap:wrap">
           <button type="button" class="primary" id="mp-app-host">Dieses Telefon ist Host</button>
           <button type="button" id="mp-app-suchen">Host im WLAN suchen</button>
@@ -7322,7 +7392,8 @@
     </div>
     <!-- Gemeinsam fuer beide Wege: beitreten, Status, Rangliste. -->
     <div id="mp-gemeinsam">
-      <h3 class="mp-gemeinsam-h">Beitreten und Rangliste</h3>
+      <h3 class="mp-gemeinsam-h">Beitreten und Rangliste
+        <button type="button" class="opt-info-btn" id="mp-erkl-knopf" aria-label="Erklärung anzeigen">i</button></h3>
       <div class="row" style="gap:10px; flex-wrap:wrap; align-items:flex-end">
         <label class="small" style="flex:1 1 200px">Host-Adresse
           <input type="text" id="mp-host" placeholder="http://192.168.1.50:8080"></label>
@@ -7338,6 +7409,9 @@
       </tr></thead><tbody id="mp-rows">
         <tr><td colspan="5" class="muted">keine Daten</td></tr>
       </tbody></table>
+      <!-- Die Erklaerungen stehen hinter dem i (BESTELLT: "keinen Text unter die Optionen,
+           sondern immer hinter das i im Kreis"). -->
+      <div class="mp-erkl" id="mp-erkl" hidden>
       <p class="muted" style="font-size:11.5px">
         Ueber die Leitung gehen Rundenzahl, Rundenzeiten und Abgaenge. Keine Physik, keine
         Lenkwerte: jedes Telefon rechnet seine eigene Physik und haelt seine eigene
@@ -7349,6 +7423,7 @@
         Ueberfahrt startet die Uhr, erst die zweite ergibt eine Zeit. Nach drei Ueberfahrten
         stehen also zwei Runden da. Bei Gleichstand fuehrt, wer zuerst dort war.
       </p>
+      </div>
     </div>
   </section>
 
@@ -10149,6 +10224,7 @@
     <div class="k-tour-spot" id="k-tour-spot" hidden></div>
     <div class="k-tour-karte unten" id="k-tour-karte">
       <img id="k-tour-bild" alt="">
+      <span class="k-tour-taste" id="k-tour-taste" hidden data-i18n-skip></span>
       <div class="k-tour-inhalt">
         <div class="k-tour-schritt" id="k-tour-schritt" data-i18n-skip></div>
         <h2 id="k-tour-titel"></h2>
@@ -10901,7 +10977,7 @@
     ") und zeigt gleichzeitig alle Notify-Werte von NUS TX (": ") and at the same time shows every notify value from NUS TX (",
     ", Skalierung": ", scaling",
     ", bevor die App es merkt:": ", before the app notices:",
-    ", damit du siehst, welches Auto in der Liste welches auf dem Tisch ist.": ", so you can see which car in the list is which one on the table.",
+    ", damit du siehst, welches welches ist.": ", so you can see which one is which.",
     ", dann": ", then",
     ", die rote die Zündrate bei der eingestellten Drehzahl. Liegen sie nah beieinander, dröhnt es.": ", the red one the firing rate at the selected engine speed. When they sit close together, it drones.",
     ", keine Messung: dass ein Auto die Linie einhält, kann die App nicht prüfen, weil kein Byte die Querlage meldet.": ", not a measurement: the app cannot check that a car holds the line, because no byte reports lateral position.",
@@ -11218,6 +11294,39 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Garage als Karten mit eigenem Foto je Auto (sonst seine Farbe), Rolle mit ◀ ▶, Einstellen klappt Farbe, Tempo und Charakter auf; ein Knopf startet und hält die Ghosts. Titel: ✕ startet, △ Tutorial, ○ neue Führung „Steuerung“ bis zur Controller-Belegung. Minigame: Fenster 0,1 s länger, falsche Taste kostet Zeit. Freies Training zeigt ∞. Mehrspieler-App wie Vorschlag A. App: Status- und Navigationsleiste werden zuverlässiger ausgeblendet.": "Garage as cards with your own photo per car (otherwise its colour), role with ◀ ▶, Settings expands colour, pace and character; one button starts and stops the ghosts. Title: ✕ starts, △ tutorial, ○ new “Controls” guide leading to the controller mapping. Minigame: windows 0.1 s longer, a wrong button costs time. Free practice shows ∞. Multiplayer app page like proposal A. App: status and navigation bars are hidden more reliably.",
+    "Foto ändern": "Change photo",
+    "Einstellen ▾": "Settings ▾",
+    "Einstellen ▴": "Settings ▴",
+    "Ghosts starten": "Start ghosts",
+    "Abstimmung und Fahrgefühl stehen unten und unter Optionen.": "Setup and driving feel are below and under Options.",
+    "Tempo und Charakter gibt es nur für Ghosts.": "Pace and character are only for ghosts.",
+    "FAHRER": "DRIVER",
+    "SPIELER 2": "PLAYER 2",
+    "GHOST": "GHOST",
+    "AUS": "OFF",
+    "DU": "YOU",
+    "Steuerung mit dem Controller": "Controls with the controller",
+    "Diese Führung gilt nur mit einem Gamepad – PS5, PS4 oder Xbox, per USB oder Bluetooth. Ohne Controller fährst du mit Tastatur oder Touch, und die Tasten hier gelten dann nicht.": "This guide only applies to a gamepad – PS5, PS4 or Xbox, over USB or Bluetooth. Without a controller you drive with keyboard or touch, and these buttons do not apply.",
+    "Gas, Bremse, Lenkung": "Throttle, brake, steering",
+    "R2 gibt Gas, L2 bremst, der linke Stick lenkt. Fahren geht auch im Menü – zum Ausprobieren von Einstellungen.": "R2 accelerates, L2 brakes, the left stick steers. Driving also works in the menu – for trying out settings.",
+    "Kreuz": "Cross",
+    "Im Menü: bestätigen. Im Cockpit: tippen für den Boxenstopp, eine Sekunde halten für die gelbe Flagge.": "In the menu: confirm. In the cockpit: tap for a pit stop, hold for one second for the yellow flag.",
+    "Kreis und Quadrat": "Circle and square",
+    "Im Cockpit schalten sie: Kreis hoch, Quadrat runter. Im Menü geht Kreis eine Ebene zurück, Quadrat wechselt den Wert auf einer Kachel. Beim Boxen-Minigame sind sie die Spieltasten.": "In the cockpit they shift: circle up, square down. In the menu circle goes back one level, square changes the value on a tile. In the pit minigame they are the game buttons.",
+    "Dreieck": "Triangle",
+    "Im Cockpit schaltet es das Licht. In den Optionen öffnet es die Erklärung einer Zeile, auf dem Titel das Tutorial.": "In the cockpit it switches the lights. In the options it opens the explanation of a row, on the title screen the tutorial.",
+    "Schultertasten": "Shoulder buttons",
+    "Im Menü wechseln sie die Reiter. Im Cockpit wählen sie für den nächsten Boxenstopp Reifen (L1) und Tankmenge (R1) vor.": "In the menu they switch tabs. In the cockpit they preselect tyres (L1) and fuel (R1) for the next pit stop.",
+    "Steuerkreuz und rechter Stick": "D-pad and right stick",
+    "Das Steuerkreuz wählt im Menü Kacheln und Zeilen und blättert im Cockpit die Schirme. Der rechte Stick rollt lange Seiten, R3 gibt Lichthupe.": "The D-pad selects tiles and rows in the menu and pages through the screens in the cockpit. The right stick scrolls long pages, R3 flashes the lights.",
+    "Options, Share und L3": "Options, Share and L3",
+    "Options springt vom Cockpit ins Fahren-Menü und wieder zurück. Share schaltet zwischen Bahn und Ausdruck, L3 das Vollbild.": "Options jumps from the cockpit to the drive menu and back. Share switches between track and printout, L3 toggles full screen.",
+    "Alle Tasten und die Belegung": "All buttons and the mapping",
+    "Hier siehst du den Controller mit allen Tasten. Darüber kannst du jede Funktion neu zuweisen: „Neu zuweisen“ drücken, dann die Taste am Controller.": "Here you see the controller with all its buttons. Above it you can reassign every function: press “Reassign”, then the button on the controller.",
+    "Steuerung": "Controls",
+    "Fertig": "Done",
+    "Mehrspieler ist aktuell noch in der Entwicklung und funktioniert nicht fehlerfrei.": "Multiplayer is still in development and does not work without faults yet.",
     "Willkommen bei OmegaSim": "Welcome to OmegaSim",
     "OmegaSim steuert deine Carrera-Hybrid-Autos per Bluetooth – mit echter Fahrphysik, Motorsound aus einer Motorsimulation und einem Cockpit wie im Rennsimulator. In einer Minute siehst du die wichtigsten Stellen.": "OmegaSim drives your Carrera Hybrid cars over Bluetooth – with real driving physics, engine sound from an engine simulation and a cockpit like a racing sim. In a minute you will see the most important places.",
     "Hier verbindest du dein Auto per Bluetooth. Das erste steuerst du selbst, jedes weitere fährt als Ghost mit eigener Linie und eigenem Charakter gegen dich – Namen, Farben und Rollen gibt es in der Garage.": "Connect your car over Bluetooth here. You drive the first one yourself; every other one races against you as a ghost with its own line and character – names, colours and roles are in the garage.",
@@ -11247,7 +11356,7 @@
     "Pacejka: Übersteuern spürbar – Vollgas in der Kurve bringt das Heck, der Vortrieb geht zurück, der Rutsch hält ohne Stick, bis man gegenlenkt oder vom Pedal geht, stärkere Vibration; mit dem Schalter „Übersteuern“ abschaltbar (experimentell).": "Pacejka: oversteer you can feel – full throttle in a corner brings the rear round, drive drops, the slide holds without the stick until you countersteer or come off the pedal, stronger vibration; can be switched off with the “Oversteer” switch (experimental).",
     "Rennen beendet – Ergebnis ansehen": "Race finished – view the result",
     "✕ Nochmal": "✕ Again",
-    "Zeigst du auf eine Zeile, blinken die Lichter": "Point at a row and that car's lights flash",
+    "Zeigst du auf eine Karte, blinkt das Auto": "Point at a card and that car flashes",
     "App: nach Schließen und Öffnen lässt sich das Auto wieder verbinden (es hing an der alten Verbindung fest); ab der nächsten APK trennt die App beim Schließen sauber.": "App: after closing and reopening, the car can be connected again (it was stuck on the old connection); from the next APK on the app disconnects cleanly when it closes.",
     "Foto": "Photo",
     "Foto löschen": "Delete photo",
@@ -11336,7 +11445,7 @@
     "Gegner": "Opponents",
     "Scan": "Scan",
     "Editor": "Editor",
-    "Beliebige Taste drücken": "Press any button",
+    "zum Starten": "to start",
     "Menü": "Menu",
     "Gas ist aus, solange das Menü offen ist – das Auto rollt aus. Ghosts fahren im Rennen weiter.": "Throttle is off while the menu is open – the car rolls out. Ghosts keep racing.",
     "Weiterfahren": "Continue",
@@ -21295,6 +21404,15 @@
     if (!$('fa-auto')) return;
     const autos = kAutos();
     $('fa-auto-titel').textContent = autos.length ? autos.length + ' ' + t('verbunden') : t('Autos verbinden');
+    // Das eigene Foto des Fahrer-Autos (Garage) statt des Beispielbilds.
+    const fahrer = autos.find((c) => c.role === 'player') || autos[0];
+    const afoto = fahrer && typeof autoFoto === 'function' ? autoFoto(fahrer) : '';
+    const ab = $('fa-auto-bild');
+    const abNeu = afoto ? 'foto:' + afoto.length : 'auto';
+    if (ab && ab.dataset.bild !== abNeu) {
+      ab.style.backgroundImage = afoto ? 'url("' + afoto + '")' : 'url(img/auto.jpg)';
+      ab.dataset.bild = abNeu;
+    }
     kZeilen($('fa-auto-info'), autos.length
       ? autos.map((c) => [kPunkt(carColor(c).hex, garageLabel(c)), t(K_ROLLE[c.role] || c.role)])
       : [[t('Status'), t('nicht verbunden')], ['✕', t('Bluetooth-Auswahl öffnen')]]);
@@ -21303,7 +21421,9 @@
     $('fa-renn-titel').textContent = modus;
     const wx = $('race-wx-start');
     kZeilen($('fa-renn-info'), [
-      [($('race-limit-label') || {}).textContent || t('Dauer'), ($('race-limit') || {}).value || '–'],
+      // Freies Training laeuft ohne Ende: dort steht das Unendlich statt einer Minutenzahl.
+      rm.value === 'practice' ? [t('Dauer'), '∞']
+        : [($('race-limit-label') || {}).textContent || t('Dauer'), ($('race-limit') || {}).value || '–'],
       [t('Wetter'), wx && wx.selectedOptions[0] ? wx.selectedOptions[0].textContent : '–'],
       [t('Pflichtboxenstopps'), ($('race-pit-required') || {}).value || '0'],
     ]);
@@ -21354,12 +21474,12 @@
     konsoleZeichnen();
     return true;
   }
-  function konsoleFotoLesen(datei) {
+  function konsoleFotoLesen(datei, groesse) {
     return new Promise((ok, nein) => {
       const url = URL.createObjectURL(datei);
       const img = new Image();
       img.onload = () => {
-        const f = Math.min(1, 1400 / Math.max(img.naturalWidth, img.naturalHeight));
+        const f = Math.min(1, (groesse || 1400) / Math.max(img.naturalWidth, img.naturalHeight));
         const c = document.createElement('canvas');
         c.width = Math.max(1, Math.round(img.naturalWidth * f));
         c.height = Math.max(1, Math.round(img.naturalHeight * f));
@@ -21412,10 +21532,12 @@
     }
     if (kAktiverTab() !== 'home') return false;
     if (neu === 14 || neu === 15 || neu === 4 || neu === 5) { setLang(lang === 'de' ? 'en' : 'de'); return true; }
-    // Dreieck: das Tutorial (51b-tutorial.js).
-    if (neu === 3) { kTitelSperre = true; konsoleTourStart(); return true; }
-    // Die Trigger (6/7) sind Gas und Bremse und zaehlen nicht als "Taste".
-    if (neu !== false && neu !== 6 && neu !== 7) { konsoleTitelWeiter(); kTitelSperre = true; return true; }
+    // BESTELLT: "'Press any key' und 'press triangle for tutorial' ist auch etwas
+    // verwirrend. Ich wuerde sagen: X zum Starten, Dreieck fuer Tutorial, Kreis fuer
+    // Steuerung." Alle anderen Tasten tun auf dem Titel nichts mehr.
+    if (neu === 0) { konsoleTitelWeiter(); kTitelSperre = true; return true; }
+    if (neu === 3) { kTitelSperre = true; konsoleTourStart(K_TOUR); return true; }
+    if (neu === 1) { kTitelSperre = true; konsoleTourStart(K_STEUERUNG); return true; }
     return true;
   }
   // Options: im Cockpit ins Fahren-Menue, in den Menues zurueck ins Cockpit. Nur die
@@ -21439,9 +21561,11 @@
     if (e.target && e.target.closest && e.target.closest('input[type="text"], input[type="number"], textarea, select')) return;
     if (kAktiverTab() === 'home' && !e.ctrlKey && !e.altKey && !e.metaKey && k !== 'tab' && k !== 'shift') {
       e.preventDefault(); e.stopImmediatePropagation();
+      // Tastatur wie am Pad: Enter, Leertaste oder X starten, T das Tutorial, S die Steuerung.
       if (k === 'arrowleft' || k === 'arrowright') setLang(lang === 'de' ? 'en' : 'de');
-      else if (k === 't') konsoleTourStart();
-      else konsoleTitelWeiter();
+      else if (k === 't') konsoleTourStart(K_TOUR);
+      else if (k === 's') konsoleTourStart(K_STEUERUNG);
+      else if (k === 'enter' || k === ' ' || k === 'x') konsoleTitelWeiter();
       return;
     }
     if (kAktiverTab() === 'race' && !kFrageOffen && k === 'escape' && !document.body.classList.contains('track-fs')) {
@@ -21500,6 +21624,8 @@
     kn('fa-druck', () => konsoleZeige('track', 'print'));
     kn('fa-profil', () => konsoleZeige('options', 'opt-feel'));
     kn('race-menue', () => konsoleZumMenue());
+    kn('mp-erkl-knopf', (e) => { e.stopPropagation(); optInfoOeffnen(t('Beitreten und Rangliste'), $('mp-erkl').innerHTML); });
+    kn('mp-app-erkl-knopf', (e) => { e.stopPropagation(); optInfoOeffnen(t('Host'), $('mp-app-erkl').innerHTML); });
     kn('k-ergebnis', () => { kErgebnisWartet = true; konsoleInsCockpit(); });
     kn('fa-motor', () => konsoleZeige('options', 'opt-sound'));
     kn('fa-foto', () => { const d = $('fa-foto-datei'); if (d) { d.value = ''; d.click(); } });
@@ -21547,7 +21673,8 @@
   // das es geht (der Rest abgedunkelt), und eine Karte mit Bild, Titel und zwei Saetzen.
   // Bedienbar wie jedes Menue: die Karte ist ein menuNav-Container (50b-menu-nav.js), Kreuz
   // waehlt (vorgewaehlt: Weiter), Kreis geht einen Schritt zurueck, auf dem ersten schliesst
-  // er. Startet nie von selbst - nur ueber den Knopf, Dreieck oder T auf dem Titel.
+  // er. Startet nie von selbst - nur ueber den Knopf, Dreieck oder T auf dem Titel (die
+  // Steuerung: Kreis oder S).
   //
   // Der erste Schritt steht schon auf FAHREN und nicht auf dem Titel: auf dem Titel
   // verbraucht konsolePadTitel() jede Taste, dort gaebe es kein Weiter.
@@ -21573,11 +21700,41 @@
       text: 'Verbinde jetzt dein erstes Auto. Das Tutorial findest du jederzeit wieder auf dem Titelbildschirm.' },
   ];
 
+  // DIE STEUERUNG (v0.8.26). BESTELLT: "neben dem Tutorial-Button noch einen Button zur
+  // Steuerung. Erklaere dabei, dass es nur mit Gamepad funktioniert, zeige die Tasten und am
+  // Ende, wo man das Bild vom Controller mit allen Tasten sieht und die Belegung aendern
+  // kann." Statt eines Fotos zeigt die Karte die Taste selbst (taste). Die Belegung ist die ab
+  // Werk (BIND_DEFAULTS in 90-ghosts.js); wer umbelegt, sieht seine im letzten Schritt.
+  const K_STEUERUNG = [
+    { tab: 'fahren', ziel: null, bild: 'optionen', titel: 'Steuerung mit dem Controller',
+      text: 'Diese Führung gilt nur mit einem Gamepad – PS5, PS4 oder Xbox, per USB oder Bluetooth. Ohne Controller fährst du mit Tastatur oder Touch, und die Tasten hier gelten dann nicht.' },
+    { tab: 'fahren', ziel: null, taste: 'L2 · R2', titel: 'Gas, Bremse, Lenkung',
+      text: 'R2 gibt Gas, L2 bremst, der linke Stick lenkt. Fahren geht auch im Menü – zum Ausprobieren von Einstellungen.' },
+    { tab: 'fahren', ziel: null, taste: '✕', titel: 'Kreuz',
+      text: 'Im Menü: bestätigen. Im Cockpit: tippen für den Boxenstopp, eine Sekunde halten für die gelbe Flagge.' },
+    { tab: 'fahren', ziel: null, taste: '○ □', titel: 'Kreis und Quadrat',
+      text: 'Im Cockpit schalten sie: Kreis hoch, Quadrat runter. Im Menü geht Kreis eine Ebene zurück, Quadrat wechselt den Wert auf einer Kachel. Beim Boxen-Minigame sind sie die Spieltasten.' },
+    { tab: 'fahren', ziel: null, taste: '△', titel: 'Dreieck',
+      text: 'Im Cockpit schaltet es das Licht. In den Optionen öffnet es die Erklärung einer Zeile, auf dem Titel das Tutorial.' },
+    { tab: 'fahren', ziel: ['#k-leiste'], taste: 'L1 · R1', titel: 'Schultertasten',
+      text: 'Im Menü wechseln sie die Reiter. Im Cockpit wählen sie für den nächsten Boxenstopp Reifen (L1) und Tankmenge (R1) vor.' },
+    { tab: 'fahren', ziel: null, taste: '✥', titel: 'Steuerkreuz und rechter Stick',
+      text: 'Das Steuerkreuz wählt im Menü Kacheln und Zeilen und blättert im Cockpit die Schirme. Der rechte Stick rollt lange Seiten, R3 gibt Lichthupe.' },
+    { tab: 'fahren', ziel: null, taste: 'OPTIONS', titel: 'Options, Share und L3',
+      text: 'Options springt vom Cockpit ins Fahren-Menü und wieder zurück. Share schaltet zwischen Bahn und Ausdruck, L3 das Vollbild.' },
+    { tab: 'options', sub: 'opt-pad', ziel: ['#pad-zoom'], bild: 'optionen', titel: 'Alle Tasten und die Belegung',
+      text: 'Hier siehst du den Controller mit allen Tasten. Darüber kannst du jede Funktion neu zuweisen: „Neu zuweisen“ drücken, dann die Taste am Controller.' },
+  ];
+  // Wo eine Fuehrung endet: das Tutorial auf Fahren, die Steuerung dort, wo sie hinfuehrt.
+  const K_TOUR_ENDE = new Map([[K_TOUR, 'fahren'], [K_STEUERUNG, 'bleiben']]);
+
   let kTourOffen = false;
   let kTourSchritt = 0;
+  let kTourListe = K_TOUR;
   function konsoleTourOffen() { return kTourOffen; }
 
-  function konsoleTourStart() {
+  function konsoleTourStart(liste) {
+    kTourListe = Array.isArray(liste) ? liste : K_TOUR;
     kTourOffen = true;
     kTourSchritt = 0;
     const d = $('k-tour');
@@ -21590,11 +21747,12 @@
     if (d) d.hidden = true;
     document.querySelectorAll('.menu-nav-sel').forEach((el) => el.classList.remove('menu-nav-sel'));
     menuNavEnsureContext();
+    if (fertig && K_TOUR_ENDE.get(kTourListe) === 'bleiben') return;
     if (fertig || kAktiverTab() !== 'fahren') konsoleZeige('fahren');
     setTimeout(() => { menuNavEnsureContext(); konsoleFokusAuf('fa-auto'); }, 0);
   }
   function konsoleTourWeiter() {
-    if (kTourSchritt >= K_TOUR.length - 1) { konsoleTourZu(true); return; }
+    if (kTourSchritt >= kTourListe.length - 1) { konsoleTourZu(true); return; }
     kTourSchritt++;
     konsoleTourZeigen();
   }
@@ -21619,18 +21777,26 @@
   }
 
   function konsoleTourZeigen() {
-    const s = K_TOUR[kTourSchritt];
+    const s = kTourListe[kTourSchritt];
     if (!s) return;
-    if (s.tab && kAktiverTab() !== s.tab) {
+    const offen = document.querySelector('.tabpage.active .subpage.on');
+    const subJetzt = offen ? offen.id.replace(/^sub-/, '') : '';
+    if ((s.tab && kAktiverTab() !== s.tab) || (s.sub || '') !== subJetzt) {
       kZurueckLaeuft = true;
-      try { konsoleZeige(s.tab); } finally { kZurueckLaeuft = false; }
+      try { konsoleZeige(s.tab || kAktiverTab(), s.sub || ''); } finally { kZurueckLaeuft = false; }
     }
-    $('k-tour-schritt').textContent = (kTourSchritt + 1) + ' / ' + K_TOUR.length;
+    $('k-tour-schritt').textContent = (kTourSchritt + 1) + ' / ' + kTourListe.length;
     $('k-tour-titel').textContent = t(s.titel);
     $('k-tour-text').textContent = t(s.text);
-    $('k-tour-bild').src = 'img/' + s.bild + '.jpg';
+    // Eine Taste statt eines Bildes (Steuerung), sonst das Foto.
+    $('k-tour-taste').hidden = !s.taste;
+    $('k-tour-taste').textContent = s.taste || '';
+    $('k-tour-bild').hidden = !!s.taste;
+    if (!s.taste) $('k-tour-bild').src = 'img/' + s.bild + '.jpg';
     $('k-tour-zurueck').hidden = kTourSchritt === 0;
-    $('k-tour-weiter').textContent = kTourSchritt === K_TOUR.length - 1 ? t('Los geht\'s') + ' ▶' : t('Weiter') + ' ▶';
+    const letzter = kTourSchritt === kTourListe.length - 1;
+    $('k-tour-weiter').textContent = letzter
+      ? (K_TOUR_ENDE.get(kTourListe) === 'bleiben' ? t('Fertig') : t('Los geht\'s')) + ' ▶' : t('Weiter') + ' ▶';
     // Erst malen lassen, dann messen: der Schirm ist eben erst gewechselt.
     setTimeout(konsoleTourSpot, 30);
     menuNavEnsureContext();
@@ -21643,8 +21809,14 @@
 
   function konsoleTourSpot() {
     if (!kTourOffen) return;
-    const s = K_TOUR[kTourSchritt];
+    const s = kTourListe[kTourSchritt];
     const spot = $('k-tour-spot'), karte = $('k-tour-karte'), d = $('k-tour');
+    // Ein Ziel weiter unten auf einer langen Seite erst in die Sicht holen.
+    const erstes = s.ziel && document.querySelector(s.ziel[0]);
+    if (erstes) {
+      const b = erstes.getBoundingClientRect();
+      if (b.height && (b.bottom > innerHeight || b.top < 0)) erstes.scrollIntoView({ block: 'center' });
+    }
     const r = kTourRechteck(s.ziel);
     d.classList.toggle('ohne-spot', !r);
     spot.hidden = !r;
@@ -21652,6 +21824,11 @@
     // ist, sonst daneben (eine hohe Kachel am Telefon laesst oben und unten nichts frei -
     // gesehen: die Karte lag ueber dem Knopf "Verbinden" der Kachel AUTOS).
     karte.classList.remove('oben', 'unten', 'links', 'rechts');
+    // NIE UNTER DIE KOPFZEILE (gemeldet: "Boxen mit Text verschwinden unter der Navibar
+    // ganz oben, bei Nr. 5 und 6"): oben beginnt die Karte unter dem Kopf.
+    const kopf = $('k-kopf');
+    const kopfUnten = kopf && kopf.offsetParent !== null ? kopf.getBoundingClientRect().bottom : 0;
+    karte.style.top = '';
     if (!r) { karte.classList.add('unten'); return; }
     const rand = 4;
     spot.style.left = (r.l - rand) + 'px';
@@ -21660,13 +21837,14 @@
     spot.style.height = (r.u - r.o + 2 * rand) + 'px';
     const h = karte.offsetHeight + 16;
     if (innerHeight - r.u >= h) karte.classList.add('unten');
-    else if (r.o >= h) karte.classList.add('oben');
+    else if (r.o - kopfUnten >= h) { karte.classList.add('oben'); karte.style.top = (kopfUnten + 6) + 'px'; }
     else karte.classList.add(r.l > innerWidth - r.r ? 'links' : 'rechts');
   }
 
   (() => {
     const kn = (id, fn) => { const el = $(id); if (el) el.addEventListener('click', fn); };
-    kn('k-tutorial-start', (e) => { e.stopPropagation(); konsoleTourStart(); });
+    kn('k-tutorial-start', (e) => { e.stopPropagation(); konsoleTourStart(K_TOUR); });
+    kn('k-steuerung-start', (e) => { e.stopPropagation(); konsoleTourStart(K_STEUERUNG); });
     kn('k-tour-weiter', () => konsoleTourWeiter());
     kn('k-tour-zurueck', () => konsoleTourZurueck());
     kn('k-tour-ende', () => konsoleTourZu(false));
@@ -29003,8 +29181,8 @@
   //
   // DIE ZEIT T ist die laengste Einzelarbeit, genau wie im Standardmodus: Reifen, Tanken
   // auf voll, Reparatur ganz. Alles laeuft proportional zum Fortschritt p = (Standzeit +
-  // Bonus) / T. Jedes Symbol steht T/10 lang; richtig gedrueckt gibt 5 % von T gut, alle
-  // zehn also die halbe Zeit; falsch gibt nichts; nicht gedrueckt verschwindet es.
+  // Bonus) / T. Jedes Symbol steht T/10 + 0,1 s lang; richtig gedrueckt gibt 5 % von T gut,
+  // alle zehn also die halbe Zeit; falsch kostet 5 %; nicht gedrueckt verschwindet es.
   // Nur Auto 1 - Spieler 2 und die Ghosts fahren ihre eigenen Stopps.
   // pitModus und pitSpiel stehen oben bei pitState (zeitliche Todeszone: setPitState liest
   // pitSpiel, und das darf nie vor seiner Deklaration laufen).
@@ -29029,7 +29207,9 @@
     const T = pitSpielDauer(pitPlan);
     const folge = [];
     for (let i = 0; i < PIT_SPIEL_ANZAHL; i++) folge.push(Math.random() < 0.5 ? 'quad' : 'kreis');
-    pitSpiel = { T, bonus: 0, folge, i: 0, fensterAb: 0, fensterS: T / PIT_SPIEL_ANZAHL,
+    // Fenster etwa 100 ms laenger als ein Zehntel (BESTELLT: "Mach die Zeiten im Pitstop
+    // ca. 100 ms laenger").
+    pitSpiel = { T, bonus: 0, folge, i: 0, fensterAb: 0, fensterS: T / PIT_SPIEL_ANZAHL + 0.1,
                  treffer: 0, fehler: 0, blitz: '', blitzBis: 0, fuel0: fuel, dmg0: damage };
     showHudToast(t('Boxen-Minigame: Quadrat und Kreis!'));
   }
@@ -29038,8 +29218,10 @@
     if (!pitSpielAktiv()) return false;
     const sp = pitSpiel;
     if (sp.i >= sp.folge.length) return true;
+    // BESTELLT: "Wenn ich die falsche Taste druecke, fuege Zeit hinzu. Wenn ich richtig
+    // druecke, ziehe Zeit ab." Beides um 5 % der Grundzeit.
     if (welche === sp.folge[sp.i]) { sp.bonus += PIT_SPIEL_BONUS * sp.T; sp.treffer++; sp.blitz = 'ok'; }
-    else { sp.fehler++; sp.blitz = 'falsch'; }
+    else { sp.bonus -= PIT_SPIEL_BONUS * sp.T; sp.fehler++; sp.blitz = 'falsch'; }
     sp.blitzBis = pitStandElapsed + 0.3;
     sp.i++;
     sp.fensterAb = pitStandElapsed;
@@ -34724,6 +34906,106 @@
   // charakterZiehen() und ghostCfg stehen WEITER UNTEN in dieser Datei. Das ist kein
   // Problem, weil diese Funktion erst beim Zeichnen laeuft, also lange nach dem Aufbau -
   // dieselbe Hochziehung, auf der auch renderGarage() selbst beruht.
+  // ---- Karten der Garage: Rollen, aufgeklappte Zeile, Fotos -------------------------
+  const GAR_ROLLEN = [
+    { id: 'player', name: 'Steuern', kurz: 'FAHRER' },
+    { id: 'player2', name: 'Spieler 2', kurz: 'SPIELER 2' },
+    { id: 'ghost', name: 'Ghost', kurz: 'GHOST' },
+    { id: 'none', name: 'Aus', kurz: 'AUS' },
+  ];
+  let garAufAuto = null;
+  let garFotoFuer = null;
+  function garageFarbeSetzen(car, id) {
+    car.colorId = id;
+    car.farbeGewaehlt = true;
+    carRemember(car);
+    renderGarage();
+    renderRaceGrid();
+  }
+  // Eine Wertzeile im Stil der Menues: Beschriftung .... < Wert >
+  function garWertZeile(titel, wert, zurueck, vor, extra) {
+    const z = document.createElement('div');
+    z.className = 'gk-zeile';
+    z.innerHTML = '<span class="gk-l"></span><span class="gk-w"><button type="button" data-d="-1" aria-label="weniger">&#9664;</button>'
+      + '<b></b><button type="button" data-d="1" aria-label="mehr">&#9654;</button></span>';
+    z.querySelector('.gk-l').textContent = titel;
+    z.querySelector('b').textContent = wert;
+    z.querySelector('[data-d="-1"]').onclick = (e) => { e.stopPropagation(); zurueck(); };
+    z.querySelector('[data-d="1"]').onclick = (e) => { e.stopPropagation(); vor(); };
+    if (extra) z.querySelector('.gk-w').appendChild(extra);
+    return z;
+  }
+  function garageAufZeile(car) {
+    const box = document.createElement('div');
+    box.className = 'gk-aufzeile';
+    const f = carColor(car);
+    const fi = CAR_COLORS.findIndex((c) => c.id === f.id);
+    const farbe = (d) => garageFarbeSetzen(car, CAR_COLORS[(fi + d + CAR_COLORS.length) % CAR_COLORS.length].id);
+    box.appendChild(garWertZeile('Farbe ' + garageLabel(car), f.name, () => farbe(-1), () => farbe(1)));
+    if (car.role === 'ghost') {
+      const eigen = car.ghostSpeed !== undefined && car.ghostSpeed !== null;
+      const v = eigen ? car.ghostSpeed : ghostCfg.speed;
+      const tempo = (d) => {
+        car.ghostSpeed = Math.round(Math.max(GHOST_READ_MIN, Math.min(1, v + 0.05 * d)) * 100) / 100;
+        renderGarage();
+      };
+      const rst = document.createElement('button');
+      rst.type = 'button';
+      rst.className = 'gar-speed-reset';
+      rst.innerHTML = '&#8635;';
+      rst.title = 'Zurueck auf die Vorgabe aus den Optionen';
+      rst.style.visibility = eigen ? '' : 'hidden';
+      rst.onclick = (e) => {
+        e.stopPropagation();
+        car.ghostSpeed = null;
+        showHudToast(garageLabel(car).toUpperCase() + ' FOLGT DER VORGABE');
+        renderGarage();
+      };
+      box.appendChild(garWertZeile('Ghost-Tempo', Math.round(v * 100) + ' %' + (eigen ? '' : ' (Vorgabe)'),
+                                   () => tempo(-1), () => tempo(1), rst));
+      const ch = document.createElement('div');
+      ch.innerHTML = charakterZeile(car);
+      if (ch.firstElementChild) box.appendChild(ch.firstElementChild);
+    } else {
+      const h = document.createElement('div');
+      h.className = 'gk-hinweis';
+      h.textContent = car.role === 'player'
+        ? 'Abstimmung und Fahrgefühl stehen unten und unter Optionen.'
+        : 'Tempo und Charakter gibt es nur für Ghosts.';
+      box.appendChild(h);
+    }
+    return box;
+  }
+  // EIGENE FOTOS JE AUTO, wie beim Streckenfoto: verkleinert als JPEG im localStorage,
+  // unter der Kennung des Autos (in der App die MAC-Adresse, ueber Neustarts stabil).
+  const AUTO_FOTO = 'omegasim-autofoto:';
+  function autoFoto(car) {
+    try { return (car && car.device && localStorage.getItem(AUTO_FOTO + car.device.id)) || ''; } catch (e) { return ''; }
+  }
+  function autoFotoSetzen(car, daten) {
+    try {
+      if (daten) localStorage.setItem(AUTO_FOTO + car.device.id, daten);
+      else localStorage.removeItem(AUTO_FOTO + car.device.id);
+    } catch (e) { return false; }
+    renderGarage();
+    if (typeof konsoleZeichnen === 'function') konsoleZeichnen();
+    return true;
+  }
+  if ($('gar-foto-datei')) {
+    $('gar-foto-datei').addEventListener('change', () => {
+      const d = $('gar-foto-datei');
+      const datei = d.files && d.files[0];
+      const car = garFotoFuer;
+      garFotoFuer = null;
+      if (!datei || !car) return;
+      konsoleFotoLesen(datei, 900).then((daten) => {
+        if (!autoFotoSetzen(car, daten)) {
+          konsoleFrage(t('Foto zu groß'), t('Der Speicher des Browsers ist voll. Ein kleineres Bild versuchen.'), [[t('Schließen'), null]]);
+        }
+      }).catch(() => konsoleFrage(t('Kein Bild'), t('Diese Datei ließ sich nicht als Bild lesen.'), [[t('Schließen'), null]]));
+    });
+  }
+
   function charakterZeile(car) {
     if (car.role !== 'ghost' || !ghostCfg.charakter) return '';
     const ch = car.ghost && car.ghost.charakter;
@@ -34777,62 +35059,86 @@
     $('gar-count').textContent = echte.length
       ? `${echte.length} Auto${echte.length === 1 ? '' : 's'} verbunden`
       : 'keine Autos verbunden';
+    // ---- DIE GARAGE ALS KARTEN (v0.8.26, Vorschlag B aus mockup/garage-mp.html) --------
+    //
+    // BESTELLT: "Garage: Implementiere Vorschlag B. Als Bilder nimm die Farben wie vorher
+    // (Blau, Rot, ...) und fuege jeweils einen Button hinzu, bei dem ich ein Foto dafuer
+    // hochladen kann." Je Auto eine Karte: Kopf mit Rolle, Bild (Farbe oder eigenes Foto),
+    // Name mit Farbklecks, Rolle als Wertzeile mit Pfeilen, Einstellen und Trennen. Unter den
+    // Karten klappt fuer das gewaehlte Auto eine Zeile mit Farbe, Ghost-Tempo und Charakter
+    // auf. Die Rollenfolge steht an der Karte (data-rollen) - der Selbsttest "jede Zeile hat
+    // vier Rollen" liest sie dort.
     list.innerHTML = '';
+    list.classList.add('gar-karten');
+    if (garAufAuto && !echte.includes(garAufAuto)) garAufAuto = null;
     echte.forEach((car, i) => {
       const row = document.createElement('div');
-      row.className = 'gar-row' + (car.role === 'player' ? ' is-player'
+      row.className = 'gar-row gar-karte' + (car.role === 'player' ? ' is-player'
                                  : car.role === 'player2' ? ' is-zwei'
-                                 : car.role === 'ghost' ? ' is-ghost' : '');
+                                 : car.role === 'ghost' ? ' is-ghost' : '')
+                    + (garAufAuto === car ? ' gk-auf' : '');
       const f = carColor(car);
+      const foto = autoFoto(car);
+      const rolle = GAR_ROLLEN.find((r) => r.id === car.role) || GAR_ROLLEN[3];
+      const bild = foto
+        ? 'background-image:url("' + foto + '")'
+        : 'background:linear-gradient(135deg,' + f.hex + ' 0%,' + f.hex + ' 55%,rgba(0,0,0,.55) 100%);color:' + f.ink;
       row.innerHTML = `
-        <div>
-          <div class="car-tag">
-            <button class="car-chip" data-act="color"
-                    style="background:${f.hex};color:${f.ink}"
-                    title="Farbe wählen, gerade ${f.name}">${car.tagChar || ''}</button>
-            <input class="car-name-in" data-act="alias" type="text" maxlength="18"
-                   placeholder="${car.tag || 'Name'}"
-                   value="${(car.alias || '').replace(/"/g, '&quot;')}"
-                   aria-label="Name für die Rundenuebersicht">
-          </div>
-          <div class="gar-id">${car.tag || ''} &middot; ${String(car.device.id).slice(0, 12)}
-            ${car.blinking ? '<span class="gar-blink">&nbsp;blinkt&hellip;</span>' : ''}</div></div>
-        <div class="gar-roles">
-          <button data-role="player" class="${car.role === 'player' ? 'on' : ''}">Steuern</button>
-          <button data-role="player2" class="gar-rolle-zwei ${car.role === 'player2' ? 'on zwei' : ''}"
-                  title="${zweiSpieler ? 'Zweites Auto, zweiter Controller'
-                          : 'Schaltet den 2-Spieler-Modus ein und weist dieses Auto zu'}"
-                  ><span>Spieler&nbsp;2</span><span class="wip-tag">experimentell</span></button>
-          <button data-role="ghost" class="${car.role === 'ghost' ? 'on ghost' : ''}">Ghost</button>
-          <button data-role="none" class="${car.role === 'none' ? 'on off' : ''}">Aus</button>
+        <div class="gk-kopf"><span>${car.role === 'player' ? 'DU' : 'AUTO ' + (i + 1)}</span>
+          <span class="gk-kopf-rolle">${rolle.kurz}</span></div>
+        <div class="gk-bild${foto ? ' mit-foto' : ''}" style='${bild}'>
+          ${foto ? '' : `<span class="gk-zeichen">${car.tagChar || ''}</span>`}
+          <button type="button" class="gk-foto" data-act="foto">${foto ? 'Foto ändern' : 'Foto'}</button>
+          ${foto ? '<button type="button" class="gk-foto-weg" data-act="foto-weg" aria-label="Foto entfernen">&#10005;</button>' : ''}
         </div>
-        <button data-act="drop">Trennen</button>
-        ${car.role === 'ghost' ? `
-        <div class="gar-speed">
-          <label>Tempo</label>
-          <input type="range" min="${GHOST_READ_MIN}" max="1" step="0.05"
-                 value="${car.ghostSpeed === undefined || car.ghostSpeed === null
-                          ? ghostCfg.speed : car.ghostSpeed}">
-          <b></b>
-          <button class="gar-speed-reset" data-act="speedreset"
-                  title="Zurueck auf die Vorgabe aus den Optionen">&#8635;</button>
-        </div>` : ''}
-        ${charakterZeile(car)}`;
-      // BLINKEN BEIM UEBERFAHREN, ohne Taste und ohne eigenen Knopf. BESTELLT: "Mach, dass
-      // Autos blinken, wenn ich mit dem Cursor in der Garage drueber hovere". Die Maus und
-      // die Menueauswahl (menuNavRender -> garageFokusZeile) loesen es aus, je Betreten der
-      // Zeile einmal und hoechstens alle 1,5 s.
+        <div class="gk-name car-tag">
+          <button class="car-chip" data-act="color"
+                  style="background:${f.hex};color:${f.ink}"
+                  title="Farbe wählen, gerade ${f.name}">${car.tagChar || ''}</button>
+          <input class="car-name-in" data-act="alias" type="text" maxlength="18"
+                 placeholder="${car.tag || 'Name'}"
+                 value="${(car.alias || '').replace(/"/g, '&quot;')}"
+                 aria-label="Name für die Rundenuebersicht">
+        </div>
+        <div class="gk-rolle" data-rollen="${GAR_ROLLEN.map((r) => r.id).join(',')}" data-rolle="${rolle.id}">
+          <button type="button" data-act="rolle" data-d="-1" aria-label="Rolle zurück">&#9664;</button>
+          <b>${rolle.name}</b>${rolle.id === 'player2' ? '<span class="wip-tag">experimentell</span>' : ''}
+          <button type="button" data-act="rolle" data-d="1" aria-label="Rolle vor">&#9654;</button>
+        </div>
+        <div class="gk-fuss">
+          <button type="button" data-act="auf">Einstellen ${garAufAuto === car ? '&#9652;' : '&#9662;'}</button>
+          <button type="button" data-act="drop">Trennen</button>
+        </div>
+        <div class="gar-id">${car.tag || ''} &middot; ${String(car.device.id).slice(0, 12)}
+          ${car.blinking ? '<span class="gar-blink">&nbsp;blinkt&hellip;</span>' : ''}</div>`;
+      // Blinken beim Ueberfahren (Maus und Menueauswahl), siehe garageFokusZeile.
       row._car = car;
       row.onmouseenter = () => garageBlinkSanft(car);
-      row.querySelectorAll('button[data-role]').forEach(b => {
-        b.onclick = () => setCarRole(car, b.dataset.role);
+      row.querySelectorAll('button[data-act="rolle"]').forEach((b) => {
+        b.onclick = (e) => {
+          e.stopPropagation();
+          const k = GAR_ROLLEN.findIndex((r) => r.id === car.role);
+          const n = GAR_ROLLEN[((k < 0 ? 3 : k) + +b.dataset.d + GAR_ROLLEN.length) % GAR_ROLLEN.length];
+          setCarRole(car, n.id);
+        };
       });
       row.querySelector('button[data-act="drop"]').onclick = () => disconnectCar(car);
+      row.querySelector('button[data-act="auf"]').onclick = () => {
+        garAufAuto = garAufAuto === car ? null : car;
+        renderGarage();
+      };
+      row.querySelector('button[data-act="foto"]').onclick = (e) => {
+        e.stopPropagation();
+        garFotoFuer = car;
+        const d = $('gar-foto-datei');
+        if (d) { d.value = ''; d.click(); }
+      };
+      const weg = row.querySelector('button[data-act="foto-weg"]');
+      if (weg) weg.onclick = (e) => { e.stopPropagation(); autoFotoSetzen(car, ''); };
 
       // Name: bei jedem Tastendruck merken, aber NICHT neu zeichnen - renderGarage()
       // waehrend des Tippens wuerde das Feld ersetzen und den Schreibstand mitnehmen.
-      // Dasselbe Muster wie beim Temporegler eine Zeile weiter unten. Neu gezeichnet wird
-      // erst beim Verlassen des Feldes.
+      // Neu gezeichnet wird erst beim Verlassen des Feldes.
       const nf = row.querySelector('input[data-act="alias"]');
       nf.addEventListener('input', () => { car.alias = nf.value.trim(); carRemember(car); });
       nf.addEventListener('change', () => { renderGarage(); renderRaceGrid(); });
@@ -34840,8 +35146,6 @@
       nf.addEventListener('pointerdown', (e) => e.stopPropagation());
 
       // Farbe: die Auswahl klappt unter dem Klecks auf, acht Farben brauchen keinen Dialog.
-      // Schon belegte Farben bleiben waehlbar, sind aber angeschrieben: zwei gleiche Farben
-      // sind eine schlechte Idee, aber es ist deine Entscheidung und nicht meine.
       const chip = row.querySelector('button[data-act="color"]');
       chip.onclick = (e) => {
         e.stopPropagation();
@@ -34858,19 +35162,13 @@
           b.setAttribute('aria-label', b.title);
           b.onclick = (ev) => {
             ev.stopPropagation();
-            car.colorId = fb.id;
-            car.farbeGewaehlt = true;
-            carRemember(car);
+            garageFarbeSetzen(car, fb.id);
             pal.remove();
-            renderGarage();
-            renderRaceGrid();
           };
           pal.appendChild(b);
         }
         document.body.appendChild(pal);
         const r = chip.getBoundingClientRect();
-        // An den Klecks gesetzt, aber im Schirm gehalten: am rechten Rand waere die
-        // Auswahl sonst zur Haelfte draussen.
         pal.style.top = (r.bottom + window.scrollY + 4) + 'px';
         pal.style.left = Math.min(r.left + window.scrollX,
           window.scrollX + document.documentElement.clientWidth - pal.offsetWidth - 8) + 'px';
@@ -34879,44 +35177,19 @@
           pal.remove();
           document.removeEventListener('pointerdown', zu, true);
         };
-        // Erst im naechsten Takt lauschen, sonst schliesst der eigene Klick sofort wieder.
         setTimeout(() => document.addEventListener('pointerdown', zu, true), 0);
       };
-      const sp = row.querySelector('.gar-speed input');
-      if (sp) {
-        const out = row.querySelector('.gar-speed b');
-        const rst = row.querySelector('.gar-speed-reset');
-        // Die Zeile sagt jetzt, WOHER ihr Wert kommt. Vorher war sie mit dem globalen Wert
-        // vorbelegt und sah damit aus wie eine Anzeige desselben Werts - waehrend ein
-        // einziges Antippen sie dauerhaft davon abkoppelte, ohne dass das irgendwo stand.
-        const paint = () => {
-          const eigen = car.ghostSpeed !== undefined && car.ghostSpeed !== null;
-          out.textContent = Math.round(sp.value * 100) + ' %'
-                            + (eigen ? '' : '\u00a0(Vorgabe)');
-          out.classList.toggle('gar-speed-own', eigen);
-          if (rst) rst.style.visibility = eigen ? '' : 'hidden';
-        };
-        paint();
-        // Nur der Wert wird gesetzt, NICHT neu gezeichnet: renderGarage() beim Ziehen
-        // aufzurufen wuerde den Regler unter dem Finger ersetzen und den Zug abbrechen.
-        sp.addEventListener('input', () => { car.ghostSpeed = +sp.value; paint(); });
-        if (rst) {
-          rst.onclick = (ev) => {
-            ev.stopPropagation();
-            // Der Weg zurueck. Ohne ihn war das Einrasten endgueltig - es gab im ganzen
-            // Projekt keine Stelle, die car.ghostSpeed wieder auf null setzt.
-            car.ghostSpeed = null;
-            sp.value = ghostCfg.speed;
-            paint();
-            showHudToast(garageLabel(car).toUpperCase() + ' FOLGT DER VORGABE');
-          };
-        }
-        // Der Klick auf die Zeile laesst das Auto blinken - am Regler waere das laestig.
-        sp.addEventListener('click', (e) => e.stopPropagation());
-        sp.addEventListener('pointerdown', (e) => e.stopPropagation());
-      }
       list.appendChild(row);
     });
+    // Leere Karte: ein weiteres Auto verbinden.
+    const plus = document.createElement('button');
+    plus.type = 'button';
+    plus.className = 'gar-karte-neu';
+    plus.innerHTML = '+ <span>AUTO</span>';
+    plus.onclick = () => { const c = $('gar-connect'); if (c) c.click(); };
+    list.appendChild(plus);
+    // Die aufgeklappte Zeile des gewaehlten Autos: Farbe, Ghost-Tempo, Charakter.
+    if (garAufAuto) list.appendChild(garageAufZeile(garAufAuto));
     refreshGarageGo();
   }
 
@@ -34940,14 +35213,19 @@
     // Anhalten ist nur scharf, wenn wirklich einer faehrt. Gepruefte Bedingung ist der
     // ZEITGEBER und nicht die Rolle: ein Auto auf "Ghost" zu stellen laesst es nicht
     // fahren, und ein Knopf, der dann etwas anzuhalten verspricht, luegt.
+    // EIN KNOPF FUER BEIDES. BESTELLT: "Der 'Ghosts anhalten'-Button soll gleichzeitig ein
+    // 'Ghosts starten'-Button sein, wenn sie noch nicht fahren."
     const stop = $('gar-stop-ghosts');
     if (stop) {
       const fahren = garage.filter(c => c.role === 'ghost' && c.ghost && c.ghost.running);
-      stop.disabled = !fahren.length;
+      stop.disabled = !fahren.length && !ghosts;
+      stop.textContent = fahren.length ? 'Ghosts anhalten' : 'Ghosts starten';
+      stop.dataset.lage = fahren.length ? 'anhalten' : 'starten';
       stop.title = fahren.length
         ? fahren.length + ' Ghost' + (fahren.length === 1 ? '' : 's')
           + ' ausrollen lassen und anhalten'
-        : 'Kein Ghost f\u00e4hrt gerade';
+        : (ghosts ? ghosts + ' Ghost' + (ghosts === 1 ? '' : 's') + ' losfahren lassen'
+                  : 'Erst ein Auto auf "Ghost" stellen');
     }
   }
 
@@ -34959,6 +35237,11 @@
   // drueckt, meint "jetzt" - und ein Knopf, der beim zweiten Mal dasselbe tut wie beim
   // ersten, naemlich nichts Sichtbares, ist der naechste Fehlerbericht.
   $('gar-stop-ghosts').onclick = () => {
+    // Faehrt keiner, startet derselbe Knopf sie (wie "Losfahren" es fuer die Ghosts tat).
+    if (!garage.some(c => c.role === 'ghost' && c.ghost && c.ghost.running)) {
+      garageGhostsStarten();
+      return;
+    }
     const ghosts = garage.filter(c => c.role === 'ghost' && c.ghost);
     if (!ghosts.length) return;
     const laufend = ghosts.filter(c => c.ghost.finish);
@@ -34974,7 +35257,8 @@
     refreshGarageGo();
   };
 
-  $('gar-go').onclick = () => {
+  $('gar-go').onclick = () => { garageGhostsStarten(); };
+  function garageGhostsStarten() {
     const player = garage.find(c => c.role === 'player');
     const ghosts = garage.filter(c => c.role === 'ghost');
     if (!player && !ghosts.length) return;
@@ -34997,7 +35281,7 @@
     log((player ? garageLabel(player) + ' im Cockpit' : 'Nur Ghosts')
         + (n ? ', ' + n + ' Ghost' + (n === 1 ? '' : 's') + ' gestartet' : ''), 'info');
     refreshGarageGo();
-  };
+  }
 
   // Die Lage EINMAL anzeigen, sobald sie bekannt ist - und nicht erst als Fehlermeldung
   // nach dem dritten vergeblichen Klick. bluetoothLageGenau() steht in 10-ble-explorer.js
@@ -44631,14 +44915,14 @@
       try {
         if (opt.zwei !== undefined) zweiSpieler = !!opt.zwei;
         renderGarage();
-        const zeilen = Array.from(($('gar-list') || { children: [] }).children);
+        // Seit v0.8.26 Karten: die Rollen stehen als Folge an der Karte (data-rollen), die
+        // gewaehlte in data-rolle; die leere "+ AUTO"-Karte und die Aufklappzeile zaehlen nicht.
+        const zeilen = Array.from(($('gar-list') || { children: [] }).children)
+          .filter((z) => z.classList.contains('gar-row'));
         const meine = zeilen[zeilen.length - 1];
-        const knoepfe = meine
-          ? Array.from(meine.querySelectorAll('button[data-role]')).map((b) => ({
-              rolle: b.dataset.role,
-              text: b.textContent.replace(/\s+/g, ' ').trim(),
-              an: b.classList.contains('on'),
-            }))
+        const r = meine && meine.querySelector('.gk-rolle');
+        const knoepfe = r
+          ? r.dataset.rollen.split(',').map((x) => ({ rolle: x, text: x, an: x === r.dataset.rolle }))
           : [];
         return { zeilen: zeilen.length, knoepfe,
                  rollen: knoepfe.map((k) => k.rolle),
@@ -62909,24 +63193,26 @@
       if (!r.rueckGesperrt) f.push('Rueckwaerts nicht gesperrt');
       if (!r.fertig) f.push('nicht fertig geworden (' + r.stand + ')');
       if (Math.abs(r.dauer - r.T) > 0.15) f.push('Dauer ' + r.dauer.toFixed(2) + ' s statt ' + r.T.toFixed(2));
-      if (r.i < 9) f.push('nur ' + r.i + ' Symbole abgelaufen');
+      const erwartet = Math.floor(r.T / (r.T / 10 + 0.1));
+      if (r.i < erwartet) f.push('nur ' + r.i + ' Symbole abgelaufen statt ' + erwartet);
       if (fuelSimOn() && r.fuel < 99.9) f.push('Tank am Ende ' + r.fuel.toFixed(1));
       if (r.plan.repair && r.damage > 0.01) f.push('Schaden am Ende ' + r.damage.toFixed(1));
     }
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'T ' + (r.T || 0).toFixed(1) + ' s, voll abgewartet, ' + r.i + ' Symbole abgelaufen, Gas und Rueckwaerts zu' };
   });
 
-  stAdd('Boxen-Minigame: zehn richtige halbieren die Zeit, falsche geben nichts', () => {
+  stAdd('Boxen-Minigame: zehn richtige halbieren die Zeit, falsche kosten Zeit', () => {
     const a = pitSpielLauf('richtig');
     const b = pitSpielLauf('falsch');
     const f = a.f.concat(b.f);
     if (!f.length) {
       if (a.treffer !== 10) f.push(a.treffer + ' Treffer statt 10');
       if (Math.abs(a.dauer - a.T / 2) > 0.2) f.push('mit 10 Treffern ' + a.dauer.toFixed(2) + ' s statt ' + (a.T / 2).toFixed(2));
-      if (b.treffer !== 0 || b.bonus !== 0) f.push('falsche Tasten geben Bonus ' + b.bonus);
-      if (Math.abs(b.dauer - b.T) > 0.15) f.push('mit falschen Tasten ' + b.dauer.toFixed(2) + ' s statt ' + b.T.toFixed(2));
+      if (b.treffer !== 0 || !(b.bonus < 0)) f.push('falsche Tasten: Treffer ' + b.treffer + ', Bonus ' + b.bonus);
+      // Zehn falsche kosten je 5 %: anderthalbfache Zeit.
+      if (Math.abs(b.dauer - 1.5 * b.T) > 0.2) f.push('mit falschen Tasten ' + b.dauer.toFixed(2) + ' s statt ' + (1.5 * b.T).toFixed(2));
     }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'halbe Zeit mit 10 Treffern (' + a.dauer.toFixed(1) + ' von ' + a.T.toFixed(1) + ' s), falsch: volle Zeit' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'halbe Zeit mit 10 Treffern (' + a.dauer.toFixed(1) + ' von ' + a.T.toFixed(1) + ' s), zehn falsche: ' + b.dauer.toFixed(1) + ' s' };
   });
 
   stAdd('Boxen-Minigame: Quadrat und Kreis schalten waehrenddessen nicht, Kreuz bricht ab', () => {
@@ -62988,6 +63274,11 @@
         if (kTourSchritt !== i) { f.push('Schritt ' + kTourSchritt + ' statt ' + i); break; }
         if (!$('k-tour-titel').textContent) f.push('Schritt ' + i + ' ohne Titel');
         if (messbar && K_TOUR[i].ziel && !kTourRechteck(K_TOUR[i].ziel)) fehlt.push(i + 1);
+        if (messbar) {
+          konsoleTourSpot();
+          const kopf = $('k-kopf').getBoundingClientRect().bottom;
+          if ($('k-tour-karte').getBoundingClientRect().top < kopf - 1) f.push('Schritt ' + (i + 1) + ': Karte unter der Kopfzeile');
+        }
         if (i < K_TOUR.length - 1) konsoleTourWeiter();
       }
       if (fehlt.length) f.push('Ziel nicht sichtbar in Schritt ' + fehlt.join(', '));
@@ -63004,6 +63295,79 @@
       if (merk) showTab(merk);
     }
     return { ok: !f.length, mass: f.length ? f.join('; ') : K_TOUR.length + ' Schritte, Ziele ' + (messbar ? 'sichtbar' : 'nicht messbar'), skip: false };
+  });
+
+  stAdd('Steuerung: vom Titel durch alle Tasten bis zur Controller-Belegung', () => {
+    const merk = kAktiverTab();
+    const f = [];
+    const messbar = innerWidth > 0 && innerHeight > 0;
+    try {
+      showTab('home');
+      $('k-steuerung-start').click();
+      if (!konsoleTourOffen()) return { ok: false, mass: 'Knopf oeffnet nicht' };
+      for (let i = 0; i < K_STEUERUNG.length - 1; i++) {
+        const s = K_STEUERUNG[i];
+        if (s.taste && ($('k-tour-taste').hidden || $('k-tour-taste').textContent !== s.taste)) f.push('Schritt ' + (i + 1) + ' zeigt die Taste nicht');
+        konsoleTourWeiter();
+      }
+      const offen = document.querySelector('#tab-options .subpage.on');
+      if (kAktiverTab() !== 'options' || !offen || offen.id !== 'sub-opt-pad') f.push('letzter Schritt nicht auf Optionen > Controller');
+      if (messbar && !kTourRechteck(['#pad-zoom'])) f.push('Controller-Bild nicht sichtbar');
+      if (messbar) {
+        const kopf = $('k-kopf').getBoundingClientRect().bottom;
+        const karte = $('k-tour-karte').getBoundingClientRect();
+        if (karte.top < kopf - 1) f.push('Karte unter der Kopfzeile (' + Math.round(karte.top) + ' < ' + Math.round(kopf) + ')');
+      }
+      konsoleTourWeiter();
+      if (konsoleTourOffen()) f.push('nach dem letzten Schritt noch offen');
+      if (kAktiverTab() !== 'options') f.push('bleibt nicht bei der Belegung, sondern ' + kAktiverTab());
+    } finally {
+      if (konsoleTourOffen()) konsoleTourZu(false);
+      showSubpage('');
+      if (merk) showTab(merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : K_STEUERUNG.length + ' Schritte, endet bei der Belegung' };
+  });
+
+  // BESTELLT: "Garage: Implementiere Vorschlag B ... und fuege jeweils einen Button hinzu,
+  // bei dem ich ein Foto dafuer hochladen kann. Der 'Ghosts anhalten'-Button soll gleichzeitig
+  // ein 'Ghosts starten'-Button sein, wenn sie noch nicht fahren."
+  stAdd('Garage: Karten mit Rolle, Foto und Aufklappzeile, ein Knopf startet und hält die Ghosts', () => {
+    const att = { role: 'ghost', device: { id: 'probe-karte' }, alias: '', colorId: 'rot', sim: false, testSenke: [] };
+    const f = [];
+    let altFoto = '';
+    try { altFoto = localStorage.getItem('omegasim-autofoto:probe-karte') || ''; } catch (e) { /* ohne Speicher */ }
+    garage.push(att);
+    const karte = () => [...$('gar-list').querySelectorAll('.gar-karte')].find((k) => k._car === att);
+    try {
+      renderGarage();
+      if (!karte()) return { ok: false, mass: 'keine Karte gezeichnet' };
+      if (!/linear-gradient/.test(karte().querySelector('.gk-bild').getAttribute('style') || '')) f.push('ohne Foto nicht die Farbe als Bild');
+      if (!$('gar-list').querySelector('.gar-karte-neu')) f.push('keine Karte "+ AUTO"');
+      karte().querySelector('[data-act="rolle"][data-d="1"]').click();
+      if (att.role !== 'none') f.push('Rolle vor fuehrt zu ' + att.role + ' statt Aus');
+      setCarRole(att, 'ghost');
+      renderGarage();
+      const c = document.createElement('canvas'); c.width = 2; c.height = 2;
+      const foto = c.toDataURL('image/jpeg', 0.8);
+      if (!autoFotoSetzen(att, foto)) return { skip: true, mass: 'Speicher voll' };
+      if (!/url\(/.test(karte().querySelector('.gk-bild').getAttribute('style') || '')) f.push('Foto nicht auf der Karte');
+      if (!karte().querySelector('[data-act="foto-weg"]')) f.push('kein Knopf zum Entfernen');
+      karte().querySelector('[data-act="auf"]').click();
+      const auf = $('gar-list').querySelector('.gk-aufzeile');
+      if (!auf) f.push('Einstellen klappt nichts auf');
+      else if (![...auf.querySelectorAll('.gk-l')].some((l) => /Tempo/.test(l.textContent))) f.push('kein Ghost-Tempo in der Aufklappzeile');
+      refreshGarageGo();
+      const b = $('gar-stop-ghosts');
+      if (b.disabled || b.dataset.lage !== 'starten') f.push('Ghost-Knopf zeigt nicht "starten" (' + b.dataset.lage + (b.disabled ? ', gesperrt' : '') + ')');
+    } finally {
+      try { autoFotoSetzen(att, altFoto); } catch (e) { /* egal */ }
+      const i = garage.indexOf(att);
+      if (i >= 0) garage.splice(i, 1);
+      garAufAuto = null;
+      renderGarage();
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Karte mit Farbbild, Rolle mit Pfeil, Foto, Aufklappzeile, Ghost-Knopf auf Starten' };
   });
 
   stAdd('ACC-Menü: Motorsound-Kachel blättert die Motoren, Quadrat', () => {
@@ -69335,6 +69699,21 @@
     const merken = () => { try { localStorage.setItem(APP_STORE, JSON.stringify(einstellung)); } catch (e) { /* privat */ } };
 
     ['info-app-kachel', 'mp-app'].forEach((id) => { if ($(id)) $(id).hidden = false; });
+
+    // VOLLBILD NACHLEGEN (ab APK 0.8.26; aeltere kennen die Methode nicht, dann bleibt es beim
+    // Versuch in MainActivity). BESTELLT: Uhrzeit, Akku, Home- und Tab-Knopf ausblenden.
+    // Beim Start, beim Zurueckkommen, bei jedem Tabwechsel und hoechstens alle 3 s bei einer
+    // Beruehrung - so verschwinden die Leisten auch wieder, wenn man sie hergewischt hat.
+    const vollbild = () => { hst('vollbild').catch(() => { /* aeltere APK */ }); };
+    let vollbildZuletzt = 0;
+    vollbild();
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) vollbild(); });
+    window.addEventListener('focus', vollbild);
+    document.addEventListener('pointerdown', () => {
+      const j = Date.now();
+      if (j - vollbildZuletzt > 3000) { vollbildZuletzt = j; vollbild(); }
+    }, { passive: true, capture: true });
+    document.querySelectorAll('.tab-btn').forEach((b) => b.addEventListener('click', vollbild));
     if ($('mp-app-hinweis')) $('mp-app-hinweis').hidden = true;
 
     // Die laufende Fassung ist hochgekommen: das ist die Bestaetigung, auf die der Wachhund

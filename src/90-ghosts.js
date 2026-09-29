@@ -1317,6 +1317,106 @@
   // charakterZiehen() und ghostCfg stehen WEITER UNTEN in dieser Datei. Das ist kein
   // Problem, weil diese Funktion erst beim Zeichnen laeuft, also lange nach dem Aufbau -
   // dieselbe Hochziehung, auf der auch renderGarage() selbst beruht.
+  // ---- Karten der Garage: Rollen, aufgeklappte Zeile, Fotos -------------------------
+  const GAR_ROLLEN = [
+    { id: 'player', name: 'Steuern', kurz: 'FAHRER' },
+    { id: 'player2', name: 'Spieler 2', kurz: 'SPIELER 2' },
+    { id: 'ghost', name: 'Ghost', kurz: 'GHOST' },
+    { id: 'none', name: 'Aus', kurz: 'AUS' },
+  ];
+  let garAufAuto = null;
+  let garFotoFuer = null;
+  function garageFarbeSetzen(car, id) {
+    car.colorId = id;
+    car.farbeGewaehlt = true;
+    carRemember(car);
+    renderGarage();
+    renderRaceGrid();
+  }
+  // Eine Wertzeile im Stil der Menues: Beschriftung .... < Wert >
+  function garWertZeile(titel, wert, zurueck, vor, extra) {
+    const z = document.createElement('div');
+    z.className = 'gk-zeile';
+    z.innerHTML = '<span class="gk-l"></span><span class="gk-w"><button type="button" data-d="-1" aria-label="weniger">&#9664;</button>'
+      + '<b></b><button type="button" data-d="1" aria-label="mehr">&#9654;</button></span>';
+    z.querySelector('.gk-l').textContent = titel;
+    z.querySelector('b').textContent = wert;
+    z.querySelector('[data-d="-1"]').onclick = (e) => { e.stopPropagation(); zurueck(); };
+    z.querySelector('[data-d="1"]').onclick = (e) => { e.stopPropagation(); vor(); };
+    if (extra) z.querySelector('.gk-w').appendChild(extra);
+    return z;
+  }
+  function garageAufZeile(car) {
+    const box = document.createElement('div');
+    box.className = 'gk-aufzeile';
+    const f = carColor(car);
+    const fi = CAR_COLORS.findIndex((c) => c.id === f.id);
+    const farbe = (d) => garageFarbeSetzen(car, CAR_COLORS[(fi + d + CAR_COLORS.length) % CAR_COLORS.length].id);
+    box.appendChild(garWertZeile('Farbe ' + garageLabel(car), f.name, () => farbe(-1), () => farbe(1)));
+    if (car.role === 'ghost') {
+      const eigen = car.ghostSpeed !== undefined && car.ghostSpeed !== null;
+      const v = eigen ? car.ghostSpeed : ghostCfg.speed;
+      const tempo = (d) => {
+        car.ghostSpeed = Math.round(Math.max(GHOST_READ_MIN, Math.min(1, v + 0.05 * d)) * 100) / 100;
+        renderGarage();
+      };
+      const rst = document.createElement('button');
+      rst.type = 'button';
+      rst.className = 'gar-speed-reset';
+      rst.innerHTML = '&#8635;';
+      rst.title = 'Zurueck auf die Vorgabe aus den Optionen';
+      rst.style.visibility = eigen ? '' : 'hidden';
+      rst.onclick = (e) => {
+        e.stopPropagation();
+        car.ghostSpeed = null;
+        showHudToast(garageLabel(car).toUpperCase() + ' FOLGT DER VORGABE');
+        renderGarage();
+      };
+      box.appendChild(garWertZeile('Ghost-Tempo', Math.round(v * 100) + ' %' + (eigen ? '' : ' (Vorgabe)'),
+                                   () => tempo(-1), () => tempo(1), rst));
+      const ch = document.createElement('div');
+      ch.innerHTML = charakterZeile(car);
+      if (ch.firstElementChild) box.appendChild(ch.firstElementChild);
+    } else {
+      const h = document.createElement('div');
+      h.className = 'gk-hinweis';
+      h.textContent = car.role === 'player'
+        ? 'Abstimmung und Fahrgefühl stehen unten und unter Optionen.'
+        : 'Tempo und Charakter gibt es nur für Ghosts.';
+      box.appendChild(h);
+    }
+    return box;
+  }
+  // EIGENE FOTOS JE AUTO, wie beim Streckenfoto: verkleinert als JPEG im localStorage,
+  // unter der Kennung des Autos (in der App die MAC-Adresse, ueber Neustarts stabil).
+  const AUTO_FOTO = 'omegasim-autofoto:';
+  function autoFoto(car) {
+    try { return (car && car.device && localStorage.getItem(AUTO_FOTO + car.device.id)) || ''; } catch (e) { return ''; }
+  }
+  function autoFotoSetzen(car, daten) {
+    try {
+      if (daten) localStorage.setItem(AUTO_FOTO + car.device.id, daten);
+      else localStorage.removeItem(AUTO_FOTO + car.device.id);
+    } catch (e) { return false; }
+    renderGarage();
+    if (typeof konsoleZeichnen === 'function') konsoleZeichnen();
+    return true;
+  }
+  if ($('gar-foto-datei')) {
+    $('gar-foto-datei').addEventListener('change', () => {
+      const d = $('gar-foto-datei');
+      const datei = d.files && d.files[0];
+      const car = garFotoFuer;
+      garFotoFuer = null;
+      if (!datei || !car) return;
+      konsoleFotoLesen(datei, 900).then((daten) => {
+        if (!autoFotoSetzen(car, daten)) {
+          konsoleFrage(t('Foto zu groß'), t('Der Speicher des Browsers ist voll. Ein kleineres Bild versuchen.'), [[t('Schließen'), null]]);
+        }
+      }).catch(() => konsoleFrage(t('Kein Bild'), t('Diese Datei ließ sich nicht als Bild lesen.'), [[t('Schließen'), null]]));
+    });
+  }
+
   function charakterZeile(car) {
     if (car.role !== 'ghost' || !ghostCfg.charakter) return '';
     const ch = car.ghost && car.ghost.charakter;
@@ -1370,62 +1470,86 @@
     $('gar-count').textContent = echte.length
       ? `${echte.length} Auto${echte.length === 1 ? '' : 's'} verbunden`
       : 'keine Autos verbunden';
+    // ---- DIE GARAGE ALS KARTEN (v0.8.26, Vorschlag B aus mockup/garage-mp.html) --------
+    //
+    // BESTELLT: "Garage: Implementiere Vorschlag B. Als Bilder nimm die Farben wie vorher
+    // (Blau, Rot, ...) und fuege jeweils einen Button hinzu, bei dem ich ein Foto dafuer
+    // hochladen kann." Je Auto eine Karte: Kopf mit Rolle, Bild (Farbe oder eigenes Foto),
+    // Name mit Farbklecks, Rolle als Wertzeile mit Pfeilen, Einstellen und Trennen. Unter den
+    // Karten klappt fuer das gewaehlte Auto eine Zeile mit Farbe, Ghost-Tempo und Charakter
+    // auf. Die Rollenfolge steht an der Karte (data-rollen) - der Selbsttest "jede Zeile hat
+    // vier Rollen" liest sie dort.
     list.innerHTML = '';
+    list.classList.add('gar-karten');
+    if (garAufAuto && !echte.includes(garAufAuto)) garAufAuto = null;
     echte.forEach((car, i) => {
       const row = document.createElement('div');
-      row.className = 'gar-row' + (car.role === 'player' ? ' is-player'
+      row.className = 'gar-row gar-karte' + (car.role === 'player' ? ' is-player'
                                  : car.role === 'player2' ? ' is-zwei'
-                                 : car.role === 'ghost' ? ' is-ghost' : '');
+                                 : car.role === 'ghost' ? ' is-ghost' : '')
+                    + (garAufAuto === car ? ' gk-auf' : '');
       const f = carColor(car);
+      const foto = autoFoto(car);
+      const rolle = GAR_ROLLEN.find((r) => r.id === car.role) || GAR_ROLLEN[3];
+      const bild = foto
+        ? 'background-image:url("' + foto + '")'
+        : 'background:linear-gradient(135deg,' + f.hex + ' 0%,' + f.hex + ' 55%,rgba(0,0,0,.55) 100%);color:' + f.ink;
       row.innerHTML = `
-        <div>
-          <div class="car-tag">
-            <button class="car-chip" data-act="color"
-                    style="background:${f.hex};color:${f.ink}"
-                    title="Farbe wählen, gerade ${f.name}">${car.tagChar || ''}</button>
-            <input class="car-name-in" data-act="alias" type="text" maxlength="18"
-                   placeholder="${car.tag || 'Name'}"
-                   value="${(car.alias || '').replace(/"/g, '&quot;')}"
-                   aria-label="Name für die Rundenuebersicht">
-          </div>
-          <div class="gar-id">${car.tag || ''} &middot; ${String(car.device.id).slice(0, 12)}
-            ${car.blinking ? '<span class="gar-blink">&nbsp;blinkt&hellip;</span>' : ''}</div></div>
-        <div class="gar-roles">
-          <button data-role="player" class="${car.role === 'player' ? 'on' : ''}">Steuern</button>
-          <button data-role="player2" class="gar-rolle-zwei ${car.role === 'player2' ? 'on zwei' : ''}"
-                  title="${zweiSpieler ? 'Zweites Auto, zweiter Controller'
-                          : 'Schaltet den 2-Spieler-Modus ein und weist dieses Auto zu'}"
-                  ><span>Spieler&nbsp;2</span><span class="wip-tag">experimentell</span></button>
-          <button data-role="ghost" class="${car.role === 'ghost' ? 'on ghost' : ''}">Ghost</button>
-          <button data-role="none" class="${car.role === 'none' ? 'on off' : ''}">Aus</button>
+        <div class="gk-kopf"><span>${car.role === 'player' ? 'DU' : 'AUTO ' + (i + 1)}</span>
+          <span class="gk-kopf-rolle">${rolle.kurz}</span></div>
+        <div class="gk-bild${foto ? ' mit-foto' : ''}" style='${bild}'>
+          ${foto ? '' : `<span class="gk-zeichen">${car.tagChar || ''}</span>`}
+          <button type="button" class="gk-foto" data-act="foto">${foto ? 'Foto ändern' : 'Foto'}</button>
+          ${foto ? '<button type="button" class="gk-foto-weg" data-act="foto-weg" aria-label="Foto entfernen">&#10005;</button>' : ''}
         </div>
-        <button data-act="drop">Trennen</button>
-        ${car.role === 'ghost' ? `
-        <div class="gar-speed">
-          <label>Tempo</label>
-          <input type="range" min="${GHOST_READ_MIN}" max="1" step="0.05"
-                 value="${car.ghostSpeed === undefined || car.ghostSpeed === null
-                          ? ghostCfg.speed : car.ghostSpeed}">
-          <b></b>
-          <button class="gar-speed-reset" data-act="speedreset"
-                  title="Zurueck auf die Vorgabe aus den Optionen">&#8635;</button>
-        </div>` : ''}
-        ${charakterZeile(car)}`;
-      // BLINKEN BEIM UEBERFAHREN, ohne Taste und ohne eigenen Knopf. BESTELLT: "Mach, dass
-      // Autos blinken, wenn ich mit dem Cursor in der Garage drueber hovere". Die Maus und
-      // die Menueauswahl (menuNavRender -> garageFokusZeile) loesen es aus, je Betreten der
-      // Zeile einmal und hoechstens alle 1,5 s.
+        <div class="gk-name car-tag">
+          <button class="car-chip" data-act="color"
+                  style="background:${f.hex};color:${f.ink}"
+                  title="Farbe wählen, gerade ${f.name}">${car.tagChar || ''}</button>
+          <input class="car-name-in" data-act="alias" type="text" maxlength="18"
+                 placeholder="${car.tag || 'Name'}"
+                 value="${(car.alias || '').replace(/"/g, '&quot;')}"
+                 aria-label="Name für die Rundenuebersicht">
+        </div>
+        <div class="gk-rolle" data-rollen="${GAR_ROLLEN.map((r) => r.id).join(',')}" data-rolle="${rolle.id}">
+          <button type="button" data-act="rolle" data-d="-1" aria-label="Rolle zurück">&#9664;</button>
+          <b>${rolle.name}</b>${rolle.id === 'player2' ? '<span class="wip-tag">experimentell</span>' : ''}
+          <button type="button" data-act="rolle" data-d="1" aria-label="Rolle vor">&#9654;</button>
+        </div>
+        <div class="gk-fuss">
+          <button type="button" data-act="auf">Einstellen ${garAufAuto === car ? '&#9652;' : '&#9662;'}</button>
+          <button type="button" data-act="drop">Trennen</button>
+        </div>
+        <div class="gar-id">${car.tag || ''} &middot; ${String(car.device.id).slice(0, 12)}
+          ${car.blinking ? '<span class="gar-blink">&nbsp;blinkt&hellip;</span>' : ''}</div>`;
+      // Blinken beim Ueberfahren (Maus und Menueauswahl), siehe garageFokusZeile.
       row._car = car;
       row.onmouseenter = () => garageBlinkSanft(car);
-      row.querySelectorAll('button[data-role]').forEach(b => {
-        b.onclick = () => setCarRole(car, b.dataset.role);
+      row.querySelectorAll('button[data-act="rolle"]').forEach((b) => {
+        b.onclick = (e) => {
+          e.stopPropagation();
+          const k = GAR_ROLLEN.findIndex((r) => r.id === car.role);
+          const n = GAR_ROLLEN[((k < 0 ? 3 : k) + +b.dataset.d + GAR_ROLLEN.length) % GAR_ROLLEN.length];
+          setCarRole(car, n.id);
+        };
       });
       row.querySelector('button[data-act="drop"]').onclick = () => disconnectCar(car);
+      row.querySelector('button[data-act="auf"]').onclick = () => {
+        garAufAuto = garAufAuto === car ? null : car;
+        renderGarage();
+      };
+      row.querySelector('button[data-act="foto"]').onclick = (e) => {
+        e.stopPropagation();
+        garFotoFuer = car;
+        const d = $('gar-foto-datei');
+        if (d) { d.value = ''; d.click(); }
+      };
+      const weg = row.querySelector('button[data-act="foto-weg"]');
+      if (weg) weg.onclick = (e) => { e.stopPropagation(); autoFotoSetzen(car, ''); };
 
       // Name: bei jedem Tastendruck merken, aber NICHT neu zeichnen - renderGarage()
       // waehrend des Tippens wuerde das Feld ersetzen und den Schreibstand mitnehmen.
-      // Dasselbe Muster wie beim Temporegler eine Zeile weiter unten. Neu gezeichnet wird
-      // erst beim Verlassen des Feldes.
+      // Neu gezeichnet wird erst beim Verlassen des Feldes.
       const nf = row.querySelector('input[data-act="alias"]');
       nf.addEventListener('input', () => { car.alias = nf.value.trim(); carRemember(car); });
       nf.addEventListener('change', () => { renderGarage(); renderRaceGrid(); });
@@ -1433,8 +1557,6 @@
       nf.addEventListener('pointerdown', (e) => e.stopPropagation());
 
       // Farbe: die Auswahl klappt unter dem Klecks auf, acht Farben brauchen keinen Dialog.
-      // Schon belegte Farben bleiben waehlbar, sind aber angeschrieben: zwei gleiche Farben
-      // sind eine schlechte Idee, aber es ist deine Entscheidung und nicht meine.
       const chip = row.querySelector('button[data-act="color"]');
       chip.onclick = (e) => {
         e.stopPropagation();
@@ -1451,19 +1573,13 @@
           b.setAttribute('aria-label', b.title);
           b.onclick = (ev) => {
             ev.stopPropagation();
-            car.colorId = fb.id;
-            car.farbeGewaehlt = true;
-            carRemember(car);
+            garageFarbeSetzen(car, fb.id);
             pal.remove();
-            renderGarage();
-            renderRaceGrid();
           };
           pal.appendChild(b);
         }
         document.body.appendChild(pal);
         const r = chip.getBoundingClientRect();
-        // An den Klecks gesetzt, aber im Schirm gehalten: am rechten Rand waere die
-        // Auswahl sonst zur Haelfte draussen.
         pal.style.top = (r.bottom + window.scrollY + 4) + 'px';
         pal.style.left = Math.min(r.left + window.scrollX,
           window.scrollX + document.documentElement.clientWidth - pal.offsetWidth - 8) + 'px';
@@ -1472,44 +1588,19 @@
           pal.remove();
           document.removeEventListener('pointerdown', zu, true);
         };
-        // Erst im naechsten Takt lauschen, sonst schliesst der eigene Klick sofort wieder.
         setTimeout(() => document.addEventListener('pointerdown', zu, true), 0);
       };
-      const sp = row.querySelector('.gar-speed input');
-      if (sp) {
-        const out = row.querySelector('.gar-speed b');
-        const rst = row.querySelector('.gar-speed-reset');
-        // Die Zeile sagt jetzt, WOHER ihr Wert kommt. Vorher war sie mit dem globalen Wert
-        // vorbelegt und sah damit aus wie eine Anzeige desselben Werts - waehrend ein
-        // einziges Antippen sie dauerhaft davon abkoppelte, ohne dass das irgendwo stand.
-        const paint = () => {
-          const eigen = car.ghostSpeed !== undefined && car.ghostSpeed !== null;
-          out.textContent = Math.round(sp.value * 100) + ' %'
-                            + (eigen ? '' : '\u00a0(Vorgabe)');
-          out.classList.toggle('gar-speed-own', eigen);
-          if (rst) rst.style.visibility = eigen ? '' : 'hidden';
-        };
-        paint();
-        // Nur der Wert wird gesetzt, NICHT neu gezeichnet: renderGarage() beim Ziehen
-        // aufzurufen wuerde den Regler unter dem Finger ersetzen und den Zug abbrechen.
-        sp.addEventListener('input', () => { car.ghostSpeed = +sp.value; paint(); });
-        if (rst) {
-          rst.onclick = (ev) => {
-            ev.stopPropagation();
-            // Der Weg zurueck. Ohne ihn war das Einrasten endgueltig - es gab im ganzen
-            // Projekt keine Stelle, die car.ghostSpeed wieder auf null setzt.
-            car.ghostSpeed = null;
-            sp.value = ghostCfg.speed;
-            paint();
-            showHudToast(garageLabel(car).toUpperCase() + ' FOLGT DER VORGABE');
-          };
-        }
-        // Der Klick auf die Zeile laesst das Auto blinken - am Regler waere das laestig.
-        sp.addEventListener('click', (e) => e.stopPropagation());
-        sp.addEventListener('pointerdown', (e) => e.stopPropagation());
-      }
       list.appendChild(row);
     });
+    // Leere Karte: ein weiteres Auto verbinden.
+    const plus = document.createElement('button');
+    plus.type = 'button';
+    plus.className = 'gar-karte-neu';
+    plus.innerHTML = '+ <span>AUTO</span>';
+    plus.onclick = () => { const c = $('gar-connect'); if (c) c.click(); };
+    list.appendChild(plus);
+    // Die aufgeklappte Zeile des gewaehlten Autos: Farbe, Ghost-Tempo, Charakter.
+    if (garAufAuto) list.appendChild(garageAufZeile(garAufAuto));
     refreshGarageGo();
   }
 
@@ -1533,14 +1624,19 @@
     // Anhalten ist nur scharf, wenn wirklich einer faehrt. Gepruefte Bedingung ist der
     // ZEITGEBER und nicht die Rolle: ein Auto auf "Ghost" zu stellen laesst es nicht
     // fahren, und ein Knopf, der dann etwas anzuhalten verspricht, luegt.
+    // EIN KNOPF FUER BEIDES. BESTELLT: "Der 'Ghosts anhalten'-Button soll gleichzeitig ein
+    // 'Ghosts starten'-Button sein, wenn sie noch nicht fahren."
     const stop = $('gar-stop-ghosts');
     if (stop) {
       const fahren = garage.filter(c => c.role === 'ghost' && c.ghost && c.ghost.running);
-      stop.disabled = !fahren.length;
+      stop.disabled = !fahren.length && !ghosts;
+      stop.textContent = fahren.length ? 'Ghosts anhalten' : 'Ghosts starten';
+      stop.dataset.lage = fahren.length ? 'anhalten' : 'starten';
       stop.title = fahren.length
         ? fahren.length + ' Ghost' + (fahren.length === 1 ? '' : 's')
           + ' ausrollen lassen und anhalten'
-        : 'Kein Ghost f\u00e4hrt gerade';
+        : (ghosts ? ghosts + ' Ghost' + (ghosts === 1 ? '' : 's') + ' losfahren lassen'
+                  : 'Erst ein Auto auf "Ghost" stellen');
     }
   }
 
@@ -1552,6 +1648,11 @@
   // drueckt, meint "jetzt" - und ein Knopf, der beim zweiten Mal dasselbe tut wie beim
   // ersten, naemlich nichts Sichtbares, ist der naechste Fehlerbericht.
   $('gar-stop-ghosts').onclick = () => {
+    // Faehrt keiner, startet derselbe Knopf sie (wie "Losfahren" es fuer die Ghosts tat).
+    if (!garage.some(c => c.role === 'ghost' && c.ghost && c.ghost.running)) {
+      garageGhostsStarten();
+      return;
+    }
     const ghosts = garage.filter(c => c.role === 'ghost' && c.ghost);
     if (!ghosts.length) return;
     const laufend = ghosts.filter(c => c.ghost.finish);
@@ -1567,7 +1668,8 @@
     refreshGarageGo();
   };
 
-  $('gar-go').onclick = () => {
+  $('gar-go').onclick = () => { garageGhostsStarten(); };
+  function garageGhostsStarten() {
     const player = garage.find(c => c.role === 'player');
     const ghosts = garage.filter(c => c.role === 'ghost');
     if (!player && !ghosts.length) return;
@@ -1590,7 +1692,7 @@
     log((player ? garageLabel(player) + ' im Cockpit' : 'Nur Ghosts')
         + (n ? ', ' + n + ' Ghost' + (n === 1 ? '' : 's') + ' gestartet' : ''), 'info');
     refreshGarageGo();
-  };
+  }
 
   // Die Lage EINMAL anzeigen, sobald sie bekannt ist - und nicht erst als Fehlermeldung
   // nach dem dritten vergeblichen Klick. bluetoothLageGenau() steht in 10-ble-explorer.js

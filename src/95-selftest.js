@@ -10033,24 +10033,26 @@
       if (!r.rueckGesperrt) f.push('Rueckwaerts nicht gesperrt');
       if (!r.fertig) f.push('nicht fertig geworden (' + r.stand + ')');
       if (Math.abs(r.dauer - r.T) > 0.15) f.push('Dauer ' + r.dauer.toFixed(2) + ' s statt ' + r.T.toFixed(2));
-      if (r.i < 9) f.push('nur ' + r.i + ' Symbole abgelaufen');
+      const erwartet = Math.floor(r.T / (r.T / 10 + 0.1));
+      if (r.i < erwartet) f.push('nur ' + r.i + ' Symbole abgelaufen statt ' + erwartet);
       if (fuelSimOn() && r.fuel < 99.9) f.push('Tank am Ende ' + r.fuel.toFixed(1));
       if (r.plan.repair && r.damage > 0.01) f.push('Schaden am Ende ' + r.damage.toFixed(1));
     }
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'T ' + (r.T || 0).toFixed(1) + ' s, voll abgewartet, ' + r.i + ' Symbole abgelaufen, Gas und Rueckwaerts zu' };
   });
 
-  stAdd('Boxen-Minigame: zehn richtige halbieren die Zeit, falsche geben nichts', () => {
+  stAdd('Boxen-Minigame: zehn richtige halbieren die Zeit, falsche kosten Zeit', () => {
     const a = pitSpielLauf('richtig');
     const b = pitSpielLauf('falsch');
     const f = a.f.concat(b.f);
     if (!f.length) {
       if (a.treffer !== 10) f.push(a.treffer + ' Treffer statt 10');
       if (Math.abs(a.dauer - a.T / 2) > 0.2) f.push('mit 10 Treffern ' + a.dauer.toFixed(2) + ' s statt ' + (a.T / 2).toFixed(2));
-      if (b.treffer !== 0 || b.bonus !== 0) f.push('falsche Tasten geben Bonus ' + b.bonus);
-      if (Math.abs(b.dauer - b.T) > 0.15) f.push('mit falschen Tasten ' + b.dauer.toFixed(2) + ' s statt ' + b.T.toFixed(2));
+      if (b.treffer !== 0 || !(b.bonus < 0)) f.push('falsche Tasten: Treffer ' + b.treffer + ', Bonus ' + b.bonus);
+      // Zehn falsche kosten je 5 %: anderthalbfache Zeit.
+      if (Math.abs(b.dauer - 1.5 * b.T) > 0.2) f.push('mit falschen Tasten ' + b.dauer.toFixed(2) + ' s statt ' + (1.5 * b.T).toFixed(2));
     }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'halbe Zeit mit 10 Treffern (' + a.dauer.toFixed(1) + ' von ' + a.T.toFixed(1) + ' s), falsch: volle Zeit' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'halbe Zeit mit 10 Treffern (' + a.dauer.toFixed(1) + ' von ' + a.T.toFixed(1) + ' s), zehn falsche: ' + b.dauer.toFixed(1) + ' s' };
   });
 
   stAdd('Boxen-Minigame: Quadrat und Kreis schalten waehrenddessen nicht, Kreuz bricht ab', () => {
@@ -10112,6 +10114,11 @@
         if (kTourSchritt !== i) { f.push('Schritt ' + kTourSchritt + ' statt ' + i); break; }
         if (!$('k-tour-titel').textContent) f.push('Schritt ' + i + ' ohne Titel');
         if (messbar && K_TOUR[i].ziel && !kTourRechteck(K_TOUR[i].ziel)) fehlt.push(i + 1);
+        if (messbar) {
+          konsoleTourSpot();
+          const kopf = $('k-kopf').getBoundingClientRect().bottom;
+          if ($('k-tour-karte').getBoundingClientRect().top < kopf - 1) f.push('Schritt ' + (i + 1) + ': Karte unter der Kopfzeile');
+        }
         if (i < K_TOUR.length - 1) konsoleTourWeiter();
       }
       if (fehlt.length) f.push('Ziel nicht sichtbar in Schritt ' + fehlt.join(', '));
@@ -10128,6 +10135,79 @@
       if (merk) showTab(merk);
     }
     return { ok: !f.length, mass: f.length ? f.join('; ') : K_TOUR.length + ' Schritte, Ziele ' + (messbar ? 'sichtbar' : 'nicht messbar'), skip: false };
+  });
+
+  stAdd('Steuerung: vom Titel durch alle Tasten bis zur Controller-Belegung', () => {
+    const merk = kAktiverTab();
+    const f = [];
+    const messbar = innerWidth > 0 && innerHeight > 0;
+    try {
+      showTab('home');
+      $('k-steuerung-start').click();
+      if (!konsoleTourOffen()) return { ok: false, mass: 'Knopf oeffnet nicht' };
+      for (let i = 0; i < K_STEUERUNG.length - 1; i++) {
+        const s = K_STEUERUNG[i];
+        if (s.taste && ($('k-tour-taste').hidden || $('k-tour-taste').textContent !== s.taste)) f.push('Schritt ' + (i + 1) + ' zeigt die Taste nicht');
+        konsoleTourWeiter();
+      }
+      const offen = document.querySelector('#tab-options .subpage.on');
+      if (kAktiverTab() !== 'options' || !offen || offen.id !== 'sub-opt-pad') f.push('letzter Schritt nicht auf Optionen > Controller');
+      if (messbar && !kTourRechteck(['#pad-zoom'])) f.push('Controller-Bild nicht sichtbar');
+      if (messbar) {
+        const kopf = $('k-kopf').getBoundingClientRect().bottom;
+        const karte = $('k-tour-karte').getBoundingClientRect();
+        if (karte.top < kopf - 1) f.push('Karte unter der Kopfzeile (' + Math.round(karte.top) + ' < ' + Math.round(kopf) + ')');
+      }
+      konsoleTourWeiter();
+      if (konsoleTourOffen()) f.push('nach dem letzten Schritt noch offen');
+      if (kAktiverTab() !== 'options') f.push('bleibt nicht bei der Belegung, sondern ' + kAktiverTab());
+    } finally {
+      if (konsoleTourOffen()) konsoleTourZu(false);
+      showSubpage('');
+      if (merk) showTab(merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : K_STEUERUNG.length + ' Schritte, endet bei der Belegung' };
+  });
+
+  // BESTELLT: "Garage: Implementiere Vorschlag B ... und fuege jeweils einen Button hinzu,
+  // bei dem ich ein Foto dafuer hochladen kann. Der 'Ghosts anhalten'-Button soll gleichzeitig
+  // ein 'Ghosts starten'-Button sein, wenn sie noch nicht fahren."
+  stAdd('Garage: Karten mit Rolle, Foto und Aufklappzeile, ein Knopf startet und hält die Ghosts', () => {
+    const att = { role: 'ghost', device: { id: 'probe-karte' }, alias: '', colorId: 'rot', sim: false, testSenke: [] };
+    const f = [];
+    let altFoto = '';
+    try { altFoto = localStorage.getItem('omegasim-autofoto:probe-karte') || ''; } catch (e) { /* ohne Speicher */ }
+    garage.push(att);
+    const karte = () => [...$('gar-list').querySelectorAll('.gar-karte')].find((k) => k._car === att);
+    try {
+      renderGarage();
+      if (!karte()) return { ok: false, mass: 'keine Karte gezeichnet' };
+      if (!/linear-gradient/.test(karte().querySelector('.gk-bild').getAttribute('style') || '')) f.push('ohne Foto nicht die Farbe als Bild');
+      if (!$('gar-list').querySelector('.gar-karte-neu')) f.push('keine Karte "+ AUTO"');
+      karte().querySelector('[data-act="rolle"][data-d="1"]').click();
+      if (att.role !== 'none') f.push('Rolle vor fuehrt zu ' + att.role + ' statt Aus');
+      setCarRole(att, 'ghost');
+      renderGarage();
+      const c = document.createElement('canvas'); c.width = 2; c.height = 2;
+      const foto = c.toDataURL('image/jpeg', 0.8);
+      if (!autoFotoSetzen(att, foto)) return { skip: true, mass: 'Speicher voll' };
+      if (!/url\(/.test(karte().querySelector('.gk-bild').getAttribute('style') || '')) f.push('Foto nicht auf der Karte');
+      if (!karte().querySelector('[data-act="foto-weg"]')) f.push('kein Knopf zum Entfernen');
+      karte().querySelector('[data-act="auf"]').click();
+      const auf = $('gar-list').querySelector('.gk-aufzeile');
+      if (!auf) f.push('Einstellen klappt nichts auf');
+      else if (![...auf.querySelectorAll('.gk-l')].some((l) => /Tempo/.test(l.textContent))) f.push('kein Ghost-Tempo in der Aufklappzeile');
+      refreshGarageGo();
+      const b = $('gar-stop-ghosts');
+      if (b.disabled || b.dataset.lage !== 'starten') f.push('Ghost-Knopf zeigt nicht "starten" (' + b.dataset.lage + (b.disabled ? ', gesperrt' : '') + ')');
+    } finally {
+      try { autoFotoSetzen(att, altFoto); } catch (e) { /* egal */ }
+      const i = garage.indexOf(att);
+      if (i >= 0) garage.splice(i, 1);
+      garAufAuto = null;
+      renderGarage();
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Karte mit Farbbild, Rolle mit Pfeil, Foto, Aufklappzeile, Ghost-Knopf auf Starten' };
   });
 
   stAdd('ACC-Menü: Motorsound-Kachel blättert die Motoren, Quadrat', () => {

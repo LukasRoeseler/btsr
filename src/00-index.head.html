@@ -2460,8 +2460,13 @@
     display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; padding: 10px 12px; color: #eef0f4; }
   .k-tour-karte.unten { bottom: max(8px, env(safe-area-inset-bottom)); }
   .k-tour-karte.oben { top: max(8px, env(safe-area-inset-top)); }
+  .k-tutorial-reihe { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .k-tour-taste { grid-row: span 2; display: grid; place-items: center; min-width: clamp(64px, 17vh, 130px);
+    aspect-ratio: 4 / 3; background: #161a24; border: 2px solid var(--k-blau); font-size: clamp(22px, 7vh, 46px);
+    font-weight: 900; color: #fff; letter-spacing: .04em; text-align: center; line-height: 1.05; padding: 4px; }
+  .k-tour-taste[hidden] { display: none; }
   /* Daneben: schmaler, senkrecht mittig, am freien Rand. */
-  .k-tour-karte.links, .k-tour-karte.rechts { top: 50%; transform: translateY(-50%); width: min(46vw, 400px);
+  .k-tour-karte.links, .k-tour-karte.rechts { top: calc(50% + 10px); transform: translateY(-50%); width: min(46vw, 400px);
     grid-template-columns: minmax(0, 1fr); }
   .k-tour-karte.links { left: max(8px, env(safe-area-inset-left)); }
   .k-tour-karte.rechts { left: auto; right: max(8px, env(safe-area-inset-right)); }
@@ -2475,6 +2480,56 @@
     font-size: 12px; padding: 4px 12px; border-radius: 0; }
   .k-tour-knoepfe .k-tour-leise { margin-right: auto; background: transparent; border-color: transparent; color: var(--k-dim); }
   .k-tour-knoepfe button.menu-nav-sel { outline: 0; border-color: #fff; background: var(--k-blau); color: var(--k-blau-text); }
+  /* ---- Mehrspieler (v0.8.26) ---- */
+  .mp-warnung { border-left: 3px solid var(--warn); padding: 3px 10px; margin: 6px 0 10px; font-size: 12px; color: #f3d9a0;
+    background: rgba(255,180,0,.08); }
+  .mp-gemeinsam-h .opt-info-btn { margin-left: 6px; vertical-align: 1px; }
+  /* App-Seite nach Vorschlag A: links Host werden / suchen, rechts Beitreten und Rangliste. */
+  #sub-mp-app.on { display: grid; grid-template-columns: minmax(170px, 30%) minmax(0, 1fr); gap: 6px 16px; align-items: start; }
+  #sub-mp-app.on:has(#mp-app[hidden]) { grid-template-columns: minmax(0, 1fr); }
+  #sub-mp-app > .subpage-back, #sub-mp-app > h2, #sub-mp-app > #mp-app-hinweis { grid-column: 1 / -1; }
+  #sub-mp-app .mp-app .row { flex-direction: column; align-items: stretch; gap: 6px; }
+  #sub-mp-app .mp-app .row button { width: 100%; padding: 8px 10px; }
+  #sub-mp-app #mp-gemeinsam { margin-top: 0; padding-top: 0; border-top: 0; }
+  #sub-mp-app #mp-gemeinsam .row { gap: 6px 8px; }
+  #sub-mp-app #mp-gemeinsam label.small { flex: 1 1 100%; display: grid; grid-template-columns: 110px minmax(0, 1fr);
+    align-items: center; gap: 8px; }
+  /* ---- Garage als Karten (v0.8.26, Vorschlag B) ---- */
+  #gar-list.gar-karten { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+  .gar-row.gar-karte { display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden; border-radius: 0;
+    background: rgba(14,16,22,.94); border: 2px solid transparent; }
+  .gar-row.gar-karte:hover, .gar-row.gar-karte.gk-auf { border-color: #fff; }
+  .gk-kopf { display: flex; justify-content: space-between; background: var(--k-grau); color: #fff; font-family: var(--k-font);
+    font-weight: 800; letter-spacing: .1em; font-size: 11px; padding: 2px 8px; }
+  .gar-karte.is-player .gk-kopf { background: var(--k-blau); color: var(--k-blau-text); }
+  .gk-kopf-rolle { opacity: .85; }
+  .gk-bild { position: relative; height: clamp(54px, 15vh, 110px); background-size: cover; background-position: center;
+    display: grid; place-items: center; }
+  .gk-zeichen { font-size: clamp(26px, 8vh, 48px); font-weight: 900; opacity: .85; }
+  .gk-foto { position: absolute; right: 6px; bottom: 6px; font-size: 10.5px; padding: 2px 8px; letter-spacing: .06em;
+    background: rgba(5,7,12,.8); color: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: 0; text-transform: uppercase; }
+  .gk-foto-weg { position: absolute; left: 6px; bottom: 6px; font-size: 11px; padding: 1px 6px; background: rgba(5,7,12,.8);
+    color: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: 0; }
+  .gk-name { padding: 6px 8px 2px; }
+  .gk-name .car-name-in { max-width: none; font-weight: 700; }
+  .gk-rolle { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 4px 8px; padding: 2px 4px;
+    background: var(--k-weiss); color: var(--k-tinte); font-family: var(--k-font); text-transform: uppercase; font-size: 12px; }
+  .gk-rolle button { background: none; border: 0; color: #0077a8; padding: 2px 6px; font-size: 11px; min-height: 0; }
+  .gk-rolle .wip-tag { font-size: 9px; }
+  .gk-fuss { display: flex; justify-content: space-between; gap: 6px; padding: 2px 8px 4px; }
+  .gk-fuss button { font-size: 11px; padding: 2px 9px; letter-spacing: .06em; text-transform: uppercase; border-radius: 0; }
+  .gar-karte .gar-id { padding: 0 8px 6px; font-size: 10px; }
+  .gar-karte-neu { min-height: 150px; border: 2px dashed rgba(255,255,255,.22); background: rgba(14,16,22,.5); color: var(--k-dim);
+    font-family: var(--k-font); font-size: 22px; font-weight: 800; letter-spacing: .1em; border-radius: 0; }
+  .gar-karte-neu:hover { color: #fff; border-color: #fff; }
+  .gk-aufzeile { grid-column: 1 / -1; background: rgba(14,16,22,.96); border-top: 2px solid var(--k-blau); padding: 4px 8px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 2px 14px; }
+  .gk-zeile { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 3px 4px;
+    border-bottom: 1px solid rgba(255,255,255,.06); }
+  .gk-w { display: flex; align-items: center; gap: 6px; font-weight: 800; }
+  .gk-w > button:not(.gar-speed-reset) { background: none; border: 0; color: var(--k-blau); padding: 2px 6px; min-height: 0; }
+  .gk-hinweis { color: var(--muted); font-size: 12px; padding: 4px; }
+  .gk-aufzeile .gar-speed { padding: 3px 4px; }
   /* HOCHFORMAT, schmal (Telefon im Browser): untereinander, mit Bildlauf. */
   @media (max-width: 760px) and (orientation: portrait) {
     header#k-kopf { grid-template-columns: 1fr auto; }
@@ -3670,9 +3725,16 @@
         <b id="lang-de">DEUTSCH</b><b id="lang-en">ENGLISH</b>
       </button>
       <!-- TUTORIAL (51b-tutorial.js): Klick, Dreieck oder T. -->
-      <button type="button" id="k-tutorial-start" class="k-tutorial-knopf">Tutorial <span class="wip-tag">WIP</span>
-        <span class="k-tutorial-taste" data-i18n-skip>&#9651; / T</span></button>
-      <div class="k-druecken">Beliebige Taste dr&uuml;cken</div>
+      <div class="k-tutorial-reihe">
+        <button type="button" id="k-tutorial-start" class="k-tutorial-knopf">Tutorial
+          <span class="k-tutorial-taste" data-i18n-skip>&#9651; / T</span></button>
+        <!-- BESTELLT: "neben dem Tutorial-Button noch einen Button zur Steuerung ... dass es nur
+             mit Gamepad funktioniert, zeige die Tasten und am Ende, wo man das Bild vom
+             Controller mit allen Tasten sieht und die Belegung aendern kann". -->
+        <button type="button" id="k-steuerung-start" class="k-tutorial-knopf">Steuerung
+          <span class="k-tutorial-taste" data-i18n-skip>&#9675; / S</span></button>
+      </div>
+      <div class="k-druecken"><span data-i18n-skip>&#10005;</span> zum Starten</div>
     <!-- Nur in der Android-App: eine neue Web-Fassung liegt bereit (siehe 97b-app.js). -->
     <div class="app-update" id="app-update" hidden>
       <b id="app-update-text">Update verf&uuml;gbar</b>
@@ -3680,7 +3742,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.25</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.26</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3703,7 +3765,7 @@
       <div class="k-kachel " id="fa-auto" role="button" tabindex="0">
         <span class="k-kk">Autos</span>
         <span class="k-kt" id="fa-auto-titel"></span>
-        <span class="k-kb" style="background-image:url(img/auto.jpg)"></span>
+        <span class="k-kb" id="fa-auto-bild" style="background-image:url(img/auto.jpg)"></span>
         <span class="k-ki" id="fa-auto-info"></span>
         <!-- BESTELLT: "Autos-Menü sollte auch Option für Garage haben zum Einstellen" - auch
              ohne verbundenes Auto (gemerkte Autos, Farben, Rollen). -->
@@ -4590,6 +4652,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Garage als Karten mit eigenem Foto je Auto (sonst seine Farbe), Rolle mit &#9664; &#9654;, Einstellen klappt Farbe, Tempo und Charakter auf; ein Knopf startet und h&auml;lt die Ghosts. Titel: &#10005; startet, &#9651; Tutorial, &#9675; neue F&uuml;hrung &bdquo;Steuerung&ldquo; bis zur Controller-Belegung. Minigame: Fenster 0,1 s l&auml;nger, falsche Taste kostet Zeit. Freies Training zeigt &infin;. Mehrspieler-App wie Vorschlag A. App: Status- und Navigationsleiste werden zuverl&auml;ssiger ausgeblendet.</li>
         <li>Tutorial auf dem Titelbildschirm (experimentell): f&uuml;hrt in neun Schritten &uuml;ber die echten Schirme, mit Controller, Tastatur oder Finger.</li>
         <li>Boxen-Minigame (experimentell, ab Werk an, unter Optionen &gt; Allgemein &gt; Tank &amp; Schaden): alles wird gewechselt, losfahren erst am Ende, zehn Tasten &#9633;/&#9675; in der Mitte k&uuml;rzen den Stopp bis auf die H&auml;lfte.</li>
         <li>Pacejka: &Uuml;bersteuern sp&uuml;rbar &ndash; Vollgas in der Kurve bringt das Heck, der Vortrieb geht zur&uuml;ck, der Rutsch h&auml;lt ohne Stick, bis man gegenlenkt oder vom Pedal geht, st&auml;rkere Vibration; mit dem Schalter &bdquo;&Uuml;bersteuern&ldquo; abschaltbar (experimentell).</li>
@@ -7096,9 +7159,11 @@
       <h2>Garage</h2>
       <p class="muted">
         Jedes Auto einzeln per Klick verbinden &ndash; Web Bluetooth verlangt das so.
-        <strong>Zeigst du auf eine Zeile, blinken die Lichter</strong>, damit du siehst,
-        welches Auto in der Liste welches auf dem Tisch ist.
+        <strong>Zeigst du auf eine Karte, blinkt das Auto</strong>, damit du siehst,
+        welches welches ist.
       </p>
+      <!-- Die Dateiwahl fuer die Autofotos (90-ghosts.js, garFotoFuer), ausserhalb der Karten. -->
+      <input type="file" id="gar-foto-datei" accept="image/*" hidden>
       <!-- Der Hinweis steht VOR dem Knopf und nicht in einer Fehlermeldung danach: wer
            die App ueber das WLAN vom Host-Programm holt, hat gar kein Web Bluetooth, und
            das soll er sehen, bevor er dreimal auf "Auto verbinden" drueckt. Leer und
@@ -7113,7 +7178,7 @@
              auto. Es soll dann mit querlage = 0 in mittlerem Tempo über die strecke
              fahren und anhalten, wenn ein geschlossener rundkurs gemessen wurde." -->
         <button id="gar-stop-ghosts" disabled>Ghosts anhalten</button>
-        <button class="primary" id="gar-go" disabled>Losfahren</button>
+        <button class="primary" id="gar-go" hidden disabled>Losfahren</button>
       </div>
       <!-- BESTELLT: "Im Garage Tab ueber den Autos Link zum Cockpit stattdessen einfuegen"
            (statt des entfernten Cockpit-Knopfs auf der Startseite). -->
@@ -7187,6 +7252,9 @@
         Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Host ist entweder
         ein PC mit einem kleinen Python-Programm oder ein Telefon mit der Android-App.
       </p>
+      <!-- BESTELLT: "In Mehrspieler schreib dazu: Mehrspieler ist aktuell noch in der
+           Entwicklung und funktioniert nicht fehlerfrei." -->
+      <p class="mp-warnung">Mehrspieler ist aktuell noch in der Entwicklung und funktioniert nicht fehlerfrei.</p>
 
       <div class="misc-grid">
         <button class="misc-tile subpage-open" data-sub="mp-pc">
@@ -7309,7 +7377,9 @@
       <p class="muted" id="mp-app-hinweis">Nur in der Android-App: dieses Telefon wird Host, die anderen finden es im WLAN. Im Browser geht das nicht &ndash; dort den Weg &uuml;ber den PC nehmen.</p>
       <!-- NUR IN DER ANDROID-APP: dieses Telefon wird Host, ohne PC. -->
       <div class="mp-app" id="mp-app" hidden>
-        <p class="muted"><span class="wip-tag">experimentell</span> <b>Ohne PC: ein Telefon ist Host.</b> Die anderen Telefone suchen ihn im WLAN oder tragen die Adresse ein. Ein Tablet oder Fernseher &ouml;ffnet die Adresse mit /?info im Browser und wird Info-Screen, ganz ohne App.</p>
+        <h3 class="mp-gemeinsam-h">Host <span class="wip-tag">experimentell</span>
+          <button type="button" class="opt-info-btn" id="mp-app-erkl-knopf" aria-label="Erklärung anzeigen">i</button></h3>
+        <p class="muted mp-erkl" id="mp-app-erkl" hidden><b>Ohne PC: ein Telefon ist Host.</b> Die anderen Telefone suchen ihn im WLAN oder tragen die Adresse ein. Ein Tablet oder Fernseher &ouml;ffnet die Adresse mit /?info im Browser und wird Info-Screen, ganz ohne App.</p>
         <div class="row" style="gap:10px; flex-wrap:wrap">
           <button type="button" class="primary" id="mp-app-host">Dieses Telefon ist Host</button>
           <button type="button" id="mp-app-suchen">Host im WLAN suchen</button>
@@ -7322,7 +7392,8 @@
     </div>
     <!-- Gemeinsam fuer beide Wege: beitreten, Status, Rangliste. -->
     <div id="mp-gemeinsam">
-      <h3 class="mp-gemeinsam-h">Beitreten und Rangliste</h3>
+      <h3 class="mp-gemeinsam-h">Beitreten und Rangliste
+        <button type="button" class="opt-info-btn" id="mp-erkl-knopf" aria-label="Erklärung anzeigen">i</button></h3>
       <div class="row" style="gap:10px; flex-wrap:wrap; align-items:flex-end">
         <label class="small" style="flex:1 1 200px">Host-Adresse
           <input type="text" id="mp-host" placeholder="http://192.168.1.50:8080"></label>
@@ -7338,6 +7409,9 @@
       </tr></thead><tbody id="mp-rows">
         <tr><td colspan="5" class="muted">keine Daten</td></tr>
       </tbody></table>
+      <!-- Die Erklaerungen stehen hinter dem i (BESTELLT: "keinen Text unter die Optionen,
+           sondern immer hinter das i im Kreis"). -->
+      <div class="mp-erkl" id="mp-erkl" hidden>
       <p class="muted" style="font-size:11.5px">
         Ueber die Leitung gehen Rundenzahl, Rundenzeiten und Abgaenge. Keine Physik, keine
         Lenkwerte: jedes Telefon rechnet seine eigene Physik und haelt seine eigene
@@ -7349,6 +7423,7 @@
         Ueberfahrt startet die Uhr, erst die zweite ergibt eine Zeit. Nach drei Ueberfahrten
         stehen also zwei Runden da. Bei Gleichstand fuehrt, wer zuerst dort war.
       </p>
+      </div>
     </div>
   </section>
 
@@ -10149,6 +10224,7 @@
     <div class="k-tour-spot" id="k-tour-spot" hidden></div>
     <div class="k-tour-karte unten" id="k-tour-karte">
       <img id="k-tour-bild" alt="">
+      <span class="k-tour-taste" id="k-tour-taste" hidden data-i18n-skip></span>
       <div class="k-tour-inhalt">
         <div class="k-tour-schritt" id="k-tour-schritt" data-i18n-skip></div>
         <h2 id="k-tour-titel"></h2>

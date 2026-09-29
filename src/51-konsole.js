@@ -507,6 +507,15 @@
     if (!$('fa-auto')) return;
     const autos = kAutos();
     $('fa-auto-titel').textContent = autos.length ? autos.length + ' ' + t('verbunden') : t('Autos verbinden');
+    // Das eigene Foto des Fahrer-Autos (Garage) statt des Beispielbilds.
+    const fahrer = autos.find((c) => c.role === 'player') || autos[0];
+    const afoto = fahrer && typeof autoFoto === 'function' ? autoFoto(fahrer) : '';
+    const ab = $('fa-auto-bild');
+    const abNeu = afoto ? 'foto:' + afoto.length : 'auto';
+    if (ab && ab.dataset.bild !== abNeu) {
+      ab.style.backgroundImage = afoto ? 'url("' + afoto + '")' : 'url(img/auto.jpg)';
+      ab.dataset.bild = abNeu;
+    }
     kZeilen($('fa-auto-info'), autos.length
       ? autos.map((c) => [kPunkt(carColor(c).hex, garageLabel(c)), t(K_ROLLE[c.role] || c.role)])
       : [[t('Status'), t('nicht verbunden')], ['✕', t('Bluetooth-Auswahl öffnen')]]);
@@ -515,7 +524,9 @@
     $('fa-renn-titel').textContent = modus;
     const wx = $('race-wx-start');
     kZeilen($('fa-renn-info'), [
-      [($('race-limit-label') || {}).textContent || t('Dauer'), ($('race-limit') || {}).value || '–'],
+      // Freies Training laeuft ohne Ende: dort steht das Unendlich statt einer Minutenzahl.
+      rm.value === 'practice' ? [t('Dauer'), '∞']
+        : [($('race-limit-label') || {}).textContent || t('Dauer'), ($('race-limit') || {}).value || '–'],
       [t('Wetter'), wx && wx.selectedOptions[0] ? wx.selectedOptions[0].textContent : '–'],
       [t('Pflichtboxenstopps'), ($('race-pit-required') || {}).value || '0'],
     ]);
@@ -566,12 +577,12 @@
     konsoleZeichnen();
     return true;
   }
-  function konsoleFotoLesen(datei) {
+  function konsoleFotoLesen(datei, groesse) {
     return new Promise((ok, nein) => {
       const url = URL.createObjectURL(datei);
       const img = new Image();
       img.onload = () => {
-        const f = Math.min(1, 1400 / Math.max(img.naturalWidth, img.naturalHeight));
+        const f = Math.min(1, (groesse || 1400) / Math.max(img.naturalWidth, img.naturalHeight));
         const c = document.createElement('canvas');
         c.width = Math.max(1, Math.round(img.naturalWidth * f));
         c.height = Math.max(1, Math.round(img.naturalHeight * f));
@@ -624,10 +635,12 @@
     }
     if (kAktiverTab() !== 'home') return false;
     if (neu === 14 || neu === 15 || neu === 4 || neu === 5) { setLang(lang === 'de' ? 'en' : 'de'); return true; }
-    // Dreieck: das Tutorial (51b-tutorial.js).
-    if (neu === 3) { kTitelSperre = true; konsoleTourStart(); return true; }
-    // Die Trigger (6/7) sind Gas und Bremse und zaehlen nicht als "Taste".
-    if (neu !== false && neu !== 6 && neu !== 7) { konsoleTitelWeiter(); kTitelSperre = true; return true; }
+    // BESTELLT: "'Press any key' und 'press triangle for tutorial' ist auch etwas
+    // verwirrend. Ich wuerde sagen: X zum Starten, Dreieck fuer Tutorial, Kreis fuer
+    // Steuerung." Alle anderen Tasten tun auf dem Titel nichts mehr.
+    if (neu === 0) { konsoleTitelWeiter(); kTitelSperre = true; return true; }
+    if (neu === 3) { kTitelSperre = true; konsoleTourStart(K_TOUR); return true; }
+    if (neu === 1) { kTitelSperre = true; konsoleTourStart(K_STEUERUNG); return true; }
     return true;
   }
   // Options: im Cockpit ins Fahren-Menue, in den Menues zurueck ins Cockpit. Nur die
@@ -651,9 +664,11 @@
     if (e.target && e.target.closest && e.target.closest('input[type="text"], input[type="number"], textarea, select')) return;
     if (kAktiverTab() === 'home' && !e.ctrlKey && !e.altKey && !e.metaKey && k !== 'tab' && k !== 'shift') {
       e.preventDefault(); e.stopImmediatePropagation();
+      // Tastatur wie am Pad: Enter, Leertaste oder X starten, T das Tutorial, S die Steuerung.
       if (k === 'arrowleft' || k === 'arrowright') setLang(lang === 'de' ? 'en' : 'de');
-      else if (k === 't') konsoleTourStart();
-      else konsoleTitelWeiter();
+      else if (k === 't') konsoleTourStart(K_TOUR);
+      else if (k === 's') konsoleTourStart(K_STEUERUNG);
+      else if (k === 'enter' || k === ' ' || k === 'x') konsoleTitelWeiter();
       return;
     }
     if (kAktiverTab() === 'race' && !kFrageOffen && k === 'escape' && !document.body.classList.contains('track-fs')) {
@@ -712,6 +727,8 @@
     kn('fa-druck', () => konsoleZeige('track', 'print'));
     kn('fa-profil', () => konsoleZeige('options', 'opt-feel'));
     kn('race-menue', () => konsoleZumMenue());
+    kn('mp-erkl-knopf', (e) => { e.stopPropagation(); optInfoOeffnen(t('Beitreten und Rangliste'), $('mp-erkl').innerHTML); });
+    kn('mp-app-erkl-knopf', (e) => { e.stopPropagation(); optInfoOeffnen(t('Host'), $('mp-app-erkl').innerHTML); });
     kn('k-ergebnis', () => { kErgebnisWartet = true; konsoleInsCockpit(); });
     kn('fa-motor', () => konsoleZeige('options', 'opt-sound'));
     kn('fa-foto', () => { const d = $('fa-foto-datei'); if (d) { d.value = ''; d.click(); } });

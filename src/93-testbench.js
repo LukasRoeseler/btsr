@@ -1015,14 +1015,14 @@
       try {
         if (opt.zwei !== undefined) zweiSpieler = !!opt.zwei;
         renderGarage();
-        const zeilen = Array.from(($('gar-list') || { children: [] }).children);
+        // Seit v0.8.26 Karten: die Rollen stehen als Folge an der Karte (data-rollen), die
+        // gewaehlte in data-rolle; die leere "+ AUTO"-Karte und die Aufklappzeile zaehlen nicht.
+        const zeilen = Array.from(($('gar-list') || { children: [] }).children)
+          .filter((z) => z.classList.contains('gar-row'));
         const meine = zeilen[zeilen.length - 1];
-        const knoepfe = meine
-          ? Array.from(meine.querySelectorAll('button[data-role]')).map((b) => ({
-              rolle: b.dataset.role,
-              text: b.textContent.replace(/\s+/g, ' ').trim(),
-              an: b.classList.contains('on'),
-            }))
+        const r = meine && meine.querySelector('.gk-rolle');
+        const knoepfe = r
+          ? r.dataset.rollen.split(',').map((x) => ({ rolle: x, text: x, an: x === r.dataset.rolle }))
           : [];
         return { zeilen: zeilen.length, knoepfe,
                  rollen: knoepfe.map((k) => k.rolle),

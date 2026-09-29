@@ -3270,8 +3270,8 @@
   //
   // DIE ZEIT T ist die laengste Einzelarbeit, genau wie im Standardmodus: Reifen, Tanken
   // auf voll, Reparatur ganz. Alles laeuft proportional zum Fortschritt p = (Standzeit +
-  // Bonus) / T. Jedes Symbol steht T/10 lang; richtig gedrueckt gibt 5 % von T gut, alle
-  // zehn also die halbe Zeit; falsch gibt nichts; nicht gedrueckt verschwindet es.
+  // Bonus) / T. Jedes Symbol steht T/10 + 0,1 s lang; richtig gedrueckt gibt 5 % von T gut,
+  // alle zehn also die halbe Zeit; falsch kostet 5 %; nicht gedrueckt verschwindet es.
   // Nur Auto 1 - Spieler 2 und die Ghosts fahren ihre eigenen Stopps.
   // pitModus und pitSpiel stehen oben bei pitState (zeitliche Todeszone: setPitState liest
   // pitSpiel, und das darf nie vor seiner Deklaration laufen).
@@ -3296,7 +3296,9 @@
     const T = pitSpielDauer(pitPlan);
     const folge = [];
     for (let i = 0; i < PIT_SPIEL_ANZAHL; i++) folge.push(Math.random() < 0.5 ? 'quad' : 'kreis');
-    pitSpiel = { T, bonus: 0, folge, i: 0, fensterAb: 0, fensterS: T / PIT_SPIEL_ANZAHL,
+    // Fenster etwa 100 ms laenger als ein Zehntel (BESTELLT: "Mach die Zeiten im Pitstop
+    // ca. 100 ms laenger").
+    pitSpiel = { T, bonus: 0, folge, i: 0, fensterAb: 0, fensterS: T / PIT_SPIEL_ANZAHL + 0.1,
                  treffer: 0, fehler: 0, blitz: '', blitzBis: 0, fuel0: fuel, dmg0: damage };
     showHudToast(t('Boxen-Minigame: Quadrat und Kreis!'));
   }
@@ -3305,8 +3307,10 @@
     if (!pitSpielAktiv()) return false;
     const sp = pitSpiel;
     if (sp.i >= sp.folge.length) return true;
+    // BESTELLT: "Wenn ich die falsche Taste druecke, fuege Zeit hinzu. Wenn ich richtig
+    // druecke, ziehe Zeit ab." Beides um 5 % der Grundzeit.
     if (welche === sp.folge[sp.i]) { sp.bonus += PIT_SPIEL_BONUS * sp.T; sp.treffer++; sp.blitz = 'ok'; }
-    else { sp.fehler++; sp.blitz = 'falsch'; }
+    else { sp.bonus -= PIT_SPIEL_BONUS * sp.T; sp.fehler++; sp.blitz = 'falsch'; }
     sp.blitzBis = pitStandElapsed + 0.3;
     sp.i++;
     sp.fensterAb = pitStandElapsed;

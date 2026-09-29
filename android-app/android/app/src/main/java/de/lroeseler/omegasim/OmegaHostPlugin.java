@@ -42,6 +42,15 @@ public class OmegaHostPlugin extends Plugin {
     private WifiManager.MulticastLock multicast;
     private final Handler haupt = new Handler(Looper.getMainLooper());
 
+    // Vollbild erneut anlegen (Status- und Navigationsleiste weg), von der Web-Seite aus
+    // gerufen. Liegt in diesem Plugin, weil es schon angemeldet ist - ein eigenes nur dafuer
+    // waere eine zweite Stelle, an der die App registriert werden muss.
+    @PluginMethod
+    public void vollbild(PluginCall call) {
+        if (getActivity() != null) getActivity().runOnUiThread(() -> MainActivity.vollbildFuer(getActivity()));
+        call.resolve();
+    }
+
     @PluginMethod
     public void start(PluginCall call) {
         int port = call.getInt("port", 8080);

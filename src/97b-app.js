@@ -23,6 +23,21 @@
     const merken = () => { try { localStorage.setItem(APP_STORE, JSON.stringify(einstellung)); } catch (e) { /* privat */ } };
 
     ['info-app-kachel', 'mp-app'].forEach((id) => { if ($(id)) $(id).hidden = false; });
+
+    // VOLLBILD NACHLEGEN (ab APK 0.8.26; aeltere kennen die Methode nicht, dann bleibt es beim
+    // Versuch in MainActivity). BESTELLT: Uhrzeit, Akku, Home- und Tab-Knopf ausblenden.
+    // Beim Start, beim Zurueckkommen, bei jedem Tabwechsel und hoechstens alle 3 s bei einer
+    // Beruehrung - so verschwinden die Leisten auch wieder, wenn man sie hergewischt hat.
+    const vollbild = () => { hst('vollbild').catch(() => { /* aeltere APK */ }); };
+    let vollbildZuletzt = 0;
+    vollbild();
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) vollbild(); });
+    window.addEventListener('focus', vollbild);
+    document.addEventListener('pointerdown', () => {
+      const j = Date.now();
+      if (j - vollbildZuletzt > 3000) { vollbildZuletzt = j; vollbild(); }
+    }, { passive: true, capture: true });
+    document.querySelectorAll('.tab-btn').forEach((b) => b.addEventListener('click', vollbild));
     if ($('mp-app-hinweis')) $('mp-app-hinweis').hidden = true;
 
     // Die laufende Fassung ist hochgekommen: das ist die Bestaetigung, auf die der Wachhund
