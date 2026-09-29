@@ -1,5 +1,5 @@
-{"version":"0.8.34","apk":1,"dateien":[
-{"p":"index.html","h":"c3a9329fdfaefb52bc316fe72371320dfb1f44cfee16022e45cf8e09c8f473da","g":4293149},
+{"version":"0.8.35","apk":1,"dateien":[
+{"p":"index.html","h":"f872f8c1344511fe597e05b10d3af74d9490aebb36c2a856254d006496e605ce","g":4298516},
 {"p":"mp-overview.html","h":"f1e30402d96e8aeedfa0219d2b3a8a6e3af09da17d1c6fe1faa61fdaba499a59","g":8680},
 {"p":"manifest.webmanifest","h":"868416fe2c9d41ebed0b5d479f07bbd16679dd4835e9c526da9eae8046e1e36a","g":639},
 {"p":"favicon.svg","h":"bc804f771d409b0efff2f2a78238a91d843d8d02efc2c614c6bdc544763de931","g":5456},
@@ -256,8 +256,8 @@
 {"p":"img/challenges.jpg","h":"952b01f1b5e90b442c0432541c51686d600adffb2ddf216d2995ce73f45a68e4","g":47405},
 {"p":"img/controller-bg.jpg","h":"1617b4ab35435033efdd9044cc44e9c7f2ccb78ec0ac9768fc161947161590aa","g":180240},
 {"p":"img/controller.jpg","h":"6cf278b1a93b8a4f93e3c17e1a528c76fe2e4fcb8e40b90d9f7d719493351e3a","g":35402},
-{"p":"img/fahren-bg.jpg","h":"8a127d4d7212f9658674794699858a4fe803f9d875a3bbb2f54b892acdf63e60","g":338635},
-{"p":"img/fahren.jpg","h":"05cf214098fd27c0f39c9fa7780926fdbca6c3bdf1eedfe5f34c22c23321d2d3","g":57072},
+{"p":"img/fahren-bg.jpg","h":"9504091918a966911ccca711616b8209dca2eb97aa358f707d53b6e2df4d7d78","g":32353},
+{"p":"img/fahren.jpg","h":"9504091918a966911ccca711616b8209dca2eb97aa358f707d53b6e2df4d7d78","g":32353},
 {"p":"img/garage-bg.jpg","h":"2169b4324606e60a6a7829cf17e9a87115c3542fd1bebd1fef7b16fb55d535cb","g":222443},
 {"p":"img/garage.jpg","h":"48bd04f6f243074ec3ca666aae58f20cbf0eb37f32cf394e0005bec4cfa43f20","g":55870},
 {"p":"img/haupt-bg.jpg","h":"d4a72da189756065b9a31addae549d78abff972023a7db91f559915b8b6d9c48","g":111068},
@@ -270,12 +270,16 @@
 {"p":"img/optionen.jpg","h":"e544aca4ec559fd5dcdb00e5fa2cfae4424a3133326db55b7a1d092646c49e33","g":48938},
 {"p":"img/rennen-bg.jpg","h":"5db36093f7204d76fca897b46d10dac6fe451ddf4f0e319ba24778ddc3e4c917","g":168200},
 {"p":"img/rennen.jpg","h":"39677dd98c9da8644c17f21477a3fb342362480641cf070b3bbfbe4eb2aba4c0","g":89505},
+{"p":"img/rennoptionen-bg.jpg","h":"4c3c6d4dec335ef7f357161e3c0a3e26b4856ed987e91739bc697096245ac721","g":28159},
+{"p":"img/rennoptionen.jpg","h":"4c3c6d4dec335ef7f357161e3c0a3e26b4856ed987e91739bc697096245ac721","g":28159},
 {"p":"img/start-bg.jpg","h":"66b5093fd4dad7ce297477bc0b0c8bac29df188b9124d661f836f9af598f31ca","g":137864},
 {"p":"img/start.jpg","h":"c71b422c6b08ad82b989ec2d792d78c450e0d419941ff8d56e0d442ac4e0f0ba","g":70865},
 {"p":"img/strecke-bahn-bg.jpg","h":"b69c445c480f9db8801107e2d7279c64048e91856a2c9542ce3ffb9e32cdbd74","g":134560},
 {"p":"img/strecke-bahn.jpg","h":"234e5c8050e50f3b80455e1f76841574edfa0ee9b2fa4e4396db1ed26761c8b5","g":69439},
 {"p":"img/strecke-frei-bg.jpg","h":"8530939c5c948c62523767dd29b26cd83affc75b93f94c6d069446ae84256488","g":151503},
 {"p":"img/strecke-frei.jpg","h":"a2a517f583b00f116bd73b3c30b897f55df47266414630d9b68d4fa49811bafb","g":26058},
+{"p":"img/strecke-kachel-bg.jpg","h":"1e53777be4c21d705d719ed851d454827ee511070b709f1e2ce3efa79694c43b","g":31342},
+{"p":"img/strecke-kachel.jpg","h":"1e53777be4c21d705d719ed851d454827ee511070b709f1e2ce3efa79694c43b","g":31342},
 {"p":"img/titel-bg.jpg","h":"c02d07a3d67a58813608b14a32f17da24e026400db9ff966cd66729de63f42f6","g":67544},
 {"p":"img/titel.jpg","h":"d0b0567a6ca37be63fbe2040e34c43d19a6da79fd6dbb8f0404cd46d5fdc7e2b","g":39348}
 ]}

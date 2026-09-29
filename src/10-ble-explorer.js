@@ -755,6 +755,10 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Zurück zum Menü": "Back to menu",
+    "Zurück zum Menü (Options, Esc)": "Back to menu (Options, Esc)",
+    "Name in der Bestenliste": "Name on the leaderboard",
+    "Cockpit immer im Vollbild, der Menü-Knopf dort zeigt jetzt „Zurück“. Reiter oben: Fahren, Mehrspieler, Challenges, Optionen. Die Info-Kacheln stehen direkt in den Optionen unter einer eigenen Überschrift. Challenges: Strecken heißen Monzetta, Suzuna, Monte Carlito und Silverbrook, der Name für die Bestenliste lässt sich auf jeder Strecken-Seite festlegen, das Perzentil zählt je Spieler. Neue Kachel- und Hintergrundbilder im Fahren-Menü.": "Cockpit always in full screen, its menu button now shows \"back\". Top tabs: Drive, Multiplayer, Challenges, Options. The info tiles sit directly in the options under their own heading. Challenges: tracks are called Monzetta, Suzuna, Monte Carlito and Silverbrook, the leaderboard name can be set on every track page, the percentile counts per player. New tile and background images in the Drive menu.",
     "Stand": "as of",
     "Challenges: die Bestenliste kommt aus einem stündlichen Schnappschuss im Repo, dazu sofort die eigenen Zeiten; das Hochladen wiederholt bei Aussetzern.": "Challenges: the leaderboard comes from an hourly snapshot in the repo, plus your own times right away; uploading retries on dropouts.",
     "Challenges: gemeinsame Online-Bestenliste ab Werk eingetragen, für alle Kopien der App.": "Challenges: shared online leaderboard set up by default, for all copies of the app.",
@@ -2820,6 +2824,11 @@
       // Only hold the screen awake while the racing screen is actually the one on show.
       keepScreenAwake(btn.dataset.tab === 'race');
       document.body.classList.toggle('race-mode', btn.dataset.tab === 'race');
+      // COCKPIT IMMER IM VOLLBILD (v0.8.35). BESTELLT: "Cockpit screen immer im Vollbild machen
+      // und mir nicht die Option geben auf dem Gamepad (linker Stick)". Lehnt der Browser das
+      // echte Vollbild ab (kein Tipp davor, iOS), gilt trotzdem das Vollbild-Layout.
+      if (btn.dataset.tab === 'race' && !document.body.classList.contains('race-fs')
+          && typeof enterRaceFullscreen === 'function') enterRaceFullscreen();
       if (btn.dataset.tab === 'race' && typeof cockpitScreenWiederherstellen === 'function') {
         cockpitScreenWiederherstellen();
       }

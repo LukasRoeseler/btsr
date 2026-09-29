@@ -2546,6 +2546,10 @@
   .gk-w > button:not(.gar-speed-reset) { background: none; border: 0; color: var(--k-blau); padding: 2px 6px; min-height: 0; }
   .gk-hinweis { color: var(--muted); font-size: 12px; padding: 4px; }
   .gk-aufzeile .gar-speed { padding: 3px 4px; }
+  /* Zwischenueberschrift fuer Kachelgruppen (Optionen: Einstellungen / Info). */
+  .k-zwischen { margin: 12px 0 6px; padding: 3px 10px; font-size: 11px; font-weight: 800; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--muted); border-left: 3px solid var(--k-blau); }
+  .subpage-home > .k-zwischen:first-of-type { margin-top: 2px; }
   /* ---- Challenges (v0.8.30) ---- */
   .ch-kachel .ch-mini { display: grid; place-items: center; height: clamp(64px, 26vh, 170px); padding: 6px 6px 2px; }
   .ch-mini svg { max-width: 100%; max-height: 100%; width: auto; height: 100%; }
@@ -2561,6 +2565,8 @@
   .ch-teile { font-size: 12px; color: var(--muted); }
   .ch-teile.fehlt { color: var(--bad); }
   .ch-teile.da { color: var(--good); }
+  .ch-name-zeile { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--muted); margin: 6px 0; }
+  .ch-name-zeile input { flex: 1; min-width: 0; }
   .ch-start { width: 100%; font-size: 15px; padding: 10px; letter-spacing: .08em; text-transform: uppercase; margin: 6px 0 4px; }
   .ch-ergebnis { border-left: 3px solid var(--k-blau); padding: 6px 10px; background: rgba(0,163,224,.08); margin-bottom: 8px; }
   .ch-ergebnis[hidden] { display: none; }
@@ -3612,6 +3618,9 @@
     color: var(--navy); border: 1px solid var(--border); border-bottom-width: 2px;
     border-bottom-color: var(--border-strong); border-radius: 4px;
     padding: 2px 7px; white-space: nowrap; justify-self: start; }
+  /* Kein Vollbild-Umschalter im Cockpit: es ist immer Vollbild (v0.8.35). */
+  #race-fs, #race-fs-exit { display: none !important; }
+  #race-menue svg { width: 1.15em; height: 1.15em; vertical-align: -0.2em; }
   .race-fs-btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
     background: var(--panel-2); color: inherit; font: inherit; cursor: pointer;
     min-height: 40px; }
@@ -3829,7 +3838,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.34</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.35</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3864,7 +3873,7 @@
       <div class="k-kachel " id="fa-strecke" role="button" tabindex="0" data-quad="bahn">
         <span class="k-kk">Strecke</span>
         <span class="k-kt" id="fa-strecke-titel"></span>
-        <span class="k-kb" id="fa-strecke-bild" style="background-image:url(img/strecke-bahn.jpg)"></span>
+        <span class="k-kb" id="fa-strecke-bild" style="background-image:url(img/strecke-kachel.jpg)"></span>
         <span class="k-ki" id="fa-strecke-info"></span>
         <span class="k-knopfreihe">
           <button type="button" class="k-knopf" id="fa-scan">Scan</button>
@@ -3878,7 +3887,7 @@
       <div class="k-kachel " id="fa-renn" role="button" tabindex="0" data-quad="renntyp">
         <span class="k-kk">Rennoptionen</span>
         <span class="k-kt" id="fa-renn-titel"></span>
-        <span class="k-kb" style="background-image:url(img/rennen.jpg)"></span>
+        <span class="k-kb" style="background-image:url(img/rennoptionen.jpg)"></span>
         <span class="k-ki" id="fa-renn-info"></span>
       </div>
       <div class="k-gitter k-fahren-unten">
@@ -3943,7 +3952,12 @@
         <span class="schirm-punkte" id="race-screen-dots" aria-hidden="true"></span>
       </div>
       <div class="race-corner">
-        <button type="button" id="race-menue" aria-label="Menü" title="Menü (Options, Esc)">&#9776;</button>
+        <button type="button" id="race-menue" aria-label="Zurück zum Menü" title="Zurück zum Menü (Options, Esc)">
+          <!-- BESTELLT: "selbe Funktion, aber das Icon soll ein klares Zurueck oder Beenden
+               signalisieren": Pfeil aus einer offenen Tuer. -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+               stroke-linejoin="round" aria-hidden="true"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/>
+            <path d="M10 16l-4-4 4-4M6 12h10"/></svg></button>
       <button type="button" id="race-fs" title="Vollbild" aria-label="Vollbild">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                stroke-linecap="round" stroke-linejoin="round">
@@ -4499,19 +4513,19 @@
       <div class="misc-grid ch-kacheln">
         <button class="misc-tile subpage-open ch-kachel" data-sub="ch-oval">
           <span class="ch-mini" data-ch="oval" aria-hidden="true"></span>
-          <b data-i18n-skip>Wohnzimmer-Runde</b>
+          <b data-i18n-skip>Monzetta</b>
           <span>Grundpackung · 10 Runden</span></button>
         <button class="misc-tile subpage-open ch-kachel" data-sub="ch-schlange">
           <span class="ch-mini" data-ch="schlange" aria-hidden="true"></span>
-          <b data-i18n-skip>Kurvenschlange</b>
+          <b data-i18n-skip>Suzuna</b>
           <span>Grundpackung · 8 Runden</span></button>
         <button class="misc-tile subpage-open ch-kachel" data-sub="ch-kehre">
           <span class="ch-mini" data-ch="kehre" aria-hidden="true"></span>
-          <b data-i18n-skip>Spitzkehre</b>
+          <b data-i18n-skip>Monte Carlito</b>
           <span>Grundpackung und Haarnadel-Set · 8 Runden</span></button>
         <button class="misc-tile subpage-open ch-kachel" data-sub="ch-weitblick">
           <span class="ch-mini" data-ch="weitblick" aria-hidden="true"></span>
-          <b data-i18n-skip>Weitblick-Ring</b>
+          <b data-i18n-skip>Silverbrook</b>
           <span>Grundpackung und 30&deg;-Au&szlig;enkurven-Set · 8 Runden</span></button>
         <button class="misc-tile subpage-open" data-sub="ch-online">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="24" r="16"/><path d="M8 24h32M24 8c6 5 6 27 0 32M24 8c-6 5-6 27 0 32" stroke="var(--bad)"/></svg>
@@ -4522,22 +4536,22 @@
     </div>
     <div class="card subpage" id="sub-ch-oval">
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
-      <h2 data-i18n-skip>Wohnzimmer-Runde</h2>
+      <h2 data-i18n-skip>Monzetta</h2>
       <div class="ch-platz"></div>
     </div>
     <div class="card subpage" id="sub-ch-schlange">
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
-      <h2 data-i18n-skip>Kurvenschlange</h2>
+      <h2 data-i18n-skip>Suzuna</h2>
       <div class="ch-platz"></div>
     </div>
     <div class="card subpage" id="sub-ch-kehre">
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
-      <h2 data-i18n-skip>Spitzkehre</h2>
+      <h2 data-i18n-skip>Monte Carlito</h2>
       <div class="ch-platz"></div>
     </div>
     <div class="card subpage" id="sub-ch-weitblick">
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
-      <h2 data-i18n-skip>Weitblick-Ring</h2>
+      <h2 data-i18n-skip>Silverbrook</h2>
       <div class="ch-platz"></div>
     </div>
     <div class="card subpage" id="sub-ch-online">
@@ -4572,6 +4586,8 @@
         <p class="muted" id="ch-modus-text" data-i18n-skip></p>
         <div class="ch-wahl" id="ch-preset"><button type="button" data-p="pro" data-i18n-skip>Pro</button><button type="button" data-p="arcade" data-i18n-skip>Arcade</button></div>
         <p class="ch-teile" id="ch-teile" data-i18n-skip></p>
+        <div class="ch-name-zeile"><label for="ch-name">Name in der Bestenliste</label>
+          <input type="text" id="ch-name" maxlength="16" data-preset-skip></div>
         <button type="button" class="primary ch-start" id="ch-start">Challenge starten</button>
         <h3>Bestenliste</h3>
         <p class="muted" id="ch-liste-status" data-i18n-skip></p>
@@ -4589,65 +4605,14 @@
          Kacheln, jede fuehrt auf eine Karte weiter unten in diesem Abschnitt. -->
     <div class="card subpage-home" id="sub-home-info">
       <h2>Info</h2>
-      <div class="misc-grid">
-        <button class="misc-tile subpage-open" data-sub="wozu">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M24 6a12 12 0 0 0-7 21c2 1.5 3 3 3 5h8c0-2 1-3.5 3-5a12 12 0 0 0-7-21z"/>
-            <path d="M20 38h8M21 42h6" stroke="var(--bad)"/>
-          </svg>
-          <b>Wozu?</b>
-          <span>Warum dieses Projekt existiert, und was offene Software damit zu tun hat.</span>
-        </button>
-        <button class="misc-tile subpage-open" data-sub="need">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 25l9 9 19-20"/></svg>
-          <b>Was du brauchst</b>
-          <span>Browser, Firmware, Controller &ndash; und was optional dazukommt.</span>
-        </button>
-        <button class="misc-tile subpage-open" data-sub="feat">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 12h32M8 24h32M8 36h32"/><circle cx="18" cy="12" r="3.5" stroke="var(--bad)"/><circle cx="30" cy="24" r="3.5" stroke="var(--bad)"/><circle cx="14" cy="36" r="3.5" stroke="var(--bad)"/></svg>
-          <b>Funktionen</b>
-          <span>Was OmegaSim alles kann, auf einen Blick.</span>
-        </button>
-        <button class="misc-tile subpage-open" data-sub="legal">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M24 5l15 6v11c0 10-7 17-15 21C16 39 9 32 9 22V11z"/><path d="M17 24l5 5 9-10" stroke="var(--bad)"/></svg>
-          <b>Rechtliches</b>
-          <span>Unabh&auml;ngig, offen, ohne Gew&auml;hr &ndash; und was gez&auml;hlt wird.</span>
-        </button>
-        <button class="misc-tile subpage-open" data-sub="dank">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M24 40C10 30 6 22 6 15a9 9 0 0 1 18-2 9 9 0 0 1 18 2c0 7-4 15-18 25z"/>
-          </svg>
-          <b>Danksagungen</b>
-          <span>Wer geholfen hat, und woher die Kl&auml;nge kommen.</span>
-        </button>
-        <button class="misc-tile subpage-open" data-sub="patchnotes">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="24" cy="26" r="16"/>
-            <path d="M24 26V16M24 26l8 5" stroke="var(--bad)"/>
-            <path d="M17 6h14M24 6v4"/>
-          </svg>
-          <b>Patchnotes</b>
-          <span>Was sich je Wochenversion ge&auml;ndert hat, kurz zusammengefasst.</span>
-        </button>
-        <button class="misc-tile subpage-open" data-sub="app" id="info-app-kachel" hidden>
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="14" y="4" width="20" height="40" rx="3" stroke-width="2.8"/>
-            <path d="M24 14v12M19 21l5 5 5-5" stroke="var(--bad)"/>
-            <path d="M21 38h6"/>
-          </svg>
-          <b>App &amp; Updates</b>
-          <span>Version der Android-App, Updates ohne neue APK.</span>
-        </button>
-      </div>
+      <!-- Die Kacheln stehen seit v0.8.35 direkt in den Optionen unter "Info" (eine Ebene
+           weniger). Diese Seite bleibt als Rahmen der Info-Unterseiten. -->
+      <div class="misc-grid"></div>
     </div>
     <!-- BESTELLT: "Ich will, dass ich die App einfach updaten kann ohne die APK neu
          installieren zu muessen." Nur in der Android-App sichtbar. -->
     <div class="card subpage" id="sub-app">
-      <button class="misc-back subpage-back" data-sub="">&larr; Info</button>
+      <button class="misc-back goto-tab" data-tab="options">&larr; Optionen</button>
       <h2>App &amp; Updates <span class="wip-tag">experimentell</span></h2>
       <p class="muted">Die App l&auml;dt neue Fassungen selbst, direkt von der Projektseite. Geladen wird nur, was sich ge&auml;ndert hat, und alle Einstellungen bleiben erhalten. Startet eine neue Fassung nicht, schaltet die App von selbst auf die vorige zur&uuml;ck.</p>
       <div class="doc-table-wrap"><table class="doc-table">
@@ -4668,7 +4633,7 @@
     </div>
     <!-- Die drei Bloecke der alten Startseite, unveraendert, jetzt als Info-Unterseiten. -->
     <div class="card subpage" id="sub-need">
-      <button class="misc-back subpage-back" data-sub="">&larr; Info</button>
+      <button class="misc-back goto-tab" data-tab="options">&larr; Optionen</button>
       <h2>Was du brauchst</h2>
     <div class="home-need">
       <h3>Was du zum Fahren brauchst</h3>
@@ -4696,7 +4661,7 @@
     </div>
     </div>
     <div class="card subpage" id="sub-feat">
-      <button class="misc-back subpage-back" data-sub="">&larr; Info</button>
+      <button class="misc-back goto-tab" data-tab="options">&larr; Optionen</button>
       <h2>Funktionen</h2>
     <!-- LIZENZ UND HAFTUNG, und zwar VOR den Features. Wer wissen will, worauf er sich
          einlaesst, soll es lesen, bevor er von einer Liste mit Faehigkeiten ueberzeugt
@@ -4736,7 +4701,7 @@
     </div>
     </div>
     <div class="card subpage" id="sub-legal">
-      <button class="misc-back subpage-back" data-sub="">&larr; Info</button>
+      <button class="misc-back goto-tab" data-tab="options">&larr; Optionen</button>
       <h2>Rechtliches</h2>
     <div class="home-legal">
       <div class="home-legal-h">Unabh&auml;ngig, offen, ohne Gew&auml;hr</div>
@@ -4754,7 +4719,7 @@
     </div>
     </div>
     <div class="card subpage" id="sub-wozu">
-      <button class="misc-back subpage-back" data-sub="">&larr; Info</button>
+      <button class="misc-back goto-tab" data-tab="options">&larr; Optionen</button>
       <h2>Wozu dient dieses Projekt?</h2>
       <p class="muted">Die Hardware ist gekauft, die Software bestimmt jemand anders. Dieses Projekt dreht das um: es steuert ein Carrera-Hybrid-Auto mit eigenem Code &uuml;ber dieselbe Bluetooth-Schnittstelle, die die Hersteller-App benutzt. Damit l&auml;uft auf der Hardware, was man selbst darauf laufen lassen will &ndash; unabh&auml;ngig davon, ob ein Anbieter eine Funktion vorsieht, eine App weiter pflegt oder einen Server abschaltet.</p>
       <p class="muted">Der zweite Punkt ist die Gemeinschaft. Ein offengelegtes Protokoll kann jeder weiterverwenden: f&uuml;r Funktionen, die der Hersteller nicht baut, f&uuml;r eine andere Bedienung, f&uuml;r Unterricht. Das hier ist bewusst als Beispiel gebaut und nicht als Produkt: alles, was herausgefunden wurde, steht in der Doku, samt der Stellen, an denen wir uns geirrt haben.</p>
@@ -4768,7 +4733,7 @@
     </div>
 
     <div class="card subpage" id="sub-dank">
-      <button class="misc-back subpage-back" data-sub="">&larr; Info</button>
+      <button class="misc-back goto-tab" data-tab="options">&larr; Optionen</button>
       <h2>Danksagungen</h2>
       <!-- ---- KEINE AUSZEICHNUNG MITTEN IM SATZ ----------------------------------
            Ein <b> oder <code> innerhalb eines Satzes ZERLEGT den Textknoten, und die
@@ -4833,10 +4798,11 @@
          kommt ein neuer Absatz oben oder unten dazu, siehe die allgemeine Verifikation
          im Session-Plan. -->
     <div class="card subpage" id="sub-patchnotes">
-      <button class="misc-back subpage-back" data-sub="">&larr; Info</button>
+      <button class="misc-back goto-tab" data-tab="options">&larr; Optionen</button>
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Cockpit immer im Vollbild, der Men&uuml;-Knopf dort zeigt jetzt &bdquo;Zur&uuml;ck&ldquo;. Reiter oben: Fahren, Mehrspieler, Challenges, Optionen. Die Info-Kacheln stehen direkt in den Optionen unter einer eigenen Überschrift. Challenges: Strecken hei&szlig;en Monzetta, Suzuna, Monte Carlito und Silverbrook, der Name f&uuml;r die Bestenliste l&auml;sst sich auf jeder Strecken-Seite festlegen, das Perzentil z&auml;hlt je Spieler. Neue Kachel- und Hintergrundbilder im Fahren-Men&uuml;.</li>
         <li>Challenges: die Bestenliste kommt aus einem st&uuml;ndlichen Schnappschuss im Repo, dazu sofort die eigenen Zeiten; das Hochladen wiederholt bei Aussetzern.</li>
         <li>Challenges: gemeinsame Online-Bestenliste ab Werk eingetragen, f&uuml;r alle Kopien der App.</li>
         <li>Challenges (experimentell): vier feste Strecken, je beste Runde oder Rennen &uuml;ber feste Runden, Pro oder Arcade. Das Auto muss stehen, dann Ampel, dann los; ohne Ghosts, danach sind die eigenen Einstellungen wieder da. Bestenliste mit Histogramm und Perzentil, lokal und online &uuml;ber ein eigenes Google Sheet.</li>
@@ -7892,7 +7858,7 @@
   <section class="tabpage" id="tab-options">
     <div class="card subpage-home" id="sub-home-options">
       <h2>Einstellungen</h2>
-      
+      <div class="k-zwischen">Einstellungen</div>
       <div class="misc-grid">
         <button class="misc-tile subpage-open" data-sub="opt-general">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
@@ -7966,12 +7932,63 @@
           <b>2&nbsp;Spieler</b>
           <span>Zwei Autos, zwei Controller, beide Drehzahlen im Cockpit. Im Aufbau.</span>
         </button>
-        <!-- Info: eine Ebene tiefer als vorher (v0.8.27). -->
-        <button class="misc-tile goto-tab" data-tab="info">
+      </div>
+      <!-- INFO OHNE EIGENE EBENE (v0.8.35). BESTELLT: "Die Kacheln aus INFO alles einzeln
+           auflisten, aber extra gruppiert mit Zwischenueberschrift, um klar zu unterscheiden
+           und eine Menue-Ebene zu sparen." Die Unterseiten bleiben im Reiter Info. -->
+      <div class="k-zwischen">Info</div>
+      <div class="misc-grid">
+        <button class="misc-tile info-open" data-sub="wozu">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="24" r="17"/><path d="M24 22v11" stroke="var(--bad)"/><circle cx="24" cy="15.5" r="1.4" fill="currentColor"/></svg>
-          <b>Info</b>
-          <span>Wozu, Funktionen, Danksagungen, Patchnotes, Rechtliches.</span>
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M24 6a12 12 0 0 0-7 21c2 1.5 3 3 3 5h8c0-2 1-3.5 3-5a12 12 0 0 0-7-21z"/>
+            <path d="M20 38h8M21 42h6" stroke="var(--bad)"/>
+          </svg>
+          <b>Wozu?</b>
+          <span>Warum dieses Projekt existiert, und was offene Software damit zu tun hat.</span>
+        </button>
+        <button class="misc-tile info-open" data-sub="need">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 25l9 9 19-20"/></svg>
+          <b>Was du brauchst</b>
+          <span>Browser, Firmware, Controller &ndash; und was optional dazukommt.</span>
+        </button>
+        <button class="misc-tile info-open" data-sub="feat">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 12h32M8 24h32M8 36h32"/><circle cx="18" cy="12" r="3.5" stroke="var(--bad)"/><circle cx="30" cy="24" r="3.5" stroke="var(--bad)"/><circle cx="14" cy="36" r="3.5" stroke="var(--bad)"/></svg>
+          <b>Funktionen</b>
+          <span>Was OmegaSim alles kann, auf einen Blick.</span>
+        </button>
+        <button class="misc-tile info-open" data-sub="legal">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M24 5l15 6v11c0 10-7 17-15 21C16 39 9 32 9 22V11z"/><path d="M17 24l5 5 9-10" stroke="var(--bad)"/></svg>
+          <b>Rechtliches</b>
+          <span>Unabh&auml;ngig, offen, ohne Gew&auml;hr &ndash; und was gez&auml;hlt wird.</span>
+        </button>
+        <button class="misc-tile info-open" data-sub="dank">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M24 40C10 30 6 22 6 15a9 9 0 0 1 18-2 9 9 0 0 1 18 2c0 7-4 15-18 25z"/>
+          </svg>
+          <b>Danksagungen</b>
+          <span>Wer geholfen hat, und woher die Kl&auml;nge kommen.</span>
+        </button>
+        <button class="misc-tile info-open" data-sub="patchnotes">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="24" cy="26" r="16"/>
+            <path d="M24 26V16M24 26l8 5" stroke="var(--bad)"/>
+            <path d="M17 6h14M24 6v4"/>
+          </svg>
+          <b>Patchnotes</b>
+          <span>Was sich je Wochenversion ge&auml;ndert hat, kurz zusammengefasst.</span>
+        </button>
+        <button class="misc-tile info-open" data-sub="app" id="info-app-kachel" hidden>
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="14" y="4" width="20" height="40" rx="3" stroke-width="2.8"/>
+            <path d="M24 14v12M19 21l5 5 5-5" stroke="var(--bad)"/>
+            <path d="M21 38h6"/>
+          </svg>
+          <b>App &amp; Updates</b>
+          <span>Version der Android-App, Updates ohne neue APK.</span>
         </button>
       </div>
     </div>
@@ -11521,6 +11538,10 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Zurück zum Menü": "Back to menu",
+    "Zurück zum Menü (Options, Esc)": "Back to menu (Options, Esc)",
+    "Name in der Bestenliste": "Name on the leaderboard",
+    "Cockpit immer im Vollbild, der Menü-Knopf dort zeigt jetzt „Zurück“. Reiter oben: Fahren, Mehrspieler, Challenges, Optionen. Die Info-Kacheln stehen direkt in den Optionen unter einer eigenen Überschrift. Challenges: Strecken heißen Monzetta, Suzuna, Monte Carlito und Silverbrook, der Name für die Bestenliste lässt sich auf jeder Strecken-Seite festlegen, das Perzentil zählt je Spieler. Neue Kachel- und Hintergrundbilder im Fahren-Menü.": "Cockpit always in full screen, its menu button now shows \"back\". Top tabs: Drive, Multiplayer, Challenges, Options. The info tiles sit directly in the options under their own heading. Challenges: tracks are called Monzetta, Suzuna, Monte Carlito and Silverbrook, the leaderboard name can be set on every track page, the percentile counts per player. New tile and background images in the Drive menu.",
     "Stand": "as of",
     "Challenges: die Bestenliste kommt aus einem stündlichen Schnappschuss im Repo, dazu sofort die eigenen Zeiten; das Hochladen wiederholt bei Aussetzern.": "Challenges: the leaderboard comes from an hourly snapshot in the repo, plus your own times right away; uploading retries on dropouts.",
     "Challenges: gemeinsame Online-Bestenliste ab Werk eingetragen, für alle Kopien der App.": "Challenges: shared online leaderboard set up by default, for all copies of the app.",
@@ -13586,6 +13607,11 @@
       // Only hold the screen awake while the racing screen is actually the one on show.
       keepScreenAwake(btn.dataset.tab === 'race');
       document.body.classList.toggle('race-mode', btn.dataset.tab === 'race');
+      // COCKPIT IMMER IM VOLLBILD (v0.8.35). BESTELLT: "Cockpit screen immer im Vollbild machen
+      // und mir nicht die Option geben auf dem Gamepad (linker Stick)". Lehnt der Browser das
+      // echte Vollbild ab (kein Tipp davor, iOS), gilt trotzdem das Vollbild-Layout.
+      if (btn.dataset.tab === 'race' && !document.body.classList.contains('race-fs')
+          && typeof enterRaceFullscreen === 'function') enterRaceFullscreen();
       if (btn.dataset.tab === 'race' && typeof cockpitScreenWiederherstellen === 'function') {
         cockpitScreenWiederherstellen();
       }
@@ -18909,8 +18935,11 @@
   // they stay in the top-right corner of the ROTATED view rather than of the screen.
   window.addEventListener('resize', syncRaceRotation);
   // Leaving fullscreen by swipe or Escape must put the buttons back too.
+  // Im Cockpit bleibt das Vollbild-Layout auch dann, wenn das echte Vollbild per Geste endet
+  // (v0.8.35: das Cockpit ist immer Vollbild); nur ausserhalb raeumt das hier auf.
   document.addEventListener('fullscreenchange', () => {
-    if (!document.fullscreenElement && document.body.classList.contains('race-fs')) {
+    if (!document.fullscreenElement && document.body.classList.contains('race-fs')
+        && !document.body.classList.contains('race-mode')) {
       exitRaceFullscreen();
     }
   });
@@ -21278,7 +21307,8 @@
   // INFO steht seit v0.8.27 unter den Optionen, oben ist Platz fuer CHALLENGES. BESTELLT:
   // "Schieb INFO in Optionen, sodass ich dort eine weitere Ebene habe und oben Platz habe
   // fuer Challenges."
-  const K_EBENE1 = ['fahren', 'mp', 'options', 'challenges', 'misc'];
+  // BESTELLT (v0.8.35): "Reihenfolge der Tabs oben: FAHREN, MEHRSPIELER, CHALLENGES, OPTIONEN".
+  const K_EBENE1 = ['fahren', 'mp', 'challenges', 'options', 'misc'];
   const K_NAME = {
     home: 'Titel', fahren: 'Fahren', garage: 'Garage', race: 'Cockpit',
     options: 'Optionen', control: 'Renneinstellungen', track: 'Strecke', mp: 'Mehrspieler',
@@ -21394,6 +21424,7 @@
     const lb = $('lb-wrap');
     if (lb && lb.classList.contains('on') && $('lb-close')) { $('lb-close').click(); return true; }
     const tab = kAktiverTab();
+    if (tab === 'info' && document.querySelector('#tab-info .subpage.on')) { konsoleZeige('options'); return true; }
     if (document.querySelector('.tabpage.active .subpage.on')) { showSubpage(''); return true; }
     if (tab === 'home' || K_EBENE1.includes(tab)) return false;
     let ziel = null;
@@ -21422,7 +21453,8 @@
     if (!tp || tab === 'home' || tab === 'race') return null;
     const offen = tp.querySelector('.subpage.on');
     if (offen) {
-      const kacheln = [...tp.querySelectorAll('.subpage-home .misc-tile.subpage-open')]
+      const kacheln = [...(tab === 'info' ? document.querySelectorAll('#sub-home-options .misc-tile.info-open')
+                                          : tp.querySelectorAll('.subpage-home .misc-tile.subpage-open'))]
         .filter((k) => !k.hidden);
       if (kacheln.length >= 2) {
         return kacheln.map((k) => ({
@@ -21818,7 +21850,7 @@
     const bild = $('fa-strecke-bild');
     // Im Ausdruck-Modus zeigt das Band das eigene Streckenfoto, sobald es eines gibt. Nur neu
     // setzen, wenn es sich geaendert hat: die Daten-URL ist einige hundert KB lang.
-    const bildNeu = !bahn && foto ? 'foto:' + foto.length : (bahn ? 'strecke-bahn' : 'strecke-frei');
+    const bildNeu = !bahn && foto ? 'foto:' + foto.length : (bahn ? 'strecke-kachel' : 'strecke-frei');
     if (bild && bild.dataset.bild !== bildNeu) {
       bild.style.backgroundImage = !bahn && foto ? 'url("' + foto + '")' : 'url(img/' + bildNeu + '.jpg)';
       bild.dataset.bild = bildNeu;
@@ -22009,6 +22041,7 @@
     kn('fa-druck', () => konsoleZeige('track', 'print'));
     kn('fa-profil', () => konsoleZeige('options', 'opt-feel'));
     kn('race-menue', () => konsoleZumMenue());
+    document.querySelectorAll('.info-open').forEach((el) => el.addEventListener('click', () => konsoleZeige('info', el.dataset.sub)));
     kn('mp-erkl-knopf', (e) => { e.stopPropagation(); optInfoOeffnen(t('Beitreten und Rangliste'), $('mp-erkl').innerHTML); });
     kn('mp-app-erkl-knopf', (e) => { e.stopPropagation(); optInfoOeffnen(t('Host'), $('mp-app-erkl').innerHTML); });
     kn('k-ergebnis', () => { kErgebnisWartet = true; konsoleInsCockpit(); });
@@ -32396,16 +32429,18 @@
   // tools/challenges-apps-script.gs). Die App spricht nur ueber chHochladen() und
   // chListeLaden(); ein Umzug auf einen anderen Dienst aendert nur diese zwei.
 
+  // NAMEN (v0.8.35): BESTELLT "Namen, die so aehnlich wie die von echten Rennstrecken sind (aber
+  // anders), damit die nicht uebersetzt werden muessen" - Monza, Suzuka, Monte Carlo, Silverstone.
   const CHALLENGES = [
     // BESTELLT: "Ersetze das Oval noch durch SGR2GR2LGR3G". Es ist damit kein Oval mehr, daher
     // der neue Name. Geschlossen (Luecke 0,5 cm), 1,36 x 2,28 m, Grundpackung.
-    { id: 'oval', name: 'Wohnzimmer-Runde', code: 'SGR2GR2LGR3G', runden: 10, sets: ['grund'],
+    { id: 'oval', name: 'Monzetta', code: 'SGR2GR2LGR3G', runden: 10, sets: ['grund'],
       idee: 'Zum Warmwerden: lange Gerade, ein kleiner Knick nach links, Bremspunkte lernen.' },
-    { id: 'schlange', name: 'Kurvenschlange', code: 'SRRRGLLRRRRGGGR', runden: 8, sets: ['grund'],
+    { id: 'schlange', name: 'Suzuna', code: 'SRRRGLLRRRRGGGR', runden: 8, sets: ['grund'],
       idee: 'Die zwei Linkskurven bilden ein S. Wer dort sauber umlenkt, gewinnt.' },
-    { id: 'kehre', name: 'Spitzkehre', code: 'SGRRRLHJRRRRG', runden: 8, sets: ['grund', 'haarnadel'],
+    { id: 'kehre', name: 'Monte Carlito', code: 'SGRRRLHJRRRRG', runden: 8, sets: ['grund', 'haarnadel'],
       idee: 'Zwei Haarnadeln direkt hintereinander als enges S: voll in die Bremse, umlegen, sauber raus.' },
-    { id: 'weitblick', name: 'Weitblick-Ring', code: 'SQRRRWGQRRRW', runden: 8, sets: ['grund', 'dreissig'],
+    { id: 'weitblick', name: 'Silverbrook', code: 'SQRRRWGQRRRW', runden: 8, sets: ['grund', 'dreissig'],
       idee: 'Lang und schmal: die weiten 30-Grad-Bögen machen die Längsseiten schnell.' },
   ];
   const CH_SET_NAME = { grund: 'Grundpackung', haarnadel: 'Haarnadel-Set', dreissig: '30°-Außenkurven-Set' };
@@ -32765,9 +32800,24 @@
     }
     return { zeiten: lok.map((z) => z.zeit_ms), online: false, eintraege: lok };
   }
+  // Online je SPIELER (Geraet) gerechnet: seine Bestzeit zaehlt einmal. "Du warst schneller als X %
+  // der Spieler" wuerde sonst von jemandem verzerrt, der dieselbe Strecke fuenfzigmal faehrt.
+  function chBesteJeSpieler(eintraege, ich, zeit) {
+    const beste = new Map();
+    eintraege.forEach((z, i) => {
+      const wer = z.geraet || ('?' + i);
+      if (!beste.has(wer) || +z.zeit_ms < beste.get(wer)) beste.set(wer, +z.zeit_ms);
+    });
+    if (!beste.has(ich) || zeit < beste.get(ich)) beste.set(ich, zeit);
+    return { werte: [...beste.values()], meine: beste.get(ich) };
+  }
   function chRangText(schl, zeit) {
     const a = chAlleZeiten(schl);
-    const alle = a.zeiten.indexOf(zeit) >= 0 ? a.zeiten : a.zeiten.concat([zeit]);
+    let alle = a.zeiten.indexOf(zeit) >= 0 ? a.zeiten : a.zeiten.concat([zeit]);
+    if (a.online) {
+      const b = chBesteJeSpieler(a.eintraege, chGeraet(), zeit);
+      alle = b.werte; zeit = b.meine;
+    }
     const platz = alle.filter((z) => z < zeit).length + 1;
     const p = chPerzentil(alle, zeit);
     return (a.online ? t('Du warst schneller als {p} % der Spieler.') : t('Schneller als {p} % deiner eigenen Läufe.'))
@@ -32811,6 +32861,8 @@
     teile.textContent = !bil.length ? t('Tipp: Unter Strecke > Meine Teile eintragen, was du hast, dann prüft die App hier, ob alles da ist.')
       : fehlt.length ? t('Fehlt') + ': ' + fehlt.map((x) => (-x.rest) + '× ' + t(TILE_LABEL[x.typ])).join(', ')
       : t('Alle Teile da');
+    const nm = $('ch-name');
+    if (nm && document.activeElement !== nm) nm.value = chOnline().fahrer || '';
     const start = $('ch-start');
     start.textContent = chLauf ? t('Challenge abbrechen') : t('Challenge starten');
     // Letztes Ergebnis dieser Strecke
@@ -32899,6 +32951,14 @@
   }));
   $('ch-start').addEventListener('click', () => { if (chLauf) challengeAbbrechen(); else challengeStarten(); });
   ['ch-url', 'ch-fahrer', 'ch-hochladen'].forEach((id) => $(id).addEventListener('change', chOnlineSpeichern));
+  // Derselbe Name direkt auf der Strecken-Seite (BESTELLT: "im Challenges-Bildschirm nochmal
+  // erlauben, dass ich meinen Username fuer die Bestenliste festlege").
+  $('ch-name').addEventListener('change', () => {
+    const o = chOnline();
+    o.fahrer = $('ch-name').value.trim().slice(0, 16);
+    chSchreiben(CH_ONLINE_STORE, o);
+    $('ch-fahrer').value = o.fahrer;
+  });
   $('ch-test').addEventListener('click', () => {
     chOnlineSpeichern();
     const st = $('ch-test-status');
@@ -43661,10 +43721,8 @@
       if (fsToggleNow && !prevFsToggle) {
         const aktiverTab = document.querySelector('.tab-btn.active');
         const tabName = aktiverTab ? aktiverTab.dataset.tab : null;
-        if (tabName === 'race') {
-          if (document.body.classList.contains('race-fs')) exitRaceFullscreen();
-          else enterRaceFullscreen();
-        } else if (tabName === 'track') {
+        // Im Cockpit nichts mehr: es ist immer Vollbild (v0.8.35).
+        if (tabName === 'track') {
           if (document.body.classList.contains('track-fs')) exitTrackFullscreen();
           else enterTrackFullscreen();
         }

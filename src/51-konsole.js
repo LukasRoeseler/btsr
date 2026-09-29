@@ -29,7 +29,8 @@
   // INFO steht seit v0.8.27 unter den Optionen, oben ist Platz fuer CHALLENGES. BESTELLT:
   // "Schieb INFO in Optionen, sodass ich dort eine weitere Ebene habe und oben Platz habe
   // fuer Challenges."
-  const K_EBENE1 = ['fahren', 'mp', 'options', 'challenges', 'misc'];
+  // BESTELLT (v0.8.35): "Reihenfolge der Tabs oben: FAHREN, MEHRSPIELER, CHALLENGES, OPTIONEN".
+  const K_EBENE1 = ['fahren', 'mp', 'challenges', 'options', 'misc'];
   const K_NAME = {
     home: 'Titel', fahren: 'Fahren', garage: 'Garage', race: 'Cockpit',
     options: 'Optionen', control: 'Renneinstellungen', track: 'Strecke', mp: 'Mehrspieler',
@@ -145,6 +146,7 @@
     const lb = $('lb-wrap');
     if (lb && lb.classList.contains('on') && $('lb-close')) { $('lb-close').click(); return true; }
     const tab = kAktiverTab();
+    if (tab === 'info' && document.querySelector('#tab-info .subpage.on')) { konsoleZeige('options'); return true; }
     if (document.querySelector('.tabpage.active .subpage.on')) { showSubpage(''); return true; }
     if (tab === 'home' || K_EBENE1.includes(tab)) return false;
     let ziel = null;
@@ -173,7 +175,8 @@
     if (!tp || tab === 'home' || tab === 'race') return null;
     const offen = tp.querySelector('.subpage.on');
     if (offen) {
-      const kacheln = [...tp.querySelectorAll('.subpage-home .misc-tile.subpage-open')]
+      const kacheln = [...(tab === 'info' ? document.querySelectorAll('#sub-home-options .misc-tile.info-open')
+                                          : tp.querySelectorAll('.subpage-home .misc-tile.subpage-open'))]
         .filter((k) => !k.hidden);
       if (kacheln.length >= 2) {
         return kacheln.map((k) => ({
@@ -569,7 +572,7 @@
     const bild = $('fa-strecke-bild');
     // Im Ausdruck-Modus zeigt das Band das eigene Streckenfoto, sobald es eines gibt. Nur neu
     // setzen, wenn es sich geaendert hat: die Daten-URL ist einige hundert KB lang.
-    const bildNeu = !bahn && foto ? 'foto:' + foto.length : (bahn ? 'strecke-bahn' : 'strecke-frei');
+    const bildNeu = !bahn && foto ? 'foto:' + foto.length : (bahn ? 'strecke-kachel' : 'strecke-frei');
     if (bild && bild.dataset.bild !== bildNeu) {
       bild.style.backgroundImage = !bahn && foto ? 'url("' + foto + '")' : 'url(img/' + bildNeu + '.jpg)';
       bild.dataset.bild = bildNeu;
@@ -760,6 +763,7 @@
     kn('fa-druck', () => konsoleZeige('track', 'print'));
     kn('fa-profil', () => konsoleZeige('options', 'opt-feel'));
     kn('race-menue', () => konsoleZumMenue());
+    document.querySelectorAll('.info-open').forEach((el) => el.addEventListener('click', () => konsoleZeige('info', el.dataset.sub)));
     kn('mp-erkl-knopf', (e) => { e.stopPropagation(); optInfoOeffnen(t('Beitreten und Rangliste'), $('mp-erkl').innerHTML); });
     kn('mp-app-erkl-knopf', (e) => { e.stopPropagation(); optInfoOeffnen(t('Host'), $('mp-app-erkl').innerHTML); });
     kn('k-ergebnis', () => { kErgebnisWartet = true; konsoleInsCockpit(); });

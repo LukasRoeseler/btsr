@@ -8750,10 +8750,8 @@
       if (fsToggleNow && !prevFsToggle) {
         const aktiverTab = document.querySelector('.tab-btn.active');
         const tabName = aktiverTab ? aktiverTab.dataset.tab : null;
-        if (tabName === 'race') {
-          if (document.body.classList.contains('race-fs')) exitRaceFullscreen();
-          else enterRaceFullscreen();
-        } else if (tabName === 'track') {
+        // Im Cockpit nichts mehr: es ist immer Vollbild (v0.8.35).
+        if (tabName === 'track') {
           if (document.body.classList.contains('track-fs')) exitTrackFullscreen();
           else enterTrackFullscreen();
         }

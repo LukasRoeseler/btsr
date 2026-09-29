@@ -26,16 +26,18 @@
   // tools/challenges-apps-script.gs). Die App spricht nur ueber chHochladen() und
   // chListeLaden(); ein Umzug auf einen anderen Dienst aendert nur diese zwei.
 
+  // NAMEN (v0.8.35): BESTELLT "Namen, die so aehnlich wie die von echten Rennstrecken sind (aber
+  // anders), damit die nicht uebersetzt werden muessen" - Monza, Suzuka, Monte Carlo, Silverstone.
   const CHALLENGES = [
     // BESTELLT: "Ersetze das Oval noch durch SGR2GR2LGR3G". Es ist damit kein Oval mehr, daher
     // der neue Name. Geschlossen (Luecke 0,5 cm), 1,36 x 2,28 m, Grundpackung.
-    { id: 'oval', name: 'Wohnzimmer-Runde', code: 'SGR2GR2LGR3G', runden: 10, sets: ['grund'],
+    { id: 'oval', name: 'Monzetta', code: 'SGR2GR2LGR3G', runden: 10, sets: ['grund'],
       idee: 'Zum Warmwerden: lange Gerade, ein kleiner Knick nach links, Bremspunkte lernen.' },
-    { id: 'schlange', name: 'Kurvenschlange', code: 'SRRRGLLRRRRGGGR', runden: 8, sets: ['grund'],
+    { id: 'schlange', name: 'Suzuna', code: 'SRRRGLLRRRRGGGR', runden: 8, sets: ['grund'],
       idee: 'Die zwei Linkskurven bilden ein S. Wer dort sauber umlenkt, gewinnt.' },
-    { id: 'kehre', name: 'Spitzkehre', code: 'SGRRRLHJRRRRG', runden: 8, sets: ['grund', 'haarnadel'],
+    { id: 'kehre', name: 'Monte Carlito', code: 'SGRRRLHJRRRRG', runden: 8, sets: ['grund', 'haarnadel'],
       idee: 'Zwei Haarnadeln direkt hintereinander als enges S: voll in die Bremse, umlegen, sauber raus.' },
-    { id: 'weitblick', name: 'Weitblick-Ring', code: 'SQRRRWGQRRRW', runden: 8, sets: ['grund', 'dreissig'],
+    { id: 'weitblick', name: 'Silverbrook', code: 'SQRRRWGQRRRW', runden: 8, sets: ['grund', 'dreissig'],
       idee: 'Lang und schmal: die weiten 30-Grad-Bögen machen die Längsseiten schnell.' },
   ];
   const CH_SET_NAME = { grund: 'Grundpackung', haarnadel: 'Haarnadel-Set', dreissig: '30°-Außenkurven-Set' };
@@ -395,9 +397,24 @@
     }
     return { zeiten: lok.map((z) => z.zeit_ms), online: false, eintraege: lok };
   }
+  // Online je SPIELER (Geraet) gerechnet: seine Bestzeit zaehlt einmal. "Du warst schneller als X %
+  // der Spieler" wuerde sonst von jemandem verzerrt, der dieselbe Strecke fuenfzigmal faehrt.
+  function chBesteJeSpieler(eintraege, ich, zeit) {
+    const beste = new Map();
+    eintraege.forEach((z, i) => {
+      const wer = z.geraet || ('?' + i);
+      if (!beste.has(wer) || +z.zeit_ms < beste.get(wer)) beste.set(wer, +z.zeit_ms);
+    });
+    if (!beste.has(ich) || zeit < beste.get(ich)) beste.set(ich, zeit);
+    return { werte: [...beste.values()], meine: beste.get(ich) };
+  }
   function chRangText(schl, zeit) {
     const a = chAlleZeiten(schl);
-    const alle = a.zeiten.indexOf(zeit) >= 0 ? a.zeiten : a.zeiten.concat([zeit]);
+    let alle = a.zeiten.indexOf(zeit) >= 0 ? a.zeiten : a.zeiten.concat([zeit]);
+    if (a.online) {
+      const b = chBesteJeSpieler(a.eintraege, chGeraet(), zeit);
+      alle = b.werte; zeit = b.meine;
+    }
     const platz = alle.filter((z) => z < zeit).length + 1;
     const p = chPerzentil(alle, zeit);
     return (a.online ? t('Du warst schneller als {p} % der Spieler.') : t('Schneller als {p} % deiner eigenen Läufe.'))
@@ -441,6 +458,8 @@
     teile.textContent = !bil.length ? t('Tipp: Unter Strecke > Meine Teile eintragen, was du hast, dann prüft die App hier, ob alles da ist.')
       : fehlt.length ? t('Fehlt') + ': ' + fehlt.map((x) => (-x.rest) + '× ' + t(TILE_LABEL[x.typ])).join(', ')
       : t('Alle Teile da');
+    const nm = $('ch-name');
+    if (nm && document.activeElement !== nm) nm.value = chOnline().fahrer || '';
     const start = $('ch-start');
     start.textContent = chLauf ? t('Challenge abbrechen') : t('Challenge starten');
     // Letztes Ergebnis dieser Strecke
@@ -529,6 +548,14 @@
   }));
   $('ch-start').addEventListener('click', () => { if (chLauf) challengeAbbrechen(); else challengeStarten(); });
   ['ch-url', 'ch-fahrer', 'ch-hochladen'].forEach((id) => $(id).addEventListener('change', chOnlineSpeichern));
+  // Derselbe Name direkt auf der Strecken-Seite (BESTELLT: "im Challenges-Bildschirm nochmal
+  // erlauben, dass ich meinen Username fuer die Bestenliste festlege").
+  $('ch-name').addEventListener('change', () => {
+    const o = chOnline();
+    o.fahrer = $('ch-name').value.trim().slice(0, 16);
+    chSchreiben(CH_ONLINE_STORE, o);
+    $('ch-fahrer').value = o.fahrer;
+  });
   $('ch-test').addEventListener('click', () => {
     chOnlineSpeichern();
     const st = $('ch-test-status');

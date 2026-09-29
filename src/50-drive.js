@@ -1615,8 +1615,11 @@
   // they stay in the top-right corner of the ROTATED view rather than of the screen.
   window.addEventListener('resize', syncRaceRotation);
   // Leaving fullscreen by swipe or Escape must put the buttons back too.
+  // Im Cockpit bleibt das Vollbild-Layout auch dann, wenn das echte Vollbild per Geste endet
+  // (v0.8.35: das Cockpit ist immer Vollbild); nur ausserhalb raeumt das hier auf.
   document.addEventListener('fullscreenchange', () => {
-    if (!document.fullscreenElement && document.body.classList.contains('race-fs')) {
+    if (!document.fullscreenElement && document.body.classList.contains('race-fs')
+        && !document.body.classList.contains('race-mode')) {
       exitRaceFullscreen();
     }
   });

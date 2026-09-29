@@ -46,7 +46,8 @@ QUELLE = os.path.join(REPO, 'photos')
 MOTIVE = {
     'titel': 'eb15c751-2d72-41aa-af6c-8e5bc54bee18.jpg',   # GT3 bei Nacht im Regen, Scheinwerfer
     'haupt': '5093976649_62c0292c23_b.jpg',
-    'fahren': '24281.jpg',                  # blaue und rote Pfeilstreifen, wie die Spuren
+    # BESTELLT (v0.8.35): "FAHREN Hintergrundbild: rangezoomte Version auf das Ruecklicht".
+    'fahren': ('fcfd5041-9934-4ffc-ae13-c784316066ed.jpg', 0, (110, 150, 640, 430)),
     'auto': '24276.jpg',                    # M4 GT3 von hinten
     'garage': ('24273.jpg', 90),            # M4 GT3 von oben, quer gelegt
     'strecke-bahn': '03a18c66-3e7f-4c80-a5f6-94465b9d43c7.jpg',   # Randstein in der Kurve
@@ -61,6 +62,11 @@ MOTIVE = {
     'controller': '24277.jpg',              # Controller nah (Steuerungs-Fuehrung)
     # Asphalt fuer den Editor-Hintergrund (BESTELLT: "stark abgedunkeltes, schwaches Bild mit
     # Asphalt von einer Strecke"): ein Ausschnitt nur mit Fahrbahn, ohne Randstein und Gras.
+    # Kachelbilder im Fahren-Menue (v0.8.35). BESTELLT: "Foto bei Strecke so machen, dass
+    # wirklich nur der Randstreifen zu sehen ist (einfach ranzoomen) und freies Training mit
+    # einem der Nordschleife-Bilder ersetzen".
+    'strecke-kachel': ('03a18c66-3e7f-4c80-a5f6-94465b9d43c7.jpg', 0, (300, 340, 840, 559)),
+    'rennoptionen': ('eb15c751-2d72-41aa-af6c-8e5bc54bee18.jpg', 0, (330, 170, 860, 470)),
     'asphalt': ('03a18c66-3e7f-4c80-a5f6-94465b9d43c7.jpg', 0, (0, 238, 420, 345)),
 }
 GROESSEN = {'-bg': 1920, '': 720}
