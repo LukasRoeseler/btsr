@@ -10333,6 +10333,109 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : K_EDITOR.length + ' Schritte, Pad blaettert, bleibt im Editor' };
   });
 
+  // ---- CHALLENGES (v0.8.30) ----
+  stAdd('Challenges: vier Strecken geschlossen und aus ihren Sets baubar', () => {
+    const f = [], zeilen = [];
+    const merkRot = trackRotationDeg;
+    trackRotationDeg = 0;
+    try {
+      for (const def of CHALLENGES) {
+        const tiles = chTiles(def);
+        const sch = trackSchluss(trackCenterline(tiles));
+        if (!sch.closed) f.push(def.name + ' nicht geschlossen (' + sch.lueckeCm.toFixed(1) + ' cm)');
+        const hat = {};
+        def.sets.forEach((set) => TEILE_PAKETE[set].forEach(([typ, n]) => { hat[typ] = (hat[typ] || 0) + n; }));
+        const braucht = {};
+        tiles.forEach((x) => { braucht[x.type] = (braucht[x.type] || 0) + 1; });
+        for (const [typ, n] of Object.entries(braucht)) {
+          if ((hat[typ] || 0) < n) f.push(def.name + ': ' + n + '× ' + TILE_LABEL[typ] + ', im Set ' + (hat[typ] || 0));
+        }
+        const [w, h] = chFlaeche(tiles);
+        zeilen.push(def.id + ' ' + tiles.length + ' Teile ' + w.toFixed(2) + 'x' + h.toFixed(2) + ' m');
+      }
+    } finally { trackRotationDeg = merkRot; }
+    if (CHALLENGES.length !== 4) f.push(CHALLENGES.length + ' statt 4 Strecken');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : zeilen.join(' | ') };
+  });
+
+  stAdd('Challenges: Wertung, Perzentil und Histogramm', () => {
+    const f = [];
+    const def = { runden: 3 };
+    const r = chWertung(def, 'rennen', [5000, 4000, 4500, 3900], true, false);
+    if (!r.gueltig || r.zeit !== 13500) f.push('Rennen zaehlt ' + r.zeit + ' statt der ersten drei Runden (13500)');
+    if (chWertung(def, 'rennen', [5000, 4000], true, false).gueltig) f.push('Rennen mit fehlender Runde gewertet');
+    if (chWertung(def, 'rennen', [5000, 4000, 4500], false, false).gueltig) f.push('abgebrochenes Rennen gewertet');
+    const b = chWertung(def, 'hotlap', [5000, 3800, 4200], false, false);
+    if (!b.gueltig || b.zeit !== 3800) f.push('beste Runde ' + b.zeit + ' statt 3800');
+    if (chWertung(def, 'hotlap', [], false, false).gueltig) f.push('beste Runde ohne Runde gewertet');
+    if (chWertung(def, 'hotlap', [3000], false, true).gueltig) f.push('Fruehstart gewertet');
+    const p = chPerzentil([10, 20, 30, 40, 50], 20);
+    if (p !== 75) f.push('Perzentil ' + p + ' statt 75');
+    if (chPerzentil([7], 7) !== 100) f.push('allein nicht 100 Prozent');
+    const k = chHistogramm([10, 11, 12, 30, 31, 50], 4);
+    const summe = k.reduce((a, x) => a + x.anz, 0);
+    if (k.length !== 4 || summe !== 6) f.push('Histogramm ' + k.length + ' Klassen, ' + summe + ' Werte');
+    if (k[0].anz !== 3 || k[3].anz !== 1) f.push('schnelle Zeiten nicht oben: ' + k.map((x) => x.anz).join(','));
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Rennen Summe, beste Runde Minimum, Abbruch und Fruehstart ungueltig, 75 %, 3/1/1/1' };
+  });
+
+  stAdd('Challenges: setzt Preset, Rennen und Strecke und stellt danach alles zurück', () => {
+    const f = [];
+    const vorher = chMerken();
+    const vorCode = trackToCode(currentTrackTiles, trackRotationDeg);
+    const def = chDef('kehre');
+    try {
+      chAnwenden(def, 'rennen', 'arcade');
+      if ($('race-mode').value !== 'laps' || raceLimit !== def.runden) f.push('Rennen nicht auf ' + def.runden + ' Runden');
+      if ($('phys-mode').value !== 'physik') f.push('Steuerungsmodus nicht Physik');
+      if (window.__presetActive && window.__presetActive() !== 'arcade') f.push('Preset ist ' + window.__presetActive());
+      if ($('race-wx-start').value !== 'dry' || $('race-pit-required').value !== '0') f.push('Wetter/Pflichtstopps nicht neutral');
+      if (trackToCode(currentTrackTiles, 0).replace(/\d/g, '') !== trackToCode(codeToTrack(def.code).tiles, 0).replace(/\d/g, '')) f.push('Strecke nicht geladen');
+      chAnwenden(def, 'hotlap', 'pro');
+      if ($('race-mode').value !== 'practice') f.push('beste Runde nicht als freies Training');
+    } finally {
+      chZuruecksetzen(vorher);
+    }
+    const nachher = chMerken();
+    if (JSON.stringify(nachher.regler) !== JSON.stringify(vorher.regler)) {
+      const diff = Object.keys(vorher.regler).filter((k) => String(vorher.regler[k]) !== String(nachher.regler[k]));
+      f.push('Regler nicht zurueck: ' + diff.slice(0, 5).join(', '));
+    }
+    if (nachher.modus !== vorher.modus || nachher.limit !== vorher.limit) f.push('Rennmodus nicht zurueck');
+    if (trackToCode(currentTrackTiles, trackRotationDeg) !== vorCode) f.push('Strecke nicht zurueck');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Arcade und Pro gesetzt, danach alles wie vorher' };
+  });
+
+  stAdd('Challenges: Seite zeigt Strecke, Modi und Bestenliste; Rennen-Taste bricht das Warten ab', () => {
+    const f = [];
+    const merkTab = kAktiverTab();
+    let alt = null;
+    try { alt = localStorage.getItem(CH_STORE); } catch (e) { return { skip: true, mass: 'kein Speicher' }; }
+    try {
+      localStorage.setItem(CH_STORE, JSON.stringify({ 'schlange|hotlap|pro': [{ zeit: 4200, auto: 'Test', geraet: 'x' }, { zeit: 4800, auto: 'Test', geraet: 'x' }] }));
+      showTab('challenges');
+      showSubpage('ch-schlange');
+      if (!$('sub-ch-schlange').contains($('ch-detail')) || $('ch-detail').hidden) f.push('Inhalt nicht in der Seite');
+      if (!$('ch-karte').querySelector('svg')) f.push('keine Streckenkarte');
+      $('ch-modus').querySelector('[data-m="hotlap"]').click();
+      $('ch-preset').querySelector('[data-p="pro"]').click();
+      if ($('ch-liste').children.length !== 2) f.push($('ch-liste').children.length + ' statt 2 Zeilen in der Bestenliste');
+      if ($('ch-histo').children.length < 3) f.push('kein Histogramm');
+      // Warten auf Stillstand, dann Rennen-Taste: abbrechen, keine Ampel.
+      const merkLauf = chMerken();
+      chLauf = { id: 'schlange', modus: 'hotlap', preset: 'pro', phase: 'stehen', stillSeit: 0, hinweisAt: 0, merk: merkLauf };
+      toggleRace();
+      if (chLauf) f.push('Challenge laeuft nach der Rennen-Taste weiter');
+      if (raceState !== 'idle' && raceState !== 'finished') f.push('Ampel trotzdem gestartet (' + raceState + ')');
+    } finally {
+      if (chLauf) { chLauf = null; }
+      try { if (alt === null) localStorage.removeItem(CH_STORE); else localStorage.setItem(CH_STORE, alt); } catch (e) { /* egal */ }
+      showSubpage('');
+      if (merkTab) showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Karte, 2 Zeilen, Histogramm, Warten abgebrochen' };
+  });
+
   stAdd('ACC-Menü: Motorsound-Kachel blättert die Motoren, Quadrat', () => {
     const s2 = $('sound-profile');
     if (!s2 || !$('fa-motor')) return { ok: false, mass: 'Kachel oder Auswahl fehlt' };

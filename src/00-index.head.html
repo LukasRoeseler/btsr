@@ -2546,6 +2546,36 @@
   .gk-w > button:not(.gar-speed-reset) { background: none; border: 0; color: var(--k-blau); padding: 2px 6px; min-height: 0; }
   .gk-hinweis { color: var(--muted); font-size: 12px; padding: 4px; }
   .gk-aufzeile .gar-speed { padding: 3px 4px; }
+  /* ---- Challenges (v0.8.30) ---- */
+  .ch-kachel .ch-mini { display: grid; place-items: center; height: clamp(64px, 26vh, 170px); padding: 6px 6px 2px; }
+  .ch-mini svg { max-width: 100%; max-height: 100%; width: auto; height: 100%; }
+  .ch-detail { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 14px; align-items: start; }
+  .ch-detail[hidden] { display: none; }
+  @media (max-width: 640px) { .ch-detail { grid-template-columns: minmax(0, 1fr); } }
+  .ch-karte { height: clamp(150px, 44vh, 340px); display: grid; place-items: center; }
+  .ch-karte svg { width: 100%; height: 100%; max-width: 100%; max-height: 100%; }
+  .ch-fakten { font-size: 12px; color: var(--muted); }
+  .ch-wahl { display: flex; margin: 6px 0; }
+  .ch-wahl button { flex: 1; border-radius: 0; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  .ch-wahl button.an { background: var(--k-blau); color: var(--k-blau-text); border-color: #fff; }
+  .ch-teile { font-size: 12px; color: var(--muted); }
+  .ch-teile.fehlt { color: var(--bad); }
+  .ch-teile.da { color: var(--good); }
+  .ch-start { width: 100%; font-size: 15px; padding: 10px; letter-spacing: .08em; text-transform: uppercase; margin: 6px 0 4px; }
+  .ch-ergebnis { border-left: 3px solid var(--k-blau); padding: 6px 10px; background: rgba(0,163,224,.08); margin-bottom: 8px; }
+  .ch-ergebnis[hidden] { display: none; }
+  .ch-erg-titel { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .ch-erg-zeit { font-size: 26px; font-weight: 900; font-variant-numeric: tabular-nums; }
+  .ch-perz { font-weight: 800; margin: 4px 0; }
+  .ch-histo { display: grid; grid-template-columns: 62px minmax(0, 1fr) 26px; gap: 3px 8px; align-items: center;
+    font-size: 11px; font-variant-numeric: tabular-nums; margin: 6px 0 10px; }
+  .ch-h-lbl { color: var(--muted); text-align: right; }
+  .ch-h-bahn { height: 12px; }
+  .ch-h-bar { height: 100%; background: #3b3f48; }
+  .ch-h-bar.du { background: var(--k-blau); }
+  .ch-tabelle { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+  .ch-tabelle td { padding: 3px 4px; border-top: 1px solid rgba(255,255,255,.06); }
+  .ch-tabelle tr.du td { background: rgba(0,163,224,.2); font-weight: 800; }
   /* ---- Streckeneditor (v0.8.28) ---- */
   .te-warn { border-left: 3px solid var(--warn); padding: 3px 10px; font-size: 12px; color: #f3d9a0; background: rgba(255,180,0,.08); }
   .te-start-reihe { gap: 10px; align-items: center; margin: 8px 0; }
@@ -3799,7 +3829,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.29</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.32</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4459,13 +4489,96 @@
        Fliesstext, und die Sprachtests nehmen tab-doc ausdruecklich aus. Ein Reiter
        mit halb uebersetztem Fliesstext waere schlechter als einer mit einem
        ehrlichen Hinweis darauf, dass er nur deutsch vorliegt. -->
-  <!-- CHALLENGES (WIP). BESTELLT: "Mach einen Plan und Mock-Up fuer einen neuen
-       Challenges-Modus". Bis zur Umsetzung steht hier, was kommt, und der Weg zum Mock-up. -->
+  <!-- CHALLENGES (v0.8.30, experimentell). BESTELLT: "Implementiere Challenges". Vier feste
+       Strecken, je zwei Modi (beste Runde, Rennen) und zwei Presets (Pro, Arcade); Ablauf und
+       Wertung in src/72-challenges.js. Je Strecke eine Unterseite, damit L1/R1 zwischen ihnen
+       blaettern; der Inhalt (#ch-detail) ist EINER und wird in die offene Seite gehaengt. -->
   <section class="tabpage" id="tab-challenges">
-    <div class="card">
-      <h2>Challenges <span class="wip-tag">WIP</span></h2>
-      <p class="muted">Feste Strecken zum Nachbauen, je zwei Modi (beste Runde, Rennen) und zwei Presets (Pro und Arcade). Stehendes Auto, Ampel, los. Deine Zeit kommt in eine gemeinsame Bestenliste.</p>
-      <p><a href="mockup/challenges.html" target="_blank" rel="noopener">Mock-up ansehen</a></p>
+    <div class="card subpage-home" id="sub-home-challenges">
+      <h2>Challenges <span class="wip-tag">experimentell</span></h2>
+      <div class="misc-grid ch-kacheln">
+        <button class="misc-tile subpage-open ch-kachel" data-sub="ch-oval">
+          <span class="ch-mini" data-ch="oval" aria-hidden="true"></span>
+          <b data-i18n-skip>Wohnzimmer-Runde</b>
+          <span>Grundpackung · 10 Runden</span></button>
+        <button class="misc-tile subpage-open ch-kachel" data-sub="ch-schlange">
+          <span class="ch-mini" data-ch="schlange" aria-hidden="true"></span>
+          <b data-i18n-skip>Kurvenschlange</b>
+          <span>Grundpackung · 8 Runden</span></button>
+        <button class="misc-tile subpage-open ch-kachel" data-sub="ch-kehre">
+          <span class="ch-mini" data-ch="kehre" aria-hidden="true"></span>
+          <b data-i18n-skip>Spitzkehre</b>
+          <span>Grundpackung und Haarnadel-Set · 8 Runden</span></button>
+        <button class="misc-tile subpage-open ch-kachel" data-sub="ch-weitblick">
+          <span class="ch-mini" data-ch="weitblick" aria-hidden="true"></span>
+          <b data-i18n-skip>Weitblick-Ring</b>
+          <span>Grundpackung und 30&deg;-Au&szlig;enkurven-Set · 8 Runden</span></button>
+        <button class="misc-tile subpage-open" data-sub="ch-online">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="24" r="16"/><path d="M8 24h32M24 8c6 5 6 27 0 32M24 8c-6 5-6 27 0 32" stroke="var(--bad)"/></svg>
+          <b>Online</b>
+          <span>Gemeinsame Bestenliste &uuml;ber ein Google Sheet.</span>
+        </button>
+      </div>
+    </div>
+    <div class="card subpage" id="sub-ch-oval">
+      <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
+      <h2 data-i18n-skip>Wohnzimmer-Runde</h2>
+      <div class="ch-platz"></div>
+    </div>
+    <div class="card subpage" id="sub-ch-schlange">
+      <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
+      <h2 data-i18n-skip>Kurvenschlange</h2>
+      <div class="ch-platz"></div>
+    </div>
+    <div class="card subpage" id="sub-ch-kehre">
+      <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
+      <h2 data-i18n-skip>Spitzkehre</h2>
+      <div class="ch-platz"></div>
+    </div>
+    <div class="card subpage" id="sub-ch-weitblick">
+      <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
+      <h2 data-i18n-skip>Weitblick-Ring</h2>
+      <div class="ch-platz"></div>
+    </div>
+    <div class="card subpage" id="sub-ch-online">
+      <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
+      <h2>Online-Bestenliste</h2>
+      <div class="opt-row"><div class="opt-label">Adresse der Web-App
+          <small>Die Adresse, die Google beim Bereitstellen des Apps Script anzeigt. Sie endet auf /exec. Wie das Sheet angelegt wird, steht in der Anleitung in tools/challenges-apps-script.gs.</small></div>
+        <input type="url" id="ch-url" data-preset-skip data-i18n-skip placeholder="https://script.google.com/macros/s/.../exec"></div>
+      <div class="opt-row"><div class="opt-label">Dein Name in der Liste
+          <small>H&ouml;chstens 16 Zeichen, frei w&auml;hlbar. Leer lassen geht auch, dann steht nur das Auto in der Liste.</small></div>
+        <input type="text" id="ch-fahrer" maxlength="16" data-preset-skip></div>
+      <div class="opt-row"><div class="opt-label">Zeiten hochladen
+          <small>Gewertete Zeiten gehen an die Liste: Strecke, Modus, Preset, Zeit, Rundenzeiten, Autoname, dein Name und eine zuf&auml;llige Ger&auml;tekennung. Keine E-Mail, kein Konto.</small></div>
+        <label class="tgl"><input type="checkbox" id="ch-hochladen" data-preset-skip checked><span></span></label></div>
+      <div class="row" style="gap:10px; align-items:center; margin-top:10px">
+        <button type="button" id="ch-test">Verbindung testen</button>
+        <span class="muted" id="ch-test-status" data-i18n-skip></span></div>
+    </div>
+    <div id="ch-detail" class="ch-detail" hidden>
+      <div class="ch-links">
+        <div class="ch-karte" id="ch-karte"></div>
+        <p class="muted" id="ch-idee"></p>
+        <p class="ch-fakten" id="ch-fakten" data-i18n-skip></p>
+      </div>
+      <div class="ch-rechts">
+        <div class="ch-ergebnis" id="ch-ergebnis" hidden>
+          <div class="ch-erg-titel" id="ch-erg-titel" data-i18n-skip></div>
+          <div class="ch-erg-zeit" id="ch-erg-zeit" data-i18n-skip></div>
+          <div class="muted" id="ch-erg-text" data-i18n-skip></div>
+        </div>
+        <div class="ch-wahl" id="ch-modus"><button type="button" data-m="hotlap">Beste Runde</button><button type="button" data-m="rennen">Rennen</button></div>
+        <p class="muted" id="ch-modus-text" data-i18n-skip></p>
+        <div class="ch-wahl" id="ch-preset"><button type="button" data-p="pro" data-i18n-skip>Pro</button><button type="button" data-p="arcade" data-i18n-skip>Arcade</button></div>
+        <p class="ch-teile" id="ch-teile" data-i18n-skip></p>
+        <button type="button" class="primary ch-start" id="ch-start">Challenge starten</button>
+        <h3>Bestenliste</h3>
+        <p class="muted" id="ch-liste-status" data-i18n-skip></p>
+        <div class="ch-perz" id="ch-perz" data-i18n-skip></div>
+        <div class="ch-histo" id="ch-histo"></div>
+        <table class="ch-tabelle"><tbody id="ch-liste"></tbody></table>
+      </div>
     </div>
   </section>
 
@@ -4724,6 +4837,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Challenges (experimentell): vier feste Strecken, je beste Runde oder Rennen &uuml;ber feste Runden, Pro oder Arcade. Das Auto muss stehen, dann Ampel, dann los; ohne Ghosts, danach sind die eigenen Einstellungen wieder da. Bestenliste mit Histogramm und Perzentil, lokal und online &uuml;ber ein eigenes Google Sheet.</li>
         <li>Logos aus den KI-Bildern entfernt, die Credits nennen die KI-Bilder (Gemini Flash). Reiter am Handy doppelt so hoch. Die Zur&uuml;ck-Taste des Handys f&uuml;hrt zum Startbildschirm (in der App ab APK 0.8.29). Editor: Asphalt im Hintergrund, Teile nach Typ getrennt, Schalter f&uuml;r Ideallinie und Tastenk&uuml;rzel.</li>
         <li>Strecke aufger&auml;umt: Editor, Scan, Laden, Meine Teile und Ausdruck haben je eine eigene Seite. Der Editor startet im Vollbild, mit Tutorial und Tasten&uuml;bersicht: Teile anw&auml;hlen, mittendrin einf&uuml;gen und entfernen, r&uuml;ckg&auml;ngig, in 45&deg;-Schritten drehen, L&auml;nge in Metern und im Ma&szlig;stab 1:50, Pfeile an den Kanten in Fahrtrichtung. Meine Teile (experimentell) z&auml;hlt deinen Bestand und zeigt im Editor, was fehlt oder &uuml;brig ist. Challenges: Plan und Mock-up mit vier Strecken, je beste Runde und Rennen.</li>
         <li>Kopfzeile nochmals flacher, Omega oben links f&uuml;hrt zum Startbildschirm, Info unter Optionen, neuer Reiter Challenges (WIP). Tutorial-Texte k&uuml;rzer; Steuerung l&auml;uft auf dem Cockpit, zeigt gedr&uuml;ckte Tasten und f&auml;hrt dabei nicht. Neue Stimmungsbilder (KI) f&uuml;r Titel, Rennoptionen, Start, Strecke, Optionen, Info und Challenges.</li>

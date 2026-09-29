@@ -1141,7 +1141,9 @@
     $('race-lap-current').textContent = '-';
     // Freies Training braucht keine Ampel: es gibt niemanden, gegen den man gleichzeitig
     // losfahren muesste. Drei Sekunden Warten vor einer Trainingsrunde sind nur Wartezeit.
-    if (raceMode === 'practice') {
+    // CHALLENGE "Beste Runde" laeuft als freies Training, aber MIT Ampel: "Auto muss stehen,
+    // dann kommt eine Ampel" (72-challenges.js).
+    if (raceMode === 'practice' && !(typeof challengeLaeuft === 'function' && challengeLaeuft())) {
       raceState = 'racing';
       $('race-start-btn').disabled = true;
       $('race-stop-btn').disabled = false;
@@ -1200,7 +1202,9 @@
     // null, bis raceClockTick() ueber raceMoveErkannt() die erste Bewegung sieht.
     raceLapStart = null;
     raceAwaitingMove = true;
-    launchGhosts();   // green means green for everyone
+    // In einer Challenge faehrt man allein: keine Ghosts.
+    const imChallenge = typeof challengeLaeuft === 'function' && challengeLaeuft();
+    if (!imChallenge) launchGhosts();   // green means green for everyone
     if (raceFormationLap) {
       // formationPace() und nicht PIT_SPEED_FACTOR: der Deckel muss zum Ziel des
       // Autopiloten passen, sonst regelt der gegen eine Wand.
@@ -1216,6 +1220,13 @@
     // raceStartedAt bleibt null, bis raceClockTick() Bewegung sieht - siehe die
     // Begruendung oben bei raceLapStart.
     raceStartedAt = null;
+    // CHALLENGE: die Uhr laeuft ab Gruen und nicht ab der ersten Bewegung - die Reaktion am
+    // stehenden Start gehoert zur Zeit, sonst waere ein Zoegern gratis.
+    if (imChallenge) {
+      raceAwaitingMove = false;
+      raceLapStart = Date.now();
+      raceStartedAt = raceLapStart;
+    }
     if (raceClockTimer) clearInterval(raceClockTimer);
     raceClockTimer = setInterval(raceClockTick, 250);
     $('race-status').textContent = raceFormationLap
@@ -1237,8 +1248,9 @@
     // KEIN AUSLAUFEN bei einem Abbruch von Hand. Wer abbricht, will, dass es aufhoert -
     // eine Extrarunde saehe aus, als haette der Knopf nichts getan. Dieselbe Ueberlegung,
     // mit der die laufende Runde hier verworfen und nicht gewertet wird.
+    const warChallenge = typeof challengeLaeuft === 'function' && challengeLaeuft();
     finishRace(false);
-    showHudToast('Rennen abgebrochen');
+    showHudToast(warChallenge ? t('Challenge beendet') : 'Rennen abgebrochen');
     updateRaceActButtons();
   }
 
@@ -1345,7 +1357,9 @@
     // SEIT v0.8.24 KEIN HARTER SPRUNG MEHR aus einem Menue: ist man im Cockpit, kommt die
     // Uebersicht; sonst eine Einblendung "Rennen beendet - Ergebnis ansehen", und Options
     // bzw. ein Klick fuehrt dann ins Cockpit auf die Uebersicht (51-konsole.js).
-    if (typeof konsoleRennenBeendet === 'function') konsoleRennenBeendet();
+    // Eine Challenge zeigt ihr Ergebnis selbst (Wertung, Bestenliste, Nochmal).
+    if (typeof challengeRennenEnde === 'function' && challengeRennenEnde(willAuslaufen)) { /* erledigt */ }
+    else if (typeof konsoleRennenBeendet === 'function') konsoleRennenBeendet();
     else {
       if (typeof showTab === 'function') showTab('race');
       if (typeof cockpitScreenZu === 'function') cockpitScreenZu('uebersicht');
@@ -1477,6 +1491,9 @@
   // and RB/R1. There used to be a second, near-identical abort path inlined here, which is
   // how the two could drift apart.
   function toggleRace() {
+    // Wartet eine Challenge noch auf Stillstand, bricht die Rennen-Taste sie ab, statt die Ampel
+    // ohne Pruefung zu starten.
+    if (typeof challengeToggle === 'function' && challengeToggle()) { updateRaceActButtons(); return; }
     const live = raceState === 'racing' || raceState === 'countdown' || raceState === 'finishing';
     if (live) requestRaceStop(); else startRaceCountdown();
     updateRaceActButtons();
