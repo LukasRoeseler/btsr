@@ -140,6 +140,31 @@ function blatt() {
 }
 
 // Einen Lauf eintragen. Die App schickt JSON als text/plain (kein CORS-Vorabruf).
+// SPALTEN NACH KOPF statt nach Stelle: die Zeilen im Sheet duerfen in jeder Reihenfolge
+// stehen, solange die Kopfzeile die Namen traegt. Das macht das Skript robust gegen
+// umgeordnete oder leicht verschobene Spalten.
+function spalten() {
+  const sh = blatt();
+  const kopf = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  const m = {};
+  kopf.forEach((name, i) => { if (name) m[String(name).toLowerCase()] = i; });
+  return m;
+}
+function zelle(sp, zeile, name) {
+  const i = sp[name];
+  return i === undefined ? '' : zeile[i];
+}
+function zelleZahl(sp, zeile, name) {
+  return Number(zelle(sp, zeile, name)) || 0;
+}
+function zeileZuEintrag(sp, z) {
+  let runden = 0, rundenMs = [];
+  try { rundenMs = JSON.parse(zelle(sp, z, 'runden_ms') || '[]'); runden = Array.isArray(rundenMs) ? rundenMs.length : 0; }
+  catch (e) { rundenMs = []; }
+  return { zeitpunkt: zelle(sp, z, 'zeitpunkt'), zeit_ms: zelleZahl(sp, z, 'zeit_ms'),
+    auto: zelle(sp, z, 'auto'), fahrer: zelle(sp, z, 'fahrer'), geraet: zelle(sp, z, 'geraet'),
+    runden: runden, runden_ms: rundenMs };
+}
 function doPost(e) {
   let d;
   try { d = JSON.parse(e.postData.contents); } catch (err) { return antwort({ ok: false, fehler: 'kein JSON' }); }
@@ -153,9 +178,23 @@ function doPost(e) {
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
-    blatt().appendRow([new Date(), d.challenge, d.modus, d.preset, Math.round(d.zeit_ms),
-      JSON.stringify(d.runden_ms || []), String(d.auto || '').slice(0, 40), String(d.fahrer || '').slice(0, 16),
-      String(d.geraet).slice(0, 40), String(d.version || '').slice(0, 20)]);
+    const sp = spalten();
+    const sh = blatt();
+    // Zeile in KOPF-Reihenfolge schreiben, damit umgeordnete Spalten nichts verschieben.
+    const zeile = KOPF.map((name) => {
+      if (name === 'zeitpunkt') return new Date();
+      if (name === 'challenge') return d.challenge;
+      if (name === 'modus') return d.modus;
+      if (name === 'preset') return d.preset;
+      if (name === 'zeit_ms') return Math.round(d.zeit_ms);
+      if (name === 'runden_ms') return JSON.stringify(d.runden_ms || []);
+      if (name === 'auto') return String(d.auto || '').slice(0, 40);
+      if (name === 'fahrer') return String(d.fahrer || '').slice(0, 16);
+      if (name === 'geraet') return String(d.geraet).slice(0, 40);
+      if (name === 'version') return String(d.version || '').slice(0, 20);
+      return '';
+    });
+    sh.appendRow(zeile);
   } finally { lock.releaseLock(); }
   return antwort({ ok: true });
 }
@@ -197,14 +236,14 @@ function doGet(e) {
       name: ss ? ss.getName() : null,
       blatt: ss ? (ss.getSheetByName(BLATT) ? BLATT : null) : null });
   }
+  const sp = spalten();
   const werte = blatt().getDataRange().getValues().slice(1);
   if (p.alle) {
     const listen = {};
     werte.forEach((z) => {
-      const k = z[1] + '|' + z[2] + '|' + z[3];
-      let runden = 0, rundenMs = [];
-      try { rundenMs = JSON.parse(z[5] || '[]'); runden = Array.isArray(rundenMs) ? rundenMs.length : 0; } catch (e) { rundenMs = []; }
-      (listen[k] = listen[k] || []).push({ zeitpunkt: z[0], zeit_ms: Number(z[4]), auto: z[6], fahrer: z[7], geraet: z[8], runden: runden, runden_ms: rundenMs });
+      const k = zelle(sp, z, 'challenge') + '|' + zelle(sp, z, 'modus') + '|' + zelle(sp, z, 'preset');
+      if (!zelle(sp, z, 'challenge')) return;
+      (listen[k] = listen[k] || []).push(zeileZuEintrag(sp, z));
     });
     Object.keys(listen).forEach((k) => {
       const l = listen[k].sort((a, b) => a.zeit_ms - b.zeit_ms);
@@ -213,12 +252,9 @@ function doGet(e) {
     return antwort({ ok: true, alle: true, listen: listen });
   }
   const liste = werte
-    .filter((z) => z[1] === p.challenge && z[2] === p.modus && z[3] === p.preset)
-    .map((z) => {
-      let runden = 0, rundenMs = [];
-      try { rundenMs = JSON.parse(z[5] || '[]'); runden = Array.isArray(rundenMs) ? rundenMs.length : 0; } catch (e) { rundenMs = []; }
-      return { zeitpunkt: z[0], zeit_ms: Number(z[4]), auto: z[6], fahrer: z[7], geraet: z[8], runden: runden, runden_ms: rundenMs };
-    })
+    .filter((z) => zelle(sp, z, 'challenge') === p.challenge
+      && zelle(sp, z, 'modus') === p.modus && zelle(sp, z, 'preset') === p.preset)
+    .map((z) => zeileZuEintrag(sp, z))
     .sort((a, b) => a.zeit_ms - b.zeit_ms);
   return antwort({ ok: true, anzahl: liste.length, zeiten: liste.slice(0, MAX_ZEILEN_ANTWORT) });
 }
