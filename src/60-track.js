@@ -2907,7 +2907,24 @@
     // Fall -, hatte ohnehin keinen Aufrufer mehr: alle fuenf Aufrufe uebergeben
     // detailed: true. Sie sah aus wie eine Zusicherung und war keine. `o.detailed` bleibt
     // fuer die GEOMETRIE zustaendig - Fahrbahn statt Linie -, dort ist der Unterschied echt.
-    const html = `<svg class="tp-karte" viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}">${body}</svg>`;
+    // ---- 50-cm-Raster im Editor-Hintergrund ------------------------------------------
+    // BESTELLT: "generiere einen Hintergrund mit horizontalen und vertikalen Linien alle
+    // 50 cm." Der Editor zeichnet die Strecke in echten Bahneinheiten (TRACK_UNITS_PER_CM),
+    // also sind 50 cm = 50 * TRACK_UNITS_PER_CM Zeichnungseinheiten. Ein <pattern> in
+    // userSpaceOnUse richtet das Raster am Koordinatenursprung der Bahn aus (Start/Ziel),
+    // und patternTransform verschiebt es um ox/oy, damit die Linien auf den Kachelmassen
+    // liegen statt auf dem Kartenrand. Nur der Editor (o.grid) bekommt es - die Minikarte
+    // und der Uebersichtsschirm nicht.
+    let gridSvg = '';
+    if (o.grid) {
+      const grid = (50 * TRACK_UNITS_PER_CM).toFixed(2);
+      gridSvg = `<defs><pattern id="tp-grid" width="${grid}" height="${grid}" `
+              + `patternUnits="userSpaceOnUse" patternTransform="translate(${ox.toFixed(2)} ${oy.toFixed(2)})">`
+              + `<path d="M ${grid} 0 L 0 0 0 ${grid}" fill="none" stroke="rgba(140,155,180,.30)" stroke-width="0.7"/>`
+              + `</pattern></defs>`
+              + `<rect x="0" y="0" width="${w.toFixed(0)}" height="${h.toFixed(0)}" fill="url(#tp-grid)"/>`;
+    }
+    const html = `<svg class="tp-karte" viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}">${gridSvg}${body}</svg>`;
     // DIE GEOMETRIE MIT HERAUS, damit ein Aufrufer Punkte setzen kann, ohne die Strecke neu
     // zu rechnen. Gemessen kostet ein Aufruf dieser Funktion rund 94 ms - sie rechnet
     // Mittellinie, Normalen UND die Ideallinie, und die ist eine Optimierung. Das gehoert
@@ -3238,7 +3255,7 @@
     const imEditor = document.body.classList.contains('track-fs');
     const result = renderTrackPreview(currentTrackTiles, null,
       { detailed: true, cars: trackCarMarks(), echt: true, auswahl: imEditor ? trackSelIndex() : null,
-        ohneLinie: !editorSchalter.linie });
+        ohneLinie: !editorSchalter.linie, grid: true });
     $('track-preview-svg').innerHTML = result.html;
     trackEditorGeo = result.geo || null;
     trackInfoZeichnen();
@@ -3725,6 +3742,98 @@
     if (currentTrackTiles.length > 1 && !confirm('Strecke wirklich zurücksetzen?')) return;
     $('track-clear').click();
   }
+
+  // ---- Zufaellige Strecke aus dem vorhandenen Bestand ---------------------------------
+  // BESTELLT: "add a button that generates a random track given the available pieces
+  // (should only work if there are enough pieces). Can you create such an algorithm?"
+  //
+  // DIE IDEE, und warum sie schliesst: `S + A + G^m + A + G^(m-1)` ist fuer JEDE Folge A,
+  // deren Drehungen sich zu +/-180 Grad addieren, ein geschlossener Rundkurs. Nach dem
+  // Startteil S dreht A um 180, dann G^m geradeaus, dann A nochmal um 180 (also 360
+  // insgesamt), und die beiden A sind - gleiche Drehung, entgegengesetzte Richtung - um
+  // 180 Grad gedrehte Kopien: die Verschiebung der zweiten A hebt die der ersten auf.
+  // G^(m-1) bringt die letzte Gerade auf die Startlinie zurueck. Die Geradenstuecke
+  // muessen also nicht gleich lang sein - die 40 Einheiten des Startteils und die
+  // (m-1)-Gerade am Ende heben sich gegenseitig auf.
+  //
+  // Nachgerechnet (Python-Simulation der echten trackCenterline): A = RRR, LLL, H, J,
+  // W*6, Q*6, K*6, M*6, RGRR, RRLRR, RRQQRR ... alle schliessen mit luecke=0 und winkel=0.
+  // Nur Folgen, die NICHT auf +/-180 kommen (z. B. RRLR = 120 Grad), schliessen nicht.
+  function trackZufall() {
+    const b = teileBestand();
+    if (!b || !(Math.floor(+b[TILE_TYPE.START] || 0) > 0)) {
+      showHudToast(t('Zufall: Kein Startteil vorhanden'));
+      return false;
+    }
+    const hat = (typ) => Math.max(0, Math.floor(+b[typ] || 0));
+    if (hat(TILE_TYPE.STRAIGHT) < 1) {
+      showHudToast(t('Zufall: Nicht genug Geraden'));
+      return false;
+    }
+    // Rechts- oder linkslaufender Kurs, zufaellig - aber wenn die eine Richtung nicht
+    // genug Teile hat (z. B. nur Rechtskurven im Karton), versucht es die andere.
+    const richtungen = Math.random() < 0.5 ? [1, -1] : [-1, 1];
+    for (const dir of richtungen) {
+      const A = trackZufallHalbe(dir, hat);
+      if (!A) continue;
+      const g = hat(TILE_TYPE.STRAIGHT);
+      // m mittlere Geraden + (m-1) am Ende = 2m-1 Geraden insgesamt, m >= 1.
+      const maxM = Math.floor((g + 1) / 2);
+      const m = 1 + Math.floor(Math.random() * maxM);
+      const tiles = [
+        { type: TILE_TYPE.START },
+        ...A.map(typ => ({ type: typ })),
+        ...Array(m).fill(null).map(() => ({ type: TILE_TYPE.STRAIGHT })),
+        ...A.map(typ => ({ type: typ })),
+        ...Array(Math.max(0, m - 1)).fill(null).map(() => ({ type: TILE_TYPE.STRAIGHT })),
+      ];
+      // Sicherheitsnetz: die Konstruktion schliesst nachgerechnet immer; wenn nicht, soll
+      // der Knopf das sagen statt eine offene Strecke in den Editor zu legen.
+      if (!trackSchluss(trackCenterline(tiles)).closed) continue;
+      trackMerken();
+      currentTrackTiles = tiles;
+      trackSel = null;
+      trackRotationDeg = 0;
+      refreshTrackPreview();
+      showHudToast(t('Zufällige Strecke gebaut'));
+      return true;
+    }
+    showHudToast(t('Zufall: Nicht genug Kurventeile für einen Rundkurs'));
+    return false;
+  }
+  // Die "halbe" Runde A: eine zufaellige Kurvenfolge, deren Drehungen sich zu dir*180 addieren.
+  function trackZufallHalbe(dir, hat) {
+    const target = dir * 180;
+    // Nur Kurventeile, die in die Zielrichtung drehen - so bleibt die Summe auf Kurs und
+    // erreicht 180 sicher. (Eine Gegenkurve waere ein S, das die Suche verzoegert.)
+    const kurven = dir > 0
+      ? [[TILE_TYPE.CURVE_RIGHT, 60], [TILE_TYPE.WEIT_RIGHT, 30], [TILE_TYPE.KLEIN_RIGHT, 30], [TILE_TYPE.HAIRPIN, 180]]
+      : [[TILE_TYPE.CURVE_LEFT, -60], [TILE_TYPE.WEIT_LEFT, -30], [TILE_TYPE.KLEIN_LEFT, -30], [TILE_TYPE.HAIRPIN_LEFT, -180]];
+    // Jede Kurve erscheint ZWEIMAL (A ... A), also hoechstens die Haelfte des Bestands.
+    const caps = {};
+    for (const [typ] of kurven) caps[typ] = Math.floor(hat(typ) / 2);
+    const A = [];
+    function bau(rem) {
+      if (rem === 0) return true;
+      if (Math.abs(rem) < 30) return false;
+      const opts = [];
+      for (const [typ, turn] of kurven) {
+        if (caps[typ] > 0 && Math.sign(turn) === Math.sign(rem) && Math.abs(turn) <= Math.abs(rem)) opts.push([typ, turn]);
+      }
+      for (let i = opts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [opts[i], opts[j]] = [opts[j], opts[i]];
+      }
+      for (const [typ, turn] of opts) {
+        caps[typ]--; A.push(typ);
+        if (bau(rem - turn)) return true;
+        A.pop(); caps[typ]++;
+      }
+      return false;
+    }
+    return bau(target) ? A : null;
+  }
+  $('track-random').onclick = () => trackZufall();
 
   // Hier standen sechs Bindungen auf Knopf-ids, die es seit dem Umbau auf die Bildleiste
   // nicht mehr gibt (track-add-start und fuenf weitere). Sie prueften auf Vorhandensein und

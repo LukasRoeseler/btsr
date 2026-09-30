@@ -3075,9 +3075,9 @@
   #track-preview-svg {
     height: clamp(240px, 42vh, 460px);
     display: grid; place-items: center; overflow: hidden;
-    /* Platz fuer die Platz-Bedarf-Zeile (.tp-space): sonst liegt "2,43 x 1,80 m"
-       auf der Strecke. Der Kasten ist im Vollbild stretch, die Karte wird um diese
-       Leiste hereingeholt. */
+    /* Die Platz-Bedarf-Zeile (.tp-space) steht jetzt oben rechts im Hintergrund. Die
+       untere Leiste bleibt: sie holt die Karte im Vollbild etwas von der Palette weg
+       und gibt dem 50-cm-Raster Luft. */
     padding-bottom: 26px;
   }
   /* Die Deckelung auf 520 px stand bis v0.5.30 im Zeichner. Sie gehoert hierher: sie
@@ -3630,9 +3630,11 @@
   .numtrain-feedback.on-bad { color: var(--bad); }
   .numtrain-score { font-size: 11.5px; color: var(--muted); margin: 0; }
 
-  .tp-space { position: absolute; right: 10px; bottom: 8px; font-family: monospace;
+  .tp-space { position: absolute; right: 10px; top: 8px; font-family: monospace;
     font-size: 11px; color: var(--muted); pointer-events: none; }
-  body.track-fs .tp-space { right: 14px; bottom: 68px; }
+  /* Im Vollbild steht die Aktionsleiste oben; die Platz-Bedarf-Zeile liegt knapp darunter
+     im Hintergrund, statt die Karte zu ueberlappen. */
+  body.track-fs .tp-space { right: 14px; top: 72px; }
   .gar-row.is-player { border-color: var(--good); }
   .gar-row.is-zwei { border-color: #3d8bff; }
   /* Die Bestandszeile der Sicherung. Ein Kasten mit linker Kante, wie die Hinweise
@@ -3994,7 +3996,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.54</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.55</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -10292,6 +10294,11 @@
                  stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M9 7V4h6v3"/>
               <path d="M7 7l1 13h8l1-13"/></svg>
             <span class="tp-cap">Leeren</span></button>
+          <button class="tp-btn" id="track-random" title="Zuf&auml;llige Strecke aus den vorhandenen Teilen bauen" aria-label="Zufaellige Strecke bauen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 6h3l7 12h3M4 18h3l7-12h3"/><path d="M17 4l3 2-3 2M17 16l3 2-3 2"/></svg>
+            <span class="tp-cap">Zufall</span></button>
           <button class="tp-btn" id="track-tour" title="Tutorial zum Editor" aria-label="Tutorial zum Editor">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                  stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1 .9-1 1.7M12 17h.01"/></svg>
