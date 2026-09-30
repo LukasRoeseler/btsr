@@ -3416,21 +3416,24 @@
     for (const typ of TEILE_SORTEN) {
       const z = document.createElement('div');
       z.className = 'teile-zeile';
-      const wert = b[typ] === undefined || b[typ] === null ? '–' : String(b[typ]);
-      z.innerHTML = '<span></span><button type="button" data-d="-1" aria-label="weniger">&minus;</button><b></b>'
-                  + '<button type="button" data-d="1" aria-label="mehr">+</button>';
-      z.querySelector('span').textContent = t(TILE_LABEL[typ] || ('0x' + typ.toString(16)));
-      z.querySelector('b').textContent = wert;
-      z.querySelectorAll('button').forEach((k) => {
-        k.onclick = () => {
-          const neu = Object.assign({}, teileBestand() || {});
-          const alt = neu[typ] === undefined || neu[typ] === null ? 0 : +neu[typ];
-          neu[typ] = Math.max(0, Math.min(99, alt + +k.dataset.d));
-          teileSpeichern(neu);
-        };
-      });
+      z.dataset.teile = typ;
+      z.tabIndex = 0;
+      z.setAttribute('role', 'button');
+      const name = t(TILE_LABEL[typ] || ('0x' + typ.toString(16)));
+      z.setAttribute('aria-label', name);
+      const wert = b[typ] === undefined || b[typ] === null ? 0 : +b[typ];
+      z.innerHTML = '<span class="teile-name"></span><span class="teile-zahl"></span>';
+      z.querySelector('.teile-name').textContent = name;
+      z.querySelector('.teile-zahl').textContent = wert;
       host.appendChild(z);
     }
+  }
+  // D-Pad links/rechts auf einer Zeile: eine Sorte um d veraendern (unten 0, oben 9999).
+  function teileAendern(typ, d) {
+    const neu = Object.assign({}, teileBestand() || {});
+    const alt = neu[typ] === undefined || neu[typ] === null ? 0 : +neu[typ];
+    neu[typ] = Math.max(0, Math.min(9999, alt + d));
+    teileSpeichern(neu);
   }
   function teilePaket(name) {
     const neu = Object.assign({}, teileBestand() || {});

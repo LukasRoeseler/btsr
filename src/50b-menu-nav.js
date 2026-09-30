@@ -184,9 +184,25 @@
       });
       return rows;
     }
+    // "Meine Teile": die Zeilenliste ist das eigentliche Bedienelement - hoch/runter waehlt
+    // die Sorte, links/rechts veraendert den Bestand (siehe menuNavAdjust, kind 'teile').
+    // Die Paket-Knoepfe oben sind sekundaer und stehen hinten an.
+    const teileZeilen = [...host.querySelectorAll('.teile-zeile')].filter(menuNavSichtbar);
+    if (teileZeilen.length) {
+      const tRows = [];
+      if (back && menuNavSichtbar(back)) tRows.push({ el: back, kind: 'button', control: back });
+      teileZeilen.forEach((el) => tRows.push({ el, kind: 'teile', control: el }));
+      host.querySelectorAll('button').forEach((el) => {
+        if (el.classList.contains('subpage-back') || el.classList.contains('misc-back')) return;
+        if (el.closest('.teile-zeile')) return;
+        if (menuNavSichtbar(el)) tRows.push({ el, kind: 'button', control: el });
+      });
+      return tRows;
+    }
     [...host.querySelectorAll(
       'button:not(.subpage-back), select, input[type="checkbox"], input[type="range"], '
-      + 'input[type="number"], input[type="text"], a[href]:not([download]):not([target="_blank"])',
+      + 'input[type="number"], input[type="text"], a[href]:not([download]):not([target="_blank"]), '
+      + '[data-ch-voll]',
     )].filter(menuNavSichtbar).forEach((el) => rows.push({ el, kind: menuNavKindOf(el), control: el }));
     return rows;
   }
@@ -304,7 +320,7 @@
     if (!rows.length) return false;
     if (menuNavIstRaum()) { if (gehalten !== false) return menuNavRaum(dir); return true; }
     const row = rows[menuNavIndex];
-    if (!row || !['range', 'select', 'toggle'].includes(row.kind)) return false;
+    if (!row || !['range', 'select', 'toggle', 'teile'].includes(row.kind)) return false;
     menuNavGezeigt = true;
     menuNavAdjustGehalten(dir, gehalten !== false);
     return true;
@@ -339,6 +355,13 @@
   // das macht erst menuNavAdjust()), Textfeld -> fokussieren und Inhalt markieren.
   function menuNavActivate() {
     menuNavEnsureContext();
+    // Challenge-Karte im Vollbild: X (Kreuz) verkleinert sie, statt etwas darunter
+    // auszuloesen (72-challenges.js, chKarteVoll/chKarteVollOffen).
+    if (typeof chKarteVollOffen === 'function' && chKarteVollOffen()) {
+      if (typeof chKarteVoll === 'function') chKarteVoll();
+      menuNavTonAktivieren();
+      return;
+    }
     const rows = menuNavRows();
     if (!rows.length) return;
     menuNavGezeigt = true;
@@ -423,6 +446,12 @@
         row.control.selectedIndex = i1;
         row.control.dispatchEvent(new Event('change', { bubbles: true }));
       }
+    } else if (row.kind === 'teile') {
+      // "Meine Teile": links/rechts veraendert den Bestand der fokussierten Sorte.
+      if (typeof teileAendern === 'function') {
+        const typ = row.el.dataset.teile;
+        if (typ !== undefined) teileAendern(typ, dir === 'left' ? -1 : 1);
+      }
     } else {
       return false;
     }
@@ -455,9 +484,10 @@
     // NUR REGLER WIEDERHOLEN BEIM HALTEN. Ein Auswahlfeld schaltete nach 300 ms Halten
     // weiter - ein etwas laengerer Druck sprang so schon zwei Optionen. Gemeldet: "manche
     // Menues schalten mehrere Optionen auf einmal durch". Auswahlfelder: ein Druck, ein Schritt.
+    // "Meine Teile" darf wie eine Skala beim Halten weiterlaufen (viel hin und her waehlen).
     const rows = menuNavRows();
     const zeile = rows[menuNavIndex];
-    if (!zeile || zeile.kind !== 'range') return;
+    if (!zeile || (zeile.kind !== 'range' && zeile.kind !== 'teile')) return;
     const seitZugbeginn = jetzt - menuNavHoldStart;
     const beschleunigt = seitZugbeginn >= MENU_NAV_ACCEL_MS;
     const naechsterSchrittNach = menuNavLastStep === menuNavHoldStart

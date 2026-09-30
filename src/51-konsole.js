@@ -149,6 +149,11 @@
   // Unterseite), dann der Stapel, zuletzt die Eltern-Ebene.
   function konsoleZurueck() {
     if (typeof optInfoOffen === 'function' && optInfoOffen()) { optInfoSchliessen(); return true; }
+    // Challenge-Karte im Vollbild: Kreis verkleinert sie, statt die Unterseite zu schliessen.
+    if (typeof chKarteVollOffen === 'function' && chKarteVollOffen()) {
+      if (typeof chKarteVoll === 'function') chKarteVoll();
+      return true;
+    }
     if ($('mp-info') && !$('mp-info').hidden && typeof mpiStop === 'function') { mpiStop(); return true; }
     menuNavTextfeldLoesen();
     if (kFrageOffen) { konsoleFrageZu(); return true; }
@@ -250,13 +255,7 @@
   }
 
   // ---- Quadrat: schneller Wechsel auf Kacheln mit data-quad --------------------------
-  function konsoleQuadrat(richtung) {
-    const dir = richtung === -1 ? -1 : 1;
-    menuNavEnsureContext();
-    const zeile = menuNavRows()[menuNavIndex];
-    const el = zeile && zeile.el;
-    const q = el && el.dataset ? el.dataset.quad : null;
-    if (!q) return false;
+  function konsoleQuadWechsel(q, dir) {
     if (q === 'renntyp') {
       const s = $('race-mode');
       s.selectedIndex = (s.selectedIndex + dir + s.options.length) % s.options.length;
@@ -275,10 +274,46 @@
         s.value = n.value;
         s.dispatchEvent(new Event('change', { bubbles: true }));
       }
+    } else {
+      return false;
     }
     menuNavTonVerstellen();
     konsoleFahrenZeichnen();
     return true;
+  }
+  function konsoleQuadrat(richtung) {
+    const dir = richtung === -1 ? -1 : 1;
+    menuNavEnsureContext();
+    const zeile = menuNavRows()[menuNavIndex];
+    const el = zeile && zeile.el;
+    const q = el && el.dataset ? el.dataset.quad : null;
+    if (!q) return false;
+    return konsoleQuadWechsel(q, dir);
+  }
+  // Die Schaltstellungen einer Kachel (Anzahl Punkte und welcher gefuellt ist), aus denselben
+  // Bedienelementen, die konsoleQuadWechsel() weiterdreht - damit Zahl und Punkt nicht
+  // auseinanderlaufen koennen.
+  function kQuadPunkte(quad) {
+    if (quad === 'bahn') {
+      const cb = $('setting-ontrack');
+      return { anzahl: 2, index: cb && cb.checked ? 1 : 0 };
+    }
+    if (quad === 'renntyp') {
+      const s = $('race-mode');
+      return { anzahl: s ? s.options.length : 0, index: s ? s.selectedIndex : -1 };
+    }
+    if (quad === 'profil') {
+      const keys = window.__presetKeys ? window.__presetKeys() : [];
+      const aktiv = window.__presetActive ? window.__presetActive() : null;
+      return { anzahl: keys.length, index: aktiv ? keys.indexOf(aktiv) : -1 };
+    }
+    if (quad === 'motor') {
+      const s = $('sound-profile');
+      const opts = s ? [...s.options].filter((o) => !o.disabled) : [];
+      const sel = s && s.selectedOptions[0];
+      return { anzahl: opts.length, index: sel ? opts.indexOf(sel) : -1 };
+    }
+    return { anzahl: 0, index: -1 };
   }
 
   // ---- Titel: jede Taste fuehrt nach FAHREN ------------------------------------------
@@ -607,6 +642,20 @@
     $('fa-start-titel').textContent = kRennenLaeuft() ? t('Zurück ins Rennen')
       : (training ? t('Training starten') : t('Rennen starten'));
     $('fa-start-unter').textContent = modus + ' · ' + (bahn ? t('auf der Bahn') : t('frei'));
+    // Punkte rechts neben dem Wert: so viele, wie es Schaltstellungen gibt, die gewaehlte gefuellt.
+    // Bei zu vielen (z. B. Motorsound mit 27 Motoren) wuerden die Punkte nicht mehr passen -
+    // dort zeigt nur noch der Wert die Stellung, ohne Punkte.
+    [['fa-strecke-punkte', 'bahn'], ['fa-renn-punkte', 'renntyp'],
+     ['fa-profil-punkte', 'profil'], ['fa-motor-punkte', 'motor']].forEach(([id, quad]) => {
+      const host = $(id);
+      if (!host) return;
+      const p = kQuadPunkte(quad);
+      let html = '';
+      if (p.anzahl <= 10) {
+        for (let i = 0; i < p.anzahl; i++) html += '<i' + (i === p.index ? ' class="an"' : '') + '></i>';
+      }
+      if (host.innerHTML !== html) host.innerHTML = html;
+    });
   }
 
   // ---- Streckenfoto (Ausdruck-Modus, experimentell) --------------------------------
@@ -777,6 +826,20 @@
     kn('fa-laden', () => konsoleZeige('track', 'laden'));
     kn('fa-druck', () => konsoleZeige('track', 'print'));
     kn('fa-profil', () => konsoleZeige('options', 'opt-feel'));
+    // BESTELLT: "wenn ich auf den Header tippe, soll es zur naechsten Option schalten".
+    // Der Kachelkopf (Titel + Wert) dreht die Schaltstellung weiter, der Rest der Kachel
+    // oeffnet wie bisher die Unterseite. Das Gamepad bleibt unveraendert (Quadrat/links/rechts).
+    [['fa-strecke', 'bahn'], ['fa-renn', 'renntyp'], ['fa-profil', 'profil'], ['fa-motor', 'motor']]
+      .forEach(([tileId, quad]) => {
+        const tile = $(tileId);
+        if (!tile) return;
+        tile.querySelectorAll('.k-kk, .k-kt').forEach((el) => {
+          el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            konsoleQuadWechsel(quad, 1);
+          });
+        });
+      });
     kn('race-menue', () => konsoleZumMenue());
     document.querySelectorAll('.info-open').forEach((el) => el.addEventListener('click', () => konsoleZeige('info', el.dataset.sub)));
     kn('mp-erkl-knopf', (e) => { e.stopPropagation(); optInfoOeffnen(t('Beitreten und Rangliste'), $('mp-erkl').innerHTML); });

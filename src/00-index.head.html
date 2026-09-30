@@ -2265,9 +2265,12 @@
     font-family: var(--k-font); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
   .k-knopf:hover, .k-knopf.menu-nav-sel { border-color: #fff; background: var(--k-blau); color: var(--k-blau-text); outline: 0; }
   .k-klein .k-kt { font-size: clamp(12px, 1.1vw, 16px); }
-  /* Die Kacheln mit schnellem Wechsel (Quadrat) zeigen die Pfeile des Vorbilds. */
-  .k-kachel[data-quad] .k-kt::before { content: '◀'; color: #0077a8; margin-right: 10px; font-size: .8em; }
-  .k-kachel[data-quad] .k-kt::after { content: '▶'; color: #0077a8; margin-left: 10px; font-size: .8em; }
+  /* Die Kacheln mit schnellem Wechsel (Quadrat): statt der kleinen blauen Pfeile zeigen
+     rechts neben dem Wert so viele Punkte, wie es Schaltstellungen gibt; die gewaehlte
+     ist gefuellt (51-konsole.js, kQuadPunkte). */
+  .k-quad-punkte { display: inline-flex; gap: 4px; margin-left: 10px; align-items: center; vertical-align: middle; }
+  .k-quad-punkte i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--k-blau); box-sizing: border-box; }
+  .k-quad-punkte i.an { background: var(--k-blau); }
 
   .k-fahren { grid-template-columns: repeat(3, 1fr); grid-template-rows: minmax(300px, 56vh) minmax(96px, 20vh); }
   .k-fahren-unten { grid-column: 1 / -1; grid-template-columns: 1fr 1fr 2fr; }
@@ -2416,8 +2419,8 @@
     /* Kleine Kacheln: eine Zeile fuer "PRO" und "PORSCHE 911 GT3 R", lange Namen umbrechen. */
     .k-klein .k-kt { font-size: clamp(9.5px, 1.9vh, 13.5px); white-space: normal; line-height: 1.15; }
   }
-  .k-kachel[data-quad] .k-kt::before { margin-right: 6px; font-size: .7em; }
-  .k-kachel[data-quad] .k-kt::after { margin-left: 6px; font-size: .7em; }
+  .k-klein .k-quad-punkte { gap: 3px; margin-left: 6px; }
+  .k-klein .k-quad-punkte i { width: 5px; height: 5px; border-width: 1px; }
   /* Kopf halb so hoch: Reiter, Logo und Innenabstand. Info bleibt ein Reiter. */
   /* NOCH EINMAL HALBIERT (v0.8.27). BESTELLT: "Die zwei Tab-Leisten noch flacher machen (50%
      der aktuellen Groesse), sonst ist der Bildschirm zu klein fuer die wichtigen Inhalte."
@@ -2589,8 +2592,12 @@
   .ch-rechts > h3:first-child { margin-top: 0; }
   .ch-detail[hidden] { display: none; }
   @media (max-width: 640px) { .ch-detail { grid-template-columns: minmax(0, 1fr); } }
-  .ch-karte { height: clamp(140px, 38vh, 300px); display: grid; place-items: center; }
+  .ch-karte { height: clamp(140px, 38vh, 300px); display: grid; place-items: center; cursor: zoom-in; }
   .ch-karte svg { width: 100%; height: 100%; max-width: 100%; max-height: 100%; }
+  /* Vollbild (72-challenges.js, X/Kreis oder Tap): die Karte liegt ueber allem, dunkel. */
+  .ch-karte.ch-voll { position: fixed; inset: 0; z-index: 20000; height: auto; margin: 0;
+    background: #05070b; padding: 3vmin; cursor: zoom-out; }
+  .ch-karte.ch-voll svg { width: 100%; height: 100%; max-width: 100%; max-height: 100%; }
   .ch-fakten { font-size: 12px; color: var(--muted); }
   .ch-umschalter { display: flex; width: 100%; padding: 0; margin: 6px 0; border-radius: 0; overflow: hidden; }
   .ch-umschalter > span { flex: 1; padding: 8px 6px; text-align: center; font-weight: 800; letter-spacing: .08em;
@@ -2630,7 +2637,7 @@
   .tp-tasten { font-size: 10.5px; color: var(--muted); flex: 1 1 260px; text-align: right; line-height: 1.35; }
   body:not(.track-fs) .tp-tasten, body:not(.track-fs) .tp-info { display: none; }
   .tp-btn { position: relative; }
-  .tp-rest { position: absolute; top: 2px; right: 3px; font-size: 9px; font-weight: 800; color: var(--good); }
+  .tp-rest { font-size: 9px; font-weight: 800; color: var(--good); line-height: 1.1; margin-top: 1px; }
   .tp-rest.fehlt { color: var(--bad); }
   #track-preview-svg { cursor: pointer; }
   /* Teile nach Typ getrennt: Linkskurven | Geraden | Rechtskurven, mit einem feinen Strich. */
@@ -2645,11 +2652,14 @@
   .tp-actions .tp-schalter.sel { border-color: var(--info); }
   .tp-actions .tp-schalter + .tp-schalter { margin-right: 8px; }
   #track-fs-host.ohne-tasten .tp-tasten { display: none; }
-  .teile-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 4px 14px; margin-top: 10px; }
-  .teile-zeile { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 6px;
-    padding: 3px 4px; border-bottom: 1px solid rgba(255,255,255,.06); }
-  .teile-zeile b { min-width: 2.2em; text-align: center; }
-  .teile-zeile button { min-height: 0; padding: 2px 9px; }
+  .teile-liste { display: flex; flex-direction: column; gap: 2px; margin-top: 10px; max-width: 560px; }
+  .teile-zeile { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 7px 12px; border: 1px solid transparent; border-radius: 6px; cursor: pointer; }
+  .teile-zeile:nth-child(odd) { background: rgba(255,255,255,.03); }
+  .teile-zeile .teile-name { color: var(--ink); }
+  .teile-zeile .teile-zahl { font-weight: 800; color: var(--k-blau); min-width: 3ch; text-align: right;
+    font-variant-numeric: tabular-nums; }
+  .teile-zeile.menu-nav-sel { background: rgba(0,163,224,.12); }
   /* HOCHFORMAT, schmal (Telefon im Browser): untereinander, mit Bildlauf. */
   @media (max-width: 760px) and (orientation: portrait) {
     header#k-kopf { grid-template-columns: 1fr auto; }
@@ -3079,9 +3089,9 @@
   .mp-datei { display: inline-block; margin-top: 3px; font-size: 11.5px; }
 
   .tp-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
-    justify-content: center; }
-  .tp-btn { width: 54px; height: 54px; padding: 0; display: grid; place-items: center;
-    border-radius: 8px; }
+    justify-content: center; padding-bottom: 4px; }
+  .tp-btn { width: 54px; min-height: 60px; padding: 3px 0 2px 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-start; border-radius: 8px; }
   .tp-btn svg { width: 26px; height: 26px; }
   .tp-btn.sel { border-color: var(--accent); border-width: 3px; background: var(--panel-3); }
   .tp-actions .tp-btn.sel { border-color: var(--info); }
@@ -3102,7 +3112,7 @@
      (Die Regel an der Karte setzt schon min-height: 0 und overflow: hidden - das deckt
      den Fall fuer das Rasterkind ab, nicht aber die Spurberechnung selbst.) */
   body.track-fs #track-fs-host { grid-template-rows: auto minmax(0, 1fr) auto; }
-  body.track-fs .tp-btn { width: 46px; height: 46px; }
+  body.track-fs .tp-btn { width: 46px; min-height: 52px; }
   /* Space usage, subtle, in a corner as asked. */
   /* The gamepad moves the REAL focus rather than a painted marker of its own, so keyboard,
      controller and screen reader all agree on where you are. That only works if focus is
@@ -3880,7 +3890,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.45</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.46</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3915,6 +3925,7 @@
       <div class="k-kachel " id="fa-strecke" role="button" tabindex="0" data-quad="bahn">
         <span class="k-kk">Strecke</span>
         <span class="k-kt" id="fa-strecke-titel"></span>
+        <span class="k-quad-punkte" id="fa-strecke-punkte" aria-hidden="true"></span>
         <span class="k-kb" id="fa-strecke-bild" style="background-image:url(img/strecke-kachel.jpg)"></span>
         <span class="k-ki" id="fa-strecke-info"></span>
         <span class="k-knopfreihe">
@@ -3929,6 +3940,7 @@
       <div class="k-kachel " id="fa-renn" role="button" tabindex="0" data-quad="renntyp">
         <span class="k-kk">Rennoptionen</span>
         <span class="k-kt" id="fa-renn-titel"></span>
+        <span class="k-quad-punkte" id="fa-renn-punkte" aria-hidden="true"></span>
         <span class="k-kb" style="background-image:url(img/rennoptionen.jpg)"></span>
         <span class="k-ki" id="fa-renn-info"></span>
       </div>
@@ -3936,6 +3948,7 @@
       <div class="k-kachel k-klein" id="fa-profil" role="button" tabindex="0" data-quad="profil">
         <span class="k-kk">Fahrgefühl</span>
         <span class="k-kt" id="fa-profil-titel"></span>
+        <span class="k-quad-punkte" id="fa-profil-punkte" aria-hidden="true"></span>
         <span class="k-ki"></span>
       </div>
       <!-- BESTELLT: "Statt Gegnerhärte Motorsound einstellen lassen im Fahren Menü". Quadrat
@@ -3943,6 +3956,7 @@
       <div class="k-kachel k-klein" id="fa-motor" role="button" tabindex="0" data-quad="motor">
         <span class="k-kk">Motorsound</span>
         <span class="k-kt" id="fa-motor-titel"></span>
+        <span class="k-quad-punkte" id="fa-motor-punkte" aria-hidden="true"></span>
         <span class="k-ki"></span>
       </div>
         <div class="k-kachel k-start" id="fa-start" role="button" tabindex="0">
@@ -4626,7 +4640,8 @@
          sondern mit X zwischen dem einen und dem anderen hin und her schalten"). -->
     <div id="ch-detail" class="ch-detail" hidden>
       <div class="ch-links">
-        <div class="ch-karte" id="ch-karte"></div>
+        <div class="ch-karte" id="ch-karte" tabindex="0" role="button" data-ch-voll
+             title="Vergr&ouml;&szlig;ern (X) / Verkleinern (X oder Kreis)" aria-label="Streckenkarte vergr&ouml;&szlig;ern"></div>
         <p class="muted" id="ch-idee"></p>
         <p class="ch-fakten" id="ch-fakten" data-i18n-skip></p>
         <div class="ch-ergebnis" id="ch-ergebnis" hidden>
@@ -10212,8 +10227,6 @@
       </p>
 
       <ol class="muted" id="track-tile-list" style="padding-left:20px; line-height:1.9; max-height:200px; overflow-y:auto; margin-top:12px"></ol>
-
-      <ol class="muted" id="track-tile-list" style="padding-left:20px; line-height:1.9; max-height:200px; overflow-y:auto; margin-top:12px"></ol>
     </div>
     <div class="card subpage" id="sub-laden">
       <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
@@ -10225,6 +10238,7 @@
         <button id="track-load">Laden</button>
         <button id="track-delete">Löschen</button>
       </div>
+    </div>
     <div class="card subpage" id="sub-teile">
       <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
       <h2>Meine Teile</h2>
@@ -10323,6 +10337,8 @@
             Original-Vorlage erzeugt und nicht nachgemessen: neun Balken, d&uuml;nn
             3,598 mm und dick 6,604 mm, L&uuml;cken 3,514 und 6,530 mm.
           </p>
+        </div>
+        <div style="flex:0 0 auto; align-self:center">
           <a href="startziel-a4.svg" download="startziel-a4.svg">
             <button class="primary">Start/Ziel herunterladen (SVG)</button>
           </a>

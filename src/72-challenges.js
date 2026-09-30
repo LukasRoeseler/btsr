@@ -698,6 +698,7 @@
   }
   // Unterseiten je Kategorie (sub-ch-a ... sub-ch-d); der Inhalt ist die Strecke der Woche.
   function challengeSeiteZeigen(id) {
+    if (chKarteVollAn && typeof chKarteVoll === 'function') chKarteVoll();
     if (id === 'online') { chOnlineZeichnen(); return; }
     const k = 'abcd'.indexOf(id);
     if (k < 0) return;
@@ -849,9 +850,26 @@
     Object.keys(chListen).forEach((k) => delete chListen[k]);
   }
 
+  // ---- Karte: Vollbild (BESTELLT) ------------------------------------------------
+  // X auf der Karte (menuNavActivate klickt das Element), Kreis (konsoleZurueck) oder ein
+  // Tap/Klick vergroessert bzw. verkleinert die Streckenkarte. Ein Zustand, damit die
+  // Menuenavigation (50b-menu-nav.js) und der Rueckweg (51-konsole.js) dieselbe Frage
+  // stellen koennen.
+  let chKarteVollAn = false;
+  function chKarteVoll() {
+    const k = $('ch-karte');
+    if (!k) return;
+    chKarteVollAn = !chKarteVollAn;
+    k.classList.toggle('ch-voll', chKarteVollAn);
+  }
+  function chKarteVollOffen() { return chKarteVollAn; }
+
   // ---- Verdrahtung ----
   // Ein Klick auf eine Haelfte waehlt sie; X (menuNavActivate klickt den Knopf selbst) oder ein
   // Klick daneben schaltet um.
+  // Karte: Klick/Tap toggelt das Vollbild (X laeuft ueber menuNavActivate -> click).
+  const chKarteEl = $('ch-karte');
+  if (chKarteEl) chKarteEl.addEventListener('click', chKarteVoll);
   $('ch-modus').addEventListener('click', (e) => {
     const h = e.target.closest('[data-m]');
     chModus = h ? h.dataset.m : (chModus === 'hotlap' ? 'rennen' : 'hotlap');
