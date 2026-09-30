@@ -10348,6 +10348,64 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Knoten als Beschriftung, 8 Buchstaben mit Zufallsfarben' };
   });
 
+  stAdd('Funk: haengender Schreibvorgang wird nach 300 ms freigegeben, neuester Wert geht raus', async () => {
+    const f = [];
+    const gesendet = [];
+    let loesen = null;
+    const ziel = { properties: { writeWithoutResponse: true },
+      writeValueWithoutResponse(p) { gesendet.push(p[0]); if (p[0] === 1) return new Promise(() => {}); return Promise.resolve(); } };
+    const merkNow = performance.now.bind(performance);
+    let jetzt = merkNow();
+    performance.now = () => jetzt;
+    try {
+      funkSchreiben(ziel, new Uint8Array([1]));          // haengt fuer immer
+      funkSchreiben(ziel, new Uint8Array([2]));          // wartet
+      funkSchreiben(ziel, new Uint8Array([3]));          // ersetzt 2
+      if (gesendet.join() !== '1') f.push('vor dem Wachhund schon gesendet: ' + gesendet.join());
+      jetzt += 320;
+      funkSchreiben(ziel, new Uint8Array([4]));          // Wachhund: haengt zu lange, neu
+      await Promise.resolve(); await Promise.resolve();
+      if (gesendet.indexOf(4) < 0) f.push('nach 300 ms geht nichts raus: ' + gesendet.join());
+      if (gesendet.indexOf(2) >= 0) f.push('veralteter Wert 2 wurde nachgeliefert');
+    } finally { performance.now = merkNow; }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Haenger nach 300 ms frei, veraltete Werte verworfen: ' + gesendet.join() };
+  });
+
+  stAdd('D-Pad: Renntyp in den Renneinstellungen, Rand der Renntyp-Kachel, Pad-Wahl', () => {
+    const f = [];
+    const merkTab = kAktiverTab();
+    const merkModus = $('race-mode').value;
+    try {
+      showTab('control');
+      menuNavEnsureContext();
+      const rows = menuNavRows();
+      const i = rows.findIndex((r) => r.el.id === 'race-mode-zeile');
+      if (i < 0) f.push('Renntyp-Zeile fuer das Steuerkreuz unsichtbar');
+      else {
+        menuNavIndex = i; menuNavGezeigt = true;
+        const vor = $('race-mode').selectedIndex;
+        menuNavSeitwaerts('right');
+        if ($('race-mode').selectedIndex === vor && vor < $('race-mode').options.length - 1) f.push('rechts schaltet den Renntyp nicht');
+      }
+      if (!rows.some((r) => r.el.classList && r.el.classList.contains('misc-back'))) f.push('Zurueck-Knopf nicht erreichbar');
+      if (!rows.some((r) => r.control && r.control.id === 'race-start-btn')) f.push('Rennen starten nicht erreichbar');
+      // Pads: ohne Zwei-Spieler-Modus und mit "tauschen" bleibt p1 stehen.
+      const merkTausch = padTauschenLesen();
+      padTauschenSetzen(true);
+      const ohneZwei = typeof zweiSpieler === 'undefined' || !zweiSpieler;
+      if (ohneZwei && navigator.getGamepads) {
+        const p = padsFuerSpieler();
+        const anzahl = [...navigator.getGamepads()].filter(Boolean).length;
+        if (anzahl && !p.p1) f.push('mit "tauschen" und einem Pad ist p1 leer');
+      }
+      padTauschenSetzen(merkTausch);
+    } finally {
+      $('race-mode').value = merkModus; $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
+      if (merkTab) showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Renntyp, Zurueck und Start per Pad, Tauschen ohne zweites Pad harmlos' };
+  });
+
   stAdd('Lenkkennlinie: voll genau bei X %, Anfang unter linear, symmetrisch, am Servo', () => {
     const f = [];
     const c = physEngine.config;

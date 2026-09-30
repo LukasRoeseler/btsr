@@ -1964,10 +1964,14 @@
       }
     }
 
+    // Werkstatt-Anzeigen: im Cockpit unsichtbar, also dort nicht bei jeder Meldung beschreiben.
+    const imCockpit = !!document.querySelector('#tab-race.active');
     const badge = $('dash-offtrack');
-    badge.textContent = dashOnMarker ? 'Über Muster' : 'Kein Muster';
-    badge.style.background = dashOnMarker ? 'rgba(70,209,127,.12)' : 'var(--panel-2)';
-    badge.style.borderColor = dashOnMarker ? 'var(--good)' : 'var(--border)';
+    if (!imCockpit) {
+      badge.textContent = dashOnMarker ? 'Über Muster' : 'Kein Muster';
+      badge.style.background = dashOnMarker ? 'rgba(70,209,127,.12)' : 'var(--panel-2)';
+      badge.style.borderColor = dashOnMarker ? 'var(--good)' : 'var(--border)';
+    }
 
     // Bytes 1 and 3 fluctuate only once the car moves and byte 3 flipped sign with turn
     // direction in one capture — hence "motion-ish". Unconfirmed.
@@ -2691,8 +2695,11 @@
       applySurface();
     }
     wxBlobsWeiter(dt);
-    wxRadarDraw();
+    // Gezeichnet wird jeden dritten Takt (etwa 4 Hz, v0.8.41): das Radar erzwingt beim Zeichnen
+    // ein Layout, und in der App bremst das den Faden, auf dem auch die Funkantworten laufen.
+    if ((wxZeichenZaehler = (wxZeichenZaehler + 1) % 3) === 0) wxRadarDraw();
   }
+  let wxZeichenZaehler = 0;
   setInterval(wxTick, 80);
 
   // ---- Die vier Zustandsansagen ------------------------------------------------------
@@ -5179,8 +5186,10 @@
       return true;
     }
     if (dir === 'left' || dir === 'right') {
-      if (!raceScreenLimitArmed) return false;
       const zeile = RACE_SETTINGS_ROWS[raceScreenSel];
+      // Der Renntyp schaltet mit links/rechts DIREKT (v0.8.41) - vorher erst nach X, und ohne X
+      // blaetterte dieselbe Taste zum naechsten Cockpit-Schirm.
+      if (zeile.id !== 'mode' && !raceScreenLimitArmed) return false;
       // BESTELLT: "rennmodi lassen sich noch nicht gut anwaehlen" - der Rennmodus geht jetzt
       // wie die Rundenzahl: anwaehlen, dann links/rechts in BEIDE Richtungen, je ein Schritt.
       if (zeile.id === 'mode') {

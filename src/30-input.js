@@ -335,7 +335,13 @@
   const keys = new Set();
   // Keyboard shifting, for testing without a controller: I up, K down. Edge-triggered via
   // the keydown listener rather than the polling interval, so one tap is one shift.
+  // Tippt man in ein Textfeld (Name, Host-Adresse), sind die Fahr- und Testtasten aus
+  // (v0.8.41): "p" loeste sonst einen Boxenstopp aus, Enter klickte eine Menuezeile.
+  function tasteImTextfeld(e) {
+    return !!(e.target && e.target.closest && e.target.closest('input[type="text"], input[type="number"], input[type="url"], textarea, select'));
+  }
   window.addEventListener('keydown', (e) => {
+    if (tasteImTextfeld(e)) return;
     const k = (e.key || '').toLowerCase();
     // Boxen-Minigame: K ist Quadrat, I ist Kreis - dieselbe Lage wie Runter/Hoch.
     if ((k === 'i' || k === 'k') && !e.repeat && pitSpielTaste(k === 'k' ? 'quad' : 'kreis')) {
@@ -401,6 +407,7 @@
     }
   });
   window.addEventListener('keydown', (e) => {
+    if (tasteImTextfeld(e)) return;
     if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
     // Phase 13: auf dem Optionen-Tab lenken die Pfeiltasten die Menuenavigation statt zu
     // steuern - sonst wuerde ein Fokuswechsel gleichzeitig das (nicht sichtbare) Auto

@@ -91,6 +91,9 @@
         menuNavEnsureContext();
         if (!menuNavGezeigt) konsoleFokusAuf(playerCar ? 'fa-start' : 'fa-auto');
       }
+      // Die gemerkte Stelle auch ZEIGEN (v0.8.41): vorher war sie aktiv, aber unmarkiert.
+      menuNavEnsureContext();
+      if (menuNavGezeigt) menuNavRender();
     }, 0);
   }
   function konsoleNachSubpage(key) {
@@ -100,7 +103,11 @@
     const mpg = $('mp-gemeinsam');
     const platz = key && document.querySelector('#sub-' + key + ' .mp-platz');
     if (mpg && platz && mpg.parentNode !== platz) platz.appendChild(mpg);
-    setTimeout(konsoleZeichnen, 0);
+    setTimeout(() => {
+      konsoleZeichnen();
+      menuNavEnsureContext();
+      if (menuNavGezeigt) menuNavRender();
+    }, 0);
   }
 
   function konsoleZeige(tab, sub) {
@@ -117,6 +124,7 @@
   // Im Browser dasselbe ueber einen Verlaufseintrag: Zurueck landet auf popstate statt die
   // Seite zu verlassen, und auf dem Startbildschirm geht es wie gewohnt zurueck.
   function omegaZurueck() {
+    if ($('mp-info') && !$('mp-info').hidden && typeof mpiStop === 'function') { mpiStop(); return true; }
     const imEditor = document.body.classList.contains('track-fs');
     const tour = typeof konsoleTourOffen === 'function' && konsoleTourOffen();
     if (kAktiverTab() === 'home' && !imEditor && !tour && !kFrageOffen) return false;
@@ -141,6 +149,8 @@
   // Unterseite), dann der Stapel, zuletzt die Eltern-Ebene.
   function konsoleZurueck() {
     if (typeof optInfoOffen === 'function' && optInfoOffen()) { optInfoSchliessen(); return true; }
+    if ($('mp-info') && !$('mp-info').hidden && typeof mpiStop === 'function') { mpiStop(); return true; }
+    menuNavTextfeldLoesen();
     if (kFrageOffen) { konsoleFrageZu(); return true; }
     if (typeof konsoleTourOffen === 'function' && konsoleTourOffen()) { konsoleTourZurueck(); return true; }
     const lb = $('lb-wrap');
@@ -240,14 +250,16 @@
   }
 
   // ---- Quadrat: schneller Wechsel auf Kacheln mit data-quad --------------------------
-  function konsoleQuadrat() {
+  function konsoleQuadrat(richtung) {
+    const dir = richtung === -1 ? -1 : 1;
+    menuNavEnsureContext();
     const zeile = menuNavRows()[menuNavIndex];
     const el = zeile && zeile.el;
     const q = el && el.dataset ? el.dataset.quad : null;
     if (!q) return false;
     if (q === 'renntyp') {
       const s = $('race-mode');
-      s.selectedIndex = (s.selectedIndex + 1) % s.options.length;
+      s.selectedIndex = (s.selectedIndex + dir + s.options.length) % s.options.length;
       s.dispatchEvent(new Event('change', { bubbles: true }));
     } else if (q === 'bahn') {
       const cb = $('setting-ontrack');
@@ -259,7 +271,7 @@
       const s = $('sound-profile');
       const opts = s ? [...s.options].filter((o) => !o.disabled) : [];
       if (opts.length) {
-        const n = opts[(opts.indexOf(s.selectedOptions[0]) + 1) % opts.length];
+        const n = opts[(opts.indexOf(s.selectedOptions[0]) + dir + opts.length) % opts.length];
         s.value = n.value;
         s.dispatchEvent(new Event('change', { bubbles: true }));
       }

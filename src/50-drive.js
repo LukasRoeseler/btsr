@@ -2281,6 +2281,26 @@
   //
   // resolveLights() bleibt, und zwar nicht als Anzeige: es setzt lightBits und liefert
   // raceLampHead, die BEIDE ins gesendete Paket gehen.
+  // Anzeige unter Optionen > System, nur wenn sie offen ist.
+  setInterval(() => {
+    const el = $('funk-rundlauf');
+    if (!el || !el.offsetParent) return;
+    const s = typeof funkStatistik === 'function' ? funkStatistik() : null;
+    const wv = (navigator.userAgent.match(/Chrome\/(\d+)/) || [])[1];
+    el.textContent = (s ? Math.round(s.mittel) + ' / ' + Math.round(s.p95) + ' ms' + (s.haenger ? ' · ' + s.haenger + '× hing' : '')
+      : t('noch keine Befehle')) + (wv ? ' · WebView ' + wv : '');
+  }, 1000);
+  // COCKPIT GEDROSSELT (v0.8.41): hoechstens alle COCKPIT_MAL_MS, nach dem Senden.
+  const COCKPIT_MAL_MS = 90;
+  let cockpitMalFaellig = false, cockpitGemaltAt = 0;
+  function cockpitNachSenden() {
+    if (!cockpitMalFaellig) return;
+    const jetzt = performance.now();
+    if (jetzt - cockpitGemaltAt < COCKPIT_MAL_MS) return;
+    cockpitGemaltAt = jetzt;
+    cockpitMalFaellig = false;
+    updateRaceScreen(physEngine.state);
+  }
   function updateDashboard(out) {
     const st = physEngine.state;
     updateRaceScreen(st);
@@ -2746,7 +2766,10 @@
     // t('ABSEITS \u00b7 GAS ' + Prozent + '%') - ein dynamischer Woerterbuchschluessel, und
     // solche gibt es hier nicht: nachgeschlagen werden ganze Textknoten. Eine Aenderung an
     // OFFTRACK_GAS haette die Uebersetzung still ausfallen lassen.
-    el.style.display = offtrackGilt() ? 'block' : 'none';
+    const an = offtrackGilt();
+    if (el.dataset.an === (an ? '1' : '0')) return;   // nur bei Wechsel anfassen
+    el.dataset.an = an ? '1' : '0';
+    el.style.display = an ? 'block' : 'none';
   }
 
   // Ist das Auto neben der Bahn? Die entprellte Antwort, und ausdruecklich OHNE
@@ -2861,7 +2884,11 @@
     const out = physEngine.update({ steering: steer, throttle: rawThrottle, brake: rawBrake,
                                     headlights: headlightsOn }, dt);
     pacejkaRueckmeldung(physEngine, 1);
-    updateDashboard(out);
+    // Nur die LICHTER hier - sie gehen ins Paket. Das Cockpit malt cockpitNachSenden() nach
+    // dem Absetzen (20-protocol.js, controlHeartbeat).
+    const lamp = resolveLights(out.lights.head, out.lights.brake);
+    raceLampHead = lamp.head;
+    cockpitMalFaellig = true;
     // Gefahrene Strecke mitzaehlen, siehe 97-sessions.js. Hier und nicht dort, weil dies
     // der einzige Ort mit einem verlaesslichen dt ist - und ausdruecklich OHNE
     // Speicherzugriff: localStorage ist synchron und wuerde den 45-ms-Sendetakt stoeren.

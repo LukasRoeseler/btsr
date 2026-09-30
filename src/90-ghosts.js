@@ -732,9 +732,24 @@
   window.addEventListener('gamepadconnected', (e) => {
     padConnected = true;
     $('pad-dot').classList.add('on');
-    $('pad-status-text').textContent = `Verbunden: ${e.gamepad.id}`;
+    $('pad-status-text').textContent = `Verbunden: ${e.gamepad.id}`
+      + (e.gamepad.mapping === 'standard' ? '' : ' · ' + t('ohne Standardbelegung'));
     log(`Gamepad verbunden: ${e.gamepad.id}`, 'info');
     startPadLoop();
+    // CONTROLLER OHNE STANDARDBELEGUNG (v0.8.41). GEMELDET: "Die Tab-Wechseltasten gehen im
+    // Browser nicht auf dem alten Handy (mit No-Name-Wireless-Controller)." Solche Pads melden
+    // andere Knopfnummern, L1/R1 liegen dann nicht auf 4/5. Einmal je Controller ein Hinweis,
+    // mit dem Weg zur eigenen Zuordnung.
+    if (e.gamepad.mapping !== 'standard') {
+      const schl = 'omegasim-pad-hinweis:' + e.gamepad.id;
+      let gesehen = false;
+      try { gesehen = localStorage.getItem(schl) === '1'; localStorage.setItem(schl, '1'); } catch (err) { /* privat */ }
+      if (!gesehen && typeof konsoleFrage === 'function') {
+        setTimeout(() => konsoleFrage(t('Controller ohne Standardbelegung'),
+          t('Dieser Controller meldet eigene Knopfnummern. Wechseln L1/R1 die Reiter nicht, weise sie unter Optionen > Controller neu zu: bei „Reifenwahl weiter“ und „Tankmenge weiter“ auf Neu zuweisen tippen und L1 bzw. R1 drücken.'),
+          [[t('Zur Controller-Seite'), () => konsoleZeige('options', 'opt-pad')], [t('Später'), null]]), 600);
+      }
+    }
   });
   window.addEventListener('gamepaddisconnected', () => {
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
@@ -1207,8 +1222,25 @@
       car.testSenke.push({ steer, throttle, lightBits });
       return;
     }
-    if (!car.rx || car.writeInFlight) return;
+    if (!car.rx) return;
+    // Das FAHRERAUTO geht durch dasselbe Schloss wie der Sendetakt (20-protocol.js): Blinken,
+    // Stopp und Latenzprobe schrieben sonst neben dem Takt her ans selbe Merkmal - genau die
+    // Ueberlappung, bei der das Plugin der App eine Antwort verliert (v0.8.41).
+    if (car === playerCar) {
+      const pkt = buildCommandPacket(steer, throttle, lightBits, modeBytes,
+                                     typeof lichtSchadenVon === 'function' ? lichtSchadenVon(car) : undefined);
+      recWrite(pkt, garageLabel(car));
+      await funkSchreiben(car.rx, pkt, null);
+      return;
+    }
+    // WACHHUND: haengt ein Schreibvorgang laenger als FUNK_HAENGT_MS, gilt er als verloren -
+    // sonst stuende dieses Auto (Spieler 2, Ghost) fuer immer still.
+    const jetzt = performance.now();
+    if (car.writeInFlight && jetzt - (car.writeSeit || 0) < FUNK_HAENGT_MS) return;
+    const gen = (car.writeGen || 0) + 1;
+    car.writeGen = gen;
     car.writeInFlight = true;
+    car.writeSeit = jetzt;
     try {
       // Der Lampenschaden DIESES Autos. Fuer einen Ghost ist das "keiner" - bis v0.6.46
       // erbte er den Schaden des Fahrerautos, und seine Scheinwerfer flackerten mit.
@@ -1222,7 +1254,7 @@
       // A disconnect mid-drive is normal; do not spam the log from a 22 Hz loop.
       car.writeErrors = (car.writeErrors || 0) + 1;
     } finally {
-      car.writeInFlight = false;
+      if (car.writeGen === gen) car.writeInFlight = false;
     }
   }
 
@@ -8443,9 +8475,22 @@
   }
   function padsFuerSpieler() {
     const sortiert = padsSortiert();
+    // OHNE ZWEI-SPIELER-MODUS (v0.8.41): das zuletzt benutzte Pad faehrt und bedient die Menues,
+    // gemappte vor rohen (Windows listet dasselbe Pad oft zweimal). GEMELDET: "im Multiplayer-
+    // modus ging gar kein Waehlen" - "Controller tauschen" mit EINEM Pad machte p1 zu null, und
+    // pollGamepad kehrte vor allen Menues zurueck; und das "erste" Pad der Browserliste kippt,
+    // wenn ein Bluetooth-Pad kurz schlaeft.
+    if (typeof zweiSpieler === 'undefined' || !zweiSpieler) {
+      const gemappt = sortiert.filter(p => p.mapping === 'standard');
+      const pool = gemappt.length ? gemappt : sortiert;
+      let best = pool[0] || null;
+      pool.forEach((p) => { if (best && (p.timestamp || 0) > (best.timestamp || 0)) best = p; });
+      return { p1: best, p2: null };
+    }
     const a = sortiert[0] || null;
     const b = sortiert.length > 1 ? sortiert[1] : null;
-    return padTauschen ? { p1: b, p2: a } : { p1: a, p2: b };
+    // Tauschen nur mit ZWEI Pads.
+    return padTauschen && a && b ? { p1: b, p2: a } : { p1: a, p2: b };
   }
 
   // ---- Die Bedienung der Kachel "2 Spieler" ---------------------------------------
@@ -8658,6 +8703,12 @@
         : (pad.buttons.length > 15 ? 'nichts' : 'nichts, Pad hat nur ' + pad.buttons.length + ' Knoepfe');
       $('pad-live-axes').textContent = (pad.axes || []).length + ': '
         + [...(pad.axes || [])].map(v => v.toFixed(1)).join(' ');
+      // Welche Knopfnummern gerade gedrueckt sind (v0.8.41): damit sich bei einem Controller
+      // ohne Standardbelegung ablesen laesst, welche Nummer L1/R1 wirklich hat.
+      if ($('pad-live-knoepfe')) {
+        const gedr = [...(pad.buttons || [])].map((b, i) => (b && b.pressed ? i : -1)).filter(i => i >= 0);
+        $('pad-live-knoepfe').textContent = (gedr.length ? gedr.join(' ') : '–') + (pad.mapping === 'standard' ? '' : ' · ' + t('ohne Standardbelegung'));
+      }
 
       // No tab gate any more, and setThrottleLogical (not setThrottle) so that pressing
       // the throttle actually goes FORWARD — setThrottle takes screen-space and was

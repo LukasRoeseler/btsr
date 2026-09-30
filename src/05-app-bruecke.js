@@ -43,11 +43,21 @@
     for (let i = 0; i < b.length; i++) s += (b[i] < 16 ? '0' : '') + b[i].toString(16);
     return s;
   }
+  // Per Tabelle statt Regex und parseInt (v0.8.41): rund 22 Meldungen je Sekunde und Auto
+  // laufen hier durch, auf einem schwachen Handy auf demselben Faden wie die Antworten.
+  const HEX_WERT = new Int8Array(128).fill(-1);
+  '0123456789abcdef'.split('').forEach((c, i) => { HEX_WERT[c.charCodeAt(0)] = i; HEX_WERT[c.toUpperCase().charCodeAt(0)] = i; });
   function ausHex(hex) {
-    const s = String(hex || '').replace(/[^0-9a-fA-F]/g, '');
+    const s = String(hex || '');
     const b = new Uint8Array(s.length >> 1);
-    for (let i = 0; i < b.length; i++) b[i] = parseInt(s.substr(i * 2, 2), 16);
-    return new DataView(b.buffer);
+    let j = 0, hoch = -1;
+    for (let i = 0; i < s.length; i++) {
+      const c = s.charCodeAt(i);
+      const v = c < 128 ? HEX_WERT[c] : -1;
+      if (v < 0) continue;
+      if (hoch < 0) hoch = v; else { b[j++] = (hoch << 4) | v; hoch = -1; }
+    }
+    return new DataView(b.buffer, 0, j);
   }
 
   // Die reinen Umrechnungen sind auch im Browser erreichbar - fuer den Selbsttest, der sie
@@ -87,14 +97,23 @@
       this._abo = null;
     }
     get _ziel() {
-      return { deviceId: this.service.device.id, service: this.service.uuid,
-               characteristic: this.uuid };
+      if (!this._zielCache) {
+        this._zielCache = { deviceId: this.service.device.id, service: this.service.uuid,
+                            characteristic: this.uuid };
+      }
+      return this._zielCache;
     }
+    // TIMEOUT 300 ms statt der 5 s des Plugins (BluetoothLe.kt liest "timeout"): ein
+    // Schreibvorgang, dessen Antwort verloren ist, haelt die Lenkung sonst fuenf Sekunden fest.
     async writeValueWithoutResponse(daten) {
-      await ruf('writeWithoutResponse', Object.assign({ value: zuHex(daten) }, this._ziel));
+      const z = this._ziel;
+      await ruf('writeWithoutResponse', { deviceId: z.deviceId, service: z.service,
+                                          characteristic: z.characteristic, value: zuHex(daten), timeout: 300 });
     }
     async writeValueWithResponse(daten) {
-      await ruf('write', Object.assign({ value: zuHex(daten) }, this._ziel));
+      const z = this._ziel;
+      await ruf('write', { deviceId: z.deviceId, service: z.service,
+                           characteristic: z.characteristic, value: zuHex(daten), timeout: 300 });
     }
     writeValue(daten) { return this.writeValueWithResponse(daten); }
     async readValue() {

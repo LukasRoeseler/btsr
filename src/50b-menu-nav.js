@@ -91,6 +91,10 @@
     // Vorrang - auch im Cockpit, das sonst keine generische Zeilenliste bekommt.
     if (typeof konsoleFrageOffen === 'function' && konsoleFrageOffen()) return $('k-frage');
     if (typeof konsoleTourOffen === 'function' && konsoleTourOffen()) return $('k-tour-karte');
+    // Die Mehrspieler-Anzeige "Info-Screen" liegt ueber allem (v0.8.41): sonst lief die Auswahl
+    // unsichtbar darunter weiter.
+    const mi = $('mp-info');
+    if (mi && !mi.hidden) return mi;
     const tab = document.querySelector('.tabpage.active');
     if (!tab || tab.id === 'tab-race') return null;
     // Der TITELBILDSCHIRM hat keine Zeilen: jede Taste fuehrt nach Fahren (51-konsole.js).
@@ -119,6 +123,7 @@
       || row.querySelector('input[type="range"]')
       || row.querySelector('select')
       || row.querySelector('input[type="number"], input[type="text"]')
+      || row.querySelector('button:not(.opt-label button):not(:disabled)')
       || row.querySelector('button:not(.opt-label button)');
   }
 
@@ -162,7 +167,9 @@
     // Reihenfolge der Selektoren - .opt-row- und .mw-row-Zeilen bleiben also gemischt in
     // ihrer Bildschirmreihenfolge.
     const optRows = [...host.querySelectorAll('.opt-row, .mw-row')].filter(menuNavSichtbar);
-    const back = host.querySelector('.subpage-back');
+    // Auch .misc-back (v0.8.41): "← Optionen" in den Renneinstellungen und den Info-Seiten ist
+    // ein goto-tab-Knopf und war fuer das Steuerkreuz nicht erreichbar.
+    const back = host.querySelector('.subpage-back') || host.querySelector('.misc-back');
     const rows = [];
     if (back && menuNavSichtbar(back)) rows.push({ el: back, kind: 'button', control: back });
     if (optRows.length) {
@@ -179,7 +186,7 @@
     }
     [...host.querySelectorAll(
       'button:not(.subpage-back), select, input[type="checkbox"], input[type="range"], '
-      + 'input[type="number"], input[type="text"], a[href]',
+      + 'input[type="number"], input[type="text"], a[href]:not([download]):not([target="_blank"])',
     )].filter(menuNavSichtbar).forEach((el) => rows.push({ el, kind: menuNavKindOf(el), control: el }));
     return rows;
   }
@@ -268,12 +275,20 @@
       const wert = Math.max(0, haupt) + quer * 2.5;
       if (wert < bestWert) { bestWert = wert; best = i; }
     });
+    // Am Rand einer Kachel mit Wert (data-quad, zeigt ◀ ▶): den Wert umschalten statt nichts
+    // zu tun (v0.8.41, GEMELDET: Renntyp liess sich mit dem Steuerkreuz nicht waehlen).
+    if (best < 0 && (dir === 'left' || dir === 'right') && cur.el.dataset && cur.el.dataset.quad
+        && typeof konsoleQuadrat === 'function') { konsoleQuadrat(dir === 'left' ? -1 : 1); return true; }
     if (best < 0) return true;   // am Rand: nichts tun, aber die Taste ist verbraucht
     menuNavIndex = best;
     menuNavArmed = false;
     menuNavRender();
     menuNavTonBewegen();
     return true;
+  }
+  function menuNavTextfeldLoesen() {
+    const a = document.activeElement;
+    if (a && a.matches && a.matches('input[type="text"], input[type="number"], input[type="url"], textarea')) a.blur();
   }
   function menuNavIstRaum() {
     const rows = menuNavRows();
@@ -300,6 +315,9 @@
     // dahinterliegenden, unsichtbaren Fokus verschieben - der naechste Blick nach dem
     // Schliessen saehe sonst eine andere Zeile ausgewaehlt, als man verlassen hatte.
     if (optInfoOffen()) return;
+    // Ein offenes Textfeld beim Weiterbewegen schliessen (v0.8.41): sonst bleibt die
+    // Handytastatur offen, und Tasten landen im Feld.
+    menuNavTextfeldLoesen();
     menuNavEnsureContext();
     const rows = menuNavRows();
     if (!rows.length) return;

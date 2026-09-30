@@ -3879,7 +3879,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.40</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.41</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4850,6 +4850,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Funk: ein Schloss je Auto mit Wachhund; ein h&auml;ngender Befehl blockiert kein Auto mehr (Ursache f&uuml;r &bdquo;Auto reagiert nach Mehrspieler-Beitritt nicht&ldquo;). In der App: kurzes Timeout, erst senden, dann das Cockpit gedrosselt malen, weniger Arbeit je Meldung; Messanzeige &bdquo;Funk-Rundlauf&ldquo; unter System. Steuerkreuz: Renntyp in den Renneinstellungen und im Cockpit direkt mit links/rechts, am Rand der Renntyp-Kachel schaltet es, Zur&uuml;ck und Rennen starten erreichbar, Info-Screen schlie&szlig;t mit &#9675;. Ohne Zwei-Spieler-Modus f&auml;hrt das zuletzt benutzte Pad; &bdquo;Controller tauschen&ldquo; legt ein einzelnes Pad nicht mehr lahm. Controller ohne Standardbelegung: Hinweis und Anzeige der gedr&uuml;ckten Kn&ouml;pfe.</li>
         <li>Gas-, Brems- und Lenkkennlinie ab Werk 2,45. Neu: &bdquo;Voller Einschlag bei&ldquo; (Vorgabe 90 % Stickweg, experimentell), darunter lenkt der Stick schon, am Anfang schw&auml;cher als linear; Lenkkalibrierung verschiebt den Punkt nicht mehr. Wer noch auf den alten Vorgaben stand, bekommt die neuen einmalig; eigene Werte bleiben.</li>
         <li>Challenges: Einstellungen unter der Streckenkarte, Bestenliste rechts; Modus und Preset schaltet &#10005; um. Fr&uuml;hstart bei allen Starts mit Ampel: kein Abbruch mehr, sondern kurz ausgebremst, sobald das Auto nach Gr&uuml;n f&auml;hrt. Silverbrook-Rennen mit einem Pflichtstopp (Boxen-Minigame, egal wo).</li>
         <li>Titel-Glitch je Buchstabe zuf&auml;llig blau oder rot, oben und unten getrennt. &bdquo;Abseits&ldquo; erscheint jetzt gro&szlig; in der Mitte des Cockpits. Autos-Kachel zeigt wieder den Namen statt &bdquo;[object HTMLSpanElement]&ldquo;. Boxen-Minigame: Tasten stehen 100 ms l&auml;nger.</li>
@@ -7671,11 +7672,13 @@
            bekommt dasselbe Gruen, das vorher #btn-connect trug (siehe die Begruendung
            bei .home-topbar in der Kopfzeilen-CSS), #race-stop-btn die globale
            .danger-Klasse, die es bisher im Markup nirgends benutzte. -->
-      <div class="row" style="gap:10px; margin-bottom:14px">
+      <!-- ALS EINSTELLUNGSZEILE (v0.8.41), damit das Steuerkreuz sie erreicht (menuNavRows nimmt
+           auf dieser Seite nur .opt-row). X loest den jeweils freien Knopf aus. -->
+      <div class="opt-row opt-breit"><div class="row" style="gap:10px; margin-bottom:6px">
         <button id="race-start-btn" class="race-go">🏁 Rennen starten</button>
         <button id="race-stop-btn" class="danger" disabled>Rennen abbrechen</button>
         <span class="muted" id="race-clock" style="font-family:monospace"></span>
-      </div>
+      </div></div>
       <div class="row" style="align-items:center; gap:18px; flex-wrap:wrap">
         <div style="display:flex; gap:8px">
           <span class="race-light" id="race-light-1"></span>
@@ -7698,6 +7701,11 @@
            versteckt: applyRaceModeUi(), die Voreinstellungen und die change-Bindung lesen
            es weiter, die Kacheln setzen nur value und loesen change aus. Ein Umbau der
            Zustandslogik waere unnoetiges Risiko fuer eine Frage der Bedienung. -->
+      <!-- RENNTYP ALS EINSTELLUNGSZEILE (v0.8.41). GEMELDET: "Im Rennmenue kann ich mit dem D-Pad
+           nicht den Renntyp anwaehlen." Die Kacheln standen ausserhalb jeder .opt-row und waren
+           fuer das Steuerkreuz unsichtbar. Jetzt wie die Wetterzeile: links/rechts schaltet das
+           versteckte Auswahlfeld, die Kacheln ziehen nach. -->
+      <div class="opt-row opt-breit" id="race-mode-zeile"><div class="opt-label">Renntyp</div>
       <div class="mode-grid" id="race-mode-tiles">
         <button type="button" class="mode-tile" data-mode="practice">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -7725,7 +7733,7 @@
         <option value="endurance">Endurance</option>
         <option value="qualifying">Qualifying</option>
         <option value="laps">Runden</option>
-      </select>
+      </select></div>
       <p class="muted" id="race-mode-hint" style="font-size:11.5px; margin:8px 0 0 0"></p>
 
       <!-- Ab hier senkrecht, in derselben Form wie die Optionen: eine Zeile je Einstellung,
@@ -9614,6 +9622,7 @@
         <span class="muted">Lenkung: <b id="pad-live-steer">0.00</b></span>
         <span class="muted">Steuerkreuz: <b id="pad-live-dpad">&ndash;</b></span>
         <span class="muted" style="font-size:11px">Achsen: <b id="pad-live-axes">&ndash;</b></span>
+        <span class="muted" style="font-size:11px">Knöpfe gedrückt: <b id="pad-live-knoepfe" data-i18n-skip>&ndash;</b></span>
       </div>
 
       <!-- Aus dem Cockpit hierher. Dort war sie eine ganze Karte unter dem Schirm, und
@@ -9824,6 +9833,11 @@
       <div class="opt-row"><div class="opt-label">Entwicklertools zeigen
           <small>Blendet im Hauptmen&uuml; die Kachel Entwickler ein: Doku, Programmierschule, BLE-Werkbank, Selbsttest, Code-Sonde, Zahlensysteme, Aufnahme-Modus. Auch mit ?dev in der Adresse.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-dev"><span></span></label></div>
+      <!-- v0.8.41: Messanzeige fuer den Lag in der App (BESTELLT: "Verzoegerung auf meinem
+           schwaecheren Handy optimieren", erst Stufe 1, dann messen). -->
+      <div class="opt-row"><div class="opt-label">Funk-Rundlauf
+          <small>Wie lange ein Steuerbefehl bis zur Best&auml;tigung durch das Bluetooth braucht: Mittelwert und 95 % der Befehle. Über 45 ms f&auml;llt jeder zweite Befehl aus dem Takt. H&auml;ngende Befehle gibt der Wachhund nach 300 ms frei. In der App auf einem &auml;lteren Handy hilft oft, &bdquo;Android System WebView&ldquo; im Play Store zu aktualisieren.</small></div>
+        <span class="opt-val" id="funk-rundlauf" data-i18n-skip>&ndash;</span></div>
       <div class="opt-row" id="opt-app-zeile" hidden><div class="opt-label">App &amp; Updates
           <small>Nur in der Android-App: Version, Updates ohne neue APK.</small></div>
         <button type="button" class="goto-tab" data-tab="info" data-k-sub="app">&Ouml;ffnen</button></div>
@@ -10618,11 +10632,21 @@
     for (let i = 0; i < b.length; i++) s += (b[i] < 16 ? '0' : '') + b[i].toString(16);
     return s;
   }
+  // Per Tabelle statt Regex und parseInt (v0.8.41): rund 22 Meldungen je Sekunde und Auto
+  // laufen hier durch, auf einem schwachen Handy auf demselben Faden wie die Antworten.
+  const HEX_WERT = new Int8Array(128).fill(-1);
+  '0123456789abcdef'.split('').forEach((c, i) => { HEX_WERT[c.charCodeAt(0)] = i; HEX_WERT[c.toUpperCase().charCodeAt(0)] = i; });
   function ausHex(hex) {
-    const s = String(hex || '').replace(/[^0-9a-fA-F]/g, '');
+    const s = String(hex || '');
     const b = new Uint8Array(s.length >> 1);
-    for (let i = 0; i < b.length; i++) b[i] = parseInt(s.substr(i * 2, 2), 16);
-    return new DataView(b.buffer);
+    let j = 0, hoch = -1;
+    for (let i = 0; i < s.length; i++) {
+      const c = s.charCodeAt(i);
+      const v = c < 128 ? HEX_WERT[c] : -1;
+      if (v < 0) continue;
+      if (hoch < 0) hoch = v; else { b[j++] = (hoch << 4) | v; hoch = -1; }
+    }
+    return new DataView(b.buffer, 0, j);
   }
 
   // Die reinen Umrechnungen sind auch im Browser erreichbar - fuer den Selbsttest, der sie
@@ -10662,14 +10686,23 @@
       this._abo = null;
     }
     get _ziel() {
-      return { deviceId: this.service.device.id, service: this.service.uuid,
-               characteristic: this.uuid };
+      if (!this._zielCache) {
+        this._zielCache = { deviceId: this.service.device.id, service: this.service.uuid,
+                            characteristic: this.uuid };
+      }
+      return this._zielCache;
     }
+    // TIMEOUT 300 ms statt der 5 s des Plugins (BluetoothLe.kt liest "timeout"): ein
+    // Schreibvorgang, dessen Antwort verloren ist, haelt die Lenkung sonst fuenf Sekunden fest.
     async writeValueWithoutResponse(daten) {
-      await ruf('writeWithoutResponse', Object.assign({ value: zuHex(daten) }, this._ziel));
+      const z = this._ziel;
+      await ruf('writeWithoutResponse', { deviceId: z.deviceId, service: z.service,
+                                          characteristic: z.characteristic, value: zuHex(daten), timeout: 300 });
     }
     async writeValueWithResponse(daten) {
-      await ruf('write', Object.assign({ value: zuHex(daten) }, this._ziel));
+      const z = this._ziel;
+      await ruf('write', { deviceId: z.deviceId, service: z.service,
+                           characteristic: z.characteristic, value: zuHex(daten), timeout: 300 });
     }
     writeValue(daten) { return this.writeValueWithResponse(daten); }
     async readValue() {
@@ -11603,6 +11636,17 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Funk-Rundlauf": "Radio round trip",
+    "Wie lange ein Steuerbefehl bis zur Bestätigung durch das Bluetooth braucht: Mittelwert und 95 % der Befehle. Über 45 ms fällt jeder zweite Befehl aus dem Takt. Hängende Befehle gibt der Wachhund nach 300 ms frei. In der App auf einem älteren Handy hilft oft, „Android System WebView“ im Play Store zu aktualisieren.": "How long a control command takes until Bluetooth confirms it: average and 95 % of commands. Above 45 ms every second command misses its slot. Hanging commands are released by the watchdog after 300 ms. In the app on an older phone, updating \"Android System WebView\" in the Play Store often helps.",
+    "noch keine Befehle": "no commands yet",
+    "Renntyp": "Race type",
+    "Knöpfe gedrückt:": "Buttons pressed:",
+    "ohne Standardbelegung": "no standard mapping",
+    "Controller ohne Standardbelegung": "Controller without standard mapping",
+    "Dieser Controller meldet eigene Knopfnummern. Wechseln L1/R1 die Reiter nicht, weise sie unter Optionen > Controller neu zu: bei „Reifenwahl weiter“ und „Tankmenge weiter“ auf Neu zuweisen tippen und L1 bzw. R1 drücken.": "This controller reports its own button numbers. If L1/R1 do not switch tabs, reassign them under Options > Controller: tap Reassign at \"Tyre choice next\" and \"Fuel amount next\" and press L1 or R1.",
+    "Zur Controller-Seite": "To the controller page",
+    "Später": "Later",
+    "Funk: ein Schloss je Auto mit Wachhund; ein hängender Befehl blockiert kein Auto mehr (Ursache für „Auto reagiert nach Mehrspieler-Beitritt nicht“). In der App: kurzes Timeout, erst senden, dann das Cockpit gedrosselt malen, weniger Arbeit je Meldung; Messanzeige „Funk-Rundlauf“ unter System. Steuerkreuz: Renntyp in den Renneinstellungen und im Cockpit direkt mit links/rechts, am Rand der Renntyp-Kachel schaltet es, Zurück und Rennen starten erreichbar, Info-Screen schließt mit ○. Ohne Zwei-Spieler-Modus fährt das zuletzt benutzte Pad; „Controller tauschen“ legt ein einzelnes Pad nicht mehr lahm. Controller ohne Standardbelegung: Hinweis und Anzeige der gedrückten Knöpfe.": "Radio: one lock per car with a watchdog; a hanging command no longer blocks a car (the cause of \"car does not react after joining multiplayer\"). In the app: short timeout, send first, then paint the cockpit throttled, less work per message; \"Radio round trip\" readout under System. D-pad: race type in race settings and in the cockpit directly with left/right, the edge of the race type tile switches it, Back and Start race reachable, info screen closes with ○. Without two-player mode the last used pad drives; \"Swap controllers\" no longer disables a single pad. Controllers without standard mapping: hint and a readout of pressed buttons.",
     "Voller Einschlag bei": "Full lock at",
     "Ab welchem Stickweg der volle Lenkeinschlag erreicht ist, in beide Richtungen gleich. Darunter lenkt der Stick schon; mit einer Lenkkennlinie über 1 am Anfang schwächer als linear, mit 1 genau linear. Lenkansprechen trimmt das nur noch fein, die Lenkkalibrierung verschiebt den Punkt nicht.": "At which stick travel full steering lock is reached, the same in both directions. Below it the stick already steers; with a steering curve above 1 weaker than linear at first, with 1 exactly linear. Steering response only fine-tunes it, steering calibration does not move the point.",
     "Gas-, Brems- und Lenkkennlinie ab Werk 2,45. Neu: „Voller Einschlag bei“ (Vorgabe 90 % Stickweg, experimentell), darunter lenkt der Stick schon, am Anfang schwächer als linear; Lenkkalibrierung verschiebt den Punkt nicht mehr. Wer noch auf den alten Vorgaben stand, bekommt die neuen einmalig; eigene Werte bleiben.": "Throttle, brake and steering curves default to 2.45. New: \"Full lock at\" (default 90 % stick travel, experimental), below it the stick already steers, weaker than linear at first; steering calibration no longer moves the point. Anyone still on the old defaults gets the new ones once; your own values stay.",
@@ -14016,31 +14060,68 @@
   //
   // GEMERKT WIRD DAS FERTIGE PAKET. Alles, was am Bauen haengt - Verbrauch, Motorton,
   // Aufnahme - ist beim Bauen schon gelaufen und darf nicht ein zweites Mal laufen.
-  let wartendes = null;
-
+  // ---- EIN SCHLOSS JE MERKMAL, MIT WACHHUND (v0.8.41) ----------------------------------
+  //
+  // GEMELDET: "Multiplayer erstellen und beitreten klappt, aber danach reagiert das Auto nicht
+  // und faehrt nicht mehr" und "auf meinem schwaecheren Handy ist die Verzoegerung sehr gross"
+  // (nur in der App). Das Bluetooth-Plugin der App haelt je Merkmal EINE offene Antwort
+  // (Device.kt: callbackMap["write|svc|char"]). Ueberlappen zwei Schreibvorgaenge ans selbe
+  // Merkmal, wird die erste Antwort ueberschrieben, ihr Promise endet nie - und die alte,
+  // globale Sperre blieb fuer immer gesetzt: kein Paket mehr ans Auto.
+  //
+  // Jetzt: ein Zustand JE MERKMAL (alle Wege ans Fahrerauto gehen hindurch, auch Blinken und
+  // Stopp aus writeToCar), und ein Wachhund - ist ein Schreibvorgang nach FUNK_HAENGT_MS nicht
+  // zurueck, gilt er als verloren, und der naechste geht los. `gen` sorgt dafuer, dass ein
+  // spaet doch noch ankommendes Ende den neuen Zustand nicht freigibt. Das Wartende ueberlebt
+  // jetzt einen Fehler (vorher wurde es verworfen). writeInFlight bleibt als Spiegel fuer die
+  // Pruefbank.
+  const FUNK_HAENGT_MS = 300;
+  const funkLage = new WeakMap();
+  // Rundlauf je Schreibvorgang, fuer die Anzeige unter Optionen > System.
+  const funkMess = { werte: [], haenger: 0 };
+  function funkZustand(ziel) {
+    let z = funkLage.get(ziel);
+    if (!z) { z = { unterwegs: false, seit: 0, gen: 0, wartendes: null }; funkLage.set(ziel, z); }
+    return z;
+  }
+  function funkMessen(ms) {
+    funkMess.werte.push(ms);
+    if (funkMess.werte.length > 200) funkMess.werte.shift();
+  }
+  function funkStatistik() {
+    const w = funkMess.werte.slice().sort((a, b) => a - b);
+    if (!w.length) return null;
+    const mittel = w.reduce((a, b) => a + b, 0) / w.length;
+    return { n: w.length, mittel, p95: w[Math.min(w.length - 1, Math.floor(w.length * 0.95))], haenger: funkMess.haenger };
+  }
   async function funkSchreiben(ziel, payload, notiz) {
-    if (writeInFlight) { wartendes = { ziel, payload, notiz }; return; }
-    writeInFlight = true;
-    try {
-      let auf = { ziel, payload, notiz };
-      while (auf) {
-        try {
-          if (auf.ziel.properties.writeWithoutResponse) await auf.ziel.writeValueWithoutResponse(auf.payload);
-          else await auf.ziel.writeValueWithResponse(auf.payload);
-          if (auf.notiz) log(`WRITE ${auf.notiz}: ${bufToHex(auf.payload)}`, 'write');
-        } catch (err) {
-          // Abbrechen und nicht weiterschleifen: wenn die Verbindung weg ist, wirft jeder
-          // Versuch, und das Wartende ist in 45 ms ohnehin durch ein frisches ersetzt.
-          log('Steuer-Schreibfehler: ' + err.message, 'err');
-          break;
-        }
-        auf = wartendes;
-        wartendes = null;
-      }
-    } finally {
-      writeInFlight = false;
-      wartendes = null;
+    const z = funkZustand(ziel);
+    const jetzt = performance.now();
+    if (z.unterwegs && jetzt - z.seit < FUNK_HAENGT_MS) { z.wartendes = { payload, notiz }; return; }
+    if (z.unterwegs) {
+      funkMess.haenger++;
+      log('Funk: Schreiben hing ' + Math.round(jetzt - z.seit) + ' ms, freigegeben.', 'warn');
     }
+    const gen = ++z.gen;
+    z.unterwegs = true;
+    writeInFlight = true;
+    let auf = { payload, notiz };
+    while (auf) {
+      z.seit = performance.now();
+      try {
+        if (ziel.properties.writeWithoutResponse) await ziel.writeValueWithoutResponse(auf.payload);
+        else await ziel.writeValueWithResponse(auf.payload);
+        funkMessen(performance.now() - z.seit);
+        if (auf.notiz) log(`WRITE ${auf.notiz}: ${bufToHex(auf.payload)}`, 'write');
+      } catch (err) {
+        log('Steuer-Schreibfehler: ' + err.message, 'err');
+      }
+      if (gen !== z.gen) return;          // der Wachhund hat inzwischen neu begonnen
+      auf = z.wartendes;
+      z.wartendes = null;
+    }
+    z.unterwegs = false;
+    writeInFlight = false;
   }
 
   async function sendControlValue(overrideSteer, overrideThrottle) {
@@ -14209,6 +14290,10 @@
     if (driftModus) steer = driftGegenlenken(steer);
     sendControlValue(steer, throttle);
     spielerZweiSenden();
+    // ERST SENDEN, DANN MALEN (v0.8.41): das Cockpit wird nach dem Absetzen gezeichnet und
+    // gedrosselt - in der App zeichnet die WebView auf dem UI-Thread, und jede Malarbeit vor
+    // dem Senden verzoegert dort die Bluetooth-Antworten (50-drive.js, cockpitNachSenden).
+    if (typeof cockpitNachSenden === 'function') cockpitNachSenden();
   }
 
   // ---- SPIELER 2 FAEHRT AUS DEM SELBEN HERZSCHLAG ------------------------------------
@@ -14723,7 +14808,13 @@
   const keys = new Set();
   // Keyboard shifting, for testing without a controller: I up, K down. Edge-triggered via
   // the keydown listener rather than the polling interval, so one tap is one shift.
+  // Tippt man in ein Textfeld (Name, Host-Adresse), sind die Fahr- und Testtasten aus
+  // (v0.8.41): "p" loeste sonst einen Boxenstopp aus, Enter klickte eine Menuezeile.
+  function tasteImTextfeld(e) {
+    return !!(e.target && e.target.closest && e.target.closest('input[type="text"], input[type="number"], input[type="url"], textarea, select'));
+  }
   window.addEventListener('keydown', (e) => {
+    if (tasteImTextfeld(e)) return;
     const k = (e.key || '').toLowerCase();
     // Boxen-Minigame: K ist Quadrat, I ist Kreis - dieselbe Lage wie Runter/Hoch.
     if ((k === 'i' || k === 'k') && !e.repeat && pitSpielTaste(k === 'k' ? 'quad' : 'kreis')) {
@@ -14789,6 +14880,7 @@
     }
   });
   window.addEventListener('keydown', (e) => {
+    if (tasteImTextfeld(e)) return;
     if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
     // Phase 13: auf dem Optionen-Tab lenken die Pfeiltasten die Menuenavigation statt zu
     // steuern - sonst wuerde ein Fokuswechsel gleichzeitig das (nicht sichtbare) Auto
@@ -19721,6 +19813,26 @@
   //
   // resolveLights() bleibt, und zwar nicht als Anzeige: es setzt lightBits und liefert
   // raceLampHead, die BEIDE ins gesendete Paket gehen.
+  // Anzeige unter Optionen > System, nur wenn sie offen ist.
+  setInterval(() => {
+    const el = $('funk-rundlauf');
+    if (!el || !el.offsetParent) return;
+    const s = typeof funkStatistik === 'function' ? funkStatistik() : null;
+    const wv = (navigator.userAgent.match(/Chrome\/(\d+)/) || [])[1];
+    el.textContent = (s ? Math.round(s.mittel) + ' / ' + Math.round(s.p95) + ' ms' + (s.haenger ? ' · ' + s.haenger + '× hing' : '')
+      : t('noch keine Befehle')) + (wv ? ' · WebView ' + wv : '');
+  }, 1000);
+  // COCKPIT GEDROSSELT (v0.8.41): hoechstens alle COCKPIT_MAL_MS, nach dem Senden.
+  const COCKPIT_MAL_MS = 90;
+  let cockpitMalFaellig = false, cockpitGemaltAt = 0;
+  function cockpitNachSenden() {
+    if (!cockpitMalFaellig) return;
+    const jetzt = performance.now();
+    if (jetzt - cockpitGemaltAt < COCKPIT_MAL_MS) return;
+    cockpitGemaltAt = jetzt;
+    cockpitMalFaellig = false;
+    updateRaceScreen(physEngine.state);
+  }
   function updateDashboard(out) {
     const st = physEngine.state;
     updateRaceScreen(st);
@@ -20186,7 +20298,10 @@
     // t('ABSEITS \u00b7 GAS ' + Prozent + '%') - ein dynamischer Woerterbuchschluessel, und
     // solche gibt es hier nicht: nachgeschlagen werden ganze Textknoten. Eine Aenderung an
     // OFFTRACK_GAS haette die Uebersetzung still ausfallen lassen.
-    el.style.display = offtrackGilt() ? 'block' : 'none';
+    const an = offtrackGilt();
+    if (el.dataset.an === (an ? '1' : '0')) return;   // nur bei Wechsel anfassen
+    el.dataset.an = an ? '1' : '0';
+    el.style.display = an ? 'block' : 'none';
   }
 
   // Ist das Auto neben der Bahn? Die entprellte Antwort, und ausdruecklich OHNE
@@ -20301,7 +20416,11 @@
     const out = physEngine.update({ steering: steer, throttle: rawThrottle, brake: rawBrake,
                                     headlights: headlightsOn }, dt);
     pacejkaRueckmeldung(physEngine, 1);
-    updateDashboard(out);
+    // Nur die LICHTER hier - sie gehen ins Paket. Das Cockpit malt cockpitNachSenden() nach
+    // dem Absetzen (20-protocol.js, controlHeartbeat).
+    const lamp = resolveLights(out.lights.head, out.lights.brake);
+    raceLampHead = lamp.head;
+    cockpitMalFaellig = true;
     // Gefahrene Strecke mitzaehlen, siehe 97-sessions.js. Hier und nicht dort, weil dies
     // der einzige Ort mit einem verlaesslichen dt ist - und ausdruecklich OHNE
     // Speicherzugriff: localStorage ist synchron und wuerde den 45-ms-Sendetakt stoeren.
@@ -21041,6 +21160,10 @@
     // Vorrang - auch im Cockpit, das sonst keine generische Zeilenliste bekommt.
     if (typeof konsoleFrageOffen === 'function' && konsoleFrageOffen()) return $('k-frage');
     if (typeof konsoleTourOffen === 'function' && konsoleTourOffen()) return $('k-tour-karte');
+    // Die Mehrspieler-Anzeige "Info-Screen" liegt ueber allem (v0.8.41): sonst lief die Auswahl
+    // unsichtbar darunter weiter.
+    const mi = $('mp-info');
+    if (mi && !mi.hidden) return mi;
     const tab = document.querySelector('.tabpage.active');
     if (!tab || tab.id === 'tab-race') return null;
     // Der TITELBILDSCHIRM hat keine Zeilen: jede Taste fuehrt nach Fahren (51-konsole.js).
@@ -21069,6 +21192,7 @@
       || row.querySelector('input[type="range"]')
       || row.querySelector('select')
       || row.querySelector('input[type="number"], input[type="text"]')
+      || row.querySelector('button:not(.opt-label button):not(:disabled)')
       || row.querySelector('button:not(.opt-label button)');
   }
 
@@ -21112,7 +21236,9 @@
     // Reihenfolge der Selektoren - .opt-row- und .mw-row-Zeilen bleiben also gemischt in
     // ihrer Bildschirmreihenfolge.
     const optRows = [...host.querySelectorAll('.opt-row, .mw-row')].filter(menuNavSichtbar);
-    const back = host.querySelector('.subpage-back');
+    // Auch .misc-back (v0.8.41): "← Optionen" in den Renneinstellungen und den Info-Seiten ist
+    // ein goto-tab-Knopf und war fuer das Steuerkreuz nicht erreichbar.
+    const back = host.querySelector('.subpage-back') || host.querySelector('.misc-back');
     const rows = [];
     if (back && menuNavSichtbar(back)) rows.push({ el: back, kind: 'button', control: back });
     if (optRows.length) {
@@ -21129,7 +21255,7 @@
     }
     [...host.querySelectorAll(
       'button:not(.subpage-back), select, input[type="checkbox"], input[type="range"], '
-      + 'input[type="number"], input[type="text"], a[href]',
+      + 'input[type="number"], input[type="text"], a[href]:not([download]):not([target="_blank"])',
     )].filter(menuNavSichtbar).forEach((el) => rows.push({ el, kind: menuNavKindOf(el), control: el }));
     return rows;
   }
@@ -21218,12 +21344,20 @@
       const wert = Math.max(0, haupt) + quer * 2.5;
       if (wert < bestWert) { bestWert = wert; best = i; }
     });
+    // Am Rand einer Kachel mit Wert (data-quad, zeigt ◀ ▶): den Wert umschalten statt nichts
+    // zu tun (v0.8.41, GEMELDET: Renntyp liess sich mit dem Steuerkreuz nicht waehlen).
+    if (best < 0 && (dir === 'left' || dir === 'right') && cur.el.dataset && cur.el.dataset.quad
+        && typeof konsoleQuadrat === 'function') { konsoleQuadrat(dir === 'left' ? -1 : 1); return true; }
     if (best < 0) return true;   // am Rand: nichts tun, aber die Taste ist verbraucht
     menuNavIndex = best;
     menuNavArmed = false;
     menuNavRender();
     menuNavTonBewegen();
     return true;
+  }
+  function menuNavTextfeldLoesen() {
+    const a = document.activeElement;
+    if (a && a.matches && a.matches('input[type="text"], input[type="number"], input[type="url"], textarea')) a.blur();
   }
   function menuNavIstRaum() {
     const rows = menuNavRows();
@@ -21250,6 +21384,9 @@
     // dahinterliegenden, unsichtbaren Fokus verschieben - der naechste Blick nach dem
     // Schliessen saehe sonst eine andere Zeile ausgewaehlt, als man verlassen hatte.
     if (optInfoOffen()) return;
+    // Ein offenes Textfeld beim Weiterbewegen schliessen (v0.8.41): sonst bleibt die
+    // Handytastatur offen, und Tasten landen im Feld.
+    menuNavTextfeldLoesen();
     menuNavEnsureContext();
     const rows = menuNavRows();
     if (!rows.length) return;
@@ -21518,6 +21655,9 @@
         menuNavEnsureContext();
         if (!menuNavGezeigt) konsoleFokusAuf(playerCar ? 'fa-start' : 'fa-auto');
       }
+      // Die gemerkte Stelle auch ZEIGEN (v0.8.41): vorher war sie aktiv, aber unmarkiert.
+      menuNavEnsureContext();
+      if (menuNavGezeigt) menuNavRender();
     }, 0);
   }
   function konsoleNachSubpage(key) {
@@ -21527,7 +21667,11 @@
     const mpg = $('mp-gemeinsam');
     const platz = key && document.querySelector('#sub-' + key + ' .mp-platz');
     if (mpg && platz && mpg.parentNode !== platz) platz.appendChild(mpg);
-    setTimeout(konsoleZeichnen, 0);
+    setTimeout(() => {
+      konsoleZeichnen();
+      menuNavEnsureContext();
+      if (menuNavGezeigt) menuNavRender();
+    }, 0);
   }
 
   function konsoleZeige(tab, sub) {
@@ -21544,6 +21688,7 @@
   // Im Browser dasselbe ueber einen Verlaufseintrag: Zurueck landet auf popstate statt die
   // Seite zu verlassen, und auf dem Startbildschirm geht es wie gewohnt zurueck.
   function omegaZurueck() {
+    if ($('mp-info') && !$('mp-info').hidden && typeof mpiStop === 'function') { mpiStop(); return true; }
     const imEditor = document.body.classList.contains('track-fs');
     const tour = typeof konsoleTourOffen === 'function' && konsoleTourOffen();
     if (kAktiverTab() === 'home' && !imEditor && !tour && !kFrageOffen) return false;
@@ -21568,6 +21713,8 @@
   // Unterseite), dann der Stapel, zuletzt die Eltern-Ebene.
   function konsoleZurueck() {
     if (typeof optInfoOffen === 'function' && optInfoOffen()) { optInfoSchliessen(); return true; }
+    if ($('mp-info') && !$('mp-info').hidden && typeof mpiStop === 'function') { mpiStop(); return true; }
+    menuNavTextfeldLoesen();
     if (kFrageOffen) { konsoleFrageZu(); return true; }
     if (typeof konsoleTourOffen === 'function' && konsoleTourOffen()) { konsoleTourZurueck(); return true; }
     const lb = $('lb-wrap');
@@ -21667,14 +21814,16 @@
   }
 
   // ---- Quadrat: schneller Wechsel auf Kacheln mit data-quad --------------------------
-  function konsoleQuadrat() {
+  function konsoleQuadrat(richtung) {
+    const dir = richtung === -1 ? -1 : 1;
+    menuNavEnsureContext();
     const zeile = menuNavRows()[menuNavIndex];
     const el = zeile && zeile.el;
     const q = el && el.dataset ? el.dataset.quad : null;
     if (!q) return false;
     if (q === 'renntyp') {
       const s = $('race-mode');
-      s.selectedIndex = (s.selectedIndex + 1) % s.options.length;
+      s.selectedIndex = (s.selectedIndex + dir + s.options.length) % s.options.length;
       s.dispatchEvent(new Event('change', { bubbles: true }));
     } else if (q === 'bahn') {
       const cb = $('setting-ontrack');
@@ -21686,7 +21835,7 @@
       const s = $('sound-profile');
       const opts = s ? [...s.options].filter((o) => !o.disabled) : [];
       if (opts.length) {
-        const n = opts[(opts.indexOf(s.selectedOptions[0]) + 1) % opts.length];
+        const n = opts[(opts.indexOf(s.selectedOptions[0]) + dir + opts.length) % opts.length];
         s.value = n.value;
         s.dispatchEvent(new Event('change', { bubbles: true }));
       }
@@ -28821,10 +28970,14 @@
       }
     }
 
+    // Werkstatt-Anzeigen: im Cockpit unsichtbar, also dort nicht bei jeder Meldung beschreiben.
+    const imCockpit = !!document.querySelector('#tab-race.active');
     const badge = $('dash-offtrack');
-    badge.textContent = dashOnMarker ? 'Über Muster' : 'Kein Muster';
-    badge.style.background = dashOnMarker ? 'rgba(70,209,127,.12)' : 'var(--panel-2)';
-    badge.style.borderColor = dashOnMarker ? 'var(--good)' : 'var(--border)';
+    if (!imCockpit) {
+      badge.textContent = dashOnMarker ? 'Über Muster' : 'Kein Muster';
+      badge.style.background = dashOnMarker ? 'rgba(70,209,127,.12)' : 'var(--panel-2)';
+      badge.style.borderColor = dashOnMarker ? 'var(--good)' : 'var(--border)';
+    }
 
     // Bytes 1 and 3 fluctuate only once the car moves and byte 3 flipped sign with turn
     // direction in one capture — hence "motion-ish". Unconfirmed.
@@ -29548,8 +29701,11 @@
       applySurface();
     }
     wxBlobsWeiter(dt);
-    wxRadarDraw();
+    // Gezeichnet wird jeden dritten Takt (etwa 4 Hz, v0.8.41): das Radar erzwingt beim Zeichnen
+    // ein Layout, und in der App bremst das den Faden, auf dem auch die Funkantworten laufen.
+    if ((wxZeichenZaehler = (wxZeichenZaehler + 1) % 3) === 0) wxRadarDraw();
   }
+  let wxZeichenZaehler = 0;
   setInterval(wxTick, 80);
 
   // ---- Die vier Zustandsansagen ------------------------------------------------------
@@ -32036,8 +32192,10 @@
       return true;
     }
     if (dir === 'left' || dir === 'right') {
-      if (!raceScreenLimitArmed) return false;
       const zeile = RACE_SETTINGS_ROWS[raceScreenSel];
+      // Der Renntyp schaltet mit links/rechts DIREKT (v0.8.41) - vorher erst nach X, und ohne X
+      // blaetterte dieselbe Taste zum naechsten Cockpit-Schirm.
+      if (zeile.id !== 'mode' && !raceScreenLimitArmed) return false;
       // BESTELLT: "rennmodi lassen sich noch nicht gut anwaehlen" - der Rennmodus geht jetzt
       // wie die Rundenzahl: anwaehlen, dann links/rechts in BEIDE Richtungen, je ein Schritt.
       if (zeile.id === 'mode') {
@@ -36051,9 +36209,24 @@
   window.addEventListener('gamepadconnected', (e) => {
     padConnected = true;
     $('pad-dot').classList.add('on');
-    $('pad-status-text').textContent = `Verbunden: ${e.gamepad.id}`;
+    $('pad-status-text').textContent = `Verbunden: ${e.gamepad.id}`
+      + (e.gamepad.mapping === 'standard' ? '' : ' · ' + t('ohne Standardbelegung'));
     log(`Gamepad verbunden: ${e.gamepad.id}`, 'info');
     startPadLoop();
+    // CONTROLLER OHNE STANDARDBELEGUNG (v0.8.41). GEMELDET: "Die Tab-Wechseltasten gehen im
+    // Browser nicht auf dem alten Handy (mit No-Name-Wireless-Controller)." Solche Pads melden
+    // andere Knopfnummern, L1/R1 liegen dann nicht auf 4/5. Einmal je Controller ein Hinweis,
+    // mit dem Weg zur eigenen Zuordnung.
+    if (e.gamepad.mapping !== 'standard') {
+      const schl = 'omegasim-pad-hinweis:' + e.gamepad.id;
+      let gesehen = false;
+      try { gesehen = localStorage.getItem(schl) === '1'; localStorage.setItem(schl, '1'); } catch (err) { /* privat */ }
+      if (!gesehen && typeof konsoleFrage === 'function') {
+        setTimeout(() => konsoleFrage(t('Controller ohne Standardbelegung'),
+          t('Dieser Controller meldet eigene Knopfnummern. Wechseln L1/R1 die Reiter nicht, weise sie unter Optionen > Controller neu zu: bei „Reifenwahl weiter“ und „Tankmenge weiter“ auf Neu zuweisen tippen und L1 bzw. R1 drücken.'),
+          [[t('Zur Controller-Seite'), () => konsoleZeige('options', 'opt-pad')], [t('Später'), null]]), 600);
+      }
+    }
   });
   window.addEventListener('gamepaddisconnected', () => {
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
@@ -36526,8 +36699,25 @@
       car.testSenke.push({ steer, throttle, lightBits });
       return;
     }
-    if (!car.rx || car.writeInFlight) return;
+    if (!car.rx) return;
+    // Das FAHRERAUTO geht durch dasselbe Schloss wie der Sendetakt (20-protocol.js): Blinken,
+    // Stopp und Latenzprobe schrieben sonst neben dem Takt her ans selbe Merkmal - genau die
+    // Ueberlappung, bei der das Plugin der App eine Antwort verliert (v0.8.41).
+    if (car === playerCar) {
+      const pkt = buildCommandPacket(steer, throttle, lightBits, modeBytes,
+                                     typeof lichtSchadenVon === 'function' ? lichtSchadenVon(car) : undefined);
+      recWrite(pkt, garageLabel(car));
+      await funkSchreiben(car.rx, pkt, null);
+      return;
+    }
+    // WACHHUND: haengt ein Schreibvorgang laenger als FUNK_HAENGT_MS, gilt er als verloren -
+    // sonst stuende dieses Auto (Spieler 2, Ghost) fuer immer still.
+    const jetzt = performance.now();
+    if (car.writeInFlight && jetzt - (car.writeSeit || 0) < FUNK_HAENGT_MS) return;
+    const gen = (car.writeGen || 0) + 1;
+    car.writeGen = gen;
     car.writeInFlight = true;
+    car.writeSeit = jetzt;
     try {
       // Der Lampenschaden DIESES Autos. Fuer einen Ghost ist das "keiner" - bis v0.6.46
       // erbte er den Schaden des Fahrerautos, und seine Scheinwerfer flackerten mit.
@@ -36541,7 +36731,7 @@
       // A disconnect mid-drive is normal; do not spam the log from a 22 Hz loop.
       car.writeErrors = (car.writeErrors || 0) + 1;
     } finally {
-      car.writeInFlight = false;
+      if (car.writeGen === gen) car.writeInFlight = false;
     }
   }
 
@@ -43762,9 +43952,22 @@
   }
   function padsFuerSpieler() {
     const sortiert = padsSortiert();
+    // OHNE ZWEI-SPIELER-MODUS (v0.8.41): das zuletzt benutzte Pad faehrt und bedient die Menues,
+    // gemappte vor rohen (Windows listet dasselbe Pad oft zweimal). GEMELDET: "im Multiplayer-
+    // modus ging gar kein Waehlen" - "Controller tauschen" mit EINEM Pad machte p1 zu null, und
+    // pollGamepad kehrte vor allen Menues zurueck; und das "erste" Pad der Browserliste kippt,
+    // wenn ein Bluetooth-Pad kurz schlaeft.
+    if (typeof zweiSpieler === 'undefined' || !zweiSpieler) {
+      const gemappt = sortiert.filter(p => p.mapping === 'standard');
+      const pool = gemappt.length ? gemappt : sortiert;
+      let best = pool[0] || null;
+      pool.forEach((p) => { if (best && (p.timestamp || 0) > (best.timestamp || 0)) best = p; });
+      return { p1: best, p2: null };
+    }
     const a = sortiert[0] || null;
     const b = sortiert.length > 1 ? sortiert[1] : null;
-    return padTauschen ? { p1: b, p2: a } : { p1: a, p2: b };
+    // Tauschen nur mit ZWEI Pads.
+    return padTauschen && a && b ? { p1: b, p2: a } : { p1: a, p2: b };
   }
 
   // ---- Die Bedienung der Kachel "2 Spieler" ---------------------------------------
@@ -43977,6 +44180,12 @@
         : (pad.buttons.length > 15 ? 'nichts' : 'nichts, Pad hat nur ' + pad.buttons.length + ' Knoepfe');
       $('pad-live-axes').textContent = (pad.axes || []).length + ': '
         + [...(pad.axes || [])].map(v => v.toFixed(1)).join(' ');
+      // Welche Knopfnummern gerade gedrueckt sind (v0.8.41): damit sich bei einem Controller
+      // ohne Standardbelegung ablesen laesst, welche Nummer L1/R1 wirklich hat.
+      if ($('pad-live-knoepfe')) {
+        const gedr = [...(pad.buttons || [])].map((b, i) => (b && b.pressed ? i : -1)).filter(i => i >= 0);
+        $('pad-live-knoepfe').textContent = (gedr.length ? gedr.join(' ') : '–') + (pad.mapping === 'standard' ? '' : ' · ' + t('ohne Standardbelegung'));
+      }
 
       // No tab gate any more, and setThrottleLogical (not setThrottle) so that pressing
       // the throttle actually goes FORWARD — setThrottle takes screen-space and was
@@ -65244,6 +65453,64 @@
     if (b.map((x) => x.textContent).join('') !== 'OMEGASIM') f.push('Titel nicht in Buchstaben zerlegt: ' + b.map((x) => x.textContent).join(''));
     if (b.some((x) => !/glitch-[cr]/.test(x.style.getPropertyValue('--gl-o') + x.style.getPropertyValue('--gl-u')))) f.push('Buchstabe ohne Farbe');
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Knoten als Beschriftung, 8 Buchstaben mit Zufallsfarben' };
+  });
+
+  stAdd('Funk: haengender Schreibvorgang wird nach 300 ms freigegeben, neuester Wert geht raus', async () => {
+    const f = [];
+    const gesendet = [];
+    let loesen = null;
+    const ziel = { properties: { writeWithoutResponse: true },
+      writeValueWithoutResponse(p) { gesendet.push(p[0]); if (p[0] === 1) return new Promise(() => {}); return Promise.resolve(); } };
+    const merkNow = performance.now.bind(performance);
+    let jetzt = merkNow();
+    performance.now = () => jetzt;
+    try {
+      funkSchreiben(ziel, new Uint8Array([1]));          // haengt fuer immer
+      funkSchreiben(ziel, new Uint8Array([2]));          // wartet
+      funkSchreiben(ziel, new Uint8Array([3]));          // ersetzt 2
+      if (gesendet.join() !== '1') f.push('vor dem Wachhund schon gesendet: ' + gesendet.join());
+      jetzt += 320;
+      funkSchreiben(ziel, new Uint8Array([4]));          // Wachhund: haengt zu lange, neu
+      await Promise.resolve(); await Promise.resolve();
+      if (gesendet.indexOf(4) < 0) f.push('nach 300 ms geht nichts raus: ' + gesendet.join());
+      if (gesendet.indexOf(2) >= 0) f.push('veralteter Wert 2 wurde nachgeliefert');
+    } finally { performance.now = merkNow; }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Haenger nach 300 ms frei, veraltete Werte verworfen: ' + gesendet.join() };
+  });
+
+  stAdd('D-Pad: Renntyp in den Renneinstellungen, Rand der Renntyp-Kachel, Pad-Wahl', () => {
+    const f = [];
+    const merkTab = kAktiverTab();
+    const merkModus = $('race-mode').value;
+    try {
+      showTab('control');
+      menuNavEnsureContext();
+      const rows = menuNavRows();
+      const i = rows.findIndex((r) => r.el.id === 'race-mode-zeile');
+      if (i < 0) f.push('Renntyp-Zeile fuer das Steuerkreuz unsichtbar');
+      else {
+        menuNavIndex = i; menuNavGezeigt = true;
+        const vor = $('race-mode').selectedIndex;
+        menuNavSeitwaerts('right');
+        if ($('race-mode').selectedIndex === vor && vor < $('race-mode').options.length - 1) f.push('rechts schaltet den Renntyp nicht');
+      }
+      if (!rows.some((r) => r.el.classList && r.el.classList.contains('misc-back'))) f.push('Zurueck-Knopf nicht erreichbar');
+      if (!rows.some((r) => r.control && r.control.id === 'race-start-btn')) f.push('Rennen starten nicht erreichbar');
+      // Pads: ohne Zwei-Spieler-Modus und mit "tauschen" bleibt p1 stehen.
+      const merkTausch = padTauschenLesen();
+      padTauschenSetzen(true);
+      const ohneZwei = typeof zweiSpieler === 'undefined' || !zweiSpieler;
+      if (ohneZwei && navigator.getGamepads) {
+        const p = padsFuerSpieler();
+        const anzahl = [...navigator.getGamepads()].filter(Boolean).length;
+        if (anzahl && !p.p1) f.push('mit "tauschen" und einem Pad ist p1 leer');
+      }
+      padTauschenSetzen(merkTausch);
+    } finally {
+      $('race-mode').value = merkModus; $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
+      if (merkTab) showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Renntyp, Zurueck und Start per Pad, Tauschen ohne zweites Pad harmlos' };
   });
 
   stAdd('Lenkkennlinie: voll genau bei X %, Anfang unter linear, symmetrisch, am Servo', () => {

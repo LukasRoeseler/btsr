@@ -3879,7 +3879,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.40</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.41</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4850,6 +4850,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Funk: ein Schloss je Auto mit Wachhund; ein h&auml;ngender Befehl blockiert kein Auto mehr (Ursache f&uuml;r &bdquo;Auto reagiert nach Mehrspieler-Beitritt nicht&ldquo;). In der App: kurzes Timeout, erst senden, dann das Cockpit gedrosselt malen, weniger Arbeit je Meldung; Messanzeige &bdquo;Funk-Rundlauf&ldquo; unter System. Steuerkreuz: Renntyp in den Renneinstellungen und im Cockpit direkt mit links/rechts, am Rand der Renntyp-Kachel schaltet es, Zur&uuml;ck und Rennen starten erreichbar, Info-Screen schlie&szlig;t mit &#9675;. Ohne Zwei-Spieler-Modus f&auml;hrt das zuletzt benutzte Pad; &bdquo;Controller tauschen&ldquo; legt ein einzelnes Pad nicht mehr lahm. Controller ohne Standardbelegung: Hinweis und Anzeige der gedr&uuml;ckten Kn&ouml;pfe.</li>
         <li>Gas-, Brems- und Lenkkennlinie ab Werk 2,45. Neu: &bdquo;Voller Einschlag bei&ldquo; (Vorgabe 90 % Stickweg, experimentell), darunter lenkt der Stick schon, am Anfang schw&auml;cher als linear; Lenkkalibrierung verschiebt den Punkt nicht mehr. Wer noch auf den alten Vorgaben stand, bekommt die neuen einmalig; eigene Werte bleiben.</li>
         <li>Challenges: Einstellungen unter der Streckenkarte, Bestenliste rechts; Modus und Preset schaltet &#10005; um. Fr&uuml;hstart bei allen Starts mit Ampel: kein Abbruch mehr, sondern kurz ausgebremst, sobald das Auto nach Gr&uuml;n f&auml;hrt. Silverbrook-Rennen mit einem Pflichtstopp (Boxen-Minigame, egal wo).</li>
         <li>Titel-Glitch je Buchstabe zuf&auml;llig blau oder rot, oben und unten getrennt. &bdquo;Abseits&ldquo; erscheint jetzt gro&szlig; in der Mitte des Cockpits. Autos-Kachel zeigt wieder den Namen statt &bdquo;[object HTMLSpanElement]&ldquo;. Boxen-Minigame: Tasten stehen 100 ms l&auml;nger.</li>
@@ -7671,11 +7672,13 @@
            bekommt dasselbe Gruen, das vorher #btn-connect trug (siehe die Begruendung
            bei .home-topbar in der Kopfzeilen-CSS), #race-stop-btn die globale
            .danger-Klasse, die es bisher im Markup nirgends benutzte. -->
-      <div class="row" style="gap:10px; margin-bottom:14px">
+      <!-- ALS EINSTELLUNGSZEILE (v0.8.41), damit das Steuerkreuz sie erreicht (menuNavRows nimmt
+           auf dieser Seite nur .opt-row). X loest den jeweils freien Knopf aus. -->
+      <div class="opt-row opt-breit"><div class="row" style="gap:10px; margin-bottom:6px">
         <button id="race-start-btn" class="race-go">🏁 Rennen starten</button>
         <button id="race-stop-btn" class="danger" disabled>Rennen abbrechen</button>
         <span class="muted" id="race-clock" style="font-family:monospace"></span>
-      </div>
+      </div></div>
       <div class="row" style="align-items:center; gap:18px; flex-wrap:wrap">
         <div style="display:flex; gap:8px">
           <span class="race-light" id="race-light-1"></span>
@@ -7698,6 +7701,11 @@
            versteckt: applyRaceModeUi(), die Voreinstellungen und die change-Bindung lesen
            es weiter, die Kacheln setzen nur value und loesen change aus. Ein Umbau der
            Zustandslogik waere unnoetiges Risiko fuer eine Frage der Bedienung. -->
+      <!-- RENNTYP ALS EINSTELLUNGSZEILE (v0.8.41). GEMELDET: "Im Rennmenue kann ich mit dem D-Pad
+           nicht den Renntyp anwaehlen." Die Kacheln standen ausserhalb jeder .opt-row und waren
+           fuer das Steuerkreuz unsichtbar. Jetzt wie die Wetterzeile: links/rechts schaltet das
+           versteckte Auswahlfeld, die Kacheln ziehen nach. -->
+      <div class="opt-row opt-breit" id="race-mode-zeile"><div class="opt-label">Renntyp</div>
       <div class="mode-grid" id="race-mode-tiles">
         <button type="button" class="mode-tile" data-mode="practice">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -7725,7 +7733,7 @@
         <option value="endurance">Endurance</option>
         <option value="qualifying">Qualifying</option>
         <option value="laps">Runden</option>
-      </select>
+      </select></div>
       <p class="muted" id="race-mode-hint" style="font-size:11.5px; margin:8px 0 0 0"></p>
 
       <!-- Ab hier senkrecht, in derselben Form wie die Optionen: eine Zeile je Einstellung,
@@ -9614,6 +9622,7 @@
         <span class="muted">Lenkung: <b id="pad-live-steer">0.00</b></span>
         <span class="muted">Steuerkreuz: <b id="pad-live-dpad">&ndash;</b></span>
         <span class="muted" style="font-size:11px">Achsen: <b id="pad-live-axes">&ndash;</b></span>
+        <span class="muted" style="font-size:11px">Knöpfe gedrückt: <b id="pad-live-knoepfe" data-i18n-skip>&ndash;</b></span>
       </div>
 
       <!-- Aus dem Cockpit hierher. Dort war sie eine ganze Karte unter dem Schirm, und
@@ -9824,6 +9833,11 @@
       <div class="opt-row"><div class="opt-label">Entwicklertools zeigen
           <small>Blendet im Hauptmen&uuml; die Kachel Entwickler ein: Doku, Programmierschule, BLE-Werkbank, Selbsttest, Code-Sonde, Zahlensysteme, Aufnahme-Modus. Auch mit ?dev in der Adresse.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-dev"><span></span></label></div>
+      <!-- v0.8.41: Messanzeige fuer den Lag in der App (BESTELLT: "Verzoegerung auf meinem
+           schwaecheren Handy optimieren", erst Stufe 1, dann messen). -->
+      <div class="opt-row"><div class="opt-label">Funk-Rundlauf
+          <small>Wie lange ein Steuerbefehl bis zur Best&auml;tigung durch das Bluetooth braucht: Mittelwert und 95 % der Befehle. Über 45 ms f&auml;llt jeder zweite Befehl aus dem Takt. H&auml;ngende Befehle gibt der Wachhund nach 300 ms frei. In der App auf einem &auml;lteren Handy hilft oft, &bdquo;Android System WebView&ldquo; im Play Store zu aktualisieren.</small></div>
+        <span class="opt-val" id="funk-rundlauf" data-i18n-skip>&ndash;</span></div>
       <div class="opt-row" id="opt-app-zeile" hidden><div class="opt-label">App &amp; Updates
           <small>Nur in der Android-App: Version, Updates ohne neue APK.</small></div>
         <button type="button" class="goto-tab" data-tab="info" data-k-sub="app">&Ouml;ffnen</button></div>
