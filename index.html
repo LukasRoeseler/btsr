@@ -4024,7 +4024,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.60</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.61</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -73615,6 +73615,10 @@
           + ' (' + mb(r.bytes) + ')';
         $('app-update-laden-text').textContent = t('Jetzt laden');
       }
+      // Einen uebrig gebliebenen Ladebalken aus einem abgebrochenen Download zuruecksetzen,
+      // sonst zeigte der Knopf beim naechsten Anbieten einen alten Fuellstand.
+      const bar = $('app-update-balken');
+      if (bar) { bar.hidden = true; if (bar.firstElementChild) bar.firstElementChild.style.width = '0%'; }
       box.hidden = false;
     }
 

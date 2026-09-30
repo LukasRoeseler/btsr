@@ -84,6 +84,10 @@
           + ' (' + mb(r.bytes) + ')';
         $('app-update-laden-text').textContent = t('Jetzt laden');
       }
+      // Einen uebrig gebliebenen Ladebalken aus einem abgebrochenen Download zuruecksetzen,
+      // sonst zeigte der Knopf beim naechsten Anbieten einen alten Fuellstand.
+      const bar = $('app-update-balken');
+      if (bar) { bar.hidden = true; if (bar.firstElementChild) bar.firstElementChild.style.width = '0%'; }
       box.hidden = false;
     }
 
