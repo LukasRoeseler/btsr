@@ -1939,6 +1939,33 @@
     grid-template-areas: "kopf kopf" "tab karte" "dia sek" "fuss fuss"; }
   #race-ovscreen > .ov-diagramm { grid-area: dia; min-width: 0; cursor: pointer; }
   #race-ovscreen > .ov-sektoren { grid-area: sek; min-width: 0; overflow: auto; }
+  /* PODEST: eine eigene Zeile ueber der Tabelle, sobald ein Rennen beendet ist. */
+  #race-ovscreen > .ov-podest { grid-area: podium; }
+  #race-ovscreen:has(.ov-podest:not([hidden])) {
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+    grid-template-areas: "kopf kopf" "podium podium" "tab karte" "dia sek" "fuss fuss"; }
+  #race-ovscreen:has(.ov-podest:not([hidden])):has(.ov-karte:empty) {
+    grid-template-areas: "kopf kopf" "podium podium" "tab tab" "dia sek" "fuss fuss"; }
+  #race-ovscreen:has(.ov-podest:not([hidden])):has(.ov-karte:empty):has(.ov-sektoren:empty) {
+    grid-template-areas: "kopf kopf" "podium podium" "tab tab" "dia dia" "fuss fuss"; }
+  .ov-podest { display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: clamp(4px, 1vw, 12px); align-items: end; margin: 2px 0 6px; }
+  .ov-podest[hidden] { display: none; }
+  .ov-podest .platz { display: flex; flex-direction: column; align-items: center; gap: 3px;
+    min-width: 0; }
+  .ov-podest .name { display: flex; align-items: center; gap: 5px; max-width: 100%;
+    font-size: clamp(10px, 1.5vw, 15px); font-weight: 800; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; }
+  .ov-podest .name.leer { opacity: 0; }
+  .ov-podest .zeit { color: var(--gt3-strip-ink, #a9b2c4); font-family: monospace;
+    font-size: clamp(9px, 1.2vw, 12px); }
+  .ov-podest .block { width: 100%; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; background: var(--gt3-tile); color: var(--gt3-tile-ink);
+    border-radius: var(--gt3-radius); }
+  .ov-podest .block b { font-size: clamp(18px, 3.6vw, 40px); font-weight: 900; line-height: 1; }
+  .ov-podest .platz-1 .block { height: clamp(44px, 11vh, 84px); color: #f5c518; }
+  .ov-podest .platz-2 .block { height: clamp(34px, 8.5vh, 66px); color: #c9d1e0; }
+  .ov-podest .platz-3 .block { height: clamp(27px, 6.8vh, 52px); color: #cd7f32; }
   .ov-dia-svg { width: 100%; height: auto; max-height: 22vh; display: block; }
   .ov-dia-gitter { stroke: rgba(255,255,255,.14); stroke-width: 1; }
   .ov-dia-text { fill: var(--gt3-strip-ink, #a9b2c4); font-size: 8px; font-family: monospace; }
@@ -2278,11 +2305,12 @@
   .k-quad-punkte i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--k-blau); box-sizing: border-box; }
   .k-quad-punkte i.an { background: var(--k-blau); }
   /* Motorsound hat zu viele Stellungen (27 Motoren) fuer Punkte: stattdessen zwei Pfeile
-     zum Vor/Zurueckblaettern, rechts neben dem Wert in der .k-kopf-Zeile. */
-  .k-quad-wechsel { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; }
-  .k-arrow { background: var(--k-grau); color: #fff; border: 0; padding: 2px 7px; font-size: 12px;
-    line-height: 1; cursor: pointer; }
-  .k-arrow:hover { background: var(--k-blau); color: var(--k-blau-text); }
+     zum Vor/Zurueckblaettern, rechts neben dem Wert in der .k-kopf-Zeile. Klein, blau auf
+     transparent - nur das Zeichen, kein Kasten. */
+  .k-quad-wechsel { display: inline-flex; align-items: center; gap: 2px; margin-left: 6px; }
+  .k-arrow { background: transparent; color: var(--k-blau); border: 0; padding: 0 3px;
+    font-size: 14px; line-height: 1; cursor: pointer; }
+  .k-arrow:hover { color: #fff; }
 
   .k-fahren { grid-template-columns: repeat(3, 1fr); grid-template-rows: minmax(300px, 56vh) minmax(96px, 20vh); }
   .k-fahren-unten { grid-column: 1 / -1; grid-template-columns: 1fr 1fr 2fr; }
@@ -3919,7 +3947,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.48</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.49</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4393,6 +4421,10 @@
       <div class="gt3-schirm" id="race-ovscreen">
         <div class="schirm-kopf"><b>Rennen</b><span id="ov-kopf-lage" data-i18n-skip>&ndash;</span>
           <span style="margin-left:auto" id="ov-kopf-runde" data-i18n-skip></span></div>
+        <!-- PODEST DER DREI BESTEN (BESTELLT: "Rennende-Mock-up umsetzen"). Erst das Podest,
+             dann darunter die gewohnte Ergebnistabelle. Nur sichtbar, wenn ein Rennen
+             beendet ist; waehrend des Rennens bleibt die Zeile leer und faellt zusammen. -->
+        <div class="ov-podest" id="ov-podest" hidden aria-label="Podest"></div>
         <div class="ov-tab" id="ov-tab"></div>
         <!-- DIE STRECKE NEBEN DER TABELLE, nicht darunter: das Cockpit ist breit und flach,
              und untereinander bliebe fuer beides zu wenig Hoehe. Leer und verborgen, solange

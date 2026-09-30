@@ -5485,9 +5485,41 @@
   }
   if ($('ov-nochmal')) $('ov-nochmal').addEventListener('click', () => { ovNochmal(); });
 
+  // PODEST DER DREI BESTEN (BESTELLT: "Rennende-Mock-up umsetzen"). Nach dem Rennen steht es
+  // ueber der Ergebnistabelle: links Platz 2, Mitte Platz 1 (am hoechsten), rechts Platz 3.
+  // Die Zeiten sind die beste Runde - die ist in ovDaten() da und vergleichbar. Waehrend
+  // eines Rennens bleibt das Podest leer und verborgen.
+  function ovPodestMalen() {
+    const host = $('ov-podest');
+    if (!host) return;
+    const zeilen = ovDaten();
+    const fertig = raceState === 'finished';
+    if (!fertig || zeilen.length < 2) {
+      host.hidden = true;
+      if (host.innerHTML) host.innerHTML = '';
+      return;
+    }
+    host.hidden = false;
+    const felder = [1, 0, 2].map((i) => zeilen[i] || null);
+    const html = felder.map((z, i) => {
+      const klasse = i === 1 ? 'platz-1' : i === 0 ? 'platz-2' : 'platz-3';
+      const nr = i === 1 ? 1 : i === 0 ? 2 : 3;
+      const name = z
+        ? '<span class="name"><i class="ov-farbe" style="background:'
+          + (z.farbe || 'transparent') + '"></i>' + z.name + '</span>'
+        : '<span class="name leer"></span>';
+      const zeit = z ? '<span class="zeit">' + (z.beste === null ? '&ndash;' : formatLapTime(z.beste))
+        + '</span>' : '<span class="zeit"></span>';
+      return '<div class="platz ' + klasse + '">' + name + zeit
+        + '<span class="block"><b>' + nr + '</b></span></div>';
+    }).join('');
+    if (host.innerHTML !== html) host.innerHTML = html;
+  }
+
   function ovScreenRender() {
     const tab = $('ov-tab');
     if (!tab) return;
+    ovPodestMalen();
     if ($('ov-nochmal')) $('ov-nochmal').hidden = raceState !== 'finished';
     ovKarteMalen();
     const zeilen = ovDaten();
