@@ -589,7 +589,7 @@
         if (!chLauf.stillSeit) chLauf.stillSeit = jetzt;
         if (jetzt - chLauf.stillSeit >= CH_STILL_MS) {
           chLauf.phase = 'ampel';
-          startRaceCountdown();
+          raceGridAnzeigen(startRaceCountdown);
         }
       } else {
         chLauf.stillSeit = 0;

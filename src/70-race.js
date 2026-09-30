@@ -1095,11 +1095,8 @@
     raceGridOrder = raceGridCars().map(c => String(c.device.id));
   }
 
-  function renderRaceGrid() {
-    const wrap = $('race-grid-wrap'), host = $('race-grid');
-    if (!wrap || !host) return;
-    wrap.style.display = raceFlying ? '' : 'none';
-    if (!raceFlying) return;
+  function raceGridZeilen(host) {
+    if (!host) return;
     const cars = raceGridCars();
     if (!cars.length) {
       host.innerHTML = '<p class="muted" style="margin:0">Keine Autos verbunden.</p>';
@@ -1128,7 +1125,7 @@
           if (to < 0 || to >= order.length) return;
           order.splice(to, 0, order.splice(from, 1)[0]);
           raceGridOrder = order;
-          renderRaceGrid();
+          raceGridZeilen(host);
         };
       });
       const handle = row.querySelector('.grid-handle');
@@ -1150,11 +1147,74 @@
         if (from < 0 || to < 0) return;
         order.splice(to, 0, order.splice(from, 1)[0]);
         raceGridOrder = order;
-        renderRaceGrid();
+        raceGridZeilen(host);
       });
       host.appendChild(row);
     });
   }
+
+  function renderRaceGrid() {
+    const wrap = $('race-grid-wrap'), host = $('race-grid');
+    if (!wrap || !host) return;
+    wrap.style.display = raceFlying ? '' : 'none';
+    if (!raceFlying) return;
+    raceGridZeilen(host);
+  }
+
+  // ---- AUTOS IN POSITION (v0.8.52): Deckfenster vor dem Countdown ----------------------
+  // BESTELLT: "Vor jedem Rennen ein Fenster, das alle teilnehmenden Autos und ihre
+  // Reihenfolge zeigt, mit der Moeglichkeit die Reihenfolge zu aendern." Titel oben,
+  // Streckenbild, Liste mit Sortierpfeilen, Start-Knopf unten. Der Start ruft dann
+  // startRaceCountdown() - das eigentliche Rennen beginnt erst nach dem Klick.
+  let raceGridWeiter = null;
+  function gridBildMalen() {
+    const host = $('grid-bild');
+    if (!host) return;
+    const bahn = ($('setting-ontrack') || {}).checked;
+    if (bahn) {
+      // Auf der Bahn: das Layout aus Editor oder Challenge (renderTrackPreview).
+      const tiles = currentTrackTiles;
+      if (tiles && tiles.length >= 2) {
+        const r = renderTrackPreview(tiles, null, { detailed: true, cars: [] });
+        if (host.innerHTML !== r.html) host.innerHTML = r.html;
+      } else if (host.innerHTML) host.innerHTML = '';
+      return;
+    }
+    // Frei: das hochgeladene Streckenfoto, sonst das Bordstein-Foto.
+    const foto = konsoleFoto();
+    host.innerHTML = '';
+    const img = document.createElement('img');
+    img.alt = 'Streckenfoto';
+    img.src = foto || 'img/strecke-frei.jpg';
+    host.appendChild(img);
+  }
+  function raceGridAnzeigen(weiter) {
+    raceGridWeiter = typeof weiter === 'function' ? weiter : null;
+    const gs = $('race-gridscreen');
+    if (!gs) { if (raceGridWeiter) raceGridWeiter(); return; }
+    raceGridZeilen($('grid-liste'));
+    gridBildMalen();
+    if ($('grid-kopf-info')) $('grid-kopf-info').textContent = '';
+    gs.hidden = false;
+  }
+  function raceGridStart() {
+    const gs = $('race-gridscreen');
+    if (gs) gs.hidden = true;
+    syncRaceGridOrder();
+    const w = raceGridWeiter; raceGridWeiter = null;
+    if (w) w();
+  }
+  function raceGridAbbrechen() {
+    const gs = $('race-gridscreen');
+    if (gs) gs.hidden = true;
+    raceGridWeiter = null;
+    // Hing die Challenge gerade in der Ampel-Phase (Autos-in-Position war ihr Start),
+    // bricht Abbrechen sie ab - sonst bliebe sie auf Stillstand warten.
+    if (typeof challengeAbbrechen === 'function' && typeof challengeLaeuft === 'function'
+        && challengeLaeuft()) challengeAbbrechen();
+  }
+  if ($('grid-start')) $('grid-start').addEventListener('click', raceGridStart);
+  if ($('grid-abbrechen')) $('grid-abbrechen').addEventListener('click', raceGridAbbrechen);
 
   $('race-flying').addEventListener('change', (e) => {
     raceFlying = e.target.checked;
@@ -1613,7 +1673,7 @@
     const laeuft = raceState === 'racing' || raceState === 'countdown' || raceState === 'finishing';
     if (!laeuft && typeof mpRennenFrage === 'function' && mpRennenFrage()) { updateRaceActButtons(); return; }
     const live = raceState === 'racing' || raceState === 'countdown' || raceState === 'finishing';
-    if (live) requestRaceStop(); else startRaceCountdown();
+    if (live) requestRaceStop(); else raceGridAnzeigen(startRaceCountdown);
     updateRaceActButtons();
   }
   $('race-act-start').onclick = toggleRace;
@@ -1836,7 +1896,7 @@
   }
   setInterval(updateRaceActButtons, 400);
 
-  $('race-start-btn').onclick = startRaceCountdown;
+  $('race-start-btn').onclick = () => raceGridAnzeigen(startRaceCountdown);
   $('race-stop-btn').onclick = requestRaceStop;
   $('race-export-csv').onclick = () => {
     // Semicolon delimiter + comma decimals: opens directly (no import wizard) in a

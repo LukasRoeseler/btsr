@@ -3010,6 +3010,21 @@
     background: var(--panel); }
   .grid-row.dragging { opacity: .45; }
   .grid-row.over { border-color: var(--accent); border-style: dashed; }
+  /* ---- AUTOS IN POSITION: Deckfenster vor dem Countdown -------------------------- */
+  .gt3-gridschirm { position: absolute; inset: 0; z-index: 10; display: flex;
+    flex-direction: column; gap: clamp(4px, .8vw, 9px); background: var(--gt3-strip);
+    color: var(--gt3-strip-ink); padding: clamp(6px, 1.2vw, 14px); }
+  .gt3-gridschirm[hidden] { display: none; }
+  .gt3-gridschirm .schirm-kopf { flex: 0 0 auto; }
+  .grid-bild { flex: 0 0 auto; max-height: 26vh; overflow: hidden; display: grid;
+    place-items: center; min-height: 0; }
+  .grid-bild .tp-karte, .grid-bild img { max-width: 100%; max-height: 26vh;
+    object-fit: contain; }
+  .grid-bild .tp-karte { max-height: 26vh; }
+  .grid-liste { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex;
+    flex-direction: column; gap: 4px; }
+  .grid-liste .grid-row { background: var(--panel); margin-bottom: 0; }
+  .grid-fuss { flex: 0 0 auto; justify-content: flex-end; gap: 10px; }
   .grid-pos { font-family: monospace; font-weight: 700; min-width: 26px; color: var(--muted); }
   .grid-handle { cursor: grab; user-select: none; font-size: 15px; color: var(--muted);
     padding: 0 4px; }
@@ -3975,7 +3990,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.51</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.52</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4010,7 +4025,7 @@
       <div class="k-kachel " id="fa-strecke" role="button" tabindex="0" data-quad="bahn">
         <span class="k-kk">Strecke</span>
         <span class="k-kopf"><span class="k-kt" id="fa-strecke-titel"></span><span class="k-quad-punkte" id="fa-strecke-punkte" aria-hidden="true"></span></span>
-        <span class="k-kb" id="fa-strecke-bild" style="background-image:url(img/strecke-kachel.jpg)"></span>
+        <span class="k-kb" id="fa-strecke-bild" style="background-image:url(img/strecke-bahn.jpg)"></span>
         <span class="k-ki" id="fa-strecke-info"></span>
         <span class="k-knopfreihe">
           <button type="button" class="k-knopf" id="fa-scan">Scan</button>
@@ -4628,6 +4643,22 @@
       </div>
 
       <div class="gt3-banner" id="hud-toast-wrap"><span id="hud-toast"></span></div>
+
+      <!-- AUTOS IN POSITION (BESTELLT: "Vor jedem Rennen ein Fenster, das alle
+           teilnehmenden Autos und ihre Reihenfolge zeigt, mit der Moeglichkeit die
+           Reihenfolge zu aendern. Oben 'Bringe die Autos in Position', dazu das
+           Streckenbild, unten ein Start-Knopf.") Ein Deckfenster ueber dem Cockpit,
+           unabhaengig vom Schirmblaettern: erscheint vor dem Countdown. -->
+      <div class="gt3-gridschirm" id="race-gridscreen" hidden>
+        <div class="schirm-kopf"><b>Bringe die Autos in Position</b>
+          <span id="grid-kopf-info" data-i18n-skip></span></div>
+        <div class="grid-bild" id="grid-bild" data-i18n-skip></div>
+        <div class="grid-liste" id="grid-liste"></div>
+        <div class="schirm-fuss grid-fuss">
+          <button type="button" id="grid-abbrechen">Abbrechen</button>
+          <button type="button" class="primary" id="grid-start">Start</button>
+        </div>
+      </div>
     </div>
 
   </section>

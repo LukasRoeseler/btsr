@@ -622,7 +622,7 @@
     const bild = $('fa-strecke-bild');
     // Im Ausdruck-Modus zeigt das Band das eigene Streckenfoto, sobald es eines gibt. Nur neu
     // setzen, wenn es sich geaendert hat: die Daten-URL ist einige hundert KB lang.
-    const bildNeu = !bahn && foto ? 'foto:' + foto.length : (bahn ? 'strecke-kachel' : 'strecke-frei');
+    const bildNeu = !bahn && foto ? 'foto:' + foto.length : (bahn ? 'strecke-bahn' : 'strecke-frei');
     if (bild && bild.dataset.bild !== bildNeu) {
       bild.style.backgroundImage = !bahn && foto ? 'url("' + foto + '")' : 'url(img/' + bildNeu + '.jpg)';
       bild.dataset.bild = bildNeu;

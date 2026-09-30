@@ -3010,6 +3010,21 @@
     background: var(--panel); }
   .grid-row.dragging { opacity: .45; }
   .grid-row.over { border-color: var(--accent); border-style: dashed; }
+  /* ---- AUTOS IN POSITION: Deckfenster vor dem Countdown -------------------------- */
+  .gt3-gridschirm { position: absolute; inset: 0; z-index: 10; display: flex;
+    flex-direction: column; gap: clamp(4px, .8vw, 9px); background: var(--gt3-strip);
+    color: var(--gt3-strip-ink); padding: clamp(6px, 1.2vw, 14px); }
+  .gt3-gridschirm[hidden] { display: none; }
+  .gt3-gridschirm .schirm-kopf { flex: 0 0 auto; }
+  .grid-bild { flex: 0 0 auto; max-height: 26vh; overflow: hidden; display: grid;
+    place-items: center; min-height: 0; }
+  .grid-bild .tp-karte, .grid-bild img { max-width: 100%; max-height: 26vh;
+    object-fit: contain; }
+  .grid-bild .tp-karte { max-height: 26vh; }
+  .grid-liste { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex;
+    flex-direction: column; gap: 4px; }
+  .grid-liste .grid-row { background: var(--panel); margin-bottom: 0; }
+  .grid-fuss { flex: 0 0 auto; justify-content: flex-end; gap: 10px; }
   .grid-pos { font-family: monospace; font-weight: 700; min-width: 26px; color: var(--muted); }
   .grid-handle { cursor: grab; user-select: none; font-size: 15px; color: var(--muted);
     padding: 0 4px; }
@@ -3975,7 +3990,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.51</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.52</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4010,7 +4025,7 @@
       <div class="k-kachel " id="fa-strecke" role="button" tabindex="0" data-quad="bahn">
         <span class="k-kk">Strecke</span>
         <span class="k-kopf"><span class="k-kt" id="fa-strecke-titel"></span><span class="k-quad-punkte" id="fa-strecke-punkte" aria-hidden="true"></span></span>
-        <span class="k-kb" id="fa-strecke-bild" style="background-image:url(img/strecke-kachel.jpg)"></span>
+        <span class="k-kb" id="fa-strecke-bild" style="background-image:url(img/strecke-bahn.jpg)"></span>
         <span class="k-ki" id="fa-strecke-info"></span>
         <span class="k-knopfreihe">
           <button type="button" class="k-knopf" id="fa-scan">Scan</button>
@@ -4628,6 +4643,22 @@
       </div>
 
       <div class="gt3-banner" id="hud-toast-wrap"><span id="hud-toast"></span></div>
+
+      <!-- AUTOS IN POSITION (BESTELLT: "Vor jedem Rennen ein Fenster, das alle
+           teilnehmenden Autos und ihre Reihenfolge zeigt, mit der Moeglichkeit die
+           Reihenfolge zu aendern. Oben 'Bringe die Autos in Position', dazu das
+           Streckenbild, unten ein Start-Knopf.") Ein Deckfenster ueber dem Cockpit,
+           unabhaengig vom Schirmblaettern: erscheint vor dem Countdown. -->
+      <div class="gt3-gridschirm" id="race-gridscreen" hidden>
+        <div class="schirm-kopf"><b>Bringe die Autos in Position</b>
+          <span id="grid-kopf-info" data-i18n-skip></span></div>
+        <div class="grid-bild" id="grid-bild" data-i18n-skip></div>
+        <div class="grid-liste" id="grid-liste"></div>
+        <div class="schirm-fuss grid-fuss">
+          <button type="button" id="grid-abbrechen">Abbrechen</button>
+          <button type="button" class="primary" id="grid-start">Start</button>
+        </div>
+      </div>
     </div>
 
   </section>
@@ -22367,7 +22398,7 @@
     const bild = $('fa-strecke-bild');
     // Im Ausdruck-Modus zeigt das Band das eigene Streckenfoto, sobald es eines gibt. Nur neu
     // setzen, wenn es sich geaendert hat: die Daten-URL ist einige hundert KB lang.
-    const bildNeu = !bahn && foto ? 'foto:' + foto.length : (bahn ? 'strecke-kachel' : 'strecke-frei');
+    const bildNeu = !bahn && foto ? 'foto:' + foto.length : (bahn ? 'strecke-bahn' : 'strecke-frei');
     if (bild && bild.dataset.bild !== bildNeu) {
       bild.style.backgroundImage = !bahn && foto ? 'url("' + foto + '")' : 'url(img/' + bildNeu + '.jpg)';
       bild.dataset.bild = bildNeu;
@@ -28362,11 +28393,8 @@
     raceGridOrder = raceGridCars().map(c => String(c.device.id));
   }
 
-  function renderRaceGrid() {
-    const wrap = $('race-grid-wrap'), host = $('race-grid');
-    if (!wrap || !host) return;
-    wrap.style.display = raceFlying ? '' : 'none';
-    if (!raceFlying) return;
+  function raceGridZeilen(host) {
+    if (!host) return;
     const cars = raceGridCars();
     if (!cars.length) {
       host.innerHTML = '<p class="muted" style="margin:0">Keine Autos verbunden.</p>';
@@ -28395,7 +28423,7 @@
           if (to < 0 || to >= order.length) return;
           order.splice(to, 0, order.splice(from, 1)[0]);
           raceGridOrder = order;
-          renderRaceGrid();
+          raceGridZeilen(host);
         };
       });
       const handle = row.querySelector('.grid-handle');
@@ -28417,11 +28445,74 @@
         if (from < 0 || to < 0) return;
         order.splice(to, 0, order.splice(from, 1)[0]);
         raceGridOrder = order;
-        renderRaceGrid();
+        raceGridZeilen(host);
       });
       host.appendChild(row);
     });
   }
+
+  function renderRaceGrid() {
+    const wrap = $('race-grid-wrap'), host = $('race-grid');
+    if (!wrap || !host) return;
+    wrap.style.display = raceFlying ? '' : 'none';
+    if (!raceFlying) return;
+    raceGridZeilen(host);
+  }
+
+  // ---- AUTOS IN POSITION (v0.8.52): Deckfenster vor dem Countdown ----------------------
+  // BESTELLT: "Vor jedem Rennen ein Fenster, das alle teilnehmenden Autos und ihre
+  // Reihenfolge zeigt, mit der Moeglichkeit die Reihenfolge zu aendern." Titel oben,
+  // Streckenbild, Liste mit Sortierpfeilen, Start-Knopf unten. Der Start ruft dann
+  // startRaceCountdown() - das eigentliche Rennen beginnt erst nach dem Klick.
+  let raceGridWeiter = null;
+  function gridBildMalen() {
+    const host = $('grid-bild');
+    if (!host) return;
+    const bahn = ($('setting-ontrack') || {}).checked;
+    if (bahn) {
+      // Auf der Bahn: das Layout aus Editor oder Challenge (renderTrackPreview).
+      const tiles = currentTrackTiles;
+      if (tiles && tiles.length >= 2) {
+        const r = renderTrackPreview(tiles, null, { detailed: true, cars: [] });
+        if (host.innerHTML !== r.html) host.innerHTML = r.html;
+      } else if (host.innerHTML) host.innerHTML = '';
+      return;
+    }
+    // Frei: das hochgeladene Streckenfoto, sonst das Bordstein-Foto.
+    const foto = konsoleFoto();
+    host.innerHTML = '';
+    const img = document.createElement('img');
+    img.alt = 'Streckenfoto';
+    img.src = foto || 'img/strecke-frei.jpg';
+    host.appendChild(img);
+  }
+  function raceGridAnzeigen(weiter) {
+    raceGridWeiter = typeof weiter === 'function' ? weiter : null;
+    const gs = $('race-gridscreen');
+    if (!gs) { if (raceGridWeiter) raceGridWeiter(); return; }
+    raceGridZeilen($('grid-liste'));
+    gridBildMalen();
+    if ($('grid-kopf-info')) $('grid-kopf-info').textContent = '';
+    gs.hidden = false;
+  }
+  function raceGridStart() {
+    const gs = $('race-gridscreen');
+    if (gs) gs.hidden = true;
+    syncRaceGridOrder();
+    const w = raceGridWeiter; raceGridWeiter = null;
+    if (w) w();
+  }
+  function raceGridAbbrechen() {
+    const gs = $('race-gridscreen');
+    if (gs) gs.hidden = true;
+    raceGridWeiter = null;
+    // Hing die Challenge gerade in der Ampel-Phase (Autos-in-Position war ihr Start),
+    // bricht Abbrechen sie ab - sonst bliebe sie auf Stillstand warten.
+    if (typeof challengeAbbrechen === 'function' && typeof challengeLaeuft === 'function'
+        && challengeLaeuft()) challengeAbbrechen();
+  }
+  if ($('grid-start')) $('grid-start').addEventListener('click', raceGridStart);
+  if ($('grid-abbrechen')) $('grid-abbrechen').addEventListener('click', raceGridAbbrechen);
 
   $('race-flying').addEventListener('change', (e) => {
     raceFlying = e.target.checked;
@@ -28880,7 +28971,7 @@
     const laeuft = raceState === 'racing' || raceState === 'countdown' || raceState === 'finishing';
     if (!laeuft && typeof mpRennenFrage === 'function' && mpRennenFrage()) { updateRaceActButtons(); return; }
     const live = raceState === 'racing' || raceState === 'countdown' || raceState === 'finishing';
-    if (live) requestRaceStop(); else startRaceCountdown();
+    if (live) requestRaceStop(); else raceGridAnzeigen(startRaceCountdown);
     updateRaceActButtons();
   }
   $('race-act-start').onclick = toggleRace;
@@ -29103,7 +29194,7 @@
   }
   setInterval(updateRaceActButtons, 400);
 
-  $('race-start-btn').onclick = startRaceCountdown;
+  $('race-start-btn').onclick = () => raceGridAnzeigen(startRaceCountdown);
   $('race-stop-btn').onclick = requestRaceStop;
   $('race-export-csv').onclick = () => {
     // Semicolon delimiter + comma decimals: opens directly (no import wizard) in a
@@ -33751,7 +33842,7 @@
         if (!chLauf.stillSeit) chLauf.stillSeit = jetzt;
         if (jetzt - chLauf.stillSeit >= CH_STILL_MS) {
           chLauf.phase = 'ampel';
-          startRaceCountdown();
+          raceGridAnzeigen(startRaceCountdown);
         }
       } else {
         chLauf.stillSeit = 0;
