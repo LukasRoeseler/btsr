@@ -1682,6 +1682,26 @@
     const v = parseInt(e.target.value, 10);
     if (Number.isFinite(v) && v >= 1) raceFuelStartL = Math.min(FUEL_TANK_LITERS, v);
   });
+  // Zahleneingaben wie "Meine Teile": Minus/Plus-Knoepfe neben dem Feld schalten je einen
+  // Schritt (stepUp/stepDown respektiert min/max/step) und loesen dasselbe 'input'-Ereignis
+  // aus wie getippte Werte - die Listener oben bleiben die einzige Wahrheit.
+  function numSteuer(id) {
+    const input = $(id);
+    const steuer = input && input.closest('.num-steuer');
+    if (!steuer) return;
+    const steuern = (schritt) => {
+      if (schritt < 0) input.stepDown(); else input.stepUp();
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    const minus = steuer.querySelector('.num-minus');
+    const plus = steuer.querySelector('.num-plus');
+    if (minus) minus.onclick = () => steuern(-1);
+    if (plus) plus.onclick = () => steuern(1);
+  }
+  numSteuer('race-limit');
+  numSteuer('race-pit-penalty');
+  numSteuer('race-fuel-start');
   applyRaceModeUi();
 
   // ---- Touch controls on the racing screen ----

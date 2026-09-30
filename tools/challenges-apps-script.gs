@@ -187,6 +187,16 @@ function pruefen(d) {
 // x 2 Modi x 2 Presets waeren sonst 320 Aufrufe).
 function doGet(e) {
   const p = (e && e.parameter) || {};
+  // DIAGNOSE: ?debug=1 nennt das Sheet, an dem diese Web-App haengt (getActiveSpreadsheet),
+  // damit man prüfen kann, ob die Zeiten im richtigen Blatt liegen. Antwortet nur, wenn
+  // wirklich ein Sheet gebunden ist - sonst 'kein Sheet'.
+  if (p.debug) {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    return antwort({ ok: true, debug: true,
+      url: ss ? ss.getUrl() : null,
+      name: ss ? ss.getName() : null,
+      blatt: ss ? (ss.getSheetByName(BLATT) ? BLATT : null) : null });
+  }
   const werte = blatt().getDataRange().getValues().slice(1);
   if (p.alle) {
     const listen = {};
