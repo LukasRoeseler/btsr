@@ -258,6 +258,26 @@
         } catch (e) { /* privater Modus oder voll - dann eben nur fuer diese Sitzung */ }
       }
     }
+    // ---- EINMALIGE UEBERNAHME DER KENNLINIEN 2,45 (v0.8.40) --------------------------
+    // BESTELLT: "Gas- und Bremskennlinien standardmaessig auf 2,45 einstellen", die Lenkung
+    // wie Gas und Bremse. Dieselbe Falle wie oben: die Selbstsicherung haelt die alten
+    // Vorgaben fest. Nur wer noch GENAU auf der alten Vorgabe steht, bekommt die neue;
+    // eigene Werte bleiben, und der Schalter verhindert ein zweites Mal.
+    {
+      let erledigt = false;
+      try { erledigt = localStorage.getItem('chc.migrate.kennlinien245.v1') === '1'; } catch (e) { /* privat */ }
+      if (!erledigt) {
+        const alt = { 'setting-throttle-gamma': 1, 'setting-brake-gamma': 1.3, 'setting-steer-expo': 1.15 };
+        let geaendert = false;
+        for (const [id, wert] of Object.entries(alt)) {
+          if (cfg[id] === wert) { cfg[id] = 2.45; geaendert = true; }
+        }
+        try {
+          localStorage.setItem('chc.migrate.kennlinien245.v1', '1');
+          if (geaendert) localStorage.setItem(AUTO_STORE, JSON.stringify(cfg));
+        } catch (e) { /* dann eben nur fuer diese Sitzung */ }
+      }
+    }
     // AUCH HIER GEPRUEFT. Die eigene Ablage ist nicht vertrauenswuerdiger als eine Datei:
     // sie kann aus einer aelteren Fassung stammen, in der ein Regler andere Grenzen hatte.
     const { bad } = presetPruefen(cfg);

@@ -6378,6 +6378,9 @@
     e.config.speedSteerReduction = 0;
     e.config.steerExpo = 1;
     e.config.steerResponse = 1;
+    // Und der alte Lenkweg: "Voller Einschlag bei" ist eine Einstellung fuer den Stick des
+    // Fahrers, ein Ghost hat keinen (v0.8.40).
+    e.config.steerVoll = null;
     // UND DIE LENKKALIBRIERUNG AUF 1, was in dieser Liste gefehlt hat.
     //
     // Sie ist dafuer da, dass der STICK des Fahrers auf engen Strecken die 45 Grad des Autos

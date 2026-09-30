@@ -5210,7 +5210,8 @@
       el.value = merk;
       el.dispatchEvent(new Event('input', { bubbles: true }));
     }
-    if (Math.abs(parseFloat(merk) - 1.3) > 1e-9) schlecht.push('Vorgabe ' + merk + ' statt 1,3');
+    // Vorgabe seit v0.8.40 2,45 (BESTELLT: "Gas und Bremskennlinien standardmaessig auf 2,45").
+    if (Math.abs(parseFloat(merk) - 2.45) > 1e-9) schlecht.push('Vorgabe ' + merk + ' statt 2,45');
     return { ok: !schlecht.length, mass: schlecht.length ? schlecht.join('; ') : 'eine Formel, Regler wirkt' };
   });
 
@@ -10345,6 +10346,34 @@
     if (b.map((x) => x.textContent).join('') !== 'OMEGASIM') f.push('Titel nicht in Buchstaben zerlegt: ' + b.map((x) => x.textContent).join(''));
     if (b.some((x) => !/glitch-[cr]/.test(x.style.getPropertyValue('--gl-o') + x.style.getPropertyValue('--gl-u')))) f.push('Buchstabe ohne Farbe');
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Knoten als Beschriftung, 8 Buchstaben mit Zufallsfarben' };
+  });
+
+  stAdd('Lenkkennlinie: voll genau bei X %, Anfang unter linear, symmetrisch, am Servo', () => {
+    const f = [];
+    const c = physEngine.config;
+    const merk = { voll: c.steerVoll, expo: c.steerExpo, resp: c.steerResponse };
+    try {
+      c.steerVoll = 0.9; c.steerExpo = 2.45; c.steerResponse = 3;
+      if (lenkWirksam(0, 2.45) !== 0) f.push('0 bleibt nicht 0');
+      if (Math.abs(lenkWirksam(0.9, 2.45) - 1) > 1e-9) f.push('bei 90 % nicht voll: ' + lenkWirksam(0.9, 2.45));
+      if (lenkWirksam(0.85, 2.45) >= 1) f.push('schon vor 90 % voll');
+      const halb = lenkWirksam(0.45, 2.45);
+      if (!(halb > 0 && halb < 0.5)) f.push('Anfang nicht unter linear: ' + halb.toFixed(3));
+      if (Math.abs(lenkWirksam(0.45, 1) - 0.5) > 1e-9) f.push('Kennlinie 1 ist nicht linear');
+      if (lenkWirksam(-0.45, 2.45) !== -halb) f.push('nicht symmetrisch');
+      // Am Servo, frische Instanz im Stand: 90 % Stick ergibt vollen Ausschlag, 45 % etwa 18 %.
+      const probe = (x) => {
+        const e = new CarreraPhysicsEngine();
+        // Kalibrierung wie im Menue (2,5): sie gleicht den Gripverlust im Stand aus.
+        Object.assign(e.config, { steerVoll: 0.9, steerExpo: 2.45, steerResponse: 3, steerCalib: 2.5 });
+        for (let i = 0; i < 40; i++) e.update({ throttle: 0, brake: 0, steering: x }, 0.045);
+        return e.outputs.servoAngle;
+      };
+      const s90 = probe(0.9), s45 = probe(0.45);
+      if (s90 < 0.98) f.push('Servo bei 90 % Stick nur ' + s90.toFixed(3));
+      if (Math.abs(s45 - Math.pow(0.5, 2.45)) > 0.03) f.push('Servo bei 45 % Stick ' + s45.toFixed(3) + ' statt ' + Math.pow(0.5, 2.45).toFixed(3));
+    } finally { c.steerVoll = merk.voll; c.steerExpo = merk.expo; c.steerResponse = merk.resp; }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'voll bei 90 %, halber Weg ' + Math.pow(0.5, 2.45).toFixed(2) + ', symmetrisch, Servo stimmt' };
   });
 
   stAdd('Fruehstart: Ampel laeuft weiter, nach Gruen 2 s kein Gas und Bremse, danach frei', () => {

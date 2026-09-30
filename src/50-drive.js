@@ -739,6 +739,7 @@
 
   function lenkWirksam(x, e) {
     const c = physEngine.config;
+    if (c.steerVoll) return lenkVollAnteil(x, c.steerVoll, e, c.steerResponse);
     const k = (c.steerResponse || 1) * (c.steerCalib || 1);
     return Math.max(-1, Math.min(1, lenkKennlinie(x, e) * k));
   }
@@ -749,8 +750,12 @@
     physEngine.config.steerExpo = e;
     const c = physEngine.config;
     const k = (c.steerResponse || 1) * (c.steerCalib || 1);
-    // Ab welchem Stickweg der volle Einschlag erreicht ist - die Zahl, die man spuert.
-    const voll = Math.min(1, Math.pow(1 / Math.max(1, k), 1 / e));
+    // Ab welchem Stickweg der volle Einschlag erreicht ist - die Zahl, die man spuert. Im neuen
+    // Weg: "Voller Einschlag bei" mal der Trimmung durch das Lenkansprechen.
+    const faktor = (c.steerResponse || STEER_VOLL_BEZUG) / STEER_VOLL_BEZUG;
+    const voll = c.steerVoll
+      ? Math.min(1, c.steerVoll * Math.pow(1 / Math.max(1, faktor), 1 / e))
+      : Math.min(1, Math.pow(1 / Math.max(1, k), 1 / e));
     $('setting-steer-expo-val').textContent = e.toFixed(2)
       + ' \u00b7 ' + t('voll ab') + ' ' + Math.round(voll * 100) + '%';
     kennlinienPlotZeichnen('setting-steer-expo-plot', (x) => lenkWirksam(x, e), -1, 1);
@@ -812,6 +817,20 @@
   if ($('setting-throttle-gamma')) {
     gasKennlinieAnwenden();
     $('setting-throttle-gamma').addEventListener('input', gasKennlinieAnwenden);
+  }
+  // VOLLER EINSCHLAG BEI (v0.8.40): setzt den neuen Lenkweg fuer beide Autos.
+  function lenkVollAnwenden() {
+    const el = $('setting-steer-voll');
+    if (!el) return;
+    const v = parseFloat(el.value);
+    physEngine.config.steerVoll = v;
+    if (typeof physEngine2 !== 'undefined' && physEngine2) physEngine2.config.steerVoll = v;
+    $('setting-steer-voll-val').textContent = Math.round(v * 100) + '%';
+    lenkKennlinieAnwenden();
+  }
+  if ($('setting-steer-voll')) {
+    lenkVollAnwenden();
+    $('setting-steer-voll').addEventListener('input', lenkVollAnwenden);
   }
   if ($('setting-steer-expo')) {
     lenkKennlinieAnwenden();
