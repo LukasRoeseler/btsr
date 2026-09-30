@@ -219,7 +219,7 @@ class HostServer extends NanoHTTPD {
             o.put("fehler", "kein Plan");
             return o;
         }
-        long vorlauf = Math.max(6000, Math.min(30000, d.optLong("vorlaufMs", 8000)));
+        long vorlauf = Math.max(6000, Math.min(30000, d.optLong("vorlaufMs", 12000)));
         long jetzt = System.currentTimeMillis();
         raceId++;
         startAt = jetzt + vorlauf;
