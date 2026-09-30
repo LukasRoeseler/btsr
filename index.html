@@ -11861,6 +11861,9 @@
     "Rennen für alle starten": "Start race for everyone",
     "Rennen für alle: Ampel kommt gleich": "Race for everyone: lights coming up",
     "Erst mitmachen, dann für alle starten.": "Join first, then start for everyone.",
+    "Rennen für alle: Ampel in ": "Race for all: lights in ",
+    "Rennen für alle: Ampel kommt gleich": "Race for all: lights coming up",
+    "Start für alle fehlgeschlagen": "Starting for everyone failed",
     "Der Host kennt das noch nicht, Host bzw. APK aktualisieren": "The host does not support this yet, update the host or APK",
     "Rennen für alle gestartet, die Ampel kommt in wenigen Sekunden.": "Race started for everyone, the lights come in a few seconds.",
     "Start für alle fehlgeschlagen": "Start for everyone failed",
@@ -34546,7 +34549,9 @@
   // Schnappschuss eine Stunde alt ist.
   function chAlleZeiten(schl) {
     const l = chListen[schl];
-    const lok = chLokal(schl).map((z) => ({ zeit_ms: z.zeit, auto: z.auto, fahrer: z.fahrer, geraet: z.geraet }));
+    const lok = chLokal(schl).map((z) => ({ zeit_ms: z.zeit, auto: z.auto, fahrer: z.fahrer,
+      geraet: z.geraet, runden: Array.isArray(z.runden) ? z.runden.length : undefined,
+      runden_ms: Array.isArray(z.runden) ? z.runden : undefined }));
     if (l && l.online && l.zeiten) {
       const da = (z) => l.zeiten.some((x) => x.geraet === z.geraet && Math.abs(+x.zeit_ms - z.zeit_ms) < 2);
       const eintraege = l.zeiten.concat(lok.filter((z) => !da(z)));

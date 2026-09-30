@@ -700,7 +700,9 @@
   // Schnappschuss eine Stunde alt ist.
   function chAlleZeiten(schl) {
     const l = chListen[schl];
-    const lok = chLokal(schl).map((z) => ({ zeit_ms: z.zeit, auto: z.auto, fahrer: z.fahrer, geraet: z.geraet }));
+    const lok = chLokal(schl).map((z) => ({ zeit_ms: z.zeit, auto: z.auto, fahrer: z.fahrer,
+      geraet: z.geraet, runden: Array.isArray(z.runden) ? z.runden.length : undefined,
+      runden_ms: Array.isArray(z.runden) ? z.runden : undefined }));
     if (l && l.online && l.zeiten) {
       const da = (z) => l.zeiten.some((x) => x.geraet === z.geraet && Math.abs(+x.zeit_ms - z.zeit_ms) < 2);
       const eintraege = l.zeiten.concat(lok.filter((z) => !da(z)));
