@@ -3075,6 +3075,10 @@
   #track-preview-svg {
     height: clamp(240px, 42vh, 460px);
     display: grid; place-items: center; overflow: hidden;
+    /* Platz fuer die Platz-Bedarf-Zeile (.tp-space): sonst liegt "2,43 x 1,80 m"
+       auf der Strecke. Der Kasten ist im Vollbild stretch, die Karte wird um diese
+       Leiste hereingeholt. */
+    padding-bottom: 26px;
   }
   /* Die Deckelung auf 520 px stand bis v0.5.30 im Zeichner. Sie gehoert hierher: sie
      beschreibt diese Spalte und nicht dieses Bild. */
@@ -3990,7 +3994,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.53</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.54</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>

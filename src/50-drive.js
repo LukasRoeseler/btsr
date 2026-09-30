@@ -433,8 +433,7 @@
       out.textContent = 'Vollgas geradeaus, ohne zu lenken \u2026';
       const r = await OMEGA_TEST.driftProbe(4000);
       if (!r.mitTempo) {
-        out.textContent = 'Das Auto ist nicht gefahren \u2013 ohne Fahrt gibt es kein '
-                        + 'Drehsignal, Byte 3 schwankt erst dann.';
+        out.textContent = t('Das Auto ist nicht gefahren – ohne Fahrt gibt es kein Drehsignal, Byte 3 schwankt erst dann.');
         return;
       }
       const teile = [
@@ -1785,9 +1784,9 @@
       } else if (lage === 'angefordert') {
         const kmh = Math.abs(physEngine2.state.speedKmh) * REAL_SCALE;
         const schwelle = PIT_STANDSTILL_KMH * REAL_SCALE;
-        fuss.textContent = 'P2 Boxenstopp: bremsen und anhalten \u2013 '
-          + Math.round(kmh) + ' km/h, nötig unter ' + Math.round(schwelle)
-          + ', dann Finger vom Gas.';
+        fuss.textContent = t('P2 Boxenstopp: bremsen und anhalten – {a} km/h, nötig unter {b}, dann Finger vom Gas.')
+          .replace('{a}', Math.round(kmh))
+          .replace('{b}', Math.round(schwelle));
       } else if (lage === 'service') {
         const offen = [];
         if (tankZweiStand() < 100 - 0.05) offen.push('tankt');
@@ -3203,7 +3202,7 @@
 
     for (const step of CALIB_MATRIX) {
       if (!calibRunning) break;
-      $('calib-status').textContent = `Läuft: ${step.label}...`;
+      $('calib-status').textContent = t('Läuft: {s}...').replace('{s}', step.label);
       await runCalibrationStep(step);
     }
     await sendControlValue(0, 0);

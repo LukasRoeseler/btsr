@@ -263,9 +263,16 @@
     if (!rec.on && !rec.rows.length) { el.textContent = 'keine Aufnahme'; return; }
     const secs = rec.rows.length ? (rec.rows[rec.rows.length - 1].t / 1000).toFixed(0) : 0;
     const marks = rec.rows.filter(r => r.dir === 'mark').length;
-    el.textContent = `${rec.on ? 'läuft' : 'gestoppt'}, ${rec.rows.length} Zeilen, `
-                   + `${secs} s, ${marks} Markierungen`;
-    $('rec-badge-text').textContent = `Aufnahme ${secs}s · ${marks} Mark.`;
+    const vorlage = rec.on
+      ? 'läuft, {n} Zeilen, {s} s, {m} Markierungen'
+      : 'gestoppt, {n} Zeilen, {s} s, {m} Markierungen';
+    el.textContent = t(vorlage)
+      .replace('{n}', rec.rows.length)
+      .replace('{s}', secs)
+      .replace('{m}', marks);
+    $('rec-badge-text').textContent = t('Aufnahme {s}s · {m} Mark.')
+      .replace('{s}', secs)
+      .replace('{m}', marks);
   }
 
   function recStart() {

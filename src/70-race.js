@@ -290,7 +290,7 @@
     playTone(1046, 0.30, 'square', 0.22);
     showHudToast(t('Frei, volle Fahrt!'));
     log('Einführungsrunde beendet, Rennen freigegeben.', 'info');
-    $('race-status').textContent = `${RACE_MODES[raceMode].label} läuft`;
+    $('race-status').textContent = t('{m} läuft').replace('{m}', t(RACE_MODES[raceMode].label));
     setTimeout(() => setRaceLights(0), 900);
   }
 
@@ -1404,7 +1404,7 @@
     raceClockTimer = setInterval(raceClockTick, 250);
     $('race-status').textContent = raceFormationLap
       ? 'Einführungsrunde, Limit bis Start/Ziel'
-      : RACE_MODES[raceMode].label + ' läuft';
+      : t('{m} läuft').replace('{m}', t(RACE_MODES[raceMode].label));
     $('race-stop-btn').disabled = false;
     updateRaceActButtons();
   }

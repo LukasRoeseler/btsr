@@ -241,7 +241,7 @@
       } catch (err) {
         const errDiv = document.createElement('div');
         errDiv.className = 'char';
-        errDiv.textContent = 'Fehler beim Laden der Characteristics: ' + err.message;
+        errDiv.textContent = t('Fehler beim Laden der Characteristics: {m}').replace('{m}', err.message);
         serviceDiv.appendChild(errDiv);
       }
 
@@ -2586,6 +2586,37 @@
     "__N__ Punkte, rein rechnerisch (Koppelnavigation).": "__N__ points, purely computed (dead reckoning).",
     "Runde __N__: __S__ s": "Lap __N__: __S__ s",
     "Keine Start/Ziel-Überfahrt in dieser Aufnahme erkannt - keine Rundenzeiten.": "No start/finish crossing detected in this recording - no lap times.",
+    "Bringe die Autos in Position": "Bring the cars into position",
+    "Der 2-Spieler-Modus ist aus – rechts steht nichts.": "The 2-player mode is off – nothing on the right.",
+    "Messstand nicht vorhanden.": "No measuring stand present.",
+    "Das Auto ist nicht gefahren – ohne Fahrt gibt es kein Drehsignal, Byte 3 schwankt erst dann.": "The car did not move – without movement there is no rotation signal, byte 3 only fluctuates then.",
+    "Fehler beim Laden der Characteristics: {m}": "Error loading the characteristics: {m}",
+    "noch kein Controller gemeldet": "no controller reported yet",
+    "Ton ist aus, in den Optionen einschalten.": "Sound is off, enable it in the options.",
+    "Geglättet, nochmal fahren und vergleichen.": "Smoothed, drive again and compare.",
+    "Zurückgesetzt.": "Reset.",
+    "Zurueck auf die Vorgabe aus den Optionen": "Back to the default from the options",
+    "Boxenstopp: links für Auto 1, rechts für Auto 2.": "Pit stop: left for car 1, right for car 2.",
+    "P2 Boxenstopp: bremsen und anhalten – {a} km/h, nötig unter {b}, dann Finger vom Gas.": "P2 pit stop: brake and stop – {a} km/h, must be below {b}, then take your foot off the throttle.",
+    "In der Garage einem Auto die Rolle \"Spieler 2\" geben.": "Give a car the \"Player 2\" role in the garage.",
+    "-- keine (nur Log) --": "-- none (log only) --",
+    "Scan läuft: {n} Teile (zuletzt: {t})": "Scanning: {n} pieces (last: {t})",
+    "Scan läuft: 0 Teile ({q})": "Scanning: 0 pieces ({q})",
+    "Scan läuft: {n} Teile, {k} ohne lesbaren Code": "Scanning: {n} pieces, {k} without a readable code",
+    "Scan läuft: {n} Teile, {k} ohne lesbaren Code ({p} Pakete ohne Lesung)": "Scanning: {n} pieces, {k} without a readable code ({p} packets without reading)",
+    "Scan läuft: 1 Teil (Auto fährt automatisch) …": "Scanning: 1 piece (car drives automatically) …",
+    "läuft, {n} Zeilen, {s} s, {m} Markierungen": "running, {n} rows, {s} s, {m} marks",
+    "gestoppt, {n} Zeilen, {s} s, {m} Markierungen": "stopped, {n} rows, {s} s, {m} marks",
+    "Aufnahme {s}s · {m} Mark.": "Recording {s}s · {m} marks.",
+    "{m} läuft": "{m} running",
+    "Läuft: {s}...": "Running: {s}...",
+    "Einführungsrunde, Limit bis Start/Ziel": "Formation lap, limit until start/finish",
+    "Zeit/Runden erreicht, laufende Runde zählt noch": "Time/laps reached, current lap still counts",
+    "Gefahren: Spitze {a} km/h · Lenkung konnte {b} % der verlangten Änderung nicht folgen ({c} von {d} Takten am Anschlag).": "Driven: top {a} km/h · steering could not follow {b} % of the requested change ({c} of {d} ticks at the stop).",
+    "DU": "YOU",
+    "AUTO {n}": "CAR {n}",
+    "fährt…": "driving…",
+    "{w} × {h} cm · {n} Teile": "{w} × {h} cm · {n} pieces",
   };
 
   // ============================================================================

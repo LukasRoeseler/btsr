@@ -3566,7 +3566,10 @@
     const xs = all.map(p => p[0]), ys = all.map(p => p[1]);
     const wCm = (Math.max(...xs) - Math.min(...xs)) / TRACK_UNITS_PER_CM;
     const hCm = (Math.max(...ys) - Math.min(...ys)) / TRACK_UNITS_PER_CM;
-    el.textContent = `${Math.round(wCm)} × ${Math.round(hCm)} cm · ${currentTrackTiles.length} Teile`;
+    el.textContent = t('{w} × {h} cm · {n} Teile')
+      .replace('{w}', Math.round(wCm))
+      .replace('{h}', Math.round(hCm))
+      .replace('{n}', currentTrackTiles.length);
   }
 
   // ====================================================================================
@@ -3890,15 +3893,20 @@
       if (bestType != null && Object.values(TILE_TYPE).includes(bestType)) {
         currentTrackTiles.push({ type: bestType });
         refreshTrackPreview();
-        $('track-scan-status').textContent = 'Scan läuft: ' + currentTrackTiles.length
-          + ' Teile (zuletzt: ' + (TILE_LABEL[bestType] || bestType) + ')';
+        $('track-scan-status').textContent = t('Scan läuft: {n} Teile (zuletzt: {t})')
+          .replace('{n}', currentTrackTiles.length)
+          .replace('{t}', TILE_LABEL[bestType] ? t(TILE_LABEL[bestType]) : bestType);
       } else {
         // Nicht mehr stumm: eine Kachel ohne einen einzigen echten Code ist eine Auskunft
         // und kein Nichts. Genau dieses Schweigen hat den Fehler oben verdeckt.
         trackScanSkipped++;
-        $('track-scan-status').textContent = 'Scan läuft: ' + currentTrackTiles.length
-          + ' Teile, ' + trackScanSkipped + ' ohne lesbaren Code'
-          + (dropped ? ' (' + dropped + ' Pakete ohne Lesung)' : '');
+        const scanStatusVorlage = dropped
+          ? 'Scan läuft: {n} Teile, {k} ohne lesbaren Code ({p} Pakete ohne Lesung)'
+          : 'Scan läuft: {n} Teile, {k} ohne lesbaren Code';
+        $('track-scan-status').textContent = t(scanStatusVorlage)
+          .replace('{n}', currentTrackTiles.length)
+          .replace('{k}', trackScanSkipped)
+          .replace('{p}', dropped);
       }
       trackScanLastCounter = counter;
       trackScanTypeVotes = {};
@@ -4192,8 +4200,8 @@
     refreshTrackPreview();
     $('track-scan-start').disabled = true;
     $('track-scan-stop').disabled = false;
-    $('track-scan-status').textContent = 'Scan läuft: 0 Teile'
-      + (trackScanCar ? ' (' + garageLabel(trackScanCar) + ')' : ' (BLE-Explorer)');
+    $('track-scan-status').textContent = t('Scan läuft: 0 Teile ({q})')
+      .replace('{q}', trackScanCar ? garageLabel(trackScanCar) : 'BLE-Explorer');
   }
   function stopTrackScan() {
     trackScanning = false;

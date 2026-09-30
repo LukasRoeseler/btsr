@@ -130,10 +130,11 @@
     psRenderResult();
     const top = Math.max(...trace.map(p => p.kmh));
     const m = psFollowMetrics(trace);
-    $('ps-status').textContent =
-      `Gefahren: Spitze ${Math.round(top)} km/h · `
-      + `Lenkung konnte ${m.pct.toFixed(0)} % der verlangten Änderung nicht folgen `
-      + `(${m.limited} von ${trace.length} Takten am Anschlag).`;
+    $('ps-status').textContent = t('Gefahren: Spitze {a} km/h · Lenkung konnte {b} % der verlangten Änderung nicht folgen ({c} von {d} Takten am Anschlag).')
+      .replace('{a}', Math.round(top))
+      .replace('{b}', m.pct.toFixed(0))
+      .replace('{c}', m.limited)
+      .replace('{d}', trace.length);
   }
 
   // Linear interpolation between control points. Deliberately linear and not a spline: the

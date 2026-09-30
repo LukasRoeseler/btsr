@@ -3075,6 +3075,10 @@
   #track-preview-svg {
     height: clamp(240px, 42vh, 460px);
     display: grid; place-items: center; overflow: hidden;
+    /* Platz fuer die Platz-Bedarf-Zeile (.tp-space): sonst liegt "2,43 x 1,80 m"
+       auf der Strecke. Der Kasten ist im Vollbild stretch, die Karte wird um diese
+       Leiste hereingeholt. */
+    padding-bottom: 26px;
   }
   /* Die Deckelung auf 520 px stand bis v0.5.30 im Zeichner. Sie gehoert hierher: sie
      beschreibt diese Spalte und nicht dieses Bild. */
@@ -3990,7 +3994,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.53</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.54</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -11275,7 +11279,7 @@
       } catch (err) {
         const errDiv = document.createElement('div');
         errDiv.className = 'char';
-        errDiv.textContent = 'Fehler beim Laden der Characteristics: ' + err.message;
+        errDiv.textContent = t('Fehler beim Laden der Characteristics: {m}').replace('{m}', err.message);
         serviceDiv.appendChild(errDiv);
       }
 
@@ -13620,6 +13624,37 @@
     "__N__ Punkte, rein rechnerisch (Koppelnavigation).": "__N__ points, purely computed (dead reckoning).",
     "Runde __N__: __S__ s": "Lap __N__: __S__ s",
     "Keine Start/Ziel-Überfahrt in dieser Aufnahme erkannt - keine Rundenzeiten.": "No start/finish crossing detected in this recording - no lap times.",
+    "Bringe die Autos in Position": "Bring the cars into position",
+    "Der 2-Spieler-Modus ist aus – rechts steht nichts.": "The 2-player mode is off – nothing on the right.",
+    "Messstand nicht vorhanden.": "No measuring stand present.",
+    "Das Auto ist nicht gefahren – ohne Fahrt gibt es kein Drehsignal, Byte 3 schwankt erst dann.": "The car did not move – without movement there is no rotation signal, byte 3 only fluctuates then.",
+    "Fehler beim Laden der Characteristics: {m}": "Error loading the characteristics: {m}",
+    "noch kein Controller gemeldet": "no controller reported yet",
+    "Ton ist aus, in den Optionen einschalten.": "Sound is off, enable it in the options.",
+    "Geglättet, nochmal fahren und vergleichen.": "Smoothed, drive again and compare.",
+    "Zurückgesetzt.": "Reset.",
+    "Zurueck auf die Vorgabe aus den Optionen": "Back to the default from the options",
+    "Boxenstopp: links für Auto 1, rechts für Auto 2.": "Pit stop: left for car 1, right for car 2.",
+    "P2 Boxenstopp: bremsen und anhalten – {a} km/h, nötig unter {b}, dann Finger vom Gas.": "P2 pit stop: brake and stop – {a} km/h, must be below {b}, then take your foot off the throttle.",
+    "In der Garage einem Auto die Rolle \"Spieler 2\" geben.": "Give a car the \"Player 2\" role in the garage.",
+    "-- keine (nur Log) --": "-- none (log only) --",
+    "Scan läuft: {n} Teile (zuletzt: {t})": "Scanning: {n} pieces (last: {t})",
+    "Scan läuft: 0 Teile ({q})": "Scanning: 0 pieces ({q})",
+    "Scan läuft: {n} Teile, {k} ohne lesbaren Code": "Scanning: {n} pieces, {k} without a readable code",
+    "Scan läuft: {n} Teile, {k} ohne lesbaren Code ({p} Pakete ohne Lesung)": "Scanning: {n} pieces, {k} without a readable code ({p} packets without reading)",
+    "Scan läuft: 1 Teil (Auto fährt automatisch) …": "Scanning: 1 piece (car drives automatically) …",
+    "läuft, {n} Zeilen, {s} s, {m} Markierungen": "running, {n} rows, {s} s, {m} marks",
+    "gestoppt, {n} Zeilen, {s} s, {m} Markierungen": "stopped, {n} rows, {s} s, {m} marks",
+    "Aufnahme {s}s · {m} Mark.": "Recording {s}s · {m} marks.",
+    "{m} läuft": "{m} running",
+    "Läuft: {s}...": "Running: {s}...",
+    "Einführungsrunde, Limit bis Start/Ziel": "Formation lap, limit until start/finish",
+    "Zeit/Runden erreicht, laufende Runde zählt noch": "Time/laps reached, current lap still counts",
+    "Gefahren: Spitze {a} km/h · Lenkung konnte {b} % der verlangten Änderung nicht folgen ({c} von {d} Takten am Anschlag).": "Driven: top {a} km/h · steering could not follow {b} % of the requested change ({c} of {d} ticks at the stop).",
+    "DU": "YOU",
+    "AUTO {n}": "CAR {n}",
+    "fährt…": "driving…",
+    "{w} × {h} cm · {n} Teile": "{w} × {h} cm · {n} pieces",
   };
 
   // ============================================================================
@@ -14911,9 +14946,16 @@
     if (!rec.on && !rec.rows.length) { el.textContent = 'keine Aufnahme'; return; }
     const secs = rec.rows.length ? (rec.rows[rec.rows.length - 1].t / 1000).toFixed(0) : 0;
     const marks = rec.rows.filter(r => r.dir === 'mark').length;
-    el.textContent = `${rec.on ? 'läuft' : 'gestoppt'}, ${rec.rows.length} Zeilen, `
-                   + `${secs} s, ${marks} Markierungen`;
-    $('rec-badge-text').textContent = `Aufnahme ${secs}s · ${marks} Mark.`;
+    const vorlage = rec.on
+      ? 'läuft, {n} Zeilen, {s} s, {m} Markierungen'
+      : 'gestoppt, {n} Zeilen, {s} s, {m} Markierungen';
+    el.textContent = t(vorlage)
+      .replace('{n}', rec.rows.length)
+      .replace('{s}', secs)
+      .replace('{m}', marks);
+    $('rec-badge-text').textContent = t('Aufnahme {s}s · {m} Mark.')
+      .replace('{s}', secs)
+      .replace('{m}', marks);
   }
 
   function recStart() {
@@ -18140,8 +18182,7 @@
       out.textContent = 'Vollgas geradeaus, ohne zu lenken \u2026';
       const r = await OMEGA_TEST.driftProbe(4000);
       if (!r.mitTempo) {
-        out.textContent = 'Das Auto ist nicht gefahren \u2013 ohne Fahrt gibt es kein '
-                        + 'Drehsignal, Byte 3 schwankt erst dann.';
+        out.textContent = t('Das Auto ist nicht gefahren – ohne Fahrt gibt es kein Drehsignal, Byte 3 schwankt erst dann.');
         return;
       }
       const teile = [
@@ -19492,9 +19533,9 @@
       } else if (lage === 'angefordert') {
         const kmh = Math.abs(physEngine2.state.speedKmh) * REAL_SCALE;
         const schwelle = PIT_STANDSTILL_KMH * REAL_SCALE;
-        fuss.textContent = 'P2 Boxenstopp: bremsen und anhalten \u2013 '
-          + Math.round(kmh) + ' km/h, nötig unter ' + Math.round(schwelle)
-          + ', dann Finger vom Gas.';
+        fuss.textContent = t('P2 Boxenstopp: bremsen und anhalten – {a} km/h, nötig unter {b}, dann Finger vom Gas.')
+          .replace('{a}', Math.round(kmh))
+          .replace('{b}', Math.round(schwelle));
       } else if (lage === 'service') {
         const offen = [];
         if (tankZweiStand() < 100 - 0.05) offen.push('tankt');
@@ -20910,7 +20951,7 @@
 
     for (const step of CALIB_MATRIX) {
       if (!calibRunning) break;
-      $('calib-status').textContent = `Läuft: ${step.label}...`;
+      $('calib-status').textContent = t('Läuft: {s}...').replace('{s}', step.label);
       await runCalibrationStep(step);
     }
     await sendControlValue(0, 0);
@@ -26514,7 +26555,10 @@
     const xs = all.map(p => p[0]), ys = all.map(p => p[1]);
     const wCm = (Math.max(...xs) - Math.min(...xs)) / TRACK_UNITS_PER_CM;
     const hCm = (Math.max(...ys) - Math.min(...ys)) / TRACK_UNITS_PER_CM;
-    el.textContent = `${Math.round(wCm)} × ${Math.round(hCm)} cm · ${currentTrackTiles.length} Teile`;
+    el.textContent = t('{w} × {h} cm · {n} Teile')
+      .replace('{w}', Math.round(wCm))
+      .replace('{h}', Math.round(hCm))
+      .replace('{n}', currentTrackTiles.length);
   }
 
   // ====================================================================================
@@ -26838,15 +26882,20 @@
       if (bestType != null && Object.values(TILE_TYPE).includes(bestType)) {
         currentTrackTiles.push({ type: bestType });
         refreshTrackPreview();
-        $('track-scan-status').textContent = 'Scan läuft: ' + currentTrackTiles.length
-          + ' Teile (zuletzt: ' + (TILE_LABEL[bestType] || bestType) + ')';
+        $('track-scan-status').textContent = t('Scan läuft: {n} Teile (zuletzt: {t})')
+          .replace('{n}', currentTrackTiles.length)
+          .replace('{t}', TILE_LABEL[bestType] ? t(TILE_LABEL[bestType]) : bestType);
       } else {
         // Nicht mehr stumm: eine Kachel ohne einen einzigen echten Code ist eine Auskunft
         // und kein Nichts. Genau dieses Schweigen hat den Fehler oben verdeckt.
         trackScanSkipped++;
-        $('track-scan-status').textContent = 'Scan läuft: ' + currentTrackTiles.length
-          + ' Teile, ' + trackScanSkipped + ' ohne lesbaren Code'
-          + (dropped ? ' (' + dropped + ' Pakete ohne Lesung)' : '');
+        const scanStatusVorlage = dropped
+          ? 'Scan läuft: {n} Teile, {k} ohne lesbaren Code ({p} Pakete ohne Lesung)'
+          : 'Scan läuft: {n} Teile, {k} ohne lesbaren Code';
+        $('track-scan-status').textContent = t(scanStatusVorlage)
+          .replace('{n}', currentTrackTiles.length)
+          .replace('{k}', trackScanSkipped)
+          .replace('{p}', dropped);
       }
       trackScanLastCounter = counter;
       trackScanTypeVotes = {};
@@ -27140,8 +27189,8 @@
     refreshTrackPreview();
     $('track-scan-start').disabled = true;
     $('track-scan-stop').disabled = false;
-    $('track-scan-status').textContent = 'Scan läuft: 0 Teile'
-      + (trackScanCar ? ' (' + garageLabel(trackScanCar) + ')' : ' (BLE-Explorer)');
+    $('track-scan-status').textContent = t('Scan läuft: 0 Teile ({q})')
+      .replace('{q}', trackScanCar ? garageLabel(trackScanCar) : 'BLE-Explorer');
   }
   function stopTrackScan() {
     trackScanning = false;
@@ -27596,7 +27645,7 @@
     playTone(1046, 0.30, 'square', 0.22);
     showHudToast(t('Frei, volle Fahrt!'));
     log('Einführungsrunde beendet, Rennen freigegeben.', 'info');
-    $('race-status').textContent = `${RACE_MODES[raceMode].label} läuft`;
+    $('race-status').textContent = t('{m} läuft').replace('{m}', t(RACE_MODES[raceMode].label));
     setTimeout(() => setRaceLights(0), 900);
   }
 
@@ -28710,7 +28759,7 @@
     raceClockTimer = setInterval(raceClockTick, 250);
     $('race-status').textContent = raceFormationLap
       ? 'Einführungsrunde, Limit bis Start/Ziel'
-      : RACE_MODES[raceMode].label + ' läuft';
+      : t('{m} läuft').replace('{m}', t(RACE_MODES[raceMode].label));
     $('race-stop-btn').disabled = false;
     updateRaceActButtons();
   }
@@ -37798,7 +37847,7 @@
         ? 'background-image:url("' + foto + '")'
         : 'background:linear-gradient(135deg,' + f.hex + ' 0%,' + f.hex + ' 55%,rgba(0,0,0,.55) 100%);color:' + f.ink;
       row.innerHTML = `
-        <div class="gk-kopf"><span>${car.role === 'player' ? 'DU' : 'AUTO ' + (i + 1)}</span>
+        <div class="gk-kopf"><span>${car.role === 'player' ? t('DU') : t('AUTO {n}').replace('{n}', i + 1)}</span>
           <span class="gk-kopf-rolle">${rolle.kurz}</span></div>
         <div class="gk-bild${foto ? ' mit-foto' : ''}" style='${bild}'>
           ${foto ? '' : `<span class="gk-zeichen">${car.tagChar || ''}</span>`}
@@ -46415,10 +46464,11 @@
     psRenderResult();
     const top = Math.max(...trace.map(p => p.kmh));
     const m = psFollowMetrics(trace);
-    $('ps-status').textContent =
-      `Gefahren: Spitze ${Math.round(top)} km/h · `
-      + `Lenkung konnte ${m.pct.toFixed(0)} % der verlangten Änderung nicht folgen `
-      + `(${m.limited} von ${trace.length} Takten am Anschlag).`;
+    $('ps-status').textContent = t('Gefahren: Spitze {a} km/h · Lenkung konnte {b} % der verlangten Änderung nicht folgen ({c} von {d} Takten am Anschlag).')
+      .replace('{a}', Math.round(top))
+      .replace('{b}', m.pct.toFixed(0))
+      .replace('{c}', m.limited)
+      .replace('{d}', trace.length);
   }
 
   // Linear interpolation between control points. Deliberately linear and not a spline: the

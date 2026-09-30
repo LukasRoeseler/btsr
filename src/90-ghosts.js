@@ -1527,7 +1527,7 @@
         ? 'background-image:url("' + foto + '")'
         : 'background:linear-gradient(135deg,' + f.hex + ' 0%,' + f.hex + ' 55%,rgba(0,0,0,.55) 100%);color:' + f.ink;
       row.innerHTML = `
-        <div class="gk-kopf"><span>${car.role === 'player' ? 'DU' : 'AUTO ' + (i + 1)}</span>
+        <div class="gk-kopf"><span>${car.role === 'player' ? t('DU') : t('AUTO {n}').replace('{n}', i + 1)}</span>
           <span class="gk-kopf-rolle">${rolle.kurz}</span></div>
         <div class="gk-bild${foto ? ' mit-foto' : ''}" style='${bild}'>
           ${foto ? '' : `<span class="gk-zeichen">${car.tagChar || ''}</span>`}
