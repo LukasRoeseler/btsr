@@ -53,8 +53,23 @@
    "zeiten": []
   },
   "wa01-imolina|hotlap|pro": {
-   "anzahl": 0,
-   "zeiten": []
+   "anzahl": 2,
+   "zeiten": [
+    {
+     "auto": "Alpha",
+     "fahrer": "Luuke",
+     "geraet": "g8tpdtco9glbi",
+     "zeit_ms": 4996,
+     "zeitpunkt": "2026-09-30T17:33:01.889Z"
+    },
+    {
+     "auto": "Alpha",
+     "fahrer": "Luuke",
+     "geraet": "g8tpdtco9glbi",
+     "zeit_ms": 4996,
+     "zeitpunkt": "2026-09-30T17:33:36.249Z"
+    }
+   ]
   },
   "wa01-imolina|rennen|arcade": {
    "anzahl": 0,
@@ -1281,5 +1296,5 @@
    "zeiten": []
   }
  },
- "stand": "2026-09-30T12:40:40Z"
+ "stand": "2026-09-30T18:27:40Z"
 }
