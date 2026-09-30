@@ -2741,9 +2741,17 @@
   .teile-zeile { display: flex; align-items: center; justify-content: space-between; gap: 10px;
     padding: 7px 12px; border: 1px solid transparent; border-radius: 6px; cursor: pointer; }
   .teile-zeile:nth-child(odd) { background: rgba(255,255,255,.03); }
-  .teile-zeile .teile-name { color: var(--ink); }
+  .teile-zeile .teile-name { color: var(--ink); flex: 1 1 auto; min-width: 0; }
+  .teile-zeile .teile-ic { width: 22px; height: 22px; flex: 0 0 auto; color: var(--ink); opacity: .95; }
+  .teile-zeile .teile-steuer { display: inline-flex; align-items: center; gap: 6px; }
   .teile-zeile .teile-zahl { font-weight: 800; color: var(--k-blau); min-width: 3ch; text-align: right;
     font-variant-numeric: tabular-nums; }
+  .teile-zeile .teile-minus, .teile-zeile .teile-plus {
+    width: 32px; height: 30px; padding: 0; border-radius: 6px; background: var(--panel-2);
+    color: var(--ink); font-size: 17px; font-weight: 700; line-height: 1;
+  }
+  .teile-zeile .teile-minus:hover, .teile-zeile .teile-plus:hover { background: var(--panel-2); filter: brightness(1.1); }
+  .teile-zeile .teile-minus:active, .teile-zeile .teile-plus:active { background: rgba(0,163,224,.2); }
   .teile-zeile.menu-nav-sel { background: rgba(0,163,224,.12); }
   /* HOCHFORMAT, schmal (Telefon im Browser): untereinander, mit Bildlauf. */
   @media (max-width: 760px) and (orientation: portrait) {
@@ -10387,8 +10395,10 @@
         und was fehlt. Leer lassen hei&szlig;t: nicht gez&auml;hlt.</p>
       <div class="row" style="gap:6px; flex-wrap:wrap">
         <button id="teile-grund">+ Grundpackung</button>
+        <button id="teile-links">+ Linkskurven-Set</button>
         <button id="teile-haarnadel">+ Haarnadel-Set</button>
         <button id="teile-dreissig">+ 30&deg;-Au&szlig;enkurven-Set</button>
+        <button id="teile-enge">+ Engstelle</button>
         <button id="teile-leer">Alles auf 0</button>
       </div>
       <div class="teile-liste" id="teile-liste"></div>

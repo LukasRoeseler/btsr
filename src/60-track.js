@@ -476,6 +476,11 @@
   // vorkommende Fall sind 120 Grad. Dazwischen ist viel Platz.
   const TRACK_SCHLUSS_CM = 15;
   const TRACK_SCHLUSS_GRAD = 12;
+  // Der Zufallsknopf verlangt MEHR als die Scan-Toleranz oben: 15 cm lassen eine sichtbare
+  // Luecke durch (eine fehlende Kachel sind 43 cm, also 8-12 cm sind schon ein Drittel davon).
+  // Eine selbst gebaute Strecke kann exakt schliessen (A == B, gemessen 0,00 cm) oder bei
+  // asymmetrisch knapp darueber - deshalb hier 3 cm, damit "geschlossen" auch so aussieht.
+  const TRACK_SCHLUSS_STRENG_CM = 3;
 
   function trackSchluss(pts) {
     if (!pts || pts.length < 3) return { closed: false, lueckeCm: null, winkel: null };
@@ -3400,8 +3405,12 @@
   // 4 Geraden, 1 Start; Haarnadel-Set links und rechts; 30-Grad-Aussenkurven 2 L, 2 R.
   const TEILE_PAKETE = {
     grund: [[TILE_TYPE.CURVE_RIGHT, 8], [TILE_TYPE.CURVE_LEFT, 2], [TILE_TYPE.STRAIGHT, 4], [TILE_TYPE.START, 1]],
+    // Spiegeldbild der Grundpackung: 8 links, 2 rechts, gleiche Geraden - und bewusst KEIN
+    // Start/Ziel, weil es das nur einmal gibt und die Grundpackung es schon liefert.
+    links: [[TILE_TYPE.CURVE_LEFT, 8], [TILE_TYPE.CURVE_RIGHT, 2], [TILE_TYPE.STRAIGHT, 4]],
     haarnadel: [[TILE_TYPE.HAIRPIN_LEFT, 1], [TILE_TYPE.HAIRPIN, 1]],
     dreissig: [[TILE_TYPE.WEIT_LEFT, 2], [TILE_TYPE.WEIT_RIGHT, 2]],
+    enge: [[TILE_TYPE.ENGE, 1]],
   };
   function teileBestand() {
     try {
@@ -3425,6 +3434,32 @@
       return { typ, hat, braucht: n, rest: hat === null ? null : hat - n };
     });
   }
+  // Symbol je Sorte fuer die "Meine Teile"-Liste. Dieselben Linien wie die Bildleiste im
+  // Editor (TRACK_PALETTE), damit das Teil dort und hier gleich aussieht; Start/Ziel fehlt
+  // in der Bildleiste und bekommt hier ein Zielflaggen-Band. Bewusst EIN Ort mehr als die
+  // Bildleiste, weil diese Liste auch Typen zeigt, die dort nicht anwaehlbar sind.
+  const TILE_ICON = {
+    [TILE_TYPE.START]: '<path d="M4 9 H20 M4 15 H20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'
+      + '<rect x="4" y="9" width="2" height="3" fill="currentColor"/><rect x="8" y="9" width="2" height="3" fill="currentColor"/>'
+      + '<rect x="12" y="9" width="2" height="3" fill="currentColor"/><rect x="16" y="9" width="2" height="3" fill="currentColor"/>'
+      + '<rect x="6" y="12" width="2" height="3" fill="currentColor"/><rect x="10" y="12" width="2" height="3" fill="currentColor"/>'
+      + '<rect x="14" y="12" width="2" height="3" fill="currentColor"/><rect x="18" y="12" width="2" height="3" fill="currentColor"/>',
+    [TILE_TYPE.STRAIGHT]: '<path d="M12 22 L12 2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
+    [TILE_TYPE.CURVE_LEFT]: '<path d="M18 22 L18 13 A7 7 0 0 0 11 6 L4 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
+    [TILE_TYPE.CURVE_RIGHT]: '<path d="M6 22 L6 13 A7 7 0 0 1 13 6 L20 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
+    [TILE_TYPE.HAIRPIN_LEFT]: '<path d="M16 22 L16 14 A5 5 0 0 0 6 14 L6 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'
+      + '<path d="M16 22 L16 19" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>',
+    [TILE_TYPE.HAIRPIN]: '<path d="M8 22 L8 14 A5 5 0 0 1 18 14 L18 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'
+      + '<path d="M8 22 L8 19" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>',
+    [TILE_TYPE.WEIT_LEFT]: '<path d="M15 22 L15 12 A20 20 0 0 0 9.5 3.2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
+    [TILE_TYPE.WEIT_RIGHT]: '<path d="M9 22 L9 12 A20 20 0 0 1 14.5 3.2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
+    [TILE_TYPE.KLEIN_LEFT]: '<path d="M16 22 L16 13 A7 7 0 0 0 12.2 6.8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
+    [TILE_TYPE.KLEIN_RIGHT]: '<path d="M8 22 L8 13 A7 7 0 0 1 11.8 6.8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
+    [TILE_TYPE.PIT]: '<path d="M8 22 L8 2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'
+      + '<path d="M16 20 L16 9 A5 5 0 0 1 21 4" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2.5" stroke-linecap="round"/>',
+    [TILE_TYPE.ENGE]: '<path d="M7 2 L7 8 L10 12 L10 22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
+      + '<path d="M17 2 L17 8 L14 12 L14 22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
+  };
   function teileZeichnen() {
     const host = $('teile-liste');
     if (!host) return;
@@ -3439,9 +3474,20 @@
       const name = t(TILE_LABEL[typ] || ('0x' + typ.toString(16)));
       z.setAttribute('aria-label', name);
       const wert = b[typ] === undefined || b[typ] === null ? 0 : +b[typ];
-      z.innerHTML = '<span class="teile-name"></span><span class="teile-zahl"></span>';
+      // Symbol links, Name in der Mitte, rechts Minus/Zahl/Plus - so aendert man den
+      // Bestand mit der Maus oder dem Finger und nicht nur mit dem D-Pad.
+      z.innerHTML = '<svg class="teile-ic" viewBox="0 0 24 24" aria-hidden="true">'
+          + (TILE_ICON[typ] || '') + '</svg>'
+          + '<span class="teile-name"></span>'
+          + '<span class="teile-steuer">'
+          + '<button class="teile-minus" type="button" aria-label="' + name + ' weniger">&#8722;</button>'
+          + '<span class="teile-zahl"></span>'
+          + '<button class="teile-plus" type="button" aria-label="' + name + ' mehr">+</button>'
+          + '</span>';
       z.querySelector('.teile-name').textContent = name;
       z.querySelector('.teile-zahl').textContent = wert;
+      z.querySelector('.teile-minus').onclick = (e) => { e.stopPropagation(); teileAendern(typ, -1); };
+      z.querySelector('.teile-plus').onclick = (e) => { e.stopPropagation(); teileAendern(typ, 1); };
       host.appendChild(z);
     }
   }
@@ -3459,8 +3505,10 @@
   }
   const teileKnopf = (id, fn) => { const el = $(id); if (el) el.onclick = fn; };
   teileKnopf('teile-grund', () => teilePaket('grund'));
+  teileKnopf('teile-links', () => teilePaket('links'));
   teileKnopf('teile-haarnadel', () => teilePaket('haarnadel'));
   teileKnopf('teile-dreissig', () => teilePaket('dreissig'));
+  teileKnopf('teile-enge', () => teilePaket('enge'));
   teileKnopf('teile-leer', () => { const n = {}; TEILE_SORTEN.forEach((x) => { n[x] = 0; }); teileSpeichern(n); });
   teileZeichnen();
 
@@ -3761,6 +3809,14 @@
   // Kreuzung der Mittellinie und kein Punkt naeher als 30 cm an einem nicht benachbarten
   // Abschnitt. Die Challenge-Strecken erfuellen beides ("kreuzungsfrei, Bahnen > 30 cm
   // auseinander") - die Pruefung oben gibt sie alle als gueltig aus.
+  // Ein Kandidat ist erst gut, wenn er STRENG schliesst (siehe TRACK_SCHLUSS_STRENG_CM) und
+  // kreuzungsfrei ist. Die eine Stelle, an der der Zufallsknopf eine Strecke annimmt.
+  function trackZufallPasst(tiles) {
+    if (!trackEndeNah(tiles)) return false;
+    const pts = trackCenterline(tiles);
+    const s = trackSchluss(pts);
+    return s.closed && s.lueckeCm <= TRACK_SCHLUSS_STRENG_CM && trackKreuzungsfrei(pts);
+  }
   function trackZufall() {
     const b = teileBestand();
     if (!b || !(Math.floor(+b[TILE_TYPE.START] || 0) > 0)) {
@@ -3810,9 +3866,7 @@
               ...B.map(t => ({ type: t })),
               ...Array(Math.max(0, m - 1)).fill(null).map(() => ({ type: TILE_TYPE.STRAIGHT })),
             ];
-            if (!trackEndeNah(tiles)) continue;
-            const pts = trackCenterline(tiles);
-            if (trackSchluss(pts).closed && trackKreuzungsfrei(pts)) {
+            if (trackZufallPasst(tiles)) {
               trackMerken();
               currentTrackTiles = tiles;
               trackSel = null;
@@ -3833,23 +3887,21 @@
                 ...A.map(t => ({ type: t })),
                 ...Array(m).fill(null).map(() => ({ type: TILE_TYPE.STRAIGHT })),
                 ...A.map(t => ({ type: t })),
-                ...Array(Math.max(0, m - 1)).fill(null).map(() => ({ type: TILE_TYPE.STRAIGHT })),
-              ];
-              if (!trackEndeNah(tiles)) continue;
-              const pts = trackCenterline(tiles);
-              if (trackSchluss(pts).closed && trackKreuzungsfrei(pts)) {
-                trackMerken();
-                currentTrackTiles = tiles;
-                trackSel = null;
-                trackRotationDeg = 0;
-                refreshTrackPreview();
-                showHudToast(t('Zufällige Strecke gebaut'));
-                return true;
-              }
+              ...Array(Math.max(0, m - 1)).fill(null).map(() => ({ type: TILE_TYPE.STRAIGHT })),
+            ];
+            if (trackZufallPasst(tiles)) {
+              trackMerken();
+              currentTrackTiles = tiles;
+              trackSel = null;
+              trackRotationDeg = 0;
+              refreshTrackPreview();
+              showHudToast(t('Zufällige Strecke gebaut'));
+              return true;
             }
           }
         }
       }
+    }
     }
     showHudToast(t('Zufall: Nicht genug Kurventeile für einen Rundkurs'));
     return false;
@@ -3949,7 +4001,7 @@
   }
   function trackEndeNah(tiles) {
     const e = trackEnde(tiles);
-    return Math.hypot(e.x, e.y) / TRACK_UNITS_PER_CM <= TRACK_SCHLUSS_CM * 2;
+    return Math.hypot(e.x, e.y) / TRACK_UNITS_PER_CM <= TRACK_SCHLUSS_STRENG_CM * 2;
   }
   // Kreuzt sich die Strecke, oder laufen zwei nicht benachbarte Abschnitte dichter als
   // 30 cm zusammen? Dann ueberlappt die Bahn und die Kandidaten-Strecke wird verworfen.
