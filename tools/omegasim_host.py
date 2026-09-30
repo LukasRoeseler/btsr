@@ -169,9 +169,9 @@ def rennen_starten(daten):
     if not isinstance(plan, dict):
         return {'ok': False, 'fehler': 'kein Plan'}
     try:
-        vorlauf = int(daten.get('vorlaufMs') or 8000)
+        vorlauf = int(daten.get('vorlaufMs') or 12000)
     except (TypeError, ValueError):
-        vorlauf = 8000
+        vorlauf = 12000
     vorlauf = max(6000, min(30000, vorlauf))
     with _lock:
         jetzt_ms = int(_jetzt() * 1000)

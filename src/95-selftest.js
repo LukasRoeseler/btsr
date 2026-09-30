@@ -6048,11 +6048,11 @@
     try {
       // 1. BEI 50% EXAKT DIE BISHERIGEN ZAHLEN.
       //
-      // BESTELLT (diese Runde): "ghosts etwas mehr abstand" - luecke/gap/range-Anker in
-      // ghostRennhaerteAnwenden() von 1,2/1,2/1,3 auf 1,5/1,5/1,625 angehoben, das
+      // BESTELLT (diese Runde): "Autos sollen mehr Abstand halten" - luecke/gap/range-Anker in
+      // ghostRennhaerteAnwenden() von 1,2/1,2/1,3 auf 1,5/1,5/1,65 angehoben, das
       // Verhaeltnis (RANGE > GAP_MIN) bleibt gleich. Diese Erwartung ist mitgezogen.
       OMEGA_TEST.ghostRennhaerteAnwenden(0.5);
-      const soll = { p: 0.45, arm: 900, luecke: 1.2, gap: 1.2, range: 1.3 };
+      const soll = { p: 0.45, arm: 900, luecke: 1.5, gap: 1.5, range: 1.65 };
       const ist50 = { p: OMEGA_TEST.attackPLesen(), arm: OMEGA_TEST.attackArmMsLesen(),
                       luecke: OMEGA_TEST.lueckeMinLesen(), gap: OMEGA_TEST.gapMinLesen(),
                       range: OMEGA_TEST.attackRangeLesen() };

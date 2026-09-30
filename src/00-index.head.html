@@ -2621,6 +2621,7 @@
      mobile view"): links Knoepfe und Info untereinander, rechts die Fahrerliste. Auf breiten
      Schirmen bleibt der bisherige eine Spaltenstapel (Formularzeile, dann Tabelle). */
   .mp-spalten { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px 16px; align-items: start; }
+  .mp-force { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
   .mp-spalte-rechts { min-width: 0; }
   @media (max-width: 900px) {
     .mp-spalten { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
@@ -7804,6 +7805,7 @@
             <button class="primary" id="mp-join">Mitmachen</button>
             <button id="mp-info-join" title="Ohne eigenes Auto: zeigt Strecke, Autos und Rangliste">Als Info-Screen <span class="wip-tag">experimentell</span></button>
             <button id="mp-rennen-alle">Rennen für alle starten <span class="wip-tag">experimentell</span></button>
+            <label class="small mp-force" title="Tempo, Handling, Beschleunigung, Schaden und Reifenverschleiss auf alle setzen (Controller, Tasten, Empfindlichkeit, Rumble und Sound bleiben unberührt)">Renneinstellungen erzwingen <input type="checkbox" id="mp-force-preset" checked></label>
             <button id="mp-leave" class="warn">Verlassen</button>
           </div>
           <div class="muted" id="mp-status" style="margin-top:8px">nicht verbunden</div>

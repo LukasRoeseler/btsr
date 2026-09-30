@@ -592,7 +592,7 @@
   // Uhrabgleich: jede Abfrage liefert die Host-Uhr (zeitMs); Versatz = zeitMs - Mitte der
   // Anfrage. Genommen wird die Probe mit dem kuerzesten Hin- und Rueckweg der letzten acht,
   // Wege ueber 300 ms zaehlen nicht.
-  const MP_VORLAUF_MS = 8000;
+  const MP_VORLAUF_MS = 12000;
   mp.proben = []; mp.offset = 0; mp.rennenId = null; mp.frageUmgehen = false;
   function mpUhrProbe(t0, t1, zeitMs) {
     if (!Number.isFinite(zeitMs)) return;
@@ -622,6 +622,14 @@
     chSetzen('race-flying', !!plan.fliegend);
     chSetzen('race-pit-required', String(plan.pit || 0));
     if (plan.tank) chSetzen('race-fuel-start', plan.tank);
+    // BESTELLT: "der Host kann die Renneinstellungen (Tempo, Handling, Beschleunigung,
+    // Schaden, Reifenverschleiss) auf alle erzwingen, wie es die Arcade/Pro-Presets bei den
+    // Challenges tun." Der Host schickt `preset` (Arcade/Pro ...) im Plan; die Mitglieder
+    // wenden ihn an. Controller-Optionen, Tastenbelegung, Empfindlichkeit, Rumble und Sound
+    // bleiben unberuehrt - der Preset betrifft nur die Abstimmung des Autos.
+    if (plan.preset && typeof applyPreset === 'function') {
+      try { applyPreset(plan.preset); } catch (e) { /* ohne Preset bleibt die eigene */ }
+    }
     showTab('race');
     startRaceCountdown(lokal, plan);
     showHudToast(t('Rennen für alle: Ampel kommt gleich'));
@@ -633,6 +641,14 @@
     const plan = { modus: raceMode, limit: raceLimit, wx: raceWxStart, wxChange: raceWxChange,
                    fliegend: raceFlying, pit: racePitRequired, tank: raceFuelStartL,
                    wetterPlan: wetterPlanBauen(), wind: { x: Math.cos(w), y: Math.sin(w) } };
+    // BESTELLT: "der Host erzwingt die Renneinstellungen auf allen." Wenn der Schalter an ist,
+    // schickt der Host seine eigene aktive Abstimmung (Arcade/Pro/...) als `preset` mit; die
+    // Mitglieder wenden sie beim Uebernehmen an (mpRennenUebernehmen).
+    if ($('mp-force-preset') && $('mp-force-preset').checked
+        && typeof window.__presetActive === 'function') {
+      const p = window.__presetActive();
+      if (p) plan.preset = p;
+    }
     try {
       const t0 = Date.now();
       const r = await fetch(mpUrl('/mp/race'), { method: 'POST', cache: 'no-store',
@@ -643,7 +659,8 @@
       if (!d.ok) throw new Error(d.fehler || 'abgelehnt');
       mpUhrProbe(t0, t1, d.zeitMs);
       mpRennenPruefen({ id: d.id, startAt: d.startAt, plan });
-      mpSay(t('Rennen für alle gestartet, die Ampel kommt in wenigen Sekunden.'));
+      const sek = Math.max(0, Math.round((d.startAt - mp.offset - Date.now()) / 1000));
+      mpSay(t('Rennen für alle: Ampel in ') + sek + ' s, wenn keiner widerruft.');
     } catch (e) {
       mpSay(t('Start für alle fehlgeschlagen') + ': ' + e.message, true);
     }
