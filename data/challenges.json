@@ -53,12 +53,33 @@
    "zeiten": []
   },
   "wa01-imolina|hotlap|pro": {
-   "anzahl": 2,
+   "anzahl": 3,
    "zeiten": [
+    {
+     "auto": "Alpha",
+     "fahrer": "Luuke2",
+     "geraet": "g8tpdtco9glbi",
+     "runden": 5,
+     "runden_ms": [
+      6814,
+      8863,
+      4771,
+      4639,
+      4724
+     ],
+     "zeit_ms": 4639,
+     "zeitpunkt": "2026-09-30T18:31:42.785Z"
+    },
     {
      "auto": "Alpha",
      "fahrer": "Luuke",
      "geraet": "g8tpdtco9glbi",
+     "runden": 3,
+     "runden_ms": [
+      6964,
+      5223,
+      4996
+     ],
      "zeit_ms": 4996,
      "zeitpunkt": "2026-09-30T17:33:01.889Z"
     },
@@ -66,6 +87,12 @@
      "auto": "Alpha",
      "fahrer": "Luuke",
      "geraet": "g8tpdtco9glbi",
+     "runden": 3,
+     "runden_ms": [
+      6964,
+      5223,
+      4996
+     ],
      "zeit_ms": 4996,
      "zeitpunkt": "2026-09-30T17:33:36.249Z"
     }
@@ -1296,5 +1323,5 @@
    "zeiten": []
   }
  },
- "stand": "2026-09-30T18:27:40Z"
+ "stand": "2026-09-30T23:02:46Z"
 }
