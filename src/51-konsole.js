@@ -608,6 +608,14 @@
     const rm = $('race-mode');
     const modus = rm.selectedOptions[0] ? rm.selectedOptions[0].textContent : '';
     $('fa-renn-titel').textContent = modus;
+    // Rennoptionen-Kachel wechselt mit dem Rennmodus das Bild (BESTELLT v0.8.53).
+    const rmBild = { practice: 'rennoptionen-practice', endurance: 'rennoptionen-endurance',
+                     qualifying: 'rennoptionen-qualifying', laps: 'rennoptionen-laps' }[rm.value];
+    const rb = $('fa-renn-bild');
+    if (rb && rmBild && rb.dataset.bild !== rmBild) {
+      rb.style.backgroundImage = 'url(img/' + rmBild + '.jpg)';
+      rb.dataset.bild = rmBild;
+    }
     const wx = $('race-wx-start');
     kZeilen($('fa-renn-info'), [
       // Freies Training laeuft ohne Ende: dort steht das Unendlich statt einer Minutenzahl.
