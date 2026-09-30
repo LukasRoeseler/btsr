@@ -3811,7 +3811,14 @@
   // auseinander") - die Pruefung oben gibt sie alle als gueltig aus.
   // Ein Kandidat ist erst gut, wenn er STRENG schliesst (siehe TRACK_SCHLUSS_STRENG_CM) und
   // kreuzungsfrei ist. Die eine Stelle, an der der Zufallsknopf eine Strecke annimmt.
+  // Der Zufallsknopf soll kein Mini-Oval bauen (SR3GR3 und sein Spiegelbild SL3GL3): nur
+  // drei Kurven, eine Gerade, drei Kurven - kurz, symmetrisch und langweilig.
+  function trackLangweilig(tiles) {
+    const c = trackToCode(tiles, 0);
+    return c === 'SR3GR3' || c === 'SL3GL3';
+  }
   function trackZufallPasst(tiles) {
+    if (trackLangweilig(tiles)) return false;
     if (!trackEndeNah(tiles)) return false;
     const pts = trackCenterline(tiles);
     const s = trackSchluss(pts);

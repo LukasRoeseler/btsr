@@ -346,8 +346,15 @@
   .home-legal-h { font-weight: 700; color: #f4f6fb; font-size: 13px; letter-spacing: .02em;
     margin-bottom: 6px; }
   .home-legal p { margin: 0 0 8px 0; }
-  .home-titel { text-align: center; padding: 18px 16px 4px; }
-  .home-titel-text { position: relative; display: inline-block; font-weight: 900;
+  /* Ein grosses, sehr dezent gehaltenes Omega hinter dem Schriftzug (BESTELLT). Es liegt
+     hinter dem Text (z-index 0, die Woerter kommen danach im DOM) und faellt nur auf, wenn
+     man hinsieht - kein Bild, ein Zeichen. */
+  .home-titel { position: relative; text-align: center; padding: 18px 16px 4px; }
+  .home-titel::before {
+    content: 'Ω'; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    font-size: clamp(120px, 34vw, 480px); font-weight: 900; line-height: 1;
+    color: rgba(244,246,251,.045); pointer-events: none; z-index: 0; }
+  .home-titel-text { position: relative; z-index: 1; display: inline-block; font-weight: 900;
     font-size: clamp(30px, 8vw, 72px); letter-spacing: .18em; color: #f4f6fb;
     text-shadow: 3px 0 0 var(--glitch-r), -3px 0 0 var(--glitch-c); }
   .home-titel-text::before, .home-titel-text::after {
@@ -558,12 +565,17 @@
   [hidden] { display: none !important; }
 
   /* ---- ANDROID-APP: Update-Hinweis und Info-Screen ------------------------------------ */
-  .app-update { max-width: 1052px; margin: 8px auto 0; padding: 10px 14px; box-sizing: border-box;
-    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  .app-update { max-width: 1052px; margin: 8px auto 0; padding: 7px 12px; box-sizing: border-box;
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
     background: rgba(61,220,132,.10); border-left: 3px solid var(--good); }
-  .app-update b { flex: 1 1 200px; }
-  .app-fortschritt { width: 100%; height: 6px; background: rgba(255,255,255,.12); }
-  .app-fortschritt > i { display: block; height: 100%; width: 0; background: var(--good); }
+  .app-update b { flex: 1 1 170px; font-size: 13.5px; line-height: 1.35; }
+  .app-update-aktion { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  /* Der Ladebalken liegt als Hintergrund im "Jetzt laden"-Knopf (BESTELLT): er braucht
+     keine eigene volle Zeile mehr, die den Titelbildschirm auseinanderzieht. */
+  .app-update-laden { position: relative; overflow: hidden; }
+  .app-update-balken { position: absolute; inset: 0; background: rgba(255,255,255,.13); }
+  .app-update-balken > i { display: block; height: 100%; width: 0; background: rgba(255,255,255,.4); }
+  .app-update-laden > span:last-child { position: relative; z-index: 1; }
   .mp-app { border-left: 3px solid var(--good); padding: 8px 12px; margin: 10px 0;
     background: rgba(61,220,132,.06); }
   .mp-app-adresse { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums;
@@ -3997,14 +4009,22 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
              stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
         <span>Installiere die App f&uuml;r Mehrspieler und Challenges</span></a>
-    <!-- Nur in der Android-App: eine neue Web-Fassung liegt bereit (siehe 97b-app.js). -->
+    <!-- Nur in der Android-App: eine neue Web-Fassung liegt bereit (siehe 97b-app.js).
+         Kompakt gehalten (BESTELLT): der Ladebalken liegt im Hintergrund des Laden-Knopfs
+         und es gibt einen Abbrechen-Knopf, damit die Box den Titelbildschirm nicht
+         auseinanderzieht. -->
     <div class="app-update" id="app-update" hidden>
       <b id="app-update-text">Update verf&uuml;gbar</b>
-      <button type="button" class="primary" id="app-update-laden">Jetzt laden</button>
-      <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
+      <div class="app-update-aktion">
+        <button type="button" class="primary app-update-laden" id="app-update-laden">
+          <span class="app-update-balken" id="app-update-balken" hidden><i></i></span>
+          <span id="app-update-laden-text">Jetzt laden</span>
+        </button>
+        <button type="button" id="app-update-abbrechen">Abbrechen</button>
+      </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.58</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.60</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -26830,7 +26850,14 @@
   // auseinander") - die Pruefung oben gibt sie alle als gueltig aus.
   // Ein Kandidat ist erst gut, wenn er STRENG schliesst (siehe TRACK_SCHLUSS_STRENG_CM) und
   // kreuzungsfrei ist. Die eine Stelle, an der der Zufallsknopf eine Strecke annimmt.
+  // Der Zufallsknopf soll kein Mini-Oval bauen (SR3GR3 und sein Spiegelbild SL3GL3): nur
+  // drei Kurven, eine Gerade, drei Kurven - kurz, symmetrisch und langweilig.
+  function trackLangweilig(tiles) {
+    const c = trackToCode(tiles, 0);
+    return c === 'SR3GR3' || c === 'SL3GL3';
+  }
   function trackZufallPasst(tiles) {
+    if (trackLangweilig(tiles)) return false;
     if (!trackEndeNah(tiles)) return false;
     const pts = trackCenterline(tiles);
     const s = trackSchluss(pts);
@@ -73582,11 +73609,11 @@
       angebot = r;
       if (r.apkNoetig) {
         $('app-update-text').textContent = t('Neue APK nötig für Fassung') + ' ' + r.version;
-        $('app-update-laden').textContent = t('APK holen');
+        $('app-update-laden-text').textContent = t('APK holen');
       } else {
         $('app-update-text').textContent = t('Update verfügbar') + ': ' + r.version
           + ' (' + mb(r.bytes) + ')';
-        $('app-update-laden').textContent = t('Jetzt laden');
+        $('app-update-laden-text').textContent = t('Jetzt laden');
       }
       box.hidden = false;
     }
@@ -73631,6 +73658,15 @@
           knopf.disabled = false;
           $('app-update-text').textContent = String(e && e.message || e);
         }
+      });
+    }
+    // Abbrechen: laufenden Download stoppen (auch aeltere APK meldet dann einen Fehler, der
+    // den Knopf freigibt) und die Box wieder einklappen.
+    if ($('app-update-abbrechen')) {
+      $('app-update-abbrechen').addEventListener('click', () => {
+        upd('abbrechen').catch(() => { /* aeltere APK ohne Plugin */ });
+        const box = $('app-update');
+        if (box) box.hidden = true;
       });
     }
 

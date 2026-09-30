@@ -78,11 +78,11 @@
       angebot = r;
       if (r.apkNoetig) {
         $('app-update-text').textContent = t('Neue APK nötig für Fassung') + ' ' + r.version;
-        $('app-update-laden').textContent = t('APK holen');
+        $('app-update-laden-text').textContent = t('APK holen');
       } else {
         $('app-update-text').textContent = t('Update verfügbar') + ': ' + r.version
           + ' (' + mb(r.bytes) + ')';
-        $('app-update-laden').textContent = t('Jetzt laden');
+        $('app-update-laden-text').textContent = t('Jetzt laden');
       }
       box.hidden = false;
     }
@@ -127,6 +127,15 @@
           knopf.disabled = false;
           $('app-update-text').textContent = String(e && e.message || e);
         }
+      });
+    }
+    // Abbrechen: laufenden Download stoppen (auch aeltere APK meldet dann einen Fehler, der
+    // den Knopf freigibt) und die Box wieder einklappen.
+    if ($('app-update-abbrechen')) {
+      $('app-update-abbrechen').addEventListener('click', () => {
+        upd('abbrechen').catch(() => { /* aeltere APK ohne Plugin */ });
+        const box = $('app-update');
+        if (box) box.hidden = true;
       });
     }
 
