@@ -3745,25 +3745,22 @@
 
   // ---- Zufaellige Strecke aus dem vorhandenen Bestand ---------------------------------
   // BESTELLT: "generates a random track given the available pieces (should only work if
-  // there are enough pieces)" und danach: "It works but it generates quite boring tracks.
-  // Make this more advanced."
+  // there are enough pieces)", dann "It works but it generates quite boring tracks. Make
+  // this more advanced." und zuletzt: "the track is not overlapping ... make it also have
+  // asymmetric tracks. I have a hairpin in my inventory but it is never using that."
   //
-  // DIE IDEE, und warum sie schliesst: `S + A + G^m + A + G^(m-1)` ist fuer JEDE Folge A,
-  // deren Drehungen sich zu +/-180 Grad addieren, ein geschlossener Rundkurs. Nach dem
-  // Startteil S dreht A um 180, dann G^m geradeaus, dann A nochmal um 180 (also 360
-  // insgesamt), und die beiden A sind - gleiche Drehung, entgegengesetzte Richtung - um
-  // 180 Grad gedrehte Kopien: die Verschiebung der zweiten A hebt die der ersten auf.
-  // G^(m-1) bringt die letzte Gerade auf die Startlinie zurueck. Die Geradenstuecke
-  // muessen also nicht gleich lang sein - die 40 Einheiten des Startteils und die
-  // (m-1)-Gerade am Ende heben sich gegenseitig auf.
+  // DIE IDEE, und warum sie schliesst: `S + A + G^m + B + G^(m-1)` ist geschlossen, wenn
+  // A und B beide auf +/-180 Grad drehen (zusammen 360). A == B ist der alte symmetrische
+  // "Rundkurs mit zwei gleichen Ecken". Fuer A != B wird B gesucht: es muss die
+  // Verschiebung von `S + A + G^m` zurueck auf die Startlinie heben. Nachgerechnet
+  // (Python-Simulation der echten trackCenterline) schliessen z. B. A = RRR, H, RRLRR und
+  // passende B; die Suche findet bei den meisten A nach ein paar Versuchen ein B. Weil A
+  // dabei nur EINMAL vorkommt, darf auch eine einzelne Haarnadel im Karton benutzt werden.
   //
-  // Das gilt fuer die SUMME der Drehungen, nicht fuer die Form: A darf also S-Biegungen
-  // (Gegenkurven, netto 0) und Geraden enthalten. Genau das macht die Strecke interessant.
-  // Ausserdem darf eine netto-0-Schikane W auf beide Geraden: `S + A + G^m + W + A +
-  // G^(m-1) + W` schliesst ebenso. Nachgerechnet (Python-Simulation der echten
-  // trackCenterline): A = RRR, LLL, RRLRR, RGRR, RRQQRR, GWRRKLRLR ... und W = RL, RRLL,
-  // RLRL, WQ, QW, RLLR, WQQW ... schliessen alle mit luecke=0 und winkel=0. Nur Folgen,
-  // die NICHT auf +/-180 (A) bzw. 0 (W) kommen, schliessen nicht.
+  // Damit die Strecke NICHT ueberlappt, wird jede Kandidaten-Strecke geprueft: keine
+  // Kreuzung der Mittellinie und kein Punkt naeher als 30 cm an einem nicht benachbarten
+  // Abschnitt. Die Challenge-Strecken erfuellen beides ("kreuzungsfrei, Bahnen > 30 cm
+  // auseinander") - die Pruefung oben gibt sie alle als gueltig aus.
   function trackZufall() {
     const b = teileBestand();
     if (!b || !(Math.floor(+b[TILE_TYPE.START] || 0) > 0)) {
@@ -3775,127 +3772,219 @@
       showHudToast(t('Zufall: Nicht genug Geraden'));
       return false;
     }
+    const kurven = [TILE_TYPE.CURVE_RIGHT, TILE_TYPE.CURVE_LEFT, TILE_TYPE.WEIT_RIGHT, TILE_TYPE.WEIT_LEFT,
+                    TILE_TYPE.KLEIN_RIGHT, TILE_TYPE.KLEIN_LEFT, TILE_TYPE.HAIRPIN, TILE_TYPE.HAIRPIN_LEFT];
     // Rechts- oder linkslaufender Kurs, zufaellig - aber wenn die eine Richtung nicht
     // genug Teile hat (z. B. nur Rechtskurven im Karton), versucht es die andere.
     const richtungen = Math.random() < 0.5 ? [1, -1] : [-1, 1];
     for (const dir of richtungen) {
-      const A = trackZufallHalbe(dir, hat);
-      if (!A) continue;
-      const g = hat(TILE_TYPE.STRAIGHT);
-      const gA = A.filter(t => t === TILE_TYPE.STRAIGHT).length;
-      // Erst mit Schikane auf den Geraden, dann ohne - je nachdem, was der Bestand hergibt.
-      for (const mitSchikane of [true, false]) {
-        const W = mitSchikane ? trackZufallChicane(hat, A) : null;
-        const gW = W ? W.filter(t => t === TILE_TYPE.STRAIGHT).length : 0;
-        if (2 * gA + 2 * gW + 1 > g) continue;
-        const maxM = Math.floor((g - 2 * gA - 2 * gW + 1) / 2);
-        const m = 1 + Math.floor(Math.random() * maxM);
-        const tiles = [
-          { type: TILE_TYPE.START },
-          ...A.map(typ => ({ type: typ })),
-          ...Array(m).fill(null).map(() => ({ type: TILE_TYPE.STRAIGHT })),
-          ...(W ? W.map(typ => ({ type: typ })) : []),
-          ...A.map(typ => ({ type: typ })),
-          ...Array(Math.max(0, m - 1)).fill(null).map(() => ({ type: TILE_TYPE.STRAIGHT })),
-          ...(W ? W.map(typ => ({ type: typ })) : []),
-        ];
-        // Sicherheitsnetz: die Konstruktion schliesst nachgerechnet immer; wenn nicht, soll
-        // der Knopf das sagen statt eine offene Strecke in den Editor zu legen.
-        if (!trackSchluss(trackCenterline(tiles)).closed) continue;
-        trackMerken();
-        currentTrackTiles = tiles;
-        trackSel = null;
-        trackRotationDeg = 0;
-        refreshTrackPreview();
-        showHudToast(t('Zufällige Strecke gebaut'));
-        return true;
+      for (let versuch = 0; versuch < 220; versuch++) {
+        // A: netto dir*180, reich (S-Biegungen, Geraden). Das Budget erlaubt auch
+        // Einzelteile (max 1 der Haelfte bzw. 1 Haarnadel), damit eine einzelne Haarnadel
+        // in A stehen kann - im symmetrischen Fall braeuchte sie sonst zwei.
+        const aMax = {};
+        for (const t of kurven) aMax[t] = hat(t) > 0 ? Math.max(1, Math.floor(hat(t) / 2)) : 0;
+        aMax[TILE_TYPE.HAIRPIN] = Math.min(1, hat(TILE_TYPE.HAIRPIN));
+        aMax[TILE_TYPE.HAIRPIN_LEFT] = Math.min(1, hat(TILE_TYPE.HAIRPIN_LEFT));
+        aMax[TILE_TYPE.STRAIGHT] = Math.floor(hat(TILE_TYPE.STRAIGHT) / 2);
+        const A = trackZufallHalbe(dir, aMax);
+        if (!A || trackDrehsumme(A) !== dir * 180) continue;
+        const g = hat(TILE_TYPE.STRAIGHT);
+        const gA = A.filter(t => t === TILE_TYPE.STRAIGHT).length;
+        // Restbestand fuer B (A steht im asymmetrischen Fall nur EINMAL).
+        const rem = {};
+        for (const t of kurven) rem[t] = Math.max(0, hat(t) - A.filter(x => x === t).length);
+        rem[TILE_TYPE.STRAIGHT] = Math.max(0, g - gA);
+        // Asymmetrisch: suche ein ANDERES B (netto dir*180), das schliesst und nicht ueberlappt.
+        for (let k = 0; k < 200; k++) {
+          const B = trackZufallHalbe(dir, rem);
+          if (!B || B === A || trackDrehsumme(B) !== dir * 180) continue;
+          const gB = B.filter(t => t === TILE_TYPE.STRAIGHT).length;
+          const maxM = Math.floor((g - gA - gB + 1) / 2);
+          if (maxM < 1) continue;
+          for (const m of trackMischung(maxM)) {
+            const tiles = [
+              { type: TILE_TYPE.START },
+              ...A.map(t => ({ type: t })),
+              ...Array(m).fill(null).map(() => ({ type: TILE_TYPE.STRAIGHT })),
+              ...B.map(t => ({ type: t })),
+              ...Array(Math.max(0, m - 1)).fill(null).map(() => ({ type: TILE_TYPE.STRAIGHT })),
+            ];
+            if (!trackEndeNah(tiles)) continue;
+            const pts = trackCenterline(tiles);
+            if (trackSchluss(pts).closed && trackKreuzungsfrei(pts)) {
+              trackMerken();
+              currentTrackTiles = tiles;
+              trackSel = null;
+              trackRotationDeg = 0;
+              refreshTrackPreview();
+              showHudToast(t('Zufällige Strecke gebaut'));
+              return true;
+            }
+          }
+        }
+        // Symmetrisch (A == B) als Rueckfall: A steht dann ZWEIMAL, braucht also das Doppelte.
+        if (kurven.concat([TILE_TYPE.STRAIGHT]).every(t => 2 * A.filter(x => x === t).length <= hat(t))) {
+          const maxM = Math.floor((g - 2 * gA + 1) / 2);
+          if (maxM >= 1) {
+            for (const m of trackMischung(maxM)) {
+              const tiles = [
+                { type: TILE_TYPE.START },
+                ...A.map(t => ({ type: t })),
+                ...Array(m).fill(null).map(() => ({ type: TILE_TYPE.STRAIGHT })),
+                ...A.map(t => ({ type: t })),
+                ...Array(Math.max(0, m - 1)).fill(null).map(() => ({ type: TILE_TYPE.STRAIGHT })),
+              ];
+              if (!trackEndeNah(tiles)) continue;
+              const pts = trackCenterline(tiles);
+              if (trackSchluss(pts).closed && trackKreuzungsfrei(pts)) {
+                trackMerken();
+                currentTrackTiles = tiles;
+                trackSel = null;
+                trackRotationDeg = 0;
+                refreshTrackPreview();
+                showHudToast(t('Zufällige Strecke gebaut'));
+                return true;
+              }
+            }
+          }
+        }
       }
     }
     showHudToast(t('Zufall: Nicht genug Kurventeile für einen Rundkurs'));
     return false;
   }
-  // Die "halbe" Runde A: eine zufaellige Folge, deren Drehungen sich zu dir*180 addieren.
-  // Sie darf S-Biegungen (Gegenkurven) und Geraden enthalten - nur die SUMME muss stimmen.
-  function trackZufallHalbe(dir, hat) {
-    const target = dir * 180;
-    const sameSign = dir > 0
-      ? [[TILE_TYPE.CURVE_RIGHT, 60], [TILE_TYPE.WEIT_RIGHT, 30], [TILE_TYPE.KLEIN_RIGHT, 30], [TILE_TYPE.HAIRPIN, 180]]
-      : [[TILE_TYPE.CURVE_LEFT, -60], [TILE_TYPE.WEIT_LEFT, -30], [TILE_TYPE.KLEIN_LEFT, -30], [TILE_TYPE.HAIRPIN_LEFT, -180]];
-    const opp = dir > 0 ? [TILE_TYPE.CURVE_LEFT, TILE_TYPE.WEIT_LEFT, TILE_TYPE.KLEIN_LEFT]
-                        : [TILE_TYPE.CURVE_RIGHT, TILE_TYPE.WEIT_RIGHT, TILE_TYPE.KLEIN_RIGHT];
-    // Jede Kachel in A erscheint ZWEIMAL (A ... A), also hoechstens die Haelfte des Bestands.
-    const aMax = {};
-    for (const [t] of sameSign) aMax[t] = Math.floor(hat(t) / 2);
-    for (const t of opp) aMax[t] = Math.floor(hat(t) / 2);
-    aMax[TILE_TYPE.STRAIGHT] = Math.floor(hat(TILE_TYPE.STRAIGHT) / 2);
-    const aUsed = {};
-    const use = (t) => { aUsed[t] = (aUsed[t] || 0) + 1; return aUsed[t] <= aMax[t]; };
-    const unuse = (t) => { aUsed[t]--; };
+  // Eine zufaellige Folge, deren Drehungen sich zu dir*180 addieren. Sie darf S-Biegungen
+  // (Gegenkurven, netto 0) und Geraden enthalten - nur die SUMME muss stimmen. maxCount
+  // begrenzt je Sorte, wie viele Teile verbraucht werden duerfen.
+  function trackZufallHalbe(dir, maxCount) {
+    const same = dir > 0
+      ? [TILE_TYPE.CURVE_RIGHT, TILE_TYPE.WEIT_RIGHT, TILE_TYPE.KLEIN_RIGHT, TILE_TYPE.HAIRPIN]
+      : [TILE_TYPE.CURVE_LEFT, TILE_TYPE.WEIT_LEFT, TILE_TYPE.KLEIN_LEFT, TILE_TYPE.HAIRPIN_LEFT];
+    const wiggles = dir > 0
+      ? [[TILE_TYPE.CURVE_LEFT, TILE_TYPE.CURVE_RIGHT], [TILE_TYPE.WEIT_LEFT, TILE_TYPE.WEIT_RIGHT], [TILE_TYPE.KLEIN_LEFT, TILE_TYPE.KLEIN_RIGHT]]
+      : [[TILE_TYPE.CURVE_RIGHT, TILE_TYPE.CURVE_LEFT], [TILE_TYPE.WEIT_RIGHT, TILE_TYPE.WEIT_LEFT], [TILE_TYPE.KLEIN_RIGHT, TILE_TYPE.KLEIN_LEFT]];
+    const used = {};
+    const take = (t) => { if ((used[t] || 0) >= (maxCount[t] || 0)) return false; used[t] = (used[t] || 0) + 1; return true; };
+    const untake = (t) => { used[t]--; };
     const A = [];
     function bau(rem) {
       if (rem === 0) return true;
       if (Math.abs(rem) < 30) return false;
       const opts = [];
-      for (const [t, turn] of sameSign) {
-        if ((aUsed[t] || 0) < aMax[t] && Math.sign(turn) === Math.sign(rem) && Math.abs(turn) <= Math.abs(rem)) opts.push([t, turn]);
+      for (const t of same) {
+        const tw = tileTurnDeg(t);
+        if ((used[t] || 0) < (maxCount[t] || 0) && Math.sign(tw) === Math.sign(rem) && Math.abs(tw) <= Math.abs(rem)) opts.push(t);
       }
       for (let i = opts.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [opts[i], opts[j]] = [opts[j], opts[i]];
       }
-      for (const [t, turn] of opts) {
-        use(t); A.push(t);
-        if (bau(rem - turn)) return true;
-        A.pop(); unuse(t);
+      for (const t of opts) {
+        take(t); A.push(t);
+        if (bau(rem - tileTurnDeg(t))) return true;
+        A.pop(); untake(t);
       }
       return false;
     }
-    if (!bau(target)) return null;
-    // S-Biegungen: ein Paar aus Gegen- und Gleichkurve (netto 0), eingefuegt in die Ecke.
-    const wiggles = dir > 0
-      ? [[TILE_TYPE.CURVE_LEFT, TILE_TYPE.CURVE_RIGHT], [TILE_TYPE.WEIT_LEFT, TILE_TYPE.WEIT_RIGHT], [TILE_TYPE.KLEIN_LEFT, TILE_TYPE.KLEIN_RIGHT]]
-      : [[TILE_TYPE.CURVE_RIGHT, TILE_TYPE.CURVE_LEFT], [TILE_TYPE.WEIT_RIGHT, TILE_TYPE.WEIT_LEFT], [TILE_TYPE.KLEIN_RIGHT, TILE_TYPE.KLEIN_LEFT]];
-    const nw = 1 + Math.floor(Math.random() * 2);   // mindestens eine S-Biegung
+    if (!bau(dir * 180)) return null;
+    // S-Biegungen: Paar aus Gegen- und Gleichkurve (netto 0), eingefuegt.
+    const nw = Math.floor(Math.random() * 3);
     for (let k = 0; k < nw; k++) {
-      const cand = wiggles.filter(([o, s]) => (aUsed[o] || 0) < aMax[o] && (aUsed[s] || 0) < aMax[s]);
+      const cand = wiggles.filter(([o, s]) => (used[o] || 0) < (maxCount[o] || 0) && (used[s] || 0) < (maxCount[s] || 0));
       if (!cand.length) break;
       const [o, s] = cand[Math.floor(Math.random() * cand.length)];
       const pos = Math.floor(Math.random() * (A.length + 1));
-      use(o); use(s); A.splice(pos, 0, o, s);
+      take(o); take(s); A.splice(pos, 0, o, s);
     }
     // gelegentlich eine Gerade in die Ecke (wie "RGRR" bei den Challenge-Strecken).
-    if (Math.random() < 0.3 && (aUsed[TILE_TYPE.STRAIGHT] || 0) < aMax[TILE_TYPE.STRAIGHT]) {
+    if (Math.random() < 0.3 && (used[TILE_TYPE.STRAIGHT] || 0) < (maxCount[TILE_TYPE.STRAIGHT] || 0)) {
       const pos = Math.floor(Math.random() * (A.length + 1));
-      use(TILE_TYPE.STRAIGHT); A.splice(pos, 0, TILE_TYPE.STRAIGHT);
+      take(TILE_TYPE.STRAIGHT); A.splice(pos, 0, TILE_TYPE.STRAIGHT);
     }
     return A;
   }
-  // W: eine Schikane (netto 0) fuer die Geraden - oder null, wenn der Bestand es nicht hergibt.
-  function trackZufallChicane(hat, A) {
-    const usedA = {};
-    for (const t of A) usedA[t] = (usedA[t] || 0) + 1;
-    const wMax = {};
-    for (const t of [TILE_TYPE.CURVE_RIGHT, TILE_TYPE.CURVE_LEFT, TILE_TYPE.WEIT_RIGHT, TILE_TYPE.WEIT_LEFT, TILE_TYPE.KLEIN_RIGHT, TILE_TYPE.KLEIN_LEFT]) {
-      wMax[t] = Math.floor((hat(t) - 2 * (usedA[t] || 0)) / 2);
-    }
-    const opts = [
-      [TILE_TYPE.CURVE_RIGHT, TILE_TYPE.CURVE_LEFT],
-      [TILE_TYPE.WEIT_RIGHT, TILE_TYPE.WEIT_LEFT],
-      [TILE_TYPE.KLEIN_RIGHT, TILE_TYPE.KLEIN_LEFT],
-      [TILE_TYPE.CURVE_RIGHT, TILE_TYPE.CURVE_RIGHT, TILE_TYPE.CURVE_LEFT, TILE_TYPE.CURVE_LEFT],
-      [TILE_TYPE.WEIT_RIGHT, TILE_TYPE.KLEIN_LEFT],
-      [TILE_TYPE.KLEIN_RIGHT, TILE_TYPE.WEIT_LEFT],
-    ];
-    for (let i = opts.length - 1; i > 0; i--) {
+  // Summe der Drehungen einer Kachelfolge.
+  function trackDrehsumme(types) {
+    return types.reduce((s, t) => s + tileTurnDeg(t), 0);
+  }
+  // 1..n in zufaelliger Reihenfolge (fuer die Geradenlaenge m).
+  function trackMischung(n) {
+    const a = Array.from({ length: n }, (_, i) => i + 1);
+    for (let i = a.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [opts[i], opts[j]] = [opts[j], opts[i]];
+      [a[i], a[j]] = [a[j], a[i]];
     }
-    for (const o of opts) {
-      const cnt = {};
-      for (const t of o) cnt[t] = (cnt[t] || 0) + 1;
-      if (Object.entries(cnt).every(([t, c]) => (wMax[t] || 0) >= c)) return o.slice();
+    return a;
+  }
+  // Nur der Endpunkt der Strecke - billig, ohne die 14 Abtastungen je Kachel. Wird als
+  // Vorfilter genutzt (doppelte Toleranz), damit nicht jede Kandidaten-Strecke die teure
+  // trackCenterline rechnen muss. Autoritativ bleibt trackSchluss(trackCenterline(...)).
+  function trackEnde(tiles) {
+    let x = 0, y = 0, heading = 0;
+    for (const t of tiles) {
+      if (tileIsCurve(t.type)) {
+        if (t.type === TILE_TYPE.HAIRPIN || t.type === TILE_TYPE.HAIRPIN_LEFT) {
+          const rad = heading * Math.PI / 180;
+          x += Math.sin(rad) * TRACK_HAIRPIN_LEAD;
+          y -= Math.cos(rad) * TRACK_HAIRPIN_LEAD;
+        }
+        const tw = tileTurnDeg(t.type);
+        const r = tileRadius(t.type);
+        const rad = heading * Math.PI / 180;
+        const sgn = Math.sign(tw);
+        const cx = x + Math.cos(rad) * r * sgn;
+        const cy = y + Math.sin(rad) * r * sgn;
+        const a0 = Math.atan2(y - cy, x - cx);
+        const a = a0 + tw * Math.PI / 180;
+        x = cx + Math.cos(a) * r; y = cy + Math.sin(a) * r;
+        heading += tw;
+      } else {
+        const len = t.type === TILE_TYPE.PIT ? TRACK_STEP * 2 : TRACK_STEP;
+        const rad = heading * Math.PI / 180;
+        x += Math.sin(rad) * len; y -= Math.cos(rad) * len;
+      }
     }
-    return null;
+    return { x, y };
+  }
+  function trackEndeNah(tiles) {
+    const e = trackEnde(tiles);
+    return Math.hypot(e.x, e.y) / TRACK_UNITS_PER_CM <= TRACK_SCHLUSS_CM * 2;
+  }
+  // Kreuzt sich die Strecke, oder laufen zwei nicht benachbarte Abschnitte dichter als
+  // 30 cm zusammen? Dann ueberlappt die Bahn und die Kandidaten-Strecke wird verworfen.
+  function trackKreuzungsfrei(pts, minCm, gap) {
+    const min = minCm || 30, gapS = gap || 40;
+    const m = pts.length;
+    if (m < 6) return true;
+    // Kreuzung: zwei nicht benachbarte Segmente schneiden sich.
+    for (let i = 0; i < m; i++) {
+      const i1 = (i + 1) % m;
+      for (let j = i + 2; j < m; j++) {
+        if (i === 0 && j === m - 1) continue;
+        const j1 = (j + 1) % m;
+        if (segKreuz(pts[i], pts[i1], pts[j], pts[j1])) return false;
+      }
+    }
+    // Abstand: zwei nicht benachbarte Punkte naeher als 30 cm.
+    for (let i = 0; i < m; i++) {
+      for (let j = i + 1; j < m; j++) {
+        const arc = Math.min(j - i, m - (j - i));
+        if (arc < gapS) continue;
+        const d = Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y) / TRACK_UNITS_PER_CM;
+        if (d < min) return false;
+      }
+    }
+    return true;
+  }
+  function segKreuz(a, b, c, d) {
+    const d1x = b.x - a.x, d1y = b.y - a.y;
+    const d2x = d.x - c.x, d2y = d.y - c.y;
+    const den = d1x * d2y - d1y * d2x;
+    if (Math.abs(den) < 1e-9) return false;
+    const t = ((c.x - a.x) * d2y - (c.y - a.y) * d2x) / den;
+    const u = ((c.x - a.x) * d1y - (c.y - a.y) * d1x) / den;
+    return t > 0 && t < 1 && u > 0 && u < 1;
   }
   $('track-random').onclick = () => trackZufall();
 
