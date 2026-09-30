@@ -823,7 +823,7 @@
       const opt = o || {};
       const merkGarage = garage.slice();
       const vorher = { zwei: zweiSpieler, p1: playerCar, p2: playerCar2,
-                       dmg: damage, an: crashDetectionEnabled,
+                       dmg: damage, an: crashDetectionEnabled, cs: crashStationarySafe,
                        schwelle: crashThreshold };
       const L1 = crashLageVon(1), L2 = crashLageVon(2);
       const merkL = { a: { ...L1 }, b: { ...L2 } };
@@ -833,6 +833,7 @@
       try {
         Date.now = () => uhr;
         crashDetectionEnabled = true;
+        crashStationarySafe = false;
         damage = 0;
         this.schadenZweiSetzen(0, false, false);
         for (const L of [L1, L2]) { L.avg1 = null; L.avg3 = null; L.letzter = 0; L.gnadeBis = 0; }
@@ -907,6 +908,7 @@
         playerCar2 = vorher.p2;
         damage = vorher.dmg;
         crashDetectionEnabled = vorher.an;
+        crashStationarySafe = vorher.cs;
         crashThreshold = vorher.schwelle;
         Object.assign(L1, merkL.a);
         Object.assign(L2, merkL.b);

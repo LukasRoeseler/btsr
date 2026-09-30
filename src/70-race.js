@@ -3955,6 +3955,10 @@
   let crashThreshold = 40;
   const CRASH_ROLLING_ALPHA = 0.15;
   const CRASH_REFRACTORY_MS = 1000; // avoid re-triggering repeatedly off one jolt
+  // Anzeige-km/h, unter denen ein Auto als "stehend" gilt und (mit dem Schalter) keinen
+  // Schaden nimmt. Dieselbe Schwelle, mit der crashEnd() einen stehenden Einschlag hinten
+  // einordnet; dort ist es 12, hier dieselbe Grenze fuer "nicht in Fahrt".
+  const CRASH_STATIONARY_KMH = 12;
   // ---- 1,0 %/s, UND DAS IST GEMESSEN -----------------------------------------------
   //
   // BESTELLT: "Tank und Schaden standardmaessig einschalten. Tankverbrauch wieder etwas
@@ -4020,6 +4024,14 @@
     if ($('setting-crash-count')) {
       $('setting-crash-count').disabled = !crashDetectionEnabled;
     }
+  }
+  // KEIN SCHADEN IM STAND (BESTELLT, ab Werk AN): solange das Auto nicht faehrt (0 km/h),
+  // zaehlt kein Stoss als Crash - man kann es aufheben, ohne dass es simulierten Schaden
+  // nimmt. Genau die Hand, die das stehende Auto hochhebt, erzeugt auf den Bytes 1 und 3
+  // dieselbe Abweichung wie ein Aufprall. Ab Werk AN, weil das die haeufigste Beschwerde war.
+  let crashStationarySafe = true;
+  if ($('setting-crash-stationary')) {
+    crashStationarySafe = $('setting-crash-stationary').checked;
   }
   // Total time (s) to repair 100% damage down to 0, non-linear: the schedule is fixed
   // proportions of that total (1/10, 2/10, 3/10, 4/10 for the four 25%-damage quarters,
@@ -4092,11 +4104,24 @@
     if (now < L.gnadeBis) return;
 
     if (dev > crashThreshold && now - L.letzter > CRASH_REFRACTORY_MS) {
+      // KEIN SCHADEN IM STAND: ein stehendes Auto (0 km/h) bekommt keinen Crash angerechnet.
+      // Die Hand, die es aufhebt, erzeugt auf den Bytes 1 und 3 genau die Abweichung, die
+      // diese Funktion sonst als Aufprall wertet - nur dass das Auto dabei eben nicht faehrt.
+      if (crashStationarySafe && stationaer(wer)) return;
       L.letzter = now;
       // Der Rundenzaehler der Ereignisse gehoert dem Rennen, und das Rennen faehrt Auto 1.
       if (wer !== 2) lapEventAkku.crash += 1;
       registerCrash(wer);
     }
+  }
+
+  // Ist das Auto (noch) nicht in Fahrt? Ab Werk gilt: wer steht, wird nicht beschadigt.
+  // Die gleiche Schwelle, mit der crashEnd() einen stehenden Einschlag hinten einordnet.
+  function stationaer(wer) {
+    const motor = (wer === 2 ? physEngine2 : physEngine);
+    const st = motor && motor.state ? motor.state : null;
+    if (!st) return true;
+    return Math.abs(st.speedKmh) * REAL_SCALE < CRASH_STATIONARY_KMH;
   }
 
   // Front or rear, decided from the gear and the speed rather than from a sensor byte.

@@ -12925,6 +12925,7 @@
       ['setting-autoshift', () => physEngine.config.autoShift],
       ['setting-battery-comp', () => batteryCompEnabled],
       ['setting-crash-damage', () => crashDetectionEnabled],
+      ['setting-crash-stationary', () => crashStationarySafe],
       ['setting-offtrack', () => offtrackEffekt],
       ['setting-tyre-blankets', () => physEngine.config.tyreBlankets],
       ['setting-vibration', () => rumbleOn],
@@ -15366,10 +15367,12 @@
     const L = OMEGA_TEST.crashLage ? OMEGA_TEST.crashLage(1) : null;
     const gemerkt = { sp: playerCar, dmg: damage,
                       an: crashDetectionEnabled,
+                      cs: crashStationarySafe,
                       a1: L && L.avg1, a3: L && L.avg3, lt: L && L.letzter,
                       gb: L && L.gnadeBis };
     try {
       crashDetectionEnabled = true;
+      crashStationarySafe = false;
       if (L) { L.avg1 = null; L.avg3 = null; L.letzter = 0; L.gnadeBis = 0; }
       damage = 0;
       const attrappe = { device: { id: 'st-crash', name: 'Pruefwagen' }, role: 'player',
@@ -15394,6 +15397,67 @@
     } finally {
       playerCar = gemerkt.sp; damage = gemerkt.dmg;
       crashDetectionEnabled = gemerkt.an;
+      crashStationarySafe = gemerkt.cs;
+      if (L) { L.avg1 = gemerkt.a1; L.avg3 = gemerkt.a3; L.gnadeBis = gemerkt.gb; }
+      if (L) L.letzter = gemerkt.lt;
+      updateDamageFuelUI();
+    }
+  });
+
+  // ---- Kein Schaden, solange das Auto steht (0 km/h) ----
+  //
+  // BESTELLT: "das Auto soll keinen Schaden nehmen, wenn es nicht faehrt (0 km/h), damit
+  // ich es aufheben kann." Die Hand, die ein stehendes Auto hochhebt, erzeugt auf den Bytes
+  // 1 und 3 dieselbe Abweichung wie ein Aufprall - nur dass das Auto dabei eben steht.
+  // Geprueft wird beides: stehend + Schalter an => kein Schaden, und fahrend + Schalter an
+  // => doch Schaden (der Schalter schaltet das Schadensmodell also nicht global aus).
+  stAdd('Kein Schaden, solange das Auto steht (0 km/h)', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.feedNotify) {
+      return { skip: true, mass: 'feedNotify nicht vorhanden' };
+    }
+    const L = OMEGA_TEST.crashLage ? OMEGA_TEST.crashLage(1) : null;
+    const gemerkt = { sp: playerCar, dmg: damage, an: crashDetectionEnabled,
+                      cs: crashStationarySafe, v: physEngine.state.speedKmh,
+                      a1: L && L.avg1, a3: L && L.avg3, lt: L && L.letzter,
+                      gb: L && L.gnadeBis };
+    const echtNow = Date.now;
+    let uhr = 500000;
+    try {
+      Date.now = () => uhr;
+      crashDetectionEnabled = true;
+      crashStationarySafe = true;
+      if (L) { L.avg1 = null; L.avg3 = null; L.letzter = 0; L.gnadeBis = 0; }
+      damage = 0;
+      physEngine.state.speedKmh = 0;
+      const attrappe = { device: { id: 'st-stand', name: 'Pruefwagen' }, role: 'player',
+                         rx: null, tx: null, tileCode: 0xff, tileCount: null,
+                         lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null };
+      playerCar = attrappe;
+      const paket = (b1, b3) => {
+        const a = new Array(19).fill(0);
+        a[1] = b1 & 0xff; a[3] = b3 & 0xff; a[14] = 0x22;
+        return a;
+      };
+      const ruhigStoss = (v) => {
+        if (L) { L.avg1 = null; L.avg3 = null; L.letzter = 0; L.gnadeBis = 0; }
+        for (let i = 0; i < 12; i++) { uhr += 45; OMEGA_TEST.feedNotify(paket(4, 2), { car: attrappe }); }
+        uhr += 2000;   // ueber Sperr- und Gnadenzeit hinaus
+        OMEGA_TEST.feedNotify(paket(100, 90), { car: attrappe });
+        return damage;
+      };
+      // Stehend: der Stoss darf KEINEN Schaden geben.
+      const imStand = ruhigStoss();
+      // Fahrend: derselbe Stoss MUSS Schaden geben - der Schalter ist nicht global aus.
+      physEngine.state.speedKmh = 180 / REAL_SCALE;
+      const inFahrt = ruhigStoss();
+      return { ok: imStand === 0 && inFahrt > 0,
+               mass: 'im Stand ' + imStand.toFixed(1) + ' %, in Fahrt '
+                     + inFahrt.toFixed(1) + ' % Schaden' };
+    } finally {
+      Date.now = echtNow;
+      playerCar = gemerkt.sp; damage = gemerkt.dmg;
+      crashDetectionEnabled = gemerkt.an; crashStationarySafe = gemerkt.cs;
+      physEngine.state.speedKmh = gemerkt.v;
       if (L) { L.avg1 = gemerkt.a1; L.avg3 = gemerkt.a3; L.gnadeBis = gemerkt.gb; }
       if (L) L.letzter = gemerkt.lt;
       updateDamageFuelUI();

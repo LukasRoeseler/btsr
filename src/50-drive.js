@@ -1399,6 +1399,13 @@
     log('Schadensmodell ' + (e.target.checked ? 'an' : 'aus') + '.', 'info');
   });
 
+  // "Kein Schaden im Stand": ab Werk AN. Der Wert wird beim Laden neben der Deklaration in
+  // 70-race.js gelesen; dieser Listener laeuft nur auf eine Nutzergeste.
+  $('setting-crash-stationary').addEventListener('change', (e) => {
+    crashStationarySafe = e.target.checked;
+    log('Schaden im Stand ' + (e.target.checked ? 'aus' : 'an') + '.', 'info');
+  });
+
   $('setting-repair-time').addEventListener('input', (e) => {
     pitFullRepairS = parseInt(e.target.value, 10);
     $('setting-repair-time-val').textContent = pitFullRepairS + ' s';

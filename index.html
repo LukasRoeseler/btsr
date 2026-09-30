@@ -3890,7 +3890,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.46</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.47</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -8364,6 +8364,11 @@
           <span class="opt-val" id="setting-crash-count-val">10</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Schaden</div><label class="tgl"><input type="checkbox" id="setting-crash-damage" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Kein Schaden im Stand
+          <small>Solange das Auto steht (0&nbsp;km/h), z&auml;hlt kein Sto&szlig; als
+          Crash &ndash; du kannst es aufheben, ohne dass es simulierten Schaden
+          nimmt.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-crash-stationary" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Crash-Schwelle
           <small>Wie weit die Bewegungsbytes 1 und 3 vom gleitenden Mittel abweichen
           m&uuml;ssen, damit ein Sto&szlig; als Crash gilt. Niedriger hei&szlig;t
@@ -18977,6 +18982,13 @@
     // aus ist, bis zum naechsten Boxenstopp.
     if (!e.target.checked) damage = 0;
     log('Schadensmodell ' + (e.target.checked ? 'an' : 'aus') + '.', 'info');
+  });
+
+  // "Kein Schaden im Stand": ab Werk AN. Der Wert wird beim Laden neben der Deklaration in
+  // 70-race.js gelesen; dieser Listener laeuft nur auf eine Nutzergeste.
+  $('setting-crash-stationary').addEventListener('change', (e) => {
+    crashStationarySafe = e.target.checked;
+    log('Schaden im Stand ' + (e.target.checked ? 'aus' : 'an') + '.', 'info');
   });
 
   $('setting-repair-time').addEventListener('input', (e) => {
@@ -31105,6 +31117,10 @@
   let crashThreshold = 40;
   const CRASH_ROLLING_ALPHA = 0.15;
   const CRASH_REFRACTORY_MS = 1000; // avoid re-triggering repeatedly off one jolt
+  // Anzeige-km/h, unter denen ein Auto als "stehend" gilt und (mit dem Schalter) keinen
+  // Schaden nimmt. Dieselbe Schwelle, mit der crashEnd() einen stehenden Einschlag hinten
+  // einordnet; dort ist es 12, hier dieselbe Grenze fuer "nicht in Fahrt".
+  const CRASH_STATIONARY_KMH = 12;
   // ---- 1,0 %/s, UND DAS IST GEMESSEN -----------------------------------------------
   //
   // BESTELLT: "Tank und Schaden standardmaessig einschalten. Tankverbrauch wieder etwas
@@ -31170,6 +31186,14 @@
     if ($('setting-crash-count')) {
       $('setting-crash-count').disabled = !crashDetectionEnabled;
     }
+  }
+  // KEIN SCHADEN IM STAND (BESTELLT, ab Werk AN): solange das Auto nicht faehrt (0 km/h),
+  // zaehlt kein Stoss als Crash - man kann es aufheben, ohne dass es simulierten Schaden
+  // nimmt. Genau die Hand, die das stehende Auto hochhebt, erzeugt auf den Bytes 1 und 3
+  // dieselbe Abweichung wie ein Aufprall. Ab Werk AN, weil das die haeufigste Beschwerde war.
+  let crashStationarySafe = true;
+  if ($('setting-crash-stationary')) {
+    crashStationarySafe = $('setting-crash-stationary').checked;
   }
   // Total time (s) to repair 100% damage down to 0, non-linear: the schedule is fixed
   // proportions of that total (1/10, 2/10, 3/10, 4/10 for the four 25%-damage quarters,
@@ -31242,11 +31266,24 @@
     if (now < L.gnadeBis) return;
 
     if (dev > crashThreshold && now - L.letzter > CRASH_REFRACTORY_MS) {
+      // KEIN SCHADEN IM STAND: ein stehendes Auto (0 km/h) bekommt keinen Crash angerechnet.
+      // Die Hand, die es aufhebt, erzeugt auf den Bytes 1 und 3 genau die Abweichung, die
+      // diese Funktion sonst als Aufprall wertet - nur dass das Auto dabei eben nicht faehrt.
+      if (crashStationarySafe && stationaer(wer)) return;
       L.letzter = now;
       // Der Rundenzaehler der Ereignisse gehoert dem Rennen, und das Rennen faehrt Auto 1.
       if (wer !== 2) lapEventAkku.crash += 1;
       registerCrash(wer);
     }
+  }
+
+  // Ist das Auto (noch) nicht in Fahrt? Ab Werk gilt: wer steht, wird nicht beschadigt.
+  // Die gleiche Schwelle, mit der crashEnd() einen stehenden Einschlag hinten einordnet.
+  function stationaer(wer) {
+    const motor = (wer === 2 ? physEngine2 : physEngine);
+    const st = motor && motor.state ? motor.state : null;
+    if (!st) return true;
+    return Math.abs(st.speedKmh) * REAL_SCALE < CRASH_STATIONARY_KMH;
   }
 
   // Front or rear, decided from the gear and the speed rather than from a sensor byte.
@@ -47153,7 +47190,7 @@
       const opt = o || {};
       const merkGarage = garage.slice();
       const vorher = { zwei: zweiSpieler, p1: playerCar, p2: playerCar2,
-                       dmg: damage, an: crashDetectionEnabled,
+                       dmg: damage, an: crashDetectionEnabled, cs: crashStationarySafe,
                        schwelle: crashThreshold };
       const L1 = crashLageVon(1), L2 = crashLageVon(2);
       const merkL = { a: { ...L1 }, b: { ...L2 } };
@@ -47163,6 +47200,7 @@
       try {
         Date.now = () => uhr;
         crashDetectionEnabled = true;
+        crashStationarySafe = false;
         damage = 0;
         this.schadenZweiSetzen(0, false, false);
         for (const L of [L1, L2]) { L.avg1 = null; L.avg3 = null; L.letzter = 0; L.gnadeBis = 0; }
@@ -47237,6 +47275,7 @@
         playerCar2 = vorher.p2;
         damage = vorher.dmg;
         crashDetectionEnabled = vorher.an;
+        crashStationarySafe = vorher.cs;
         crashThreshold = vorher.schwelle;
         Object.assign(L1, merkL.a);
         Object.assign(L2, merkL.b);
@@ -68515,6 +68554,7 @@
       ['setting-autoshift', () => physEngine.config.autoShift],
       ['setting-battery-comp', () => batteryCompEnabled],
       ['setting-crash-damage', () => crashDetectionEnabled],
+      ['setting-crash-stationary', () => crashStationarySafe],
       ['setting-offtrack', () => offtrackEffekt],
       ['setting-tyre-blankets', () => physEngine.config.tyreBlankets],
       ['setting-vibration', () => rumbleOn],
@@ -70956,10 +70996,12 @@
     const L = OMEGA_TEST.crashLage ? OMEGA_TEST.crashLage(1) : null;
     const gemerkt = { sp: playerCar, dmg: damage,
                       an: crashDetectionEnabled,
+                      cs: crashStationarySafe,
                       a1: L && L.avg1, a3: L && L.avg3, lt: L && L.letzter,
                       gb: L && L.gnadeBis };
     try {
       crashDetectionEnabled = true;
+      crashStationarySafe = false;
       if (L) { L.avg1 = null; L.avg3 = null; L.letzter = 0; L.gnadeBis = 0; }
       damage = 0;
       const attrappe = { device: { id: 'st-crash', name: 'Pruefwagen' }, role: 'player',
@@ -70984,6 +71026,67 @@
     } finally {
       playerCar = gemerkt.sp; damage = gemerkt.dmg;
       crashDetectionEnabled = gemerkt.an;
+      crashStationarySafe = gemerkt.cs;
+      if (L) { L.avg1 = gemerkt.a1; L.avg3 = gemerkt.a3; L.gnadeBis = gemerkt.gb; }
+      if (L) L.letzter = gemerkt.lt;
+      updateDamageFuelUI();
+    }
+  });
+
+  // ---- Kein Schaden, solange das Auto steht (0 km/h) ----
+  //
+  // BESTELLT: "das Auto soll keinen Schaden nehmen, wenn es nicht faehrt (0 km/h), damit
+  // ich es aufheben kann." Die Hand, die ein stehendes Auto hochhebt, erzeugt auf den Bytes
+  // 1 und 3 dieselbe Abweichung wie ein Aufprall - nur dass das Auto dabei eben steht.
+  // Geprueft wird beides: stehend + Schalter an => kein Schaden, und fahrend + Schalter an
+  // => doch Schaden (der Schalter schaltet das Schadensmodell also nicht global aus).
+  stAdd('Kein Schaden, solange das Auto steht (0 km/h)', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.feedNotify) {
+      return { skip: true, mass: 'feedNotify nicht vorhanden' };
+    }
+    const L = OMEGA_TEST.crashLage ? OMEGA_TEST.crashLage(1) : null;
+    const gemerkt = { sp: playerCar, dmg: damage, an: crashDetectionEnabled,
+                      cs: crashStationarySafe, v: physEngine.state.speedKmh,
+                      a1: L && L.avg1, a3: L && L.avg3, lt: L && L.letzter,
+                      gb: L && L.gnadeBis };
+    const echtNow = Date.now;
+    let uhr = 500000;
+    try {
+      Date.now = () => uhr;
+      crashDetectionEnabled = true;
+      crashStationarySafe = true;
+      if (L) { L.avg1 = null; L.avg3 = null; L.letzter = 0; L.gnadeBis = 0; }
+      damage = 0;
+      physEngine.state.speedKmh = 0;
+      const attrappe = { device: { id: 'st-stand', name: 'Pruefwagen' }, role: 'player',
+                         rx: null, tx: null, tileCode: 0xff, tileCount: null,
+                         lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null };
+      playerCar = attrappe;
+      const paket = (b1, b3) => {
+        const a = new Array(19).fill(0);
+        a[1] = b1 & 0xff; a[3] = b3 & 0xff; a[14] = 0x22;
+        return a;
+      };
+      const ruhigStoss = (v) => {
+        if (L) { L.avg1 = null; L.avg3 = null; L.letzter = 0; L.gnadeBis = 0; }
+        for (let i = 0; i < 12; i++) { uhr += 45; OMEGA_TEST.feedNotify(paket(4, 2), { car: attrappe }); }
+        uhr += 2000;   // ueber Sperr- und Gnadenzeit hinaus
+        OMEGA_TEST.feedNotify(paket(100, 90), { car: attrappe });
+        return damage;
+      };
+      // Stehend: der Stoss darf KEINEN Schaden geben.
+      const imStand = ruhigStoss();
+      // Fahrend: derselbe Stoss MUSS Schaden geben - der Schalter ist nicht global aus.
+      physEngine.state.speedKmh = 180 / REAL_SCALE;
+      const inFahrt = ruhigStoss();
+      return { ok: imStand === 0 && inFahrt > 0,
+               mass: 'im Stand ' + imStand.toFixed(1) + ' %, in Fahrt '
+                     + inFahrt.toFixed(1) + ' % Schaden' };
+    } finally {
+      Date.now = echtNow;
+      playerCar = gemerkt.sp; damage = gemerkt.dmg;
+      crashDetectionEnabled = gemerkt.an; crashStationarySafe = gemerkt.cs;
+      physEngine.state.speedKmh = gemerkt.v;
       if (L) { L.avg1 = gemerkt.a1; L.avg3 = gemerkt.a3; L.gnadeBis = gemerkt.gb; }
       if (L) L.letzter = gemerkt.lt;
       updateDamageFuelUI();
