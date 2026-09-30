@@ -2584,6 +2584,7 @@
   .ch-sperre-hinweis[hidden] { display: none; }
   .ch-kachel .ch-mini { display: grid; place-items: center; height: clamp(64px, 26vh, 170px); padding: 6px 6px 2px; }
   .ch-mini svg { max-width: 100%; max-height: 100%; width: auto; height: 100%; }
+  .ch-kachel .ch-k-woche { display: block; font-style: normal; font-size: 10.5px; letter-spacing: .04em; color: var(--dim, #a3acbd); text-align: center; padding: 0 4px 5px; }
   .ch-detail { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 16px; align-items: start; }
   .ch-rechts > h3:first-child { margin-top: 0; }
   .ch-detail[hidden] { display: none; }
@@ -3879,7 +3880,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.43</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.45</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4544,7 +4545,8 @@
        Fliesstext, und die Sprachtests nehmen tab-doc ausdruecklich aus. Ein Reiter
        mit halb uebersetztem Fliesstext waere schlechter als einer mit einem
        ehrlichen Hinweis darauf, dass er nur deutsch vorliegt. -->
-  <!-- CHALLENGES (v0.8.30, experimentell). BESTELLT: "Implementiere Challenges". Vier feste
+  <!-- CHALLENGES (v0.8.30, experimentell; seit v0.8.44 vier Kategorien mit Wochenstrecken, die
+       Kacheln fuellt chKachelnZeichnen). BESTELLT: "Implementiere Challenges". Vier
        Strecken, je zwei Modi (beste Runde, Rennen) und zwei Presets (Pro, Arcade); Ablauf und
        Wertung in src/72-challenges.js. Je Strecke eine Unterseite, damit L1/R1 zwischen ihnen
        blaettern; der Inhalt (#ch-detail) ist EINER und wird in die offene Seite gehaengt. -->
@@ -4552,22 +4554,26 @@
     <div class="card subpage-home" id="sub-home-challenges">
       <h2>Challenges <span class="wip-tag">experimentell</span></h2>
       <div class="misc-grid ch-kacheln">
-        <button class="misc-tile subpage-open ch-kachel" data-sub="ch-oval">
-          <span class="ch-mini" data-ch="oval" aria-hidden="true"></span>
-          <b data-i18n-skip>Monzetta</b>
-          <span>Grundpackung · 10 Runden</span></button>
-        <button class="misc-tile subpage-open ch-kachel" data-sub="ch-schlange">
-          <span class="ch-mini" data-ch="schlange" aria-hidden="true"></span>
-          <b data-i18n-skip>Suzuna</b>
-          <span>Grundpackung · 8 Runden</span></button>
-        <button class="misc-tile subpage-open ch-kachel" data-sub="ch-kehre">
-          <span class="ch-mini" data-ch="kehre" aria-hidden="true"></span>
-          <b data-i18n-skip>Monte Carlito</b>
-          <span>Grundpackung und Haarnadel-Set · 8 Runden</span></button>
-        <button class="misc-tile subpage-open ch-kachel" data-sub="ch-weitblick">
-          <span class="ch-mini" data-ch="weitblick" aria-hidden="true"></span>
-          <b data-i18n-skip>Silverbrook</b>
-          <span>Grundpackung und 30&deg;-Au&szlig;enkurven-Set · 8 Runden</span></button>
+        <button class="misc-tile subpage-open ch-kachel" data-sub="ch-a">
+          <span class="ch-mini" data-kat="a" aria-hidden="true"></span>
+          <b class="ch-k-name" data-i18n-skip></b>
+          <span class="ch-k-info" data-i18n-skip></span>
+          <em class="ch-k-woche" data-i18n-skip></em></button>
+        <button class="misc-tile subpage-open ch-kachel" data-sub="ch-b">
+          <span class="ch-mini" data-kat="b" aria-hidden="true"></span>
+          <b class="ch-k-name" data-i18n-skip></b>
+          <span class="ch-k-info" data-i18n-skip></span>
+          <em class="ch-k-woche" data-i18n-skip></em></button>
+        <button class="misc-tile subpage-open ch-kachel" data-sub="ch-c">
+          <span class="ch-mini" data-kat="c" aria-hidden="true"></span>
+          <b class="ch-k-name" data-i18n-skip></b>
+          <span class="ch-k-info" data-i18n-skip></span>
+          <em class="ch-k-woche" data-i18n-skip></em></button>
+        <button class="misc-tile subpage-open ch-kachel" data-sub="ch-d">
+          <span class="ch-mini" data-kat="d" aria-hidden="true"></span>
+          <b class="ch-k-name" data-i18n-skip></b>
+          <span class="ch-k-info" data-i18n-skip></span>
+          <em class="ch-k-woche" data-i18n-skip></em></button>
         <button class="misc-tile subpage-open" data-sub="ch-online">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="24" r="16"/><path d="M8 24h32M24 8c6 5 6 27 0 32M24 8c-6 5-6 27 0 32" stroke="var(--bad)"/></svg>
           <b>Online</b>
@@ -4575,24 +4581,24 @@
         </button>
       </div>
     </div>
-    <div class="card subpage" id="sub-ch-oval">
+    <div class="card subpage" id="sub-ch-a">
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
-      <h2 data-i18n-skip>Monzetta</h2>
+      <h2 class="ch-titel" data-i18n-skip></h2>
       <div class="ch-platz"></div>
     </div>
-    <div class="card subpage" id="sub-ch-schlange">
+    <div class="card subpage" id="sub-ch-b">
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
-      <h2 data-i18n-skip>Suzuna</h2>
+      <h2 class="ch-titel" data-i18n-skip></h2>
       <div class="ch-platz"></div>
     </div>
-    <div class="card subpage" id="sub-ch-kehre">
+    <div class="card subpage" id="sub-ch-c">
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
-      <h2 data-i18n-skip>Monte Carlito</h2>
+      <h2 class="ch-titel" data-i18n-skip></h2>
       <div class="ch-platz"></div>
     </div>
-    <div class="card subpage" id="sub-ch-weitblick">
+    <div class="card subpage" id="sub-ch-d">
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
-      <h2 data-i18n-skip>Silverbrook</h2>
+      <h2 class="ch-titel" data-i18n-skip></h2>
       <div class="ch-platz"></div>
     </div>
     <div class="card subpage" id="sub-ch-online">
@@ -4850,6 +4856,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Challenges: Wochenstrecken. Vier Kategorien (A kurz, B lang, C Haarnadel, D 30&deg;) mit je 20 Strecken, jeden Mittwoch um 0:00 Uhr (deutsche Zeit) kommt je Kategorie die n&auml;chste, nach 20 Wochen von vorn. Bestenlisten bleiben je Strecke erhalten. Die Kacheln zeigen, wann die n&auml;chste Strecke kommt.</li>
         <li>Rundenzeit-Ansage jetzt auch in der App: Dort fehlt die Sprachausgabe des Browsers, deshalb liest die App die Zeit aus Aufnahmen vor (Zahlen 0&ndash;60, erzeugt mit Piper TTS, Stimmen &bdquo;Thorsten&ldquo; und &bdquo;LJ Speech&ldquo;).</li>
         <li>Mehrspieler (experimentell): &bdquo;Rennen f&uuml;r alle starten&ldquo; startet ein gemeinsames Rennen. Alle Telefone &uuml;bernehmen Renntyp, L&auml;nge und einen gemeinsamen Wetterplan, die Ampel kommt &uuml;berall gleichzeitig (Uhrabgleich mit dem Host). &bdquo;Rennen starten&ldquo; fragt im Mehrspieler: f&uuml;r alle oder nur ich. F&uuml;r den Telefon-Host braucht es die neue APK.</li>
         <li>Funk: ein Schloss je Auto mit Wachhund; ein h&auml;ngender Befehl blockiert kein Auto mehr (Ursache f&uuml;r &bdquo;Auto reagiert nach Mehrspieler-Beitritt nicht&ldquo;). In der App: kurzes Timeout, erst senden, dann das Cockpit gedrosselt malen, weniger Arbeit je Meldung; Messanzeige &bdquo;Funk-Rundlauf&ldquo; unter System. Steuerkreuz: Renntyp in den Renneinstellungen und im Cockpit direkt mit links/rechts, am Rand der Renntyp-Kachel schaltet es, Zur&uuml;ck und Rennen starten erreichbar, Info-Screen schlie&szlig;t mit &#9675;. Ohne Zwei-Spieler-Modus f&auml;hrt das zuletzt benutzte Pad; &bdquo;Controller tauschen&ldquo; legt ein einzelnes Pad nicht mehr lahm. Controller ohne Standardbelegung: Hinweis und Anzeige der gedr&uuml;ckten Kn&ouml;pfe.</li>

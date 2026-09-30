@@ -10524,12 +10524,20 @@
   });
 
   // ---- CHALLENGES (v0.8.30) ----
-  stAdd('Challenges: vier Strecken geschlossen und aus ihren Sets baubar', () => {
+  stAdd('Challenges: alle 80 Wochenstrecken geschlossen, baubar, verschieden, passend gross', () => {
     const f = [], zeilen = [];
     const merkRot = trackRotationDeg;
     trackRotationDeg = 0;
     try {
-      for (const def of CHALLENGES) {
+      const ids = new Set(CH_ALLE.map((d) => d.id));
+      if (ids.size !== 80) f.push(ids.size + ' verschiedene Kennungen statt 80');
+      for (const k of 'ABCD') if (CH_KATALOG[k].length !== 20) f.push(k + ': ' + CH_KATALOG[k].length + ' statt 20');
+      for (const def of CH_ALLE) {
+        const n = chTiles(def).length;
+        if (def.kat === 'A' && (n < 8 || n > 12)) f.push(def.name + ': ' + n + ' Teile in A');
+        if (def.kat === 'B' && (n < 13 || n > 15)) f.push(def.name + ': ' + n + ' Teile in B');
+        const [bw, bh] = chFlaeche(chTiles(def));
+        if (bw > 2.65 || bh > 2.65) f.push(def.name + ' zu gross ' + bw.toFixed(2) + 'x' + bh.toFixed(2));
         const tiles = chTiles(def);
         const sch = trackSchluss(trackCenterline(tiles));
         if (!sch.closed) f.push(def.name + ' nicht geschlossen (' + sch.lueckeCm.toFixed(1) + ' cm)');
@@ -10540,12 +10548,33 @@
         for (const [typ, n] of Object.entries(braucht)) {
           if ((hat[typ] || 0) < n) f.push(def.name + ': ' + n + '× ' + TILE_LABEL[typ] + ', im Set ' + (hat[typ] || 0));
         }
-        const [w, h] = chFlaeche(tiles);
-        zeilen.push(def.id + ' ' + tiles.length + ' Teile ' + w.toFixed(2) + 'x' + h.toFixed(2) + ' m');
+        if (CHALLENGES.indexOf(def) >= 0) {
+          const [w, h] = chFlaeche(tiles);
+          zeilen.push(def.id + ' ' + tiles.length + ' Teile ' + w.toFixed(2) + 'x' + h.toFixed(2) + ' m');
+        }
       }
     } finally { trackRotationDeg = merkRot; }
     if (CHALLENGES.length !== 4) f.push(CHALLENGES.length + ' statt 4 Strecken');
-    return { ok: !f.length, mass: f.length ? f.join('; ') : zeilen.join(' | ') };
+    return { ok: !f.length, mass: f.length ? f.slice(0, 6).join('; ') : '80 geprueft, jetzt: ' + zeilen.join(' | ') };
+  });
+
+  stAdd('Challenges: Wochenwechsel Mittwoch 0:00 Berlin, nach 20 Wochen von vorn', () => {
+    const f = [];
+    const pruefe = (utc, soll, was) => { const i = chWoche(utc).index; if (i !== soll) f.push(was + ': Woche-Index ' + i + ' statt ' + soll); };
+    pruefe(Date.UTC(2026, 8, 29, 21, 59), 0, 'Di 29.09. 23:59 (vor dem Anker)');
+    pruefe(Date.UTC(2026, 9, 6, 21, 59, 59), 0, 'Di 06.10. 23:59:59');
+    pruefe(Date.UTC(2026, 9, 6, 22, 0, 0), 1, 'Mi 07.10. 0:00 Sommerzeit');
+    pruefe(Date.UTC(2026, 9, 27, 22, 59, 59), 3, 'Di 27.10. 23:59:59 Winterzeit');
+    pruefe(Date.UTC(2026, 9, 27, 23, 0, 0), 4, 'Mi 28.10. 0:00 Winterzeit');
+    pruefe(Date.UTC(2027, 1, 16, 22, 59, 59), 19, 'Di 16.02.2027 23:59:59');
+    pruefe(Date.UTC(2027, 1, 16, 23, 0, 0), 0, 'Mi 17.02.2027 0:00, wieder Woche 1');
+    const w = chWoche(Date.UTC(2026, 9, 5, 10, 0));
+    if (w.tage !== 2) f.push('Mo 05.10. mittags: ' + w.tage + ' statt 2 Tage bis zum Wechsel');
+    const a = chAktuelle(Date.UTC(2026, 9, 1)), b = chAktuelle(Date.UTC(2026, 9, 8));
+    if (a[1].id !== 'oval' || b[1].id !== 'schlange') f.push('B: Woche 1/2 nicht Monzetta/Suzuna');
+    if (a[2].id !== 'kehre' || a[3].id !== 'weitblick') f.push('C/D Woche 1 nicht Monte Carlito/Silverbrook');
+    if (a.some((d, i) => d.kat !== 'ABCD'[i])) f.push('Kategorien vertauscht');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Grenzen Sommer/Winterzeit, Umlauf nach 20 Wochen, Tage bis zum Wechsel' };
   });
 
   stAdd('Challenges: Rundenpruefung (90 % der Teile), Mindestzeit, geaenderte Einstellungen', () => {
@@ -10656,10 +10685,13 @@
     let alt = null;
     try { alt = localStorage.getItem(CH_STORE); } catch (e) { return { skip: true, mass: 'kein Speicher' }; }
     try {
-      localStorage.setItem(CH_STORE, JSON.stringify({ 'schlange|hotlap|pro': [{ zeit: 4200, auto: 'Test', geraet: 'x' }, { zeit: 4800, auto: 'Test', geraet: 'x' }] }));
+      const idB = CHALLENGES[1].id;
+      localStorage.setItem(CH_STORE, JSON.stringify({ [idB + '|hotlap|pro']: [{ zeit: 4200, auto: 'Test', geraet: 'x' }, { zeit: 4800, auto: 'Test', geraet: 'x' }] }));
       showTab('challenges');
-      showSubpage('ch-schlange');
-      if (!$('sub-ch-schlange').contains($('ch-detail')) || $('ch-detail').hidden) f.push('Inhalt nicht in der Seite');
+      showSubpage('ch-b');
+      if (!$('sub-ch-b').contains($('ch-detail')) || $('ch-detail').hidden) f.push('Inhalt nicht in der Seite');
+      if ($('sub-ch-b').querySelector('.ch-titel').textContent !== CHALLENGES[1].name) f.push('Titel nicht die Strecke der Woche');
+      if (!document.querySelector('.ch-kachel .ch-mini[data-kat="b"] svg')) f.push('Kachel ohne Minikarte');
       if (!$('ch-karte').querySelector('svg')) f.push('keine Streckenkarte');
       $('ch-modus').querySelector('[data-m="hotlap"]').click();
       $('ch-preset').querySelector('[data-p="pro"]').click();
@@ -10672,7 +10704,7 @@
       if ($('ch-histo').children.length < 3) f.push('kein Histogramm');
       // Warten auf Stillstand, dann Rennen-Taste: abbrechen, keine Ampel.
       const merkLauf = chMerken();
-      chLauf = { id: 'schlange', modus: 'hotlap', preset: 'pro', phase: 'stehen', stillSeit: 0, hinweisAt: 0, merk: merkLauf };
+      chLauf = { id: idB, modus: 'hotlap', preset: 'pro', phase: 'stehen', stillSeit: 0, hinweisAt: 0, merk: merkLauf };
       toggleRace();
       if (chLauf) f.push('Challenge laeuft nach der Rennen-Taste weiter');
       if (raceState !== 'idle' && raceState !== 'finished') f.push('Ampel trotzdem gestartet (' + raceState + ')');

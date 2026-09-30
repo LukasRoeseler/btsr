@@ -28,18 +28,154 @@
 
   // NAMEN (v0.8.35): BESTELLT "Namen, die so aehnlich wie die von echten Rennstrecken sind (aber
   // anders), damit die nicht uebersetzt werden muessen" - Monza, Suzuka, Monte Carlo, Silverstone.
-  const CHALLENGES = [
-    // BESTELLT: "Ersetze das Oval noch durch SGR2GR2LGR3G". Es ist damit kein Oval mehr, daher
-    // der neue Name. Geschlossen (Luecke 0,5 cm), 1,36 x 2,28 m, Grundpackung.
-    { id: 'oval', kat: 'B', name: 'Monzetta', code: 'SGR2GR2LGR3G', runden: 10, sets: ['grund'],
-      idee: 'Zum Warmwerden: lange Gerade, ein kleiner Knick nach links, Bremspunkte lernen.' },
-    { id: 'schlange', kat: 'B', name: 'Suzuna', code: 'SRRRGLLRRRRGGGR', runden: 8, sets: ['grund'],
-      idee: 'Die zwei Linkskurven bilden ein S. Wer dort sauber umlenkt, gewinnt.' },
-    { id: 'kehre', kat: 'C', name: 'Monte Carlito', code: 'SGRRRLHJRRRRG', runden: 8, sets: ['grund', 'haarnadel'],
-      idee: 'Zwei Haarnadeln direkt hintereinander als enges S: voll in die Bremse, umlegen, sauber raus.' },
-    { id: 'weitblick', kat: 'D', name: 'Silverbrook', code: 'SQRRRWGQRRRW', runden: 8, sets: ['grund', 'dreissig'],
-      idee: 'Lang und schmal: die weiten 30-Grad-Bögen machen die Längsseiten schnell.' },
-  ];
+  // WOCHENSTRECKEN (v0.8.44). BESTELLT: "Mache Vorschlaege fuer 20 verschiedene Strecken je
+  // Kategorie (also 4x20), die nacheinander jede Woche rotieren ... Update soll jeweils Mittwochs
+  // passieren." Abgesegnet am Mock-up mockup/wochenstrecken.html. Jede Kategorie hat 20 Strecken;
+  // Woche 1 beginnt Mittwoch, 30.09.2026, 0:00 deutscher Zeit, nach 20 Wochen von vorn (chWoche).
+  // Alle sind geschlossen, kreuzungsfrei (Bahnen > 30 cm auseinander), hoechstens 2,6 x 2,6 m und
+  // aus den Teilen ihrer Kategorie baubar - der Selbsttest prueft das fuer alle 80. Die vier
+  // bisherigen Strecken behalten ihre Kennung (oval, schlange, kehre, weitblick), damit ihre
+  // Bestenlisten gelten; jede Liste haengt an der Kennung und kommt nach 20 Wochen wieder.
+  // Kategorien: A kurz (Grundpackung, 8-12 Teile), B lang (13-15), C beide Haarnadeln, D beide
+  // 30-Grad-Paare. Idee-Texte haben nur die vier alten, die anderen bekommen einen aus der
+  // Kategorie (chIdee).
+  const CH_KAT_SETS = { A: ['grund'], B: ['grund'], C: ['grund', 'haarnadel'], D: ['grund', 'dreissig'] };
+  const CH_KATALOG = {
+    A: [
+      { id: 'wa01-imolina', name: 'Imolina', code: 'SRRRGRRR', runden: 12 },
+      { id: 'wa02-zandwoorde', name: 'Zandwoorde', code: 'SRGRRLRRRLRR', runden: 12 },
+      { id: 'wa03-hockenhain', name: 'Hockenhain', code: 'SRRRRLGRRRRL', runden: 12 },
+      { id: 'wa04-brandsby', name: 'Brandsby', code: 'SRRRGGRRRG', runden: 12 },
+      { id: 'wa05-oultonia', name: 'Oultonia', code: 'SRRGRRGRR', runden: 12 },
+      { id: 'wa06-magnycour', name: 'Magnycour', code: 'SRRLRRGRRLRR', runden: 12 },
+      { id: 'wa07-estorilla', name: 'Estorilla', code: 'SRGRRRLRRR', runden: 12 },
+      { id: 'wa08-jerezito', name: 'Jerezito', code: 'SRRRLRRGRRG', runden: 12 },
+      { id: 'wa09-assenburg', name: 'Assenburg', code: 'SRGRRGRLRRRG', runden: 12 },
+      { id: 'wa10-mugellino', name: 'Mugellino', code: 'SRGRRGRGRR', runden: 12 },
+      { id: 'wa11-donningham', name: 'Donningham', code: 'SRRRGLRRRGRG', runden: 12 },
+      { id: 'wa12-knockhilly', name: 'Knockhilly', code: 'SRRRLRGRRRLR', runden: 12 },
+      { id: 'wa13-zolderen', name: 'Zolderen', code: 'SRGRGRGRRLRR', runden: 12 },
+      { id: 'wa14-oscherlingen', name: 'Oscherlingen', code: 'SRLRRRGRLRRR', runden: 12 },
+      { id: 'wa15-sachsenried', name: 'Sachsenried', code: 'SRRGRGRGRRG', runden: 12 },
+      { id: 'wa16-anderstrup', name: 'Anderstrup', code: 'SRRRGLRRRRLR', runden: 12 },
+      { id: 'wa17-hungarella', name: 'Hungarella', code: 'SRRRLRGRRGRG', runden: 12 },
+      { id: 'wa18-misanello', name: 'Misanello', code: 'SRRGRRLRRRG', runden: 12 },
+      { id: 'wa19-kyalamo', name: 'Kyalamo', code: 'SRGRRRLGRRRG', runden: 12 },
+      { id: 'wa20-salzbergring', name: 'Salzbergring', code: 'SRRRGRLRRRRL', runden: 12 },
+    ],
+    B: [
+      { id: 'oval', name: 'Monzetta', code: 'SGR2GR2LGR3G', runden: 10,
+        idee: 'Zum Warmwerden: lange Gerade, ein kleiner Knick nach links, Bremspunkte lernen.' },
+      { id: 'schlange', name: 'Suzuna', code: 'SRRRGLLRRRRGGGR', runden: 8,
+        idee: 'Die zwei Linkskurven bilden ein S. Wer dort sauber umlenkt, gewinnt.' },
+      { id: 'wb03-interlagoa', name: 'Interlagoa', code: 'SRGRGGRRLRRLRRG', runden: 10 },
+      { id: 'wb04-montrealle', name: 'Montrealle', code: 'SGRRRRLLRRRRG', runden: 10 },
+      { id: 'wb05-barcelonetta', name: 'Barcelonetta', code: 'SRGLRRRRGLGRRR', runden: 10 },
+      { id: 'wb06-castelletto', name: 'Castelletto', code: 'SRRLRRRGLRRRG', runden: 10 },
+      { id: 'wb07-sepangga', name: 'Sepangga', code: 'SRRGRLRRGRRLR', runden: 10 },
+      { id: 'wb08-fujimoro', name: 'Fujimoro', code: 'SGRRRLGRRLRRGRG', runden: 10 },
+      { id: 'wb09-laguna-sekka', name: 'Laguna Sekka', code: 'SRRGRRGLRGRRRGL', runden: 10 },
+      { id: 'wb10-watkins-dale', name: 'Watkins Dale', code: 'SRGRRLGRRRGLRR', runden: 10 },
+      { id: 'wb11-road-atlantica', name: 'Road Atlantica', code: 'SRGRLRGRRGRLGRR', runden: 10 },
+      { id: 'wb12-sebringa', name: 'Sebringa', code: 'SRLRRRGGRLRRRG', runden: 10 },
+      { id: 'wb13-daytonella', name: 'Daytonella', code: 'SRGRGRGRLRRRLR', runden: 10 },
+      { id: 'wb14-bathursta', name: 'Bathursta', code: 'SRRLRRGGRRLRRG', runden: 10 },
+      { id: 'wb15-phillip-isle', name: 'Phillip Isle', code: 'SRRGLRRRGRLRR', runden: 10 },
+      { id: 'wb16-portimanta', name: 'Portimanta', code: 'SRRGLRRGRRGLRR', runden: 10 },
+      { id: 'wb17-aragonita', name: 'Aragonita', code: 'SRGRGGRRRLLRRRG', runden: 10 },
+      { id: 'wb18-shanghaio', name: 'Shanghaio', code: 'SRRGRRGLGRRRGRL', runden: 10 },
+      { id: 'wb19-istanbella', name: 'Istanbella', code: 'SRRLRGRGRGRLRRG', runden: 10 },
+      { id: 'wb20-losaya', name: 'Losaya', code: 'SGRRLRRRGLGRRRG', runden: 10 },
+    ],
+    C: [
+      { id: 'kehre', name: 'Monte Carlito', code: 'SGRRRLHJRRRRG', runden: 8,
+        idee: 'Zwei Haarnadeln direkt hintereinander als enges S: voll in die Bremse, umlegen, sauber raus.' },
+      { id: 'wc02-macaolo', name: 'Macaolo', code: 'SRRGHJRGRRLRRRGL', runden: 8 },
+      { id: 'wc03-bakuna', name: 'Bakuna', code: 'SRGRRLRRRRJH', runden: 8 },
+      { id: 'wc04-singaporta', name: 'Singaporta', code: 'SRRLRRLHGGJRRRRG', runden: 8 },
+      { id: 'wc05-long-beacho', name: 'Long Beacho', code: 'SRRRGLRGHJRRRRLG', runden: 8 },
+      { id: 'wc06-adelaina', name: 'Adelaina', code: 'SRGRLRRRRJHLRR', runden: 8 },
+      { id: 'wc07-pauvilla', name: 'Pauvilla', code: 'SRRGHJRRLRRRRLG', runden: 8 },
+      { id: 'wc08-detroita', name: 'Detroita', code: 'SRRGLGRRGHJRRLRR', runden: 8 },
+      { id: 'wc09-jeddara', name: 'Jeddara', code: 'SRRRJHGRRLRR', runden: 8 },
+      { id: 'wc10-norisburg', name: 'Norisburg', code: 'SRGRLRRRLGRRRJHG', runden: 8 },
+      { id: 'wc11-villa-reala', name: 'Villa Reala', code: 'SRGRRLRRJHGRGRLR', runden: 8 },
+      { id: 'wc12-surfers-parada', name: 'Surfers Parada', code: 'SRRRJRHLRRLRR', runden: 8 },
+      { id: 'wc13-montjuicita', name: 'Montjuicita', code: 'SRGRLRGRRRGJHLRR', runden: 8 },
+      { id: 'wc14-pedralbia', name: 'Pedralbia', code: 'SRHLJRRRGRRLRRG', runden: 8 },
+      { id: 'wc15-avusa', name: 'Avusa', code: 'SHJRRGRRRLLRRRG', runden: 8 },
+      { id: 'wc16-monsanta', name: 'Monsanta', code: 'SRRGRLRRRRJRHL', runden: 8 },
+      { id: 'wc17-boavistella', name: 'Boavistella', code: 'SRRLHJRRRRGLRR', runden: 8 },
+      { id: 'wc18-miamira', name: 'Miamira', code: 'SGRRRRLJRHLRGRRG', runden: 8 },
+      { id: 'wc19-vegasina', name: 'Vegasina', code: 'SLRRRRJRRRRGGLHG', runden: 8 },
+      { id: 'wc20-marinella-bay', name: 'Marinella Bay', code: 'SRRLLHGGRRJRRRRG', runden: 8 },
+    ],
+    D: [
+      { id: 'weitblick', name: 'Silverbrook', code: 'SQRRRWGQRRRW', runden: 8,
+        idee: 'Lang und schmal: die weiten 30-Grad-Bögen machen die Längsseiten schnell.' },
+      { id: 'wd02-francorella', name: 'Francorella', code: 'SRRRQQRRWWLRRRGL', runden: 8 },
+      { id: 'wd03-le-mansard', name: 'Le Mansard', code: 'SRRQRWGRRQRW', runden: 8 },
+      { id: 'wd04-reimsville', name: 'Reimsville', code: 'SRGQRRRWQLRRRW', runden: 8 },
+      { id: 'wd05-oesterwald', name: 'Österwald', code: 'SRRQWWRRRLQRR', runden: 8 },
+      { id: 'wd06-mosporto', name: 'Mosporto', code: 'SRRRLQRWRRGQRW', runden: 8 },
+      { id: 'wd07-road-amerigo', name: 'Road Amerigo', code: 'SRRLQWRRGRRLQWRR', runden: 8 },
+      { id: 'wd08-talladina', name: 'Talladina', code: 'SRQWRRGRQWRR', runden: 8 },
+      { id: 'wd09-brookfeld', name: 'Brookfeld', code: 'SLRRRQQRRGWWRLRR', runden: 8 },
+      { id: 'wd10-montlherine', name: 'Montlhérine', code: 'SRGWRRQQRRWRLR', runden: 8 },
+      { id: 'wd11-rouenna', name: 'Rouenna', code: 'SRGRWQRLRRWGRGQR', runden: 8 },
+      { id: 'wd12-nivella', name: 'Nivella', code: 'SRQRRWGRQRRW', runden: 8 },
+      { id: 'wd13-zeltbach', name: 'Zeltbach', code: 'SRRQGRWGRRQGRW', runden: 8 },
+      { id: 'wd14-pergusella', name: 'Pergusella', code: 'SWRQRGRRWLQRRRG', runden: 8 },
+      { id: 'wd15-charadella', name: 'Charadella', code: 'SLWRRRQWQRRRLRR', runden: 8 },
+      { id: 'wd16-crystal-parc', name: 'Crystal Parc', code: 'SRRWRQGRRWRQ', runden: 8 },
+      { id: 'wd17-goodwald', name: 'Goodwald', code: 'SRGRQRRQRWGRW', runden: 8 },
+      { id: 'wd18-thruxford', name: 'Thruxford', code: 'SQRRRQWWRRLRR', runden: 8 },
+      { id: 'wd19-jaramilla', name: 'Jaramilla', code: 'SRWQRRRLGRWQRRRL', runden: 8 },
+      { id: 'wd20-nuerbelberg', name: 'Nürbelberg', code: 'SRRQRWGGRRQRWG', runden: 8 },
+    ],
+  };
+  const CH_ALLE = [];
+  Object.keys(CH_KATALOG).forEach((k) => CH_KATALOG[k].forEach((d, i) => {
+    d.kat = k; d.woche = i + 1; d.sets = CH_KAT_SETS[k]; CH_ALLE.push(d);
+  }));
+  // Wanduhr in Berlin als UTC-Zahl: so zaehlt ein Tag immer 24 h, auch ueber die Zeitumstellung.
+  const CH_ANKER = Date.UTC(2026, 8, 30);          // Mittwoch, 30.09.2026, 0:00 in Berlin
+  const CH_WOCHE_MS = 7 * 86400000;
+  let chBerlinFmt = null;
+  function chBerlinWand(ms) {
+    try {
+      if (!chBerlinFmt) chBerlinFmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Berlin', hourCycle: 'h23',
+        year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const p = {};
+      chBerlinFmt.formatToParts(new Date(ms)).forEach((x) => { p[x.type] = x.value; });
+      return Date.UTC(+p.year, +p.month - 1, +p.day, (+p.hour) % 24, +p.minute, +p.second);
+    } catch (e) { return ms + 3600000; }      // ohne Zeitzonen-Daten: Winterzeit
+  }
+  // index 0-19 (davor gilt Woche 1), tage = volle oder angebrochene Tage bis zum naechsten Wechsel.
+  function chWoche(ms) {
+    const wand = chBerlinWand(ms === undefined ? Date.now() : ms);
+    const n = Math.max(0, Math.floor((wand - CH_ANKER) / CH_WOCHE_MS));
+    const naechste = wand < CH_ANKER ? CH_ANKER + CH_WOCHE_MS : CH_ANKER + (n + 1) * CH_WOCHE_MS;
+    return { index: n % 20, woche: (n % 20) + 1, tage: Math.ceil((naechste - wand) / 86400000) };
+  }
+  function chAktuelle(ms) { const i = chWoche(ms).index; return 'ABCD'.split('').map((k) => CH_KATALOG[k][i]); }
+  let CHALLENGES = chAktuelle();
+  function chIdee(def) {
+    if (def.idee) return t(def.idee);
+    const tiles = chTiles(def);
+    const gerade = tiles.map((x) => x.type === TILE_TYPE.STRAIGHT || x.type === TILE_TYPE.START);
+    let g = 0;
+    for (let i = 0; i < gerade.length; i++) {
+      let l = 0;
+      while (l < gerade.length && gerade[(i + l) % gerade.length]) l++;
+      g = Math.max(g, l);
+    }
+    const vorlage = { A: 'Kurzer Kurs mit {n} Teilen: Rhythmus finden, jede Kurve zählt.',
+                      B: 'Langer Kurs mit {n} Teilen, die längste Gerade hat {g} Teile: dort Anlauf holen.',
+                      C: 'Stadtkurs mit beiden Haarnadeln: spät bremsen, eng einlenken, sauber raus.',
+                      D: 'Schneller Kurs: die weiten 30-Grad-Bögen gehen fast voll, die engen Kurven entscheiden.' }[def.kat];
+    return t(vorlage).replace('{n}', tiles.length).replace('{g}', g);
+  }
   const CH_SET_NAME = { grund: 'Grundpackung', haarnadel: 'Haarnadel-Set', dreissig: '30°-Außenkurven-Set' };
   const CH_MODUS_NAME = { hotlap: 'Beste Runde', rennen: 'Rennen' };
   const CH_STORE = 'omegasim-challenges';
@@ -105,7 +241,7 @@
   let chLetzt = null;              // letztes Ergebnis, fuer die Anzeige auf der Seite
   const chListen = {};             // Schluessel -> { zeiten, online, fehler, laedt }
 
-  function chDef(id) { return CHALLENGES.find((c) => c.id === id) || CHALLENGES[0]; }
+  function chDef(id) { return CH_ALLE.find((c) => c.id === id) || CHALLENGES[0]; }
   function chSchluessel(id, modus, preset) { return id + '|' + modus + '|' + preset; }
   // PFLICHTSTOPP (v0.8.39). BESTELLT: "bei Rundenrennen in Challenge 4 immer einen Pitstop
   // verpflichtend (egal wo und mit Pit-Minigame)". Kategorie D, nur im Modus Rennen.
@@ -260,7 +396,10 @@
   // Liste - eine eigene Adresse steht nicht im Schnappschuss. Aelter als zwei Stunden, oder die
   // Datei fehlt (die Kopie auf luuke42 hat keine Action, die APK nur die mitgelieferte): dann
   // direkt beim Sheet fragen.
-  const CH_SCHNAPPSCHUSS_MAX_MS = 2 * 3600 * 1000;
+  // v0.8.44: 8 h statt 2 h. Der Sync schreibt nur bei Aenderungen, dazu spaetestens alle 6 h
+  // einen neuen Stand - vorher galt ein ruhiges Sheet nach zwei Stunden als veraltet, und die
+  // App fragte dann doch wieder jede Liste live.
+  const CH_SCHNAPPSCHUSS_MAX_MS = 8 * 3600 * 1000;
   let chSchnapp = null, chSchnappAt = 0;
   function chSchnappschuss() {
     if (chSchnapp && Date.now() - chSchnappAt < 10 * 60000) return chSchnapp;
@@ -557,10 +696,14 @@
     const d = $('ch-detail');
     return !!(d && !d.hidden && d.closest('.subpage.on'));
   }
+  // Unterseiten je Kategorie (sub-ch-a ... sub-ch-d); der Inhalt ist die Strecke der Woche.
   function challengeSeiteZeigen(id) {
     if (id === 'online') { chOnlineZeichnen(); return; }
-    if (!CHALLENGES.some((c) => c.id === id)) return;
-    chWahl = id;
+    const k = 'abcd'.indexOf(id);
+    if (k < 0) return;
+    chWahl = CHALLENGES[k].id;
+    const titel = document.querySelector('#sub-ch-' + id + ' .ch-titel');
+    if (titel) titel.textContent = CHALLENGES[k].name;
     const platz = document.querySelector('#sub-ch-' + id + ' .ch-platz');
     const d = $('ch-detail');
     if (platz && d && d.parentNode !== platz) platz.appendChild(d);
@@ -573,7 +716,7 @@
     if (!d) return;
     const def = chDef(chWahl), tiles = chTiles(def);
     $('ch-karte').innerHTML = chKarte(def, true);
-    $('ch-idee').textContent = t(def.idee);
+    $('ch-idee').textContent = chIdee(def);
     const [bw, bh] = chFlaeche(tiles);
     const m = trackLaengeM(tiles);
     $('ch-fakten').textContent = t('Länge') + ' ' + chZahl(m, 2) + ' m · 1:50 ' + chZahl(m * 50 / 1000, 2) + ' km · '
@@ -658,11 +801,42 @@
     $('ch-perz').textContent = eigene !== null && zeiten.length > 1 ? chRangText(schl, eigene) : '';
   }
   function chKachelnZeichnen() {
-    CHALLENGES.forEach((def) => {
-      const el = document.querySelector('.ch-mini[data-ch="' + def.id + '"]');
-      if (el && !el.dataset.fertig) { el.innerHTML = chKarte(def, false); el.dataset.fertig = '1'; }
+    const w = chWoche();
+    const wechsel = w.tage <= 1 ? t('Neue Strecke morgen') : t('Neue Strecke in {n} Tagen').replace('{n}', w.tage);
+    CHALLENGES.forEach((def, i) => {
+      const k = 'abcd'[i];
+      const el = document.querySelector('.ch-mini[data-kat="' + k + '"]');
+      if (el && el.dataset.id !== def.id) { el.innerHTML = chKarte(def, false); el.dataset.id = def.id; }
+      const kachel = el && el.closest('.ch-kachel');
+      if (!kachel) return;
+      kachel.querySelector('.ch-k-name').textContent = def.name;
+      kachel.querySelector('.ch-k-info').textContent = def.sets.map((s) => t(CH_SET_NAME[s])).join(' + ') + ' · '
+        + def.runden + ' ' + t('Runden') + ' · ' + t('Woche') + ' ' + def.woche + '/20 · ' + wechsel;
+      // Sichtbar auch im Konsolen-Layout, das die Beschreibungszeile der Kacheln ausblendet.
+      kachel.querySelector('.ch-k-woche').textContent = t('Woche') + ' ' + def.woche + '/20 · '
+        + (w.tage <= 1 ? t('neu morgen') : t('neu in {n} Tagen').replace('{n}', w.tage));
     });
   }
+  // Wechsel im laufenden Betrieb: jede Minute nachsehen; eine laufende Challenge behaelt ihre
+  // Strecke (chLauf.id, chDef sucht im ganzen Katalog).
+  function chWocheNachsehen() {
+    const neu = chAktuelle();
+    if (neu.every((d, i) => d === CHALLENGES[i])) { chKachelnZeichnen(); return; }
+    CHALLENGES = neu;
+    chKachelnZeichnen();
+    if (!chLauf && chSeiteOffen()) {
+      const offen = document.querySelector('.subpage.on[id^="sub-ch-"]');
+      if (offen) challengeSeiteZeigen(offen.id.slice(7));
+    }
+  }
+  setInterval(chWocheNachsehen, 60000);
+  if (typeof i18nOnLangChange === 'function') i18nOnLangChange(() => {
+    chKachelnZeichnen();
+    // Auch wenn die Seite gerade zu ist: der Inhalt bleibt im Dokument, und der Idee-Text ist
+    // zusammengesetzt, den kann der Textknoten-Uebersetzer nicht.
+    const d = $('ch-detail');
+    if (d && !d.hidden) chZeichneDetail();
+  });
   function chOnlineZeichnen() {
     const o = chOnline();
     $('ch-url').value = o.url;

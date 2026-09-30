@@ -37,11 +37,88 @@ const KOPF = ['zeitpunkt', 'challenge', 'modus', 'preset', 'zeit_ms', 'runden_ms
 // durch 2,5 m/s - rund 50 % ueber dem gemessenen Hoechsttempo der Autos (1,64 m/s) - und
 // verwirft schnellere Runden selbst (72-challenges.js, chMinRundeMs). Hier stehen die Werte
 // um gut 2 % darunter, damit das Sheet nie eine Runde ablehnt, die die App knapp zaehlt.
+// v0.8.44: alle 80 Wochenstrecken (72-challenges.js, CH_KATALOG), 4 % unter der App.
 const CHALLENGES = {
-  oval: { runden: 10, min: 2050 },
-  schlange: { runden: 8, min: 2350 },
-  kehre: { runden: 8, min: 2340 },
-  weitblick: { runden: 8, min: 2160 },
+  'wa01-imolina': { runden: 12, min: 1220 },
+  'wa02-zandwoorde': { runden: 12, min: 1810 },
+  'wa03-hockenhain': { runden: 12, min: 1810 },
+  'wa04-brandsby': { runden: 12, min: 1550 },
+  'wa05-oultonia': { runden: 12, min: 1380 },
+  'wa06-magnycour': { runden: 12, min: 1810 },
+  'wa07-estorilla': { runden: 12, min: 1520 },
+  'wa08-jerezito': { runden: 12, min: 1680 },
+  'wa09-assenburg': { runden: 12, min: 1850 },
+  'wa10-mugellino': { runden: 12, min: 1550 },
+  'wa11-donningham': { runden: 12, min: 1850 },
+  'wa12-knockhilly': { runden: 12, min: 1810 },
+  'wa13-zolderen': { runden: 12, min: 1850 },
+  'wa14-oscherlingen': { runden: 12, min: 1810 },
+  'wa15-sachsenried': { runden: 12, min: 1710 },
+  'wa16-anderstrup': { runden: 12, min: 1810 },
+  'wa17-hungarella': { runden: 12, min: 1850 },
+  'wa18-misanello': { runden: 12, min: 1680 },
+  'wa19-kyalamo': { runden: 12, min: 1850 },
+  'wa20-salzbergring': { runden: 12, min: 1810 },
+  oval: { runden: 10, min: 2010 },
+  schlange: { runden: 8, min: 2310 },
+  'wb03-interlagoa': { runden: 10, min: 2310 },
+  'wb04-montrealle': { runden: 10, min: 1980 },
+  'wb05-barcelonetta': { runden: 10, min: 2140 },
+  'wb06-castelletto': { runden: 10, min: 1980 },
+  'wb07-sepangga': { runden: 10, min: 1980 },
+  'wb08-fujimoro': { runden: 10, min: 2310 },
+  'wb09-laguna-sekka': { runden: 10, min: 2310 },
+  'wb10-watkins-dale': { runden: 10, min: 2140 },
+  'wb11-road-atlantica': { runden: 10, min: 2310 },
+  'wb12-sebringa': { runden: 10, min: 2140 },
+  'wb13-daytonella': { runden: 10, min: 2140 },
+  'wb14-bathursta': { runden: 10, min: 2140 },
+  'wb15-phillip-isle': { runden: 10, min: 1980 },
+  'wb16-portimanta': { runden: 10, min: 2140 },
+  'wb17-aragonita': { runden: 10, min: 2310 },
+  'wb18-shanghaio': { runden: 10, min: 2310 },
+  'wb19-istanbella': { runden: 10, min: 2310 },
+  'wb20-losaya': { runden: 10, min: 2310 },
+  kehre: { runden: 8, min: 2290 },
+  'wc02-macaolo': { runden: 8, min: 2760 },
+  'wc03-bakuna': { runden: 8, min: 2130 },
+  'wc04-singaporta': { runden: 8, min: 2760 },
+  'wc05-long-beacho': { runden: 8, min: 2760 },
+  'wc06-adelaina': { runden: 8, min: 2430 },
+  'wc07-pauvilla': { runden: 8, min: 2590 },
+  'wc08-detroita': { runden: 8, min: 2760 },
+  'wc09-jeddara': { runden: 8, min: 2130 },
+  'wc10-norisburg': { runden: 8, min: 2760 },
+  'wc11-villa-reala': { runden: 8, min: 2760 },
+  'wc12-surfers-parada': { runden: 8, min: 2260 },
+  'wc13-montjuicita': { runden: 8, min: 2760 },
+  'wc14-pedralbia': { runden: 8, min: 2590 },
+  'wc15-avusa': { runden: 8, min: 2590 },
+  'wc16-monsanta': { runden: 8, min: 2430 },
+  'wc17-boavistella': { runden: 8, min: 2430 },
+  'wc18-miamira': { runden: 8, min: 2760 },
+  'wc19-vegasina': { runden: 8, min: 2760 },
+  'wc20-marinella-bay': { runden: 8, min: 2760 },
+  weitblick: { runden: 8, min: 2120 },
+  'wd02-francorella': { runden: 8, min: 2710 },
+  'wd03-le-mansard': { runden: 8, min: 2120 },
+  'wd04-reimsville': { runden: 8, min: 2420 },
+  'wd05-oesterwald': { runden: 8, min: 2250 },
+  'wd06-mosporto': { runden: 8, min: 2420 },
+  'wd07-road-amerigo': { runden: 8, min: 2710 },
+  'wd08-talladina': { runden: 8, min: 2120 },
+  'wd09-brookfeld': { runden: 8, min: 2710 },
+  'wd10-montlherine': { runden: 8, min: 2420 },
+  'wd11-rouenna': { runden: 8, min: 2750 },
+  'wd12-nivella': { runden: 8, min: 2120 },
+  'wd13-zeltbach': { runden: 8, min: 2450 },
+  'wd14-pergusella': { runden: 8, min: 2580 },
+  'wd15-charadella': { runden: 8, min: 2550 },
+  'wd16-crystal-parc': { runden: 8, min: 2120 },
+  'wd17-goodwald': { runden: 8, min: 2280 },
+  'wd18-thruxford': { runden: 8, min: 2250 },
+  'wd19-jaramilla': { runden: 8, min: 2710 },
+  'wd20-nuerbelberg': { runden: 8, min: 2450 },
 };
 const MODI = ['hotlap', 'rennen'];
 const PRESETS = ['pro', 'arcade'];
@@ -106,9 +183,23 @@ function pruefen(d) {
 }
 
 // Bestenliste: ?challenge=oval&modus=hotlap&preset=pro -> schnellste Zeiten zuerst.
+// ?alle=1 (v0.8.44): alle Listen auf einmal, fuer den stuendlichen Schnappschuss (80 Strecken
+// x 2 Modi x 2 Presets waeren sonst 320 Aufrufe).
 function doGet(e) {
   const p = (e && e.parameter) || {};
   const werte = blatt().getDataRange().getValues().slice(1);
+  if (p.alle) {
+    const listen = {};
+    werte.forEach((z) => {
+      const k = z[1] + '|' + z[2] + '|' + z[3];
+      (listen[k] = listen[k] || []).push({ zeitpunkt: z[0], zeit_ms: Number(z[4]), auto: z[6], fahrer: z[7], geraet: z[8] });
+    });
+    Object.keys(listen).forEach((k) => {
+      const l = listen[k].sort((a, b) => a.zeit_ms - b.zeit_ms);
+      listen[k] = { anzahl: l.length, zeiten: l.slice(0, MAX_ZEILEN_ANTWORT) };
+    });
+    return antwort({ ok: true, alle: true, listen: listen });
+  }
   const liste = werte
     .filter((z) => z[1] === p.challenge && z[2] === p.modus && z[3] === p.preset)
     .map((z) => ({ zeitpunkt: z[0], zeit_ms: Number(z[4]), auto: z[6], fahrer: z[7], geraet: z[8] }))
