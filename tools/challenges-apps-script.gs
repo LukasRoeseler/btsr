@@ -192,7 +192,9 @@ function doGet(e) {
     const listen = {};
     werte.forEach((z) => {
       const k = z[1] + '|' + z[2] + '|' + z[3];
-      (listen[k] = listen[k] || []).push({ zeitpunkt: z[0], zeit_ms: Number(z[4]), auto: z[6], fahrer: z[7], geraet: z[8] });
+      let runden = 0, rundenMs = [];
+      try { rundenMs = JSON.parse(z[5] || '[]'); runden = Array.isArray(rundenMs) ? rundenMs.length : 0; } catch (e) { rundenMs = []; }
+      (listen[k] = listen[k] || []).push({ zeitpunkt: z[0], zeit_ms: Number(z[4]), auto: z[6], fahrer: z[7], geraet: z[8], runden: runden, runden_ms: rundenMs });
     });
     Object.keys(listen).forEach((k) => {
       const l = listen[k].sort((a, b) => a.zeit_ms - b.zeit_ms);
@@ -202,7 +204,11 @@ function doGet(e) {
   }
   const liste = werte
     .filter((z) => z[1] === p.challenge && z[2] === p.modus && z[3] === p.preset)
-    .map((z) => ({ zeitpunkt: z[0], zeit_ms: Number(z[4]), auto: z[6], fahrer: z[7], geraet: z[8] }))
+    .map((z) => {
+      let runden = 0, rundenMs = [];
+      try { rundenMs = JSON.parse(z[5] || '[]'); runden = Array.isArray(rundenMs) ? rundenMs.length : 0; } catch (e) { rundenMs = []; }
+      return { zeitpunkt: z[0], zeit_ms: Number(z[4]), auto: z[6], fahrer: z[7], geraet: z[8], runden: runden, runden_ms: rundenMs };
+    })
     .sort((a, b) => a.zeit_ms - b.zeit_ms);
   return antwort({ ok: true, anzahl: liste.length, zeiten: liste.slice(0, MAX_ZEILEN_ANTWORT) });
 }

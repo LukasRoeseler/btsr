@@ -679,6 +679,25 @@
     if (beste) stimme(f0 * 2, 0.34);
   }
 
+  // Ungueltige Runde (Challenge: Strecke nicht erkannt oder zu schnell). Ein tiefer, dumpfer
+  // Ton statt des hellen Runden-/Bestzeit-Klangs - so hoert man sofort, dass die Runde nicht
+  // zaehlt, ohne dass ein Fehler-Dialog den Fahrtablauf stoert.
+  function playLapChimeUngueltig() {
+    if (!soundEnabled || !audioCtx) return;
+    const t = audioCtx.currentTime;
+    const o = audioCtx.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(190, t);
+    o.frequency.linearRampToValueAtTime(140, t + 0.22);
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.001, t);
+    g.gain.linearRampToValueAtTime(0.16, t + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+    o.connect(g).connect(audioCtx.destination);
+    o.start(t);
+    o.stop(t + 0.3);
+  }
+
   // ---- Tempolimit: eine Stelle, drei Quellen ----
   // Boxengasse, gelbe Flagge und Einfuehrungsrunde wollen alle das Tempo begrenzen, und
   // vorher schrieb jede von ihnen direkt in speedLimitFactor. Wer waehrend einer gelben
@@ -1203,6 +1222,12 @@
     syncRaceGridOrder();
     const w = raceGridWeiter; raceGridWeiter = null;
     if (w) w();
+  }
+  // BESTELLT: "X auf dem Controller soll auf dem Autos-in-Position-Schirm funktionieren".
+  // flagTasteTick() fragt das ab, bevor es den normalen Cockpit-Weg (Boxenstopp/Gelb) nimmt.
+  function raceGridOffen() {
+    const gs = $('race-gridscreen');
+    return !!(gs && !gs.hidden);
   }
   function raceGridAbbrechen() {
     const gs = $('race-gridscreen');
@@ -2401,7 +2426,10 @@
       const besteBisher = raceLapTimes.length
         ? Math.min.apply(null, raceLapTimes.map(l => l.ms)) : Infinity;
       raceLapTimes.push({ lap: raceLapTimes.length + 1, ms: rundeMs });
-      if (typeof challengeRundeFertig === 'function') challengeRundeFertig(raceLapTimes.length - 1);
+      // Challenge: Runde gegen die Strecke pruefen. Liefert true, wenn die Runde NICHT zaehlt
+      // (Strecke nicht erkannt oder zu schnell) - dann tiefer Ton statt des hellen Rundenklangs.
+      const challengeUngueltig = typeof challengeRundeFertig === 'function'
+        ? challengeRundeFertig(raceLapTimes.length - 1) : false;
       // Die Ereignisse DIESER Runde festhalten und den Zaehler leeren. Dieselbe Reihenfolge
       // wie raceLapTimes, damit der Index die Rundennummer bleibt.
       raceLapEvents.push({ pit: lapEventAkku.pit, crash: lapEventAkku.crash });
@@ -2410,10 +2438,11 @@
       // Die erste Runde ist nicht "die beste" - sie ist die einzige, und ein Bestzeit-Ton
       // beim ersten Mal nimmt ihm die Bedeutung fuer alle weiteren.
       const istBest = raceLapTimes.length > 1 && rundeMs < besteBisher;
-      playLapChime(istBest);
+      if (challengeUngueltig) playLapChimeUngueltig();
+      else playLapChime(istBest);
       // Die Ansage NEBEN dem Ton und nicht statt ihm: der Ton kommt sofort, die Stimme
       // braucht eine Sekunde. Wer sie abschaltet, hoert weiter, dass eine Runde voll ist.
-      speakLap(rundeMs, istBest);
+      if (!challengeUngueltig) speakLap(rundeMs, istBest);
       if (wasFinishing) finishRace();
       // Runde 0, nicht 1: das Feld steht auf der Startgeraden und ueberfaehrt Start/Ziel
       // erst am Ende der ersten Runde. Vor der ersten Ueberfahrt ist also noch keine Runde
@@ -5645,9 +5674,39 @@
         + '<span class="ov-luecke">' + z.luecke + '</span>'
         + '</div>';
     }).join('');
+    // BESTELLT: "im Mehrspieler alle Spieler mit ihren Zeiten und Positionen zeigen". Die
+    // lokalen Zeilen (eigene Autos/Ghosts) bleiben; die anderen Geraete aus der Rangliste
+    // kommen als zusaetzliche Zeilen dazu - jede mit ihren gemeldeten Runden/Zeiten.
+    let mpHtml = '';
+    if (typeof mpStand === 'function') {
+      const stand = mpStand();
+      const leute = (stand && stand.fahrer) || [];
+      const lokale = new Set();
+      if (typeof raceAllCars === 'function') {
+        raceAllCars().forEach((c) => { if (c && c.name) lokale.add(c.name); });
+      }
+      const zeit = (x) => (x === null || x === undefined) ? '&ndash;'
+        : formatLapTime(Math.round((x || 0) * 1000));
+      leute.forEach((f, i) => {
+        if (lokale.has(f.name)) return;
+        const best = f.beste === null || f.beste === undefined;
+        mpHtml += '<div class="ov-zeile ov-mp' + (f.id === mp.id ? ' ov-ich' : '') + '">'
+          + '<span class="ov-pos">' + (i + 1) + '</span>'
+          + '<span class="ov-farbe" style="background:#8b99b4"></span>'
+          + '<span class="ov-name" data-i18n-skip>' + String(f.name).replace(/</g, '&lt;') + '</span>'
+          + '<span class="ov-runden">' + f.laps + '</span>'
+          + '<span class="ov-pit"></span>'
+          + '<span class="ov-mix ov-mix-leer"></span>'
+          + '<span class="ov-zeit ov-letzte">' + (f.letzte === null || f.letzte === undefined ? '&ndash;' : formatLapTime(Math.round(f.letzte * 1000))) + '</span>'
+          + '<span class="ov-zeit' + (best ? '' : ' ov-feldbeste') + '">' + (best ? '&ndash;' : formatLapTime(Math.round(f.beste * 1000))) + '</span>'
+          + '<span class="ov-luecke"></span>'
+          + '</div>';
+      });
+    }
+    const zusammen = html + mpHtml;
     // Die Mischungsfarbe steht als eigener Balken NEBEN der Zeile, weil sie eine Farbe und
     // keine Zahl ist. Sie wird hier eingesetzt, damit die Spaltenbreiten fest bleiben.
-    if (tab.innerHTML !== html) tab.innerHTML = html;
+    if (tab.innerHTML !== zusammen) tab.innerHTML = zusammen;
     const fuss = $('ov-fuss');
     if (fuss) {
       fuss.textContent = 'Platz \u00b7 Runden \u00b7 Stopps \u00b7 Mischung'

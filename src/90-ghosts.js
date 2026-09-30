@@ -4173,6 +4173,13 @@
   // Prozent stehenzubleiben.
   let padKreuzSeit = null;
   function flagTasteTick(flagNow) {
+    // ALLERERSTE STUFE: ist das Autos-in-Position-Fenster offen (70-race.js), startet dieselbe
+    // Taste das Rennen (X statt Touch). Alles dahinter bleibt unberuehrt.
+    if (typeof raceGridOffen === 'function' && raceGridOffen()) {
+      if (flagNow && !prevYellowFlag) raceGridStart();
+      prevYellowFlag = flagNow;
+      return;
+    }
     // ALLERERSTE STUFE: ist das Info-Popup offen (98c-opt-info.js), schliesst dieselbe
     // Taste nur IHN - alles dahinter (Menuenavigation, Cockpit-Schirm, gelbe Flagge)
     // bleibt unberuehrt, waehrend ein Modal offen ist.

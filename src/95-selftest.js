@@ -12086,13 +12086,10 @@
     }
     const r = OMEGA_TEST.raceEinstellungenSchirmProbe();
     const maengel = [];
-    if (!r.screenErreichbar) maengel.push('Schirm "renneinstellungen" nicht erreichbar');
-    if (!r.nurEineZeileVorher) maengel.push('keine oder mehrere Zeilen ausgewaehlt');
-    if (!r.bewegtSich) maengel.push('"runter" bewegt die Auswahl nicht');
-    if (!r.umlaufKehrtZurueck) maengel.push('drei Schritte "runter" kehren nicht zur Ausgangszeile zurueck');
-    if (!r.armiert) maengel.push('Waehltaste auf "Renntyp" waehlt die Zeile nicht an');
-    if (r.modeNachWahl === r.modeVorWahl) maengel.push('rechts auf "Renntyp" aendert #race-mode nicht');
-    if (r.modeZurueck !== r.modeVorWahl) maengel.push('links geht nicht genau einen Schritt zurueck');
+    // BESTELLT: "Renneinstellungen aus dem Cockpit-Schirmkreis herausnehmen" - der Schirm
+    // darf NICHT mehr blaetterbar sein; Rennmodus/Dauer stehen im Fahren-Tab.
+    if (!r.screenErreichbar) maengel.push('Schirm "renneinstellungen" noch im Cockpit-Kreis');
+    if (r.modeNachWahl === r.modeVorWahl) maengel.push('Tab-Aenderung schreibt nicht auf #race-mode');
     return { ok: !maengel.length,
              mass: 'genau eine Zeile ausgewaehlt, hoch/runter bewegt sie mit Umlauf, '
                  + 'Renntyp ' + r.modeVorWahl + ' -> ' + r.modeNachWahl + ' auf #race-mode selbst'

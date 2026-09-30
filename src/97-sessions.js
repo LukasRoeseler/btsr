@@ -672,6 +672,7 @@
       mpUhrProbe(t0, Date.now(), d.zeitMs);
       mpRennenPruefen(d.rennen);
       mp.zuschauer = d.zuschauer || 0;
+      mpLetzterStand = d;
       mpPosTakt();
       mpZeichnen(d);
       mpSay(t('verbunden') + ', ' + (d.fahrer || []).length + ' '
@@ -700,6 +701,12 @@
       + '<td>' + f.laps + '</td><td>' + zeit(f.letzte) + '</td><td>' + zeit(f.beste)
       + '</td></tr>').join('');
   }
+
+  // BESTELLT: "im Cockpit die Mehrspieler-Rangliste zeigen". Das Cockpit (70-race.js,
+  // ovDaten/ovScreenRender) kann keinen direkten Zugriff auf das `d` des letzten Abrufs
+  // haben - hier liegt es als letzter Stand, und nur wenn man mehrspielt.
+  let mpLetzterStand = null;
+  function mpStand() { return mp.an ? mpLetzterStand : null; }
 
   // Wer neu in der Fahrerliste steht (nicht man selbst) und wer verschwunden ist. Der eigene
   // Beitritt/Abschied soll nicht tueten - man weiss ja selbst, dass man kommt oder geht.

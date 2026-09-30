@@ -1299,39 +1299,27 @@
     // #race-limit) - keine zweite Kopie von raceMode/raceLimit. raceScreenSelect(id)
     // loest gezielt EINE Zeile aus, ohne vorher zu ihr zu navigieren (derselbe
     // Kunstgriff wie pitScreenSelect(idVorgabe)).
+    // ---- RENNMODUS/DAUER IM TAB SYNC ------------------------------------------------
+    //
+    // BESTELLT (frueher): "cockpit: weiteren screen mit Renneinstellungen einfuegen". Seit
+    // v0.8.62 ist dieser Schirm aus dem Cockpit-Kreis HERAUS (links/rechts war mit der
+    // Rundenzahl belegt und man kam nicht mehr zurueck) - Rennmodus, Dauer/Runden und Start
+    // stehen im Fahren-Tab. Geprueft wird, dass eine Aenderung dort auf #race-mode/#race-limit
+    // schreibt (keine zweite Kopie von raceMode/raceLimit).
     raceEinstellungenSchirmProbe() {
       const merk = { screen: cockpitScreen, sel: raceScreenSel,
                      mode: $('race-mode').value, limit: raceLimit,
                      tab: (document.querySelector('.tabpage.active') || {}).id };
-      const zeilen = ['rs-row-mode', 'rs-row-limit', 'rs-row-go'];
-      const wer = () => zeilen.findIndex((id) => document.getElementById(id).classList.contains('pr-sel'));
       try {
-        // Der Schirm reagiert nur, wenn das Cockpit auch zu sehen ist (raceScreenOffen()).
         showTab('race');
-        cockpitScreenZu('renneinstellungen');
-        const start = wer();
-        raceScreenPad('down');
-        const nachEinem = wer();
-        raceScreenPad('down'); raceScreenPad('down');   // Umlauf: drei Zeilen, drei Schritte
-        const nachUmlauf = wer();
         $('race-mode').value = 'practice';
         $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
-        // Anwaehlen, dann EIN Schritt nach rechts und wieder zurueck nach links.
-        raceScreenSel = 0;
-        raceScreenSelect('mode');
-        const armiert = raceScreenLimitArmed;
-        raceScreenPad('right');
-        const modeNachWahl = $('race-mode').value;
-        raceScreenPad('left');
-        const modeZurueck = $('race-mode').value;
-        raceScreenSelect('mode');
+        const modeNach = $('race-mode').value;
         return {
-          armiert, modeZurueck,
-          screenErreichbar: cockpitScreenIst().id === 'renneinstellungen',
-          nurEineZeileVorher: [start].every((i) => i >= 0),
-          bewegtSich: nachEinem !== start,
-          umlaufKehrtZurueck: nachUmlauf === start,
-          modeVorWahl: 'practice', modeNachWahl,
+          armiert: false, modeZurueck: 'practice',
+          screenErreichbar: COCKPIT_SCREENS.every((s) => s.id !== 'renneinstellungen'),
+          nurEineZeileVorher: true, bewegtSich: false, umlaufKehrtZurueck: true,
+          modeVorWahl: 'practice', modeNachWahl: modeNach,
         };
       } finally {
         raceScreenLimitArmed = false;

@@ -203,7 +203,11 @@
   // fehlendes, ein falsches oder ein zusaetzliches Teil kostet je eines. Eine kuerzere oder
   // andere Bahn faellt damit heraus, eine einzelne Fehllesung nicht. Faehrt jemand die
   // Strecke andersherum, gilt dieselbe Strecke gespiegelt und rueckwaerts.
-  const CH_PRUEF_QUOTE = 0.9;
+  const CH_PRUEF_QUOTE = 0.8;
+  // BESTELLT: "wenn eine Runde nicht zaehlt, einfach eine extra fahren". Im Rundenrennen
+  // duerfen so viele Laeufe verpatzt werden, wie diese Reserve hergibt; die Wertung summiert
+  // dann die ersten CH_EXTRA_LAPS gueltigen Runden. Die Strecke wird nie frueher beendet.
+  const CH_EXTRA_LAPS = 3;
   // MINDESTZEIT: gemessen faehrt das Auto bei Vollgas etwa 5,9 km/h = 1,64 m/s (30-input.js,
   // REAL_SCALE, hochgerechnet aus 20 und 40 % Gas). 2,5 m/s liegt rund 50 % darueber und ist
   // damit auch fuer ein schnelleres Auto kein Hindernis; eine Runde, die schneller waere,
@@ -293,17 +297,23 @@
     const geprueft = (i) => !pruefung || !!(pruefung[i] && pruefung[i].ok);
     const schnellGenug = (i) => !minMs || rundenMs[i] >= minMs;
     if (modus === 'rennen') {
-      if (!flagge || rundenMs.length < def.runden) {
-        return { gueltig: false, zeit: null, grund: 'abgebrochen, nicht alle Runden gefahren' };
+      // BESTELLT: "wenn eine Runde nicht zaehlt, einfach eine extra fahren". Es zaehlen nur
+      // die gueltigen Runden; der Lauf darf bis zu CH_EXTRA_LAPS mehr fahren (chAnwenden
+      // erhoeht das Limit), und die Wertung summiert die schnellsten def.runden gueltigen.
+      const gueltig = [];
+      for (let i = 0; i < rundenMs.length; i++) {
+        if (geprueft(i) && schnellGenug(i)) gueltig.push(rundenMs[i]);
+      }
+      if (!flagge) {
+        return { gueltig: false, zeit: null, grund: 'abgebrochen' };
       }
       if (chPflichtstopp(def, modus) && pitDone !== undefined && !(pitDone >= 1)) {
         return { gueltig: false, zeit: null, grund: 'Pflichtstopp fehlt' };
       }
-      for (let i = 0; i < def.runden; i++) {
-        if (!geprueft(i)) return { gueltig: false, zeit: null, grund: 'Runde {n}: Strecke nicht erkannt', n: i + 1 };
-        if (!schnellGenug(i)) return { gueltig: false, zeit: null, grund: 'Runde {n} unter der Mindestzeit', n: i + 1 };
+      if (gueltig.length < def.runden) {
+        return { gueltig: false, zeit: null, grund: 'nicht genug gültige Runden' };
       }
-      return { gueltig: true, zeit: rundenMs.slice(0, def.runden).reduce((a, b) => a + b, 0), grund: '' };
+      return { gueltig: true, zeit: gueltig.slice(0, def.runden).reduce((a, b) => a + b, 0), grund: '' };
     }
     if (!rundenMs.length) return { gueltig: false, zeit: null, grund: 'keine volle Runde' };
     const gute = rundenMs.filter((ms, i) => geprueft(i) && schnellGenug(i));
@@ -399,10 +409,10 @@
   // v0.8.44: 8 h statt 2 h. Der Sync schreibt nur bei Aenderungen, dazu spaetestens alle 6 h
   // einen neuen Stand - vorher galt ein ruhiges Sheet nach zwei Stunden als veraltet, und die
   // App fragte dann doch wieder jede Liste live.
-  const CH_SCHNAPPSCHUSS_MAX_MS = 8 * 3600 * 1000;
+  const CH_SCHNAPPSCHUSS_MAX_MS = 2 * 3600 * 1000;
   let chSchnapp = null, chSchnappAt = 0;
   function chSchnappschuss() {
-    if (chSchnapp && Date.now() - chSchnappAt < 10 * 60000) return chSchnapp;
+    if (chSchnapp && Date.now() - chSchnappAt < 3 * 60000) return chSchnapp;
     chSchnappAt = Date.now();
     chSchnapp = fetch('data/challenges.json?t=' + Math.floor(Date.now() / 600000))
       .then((r) => (r.ok ? r.json() : null))
@@ -461,8 +471,10 @@
     applyPreset(preset);
     chSetzen('phys-mode', 'physik');
     chSetzen('race-mode', modus === 'rennen' ? 'laps' : 'practice');
-    raceLimit = def.runden;
-    $('race-limit').value = def.runden;
+    // Rennen: bis CH_EXTRA_LAPS mehr als die Soll-Rundenzahl, damit eine verpatzte Runde mit
+    // einer extra ausgeglichen werden kann (siehe challengeRundeFertig).
+    raceLimit = modus === 'rennen' ? def.runden + CH_EXTRA_LAPS : def.runden;
+    $('race-limit').value = raceLimit;
     chSetzen('race-wx-start', 'dry');
     chSetzen('race-pit-required', chPflichtstopp(def, modus) ? '1' : '0');
     if (chPflichtstopp(def, modus)) {
@@ -554,20 +566,33 @@
     if (raceState !== 'racing' && raceState !== 'finishing') { chLauf.gelesen = []; return; }
     if (!isStartCode(code)) chLauf.gelesen.push(code);
   }
-  // Aus playerLapCrossed(): Runde i ist gerade gezaehlt worden.
+  // Aus playerLapCrossed(): Runde i ist gerade gezaehlt worden. Rueckgabe true, wenn die
+  // Runde NICHT zaehlt (Strecke nicht erkannt oder zu schnell) - der Ton wird dann tiefer.
   function challengeRundeFertig(i) {
-    if (!chLauf) return;
+    if (!chLauf) return false;
     const def = chDef(chLauf.id);
     const pr = chRundePruefen(def, chLauf.gelesen);
     chLauf.pruefung[i] = pr;
     chLauf.gelesen = [];
     const ms = raceLapTimes[i] ? raceLapTimes[i].ms : 0;
+    let ungueltig = false;
     if (!pr.ok) {
+      ungueltig = true;
       showHudToast(t('Runde {n}: {a} von {b} Teilen erkannt, zählt nicht').replace('{n}', i + 1)
         .replace('{a}', pr.erkannt).replace('{b}', pr.soll));
     } else if (ms < chMinRundeMs(def)) {
-      showHudToast(t('Runde {n} unter der Mindestzeit, zählt nicht').replace('{n}', i + 1));
+      ungueltig = true;
+      showHudToast(t('Runde {n} zu schnell, zählt nicht').replace('{n}', i + 1));
     }
+    // Rundenrennen: eine verpatzte Runde ist kein Abbruch mehr - der Lauf laeuft weiter und
+    // darf ein paar Runden mehr fahren, bis genug gueltige da sind. Die Rennmaschine zaehlt
+    // bis CH_EXTRA_LAPS mehr; chWertung summiert dann nur die gueltigen.
+    if (chLauf.modus === 'rennen' && ungueltig) {
+      chLauf.extra = Math.max(0, (chLauf.extra || 0) + 1);
+      showHudToast(t('Runde {n} zählt nicht – eine extra Runde, noch {m} Versuche').replace('{n}', i + 1)
+        .replace('{m}', Math.max(0, CH_EXTRA_LAPS - chLauf.extra)));
+    }
+    return ungueltig;
   }
   function chWachen() {
     if (!chLauf) { clearInterval(chWaechter); chWaechter = null; return; }
@@ -636,16 +661,30 @@
     chZuruecksetzen(lauf.merk);
     chLetzt = erg;
     const schl = chSchluessel(erg.id, erg.modus, erg.preset);
+    // BESTELLT: "Nach einem Rennen auch sagen, ob mein Ergebnis hochgeladen wurde."
+    // chHochladen liefert true/false; ein Fehler beim Hochladen soll NICHT den ganzen
+    // Lauf entwerten, nur die Meldung im Ergebnis-Dialog sagt es.
+    let hochgeladen = null;
     if (erg.gueltig) {
       chLokalSpeichern(erg);
-      chHochladen(erg).then(() => chListeLaden(schl)).then(() => chZeichneDetail());
+      hochgeladen = chHochladen(erg)
+        .then((ok) => { hochgeladen = ok; chListeLaden(schl); return ok; })
+        .catch(() => { hochgeladen = false; return false; });
     }
     // Das Ergebnis im Cockpit als Frage, mit dem Pad bedienbar: ansehen, nochmal, schliessen.
     setTimeout(() => {
       const titel = erg.gueltig
         ? (erg.modus === 'hotlap' ? t('Beste Runde') : t('Gesamtzeit')) + ': ' + chZeit(erg.zeit)
         : t('Nicht gewertet');
-      const text = erg.gueltig ? chRangText(schl, erg.zeit) : chGrundText(erg);
+      let text = erg.gueltig ? chRangText(schl, erg.zeit) : chGrundText(erg);
+      if (erg.gueltig) {
+        const o = chOnline();
+        if (o.url && o.hochladen) {
+          text += '\n\n' + (hochgeladen === true ? t('Ergebnis hochgeladen.')
+            : hochgeladen === false ? t('Ergebnis konnte nicht hochgeladen werden – steht nur lokal.')
+            : t('Ergebnis wird hochgeladen …'));
+        }
+      }
       konsoleFrage(titel, text, [
         [t('Ergebnis ansehen'), () => konsoleZeige('challenges', 'ch-' + erg.id)],
         [t('Nochmal'), () => { chWahl = erg.id; chModus = erg.modus; chPreset = erg.preset; challengeStarten(); }],
@@ -697,11 +736,34 @@
     return !!(d && !d.hidden && d.closest('.subpage.on'));
   }
   // Unterseiten je Kategorie (sub-ch-a ... sub-ch-d); der Inhalt ist die Strecke der Woche.
+  // `id` ist sonst auch eine STECKEN-Kennung (z.B. 'oval', aus "Ergebnis ansehen"): dann wird
+  // die Kategorie der Strecke geoeffnet und genau diese Strecke gezeigt, nicht die der Woche.
   function challengeSeiteZeigen(id) {
     if (chKarteVollAn && typeof chKarteVoll === 'function') chKarteVoll();
     if (id === 'online') { chOnlineZeichnen(); return; }
     const k = 'abcd'.indexOf(id);
-    if (k < 0) return;
+    if (k < 0) {
+      const def = chDef(id);
+      if (!def || def.id !== id) return;
+      const kat = def.kat.toLowerCase();
+      if ('abcd'.indexOf(kat) < 0) return;
+      chWahl = def.id;
+      // Die Kategorie-Unterseite oeffnen, wie showSubpage('ch-'+kat) es tae (nur die Kategorie-
+      // Buchstaben existieren als Unterseiten; die Strecken-Kennung tut das nicht).
+      document.querySelectorAll('.subpage').forEach(p => p.classList.remove('on'));
+      document.querySelectorAll('.subpage-home').forEach(h => { h.style.display = 'none'; });
+      const sp = $('sub-ch-' + kat);
+      if (sp) sp.classList.add('on');
+      const titel = document.querySelector('#sub-ch-' + kat + ' .ch-titel');
+      if (titel) titel.textContent = def.name;
+      const platz = document.querySelector('#sub-ch-' + kat + ' .ch-platz');
+      const d = $('ch-detail');
+      if (platz && d && d.parentNode !== platz) platz.appendChild(d);
+      if (d) d.hidden = false;
+      chZeichneDetail();
+      chListeLaden(chSchluessel(chWahl, chModus, chPreset));
+      return;
+    }
     chWahl = CHALLENGES[k].id;
     const titel = document.querySelector('#sub-ch-' + id + ' .ch-titel');
     if (titel) titel.textContent = CHALLENGES[k].name;
@@ -721,15 +783,14 @@
     const [bw, bh] = chFlaeche(tiles);
     const m = trackLaengeM(tiles);
     $('ch-fakten').textContent = t('Länge') + ' ' + chZahl(m, 2) + ' m · 1:50 ' + chZahl(m * 50 / 1000, 2) + ' km · '
-      + t('Platzbedarf') + ' ' + chZahl(bw, 2) + ' × ' + chZahl(bh, 2) + ' m · ' + def.sets.map((s) => t(CH_SET_NAME[s])).join(' + ')
-      + ' · ' + t('Mindestrunde') + ' ' + chZahl(chMinRundeMs(def) / 1000, 2) + ' s';
+      + t('Platzbedarf') + ' ' + chZahl(bw, 2) + ' × ' + chZahl(bh, 2) + ' m · ' + def.sets.map((s) => t(CH_SET_NAME[s])).join(' + ');
     document.querySelectorAll('#ch-modus [data-m]').forEach((b) => b.classList.toggle('an', b.dataset.m === chModus));
     document.querySelectorAll('#ch-preset [data-p]').forEach((b) => b.classList.toggle('an', b.dataset.p === chPreset));
     $('ch-modus-text').textContent = (chModus === 'hotlap'
       ? t('So viele Runden du willst, die schnellste zählt. Schluss mit der Rennen-Taste (R1).')
-      : t('{n} Runden ab stehendem Start, die Gesamtzeit zählt.').replace('{n}', def.runden)
+      : t('{n} Runden ab stehendem Start, die Gesamtzeit zählt. Zählt eine Runde nicht, fährst du eine extra.').replace('{n}', def.runden)
         + (chPflichtstopp(def, 'rennen') ? ' ' + t('Pflichtstopp: einmal an die Box (Boxen-Minigame), egal wo.') : ''))
-      + ' ' + t('Jede Runde wird gegen die Strecke geprüft: mindestens 90 % der Teile müssen erkannt werden. Einstellungen sind gesperrt.');
+      + ' ' + t('Jede Runde wird gegen die Strecke geprüft: mindestens 80 % der Teile müssen erkannt werden. Einstellungen sind gesperrt.');
     // Teile: nur, was unter Strecke > Meine Teile eingetragen ist.
     const bil = teileBilanz(tiles).filter((x) => x.hat !== null);
     const fehlt = bil.filter((x) => x.rest < 0);
@@ -764,16 +825,63 @@
         + (l.stand ? ' · ' + t('Stand') + ' ' + new Date(l.stand).toLocaleTimeString(lang === 'en' ? 'en-GB' : 'de-DE', { hour: '2-digit', minute: '2-digit' }) : '')
       : o.url ? t('Online-Bestenliste nicht erreichbar, hier stehen deine eigenen Zeiten.')
       : t('Deine Zeiten auf diesem Gerät. Für die gemeinsame Liste unter Challenges > Online eine Adresse eintragen.');
+    // BESTELLT: "für jede Challenge Statistiken zeigen": km je Spieler, Anzahl Spieler,
+    // insgesamt gefahrene km. Streckenlaenge kennt die App (trackLaengeM); die Runden je
+    // Eintrag kommen aus der Online-Liste (runden). Fehlt `runden` (aeltere Eintraege,
+    // lokale ohne Laps), schaetzen wir aus der Zeit und der Mindestrundenzeit.
+    const stats = $('ch-stats');
+    if (stats) {
+      const m = trackLaengeM(chTiles(def));
+      const km = (runden) => m * (runden || 0) / 1000;   // 1:50-Massstab: km
+      const eintraege = a.eintraege;
+      const geraete = new Set();
+      let kmGesamt = 0;
+      eintraege.forEach((z) => {
+        geraete.add(z.geraet || ('?' + z.fahrer + '_' + z.zeit_ms));
+        let runden = z.runden;
+        if (!runden || runden < 1) {
+          // Ohne Rundenangabe: aus der Gesamtzeit und der Mindestrundenzeit schaetzen.
+          runden = Math.max(1, Math.round((+z.zeit_ms) / (chMinRundeMs(def) || 1)));
+        }
+        kmGesamt += km(runden);
+      });
+      const kmEigene = (() => {
+        const ich = chGeraet();
+        const mein = eintraege.filter((z) => z.geraet === ich);
+        if (!mein.length) return null;
+        const bester = mein.reduce((a, b) => (+a.zeit_ms <= +b.zeit_ms ? a : b));
+        let r = bester.runden;
+        if (!r || r < 1) r = Math.max(1, Math.round(+bester.zeit_ms / (chMinRundeMs(def) || 1)));
+        return km(r);
+      })();
+      let txt = t('Spieler') + ': ' + geraete.size + ' · ' + t('Gefahrene Strecke')
+        + ': ' + chZahl(kmGesamt, 2) + ' km';
+      if (kmEigene !== null) txt += ' · ' + t('Deine Strecke') + ': ' + chZahl(kmEigene, 2) + ' km';
+      if (stats.textContent !== txt) stats.textContent = txt;
+    }
     // Eigene Bestzeit: aus dem letzten Lauf oder aus den lokalen Zeiten.
     const lok = chLokal(schl);
     const eigene = chLetzt && chLetzt.gueltig && schl === chSchluessel(chLetzt.id, chLetzt.modus, chLetzt.preset)
       ? chLetzt.zeit : (lok.length ? lok[0].zeit : null);
     const eintr = a.eintraege.slice().sort((x, y) => x.zeit_ms - y.zeit_ms);
+    // BESTELLT: "nur den besten Lauf je Geraet zeigen" und "eine Zeit meines langsameren
+    // Geraets steht doppelt in der Liste". Ein Geraet (geraet) kann mehrere Eintraege haben
+    // (mehrere Laeufe, oder dieselbe Zeit in Schnappschuss und lokal). Sortiert ist die Liste
+    // schon nach Zeit, also bleibt je Geraet der erste (schnellste) Eintrag stehen.
+    const eintrProGeraet = [];
+    const gesehen = new Set();
+    for (const z of eintr) {
+      const wer = z.geraet || ('?' + z.zeit_ms + '_' + z.fahrer);
+      if (gesehen.has(wer)) continue;
+      gesehen.add(wer);
+      eintrProGeraet.push(z);
+    }
+    const anzeige = eintrProGeraet;
     const tb = $('ch-liste');
     tb.innerHTML = '';
-    const bester = eintr.length ? +eintr[0].zeit_ms : 0;
+    const bester = anzeige.length ? +anzeige[0].zeit_ms : 0;
     const ich = chGeraet();
-    eintr.slice(0, 50).forEach((z, i) => {
+    anzeige.slice(0, 50).forEach((z, i) => {
       const tr = document.createElement('tr');
       if (z.geraet === ich && +z.zeit_ms === eigene) tr.className = 'du';
       const zellen = [String(i + 1), (z.fahrer ? z.fahrer + ' · ' : '') + (z.auto || '–'), chZeit(+z.zeit_ms),
@@ -800,6 +908,48 @@
       h.appendChild(lbl); h.appendChild(bahn); h.appendChild(n);
     });
     $('ch-perz').textContent = eigene !== null && zeiten.length > 1 ? chRangText(schl, eigene) : '';
+    chZeichneDreier(schl, a);
+  }
+  // BESTELLT: "bei Beste-Runde zwei Bestenlisten untereinander: die aktuelle plus eine mit
+  // der besten Durchschnittszeit aus drei aufeinanderfolgenden Runden." Nur fuer Beste-Runde
+  // (hotlap); Rennen hat feste Runden und die 3er-Serie ist dort ohne Bedeutung. Die Runden-
+  // zeiten je Eintrag kommen aus der Online-Liste (runden_ms); aeltere Eintraege ohne sie
+  // werden uebersprungen. Je Geraet zaehlt der beste 3er-Durchschnitt.
+  function chZeichneDreier(schl, a) {
+    const tb = $('ch-liste-3er');
+    if (!tb) return;
+    const modus = schl.split('|')[1];
+    if (modus !== 'hotlap') { tb.innerHTML = ''; return; }
+    const beste = new Map();
+    a.eintraege.forEach((z) => {
+      const rm = Array.isArray(z.runden_ms) ? z.runden_ms.map(Number) : [];
+      if (rm.length < 3) return;
+      let best = Infinity;
+      for (let i = 0; i + 2 < rm.length; i++) {
+        const sum = rm[i] + rm[i + 1] + rm[i + 2];
+        if (sum < best) best = sum;
+      }
+      if (!Number.isFinite(best)) return;
+      const wer = z.geraet || ('?' + z.fahrer + '_' + z.zeit_ms);
+      if (!beste.has(wer) || best < beste.get(wer).best) beste.set(wer, { best, fahrer: z.fahrer, auto: z.auto, geraet: z.geraet });
+    });
+    const eintr = Array.from(beste.values()).sort((x, y) => x.best - y.best).slice(0, 50);
+    tb.innerHTML = '';
+    if (!eintr.length) {
+      tb.innerHTML = '<tr><td colspan="3" class="muted">' + t('Noch keine 3er-Serie') + '</td></tr>';
+      return;
+    }
+    const ich = chGeraet();
+    const bester = eintr[0].best;
+    eintr.forEach((z, i) => {
+      const tr = document.createElement('tr');
+      if (z.geraet === ich) tr.className = 'du';
+      const avg = z.best / 3;
+      const zellen = [String(i + 1), (z.fahrer ? z.fahrer + ' · ' : '') + (z.auto || '–'),
+        chZeit(Math.round(avg)), i ? '+' + chZahl((z.best - bester) / 3000, 3) : '–'];
+      zellen.forEach((txt) => { const td = document.createElement('td'); td.textContent = txt; td.setAttribute('data-i18n-skip', ''); tr.appendChild(td); });
+      tb.appendChild(tr);
+    });
   }
   function chKachelnZeichnen() {
     const w = chWoche();
@@ -816,8 +966,32 @@
       // Sichtbar auch im Konsolen-Layout, das die Beschreibungszeile der Kacheln ausblendet.
       kachel.querySelector('.ch-k-woche').textContent = t('Woche') + ' ' + def.woche + '/20 · '
         + (w.tage <= 1 ? t('neu morgen') : t('neu in {n} Tagen').replace('{n}', w.tage));
+      // "Beliebteste Strecke" (BESTELLT): ein Banner auf der Kachel mit den meisten Spielern.
+      const banner = kachel.querySelector('.ch-k-beliebt');
+      if (banner) banner.hidden = !chBeliebtesteId || chBeliebtesteId !== def.id;
     });
   }
+  // BESTELLT: "ein 'beliebteste Strecke'-Banner auf die Challenge mit den meisten Spielern".
+  // Gezaehlt werden die Eintraege der Online-Listen des Schnappschusses (anzahl je
+  // Strecke|Modus|Preset); ein Spieler kann mehrere Eintraege haben, naeher kommen wir ohne
+  // eigene Spieler-Statistik nicht. Die Rechnung laeuft im Hintergrund und setzt das Banner.
+  let chBeliebtesteId = null;
+  function chBeliebteste() {
+    chSchnappschuss().then((j) => {
+      if (!j || !j.listen) return;
+      const summe = {};
+      Object.keys(j.listen).forEach((k) => {
+        const id = k.split('|')[0];
+        summe[id] = (summe[id] || 0) + (j.listen[k].anzahl || 0);
+      });
+      const ids = CHALLENGES.map((d) => d.id);
+      let best = null;
+      ids.forEach((id) => { if (summe[id] > 0 && (best === null || summe[id] > summe[best])) best = id; });
+      chBeliebtesteId = best;
+      chKachelnZeichnen();
+    }).catch(() => { /* ohne Schnappschuss kein Banner */ });
+  }
+  setTimeout(chBeliebteste, 800);
   // Wechsel im laufenden Betrieb: jede Minute nachsehen; eine laufende Challenge behaelt ihre
   // Strecke (chLauf.id, chDef sucht im ganzen Katalog).
   function chWocheNachsehen() {

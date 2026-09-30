@@ -765,7 +765,16 @@
         && !(typeof konsoleTourOffen === 'function' && konsoleTourOffen())
         && !document.body.classList.contains('track-fs')) {
       const tab = kAktiverTab();
-      if (tab === 'race') konsoleZumMenue();
+      if (tab === 'race') {
+        // BESTELLT: "Options waehrend einer Challenge beendet die Challenge und zeigt das
+        // Ergebnis". requestRaceStop() -> finishRace() -> challengeRennenEnde() wertet und
+        // zeigt den Ergebnis-Dialog. Nichts zaehlt mehr, auch der Abbruch in die Rennmaschine.
+        if (typeof challengeLaeuft === 'function' && challengeLaeuft() && kRennenLaeuft()) {
+          requestRaceStop();
+        } else {
+          konsoleZumMenue();
+        }
+      }
       else if (tab && tab !== 'home') konsoleInsCockpit(true);
     }
     konsoleOptionsTaste.vorher = gedrueckt;

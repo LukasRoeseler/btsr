@@ -894,13 +894,10 @@
     { id: 'uebersicht', name: 'Rennen',
       waehlen: () => ovNochmal(),
       malen: () => ovScreenRender() },
-    // BESTELLT: "cockpit: weiteren screen mit Renneinstellungen einfuegen." waehlen()
-    // ist generisch verdrahtet (cockpitScreenWaehlen()), pad() ist es NICHT - siehe die
-    // Begruendung bei raceScreenPad() in 70-race.js und den Aufruf in pollGamepad()
-    // (90-ghosts.js), der ihn genau wie pitScreenPad() von Hand mit einbindet.
-    { id: 'renneinstellungen', name: 'Renneinstellungen',
-      waehlen: () => raceScreenSelect(),
-      malen: () => raceScreenRender() },
+    // BESTELLT: "Renneinstellungen aus dem Cockpit-Schirmkreis herausnehmen." Der Schirm
+    // existierte im Cockpit, und links/rechts (Dauer/Runden) hatte die gleiche Belegung wie
+    // das Schirmblaettern - wer die Rundenzahl veraenderte, kam mit dem Steuerkreuz nicht
+    // mehr zurueck. Rennmodus, Dauer/Runden und Start bleiben im Fahren-Tab.
     // ---- NUR IM ZWEI-SPIELER-MODUS BLAETTERBAR ---------------------------------------
     //
     // Der Eintrag steht IMMER in der Liste und wird beim Blaettern uebersprungen, solange

@@ -2685,8 +2685,11 @@
   .ch-kachel .ch-mini { display: grid; place-items: center; height: clamp(64px, 26vh, 170px); padding: 6px 6px 2px; }
   .ch-mini svg { max-width: 100%; max-height: 100%; width: auto; height: 100%; }
   .ch-kachel .ch-k-woche { display: block; font-style: normal; font-size: 10.5px; letter-spacing: .04em; color: var(--dim, #a3acbd); text-align: center; padding: 0 4px 5px; }
+  .ch-kachel .ch-k-beliebt { display: block; font-style: normal; font-size: 10.5px; font-weight: 600; letter-spacing: .04em; color: #fff; background: #7a5bd6; text-align: center; padding: 3px 4px; margin: 0 4px 5px; border-radius: 4px; }
+  .ch-kachel .ch-k-beliebt[hidden] { display: none; }
   .ch-detail { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 16px; align-items: start; }
   .ch-rechts > h3:first-child { margin-top: 0; }
+  .ch-stats { font-size: 12px; line-height: 1.5; }
   .ch-detail[hidden] { display: none; }
   @media (max-width: 640px) { .ch-detail { grid-template-columns: minmax(0, 1fr); } }
   .ch-karte { height: clamp(140px, 38vh, 300px); display: grid; place-items: center; cursor: zoom-in; }
@@ -3045,6 +3048,9 @@
     flex-direction: column; gap: 4px; }
   .grid-liste .grid-row { background: var(--panel); margin-bottom: 0; }
   .grid-fuss { flex: 0 0 auto; justify-content: flex-end; gap: 10px; }
+  .grid-start-gross { font-size: clamp(14px, 2vw, 20px); padding: clamp(8px, 1.4vw, 14px) clamp(20px, 4vw, 42px); }
+  .grid-hinweis { flex: 0 0 auto; margin: 0; font-size: clamp(10px, 1.2vw, 13px);
+    line-height: 1.35; color: var(--gt3-strip-ink); opacity: .9; }
   .grid-pos { font-family: monospace; font-weight: 700; min-width: 26px; color: var(--muted); }
   .grid-handle { cursor: grab; user-select: none; font-size: 15px; color: var(--muted);
     padding: 0 4px; }
@@ -4687,10 +4693,11 @@
         <div class="schirm-kopf"><b>Bringe die Autos in Position</b>
           <span id="grid-kopf-info" data-i18n-skip></span></div>
         <div class="grid-bild" id="grid-bild" data-i18n-skip></div>
+        <p class="grid-hinweis" id="grid-hinweis">Alle Autos stehen auf den Teilen <b>vor</b> Start/Ziel. Erst wenn du Start/Ziel zum ersten Mal &uuml;berf&auml;hrst, beginnt Runde&nbsp;1.</p>
         <div class="grid-liste" id="grid-liste"></div>
         <div class="schirm-fuss grid-fuss">
           <button type="button" id="grid-abbrechen">Abbrechen</button>
-          <button type="button" class="primary" id="grid-start">Start</button>
+          <button type="button" class="primary grid-start-gross" id="grid-start">Start</button>
         </div>
       </div>
     </div>
@@ -4722,22 +4729,26 @@
           <span class="ch-mini" data-kat="a" aria-hidden="true"></span>
           <b class="ch-k-name" data-i18n-skip></b>
           <span class="ch-k-info" data-i18n-skip></span>
-          <em class="ch-k-woche" data-i18n-skip></em></button>
+          <em class="ch-k-woche" data-i18n-skip></em>
+          <em class="ch-k-beliebt" hidden>&#9733; Beliebteste Strecke</em></button>
         <button class="misc-tile subpage-open ch-kachel" data-sub="ch-b">
           <span class="ch-mini" data-kat="b" aria-hidden="true"></span>
           <b class="ch-k-name" data-i18n-skip></b>
           <span class="ch-k-info" data-i18n-skip></span>
-          <em class="ch-k-woche" data-i18n-skip></em></button>
+          <em class="ch-k-woche" data-i18n-skip></em>
+          <em class="ch-k-beliebt" hidden>&#9733; Beliebteste Strecke</em></button>
         <button class="misc-tile subpage-open ch-kachel" data-sub="ch-c">
           <span class="ch-mini" data-kat="c" aria-hidden="true"></span>
           <b class="ch-k-name" data-i18n-skip></b>
           <span class="ch-k-info" data-i18n-skip></span>
-          <em class="ch-k-woche" data-i18n-skip></em></button>
+          <em class="ch-k-woche" data-i18n-skip></em>
+          <em class="ch-k-beliebt" hidden>&#9733; Beliebteste Strecke</em></button>
         <button class="misc-tile subpage-open ch-kachel" data-sub="ch-d">
           <span class="ch-mini" data-kat="d" aria-hidden="true"></span>
           <b class="ch-k-name" data-i18n-skip></b>
           <span class="ch-k-info" data-i18n-skip></span>
-          <em class="ch-k-woche" data-i18n-skip></em></button>
+          <em class="ch-k-woche" data-i18n-skip></em>
+          <em class="ch-k-beliebt" hidden>&#9733; Beliebteste Strecke</em></button>
         <button class="misc-tile subpage-open" data-sub="ch-online">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="24" r="16"/><path d="M8 24h32M24 8c6 5 6 27 0 32M24 8c-6 5-6 27 0 32" stroke="var(--bad)"/></svg>
           <b>Online</b>
@@ -4810,9 +4821,13 @@
       <div class="ch-rechts">
         <h3>Bestenliste</h3>
         <p class="muted" id="ch-liste-status" data-i18n-skip></p>
+        <p class="muted ch-stats" id="ch-stats" data-i18n-skip></p>
         <div class="ch-perz" id="ch-perz" data-i18n-skip></div>
         <div class="ch-histo" id="ch-histo"></div>
         <table class="ch-tabelle"><tbody id="ch-liste"></tbody></table>
+        <h3 class="ch-zweite">Beste 3er-Serie</h3>
+        <p class="muted ch-stats">Durchschnitt der drei schnellsten aufeinanderfolgenden Runden.</p>
+        <table class="ch-tabelle"><tbody id="ch-liste-3er"></tbody></table>
       </div>
     </div>
   </section>
@@ -5028,7 +5043,7 @@
         <li>Gas-, Brems- und Lenkkennlinie ab Werk 2,45. Neu: &bdquo;Voller Einschlag bei&ldquo; (Vorgabe 90 % Stickweg, experimentell), darunter lenkt der Stick schon, am Anfang schw&auml;cher als linear; Lenkkalibrierung verschiebt den Punkt nicht mehr. Wer noch auf den alten Vorgaben stand, bekommt die neuen einmalig; eigene Werte bleiben.</li>
         <li>Challenges: Einstellungen unter der Streckenkarte, Bestenliste rechts; Modus und Preset schaltet &#10005; um. Fr&uuml;hstart bei allen Starts mit Ampel: kein Abbruch mehr, sondern kurz ausgebremst, sobald das Auto nach Gr&uuml;n f&auml;hrt. Silverbrook-Rennen mit einem Pflichtstopp (Boxen-Minigame, egal wo).</li>
         <li>Titel-Glitch je Buchstabe zuf&auml;llig blau oder rot, oben und unten getrennt. &bdquo;Abseits&ldquo; erscheint jetzt gro&szlig; in der Mitte des Cockpits. Autos-Kachel zeigt wieder den Namen statt &bdquo;[object HTMLSpanElement]&ldquo;. Boxen-Minigame: Tasten stehen 100 ms l&auml;nger.</li>
-        <li>Challenges gegen Schummeln: jede Runde wird gegen die Strecke gepr&uuml;ft (mindestens 90 % der Teile erkannt), eine plausible Mindestrundenzeit gilt in App und Bestenliste, und die Einstellungen sind w&auml;hrend des Laufs gesperrt; wer sie doch &auml;ndert, bricht ab.</li>
+        <li>Challenges gegen Schummeln: jede Runde wird gegen die Strecke gepr&uuml;ft (mindestens 80 % der Teile erkannt), eine plausible Mindestrundenzeit gilt in App und Bestenliste, und die Einstellungen sind w&auml;hrend des Laufs gesperrt; wer sie doch &auml;ndert, bricht ab.</li>
         <li>Titelseite im Browser: Link zum Download der neuesten Android-App. Die APK-Release h&auml;ngt daf&uuml;r zus&auml;tzlich eine Datei mit festem Namen an; die Android-Schicht ist unver&auml;ndert, neu installieren ist nicht n&ouml;tig.</li>
         <li>Cockpit immer im Vollbild, der Men&uuml;-Knopf dort zeigt jetzt &bdquo;Zur&uuml;ck&ldquo;. Reiter oben: Fahren, Mehrspieler, Challenges, Optionen. Die Info-Kacheln stehen direkt in den Optionen unter einer eigenen Überschrift. Challenges: Strecken hei&szlig;en Monzetta, Suzuna, Monte Carlito und Silverbrook, der Name f&uuml;r die Bestenliste l&auml;sst sich auf jeder Strecken-Seite festlegen, das Perzentil z&auml;hlt je Spieler. Neue Kachel- und Hintergrundbilder im Fahren-Men&uuml;.</li>
         <li>Challenges: die Bestenliste kommt aus einem st&uuml;ndlichen Schnappschuss im Repo, dazu sofort die eigenen Zeiten; das Hochladen wiederholt bei Aussetzern.</li>
@@ -7759,7 +7774,7 @@
     <div class="card subpage" id="sub-mp-app">
       <button class="misc-back subpage-back" data-sub="">&larr; Mehrspieler</button>
       <h2>&Uuml;ber Android-App</h2>
-      <p class="muted" id="mp-app-hinweis">Nur in der Android-App: dieses Telefon wird Host, die anderen finden es im WLAN. Im Browser geht das nicht &ndash; dort den Weg &uuml;ber den PC nehmen.</p>
+      <p class="muted" id="mp-app-hinweis">Nur in der Android-App: dieses Telefon wird Host, die anderen finden es im WLAN. Im Browser geht das nicht &ndash; dort den Weg &uuml;ber den PC nehmen. Wer im Browser mitspielen will, braucht f&uuml;r das Auto die App (Web Bluetooth verlangt einen secure context; das APK hat das eingebaut).</p>
       <!-- NUR IN DER ANDROID-APP: dieses Telefon wird Host, ohne PC. -->
       <div class="mp-app" id="mp-app" hidden>
         <h3 class="mp-gemeinsam-h">Host <span class="wip-tag">experimentell</span>
