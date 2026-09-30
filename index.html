@@ -3879,7 +3879,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.42</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.43</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4850,6 +4850,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Rundenzeit-Ansage jetzt auch in der App: Dort fehlt die Sprachausgabe des Browsers, deshalb liest die App die Zeit aus Aufnahmen vor (Zahlen 0&ndash;60, erzeugt mit Piper TTS, Stimmen &bdquo;Thorsten&ldquo; und &bdquo;LJ Speech&ldquo;).</li>
         <li>Mehrspieler (experimentell): &bdquo;Rennen f&uuml;r alle starten&ldquo; startet ein gemeinsames Rennen. Alle Telefone &uuml;bernehmen Renntyp, L&auml;nge und einen gemeinsamen Wetterplan, die Ampel kommt &uuml;berall gleichzeitig (Uhrabgleich mit dem Host). &bdquo;Rennen starten&ldquo; fragt im Mehrspieler: f&uuml;r alle oder nur ich. F&uuml;r den Telefon-Host braucht es die neue APK.</li>
         <li>Funk: ein Schloss je Auto mit Wachhund; ein h&auml;ngender Befehl blockiert kein Auto mehr (Ursache f&uuml;r &bdquo;Auto reagiert nach Mehrspieler-Beitritt nicht&ldquo;). In der App: kurzes Timeout, erst senden, dann das Cockpit gedrosselt malen, weniger Arbeit je Meldung; Messanzeige &bdquo;Funk-Rundlauf&ldquo; unter System. Steuerkreuz: Renntyp in den Renneinstellungen und im Cockpit direkt mit links/rechts, am Rand der Renntyp-Kachel schaltet es, Zur&uuml;ck und Rennen starten erreichbar, Info-Screen schlie&szlig;t mit &#9675;. Ohne Zwei-Spieler-Modus f&auml;hrt das zuletzt benutzte Pad; &bdquo;Controller tauschen&ldquo; legt ein einzelnes Pad nicht mehr lahm. Controller ohne Standardbelegung: Hinweis und Anzeige der gedr&uuml;ckten Kn&ouml;pfe.</li>
         <li>Gas-, Brems- und Lenkkennlinie ab Werk 2,45. Neu: &bdquo;Voller Einschlag bei&ldquo; (Vorgabe 90 % Stickweg, experimentell), darunter lenkt der Stick schon, am Anfang schw&auml;cher als linear; Lenkkalibrierung verschiebt den Punkt nicht mehr. Wer noch auf den alten Vorgaben stand, bekommt die neuen einmalig; eigene Werte bleiben.</li>
@@ -11638,6 +11639,7 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Rundenzeit-Ansage jetzt auch in der App: Dort fehlt die Sprachausgabe des Browsers, deshalb liest die App die Zeit aus Aufnahmen vor (Zahlen 0–60, erzeugt mit Piper TTS, Stimmen „Thorsten“ und „LJ Speech“).": "Lap time announcement now also in the app: the browser speech output is missing there, so the app reads the time from recordings (numbers 0–60, made with Piper TTS, voices \"Thorsten\" and \"LJ Speech\").",
     "Rennen für alle starten": "Start race for everyone",
     "Rennen für alle: Ampel kommt gleich": "Race for everyone: lights coming up",
     "Erst mitmachen, dann für alle starten.": "Join first, then start for everyone.",
@@ -33594,6 +33596,7 @@
       loadEngineSamples(); // needs the AudioContext, so it can only start from here
       loadFxSamples();
       loadVoiceSamples();
+      if (!('speechSynthesis' in window)) zahlenClipsLaden(lang);
       loadAmbience();
     }
     document.removeEventListener('pointerdown', unlockAudioOnFirstGesture);
@@ -33610,6 +33613,7 @@
       loadEngineSamples();
       loadFxSamples();
       loadVoiceSamples();
+      if (!('speechSynthesis' in window)) zahlenClipsLaden(lang);
       loadAmbience();
       refreshAmbienceGains();
     } else if (engineGain) {
@@ -33943,6 +33947,75 @@
     }
   }
 
+  // ---- RUNDENZEIT AUS CLIPS (v0.8.43) ----
+  // BESTELLT: "kannst du die ganzen Zahlen von 1 bis 60 und 'Minute' selbst aufnehmen oder
+  // gibt es dafuer nicht einen MIT lizenzierten Katalog". Die Android-WebView der App hat
+  // kein speechSynthesis, dort blieb die Rundenzeit stumm. tools/voice_zahlen.py erzeugt mit
+  // Piper (Stimmen Thorsten / LJ Speech) je Sprache 0-60 und vier Woerter; hier werden sie
+  // lueckenlos im AudioContext aneinandergereiht. Geladen wird nur die gerade gewaehlte
+  // Sprache, und erst wenn es kein speechSynthesis gibt - der Browser braucht sie nicht.
+  const zahlenBuffers = { de: null, en: null };
+  let zahlenManifest = null, zahlenLaden = {}, zahlenQuellen = [];
+  async function zahlenClipsLaden(spr) {
+    if (!audioCtx || zahlenBuffers[spr] || zahlenLaden[spr]) return;
+    zahlenLaden[spr] = true;
+    try {
+      if (!zahlenManifest) {
+        const res = await fetch('audio/zahlen.json');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        zahlenManifest = await res.json();
+      }
+      const satz = {};
+      for (const [k, datei] of Object.entries(zahlenManifest[spr] || {})) {
+        const r = await fetch('audio/' + datei);
+        if (!r.ok) throw new Error(datei);
+        satz[k] = await audioCtx.decodeAudioData(await r.arrayBuffer());
+      }
+      zahlenBuffers[spr] = satz;
+    } catch (err) {
+      log('Rundenzeit-Aufnahmen nicht ladbar (' + err.message + '), die Rundenansage bleibt aus.', 'info');
+    } finally {
+      zahlenLaden[spr] = false;
+    }
+  }
+  // Rundenzeit -> Clip-Schluessel, gleicher Wortlaut wie lapSpeechText(). Gerundet wird
+  // EINMAL auf Zehntel, damit 59,96 s nicht "59 Komma 10" wird, sondern "eine Minute null Komma null".
+  function lapClipFolge(ms, istBest) {
+    const z = Math.max(0, Math.round(ms / 100));
+    const m = Math.min(60, Math.floor(z / 600));
+    const s = Math.floor((z % 600) / 10);
+    const folge = [];
+    if (m === 1) folge.push('minute');
+    else if (m > 1) folge.push(String(m), 'minuten');
+    folge.push(String(s), 'komma', String(z % 10));
+    if (istBest) folge.push('bestzeit');
+    return folge;
+  }
+  function lapClipsSpielen(ms, istBest) {
+    const satz = zahlenBuffers[lang];
+    if (!satz) { zahlenClipsLaden(lang); return false; }
+    if (!audioCtx || !soundEnabled) return false;
+    const folge = lapClipFolge(ms, istBest);
+    if (folge.some((k) => !satz[k])) return false;
+    // Abbrechen vor dem Sprechen, wie bei speechSynthesis in ansage().
+    for (const q of zahlenQuellen) { try { q.stop(); } catch (e) {} }
+    zahlenQuellen = [];
+    let t0 = audioCtx.currentTime + 0.03;
+    for (const k of folge) {
+      const src = audioCtx.createBufferSource();
+      src.buffer = satz[k];
+      const g = audioCtx.createGain();
+      g.gain.value = 1.0;
+      src.connect(g).connect(audioCtx.destination);
+      src.start(t0);
+      zahlenQuellen.push(src);
+      t0 += satz[k].duration + (k === 'komma' ? 0.02 : 0.06);
+    }
+    announceCancels++;
+    announceCalls++;
+    return true;
+  }
+
   // Die aufgenommene Ansage abspielen, wenn es sie gibt - sonst false, genau wie ein
   // gescheiterter ansage()-Aufruf. `key` ist meist gleich `art` (siehe ansage()), nur
   // 'rain' hat zwei Aufnahmen (an/aus) und braucht den spezifischeren Schluessel.
@@ -34202,6 +34275,11 @@
   }
 
   function speakLap(ms, istBest) {
+    // Ohne Sprachausgabe (App-WebView): die Zahlen-Clips.
+    if (!('speechSynthesis' in window)) {
+      if (ansageAn.lap) lapClipsSpielen(ms, istBest);
+      return;
+    }
     ansage('lap', lapSpeechText(ms, istBest));
   }
 
@@ -34224,6 +34302,10 @@
       if (art === 'lap') announceOn = e.target.checked;
       // Beim Ausschalten sofort still sein und nicht den Satz noch beenden.
       if (!e.target.checked && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+      if (!e.target.checked && art === 'lap') {
+        for (const q of zahlenQuellen) { try { q.stop(); } catch (e2) {} }
+        zahlenQuellen = [];
+      }
     });
   });
 
@@ -61529,6 +61611,30 @@
     return { ok: schlecht.length === 0,
              mass: [kurz, lang1, lang2, best].join(' | ')
                    + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Rundenzeit aus Clips (App ohne speechSynthesis) ----
+  stAdd('Rundenansage aus Clips: Folge stimmt, alle Clips im Manifest', async () => {
+    const f = [];
+    const soll = [[12400, false, '12 komma 4'], [63200, false, 'minute 3 komma 2'],
+                  [125000, true, '2 minuten 5 komma 0 bestzeit'], [59960, false, 'minute 0 komma 0'],
+                  [9040, false, '9 komma 0']];
+    for (const [ms, b, text] of soll) {
+      const ist = lapClipFolge(ms, b).join(' ');
+      if (ist !== text) f.push(ms + ': "' + ist + '" statt "' + text + '"');
+    }
+    if (location.protocol !== 'file:') {
+      try {
+        const man = await fetch('audio/zahlen.json', { cache: 'reload' }).then((r) => r.json());
+        const noetig = ['komma', 'minute', 'minuten', 'bestzeit'];
+        for (let n = 0; n <= 60; n++) noetig.push(String(n));
+        for (const spr of ['de', 'en']) {
+          const fehlt = noetig.filter((k) => !(man[spr] && man[spr][k]));
+          if (fehlt.length) f.push(spr + ' fehlt: ' + fehlt.slice(0, 5).join(','));
+        }
+      } catch (e) { f.push('zahlen.json: ' + e.message); }
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : '5 Zeiten richtig zerlegt, 65 Clips je Sprache' };
   });
 
   // ---- Ansage: jede Aeusserung bricht die vorherige ab ----

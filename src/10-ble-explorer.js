@@ -755,6 +755,7 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Rundenzeit-Ansage jetzt auch in der App: Dort fehlt die Sprachausgabe des Browsers, deshalb liest die App die Zeit aus Aufnahmen vor (Zahlen 0–60, erzeugt mit Piper TTS, Stimmen „Thorsten“ und „LJ Speech“).": "Lap time announcement now also in the app: the browser speech output is missing there, so the app reads the time from recordings (numbers 0–60, made with Piper TTS, voices \"Thorsten\" and \"LJ Speech\").",
     "Rennen für alle starten": "Start race for everyone",
     "Rennen für alle: Ampel kommt gleich": "Race for everyone: lights coming up",
     "Erst mitmachen, dann für alle starten.": "Join first, then start for everyone.",

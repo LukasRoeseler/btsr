@@ -6344,6 +6344,30 @@
                    + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Rundenzeit aus Clips (App ohne speechSynthesis) ----
+  stAdd('Rundenansage aus Clips: Folge stimmt, alle Clips im Manifest', async () => {
+    const f = [];
+    const soll = [[12400, false, '12 komma 4'], [63200, false, 'minute 3 komma 2'],
+                  [125000, true, '2 minuten 5 komma 0 bestzeit'], [59960, false, 'minute 0 komma 0'],
+                  [9040, false, '9 komma 0']];
+    for (const [ms, b, text] of soll) {
+      const ist = lapClipFolge(ms, b).join(' ');
+      if (ist !== text) f.push(ms + ': "' + ist + '" statt "' + text + '"');
+    }
+    if (location.protocol !== 'file:') {
+      try {
+        const man = await fetch('audio/zahlen.json', { cache: 'reload' }).then((r) => r.json());
+        const noetig = ['komma', 'minute', 'minuten', 'bestzeit'];
+        for (let n = 0; n <= 60; n++) noetig.push(String(n));
+        for (const spr of ['de', 'en']) {
+          const fehlt = noetig.filter((k) => !(man[spr] && man[spr][k]));
+          if (fehlt.length) f.push(spr + ' fehlt: ' + fehlt.slice(0, 5).join(','));
+        }
+      } catch (e) { f.push('zahlen.json: ' + e.message); }
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : '5 Zeiten richtig zerlegt, 65 Clips je Sprache' };
+  });
+
   // ---- Ansage: jede Aeusserung bricht die vorherige ab ----
   //
   // Zwei Runden kurz hintereinander duerfen sich nicht stapeln, sonst laeuft die Stimme

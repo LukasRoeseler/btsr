@@ -34,6 +34,7 @@
       loadEngineSamples(); // needs the AudioContext, so it can only start from here
       loadFxSamples();
       loadVoiceSamples();
+      if (!('speechSynthesis' in window)) zahlenClipsLaden(lang);
       loadAmbience();
     }
     document.removeEventListener('pointerdown', unlockAudioOnFirstGesture);
@@ -50,6 +51,7 @@
       loadEngineSamples();
       loadFxSamples();
       loadVoiceSamples();
+      if (!('speechSynthesis' in window)) zahlenClipsLaden(lang);
       loadAmbience();
       refreshAmbienceGains();
     } else if (engineGain) {
@@ -383,6 +385,75 @@
     }
   }
 
+  // ---- RUNDENZEIT AUS CLIPS (v0.8.43) ----
+  // BESTELLT: "kannst du die ganzen Zahlen von 1 bis 60 und 'Minute' selbst aufnehmen oder
+  // gibt es dafuer nicht einen MIT lizenzierten Katalog". Die Android-WebView der App hat
+  // kein speechSynthesis, dort blieb die Rundenzeit stumm. tools/voice_zahlen.py erzeugt mit
+  // Piper (Stimmen Thorsten / LJ Speech) je Sprache 0-60 und vier Woerter; hier werden sie
+  // lueckenlos im AudioContext aneinandergereiht. Geladen wird nur die gerade gewaehlte
+  // Sprache, und erst wenn es kein speechSynthesis gibt - der Browser braucht sie nicht.
+  const zahlenBuffers = { de: null, en: null };
+  let zahlenManifest = null, zahlenLaden = {}, zahlenQuellen = [];
+  async function zahlenClipsLaden(spr) {
+    if (!audioCtx || zahlenBuffers[spr] || zahlenLaden[spr]) return;
+    zahlenLaden[spr] = true;
+    try {
+      if (!zahlenManifest) {
+        const res = await fetch('audio/zahlen.json');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        zahlenManifest = await res.json();
+      }
+      const satz = {};
+      for (const [k, datei] of Object.entries(zahlenManifest[spr] || {})) {
+        const r = await fetch('audio/' + datei);
+        if (!r.ok) throw new Error(datei);
+        satz[k] = await audioCtx.decodeAudioData(await r.arrayBuffer());
+      }
+      zahlenBuffers[spr] = satz;
+    } catch (err) {
+      log('Rundenzeit-Aufnahmen nicht ladbar (' + err.message + '), die Rundenansage bleibt aus.', 'info');
+    } finally {
+      zahlenLaden[spr] = false;
+    }
+  }
+  // Rundenzeit -> Clip-Schluessel, gleicher Wortlaut wie lapSpeechText(). Gerundet wird
+  // EINMAL auf Zehntel, damit 59,96 s nicht "59 Komma 10" wird, sondern "eine Minute null Komma null".
+  function lapClipFolge(ms, istBest) {
+    const z = Math.max(0, Math.round(ms / 100));
+    const m = Math.min(60, Math.floor(z / 600));
+    const s = Math.floor((z % 600) / 10);
+    const folge = [];
+    if (m === 1) folge.push('minute');
+    else if (m > 1) folge.push(String(m), 'minuten');
+    folge.push(String(s), 'komma', String(z % 10));
+    if (istBest) folge.push('bestzeit');
+    return folge;
+  }
+  function lapClipsSpielen(ms, istBest) {
+    const satz = zahlenBuffers[lang];
+    if (!satz) { zahlenClipsLaden(lang); return false; }
+    if (!audioCtx || !soundEnabled) return false;
+    const folge = lapClipFolge(ms, istBest);
+    if (folge.some((k) => !satz[k])) return false;
+    // Abbrechen vor dem Sprechen, wie bei speechSynthesis in ansage().
+    for (const q of zahlenQuellen) { try { q.stop(); } catch (e) {} }
+    zahlenQuellen = [];
+    let t0 = audioCtx.currentTime + 0.03;
+    for (const k of folge) {
+      const src = audioCtx.createBufferSource();
+      src.buffer = satz[k];
+      const g = audioCtx.createGain();
+      g.gain.value = 1.0;
+      src.connect(g).connect(audioCtx.destination);
+      src.start(t0);
+      zahlenQuellen.push(src);
+      t0 += satz[k].duration + (k === 'komma' ? 0.02 : 0.06);
+    }
+    announceCancels++;
+    announceCalls++;
+    return true;
+  }
+
   // Die aufgenommene Ansage abspielen, wenn es sie gibt - sonst false, genau wie ein
   // gescheiterter ansage()-Aufruf. `key` ist meist gleich `art` (siehe ansage()), nur
   // 'rain' hat zwei Aufnahmen (an/aus) und braucht den spezifischeren Schluessel.
@@ -642,6 +713,11 @@
   }
 
   function speakLap(ms, istBest) {
+    // Ohne Sprachausgabe (App-WebView): die Zahlen-Clips.
+    if (!('speechSynthesis' in window)) {
+      if (ansageAn.lap) lapClipsSpielen(ms, istBest);
+      return;
+    }
     ansage('lap', lapSpeechText(ms, istBest));
   }
 
@@ -664,6 +740,10 @@
       if (art === 'lap') announceOn = e.target.checked;
       // Beim Ausschalten sofort still sein und nicht den Satz noch beenden.
       if (!e.target.checked && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+      if (!e.target.checked && art === 'lap') {
+        for (const q of zahlenQuellen) { try { q.stop(); } catch (e2) {} }
+        zahlenQuellen = [];
+      }
     });
   });
 
