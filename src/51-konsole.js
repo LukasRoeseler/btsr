@@ -631,7 +631,9 @@
       ? [[t('Teile'), String(kTeile())], ['Code', kCode() || '–']]
       : [[t('Modus'), t('Ausdruck, ohne Bahn')], [t('Streckenfoto'), foto ? t('hochgeladen') : t('keins')]]);
     ['fa-scan', 'fa-laden'].forEach((id) => { if ($(id)) $(id).hidden = !bahn; });
-    if ($('fa-druck')) $('fa-druck').hidden = bahn;
+    // BESTELLT: "wenn ich auf TRACK klicke, sollen alle Optionen sichtbar sein" - auch im
+    // Bahn-Modus sollen die Druckvorlagen erreichbar bleiben.
+    if ($('fa-druck')) $('fa-druck').hidden = false;
     if ($('fa-foto')) $('fa-foto').hidden = bahn;
     if ($('fa-foto-weg')) $('fa-foto-weg').hidden = bahn || !foto;
     $('fa-profil-titel').textContent = ($('race-act-mode-txt') || {}).textContent || '–';
@@ -642,11 +644,11 @@
     $('fa-start-titel').textContent = kRennenLaeuft() ? t('Zurück ins Rennen')
       : (training ? t('Training starten') : t('Rennen starten'));
     $('fa-start-unter').textContent = modus + ' · ' + (bahn ? t('auf der Bahn') : t('frei'));
-    // Punkte rechts neben dem Wert: so viele, wie es Schaltstellungen gibt, die gewaehlte gefuellt.
-    // Bei zu vielen (z. B. Motorsound mit 27 Motoren) wuerden die Punkte nicht mehr passen -
-    // dort zeigt nur noch der Wert die Stellung, ohne Punkte.
+    // Punkte rechts neben dem Wert (in derselben .k-kopf-Zeile): so viele, wie es
+    // Schaltstellungen gibt, die gewaehlte gefuellt. Bei zu vielen (z. B. Motorsound mit
+    // 27 Motoren) wuerden die Punkte nicht mehr passen - dort stehen Pfeile im Markup.
     [['fa-strecke-punkte', 'bahn'], ['fa-renn-punkte', 'renntyp'],
-     ['fa-profil-punkte', 'profil'], ['fa-motor-punkte', 'motor']].forEach(([id, quad]) => {
+     ['fa-profil-punkte', 'profil']].forEach(([id, quad]) => {
       const host = $(id);
       if (!host) return;
       const p = kQuadPunkte(quad);
@@ -840,6 +842,13 @@
           });
         });
       });
+    // Die Pfeile des Motorsound-Kachelkopfs blaettern vor und zurueck (nicht das Gamepad).
+    document.querySelectorAll('.k-arrow').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        konsoleQuadWechsel(el.dataset.quad, parseInt(el.dataset.dir, 10));
+      });
+    });
     kn('race-menue', () => konsoleZumMenue());
     document.querySelectorAll('.info-open').forEach((el) => el.addEventListener('click', () => konsoleZeige('info', el.dataset.sub)));
     kn('mp-erkl-knopf', (e) => { e.stopPropagation(); optInfoOeffnen(t('Beitreten und Rangliste'), $('mp-erkl').innerHTML); });

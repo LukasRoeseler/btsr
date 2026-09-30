@@ -542,6 +542,34 @@
     return playFx(fxBuffers.crash[i], 0.95);
   }
 
+  // ---- ZWEI NOTEN FUER MEHRSPIELER: Beitritt und Abschied ------------------------------
+  // BESTELLT: "subtle join and leave sound (like two notes, medium-high for join and
+  // high-medium for leave) when another player is joining, for all players already part of a
+  // multiplayer session." Aufwaerts (mittel -> hoch) fuer einen Neuzugang, abwaerts
+  // (hoch -> mittel) fuer einen Abschied. Kurz und leise, damit es nicht nach Alarm klingt.
+  const MP_JOIN_TONE = [587.33, 783.99];   // D5 -> G5
+  const MP_LEAVE_TONE = [783.99, 587.33];  // G5 -> D5
+  function spielerWechselTon(join) {
+    if (!audioCtx || !soundEnabled) return;
+    const t0 = audioCtx.currentTime + 0.02;
+    const folge = join ? MP_JOIN_TONE : MP_LEAVE_TONE;
+    const dauer = 0.09, pause = 0.05, laut = 0.13;
+    folge.forEach((hz, i) => {
+      const t = t0 + i * (dauer + pause);
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = 'sine';
+      o.frequency.value = hz;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(laut, t + 0.008);
+      g.gain.setValueAtTime(laut, t + dauer - 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dauer);
+      o.connect(g).connect(audioCtx.destination);
+      o.start(t);
+      o.stop(t + dauer + 0.02);
+    });
+  }
+
   // The brake squeal is a sustained loop faded by pressure, the way a real squeal swells
   // and dies rather than being retriggered.
   // Pneumatic paddle shift. Up and down are distinct samples because they really do

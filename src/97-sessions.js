@@ -474,7 +474,7 @@
   const MP_POLL_MS = 1500;      // Rangliste holen
   const MP_HEARTBEAT_MS = 5000; // Lebenszeichen, damit die eigene Zeile nicht blass wird
   const mp = { host: '', name: '', id: '', an: false, timer: null, letzterBericht: 0,
-               zuschauer: 0, posTimer: null };
+               zuschauer: 0, posTimer: null, bekannt: null };
   // POSITIONEN NUR, WENN JEMAND ZUSIEHT. Der Host zaehlt die Info-Screens (zuschauer in
   // /mp/state); ist keiner da, bleibt es bei Rundenschluss und Lebenszeichen wie bisher.
   // Mit Zuschauer drei Berichte je Sekunde - der Info-Screen rechnet dazwischen weiter.
@@ -685,6 +685,10 @@
     const host = $('mp-rows');
     if (!host) return;
     const leute = d.fahrer || [];
+    // Beitritt/Abschied (BESTELLT): wenn ein ANDERER Fahrer dazukommt oder geht, hoeren die
+    // schon dabei einen leisen Zwei-Ton. Der erste Abruf setzt nur den Grundstock, damit
+    // nicht beim Anmelden gleich der ganze Raum tutet.
+    mpSpielerWechsel(leute);
     if (!leute.length) {
       host.innerHTML = '<tr><td colspan="5" class="muted">' + t('keine Daten') + '</td></tr>';
       return;
@@ -697,12 +701,26 @@
       + '</td></tr>').join('');
   }
 
+  // Wer neu in der Fahrerliste steht (nicht man selbst) und wer verschwunden ist. Der eigene
+  // Beitritt/Abschied soll nicht tueten - man weiss ja selbst, dass man kommt oder geht.
+  function mpSpielerWechsel(leute) {
+    const jetzt = new Set(leute.map((f) => f.id).filter(Boolean));
+    if (mp.bekannt === null) { mp.bekannt = jetzt; return; }
+    let join = false, leave = false;
+    jetzt.forEach((id) => { if (!mp.bekannt.has(id) && id !== mp.id) join = true; });
+    mp.bekannt.forEach((id) => { if (!jetzt.has(id) && id !== mp.id) leave = true; });
+    mp.bekannt = jetzt;
+    if (join && typeof spielerWechselTon === 'function') spielerWechselTon(true);
+    if (leave && typeof spielerWechselTon === 'function') spielerWechselTon(false);
+  }
+
   function mpJoin() {
     mp.host = ($('mp-host') || { value: '' }).value.trim();
     mp.name = ($('mp-name') || { value: '' }).value.trim();
     if (!mp.host) { mpSay(t('Ohne Host-Adresse geht es nicht.'), true); return; }
     mpSpeichern();
     mp.an = true;
+    mp.bekannt = null;
     if (mp.timer === null) mp.timer = setInterval(mpHolen, MP_POLL_MS);
     mpBerichten();
     mpHolen();
@@ -712,6 +730,7 @@
 
   function mpLeave() {
     mp.an = false;
+    mp.bekannt = null;
     mpPosTakt();
     if (mp.timer !== null) { clearInterval(mp.timer); mp.timer = null; }
     mpSay(t('nicht verbunden'));

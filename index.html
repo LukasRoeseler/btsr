@@ -2267,10 +2267,22 @@
   .k-klein .k-kt { font-size: clamp(12px, 1.1vw, 16px); }
   /* Die Kacheln mit schnellem Wechsel (Quadrat): statt der kleinen blauen Pfeile zeigen
      rechts neben dem Wert so viele Punkte, wie es Schaltstellungen gibt; die gewaehlte
-     ist gefuellt (51-konsole.js, kQuadPunkte). */
+     ist gefuellt (51-konsole.js, kQuadPunkte). Wert und Punkte liegen in EINER Zeile
+     (.k-kopf) - als eigene Flexzeile waren die Punkte unter dem Wert kaum zu sehen. */
+  .k-kopf { display: flex; align-items: center; justify-content: center; background: var(--k-weiss);
+    color: var(--k-tinte); }
+  .k-kopf .k-kt { flex: 0 1 auto; background: none; min-width: 0; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; }
+  .k-kopf .k-quad-punkte { flex: 0 0 auto; margin-left: 6px; }
   .k-quad-punkte { display: inline-flex; gap: 4px; margin-left: 10px; align-items: center; vertical-align: middle; }
   .k-quad-punkte i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--k-blau); box-sizing: border-box; }
   .k-quad-punkte i.an { background: var(--k-blau); }
+  /* Motorsound hat zu viele Stellungen (27 Motoren) fuer Punkte: stattdessen zwei Pfeile
+     zum Vor/Zurueckblaettern, rechts neben dem Wert in der .k-kopf-Zeile. */
+  .k-quad-wechsel { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; }
+  .k-arrow { background: var(--k-grau); color: #fff; border: 0; padding: 2px 7px; font-size: 12px;
+    line-height: 1; cursor: pointer; }
+  .k-arrow:hover { background: var(--k-blau); color: var(--k-blau-text); }
 
   .k-fahren { grid-template-columns: repeat(3, 1fr); grid-template-rows: minmax(300px, 56vh) minmax(96px, 20vh); }
   .k-fahren-unten { grid-column: 1 / -1; grid-template-columns: 1fr 1fr 2fr; }
@@ -2414,7 +2426,8 @@
       linear-gradient(90deg, rgba(8,10,16,.92) 0, rgba(8,10,16,.8) 36%, rgba(8,10,16,.28) 72%, rgba(8,10,16,.12)),
       linear-gradient(transparent 58%, rgba(0,229,255,.35) 58% 59.5%, transparent 59.5% 78%, rgba(255,43,94,.38) 78% 79.5%, transparent 79.5%) right / 32% 100% no-repeat; }
     .k-kachel.menu-nav-sel > .k-kb, .k-kachel:hover > .k-kb { filter: brightness(.95) saturate(1) contrast(1.05); }
-    .k-kachel > .k-kk, .k-kachel > .k-kt, .k-kachel > .k-ki, .k-kachel > .k-knopfreihe { position: relative; z-index: 1; }
+    .k-kachel > .k-kk, .k-kachel > .k-kt, .k-kachel > .k-ki, .k-kachel > .k-knopfreihe,
+    .k-kachel > .k-kopf { position: relative; z-index: 1; }
     .k-kachel > .k-ki { text-shadow: 0 1px 3px rgba(0,0,0,.95); }
     /* Kleine Kacheln: eine Zeile fuer "PRO" und "PORSCHE 911 GT3 R", lange Namen umbrechen. */
     .k-klein .k-kt { font-size: clamp(9.5px, 1.9vh, 13.5px); white-space: normal; line-height: 1.15; }
@@ -2541,6 +2554,22 @@
   #sub-mp-app #mp-gemeinsam .row { gap: 6px 8px; }
   #sub-mp-app #mp-gemeinsam label.small { flex: 1 1 100%; display: grid; grid-template-columns: 110px minmax(0, 1fr);
     align-items: center; gap: 8px; }
+  /* Beitreten/Rangliste zweispaltig auf schmalen Schirmen (BESTELLT: "optimize the menu for
+     mobile view"): links Knoepfe und Info untereinander, rechts die Fahrerliste. Auf breiten
+     Schirmen bleibt der bisherige eine Spaltenstapel (Formularzeile, dann Tabelle). */
+  .mp-spalten { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px 16px; align-items: start; }
+  .mp-spalte-rechts { min-width: 0; }
+  @media (max-width: 900px) {
+    .mp-spalten { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
+    .mp-spalte-links { display: flex; flex-direction: column; gap: 8px; }
+    .mp-spalte-links .row { flex-direction: column; flex-wrap: nowrap !important;
+      align-items: stretch !important; gap: 6px !important; }
+    .mp-spalte-links .row label.small { flex: 1 1 auto; width: 100%; }
+    .mp-spalte-links .row button { width: 100%; }
+    /* Die App-Seite hat ihren eigenen 2-Spalter; auf Mobile in eine Spalte, damit nicht zwei
+       Spalten ineinander liegen. */
+    #sub-mp-app.on { grid-template-columns: minmax(0, 1fr); }
+  }
   /* ---- Garage als Karten (v0.8.26, Vorschlag B) ---- */
   #gar-list.gar-karten { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
   .gar-row.gar-karte { display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden; border-radius: 0;
@@ -3890,7 +3919,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.47</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.48</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3924,8 +3953,7 @@
       </div>
       <div class="k-kachel " id="fa-strecke" role="button" tabindex="0" data-quad="bahn">
         <span class="k-kk">Strecke</span>
-        <span class="k-kt" id="fa-strecke-titel"></span>
-        <span class="k-quad-punkte" id="fa-strecke-punkte" aria-hidden="true"></span>
+        <span class="k-kopf"><span class="k-kt" id="fa-strecke-titel"></span><span class="k-quad-punkte" id="fa-strecke-punkte" aria-hidden="true"></span></span>
         <span class="k-kb" id="fa-strecke-bild" style="background-image:url(img/strecke-kachel.jpg)"></span>
         <span class="k-ki" id="fa-strecke-info"></span>
         <span class="k-knopfreihe">
@@ -3939,24 +3967,21 @@
       </div>
       <div class="k-kachel " id="fa-renn" role="button" tabindex="0" data-quad="renntyp">
         <span class="k-kk">Rennoptionen</span>
-        <span class="k-kt" id="fa-renn-titel"></span>
-        <span class="k-quad-punkte" id="fa-renn-punkte" aria-hidden="true"></span>
+        <span class="k-kopf"><span class="k-kt" id="fa-renn-titel"></span><span class="k-quad-punkte" id="fa-renn-punkte" aria-hidden="true"></span></span>
         <span class="k-kb" style="background-image:url(img/rennoptionen.jpg)"></span>
         <span class="k-ki" id="fa-renn-info"></span>
       </div>
       <div class="k-gitter k-fahren-unten">
       <div class="k-kachel k-klein" id="fa-profil" role="button" tabindex="0" data-quad="profil">
         <span class="k-kk">Fahrgefühl</span>
-        <span class="k-kt" id="fa-profil-titel"></span>
-        <span class="k-quad-punkte" id="fa-profil-punkte" aria-hidden="true"></span>
+        <span class="k-kopf"><span class="k-kt" id="fa-profil-titel"></span><span class="k-quad-punkte" id="fa-profil-punkte" aria-hidden="true"></span></span>
         <span class="k-ki"></span>
       </div>
       <!-- BESTELLT: "Statt Gegnerhärte Motorsound einstellen lassen im Fahren Menü". Quadrat
            blaettert die Motoren durch (#sound-profile), Kreuz oeffnet Optionen, Ton. -->
       <div class="k-kachel k-klein" id="fa-motor" role="button" tabindex="0" data-quad="motor">
         <span class="k-kk">Motorsound</span>
-        <span class="k-kt" id="fa-motor-titel"></span>
-        <span class="k-quad-punkte" id="fa-motor-punkte" aria-hidden="true"></span>
+        <span class="k-kopf"><span class="k-kt" id="fa-motor-titel"></span><span class="k-quad-wechsel"><button type="button" class="k-arrow" data-quad="motor" data-dir="-1" aria-label="vorheriger Motorsound">&#9664;</button><button type="button" class="k-arrow" data-quad="motor" data-dir="1" aria-label="naechster Motorsound">&#9654;</button></span></span>
         <span class="k-ki"></span>
       </div>
         <div class="k-kachel k-start" id="fa-start" role="button" tabindex="0">
@@ -7629,22 +7654,28 @@
     <div id="mp-gemeinsam">
       <h3 class="mp-gemeinsam-h">Beitreten und Rangliste
         <button type="button" class="opt-info-btn" id="mp-erkl-knopf" aria-label="Erklärung anzeigen">i</button></h3>
-      <div class="row" style="gap:10px; flex-wrap:wrap; align-items:flex-end">
-        <label class="small" style="flex:1 1 200px">Host-Adresse
-          <input type="text" id="mp-host" placeholder="http://192.168.1.50:8080"></label>
-        <label class="small" style="flex:1 1 140px">Mein Name
-          <input type="text" id="mp-name" maxlength="40" placeholder="z. B. Luuke"></label>
-        <button class="primary" id="mp-join">Mitmachen</button>
-        <button id="mp-info-join" title="Ohne eigenes Auto: zeigt Strecke, Autos und Rangliste">Als Info-Screen <span class="wip-tag">experimentell</span></button>
-        <button id="mp-rennen-alle">Rennen für alle starten <span class="wip-tag">experimentell</span></button>
-        <button id="mp-leave" class="warn">Verlassen</button>
+      <div class="mp-spalten">
+        <div class="mp-spalte-links">
+          <div class="row" style="gap:10px; flex-wrap:wrap; align-items:flex-end">
+            <label class="small" style="flex:1 1 200px">Host-Adresse
+              <input type="text" id="mp-host" placeholder="http://192.168.1.50:8080"></label>
+            <label class="small" style="flex:1 1 140px">Mein Name
+              <input type="text" id="mp-name" maxlength="40" placeholder="z. B. Luuke"></label>
+            <button class="primary" id="mp-join">Mitmachen</button>
+            <button id="mp-info-join" title="Ohne eigenes Auto: zeigt Strecke, Autos und Rangliste">Als Info-Screen <span class="wip-tag">experimentell</span></button>
+            <button id="mp-rennen-alle">Rennen für alle starten <span class="wip-tag">experimentell</span></button>
+            <button id="mp-leave" class="warn">Verlassen</button>
+          </div>
+          <div class="muted" id="mp-status" style="margin-top:8px">nicht verbunden</div>
+        </div>
+        <div class="mp-spalte-rechts">
+          <table class="cm-tab"><thead><tr>
+            <th></th><th>Fahrer</th><th>Runden</th><th>Letzte</th><th>Beste</th>
+          </tr></thead><tbody id="mp-rows">
+            <tr><td colspan="5" class="muted">keine Daten</td></tr>
+          </tbody></table>
+        </div>
       </div>
-      <div class="muted" id="mp-status" style="margin-top:8px">nicht verbunden</div>
-      <table class="cm-tab"><thead><tr>
-        <th></th><th>Fahrer</th><th>Runden</th><th>Letzte</th><th>Beste</th>
-      </tr></thead><tbody id="mp-rows">
-        <tr><td colspan="5" class="muted">keine Daten</td></tr>
-      </tbody></table>
       <!-- Die Erklaerungen stehen hinter dem i (BESTELLT: "keinen Text unter die Optionen,
            sondern immer hinter das i im Kreis"). -->
       <div class="mp-erkl" id="mp-erkl" hidden>
@@ -10100,7 +10131,7 @@
           <b>Meine Teile</b>
           <span>Wie viele Teile du von jeder Sorte hast. Der Editor zeigt, was fehlt.</span>
         </button>
-        <button class="misc-tile subpage-open" data-sub="print" data-modus="frei">
+        <button class="misc-tile subpage-open" data-sub="print">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V8h20v10"/><rect x="8" y="18" width="32" height="14" rx="2"/><path d="M14 32h20v10H14z" stroke="var(--bad)"/></svg>
           <b>Druckvorlagen</b>
@@ -22285,7 +22316,9 @@
       ? [[t('Teile'), String(kTeile())], ['Code', kCode() || '–']]
       : [[t('Modus'), t('Ausdruck, ohne Bahn')], [t('Streckenfoto'), foto ? t('hochgeladen') : t('keins')]]);
     ['fa-scan', 'fa-laden'].forEach((id) => { if ($(id)) $(id).hidden = !bahn; });
-    if ($('fa-druck')) $('fa-druck').hidden = bahn;
+    // BESTELLT: "wenn ich auf TRACK klicke, sollen alle Optionen sichtbar sein" - auch im
+    // Bahn-Modus sollen die Druckvorlagen erreichbar bleiben.
+    if ($('fa-druck')) $('fa-druck').hidden = false;
     if ($('fa-foto')) $('fa-foto').hidden = bahn;
     if ($('fa-foto-weg')) $('fa-foto-weg').hidden = bahn || !foto;
     $('fa-profil-titel').textContent = ($('race-act-mode-txt') || {}).textContent || '–';
@@ -22296,11 +22329,11 @@
     $('fa-start-titel').textContent = kRennenLaeuft() ? t('Zurück ins Rennen')
       : (training ? t('Training starten') : t('Rennen starten'));
     $('fa-start-unter').textContent = modus + ' · ' + (bahn ? t('auf der Bahn') : t('frei'));
-    // Punkte rechts neben dem Wert: so viele, wie es Schaltstellungen gibt, die gewaehlte gefuellt.
-    // Bei zu vielen (z. B. Motorsound mit 27 Motoren) wuerden die Punkte nicht mehr passen -
-    // dort zeigt nur noch der Wert die Stellung, ohne Punkte.
+    // Punkte rechts neben dem Wert (in derselben .k-kopf-Zeile): so viele, wie es
+    // Schaltstellungen gibt, die gewaehlte gefuellt. Bei zu vielen (z. B. Motorsound mit
+    // 27 Motoren) wuerden die Punkte nicht mehr passen - dort stehen Pfeile im Markup.
     [['fa-strecke-punkte', 'bahn'], ['fa-renn-punkte', 'renntyp'],
-     ['fa-profil-punkte', 'profil'], ['fa-motor-punkte', 'motor']].forEach(([id, quad]) => {
+     ['fa-profil-punkte', 'profil']].forEach(([id, quad]) => {
       const host = $(id);
       if (!host) return;
       const p = kQuadPunkte(quad);
@@ -22494,6 +22527,13 @@
           });
         });
       });
+    // Die Pfeile des Motorsound-Kachelkopfs blaettern vor und zurueck (nicht das Gamepad).
+    document.querySelectorAll('.k-arrow').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        konsoleQuadWechsel(el.dataset.quad, parseInt(el.dataset.dir, 10));
+      });
+    });
     kn('race-menue', () => konsoleZumMenue());
     document.querySelectorAll('.info-open').forEach((el) => el.addEventListener('click', () => konsoleZeige('info', el.dataset.sub)));
     kn('mp-erkl-knopf', (e) => { e.stopPropagation(); optInfoOeffnen(t('Beitreten und Rangliste'), $('mp-erkl').innerHTML); });
@@ -34460,6 +34500,34 @@
     if (!fxBuffers.crash.length) return false;
     const i = Math.floor(Math.random() * fxBuffers.crash.length);
     return playFx(fxBuffers.crash[i], 0.95);
+  }
+
+  // ---- ZWEI NOTEN FUER MEHRSPIELER: Beitritt und Abschied ------------------------------
+  // BESTELLT: "subtle join and leave sound (like two notes, medium-high for join and
+  // high-medium for leave) when another player is joining, for all players already part of a
+  // multiplayer session." Aufwaerts (mittel -> hoch) fuer einen Neuzugang, abwaerts
+  // (hoch -> mittel) fuer einen Abschied. Kurz und leise, damit es nicht nach Alarm klingt.
+  const MP_JOIN_TONE = [587.33, 783.99];   // D5 -> G5
+  const MP_LEAVE_TONE = [783.99, 587.33];  // G5 -> D5
+  function spielerWechselTon(join) {
+    if (!audioCtx || !soundEnabled) return;
+    const t0 = audioCtx.currentTime + 0.02;
+    const folge = join ? MP_JOIN_TONE : MP_LEAVE_TONE;
+    const dauer = 0.09, pause = 0.05, laut = 0.13;
+    folge.forEach((hz, i) => {
+      const t = t0 + i * (dauer + pause);
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = 'sine';
+      o.frequency.value = hz;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(laut, t + 0.008);
+      g.gain.setValueAtTime(laut, t + dauer - 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dauer);
+      o.connect(g).connect(audioCtx.destination);
+      o.start(t);
+      o.stop(t + dauer + 0.02);
+    });
   }
 
   // The brake squeal is a sustained loop faded by pressure, the way a real squeal swells
@@ -72317,7 +72385,7 @@
   const MP_POLL_MS = 1500;      // Rangliste holen
   const MP_HEARTBEAT_MS = 5000; // Lebenszeichen, damit die eigene Zeile nicht blass wird
   const mp = { host: '', name: '', id: '', an: false, timer: null, letzterBericht: 0,
-               zuschauer: 0, posTimer: null };
+               zuschauer: 0, posTimer: null, bekannt: null };
   // POSITIONEN NUR, WENN JEMAND ZUSIEHT. Der Host zaehlt die Info-Screens (zuschauer in
   // /mp/state); ist keiner da, bleibt es bei Rundenschluss und Lebenszeichen wie bisher.
   // Mit Zuschauer drei Berichte je Sekunde - der Info-Screen rechnet dazwischen weiter.
@@ -72528,6 +72596,10 @@
     const host = $('mp-rows');
     if (!host) return;
     const leute = d.fahrer || [];
+    // Beitritt/Abschied (BESTELLT): wenn ein ANDERER Fahrer dazukommt oder geht, hoeren die
+    // schon dabei einen leisen Zwei-Ton. Der erste Abruf setzt nur den Grundstock, damit
+    // nicht beim Anmelden gleich der ganze Raum tutet.
+    mpSpielerWechsel(leute);
     if (!leute.length) {
       host.innerHTML = '<tr><td colspan="5" class="muted">' + t('keine Daten') + '</td></tr>';
       return;
@@ -72540,12 +72612,26 @@
       + '</td></tr>').join('');
   }
 
+  // Wer neu in der Fahrerliste steht (nicht man selbst) und wer verschwunden ist. Der eigene
+  // Beitritt/Abschied soll nicht tueten - man weiss ja selbst, dass man kommt oder geht.
+  function mpSpielerWechsel(leute) {
+    const jetzt = new Set(leute.map((f) => f.id).filter(Boolean));
+    if (mp.bekannt === null) { mp.bekannt = jetzt; return; }
+    let join = false, leave = false;
+    jetzt.forEach((id) => { if (!mp.bekannt.has(id) && id !== mp.id) join = true; });
+    mp.bekannt.forEach((id) => { if (!jetzt.has(id) && id !== mp.id) leave = true; });
+    mp.bekannt = jetzt;
+    if (join && typeof spielerWechselTon === 'function') spielerWechselTon(true);
+    if (leave && typeof spielerWechselTon === 'function') spielerWechselTon(false);
+  }
+
   function mpJoin() {
     mp.host = ($('mp-host') || { value: '' }).value.trim();
     mp.name = ($('mp-name') || { value: '' }).value.trim();
     if (!mp.host) { mpSay(t('Ohne Host-Adresse geht es nicht.'), true); return; }
     mpSpeichern();
     mp.an = true;
+    mp.bekannt = null;
     if (mp.timer === null) mp.timer = setInterval(mpHolen, MP_POLL_MS);
     mpBerichten();
     mpHolen();
@@ -72555,6 +72641,7 @@
 
   function mpLeave() {
     mp.an = false;
+    mp.bekannt = null;
     mpPosTakt();
     if (mp.timer !== null) { clearInterval(mp.timer); mp.timer = null; }
     mpSay(t('nicht verbunden'));
