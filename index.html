@@ -2310,9 +2310,9 @@
      ist gefuellt (51-konsole.js, kQuadPunkte). Wert und Punkte liegen in EINER Zeile
      (.k-kopf) - als eigene Flexzeile waren die Punkte unter dem Wert kaum zu sehen. */
   .k-kopf { display: flex; align-items: center; justify-content: center; background: var(--k-weiss);
-    color: var(--k-tinte); min-height: clamp(17px, 3vh, 27px); }
+    color: var(--k-tinte); height: clamp(20px, 3.4vh, 32px); }
   .k-kopf .k-kt { flex: 0 1 auto; background: none; min-width: 0; overflow: hidden;
-    text-overflow: ellipsis; white-space: nowrap; }
+    text-overflow: ellipsis; white-space: nowrap; line-height: 1.1; padding: 0 6px; }
   .k-kopf .k-quad-punkte { flex: 0 0 auto; margin-left: 6px; }
   .k-quad-punkte { display: inline-flex; gap: 4px; margin-left: 10px; align-items: center; vertical-align: middle; }
   .k-quad-punkte i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--k-blau); box-sizing: border-box; }
@@ -2320,16 +2320,17 @@
   /* Kompakte "N/M"-Anzeige statt vieler Punkte (viele Schaltstellungen, keine Pfeile). */
   .k-quad-punkte .k-quad-zahl { font-size: 12px; font-weight: 800; line-height: 1;
     color: var(--k-blau); letter-spacing: .02em; }
-  /* Motorsound hat zu viele Stellungen (27 Motoren) fuer Punkte: stattdessen zwei Pfeile
-     zum Vor/Zurueckblaettern, rechts neben dem Wert in der .k-kopf-Zeile. Klein, blau auf
-     transparent - nur das Zeichen, kein Kasten. */
-  .k-quad-wechsel { display: inline-flex; align-items: center; gap: 2px; margin-left: 6px; }
-  /* Kleiner Kasten mit dunkelgrauem Rahmen, blau, auf transparent - der Kasten ist das
-     Klickziel, und Hover/Aktiv duerfen keine Panel-Farbe annehmen (die generische
-     button:hover-Regel hat hoehere Spezifitaet und waere sonst die "haeßliche" Flaeche). */
-  .k-arrow { background: transparent; color: var(--k-blau); border: 1px solid var(--k-grau);
-    border-radius: 2px; padding: 0 3px; font-size: 14px; line-height: 1; cursor: pointer;
-    outline: 0; }
+  /* Motorsound: Pfeile LINKS und RECHTS vom Wert (nicht beide rechts). Der Wert nimmt die
+     Mitte (flex:1), damit er beim Blaettern nicht breiter/breiter wird und die Pfeile nicht
+     springen; lange Namen laufen in die Ellipse. Die Dreiecke sind blau mit grauem Rand -
+     kein Kasten, nur das Zeichen. */
+  .k-kopf-wechsel { gap: 4px; }
+  .k-kopf-wechsel .k-kt { flex: 1 1 auto; text-align: center; }
+  .k-arrow { background: transparent; color: var(--k-blau); border: 0; padding: 0 2px;
+    cursor: pointer; display: inline-flex; align-items: center; outline: 0; }
+  .k-arrow svg { width: 13px; height: 13px; display: block; }
+  .k-arrow svg path { fill: var(--k-blau); stroke: var(--k-grau); stroke-width: 1.3;
+    stroke-linejoin: round; }
   .k-arrow:hover, .k-arrow:active, .k-arrow:focus-visible { background: transparent;
     color: var(--k-blau); outline: 0; }
 
@@ -3974,7 +3975,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.50</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.51</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4036,7 +4037,7 @@
            blaettert die Motoren durch (#sound-profile), Kreuz oeffnet Optionen, Ton. -->
       <div class="k-kachel k-klein" id="fa-motor" role="button" tabindex="0" data-quad="motor">
         <span class="k-kk">Motorsound</span>
-        <span class="k-kopf"><span class="k-kt" id="fa-motor-titel"></span><span class="k-quad-wechsel"><button type="button" class="k-arrow" data-quad="motor" data-dir="-1" aria-label="vorheriger Motorsound">&#9664;</button><button type="button" class="k-arrow" data-quad="motor" data-dir="1" aria-label="naechster Motorsound">&#9654;</button></span></span>
+        <span class="k-kopf k-kopf-wechsel"><button type="button" class="k-arrow" data-quad="motor" data-dir="-1" aria-label="vorheriger Motorsound"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3v10L4 8z"/></svg></button><span class="k-kt" id="fa-motor-titel"></span><button type="button" class="k-arrow" data-quad="motor" data-dir="1" aria-label="naechster Motorsound"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3v10l7-5z"/></svg></button></span>
         <span class="k-ki"></span>
       </div>
         <div class="k-kachel k-start" id="fa-start" role="button" tabindex="0">
