@@ -586,15 +586,91 @@
     if (mp.an) mpBerichten();
   }
 
+  // ---- GEMEINSAMER START (v0.8.42) ----------------------------------------------------
+  // BESTELLT: "Im Multiplayer muss das Wetter fuer das eingestellte Rennen bei anderen
+  // Spielern synchronisiert sein. Ausserdem muss die Ampel ueberall gleichzeitig kommen."
+  // Uhrabgleich: jede Abfrage liefert die Host-Uhr (zeitMs); Versatz = zeitMs - Mitte der
+  // Anfrage. Genommen wird die Probe mit dem kuerzesten Hin- und Rueckweg der letzten acht,
+  // Wege ueber 300 ms zaehlen nicht.
+  const MP_VORLAUF_MS = 8000;
+  mp.proben = []; mp.offset = 0; mp.rennenId = null; mp.frageUmgehen = false;
+  function mpUhrProbe(t0, t1, zeitMs) {
+    if (!Number.isFinite(zeitMs)) return;
+    const weg = t1 - t0;
+    if (weg < 0 || weg > 300) return;
+    mp.proben.push({ weg, off: zeitMs - (t0 + t1) / 2 });
+    if (mp.proben.length > 8) mp.proben.shift();
+    mp.offset = mp.proben.reduce((a, x) => (x.weg < a.weg ? x : a)).off;
+  }
+  // Ein neuer Plan vom Host: uebernehmen, wenn Gruen noch bevorsteht.
+  function mpRennenPruefen(r) {
+    if (!r || !r.id || !r.startAt || !r.plan) return false;
+    if (r.id === mp.rennenId) return false;
+    mp.rennenId = r.id;
+    const lokal = r.startAt - mp.offset;
+    if (lokal < Date.now() + 500) return false;          // schon vorbei oder zu knapp
+    mpRennenUebernehmen(r.plan, lokal);
+    return true;
+  }
+  function mpRennenUebernehmen(plan, lokal) {
+    if (typeof challengeLaeuft === 'function' && challengeLaeuft()) challengeAbbrechen();
+    if (raceState === 'racing' || raceState === 'countdown' || raceState === 'finishing') requestRaceStop();
+    chSetzen('race-mode', plan.modus);
+    chSetzen('race-limit', plan.limit);   // nach dem Modus: der setzt die Laenge zurueck
+    chSetzen('race-wx-start', plan.wx);
+    chSetzen('race-wx-change', !!plan.wxChange);
+    chSetzen('race-flying', !!plan.fliegend);
+    chSetzen('race-pit-required', String(plan.pit || 0));
+    if (plan.tank) chSetzen('race-fuel-start', plan.tank);
+    showTab('race');
+    startRaceCountdown(lokal, plan);
+    showHudToast(t('Rennen für alle: Ampel kommt gleich'));
+    log('Mehrspieler: gemeinsamer Start in ' + Math.round((lokal - Date.now()) / 100) / 10 + ' s.', 'info');
+  }
+  async function mpRennenFuerAlle() {
+    if (!mp.an) { mpSay(t('Erst mitmachen, dann für alle starten.'), true); return; }
+    const w = Math.random() * 2 * Math.PI;
+    const plan = { modus: raceMode, limit: raceLimit, wx: raceWxStart, wxChange: raceWxChange,
+                   fliegend: raceFlying, pit: racePitRequired, tank: raceFuelStartL,
+                   wetterPlan: wetterPlanBauen(), wind: { x: Math.cos(w), y: Math.sin(w) } };
+    try {
+      const t0 = Date.now();
+      const r = await fetch(mpUrl('/mp/race'), { method: 'POST', cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan, vorlaufMs: MP_VORLAUF_MS }) });
+      const t1 = Date.now();
+      if (r.status === 404 || r.status === 501) throw new Error(t('Der Host kennt das noch nicht, Host bzw. APK aktualisieren'));
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.fehler || 'abgelehnt');
+      mpUhrProbe(t0, t1, d.zeitMs);
+      mpRennenPruefen({ id: d.id, startAt: d.startAt, plan });
+      mpSay(t('Rennen für alle gestartet, die Ampel kommt in wenigen Sekunden.'));
+    } catch (e) {
+      mpSay(t('Start für alle fehlgeschlagen') + ': ' + e.message, true);
+    }
+  }
+  // Aus toggleRace (70-race.js): im Mehrspieler erst fragen. true = Dialog offen.
+  function mpRennenFrage() {
+    if (!mp.an || mp.frageUmgehen) return false;
+    konsoleFrage(t('Mehrspieler-Rennen'),
+      t('Für alle zugleich starten (gemeinsame Ampel, gleiches Wetter) oder nur für dich?'),
+      [[t('Für alle'), () => mpRennenFuerAlle()],
+       [t('Nur ich'), () => { mp.frageUmgehen = true; try { toggleRace(); } finally { mp.frageUmgehen = false; } }],
+       [t('Abbrechen'), null]], true);
+    return true;
+  }
+
   async function mpHolen() {
     if (!mp.an) return;
     // Lebenszeichen, wenn lange kein Rundenschluss war: ohne das wird die eigene Zeile im
     // Ueberblicksschirm nach zehn Sekunden blass, obwohl man faehrt.
     if (Date.now() - mp.letzterBericht > MP_HEARTBEAT_MS) mpBerichten();
     try {
+      const t0 = Date.now();
       const r = await fetch(mpUrl('/mp/state'), { cache: 'no-store' });
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const d = await r.json();
+      mpUhrProbe(t0, Date.now(), d.zeitMs);
+      mpRennenPruefen(d.rennen);
       mp.zuschauer = d.zuschauer || 0;
       mpPosTakt();
       mpZeichnen(d);
@@ -841,6 +917,7 @@
   if ($('mp-name')) $('mp-name').value = mp.name;
   if ($('mp-join')) $('mp-join').addEventListener('click', mpJoin);
   if ($('mp-leave')) $('mp-leave').addEventListener('click', mpLeave);
+  if ($('mp-rennen-alle')) $('mp-rennen-alle').addEventListener('click', mpRennenFuerAlle);
 
   // ---- DIE ZWEI KOPIERKNOEPFE DER ANLEITUNG ---------------------------------------
   //

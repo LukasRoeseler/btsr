@@ -97,7 +97,12 @@ REPO = os.path.dirname(HERE)
 # Sperrschema waere hier mehr Fehlerquelle als Gewinn: die Anfragen dauern Mikrosekunden.
 _lock = threading.Lock()
 _fahrer = {}            # id -> {name, laps, letzte, beste, aktualisiert, abgaenge}
-_rennen = {'start': None, 'laps': None, 'minutes': None}
+_rennen = {'start': None, 'laps': None, 'minutes': None,
+           # GEMEINSAMER START (v0.8.42): ein Telefon schickt POST /mp/race mit einem Plan
+           # (Renntyp, Wetterplan, Wind ...); der Host setzt die Startzeit in SEINER Uhr und
+           # verteilt beides ueber /mp/state. Die Logik bleibt in der App - der Host speichert
+           # und verteilt nur. Dieselbe API im Telefon-Host (HostServer.java).
+           'id': 0, 'startAt': None, 'plan': None}
 # INFO-SCREENS (BESTELLT: "ein Geraet, das rein als Info-Screen fungiert"). Sie melden sich mit
 # /mp/state?zuschauer=<id>; solange einer da ist, schicken die Fahrer ihre Kartenpunkte mit.
 # Dieselbe Logik steht im Telefon-Host (android-app/.../HostServer.java) - beide zusammen aendern.
@@ -152,8 +157,30 @@ def zustand_lesen(zuschauer_id=None):
         if rennen['minutes']:
             rennen['restSekunden'] = max(
                 0, round(rennen['minutes'] * 60 - rennen['laufzeit'], 1))
+    # zeitMs: die Host-Uhr in Millisekunden, fuer den Uhrabgleich der Telefone.
     return {'fahrer': leute, 'rennen': rennen, 'zeit': round(_jetzt(), 1),
+            'zeitMs': int(_jetzt() * 1000),
             'zuschauer': zuschauer, 'strecke': strecke}
+
+
+def rennen_starten(daten):
+    """POST /mp/race {plan, vorlaufMs}: ein gemeinsames Rennen, Start in vorlaufMs."""
+    plan = daten.get('plan')
+    if not isinstance(plan, dict):
+        return {'ok': False, 'fehler': 'kein Plan'}
+    try:
+        vorlauf = int(daten.get('vorlaufMs') or 8000)
+    except (TypeError, ValueError):
+        vorlauf = 8000
+    vorlauf = max(6000, min(30000, vorlauf))
+    with _lock:
+        jetzt_ms = int(_jetzt() * 1000)
+        _rennen['id'] = int(_rennen.get('id') or 0) + 1
+        _rennen['startAt'] = jetzt_ms + vorlauf
+        _rennen['plan'] = plan
+        _rennen['start'] = _rennen['startAt'] / 1000.0
+        _fahrer.clear()
+        return {'ok': True, 'id': _rennen['id'], 'startAt': _rennen['startAt'], 'zeitMs': jetzt_ms}
 
 
 def melden(daten):
@@ -207,6 +234,8 @@ def zuruecksetzen():
     with _lock:
         _fahrer.clear()
         _rennen['start'] = None
+        _rennen['startAt'] = None
+        _rennen['plan'] = None
     return {'ok': True}
 
 
@@ -278,17 +307,20 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_POST(self):
-        if not self.path.startswith('/mp/report'):
+        if not (self.path.startswith('/mp/report') or self.path.startswith('/mp/race')):
             self.send_error(404)
             return
         try:
             n = int(self.headers.get('Content-Length') or 0)
-            if n > 8192:
+            if n > 16384:
                 self._json({'ok': False, 'fehler': 'zu gross'}, 413)
                 return
             daten = json.loads(self.rfile.read(n).decode('utf-8'))
         except Exception as e:
             self._json({'ok': False, 'fehler': str(e)}, 400)
+            return
+        if self.path.startswith('/mp/race'):
+            self._json(rennen_starten(daten))
             return
         self._json(melden(daten))
 

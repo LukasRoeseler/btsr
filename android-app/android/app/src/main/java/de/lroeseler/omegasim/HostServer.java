@@ -23,6 +23,7 @@ import org.json.JSONObject;
  *   POST /mp/report                eigener Stand eines Telefons (JSON, hoechstens 8 KiB)
  *   GET  /mp/info                  Rennlaenge und Adresse
  *   GET  /mp/reset                 neues Rennen
+ *   POST /mp/race                  gemeinsames Rennen: {plan, vorlaufMs} -> Startzeit in der Host-Uhr (v0.8.42)
  *   OPTIONS                        Vorabflug, CORS *
  *   alles andere                   die App selbst (laufende Fassung), fuer Browser im WLAN
  *
@@ -36,6 +37,10 @@ class HostServer extends NanoHTTPD {
     private Double start = null;
     private Integer runden = null, minuten = null;
     private String strecke = "";
+    // GEMEINSAMER START (v0.8.42): Plan und Startzeit (Host-Uhr, ms), verteilt ueber /mp/state.
+    private long raceId = 0;
+    private Long startAt = null;
+    private JSONObject plan = null;
 
     HostServer(Context ctx, int port) {
         super(port);
@@ -71,11 +76,11 @@ class HostServer extends NanoHTTPD {
                 o.put("adresse", a.isEmpty() ? "" : a.get(0));
                 return json(o);
             }
-            if (uri.startsWith("/mp/report")) {
+            if (uri.startsWith("/mp/report") || uri.startsWith("/mp/race")) {
                 if (s.getMethod() != Method.POST) return cors(newFixedLengthResponse(Response.Status.METHOD_NOT_ALLOWED, "text/plain", "POST"));
                 String laenge = s.getHeaders().get("content-length");
                 int n = laenge == null ? 0 : Integer.parseInt(laenge.trim());
-                if (n > 8192) {
+                if (n > 16384) {
                     JSONObject f = new JSONObject();
                     f.put("ok", false);
                     f.put("fehler", "zu gross");
@@ -89,7 +94,9 @@ class HostServer extends NanoHTTPD {
                     if (k < 0) break;
                     gelesen += k;
                 }
-                return json(melden(new JSONObject(new String(b, 0, gelesen, StandardCharsets.UTF_8))));
+                JSONObject daten = new JSONObject(new String(b, 0, gelesen, StandardCharsets.UTF_8));
+                if (uri.startsWith("/mp/race")) return json(rennenStarten(daten));
+                return json(melden(daten));
             }
             return datei(uri);
         } catch (Exception e) {
@@ -104,6 +111,9 @@ class HostServer extends NanoHTTPD {
         r.put("start", start == null ? JSONObject.NULL : start);
         r.put("laps", runden == null ? JSONObject.NULL : runden);
         r.put("minutes", minuten == null ? JSONObject.NULL : minuten);
+        r.put("id", raceId);
+        r.put("startAt", startAt == null ? JSONObject.NULL : startAt);
+        r.put("plan", plan == null ? JSONObject.NULL : plan);
         if (start != null) {
             double lauf = Math.round((jetzt() - start) * 10) / 10.0;
             r.put("laufzeit", lauf);
@@ -150,6 +160,7 @@ class HostServer extends NanoHTTPD {
         r.put("fahrer", new JSONArray(leute));
         r.put("rennen", rennen());
         r.put("zeit", Math.round(t * 10) / 10.0);
+        r.put("zeitMs", System.currentTimeMillis());
         r.put("zuschauer", aktiv);
         r.put("strecke", strecke);
         return r;
@@ -200,9 +211,33 @@ class HostServer extends NanoHTTPD {
         return ok;
     }
 
+    private synchronized JSONObject rennenStarten(JSONObject d) throws Exception {
+        JSONObject o = new JSONObject();
+        JSONObject p = d.optJSONObject("plan");
+        if (p == null) {
+            o.put("ok", false);
+            o.put("fehler", "kein Plan");
+            return o;
+        }
+        long vorlauf = Math.max(6000, Math.min(30000, d.optLong("vorlaufMs", 8000)));
+        long jetzt = System.currentTimeMillis();
+        raceId++;
+        startAt = jetzt + vorlauf;
+        plan = p;
+        start = startAt / 1000.0;
+        fahrer.clear();
+        o.put("ok", true);
+        o.put("id", raceId);
+        o.put("startAt", startAt);
+        o.put("zeitMs", jetzt);
+        return o;
+    }
+
     private synchronized JSONObject zuruecksetzen() throws Exception {
         fahrer.clear();
         start = null;
+        startAt = null;
+        plan = null;
         JSONObject ok = new JSONObject();
         ok.put("ok", true);
         return ok;

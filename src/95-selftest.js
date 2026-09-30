@@ -10406,6 +10406,43 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Renntyp, Zurueck und Start per Pad, Tauschen ohne zweites Pad harmlos' };
   });
 
+  stAdd('Mehrspieler: Ampel nach Frist, Uhrabgleich, gemeinsamer Wetterplan', () => {
+    const f = [];
+    const z = ampelZeitplan(10000);
+    if (JSON.stringify(z) !== JSON.stringify([[7000, 3], [8000, 2], [9000, 1], [10000, 0]])) f.push('Zeitplan ' + JSON.stringify(z));
+    const merkP = mp.proben.slice(), merkO = mp.offset;
+    try {
+      mp.proben = [];
+      mpUhrProbe(1000, 1200, 5000);     // Weg 200, Versatz 3900
+      mpUhrProbe(2000, 2040, 6000);     // Weg 40, Versatz 3980 - gilt
+      mpUhrProbe(3000, 3500, 9000);     // Weg 500 - zaehlt nicht
+      if (mp.offset !== 3980) f.push('Versatz ' + mp.offset + ' statt 3980');
+    } finally { mp.proben = merkP; mp.offset = merkO; }
+    const merk = { wx: raceWxStart, mode: raceMode, lim: raceLimit, wetter: weather, st: raceState, now: Date.now };
+    try {
+      raceWxStart = 'wechsel'; raceMode = 'laps'; raceLimit = 10;
+      const plan = wetterPlanBauen();
+      if (plan.length < 3) f.push('wechselhaft ergibt nur ' + plan.length + ' Wechsel');
+      if (plan.some((e, i) => i && e.abMs <= plan[i - 1].abMs)) f.push('Plan nicht aufsteigend');
+      if (plan[0] && plan[0].wetter !== 'rain') f.push('erster Wechsel nicht zu Regen');
+      let jetzt = 100000;
+      Date.now = () => jetzt;
+      raceState = 'racing';
+      mpWetter = { gruen: 100000, liste: [{ abMs: 1000, wetter: 'rain' }, { abMs: 5000, wetter: 'dry' }], i: 0 };
+      weather = 'dry';
+      jetzt = 100500; mpWetterTick();
+      if (weather !== 'dry') f.push('Wetter vor der Zeit gewechselt');
+      jetzt = 101200; mpWetterTick();
+      if (weather !== 'rain') f.push('Regen nicht nach Plan');
+      jetzt = 106000; mpWetterTick();
+      if (weather !== 'dry') f.push('Abtrocknen nicht nach Plan');
+    } finally {
+      Date.now = merk.now; raceWxStart = merk.wx; raceMode = merk.mode; raceLimit = merk.lim;
+      raceState = merk.st; mpWetter = null; setWeather(merk.wetter);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Lichter -3/-2/-1/0 s, Versatz vom kuerzesten Weg, Wetter folgt dem Plan' };
+  });
+
   stAdd('Lenkkennlinie: voll genau bei X %, Anfang unter linear, symmetrisch, am Servo', () => {
     const f = [];
     const c = physEngine.config;

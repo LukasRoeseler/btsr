@@ -895,6 +895,7 @@
   // schadet nicht: nach dem ersten Umschalten liegt wxWechselAt in der Zukunft.
   setInterval(() => { wxWechselTick(); }, 1000);
   function wxWechselTick() {
+    if (mpWetter) { mpWetterTick(); return; }
     if (raceWxStart !== 'wechsel' || wxWechselAt === null) return;
     if (Date.now() < wxWechselAt) return;
     const warNass = weather === 'rain';
@@ -905,7 +906,48 @@
     wxWechselPlanen(!warNass);
   }
 
+  // ---- GEMEINSAMER WETTERPLAN (v0.8.42) ----
+  // BESTELLT: "Im Multiplayer muss das Wetter fuer das eingestellte Rennen bei anderen Spielern
+  // synchronisiert sein." Das startende Telefon wuerfelt den Plan mit denselben Regeln wie hier
+  // (wechselhaft: trocken 60-180 s, Regen 30-90 s; einmaliger Wechsel im mittleren Drittel) und
+  // schickt ihn mit; alle Telefone folgen ihm ab derselben Gruenzeit, statt selbst zu wuerfeln.
+  let mpWetter = null;   // { gruen, liste: [{ abMs, wetter }], i }
+  function wetterPlanBauen() {
+    const liste = [];
+    const zeitRennen = RACE_MODES[raceMode].timed && raceMode !== 'laps';
+    if (raceWxStart === 'wechsel') {
+      const total = zeitRennen ? raceLimit * 60000 : 2 * 3600000;
+      let t = 0, nass = false, erste = true;
+      while (t < total && liste.length < 200) {
+        const min = nass ? WX_REGEN_MIN_MS : WX_TROCKEN_MIN_MS;
+        const max = nass ? WX_REGEN_MAX_MS : WX_TROCKEN_MAX_MS;
+        let d = min + Math.random() * (max - min);
+        if (erste && zeitRennen) d = Math.min(d, raceLimit * 60000 * 0.5);
+        erste = false;
+        t += d;
+        nass = !nass;
+        liste.push({ abMs: Math.round(t), wetter: nass ? 'rain' : 'dry' });
+      }
+    } else if (raceWxChange) {
+      const total = zeitRennen ? raceLimit * 60000 : 5 * 60000;
+      liste.push({ abMs: Math.round(total * (0.35 + Math.random() * 0.3)), wetter: raceWxStart === 'rain' ? 'dry' : 'rain' });
+    }
+    return liste;
+  }
+  function mpWetterTick() {
+    if (!mpWetter || (raceState !== 'racing' && raceState !== 'finishing')) return;
+    const jetzt = Date.now();
+    while (mpWetter.i < mpWetter.liste.length && mpWetter.gruen + mpWetter.liste[mpWetter.i].abMs <= jetzt) {
+      const e = mpWetter.liste[mpWetter.i++];
+      if (e.wetter !== weather) {
+        setWeather(e.wetter);
+        showHudToast(e.wetter === 'rain' ? t('Es fängt an zu regnen') : t('Es trocknet ab'));
+      }
+    }
+  }
+
   function maybeSwitchRaceWeather() {
+    if (mpWetter) { mpWetterTick(); return; }
     if (raceWxSwitchAt === null || Date.now() < raceWxSwitchAt) return;
     raceWxSwitchAt = null;   // once per race
     const next = weather === 'rain' ? 'dry' : 'rain';
@@ -1120,7 +1162,17 @@
     renderRaceGrid();
   });
 
-  function startRaceCountdown() {
+  // ---- AMPEL NACH FRIST (v0.8.42) ----
+  // BESTELLT: "Im Multiplayer muss die Ampel ueberall gleichzeitig kommen." Die Lichter haengen
+  // an festen Zeitpunkten vor Gruen statt an einem 1-s-Intervall - so kommt Gruen auf allen
+  // Telefonen im selben Moment, wenn alle dieselbe (abgeglichene) Gruenzeit haben. Lokal ist
+  // Gruen einfach jetzt + 3 s.
+  function ampelZeitplan(gruen) {
+    return [[gruen - 3000, 3], [gruen - 2000, 2], [gruen - 1000, 1], [gruen, 0]];
+  }
+  // gruenZiel: lokale Uhrzeit (ms) fuer Gruen, sonst in 3 s. mpPlan: Wetterplan und Wind eines
+  // gemeinsamen Mehrspieler-Rennens (97-sessions.js).
+  function startRaceCountdown(gruenZiel, mpPlan) {
     // launchGhosts() is called from the green-light step below, not here.
     if (raceState !== 'idle' && raceState !== 'finished') return; // ignore while armed/racing
     // EINSCHALTRAMPE: der Schirm zieht in 300 ms von schwarz auf Wert hoch, wie ein TFT beim
@@ -1148,6 +1200,13 @@
     // hier direkt danach steht es, weil beides zur selben "was fuer ein Rennen wird das"-
     // Ansage am Start gehoert.
     wxWindWuerfeln();
+    const gruenBei = typeof gruenZiel === 'number' && gruenZiel > Date.now() + 200 ? gruenZiel : null;
+    // Mehrspieler: Wind und Wetterplan fuer alle gleich (v0.8.42).
+    mpWetter = null;
+    if (mpPlan && gruenBei) {
+      if (mpPlan.wind && Number.isFinite(mpPlan.wind.x)) { WX_WIND.x = mpPlan.wind.x; WX_WIND.y = mpPlan.wind.y; }
+      mpWetter = { gruen: gruenBei, liste: Array.isArray(mpPlan.wetterPlan) ? mpPlan.wetterPlan : [], i: 0 };
+    }
     fuel = Math.max(0, Math.min(100, raceFuelStartL / FUEL_TANK_LITERS * 100));
     // BEIDE Autos mit derselben Startmenge und beide schadenfrei. Ein Rennen, in dem das
     // eine Auto voll und das andere halb leer startet, waere kein Rennen - das ist die
@@ -1191,7 +1250,7 @@
     // losfahren muesste. Drei Sekunden Warten vor einer Trainingsrunde sind nur Wartezeit.
     // CHALLENGE "Beste Runde" laeuft als freies Training, aber MIT Ampel: "Auto muss stehen,
     // dann kommt eine Ampel" (72-challenges.js).
-    if (raceMode === 'practice' && !(typeof challengeLaeuft === 'function' && challengeLaeuft())) {
+    if (raceMode === 'practice' && !gruenBei && !(typeof challengeLaeuft === 'function' && challengeLaeuft())) {
       raceState = 'racing';
       $('race-start-btn').disabled = true;
       $('race-stop-btn').disabled = false;
@@ -1216,23 +1275,27 @@
     // auf, und ein Countdown, aus dem man nicht herauskommt, ist eine Falle.
     $('race-stop-btn').disabled = false;
     $('race-status').textContent = 'Countdown…';
-    let step = 3;
-    setRaceLights(step);
-    playTone(440, 0.18, 'square', 0.18);
-    clearInterval(raceCountdownTimer);
-    raceCountdownTimer = setInterval(() => {
-      step--;
-      if (step > 0) {
-        setRaceLights(step);
-        playTone(440 + (3 - step) * 60, 0.18, 'square', 0.18);
-      } else {
-        clearInterval(raceCountdownTimer);
-        setRaceLights('go');
-        playTone(880, 0.35, 'square', 0.22);
-        raceGreen();
-        setTimeout(() => setRaceLights(0), 900);
+    const plan = ampelZeitplan(gruenBei || Date.now() + 3000);
+    clearTimeout(raceCountdownTimer);
+    const schritt = (k) => {
+      if (raceState !== 'countdown') return;
+      const [bei, stufe] = plan[k];
+      const warte = bei - Date.now();
+      if (warte > 4) { raceCountdownTimer = setTimeout(() => schritt(k), warte); return; }
+      // Kommt der Plan spaet an, werden verpasste Lichter uebersprungen - nur Gruen zaehlt.
+      if (stufe > 0 && warte < -400 && k + 1 < plan.length) { schritt(k + 1); return; }
+      if (stufe > 0) {
+        setRaceLights(stufe);
+        playTone(440 + (3 - stufe) * 60, 0.18, 'square', 0.18);
+        schritt(k + 1);
+        return;
       }
-    }, 1000);
+      setRaceLights('go');
+      playTone(880, 0.35, 'square', 0.22);
+      raceGreen();
+      setTimeout(() => setRaceLights(0), 900);
+    };
+    schritt(0);
   }
 
   // Alles, was beim Gruen passiert. Eine Funktion, zwei Aufrufer: der Countdown und das
@@ -1324,6 +1387,7 @@
   function finishRace(auslaufen) {
     raceState = 'finished';
     fruehstartReset();
+    mpWetter = null;
     // Die laufende Runde festhalten und die Uhr anhalten. Ohne das Nullsetzen von
     // raceLapStart rechnet die Anzeige weiter gegen Date.now() und die Runde waechst nach
     // dem Ende einfach weiter.
@@ -1545,6 +1609,9 @@
     // Wartet eine Challenge noch auf Stillstand, bricht die Rennen-Taste sie ab, statt die Ampel
     // ohne Pruefung zu starten.
     if (typeof challengeToggle === 'function' && challengeToggle()) { updateRaceActButtons(); return; }
+    // Im Mehrspieler fragen: fuer alle zugleich oder nur fuer mich (97-sessions.js).
+    const laeuft = raceState === 'racing' || raceState === 'countdown' || raceState === 'finishing';
+    if (!laeuft && typeof mpRennenFrage === 'function' && mpRennenFrage()) { updateRaceActButtons(); return; }
     const live = raceState === 'racing' || raceState === 'countdown' || raceState === 'finishing';
     if (live) requestRaceStop(); else startRaceCountdown();
     updateRaceActButtons();
