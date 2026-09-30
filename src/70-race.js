@@ -5419,7 +5419,7 @@
         luecke = '\u2014';
       }
       return { pos: i + 1, name: x.c.name, farbe: x.c.farbe, rolle: x.c.role,
-               runden: x.n, luecke, letzte: x.letzte, beste: x.beste,
+               runden: x.n, summe: x.summe, luecke, letzte: x.letzte, beste: x.beste,
                // Die schnellste Runde des ganzen Feldes wird hervorgehoben, wie auf einer
                // Zeittafel. Verglichen wird SPAETER, wenn alle Zeilen vorliegen.
                istBeste: false };
@@ -5487,8 +5487,9 @@
 
   // PODEST DER DREI BESTEN (BESTELLT: "Rennende-Mock-up umsetzen"). Nach dem Rennen steht es
   // ueber der Ergebnistabelle: links Platz 2, Mitte Platz 1 (am hoechsten), rechts Platz 3.
-  // Die Zeiten sind die beste Runde - die ist in ovDaten() da und vergleichbar. Waehrend
-  // eines Rennens bleibt das Podest leer und verborgen.
+  // Der Sieger bekommt die GESAMTZEIT, Platz 2 und 3 den Rueckstand (luecke) - so liest sich
+  // ein Podest, und die Gesamtzeit ist hier die vergleichbare Zahl. Waehrend eines Rennens
+  // bleibt das Podest leer und verborgen.
   function ovPodestMalen() {
     const host = $('ov-podest');
     if (!host) return;
@@ -5508,8 +5509,12 @@
         ? '<span class="name"><i class="ov-farbe" style="background:'
           + (z.farbe || 'transparent') + '"></i>' + z.name + '</span>'
         : '<span class="name leer"></span>';
-      const zeit = z ? '<span class="zeit">' + (z.beste === null ? '&ndash;' : formatLapTime(z.beste))
-        + '</span>' : '<span class="zeit"></span>';
+      // Platz 1: Gesamtzeit; die anderen: Rueckstand. Ohne abgeschlossene Runde leer.
+      const zeit = !z ? '<span class="zeit"></span>'
+        : (nr === 1
+            ? (z.summe > 0 ? '<span class="zeit zeit-1">' + formatLapTime(z.summe) + '</span>'
+                           : '<span class="zeit"></span>')
+            : '<span class="zeit">' + (z.luecke || '&ndash;') + '</span>');
       return '<div class="platz ' + klasse + '">' + name + zeit
         + '<span class="block"><b>' + nr + '</b></span></div>';
     }).join('');
@@ -5520,6 +5525,10 @@
     const tab = $('ov-tab');
     if (!tab) return;
     ovPodestMalen();
+    // NACH DEM RENNEN: die Spalte "letzte" wird ausgeblendet (nur die beste zaehlt dann noch),
+    // und das eigene Auto bekommt eine Akzentleiste statt einer Umrandung (90-CSS).
+    const ovSchirm = $('race-ovscreen');
+    if (ovSchirm) ovSchirm.classList.toggle('ov-fertig', raceState === 'finished');
     if ($('ov-nochmal')) $('ov-nochmal').hidden = raceState !== 'finished';
     ovKarteMalen();
     const zeilen = ovDaten();
@@ -5570,7 +5579,7 @@
         + '<span class="ov-runden">' + z.runden + '</span>'
         + '<span class="ov-pit">' + p + '</span>'
         + mix
-        + '<span class="ov-zeit">' + (z.letzte === null ? '&ndash;' : formatLapTime(z.letzte)) + '</span>'
+        + '<span class="ov-zeit ov-letzte">' + (z.letzte === null ? '&ndash;' : formatLapTime(z.letzte)) + '</span>'
         + '<span class="ov-zeit' + (z.istBeste ? ' ov-feldbeste' : '') + '">'
         + (z.beste === null ? '&ndash;' : formatLapTime(z.beste)) + '</span>'
         + '<span class="ov-luecke">' + z.luecke + '</span>'
@@ -5581,7 +5590,8 @@
     if (tab.innerHTML !== html) tab.innerHTML = html;
     const fuss = $('ov-fuss');
     if (fuss) {
-      fuss.textContent = 'Platz \u00b7 Runden \u00b7 Stopps \u00b7 Mischung \u00b7 letzte'
+      fuss.textContent = 'Platz \u00b7 Runden \u00b7 Stopps \u00b7 Mischung'
+        + (raceState === 'finished' ? '' : ' \u00b7 letzte')
         + ' \u00b7 beste \u00b7 R\u00fcckstand \u2014 Reifen und Stopps nur f\u00fcr das'
         + ' eigene Auto simuliert';
     }

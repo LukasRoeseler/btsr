@@ -1959,11 +1959,18 @@
   .ov-podest .name.leer { opacity: 0; }
   .ov-podest .zeit { color: var(--gt3-strip-ink, #a9b2c4); font-family: monospace;
     font-size: clamp(9px, 1.2vw, 12px); }
+  /* Die Gesamtzeit des Siegers: groesser und in der Goldfarbe, damit der Blick dort landet. */
+  .ov-podest .zeit.zeit-1 { color: #f5c518; font-weight: 800; font-size: clamp(11px, 1.7vw, 17px); }
   .ov-podest .block { width: 100%; display: flex; flex-direction: column; align-items: center;
     justify-content: center; background: var(--gt3-tile); color: var(--gt3-tile-ink);
-    border-radius: var(--gt3-radius); }
+    border-radius: var(--gt3-radius); position: relative; overflow: hidden; }
   .ov-podest .block b { font-size: clamp(18px, 3.6vw, 40px); font-weight: 900; line-height: 1; }
-  .ov-podest .platz-1 .block { height: clamp(44px, 11vh, 84px); color: #f5c518; }
+  .ov-podest .platz-1 .block { height: clamp(44px, 11vh, 84px); color: #f5c518;
+    background: linear-gradient(180deg, #f7d26a, #e0a91e); }
+  .ov-podest .platz-1 .block b { color: #2b1c00; }
+  /* Kleines Zielflaggen-Band am oberen Rand des Siegerblocks. */
+  .ov-podest .platz-1 .block::before { content: ''; position: absolute; left: 0; right: 0;
+    top: 0; height: 5px; background: repeating-conic-gradient(#fff 0 25%, #111 0 50%) 0 0 / 8px 8px; }
   .ov-podest .platz-2 .block { height: clamp(34px, 8.5vh, 66px); color: #c9d1e0; }
   .ov-podest .platz-3 .block { height: clamp(27px, 6.8vh, 52px); color: #cd7f32; }
   .ov-dia-svg { width: 100%; height: auto; max-height: 22vh; display: block; }
@@ -2013,13 +2020,19 @@
     grid-template-areas: "kopf kopf" "tab tab" "dia dia" "fuss fuss"; }
   .ov-tab { display: grid; align-content: start; gap: 2px; overflow-y: auto;
     font-family: monospace; font-size: clamp(9px, 1.35vw, 14px); }
-  .ov-zeile { display: grid; align-items: center;
+  .ov-zeile { display: grid; align-items: center; position: relative;
     grid-template-columns: 1.5em 1.1em minmax(0, 1fr) 2.2em 2.2em 1.4em 4.4em 4.4em 3.8em;
     gap: clamp(2px, .55vw, 7px);
     padding: clamp(1px, .35vw, 4px) clamp(3px, .8vw, 8px);
     background: var(--gt3-tile); color: var(--gt3-tile-ink);
     border-radius: var(--gt3-radius); }
-  .ov-zeile.ov-ich { outline: 1px solid var(--gt3-tile-ink); outline-offset: -1px; }
+  /* Das eigene Auto: eine Akzentleiste links statt einer Umrandung - auf einen Blick. */
+  .ov-zeile.ov-ich::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px; background: var(--gt3-tile-ink);
+    border-radius: var(--gt3-radius) 0 0 var(--gt3-radius); }
+  /* NACH DEM RENNEN (ov-fertig): die Spalte "letzte" ausgeblendet, nur die beste zaehlt. */
+  #race-ovscreen.ov-fertig .ov-zeile { grid-template-columns: 1.5em 1.1em minmax(0, 1fr) 2.2em 2.2em 1.4em 4.4em 3.8em; }
+  #race-ovscreen.ov-fertig .ov-zeile > .ov-letzte { display: none; }
   .ov-pos { color: var(--gt3-strip-ink); }
   /* Der Farbklecks des Autos, dieselbe Kennung wie in der Garage. */
   .ov-farbe { width: 1em; height: 1em; border-radius: 50%; align-self: center;
@@ -2297,20 +2310,28 @@
      ist gefuellt (51-konsole.js, kQuadPunkte). Wert und Punkte liegen in EINER Zeile
      (.k-kopf) - als eigene Flexzeile waren die Punkte unter dem Wert kaum zu sehen. */
   .k-kopf { display: flex; align-items: center; justify-content: center; background: var(--k-weiss);
-    color: var(--k-tinte); }
+    color: var(--k-tinte); min-height: clamp(17px, 3vh, 27px); }
   .k-kopf .k-kt { flex: 0 1 auto; background: none; min-width: 0; overflow: hidden;
     text-overflow: ellipsis; white-space: nowrap; }
   .k-kopf .k-quad-punkte { flex: 0 0 auto; margin-left: 6px; }
   .k-quad-punkte { display: inline-flex; gap: 4px; margin-left: 10px; align-items: center; vertical-align: middle; }
   .k-quad-punkte i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--k-blau); box-sizing: border-box; }
   .k-quad-punkte i.an { background: var(--k-blau); }
+  /* Kompakte "N/M"-Anzeige statt vieler Punkte (viele Schaltstellungen, keine Pfeile). */
+  .k-quad-punkte .k-quad-zahl { font-size: 12px; font-weight: 800; line-height: 1;
+    color: var(--k-blau); letter-spacing: .02em; }
   /* Motorsound hat zu viele Stellungen (27 Motoren) fuer Punkte: stattdessen zwei Pfeile
      zum Vor/Zurueckblaettern, rechts neben dem Wert in der .k-kopf-Zeile. Klein, blau auf
      transparent - nur das Zeichen, kein Kasten. */
   .k-quad-wechsel { display: inline-flex; align-items: center; gap: 2px; margin-left: 6px; }
-  .k-arrow { background: transparent; color: var(--k-blau); border: 0; padding: 0 3px;
-    font-size: 14px; line-height: 1; cursor: pointer; }
-  .k-arrow:hover { color: #fff; }
+  /* Kleiner Kasten mit dunkelgrauem Rahmen, blau, auf transparent - der Kasten ist das
+     Klickziel, und Hover/Aktiv duerfen keine Panel-Farbe annehmen (die generische
+     button:hover-Regel hat hoehere Spezifitaet und waere sonst die "haeßliche" Flaeche). */
+  .k-arrow { background: transparent; color: var(--k-blau); border: 1px solid var(--k-grau);
+    border-radius: 2px; padding: 0 3px; font-size: 14px; line-height: 1; cursor: pointer;
+    outline: 0; }
+  .k-arrow:hover, .k-arrow:active, .k-arrow:focus-visible { background: transparent;
+    color: var(--k-blau); outline: 0; }
 
   .k-fahren { grid-template-columns: repeat(3, 1fr); grid-template-rows: minmax(300px, 56vh) minmax(96px, 20vh); }
   .k-fahren-unten { grid-column: 1 / -1; grid-template-columns: 1fr 1fr 2fr; }
@@ -2457,8 +2478,9 @@
     .k-kachel > .k-kk, .k-kachel > .k-kt, .k-kachel > .k-ki, .k-kachel > .k-knopfreihe,
     .k-kachel > .k-kopf { position: relative; z-index: 1; }
     .k-kachel > .k-ki { text-shadow: 0 1px 3px rgba(0,0,0,.95); }
-    /* Kleine Kacheln: eine Zeile fuer "PRO" und "PORSCHE 911 GT3 R", lange Namen umbrechen. */
-    .k-klein .k-kt { font-size: clamp(9.5px, 1.9vh, 13.5px); white-space: normal; line-height: 1.15; }
+    /* Kleine Kacheln: eine Zeile fuer "PRO" und "PORSCHE 911 GT3 R". Einzeilig und mit
+       Ellipse statt Umbruch: so bleiben Fahrgefuehl- und Motorsound-Band gleich hoch. */
+    .k-klein .k-kt { font-size: clamp(9.5px, 1.9vh, 13.5px); line-height: 1.15; }
   }
   .k-klein .k-quad-punkte { gap: 3px; margin-left: 6px; }
   .k-klein .k-quad-punkte i { width: 5px; height: 5px; border-width: 1px; }
@@ -2590,13 +2612,18 @@
   @media (max-width: 900px) {
     .mp-spalten { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
     .mp-spalte-links { display: flex; flex-direction: column; gap: 8px; }
-    .mp-spalte-links .row { flex-direction: column; flex-wrap: nowrap !important;
-      align-items: stretch !important; gap: 6px !important; }
-    .mp-spalte-links .row label.small { flex: 1 1 auto; width: 100%; }
-    .mp-spalte-links .row button { width: 100%; }
+    /* Host und Name nebeneinander (spart Hoehe), die Knoepfe darunter. */
+    .mp-spalte-links .row { flex-direction: row; flex-wrap: wrap; gap: 6px; align-items: flex-end; }
+    .mp-spalte-links .row label.small { flex: 1 1 40%; min-width: 110px; }
+    .mp-spalte-links .row button { flex: 1 1 auto; }
     /* Die App-Seite hat ihren eigenen 2-Spalter; auf Mobile in eine Spalte, damit nicht zwei
        Spalten ineinander liegen. */
     #sub-mp-app.on { grid-template-columns: minmax(0, 1fr); }
+  }
+  /* Sehr schmal: wieder eine Spalte, damit die Fahrerliste nicht gequetscht wird. */
+  @media (max-width: 600px) {
+    .mp-spalten { grid-template-columns: minmax(0, 1fr); }
+    .mp-spalte-links .row label.small { flex: 1 1 100%; }
   }
   /* ---- Garage als Karten (v0.8.26, Vorschlag B) ---- */
   #gar-list.gar-karten { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
@@ -3947,7 +3974,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.49</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.50</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>

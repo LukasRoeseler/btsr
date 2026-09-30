@@ -647,14 +647,19 @@
     // Punkte rechts neben dem Wert (in derselben .k-kopf-Zeile): so viele, wie es
     // Schaltstellungen gibt, die gewaehlte gefuellt. Bei zu vielen (z. B. Motorsound mit
     // 27 Motoren) wuerden die Punkte nicht mehr passen - dort stehen Pfeile im Markup.
+    // Fuer 6..10 Stellungen ohne Pfeile reicht auch der Platz nicht mehr: dann eine kompakte
+    // "N/M"-Anzeige statt der Punkte (BESTELLT: "N/8"-Readout, wenn die Punkte drangeln).
     [['fa-strecke-punkte', 'bahn'], ['fa-renn-punkte', 'renntyp'],
      ['fa-profil-punkte', 'profil']].forEach(([id, quad]) => {
       const host = $(id);
       if (!host) return;
       const p = kQuadPunkte(quad);
       let html = '';
-      if (p.anzahl <= 10) {
+      if (p.anzahl <= 5) {
         for (let i = 0; i < p.anzahl; i++) html += '<i' + (i === p.index ? ' class="an"' : '') + '></i>';
+      } else if (p.anzahl > 0) {
+        const n = p.index >= 0 ? p.index + 1 : '&ndash;';
+        html = '<b class="k-quad-zahl">' + n + '/' + p.anzahl + '</b>';
       }
       if (host.innerHTML !== html) host.innerHTML = html;
     });

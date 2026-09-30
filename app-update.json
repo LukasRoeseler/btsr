@@ -1,5 +1,5 @@
-{"version":"0.8.49","apk":1,"dateien":[
-{"p":"index.html","h":"d285c1818c31a0e05018ddf09425731d7253da5a45118c64f481cb2ef64ceb02","g":4413141},
+{"version":"0.8.50","apk":1,"dateien":[
+{"p":"index.html","h":"778761e8fc6b9bfccfdc4fd88f9a98494b19bfa25bcf92c6a4a44a4af3a1fc98","g":4416311},
 {"p":"mp-overview.html","h":"f1e30402d96e8aeedfa0219d2b3a8a6e3af09da17d1c6fe1faa61fdaba499a59","g":8680},
 {"p":"manifest.webmanifest","h":"868416fe2c9d41ebed0b5d479f07bbd16679dd4835e9c526da9eae8046e1e36a","g":639},
 {"p":"favicon.svg","h":"bc804f771d409b0efff2f2a78238a91d843d8d02efc2c614c6bdc544763de931","g":5456},
@@ -412,5 +412,14 @@
 {"p":"img/strecke-kachel-bg.jpg","h":"1e53777be4c21d705d719ed851d454827ee511070b709f1e2ce3efa79694c43b","g":31342},
 {"p":"img/strecke-kachel.jpg","h":"1e53777be4c21d705d719ed851d454827ee511070b709f1e2ce3efa79694c43b","g":31342},
 {"p":"img/titel-bg.jpg","h":"c02d07a3d67a58813608b14a32f17da24e026400db9ff966cd66729de63f42f6","g":67544},
-{"p":"img/titel.jpg","h":"d0b0567a6ca37be63fbe2040e34c43d19a6da79fd6dbb8f0404cd46d5fdc7e2b","g":39348}
+{"p":"img/titel.jpg","h":"d0b0567a6ca37be63fbe2040e34c43d19a6da79fd6dbb8f0404cd46d5fdc7e2b","g":39348},
+{"p":"muster-gerade-a4.svg","h":"e919c88d525372efe3b6fc53a269da7bb645122ede31b691b4b4b86cf35799f8","g":2976},
+{"p":"muster-kurve-60grad-a4.svg","h":"acf5a7759c0556615440dcbcba0b614b3fda2401e6f14ed7d9ebc58a77580d4c","g":2999},
+{"p":"muster-kurve-60grad-versionb-a4.svg","h":"4143517d5b0c0690b3cd4c6565d6715b556748e55dd9694d6fcb60b502883cbc","g":3722},
+{"p":"spur-gerade-1-a4.svg","h":"f8c19262bf93b728acc961f8a0479cb1446e4e3c28d61629bdbe0634f953bdcc","g":4283},
+{"p":"spur-gerade-2-a4.svg","h":"706c1c62b56bd8adcf8911f77c4352a65ffed71484a482d7ddb6d95a1db4125c","g":4283},
+{"p":"spur-kurve-1-a4.svg","h":"b00a3b508f5024722a65d415fd758e5daca6dabbabc44222150a68d2a81ab2ff","g":3037},
+{"p":"spur-kurve-2-a4.svg","h":"72d4338da3a0fc3370fc748bd5d49023a229a2b5d750660a8bac3ac175e2a7a5","g":3164},
+{"p":"spur-schneidebogen-a4.svg","h":"09b4eede1e76056ca71e927334998568ca77e1d064dee6c6887376f551999947","g":4576},
+{"p":"startziel-a4.svg","h":"8131b652fddc222825462f2d6495c192de889fd3f8e788076ed0b31d9a1787fb","g":2861}
 ]}
