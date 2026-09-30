@@ -516,7 +516,10 @@
     if (!host) return;
     host.innerHTML = '';
     for (const [l, w] of paare) {
-      const a = document.createElement('span'); a.className = 'k-l'; a.textContent = l;
+      // Auch die BESCHRIFTUNG darf ein Knoten sein: die Autos-Kachel gibt den Farbpunkt mit
+      // Namen als Span. Mit textContent stand dort "[object HTMLSpanElement]" (GEMELDET).
+      const a = document.createElement('span'); a.className = 'k-l';
+      if (l instanceof Node) a.appendChild(l); else a.textContent = l;
       const b = document.createElement('span'); b.className = 'k-w';
       if (w instanceof Node) b.appendChild(w); else b.textContent = w;
       host.appendChild(a); host.appendChild(b);

@@ -10033,7 +10033,9 @@
       if (!r.rueckGesperrt) f.push('Rueckwaerts nicht gesperrt');
       if (!r.fertig) f.push('nicht fertig geworden (' + r.stand + ')');
       if (Math.abs(r.dauer - r.T) > 0.15) f.push('Dauer ' + r.dauer.toFixed(2) + ' s statt ' + r.T.toFixed(2));
-      const erwartet = Math.floor(r.T / (r.T / 10 + 0.1));
+      // Fenster = ein Zehntel + 200 ms (70-race.js, pitSpielStart).
+      // 0,15 s Toleranz: endet das letzte Fenster knapp vor dem Stopp, sieht der Testtakt es nicht mehr.
+      const erwartet = Math.floor((r.T - 0.15) / (r.T / 10 + 0.2));
       if (r.i < erwartet) f.push('nur ' + r.i + ' Symbole abgelaufen statt ' + erwartet);
       if (fuelSimOn() && r.fuel < 99.9) f.push('Tank am Ende ' + r.fuel.toFixed(1));
       if (r.plan.repair && r.damage > 0.01) f.push('Schaden am Ende ' + r.damage.toFixed(1));
@@ -10331,6 +10333,18 @@
       if (merk) showTab(merk);
     }
     return { ok: !f.length, mass: f.length ? f.join('; ') : K_EDITOR.length + ' Schritte, Pad blaettert, bleibt im Editor' };
+  });
+
+  stAdd('Menue: Kachelzeilen nehmen Knoten auch als Beschriftung, Titel je Buchstabe', () => {
+    const f = [];
+    const host = document.createElement('div');
+    kZeilen(host, [[kPunkt('#ff0000', 'Testauto'), 'Steuern']]);
+    if (/\[object/.test(host.textContent)) f.push('"[object" in der Zeile: ' + host.textContent);
+    if (host.textContent.indexOf('Testauto') < 0) f.push('Name fehlt');
+    const b = [...document.querySelectorAll('.home-titel .gl-b')];
+    if (b.map((x) => x.textContent).join('') !== 'OMEGASIM') f.push('Titel nicht in Buchstaben zerlegt: ' + b.map((x) => x.textContent).join(''));
+    if (b.some((x) => !/glitch-[cr]/.test(x.style.getPropertyValue('--gl-o') + x.style.getPropertyValue('--gl-u')))) f.push('Buchstabe ohne Farbe');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Knoten als Beschriftung, 8 Buchstaben mit Zufallsfarben' };
   });
 
   // ---- CHALLENGES (v0.8.30) ----

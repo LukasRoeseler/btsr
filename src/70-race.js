@@ -3316,9 +3316,9 @@
     const T = pitSpielDauer(pitPlan);
     const folge = [];
     for (let i = 0; i < PIT_SPIEL_ANZAHL; i++) folge.push(Math.random() < 0.5 ? 'quad' : 'kreis');
-    // Fenster etwa 100 ms laenger als ein Zehntel (BESTELLT: "Mach die Zeiten im Pitstop
-    // ca. 100 ms laenger").
-    pitSpiel = { T, bonus: 0, folge, i: 0, fensterAb: 0, fensterS: T / PIT_SPIEL_ANZAHL + 0.1,
+    // Fenster 200 ms laenger als ein Zehntel. Zuerst 100 ms (BESTELLT: "Mach die Zeiten im
+    // Pitstop ca. 100 ms laenger"), seit v0.8.38 200 ms (BESTELLT: "nicht 600 ms sondern 200 ms").
+    pitSpiel = { T, bonus: 0, folge, i: 0, fensterAb: 0, fensterS: T / PIT_SPIEL_ANZAHL + 0.2,
                  treffer: 0, fehler: 0, blitz: '', blitzBis: 0, fuel0: fuel, dmg0: damage };
     showHudToast(t('Boxen-Minigame: Quadrat und Kreis!'));
   }

@@ -755,6 +755,7 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Titel-Glitch je Buchstabe zufällig blau oder rot, oben und unten getrennt. „Abseits“ erscheint jetzt groß in der Mitte des Cockpits. Autos-Kachel zeigt wieder den Namen statt „[object HTMLSpanElement]“. Boxen-Minigame: Tasten stehen 100 ms länger.": "Title glitch randomly blue or red per letter, top and bottom separately. \"Off track\" now appears large in the middle of the cockpit. The cars tile shows the name again instead of \"[object HTMLSpanElement]\". Pit minigame: buttons stay 100 ms longer.",
     "Runde {n}: {a} von {b} Teilen erkannt, zählt nicht": "Lap {n}: {a} of {b} pieces recognised, does not count",
     "Runde {n} unter der Mindestzeit, zählt nicht": "Lap {n} below the minimum time, does not count",
     "Einstellungen geändert, Challenge abgebrochen": "Settings changed, challenge aborted",
