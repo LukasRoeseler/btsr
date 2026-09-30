@@ -2813,6 +2813,11 @@
     if (offtrackGilt()) {
       rawThrottle = Math.min(rawThrottle, OFFTRACK_GAS);
     }
+    // Fruehstart-Strafe (70-race.js): kurz kein Gas und bremsen. try, weil der Takt schon laeuft,
+    // bevor 70-race.js seine Konstanten angelegt hat (temporale Todeszone beim Laden).
+    try {
+      if (fruehstartStrafeAktiv(1)) { rawThrottle = 0; rawBrake = Math.max(rawBrake, FRUEHSTART_BREMSE); }
+    } catch (e) { /* beim Laden */ }
     // ... und das Brummen an seinem. padRumble() prueft rumbleOn selbst, also steht hier nur
     // die Frage, OB gebrummt werden soll - nicht, ob der Nutzer Vibration will.
     if (abseitsJetzt()) {
@@ -2930,6 +2935,9 @@
       if (ap2.lenkt) lenkung = ap2.steer;
     }
     if (offtrackGiltFuer(2)) gas = Math.min(gas, OFFTRACK_GAS);
+    try {
+      if (fruehstartStrafeAktiv(2)) { gas = 0; bremse = Math.max(bremse, FRUEHSTART_BREMSE); }
+    } catch (e) { /* beim Laden */ }
     // Und das Rumpeln, an seinen eigenen Pad. Bis v0.6.45 waere es der Pad von Spieler 1
     // gewesen; jetzt hat jeder Stoss eine Adresse.
     if (abseitsJetztFuer(2)) {

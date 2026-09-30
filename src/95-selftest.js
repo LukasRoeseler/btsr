@@ -10347,6 +10347,34 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Knoten als Beschriftung, 8 Buchstaben mit Zufallsfarben' };
   });
 
+  stAdd('Fruehstart: Ampel laeuft weiter, nach Gruen 2 s kein Gas und Bremse, danach frei', () => {
+    const f = [];
+    const merkState = raceState, merkT = physEngine.state.speedKmh, merkNow = Date.now;
+    let jetzt = merkNow.call(Date);
+    try {
+      Date.now = () => jetzt;
+      fruehstartReset();
+      raceState = 'countdown';
+      fruehstart[1].frueh = true;                 // wie vom Waechter im Countdown gesetzt
+      fruehstartGruen();
+      raceState = 'racing';
+      physEngine.state.speedKmh = 0;
+      if (fruehstartStrafeAktiv(1)) f.push('Strafe schon vor dem Anfahren');
+      physEngine.state.speedKmh = 10;
+      if (!fruehstartStrafeAktiv(1)) f.push('keine Strafe nach dem Anfahren');
+      jetzt += 1900;
+      if (!fruehstartStrafeAktiv(1)) f.push('Strafe endet vor 2 s');
+      jetzt += 200;
+      if (fruehstartStrafeAktiv(1)) f.push('Strafe laenger als 2 s');
+      fruehstartReset();
+      fruehstartGruen();
+      if (fruehstartStrafeAktiv(1)) f.push('Strafe ohne Fruehstart');
+    } finally {
+      Date.now = merkNow; raceState = merkState; physEngine.state.speedKmh = merkT; fruehstartReset();
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Strafe erst nach dem Anfahren, genau 2 s, ohne Fruehstart keine' };
+  });
+
   // ---- CHALLENGES (v0.8.30) ----
   stAdd('Challenges: vier Strecken geschlossen und aus ihren Sets baubar', () => {
     const f = [], zeilen = [];
@@ -10432,7 +10460,11 @@
     const b = chWertung(def, 'hotlap', [5000, 3800, 4200], false, false);
     if (!b.gueltig || b.zeit !== 3800) f.push('beste Runde ' + b.zeit + ' statt 3800');
     if (chWertung(def, 'hotlap', [], false, false).gueltig) f.push('beste Runde ohne Runde gewertet');
-    if (chWertung(def, 'hotlap', [3000], false, true).gueltig) f.push('Fruehstart gewertet');
+    if (!chWertung(def, 'hotlap', [3000], false, true).gueltig) f.push('Fruehstart bricht noch ab (soll mit Bremsstrafe zaehlen)');
+    const dD = { runden: 2, kat: 'D' };
+    if (chWertung(dD, 'rennen', [5000, 5000], true, false, null, 0, false, 0).gueltig) f.push('Kategorie D ohne Pflichtstopp gewertet');
+    if (!chWertung(dD, 'rennen', [5000, 5000], true, false, null, 0, false, 1).gueltig) f.push('Kategorie D mit Pflichtstopp nicht gewertet');
+    if (!chWertung({ runden: 2, kat: 'B' }, 'rennen', [5000, 5000], true, false, null, 0, false, 0).gueltig) f.push('Pflichtstopp auch ausserhalb von D verlangt');
     const p = chPerzentil([10, 20, 30, 40, 50], 20);
     if (p !== 75) f.push('Perzentil ' + p + ' statt 75');
     if (chPerzentil([7], 7) !== 100) f.push('allein nicht 100 Prozent');
@@ -10440,7 +10472,7 @@
     const summe = k.reduce((a, x) => a + x.anz, 0);
     if (k.length !== 4 || summe !== 6) f.push('Histogramm ' + k.length + ' Klassen, ' + summe + ' Werte');
     if (k[0].anz !== 3 || k[3].anz !== 1) f.push('schnelle Zeiten nicht oben: ' + k.map((x) => x.anz).join(','));
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Rennen Summe, beste Runde Minimum, Abbruch und Fruehstart ungueltig, 75 %, 3/1/1/1' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Rennen Summe, beste Runde Minimum, Abbruch ungueltig, Fruehstart zaehlt, Pflichtstopp D, 75 %, 3/1/1/1' };
   });
 
   stAdd('Challenges: setzt Preset, Rennen und Strecke und stellt danach alles zurück', () => {
@@ -10483,6 +10515,11 @@
       if (!$('ch-karte').querySelector('svg')) f.push('keine Streckenkarte');
       $('ch-modus').querySelector('[data-m="hotlap"]').click();
       $('ch-preset').querySelector('[data-p="pro"]').click();
+      $('ch-modus').click();
+      if (chModus !== 'rennen') f.push('X auf dem Modus-Knopf schaltet nicht um');
+      $('ch-modus').click();
+      if (chModus !== 'hotlap') f.push('zweites X schaltet nicht zurueck');
+      if (!$('ch-detail').querySelector('.ch-links #ch-start') || !$('ch-detail').querySelector('.ch-rechts #ch-liste')) f.push('Anordnung: Einstellungen links, Bestenliste rechts stimmt nicht');
       if ($('ch-liste').children.length !== 2) f.push($('ch-liste').children.length + ' statt 2 Zeilen in der Bestenliste');
       if ($('ch-histo').children.length < 3) f.push('kein Histogramm');
       // Warten auf Stillstand, dann Rennen-Taste: abbrechen, keine Ampel.

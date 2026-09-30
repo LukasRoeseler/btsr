@@ -31,13 +31,13 @@
   const CHALLENGES = [
     // BESTELLT: "Ersetze das Oval noch durch SGR2GR2LGR3G". Es ist damit kein Oval mehr, daher
     // der neue Name. Geschlossen (Luecke 0,5 cm), 1,36 x 2,28 m, Grundpackung.
-    { id: 'oval', name: 'Monzetta', code: 'SGR2GR2LGR3G', runden: 10, sets: ['grund'],
+    { id: 'oval', kat: 'B', name: 'Monzetta', code: 'SGR2GR2LGR3G', runden: 10, sets: ['grund'],
       idee: 'Zum Warmwerden: lange Gerade, ein kleiner Knick nach links, Bremspunkte lernen.' },
-    { id: 'schlange', name: 'Suzuna', code: 'SRRRGLLRRRRGGGR', runden: 8, sets: ['grund'],
+    { id: 'schlange', kat: 'B', name: 'Suzuna', code: 'SRRRGLLRRRRGGGR', runden: 8, sets: ['grund'],
       idee: 'Die zwei Linkskurven bilden ein S. Wer dort sauber umlenkt, gewinnt.' },
-    { id: 'kehre', name: 'Monte Carlito', code: 'SGRRRLHJRRRRG', runden: 8, sets: ['grund', 'haarnadel'],
+    { id: 'kehre', kat: 'C', name: 'Monte Carlito', code: 'SGRRRLHJRRRRG', runden: 8, sets: ['grund', 'haarnadel'],
       idee: 'Zwei Haarnadeln direkt hintereinander als enges S: voll in die Bremse, umlegen, sauber raus.' },
-    { id: 'weitblick', name: 'Silverbrook', code: 'SQRRRWGQRRRW', runden: 8, sets: ['grund', 'dreissig'],
+    { id: 'weitblick', kat: 'D', name: 'Silverbrook', code: 'SQRRRWGQRRRW', runden: 8, sets: ['grund', 'dreissig'],
       idee: 'Lang und schmal: die weiten 30-Grad-Bögen machen die Längsseiten schnell.' },
   ];
   const CH_SET_NAME = { grund: 'Grundpackung', haarnadel: 'Haarnadel-Set', dreissig: '30°-Außenkurven-Set' };
@@ -107,6 +107,9 @@
 
   function chDef(id) { return CHALLENGES.find((c) => c.id === id) || CHALLENGES[0]; }
   function chSchluessel(id, modus, preset) { return id + '|' + modus + '|' + preset; }
+  // PFLICHTSTOPP (v0.8.39). BESTELLT: "bei Rundenrennen in Challenge 4 immer einen Pitstop
+  // verpflichtend (egal wo und mit Pit-Minigame)". Kategorie D, nur im Modus Rennen.
+  function chPflichtstopp(def, modus) { return def.kat === 'D' && modus === 'rennen'; }
   function chTiles(def) { const p = codeToTrack(def.code); return p ? p.tiles : []; }
   function challengeLaeuft() { return !!chLauf; }
 
@@ -146,14 +149,19 @@
   // ---- Wertung, Rang, Verteilung: reine Rechnungen (Selbsttest) ----
   // pruefung: je Runde das Ergebnis von chRundePruefen (fehlt es ganz, gilt jede Runde als
   // geprueft - so rechnen die Tests die reine Zeitwertung). minMs: Mindestrundenzeit.
-  function chWertung(def, modus, rundenMs, flagge, fruehstart, pruefung, minMs, geaendert) {
-    if (fruehstart) return { gueltig: false, zeit: null, grund: 'Frühstart' };
+  // fruehstart: seit v0.8.39 KEIN Abbruch mehr - das Auto wird nach dem Anfahren kurz
+  // ausgebremst (70-race.js, fruehstartStrafeAktiv), die Strafe steckt in der Zeit.
+  // pitDone: erledigte Stopps; bei Pflichtstopp (Kategorie D, Rennen) muss es >= 1 sein.
+  function chWertung(def, modus, rundenMs, flagge, fruehstart, pruefung, minMs, geaendert, pitDone) {
     if (geaendert) return { gueltig: false, zeit: null, grund: 'Einstellungen während der Challenge geändert' };
     const geprueft = (i) => !pruefung || !!(pruefung[i] && pruefung[i].ok);
     const schnellGenug = (i) => !minMs || rundenMs[i] >= minMs;
     if (modus === 'rennen') {
       if (!flagge || rundenMs.length < def.runden) {
         return { gueltig: false, zeit: null, grund: 'abgebrochen, nicht alle Runden gefahren' };
+      }
+      if (chPflichtstopp(def, modus) && pitDone !== undefined && !(pitDone >= 1)) {
+        return { gueltig: false, zeit: null, grund: 'Pflichtstopp fehlt' };
       }
       for (let i = 0; i < def.runden; i++) {
         if (!geprueft(i)) return { gueltig: false, zeit: null, grund: 'Runde {n}: Strecke nicht erkannt', n: i + 1 };
@@ -306,6 +314,7 @@
       regler: presetRead(), modus: $('race-mode').value, limit: raceLimit,
       wx: $('race-wx-start').value, pit: $('race-pit-required').value,
       tank: $('race-fuel-start').value, fliegend: $('race-flying').checked,
+      pitModus: $('pit-modus') ? $('pit-modus').value : null,
       tiles: currentTrackTiles, rot: trackRotationDeg,
     };
   }
@@ -316,7 +325,11 @@
     raceLimit = def.runden;
     $('race-limit').value = def.runden;
     chSetzen('race-wx-start', 'dry');
-    chSetzen('race-pit-required', '0');
+    chSetzen('race-pit-required', chPflichtstopp(def, modus) ? '1' : '0');
+    if (chPflichtstopp(def, modus)) {
+      chSetzen('pit-modus', 'minigame');
+      chSetzen('pit-trigger', 'anywhere');
+    }
     chSetzen('race-fuel-start', FUEL_TANK_LITERS);
     chSetzen('race-flying', false);
     // Auf der Bahn: nur dort meldet das Auto jedes Teil, und nur dann laesst sich die Runde
@@ -337,6 +350,7 @@
     chSetzen('race-pit-required', m.pit);
     chSetzen('race-fuel-start', m.tank);
     chSetzen('race-flying', m.fliegend);
+    if (m.pitModus !== null && m.pitModus !== undefined) chSetzen('pit-modus', m.pitModus);
     currentTrackTiles = m.tiles;
     trackRotationDeg = m.rot;
     trackSel = null;
@@ -443,13 +457,9 @@
         if (jetzt - chLauf.hinweisAt > 2500) { chLauf.hinweisAt = jetzt; showHudToast(t('Auto anhalten')); }
       }
     } else if (chLauf.phase === 'ampel') {
-      if (raceState === 'countdown' && v > CH_FRUEHSTART_KMH) {
-        chLauf.fruehstart = true;
-        requestRaceStop();
-        showHudToast(t('Frühstart! Challenge abgebrochen'));
-      } else if (raceState === 'racing') {
-        chLauf.phase = 'faehrt';
-      }
+      // Frühstart: kein Abbruch mehr, die Ampel laeuft weiter, die Strafe kommt nach Gruen
+      // (70-race.js, fruehstartStrafeAktiv).
+      if (raceState === 'racing') chLauf.phase = 'faehrt';
     }
   }
   // Die Rennen-Taste (R1, Knopf im Cockpit) waehrend des Wartens auf Stillstand: abbrechen,
@@ -479,7 +489,7 @@
     const def = chDef(lauf.id);
     const rundenMs = raceLapTimes.map((l) => l.ms);
     const w = chWertung(def, lauf.modus, rundenMs, flagge, lauf.fruehstart,
-                        lauf.probe ? null : lauf.pruefung, chMinRundeMs(def), lauf.geaendert);
+                        lauf.probe ? null : lauf.pruefung, chMinRundeMs(def), lauf.geaendert, racePitDone);
     if (lauf.probe && w.gueltig) { w.gueltig = false; w.grund = 'Probelauf ohne Auto'; }
     const erg = Object.assign({ id: lauf.id, modus: lauf.modus, preset: lauf.preset, runden: rundenMs,
       auto: playerCar ? garageLabel(playerCar) : '', fahrer: chOnline().fahrer, geraet: chGeraet() }, w);
@@ -569,11 +579,12 @@
     $('ch-fakten').textContent = t('Länge') + ' ' + chZahl(m, 2) + ' m · 1:50 ' + chZahl(m * 50 / 1000, 2) + ' km · '
       + t('Platzbedarf') + ' ' + chZahl(bw, 2) + ' × ' + chZahl(bh, 2) + ' m · ' + def.sets.map((s) => t(CH_SET_NAME[s])).join(' + ')
       + ' · ' + t('Mindestrunde') + ' ' + chZahl(chMinRundeMs(def) / 1000, 2) + ' s';
-    document.querySelectorAll('#ch-modus button').forEach((b) => b.classList.toggle('an', b.dataset.m === chModus));
-    document.querySelectorAll('#ch-preset button').forEach((b) => b.classList.toggle('an', b.dataset.p === chPreset));
+    document.querySelectorAll('#ch-modus [data-m]').forEach((b) => b.classList.toggle('an', b.dataset.m === chModus));
+    document.querySelectorAll('#ch-preset [data-p]').forEach((b) => b.classList.toggle('an', b.dataset.p === chPreset));
     $('ch-modus-text').textContent = (chModus === 'hotlap'
       ? t('So viele Runden du willst, die schnellste zählt. Schluss mit der Rennen-Taste (R1).')
-      : t('{n} Runden ab stehendem Start, die Gesamtzeit zählt.').replace('{n}', def.runden))
+      : t('{n} Runden ab stehendem Start, die Gesamtzeit zählt.').replace('{n}', def.runden)
+        + (chPflichtstopp(def, 'rennen') ? ' ' + t('Pflichtstopp: einmal an die Box (Boxen-Minigame), egal wo.') : ''))
       + ' ' + t('Jede Runde wird gegen die Strecke geprüft: mindestens 90 % der Teile müssen erkannt werden. Einstellungen sind gesperrt.');
     // Teile: nur, was unter Strecke > Meine Teile eingetragen ist.
     const bil = teileBilanz(tiles).filter((x) => x.hat !== null);
@@ -665,12 +676,18 @@
   }
 
   // ---- Verdrahtung ----
-  document.querySelectorAll('#ch-modus button').forEach((b) => b.addEventListener('click', () => {
-    chModus = b.dataset.m; chZeichneDetail(); chListeLaden(chSchluessel(chWahl, chModus, chPreset));
-  }));
-  document.querySelectorAll('#ch-preset button').forEach((b) => b.addEventListener('click', () => {
-    chPreset = b.dataset.p; chZeichneDetail(); chListeLaden(chSchluessel(chWahl, chModus, chPreset));
-  }));
+  // Ein Klick auf eine Haelfte waehlt sie; X (menuNavActivate klickt den Knopf selbst) oder ein
+  // Klick daneben schaltet um.
+  $('ch-modus').addEventListener('click', (e) => {
+    const h = e.target.closest('[data-m]');
+    chModus = h ? h.dataset.m : (chModus === 'hotlap' ? 'rennen' : 'hotlap');
+    chZeichneDetail(); chListeLaden(chSchluessel(chWahl, chModus, chPreset));
+  });
+  $('ch-preset').addEventListener('click', (e) => {
+    const h = e.target.closest('[data-p]');
+    chPreset = h ? h.dataset.p : (chPreset === 'pro' ? 'arcade' : 'pro');
+    chZeichneDetail(); chListeLaden(chSchluessel(chWahl, chModus, chPreset));
+  });
   $('ch-start').addEventListener('click', () => { if (chLauf) challengeAbbrechen(); else challengeStarten(); });
   ['ch-url', 'ch-fahrer', 'ch-hochladen'].forEach((id) => $(id).addEventListener('change', chOnlineSpeichern));
   // Derselbe Name direkt auf der Strecken-Seite (BESTELLT: "im Challenges-Bildschirm nochmal

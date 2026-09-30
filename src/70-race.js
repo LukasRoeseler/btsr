@@ -152,6 +152,54 @@
     return false;
   }
 
+  // ---- FRUEHSTART: kurz ausbremsen statt Zeitstrafe (v0.8.38/39) -----------------------
+  // BESTELLT: "Bei allen Rennen / Challenges mit Ampel ... fuer Fruehstarts - mach keine
+  // Zeitstrafe, sondern bremse das Auto dann nochmal kurz ab, nachdem es angefahren ist."
+  // Faehrt ein Auto waehrend des Countdowns an (dieselbe Schwelle wie raceMoveErkannt), ist es
+  // ein Fruehstart. Die Ampel laeuft weiter. Nach Gruen, sobald das Auto faehrt, gibt es 2 s
+  // kein Gas und eine Bremsung (50-drive.js, physicsStep). Je Auto getrennt.
+  const FRUEHSTART_KMH = 3, FRUEHSTART_STRAFE_MS = 2000, FRUEHSTART_BREMSE = 0.6;
+  const fruehstart = { 1: { frueh: false, warten: false, bis: 0 }, 2: { frueh: false, warten: false, bis: 0 } };
+  let fruehstartTimer = null;
+  function fruehstartTempo(w) {
+    try { return Math.abs((w === 2 ? physEngine2 : physEngine).state.speedKmh || 0); } catch (e) { return 0; }
+  }
+  function fruehstartReset() {
+    if (fruehstartTimer) { clearInterval(fruehstartTimer); fruehstartTimer = null; }
+    [1, 2].forEach((w) => Object.assign(fruehstart[w], { frueh: false, warten: false, bis: 0 }));
+  }
+  function fruehstartBeginnen() {
+    fruehstartReset();
+    fruehstartTimer = setInterval(() => {
+      if (raceState !== 'countdown') return;
+      [1, 2].forEach((w) => {
+        if (w === 2 && !(zweiSpieler && playerCar2)) return;
+        if (!fruehstart[w].frueh && fruehstartTempo(w) > FRUEHSTART_KMH) {
+          fruehstart[w].frueh = true;
+          showHudToast(w === 2 ? t('Frühstart Spieler 2!') : t('Frühstart!'));
+        }
+      });
+    }, 100);
+  }
+  function fruehstartGruen() {
+    if (fruehstartTimer) { clearInterval(fruehstartTimer); fruehstartTimer = null; }
+    [1, 2].forEach((w) => { if (fruehstart[w].frueh) fruehstart[w].warten = true; });
+  }
+  // Aus dem Fahrtakt: gilt die Strafe fuer Auto w gerade? Startet sie, sobald das Auto nach
+  // Gruen faehrt.
+  function fruehstartStrafeAktiv(w) {
+    const f = fruehstart[w];
+    if (!f) return false;
+    const jetzt = Date.now();
+    if (f.warten && (raceState === 'racing' || raceState === 'finishing') && fruehstartTempo(w) > FRUEHSTART_KMH) {
+      f.warten = false;
+      f.bis = jetzt + FRUEHSTART_STRAFE_MS;
+      showHudToast(w === 2 ? t('Frühstart Spieler 2: Strafe') : t('Frühstart: Strafe'));
+    }
+    return jetzt < f.bis;
+  }
+  function fruehstartGab(w) { const f = fruehstart[w || 1]; return !!(f && f.frueh); }
+
   function raceClockTick() {
     if (raceState !== 'racing') return;
     if (raceAwaitingMove) {
@@ -1162,6 +1210,7 @@
       finishSeitenZaehlerZuruecksetzen();
     }
     raceState = 'countdown';
+    fruehstartBeginnen();
     $('race-start-btn').disabled = true;
     // Abbrechen muss schon im Countdown gehen: requestRaceStop() raeumt den Zaehler mit
     // auf, und ein Countdown, aus dem man nicht herauskommt, ist eine Falle.
@@ -1192,6 +1241,7 @@
     // A flying start goes to the formation lap first: the cars roll at pit-lane speed
     // and no laps count until the field crosses the line.
     raceFormationLap = raceFlying;
+    fruehstartGruen();
     // FRISCH ZAEHLEN. Ohne das traegt ein zweites Rennen die Ueberfahrten des ersten mit
     // sich, und dann ist die Einfuehrungsrunde beim naechsten Start sofort vorbei.
     formationZaehler = new Map();
@@ -1273,6 +1323,7 @@
   // requestRaceStop() uebergibt ausdruecklich false.
   function finishRace(auslaufen) {
     raceState = 'finished';
+    fruehstartReset();
     // Die laufende Runde festhalten und die Uhr anhalten. Ohne das Nullsetzen von
     // raceLapStart rechnet die Anzeige weiter gegen Date.now() und die Runde waechst nach
     // dem Ende einfach weiter.

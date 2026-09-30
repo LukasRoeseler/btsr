@@ -2584,15 +2584,17 @@
   .ch-sperre-hinweis[hidden] { display: none; }
   .ch-kachel .ch-mini { display: grid; place-items: center; height: clamp(64px, 26vh, 170px); padding: 6px 6px 2px; }
   .ch-mini svg { max-width: 100%; max-height: 100%; width: auto; height: 100%; }
-  .ch-detail { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 14px; align-items: start; }
+  .ch-detail { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+  .ch-rechts > h3:first-child { margin-top: 0; }
   .ch-detail[hidden] { display: none; }
   @media (max-width: 640px) { .ch-detail { grid-template-columns: minmax(0, 1fr); } }
-  .ch-karte { height: clamp(150px, 44vh, 340px); display: grid; place-items: center; }
+  .ch-karte { height: clamp(140px, 38vh, 300px); display: grid; place-items: center; }
   .ch-karte svg { width: 100%; height: 100%; max-width: 100%; max-height: 100%; }
   .ch-fakten { font-size: 12px; color: var(--muted); }
-  .ch-wahl { display: flex; margin: 6px 0; }
-  .ch-wahl button { flex: 1; border-radius: 0; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-  .ch-wahl button.an { background: var(--k-blau); color: var(--k-blau-text); border-color: #fff; }
+  .ch-umschalter { display: flex; width: 100%; padding: 0; margin: 6px 0; border-radius: 0; overflow: hidden; }
+  .ch-umschalter > span { flex: 1; padding: 8px 6px; text-align: center; font-weight: 800; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--muted); }
+  .ch-umschalter > span.an { background: var(--k-blau); color: var(--k-blau-text); }
   .ch-teile { font-size: 12px; color: var(--muted); }
   .ch-teile.fehlt { color: var(--bad); }
   .ch-teile.da { color: var(--good); }
@@ -3877,7 +3879,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.38</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.39</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4612,25 +4614,29 @@
         <button type="button" id="ch-test">Verbindung testen</button>
         <span class="muted" id="ch-test-status" data-i18n-skip></span></div>
     </div>
+    <!-- NEU ANGEORDNET (v0.8.39). BESTELLT: "die Einstellungen je Strecke unter das Bild vom
+         Streckenlayout und die Bestenliste auf die rechte Seite". Modus und Preset sind je EIN
+         Knopf: X schaltet um (BESTELLT: "nicht dpad runter auf Rundenrennen rechts daneben,
+         sondern mit X zwischen dem einen und dem anderen hin und her schalten"). -->
     <div id="ch-detail" class="ch-detail" hidden>
       <div class="ch-links">
         <div class="ch-karte" id="ch-karte"></div>
         <p class="muted" id="ch-idee"></p>
         <p class="ch-fakten" id="ch-fakten" data-i18n-skip></p>
-      </div>
-      <div class="ch-rechts">
         <div class="ch-ergebnis" id="ch-ergebnis" hidden>
           <div class="ch-erg-titel" id="ch-erg-titel" data-i18n-skip></div>
           <div class="ch-erg-zeit" id="ch-erg-zeit" data-i18n-skip></div>
           <div class="muted" id="ch-erg-text" data-i18n-skip></div>
         </div>
-        <div class="ch-wahl" id="ch-modus"><button type="button" data-m="hotlap">Beste Runde</button><button type="button" data-m="rennen">Rennen</button></div>
+        <button type="button" class="ch-umschalter" id="ch-modus" aria-label="Modus umschalten"><span data-m="hotlap">Beste Runde</span><span data-m="rennen">Rennen</span></button>
         <p class="muted" id="ch-modus-text" data-i18n-skip></p>
-        <div class="ch-wahl" id="ch-preset"><button type="button" data-p="pro" data-i18n-skip>Pro</button><button type="button" data-p="arcade" data-i18n-skip>Arcade</button></div>
+        <button type="button" class="ch-umschalter" id="ch-preset" aria-label="Preset umschalten"><span data-p="pro" data-i18n-skip>Pro</span><span data-p="arcade" data-i18n-skip>Arcade</span></button>
         <p class="ch-teile" id="ch-teile" data-i18n-skip></p>
         <div class="ch-name-zeile"><label for="ch-name">Name in der Bestenliste</label>
           <input type="text" id="ch-name" maxlength="16" data-preset-skip></div>
         <button type="button" class="primary ch-start" id="ch-start">Challenge starten</button>
+      </div>
+      <div class="ch-rechts">
         <h3>Bestenliste</h3>
         <p class="muted" id="ch-liste-status" data-i18n-skip></p>
         <div class="ch-perz" id="ch-perz" data-i18n-skip></div>
@@ -4844,6 +4850,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Challenges: Einstellungen unter der Streckenkarte, Bestenliste rechts; Modus und Preset schaltet &#10005; um. Fr&uuml;hstart bei allen Starts mit Ampel: kein Abbruch mehr, sondern kurz ausgebremst, sobald das Auto nach Gr&uuml;n f&auml;hrt. Silverbrook-Rennen mit einem Pflichtstopp (Boxen-Minigame, egal wo).</li>
         <li>Titel-Glitch je Buchstabe zuf&auml;llig blau oder rot, oben und unten getrennt. &bdquo;Abseits&ldquo; erscheint jetzt gro&szlig; in der Mitte des Cockpits. Autos-Kachel zeigt wieder den Namen statt &bdquo;[object HTMLSpanElement]&ldquo;. Boxen-Minigame: Tasten stehen 100 ms l&auml;nger.</li>
         <li>Challenges gegen Schummeln: jede Runde wird gegen die Strecke gepr&uuml;ft (mindestens 90 % der Teile erkannt), eine plausible Mindestrundenzeit gilt in App und Bestenliste, und die Einstellungen sind w&auml;hrend des Laufs gesperrt; wer sie doch &auml;ndert, bricht ab.</li>
         <li>Titelseite im Browser: Link zum Download der neuesten Android-App. Die APK-Release h&auml;ngt daf&uuml;r zus&auml;tzlich eine Datei mit festem Namen an; die Android-Schicht ist unver&auml;ndert, neu installieren ist nicht n&ouml;tig.</li>
@@ -11584,6 +11591,15 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Modus umschalten": "Switch mode",
+    "Preset umschalten": "Switch preset",
+    "Pflichtstopp fehlt": "Mandatory pit stop missing",
+    "Pflichtstopp: einmal an die Box (Boxen-Minigame), egal wo.": "Mandatory stop: pit once (pit minigame), anywhere.",
+    "Frühstart!": "Jump start!",
+    "Frühstart Spieler 2!": "Jump start player 2!",
+    "Frühstart: Strafe": "Jump start: penalty",
+    "Frühstart Spieler 2: Strafe": "Jump start player 2: penalty",
+    "Challenges: Einstellungen unter der Streckenkarte, Bestenliste rechts; Modus und Preset schaltet ✕ um. Frühstart bei allen Starts mit Ampel: kein Abbruch mehr, sondern kurz ausgebremst, sobald das Auto nach Grün fährt. Silverbrook-Rennen mit einem Pflichtstopp (Boxen-Minigame, egal wo).": "Challenges: settings below the track map, leaderboard on the right; ✕ switches mode and preset. Jump start on every start with lights: no more abort, instead a short forced braking once the car moves after green. Silverbrook race with one mandatory pit stop (pit minigame, anywhere).",
     "Titel-Glitch je Buchstabe zufällig blau oder rot, oben und unten getrennt. „Abseits“ erscheint jetzt groß in der Mitte des Cockpits. Autos-Kachel zeigt wieder den Namen statt „[object HTMLSpanElement]“. Boxen-Minigame: Tasten stehen 100 ms länger.": "Title glitch randomly blue or red per letter, top and bottom separately. \"Off track\" now appears large in the middle of the cockpit. The cars tile shows the name again instead of \"[object HTMLSpanElement]\". Pit minigame: buttons stay 100 ms longer.",
     "Runde {n}: {a} von {b} Teilen erkannt, zählt nicht": "Lap {n}: {a} of {b} pieces recognised, does not count",
     "Runde {n} unter der Mindestzeit, zählt nicht": "Lap {n} below the minimum time, does not count",
@@ -20194,6 +20210,11 @@
     if (offtrackGilt()) {
       rawThrottle = Math.min(rawThrottle, OFFTRACK_GAS);
     }
+    // Fruehstart-Strafe (70-race.js): kurz kein Gas und bremsen. try, weil der Takt schon laeuft,
+    // bevor 70-race.js seine Konstanten angelegt hat (temporale Todeszone beim Laden).
+    try {
+      if (fruehstartStrafeAktiv(1)) { rawThrottle = 0; rawBrake = Math.max(rawBrake, FRUEHSTART_BREMSE); }
+    } catch (e) { /* beim Laden */ }
     // ... und das Brummen an seinem. padRumble() prueft rumbleOn selbst, also steht hier nur
     // die Frage, OB gebrummt werden soll - nicht, ob der Nutzer Vibration will.
     if (abseitsJetzt()) {
@@ -20311,6 +20332,9 @@
       if (ap2.lenkt) lenkung = ap2.steer;
     }
     if (offtrackGiltFuer(2)) gas = Math.min(gas, OFFTRACK_GAS);
+    try {
+      if (fruehstartStrafeAktiv(2)) { gas = 0; bremse = Math.max(bremse, FRUEHSTART_BREMSE); }
+    } catch (e) { /* beim Laden */ }
     // Und das Rumpeln, an seinen eigenen Pad. Bis v0.6.45 waere es der Pad von Spieler 1
     // gewesen; jetzt hat jeder Stoss eine Adresse.
     if (abseitsJetztFuer(2)) {
@@ -26923,6 +26947,54 @@
     return false;
   }
 
+  // ---- FRUEHSTART: kurz ausbremsen statt Zeitstrafe (v0.8.38/39) -----------------------
+  // BESTELLT: "Bei allen Rennen / Challenges mit Ampel ... fuer Fruehstarts - mach keine
+  // Zeitstrafe, sondern bremse das Auto dann nochmal kurz ab, nachdem es angefahren ist."
+  // Faehrt ein Auto waehrend des Countdowns an (dieselbe Schwelle wie raceMoveErkannt), ist es
+  // ein Fruehstart. Die Ampel laeuft weiter. Nach Gruen, sobald das Auto faehrt, gibt es 2 s
+  // kein Gas und eine Bremsung (50-drive.js, physicsStep). Je Auto getrennt.
+  const FRUEHSTART_KMH = 3, FRUEHSTART_STRAFE_MS = 2000, FRUEHSTART_BREMSE = 0.6;
+  const fruehstart = { 1: { frueh: false, warten: false, bis: 0 }, 2: { frueh: false, warten: false, bis: 0 } };
+  let fruehstartTimer = null;
+  function fruehstartTempo(w) {
+    try { return Math.abs((w === 2 ? physEngine2 : physEngine).state.speedKmh || 0); } catch (e) { return 0; }
+  }
+  function fruehstartReset() {
+    if (fruehstartTimer) { clearInterval(fruehstartTimer); fruehstartTimer = null; }
+    [1, 2].forEach((w) => Object.assign(fruehstart[w], { frueh: false, warten: false, bis: 0 }));
+  }
+  function fruehstartBeginnen() {
+    fruehstartReset();
+    fruehstartTimer = setInterval(() => {
+      if (raceState !== 'countdown') return;
+      [1, 2].forEach((w) => {
+        if (w === 2 && !(zweiSpieler && playerCar2)) return;
+        if (!fruehstart[w].frueh && fruehstartTempo(w) > FRUEHSTART_KMH) {
+          fruehstart[w].frueh = true;
+          showHudToast(w === 2 ? t('Frühstart Spieler 2!') : t('Frühstart!'));
+        }
+      });
+    }, 100);
+  }
+  function fruehstartGruen() {
+    if (fruehstartTimer) { clearInterval(fruehstartTimer); fruehstartTimer = null; }
+    [1, 2].forEach((w) => { if (fruehstart[w].frueh) fruehstart[w].warten = true; });
+  }
+  // Aus dem Fahrtakt: gilt die Strafe fuer Auto w gerade? Startet sie, sobald das Auto nach
+  // Gruen faehrt.
+  function fruehstartStrafeAktiv(w) {
+    const f = fruehstart[w];
+    if (!f) return false;
+    const jetzt = Date.now();
+    if (f.warten && (raceState === 'racing' || raceState === 'finishing') && fruehstartTempo(w) > FRUEHSTART_KMH) {
+      f.warten = false;
+      f.bis = jetzt + FRUEHSTART_STRAFE_MS;
+      showHudToast(w === 2 ? t('Frühstart Spieler 2: Strafe') : t('Frühstart: Strafe'));
+    }
+    return jetzt < f.bis;
+  }
+  function fruehstartGab(w) { const f = fruehstart[w || 1]; return !!(f && f.frueh); }
+
   function raceClockTick() {
     if (raceState !== 'racing') return;
     if (raceAwaitingMove) {
@@ -27933,6 +28005,7 @@
       finishSeitenZaehlerZuruecksetzen();
     }
     raceState = 'countdown';
+    fruehstartBeginnen();
     $('race-start-btn').disabled = true;
     // Abbrechen muss schon im Countdown gehen: requestRaceStop() raeumt den Zaehler mit
     // auf, und ein Countdown, aus dem man nicht herauskommt, ist eine Falle.
@@ -27963,6 +28036,7 @@
     // A flying start goes to the formation lap first: the cars roll at pit-lane speed
     // and no laps count until the field crosses the line.
     raceFormationLap = raceFlying;
+    fruehstartGruen();
     // FRISCH ZAEHLEN. Ohne das traegt ein zweites Rennen die Ueberfahrten des ersten mit
     // sich, und dann ist die Einfuehrungsrunde beim naechsten Start sofort vorbei.
     formationZaehler = new Map();
@@ -28044,6 +28118,7 @@
   // requestRaceStop() uebergibt ausdruecklich false.
   function finishRace(auslaufen) {
     raceState = 'finished';
+    fruehstartReset();
     // Die laufende Runde festhalten und die Uhr anhalten. Ohne das Nullsetzen von
     // raceLapStart rechnet die Anzeige weiter gegen Date.now() und die Runde waechst nach
     // dem Ende einfach weiter.
@@ -32503,13 +32578,13 @@
   const CHALLENGES = [
     // BESTELLT: "Ersetze das Oval noch durch SGR2GR2LGR3G". Es ist damit kein Oval mehr, daher
     // der neue Name. Geschlossen (Luecke 0,5 cm), 1,36 x 2,28 m, Grundpackung.
-    { id: 'oval', name: 'Monzetta', code: 'SGR2GR2LGR3G', runden: 10, sets: ['grund'],
+    { id: 'oval', kat: 'B', name: 'Monzetta', code: 'SGR2GR2LGR3G', runden: 10, sets: ['grund'],
       idee: 'Zum Warmwerden: lange Gerade, ein kleiner Knick nach links, Bremspunkte lernen.' },
-    { id: 'schlange', name: 'Suzuna', code: 'SRRRGLLRRRRGGGR', runden: 8, sets: ['grund'],
+    { id: 'schlange', kat: 'B', name: 'Suzuna', code: 'SRRRGLLRRRRGGGR', runden: 8, sets: ['grund'],
       idee: 'Die zwei Linkskurven bilden ein S. Wer dort sauber umlenkt, gewinnt.' },
-    { id: 'kehre', name: 'Monte Carlito', code: 'SGRRRLHJRRRRG', runden: 8, sets: ['grund', 'haarnadel'],
+    { id: 'kehre', kat: 'C', name: 'Monte Carlito', code: 'SGRRRLHJRRRRG', runden: 8, sets: ['grund', 'haarnadel'],
       idee: 'Zwei Haarnadeln direkt hintereinander als enges S: voll in die Bremse, umlegen, sauber raus.' },
-    { id: 'weitblick', name: 'Silverbrook', code: 'SQRRRWGQRRRW', runden: 8, sets: ['grund', 'dreissig'],
+    { id: 'weitblick', kat: 'D', name: 'Silverbrook', code: 'SQRRRWGQRRRW', runden: 8, sets: ['grund', 'dreissig'],
       idee: 'Lang und schmal: die weiten 30-Grad-Bögen machen die Längsseiten schnell.' },
   ];
   const CH_SET_NAME = { grund: 'Grundpackung', haarnadel: 'Haarnadel-Set', dreissig: '30°-Außenkurven-Set' };
@@ -32579,6 +32654,9 @@
 
   function chDef(id) { return CHALLENGES.find((c) => c.id === id) || CHALLENGES[0]; }
   function chSchluessel(id, modus, preset) { return id + '|' + modus + '|' + preset; }
+  // PFLICHTSTOPP (v0.8.39). BESTELLT: "bei Rundenrennen in Challenge 4 immer einen Pitstop
+  // verpflichtend (egal wo und mit Pit-Minigame)". Kategorie D, nur im Modus Rennen.
+  function chPflichtstopp(def, modus) { return def.kat === 'D' && modus === 'rennen'; }
   function chTiles(def) { const p = codeToTrack(def.code); return p ? p.tiles : []; }
   function challengeLaeuft() { return !!chLauf; }
 
@@ -32618,14 +32696,19 @@
   // ---- Wertung, Rang, Verteilung: reine Rechnungen (Selbsttest) ----
   // pruefung: je Runde das Ergebnis von chRundePruefen (fehlt es ganz, gilt jede Runde als
   // geprueft - so rechnen die Tests die reine Zeitwertung). minMs: Mindestrundenzeit.
-  function chWertung(def, modus, rundenMs, flagge, fruehstart, pruefung, minMs, geaendert) {
-    if (fruehstart) return { gueltig: false, zeit: null, grund: 'Frühstart' };
+  // fruehstart: seit v0.8.39 KEIN Abbruch mehr - das Auto wird nach dem Anfahren kurz
+  // ausgebremst (70-race.js, fruehstartStrafeAktiv), die Strafe steckt in der Zeit.
+  // pitDone: erledigte Stopps; bei Pflichtstopp (Kategorie D, Rennen) muss es >= 1 sein.
+  function chWertung(def, modus, rundenMs, flagge, fruehstart, pruefung, minMs, geaendert, pitDone) {
     if (geaendert) return { gueltig: false, zeit: null, grund: 'Einstellungen während der Challenge geändert' };
     const geprueft = (i) => !pruefung || !!(pruefung[i] && pruefung[i].ok);
     const schnellGenug = (i) => !minMs || rundenMs[i] >= minMs;
     if (modus === 'rennen') {
       if (!flagge || rundenMs.length < def.runden) {
         return { gueltig: false, zeit: null, grund: 'abgebrochen, nicht alle Runden gefahren' };
+      }
+      if (chPflichtstopp(def, modus) && pitDone !== undefined && !(pitDone >= 1)) {
+        return { gueltig: false, zeit: null, grund: 'Pflichtstopp fehlt' };
       }
       for (let i = 0; i < def.runden; i++) {
         if (!geprueft(i)) return { gueltig: false, zeit: null, grund: 'Runde {n}: Strecke nicht erkannt', n: i + 1 };
@@ -32778,6 +32861,7 @@
       regler: presetRead(), modus: $('race-mode').value, limit: raceLimit,
       wx: $('race-wx-start').value, pit: $('race-pit-required').value,
       tank: $('race-fuel-start').value, fliegend: $('race-flying').checked,
+      pitModus: $('pit-modus') ? $('pit-modus').value : null,
       tiles: currentTrackTiles, rot: trackRotationDeg,
     };
   }
@@ -32788,7 +32872,11 @@
     raceLimit = def.runden;
     $('race-limit').value = def.runden;
     chSetzen('race-wx-start', 'dry');
-    chSetzen('race-pit-required', '0');
+    chSetzen('race-pit-required', chPflichtstopp(def, modus) ? '1' : '0');
+    if (chPflichtstopp(def, modus)) {
+      chSetzen('pit-modus', 'minigame');
+      chSetzen('pit-trigger', 'anywhere');
+    }
     chSetzen('race-fuel-start', FUEL_TANK_LITERS);
     chSetzen('race-flying', false);
     // Auf der Bahn: nur dort meldet das Auto jedes Teil, und nur dann laesst sich die Runde
@@ -32809,6 +32897,7 @@
     chSetzen('race-pit-required', m.pit);
     chSetzen('race-fuel-start', m.tank);
     chSetzen('race-flying', m.fliegend);
+    if (m.pitModus !== null && m.pitModus !== undefined) chSetzen('pit-modus', m.pitModus);
     currentTrackTiles = m.tiles;
     trackRotationDeg = m.rot;
     trackSel = null;
@@ -32915,13 +33004,9 @@
         if (jetzt - chLauf.hinweisAt > 2500) { chLauf.hinweisAt = jetzt; showHudToast(t('Auto anhalten')); }
       }
     } else if (chLauf.phase === 'ampel') {
-      if (raceState === 'countdown' && v > CH_FRUEHSTART_KMH) {
-        chLauf.fruehstart = true;
-        requestRaceStop();
-        showHudToast(t('Frühstart! Challenge abgebrochen'));
-      } else if (raceState === 'racing') {
-        chLauf.phase = 'faehrt';
-      }
+      // Frühstart: kein Abbruch mehr, die Ampel laeuft weiter, die Strafe kommt nach Gruen
+      // (70-race.js, fruehstartStrafeAktiv).
+      if (raceState === 'racing') chLauf.phase = 'faehrt';
     }
   }
   // Die Rennen-Taste (R1, Knopf im Cockpit) waehrend des Wartens auf Stillstand: abbrechen,
@@ -32951,7 +33036,7 @@
     const def = chDef(lauf.id);
     const rundenMs = raceLapTimes.map((l) => l.ms);
     const w = chWertung(def, lauf.modus, rundenMs, flagge, lauf.fruehstart,
-                        lauf.probe ? null : lauf.pruefung, chMinRundeMs(def), lauf.geaendert);
+                        lauf.probe ? null : lauf.pruefung, chMinRundeMs(def), lauf.geaendert, racePitDone);
     if (lauf.probe && w.gueltig) { w.gueltig = false; w.grund = 'Probelauf ohne Auto'; }
     const erg = Object.assign({ id: lauf.id, modus: lauf.modus, preset: lauf.preset, runden: rundenMs,
       auto: playerCar ? garageLabel(playerCar) : '', fahrer: chOnline().fahrer, geraet: chGeraet() }, w);
@@ -33041,11 +33126,12 @@
     $('ch-fakten').textContent = t('Länge') + ' ' + chZahl(m, 2) + ' m · 1:50 ' + chZahl(m * 50 / 1000, 2) + ' km · '
       + t('Platzbedarf') + ' ' + chZahl(bw, 2) + ' × ' + chZahl(bh, 2) + ' m · ' + def.sets.map((s) => t(CH_SET_NAME[s])).join(' + ')
       + ' · ' + t('Mindestrunde') + ' ' + chZahl(chMinRundeMs(def) / 1000, 2) + ' s';
-    document.querySelectorAll('#ch-modus button').forEach((b) => b.classList.toggle('an', b.dataset.m === chModus));
-    document.querySelectorAll('#ch-preset button').forEach((b) => b.classList.toggle('an', b.dataset.p === chPreset));
+    document.querySelectorAll('#ch-modus [data-m]').forEach((b) => b.classList.toggle('an', b.dataset.m === chModus));
+    document.querySelectorAll('#ch-preset [data-p]').forEach((b) => b.classList.toggle('an', b.dataset.p === chPreset));
     $('ch-modus-text').textContent = (chModus === 'hotlap'
       ? t('So viele Runden du willst, die schnellste zählt. Schluss mit der Rennen-Taste (R1).')
-      : t('{n} Runden ab stehendem Start, die Gesamtzeit zählt.').replace('{n}', def.runden))
+      : t('{n} Runden ab stehendem Start, die Gesamtzeit zählt.').replace('{n}', def.runden)
+        + (chPflichtstopp(def, 'rennen') ? ' ' + t('Pflichtstopp: einmal an die Box (Boxen-Minigame), egal wo.') : ''))
       + ' ' + t('Jede Runde wird gegen die Strecke geprüft: mindestens 90 % der Teile müssen erkannt werden. Einstellungen sind gesperrt.');
     // Teile: nur, was unter Strecke > Meine Teile eingetragen ist.
     const bil = teileBilanz(tiles).filter((x) => x.hat !== null);
@@ -33137,12 +33223,18 @@
   }
 
   // ---- Verdrahtung ----
-  document.querySelectorAll('#ch-modus button').forEach((b) => b.addEventListener('click', () => {
-    chModus = b.dataset.m; chZeichneDetail(); chListeLaden(chSchluessel(chWahl, chModus, chPreset));
-  }));
-  document.querySelectorAll('#ch-preset button').forEach((b) => b.addEventListener('click', () => {
-    chPreset = b.dataset.p; chZeichneDetail(); chListeLaden(chSchluessel(chWahl, chModus, chPreset));
-  }));
+  // Ein Klick auf eine Haelfte waehlt sie; X (menuNavActivate klickt den Knopf selbst) oder ein
+  // Klick daneben schaltet um.
+  $('ch-modus').addEventListener('click', (e) => {
+    const h = e.target.closest('[data-m]');
+    chModus = h ? h.dataset.m : (chModus === 'hotlap' ? 'rennen' : 'hotlap');
+    chZeichneDetail(); chListeLaden(chSchluessel(chWahl, chModus, chPreset));
+  });
+  $('ch-preset').addEventListener('click', (e) => {
+    const h = e.target.closest('[data-p]');
+    chPreset = h ? h.dataset.p : (chPreset === 'pro' ? 'arcade' : 'pro');
+    chZeichneDetail(); chListeLaden(chSchluessel(chWahl, chModus, chPreset));
+  });
   $('ch-start').addEventListener('click', () => { if (chLauf) challengeAbbrechen(); else challengeStarten(); });
   ['ch-url', 'ch-fahrer', 'ch-hochladen'].forEach((id) => $(id).addEventListener('change', chOnlineSpeichern));
   // Derselbe Name direkt auf der Strecken-Seite (BESTELLT: "im Challenges-Bildschirm nochmal
@@ -65088,6 +65180,34 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Knoten als Beschriftung, 8 Buchstaben mit Zufallsfarben' };
   });
 
+  stAdd('Fruehstart: Ampel laeuft weiter, nach Gruen 2 s kein Gas und Bremse, danach frei', () => {
+    const f = [];
+    const merkState = raceState, merkT = physEngine.state.speedKmh, merkNow = Date.now;
+    let jetzt = merkNow.call(Date);
+    try {
+      Date.now = () => jetzt;
+      fruehstartReset();
+      raceState = 'countdown';
+      fruehstart[1].frueh = true;                 // wie vom Waechter im Countdown gesetzt
+      fruehstartGruen();
+      raceState = 'racing';
+      physEngine.state.speedKmh = 0;
+      if (fruehstartStrafeAktiv(1)) f.push('Strafe schon vor dem Anfahren');
+      physEngine.state.speedKmh = 10;
+      if (!fruehstartStrafeAktiv(1)) f.push('keine Strafe nach dem Anfahren');
+      jetzt += 1900;
+      if (!fruehstartStrafeAktiv(1)) f.push('Strafe endet vor 2 s');
+      jetzt += 200;
+      if (fruehstartStrafeAktiv(1)) f.push('Strafe laenger als 2 s');
+      fruehstartReset();
+      fruehstartGruen();
+      if (fruehstartStrafeAktiv(1)) f.push('Strafe ohne Fruehstart');
+    } finally {
+      Date.now = merkNow; raceState = merkState; physEngine.state.speedKmh = merkT; fruehstartReset();
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Strafe erst nach dem Anfahren, genau 2 s, ohne Fruehstart keine' };
+  });
+
   // ---- CHALLENGES (v0.8.30) ----
   stAdd('Challenges: vier Strecken geschlossen und aus ihren Sets baubar', () => {
     const f = [], zeilen = [];
@@ -65173,7 +65293,11 @@
     const b = chWertung(def, 'hotlap', [5000, 3800, 4200], false, false);
     if (!b.gueltig || b.zeit !== 3800) f.push('beste Runde ' + b.zeit + ' statt 3800');
     if (chWertung(def, 'hotlap', [], false, false).gueltig) f.push('beste Runde ohne Runde gewertet');
-    if (chWertung(def, 'hotlap', [3000], false, true).gueltig) f.push('Fruehstart gewertet');
+    if (!chWertung(def, 'hotlap', [3000], false, true).gueltig) f.push('Fruehstart bricht noch ab (soll mit Bremsstrafe zaehlen)');
+    const dD = { runden: 2, kat: 'D' };
+    if (chWertung(dD, 'rennen', [5000, 5000], true, false, null, 0, false, 0).gueltig) f.push('Kategorie D ohne Pflichtstopp gewertet');
+    if (!chWertung(dD, 'rennen', [5000, 5000], true, false, null, 0, false, 1).gueltig) f.push('Kategorie D mit Pflichtstopp nicht gewertet');
+    if (!chWertung({ runden: 2, kat: 'B' }, 'rennen', [5000, 5000], true, false, null, 0, false, 0).gueltig) f.push('Pflichtstopp auch ausserhalb von D verlangt');
     const p = chPerzentil([10, 20, 30, 40, 50], 20);
     if (p !== 75) f.push('Perzentil ' + p + ' statt 75');
     if (chPerzentil([7], 7) !== 100) f.push('allein nicht 100 Prozent');
@@ -65181,7 +65305,7 @@
     const summe = k.reduce((a, x) => a + x.anz, 0);
     if (k.length !== 4 || summe !== 6) f.push('Histogramm ' + k.length + ' Klassen, ' + summe + ' Werte');
     if (k[0].anz !== 3 || k[3].anz !== 1) f.push('schnelle Zeiten nicht oben: ' + k.map((x) => x.anz).join(','));
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Rennen Summe, beste Runde Minimum, Abbruch und Fruehstart ungueltig, 75 %, 3/1/1/1' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Rennen Summe, beste Runde Minimum, Abbruch ungueltig, Fruehstart zaehlt, Pflichtstopp D, 75 %, 3/1/1/1' };
   });
 
   stAdd('Challenges: setzt Preset, Rennen und Strecke und stellt danach alles zurück', () => {
@@ -65224,6 +65348,11 @@
       if (!$('ch-karte').querySelector('svg')) f.push('keine Streckenkarte');
       $('ch-modus').querySelector('[data-m="hotlap"]').click();
       $('ch-preset').querySelector('[data-p="pro"]').click();
+      $('ch-modus').click();
+      if (chModus !== 'rennen') f.push('X auf dem Modus-Knopf schaltet nicht um');
+      $('ch-modus').click();
+      if (chModus !== 'hotlap') f.push('zweites X schaltet nicht zurueck');
+      if (!$('ch-detail').querySelector('.ch-links #ch-start') || !$('ch-detail').querySelector('.ch-rechts #ch-liste')) f.push('Anordnung: Einstellungen links, Bestenliste rechts stimmt nicht');
       if ($('ch-liste').children.length !== 2) f.push($('ch-liste').children.length + ' statt 2 Zeilen in der Bestenliste');
       if ($('ch-histo').children.length < 3) f.push('kein Histogramm');
       // Warten auf Stillstand, dann Rennen-Taste: abbrechen, keine Ampel.

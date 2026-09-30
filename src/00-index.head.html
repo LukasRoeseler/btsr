@@ -2584,15 +2584,17 @@
   .ch-sperre-hinweis[hidden] { display: none; }
   .ch-kachel .ch-mini { display: grid; place-items: center; height: clamp(64px, 26vh, 170px); padding: 6px 6px 2px; }
   .ch-mini svg { max-width: 100%; max-height: 100%; width: auto; height: 100%; }
-  .ch-detail { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 14px; align-items: start; }
+  .ch-detail { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+  .ch-rechts > h3:first-child { margin-top: 0; }
   .ch-detail[hidden] { display: none; }
   @media (max-width: 640px) { .ch-detail { grid-template-columns: minmax(0, 1fr); } }
-  .ch-karte { height: clamp(150px, 44vh, 340px); display: grid; place-items: center; }
+  .ch-karte { height: clamp(140px, 38vh, 300px); display: grid; place-items: center; }
   .ch-karte svg { width: 100%; height: 100%; max-width: 100%; max-height: 100%; }
   .ch-fakten { font-size: 12px; color: var(--muted); }
-  .ch-wahl { display: flex; margin: 6px 0; }
-  .ch-wahl button { flex: 1; border-radius: 0; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-  .ch-wahl button.an { background: var(--k-blau); color: var(--k-blau-text); border-color: #fff; }
+  .ch-umschalter { display: flex; width: 100%; padding: 0; margin: 6px 0; border-radius: 0; overflow: hidden; }
+  .ch-umschalter > span { flex: 1; padding: 8px 6px; text-align: center; font-weight: 800; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--muted); }
+  .ch-umschalter > span.an { background: var(--k-blau); color: var(--k-blau-text); }
   .ch-teile { font-size: 12px; color: var(--muted); }
   .ch-teile.fehlt { color: var(--bad); }
   .ch-teile.da { color: var(--good); }
@@ -3877,7 +3879,7 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.38</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.39</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4612,25 +4614,29 @@
         <button type="button" id="ch-test">Verbindung testen</button>
         <span class="muted" id="ch-test-status" data-i18n-skip></span></div>
     </div>
+    <!-- NEU ANGEORDNET (v0.8.39). BESTELLT: "die Einstellungen je Strecke unter das Bild vom
+         Streckenlayout und die Bestenliste auf die rechte Seite". Modus und Preset sind je EIN
+         Knopf: X schaltet um (BESTELLT: "nicht dpad runter auf Rundenrennen rechts daneben,
+         sondern mit X zwischen dem einen und dem anderen hin und her schalten"). -->
     <div id="ch-detail" class="ch-detail" hidden>
       <div class="ch-links">
         <div class="ch-karte" id="ch-karte"></div>
         <p class="muted" id="ch-idee"></p>
         <p class="ch-fakten" id="ch-fakten" data-i18n-skip></p>
-      </div>
-      <div class="ch-rechts">
         <div class="ch-ergebnis" id="ch-ergebnis" hidden>
           <div class="ch-erg-titel" id="ch-erg-titel" data-i18n-skip></div>
           <div class="ch-erg-zeit" id="ch-erg-zeit" data-i18n-skip></div>
           <div class="muted" id="ch-erg-text" data-i18n-skip></div>
         </div>
-        <div class="ch-wahl" id="ch-modus"><button type="button" data-m="hotlap">Beste Runde</button><button type="button" data-m="rennen">Rennen</button></div>
+        <button type="button" class="ch-umschalter" id="ch-modus" aria-label="Modus umschalten"><span data-m="hotlap">Beste Runde</span><span data-m="rennen">Rennen</span></button>
         <p class="muted" id="ch-modus-text" data-i18n-skip></p>
-        <div class="ch-wahl" id="ch-preset"><button type="button" data-p="pro" data-i18n-skip>Pro</button><button type="button" data-p="arcade" data-i18n-skip>Arcade</button></div>
+        <button type="button" class="ch-umschalter" id="ch-preset" aria-label="Preset umschalten"><span data-p="pro" data-i18n-skip>Pro</span><span data-p="arcade" data-i18n-skip>Arcade</span></button>
         <p class="ch-teile" id="ch-teile" data-i18n-skip></p>
         <div class="ch-name-zeile"><label for="ch-name">Name in der Bestenliste</label>
           <input type="text" id="ch-name" maxlength="16" data-preset-skip></div>
         <button type="button" class="primary ch-start" id="ch-start">Challenge starten</button>
+      </div>
+      <div class="ch-rechts">
         <h3>Bestenliste</h3>
         <p class="muted" id="ch-liste-status" data-i18n-skip></p>
         <div class="ch-perz" id="ch-perz" data-i18n-skip></div>
@@ -4844,6 +4850,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Challenges: Einstellungen unter der Streckenkarte, Bestenliste rechts; Modus und Preset schaltet &#10005; um. Fr&uuml;hstart bei allen Starts mit Ampel: kein Abbruch mehr, sondern kurz ausgebremst, sobald das Auto nach Gr&uuml;n f&auml;hrt. Silverbrook-Rennen mit einem Pflichtstopp (Boxen-Minigame, egal wo).</li>
         <li>Titel-Glitch je Buchstabe zuf&auml;llig blau oder rot, oben und unten getrennt. &bdquo;Abseits&ldquo; erscheint jetzt gro&szlig; in der Mitte des Cockpits. Autos-Kachel zeigt wieder den Namen statt &bdquo;[object HTMLSpanElement]&ldquo;. Boxen-Minigame: Tasten stehen 100 ms l&auml;nger.</li>
         <li>Challenges gegen Schummeln: jede Runde wird gegen die Strecke gepr&uuml;ft (mindestens 90 % der Teile erkannt), eine plausible Mindestrundenzeit gilt in App und Bestenliste, und die Einstellungen sind w&auml;hrend des Laufs gesperrt; wer sie doch &auml;ndert, bricht ab.</li>
         <li>Titelseite im Browser: Link zum Download der neuesten Android-App. Die APK-Release h&auml;ngt daf&uuml;r zus&auml;tzlich eine Datei mit festem Namen an; die Android-Schicht ist unver&auml;ndert, neu installieren ist nicht n&ouml;tig.</li>
