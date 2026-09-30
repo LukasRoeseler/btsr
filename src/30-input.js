@@ -402,15 +402,13 @@
       rec.next = Math.min(rec.next + 1, REC_SECTIONS.length);
       recMark(label);
     }
-    if (k === '?' || (k === '/' && e.shiftKey)) { if (!e.repeat) toggleHelp(); }
-    // optInfoSchliessen() ZUERST: toggleHelp() ist eine tote Referenz (keine solche
-    // Funktion existiert mehr im Projekt, siehe die Fundstelle) und wirft bei jedem
-    // Escape/? - stuende sie vorn, wuerde sie diese Zeile nie bis zum Popup kommen
-    // lassen. Unabhaengiger Fund, nicht Teil dieser Bestellung - dem Nutzer gemeldet,
-    // nicht stillschweigend "repariert".
+    // ? zeigt die Tastenbelegung. Die alte Hilfe-Karte lag einmal ueber allem, ist aber
+    // nach Optionen -> Controller gewandert (eine Tastenbelegung liest man vor dem
+    // Fahren, nicht waehrenddessen). toggleHelp() gab es nie als Funktion - es war eine
+    // tote Referenz und warf bei jedem ?/Escape einen ReferenceError.
+    if (k === '?' || (k === '/' && e.shiftKey)) { if (!e.repeat) { showTab('options'); showSubpage('opt-pad'); } }
     if (k === 'escape') {
       if (optInfoOffen()) optInfoSchliessen();
-      toggleHelp(false);
     }
   });
   window.addEventListener('keydown', (e) => {

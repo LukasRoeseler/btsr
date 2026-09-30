@@ -4024,7 +4024,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.61</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.62</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -15135,15 +15135,13 @@
       rec.next = Math.min(rec.next + 1, REC_SECTIONS.length);
       recMark(label);
     }
-    if (k === '?' || (k === '/' && e.shiftKey)) { if (!e.repeat) toggleHelp(); }
-    // optInfoSchliessen() ZUERST: toggleHelp() ist eine tote Referenz (keine solche
-    // Funktion existiert mehr im Projekt, siehe die Fundstelle) und wirft bei jedem
-    // Escape/? - stuende sie vorn, wuerde sie diese Zeile nie bis zum Popup kommen
-    // lassen. Unabhaengiger Fund, nicht Teil dieser Bestellung - dem Nutzer gemeldet,
-    // nicht stillschweigend "repariert".
+    // ? zeigt die Tastenbelegung. Die alte Hilfe-Karte lag einmal ueber allem, ist aber
+    // nach Optionen -> Controller gewandert (eine Tastenbelegung liest man vor dem
+    // Fahren, nicht waehrenddessen). toggleHelp() gab es nie als Funktion - es war eine
+    // tote Referenz und warf bei jedem ?/Escape einen ReferenceError.
+    if (k === '?' || (k === '/' && e.shiftKey)) { if (!e.repeat) { showTab('options'); showSubpage('opt-pad'); } }
     if (k === 'escape') {
       if (optInfoOffen()) optInfoSchliessen();
-      toggleHelp(false);
     }
   });
   window.addEventListener('keydown', (e) => {
@@ -26863,6 +26861,173 @@
     const s = trackSchluss(pts);
     return s.closed && s.lueckeCm <= TRACK_SCHLUSS_STRENG_CM && trackKreuzungsfrei(pts);
   }
+  // =========================================================================
+  // Zufallsstrecke: frei zusammenbauen statt "zwei Haelfte".
+  //
+  // Der Wochenstrecken-Mockup (mockup/wochenstrecken.html) baut JEDE Folge von
+  // Kurvenlaeufen, deren Drehungen sich zu +360 addieren, und loest dann die Laengen der
+  // Geradenstuecke, damit der Ring schliesst. Genau das wird hier nachgebaut: statt des
+  // starren S + A + G^m + B + G^(m-1) (A und B je netto 180) entsteht ein "Rueckgrat" aus
+  // beliebigen Kurvenlaeufen (netto +360 oder -360), und die Geradenluecken werden linear
+  // geloest.
+  //
+  // DIE ENDPOSITION IST LINEAR IN DEN GERADENLUECKEN. Jede Gerade verschiebt um einen
+  // festen Vektor (Richtung = Kurs vor der Luecke, Kurven aendern den Kurs, Geraden nicht);
+  // Kurven verschieben unabhaengig von den Luecken. Also ist
+  //
+  //     Ende = C + Summe( luecke[g] * v_g )
+  //
+  // mit C = Verschiebung aller Kurven plus der Start-Kachel (selbst eine Gerade). Ein kleines
+  // ganzzahliges Suchen ueber luecke[g] in 0..maxg findet den Schluss, OHNE fuer jeden
+  // Kandidaten die teure trackCenterline() zu rechnen - die macht erst die Endabnahme.
+  //
+  // Die Kurventypen sind die des Mockups (R/L/W/Q/H/J); die "kleine" 30-Grad-Kurve (K/M)
+  // kommt in den 80 Wochenstrecken nicht vor und bleibt deshalb aussen vor.
+
+  // Eine zufaellige Aufteilung von dir*360 auf nc Kurvenlaeufe, jeder ein Vielfaches von 30.
+  function trackZufallRunTurns(dir, nc) {
+    let rem = dir * 360;
+    const turns = [];
+    for (let i = 0; i < nc - 1; i++) {
+      const left = nc - 1 - i;
+      const lo = 30, hi = rem - left * 30;
+      if (hi < lo) return null;
+      const choices = [];
+      for (let v = lo; v <= hi; v += 30) choices.push(v);
+      const v = choices[Math.floor(Math.random() * choices.length)];
+      turns.push(v);
+      rem -= v;
+    }
+    if (Math.abs(rem) < 30) return null;
+    turns.push(rem);
+    if (Math.random() < 0.5) {
+      for (let i = turns.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [turns[i], turns[j]] = [turns[j], turns[i]];
+      }
+    }
+    return turns;
+  }
+
+  // Ein Kurvenlauf, dessen Drehungen sich zu `target` addieren - nur gleichsinnige Kacheln,
+  // damit der Lauf als EINE Ecke liest (wie "RRR" oder "R2" im Mockup). used/b verfolgen,
+  // wie viel vom Bestand schon verbraucht ist.
+  function trackZufallRun(target, used, b) {
+    const same = [TILE_TYPE.CURVE_RIGHT, TILE_TYPE.WEIT_RIGHT, TILE_TYPE.HAIRPIN,
+                  TILE_TYPE.CURVE_LEFT, TILE_TYPE.WEIT_LEFT, TILE_TYPE.HAIRPIN_LEFT]
+      .filter(t => (tileTurnDeg(t) > 0) === (target > 0) && (b[t] || 0) > (used[t] || 0));
+    const avail = (t) => (b[t] || 0) - (used[t] || 0);
+    const rec = (rem, lst) => {
+      if (Math.abs(rem) < 1e-6) return lst.slice();
+      if (lst.length >= 6) return null;
+      if (Math.abs(rem) < 30) return null;
+      let cands = same.filter(t => avail(t) > 0 && Math.abs(tileTurnDeg(t)) <= Math.abs(rem) + 1e-6);
+      if (!cands.length) return null;
+      for (let i = cands.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [cands[i], cands[j]] = [cands[j], cands[i]];
+      }
+      // Meistens aus mehreren 60/30-Teilen bauen (laenger, wie der Mockup); eine Haarnadel
+      // bleibt moeglich, damit der Lauf nicht immer auf eine Kachel zusammenfällt.
+      if (Math.random() < 0.45) cands.sort((a, z) => Math.abs(tileTurnDeg(z)) - Math.abs(tileTurnDeg(a)));
+      else cands.sort((a, z) => (Math.abs(tileTurnDeg(a)) !== 60) - (Math.abs(tileTurnDeg(z)) !== 60));
+      for (const t of cands) {
+        used[t] = (used[t] || 0) + 1;
+        const r = rec(rem - tileTurnDeg(t), lst.concat(t));
+        if (r) return r;
+        used[t]--;
+      }
+      return null;
+    };
+    return rec(target, []);
+  }
+
+  // Ein netto-0-Schikane-Lauf (H+J oder R+L oder W+Q): dreht hin und zurueck, aendert den
+  // Kurs nicht, verschiebt aber die Bahn - genau die "Kerbe", die der Mockup einsetzt.
+  function trackZufallWiggle(used, b) {
+    const avail = (t) => (b[t] || 0) - (used[t] || 0);
+    const patterns = [
+      [TILE_TYPE.HAIRPIN, TILE_TYPE.HAIRPIN_LEFT],
+      [TILE_TYPE.HAIRPIN_LEFT, TILE_TYPE.HAIRPIN],
+      [TILE_TYPE.CURVE_RIGHT, TILE_TYPE.CURVE_LEFT],
+      [TILE_TYPE.CURVE_LEFT, TILE_TYPE.CURVE_RIGHT],
+      [TILE_TYPE.WEIT_RIGHT, TILE_TYPE.WEIT_LEFT],
+      [TILE_TYPE.WEIT_LEFT, TILE_TYPE.WEIT_RIGHT],
+    ];
+    for (let i = patterns.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [patterns[i], patterns[j]] = [patterns[j], patterns[i]];
+    }
+    for (const p of patterns) if (p.every(t => avail(t) > 0)) return p;
+    return null;
+  }
+
+  // Rueckgrat-Information: Verschiebung C der Kurven (plus Start-Kachel) und der
+  // Verschiebungsvektor v_g je Geradenluecke (Kurs vor der Luecke).
+  function trackZufallSpineInfo(runs) {
+    let x = 0, y = 0, heading = 0;
+    const headings = [0];
+    const step = (tile) => {
+      const turn = tileTurnDeg(tile);
+      const radius = tileRadius(tile);
+      if (tile === TILE_TYPE.HAIRPIN || tile === TILE_TYPE.HAIRPIN_LEFT) {
+        const rad0 = heading * Math.PI / 180;
+        x += Math.sin(rad0) * TRACK_HAIRPIN_LEAD;
+        y -= Math.cos(rad0) * TRACK_HAIRPIN_LEAD;
+      }
+      const sgn = Math.sign(turn);
+      const cx = x + Math.cos(heading * Math.PI / 180) * radius * sgn;
+      const cy = y + Math.sin(heading * Math.PI / 180) * radius * sgn;
+      const a0 = Math.atan2(y - cy, x - cx);
+      const a = a0 + turn * Math.PI / 180;
+      x = cx + Math.cos(a) * radius;
+      y = cy + Math.sin(a) * radius;
+      heading += turn;
+    };
+    for (const run of runs) {
+      for (const t of run) step(t);
+      headings.push(heading);
+    }
+    const vs = headings.map(h => {
+      const rad = h * Math.PI / 180;
+      return { x: Math.sin(rad) * TRACK_STEP, y: -Math.cos(rad) * TRACK_STEP };
+    });
+    return { C: { x: x + vs[0].x, y: y + vs[0].y }, headings, vs };
+  }
+
+  // Sucht die Geradenluecken (je 0..maxg), die Ende nahe 0 bringen. Bevorzugt den engsten
+  // Schluss, dann die wenigsten Geraden - so entstehen die kurzen Luecken des Mockups.
+  function trackZufallSolveGaps(runs, maxg, tolCm) {
+    const info = trackZufallSpineInfo(runs);
+    const tx = -info.C.x, ty = -info.C.y;
+    const vs = info.vs;
+    const n = runs.length;
+    const tol = tolCm * TRACK_UNITS_PER_CM;
+    let best = null;
+    const rec = (g, px, py, gaps, total) => {
+      if (g === n + 1) {
+        const d = Math.hypot(px - tx, py - ty);
+        if (d <= tol) {
+          const dr = Math.round(d * 1000) / 1000;
+          if (!best || dr < best.d || (dr === best.d && total < best.total)) {
+            best = { d: dr, total, gaps: gaps.slice() };
+          }
+        }
+        return;
+      }
+      const remaining = (n + 1 - g) * maxg * TRACK_STEP;
+      if (Math.hypot(px - tx, py - ty) - remaining > tol) return;
+      const vx = vs[g].x, vy = vs[g].y;
+      for (let k = 0; k <= maxg; k++) {
+        gaps.push(k);
+        rec(g + 1, px + k * vx, py + k * vy, gaps, total + k);
+        gaps.pop();
+      }
+    };
+    rec(0, 0, 0, [], 0);
+    return best ? best.gaps : null;
+  }
+
   function trackZufall() {
     const b = teileBestand();
     if (!b || !(Math.floor(+b[TILE_TYPE.START] || 0) > 0)) {
@@ -26874,146 +27039,57 @@
       showHudToast(t('Zufall: Nicht genug Geraden'));
       return false;
     }
-    const kurven = [TILE_TYPE.CURVE_RIGHT, TILE_TYPE.CURVE_LEFT, TILE_TYPE.WEIT_RIGHT, TILE_TYPE.WEIT_LEFT,
-                    TILE_TYPE.KLEIN_RIGHT, TILE_TYPE.KLEIN_LEFT, TILE_TYPE.HAIRPIN, TILE_TYPE.HAIRPIN_LEFT];
-    // Rechts- oder linkslaufender Kurs, zufaellig - aber wenn die eine Richtung nicht
-    // genug Teile hat (z. B. nur Rechtskurven im Karton), versucht es die andere.
-    const richtungen = Math.random() < 0.5 ? [1, -1] : [-1, 1];
-    for (const dir of richtungen) {
-      for (let versuch = 0; versuch < 220; versuch++) {
-        // A: netto dir*180, reich (S-Biegungen, Geraden). Das Budget erlaubt auch
-        // Einzelteile (max 1 der Haelfte bzw. 1 Haarnadel), damit eine einzelne Haarnadel
-        // in A stehen kann - im symmetrischen Fall braeuchte sie sonst zwei.
-        const aMax = {};
-        for (const t of kurven) aMax[t] = hat(t) > 0 ? Math.max(1, Math.floor(hat(t) / 2)) : 0;
-        aMax[TILE_TYPE.HAIRPIN] = Math.min(1, hat(TILE_TYPE.HAIRPIN));
-        aMax[TILE_TYPE.HAIRPIN_LEFT] = Math.min(1, hat(TILE_TYPE.HAIRPIN_LEFT));
-        aMax[TILE_TYPE.STRAIGHT] = Math.floor(hat(TILE_TYPE.STRAIGHT) / 2);
-        const A = trackZufallHalbe(dir, aMax);
-        if (!A || trackDrehsumme(A) !== dir * 180) continue;
-        const g = hat(TILE_TYPE.STRAIGHT);
-        const gA = A.filter(t => t === TILE_TYPE.STRAIGHT).length;
-        // Restbestand fuer B (A steht im asymmetrischen Fall nur EINMAL).
-        const rem = {};
-        for (const t of kurven) rem[t] = Math.max(0, hat(t) - A.filter(x => x === t).length);
-        rem[TILE_TYPE.STRAIGHT] = Math.max(0, g - gA);
-        // Asymmetrisch: suche ein ANDERES B (netto dir*180), das schliesst und nicht ueberlappt.
-        for (let k = 0; k < 200; k++) {
-          const B = trackZufallHalbe(dir, rem);
-          if (!B || B === A || trackDrehsumme(B) !== dir * 180) continue;
-          const gB = B.filter(t => t === TILE_TYPE.STRAIGHT).length;
-          const maxM = Math.floor((g - gA - gB + 1) / 2);
-          if (maxM < 1) continue;
-          for (const m of trackMischung(maxM)) {
-            const tiles = [
-              { type: TILE_TYPE.START },
-              ...A.map(t => ({ type: t })),
-              ...Array(m).fill(null).map(() => ({ type: TILE_TYPE.STRAIGHT })),
-              ...B.map(t => ({ type: t })),
-              ...Array(Math.max(0, m - 1)).fill(null).map(() => ({ type: TILE_TYPE.STRAIGHT })),
-            ];
-            if (trackZufallPasst(tiles)) {
-              trackMerken();
-              currentTrackTiles = tiles;
-              trackSel = null;
-              trackRotationDeg = 0;
-              refreshTrackPreview();
-              showHudToast(t('Zufällige Strecke gebaut'));
-              return true;
-            }
-          }
-        }
-        // Symmetrisch (A == B) als Rueckfall: A steht dann ZWEIMAL, braucht also das Doppelte.
-        if (kurven.concat([TILE_TYPE.STRAIGHT]).every(t => 2 * A.filter(x => x === t).length <= hat(t))) {
-          const maxM = Math.floor((g - 2 * gA + 1) / 2);
-          if (maxM >= 1) {
-            for (const m of trackMischung(maxM)) {
-              const tiles = [
-                { type: TILE_TYPE.START },
-                ...A.map(t => ({ type: t })),
-                ...Array(m).fill(null).map(() => ({ type: TILE_TYPE.STRAIGHT })),
-                ...A.map(t => ({ type: t })),
-              ...Array(Math.max(0, m - 1)).fill(null).map(() => ({ type: TILE_TYPE.STRAIGHT })),
-            ];
-            if (trackZufallPasst(tiles)) {
-              trackMerken();
-              currentTrackTiles = tiles;
-              trackSel = null;
-              trackRotationDeg = 0;
-              refreshTrackPreview();
-              showHudToast(t('Zufällige Strecke gebaut'));
-              return true;
-            }
-          }
-        }
+    // Wie viele Ecken (Kurvenlaeufe): Verteilung des Mockups (meist 2-3).
+    for (let versuch = 0; versuch < 400; versuch++) {
+      const dir = Math.random() < 0.5 ? 1 : -1;
+      const r = Math.random();
+      const nc = r < 0.075 ? 1 : r < 0.585 ? 2 : r < 0.785 ? 3 : r < 0.96 ? 4 : 5;
+      const used = {};
+      const turns = trackZufallRunTurns(dir, nc);
+      if (!turns) continue;
+      const runs = [];
+      let gut = true;
+      for (const t of turns) {
+        const run = trackZufallRun(t, used, b);
+        if (!run) { gut = false; break; }
+        runs.push(run);
       }
-    }
+      if (!gut) continue;
+      // gelegentlich eine netto-0-Schikane einsetzen
+      if (Math.random() < 0.4) {
+        const wig = trackZufallWiggle(used, b);
+        if (wig) runs.splice(Math.floor(Math.random() * (runs.length + 1)), 0, wig);
+      }
+      const gaps = trackZufallSolveGaps(runs, 3, TRACK_SCHLUSS_STRENG_CM);
+      if (!gaps) continue;
+      const tiles = [{ type: TILE_TYPE.START }];
+      for (let i = 0; i < gaps[0]; i++) tiles.push({ type: TILE_TYPE.STRAIGHT });
+      runs.forEach((run, ci) => {
+        for (const t of run) tiles.push({ type: t });
+        for (let i = 0; i < gaps[ci + 1]; i++) tiles.push({ type: TILE_TYPE.STRAIGHT });
+      });
+      trackRotationDeg = 0;
+      if (!trackZufallPasst(tiles)) continue;
+      // Fussabdruck im Rahmen des Mockups (max. ~2,6 m) halten.
+      const pts = trackCenterline(tiles);
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const p of pts) {
+        if (p.x < minX) minX = p.x;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.y > maxY) maxY = p.y;
+      }
+      if ((maxX - minX) / TRACK_UNITS_PER_CM > 260 || (maxY - minY) / TRACK_UNITS_PER_CM > 260) continue;
+      trackMerken();
+      currentTrackTiles = tiles;
+      trackSel = null;
+      trackRotationDeg = 0;
+      refreshTrackPreview();
+      showHudToast(t('Zufällige Strecke gebaut'));
+      return true;
     }
     showHudToast(t('Zufall: Nicht genug Kurventeile für einen Rundkurs'));
     return false;
-  }
-  // Eine zufaellige Folge, deren Drehungen sich zu dir*180 addieren. Sie darf S-Biegungen
-  // (Gegenkurven, netto 0) und Geraden enthalten - nur die SUMME muss stimmen. maxCount
-  // begrenzt je Sorte, wie viele Teile verbraucht werden duerfen.
-  function trackZufallHalbe(dir, maxCount) {
-    const same = dir > 0
-      ? [TILE_TYPE.CURVE_RIGHT, TILE_TYPE.WEIT_RIGHT, TILE_TYPE.KLEIN_RIGHT, TILE_TYPE.HAIRPIN]
-      : [TILE_TYPE.CURVE_LEFT, TILE_TYPE.WEIT_LEFT, TILE_TYPE.KLEIN_LEFT, TILE_TYPE.HAIRPIN_LEFT];
-    const wiggles = dir > 0
-      ? [[TILE_TYPE.CURVE_LEFT, TILE_TYPE.CURVE_RIGHT], [TILE_TYPE.WEIT_LEFT, TILE_TYPE.WEIT_RIGHT], [TILE_TYPE.KLEIN_LEFT, TILE_TYPE.KLEIN_RIGHT]]
-      : [[TILE_TYPE.CURVE_RIGHT, TILE_TYPE.CURVE_LEFT], [TILE_TYPE.WEIT_RIGHT, TILE_TYPE.WEIT_LEFT], [TILE_TYPE.KLEIN_RIGHT, TILE_TYPE.KLEIN_LEFT]];
-    const used = {};
-    const take = (t) => { if ((used[t] || 0) >= (maxCount[t] || 0)) return false; used[t] = (used[t] || 0) + 1; return true; };
-    const untake = (t) => { used[t]--; };
-    const A = [];
-    function bau(rem) {
-      if (rem === 0) return true;
-      if (Math.abs(rem) < 30) return false;
-      const opts = [];
-      for (const t of same) {
-        const tw = tileTurnDeg(t);
-        if ((used[t] || 0) < (maxCount[t] || 0) && Math.sign(tw) === Math.sign(rem) && Math.abs(tw) <= Math.abs(rem)) opts.push(t);
-      }
-      for (let i = opts.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [opts[i], opts[j]] = [opts[j], opts[i]];
-      }
-      for (const t of opts) {
-        take(t); A.push(t);
-        if (bau(rem - tileTurnDeg(t))) return true;
-        A.pop(); untake(t);
-      }
-      return false;
-    }
-    if (!bau(dir * 180)) return null;
-    // S-Biegungen: Paar aus Gegen- und Gleichkurve (netto 0), eingefuegt.
-    const nw = Math.floor(Math.random() * 3);
-    for (let k = 0; k < nw; k++) {
-      const cand = wiggles.filter(([o, s]) => (used[o] || 0) < (maxCount[o] || 0) && (used[s] || 0) < (maxCount[s] || 0));
-      if (!cand.length) break;
-      const [o, s] = cand[Math.floor(Math.random() * cand.length)];
-      const pos = Math.floor(Math.random() * (A.length + 1));
-      take(o); take(s); A.splice(pos, 0, o, s);
-    }
-    // gelegentlich eine Gerade in die Ecke (wie "RGRR" bei den Challenge-Strecken).
-    if (Math.random() < 0.3 && (used[TILE_TYPE.STRAIGHT] || 0) < (maxCount[TILE_TYPE.STRAIGHT] || 0)) {
-      const pos = Math.floor(Math.random() * (A.length + 1));
-      take(TILE_TYPE.STRAIGHT); A.splice(pos, 0, TILE_TYPE.STRAIGHT);
-    }
-    return A;
-  }
-  // Summe der Drehungen einer Kachelfolge.
-  function trackDrehsumme(types) {
-    return types.reduce((s, t) => s + tileTurnDeg(t), 0);
-  }
-  // 1..n in zufaelliger Reihenfolge (fuer die Geradenlaenge m).
-  function trackMischung(n) {
-    const a = Array.from({ length: n }, (_, i) => i + 1);
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
   }
   // Nur der Endpunkt der Strecke - billig, ohne die 14 Abtastungen je Kachel. Wird als
   // Vorfilter genutzt (doppelte Toleranz), damit nicht jede Kandidaten-Strecke die teure
@@ -46762,17 +46838,26 @@
     if (!a || !st) return;
     a.innerHTML = psEditorSvg('accel', psAccel);
     st.innerHTML = psEditorSvg('steer', psSteer);
-    psWireDrag(a, 'accel', psAccel);
-    psWireDrag(st, 'steer', psSteer);
   }
 
   // Pointer events, not mouse events: the same code then works with a finger, and a phone
   // is the most likely place for this tab.
-  function psWireDrag(host, which, data) {
-    const svg = host.querySelector('svg');
-    if (!svg) return;
+  //
+  // Ein Listener je Editor, am HOST und NUR EINMAL verdrahtet. Die alte Fassung rief
+  // psWireDrag() aus psRenderEditors() bei jedem pointerdown/pointermove erneut auf, was
+  // das SVG per innerHTML ersetzte und eine NEUE Closure mit dragging=null anlegte - der
+  // pointermove nach dem ersten pointerdown sah also dragging===null und tat nichts. Am
+  // HOST (der den innerHTML-Tausch ueberlebt) haengt die Closure ueber alle Re-Renders
+  // hinweg; psEditorDaten() liest das AKTUELLE Array, damit Zuruecksetzen/Vorgaben (die
+  // psAccel/psSteer neu zuweisen) nicht auf einer veralteten Referenz schreiben.
+  function psEditorDaten(which) { return which === 'accel' ? psAccel : psSteer; }
+
+  function psWireDrag(host, which) {
+    if (!host) return;
     let dragging = null;
     const toLocal = (e) => {
+      const svg = host.querySelector('svg');
+      if (!svg) return null;
       const r = svg.getBoundingClientRect();
       return { x: (e.clientX - r.left) / r.width * PS_W,
                y: (e.clientY - r.top) / r.height * PS_H };
@@ -46785,22 +46870,25 @@
       }
       return best;
     };
-    svg.addEventListener('pointerdown', (e) => {
+    host.addEventListener('pointerdown', (e) => {
       const p = toLocal(e);
+      if (!p) return;
       dragging = nearest(p.x);
       psActive = which; psSel = dragging;
-      data[dragging] = psValFromY(p.y);
-      svg.setPointerCapture(e.pointerId);
+      psEditorDaten(which)[dragging] = psValFromY(p.y);
+      host.setPointerCapture(e.pointerId);
       psRenderEditors();
     });
-    svg.addEventListener('pointermove', (e) => {
+    host.addEventListener('pointermove', (e) => {
       if (dragging === null) return;
-      data[dragging] = psValFromY(toLocal(e).y);
+      const p = toLocal(e);
+      if (!p) return;
+      psEditorDaten(which)[dragging] = psValFromY(p.y);
       psRenderEditors();
     });
     const end = () => { dragging = null; };
-    svg.addEventListener('pointerup', end);
-    svg.addEventListener('pointercancel', end);
+    host.addEventListener('pointerup', end);
+    host.addEventListener('pointercancel', end);
   }
 
   // ---- The simulation ----
@@ -46984,6 +47072,9 @@
 
   // Gamepad, only while this tab is open — otherwise the D-pad would lose its driving job.
   psRenderEditors();
+  // Drag einmal am HOST verdrahten, nicht bei jedem Zeichnen (siehe psWireDrag).
+  psWireDrag($('ps-accel'), 'accel');
+  psWireDrag($('ps-steer'), 'steer');
   psRefreshSendButton();
 
   // ============================ ZAHLENSYSTEME-TRAINER (WIP) ========================
