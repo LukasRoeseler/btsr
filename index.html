@@ -2691,6 +2691,9 @@
   .ch-kachel .ch-k-woche { display: block; font-style: normal; font-size: 10.5px; letter-spacing: .04em; color: var(--dim, #a3acbd); text-align: center; padding: 0 4px 5px; }
   .ch-kachel .ch-k-beliebt { display: block; font-style: normal; font-size: 10.5px; font-weight: 600; letter-spacing: .04em; color: #fff; background: #7a5bd6; text-align: center; padding: 3px 4px; margin: 0 4px 5px; border-radius: 4px; }
   .ch-kachel .ch-k-beliebt[hidden] { display: none; }
+  .ch-kachel .ch-k-rang { display: block; font-style: normal; font-size: 11px; letter-spacing: .03em; text-align: center; padding: 0 4px 6px; }
+  .ch-kachel .ch-k-rang:empty { display: none; }
+  .ch-k-medaille-hinweis { font-size: 12px; line-height: 1.5; margin: 2px 0 8px; }
   .ch-detail { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 16px; align-items: start; }
   .ch-rechts > h3:first-child { margin-top: 0; }
   .ch-stats { font-size: 12px; line-height: 1.5; }
@@ -4049,7 +4052,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.79</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.80</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4737,7 +4740,7 @@
        ehrlichen Hinweis darauf, dass er nur deutsch vorliegt. -->
   <!-- CHALLENGES (v0.8.30, experimentell; seit v0.8.44 vier Kategorien mit Wochenstrecken, die
        Kacheln fuellt chKachelnZeichnen). BESTELLT: "Implementiere Challenges". Vier
-       Strecken, je zwei Modi (beste Runde, Rennen) und zwei Presets (Pro, Arcade); Ablauf und
+       Strecken, je zwei Modi (beste Runde, Rennen) und das Pro-Preset; Ablauf und
        Wertung in src/72-challenges.js. Je Strecke eine Unterseite, damit L1/R1 zwischen ihnen
        blaettern; der Inhalt (#ch-detail) ist EINER und wird in die offene Seite gehaengt. -->
   <section class="tabpage" id="tab-challenges">
@@ -4749,24 +4752,28 @@
           <b class="ch-k-name" data-i18n-skip></b>
           <span class="ch-k-info" data-i18n-skip></span>
           <em class="ch-k-woche" data-i18n-skip></em>
+          <em class="ch-k-rang" data-i18n-skip></em>
           <em class="ch-k-beliebt" hidden>&#9733; Beliebteste Strecke</em></button>
         <button class="misc-tile subpage-open ch-kachel" data-sub="ch-b">
           <span class="ch-mini" data-kat="b" aria-hidden="true"></span>
           <b class="ch-k-name" data-i18n-skip></b>
           <span class="ch-k-info" data-i18n-skip></span>
           <em class="ch-k-woche" data-i18n-skip></em>
+          <em class="ch-k-rang" data-i18n-skip></em>
           <em class="ch-k-beliebt" hidden>&#9733; Beliebteste Strecke</em></button>
         <button class="misc-tile subpage-open ch-kachel" data-sub="ch-c">
           <span class="ch-mini" data-kat="c" aria-hidden="true"></span>
           <b class="ch-k-name" data-i18n-skip></b>
           <span class="ch-k-info" data-i18n-skip></span>
           <em class="ch-k-woche" data-i18n-skip></em>
+          <em class="ch-k-rang" data-i18n-skip></em>
           <em class="ch-k-beliebt" hidden>&#9733; Beliebteste Strecke</em></button>
         <button class="misc-tile subpage-open ch-kachel" data-sub="ch-d">
           <span class="ch-mini" data-kat="d" aria-hidden="true"></span>
           <b class="ch-k-name" data-i18n-skip></b>
           <span class="ch-k-info" data-i18n-skip></span>
           <em class="ch-k-woche" data-i18n-skip></em>
+          <em class="ch-k-rang" data-i18n-skip></em>
           <em class="ch-k-beliebt" hidden>&#9733; Beliebteste Strecke</em></button>
         <button class="misc-tile subpage-open" data-sub="ch-online">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="24" r="16"/><path d="M8 24h32M24 8c6 5 6 27 0 32M24 8c-6 5-6 27 0 32" stroke="var(--bad)"/></svg>
@@ -4832,7 +4839,7 @@
         </div>
         <button type="button" class="ch-umschalter" id="ch-modus" aria-label="Modus umschalten"><span data-m="hotlap">Beste Runde</span><span data-m="rennen">Rennen</span></button>
         <p class="muted" id="ch-modus-text" data-i18n-skip></p>
-        <button type="button" class="ch-umschalter" id="ch-preset" aria-label="Preset umschalten"><span data-p="pro" data-i18n-skip>Pro</span><span data-p="arcade" data-i18n-skip>Arcade</span></button>
+        <p class="ch-medaille-hinweis" id="ch-medaille-hinweis" data-i18n-skip></p>
         <p class="ch-teile" id="ch-teile" data-i18n-skip></p>
         <div class="ch-name-zeile"><label for="ch-name">Name in der Bestenliste</label>
           <input type="text" id="ch-name" maxlength="16" data-preset-skip></div>
@@ -5072,7 +5079,7 @@
         <li>Cockpit immer im Vollbild, der Men&uuml;-Knopf dort zeigt jetzt &bdquo;Zur&uuml;ck&ldquo;. Reiter oben: Fahren, Mehrspieler, Challenges, Optionen. Die Info-Kacheln stehen direkt in den Optionen unter einer eigenen Überschrift. Challenges: Strecken hei&szlig;en Monzetta, Suzuna, Monte Carlito und Silverbrook, der Name f&uuml;r die Bestenliste l&auml;sst sich auf jeder Strecken-Seite festlegen, das Perzentil z&auml;hlt je Spieler. Neue Kachel- und Hintergrundbilder im Fahren-Men&uuml;.</li>
         <li>Challenges: die Bestenliste kommt aus einem st&uuml;ndlichen Schnappschuss im Repo, dazu sofort die eigenen Zeiten; das Hochladen wiederholt bei Aussetzern.</li>
         <li>Challenges: gemeinsame Online-Bestenliste ab Werk eingetragen, f&uuml;r alle Kopien der App.</li>
-        <li>Challenges (experimentell): vier feste Strecken, je beste Runde oder Rennen &uuml;ber feste Runden, Pro oder Arcade. Das Auto muss stehen, dann Ampel, dann los; ohne Ghosts, danach sind die eigenen Einstellungen wieder da. Bestenliste mit Histogramm und Perzentil, lokal und online &uuml;ber ein eigenes Google Sheet.</li>
+        <li>Challenges (experimentell): vier feste Strecken, je beste Runde oder Rennen &uuml;ber feste Runden, im Pro-Preset. Das Auto muss stehen, dann Ampel, dann los; ohne Ghosts, danach sind die eigenen Einstellungen wieder da. Bestenliste mit Histogramm und Perzentil, lokal und online &uuml;ber ein eigenes Google Sheet.</li>
         <li>Logos aus den KI-Bildern entfernt, die Credits nennen die KI-Bilder (Gemini Flash). Reiter am Handy doppelt so hoch. Die Zur&uuml;ck-Taste des Handys f&uuml;hrt zum Startbildschirm (in der App ab APK 0.8.29). Editor: Asphalt im Hintergrund, Teile nach Typ getrennt, Schalter f&uuml;r Ideallinie und Tastenk&uuml;rzel.</li>
         <li>Strecke aufger&auml;umt: Editor, Scan, Laden, Meine Teile und Ausdruck haben je eine eigene Seite. Der Editor startet im Vollbild, mit Tutorial und Tasten&uuml;bersicht: Teile anw&auml;hlen, mittendrin einf&uuml;gen und entfernen, r&uuml;ckg&auml;ngig, in 45&deg;-Schritten drehen, L&auml;nge in Metern und im Ma&szlig;stab 1:50, Pfeile an den Kanten in Fahrtrichtung. Meine Teile (experimentell) z&auml;hlt deinen Bestand und zeigt im Editor, was fehlt oder &uuml;brig ist. Challenges: Plan und Mock-up mit vier Strecken, je beste Runde und Rennen.</li>
         <li>Kopfzeile nochmals flacher, Omega oben links f&uuml;hrt zum Startbildschirm, Info unter Optionen, neuer Reiter Challenges (WIP). Tutorial-Texte k&uuml;rzer; Steuerung l&auml;uft auf dem Cockpit, zeigt gedr&uuml;ckte Tasten und f&auml;hrt dabei nicht. Neue Stimmungsbilder (KI) f&uuml;r Titel, Rennoptionen, Start, Strecke, Optionen, Info und Challenges.</li>
@@ -11947,7 +11954,7 @@
     "Stand": "as of",
     "Challenges: die Bestenliste kommt aus einem stündlichen Schnappschuss im Repo, dazu sofort die eigenen Zeiten; das Hochladen wiederholt bei Aussetzern.": "Challenges: the leaderboard comes from an hourly snapshot in the repo, plus your own times right away; uploading retries on dropouts.",
     "Challenges: gemeinsame Online-Bestenliste ab Werk eingetragen, für alle Kopien der App.": "Challenges: shared online leaderboard set up by default, for all copies of the app.",
-    "Challenges (experimentell): vier feste Strecken, je beste Runde oder Rennen über feste Runden, Pro oder Arcade. Das Auto muss stehen, dann Ampel, dann los; ohne Ghosts, danach sind die eigenen Einstellungen wieder da. Bestenliste mit Histogramm und Perzentil, lokal und online über ein eigenes Google Sheet.": "Challenges (experimental): four fixed tracks, each as best lap or a race over fixed laps, Pro or Arcade. The car must stand still, then start lights, then go; no ghosts, and your own settings come back afterwards. Leaderboard with histogram and percentile, locally and online via your own Google Sheet.",
+    "Challenges (experimentell): vier feste Strecken, je beste Runde oder Rennen über feste Runden, im Pro-Preset. Das Auto muss stehen, dann Ampel, dann los; ohne Ghosts, danach sind die eigenen Einstellungen wieder da. Bestenliste mit Histogramm und Perzentil, lokal und online über ein eigenes Google Sheet.": "Challenges (experimental): four fixed tracks, each as best lap or a race over fixed laps, in the Pro preset. The car must stand still, then start lights, then go; no ghosts, and your own settings come back afterwards. Leaderboard with histogram and percentile, locally and online via your own Google Sheet.",
     "Grundpackung · 10 Runden": "Basic set · 10 laps",
     "Grundpackung · 8 Runden": "Basic set · 8 laps",
     "Grundpackung und Haarnadel-Set · 8 Runden": "Basic set and hairpin set · 8 laps",
@@ -11977,6 +11984,9 @@
     "Bronze": "Bronze",
     "Silber": "Silver",
     "Gold": "Gold",
+    "bis {zeit}": "up to {zeit}",
+    "gefahren": "completed",
+    "TOP {x} %": "TOP {x} %",
     "Nicht gewertet": "Not counted",
     "Frühstart": "Jump start",
     "abgebrochen, nicht alle Runden gefahren": "aborted, not all laps driven",
@@ -14078,6 +14088,9 @@
       // Charts are drawn lazily when the documentation is actually opened: the sliders
       // that invalidate them fire constantly and the canvases are invisible meanwhile.
       if (btn.dataset.tab === 'doc' && drivetrainChartsDirty) renderDrivetrainCharts();
+      // Challenges: die Kachel-Raenge (Medaille + Perzentil) beim Oeffnen auffrischen, sonst
+      // bleibt nach einem Lauf der alte Stand stehen.
+      if (btn.dataset.tab === 'challenges' && typeof chKachelnZeichnen === 'function') chKachelnZeichnen();
       // Den gewaehlten Tab in die Sicht holen, siehe scrollTabIntoView(). Am Ende des
       // Handlers, weil .active erst darueber gesetzt wird und der Hinweis am Rand den
       // neuen Scrollstand braucht.
@@ -33903,7 +33916,7 @@
   //   - je Strecke zwei Modi: BESTE RUNDE (beliebig viele Runden, die schnellste zaehlt) und
   //     RENNEN (feste Rundenzahl, die Gesamtzeit zaehlt) - BESTELLT: "Mach pro Strecke: beste
   //     Rundenzeit (unendlich viele Runden, beste wird gezaehlt) und das Rundenrennen";
-  //   - je zwei Presets, Pro und Arcade: die Abstimmungen gleichen Namens aus 98-presets.js,
+  //   - das Pro-Preset: die Abstimmung gleichen Namens aus 98-presets.js,
   //     dazu Steuerungsmodus Physik, trocken, voller Tank, keine Pflichtstopps, keine Ghosts;
   //   - "Auto muss stehen, dann kommt eine Ampel, dann los; die Zeit wird gespeichert";
   //   - Bestenliste mit Abstaenden, waagerechtes Histogramm (oben schnell), eigene Zeit
@@ -34136,7 +34149,10 @@
   }
   function chGrundText(w) { return t(w.grund || '').replace('{n}', w.n || ''); }
 
-  let chWahl = 'oval', chModus = 'hotlap', chPreset = 'pro';
+  let chWahl = 'oval', chModus = 'hotlap';
+  // v0.8.80: Arcade entfernt. Challenges laufen nur mit dem Pro-Preset; der Schluessel der
+  // Bestenliste behaelt das |pro|, damit die vorhandenen Zeiten weiter gelten.
+  const chPreset = 'pro';
   let chLauf = null;               // laufende Challenge, siehe challengeStarten()
   let chWaechter = null;
   let chLetzt = null;              // letztes Ergebnis, fuer die Anzeige auf der Seite
@@ -34160,15 +34176,14 @@
 
   // ---- STERNE (v0.8.79). BESTELLT: "auch offline Spass": Bronze fuer das Absolvieren,
   // Silber fuer eine ordentliche, Gold fuer eine gute Zeit. Die Schwellen sind je Strecke
-  // und Preset (Arcade/Pro) und werden aus der Streckengeometrie gerechnet - eine gute Runde
-  // ist das, was die Messung hergibt: die Geraden bei gemessener Vollgasgeschwindigkeit, die
-  // Kurven langsamer (kalibriert an der besten Imolina-Pro-Runde 4,639 s auf 3,18 m). Der
-  // Nutzer testet die Werte und kann die beiden Faktoren unten nachziehen.
+  // und werden aus der Streckengeometrie gerechnet - eine gute Runde ist das, was die
+  // Messung hergibt: die Geraden bei gemessener Vollgasgeschwindigkeit, die Kurven langsamer
+  // (kalibriert an der besten Imolina-Pro-Runde 4,639 s auf 3,18 m). Der Nutzer testet die
+  // Werte und kann die beiden Faktoren unten nachziehen. Nur Pro (v0.8.80: Arcade entfernt).
   const CH_STERNE_V_GERADE = 1.64;        // m/s, gemessene Vollgasgeschwindigkeit
   const CH_STERNE_V_KURVE = 0.565;        // m/s, kalibriert an Imolina-Pro
   const CH_STERNE_SILBER_FAKTOR = 1.5;    // Silber = 50 % langsamer als Gold
-  const CH_STERNE_ARCADE_FAKTOR = 0.92;   // Arcade ist einfacher zu fahren -> etwas schnellere Schwellen
-  function chSterneSchwellen(def, preset) {
+  function chSterneSchwellen(def) {
     const tiles = chTiles(def);
     let gerade = 0, kurve = 0;
     for (const t of tiles) {
@@ -34178,15 +34193,14 @@
     const m = TRACK_UNITS_PER_CM * 100;        // Einheiten -> cm -> m
     gerade /= m; kurve /= m;
     const gold = (gerade / CH_STERNE_V_GERADE + kurve / CH_STERNE_V_KURVE) * 1000;
-    const f = preset === 'arcade' ? CH_STERNE_ARCADE_FAKTOR : 1;
-    return { silber: Math.round(gold * CH_STERNE_SILBER_FAKTOR * f), gold: Math.round(gold * f) };
+    return { silber: Math.round(gold * CH_STERNE_SILBER_FAKTOR), gold: Math.round(gold) };
   }
   // 1 = Bronze (Challenge gefahren), 2 = Silber, 3 = Gold; 0 = keine Wertung.
   // Im Rennen (rennen) ist die Zeit die Summe ueber def.runden Runden, die Schwellen
   // werden entsprechend skaliert; Beste-Runde (hotlap) vergleicht eine einzelne Runde.
-  function chSterne(def, preset, modus, zeitMs) {
+  function chSterne(def, modus, zeitMs) {
     if (!(zeitMs > 0)) return 0;
-    const s = chSterneSchwellen(def, preset);
+    const s = chSterneSchwellen(def);
     const runden = modus === 'rennen' ? (def.runden || 1) : 1;
     if (zeitMs <= s.gold * runden) return 3;
     if (zeitMs <= s.silber * runden) return 2;
@@ -34209,6 +34223,49 @@
   }
   function chSterneName(n) {
     return n >= 3 ? t('Gold') : n === 2 ? t('Silber') : n === 1 ? t('Bronze') : '';
+  }
+  // Bedingungen je Medaille, z. B. "Gold: bis 4,639 s · Silber: bis 6,959 s · Bronze: gefahren".
+  // Im Rennen skaliert die Schwellen mit der Rundenzahl, wie chSterne es auch tut.
+  function chMedailleHinweis(def, modus) {
+    const s = chSterneSchwellen(def);
+    const r = modus === 'rennen' ? (def.runden || 1) : 1;
+    const gold = chZeit(s.gold * r), silber = chZeit(s.silber * r);
+    return '<span class="ch-sterne" style="color:var(--gold)">' + chSterneZeichen(3) + '</span> ' + t('Gold')
+      + ': ' + t('bis {zeit}').replace('{zeit}', gold) + ' &middot; '
+      + '<span class="ch-sterne" style="color:var(--silber)">' + chSterneZeichen(2) + '</span> ' + t('Silber')
+      + ': ' + t('bis {zeit}').replace('{zeit}', silber) + ' &middot; '
+      + '<span class="ch-sterne" style="color:var(--bronze)">' + chSterneZeichen(1) + '</span> ' + t('Bronze')
+      + ': ' + t('gefahren');
+  }
+  // Rang einer Kachel: erreichte Medaille + Perzentil ("TOP X %"). Beste der beiden Modi.
+  function chKachelRang(def) {
+    let best = null;
+    for (const modus of ['hotlap', 'rennen']) {
+      const schl = chSchluessel(def.id, modus, 'pro');
+      const lok = chLokal(schl);
+      const eig = lok.filter((z) => z.zeit > 0);
+      if (!eig.length) continue;
+      const zeit = Math.min(...eig.map((z) => z.zeit));
+      const st = chSterne(def, modus, zeit);
+      const a = chAlleZeiten(schl);
+      let alle = a.zeiten.indexOf(zeit) >= 0 ? a.zeiten : a.zeiten.concat([zeit]);
+      let meine = zeit;
+      if (a.online) {
+        const b = chBesteJeSpieler(a.eintraege, chGeraet(), zeit);
+        alle = b.werte; meine = b.meine;
+      }
+      const p = chPerzentil(alle, meine);
+      if (!best || st > best.st || (st === best.st && p > best.p)) best = { st, p, n: alle.length };
+    }
+    return best;
+  }
+  // Anzeige auf der Kachel: "★★★ Gold · TOP 5 %". Ohne Konkurrenz (nur der eigene Lauf) nur die
+  // Medaille, sonst waere "TOP 100 %" bei einem einzigen Eintrag irrefuehrend.
+  function chRangKachelText(r) {
+    if (!r) return '';
+    const top = Math.max(1, Math.round(100 - r.p));
+    return chSterneText(r.st) + ' ' + chSterneName(r.st)
+      + (r.n >= 2 ? ' &middot; ' + t('TOP {x} %').replace('{x}', top) : '');
   }
 
   // Platzbedarf auf dem Boden in Metern, aus derselben Geometrie wie der Editor (Mittellinie
@@ -34630,7 +34687,7 @@
         : t('Nicht gewertet');
       let text = erg.gueltig ? chRangText(schl, erg.zeit) : chGrundText(erg);
       if (erg.gueltig) {
-        const sterne = chSterne(def, erg.preset, erg.modus, erg.zeit);
+        const sterne = chSterne(def, erg.modus, erg.zeit);
         text += '\n\n' + chSterneName(sterne) + ' ' + chSterneZeichen(sterne);
         const o = chOnline();
         if (o.url && o.hochladen) {
@@ -34641,7 +34698,7 @@
       }
       konsoleFrage(titel, text, [
         [t('Ergebnis ansehen'), () => konsoleZeige('challenges', 'ch-' + erg.id)],
-        [t('Nochmal'), () => { chWahl = erg.id; chModus = erg.modus; chPreset = erg.preset; challengeStarten(); }],
+        [t('Nochmal'), () => { chWahl = erg.id; chModus = erg.modus; challengeStarten(); }],
         [t('Schließen'), null]]);
     }, 900);
     chZeichneDetail();
@@ -34741,12 +34798,13 @@
     $('ch-fakten').textContent = t('Länge') + ' ' + chZahl(m, 2) + ' m · 1:50 ' + chZahl(m * 50 / 1000, 2) + ' km · '
       + t('Platzbedarf') + ' ' + chZahl(bw, 2) + ' × ' + chZahl(bh, 2) + ' m · ' + def.sets.map((s) => t(CH_SET_NAME[s])).join(' + ');
     document.querySelectorAll('#ch-modus [data-m]').forEach((b) => b.classList.toggle('an', b.dataset.m === chModus));
-    document.querySelectorAll('#ch-preset [data-p]').forEach((b) => b.classList.toggle('an', b.dataset.p === chPreset));
     $('ch-modus-text').textContent = (chModus === 'hotlap'
       ? t('So viele Runden du willst, die schnellste zählt. Schluss mit der Rennen-Taste (R1).')
       : t('{n} Runden ab stehendem Start, die Gesamtzeit zählt. Zählt eine Runde nicht, fährst du eine extra.').replace('{n}', def.runden)
         + (chPflichtstopp(def, 'rennen') ? ' ' + t('Pflichtstopp: einmal an die Box (Boxen-Minigame), egal wo.') : ''))
       + ' ' + t('Jede Runde wird gegen die Strecke geprüft: mindestens 80 % der Teile müssen erkannt werden. Einstellungen sind gesperrt.');
+    const mh = $('ch-medaille-hinweis');
+    if (mh) mh.innerHTML = chMedailleHinweis(def, chModus);
     // Teile: nur, was unter Strecke > Meine Teile eingetragen ist.
     const bil = teileBilanz(tiles).filter((x) => x.hat !== null);
     const fehlt = bil.filter((x) => x.rest < 0);
@@ -34764,10 +34822,10 @@
     if (chLetzt && chLetzt.id === chWahl) {
       e.hidden = false;
       const schl = chSchluessel(chLetzt.id, chLetzt.modus, chLetzt.preset);
-      $('ch-erg-titel').textContent = t(CH_MODUS_NAME[chLetzt.modus]) + ' · ' + (chLetzt.preset === 'pro' ? 'Pro' : 'Arcade');
+      $('ch-erg-titel').textContent = t(CH_MODUS_NAME[chLetzt.modus]) + ' · Pro';
       $('ch-erg-zeit').textContent = chLetzt.gueltig ? chZeit(chLetzt.zeit) : t('Nicht gewertet');
       $('ch-erg-text').textContent = chLetzt.gueltig ? chRangText(schl, chLetzt.zeit) : chGrundText(chLetzt);
-      const ergSterne = chLetzt.gueltig ? chSterne(chDef(chWahl), chLetzt.preset, chLetzt.modus, chLetzt.zeit) : 0;
+      const ergSterne = chLetzt.gueltig ? chSterne(chDef(chWahl), chLetzt.modus, chLetzt.zeit) : 0;
       const ergSt = $('ch-erg-sterne');
       if (ergSt) { ergSt.innerHTML = chSterneText(ergSterne); ergSt.hidden = !ergSterne; }
     } else e.hidden = true;
@@ -34853,7 +34911,7 @@
     anzeige.slice(0, 50).forEach((z, i) => {
       const tr = document.createElement('tr');
       if (z.geraet === ich && +z.zeit_ms === eigene) tr.className = 'du';
-      const sterne = chSterne(defS, chPreset, chModus, +z.zeit_ms);
+      const sterne = chSterne(defS, chModus, +z.zeit_ms);
       const zellen = [String(i + 1), (z.fahrer ? z.fahrer + ' · ' : '') + (z.auto || '–'), chZeit(+z.zeit_ms),
         i ? '+' + chZahl((z.zeit_ms - bester) / 1000, 3) : '–'];
       zellen.forEach((txt) => { const td = document.createElement('td'); td.textContent = txt; td.setAttribute('data-i18n-skip', ''); tr.appendChild(td); });
@@ -34947,6 +35005,9 @@
       // "Beliebteste Strecke" (BESTELLT): ein Banner auf der Kachel mit den meisten Spielern.
       const banner = kachel.querySelector('.ch-k-beliebt');
       if (banner) banner.hidden = !chBeliebtesteId || chBeliebtesteId !== def.id;
+      // Erreichter Rang (Medaille + Perzentil) auf der Uebersicht.
+      const rang = kachel.querySelector('.ch-k-rang');
+      if (rang) rang.innerHTML = chRangKachelText(chKachelRang(def));
     });
   }
   // BESTELLT: "ein 'beliebteste Strecke'-Banner auf die Challenge mit den meisten Spielern".
@@ -34957,6 +35018,12 @@
   function chBeliebteste() {
     chSchnappschuss().then((j) => {
       if (!j || !j.listen) return;
+      // Listen aus dem Schnappschuss in chListen legen, damit die Kachel-Raenge (Perzentil)
+      // online + lokal mischen, nicht nur die eigenen Laeufe.
+      Object.keys(j.listen).forEach((k) => {
+        const l = j.listen[k];
+        if (l && !chListen[k]) chListen[k] = { zeiten: l.zeiten || [], online: true, anzahl: l.anzahl || 0, stand: j.stand };
+      });
       const summe = {};
       Object.keys(j.listen).forEach((k) => {
         const id = k.split('|')[0];
@@ -35025,11 +35092,6 @@
   $('ch-modus').addEventListener('click', (e) => {
     const h = e.target.closest('[data-m]');
     chModus = h ? h.dataset.m : (chModus === 'hotlap' ? 'rennen' : 'hotlap');
-    chZeichneDetail(); chListeLaden(chSchluessel(chWahl, chModus, chPreset));
-  });
-  $('ch-preset').addEventListener('click', (e) => {
-    const h = e.target.closest('[data-p]');
-    chPreset = h ? h.dataset.p : (chPreset === 'pro' ? 'arcade' : 'pro');
     chZeichneDetail(); chListeLaden(chSchluessel(chWahl, chModus, chPreset));
   });
   $('ch-start').addEventListener('click', () => { if (chLauf) challengeAbbrechen(); else challengeStarten(); });
@@ -67444,25 +67506,50 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'exakt/1 Fehler ok, 2 Fehler/kuerzer/doppelt nein, rueckwaerts und 30->60 ok, Mindestrunde ' + min + ' ms' };
   });
 
-  stAdd('Challenges: Sterne (Bronze/Silber/Gold) nach Strecke und Preset', () => {
+  stAdd('Challenges: Sterne (Bronze/Silber/Gold) nach Strecke', () => {
     const f = [];
     const imo = chDef('wa01-imolina');
     // Kalibriert an der gemessenen Imolina-Pro-Bestzeit 4639 ms -> das muss Gold sein.
-    const s = chSterneSchwellen(imo, 'pro');
+    const s = chSterneSchwellen(imo);
     if (!(s.gold > 4000 && s.gold < 5200)) f.push('Imolina-Pro Gold ' + s.gold + ' ms unplausibel (erwartet um 4639)');
     if (!(s.silber > s.gold)) f.push('Silber muss langsamer (groesser) als Gold sein');
     // Bronze: jede gewertete Zeit unter Silber; Silber: zwischen Gold und Silber.
-    if (chSterne(imo, 'pro', 'hotlap', 4639) !== 3) f.push('Imolina-Pro 4639 ms ist kein Gold');
-    if (chSterne(imo, 'pro', 'hotlap', Math.round(s.gold + 1)) !== 2) f.push('knapp ueber Gold ist kein Silber');
-    if (chSterne(imo, 'pro', 'hotlap', s.silber * 2) !== 1) f.push('deutlich langsamer ist kein Bronze');
-    if (chSterne(imo, 'pro', 'hotlap', 0) !== 0) f.push('Zeit 0 (keine Wertung) ist keine Bronze');
-    // Arcade ist einfacher: die Schwellen liegen unter denen von Pro.
-    const a = chSterneSchwellen(imo, 'arcade');
-    if (!(a.gold < s.gold)) f.push('Arcade-Gold muss schneller (kleiner) als Pro-Gold sein');
+    if (chSterne(imo, 'hotlap', 4639) !== 3) f.push('Imolina-Pro 4639 ms ist kein Gold');
+    if (chSterne(imo, 'hotlap', Math.round(s.gold + 1)) !== 2) f.push('knapp ueber Gold ist kein Silber');
+    if (chSterne(imo, 'hotlap', s.silber * 2) !== 1) f.push('deutlich langsamer ist kein Bronze');
+    if (chSterne(imo, 'hotlap', 0) !== 0) f.push('Zeit 0 (keine Wertung) ist keine Bronze');
     // Rennen skaliert mit der Rundenzahl: die Gesamtzeit zaehlt def.runden Runden.
-    const rennen = chSterne(imo, 'pro', 'rennen', s.gold * imo.runden);
+    const rennen = chSterne(imo, 'rennen', s.gold * imo.runden);
     if (rennen !== 3) f.push('Rennen: Goldzeit ueber ' + imo.runden + ' Runden ist kein Gold');
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Gold/Silber/Bronce geordnet, Arcade schneller, Rennen skaliert, Imolina-Kalibrierung ' + s.gold + ' ms' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Gold/Silber/Bronce geordnet, Rennen skaliert, Imolina-Kalibrierung ' + s.gold + ' ms' };
+  });
+
+  stAdd('Challenges: Medaillen-Hinweis zeigt Bedingungen, Kachel-Rang Medaille + Perzentil', () => {
+    const f = [];
+    const imo = chDef('wa01-imolina');
+    const s = chSterneSchwellen(imo);
+    // Hinweis: Gold/Silber mit Zeit, Bronze ohne Zeit; Rennen skaliert mit der Rundenzahl.
+    const h = chMedailleHinweis(imo, 'hotlap');
+    if (h.indexOf('Gold') < 0 || h.indexOf('Silber') < 0 || h.indexOf('Bronze') < 0) f.push('Hinweis ohne alle drei Medaillen');
+    if (h.indexOf(chZeit(s.gold)) < 0 || h.indexOf(chZeit(s.silber)) < 0) f.push('Hinweis ohne Zeiten der Schwellen');
+    const hr = chMedailleHinweis(imo, 'rennen');
+    if (hr.indexOf(chZeit(s.gold * imo.runden)) < 0) f.push('Rennen-Hinweis ohne skalierte Goldzeit');
+    // Kachel-Rang: ohne eigene Zeit leer; mit Zeit Medaille; Perzentil nur bei Konkurrenz.
+    const leer = chRangKachelText(null);
+    if (leer !== '') f.push('leerer Rang ist nicht leer: ' + leer);
+    let alt = null;
+    try { alt = localStorage.getItem(CH_STORE); } catch (e) { return { skip: true, mass: 'kein Speicher' }; }
+    try {
+      chLokalSpeichern({ id: imo.id, modus: 'hotlap', preset: 'pro', zeit: 4639, gueltig: true, auto: 'Test', geraet: 'x', fahrer: 'Test', runden: [4639] });
+      const r = chKachelRang(imo);
+      if (!r || r.st !== 3) f.push('Kachel-Rang ist kein Gold bei 4639 ms');
+      const txt = chRangKachelText(r);
+      if (txt.indexOf('Gold') < 0) f.push('Rang-Text ohne Medaillennamen: ' + txt);
+      if (r.n >= 2 && txt.indexOf('TOP') < 0) f.push('Rang ohne Perzentil bei Konkurrenz: ' + txt);
+    } finally {
+      try { if (alt === null) localStorage.removeItem(CH_STORE); else localStorage.setItem(CH_STORE, alt); } catch (e) { /* egal */ }
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Hinweis mit Gold/Silber/Bronze und Zeiten, Rennen skaliert, Rang Gold' };
   });
 
   stAdd('Challenges: Einstellungen waehrend des Laufs gesperrt und danach frei', () => {
@@ -67512,10 +67599,10 @@
     const vorCode = trackToCode(currentTrackTiles, trackRotationDeg);
     const def = chDef('kehre');
     try {
-      chAnwenden(def, 'rennen', 'arcade');
+      chAnwenden(def, 'rennen', 'pro');
       if ($('race-mode').value !== 'laps' || raceLimit !== def.runden) f.push('Rennen nicht auf ' + def.runden + ' Runden');
       if ($('phys-mode').value !== 'physik') f.push('Steuerungsmodus nicht Physik');
-      if (window.__presetActive && window.__presetActive() !== 'arcade') f.push('Preset ist ' + window.__presetActive());
+      if (window.__presetActive && window.__presetActive() !== 'pro') f.push('Preset ist ' + window.__presetActive());
       if ($('race-wx-start').value !== 'dry' || $('race-pit-required').value !== '0') f.push('Wetter/Pflichtstopps nicht neutral');
       if (trackToCode(currentTrackTiles, 0).replace(/\d/g, '') !== trackToCode(codeToTrack(def.code).tiles, 0).replace(/\d/g, '')) f.push('Strecke nicht geladen');
       chAnwenden(def, 'hotlap', 'pro');
@@ -67530,7 +67617,7 @@
     }
     if (nachher.modus !== vorher.modus || nachher.limit !== vorher.limit) f.push('Rennmodus nicht zurueck');
     if (trackToCode(currentTrackTiles, trackRotationDeg) !== vorCode) f.push('Strecke nicht zurueck');
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Arcade und Pro gesetzt, danach alles wie vorher' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Pro gesetzt, danach alles wie vorher' };
   });
 
   stAdd('Challenges: Seite zeigt Strecke, Modi und Bestenliste; Rennen-Taste bricht das Warten ab', () => {
@@ -67548,7 +67635,6 @@
       if (!document.querySelector('.ch-kachel .ch-mini[data-kat="b"] svg')) f.push('Kachel ohne Minikarte');
       if (!$('ch-karte').querySelector('svg')) f.push('keine Streckenkarte');
       $('ch-modus').querySelector('[data-m="hotlap"]').click();
-      $('ch-preset').querySelector('[data-p="pro"]').click();
       $('ch-modus').click();
       if (chModus !== 'rennen') f.push('X auf dem Modus-Knopf schaltet nicht um');
       $('ch-modus').click();

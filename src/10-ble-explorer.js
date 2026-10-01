@@ -832,7 +832,7 @@
     "Stand": "as of",
     "Challenges: die Bestenliste kommt aus einem stündlichen Schnappschuss im Repo, dazu sofort die eigenen Zeiten; das Hochladen wiederholt bei Aussetzern.": "Challenges: the leaderboard comes from an hourly snapshot in the repo, plus your own times right away; uploading retries on dropouts.",
     "Challenges: gemeinsame Online-Bestenliste ab Werk eingetragen, für alle Kopien der App.": "Challenges: shared online leaderboard set up by default, for all copies of the app.",
-    "Challenges (experimentell): vier feste Strecken, je beste Runde oder Rennen über feste Runden, Pro oder Arcade. Das Auto muss stehen, dann Ampel, dann los; ohne Ghosts, danach sind die eigenen Einstellungen wieder da. Bestenliste mit Histogramm und Perzentil, lokal und online über ein eigenes Google Sheet.": "Challenges (experimental): four fixed tracks, each as best lap or a race over fixed laps, Pro or Arcade. The car must stand still, then start lights, then go; no ghosts, and your own settings come back afterwards. Leaderboard with histogram and percentile, locally and online via your own Google Sheet.",
+    "Challenges (experimentell): vier feste Strecken, je beste Runde oder Rennen über feste Runden, im Pro-Preset. Das Auto muss stehen, dann Ampel, dann los; ohne Ghosts, danach sind die eigenen Einstellungen wieder da. Bestenliste mit Histogramm und Perzentil, lokal und online über ein eigenes Google Sheet.": "Challenges (experimental): four fixed tracks, each as best lap or a race over fixed laps, in the Pro preset. The car must stand still, then start lights, then go; no ghosts, and your own settings come back afterwards. Leaderboard with histogram and percentile, locally and online via your own Google Sheet.",
     "Grundpackung · 10 Runden": "Basic set · 10 laps",
     "Grundpackung · 8 Runden": "Basic set · 8 laps",
     "Grundpackung und Haarnadel-Set · 8 Runden": "Basic set and hairpin set · 8 laps",
@@ -862,6 +862,9 @@
     "Bronze": "Bronze",
     "Silber": "Silver",
     "Gold": "Gold",
+    "bis {zeit}": "up to {zeit}",
+    "gefahren": "completed",
+    "TOP {x} %": "TOP {x} %",
     "Nicht gewertet": "Not counted",
     "Frühstart": "Jump start",
     "abgebrochen, nicht alle Runden gefahren": "aborted, not all laps driven",
@@ -2963,6 +2966,9 @@
       // Charts are drawn lazily when the documentation is actually opened: the sliders
       // that invalidate them fire constantly and the canvases are invisible meanwhile.
       if (btn.dataset.tab === 'doc' && drivetrainChartsDirty) renderDrivetrainCharts();
+      // Challenges: die Kachel-Raenge (Medaille + Perzentil) beim Oeffnen auffrischen, sonst
+      // bleibt nach einem Lauf der alte Stand stehen.
+      if (btn.dataset.tab === 'challenges' && typeof chKachelnZeichnen === 'function') chKachelnZeichnen();
       // Den gewaehlten Tab in die Sicht holen, siehe scrollTabIntoView(). Am Ende des
       // Handlers, weil .active erst darueber gesetzt wird und der Hinweis am Rand den
       // neuen Scrollstand braucht.

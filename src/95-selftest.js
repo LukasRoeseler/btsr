@@ -10611,25 +10611,50 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'exakt/1 Fehler ok, 2 Fehler/kuerzer/doppelt nein, rueckwaerts und 30->60 ok, Mindestrunde ' + min + ' ms' };
   });
 
-  stAdd('Challenges: Sterne (Bronze/Silber/Gold) nach Strecke und Preset', () => {
+  stAdd('Challenges: Sterne (Bronze/Silber/Gold) nach Strecke', () => {
     const f = [];
     const imo = chDef('wa01-imolina');
     // Kalibriert an der gemessenen Imolina-Pro-Bestzeit 4639 ms -> das muss Gold sein.
-    const s = chSterneSchwellen(imo, 'pro');
+    const s = chSterneSchwellen(imo);
     if (!(s.gold > 4000 && s.gold < 5200)) f.push('Imolina-Pro Gold ' + s.gold + ' ms unplausibel (erwartet um 4639)');
     if (!(s.silber > s.gold)) f.push('Silber muss langsamer (groesser) als Gold sein');
     // Bronze: jede gewertete Zeit unter Silber; Silber: zwischen Gold und Silber.
-    if (chSterne(imo, 'pro', 'hotlap', 4639) !== 3) f.push('Imolina-Pro 4639 ms ist kein Gold');
-    if (chSterne(imo, 'pro', 'hotlap', Math.round(s.gold + 1)) !== 2) f.push('knapp ueber Gold ist kein Silber');
-    if (chSterne(imo, 'pro', 'hotlap', s.silber * 2) !== 1) f.push('deutlich langsamer ist kein Bronze');
-    if (chSterne(imo, 'pro', 'hotlap', 0) !== 0) f.push('Zeit 0 (keine Wertung) ist keine Bronze');
-    // Arcade ist einfacher: die Schwellen liegen unter denen von Pro.
-    const a = chSterneSchwellen(imo, 'arcade');
-    if (!(a.gold < s.gold)) f.push('Arcade-Gold muss schneller (kleiner) als Pro-Gold sein');
+    if (chSterne(imo, 'hotlap', 4639) !== 3) f.push('Imolina-Pro 4639 ms ist kein Gold');
+    if (chSterne(imo, 'hotlap', Math.round(s.gold + 1)) !== 2) f.push('knapp ueber Gold ist kein Silber');
+    if (chSterne(imo, 'hotlap', s.silber * 2) !== 1) f.push('deutlich langsamer ist kein Bronze');
+    if (chSterne(imo, 'hotlap', 0) !== 0) f.push('Zeit 0 (keine Wertung) ist keine Bronze');
     // Rennen skaliert mit der Rundenzahl: die Gesamtzeit zaehlt def.runden Runden.
-    const rennen = chSterne(imo, 'pro', 'rennen', s.gold * imo.runden);
+    const rennen = chSterne(imo, 'rennen', s.gold * imo.runden);
     if (rennen !== 3) f.push('Rennen: Goldzeit ueber ' + imo.runden + ' Runden ist kein Gold');
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Gold/Silber/Bronce geordnet, Arcade schneller, Rennen skaliert, Imolina-Kalibrierung ' + s.gold + ' ms' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Gold/Silber/Bronce geordnet, Rennen skaliert, Imolina-Kalibrierung ' + s.gold + ' ms' };
+  });
+
+  stAdd('Challenges: Medaillen-Hinweis zeigt Bedingungen, Kachel-Rang Medaille + Perzentil', () => {
+    const f = [];
+    const imo = chDef('wa01-imolina');
+    const s = chSterneSchwellen(imo);
+    // Hinweis: Gold/Silber mit Zeit, Bronze ohne Zeit; Rennen skaliert mit der Rundenzahl.
+    const h = chMedailleHinweis(imo, 'hotlap');
+    if (h.indexOf('Gold') < 0 || h.indexOf('Silber') < 0 || h.indexOf('Bronze') < 0) f.push('Hinweis ohne alle drei Medaillen');
+    if (h.indexOf(chZeit(s.gold)) < 0 || h.indexOf(chZeit(s.silber)) < 0) f.push('Hinweis ohne Zeiten der Schwellen');
+    const hr = chMedailleHinweis(imo, 'rennen');
+    if (hr.indexOf(chZeit(s.gold * imo.runden)) < 0) f.push('Rennen-Hinweis ohne skalierte Goldzeit');
+    // Kachel-Rang: ohne eigene Zeit leer; mit Zeit Medaille; Perzentil nur bei Konkurrenz.
+    const leer = chRangKachelText(null);
+    if (leer !== '') f.push('leerer Rang ist nicht leer: ' + leer);
+    let alt = null;
+    try { alt = localStorage.getItem(CH_STORE); } catch (e) { return { skip: true, mass: 'kein Speicher' }; }
+    try {
+      chLokalSpeichern({ id: imo.id, modus: 'hotlap', preset: 'pro', zeit: 4639, gueltig: true, auto: 'Test', geraet: 'x', fahrer: 'Test', runden: [4639] });
+      const r = chKachelRang(imo);
+      if (!r || r.st !== 3) f.push('Kachel-Rang ist kein Gold bei 4639 ms');
+      const txt = chRangKachelText(r);
+      if (txt.indexOf('Gold') < 0) f.push('Rang-Text ohne Medaillennamen: ' + txt);
+      if (r.n >= 2 && txt.indexOf('TOP') < 0) f.push('Rang ohne Perzentil bei Konkurrenz: ' + txt);
+    } finally {
+      try { if (alt === null) localStorage.removeItem(CH_STORE); else localStorage.setItem(CH_STORE, alt); } catch (e) { /* egal */ }
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Hinweis mit Gold/Silber/Bronze und Zeiten, Rennen skaliert, Rang Gold' };
   });
 
   stAdd('Challenges: Einstellungen waehrend des Laufs gesperrt und danach frei', () => {
@@ -10679,10 +10704,10 @@
     const vorCode = trackToCode(currentTrackTiles, trackRotationDeg);
     const def = chDef('kehre');
     try {
-      chAnwenden(def, 'rennen', 'arcade');
+      chAnwenden(def, 'rennen', 'pro');
       if ($('race-mode').value !== 'laps' || raceLimit !== def.runden) f.push('Rennen nicht auf ' + def.runden + ' Runden');
       if ($('phys-mode').value !== 'physik') f.push('Steuerungsmodus nicht Physik');
-      if (window.__presetActive && window.__presetActive() !== 'arcade') f.push('Preset ist ' + window.__presetActive());
+      if (window.__presetActive && window.__presetActive() !== 'pro') f.push('Preset ist ' + window.__presetActive());
       if ($('race-wx-start').value !== 'dry' || $('race-pit-required').value !== '0') f.push('Wetter/Pflichtstopps nicht neutral');
       if (trackToCode(currentTrackTiles, 0).replace(/\d/g, '') !== trackToCode(codeToTrack(def.code).tiles, 0).replace(/\d/g, '')) f.push('Strecke nicht geladen');
       chAnwenden(def, 'hotlap', 'pro');
@@ -10697,7 +10722,7 @@
     }
     if (nachher.modus !== vorher.modus || nachher.limit !== vorher.limit) f.push('Rennmodus nicht zurueck');
     if (trackToCode(currentTrackTiles, trackRotationDeg) !== vorCode) f.push('Strecke nicht zurueck');
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Arcade und Pro gesetzt, danach alles wie vorher' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Pro gesetzt, danach alles wie vorher' };
   });
 
   stAdd('Challenges: Seite zeigt Strecke, Modi und Bestenliste; Rennen-Taste bricht das Warten ab', () => {
@@ -10715,7 +10740,6 @@
       if (!document.querySelector('.ch-kachel .ch-mini[data-kat="b"] svg')) f.push('Kachel ohne Minikarte');
       if (!$('ch-karte').querySelector('svg')) f.push('keine Streckenkarte');
       $('ch-modus').querySelector('[data-m="hotlap"]').click();
-      $('ch-preset').querySelector('[data-p="pro"]').click();
       $('ch-modus').click();
       if (chModus !== 'rennen') f.push('X auf dem Modus-Knopf schaltet nicht um');
       $('ch-modus').click();

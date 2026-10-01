@@ -2691,6 +2691,9 @@
   .ch-kachel .ch-k-woche { display: block; font-style: normal; font-size: 10.5px; letter-spacing: .04em; color: var(--dim, #a3acbd); text-align: center; padding: 0 4px 5px; }
   .ch-kachel .ch-k-beliebt { display: block; font-style: normal; font-size: 10.5px; font-weight: 600; letter-spacing: .04em; color: #fff; background: #7a5bd6; text-align: center; padding: 3px 4px; margin: 0 4px 5px; border-radius: 4px; }
   .ch-kachel .ch-k-beliebt[hidden] { display: none; }
+  .ch-kachel .ch-k-rang { display: block; font-style: normal; font-size: 11px; letter-spacing: .03em; text-align: center; padding: 0 4px 6px; }
+  .ch-kachel .ch-k-rang:empty { display: none; }
+  .ch-k-medaille-hinweis { font-size: 12px; line-height: 1.5; margin: 2px 0 8px; }
   .ch-detail { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 16px; align-items: start; }
   .ch-rechts > h3:first-child { margin-top: 0; }
   .ch-stats { font-size: 12px; line-height: 1.5; }
@@ -4049,7 +4052,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.79</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.80</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4737,7 +4740,7 @@
        ehrlichen Hinweis darauf, dass er nur deutsch vorliegt. -->
   <!-- CHALLENGES (v0.8.30, experimentell; seit v0.8.44 vier Kategorien mit Wochenstrecken, die
        Kacheln fuellt chKachelnZeichnen). BESTELLT: "Implementiere Challenges". Vier
-       Strecken, je zwei Modi (beste Runde, Rennen) und zwei Presets (Pro, Arcade); Ablauf und
+       Strecken, je zwei Modi (beste Runde, Rennen) und das Pro-Preset; Ablauf und
        Wertung in src/72-challenges.js. Je Strecke eine Unterseite, damit L1/R1 zwischen ihnen
        blaettern; der Inhalt (#ch-detail) ist EINER und wird in die offene Seite gehaengt. -->
   <section class="tabpage" id="tab-challenges">
@@ -4749,24 +4752,28 @@
           <b class="ch-k-name" data-i18n-skip></b>
           <span class="ch-k-info" data-i18n-skip></span>
           <em class="ch-k-woche" data-i18n-skip></em>
+          <em class="ch-k-rang" data-i18n-skip></em>
           <em class="ch-k-beliebt" hidden>&#9733; Beliebteste Strecke</em></button>
         <button class="misc-tile subpage-open ch-kachel" data-sub="ch-b">
           <span class="ch-mini" data-kat="b" aria-hidden="true"></span>
           <b class="ch-k-name" data-i18n-skip></b>
           <span class="ch-k-info" data-i18n-skip></span>
           <em class="ch-k-woche" data-i18n-skip></em>
+          <em class="ch-k-rang" data-i18n-skip></em>
           <em class="ch-k-beliebt" hidden>&#9733; Beliebteste Strecke</em></button>
         <button class="misc-tile subpage-open ch-kachel" data-sub="ch-c">
           <span class="ch-mini" data-kat="c" aria-hidden="true"></span>
           <b class="ch-k-name" data-i18n-skip></b>
           <span class="ch-k-info" data-i18n-skip></span>
           <em class="ch-k-woche" data-i18n-skip></em>
+          <em class="ch-k-rang" data-i18n-skip></em>
           <em class="ch-k-beliebt" hidden>&#9733; Beliebteste Strecke</em></button>
         <button class="misc-tile subpage-open ch-kachel" data-sub="ch-d">
           <span class="ch-mini" data-kat="d" aria-hidden="true"></span>
           <b class="ch-k-name" data-i18n-skip></b>
           <span class="ch-k-info" data-i18n-skip></span>
           <em class="ch-k-woche" data-i18n-skip></em>
+          <em class="ch-k-rang" data-i18n-skip></em>
           <em class="ch-k-beliebt" hidden>&#9733; Beliebteste Strecke</em></button>
         <button class="misc-tile subpage-open" data-sub="ch-online">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="24" r="16"/><path d="M8 24h32M24 8c6 5 6 27 0 32M24 8c-6 5-6 27 0 32" stroke="var(--bad)"/></svg>
@@ -4832,7 +4839,7 @@
         </div>
         <button type="button" class="ch-umschalter" id="ch-modus" aria-label="Modus umschalten"><span data-m="hotlap">Beste Runde</span><span data-m="rennen">Rennen</span></button>
         <p class="muted" id="ch-modus-text" data-i18n-skip></p>
-        <button type="button" class="ch-umschalter" id="ch-preset" aria-label="Preset umschalten"><span data-p="pro" data-i18n-skip>Pro</span><span data-p="arcade" data-i18n-skip>Arcade</span></button>
+        <p class="ch-medaille-hinweis" id="ch-medaille-hinweis" data-i18n-skip></p>
         <p class="ch-teile" id="ch-teile" data-i18n-skip></p>
         <div class="ch-name-zeile"><label for="ch-name">Name in der Bestenliste</label>
           <input type="text" id="ch-name" maxlength="16" data-preset-skip></div>
@@ -5072,7 +5079,7 @@
         <li>Cockpit immer im Vollbild, der Men&uuml;-Knopf dort zeigt jetzt &bdquo;Zur&uuml;ck&ldquo;. Reiter oben: Fahren, Mehrspieler, Challenges, Optionen. Die Info-Kacheln stehen direkt in den Optionen unter einer eigenen Überschrift. Challenges: Strecken hei&szlig;en Monzetta, Suzuna, Monte Carlito und Silverbrook, der Name f&uuml;r die Bestenliste l&auml;sst sich auf jeder Strecken-Seite festlegen, das Perzentil z&auml;hlt je Spieler. Neue Kachel- und Hintergrundbilder im Fahren-Men&uuml;.</li>
         <li>Challenges: die Bestenliste kommt aus einem st&uuml;ndlichen Schnappschuss im Repo, dazu sofort die eigenen Zeiten; das Hochladen wiederholt bei Aussetzern.</li>
         <li>Challenges: gemeinsame Online-Bestenliste ab Werk eingetragen, f&uuml;r alle Kopien der App.</li>
-        <li>Challenges (experimentell): vier feste Strecken, je beste Runde oder Rennen &uuml;ber feste Runden, Pro oder Arcade. Das Auto muss stehen, dann Ampel, dann los; ohne Ghosts, danach sind die eigenen Einstellungen wieder da. Bestenliste mit Histogramm und Perzentil, lokal und online &uuml;ber ein eigenes Google Sheet.</li>
+        <li>Challenges (experimentell): vier feste Strecken, je beste Runde oder Rennen &uuml;ber feste Runden, im Pro-Preset. Das Auto muss stehen, dann Ampel, dann los; ohne Ghosts, danach sind die eigenen Einstellungen wieder da. Bestenliste mit Histogramm und Perzentil, lokal und online &uuml;ber ein eigenes Google Sheet.</li>
         <li>Logos aus den KI-Bildern entfernt, die Credits nennen die KI-Bilder (Gemini Flash). Reiter am Handy doppelt so hoch. Die Zur&uuml;ck-Taste des Handys f&uuml;hrt zum Startbildschirm (in der App ab APK 0.8.29). Editor: Asphalt im Hintergrund, Teile nach Typ getrennt, Schalter f&uuml;r Ideallinie und Tastenk&uuml;rzel.</li>
         <li>Strecke aufger&auml;umt: Editor, Scan, Laden, Meine Teile und Ausdruck haben je eine eigene Seite. Der Editor startet im Vollbild, mit Tutorial und Tasten&uuml;bersicht: Teile anw&auml;hlen, mittendrin einf&uuml;gen und entfernen, r&uuml;ckg&auml;ngig, in 45&deg;-Schritten drehen, L&auml;nge in Metern und im Ma&szlig;stab 1:50, Pfeile an den Kanten in Fahrtrichtung. Meine Teile (experimentell) z&auml;hlt deinen Bestand und zeigt im Editor, was fehlt oder &uuml;brig ist. Challenges: Plan und Mock-up mit vier Strecken, je beste Runde und Rennen.</li>
         <li>Kopfzeile nochmals flacher, Omega oben links f&uuml;hrt zum Startbildschirm, Info unter Optionen, neuer Reiter Challenges (WIP). Tutorial-Texte k&uuml;rzer; Steuerung l&auml;uft auf dem Cockpit, zeigt gedr&uuml;ckte Tasten und f&auml;hrt dabei nicht. Neue Stimmungsbilder (KI) f&uuml;r Titel, Rennoptionen, Start, Strecke, Optionen, Info und Challenges.</li>
