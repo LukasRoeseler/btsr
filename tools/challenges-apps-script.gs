@@ -231,10 +231,28 @@ function doGet(e) {
   // wirklich ein Sheet gebunden ist - sonst 'kein Sheet'.
   if (p.debug) {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sh = ss ? ss.getSheetByName(BLATT) : null;
+    let kopf = [], zeilen = 0, challenges = [], letzte = null;
+    if (sh) {
+      const werte = sh.getDataRange().getValues();
+      zeilen = Math.max(0, werte.length - 1);
+      kopf = (werte[0] || []).map((x) => String(x));
+      const sp = {};
+      kopf.forEach((name, i) => { if (name) sp[String(name).toLowerCase()] = i; });
+      const gez = {};
+      werte.slice(1).forEach((z) => {
+        const c = sp['challenge'] === undefined ? '' : String(z[sp['challenge']] || '');
+        if (!c) return;
+        gez[c] = (gez[c] || 0) + 1;
+      });
+      challenges = Object.keys(gez).sort().map((c) => ({ id: c, n: gez[c] }));
+      if (werte.length > 1) letzte = werte[werte.length - 1];
+    }
     return antwort({ ok: true, debug: true,
       url: ss ? ss.getUrl() : null,
       name: ss ? ss.getName() : null,
-      blatt: ss ? (ss.getSheetByName(BLATT) ? BLATT : null) : null });
+      blatt: sh ? BLATT : null,
+      kopf: kopf, zeilen: zeilen, challenges: challenges, letzte: letzte });
   }
   const sp = spalten();
   const werte = blatt().getDataRange().getValues().slice(1);
