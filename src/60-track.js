@@ -241,6 +241,20 @@
   function freshTrackTiles() { return [{ type: TILE_TYPE.START }]; }
   let currentTrackTiles = freshTrackTiles(); // [{type}]
   let trackRotationDeg = 0; // whole-track orientation, rotatable in 45° steps (v0.8.28)
+  // Zuletzt gebaute Zufallsstrecken (Codes). Nicht nur die letzte: wer mehr merkt, bekommt
+  // mehr Abwechslung. Das Fenster ist begrenzt, damit der Schutz die Erzeugung nicht blockiert
+  // (s. trackZufall: faellt auf "nur nicht dieselbe wie zuletzt" zurueck).
+  let trackZufallCodes = [];
+  const TRACK_ZUFALL_CODE_MAX = 12;
+  function trackZufallCodeKennt(code) { return trackZufallCodes.indexOf(code) >= 0; }
+  function trackZufallCodeMerken(code) {
+    // MRU: schon bekannt -> ans Ende, sonst anfuegen. So bleiben die gemerkten Codes ohne
+    // Duplikate, und das Fenster zeigt die zuletzt gebauten Strecken.
+    const i = trackZufallCodes.indexOf(code);
+    if (i >= 0) trackZufallCodes.splice(i, 1);
+    trackZufallCodes.push(code);
+    if (trackZufallCodes.length > TRACK_ZUFALL_CODE_MAX) trackZufallCodes.shift();
+  }
 
   // Turtle-graphics walk: each tile is a fixed-length/fixed-turn step, always
   // continuing from the previous tile's exact end position and heading — so tiles
@@ -3420,6 +3434,9 @@
   }
   function teileSpeichern(b) {
     try { if (b) localStorage.setItem(TEILE_KEY, JSON.stringify(b)); else localStorage.removeItem(TEILE_KEY); } catch (e) { /* privat */ }
+    // Neuer Bestand: die Zufallsstrecken duerfen wiederkommen, sonst blockiert der
+    // "nicht zweimal dieselbe"-Schutz die Erzeugung dauerhaft.
+    trackZufallCodes = [];
     teileZeichnen();
     refreshTrackPreview();
   }
@@ -3878,12 +3895,14 @@
   // wie viel vom Bestand schon verbraucht ist.
   function trackZufallRun(target, used, b) {
     const same = [TILE_TYPE.CURVE_RIGHT, TILE_TYPE.WEIT_RIGHT, TILE_TYPE.HAIRPIN,
-                  TILE_TYPE.CURVE_LEFT, TILE_TYPE.WEIT_LEFT, TILE_TYPE.HAIRPIN_LEFT]
+                  TILE_TYPE.KLEIN_RIGHT,
+                  TILE_TYPE.CURVE_LEFT, TILE_TYPE.WEIT_LEFT, TILE_TYPE.HAIRPIN_LEFT,
+                  TILE_TYPE.KLEIN_LEFT]
       .filter(t => (tileTurnDeg(t) > 0) === (target > 0) && (b[t] || 0) > (used[t] || 0));
     const avail = (t) => (b[t] || 0) - (used[t] || 0);
     const rec = (rem, lst) => {
       if (Math.abs(rem) < 1e-6) return lst.slice();
-      if (lst.length >= 6) return null;
+      if (lst.length >= 8) return null;
       if (Math.abs(rem) < 30) return null;
       let cands = same.filter(t => avail(t) > 0 && Math.abs(tileTurnDeg(t)) <= Math.abs(rem) + 1e-6);
       if (!cands.length) return null;
@@ -3917,6 +3936,10 @@
       [TILE_TYPE.CURVE_LEFT, TILE_TYPE.CURVE_RIGHT],
       [TILE_TYPE.WEIT_RIGHT, TILE_TYPE.WEIT_LEFT],
       [TILE_TYPE.WEIT_LEFT, TILE_TYPE.WEIT_RIGHT],
+      [TILE_TYPE.KLEIN_RIGHT, TILE_TYPE.KLEIN_LEFT],
+      [TILE_TYPE.KLEIN_LEFT, TILE_TYPE.KLEIN_RIGHT],
+      [TILE_TYPE.KLEIN_RIGHT, TILE_TYPE.WEIT_LEFT],
+      [TILE_TYPE.KLEIN_LEFT, TILE_TYPE.WEIT_RIGHT],
     ];
     for (let i = patterns.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -3992,22 +4015,93 @@
     return best ? best.gaps : null;
   }
 
+  // Ist ueberhaupt etwas eingetragen? Leer heisst: nichts gespeichert oder alle Zaehler 0.
+  function trackZufallTotalLeer(b) {
+    if (!b) return true;
+    for (const typ of TEILE_SORTEN) if ((+b[typ] || 0) > 0) return false;
+    return true;
+  }
+  // Wie viele Teile des eingetragenen Bestands die Strecke NICHT nutzt. Je kleiner, desto
+  // besser - die Zufallsstrecke soll moeglichst den ganzen Karton verbrauchen.
+  function trackZufallRest(tiles, b) {
+    const braucht = {};
+    for (const t of tiles) braucht[t.type] = (braucht[t.type] || 0) + 1;
+    let rest = 0;
+    for (const typ of TEILE_SORTEN) {
+      const hat = b && b[typ] !== undefined && b[typ] !== null ? Math.max(0, Math.floor(+b[typ])) : null;
+      if (hat === null) continue;
+      rest += Math.max(0, hat - (braucht[typ] || 0));
+    }
+    return rest;
+  }
+  // Fuelle eine Luecke von `units` Kachel-Laengen mit den geraden Teilen: PIT ist 2 lang,
+  // ENGE und STRAIGHT sind 1 lang. Greedy, damit auch PIT/ENGE aus dem Bestand landen.
+  function trackZufallFuellGap(units, verf) {
+    const seq = [];
+    let rem = units;
+    while (rem >= 2 && verf[TILE_TYPE.PIT] > 0) { seq.push(TILE_TYPE.PIT); verf[TILE_TYPE.PIT]--; rem -= 2; }
+    while (rem >= 1 && verf[TILE_TYPE.ENGE] > 0) { seq.push(TILE_TYPE.ENGE); verf[TILE_TYPE.ENGE]--; rem -= 1; }
+    while (rem >= 1 && verf[TILE_TYPE.STRAIGHT] > 0) { seq.push(TILE_TYPE.STRAIGHT); verf[TILE_TYPE.STRAIGHT]--; rem -= 1; }
+    return rem === 0 ? seq : null;
+  }
+  function trackZufallBaueTiles(runs, gaps, b) {
+    const verf = {};
+    for (const typ of [TILE_TYPE.STRAIGHT, TILE_TYPE.ENGE, TILE_TYPE.PIT]) {
+      verf[typ] = Math.max(0, Math.floor(+b[typ] || 0));
+    }
+    const tiles = [{ type: TILE_TYPE.START }];
+    const g0 = trackZufallFuellGap(gaps[0], verf);
+    if (!g0) return null;
+    for (const t of g0) tiles.push({ type: t });
+    for (let ci = 0; ci < runs.length; ci++) {
+      for (const t of runs[ci]) tiles.push({ type: t });
+      const g = trackZufallFuellGap(gaps[ci + 1], verf);
+      if (!g) return null;
+      for (const t of g) tiles.push({ type: t });
+    }
+    return tiles;
+  }
+  // Keine Teile eingetragen: ein Dialog statt eines stillen Toasts, mit "Teile eingeben" und
+  // "Abbrechen". BESTELLT: "If no track parts are entered, generate an error message pop up
+  // saying 'Enter track parts first' with two options: enter track parts, cancel".
+  function trackZufallKeineTeile() {
+    if (typeof konsoleFrage !== 'function') { showHudToast(t('Erst die Streckenteile eingeben')); return; }
+    konsoleFrage(t('Zufall: Keine Streckenteile'), t('Erst die Streckenteile eingeben'), [
+      [t('Teile eingeben'), () => {
+        if (typeof exitTrackFullscreen === 'function') exitTrackFullscreen();
+        showTab('track');
+        showSubpage('teile');
+      }],
+      [t('Abbrechen'), null],
+    ]);
+  }
+
   function trackZufall() {
     const b = teileBestand();
-    if (!b || !(Math.floor(+b[TILE_TYPE.START] || 0) > 0)) {
+    if (trackZufallTotalLeer(b)) { trackZufallKeineTeile(); return false; }
+    const hat = (typ) => Math.max(0, Math.floor(+b[typ] || 0));
+    if (!(hat(TILE_TYPE.START) > 0)) {
       showHudToast(t('Zufall: Kein Startteil vorhanden'));
       return false;
     }
-    const hat = (typ) => Math.max(0, Math.floor(+b[typ] || 0));
-    if (hat(TILE_TYPE.STRAIGHT) < 1) {
+    if (hat(TILE_TYPE.STRAIGHT) + hat(TILE_TYPE.ENGE) + hat(TILE_TYPE.PIT) * 2 < 1) {
       showHudToast(t('Zufall: Nicht genug Geraden'));
       return false;
     }
-    // Wie viele Ecken (Kurvenlaeufe): Verteilung des Mockups (meist 2-3).
+    // Beste Kandidaten: einer, der nicht in den letzten Codes vorkommt (Dedup ueber ein Fenster,
+    // nicht nur die letzte Strecke), einer, der nur nicht der allerletzte ist (Rueckfall, damit
+    // "nicht zweimal dieselbe in Folge" trotzdem gilt), und einer, der es egal ist. Ueber viele
+    // Versuche wird der mit den wenigsten ungenutzten Teilen behalten - so naehert sich die
+    // Zufallsstrecke dem Ziel, den ganzen Bestand zu verbrauchen.
+    let beste = null, besteAnders = null, besteGleich = null;
+    const letzte = trackZufallCodes.length ? trackZufallCodes[trackZufallCodes.length - 1] : null;
+    const besser = (a, z) => !a || z.rest < a.rest || (z.rest === a.rest && Math.random() < 0.4);
+    const startZeit = performance.now();
     for (let versuch = 0; versuch < 400; versuch++) {
+      if (performance.now() - startZeit > 3000) break;
       const dir = Math.random() < 0.5 ? 1 : -1;
       const r = Math.random();
-      const nc = r < 0.075 ? 1 : r < 0.585 ? 2 : r < 0.785 ? 3 : r < 0.96 ? 4 : 5;
+      const nc = r < 0.05 ? 1 : r < 0.5 ? 2 : r < 0.75 ? 3 : r < 0.93 ? 4 : 5;
       const used = {};
       const turns = trackZufallRunTurns(dir, nc);
       if (!turns) continue;
@@ -4019,19 +4113,23 @@
         runs.push(run);
       }
       if (!gut) continue;
-      // gelegentlich eine netto-0-Schikane einsetzen
-      if (Math.random() < 0.4) {
+      // Netto-0-Schikanen einsetzen, solange welche passen: verbraucht uebrige Kurvenpaare,
+      // damit die Strecke mehr vom Bestand nutzt. Jede Einsetzung muss den Schluss halten.
+      for (let wi = 0; wi < 3; wi++) {
         const wig = trackZufallWiggle(used, b);
-        if (wig) runs.splice(Math.floor(Math.random() * (runs.length + 1)), 0, wig);
+        if (!wig) break;
+        const pos = Math.floor(Math.random() * (runs.length + 1));
+        const test = runs.slice();
+        test.splice(pos, 0, wig);
+        const g = trackZufallSolveGaps(test, 3, TRACK_SCHLUSS_STRENG_CM);
+        if (!g) continue;
+        runs.splice(pos, 0, wig);
+        for (const t of wig) used[t] = (used[t] || 0) + 1;
       }
       const gaps = trackZufallSolveGaps(runs, 3, TRACK_SCHLUSS_STRENG_CM);
       if (!gaps) continue;
-      const tiles = [{ type: TILE_TYPE.START }];
-      for (let i = 0; i < gaps[0]; i++) tiles.push({ type: TILE_TYPE.STRAIGHT });
-      runs.forEach((run, ci) => {
-        for (const t of run) tiles.push({ type: t });
-        for (let i = 0; i < gaps[ci + 1]; i++) tiles.push({ type: TILE_TYPE.STRAIGHT });
-      });
+      const tiles = trackZufallBaueTiles(runs, gaps, b);
+      if (!tiles) continue;
       trackRotationDeg = 0;
       if (!trackZufallPasst(tiles)) continue;
       // Fussabdruck im Rahmen des Mockups (max. ~2,6 m) halten.
@@ -4044,13 +4142,27 @@
         if (p.y > maxY) maxY = p.y;
       }
       if ((maxX - minX) / TRACK_UNITS_PER_CM > 260 || (maxY - minY) / TRACK_UNITS_PER_CM > 260) continue;
+      const rest = trackZufallRest(tiles, b);
+      const code = trackToCode(tiles, 0);
+      const kandidat = { tiles, rest, code };
+      if (!trackZufallCodeKennt(code) && besser(beste, kandidat)) beste = kandidat;
+      if (code !== letzte && besser(besteAnders, kandidat)) besteAnders = kandidat;
+      if (besser(besteGleich, kandidat)) besteGleich = kandidat;
+    }
+    const wahl = beste || besteAnders;
+    if (wahl) {
       trackMerken();
-      currentTrackTiles = tiles;
+      currentTrackTiles = wahl.tiles;
       trackSel = null;
       trackRotationDeg = 0;
       refreshTrackPreview();
+      trackZufallCodeMerken(wahl.code);
       showHudToast(t('Zufällige Strecke gebaut'));
       return true;
+    }
+    if (besteGleich) {
+      showHudToast(t('Zufall: Keine neue Variante möglich'));
+      return false;
     }
     showHudToast(t('Zufall: Nicht genug Kurventeile für einen Rundkurs'));
     return false;

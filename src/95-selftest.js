@@ -10340,6 +10340,53 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Knopf links, Vorschlag ' + trackNameVorschlag() };
   });
 
+  stAdd('Zufallsstrecke: Wuerfe verschieden, Verlauf gemerkt, leerer Bestand zeigt Dialog', () => {
+    const merk = { tiles: currentTrackTiles, rot: trackRotationDeg, sel: trackSel, verlauf: trackVerlauf.length, codes: trackZufallCodes.slice() };
+    const f = [];
+    let alt = null;
+    try { alt = localStorage.getItem(TEILE_KEY); } catch (e) { return { skip: true, mass: 'kein Speicher' }; }
+    try {
+      // Grundpackung: 1 Start, 4 Gerade, 8 rechts, 2 links - ergibt zuverlaessig einen Ring.
+      const inv = {}; inv[TILE_TYPE.START] = 1; inv[TILE_TYPE.STRAIGHT] = 4;
+      inv[TILE_TYPE.CURVE_RIGHT] = 8; inv[TILE_TYPE.CURVE_LEFT] = 2;
+      localStorage.setItem(TEILE_KEY, JSON.stringify(inv));
+      trackZufallCodes = [];
+      const codes = [];
+      // Bis zu TRACK_ZUFALL_CODE_MAX Wuerfe. Harte Zusage: nie zweimal dieselbe in Folge.
+      // Das Dedup-Fenster ist ein "so viele wie moeglich"-Bestreben; wenn der Bestand keine
+      // neue Variante mehr hergibt, ist "Keine neue Variante" ein legitimes Ende - dann brechen
+      // wir ab, ohne den Wurf als Fehler zu werten.
+      for (let i = 0; i < TRACK_ZUFALL_CODE_MAX; i++) {
+        const ok = trackZufall();
+        if (!ok) break;
+        if (!trackZufallPasst(currentTrackTiles)) { f.push('Wurf ' + (i + 1) + ' nicht geschlossen/kreuzungsfrei'); break; }
+        const code = trackToCode(currentTrackTiles, 0);
+        if (i > 0 && code === codes[codes.length - 1]) { f.push('Wurf ' + (i + 1) + ' wiederholte die vorherige Strecke'); break; }
+        codes.push(code);
+      }
+      if (codes.length < 4) f.push('nur ' + codes.length + ' verschiedene Strecken aus der Grundpackung');
+      // Verlauf: mehrere Codes ohne Duplikate, und nicht groesser als das Fenster.
+      if (trackZufallCodes.length < 2) f.push('Verlauf merkt nicht mehrere Codes');
+      if (trackZufallCodes.length > TRACK_ZUFALL_CODE_MAX) f.push('Fenster groesser als ' + TRACK_ZUFALL_CODE_MAX);
+      if (new Set(trackZufallCodes).size !== trackZufallCodes.length) f.push('Verlauf enthaelt Duplikate');
+      // Leerer Bestand: Dialog statt stillem Toast.
+      localStorage.setItem(TEILE_KEY, '{}');
+      const ok3 = trackZufall();
+      if (ok3 !== false) f.push('leerer Bestand gab keine Fehlermeldung');
+      if (!document.getElementById('k-frage') || document.getElementById('k-frage').hidden) {
+        f.push('kein Dialog bei leerem Bestand');
+      }
+      if (typeof konsoleFrageZu === 'function') konsoleFrageZu();
+    } finally {
+      try { if (alt === null) localStorage.removeItem(TEILE_KEY); else localStorage.setItem(TEILE_KEY, alt); } catch (e) { /* egal */ }
+      currentTrackTiles = merk.tiles; trackRotationDeg = merk.rot; trackSel = merk.sel;
+      trackVerlauf.length = Math.min(trackVerlauf.length, merk.verlauf);
+      trackZufallCodes = merk.codes;
+      refreshTrackPreview();
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Wuerfe verschieden, Verlauf gemerkt, leerer Bestand zeigt Dialog' };
+  });
+
   stAdd('Strecke: jede Unterseite hat nur, was sie bezeichnet', () => {
     const f = [];
     const drin = (sub, id) => { const s = $('sub-' + sub); return !!(s && $(id) && s.contains($(id))); };
