@@ -4040,7 +4040,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.77</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.78</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -34287,8 +34287,10 @@
   // direkt beim Sheet fragen.
   // v0.8.44: 8 h statt 2 h. Der Sync schreibt nur bei Aenderungen, dazu spaetestens alle 6 h
   // einen neuen Stand - vorher galt ein ruhiges Sheet nach zwei Stunden als veraltet, und die
-  // App fragte dann doch wieder jede Liste live.
-  const CH_SCHNAPPSCHUSS_MAX_MS = 2 * 3600 * 1000;
+  // App fragte dann doch wieder jede Liste live. 8 h passen zum 6-h-Takt: der Schnappschuss
+  // gilt die meiste Zeit als frisch, und Google wird nur gefragt, wenn er wirklich fehlt
+  // (z. B. die luuke42-Kopie ohne Action) oder zu alt ist.
+  const CH_SCHNAPPSCHUSS_MAX_MS = 8 * 3600 * 1000;
   let chSchnapp = null, chSchnappAt = 0;
   function chSchnappschuss() {
     if (chSchnapp && Date.now() - chSchnappAt < 3 * 60000) return chSchnapp;
