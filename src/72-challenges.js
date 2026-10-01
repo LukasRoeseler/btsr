@@ -263,6 +263,8 @@
     return lang === 'en' ? txt : txt.replace('.', ',');
   }
   function chZahl(x, n) { const s = x.toFixed(n); return lang === 'en' ? s : s.replace('.', ','); }
+  // Schwellen auf Zehntelsekunden runden, z. B. 4639 ms -> "4,6 s".
+  function chSekunden(ms) { return chZahl(ms / 1000, 1) + ' s'; }
 
   // ---- STERNE (v0.8.79). BESTELLT: "auch offline Spass": Bronze fuer das Absolvieren,
   // Silber fuer eine ordentliche, Gold fuer eine gute Zeit. Die Schwellen sind je Strecke
@@ -314,12 +316,12 @@
   function chSterneName(n) {
     return n >= 3 ? t('Gold') : n === 2 ? t('Silber') : n === 1 ? t('Bronze') : '';
   }
-  // Bedingungen je Medaille, z. B. "Gold: bis 4,639 s · Silber: bis 6,959 s · Bronze: gefahren".
+  // Bedingungen je Medaille, z. B. "Gold: bis 4,6 s · Silber: bis 7,0 s · Bronze: gefahren".
   // Im Rennen skaliert die Schwellen mit der Rundenzahl, wie chSterne es auch tut.
   function chMedailleHinweis(def, modus) {
     const s = chSterneSchwellen(def);
     const r = modus === 'rennen' ? (def.runden || 1) : 1;
-    const gold = chZeit(s.gold * r), silber = chZeit(s.silber * r);
+    const gold = chSekunden(s.gold * r), silber = chSekunden(s.silber * r);
     return '<span class="ch-sterne" style="color:var(--gold)">' + chSterneZeichen(3) + '</span> ' + t('Gold')
       + ': ' + t('bis {zeit}').replace('{zeit}', gold) + ' &middot; '
       + '<span class="ch-sterne" style="color:var(--silber)">' + chSterneZeichen(2) + '</span> ' + t('Silber')

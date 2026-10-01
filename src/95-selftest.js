@@ -10636,9 +10636,10 @@
     // Hinweis: Gold/Silber mit Zeit, Bronze ohne Zeit; Rennen skaliert mit der Rundenzahl.
     const h = chMedailleHinweis(imo, 'hotlap');
     if (h.indexOf('Gold') < 0 || h.indexOf('Silber') < 0 || h.indexOf('Bronze') < 0) f.push('Hinweis ohne alle drei Medaillen');
-    if (h.indexOf(chZeit(s.gold)) < 0 || h.indexOf(chZeit(s.silber)) < 0) f.push('Hinweis ohne Zeiten der Schwellen');
+    if (h.indexOf(chSekunden(s.gold)) < 0 || h.indexOf(chSekunden(s.silber)) < 0) f.push('Hinweis ohne Zeiten der Schwellen');
+    if (!/[0-9],[0-9] s|[0-9]\.[0-9] s/.test(h)) f.push('Zeiten nicht auf Zehntelsekunden gerundet: ' + h);
     const hr = chMedailleHinweis(imo, 'rennen');
-    if (hr.indexOf(chZeit(s.gold * imo.runden)) < 0) f.push('Rennen-Hinweis ohne skalierte Goldzeit');
+    if (hr.indexOf(chSekunden(s.gold * imo.runden)) < 0) f.push('Rennen-Hinweis ohne skalierte Goldzeit');
     // Kachel-Rang: ohne eigene Zeit leer; mit Zeit Medaille; Perzentil nur bei Konkurrenz.
     const leer = chRangKachelText(null);
     if (leer !== '') f.push('leerer Rang ist nicht leer: ' + leer);
