@@ -72,6 +72,9 @@
     --good: #3ddc84;
     --bad: #ff5c5c;
     --warn: #ffb02e;
+    --bronze: #cd7f32;
+    --silber: #c0c6cf;
+    --gold: #ffd34d;
     --stripe: #f4f6fb;
     --info: #5aa9ff;      /* the blue side of the track, and links */
     /* The zebra striping and hover washes were semi-transparent navy over white. Over black
@@ -2714,6 +2717,8 @@
   .ch-ergebnis[hidden] { display: none; }
   .ch-erg-titel { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
   .ch-erg-zeit { font-size: 26px; font-weight: 900; font-variant-numeric: tabular-nums; }
+  .ch-erg-sterne { font-size: 20px; margin-top: 2px; }
+  .ch-erg-sterne[hidden] { display: none; }
   .ch-perz { font-weight: 800; margin: 4px 0; }
   .ch-histo { display: grid; grid-template-columns: 62px minmax(0, 1fr) 26px; gap: 3px 8px; align-items: center;
     font-size: 11px; font-variant-numeric: tabular-nums; margin: 6px 0 10px; }
@@ -2723,7 +2728,11 @@
   .ch-h-bar.du { background: var(--k-blau); }
   .ch-tabelle { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
   .ch-tabelle td { padding: 3px 4px; border-top: 1px solid rgba(255,255,255,.06); }
+  .ch-tabelle thead th { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--muted); text-align: left; padding: 2px 4px; }
   .ch-tabelle tr.du td { background: rgba(0,163,224,.2); font-weight: 800; }
+  .ch-sterne-hinweis { font-size: 11px; margin: 2px 0 10px; }
+  .ch-sterne { letter-spacing: .06em; white-space: nowrap; }
   /* ---- Streckeneditor (v0.8.28) ---- */
   .te-warn { border-left: 3px solid var(--warn); padding: 3px 10px; font-size: 12px; color: #f3d9a0; background: rgba(255,180,0,.08); }
   .te-start-reihe { gap: 10px; align-items: center; margin: 8px 0; }
@@ -3948,7 +3957,7 @@
        jetzt ueber die Kachel in den Einstellungen, genau wie Doku/Programmierschule/
        Entwickler/Selbsttest/Code-Sonde ueber Entwicklertools. -->
   <button class="tab-btn" data-tab="control" data-parent="options" hidden style="display:none">Renneinstellungen</button>
-  <button class="tab-btn" data-tab="mp">Mehrspieler</button>
+  <button class="tab-btn" data-tab="mp">WLAN Mehrspieler</button>
   <button class="tab-btn" data-tab="info" data-parent="options" hidden style="display:none">Info</button>
   <button class="tab-btn" data-tab="challenges">Challenges</button>
   <button class="tab-btn" data-tab="misc">Entwicklertools</button>
@@ -4024,7 +4033,7 @@
       <a class="k-apk" id="home-apk" href="https://github.com/LukasRoeseler/btsr/releases/latest/download/OmegaSim.apk" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
              stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
-        <span>Installiere die App f&uuml;r Mehrspieler und Challenges</span></a>
+        <span>Installiere die App f&uuml;r Mehrspieler</span></a>
     <!-- Nur in der Android-App: eine neue Web-Fassung liegt bereit (siehe 97b-app.js).
          Kompakt gehalten (BESTELLT): der Ladebalken liegt im Hintergrund des Laden-Knopfs
          und es gibt einen Abbrechen-Knopf, damit die Box den Titelbildschirm nicht
@@ -4040,7 +4049,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.78</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.79</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4818,6 +4827,7 @@
         <div class="ch-ergebnis" id="ch-ergebnis" hidden>
           <div class="ch-erg-titel" id="ch-erg-titel" data-i18n-skip></div>
           <div class="ch-erg-zeit" id="ch-erg-zeit" data-i18n-skip></div>
+          <div class="ch-erg-sterne" id="ch-erg-sterne" data-i18n-skip hidden></div>
           <div class="muted" id="ch-erg-text" data-i18n-skip></div>
         </div>
         <button type="button" class="ch-umschalter" id="ch-modus" aria-label="Modus umschalten"><span data-m="hotlap">Beste Runde</span><span data-m="rennen">Rennen</span></button>
@@ -4834,7 +4844,11 @@
         <p class="muted ch-stats" id="ch-stats" data-i18n-skip></p>
         <div class="ch-perz" id="ch-perz" data-i18n-skip></div>
         <div class="ch-histo" id="ch-histo"></div>
-        <table class="ch-tabelle"><tbody id="ch-liste"></tbody></table>
+        <table class="ch-tabelle">
+          <thead><tr><th>#</th><th>Fahrer</th><th>Zeit</th><th>Abstand</th><th aria-label="Sterne"></th></tr></thead>
+          <tbody id="ch-liste"></tbody>
+        </table>
+        <p class="muted ch-sterne-hinweis" id="ch-sterne-hinweis"></p>
         <h3 class="ch-zweite" id="ch-zweite-3er">Beste 3er-Serie</h3>
         <p class="muted ch-stats" id="ch-hinweis-3er">Durchschnitt der drei schnellsten aufeinanderfolgenden Runden.</p>
         <table class="ch-tabelle"><tbody id="ch-liste-3er"></tbody></table>
@@ -7657,7 +7671,7 @@
          Status und Rangliste gehoeren zu beiden Wegen: der Block #mp-gemeinsam wandert beim
          Oeffnen in die jeweilige Unterseite (51-konsole.js) - so gibt es jede id nur einmal. -->
     <div class="card subpage-home" id="sub-home-mp">
-      <h2>Mehrspieler im WLAN <span class="wip-tag">experimentell</span></h2>
+      <h2>WLAN Mehrspieler <span class="wip-tag">experimentell</span></h2>
       <p class="muted">
         Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Host ist entweder
         ein PC mit einem kleinen Python-Programm oder ein Telefon mit der Android-App.
@@ -11924,7 +11938,7 @@
     "Während der Challenge gesperrt": "Locked during the challenge",
     "Während einer Challenge sind die Einstellungen gesperrt.": "Settings are locked during a challenge.",
     "Challenges gegen Schummeln: jede Runde wird gegen die Strecke geprüft (mindestens 80 % der Teile erkannt), eine plausible Mindestrundenzeit gilt in App und Bestenliste, und die Einstellungen sind während des Laufs gesperrt; wer sie doch ändert, bricht ab.": "Challenges against cheating: every lap is checked against the track (at least 80 % of the pieces recognised), a plausible minimum lap time applies in the app and the leaderboard, and settings are locked during the run; changing them anyway aborts it.",
-    "Installiere die App für Mehrspieler und Challenges": "Install the app for multiplayer and challenges",
+    "Installiere die App für Mehrspieler": "Install the app for multiplayer",
     "Titelseite im Browser: Link zum Download der neuesten Android-App. Die APK-Release hängt dafür zusätzlich eine Datei mit festem Namen an; die Android-Schicht ist unverändert, neu installieren ist nicht nötig.": "Title page in the browser: link to download the newest Android app. The APK release now also attaches a file with a fixed name; the Android layer is unchanged, no reinstall needed.",
     "Zurück zum Menü": "Back to menu",
     "Zurück zum Menü (Options, Esc)": "Back to menu (Options, Esc)",
@@ -11960,6 +11974,9 @@
     "Challenge abgebrochen": "Challenge aborted",
     "Challenge beendet": "Challenge finished",
     "Gesamtzeit": "Total time",
+    "Bronze": "Bronze",
+    "Silber": "Silver",
+    "Gold": "Gold",
     "Nicht gewertet": "Not counted",
     "Frühstart": "Jump start",
     "abgebrochen, nicht alle Runden gefahren": "aborted, not all laps driven",
@@ -12109,7 +12126,7 @@
     "Deine Strecke": "Your track",
     "Fahrgefühl und Motorsound": "Driving feel and engine sound",
     "Boxenstopp als Minigame": "The pit stop as a minigame",
-    "Mehrspieler und Info-Screen": "Multiplayer and info screen",
+    "WLAN Mehrspieler und Info-Screen": "WIFI Multiplayer and info screen",
     "Los geht's": "Let's go",
     "Tutorial": "Tutorial",
     "Beenden": "Finish",
@@ -13108,7 +13125,6 @@
     "Abgänge": "Departures",
     // Mehrspieler Version A (v0.5). Alle GANZE Textknoten, kein Fragment - die
     // Erklaerabsaetze sind ohne inneres Markup geschrieben.
-    "Mehrspieler im WLAN": "Multiplayer over Wi-Fi",
     "Gezaehlt werden GEMESSENE Runden, genau wie in der Rundenliste im Cockpit: die erste Ueberfahrt startet die Uhr, erst die zweite ergibt eine Zeit. Nach drei Ueberfahrten stehen also zwei Runden da. Bei Gleichstand fuehrt, wer zuerst dort war.": "Counted are MEASURED laps, exactly as in the cockpit lap list: the first crossing starts the clock, only the second yields a time. After three crossings the count shows two laps. On a tie, whoever got there first leads.",
     "Warum es experimentell ist, und der Grund ist eine Browserregel und kein Wackeln im Code: Web Bluetooth verlangt einen secure context. Das sind https, http://localhost und file. Eine Adresse wie http://192.168.1.50:8080 ist keiner – die App laedt dort, aber „Auto verbinden“ bleibt ohne Wirkung. Einmal je Telefon muss man in Chrome unter chrome://flags/#unsafely-treat-insecure-origin-as-secure die Adresse des Hosts eintragen und Chrome neu starten. Damit erklaert man diesen einen Ursprung fuer vertrauenswuerdig; im eigenen WLAN mit dem eigenen PC ist das vertretbar, aber es ist eine Ausnahme von einer Sicherheitsregel und keine Einstellung.": "Why it is experimental – and the reason is a browser rule, not shaky code: Web Bluetooth requires a secure context. Those are https, http://localhost and file. An address like http://192.168.1.50:8080 is not one – the app loads there, but “Connect car” has no effect. Once per phone you have to enter the host address in Chrome under chrome://flags/#unsafely-treat-insecure-origin-as-secure and restart Chrome. Doing so declares that one origin trustworthy; on your own Wi-Fi with your own PC that is defensible, but it is an exception to a security rule and not a setting.",
     "Der Ueberblicksschirm fuer den PC liegt beim Host unter /mp-overview.html. Er braucht kein Bluetooth und deshalb auch keine Freigabe: auf http://localhost ist er ohnehin ein secure context.": "The overview screen for the PC sits on the host at /mp-overview.html. It needs no Bluetooth and therefore no exemption: on http://localhost it is a secure context anyway.",
@@ -13118,6 +13134,8 @@
     "Verlassen": "Leave",
     "keine Daten": "no data",
     "Fahrer": "drivers",
+    "Zeit": "time",
+    "Abstand": "gap",
     "verbunden": "connected",
     "kein Kontakt zum Host": "no contact with the host",
     "Ohne Host-Adresse geht es nicht.": "It does not work without a host address.",
@@ -13171,7 +13189,7 @@
     "bei Bremse": "on the brake",
     "Reifenquietschen": "Tyre squeal",
     "Am Grenzbereich, im Stil von Gran Turismo: Lautstärke und Tonhöhe laufen stetig mit der Querausnutzung des Reibkreises, Einsatz ab 60 Prozent – also ab etwa 98 km/h bei vollem Lenkausschlag, ab 197 km/h bei halbem, und bei einem Viertel Ausschlag nie. Eine Haarnadel quietscht, eine lange schnelle Kurve nicht. Bis v0.4.55 stand die Schwelle bei 85 Prozent und war damit unerreichbar: gemessen kommt die Querausnutzung erst bei 265 km/h dorthin, weil der Lenkausschlag mit dem Tempo beschnitten wird. Es hat deshalb nie gequietscht.": "At the limit, in the style of Gran Turismo: volume and pitch run continuously with the lateral use of the friction circle, starting at 60 per cent – so from about 98 km/h at full lock, from 197 km/h at half, and at a quarter of lock never. A hairpin squeals, a long fast corner does not. Up to v0.4.55 the threshold sat at 85 per cent and was therefore unreachable: measured, the lateral use only gets there at 265 km/h, because the steering lock is cut back with speed. It therefore never squealed.",
-    "Mehrspieler": "Multiplayer",
+    "WLAN Mehrspieler": "WIFI Multiplayer",
     "Sportlich, mit Simulationstiefe": "Sporty, with simulation depth",
     "Von Hand schalten, 2,9 s auf 100, Reifenverschleiß und Tankgewicht knapp zur Hälfte. Bremsfading, Windschatten und ungleicher Verschleiß sind voll an. Die harte, gegen echte Werte kalibrierte Fassung steht daneben als Realismus GT3.": "Shift by hand, 2.9 s to 100, tyre wear and fuel weight at just under half. Brake fade, dirty air and uneven wear are fully on. The hard version, calibrated against real figures, sits next to it as Realism GT3.",
     "Das schärfste der fahrbaren": "The sharpest of the driveable ones",
@@ -21932,7 +21950,7 @@
   const K_EBENE1 = ['fahren', 'mp', 'challenges', 'options', 'misc'];
   const K_NAME = {
     home: 'Titel', fahren: 'Fahren', garage: 'Garage', race: 'Cockpit',
-    options: 'Optionen', control: 'Renneinstellungen', track: 'Strecke', mp: 'Mehrspieler',
+    options: 'Optionen', control: 'Renneinstellungen', track: 'Strecke', mp: 'WLAN Mehrspieler',
     info: 'Info', challenges: 'Challenges', misc: 'Entwickler', doc: 'Doku', school: 'Programmierschule',
     dev: 'BLE-Werkbank', selftest: 'Selbsttest', probe: 'Code-Sonde', numtrain: 'Zahlensysteme',
     record: 'Aufnahme-Modus',
@@ -22844,7 +22862,7 @@
       text: 'Ein Druck startet die Ampel. Im Cockpit fordert Kreuz den Boxenstopp an, Options öffnet das Menü.' },
     { tab: 'fahren', ziel: null, bild: 'box', titel: 'Boxenstopp als Minigame',
       text: 'Beim Stopp erscheinen zehn Tasten. Triffst du Quadrat oder Kreis rechtzeitig, ist die Crew schneller fertig. Abschalten kannst du es unter Optionen, Allgemein, Tank & Schaden.' },
-    { tab: 'mp', ziel: ['#k-reiter button:nth-child(2)', '#sub-home-mp .misc-grid'], bild: 'mehrspieler', titel: 'Mehrspieler und Info-Screen',
+    { tab: 'mp', ziel: ['#k-reiter button:nth-child(2)', '#sub-home-mp .misc-grid'], bild: 'mehrspieler', titel: 'WLAN Mehrspieler und Info-Screen',
       text: 'Mehrere Telefone fahren in einer gemeinsamen Rangliste. Ein Tablet zeigt als Info-Screen Strecke und Zeiten.' },
     { tab: 'fahren', ziel: ['#fa-auto'], bild: 'fahren', titel: "Los geht's",
       text: 'Verbinde jetzt dein erstes Auto. Zum Tutorial kommst du jederzeit zurück: Klick auf das Omega oben links.' },
@@ -34140,6 +34158,59 @@
   }
   function chZahl(x, n) { const s = x.toFixed(n); return lang === 'en' ? s : s.replace('.', ','); }
 
+  // ---- STERNE (v0.8.79). BESTELLT: "auch offline Spass": Bronze fuer das Absolvieren,
+  // Silber fuer eine ordentliche, Gold fuer eine gute Zeit. Die Schwellen sind je Strecke
+  // und Preset (Arcade/Pro) und werden aus der Streckengeometrie gerechnet - eine gute Runde
+  // ist das, was die Messung hergibt: die Geraden bei gemessener Vollgasgeschwindigkeit, die
+  // Kurven langsamer (kalibriert an der besten Imolina-Pro-Runde 4,639 s auf 3,18 m). Der
+  // Nutzer testet die Werte und kann die beiden Faktoren unten nachziehen.
+  const CH_STERNE_V_GERADE = 1.64;        // m/s, gemessene Vollgasgeschwindigkeit
+  const CH_STERNE_V_KURVE = 0.565;        // m/s, kalibriert an Imolina-Pro
+  const CH_STERNE_SILBER_FAKTOR = 1.5;    // Silber = 50 % langsamer als Gold
+  const CH_STERNE_ARCADE_FAKTOR = 0.92;   // Arcade ist einfacher zu fahren -> etwas schnellere Schwellen
+  function chSterneSchwellen(def, preset) {
+    const tiles = chTiles(def);
+    let gerade = 0, kurve = 0;
+    for (const t of tiles) {
+      const len = tileLength(t.type);          // in TRACK_STEP-Einheiten
+      if (tileIsCurve(t.type)) kurve += len; else gerade += len;
+    }
+    const m = TRACK_UNITS_PER_CM * 100;        // Einheiten -> cm -> m
+    gerade /= m; kurve /= m;
+    const gold = (gerade / CH_STERNE_V_GERADE + kurve / CH_STERNE_V_KURVE) * 1000;
+    const f = preset === 'arcade' ? CH_STERNE_ARCADE_FAKTOR : 1;
+    return { silber: Math.round(gold * CH_STERNE_SILBER_FAKTOR * f), gold: Math.round(gold * f) };
+  }
+  // 1 = Bronze (Challenge gefahren), 2 = Silber, 3 = Gold; 0 = keine Wertung.
+  // Im Rennen (rennen) ist die Zeit die Summe ueber def.runden Runden, die Schwellen
+  // werden entsprechend skaliert; Beste-Runde (hotlap) vergleicht eine einzelne Runde.
+  function chSterne(def, preset, modus, zeitMs) {
+    if (!(zeitMs > 0)) return 0;
+    const s = chSterneSchwellen(def, preset);
+    const runden = modus === 'rennen' ? (def.runden || 1) : 1;
+    if (zeitMs <= s.gold * runden) return 3;
+    if (zeitMs <= s.silber * runden) return 2;
+    return 1;
+  }
+  function chSterneText(n) {
+    const farben = { 1: 'var(--bronze)', 2: 'var(--silber)', 3: 'var(--gold)' };
+    if (!farben[n]) return '';
+    let s = '';
+    for (let i = 0; i < n; i++) s += '★';
+    for (let i = n; i < 3; i++) s += '☆';
+    return '<span class="ch-sterne" style="color:' + farben[n] + '">' + s + '</span>';
+  }
+  // Sterne als Klartext (fuer den Ergebnis-Dialog, der keine HTML nimmt).
+  function chSterneZeichen(n) {
+    let s = '';
+    for (let i = 0; i < n; i++) s += '★';
+    for (let i = n; i < 3; i++) s += '☆';
+    return s;
+  }
+  function chSterneName(n) {
+    return n >= 3 ? t('Gold') : n === 2 ? t('Silber') : n === 1 ? t('Bronze') : '';
+  }
+
   // Platzbedarf auf dem Boden in Metern, aus derselben Geometrie wie der Editor (Mittellinie
   // plus halbe Bahnbreite). Mit Drehung 0 gerechnet, unabhaengig von der Editor-Strecke.
   function chFlaeche(tiles) {
@@ -34559,6 +34630,8 @@
         : t('Nicht gewertet');
       let text = erg.gueltig ? chRangText(schl, erg.zeit) : chGrundText(erg);
       if (erg.gueltig) {
+        const sterne = chSterne(def, erg.preset, erg.modus, erg.zeit);
+        text += '\n\n' + chSterneName(sterne) + ' ' + chSterneZeichen(sterne);
         const o = chOnline();
         if (o.url && o.hochladen) {
           text += '\n\n' + (hochgeladen === true ? t('Ergebnis hochgeladen.')
@@ -34694,7 +34767,18 @@
       $('ch-erg-titel').textContent = t(CH_MODUS_NAME[chLetzt.modus]) + ' · ' + (chLetzt.preset === 'pro' ? 'Pro' : 'Arcade');
       $('ch-erg-zeit').textContent = chLetzt.gueltig ? chZeit(chLetzt.zeit) : t('Nicht gewertet');
       $('ch-erg-text').textContent = chLetzt.gueltig ? chRangText(schl, chLetzt.zeit) : chGrundText(chLetzt);
+      const ergSterne = chLetzt.gueltig ? chSterne(chDef(chWahl), chLetzt.preset, chLetzt.modus, chLetzt.zeit) : 0;
+      const ergSt = $('ch-erg-sterne');
+      if (ergSt) { ergSt.innerHTML = chSterneText(ergSterne); ergSt.hidden = !ergSterne; }
     } else e.hidden = true;
+    // Legende der Sterne: Gold = gute, Silber = ordentliche, Bronze = gefahrene Zeit.
+    const lg = $('ch-sterne-hinweis');
+    if (lg) {
+      lg.innerHTML = ''
+        + '<span class="ch-sterne" style="color:var(--gold)">' + chSterneZeichen(3) + '</span> ' + t('Gold')
+        + ' &middot; <span class="ch-sterne" style="color:var(--silber)">' + chSterneZeichen(2) + '</span> ' + t('Silber')
+        + ' &middot; <span class="ch-sterne" style="color:var(--bronze)">' + chSterneZeichen(1) + '</span> ' + t('Bronze');
+    }
     chZeichneListe();
   }
   function chZeichneListe() {
@@ -34765,12 +34849,18 @@
     tb.innerHTML = '';
     const bester = anzeige.length ? +anzeige[0].zeit_ms : 0;
     const ich = chGeraet();
+    const defS = chDef(chWahl);
     anzeige.slice(0, 50).forEach((z, i) => {
       const tr = document.createElement('tr');
       if (z.geraet === ich && +z.zeit_ms === eigene) tr.className = 'du';
+      const sterne = chSterne(defS, chPreset, chModus, +z.zeit_ms);
       const zellen = [String(i + 1), (z.fahrer ? z.fahrer + ' · ' : '') + (z.auto || '–'), chZeit(+z.zeit_ms),
         i ? '+' + chZahl((z.zeit_ms - bester) / 1000, 3) : '–'];
       zellen.forEach((txt) => { const td = document.createElement('td'); td.textContent = txt; td.setAttribute('data-i18n-skip', ''); tr.appendChild(td); });
+      const st = document.createElement('td');
+      st.innerHTML = chSterneText(sterne);
+      st.setAttribute('data-i18n-skip', '');
+      tr.appendChild(st);
       tb.appendChild(tr);
     });
     // Histogramm, oben schnell, die eigene Klasse markiert.
@@ -67352,6 +67442,27 @@
     if (!hb.gueltig || hb.zeit !== 4800) f.push('beste Runde ' + hb.zeit + ' statt 4800 (1500 zu schnell, 4000 ungeprueft)');
     if (chWertung(d3, 'hotlap', [5000], false, false, [ok], 2000, true).gueltig) f.push('geaenderte Einstellungen gewertet');
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'exakt/1 Fehler ok, 2 Fehler/kuerzer/doppelt nein, rueckwaerts und 30->60 ok, Mindestrunde ' + min + ' ms' };
+  });
+
+  stAdd('Challenges: Sterne (Bronze/Silber/Gold) nach Strecke und Preset', () => {
+    const f = [];
+    const imo = chDef('wa01-imolina');
+    // Kalibriert an der gemessenen Imolina-Pro-Bestzeit 4639 ms -> das muss Gold sein.
+    const s = chSterneSchwellen(imo, 'pro');
+    if (!(s.gold > 4000 && s.gold < 5200)) f.push('Imolina-Pro Gold ' + s.gold + ' ms unplausibel (erwartet um 4639)');
+    if (!(s.silber > s.gold)) f.push('Silber muss langsamer (groesser) als Gold sein');
+    // Bronze: jede gewertete Zeit unter Silber; Silber: zwischen Gold und Silber.
+    if (chSterne(imo, 'pro', 'hotlap', 4639) !== 3) f.push('Imolina-Pro 4639 ms ist kein Gold');
+    if (chSterne(imo, 'pro', 'hotlap', Math.round(s.gold + 1)) !== 2) f.push('knapp ueber Gold ist kein Silber');
+    if (chSterne(imo, 'pro', 'hotlap', s.silber * 2) !== 1) f.push('deutlich langsamer ist kein Bronze');
+    if (chSterne(imo, 'pro', 'hotlap', 0) !== 0) f.push('Zeit 0 (keine Wertung) ist keine Bronze');
+    // Arcade ist einfacher: die Schwellen liegen unter denen von Pro.
+    const a = chSterneSchwellen(imo, 'arcade');
+    if (!(a.gold < s.gold)) f.push('Arcade-Gold muss schneller (kleiner) als Pro-Gold sein');
+    // Rennen skaliert mit der Rundenzahl: die Gesamtzeit zaehlt def.runden Runden.
+    const rennen = chSterne(imo, 'pro', 'rennen', s.gold * imo.runden);
+    if (rennen !== 3) f.push('Rennen: Goldzeit ueber ' + imo.runden + ' Runden ist kein Gold');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Gold/Silber/Bronce geordnet, Arcade schneller, Rennen skaliert, Imolina-Kalibrierung ' + s.gold + ' ms' };
   });
 
   stAdd('Challenges: Einstellungen waehrend des Laufs gesperrt und danach frei', () => {

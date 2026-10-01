@@ -72,6 +72,9 @@
     --good: #3ddc84;
     --bad: #ff5c5c;
     --warn: #ffb02e;
+    --bronze: #cd7f32;
+    --silber: #c0c6cf;
+    --gold: #ffd34d;
     --stripe: #f4f6fb;
     --info: #5aa9ff;      /* the blue side of the track, and links */
     /* The zebra striping and hover washes were semi-transparent navy over white. Over black
@@ -2714,6 +2717,8 @@
   .ch-ergebnis[hidden] { display: none; }
   .ch-erg-titel { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
   .ch-erg-zeit { font-size: 26px; font-weight: 900; font-variant-numeric: tabular-nums; }
+  .ch-erg-sterne { font-size: 20px; margin-top: 2px; }
+  .ch-erg-sterne[hidden] { display: none; }
   .ch-perz { font-weight: 800; margin: 4px 0; }
   .ch-histo { display: grid; grid-template-columns: 62px minmax(0, 1fr) 26px; gap: 3px 8px; align-items: center;
     font-size: 11px; font-variant-numeric: tabular-nums; margin: 6px 0 10px; }
@@ -2723,7 +2728,11 @@
   .ch-h-bar.du { background: var(--k-blau); }
   .ch-tabelle { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
   .ch-tabelle td { padding: 3px 4px; border-top: 1px solid rgba(255,255,255,.06); }
+  .ch-tabelle thead th { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--muted); text-align: left; padding: 2px 4px; }
   .ch-tabelle tr.du td { background: rgba(0,163,224,.2); font-weight: 800; }
+  .ch-sterne-hinweis { font-size: 11px; margin: 2px 0 10px; }
+  .ch-sterne { letter-spacing: .06em; white-space: nowrap; }
   /* ---- Streckeneditor (v0.8.28) ---- */
   .te-warn { border-left: 3px solid var(--warn); padding: 3px 10px; font-size: 12px; color: #f3d9a0; background: rgba(255,180,0,.08); }
   .te-start-reihe { gap: 10px; align-items: center; margin: 8px 0; }
@@ -3948,7 +3957,7 @@
        jetzt ueber die Kachel in den Einstellungen, genau wie Doku/Programmierschule/
        Entwickler/Selbsttest/Code-Sonde ueber Entwicklertools. -->
   <button class="tab-btn" data-tab="control" data-parent="options" hidden style="display:none">Renneinstellungen</button>
-  <button class="tab-btn" data-tab="mp">Mehrspieler</button>
+  <button class="tab-btn" data-tab="mp">WLAN Mehrspieler</button>
   <button class="tab-btn" data-tab="info" data-parent="options" hidden style="display:none">Info</button>
   <button class="tab-btn" data-tab="challenges">Challenges</button>
   <button class="tab-btn" data-tab="misc">Entwicklertools</button>
@@ -4024,7 +4033,7 @@
       <a class="k-apk" id="home-apk" href="https://github.com/LukasRoeseler/btsr/releases/latest/download/OmegaSim.apk" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
              stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
-        <span>Installiere die App f&uuml;r Mehrspieler und Challenges</span></a>
+        <span>Installiere die App f&uuml;r Mehrspieler</span></a>
     <!-- Nur in der Android-App: eine neue Web-Fassung liegt bereit (siehe 97b-app.js).
          Kompakt gehalten (BESTELLT): der Ladebalken liegt im Hintergrund des Laden-Knopfs
          und es gibt einen Abbrechen-Knopf, damit die Box den Titelbildschirm nicht
@@ -4040,7 +4049,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.78</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.79</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4818,6 +4827,7 @@
         <div class="ch-ergebnis" id="ch-ergebnis" hidden>
           <div class="ch-erg-titel" id="ch-erg-titel" data-i18n-skip></div>
           <div class="ch-erg-zeit" id="ch-erg-zeit" data-i18n-skip></div>
+          <div class="ch-erg-sterne" id="ch-erg-sterne" data-i18n-skip hidden></div>
           <div class="muted" id="ch-erg-text" data-i18n-skip></div>
         </div>
         <button type="button" class="ch-umschalter" id="ch-modus" aria-label="Modus umschalten"><span data-m="hotlap">Beste Runde</span><span data-m="rennen">Rennen</span></button>
@@ -4834,7 +4844,11 @@
         <p class="muted ch-stats" id="ch-stats" data-i18n-skip></p>
         <div class="ch-perz" id="ch-perz" data-i18n-skip></div>
         <div class="ch-histo" id="ch-histo"></div>
-        <table class="ch-tabelle"><tbody id="ch-liste"></tbody></table>
+        <table class="ch-tabelle">
+          <thead><tr><th>#</th><th>Fahrer</th><th>Zeit</th><th>Abstand</th><th aria-label="Sterne"></th></tr></thead>
+          <tbody id="ch-liste"></tbody>
+        </table>
+        <p class="muted ch-sterne-hinweis" id="ch-sterne-hinweis"></p>
         <h3 class="ch-zweite" id="ch-zweite-3er">Beste 3er-Serie</h3>
         <p class="muted ch-stats" id="ch-hinweis-3er">Durchschnitt der drei schnellsten aufeinanderfolgenden Runden.</p>
         <table class="ch-tabelle"><tbody id="ch-liste-3er"></tbody></table>
@@ -7657,7 +7671,7 @@
          Status und Rangliste gehoeren zu beiden Wegen: der Block #mp-gemeinsam wandert beim
          Oeffnen in die jeweilige Unterseite (51-konsole.js) - so gibt es jede id nur einmal. -->
     <div class="card subpage-home" id="sub-home-mp">
-      <h2>Mehrspieler im WLAN <span class="wip-tag">experimentell</span></h2>
+      <h2>WLAN Mehrspieler <span class="wip-tag">experimentell</span></h2>
       <p class="muted">
         Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Host ist entweder
         ein PC mit einem kleinen Python-Programm oder ein Telefon mit der Android-App.

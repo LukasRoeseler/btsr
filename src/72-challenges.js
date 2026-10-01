@@ -261,6 +261,59 @@
   }
   function chZahl(x, n) { const s = x.toFixed(n); return lang === 'en' ? s : s.replace('.', ','); }
 
+  // ---- STERNE (v0.8.79). BESTELLT: "auch offline Spass": Bronze fuer das Absolvieren,
+  // Silber fuer eine ordentliche, Gold fuer eine gute Zeit. Die Schwellen sind je Strecke
+  // und Preset (Arcade/Pro) und werden aus der Streckengeometrie gerechnet - eine gute Runde
+  // ist das, was die Messung hergibt: die Geraden bei gemessener Vollgasgeschwindigkeit, die
+  // Kurven langsamer (kalibriert an der besten Imolina-Pro-Runde 4,639 s auf 3,18 m). Der
+  // Nutzer testet die Werte und kann die beiden Faktoren unten nachziehen.
+  const CH_STERNE_V_GERADE = 1.64;        // m/s, gemessene Vollgasgeschwindigkeit
+  const CH_STERNE_V_KURVE = 0.565;        // m/s, kalibriert an Imolina-Pro
+  const CH_STERNE_SILBER_FAKTOR = 1.5;    // Silber = 50 % langsamer als Gold
+  const CH_STERNE_ARCADE_FAKTOR = 0.92;   // Arcade ist einfacher zu fahren -> etwas schnellere Schwellen
+  function chSterneSchwellen(def, preset) {
+    const tiles = chTiles(def);
+    let gerade = 0, kurve = 0;
+    for (const t of tiles) {
+      const len = tileLength(t.type);          // in TRACK_STEP-Einheiten
+      if (tileIsCurve(t.type)) kurve += len; else gerade += len;
+    }
+    const m = TRACK_UNITS_PER_CM * 100;        // Einheiten -> cm -> m
+    gerade /= m; kurve /= m;
+    const gold = (gerade / CH_STERNE_V_GERADE + kurve / CH_STERNE_V_KURVE) * 1000;
+    const f = preset === 'arcade' ? CH_STERNE_ARCADE_FAKTOR : 1;
+    return { silber: Math.round(gold * CH_STERNE_SILBER_FAKTOR * f), gold: Math.round(gold * f) };
+  }
+  // 1 = Bronze (Challenge gefahren), 2 = Silber, 3 = Gold; 0 = keine Wertung.
+  // Im Rennen (rennen) ist die Zeit die Summe ueber def.runden Runden, die Schwellen
+  // werden entsprechend skaliert; Beste-Runde (hotlap) vergleicht eine einzelne Runde.
+  function chSterne(def, preset, modus, zeitMs) {
+    if (!(zeitMs > 0)) return 0;
+    const s = chSterneSchwellen(def, preset);
+    const runden = modus === 'rennen' ? (def.runden || 1) : 1;
+    if (zeitMs <= s.gold * runden) return 3;
+    if (zeitMs <= s.silber * runden) return 2;
+    return 1;
+  }
+  function chSterneText(n) {
+    const farben = { 1: 'var(--bronze)', 2: 'var(--silber)', 3: 'var(--gold)' };
+    if (!farben[n]) return '';
+    let s = '';
+    for (let i = 0; i < n; i++) s += '★';
+    for (let i = n; i < 3; i++) s += '☆';
+    return '<span class="ch-sterne" style="color:' + farben[n] + '">' + s + '</span>';
+  }
+  // Sterne als Klartext (fuer den Ergebnis-Dialog, der keine HTML nimmt).
+  function chSterneZeichen(n) {
+    let s = '';
+    for (let i = 0; i < n; i++) s += '★';
+    for (let i = n; i < 3; i++) s += '☆';
+    return s;
+  }
+  function chSterneName(n) {
+    return n >= 3 ? t('Gold') : n === 2 ? t('Silber') : n === 1 ? t('Bronze') : '';
+  }
+
   // Platzbedarf auf dem Boden in Metern, aus derselben Geometrie wie der Editor (Mittellinie
   // plus halbe Bahnbreite). Mit Drehung 0 gerechnet, unabhaengig von der Editor-Strecke.
   function chFlaeche(tiles) {
@@ -680,6 +733,8 @@
         : t('Nicht gewertet');
       let text = erg.gueltig ? chRangText(schl, erg.zeit) : chGrundText(erg);
       if (erg.gueltig) {
+        const sterne = chSterne(def, erg.preset, erg.modus, erg.zeit);
+        text += '\n\n' + chSterneName(sterne) + ' ' + chSterneZeichen(sterne);
         const o = chOnline();
         if (o.url && o.hochladen) {
           text += '\n\n' + (hochgeladen === true ? t('Ergebnis hochgeladen.')
@@ -815,7 +870,18 @@
       $('ch-erg-titel').textContent = t(CH_MODUS_NAME[chLetzt.modus]) + ' · ' + (chLetzt.preset === 'pro' ? 'Pro' : 'Arcade');
       $('ch-erg-zeit').textContent = chLetzt.gueltig ? chZeit(chLetzt.zeit) : t('Nicht gewertet');
       $('ch-erg-text').textContent = chLetzt.gueltig ? chRangText(schl, chLetzt.zeit) : chGrundText(chLetzt);
+      const ergSterne = chLetzt.gueltig ? chSterne(chDef(chWahl), chLetzt.preset, chLetzt.modus, chLetzt.zeit) : 0;
+      const ergSt = $('ch-erg-sterne');
+      if (ergSt) { ergSt.innerHTML = chSterneText(ergSterne); ergSt.hidden = !ergSterne; }
     } else e.hidden = true;
+    // Legende der Sterne: Gold = gute, Silber = ordentliche, Bronze = gefahrene Zeit.
+    const lg = $('ch-sterne-hinweis');
+    if (lg) {
+      lg.innerHTML = ''
+        + '<span class="ch-sterne" style="color:var(--gold)">' + chSterneZeichen(3) + '</span> ' + t('Gold')
+        + ' &middot; <span class="ch-sterne" style="color:var(--silber)">' + chSterneZeichen(2) + '</span> ' + t('Silber')
+        + ' &middot; <span class="ch-sterne" style="color:var(--bronze)">' + chSterneZeichen(1) + '</span> ' + t('Bronze');
+    }
     chZeichneListe();
   }
   function chZeichneListe() {
@@ -886,12 +952,18 @@
     tb.innerHTML = '';
     const bester = anzeige.length ? +anzeige[0].zeit_ms : 0;
     const ich = chGeraet();
+    const defS = chDef(chWahl);
     anzeige.slice(0, 50).forEach((z, i) => {
       const tr = document.createElement('tr');
       if (z.geraet === ich && +z.zeit_ms === eigene) tr.className = 'du';
+      const sterne = chSterne(defS, chPreset, chModus, +z.zeit_ms);
       const zellen = [String(i + 1), (z.fahrer ? z.fahrer + ' · ' : '') + (z.auto || '–'), chZeit(+z.zeit_ms),
         i ? '+' + chZahl((z.zeit_ms - bester) / 1000, 3) : '–'];
       zellen.forEach((txt) => { const td = document.createElement('td'); td.textContent = txt; td.setAttribute('data-i18n-skip', ''); tr.appendChild(td); });
+      const st = document.createElement('td');
+      st.innerHTML = chSterneText(sterne);
+      st.setAttribute('data-i18n-skip', '');
+      tr.appendChild(st);
       tb.appendChild(tr);
     });
     // Histogramm, oben schnell, die eigene Klasse markiert.

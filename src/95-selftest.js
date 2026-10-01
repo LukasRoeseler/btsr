@@ -10611,6 +10611,27 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'exakt/1 Fehler ok, 2 Fehler/kuerzer/doppelt nein, rueckwaerts und 30->60 ok, Mindestrunde ' + min + ' ms' };
   });
 
+  stAdd('Challenges: Sterne (Bronze/Silber/Gold) nach Strecke und Preset', () => {
+    const f = [];
+    const imo = chDef('wa01-imolina');
+    // Kalibriert an der gemessenen Imolina-Pro-Bestzeit 4639 ms -> das muss Gold sein.
+    const s = chSterneSchwellen(imo, 'pro');
+    if (!(s.gold > 4000 && s.gold < 5200)) f.push('Imolina-Pro Gold ' + s.gold + ' ms unplausibel (erwartet um 4639)');
+    if (!(s.silber > s.gold)) f.push('Silber muss langsamer (groesser) als Gold sein');
+    // Bronze: jede gewertete Zeit unter Silber; Silber: zwischen Gold und Silber.
+    if (chSterne(imo, 'pro', 'hotlap', 4639) !== 3) f.push('Imolina-Pro 4639 ms ist kein Gold');
+    if (chSterne(imo, 'pro', 'hotlap', Math.round(s.gold + 1)) !== 2) f.push('knapp ueber Gold ist kein Silber');
+    if (chSterne(imo, 'pro', 'hotlap', s.silber * 2) !== 1) f.push('deutlich langsamer ist kein Bronze');
+    if (chSterne(imo, 'pro', 'hotlap', 0) !== 0) f.push('Zeit 0 (keine Wertung) ist keine Bronze');
+    // Arcade ist einfacher: die Schwellen liegen unter denen von Pro.
+    const a = chSterneSchwellen(imo, 'arcade');
+    if (!(a.gold < s.gold)) f.push('Arcade-Gold muss schneller (kleiner) als Pro-Gold sein');
+    // Rennen skaliert mit der Rundenzahl: die Gesamtzeit zaehlt def.runden Runden.
+    const rennen = chSterne(imo, 'pro', 'rennen', s.gold * imo.runden);
+    if (rennen !== 3) f.push('Rennen: Goldzeit ueber ' + imo.runden + ' Runden ist kein Gold');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Gold/Silber/Bronce geordnet, Arcade schneller, Rennen skaliert, Imolina-Kalibrierung ' + s.gold + ' ms' };
+  });
+
   stAdd('Challenges: Einstellungen waehrend des Laufs gesperrt und danach frei', () => {
     const f = [];
     const pm = $('phys-mode'), fm = $('race-act-mode');
