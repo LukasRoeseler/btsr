@@ -10124,6 +10124,32 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Quadrat gehoert dem Spiel, kein Gangwechsel, Abbruch beendet es' };
   });
 
+  stAdd('Boxen-Minigame: der letzte Knopf ist immer Kreis', () => {
+    const merk = { modus: pitModus, an: pitLaneEnabled, trig: pitTrigger, kmh: physEngine.state.speedKmh };
+    const reifen = pitSpielReifenMerk();
+    const f = [];
+    try {
+      pitModus = 'minigame'; pitLaneEnabled = true; pitTrigger = 'anywhere';
+      physEngine.state.speedKmh = 0; throttleY = 0;
+      for (let i = 0; i < 8; i++) {
+        setPitState('off'); pitRearmBlockedUntil = 0;
+        setPitState('limited'); pitLastTick = 0; pitLaneTick();
+        if (!pitSpielAktiv()) { f.push('kein Minigame-Stopp'); break; }
+        const folge = pitSpiel.folge;
+        if (!folge.length) { f.push('leere Folge'); break; }
+        if (folge[folge.length - 1] !== 'kreis') f.push('letzter Knopf ist ' + folge[folge.length - 1] + ' statt Kreis');
+        if (folge.some(x => x !== 'quad' && x !== 'kreis')) f.push('unbekannter Knopf in der Folge');
+        setPitState('off');
+      }
+    } finally {
+      setPitState('off'); pitRearmBlockedUntil = 0;
+      pitModus = merk.modus; pitLaneEnabled = merk.an; pitTrigger = merk.trig;
+      physEngine.state.speedKmh = merk.kmh;
+      pitSpielReifenZurueck(reifen);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : '8 Stopps, letzter Knopf immer Kreis' };
+  });
+
   stAdd('Tutorial: startet vom Titel, führt durch alle Schritte, Kreis zurück', () => {
     const merk = kAktiverTab();
     const f = [];
@@ -10385,6 +10411,39 @@
       refreshTrackPreview();
     }
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Wuerfe verschieden, Verlauf gemerkt, leerer Bestand zeigt Dialog' };
+  });
+
+  stAdd('Zufallsstrecke: passt in den eingestellten Raum (45°-Schritte)', () => {
+    const merk = { tiles: currentTrackTiles, rot: trackRotationDeg, sel: trackSel, verlauf: trackVerlauf.length };
+    const f = [];
+    let alt = null, altRaum = null;
+    try { alt = localStorage.getItem(TEILE_KEY); } catch (e) { return { skip: true, mass: 'kein Speicher' }; }
+    try { altRaum = localStorage.getItem(RAUM_KEY); } catch (e) { /* egal */ }
+    try {
+      if (!$('teile-raum-x') || !$('teile-raum-y')) f.push('Raumfelder fehlen in Meine Teile');
+      const inv = {}; inv[TILE_TYPE.START] = 1; inv[TILE_TYPE.STRAIGHT] = 4;
+      inv[TILE_TYPE.CURVE_RIGHT] = 8; inv[TILE_TYPE.CURVE_LEFT] = 2;
+      localStorage.setItem(TEILE_KEY, JSON.stringify(inv));
+      // Grosser Raum (3 m x 3 m): es muss eine Strecke hineinpassen, und sie darf in 45°-Schritten gedreht werden.
+      localStorage.setItem(RAUM_KEY, JSON.stringify({ x: 3, y: 3 }));
+      const ok = trackZufall();
+      if (!ok) f.push('3x3 m Raum ergab keine Strecke');
+      else {
+        if (!trackZufallPasst(currentTrackTiles)) f.push('gebaut nicht geschlossen/kreuzungsfrei');
+        if (trackZufallPasstRaum(currentTrackTiles) < 0) f.push('Strecke passt nicht in den Raum');
+      }
+      // Winziger Raum (0,5 m x 0,5 m): nichts darf hineinpassen.
+      localStorage.setItem(RAUM_KEY, JSON.stringify({ x: 0.5, y: 0.5 }));
+      const okKlein = trackZufall();
+      if (okKlein !== false) f.push('0,5x0,5 m Raum liess doch eine Strecke zu');
+    } finally {
+      try { if (alt === null) localStorage.removeItem(TEILE_KEY); else localStorage.setItem(TEILE_KEY, alt); } catch (e) { /* egal */ }
+      try { if (altRaum === null) localStorage.removeItem(RAUM_KEY); else localStorage.setItem(RAUM_KEY, altRaum); } catch (e) { /* egal */ }
+      currentTrackTiles = merk.tiles; trackRotationDeg = merk.rot; trackSel = merk.sel;
+      trackVerlauf.length = Math.min(trackVerlauf.length, merk.verlauf);
+      refreshTrackPreview();
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'grosser Raum baut eine passende Strecke, winziger nicht' };
   });
 
   stAdd('Strecke: jede Unterseite hat nur, was sie bezeichnet', () => {

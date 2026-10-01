@@ -3412,6 +3412,11 @@
 
   // ---- MEINE TEILE: was im Karton ist, und was die Strecke davon braucht --------------
   const TEILE_KEY = 'omegasim-teile';
+  // BESTELLT: "let me determine the maximum size of the room as a rectangle (x and y, in
+  // meters, format X.Y)". Die Zufallsstrecke muss in dieses Rechteck passen (45°-Schritte).
+  // Default 2,6 m x 2,6 m = das bisherige Mockup-Mass.
+  const RAUM_KEY = 'omegasim-raum';
+  const RAUM_DEFAULT = { x: 2.6, y: 2.6 };
   const TEILE_SORTEN = [TILE_TYPE.START, TILE_TYPE.STRAIGHT, TILE_TYPE.CURVE_LEFT, TILE_TYPE.CURVE_RIGHT,
     TILE_TYPE.HAIRPIN_LEFT, TILE_TYPE.HAIRPIN, TILE_TYPE.WEIT_LEFT, TILE_TYPE.WEIT_RIGHT,
     TILE_TYPE.KLEIN_LEFT, TILE_TYPE.KLEIN_RIGHT, TILE_TYPE.PIT, TILE_TYPE.ENGE];
@@ -3431,6 +3436,17 @@
       const x = JSON.parse(localStorage.getItem(TEILE_KEY) || 'null');
       return x && typeof x === 'object' ? x : null;
     } catch (e) { return null; }
+  }
+  // Raumgrenzen (m) fuer die Zufallsstrecke. Fehlt der Eintrag oder ist er unbrauchbar,
+  // gilt das Mockup-Mass (2,6 m x 2,6 m).
+  function teileRaum() {
+    let r = null;
+    try { r = JSON.parse(localStorage.getItem(RAUM_KEY) || 'null'); } catch (e) { r = null; }
+    if (!r || typeof r !== 'object' || !(r.x > 0) || !(r.y > 0)) return { x: RAUM_DEFAULT.x, y: RAUM_DEFAULT.y };
+    return { x: +r.x, y: +r.y };
+  }
+  function teileRaumSpeichern(r) {
+    try { localStorage.setItem(RAUM_KEY, JSON.stringify({ x: +r.x, y: +r.y })); } catch (e) { /* privat */ }
   }
   function teileSpeichern(b) {
     try { if (b) localStorage.setItem(TEILE_KEY, JSON.stringify(b)); else localStorage.removeItem(TEILE_KEY); } catch (e) { /* privat */ }
@@ -3528,6 +3544,27 @@
   teileKnopf('teile-enge', () => teilePaket('enge'));
   teileKnopf('teile-leer', () => { const n = {}; TEILE_SORTEN.forEach((x) => { n[x] = 0; }); teileSpeichern(n); });
   teileZeichnen();
+
+  // Raumgrenzen (m) fuer die Zufallsstrecke: zwei Felder "Breite" und "Tiefe", Format X.Y (z. B. 1,2).
+  const raumX = $('teile-raum-x'), raumY = $('teile-raum-y');
+  if (raumX && raumY) {
+    const anzeigen = () => {
+      const r = teileRaum();
+      raumX.value = String(r.x);
+      raumY.value = String(r.y);
+    };
+    const lesen = () => {
+      // Punkt und Komma gleichwertig (X.Y oder X,Y), sonst gilt das Mockup-Mass.
+      const parse = (v) => { const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) && n > 0 ? Math.min(99, n) : null; };
+      const x = parse(raumX.value), y = parse(raumY.value);
+      const r = { x: x === null ? RAUM_DEFAULT.x : x, y: y === null ? RAUM_DEFAULT.y : y };
+      teileRaumSpeichern(r);
+      anzeigen();
+    };
+    raumX.addEventListener('change', lesen);
+    raumY.addEventListener('change', lesen);
+    anzeigen();
+  }
 
   // Anzeige oben im Vollbild: Laenge, Teilebilanz; dazu die Tastenbelegung.
   function trackInfoZeichnen() {
@@ -3842,6 +3879,32 @@
     const s = trackSchluss(pts);
     return s.closed && s.lueckeCm <= TRACK_SCHLUSS_STRENG_CM && trackKreuzungsfrei(pts);
   }
+  // Passt die Strecke in den angegebenen Raum? Die Strecke darf in 45°-Schritten gedreht
+  // werden, deshalb wird jede der 8 Lagen geprueft. Rueckgabe: die passende Drehung in Grad
+  // (0, 45, ...) oder -1, wenn keine Lage in den Raum passt. Die Drehung ist dieselbe wie
+  // trackRotationDeg (Startkurs), sodass man die Strecke direkt in die passende Lage drehen kann.
+  function trackZufallPasstRaum(tiles) {
+    const r = teileRaum();
+    const raumX = r.x * 100, raumY = r.y * 100;  // cm
+    const pts = trackCenterline(tiles);
+    for (let step = 0; step < 8; step++) {
+      const rad = step * 45 * Math.PI / 180;
+      const cos = Math.cos(rad), sin = Math.sin(rad);
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const p of pts) {
+        const x = p.x * cos - p.y * sin;
+        const y = p.x * sin + p.y * cos;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+      if ((maxX - minX) / TRACK_UNITS_PER_CM <= raumX && (maxY - minY) / TRACK_UNITS_PER_CM <= raumY) {
+        return step * 45;
+      }
+    }
+    return -1;
+  }
   // =========================================================================
   // Zufallsstrecke: frei zusammenbauen statt "zwei Haelfte".
   //
@@ -4094,6 +4157,7 @@
     // Versuche wird der mit den wenigsten ungenutzten Teilen behalten - so naehert sich die
     // Zufallsstrecke dem Ziel, den ganzen Bestand zu verbrauchen.
     let beste = null, besteAnders = null, besteGleich = null;
+    let raumZuKlein = false;
     const letzte = trackZufallCodes.length ? trackZufallCodes[trackZufallCodes.length - 1] : null;
     const besser = (a, z) => !a || z.rest < a.rest || (z.rest === a.rest && Math.random() < 0.4);
     const startZeit = performance.now();
@@ -4132,19 +4196,12 @@
       if (!tiles) continue;
       trackRotationDeg = 0;
       if (!trackZufallPasst(tiles)) continue;
-      // Fussabdruck im Rahmen des Mockups (max. ~2,6 m) halten.
-      const pts = trackCenterline(tiles);
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      for (const p of pts) {
-        if (p.x < minX) minX = p.x;
-        if (p.x > maxX) maxX = p.x;
-        if (p.y < minY) minY = p.y;
-        if (p.y > maxY) maxY = p.y;
-      }
-      if ((maxX - minX) / TRACK_UNITS_PER_CM > 260 || (maxY - minY) / TRACK_UNITS_PER_CM > 260) continue;
+      // Fussabdruck: die Strecke muss in den angegebenen Raum passen (45°-Schritte).
+      const rot = trackZufallPasstRaum(tiles);
+      if (rot < 0) { raumZuKlein = true; continue; }
       const rest = trackZufallRest(tiles, b);
       const code = trackToCode(tiles, 0);
-      const kandidat = { tiles, rest, code };
+      const kandidat = { tiles, rest, code, rot };
       if (!trackZufallCodeKennt(code) && besser(beste, kandidat)) beste = kandidat;
       if (code !== letzte && besser(besteAnders, kandidat)) besteAnders = kandidat;
       if (besser(besteGleich, kandidat)) besteGleich = kandidat;
@@ -4154,7 +4211,7 @@
       trackMerken();
       currentTrackTiles = wahl.tiles;
       trackSel = null;
-      trackRotationDeg = 0;
+      trackRotationDeg = wahl.rot || 0;
       refreshTrackPreview();
       trackZufallCodeMerken(wahl.code);
       showHudToast(t('Zufällige Strecke gebaut'));
@@ -4162,6 +4219,10 @@
     }
     if (besteGleich) {
       showHudToast(t('Zufall: Keine neue Variante möglich'));
+      return false;
+    }
+    if (raumZuKlein) {
+      showHudToast(t('Zufall: Raum zu klein für einen Rundkurs'));
       return false;
     }
     showHudToast(t('Zufall: Nicht genug Kurventeile für einen Rundkurs'));

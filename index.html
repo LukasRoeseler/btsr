@@ -4052,7 +4052,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.83</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.84</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -10476,6 +10476,16 @@
         <button id="teile-enge">+ Engstelle</button>
         <button id="teile-leer">Alles auf 0</button>
       </div>
+      <!-- BESTELLT: "let me determine the maximum size of the room as a rectangle (x and y, in
+           meters, format X.Y). The generated track must fit into that rectangle. Remember that
+           you can turn the track in 45° steps." -->
+      <div class="row" style="gap:6px; flex-wrap:wrap; align-items:center; margin-top:10px">
+        <span class="muted">Zufallsstrecke: max. Raum (m)</span>
+        <label for="teile-raum-x">Breite (m)</label>
+        <input id="teile-raum-x" type="text" inputmode="decimal" pattern="[0-9]+[.,][0-9]" style="width:76px">
+        <label for="teile-raum-y">Tiefe (m)</label>
+        <input id="teile-raum-y" type="text" inputmode="decimal" pattern="[0-9]+[.,][0-9]" style="width:76px">
+      </div>
       <div class="teile-liste" id="teile-liste"></div>
     </div>
     <div class="card subpage" id="sub-scan">
@@ -12047,6 +12057,10 @@
     "+ 30°-Außenkurven-Set": "+ 30° outer curve set",
     "+ Engstelle": "+ Narrow section",
     "Alles auf 0": "All to 0",
+    "Zufallsstrecke: max. Raum (m)": "Random track: max. room (m)",
+    "Breite (m)": "Width (m)",
+    "Tiefe (m)": "Depth (m)",
+    "Zufall: Raum zu klein für einen Rundkurs": "Random: Room too small for a lap",
     "Entfernen": "Remove",
     "45° L": "45° L",
     "45° R": "45° R",
@@ -26535,6 +26549,11 @@
 
   // ---- MEINE TEILE: was im Karton ist, und was die Strecke davon braucht --------------
   const TEILE_KEY = 'omegasim-teile';
+  // BESTELLT: "let me determine the maximum size of the room as a rectangle (x and y, in
+  // meters, format X.Y)". Die Zufallsstrecke muss in dieses Rechteck passen (45°-Schritte).
+  // Default 2,6 m x 2,6 m = das bisherige Mockup-Mass.
+  const RAUM_KEY = 'omegasim-raum';
+  const RAUM_DEFAULT = { x: 2.6, y: 2.6 };
   const TEILE_SORTEN = [TILE_TYPE.START, TILE_TYPE.STRAIGHT, TILE_TYPE.CURVE_LEFT, TILE_TYPE.CURVE_RIGHT,
     TILE_TYPE.HAIRPIN_LEFT, TILE_TYPE.HAIRPIN, TILE_TYPE.WEIT_LEFT, TILE_TYPE.WEIT_RIGHT,
     TILE_TYPE.KLEIN_LEFT, TILE_TYPE.KLEIN_RIGHT, TILE_TYPE.PIT, TILE_TYPE.ENGE];
@@ -26554,6 +26573,17 @@
       const x = JSON.parse(localStorage.getItem(TEILE_KEY) || 'null');
       return x && typeof x === 'object' ? x : null;
     } catch (e) { return null; }
+  }
+  // Raumgrenzen (m) fuer die Zufallsstrecke. Fehlt der Eintrag oder ist er unbrauchbar,
+  // gilt das Mockup-Mass (2,6 m x 2,6 m).
+  function teileRaum() {
+    let r = null;
+    try { r = JSON.parse(localStorage.getItem(RAUM_KEY) || 'null'); } catch (e) { r = null; }
+    if (!r || typeof r !== 'object' || !(r.x > 0) || !(r.y > 0)) return { x: RAUM_DEFAULT.x, y: RAUM_DEFAULT.y };
+    return { x: +r.x, y: +r.y };
+  }
+  function teileRaumSpeichern(r) {
+    try { localStorage.setItem(RAUM_KEY, JSON.stringify({ x: +r.x, y: +r.y })); } catch (e) { /* privat */ }
   }
   function teileSpeichern(b) {
     try { if (b) localStorage.setItem(TEILE_KEY, JSON.stringify(b)); else localStorage.removeItem(TEILE_KEY); } catch (e) { /* privat */ }
@@ -26651,6 +26681,27 @@
   teileKnopf('teile-enge', () => teilePaket('enge'));
   teileKnopf('teile-leer', () => { const n = {}; TEILE_SORTEN.forEach((x) => { n[x] = 0; }); teileSpeichern(n); });
   teileZeichnen();
+
+  // Raumgrenzen (m) fuer die Zufallsstrecke: zwei Felder "Breite" und "Tiefe", Format X.Y (z. B. 1,2).
+  const raumX = $('teile-raum-x'), raumY = $('teile-raum-y');
+  if (raumX && raumY) {
+    const anzeigen = () => {
+      const r = teileRaum();
+      raumX.value = String(r.x);
+      raumY.value = String(r.y);
+    };
+    const lesen = () => {
+      // Punkt und Komma gleichwertig (X.Y oder X,Y), sonst gilt das Mockup-Mass.
+      const parse = (v) => { const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) && n > 0 ? Math.min(99, n) : null; };
+      const x = parse(raumX.value), y = parse(raumY.value);
+      const r = { x: x === null ? RAUM_DEFAULT.x : x, y: y === null ? RAUM_DEFAULT.y : y };
+      teileRaumSpeichern(r);
+      anzeigen();
+    };
+    raumX.addEventListener('change', lesen);
+    raumY.addEventListener('change', lesen);
+    anzeigen();
+  }
 
   // Anzeige oben im Vollbild: Laenge, Teilebilanz; dazu die Tastenbelegung.
   function trackInfoZeichnen() {
@@ -26965,6 +27016,32 @@
     const s = trackSchluss(pts);
     return s.closed && s.lueckeCm <= TRACK_SCHLUSS_STRENG_CM && trackKreuzungsfrei(pts);
   }
+  // Passt die Strecke in den angegebenen Raum? Die Strecke darf in 45°-Schritten gedreht
+  // werden, deshalb wird jede der 8 Lagen geprueft. Rueckgabe: die passende Drehung in Grad
+  // (0, 45, ...) oder -1, wenn keine Lage in den Raum passt. Die Drehung ist dieselbe wie
+  // trackRotationDeg (Startkurs), sodass man die Strecke direkt in die passende Lage drehen kann.
+  function trackZufallPasstRaum(tiles) {
+    const r = teileRaum();
+    const raumX = r.x * 100, raumY = r.y * 100;  // cm
+    const pts = trackCenterline(tiles);
+    for (let step = 0; step < 8; step++) {
+      const rad = step * 45 * Math.PI / 180;
+      const cos = Math.cos(rad), sin = Math.sin(rad);
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const p of pts) {
+        const x = p.x * cos - p.y * sin;
+        const y = p.x * sin + p.y * cos;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+      if ((maxX - minX) / TRACK_UNITS_PER_CM <= raumX && (maxY - minY) / TRACK_UNITS_PER_CM <= raumY) {
+        return step * 45;
+      }
+    }
+    return -1;
+  }
   // =========================================================================
   // Zufallsstrecke: frei zusammenbauen statt "zwei Haelfte".
   //
@@ -27217,6 +27294,7 @@
     // Versuche wird der mit den wenigsten ungenutzten Teilen behalten - so naehert sich die
     // Zufallsstrecke dem Ziel, den ganzen Bestand zu verbrauchen.
     let beste = null, besteAnders = null, besteGleich = null;
+    let raumZuKlein = false;
     const letzte = trackZufallCodes.length ? trackZufallCodes[trackZufallCodes.length - 1] : null;
     const besser = (a, z) => !a || z.rest < a.rest || (z.rest === a.rest && Math.random() < 0.4);
     const startZeit = performance.now();
@@ -27255,19 +27333,12 @@
       if (!tiles) continue;
       trackRotationDeg = 0;
       if (!trackZufallPasst(tiles)) continue;
-      // Fussabdruck im Rahmen des Mockups (max. ~2,6 m) halten.
-      const pts = trackCenterline(tiles);
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      for (const p of pts) {
-        if (p.x < minX) minX = p.x;
-        if (p.x > maxX) maxX = p.x;
-        if (p.y < minY) minY = p.y;
-        if (p.y > maxY) maxY = p.y;
-      }
-      if ((maxX - minX) / TRACK_UNITS_PER_CM > 260 || (maxY - minY) / TRACK_UNITS_PER_CM > 260) continue;
+      // Fussabdruck: die Strecke muss in den angegebenen Raum passen (45°-Schritte).
+      const rot = trackZufallPasstRaum(tiles);
+      if (rot < 0) { raumZuKlein = true; continue; }
       const rest = trackZufallRest(tiles, b);
       const code = trackToCode(tiles, 0);
-      const kandidat = { tiles, rest, code };
+      const kandidat = { tiles, rest, code, rot };
       if (!trackZufallCodeKennt(code) && besser(beste, kandidat)) beste = kandidat;
       if (code !== letzte && besser(besteAnders, kandidat)) besteAnders = kandidat;
       if (besser(besteGleich, kandidat)) besteGleich = kandidat;
@@ -27277,7 +27348,7 @@
       trackMerken();
       currentTrackTiles = wahl.tiles;
       trackSel = null;
-      trackRotationDeg = 0;
+      trackRotationDeg = wahl.rot || 0;
       refreshTrackPreview();
       trackZufallCodeMerken(wahl.code);
       showHudToast(t('Zufällige Strecke gebaut'));
@@ -27285,6 +27356,10 @@
     }
     if (besteGleich) {
       showHudToast(t('Zufall: Keine neue Variante möglich'));
+      return false;
+    }
+    if (raumZuKlein) {
+      showHudToast(t('Zufall: Raum zu klein für einen Rundkurs'));
       return false;
     }
     showHudToast(t('Zufall: Nicht genug Kurventeile für einen Rundkurs'));
@@ -31589,6 +31664,10 @@
     const T = pitSpielDauer(pitPlan);
     const folge = [];
     for (let i = 0; i < PIT_SPIEL_ANZAHL; i++) folge.push(Math.random() < 0.5 ? 'quad' : 'kreis');
+    // BESTELLT: "the last button is always circle, otherwise I shift into rear gear". Der
+    // letzte Knopf im Spiel ist immer Kreis, damit ein danach gedruecktes Quadrat (K) nicht
+    // aus Versehen in den Rueckwaertsgang schaltet.
+    if (folge.length) folge[folge.length - 1] = 'kreis';
     // Fenster 200 ms laenger als ein Zehntel. Zuerst 100 ms (BESTELLT: "Mach die Zeiten im
     // Pitstop ca. 100 ms laenger"), seit v0.8.38 200 ms (BESTELLT: "nicht 600 ms sondern 200 ms").
     pitSpiel = { T, bonus: 0, folge, i: 0, fensterAb: 0, fensterS: T / PIT_SPIEL_ANZAHL + 0.2,
@@ -31602,13 +31681,25 @@
     if (sp.i >= sp.folge.length) return true;
     // BESTELLT: "Wenn ich die falsche Taste druecke, fuege Zeit hinzu. Wenn ich richtig
     // druecke, ziehe Zeit ab." Beides um 5 % der Grundzeit.
-    if (welche === sp.folge[sp.i]) { sp.bonus += PIT_SPIEL_BONUS * sp.T; sp.treffer++; sp.blitz = 'ok'; }
-    else { sp.bonus -= PIT_SPIEL_BONUS * sp.T; sp.fehler++; sp.blitz = 'falsch'; }
+    if (welche === sp.folge[sp.i]) { sp.bonus += PIT_SPIEL_BONUS * sp.T; sp.treffer++; sp.blitz = 'ok'; pitSpielTon(true); }
+    else { sp.bonus -= PIT_SPIEL_BONUS * sp.T; sp.fehler++; sp.blitz = 'falsch'; pitSpielTon(false); }
     sp.blitzBis = pitStandElapsed + 0.3;
     sp.i++;
     sp.fensterAb = pitStandElapsed;
     pitSpielMalen();
     return true;
+  }
+  // BESTELLT: "give positive and negative feedback noises for button presses". Richtig: ein
+  // heller, aufsteigender Ton. Falsch: ein dunkler, abfallender Brummton. playTone() schaltet
+  // sich selbst aus, wenn der Ton aus oder audioCtx noch nicht da ist.
+  function pitSpielTon(gut) {
+    if (gut) {
+      playTone(880, 0.06, 'sine', 0.2);
+      setTimeout(() => playTone(1320, 0.09, 'sine', 0.2), 45);
+    } else {
+      playTone(200, 0.12, 'square', 0.16);
+      setTimeout(() => playTone(140, 0.14, 'square', 0.14), 70);
+    }
   }
   function pitSpielTick(dt) {
     const sp = pitSpiel, pl = pitPlan || {};
@@ -67184,6 +67275,32 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Quadrat gehoert dem Spiel, kein Gangwechsel, Abbruch beendet es' };
   });
 
+  stAdd('Boxen-Minigame: der letzte Knopf ist immer Kreis', () => {
+    const merk = { modus: pitModus, an: pitLaneEnabled, trig: pitTrigger, kmh: physEngine.state.speedKmh };
+    const reifen = pitSpielReifenMerk();
+    const f = [];
+    try {
+      pitModus = 'minigame'; pitLaneEnabled = true; pitTrigger = 'anywhere';
+      physEngine.state.speedKmh = 0; throttleY = 0;
+      for (let i = 0; i < 8; i++) {
+        setPitState('off'); pitRearmBlockedUntil = 0;
+        setPitState('limited'); pitLastTick = 0; pitLaneTick();
+        if (!pitSpielAktiv()) { f.push('kein Minigame-Stopp'); break; }
+        const folge = pitSpiel.folge;
+        if (!folge.length) { f.push('leere Folge'); break; }
+        if (folge[folge.length - 1] !== 'kreis') f.push('letzter Knopf ist ' + folge[folge.length - 1] + ' statt Kreis');
+        if (folge.some(x => x !== 'quad' && x !== 'kreis')) f.push('unbekannter Knopf in der Folge');
+        setPitState('off');
+      }
+    } finally {
+      setPitState('off'); pitRearmBlockedUntil = 0;
+      pitModus = merk.modus; pitLaneEnabled = merk.an; pitTrigger = merk.trig;
+      physEngine.state.speedKmh = merk.kmh;
+      pitSpielReifenZurueck(reifen);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : '8 Stopps, letzter Knopf immer Kreis' };
+  });
+
   stAdd('Tutorial: startet vom Titel, führt durch alle Schritte, Kreis zurück', () => {
     const merk = kAktiverTab();
     const f = [];
@@ -67445,6 +67562,39 @@
       refreshTrackPreview();
     }
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Wuerfe verschieden, Verlauf gemerkt, leerer Bestand zeigt Dialog' };
+  });
+
+  stAdd('Zufallsstrecke: passt in den eingestellten Raum (45°-Schritte)', () => {
+    const merk = { tiles: currentTrackTiles, rot: trackRotationDeg, sel: trackSel, verlauf: trackVerlauf.length };
+    const f = [];
+    let alt = null, altRaum = null;
+    try { alt = localStorage.getItem(TEILE_KEY); } catch (e) { return { skip: true, mass: 'kein Speicher' }; }
+    try { altRaum = localStorage.getItem(RAUM_KEY); } catch (e) { /* egal */ }
+    try {
+      if (!$('teile-raum-x') || !$('teile-raum-y')) f.push('Raumfelder fehlen in Meine Teile');
+      const inv = {}; inv[TILE_TYPE.START] = 1; inv[TILE_TYPE.STRAIGHT] = 4;
+      inv[TILE_TYPE.CURVE_RIGHT] = 8; inv[TILE_TYPE.CURVE_LEFT] = 2;
+      localStorage.setItem(TEILE_KEY, JSON.stringify(inv));
+      // Grosser Raum (3 m x 3 m): es muss eine Strecke hineinpassen, und sie darf in 45°-Schritten gedreht werden.
+      localStorage.setItem(RAUM_KEY, JSON.stringify({ x: 3, y: 3 }));
+      const ok = trackZufall();
+      if (!ok) f.push('3x3 m Raum ergab keine Strecke');
+      else {
+        if (!trackZufallPasst(currentTrackTiles)) f.push('gebaut nicht geschlossen/kreuzungsfrei');
+        if (trackZufallPasstRaum(currentTrackTiles) < 0) f.push('Strecke passt nicht in den Raum');
+      }
+      // Winziger Raum (0,5 m x 0,5 m): nichts darf hineinpassen.
+      localStorage.setItem(RAUM_KEY, JSON.stringify({ x: 0.5, y: 0.5 }));
+      const okKlein = trackZufall();
+      if (okKlein !== false) f.push('0,5x0,5 m Raum liess doch eine Strecke zu');
+    } finally {
+      try { if (alt === null) localStorage.removeItem(TEILE_KEY); else localStorage.setItem(TEILE_KEY, alt); } catch (e) { /* egal */ }
+      try { if (altRaum === null) localStorage.removeItem(RAUM_KEY); else localStorage.setItem(RAUM_KEY, altRaum); } catch (e) { /* egal */ }
+      currentTrackTiles = merk.tiles; trackRotationDeg = merk.rot; trackSel = merk.sel;
+      trackVerlauf.length = Math.min(trackVerlauf.length, merk.verlauf);
+      refreshTrackPreview();
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'grosser Raum baut eine passende Strecke, winziger nicht' };
   });
 
   stAdd('Strecke: jede Unterseite hat nur, was sie bezeichnet', () => {

@@ -4052,7 +4052,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.83</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.84</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -10475,6 +10475,16 @@
         <button id="teile-dreissig">+ 30&deg;-Au&szlig;enkurven-Set</button>
         <button id="teile-enge">+ Engstelle</button>
         <button id="teile-leer">Alles auf 0</button>
+      </div>
+      <!-- BESTELLT: "let me determine the maximum size of the room as a rectangle (x and y, in
+           meters, format X.Y). The generated track must fit into that rectangle. Remember that
+           you can turn the track in 45° steps." -->
+      <div class="row" style="gap:6px; flex-wrap:wrap; align-items:center; margin-top:10px">
+        <span class="muted">Zufallsstrecke: max. Raum (m)</span>
+        <label for="teile-raum-x">Breite (m)</label>
+        <input id="teile-raum-x" type="text" inputmode="decimal" pattern="[0-9]+[.,][0-9]" style="width:76px">
+        <label for="teile-raum-y">Tiefe (m)</label>
+        <input id="teile-raum-y" type="text" inputmode="decimal" pattern="[0-9]+[.,][0-9]" style="width:76px">
       </div>
       <div class="teile-liste" id="teile-liste"></div>
     </div>

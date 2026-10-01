@@ -3550,6 +3550,10 @@
     const T = pitSpielDauer(pitPlan);
     const folge = [];
     for (let i = 0; i < PIT_SPIEL_ANZAHL; i++) folge.push(Math.random() < 0.5 ? 'quad' : 'kreis');
+    // BESTELLT: "the last button is always circle, otherwise I shift into rear gear". Der
+    // letzte Knopf im Spiel ist immer Kreis, damit ein danach gedruecktes Quadrat (K) nicht
+    // aus Versehen in den Rueckwaertsgang schaltet.
+    if (folge.length) folge[folge.length - 1] = 'kreis';
     // Fenster 200 ms laenger als ein Zehntel. Zuerst 100 ms (BESTELLT: "Mach die Zeiten im
     // Pitstop ca. 100 ms laenger"), seit v0.8.38 200 ms (BESTELLT: "nicht 600 ms sondern 200 ms").
     pitSpiel = { T, bonus: 0, folge, i: 0, fensterAb: 0, fensterS: T / PIT_SPIEL_ANZAHL + 0.2,
@@ -3563,13 +3567,25 @@
     if (sp.i >= sp.folge.length) return true;
     // BESTELLT: "Wenn ich die falsche Taste druecke, fuege Zeit hinzu. Wenn ich richtig
     // druecke, ziehe Zeit ab." Beides um 5 % der Grundzeit.
-    if (welche === sp.folge[sp.i]) { sp.bonus += PIT_SPIEL_BONUS * sp.T; sp.treffer++; sp.blitz = 'ok'; }
-    else { sp.bonus -= PIT_SPIEL_BONUS * sp.T; sp.fehler++; sp.blitz = 'falsch'; }
+    if (welche === sp.folge[sp.i]) { sp.bonus += PIT_SPIEL_BONUS * sp.T; sp.treffer++; sp.blitz = 'ok'; pitSpielTon(true); }
+    else { sp.bonus -= PIT_SPIEL_BONUS * sp.T; sp.fehler++; sp.blitz = 'falsch'; pitSpielTon(false); }
     sp.blitzBis = pitStandElapsed + 0.3;
     sp.i++;
     sp.fensterAb = pitStandElapsed;
     pitSpielMalen();
     return true;
+  }
+  // BESTELLT: "give positive and negative feedback noises for button presses". Richtig: ein
+  // heller, aufsteigender Ton. Falsch: ein dunkler, abfallender Brummton. playTone() schaltet
+  // sich selbst aus, wenn der Ton aus oder audioCtx noch nicht da ist.
+  function pitSpielTon(gut) {
+    if (gut) {
+      playTone(880, 0.06, 'sine', 0.2);
+      setTimeout(() => playTone(1320, 0.09, 'sine', 0.2), 45);
+    } else {
+      playTone(200, 0.12, 'square', 0.16);
+      setTimeout(() => playTone(140, 0.14, 'square', 0.14), 70);
+    }
   }
   function pitSpielTick(dt) {
     const sp = pitSpiel, pl = pitPlan || {};
