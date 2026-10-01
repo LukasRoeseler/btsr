@@ -3187,7 +3187,8 @@
      596 px unbenutzt, nachdem die feste Hoehe weg war. Der Ausnahmefall gehoert an die
      Karte und nicht an den Host: die Leisten sollen mittig bleiben. */
   body.track-fs #track-fs-host > #track-preview-svg { height: auto; min-height: 0;
-    align-self: stretch; overflow: hidden; display: grid; place-items: center; }
+    align-self: stretch; overflow: hidden; display: grid; place-items: center;
+    padding-bottom: 0; }
   /* Der Warnabsatz ueber die unvollstaendige Palette ist mit v0.6.18 ganz entfallen - die
      fehlenden Kacheltypen sind vermessen und eingebaut. Die Regel bleibt trotzdem stehen:
      sie sagt, dass in diesen Kasten keine Prosa gehoert. Ein Absatz nimmt hier eine eigene
@@ -4052,7 +4053,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.84</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.85</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5074,7 +5075,7 @@
         <li>Gas-, Brems- und Lenkkennlinie ab Werk 2,45. Neu: &bdquo;Voller Einschlag bei&ldquo; (Vorgabe 90 % Stickweg, experimentell), darunter lenkt der Stick schon, am Anfang schw&auml;cher als linear; Lenkkalibrierung verschiebt den Punkt nicht mehr. Wer noch auf den alten Vorgaben stand, bekommt die neuen einmalig; eigene Werte bleiben.</li>
         <li>Challenges: Einstellungen unter der Streckenkarte, Bestenliste rechts; Modus und Preset schaltet &#10005; um. Fr&uuml;hstart bei allen Starts mit Ampel: kein Abbruch mehr, sondern kurz ausgebremst, sobald das Auto nach Gr&uuml;n f&auml;hrt. Silverbrook-Rennen mit einem Pflichtstopp (Boxen-Minigame, egal wo).</li>
         <li>Titel-Glitch je Buchstabe zuf&auml;llig blau oder rot, oben und unten getrennt. &bdquo;Abseits&ldquo; erscheint jetzt gro&szlig; in der Mitte des Cockpits. Autos-Kachel zeigt wieder den Namen statt &bdquo;[object HTMLSpanElement]&ldquo;. Boxen-Minigame: Tasten stehen 100 ms l&auml;nger.</li>
-        <li>Challenges gegen Schummeln: jede Runde wird gegen die Strecke gepr&uuml;ft (mindestens 80 % der Teile erkannt), eine plausible Mindestrundenzeit gilt in App und Bestenliste, und die Einstellungen sind w&auml;hrend des Laufs gesperrt; wer sie doch &auml;ndert, bricht ab.</li>
+        <li>Challenges gegen Schummeln: jede Runde wird gegen die Strecke gepr&uuml;ft (mindestens 90 % der Teile erkannt), eine plausible Mindestrundenzeit gilt in App und Bestenliste, und die Einstellungen sind w&auml;hrend des Laufs gesperrt; wer sie doch &auml;ndert, bricht ab.</li>
         <li>Titelseite im Browser: Link zum Download der neuesten Android-App. Die APK-Release h&auml;ngt daf&uuml;r zus&auml;tzlich eine Datei mit festem Namen an; die Android-Schicht ist unver&auml;ndert, neu installieren ist nicht n&ouml;tig.</li>
         <li>Cockpit immer im Vollbild, der Men&uuml;-Knopf dort zeigt jetzt &bdquo;Zur&uuml;ck&ldquo;. Reiter oben: Fahren, Mehrspieler, Challenges, Optionen. Die Info-Kacheln stehen direkt in den Optionen unter einer eigenen Überschrift. Challenges: Strecken hei&szlig;en Monzetta, Suzuna, Monte Carlito und Silverbrook, der Name f&uuml;r die Bestenliste l&auml;sst sich auf jeder Strecken-Seite festlegen, das Perzentil z&auml;hlt je Spieler. Neue Kachel- und Hintergrundbilder im Fahren-Men&uuml;.</li>
         <li>Challenges: die Bestenliste kommt aus einem st&uuml;ndlichen Schnappschuss im Repo, dazu sofort die eigenen Zeiten; das Hochladen wiederholt bei Aussetzern.</li>

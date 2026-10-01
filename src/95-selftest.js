@@ -10833,7 +10833,7 @@
     const def = chDef('kehre');
     try {
       chAnwenden(def, 'rennen', 'pro');
-      if ($('race-mode').value !== 'laps' || raceLimit !== def.runden) f.push('Rennen nicht auf ' + def.runden + ' Runden');
+      if ($('race-mode').value !== 'laps' || raceLimit !== def.runden + CH_EXTRA_LAPS) f.push('Rennen nicht auf ' + def.runden + ' Runden (+ ' + CH_EXTRA_LAPS + ' Ausgleichsrunden)');
       if ($('phys-mode').value !== 'physik') f.push('Steuerungsmodus nicht Physik');
       if (window.__presetActive && window.__presetActive() !== 'pro') f.push('Preset ist ' + window.__presetActive());
       if ($('race-wx-start').value !== 'dry' || $('race-pit-required').value !== '0') f.push('Wetter/Pflichtstopps nicht neutral');
@@ -10860,7 +10860,7 @@
     try { alt = localStorage.getItem(CH_STORE); } catch (e) { return { skip: true, mass: 'kein Speicher' }; }
     try {
       const idB = CHALLENGES[1].id;
-      localStorage.setItem(CH_STORE, JSON.stringify({ [idB + '|hotlap|pro']: [{ zeit: 4200, auto: 'Test', geraet: 'x' }, { zeit: 4800, auto: 'Test', geraet: 'x' }] }));
+      localStorage.setItem(CH_STORE, JSON.stringify({ [idB + '|hotlap|pro']: [{ zeit: 4200, auto: 'Test', geraet: 'x' }, { zeit: 4800, auto: 'Test', geraet: 'y' }] }));
       showTab('challenges');
       showSubpage('ch-b');
       if (!$('sub-ch-b').contains($('ch-detail')) || $('ch-detail').hidden) f.push('Inhalt nicht in der Seite');

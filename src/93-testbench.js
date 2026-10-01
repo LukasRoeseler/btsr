@@ -1312,14 +1312,15 @@
                      tab: (document.querySelector('.tabpage.active') || {}).id };
       try {
         showTab('race');
-        $('race-mode').value = 'practice';
+        const vor = $('race-mode').value;
+        $('race-mode').value = vor === 'practice' ? 'laps' : 'practice';
         $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
         const modeNach = $('race-mode').value;
         return {
           armiert: false, modeZurueck: 'practice',
           screenErreichbar: COCKPIT_SCREENS.every((s) => s.id !== 'renneinstellungen'),
           nurEineZeileVorher: true, bewegtSich: false, umlaufKehrtZurueck: true,
-          modeVorWahl: 'practice', modeNachWahl: modeNach,
+          modeVorWahl: vor, modeNachWahl: modeNach,
         };
       } finally {
         raceScreenLimitArmed = false;

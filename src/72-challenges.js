@@ -203,7 +203,7 @@
   // fehlendes, ein falsches oder ein zusaetzliches Teil kostet je eines. Eine kuerzere oder
   // andere Bahn faellt damit heraus, eine einzelne Fehllesung nicht. Faehrt jemand die
   // Strecke andersherum, gilt dieselbe Strecke gespiegelt und rueckwaerts.
-  const CH_PRUEF_QUOTE = 0.8;
+  const CH_PRUEF_QUOTE = 0.9;          
   // BESTELLT: "wenn eine Runde nicht zaehlt, einfach eine extra fahren". Im Rundenrennen
   // duerfen so viele Laeufe verpatzt werden, wie diese Reserve hergibt; die Wertung summiert
   // dann die ersten CH_EXTRA_LAPS gueltigen Runden. Die Strecke wird nie frueher beendet.
@@ -894,7 +894,7 @@
       ? t('So viele Runden du willst, die schnellste zählt. Schluss mit der Rennen-Taste (R1).')
       : t('{n} Runden ab stehendem Start, die Gesamtzeit zählt. Zählt eine Runde nicht, fährst du eine extra.').replace('{n}', def.runden)
         + (chPflichtstopp(def, 'rennen') ? ' ' + t('Pflichtstopp: einmal an die Box (Boxen-Minigame), egal wo.') : ''))
-      + ' ' + t('Jede Runde wird gegen die Strecke geprüft: mindestens 80 % der Teile müssen erkannt werden. Einstellungen sind gesperrt.');
+      + ' ' + t('Jede Runde wird gegen die Strecke geprüft: mindestens 90 % der Teile müssen erkannt werden. Einstellungen sind gesperrt.');
     const mh = $('ch-medaille-hinweis');
     if (mh) mh.innerHTML = chMedailleHinweis(def, chModus);
     // Teile: nur, was unter Strecke > Meine Teile eingetragen ist.
@@ -932,6 +932,7 @@
     chZeichneListe();
   }
   function chZeichneListe() {
+    const def = chDef(chWahl);
     const schl = chSchluessel(chWahl, chModus, chPreset);
     const l = chListen[schl] || {};
     const a = chAlleZeiten(schl);

@@ -288,7 +288,8 @@
       else if (dir === 'left') { if (bx >= ax - 2 || !selbeZeile) return; haupt = a.left - b.right; quer = Math.abs(by - ay); }
       else if (dir === 'down') { if (by <= ay + 2) return; haupt = b.top - a.bottom; quer = Math.abs(bx - ax); }
       else { if (by >= ay - 2) return; haupt = a.top - b.bottom; quer = Math.abs(bx - ax); }
-      const wert = Math.max(0, haupt) + quer * 2.5;
+      const wert = Math.max(0, haupt) + quer * 2.5
+        - ((dir === 'down' || dir === 'up') && cur.el.contains(r.el) ? 1000 : 0);
       if (wert < bestWert) { bestWert = wert; best = i; }
     });
     // Am Rand einer Kachel mit Wert (data-quad, zeigt ◀ ▶): den Wert umschalten statt nichts
