@@ -191,10 +191,15 @@
     if (teileZeilen.length) {
       const tRows = [];
       if (back && menuNavSichtbar(back)) tRows.push({ el: back, kind: 'button', control: back });
+      // Raumgrenzen (Breite/Tiefe) stehen ueber der Teileliste; links/rechts aendert sie.
+      host.querySelectorAll('.raum-zeile').forEach((el) => {
+        if (menuNavSichtbar(el)) tRows.push({ el, kind: 'raum', control: el, achse: el.dataset.achse });
+      });
       teileZeilen.forEach((el) => tRows.push({ el, kind: 'teile', control: el }));
       host.querySelectorAll('button').forEach((el) => {
         if (el.classList.contains('subpage-back') || el.classList.contains('misc-back')) return;
         if (el.closest('.teile-zeile')) return;
+        if (el.closest('.raum-zeile')) return;
         if (menuNavSichtbar(el)) tRows.push({ el, kind: 'button', control: el });
       });
       return tRows;
@@ -453,6 +458,13 @@
         const typ = row.el.dataset.teile;
         if (typ !== undefined) teileAendern(typ, dir === 'left' ? -1 : 1);
       }
+    } else if (row.kind === 'raum') {
+      // Raumgrenze: links/rechts aendert die fokussierte Achse (0,1 je Schritt, beim
+      // Halten 0,5) - dieselbe Stelle wie die Minus/Plus-Knoepfe in "Meine Teile".
+      if (typeof raumAendern === 'function') {
+        const achse = row.achse;
+        if (achse) raumAendern(achse, dir === 'left' ? -(gross ? 0.5 : 0.1) : (gross ? 0.5 : 0.1));
+      }
     } else {
       return false;
     }
@@ -488,7 +500,7 @@
     // "Meine Teile" darf wie eine Skala beim Halten weiterlaufen (viel hin und her waehlen).
     const rows = menuNavRows();
     const zeile = rows[menuNavIndex];
-    if (!zeile || (zeile.kind !== 'range' && zeile.kind !== 'teile')) return;
+    if (!zeile || (zeile.kind !== 'range' && zeile.kind !== 'teile' && zeile.kind !== 'raum')) return;
     const seitZugbeginn = jetzt - menuNavHoldStart;
     const beschleunigt = seitZugbeginn >= MENU_NAV_ACCEL_MS;
     const naechsterSchrittNach = menuNavLastStep === menuNavHoldStart

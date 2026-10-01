@@ -2684,6 +2684,19 @@
     if (o.detailed) {
       all.push(...offsetPath(pts, nrm, half + 6), ...offsetPath(pts, nrm, -(half + 6)));
     }
+    // Raum-Rechteck (o.raum, in Metern): die Zufallsstrecke muss in dieses Rechteck passen.
+    // Es wird mittig auf den Umriss der Strecke gelegt und erweitert die Ansicht, damit es
+    // nicht am Kartenrand abgeschnitten wird. Nur der Editor (o.raum) zeichnet es.
+    let raumRect = null;
+    if (o.raum && o.raum.x > 0 && o.raum.y > 0) {
+      const cxs = pts.map(p => p.x), cys = pts.map(p => p.y);
+      const cx = (Math.min(...cxs) + Math.max(...cxs)) / 2;
+      const cy = (Math.min(...cys) + Math.max(...cys)) / 2;
+      const rw = o.raum.x * 100 * TRACK_UNITS_PER_CM / 2;
+      const rh = o.raum.y * 100 * TRACK_UNITS_PER_CM / 2;
+      raumRect = { x: cx - rw, y: cy - rh, w: rw * 2, h: rh * 2 };
+      all.push([raumRect.x, raumRect.y], [raumRect.x + raumRect.w, raumRect.y + raumRect.h]);
+    }
     const xs = all.map(p => p[0]), ys = all.map(p => p[1]);
     const minX = Math.min(...xs), maxX = Math.max(...xs);
     const minY = Math.min(...ys), maxY = Math.max(...ys);
@@ -2942,6 +2955,11 @@
               + `<path d="M ${grid} 0 L 0 0 0 ${grid}" fill="none" stroke="rgba(140,155,180,.30)" stroke-width="0.7"/>`
               + `</pattern></defs>`
               + `<rect x="0" y="0" width="${w.toFixed(0)}" height="${h.toFixed(0)}" fill="url(#tp-grid)"/>`;
+    }
+    if (raumRect) {
+      body += `<rect x="${(raumRect.x + ox).toFixed(1)}" y="${(raumRect.y + oy).toFixed(1)}" `
+        + `width="${raumRect.w.toFixed(1)}" height="${raumRect.h.toFixed(1)}" fill="none" `
+        + `stroke="rgba(110,160,255,.55)" stroke-width="1.5" stroke-dasharray="7 5"/>`;
     }
     const html = `<svg class="tp-karte" viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}">${gridSvg}${body}</svg>`;
     // DIE GEOMETRIE MIT HERAUS, damit ein Aufrufer Punkte setzen kann, ohne die Strecke neu
@@ -3272,9 +3290,11 @@
     // Start/Ziel-Linie.
     if (trackSel !== null && trackSel >= currentTrackTiles.length) trackSel = null;
     const imEditor = document.body.classList.contains('track-fs');
+    const raum = teileRaum();
     const result = renderTrackPreview(currentTrackTiles, null,
       { detailed: true, cars: trackCarMarks(), echt: true, auswahl: imEditor ? trackSelIndex() : null,
-        ohneLinie: !editorSchalter.linie, grid: true });
+        ohneLinie: !editorSchalter.linie, grid: true,
+        raum: (raum.x > 0 || raum.y > 0) ? raum : null });
     $('track-preview-svg').innerHTML = result.html;
     trackEditorGeo = result.geo || null;
     trackInfoZeichnen();
@@ -3414,9 +3434,10 @@
   const TEILE_KEY = 'omegasim-teile';
   // BESTELLT: "let me determine the maximum size of the room as a rectangle (x and y, in
   // meters, format X.Y)". Die Zufallsstrecke muss in dieses Rechteck passen (45°-Schritte).
-  // Default 2,6 m x 2,6 m = das bisherige Mockup-Mass.
+  // Default 0 m x 0 m = keine Begrenzung: die Zufallsstrecke ignoriert den Raum, bis der
+  // Nutzer eine Groesse eintraegt. Ein Wert 0 je Achse heisst "diese Richtung unbegrenzt".
   const RAUM_KEY = 'omegasim-raum';
-  const RAUM_DEFAULT = { x: 2.6, y: 2.6 };
+  const RAUM_DEFAULT = { x: 0, y: 0 };
   const TEILE_SORTEN = [TILE_TYPE.START, TILE_TYPE.STRAIGHT, TILE_TYPE.CURVE_LEFT, TILE_TYPE.CURVE_RIGHT,
     TILE_TYPE.HAIRPIN_LEFT, TILE_TYPE.HAIRPIN, TILE_TYPE.WEIT_LEFT, TILE_TYPE.WEIT_RIGHT,
     TILE_TYPE.KLEIN_LEFT, TILE_TYPE.KLEIN_RIGHT, TILE_TYPE.PIT, TILE_TYPE.ENGE];
@@ -3438,15 +3459,15 @@
     } catch (e) { return null; }
   }
   // Raumgrenzen (m) fuer die Zufallsstrecke. Fehlt der Eintrag oder ist er unbrauchbar,
-  // gilt das Mockup-Mass (2,6 m x 2,6 m).
+  // gilt 0 x 0 - also keine Begrenzung. 0 je Achse heisst "diese Richtung unbegrenzt".
   function teileRaum() {
     let r = null;
     try { r = JSON.parse(localStorage.getItem(RAUM_KEY) || 'null'); } catch (e) { r = null; }
-    if (!r || typeof r !== 'object' || !(r.x > 0) || !(r.y > 0)) return { x: RAUM_DEFAULT.x, y: RAUM_DEFAULT.y };
-    return { x: +r.x, y: +r.y };
+    if (!r || typeof r !== 'object') return { x: 0, y: 0 };
+    return { x: Math.max(0, +r.x || 0), y: Math.max(0, +r.y || 0) };
   }
   function teileRaumSpeichern(r) {
-    try { localStorage.setItem(RAUM_KEY, JSON.stringify({ x: +r.x, y: +r.y })); } catch (e) { /* privat */ }
+    try { localStorage.setItem(RAUM_KEY, JSON.stringify({ x: +r.x || 0, y: +r.y || 0 })); } catch (e) { /* privat */ }
   }
   function teileSpeichern(b) {
     try { if (b) localStorage.setItem(TEILE_KEY, JSON.stringify(b)); else localStorage.removeItem(TEILE_KEY); } catch (e) { /* privat */ }
@@ -3545,25 +3566,69 @@
   teileKnopf('teile-leer', () => { const n = {}; TEILE_SORTEN.forEach((x) => { n[x] = 0; }); teileSpeichern(n); });
   teileZeichnen();
 
+  // Raumgrenze (m) einer Achse um delta aendern (0,1 je Schritt, beim Halten groesser).
+  // Top-level, damit das Steuerkreuz in 50b-menu-nav.js (row.kind 'raum') dieselbe Stelle
+  // schreibt wie die Minus/Plus-Knoepfe - keine zweite Kopie von teileRaum().
+  function raumAendern(achse, delta) {
+    const r = teileRaum();
+    r[achse] = Math.max(0, Math.min(99, Math.round((r[achse] + delta) * 10) / 10));
+    teileRaumSpeichern(r);
+    if (typeof raumAnzeigen === 'function') raumAnzeigen();
+    // Das Raum-Rechteck zeichnet erst der Editor (refreshTrackPreview). Beim Halten der
+    // Knoepfe wuerde jede 0,1-Stufe sonst die teure Streckenberechnung neu ausloesen.
+    if (document.body.classList.contains('track-fs')) refreshTrackPreview();
+  }
+
   // Raumgrenzen (m) fuer die Zufallsstrecke: zwei Felder "Breite" und "Tiefe", Format X.Y (z. B. 1,2).
+  // 0 (oder leer) heisst "keine Begrenzung". Minus/Plus-Knoepfe aendern um 0,1, beim Halten
+  // beschleunigt (erst schneller, dann groessere Schritte) - dasselbe Muster wie das Steuerkreuz.
   const raumX = $('teile-raum-x'), raumY = $('teile-raum-y');
+  let raumAnzeigen = () => {};
   if (raumX && raumY) {
-    const anzeigen = () => {
+    raumAnzeigen = () => {
       const r = teileRaum();
       raumX.value = String(r.x);
       raumY.value = String(r.y);
     };
     const lesen = () => {
-      // Punkt und Komma gleichwertig (X.Y oder X,Y), sonst gilt das Mockup-Mass.
-      const parse = (v) => { const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) && n > 0 ? Math.min(99, n) : null; };
-      const x = parse(raumX.value), y = parse(raumY.value);
-      const r = { x: x === null ? RAUM_DEFAULT.x : x, y: y === null ? RAUM_DEFAULT.y : y };
-      teileRaumSpeichern(r);
-      anzeigen();
+      // Punkt und Komma gleichwertig (X.Y oder X,Y); leer oder unlesbar = 0 (keine Begrenzung).
+      const parse = (v) => { const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) && n >= 0 ? Math.min(99, n) : 0; };
+      teileRaumSpeichern({ x: parse(raumX.value), y: parse(raumY.value) });
+      raumAnzeigen();
+      refreshTrackPreview();
     };
     raumX.addEventListener('change', lesen);
     raumY.addEventListener('change', lesen);
-    anzeigen();
+    // Minus/Plus je Achse: 0,1 je Klick, beim Halten schneller/groesser (Date.now-Muster).
+    const raumHold = (btn, achse, richtung) => {
+      let timer = null, start = 0, last = 0;
+      const step = (schritt) => { raumAendern(achse, richtung * schritt); };
+      const begin = (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (btn.setPointerCapture && e.pointerId !== undefined) { try { btn.setPointerCapture(e.pointerId); } catch (x) { /* egal */ } }
+        step(0.1);
+        start = last = Date.now();
+        let delay = 300;
+        const tick = () => {
+          const now = Date.now();
+          const beschleunigt = now - start >= 500;
+          const schritt = beschleunigt ? 0.5 : 0.1;
+          delay = last === start ? 300 : (beschleunigt ? 70 : 120);
+          if (now - last >= delay) { last = now; step(schritt); }
+          timer = setTimeout(tick, delay);
+        };
+        timer = setTimeout(tick, delay);
+      };
+      const end = () => { if (timer) { clearTimeout(timer); timer = null; } };
+      btn.addEventListener('pointerdown', begin);
+      btn.addEventListener('pointerup', end);
+      btn.addEventListener('pointerleave', end);
+      btn.addEventListener('pointercancel', end);
+    };
+    const rm = (id, achse, richtung) => { const b = $(id); if (b) raumHold(b, achse, richtung); };
+    rm('raum-x-minus', 'x', -1); rm('raum-x-plus', 'x', 1);
+    rm('raum-y-minus', 'y', -1); rm('raum-y-plus', 'y', 1);
+    raumAnzeigen();
   }
 
   // Anzeige oben im Vollbild: Laenge, Teilebilanz; dazu die Tastenbelegung.
@@ -3886,6 +3951,8 @@
   function trackZufallPasstRaum(tiles) {
     const r = teileRaum();
     const raumX = r.x * 100, raumY = r.y * 100;  // cm
+    // 0 x 0 (oder eine Achse 0): keine Begrenzung in dieser Richtung. Beide 0: gar keine.
+    if (raumX <= 0 && raumY <= 0) return 0;
     const pts = trackCenterline(tiles);
     for (let step = 0; step < 8; step++) {
       const rad = step * 45 * Math.PI / 180;
@@ -3899,9 +3966,9 @@
         if (y < minY) minY = y;
         if (y > maxY) maxY = y;
       }
-      if ((maxX - minX) / TRACK_UNITS_PER_CM <= raumX && (maxY - minY) / TRACK_UNITS_PER_CM <= raumY) {
-        return step * 45;
-      }
+      const passtX = raumX <= 0 || (maxX - minX) / TRACK_UNITS_PER_CM <= raumX;
+      const passtY = raumY <= 0 || (maxY - minY) / TRACK_UNITS_PER_CM <= raumY;
+      if (passtX && passtY) return step * 45;
     }
     return -1;
   }
