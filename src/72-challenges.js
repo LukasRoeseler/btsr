@@ -922,6 +922,10 @@
     const tb = $('ch-liste-3er');
     if (!tb) return;
     const modus = schl.split('|')[1];
+    // Ueberschrift und Hinweis gehoeren zur 3er-Serie: nur bei Beste-Runde zeigen.
+    const h3 = $('ch-zweite-3er'), hinweis = $('ch-hinweis-3er');
+    if (h3) h3.hidden = modus !== 'hotlap';
+    if (hinweis) hinweis.hidden = modus !== 'hotlap';
     if (modus !== 'hotlap') { tb.innerHTML = ''; return; }
     const beste = new Map();
     a.eintraege.forEach((z) => {
