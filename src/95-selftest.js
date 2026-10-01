@@ -10319,6 +10319,27 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'SG3 = ' + m.toFixed(2) + ' m, fehlende Gerade erkannt, nicht gezaehlte Sorten frei' };
   });
 
+  stAdd('Editor: Speichern-Knopf oben links, Namens-Vorschlag klingt wie eine Rennstrecke', () => {
+    const f = [];
+    const k = $('track-save-toolbar');
+    if (!k) f.push('Speichern-Knopf im Editor fehlt');
+    else {
+      if (!k.onclick) f.push('Speichern-Knopf nicht verdrahtet');
+      const cap = k.querySelector('.tp-cap');
+      if (!cap || !cap.textContent.trim()) f.push('Aufschrift fehlt');
+      const bar = k.closest('.tp-actions');
+      if (bar && bar.firstElementChild !== k) f.push('Speichern steht nicht ganz links');
+    }
+    let gut = 0;
+    for (let i = 0; i < 40; i++) {
+      const n = trackNameVorschlag();
+      if (typeof n === 'string' && /^[A-Z][a-z]+/.test(n) && n.length >= 5 && n.length <= 24
+          && !/\s/.test(n)) gut++;
+    }
+    if (gut < 38) f.push('Namens-Vorschlaege klingen nicht plausibel (' + gut + '/40)');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Knopf links, Vorschlag ' + trackNameVorschlag() };
+  });
+
   stAdd('Strecke: jede Unterseite hat nur, was sie bezeichnet', () => {
     const f = [];
     const drin = (sub, id) => { const s = $('sub-' + sub); return !!(s && $(id) && s.contains($(id))); };

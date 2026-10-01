@@ -4052,7 +4052,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.81</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.82</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -10329,6 +10329,14 @@
            sondern 'Editor starten', und dann ist er im Vollbild"). -->
       <div id="track-fs-host">
         <div class="tp-bar tp-actions">
+          <!-- Speichern (BESTELLT): oben LINKS, damit man nicht aus Versehen auf
+               "Schliessen" statt "Speichern" klickt. Fragt nach einem Namen; bleibt das Feld
+               leer, schlaegt die App einen passenden Streckennamen vor. -->
+          <button class="tp-btn" id="track-save-toolbar" title="Strecke speichern" aria-label="Strecke speichern">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/>
+              <path d="M8 4v5h7V4M8 20v-6h8v6"/></svg>
+            <span class="tp-cap">Speichern</span></button>
           <!-- BESTELLT: "oben links eine Checkbox (so gross wie die Zurueck- und Entfernen-
                Buttons) fuer Ideallinie und eine fuer Tastenkuerzel anzeigen ... ein
                Idealliniensymbol mit farbigem Rand wenn aktiv und grauem Rand wenn inaktiv und

@@ -3724,6 +3724,7 @@
   // gelesen - renderTrackPadFocus und trackEditorPad nehmen beide ausschliesslich `id`.
   // Fuer den Umschalter waere sie ausserdem falsch geworden: er traegt jetzt zwei.
   const TRACK_ACTIONS = [
+    { id: 'track-save-toolbar' },
     { id: 'track-opt-linie' },
     { id: 'track-opt-tasten' },
     { id: 'track-undo' },
@@ -4216,9 +4217,11 @@
   }
   refreshTrackList();
 
-  $('track-save').onclick = () => {
-    const name = $('track-name').value.trim();
-    if (!name) { alert('Bitte einen Namen für die Strecke eingeben.'); return; }
+  // Gemeinsames Speichern fuer beide Knoepfe: "Strecke laden" und der Speichern-Knopf im
+  // Editor. BESTELLT: "It should save the track like the saving function does in the load
+  // track tab" - deshalb derselbe Ablauf (Store, Zeitstempel, Liste aktualisieren, log).
+  function trackSpeichern(name) {
+    if (!name) return;
     if (currentTrackTiles.length === 0) { alert('Keine Streckenteile vorhanden.'); return; }
     const store = loadTrackStore();
     const now = new Date().toISOString();
@@ -4226,7 +4229,43 @@
     saveTrackStore(store);
     refreshTrackList();
     log(`Strecke "${name}" gespeichert (${currentTrackTiles.length} Teile).`, 'info');
+  }
+  $('track-save').onclick = () => {
+    const name = $('track-name').value.trim();
+    if (!name) { alert('Bitte einen Namen für die Strecke eingeben.'); return; }
+    trackSpeichern(name);
   };
+  // Speichern im Editor (oben links): fragt nach einem Namen, schlaegt aber einen vor, wenn
+  // man keinen eintippen will. BESTELLT: "Add a save button to the editor that prompts you to
+  // enter a track name but if you are too lazy to enter one, provide a suggestion that sounds
+  // like a real track and that I can just use to save the track. The button should be at the
+  // top on the left side (so that I don't accidentally click on close instead of save)."
+  $('track-save-toolbar').onclick = () => {
+    if (currentTrackTiles.length === 0) { alert('Keine Streckenteile vorhanden.'); return; }
+    const eingabe = prompt(t('Name der Strecke'), trackNameVorschlag());
+    if (eingabe === null) return; // Abbrechen
+    trackSpeichern(eingabe.trim() || trackNameVorschlag());
+  };
+  // Ein Vorschlag, der nach einer echten Rennstrecke klingt: Orts-/Bildwort + Rennstrecken-Endung.
+  const TRACK_NAME_ANFANG = ['Silver', 'Thunder', 'Apex', 'Riverside', 'Lakeside', 'Sunset',
+    'Alpine', 'Crimson', 'Iron', 'Golden', 'Wild', 'Storm', 'Summit', 'Falcon', 'Meteor',
+    'Comet', 'Hurricane', 'Volt', 'Turbo', 'Granite', 'Cobalt', 'Ember', 'Vortex', 'Horizon',
+    'Nova', 'Phoenix', 'Dragon', 'Viper', 'Aurora', 'Beacon', 'Canyon', 'Cedar', 'Willow',
+    'Monte', 'Amber', 'Sierra'];
+  const TRACK_NAME_ENDUNG = ['ring', 'park', 'speedway', 'raceway', 'circuit', 'cross',
+    'field', 'point', 'valley', 'berg', 'burg', 'way', 'view', 'track', 'grund'];
+  function trackNameVorschlag() {
+    const store = loadTrackStore();
+    // Nicht mit einer schon gespeicherten Strecke kollidieren: ein versehentliches OK auf den
+    // Vorschlag soll keine vorhandene Strecke ueberschreiben.
+    for (let i = 0; i < 30; i++) {
+      const n = TRACK_NAME_ANFANG[Math.floor(Math.random() * TRACK_NAME_ANFANG.length)]
+        + TRACK_NAME_ENDUNG[Math.floor(Math.random() * TRACK_NAME_ENDUNG.length)];
+      if (!Object.prototype.hasOwnProperty.call(store, n)) return n;
+    }
+    return TRACK_NAME_ANFANG[Math.floor(Math.random() * TRACK_NAME_ANFANG.length)]
+      + TRACK_NAME_ENDUNG[Math.floor(Math.random() * TRACK_NAME_ENDUNG.length)];
+  }
   $('track-load').onclick = () => {
     const name = $('track-list').value;
     if (!name) return;
