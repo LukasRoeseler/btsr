@@ -823,6 +823,7 @@
     const o = chOnline();
     const st = $('ch-liste-status');
     st.textContent = l.laedt ? t('Lade Bestenliste …')
+      : a.zeiten.length === 0 ? t('Noch keine Zeiten eingetragen. Fahr die Challenge, dann erscheint deine Zeit hier.')
       : a.online ? t('Online-Bestenliste') + ': ' + a.zeiten.length + ' ' + t('Zeiten')
         + (l.stand ? ' · ' + t('Stand') + ' ' + new Date(l.stand).toLocaleTimeString(lang === 'en' ? 'en-GB' : 'de-DE', { hour: '2-digit', minute: '2-digit' }) : '')
       : o.url ? t('Online-Bestenliste nicht erreichbar, hier stehen deine eigenen Zeiten.')

@@ -884,6 +884,7 @@
     "Lade Bestenliste …": "Loading leaderboard …",
     "Zeiten": "times",
     "Online-Bestenliste nicht erreichbar, hier stehen deine eigenen Zeiten.": "Online leaderboard not reachable, showing your own times.",
+    "Noch keine Zeiten eingetragen. Fahr die Challenge, dann erscheint deine Zeit hier.": "No times submitted yet. Run the challenge and your time will appear here.",
     "Deine Zeiten auf diesem Gerät. Für die gemeinsame Liste unter Challenges > Online eine Adresse eintragen.": "Your times on this device. For the shared list, enter an address under Challenges > Online.",
     "Erst die Adresse eintragen.": "Enter the address first.",
     "Prüfe …": "Checking …",
