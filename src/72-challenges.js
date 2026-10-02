@@ -351,9 +351,9 @@
     const r = modus === 'rennen' ? (def.runden || 1) : 1;
     const gold = chSekunden(s.gold * r), silber = chSekunden(s.silber * r);
     return '<span class="ch-sterne" style="color:var(--gold)">' + chSterneZeichen(3) + '</span> ' + t('Gold')
-      + ': ' + t('bis {zeit}').replace('{zeit}', gold) + ' &middot; '
+      + ': ' + t('bis {zeit}').replace('{zeit}', gold) + '<br>'
       + '<span class="ch-sterne" style="color:var(--silber)">' + chSterneZeichen(2) + '</span> ' + t('Silber')
-      + ': ' + t('bis {zeit}').replace('{zeit}', silber) + ' &middot; '
+      + ': ' + t('bis {zeit}').replace('{zeit}', silber) + '<br>'
       + '<span class="ch-sterne" style="color:var(--bronze)">' + chSterneZeichen(1) + '</span> ' + t('Bronze')
       + ': ' + t('gefahren');
   }
@@ -924,14 +924,9 @@
     $('ch-idee').textContent = chIdee(def);
     const [bw, bh] = chFlaeche(tiles);
     const m = trackLaengeM(tiles);
-    $('ch-fakten').textContent = t('Länge') + ' ' + chZahl(m, 2) + ' m · 1:50 ' + chZahl(m * 50 / 1000, 2) + ' km · '
+    $('ch-fakten').textContent = t('Länge') + ' ' + chZahl(m, 2) + ' m · '
       + t('Platzbedarf') + ' ' + chZahl(bw, 2) + ' × ' + chZahl(bh, 2) + ' m · ' + chSetsText(def);
     document.querySelectorAll('#ch-modus [data-m]').forEach((b) => b.classList.toggle('an', b.dataset.m === chModus));
-    $('ch-modus-text').textContent = (chModus === 'hotlap'
-      ? t('So viele Runden du willst, die schnellste zählt. Schluss mit der Rennen-Taste (R1).')
-      : t('{n} Runden ab stehendem Start, die Gesamtzeit zählt. Zählt eine Runde nicht, fährst du eine extra.').replace('{n}', def.runden)
-        + (chPflichtstopp(def, 'rennen') ? ' ' + t('Pflichtstopp: einmal an die Box (Boxen-Minigame), egal wo.') : ''))
-      + ' ' + t('Jede Runde wird gegen die Strecke geprüft: mindestens 90 % der Teile müssen erkannt werden. Einstellungen sind gesperrt.');
     const mh = $('ch-medaille-hinweis');
     if (mh) mh.innerHTML = chMedailleHinweis(def, chModus);
     // Teile: nur, was unter Strecke > Meine Teile eingetragen ist.
