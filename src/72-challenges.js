@@ -141,7 +141,7 @@
   const CH_DAUER = [
     { id: 'dauer-homington', name: 'Homington', code: 'SGR2GRGRLR3G@270', runden: 20, kat: 'E', sets: ['grund'] },
     { id: 'dauer-circuitdusol', name: 'Circuit Du Sol', code: 'SGRHLGJR4LR2GRG@270', runden: 20, kat: 'E', sets: ['grund', 'haarnadel'] },
-    { id: 'dauer-balkonia', name: 'Balkonia 50 Kilometers', code: 'SG2RLGR3LGHLGLJR4G3R2@270', runden: 100, kat: 'E', sets: ['grund', 'grund', 'haarnadel'], max: 3.5, pit: 1, wx: [{ min: 2, wetter: 'rain' }, { min: 4, wetter: 'dry' }] },
+    { id: 'dauer-balkonia', name: 'Balkonia 50 Kilometers', code: 'SG2RLGR3LGHLGLJR4G3R2@270', runden: 100, kat: 'E', sets: ['grund', 'grund', 'haarnadel'], max: 3.5, pit: 1, wx: [{ min: 2, wetter: 'rain' }, { min: 4, wetter: 'dry' }], sternGold: 9.6 },
   ];
   const CH_ALLE = [];
   Object.keys(CH_KATALOG).forEach((k) => CH_KATALOG[k].forEach((d, i) => {
@@ -333,6 +333,13 @@
   const CH_STERNE_V_KURVE = 0.565;        // m/s, kalibriert an Imolina-Pro
   const CH_STERNE_SILBER_FAKTOR = 1.5;    // Silber = 50 % langsamer als Gold
   function chSterneSchwellen(def) {
+    // BESTELLT (Balkonia): "relax the times" - eine Strecke kann ihre Gold-Zeit selbst
+    // vorgeben (Sekunden je Runde, wird bei Rennen mit der Rundenzahl skaliert). Silber
+    // wird daraus wie ueberall gerechnet.
+    if (def.sternGold !== undefined) {
+      const gold = Math.round(def.sternGold * 1000);
+      return { silber: Math.round(gold * CH_STERNE_SILBER_FAKTOR), gold };
+    }
     const tiles = chTiles(def);
     let gerade = 0, kurve = 0;
     for (const t of tiles) {
@@ -860,6 +867,27 @@
     chWaechter = setInterval(chWachen, 100);
     chZeichneDetail();
   }
+  // BESTELLT: "vor einer Challenge Username und Autoname zeigen, etwas eintragen muessen,
+  // alles auf dem Startbildschirm." Der Startbildschirm fragt den Namen ab (Pflicht, sonst
+  // startet nichts), zeigt das angeschlossene Auto und speichert den Namen fuer die
+  // Bestenliste. Fuer Nicht-Challenge-Fahrten ist das nicht noetig.
+  function challengeStartenDialog() {
+    const o = chOnline();
+    const auto = playerCar ? garageLabel(playerCar) : '';
+    konsoleFrage(t('Challenge starten'),
+      (auto ? t('Auto: {auto}').replace('{auto}', auto) + '\n' : '')
+        + t('Dieser Name erscheint in der Bestenliste. Bitte Namen eintragen.'),
+      [[t('Starten'), () => {
+         const feld = $('k-frage-eingabe-feld');
+         const name = ((feld ? feld.value : '') || kFrageWert || '').trim().slice(0, 16);
+         if (!name) { showHudToast(t('Bitte zuerst einen Namen eintragen')); challengeStartenDialog(); return; }
+         const no = chOnline(); no.fahrer = name; chSchreiben(CH_ONLINE_STORE, no);
+         const nm = $('ch-name'); if (nm) nm.value = name;
+         challengeStarten();
+       }],
+       [t('Abbrechen'), null]], true, null,
+      { label: t('Name in der Bestenliste'), wert: o.fahrer });
+  }
   function chTempo() {
     try { return Math.abs(physEngine.state.speedKmh || 0); } catch (e) { return 0; }
   }
@@ -1282,6 +1310,20 @@
   // (hotlap); Rennen hat feste Runden und die 3er-Serie ist dort ohne Bedeutung. Die Runden-
   // zeiten je Eintrag kommen aus der Online-Liste (runden_ms); aeltere Eintraege ohne sie
   // werden uebersprungen. Je Geraet zaehlt der beste 3er-Durchschnitt.
+  // BESTELLT: "nur drei aufeinanderfolgende Zeiten, die alle gueltig waren". Die beste
+  // Summe aus drei AUFEINANDERFOLGENDEN Runden, wobei jede Dreiergruppe verworfen wird,
+  // in der eine Runde unter der Mindestzeit liegt (z. B. 1 s, weil das Auto kaum fuhr).
+  // Rueckgabe null, wenn keine gueltige Dreiergruppe existiert.
+  function chDreierBeste(rm, minMs) {
+    if (!Array.isArray(rm) || rm.length < 3) return null;
+    let best = Infinity;
+    for (let i = 0; i + 2 < rm.length; i++) {
+      if (rm[i] < minMs || rm[i + 1] < minMs || rm[i + 2] < minMs) continue;
+      const sum = rm[i] + rm[i + 1] + rm[i + 2];
+      if (sum < best) best = sum;
+    }
+    return Number.isFinite(best) ? best : null;
+  }
   function chZeichneDreier(schl, a) {
     const tb = $('ch-liste-3er');
     if (!tb) return;
@@ -1291,16 +1333,13 @@
     if (h3) h3.hidden = modus !== 'hotlap';
     if (hinweis) hinweis.hidden = modus !== 'hotlap';
     if (modus !== 'hotlap') { tb.innerHTML = ''; return; }
+    const def = chDef(schl.split('|')[0]);
+    const minMs = chMinRundeMs(def);
     const beste = new Map();
     a.eintraege.forEach((z) => {
       const rm = Array.isArray(z.runden_ms) ? z.runden_ms.map(Number) : [];
-      if (rm.length < 3) return;
-      let best = Infinity;
-      for (let i = 0; i + 2 < rm.length; i++) {
-        const sum = rm[i] + rm[i + 1] + rm[i + 2];
-        if (sum < best) best = sum;
-      }
-      if (!Number.isFinite(best)) return;
+      const best = chDreierBeste(rm, minMs);
+      if (best === null) return;
       const wer = z.geraet || ('?' + z.fahrer + '_' + z.zeit_ms);
       if (!beste.has(wer) || best < beste.get(wer).best) beste.set(wer, { best, fahrer: z.fahrer, auto: z.auto, geraet: z.geraet });
     });
@@ -1452,7 +1491,7 @@
     chSpiegel = $('ch-spiegel').checked;
     chZeichneDetail();
   });
-  $('ch-start').addEventListener('click', () => { if (chLauf) challengeAbbrechen(); else challengeStarten(); });
+  $('ch-start').addEventListener('click', () => { if (chLauf) challengeAbbrechen(); else challengeStartenDialog(); });
   ['ch-url', 'ch-fahrer', 'ch-hochladen'].forEach((id) => $(id).addEventListener('change', chOnlineSpeichern));
   // Derselbe Name direkt auf der Strecken-Seite (BESTELLT: "im Challenges-Bildschirm nochmal
   // erlauben, dass ich meinen Username fuer die Bestenliste festlege").

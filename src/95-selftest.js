@@ -10885,6 +10885,55 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : '1 Pflichtstopp, Wetterplan Regen 2 min / trocken 4 min' };
   });
 
+  // BESTELLT (Balkonia): "relax the times ... Make gold 16 and recalibrate all other
+  // times." Die Strecke gibt sich ihre Gold-Zeit selbst (Sekunden je Runde); Silber wird
+  // daraus gerechnet. Im Rennen (100 Runden) ergibt das 16 min Gold und 24 min Silber.
+  stAdd('Challenges: Balkonia Gold-Zeit entspannt auf 16 min', () => {
+    const f = [];
+    const def = chDef('dauer-balkonia');
+    const s = chSterneSchwellen(def);
+    if (s.gold !== 9600) f.push('Gold je Runde ' + s.gold + ' statt 9600 ms');
+    if (s.silber !== Math.round(9600 * CH_STERNE_SILBER_FAKTOR)) f.push('Silber je Runde ' + s.silber);
+    const r = def.runden || 1;
+    if (Math.round(s.gold * r / 1000 / 60) !== 16) f.push('Rennen-Gold ' + Math.round(s.gold * r / 1000 / 60) + ' min statt 16');
+    if (Math.round(s.silber * r / 1000 / 60) !== 24) f.push('Rennen-Silber ' + Math.round(s.silber * r / 1000 / 60) + ' min statt 24');
+    if (chSterne(def, 'rennen', 15.5 * 60000) !== 3) f.push('Bestzeit 15.5 min gibt nicht Gold');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Gold 9.6 s/Runde, Rennen 16 min, Silber 24 min' };
+  });
+
+  // BESTELLT: "mirroring the track does not work. Check it for all existing ones in the
+  // current challenges." Die Spiegelung (chSpiegelTiles) wird fuer alle bestehenden
+  // Challenges geprueft: gueltige Geometrie, gleiche Laenge, und die Anti-Cheat-Pruefung
+  // erkennt die gespiegelte Runde.
+  stAdd('Challenges: Spiegelung funktioniert fuer alle Strecken', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.spiegelProbe) {
+      return { skip: true, mass: 'spiegelProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.spiegelProbe();
+    return { ok: r.schlecht.length === 0,
+             mass: r.geprueft + ' Strecken gespiegelt'
+                   + (r.schlecht.length ? ' || ' + r.schlecht.join('; ') : '') };
+  });
+
+  // BESTELLT: "for the best 3 times, consider only 3 subsequent times that were all valid
+  // because if there was one invalid one (eg 1s, it skews all times)." Die beste
+  // Dreiergruppe besteht nur aus Runden, die alle ueber der Mindestzeit liegen.
+  stAdd('Challenges: 3er-Serie nur aus drei gueltigen Runden', () => {
+    const f = [];
+    // [10,11,12] -> Summe 33.
+    if (chDreierBeste([10, 11, 12], 0) !== 33) f.push('einfache Dreiergruppe');
+    // [1, 10, 11, 12] -> die 1-s-Runde ist zu kurz, also zaehlt [10,11,12] = 33.
+    if (chDreierBeste([1, 10, 11, 12], 5) !== 33) f.push('zu kurze Runde vorn');
+    // [10, 1, 11, 12] -> die 1-s-Runde liegt MITTEN drin, beide Dreiergruppen sind zu
+    // verwerfen -> null (nur [10,1,11] und [1,11,12], beide enthalten die 1 s).
+    if (chDreierBeste([10, 1, 11, 12], 5) !== null) f.push('zu kurze Runde mittendrin');
+    // [10, 11, 12, 13] -> beste Gruppe [10,11,12] = 33.
+    if (chDreierBeste([10, 11, 12, 13], 0) !== 33) f.push('beste von zwei Gruppen');
+    // Weniger als drei Runden -> null.
+    if (chDreierBeste([10, 11], 0) !== null) f.push('zu wenige Runden');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'nur Dreier aus gueltigen Runden' };
+  });
+
   stAdd('Challenges: Seite zeigt Strecke, Modi und Bestenliste; Rennen-Taste bricht das Warten ab', () => {
     const f = [];
     const merkTab = kAktiverTab();

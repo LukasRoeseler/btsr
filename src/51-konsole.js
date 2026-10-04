@@ -53,6 +53,7 @@
   let kStapel = [];
   let kZurueckLaeuft = false;
   let kFrageOffen = false;
+  let kFrageWert = '';        // aktueller Wert der Namenseingabe im Frage-Dialog
   let kLetzterTab = 'home';
 
   function kAktiverTab() {
@@ -391,7 +392,9 @@
   // ---- Frage-Dialog (#k-frage): wie das Cockpit-Menue, mit dem Pad bedienbar ----------
   // knoepfe: [[Text, Funktion oder null], ...]; der erste ist vorgewaehlt.
   // `bild` ist optionales HTML (z. B. ein Strecken-SVG) fuer die Vorschau im Dialog.
-  function konsoleFrage(titel, text, knoepfe, wip, bild) {
+  // `eingabe` ist optional { label, wert }: eine Namenseingabe; der aktuelle Wert steht
+  // in kFrageWert und wird von der Klick-Funktion der Knoepfe gelesen.
+  function konsoleFrage(titel, text, knoepfe, wip, bild, eingabe) {
     const d = $('k-frage');
     if (!d) return;
     $('k-frage-titel').textContent = titel;
@@ -406,6 +409,24 @@
     if (bd) {
       if (bild) { bd.innerHTML = bild; bd.hidden = false; }
       else { bd.innerHTML = ''; bd.hidden = true; }
+    }
+    const ei = $('k-frage-eingabe');
+    if (ei) {
+      if (eingabe) {
+        ei.hidden = false;
+        const lbl = ei.querySelector('label');
+        if (lbl) lbl.textContent = eingabe.label || '';
+        const feld = $('k-frage-eingabe-feld');
+        if (feld) {
+          feld.value = eingabe.wert || '';
+          feld.addEventListener('input', () => { kFrageWert = feld.value.trim(); });
+          setTimeout(() => { try { feld.focus(); } catch (e) {} }, 0);
+        }
+        kFrageWert = (eingabe.wert || '').trim();
+      } else {
+        ei.hidden = true;
+        kFrageWert = '';
+      }
     }
     $('k-frage-text').textContent = text || '';
     const host = $('k-frage-knoepfe');

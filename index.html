@@ -2417,6 +2417,11 @@
   .k-pause-dialog .k-frage-bild { display: block; background: #05070a; border: 1px solid rgba(255,255,255,.14);
     border-radius: 4px; padding: 6px; margin: 0 0 4px; }
   .k-pause-dialog .k-frage-bild svg { display: block; width: 100%; height: auto; }
+  /* Namenseingabe im Frage-Dialog (Challenge-Start): der Name fuer die Bestenliste. */
+  .k-pause-dialog .k-frage-eingabe { display: flex; flex-direction: column; gap: 4px; margin: 0 0 6px; }
+  .k-pause-dialog .k-frage-eingabe label { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .k-pause-dialog .k-frage-eingabe input { font-size: 17px; padding: 8px 10px; background: #05070a;
+    color: #fff; border: 1px solid rgba(255,255,255,.25); border-radius: 0; letter-spacing: .06em; }
   /* Der Grund bleibt auch auf dem niedrigen Telefon sichtbar (dort blendet .k-pause-dialog p
      die Erklaerzeilen des Cockpit-Menues aus). */
   .k-pause-dialog .k-frage-text { display: block; white-space: pre-line; font-size: clamp(11px, 2.6vh, 13.5px); margin: 0 0 4px; line-height: 1.4; }
@@ -4123,7 +4128,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.121</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.122</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -11014,6 +11019,10 @@
       <h2 id="k-frage-titel"></h2>
       <div class="k-frage-bild" id="k-frage-bild" hidden></div>
       <p class="muted k-frage-text" id="k-frage-text"></p>
+      <div class="k-frage-eingabe" id="k-frage-eingabe" hidden>
+        <label for="k-frage-eingabe-feld"></label>
+        <input type="text" id="k-frage-eingabe-feld" maxlength="16" autocomplete="off">
+      </div>
       <div class="k-frage-knoepfe" id="k-frage-knoepfe"></div>
     </div>
   </div>
@@ -12156,6 +12165,10 @@
     "Zurück zum Menü": "Back to menu",
     "Zurück zum Menü (Options, Esc)": "Back to menu (Options, Esc)",
     "Name in der Bestenliste": "Name on the leaderboard",
+    "Auto: {auto}": "Car: {auto}",
+    "Dieser Name erscheint in der Bestenliste. Bitte Namen eintragen.": "This name appears on the leaderboard. Please enter a name.",
+    "Bitte zuerst einen Namen eintragen": "Please enter a name first",
+    "Starten": "Start",
     "Cockpit immer im Vollbild, der Menü-Knopf dort zeigt jetzt „Zurück“. Reiter oben: Fahren, Mehrspieler, Challenges, Optionen. Die Info-Kacheln stehen direkt in den Optionen unter einer eigenen Überschrift. Challenges: Strecken heißen Monzetta, Suzuna, Monte Carlito und Silverbrook, der Name für die Bestenliste lässt sich auf jeder Strecken-Seite festlegen, das Perzentil zählt je Spieler. Neue Kachel- und Hintergrundbilder im Fahren-Menü.": "Cockpit always in full screen, its menu button now shows \"back\". Top tabs: Drive, Multiplayer, Challenges, Options. The info tiles sit directly in the options under their own heading. Challenges: tracks are called Monzetta, Suzuna, Monte Carlito and Silverbrook, the leaderboard name can be set on every track page, the percentile counts per player. New tile and background images in the Drive menu.",
     "Stand": "as of",
     "Challenges: die Bestenliste kommt aus einem stündlichen Schnappschuss im Repo, dazu sofort die eigenen Zeiten; das Hochladen wiederholt bei Aussetzern.": "Challenges: the leaderboard comes from an hourly snapshot in the repo, plus your own times right away; uploading retries on dropouts.",
@@ -22279,6 +22292,7 @@
   let kStapel = [];
   let kZurueckLaeuft = false;
   let kFrageOffen = false;
+  let kFrageWert = '';        // aktueller Wert der Namenseingabe im Frage-Dialog
   let kLetzterTab = 'home';
 
   function kAktiverTab() {
@@ -22617,7 +22631,9 @@
   // ---- Frage-Dialog (#k-frage): wie das Cockpit-Menue, mit dem Pad bedienbar ----------
   // knoepfe: [[Text, Funktion oder null], ...]; der erste ist vorgewaehlt.
   // `bild` ist optionales HTML (z. B. ein Strecken-SVG) fuer die Vorschau im Dialog.
-  function konsoleFrage(titel, text, knoepfe, wip, bild) {
+  // `eingabe` ist optional { label, wert }: eine Namenseingabe; der aktuelle Wert steht
+  // in kFrageWert und wird von der Klick-Funktion der Knoepfe gelesen.
+  function konsoleFrage(titel, text, knoepfe, wip, bild, eingabe) {
     const d = $('k-frage');
     if (!d) return;
     $('k-frage-titel').textContent = titel;
@@ -22632,6 +22648,24 @@
     if (bd) {
       if (bild) { bd.innerHTML = bild; bd.hidden = false; }
       else { bd.innerHTML = ''; bd.hidden = true; }
+    }
+    const ei = $('k-frage-eingabe');
+    if (ei) {
+      if (eingabe) {
+        ei.hidden = false;
+        const lbl = ei.querySelector('label');
+        if (lbl) lbl.textContent = eingabe.label || '';
+        const feld = $('k-frage-eingabe-feld');
+        if (feld) {
+          feld.value = eingabe.wert || '';
+          feld.addEventListener('input', () => { kFrageWert = feld.value.trim(); });
+          setTimeout(() => { try { feld.focus(); } catch (e) {} }, 0);
+        }
+        kFrageWert = (eingabe.wert || '').trim();
+      } else {
+        ei.hidden = true;
+        kFrageWert = '';
+      }
     }
     $('k-frage-text').textContent = text || '';
     const host = $('k-frage-knoepfe');
@@ -35039,7 +35073,7 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
   const CH_DAUER = [
     { id: 'dauer-homington', name: 'Homington', code: 'SGR2GRGRLR3G@270', runden: 20, kat: 'E', sets: ['grund'] },
     { id: 'dauer-circuitdusol', name: 'Circuit Du Sol', code: 'SGRHLGJR4LR2GRG@270', runden: 20, kat: 'E', sets: ['grund', 'haarnadel'] },
-    { id: 'dauer-balkonia', name: 'Balkonia 50 Kilometers', code: 'SG2RLGR3LGHLGLJR4G3R2@270', runden: 100, kat: 'E', sets: ['grund', 'grund', 'haarnadel'], max: 3.5, pit: 1, wx: [{ min: 2, wetter: 'rain' }, { min: 4, wetter: 'dry' }] },
+    { id: 'dauer-balkonia', name: 'Balkonia 50 Kilometers', code: 'SG2RLGR3LGHLGLJR4G3R2@270', runden: 100, kat: 'E', sets: ['grund', 'grund', 'haarnadel'], max: 3.5, pit: 1, wx: [{ min: 2, wetter: 'rain' }, { min: 4, wetter: 'dry' }], sternGold: 9.6 },
   ];
   const CH_ALLE = [];
   Object.keys(CH_KATALOG).forEach((k) => CH_KATALOG[k].forEach((d, i) => {
@@ -35231,6 +35265,13 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
   const CH_STERNE_V_KURVE = 0.565;        // m/s, kalibriert an Imolina-Pro
   const CH_STERNE_SILBER_FAKTOR = 1.5;    // Silber = 50 % langsamer als Gold
   function chSterneSchwellen(def) {
+    // BESTELLT (Balkonia): "relax the times" - eine Strecke kann ihre Gold-Zeit selbst
+    // vorgeben (Sekunden je Runde, wird bei Rennen mit der Rundenzahl skaliert). Silber
+    // wird daraus wie ueberall gerechnet.
+    if (def.sternGold !== undefined) {
+      const gold = Math.round(def.sternGold * 1000);
+      return { silber: Math.round(gold * CH_STERNE_SILBER_FAKTOR), gold };
+    }
     const tiles = chTiles(def);
     let gerade = 0, kurve = 0;
     for (const t of tiles) {
@@ -35758,6 +35799,27 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
     chWaechter = setInterval(chWachen, 100);
     chZeichneDetail();
   }
+  // BESTELLT: "vor einer Challenge Username und Autoname zeigen, etwas eintragen muessen,
+  // alles auf dem Startbildschirm." Der Startbildschirm fragt den Namen ab (Pflicht, sonst
+  // startet nichts), zeigt das angeschlossene Auto und speichert den Namen fuer die
+  // Bestenliste. Fuer Nicht-Challenge-Fahrten ist das nicht noetig.
+  function challengeStartenDialog() {
+    const o = chOnline();
+    const auto = playerCar ? garageLabel(playerCar) : '';
+    konsoleFrage(t('Challenge starten'),
+      (auto ? t('Auto: {auto}').replace('{auto}', auto) + '\n' : '')
+        + t('Dieser Name erscheint in der Bestenliste. Bitte Namen eintragen.'),
+      [[t('Starten'), () => {
+         const feld = $('k-frage-eingabe-feld');
+         const name = ((feld ? feld.value : '') || kFrageWert || '').trim().slice(0, 16);
+         if (!name) { showHudToast(t('Bitte zuerst einen Namen eintragen')); challengeStartenDialog(); return; }
+         const no = chOnline(); no.fahrer = name; chSchreiben(CH_ONLINE_STORE, no);
+         const nm = $('ch-name'); if (nm) nm.value = name;
+         challengeStarten();
+       }],
+       [t('Abbrechen'), null]], true, null,
+      { label: t('Name in der Bestenliste'), wert: o.fahrer });
+  }
   function chTempo() {
     try { return Math.abs(physEngine.state.speedKmh || 0); } catch (e) { return 0; }
   }
@@ -36180,6 +36242,20 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
   // (hotlap); Rennen hat feste Runden und die 3er-Serie ist dort ohne Bedeutung. Die Runden-
   // zeiten je Eintrag kommen aus der Online-Liste (runden_ms); aeltere Eintraege ohne sie
   // werden uebersprungen. Je Geraet zaehlt der beste 3er-Durchschnitt.
+  // BESTELLT: "nur drei aufeinanderfolgende Zeiten, die alle gueltig waren". Die beste
+  // Summe aus drei AUFEINANDERFOLGENDEN Runden, wobei jede Dreiergruppe verworfen wird,
+  // in der eine Runde unter der Mindestzeit liegt (z. B. 1 s, weil das Auto kaum fuhr).
+  // Rueckgabe null, wenn keine gueltige Dreiergruppe existiert.
+  function chDreierBeste(rm, minMs) {
+    if (!Array.isArray(rm) || rm.length < 3) return null;
+    let best = Infinity;
+    for (let i = 0; i + 2 < rm.length; i++) {
+      if (rm[i] < minMs || rm[i + 1] < minMs || rm[i + 2] < minMs) continue;
+      const sum = rm[i] + rm[i + 1] + rm[i + 2];
+      if (sum < best) best = sum;
+    }
+    return Number.isFinite(best) ? best : null;
+  }
   function chZeichneDreier(schl, a) {
     const tb = $('ch-liste-3er');
     if (!tb) return;
@@ -36189,16 +36265,13 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
     if (h3) h3.hidden = modus !== 'hotlap';
     if (hinweis) hinweis.hidden = modus !== 'hotlap';
     if (modus !== 'hotlap') { tb.innerHTML = ''; return; }
+    const def = chDef(schl.split('|')[0]);
+    const minMs = chMinRundeMs(def);
     const beste = new Map();
     a.eintraege.forEach((z) => {
       const rm = Array.isArray(z.runden_ms) ? z.runden_ms.map(Number) : [];
-      if (rm.length < 3) return;
-      let best = Infinity;
-      for (let i = 0; i + 2 < rm.length; i++) {
-        const sum = rm[i] + rm[i + 1] + rm[i + 2];
-        if (sum < best) best = sum;
-      }
-      if (!Number.isFinite(best)) return;
+      const best = chDreierBeste(rm, minMs);
+      if (best === null) return;
       const wer = z.geraet || ('?' + z.fahrer + '_' + z.zeit_ms);
       if (!beste.has(wer) || best < beste.get(wer).best) beste.set(wer, { best, fahrer: z.fahrer, auto: z.auto, geraet: z.geraet });
     });
@@ -36350,7 +36423,7 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
     chSpiegel = $('ch-spiegel').checked;
     chZeichneDetail();
   });
-  $('ch-start').addEventListener('click', () => { if (chLauf) challengeAbbrechen(); else challengeStarten(); });
+  $('ch-start').addEventListener('click', () => { if (chLauf) challengeAbbrechen(); else challengeStartenDialog(); });
   ['ch-url', 'ch-fahrer', 'ch-hochladen'].forEach((id) => $(id).addEventListener('change', chOnlineSpeichern));
   // Derselbe Name direkt auf der Strecken-Seite (BESTELLT: "im Challenges-Bildschirm nochmal
   // erlauben, dass ich meinen Username fuer die Bestenliste festlege").
@@ -49615,6 +49688,63 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         if (typeof zweiSpielerSetzen === 'function') zweiSpielerSetzen(vorher.zwei);
         cockpitScreenZu(vorher.schirm);
       }
+    },
+
+    // ---- SPIEGELN (v0.8.121, BESTELLT: "mirroring the track does not work") ----------
+    //
+    // Die Challenge-Spiegelung (chSpiegelTiles) kehrt die Kachelfolge um und tauscht
+    // links/rechts. Geprueft wird fuer ALLE bestehenden Challenges, dass die gespiegelte
+    // Strecke eine gueltige Geometrie ergibt: gleiche Kachelzahl, Start/Ziel vorn,
+    // Mittelachse berechenbar und (ungefaehr) gleiche Laenge wie das Original.
+    spiegelProbe() {
+      const defs = [];
+      const schlecht = [];
+      let geprueft = 0;
+      const debugInfo = [];
+      let debugGesperrt = false;
+      const pruefe = (def) => {
+        const orig = chTiles(def);
+        if (!orig || orig.length < 2) { schlecht.push(def.id + ': keine Kacheln'); return; }
+        const ges = chSpiegelTiles(orig);
+        geprueft++;
+        if (ges.length !== orig.length) schlecht.push(def.id + ': Kachelzahl ' + ges.length + ' statt ' + orig.length);
+        if (ges[0] && ges[0].type !== TILE_TYPE.START) schlecht.push(def.id + ': beginnt nicht mit Start/Ziel');
+        if (ges.some((t) => !t || !t.type)) schlecht.push(def.id + ': Kachel ohne Typ');
+        try {
+          const pts = trackCenterline(ges);
+          const laenge = trackLaengeM(ges);
+          const origLaenge = trackLaengeM(orig);
+          if (!pts || pts.length < 2) schlecht.push(def.id + ': Mittelachse leer');
+          if (Math.abs(laenge - origLaenge) / Math.max(origLaenge, 1) > 0.02) {
+            schlecht.push(def.id + ': Laenge ' + laenge.toFixed(2) + ' m statt ' + origLaenge.toFixed(2) + ' m');
+          }
+        } catch (e) {
+          schlecht.push(def.id + ': Mittelachse wirft ' + e.message);
+        }
+        // Gegenprobe: faehrt man die gespiegelte Strecke ab, muss die Anti-Cheat-Pruefung
+        // die Runde erkennen. Auf der Schiene meldet das Auto Start/Ziel als 0x01 (nicht
+        // als den Kacheltyp 0x0a), also so simulieren.
+        try {
+          const gelesen = ges.map((t) => (t.type === TILE_TYPE.START ? START_CODE_RAIL : t.type));
+          const pr = chRundePruefen(def, gelesen);
+          if (!pr.ok) {
+            schlecht.push(def.id + ': Anti-Cheat lehnt gespiegelte Runde ab (quote ' + pr.quote.toFixed(2) + ')');
+            if (!debugGesperrt) {
+              debugGesperrt = true;
+              const soll = chTiles(def).slice(1).map((x) => chKlasse(x.type));
+              const ist = gelesen.filter((c) => !isStartCode(c) && c !== TILE_OFFTRACK).map(chKlasse);
+              const spiegel = soll.slice().reverse().map((k) => (k === 'R' ? 'L' : k === 'L' ? 'R' : k));
+              debugInfo.push({ def: def.id, orig: orig.map((t) => t.type), ges: ges.map((t) => t.type),
+                soll, spiegel, ist, lcsSpiegel: chLcs(spiegel, ist), lcsSoll: chLcs(soll, ist) });
+            }
+          }
+        } catch (e) {
+          schlecht.push(def.id + ': Anti-Cheat wirft ' + e.message);
+        }
+        defs.push(def.id);
+      };
+      CH_ALLE.forEach(pruefe);
+      return { geprueft, defs, schlecht, debugInfo };
     },
 
     // ---- STEHT AUTO 2 IN DER RUNDENUEBERSICHT? ---------------------------------------
@@ -69162,6 +69292,55 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     } finally { chZuruecksetzen(vorher); }
     if (chWetterPlan !== null) f.push('Wetterplan nach Zuruecksetzen nicht null');
     return { ok: !f.length, mass: f.length ? f.join('; ') : '1 Pflichtstopp, Wetterplan Regen 2 min / trocken 4 min' };
+  });
+
+  // BESTELLT (Balkonia): "relax the times ... Make gold 16 and recalibrate all other
+  // times." Die Strecke gibt sich ihre Gold-Zeit selbst (Sekunden je Runde); Silber wird
+  // daraus gerechnet. Im Rennen (100 Runden) ergibt das 16 min Gold und 24 min Silber.
+  stAdd('Challenges: Balkonia Gold-Zeit entspannt auf 16 min', () => {
+    const f = [];
+    const def = chDef('dauer-balkonia');
+    const s = chSterneSchwellen(def);
+    if (s.gold !== 9600) f.push('Gold je Runde ' + s.gold + ' statt 9600 ms');
+    if (s.silber !== Math.round(9600 * CH_STERNE_SILBER_FAKTOR)) f.push('Silber je Runde ' + s.silber);
+    const r = def.runden || 1;
+    if (Math.round(s.gold * r / 1000 / 60) !== 16) f.push('Rennen-Gold ' + Math.round(s.gold * r / 1000 / 60) + ' min statt 16');
+    if (Math.round(s.silber * r / 1000 / 60) !== 24) f.push('Rennen-Silber ' + Math.round(s.silber * r / 1000 / 60) + ' min statt 24');
+    if (chSterne(def, 'rennen', 15.5 * 60000) !== 3) f.push('Bestzeit 15.5 min gibt nicht Gold');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Gold 9.6 s/Runde, Rennen 16 min, Silber 24 min' };
+  });
+
+  // BESTELLT: "mirroring the track does not work. Check it for all existing ones in the
+  // current challenges." Die Spiegelung (chSpiegelTiles) wird fuer alle bestehenden
+  // Challenges geprueft: gueltige Geometrie, gleiche Laenge, und die Anti-Cheat-Pruefung
+  // erkennt die gespiegelte Runde.
+  stAdd('Challenges: Spiegelung funktioniert fuer alle Strecken', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.spiegelProbe) {
+      return { skip: true, mass: 'spiegelProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.spiegelProbe();
+    return { ok: r.schlecht.length === 0,
+             mass: r.geprueft + ' Strecken gespiegelt'
+                   + (r.schlecht.length ? ' || ' + r.schlecht.join('; ') : '') };
+  });
+
+  // BESTELLT: "for the best 3 times, consider only 3 subsequent times that were all valid
+  // because if there was one invalid one (eg 1s, it skews all times)." Die beste
+  // Dreiergruppe besteht nur aus Runden, die alle ueber der Mindestzeit liegen.
+  stAdd('Challenges: 3er-Serie nur aus drei gueltigen Runden', () => {
+    const f = [];
+    // [10,11,12] -> Summe 33.
+    if (chDreierBeste([10, 11, 12], 0) !== 33) f.push('einfache Dreiergruppe');
+    // [1, 10, 11, 12] -> die 1-s-Runde ist zu kurz, also zaehlt [10,11,12] = 33.
+    if (chDreierBeste([1, 10, 11, 12], 5) !== 33) f.push('zu kurze Runde vorn');
+    // [10, 1, 11, 12] -> die 1-s-Runde liegt MITTEN drin, beide Dreiergruppen sind zu
+    // verwerfen -> null (nur [10,1,11] und [1,11,12], beide enthalten die 1 s).
+    if (chDreierBeste([10, 1, 11, 12], 5) !== null) f.push('zu kurze Runde mittendrin');
+    // [10, 11, 12, 13] -> beste Gruppe [10,11,12] = 33.
+    if (chDreierBeste([10, 11, 12, 13], 0) !== 33) f.push('beste von zwei Gruppen');
+    // Weniger als drei Runden -> null.
+    if (chDreierBeste([10, 11], 0) !== null) f.push('zu wenige Runden');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'nur Dreier aus gueltigen Runden' };
   });
 
   stAdd('Challenges: Seite zeigt Strecke, Modi und Bestenliste; Rennen-Taste bricht das Warten ab', () => {

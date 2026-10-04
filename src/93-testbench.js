@@ -609,6 +609,63 @@
       }
     },
 
+    // ---- SPIEGELN (v0.8.121, BESTELLT: "mirroring the track does not work") ----------
+    //
+    // Die Challenge-Spiegelung (chSpiegelTiles) kehrt die Kachelfolge um und tauscht
+    // links/rechts. Geprueft wird fuer ALLE bestehenden Challenges, dass die gespiegelte
+    // Strecke eine gueltige Geometrie ergibt: gleiche Kachelzahl, Start/Ziel vorn,
+    // Mittelachse berechenbar und (ungefaehr) gleiche Laenge wie das Original.
+    spiegelProbe() {
+      const defs = [];
+      const schlecht = [];
+      let geprueft = 0;
+      const debugInfo = [];
+      let debugGesperrt = false;
+      const pruefe = (def) => {
+        const orig = chTiles(def);
+        if (!orig || orig.length < 2) { schlecht.push(def.id + ': keine Kacheln'); return; }
+        const ges = chSpiegelTiles(orig);
+        geprueft++;
+        if (ges.length !== orig.length) schlecht.push(def.id + ': Kachelzahl ' + ges.length + ' statt ' + orig.length);
+        if (ges[0] && ges[0].type !== TILE_TYPE.START) schlecht.push(def.id + ': beginnt nicht mit Start/Ziel');
+        if (ges.some((t) => !t || !t.type)) schlecht.push(def.id + ': Kachel ohne Typ');
+        try {
+          const pts = trackCenterline(ges);
+          const laenge = trackLaengeM(ges);
+          const origLaenge = trackLaengeM(orig);
+          if (!pts || pts.length < 2) schlecht.push(def.id + ': Mittelachse leer');
+          if (Math.abs(laenge - origLaenge) / Math.max(origLaenge, 1) > 0.02) {
+            schlecht.push(def.id + ': Laenge ' + laenge.toFixed(2) + ' m statt ' + origLaenge.toFixed(2) + ' m');
+          }
+        } catch (e) {
+          schlecht.push(def.id + ': Mittelachse wirft ' + e.message);
+        }
+        // Gegenprobe: faehrt man die gespiegelte Strecke ab, muss die Anti-Cheat-Pruefung
+        // die Runde erkennen. Auf der Schiene meldet das Auto Start/Ziel als 0x01 (nicht
+        // als den Kacheltyp 0x0a), also so simulieren.
+        try {
+          const gelesen = ges.map((t) => (t.type === TILE_TYPE.START ? START_CODE_RAIL : t.type));
+          const pr = chRundePruefen(def, gelesen);
+          if (!pr.ok) {
+            schlecht.push(def.id + ': Anti-Cheat lehnt gespiegelte Runde ab (quote ' + pr.quote.toFixed(2) + ')');
+            if (!debugGesperrt) {
+              debugGesperrt = true;
+              const soll = chTiles(def).slice(1).map((x) => chKlasse(x.type));
+              const ist = gelesen.filter((c) => !isStartCode(c) && c !== TILE_OFFTRACK).map(chKlasse);
+              const spiegel = soll.slice().reverse().map((k) => (k === 'R' ? 'L' : k === 'L' ? 'R' : k));
+              debugInfo.push({ def: def.id, orig: orig.map((t) => t.type), ges: ges.map((t) => t.type),
+                soll, spiegel, ist, lcsSpiegel: chLcs(spiegel, ist), lcsSoll: chLcs(soll, ist) });
+            }
+          }
+        } catch (e) {
+          schlecht.push(def.id + ': Anti-Cheat wirft ' + e.message);
+        }
+        defs.push(def.id);
+      };
+      CH_ALLE.forEach(pruefe);
+      return { geprueft, defs, schlecht, debugInfo };
+    },
+
     // ---- STEHT AUTO 2 IN DER RUNDENUEBERSICHT? ---------------------------------------
     //
     // DIE AUFWANDSSCHAETZUNG WAR HIER FALSCH, und das gehoert aufgeschrieben: die

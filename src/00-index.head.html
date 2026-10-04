@@ -2417,6 +2417,11 @@
   .k-pause-dialog .k-frage-bild { display: block; background: #05070a; border: 1px solid rgba(255,255,255,.14);
     border-radius: 4px; padding: 6px; margin: 0 0 4px; }
   .k-pause-dialog .k-frage-bild svg { display: block; width: 100%; height: auto; }
+  /* Namenseingabe im Frage-Dialog (Challenge-Start): der Name fuer die Bestenliste. */
+  .k-pause-dialog .k-frage-eingabe { display: flex; flex-direction: column; gap: 4px; margin: 0 0 6px; }
+  .k-pause-dialog .k-frage-eingabe label { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .k-pause-dialog .k-frage-eingabe input { font-size: 17px; padding: 8px 10px; background: #05070a;
+    color: #fff; border: 1px solid rgba(255,255,255,.25); border-radius: 0; letter-spacing: .06em; }
   /* Der Grund bleibt auch auf dem niedrigen Telefon sichtbar (dort blendet .k-pause-dialog p
      die Erklaerzeilen des Cockpit-Menues aus). */
   .k-pause-dialog .k-frage-text { display: block; white-space: pre-line; font-size: clamp(11px, 2.6vh, 13.5px); margin: 0 0 4px; line-height: 1.4; }
@@ -4123,7 +4128,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.121</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.122</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -11014,6 +11019,10 @@
       <h2 id="k-frage-titel"></h2>
       <div class="k-frage-bild" id="k-frage-bild" hidden></div>
       <p class="muted k-frage-text" id="k-frage-text"></p>
+      <div class="k-frage-eingabe" id="k-frage-eingabe" hidden>
+        <label for="k-frage-eingabe-feld"></label>
+        <input type="text" id="k-frage-eingabe-feld" maxlength="16" autocomplete="off">
+      </div>
       <div class="k-frage-knoepfe" id="k-frage-knoepfe"></div>
     </div>
   </div>
