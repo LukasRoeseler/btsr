@@ -570,7 +570,8 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
     // eine Art Tabelle". Bisher gab es Sektoren nur fuer das Spielerauto (sectorCrossed);
     // hier zaehlte bei eingeschalteten Sektoren JEDE Ueberfahrt als Runde. Jetzt dieselbe
     // Regel je Auto: sectorCount Kontakte sind eine Runde, dazwischen Sektorgrenzen.
-    if (sectorCount > 1) {
+    const sektorZahl = sektorZiel();
+    if (sektorZahl > 1) {
       if (!r.sek) r.sek = { start: null, zeiten: [], hist: [], n: 0 };
       const k = r.sek;
       if (k.start === null) k.start = r.lapStart !== null ? r.lapStart : now;
@@ -580,7 +581,7 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
       }
       k.start = now;
       if (r.lapStart === null) r.lapStart = now;
-      if (k.n < sectorCount) return;
+      if (k.n < sektorZahl) return;
       k.hist.push(k.zeiten.slice());
       k.zeiten = [];
       k.n = 0;
@@ -1001,11 +1002,11 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
       // Die beste je gefahrene Zeit JE SEKTOR wird mitgerechnet und hervorgehoben - das ist
       // die Zahl, wegen der man Sektorzeiten ueberhaupt ansieht: sie sagt, WO eine Runde
       // verloren ging, und nicht nur dass sie es tat.
-      const mehrere = typeof sectorCount === 'number' && sectorCount > 1
+      const mehrere = typeof sectorCount === 'number' && sektorZiel() > 1
                       && sectorHistory.length > 0;
       const besteS = [];
       if (mehrere) {
-        for (let i = 0; i < sectorCount; i++) {
+        for (let i = 0; i < sektorZiel(); i++) {
           const werte = sectorHistory.map((r) => r[i]).filter((v) => v !== undefined);
           besteS.push(werte.length ? Math.min.apply(null, werte) : null);
         }
@@ -2567,10 +2568,28 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
     sectorTimes = [];
   }
 
+  // BESTELLT: "im editor weitere start/ziel geraden einbauen, die dann als sektor gelten".
+  // Die Zahl der Start/Ziel-Kacheln der Editor-Strecke bestimmt die Sektorzahl: die erste
+  // ist die Rundenlinie, die weiteren sind Sektorgrenzen (Zwischenzeit).
+  //
+  // Hat die Strecke MEHRERE Start/Ziel-Kacheln, gilt das Layout (Bahn-Modus, Editor).
+  // Sonst bleibt der manuelle Regler (sector-count) massgeblich - er deckt den
+  // Ausdruck-Modus ab, wo die Muster auf der Schiene liegen, und eine einzelne
+  // Start/Ziel-Kachel (jede Ueberfahrt eine Runde).
+  function sektorZiel() {
+    let n = 1;
+    if (typeof trackSektorAnzahl === 'function' && currentTrackTiles && currentTrackTiles.length) {
+      try { n = trackSektorAnzahl(currentTrackTiles); } catch (e) { n = 1; }
+    }
+    if (n > 1) return n;
+    return sectorCount > 1 ? sectorCount : 1;
+  }
+
   // Gibt true zurueck, wenn dieser Kontakt eine RUNDE vollendet - dann laeuft die normale
   // Rundenlogik. Sonst war es eine Sektorgrenze und die Runde laeuft weiter.
   function sectorCrossed(now) {
-    if (sectorCount <= 1) return true;
+    const ziel = sektorZiel();
+    if (ziel <= 1) return true;
     if (sectorStart === null) {
       // Der erste Kontakt ueberhaupt: er beginnt den ersten Sektor und ist noch keine
       // Sektorgrenze. Ohne diesen Fall waere der erste Sektor die Zeit seit dem Rennstart
@@ -2582,13 +2601,11 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
     sectorTimes.push(now - sectorStart);
     sectorStart = now;
     sectorIndex += 1;
-    if (sectorIndex < sectorCount) {
+    if (sectorIndex < ziel) {
       renderSectors();
-      showHudToast('SEKTOR ' + sectorIndex + ': '
-                   + formatLapTime(sectorTimes[sectorTimes.length - 1]));
-      // Ein eigener, tieferer Ton fuer die Sektorgrenze: derselbe wie fuer die Runde waere
-      // eine Falschmeldung, denn die Runde ist nicht vorbei.
-      playTone(300, 0.07, 'sine', 0.12);
+      // BESTELLT: "zwischenzeit soll nicht angesagt werden". Die Sektorgrenze misst die
+      // Zwischenzeit still - kein Toast, kein Ton, keine Stimme. Die Zeiten stehen in der
+      // Sektorentabelle (renderSectors) und im Diagramm.
       return false;
     }
     // Runde voll.
@@ -2602,7 +2619,8 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
   function renderSectors() {
     const host = $('sector-list');
     if (!host) return;
-    if (sectorCount <= 1) { host.innerHTML = ''; return; }
+    const ziel = sektorZiel();
+    if (ziel <= 1) { host.innerHTML = ''; return; }
     const teile = [];
     if (sectorTimes.length) {
       teile.push('<div class="sess-row"><b>jetzt</b> '
@@ -2614,7 +2632,7 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
     // gefahrene Runde, und die Differenz sagt, wieviel noch drin ist.
     if (sectorHistory.length) {
       const beste = [];
-      for (let i = 0; i < sectorCount - 1 + 1; i++) {
+      for (let i = 0; i < ziel - 1 + 1; i++) {
         const werte = sectorHistory.map(r => r[i]).filter(v => v !== undefined);
         if (werte.length) beste.push(Math.min.apply(null, werte));
       }
@@ -3876,13 +3894,19 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
     sectorHistory = [];
     renderSectors();
     if (sectorCount > 1 && trackMode === 'on') {
-      // Kein stiller Fehlschlag: mit Bahn ist die Einstellung nicht falsch, sondern
-      // bedeutungslos, und das gehoert gesagt statt dass man auf Sektorzeiten wartet, die
-      // nie kommen.
-      showHudToast('SEKTOREN BRAUCHEN DEN AUSDRUCK-MODUS');
-      log('Sektoren sind auf ' + sectorCount + ' gestellt, aber die Leseart ist "Bahn". '
-          + 'Auf der Schiene gibt es genau ein Start/Ziel, also bleibt jede Ueberfahrt eine '
-          + 'Runde. Im Cockpit auf "Ausdruck" umschalten.', 'err');
+      // Im Bahn-Modus bestimmt die Strecke die Sektorzahl: die Zahl der Start/Ziel-Kacheln
+      // im Editor. Der manuelle Regler gilt dort nur fuer den Ausdruck-Modus.
+      const imEditor = (typeof trackSektorAnzahl === 'function')
+        ? trackSektorAnzahl(currentTrackTiles || []) : 1;
+      if (imEditor > 1) {
+        log('Bahn: ' + imEditor + ' Start/Ziel-Kacheln = ' + imEditor + ' Sektoren '
+            + '(der Regler gilt hier nur fuer den Ausdruck-Modus).', 'info');
+      } else {
+        showHudToast('SEKTOREN BRAUCHEN DEN AUSDRUCK-MODUS');
+        log('Sektoren sind auf ' + sectorCount + ' gestellt, aber die Leseart ist "Bahn". '
+            + 'Lege mehrere Start/Ziel-Geraden im Editor an, oder schalte im Cockpit auf '
+            + '"Ausdruck" um.', 'err');
+      }
     } else {
       log('Sektoren: ' + (sectorCount <= 1 ? 'aus'
           : sectorCount + ' Ueberfahrten je Runde'), 'info');
@@ -6004,7 +6028,7 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
   function ovDiagrammMalen() {
     const host = $('ov-diagramm');
     if (!host) return;
-    if (ovDiagrammArt > 0 && sectorCount <= 1) ovDiagrammArt = 0;
+    if (ovDiagrammArt > 0 && sektorZiel() <= 1) ovDiagrammArt = 0;
     const reihen = ovDiagrammReihen();
     const alle = reihen.flatMap((r) => r.werte).sort((a, b) => a - b);
     if (!alle.length) { if (host.innerHTML) host.innerHTML = ''; return; }
@@ -6056,7 +6080,7 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
   }
   if ($('ov-diagramm')) {
     $('ov-diagramm').addEventListener('click', () => {
-      ovDiagrammArt = sectorCount > 1 ? (ovDiagrammArt + 1) % (sectorCount + 1) : 0;
+      ovDiagrammArt = sektorZiel() > 1 ? (ovDiagrammArt + 1) % (sektorZiel() + 1) : 0;
       ovDiagrammMalen();
     });
   }
@@ -6070,10 +6094,11 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
   function ovSektorenMalen() {
     const host = $('ov-sektoren');
     if (!host) return;
-    if (sectorCount <= 1) { if (host.innerHTML) host.innerHTML = ''; return; }
+    const sz = sektorZiel();
+    if (sz <= 1) { if (host.innerHTML) host.innerHTML = ''; return; }
     const autos = raceAllCars().map((c) => {
       const beste = [];
-      for (let k = 0; k < sectorCount; k++) {
+      for (let k = 0; k < sz; k++) {
         const v = (c.sektoren || []).map((sek) => sek[k]).filter((x) => x > 0);
         beste.push(v.length ? Math.min.apply(null, v) : null);
       }
@@ -6082,13 +6107,13 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
       return { name: c.name, farbe: c.farbe, werte: beste };
     });
     if (!autos.length) { if (host.innerHTML) host.innerHTML = ''; return; }
-    const spalten = sectorCount + 1;
+    const spalten = sz + 1;
     const grenzen = [];
     for (let k = 0; k < spalten; k++) {
       const v = autos.map((a) => a.werte[k]).filter((x) => x !== null);
       grenzen.push(v.length > 1 ? [Math.min.apply(null, v), Math.max.apply(null, v)] : null);
     }
-    const kopf = '<tr><th></th>' + Array.from({ length: sectorCount }, (_, k) => '<th>S' + (k + 1) + '</th>').join('')
+    const kopf = '<tr><th></th>' + Array.from({ length: sz }, (_, k) => '<th>S' + (k + 1) + '</th>').join('')
       + '<th>' + t('Runde') + '</th></tr>';
     const zeilen = autos.map((a) => '<tr><td><span class="ov-farbe" style="background:'
       + (a.farbe || 'transparent') + '"></span> ' + a.name + '</td>'

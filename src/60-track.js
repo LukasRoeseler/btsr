@@ -2117,10 +2117,10 @@
       }
     });
 
-    let startIdx = -1;
+    const startIdxListe = [];
     for (let i = 0; i < n; i++) {
       if (runOf[i]) continue;
-      if (tiles[i].type === TILE_TYPE.START) { startIdx = i; continue; }
+      if (tiles[i].type === TILE_TYPE.START) { startIdxListe.push(i); continue; }
       if (override.has(i)) { anker[i] = override.get(i); continue; }
       anker[i] = luukeGeradenWert(i, tiles, runOf, closed, at);
     }
@@ -2131,9 +2131,13 @@
     // Mitte zu erzwingen - eine dritte, unnoetige Wende. Erst NACH allen anderen Ankern
     // berechnet: luukeGeradenWert() und die gedaempfte Uebergabe oben pruefen nur den
     // TYP der Startkachel (TILE_TYPE.START), nie ihren Zahlenwert - keine Ringabhaengigkeit.
-    if (startIdx >= 0 && n > 1) {
-      const vorIdx = at(startIdx - 1), nachIdx = at(startIdx + 1);
-      anker[startIdx] = (anker[vorIdx] + anker[nachIdx]) / 2;
+    // BESTELLT: mehrere Start/Ziel-Geraden als Sektoren - JEDE Startkachel wird so
+    // gesetzt, nicht nur die letzte.
+    if (startIdxListe.length && n > 1) {
+      startIdxListe.forEach((si) => {
+        const vorIdx = at(si - 1), nachIdx = at(si + 1);
+        anker[si] = (anker[vorIdx] + anker[nachIdx]) / 2;
+      });
     }
     return anker;
   }
@@ -3396,10 +3400,9 @@
     if (trackVerlauf.length > 80) trackVerlauf.shift();
   }
   function addTile(type) {
-    if (type === TILE_TYPE.START && currentTrackTiles.some(t => t.type === TILE_TYPE.START)) {
-      showHudToast('Start/Ziel gibt es nur einmal');
-      return;
-    }
+    // BESTELLT: "lass mich im editor weitere start/ziel geraden einbauen, die dann als
+    // sektor gelten". Mehrere Start/Ziel-Kacheln sind jetzt erlaubt - die erste ist die
+    // Rundenlinie, die weiteren sind Sektorgrenzen (siehe trackSektorAnzahl).
     const warZu = trackIstGeschlossen();
     trackMerken();
     const at = currentTrackTiles.length ? trackSelIndex() + 1 : 0;
@@ -3411,6 +3414,12 @@
     // UEBERGANG von offen zu geschlossen, nicht bei jedem weiteren Teil auf der fertigen Runde.
     if (!warZu && trackIstGeschlossen()) trackFertigKlang();
     refreshTrackPreview();
+  }
+  // BESTELLT: "im editor weitere start/ziel geraden einbauen, die dann als sektor gelten".
+  // Die Zahl der Start/Ziel-Kacheln ist die Zahl der Sektoren: die erste ist die Rundenlinie,
+  // die weiteren sind Sektorgrenzen (Zwischenzeit).
+  function trackSektorAnzahl(tiles) {
+    return (tiles || []).filter((t) => t.type === TILE_TYPE.START).length;
   }
   function trackIstGeschlossen() {
     if (currentTrackTiles.length < 3) return false;
@@ -3692,6 +3701,15 @@
   // mit dem Daumen trifft. Vorher lagen BEIDE Haarnadeln rechts, eine Linkshaarnadel war
   // also am falschen Ende zu suchen.
   const TRACK_PALETTE = [
+    // BESTELLT: "im editor weitere start/ziel geraden einbauen, die dann als sektor gelten".
+    // Start/Ziel ist jetzt in der Palette, damit man eine zweite Rundenlinie als Sektor
+    // legen kann. Die erste Kachel bleibt die Rundenlinie (siehe sektorZiel()).
+    { key: 'start', type: () => TILE_TYPE.START, cap: 'Start/Ziel',
+      icon: '<path d="M4 9 H20 M4 15 H20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'
+          + '<rect x="4" y="9" width="2" height="3" fill="currentColor"/><rect x="8" y="9" width="2" height="3" fill="currentColor"/>'
+          + '<rect x="12" y="9" width="2" height="3" fill="currentColor"/><rect x="16" y="9" width="2" height="3" fill="currentColor"/>'
+          + '<rect x="6" y="12" width="2" height="3" fill="currentColor"/><rect x="10" y="12" width="2" height="3" fill="currentColor"/>'
+          + '<rect x="14" y="12" width="2" height="3" fill="currentColor"/><rect x="18" y="12" width="2" height="3" fill="currentColor"/>' },
     { key: 'hairpin-left', type: () => TILE_TYPE.HAIRPIN_LEFT, cap: 'Haarnadel L',
       icon: '<path d="M16 22 L16 14 A5 5 0 0 0 6 14 L6 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'
           + '<path d="M16 22 L16 19" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>' },

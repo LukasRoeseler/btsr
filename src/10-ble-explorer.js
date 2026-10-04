@@ -1681,9 +1681,16 @@
       "km/h in the middle, no overtaking, lights flashing. Holding for another second starts the lights and releases. The cockpit button needs only a tap – the key sits next to everything else, the button does not.",
     "Sektoren": "Sectors",
     "Überfahrten je Runde. Nur": "Crossings per lap. Only",
+    "Überfahrten je Runde.": "Crossings per lap.",
     "experimentell": "experimental",
     "Überfahrten je Runde": "Crossings per lap",
     "1 (aus)": "1 (off)",
+    "Im Bahn-Modus": "In track mode",
+    "(Editor) bestimmt die Strecke die Sektorzahl: jede Start/Ziel-Gerade ist eine Sektorgrenze, die erste ist die Rundenlinie.":
+      "(editor) the track determines the sector count: each start/finish straight is a sector boundary, the first one is the lap line.",
+    "Ohne Bahn": "Without a track",
+    "(Ausdruck) gilt dieser Regler - dort legt man die Muster selbst hin, drei Ausdrucke über eine Runde verteilt sind drei Sektoren. Eine Sektorzeit ist die":
+      "(print mode) this control applies - there you place the patterns yourself, three printouts spread over a lap are three sectors. A sector time is the",
     "Nur": "Only",
     "ohne Bahn": "without a track",
     "sinnvoll: auf der CH-Schiene gibt es genau ein Start/Ziel, also ist jede Überfahrt eine Runde. Im Ausdruck-Modus legt man die Muster selbst hin – drei Ausdrucke über eine Runde verteilt sind drei Sektoren. Eine Sektorzeit ist die":

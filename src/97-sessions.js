@@ -548,6 +548,14 @@
   // Die Kartenpunkte dieses Telefons: das eigene Auto und seine Ghosts, knapp kodiert
   // (i Kachel, f Anteil darin, c Farbe, k Kuerzel, g Ghost). Das eigene Auto traegt das
   // Kuerzel des Fahrernamens, damit man es auf dem Info-Screen wiedererkennt.
+  //
+  // BESTELLT: "Multiplayer mit Ghosts bestaetigen" (v0.8.96). GEPRUEFT PER CODE, NICHT AUF
+  // ECHTEN GERAETEN: Der Host hat die Ghosts in seiner Garage, launchGhosts() startet sie
+  // beim Gruen (startRaceCountdown), trackCarMarks() liefert ihre Positionen, und
+  // mpPositionen() schickt sie mit g:1 an die Zuschauer. Auf der Gegenseite legt mpiHolen()
+  // sie in mpi.spur ab (g: p.g), und mpiBild() zeichnet sie auf der Karte. Ein Tischtest mit
+  // zwei Geräten steht noch aus - die Zustandsübertragung ist damit belegt, das Zusammenspiel
+  // von Host und mehreren Fahrern plus Ghosts auf der Strecke bleibt Hardware-verifikation.
   function mpPositionen() {
     const marken = (typeof trackCarMarks === 'function') ? trackCarMarks() : [];
     return marken.filter((m) => m && m.index !== null && m.index !== undefined).slice(0, 8)
