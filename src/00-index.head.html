@@ -3142,6 +3142,16 @@
   #track-preview-svg {
     height: clamp(240px, 42vh, 460px);
     display: grid; place-items: center; overflow: hidden;
+    /* BESTELLT: "beim zufälliger strecke ... Animation ... wie sich die strecke selbst
+       zusammenbaut". trackZufall() setzt die Klasse; die Animation ist auf hoechstens
+       500 ms begrenzt und laeuft nicht bei jedem normalen Neuzeichnen. */
+  }
+  #track-preview-svg.track-baut { animation: trackBaut .5s ease-out; }
+  @keyframes trackBaut {
+    0% { opacity: 0; transform: scale(.92); }
+    60% { opacity: 1; }
+    100% { opacity: 1; transform: scale(1); }
+  }
     /* Die Platz-Bedarf-Zeile (.tp-space) steht jetzt oben rechts im Hintergrund. Die
        untere Leiste bleibt: sie holt die Karte im Vollbild etwas von der Palette weg
        und gibt dem 50-cm-Raster Luft. */

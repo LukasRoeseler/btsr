@@ -3387,11 +3387,30 @@
       showHudToast('Start/Ziel gibt es nur einmal');
       return;
     }
+    const warZu = trackIstGeschlossen();
     trackMerken();
     const at = currentTrackTiles.length ? trackSelIndex() + 1 : 0;
     currentTrackTiles.splice(at, 0, { type });
     trackSel = at;
+    // BESTELLT: "beim zusammenfügen ein angenehmes klick geräusch". Ein kurzer, heller Ton.
+    if (typeof playTone === 'function') playTone(660, 0.045, 'sine', 0.12);
+    // BESTELLT: "wenn die strecke fertig ist, ein noch befriedigenderes klack". Erst beim
+    // UEBERGANG von offen zu geschlossen, nicht bei jedem weiteren Teil auf der fertigen Runde.
+    if (!warZu && trackIstGeschlossen()) trackFertigKlang();
     refreshTrackPreview();
+  }
+  function trackIstGeschlossen() {
+    if (currentTrackTiles.length < 3) return false;
+    if (typeof trackCenterline !== 'function' || typeof trackSchluss !== 'function') return false;
+    try { return trackSchluss(trackCenterline(currentTrackTiles)); } catch (e) { return false; }
+  }
+  // Befriedigendes Klack (ein bisschen wie bei Legovideospielen): drei schnell ansteigende
+  // Toene, der letzte laenger und heller.
+  function trackFertigKlang() {
+    if (typeof playTone !== 'function') return;
+    playTone(520, 0.05, 'sine', 0.18);
+    setTimeout(() => playTone(780, 0.07, 'sine', 0.2), 55);
+    setTimeout(() => playTone(1040, 0.1, 'sine', 0.24), 120);
   }
   function trackTeilEntfernen() {
     const i = trackSelIndex();
@@ -4281,6 +4300,11 @@
       trackRotationDeg = wahl.rot || 0;
       refreshTrackPreview();
       trackZufallCodeMerken(wahl.code);
+      // BESTELLT: "beim zufälliger strecke wenn möglich eine Animation abspielen (max 500ms
+      // lang), wie sich die strecke selbst zusammenbaut." Plus das befriedigende Klack.
+      trackFertigKlang();
+      const pre = $('track-preview-svg');
+      if (pre) { pre.classList.remove('track-baut'); void pre.offsetWidth; pre.classList.add('track-baut'); }
       showHudToast(t('Zufällige Strecke gebaut'));
       return true;
     }
