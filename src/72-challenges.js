@@ -515,6 +515,139 @@
     chSchreiben(CH_STORE, alle);
   }
 
+  // ---- COMMUNITY STRECKEN (v0.8.96, BESTELLT) -----------------------------------------
+  // BESTELLT: "füge bei challenges als vierte section ein, dass Leute eine eigene Strecke
+  // eintragen können und dort ihre Bestzeit aufnehmen können." Strecken bekommen vierstellige
+  // IDs (0001, 0002, ...). Eigene Strecken werden mit vorhandenen zusammengefuehrt, auch wenn
+  // sie gespiegelt sind (dieselbe Logik wie chSpiegelTiles). Sortiert wird nach (1) neuester
+  // Zeit, (2) den meisten verschiedenen Spielern (ueber Geraet). Nur pro Preset.
+  const COMMUNITY_STORE = 'omegasim-community';
+  function communityLesen() {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(COMMUNITY_STORE) || 'null'); } catch (e) { /* privat */ }
+    if (!d || !Array.isArray(d.tracks)) d = { tracks: [], times: {}, nextId: 1 };
+    if (!d.times) d.times = {};
+    if (!d.nextId) d.nextId = 1;
+    return d;
+  }
+  function communitySchreiben(d) {
+    try { localStorage.setItem(COMMUNITY_STORE, JSON.stringify(d)); } catch (e) { /* privat */ }
+  }
+  function communityCode(tiles) { return trackToCode(tiles, 0); }
+  // Zwei Strecken sind dieselbe, wenn ihr Code gleich ist ODER die eine das Spiegelbild der
+  // anderen ist (Reihenfolge umkehren + links/rechts tauschen, wie chSpiegelTiles).
+  function communityGleiche(tilesA, tilesB) {
+    const a = communityCode(tilesA);
+    if (a === communityCode(tilesB)) return true;
+    try { return a === communityCode(chSpiegelTiles(tilesB)); } catch (e) { return false; }
+  }
+  function communityFinde(data, tiles) {
+    for (const t of data.tracks) {
+      const p = codeToTrack(t.code);
+      if (p && communityGleiche(tiles, p.tiles)) return t;
+    }
+    return null;
+  }
+  // Nimmt eine Strecke auf (oder fuehrt sie mit einer vorhandenen zusammen) und liefert die id.
+  function communityEinreichen(data, tiles, name) {
+    const vorhanden = communityFinde(data, tiles);
+    if (vorhanden) return vorhanden.id;
+    const id = String(data.nextId || 1).padStart(4, '0');
+    data.tracks.push({ id, code: communityCode(tiles), name: (name || 'Strecke ' + id).slice(0, 32) });
+    data.nextId = (data.nextId || 1) + 1;
+    communitySchreiben(data);
+    return id;
+  }
+  // Tragt eine Zeit ein (beste je Geraet bleibt bestehen, die Liste ist sortiert).
+  function communityZeit(data, trackId, zeit, fahrer) {
+    const geraet = chGeraet();
+    const liste = data.times[trackId] = data.times[trackId] || [];
+    liste.push({ zeit: Math.round(zeit), fahrer: (fahrer || '').slice(0, 16), geraet, datum: Date.now() });
+    liste.sort((a, b) => a.zeit - b.zeit);
+    if (liste.length > 50) liste.length = 50;
+    communitySchreiben(data);
+  }
+  function communityNeuesteZeit(data, id) {
+    let max = 0;
+    for (const e of (data.times[id] || [])) if (e.datum > max) max = e.datum;
+    return max;
+  }
+  function communitySpieler(data, id) {
+    const set = new Set();
+    for (const e of (data.times[id] || [])) set.add(e.geraet);
+    return set.size;
+  }
+  // Sortierung: (1) neueste Zeit, (2) meisten verschiedenen Spieler.
+  function communitySortiert(data) {
+    return data.tracks.slice().sort((a, b) => {
+      const ta = communityNeuesteZeit(data, a.id), tb = communityNeuesteZeit(data, b.id);
+      if (ta !== tb) return tb - ta;
+      return communitySpieler(data, b.id) - communitySpieler(data, a.id);
+    });
+  }
+  function communityBesteZeit(data, id) {
+    const l = data.times[id] || [];
+    return l.length ? l[0].zeit : 0;
+  }
+  // Die Community-Seite: Liste der eingereichten Strecken (sortiert) und ein Knopf, um die
+  // eigene Strecke aus dem Editor einzureichen.
+  function communityZeichnen() {
+    const bereich = $('community-bereich');
+    if (!bereich) return;
+    const data = communityLesen();
+    bereich.innerHTML = '';
+    const ein = document.createElement('button');
+    ein.className = 'primary';
+    ein.textContent = t('Eigene Strecke einreichen');
+    ein.onclick = () => {
+      if (!currentTrackTiles || currentTrackTiles.length < 2) {
+        showHudToast('Keine Strecke im Editor.'); return;
+      }
+      const name = prompt(t('Name der Strecke'), '') || 'Strecke ' + String(data.nextId || 1).padStart(4, '0');
+      const id = communityEinreichen(data, currentTrackTiles, name);
+      communitySchreiben(data);
+      showHudToast('Strecke ' + id + ' eingereicht.');
+      communityZeichnen();
+    };
+    bereich.appendChild(ein);
+    const liste = communitySortiert(data);
+    if (!liste.length) {
+      const p = document.createElement('p');
+      p.className = 'muted';
+      p.textContent = t('Noch keine Community-Strecken. Reiche deine Strecke ein.');
+      bereich.appendChild(p);
+      return;
+    }
+    const wrap = document.createElement('div');
+    wrap.className = 'community-liste';
+    for (const tr of liste) {
+      const row = document.createElement('div');
+      row.className = 'community-zeile';
+      const links = document.createElement('div');
+      const b = document.createElement('b');
+      b.textContent = tr.id + ' \u00b7 ' + tr.name;
+      const best = communityBesteZeit(data, tr.id);
+      const spieler = communitySpieler(data, tr.id);
+      const em = document.createElement('em');
+      em.textContent = best ? t('Bestzeit') + ' ' + chZeit(best) + ' \u00b7 ' + spieler + ' ' + t('Spieler')
+                             : t('Noch keine Zeit') + ' \u00b7 ' + spieler + ' ' + t('Spieler');
+      links.appendChild(b); links.appendChild(em);
+      const z = document.createElement('button');
+      z.textContent = t('Zeit eintragen');
+      z.onclick = () => {
+        const eingabe = prompt(t('Bestzeit in Sekunden (z.B. 12,345)'), '');
+        const sek = parseFloat((eingabe || '').replace(',', '.'));
+        if (!Number.isFinite(sek) || sek <= 0) return;
+        communityZeit(data, tr.id, sek * 1000, chOnline().fahrer);
+        communityZeichnen();
+      };
+      row.appendChild(links); row.appendChild(z);
+      wrap.appendChild(row);
+    }
+    bereich.appendChild(wrap);
+  }
+
+
   // ---- Online ----
   function chHochladen(erg) {
     const o = chOnline();
@@ -903,6 +1036,7 @@
   function challengeSeiteZeigen(id) {
     if (chKarteVollAn && typeof chKarteVoll === 'function') chKarteVoll();
     if (id === 'online') { chOnlineZeichnen(); return; }
+    if (id === 'community') { communityZeichnen(); return; }
     const k = 'abcd'.indexOf(id);
     if (k < 0) {
       const def = chDef(id);

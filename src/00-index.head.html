@@ -3277,6 +3277,15 @@
     border-radius: 50%; font-size: 12px; line-height: 1; padding: 0; display: flex;
     align-items: center; justify-content: center; background: var(--danger, #c0392b);
     color: #fff; border: none; cursor: pointer; }
+  /* Community Strecken: Liste der eingereichten Strecken. */
+  .community-liste { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .community-zeile { display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--panel-2); }
+  .community-zeile div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .community-zeile b { font-size: 13px; }
+  .community-zeile em { font-style: normal; font-size: 11px; color: var(--muted); }
+  .community-zeile button { white-space: nowrap; }
   /* Etwas Abstand zwischen Teilen und Aktionen, damit "Leeren" nicht neben "Haarnadel"
      steht und aussieht wie ein weiteres Streckenteil. */
   .tp-actions { margin-bottom: 4px; }
@@ -4834,6 +4843,14 @@
           <span>Gemeinsame Bestenliste &uuml;ber ein Google Sheet.</span>
         </button>
       </div>
+      <h3 class="k-zwischen">Community Strecken</h3>
+      <div class="misc-grid">
+        <button class="misc-tile subpage-open" data-sub="ch-community">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 34c0-4 3-8 8-8s8 3 8 8M20 14a6 6 0 1 1 0 12 6 6 0 0 1 0-12z"/><path d="M28 14c4-2 10-1 12 4M36 26c-2 4-6 6-10 6" stroke="var(--accent)"/></svg>
+          <b>Community Strecken</b>
+          <span>Eigene Strecken eintragen und Bestzeiten teilen.</span>
+        </button>
+      </div>
     </div>
     <div class="card subpage" id="sub-ch-a">
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
@@ -4861,6 +4878,11 @@
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
       <h2 class="ch-titel" data-i18n-skip></h2>
       <div class="ch-platz"></div>
+    </div>
+    <div class="card subpage" id="sub-ch-community">
+      <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
+      <h2>Community Strecken</h2>
+      <div id="community-bereich"></div>
     </div>
     <div class="card subpage" id="sub-ch-online">
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
