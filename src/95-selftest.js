@@ -10449,7 +10449,7 @@
   stAdd('Strecke: jede Unterseite hat nur, was sie bezeichnet', () => {
     const f = [];
     const drin = (sub, id) => { const s = $('sub-' + sub); return !!(s && $(id) && s.contains($(id))); };
-    if (!drin('laden', 'track-list') || drin('edit', 'track-list')) f.push('gespeicherte Strecken nicht (nur) unter Laden');
+    if (!drin('laden', 'track-kacheln') || drin('edit', 'track-kacheln')) f.push('gespeicherte Strecken nicht (nur) unter Laden');
     if (!drin('edit', 'track-preview-svg')) f.push('Editor-Karte nicht im Editor');
     if (drin('laden', 'track-preview-svg')) f.push('Editor unter Laden');
     if (!drin('scan', 'track-scan-start') || drin('edit', 'track-scan-start')) f.push('Live-Scan nicht (nur) im Scan');

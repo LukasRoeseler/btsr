@@ -4446,14 +4446,67 @@
 
   function refreshTrackList() {
     const store = loadTrackStore();
-    const sel = $('track-list');
-    sel.innerHTML = '<option value="">-- gespeicherte Strecken --</option>';
-    Object.keys(store).forEach(name => {
-      const opt = document.createElement('option');
-      opt.value = name;
-      opt.textContent = `${name} (${store[name].tiles.length} Teile)`;
-      sel.appendChild(opt);
+    const cont = $('track-kacheln');
+    if (!cont) return;
+    cont.innerHTML = '';
+    const keys = Object.keys(store).sort();
+    if (!keys.length) {
+      const p = document.createElement('p');
+      p.className = 'muted';
+      p.textContent = 'Noch keine Strecken gespeichert.';
+      cont.appendChild(p);
+      return;
+    }
+    // BESTELLT: "gespeicherte strecken / strecke laden: nenne das menü 'meine strecken' und
+    // stelle sie als kacheln mit vorschaubild dar statt drop down. Klick auf strecke lädt sie
+    // in den Editor." Die Kacheln werden als DOM-Elemente gebaut (kein innerHTML fuer den
+    // Namen), damit ein Streckenname mit Sonderzeichen die Seite nicht zerreisst.
+    keys.forEach(name => {
+      const t = store[name];
+      const btn = document.createElement('button');
+      btn.className = 'track-kachel';
+      btn.title = name + ' laden';
+      const vor = document.createElement('span');
+      vor.className = 'track-kachel-vorschau';
+      try {
+        const tiles = migrateTiles((t.tiles || []).slice());
+        vor.innerHTML = renderTrackPreview(tiles, null, {}).html;
+      } catch (e) { /* ohne Vorschau */ }
+      const b = document.createElement('b');
+      b.textContent = name;
+      const em = document.createElement('em');
+      em.textContent = (t.tiles ? t.tiles.length : 0) + ' Teile';
+      btn.appendChild(vor); btn.appendChild(b); btn.appendChild(em);
+      btn.addEventListener('click', () => trackLaden(name));
+      const del = document.createElement('button');
+      del.className = 'track-kachel-del';
+      del.textContent = '✕';
+      del.title = 'Löschen';
+      del.addEventListener('click', (e) => { e.stopPropagation(); trackLoeschen(name); });
+      btn.appendChild(del);
+      cont.appendChild(btn);
     });
+  }
+  // Klick auf eine Kachel laedt die Strecke in den Editor (vorher das <select>-Laden).
+  function trackLaden(name) {
+    const store = loadTrackStore();
+    if (!store[name]) return;
+    // Gewandert, weil gespeicherte Strecken den Kacheltyp als Zahl halten und
+    // Start/Ziel von 0x01 auf 0x0a gewechselt ist.
+    currentTrackTiles = migrateTiles(store[name].tiles.slice());
+    trackRotationDeg = store[name].rotation || 0;
+    if (!currentTrackTiles.length || currentTrackTiles[0].type !== TILE_TYPE.START) {
+      currentTrackTiles.unshift({ type: TILE_TYPE.START }); // older saves may predate the anchor
+    }
+    $('track-name').value = name;
+    refreshTrackPreview();
+    showHudToast('Strecke "' + name + '" geladen');
+  }
+  function trackLoeschen(name) {
+    const store = loadTrackStore();
+    delete store[name];
+    saveTrackStore(store);
+    refreshTrackList();
   }
   refreshTrackList();
 
@@ -4506,29 +4559,7 @@
     return TRACK_NAME_ANFANG[Math.floor(Math.random() * TRACK_NAME_ANFANG.length)]
       + TRACK_NAME_ENDUNG[Math.floor(Math.random() * TRACK_NAME_ENDUNG.length)];
   }
-  $('track-load').onclick = () => {
-    const name = $('track-list').value;
-    if (!name) return;
-    const store = loadTrackStore();
-    if (!store[name]) return;
-    // Gewandert, weil gespeicherte Strecken den Kacheltyp als Zahl halten und
-    // Start/Ziel von 0x01 auf 0x0a gewechselt ist.
-    currentTrackTiles = migrateTiles(store[name].tiles.slice());
-    trackRotationDeg = store[name].rotation || 0;
-    if (!currentTrackTiles.length || currentTrackTiles[0].type !== TILE_TYPE.START) {
-      currentTrackTiles.unshift({ type: TILE_TYPE.START }); // older saves may predate the anchor
-    }
-    $('track-name').value = name;
-    refreshTrackPreview();
-  };
-  $('track-delete').onclick = () => {
-    const name = $('track-list').value;
-    if (!name) return;
-    const store = loadTrackStore();
-    delete store[name];
-    saveTrackStore(store);
-    refreshTrackList();
-  };
+  refreshTrackList();
 
   // ---- Live track scan: subscribe to NUS TX, watch byte 11 (tile counter) for
   // changes, majority-vote byte 12 (tile type) across samples seen during that tile's

@@ -3261,6 +3261,22 @@
   .tp-actions .tp-btn.sel { border-color: var(--info); }
   .tp-btn .tp-cap { font-size: 8.5px; letter-spacing: .04em; text-transform: uppercase;
     color: var(--muted); margin-top: 1px; }
+  /* Meine Strecken: gespeicherte Strecken als Kacheln mit Vorschaubild (statt <select>). */
+  .track-kacheln { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px; margin-top: 8px; }
+  .track-kachel { position: relative; display: flex; flex-direction: column; gap: 4px;
+    padding: 8px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--panel-2); cursor: pointer; text-align: left; }
+  .track-kachel:hover { border-color: var(--accent); }
+  .track-kachel-vorschau { display: block; min-height: 90px; border-radius: 6px;
+    background: var(--panel-3); overflow: hidden; }
+  .track-kachel-vorschau svg { width: 100%; height: 100%; display: block; }
+  .track-kachel b { font-size: 13px; }
+  .track-kachel em { font-style: normal; font-size: 11px; color: var(--muted); }
+  .track-kachel-del { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px;
+    border-radius: 50%; font-size: 12px; line-height: 1; padding: 0; display: flex;
+    align-items: center; justify-content: center; background: var(--danger, #c0392b);
+    color: #fff; border: none; cursor: pointer; }
   /* Etwas Abstand zwischen Teilen und Aktionen, damit "Leeren" nicht neben "Haarnadel"
      steht und aussieht wie ein weiteres Streckenteil. */
   .tp-actions { margin-bottom: 4px; }
@@ -10500,14 +10516,12 @@
     </div>
     <div class="card subpage" id="sub-laden">
       <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
-      <h2>Strecke laden</h2>
+      <h2>Meine Strecken</h2>
       <div class="row">
         <input type="text" id="track-name" placeholder="Name der Strecke">
         <button id="track-save">Speichern</button>
-        <select id="track-list"><option value="">-- gespeicherte Strecken --</option></select>
-        <button id="track-load">Laden</button>
-        <button id="track-delete">Löschen</button>
       </div>
+      <div class="track-kacheln" id="track-kacheln"></div>
     </div>
     <div class="card subpage" id="sub-teile">
       <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
