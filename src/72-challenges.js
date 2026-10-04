@@ -261,7 +261,27 @@
   }
   function chGrundText(w) { return t(w.grund || '').replace('{n}', w.n || ''); }
 
-  let chWahl = 'oval', chModus = 'hotlap';
+  let chWahl = 'oval', chModus = 'hotlap', chSpiegel = false;
+  // BESTELLT: "bei dek challenges jeweils einen toggle ein, mit dem man die Strecke spiegeln
+  // kann". Gespiegelt heisst hier wie in der Anti-Cheat-Pruefung (chRundePruefen): die
+  // Schleife rueckwaerts fahren - Reihenfolge umkehren und links/rechts tauschen. So erkennt
+  // die Wertung die gespiegelte Runde ohne Aenderung.
+  function chSpiegelTiles(tiles) {
+    const tausch = (t) => {
+      switch (t.type) {
+        case TILE_TYPE.CURVE_LEFT: return { type: TILE_TYPE.CURVE_RIGHT };
+        case TILE_TYPE.CURVE_RIGHT: return { type: TILE_TYPE.CURVE_LEFT };
+        case TILE_TYPE.HAIRPIN: return { type: TILE_TYPE.HAIRPIN_LEFT };
+        case TILE_TYPE.HAIRPIN_LEFT: return { type: TILE_TYPE.HAIRPIN };
+        case TILE_TYPE.WEIT_RIGHT: return { type: TILE_TYPE.WEIT_LEFT };
+        case TILE_TYPE.WEIT_LEFT: return { type: TILE_TYPE.WEIT_RIGHT };
+        case TILE_TYPE.KLEIN_RIGHT: return { type: TILE_TYPE.KLEIN_LEFT };
+        case TILE_TYPE.KLEIN_LEFT: return { type: TILE_TYPE.KLEIN_RIGHT };
+        default: return { type: t.type };
+      }
+    };
+    return [tiles[0], ...tiles.slice(1).map(tausch).reverse()];
+  }
   // v0.8.80: Arcade entfernt. Challenges laufen nur mit dem Pro-Preset; der Schluessel der
   // Bestenliste behaelt das |pro|, damit die vorhandenen Zeiten weiter gelten.
   const chPreset = 'pro';
@@ -408,7 +428,8 @@
     const merk = trackRotationDeg;
     trackRotationDeg = 0;
     try {
-      return renderTrackPreview(chTiles(def), null,
+      const tiles = chSpiegel ? chSpiegelTiles(chTiles(def)) : chTiles(def);
+      return renderTrackPreview(tiles, null,
         detailliert ? { detailed: true, echt: true, ohneLinie: true } : {}).html;
     } finally { trackRotationDeg = merk; }
   }
@@ -622,7 +643,7 @@
     // Auf der Bahn: nur dort meldet das Auto jedes Teil, und nur dann laesst sich die Runde
     // gegen die Strecke pruefen.
     chSetzen('setting-ontrack', true);
-    currentTrackTiles = chTiles(def);
+    currentTrackTiles = chSpiegel ? chSpiegelTiles(chTiles(def)) : chTiles(def);
     trackRotationDeg = 0;
     trackSel = null;
     refreshTrackPreview();
@@ -1235,6 +1256,12 @@
     const h = e.target.closest('[data-m]');
     chModus = h ? h.dataset.m : (chModus === 'hotlap' ? 'rennen' : 'hotlap');
     chZeichneDetail(); chListeLaden(chSchluessel(chWahl, chModus, chPreset));
+  });
+  // BESTELLT: "bei dek challenges jeweils einen toggle ein, mit dem man die Strecke spiegeln
+  // kann". Der Umschalter zeichnet die Karte neu und merkt den Zustand fuer den Start.
+  $('ch-spiegel').addEventListener('change', () => {
+    chSpiegel = $('ch-spiegel').checked;
+    chZeichneDetail();
   });
   $('ch-start').addEventListener('click', () => { if (chLauf) challengeAbbrechen(); else challengeStarten(); });
   ['ch-url', 'ch-fahrer', 'ch-hochladen'].forEach((id) => $(id).addEventListener('change', chOnlineSpeichern));

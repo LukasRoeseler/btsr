@@ -192,8 +192,16 @@
       if (kacheln.length >= 2) {
         return kacheln.map((k) => ({
           text: (k.querySelector('b') || k).textContent.trim(),
-          an: k.dataset.sub === offen.id.replace(/^sub-/, ''),
-          wahl: () => { showSubpage(k.dataset.sub); },
+          // Dauerrennen-Kacheln (data-ch) zeigen alle dieselbe Kategorie-Unterseite sub-ch-e;
+          // der aktive ist der, dessen Strecke gerade offen ist (chWahl). So sind sie auf
+          // derselben Ebene wie die Wochenkategorien - BESTELLT: "wöchentliche Challenges und
+          // Dauerrennen sind auf verschiedenen menü-ebenen, bitte angleichen".
+          an: k.dataset.ch ? k.dataset.ch === chWahl
+              : k.dataset.sub === offen.id.replace(/^sub-/, ''),
+          wahl: () => {
+            if (k.dataset.ch && typeof challengeSeiteZeigen === 'function') challengeSeiteZeigen(k.dataset.ch);
+            else showSubpage(k.dataset.sub);
+          },
         }));
       }
       return null;
