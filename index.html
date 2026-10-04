@@ -18944,7 +18944,11 @@
   // Hochziehung zwar ohnehin, aber ein Verweis im Array wuerde beim Aufbau ausgewertet, und
   // diese Datei hat schon fuenf Ladeabbrueche an genau dieser Falle gekostet.
   const COCKPIT_SCREENS = [
-    { id: 'main', name: 'Cockpit' },
+    // BESTELLT: "statt einem extra cockpit screen für 2 spieler, mach es so dass der
+    // standard cockpit screen sich zum 2-spieler screen ändert, wenn in der garage zwei
+    // autos als gesteuert angemeldet sind." Der Standardschirm (main) zeigt bei aktivem
+    // Zwei-Spieler-Modus den Beide-Schirm (auto2), statt dass man extra dorthin blaettert.
+    { id: 'main', name: 'Cockpit', malen: () => cockpitMainMalen() },
     { id: 'pit', name: 'Box',
       pad: (d) => pitScreenPad(d),
       waehlen: () => pitScreenSelect(),
@@ -18972,6 +18976,19 @@
   let cockpitScreen = 0;
 
   function cockpitScreenIst() { return COCKPIT_SCREENS[cockpitScreen]; }
+
+  // Der Standardschirm: im Zwei-Spieler-Modus zeigt er die Beide-Ansicht, sonst das normale
+  // Cockpit (das ist per CSS an data-screen="main" gebunden und braucht kein malen).
+  function cockpitMainMalen() {
+    const el = $('race-dash');
+    if (!el) return;
+    if (zweiSpieler) {
+      el.dataset.screen = 'auto2';
+      if (typeof p2ScreenRender === 'function') p2ScreenRender();
+    } else {
+      el.dataset.screen = 'main';
+    }
+  }
 
   function cockpitScreenSet(i) {
     const n = COCKPIT_SCREENS.length;
@@ -21151,6 +21168,11 @@
     // nicht zurueck (cockpitScreenStep ueberspringt ihn dann ja gerade).
     if (!zweiSpieler && cockpitScreenIst() && cockpitScreenIst().nurZweiSpieler) {
       cockpitScreenZu('main');
+    }
+    // Standardschirm morph(t) im Zwei-Spieler-Modus zur Beide-Ansicht: beim Umschalten neu
+    // zeichnen, wenn man gerade auf main steht.
+    if (cockpitScreenIst() && cockpitScreenIst().id === 'main' && cockpitScreenIst().malen) {
+      cockpitScreenIst().malen();
     }
     // DAS KAESTCHEN GEHT MIT. Der Modus laesst sich seit v0.6.45 auch aus der Garage
     // einschalten (siehe setCarRole in 90-ghosts.js), und ein Schalter, der "aus" zeigt,
