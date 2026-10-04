@@ -92,6 +92,13 @@
     // Menschen raus (Niederlage) sind.
     knockout:   { label: 'Knockout', unit: 'Leben', timed: false,
                   hint: 'Experimentell: Geister von der Bahn rammen, 3 Leben.' },
+    // BESTELLT: "weiteren experimentellen rennmodus: demolition derby." Jedes Auto hat Health
+    // 0-100; ein Aufprall kostet 10 % (frontal) bzw. 20 % (von der Seite gerammt). Bei 0 %
+    // bleibt das Auto stehen, die Lichter flackern nur noch. Kein Boxenstopp, keine Runden.
+    // BESTELLT (nachgefragt): Sieger nach Kills (meiste Abschuesse), alle Aufpraelle zaehlen,
+    // auch Geister haben Health.
+    derby:      { label: 'Demolition Derby', unit: 'Kills', timed: false,
+                  hint: 'Experimentell: rammen, Health 0-100, Sieg nach Kills.' },
   };
   let raceMode = 'practice';
   let raceLimit = 2;              // minutes, or laps in 'laps' mode
@@ -106,6 +113,18 @@
   let knockoutGeister = 0;         // noch im Rennen befindliche Geister
   let knockoutLaeuft = false;      // Wertung nur waehrend eines Knockout-Rennens aktiv
   let knockoutSieger = null;       // null | 'menschen' | 'geister'
+
+  // ---- Demolition Derby (v0.8.96, experimentell) ----
+  const DERBY_MAX = 100;
+  let derbyLaeuft = false;
+  let derbyHealth = DERBY_MAX;     // Health von Spieler 1
+  let derbyHealth2 = DERBY_MAX;    // Health von Spieler 2
+  let derbyKills = 0;              // Abschuesse von Spieler 1
+  let derbyKills2 = 0;             // Abschuesse von Spieler 2
+  let derbySieger = null;          // null | 'p1' | 'p2' | 'geist'
+  let derbyTitel = null;           // gesperrt: Anzeige "Derby beendet"
+  let derbyTot1 = false;           // Spieler 1 bei 0 %: Auto steht, Lichter flackern
+  let derbyTot2 = false;           // Spieler 2 bei 0 %
 
   // ---- Race options: weather, mandatory stops, starting fuel ----
   let raceWxStart = 'dry';
@@ -202,6 +221,98 @@
     if (typeof finishRace === 'function') finishRace(false);
   }
 
+  // ---- Demolition-Derby-Wertung (experimentell) ----
+  // Sieg nach Kills (meiste Abschuesse). Health 0-100; frontal -10 %, von der Seite gerammt
+  // -20 %. Bei 0 % bleibt das Auto stehen, die Lichter flackern nur noch. Geister haben
+  // ebenfalls Health.
+  function derbyGeisterZaehlen() {
+    let n = 0;
+    for (const c of garage) if (c && c.role === 'ghost' && c.ghost && !c.ghost.derbyAus) n++;
+    return n;
+  }
+  // Schaden fuer ein Derby-Auto (wer 1/2 = Spieler, wer = car-Objekt = Geist). `schuetze`
+  // ist der Urheber (1 oder 2) fuer die Abschuss-Zuschreibung.
+  function derbySchaden(wer, wert, schuetze) {
+    if (!derbyLaeuft) return;
+    let car = null;
+    if (wer === 1) { derbyHealth = Math.max(0, derbyHealth - wert); if (derbyHealth <= 0 && !derbyTot1) { derbyTot1 = true; physEngine.state.speedKmh = 0; } }
+    else if (wer === 2) { derbyHealth2 = Math.max(0, derbyHealth2 - wert); if (derbyHealth2 <= 0 && !derbyTot2) { derbyTot2 = true; physEngine2.state.speedKmh = 0; } }
+    else if (wer && wer.ghost) { car = wer; }
+    if (car) {
+      car.ghost.derbyHealth = Math.max(0, (car.ghost.derbyHealth || DERBY_MAX) - wert);
+      if (car.ghost.derbyHealth <= 0 && !car.ghost.derbyAus) derbyGeistRaus(car, schuetze);
+    }
+    derbyPruefen();
+  }
+  // Ein Geist ist ausgeschaltet: Abschuss fuer den Spieler, der ihn getroffen hat.
+  function derbyGeistRaus(car, schuetze) {
+    if (!car || !car.ghost || car.ghost.derbyAus) return;
+    car.ghost.derbyAus = true;
+    if (typeof stopGhost === 'function') stopGhost(car);
+    if (schuetze === 2) derbyKills2++; else derbyKills++;
+    if (typeof playTone === 'function') {   // positiver Ton fuer den Abschuss
+      playTone(880, 0.06, 'sine', 0.2);
+      setTimeout(() => playTone(1320, 0.09, 'sine', 0.2), 45);
+    }
+    showHudToast('Geist aus · Kills ' + derbyKills);
+    derbyPruefen();
+  }
+  // Aufprall-Schaden fuer den Spieler (head-on 10 %, sonst 20 %).
+  function derbyAufprall(wer) {
+    if (!derbyLaeuft) return;
+    const frontal = derbyFrontal();
+    derbySchaden(wer, frontal ? 10 : 20);
+  }
+  // Head-on, wenn der Gyro stark nach vorne ausschlaegt (x-Achse dominiert). Sonst Seite/Ramme.
+  function derbyFrontal() {
+    if (typeof gyroRaw !== 'undefined' && gyroRaw) {
+      return Math.abs(gyroRaw.x) >= Math.abs(gyroRaw.y) * 1.3;
+    }
+    return false;
+  }
+  // Ende: der Spieler mit den meisten Kills gewinnt. Bei Gleichstand: der mit mehr Health.
+  function derbyPruefen() {
+    if (!derbyLaeuft) return;
+    const geister = derbyGeisterZaehlen();
+    const geistKills = Math.max(0, ...garage.filter(c => c.role === 'ghost' && c.ghost)
+      .map(c => c.ghost.derbyKills || 0));
+    // Rennen endet, wenn nur noch einer faehrt (alle anderen raus) ODER ein Geist alle Kills
+    // hat. Einfachheit: Ende, wenn ein menschlicher Fahrer 0 Health hat und alle Geister raus
+    // sind, oder wenn alle Gegner raus sind.
+    const alleGeister = geister <= 0;
+    const p1Aus = derbyHealth <= 0, p2Aus = derbyHealth2 <= 0;
+    const alleMenschen = (typeof zweiSpieler !== 'undefined' && zweiSpieler) ? (p1Aus && p2Aus) : p1Aus;
+    if (alleGeister) {
+      // Sieger nach Kills (dann Health als Tiebreaker).
+      const k = [['p1', derbyKills, derbyHealth], ['p2', derbyKills2, derbyHealth2]];
+      k.sort((a, b) => b[1] - a[1] || b[2] - a[2]);
+      derbyEnde(k[0][0]);
+    } else if (alleMenschen) {
+      derbyEnde('geist');
+    }
+  }
+  function derbyEnde(sieger) {
+    if (!derbyLaeuft || derbySieger) return;
+    derbySieger = sieger; derbyLaeuft = false;
+    if (sieger === 'p1') { if (typeof playRaceEndFanfare === 'function') playRaceEndFanfare(); showHudToast('Derby: Spieler 1 gewinnt!'); }
+    else if (sieger === 'p2') { if (typeof playRaceEndFanfare === 'function') playRaceEndFanfare(); showHudToast('Derby: Spieler 2 gewinnt!'); }
+    else { if (typeof playTone === 'function') { playTone(200, 0.12, 'square', 0.16); setTimeout(() => playTone(140, 0.16, 'square', 0.14), 70); setTimeout(() => playTone(110, 0.2, 'square', 0.12), 160); } showHudToast('Derby: Geist gewinnt.'); }
+    if (typeof finishRace === 'function') finishRace(false);
+  }
+  // Im Derby: nahe Geister werden vom fahrenden Spieler gerammt (sie verlieren 20 % Health).
+  const DERBY_RAM_TILES = 4, DERBY_RAM_KMH = 30;
+  function derbyTick() {
+    if (!derbyLaeuft || raceState !== 'racing') return;
+    const ort = typeof spielerOrtGes === 'function' ? spielerOrtGes() : null;
+    const tempo = Math.abs(physEngine.state.speedKmh);
+    if (ort === null) return;
+    for (const c of garage) {
+      if (c.role !== 'ghost' || !c.ghost || c.ghost.derbyAus) continue;
+      const dist = Math.abs(ghostOrtGes(c) - ort);
+      if (dist < DERBY_RAM_TILES && tempo > DERBY_RAM_KMH) derbySchaden(c, 20, 1);
+    }
+  }
+
   // ---- Die erste Bewegung nach Gruen -------------------------------------------------
   //
   // BESTELLT: "Zeit soll anfangen zu zaehlen, sobald das erste Auto sich in Bewegung
@@ -284,6 +395,7 @@
     }
     maybeSwitchRaceWeather();
     wxWechselTick();
+    if (typeof derbyTick === 'function') derbyTick();
     const el = $('race-clock');
     if (el) {
       if (!RACE_MODES[raceMode].timed) {
@@ -1491,6 +1603,15 @@
       for (const c of garage) if (c && c.ghost) c.ghost.eliminated = false;
       knockoutGeister = knockoutGeisterZaehlen();
       showHudToast('Knockout: ' + knockoutGeister + ' Geister · ' + KO_LEBEN + ' Leben');
+    }
+    if (raceMode === 'derby') {
+      derbyLaeuft = true; derbySieger = null; derbyTitel = null;
+      derbyHealth = DERBY_MAX; derbyHealth2 = DERBY_MAX;
+      derbyKills = 0; derbyKills2 = 0; derbyTot1 = false; derbyTot2 = false;
+      for (const c of garage) if (c && c.ghost) {
+        c.ghost.derbyHealth = DERBY_MAX; c.ghost.derbyAus = false; c.ghost.derbyKills = 0;
+      }
+      showHudToast('Derby: ' + derbyGeisterZaehlen() + ' Gegner · Health 100');
     }
     if (raceFormationLap) {
       // formationPace() und nicht PIT_SPEED_FACTOR: der Deckel muss zum Ziel des
@@ -4362,6 +4483,17 @@
     const motor = zwei ? physEngine2 : physEngine;
     const licht = zwei ? schadenZwei.licht : lightDamage;
     const pre = zwei ? 'P2: ' : '';
+    // DEMOLITION DERBY (experimentell): kein normaler Schaden, sondern Derby-Health. Der
+    // Aufprall stoppt wie ueblich das Tempo, die Health-Regel (frontal 10 %, sonst 20 %)
+    // macht der Derby-Block. Bei 0 % wird das Auto gestoppt (siehe derbyTot).
+    if (typeof derbyLaeuft !== 'undefined' && derbyLaeuft) {
+      if (typeof derbyAufprall === 'function') derbyAufprall(wer);
+      motor.state.speedKmh *= 0.3;
+      if (!zwei) updateDamageFuelUI();
+      if (!playCrashFx()) playCrashSound();
+      padRumble(0.65 + 0.35 * Math.max(0, Math.min(1, Math.abs(motor.state.speedKmh) / Math.max(0.01, motor.config.topSpeedKmh))), 0.5, 260);
+      return;
+    }
     if (zwei) schadenZwei.wert = Math.min(100, schadenZwei.wert + 100 / crashesToTotal);
     else damage = Math.min(100, damage + 100 / crashesToTotal);
     const stand = zwei ? schadenZwei.wert : damage;
@@ -5467,7 +5599,7 @@
   // erhoehen - und links/rechts kann den Schirm weiterblaettern, solange nichts angewaehlt
   // ist.
   let raceScreenLimitArmed = false;
-  const RACE_MODE_ORDER = ['practice', 'endurance', 'qualifying', 'laps', 'knockout'];
+  const RACE_MODE_ORDER = ['practice', 'endurance', 'qualifying', 'laps', 'knockout', 'derby'];
 
   // NUR WENN DAS COCKPIT AUCH ZU SEHEN IST. cockpitScreen bleibt beim Tabwechsel stehen -
   // ohne diese Bedingung schluckte der Schirm auf JEDEM Tab die Pfeiltasten, und Fahren
