@@ -223,6 +223,14 @@
      allein ist kein Zustand, wenn jemand sie nicht unterscheiden kann. */
   .mode-tile.sel { color: var(--ink); border-color: var(--bad);
     box-shadow: inset 3px 0 0 var(--bad); background: var(--panel-3); }
+  /* Kachelbild fuer die experimentellen Modi: das Gemini-Bild als Hintergrund, dunkel
+     ueberlagert, damit der Text lesbar bleibt. */
+  .mode-tile.kachelbild { min-height: 96px; color: #fff; border-color: rgba(255,255,255,.25);
+    background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/knockout.jpg) center / cover; }
+  .mode-tile.kachelbild.derby {
+    background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/derby.jpg) center / cover; }
+  .mode-tile.kachelbild:hover, .mode-tile.kachelbild.sel { color: #fff; background-color: transparent; }
+  .mode-tile.kachelbild.sel { border-color: var(--bad); box-shadow: inset 3px 0 0 var(--bad); }
   .wx-pick { display: flex; gap: 6px; }
   .wx-pick button {
     width: 46px; min-height: 44px; padding: 0; display: grid; place-items: center;
@@ -8068,12 +8076,12 @@
                stroke-linecap="round" aria-hidden="true">
             <path d="M4 8a8 5 0 1 0 16 0 8 5 0 1 0-16 0"/><path d="M12 3v3M12 13v-3"/>
           </svg><b>Runden</b></button>
-        <button type="button" class="mode-tile" data-mode="knockout">
+        <button type="button" class="mode-tile kachelbild" data-mode="knockout">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M7 7h10M7 17h10M12 7v10"/><circle cx="12" cy="12" r="3"/>
           </svg><b>Knockout</b></button>
-        <button type="button" class="mode-tile" data-mode="derby">
+        <button type="button" class="mode-tile kachelbild derby" data-mode="derby">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="9" cy="9" r="3"/><circle cx="15" cy="15" r="3"/><path d="M9 12v9M15 12V3"/>

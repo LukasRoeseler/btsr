@@ -1,5 +1,5 @@
 {"version":"0.8.96","apk":1,"dateien":[
-{"p":"index.html","h":"d9c12dd03890708b7d9bf2d7f1844dd187a2fc0c738daa94681b16a89f7b1c05","g":4551608},
+{"p":"index.html","h":"f9191818eee928f91c4904033c259f6c8990e31ff66ff57a7a3a0f830fadbf84","g":4552312},
 {"p":"mp-overview.html","h":"61388dad99cb805de167fe9a10b9ffdb1d4655c450f175f4eeb9ede3a24d04aa","g":9956},
 {"p":"manifest.webmanifest","h":"868416fe2c9d41ebed0b5d479f07bbd16679dd4835e9c526da9eae8046e1e36a","g":639},
 {"p":"favicon.svg","h":"bc804f771d409b0efff2f2a78238a91d843d8d02efc2c614c6bdc544763de931","g":5456},
@@ -387,6 +387,7 @@
 {"p":"img/challenges.jpg","h":"952b01f1b5e90b442c0432541c51686d600adffb2ddf216d2995ce73f45a68e4","g":47405},
 {"p":"img/controller-bg.jpg","h":"1617b4ab35435033efdd9044cc44e9c7f2ccb78ec0ac9768fc161947161590aa","g":180240},
 {"p":"img/controller.jpg","h":"6cf278b1a93b8a4f93e3c17e1a528c76fe2e4fcb8e40b90d9f7d719493351e3a","g":35402},
+{"p":"img/derby.jpg","h":"b321fb777a8c332fd04f7151a0484f60b7f18b98e272e465274470dc2e2883ed","g":885969},
 {"p":"img/fahren-bg.jpg","h":"9504091918a966911ccca711616b8209dca2eb97aa358f707d53b6e2df4d7d78","g":32353},
 {"p":"img/fahren.jpg","h":"9504091918a966911ccca711616b8209dca2eb97aa358f707d53b6e2df4d7d78","g":32353},
 {"p":"img/garage-bg.jpg","h":"2169b4324606e60a6a7829cf17e9a87115c3542fd1bebd1fef7b16fb55d535cb","g":222443},
@@ -395,6 +396,7 @@
 {"p":"img/haupt.jpg","h":"82dc4ba2ecf2769bce4e3320d953d25b06440e2e4d396072e6425db9a4796699","g":53711},
 {"p":"img/info-bg.jpg","h":"ec2de427d029334ba8403c600cf7935e44434cef014032e6d9ca86b9cef5e6a9","g":147210},
 {"p":"img/info.jpg","h":"657e25b8cf8ae59c04a50096540330d3bc855fbd691f13933b9594c021e68c2e","g":77735},
+{"p":"img/knockout.jpg","h":"13aedb2c13140ccd0cf4739b3b2847f20cf25c20c35dac6f28941b976697ece0","g":957704},
 {"p":"img/mehrspieler-bg.jpg","h":"ee7e53b4641ba5b6f3a53d9daed403c2253d89e1136835cf29acd151ea303824","g":369659},
 {"p":"img/mehrspieler.jpg","h":"4df84ed38d9fc5846a1ca4f40fa4372c700baf63749c4e4c7d9d969db354bb0c","g":80442},
 {"p":"img/optionen-bg.jpg","h":"6224ea06db4838b4557e8b4b520a5b35aa6a85b2fb89dd9b3f3f4d9a3bdc9945","g":82697},
