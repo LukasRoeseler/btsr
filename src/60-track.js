@@ -4453,7 +4453,7 @@
     if (!keys.length) {
       const p = document.createElement('p');
       p.className = 'muted';
-      p.textContent = 'Noch keine Strecken gespeichert.';
+      p.textContent = t('Noch keine Strecken gespeichert.');
       cont.appendChild(p);
       return;
     }

@@ -1160,6 +1160,8 @@
     "Das Auto fährt eine Runde und liest dabei die Teile ein.": "The car drives a lap and reads the pieces.",
     "Strecke laden": "Load track",
     "Eine gespeicherte Strecke laden, speichern oder löschen.": "Load, save or delete a saved track.",
+    "Meine Strecken": "My tracks",
+    "Noch keine Strecken gespeichert.": "No tracks saved yet.",
     "Das Auto fährt mit mittlerem Tempo über die Bahn und hält an, sobald ein geschlossener Rundkurs gemessen ist. Die Strecke steht danach im Editor.": "The car drives over the track at medium pace and stops as soon as a closed circuit is measured. The track is then in the editor.",
     "Live mitlesen, während du selbst fährst: im Streckeneditor, „Live-Scan starten“.": "To read along live while you drive yourself: in the track editor, “Start live scan”.",
     "Android-App (experimentell): dieselbe App als APK, mit Bluetooth-Brücke, Host ohne PC und Updates ohne Neuinstallation.": "Android app (experimental): the same app as an APK, with a Bluetooth bridge, a host without a PC and updates without reinstalling.",
