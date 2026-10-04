@@ -2271,7 +2271,9 @@
     // noch 2 kommen. Bei Endurance und Qualifying ist das Ziel eine ZEIT, also steht dort
     // die verbleibende Zeit - eine Rundenzahl anzuschreiben, die es in diesem Modus nicht
     // gibt, waere eine erfundene Angabe.
-    $('race-lap-count').textContent = raceLapTarget(laps.length);
+    $('race-lap-count').textContent = raceMode === 'knockout'
+      ? 'Leben ' + knockoutLeben + (zweiSpieler ? '/' + knockoutLeben2 : '') + ' · Geister ' + knockoutGeister
+      : raceLapTarget(laps.length);
     $('race-lap-list').innerHTML = laps.slice().reverse().slice(0, 10).map(l =>
       `<li><span>${l.lap}</span><span${l.ms === best ? ' class="gt3-ok"' : ''}>${formatLapTime(l.ms)}</span></li>`
     ).join('');
@@ -2701,7 +2703,10 @@
       if (abseits) {
         a.wiederSeit = null;
         if (a.seit === null) a.seit = jetzt;
-        if (!a.aktiv && jetzt - a.seit >= offtrackEinMs) { a.aktiv = true; a.zaehler++; }
+        if (!a.aktiv && jetzt - a.seit >= offtrackEinMs) {
+          a.aktiv = true; a.zaehler++;
+          if (typeof knockoutLebenVerlieren === 'function') knockoutLebenVerlieren(2);
+        }
       } else {
         a.seit = null;
         if (a.wiederSeit === null) a.wiederSeit = jetzt;
@@ -2717,6 +2722,7 @@
       if (!offtrackAktiv && jetzt - offtrackSeit >= offtrackEinMs) {
         offtrackAktiv = true;
         offtrackZaehler++;
+        if (typeof knockoutLebenVerlieren === 'function') knockoutLebenVerlieren(1);
       }
     } else {
       offtrackSeit = null;

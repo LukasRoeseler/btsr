@@ -1363,6 +1363,7 @@
     "Losfahren": "Start driving",
     "Läuft komplett automatisch, ohne Physik-Engine (direkte Werte).": "Runs fully automatically, without the physics engine (direct values).",
     "Läuft, bis du beendest.": "Runs until you stop it.",
+    "Experimentell: Geister von der Bahn rammen, 3 Leben.": "Experimental: knock the ghosts off the track, 3 lives.",
     "Löschen": "Delete",
     "Löst Tempolimit und Boxenstopp aus. Das alte Blatt wurde gar nicht erkannt, und dafür gibt es zwei sichtbare Gründe: alle neun Balken waren gleich dick, es gab also nur ein Symbol statt zwei, und das Modulmaß war ein anderes als beim Original. Das neue Blatt nimmt das Modulmaß des Originals.": "Triggers the speed limit and the pit stop. The old sheet was not recognised at all, and there are two visible reasons: all nine bars were the same thickness, so there was only one symbol instead of two, and the module size differed from the original. The new sheet takes the original's module size.",
     "Löst Tempolimit und Boxenstopp aus. Welchen Code das Auto dafür meldet, ist": "Triggers the speed limit and the pit stop. Which code the car reports for it is",

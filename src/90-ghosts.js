@@ -7226,6 +7226,8 @@
       if (!car.race) car.race = { laps: [], lapStart: null, pending: null, seen: 0,
                                   lastActed: 0, lastCount: null };
       car.race.offLap = (car.race.offLap || 0) + 1;
+      // Knockout (experimentell): ein Geist, der von der Bahn ist, ist raus.
+      if (typeof knockoutGeistRaus === 'function') knockoutGeistRaus(car);
     }
     if (offTrack !== g.cutOut) {
       g.cutOut = offTrack;

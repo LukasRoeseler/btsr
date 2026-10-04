@@ -86,9 +86,26 @@
     endurance:  { label: 'Endurance', unit: 'Minuten', timed: true, hint: 'Meiste Runden in der Zeit.' },
     qualifying: { label: 'Qualifying', unit: 'Minuten', timed: true, hint: 'Schnellste Einzelrunde zählt.' },
     laps:       { label: 'Runden', unit: 'Runden', timed: true, hint: 'Wer zuerst die Rundenzahl hat.' },
+    // BESTELLT: "neuer rennmodus (experimentell): knockout." Die Wertung ist nicht zeit- oder
+    // rundenzahlbasiert (timed:false), sondern eliminiert: Geister fliegen bei Abkommen von
+    // der Bahn, Menschen verlieren ein Leben. Ende, wenn alle Geister weg (Sieg) oder alle
+    // Menschen raus (Niederlage) sind.
+    knockout:   { label: 'Knockout', unit: 'Leben', timed: false,
+                  hint: 'Experimentell: Geister von der Bahn rammen, 3 Leben.' },
   };
   let raceMode = 'practice';
   let raceLimit = 2;              // minutes, or laps in 'laps' mode
+
+  // ---- Knockout (v0.8.96, experimentell) ----
+  // Jeder menschliche Fahrer hat KO_Leben Leben; ein Abkommen kostet eins. Ein Geist ist
+  // raus, wenn er von der Bahn ist (der Sensor meldet Offtrack). Sieg = alle Geister raus,
+  // Niederlage = alle Menschen raus.
+  const KO_LEBEN = 3;
+  let knockoutLeben = KO_LEBEN;    // Leben des Spielers (Spieler 1)
+  let knockoutLeben2 = KO_LEBEN;   // Leben von Spieler 2 (nur im 2-Spieler-Modus)
+  let knockoutGeister = 0;         // noch im Rennen befindliche Geister
+  let knockoutLaeuft = false;      // Wertung nur waehrend eines Knockout-Rennens aktiv
+  let knockoutSieger = null;       // null | 'menschen' | 'geister'
 
   // ---- Race options: weather, mandatory stops, starting fuel ----
   let raceWxStart = 'dry';
@@ -130,6 +147,59 @@
       return raceAllCars().some(c => c.laps.length >= raceLimit);
     }
     return raceStartedAt !== null && (Date.now() - raceStartedAt) >= raceLimit * 60000;
+  }
+
+  // ---- Knockout-Wertung (experimentell) ----
+  function knockoutGeisterZaehlen() {
+    let n = 0;
+    for (const c of garage) if (c && c.role === 'ghost' && c.ghost && c.ghost.running && !c.ghost.eliminated) n++;
+    return n;
+  }
+  // Ein Geist ist raus (von der Bahn gerammt): im Knockout stoppen und Wertung pruefen.
+  function knockoutGeistRaus(car) {
+    if (!knockoutLaeuft || !car || !car.ghost || car.ghost.eliminated) return;
+    car.ghost.eliminated = true;
+    if (typeof stopGhost === 'function') stopGhost(car);
+    knockoutGeister = knockoutGeisterZaehlen();
+    if (typeof playTone === 'function') {   // positiver Ton
+      playTone(880, 0.06, 'sine', 0.2);
+      setTimeout(() => playTone(1320, 0.09, 'sine', 0.2), 45);
+    }
+    showHudToast('Geist raus · noch ' + knockoutGeister + ' Geister');
+    knockoutPruefen();
+  }
+  // Ein Mensch verliert ein Leben (Abkommen von der Bahn).
+  function knockoutLebenVerlieren(wer) {
+    if (!knockoutLaeuft) return;
+    if (wer === 2) knockoutLeben2 = Math.max(0, knockoutLeben2 - 1);
+    else knockoutLeben = Math.max(0, knockoutLeben - 1);
+    showHudToast('Leben ' + (wer === 2 ? '2' : '1') + ': noch ' + (wer === 2 ? knockoutLeben2 : knockoutLeben));
+    knockoutPruefen();
+  }
+  // Ende: alle Geister raus -> Sieg; alle Menschen raus -> Niederlage.
+  function knockoutPruefen() {
+    if (!knockoutLaeuft) return;
+    const menschen = (typeof zweiSpieler !== 'undefined' && zweiSpieler) ? 2 : 1;
+    const menschenRaus = knockoutLeben <= 0 && (menschen < 2 || knockoutLeben2 <= 0);
+    if (knockoutGeister <= 0) knockoutEnde('menschen');
+    else if (menschenRaus) knockoutEnde('geister');
+  }
+  function knockoutEnde(sieger) {
+    if (!knockoutLaeuft || knockoutSieger) return;
+    knockoutSieger = sieger;
+    knockoutLaeuft = false;
+    if (sieger === 'menschen') {
+      if (typeof playRaceEndFanfare === 'function') playRaceEndFanfare();
+      showHudToast('Knockout: Menschen gewinnen!');
+    } else {
+      if (typeof playTone === 'function') {   // dunkler Abwaertston
+        playTone(200, 0.12, 'square', 0.16);
+        setTimeout(() => playTone(140, 0.16, 'square', 0.14), 70);
+        setTimeout(() => playTone(110, 0.2, 'square', 0.12), 160);
+      }
+      showHudToast('Knockout: Geister gewinnen.');
+    }
+    if (typeof finishRace === 'function') finishRace(false);
   }
 
   // ---- Die erste Bewegung nach Gruen -------------------------------------------------
@@ -1413,6 +1483,15 @@
     // In einer Challenge faehrt man allein: keine Ghosts.
     const imChallenge = typeof challengeLaeuft === 'function' && challengeLaeuft();
     if (!imChallenge) launchGhosts();   // green means green for everyone
+    // Knockout-Wertung (experimentell): Leben und Geisterstand zuruecksetzen. Geister zaehlen
+    // nach launchGhosts(), weil sie erst dort gestartet werden.
+    if (raceMode === 'knockout') {
+      knockoutLeben = KO_LEBEN; knockoutLeben2 = KO_LEBEN;
+      knockoutSieger = null; knockoutLaeuft = true;
+      for (const c of garage) if (c && c.ghost) c.ghost.eliminated = false;
+      knockoutGeister = knockoutGeisterZaehlen();
+      showHudToast('Knockout: ' + knockoutGeister + ' Geister · ' + KO_LEBEN + ' Leben');
+    }
     if (raceFormationLap) {
       // formationPace() und nicht PIT_SPEED_FACTOR: der Deckel muss zum Ziel des
       // Autopiloten passen, sonst regelt der gegen eine Wand.
@@ -5388,7 +5467,7 @@
   // erhoehen - und links/rechts kann den Schirm weiterblaettern, solange nichts angewaehlt
   // ist.
   let raceScreenLimitArmed = false;
-  const RACE_MODE_ORDER = ['practice', 'endurance', 'qualifying', 'laps'];
+  const RACE_MODE_ORDER = ['practice', 'endurance', 'qualifying', 'laps', 'knockout'];
 
   // NUR WENN DAS COCKPIT AUCH ZU SEHEN IST. cockpitScreen bleibt beim Tabwechsel stehen -
   // ohne diese Bedingung schluckte der Schirm auf JEDEM Tab die Pfeiltasten, und Fahren

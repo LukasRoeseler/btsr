@@ -8068,12 +8068,18 @@
                stroke-linecap="round" aria-hidden="true">
             <path d="M4 8a8 5 0 1 0 16 0 8 5 0 1 0-16 0"/><path d="M12 3v3M12 13v-3"/>
           </svg><b>Runden</b></button>
+        <button type="button" class="mode-tile" data-mode="knockout">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M7 7h10M7 17h10M12 7v10"/><circle cx="12" cy="12" r="3"/>
+          </svg><b>Knockout</b></button>
       </div>
       <select id="race-mode" hidden style="display:none">
         <option value="practice" selected>Freies Training</option>
         <option value="endurance">Endurance</option>
         <option value="qualifying">Qualifying</option>
         <option value="laps">Runden</option>
+        <option value="knockout">Knockout</option>
       </select></div>
       <p class="muted" id="race-mode-hint" style="font-size:11.5px; margin:8px 0 0 0"></p>
 
