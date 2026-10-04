@@ -39637,14 +39637,37 @@
       ch.innerHTML = charakterZeile(car);
       if (ch.firstElementChild) box.appendChild(ch.firstElementChild);
     } else {
+      // BESTELLT: "garage bedienfreundlich machen, je auto (wenn gesteuert) auch presets
+      // anzeigen und motorsound." Presets stehen in der Leiste darunter (#gar-preset); hier
+      // kommt der Motorsound des gesteuerten Autos dazu (pro Spieler: sound-profile bzw.
+      // sound-profile-2 fuer Spieler 2).
+      if (car.role === 'player' || car.role === 'player2') box.appendChild(garMotorZeile(car));
       const h = document.createElement('div');
       h.className = 'gk-hinweis';
-      h.textContent = car.role === 'player'
+      h.textContent = car.role === 'player' || car.role === 'player2'
         ? 'Abstimmung und Fahrgefühl stehen unten und unter Optionen.'
         : 'Tempo und Charakter gibt es nur für Ghosts.';
       box.appendChild(h);
     }
     return box;
+  }
+  // Motorsound-Zeile fuer ein gesteuertes Auto: zeigt den Motor und blaettert ihn durch.
+  function garMotorZeile(car) {
+    const sel = car.role === 'player2' ? $('sound-profile-2') : $('sound-profile');
+    const name = sel && sel.selectedOptions[0]
+      ? sel.selectedOptions[0].textContent.split(':')[0].trim() : '–';
+    return garWertZeile('Motorsound', name,
+      () => garMotorWechsel(car, -1), () => garMotorWechsel(car, 1));
+  }
+  function garMotorWechsel(car, dir) {
+    const sel = car.role === 'player2' ? $('sound-profile-2') : $('sound-profile');
+    if (!sel) return;
+    const opts = [...sel.options].filter((o) => !o.disabled);
+    if (!opts.length) return;
+    const n = opts[(opts.indexOf(sel.selectedOptions[0]) + dir + opts.length) % opts.length];
+    sel.value = n.value;
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+    renderGarage();
   }
   // EIGENE FOTOS JE AUTO, wie beim Streckenfoto: verkleinert als JPEG im localStorage,
   // unter der Kennung des Autos (in der App die MAC-Adresse, ueber Neustarts stabil).
