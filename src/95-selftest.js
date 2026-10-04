@@ -10002,13 +10002,16 @@
   function pitSpielLauf(tippen) {
     const reifen = pitSpielReifenMerk();
     const merk = { modus: pitModus, an: pitLaneEnabled, trig: pitTrigger, fuel, damage,
-                   kmh: physEngine.state.speedKmh, gas: throttleY };
+                   kmh: physEngine.state.speedKmh, gas: throttleY, zwei: zweiSpieler };
     const echtNow = Date.now;
     let uhr = echtNow.call(Date);
     const r = { f: [] };
     try {
       Date.now = () => uhr;
       pitModus = 'minigame'; pitLaneEnabled = true; pitTrigger = 'anywhere';
+      // Im Zwei-Spieler-Modus ist das Minigame bewusst abgeschaltet (siehe setPitState);
+      // dieser Prueflauf testet das Einzelspieler-Minigame und setzt deshalb die Weiche.
+      zweiSpieler = false;
       fuel = 30; damage = 20;
       physEngine.state.speedKmh = 0; throttleY = 0;
       setPitState('off');
@@ -10040,6 +10043,7 @@
       setPitState('off');
       pitRearmBlockedUntil = 0;
       pitModus = merk.modus; pitLaneEnabled = merk.an; pitTrigger = merk.trig;
+      zweiSpieler = merk.zwei;
       fuel = merk.fuel; damage = merk.damage;
       physEngine.state.speedKmh = merk.kmh; throttleY = merk.gas;
       pitSpielReifenZurueck(reifen);
@@ -10085,12 +10089,13 @@
   stAdd('Boxen-Minigame: Quadrat und Kreis schalten waehrenddessen nicht, Kreuz bricht ab', () => {
     const merk = { modus: pitModus, an: pitLaneEnabled, trig: pitTrigger,
                    kmh: physEngine.state.speedKmh, gang: physEngine.state.currentGear,
-                   mode: physEngine.state.driveMode };
+                   mode: physEngine.state.driveMode, zwei: zweiSpieler };
     const echt = navigator.getGamepads;
     const reifen = pitSpielReifenMerk();
     const f = [];
     try {
       pitModus = 'minigame'; pitLaneEnabled = true; pitTrigger = 'anywhere';
+      zweiSpieler = false;
       physEngine.state.speedKmh = 0; throttleY = 0;
       setPitState('off'); pitRearmBlockedUntil = 0;
       setPitState('limited'); pitLastTick = 0; pitLaneTick();
@@ -10117,6 +10122,7 @@
       try { pollGamepad(); } catch (e) { /* ohne Pad */ }
       setPitState('off'); pitRearmBlockedUntil = 0;
       pitModus = merk.modus; pitLaneEnabled = merk.an; pitTrigger = merk.trig;
+      zweiSpieler = merk.zwei;
       physEngine.state.speedKmh = merk.kmh;
       physEngine.state.currentGear = merk.gang; physEngine.state.driveMode = merk.mode;
       pitSpielReifenZurueck(reifen);
@@ -10125,11 +10131,12 @@
   });
 
   stAdd('Boxen-Minigame: der letzte Knopf ist immer Kreis', () => {
-    const merk = { modus: pitModus, an: pitLaneEnabled, trig: pitTrigger, kmh: physEngine.state.speedKmh };
+    const merk = { modus: pitModus, an: pitLaneEnabled, trig: pitTrigger, kmh: physEngine.state.speedKmh, zwei: zweiSpieler };
     const reifen = pitSpielReifenMerk();
     const f = [];
     try {
       pitModus = 'minigame'; pitLaneEnabled = true; pitTrigger = 'anywhere';
+      zweiSpieler = false;
       physEngine.state.speedKmh = 0; throttleY = 0;
       for (let i = 0; i < 8; i++) {
         setPitState('off'); pitRearmBlockedUntil = 0;
@@ -10144,6 +10151,7 @@
     } finally {
       setPitState('off'); pitRearmBlockedUntil = 0;
       pitModus = merk.modus; pitLaneEnabled = merk.an; pitTrigger = merk.trig;
+      zweiSpieler = merk.zwei;
       physEngine.state.speedKmh = merk.kmh;
       pitSpielReifenZurueck(reifen);
     }

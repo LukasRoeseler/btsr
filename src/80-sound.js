@@ -1618,6 +1618,15 @@
     ghostCfg.curveSlow = parseFloat(e.target.value);
     $('ghost-curve-val').textContent = Math.round(ghostCfg.curveSlow * 100) + '%';
   });
+  // BESTELLT: Feld auffächern + Überholmanöver je Runde (experimentell).
+  $('ghost-feld').addEventListener('input', (e) => {
+    ghostCfg.feldAbstand = parseFloat(e.target.value);
+    $('ghost-feld-val').textContent = e.target.value + '%';
+  });
+  $('ghost-ueber').addEventListener('input', (e) => {
+    ghostCfg.ueberholRate = parseFloat(e.target.value);
+    $('ghost-ueber-val').textContent = e.target.value;
+  });
   $('ghost-lateral').addEventListener('input', (e) => {
     ghostCfg.lateral = parseFloat(e.target.value);
     $('ghost-lateral-val').textContent = ghostCfg.lateral === 0

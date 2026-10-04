@@ -2310,6 +2310,11 @@
     // ueber. Der Anti-Windup daneben ist genau dafuer da, und der Boden bei 0,3 laesst den
     // alten, weichen Zustand jederzeit wieder einstellen.
     gasDynamik: 4.0,
+    // BESTELLT: "das Feld noch etwas auffächern, indem die Abstände zwischen allen Autos
+    // vergrößert werden (dazu slider)" und "Pro 4 Autos ... wie viele Überholmanöver pro
+    // Runde ... auf 0m5 setzen". Beide experimentell.
+    feldAbstand: 0,        // 0-100 %: vergroessert die Abstaende zwischen den Autos
+    ueberholRate: 0.5,     // Ueberholmanoever pro Runde pro 4 Autos (0.1er Schritte)
     // ---- GHOST-BOXENSTOPP ----------------------------------------------------------
     //
     // pitAn steht auf AN, obwohl es neu und experimentell ist: bestellt war ein Feature, das
@@ -5475,6 +5480,12 @@
     }
 
     const ah = ghostAhead(car);
+    // BESTELLT (experimentell): "Feld auffächern" (0-100 %) vergrößert den Abstand, die
+    // "Überholrate" (0.1er Schritte, Vorgabe 0.5) skaliert die Reichweite, ab der ein
+    // Angriff beginnt - kleinere Reichweite = weniger Ueberholmanoever.
+    const feldF = 1 + (ghostCfg.feldAbstand || 0) / 100;
+    // 0.5 ist die bisherige Abstimmung: bei der Vorgabe bleibt die Reichweite unveraendert.
+    const ueberF = Math.max(0.1, (ghostCfg.ueberholRate || 0.5) / 0.5);
     const onStraight = aheadTight.tight === 0;
     // DIE ANNAEHERUNGSRATE GENAU EINMAL JE TAKT, und deshalb steht sie hier oben. Sie ist
     // eine ABLEITUNG mit Zustand (g.gapLast, g.gapAt): ein zweiter Aufruf im selben Takt
@@ -5484,12 +5495,12 @@
     const naehern = ghostClosing(car, ah ? ah.gap : null);
 
     // 3. Windschatten
-    if (ghostCfg.wuerzeWindschatten && ah && ah.gap <= SPICE_SLIP_TILES && onStraight) {
-      f *= 1 + SPICE_SLIP_GAIN * (1 - ah.gap / SPICE_SLIP_TILES);
+    if (ghostCfg.wuerzeWindschatten && ah && ah.gap <= SPICE_SLIP_TILES * feldF && onStraight) {
+      f *= 1 + SPICE_SLIP_GAIN * (1 - ah.gap / (SPICE_SLIP_TILES * feldF));
     }
 
     // 4. Attacke
-    if (ah && ah.gap <= SPICE_ATTACK_RANGE) {
+    if (ah && ah.gap <= SPICE_ATTACK_RANGE * feldF * ueberF) {
       if (!g.closeSince) g.closeSince = now;
     } else {
       g.closeSince = 0;

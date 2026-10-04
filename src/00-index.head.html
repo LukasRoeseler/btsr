@@ -9550,6 +9550,23 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-hardness-val">50%</span>
         </div></div>
+      <!-- BESTELLT: "das Feld noch etwas auffächern, indem die Abstände zwischen allen Autos
+           vergrößert werden (dazu slider)" und "Pro 4 Autos ... wie viele Überholmanöver pro
+           Runde ... auf 0m5 setzen ... in 0.1er schritten". Beide experimentell. -->
+      <div class="opt-row"><div class="opt-label">Ghost: Feld auffächern<span class="wip-tag">experimentell</span><small>Vergrößert die Abstände zwischen den Autos. 0% = wie bisher.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-feld" min="0" max="100" step="5" value="0">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-feld-val">0%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Überholmanöver je Runde<span class="wip-tag">experimentell</span><small>Pro 4 Autos, wie viele Überholmanöver pro Runde. 0.5 = eines alle 2 Runden.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-ueber" min="0" max="2" step="0.1" value="0.5">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-ueber-val">0.5</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Ghost: Kurvendrosselung<small>Wie viel Tempo in Kurven abgegeben wird. <b>Braucht ein Streckenlayout</b>: ohne gelesene oder gebaute Kacheln wei&szlig; der Ghost nicht, wo eine Kurve ist, und der Regler multipliziert eine Null.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>

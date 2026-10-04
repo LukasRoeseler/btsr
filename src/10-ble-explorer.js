@@ -714,6 +714,10 @@
     "Ghost: Ideallinie": "Ghost: racing line",
     "Ghost: Kurvendrosselung": "Ghost: corner slowdown",
     "Ghost: Rennhärte": "Ghost: race hardness",
+    "Ghost: Feld auffächern": "Ghost: spread the field",
+    "Vergrößert die Abstände zwischen den Autos. 0% = wie bisher.": "Increases the distances between the cars. 0% = as before.",
+    "Ghost: Überholmanöver je Runde": "Ghost: overtaking moves per lap",
+    "Pro 4 Autos, wie viele Überholmanöver pro Runde. 0.5 = eines alle 2 Runden.": "Per 4 cars, how many overtaking moves per lap. 0.5 = one every 2 laps.",
     "Außen-Innen": "Outside-inside",
     "Ghost: Rückweg nach einem Abgang": "Ghost: recovery after leaving the track",
     "Statt sofort zu parken, versucht das Auto bis zu 3 Sekunden, selbst auf die Strecke zurückzufahren - anhand der zuletzt bekannten Stelle und der Ideallinie dort. Kommt es dabei nicht voran (vermutlich ein Hindernis), oder gelingt es in 3 Sekunden nicht, parkt es wie bisher. Es muss nicht an derselben Stelle wieder auffahren.":

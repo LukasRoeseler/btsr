@@ -9550,6 +9550,23 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-hardness-val">50%</span>
         </div></div>
+      <!-- BESTELLT: "das Feld noch etwas auffächern, indem die Abstände zwischen allen Autos
+           vergrößert werden (dazu slider)" und "Pro 4 Autos ... wie viele Überholmanöver pro
+           Runde ... auf 0m5 setzen ... in 0.1er schritten". Beide experimentell. -->
+      <div class="opt-row"><div class="opt-label">Ghost: Feld auffächern<span class="wip-tag">experimentell</span><small>Vergrößert die Abstände zwischen den Autos. 0% = wie bisher.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-feld" min="0" max="100" step="5" value="0">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-feld-val">0%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Überholmanöver je Runde<span class="wip-tag">experimentell</span><small>Pro 4 Autos, wie viele Überholmanöver pro Runde. 0.5 = eines alle 2 Runden.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-ueber" min="0" max="2" step="0.1" value="0.5">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-ueber-val">0.5</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Ghost: Kurvendrosselung<small>Wie viel Tempo in Kurven abgegeben wird. <b>Braucht ein Streckenlayout</b>: ohne gelesene oder gebaute Kacheln wei&szlig; der Ghost nicht, wo eine Kurve ist, und der Regler multipliziert eine Null.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -12003,6 +12020,10 @@
     "Ghost: Ideallinie": "Ghost: racing line",
     "Ghost: Kurvendrosselung": "Ghost: corner slowdown",
     "Ghost: Rennhärte": "Ghost: race hardness",
+    "Ghost: Feld auffächern": "Ghost: spread the field",
+    "Vergrößert die Abstände zwischen den Autos. 0% = wie bisher.": "Increases the distances between the cars. 0% = as before.",
+    "Ghost: Überholmanöver je Runde": "Ghost: overtaking moves per lap",
+    "Pro 4 Autos, wie viele Überholmanöver pro Runde. 0.5 = eines alle 2 Runden.": "Per 4 cars, how many overtaking moves per lap. 0.5 = one every 2 laps.",
     "Außen-Innen": "Outside-inside",
     "Ghost: Rückweg nach einem Abgang": "Ghost: recovery after leaving the track",
     "Statt sofort zu parken, versucht das Auto bis zu 3 Sekunden, selbst auf die Strecke zurückzufahren - anhand der zuletzt bekannten Stelle und der Ideallinie dort. Kommt es dabei nicht voran (vermutlich ein Hindernis), oder gelingt es in 3 Sekunden nicht, parkt es wie bisher. Es muss nicht an derselben Stelle wieder auffahren.":
@@ -37812,6 +37833,15 @@
     ghostCfg.curveSlow = parseFloat(e.target.value);
     $('ghost-curve-val').textContent = Math.round(ghostCfg.curveSlow * 100) + '%';
   });
+  // BESTELLT: Feld auffächern + Überholmanöver je Runde (experimentell).
+  $('ghost-feld').addEventListener('input', (e) => {
+    ghostCfg.feldAbstand = parseFloat(e.target.value);
+    $('ghost-feld-val').textContent = e.target.value + '%';
+  });
+  $('ghost-ueber').addEventListener('input', (e) => {
+    ghostCfg.ueberholRate = parseFloat(e.target.value);
+    $('ghost-ueber-val').textContent = e.target.value;
+  });
   $('ghost-lateral').addEventListener('input', (e) => {
     ghostCfg.lateral = parseFloat(e.target.value);
     $('ghost-lateral-val').textContent = ghostCfg.lateral === 0
@@ -40609,6 +40639,11 @@
     // ueber. Der Anti-Windup daneben ist genau dafuer da, und der Boden bei 0,3 laesst den
     // alten, weichen Zustand jederzeit wieder einstellen.
     gasDynamik: 4.0,
+    // BESTELLT: "das Feld noch etwas auffächern, indem die Abstände zwischen allen Autos
+    // vergrößert werden (dazu slider)" und "Pro 4 Autos ... wie viele Überholmanöver pro
+    // Runde ... auf 0m5 setzen". Beide experimentell.
+    feldAbstand: 0,        // 0-100 %: vergroessert die Abstaende zwischen den Autos
+    ueberholRate: 0.5,     // Ueberholmanoever pro Runde pro 4 Autos (0.1er Schritte)
     // ---- GHOST-BOXENSTOPP ----------------------------------------------------------
     //
     // pitAn steht auf AN, obwohl es neu und experimentell ist: bestellt war ein Feature, das
@@ -43774,6 +43809,12 @@
     }
 
     const ah = ghostAhead(car);
+    // BESTELLT (experimentell): "Feld auffächern" (0-100 %) vergrößert den Abstand, die
+    // "Überholrate" (0.1er Schritte, Vorgabe 0.5) skaliert die Reichweite, ab der ein
+    // Angriff beginnt - kleinere Reichweite = weniger Ueberholmanoever.
+    const feldF = 1 + (ghostCfg.feldAbstand || 0) / 100;
+    // 0.5 ist die bisherige Abstimmung: bei der Vorgabe bleibt die Reichweite unveraendert.
+    const ueberF = Math.max(0.1, (ghostCfg.ueberholRate || 0.5) / 0.5);
     const onStraight = aheadTight.tight === 0;
     // DIE ANNAEHERUNGSRATE GENAU EINMAL JE TAKT, und deshalb steht sie hier oben. Sie ist
     // eine ABLEITUNG mit Zustand (g.gapLast, g.gapAt): ein zweiter Aufruf im selben Takt
@@ -43783,12 +43824,12 @@
     const naehern = ghostClosing(car, ah ? ah.gap : null);
 
     // 3. Windschatten
-    if (ghostCfg.wuerzeWindschatten && ah && ah.gap <= SPICE_SLIP_TILES && onStraight) {
-      f *= 1 + SPICE_SLIP_GAIN * (1 - ah.gap / SPICE_SLIP_TILES);
+    if (ghostCfg.wuerzeWindschatten && ah && ah.gap <= SPICE_SLIP_TILES * feldF && onStraight) {
+      f *= 1 + SPICE_SLIP_GAIN * (1 - ah.gap / (SPICE_SLIP_TILES * feldF));
     }
 
     // 4. Attacke
-    if (ah && ah.gap <= SPICE_ATTACK_RANGE) {
+    if (ah && ah.gap <= SPICE_ATTACK_RANGE * feldF * ueberF) {
       if (!g.closeSince) g.closeSince = now;
     } else {
       g.closeSince = 0;
@@ -68039,13 +68080,16 @@
   function pitSpielLauf(tippen) {
     const reifen = pitSpielReifenMerk();
     const merk = { modus: pitModus, an: pitLaneEnabled, trig: pitTrigger, fuel, damage,
-                   kmh: physEngine.state.speedKmh, gas: throttleY };
+                   kmh: physEngine.state.speedKmh, gas: throttleY, zwei: zweiSpieler };
     const echtNow = Date.now;
     let uhr = echtNow.call(Date);
     const r = { f: [] };
     try {
       Date.now = () => uhr;
       pitModus = 'minigame'; pitLaneEnabled = true; pitTrigger = 'anywhere';
+      // Im Zwei-Spieler-Modus ist das Minigame bewusst abgeschaltet (siehe setPitState);
+      // dieser Prueflauf testet das Einzelspieler-Minigame und setzt deshalb die Weiche.
+      zweiSpieler = false;
       fuel = 30; damage = 20;
       physEngine.state.speedKmh = 0; throttleY = 0;
       setPitState('off');
@@ -68077,6 +68121,7 @@
       setPitState('off');
       pitRearmBlockedUntil = 0;
       pitModus = merk.modus; pitLaneEnabled = merk.an; pitTrigger = merk.trig;
+      zweiSpieler = merk.zwei;
       fuel = merk.fuel; damage = merk.damage;
       physEngine.state.speedKmh = merk.kmh; throttleY = merk.gas;
       pitSpielReifenZurueck(reifen);
@@ -68122,12 +68167,13 @@
   stAdd('Boxen-Minigame: Quadrat und Kreis schalten waehrenddessen nicht, Kreuz bricht ab', () => {
     const merk = { modus: pitModus, an: pitLaneEnabled, trig: pitTrigger,
                    kmh: physEngine.state.speedKmh, gang: physEngine.state.currentGear,
-                   mode: physEngine.state.driveMode };
+                   mode: physEngine.state.driveMode, zwei: zweiSpieler };
     const echt = navigator.getGamepads;
     const reifen = pitSpielReifenMerk();
     const f = [];
     try {
       pitModus = 'minigame'; pitLaneEnabled = true; pitTrigger = 'anywhere';
+      zweiSpieler = false;
       physEngine.state.speedKmh = 0; throttleY = 0;
       setPitState('off'); pitRearmBlockedUntil = 0;
       setPitState('limited'); pitLastTick = 0; pitLaneTick();
@@ -68154,6 +68200,7 @@
       try { pollGamepad(); } catch (e) { /* ohne Pad */ }
       setPitState('off'); pitRearmBlockedUntil = 0;
       pitModus = merk.modus; pitLaneEnabled = merk.an; pitTrigger = merk.trig;
+      zweiSpieler = merk.zwei;
       physEngine.state.speedKmh = merk.kmh;
       physEngine.state.currentGear = merk.gang; physEngine.state.driveMode = merk.mode;
       pitSpielReifenZurueck(reifen);
@@ -68162,11 +68209,12 @@
   });
 
   stAdd('Boxen-Minigame: der letzte Knopf ist immer Kreis', () => {
-    const merk = { modus: pitModus, an: pitLaneEnabled, trig: pitTrigger, kmh: physEngine.state.speedKmh };
+    const merk = { modus: pitModus, an: pitLaneEnabled, trig: pitTrigger, kmh: physEngine.state.speedKmh, zwei: zweiSpieler };
     const reifen = pitSpielReifenMerk();
     const f = [];
     try {
       pitModus = 'minigame'; pitLaneEnabled = true; pitTrigger = 'anywhere';
+      zweiSpieler = false;
       physEngine.state.speedKmh = 0; throttleY = 0;
       for (let i = 0; i < 8; i++) {
         setPitState('off'); pitRearmBlockedUntil = 0;
@@ -68181,6 +68229,7 @@
     } finally {
       setPitState('off'); pitRearmBlockedUntil = 0;
       pitModus = merk.modus; pitLaneEnabled = merk.an; pitTrigger = merk.trig;
+      zweiSpieler = merk.zwei;
       physEngine.state.speedKmh = merk.kmh;
       pitSpielReifenZurueck(reifen);
     }
