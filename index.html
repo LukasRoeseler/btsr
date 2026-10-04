@@ -14652,7 +14652,7 @@
   let physOutSteer = 0, physOutThrottle = 0;
   // Und dasselbe Paar fuer Spieler 2. Es steht neben dem ersten, weil es dieselbe Rolle
   // hat: der geformte Ausgang der Physik, den der Herzschlag verschickt.
-  let physOut2Steer = 0, physOut2Throttle = 0;
+  let physOut2Steer = 0, physOut2Throttle = 0, physOut2Brake = false;
 
   const CONTROL_SEND_INTERVAL_MS = 45; // matches the real app's observed command cadence
 
@@ -14807,7 +14807,8 @@
     const kopflicht2 = typeof headlichtZwei === 'function'
       ? headlichtZwei(headlightsOn2) : headlightsOn2;
     writeToCar(playerCar2, steer, throttle,
-               trackModeBit() | (kopflicht2 ? LIGHT_HEAD : 0),
+               trackModeBit() | (kopflicht2 ? LIGHT_HEAD : 0)
+                 | (physOut2Brake ? LIGHT_BRAKE : 0),
                playerCar2.modeBytes || null);
   }
   setInterval(controlHeartbeat, CONTROL_SEND_INTERVAL_MS);
@@ -20967,6 +20968,7 @@
     if (typeof updateEngineSound2 === 'function') updateEngineSound2();
     physOut2Steer = out.servoAngle;
     physOut2Throttle = out.motorPWM;
+    physOut2Brake = out.lights.brake;
   }
 
   // Beim Umschalten die Einstellungen uebernehmen. Die rund sechzig Regler im Optionentab
@@ -22200,18 +22202,14 @@
     const lb = $('lb-wrap');
     if (lb && lb.classList.contains('on') && $('lb-close')) { $('lb-close').click(); return true; }
     const tab = kAktiverTab();
-    if (tab === 'info' && document.querySelector('#tab-info .subpage.on')) { konsoleZeige('options'); return true; }
+    if (tab === 'info' && document.querySelector('#tab-info .subpage.on')) { konsoleZeige('fahren'); return true; }
     if (document.querySelector('.tabpage.active .subpage.on')) { showSubpage(''); return true; }
-    if (tab === 'home' || K_EBENE1.includes(tab)) return false;
-    let ziel = null;
-    while (kStapel.length && !ziel) {
-      const z = kStapel.pop();
-      const zt = typeof z === 'string' ? { tab: z, sub: '' } : z;
-      if (zt.tab !== tab && zt.tab !== 'home') ziel = zt;
-    }
-    if (!ziel) ziel = { tab: K_ELTERN[tab] || 'fahren', sub: '' };
+    if (tab === 'home' || tab === 'fahren') return false;
+    // BESTELLT: "wenn ich aus menues mit kreistaste zurueckgehe, will ich zu fahren kommen."
+    // Der Stapel fuehrte sonst in den zuletzt besuchten Menue-Reiter zurueck; Kreis soll
+    // aber immer auf dem Fahren-Reiter landen.
     kZurueckLaeuft = true;
-    try { showTab(ziel.tab); if (ziel.sub) showSubpage(ziel.sub); } finally { kZurueckLaeuft = false; }
+    try { showTab('fahren'); } finally { kZurueckLaeuft = false; }
     menuNavTonAbwaehlen();
     return true;
   }
@@ -28672,7 +28670,11 @@
       r.laps.push({ lap: r.laps.length + 1, ms, off: offs });
       if (typeof playerCar2 !== 'undefined' && car === playerCar2) {
         const beste2 = r.laps.every((l) => l.ms >= ms);
-        playLapChime(beste2 && r.laps.length > 1, P2_TON_HOEHE);
+        const istBest2 = beste2 && r.laps.length > 1;
+        playLapChime(istBest2, P2_TON_HOEHE);
+        // BESTELLT: "rundenzeiten von beiden ansagen". Spieler 2 bekommt dieselbe Ansage
+        // wie Spieler 1, nur mit dem hoeheren Ton.
+        speakLap(ms, istBest2);
       }
       // Genau hier liegen Rundenzeit und Abgangszahl zusammen vor, und beides braucht die
       // Annahmeregel des Lernens: schneller UND heil. Eine Runde ist eine Auswertung.
@@ -31551,7 +31553,9 @@
       pitTyreTarget = Math.max(1.5, gaussian(PIT_TYRE_CHANGE_S, PIT_TYRE_CHANGE_SD));
       // MINIGAME: alles, was simuliert wird, und die Tastenfolge (siehe pitSpielStart).
       pitSpiel = null;
-      if (pitModus === 'minigame') pitSpielStart();
+      // BESTELLT: "2spielermodus: kein pitgame machen". Im Zwei-Spieler-Modus faehrt
+      // jeder seine eigenen Stopps ohne Minispiel.
+      if (pitModus === 'minigame' && !zweiSpieler) pitSpielStart();
       // The plan was chosen while rolling down the pit lane; only now is it locked in.
       if (!pitPlan) pitPlan = makePitPlan();
       if (pitPlan.tyres) {
@@ -46394,10 +46398,10 @@
     }
     p2PrevHeadlights = headNow2;
 
-    // Boxenstopp: derselbe Griff wie der Knopf auf dem Vergleichsschirm
-    // (boxZweiAnfordern in 70-race.js) - er fordert an und bricht bei erneutem Druck ab,
+    // Boxenstopp: BESTELLT "pitbutton bei beiden auf X". Derselbe Griff wie bei Spieler 1
+    // (bindings.yellowflag = Kreuz/X) - er fordert an und bricht bei erneutem Druck ab,
     // genau wie bei Spieler 1.
-    const pitstopNow2 = readBindingValue(pad, bindings2.pitstop) > BUTTON_CAPTURE_THRESHOLD;
+    const pitstopNow2 = readBindingValue(pad, bindings2.yellowflag) > BUTTON_CAPTURE_THRESHOLD;
     if (pitstopNow2 && !p2PrevPitstop && typeof boxZweiAnfordern === 'function') {
       boxZweiAnfordern();
     }
@@ -49396,7 +49400,7 @@
         const los = () => ({ pressed: false, value: 0 });
         const pad = { axes: [0, 0, 0, 0], buttons: Array(20).fill(0).map(() => los()) };
         pad.buttons[3] = knopf();   // headlights
-        pad.buttons[9] = knopf();   // pitstop
+        pad.buttons[0] = knopf();   // pitstop: seit v0.8.96 Kreuz/X (bindings2.yellowflag)
         pad.buttons[11] = knopf();  // lightflash
         const vorLage = (typeof boxZweiLage === 'function') ? boxZweiLage() : null;
         pollPad2(pad);
@@ -67125,7 +67129,7 @@
       if (kAktiverTab() !== 'fahren') f.push('Taste auf dem Titel fuehrt nach ' + kAktiverTab() + ' statt nach Fahren');
       konsoleReiterSchritt(1);
       if (kAktiverTab() !== 'mp') f.push('R1 im Fahren-Schirm fuehrt nach ' + kAktiverTab());
-      if (konsoleZurueck() || kAktiverTab() !== 'mp') f.push('Kreis auf der Ebene 1 tut etwas (' + kAktiverTab() + ')');
+      if (!konsoleZurueck() || kAktiverTab() !== 'fahren') f.push('Kreis auf der Ebene 1 fuehrt nicht nach Fahren (' + kAktiverTab() + ')');
       showTab('fahren');
       $('fa-garage').click();
       if (kAktiverTab() !== 'garage') f.push('Knopf Garage auf AUTO fuehrt nach ' + kAktiverTab());
@@ -74413,9 +74417,13 @@
   function mpRennenPruefen(r) {
     if (!r || !r.id || !r.startAt || !r.plan) return false;
     if (r.id === mp.rennenId) return false;
-    mp.rennenId = r.id;
     const lokal = r.startAt - mp.offset;
+    // Erst pruefen, dann merken: Wer zu spaet (oder mit falsch geeichter Uhr) kommt,
+    // darf den Renn-ID nicht verbrauchen, sonst wuerde der naechste Poll denselben Plan
+    // nicht mehr annehmen und das Rennen startete fuer ihn nie. So kann eine verpasste
+    // Probe (gedrosselter Tab, langsames WLAN, Uhrversatz) beim naechsten Poll nachziehen.
     if (lokal < Date.now() + 500) return false;          // schon vorbei oder zu knapp
+    mp.rennenId = r.id;
     mpRennenUebernehmen(r.plan, lokal);
     return true;
   }
@@ -75726,12 +75734,16 @@
   //      Rennmodus"). Eine benannte Ausnahme mit Grund - und kein aufgeweiteter Selektor,
   //      der nebenbei sess-plot-pick mitnehmen wuerde.
   const SICHERUNG_REITER = ['tab-options', 'tab-control'];
-  const SICHERUNG_EXTRA = ['race-mode'];
+  const SICHERUNG_EXTRA = ['race-mode', 'mp-force-preset'];
 
   function sicherungRegler() {
+    // .opt-row sind die Abstimmungs- und Rennregler, .mw-row die Motorwerkstatt-Regler
+    // (Zylinder, Bauart, Kurbelwelle ...) - beide sollen beim Neuladen wieder da sein.
     const sel = SICHERUNG_REITER.map((t) =>
       '#' + t + ' .opt-row input[id]:not([type=file]):not([type=button]), '
-      + '#' + t + ' .opt-row select[id]').join(', ');
+      + '#' + t + ' .opt-row select[id], '
+      + '#' + t + ' .mw-row input[id]:not([type=file]):not([type=button]), '
+      + '#' + t + ' .mw-row select[id]').join(', ');
     const els = [...document.querySelectorAll(sel)];
     for (const id of SICHERUNG_EXTRA) {
       const el = document.getElementById(id);
@@ -76222,12 +76234,19 @@
   // melden beides. Beide zu nehmen kostet nichts, weil das Schreiben gebuendelt ist.
   document.addEventListener('change', (e) => {
     if (e.target && e.target.closest
-        && e.target.closest('#tab-options, #tab-control')) autoSicherungPlanen();
+        && e.target.closest('#tab-options, #tab-control, #tab-mp')) autoSicherungPlanen();
   }, true);
   document.addEventListener('input', (e) => {
     if (e.target && e.target.closest
-        && e.target.closest('#tab-options, #tab-control')) autoSicherungPlanen();
+        && e.target.closest('#tab-options, #tab-control, #tab-mp')) autoSicherungPlanen();
   }, true);
+  // BESTELLT: "alle einstellungen im browsercache gespeichert werden und auch bei neuladen
+  // der seite da bleiben (bei apk im cache speichern)". localStorage ueberlebt das Neuladen,
+  // aber der Browser (oder die WebView in der APK) kann es verwerfen. storage.persist() bittet
+  // um dauerhafte Aufbewahrung - best effort, kein Fehler, wenn die Anfrage abgelehnt wird.
+  if (navigator.storage && navigator.storage.persist) {
+    try { navigator.storage.persist(); } catch (e) { /* nicht moeglich - dann eben nicht */ }
+  }
   // ============================ INFO-POPUP FUER OPTIONEN (Phase 13) ==================
   //
   // BESTELLT: "Schiebe alle Infos zu den Optionen in ein Pop-up mit 'i' im Kreis. Wenn

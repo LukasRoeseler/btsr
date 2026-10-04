@@ -8708,10 +8708,10 @@
     }
     p2PrevHeadlights = headNow2;
 
-    // Boxenstopp: derselbe Griff wie der Knopf auf dem Vergleichsschirm
-    // (boxZweiAnfordern in 70-race.js) - er fordert an und bricht bei erneutem Druck ab,
+    // Boxenstopp: BESTELLT "pitbutton bei beiden auf X". Derselbe Griff wie bei Spieler 1
+    // (bindings.yellowflag = Kreuz/X) - er fordert an und bricht bei erneutem Druck ab,
     // genau wie bei Spieler 1.
-    const pitstopNow2 = readBindingValue(pad, bindings2.pitstop) > BUTTON_CAPTURE_THRESHOLD;
+    const pitstopNow2 = readBindingValue(pad, bindings2.yellowflag) > BUTTON_CAPTURE_THRESHOLD;
     if (pitstopNow2 && !p2PrevPitstop && typeof boxZweiAnfordern === 'function') {
       boxZweiAnfordern();
     }

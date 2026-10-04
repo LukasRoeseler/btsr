@@ -352,7 +352,7 @@
   let physOutSteer = 0, physOutThrottle = 0;
   // Und dasselbe Paar fuer Spieler 2. Es steht neben dem ersten, weil es dieselbe Rolle
   // hat: der geformte Ausgang der Physik, den der Herzschlag verschickt.
-  let physOut2Steer = 0, physOut2Throttle = 0;
+  let physOut2Steer = 0, physOut2Throttle = 0, physOut2Brake = false;
 
   const CONTROL_SEND_INTERVAL_MS = 45; // matches the real app's observed command cadence
 
@@ -507,7 +507,8 @@
     const kopflicht2 = typeof headlichtZwei === 'function'
       ? headlichtZwei(headlightsOn2) : headlightsOn2;
     writeToCar(playerCar2, steer, throttle,
-               trackModeBit() | (kopflicht2 ? LIGHT_HEAD : 0),
+               trackModeBit() | (kopflicht2 ? LIGHT_HEAD : 0)
+                 | (physOut2Brake ? LIGHT_BRAKE : 0),
                playerCar2.modeBytes || null);
   }
   setInterval(controlHeartbeat, CONTROL_SEND_INTERVAL_MS);

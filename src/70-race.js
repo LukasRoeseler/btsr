@@ -408,7 +408,11 @@
       r.laps.push({ lap: r.laps.length + 1, ms, off: offs });
       if (typeof playerCar2 !== 'undefined' && car === playerCar2) {
         const beste2 = r.laps.every((l) => l.ms >= ms);
-        playLapChime(beste2 && r.laps.length > 1, P2_TON_HOEHE);
+        const istBest2 = beste2 && r.laps.length > 1;
+        playLapChime(istBest2, P2_TON_HOEHE);
+        // BESTELLT: "rundenzeiten von beiden ansagen". Spieler 2 bekommt dieselbe Ansage
+        // wie Spieler 1, nur mit dem hoeheren Ton.
+        speakLap(ms, istBest2);
       }
       // Genau hier liegen Rundenzeit und Abgangszahl zusammen vor, und beides braucht die
       // Annahmeregel des Lernens: schneller UND heil. Eine Runde ist eine Auswertung.
@@ -3287,7 +3291,9 @@
       pitTyreTarget = Math.max(1.5, gaussian(PIT_TYRE_CHANGE_S, PIT_TYRE_CHANGE_SD));
       // MINIGAME: alles, was simuliert wird, und die Tastenfolge (siehe pitSpielStart).
       pitSpiel = null;
-      if (pitModus === 'minigame') pitSpielStart();
+      // BESTELLT: "2spielermodus: kein pitgame machen". Im Zwei-Spieler-Modus faehrt
+      // jeder seine eigenen Stopps ohne Minispiel.
+      if (pitModus === 'minigame' && !zweiSpieler) pitSpielStart();
       // The plan was chosen while rolling down the pit lane; only now is it locked in.
       if (!pitPlan) pitPlan = makePitPlan();
       if (pitPlan.tyres) {

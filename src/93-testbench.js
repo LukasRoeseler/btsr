@@ -1248,7 +1248,7 @@
         const los = () => ({ pressed: false, value: 0 });
         const pad = { axes: [0, 0, 0, 0], buttons: Array(20).fill(0).map(() => los()) };
         pad.buttons[3] = knopf();   // headlights
-        pad.buttons[9] = knopf();   // pitstop
+        pad.buttons[0] = knopf();   // pitstop: seit v0.8.96 Kreuz/X (bindings2.yellowflag)
         pad.buttons[11] = knopf();  // lightflash
         const vorLage = (typeof boxZweiLage === 'function') ? boxZweiLage() : null;
         pollPad2(pad);

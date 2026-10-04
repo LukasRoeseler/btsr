@@ -3006,6 +3006,7 @@
     if (typeof updateEngineSound2 === 'function') updateEngineSound2();
     physOut2Steer = out.servoAngle;
     physOut2Throttle = out.motorPWM;
+    physOut2Brake = out.lights.brake;
   }
 
   // Beim Umschalten die Einstellungen uebernehmen. Die rund sechzig Regler im Optionentab

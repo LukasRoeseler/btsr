@@ -161,18 +161,14 @@
     const lb = $('lb-wrap');
     if (lb && lb.classList.contains('on') && $('lb-close')) { $('lb-close').click(); return true; }
     const tab = kAktiverTab();
-    if (tab === 'info' && document.querySelector('#tab-info .subpage.on')) { konsoleZeige('options'); return true; }
+    if (tab === 'info' && document.querySelector('#tab-info .subpage.on')) { konsoleZeige('fahren'); return true; }
     if (document.querySelector('.tabpage.active .subpage.on')) { showSubpage(''); return true; }
-    if (tab === 'home' || K_EBENE1.includes(tab)) return false;
-    let ziel = null;
-    while (kStapel.length && !ziel) {
-      const z = kStapel.pop();
-      const zt = typeof z === 'string' ? { tab: z, sub: '' } : z;
-      if (zt.tab !== tab && zt.tab !== 'home') ziel = zt;
-    }
-    if (!ziel) ziel = { tab: K_ELTERN[tab] || 'fahren', sub: '' };
+    if (tab === 'home' || tab === 'fahren') return false;
+    // BESTELLT: "wenn ich aus menues mit kreistaste zurueckgehe, will ich zu fahren kommen."
+    // Der Stapel fuehrte sonst in den zuletzt besuchten Menue-Reiter zurueck; Kreis soll
+    // aber immer auf dem Fahren-Reiter landen.
     kZurueckLaeuft = true;
-    try { showTab(ziel.tab); if (ziel.sub) showSubpage(ziel.sub); } finally { kZurueckLaeuft = false; }
+    try { showTab('fahren'); } finally { kZurueckLaeuft = false; }
     menuNavTonAbwaehlen();
     return true;
   }

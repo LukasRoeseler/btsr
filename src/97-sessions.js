@@ -606,9 +606,13 @@
   function mpRennenPruefen(r) {
     if (!r || !r.id || !r.startAt || !r.plan) return false;
     if (r.id === mp.rennenId) return false;
-    mp.rennenId = r.id;
     const lokal = r.startAt - mp.offset;
+    // Erst pruefen, dann merken: Wer zu spaet (oder mit falsch geeichter Uhr) kommt,
+    // darf den Renn-ID nicht verbrauchen, sonst wuerde der naechste Poll denselben Plan
+    // nicht mehr annehmen und das Rennen startete fuer ihn nie. So kann eine verpasste
+    // Probe (gedrosselter Tab, langsames WLAN, Uhrversatz) beim naechsten Poll nachziehen.
     if (lokal < Date.now() + 500) return false;          // schon vorbei oder zu knapp
+    mp.rennenId = r.id;
     mpRennenUebernehmen(r.plan, lokal);
     return true;
   }

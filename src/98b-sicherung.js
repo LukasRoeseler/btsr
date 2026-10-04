@@ -55,12 +55,16 @@
   //      Rennmodus"). Eine benannte Ausnahme mit Grund - und kein aufgeweiteter Selektor,
   //      der nebenbei sess-plot-pick mitnehmen wuerde.
   const SICHERUNG_REITER = ['tab-options', 'tab-control'];
-  const SICHERUNG_EXTRA = ['race-mode'];
+  const SICHERUNG_EXTRA = ['race-mode', 'mp-force-preset'];
 
   function sicherungRegler() {
+    // .opt-row sind die Abstimmungs- und Rennregler, .mw-row die Motorwerkstatt-Regler
+    // (Zylinder, Bauart, Kurbelwelle ...) - beide sollen beim Neuladen wieder da sein.
     const sel = SICHERUNG_REITER.map((t) =>
       '#' + t + ' .opt-row input[id]:not([type=file]):not([type=button]), '
-      + '#' + t + ' .opt-row select[id]').join(', ');
+      + '#' + t + ' .opt-row select[id], '
+      + '#' + t + ' .mw-row input[id]:not([type=file]):not([type=button]), '
+      + '#' + t + ' .mw-row select[id]').join(', ');
     const els = [...document.querySelectorAll(sel)];
     for (const id of SICHERUNG_EXTRA) {
       const el = document.getElementById(id);
@@ -551,9 +555,16 @@
   // melden beides. Beide zu nehmen kostet nichts, weil das Schreiben gebuendelt ist.
   document.addEventListener('change', (e) => {
     if (e.target && e.target.closest
-        && e.target.closest('#tab-options, #tab-control')) autoSicherungPlanen();
+        && e.target.closest('#tab-options, #tab-control, #tab-mp')) autoSicherungPlanen();
   }, true);
   document.addEventListener('input', (e) => {
     if (e.target && e.target.closest
-        && e.target.closest('#tab-options, #tab-control')) autoSicherungPlanen();
+        && e.target.closest('#tab-options, #tab-control, #tab-mp')) autoSicherungPlanen();
   }, true);
+  // BESTELLT: "alle einstellungen im browsercache gespeichert werden und auch bei neuladen
+  // der seite da bleiben (bei apk im cache speichern)". localStorage ueberlebt das Neuladen,
+  // aber der Browser (oder die WebView in der APK) kann es verwerfen. storage.persist() bittet
+  // um dauerhafte Aufbewahrung - best effort, kein Fehler, wenn die Anfrage abgelehnt wird.
+  if (navigator.storage && navigator.storage.persist) {
+    try { navigator.storage.persist(); } catch (e) { /* nicht moeglich - dann eben nicht */ }
+  }

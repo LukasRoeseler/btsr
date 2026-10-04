@@ -9726,7 +9726,7 @@
       if (kAktiverTab() !== 'fahren') f.push('Taste auf dem Titel fuehrt nach ' + kAktiverTab() + ' statt nach Fahren');
       konsoleReiterSchritt(1);
       if (kAktiverTab() !== 'mp') f.push('R1 im Fahren-Schirm fuehrt nach ' + kAktiverTab());
-      if (konsoleZurueck() || kAktiverTab() !== 'mp') f.push('Kreis auf der Ebene 1 tut etwas (' + kAktiverTab() + ')');
+      if (!konsoleZurueck() || kAktiverTab() !== 'fahren') f.push('Kreis auf der Ebene 1 fuehrt nicht nach Fahren (' + kAktiverTab() + ')');
       showTab('fahren');
       $('fa-garage').click();
       if (kAktiverTab() !== 'garage') f.push('Knopf Garage auf AUTO fuehrt nach ' + kAktiverTab());
