@@ -2042,6 +2042,7 @@
   // Einfuehrungsrunde geht es mit Boxentempo zu, und dort verzeiht ein seitlicher Versatz
   // mehr.
   const GHOST_GRID_OFFSET = 0.38;
+const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experimentell)
   // DIE LESESCHWELLE. Unter diesem Anteil der Hoechstgeschwindigkeit faehrt das Auto so
   // langsam, dass es die gedruckte Strecke nicht mehr zuverlaessig liest - dann meldet Byte
   // 12 nur noch 0x00, der Vorausblick faellt aus, und der Abgangsmelder haelt das fuer "Bahn
@@ -2084,7 +2085,14 @@
   function formationOffset(halter, gridPos, now) {
     if (halter.weavePhase === undefined) halter.weavePhase = Math.random() * 6.283;
     let v = Math.sin(now / 700 + halter.weavePhase) * GHOST_WEAVE;
-    if (gridPos >= 0) v += (gridPos % 2 ? -1 : 1) * GHOST_GRID_OFFSET;
+    if (gridPos >= 0) {
+      const seit = gridPos % 2 ? -1 : 1;
+      // BESTELLT: "alle abwechselnd link und rechts (max querlage) anhalten". Bei "Autos
+      // fahren selbst in Position" (gridSelbst, experimentell) wird die maximale Querlage
+      // angesteuert, sonst der bisherige Versatz.
+      const breite = (typeof gridSelbst !== 'undefined' && gridSelbst) ? GHOST_GRID_MAX : GHOST_GRID_OFFSET;
+      v += seit * breite;
+    }
     return v;
   }
 

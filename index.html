@@ -3088,9 +3088,11 @@
   .grid-liste { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex;
     flex-direction: column; gap: 4px; }
   .grid-liste .grid-row { background: var(--panel); margin-bottom: 0; }
-  .grid-fuss { flex: 0 0 auto; justify-content: flex-end; gap: 10px; }
-  .grid-start-gross { font-size: clamp(14px, 2vw, 20px); padding: clamp(8px, 1.4vw, 14px) clamp(20px, 4vw, 42px); }
-  .grid-hinweis { flex: 0 0 auto; margin: 0; font-size: clamp(10px, 1.2vw, 13px);
+.grid-fuss { flex: 0 0 auto; justify-content: flex-end; gap: 10px; }
+.grid-start-gross { font-size: clamp(16px, 2.4vw, 26px); padding: clamp(10px, 1.8vw, 18px) clamp(28px, 6vw, 70px); }
+.grid-selbst { display: flex; align-items: center; gap: 8px; margin: 10px 0 4px 0;
+  font-size: clamp(10px, 1.2vw, 13px); color: var(--muted); }
+.grid-hinweis { flex: 0 0 auto; margin: 0; font-size: clamp(10px, 1.2vw, 13px);
     line-height: 1.35; color: var(--gt3-strip-ink); opacity: .9; }
   .grid-pos { font-family: monospace; font-weight: 700; min-width: 26px; color: var(--muted); }
   .grid-handle { cursor: grab; user-select: none; font-size: 15px; color: var(--muted);
@@ -4771,6 +4773,10 @@
           <span id="grid-kopf-info" data-i18n-skip></span></div>
         <div class="grid-bild" id="grid-bild" data-i18n-skip></div>
         <p class="grid-hinweis" id="grid-hinweis">Alle Autos stehen auf den Teilen <b>vor</b> Start/Ziel. Erst wenn du Start/Ziel zum ersten Mal &uuml;berf&auml;hrst, beginnt Runde&nbsp;1.</p>
+        <label class="grid-selbst" id="grid-selbst-wrap">
+          <input type="checkbox" id="grid-selbst">
+          <span class="wip-tag">experimentell</span> Autos fahren selbst in Position
+        </label>
         <div class="grid-liste" id="grid-liste"></div>
         <div class="schirm-fuss grid-fuss">
           <button type="button" id="grid-abbrechen">Abbrechen</button>
@@ -13954,6 +13960,7 @@
     "Runde __N__: __S__ s": "Lap __N__: __S__ s",
     "Keine Start/Ziel-Überfahrt in dieser Aufnahme erkannt - keine Rundenzeiten.": "No start/finish crossing detected in this recording - no lap times.",
     "Bringe die Autos in Position": "Bring the cars into position",
+  "Autos fahren selbst in Position": "Cars drive into position automatically",
     "Der 2-Spieler-Modus ist aus – rechts steht nichts.": "The 2-player mode is off – nothing on the right.",
     "Messstand nicht vorhanden.": "No measuring stand present.",
     "Das Auto ist nicht gefahren – ohne Fahrt gibt es kein Drehsignal, Byte 3 schwankt erst dann.": "The car did not move – without movement there is no rotation signal, byte 3 only fluctuates then.",
@@ -28661,6 +28668,7 @@
   // which is what "sobald das erste Auto über Start fährt" means literally.
   let raceFlying = false;
   let raceGridOrder = [];      // device ids, first = pole
+let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
   let raceFormationLap = false;
   let raceStartedAt = null;
   let raceClockTimer = null;
@@ -29946,6 +29954,13 @@
   }
   if ($('grid-start')) $('grid-start').addEventListener('click', raceGridStart);
   if ($('grid-abbrechen')) $('grid-abbrechen').addEventListener('click', raceGridAbbrechen);
+  // BESTELLT: "eine option, dass die autos selbst in position fahren ... (als experimentell
+  // kennzeichnen)". Der Schalter setzt gridSelbst, das die Ghosts auf ihre Startplaetze
+  // (abwechselnd links/rechts, max Querlage) faehrt statt sie von Hand aufzustellen.
+  if ($('grid-selbst')) {
+    gridSelbst = $('grid-selbst').checked;
+    $('grid-selbst').addEventListener('change', (e) => { gridSelbst = e.target.checked; });
+  }
 
   $('race-flying').addEventListener('change', (e) => {
     raceFlying = e.target.checked;
@@ -40371,6 +40386,7 @@
   // Einfuehrungsrunde geht es mit Boxentempo zu, und dort verzeiht ein seitlicher Versatz
   // mehr.
   const GHOST_GRID_OFFSET = 0.38;
+const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experimentell)
   // DIE LESESCHWELLE. Unter diesem Anteil der Hoechstgeschwindigkeit faehrt das Auto so
   // langsam, dass es die gedruckte Strecke nicht mehr zuverlaessig liest - dann meldet Byte
   // 12 nur noch 0x00, der Vorausblick faellt aus, und der Abgangsmelder haelt das fuer "Bahn
@@ -40413,7 +40429,14 @@
   function formationOffset(halter, gridPos, now) {
     if (halter.weavePhase === undefined) halter.weavePhase = Math.random() * 6.283;
     let v = Math.sin(now / 700 + halter.weavePhase) * GHOST_WEAVE;
-    if (gridPos >= 0) v += (gridPos % 2 ? -1 : 1) * GHOST_GRID_OFFSET;
+    if (gridPos >= 0) {
+      const seit = gridPos % 2 ? -1 : 1;
+      // BESTELLT: "alle abwechselnd link und rechts (max querlage) anhalten". Bei "Autos
+      // fahren selbst in Position" (gridSelbst, experimentell) wird die maximale Querlage
+      // angesteuert, sonst der bisherige Versatz.
+      const breite = (typeof gridSelbst !== 'undefined' && gridSelbst) ? GHOST_GRID_MAX : GHOST_GRID_OFFSET;
+      v += seit * breite;
+    }
     return v;
   }
 

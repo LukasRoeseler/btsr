@@ -141,6 +141,7 @@
   // which is what "sobald das erste Auto über Start fährt" means literally.
   let raceFlying = false;
   let raceGridOrder = [];      // device ids, first = pole
+let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
   let raceFormationLap = false;
   let raceStartedAt = null;
   let raceClockTimer = null;
@@ -1426,6 +1427,13 @@
   }
   if ($('grid-start')) $('grid-start').addEventListener('click', raceGridStart);
   if ($('grid-abbrechen')) $('grid-abbrechen').addEventListener('click', raceGridAbbrechen);
+  // BESTELLT: "eine option, dass die autos selbst in position fahren ... (als experimentell
+  // kennzeichnen)". Der Schalter setzt gridSelbst, das die Ghosts auf ihre Startplaetze
+  // (abwechselnd links/rechts, max Querlage) faehrt statt sie von Hand aufzustellen.
+  if ($('grid-selbst')) {
+    gridSelbst = $('grid-selbst').checked;
+    $('grid-selbst').addEventListener('change', (e) => { gridSelbst = e.target.checked; });
+  }
 
   $('race-flying').addEventListener('change', (e) => {
     raceFlying = e.target.checked;

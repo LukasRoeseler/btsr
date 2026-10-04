@@ -2648,6 +2648,7 @@
     "Runde __N__: __S__ s": "Lap __N__: __S__ s",
     "Keine Start/Ziel-Überfahrt in dieser Aufnahme erkannt - keine Rundenzeiten.": "No start/finish crossing detected in this recording - no lap times.",
     "Bringe die Autos in Position": "Bring the cars into position",
+  "Autos fahren selbst in Position": "Cars drive into position automatically",
     "Der 2-Spieler-Modus ist aus – rechts steht nichts.": "The 2-player mode is off – nothing on the right.",
     "Messstand nicht vorhanden.": "No measuring stand present.",
     "Das Auto ist nicht gefahren – ohne Fahrt gibt es kein Drehsignal, Byte 3 schwankt erst dann.": "The car did not move – without movement there is no rotation signal, byte 3 only fluctuates then.",

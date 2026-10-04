@@ -3088,9 +3088,11 @@
   .grid-liste { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex;
     flex-direction: column; gap: 4px; }
   .grid-liste .grid-row { background: var(--panel); margin-bottom: 0; }
-  .grid-fuss { flex: 0 0 auto; justify-content: flex-end; gap: 10px; }
-  .grid-start-gross { font-size: clamp(14px, 2vw, 20px); padding: clamp(8px, 1.4vw, 14px) clamp(20px, 4vw, 42px); }
-  .grid-hinweis { flex: 0 0 auto; margin: 0; font-size: clamp(10px, 1.2vw, 13px);
+.grid-fuss { flex: 0 0 auto; justify-content: flex-end; gap: 10px; }
+.grid-start-gross { font-size: clamp(16px, 2.4vw, 26px); padding: clamp(10px, 1.8vw, 18px) clamp(28px, 6vw, 70px); }
+.grid-selbst { display: flex; align-items: center; gap: 8px; margin: 10px 0 4px 0;
+  font-size: clamp(10px, 1.2vw, 13px); color: var(--muted); }
+.grid-hinweis { flex: 0 0 auto; margin: 0; font-size: clamp(10px, 1.2vw, 13px);
     line-height: 1.35; color: var(--gt3-strip-ink); opacity: .9; }
   .grid-pos { font-family: monospace; font-weight: 700; min-width: 26px; color: var(--muted); }
   .grid-handle { cursor: grab; user-select: none; font-size: 15px; color: var(--muted);
@@ -4771,6 +4773,10 @@
           <span id="grid-kopf-info" data-i18n-skip></span></div>
         <div class="grid-bild" id="grid-bild" data-i18n-skip></div>
         <p class="grid-hinweis" id="grid-hinweis">Alle Autos stehen auf den Teilen <b>vor</b> Start/Ziel. Erst wenn du Start/Ziel zum ersten Mal &uuml;berf&auml;hrst, beginnt Runde&nbsp;1.</p>
+        <label class="grid-selbst" id="grid-selbst-wrap">
+          <input type="checkbox" id="grid-selbst">
+          <span class="wip-tag">experimentell</span> Autos fahren selbst in Position
+        </label>
         <div class="grid-liste" id="grid-liste"></div>
         <div class="schirm-fuss grid-fuss">
           <button type="button" id="grid-abbrechen">Abbrechen</button>
