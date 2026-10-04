@@ -39,6 +39,14 @@ import java.util.concurrent.ConcurrentHashMap;
  *     Befehl, wird der naechste geschrieben; der aeltere faellt weg. Bei WRITE_TYPE_NO_RESPONSE
  *     ist das richtig, weil jedes Steuerpaket das vorherige ersetzt.
  *
+ * SEIT v0.8.126 (BESTELLT "occasionally it is too much"): die GATT-Verbindung und die beiden
+ * UUIDs werden je Geraet GEMERKT, statt sie bei jedem Write per Reflexion zu suchen und neu zu
+ * parsen - die Reflexion war der teuerste Teil des Background-Writes. Ausserdem wird der
+ * Rueckgabewert von writeCharacteristic geprueft: liefert er einen Fehler (GATT-Stack noch
+ * beschaefigt, Verbindung gerade weg), wird der Write als verloren behandelt und sofort
+ * erneut versucht, statt dass das Paket stillschweigend unter den Tisch faellt - ein
+ * verschluckter Lenkbefehl fuehlt sich genau wie ein Verzoegerungsausreisser an.
+ *
  * DIE VERBINDUNG LEIHEN wir uns vom Community-Plugin: es haelt die GATT-Verbindung (deviceMap ->
  * bluetoothGatt). Dasselbe tut MainActivity.bluetoothTrennen() per Reflexion. Scheitert die
  * Reflexion (andere Plugin-Fassung), faellt die Web-Seite auf das Community-Plugin zurueck.
@@ -50,8 +58,21 @@ public class OmegaBlePlugin extends Plugin {
     private final Map<String, String[]> ziele = new ConcurrentHashMap<>();
     private final Map<String, Long> gen = new ConcurrentHashMap<>();
     private final Map<String, Boolean> schreibt = new ConcurrentHashMap<>();
+    // GEMERKTE GATT-Handles: pro Geraet die Verbindung plus die aufgeloesten UUID-Objekte.
+    // Das spart die Reflexion (findeGatt) und das UUID.fromString bei jedem Write.
+    private final Map<String, Ziel> zielCache = new ConcurrentHashMap<>();
     private HandlerThread writeThread;
     private Handler writeHandler;
+
+    /** Ein gemerktes Schreibziel: die GATT-Verbindung und das aufgeloeste Merkmal. */
+    private static final class Ziel {
+        BluetoothGatt gatt;
+        BluetoothGattCharacteristic merkmal;
+        Ziel(BluetoothGatt gatt, BluetoothGattCharacteristic merkmal) {
+            this.gatt = gatt;
+            this.merkmal = merkmal;
+        }
+    }
 
     @Override
     public void load() {
@@ -82,21 +103,34 @@ public class OmegaBlePlugin extends Plugin {
 
     /** Schreiben auf dem Hintergrund-Thread, serialisiert, "letzter gewinnt". */
     private void schreibe(String deviceId) {
+        boolean weiter = false;
         try {
             byte[] wert = neueste.get(deviceId);
             long g = gen.getOrDefault(deviceId, 0L);
             if (wert != null) {
                 String[] ziel = ziele.get(deviceId);
-                BluetoothGatt gatt = findeGatt(deviceId);
-                if (gatt != null && ziel != null) {
-                    BluetoothGattService s = gatt.getService(UUID.fromString(ziel[0]));
-                    BluetoothGattCharacteristic c = s != null
-                        ? s.getCharacteristic(UUID.fromString(ziel[1])) : null;
-                    if (c != null) schreibeGatt(gatt, c, wert);
+                if (ziel != null) {
+                    // Gemerktes Ziel holen; fehlt es oder ist es veraltet, neu suchen.
+                    Ziel z = zielCache.get(deviceId);
+                    if (z == null || z.gatt == null || z.merkmal == null) {
+                        z = findeZiel(deviceId, ziel);
+                        if (z != null) zielCache.put(deviceId, z);
+                    }
+                    if (z != null && z.gatt != null && z.merkmal != null) {
+                        // Erfolg? Bei Fehler das gemerkte Ziel verwerfen und gleich nochmal.
+                        if (!schreibeGatt(z.gatt, z.merkmal, wert)) {
+                            zielCache.remove(deviceId);
+                            weiter = true;
+                        }
+                    } else {
+                        // Verbindung (noch) nicht auffindbar: der naechste Befehl versucht es.
+                        zielCache.remove(deviceId);
+                    }
                 }
             }
             // Kam waehrend des Write ein neuer Befehl, den naechsten schreiben; sonst frei.
-            if (gen.getOrDefault(deviceId, 0L) != g) {
+            if (!weiter && gen.getOrDefault(deviceId, 0L) != g) weiter = true;
+            if (weiter) {
                 writeHandler.post(() -> schreibe(deviceId));
             } else {
                 schreibt.remove(deviceId);
@@ -106,13 +140,38 @@ public class OmegaBlePlugin extends Plugin {
         }
     }
 
-    private static void schreibeGatt(BluetoothGatt gatt, BluetoothGattCharacteristic c, byte[] bytes) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            gatt.writeCharacteristic(c, bytes, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-        } else {
+    /**
+     * Der eigentliche GATT-Write. liefert true, wenn der Stack den Write angenommen hat.
+     * Der Rueckgabewert von writeCharacteristic wird geprueft: 0 = SUCCESS; alles andere
+     * bedeutet, der Write kam nicht an (GATT-Busy, Verbindung weg) und das Paket waere
+     * verloren. Nur dann wird hier false geliefert, damit der Aufrufer neu versucht.
+     */
+    private static boolean schreibeGatt(BluetoothGatt gatt, BluetoothGattCharacteristic c, byte[] bytes) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                int status = gatt.writeCharacteristic(c, bytes, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+                return status == BluetoothStatusCodes.SUCCESS;
+            }
             c.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
             c.setValue(bytes);
-            gatt.writeCharacteristic(c);
+            return gatt.writeCharacteristic(c);
+        } catch (Throwable e) {
+            return false;
+        }
+    }
+
+    /** Die GATT-Verbindung aus dem Community-Plugin holen und das Merkmal aufloesen. */
+    private Ziel findeZiel(String deviceId, String[] ziel) {
+        try {
+            BluetoothGatt gatt = findeGatt(deviceId);
+            if (gatt == null) return null;
+            BluetoothGattService s = gatt.getService(UUID.fromString(ziel[0]));
+            if (s == null) return null;
+            BluetoothGattCharacteristic c = s.getCharacteristic(UUID.fromString(ziel[1]));
+            if (c == null) return null;
+            return new Ziel(gatt, c);
+        } catch (Throwable e) {
+            return null;
         }
     }
 

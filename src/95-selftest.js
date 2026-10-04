@@ -11026,6 +11026,63 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Foto frei gezeigt, auf der Bahn wieder die Karte' };
   });
 
+  // BESTELLT v0.8.126: mehrere verbundene Autos mit Fotos gemeinsam zeigen (Garage auf dem
+  // Fahren-Schirm). Erst ab zwei Fotos wird daraus eine Galerie, sonst bleibt es beim einen
+  // Bild des Fahrer-Autos.
+  stAdd('Fahren: mehrere verbundene Autos zeigen ihre Fotos gemeinsam', () => {
+    const merk = garage.slice();
+    const f = [];
+    const a1 = { role: 'player', device: { id: 'probe-galerie-1' }, alias: 'Alpha', colorId: 'rot', sim: false, testSenke: [] };
+    const a2 = { role: 'player2', device: { id: 'probe-galerie-2' }, alias: 'Beta', colorId: 'blau', sim: false, testSenke: [] };
+    const alt = (id) => { try { return localStorage.getItem('omegasim-autofoto:' + id) || ''; } catch (e) { return ''; } };
+    const alt1 = alt(a1.device.id), alt2 = alt(a2.device.id);
+    try {
+      garage.splice(0, garage.length);
+      garage.push(a1, a2);
+      const c = document.createElement('canvas'); c.width = 2; c.height = 2;
+      const foto = c.toDataURL('image/jpeg', 0.8);
+      if (!autoFotoSetzen(a1, foto) || !autoFotoSetzen(a2, foto)) return { skip: true, mass: 'Speicher voll' };
+      konsoleFahrenZeichnen();
+      const gal = $('fa-auto-bild').querySelector('.k-auto-galerie');
+      if (!gal) f.push('keine Galerie bei zwei Fotos');
+      else if (gal.querySelectorAll('.k-auto-zelle').length !== 2) f.push('Galerie hat nicht 2 Kacheln');
+      if (!$('fa-auto').classList.contains('k-auto-mehr')) f.push('Kachel traegt k-auto-mehr nicht');
+      autoFotoSetzen(a2, '');
+      konsoleFahrenZeichnen();
+      if ($('fa-auto-bild').querySelector('.k-auto-galerie')) f.push('Galerie bleibt bei einem Foto');
+    } finally {
+      garage.splice(0, garage.length);
+      for (const c of merk) garage.push(c);
+      try { localStorage.setItem('omegasim-autofoto:' + a1.device.id, alt1); } catch (e) { /* egal */ }
+      try { localStorage.setItem('omegasim-autofoto:' + a2.device.id, alt2); } catch (e) { /* egal */ }
+      konsoleFahrenZeichnen();
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'zwei Fotos gemeinsam, eines wieder einzeln' };
+  });
+
+  // BESTELLT v0.8.126: ist eine Strecke eingegeben und der Modus steht auf "auf der Bahn",
+  // zeigt das Band die Streckenvorschau aus dem Editor statt des Beispielbilds.
+  stAdd('Fahren: eingegebene Strecke zeigt die Vorschau statt des Fotos', () => {
+    const keep = currentTrackTiles;
+    const merkBahn = ($('setting-ontrack') || {}).checked;
+    const f = [];
+    try {
+      currentTrackTiles = codeToTrack('SGHR').tiles;
+      $('setting-ontrack').checked = true;
+      konsoleFahrenZeichnen();
+      if (!$('fa-strecke-bild').querySelector('.tp-karte')) f.push('keine Streckenvorschau bei eingegebener Strecke');
+      if (!$('fa-strecke').classList.contains('k-vorschau')) f.push('Kachel traegt k-vorschau nicht');
+      $('setting-ontrack').checked = false;
+      konsoleFahrenZeichnen();
+      if ($('fa-strecke-bild').querySelector('.tp-karte')) f.push('Vorschau bleibt ohne Bahn-Modus');
+    } finally {
+      currentTrackTiles = keep;
+      $('setting-ontrack').checked = merkBahn;
+      konsoleFahrenZeichnen();
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Vorschau auf der Bahn, Foto ohne Bahn' };
+  });
+
   stAdd('ACC-Menü: Entwicklertools versteckt, Schalter blendet sie ein', () => {
     const cb = $('setting-dev');
     if (!cb) return { ok: false, mass: '#setting-dev fehlt' };

@@ -283,6 +283,12 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
     const alleGeister = geister <= 0;
     const p1Aus = derbyHealth <= 0, p2Aus = derbyHealth2 <= 0;
     const alleMenschen = (typeof zweiSpieler !== 'undefined' && zweiSpieler) ? (p1Aus && p2Aus) : p1Aus;
+    // KILLS-ZIEL (v0.8.126, Voreinstellung 1): wer das Ziel erreicht, beendet das Derby sofort.
+    const ziel = raceLimit;
+    if (ziel > 0) {
+      if (derbyKills >= ziel) { derbyEnde('p1'); return; }
+      if (typeof zweiSpieler !== 'undefined' && zweiSpieler && derbyKills2 >= ziel) { derbyEnde('p2'); return; }
+    }
     if (alleGeister) {
       // Sieger nach Kills (dann Health als Tiebreaker).
       const k = [['p1', derbyKills, derbyHealth], ['p2', derbyKills2, derbyHealth2]];
@@ -299,6 +305,45 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
     else if (sieger === 'p2') { if (typeof playRaceEndFanfare === 'function') playRaceEndFanfare(); showHudToast('Derby: Spieler 2 gewinnt!'); }
     else { if (typeof playTone === 'function') { playTone(200, 0.12, 'square', 0.16); setTimeout(() => playTone(140, 0.16, 'square', 0.14), 70); setTimeout(() => playTone(110, 0.2, 'square', 0.12), 160); } showHudToast('Derby: Geist gewinnt.'); }
     if (typeof finishRace === 'function') finishRace(false);
+  }
+  // ---- DERBY-COCKPIT (v0.8.126) ----
+  // BESTELLT: "nur der Mittelteil (Gang, Tempo, Drehzahl), die Lichter darueber und
+  // Health-Balken aller Teilnehmer." Die Klasse `derby` auf #race-dash blendet die
+  // Seitenteile und die Reifenleiste aus (CSS in 00-index.head.html); hier wird nur der
+  // Balkeninhalt geschrieben. Aufgerufen aus updateRaceScreen() (50-drive.js).
+  function derbyCockpitMalen() {
+    const dash = $('race-dash');
+    const host = $('derby-health');
+    if (!dash || !host) return;
+    const aktiv = derbyLaeuft && (raceState === 'racing' || raceState === 'countdown');
+    dash.classList.toggle('derby', !!aktiv);
+    if (!aktiv) { host.innerHTML = ''; return; }
+    const nameFarbe = (c) => {
+      try { return { name: garageLabel(c), farbe: carColor(c).hex }; }
+      catch (e) { return { name: '?', farbe: '#8b99b4' }; }
+    };
+    const teile = [];
+    teile.push({ name: 'Du', farbe: '#2ee06a', health: derbyHealth, kills: derbyKills,
+                 aus: derbyHealth <= 0 });
+    if (typeof zweiSpieler !== 'undefined' && zweiSpieler) {
+      teile.push({ name: 'Spieler 2', farbe: '#ffb02e', health: derbyHealth2, kills: derbyKills2,
+                   aus: derbyHealth2 <= 0 });
+    }
+    for (const c of garage) {
+      if (c && c.role === 'ghost' && c.ghost) {
+        const nf = nameFarbe(c);
+        teile.push({ name: nf.name, farbe: nf.farbe, health: c.ghost.derbyHealth || 0,
+                     kills: c.ghost.derbyKills || 0, aus: !!c.ghost.derbyAus });
+      }
+    }
+    const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+    host.innerHTML = teile.map((t) =>
+      '<div class="derby-balken' + (t.aus ? ' aus' : '') + '">'
+      + '<div class="db-kopf"><span class="db-name" style="color:' + esc(t.farbe) + '">'
+      + esc(t.name) + '</span><span class="db-wert">' + Math.round(t.health) + '% · ' + t.kills
+      + '</span></div>'
+      + '<div class="db-leiste"><i style="width:' + Math.max(0, Math.min(100, t.health))
+      + '%;background:' + esc(t.farbe) + '"></i></div></div>').join('');
   }
   // Im Derby: nahe Geister werden vom fahrenden Spieler gerammt (sie verlieren 20 % Health).
   const DERBY_RAM_TILES = 4, DERBY_RAM_KMH = 30;
@@ -1832,10 +1877,12 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
     $('race-start-btn').textContent = `\u{1F3C1} ${m.label} starten`;
     // Free practice has no limit, so the field would be a lie. Disabled, not hidden:
     // a control that vanishes makes people wonder whether they broke something.
-    $('race-limit').disabled = !m.timed;
+    // DERBY (v0.8.126): das Limit ist das KILLS-ZIEL und wird deshalb aktiviert - sonst
+    // koennte man es nicht auf 1 setzen. Die Voreinstellung setzt der Moduswechsel unten.
+    $('race-limit').disabled = !m.timed && raceMode !== 'derby';
     // 0.7, not 0.45. On white 0.45 was a legible grey; on black it collapsed to 2.7:1,
     // and this label still has to be readable while it says which unit is NOT in use.
-    $('race-limit-label').style.opacity = m.timed ? '' : '0.7';
+    $('race-limit-label').style.opacity = (m.timed || raceMode === 'derby') ? '' : '0.7';
   }
   // Kacheln und Wetterknoepfe schreiben in das versteckte Auswahlfeld und loesen change
   // aus. Damit gibt es weiter genau EINE Stelle, die auf eine Aenderung reagiert, und die
@@ -1873,7 +1920,8 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
   $('race-mode').addEventListener('change', (e) => {
     raceMode = e.target.value;
     // Sensible default per mode rather than carrying a minute count over into a lap count.
-    raceLimit = raceMode === 'laps' ? 10 : 2;
+    // DERBY (v0.8.126): das Limit ist das KILLS-ZIEL, Voreinstellung 1.
+    raceLimit = raceMode === 'laps' ? 10 : (raceMode === 'derby' ? 1 : 2);
     $('race-limit').value = raceLimit;
     applyRaceModeUi();
   });
@@ -4476,7 +4524,9 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
       // KEIN SCHADEN IM STAND: ein stehendes Auto (0 km/h) bekommt keinen Crash angerechnet.
       // Die Hand, die es aufhebt, erzeugt auf den Bytes 1 und 3 genau die Abweichung, die
       // diese Funktion sonst als Aufprall wertet - nur dass das Auto dabei eben nicht faehrt.
-      if (crashStationarySafe && stationaer(wer)) return;
+      // DERBY (v0.8.126): hier nimmt auch ein stehendes Auto Schaden - die Ausnahme gilt nur
+      // im normalen Betrieb, nicht im Demolition-Derby.
+      if (crashStationarySafe && stationaer(wer) && !(typeof derbyLaeuft !== 'undefined' && derbyLaeuft)) return;
       L.letzter = now;
       // Der Rundenzaehler der Ereignisse gehoert dem Rennen, und das Rennen faehrt Auto 1.
       if (wer !== 2) lapEventAkku.crash += 1;
@@ -6274,6 +6324,12 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
   // Sichtbar gemacht wird es am Knopf: er ist im Doppelausdruck-Modus abgeblendet, solange
   // nichts laeuft (updateRaceActButtons).
   function requestPitStop() {
+    // DERBY (v0.8.126): kein Boxenstopp - das Derby ist ein Ramm-Modus, der Stopp gaebe
+    // nur eine Pause, in der man keine Gegner rammt.
+    if (typeof derbyLaeuft !== 'undefined' && derbyLaeuft) {
+      showHudToast('Derby: kein Boxenstopp');
+      return;
+    }
     const now = Date.now();
     pitLastPress = now;
 

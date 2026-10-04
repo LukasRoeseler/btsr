@@ -1344,6 +1344,30 @@
     align-content: center; }
   .gt3-right { grid-area: right; display: grid; gap: clamp(4px, .8vw, 9px);
     align-content: start; }
+  /* ---- DERBY-COCKPIT (v0.8.126) ----
+     Nur der Mittelteil (Gang, Tempo, Drehzahl), darueber die Ampel, darunter die
+     Health-Balken aller Teilnehmer. Seitenteile und Reifenleiste fallen weg. */
+  .gt3-derby-health { grid-area: derby; display: none; gap: clamp(4px, .8vw, 9px);
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); align-content: center; }
+  #race-dash.derby { grid-template-areas:
+    "flag flag flag" "shift shift shift" "derby derby derby" "left gear right"
+    "strip strip strip" "banner banner banner" "foot foot foot" "toast toast toast" "marke marke marke"; }
+  #race-dash.derby .gt3-left, #race-dash.derby .gt3-right,
+  #race-dash.derby .gt3-strip { display: none; }
+  #race-dash.derby .gt3-gear { align-content: center; }
+  #race-dash.derby .gt3-derby-health { display: grid; }
+  .derby-balken { display: grid; gap: 3px; align-content: start;
+    background: rgba(255,255,255,.045); border-radius: 8px; padding: clamp(5px,.9vw,9px); }
+  .derby-balken .db-kopf { display: flex; justify-content: space-between; gap: 6px;
+    font-size: clamp(10px, 1.6vw, 13px); line-height: 1.1; white-space: nowrap; }
+  .derby-balken .db-name { overflow: hidden; text-overflow: ellipsis; }
+  .derby-balken .db-wert { font-variant-numeric: tabular-nums; opacity: .85; }
+  .derby-balken .db-leiste { height: clamp(6px, 1.1vw, 11px); border-radius: 999px;
+    background: rgba(255,255,255,.09); overflow: hidden; }
+  .derby-balken .db-leiste > i { display: block; height: 100%; width: 100%;
+    border-radius: inherit; transition: width .2s linear; }
+  .derby-balken.aus { opacity: .45; }
+  .derby-balken.aus .db-name { text-decoration: line-through; }
   /* Acht Spalten auf 375 px sind 40 px je Kachel, und darin passt keine Beschriftung:
      gemessen lief der Reifentext ueber die Akkukachel. Unter 560 px deshalb zweireihig. */
   .gt3-strip { grid-area: strip; display: grid; gap: clamp(3px, .7vw, 8px);
@@ -2370,6 +2394,27 @@
 
   .k-fahren { grid-template-columns: repeat(3, 1fr); grid-template-rows: minmax(300px, 56vh) minmax(96px, 20vh); }
   .k-fahren-unten { grid-column: 1 / -1; grid-template-columns: 1fr 1fr 2fr; }
+  /* BESTELLT v0.8.126: mehrere verbundene Autos mit Fotos gemeinsam zeigen (Garage auf dem
+     Fahren-Schirm). Erst ab zwei Fotos; dann ist die Abdunklung aus, sonst waere das Foto zu
+     dunkel. Die Kacheln stehen in der .k-kb-Flaeche (Auto-Bild). */
+  #fa-auto.k-auto-mehr > .k-kb { filter: none; }
+  #fa-auto.k-auto-mehr > .k-kb::after { display: none; }
+  #fa-auto .k-auto-galerie { position: absolute; inset: 0; display: flex; gap: 10px; padding: 12px;
+    align-items: center; justify-content: center; }
+  #fa-auto .k-auto-zelle { width: clamp(90px, 22vw, 160px); aspect-ratio: 4 / 3; min-width: 0;
+    border: 2px solid rgba(255,255,255,.4); border-radius: 8px; background-size: cover;
+    background-position: center; position: relative; overflow: hidden; }
+  #fa-auto .k-auto-zelle span { position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 5px;
+    background: rgba(0,0,0,.72); color: #fff; font-size: 11px; font-weight: 700; text-align: center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #fa-auto .k-auto-zelle span i { display: inline-block; width: .6em; height: .6em; border-radius: 50%;
+    margin-right: .4em; vertical-align: middle; }
+  /* BESTELLT v0.8.126: Streckenvorschau im Fahren-Band statt des Beispielbilds, sobald eine
+     Strecke eingegeben ist und der Modus auf "auf der Bahn" steht. */
+  #fa-strecke.k-vorschau > .k-kb { filter: none; background-color: var(--panel-2); }
+  #fa-strecke.k-vorschau > .k-kb::after { display: none; }
+  #fa-strecke.k-vorschau .tp-karte { width: 100%; height: 100%; max-width: none; max-height: none;
+    border: none; border-radius: 0; }
   .k-start { justify-content: center; align-items: center; min-height: 96px; text-transform: uppercase;
     background: linear-gradient(rgba(0,0,0,.5), rgba(0,0,0,.5)), url(img/start.jpg) center / cover; }
   .k-start-innen { display: flex; flex-direction: column; align-items: center; text-align: center; text-shadow: 0 2px 14px #000; }
@@ -3291,6 +3336,16 @@
   .mp-kopier { font-size: 11px; padding: 4px 9px; }
   .mp-datei { display: inline-block; margin-top: 3px; font-size: 11.5px; }
 
+  /* MEHRSPIELER-BEREITSCHAFT (v0.8.126): die Zeilen im Bereitschaftsschirm. */
+  .mp-ready-zeile { display: flex; justify-content: space-between; align-items: center;
+    gap: 10px; padding: clamp(7px, 1.2vw, 12px) clamp(9px, 1.6vw, 14px);
+    border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px;
+    background: rgba(255,255,255,.035); }
+  .mp-ready-zeile.bereit { border-color: var(--good); background: rgba(46,224,106,.08); }
+  .mp-ready-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; }
+  .mp-ready-status { font-size: 12px; opacity: .85; flex: none; }
+
   .tp-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
     justify-content: center; padding-bottom: 4px; }
   .tp-btn { width: 54px; min-height: 60px; padding: 3px 0 2px 0; display: flex; flex-direction: column;
@@ -4128,7 +4183,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.125</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.126</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4330,6 +4385,10 @@
           </div>
           <div class="gt3-abs" id="race-abs">ABS</div></div>
       </div>
+
+      <!-- DERBY (v0.8.126): nur Mittelteil, Ampel und Health-Balken. Wird nur im
+           Demolition-Derby angezeigt; sonst versteckt. -->
+      <div class="gt3-derby-health" id="derby-health" aria-label="Health der Teilnehmer"></div>
 
       <!-- Die drei Zeiten standen in drei eigenen Kaesten uebereinander. Sie gehoeren
            zusammen - man liest sie zusammen -, also stehen sie jetzt in EINEM Feld als
@@ -4802,6 +4861,20 @@
           <button type="button" class="primary grid-start-gross" id="grid-start">Start</button>
         </div>
       </div>
+
+      <!-- MEHRSPIELER-BEREITSCHAFT (v0.8.126): wenn jemand ein Rennen "fuer alle" startet,
+           sehen ALLE Telefone diesen Schirm. Jeder meldet sich bereit; der Initiator kann
+           erst starten, wenn alle anderen bereit sind. -->
+      <div class="gt3-gridschirm" id="mp-ready-screen" data-i18n-skip hidden>
+        <div class="schirm-kopf"><b>Rennen für alle: bereit?</b>
+          <span id="mp-ready-info" data-i18n-skip></span></div>
+        <div class="grid-liste" id="mp-ready-liste"></div>
+        <div class="schirm-fuss grid-fuss">
+          <button type="button" class="warn" id="mp-ready-abbrechen">Abbrechen</button>
+          <button type="button" class="primary grid-start-gross" id="mp-ready-start" disabled>Start</button>
+          <button type="button" class="primary grid-start-gross" id="mp-ready-bereit" hidden>Bereit</button>
+        </div>
+      </div>
     </div>
 
   </section>
@@ -5196,7 +5269,7 @@
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
         <li>Challenges: Wochenstrecken. Vier Kategorien (A kurz, B lang, C Haarnadel, D 30&deg;) mit je 20 Strecken, jeden Mittwoch um 0:00 Uhr (deutsche Zeit) kommt je Kategorie die n&auml;chste, nach 20 Wochen von vorn. Bestenlisten bleiben je Strecke erhalten. Die Kacheln zeigen, wann die n&auml;chste Strecke kommt.</li>
         <li>Rundenzeit-Ansage jetzt auch in der App: Dort fehlt die Sprachausgabe des Browsers, deshalb liest die App die Zeit aus Aufnahmen vor (Zahlen 0&ndash;60, erzeugt mit Piper TTS, Stimmen &bdquo;Thorsten&ldquo; und &bdquo;LJ Speech&ldquo;).</li>
-        <li>Mehrspieler (experimentell): &bdquo;Rennen f&uuml;r alle starten&ldquo; startet ein gemeinsames Rennen. Alle Telefone &uuml;bernehmen Renntyp, L&auml;nge und einen gemeinsamen Wetterplan, die Ampel kommt &uuml;berall gleichzeitig (Uhrabgleich mit dem Host). &bdquo;Rennen starten&ldquo; fragt im Mehrspieler: f&uuml;r alle oder nur ich. F&uuml;r den Telefon-Host braucht es die neue APK.</li>
+        <li>Mehrspieler (experimentell): &bdquo;Rennen f&uuml;r alle starten&ldquo; zeigt auf allen Telefonen einen Bereitschaftsschirm. Jeder tippt &bdquo;Bereit&ldquo;; erst wenn alle anderen bereit sind, kann der Initiator starten. Dann &uuml;bernehmen alle Renntyp, L&auml;nge und einen gemeinsamen Wetterplan, und die Ampel kommt &uuml;berall gleichzeitig (Uhrabgleich mit dem Host). &bdquo;Rennen starten&ldquo; fragt im Mehrspieler: f&uuml;r alle oder nur ich. F&uuml;r den Telefon-Host braucht es die neue APK.</li>
         <li>Funk: ein Schloss je Auto mit Wachhund; ein h&auml;ngender Befehl blockiert kein Auto mehr (Ursache f&uuml;r &bdquo;Auto reagiert nach Mehrspieler-Beitritt nicht&ldquo;). In der App: kurzes Timeout, erst senden, dann das Cockpit gedrosselt malen, weniger Arbeit je Meldung; Messanzeige &bdquo;Funk-Rundlauf&ldquo; unter System. Steuerkreuz: Renntyp in den Renneinstellungen und im Cockpit direkt mit links/rechts, am Rand der Renntyp-Kachel schaltet es, Zur&uuml;ck und Rennen starten erreichbar, Info-Screen schlie&szlig;t mit &#9675;. Ohne Zwei-Spieler-Modus f&auml;hrt das zuletzt benutzte Pad; &bdquo;Controller tauschen&ldquo; legt ein einzelnes Pad nicht mehr lahm. Controller ohne Standardbelegung: Hinweis und Anzeige der gedr&uuml;ckten Kn&ouml;pfe.</li>
         <li>Gas-, Brems- und Lenkkennlinie ab Werk 2,45. Neu: &bdquo;Voller Einschlag bei&ldquo; (Vorgabe 90 % Stickweg, experimentell), darunter lenkt der Stick schon, am Anfang schw&auml;cher als linear; Lenkkalibrierung verschiebt den Punkt nicht mehr. Wer noch auf den alten Vorgaben stand, bekommt die neuen einmalig; eigene Werte bleiben.</li>
         <li>Challenges: Einstellungen unter der Streckenkarte, Bestenliste rechts; Modus und Preset schaltet &#10005; um. Fr&uuml;hstart bei allen Starts mit Ampel: kein Abbruch mehr, sondern kurz ausgebremst, sobald das Auto nach Gr&uuml;n f&auml;hrt. Silverbrook-Rennen mit einem Pflichtstopp (Boxen-Minigame, egal wo).</li>
@@ -12140,6 +12213,7 @@
     "Rennen für alle: Ampel kommt gleich": "Race for everyone: lights coming up",
     "Erst mitmachen, dann für alle starten.": "Join first, then start for everyone.",
     "Rennen für alle: Ampel in ": "Race for all: lights in ",
+    "Rennen für alle: alle bereit machen, dann startet der Host.": "Race for all: everyone ready up, then the host starts.",
     "Start für alle fehlgeschlagen": "Starting for everyone failed",
     "Der Host kennt das noch nicht, Host bzw. APK aktualisieren": "The host does not support this yet, update the host or APK",
     "Rennen für alle gestartet, die Ampel kommt in wenigen Sekunden.": "Race started for everyone, the lights come in a few seconds.",
@@ -12147,7 +12221,7 @@
     "Für alle zugleich starten (gemeinsame Ampel, gleiches Wetter) oder nur für dich?": "Start for everyone at once (shared lights, same weather) or just for you?",
     "Für alle": "For everyone",
     "Nur ich": "Just me",
-    "Mehrspieler (experimentell): „Rennen für alle starten“ startet ein gemeinsames Rennen. Alle Telefone übernehmen Renntyp, Länge und einen gemeinsamen Wetterplan, die Ampel kommt überall gleichzeitig (Uhrabgleich mit dem Host). „Rennen starten“ fragt im Mehrspieler: für alle oder nur ich. Für den Telefon-Host braucht es die neue APK.": "Multiplayer (experimental): \"Start race for everyone\" starts a shared race. All phones take over race type, length and a shared weather plan, the lights come on everywhere at the same time (clock sync with the host). \"Start race\" asks in multiplayer: for everyone or just me. The phone host needs the new APK.",
+    "Mehrspieler (experimentell): „Rennen für alle starten“ zeigt auf allen Telefonen einen Bereitschaftsschirm. Jeder tippt „Bereit“; erst wenn alle anderen bereit sind, kann der Initiator starten. Dann übernehmen alle Renntyp, Länge und einen gemeinsamen Wetterplan, und die Ampel kommt überall gleichzeitig (Uhrabgleich mit dem Host). „Rennen starten“ fragt im Mehrspieler: für alle oder nur ich. Für den Telefon-Host braucht es die neue APK.": "Multiplayer (experimental): \"Start race for everyone\" shows a ready screen on all phones. Everyone taps \"Ready\"; only when all others are ready can the initiator start. Then all phones take over race type, length and a shared weather plan, and the lights come on everywhere at the same time (clock sync with the host). \"Start race\" asks in multiplayer: for everyone or just me. The phone host needs the new APK.",
     "Funk-Rundlauf": "Radio round trip",
     "Wie lange ein Steuerbefehl bis zur Bestätigung durch das Bluetooth braucht: Mittelwert und 95 % der Befehle. Über 45 ms fällt jeder zweite Befehl aus dem Takt. Hängende Befehle gibt der Wachhund nach 300 ms frei. In der App auf einem älteren Handy hilft oft, „Android System WebView“ im Play Store zu aktualisieren.": "How long a control command takes until Bluetooth confirms it: average and 95 % of commands. Above 45 ms every second command misses its slot. Hanging commands are released by the watchdog after 300 ms. In the app on an older phone, updating \"Android System WebView\" in the Play Store often helps.",
     "noch keine Befehle": "no commands yet",
@@ -20167,6 +20241,11 @@
     // in this drivetrain and therefore gets no cell, rather than a permanent zero.
     $('race-abs').classList.toggle('active', st.absActive);
 
+    // DERBY-COCKPIT (v0.8.126): blendet die Seitenteile aus und malt die Health-Balken,
+    // sobald ein Demolition-Derby laeuft. Defensiv gerufen, weil die Funktion in der
+    // spaeteren 70-race.js steht.
+    if (typeof derbyCockpitMalen === 'function') derbyCockpitMalen();
+
     // Headlight tell-tale. Reads the real state rather than sniffing the lamp's CSS
     // colour: there are two different "off" colours in this file (#3a4a6b and #444), so a
     // colour comparison silently matched the wrong one and the indicator never went out.
@@ -22901,13 +22980,46 @@
     if (!$('fa-auto')) return;
     const autos = kAutos();
     $('fa-auto-titel').textContent = autos.length ? autos.length + ' ' + t('verbunden') : t('Autos verbinden');
+    // BESTELLT v0.8.126: mehrere verbundene Autos mit Fotos gemeinsam zeigen (die Garage auf dem
+    // Fahren-Schirm). Erst ab zwei Fotos, sonst bleibt es beim einen Bild des Fahrer-Autos.
+    const mitFotos = autos.filter((c) => typeof autoFoto === 'function' && autoFoto(c));
+    const galerieAn = mitFotos.length >= 2;
+    const faAuto = $('fa-auto');
+    if (faAuto) faAuto.classList.toggle('k-auto-mehr', galerieAn);
     // Das eigene Foto des Fahrer-Autos (Garage) statt des Beispielbilds.
     const fahrer = autos.find((c) => c.role === 'player') || autos[0];
     const afoto = fahrer && typeof autoFoto === 'function' ? autoFoto(fahrer) : '';
     const ab = $('fa-auto-bild');
-    const abNeu = afoto ? 'foto:' + afoto.length : 'auto';
+    let abNeu;
+    if (galerieAn) {
+      abNeu = 'galerie:' + mitFotos.map((c) => (c.device ? c.device.id : '') + ':' + autoFoto(c).length).join('|');
+    } else {
+      abNeu = afoto ? 'foto:' + afoto.length : 'auto';
+    }
     if (ab && ab.dataset.bild !== abNeu) {
-      ab.style.backgroundImage = afoto ? 'url("' + afoto + '")' : 'url(img/auto.jpg)';
+      if (galerieAn) {
+        ab.style.backgroundImage = 'none';
+        ab.innerHTML = '';
+        const gal = document.createElement('div');
+        gal.className = 'k-auto-galerie';
+        mitFotos.forEach((c) => {
+          const zelle = document.createElement('div');
+          zelle.className = 'k-auto-zelle';
+          zelle.style.backgroundImage = 'url("' + autoFoto(c) + '")';
+          zelle.title = garageLabel(c);
+          const lab = document.createElement('span');
+          const dot = document.createElement('i');
+          dot.style.background = carColor(c).hex;
+          lab.appendChild(dot);
+          lab.appendChild(document.createTextNode(garageLabel(c)));
+          zelle.appendChild(lab);
+          gal.appendChild(zelle);
+        });
+        ab.appendChild(gal);
+      } else {
+        ab.style.backgroundImage = afoto ? 'url("' + afoto + '")' : 'url(img/auto.jpg)';
+        ab.innerHTML = '';
+      }
       ab.dataset.bild = abNeu;
     }
     kZeilen($('fa-auto-info'), autos.length
@@ -22937,11 +23049,36 @@
     const foto = konsoleFoto();
     $('fa-strecke-titel').textContent = bahn ? t('Auf der Bahn') : t('Frei');
     const bild = $('fa-strecke-bild');
+    // BESTELLT v0.8.126: ist eine Strecke eingegeben und der Modus steht auf "auf der Bahn",
+    // zeigt das Band die Streckenvorschau aus dem Editor statt des Beispielbilds.
+    let teileAn = 0;
+    try { teileAn = currentTrackTiles.length; } catch (e) { teileAn = 0; }
+    const vorschauAn = bahn && teileAn >= 3 && typeof renderTrackPreview === 'function';
+    const faStrecke = $('fa-strecke');
+    if (faStrecke) faStrecke.classList.toggle('k-vorschau', vorschauAn);
     // Im Ausdruck-Modus zeigt das Band das eigene Streckenfoto, sobald es eines gibt. Nur neu
     // setzen, wenn es sich geaendert hat: die Daten-URL ist einige hundert KB lang.
-    const bildNeu = !bahn && foto ? 'foto:' + foto.length : (bahn ? 'strecke-bahn' : 'strecke-frei');
+    let bildNeu;
+    if (vorschauAn) {
+      try { bildNeu = 'karte:' + trackToCode(currentTrackTiles, trackRotationDeg); }
+      catch (e) { bildNeu = 'karte'; }
+    } else {
+      bildNeu = !bahn && foto ? 'foto:' + foto.length : (bahn ? 'strecke-bahn' : 'strecke-frei');
+    }
     if (bild && bild.dataset.bild !== bildNeu) {
-      bild.style.backgroundImage = !bahn && foto ? 'url("' + foto + '")' : 'url(img/' + bildNeu + '.jpg)';
+      let gezeichnet = false;
+      if (vorschauAn) {
+        try {
+          const res = renderTrackPreview(currentTrackTiles, null, { detailed: true });
+          bild.style.backgroundImage = 'none';
+          bild.innerHTML = res.html;
+          gezeichnet = true;
+        } catch (e) { /* Fall: Foto */ }
+      }
+      if (!gezeichnet) {
+        bild.style.backgroundImage = !bahn && foto ? 'url("' + foto + '")' : 'url(img/' + (bahn ? 'strecke-bahn' : 'strecke-frei') + '.jpg)';
+        bild.innerHTML = '';
+      }
       bild.dataset.bild = bildNeu;
     }
     kZeilen($('fa-strecke-info'), bahn
@@ -28939,6 +29076,12 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
     const alleGeister = geister <= 0;
     const p1Aus = derbyHealth <= 0, p2Aus = derbyHealth2 <= 0;
     const alleMenschen = (typeof zweiSpieler !== 'undefined' && zweiSpieler) ? (p1Aus && p2Aus) : p1Aus;
+    // KILLS-ZIEL (v0.8.126, Voreinstellung 1): wer das Ziel erreicht, beendet das Derby sofort.
+    const ziel = raceLimit;
+    if (ziel > 0) {
+      if (derbyKills >= ziel) { derbyEnde('p1'); return; }
+      if (typeof zweiSpieler !== 'undefined' && zweiSpieler && derbyKills2 >= ziel) { derbyEnde('p2'); return; }
+    }
     if (alleGeister) {
       // Sieger nach Kills (dann Health als Tiebreaker).
       const k = [['p1', derbyKills, derbyHealth], ['p2', derbyKills2, derbyHealth2]];
@@ -28955,6 +29098,45 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
     else if (sieger === 'p2') { if (typeof playRaceEndFanfare === 'function') playRaceEndFanfare(); showHudToast('Derby: Spieler 2 gewinnt!'); }
     else { if (typeof playTone === 'function') { playTone(200, 0.12, 'square', 0.16); setTimeout(() => playTone(140, 0.16, 'square', 0.14), 70); setTimeout(() => playTone(110, 0.2, 'square', 0.12), 160); } showHudToast('Derby: Geist gewinnt.'); }
     if (typeof finishRace === 'function') finishRace(false);
+  }
+  // ---- DERBY-COCKPIT (v0.8.126) ----
+  // BESTELLT: "nur der Mittelteil (Gang, Tempo, Drehzahl), die Lichter darueber und
+  // Health-Balken aller Teilnehmer." Die Klasse `derby` auf #race-dash blendet die
+  // Seitenteile und die Reifenleiste aus (CSS in 00-index.head.html); hier wird nur der
+  // Balkeninhalt geschrieben. Aufgerufen aus updateRaceScreen() (50-drive.js).
+  function derbyCockpitMalen() {
+    const dash = $('race-dash');
+    const host = $('derby-health');
+    if (!dash || !host) return;
+    const aktiv = derbyLaeuft && (raceState === 'racing' || raceState === 'countdown');
+    dash.classList.toggle('derby', !!aktiv);
+    if (!aktiv) { host.innerHTML = ''; return; }
+    const nameFarbe = (c) => {
+      try { return { name: garageLabel(c), farbe: carColor(c).hex }; }
+      catch (e) { return { name: '?', farbe: '#8b99b4' }; }
+    };
+    const teile = [];
+    teile.push({ name: 'Du', farbe: '#2ee06a', health: derbyHealth, kills: derbyKills,
+                 aus: derbyHealth <= 0 });
+    if (typeof zweiSpieler !== 'undefined' && zweiSpieler) {
+      teile.push({ name: 'Spieler 2', farbe: '#ffb02e', health: derbyHealth2, kills: derbyKills2,
+                   aus: derbyHealth2 <= 0 });
+    }
+    for (const c of garage) {
+      if (c && c.role === 'ghost' && c.ghost) {
+        const nf = nameFarbe(c);
+        teile.push({ name: nf.name, farbe: nf.farbe, health: c.ghost.derbyHealth || 0,
+                     kills: c.ghost.derbyKills || 0, aus: !!c.ghost.derbyAus });
+      }
+    }
+    const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+    host.innerHTML = teile.map((t) =>
+      '<div class="derby-balken' + (t.aus ? ' aus' : '') + '">'
+      + '<div class="db-kopf"><span class="db-name" style="color:' + esc(t.farbe) + '">'
+      + esc(t.name) + '</span><span class="db-wert">' + Math.round(t.health) + '% · ' + t.kills
+      + '</span></div>'
+      + '<div class="db-leiste"><i style="width:' + Math.max(0, Math.min(100, t.health))
+      + '%;background:' + esc(t.farbe) + '"></i></div></div>').join('');
   }
   // Im Derby: nahe Geister werden vom fahrenden Spieler gerammt (sie verlieren 20 % Health).
   const DERBY_RAM_TILES = 4, DERBY_RAM_KMH = 30;
@@ -30488,10 +30670,12 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
     $('race-start-btn').textContent = `\u{1F3C1} ${m.label} starten`;
     // Free practice has no limit, so the field would be a lie. Disabled, not hidden:
     // a control that vanishes makes people wonder whether they broke something.
-    $('race-limit').disabled = !m.timed;
+    // DERBY (v0.8.126): das Limit ist das KILLS-ZIEL und wird deshalb aktiviert - sonst
+    // koennte man es nicht auf 1 setzen. Die Voreinstellung setzt der Moduswechsel unten.
+    $('race-limit').disabled = !m.timed && raceMode !== 'derby';
     // 0.7, not 0.45. On white 0.45 was a legible grey; on black it collapsed to 2.7:1,
     // and this label still has to be readable while it says which unit is NOT in use.
-    $('race-limit-label').style.opacity = m.timed ? '' : '0.7';
+    $('race-limit-label').style.opacity = (m.timed || raceMode === 'derby') ? '' : '0.7';
   }
   // Kacheln und Wetterknoepfe schreiben in das versteckte Auswahlfeld und loesen change
   // aus. Damit gibt es weiter genau EINE Stelle, die auf eine Aenderung reagiert, und die
@@ -30529,7 +30713,8 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
   $('race-mode').addEventListener('change', (e) => {
     raceMode = e.target.value;
     // Sensible default per mode rather than carrying a minute count over into a lap count.
-    raceLimit = raceMode === 'laps' ? 10 : 2;
+    // DERBY (v0.8.126): das Limit ist das KILLS-ZIEL, Voreinstellung 1.
+    raceLimit = raceMode === 'laps' ? 10 : (raceMode === 'derby' ? 1 : 2);
     $('race-limit').value = raceLimit;
     applyRaceModeUi();
   });
@@ -33132,7 +33317,9 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
       // KEIN SCHADEN IM STAND: ein stehendes Auto (0 km/h) bekommt keinen Crash angerechnet.
       // Die Hand, die es aufhebt, erzeugt auf den Bytes 1 und 3 genau die Abweichung, die
       // diese Funktion sonst als Aufprall wertet - nur dass das Auto dabei eben nicht faehrt.
-      if (crashStationarySafe && stationaer(wer)) return;
+      // DERBY (v0.8.126): hier nimmt auch ein stehendes Auto Schaden - die Ausnahme gilt nur
+      // im normalen Betrieb, nicht im Demolition-Derby.
+      if (crashStationarySafe && stationaer(wer) && !(typeof derbyLaeuft !== 'undefined' && derbyLaeuft)) return;
       L.letzter = now;
       // Der Rundenzaehler der Ereignisse gehoert dem Rennen, und das Rennen faehrt Auto 1.
       if (wer !== 2) lapEventAkku.crash += 1;
@@ -34930,6 +35117,12 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
   // Sichtbar gemacht wird es am Knopf: er ist im Doppelausdruck-Modus abgeblendet, solange
   // nichts laeuft (updateRaceActButtons).
   function requestPitStop() {
+    // DERBY (v0.8.126): kein Boxenstopp - das Derby ist ein Ramm-Modus, der Stopp gaebe
+    // nur eine Pause, in der man keine Gegner rammt.
+    if (typeof derbyLaeuft !== 'undefined' && derbyLaeuft) {
+      showHudToast('Derby: kein Boxenstopp');
+      return;
+    }
     const now = Date.now();
     pitLastPress = now;
 
@@ -69465,6 +69658,63 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Foto frei gezeigt, auf der Bahn wieder die Karte' };
   });
 
+  // BESTELLT v0.8.126: mehrere verbundene Autos mit Fotos gemeinsam zeigen (Garage auf dem
+  // Fahren-Schirm). Erst ab zwei Fotos wird daraus eine Galerie, sonst bleibt es beim einen
+  // Bild des Fahrer-Autos.
+  stAdd('Fahren: mehrere verbundene Autos zeigen ihre Fotos gemeinsam', () => {
+    const merk = garage.slice();
+    const f = [];
+    const a1 = { role: 'player', device: { id: 'probe-galerie-1' }, alias: 'Alpha', colorId: 'rot', sim: false, testSenke: [] };
+    const a2 = { role: 'player2', device: { id: 'probe-galerie-2' }, alias: 'Beta', colorId: 'blau', sim: false, testSenke: [] };
+    const alt = (id) => { try { return localStorage.getItem('omegasim-autofoto:' + id) || ''; } catch (e) { return ''; } };
+    const alt1 = alt(a1.device.id), alt2 = alt(a2.device.id);
+    try {
+      garage.splice(0, garage.length);
+      garage.push(a1, a2);
+      const c = document.createElement('canvas'); c.width = 2; c.height = 2;
+      const foto = c.toDataURL('image/jpeg', 0.8);
+      if (!autoFotoSetzen(a1, foto) || !autoFotoSetzen(a2, foto)) return { skip: true, mass: 'Speicher voll' };
+      konsoleFahrenZeichnen();
+      const gal = $('fa-auto-bild').querySelector('.k-auto-galerie');
+      if (!gal) f.push('keine Galerie bei zwei Fotos');
+      else if (gal.querySelectorAll('.k-auto-zelle').length !== 2) f.push('Galerie hat nicht 2 Kacheln');
+      if (!$('fa-auto').classList.contains('k-auto-mehr')) f.push('Kachel traegt k-auto-mehr nicht');
+      autoFotoSetzen(a2, '');
+      konsoleFahrenZeichnen();
+      if ($('fa-auto-bild').querySelector('.k-auto-galerie')) f.push('Galerie bleibt bei einem Foto');
+    } finally {
+      garage.splice(0, garage.length);
+      for (const c of merk) garage.push(c);
+      try { localStorage.setItem('omegasim-autofoto:' + a1.device.id, alt1); } catch (e) { /* egal */ }
+      try { localStorage.setItem('omegasim-autofoto:' + a2.device.id, alt2); } catch (e) { /* egal */ }
+      konsoleFahrenZeichnen();
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'zwei Fotos gemeinsam, eines wieder einzeln' };
+  });
+
+  // BESTELLT v0.8.126: ist eine Strecke eingegeben und der Modus steht auf "auf der Bahn",
+  // zeigt das Band die Streckenvorschau aus dem Editor statt des Beispielbilds.
+  stAdd('Fahren: eingegebene Strecke zeigt die Vorschau statt des Fotos', () => {
+    const keep = currentTrackTiles;
+    const merkBahn = ($('setting-ontrack') || {}).checked;
+    const f = [];
+    try {
+      currentTrackTiles = codeToTrack('SGHR').tiles;
+      $('setting-ontrack').checked = true;
+      konsoleFahrenZeichnen();
+      if (!$('fa-strecke-bild').querySelector('.tp-karte')) f.push('keine Streckenvorschau bei eingegebener Strecke');
+      if (!$('fa-strecke').classList.contains('k-vorschau')) f.push('Kachel traegt k-vorschau nicht');
+      $('setting-ontrack').checked = false;
+      konsoleFahrenZeichnen();
+      if ($('fa-strecke-bild').querySelector('.tp-karte')) f.push('Vorschau bleibt ohne Bahn-Modus');
+    } finally {
+      currentTrackTiles = keep;
+      $('setting-ontrack').checked = merkBahn;
+      konsoleFahrenZeichnen();
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Vorschau auf der Bahn, Foto ohne Bahn' };
+  });
+
   stAdd('ACC-Menü: Entwicklertools versteckt, Schalter blendet sie ein', () => {
     const cb = $('setting-dev');
     if (!cb) return { ok: false, mass: '#setting-dev fehlt' };
@@ -75567,19 +75817,106 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     try {
       const t0 = Date.now();
+      // BEREIT-GATE (v0.8.126): zuerst nur den Bereitschaftsschirm ankündigen (phase
+      // 'bereit'). Die Startzeit setzt der Host erst mit phase 'start', wenn alle anderen
+      // bereit sind.
       const r = await fetch(mpUrl('/mp/race'), { method: 'POST', cache: 'no-store',
-        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan, vorlaufMs: MP_VORLAUF_MS }) });
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan, phase: 'bereit', initiator: mp.id }) });
+      const t1 = Date.now();
+      if (r.status === 404 || r.status === 501) throw new Error(t('Der Host kennt das noch nicht, Host bzw. APK aktualisieren'));
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.fehler || 'abgelehnt');
+      mpUhrProbe(t0, t1, d.zeitMs);
+      mpSay(t('Rennen für alle: alle bereit machen, dann startet der Host.'));
+    } catch (e) {
+      mpSay(t('Start für alle fehlgeschlagen') + ': ' + e.message, true);
+    }
+  }
+  // ---- BEREITSCHAFTSSCHIRM (v0.8.126) -----------------------------------------------
+  // Der Schirm wird aus dem /mp/state-Abruf gespeist (mpBereitSchirm). Jeder tippt
+  // "Bereit" (POST /mp/ready); der Initiator sieht "Start", sobald alle anderen bereit sind.
+  function mpBereitEsc(x) {
+    return String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  }
+  function mpBereitSchirm(d) {
+    const screen = $('mp-ready-screen');
+    if (!screen) return;
+    const rennen = d && d.rennen ? d.rennen : {};
+    if (rennen.phase !== 'bereit') { screen.hidden = true; return; }
+    const initiator = rennen.initiator;
+    const bereitListe = Array.isArray(rennen.bereit) ? rennen.bereit : [];
+    const leute = (d && d.fahrer) || [];
+    const istInitiator = mp.id === initiator;
+    const andere = leute.filter((f) => f.id && f.id !== initiator);
+    const alleBereit = andere.every((f) => bereitListe.indexOf(f.id) >= 0);
+    const host = $('mp-ready-liste');
+    if (host) {
+      host.innerHTML = leute.map((f) => {
+        const bereit = bereitListe.indexOf(f.id) >= 0;
+        const eigen = f.id === mp.id;
+        return '<div class="mp-ready-zeile' + (bereit ? ' bereit' : '') + '">'
+          + '<span class="mp-ready-name">' + mpBereitEsc(f.name || f.id) + (eigen ? ' (du)' : '')
+          + (f.id === initiator ? ' · Host' : '') + '</span>'
+          + '<span class="mp-ready-status">' + (bereit ? '\u2713 bereit' : 'wartet\u2026')
+          + '</span></div>';
+      }).join('');
+    }
+    const info = $('mp-ready-info');
+    if (info) {
+      info.textContent = istInitiator
+        ? (alleBereit ? 'Alle bereit \u2013 du kannst starten.' : 'Warte auf die Bereitschaft aller anderen.')
+        : (bereitListe.indexOf(mp.id) >= 0 ? 'Du bist bereit. Warte, bis der Host startet.'
+           : 'Tippe auf \u201eBereit\u201c, sobald du soweit bist.');
+    }
+    if ($('mp-ready-bereit')) $('mp-ready-bereit').hidden = istInitiator || bereitListe.indexOf(mp.id) >= 0;
+    if ($('mp-ready-start')) {
+      $('mp-ready-start').hidden = !istInitiator;
+      $('mp-ready-start').disabled = !alleBereit;
+    }
+    if ($('mp-ready-abbrechen')) $('mp-ready-abbrechen').hidden = !istInitiator;
+    screen.hidden = false;
+  }
+  async function mpBereitMelden() {
+    if (!mp.an) return;
+    try {
+      await fetch(mpUrl('/mp/ready'), { method: 'POST', cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: mp.id }) });
+    } catch (e) { /* der naechste Abruf zeigt es */ }
+    mpHolen();
+  }
+  async function mpBereitStarten() {
+    if (!mp.an) return;
+    const w = Math.random() * 2 * Math.PI;
+    const plan = { modus: raceMode, limit: raceLimit, wx: raceWxStart, wxChange: raceWxChange,
+                   fliegend: raceFlying, pit: racePitRequired, tank: raceFuelStartL,
+                   wetterPlan: wetterPlanBauen(), wind: { x: Math.cos(w), y: Math.sin(w) } };
+    if ($('mp-force-preset') && $('mp-force-preset').checked
+        && typeof window.__presetActive === 'function') {
+      const p = window.__presetActive();
+      if (p) plan.preset = p;
+    }
+    try {
+      const t0 = Date.now();
+      const r = await fetch(mpUrl('/mp/race'), { method: 'POST', cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan, phase: 'start', initiator: mp.id, vorlaufMs: MP_VORLAUF_MS }) });
       const t1 = Date.now();
       if (r.status === 404 || r.status === 501) throw new Error(t('Der Host kennt das noch nicht, Host bzw. APK aktualisieren'));
       const d = await r.json();
       if (!d.ok) throw new Error(d.fehler || 'abgelehnt');
       mpUhrProbe(t0, t1, d.zeitMs);
       mpRennenPruefen({ id: d.id, startAt: d.startAt, plan });
-      const sek = Math.max(0, Math.round((d.startAt - mp.offset - Date.now()) / 1000));
-      mpSay(t('Rennen für alle: Ampel in ') + sek + ' s, wenn keiner widerruft.');
+      $('mp-ready-screen').hidden = true;
     } catch (e) {
       mpSay(t('Start für alle fehlgeschlagen') + ': ' + e.message, true);
     }
+  }
+  async function mpBereitAbbrechen() {
+    try {
+      await fetch(mpUrl('/mp/reset'), { method: 'GET', cache: 'no-store' });
+    } catch (e) { /* egal */ }
+    $('mp-ready-screen').hidden = true;
   }
   // Aus toggleRace (70-race.js): im Mehrspieler erst fragen. true = Dialog offen.
   function mpRennenFrage() {
@@ -75608,6 +75945,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       mpLetzterStand = d;
       mpPosTakt();
       mpZeichnen(d);
+      mpBereitSchirm(d);
       mpSay(t('verbunden') + ', ' + (d.fahrer || []).length + ' '
             + t('Fahrer'));
     } catch (e) {
@@ -75877,6 +76215,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   if ($('mp-join')) $('mp-join').addEventListener('click', mpJoin);
   if ($('mp-leave')) $('mp-leave').addEventListener('click', mpLeave);
   if ($('mp-rennen-alle')) $('mp-rennen-alle').addEventListener('click', mpRennenFuerAlle);
+  // BEREITSCHAFTSSCHIRM (v0.8.126).
+  if ($('mp-ready-bereit')) $('mp-ready-bereit').addEventListener('click', mpBereitMelden);
+  if ($('mp-ready-start')) $('mp-ready-start').addEventListener('click', mpBereitStarten);
+  if ($('mp-ready-abbrechen')) $('mp-ready-abbrechen').addEventListener('click', mpBereitAbbrechen);
 
   // ---- DIE ZWEI KOPIERKNOEPFE DER ANLEITUNG ---------------------------------------
   //

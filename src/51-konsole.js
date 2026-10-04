@@ -632,13 +632,46 @@
     if (!$('fa-auto')) return;
     const autos = kAutos();
     $('fa-auto-titel').textContent = autos.length ? autos.length + ' ' + t('verbunden') : t('Autos verbinden');
+    // BESTELLT v0.8.126: mehrere verbundene Autos mit Fotos gemeinsam zeigen (die Garage auf dem
+    // Fahren-Schirm). Erst ab zwei Fotos, sonst bleibt es beim einen Bild des Fahrer-Autos.
+    const mitFotos = autos.filter((c) => typeof autoFoto === 'function' && autoFoto(c));
+    const galerieAn = mitFotos.length >= 2;
+    const faAuto = $('fa-auto');
+    if (faAuto) faAuto.classList.toggle('k-auto-mehr', galerieAn);
     // Das eigene Foto des Fahrer-Autos (Garage) statt des Beispielbilds.
     const fahrer = autos.find((c) => c.role === 'player') || autos[0];
     const afoto = fahrer && typeof autoFoto === 'function' ? autoFoto(fahrer) : '';
     const ab = $('fa-auto-bild');
-    const abNeu = afoto ? 'foto:' + afoto.length : 'auto';
+    let abNeu;
+    if (galerieAn) {
+      abNeu = 'galerie:' + mitFotos.map((c) => (c.device ? c.device.id : '') + ':' + autoFoto(c).length).join('|');
+    } else {
+      abNeu = afoto ? 'foto:' + afoto.length : 'auto';
+    }
     if (ab && ab.dataset.bild !== abNeu) {
-      ab.style.backgroundImage = afoto ? 'url("' + afoto + '")' : 'url(img/auto.jpg)';
+      if (galerieAn) {
+        ab.style.backgroundImage = 'none';
+        ab.innerHTML = '';
+        const gal = document.createElement('div');
+        gal.className = 'k-auto-galerie';
+        mitFotos.forEach((c) => {
+          const zelle = document.createElement('div');
+          zelle.className = 'k-auto-zelle';
+          zelle.style.backgroundImage = 'url("' + autoFoto(c) + '")';
+          zelle.title = garageLabel(c);
+          const lab = document.createElement('span');
+          const dot = document.createElement('i');
+          dot.style.background = carColor(c).hex;
+          lab.appendChild(dot);
+          lab.appendChild(document.createTextNode(garageLabel(c)));
+          zelle.appendChild(lab);
+          gal.appendChild(zelle);
+        });
+        ab.appendChild(gal);
+      } else {
+        ab.style.backgroundImage = afoto ? 'url("' + afoto + '")' : 'url(img/auto.jpg)';
+        ab.innerHTML = '';
+      }
       ab.dataset.bild = abNeu;
     }
     kZeilen($('fa-auto-info'), autos.length
@@ -668,11 +701,36 @@
     const foto = konsoleFoto();
     $('fa-strecke-titel').textContent = bahn ? t('Auf der Bahn') : t('Frei');
     const bild = $('fa-strecke-bild');
+    // BESTELLT v0.8.126: ist eine Strecke eingegeben und der Modus steht auf "auf der Bahn",
+    // zeigt das Band die Streckenvorschau aus dem Editor statt des Beispielbilds.
+    let teileAn = 0;
+    try { teileAn = currentTrackTiles.length; } catch (e) { teileAn = 0; }
+    const vorschauAn = bahn && teileAn >= 3 && typeof renderTrackPreview === 'function';
+    const faStrecke = $('fa-strecke');
+    if (faStrecke) faStrecke.classList.toggle('k-vorschau', vorschauAn);
     // Im Ausdruck-Modus zeigt das Band das eigene Streckenfoto, sobald es eines gibt. Nur neu
     // setzen, wenn es sich geaendert hat: die Daten-URL ist einige hundert KB lang.
-    const bildNeu = !bahn && foto ? 'foto:' + foto.length : (bahn ? 'strecke-bahn' : 'strecke-frei');
+    let bildNeu;
+    if (vorschauAn) {
+      try { bildNeu = 'karte:' + trackToCode(currentTrackTiles, trackRotationDeg); }
+      catch (e) { bildNeu = 'karte'; }
+    } else {
+      bildNeu = !bahn && foto ? 'foto:' + foto.length : (bahn ? 'strecke-bahn' : 'strecke-frei');
+    }
     if (bild && bild.dataset.bild !== bildNeu) {
-      bild.style.backgroundImage = !bahn && foto ? 'url("' + foto + '")' : 'url(img/' + bildNeu + '.jpg)';
+      let gezeichnet = false;
+      if (vorschauAn) {
+        try {
+          const res = renderTrackPreview(currentTrackTiles, null, { detailed: true });
+          bild.style.backgroundImage = 'none';
+          bild.innerHTML = res.html;
+          gezeichnet = true;
+        } catch (e) { /* Fall: Foto */ }
+      }
+      if (!gezeichnet) {
+        bild.style.backgroundImage = !bahn && foto ? 'url("' + foto + '")' : 'url(img/' + (bahn ? 'strecke-bahn' : 'strecke-frei') + '.jpg)';
+        bild.innerHTML = '';
+      }
       bild.dataset.bild = bildNeu;
     }
     kZeilen($('fa-strecke-info'), bahn

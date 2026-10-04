@@ -663,19 +663,106 @@
     }
     try {
       const t0 = Date.now();
+      // BEREIT-GATE (v0.8.126): zuerst nur den Bereitschaftsschirm ankündigen (phase
+      // 'bereit'). Die Startzeit setzt der Host erst mit phase 'start', wenn alle anderen
+      // bereit sind.
       const r = await fetch(mpUrl('/mp/race'), { method: 'POST', cache: 'no-store',
-        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan, vorlaufMs: MP_VORLAUF_MS }) });
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan, phase: 'bereit', initiator: mp.id }) });
+      const t1 = Date.now();
+      if (r.status === 404 || r.status === 501) throw new Error(t('Der Host kennt das noch nicht, Host bzw. APK aktualisieren'));
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.fehler || 'abgelehnt');
+      mpUhrProbe(t0, t1, d.zeitMs);
+      mpSay(t('Rennen für alle: alle bereit machen, dann startet der Host.'));
+    } catch (e) {
+      mpSay(t('Start für alle fehlgeschlagen') + ': ' + e.message, true);
+    }
+  }
+  // ---- BEREITSCHAFTSSCHIRM (v0.8.126) -----------------------------------------------
+  // Der Schirm wird aus dem /mp/state-Abruf gespeist (mpBereitSchirm). Jeder tippt
+  // "Bereit" (POST /mp/ready); der Initiator sieht "Start", sobald alle anderen bereit sind.
+  function mpBereitEsc(x) {
+    return String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  }
+  function mpBereitSchirm(d) {
+    const screen = $('mp-ready-screen');
+    if (!screen) return;
+    const rennen = d && d.rennen ? d.rennen : {};
+    if (rennen.phase !== 'bereit') { screen.hidden = true; return; }
+    const initiator = rennen.initiator;
+    const bereitListe = Array.isArray(rennen.bereit) ? rennen.bereit : [];
+    const leute = (d && d.fahrer) || [];
+    const istInitiator = mp.id === initiator;
+    const andere = leute.filter((f) => f.id && f.id !== initiator);
+    const alleBereit = andere.every((f) => bereitListe.indexOf(f.id) >= 0);
+    const host = $('mp-ready-liste');
+    if (host) {
+      host.innerHTML = leute.map((f) => {
+        const bereit = bereitListe.indexOf(f.id) >= 0;
+        const eigen = f.id === mp.id;
+        return '<div class="mp-ready-zeile' + (bereit ? ' bereit' : '') + '">'
+          + '<span class="mp-ready-name">' + mpBereitEsc(f.name || f.id) + (eigen ? ' (du)' : '')
+          + (f.id === initiator ? ' · Host' : '') + '</span>'
+          + '<span class="mp-ready-status">' + (bereit ? '\u2713 bereit' : 'wartet\u2026')
+          + '</span></div>';
+      }).join('');
+    }
+    const info = $('mp-ready-info');
+    if (info) {
+      info.textContent = istInitiator
+        ? (alleBereit ? 'Alle bereit \u2013 du kannst starten.' : 'Warte auf die Bereitschaft aller anderen.')
+        : (bereitListe.indexOf(mp.id) >= 0 ? 'Du bist bereit. Warte, bis der Host startet.'
+           : 'Tippe auf \u201eBereit\u201c, sobald du soweit bist.');
+    }
+    if ($('mp-ready-bereit')) $('mp-ready-bereit').hidden = istInitiator || bereitListe.indexOf(mp.id) >= 0;
+    if ($('mp-ready-start')) {
+      $('mp-ready-start').hidden = !istInitiator;
+      $('mp-ready-start').disabled = !alleBereit;
+    }
+    if ($('mp-ready-abbrechen')) $('mp-ready-abbrechen').hidden = !istInitiator;
+    screen.hidden = false;
+  }
+  async function mpBereitMelden() {
+    if (!mp.an) return;
+    try {
+      await fetch(mpUrl('/mp/ready'), { method: 'POST', cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: mp.id }) });
+    } catch (e) { /* der naechste Abruf zeigt es */ }
+    mpHolen();
+  }
+  async function mpBereitStarten() {
+    if (!mp.an) return;
+    const w = Math.random() * 2 * Math.PI;
+    const plan = { modus: raceMode, limit: raceLimit, wx: raceWxStart, wxChange: raceWxChange,
+                   fliegend: raceFlying, pit: racePitRequired, tank: raceFuelStartL,
+                   wetterPlan: wetterPlanBauen(), wind: { x: Math.cos(w), y: Math.sin(w) } };
+    if ($('mp-force-preset') && $('mp-force-preset').checked
+        && typeof window.__presetActive === 'function') {
+      const p = window.__presetActive();
+      if (p) plan.preset = p;
+    }
+    try {
+      const t0 = Date.now();
+      const r = await fetch(mpUrl('/mp/race'), { method: 'POST', cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan, phase: 'start', initiator: mp.id, vorlaufMs: MP_VORLAUF_MS }) });
       const t1 = Date.now();
       if (r.status === 404 || r.status === 501) throw new Error(t('Der Host kennt das noch nicht, Host bzw. APK aktualisieren'));
       const d = await r.json();
       if (!d.ok) throw new Error(d.fehler || 'abgelehnt');
       mpUhrProbe(t0, t1, d.zeitMs);
       mpRennenPruefen({ id: d.id, startAt: d.startAt, plan });
-      const sek = Math.max(0, Math.round((d.startAt - mp.offset - Date.now()) / 1000));
-      mpSay(t('Rennen für alle: Ampel in ') + sek + ' s, wenn keiner widerruft.');
+      $('mp-ready-screen').hidden = true;
     } catch (e) {
       mpSay(t('Start für alle fehlgeschlagen') + ': ' + e.message, true);
     }
+  }
+  async function mpBereitAbbrechen() {
+    try {
+      await fetch(mpUrl('/mp/reset'), { method: 'GET', cache: 'no-store' });
+    } catch (e) { /* egal */ }
+    $('mp-ready-screen').hidden = true;
   }
   // Aus toggleRace (70-race.js): im Mehrspieler erst fragen. true = Dialog offen.
   function mpRennenFrage() {
@@ -704,6 +791,7 @@
       mpLetzterStand = d;
       mpPosTakt();
       mpZeichnen(d);
+      mpBereitSchirm(d);
       mpSay(t('verbunden') + ', ' + (d.fahrer || []).length + ' '
             + t('Fahrer'));
     } catch (e) {
@@ -973,6 +1061,10 @@
   if ($('mp-join')) $('mp-join').addEventListener('click', mpJoin);
   if ($('mp-leave')) $('mp-leave').addEventListener('click', mpLeave);
   if ($('mp-rennen-alle')) $('mp-rennen-alle').addEventListener('click', mpRennenFuerAlle);
+  // BEREITSCHAFTSSCHIRM (v0.8.126).
+  if ($('mp-ready-bereit')) $('mp-ready-bereit').addEventListener('click', mpBereitMelden);
+  if ($('mp-ready-start')) $('mp-ready-start').addEventListener('click', mpBereitStarten);
+  if ($('mp-ready-abbrechen')) $('mp-ready-abbrechen').addEventListener('click', mpBereitAbbrechen);
 
   // ---- DIE ZWEI KOPIERKNOEPFE DER ANLEITUNG ---------------------------------------
   //

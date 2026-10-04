@@ -1999,6 +1999,11 @@
     // in this drivetrain and therefore gets no cell, rather than a permanent zero.
     $('race-abs').classList.toggle('active', st.absActive);
 
+    // DERBY-COCKPIT (v0.8.126): blendet die Seitenteile aus und malt die Health-Balken,
+    // sobald ein Demolition-Derby laeuft. Defensiv gerufen, weil die Funktion in der
+    // spaeteren 70-race.js steht.
+    if (typeof derbyCockpitMalen === 'function') derbyCockpitMalen();
+
     // Headlight tell-tale. Reads the real state rather than sniffing the lamp's CSS
     // colour: there are two different "off" colours in this file (#3a4a6b and #444), so a
     // colour comparison silently matched the wrong one and the indicator never went out.
