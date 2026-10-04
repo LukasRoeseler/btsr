@@ -5628,6 +5628,32 @@
     </div>
 
     <div class="card">
+      <h2>Der Streckenrandomisator (Zufallsknopf)</h2>
+      <p class="muted">
+        Der Zufallsknopf baut eine geschlossene Runde aus den Teilen, die als vorhanden eingetragen sind.
+        Das Kernprinzip: Es entsteht ein <b>&bdquo;Rückgrat&ldquo;</b> aus beliebigen Kurvenläufen, deren
+        Drehungen sich zu +360 oder &ndash;360 addieren &ndash; also ein Rundkurs aus lauter Kurven. Die
+        L&uuml;cken zwischen den Kurvenbl&ouml;cken werden dann mit Geradenst&uuml;cken aufgefüllt.
+      </p>
+      <p class="muted">
+        <b>Warum das schnell geht:</b> Die Endposition des Ringes ist <em>linear</em> in den
+        Geradenl&uuml;cken. Jede Gerade verschiebt um einen festen Vektor (Kurs vor der L&uuml;cke),
+        Kurven verschieben unabh&auml;ngig von den L&uuml;cken. Also gilt
+        <code>Ende = C + Summe(l&uuml;cke[g] &middot; v<sub>g</sub>)</code> mit festem <code>C</code>.
+        Ein kleines ganzzahliges Suchen &uuml;ber die Geradenl&auml;ngen findet den Schluss, ohne f&uuml;r
+        jeden Kandidaten die teure Mittelpunktsrechnung auszuf&uuml;hren &ndash; die l&auml;uft erst bei der
+        Endabnahme.
+      </p>
+      <p class="muted">
+        <b>Die Endabnahme pr&uuml;ft:</b> die Strecke ist kein langweiliges Mini-Oval (SR3GR3 und sein
+        Spiegelbild), Anfang und Ende liegen nah genug beieinander, der Ring ist wirklich geschlossen,
+        und die Bahn kreuzt sich nicht. Passt die Strecke in einen angegebenen Raum, werden alle acht
+        45&deg;-Lagen gepr&uuml;ft und die passende Drehung zur&uuml;ckgegeben. Zuletzt merkt sich die App
+        die zuletzt gebauten Strecken, damit nicht dieselbe Form zweimal hintereinander kommt.
+      </p>
+    </div>
+
+    <div class="card">
       <h2>Der Barcode auf der Bahn</h2>
       <p class="muted">
         Jedes Streckenteil tr&auml;gt ein gedrucktes Muster, das das Auto beim
