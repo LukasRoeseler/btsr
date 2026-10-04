@@ -4128,7 +4128,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.124</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.125</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -11117,6 +11117,28 @@
   const PLUGIN = 'BluetoothLe';
   const ruf = (methode, optionen) => C.nativePromise(PLUGIN, methode, optionen || {});
 
+  // Ist das OmegaBle-Plugin registriert (neue APK)? Einmal geprueft und gemerkt, damit der
+  // Steuertakt nicht bei jedem Befehl einen fehlgeschlagenen Aufruf bezahlt.
+  let omegaBleDa = null;
+  function omegaBleVerfuegbar() {
+    if (omegaBleDa === null) {
+      try { omegaBleDa = !!(C && typeof C.isPluginAvailable === 'function' && C.isPluginAvailable('OmegaBle')); }
+      catch (e) { omegaBleDa = false; }
+    }
+    return omegaBleDa;
+  }
+  // Natives Direktschreiben, FEUER UND WEG: der Aufruf loest sofort auf und haelt den
+  // Steuertakt nicht auf. Der eigentliche GATT-Write laeuft im Plugin auf einem eigenen
+  // Hintergrund-Thread. Kommt waehrend eines Write ein neuer Befehl, gewinnt der neueste.
+  function omegaBleSchreiben(z, hex) {
+    try {
+      C.nativePromise('OmegaBle', 'writeControl', { deviceId: z.deviceId, service: z.service,
+                                                    characteristic: z.characteristic, value: hex })
+        .catch(() => {});
+      return true;
+    } catch (e) { return false; }
+  }
+
   let bereit = null;
   function starten() {
     // androidNeverForLocation passt zum Manifest (BLUETOOTH_SCAN mit neverForLocation): ab
@@ -11152,19 +11174,15 @@
     //
     // NATIVES DIREKTSCHREIBEN (OmegaBlePlugin): der Community-Weg wartet auf onCharacteristicWrite,
     // und der Bridge-Rundlauf JS <-> nativ legt sich auf jede Lenk-/Gaseingabe. OmegaBle schreibt
-    // direkt mit WRITE_TYPE_NO_RESPONSE und loest sofort auf - der naechste Steuerbefehl wartet
-    // nicht auf die Bestaetigung des vorherigen. Faellt auf das Community-Plugin zurueck, wenn
-    // OmegaBle fehlt oder die Verbindung nicht gefunden wird.
-    async writeValueWithoutResponse(daten) {
+    // mit WRITE_TYPE_NO_RESPONSE und loest sofort auf; die Web-Seite wartet NICHT auf den
+    // Bridge-Rundlauf (fire-and-forget), damit der Steuertakt nie an ihm haengt. Faellt auf das
+    // Community-Plugin zurueck, wenn OmegaBle fehlt oder nicht verbunden ist.
+    writeValueWithoutResponse(daten) {
       const z = this._ziel;
       const hex = zuHex(daten);
-      try {
-        await C.nativePromise('OmegaBle', 'writeControl', { deviceId: z.deviceId, service: z.service,
-                                                            characteristic: z.characteristic, value: hex });
-        return;
-      } catch (e) { /* Rueckfall */ }
-      await ruf('writeWithoutResponse', { deviceId: z.deviceId, service: z.service,
-                                          characteristic: z.characteristic, value: hex, timeout: 300 });
+      if (omegaBleVerfuegbar() && omegaBleSchreiben(z, hex)) return Promise.resolve();
+      return ruf('writeWithoutResponse', { deviceId: z.deviceId, service: z.service,
+                                           characteristic: z.characteristic, value: hex, timeout: 300 });
     }
     async writeValueWithResponse(daten) {
       const z = this._ziel;
