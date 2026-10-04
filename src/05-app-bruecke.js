@@ -105,10 +105,22 @@
     }
     // TIMEOUT 300 ms statt der 5 s des Plugins (BluetoothLe.kt liest "timeout"): ein
     // Schreibvorgang, dessen Antwort verloren ist, haelt die Lenkung sonst fuenf Sekunden fest.
+    //
+    // NATIVES DIREKTSCHREIBEN (OmegaBlePlugin): der Community-Weg wartet auf onCharacteristicWrite,
+    // und der Bridge-Rundlauf JS <-> nativ legt sich auf jede Lenk-/Gaseingabe. OmegaBle schreibt
+    // direkt mit WRITE_TYPE_NO_RESPONSE und loest sofort auf - der naechste Steuerbefehl wartet
+    // nicht auf die Bestaetigung des vorherigen. Faellt auf das Community-Plugin zurueck, wenn
+    // OmegaBle fehlt oder die Verbindung nicht gefunden wird.
     async writeValueWithoutResponse(daten) {
       const z = this._ziel;
+      const hex = zuHex(daten);
+      try {
+        await C.nativePromise('OmegaBle', 'writeControl', { deviceId: z.deviceId, service: z.service,
+                                                            characteristic: z.characteristic, value: hex });
+        return;
+      } catch (e) { /* Rueckfall */ }
       await ruf('writeWithoutResponse', { deviceId: z.deviceId, service: z.service,
-                                          characteristic: z.characteristic, value: zuHex(daten), timeout: 300 });
+                                          characteristic: z.characteristic, value: hex, timeout: 300 });
     }
     async writeValueWithResponse(daten) {
       const z = this._ziel;
