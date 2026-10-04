@@ -390,7 +390,8 @@
 
   // ---- Frage-Dialog (#k-frage): wie das Cockpit-Menue, mit dem Pad bedienbar ----------
   // knoepfe: [[Text, Funktion oder null], ...]; der erste ist vorgewaehlt.
-  function konsoleFrage(titel, text, knoepfe, wip) {
+  // `bild` ist optionales HTML (z. B. ein Strecken-SVG) fuer die Vorschau im Dialog.
+  function konsoleFrage(titel, text, knoepfe, wip, bild) {
     const d = $('k-frage');
     if (!d) return;
     $('k-frage-titel').textContent = titel;
@@ -400,6 +401,11 @@
       w.textContent = t('experimentell');
       $('k-frage-titel').appendChild(document.createTextNode(' '));
       $('k-frage-titel').appendChild(w);
+    }
+    const bd = $('k-frage-bild');
+    if (bd) {
+      if (bild) { bd.innerHTML = bild; bd.hidden = false; }
+      else { bd.innerHTML = ''; bd.hidden = true; }
     }
     $('k-frage-text').textContent = text || '';
     const host = $('k-frage-knoepfe');
@@ -476,6 +482,14 @@
   function konsoleZumMenue() {
     kCockpitVollbild = document.body.classList.contains('race-fs');
     if (kCockpitVollbild) exitRaceFullscreen();
+    // BESTELLT: "im Cockpit soll der Menue-Knopf das laufende Rennen/Training immer
+    // beenden." Vorher blieb ein Rennen im Hintergrund laufen, wenn man ueber den
+    // Menue-Knopf in die Menues wechselte - die Ampel lief weiter, das Auto fuhr ohne
+    // Fahrer. Der Menue-Knopf ist ein Ausstieg, also beendet er auch die Sitzung.
+    if (typeof kRennenLaeuft === 'function' && kRennenLaeuft()
+        && typeof requestRaceStop === 'function') {
+      requestRaceStop();
+    }
     const r = kMenueRueck;
     kMenueRueck = null;
     if (r && r.tab && r.tab !== 'race' && r.tab !== 'home') konsoleZeige(r.tab, r.sub || '');
@@ -614,7 +628,8 @@
     $('fa-renn-titel').textContent = modus;
     // Rennoptionen-Kachel wechselt mit dem Rennmodus das Bild (BESTELLT v0.8.53).
     const rmBild = { practice: 'rennoptionen-practice', endurance: 'rennoptionen-endurance',
-                     qualifying: 'rennoptionen-qualifying', laps: 'rennoptionen-laps' }[rm.value];
+                     qualifying: 'rennoptionen-qualifying', laps: 'rennoptionen-laps',
+                     knockout: 'knockout', derby: 'derby' }[rm.value];
     const rb = $('fa-renn-bild');
     if (rb && rmBild && rb.dataset.bild !== rmBild) {
       rb.style.backgroundImage = 'url(img/' + rmBild + '.jpg)';

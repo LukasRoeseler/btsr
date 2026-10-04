@@ -2873,13 +2873,24 @@
       body += `<path d="${poly(centre)}" fill="none" stroke="#7d8698" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`;
     }
 
-    // Start line and the live position marker.
-    const i0 = 0;
-    const sA = [pts[i0].x + nrm[i0].x * half, pts[i0].y + nrm[i0].y * half];
-    const sB = [pts[i0].x - nrm[i0].x * half, pts[i0].y - nrm[i0].y * half];
-    body += o.detailed
-      ? `<path d="M ${P2(sA)} L ${P2(sB)}" stroke="#3ddc84" stroke-width="4"/>`
-      : `<circle cx="${(first.x + ox).toFixed(1)}" cy="${(first.y + oy).toFixed(1)}" r="5" fill="#1c7a4d"/>`;
+    // Start line and the live position marker. Die ERSTE Start/Ziel-Gerade ist die
+    // Rundenlinie (gruen); jede weitere ist eine Sektorgrenze und wird gelb gezeichnet,
+    // damit man sie von der ersten unterscheidet (BESTELLT: "die zweite Start/Ziel-Gerade
+    // soll sich deutlich von der ersten unterscheiden").
+    let ersteStart = true;
+    for (let ti = 0; ti < tiles.length; ti++) {
+      if (tiles[ti].type !== TILE_TYPE.START) continue;
+      const pi = kachelTab && kachelTab.start ? kachelTab.start[ti] : 0;
+      const p = pts[pi] || pts[0];
+      if (!p) continue;
+      const sA = [p.x + nrm[pi].x * half, p.y + nrm[pi].y * half];
+      const sB = [p.x - nrm[pi].x * half, p.y - nrm[pi].y * half];
+      const farbe = ersteStart ? '#3ddc84' : '#ffd400';
+      body += o.detailed
+        ? `<path d="M ${P2(sA)} L ${P2(sB)}" stroke="${farbe}" stroke-width="4"/>`
+        : `<circle cx="${(p.x + ox).toFixed(1)}" cy="${(p.y + oy).toFixed(1)}" r="5" fill="${farbe}"/>`;
+      ersteStart = false;
+    }
     // ---- Die Autos ----------------------------------------------------------------
     //
     // `currentIndex` zeichnet EIN Auto und bleibt fuer alte Aufrufer; `o.cars` zeichnet

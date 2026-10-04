@@ -898,22 +898,6 @@
     { id: 'uebersicht', name: 'Rennen',
       waehlen: () => ovNochmal(),
       malen: () => ovScreenRender() },
-    // BESTELLT: "Renneinstellungen aus dem Cockpit-Schirmkreis herausnehmen." Der Schirm
-    // existierte im Cockpit, und links/rechts (Dauer/Runden) hatte die gleiche Belegung wie
-    // das Schirmblaettern - wer die Rundenzahl veraenderte, kam mit dem Steuerkreuz nicht
-    // mehr zurueck. Rennmodus, Dauer/Runden und Start bleiben im Fahren-Tab.
-    // ---- NUR IM ZWEI-SPIELER-MODUS BLAETTERBAR ---------------------------------------
-    //
-    // Der Eintrag steht IMMER in der Liste und wird beim Blaettern uebersprungen, solange
-    // der Modus aus ist. Die Alternative waere eine Liste, deren LAENGE sich aendert - und
-    // an ihr haengen der Schirmzaehler, die Punkte unter dem Pfeil und zwei Selbsttests.
-    // Eine Liste, die beim Umschalten kuerzer wird, verschiebt den gerade gezeigten Schirm.
-    // Der Name ist "Beide" und nicht mehr "Auto 2": der Schirm zeigt seit v0.6.56 beide
-    // Autos nebeneinander. Die id bleibt `auto2` - sie steht in gespeicherten Zustaenden
-    // und in Prueflaeufen, und ein Name im Menue ist kein Grund, eine Kennung zu aendern.
-    { id: 'auto2', name: 'Beide',
-      nurZweiSpieler: true,
-      malen: () => p2ScreenRender() },
   ];
   let cockpitScreen = 0;
 
@@ -924,12 +908,25 @@
   function cockpitMainMalen() {
     const el = $('race-dash');
     if (!el) return;
-    if (zweiSpieler) {
+    if (zweiSpielerAktiv()) {
       el.dataset.screen = 'auto2';
       if (typeof p2ScreenRender === 'function') p2ScreenRender();
     } else {
       el.dataset.screen = 'main';
     }
+  }
+
+  // NUR DANN ZWEI SPIELER, WENN BEIDE AUTOS WIRKLICH DA SIND. Der Schalter
+  // (zweiSpieler) kann anstehen, ohne dass ein zweites Auto verbunden ist - etwa nach
+  // dem Trennen oder wenn eine Rolle in der gespeicherten Garage stehen blieb. Das
+  // Cockpit soll dann nicht zwei Spieler zeigen, die es nicht gibt. Die Garage haelt
+  // nur verbundene Autos, also ist `garage.indexOf(...)` die Verbindungsprobe.
+  function zweiSpielerAktiv() {
+    if (typeof zweiSpieler === 'undefined' || !zweiSpieler) return false;
+    if (typeof playerCar === 'undefined' || !playerCar) return false;
+    if (typeof playerCar2 === 'undefined' || !playerCar2) return false;
+    if (typeof garage === 'undefined') return false;
+    return garage.indexOf(playerCar) >= 0 && garage.indexOf(playerCar2) >= 0;
   }
 
   function cockpitScreenSet(i) {
@@ -962,7 +959,8 @@
   // Zahlen stehen bleiben - schlimmer als ein Schirm, den es nicht gibt.
   function cockpitScreenGilt(s) {
     if (!s) return false;
-    if (s.nurZweiSpieler) return typeof zweiSpieler !== 'undefined' && !!zweiSpieler;
+    // Seit dem Cockpit-Umbau ist die Beide-Ansicht der morph(t)e Standardschirm (main)
+    // selbst und kein eigener Schirm mehr - es gibt keinen Schirm mehr mit einer Sperre.
     return true;
   }
 
@@ -3104,12 +3102,6 @@
           && typeof setCarRole === 'function') {
         setCarRole(playerCar2, 'none');
       }
-    }
-    // Liegt der Schirm von Auto 2 vorne, wenn der Modus ausgeht, muss er verlassen werden -
-    // sonst starrt man auf neun Zahlen, die niemand mehr nachfuehrt, und der Pfeil kommt
-    // nicht zurueck (cockpitScreenStep ueberspringt ihn dann ja gerade).
-    if (!zweiSpieler && cockpitScreenIst() && cockpitScreenIst().nurZweiSpieler) {
-      cockpitScreenZu('main');
     }
     // Standardschirm morph(t) im Zwei-Spieler-Modus zur Beide-Ansicht: beim Umschalten neu
     // zeichnen, wenn man gerade auf main steht.

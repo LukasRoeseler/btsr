@@ -226,9 +226,19 @@
   /* Kachelbild fuer die experimentellen Modi: das Gemini-Bild als Hintergrund, dunkel
      ueberlagert, damit der Text lesbar bleibt. */
   .mode-tile.kachelbild { min-height: 96px; color: #fff; border-color: rgba(255,255,255,.25);
+    background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)); }
+  .mode-tile.kachelbild.knockout {
     background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/knockout.jpg) center / cover; }
   .mode-tile.kachelbild.derby {
     background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/derby.jpg) center / cover; }
+  .mode-tile.kachelbild.practice {
+    background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/rennoptionen-practice.jpg) center / cover; }
+  .mode-tile.kachelbild.endurance {
+    background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/rennoptionen-endurance.jpg) center / cover; }
+  .mode-tile.kachelbild.qualifying {
+    background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/rennoptionen-qualifying.jpg) center / cover; }
+  .mode-tile.kachelbild.laps {
+    background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/rennoptionen-laps.jpg) center / cover; }
   .mode-tile.kachelbild:hover, .mode-tile.kachelbild.sel { color: #fff; background-color: transparent; }
   .mode-tile.kachelbild.sel { border-color: var(--bad); box-shadow: inset 3px 0 0 var(--bad); }
   .wx-pick { display: flex; gap: 6px; }
@@ -2403,6 +2413,10 @@
     background: var(--k-grau); color: #fff; border: 2px solid transparent; border-radius: 0; padding: 11px 16px; }
   .k-pause-dialog button.menu-nav-sel, .k-pause-dialog button:hover { outline: 0; border-color: #fff; background: var(--k-blau); color: var(--k-blau-text); }
   .k-frage-knoepfe { display: flex; flex-direction: column; gap: 6px; }
+  /* Vorschau im Frage-Dialog (Community-Strecke): das Streckenbild, eingerahmt. */
+  .k-pause-dialog .k-frage-bild { display: block; background: #05070a; border: 1px solid rgba(255,255,255,.14);
+    border-radius: 4px; padding: 6px; margin: 0 0 4px; }
+  .k-pause-dialog .k-frage-bild svg { display: block; width: 100%; height: auto; }
   /* Der Grund bleibt auch auf dem niedrigen Telefon sichtbar (dort blendet .k-pause-dialog p
      die Erklaerzeilen des Cockpit-Menues aus). */
   .k-pause-dialog .k-frage-text { display: block; white-space: pre-line; font-size: clamp(11px, 2.6vh, 13.5px); margin: 0 0 4px; line-height: 1.4; }
@@ -4109,7 +4123,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.96</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.121</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -8072,27 +8086,27 @@
            versteckte Auswahlfeld, die Kacheln ziehen nach. -->
       <div class="opt-row opt-breit" id="race-mode-zeile"><div class="opt-label">Renntyp</div>
       <div class="mode-grid" id="race-mode-tiles">
-        <button type="button" class="mode-tile" data-mode="practice">
+        <button type="button" class="mode-tile kachelbild practice" data-mode="practice">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" aria-hidden="true">
             <circle cx="12" cy="13" r="8"/><path d="M12 13V8.5M12 2h0M9 3h6"/>
           </svg><b>Freies Training</b></button>
-        <button type="button" class="mode-tile" data-mode="endurance">
+        <button type="button" class="mode-tile kachelbild endurance" data-mode="endurance">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" aria-hidden="true">
             <circle cx="12" cy="12" r="9"/><path d="M12 12V6M12 12l4.5 3"/>
           </svg><b>Endurance</b></button>
-        <button type="button" class="mode-tile" data-mode="qualifying">
+        <button type="button" class="mode-tile kachelbild qualifying" data-mode="qualifying">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M5 20V4l14 4-14 4"/><path d="M5 12v8"/>
           </svg><b>Qualifying</b></button>
-        <button type="button" class="mode-tile" data-mode="laps">
+        <button type="button" class="mode-tile kachelbild laps" data-mode="laps">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" aria-hidden="true">
             <path d="M4 8a8 5 0 1 0 16 0 8 5 0 1 0-16 0"/><path d="M12 3v3M12 13v-3"/>
           </svg><b>Runden</b></button>
-        <button type="button" class="mode-tile kachelbild" data-mode="knockout">
+        <button type="button" class="mode-tile kachelbild knockout" data-mode="knockout">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M7 7h10M7 17h10M12 7v10"/><circle cx="12" cy="12" r="3"/>
@@ -10998,6 +11012,7 @@
   <div class="k-pause" id="k-frage" hidden>
     <div class="k-pause-dialog">
       <h2 id="k-frage-titel"></h2>
+      <div class="k-frage-bild" id="k-frage-bild" hidden></div>
       <p class="muted k-frage-text" id="k-frage-text"></p>
       <div class="k-frage-knoepfe" id="k-frage-knoepfe"></div>
     </div>
@@ -12711,7 +12726,14 @@
     "Noch keine Community-Strecken. Reiche deine Strecke ein.": "No community tracks yet. Submit your track.",
     "Noch keine Zeit": "No time yet",
     "Bestzeit in Sekunden (z.B. 12,345)": "Best time in seconds (e.g. 12.345)",
+    "Zeit fahren": "Run for a time",
     "Zeit eintragen": "Enter time",
+    "Strecke einreichen": "Submit track",
+    "Keine Strecke im Editor. Scanne oder baue zuerst eine Strecke.": "No track in the editor. Scan or build a track first.",
+    "So sieht deine Strecke aus. Bitte prüfe das Bild, dann wird sie eingereicht.": "This is what your track looks like. Please check the picture, then it will be submitted.",
+    "Strecke {n} eingereicht.": "Track {n} submitted.",
+    "Zeit für die Community-Strecke {n} eingetragen.": "Time for community track {n} recorded.",
+    "Erst die laufende Challenge beenden": "Finish the running challenge first",
     "Neu zuweisen": "Reassign",
     "Nicht im Bild, weil man sie nur hört: Klappern, Ansauganteil und Last.": "Not in the pictures, because you can only hear them: clatter, intake share and load.",
     "Noch keine Verbindung.": "No connection yet.",
@@ -19001,22 +19023,6 @@
     { id: 'uebersicht', name: 'Rennen',
       waehlen: () => ovNochmal(),
       malen: () => ovScreenRender() },
-    // BESTELLT: "Renneinstellungen aus dem Cockpit-Schirmkreis herausnehmen." Der Schirm
-    // existierte im Cockpit, und links/rechts (Dauer/Runden) hatte die gleiche Belegung wie
-    // das Schirmblaettern - wer die Rundenzahl veraenderte, kam mit dem Steuerkreuz nicht
-    // mehr zurueck. Rennmodus, Dauer/Runden und Start bleiben im Fahren-Tab.
-    // ---- NUR IM ZWEI-SPIELER-MODUS BLAETTERBAR ---------------------------------------
-    //
-    // Der Eintrag steht IMMER in der Liste und wird beim Blaettern uebersprungen, solange
-    // der Modus aus ist. Die Alternative waere eine Liste, deren LAENGE sich aendert - und
-    // an ihr haengen der Schirmzaehler, die Punkte unter dem Pfeil und zwei Selbsttests.
-    // Eine Liste, die beim Umschalten kuerzer wird, verschiebt den gerade gezeigten Schirm.
-    // Der Name ist "Beide" und nicht mehr "Auto 2": der Schirm zeigt seit v0.6.56 beide
-    // Autos nebeneinander. Die id bleibt `auto2` - sie steht in gespeicherten Zustaenden
-    // und in Prueflaeufen, und ein Name im Menue ist kein Grund, eine Kennung zu aendern.
-    { id: 'auto2', name: 'Beide',
-      nurZweiSpieler: true,
-      malen: () => p2ScreenRender() },
   ];
   let cockpitScreen = 0;
 
@@ -19027,12 +19033,25 @@
   function cockpitMainMalen() {
     const el = $('race-dash');
     if (!el) return;
-    if (zweiSpieler) {
+    if (zweiSpielerAktiv()) {
       el.dataset.screen = 'auto2';
       if (typeof p2ScreenRender === 'function') p2ScreenRender();
     } else {
       el.dataset.screen = 'main';
     }
+  }
+
+  // NUR DANN ZWEI SPIELER, WENN BEIDE AUTOS WIRKLICH DA SIND. Der Schalter
+  // (zweiSpieler) kann anstehen, ohne dass ein zweites Auto verbunden ist - etwa nach
+  // dem Trennen oder wenn eine Rolle in der gespeicherten Garage stehen blieb. Das
+  // Cockpit soll dann nicht zwei Spieler zeigen, die es nicht gibt. Die Garage haelt
+  // nur verbundene Autos, also ist `garage.indexOf(...)` die Verbindungsprobe.
+  function zweiSpielerAktiv() {
+    if (typeof zweiSpieler === 'undefined' || !zweiSpieler) return false;
+    if (typeof playerCar === 'undefined' || !playerCar) return false;
+    if (typeof playerCar2 === 'undefined' || !playerCar2) return false;
+    if (typeof garage === 'undefined') return false;
+    return garage.indexOf(playerCar) >= 0 && garage.indexOf(playerCar2) >= 0;
   }
 
   function cockpitScreenSet(i) {
@@ -19065,7 +19084,8 @@
   // Zahlen stehen bleiben - schlimmer als ein Schirm, den es nicht gibt.
   function cockpitScreenGilt(s) {
     if (!s) return false;
-    if (s.nurZweiSpieler) return typeof zweiSpieler !== 'undefined' && !!zweiSpieler;
+    // Seit dem Cockpit-Umbau ist die Beide-Ansicht der morph(t)e Standardschirm (main)
+    // selbst und kein eigener Schirm mehr - es gibt keinen Schirm mehr mit einer Sperre.
     return true;
   }
 
@@ -21208,12 +21228,6 @@
         setCarRole(playerCar2, 'none');
       }
     }
-    // Liegt der Schirm von Auto 2 vorne, wenn der Modus ausgeht, muss er verlassen werden -
-    // sonst starrt man auf neun Zahlen, die niemand mehr nachfuehrt, und der Pfeil kommt
-    // nicht zurueck (cockpitScreenStep ueberspringt ihn dann ja gerade).
-    if (!zweiSpieler && cockpitScreenIst() && cockpitScreenIst().nurZweiSpieler) {
-      cockpitScreenZu('main');
-    }
     // Standardschirm morph(t) im Zwei-Spieler-Modus zur Beide-Ansicht: beim Umschalten neu
     // zeichnen, wenn man gerade auf main steht.
     if (cockpitScreenIst() && cockpitScreenIst().id === 'main' && cockpitScreenIst().malen) {
@@ -22602,7 +22616,8 @@
 
   // ---- Frage-Dialog (#k-frage): wie das Cockpit-Menue, mit dem Pad bedienbar ----------
   // knoepfe: [[Text, Funktion oder null], ...]; der erste ist vorgewaehlt.
-  function konsoleFrage(titel, text, knoepfe, wip) {
+  // `bild` ist optionales HTML (z. B. ein Strecken-SVG) fuer die Vorschau im Dialog.
+  function konsoleFrage(titel, text, knoepfe, wip, bild) {
     const d = $('k-frage');
     if (!d) return;
     $('k-frage-titel').textContent = titel;
@@ -22612,6 +22627,11 @@
       w.textContent = t('experimentell');
       $('k-frage-titel').appendChild(document.createTextNode(' '));
       $('k-frage-titel').appendChild(w);
+    }
+    const bd = $('k-frage-bild');
+    if (bd) {
+      if (bild) { bd.innerHTML = bild; bd.hidden = false; }
+      else { bd.innerHTML = ''; bd.hidden = true; }
     }
     $('k-frage-text').textContent = text || '';
     const host = $('k-frage-knoepfe');
@@ -22688,6 +22708,14 @@
   function konsoleZumMenue() {
     kCockpitVollbild = document.body.classList.contains('race-fs');
     if (kCockpitVollbild) exitRaceFullscreen();
+    // BESTELLT: "im Cockpit soll der Menue-Knopf das laufende Rennen/Training immer
+    // beenden." Vorher blieb ein Rennen im Hintergrund laufen, wenn man ueber den
+    // Menue-Knopf in die Menues wechselte - die Ampel lief weiter, das Auto fuhr ohne
+    // Fahrer. Der Menue-Knopf ist ein Ausstieg, also beendet er auch die Sitzung.
+    if (typeof kRennenLaeuft === 'function' && kRennenLaeuft()
+        && typeof requestRaceStop === 'function') {
+      requestRaceStop();
+    }
     const r = kMenueRueck;
     kMenueRueck = null;
     if (r && r.tab && r.tab !== 'race' && r.tab !== 'home') konsoleZeige(r.tab, r.sub || '');
@@ -22826,7 +22854,8 @@
     $('fa-renn-titel').textContent = modus;
     // Rennoptionen-Kachel wechselt mit dem Rennmodus das Bild (BESTELLT v0.8.53).
     const rmBild = { practice: 'rennoptionen-practice', endurance: 'rennoptionen-endurance',
-                     qualifying: 'rennoptionen-qualifying', laps: 'rennoptionen-laps' }[rm.value];
+                     qualifying: 'rennoptionen-qualifying', laps: 'rennoptionen-laps',
+                     knockout: 'knockout', derby: 'derby' }[rm.value];
     const rb = $('fa-renn-bild');
     if (rb && rmBild && rb.dataset.bild !== rmBild) {
       rb.style.backgroundImage = 'url(img/' + rmBild + '.jpg)';
@@ -26270,13 +26299,24 @@
       body += `<path d="${poly(centre)}" fill="none" stroke="#7d8698" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`;
     }
 
-    // Start line and the live position marker.
-    const i0 = 0;
-    const sA = [pts[i0].x + nrm[i0].x * half, pts[i0].y + nrm[i0].y * half];
-    const sB = [pts[i0].x - nrm[i0].x * half, pts[i0].y - nrm[i0].y * half];
-    body += o.detailed
-      ? `<path d="M ${P2(sA)} L ${P2(sB)}" stroke="#3ddc84" stroke-width="4"/>`
-      : `<circle cx="${(first.x + ox).toFixed(1)}" cy="${(first.y + oy).toFixed(1)}" r="5" fill="#1c7a4d"/>`;
+    // Start line and the live position marker. Die ERSTE Start/Ziel-Gerade ist die
+    // Rundenlinie (gruen); jede weitere ist eine Sektorgrenze und wird gelb gezeichnet,
+    // damit man sie von der ersten unterscheidet (BESTELLT: "die zweite Start/Ziel-Gerade
+    // soll sich deutlich von der ersten unterscheiden").
+    let ersteStart = true;
+    for (let ti = 0; ti < tiles.length; ti++) {
+      if (tiles[ti].type !== TILE_TYPE.START) continue;
+      const pi = kachelTab && kachelTab.start ? kachelTab.start[ti] : 0;
+      const p = pts[pi] || pts[0];
+      if (!p) continue;
+      const sA = [p.x + nrm[pi].x * half, p.y + nrm[pi].y * half];
+      const sB = [p.x - nrm[pi].x * half, p.y - nrm[pi].y * half];
+      const farbe = ersteStart ? '#3ddc84' : '#ffd400';
+      body += o.detailed
+        ? `<path d="M ${P2(sA)} L ${P2(sB)}" stroke="${farbe}" stroke-width="4"/>`
+        : `<circle cx="${(p.x + ox).toFixed(1)}" cy="${(p.y + oy).toFixed(1)}" r="5" fill="${farbe}"/>`;
+      ersteStart = false;
+    }
     // ---- Die Autos ----------------------------------------------------------------
     //
     // `currentIndex` zeichnet EIN Auto und bleibt fuer alte Aufrufer; `o.cars` zeichnet
@@ -35148,7 +35188,16 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
   let chLetzt = null;              // letztes Ergebnis, fuer die Anzeige auf der Seite
   const chListen = {};             // Schluessel -> { zeiten, online, fehler, laedt }
 
-  function chDef(id) { return CH_ALLE.find((c) => c.id === id) || CHALLENGES[0]; }
+  function chDef(id) {
+    const c = CH_ALLE.find((x) => x.id === id);
+    if (c) return c;
+    // Community-Strecke als Challenge fahren: die Strecke wird aus dem eingereichten Code
+    // aufgebaut, ein Lauf mit Ampel, Wertung nach erkannten Teilen.
+    const d = communityLesen();
+    const tr = d.tracks.find((t) => t.id === id);
+    if (tr) return { id: tr.id, code: tr.code, name: tr.name, runden: 1, pit: 0, wx: null, community: true };
+    return CHALLENGES[0];
+  }
   function chSchluessel(id, modus, preset) { return id + '|' + modus + '|' + preset; }
   // PFLICHTSTOPP (v0.8.39). BESTELLT: "bei Rundenrennen in Challenge 4 immer einen Pitstop
   // verpflichtend (egal wo und mit Pit-Minigame)". Kategorie D, nur im Modus Rennen.
@@ -35458,14 +35507,26 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
     ein.className = 'primary';
     ein.textContent = t('Eigene Strecke einreichen');
     ein.onclick = () => {
+      // BESTELLT: "wenn keine Strecke im Editor ist, soll die App sagen, dass man zuerst
+      // scannen oder bauen soll." Kein stiller Abbruch - der Grund wird gesagt.
       if (!currentTrackTiles || currentTrackTiles.length < 2) {
-        showHudToast('Keine Strecke im Editor.'); return;
+        showHudToast(t('Keine Strecke im Editor. Scanne oder baue zuerst eine Strecke.'));
+        return;
       }
-      const name = prompt(t('Name der Strecke'), '') || 'Strecke ' + String(data.nextId || 1).padStart(4, '0');
-      const id = communityEinreichen(data, currentTrackTiles, name);
-      communitySchreiben(data);
-      showHudToast('Strecke ' + id + ' eingereicht.');
-      communityZeichnen();
+      // BESTELLT: "beim Einreichen soll das Bild gezeigt und bestaetigt werden." Die
+      // Vorschau (Streckenkarte) steht im Frage-Dialog, erst auf Einreichen wird gespeichert.
+      const vorschau = (typeof renderTrackPreview === 'function')
+        ? renderTrackPreview(currentTrackTiles, null, { detailed: true, cars: [] }).html : '';
+      konsoleFrage(t('Strecke einreichen'),
+        t('So sieht deine Strecke aus. Bitte prüfe das Bild, dann wird sie eingereicht.'),
+        [[t('Einreichen'), () => {
+           const name = prompt(t('Name der Strecke'), '') || 'Strecke ' + String(data.nextId || 1).padStart(4, '0');
+           const id = communityEinreichen(data, currentTrackTiles, name);
+           communitySchreiben(data);
+           showHudToast(t('Strecke {n} eingereicht.').replace('{n}', id));
+           communityZeichnen();
+         }],
+         [t('Abbrechen'), null]], true, vorschau);
     };
     bereich.appendChild(ein);
     const liste = communitySortiert(data);
@@ -35490,19 +35551,33 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
       em.textContent = best ? t('Bestzeit') + ' ' + chZeit(best) + ' \u00b7 ' + spieler + ' ' + t('Spieler')
                              : t('Noch keine Zeit') + ' \u00b7 ' + spieler + ' ' + t('Spieler');
       links.appendChild(b); links.appendChild(em);
+      // BESTELLT: "eine Zeit eintragen wie eine normale Challenge: Strecke fahren, dabei
+      // prueft die App, dass man wirklich auf der Strecke faehrt (X % der Teile), misst die
+      // Zeit und traegt sie beim Zieleinlauf ein." Kein Handtippen mehr - ein Lauf.
       const z = document.createElement('button');
-      z.textContent = t('Zeit eintragen');
-      z.onclick = () => {
-        const eingabe = prompt(t('Bestzeit in Sekunden (z.B. 12,345)'), '');
-        const sek = parseFloat((eingabe || '').replace(',', '.'));
-        if (!Number.isFinite(sek) || sek <= 0) return;
-        communityZeit(data, tr.id, sek * 1000, chOnline().fahrer);
-        communityZeichnen();
-      };
+      z.textContent = t('Zeit fahren');
+      z.onclick = () => communityStarten(tr);
       row.appendChild(links); row.appendChild(z);
       wrap.appendChild(row);
     }
     bereich.appendChild(wrap);
+  }
+
+  // BESTELLT: "Zeit eintragen wie eine normale Challenge." Die Community-Strecke wird als
+  // Challenge gefahren: Auto muss stehen, Ampel, dann wird die Strecke abgefahren und die
+  // App prueft je Runde, wie viele Teile erkannt wurden (challengeRundeFertig/chRundePruefen),
+  // misst die Zeit und traegt sie beim Zieleinlauf in die Community-Liste ein.
+  function communityStarten(tr) {
+    if (!tr) return;
+    if (typeof challengeLaeuft === 'function' && challengeLaeuft()) {
+      showHudToast(t('Erst die laufende Challenge beenden'));
+      return;
+    }
+    if (kRennenLaeuft()) { showHudToast(t('Erst das laufende Rennen beenden')); return; }
+    chWahl = tr.id;
+    chModus = 'hotlap';
+    chSpiegel = false;
+    if (typeof challengeStarten === 'function') challengeStarten();
   }
 
 
@@ -35672,7 +35747,8 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
     const def = chDef(chWahl);
     chLauf = { id: def.id, modus: chModus, preset: chPreset, phase: 'stehen', stillSeit: 0,
                hinweisAt: 0, fruehstart: false, probe: !playerCar, merk: chMerken(),
-               gelesen: [], pruefung: [], geaendert: false, pruefAt: 0 };
+               gelesen: [], pruefung: [], geaendert: false, pruefAt: 0,
+               community: !!def.community };
     chAnwenden(def, chModus, chPreset);
     chLauf.soll = chWachWerte(chPreset);
     chSperre(true);
@@ -35815,31 +35891,50 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
     // Lauf entwerten, nur die Meldung im Ergebnis-Dialog sagt es.
     let hochgeladen = null;
     if (erg.gueltig) {
-      chLokalSpeichern(erg);
-      hochgeladen = chHochladen(erg)
-        .then((ok) => { hochgeladen = ok; chListeLaden(schl); return ok; })
-        .catch(() => { hochgeladen = false; return false; });
+      // Community-Strecke: die Zeit gehoert in die Community-Liste, nicht in die
+      // woechentliche Challenge-Bestenliste. Alles andere (Ampel, Teilepruefung, Zeitmessung)
+      // ist dieselbe Challenge-Maschinerie.
+      if (lauf.community) {
+        communityZeit(communityLesen(), erg.id, erg.zeit, erg.fahrer);
+        hochgeladen = true;
+        communityZeichnen();
+      } else {
+        chLokalSpeichern(erg);
+        hochgeladen = chHochladen(erg)
+          .then((ok) => { hochgeladen = ok; chListeLaden(schl); return ok; })
+          .catch(() => { hochgeladen = false; return false; });
+      }
     }
     // Das Ergebnis im Cockpit als Frage, mit dem Pad bedienbar: ansehen, nochmal, schliessen.
     setTimeout(() => {
       const titel = erg.gueltig
         ? (erg.modus === 'hotlap' ? t('Beste Runde') : t('Gesamtzeit')) + ': ' + chZeit(erg.zeit)
         : t('Nicht gewertet');
-      let text = erg.gueltig ? chRangText(schl, erg.zeit) : chGrundText(erg);
-      if (erg.gueltig) {
-        const sterne = chSterne(def, erg.modus, erg.zeit);
-        text += '\n\n' + chSterneName(sterne) + ' ' + chSterneZeichen(sterne);
-        const o = chOnline();
-        if (o.url && o.hochladen) {
-          text += '\n\n' + (hochgeladen === true ? t('Ergebnis hochgeladen.')
-            : hochgeladen === false ? t('Ergebnis konnte nicht hochgeladen werden – steht nur lokal.')
-            : t('Ergebnis wird hochgeladen …'));
+      let text;
+      if (lauf.community) {
+        text = erg.gueltig
+          ? t('Zeit für die Community-Strecke {n} eingetragen.').replace('{n}', erg.id)
+          : chGrundText(erg);
+      } else {
+        text = erg.gueltig ? chRangText(schl, erg.zeit) : chGrundText(erg);
+        if (erg.gueltig) {
+          const sterne = chSterne(def, erg.modus, erg.zeit);
+          text += '\n\n' + chSterneName(sterne) + ' ' + chSterneZeichen(sterne);
+          const o = chOnline();
+          if (o.url && o.hochladen) {
+            text += '\n\n' + (hochgeladen === true ? t('Ergebnis hochgeladen.')
+              : hochgeladen === false ? t('Ergebnis konnte nicht hochgeladen werden – steht nur lokal.')
+              : t('Ergebnis wird hochgeladen …'));
+          }
         }
       }
-      konsoleFrage(titel, text, [
-        [t('Ergebnis ansehen'), () => konsoleZeige('challenges', 'ch-' + erg.id)],
-        [t('Nochmal'), () => { chWahl = erg.id; chModus = erg.modus; challengeStarten(); }],
-        [t('Schließen'), null]]);
+      const knoepfe = lauf.community
+        ? [[t('Nochmal'), () => { chWahl = erg.id; chModus = erg.modus; challengeStarten(); }],
+           [t('Schließen'), null]]
+        : [[t('Ergebnis ansehen'), () => konsoleZeige('challenges', 'ch-' + erg.id)],
+           [t('Nochmal'), () => { chWahl = erg.id; chModus = erg.modus; challengeStarten(); }],
+           [t('Schließen'), null]];
+      konsoleFrage(titel, text, knoepfe);
     }, 900);
     chZeichneDetail();
     return true;
@@ -49440,7 +49535,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // der Schirmzaehler, die Punkte unter dem Pfeil und zwei Selbsttests.
     schirmZweiProbe() {
       const vorher = { zwei: zweiSpieler, schirm: cockpitScreenIst().id,
-                       p2: playerCar2, tank: tankZweiStand(), fuel };
+                       p1: playerCar, p2: playerCar2, tank: tankZweiStand(), fuel };
       const merkGarage = garage.slice();
       try {
         // ---- Erst die Registry, ohne Modus --------------------------------------
@@ -49454,6 +49549,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         const mit = [];
         for (let i = 0; i < 5; i++) { cockpitScreenStep(1); mit.push(cockpitScreenIst().id); }
         // ---- Und die Zahlen -----------------------------------------------------
+        // Auto 1 (STEUERN) bekommt bewusst KEINEN Akkustand und keine Runde: die Beide-
+        // Ansicht soll dann einen Strich und "Runde 0" zeigen (gemessene Groesse). Nur
+        // Auto 2 (Spieler 2) hat einen Akku und zaehlt Runden.
+        const a1 = { device: { id: 'probe-schirm1' }, role: 'player', alias: 'P1',
+                     rx: null, testSenke: [], colorId: null,
+                     race: { laps: [] } };
+        garage.push(a1);
+        playerCar = a1;
         const a2 = { device: { id: 'probe-schirm' }, role: 'player2', alias: 'P2',
                      rx: null, testSenke: [], colorId: null, battery: 200,
                      race: { laps: [{ lap: 1, ms: 21500 }, { lap: 2, ms: 20900 }] } };
@@ -49464,7 +49567,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         const merkFuel = fuel;
         fuel = 80;
         tankZweiFuellen(40);
-        cockpitScreenZu('auto2');
+        // Seit dem Cockpit-Umbau ist die Beide-Ansicht der STANDARDSCHIRM (main) selbst:
+        // er morph(t) im Zwei-Spieler-Modus zur Beide-Ansicht (siehe cockpitMainMalen).
+        // Deshalb hier auf main gehen und die morph(t)e Ansicht auslesen.
+        cockpitScreenZu('main');
         p2ScreenRender();
         const lies = (id) => { const e = $(id); return e ? e.textContent : null; };
         // Seit v0.6.56 zeigt der Schirm BEIDE Autos - also werden beide Spalten gelesen.
@@ -49484,16 +49590,25 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
           runden1: lies('vgl1-runde'), runden2: lies('vgl2-runde'),
           fuss: lies('p2s-fuss'),
         };
+        // Der Standardschirm morph(t) im Zwei-Spieler-Modus zur Beide-Ansicht: das hier
+        // ist die Zusage, die der Selbsttest prüft. VOR dem Abschalten lesen.
+        const dash = $('race-dash');
+        const mainSchirm = dash ? dash.dataset.screen : null;
         // Und dass der Schirm beim Abschalten verlassen wird.
         if (typeof zweiSpielerSetzen === 'function') zweiSpielerSetzen(false);
         const nachAus = cockpitScreenIst().id;
-        return { liste: COCKPIT_SCREENS.map((x) => x.id), ohne, mit, werte, nachAus };
+        return { liste: COCKPIT_SCREENS.map((x) => x.id), ohne, mit, werte, nachAus,
+                 mainSchirm };
       } finally {
         const i = garage.indexOf(garage.find((c) => c.device
                                             && c.device.id === 'probe-schirm'));
         if (i >= 0) garage.splice(i, 1);
+        const i1 = garage.indexOf(garage.find((c) => c.device
+                                             && c.device.id === 'probe-schirm1'));
+        if (i1 >= 0) garage.splice(i1, 1);
         garage.splice(0, garage.length);
         merkGarage.forEach((c) => garage.push(c));
+        playerCar = vorher.p1;
         playerCar2 = vorher.p2;
         tankZweiFuellen(vorher.tank);
         if (typeof vorher.fuel === 'number') fuel = vorher.fuel;
@@ -70703,11 +70818,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const r = OMEGA_TEST.schirmZweiProbe();
     const w = r.werte;
     const maengel = [];
-    if (r.liste.indexOf('auto2') < 0) maengel.push('Schirm nicht in der Registry');
-    if (r.ohne.indexOf('auto2') >= 0) {
-      maengel.push('ohne Modus erreichbar: ' + r.ohne.join('>'));
-    }
-    if (r.mit.indexOf('auto2') < 0) maengel.push('mit Modus nicht erreichbar: ' + r.mit.join('>'));
+    // Die Beide-Ansicht ist seit dem Cockpit-Umbau der morph(t)e Standardschirm (main)
+    // selbst und kein eigener Schirm mehr: kein auto2 in der Registry, und main zeigt
+    // im Zwei-Spieler-Modus die Beide-Ansicht.
+    if (r.liste.indexOf('auto2') >= 0) maengel.push('auto2-Schirm existiert noch: ' + r.liste.join('>'));
+    if (r.mainSchirm !== 'auto2') maengel.push('main zeigt im Zwei-Spieler-Modus nicht die Beide-Ansicht: ' + r.mainSchirm);
     if (r.nachAus !== 'main') maengel.push('nach dem Abschalten noch auf ' + r.nachAus);
     // ---- Die beiden Spalten zeigen VERSCHIEDENE Autos --------------------------
     // 80 % von 110 l sind 88, 40 % sind 44.

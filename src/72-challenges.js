@@ -290,7 +290,16 @@
   let chLetzt = null;              // letztes Ergebnis, fuer die Anzeige auf der Seite
   const chListen = {};             // Schluessel -> { zeiten, online, fehler, laedt }
 
-  function chDef(id) { return CH_ALLE.find((c) => c.id === id) || CHALLENGES[0]; }
+  function chDef(id) {
+    const c = CH_ALLE.find((x) => x.id === id);
+    if (c) return c;
+    // Community-Strecke als Challenge fahren: die Strecke wird aus dem eingereichten Code
+    // aufgebaut, ein Lauf mit Ampel, Wertung nach erkannten Teilen.
+    const d = communityLesen();
+    const tr = d.tracks.find((t) => t.id === id);
+    if (tr) return { id: tr.id, code: tr.code, name: tr.name, runden: 1, pit: 0, wx: null, community: true };
+    return CHALLENGES[0];
+  }
   function chSchluessel(id, modus, preset) { return id + '|' + modus + '|' + preset; }
   // PFLICHTSTOPP (v0.8.39). BESTELLT: "bei Rundenrennen in Challenge 4 immer einen Pitstop
   // verpflichtend (egal wo und mit Pit-Minigame)". Kategorie D, nur im Modus Rennen.
@@ -600,14 +609,26 @@
     ein.className = 'primary';
     ein.textContent = t('Eigene Strecke einreichen');
     ein.onclick = () => {
+      // BESTELLT: "wenn keine Strecke im Editor ist, soll die App sagen, dass man zuerst
+      // scannen oder bauen soll." Kein stiller Abbruch - der Grund wird gesagt.
       if (!currentTrackTiles || currentTrackTiles.length < 2) {
-        showHudToast('Keine Strecke im Editor.'); return;
+        showHudToast(t('Keine Strecke im Editor. Scanne oder baue zuerst eine Strecke.'));
+        return;
       }
-      const name = prompt(t('Name der Strecke'), '') || 'Strecke ' + String(data.nextId || 1).padStart(4, '0');
-      const id = communityEinreichen(data, currentTrackTiles, name);
-      communitySchreiben(data);
-      showHudToast('Strecke ' + id + ' eingereicht.');
-      communityZeichnen();
+      // BESTELLT: "beim Einreichen soll das Bild gezeigt und bestaetigt werden." Die
+      // Vorschau (Streckenkarte) steht im Frage-Dialog, erst auf Einreichen wird gespeichert.
+      const vorschau = (typeof renderTrackPreview === 'function')
+        ? renderTrackPreview(currentTrackTiles, null, { detailed: true, cars: [] }).html : '';
+      konsoleFrage(t('Strecke einreichen'),
+        t('So sieht deine Strecke aus. Bitte prüfe das Bild, dann wird sie eingereicht.'),
+        [[t('Einreichen'), () => {
+           const name = prompt(t('Name der Strecke'), '') || 'Strecke ' + String(data.nextId || 1).padStart(4, '0');
+           const id = communityEinreichen(data, currentTrackTiles, name);
+           communitySchreiben(data);
+           showHudToast(t('Strecke {n} eingereicht.').replace('{n}', id));
+           communityZeichnen();
+         }],
+         [t('Abbrechen'), null]], true, vorschau);
     };
     bereich.appendChild(ein);
     const liste = communitySortiert(data);
@@ -632,19 +653,33 @@
       em.textContent = best ? t('Bestzeit') + ' ' + chZeit(best) + ' \u00b7 ' + spieler + ' ' + t('Spieler')
                              : t('Noch keine Zeit') + ' \u00b7 ' + spieler + ' ' + t('Spieler');
       links.appendChild(b); links.appendChild(em);
+      // BESTELLT: "eine Zeit eintragen wie eine normale Challenge: Strecke fahren, dabei
+      // prueft die App, dass man wirklich auf der Strecke faehrt (X % der Teile), misst die
+      // Zeit und traegt sie beim Zieleinlauf ein." Kein Handtippen mehr - ein Lauf.
       const z = document.createElement('button');
-      z.textContent = t('Zeit eintragen');
-      z.onclick = () => {
-        const eingabe = prompt(t('Bestzeit in Sekunden (z.B. 12,345)'), '');
-        const sek = parseFloat((eingabe || '').replace(',', '.'));
-        if (!Number.isFinite(sek) || sek <= 0) return;
-        communityZeit(data, tr.id, sek * 1000, chOnline().fahrer);
-        communityZeichnen();
-      };
+      z.textContent = t('Zeit fahren');
+      z.onclick = () => communityStarten(tr);
       row.appendChild(links); row.appendChild(z);
       wrap.appendChild(row);
     }
     bereich.appendChild(wrap);
+  }
+
+  // BESTELLT: "Zeit eintragen wie eine normale Challenge." Die Community-Strecke wird als
+  // Challenge gefahren: Auto muss stehen, Ampel, dann wird die Strecke abgefahren und die
+  // App prueft je Runde, wie viele Teile erkannt wurden (challengeRundeFertig/chRundePruefen),
+  // misst die Zeit und traegt sie beim Zieleinlauf in die Community-Liste ein.
+  function communityStarten(tr) {
+    if (!tr) return;
+    if (typeof challengeLaeuft === 'function' && challengeLaeuft()) {
+      showHudToast(t('Erst die laufende Challenge beenden'));
+      return;
+    }
+    if (kRennenLaeuft()) { showHudToast(t('Erst das laufende Rennen beenden')); return; }
+    chWahl = tr.id;
+    chModus = 'hotlap';
+    chSpiegel = false;
+    if (typeof challengeStarten === 'function') challengeStarten();
   }
 
 
@@ -814,7 +849,8 @@
     const def = chDef(chWahl);
     chLauf = { id: def.id, modus: chModus, preset: chPreset, phase: 'stehen', stillSeit: 0,
                hinweisAt: 0, fruehstart: false, probe: !playerCar, merk: chMerken(),
-               gelesen: [], pruefung: [], geaendert: false, pruefAt: 0 };
+               gelesen: [], pruefung: [], geaendert: false, pruefAt: 0,
+               community: !!def.community };
     chAnwenden(def, chModus, chPreset);
     chLauf.soll = chWachWerte(chPreset);
     chSperre(true);
@@ -957,31 +993,50 @@
     // Lauf entwerten, nur die Meldung im Ergebnis-Dialog sagt es.
     let hochgeladen = null;
     if (erg.gueltig) {
-      chLokalSpeichern(erg);
-      hochgeladen = chHochladen(erg)
-        .then((ok) => { hochgeladen = ok; chListeLaden(schl); return ok; })
-        .catch(() => { hochgeladen = false; return false; });
+      // Community-Strecke: die Zeit gehoert in die Community-Liste, nicht in die
+      // woechentliche Challenge-Bestenliste. Alles andere (Ampel, Teilepruefung, Zeitmessung)
+      // ist dieselbe Challenge-Maschinerie.
+      if (lauf.community) {
+        communityZeit(communityLesen(), erg.id, erg.zeit, erg.fahrer);
+        hochgeladen = true;
+        communityZeichnen();
+      } else {
+        chLokalSpeichern(erg);
+        hochgeladen = chHochladen(erg)
+          .then((ok) => { hochgeladen = ok; chListeLaden(schl); return ok; })
+          .catch(() => { hochgeladen = false; return false; });
+      }
     }
     // Das Ergebnis im Cockpit als Frage, mit dem Pad bedienbar: ansehen, nochmal, schliessen.
     setTimeout(() => {
       const titel = erg.gueltig
         ? (erg.modus === 'hotlap' ? t('Beste Runde') : t('Gesamtzeit')) + ': ' + chZeit(erg.zeit)
         : t('Nicht gewertet');
-      let text = erg.gueltig ? chRangText(schl, erg.zeit) : chGrundText(erg);
-      if (erg.gueltig) {
-        const sterne = chSterne(def, erg.modus, erg.zeit);
-        text += '\n\n' + chSterneName(sterne) + ' ' + chSterneZeichen(sterne);
-        const o = chOnline();
-        if (o.url && o.hochladen) {
-          text += '\n\n' + (hochgeladen === true ? t('Ergebnis hochgeladen.')
-            : hochgeladen === false ? t('Ergebnis konnte nicht hochgeladen werden – steht nur lokal.')
-            : t('Ergebnis wird hochgeladen …'));
+      let text;
+      if (lauf.community) {
+        text = erg.gueltig
+          ? t('Zeit für die Community-Strecke {n} eingetragen.').replace('{n}', erg.id)
+          : chGrundText(erg);
+      } else {
+        text = erg.gueltig ? chRangText(schl, erg.zeit) : chGrundText(erg);
+        if (erg.gueltig) {
+          const sterne = chSterne(def, erg.modus, erg.zeit);
+          text += '\n\n' + chSterneName(sterne) + ' ' + chSterneZeichen(sterne);
+          const o = chOnline();
+          if (o.url && o.hochladen) {
+            text += '\n\n' + (hochgeladen === true ? t('Ergebnis hochgeladen.')
+              : hochgeladen === false ? t('Ergebnis konnte nicht hochgeladen werden – steht nur lokal.')
+              : t('Ergebnis wird hochgeladen …'));
+          }
         }
       }
-      konsoleFrage(titel, text, [
-        [t('Ergebnis ansehen'), () => konsoleZeige('challenges', 'ch-' + erg.id)],
-        [t('Nochmal'), () => { chWahl = erg.id; chModus = erg.modus; challengeStarten(); }],
-        [t('Schließen'), null]]);
+      const knoepfe = lauf.community
+        ? [[t('Nochmal'), () => { chWahl = erg.id; chModus = erg.modus; challengeStarten(); }],
+           [t('Schließen'), null]]
+        : [[t('Ergebnis ansehen'), () => konsoleZeige('challenges', 'ch-' + erg.id)],
+           [t('Nochmal'), () => { chWahl = erg.id; chModus = erg.modus; challengeStarten(); }],
+           [t('Schließen'), null]];
+      konsoleFrage(titel, text, knoepfe);
     }, 900);
     chZeichneDetail();
     return true;

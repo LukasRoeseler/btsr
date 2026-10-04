@@ -527,7 +527,7 @@
     // der Schirmzaehler, die Punkte unter dem Pfeil und zwei Selbsttests.
     schirmZweiProbe() {
       const vorher = { zwei: zweiSpieler, schirm: cockpitScreenIst().id,
-                       p2: playerCar2, tank: tankZweiStand(), fuel };
+                       p1: playerCar, p2: playerCar2, tank: tankZweiStand(), fuel };
       const merkGarage = garage.slice();
       try {
         // ---- Erst die Registry, ohne Modus --------------------------------------
@@ -541,6 +541,14 @@
         const mit = [];
         for (let i = 0; i < 5; i++) { cockpitScreenStep(1); mit.push(cockpitScreenIst().id); }
         // ---- Und die Zahlen -----------------------------------------------------
+        // Auto 1 (STEUERN) bekommt bewusst KEINEN Akkustand und keine Runde: die Beide-
+        // Ansicht soll dann einen Strich und "Runde 0" zeigen (gemessene Groesse). Nur
+        // Auto 2 (Spieler 2) hat einen Akku und zaehlt Runden.
+        const a1 = { device: { id: 'probe-schirm1' }, role: 'player', alias: 'P1',
+                     rx: null, testSenke: [], colorId: null,
+                     race: { laps: [] } };
+        garage.push(a1);
+        playerCar = a1;
         const a2 = { device: { id: 'probe-schirm' }, role: 'player2', alias: 'P2',
                      rx: null, testSenke: [], colorId: null, battery: 200,
                      race: { laps: [{ lap: 1, ms: 21500 }, { lap: 2, ms: 20900 }] } };
@@ -551,7 +559,10 @@
         const merkFuel = fuel;
         fuel = 80;
         tankZweiFuellen(40);
-        cockpitScreenZu('auto2');
+        // Seit dem Cockpit-Umbau ist die Beide-Ansicht der STANDARDSCHIRM (main) selbst:
+        // er morph(t) im Zwei-Spieler-Modus zur Beide-Ansicht (siehe cockpitMainMalen).
+        // Deshalb hier auf main gehen und die morph(t)e Ansicht auslesen.
+        cockpitScreenZu('main');
         p2ScreenRender();
         const lies = (id) => { const e = $(id); return e ? e.textContent : null; };
         // Seit v0.6.56 zeigt der Schirm BEIDE Autos - also werden beide Spalten gelesen.
@@ -571,16 +582,25 @@
           runden1: lies('vgl1-runde'), runden2: lies('vgl2-runde'),
           fuss: lies('p2s-fuss'),
         };
+        // Der Standardschirm morph(t) im Zwei-Spieler-Modus zur Beide-Ansicht: das hier
+        // ist die Zusage, die der Selbsttest prüft. VOR dem Abschalten lesen.
+        const dash = $('race-dash');
+        const mainSchirm = dash ? dash.dataset.screen : null;
         // Und dass der Schirm beim Abschalten verlassen wird.
         if (typeof zweiSpielerSetzen === 'function') zweiSpielerSetzen(false);
         const nachAus = cockpitScreenIst().id;
-        return { liste: COCKPIT_SCREENS.map((x) => x.id), ohne, mit, werte, nachAus };
+        return { liste: COCKPIT_SCREENS.map((x) => x.id), ohne, mit, werte, nachAus,
+                 mainSchirm };
       } finally {
         const i = garage.indexOf(garage.find((c) => c.device
                                             && c.device.id === 'probe-schirm'));
         if (i >= 0) garage.splice(i, 1);
+        const i1 = garage.indexOf(garage.find((c) => c.device
+                                             && c.device.id === 'probe-schirm1'));
+        if (i1 >= 0) garage.splice(i1, 1);
         garage.splice(0, garage.length);
         merkGarage.forEach((c) => garage.push(c));
+        playerCar = vorher.p1;
         playerCar2 = vorher.p2;
         tankZweiFuellen(vorher.tank);
         if (typeof vorher.fuel === 'number') fuel = vorher.fuel;

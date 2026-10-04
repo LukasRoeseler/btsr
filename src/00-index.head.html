@@ -226,9 +226,19 @@
   /* Kachelbild fuer die experimentellen Modi: das Gemini-Bild als Hintergrund, dunkel
      ueberlagert, damit der Text lesbar bleibt. */
   .mode-tile.kachelbild { min-height: 96px; color: #fff; border-color: rgba(255,255,255,.25);
+    background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)); }
+  .mode-tile.kachelbild.knockout {
     background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/knockout.jpg) center / cover; }
   .mode-tile.kachelbild.derby {
     background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/derby.jpg) center / cover; }
+  .mode-tile.kachelbild.practice {
+    background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/rennoptionen-practice.jpg) center / cover; }
+  .mode-tile.kachelbild.endurance {
+    background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/rennoptionen-endurance.jpg) center / cover; }
+  .mode-tile.kachelbild.qualifying {
+    background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/rennoptionen-qualifying.jpg) center / cover; }
+  .mode-tile.kachelbild.laps {
+    background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/rennoptionen-laps.jpg) center / cover; }
   .mode-tile.kachelbild:hover, .mode-tile.kachelbild.sel { color: #fff; background-color: transparent; }
   .mode-tile.kachelbild.sel { border-color: var(--bad); box-shadow: inset 3px 0 0 var(--bad); }
   .wx-pick { display: flex; gap: 6px; }
@@ -2403,6 +2413,10 @@
     background: var(--k-grau); color: #fff; border: 2px solid transparent; border-radius: 0; padding: 11px 16px; }
   .k-pause-dialog button.menu-nav-sel, .k-pause-dialog button:hover { outline: 0; border-color: #fff; background: var(--k-blau); color: var(--k-blau-text); }
   .k-frage-knoepfe { display: flex; flex-direction: column; gap: 6px; }
+  /* Vorschau im Frage-Dialog (Community-Strecke): das Streckenbild, eingerahmt. */
+  .k-pause-dialog .k-frage-bild { display: block; background: #05070a; border: 1px solid rgba(255,255,255,.14);
+    border-radius: 4px; padding: 6px; margin: 0 0 4px; }
+  .k-pause-dialog .k-frage-bild svg { display: block; width: 100%; height: auto; }
   /* Der Grund bleibt auch auf dem niedrigen Telefon sichtbar (dort blendet .k-pause-dialog p
      die Erklaerzeilen des Cockpit-Menues aus). */
   .k-pause-dialog .k-frage-text { display: block; white-space: pre-line; font-size: clamp(11px, 2.6vh, 13.5px); margin: 0 0 4px; line-height: 1.4; }
@@ -4109,7 +4123,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.96</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.121</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -8072,27 +8086,27 @@
            versteckte Auswahlfeld, die Kacheln ziehen nach. -->
       <div class="opt-row opt-breit" id="race-mode-zeile"><div class="opt-label">Renntyp</div>
       <div class="mode-grid" id="race-mode-tiles">
-        <button type="button" class="mode-tile" data-mode="practice">
+        <button type="button" class="mode-tile kachelbild practice" data-mode="practice">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" aria-hidden="true">
             <circle cx="12" cy="13" r="8"/><path d="M12 13V8.5M12 2h0M9 3h6"/>
           </svg><b>Freies Training</b></button>
-        <button type="button" class="mode-tile" data-mode="endurance">
+        <button type="button" class="mode-tile kachelbild endurance" data-mode="endurance">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" aria-hidden="true">
             <circle cx="12" cy="12" r="9"/><path d="M12 12V6M12 12l4.5 3"/>
           </svg><b>Endurance</b></button>
-        <button type="button" class="mode-tile" data-mode="qualifying">
+        <button type="button" class="mode-tile kachelbild qualifying" data-mode="qualifying">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M5 20V4l14 4-14 4"/><path d="M5 12v8"/>
           </svg><b>Qualifying</b></button>
-        <button type="button" class="mode-tile" data-mode="laps">
+        <button type="button" class="mode-tile kachelbild laps" data-mode="laps">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" aria-hidden="true">
             <path d="M4 8a8 5 0 1 0 16 0 8 5 0 1 0-16 0"/><path d="M12 3v3M12 13v-3"/>
           </svg><b>Runden</b></button>
-        <button type="button" class="mode-tile kachelbild" data-mode="knockout">
+        <button type="button" class="mode-tile kachelbild knockout" data-mode="knockout">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M7 7h10M7 17h10M12 7v10"/><circle cx="12" cy="12" r="3"/>
@@ -10998,6 +11012,7 @@
   <div class="k-pause" id="k-frage" hidden>
     <div class="k-pause-dialog">
       <h2 id="k-frage-titel"></h2>
+      <div class="k-frage-bild" id="k-frage-bild" hidden></div>
       <p class="muted k-frage-text" id="k-frage-text"></p>
       <div class="k-frage-knoepfe" id="k-frage-knoepfe"></div>
     </div>

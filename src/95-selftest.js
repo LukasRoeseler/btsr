@@ -12539,11 +12539,11 @@
     const r = OMEGA_TEST.schirmZweiProbe();
     const w = r.werte;
     const maengel = [];
-    if (r.liste.indexOf('auto2') < 0) maengel.push('Schirm nicht in der Registry');
-    if (r.ohne.indexOf('auto2') >= 0) {
-      maengel.push('ohne Modus erreichbar: ' + r.ohne.join('>'));
-    }
-    if (r.mit.indexOf('auto2') < 0) maengel.push('mit Modus nicht erreichbar: ' + r.mit.join('>'));
+    // Die Beide-Ansicht ist seit dem Cockpit-Umbau der morph(t)e Standardschirm (main)
+    // selbst und kein eigener Schirm mehr: kein auto2 in der Registry, und main zeigt
+    // im Zwei-Spieler-Modus die Beide-Ansicht.
+    if (r.liste.indexOf('auto2') >= 0) maengel.push('auto2-Schirm existiert noch: ' + r.liste.join('>'));
+    if (r.mainSchirm !== 'auto2') maengel.push('main zeigt im Zwei-Spieler-Modus nicht die Beide-Ansicht: ' + r.mainSchirm);
     if (r.nachAus !== 'main') maengel.push('nach dem Abschalten noch auf ' + r.nachAus);
     // ---- Die beiden Spalten zeigen VERSCHIEDENE Autos --------------------------
     // 80 % von 110 l sind 88, 40 % sind 44.
