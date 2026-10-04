@@ -45724,6 +45724,9 @@
       // 20 Prozent in der Kurve und 40 in der Haarnadel oder Engstelle.
       const abzugKachel = tight > 0 ? Math.min(0.85, curveSlowIch * tight) : 0;
       target *= 1 - Math.max(abzugProfil, abzugKachel);
+      // BESTELLT: "wenn sie nah beieinander fahren ... 5% langsamer fahren in den kurven."
+      // Nur in der Kurve (Abzug aktiv) und nur bei nahem Nachbarn.
+      if ((tight > 0 || bd !== null) && ghostNah(car)) target *= 1 - 0.05;
       // GESTAFFELT UEBER DAS GANZE FELD, nicht nur der Erste. Begruendung und Formel
       // stehen bei ghostFeldStaffel(); ein Rennen ist ausdruecklich nicht Bedingung, auch im
       // freien Fahren gibt es einen Ersten und einen Letzten.
@@ -46483,6 +46486,16 @@
     if (d !== null) return Math.abs(d) <= GHOST_NAH_SEK;
     return a.ghost.laps === b.ghost.laps
       && Math.abs((a.ghost.tilesTotal || 0) - (b.ghost.tilesTotal || 0)) <= 1;
+  }
+
+  // Ist dieses Auto nah an irgendeinem anderen Ghost? BESTELLT: "wenn sie nah beieinander
+  // fahren ... 5% langsamer fahren in den kurven."
+  function ghostNah(car) {
+    const feld = ghostFieldRacing();
+    for (const o of feld) {
+      if (o !== car && o.ghost && ghostNahe(car, o)) return true;
+    }
+    return false;
   }
 
   // ---- Die Feldstaffel: gebremst wird nach PLATZ, nicht nur der Erste ---------------
