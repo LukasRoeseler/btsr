@@ -3307,7 +3307,35 @@
     if (was === 'linie') refreshTrackPreview();
   }
 
+  // DIE STRECKE IM EDITOR UEBERLEBT EINEN NEUSTART (v0.9.6). Vorher stand nach dem Neuladen
+  // wieder nur das Startteil da. Gebuendelt geschrieben, weil die Vorschau beim Fahren oft
+  // neu gezeichnet wird.
+  // var und nicht const/let: refreshTrackPreview() laeuft schon beim Laden (siehe editorZoom).
+  var EDITOR_STRECKE_STORE = 'omegasim-editor-strecke';
+  var editorStreckeFaellig = null;
+  function editorStreckeMerken() {
+    if (editorStreckeFaellig !== null) return;
+    editorStreckeFaellig = setTimeout(() => {
+      editorStreckeFaellig = null;
+      try {
+        localStorage.setItem(EDITOR_STRECKE_STORE, JSON.stringify({ tiles: currentTrackTiles.map((x) => x.type),
+          rotation: trackRotationDeg, zoom: editorZoom }));
+      } catch (e) { /* voll oder privat */ }
+    }, 800);
+  }
+  function editorStreckeLaden() {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(EDITOR_STRECKE_STORE) || 'null'); } catch (e) { return false; }
+    if (!d || !Array.isArray(d.tiles) || d.tiles.length < 2) return false;
+    const ok = Object.values(TILE_TYPE);
+    if (!d.tiles.every((x) => ok.includes(x))) return false;
+    currentTrackTiles = d.tiles.map((type) => ({ type }));
+    if (Number.isFinite(d.rotation)) trackRotationDeg = d.rotation;
+    if (Number.isFinite(d.zoom)) editorZoom = Math.max(0.5, Math.min(3, d.zoom));
+    return true;
+  }
   function refreshTrackPreview() {
+    editorStreckeMerken();
     // Die Kachelzahl entscheidet, ob der Windschatten ueberhaupt rechnen kann. Hier gerufen
     // und nicht in 50-drive.js beim Laden: dort ist currentTrackTiles noch in der temporalen
     // Todeszone, siehe den Kommentar bei dirtyAirVerfuegbar().
@@ -5194,3 +5222,6 @@
   // Battery is a rough two-point estimate (0x9b/155≈100%, 0x90/144≈75%, observed in an
   // earlier session) — not a calibrated formula, just enough for a rough gauge.
   let dashBattery = null;
+
+  // Editor-Strecke aus der letzten Sitzung (v0.9.6).
+  if (editorStreckeLaden()) { refreshTrackPreview(); if (typeof trackZoomAnwenden === 'function') trackZoomAnwenden(); }

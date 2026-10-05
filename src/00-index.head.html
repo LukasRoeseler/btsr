@@ -4211,7 +4211,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.5</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.6</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5282,6 +5282,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Alles bleibt gespeichert: Rolle und Ghost-Tempo je Auto, die Strecke im Editor (mit Drehung und Zoom) und die Tastenbelegung je Controller. In der App zus&#228;tzlich eine Sicherungsdatei in Dokumente/OmegaSim, die auch eine Neuinstallation &#252;bersteht; nach einer Neuinstallation bietet die App an, sie einzulesen (neue APK n&#246;tig). Garage: Spieler 1/2 lassen sich nur noch w&#228;hlen, wenn kein anderes Auto sie hat. Presets enthalten Sprache, Entwickler- und Zwei-Spieler-Modus nicht mehr.</li>
         <li>Ghosts (experimentell): Regler &#8222;Tempo-Streuung&#8220; (Vorgabe 0 %), Start je Startreihe versetzt (an, 200 ms je Reihe), und zu zweit in Kurven f&#228;hrt das vordere Auto innen, das hintere in der Mitte (an).</li>
         <li>Streckenscan langsamer (auch in der Haarnadel), das Auto h&#228;lt am Ende an; der Live-Scan erkennt das Rundenende selbst. Reiter wechseln per Wischen nach links/rechts. Kein Neuladen mehr durch Herunterziehen. Challenges zeigen &#8222;X Ergebnisse&#8220;. Cockpit: Rundenzeiten doppelt so gro&#223;, Sound- und Start-Knopf rechts entfernt.</li>
         <li>Obere Reiterleiste deutlich h&#246;her (PC 40 px, Handy 46 px), gut zum Tippen. Meine Strecken: Ton beim Laden, rundes L&#246;schen-Kreuz mit R&#252;ckfrage. Ghosts halten wieder den gemessenen Abstand (1,2 Kacheln, mehr &#252;ber &#8222;Feld-Abstand&#8220;). Knockout und Derby als experimentell gekennzeichnet, Texte &#252;bersetzt.</li>
@@ -10369,10 +10370,10 @@
       <h2>System</h2>
       <div class="opt-row"><div class="opt-label">Sprache
           <small>Dieselbe Wahl wie auf dem Titelbildschirm.</small></div>
-        <select id="setting-sprache"><option value="de">Deutsch</option><option value="en">English</option></select></div>
+        <select id="setting-sprache" data-preset-skip><option value="de">Deutsch</option><option value="en">English</option></select></div>
       <div class="opt-row"><div class="opt-label">Entwicklertools zeigen
           <small>Blendet im Hauptmen&uuml; die Kachel Entwickler ein: Doku, Programmierschule, BLE-Werkbank, Selbsttest, Code-Sonde, Zahlensysteme, Aufnahme-Modus. Auch mit ?dev in der Adresse.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-dev"><span></span></label></div>
+        <label class="tgl"><input type="checkbox" id="setting-dev" data-preset-skip><span></span></label></div>
       <!-- v0.8.41: Messanzeige fuer den Lag in der App (BESTELLT: "Verzoegerung auf meinem
            schwaecheren Handy optimieren", erst Stufe 1, dann messen). -->
       <div class="opt-row"><div class="opt-label">Funk-Rundlauf
@@ -10428,6 +10429,7 @@
       </div>
       <div class="muted" id="sich-status" style="margin-top:8px; font-size:12px"
            data-i18n-skip>&nbsp;</div>
+      <div class="muted" id="sich-auto" style="margin-top:6px; font-size:12px" data-i18n-skip>&nbsp;</div>
       <p class="muted" style="font-size:11.5px; border-left:3px solid var(--info);
          padding-left:9px; margin-top:12px">
         Der Browser darf diesen Speicher jederzeit leeren &ndash; diese Datei ist die
@@ -10450,7 +10452,7 @@
           vorbehalten. Beide Autos werden aus demselben 45-ms-Sendetakt bedient &ndash;
           getrennte Takte waren die Ursache des Stotterns mit echtem Controller, und dieser
           Modus wiederholt den Fehler nicht.</small></div>
-        <label class="tgl"><input type="checkbox" id="opt-zwei-an"></label></div>
+        <label class="tgl"><input type="checkbox" id="opt-zwei-an" data-preset-skip></label></div>
       <div class="opt-row"><div class="opt-label">Controller tauschen<small>Welcher der
           beiden erkannten Controller Auto&nbsp;1 f&auml;hrt. Die Reihenfolge kommt vom
           Browser und ist nicht w&auml;hlbar: hier ist der Schalter daf&uuml;r.</small></div>

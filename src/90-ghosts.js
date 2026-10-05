@@ -264,7 +264,22 @@
       return resolveBindingCollisions(migrateBindings({ ...DEFAULT_BINDINGS, ...saved }));
     } catch { return { ...DEFAULT_BINDINGS }; }
   }
-  function saveBindings() { localStorage.setItem(GAMEPAD_BINDINGS_KEY, JSON.stringify(bindings)); }
+  // BELEGUNG JE CONTROLLER (v0.9.6). GEMELDET (Familie): "Scheinbar wird die Controller-Belegung
+  // nirgends gespeichert." Gespeichert war sie - aber je SPIELER. Wer zwischen einem No-Name-Pad
+  // (eigene Knopfnummern) und einem Standard-Pad wechselt, bekam deshalb die Belegung des
+  // anderen. Jetzt zusaetzlich je Controller-Kennung (pad.id); verbindet sich ein bekanntes Pad
+  // als Spieler 1 oder 2, kommt seine Belegung mit (padBelegungAbgleichen in pollGamepad).
+  const PAD_BELEGUNG_PRAEFIX = 'carrera-hybrid-gamepad-pad:';
+  const padBelegungFuer = { 1: null, 2: null };
+  function padBelegungSpeichern(spielerNr, b) {
+    const id = padBelegungFuer[spielerNr];
+    if (!id) return;
+    try { localStorage.setItem(PAD_BELEGUNG_PRAEFIX + id, JSON.stringify(b)); } catch (e) { /* voll */ }
+  }
+  function saveBindings() {
+    localStorage.setItem(GAMEPAD_BINDINGS_KEY, JSON.stringify(bindings));
+    padBelegungSpeichern(1, bindings);
+  }
 
   let bindings = loadBindings();
   if (bindings.__kollisionen) {
@@ -295,7 +310,29 @@
       return resolveBindingCollisions({ ...DEFAULT_BINDINGS2, ...saved }, DEFAULT_BINDINGS2);
     } catch { return { ...DEFAULT_BINDINGS2 }; }
   }
-  function saveBindings2() { localStorage.setItem(GAMEPAD_BINDINGS_KEY2, JSON.stringify(bindings2)); }
+  function saveBindings2() {
+    localStorage.setItem(GAMEPAD_BINDINGS_KEY2, JSON.stringify(bindings2));
+    padBelegungSpeichern(2, bindings2);
+  }
+  // Wechselt das Pad eines Spielers, seine gemerkte Belegung laden (falls es eine gibt).
+  function padBelegungAbgleichen(spieler) {
+    for (const nr of [1, 2]) {
+      const pad = nr === 1 ? spieler.p1 : spieler.p2;
+      const id = pad && pad.id ? String(pad.id).slice(0, 120) : null;
+      if (id === padBelegungFuer[nr]) continue;
+      padBelegungFuer[nr] = id;
+      if (!id) continue;
+      let roh = null;
+      try { roh = localStorage.getItem(PAD_BELEGUNG_PRAEFIX + id); } catch (e) { /* privat */ }
+      if (!roh) continue;
+      try {
+        const saved = JSON.parse(roh);
+        if (nr === 1) { bindings = resolveBindingCollisions(migrateBindings({ ...DEFAULT_BINDINGS, ...saved })); delete bindings.__kollisionen; }
+        else { bindings2 = resolveBindingCollisions({ ...DEFAULT_BINDINGS2, ...saved }, DEFAULT_BINDINGS2); delete bindings2.__kollisionen; }
+        log('Controller: gemerkte Belegung fuer "' + id + '" geladen (Spieler ' + nr + ').', 'info');
+      } catch (e) { /* unlesbar: bleibt die bisherige */ }
+    }
+  }
   let bindings2 = loadBindings2();
   if (bindings2.__kollisionen) {
     for (const zeile of bindings2.__kollisionen) log('Controller (Spieler 2): ' + zeile, 'notify');
@@ -908,6 +945,20 @@
   // nur, wenn sie von Hand gewaehlt wurde (car.farbeGewaehlt). Ohne beides wird ein
   // vorhandener Eintrag geloescht statt ein leerer angelegt.
   function carProfilGeaendert(e) { return !!(e && (e.alias || e.farbe)); }
+  // ROLLE UND GHOST-TEMPO JE AUTO (v0.9.6). GEMELDET (Familie): Einstellungen muessten am
+  // naechsten Tag neu gesetzt werden. Rolle und eigenes Ghost-Tempo lagen nur im Speicher der
+  // Sitzung. Eigene Ablage, damit carProfilGeaendert (Name/Farbe) unberuehrt bleibt.
+  const CAR_ROLLEN_STORE = 'chc.rollen.v1';
+  function carRollenLesen() {
+    try { return JSON.parse(localStorage.getItem(CAR_ROLLEN_STORE) || '{}') || {}; } catch (e) { return {}; }
+  }
+  function carRolleMerken(car) {
+    if (!car || !car.device || car.sim) return;
+    const alle = carRollenLesen();
+    alle[String(car.device.id)] = { role: car.role,
+      ghostSpeed: car.ghostSpeed === undefined ? null : car.ghostSpeed };
+    try { localStorage.setItem(CAR_ROLLEN_STORE, JSON.stringify(alle)); } catch (e) { /* voll */ }
+  }
   function carStoreSchreiben(all) {
     try { localStorage.setItem(CAR_STORE, JSON.stringify(all)); } catch (e) { /* privat */ }
   }
@@ -1329,8 +1380,9 @@
     }
     car.role = role;
     if (role !== 'ghost') stopGhost(car);
+    carRolleMerken(car);
     renderGarage();
-    const name = role === 'player' ? 'Steuern' : role === 'player2' ? 'Spieler 2'
+    const name = role === 'player' ? 'Spieler 1' : role === 'player2' ? 'Spieler 2'
                : role === 'ghost' ? 'Ghost' : 'keine';
     log(`${garageLabel(car)}: Rolle ${name}`, 'info');
   }
@@ -1351,11 +1403,16 @@
   // dieselbe Hochziehung, auf der auch renderGarage() selbst beruht.
   // ---- Karten der Garage: Rollen, aufgeklappte Zeile, Fotos -------------------------
   const GAR_ROLLEN = [
-    { id: 'player', name: 'Steuern', kurz: 'FAHRER' },
+    { id: 'player', name: 'Spieler 1', kurz: 'SPIELER 1' },
     { id: 'player2', name: 'Spieler 2', kurz: 'SPIELER 2' },
     { id: 'ghost', name: 'Ghost', kurz: 'GHOST' },
     { id: 'none', name: 'Aus', kurz: 'AUS' },
   ];
+  // Die Rollen, die dieses Auto bekommen darf: Spieler-Rollen nur, wenn kein ANDERES Auto sie hat.
+  function garRollenFrei(car) {
+    return GAR_ROLLEN.filter((r) => (r.id !== 'player' && r.id !== 'player2')
+      || !garage.some((c) => c !== car && c.role === r.id));
+  }
   let garAufAuto = null;
   let garFotoFuer = null;
   function garageFarbeSetzen(car, id) {
@@ -1390,6 +1447,7 @@
       const v = eigen ? car.ghostSpeed : ghostCfg.speed;
       const tempo = (d) => {
         car.ghostSpeed = Math.round(Math.max(GHOST_READ_MIN, Math.min(1, v + 0.05 * d)) * 100) / 100;
+        carRolleMerken(car);
         renderGarage();
       };
       const rst = document.createElement('button');
@@ -1401,6 +1459,7 @@
       rst.onclick = (e) => {
         e.stopPropagation();
         car.ghostSpeed = null;
+        carRolleMerken(car);
         showHudToast(garageLabel(car).toUpperCase() + ' FOLGT DER VORGABE');
         renderGarage();
       };
@@ -1591,8 +1650,14 @@
       row.querySelectorAll('button[data-act="rolle"]').forEach((b) => {
         b.onclick = (e) => {
           e.stopPropagation();
-          const k = GAR_ROLLEN.findIndex((r) => r.id === car.role);
-          const n = GAR_ROLLEN[((k < 0 ? 3 : k) + +b.dataset.d + GAR_ROLLEN.length) % GAR_ROLLEN.length];
+          // Nur FREIE Rollen (v0.9.6). BESTELLT: "wenn ich Auto 2 umschalte, soll es nicht den
+          // Status 'Steuern' von Auto 1 klauen, sondern der Status 'Spieler 1' ist erst dann
+          // verfuegbar, wenn kein anderes Auto das hat; das andere Auto hat dann nur die
+          // uebrigen Optionen zur Auswahl." Vorher lief der Pfeil durch alle vier Rollen, und
+          // setCarRole nahm dem anderen Auto seine Rolle weg.
+          const frei = garRollenFrei(car);
+          const k = frei.findIndex((r) => r.id === car.role);
+          const n = frei[((k < 0 ? frei.length - 1 : k) + +b.dataset.d + frei.length) % frei.length];
           setCarRole(car, n.id);
         };
       });
@@ -1833,7 +1898,12 @@
       // Ghost, unabhaengig vom Zwei-Spieler-Modus. Spieler 2 bleibt eine bewusste manuelle
       // Zuweisung ueber den Rollen-Knopf in der Garage (setCarRole schaltet dabei weiterhin
       // von selbst den Zwei-Spieler-Modus an, siehe dort).
-      if (!playerCar) setCarRole(car, 'player');
+      // Gemerkte Rolle zuerst (v0.9.6) - wenn sie frei ist; sonst wie bisher.
+      const gemerkt = carRollenLesen()[String(car.device.id)];
+      if (gemerkt && typeof gemerkt.ghostSpeed === 'number') car.ghostSpeed = gemerkt.ghostSpeed;
+      const frei = gemerkt && garRollenFrei(car).some((r) => r.id === gemerkt.role);
+      if (frei && gemerkt.role !== 'none') setCarRole(car, gemerkt.role);
+      else if (!playerCar) setCarRole(car, 'player');
       else setCarRole(car, 'ghost');
       log(`${garageLabel(car)} verbunden (${garage.length} insgesamt).`, 'info');
       playFx(fxBuffers.start[$('sound-profile').value] || fxBuffers.start.p992gt3r, 0.85);
@@ -8841,6 +8911,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
 
   function pollGamepad() {
     const spieler = padsFuerSpieler();
+    padBelegungAbgleichen(spieler);
     // Spieler 2 zuerst, und ohne Bedingung auf `pad`: sein Eingang muss auch dann auf null
     // gehen, wenn Spieler 1 gar kein Pad hat (der Rumpf darunter kehrt dann frueh zurueck).
     if (zweiSpieler) pollPad2(spieler.p2); else { p2Steer = 0; p2Throttle = 0; }

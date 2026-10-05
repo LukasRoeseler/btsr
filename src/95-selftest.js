@@ -10247,6 +10247,14 @@
       if (!$('gar-list').querySelector('.gar-karte-neu')) f.push('keine Karte "+ AUTO"');
       karte().querySelector('[data-act="rolle"][data-d="1"]').click();
       if (att.role !== 'none') f.push('Rolle vor fuehrt zu ' + att.role + ' statt Aus');
+      // Freie Rollen: hat ein anderes Auto "Spieler 1", bietet der Pfeil sie nicht an.
+      const anderer = { role: 'player', device: { id: 'probe-andere' }, alias: '', colorId: 'blau', sim: false, testSenke: [] };
+      garage.push(anderer);
+      try {
+        const frei = garRollenFrei(att).map((r) => r.id);
+        if (frei.indexOf('player') >= 0) f.push('Spieler 1 angeboten, obwohl vergeben');
+        if (frei.indexOf('ghost') < 0 || frei.indexOf('none') < 0) f.push('Ghost/Aus fehlen in den freien Rollen');
+      } finally { garage.splice(garage.indexOf(anderer), 1); }
       setCarRole(att, 'ghost');
       renderGarage();
       const c = document.createElement('canvas'); c.width = 2; c.height = 2;
@@ -10563,6 +10571,32 @@
       if (merkTab) showTab(merkTab);
     }
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Renntyp, Zurueck und Start per Pad, Tauschen ohne zweites Pad harmlos' };
+  });
+
+  stAdd('Speichern: Rolle je Auto, Editor-Strecke, Belegung je Controller', () => {
+    const f = [];
+    const merkR = localStorage.getItem(CAR_ROLLEN_STORE), merkE = localStorage.getItem(EDITOR_STRECKE_STORE);
+    const merkTiles = currentTrackTiles, merkRot = trackRotationDeg, merkB = bindings, merkFuer = padBelegungFuer[1];
+    try {
+      const auto = { role: 'ghost', ghostSpeed: 0.6, device: { id: 'probe-rolle' } };
+      carRolleMerken(auto);
+      const r = carRollenLesen()['probe-rolle'];
+      if (!r || r.role !== 'ghost' || r.ghostSpeed !== 0.6) f.push('Rolle/Tempo nicht gemerkt');
+      currentTrackTiles = [{ type: TILE_TYPE.START }, { type: TILE_TYPE.STRAIGHT }, { type: TILE_TYPE.CURVE_RIGHT }];
+      localStorage.setItem(EDITOR_STRECKE_STORE, JSON.stringify({ tiles: currentTrackTiles.map((x) => x.type), rotation: 90 }));
+      currentTrackTiles = [{ type: TILE_TYPE.START }];
+      if (!editorStreckeLaden() || currentTrackTiles.length !== 3 || trackRotationDeg !== 90) f.push('Editor-Strecke nicht wieder geladen');
+      localStorage.setItem(PAD_BELEGUNG_PRAEFIX + 'probe-pad', JSON.stringify({ ...DEFAULT_BINDINGS, steering: { type: 'axis', index: 0, invert: true, label: 'probe' } }));
+      padBelegungFuer[1] = null;
+      padBelegungAbgleichen({ p1: { id: 'probe-pad' }, p2: null });
+      if (!bindings.steering || bindings.steering.invert !== true) f.push('Belegung je Controller nicht geladen');
+    } finally {
+      const zurueck = (k, v) => { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); };
+      zurueck(CAR_ROLLEN_STORE, merkR); zurueck(EDITOR_STRECKE_STORE, merkE);
+      localStorage.removeItem(PAD_BELEGUNG_PRAEFIX + 'probe-pad');
+      currentTrackTiles = merkTiles; trackRotationDeg = merkRot; bindings = merkB; padBelegungFuer[1] = merkFuer;
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Rolle+Tempo, Strecke+Drehung, Pad-Belegung' };
   });
 
   stAdd('Ghosts: Tempo-Streuung (0 = gleich), Startversatz je Reihe, Paar in der Kurve', () => {
