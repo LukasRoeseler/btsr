@@ -2377,6 +2377,13 @@
     cockpitGemaltAt = jetzt;
     cockpitMalFaellig = false;
     updateRaceScreen(physEngine.state);
+    // v0.9.28: im Zwei-Spieler-Modus auch der Beide-Schirm HIER, direkt nach dem Senden -
+    // der eigene 120-ms-Takt unten malte ihn zu beliebiger Zeit, auch kurz vor dem Paket.
+    if (beideSchirmOffen()) p2ScreenRender();
+  }
+  function beideSchirmOffen() {
+    const el = $('race-dash');
+    return !!(el && el.dataset.screen === 'auto2' && typeof zweiSpielerAktiv === 'function' && zweiSpielerAktiv());
   }
   function updateDashboard(out) {
     const st = physEngine.state;

@@ -16929,6 +16929,37 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Derby raeumt auf, Schalter sperrt Gelb' };
   });
 
+  stAdd('Derby: Wand-Crash ohne Gegner beendet nichts, letzter Fahrer gewinnt', () => {
+    const f = [];
+    const merk = { lauf: derbyLaeuft, h: derbyHealth, k: derbyKills, zwei: zweiSpieler, lim: raceLimit,
+                   h2: derbyHealth2, k2: derbyKills2 };
+    const geister = garage.filter((c) => c.role === 'ghost');
+    const rollen = geister.map((c) => c.role);
+    try {
+      geister.forEach((c) => { c.role = 'none'; });
+      derbyLaeuft = true; zweiSpieler = false; raceLimit = 0;
+      derbyHealth = 80; derbyKills = 0;
+      if (derbyUrteil() !== null) f.push('allein: Ende nach Crash (' + derbyUrteil() + ')');
+      derbyHealth = 0;
+      if (derbyUrteil() !== null) f.push('allein bei 0 %: trotzdem Ende');
+      zweiSpieler = true; derbyHealth = 60; derbyHealth2 = 40; derbyKills2 = 0;
+      if (derbyUrteil() !== null) f.push('zu zweit, beide fahren: Ende');
+      derbyHealth2 = 0;
+      if (derbyUrteil() !== 'p1') f.push('zu zweit, P2 raus: nicht p1 (' + derbyUrteil() + ')');
+      const g = { device: { id: 'probe-derby-g' }, role: 'ghost', ghost: undefined };
+      garage.push(g);
+      try {
+        zweiSpieler = false; derbyHealth = 70;
+        if (derbyUrteil() !== null) f.push('mit Ghost ohne Zustand: Ende ohne Grund');
+      } finally { garage.splice(garage.indexOf(g), 1); }
+    } finally {
+      geister.forEach((c, i) => { c.role = rollen[i]; });
+      derbyLaeuft = merk.lauf; derbyHealth = merk.h; derbyKills = merk.k; zweiSpieler = merk.zwei;
+      raceLimit = merk.lim; derbyHealth2 = merk.h2; derbyKills2 = merk.k2;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'allein nie Ende, zu zweit gewinnt der Letzte, Ghost zaehlt ab Start' };
+  });
+
   stAdd('Woerterbuch ohne doppelte Schluessel', () => {
     const imObjekt = Object.keys(I18N_EN).length;
     // Die Quelle steht im eigenen <script>. Sie zu lesen ist billiger und ehrlicher als die

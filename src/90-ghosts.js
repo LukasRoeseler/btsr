@@ -1302,7 +1302,11 @@
     // Das FAHRERAUTO geht durch dasselbe Schloss wie der Sendetakt (20-protocol.js): Blinken,
     // Stopp und Latenzprobe schrieben sonst neben dem Takt her ans selbe Merkmal - genau die
     // Ueberlappung, bei der das Plugin der App eine Antwort verliert (v0.8.41).
-    if (car === playerCar) {
+    // v0.9.28: auch Spieler 2 und 3 ueber funkSchreiben - dort ERSETZT ein neuer Befehl den
+    // wartenden, statt verworfen zu werden (der Ghost-Weg unten verwirft, solange einer
+    // unterwegs ist). Auf dem Rueckfallweg ohne OmegaBle hiess das bisher: jedes zweite
+    // Lenkpaket von Auto 2 fiel weg, und die Eingabe kam einen Takt spaeter an.
+    if (car === playerCar || (typeof spielerNrVon === 'function' && spielerNrVon(car) >= 2)) {
       const pkt = buildCommandPacket(steer, throttle, lightBits, modeBytes,
                                      typeof lichtSchadenVon === 'function' ? lichtSchadenVon(car) : undefined);
       recWrite(pkt, garageLabel(car));

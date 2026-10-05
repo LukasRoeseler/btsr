@@ -299,31 +299,40 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     if (u) derbyEnde(u);
   }
   // Die Entscheidung allein, ohne Folgen (v0.9.16, fuer den Selbsttest): null = weiter.
+  // Alle, die im Derby mitfahren: Spieler 1, die Mitspieler und JEDES Ghost-Auto der Garage
+  // (auch eines, dessen Ghost-Zustand noch nicht gebaut ist - dann mit voller Health).
+  function derbyTeilnehmer() {
+    const tn = [{ id: 'p1', health: derbyHealth, kills: derbyKills, lebt: derbyHealth > 0 }];
+    for (const z of wertungsMitspieler()) {
+      tn.push({ id: 'p' + z.nr, health: z.derbyHealth, kills: z.derbyKills, lebt: z.derbyHealth > 0 });
+    }
+    for (const c of garage) {
+      if (!c || c.role !== 'ghost') continue;
+      const g = c.ghost || {};
+      tn.push({ id: 'geist', health: g.derbyHealth === undefined ? DERBY_MAX : g.derbyHealth,
+                kills: g.derbyKills || 0, lebt: !g.derbyAus });
+    }
+    return tn;
+  }
+  // GEMELDET (v0.9.28): "Wenn ein Auto gegen die Wand faehrt, kommt sofort der Spiel-zu-Ende-
+  // Sound." Ohne Ghosts in der Garage galt "alle Geister raus" schon beim ersten Crash als
+  // erfuellt, und das erste derbyPruefen() beendete das Derby. Jetzt: Ende nur, wenn jemand
+  // das Kill-Ziel hat oder hoechstens noch EIN Teilnehmer faehrt - und allein (ohne Gegner)
+  // endet ein Derby nie von selbst, nur von Hand.
   function derbyUrteil() {
-    const geister = derbyGeisterZaehlen();
-    const geistKills = Math.max(0, ...garage.filter(c => c.role === 'ghost' && c.ghost)
-      .map(c => c.ghost.derbyKills || 0));
-    // Rennen endet, wenn nur noch einer faehrt (alle anderen raus) ODER ein Geist alle Kills
-    // hat. Einfachheit: Ende, wenn ein menschlicher Fahrer 0 Health hat und alle Geister raus
-    // sind, oder wenn alle Gegner raus sind.
-    const alleGeister = geister <= 0;
-    const mit = wertungsMitspieler();
-    const alleMenschen = derbyHealth <= 0 && mit.every((z) => z.derbyHealth <= 0);
-    // KILLS-ZIEL (v0.8.126, Voreinstellung 1): wer das Ziel erreicht, beendet das Derby sofort.
+    const tn = derbyTeilnehmer();
     const ziel = raceLimit;
     if (ziel > 0) {
-      if (derbyKills >= ziel) return 'p1';
-      for (const z of mit) if (z.derbyKills >= ziel) return 'p' + z.nr;
+      const mensch = tn.find((x) => x.id !== 'geist' && x.kills >= ziel);
+      if (mensch) return mensch.id;
+      if (tn.some((x) => x.id === 'geist' && x.kills >= ziel)) return 'geist';
     }
-    if (alleGeister) {
-      // Sieger nach Kills (dann Health als Tiebreaker).
-      const k = [['p1', derbyKills, derbyHealth]];
-      for (const z of mit) k.push(['p' + z.nr, z.derbyKills, z.derbyHealth]);
-      k.sort((a, b) => b[1] - a[1] || b[2] - a[2]);
-      return k[0][0];
-    }
-    if (alleMenschen) return 'geist';
-    return null;
+    if (tn.length < 2) return null;
+    const lebend = tn.filter((x) => x.lebt);
+    if (lebend.length >= 2) return null;
+    if (lebend.length === 1) return lebend[0].id;
+    const reihe = tn.slice().sort((x, y) => y.kills - x.kills || y.health - x.health);
+    return reihe[0].id;
   }
   function derbyEnde(sieger) {
     if (!derbyLaeuft || derbySieger) return;
@@ -4336,6 +4345,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     z.box.lage = 'aus';
     z.box.fertig = false;
     z.box.letzterTick = null;
+    stopPitLoopsFuer(z.nr);
     if (warum === 'abgebrochen') {
       showHudToast('P' + z.nr + ': BOXENSTOPP ABGEBROCHEN');
       log('P' + z.nr + ': Boxenstopp abgebrochen.', 'info');
@@ -4375,6 +4385,11 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
         }
         z.mischungWunsch = null;
         resetTyres(z.motor);
+        // Toene wie bei Auto 1: Schrauber kurz, Tanken und Reparatur, solange sie laufen.
+        setPitLoopFuer(z.nr, 'wrench', true);
+        setTimeout(() => setPitLoopFuer(z.nr, 'wrench', false), PIT_TYRE_CHANGE_S * 1000);
+        if (z.tank.stand < z.tankZiel - 0.05) setPitLoopFuer(z.nr, 'fuel', true);
+        if (schadenVon(z.nr) > 0.05) setPitLoopFuer(z.nr, 'repair', true);
       }
       return;
     }
@@ -4402,6 +4417,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
         z.box.getankt += dazu;
         if (tank + dazu >= z.tankZiel - 0.05) {
           z.box.tankFertig = true;
+          setPitLoopFuer(z.nr, 'fuel', false);
           pitChimeFuel();
         }
       }
@@ -4417,6 +4433,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
         z.box.repariert += weg;
         if (schaden - weg <= 0.05) {
           z.box.reparaturFertig = true;
+          setPitLoopFuer(z.nr, 'repair', false);
           pitChimeRepair();
         }
       }
@@ -4433,6 +4450,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     }
     if (fertig && genug && !z.box.fertig) {
       z.box.fertig = true;
+      stopPitLoopsFuer(z.nr);
       rammStrafeAbsitzen(z.car);
       showHudToast('P' + z.nr + ': FERTIG, LOSFAHREN!');
       pitChimeReady();
@@ -5470,6 +5488,38 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   }
 
   function stopAllPitLoops() { Object.keys(PIT_LOOP_SPEC).forEach(k => setPitLoop(k, false)); }
+  // BESTELLT (v0.9.28): "2-Spieler-Modus: spiele auch fuer Auto 2 die Boxenstopp-Toene ab."
+  // Dieselben Schleifen wie bei Auto 1, je Spielerplatz eigene Quellen und auf SEINER
+  // Stereoseite (spielerPan) - zwei Stopps gleichzeitig sollen sich nicht abschalten.
+  const pitLoopsZ = {};
+  function setPitLoopFuer(nr, which, on) {
+    const spec = PIT_LOOP_SPEC[which];
+    if (!spec) return;
+    const l = pitLoopsZ[nr] || (pitLoopsZ[nr] = {});
+    if (on) {
+      if (l[which] || !audioCtx || !soundEnabled) return;
+      const buf = spec.buf();
+      if (!buf) return;
+      const src = audioCtx.createBufferSource();
+      src.buffer = buf; src.loop = true;
+      const g = audioCtx.createGain();
+      g.gain.value = spec.gain;
+      let ziel = audioCtx.destination;
+      if (audioCtx.createStereoPanner && typeof spielerPan === 'function') {
+        const p = audioCtx.createStereoPanner();
+        p.pan.value = spielerPan(nr);
+        p.connect(audioCtx.destination);
+        ziel = p;
+      }
+      src.connect(g).connect(ziel);
+      src.start();
+      l[which] = src;
+    } else if (l[which]) {
+      try { l[which].stop(); } catch { /* schon gestoppt */ }
+      l[which] = null;
+    }
+  }
+  function stopPitLoopsFuer(nr) { Object.keys(PIT_LOOP_SPEC).forEach((k) => setPitLoopFuer(nr, k, false)); }
 
   // Kept as a thin alias: the tyre change is the one loop other code refers to by name.
   // setPitWrench(on) stand hier und war ein Einzeiler um setPitLoop('wrench', on), den
@@ -6338,6 +6388,8 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   setInterval(() => {
     if (typeof cockpitScreenIst !== 'function') return;
     const s = cockpitScreenIst();
+    // Der Beide-Schirm malt im Sendetakt (cockpitNachSenden), solange gesendet wird.
+    if (s && s.id === 'main' && beideSchirmOffen() && performance.now() - cockpitGemaltAt < 400) return;
     if (s && s.malen) s.malen();
   }, 120);
 
