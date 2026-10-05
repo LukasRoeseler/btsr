@@ -4183,7 +4183,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.126</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.1</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5265,6 +5265,10 @@
     <div class="card subpage" id="sub-patchnotes">
       <button class="misc-back goto-tab" data-tab="options">&larr; Optionen</button>
       <h2>Patchnotes</h2>
+      <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
+      <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Zweite Kopie der App: Die Download-Links zeigen auf deren eigenes Release (mit Download-Z&#228;hler), sonst auf die APK im Repo.</li>
+      </ul>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
         <li>Challenges: Wochenstrecken. Vier Kategorien (A kurz, B lang, C Haarnadel, D 30&deg;) mit je 20 Strecken, jeden Mittwoch um 0:00 Uhr (deutsche Zeit) kommt je Kategorie die n&auml;chste, nach 20 Wochen von vorn. Bestenlisten bleiben je Strecke erhalten. Die Kacheln zeigen, wann die n&auml;chste Strecke kommt.</li>
@@ -12198,6 +12202,7 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Zweite Kopie der App: Die Download-Links zeigen auf deren eigenes Release (mit Download-Zähler), sonst auf die APK im Repo.": "Second copy of the app: download links point to its own release (with download counter), otherwise to the APK in the repo.",
     "neu morgen": "new tomorrow",
     "neu in {n} Tagen": "new in {n} days",
     "Kurzer Kurs mit {n} Teilen: Rhythmus finden, jede Kurve zählt.": "Short track with {n} pieces: find the rhythm, every corner counts.",
@@ -76289,11 +76294,27 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // ---- APK-LINK AUF DER TITELSEITE (v0.8.36) ----
   // Nur im Browser: in der App ist sie schon installiert. Nicht auf iPhone/iPad, dort laeuft
   // keine APK. Auf der luuke42-Kopie liegt die APK im eigenen Repo (apk/OmegaSim.apk).
+  //
+  // v0.8.127: die luuke42-Kopie hat ein eigenes Release (mit Download-Zaehler). Alle APK-Links
+  // dort zeigen darauf, sobald es eines gibt - die GitHub-API sagt es (CORS erlaubt); bis dahin
+  // und ohne Netz bleibt die Datei im Repo der Rueckfall.
   (function apkLinkZeigen() {
     const a = $('home-apk');
     if (!a || (window.OMEGA_APP && window.OMEGA_APP.nativ)) return;
     if (/iPhone|iPad|iPod/.test(navigator.userAgent)) return;
-    if (/(^|\.)luuke42\.github\.io$/i.test(location.hostname)) a.href = 'apk/OmegaSim.apk';
+    if (/(^|\.)luuke42\.github\.io$/i.test(location.hostname)) {
+      const info = $('app-apk-link');
+      a.href = 'apk/OmegaSim.apk';
+      if (info) info.href = 'apk/OmegaSim.apk';
+      fetch('https://api.github.com/repos/Luuke42/omegasim/releases/latest', { cache: 'no-store' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => {
+          if (!j || !(j.assets || []).some((x) => x.name === 'OmegaSim.apk')) return;
+          a.href = 'https://github.com/Luuke42/omegasim/releases/latest/download/OmegaSim.apk';
+          if (info) info.href = 'https://github.com/Luuke42/omegasim/releases/latest';
+        })
+        .catch(() => { /* Datei im Repo bleibt */ });
+    }
     a.hidden = false;
   })();
 

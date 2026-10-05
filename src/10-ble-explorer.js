@@ -759,6 +759,7 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Zweite Kopie der App: Die Download-Links zeigen auf deren eigenes Release (mit Download-Zähler), sonst auf die APK im Repo.": "Second copy of the app: download links point to its own release (with download counter), otherwise to the APK in the repo.",
     "neu morgen": "new tomorrow",
     "neu in {n} Tagen": "new in {n} days",
     "Kurzer Kurs mit {n} Teilen: Rhythmus finden, jede Kurve zählt.": "Short track with {n} pieces: find the rhythm, every corner counts.",
