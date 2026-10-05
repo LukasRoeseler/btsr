@@ -11204,27 +11204,13 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Karte, 2 Zeilen, Histogramm, Warten abgebrochen' };
   });
 
-  stAdd('ACC-Menü: Motorsound-Kachel blättert die Motoren, Quadrat', () => {
-    const s2 = $('sound-profile');
-    if (!s2 || !$('fa-motor')) return { ok: false, mass: 'Kachel oder Auswahl fehlt' };
-    const merk = kAktiverTab();
-    const merkWert = s2.value;
+  stAdd('Fahren: Motorsound nur noch in der Garage, Fahrgefuehl und Start fuellen die Reihe', () => {
     const f = [];
-    try {
-      showTab('fahren');
-      menuNavEnsureContext();
-      konsoleFokusAuf('fa-motor');
-      konsoleQuadrat();
-      if (s2.value === merkWert) f.push('Quadrat aendert den Motor nicht');
-      konsoleZeichnen();
-      const titel = $('fa-motor-titel').textContent;
-      if (!titel || s2.selectedOptions[0].textContent.indexOf(titel) !== 0) f.push('Titel "' + titel + '" passt nicht zum Motor');
-    } finally {
-      s2.value = merkWert;
-      s2.dispatchEvent(new Event('change', { bubbles: true }));
-      if (merk) showTab(merk);
-    }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Motor weitergeschaltet und zurueck' };
+    if (document.getElementById(['fa', 'motor'].join('-'))) f.push('Motorsound-Kachel noch da');
+    if (!$('fa-profil') || !$('fa-start')) f.push('Fahrgefuehl oder Start fehlt');
+    const unten = document.querySelector('.k-fahren-unten');
+    if (unten && getComputedStyle(unten).gridTemplateColumns.split(' ').length !== 2) f.push('Reihe hat nicht zwei Spalten');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Fahrgefuehl 1/3, Start 2/3' };
   });
 
   stAdd('ACC-Menü: Streckenfoto ersetzt im Ausdruck-Modus die Karte im Cockpit', () => {
@@ -11280,9 +11266,13 @@
       if (!gal) f.push('keine Galerie bei zwei Fotos');
       else if (gal.querySelectorAll('.k-auto-zelle').length !== 2) f.push('Galerie hat nicht 2 Kacheln');
       if (!$('fa-auto').classList.contains('k-auto-mehr')) f.push('Kachel traegt k-auto-mehr nicht');
+      // v0.9.31: die Galerie bleibt bei zwei Autos, auch wenn eines kein Foto hat - es steht
+      // dann als Farbflaeche mit seinem Zeichen darin (GEMELDET: "es wurde nur eins angezeigt").
       autoFotoSetzen(a2, '');
       konsoleFahrenZeichnen();
-      if ($('fa-auto-bild').querySelector('.k-auto-galerie')) f.push('Galerie bleibt bei einem Foto');
+      const gal2 = $('fa-auto-bild').querySelector('.k-auto-galerie');
+      if (!gal2 || gal2.querySelectorAll('.k-auto-zelle').length !== 2) f.push('Galerie verschwindet, wenn ein Auto kein Foto hat');
+      else if (!gal2.querySelector('.k-auto-ohne-foto')) f.push('Auto ohne Foto nicht als Farbflaeche');
     } finally {
       garage.splice(0, garage.length);
       for (const c of merk) garage.push(c);
@@ -11290,7 +11280,7 @@
       try { localStorage.setItem('omegasim-autofoto:' + a2.device.id, alt2); } catch (e) { /* egal */ }
       konsoleFahrenZeichnen();
     }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'zwei Fotos gemeinsam, eines wieder einzeln' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'zwei Autos gemeinsam, auch ohne Foto' };
   });
 
   // BESTELLT v0.8.126: ist eine Strecke eingegeben und der Modus steht auf "auf der Bahn",

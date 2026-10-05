@@ -1555,6 +1555,8 @@
     try { return (car && car.device && localStorage.getItem(AUTO_FOTO + car.device.id)) || ''; } catch (e) { return ''; }
   }
   function autoFotoSetzen(car, daten) {
+    // Fokus aus der Garage nehmen, damit renderGarage() das Foto sofort zeigt.
+    try { if (document.activeElement && $('gar-list') && $('gar-list').contains(document.activeElement)) document.activeElement.blur(); } catch (e) { /* egal */ }
     try {
       if (daten) localStorage.setItem(AUTO_FOTO + car.device.id, daten);
       else localStorage.removeItem(AUTO_FOTO + car.device.id);
@@ -1674,7 +1676,15 @@
     // wird beim Verlassen des Feldes gerendert (change-Handler).
     const aktiv = document.activeElement;
     if (aktiv && list.contains(aktiv)
-        && (aktiv.tagName === 'INPUT' || aktiv.tagName === 'TEXTAREA')) return;
+        && (aktiv.tagName === 'INPUT' || aktiv.tagName === 'TEXTAREA')) {
+      // v0.9.31: nicht still verwerfen - nach dem Verlassen des Feldes nachholen. Vorher
+      // blieb z. B. ein neues Foto unsichtbar, solange das Namensfeld den Fokus hatte.
+      if (!aktiv.dataset.garNach) {
+        aktiv.dataset.garNach = '1';
+        aktiv.addEventListener('blur', () => { delete aktiv.dataset.garNach; setTimeout(renderGarage, 0); }, { once: true });
+      }
+      return;
+    }
     // Ueber das Fenster und nicht direkt: 98-presets.js wird NACH dieser Datei gebaut, die
     // Funktion existiert zur Deklarationszeit hier also noch nicht. Zur Laufzeit ist sie
     // da. Genau dieser Unterschied hat in dieser Datei schon fuenf Ladeabbrueche gekostet.

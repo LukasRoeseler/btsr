@@ -1377,6 +1377,24 @@
   /* Rammstrafe (v0.9.21): rot auf dem Boxenknopf und im Ergebnis. */
   .gt3-act.strafe { color: #ff5252; box-shadow: inset 0 0 0 2px #ff5252; }
   .rammer-tag { color: #ff5252; font-weight: 700; letter-spacing: .04em; margin-left: .4em; }
+  /* Fahren: Fahrgefuehl-Kachel mit groesserer Schrift (v0.9.31) */
+  .k-fahren-unten #fa-profil .k-kt { font-size: clamp(14px, 2.6vh, 22px); }
+  .k-fahren-unten #fa-profil .k-kk { font-size: clamp(11px, 2vh, 15px); }
+  /* Galerie: Auto ohne Foto als Farbflaeche mit Zeichen */
+  .k-auto-zelle.k-auto-ohne-foto { position: relative; }
+  .k-auto-zelle.k-auto-ohne-foto::before { content: attr(data-zeichen); position: absolute; inset: 0;
+    display: grid; place-items: center; font-size: clamp(22px, 6vh, 46px); font-weight: 900; opacity: .85; }
+  /* Podium: groessere Namen, zwei Plaetze, Solo */
+  .ov-podest .name { font-size: clamp(13px, 2.2vw, 22px) !important; font-weight: 800; }
+  .ov-podest.zwei { grid-template-columns: repeat(2, 1fr); }
+  .ov-podest.solo { grid-template-columns: 1fr; }
+  .ov-podest .platz-solo { gap: 4px; }
+  .ov-podest .solo-zeit { font: 800 clamp(20px, 4vw, 40px)/1 monospace; color: #f5c518; }
+  .ov-podest .solo-werte { font-size: clamp(11px, 1.6vw, 15px); color: var(--gt3-strip-ink, #a9b2c4); }
+  .ov-podest .solo-vergleich { font-size: clamp(12px, 1.8vw, 17px); font-weight: 700; color: #c9d1e0; }
+  .ov-podest .solo-vergleich.neu { color: #2ee06a; }
+  .ov-podest .platz-solo .block { height: clamp(34px, 8vh, 60px); color: #f5c518; width: 60%; }
+  .ov-podest .platz-solo .block b { font-size: clamp(16px, 3vw, 30px); letter-spacing: .2em; }
   /* Statistiken (v0.9.25) */
   .stat-raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 8px; margin: 6px 0 14px; }
@@ -2426,8 +2444,9 @@
   .k-arrow:hover, .k-arrow:active, .k-arrow:focus-visible { background: transparent;
     color: var(--k-blau); outline: 0; }
 
-  .k-fahren { grid-template-columns: repeat(3, 1fr); grid-template-rows: minmax(300px, 56vh) minmax(96px, 20vh); }
-  .k-fahren-unten { grid-column: 1 / -1; grid-template-columns: 1fr 1fr 2fr; }
+  .k-fahren { grid-template-columns: repeat(3, 1fr); grid-template-rows: minmax(300px, 52vh) minmax(120px, 25vh); }
+  /* v0.9.31: Motorsound steht nur noch in der Garage; Fahrgefuehl und Start teilen sich die Reihe. */
+  .k-fahren-unten { grid-column: 1 / -1; grid-template-columns: 1fr 2fr; }
   /* BESTELLT v0.8.126: mehrere verbundene Autos mit Fotos gemeinsam zeigen (Garage auf dem
      Fahren-Schirm). Erst ab zwei Fotos; dann ist die Abdunklung aus, sonst waere das Foto zu
      dunkel. Die Kacheln stehen in der .k-kb-Flaeche (Auto-Bild). */
@@ -2530,7 +2549,7 @@
       padding: clamp(6px, 1.6vh, 22px) clamp(8px, 2vw, 28px); }
     body.k-kacheln .tabpage.active { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
     body.k-kacheln .k-fahren { flex: 1 1 0; min-height: 0; }
-    .k-fahren { grid-template-rows: minmax(0, 1fr) minmax(40px, 21%); }
+    .k-fahren { grid-template-rows: minmax(0, 1fr) minmax(48px, 27%); }
     .k-fahren-unten { min-height: 0; }
     .k-kachel { min-height: 0; overflow: hidden; }
     .k-kb { height: clamp(26px, 11vh, 120px); }
@@ -2660,7 +2679,10 @@
   #race-act-start, #race-act-sound { display: none !important; }
   .gt3-right .gt3-times .gt3-val { font-size: clamp(26px, 5.2vw, 54px); line-height: 1.05; }
   .gt3-right .gt3-times .gt3-lbl { font-size: clamp(9px, 1.4vw, 12px); }
-  .gt3-right .gt3-laps { font-size: clamp(16px, 2.4vw, 24px); max-height: none; }
+  /* v0.9.31, GEMELDET: "bei vielen Runden werden die unteren Kacheln vom Bildschirm
+     geschoben". Die Liste zeigt die neuesten Runden oben und hoechstens fuenf - mehr
+     schneidet sie ab, statt das Cockpit zu strecken. */
+  .gt3-right .gt3-laps { font-size: clamp(16px, 2.4vw, 24px); max-height: 6.4em; overflow: hidden; }
   /* ---- v0.9.22, BESTELLT: "Rundenanzeige links oben so gross wie die Zeiten rechts und
      Buttons darunter etwas kleiner; die Lichter oben rechteckig und so etwas groesser,
      damit ich sie im Augenwinkel gut erkenne." ---- */
@@ -4357,7 +4379,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.30</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.31</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4413,13 +4435,6 @@
       <div class="k-kachel k-klein" id="fa-profil" role="button" tabindex="0" data-quad="profil">
         <span class="k-kk">Fahrgefühl</span>
         <span class="k-kopf"><span class="k-kt" id="fa-profil-titel"></span><span class="k-quad-punkte" id="fa-profil-punkte" aria-hidden="true"></span></span>
-        <span class="k-ki"></span>
-      </div>
-      <!-- BESTELLT: "Statt Gegnerhärte Motorsound einstellen lassen im Fahren Menü". Quadrat
-           blaettert die Motoren durch (#sound-profile), Kreuz oeffnet Optionen, Ton. -->
-      <div class="k-kachel k-klein" id="fa-motor" role="button" tabindex="0" data-quad="motor">
-        <span class="k-kk">Motorsound</span>
-        <span class="k-kopf k-kopf-wechsel"><button type="button" class="k-arrow" data-quad="motor" data-dir="-1" aria-label="vorheriger Motorsound"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3v10L4 8z"/></svg></button><span class="k-kt" id="fa-motor-titel"></span><button type="button" class="k-arrow" data-quad="motor" data-dir="1" aria-label="naechster Motorsound"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3v10l7-5z"/></svg></button></span>
         <span class="k-ki"></span>
       </div>
         <div class="k-kachel k-start" id="fa-start" role="button" tabindex="0">
@@ -5469,6 +5484,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>FAHREN: Die Autos-Kachel zeigt ab zwei verbundenen Autos alle (ohne Foto als Farbfl&#228;che), die Motorsound-Kachel ist weg (Motor jetzt nur in der Garage), Fahrgef&#252;hl und Start sind gr&#246;&#223;er. Garage: ein neues Foto erscheint sofort links in der Auto-Kachel. Podium: gr&#246;&#223;ere Namen, bei zwei Autos nur Platz 1 und 2, allein ein Solo-Podest mit Gesamtzeit, bester Runde und Vergleich mit deiner Bestzeit auf der Strecke. Cockpit: die Rundenliste zeigt h&#246;chstens f&#252;nf Runden und schiebt nichts mehr aus dem Bild. Ohne Bahn zeigt die Renn&#252;bersicht dein Streckenfoto bzw. den Platzhalter statt des Layouts. Freies Training: kein &#8222;Automatisch aufstellen&#8220;. Knockout hei&#223;t jetzt &#8222;NPC Knockout&#8220;, braucht mindestens einen Ghost und schaltet &#8222;Auf der Bahn&#8220; ein.</li>
         <li>Derby: Ein Crash gegen die Wand beendet das Spiel nicht mehr. Es endet erst, wenn jemand das Kill-Ziel erreicht oder nur noch ein Teilnehmer f&#228;hrt; allein ohne Gegner nur von Hand. 2 Spieler: Auto 2 und 3 haben beim Boxenstopp dieselben T&#246;ne wie Auto 1 (Tanken, Reparatur, Schrauber), auf ihrer Stereoseite. Latenz: Spieler 2 und 3 senden &#252;ber denselben Weg wie Auto 1 (der neueste Befehl ersetzt den wartenden), und der Schirm &#8222;Beide&#8220; wird direkt nach dem Senden gezeichnet.</li>
         <li>Behoben: Nach einem abgebrochenen Derby blieb das Cockpit im n&#228;chsten normalen Rennen im Derby-Modus. Behoben: Gespiegelte Strecken mit beiden Haarnadeltypen (z. B. Balkonia) gingen nicht mehr zu, weil das gerade St&#252;ck der Haarnadel r&#252;ckw&#228;rts gefahren am Ausgang liegt. Jetzt schlie&#223;en alle 83 Challenge-Strecken auch gespiegelt. Neu in den Renneinstellungen: &#8222;Gelbe Flagge deaktivieren&#8220; (ab Werk aus). Die Motorwahl von Auto 2 und 3 wird jetzt gespeichert und gesichert.</li>
         <li>Latenz: Im Cockpit liest der 45-ms-Sendetakt das Gamepad jetzt direkt vor der Physik statt den Wert vom letzten Bildschirmbild zu nehmen (spart im Schnitt etwa einen halben Frame, auf schwachen Handys mehr). Die Live-Anzeigen des Pads werden nur noch bei &#196;nderung geschrieben.</li>
@@ -8420,7 +8436,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M7 7h10M7 17h10M12 7v10"/><circle cx="12" cy="12" r="3"/>
-          </svg><b>Knockout</b><span class="wip-tag">experimentell</span></button>
+          </svg><b>NPC Knockout</b><span class="wip-tag">experimentell</span></button>
         <button type="button" class="mode-tile kachelbild derby" data-mode="derby">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -8432,7 +8448,7 @@
         <option value="endurance">Endurance</option>
         <option value="qualifying">Qualifying</option>
         <option value="laps">Runden</option>
-        <option value="knockout">Knockout</option>
+        <option value="knockout">NPC Knockout</option>
         <option value="derby">Demolition Derby</option>
       </select></div>
       <p class="muted" id="race-mode-hint" style="font-size:11.5px; margin:8px 0 0 0"></p>

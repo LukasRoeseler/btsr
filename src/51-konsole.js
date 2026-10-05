@@ -659,7 +659,7 @@
   function kAutos() {
     try { return garage.filter((c) => c.device); } catch (e) { return []; }
   }
-  const K_ROLLE = { player: 'Steuern', player2: 'Spieler 2', ghost: 'Ghost', none: 'Aus' };
+  const K_ROLLE = { player: 'Steuern', player2: 'Spieler 2', player3: 'Spieler 3', ghost: 'Ghost', none: 'Aus' };
   function kPunkt(farbe, text) {
     const s = document.createElement('span');
     const p = document.createElement('i'); p.className = 'k-punkt'; p.style.background = farbe;
@@ -679,7 +679,10 @@
     $('fa-auto-titel').textContent = autos.length ? autos.length + ' ' + t('verbunden') : t('Autos verbinden');
     // BESTELLT v0.8.126: mehrere verbundene Autos mit Fotos gemeinsam zeigen (die Garage auf dem
     // Fahren-Schirm). Erst ab zwei Fotos, sonst bleibt es beim einen Bild des Fahrer-Autos.
-    const mitFotos = autos.filter((c) => typeof autoFoto === 'function' && autoFoto(c));
+    // v0.9.31, GEMELDET: "mit 2 Autos 'Steuern' und 'Spieler 2' wurde nur eins angezeigt" -
+    // die Galerie kam erst ab ZWEI FOTOS. Jetzt ab zwei verbundenen Autos; eines ohne Foto
+    // steht als Farbflaeche mit seinem Zeichen darin.
+    const mitFotos = autos.filter((c) => c.role !== 'none').slice(0, 4);
     const galerieAn = mitFotos.length >= 2;
     const faAuto = $('fa-auto');
     if (faAuto) faAuto.classList.toggle('k-auto-mehr', galerieAn);
@@ -689,7 +692,7 @@
     const ab = $('fa-auto-bild');
     let abNeu;
     if (galerieAn) {
-      abNeu = 'galerie:' + mitFotos.map((c) => (c.device ? c.device.id : '') + ':' + autoFoto(c).length).join('|');
+      abNeu = 'galerie:' + mitFotos.map((c) => (c.device ? c.device.id : '') + ':' + c.role + ':' + autoFoto(c).length).join('|');
     } else {
       abNeu = afoto ? 'foto:' + afoto.length : 'auto';
     }
@@ -702,7 +705,13 @@
         mitFotos.forEach((c) => {
           const zelle = document.createElement('div');
           zelle.className = 'k-auto-zelle';
-          zelle.style.backgroundImage = 'url("' + autoFoto(c) + '")';
+          const f = autoFoto(c);
+          if (f) zelle.style.backgroundImage = 'url("' + f + '")';
+          else {
+            zelle.style.background = 'linear-gradient(135deg,' + carColor(c).hex + ' 0%,' + carColor(c).hex + ' 55%,rgba(0,0,0,.55) 100%)';
+            zelle.dataset.zeichen = c.tagChar || '';
+            zelle.classList.add('k-auto-ohne-foto');
+          }
           zelle.title = garageLabel(c);
           const lab = document.createElement('span');
           const dot = document.createElement('i');
@@ -788,9 +797,7 @@
     if ($('fa-foto')) $('fa-foto').hidden = bahn;
     if ($('fa-foto-weg')) $('fa-foto-weg').hidden = bahn || !foto;
     $('fa-profil-titel').textContent = ($('race-act-mode-txt') || {}).textContent || '–';
-    const sp = $('sound-profile');
-    const motor = sp && sp.selectedOptions[0] ? sp.selectedOptions[0].textContent.split(':')[0].trim() : '–';
-    $('fa-motor-titel').textContent = motor;
+
     const training = rm.value === 'practice';
     $('fa-start-titel').textContent = kRennenLaeuft() ? t('Zurück ins Rennen')
       : (training ? t('Training starten') : t('Rennen starten'));
@@ -996,7 +1003,7 @@
     // BESTELLT: "wenn ich auf den Header tippe, soll es zur naechsten Option schalten".
     // Der Kachelkopf (Titel + Wert) dreht die Schaltstellung weiter, der Rest der Kachel
     // oeffnet wie bisher die Unterseite. Das Gamepad bleibt unveraendert (Quadrat/links/rechts).
-    [['fa-strecke', 'bahn'], ['fa-renn', 'renntyp'], ['fa-profil', 'profil'], ['fa-motor', 'motor']]
+    [['fa-strecke', 'bahn'], ['fa-renn', 'renntyp'], ['fa-profil', 'profil']]
       .forEach(([tileId, quad]) => {
         const tile = $(tileId);
         if (!tile) return;
@@ -1019,7 +1026,6 @@
     kn('mp-erkl-knopf', (e) => { e.stopPropagation(); optInfoOeffnen(t('Beitreten und Rangliste'), $('mp-erkl').innerHTML); });
     kn('mp-app-erkl-knopf', (e) => { e.stopPropagation(); optInfoOeffnen(t('Host'), $('mp-app-erkl').innerHTML); });
     kn('k-ergebnis', () => { kErgebnisWartet = true; konsoleInsCockpit(); });
-    kn('fa-motor', () => konsoleZeige('options', 'opt-sound'));
     kn('fa-foto', () => { const d = $('fa-foto-datei'); if (d) { d.value = ''; d.click(); } });
     kn('fa-foto-weg', () => {
       konsoleFrage(t('Streckenfoto löschen?'), '', [[t('Löschen'), () => { konsoleFotoSetzen(''); }], [t('Abbrechen'), null]]);

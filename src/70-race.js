@@ -90,7 +90,7 @@
     // rundenzahlbasiert (timed:false), sondern eliminiert: Geister fliegen bei Abkommen von
     // der Bahn, Menschen verlieren ein Leben. Ende, wenn alle Geister weg (Sieg) oder alle
     // Menschen raus (Niederlage) sind.
-    knockout:   { label: 'Knockout', unit: 'Leben', timed: false,
+    knockout:   { label: 'NPC Knockout', unit: 'Leben', timed: false,
                   hint: 'Experimentell: Geister von der Bahn rammen, 3 Leben.' },
     // BESTELLT: "weiteren experimentellen rennmodus: demolition derby." Jedes Auto hat Health
     // 0-100; ein Aufprall kostet 10 % (frontal) bzw. 20 % (von der Seite gerammt). Bei 0 %
@@ -1512,6 +1512,8 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     raceGridZeilen($('grid-liste'));
     gridBildMalen();
     if ($('grid-kopf-info')) $('grid-kopf-info').textContent = '';
+    // v0.9.31: im freien Training gibt es keine Startaufstellung - also auch keinen Knopf.
+    if ($('grid-auto')) $('grid-auto').hidden = raceMode === 'practice';
     gs.hidden = false;
   }
   function raceGridStart() {
@@ -1565,9 +1567,27 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   }
   // gruenZiel: lokale Uhrzeit (ms) fuer Gruen, sonst in 3 s. mpPlan: Wetterplan und Wind eines
   // gemeinsamen Mehrspieler-Rennens (97-sessions.js).
-  function startRaceCountdown(gruenZiel, mpPlan) {
     // launchGhosts() is called from the green-light step below, not here.
+  // BESTELLT (v0.9.31): "Bei Knockout Bahnmodus 'auf der Bahn' erzwingen, da es sonst gar
+  // nicht funktioniert, und mindestens 1 Ghost erfordern. Menschen fahren gegen KI."
+  // Gibt true zurueck, wenn gestartet werden darf.
+  function knockoutBereit(melden) {
+    if (raceMode !== 'knockout') return true;
+    if (!garage.some((c) => c && c.role === 'ghost')) {
+      if (melden) showHudToast(t('NPC Knockout braucht mindestens einen Ghost'));
+      return false;
+    }
+    const cb = $('setting-ontrack');
+    if (cb && !cb.checked) {
+      cb.checked = true;
+      cb.dispatchEvent(new Event('change', { bubbles: true }));
+      if (melden) showHudToast(t('NPC Knockout: Bahnmodus „Auf der Bahn“'));
+    }
+    return true;
+  }
+  function startRaceCountdown(gruenZiel, mpPlan) {
     if (raceState !== 'idle' && raceState !== 'finished') return; // ignore while armed/racing
+    if (!knockoutBereit(true)) return;
     // EINSCHALTRAMPE: der Schirm zieht in 300 ms von schwarz auf Wert hoch, wie ein TFT beim
     // Einschalten. Hier und nicht in raceGreen(), weil der Schirm mit dem Knopfdruck
     // "angeht" und nicht erst bei Gruen - im Countdown will man ihn schon lesen.
@@ -2003,6 +2023,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     raceLimit = raceMode === 'laps' ? 10 : (raceMode === 'derby' ? 1 : 2);
     $('race-limit').value = raceLimit;
     applyRaceModeUi();
+    if (raceMode === 'knockout') knockoutBereit(true);
   });
   $('race-limit').addEventListener('input', (e) => {
     const v = parseInt(e.target.value, 10);
@@ -6052,7 +6073,10 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     if (!host) return;
     // AUSDRUCK-MODUS MIT EIGENEM FOTO (51-konsole.js): das Foto statt des Editor-Layouts.
     // Ohne Autopunkte - auf einem Foto gibt es keine Geometrie, an die man sie setzen koennte.
-    const foto = typeof konsoleStreckenfotoAktiv === 'function' ? konsoleStreckenfotoAktiv() : '';
+    // v0.9.31, BESTELLT: "wenn ich nicht auf der Bahn fahre, nicht das Carrera-Hybrid-
+    // Streckenlayout anzeigen, sondern das Foto von der Bahn bzw. den Platzhalter".
+    const frei = !(($('setting-ontrack') || {}).checked);
+    const foto = frei ? ((typeof konsoleFoto === 'function' && konsoleFoto()) || 'img/strecke-frei.jpg') : '';
     if (foto) {
       const s = 'foto:' + foto.length + ':' + foto.slice(-24);
       if (s !== ovKarteSchluessel) {
@@ -6100,34 +6124,74 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   // Der Sieger bekommt die GESAMTZEIT, Platz 2 und 3 den Rueckstand (luecke) - so liest sich
   // ein Podest, und die Gesamtzeit ist hier die vergleichbare Zahl. Waehrend eines Rennens
   // bleibt das Podest leer und verborgen.
+  // BESTELLT (v0.9.31): "Namen groesser, nur Plaetze 1 und 2, wenn keine weiteren Autos da
+  // sind, und denk dir was Gutes fuer Rennen mit nur einem Auto aus." Allein gibt es ein
+  // Solo-Podest: Gesamtzeit, Runden, beste Runde und der Vergleich mit deiner bisherigen
+  // Bestzeit auf derselben Strecke (aus den gespeicherten Sitzungen).
+  function ovSoloBestzeit() {
+    try {
+      const code = currentTrackTiles && currentTrackTiles.length > 1 ? trackToCode(currentTrackTiles) : '';
+      if (!code) return null;
+      const s = sessionStore().sessions;
+      // Die gerade gespeicherte Sitzung (dieses Rennen) zaehlt nicht mit.
+      const alt = s.length && Date.now() - Date.parse(s[s.length - 1].zeit) < 120000 ? s.slice(0, -1) : s;
+      let best = null;
+      for (const e of alt) {
+        if (e.strecke !== code) continue;
+        for (const a of (e.autos || [])) {
+          if (a.rolle !== 'player') continue;
+          for (const ms of (a.laps || [])) if (best === null || ms < best) best = ms;
+        }
+      }
+      return best;
+    } catch (e) { return null; }
+  }
   function ovPodestMalen() {
     const host = $('ov-podest');
     if (!host) return;
     const zeilen = ovDaten();
     const fertig = raceState === 'finished';
-    if (!fertig || zeilen.length < 2) {
+    if (!fertig || zeilen.length < 1) {
       host.hidden = true;
       if (host.innerHTML) host.innerHTML = '';
       return;
     }
     host.hidden = false;
-    const felder = [1, 0, 2].map((i) => zeilen[i] || null);
-    const html = felder.map((z, i) => {
-      const klasse = i === 1 ? 'platz-1' : i === 0 ? 'platz-2' : 'platz-3';
-      const nr = i === 1 ? 1 : i === 0 ? 2 : 3;
-      const name = z
-        ? '<span class="name"><i class="ov-farbe" style="background:'
-          + (z.farbe || 'transparent') + '"></i>' + z.name + '</span>'
-        : '<span class="name leer"></span>';
-      // Platz 1: Gesamtzeit; die anderen: Rueckstand. Ohne abgeschlossene Runde leer.
-      const zeit = !z ? '<span class="zeit"></span>'
-        : (nr === 1
-            ? (z.summe > 0 ? '<span class="zeit zeit-1">' + formatLapTime(z.summe) + '</span>'
-                           : '<span class="zeit"></span>')
-            : '<span class="zeit">' + (z.luecke || '&ndash;') + '</span>');
-      return '<div class="platz ' + klasse + '">' + name + zeit
-        + '<span class="block"><b>' + nr + '</b></span></div>';
-    }).join('');
+    const nameHtml = (z) => '<span class="name"><i class="ov-farbe" style="background:'
+      + (z.farbe || 'transparent') + '"></i>' + z.name + '</span>';
+    let html;
+    if (zeilen.length === 1) {
+      const z = zeilen[0];
+      const alt = ovSoloBestzeit();
+      let vergleich = '';
+      if (z.beste !== null && z.beste !== undefined) {
+        if (alt === null) vergleich = t('Erste Wertung auf dieser Strecke');
+        else if (z.beste < alt) vergleich = '★ ' + t('Neue Bestzeit!') + ' −' + ((alt - z.beste) / 1000).toFixed(2) + ' s';
+        else vergleich = '+' + ((z.beste - alt) / 1000).toFixed(2) + ' s ' + t('auf deine Bestzeit') + ' (' + formatLapTime(alt) + ')';
+      }
+      html = '<div class="platz platz-solo">' + nameHtml(z)
+        + '<span class="solo-zeit">' + (z.summe > 0 ? formatLapTime(z.summe) : '–') + '</span>'
+        + '<span class="solo-werte">' + z.runden + ' ' + t('Runden') + (z.beste ? ' · ' + t('Beste Runde') + ' ' + formatLapTime(z.beste) : '') + '</span>'
+        + (vergleich ? '<span class="solo-vergleich' + (alt !== null && z.beste < alt ? ' neu' : '') + '">' + vergleich + '</span>' : '')
+        + '<span class="block"><b>SOLO</b></span></div>';
+      host.classList.add('solo'); host.classList.remove('zwei');
+    } else {
+      const reihe = zeilen.length === 2 ? [1, 0] : [1, 0, 2];
+      html = reihe.map((zi) => {
+        const z = zeilen[zi] || null;
+        const nr = zi + 1;
+        const klasse = 'platz-' + nr;
+        const name = z ? nameHtml(z) : '<span class="name leer"></span>';
+        const zeit = !z ? '<span class="zeit"></span>'
+          : (nr === 1
+              ? (z.summe > 0 ? '<span class="zeit zeit-1">' + formatLapTime(z.summe) + '</span>'
+                             : '<span class="zeit"></span>')
+              : '<span class="zeit">' + (z.luecke || '&ndash;') + '</span>');
+        return '<div class="platz ' + klasse + '">' + name + zeit
+          + '<span class="block"><b>' + nr + '</b></span></div>';
+      }).join('');
+      host.classList.toggle('zwei', zeilen.length === 2); host.classList.remove('solo');
+    }
     if (host.innerHTML !== html) host.innerHTML = html;
   }
 
