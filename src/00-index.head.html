@@ -192,7 +192,7 @@
   nav.tabs button {
     background: transparent; border: none; border-bottom: 3px solid transparent;
     white-space: nowrap; flex-shrink: 0;
-    border-radius: 0; padding: 27px 15px; min-height: 345px; color: var(--muted); font-weight: 700;
+    border-radius: 0; padding: 11px 15px; color: var(--muted); font-weight: 700;
     text-transform: uppercase; letter-spacing: .09em; font-size: 11.5px;
   }
   /* Every tab gets a hint of the channel offset, the active one gets it at full strength.
@@ -563,7 +563,6 @@
     .home-topbar { padding: 10px 16px; font-size: 12.5px; gap: 8px 10px; }
     .home-topbar .foot-brand { display: none; }
     #lang-toggle { min-width: 104px; }
-    nav.tabs button { padding: 15px 15px; min-height: 90px; }
   }
   /* Die aktive Sprache steht hell, die andere gedimmt - ein Umschalter, der zeigt, was
      gerade gilt, statt nur was man anklicken kann. */
@@ -2596,6 +2595,15 @@
     #k-leiste .k-reiter button { padding: 5px 8px; font-size: clamp(9px, 1.9vh, 12px); }
     .k-leiste2 .k-reiter button { padding: 4px 8px; font-size: clamp(8.5px, 1.7vh, 11px); }
   }
+  /* REITER HOEHER (v0.9.3). BESTELLT: "tab höhe ganz oben in der navbar erhöhen; Auf PC das
+     4fache, auf mobile 2-3 fache, damit man auch mit finger ganz ok drauftippen kann (sollte
+     trotzdem noch schlank sein)." Gemessen vorher: 10 px am PC, 20-23 px am Handy. Die
+     Aenderungen v0.8.92-96 hatten das verborgene nav.tabs erhoeht und deshalb nichts bewirkt. */
+  #k-leiste .k-reiter button { min-height: 40px; padding: 0 10px; font-size: 12.5px; letter-spacing: .08em; }
+  @media (pointer: coarse) {
+    #k-leiste .k-reiter button { min-height: 46px; padding: 0 4px; font-size: clamp(10px, 2.9vw, 13px); letter-spacing: .02em;
+      white-space: normal; line-height: 1.1; text-overflow: clip; }
+  }
   /* Offene Unterseite mit zweiter Leiste: die Ueberschrift steht dort schon, der
      Zurueck-Knopf wird eine knappe Zeile. */
   body.k-innen .subpage.on > h2 { display: none; }
@@ -3367,9 +3375,16 @@
   .track-kachel-vorschau svg { width: 100%; height: 100%; display: block; }
   .track-kachel b { font-size: 13px; }
   .track-kachel em { font-style: normal; font-size: 11px; color: var(--muted); }
-  .track-kachel-del { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px;
-    border-radius: 50%; font-size: 12px; line-height: 1; padding: 0; display: flex;
-    align-items: center; justify-content: center; background: var(--danger, #c0392b);
+  /* Das Loeschen-Kreuz ist ein eigener Knopf NEBEN der Kachel (v0.9.3; vorher ein Knopf im
+     Knopf - ungueltiges HTML) und wirklich rund: die allgemeinen Knopf-Mindestmasse machten es
+     oval, deshalb hier feste Groesse ohne Mindestmasse und Seitenverhaeltnis 1. */
+  .track-kachel-wrap { position: relative; display: flex; min-width: 0; }
+  .track-kachel-wrap > .track-kachel { flex: 1; min-width: 0; }
+  .track-kachel-del { position: absolute; top: 6px; right: 6px; z-index: 1;
+    width: 26px !important; height: 26px !important; min-width: 0 !important; min-height: 0 !important;
+    aspect-ratio: 1 / 1; box-sizing: border-box; flex: none;
+    border-radius: 50%; font-size: 13px; line-height: 1; padding: 0 !important; display: grid;
+    place-items: center; background: var(--danger, #c0392b);
     color: #fff; border: none; cursor: pointer; }
   /* Community Strecken: Liste der eingereichten Strecken. */
   .community-liste { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
@@ -4183,7 +4198,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.2</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.3</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4853,7 +4868,7 @@
         <p class="grid-hinweis" id="grid-hinweis">Alle Autos stehen auf den Teilen <b>vor</b> Start/Ziel. Erst wenn du Start/Ziel zum ersten Mal &uuml;berf&auml;hrst, beginnt Runde&nbsp;1.</p>
         <label class="grid-selbst" id="grid-selbst-wrap">
           <input type="checkbox" id="grid-selbst">
-          <span class="wip-tag">experimentell</span> Autos fahren selbst in Position
+          <span class="wip-tag">experimentell</span> Aufstellung mit gr&ouml;&szlig;ter Querlage (links/rechts)
         </label>
         <div class="grid-liste" id="grid-liste"></div>
         <div class="schirm-fuss grid-fuss">
@@ -5254,6 +5269,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Obere Reiterleiste deutlich h&#246;her (PC 40 px, Handy 46 px), gut zum Tippen. Meine Strecken: Ton beim Laden, rundes L&#246;schen-Kreuz mit R&#252;ckfrage. Ghosts halten wieder den gemessenen Abstand (1,2 Kacheln, mehr &#252;ber &#8222;Feld-Abstand&#8220;). Knockout und Derby als experimentell gekennzeichnet, Texte &#252;bersetzt.</li>
         <li>Mehrspieler: &#8222;Rennen f&#252;r alle&#8220; repariert. Der Bereitschaftsschirm erscheint jetzt auf jedem Reiter, inaktive oder abgemeldete Telefone blockieren den Start nicht mehr, Abbrechen l&#246;scht nicht mehr die Wertung aller, und das angek&#252;ndigte Wetter gilt auch beim Start. App: schnellerer, stabilerer direkter Steuerweg zum Auto (neue APK n&#246;tig).</li>
         <li>Zweite Kopie der App: Die Download-Links zeigen auf deren eigenes Release (mit Download-Z&#228;hler), sonst auf die APK im Repo.</li>
       </ul>
@@ -8180,12 +8196,12 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M7 7h10M7 17h10M12 7v10"/><circle cx="12" cy="12" r="3"/>
-          </svg><b>Knockout</b></button>
+          </svg><b>Knockout</b><span class="wip-tag">experimentell</span></button>
         <button type="button" class="mode-tile kachelbild derby" data-mode="derby">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="9" cy="9" r="3"/><circle cx="15" cy="15" r="3"/><path d="M9 12v9M15 12V3"/>
-          </svg><b>Demolition Derby</b></button>
+          </svg><b>Demolition Derby</b><span class="wip-tag">experimentell</span></button>
       </div>
       <select id="race-mode" hidden style="display:none">
         <option value="practice" selected>Freies Training</option>

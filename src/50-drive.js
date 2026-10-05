@@ -2292,9 +2292,9 @@
     // die verbleibende Zeit - eine Rundenzahl anzuschreiben, die es in diesem Modus nicht
     // gibt, waere eine erfundene Angabe.
     $('race-lap-count').textContent = raceMode === 'knockout'
-      ? 'Leben ' + knockoutLeben + (zweiSpieler ? '/' + knockoutLeben2 : '') + ' · Geister ' + knockoutGeister
+      ? t('Leben') + ' ' + knockoutLeben + (zweiSpieler ? '/' + knockoutLeben2 : '') + ' · ' + t('Geister') + ' ' + knockoutGeister
       : raceMode === 'derby'
-        ? 'Health ' + Math.round(derbyHealth) + '% · Kills ' + derbyKills + ' · Gegner ' + derbyGeisterZaehlen()
+        ? 'Health ' + Math.round(derbyHealth) + '% · Kills ' + derbyKills + ' · ' + t('Gegner') + ' ' + derbyGeisterZaehlen()
         : raceLapTarget(laps.length);
     $('race-lap-list').innerHTML = laps.slice().reverse().slice(0, 10).map(l =>
       `<li><span>${l.lap}</span><span${l.ms === best ? ' class="gt3-ok"' : ''}>${formatLapTime(l.ms)}</span></li>`

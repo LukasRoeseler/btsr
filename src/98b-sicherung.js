@@ -9,8 +9,8 @@
   // ---- WARUM DAS NOETIG IST, UND NICHT NUR BEQUEM --------------------------------
   //
   // Alles liegt in localStorage. Ein Browser darf das raeumen - beim Aufraeumen von
-  // Websitedaten, im privaten Modus, auf einem iPhone auch nach sieben Tagen ohne Besuch -
-  // und navigator.storage.persist() wird nirgends angefordert. Fuer die Sitzungshistorie
+  // Websitedaten, im privaten Modus, auf einem iPhone auch nach sieben Tagen ohne Besuch.
+  // navigator.storage.persist() wird seit v0.8.96 angefordert (unten, best effort). Fuer die Sitzungshistorie
   // (bis 200 Rennen mit allen Rundenzeiten) ist das die eigentliche Schwachstelle: die ist
   // nicht nachbaubar, anders als eine Abstimmung.
   //
@@ -55,7 +55,7 @@
   //      Rennmodus"). Eine benannte Ausnahme mit Grund - und kein aufgeweiteter Selektor,
   //      der nebenbei sess-plot-pick mitnehmen wuerde.
   const SICHERUNG_REITER = ['tab-options', 'tab-control'];
-  const SICHERUNG_EXTRA = ['race-mode', 'mp-force-preset'];
+  const SICHERUNG_EXTRA = ['race-mode', 'mp-force-preset', 'grid-selbst'];
 
   function sicherungRegler() {
     // .opt-row sind die Abstimmungs- und Rennregler, .mw-row die Motorwerkstatt-Regler
@@ -312,7 +312,7 @@
   const LAGE_ABLAGEN = [
     // Schluessel, Name, und wie man den Inhalt zaehlt. `zahl` gibt null zurueck, wenn es
     // nichts zu zaehlen gibt - dann wird die Zeile weggelassen.
-    ['chc.layout.v1', 'Streckenlayout', (v) => (v && Object.keys(v).length) || null],
+    ['chc.layout.v1', 'Fahrzeug-Layout', (v) => (v && Object.keys(v).length) || null],
     ['carrera-hybrid-tracks', 'Strecken', (v) => (Array.isArray(v) ? v.length : null)],
     ['chc.sessions.v1', 'Sitzungen', (v) => (Array.isArray(v) ? v.length
                                              : (v && v.sitzungen ? v.sitzungen.length : null))],
@@ -555,11 +555,13 @@
   // melden beides. Beide zu nehmen kostet nichts, weil das Schreiben gebuendelt ist.
   document.addEventListener('change', (e) => {
     if (e.target && e.target.closest
-        && e.target.closest('#tab-options, #tab-control, #tab-mp')) autoSicherungPlanen();
+        && (e.target.closest('#tab-options, #tab-control, #tab-mp')
+            || SICHERUNG_EXTRA.indexOf(e.target.id) >= 0)) autoSicherungPlanen();
   }, true);
   document.addEventListener('input', (e) => {
     if (e.target && e.target.closest
-        && e.target.closest('#tab-options, #tab-control, #tab-mp')) autoSicherungPlanen();
+        && (e.target.closest('#tab-options, #tab-control, #tab-mp')
+            || SICHERUNG_EXTRA.indexOf(e.target.id) >= 0)) autoSicherungPlanen();
   }, true);
   // BESTELLT: "alle einstellungen im browsercache gespeichert werden und auch bei neuladen
   // der seite da bleiben (bei apk im cache speichern)". localStorage ueberlebt das Neuladen,

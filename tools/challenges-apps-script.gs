@@ -226,13 +226,13 @@ function pruefen(d) {
 // x 2 Modi x 2 Presets waeren sonst 320 Aufrufe).
 function doGet(e) {
   const p = (e && e.parameter) || {};
-  // DIAGNOSE: ?debug=1 nennt das Sheet, an dem diese Web-App haengt (getActiveSpreadsheet),
-  // damit man prüfen kann, ob die Zeiten im richtigen Blatt liegen. Antwortet nur, wenn
-  // wirklich ein Sheet gebunden ist - sonst 'kein Sheet'.
+  // DIAGNOSE: ?debug=1 zeigt, ob ein Sheet gebunden ist, die Kopfzeile und wie viele Zeilen je
+  // Challenge darin stehen. Seit v0.9.3 OHNE Adresse und Namen des Sheets und ohne die letzte
+  // Zeile - die Web-App ist oeffentlich, und die letzte Zeile enthielt Geraete-ID und Namen.
   if (p.debug) {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sh = ss ? ss.getSheetByName(BLATT) : null;
-    let kopf = [], zeilen = 0, challenges = [], letzte = null;
+    let kopf = [], zeilen = 0, challenges = [];
     if (sh) {
       const werte = sh.getDataRange().getValues();
       zeilen = Math.max(0, werte.length - 1);
@@ -246,13 +246,10 @@ function doGet(e) {
         gez[c] = (gez[c] || 0) + 1;
       });
       challenges = Object.keys(gez).sort().map((c) => ({ id: c, n: gez[c] }));
-      if (werte.length > 1) letzte = werte[werte.length - 1];
     }
-    return antwort({ ok: true, debug: true,
-      url: ss ? ss.getUrl() : null,
-      name: ss ? ss.getName() : null,
+    return antwort({ ok: true, debug: true, gebunden: !!ss,
       blatt: sh ? BLATT : null,
-      kopf: kopf, zeilen: zeilen, challenges: challenges, letzte: letzte });
+      kopf: kopf, zeilen: zeilen, challenges: challenges });
   }
   const sp = spalten();
   const werte = blatt().getDataRange().getValues().slice(1);

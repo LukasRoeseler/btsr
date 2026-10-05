@@ -4553,29 +4553,40 @@
     // in den Editor." Die Kacheln werden als DOM-Elemente gebaut (kein innerHTML fuer den
     // Namen), damit ein Streckenname mit Sonderzeichen die Seite nicht zerreisst.
     keys.forEach(name => {
-      const t = store[name];
+      const eintrag = store[name];
+      const wrap = document.createElement('div');
+      wrap.className = 'track-kachel-wrap';
       const btn = document.createElement('button');
       btn.className = 'track-kachel';
-      btn.title = name + ' laden';
+      btn.title = t('{n} laden').replace('{n}', name);
       const vor = document.createElement('span');
       vor.className = 'track-kachel-vorschau';
       try {
-        const tiles = migrateTiles((t.tiles || []).slice());
+        const tiles = migrateTiles((eintrag.tiles || []).slice());
         vor.innerHTML = renderTrackPreview(tiles, null, {}).html;
       } catch (e) { /* ohne Vorschau */ }
       const b = document.createElement('b');
       b.textContent = name;
+      b.setAttribute('data-i18n-skip', '');
       const em = document.createElement('em');
-      em.textContent = (t.tiles ? t.tiles.length : 0) + ' Teile';
+      em.textContent = (eintrag.tiles ? eintrag.tiles.length : 0) + ' ' + t('Teile');
+      em.setAttribute('data-i18n-skip', '');
       btn.appendChild(vor); btn.appendChild(b); btn.appendChild(em);
       btn.addEventListener('click', () => trackLaden(name));
       const del = document.createElement('button');
+      del.type = 'button';
       del.className = 'track-kachel-del';
       del.textContent = '✕';
-      del.title = 'Löschen';
-      del.addEventListener('click', (e) => { e.stopPropagation(); trackLoeschen(name); });
-      btn.appendChild(del);
-      cont.appendChild(btn);
+      del.title = t('Löschen');
+      // BESTELLT: "Wenn ich es zum Strecke loeschen klicke, soll noch ein 'bist du sicher?'
+      // Fenster kommen."
+      del.addEventListener('click', (e) => {
+        e.stopPropagation();
+        konsoleFrage(t('Strecke löschen?'), t('„{n}“ wird gelöscht. Bist du sicher?').replace('{n}', name),
+          [[t('Löschen'), () => trackLoeschen(name)], [t('Abbrechen'), null]]);
+      });
+      wrap.appendChild(btn); wrap.appendChild(del);
+      cont.appendChild(wrap);
     });
   }
   // Klick auf eine Kachel laedt die Strecke in den Editor (vorher das <select>-Laden).
@@ -4591,7 +4602,10 @@
     }
     $('track-name').value = name;
     refreshTrackPreview();
-    showHudToast('Strecke "' + name + '" geladen');
+    // BESTELLT: "bei Strecken laden einen Ton abspielen, wenn die Strecke erfolgreich geladen
+    // wurde" - derselbe Klack wie bei einer fertigen Strecke im Editor.
+    try { trackFertigKlang(); } catch (e) { /* ohne Ton */ }
+    showHudToast(t('Strecke „{n}“ geladen').replace('{n}', name));
   }
   function trackLoeschen(name) {
     const store = loadTrackStore();

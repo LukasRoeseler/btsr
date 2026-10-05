@@ -6052,7 +6052,7 @@
       // ghostRennhaerteAnwenden() von 1,2/1,2/1,3 auf 1,5/1,5/1,65 angehoben, das
       // Verhaeltnis (RANGE > GAP_MIN) bleibt gleich. Diese Erwartung ist mitgezogen.
       OMEGA_TEST.ghostRennhaerteAnwenden(0.5);
-      const soll = { p: 0.45, arm: 900, luecke: 1.5, gap: 1.5, range: 1.65 };
+      const soll = { p: 0.45, arm: 900, luecke: 1.2, gap: 1.2, range: 1.3 };
       const ist50 = { p: OMEGA_TEST.attackPLesen(), arm: OMEGA_TEST.attackArmMsLesen(),
                       luecke: OMEGA_TEST.lueckeMinLesen(), gap: OMEGA_TEST.gapMinLesen(),
                       range: OMEGA_TEST.attackRangeLesen() };
@@ -12415,7 +12415,7 @@
     const maengel = [];
     // BESTELLT: "Renneinstellungen aus dem Cockpit-Schirmkreis herausnehmen" - der Schirm
     // darf NICHT mehr blaetterbar sein; Rennmodus/Dauer stehen im Fahren-Tab.
-    if (!r.screenErreichbar) maengel.push('Schirm "renneinstellungen" noch im Cockpit-Kreis');
+    if (!r.renneinstellungenRaus) maengel.push('Schirm "renneinstellungen" noch im Cockpit-Kreis');
     if (r.modeNachWahl === r.modeVorWahl) maengel.push('Tab-Aenderung schreibt nicht auf #race-mode');
     return { ok: !maengel.length,
              mass: 'genau eine Zeile ausgewaehlt, hoch/runter bewegt sie mit Umlauf, '

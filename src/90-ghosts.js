@@ -4434,7 +4434,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // der Verfolger darf also heran - genau dafuer ist die Ausnahme dort.
   // let und nicht const, damit ein Prueflauf sie sweepen kann - sie und SPICE_GAP_MIN
   // bestreiten dasselbe Band, und welches Paar taugt, ist eine Messung und keine Meinung.
-  let SPICE_ATTACK_RANGE = 1.65;
+  let SPICE_ATTACK_RANGE = 1.3;
   function attackRangeSetzen(v) { SPICE_ATTACK_RANGE = v; }
   function attackRangeLesen() { return SPICE_ATTACK_RANGE; }
   function attackPSetzen(v) { SPICE_ATTACK_P = v; }
@@ -4888,7 +4888,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // abstand"). GEMELDET danach: "danach haben sie sich geschoben (zu geringer Abstand) und
   // sind tuer an tuer gefahren" - also schlechter, genau wie die Messreihe unten es fuer
   // groessere Soll-Luecken zeigt (mehr Bremsen, dann Auflaufen). ZURUECK auf 1,2.
-  let SPICE_GAP_MIN = 1.5;      // Kacheln, ab hier wird gelupft (nur noch Rueckfall)
+  let SPICE_GAP_MIN = 1.2;      // Kacheln, ab hier wird gelupft (nur noch Rueckfall)
   // ---- DIE ZEITLUECKE IN SEKUNDEN --------------------------------------------------
   //
   // ABGELEITET UND NICHT GEWAEHLT, aus der Fahrzeuglaenge und dem Tempo. Ein Auto ist 9,5 cm
@@ -4933,7 +4933,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // ist plausibel und kein Messfehler - eine sehr grosse Sollluecke laesst die Autos
   // staerker bremsen, und dann laufen sie wieder auf.
   // In v0.7.57 kurz auf 1,5, wieder zurueck auf 1,2 - siehe SPICE_GAP_MIN darueber.
-  let SPICE_LUECKE_MIN_S = 1.5;
+  let SPICE_LUECKE_MIN_S = 1.2;
   const SPICE_LUECKE_PER_CLOSING = 0.30;
   function lueckeMinSetzen(v) { SPICE_LUECKE_MIN_S = v; }
   function lueckeMinLesen() { return SPICE_LUECKE_MIN_S; }
@@ -4970,13 +4970,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const von = 1.5 - i;        // 1.5..0.5, 1 bei 50 % - fuer Luecken/Reichweite
     attackPSetzen(0.45 * zu);
     attackArmMsSetzen(900 * von);
-    // BESTELLT: "Autos sollen mehr Abstand halten." Die Anker stehen auf 1,5/1,5/1,65 -
-    // vorher 1,2/1,2/1,3. Das Gummiband-Fenster (RANGE - GAP) bleibt bei 0,15, und die
-    // Ungleichung RANGE > GAP bleibt bei jeder Reglerstellung erfuellt (beide laufen mit
-    // demselben `von`).
-    lueckeMinSetzen(1.5 * von);
-    gapMinSetzen(1.5 * von);
-    attackRangeSetzen(1.65 * von);
+    // Anker 1,2/1,2/1,3 (v0.9.3 wieder): eine Zwischenfassung hatte 1,5/1,5/1,65 - genau der
+    // Wert, der in v0.7.57 schon schlechter gemessen war ("tuer an tuer", siehe SPICE_GAP_MIN).
+    // Wer mehr Abstand will, nimmt den Regler "Feld-Abstand" (ghostSpice). Die Ungleichung
+    // RANGE > GAP bleibt bei jeder Reglerstellung erfuellt (beide laufen mit demselben `von`).
+    lueckeMinSetzen(1.2 * von);
+    gapMinSetzen(1.2 * von);
+    attackRangeSetzen(1.3 * von);
   }
 
   // Fortschritt in Kacheln seit dem Start, mit Bruchteil. Absichtlich NICHT ueber den

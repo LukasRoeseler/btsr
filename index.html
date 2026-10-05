@@ -192,7 +192,7 @@
   nav.tabs button {
     background: transparent; border: none; border-bottom: 3px solid transparent;
     white-space: nowrap; flex-shrink: 0;
-    border-radius: 0; padding: 27px 15px; min-height: 345px; color: var(--muted); font-weight: 700;
+    border-radius: 0; padding: 11px 15px; color: var(--muted); font-weight: 700;
     text-transform: uppercase; letter-spacing: .09em; font-size: 11.5px;
   }
   /* Every tab gets a hint of the channel offset, the active one gets it at full strength.
@@ -563,7 +563,6 @@
     .home-topbar { padding: 10px 16px; font-size: 12.5px; gap: 8px 10px; }
     .home-topbar .foot-brand { display: none; }
     #lang-toggle { min-width: 104px; }
-    nav.tabs button { padding: 15px 15px; min-height: 90px; }
   }
   /* Die aktive Sprache steht hell, die andere gedimmt - ein Umschalter, der zeigt, was
      gerade gilt, statt nur was man anklicken kann. */
@@ -2596,6 +2595,15 @@
     #k-leiste .k-reiter button { padding: 5px 8px; font-size: clamp(9px, 1.9vh, 12px); }
     .k-leiste2 .k-reiter button { padding: 4px 8px; font-size: clamp(8.5px, 1.7vh, 11px); }
   }
+  /* REITER HOEHER (v0.9.3). BESTELLT: "tab höhe ganz oben in der navbar erhöhen; Auf PC das
+     4fache, auf mobile 2-3 fache, damit man auch mit finger ganz ok drauftippen kann (sollte
+     trotzdem noch schlank sein)." Gemessen vorher: 10 px am PC, 20-23 px am Handy. Die
+     Aenderungen v0.8.92-96 hatten das verborgene nav.tabs erhoeht und deshalb nichts bewirkt. */
+  #k-leiste .k-reiter button { min-height: 40px; padding: 0 10px; font-size: 12.5px; letter-spacing: .08em; }
+  @media (pointer: coarse) {
+    #k-leiste .k-reiter button { min-height: 46px; padding: 0 4px; font-size: clamp(10px, 2.9vw, 13px); letter-spacing: .02em;
+      white-space: normal; line-height: 1.1; text-overflow: clip; }
+  }
   /* Offene Unterseite mit zweiter Leiste: die Ueberschrift steht dort schon, der
      Zurueck-Knopf wird eine knappe Zeile. */
   body.k-innen .subpage.on > h2 { display: none; }
@@ -3367,9 +3375,16 @@
   .track-kachel-vorschau svg { width: 100%; height: 100%; display: block; }
   .track-kachel b { font-size: 13px; }
   .track-kachel em { font-style: normal; font-size: 11px; color: var(--muted); }
-  .track-kachel-del { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px;
-    border-radius: 50%; font-size: 12px; line-height: 1; padding: 0; display: flex;
-    align-items: center; justify-content: center; background: var(--danger, #c0392b);
+  /* Das Loeschen-Kreuz ist ein eigener Knopf NEBEN der Kachel (v0.9.3; vorher ein Knopf im
+     Knopf - ungueltiges HTML) und wirklich rund: die allgemeinen Knopf-Mindestmasse machten es
+     oval, deshalb hier feste Groesse ohne Mindestmasse und Seitenverhaeltnis 1. */
+  .track-kachel-wrap { position: relative; display: flex; min-width: 0; }
+  .track-kachel-wrap > .track-kachel { flex: 1; min-width: 0; }
+  .track-kachel-del { position: absolute; top: 6px; right: 6px; z-index: 1;
+    width: 26px !important; height: 26px !important; min-width: 0 !important; min-height: 0 !important;
+    aspect-ratio: 1 / 1; box-sizing: border-box; flex: none;
+    border-radius: 50%; font-size: 13px; line-height: 1; padding: 0 !important; display: grid;
+    place-items: center; background: var(--danger, #c0392b);
     color: #fff; border: none; cursor: pointer; }
   /* Community Strecken: Liste der eingereichten Strecken. */
   .community-liste { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
@@ -4183,7 +4198,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.2</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.3</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4853,7 +4868,7 @@
         <p class="grid-hinweis" id="grid-hinweis">Alle Autos stehen auf den Teilen <b>vor</b> Start/Ziel. Erst wenn du Start/Ziel zum ersten Mal &uuml;berf&auml;hrst, beginnt Runde&nbsp;1.</p>
         <label class="grid-selbst" id="grid-selbst-wrap">
           <input type="checkbox" id="grid-selbst">
-          <span class="wip-tag">experimentell</span> Autos fahren selbst in Position
+          <span class="wip-tag">experimentell</span> Aufstellung mit gr&ouml;&szlig;ter Querlage (links/rechts)
         </label>
         <div class="grid-liste" id="grid-liste"></div>
         <div class="schirm-fuss grid-fuss">
@@ -5254,6 +5269,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Obere Reiterleiste deutlich h&#246;her (PC 40 px, Handy 46 px), gut zum Tippen. Meine Strecken: Ton beim Laden, rundes L&#246;schen-Kreuz mit R&#252;ckfrage. Ghosts halten wieder den gemessenen Abstand (1,2 Kacheln, mehr &#252;ber &#8222;Feld-Abstand&#8220;). Knockout und Derby als experimentell gekennzeichnet, Texte &#252;bersetzt.</li>
         <li>Mehrspieler: &#8222;Rennen f&#252;r alle&#8220; repariert. Der Bereitschaftsschirm erscheint jetzt auf jedem Reiter, inaktive oder abgemeldete Telefone blockieren den Start nicht mehr, Abbrechen l&#246;scht nicht mehr die Wertung aller, und das angek&#252;ndigte Wetter gilt auch beim Start. App: schnellerer, stabilerer direkter Steuerweg zum Auto (neue APK n&#246;tig).</li>
         <li>Zweite Kopie der App: Die Download-Links zeigen auf deren eigenes Release (mit Download-Z&#228;hler), sonst auf die APK im Repo.</li>
       </ul>
@@ -8180,12 +8196,12 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M7 7h10M7 17h10M12 7v10"/><circle cx="12" cy="12" r="3"/>
-          </svg><b>Knockout</b></button>
+          </svg><b>Knockout</b><span class="wip-tag">experimentell</span></button>
         <button type="button" class="mode-tile kachelbild derby" data-mode="derby">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="9" cy="9" r="3"/><circle cx="15" cy="15" r="3"/><path d="M9 12v9M15 12V3"/>
-          </svg><b>Demolition Derby</b></button>
+          </svg><b>Demolition Derby</b><span class="wip-tag">experimentell</span></button>
       </div>
       <select id="race-mode" hidden style="display:none">
         <option value="practice" selected>Freies Training</option>
@@ -12255,6 +12271,18 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Obere Reiterleiste deutlich höher (PC 40 px, Handy 46 px), gut zum Tippen. Meine Strecken: Ton beim Laden, rundes Löschen-Kreuz mit Rückfrage. Ghosts halten wieder den gemessenen Abstand (1,2 Kacheln, mehr über „Feld-Abstand“). Knockout und Derby als experimentell gekennzeichnet, Texte übersetzt.": "Top tab bar much taller (PC 40 px, phone 46 px), easy to tap. My tracks: sound when loading, round delete cross with confirmation. Ghosts keep the measured gap again (1.2 tiles, more via \"field spacing\"). Knockout and Derby marked experimental, texts translated.",
+    "Fahrzeug-Layout": "Vehicle layout",
+    "{n} laden": "Load {n}",
+    "Strecke löschen?": "Delete track?",
+    "„{n}“ wird gelöscht. Bist du sicher?": "\"{n}\" will be deleted. Are you sure?",
+    "Strecke „{n}“ geladen": "Track \"{n}\" loaded",
+    "Leben": "Lives",
+    "Geister": "Ghosts",
+    "Spieler {s}: noch {n} Leben": "Player {s}: {n} lives left",
+    "Geist aus": "Ghost out",
+    "Du": "You",
+    "Aufstellung mit größter Querlage (links/rechts)": "Grid with widest offset (left/right)",
     "Weg": "Path",
     "alte APK": "old APK",
     "geschrieben": "written",
@@ -20606,9 +20634,9 @@
     // die verbleibende Zeit - eine Rundenzahl anzuschreiben, die es in diesem Modus nicht
     // gibt, waere eine erfundene Angabe.
     $('race-lap-count').textContent = raceMode === 'knockout'
-      ? 'Leben ' + knockoutLeben + (zweiSpieler ? '/' + knockoutLeben2 : '') + ' · Geister ' + knockoutGeister
+      ? t('Leben') + ' ' + knockoutLeben + (zweiSpieler ? '/' + knockoutLeben2 : '') + ' · ' + t('Geister') + ' ' + knockoutGeister
       : raceMode === 'derby'
-        ? 'Health ' + Math.round(derbyHealth) + '% · Kills ' + derbyKills + ' · Gegner ' + derbyGeisterZaehlen()
+        ? 'Health ' + Math.round(derbyHealth) + '% · Kills ' + derbyKills + ' · ' + t('Gegner') + ' ' + derbyGeisterZaehlen()
         : raceLapTarget(laps.length);
     $('race-lap-list').innerHTML = laps.slice().reverse().slice(0, 10).map(l =>
       `<li><span>${l.lap}</span><span${l.ms === best ? ' class="gt3-ok"' : ''}>${formatLapTime(l.ms)}</span></li>`
@@ -28260,29 +28288,40 @@
     // in den Editor." Die Kacheln werden als DOM-Elemente gebaut (kein innerHTML fuer den
     // Namen), damit ein Streckenname mit Sonderzeichen die Seite nicht zerreisst.
     keys.forEach(name => {
-      const t = store[name];
+      const eintrag = store[name];
+      const wrap = document.createElement('div');
+      wrap.className = 'track-kachel-wrap';
       const btn = document.createElement('button');
       btn.className = 'track-kachel';
-      btn.title = name + ' laden';
+      btn.title = t('{n} laden').replace('{n}', name);
       const vor = document.createElement('span');
       vor.className = 'track-kachel-vorschau';
       try {
-        const tiles = migrateTiles((t.tiles || []).slice());
+        const tiles = migrateTiles((eintrag.tiles || []).slice());
         vor.innerHTML = renderTrackPreview(tiles, null, {}).html;
       } catch (e) { /* ohne Vorschau */ }
       const b = document.createElement('b');
       b.textContent = name;
+      b.setAttribute('data-i18n-skip', '');
       const em = document.createElement('em');
-      em.textContent = (t.tiles ? t.tiles.length : 0) + ' Teile';
+      em.textContent = (eintrag.tiles ? eintrag.tiles.length : 0) + ' ' + t('Teile');
+      em.setAttribute('data-i18n-skip', '');
       btn.appendChild(vor); btn.appendChild(b); btn.appendChild(em);
       btn.addEventListener('click', () => trackLaden(name));
       const del = document.createElement('button');
+      del.type = 'button';
       del.className = 'track-kachel-del';
       del.textContent = '✕';
-      del.title = 'Löschen';
-      del.addEventListener('click', (e) => { e.stopPropagation(); trackLoeschen(name); });
-      btn.appendChild(del);
-      cont.appendChild(btn);
+      del.title = t('Löschen');
+      // BESTELLT: "Wenn ich es zum Strecke loeschen klicke, soll noch ein 'bist du sicher?'
+      // Fenster kommen."
+      del.addEventListener('click', (e) => {
+        e.stopPropagation();
+        konsoleFrage(t('Strecke löschen?'), t('„{n}“ wird gelöscht. Bist du sicher?').replace('{n}', name),
+          [[t('Löschen'), () => trackLoeschen(name)], [t('Abbrechen'), null]]);
+      });
+      wrap.appendChild(btn); wrap.appendChild(del);
+      cont.appendChild(wrap);
     });
   }
   // Klick auf eine Kachel laedt die Strecke in den Editor (vorher das <select>-Laden).
@@ -28298,7 +28337,10 @@
     }
     $('track-name').value = name;
     refreshTrackPreview();
-    showHudToast('Strecke "' + name + '" geladen');
+    // BESTELLT: "bei Strecken laden einen Ton abspielen, wenn die Strecke erfolgreich geladen
+    // wurde" - derselbe Klack wie bei einer fertigen Strecke im Editor.
+    try { trackFertigKlang(); } catch (e) { /* ohne Ton */ }
+    showHudToast(t('Strecke „{n}“ geladen').replace('{n}', name));
   }
   function trackLoeschen(name) {
     const store = loadTrackStore();
@@ -29014,7 +29056,9 @@
   // which is what "sobald das erste Auto über Start fährt" means literally.
   let raceFlying = false;
   let raceGridOrder = [];      // device ids, first = pole
-let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
+let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentell). Hiess bis v0.9.2
+                            // "Autos fahren selbst in Position" - das tat er nie, er aendert nur den
+                            // Querversatz der Startaufstellung in der Einfuehrungsrunde.
   let raceFormationLap = false;
   let raceStartedAt = null;
   let raceClockTimer = null;
@@ -29066,7 +29110,7 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
     if (!knockoutLaeuft) return;
     if (wer === 2) knockoutLeben2 = Math.max(0, knockoutLeben2 - 1);
     else knockoutLeben = Math.max(0, knockoutLeben - 1);
-    showHudToast('Leben ' + (wer === 2 ? '2' : '1') + ': noch ' + (wer === 2 ? knockoutLeben2 : knockoutLeben));
+    showHudToast(t('Spieler {s}: noch {n} Leben').replace('{s}', wer === 2 ? '2' : '1').replace('{n}', wer === 2 ? knockoutLeben2 : knockoutLeben));
     knockoutPruefen();
   }
   // Ende: alle Geister raus -> Sieg; alle Menschen raus -> Niederlage.
@@ -29128,7 +29172,7 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
       playTone(880, 0.06, 'sine', 0.2);
       setTimeout(() => playTone(1320, 0.09, 'sine', 0.2), 45);
     }
-    showHudToast('Geist aus · Kills ' + derbyKills);
+    showHudToast(t('Geist aus') + ' · Kills ' + derbyKills);
     derbyPruefen();
   }
   // Aufprall-Schaden fuer den Spieler (head-on 10 %, sonst 20 %).
@@ -29196,10 +29240,10 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
       catch (e) { return { name: '?', farbe: '#8b99b4' }; }
     };
     const teile = [];
-    teile.push({ name: 'Du', farbe: '#2ee06a', health: derbyHealth, kills: derbyKills,
+    teile.push({ name: t('Du'), farbe: '#2ee06a', health: derbyHealth, kills: derbyKills,
                  aus: derbyHealth <= 0 });
     if (typeof zweiSpieler !== 'undefined' && zweiSpieler) {
-      teile.push({ name: 'Spieler 2', farbe: '#ffb02e', health: derbyHealth2, kills: derbyKills2,
+      teile.push({ name: t('Spieler 2'), farbe: '#ffb02e', health: derbyHealth2, kills: derbyKills2,
                    aus: derbyHealth2 <= 0 });
     }
     for (const c of garage) {
@@ -30529,7 +30573,7 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
       knockoutSieger = null; knockoutLaeuft = true;
       for (const c of garage) if (c && c.ghost) c.ghost.eliminated = false;
       knockoutGeister = knockoutGeisterZaehlen();
-      showHudToast('Knockout: ' + knockoutGeister + ' Geister · ' + KO_LEBEN + ' Leben');
+      showHudToast('Knockout: ' + knockoutGeister + ' ' + t('Geister') + ' · ' + KO_LEBEN + ' ' + t('Leben'));
     }
     if (raceMode === 'derby') {
       derbyLaeuft = true; derbySieger = null; derbyTitel = null;
@@ -30538,7 +30582,7 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
       for (const c of garage) if (c && c.ghost) {
         c.ghost.derbyHealth = DERBY_MAX; c.ghost.derbyAus = false; c.ghost.derbyKills = 0;
       }
-      showHudToast('Derby: ' + derbyGeisterZaehlen() + ' Gegner · Health 100');
+      showHudToast('Derby: ' + derbyGeisterZaehlen() + ' ' + t('Gegner') + ' · Health 100');
     }
     if (raceFormationLap) {
       // formationPace() und nicht PIT_SPEED_FACTOR: der Deckel muss zum Ziel des
@@ -30745,8 +30789,8 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
   function applyRaceModeUi() {
     syncRaceModeTiles();
     const m = RACE_MODES[raceMode];
-    $('race-limit-label').textContent = m.unit;
-    $('race-mode-hint').textContent = m.hint;
+    $('race-limit-label').textContent = t(m.unit);
+    $('race-mode-hint').textContent = t(m.hint);
     $('race-start-btn').textContent = `\u{1F3C1} ${m.label} starten`;
     // Free practice has no limit, so the field would be a lie. Disabled, not hidden:
     // a control that vanishes makes people wonder whether they broke something.
@@ -34892,8 +34936,12 @@ let gridSelbst = false;      // Autos fahren selbst in Position (experimentell)
     // lokalen Zeilen (eigene Autos/Ghosts) bleiben; die anderen Geraete aus der Rangliste
     // kommen als zusaetzliche Zeilen dazu - jede mit ihren gemeldeten Runden/Zeiten.
     let mpHtml = '';
-    if (typeof mpStand === 'function') {
-      const stand = mpStand();
+    // try: mpStand liest mp aus 97-sessions.js - ein Aufruf vor dessen Auswertung (Sprachwechsel
+    // beim Laden) waere sonst ein Fehler der Ladereihenfolge (temporale Todeszone).
+    let mpStandJetzt = null;
+    try { mpStandJetzt = typeof mpStand === 'function' ? mpStand() : null; } catch (e) { /* Ladefolge */ }
+    if (mpStandJetzt) {
+      const stand = mpStandJetzt;
       const leute = (stand && stand.fahrer) || [];
       const lokale = new Set();
       if (typeof raceAllCars === 'function') {
@@ -43299,7 +43347,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // der Verfolger darf also heran - genau dafuer ist die Ausnahme dort.
   // let und nicht const, damit ein Prueflauf sie sweepen kann - sie und SPICE_GAP_MIN
   // bestreiten dasselbe Band, und welches Paar taugt, ist eine Messung und keine Meinung.
-  let SPICE_ATTACK_RANGE = 1.65;
+  let SPICE_ATTACK_RANGE = 1.3;
   function attackRangeSetzen(v) { SPICE_ATTACK_RANGE = v; }
   function attackRangeLesen() { return SPICE_ATTACK_RANGE; }
   function attackPSetzen(v) { SPICE_ATTACK_P = v; }
@@ -43753,7 +43801,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // abstand"). GEMELDET danach: "danach haben sie sich geschoben (zu geringer Abstand) und
   // sind tuer an tuer gefahren" - also schlechter, genau wie die Messreihe unten es fuer
   // groessere Soll-Luecken zeigt (mehr Bremsen, dann Auflaufen). ZURUECK auf 1,2.
-  let SPICE_GAP_MIN = 1.5;      // Kacheln, ab hier wird gelupft (nur noch Rueckfall)
+  let SPICE_GAP_MIN = 1.2;      // Kacheln, ab hier wird gelupft (nur noch Rueckfall)
   // ---- DIE ZEITLUECKE IN SEKUNDEN --------------------------------------------------
   //
   // ABGELEITET UND NICHT GEWAEHLT, aus der Fahrzeuglaenge und dem Tempo. Ein Auto ist 9,5 cm
@@ -43798,7 +43846,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // ist plausibel und kein Messfehler - eine sehr grosse Sollluecke laesst die Autos
   // staerker bremsen, und dann laufen sie wieder auf.
   // In v0.7.57 kurz auf 1,5, wieder zurueck auf 1,2 - siehe SPICE_GAP_MIN darueber.
-  let SPICE_LUECKE_MIN_S = 1.5;
+  let SPICE_LUECKE_MIN_S = 1.2;
   const SPICE_LUECKE_PER_CLOSING = 0.30;
   function lueckeMinSetzen(v) { SPICE_LUECKE_MIN_S = v; }
   function lueckeMinLesen() { return SPICE_LUECKE_MIN_S; }
@@ -43835,13 +43883,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const von = 1.5 - i;        // 1.5..0.5, 1 bei 50 % - fuer Luecken/Reichweite
     attackPSetzen(0.45 * zu);
     attackArmMsSetzen(900 * von);
-    // BESTELLT: "Autos sollen mehr Abstand halten." Die Anker stehen auf 1,5/1,5/1,65 -
-    // vorher 1,2/1,2/1,3. Das Gummiband-Fenster (RANGE - GAP) bleibt bei 0,15, und die
-    // Ungleichung RANGE > GAP bleibt bei jeder Reglerstellung erfuellt (beide laufen mit
-    // demselben `von`).
-    lueckeMinSetzen(1.5 * von);
-    gapMinSetzen(1.5 * von);
-    attackRangeSetzen(1.65 * von);
+    // Anker 1,2/1,2/1,3 (v0.9.3 wieder): eine Zwischenfassung hatte 1,5/1,5/1,65 - genau der
+    // Wert, der in v0.7.57 schon schlechter gemessen war ("tuer an tuer", siehe SPICE_GAP_MIN).
+    // Wer mehr Abstand will, nimmt den Regler "Feld-Abstand" (ghostSpice). Die Ungleichung
+    // RANGE > GAP bleibt bei jeder Reglerstellung erfuellt (beide laufen mit demselben `von`).
+    lueckeMinSetzen(1.2 * von);
+    gapMinSetzen(1.2 * von);
+    attackRangeSetzen(1.3 * von);
   }
 
   // Fortschritt in Kacheln seit dem Start, mit Bruchteil. Absichtlich NICHT ueber den
@@ -50779,7 +50827,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         const modeNach = $('race-mode').value;
         return {
           armiert: false, modeZurueck: 'practice',
-          screenErreichbar: COCKPIT_SCREENS.every((s) => s.id !== 'renneinstellungen'),
+          renneinstellungenRaus: COCKPIT_SCREENS.every((s) => s.id !== 'renneinstellungen'),
           nurEineZeileVorher: true, bewegtSich: false, umlaufKehrtZurueck: true,
           modeVorWahl: vor, modeNachWahl: modeNach,
         };
@@ -56274,8 +56322,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const opt = o || {};
       const echtFetch = window.fetch;
       const merk = { host: mp.host, name: mp.name, an: mp.an, timer: mp.timer,
-                     id: mp.id, letzter: mp.letzterBericht,
-                     runden: dashLapTimes.slice() };
+                     id: mp.id, letzter: mp.letzterBericht, bekannt: mp.bekannt,
+                     stand: mpLetzterStand, runden: dashLapTimes.slice() };
       const gesendet = [];
       try {
         // Kein Zeitgeber waehrend der Messung: mpJoin() startet einen, und ein Takt, der
@@ -56336,6 +56384,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         window.fetch = echtFetch;
         mp.host = merk.host; mp.name = merk.name; mp.an = merk.an;
         mp.id = merk.id; mp.letzterBericht = merk.letzter;
+        // Auch die Fahrerliste des Probelaufs zuruecknehmen (v0.9.3): sonst stand der
+        // Pruef-Fahrer "x" danach in mp.bekannt und loeste einen falschen Abschiedston aus.
+        mp.bekannt = merk.bekannt; mpLetzterStand = merk.stand;
         if (mp.timer) { clearInterval(mp.timer); }
         mp.timer = merk.timer;
         dashLapTimes = merk.runden;
@@ -64764,7 +64815,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // ghostRennhaerteAnwenden() von 1,2/1,2/1,3 auf 1,5/1,5/1,65 angehoben, das
       // Verhaeltnis (RANGE > GAP_MIN) bleibt gleich. Diese Erwartung ist mitgezogen.
       OMEGA_TEST.ghostRennhaerteAnwenden(0.5);
-      const soll = { p: 0.45, arm: 900, luecke: 1.5, gap: 1.5, range: 1.65 };
+      const soll = { p: 0.45, arm: 900, luecke: 1.2, gap: 1.2, range: 1.3 };
       const ist50 = { p: OMEGA_TEST.attackPLesen(), arm: OMEGA_TEST.attackArmMsLesen(),
                       luecke: OMEGA_TEST.lueckeMinLesen(), gap: OMEGA_TEST.gapMinLesen(),
                       range: OMEGA_TEST.attackRangeLesen() };
@@ -71127,7 +71178,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const maengel = [];
     // BESTELLT: "Renneinstellungen aus dem Cockpit-Schirmkreis herausnehmen" - der Schirm
     // darf NICHT mehr blaetterbar sein; Rennmodus/Dauer stehen im Fahren-Tab.
-    if (!r.screenErreichbar) maengel.push('Schirm "renneinstellungen" noch im Cockpit-Kreis');
+    if (!r.renneinstellungenRaus) maengel.push('Schirm "renneinstellungen" noch im Cockpit-Kreis');
     if (r.modeNachWahl === r.modeVorWahl) maengel.push('Tab-Aenderung schreibt nicht auf #race-mode');
     return { ok: !maengel.length,
              mass: 'genau eine Zeile ausgewaehlt, hoch/runter bewegt sie mit Umlauf, '
@@ -77281,8 +77332,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // ---- WARUM DAS NOETIG IST, UND NICHT NUR BEQUEM --------------------------------
   //
   // Alles liegt in localStorage. Ein Browser darf das raeumen - beim Aufraeumen von
-  // Websitedaten, im privaten Modus, auf einem iPhone auch nach sieben Tagen ohne Besuch -
-  // und navigator.storage.persist() wird nirgends angefordert. Fuer die Sitzungshistorie
+  // Websitedaten, im privaten Modus, auf einem iPhone auch nach sieben Tagen ohne Besuch.
+  // navigator.storage.persist() wird seit v0.8.96 angefordert (unten, best effort). Fuer die Sitzungshistorie
   // (bis 200 Rennen mit allen Rundenzeiten) ist das die eigentliche Schwachstelle: die ist
   // nicht nachbaubar, anders als eine Abstimmung.
   //
@@ -77327,7 +77378,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   //      Rennmodus"). Eine benannte Ausnahme mit Grund - und kein aufgeweiteter Selektor,
   //      der nebenbei sess-plot-pick mitnehmen wuerde.
   const SICHERUNG_REITER = ['tab-options', 'tab-control'];
-  const SICHERUNG_EXTRA = ['race-mode', 'mp-force-preset'];
+  const SICHERUNG_EXTRA = ['race-mode', 'mp-force-preset', 'grid-selbst'];
 
   function sicherungRegler() {
     // .opt-row sind die Abstimmungs- und Rennregler, .mw-row die Motorwerkstatt-Regler
@@ -77584,7 +77635,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   const LAGE_ABLAGEN = [
     // Schluessel, Name, und wie man den Inhalt zaehlt. `zahl` gibt null zurueck, wenn es
     // nichts zu zaehlen gibt - dann wird die Zeile weggelassen.
-    ['chc.layout.v1', 'Streckenlayout', (v) => (v && Object.keys(v).length) || null],
+    ['chc.layout.v1', 'Fahrzeug-Layout', (v) => (v && Object.keys(v).length) || null],
     ['carrera-hybrid-tracks', 'Strecken', (v) => (Array.isArray(v) ? v.length : null)],
     ['chc.sessions.v1', 'Sitzungen', (v) => (Array.isArray(v) ? v.length
                                              : (v && v.sitzungen ? v.sitzungen.length : null))],
@@ -77827,11 +77878,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // melden beides. Beide zu nehmen kostet nichts, weil das Schreiben gebuendelt ist.
   document.addEventListener('change', (e) => {
     if (e.target && e.target.closest
-        && e.target.closest('#tab-options, #tab-control, #tab-mp')) autoSicherungPlanen();
+        && (e.target.closest('#tab-options, #tab-control, #tab-mp')
+            || SICHERUNG_EXTRA.indexOf(e.target.id) >= 0)) autoSicherungPlanen();
   }, true);
   document.addEventListener('input', (e) => {
     if (e.target && e.target.closest
-        && e.target.closest('#tab-options, #tab-control, #tab-mp')) autoSicherungPlanen();
+        && (e.target.closest('#tab-options, #tab-control, #tab-mp')
+            || SICHERUNG_EXTRA.indexOf(e.target.id) >= 0)) autoSicherungPlanen();
   }, true);
   // BESTELLT: "alle einstellungen im browsercache gespeichert werden und auch bei neuladen
   // der seite da bleiben (bei apk im cache speichern)". localStorage ueberlebt das Neuladen,
