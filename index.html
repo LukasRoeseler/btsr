@@ -4183,7 +4183,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.1</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.2</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4862,19 +4862,6 @@
         </div>
       </div>
 
-      <!-- MEHRSPIELER-BEREITSCHAFT (v0.8.126): wenn jemand ein Rennen "fuer alle" startet,
-           sehen ALLE Telefone diesen Schirm. Jeder meldet sich bereit; der Initiator kann
-           erst starten, wenn alle anderen bereit sind. -->
-      <div class="gt3-gridschirm" id="mp-ready-screen" data-i18n-skip hidden>
-        <div class="schirm-kopf"><b>Rennen für alle: bereit?</b>
-          <span id="mp-ready-info" data-i18n-skip></span></div>
-        <div class="grid-liste" id="mp-ready-liste"></div>
-        <div class="schirm-fuss grid-fuss">
-          <button type="button" class="warn" id="mp-ready-abbrechen">Abbrechen</button>
-          <button type="button" class="primary grid-start-gross" id="mp-ready-start" disabled>Start</button>
-          <button type="button" class="primary grid-start-gross" id="mp-ready-bereit" hidden>Bereit</button>
-        </div>
-      </div>
     </div>
 
   </section>
@@ -5267,6 +5254,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Mehrspieler: &#8222;Rennen f&#252;r alle&#8220; repariert. Der Bereitschaftsschirm erscheint jetzt auf jedem Reiter, inaktive oder abgemeldete Telefone blockieren den Start nicht mehr, Abbrechen l&#246;scht nicht mehr die Wertung aller, und das angek&#252;ndigte Wetter gilt auch beim Start. App: schnellerer, stabilerer direkter Steuerweg zum Auto (neue APK n&#246;tig).</li>
         <li>Zweite Kopie der App: Die Download-Links zeigen auf deren eigenes Release (mit Download-Z&#228;hler), sonst auf die APK im Repo.</li>
       </ul>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
@@ -11103,6 +11091,22 @@
       <div class="k-frage-knoepfe" id="k-frage-knoepfe"></div>
     </div>
   </div>
+  <!-- MEHRSPIELER-BEREITSCHAFT (v0.8.126, seit v0.9.2 als Einblendung ueber ALLEM): wenn jemand
+       ein Rennen "fuer alle" startet, sehen alle Telefone diesen Schirm, egal auf welchem Reiter.
+       Vorher lag er im Cockpit, der Knopf aber im Mehrspieler-Reiter - niemand sah ihn. Jeder
+       meldet sich bereit; der Initiator startet, sobald alle anderen bereit sind. -->
+  <div class="k-pause" id="mp-ready-screen" hidden>
+    <div class="k-pause-dialog">
+      <h2>Rennen für alle: bereit? <span class="wip-tag">experimentell</span></h2>
+      <p class="muted" id="mp-ready-info" data-i18n-skip></p>
+      <div class="grid-liste" id="mp-ready-liste"></div>
+      <div class="k-frage-knoepfe">
+        <button type="button" class="primary" id="mp-ready-bereit" hidden>Bereit</button>
+        <button type="button" class="primary" id="mp-ready-start" disabled>Start</button>
+        <button type="button" class="warn" id="mp-ready-abbrechen">Abbrechen</button>
+      </div>
+    </div>
+  </div>
 </main>
 <!-- BESCHREIBUNG UND FUSSLEISTE: was die angewaehlte Zeile tut, und welche Taste was macht. -->
 
@@ -11204,17 +11208,59 @@
     }
     return omegaBleDa;
   }
-  // Natives Direktschreiben, FEUER UND WEG: der Aufruf loest sofort auf und haelt den
-  // Steuertakt nicht auf. Der eigentliche GATT-Write laeuft im Plugin auf einem eigenen
-  // Hintergrund-Thread. Kommt waehrend eines Write ein neuer Befehl, gewinnt der neueste.
+  // Natives Direktschreiben, FEUER UND WEG (v0.9.2 neu): toNative OHNE gespeicherten Rueckruf -
+  // writeControl antwortet ab APK 0.9.2 gar nicht (RETURN_NONE), es bleibt also auch kein Promise
+  // je Takt liegen. Aeltere OmegaBle-Fassungen antworten noch; ohne Rueckruf verfaellt die Antwort.
+  //
+  // EHRLICHER RUECKFALL: OmegaBle meldet ueber status(), ob es die Verbindung findet. Solange das
+  // nicht feststeht oder "nein" heisst, schreibt das Community-Plugin. Geprueft wird beim ersten
+  // Befehl und danach alle 2 s, im Hintergrund. Kennt das Plugin status() nicht (APK 0.8.124-126),
+  // bleibt es beim alten Verhalten: OmegaBle schreibt.
+  const omegaLage = new Map();
+  function omegaBleBereit(z) {
+    let l = omegaLage.get(z.deviceId);
+    if (!l) { l = { bereit: null, geprueft: 0, fragt: false, zaehler: null, alt: false }; omegaLage.set(z.deviceId, l); }
+    const jetzt = performance.now();
+    if (!l.fragt && jetzt - l.geprueft > 2000) {
+      l.fragt = true;
+      C.nativePromise('OmegaBle', 'status', z)
+        .then((r) => {
+          // Findet es die Verbindung, verwirft aber seit der letzten Frage nur noch (nichts
+          // geschrieben, etwas verworfen): dann ebenfalls das Plugin nehmen.
+          const v = l.zaehler;
+          const nurVerworfen = v && r && r.geschrieben === v.geschrieben && r.verworfen > v.verworfen;
+          l.bereit = !!(r && r.bereit) && !nurVerworfen;
+          l.zaehler = r || null;
+        })
+        .catch(() => { l.bereit = true; l.alt = true; })
+        .then(() => { l.fragt = false; l.geprueft = performance.now(); });
+    }
+    return l.bereit === true;
+  }
   function omegaBleSchreiben(z, hex) {
     try {
-      C.nativePromise('OmegaBle', 'writeControl', { deviceId: z.deviceId, service: z.service,
-                                                    characteristic: z.characteristic, value: hex })
-        .catch(() => {});
+      C.toNative('OmegaBle', 'writeControl', { deviceId: z.deviceId, service: z.service,
+                                               characteristic: z.characteristic, value: hex });
       return true;
     } catch (e) { return false; }
   }
+  // Waehrend das Community-Plugin selbst ans GATT geht (Abo, Lesen, Schreiben mit Antwort),
+  // schreibt OmegaBle nicht: Android erlaubt nur EINEN GATT-Vorgang zugleich. Gezaehlt, weil
+  // mehrere Vorgaenge ueberlappen koennen; das Plugin hebt die Pause nach 1,5 s selbst auf.
+  let omegaPausen = 0;
+  async function mitOmegaPause(fn) {
+    if (!omegaBleVerfuegbar()) return fn();
+    if (omegaPausen++ === 0) await C.nativePromise('OmegaBle', 'pause', { an: true }).catch(() => {});
+    try { return await fn(); } finally {
+      if (--omegaPausen === 0) C.nativePromise('OmegaBle', 'pause', { an: false }).catch(() => {});
+    }
+  }
+  // Fuer die Anzeige "Funk-Rundlauf" (Optionen > System).
+  window.OMEGA_BRUECKE.omegaInfo = () => {
+    if (!omegaBleVerfuegbar()) return { weg: 'Plugin' };
+    const l = [...omegaLage.values()][0];
+    return { weg: l && l.bereit ? 'OmegaBle' : 'Plugin', alt: !!(l && l.alt), zaehler: l && l.zaehler };
+  };
 
   let bereit = null;
   function starten() {
@@ -11257,18 +11303,18 @@
     writeValueWithoutResponse(daten) {
       const z = this._ziel;
       const hex = zuHex(daten);
-      if (omegaBleVerfuegbar() && omegaBleSchreiben(z, hex)) return Promise.resolve();
+      if (omegaBleVerfuegbar() && omegaBleBereit(z) && omegaBleSchreiben(z, hex)) return Promise.resolve();
       return ruf('writeWithoutResponse', { deviceId: z.deviceId, service: z.service,
                                            characteristic: z.characteristic, value: hex, timeout: 300 });
     }
     async writeValueWithResponse(daten) {
       const z = this._ziel;
-      await ruf('write', { deviceId: z.deviceId, service: z.service,
-                           characteristic: z.characteristic, value: zuHex(daten), timeout: 300 });
+      await mitOmegaPause(() => ruf('write', { deviceId: z.deviceId, service: z.service,
+                                               characteristic: z.characteristic, value: zuHex(daten), timeout: 300 }));
     }
     writeValue(daten) { return this.writeValueWithResponse(daten); }
     async readValue() {
-      const r = await ruf('read', this._ziel);
+      const r = await mitOmegaPause(() => ruf('read', this._ziel));
       this.value = ausHex(r && r.value);
       return this.value;
     }
@@ -11283,11 +11329,11 @@
           this.dispatchEvent(new Event('characteristicvaluechanged'));
         });
       }
-      await ruf('startNotifications', z);
+      await mitOmegaPause(() => ruf('startNotifications', z));
       return this;
     }
     async stopNotifications() {
-      await ruf('stopNotifications', this._ziel);
+      await mitOmegaPause(() => ruf('stopNotifications', this._ziel));
       if (this._abo) { this._abo.remove(); this._abo = null; }
       return this;
     }
@@ -11328,6 +11374,13 @@
       // SCHNELLES VERBINDUNGSINTERVALL. Android waehlt sonst 30-50 ms, und der Sendetakt ist
       // 45 ms - dann faellt jedes zweite Paket auf das naechste Intervall. 1 = HIGH.
       ruf('requestConnectionPriority', { deviceId: id, connectionPriority: 1 }).catch(() => {});
+      // Und alle 10 s nachlegen (v0.9.2): manche Autos/Telefone handeln das Intervall spaeter
+      // wieder hoch, und ein langsames Intervall fuehlt sich genau wie Eingabeverzoegerung an.
+      clearInterval(this._prio);
+      this._prio = setInterval(() => {
+        if (!this.connected) { clearInterval(this._prio); return; }
+        ruf('requestConnectionPriority', { deviceId: id, connectionPriority: 1 }).catch(() => {});
+      }, 10000);
       return this;
     }
     disconnect() {
@@ -12202,6 +12255,20 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Weg": "Path",
+    "alte APK": "old APK",
+    "geschrieben": "written",
+    "wiederholt": "retried",
+    "verworfen": "dropped",
+    "Mehrspieler: „Rennen für alle“ repariert. Der Bereitschaftsschirm erscheint jetzt auf jedem Reiter, inaktive oder abgemeldete Telefone blockieren den Start nicht mehr, Abbrechen löscht nicht mehr die Wertung aller, und das angekündigte Wetter gilt auch beim Start. App: schnellerer, stabilerer direkter Steuerweg zum Auto (neue APK nötig).": "Multiplayer: \"Race for everyone\" fixed. The ready screen now appears on every tab, inactive or departed phones no longer block the start, cancelling no longer wipes everyone's standings, and the announced weather also applies at the start. App: faster, more stable direct control path to the car (new APK needed).",
+    "Rennen für alle: bereit?": "Race for everyone: ready?",
+    "du": "you",
+    "startet": "starts",
+    "wartet …": "waiting …",
+    "Alle bereit, du kannst starten.": "Everyone is ready, you can start.",
+    "Warte, bis alle anderen bereit sind.": "Waiting until everyone else is ready.",
+    "Du bist bereit. Warte, bis gestartet wird.": "You are ready. Wait for the start.",
+    "Tippe auf „Bereit“, sobald du soweit bist.": "Tap \"Ready\" as soon as you are set.",
     "Zweite Kopie der App: Die Download-Links zeigen auf deren eigenes Release (mit Download-Zähler), sonst auf die APK im Repo.": "Second copy of the app: download links point to its own release (with download counter), otherwise to the APK in the repo.",
     "neu morgen": "new tomorrow",
     "neu in {n} Tagen": "new in {n} days",
@@ -20561,8 +20628,14 @@
     if (!el || !el.offsetParent) return;
     const s = typeof funkStatistik === 'function' ? funkStatistik() : null;
     const wv = (navigator.userAgent.match(/Chrome\/(\d+)/) || [])[1];
+    // Schreibweg in der App (v0.9.2): OmegaBle (direkt, ohne Rundlauf) oder das Plugin.
+    const ob = window.OMEGA_APP && window.OMEGA_BRUECKE && window.OMEGA_BRUECKE.omegaInfo
+      ? window.OMEGA_BRUECKE.omegaInfo() : null;
+    const z = ob && ob.zaehler;
+    const weg = ob ? ' · ' + t('Weg') + ' ' + ob.weg + (ob.alt ? ' (' + t('alte APK') + ')' : '')
+      + (z ? ' · ' + z.geschrieben + ' ' + t('geschrieben') + ', ' + z.wiederholt + ' ' + t('wiederholt') + ', ' + z.verworfen + ' ' + t('verworfen') : '') : '';
     el.textContent = (s ? Math.round(s.mittel) + ' / ' + Math.round(s.p95) + ' ms' + (s.haenger ? ' · ' + s.haenger + '× hing' : '')
-      : t('noch keine Befehle')) + (wv ? ' · WebView ' + wv : '');
+      : t('noch keine Befehle')) + weg + (wv ? ' · WebView ' + wv : '');
   }, 1000);
   // COCKPIT GEDROSSELT (v0.8.41): hoechstens alle COCKPIT_MAL_MS, nach dem Senden.
   const COCKPIT_MAL_MS = 90;
@@ -21910,6 +21983,8 @@
     // unsichtbar darunter weiter.
     const mi = $('mp-info');
     if (mi && !mi.hidden) return mi;
+    const mr = $('mp-ready-screen');
+    if (mr && !mr.hidden) return mr;
     const tab = document.querySelector('.tabpage.active');
     if (!tab || tab.id === 'tab-race') return null;
     // Der TITELBILDSCHIRM hat keine Zeilen: jede Taste fuehrt nach Fahren (51-konsole.js).
@@ -22039,7 +22114,7 @@
   // Zeile gemerkt, beim Zurueckkommen steht die Auswahl wieder dort. Nicht fuer Dialoge
   // (#k-frage, Tutorial): die fangen immer oben an.
   const menuNavMerk = {};
-  const MENU_NAV_OHNE_MERK = ['k-frage', 'k-tour-karte'];
+  const MENU_NAV_OHNE_MERK = ['k-frage', 'k-tour-karte', 'mp-ready-screen'];
   function menuNavMerkLeeren() { Object.keys(menuNavMerk).forEach((k) => { delete menuNavMerk[k]; }); }
   function menuNavEnsureContext() {
     const key = menuNavContextNow();
@@ -69202,6 +69277,22 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Renntyp, Zurueck und Start per Pad, Tauschen ohne zweites Pad harmlos' };
   });
 
+  stAdd('Mehrspieler: Bereitschaft nur mit aktiven Fahrern, Rennen an Host-Kennung erkannt', () => {
+    const f = [];
+    if (!mpAktiv({ alter: 3 }) || mpAktiv({ alter: 40 }) || !mpAktiv({})) f.push('mpAktiv: 15-s-Grenze stimmt nicht');
+    const merk = mp.rennenId;
+    try {
+      mp.rennenId = 'abc:2';
+      if (mpRennenPruefen({ id: 2, startAt: Date.now() + 9000, plan: {}, phase: 'start' }, 'abc')) f.push('gleiches Rennen zweimal genommen');
+      if (mpRennenPruefen({ id: 3, startAt: Date.now() + 9000, plan: {}, phase: 'bereit' }, 'abc')) f.push('Bereitschaftsphase als Start genommen');
+      if (mpRennenPruefen({ id: 3, startAt: Date.now() - 1000, plan: {}, phase: 'start' }, 'abc')) f.push('vergangenen Start genommen');
+      if (mp.rennenId !== 'abc:2') f.push('Abgelehntes hat die Renn-Kennung verbraucht');
+    } finally { mp.rennenId = merk; }
+    const scr = $('mp-ready-screen');
+    if (!scr || scr.closest('.tabpage')) f.push('Bereitschaftsschirm liegt in einem Reiter statt darueber');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'aktiv <= 15 s, boot+id, Phase, Schirm global' };
+  });
+
   stAdd('Mehrspieler: Ampel nach Frist, Uhrabgleich, gemeinsamer Wetterplan', () => {
     const f = [];
     const z = ampelZeitplan(10000);
@@ -75770,16 +75861,23 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     mp.offset = mp.proben.reduce((a, x) => (x.weg < a.weg ? x : a)).off;
   }
   // Ein neuer Plan vom Host: uebernehmen, wenn Gruen noch bevorsteht.
-  function mpRennenPruefen(r) {
+  //
+  // Erkannt wird ein Rennen an HOST-KENNUNG + Nummer (v0.9.2): die Nummer beginnt nach einem
+  // Neustart des Hosts wieder bei 1, und ohne die Kennung (`boot`) hielte ein Telefon das neue
+  // Rennen fuer ein schon gefahrenes und liesse es still aus. Die Bereitschaftsphase hat noch
+  // keine Startzeit und wird hier nicht genommen (alte Hosts kennen keine `phase`).
+  function mpRennenPruefen(r, boot) {
     if (!r || !r.id || !r.startAt || !r.plan) return false;
-    if (r.id === mp.rennenId) return false;
+    if (r.phase && r.phase !== 'start') return false;
+    const schl = (boot || '') + ':' + r.id;
+    if (schl === mp.rennenId) return false;
     const lokal = r.startAt - mp.offset;
     // Erst pruefen, dann merken: Wer zu spaet (oder mit falsch geeichter Uhr) kommt,
     // darf den Renn-ID nicht verbrauchen, sonst wuerde der naechste Poll denselben Plan
     // nicht mehr annehmen und das Rennen startete fuer ihn nie. So kann eine verpasste
     // Probe (gedrosselter Tab, langsames WLAN, Uhrversatz) beim naechsten Poll nachziehen.
     if (lokal < Date.now() + 500) return false;          // schon vorbei oder zu knapp
-    mp.rennenId = r.id;
+    mp.rennenId = schl;
     mpRennenUebernehmen(r.plan, lokal);
     return true;
   }
@@ -75806,8 +75904,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     showHudToast(t('Rennen für alle: Ampel kommt gleich'));
     log('Mehrspieler: gemeinsamer Start in ' + Math.round((lokal - Date.now()) / 100) / 10 + ' s.', 'info');
   }
-  async function mpRennenFuerAlle() {
-    if (!mp.an) { mpSay(t('Erst mitmachen, dann für alle starten.'), true); return; }
+  // Fehler sichtbar machen, wo man gerade ist: die Statuszeile steht nur im Mehrspieler-Reiter.
+  function mpFehler(text) {
+    mpSay(text, true);
+    if (typeof showHudToast === 'function') showHudToast(text);
+  }
+  // EIN Plan (v0.9.2): vorher wurde er beim Ankuendigen und beim Start je neu gewuerfelt - dann
+  // stimmten Wetter und Wind nicht mit dem angekuendigten Plan ueberein.
+  function mpPlanBauen() {
     const w = Math.random() * 2 * Math.PI;
     const plan = { modus: raceMode, limit: raceLimit, wx: raceWxStart, wxChange: raceWxChange,
                    fliegend: raceFlying, pit: racePitRequired, tank: raceFuelStartL,
@@ -75820,6 +75924,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const p = window.__presetActive();
       if (p) plan.preset = p;
     }
+    return plan;
+  }
+  async function mpRennenFuerAlle() {
+    if (!mp.an) { mpFehler(t('Erst mitmachen, dann für alle starten.')); return; }
+    const plan = mpPlanBauen();
+    mp.planBereit = plan;
     try {
       const t0 = Date.now();
       // BEREIT-GATE (v0.8.126): zuerst nur den Bereitschaftsschirm ankündigen (phase
@@ -75833,11 +75943,21 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const d = await r.json();
       if (!d.ok) throw new Error(d.fehler || 'abgelehnt');
       mpUhrProbe(t0, t1, d.zeitMs);
+      // Ein Host ohne Bereitschaftsrunde (aelter als v0.8.126) startet sofort und schickt die
+      // Startzeit gleich mit: dann wie frueher direkt uebernehmen.
+      if (d.startAt) { mpRennenPruefen({ id: d.id, startAt: d.startAt, plan }, mpBoot()); return; }
       mpSay(t('Rennen für alle: alle bereit machen, dann startet der Host.'));
+      mpHolen();                                         // Schirm sofort zeigen
     } catch (e) {
-      mpSay(t('Start für alle fehlgeschlagen') + ': ' + e.message, true);
+      mpFehler(t('Start für alle fehlgeschlagen') + ': ' + e.message);
     }
   }
+  function mpBoot() { return mpLetzterStand && mpLetzterStand.boot; }
+  // Wer zaehlt bei "alle bereit": nur, wer sich in den letzten 15 s gemeldet hat (dieselbe
+  // Grenze wie in beiden Hosts). Abgemeldete, schlafende oder abgestuerzte Telefone blockierten
+  // sonst den Start fuer immer - sie blieben in der Fahrerliste stehen.
+  const MP_AKTIV_S = 15;
+  function mpAktiv(f) { return !(f && Number.isFinite(f.alter) && f.alter > MP_AKTIV_S); }
   // ---- BEREITSCHAFTSSCHIRM (v0.8.126) -----------------------------------------------
   // Der Schirm wird aus dem /mp/state-Abruf gespeist (mpBereitSchirm). Jeder tippt
   // "Bereit" (POST /mp/ready); der Initiator sieht "Start", sobald alle anderen bereit sind.
@@ -75851,28 +75971,28 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (rennen.phase !== 'bereit') { screen.hidden = true; return; }
     const initiator = rennen.initiator;
     const bereitListe = Array.isArray(rennen.bereit) ? rennen.bereit : [];
-    const leute = (d && d.fahrer) || [];
+    const leute = ((d && d.fahrer) || []).filter(mpAktiv);
     const istInitiator = mp.id === initiator;
     const andere = leute.filter((f) => f.id && f.id !== initiator);
     const alleBereit = andere.every((f) => bereitListe.indexOf(f.id) >= 0);
     const host = $('mp-ready-liste');
     if (host) {
       host.innerHTML = leute.map((f) => {
-        const bereit = bereitListe.indexOf(f.id) >= 0;
+        const bereit = f.id === initiator || bereitListe.indexOf(f.id) >= 0;
         const eigen = f.id === mp.id;
         return '<div class="mp-ready-zeile' + (bereit ? ' bereit' : '') + '">'
-          + '<span class="mp-ready-name">' + mpBereitEsc(f.name || f.id) + (eigen ? ' (du)' : '')
-          + (f.id === initiator ? ' · Host' : '') + '</span>'
-          + '<span class="mp-ready-status">' + (bereit ? '\u2713 bereit' : 'wartet\u2026')
+          + '<span class="mp-ready-name">' + mpBereitEsc(f.name || f.id) + (eigen ? ' (' + t('du') + ')' : '')
+          + (f.id === initiator ? ' · ' + t('startet') : '') + '</span>'
+          + '<span class="mp-ready-status">' + (bereit ? '\u2713 ' + t('bereit') : t('wartet …'))
           + '</span></div>';
       }).join('');
     }
     const info = $('mp-ready-info');
     if (info) {
       info.textContent = istInitiator
-        ? (alleBereit ? 'Alle bereit \u2013 du kannst starten.' : 'Warte auf die Bereitschaft aller anderen.')
-        : (bereitListe.indexOf(mp.id) >= 0 ? 'Du bist bereit. Warte, bis der Host startet.'
-           : 'Tippe auf \u201eBereit\u201c, sobald du soweit bist.');
+        ? (alleBereit ? t('Alle bereit, du kannst starten.') : t('Warte, bis alle anderen bereit sind.'))
+        : (bereitListe.indexOf(mp.id) >= 0 ? t('Du bist bereit. Warte, bis gestartet wird.')
+           : t('Tippe auf „Bereit“, sobald du soweit bist.'));
     }
     if ($('mp-ready-bereit')) $('mp-ready-bereit').hidden = istInitiator || bereitListe.indexOf(mp.id) >= 0;
     if ($('mp-ready-start')) {
@@ -75880,7 +76000,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       $('mp-ready-start').disabled = !alleBereit;
     }
     if ($('mp-ready-abbrechen')) $('mp-ready-abbrechen').hidden = !istInitiator;
-    screen.hidden = false;
+    if (screen.hidden) {
+      screen.hidden = false;
+      if (typeof menuNavEnsureContext === 'function') { menuNavEnsureContext(); menuNavIndex = 0; menuNavGezeigt = true; menuNavRender(); }
+    }
   }
   async function mpBereitMelden() {
     if (!mp.an) return;
@@ -75892,15 +76015,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
   async function mpBereitStarten() {
     if (!mp.an) return;
-    const w = Math.random() * 2 * Math.PI;
-    const plan = { modus: raceMode, limit: raceLimit, wx: raceWxStart, wxChange: raceWxChange,
-                   fliegend: raceFlying, pit: racePitRequired, tank: raceFuelStartL,
-                   wetterPlan: wetterPlanBauen(), wind: { x: Math.cos(w), y: Math.sin(w) } };
-    if ($('mp-force-preset') && $('mp-force-preset').checked
-        && typeof window.__presetActive === 'function') {
-      const p = window.__presetActive();
-      if (p) plan.preset = p;
-    }
+    // Derselbe Plan wie angekuendigt; nach einem Neuladen kennt ihn nur der Host (plan: null).
+    const plan = mp.planBereit || null;
     try {
       const t0 = Date.now();
       const r = await fetch(mpUrl('/mp/race'), { method: 'POST', cache: 'no-store',
@@ -75911,16 +76027,21 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const d = await r.json();
       if (!d.ok) throw new Error(d.fehler || 'abgelehnt');
       mpUhrProbe(t0, t1, d.zeitMs);
-      mpRennenPruefen({ id: d.id, startAt: d.startAt, plan });
+      mpRennenPruefen({ id: d.id, startAt: d.startAt, plan: d.plan || plan, phase: 'start' }, mpBoot());
       $('mp-ready-screen').hidden = true;
+      mp.planBereit = null;
     } catch (e) {
-      mpSay(t('Start für alle fehlgeschlagen') + ': ' + e.message, true);
+      mpFehler(t('Start für alle fehlgeschlagen') + ': ' + e.message);
     }
   }
+  // Nur die Bereitschaftsrunde beenden (v0.9.2). Vorher rief das /mp/reset - und loeschte
+  // damit Fahrerliste und Wertung aller Mitspieler.
   async function mpBereitAbbrechen() {
     try {
-      await fetch(mpUrl('/mp/reset'), { method: 'GET', cache: 'no-store' });
-    } catch (e) { /* egal */ }
+      await fetch(mpUrl('/mp/race/cancel'), { method: 'POST', cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: mp.id }) });
+    } catch (e) { /* der naechste Abruf zeigt es */ }
+    mp.planBereit = null;
     $('mp-ready-screen').hidden = true;
   }
   // Aus toggleRace (70-race.js): im Mehrspieler erst fragen. true = Dialog offen.
@@ -75945,7 +76066,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const d = await r.json();
       mpUhrProbe(t0, Date.now(), d.zeitMs);
-      mpRennenPruefen(d.rennen);
+      mpRennenPruefen(d.rennen, d.boot);
       mp.zuschauer = d.zuschauer || 0;
       mpLetzterStand = d;
       mpPosTakt();
@@ -76012,6 +76133,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
 
   function mpLeave() {
+    // Beim Host abmelden (v0.9.2), sonst stand man noch in der Fahrerliste und blockierte eine
+    // Bereitschaftsrunde. Aeltere Hosts kennen /mp/leave nicht - dann zaehlt die 15-s-Grenze.
+    if (mp.an && mp.host) {
+      fetch(mpUrl('/mp/leave'), { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ id: mp.id }) }).catch(() => {});
+    }
+    if ($('mp-ready-screen')) $('mp-ready-screen').hidden = true;
+    mp.planBereit = null;
     mp.an = false;
     mp.bekannt = null;
     mpPosTakt();

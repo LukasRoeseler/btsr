@@ -10565,6 +10565,22 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Renntyp, Zurueck und Start per Pad, Tauschen ohne zweites Pad harmlos' };
   });
 
+  stAdd('Mehrspieler: Bereitschaft nur mit aktiven Fahrern, Rennen an Host-Kennung erkannt', () => {
+    const f = [];
+    if (!mpAktiv({ alter: 3 }) || mpAktiv({ alter: 40 }) || !mpAktiv({})) f.push('mpAktiv: 15-s-Grenze stimmt nicht');
+    const merk = mp.rennenId;
+    try {
+      mp.rennenId = 'abc:2';
+      if (mpRennenPruefen({ id: 2, startAt: Date.now() + 9000, plan: {}, phase: 'start' }, 'abc')) f.push('gleiches Rennen zweimal genommen');
+      if (mpRennenPruefen({ id: 3, startAt: Date.now() + 9000, plan: {}, phase: 'bereit' }, 'abc')) f.push('Bereitschaftsphase als Start genommen');
+      if (mpRennenPruefen({ id: 3, startAt: Date.now() - 1000, plan: {}, phase: 'start' }, 'abc')) f.push('vergangenen Start genommen');
+      if (mp.rennenId !== 'abc:2') f.push('Abgelehntes hat die Renn-Kennung verbraucht');
+    } finally { mp.rennenId = merk; }
+    const scr = $('mp-ready-screen');
+    if (!scr || scr.closest('.tabpage')) f.push('Bereitschaftsschirm liegt in einem Reiter statt darueber');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'aktiv <= 15 s, boot+id, Phase, Schirm global' };
+  });
+
   stAdd('Mehrspieler: Ampel nach Frist, Uhrabgleich, gemeinsamer Wetterplan', () => {
     const f = [];
     const z = ampelZeitplan(10000);

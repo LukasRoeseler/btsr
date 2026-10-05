@@ -2314,8 +2314,14 @@
     if (!el || !el.offsetParent) return;
     const s = typeof funkStatistik === 'function' ? funkStatistik() : null;
     const wv = (navigator.userAgent.match(/Chrome\/(\d+)/) || [])[1];
+    // Schreibweg in der App (v0.9.2): OmegaBle (direkt, ohne Rundlauf) oder das Plugin.
+    const ob = window.OMEGA_APP && window.OMEGA_BRUECKE && window.OMEGA_BRUECKE.omegaInfo
+      ? window.OMEGA_BRUECKE.omegaInfo() : null;
+    const z = ob && ob.zaehler;
+    const weg = ob ? ' · ' + t('Weg') + ' ' + ob.weg + (ob.alt ? ' (' + t('alte APK') + ')' : '')
+      + (z ? ' · ' + z.geschrieben + ' ' + t('geschrieben') + ', ' + z.wiederholt + ' ' + t('wiederholt') + ', ' + z.verworfen + ' ' + t('verworfen') : '') : '';
     el.textContent = (s ? Math.round(s.mittel) + ' / ' + Math.round(s.p95) + ' ms' + (s.haenger ? ' · ' + s.haenger + '× hing' : '')
-      : t('noch keine Befehle')) + (wv ? ' · WebView ' + wv : '');
+      : t('noch keine Befehle')) + weg + (wv ? ' · WebView ' + wv : '');
   }, 1000);
   // COCKPIT GEDROSSELT (v0.8.41): hoechstens alle COCKPIT_MAL_MS, nach dem Senden.
   const COCKPIT_MAL_MS = 90;

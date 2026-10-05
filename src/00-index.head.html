@@ -4183,7 +4183,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.1</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.2</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4862,19 +4862,6 @@
         </div>
       </div>
 
-      <!-- MEHRSPIELER-BEREITSCHAFT (v0.8.126): wenn jemand ein Rennen "fuer alle" startet,
-           sehen ALLE Telefone diesen Schirm. Jeder meldet sich bereit; der Initiator kann
-           erst starten, wenn alle anderen bereit sind. -->
-      <div class="gt3-gridschirm" id="mp-ready-screen" data-i18n-skip hidden>
-        <div class="schirm-kopf"><b>Rennen für alle: bereit?</b>
-          <span id="mp-ready-info" data-i18n-skip></span></div>
-        <div class="grid-liste" id="mp-ready-liste"></div>
-        <div class="schirm-fuss grid-fuss">
-          <button type="button" class="warn" id="mp-ready-abbrechen">Abbrechen</button>
-          <button type="button" class="primary grid-start-gross" id="mp-ready-start" disabled>Start</button>
-          <button type="button" class="primary grid-start-gross" id="mp-ready-bereit" hidden>Bereit</button>
-        </div>
-      </div>
     </div>
 
   </section>
@@ -5267,6 +5254,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Mehrspieler: &#8222;Rennen f&#252;r alle&#8220; repariert. Der Bereitschaftsschirm erscheint jetzt auf jedem Reiter, inaktive oder abgemeldete Telefone blockieren den Start nicht mehr, Abbrechen l&#246;scht nicht mehr die Wertung aller, und das angek&#252;ndigte Wetter gilt auch beim Start. App: schnellerer, stabilerer direkter Steuerweg zum Auto (neue APK n&#246;tig).</li>
         <li>Zweite Kopie der App: Die Download-Links zeigen auf deren eigenes Release (mit Download-Z&#228;hler), sonst auf die APK im Repo.</li>
       </ul>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
@@ -11101,6 +11089,22 @@
         <input type="text" id="k-frage-eingabe-feld" maxlength="16" autocomplete="off">
       </div>
       <div class="k-frage-knoepfe" id="k-frage-knoepfe"></div>
+    </div>
+  </div>
+  <!-- MEHRSPIELER-BEREITSCHAFT (v0.8.126, seit v0.9.2 als Einblendung ueber ALLEM): wenn jemand
+       ein Rennen "fuer alle" startet, sehen alle Telefone diesen Schirm, egal auf welchem Reiter.
+       Vorher lag er im Cockpit, der Knopf aber im Mehrspieler-Reiter - niemand sah ihn. Jeder
+       meldet sich bereit; der Initiator startet, sobald alle anderen bereit sind. -->
+  <div class="k-pause" id="mp-ready-screen" hidden>
+    <div class="k-pause-dialog">
+      <h2>Rennen für alle: bereit? <span class="wip-tag">experimentell</span></h2>
+      <p class="muted" id="mp-ready-info" data-i18n-skip></p>
+      <div class="grid-liste" id="mp-ready-liste"></div>
+      <div class="k-frage-knoepfe">
+        <button type="button" class="primary" id="mp-ready-bereit" hidden>Bereit</button>
+        <button type="button" class="primary" id="mp-ready-start" disabled>Start</button>
+        <button type="button" class="warn" id="mp-ready-abbrechen">Abbrechen</button>
+      </div>
     </div>
   </div>
 </main>
