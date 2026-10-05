@@ -2362,6 +2362,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Fahrercharakter je Auto und Rennen, und die Startreaktion. Beide Standard AUS.
     charakter: false,
     wuerzeStart: false,
+    // v0.9.5 (experimentell): Tempo-Streuung in Prozent (0 = alle gleich), Startversatz je
+    // Zweierreihe, und zu zweit in Kurven innen/Mitte. Siehe ghostStreuFaktor, ghostStaffelMs,
+    // ghostPaarKurve.
+    tempoStreuung: 0,
+    staffelStart: true,
+    staffelMs: 200,
+    paarKurve: true,
     // Lernen von Runde zu Runde, standardmaessig aus: es aendert das Fahrverhalten ueber
     // ein Rennen hinweg, und das soll niemand ungefragt bekommen.
     learnPace: false,
@@ -4705,6 +4712,40 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // NUR IM ECHTEN RENNEN, und das gehoert gesagt: es haengt an raceStartedAt, das
   // raceGreen() setzt. simStart() geht nicht durch raceGreen - die Kennzahlensonde sieht
   // diesen Baustein also nicht, und eine Messung dazu waere eine Messung von nichts.
+  // ---- TEMPO-STREUUNG, STARTVERSATZ, PAAR IN DER KURVE (v0.9.5, experimentell) ---------
+  // Streuung: nur auf der Geraden (BESTELLT "im Schnitt minimal schneller auf der Geraden"),
+  // Faktor 1 + Prozent * tempoZ. Bei 0 % genau 1 - das Fahrverhalten bleibt dann bitgleich.
+  function ghostStreuFaktor(car) {
+    const p = ghostCfg.tempoStreuung || 0;
+    const g = car && car.ghost;
+    if (!p || !g || typeof g.tempoZ !== 'number') return 1;
+    if (ghostTurnOf(car.tileCode)) return 1;          // in Kurven gleich
+    return 1 + (p / 100) * g.tempoZ;
+  }
+  // Wartezeit nach Gruen fuer dieses Auto: Reihe = Startplatz / 2 (abgerundet).
+  function ghostStaffelMs(car) {
+    if (!ghostCfg.staffelStart) return 0;
+    const pos = gridPosOf(car);
+    if (pos < 0) return 0;
+    return Math.floor(pos / 2) * (ghostCfg.staffelMs || 0);
+  }
+  // Zu zweit in einer Kurve: das vordere Auto innen, das hintere in der Mitte. null = keine
+  // Vorgabe (allein, Gerade, Schalter aus). Innen ist +dir (siehe ghostLineFromCode).
+  const GHOST_PAAR_INNEN = 0.8;
+  function ghostPaarKurve(car) {
+    if (!ghostCfg.paarKurve || !car || !car.ghost) return null;
+    const dir = ghostTurnOf(car.tileCode);
+    if (!dir) return null;
+    let nb = null;
+    for (const o of ghostFieldRacing()) {
+      if (o !== car && o.ghost && ghostNahe(car, o)) { nb = o; break; }
+    }
+    if (!nb) return null;
+    const a = ghostOrtGes(car), b = ghostOrtGes(nb);
+    const vorn = (a === null || b === null) ? garage.indexOf(car) < garage.indexOf(nb) : a >= b;
+    return vorn ? dir * GHOST_PAAR_INNEN : 0;
+  }
+
   const GHOST_START_REAKTION_MS = [80, 300];
   const GHOST_START_VORSICHT_MS = 2500;
   const GHOST_START_VORSICHT = 0.85;
@@ -6589,6 +6630,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                   // Die Reaktionszeit dieses Fahrers am Start, in Millisekunden. Auch sie
                   // wird immer gezogen und nur bei eingeschaltetem Schalter gelesen.
                   startReaktion: startReaktionZiehen(),
+                  // Lage dieses Fahrers in der Tempo-Streuung, -1..1, EINMAL je Rennen gezogen
+                  // und nur gelesen, wenn der Regler nicht auf 0 steht.
+                  tempoZ: Math.random() * 2 - 1,
                   // Der aufintegrierte Weg auf der aktuellen Kachel, in Zeichnungseinheiten.
                   // Er traegt die Kachelphase, sobald dieser Kacheltyp zweimal gemessen ist -
                   // siehe ghostTilePhaseWeg().
@@ -7292,6 +7336,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Gelb wirklich das Limit ist: ein lernender Ghost darf sich nicht ueber eine
       // Neutralisierung hinwegsetzen.
       target = Math.max(0.05, Math.min(1, target * learnFactors(car).pace));
+      target *= ghostStreuFaktor(car);
       // Gelbe Flagge: alle auf denselben Wert, und zwar bevor irgendetwas anderes daran
       // dreht. Gleiches Tempo fuer alle heisst von selbst "kein Ueberholen".
       const underYellow = flagState !== 'green';
@@ -7450,6 +7495,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Begruendung und Zahlen stehen bei GHOST_START_REAKTION_MS. Es steht NEBEN der
       // Einfuehrungsrunde, weil es dieselbe Art Griff ist - eine Obergrenze in der
       // Startphase - und vor der Anfahrrampe, die ihre eigene Aufgabe hat.
+      // STARTVERSATZ JE REIHE (v0.9.5): Reihe 1 (Platz 1/2) sofort, jede weitere ghostCfg.staffelMs
+      // spaeter. Unabhaengig von der Startreaktion und vor ihr - beide addieren sich.
+      const reihenWarten = raceStartedAt ? ghostStaffelMs(car) : 0;
+      if (reihenWarten && now - raceStartedAt < reihenWarten) target = 0;
       if (ghostCfg.wuerzeStart && raceStartedAt && g.startReaktion) {
         const seitGruen = now - raceStartedAt;
         if (seitGruen < g.startReaktion) target = 0;
@@ -7692,9 +7741,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         // eines von beiden ausweichen kann, ist eine Mitte, auf der sie sich treffen.
         const passSeite = (spice.attack || 0) !== 0 ? Math.sign(spice.attack)
                         : (weiche !== 0 ? Math.sign(weiche) : 0);
+        const paar = pq === null && !underYellow && passSeite === 0 ? ghostPaarKurve(car) : null;
         const quer = pq !== null ? pq
           : underYellow ? 0
           : passSeite !== 0 ? passSeite * passAussen()
+          : paar !== null ? paar * GHOST_LINE_STEER
           : ghostLineOffset(car) * ghostCfg.line * GHOST_LINE_STEER * linieGewicht;
         // BESTELLT (diese Runde): "querlage bei boxenstopps klappt nicht, die autos
         // bleiben mitten auf der strecke stehen." Der Kommentar zwei Absaetze ueber pq
@@ -7705,7 +7756,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         // haelt ein Boxenstopp (pq !== null) exakt den Randwert, ohne Zusatz.
         const querRohSumme = pq !== null ? quer : (quer
               + g.bias * ghostCfg.lateral * 0.25
-              + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER * spurGewicht
+              + (paar !== null ? 0 : ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER * spurGewicht)
               // Der Querausschlag eines Verbremsers, additiv - siehe SPICE_FEHLER_QUER.
               + (spice.fehlerQuer || 0));
         // ---- QUERTRAEGHEIT: eine RATENBEGRENZUNG und kein Tiefpass ------------------
@@ -7843,13 +7894,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
           // dieser Zweig beginnt. Ein Boxenstopp ist kein Zuschlag auf eine Kurvenfahrt.
           steer = pq2;
         } else {
+          const paar2 = passSeite2 === 0 ? ghostPaarKurve(car) : null;
           steer += (passSeite2 !== 0
                     ? passSeite2 * passAussen()
+                    : paar2 !== null ? paar2 * GHOST_LINE_STEER
                     : ghostLineOffset(car) * ghostCfg.line * GHOST_LINE_STEER
                       * ghostLinieGewicht(mix2))
                  + g.bias * ghostCfg.lateral * 0.25
-                 + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER
-                   * ghostSpurGewicht(mix2);
+                 + (paar2 !== null ? 0 : ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER
+                   * ghostSpurGewicht(mix2));
         }
       }
       // DER PRUEFSTAND UEBERSCHREIBT ALLES, auch das Schlaengeln: ein fester Versatz, der

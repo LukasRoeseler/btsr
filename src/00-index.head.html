@@ -4211,7 +4211,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.4</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.5</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5282,6 +5282,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Ghosts (experimentell): Regler &#8222;Tempo-Streuung&#8220; (Vorgabe 0 %), Start je Startreihe versetzt (an, 200 ms je Reihe), und zu zweit in Kurven f&#228;hrt das vordere Auto innen, das hintere in der Mitte (an).</li>
         <li>Streckenscan langsamer (auch in der Haarnadel), das Auto h&#228;lt am Ende an; der Live-Scan erkennt das Rundenende selbst. Reiter wechseln per Wischen nach links/rechts. Kein Neuladen mehr durch Herunterziehen. Challenges zeigen &#8222;X Ergebnisse&#8220;. Cockpit: Rundenzeiten doppelt so gro&#223;, Sound- und Start-Knopf rechts entfernt.</li>
         <li>Obere Reiterleiste deutlich h&#246;her (PC 40 px, Handy 46 px), gut zum Tippen. Meine Strecken: Ton beim Laden, rundes L&#246;schen-Kreuz mit R&#252;ckfrage. Ghosts halten wieder den gemessenen Abstand (1,2 Kacheln, mehr &#252;ber &#8222;Feld-Abstand&#8220;). Knockout und Derby als experimentell gekennzeichnet, Texte &#252;bersetzt.</li>
         <li>Mehrspieler: &#8222;Rennen f&#252;r alle&#8220; repariert. Der Bereitschaftsschirm erscheint jetzt auf jedem Reiter, inaktive oder abgemeldete Telefone blockieren den Start nicht mehr, Abbrechen l&#246;scht nicht mehr die Wertung aller, und das angek&#252;ndigte Wetter gilt auch beim Start. App: schnellerer, stabilerer direkter Steuerweg zum Auto (neue APK n&#246;tig).</li>
@@ -9687,6 +9688,32 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-ueber-val">0.5</span>
         </div></div>
+      <!-- v0.9.5. BESTELLT: "gibt es fuer ghosts schon einen slider, der die heterogenitaet der
+           geschwindigkeiten angibt, also dass manche autos im schnitt minimal schneller sind auf
+           der geraden? Ansonsten einbauen, als experimentell, erstmal bei 0 varianz lassen" -->
+      <div class="opt-row"><div class="opt-label">Ghost: Tempo-Streuung<span class="wip-tag">experimentell</span><small>Jedes Auto bekommt je Rennen ein eigenes Grundtempo auf der Geraden, bis zu so viel Prozent schneller oder langsamer. 0&nbsp;% = alle gleich.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-streuung" min="0" max="10" step="1" value="0">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-streuung-val">0%</span>
+        </div></div>
+      <!-- v0.9.5. BESTELLT: "verzoegere beim rennstart leicht je paerchen autos, also platz 1 und 2
+           fahren minimal frueher los als 3 und 4 usw ... Ausserdem, wenn 2 autos nebeneinander
+           fahren, mach es so, dass in den kurven eins innen und eins in der mitte faehrt (nicht
+           aussen, dann riskiert es einen abflug). Diese einstellungen als toggles die
+           standardmaessig an sind einbauen" -->
+      <div class="opt-row"><div class="opt-label">Ghost: Start je Startreihe versetzt<span class="wip-tag">experimentell</span><small>Startplatz 1 und 2 fahren sofort los, 3 und 4 etwas später, 5 und 6 noch etwas später – so kommt Luft in die erste Kurve.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-staffel" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Versatz je Startreihe<span class="wip-tag">experimentell</span><small>Wie viel später jede weitere Zweierreihe losfährt.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-staffel-ms" min="50" max="600" step="50" value="200">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-staffel-ms-val">200 ms</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Zu zweit in Kurven innen/Mitte<span class="wip-tag">experimentell</span><small>Fahren zwei Autos nebeneinander in eine Kurve, nimmt das vordere die Innenseite und das hintere die Mitte, statt außen zu fahren und abzufliegen.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-paar-kurve" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: Kurvendrosselung<small>Wie viel Tempo in Kurven abgegeben wird. <b>Braucht ein Streckenlayout</b>: ohne gelesene oder gebaute Kacheln wei&szlig; der Ghost nicht, wo eine Kurve ist, und der Regler multipliziert eine Null.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>

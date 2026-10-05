@@ -4211,7 +4211,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.4</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.5</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5282,6 +5282,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Ghosts (experimentell): Regler &#8222;Tempo-Streuung&#8220; (Vorgabe 0 %), Start je Startreihe versetzt (an, 200 ms je Reihe), und zu zweit in Kurven f&#228;hrt das vordere Auto innen, das hintere in der Mitte (an).</li>
         <li>Streckenscan langsamer (auch in der Haarnadel), das Auto h&#228;lt am Ende an; der Live-Scan erkennt das Rundenende selbst. Reiter wechseln per Wischen nach links/rechts. Kein Neuladen mehr durch Herunterziehen. Challenges zeigen &#8222;X Ergebnisse&#8220;. Cockpit: Rundenzeiten doppelt so gro&#223;, Sound- und Start-Knopf rechts entfernt.</li>
         <li>Obere Reiterleiste deutlich h&#246;her (PC 40 px, Handy 46 px), gut zum Tippen. Meine Strecken: Ton beim Laden, rundes L&#246;schen-Kreuz mit R&#252;ckfrage. Ghosts halten wieder den gemessenen Abstand (1,2 Kacheln, mehr &#252;ber &#8222;Feld-Abstand&#8220;). Knockout und Derby als experimentell gekennzeichnet, Texte &#252;bersetzt.</li>
         <li>Mehrspieler: &#8222;Rennen f&#252;r alle&#8220; repariert. Der Bereitschaftsschirm erscheint jetzt auf jedem Reiter, inaktive oder abgemeldete Telefone blockieren den Start nicht mehr, Abbrechen l&#246;scht nicht mehr die Wertung aller, und das angek&#252;ndigte Wetter gilt auch beim Start. App: schnellerer, stabilerer direkter Steuerweg zum Auto (neue APK n&#246;tig).</li>
@@ -9687,6 +9688,32 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-ueber-val">0.5</span>
         </div></div>
+      <!-- v0.9.5. BESTELLT: "gibt es fuer ghosts schon einen slider, der die heterogenitaet der
+           geschwindigkeiten angibt, also dass manche autos im schnitt minimal schneller sind auf
+           der geraden? Ansonsten einbauen, als experimentell, erstmal bei 0 varianz lassen" -->
+      <div class="opt-row"><div class="opt-label">Ghost: Tempo-Streuung<span class="wip-tag">experimentell</span><small>Jedes Auto bekommt je Rennen ein eigenes Grundtempo auf der Geraden, bis zu so viel Prozent schneller oder langsamer. 0&nbsp;% = alle gleich.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-streuung" min="0" max="10" step="1" value="0">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-streuung-val">0%</span>
+        </div></div>
+      <!-- v0.9.5. BESTELLT: "verzoegere beim rennstart leicht je paerchen autos, also platz 1 und 2
+           fahren minimal frueher los als 3 und 4 usw ... Ausserdem, wenn 2 autos nebeneinander
+           fahren, mach es so, dass in den kurven eins innen und eins in der mitte faehrt (nicht
+           aussen, dann riskiert es einen abflug). Diese einstellungen als toggles die
+           standardmaessig an sind einbauen" -->
+      <div class="opt-row"><div class="opt-label">Ghost: Start je Startreihe versetzt<span class="wip-tag">experimentell</span><small>Startplatz 1 und 2 fahren sofort los, 3 und 4 etwas später, 5 und 6 noch etwas später – so kommt Luft in die erste Kurve.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-staffel" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Versatz je Startreihe<span class="wip-tag">experimentell</span><small>Wie viel später jede weitere Zweierreihe losfährt.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-staffel-ms" min="50" max="600" step="50" value="200">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-staffel-ms-val">200 ms</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Zu zweit in Kurven innen/Mitte<span class="wip-tag">experimentell</span><small>Fahren zwei Autos nebeneinander in eine Kurve, nimmt das vordere die Innenseite und das hintere die Mitte, statt außen zu fahren und abzufliegen.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-paar-kurve" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: Kurvendrosselung<small>Wie viel Tempo in Kurven abgegeben wird. <b>Braucht ein Streckenlayout</b>: ohne gelesene oder gebaute Kacheln wei&szlig; der Ghost nicht, wo eine Kurve ist, und der Regler multipliziert eine Null.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -12285,6 +12312,15 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Ghost: Tempo-Streuung": "Ghost: speed spread",
+    "Jedes Auto bekommt je Rennen ein eigenes Grundtempo auf der Geraden, bis zu so viel Prozent schneller oder langsamer. 0 % = alle gleich.": "Each car gets its own base speed on the straights per race, up to this many percent faster or slower. 0 % = all equal.",
+    "Ghost: Start je Startreihe versetzt": "Ghost: staggered start per grid row",
+    "Startplatz 1 und 2 fahren sofort los, 3 und 4 etwas später, 5 und 6 noch etwas später – so kommt Luft in die erste Kurve.": "Grid slots 1 and 2 go at once, 3 and 4 a little later, 5 and 6 later still – this leaves room in the first corner.",
+    "Ghost: Versatz je Startreihe": "Ghost: delay per grid row",
+    "Wie viel später jede weitere Zweierreihe losfährt.": "How much later each further row of two starts.",
+    "Ghost: Zu zweit in Kurven innen/Mitte": "Ghost: side by side in corners inside/middle",
+    "Fahren zwei Autos nebeneinander in eine Kurve, nimmt das vordere die Innenseite und das hintere die Mitte, statt außen zu fahren und abzufliegen.": "When two cars enter a corner side by side, the front one takes the inside and the rear one the middle, instead of going wide and flying off.",
+    "Ghosts (experimentell): Regler „Tempo-Streuung“ (Vorgabe 0 %), Start je Startreihe versetzt (an, 200 ms je Reihe), und zu zweit in Kurven fährt das vordere Auto innen, das hintere in der Mitte (an).": "Ghosts (experimental): \"speed spread\" slider (default 0 %), staggered start per grid row (on, 200 ms per row), and when side by side in corners the front car takes the inside, the rear car the middle (on).",
     "Scan fertig: {n} Teile, Runde geschlossen.": "Scan done: {n} pieces, lap closed.",
     "STRECKE GESCANNT: {n} TEILE": "TRACK SCANNED: {n} PIECES",
     "1 Ergebnis": "1 result",
@@ -38372,6 +38408,8 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     ['ghost-charakter', 'charakter'],
     ['ghost-w-start', 'wuerzeStart'],
     ['ghost-w-recovery', 'wuerzeRecovery'],
+    ['ghost-staffel', 'staffelStart'],
+    ['ghost-paar-kurve', 'paarKurve'],
     // Die zwei Boxenstopp-Schalter. Sie gehoeren in dieselbe Liste, weil sie dieselbe Form
     // haben - Kaestchen an, Feld true - und nicht, weil sie mit der Wuerze zu tun haetten.
     ['ghost-pit', 'pitAn'],
@@ -38523,6 +38561,14 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   $('ghost-feld').addEventListener('input', (e) => {
     ghostCfg.feldAbstand = parseFloat(e.target.value);
     $('ghost-feld-val').textContent = e.target.value + '%';
+  });
+  if ($('ghost-streuung')) $('ghost-streuung').addEventListener('input', (e) => {
+    ghostCfg.tempoStreuung = parseFloat(e.target.value);
+    $('ghost-streuung-val').textContent = e.target.value + '%';
+  });
+  if ($('ghost-staffel-ms')) $('ghost-staffel-ms').addEventListener('input', (e) => {
+    ghostCfg.staffelMs = parseFloat(e.target.value);
+    $('ghost-staffel-ms-val').textContent = e.target.value + ' ms';
   });
   $('ghost-ueber').addEventListener('input', (e) => {
     ghostCfg.ueberholRate = parseFloat(e.target.value);
@@ -41377,6 +41423,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Fahrercharakter je Auto und Rennen, und die Startreaktion. Beide Standard AUS.
     charakter: false,
     wuerzeStart: false,
+    // v0.9.5 (experimentell): Tempo-Streuung in Prozent (0 = alle gleich), Startversatz je
+    // Zweierreihe, und zu zweit in Kurven innen/Mitte. Siehe ghostStreuFaktor, ghostStaffelMs,
+    // ghostPaarKurve.
+    tempoStreuung: 0,
+    staffelStart: true,
+    staffelMs: 200,
+    paarKurve: true,
     // Lernen von Runde zu Runde, standardmaessig aus: es aendert das Fahrverhalten ueber
     // ein Rennen hinweg, und das soll niemand ungefragt bekommen.
     learnPace: false,
@@ -43720,6 +43773,40 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // NUR IM ECHTEN RENNEN, und das gehoert gesagt: es haengt an raceStartedAt, das
   // raceGreen() setzt. simStart() geht nicht durch raceGreen - die Kennzahlensonde sieht
   // diesen Baustein also nicht, und eine Messung dazu waere eine Messung von nichts.
+  // ---- TEMPO-STREUUNG, STARTVERSATZ, PAAR IN DER KURVE (v0.9.5, experimentell) ---------
+  // Streuung: nur auf der Geraden (BESTELLT "im Schnitt minimal schneller auf der Geraden"),
+  // Faktor 1 + Prozent * tempoZ. Bei 0 % genau 1 - das Fahrverhalten bleibt dann bitgleich.
+  function ghostStreuFaktor(car) {
+    const p = ghostCfg.tempoStreuung || 0;
+    const g = car && car.ghost;
+    if (!p || !g || typeof g.tempoZ !== 'number') return 1;
+    if (ghostTurnOf(car.tileCode)) return 1;          // in Kurven gleich
+    return 1 + (p / 100) * g.tempoZ;
+  }
+  // Wartezeit nach Gruen fuer dieses Auto: Reihe = Startplatz / 2 (abgerundet).
+  function ghostStaffelMs(car) {
+    if (!ghostCfg.staffelStart) return 0;
+    const pos = gridPosOf(car);
+    if (pos < 0) return 0;
+    return Math.floor(pos / 2) * (ghostCfg.staffelMs || 0);
+  }
+  // Zu zweit in einer Kurve: das vordere Auto innen, das hintere in der Mitte. null = keine
+  // Vorgabe (allein, Gerade, Schalter aus). Innen ist +dir (siehe ghostLineFromCode).
+  const GHOST_PAAR_INNEN = 0.8;
+  function ghostPaarKurve(car) {
+    if (!ghostCfg.paarKurve || !car || !car.ghost) return null;
+    const dir = ghostTurnOf(car.tileCode);
+    if (!dir) return null;
+    let nb = null;
+    for (const o of ghostFieldRacing()) {
+      if (o !== car && o.ghost && ghostNahe(car, o)) { nb = o; break; }
+    }
+    if (!nb) return null;
+    const a = ghostOrtGes(car), b = ghostOrtGes(nb);
+    const vorn = (a === null || b === null) ? garage.indexOf(car) < garage.indexOf(nb) : a >= b;
+    return vorn ? dir * GHOST_PAAR_INNEN : 0;
+  }
+
   const GHOST_START_REAKTION_MS = [80, 300];
   const GHOST_START_VORSICHT_MS = 2500;
   const GHOST_START_VORSICHT = 0.85;
@@ -45604,6 +45691,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                   // Die Reaktionszeit dieses Fahrers am Start, in Millisekunden. Auch sie
                   // wird immer gezogen und nur bei eingeschaltetem Schalter gelesen.
                   startReaktion: startReaktionZiehen(),
+                  // Lage dieses Fahrers in der Tempo-Streuung, -1..1, EINMAL je Rennen gezogen
+                  // und nur gelesen, wenn der Regler nicht auf 0 steht.
+                  tempoZ: Math.random() * 2 - 1,
                   // Der aufintegrierte Weg auf der aktuellen Kachel, in Zeichnungseinheiten.
                   // Er traegt die Kachelphase, sobald dieser Kacheltyp zweimal gemessen ist -
                   // siehe ghostTilePhaseWeg().
@@ -46307,6 +46397,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Gelb wirklich das Limit ist: ein lernender Ghost darf sich nicht ueber eine
       // Neutralisierung hinwegsetzen.
       target = Math.max(0.05, Math.min(1, target * learnFactors(car).pace));
+      target *= ghostStreuFaktor(car);
       // Gelbe Flagge: alle auf denselben Wert, und zwar bevor irgendetwas anderes daran
       // dreht. Gleiches Tempo fuer alle heisst von selbst "kein Ueberholen".
       const underYellow = flagState !== 'green';
@@ -46465,6 +46556,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Begruendung und Zahlen stehen bei GHOST_START_REAKTION_MS. Es steht NEBEN der
       // Einfuehrungsrunde, weil es dieselbe Art Griff ist - eine Obergrenze in der
       // Startphase - und vor der Anfahrrampe, die ihre eigene Aufgabe hat.
+      // STARTVERSATZ JE REIHE (v0.9.5): Reihe 1 (Platz 1/2) sofort, jede weitere ghostCfg.staffelMs
+      // spaeter. Unabhaengig von der Startreaktion und vor ihr - beide addieren sich.
+      const reihenWarten = raceStartedAt ? ghostStaffelMs(car) : 0;
+      if (reihenWarten && now - raceStartedAt < reihenWarten) target = 0;
       if (ghostCfg.wuerzeStart && raceStartedAt && g.startReaktion) {
         const seitGruen = now - raceStartedAt;
         if (seitGruen < g.startReaktion) target = 0;
@@ -46707,9 +46802,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         // eines von beiden ausweichen kann, ist eine Mitte, auf der sie sich treffen.
         const passSeite = (spice.attack || 0) !== 0 ? Math.sign(spice.attack)
                         : (weiche !== 0 ? Math.sign(weiche) : 0);
+        const paar = pq === null && !underYellow && passSeite === 0 ? ghostPaarKurve(car) : null;
         const quer = pq !== null ? pq
           : underYellow ? 0
           : passSeite !== 0 ? passSeite * passAussen()
+          : paar !== null ? paar * GHOST_LINE_STEER
           : ghostLineOffset(car) * ghostCfg.line * GHOST_LINE_STEER * linieGewicht;
         // BESTELLT (diese Runde): "querlage bei boxenstopps klappt nicht, die autos
         // bleiben mitten auf der strecke stehen." Der Kommentar zwei Absaetze ueber pq
@@ -46720,7 +46817,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         // haelt ein Boxenstopp (pq !== null) exakt den Randwert, ohne Zusatz.
         const querRohSumme = pq !== null ? quer : (quer
               + g.bias * ghostCfg.lateral * 0.25
-              + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER * spurGewicht
+              + (paar !== null ? 0 : ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER * spurGewicht)
               // Der Querausschlag eines Verbremsers, additiv - siehe SPICE_FEHLER_QUER.
               + (spice.fehlerQuer || 0));
         // ---- QUERTRAEGHEIT: eine RATENBEGRENZUNG und kein Tiefpass ------------------
@@ -46858,13 +46955,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
           // dieser Zweig beginnt. Ein Boxenstopp ist kein Zuschlag auf eine Kurvenfahrt.
           steer = pq2;
         } else {
+          const paar2 = passSeite2 === 0 ? ghostPaarKurve(car) : null;
           steer += (passSeite2 !== 0
                     ? passSeite2 * passAussen()
+                    : paar2 !== null ? paar2 * GHOST_LINE_STEER
                     : ghostLineOffset(car) * ghostCfg.line * GHOST_LINE_STEER
                       * ghostLinieGewicht(mix2))
                  + g.bias * ghostCfg.lateral * 0.25
-                 + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER
-                   * ghostSpurGewicht(mix2);
+                 + (paar2 !== null ? 0 : ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER
+                   * ghostSpurGewicht(mix2));
         }
       }
       // DER PRUEFSTAND UEBERSCHREIBT ALLES, auch das Schlaengeln: ein fester Versatz, der
@@ -69428,6 +69527,30 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (merkTab) showTab(merkTab);
     }
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Renntyp, Zurueck und Start per Pad, Tauschen ohne zweites Pad harmlos' };
+  });
+
+  stAdd('Ghosts: Tempo-Streuung (0 = gleich), Startversatz je Reihe, Paar in der Kurve', () => {
+    const f = [];
+    const merk = { p: ghostCfg.tempoStreuung, s: ghostCfg.staffelStart, ms: ghostCfg.staffelMs, k: ghostCfg.paarKurve, ord: raceGridOrder };
+    try {
+      const auto = { ghost: { tempoZ: 0.7 }, tileCode: null, device: { id: 'g3' } };
+      ghostCfg.tempoStreuung = 0;
+      if (ghostStreuFaktor(auto) !== 1) f.push('Streuung 0 aendert das Tempo');
+      ghostCfg.tempoStreuung = 10;
+      if (Math.abs(ghostStreuFaktor(auto) - 1.07) > 1e-9) f.push('10 % bei z=0,7 ergibt ' + ghostStreuFaktor(auto));
+      raceGridOrder = ['g1', 'g2', 'g3', 'g4', 'g5'];
+      ghostCfg.staffelStart = true; ghostCfg.staffelMs = 200;
+      const ms = (id) => ghostStaffelMs({ device: { id } });
+      if (ms('g1') !== 0 || ms('g2') !== 0 || ms('g3') !== 200 || ms('g4') !== 200 || ms('g5') !== 400) f.push('Reihen: ' + ['g1','g2','g3','g4','g5'].map(ms).join('/'));
+      ghostCfg.staffelStart = false;
+      if (ms('g5') !== 0) f.push('Schalter aus, trotzdem Versatz');
+      ghostCfg.paarKurve = false;
+      if (ghostPaarKurve(auto) !== null) f.push('Paar-Regel trotz Schalter aus');
+    } finally {
+      ghostCfg.tempoStreuung = merk.p; ghostCfg.staffelStart = merk.s; ghostCfg.staffelMs = merk.ms;
+      ghostCfg.paarKurve = merk.k; raceGridOrder = merk.ord;
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Faktor 1 bei 0 %, Reihen 0/0/200/200/400 ms, Schalter wirken' };
   });
 
   stAdd('Mehrspieler: Bereitschaft nur mit aktiven Fahrern, Rennen an Host-Kennung erkannt', () => {

@@ -10565,6 +10565,30 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Renntyp, Zurueck und Start per Pad, Tauschen ohne zweites Pad harmlos' };
   });
 
+  stAdd('Ghosts: Tempo-Streuung (0 = gleich), Startversatz je Reihe, Paar in der Kurve', () => {
+    const f = [];
+    const merk = { p: ghostCfg.tempoStreuung, s: ghostCfg.staffelStart, ms: ghostCfg.staffelMs, k: ghostCfg.paarKurve, ord: raceGridOrder };
+    try {
+      const auto = { ghost: { tempoZ: 0.7 }, tileCode: null, device: { id: 'g3' } };
+      ghostCfg.tempoStreuung = 0;
+      if (ghostStreuFaktor(auto) !== 1) f.push('Streuung 0 aendert das Tempo');
+      ghostCfg.tempoStreuung = 10;
+      if (Math.abs(ghostStreuFaktor(auto) - 1.07) > 1e-9) f.push('10 % bei z=0,7 ergibt ' + ghostStreuFaktor(auto));
+      raceGridOrder = ['g1', 'g2', 'g3', 'g4', 'g5'];
+      ghostCfg.staffelStart = true; ghostCfg.staffelMs = 200;
+      const ms = (id) => ghostStaffelMs({ device: { id } });
+      if (ms('g1') !== 0 || ms('g2') !== 0 || ms('g3') !== 200 || ms('g4') !== 200 || ms('g5') !== 400) f.push('Reihen: ' + ['g1','g2','g3','g4','g5'].map(ms).join('/'));
+      ghostCfg.staffelStart = false;
+      if (ms('g5') !== 0) f.push('Schalter aus, trotzdem Versatz');
+      ghostCfg.paarKurve = false;
+      if (ghostPaarKurve(auto) !== null) f.push('Paar-Regel trotz Schalter aus');
+    } finally {
+      ghostCfg.tempoStreuung = merk.p; ghostCfg.staffelStart = merk.s; ghostCfg.staffelMs = merk.ms;
+      ghostCfg.paarKurve = merk.k; raceGridOrder = merk.ord;
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Faktor 1 bei 0 %, Reihen 0/0/200/200/400 ms, Schalter wirken' };
+  });
+
   stAdd('Mehrspieler: Bereitschaft nur mit aktiven Fahrern, Rennen an Host-Kennung erkannt', () => {
     const f = [];
     if (!mpAktiv({ alter: 3 }) || mpAktiv({ alter: 40 }) || !mpAktiv({})) f.push('mpAktiv: 15-s-Grenze stimmt nicht');
