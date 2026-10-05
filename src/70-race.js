@@ -1698,6 +1698,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     clearTimeout(raceCountdownTimer);
     const schritt = (k) => {
       if (raceState !== 'countdown') return;
+      ampelK = k;
       const [bei, stufe] = plan[k];
       const warte = bei - Date.now();
       if (warte > 4) { raceCountdownTimer = setTimeout(() => schritt(k), warte); return; }
@@ -1714,7 +1715,19 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       raceGreen();
       setTimeout(() => setRaceLights(0), 900);
     };
+    ampelPlan = plan; ampelSchritt = schritt;
     schritt(0);
+  }
+  // v0.9.32: die laufende Ampel um delta ms verschieben (WLAN-Mehrspieler: feinerer
+  // Uhrabgleich waehrend des Vorlaufs). Nur solange noch keine Lampe leuchtet.
+  let ampelPlan = null, ampelSchritt = null, ampelK = 0;
+  function ampelVerschieben(delta) {
+    if (!ampelPlan || !ampelSchritt || raceState !== 'countdown' || ampelK > 0) return false;
+    if (ampelPlan[0][0] + delta < Date.now() + 300) return false;
+    for (const p of ampelPlan) p[0] += delta;
+    clearTimeout(raceCountdownTimer);
+    ampelSchritt(ampelK);
+    return true;
   }
 
   // Alles, was beim Gruen passiert. Eine Funktion, zwei Aufrufer: der Countdown und das

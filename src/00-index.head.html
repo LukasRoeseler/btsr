@@ -4379,7 +4379,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.31</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.32</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5484,6 +5484,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>WLAN-Mehrspieler: genauerer gemeinsamer Start. Die Zeit wird beim Eintreffen der Antwort gemessen, nicht erst nach dem Einlesen, und im Vorlauf gleicht jedes Telefon die Host-Uhr acht Mal nach und stellt die Ampel nach. Rennende f&#252;r alle: Hat ein Mitspieler die Rundenzahl erreicht, ist bei allen die laufende Runde die letzte. Neu: &#8222;Rennen f&#252;r alle beenden&#8220; (WLAN-Reiter und R&#252;ckfrage beim Verlassen des Rennens). An den Host gehen jetzt die Rennrunden inklusive Fr&#252;hstart-Strafe.</li>
         <li>FAHREN: Die Autos-Kachel zeigt ab zwei verbundenen Autos alle (ohne Foto als Farbfl&#228;che), die Motorsound-Kachel ist weg (Motor jetzt nur in der Garage), Fahrgef&#252;hl und Start sind gr&#246;&#223;er. Garage: ein neues Foto erscheint sofort links in der Auto-Kachel. Podium: gr&#246;&#223;ere Namen, bei zwei Autos nur Platz 1 und 2, allein ein Solo-Podest mit Gesamtzeit, bester Runde und Vergleich mit deiner Bestzeit auf der Strecke. Cockpit: die Rundenliste zeigt h&#246;chstens f&#252;nf Runden und schiebt nichts mehr aus dem Bild. Ohne Bahn zeigt die Renn&#252;bersicht dein Streckenfoto bzw. den Platzhalter statt des Layouts. Freies Training: kein &#8222;Automatisch aufstellen&#8220;. Knockout hei&#223;t jetzt &#8222;NPC Knockout&#8220;, braucht mindestens einen Ghost und schaltet &#8222;Auf der Bahn&#8220; ein.</li>
         <li>Derby: Ein Crash gegen die Wand beendet das Spiel nicht mehr. Es endet erst, wenn jemand das Kill-Ziel erreicht oder nur noch ein Teilnehmer f&#228;hrt; allein ohne Gegner nur von Hand. 2 Spieler: Auto 2 und 3 haben beim Boxenstopp dieselben T&#246;ne wie Auto 1 (Tanken, Reparatur, Schrauber), auf ihrer Stereoseite. Latenz: Spieler 2 und 3 senden &#252;ber denselben Weg wie Auto 1 (der neueste Befehl ersetzt den wartenden), und der Schirm &#8222;Beide&#8220; wird direkt nach dem Senden gezeichnet.</li>
         <li>Behoben: Nach einem abgebrochenen Derby blieb das Cockpit im n&#228;chsten normalen Rennen im Derby-Modus. Behoben: Gespiegelte Strecken mit beiden Haarnadeltypen (z. B. Balkonia) gingen nicht mehr zu, weil das gerade St&#252;ck der Haarnadel r&#252;ckw&#228;rts gefahren am Ausgang liegt. Jetzt schlie&#223;en alle 83 Challenge-Strecken auch gespiegelt. Neu in den Renneinstellungen: &#8222;Gelbe Flagge deaktivieren&#8220; (ab Werk aus). Die Motorwahl von Auto 2 und 3 wird jetzt gespeichert und gesichert.</li>
@@ -8312,6 +8313,7 @@
             <button class="primary" id="mp-join">Mitmachen</button>
             <button id="mp-info-join" title="Ohne eigenes Auto: zeigt Strecke, Autos und Rangliste">Als Info-Screen <span class="wip-tag">experimentell</span></button>
             <button id="mp-rennen-alle">Rennen für alle starten <span class="wip-tag">experimentell</span></button>
+            <button id="mp-rennen-ende">Rennen für alle beenden <span class="wip-tag">experimentell</span></button>
             <label class="small mp-force" title="Tempo, Handling, Beschleunigung, Schaden und Reifenverschleiss auf alle setzen (Controller, Tasten, Empfindlichkeit, Rumble und Sound bleiben unberührt)">Renneinstellungen erzwingen <input type="checkbox" id="mp-force-preset" checked></label>
             <button id="mp-leave" class="warn">Verlassen</button>
           </div>

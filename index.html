@@ -4379,7 +4379,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.31</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.32</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5484,6 +5484,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>WLAN-Mehrspieler: genauerer gemeinsamer Start. Die Zeit wird beim Eintreffen der Antwort gemessen, nicht erst nach dem Einlesen, und im Vorlauf gleicht jedes Telefon die Host-Uhr acht Mal nach und stellt die Ampel nach. Rennende f&#252;r alle: Hat ein Mitspieler die Rundenzahl erreicht, ist bei allen die laufende Runde die letzte. Neu: &#8222;Rennen f&#252;r alle beenden&#8220; (WLAN-Reiter und R&#252;ckfrage beim Verlassen des Rennens). An den Host gehen jetzt die Rennrunden inklusive Fr&#252;hstart-Strafe.</li>
         <li>FAHREN: Die Autos-Kachel zeigt ab zwei verbundenen Autos alle (ohne Foto als Farbfl&#228;che), die Motorsound-Kachel ist weg (Motor jetzt nur in der Garage), Fahrgef&#252;hl und Start sind gr&#246;&#223;er. Garage: ein neues Foto erscheint sofort links in der Auto-Kachel. Podium: gr&#246;&#223;ere Namen, bei zwei Autos nur Platz 1 und 2, allein ein Solo-Podest mit Gesamtzeit, bester Runde und Vergleich mit deiner Bestzeit auf der Strecke. Cockpit: die Rundenliste zeigt h&#246;chstens f&#252;nf Runden und schiebt nichts mehr aus dem Bild. Ohne Bahn zeigt die Renn&#252;bersicht dein Streckenfoto bzw. den Platzhalter statt des Layouts. Freies Training: kein &#8222;Automatisch aufstellen&#8220;. Knockout hei&#223;t jetzt &#8222;NPC Knockout&#8220;, braucht mindestens einen Ghost und schaltet &#8222;Auf der Bahn&#8220; ein.</li>
         <li>Derby: Ein Crash gegen die Wand beendet das Spiel nicht mehr. Es endet erst, wenn jemand das Kill-Ziel erreicht oder nur noch ein Teilnehmer f&#228;hrt; allein ohne Gegner nur von Hand. 2 Spieler: Auto 2 und 3 haben beim Boxenstopp dieselben T&#246;ne wie Auto 1 (Tanken, Reparatur, Schrauber), auf ihrer Stereoseite. Latenz: Spieler 2 und 3 senden &#252;ber denselben Weg wie Auto 1 (der neueste Befehl ersetzt den wartenden), und der Schirm &#8222;Beide&#8220; wird direkt nach dem Senden gezeichnet.</li>
         <li>Behoben: Nach einem abgebrochenen Derby blieb das Cockpit im n&#228;chsten normalen Rennen im Derby-Modus. Behoben: Gespiegelte Strecken mit beiden Haarnadeltypen (z. B. Balkonia) gingen nicht mehr zu, weil das gerade St&#252;ck der Haarnadel r&#252;ckw&#228;rts gefahren am Ausgang liegt. Jetzt schlie&#223;en alle 83 Challenge-Strecken auch gespiegelt. Neu in den Renneinstellungen: &#8222;Gelbe Flagge deaktivieren&#8220; (ab Werk aus). Die Motorwahl von Auto 2 und 3 wird jetzt gespeichert und gesichert.</li>
@@ -8312,6 +8313,7 @@
             <button class="primary" id="mp-join">Mitmachen</button>
             <button id="mp-info-join" title="Ohne eigenes Auto: zeigt Strecke, Autos und Rangliste">Als Info-Screen <span class="wip-tag">experimentell</span></button>
             <button id="mp-rennen-alle">Rennen für alle starten <span class="wip-tag">experimentell</span></button>
+            <button id="mp-rennen-ende">Rennen für alle beenden <span class="wip-tag">experimentell</span></button>
             <label class="small mp-force" title="Tempo, Handling, Beschleunigung, Schaden und Reifenverschleiss auf alle setzen (Controller, Tasten, Empfindlichkeit, Rumble und Sound bleiben unberührt)">Renneinstellungen erzwingen <input type="checkbox" id="mp-force-preset" checked></label>
             <button id="mp-leave" class="warn">Verlassen</button>
           </div>
@@ -12341,6 +12343,11 @@
     "Spieler 1": "Player 1",
     "Spieler 2": "Player 2",
     "Spieler 3": "Player 3",
+    "Rennen für alle beenden": "End race for everyone",
+    "Rennen für alle beendet": "Race ended for everyone",
+    "Ein Mitspieler ist im Ziel, laufende Runde zählt noch": "Another player has finished, the current lap still counts",
+    "Erst mitmachen": "Join first",
+    "Letzte Runde": "Last lap",
     "Die Abstimmung deines Autos. Den Motorsound wählst du je Auto in der Garage; jeder Klang kommt aus einer Motorsimulation.": "Your car's setup. You choose the engine sound per car in the garage; every sound comes from an engine simulation.",
     "Erste Wertung auf dieser Strecke": "First result on this track",
     "Neue Bestzeit!": "New personal best!",
@@ -12669,6 +12676,7 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "WLAN-Mehrspieler: genauerer gemeinsamer Start. Die Zeit wird beim Eintreffen der Antwort gemessen, nicht erst nach dem Einlesen, und im Vorlauf gleicht jedes Telefon die Host-Uhr acht Mal nach und stellt die Ampel nach. Rennende für alle: Hat ein Mitspieler die Rundenzahl erreicht, ist bei allen die laufende Runde die letzte. Neu: „Rennen für alle beenden“ (WLAN-Reiter und Rückfrage beim Verlassen des Rennens). An den Host gehen jetzt die Rennrunden inklusive Frühstart-Strafe.": "WiFi multiplayer: a more precise shared start. The time is measured when the response arrives, not after reading it, and during the lead-in every phone re-syncs with the host clock eight times and adjusts the start lights. Race end for everyone: once a player reaches the lap count, the current lap is the last one for everybody. New: “End race for everyone” (WiFi tab and the question when leaving the race). The host now receives race laps including the jump-start penalty.",
     "FAHREN: Die Autos-Kachel zeigt ab zwei verbundenen Autos alle (ohne Foto als Farbfläche), die Motorsound-Kachel ist weg (Motor jetzt nur in der Garage), Fahrgefühl und Start sind größer. Garage: ein neues Foto erscheint sofort links in der Auto-Kachel. Podium: größere Namen, bei zwei Autos nur Platz 1 und 2, allein ein Solo-Podest mit Gesamtzeit, bester Runde und Vergleich mit deiner Bestzeit auf der Strecke. Cockpit: die Rundenliste zeigt höchstens fünf Runden und schiebt nichts mehr aus dem Bild. Ohne Bahn zeigt die Rennübersicht dein Streckenfoto bzw. den Platzhalter statt des Layouts. Freies Training: kein „Automatisch aufstellen“. Knockout heißt jetzt „NPC Knockout“, braucht mindestens einen Ghost und schaltet „Auf der Bahn“ ein.": "DRIVE: the cars tile shows every car once two are connected (a car without a photo appears as a colour block), the engine-sound tile is gone (engine now only in the garage), and driving feel and start are larger. Garage: a new photo appears right away in the car tile on the left. Podium: larger names; with two cars only places 1 and 2; alone, a solo podium with total time, best lap and a comparison with your best time on the track. Cockpit: the lap list shows at most five laps and no longer pushes anything off screen. Without the track, the race overview shows your track photo or the placeholder instead of the layout. Free practice: no “Line up automatically”. Knockout is now called “NPC Knockout”; it needs at least one ghost and switches on “On the track”.",
     "Derby: Ein Crash gegen die Wand beendet das Spiel nicht mehr. Es endet erst, wenn jemand das Kill-Ziel erreicht oder nur noch ein Teilnehmer fährt; allein ohne Gegner nur von Hand. 2 Spieler: Auto 2 und 3 haben beim Boxenstopp dieselben Töne wie Auto 1 (Tanken, Reparatur, Schrauber), auf ihrer Stereoseite. Latenz: Spieler 2 und 3 senden über denselben Weg wie Auto 1 (der neueste Befehl ersetzt den wartenden), und der Schirm „Beide“ wird direkt nach dem Senden gezeichnet.": "Derby: a crash into the wall no longer ends the game. It ends only when someone reaches the kill target or only one participant is still driving; alone without opponents, only by hand. 2 players: cars 2 and 3 get the same pit-stop sounds as car 1 (refuelling, repair, wrench), on their own stereo side. Latency: players 2 and 3 send through the same path as car 1 (the newest command replaces the waiting one), and the “Both” screen is drawn right after sending.",
     "Behoben: Nach einem abgebrochenen Derby blieb das Cockpit im nächsten normalen Rennen im Derby-Modus. Behoben: Gespiegelte Strecken mit beiden Haarnadeltypen (z. B. Balkonia) gingen nicht mehr zu, weil das gerade Stück der Haarnadel rückwärts gefahren am Ausgang liegt. Jetzt schließen alle 83 Challenge-Strecken auch gespiegelt. Neu in den Renneinstellungen: „Gelbe Flagge deaktivieren“ (ab Werk aus). Die Motorwahl von Auto 2 und 3 wird jetzt gespeichert und gesichert.": "Fixed: after an aborted derby, the cockpit stayed in derby mode in the next normal race. Fixed: mirrored tracks with both hairpin types (e.g. Balkonia) no longer closed, because driven in reverse the hairpin's straight section sits at the exit. All 83 challenge tracks now close when mirrored too. New in race settings: “Disable yellow flag” (off by default). The engine choice for cars 2 and 3 is now saved and backed up.",
@@ -23732,8 +23740,11 @@
     // haelt nichts an; Weiterfahren ist vorgewaehlt, damit ein versehentlicher Druck nichts
     // beendet.
     if (!bestaetigt && typeof kRennenLaeuft === 'function' && kRennenLaeuft()) {
-      konsoleFrage(t('Ein Wechsel ins Menü beendet das Rennen.'), '',
-        [[t('Weiterfahren'), null], [t('Rennen beenden'), () => konsoleZumMenue(true)]]);
+      const knoepfe = [[t('Weiterfahren'), null], [t('Rennen beenden'), () => konsoleZumMenue(true)]];
+      if (typeof mp !== 'undefined' && mp.an && mp.rennenId && typeof mpRennenBeendenFuerAlle === 'function') {
+        knoepfe.push([t('Rennen für alle beenden'), () => { mpRennenBeendenFuerAlle(); konsoleZumMenue(true); }]);
+      }
+      konsoleFrage(t('Ein Wechsel ins Menü beendet das Rennen.'), '', knoepfe);
       return;
     }
     kCockpitVollbild = document.body.classList.contains('race-fs');
@@ -31632,6 +31643,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     clearTimeout(raceCountdownTimer);
     const schritt = (k) => {
       if (raceState !== 'countdown') return;
+      ampelK = k;
       const [bei, stufe] = plan[k];
       const warte = bei - Date.now();
       if (warte > 4) { raceCountdownTimer = setTimeout(() => schritt(k), warte); return; }
@@ -31648,7 +31660,19 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       raceGreen();
       setTimeout(() => setRaceLights(0), 900);
     };
+    ampelPlan = plan; ampelSchritt = schritt;
     schritt(0);
+  }
+  // v0.9.32: die laufende Ampel um delta ms verschieben (WLAN-Mehrspieler: feinerer
+  // Uhrabgleich waehrend des Vorlaufs). Nur solange noch keine Lampe leuchtet.
+  let ampelPlan = null, ampelSchritt = null, ampelK = 0;
+  function ampelVerschieben(delta) {
+    if (!ampelPlan || !ampelSchritt || raceState !== 'countdown' || ampelK > 0) return false;
+    if (ampelPlan[0][0] + delta < Date.now() + 300) return false;
+    for (const p of ampelPlan) p[0] += delta;
+    clearTimeout(raceCountdownTimer);
+    ampelSchritt(ampelK);
+    return true;
   }
 
   // Alles, was beim Gruen passiert. Eine Funktion, zwei Aufrufer: der Countdown und das
@@ -77798,6 +77822,37 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'allein nie Ende, zu zweit gewinnt der Letzte, Ghost zaehlt ab Start' };
   });
 
+  stAdd('Mehrspieler: Ampel verschiebbar, Rennende von Mitspieler, Ende-Signal', () => {
+    const f = [];
+    const merk = { rs: raceState, rm: raceMode, lim: raceLimit, an: mp.an, id: mp.rennenId, mpid: mp.id, ende: mp.endeGesehen };
+    const status = $('race-status') ? $('race-status').textContent : '';
+    try {
+      // Rennende: ein anderer Fahrer hat das Ziel -> letzte Runde.
+      mp.an = true; mp.rennenId = 'probe:1'; mp.id = 'ich'; raceState = 'racing'; raceMode = 'laps'; raceLimit = 10;
+      mpZielPruefen({ fahrer: [{ id: 'ich', laps: 7 }, { id: 'du', name: 'Du', laps: 9 }] });
+      if (raceState !== 'racing') f.push('9 von 10 Runden schon Ende');
+      mpZielPruefen({ fahrer: [{ id: 'ich', laps: 7 }, { id: 'du', name: 'Du', laps: 10 }] });
+      if (raceState !== 'finishing') f.push('Mitspieler mit 10 Runden loest kein Rennende aus');
+      raceState = 'racing';
+      mpZielPruefen({ fahrer: [{ id: 'ich', laps: 10 }] });
+      if (raceState !== 'racing') f.push('eigene Runden aus dem Host zaehlen doppelt');
+      // Ende-Signal anderer: ohne laufendes Rennen nichts tun, kein Bereitschaftsschirm.
+      raceState = 'idle'; mp.endeGesehen = null;
+      mpEndePruefen({ boot: 'b', rennen: { id: 5, phase: 'bereit', plan: { ende: true }, initiator: 'du' } });
+      if (mp.endeGesehen !== 'b:5') f.push('Ende-Signal nicht erkannt');
+      mpBereitSchirm({ rennen: { id: 5, phase: 'bereit', plan: { ende: true }, initiator: 'du' }, fahrer: [] });
+      if ($('mp-ready-screen') && !$('mp-ready-screen').hidden) f.push('Ende-Signal zeigt den Bereitschaftsschirm');
+      // Ampel verschieben ohne laufenden Countdown: nichts.
+      if (ampelVerschieben(50)) f.push('Ampel ohne Countdown verschoben');
+    } finally {
+      raceState = merk.rs; raceMode = merk.rm; raceLimit = merk.lim; mp.an = merk.an; mp.rennenId = merk.id;
+      mp.id = merk.mpid; mp.endeGesehen = merk.ende;
+      if ($('race-status')) $('race-status').textContent = status;
+      if ($('mp-ready-screen')) $('mp-ready-screen').hidden = true;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Mitspieler im Ziel -> letzte Runde, Ende-Signal erkannt, Ampel nur im Countdown' };
+  });
+
   stAdd('Woerterbuch ohne doppelte Schluessel', () => {
     const imObjekt = Object.keys(I18N_EN).length;
     // Die Quelle steht im eigenen <script>. Sie zu lesen ist billiger und ehrlicher als die
@@ -78526,7 +78581,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Der eigene Stand. Er kommt aus DENSELBEN Variablen, aus denen das Cockpit liest -
   // dashLapTimes und die Rundenzahl. Eine zweite Zaehlung waere eine zweite Wahrheit.
   function mpEigenerStand() {
-    const zeiten = (typeof dashLapTimes !== 'undefined' && dashLapTimes) || [];
+    // Im Rennen die RENNRUNDEN (mit Fruehstart-Strafe auf Runde 1), sonst die Ueberfahrten.
+    const imRennen = typeof raceLapTimes !== 'undefined' && raceLapTimes.length
+      && ['racing', 'finishing', 'finished'].indexOf(raceState) >= 0;
+    const zeiten = imRennen ? raceLapTimes.map((l) => l.ms)
+      : ((typeof dashLapTimes !== 'undefined' && dashLapTimes) || []);
     const beste = zeiten.length ? Math.min.apply(null, zeiten) / 1000 : null;
     const letzte = zeiten.length ? zeiten[zeiten.length - 1] / 1000 : null;
     return { id: mp.id, name: mp.name || 'ohne Namen', laps: zeiten.length,
@@ -78617,6 +78676,73 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Neustart des Hosts wieder bei 1, und ohne die Kennung (`boot`) hielte ein Telefon das neue
   // Rennen fuer ein schon gefahrenes und liesse es still aus. Die Bereitschaftsphase hat noch
   // keine Startzeit und wird hier nicht genommen (alte Hosts kennen keine `phase`).
+  // ---- FEINABGLEICH IM VORLAUF (v0.9.32) ---------------------------------------------
+  // Nach der Startankuendigung bleiben zwoelf Sekunden. In denen misst jedes Telefon die
+  // Host-Uhr acht Mal im Abstand von 300 ms nach (kuerzester Weg gewinnt, siehe mpUhrProbe)
+  // und verschiebt die laufende Ampel um die Abweichung - solange noch keine Lampe brennt.
+  mp.startHost = null;
+  async function mpStartFeinabgleich(lokal) {
+    const startHost = lokal + mp.offset;          // dieselbe Startzeit in Host-Uhr
+    let benutzt = lokal;
+    for (let i = 0; i < 8; i++) {
+      await new Promise((ok) => setTimeout(ok, 300));
+      if (!mp.an || raceState !== 'countdown') return;
+      try {
+        const t0 = Date.now();
+        const r = await fetch(mpUrl('/mp/state'), { cache: 'no-store' });
+        const t1 = Date.now();
+        const d = await r.json();
+        mpUhrProbe(t0, t1, d.zeitMs);
+      } catch (e) { /* naechste Probe */ }
+      const neu = startHost - mp.offset;
+      const delta = neu - benutzt;
+      if (Math.abs(delta) >= 8 && typeof ampelVerschieben === 'function' && ampelVerschieben(delta)) {
+        log('Mehrspieler: Ampel um ' + Math.round(delta) + ' ms nachgestellt (Uhrabgleich).', 'info');
+        benutzt = neu;
+      }
+    }
+  }
+  // ---- RENNENDE FUER ALLE (v0.9.32) ------------------------------------------------
+  // GEMELDET: "Wenn bei 2 Autos, Rundenrennen ueber 10 Runden, eines die 10 hat und das andere
+  // ueber Start/Ziel faehrt, sollte das Rennende getriggert werden." Jedes Telefon zaehlt nur
+  // seine eigenen Autos; die Runden der anderen stehen in der Rangliste des Hosts. Hat dort
+  // jemand das Ziel, gilt hier "letzte Runde" - die naechste Ueberfahrt beendet das Rennen.
+  function mpZielPruefen(d) {
+    if (!mp.an || !mp.rennenId || raceState !== 'racing' || raceMode !== 'laps') return;
+    const andere = ((d && d.fahrer) || []).filter((f) => f.id && f.id !== mp.id && mpAktiv(f));
+    const fertig = andere.find((f) => (f.laps || 0) >= raceLimit);
+    if (!fertig) return;
+    raceState = 'finishing';
+    if ($('race-status')) $('race-status').textContent = t('Ein Mitspieler ist im Ziel, laufende Runde zählt noch');
+    showHudToast(t('Letzte Runde') + ' · ' + (fertig.name || ''));
+  }
+  // "Genauso sollte ich das Rennen fuer alle beenden koennen." Der Host kennt keine eigene
+  // Ende-Phase; eine Bereitschaftsrunde mit plan.ende traegt die Nachricht aber ohne neue
+  // APK zu allen Telefonen, und nach vier Sekunden wird sie wieder abgeraeumt.
+  async function mpRennenBeendenFuerAlle() {
+    if (!mp.an) { mpSay(t('Erst mitmachen'), true); return; }
+    try {
+      await fetch(mpUrl('/mp/race'), { method: 'POST', cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: { ende: true, von: mp.name || '' }, phase: 'bereit', initiator: mp.id }) });
+      if (typeof kRennenLaeuft === 'function' && kRennenLaeuft()) requestRaceStop();
+      showHudToast(t('Rennen für alle beendet'));
+      setTimeout(() => { fetch(mpUrl('/mp/race/cancel'), { method: 'POST', cache: 'no-store' }).catch(() => {}); }, 4000);
+    } catch (e) { mpSay(t('kein Kontakt zum Host') + ': ' + e.message, true); }
+  }
+  mp.endeGesehen = null;
+  function mpEndePruefen(d) {
+    const r = d && d.rennen;
+    if (!r || r.phase !== 'bereit' || !r.plan || !r.plan.ende) return;
+    const schl = (d.boot || '') + ':' + r.id;
+    if (mp.endeGesehen === schl) return;
+    mp.endeGesehen = schl;
+    if (r.initiator === mp.id) return;
+    if (typeof kRennenLaeuft === 'function' && kRennenLaeuft()) {
+      requestRaceStop();
+      showHudToast(t('Rennen für alle beendet') + (r.plan.von ? ' (' + r.plan.von + ')' : ''));
+    }
+  }
   function mpRennenPruefen(r, boot) {
     if (!r || !r.id || !r.startAt || !r.plan) return false;
     if (r.phase && r.phase !== 'start') return false;
@@ -78652,6 +78778,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     showTab('race');
     startRaceCountdown(lokal, plan);
+    mpStartFeinabgleich(lokal);
     showHudToast(t('Rennen für alle: Ampel kommt gleich'));
     log('Mehrspieler: gemeinsamer Start in ' + Math.round((lokal - Date.now()) / 100) / 10 + ' s.', 'info');
   }
@@ -78719,7 +78846,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const screen = $('mp-ready-screen');
     if (!screen) return;
     const rennen = d && d.rennen ? d.rennen : {};
-    if (rennen.phase !== 'bereit') { screen.hidden = true; return; }
+    if (rennen.phase !== 'bereit' || (rennen.plan && rennen.plan.ende)) { screen.hidden = true; return; }
     const initiator = rennen.initiator;
     const bereitListe = Array.isArray(rennen.bereit) ? rennen.bereit : [];
     const leute = ((d && d.fahrer) || []).filter(mpAktiv);
@@ -78814,14 +78941,20 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     try {
       const t0 = Date.now();
       const r = await fetch(mpUrl('/mp/state'), { cache: 'no-store' });
+      // v0.9.32: die Rueckkehr ZAEHLT HIER, beim Eintreffen der Antwort - nicht nach dem
+      // Einlesen. Vorher lag die Mitte der Anfrage um die Lesezeit zu spaet, der Versatz war
+      // zu klein, und das andere Telefon startete nach dem Host (GEMELDET: ~200 ms).
+      const t1 = Date.now();
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const d = await r.json();
-      mpUhrProbe(t0, Date.now(), d.zeitMs);
+      mpUhrProbe(t0, t1, d.zeitMs);
       mpRennenPruefen(d.rennen, d.boot);
       mp.zuschauer = d.zuschauer || 0;
       mpLetzterStand = d;
       mpPosTakt();
       mpZeichnen(d);
+      mpEndePruefen(d);
+      mpZielPruefen(d);
       mpBereitSchirm(d);
       mpSay(t('verbunden') + ', ' + (d.fahrer || []).length + ' '
             + t('Fahrer'));
@@ -79100,6 +79233,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   if ($('mp-join')) $('mp-join').addEventListener('click', mpJoin);
   if ($('mp-leave')) $('mp-leave').addEventListener('click', mpLeave);
   if ($('mp-rennen-alle')) $('mp-rennen-alle').addEventListener('click', mpRennenFuerAlle);
+  if ($('mp-rennen-ende')) $('mp-rennen-ende').addEventListener('click', mpRennenBeendenFuerAlle);
   // BEREITSCHAFTSSCHIRM (v0.8.126).
   if ($('mp-ready-bereit')) $('mp-ready-bereit').addEventListener('click', mpBereitMelden);
   if ($('mp-ready-start')) $('mp-ready-start').addEventListener('click', mpBereitStarten);

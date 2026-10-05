@@ -542,8 +542,11 @@
     // haelt nichts an; Weiterfahren ist vorgewaehlt, damit ein versehentlicher Druck nichts
     // beendet.
     if (!bestaetigt && typeof kRennenLaeuft === 'function' && kRennenLaeuft()) {
-      konsoleFrage(t('Ein Wechsel ins Menü beendet das Rennen.'), '',
-        [[t('Weiterfahren'), null], [t('Rennen beenden'), () => konsoleZumMenue(true)]]);
+      const knoepfe = [[t('Weiterfahren'), null], [t('Rennen beenden'), () => konsoleZumMenue(true)]];
+      if (typeof mp !== 'undefined' && mp.an && mp.rennenId && typeof mpRennenBeendenFuerAlle === 'function') {
+        knoepfe.push([t('Rennen für alle beenden'), () => { mpRennenBeendenFuerAlle(); konsoleZumMenue(true); }]);
+      }
+      konsoleFrage(t('Ein Wechsel ins Menü beendet das Rennen.'), '', knoepfe);
       return;
     }
     kCockpitVollbild = document.body.classList.contains('race-fs');

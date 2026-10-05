@@ -16950,6 +16950,37 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'allein nie Ende, zu zweit gewinnt der Letzte, Ghost zaehlt ab Start' };
   });
 
+  stAdd('Mehrspieler: Ampel verschiebbar, Rennende von Mitspieler, Ende-Signal', () => {
+    const f = [];
+    const merk = { rs: raceState, rm: raceMode, lim: raceLimit, an: mp.an, id: mp.rennenId, mpid: mp.id, ende: mp.endeGesehen };
+    const status = $('race-status') ? $('race-status').textContent : '';
+    try {
+      // Rennende: ein anderer Fahrer hat das Ziel -> letzte Runde.
+      mp.an = true; mp.rennenId = 'probe:1'; mp.id = 'ich'; raceState = 'racing'; raceMode = 'laps'; raceLimit = 10;
+      mpZielPruefen({ fahrer: [{ id: 'ich', laps: 7 }, { id: 'du', name: 'Du', laps: 9 }] });
+      if (raceState !== 'racing') f.push('9 von 10 Runden schon Ende');
+      mpZielPruefen({ fahrer: [{ id: 'ich', laps: 7 }, { id: 'du', name: 'Du', laps: 10 }] });
+      if (raceState !== 'finishing') f.push('Mitspieler mit 10 Runden loest kein Rennende aus');
+      raceState = 'racing';
+      mpZielPruefen({ fahrer: [{ id: 'ich', laps: 10 }] });
+      if (raceState !== 'racing') f.push('eigene Runden aus dem Host zaehlen doppelt');
+      // Ende-Signal anderer: ohne laufendes Rennen nichts tun, kein Bereitschaftsschirm.
+      raceState = 'idle'; mp.endeGesehen = null;
+      mpEndePruefen({ boot: 'b', rennen: { id: 5, phase: 'bereit', plan: { ende: true }, initiator: 'du' } });
+      if (mp.endeGesehen !== 'b:5') f.push('Ende-Signal nicht erkannt');
+      mpBereitSchirm({ rennen: { id: 5, phase: 'bereit', plan: { ende: true }, initiator: 'du' }, fahrer: [] });
+      if ($('mp-ready-screen') && !$('mp-ready-screen').hidden) f.push('Ende-Signal zeigt den Bereitschaftsschirm');
+      // Ampel verschieben ohne laufenden Countdown: nichts.
+      if (ampelVerschieben(50)) f.push('Ampel ohne Countdown verschoben');
+    } finally {
+      raceState = merk.rs; raceMode = merk.rm; raceLimit = merk.lim; mp.an = merk.an; mp.rennenId = merk.id;
+      mp.id = merk.mpid; mp.endeGesehen = merk.ende;
+      if ($('race-status')) $('race-status').textContent = status;
+      if ($('mp-ready-screen')) $('mp-ready-screen').hidden = true;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Mitspieler im Ziel -> letzte Runde, Ende-Signal erkannt, Ampel nur im Countdown' };
+  });
+
   stAdd('Woerterbuch ohne doppelte Schluessel', () => {
     const imObjekt = Object.keys(I18N_EN).length;
     // Die Quelle steht im eigenen <script>. Sie zu lesen ist billiger und ehrlicher als die
