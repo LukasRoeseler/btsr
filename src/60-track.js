@@ -4704,6 +4704,20 @@
         if (ty === 0xff || ty === TILE_OFFTRACK) { dropped += c; continue; }
         if (c > bestCount) { bestCount = c; bestType = ty; }
       }
+      // FERTIG BEI DER ZWEITEN START/ZIEL-UEBERFAHRT (v0.9.4). BESTELLT: "wenn livescan fertig,
+      // dann auto anhalten". Vorher lief der Live-Scan, bis man von Hand stoppte - und schrieb
+      // dabei die zweite Runde hinten an. Jetzt: Start/Ziel nach mindestens vier Teilen ist das
+      // Ende der Runde; die Strecke bleibt, das Auto haelt an.
+      if (bestType != null && isStartCode(bestType) && currentTrackTiles.length >= 5) {
+        const auto = trackScanCar;
+        refreshTrackPreview();
+        stopTrackScan();
+        $('track-scan-status').textContent = t('Scan fertig: {n} Teile, Runde geschlossen.').replace('{n}', currentTrackTiles.length);
+        showHudToast(t('STRECKE GESCANNT: {n} TEILE').replace('{n}', currentTrackTiles.length));
+        if (typeof scanAnhalten === 'function') scanAnhalten(auto || playerCar);
+        try { trackFertigKlang(); } catch (err) { /* ohne Ton */ }
+        return;
+      }
       if (bestType != null && Object.values(TILE_TYPE).includes(bestType)) {
         currentTrackTiles.push({ type: bestType });
         refreshTrackPreview();
@@ -5139,8 +5153,10 @@
         refreshTrackPreview();
         const wie = 'Lücke ' + schluss.lueckeCm.toFixed(1) + ' cm, Winkel '
           + schluss.winkel.toFixed(1) + '°';
+        const gescannt = garageScan.car;
         garageScanAbbrechen('Fertig: ' + garageScan.seq.length + ' Teile, Rundkurs '
           + 'geschlossen (' + wie + ').');
+        if (typeof scanAnhalten === 'function') scanAnhalten(gescannt);
         showHudToast('STRECKE GESCANNT: ' + garageScan.seq.length + ' TEILE');
         log('Garagenscan fertig: ' + garageScan.seq.length + ' Teile, geschlossen (' + wie
             + ') nach ' + garageScan.versuch + ' Versuch(en).', 'info');

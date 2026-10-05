@@ -2567,6 +2567,9 @@
   // Moeglich wurde es durch die Ortung aus v0.6.46: autopilotGrund() ist global (Flagge,
   // Einfuehrungsrunde, Bahn/Ausdruck-Stellung), der Rest haengt am Auto - Motor, Regler,
   // Kolonnenversatz, Abseits-Antwort. `wer` ist 1, wenn nichts dasteht.
+  const SCAN_TEMPO = 0.6, SCAN_TEMPO_HAARNADEL = 0.4;
+  const scanStopp = { car: null, bis: 0 };
+  function scanAnhalten(car) { if (car) { scanStopp.car = car; scanStopp.bis = Date.now() + 1500; } }
   function autopilot(fahrerBremse, wer) {
     const zwei = wer === 2;
     const motor = zwei ? physEngine2 : physEngine;
@@ -2581,6 +2584,11 @@
     // garageScan.car in 60-track.js. Ein globales 'scan' wuerde das jeweils andere Auto
     // mit hineinziehen, auch wenn nur eines tatsaechlich gescannt wird.
     const meinAuto = zwei ? (typeof playerCar2 !== 'undefined' ? playerCar2 : null) : playerCar;
+    // NACH DEM SCAN ANHALTEN (v0.9.4). BESTELLT: "wenn livescan fertig, dann auto anhalten".
+    // 1,5 s Bremse, danach wieder der Fahrer - steht der Gashebel auf null, bleibt das Auto stehen.
+    if (scanStopp.car && scanStopp.car === meinAuto && Date.now() < scanStopp.bis) {
+      return { grund: 'scan', throttle: 0, brake: 1, steer: 0, lenkt: false };
+    }
     if (typeof garageScan !== 'undefined' && garageScan.aktiv && garageScan.car === meinAuto) {
       const v = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
       const dt = Math.max(0.01, Math.min(0.25, (Date.now() - (regler.at || Date.now())) / 1000));
@@ -2591,7 +2599,12 @@
       // Haarnadelkurve rausfaehrt -> drosseln." Insgesamt 85 % der Einfuehrungsrunde, in
       // einer gemeldeten Haarnadel 65 %. Die Leseschwelle 0,35 (GHOST_READ_MIN) ist am
       // GEDRUCKTEN Muster gemessen; der Scan laeuft auf der Bahn (trackMode 'on').
-      const ziel = formationPace() * (scanInHaarnadel(meinAuto) ? 0.65 : 0.85);
+      // v0.9.4: BESTELLT "Streckenscan funktioniert nicht. Das Auto faehrt in der Haarnadelkurve
+      // raus. Mach insgesamt langsamer." Waehrend des Scans ist die Strecke unbekannt - eine
+      // Haarnadel ist erst zu erkennen, wenn das Auto schon auf ihr steht. Deshalb ueberall
+      // langsamer (60 statt 85 %, in der Haarnadel 40 statt 65 %); auf der Bahn liest das Auto
+      // die Codes auch darunter (die Schwelle 0,35 gilt fuer das gedruckte Muster).
+      const ziel = formationPace() * (scanInHaarnadel(meinAuto) ? SCAN_TEMPO_HAARNADEL : SCAN_TEMPO);
       const geregelt = ghostSpeedControl(regler, ziel, v, dt);
       return { grund: 'scan', throttle: geregelt.throttle, brake: geregelt.brake,
                steer: 0, lenkt: !abseitsJetztFuer(zwei ? 2 : 1) };

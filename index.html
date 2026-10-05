@@ -2595,6 +2595,17 @@
     #k-leiste .k-reiter button { padding: 5px 8px; font-size: clamp(9px, 1.9vh, 12px); }
     .k-leiste2 .k-reiter button { padding: 4px 8px; font-size: clamp(8.5px, 1.7vh, 11px); }
   }
+  /* KEIN ZIEHEN-ZUM-AKTUALISIEREN (v0.9.4). BESTELLT: "in der installierten Chrome-App (nicht
+     .apk) das Herunterswipen nicht zum Aktualisieren fuehren". */
+  html, body { overscroll-behavior-y: contain; }
+  /* COCKPIT RECHTS (v0.9.4). BESTELLT: "Sound und 'Rennen starten' Buttons rechts weg und dafuer
+     Rundenzeiten in doppelt so grosser Schriftgroesse." Die Knoepfe bleiben im Dokument (Tasten,
+     Tests und Zustandsanzeige haengen an ihnen), werden aber nicht mehr gezeigt: Rennen starten
+     geht ueber die Rennen-Taste/das Menue, der Motorklang ueber Optionen > Sound. */
+  #race-act-start, #race-act-sound { display: none !important; }
+  .gt3-right .gt3-times .gt3-val { font-size: clamp(26px, 5.2vw, 54px); line-height: 1.05; }
+  .gt3-right .gt3-times .gt3-lbl { font-size: clamp(9px, 1.4vw, 12px); }
+  .gt3-right .gt3-laps { font-size: clamp(16px, 2.4vw, 24px); max-height: none; }
   /* REITER HOEHER (v0.9.3). BESTELLT: "tab höhe ganz oben in der navbar erhöhen; Auf PC das
      4fache, auf mobile 2-3 fache, damit man auch mit finger ganz ok drauftippen kann (sollte
      trotzdem noch schlank sein)." Gemessen vorher: 10 px am PC, 20-23 px am Handy. Die
@@ -2774,6 +2785,8 @@
   .ch-kachel .ch-k-beliebt[hidden] { display: none; }
   .ch-kachel .ch-k-rang { display: block; font-style: normal; font-size: 11px; letter-spacing: .03em; text-align: center; padding: 0 4px 6px; }
   .ch-kachel .ch-k-rang:empty { display: none; }
+  .ch-kachel .ch-k-anzahl { display: block; font-style: normal; font-size: 10.5px; color: var(--dim, #a3acbd); text-align: center; padding: 0 4px 5px; }
+  .ch-kachel .ch-k-anzahl[hidden] { display: none; }
   .ch-k-medaille-hinweis { font-size: 12px; line-height: 1.5; margin: 2px 0 8px; }
   .ch-detail { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 16px; align-items: start; }
   .ch-rechts > h3:first-child { margin-top: 0; }
@@ -4198,7 +4211,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.3</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.4</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5269,6 +5282,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Streckenscan langsamer (auch in der Haarnadel), das Auto h&#228;lt am Ende an; der Live-Scan erkennt das Rundenende selbst. Reiter wechseln per Wischen nach links/rechts. Kein Neuladen mehr durch Herunterziehen. Challenges zeigen &#8222;X Ergebnisse&#8220;. Cockpit: Rundenzeiten doppelt so gro&#223;, Sound- und Start-Knopf rechts entfernt.</li>
         <li>Obere Reiterleiste deutlich h&#246;her (PC 40 px, Handy 46 px), gut zum Tippen. Meine Strecken: Ton beim Laden, rundes L&#246;schen-Kreuz mit R&#252;ckfrage. Ghosts halten wieder den gemessenen Abstand (1,2 Kacheln, mehr &#252;ber &#8222;Feld-Abstand&#8220;). Knockout und Derby als experimentell gekennzeichnet, Texte &#252;bersetzt.</li>
         <li>Mehrspieler: &#8222;Rennen f&#252;r alle&#8220; repariert. Der Bereitschaftsschirm erscheint jetzt auf jedem Reiter, inaktive oder abgemeldete Telefone blockieren den Start nicht mehr, Abbrechen l&#246;scht nicht mehr die Wertung aller, und das angek&#252;ndigte Wetter gilt auch beim Start. App: schnellerer, stabilerer direkter Steuerweg zum Auto (neue APK n&#246;tig).</li>
         <li>Zweite Kopie der App: Die Download-Links zeigen auf deren eigenes Release (mit Download-Z&#228;hler), sonst auf die APK im Repo.</li>
@@ -12271,6 +12285,11 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Scan fertig: {n} Teile, Runde geschlossen.": "Scan done: {n} pieces, lap closed.",
+    "STRECKE GESCANNT: {n} TEILE": "TRACK SCANNED: {n} PIECES",
+    "1 Ergebnis": "1 result",
+    "{n} Ergebnisse": "{n} results",
+    "Streckenscan langsamer (auch in der Haarnadel), das Auto hält am Ende an; der Live-Scan erkennt das Rundenende selbst. Reiter wechseln per Wischen nach links/rechts. Kein Neuladen mehr durch Herunterziehen. Challenges zeigen „X Ergebnisse“. Cockpit: Rundenzeiten doppelt so groß, Sound- und Start-Knopf rechts entfernt.": "Track scan slower (also in the hairpin), the car stops at the end; the live scan detects the end of the lap itself. Swipe left/right switches tabs. Pulling down no longer reloads. Challenges show \"X results\". Cockpit: lap times twice as large, sound and start buttons on the right removed.",
     "Obere Reiterleiste deutlich höher (PC 40 px, Handy 46 px), gut zum Tippen. Meine Strecken: Ton beim Laden, rundes Löschen-Kreuz mit Rückfrage. Ghosts halten wieder den gemessenen Abstand (1,2 Kacheln, mehr über „Feld-Abstand“). Knockout und Derby als experimentell gekennzeichnet, Texte übersetzt.": "Top tab bar much taller (PC 40 px, phone 46 px), easy to tap. My tracks: sound when loading, round delete cross with confirmation. Ghosts keep the measured gap again (1.2 tiles, more via \"field spacing\"). Knockout and Derby marked experimental, texts translated.",
     "Fahrzeug-Layout": "Vehicle layout",
     "{n} laden": "Load {n}",
@@ -20909,6 +20928,9 @@
   // Moeglich wurde es durch die Ortung aus v0.6.46: autopilotGrund() ist global (Flagge,
   // Einfuehrungsrunde, Bahn/Ausdruck-Stellung), der Rest haengt am Auto - Motor, Regler,
   // Kolonnenversatz, Abseits-Antwort. `wer` ist 1, wenn nichts dasteht.
+  const SCAN_TEMPO = 0.6, SCAN_TEMPO_HAARNADEL = 0.4;
+  const scanStopp = { car: null, bis: 0 };
+  function scanAnhalten(car) { if (car) { scanStopp.car = car; scanStopp.bis = Date.now() + 1500; } }
   function autopilot(fahrerBremse, wer) {
     const zwei = wer === 2;
     const motor = zwei ? physEngine2 : physEngine;
@@ -20923,6 +20945,11 @@
     // garageScan.car in 60-track.js. Ein globales 'scan' wuerde das jeweils andere Auto
     // mit hineinziehen, auch wenn nur eines tatsaechlich gescannt wird.
     const meinAuto = zwei ? (typeof playerCar2 !== 'undefined' ? playerCar2 : null) : playerCar;
+    // NACH DEM SCAN ANHALTEN (v0.9.4). BESTELLT: "wenn livescan fertig, dann auto anhalten".
+    // 1,5 s Bremse, danach wieder der Fahrer - steht der Gashebel auf null, bleibt das Auto stehen.
+    if (scanStopp.car && scanStopp.car === meinAuto && Date.now() < scanStopp.bis) {
+      return { grund: 'scan', throttle: 0, brake: 1, steer: 0, lenkt: false };
+    }
     if (typeof garageScan !== 'undefined' && garageScan.aktiv && garageScan.car === meinAuto) {
       const v = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
       const dt = Math.max(0.01, Math.min(0.25, (Date.now() - (regler.at || Date.now())) / 1000));
@@ -20933,7 +20960,12 @@
       // Haarnadelkurve rausfaehrt -> drosseln." Insgesamt 85 % der Einfuehrungsrunde, in
       // einer gemeldeten Haarnadel 65 %. Die Leseschwelle 0,35 (GHOST_READ_MIN) ist am
       // GEDRUCKTEN Muster gemessen; der Scan laeuft auf der Bahn (trackMode 'on').
-      const ziel = formationPace() * (scanInHaarnadel(meinAuto) ? 0.65 : 0.85);
+      // v0.9.4: BESTELLT "Streckenscan funktioniert nicht. Das Auto faehrt in der Haarnadelkurve
+      // raus. Mach insgesamt langsamer." Waehrend des Scans ist die Strecke unbekannt - eine
+      // Haarnadel ist erst zu erkennen, wenn das Auto schon auf ihr steht. Deshalb ueberall
+      // langsamer (60 statt 85 %, in der Haarnadel 40 statt 65 %); auf der Bahn liest das Auto
+      // die Codes auch darunter (die Schwelle 0,35 gilt fuer das gedruckte Muster).
+      const ziel = formationPace() * (scanInHaarnadel(meinAuto) ? SCAN_TEMPO_HAARNADEL : SCAN_TEMPO);
       const geregelt = ghostSpeedControl(regler, ziel, v, dt);
       return { grund: 'scan', throttle: geregelt.throttle, brake: geregelt.brake,
                steer: 0, lenkt: !abseitsJetztFuer(zwei ? 2 : 1) };
@@ -22714,6 +22746,40 @@
     menuNavTonBewegen();
     return true;
   }
+
+  // ---- WISCHEN WECHSELT DIE REITER (v0.9.4) -------------------------------------------
+  // BESTELLT: "mach, dass ich mit swipe nach links und rechts so wie mit den Schultertasten
+  // die Tabs wechseln kann". Dieselbe Funktion wie L1/R1 (innerste Leiste). Nicht im Cockpit,
+  // im Editor, auf Reglern, Karten und in waagrecht scrollbaren Bereichen - dort gehoert die
+  // Wischgeste dem Inhalt. Mindestens 60 px, deutlich waagrecht, in hoechstens 0,7 s.
+  (function wischenAnbinden() {
+    const NICHT = '.tp-karte, input, select, textarea, canvas, .k-pause, .lb-wrap, #mp-info, .k-kein-wischen';
+    let a = null;
+    document.addEventListener('touchstart', (e) => {
+      a = null;
+      if (e.touches.length !== 1) return;
+      const z = e.target;
+      if (!z || !z.closest || z.closest(NICHT) || document.body.classList.contains('track-fs')) return;
+      for (let el = z; el && el !== document.body; el = el.parentElement) {
+        if (el.scrollWidth > el.clientWidth + 4) {
+          const ox = getComputedStyle(el).overflowX;
+          if (ox === 'auto' || ox === 'scroll') return;
+        }
+      }
+      a = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: performance.now() };
+    }, { passive: true });
+    document.addEventListener('touchend', (e) => {
+      if (!a || !e.changedTouches.length) return;
+      const p = e.changedTouches[0];
+      const dx = p.clientX - a.x, dy = p.clientY - a.y, dt = performance.now() - a.t;
+      a = null;
+      if (Math.abs(dx) < 60 || Math.abs(dx) < 2 * Math.abs(dy) || dt > 700) return;
+      const tab = document.querySelector('.tabpage.active');
+      if (!tab || tab.id === 'tab-home' || tab.id === 'tab-race') return;
+      if (typeof konsoleFrageOffen === 'function' && konsoleFrageOffen()) return;
+      konsoleReiterSchritt(dx < 0 ? 1 : -1);
+    }, { passive: true });
+  })();
 
   // ---- Quadrat: schneller Wechsel auf Kacheln mit data-quad --------------------------
   function konsoleQuadWechsel(q, dir) {
@@ -28439,6 +28505,20 @@
         if (ty === 0xff || ty === TILE_OFFTRACK) { dropped += c; continue; }
         if (c > bestCount) { bestCount = c; bestType = ty; }
       }
+      // FERTIG BEI DER ZWEITEN START/ZIEL-UEBERFAHRT (v0.9.4). BESTELLT: "wenn livescan fertig,
+      // dann auto anhalten". Vorher lief der Live-Scan, bis man von Hand stoppte - und schrieb
+      // dabei die zweite Runde hinten an. Jetzt: Start/Ziel nach mindestens vier Teilen ist das
+      // Ende der Runde; die Strecke bleibt, das Auto haelt an.
+      if (bestType != null && isStartCode(bestType) && currentTrackTiles.length >= 5) {
+        const auto = trackScanCar;
+        refreshTrackPreview();
+        stopTrackScan();
+        $('track-scan-status').textContent = t('Scan fertig: {n} Teile, Runde geschlossen.').replace('{n}', currentTrackTiles.length);
+        showHudToast(t('STRECKE GESCANNT: {n} TEILE').replace('{n}', currentTrackTiles.length));
+        if (typeof scanAnhalten === 'function') scanAnhalten(auto || playerCar);
+        try { trackFertigKlang(); } catch (err) { /* ohne Ton */ }
+        return;
+      }
       if (bestType != null && Object.values(TILE_TYPE).includes(bestType)) {
         currentTrackTiles.push({ type: bestType });
         refreshTrackPreview();
@@ -28874,8 +28954,10 @@
         refreshTrackPreview();
         const wie = 'Lücke ' + schluss.lueckeCm.toFixed(1) + ' cm, Winkel '
           + schluss.winkel.toFixed(1) + '°';
+        const gescannt = garageScan.car;
         garageScanAbbrechen('Fertig: ' + garageScan.seq.length + ' Teile, Rundkurs '
           + 'geschlossen (' + wie + ').');
+        if (typeof scanAnhalten === 'function') scanAnhalten(gescannt);
         showHudToast('STRECKE GESCANNT: ' + garageScan.seq.length + ' TEILE');
         log('Garagenscan fertig: ' + garageScan.seq.length + ' Teile, geschlossen (' + wie
             + ') nach ' + garageScan.versuch + ' Versuch(en).', 'info');
@@ -36665,6 +36747,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       // Erreichter Rang (Medaille + Perzentil) auf der Uebersicht.
       const rang = kachel.querySelector('.ch-k-rang');
       if (rang) rang.innerHTML = chRangKachelText(chKachelRang(def));
+      chErgebnisseZeigen(kachel, def.id);
     });
     chDauerKachelnZeichnen();
   }
@@ -36682,6 +36765,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       if (woche) woche.textContent = t('Dauerrennen');
       const rang = kachel.querySelector('.ch-k-rang');
       if (rang) rang.innerHTML = chRangKachelText(chKachelRang(def));
+      chErgebnisseZeigen(kachel, def.id);
     });
   }
   // BESTELLT: "ein 'beliebteste Strecke'-Banner auf die Challenge mit den meisten Spielern".
@@ -36689,6 +36773,23 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   // Strecke|Modus|Preset); ein Spieler kann mehrere Eintraege haben, naeher kommen wir ohne
   // eigene Spieler-Statistik nicht. Die Rechnung laeuft im Hintergrund und setzt das Banner.
   let chBeliebtesteId = null;
+  // Ergebnisse je Strecke (alle Modi/Presets), aus demselben Schnappschuss. BESTELLT: "zeig bei
+  // den woechentlichen Challenges an, wie viele Spieler jeweils Zeiten beigetragen haben
+  // (einfach nur darunter: 'X Ergebnisse')".
+  let chErgebnisse = null;
+  function chErgebnisseZeigen(kachel, id) {
+    let em = kachel.querySelector('.ch-k-anzahl');
+    if (!em) {
+      em = document.createElement('em');
+      em.className = 'ch-k-anzahl';
+      em.setAttribute('data-i18n-skip', '');
+      const nach = kachel.querySelector('.ch-k-woche');
+      if (nach && nach.nextSibling) kachel.insertBefore(em, nach.nextSibling); else kachel.appendChild(em);
+    }
+    const n = chErgebnisse ? (chErgebnisse[id] || 0) : null;
+    em.hidden = n === null;
+    em.textContent = n === 1 ? t('1 Ergebnis') : t('{n} Ergebnisse').replace('{n}', n);
+  }
   function chBeliebteste() {
     chSchnappschuss().then((j) => {
       if (!j || !j.listen) return;
@@ -36707,6 +36808,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       let best = null;
       ids.forEach((id) => { if (summe[id] > 0 && (best === null || summe[id] > summe[best])) best = id; });
       chBeliebtesteId = best;
+      chErgebnisse = summe;
       chKachelnZeichnen();
     }).catch(() => { /* ohne Schnappschuss kein Banner */ });
   }

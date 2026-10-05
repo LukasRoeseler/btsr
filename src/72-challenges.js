@@ -1382,6 +1382,7 @@
       // Erreichter Rang (Medaille + Perzentil) auf der Uebersicht.
       const rang = kachel.querySelector('.ch-k-rang');
       if (rang) rang.innerHTML = chRangKachelText(chKachelRang(def));
+      chErgebnisseZeigen(kachel, def.id);
     });
     chDauerKachelnZeichnen();
   }
@@ -1399,6 +1400,7 @@
       if (woche) woche.textContent = t('Dauerrennen');
       const rang = kachel.querySelector('.ch-k-rang');
       if (rang) rang.innerHTML = chRangKachelText(chKachelRang(def));
+      chErgebnisseZeigen(kachel, def.id);
     });
   }
   // BESTELLT: "ein 'beliebteste Strecke'-Banner auf die Challenge mit den meisten Spielern".
@@ -1406,6 +1408,23 @@
   // Strecke|Modus|Preset); ein Spieler kann mehrere Eintraege haben, naeher kommen wir ohne
   // eigene Spieler-Statistik nicht. Die Rechnung laeuft im Hintergrund und setzt das Banner.
   let chBeliebtesteId = null;
+  // Ergebnisse je Strecke (alle Modi/Presets), aus demselben Schnappschuss. BESTELLT: "zeig bei
+  // den woechentlichen Challenges an, wie viele Spieler jeweils Zeiten beigetragen haben
+  // (einfach nur darunter: 'X Ergebnisse')".
+  let chErgebnisse = null;
+  function chErgebnisseZeigen(kachel, id) {
+    let em = kachel.querySelector('.ch-k-anzahl');
+    if (!em) {
+      em = document.createElement('em');
+      em.className = 'ch-k-anzahl';
+      em.setAttribute('data-i18n-skip', '');
+      const nach = kachel.querySelector('.ch-k-woche');
+      if (nach && nach.nextSibling) kachel.insertBefore(em, nach.nextSibling); else kachel.appendChild(em);
+    }
+    const n = chErgebnisse ? (chErgebnisse[id] || 0) : null;
+    em.hidden = n === null;
+    em.textContent = n === 1 ? t('1 Ergebnis') : t('{n} Ergebnisse').replace('{n}', n);
+  }
   function chBeliebteste() {
     chSchnappschuss().then((j) => {
       if (!j || !j.listen) return;
@@ -1424,6 +1443,7 @@
       let best = null;
       ids.forEach((id) => { if (summe[id] > 0 && (best === null || summe[id] > summe[best])) best = id; });
       chBeliebtesteId = best;
+      chErgebnisse = summe;
       chKachelnZeichnen();
     }).catch(() => { /* ohne Schnappschuss kein Banner */ });
   }

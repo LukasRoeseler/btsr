@@ -2595,6 +2595,17 @@
     #k-leiste .k-reiter button { padding: 5px 8px; font-size: clamp(9px, 1.9vh, 12px); }
     .k-leiste2 .k-reiter button { padding: 4px 8px; font-size: clamp(8.5px, 1.7vh, 11px); }
   }
+  /* KEIN ZIEHEN-ZUM-AKTUALISIEREN (v0.9.4). BESTELLT: "in der installierten Chrome-App (nicht
+     .apk) das Herunterswipen nicht zum Aktualisieren fuehren". */
+  html, body { overscroll-behavior-y: contain; }
+  /* COCKPIT RECHTS (v0.9.4). BESTELLT: "Sound und 'Rennen starten' Buttons rechts weg und dafuer
+     Rundenzeiten in doppelt so grosser Schriftgroesse." Die Knoepfe bleiben im Dokument (Tasten,
+     Tests und Zustandsanzeige haengen an ihnen), werden aber nicht mehr gezeigt: Rennen starten
+     geht ueber die Rennen-Taste/das Menue, der Motorklang ueber Optionen > Sound. */
+  #race-act-start, #race-act-sound { display: none !important; }
+  .gt3-right .gt3-times .gt3-val { font-size: clamp(26px, 5.2vw, 54px); line-height: 1.05; }
+  .gt3-right .gt3-times .gt3-lbl { font-size: clamp(9px, 1.4vw, 12px); }
+  .gt3-right .gt3-laps { font-size: clamp(16px, 2.4vw, 24px); max-height: none; }
   /* REITER HOEHER (v0.9.3). BESTELLT: "tab höhe ganz oben in der navbar erhöhen; Auf PC das
      4fache, auf mobile 2-3 fache, damit man auch mit finger ganz ok drauftippen kann (sollte
      trotzdem noch schlank sein)." Gemessen vorher: 10 px am PC, 20-23 px am Handy. Die
@@ -2774,6 +2785,8 @@
   .ch-kachel .ch-k-beliebt[hidden] { display: none; }
   .ch-kachel .ch-k-rang { display: block; font-style: normal; font-size: 11px; letter-spacing: .03em; text-align: center; padding: 0 4px 6px; }
   .ch-kachel .ch-k-rang:empty { display: none; }
+  .ch-kachel .ch-k-anzahl { display: block; font-style: normal; font-size: 10.5px; color: var(--dim, #a3acbd); text-align: center; padding: 0 4px 5px; }
+  .ch-kachel .ch-k-anzahl[hidden] { display: none; }
   .ch-k-medaille-hinweis { font-size: 12px; line-height: 1.5; margin: 2px 0 8px; }
   .ch-detail { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 16px; align-items: start; }
   .ch-rechts > h3:first-child { margin-top: 0; }
@@ -4198,7 +4211,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.3</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.4</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5269,6 +5282,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Streckenscan langsamer (auch in der Haarnadel), das Auto h&#228;lt am Ende an; der Live-Scan erkennt das Rundenende selbst. Reiter wechseln per Wischen nach links/rechts. Kein Neuladen mehr durch Herunterziehen. Challenges zeigen &#8222;X Ergebnisse&#8220;. Cockpit: Rundenzeiten doppelt so gro&#223;, Sound- und Start-Knopf rechts entfernt.</li>
         <li>Obere Reiterleiste deutlich h&#246;her (PC 40 px, Handy 46 px), gut zum Tippen. Meine Strecken: Ton beim Laden, rundes L&#246;schen-Kreuz mit R&#252;ckfrage. Ghosts halten wieder den gemessenen Abstand (1,2 Kacheln, mehr &#252;ber &#8222;Feld-Abstand&#8220;). Knockout und Derby als experimentell gekennzeichnet, Texte &#252;bersetzt.</li>
         <li>Mehrspieler: &#8222;Rennen f&#252;r alle&#8220; repariert. Der Bereitschaftsschirm erscheint jetzt auf jedem Reiter, inaktive oder abgemeldete Telefone blockieren den Start nicht mehr, Abbrechen l&#246;scht nicht mehr die Wertung aller, und das angek&#252;ndigte Wetter gilt auch beim Start. App: schnellerer, stabilerer direkter Steuerweg zum Auto (neue APK n&#246;tig).</li>
         <li>Zweite Kopie der App: Die Download-Links zeigen auf deren eigenes Release (mit Download-Z&#228;hler), sonst auf die APK im Repo.</li>
