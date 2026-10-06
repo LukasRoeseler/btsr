@@ -4387,7 +4387,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.35</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.36</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5502,6 +5502,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Crash-Richtung jetzt gemessen statt gelernt: Beim Beschleunigen wandert der Gyro-Punkt im Cockpit nach vorn, also hei&#223;t Byte 1 f&#228;llt &#8222;von hinten geschoben&#8220;, Byte 1 steigt &#8222;vorne eingeschlagen&#8220;, &#252;berwiegendes Byte 3 &#8222;von der Seite&#8220; (45&#176; Toleranz). &#8222;Nur der Rammer bremst&#8220; (fr&#252;her &#8222;Kein Bremsen bei Auffahrunfall&#8220;): Gebremst wird nur, wer vorne einschl&#228;gt; wer von hinten oder von der Seite getroffen wird, f&#228;hrt weiter. Rammer-Strafe: Rammer ist, wer vorne eingeschlagen ist, w&#228;hrend der andere von hinten oder der Seite getroffen wurde (frontal z&#228;hlt nicht); das gilt auch f&#252;r Ghosts. Im Derby kostet vorn einschlagen 10 %, getroffen werden 20 %.</li>
         <li>Bestenliste: Kann eine Zeit nicht hochgeladen werden, kommt ein Hinweis mit Strecke und Grund (z. B. &#8222;keine Verbindung zum Server&#8220; oder die Ablehnung durch die Bestenliste), nie mitten im Rennen und nie &#252;ber einem anderen Dialog. Auf der Challenge-Seite steht, wie viele Zeiten noch warten, mit &#8222;Jetzt senden&#8220;. Hoch- und Herunterladen der Bestenliste laufen nur, wenn gerade kein Rennen l&#228;uft, damit das Steuern nicht verz&#246;gert wird.</li>
         <li>Bestenliste: Die Listen liegen im Zwischenspeicher und erscheinen sofort, beim App-Start und alle 10 Minuten wird im Hintergrund nachgeladen; eine Strecke ohne Zeiten zeigt das sofort, statt lange zu laden. Hochgeladene Zeiten bleiben in einer Warteschlange, bis das Sheet sie best&#228;tigt, und eine Ablehnung wird mit Grund gemeldet. W&#246;chentliche Challenges: Die Resttage stehen oben neben &#8222;Woche X/20&#8220;, unter jeder Strecke stehen Spieler und Ergebnisse. Spiegeln ist jetzt ein Knopf mit Symbol unter der Karte. FAHREN, Strecke: Druckvorlagen nur bei FREI, Editor nur bei AUF DER BAHN. Wischen wechselt den Reiter nicht mehr, wenn die Geste am Bildschirmrand beginnt (Systemleiste).</li>
         <li>WLAN-Mehrspieler: genauerer gemeinsamer Start. Die Zeit wird beim Eintreffen der Antwort gemessen, nicht erst nach dem Einlesen, und im Vorlauf gleicht jedes Telefon die Host-Uhr acht Mal nach und stellt die Ampel nach. Rennende f&#252;r alle: Hat ein Mitspieler die Rundenzahl erreicht, ist bei allen die laufende Runde die letzte. Neu: &#8222;Rennen f&#252;r alle beenden&#8220; (WLAN-Reiter und R&#252;ckfrage beim Verlassen des Rennens). An den Host gehen jetzt die Rennrunden inklusive Fr&#252;hstart-Strafe.</li>
@@ -9118,12 +9119,10 @@
           (Leistung, Licht). Ab Werk an, bei Arcade aus.</small></div><label class="tgl"><input type="checkbox" id="setting-crash-schaden" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Bremsen bei Crash<small>Ein Crash nimmt dem Auto
           sofort den Gro&szlig;teil seines Tempos.</small></div><label class="tgl"><input type="checkbox" id="setting-crash-bremse" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Kein Bremsen bei Auffahrunfall<span class="wip-tag">experimentell</span><small>Gilt,
-          wenn &bdquo;Bremsen bei Crash&ldquo; an ist: f&auml;hrt dir jemand von hinten drauf
-          (Sto&szlig; nach vorn, bis 45&deg; nach hinten links oder rechts), bremst nur der
-          Auffahrende. Die Richtung kommt aus dem Bewegungssensor; welche Richtung &bdquo;vorn&ldquo;
-          ist, lernt die App beim Gasgeben und Bremsen. Bis sie es wei&szlig;, wird wie bisher
-          gebremst.</small></div><label class="tgl"><input type="checkbox" id="setting-crash-auffahr" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Nur der Rammer bremst<span class="wip-tag">experimentell</span><small>Gilt,
+          wenn &bdquo;Bremsen bei Crash&ldquo; an ist: Gebremst wird nur, wer vorne einschl&auml;gt
+          (der Auffahrende oder ein Auto an der Wand). Wer von hinten oder von der Seite getroffen
+          wird, f&auml;hrt weiter. Die Richtung kommt aus dem Bewegungssensor, mit 45&deg; Toleranz.</small></div><label class="tgl"><input type="checkbox" id="setting-crash-auffahr" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Kein Schaden im Stand
           <small>Solange das Auto steht (0&nbsp;km/h), z&auml;hlt kein Sto&szlig; als
           Crash &ndash; du kannst es aufheben, ohne dass es simulierten Schaden
@@ -12363,6 +12362,9 @@
     "Spieler 1": "Player 1",
     "Spieler 2": "Player 2",
     "Spieler 3": "Player 3",
+    "Nur der Rammer bremst": "Only the rammer brakes",
+    "Gilt, wenn „Bremsen bei Crash“ an ist: Gebremst wird nur, wer vorne einschlägt (der Auffahrende oder ein Auto an der Wand). Wer von hinten oder von der Seite getroffen wird, fährt weiter. Die Richtung kommt aus dem Bewegungssensor, mit 45° Toleranz.": "Applies when “Braking on crash” is on: only a car that hits with its front is braked (the one running into another, or a car hitting the wall). A car hit from behind or from the side keeps going. The direction comes from the motion sensor, with 45° tolerance.",
+    "SEITLICH GETROFFEN": "HIT FROM THE SIDE",
     "Deine Zeit auf {s} konnte nicht hochgeladen werden: {g}. Sie ist gespeichert und wird automatisch erneut gesendet.": "Your time on {s} could not be uploaded: {g}. It is saved and will be sent again automatically.",
     "es läuft gerade ein Rennen": "a race is running right now",
     "der Server hat nicht richtig geantwortet": "the server did not answer properly",
@@ -12438,8 +12440,6 @@
     "Jeder Crash kostet Zustand (Leistung, Licht). Ab Werk an, bei Arcade aus.": "Every crash costs condition (power, lights). On by default, off in Arcade.",
     "Bremsen bei Crash": "Braking on crash",
     "Ein Crash nimmt dem Auto sofort den Großteil seines Tempos.": "A crash instantly takes most of the car's speed.",
-    "Kein Bremsen bei Auffahrunfall": "No braking when rear-ended",
-    "Gilt, wenn „Bremsen bei Crash“ an ist: fährt dir jemand von hinten drauf (Stoß nach vorn, bis 45° nach hinten links oder rechts), bremst nur der Auffahrende. Die Richtung kommt aus dem Bewegungssensor; welche Richtung „vorn“ ist, lernt die App beim Gasgeben und Bremsen. Bis sie es weiß, wird wie bisher gebremst.": "Applies when “Braking on crash” is on: if someone runs into you from behind (push forward, up to 45° to the rear left or right), only the car behind brakes. The direction comes from the motion sensor; the app learns which way is “forward” while you accelerate and brake. Until it knows, braking works as before.",
     "Strafe für Rammer": "Penalty for rammers",
     "Zwei Crashs verschiedener Autos im selben Moment sind ein Rammen (ein Auto gegen die Wand zählt nicht). Nach so vielen Rammstößen bekommt der Rammer eine Strafe: er steht beim nächsten Boxenstopp zusätzlich still. Wird sie nicht abgesessen, steht im Ergebnis [RAMMER].": "Two crashes of different cars at the same moment count as ramming (a car hitting the wall does not). After this many rams the rammer gets a penalty: an extra standstill at the next pit stop. If it is not served, the result shows [RAMMER].",
     "nach 1× Rammen": "after 1 ram",
@@ -12720,6 +12720,7 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Crash-Richtung jetzt gemessen statt gelernt: Beim Beschleunigen wandert der Gyro-Punkt im Cockpit nach vorn, also heißt Byte 1 fällt „von hinten geschoben“, Byte 1 steigt „vorne eingeschlagen“, überwiegendes Byte 3 „von der Seite“ (45° Toleranz). „Nur der Rammer bremst“ (früher „Kein Bremsen bei Auffahrunfall“): Gebremst wird nur, wer vorne einschlägt; wer von hinten oder von der Seite getroffen wird, fährt weiter. Rammer-Strafe: Rammer ist, wer vorne eingeschlagen ist, während der andere von hinten oder der Seite getroffen wurde (frontal zählt nicht); das gilt auch für Ghosts. Im Derby kostet vorn einschlagen 10 %, getroffen werden 20 %.": "Crash direction is now measured instead of learned: when accelerating, the gyro dot in the cockpit moves forward, so byte 1 falling means “pushed from behind”, byte 1 rising means “hit with the front”, and byte 3 dominating means “from the side” (45° tolerance). “Only the rammer brakes” (formerly “No braking when rear-ended”): only a car that hits with its front is braked; a car hit from behind or from the side keeps going. Ramming penalty: the rammer is the car that hit with its front while the other was hit from behind or the side (head-on does not count); this applies to ghosts too. In derby, hitting with the front costs 10 %, being hit costs 20 %.",
     "Bestenliste: Kann eine Zeit nicht hochgeladen werden, kommt ein Hinweis mit Strecke und Grund (z. B. „keine Verbindung zum Server“ oder die Ablehnung durch die Bestenliste), nie mitten im Rennen und nie über einem anderen Dialog. Auf der Challenge-Seite steht, wie viele Zeiten noch warten, mit „Jetzt senden“. Hoch- und Herunterladen der Bestenliste laufen nur, wenn gerade kein Rennen läuft, damit das Steuern nicht verzögert wird.": "Leaderboard: if a time cannot be uploaded, a notice shows the track and the reason (e.g. “no connection to the server” or a rejection by the leaderboard), never in the middle of a race and never over another dialog. The challenge page shows how many times are still waiting, with “Send now”. Leaderboard uploads and downloads only run when no race is in progress, so steering is not delayed.",
     "Bestenliste: Die Listen liegen im Zwischenspeicher und erscheinen sofort, beim App-Start und alle 10 Minuten wird im Hintergrund nachgeladen; eine Strecke ohne Zeiten zeigt das sofort, statt lange zu laden. Hochgeladene Zeiten bleiben in einer Warteschlange, bis das Sheet sie bestätigt, und eine Ablehnung wird mit Grund gemeldet. Wöchentliche Challenges: Die Resttage stehen oben neben „Woche X/20“, unter jeder Strecke stehen Spieler und Ergebnisse. Spiegeln ist jetzt ein Knopf mit Symbol unter der Karte. FAHREN, Strecke: Druckvorlagen nur bei FREI, Editor nur bei AUF DER BAHN. Wischen wechselt den Reiter nicht mehr, wenn die Geste am Bildschirmrand beginnt (Systemleiste).": "Leaderboard: lists are cached and appear immediately; they are refreshed in the background at app start and every 10 minutes, and a track without times shows that right away instead of loading for a long time. Uploaded times stay in a queue until the sheet confirms them, and a rejection is reported with its reason. Weekly challenges: the remaining days appear at the top next to “Week X/20”, and players and results appear under each track. Mirroring is now an icon button under the map. DRIVE, track: print templates only for FREE, the editor only for ON THE TRACK. Swiping no longer switches tabs when the gesture starts at the screen edge (system bar).",
     "WLAN-Mehrspieler: genauerer gemeinsamer Start. Die Zeit wird beim Eintreffen der Antwort gemessen, nicht erst nach dem Einlesen, und im Vorlauf gleicht jedes Telefon die Host-Uhr acht Mal nach und stellt die Ampel nach. Rennende für alle: Hat ein Mitspieler die Rundenzahl erreicht, ist bei allen die laufende Runde die letzte. Neu: „Rennen für alle beenden“ (WLAN-Reiter und Rückfrage beim Verlassen des Rennens). An den Host gehen jetzt die Rennrunden inklusive Frühstart-Strafe.": "WiFi multiplayer: a more precise shared start. The time is measured when the response arrives, not after reading it, and during the lead-in every phone re-syncs with the host clock eight times and adjusts the start lights. Race end for everyone: once a player reaches the lap count, the current lap is the last one for everybody. New: “End race for everyone” (WiFi tab and the question when leaving the race). The host now receives race laps including the jump-start penalty.",
@@ -30276,9 +30277,10 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     derbyPruefen();
   }
   // Aufprall-Schaden fuer den Spieler (head-on 10 %, sonst 20 %).
-  function derbyAufprall(wer) {
+  function derbyAufprall(wer, richtung) {
     if (!derbyLaeuft) return;
-    const frontal = derbyFrontal(wer);
+    // v0.9.36: mit gemessener Richtung - vorn eingeschlagen kostet 10 %, getroffen 20 %.
+    const frontal = richtung && richtung !== 'unbekannt' ? richtung === 'vorn' : derbyFrontal(wer);
     derbySchaden(wer, frontal ? 10 : 20);
   }
   // Head-on, wenn der Gyro stark nach vorne ausschlaegt (x-Achse dominiert). Sonst Seite/Ramme.
@@ -34651,9 +34653,6 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     // Die Richtung des Stosses (v0.9.21, siehe 71-rammen.js): Abweichung je Achse VOR dem
     // Nachziehen des Mittels, und nebenbei lernen, welche Richtung von Byte 1 "vorn" ist.
     const d1 = v1 - L.avg1, d3 = v3 - L.avg3;
-    const tempo = motorVon(wer || 1).state.speedKmh;
-    if (L.vPrev !== undefined) crashVorLernen(L, d1, tempo - L.vPrev, dev);
-    L.vPrev = tempo;
     L.avg1 += (v1 - L.avg1) * CRASH_ROLLING_ALPHA;
     L.avg3 += (v3 - L.avg3) * CRASH_ROLLING_ALPHA;
     const now = Date.now();
@@ -34692,10 +34691,9 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       // Der Rundenzaehler der Ereignisse gehoert dem Rennen, und das Rennen faehrt Auto 1.
       L.letzter = now;
       if (!(wer >= 2)) lapEventAkku.crash += 1;
-      const vonHinten = crashVonHinten(L, d1, d3);
-      const vz = crashVorZeichen(L);
-      crashEreignis(wer >= 2 ? zusatzPlatz(wer).car : playerCar, vz ? Math.sign(d1) === vz : null);
-      registerCrash(wer, { vonHinten });
+      const richtung = crashRichtung(d1, d3);
+      crashEreignis(wer >= 2 ? zusatzPlatz(wer).car : playerCar, richtung);
+      registerCrash(wer, { richtung });
     }
   }
 
@@ -34726,8 +34724,13 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     const zPl = wer >= 2 ? zusatzPlatz(wer) : null;
     // BESTELLT (v0.9.21): Bremsen und Schaden getrennt schaltbar, und kein Bremsen fuer den,
     // auf den von hinten aufgefahren wurde.
-    const vonHinten = !!(stoss && stoss.vonHinten) && crashAuffahrSchutzAn();
-    const bremsen = crashBremseAn() && !vonHinten;
+    // v0.9.36, BESTELLT: "Abbremsen nur fuer Rammer, nicht fuer Gerammte." Gerammt heisst:
+    // von hinten oder von der Seite getroffen (crashRichtung in 71-rammen.js).
+    const richtung = (stoss && stoss.richtung) || 'unbekannt';
+    const getroffen = richtung === 'hinten' || richtung === 'seite';
+    const geschont = getroffen && crashNurRammerBremst();
+    const vonHinten = richtung === 'hinten';
+    const bremsen = crashBremseAn() && !geschont;
     const zwei = !!zPl;
     // EINE Funktion fuer beide Autos und nicht zwei: die Schadensrechnung ist dieselbe, nur
     // der Ablageort und der Adressat der Rueckmeldungen unterscheiden sich. Zwei Kopien
@@ -34739,7 +34742,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     // Aufprall stoppt wie ueblich das Tempo, die Health-Regel (frontal 10 %, sonst 20 %)
     // macht der Derby-Block. Bei 0 % wird das Auto gestoppt (siehe derbyTot).
     if (typeof derbyLaeuft !== 'undefined' && derbyLaeuft) {
-      if (typeof derbyAufprall === 'function') derbyAufprall(wer);
+      if (typeof derbyAufprall === 'function') derbyAufprall(wer, richtung);
       if (bremsen) motor.state.speedKmh *= 0.3;
       if (!zwei) updateDamageFuelUI();
       if (!playCrashFx()) playCrashSound();
@@ -34791,9 +34794,9 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     //
     // Rueckmeldung gibt es genug - Schadensbalken, Geraeusch, Rumble, Protokoll -, nur nicht
     // auf dem Rennschirm. Also dort eine Meldung.
-    showHudToast(pre + (vonHinten ? t('AUFFAHRUNFALL') : 'CRASH')
+    showHudToast(pre + (geschont ? (vonHinten ? t('AUFFAHRUNFALL') : t('SEITLICH GETROFFEN')) : 'CRASH')
                  + (schadenAn ? ' · SCHADEN ' + Math.round(stand) + ' %' : ''));
-    log(pre + 'Crash erkannt' + (vonHinten ? ' (von hinten, kein Bremsen)' : '')
+    log(pre + 'Crash erkannt (Stoss ' + richtung + ')' + (geschont ? ', gerammt: kein Bremsen' : '')
         + (schadenAn ? `, Schaden +${Math.round(100 / crashesToTotal)}%.` : ', ohne Schaden.'), 'err');
   }
 
@@ -36628,46 +36631,35 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   // BESTELLT: "Mache aus Bremsen beim Crash mehrere Funktionen":
   //   Schaden bei Crash      ja/nein (Vorgabe ja, Arcade nein)
   //   Bremsen bei Crash      ja/nein (Vorgabe ja)
-  //   Kein Bremsen bei Auffahrunfall  ja/nein (Vorgabe ja): "wenn mir von hinten jemand drauf
-  //                          faehrt, soll der bremsen, aber nicht ich. Laesst sich ueber Gyro
-  //                          messen. Von hinten mit 45 Grad Toleranz."
+  //   Nur der Rammer bremst  ja/nein (Vorgabe ja; v0.9.36, vorher "Kein Bremsen bei
+  //                          Auffahrunfall"): "Abbremsen nur fuer Rammer, nicht fuer Gerammte."
   // und, experimentell in den Renneinstellungen: Pitstrafen fuer Rammer.
   //
   // DIE RICHTUNG DES STOSSES kommt aus den Bewegungsbytes 1 und 3, mit denen auch der Crash
-  // erkannt wird (Abweichung vom gleitenden Mittel, siehe detectCrash). Welche Richtung von
-  // Byte 1 "nach vorn" ist, ist nirgends bestaetigt - deshalb wird es GELERNT: beim normalen
-  // Beschleunigen und Bremsen zeigt die Abweichung von Byte 1 mit bzw. gegen die
-  // Tempoaenderung. Ein Stoss von hinten schiebt das Auto nach vorn, also in dieselbe Richtung
-  // wie Gasgeben. Solange nicht genug gelernt ist, gilt kein Stoss als Auffahrunfall (es wird
-  // gebremst wie bisher) - die sichere Seite.
-  const CRASH_VOR_LERN_MIN = 40;         // so viel Beleg, bevor die Richtung gilt
+  // erkannt wird (Abweichung vom gleitenden Mittel, siehe detectCrash). Bis v0.9.35 wurde
+  // gelernt, welche Richtung von Byte 1 "vorn" ist; seit v0.9.36 steht sie fest, weil sie
+  // gemessen ist (siehe CRASH_BYTE1_VORWAERTS).
   function crashSchalter(id, vorgabe) {
     const el = typeof $ === 'function' ? $(id) : null;
     return el ? !!el.checked : vorgabe;
   }
   function crashSchadenAn() { return crashSchalter('setting-crash-schaden', true); }
   function crashBremseAn() { return crashSchalter('setting-crash-bremse', true); }
-  function crashAuffahrSchutzAn() { return crashBremseAn() && crashSchalter('setting-crash-auffahr', true); }
+  function crashNurRammerBremst() { return crashBremseAn() && crashSchalter('setting-crash-auffahr', true); }
 
-  // Lernschritt je Paket (aus detectCrash): d1 = Abweichung von Byte 1, dv = Tempoaenderung
-  // des Modells seit dem letzten Paket (km/h), dev = Gesamtabweichung (kein Crash-Stoss).
-  function crashVorLernen(L, d1, dv, dev) {
-    if (L.vorSumme === undefined) L.vorSumme = 0;
-    if (!(Math.abs(dv) > 0.02) || dev > crashThreshold * 0.8) return;
-    const gewicht = Math.min(1, Math.abs(dv) / 0.2);
-    L.vorSumme = L.vorSumme * 0.998 + Math.max(-20, Math.min(20, d1)) * Math.sign(dv) * gewicht;
-  }
-  // +1 / -1: welches Vorzeichen von Byte 1 "nach vorn geschoben" heisst; 0 = noch unbekannt.
-  function crashVorZeichen(L) {
-    if (!L || !(Math.abs(L.vorSumme || 0) >= CRASH_VOR_LERN_MIN)) return 0;
-    return Math.sign(L.vorSumme);
-  }
-  // Auffahrunfall: der Stoss schiebt nach vorn, hoechstens 45 Grad zur Seite
-  // (|quer| <= |laengs|). Ohne gelernte Richtung: nein.
-  function crashVonHinten(L, d1, d3) {
-    const vz = crashVorZeichen(L);
-    if (!vz || !d1) return false;
-    return Math.sign(d1) === vz && Math.abs(d3) <= Math.abs(d1);
+  // ---- DIE RICHTUNG DES STOSSES (v0.9.36, gemessen statt gelernt) ----------------------
+  // GEMELDET: "Beim Vorwaertsbeschleunigen geht der gemessene Gyro nach vorne im Cockpit."
+  // Der Punkt im Cockpit (race-g-real, cy = 50 + gyroRaw.y) wandert dabei nach OBEN, also
+  // wird gyroRaw.y - Byte 1 - KLEINER. Daraus:
+  //   Byte 1 faellt (wie Gasgeben)  -> das Auto wurde nach vorn geschoben: von HINTEN getroffen
+  //   Byte 1 steigt (wie Bremsen)   -> das Auto ist VORN eingeschlagen: der Rammer (oder die Wand)
+  //   Byte 3 ueberwiegt             -> von der SEITE getroffen
+  // 45 Grad Toleranz: laengs, solange |quer| <= |laengs|.
+  const CRASH_BYTE1_VORWAERTS = -1;
+  function crashRichtung(d1, d3) {
+    if (!d1 && !d3) return 'unbekannt';
+    if (Math.abs(d3) > Math.abs(d1)) return 'seite';
+    return Math.sign(d1) === CRASH_BYTE1_VORWAERTS ? 'hinten' : 'vorn';
   }
 
   // ---- RAMMEN: zwei Crashs zur selben Zeit ---------------------------------------------
@@ -36704,9 +36696,12 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     }
     return car && car.ghost ? Math.abs(car.ghost.lastThrottle || 0) : 0;
   }
-  // Ein Crash eines Autos. vorwaerts: true = nach vorn geschoben, false = nach hinten,
-  // null = unbekannt.
-  function crashEreignis(car, vorwaerts) {
+  // Ein Crash eines Autos mit der Richtung, aus der der Stoss kam (crashRichtung).
+  // RAMMER ist, wer VORN eingeschlagen ist, waehrend der andere von hinten oder der Seite
+  // getroffen wurde. Beide vorn (frontal) oder keiner vorn: keine Wertung. Nur ohne
+  // Richtung (unbekannt) entscheidet wie bisher das hoehere Tempo.
+  function crashEreignis(car, richtung) {
+    const vorwaerts = richtung;
     if (!car || raceState !== 'racing' || !(rammAb() > 0)) return null;
     const jetzt = Date.now();
     rammEreignisse = rammEreignisse.filter((e) => jetzt - e.at <= RAMM_FENSTER_MS);
@@ -36715,9 +36710,11 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     rammEreignisse.push(neu);
     if (!anderer) return null;
     let rammer = null, opfer = null;
-    if (neu.vorwaerts === true && anderer.vorwaerts !== true) { rammer = anderer; opfer = neu; }
-    else if (anderer.vorwaerts === true && neu.vorwaerts !== true) { rammer = neu; opfer = anderer; }
-    else if (Math.abs(neu.tempo - anderer.tempo) > 0.05) {
+    const vorn = (e) => e.vorwaerts === 'vorn';
+    const bekannt = (e) => e.vorwaerts && e.vorwaerts !== 'unbekannt';
+    if (vorn(neu) && bekannt(anderer) && !vorn(anderer)) { rammer = neu; opfer = anderer; }
+    else if (vorn(anderer) && bekannt(neu) && !vorn(neu)) { rammer = anderer; opfer = neu; }
+    else if ((!bekannt(neu) || !bekannt(anderer)) && Math.abs(neu.tempo - anderer.tempo) > 0.05) {
       rammer = neu.tempo > anderer.tempo ? neu : anderer;
       opfer = rammer === neu ? anderer : neu;
     }
@@ -36745,12 +36742,13 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     const v1 = s8signed(bytes[1]), v3 = s8signed(bytes[3]);
     if (L.avg1 === null) { L.avg1 = v1; L.avg3 = v3; return; }
     const dev = Math.abs(v1 - L.avg1) + Math.abs(v3 - L.avg3);
+    const d1 = v1 - L.avg1, d3 = v3 - L.avg3;
     L.avg1 += (v1 - L.avg1) * CRASH_ROLLING_ALPHA;
     L.avg3 += (v3 - L.avg3) * CRASH_ROLLING_ALPHA;
     const jetzt = Date.now();
     if (dev > crashThreshold && jetzt - L.letzter > CRASH_REFRACTORY_MS) {
       L.letzter = jetzt;
-      crashEreignis(car, null);
+      crashEreignis(car, crashRichtung(d1, d3));
     }
   }
   // Rotes Label im Rennergebnis: Strafe nicht abgesessen.
@@ -77817,83 +77815,76 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   });
 
   // v0.9.21: Schaden, Bremsen und Auffahrunfall getrennt.
-  stAdd('Crash: Schaden, Bremsen und Auffahrunfall getrennt schaltbar', () => {
+  stAdd('Crash: Schaden und Bremsen getrennt, nur der Rammer bremst (Richtung aus Byte 1)', () => {
     const f = [];
     const ids = ['setting-crash-schaden', 'setting-crash-bremse', 'setting-crash-auffahr'];
     const merk = { dmg: damage, v: physEngine.state.speedKmh, schalter: ids.map((id) => $(id).checked),
                    licht: { front: lightDamage.front, rear: lightDamage.rear }, derby: derbyLaeuft };
-    const L = crashLageVon(1);
-    const vor = L.vorSumme;
     try {
       derbyLaeuft = false;
-      const lauf = (schaden, bremse, auffahr, stoss) => {
-        $(ids[0]).checked = schaden; $(ids[1]).checked = bremse; $(ids[2]).checked = auffahr;
+      const lauf = (schaden, bremse, nurRammer, richtung) => {
+        $(ids[0]).checked = schaden; $(ids[1]).checked = bremse; $(ids[2]).checked = nurRammer;
         damage = 0; physEngine.state.speedKmh = 2;
-        registerCrash(1, stoss);
+        registerCrash(1, { richtung });
         return { dmg: damage, v: physEngine.state.speedKmh };
       };
-      let r = lauf(true, true, true, { vonHinten: false });
+      let r = lauf(true, true, true, 'vorn');
       if (!(r.dmg > 0)) f.push('Schaden an: kein Schaden');
-      if (!(r.v < 1)) f.push('Bremsen an: nicht gebremst (' + r.v + ')');
-      r = lauf(false, true, true, { vonHinten: false });
+      if (!(r.v < 1)) f.push('Rammer (vorn) nicht gebremst');
+      r = lauf(false, true, true, 'vorn');
       if (r.dmg !== 0) f.push('Schaden aus: trotzdem ' + r.dmg + ' %');
-      r = lauf(true, false, true, { vonHinten: false });
+      r = lauf(true, false, true, 'vorn');
       if (r.v !== 2) f.push('Bremsen aus: Tempo ' + r.v);
-      r = lauf(true, true, true, { vonHinten: true });
-      if (r.v !== 2) f.push('Auffahrunfall: trotzdem gebremst');
-      r = lauf(true, true, false, { vonHinten: true });
-      if (!(r.v < 1)) f.push('Auffahr-Schutz aus: nicht gebremst');
-      // Richtung: ungelernt nie "von hinten"; gelernt +: Stoss + mit wenig Querteil ja, 50 Grad nein.
-      L.vorSumme = 0;
-      if (crashVonHinten(L, 30, 5)) f.push('ungelernt als Auffahrunfall gewertet');
-      L.vorSumme = 100;
-      if (!crashVonHinten(L, 30, 25)) f.push('von hinten (40 Grad) nicht erkannt');
-      if (crashVonHinten(L, 30, 36)) f.push('50 Grad noch als von hinten gewertet');
-      if (crashVonHinten(L, -30, 5)) f.push('Stoss nach hinten als Auffahrunfall gewertet');
-      // Lernen: Gasgeben mit positivem Byte-1-Ausschlag lernt "+".
-      L.vorSumme = 0;
-      for (let i = 0; i < 80; i++) crashVorLernen(L, 6, 0.3, 10);
-      if (crashVorZeichen(L) !== 1) f.push('Lernen: Vorzeichen ' + crashVorZeichen(L));
+      r = lauf(true, true, true, 'hinten');
+      if (r.v !== 2) f.push('von hinten gerammt: gebremst');
+      r = lauf(true, true, true, 'seite');
+      if (r.v !== 2) f.push('seitlich gerammt: gebremst');
+      r = lauf(true, true, false, 'hinten');
+      if (!(r.v < 1)) f.push('Schalter aus: Gerammter nicht gebremst');
+      // Richtung: Byte 1 faellt (wie Gasgeben) = von hinten; steigt = vorn; quer ueber 45 Grad = Seite.
+      if (crashRichtung(-30, 5) !== 'hinten') f.push('Byte 1 faellt: nicht "hinten"');
+      if (crashRichtung(30, 5) !== 'vorn') f.push('Byte 1 steigt: nicht "vorn"');
+      if (crashRichtung(-30, 25) !== 'hinten') f.push('40 Grad nicht mehr laengs');
+      if (crashRichtung(-30, 36) !== 'seite') f.push('50 Grad nicht Seite');
     } finally {
       ids.forEach((id, i) => { $(id).checked = merk.schalter[i]; });
-      damage = merk.dmg; physEngine.state.speedKmh = merk.v; L.vorSumme = vor;
+      damage = merk.dmg; physEngine.state.speedKmh = merk.v;
       lightDamage.front = merk.licht.front; lightDamage.rear = merk.licht.rear; derbyLaeuft = merk.derby;
       updateDamageFuelUI();
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Schaden/Bremsen/Auffahrunfall wirken einzeln, 45-Grad-Kegel stimmt' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Rammer bremst, Gerammte (hinten/Seite) nicht, Richtung mit 45 Grad' };
   });
 
-  stAdd('Rammen: zwei Crashs gleichzeitig = Rammer, Strafe nach N, Label im Ergebnis', () => {
+  stAdd('Rammen: Rammer nach Stossrichtung, Strafe nach N, Label im Ergebnis', () => {
     const f = [];
     const merk = { rs: raceState, ab: $('race-ramm-ab').value, st: $('race-ramm-strafe').value };
-    const a = { device: { id: 'probe-ramm-a' }, role: 'ghost', alias: 'A', ghost: { running: true, lastThrottle: 0.9 } };
-    const b = { device: { id: 'probe-ramm-b' }, role: 'ghost', alias: 'B', ghost: { running: true, lastThrottle: 0.3 } };
+    const a = { device: { id: 'probe-ramm-a' }, role: 'ghost', alias: 'A', ghost: { running: true, lastThrottle: 0.3 } };
+    const b = { device: { id: 'probe-ramm-b' }, role: 'ghost', alias: 'B', ghost: { running: true, lastThrottle: 0.9 } };
     try {
       raceState = 'racing'; $('race-ramm-ab').value = '2'; $('race-ramm-strafe').value = '5';
       rammReset();
-      if (crashEreignis(a, null) !== null) f.push('ein Crash allein ist schon ein Rammen');
-      if (crashEreignis(b, null) !== a) f.push('Schnellerer nicht als Rammer erkannt');
+      if (crashEreignis(a, 'vorn') !== null) f.push('ein Crash allein ist schon ein Rammen');
+      if (crashEreignis(b, 'hinten') !== a) f.push('vorn eingeschlagener (langsamerer) nicht als Rammer');
       if (rammStrafeOffen(a) !== 0) f.push('Strafe schon nach 1x');
-      rammReset();
-      crashEreignis(a, null); crashEreignis(b, null);
-      crashEreignis(a, null); crashEreignis(b, null);
+      crashEreignis(b, 'seite'); crashEreignis(a, 'vorn');
       if (rammStrafeOffen(a) !== 5) f.push('nach 2x keine 5 s Strafe (' + rammStrafeOffen(a) + ')');
       if (rammStrafeOffen(b) !== 0) f.push('Opfer bestraft');
       if (!/RAMMER/.test(rammerLabel(a))) f.push('kein [RAMMER]-Label');
-      // Richtung schlaegt Tempo: wer nach vorn geschoben wurde, ist das Opfer.
       rammReset();
-      if (crashEreignis(a, true) !== null) f.push('Paarung zu frueh');
-      if (crashEreignis(b, false) !== b) f.push('nach vorn geschobenes Auto als Rammer gewertet');
-      // Abgesessen: kein Label mehr.
-      rammReset(); crashEreignis(a, null); crashEreignis(b, null); crashEreignis(a, null); crashEreignis(b, null);
+      crashEreignis(a, 'vorn');
+      if (crashEreignis(b, 'vorn') !== null) f.push('frontal (beide vorn) als Rammen gewertet');
+      rammReset();
+      crashEreignis(a, 'hinten');
+      if (crashEreignis(b, 'seite') !== null) f.push('keiner vorn als Rammen gewertet');
+      rammReset(); crashEreignis(a, 'vorn'); crashEreignis(b, 'hinten'); crashEreignis(a, 'vorn'); crashEreignis(b, 'hinten');
       if (rammStrafeAbsitzen(a) !== 5 || rammerLabel(a)) f.push('Absitzen loescht die Strafe nicht');
       $('race-ramm-ab').value = '0'; rammReset();
-      crashEreignis(a, null);
-      if (crashEreignis(b, null) !== null) f.push('Option aus: trotzdem gewertet');
+      crashEreignis(a, 'vorn');
+      if (crashEreignis(b, 'hinten') !== null) f.push('Option aus: trotzdem gewertet');
     } finally {
       raceState = merk.rs; $('race-ramm-ab').value = merk.ab; $('race-ramm-strafe').value = merk.st; rammReset();
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Paarung, Rammer, Strafe nach 2x, Label, Absitzen' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Rammer = vorn eingeschlagen, frontal/keiner vorn zaehlt nicht, Strafe nach 2x' };
   });
 
   stAdd('Derby: Licht flackert ab 50 % Schaden, aus und Ruckeln ab 75 %, ohne Tank/Reifen', () => {

@@ -277,9 +277,10 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     derbyPruefen();
   }
   // Aufprall-Schaden fuer den Spieler (head-on 10 %, sonst 20 %).
-  function derbyAufprall(wer) {
+  function derbyAufprall(wer, richtung) {
     if (!derbyLaeuft) return;
-    const frontal = derbyFrontal(wer);
+    // v0.9.36: mit gemessener Richtung - vorn eingeschlagen kostet 10 %, getroffen 20 %.
+    const frontal = richtung && richtung !== 'unbekannt' ? richtung === 'vorn' : derbyFrontal(wer);
     derbySchaden(wer, frontal ? 10 : 20);
   }
   // Head-on, wenn der Gyro stark nach vorne ausschlaegt (x-Achse dominiert). Sonst Seite/Ramme.
@@ -4652,9 +4653,6 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     // Die Richtung des Stosses (v0.9.21, siehe 71-rammen.js): Abweichung je Achse VOR dem
     // Nachziehen des Mittels, und nebenbei lernen, welche Richtung von Byte 1 "vorn" ist.
     const d1 = v1 - L.avg1, d3 = v3 - L.avg3;
-    const tempo = motorVon(wer || 1).state.speedKmh;
-    if (L.vPrev !== undefined) crashVorLernen(L, d1, tempo - L.vPrev, dev);
-    L.vPrev = tempo;
     L.avg1 += (v1 - L.avg1) * CRASH_ROLLING_ALPHA;
     L.avg3 += (v3 - L.avg3) * CRASH_ROLLING_ALPHA;
     const now = Date.now();
@@ -4693,10 +4691,9 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       // Der Rundenzaehler der Ereignisse gehoert dem Rennen, und das Rennen faehrt Auto 1.
       L.letzter = now;
       if (!(wer >= 2)) lapEventAkku.crash += 1;
-      const vonHinten = crashVonHinten(L, d1, d3);
-      const vz = crashVorZeichen(L);
-      crashEreignis(wer >= 2 ? zusatzPlatz(wer).car : playerCar, vz ? Math.sign(d1) === vz : null);
-      registerCrash(wer, { vonHinten });
+      const richtung = crashRichtung(d1, d3);
+      crashEreignis(wer >= 2 ? zusatzPlatz(wer).car : playerCar, richtung);
+      registerCrash(wer, { richtung });
     }
   }
 
@@ -4727,8 +4724,13 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     const zPl = wer >= 2 ? zusatzPlatz(wer) : null;
     // BESTELLT (v0.9.21): Bremsen und Schaden getrennt schaltbar, und kein Bremsen fuer den,
     // auf den von hinten aufgefahren wurde.
-    const vonHinten = !!(stoss && stoss.vonHinten) && crashAuffahrSchutzAn();
-    const bremsen = crashBremseAn() && !vonHinten;
+    // v0.9.36, BESTELLT: "Abbremsen nur fuer Rammer, nicht fuer Gerammte." Gerammt heisst:
+    // von hinten oder von der Seite getroffen (crashRichtung in 71-rammen.js).
+    const richtung = (stoss && stoss.richtung) || 'unbekannt';
+    const getroffen = richtung === 'hinten' || richtung === 'seite';
+    const geschont = getroffen && crashNurRammerBremst();
+    const vonHinten = richtung === 'hinten';
+    const bremsen = crashBremseAn() && !geschont;
     const zwei = !!zPl;
     // EINE Funktion fuer beide Autos und nicht zwei: die Schadensrechnung ist dieselbe, nur
     // der Ablageort und der Adressat der Rueckmeldungen unterscheiden sich. Zwei Kopien
@@ -4740,7 +4742,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     // Aufprall stoppt wie ueblich das Tempo, die Health-Regel (frontal 10 %, sonst 20 %)
     // macht der Derby-Block. Bei 0 % wird das Auto gestoppt (siehe derbyTot).
     if (typeof derbyLaeuft !== 'undefined' && derbyLaeuft) {
-      if (typeof derbyAufprall === 'function') derbyAufprall(wer);
+      if (typeof derbyAufprall === 'function') derbyAufprall(wer, richtung);
       if (bremsen) motor.state.speedKmh *= 0.3;
       if (!zwei) updateDamageFuelUI();
       if (!playCrashFx()) playCrashSound();
@@ -4792,9 +4794,9 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     //
     // Rueckmeldung gibt es genug - Schadensbalken, Geraeusch, Rumble, Protokoll -, nur nicht
     // auf dem Rennschirm. Also dort eine Meldung.
-    showHudToast(pre + (vonHinten ? t('AUFFAHRUNFALL') : 'CRASH')
+    showHudToast(pre + (geschont ? (vonHinten ? t('AUFFAHRUNFALL') : t('SEITLICH GETROFFEN')) : 'CRASH')
                  + (schadenAn ? ' · SCHADEN ' + Math.round(stand) + ' %' : ''));
-    log(pre + 'Crash erkannt' + (vonHinten ? ' (von hinten, kein Bremsen)' : '')
+    log(pre + 'Crash erkannt (Stoss ' + richtung + ')' + (geschont ? ', gerammt: kein Bremsen' : '')
         + (schadenAn ? `, Schaden +${Math.round(100 / crashesToTotal)}%.` : ', ohne Schaden.'), 'err');
   }
 

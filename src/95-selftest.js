@@ -16674,83 +16674,76 @@
   });
 
   // v0.9.21: Schaden, Bremsen und Auffahrunfall getrennt.
-  stAdd('Crash: Schaden, Bremsen und Auffahrunfall getrennt schaltbar', () => {
+  stAdd('Crash: Schaden und Bremsen getrennt, nur der Rammer bremst (Richtung aus Byte 1)', () => {
     const f = [];
     const ids = ['setting-crash-schaden', 'setting-crash-bremse', 'setting-crash-auffahr'];
     const merk = { dmg: damage, v: physEngine.state.speedKmh, schalter: ids.map((id) => $(id).checked),
                    licht: { front: lightDamage.front, rear: lightDamage.rear }, derby: derbyLaeuft };
-    const L = crashLageVon(1);
-    const vor = L.vorSumme;
     try {
       derbyLaeuft = false;
-      const lauf = (schaden, bremse, auffahr, stoss) => {
-        $(ids[0]).checked = schaden; $(ids[1]).checked = bremse; $(ids[2]).checked = auffahr;
+      const lauf = (schaden, bremse, nurRammer, richtung) => {
+        $(ids[0]).checked = schaden; $(ids[1]).checked = bremse; $(ids[2]).checked = nurRammer;
         damage = 0; physEngine.state.speedKmh = 2;
-        registerCrash(1, stoss);
+        registerCrash(1, { richtung });
         return { dmg: damage, v: physEngine.state.speedKmh };
       };
-      let r = lauf(true, true, true, { vonHinten: false });
+      let r = lauf(true, true, true, 'vorn');
       if (!(r.dmg > 0)) f.push('Schaden an: kein Schaden');
-      if (!(r.v < 1)) f.push('Bremsen an: nicht gebremst (' + r.v + ')');
-      r = lauf(false, true, true, { vonHinten: false });
+      if (!(r.v < 1)) f.push('Rammer (vorn) nicht gebremst');
+      r = lauf(false, true, true, 'vorn');
       if (r.dmg !== 0) f.push('Schaden aus: trotzdem ' + r.dmg + ' %');
-      r = lauf(true, false, true, { vonHinten: false });
+      r = lauf(true, false, true, 'vorn');
       if (r.v !== 2) f.push('Bremsen aus: Tempo ' + r.v);
-      r = lauf(true, true, true, { vonHinten: true });
-      if (r.v !== 2) f.push('Auffahrunfall: trotzdem gebremst');
-      r = lauf(true, true, false, { vonHinten: true });
-      if (!(r.v < 1)) f.push('Auffahr-Schutz aus: nicht gebremst');
-      // Richtung: ungelernt nie "von hinten"; gelernt +: Stoss + mit wenig Querteil ja, 50 Grad nein.
-      L.vorSumme = 0;
-      if (crashVonHinten(L, 30, 5)) f.push('ungelernt als Auffahrunfall gewertet');
-      L.vorSumme = 100;
-      if (!crashVonHinten(L, 30, 25)) f.push('von hinten (40 Grad) nicht erkannt');
-      if (crashVonHinten(L, 30, 36)) f.push('50 Grad noch als von hinten gewertet');
-      if (crashVonHinten(L, -30, 5)) f.push('Stoss nach hinten als Auffahrunfall gewertet');
-      // Lernen: Gasgeben mit positivem Byte-1-Ausschlag lernt "+".
-      L.vorSumme = 0;
-      for (let i = 0; i < 80; i++) crashVorLernen(L, 6, 0.3, 10);
-      if (crashVorZeichen(L) !== 1) f.push('Lernen: Vorzeichen ' + crashVorZeichen(L));
+      r = lauf(true, true, true, 'hinten');
+      if (r.v !== 2) f.push('von hinten gerammt: gebremst');
+      r = lauf(true, true, true, 'seite');
+      if (r.v !== 2) f.push('seitlich gerammt: gebremst');
+      r = lauf(true, true, false, 'hinten');
+      if (!(r.v < 1)) f.push('Schalter aus: Gerammter nicht gebremst');
+      // Richtung: Byte 1 faellt (wie Gasgeben) = von hinten; steigt = vorn; quer ueber 45 Grad = Seite.
+      if (crashRichtung(-30, 5) !== 'hinten') f.push('Byte 1 faellt: nicht "hinten"');
+      if (crashRichtung(30, 5) !== 'vorn') f.push('Byte 1 steigt: nicht "vorn"');
+      if (crashRichtung(-30, 25) !== 'hinten') f.push('40 Grad nicht mehr laengs');
+      if (crashRichtung(-30, 36) !== 'seite') f.push('50 Grad nicht Seite');
     } finally {
       ids.forEach((id, i) => { $(id).checked = merk.schalter[i]; });
-      damage = merk.dmg; physEngine.state.speedKmh = merk.v; L.vorSumme = vor;
+      damage = merk.dmg; physEngine.state.speedKmh = merk.v;
       lightDamage.front = merk.licht.front; lightDamage.rear = merk.licht.rear; derbyLaeuft = merk.derby;
       updateDamageFuelUI();
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Schaden/Bremsen/Auffahrunfall wirken einzeln, 45-Grad-Kegel stimmt' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Rammer bremst, Gerammte (hinten/Seite) nicht, Richtung mit 45 Grad' };
   });
 
-  stAdd('Rammen: zwei Crashs gleichzeitig = Rammer, Strafe nach N, Label im Ergebnis', () => {
+  stAdd('Rammen: Rammer nach Stossrichtung, Strafe nach N, Label im Ergebnis', () => {
     const f = [];
     const merk = { rs: raceState, ab: $('race-ramm-ab').value, st: $('race-ramm-strafe').value };
-    const a = { device: { id: 'probe-ramm-a' }, role: 'ghost', alias: 'A', ghost: { running: true, lastThrottle: 0.9 } };
-    const b = { device: { id: 'probe-ramm-b' }, role: 'ghost', alias: 'B', ghost: { running: true, lastThrottle: 0.3 } };
+    const a = { device: { id: 'probe-ramm-a' }, role: 'ghost', alias: 'A', ghost: { running: true, lastThrottle: 0.3 } };
+    const b = { device: { id: 'probe-ramm-b' }, role: 'ghost', alias: 'B', ghost: { running: true, lastThrottle: 0.9 } };
     try {
       raceState = 'racing'; $('race-ramm-ab').value = '2'; $('race-ramm-strafe').value = '5';
       rammReset();
-      if (crashEreignis(a, null) !== null) f.push('ein Crash allein ist schon ein Rammen');
-      if (crashEreignis(b, null) !== a) f.push('Schnellerer nicht als Rammer erkannt');
+      if (crashEreignis(a, 'vorn') !== null) f.push('ein Crash allein ist schon ein Rammen');
+      if (crashEreignis(b, 'hinten') !== a) f.push('vorn eingeschlagener (langsamerer) nicht als Rammer');
       if (rammStrafeOffen(a) !== 0) f.push('Strafe schon nach 1x');
-      rammReset();
-      crashEreignis(a, null); crashEreignis(b, null);
-      crashEreignis(a, null); crashEreignis(b, null);
+      crashEreignis(b, 'seite'); crashEreignis(a, 'vorn');
       if (rammStrafeOffen(a) !== 5) f.push('nach 2x keine 5 s Strafe (' + rammStrafeOffen(a) + ')');
       if (rammStrafeOffen(b) !== 0) f.push('Opfer bestraft');
       if (!/RAMMER/.test(rammerLabel(a))) f.push('kein [RAMMER]-Label');
-      // Richtung schlaegt Tempo: wer nach vorn geschoben wurde, ist das Opfer.
       rammReset();
-      if (crashEreignis(a, true) !== null) f.push('Paarung zu frueh');
-      if (crashEreignis(b, false) !== b) f.push('nach vorn geschobenes Auto als Rammer gewertet');
-      // Abgesessen: kein Label mehr.
-      rammReset(); crashEreignis(a, null); crashEreignis(b, null); crashEreignis(a, null); crashEreignis(b, null);
+      crashEreignis(a, 'vorn');
+      if (crashEreignis(b, 'vorn') !== null) f.push('frontal (beide vorn) als Rammen gewertet');
+      rammReset();
+      crashEreignis(a, 'hinten');
+      if (crashEreignis(b, 'seite') !== null) f.push('keiner vorn als Rammen gewertet');
+      rammReset(); crashEreignis(a, 'vorn'); crashEreignis(b, 'hinten'); crashEreignis(a, 'vorn'); crashEreignis(b, 'hinten');
       if (rammStrafeAbsitzen(a) !== 5 || rammerLabel(a)) f.push('Absitzen loescht die Strafe nicht');
       $('race-ramm-ab').value = '0'; rammReset();
-      crashEreignis(a, null);
-      if (crashEreignis(b, null) !== null) f.push('Option aus: trotzdem gewertet');
+      crashEreignis(a, 'vorn');
+      if (crashEreignis(b, 'hinten') !== null) f.push('Option aus: trotzdem gewertet');
     } finally {
       raceState = merk.rs; $('race-ramm-ab').value = merk.ab; $('race-ramm-strafe').value = merk.st; rammReset();
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Paarung, Rammer, Strafe nach 2x, Label, Absitzen' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Rammer = vorn eingeschlagen, frontal/keiner vorn zaehlt nicht, Strafe nach 2x' };
   });
 
   stAdd('Derby: Licht flackert ab 50 % Schaden, aus und Ruckeln ab 75 %, ohne Tank/Reifen', () => {

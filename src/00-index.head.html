@@ -4387,7 +4387,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.35</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.36</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5502,6 +5502,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Crash-Richtung jetzt gemessen statt gelernt: Beim Beschleunigen wandert der Gyro-Punkt im Cockpit nach vorn, also hei&#223;t Byte 1 f&#228;llt &#8222;von hinten geschoben&#8220;, Byte 1 steigt &#8222;vorne eingeschlagen&#8220;, &#252;berwiegendes Byte 3 &#8222;von der Seite&#8220; (45&#176; Toleranz). &#8222;Nur der Rammer bremst&#8220; (fr&#252;her &#8222;Kein Bremsen bei Auffahrunfall&#8220;): Gebremst wird nur, wer vorne einschl&#228;gt; wer von hinten oder von der Seite getroffen wird, f&#228;hrt weiter. Rammer-Strafe: Rammer ist, wer vorne eingeschlagen ist, w&#228;hrend der andere von hinten oder der Seite getroffen wurde (frontal z&#228;hlt nicht); das gilt auch f&#252;r Ghosts. Im Derby kostet vorn einschlagen 10 %, getroffen werden 20 %.</li>
         <li>Bestenliste: Kann eine Zeit nicht hochgeladen werden, kommt ein Hinweis mit Strecke und Grund (z. B. &#8222;keine Verbindung zum Server&#8220; oder die Ablehnung durch die Bestenliste), nie mitten im Rennen und nie &#252;ber einem anderen Dialog. Auf der Challenge-Seite steht, wie viele Zeiten noch warten, mit &#8222;Jetzt senden&#8220;. Hoch- und Herunterladen der Bestenliste laufen nur, wenn gerade kein Rennen l&#228;uft, damit das Steuern nicht verz&#246;gert wird.</li>
         <li>Bestenliste: Die Listen liegen im Zwischenspeicher und erscheinen sofort, beim App-Start und alle 10 Minuten wird im Hintergrund nachgeladen; eine Strecke ohne Zeiten zeigt das sofort, statt lange zu laden. Hochgeladene Zeiten bleiben in einer Warteschlange, bis das Sheet sie best&#228;tigt, und eine Ablehnung wird mit Grund gemeldet. W&#246;chentliche Challenges: Die Resttage stehen oben neben &#8222;Woche X/20&#8220;, unter jeder Strecke stehen Spieler und Ergebnisse. Spiegeln ist jetzt ein Knopf mit Symbol unter der Karte. FAHREN, Strecke: Druckvorlagen nur bei FREI, Editor nur bei AUF DER BAHN. Wischen wechselt den Reiter nicht mehr, wenn die Geste am Bildschirmrand beginnt (Systemleiste).</li>
         <li>WLAN-Mehrspieler: genauerer gemeinsamer Start. Die Zeit wird beim Eintreffen der Antwort gemessen, nicht erst nach dem Einlesen, und im Vorlauf gleicht jedes Telefon die Host-Uhr acht Mal nach und stellt die Ampel nach. Rennende f&#252;r alle: Hat ein Mitspieler die Rundenzahl erreicht, ist bei allen die laufende Runde die letzte. Neu: &#8222;Rennen f&#252;r alle beenden&#8220; (WLAN-Reiter und R&#252;ckfrage beim Verlassen des Rennens). An den Host gehen jetzt die Rennrunden inklusive Fr&#252;hstart-Strafe.</li>
@@ -9118,12 +9119,10 @@
           (Leistung, Licht). Ab Werk an, bei Arcade aus.</small></div><label class="tgl"><input type="checkbox" id="setting-crash-schaden" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Bremsen bei Crash<small>Ein Crash nimmt dem Auto
           sofort den Gro&szlig;teil seines Tempos.</small></div><label class="tgl"><input type="checkbox" id="setting-crash-bremse" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Kein Bremsen bei Auffahrunfall<span class="wip-tag">experimentell</span><small>Gilt,
-          wenn &bdquo;Bremsen bei Crash&ldquo; an ist: f&auml;hrt dir jemand von hinten drauf
-          (Sto&szlig; nach vorn, bis 45&deg; nach hinten links oder rechts), bremst nur der
-          Auffahrende. Die Richtung kommt aus dem Bewegungssensor; welche Richtung &bdquo;vorn&ldquo;
-          ist, lernt die App beim Gasgeben und Bremsen. Bis sie es wei&szlig;, wird wie bisher
-          gebremst.</small></div><label class="tgl"><input type="checkbox" id="setting-crash-auffahr" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Nur der Rammer bremst<span class="wip-tag">experimentell</span><small>Gilt,
+          wenn &bdquo;Bremsen bei Crash&ldquo; an ist: Gebremst wird nur, wer vorne einschl&auml;gt
+          (der Auffahrende oder ein Auto an der Wand). Wer von hinten oder von der Seite getroffen
+          wird, f&auml;hrt weiter. Die Richtung kommt aus dem Bewegungssensor, mit 45&deg; Toleranz.</small></div><label class="tgl"><input type="checkbox" id="setting-crash-auffahr" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Kein Schaden im Stand
           <small>Solange das Auto steht (0&nbsp;km/h), z&auml;hlt kein Sto&szlig; als
           Crash &ndash; du kannst es aufheben, ohne dass es simulierten Schaden
