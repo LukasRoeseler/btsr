@@ -866,6 +866,7 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Rundenrennen enden jetzt mit der Zielrunde: Wer die eingestellte Rundenzahl fährt, ist sofort im Ziel (Ende-Ton und Ergebnis); vorher endete ein 5-Runden-Rennen erst bei der Überfahrt nach Runde 5, im Mehrspieler also scheinbar nie. Die Rennübersicht zeigt dich im Mehrspieler nicht mehr doppelt (Name und Auto). Derby: Auto 1 nimmt wieder Schaden (seitlich −20 %, vorn −10 %), vorher ging der Treffer ins Leere und nur der Controller rüttelte. Mehrspieler auf schwachen Handys: im Rennen fragt das Handy den Host nur noch alle 3 s ab, meldet Positionen für Zuschauer alle 0,5 s und zeichnet die Ranglisten-Tabelle erst nach dem Rennen, damit der Steuertakt Luft hat.": "Lap races now end with the final lap: whoever completes the set number of laps finishes immediately (end sound and results); before, a 5-lap race only ended at the crossing after lap 5, so in multiplayer it seemed never to end. The race overview no longer shows you twice in multiplayer (name and car). Derby: car 1 takes damage again (side −20 %, front −10 %); before, the hit went nowhere and only the controller rumbled. Multiplayer on slow phones: during the race the phone polls the host only every 3 s, reports positions for spectators every 0.5 s and redraws the leaderboard table only after the race, so the control loop has room.",
     "Raum gestalten": "Design room",
     "Raumdesigner": "Room designer",
     "Möbel": "Furniture",

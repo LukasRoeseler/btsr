@@ -17303,6 +17303,86 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'bewegen, malen, umschalten, rueckgaengig, schliessen ohne Nachwirkung' };
   }));
 
+  // v0.9.41 GEMELDET: "Das Multiplayer Renn-Ende wird nicht getriggert ... 5-Runden-Rennen."
+  stAdd('Rundenrennen endet mit der Zielrunde, nicht eine Runde spaeter', () => {
+    const f = [];
+    const merk = { rs: raceState, rm: raceMode, lim: raceLimit, laps: raceLapTimes.slice(), ls: raceLapStart,
+                   dl: dashLapStart, dt: dashLapTimes.slice(), form: raceFormationLap, aw: raceAwaitingMove,
+                   tiles: currentTrackTiles, sc: sectorCount, ev: raceLapEvents.slice(),
+                   status: $('race-status') ? $('race-status').textContent : '' };
+    const echt = { fin: finishRace, sp: speakLap, ch: playLapChime };
+    let ende = 0;
+    try {
+      finishRace = () => { ende++; raceState = 'finished'; };
+      speakLap = () => {}; playLapChime = () => {};
+      raceMode = 'laps'; raceLimit = 3; raceState = 'racing'; raceFormationLap = false; raceAwaitingMove = false;
+      raceLapTimes = []; raceLapStart = Date.now() - 5000; dashLapStart = raceLapStart; sectorCount = 1; sectorReset();
+      currentTrackTiles = [{ type: TILE_TYPE.START }, { type: TILE_TYPE.STRAIGHT }];
+      playerLapCrossed(); playerLapCrossed();
+      if (ende) f.push('nach 2 von 3 Runden schon zu Ende');
+      playerLapCrossed();
+      if (ende !== 1) f.push('nach 3 von 3 Runden nicht zu Ende (' + raceState + ')');
+      // Hat ein anderer das Ziel (finishing), beendet die naechste eigene Ueberfahrt.
+      ende = 0; raceState = 'finishing'; raceLapTimes = [{ lap: 1, ms: 5000 }]; raceLapStart = Date.now() - 4000;
+      playerLapCrossed();
+      if (ende !== 1) f.push('finishing: die naechste Ueberfahrt beendet nicht');
+    } finally {
+      finishRace = echt.fin; speakLap = echt.sp; playLapChime = echt.ch;
+      raceState = merk.rs; raceMode = merk.rm; raceLimit = merk.lim; raceLapTimes = merk.laps; raceLapStart = merk.ls;
+      dashLapStart = merk.dl; dashLapTimes = merk.dt; raceFormationLap = merk.form; raceAwaitingMove = merk.aw;
+      currentTrackTiles = merk.tiles; sectorCount = merk.sc; raceLapEvents = merk.ev; sectorReset();
+      if ($('race-status')) $('race-status').textContent = merk.status;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Ende genau mit Runde 3 von 3; nach fremdem Ziel mit der naechsten Ueberfahrt' };
+  });
+
+  // v0.9.41 GEMELDET: "Im Derby-Modus nehmen die Autos keinen Schaden. Die Controller ruckeln,
+  // aber es bleibt bei 100 %."
+  stAdd('Derby: Crash von Auto 1 ohne Nummer kostet Health', () => {
+    const f = [];
+    const merk = { dl: derbyLaeuft, h: derbyHealth, k: derbyKills, tot: derbyTot1, rs: raceState, rm: raceMode,
+                   v: physEngine.state.speedKmh };
+    const echt = { fin: finishRace };
+    try {
+      finishRace = () => {};
+      derbyLaeuft = true; raceState = 'racing'; raceMode = 'derby'; derbyHealth = DERBY_MAX; derbyTot1 = false;
+      registerCrash(undefined, { richtung: 'seite' });
+      if (derbyHealth !== DERBY_MAX - 20) f.push('seitlich: Health ' + derbyHealth + ' statt ' + (DERBY_MAX - 20));
+      registerCrash(undefined, { richtung: 'vorn' });
+      if (derbyHealth !== DERBY_MAX - 30) f.push('vorn: Health ' + derbyHealth + ' statt ' + (DERBY_MAX - 30));
+    } finally {
+      finishRace = echt.fin;
+      derbyLaeuft = merk.dl; derbyHealth = merk.h; derbyKills = merk.k; derbyTot1 = merk.tot; raceState = merk.rs;
+      raceMode = merk.rm; physEngine.state.speedKmh = merk.v;
+      if (typeof derbyCockpitMalen === 'function') derbyCockpitMalen();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'seitlich -20, vorn -10, wie angezeigt' };
+  });
+
+  stAdd('Mehrspieler: im Rennen seltener abfragen, Tabelle erst danach', () => {
+    const f = [];
+    const merk = { rs: raceState, an: mp.an, at: mp.abrufAt };
+    const echtFetch = window.fetch;
+    let abrufe = 0;
+    try {
+      window.fetch = () => { abrufe++; return Promise.reject(new Error('probe')); };
+      mp.an = true;
+      raceState = 'racing'; mp.abrufAt = Date.now() - 1600;
+      mpHolen();
+      if (abrufe) f.push('im Rennen nach 1,6 s schon wieder abgefragt');
+      mp.abrufAt = Date.now() - 3100;
+      mpHolen();
+      if (!abrufe) f.push('im Rennen nach 3,1 s nicht abgefragt');
+      abrufe = 0; raceState = 'idle'; mp.abrufAt = Date.now() - 1600;
+      mpHolen();
+      if (!abrufe) f.push('ausserhalb des Rennens gedrosselt');
+    } finally {
+      window.fetch = echtFetch;
+      raceState = merk.rs; mp.an = merk.an; mp.abrufAt = merk.at;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Rennen 3 s, sonst 1,5 s' };
+  });
+
   stAdd('Woerterbuch ohne doppelte Schluessel', () => {
     const imObjekt = Object.keys(I18N_EN).length;
     // Die Quelle steht im eigenen <script>. Sie zu lesen ist billiger und ehrlicher als die

@@ -4416,7 +4416,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.40</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.41</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5531,6 +5531,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Rundenrennen enden jetzt mit der Zielrunde: Wer die eingestellte Rundenzahl f&#228;hrt, ist sofort im Ziel (Ende-Ton und Ergebnis); vorher endete ein 5-Runden-Rennen erst bei der &#220;berfahrt nach Runde 5, im Mehrspieler also scheinbar nie. Die Renn&#252;bersicht zeigt dich im Mehrspieler nicht mehr doppelt (Name und Auto). Derby: Auto 1 nimmt wieder Schaden (seitlich &#8722;20 %, vorn &#8722;10 %), vorher ging der Treffer ins Leere und nur der Controller r&#252;ttelte. Mehrspieler auf schwachen Handys: im Rennen fragt das Handy den Host nur noch alle 3 s ab, meldet Positionen f&#252;r Zuschauer alle 0,5 s und zeichnet die Ranglisten-Tabelle erst nach dem Rennen, damit der Steuertakt Luft hat.</li>
         <li>Raumdesigner (experimentell) unter Strecke &#8594; Meine Teile: den Raum in 10-cm-Feldern als Boden oder M&#246;bel malen, mit Pinsel (10/30/60 cm) oder Rechteck, Vorlagen Rechteck, L, U und Oval, R&#252;ckg&#228;ngig und &#8222;Strecke einpassen&#8220;. Geht mit Finger, Maus, Tastatur und Gamepad (Stick/Steuerkreuz bewegt, &#10005; malt, &#9633; M&#246;bel/Boden, &#9651; Pinsel/Rechteck, L1/R1 Gr&#246;&#223;e, &#9675; fertig). Zufallsstrecken passen jetzt wirklich hinein: gepr&#252;ft wird mit der vollen Bahnbreite plus 2 cm Abstand statt nur mit der Mittellinie, um M&#246;bel herum, und der Raum wird im Editor gleich richtig um die Strecke gelegt.</li>
         <li>Streckenteile wie die Originalschienen: wei&#223;er Randstreifen mit gef&#252;llten Pfeilen in gleichem Abstand auf beiden Seiten (links blau, rechts rot), Steckzapfen an den Teilenden, matt schwarze Fahrbahn. Tempo nachgemessen (btsnoop): Vollgas sind real 5,45 km/h, im Ma&#223;stab 272 km/h; der Tacho rechnet jetzt damit, und bei Gasfaktor 100 % (Realismus GT3) stimmt er genau; Pro und Arcade behalten ihren Faktor und fahren sich wie vorher. Rundenz&#228;hlung auf der Schiene: keine Doppelrunde mehr, wenn ein Auto zwischen Barcode und Ziellinie h&#228;lt, keine Mini-Runde beim Start vor dem Streifen, keine Phantomrunde bei Ghosts und Spieler 2/3 beim Losfahren; mit einer zweiten Start/Ziel-Geraden z&#228;hlt Runde 1 richtig.</li>
         <li>Rundenzeit an der Ziellinie: Auf der Schiene misst und sagt Spieler 1 die Runde jetzt an der Ziellinie an, die das Auto selbst meldet (Byte 15, etwa 35 cm nach dem Barcode, aus den btsnoop-Mitschnitten), nicht mehr am Barcode; der Barcode bleibt R&#252;ckfall f&#252;r Autos ohne diese Meldung. Tastenbelegung: Eine neue Zuweisung auf eine schon belegte Taste tauscht jetzt die beiden Aktionen, statt beim n&#228;chsten Start zur&#252;ckzufallen, und eine alte Aufr&#228;umregel setzt eigene Tasten (z. B. Rennstart auf Kreuz) nicht mehr bei jedem Laden zur&#252;ck. Optionen &#8594; Allgemein: zwei Regler f&#252;r die Gr&#246;&#223;e der Haupttabs und der Unter-Tabs (60&#8211;180 %, 100 % wie bisher).</li>
@@ -12814,6 +12815,7 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Rundenrennen enden jetzt mit der Zielrunde: Wer die eingestellte Rundenzahl fährt, ist sofort im Ziel (Ende-Ton und Ergebnis); vorher endete ein 5-Runden-Rennen erst bei der Überfahrt nach Runde 5, im Mehrspieler also scheinbar nie. Die Rennübersicht zeigt dich im Mehrspieler nicht mehr doppelt (Name und Auto). Derby: Auto 1 nimmt wieder Schaden (seitlich −20 %, vorn −10 %), vorher ging der Treffer ins Leere und nur der Controller rüttelte. Mehrspieler auf schwachen Handys: im Rennen fragt das Handy den Host nur noch alle 3 s ab, meldet Positionen für Zuschauer alle 0,5 s und zeichnet die Ranglisten-Tabelle erst nach dem Rennen, damit der Steuertakt Luft hat.": "Lap races now end with the final lap: whoever completes the set number of laps finishes immediately (end sound and results); before, a 5-lap race only ended at the crossing after lap 5, so in multiplayer it seemed never to end. The race overview no longer shows you twice in multiplayer (name and car). Derby: car 1 takes damage again (side −20 %, front −10 %); before, the hit went nowhere and only the controller rumbled. Multiplayer on slow phones: during the race the phone polls the host only every 3 s, reports positions for spectators every 0.5 s and redraws the leaderboard table only after the race, so the control loop has room.",
     "Raum gestalten": "Design room",
     "Raumdesigner": "Room designer",
     "Möbel": "Furniture",
@@ -33753,7 +33755,12 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       // Die Ansage NEBEN dem Ton und nicht statt ihm: der Ton kommt sofort, die Stimme
       // braucht eine Sekunde. Wer sie abschaltet, hoert weiter, dass eine Runde voll ist.
       if (!challengeUngueltig) speakLap(rundeMs, istBest);
-      if (wasFinishing) finishRace();
+      // v0.9.41 GEMELDET: "Das Multiplayer Renn-Ende wird nicht getriggert ... 5-Runden-Rennen."
+      // Die Zielrunde schaltete nur auf 'finishing' (raceClockTick), beendet wurde erst bei der
+      // NAECHSTEN Ueberfahrt - ein 5-Runden-Rennen ging also ueber 6 Runden. Wer die Zielzahl
+      // selbst erreicht, ist im Ziel; die anderen fahren ihre Runde zu Ende (Auslauf/finishing).
+      const zielErreicht = !wasFinishing && raceMode === 'laps' && raceLapTimes.length >= raceLimit;
+      if (wasFinishing || zielErreicht) finishRace();
       // Runde 0, nicht 1: das Feld steht auf der Startgeraden und ueberfaehrt Start/Ziel
       // erst am Ende der ersten Runde. Vor der ersten Ueberfahrt ist also noch keine Runde
       // voll, und raceLapTimes.length ist genau diese Zahl.
@@ -35629,7 +35636,12 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     // Aufprall stoppt wie ueblich das Tempo, die Health-Regel (frontal 10 %, sonst 20 %)
     // macht der Derby-Block. Bei 0 % wird das Auto gestoppt (siehe derbyTot).
     if (typeof derbyLaeuft !== 'undefined' && derbyLaeuft) {
-      if (typeof derbyAufprall === 'function') derbyAufprall(wer, richtung);
+      // v0.9.41 GEMELDET: "Im Derby nehmen die Autos keinen Schaden. Die Controller ruckeln,
+      // aber es bleibt bei 100 %." Auto 1 meldet seinen Crash OHNE Nummer (detectCrash(bytes)
+      // in handleDashboardBytes) - derbySchaden() kennt aber nur 1, 2/3 oder einen Geist, und
+      // ein undefined traf keinen davon. Ausserhalb des Derbys fiel das nie auf, weil dort
+      // jedes "nicht 2/3" als Auto 1 gilt.
+      if (typeof derbyAufprall === 'function') derbyAufprall(wer >= 2 ? wer : 1, richtung);
       if (bremsen) motor.state.speedKmh *= 0.3;
       if (!zwei) updateDamageFuelUI();
       if (!playCrashFx()) playCrashSound();
@@ -37182,7 +37194,10 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       const zeit = (x) => (x === null || x === undefined) ? '&ndash;'
         : formatLapTime(Math.round((x || 0) * 1000));
       leute.forEach((f, i) => {
-        if (lokale.has(f.name)) return;
+        // v0.9.41: der EIGENE Eintrag steht schon als lokale Zeile da (das eigene Auto). Der
+        // Abgleich ueber den Namen griff nicht, weil der Fahrername nicht der Autoname ist -
+        // GEMELDET: "es werden 3 Autos angezeigt: ich mit meinem Namen und dann das Auto".
+        if (f.id === mp.id || lokale.has(f.name)) return;
         const best = f.beste === null || f.beste === undefined;
         mpHtml += '<div class="ov-zeile ov-mp' + (f.id === mp.id ? ' ov-ich' : '') + '">'
           + '<span class="ov-pos">' + (i + 1) + '</span>'
@@ -79335,6 +79350,86 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'bewegen, malen, umschalten, rueckgaengig, schliessen ohne Nachwirkung' };
   }));
 
+  // v0.9.41 GEMELDET: "Das Multiplayer Renn-Ende wird nicht getriggert ... 5-Runden-Rennen."
+  stAdd('Rundenrennen endet mit der Zielrunde, nicht eine Runde spaeter', () => {
+    const f = [];
+    const merk = { rs: raceState, rm: raceMode, lim: raceLimit, laps: raceLapTimes.slice(), ls: raceLapStart,
+                   dl: dashLapStart, dt: dashLapTimes.slice(), form: raceFormationLap, aw: raceAwaitingMove,
+                   tiles: currentTrackTiles, sc: sectorCount, ev: raceLapEvents.slice(),
+                   status: $('race-status') ? $('race-status').textContent : '' };
+    const echt = { fin: finishRace, sp: speakLap, ch: playLapChime };
+    let ende = 0;
+    try {
+      finishRace = () => { ende++; raceState = 'finished'; };
+      speakLap = () => {}; playLapChime = () => {};
+      raceMode = 'laps'; raceLimit = 3; raceState = 'racing'; raceFormationLap = false; raceAwaitingMove = false;
+      raceLapTimes = []; raceLapStart = Date.now() - 5000; dashLapStart = raceLapStart; sectorCount = 1; sectorReset();
+      currentTrackTiles = [{ type: TILE_TYPE.START }, { type: TILE_TYPE.STRAIGHT }];
+      playerLapCrossed(); playerLapCrossed();
+      if (ende) f.push('nach 2 von 3 Runden schon zu Ende');
+      playerLapCrossed();
+      if (ende !== 1) f.push('nach 3 von 3 Runden nicht zu Ende (' + raceState + ')');
+      // Hat ein anderer das Ziel (finishing), beendet die naechste eigene Ueberfahrt.
+      ende = 0; raceState = 'finishing'; raceLapTimes = [{ lap: 1, ms: 5000 }]; raceLapStart = Date.now() - 4000;
+      playerLapCrossed();
+      if (ende !== 1) f.push('finishing: die naechste Ueberfahrt beendet nicht');
+    } finally {
+      finishRace = echt.fin; speakLap = echt.sp; playLapChime = echt.ch;
+      raceState = merk.rs; raceMode = merk.rm; raceLimit = merk.lim; raceLapTimes = merk.laps; raceLapStart = merk.ls;
+      dashLapStart = merk.dl; dashLapTimes = merk.dt; raceFormationLap = merk.form; raceAwaitingMove = merk.aw;
+      currentTrackTiles = merk.tiles; sectorCount = merk.sc; raceLapEvents = merk.ev; sectorReset();
+      if ($('race-status')) $('race-status').textContent = merk.status;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Ende genau mit Runde 3 von 3; nach fremdem Ziel mit der naechsten Ueberfahrt' };
+  });
+
+  // v0.9.41 GEMELDET: "Im Derby-Modus nehmen die Autos keinen Schaden. Die Controller ruckeln,
+  // aber es bleibt bei 100 %."
+  stAdd('Derby: Crash von Auto 1 ohne Nummer kostet Health', () => {
+    const f = [];
+    const merk = { dl: derbyLaeuft, h: derbyHealth, k: derbyKills, tot: derbyTot1, rs: raceState, rm: raceMode,
+                   v: physEngine.state.speedKmh };
+    const echt = { fin: finishRace };
+    try {
+      finishRace = () => {};
+      derbyLaeuft = true; raceState = 'racing'; raceMode = 'derby'; derbyHealth = DERBY_MAX; derbyTot1 = false;
+      registerCrash(undefined, { richtung: 'seite' });
+      if (derbyHealth !== DERBY_MAX - 20) f.push('seitlich: Health ' + derbyHealth + ' statt ' + (DERBY_MAX - 20));
+      registerCrash(undefined, { richtung: 'vorn' });
+      if (derbyHealth !== DERBY_MAX - 30) f.push('vorn: Health ' + derbyHealth + ' statt ' + (DERBY_MAX - 30));
+    } finally {
+      finishRace = echt.fin;
+      derbyLaeuft = merk.dl; derbyHealth = merk.h; derbyKills = merk.k; derbyTot1 = merk.tot; raceState = merk.rs;
+      raceMode = merk.rm; physEngine.state.speedKmh = merk.v;
+      if (typeof derbyCockpitMalen === 'function') derbyCockpitMalen();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'seitlich -20, vorn -10, wie angezeigt' };
+  });
+
+  stAdd('Mehrspieler: im Rennen seltener abfragen, Tabelle erst danach', () => {
+    const f = [];
+    const merk = { rs: raceState, an: mp.an, at: mp.abrufAt };
+    const echtFetch = window.fetch;
+    let abrufe = 0;
+    try {
+      window.fetch = () => { abrufe++; return Promise.reject(new Error('probe')); };
+      mp.an = true;
+      raceState = 'racing'; mp.abrufAt = Date.now() - 1600;
+      mpHolen();
+      if (abrufe) f.push('im Rennen nach 1,6 s schon wieder abgefragt');
+      mp.abrufAt = Date.now() - 3100;
+      mpHolen();
+      if (!abrufe) f.push('im Rennen nach 3,1 s nicht abgefragt');
+      abrufe = 0; raceState = 'idle'; mp.abrufAt = Date.now() - 1600;
+      mpHolen();
+      if (!abrufe) f.push('ausserhalb des Rennens gedrosselt');
+    } finally {
+      window.fetch = echtFetch;
+      raceState = merk.rs; mp.an = merk.an; mp.abrufAt = merk.at;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Rennen 3 s, sonst 1,5 s' };
+  });
+
   stAdd('Woerterbuch ohne doppelte Schluessel', () => {
     const imObjekt = Object.keys(I18N_EN).length;
     // Die Quelle steht im eigenen <script>. Sie zu lesen ist billiger und ehrlicher als die
@@ -80017,6 +80112,16 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // /mp/state); ist keiner da, bleibt es bei Rundenschluss und Lebenszeichen wie bisher.
   // Mit Zuschauer drei Berichte je Sekunde - der Info-Screen rechnet dazwischen weiter.
   const MP_POS_MS = 330;
+  // v0.9.41 GEMELDET: "Latenz bei aelterem Geraet ist im Multiplayer etwas hoch." Jeder Abruf
+  // ist Netz, JSON und DOM auf demselben Faden wie der 45-ms-Steuertakt. Waehrend das Rennen
+  // laeuft, also seltener: Rangliste alle 3 s statt 1,5 s (eine Runde dauert laenger, das
+  // Rennende kommt also weiter rechtzeitig an), Positionen fuer Zuschauer alle 500 ms, und die
+  // Ranglisten-Tabelle im Mehrspieler-Reiter wird erst nach dem Rennen wieder gezeichnet.
+  const MP_POLL_RENNEN_MS = 3000, MP_POS_RENNEN_MS = 500;
+  function mpImRennen() {
+    return typeof raceState !== 'undefined' && (raceState === 'racing' || raceState === 'finishing');
+  }
+  mp.abrufAt = 0; mp.posAt = 0;
 
   function mpLaden() {
     try {
@@ -80117,6 +80222,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
 
   function mpPosBerichten() {
     if (!mp.an || mp.zuschauer <= 0) return;
+    if (mpImRennen() && Date.now() - mp.posAt < MP_POS_RENNEN_MS - 40) return;
+    mp.posAt = Date.now();
     fetch(mpUrl('/mp/report'), {
       method: 'POST', cache: 'no-store',
       headers: { 'Content-Type': 'application/json' },
@@ -80415,8 +80522,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return true;
   }
 
-  async function mpHolen() {
+  async function mpHolen(sofort) {
     if (!mp.an) return;
+    if (sofort !== true && mpImRennen() && Date.now() - mp.abrufAt < MP_POLL_RENNEN_MS - 100) return;
+    mp.abrufAt = Date.now();
     // Lebenszeichen, wenn lange kein Rundenschluss war: ohne das wird die eigene Zeile im
     // Ueberblicksschirm nach zehn Sekunden blass, obwohl man faehrt.
     if (Date.now() - mp.letzterBericht > MP_HEARTBEAT_MS) mpBerichten();
@@ -80453,6 +80562,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // schon dabei einen leisen Zwei-Ton. Der erste Abruf setzt nur den Grundstock, damit
     // nicht beim Anmelden gleich der ganze Raum tutet.
     mpSpielerWechsel(leute);
+    if (mpImRennen()) return;        // v0.9.41: Tabelle erst nach dem Rennen (siehe MP_POLL_RENNEN_MS)
     if (!leute.length) {
       host.innerHTML = '<tr><td colspan="5" class="muted">' + t('keine Daten') + '</td></tr>';
       return;

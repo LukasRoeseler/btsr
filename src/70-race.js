@@ -2949,7 +2949,12 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       // Die Ansage NEBEN dem Ton und nicht statt ihm: der Ton kommt sofort, die Stimme
       // braucht eine Sekunde. Wer sie abschaltet, hoert weiter, dass eine Runde voll ist.
       if (!challengeUngueltig) speakLap(rundeMs, istBest);
-      if (wasFinishing) finishRace();
+      // v0.9.41 GEMELDET: "Das Multiplayer Renn-Ende wird nicht getriggert ... 5-Runden-Rennen."
+      // Die Zielrunde schaltete nur auf 'finishing' (raceClockTick), beendet wurde erst bei der
+      // NAECHSTEN Ueberfahrt - ein 5-Runden-Rennen ging also ueber 6 Runden. Wer die Zielzahl
+      // selbst erreicht, ist im Ziel; die anderen fahren ihre Runde zu Ende (Auslauf/finishing).
+      const zielErreicht = !wasFinishing && raceMode === 'laps' && raceLapTimes.length >= raceLimit;
+      if (wasFinishing || zielErreicht) finishRace();
       // Runde 0, nicht 1: das Feld steht auf der Startgeraden und ueberfaehrt Start/Ziel
       // erst am Ende der ersten Runde. Vor der ersten Ueberfahrt ist also noch keine Runde
       // voll, und raceLapTimes.length ist genau diese Zahl.
@@ -4825,7 +4830,12 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     // Aufprall stoppt wie ueblich das Tempo, die Health-Regel (frontal 10 %, sonst 20 %)
     // macht der Derby-Block. Bei 0 % wird das Auto gestoppt (siehe derbyTot).
     if (typeof derbyLaeuft !== 'undefined' && derbyLaeuft) {
-      if (typeof derbyAufprall === 'function') derbyAufprall(wer, richtung);
+      // v0.9.41 GEMELDET: "Im Derby nehmen die Autos keinen Schaden. Die Controller ruckeln,
+      // aber es bleibt bei 100 %." Auto 1 meldet seinen Crash OHNE Nummer (detectCrash(bytes)
+      // in handleDashboardBytes) - derbySchaden() kennt aber nur 1, 2/3 oder einen Geist, und
+      // ein undefined traf keinen davon. Ausserhalb des Derbys fiel das nie auf, weil dort
+      // jedes "nicht 2/3" als Auto 1 gilt.
+      if (typeof derbyAufprall === 'function') derbyAufprall(wer >= 2 ? wer : 1, richtung);
       if (bremsen) motor.state.speedKmh *= 0.3;
       if (!zwei) updateDamageFuelUI();
       if (!playCrashFx()) playCrashSound();
@@ -6378,7 +6388,10 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       const zeit = (x) => (x === null || x === undefined) ? '&ndash;'
         : formatLapTime(Math.round((x || 0) * 1000));
       leute.forEach((f, i) => {
-        if (lokale.has(f.name)) return;
+        // v0.9.41: der EIGENE Eintrag steht schon als lokale Zeile da (das eigene Auto). Der
+        // Abgleich ueber den Namen griff nicht, weil der Fahrername nicht der Autoname ist -
+        // GEMELDET: "es werden 3 Autos angezeigt: ich mit meinem Namen und dann das Auto".
+        if (f.id === mp.id || lokale.has(f.name)) return;
         const best = f.beste === null || f.beste === undefined;
         mpHtml += '<div class="ov-zeile ov-mp' + (f.id === mp.id ? ' ov-ich' : '') + '">'
           + '<span class="ov-pos">' + (i + 1) + '</span>'

@@ -506,6 +506,16 @@
   // /mp/state); ist keiner da, bleibt es bei Rundenschluss und Lebenszeichen wie bisher.
   // Mit Zuschauer drei Berichte je Sekunde - der Info-Screen rechnet dazwischen weiter.
   const MP_POS_MS = 330;
+  // v0.9.41 GEMELDET: "Latenz bei aelterem Geraet ist im Multiplayer etwas hoch." Jeder Abruf
+  // ist Netz, JSON und DOM auf demselben Faden wie der 45-ms-Steuertakt. Waehrend das Rennen
+  // laeuft, also seltener: Rangliste alle 3 s statt 1,5 s (eine Runde dauert laenger, das
+  // Rennende kommt also weiter rechtzeitig an), Positionen fuer Zuschauer alle 500 ms, und die
+  // Ranglisten-Tabelle im Mehrspieler-Reiter wird erst nach dem Rennen wieder gezeichnet.
+  const MP_POLL_RENNEN_MS = 3000, MP_POS_RENNEN_MS = 500;
+  function mpImRennen() {
+    return typeof raceState !== 'undefined' && (raceState === 'racing' || raceState === 'finishing');
+  }
+  mp.abrufAt = 0; mp.posAt = 0;
 
   function mpLaden() {
     try {
@@ -606,6 +616,8 @@
 
   function mpPosBerichten() {
     if (!mp.an || mp.zuschauer <= 0) return;
+    if (mpImRennen() && Date.now() - mp.posAt < MP_POS_RENNEN_MS - 40) return;
+    mp.posAt = Date.now();
     fetch(mpUrl('/mp/report'), {
       method: 'POST', cache: 'no-store',
       headers: { 'Content-Type': 'application/json' },
@@ -904,8 +916,10 @@
     return true;
   }
 
-  async function mpHolen() {
+  async function mpHolen(sofort) {
     if (!mp.an) return;
+    if (sofort !== true && mpImRennen() && Date.now() - mp.abrufAt < MP_POLL_RENNEN_MS - 100) return;
+    mp.abrufAt = Date.now();
     // Lebenszeichen, wenn lange kein Rundenschluss war: ohne das wird die eigene Zeile im
     // Ueberblicksschirm nach zehn Sekunden blass, obwohl man faehrt.
     if (Date.now() - mp.letzterBericht > MP_HEARTBEAT_MS) mpBerichten();
@@ -942,6 +956,7 @@
     // schon dabei einen leisen Zwei-Ton. Der erste Abruf setzt nur den Grundstock, damit
     // nicht beim Anmelden gleich der ganze Raum tutet.
     mpSpielerWechsel(leute);
+    if (mpImRennen()) return;        // v0.9.41: Tabelle erst nach dem Rennen (siehe MP_POLL_RENNEN_MS)
     if (!leute.length) {
       host.innerHTML = '<tr><td colspan="5" class="muted">' + t('keine Daten') + '</td></tr>';
       return;
