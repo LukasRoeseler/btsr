@@ -3055,11 +3055,15 @@
       const fs = Math.max(8, Math.min(w, h) * 0.035);
       const mass = (raumRect.mx > 0 ? String(raumRect.mx).replace('.', ',') : '–') + ' × '
                  + (raumRect.my > 0 ? String(raumRect.my).replace('.', ',') : '–') + ' m';
-      body += `<g class="tp-raum"><rect x="${(raumRect.x + ox).toFixed(1)}" y="${(raumRect.y + oy).toFixed(1)}" `
+      // v0.9.39: UNTER die Strecke (vorne in body) und mit den Moebeln aus dem Raumdesigner.
+      // Die Flaechen sind <rect>, damit raumRechteckSchieben() sie beim Ziehen mitnimmt.
+      const moebel = typeof raumMoebelSvg === 'function' && raumRect.mx > 0 && raumRect.my > 0
+        ? raumMoebelSvg(raumRect.x + ox, raumRect.y + oy, TRACK_UNITS_PER_CM) : '';
+      body = `<g class="tp-raum">${moebel}<rect x="${(raumRect.x + ox).toFixed(1)}" y="${(raumRect.y + oy).toFixed(1)}" `
         + `width="${raumRect.w.toFixed(1)}" height="${raumRect.h.toFixed(1)}" fill="none" `
         + `stroke="rgba(110,160,255,.7)" stroke-width="2" stroke-dasharray="7 5"/>`
         + `<text x="${(raumRect.x + ox + fs * 0.4).toFixed(1)}" y="${(raumRect.y + oy + fs * 1.2).toFixed(1)}" `
-        + `font-size="${fs.toFixed(1)}" fill="rgba(140,180,255,.85)">${mass}</text></g>`;
+        + `font-size="${fs.toFixed(1)}" fill="rgba(140,180,255,.85)">${mass}</text></g>` + body;
     }
     const html = `<svg class="tp-karte" viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}">${gridSvg}${body}</svg>`;
     // DIE GEOMETRIE MIT HERAUS, damit ein Aufrufer Punkte setzen kann, ohne die Strecke neu
@@ -4224,6 +4228,12 @@
   // (0, 45, ...) oder -1, wenn keine Lage in den Raum passt. Die Drehung ist dieselbe wie
   // trackRotationDeg (Startkurs), sodass man die Strecke direkt in die passende Lage drehen kann.
   function trackZufallPasstRaum(tiles) {
+    // v0.9.39: mit Bahnbreite, Raumform und Lage - siehe raumEinpassen() (60b-raum.js). Der
+    // alte Weg unten verglich nur die Mittellinie, und die Bahn stand bis zu 12,5 cm ueber.
+    if (typeof raumEinpassen === 'function') {
+      const fit = raumEinpassen(tiles);
+      return fit ? fit.rot : -1;
+    }
     const r = teileRaum();
     const raumX = r.x * 100, raumY = r.y * 100;  // cm
     // 0 x 0 (oder eine Achse 0): keine Begrenzung in dieser Richtung. Beide 0: gar keine.
@@ -4603,6 +4613,10 @@
       currentTrackTiles = wahl.tiles;
       trackSel = null;
       trackRotationDeg = wahl.rot || 0;
+      // Den Raum so um die Strecke legen, wie sie hineinpasst (v0.9.39). Vorher blieb ein
+      // alter Versatz stehen, und die Strecke lag sichtbar ueber dem Rand.
+      const fit = typeof raumEinpassen === 'function' ? raumEinpassen(wahl.tiles) : null;
+      if (fit && fit.versatz) { raumVersatz = { x: fit.versatz.x, y: fit.versatz.y }; raumVersatzSpeichern(); }
       refreshTrackPreview();
       trackZufallCodeMerken(wahl.code);
       // BESTELLT: "beim zufälliger strecke wenn möglich eine Animation abspielen (max 500ms

@@ -9170,6 +9170,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       releaseInput(SRC.PAD);
       return;
     }
+    // Raumdesigner offen (60b-raum.js): Stick, Kreuz und Tasten gehoeren ihm.
+    if (typeof raumPad === 'function' && raumPad(pad)) {
+      releaseInput(SRC.PAD);
+      return;
+    }
 
     // Nur abfangen, wenn hier auch wirklich Spieler 1s Belegung dran ist - waehrend
     // Spieler 2s Tabelle bearbeitet wird (bindEditSpieler === 2), soll Spieler 1

@@ -17144,6 +17144,165 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Linie zu Linie, geparktes Auto, Start vor dem Streifen und zweite Start/Ziel-Gerade richtig' };
   });
 
+  // ---- RAUMDESIGNER (v0.9.39) ----------------------------------------------------------
+  // Gemeinsamer Rahmen: Raum, Form, Versatz, Teile und Editor-Strecke sichern und zurueck.
+  const raumTestRahmen = (fn) => {
+    const keys = ['omegasim-raum', 'omegasim-raum-form', 'omegasim-raum-versatz', 'omegasim-teile'];
+    const ls = {};
+    for (const k of keys) { try { ls[k] = localStorage.getItem(k); } catch (e) { ls[k] = null; } }
+    const g = { tiles: currentTrackTiles, rot: trackRotationDeg, v: { ...raumVersatz }, codes: trackZufallCodes.slice(), sel: trackSel };
+    try { return fn(); } finally {
+      for (const k of keys) { try { if (ls[k] === null) localStorage.removeItem(k); else localStorage.setItem(k, ls[k]); } catch (e) { /* privat */ } }
+      currentTrackTiles = g.tiles; trackRotationDeg = g.rot; raumVersatz = g.v; trackZufallCodes = g.codes; trackSel = g.sel;
+      raumDsSchliessen();
+      refreshTrackPreview();
+    }
+  };
+  const raumOval = () => [TILE_TYPE.START, TILE_TYPE.STRAIGHT, TILE_TYPE.CURVE_RIGHT, TILE_TYPE.CURVE_RIGHT,
+    TILE_TYPE.CURVE_RIGHT, TILE_TYPE.STRAIGHT, TILE_TYPE.STRAIGHT, TILE_TYPE.CURVE_RIGHT,
+    TILE_TYPE.CURVE_RIGHT, TILE_TYPE.CURVE_RIGHT].map(type => ({ type }));
+  // Die Strecke so, wie der Editor sie zeichnet (Drehung + Raumlage), in Raum-cm.
+  const raumLage = (tiles, rot, versatz, W, H) => {
+    const merk = trackRotationDeg;
+    let pts;
+    try { trackRotationDeg = rot; pts = trackCenterline(tiles); } finally { trackRotationDeg = merk; }
+    const P = pts.map(p => [p.x / TRACK_UNITS_PER_CM, p.y / TRACK_UNITS_PER_CM]);
+    const xs = P.map(p => p[0]), ys = P.map(p => p[1]);
+    const mx = (Math.min(...xs) + Math.max(...xs)) / 2, my = (Math.min(...ys) + Math.max(...ys)) / 2;
+    // Raumecke wie renderTrackPreview: Mitte - halbe Raumgroesse + Versatz.
+    const x0 = mx - W / 2 + versatz.x, y0 = my - H / 2 + versatz.y;
+    return P.map(([x, y]) => [x - x0, y - y0]);
+  };
+  // Kleinster Abstand der Mittellinie zu Wand und Moebeln (cm). >= 12,5 heisst: die ganze Bahn liegt im Raum.
+  const raumAbstand = (Q, W, H, form) => {
+    let min = Infinity;
+    for (const [x, y] of Q) {
+      min = Math.min(min, x, W - x, y, H - y);
+      if (form) {
+        for (let zy = 0; zy < form.h; zy++) {
+          for (let zx = 0; zx < form.w; zx++) {
+            if (!form.g[zy * form.w + zx]) continue;
+            const ax = zx * 10, ay = zy * 10;
+            const dx = Math.max(ax - x, 0, x - ax - 10), dy = Math.max(ay - y, 0, y - ay - 10);
+            min = Math.min(min, Math.hypot(dx, dy));
+          }
+        }
+      }
+    }
+    return min;
+  };
+
+  stAdd('Raum: Strecke passt mit voller Bahnbreite, nicht nur mit der Mittellinie', () => raumTestRahmen(() => {
+    const f = [];
+    const tiles = raumOval();
+    localStorage.removeItem('omegasim-raum-form');
+    const Q0 = raumLage(tiles, 0, { x: 0, y: 0 }, 0, 0);
+    const spanX = Math.max(...Q0.map(p => p[0])) - Math.min(...Q0.map(p => p[0]));
+    const spanY = Math.max(...Q0.map(p => p[1])) - Math.min(...Q0.map(p => p[1]));
+    // 1. Genug Platz (Spannweite + Bahnbreite + 2 x 2 cm + 1): passt, und die Bahn liegt drin.
+    let W = Math.ceil(spanX + 30), H = Math.ceil(spanY + 30);
+    teileRaumSpeichern({ x: W / 100, y: H / 100 });
+    let fit = raumEinpassen(tiles);
+    if (!fit) f.push('passt nicht, obwohl Platz ist');
+    else {
+      const a = raumAbstand(raumLage(tiles, fit.rot, fit.versatz, W, H), W, H, null);
+      if (a < 12.5) f.push('Bahn ragt ' + (12.5 - a).toFixed(1) + ' cm ueber den Rand');
+    }
+    // 2. Mittellinie passt, Bahn nicht (der alte Fehler): darf in DIESER Lage nicht passen.
+    W = Math.ceil(spanX + 15); H = Math.ceil(spanY + 15);
+    teileRaumSpeichern({ x: W / 100, y: H / 100 });
+    fit = raumEinpassen(tiles);
+    if (fit) {
+      const a = raumAbstand(raumLage(tiles, fit.rot, fit.versatz, W, H), W, H, null);
+      if (a < 12.5) f.push('zu enger Raum angenommen, Bahn ragt ' + (12.5 - a).toFixed(1) + ' cm ueber');
+    }
+    // 3. Drehung: dieselbe Rechnung wie trackCenterline mit trackRotationDeg.
+    teileRaumSpeichern({ x: spanY / 100 + 0.4, y: spanX / 100 + 0.4 });
+    fit = raumEinpassen(tiles);
+    if (!fit || fit.rot % 180 !== 90) f.push('quer liegender Raum: Drehung ' + (fit ? fit.rot : 'keine'));
+    else {
+      const a = raumAbstand(raumLage(tiles, fit.rot, fit.versatz, spanY + 40, spanX + 40), spanY + 40, spanX + 40, null);
+      if (a < 12.5) f.push('gedreht ragt die Bahn ueber (' + a.toFixed(1) + ')');
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'mit Bahnbreite, zu enger Raum abgelehnt, Drehung stimmt' };
+  }));
+
+  stAdd('Raum: Strecke wird um Moebel herum eingepasst (L-Form)', () => raumTestRahmen(() => {
+    const f = [];
+    const tiles = raumOval();
+    teileRaumSpeichern({ x: 3, y: 2.5 });
+    const form = raumFormLaden();
+    // Rechte obere Ecke ab 1,65 m x 1,1 m gesperrt.
+    for (let y = 0; y < form.h; y++) for (let x = 0; x < form.w; x++) if (x >= 17 && y < 11) form.g[y * form.w + x] = 1;
+    raumFormSpeichern(form);
+    const zurueck = raumFormLaden();
+    if (raumFormKodieren(zurueck.g) !== raumFormKodieren(form.g)) f.push('Form kommt nicht gleich zurueck');
+    const fit = raumEinpassen(tiles);
+    if (!fit) f.push('passt nicht');
+    else {
+      const a = raumAbstand(raumLage(tiles, fit.rot, fit.versatz, 300, 250), 300, 250, form);
+      if (a < 12.5) f.push('Bahn beruehrt Moebel oder Wand (' + a.toFixed(1) + ' cm)');
+    }
+    // Groesse aendern: Ecke oben links bleibt, Neues ist Boden.
+    teileRaumSpeichern({ x: 3.5, y: 2.5 });
+    const gross = raumFormLaden();
+    if (gross.w !== 35 || !gross.g[0 * 35 + 17] || gross.g[0 * 35 + 34]) f.push('Groessenwechsel verliert die Form');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Abstand zu Moebeln und Wand >= halbe Bahnbreite, Form bleibt beim Vergroessern' };
+  }));
+
+  stAdd('Raum: Zufallsstrecke liegt im Editor ganz im Raum', () => raumTestRahmen(() => {
+    const f = [];
+    const b = {};
+    b[TILE_TYPE.START] = 1; b[TILE_TYPE.STRAIGHT] = 8; b[TILE_TYPE.CURVE_RIGHT] = 10; b[TILE_TYPE.CURVE_LEFT] = 4;
+    b[TILE_TYPE.HAIRPIN] = 1; b[TILE_TYPE.HAIRPIN_LEFT] = 1;
+    localStorage.setItem('omegasim-teile', JSON.stringify(b));
+    localStorage.removeItem('omegasim-raum-form');
+    teileRaumSpeichern({ x: 3.2, y: 2.4 });
+    raumVersatz = { x: 37, y: -21 };      // ein alter Versatz darf nicht stehen bleiben
+    let gebaut = 0, schlechtest = Infinity;
+    for (let i = 0; i < 2; i++) {
+      trackZufallCodes = [];
+      if (!trackZufall()) continue;
+      gebaut++;
+      const a = raumAbstand(raumLage(currentTrackTiles, trackRotationDeg, raumVersatz, 320, 240), 320, 240, null);
+      schlechtest = Math.min(schlechtest, a);
+    }
+    if (!gebaut) f.push('keine Zufallsstrecke gebaut');
+    else if (schlechtest < 12.5) f.push('Bahn ragt ' + (12.5 - schlechtest).toFixed(1) + ' cm ueber den Rand');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : gebaut + ' Strecken, kleinster Randabstand der Mitte ' + schlechtest.toFixed(1) + ' cm' };
+  }));
+
+  stAdd('Raumdesigner: Gamepad malt, schaltet um und schliesst ohne Nachwirkung', () => raumTestRahmen(() => {
+    const f = [];
+    localStorage.removeItem('omegasim-raum-form');
+    teileRaumSpeichern({ x: 2, y: 2 });
+    const knopf = $('raum-designer-auf');
+    if (!knopf) return { ok: false, mass: 'Knopf fehlt' };
+    knopf.click();
+    if (!raumDsOffen()) return { ok: false, mass: 'Designer geht nicht auf' };
+    const pad = (an) => ({ axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: an.indexOf(i) >= 0, value: an.indexOf(i) >= 0 ? 1 : 0 })) });
+    raumPad(pad([0]));                       // erster Takt: Kreuz vom Oeffnen noch gehalten, nichts tun
+    if (raumFormHatMoebel(rd.form)) f.push('das Kreuz vom Oeffnen hat gemalt');
+    raumPad(pad([]));
+    const x0 = rd.cursor.x;
+    raumPad(pad([15])); raumPad(pad([]));    // rechts: eine Zelle
+    if (Math.abs(rd.cursor.x - x0 - 10) > 0.01) f.push('Steuerkreuz bewegt nicht um 10 cm (' + (rd.cursor.x - x0) + ')');
+    raumPad(pad([0])); raumPad(pad([]));     // malen (Moebel, Pinsel 30 cm)
+    const zx = Math.floor(rd.cursor.x / 10), zy = Math.floor(rd.cursor.y / 10);
+    if (!rd.form.g[zy * rd.form.w + zx]) f.push('Kreuz malt kein Moebel');
+    raumPad(pad([2])); raumPad(pad([]));     // Quadrat: Boden
+    if (rd.modus !== 'boden') f.push('Quadrat schaltet nicht auf Boden');
+    raumPad(pad([3])); raumPad(pad([]));     // Dreieck: Rechteck
+    if (rd.werkzeug !== 'rechteck') f.push('Dreieck schaltet nicht auf Rechteck');
+    raumPad(pad([8])); raumPad(pad([]));     // Select: rueckgaengig
+    if (raumFormHatMoebel(rd.form)) f.push('Select nimmt das Malen nicht zurueck');
+    raumPad(pad([1]));                       // Kreis: schliessen
+    if (raumDsOffen()) f.push('Kreis schliesst nicht');
+    if (!raumPad(pad([1]))) f.push('gehaltener Kreis geht nach dem Schliessen ans Menue');
+    if (raumPad(pad([]))) f.push('nach dem Loslassen bleibt das Pad gesperrt');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'bewegen, malen, umschalten, rueckgaengig, schliessen ohne Nachwirkung' };
+  }));
+
   stAdd('Woerterbuch ohne doppelte Schluessel', () => {
     const imObjekt = Object.keys(I18N_EN).length;
     // Die Quelle steht im eigenen <script>. Sie zu lesen ist billiger und ehrlicher als die

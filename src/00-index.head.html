@@ -3069,6 +3069,32 @@
   .raum-knopf:hover { background: var(--panel-2); filter: brightness(1.1); }
   .raum-knopf:active { background: rgba(0,163,224,.2); }
   .raum-zeile.menu-nav-sel { border-radius: 8px; }
+  /* RAUMDESIGNER (v0.9.39) */
+  .raum-ds-zeile { display: flex; align-items: center; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+  .raum-mini { width: 150px; height: 90px; cursor: pointer; }
+  .raum-mini svg { width: 100%; height: 100%; display: block; }
+  .raum-ds { position: fixed; inset: 0; z-index: 9000; background: var(--bg); display: flex;
+    gap: 10px; padding: 10px; box-sizing: border-box; }
+  .raum-ds[hidden] { display: none; }
+  .raum-ds-flaeche { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: center;
+    touch-action: none; user-select: none; }
+  .raum-ds-flaeche svg { width: 100%; height: 100%; display: block; cursor: crosshair; }
+  .raum-ds-leiste { flex: 0 0 232px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; }
+  .raum-ds-leiste h2 { margin: 0; }
+  .raum-ds-gruppe { display: flex; gap: 4px; }
+  .raum-ds-gruppe button { flex: 1 1 0; padding: 7px 4px; font-size: 12.5px; min-height: 32px; }
+  .raum-ds-gruppe button.an { background: rgba(0,163,224,.28); border-color: var(--info); color: var(--ink); }
+  .raum-ds-vorlagen button { font-size: 15px; font-weight: 700; }
+  .raum-ds-info { margin: 2px 0 0; font-size: 12px; }
+  .raum-ds-info.schlecht { color: var(--warn); }
+  .raum-ds-tasten { margin: 0; font-size: 10.5px; line-height: 1.45; }
+  .raum-ds-kopf { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .raum-ds-kopf h2 { font-size: 14px; line-height: 1.2; }
+  .raum-ds-fertig { flex: 0 0 auto; min-height: 32px; padding: 6px 12px; }
+  @media (max-width: 640px) and (orientation: portrait) {
+    .raum-ds { flex-direction: column; }
+    .raum-ds-leiste { flex: 0 0 auto; max-height: 45vh; }
+  }
   /* HOCHFORMAT, schmal (Telefon im Browser): untereinander, mit Bildlauf. */
   @media (max-width: 760px) and (orientation: portrait) {
     header#k-kopf { grid-template-columns: 1fr auto; }
@@ -4390,7 +4416,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.39</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.40</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5505,6 +5531,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Raumdesigner (experimentell) unter Strecke &#8594; Meine Teile: den Raum in 10-cm-Feldern als Boden oder M&#246;bel malen, mit Pinsel (10/30/60 cm) oder Rechteck, Vorlagen Rechteck, L, U und Oval, R&#252;ckg&#228;ngig und &#8222;Strecke einpassen&#8220;. Geht mit Finger, Maus, Tastatur und Gamepad (Stick/Steuerkreuz bewegt, &#10005; malt, &#9633; M&#246;bel/Boden, &#9651; Pinsel/Rechteck, L1/R1 Gr&#246;&#223;e, &#9675; fertig). Zufallsstrecken passen jetzt wirklich hinein: gepr&#252;ft wird mit der vollen Bahnbreite plus 2 cm Abstand statt nur mit der Mittellinie, um M&#246;bel herum, und der Raum wird im Editor gleich richtig um die Strecke gelegt.</li>
         <li>Streckenteile wie die Originalschienen: wei&#223;er Randstreifen mit gef&#252;llten Pfeilen in gleichem Abstand auf beiden Seiten (links blau, rechts rot), Steckzapfen an den Teilenden, matt schwarze Fahrbahn. Tempo nachgemessen (btsnoop): Vollgas sind real 5,45 km/h, im Ma&#223;stab 272 km/h; der Tacho rechnet jetzt damit, und bei Gasfaktor 100 % (Realismus GT3) stimmt er genau; Pro und Arcade behalten ihren Faktor und fahren sich wie vorher. Rundenz&#228;hlung auf der Schiene: keine Doppelrunde mehr, wenn ein Auto zwischen Barcode und Ziellinie h&#228;lt, keine Mini-Runde beim Start vor dem Streifen, keine Phantomrunde bei Ghosts und Spieler 2/3 beim Losfahren; mit einer zweiten Start/Ziel-Geraden z&#228;hlt Runde 1 richtig.</li>
         <li>Rundenzeit an der Ziellinie: Auf der Schiene misst und sagt Spieler 1 die Runde jetzt an der Ziellinie an, die das Auto selbst meldet (Byte 15, etwa 35 cm nach dem Barcode, aus den btsnoop-Mitschnitten), nicht mehr am Barcode; der Barcode bleibt R&#252;ckfall f&#252;r Autos ohne diese Meldung. Tastenbelegung: Eine neue Zuweisung auf eine schon belegte Taste tauscht jetzt die beiden Aktionen, statt beim n&#228;chsten Start zur&#252;ckzufallen, und eine alte Aufr&#228;umregel setzt eigene Tasten (z. B. Rennstart auf Kreuz) nicht mehr bei jedem Laden zur&#252;ck. Optionen &#8594; Allgemein: zwei Regler f&#252;r die Gr&#246;&#223;e der Haupttabs und der Unter-Tabs (60&#8211;180 %, 100 % wie bisher).</li>
         <li>Crash-Richtung jetzt gemessen statt gelernt: Beim Beschleunigen wandert der Gyro-Punkt im Cockpit nach vorn, also hei&#223;t Byte 1 f&#228;llt &#8222;von hinten geschoben&#8220;, Byte 1 steigt &#8222;vorne eingeschlagen&#8220;, &#252;berwiegendes Byte 3 &#8222;von der Seite&#8220; (45&#176; Toleranz). &#8222;Nur der Rammer bremst&#8220; (fr&#252;her &#8222;Kein Bremsen bei Auffahrunfall&#8220;): Gebremst wird nur, wer vorne einschl&#228;gt; wer von hinten oder von der Seite getroffen wird, f&#228;hrt weiter. Rammer-Strafe: Rammer ist, wer vorne eingeschlagen ist, w&#228;hrend der andere von hinten oder der Seite getroffen wurde (frontal z&#228;hlt nicht); das gilt auch f&#252;r Ghosts. Im Derby kostet vorn einschlagen 10 %, getroffen werden 20 %.</li>
@@ -11126,6 +11153,12 @@
           <button class="raum-knopf" id="raum-y-plus" type="button" aria-label="Tiefe mehr">+</button>
         </span>
       </div>
+      <!-- v0.9.39 BESTELLT: "Raumdesigner im Meine-Teile-Menue, mit dem ich auch andere Formen
+           erstellen kann" (60b-raum.js). -->
+      <div class="raum-ds-zeile">
+        <button id="raum-designer-auf" type="button">Raum gestalten <span class="wip-tag">experimentell</span></button>
+        <div class="raum-mini" id="raum-mini" role="button" aria-label="Raum gestalten"></div>
+      </div>
       <div class="teile-liste" id="teile-liste"></div>
     </div>
     <div class="card subpage" id="sub-scan">
@@ -11463,6 +11496,41 @@
   <button type="button" class="k-ergebnis" id="k-ergebnis" hidden>Rennen beendet – Ergebnis ansehen</button>
   <!-- FRAGE-DIALOG (51-konsole.js, konsoleFrage). Zuerst fuer "trotzdem starten": BESTELLT
        "erlaube mir zum Debuggen auch auf Starten zu drücken, wenn kein Auto verbunden ist". -->
+  <!-- RAUMDESIGNER (v0.9.39, 60b-raum.js): Vollbild ueber allem. -->
+  <div class="raum-ds" id="raum-ds" hidden>
+    <div class="raum-ds-flaeche" id="raum-ds-flaeche"></div>
+    <div class="raum-ds-leiste">
+      <div class="raum-ds-kopf">
+        <h2>Raumdesigner <span class="wip-tag">experimentell</span></h2>
+        <button type="button" id="raum-ds-fertig" class="raum-ds-fertig">Fertig</button>
+      </div>
+      <div class="raum-ds-gruppe">
+        <button type="button" data-rd-modus="moebel">M&ouml;bel</button>
+        <button type="button" data-rd-modus="boden">Boden</button>
+      </div>
+      <div class="raum-ds-gruppe">
+        <button type="button" data-rd-werkzeug="pinsel">Pinsel</button>
+        <button type="button" data-rd-werkzeug="rechteck">Rechteck</button>
+      </div>
+      <div class="raum-ds-gruppe">
+        <button type="button" data-rd-groesse="10">10 cm</button>
+        <button type="button" data-rd-groesse="30">30 cm</button>
+        <button type="button" data-rd-groesse="60">60 cm</button>
+      </div>
+      <div class="raum-ds-gruppe raum-ds-vorlagen">
+        <button type="button" data-rd-vorlage="rechteck" aria-label="Vorlage Rechteck">&#9645;</button>
+        <button type="button" data-rd-vorlage="l" aria-label="Vorlage L-Form">L</button>
+        <button type="button" data-rd-vorlage="u" aria-label="Vorlage U-Form">U</button>
+        <button type="button" data-rd-vorlage="oval" aria-label="Vorlage Oval">&#9711;</button>
+      </div>
+      <div class="raum-ds-gruppe">
+        <button type="button" id="raum-ds-undo">R&uuml;ckg&auml;ngig</button>
+        <button type="button" id="raum-ds-probe">Strecke einpassen</button>
+      </div>
+      <p class="muted raum-ds-info" id="raum-ds-info"></p>
+      <p class="muted raum-ds-tasten">&#10005; malen &middot; &#9633; M&ouml;bel/Boden &middot; &#9651; Pinsel/Rechteck &middot; L1/R1 Gr&ouml;&szlig;e &middot; Select r&uuml;ckg&auml;ngig &middot; Start einpassen &middot; &#9675; fertig</p>
+    </div>
+  </div>
   <div class="k-pause" id="k-frage" hidden>
     <div class="k-pause-dialog">
       <h2 id="k-frage-titel"></h2>
