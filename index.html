@@ -3073,28 +3073,28 @@
   .raum-ds-zeile { display: flex; align-items: center; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
   .raum-mini { width: 150px; height: 90px; cursor: pointer; }
   .raum-mini svg { width: 100%; height: 100%; display: block; }
-  .raum-ds { position: fixed; inset: 0; z-index: 9000; background: var(--bg); display: flex;
-    gap: 10px; padding: 10px; box-sizing: border-box; }
+  /* v0.9.43: wie das Editor-Vollbild - drei Rasterzeilen, die Flaeche in der mittleren mit
+     min-height 0, damit sie nie ueber Leiste oder Fuss waechst; der Menuekopf ist weg. */
+  .raum-ds { position: fixed; inset: 0; z-index: 9000; display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto; gap: 6px; padding: 8px; box-sizing: border-box;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    background: linear-gradient(rgba(6,8,12,.9), rgba(6,8,12,.9)), url(img/asphalt-bg.jpg) center / cover, var(--bg); }
   .raum-ds[hidden] { display: none; }
-  .raum-ds-flaeche { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: center;
-    touch-action: none; user-select: none; }
-  .raum-ds-flaeche svg { width: 100%; height: 100%; display: block; cursor: crosshair; }
-  .raum-ds-leiste { flex: 0 0 232px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; }
-  .raum-ds-leiste h2 { margin: 0; }
-  .raum-ds-gruppe { display: flex; gap: 4px; }
-  .raum-ds-gruppe button { flex: 1 1 0; padding: 7px 4px; font-size: 12.5px; min-height: 32px; }
+  body.raum-ds-offen header#k-kopf { display: none !important; }
+  .raum-ds-leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+  .raum-ds-titel { font-weight: 800; font-size: 13px; letter-spacing: .05em; text-transform: uppercase; }
+  .raum-ds-gruppe { display: flex; gap: 3px; }
+  .raum-ds-gruppe button { padding: 6px 9px; font-size: 12.5px; min-height: 32px; }
   .raum-ds-gruppe button.an { background: rgba(0,163,224,.28); border-color: var(--info); color: var(--ink); }
-  .raum-ds-vorlagen button { font-size: 15px; font-weight: 700; }
-  .raum-ds-info { margin: 2px 0 0; font-size: 12px; }
+  .raum-ds-vorlagen button { font-size: 15px; font-weight: 700; min-width: 34px; }
+  .raum-ds-fertig { margin-left: auto; min-height: 34px; padding: 6px 16px; font-weight: 700; }
+  .raum-ds-flaeche { min-height: 0; min-width: 0; overflow: hidden; display: flex; align-items: center;
+    justify-content: center; touch-action: none; user-select: none; }
+  .raum-ds-flaeche svg { width: 100%; height: 100%; display: block; cursor: crosshair; }
+  .raum-ds-fuss { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; justify-content: space-between; }
+  .raum-ds-info { font-size: 12px; color: var(--ink-2); }
   .raum-ds-info.schlecht { color: var(--warn); }
-  .raum-ds-tasten { margin: 0; font-size: 10.5px; line-height: 1.45; }
-  .raum-ds-kopf { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-  .raum-ds-kopf h2 { font-size: 14px; line-height: 1.2; }
-  .raum-ds-fertig { flex: 0 0 auto; min-height: 32px; padding: 6px 12px; }
-  @media (max-width: 640px) and (orientation: portrait) {
-    .raum-ds { flex-direction: column; }
-    .raum-ds-leiste { flex: 0 0 auto; max-height: 45vh; }
-  }
+  .raum-ds-tasten { font-size: 10.5px; color: var(--muted); }
   /* HOCHFORMAT, schmal (Telefon im Browser): untereinander, mit Bildlauf. */
   @media (max-width: 760px) and (orientation: portrait) {
     header#k-kopf { grid-template-columns: 1fr auto; }
@@ -4435,7 +4435,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.42</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.43</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5550,6 +5550,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Rennende: Die Rennuhr startete erst bei 75 % der H&#246;chstgeschwindigkeit (die Schwelle &#8222;3 km/h&#8220; wurde mit dem Modelltempo verglichen) &#8211; wer das nie erreichte, fuhr Runden, die nicht z&#228;hlten, und das Rennen endete nie. Jetzt startet sie bei 3 km/h auf dem Tacho oder sp&#228;testens an der ersten Ziellinie; die Fr&#252;hstart-Erkennung hatte denselben Fehler. Raumgestalter wie der Editor: &#8222;Raumgestalter starten&#8220; &#246;ffnet das Vollbild, oben die Werkzeugleiste mit &#8222;Schlie&#223;en&#8220;, die Fl&#228;che in einer eigenen Zeile darunter, der Men&#252;kopf liegt nicht mehr &#252;ber den Kn&#246;pfen. Rundenzeiten-Diagramm: wei&#223;er Saum unter jeder Linie, damit auch ein schwarzes Auto sichtbar ist.</li>
         <li>Lenkung GT3, F1 und Realismus GT3: voller Einschlag ist wieder erreichbar. Seit dem neuen Lenkweg begrenzte das &#8222;Lenkansprechen&#8220; dieser Voreinstellungen den gr&#246;&#223;ten Einschlag (Realismus GT3 gemessen 19 von 45&#176; im Schritttempo, mit kalten Reifen 11&#176;); jetzt 3,0 wie Pro, und Realismus GT3 gleicht kalte Reifen mit Lenkkalibrierung 1,6 aus. Pro und Arcade unver&#228;ndert. Zufallsstrecke: Ladeanimation (Gerade, Kurve, Haarnadel) im Editor, die Suche l&#228;uft daf&#252;r in kleinen St&#252;cken. Mehrspieler: dieselbe Animation im Bereitschaftsschirm, solange auf die anderen gewartet wird.</li>
         <li>Rundenrennen enden jetzt mit der Zielrunde: Wer die eingestellte Rundenzahl f&#228;hrt, ist sofort im Ziel (Ende-Ton und Ergebnis); vorher endete ein 5-Runden-Rennen erst bei der &#220;berfahrt nach Runde 5, im Mehrspieler also scheinbar nie. Die Renn&#252;bersicht zeigt dich im Mehrspieler nicht mehr doppelt (Name und Auto). Derby: Auto 1 nimmt wieder Schaden (seitlich &#8722;20 %, vorn &#8722;10 %), vorher ging der Treffer ins Leere und nur der Controller r&#252;ttelte. Mehrspieler auf schwachen Handys: im Rennen fragt das Handy den Host nur noch alle 3 s ab, meldet Positionen f&#252;r Zuschauer alle 0,5 s und zeichnet die Ranglisten-Tabelle erst nach dem Rennen, damit der Steuertakt Luft hat.</li>
         <li>Raumdesigner (experimentell) unter Strecke &#8594; Meine Teile: den Raum in 10-cm-Feldern als Boden oder M&#246;bel malen, mit Pinsel (10/30/60 cm) oder Rechteck, Vorlagen Rechteck, L, U und Oval, R&#252;ckg&#228;ngig und &#8222;Strecke einpassen&#8220;. Geht mit Finger, Maus, Tastatur und Gamepad (Stick/Steuerkreuz bewegt, &#10005; malt, &#9633; M&#246;bel/Boden, &#9651; Pinsel/Rechteck, L1/R1 Gr&#246;&#223;e, &#9675; fertig). Zufallsstrecken passen jetzt wirklich hinein: gepr&#252;ft wird mit der vollen Bahnbreite plus 2 cm Abstand statt nur mit der Mittellinie, um M&#246;bel herum, und der Raum wird im Editor gleich richtig um die Strecke gelegt.</li>
@@ -11177,7 +11178,8 @@
       <!-- v0.9.39 BESTELLT: "Raumdesigner im Meine-Teile-Menue, mit dem ich auch andere Formen
            erstellen kann" (60b-raum.js). -->
       <div class="raum-ds-zeile">
-        <button id="raum-designer-auf" type="button">Raum gestalten <span class="wip-tag">experimentell</span></button>
+        <button id="raum-designer-auf" type="button" class="primary te-start">Raumgestalter starten</button>
+        <span class="wip-tag">experimentell</span>
         <div class="raum-mini" id="raum-mini" role="button" aria-label="Raum gestalten"></div>
       </div>
       <div class="teile-liste" id="teile-liste"></div>
@@ -11519,12 +11521,11 @@
        "erlaube mir zum Debuggen auch auf Starten zu drücken, wenn kein Auto verbunden ist". -->
   <!-- RAUMDESIGNER (v0.9.39, 60b-raum.js): Vollbild ueber allem. -->
   <div class="raum-ds" id="raum-ds" hidden>
-    <div class="raum-ds-flaeche" id="raum-ds-flaeche"></div>
+    <!-- v0.9.43 wie der Editor: oben die Leiste mit "Schliessen", darunter die Flaeche in
+         einer EIGENEN Rasterzeile, unten Info und Tasten. GEMELDET: "Aus dem Raum-Gestalter
+         komme ich nicht mehr raus ... das Layout liegt vor den Tasten." -->
     <div class="raum-ds-leiste">
-      <div class="raum-ds-kopf">
-        <h2>Raumdesigner <span class="wip-tag">experimentell</span></h2>
-        <button type="button" id="raum-ds-fertig" class="raum-ds-fertig">Fertig</button>
-      </div>
+      <span class="raum-ds-titel">Raumgestalter <span class="wip-tag">experimentell</span></span>
       <div class="raum-ds-gruppe">
         <button type="button" data-rd-modus="moebel">M&ouml;bel</button>
         <button type="button" data-rd-modus="boden">Boden</button>
@@ -11548,8 +11549,12 @@
         <button type="button" id="raum-ds-undo">R&uuml;ckg&auml;ngig</button>
         <button type="button" id="raum-ds-probe">Strecke einpassen</button>
       </div>
-      <p class="muted raum-ds-info" id="raum-ds-info"></p>
-      <p class="muted raum-ds-tasten">&#10005; malen &middot; &#9633; M&ouml;bel/Boden &middot; &#9651; Pinsel/Rechteck &middot; L1/R1 Gr&ouml;&szlig;e &middot; Select r&uuml;ckg&auml;ngig &middot; Start einpassen &middot; &#9675; fertig</p>
+      <button type="button" id="raum-ds-fertig" class="raum-ds-fertig">Schlie&szlig;en</button>
+    </div>
+    <div class="raum-ds-flaeche" id="raum-ds-flaeche"></div>
+    <div class="raum-ds-fuss">
+      <span class="raum-ds-info" id="raum-ds-info" data-i18n-skip></span>
+      <span class="raum-ds-tasten">&#10005; malen &middot; &#9633; M&ouml;bel/Boden &middot; &#9651; Pinsel/Rechteck &middot; L1/R1 Gr&ouml;&szlig;e &middot; Select r&uuml;ckg&auml;ngig &middot; Start einpassen &middot; &#9675; schlie&szlig;en</span>
     </div>
   </div>
   <div class="k-pause" id="k-frage" hidden>
@@ -12853,11 +12858,12 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Rennende: Die Rennuhr startete erst bei 75 % der Höchstgeschwindigkeit (die Schwelle „3 km/h“ wurde mit dem Modelltempo verglichen) – wer das nie erreichte, fuhr Runden, die nicht zählten, und das Rennen endete nie. Jetzt startet sie bei 3 km/h auf dem Tacho oder spätestens an der ersten Ziellinie; die Frühstart-Erkennung hatte denselben Fehler. Raumgestalter wie der Editor: „Raumgestalter starten“ öffnet das Vollbild, oben die Werkzeugleiste mit „Schließen“, die Fläche in einer eigenen Zeile darunter, der Menükopf liegt nicht mehr über den Knöpfen. Rundenzeiten-Diagramm: weißer Saum unter jeder Linie, damit auch ein schwarzes Auto sichtbar ist.": "Race end: the race clock only started at 75 % of top speed (the “3 km/h” threshold was compared with the model speed) – anyone who never reached that drove laps that did not count, and the race never ended. Now it starts at 3 km/h on the speedometer or at the first finish line at the latest; false-start detection had the same bug. Room designer like the editor: “Start room designer” opens full screen, toolbar with “Close” at the top, the area in its own row below, the menu header no longer covers the buttons. Lap time chart: white outline under every line so a black car is visible too.",
     "Strecke wird gesucht …": "Searching for a track …",
     "Lenkung GT3, F1 und Realismus GT3: voller Einschlag ist wieder erreichbar. Seit dem neuen Lenkweg begrenzte das „Lenkansprechen“ dieser Voreinstellungen den größten Einschlag (Realismus GT3 gemessen 19 von 45° im Schritttempo, mit kalten Reifen 11°); jetzt 3,0 wie Pro, und Realismus GT3 gleicht kalte Reifen mit Lenkkalibrierung 1,6 aus. Pro und Arcade unverändert. Zufallsstrecke: Ladeanimation (Gerade, Kurve, Haarnadel) im Editor, die Suche läuft dafür in kleinen Stücken. Mehrspieler: dieselbe Animation im Bereitschaftsschirm, solange auf die anderen gewartet wird.": "Steering GT3, F1 and Realism GT3: full lock is reachable again. Since the new steering path, the “steering response” of these presets capped the largest angle (Realism GT3 measured 19 of 45° at walking pace, 11° on cold tyres); now 3.0 like Pro, and Realism GT3 compensates cold tyres with steering calibration 1.6. Pro and Arcade unchanged. Random track: loading animation (straight, curve, hairpin) in the editor; the search now runs in small chunks for this. Multiplayer: the same animation on the ready screen while waiting for the others.",
     "Rundenrennen enden jetzt mit der Zielrunde: Wer die eingestellte Rundenzahl fährt, ist sofort im Ziel (Ende-Ton und Ergebnis); vorher endete ein 5-Runden-Rennen erst bei der Überfahrt nach Runde 5, im Mehrspieler also scheinbar nie. Die Rennübersicht zeigt dich im Mehrspieler nicht mehr doppelt (Name und Auto). Derby: Auto 1 nimmt wieder Schaden (seitlich −20 %, vorn −10 %), vorher ging der Treffer ins Leere und nur der Controller rüttelte. Mehrspieler auf schwachen Handys: im Rennen fragt das Handy den Host nur noch alle 3 s ab, meldet Positionen für Zuschauer alle 0,5 s und zeichnet die Ranglisten-Tabelle erst nach dem Rennen, damit der Steuertakt Luft hat.": "Lap races now end with the final lap: whoever completes the set number of laps finishes immediately (end sound and results); before, a 5-lap race only ended at the crossing after lap 5, so in multiplayer it seemed never to end. The race overview no longer shows you twice in multiplayer (name and car). Derby: car 1 takes damage again (side −20 %, front −10 %); before, the hit went nowhere and only the controller rumbled. Multiplayer on slow phones: during the race the phone polls the host only every 3 s, reports positions for spectators every 0.5 s and redraws the leaderboard table only after the race, so the control loop has room.",
-    "Raum gestalten": "Design room",
-    "Raumdesigner": "Room designer",
+    "Raumgestalter starten": "Start room designer",
+    "Raumgestalter": "Room designer",
     "Möbel": "Furniture",
     "Boden": "Floor",
     "Pinsel": "Brush",
@@ -12867,7 +12873,7 @@
     "Vorlage L-Form": "Template L shape",
     "Vorlage U-Form": "Template U shape",
     "Vorlage Oval": "Template oval",
-    "✕ malen · □ Möbel/Boden · △ Pinsel/Rechteck · L1/R1 Größe · Select rückgängig · Start einpassen · ○ fertig": "✕ paint · □ furniture/floor · △ brush/rectangle · L1/R1 size · Select undo · Start fit · ○ done",
+    "✕ malen · □ Möbel/Boden · △ Pinsel/Rechteck · L1/R1 Größe · Select rückgängig · Start einpassen · ○ schließen": "✕ paint · □ furniture/floor · △ brush/rectangle · L1/R1 size · Select undo · Start fit · ○ close",
     "Im Editor ist noch keine Strecke.": "There is no track in the editor yet.",
     "Die Editor-Strecke passt nicht in diesen Raum.": "The editor track does not fit into this room.",
     "Die Editor-Strecke passt": "The editor track fits",
@@ -30796,6 +30802,11 @@
     rdPadStart = true;
     $('raum-ds').hidden = false;
     document.body.classList.add('raum-ds-offen');
+    // v0.9.43 wie der Editor: echtes Vollbild, wenn der Browser es erlaubt.
+    try {
+      const el = document.documentElement;
+      if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(() => {});
+    } catch (e) { /* abgelehnt: das Raster gilt trotzdem */ }
     rdLeiste();
     rdZeichnen();
   }
@@ -30804,6 +30815,10 @@
     if (!el || el.hidden) return;
     el.hidden = true;
     document.body.classList.remove('raum-ds-offen');
+    try {
+      if (document.fullscreenElement && document.exitFullscreen
+          && !document.body.classList.contains('track-fs')) document.exitFullscreen().catch(() => {});
+    } catch (e) { /* schon draussen */ }
     rd.anker = null; rd.malt = false;
     raumMiniZeichnen();
     if (typeof refreshTrackPreview === 'function') refreshTrackPreview();
@@ -31385,7 +31400,12 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   // 2") gibt es keine Reaktion, auf die zu warten waere - dieselbe Bedingung wie bei der
   // Zielflagge weiter oben (finishRace() ohne Fahrer im Feld).
   function raceMoveErkannt() {
-    const SCHWELLE_KMH = 3;   // etwas ueber dem Standrauschen des Sensors
+    // v0.9.43: 3 ANGEZEIGTE km/h. Hier stand 3 - verglichen mit speedKmh, und das ist das
+    // MODELLTEMPO (Vollgas 4,0). Die Rennuhr startete also erst bei 75 % der
+    // Hoechstgeschwindigkeit (rund 220 km/h auf dem Tacho); wer das auf einer kurzen Strecke
+    // nie erreichte, fuhr Runden, die nicht zaehlten - und das Rennen endete nie. GEMELDET:
+    // "Ende des Rennens wird immer noch nicht getriggert ... 3 Runden".
+    const SCHWELLE_KMH = 3 / REAL_SCALE;
     const fahrer = (c) => c.role === 'player' || (zweiSpieler && /^player[2-9]$/.test(c.role));
     if (!garage.some(fahrer)) return true;
     if (playerCar && Math.abs(physEngine.state.speedKmh) > SCHWELLE_KMH) return true;
@@ -31399,7 +31419,9 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   // Faehrt ein Auto waehrend des Countdowns an (dieselbe Schwelle wie raceMoveErkannt), ist es
   // ein Fruehstart. Die Ampel laeuft weiter. Nach Gruen, sobald das Auto faehrt, gibt es 2 s
   // kein Gas und eine Bremsung (50-drive.js, physicsStep). Je Auto getrennt.
-  const FRUEHSTART_KMH = 3, FRUEHSTART_STRAFE_MS = 2000, FRUEHSTART_BREMSE = 0.6;
+  // v0.9.43: 3 angezeigte km/h im Modelltempo (siehe raceMoveErkannt) - vorher 3 Modell-km/h,
+  // also 75 % der Hoechstgeschwindigkeit, und damit wurde praktisch kein Fruehstart erkannt.
+  const FRUEHSTART_KMH = 3 / REAL_SCALE, FRUEHSTART_STRAFE_MS = 2000, FRUEHSTART_BREMSE = 0.6;
   const fruehstart = { 1: { frueh: false, warten: false, bis: 0 }, 2: { frueh: false, warten: false, bis: 0 },
                       3: { frueh: false, warten: false, bis: 0 } };
   const FRUEH_SPIELER = [1, 2, 3];
@@ -33871,6 +33893,14 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
 
   function playerLapCrossed() {
     const now = Date.now();
+    // v0.9.43: Wartet die Rennuhr noch auf die erste Bewegung, BEWEIST eine Ueberfahrt die
+    // Bewegung - die Uhr startet hier, und diese Ueberfahrt ist der Anfang der ersten Runde.
+    if ((raceState === 'racing' || raceState === 'finishing') && raceAwaitingMove && !raceFormationLap) {
+      raceAwaitingMove = false;
+      raceLapStart = now; raceStartedAt = now;
+      if (dashLapStart !== null) dashLapStart = now;
+      return false;
+    }
     // Sektoren zuerst: war das nur eine Sektorgrenze, ist die Runde nicht vorbei und alles
     // Weitere darf nicht laufen - weder die Rundenzeit noch der Ton noch das Rennende.
     if (!sectorCrossed(now)) return false;
@@ -37432,6 +37462,20 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
          + ' class="ov-dia-text">' + (i + 1) + '</text>';
     }
     let linien = '';
+    // v0.9.43 GEMELDET: "In den Linienplots sieht man das Auto mit der schwarzen Farbe nicht."
+    // Erst fuer ALLE Reihen ein weisser, halbdurchsichtiger Saum (wie im Positionsdiagramm),
+    // dann die Linien darueber - sonst deckte ein spaeterer Saum eine fruehere Linie zu.
+    const SAUM = 'rgba(255,255,255,0.55)';
+    for (const r of reihen) {
+      const pts = r.werte.map((v, i) => [sx(i), sy(v)]);
+      if (pts.length > 1) {
+        linien += '<polyline fill="none" stroke="' + SAUM + '" stroke-width="4" stroke-linejoin="round" '
+          + 'stroke-linecap="round" points="' + pts.map((q) => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' ') + '"/>';
+      }
+      for (const q of pts) {
+        linien += '<circle class="ov-dia-saum" cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="3.4" fill="' + SAUM + '"/>';
+      }
+    }
     for (const r of reihen) {
       const pts = r.werte.map((v, i) => [sx(i), sy(v), v > y1]);
       linien += '<polyline fill="none" stroke="' + r.farbe + '" stroke-width="1.6" points="'
@@ -55569,7 +55613,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         ovDiagrammMalen();
         ovSektorenMalen();
         const dia = $('ov-diagramm'), sek = $('ov-sektoren');
-        return { punkte: dia ? dia.querySelectorAll('circle').length : -1,
+        return { punkte: dia ? dia.querySelectorAll('circle:not(.ov-dia-saum)').length : -1,
                  pfeile: dia ? dia.querySelectorAll('path').length : -1,
                  gitter: dia ? dia.querySelectorAll('.ov-dia-gitter').length : -1,
                  spalten: sek ? sek.querySelectorAll('th').length : -1 };
@@ -79586,6 +79630,66 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Rennen 3 s, sonst 1,5 s' };
   });
 
+  // v0.9.43 GEMELDET: "Ende des Rennens wird bei 0.9.41 immer noch nicht getriggert ... 3 Runden."
+  // Ueber ECHTE Pakete wie ein Auto auf der Schiene (Barcode, Ziellinie, Geraden), nicht
+  // ueber playerLapCrossed() direkt - genau der Weg, der beim Nutzer nicht ankam.
+  stAdd('Rundenrennen ueber die Schiene: 3 Runden, dann Ende', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.feedNotify) return { skip: true, mass: 'feedNotify nicht vorhanden' };
+    const f = [];
+    const sw = $('setting-ontrack');
+    const uhr = Date.now;
+    const g = { state: raceState, laps: raceLapTimes.slice(), start: raceLapStart, dash: dashLapStart,
+                form: raceFormationLap, rail: sw ? sw.checked : true, sp: playerCar, rm: raceMode, lim: raceLimit,
+                mp: dashMarkerPrev, ac: dashLastActedCode, aa: dashLastActedAt, pc: dashPendingCode,
+                ps: dashPendingSeen, lc: dashLastTileCounter, zg: dashZielGesehen, za: dashZielAt,
+                sa: dashStartLapAt, zauto: dashZielAuto, lz: dashLapZaehler, aw: raceAwaitingMove,
+                tiles: currentTrackTiles, sc: sectorCount, ev: raceLapEvents.slice(), dt: dashLapTimes.slice(),
+                status: $('race-status') ? $('race-status').textContent : '' };
+    const echt = { fin: finishRace, sp: speakLap, ch: playLapChime };
+    let jetzt = uhr.call(Date), ende = 0, endeBeiRunden = null;
+    try {
+      Date.now = () => jetzt;
+      finishRace = () => { ende++; endeBeiRunden = raceLapTimes.length; raceState = 'finished'; };
+      speakLap = () => {}; playLapChime = () => {};
+      if (sw && !sw.checked) { sw.checked = true; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+      const auto = { device: { id: 'st-ende', name: 'Pruefwagen' }, role: 'player', rx: null, tx: null,
+                     tileCode: 0xff, tileCount: null, lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null };
+      playerCar = auto;
+      raceMode = 'laps'; raceLimit = 3; raceState = 'racing'; raceFormationLap = false; raceAwaitingMove = false;
+      raceLapTimes = []; raceLapStart = jetzt; dashLapStart = jetzt; sectorCount = 1; sectorReset();
+      dashMarkerPrev = false; dashLastActedCode = null; dashLastActedAt = 0; dashPendingCode = null;
+      dashPendingSeen = 0; dashLastTileCounter = null; dashZielAuto = null; dashLapZaehler = null;
+      currentTrackTiles = [{ type: TILE_TYPE.START }, { type: TILE_TYPE.STRAIGHT }, { type: TILE_TYPE.STRAIGHT }];
+      const START = [0x01, 0x0a].find((c) => isStartCode(c));
+      const paket = (z, c, ziel) => { const a = new Array(19).fill(0); a[11] = z; a[12] = c; a[14] = 0x82; a[15] = ziel ? 0x08 : 0; return a; };
+      const sende = (z, c, ziel) => { for (let i = 0; i < 3; i++) { OMEGA_TEST.feedNotify(paket(z, c, ziel), { car: auto }); jetzt += 15; } };
+      // Das Auto steht hinter der Linie auf einer Geraden (wie nach der Aufstellung).
+      let z = 10;
+      sende(z, 0x02, false);
+      dashLapZaehler = dashLastTileCounter;          // wie raceClockTick beim Losfahren
+      for (let runde = 1; runde <= 4 && !ende; runde++) {
+        jetzt += 1500; sende(++z, 0x02, false);
+        jetzt += 1500; sende(++z, START, false);     // Barcode
+        jetzt += 455;  sende(z, START, true);        // Ziellinie: Runde
+        jetzt += 600;  sende(z, START, false);       // Bit faellt
+      }
+      if (ende !== 1) f.push('kein Rennende (Runden ' + raceLapTimes.length + ', Zustand ' + raceState + ')');
+      else if (endeBeiRunden !== 3) f.push('Ende erst nach ' + endeBeiRunden + ' Runden');
+    } finally {
+      Date.now = uhr;
+      finishRace = echt.fin; speakLap = echt.sp; playLapChime = echt.ch;
+      raceState = g.state; raceLapTimes = g.laps; raceLapStart = g.start; dashLapStart = g.dash;
+      raceFormationLap = g.form; playerCar = g.sp; raceMode = g.rm; raceLimit = g.lim;
+      dashMarkerPrev = g.mp; dashLastActedCode = g.ac; dashLastActedAt = g.aa; dashPendingCode = g.pc;
+      dashPendingSeen = g.ps; dashLastTileCounter = g.lc; dashZielGesehen = g.zg; dashZielAt = g.za;
+      dashStartLapAt = g.sa; dashZielAuto = g.zauto; dashLapZaehler = g.lz; raceAwaitingMove = g.aw;
+      currentTrackTiles = g.tiles; sectorCount = g.sc; raceLapEvents = g.ev; dashLapTimes = g.dt; sectorReset();
+      if ($('race-status')) $('race-status').textContent = g.status;
+      if (sw && sw.checked !== g.rail) { sw.checked = g.rail; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Ende genau nach der 3. Ziellinie' };
+  });
+
   stAdd('Woerterbuch ohne doppelte Schluessel', () => {
     const imObjekt = Object.keys(I18N_EN).length;
     // Die Quelle steht im eigenen <script>. Sie zu lesen ist billiger und ehrlicher als die
@@ -79640,11 +79744,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const rows = $('st-rows');
     $('st-run').disabled = true;
     $('st-status').textContent = 'laeuft …';
-    rows.innerHTML = ST_TESTS.map(t =>
+    // ?st=Teilstring laesst nur passende Tests laufen (v0.9.43, zum gezielten Nachpruefen).
+    let nur = null;
+    try { nur = new URLSearchParams(location.search).get('st'); } catch (e) { nur = null; }
+    const liste = nur ? ST_TESTS.filter((x) => x.name.toLowerCase().indexOf(nur.toLowerCase()) >= 0) : ST_TESTS;
+    rows.innerHTML = liste.map(t =>
       '<tr class="st-run"><td>' + t.name + '</td><td>…</td><td></td></tr>').join('');
     let gut = 0, schlecht = 0, offen = 0;
-    for (let i = 0; i < ST_TESTS.length; i++) {
-      const t = ST_TESTS[i];
+    for (let i = 0; i < liste.length; i++) {
+      const t = liste[i];
       let r;
       try {
         r = await t.fn();

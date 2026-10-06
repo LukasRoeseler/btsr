@@ -420,6 +420,11 @@
     rdPadStart = true;
     $('raum-ds').hidden = false;
     document.body.classList.add('raum-ds-offen');
+    // v0.9.43 wie der Editor: echtes Vollbild, wenn der Browser es erlaubt.
+    try {
+      const el = document.documentElement;
+      if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(() => {});
+    } catch (e) { /* abgelehnt: das Raster gilt trotzdem */ }
     rdLeiste();
     rdZeichnen();
   }
@@ -428,6 +433,10 @@
     if (!el || el.hidden) return;
     el.hidden = true;
     document.body.classList.remove('raum-ds-offen');
+    try {
+      if (document.fullscreenElement && document.exitFullscreen
+          && !document.body.classList.contains('track-fs')) document.exitFullscreen().catch(() => {});
+    } catch (e) { /* schon draussen */ }
     rd.anker = null; rd.malt = false;
     raumMiniZeichnen();
     if (typeof refreshTrackPreview === 'function') refreshTrackPreview();

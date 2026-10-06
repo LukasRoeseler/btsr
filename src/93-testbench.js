@@ -2749,7 +2749,7 @@
         ovDiagrammMalen();
         ovSektorenMalen();
         const dia = $('ov-diagramm'), sek = $('ov-sektoren');
-        return { punkte: dia ? dia.querySelectorAll('circle').length : -1,
+        return { punkte: dia ? dia.querySelectorAll('circle:not(.ov-dia-saum)').length : -1,
                  pfeile: dia ? dia.querySelectorAll('path').length : -1,
                  gitter: dia ? dia.querySelectorAll('.ov-dia-gitter').length : -1,
                  spalten: sek ? sek.querySelectorAll('th').length : -1 };

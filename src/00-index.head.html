@@ -3073,28 +3073,28 @@
   .raum-ds-zeile { display: flex; align-items: center; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
   .raum-mini { width: 150px; height: 90px; cursor: pointer; }
   .raum-mini svg { width: 100%; height: 100%; display: block; }
-  .raum-ds { position: fixed; inset: 0; z-index: 9000; background: var(--bg); display: flex;
-    gap: 10px; padding: 10px; box-sizing: border-box; }
+  /* v0.9.43: wie das Editor-Vollbild - drei Rasterzeilen, die Flaeche in der mittleren mit
+     min-height 0, damit sie nie ueber Leiste oder Fuss waechst; der Menuekopf ist weg. */
+  .raum-ds { position: fixed; inset: 0; z-index: 9000; display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto; gap: 6px; padding: 8px; box-sizing: border-box;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    background: linear-gradient(rgba(6,8,12,.9), rgba(6,8,12,.9)), url(img/asphalt-bg.jpg) center / cover, var(--bg); }
   .raum-ds[hidden] { display: none; }
-  .raum-ds-flaeche { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: center;
-    touch-action: none; user-select: none; }
-  .raum-ds-flaeche svg { width: 100%; height: 100%; display: block; cursor: crosshair; }
-  .raum-ds-leiste { flex: 0 0 232px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; }
-  .raum-ds-leiste h2 { margin: 0; }
-  .raum-ds-gruppe { display: flex; gap: 4px; }
-  .raum-ds-gruppe button { flex: 1 1 0; padding: 7px 4px; font-size: 12.5px; min-height: 32px; }
+  body.raum-ds-offen header#k-kopf { display: none !important; }
+  .raum-ds-leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+  .raum-ds-titel { font-weight: 800; font-size: 13px; letter-spacing: .05em; text-transform: uppercase; }
+  .raum-ds-gruppe { display: flex; gap: 3px; }
+  .raum-ds-gruppe button { padding: 6px 9px; font-size: 12.5px; min-height: 32px; }
   .raum-ds-gruppe button.an { background: rgba(0,163,224,.28); border-color: var(--info); color: var(--ink); }
-  .raum-ds-vorlagen button { font-size: 15px; font-weight: 700; }
-  .raum-ds-info { margin: 2px 0 0; font-size: 12px; }
+  .raum-ds-vorlagen button { font-size: 15px; font-weight: 700; min-width: 34px; }
+  .raum-ds-fertig { margin-left: auto; min-height: 34px; padding: 6px 16px; font-weight: 700; }
+  .raum-ds-flaeche { min-height: 0; min-width: 0; overflow: hidden; display: flex; align-items: center;
+    justify-content: center; touch-action: none; user-select: none; }
+  .raum-ds-flaeche svg { width: 100%; height: 100%; display: block; cursor: crosshair; }
+  .raum-ds-fuss { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; justify-content: space-between; }
+  .raum-ds-info { font-size: 12px; color: var(--ink-2); }
   .raum-ds-info.schlecht { color: var(--warn); }
-  .raum-ds-tasten { margin: 0; font-size: 10.5px; line-height: 1.45; }
-  .raum-ds-kopf { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-  .raum-ds-kopf h2 { font-size: 14px; line-height: 1.2; }
-  .raum-ds-fertig { flex: 0 0 auto; min-height: 32px; padding: 6px 12px; }
-  @media (max-width: 640px) and (orientation: portrait) {
-    .raum-ds { flex-direction: column; }
-    .raum-ds-leiste { flex: 0 0 auto; max-height: 45vh; }
-  }
+  .raum-ds-tasten { font-size: 10.5px; color: var(--muted); }
   /* HOCHFORMAT, schmal (Telefon im Browser): untereinander, mit Bildlauf. */
   @media (max-width: 760px) and (orientation: portrait) {
     header#k-kopf { grid-template-columns: 1fr auto; }
@@ -4435,7 +4435,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.42</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.43</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5550,6 +5550,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Rennende: Die Rennuhr startete erst bei 75 % der H&#246;chstgeschwindigkeit (die Schwelle &#8222;3 km/h&#8220; wurde mit dem Modelltempo verglichen) &#8211; wer das nie erreichte, fuhr Runden, die nicht z&#228;hlten, und das Rennen endete nie. Jetzt startet sie bei 3 km/h auf dem Tacho oder sp&#228;testens an der ersten Ziellinie; die Fr&#252;hstart-Erkennung hatte denselben Fehler. Raumgestalter wie der Editor: &#8222;Raumgestalter starten&#8220; &#246;ffnet das Vollbild, oben die Werkzeugleiste mit &#8222;Schlie&#223;en&#8220;, die Fl&#228;che in einer eigenen Zeile darunter, der Men&#252;kopf liegt nicht mehr &#252;ber den Kn&#246;pfen. Rundenzeiten-Diagramm: wei&#223;er Saum unter jeder Linie, damit auch ein schwarzes Auto sichtbar ist.</li>
         <li>Lenkung GT3, F1 und Realismus GT3: voller Einschlag ist wieder erreichbar. Seit dem neuen Lenkweg begrenzte das &#8222;Lenkansprechen&#8220; dieser Voreinstellungen den gr&#246;&#223;ten Einschlag (Realismus GT3 gemessen 19 von 45&#176; im Schritttempo, mit kalten Reifen 11&#176;); jetzt 3,0 wie Pro, und Realismus GT3 gleicht kalte Reifen mit Lenkkalibrierung 1,6 aus. Pro und Arcade unver&#228;ndert. Zufallsstrecke: Ladeanimation (Gerade, Kurve, Haarnadel) im Editor, die Suche l&#228;uft daf&#252;r in kleinen St&#252;cken. Mehrspieler: dieselbe Animation im Bereitschaftsschirm, solange auf die anderen gewartet wird.</li>
         <li>Rundenrennen enden jetzt mit der Zielrunde: Wer die eingestellte Rundenzahl f&#228;hrt, ist sofort im Ziel (Ende-Ton und Ergebnis); vorher endete ein 5-Runden-Rennen erst bei der &#220;berfahrt nach Runde 5, im Mehrspieler also scheinbar nie. Die Renn&#252;bersicht zeigt dich im Mehrspieler nicht mehr doppelt (Name und Auto). Derby: Auto 1 nimmt wieder Schaden (seitlich &#8722;20 %, vorn &#8722;10 %), vorher ging der Treffer ins Leere und nur der Controller r&#252;ttelte. Mehrspieler auf schwachen Handys: im Rennen fragt das Handy den Host nur noch alle 3 s ab, meldet Positionen f&#252;r Zuschauer alle 0,5 s und zeichnet die Ranglisten-Tabelle erst nach dem Rennen, damit der Steuertakt Luft hat.</li>
         <li>Raumdesigner (experimentell) unter Strecke &#8594; Meine Teile: den Raum in 10-cm-Feldern als Boden oder M&#246;bel malen, mit Pinsel (10/30/60 cm) oder Rechteck, Vorlagen Rechteck, L, U und Oval, R&#252;ckg&#228;ngig und &#8222;Strecke einpassen&#8220;. Geht mit Finger, Maus, Tastatur und Gamepad (Stick/Steuerkreuz bewegt, &#10005; malt, &#9633; M&#246;bel/Boden, &#9651; Pinsel/Rechteck, L1/R1 Gr&#246;&#223;e, &#9675; fertig). Zufallsstrecken passen jetzt wirklich hinein: gepr&#252;ft wird mit der vollen Bahnbreite plus 2 cm Abstand statt nur mit der Mittellinie, um M&#246;bel herum, und der Raum wird im Editor gleich richtig um die Strecke gelegt.</li>
@@ -11177,7 +11178,8 @@
       <!-- v0.9.39 BESTELLT: "Raumdesigner im Meine-Teile-Menue, mit dem ich auch andere Formen
            erstellen kann" (60b-raum.js). -->
       <div class="raum-ds-zeile">
-        <button id="raum-designer-auf" type="button">Raum gestalten <span class="wip-tag">experimentell</span></button>
+        <button id="raum-designer-auf" type="button" class="primary te-start">Raumgestalter starten</button>
+        <span class="wip-tag">experimentell</span>
         <div class="raum-mini" id="raum-mini" role="button" aria-label="Raum gestalten"></div>
       </div>
       <div class="teile-liste" id="teile-liste"></div>
@@ -11519,12 +11521,11 @@
        "erlaube mir zum Debuggen auch auf Starten zu drücken, wenn kein Auto verbunden ist". -->
   <!-- RAUMDESIGNER (v0.9.39, 60b-raum.js): Vollbild ueber allem. -->
   <div class="raum-ds" id="raum-ds" hidden>
-    <div class="raum-ds-flaeche" id="raum-ds-flaeche"></div>
+    <!-- v0.9.43 wie der Editor: oben die Leiste mit "Schliessen", darunter die Flaeche in
+         einer EIGENEN Rasterzeile, unten Info und Tasten. GEMELDET: "Aus dem Raum-Gestalter
+         komme ich nicht mehr raus ... das Layout liegt vor den Tasten." -->
     <div class="raum-ds-leiste">
-      <div class="raum-ds-kopf">
-        <h2>Raumdesigner <span class="wip-tag">experimentell</span></h2>
-        <button type="button" id="raum-ds-fertig" class="raum-ds-fertig">Fertig</button>
-      </div>
+      <span class="raum-ds-titel">Raumgestalter <span class="wip-tag">experimentell</span></span>
       <div class="raum-ds-gruppe">
         <button type="button" data-rd-modus="moebel">M&ouml;bel</button>
         <button type="button" data-rd-modus="boden">Boden</button>
@@ -11548,8 +11549,12 @@
         <button type="button" id="raum-ds-undo">R&uuml;ckg&auml;ngig</button>
         <button type="button" id="raum-ds-probe">Strecke einpassen</button>
       </div>
-      <p class="muted raum-ds-info" id="raum-ds-info"></p>
-      <p class="muted raum-ds-tasten">&#10005; malen &middot; &#9633; M&ouml;bel/Boden &middot; &#9651; Pinsel/Rechteck &middot; L1/R1 Gr&ouml;&szlig;e &middot; Select r&uuml;ckg&auml;ngig &middot; Start einpassen &middot; &#9675; fertig</p>
+      <button type="button" id="raum-ds-fertig" class="raum-ds-fertig">Schlie&szlig;en</button>
+    </div>
+    <div class="raum-ds-flaeche" id="raum-ds-flaeche"></div>
+    <div class="raum-ds-fuss">
+      <span class="raum-ds-info" id="raum-ds-info" data-i18n-skip></span>
+      <span class="raum-ds-tasten">&#10005; malen &middot; &#9633; M&ouml;bel/Boden &middot; &#9651; Pinsel/Rechteck &middot; L1/R1 Gr&ouml;&szlig;e &middot; Select r&uuml;ckg&auml;ngig &middot; Start einpassen &middot; &#9675; schlie&szlig;en</span>
     </div>
   </div>
   <div class="k-pause" id="k-frage" hidden>

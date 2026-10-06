@@ -423,7 +423,12 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   // 2") gibt es keine Reaktion, auf die zu warten waere - dieselbe Bedingung wie bei der
   // Zielflagge weiter oben (finishRace() ohne Fahrer im Feld).
   function raceMoveErkannt() {
-    const SCHWELLE_KMH = 3;   // etwas ueber dem Standrauschen des Sensors
+    // v0.9.43: 3 ANGEZEIGTE km/h. Hier stand 3 - verglichen mit speedKmh, und das ist das
+    // MODELLTEMPO (Vollgas 4,0). Die Rennuhr startete also erst bei 75 % der
+    // Hoechstgeschwindigkeit (rund 220 km/h auf dem Tacho); wer das auf einer kurzen Strecke
+    // nie erreichte, fuhr Runden, die nicht zaehlten - und das Rennen endete nie. GEMELDET:
+    // "Ende des Rennens wird immer noch nicht getriggert ... 3 Runden".
+    const SCHWELLE_KMH = 3 / REAL_SCALE;
     const fahrer = (c) => c.role === 'player' || (zweiSpieler && /^player[2-9]$/.test(c.role));
     if (!garage.some(fahrer)) return true;
     if (playerCar && Math.abs(physEngine.state.speedKmh) > SCHWELLE_KMH) return true;
@@ -437,7 +442,9 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   // Faehrt ein Auto waehrend des Countdowns an (dieselbe Schwelle wie raceMoveErkannt), ist es
   // ein Fruehstart. Die Ampel laeuft weiter. Nach Gruen, sobald das Auto faehrt, gibt es 2 s
   // kein Gas und eine Bremsung (50-drive.js, physicsStep). Je Auto getrennt.
-  const FRUEHSTART_KMH = 3, FRUEHSTART_STRAFE_MS = 2000, FRUEHSTART_BREMSE = 0.6;
+  // v0.9.43: 3 angezeigte km/h im Modelltempo (siehe raceMoveErkannt) - vorher 3 Modell-km/h,
+  // also 75 % der Hoechstgeschwindigkeit, und damit wurde praktisch kein Fruehstart erkannt.
+  const FRUEHSTART_KMH = 3 / REAL_SCALE, FRUEHSTART_STRAFE_MS = 2000, FRUEHSTART_BREMSE = 0.6;
   const fruehstart = { 1: { frueh: false, warten: false, bis: 0 }, 2: { frueh: false, warten: false, bis: 0 },
                       3: { frueh: false, warten: false, bis: 0 } };
   const FRUEH_SPIELER = [1, 2, 3];
@@ -2909,6 +2916,14 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
 
   function playerLapCrossed() {
     const now = Date.now();
+    // v0.9.43: Wartet die Rennuhr noch auf die erste Bewegung, BEWEIST eine Ueberfahrt die
+    // Bewegung - die Uhr startet hier, und diese Ueberfahrt ist der Anfang der ersten Runde.
+    if ((raceState === 'racing' || raceState === 'finishing') && raceAwaitingMove && !raceFormationLap) {
+      raceAwaitingMove = false;
+      raceLapStart = now; raceStartedAt = now;
+      if (dashLapStart !== null) dashLapStart = now;
+      return false;
+    }
     // Sektoren zuerst: war das nur eine Sektorgrenze, ist die Runde nicht vorbei und alles
     // Weitere darf nicht laufen - weder die Rundenzeit noch der Ton noch das Rennende.
     if (!sectorCrossed(now)) return false;
@@ -6470,6 +6485,20 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
          + ' class="ov-dia-text">' + (i + 1) + '</text>';
     }
     let linien = '';
+    // v0.9.43 GEMELDET: "In den Linienplots sieht man das Auto mit der schwarzen Farbe nicht."
+    // Erst fuer ALLE Reihen ein weisser, halbdurchsichtiger Saum (wie im Positionsdiagramm),
+    // dann die Linien darueber - sonst deckte ein spaeterer Saum eine fruehere Linie zu.
+    const SAUM = 'rgba(255,255,255,0.55)';
+    for (const r of reihen) {
+      const pts = r.werte.map((v, i) => [sx(i), sy(v)]);
+      if (pts.length > 1) {
+        linien += '<polyline fill="none" stroke="' + SAUM + '" stroke-width="4" stroke-linejoin="round" '
+          + 'stroke-linecap="round" points="' + pts.map((q) => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' ') + '"/>';
+      }
+      for (const q of pts) {
+        linien += '<circle class="ov-dia-saum" cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="3.4" fill="' + SAUM + '"/>';
+      }
+    }
     for (const r of reihen) {
       const pts = r.werte.map((v, i) => [sx(i), sy(v), v > y1]);
       linien += '<polyline fill="none" stroke="' + r.farbe + '" stroke-width="1.6" points="'

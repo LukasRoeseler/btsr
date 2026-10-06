@@ -17383,6 +17383,66 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Rennen 3 s, sonst 1,5 s' };
   });
 
+  // v0.9.43 GEMELDET: "Ende des Rennens wird bei 0.9.41 immer noch nicht getriggert ... 3 Runden."
+  // Ueber ECHTE Pakete wie ein Auto auf der Schiene (Barcode, Ziellinie, Geraden), nicht
+  // ueber playerLapCrossed() direkt - genau der Weg, der beim Nutzer nicht ankam.
+  stAdd('Rundenrennen ueber die Schiene: 3 Runden, dann Ende', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.feedNotify) return { skip: true, mass: 'feedNotify nicht vorhanden' };
+    const f = [];
+    const sw = $('setting-ontrack');
+    const uhr = Date.now;
+    const g = { state: raceState, laps: raceLapTimes.slice(), start: raceLapStart, dash: dashLapStart,
+                form: raceFormationLap, rail: sw ? sw.checked : true, sp: playerCar, rm: raceMode, lim: raceLimit,
+                mp: dashMarkerPrev, ac: dashLastActedCode, aa: dashLastActedAt, pc: dashPendingCode,
+                ps: dashPendingSeen, lc: dashLastTileCounter, zg: dashZielGesehen, za: dashZielAt,
+                sa: dashStartLapAt, zauto: dashZielAuto, lz: dashLapZaehler, aw: raceAwaitingMove,
+                tiles: currentTrackTiles, sc: sectorCount, ev: raceLapEvents.slice(), dt: dashLapTimes.slice(),
+                status: $('race-status') ? $('race-status').textContent : '' };
+    const echt = { fin: finishRace, sp: speakLap, ch: playLapChime };
+    let jetzt = uhr.call(Date), ende = 0, endeBeiRunden = null;
+    try {
+      Date.now = () => jetzt;
+      finishRace = () => { ende++; endeBeiRunden = raceLapTimes.length; raceState = 'finished'; };
+      speakLap = () => {}; playLapChime = () => {};
+      if (sw && !sw.checked) { sw.checked = true; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+      const auto = { device: { id: 'st-ende', name: 'Pruefwagen' }, role: 'player', rx: null, tx: null,
+                     tileCode: 0xff, tileCount: null, lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null };
+      playerCar = auto;
+      raceMode = 'laps'; raceLimit = 3; raceState = 'racing'; raceFormationLap = false; raceAwaitingMove = false;
+      raceLapTimes = []; raceLapStart = jetzt; dashLapStart = jetzt; sectorCount = 1; sectorReset();
+      dashMarkerPrev = false; dashLastActedCode = null; dashLastActedAt = 0; dashPendingCode = null;
+      dashPendingSeen = 0; dashLastTileCounter = null; dashZielAuto = null; dashLapZaehler = null;
+      currentTrackTiles = [{ type: TILE_TYPE.START }, { type: TILE_TYPE.STRAIGHT }, { type: TILE_TYPE.STRAIGHT }];
+      const START = [0x01, 0x0a].find((c) => isStartCode(c));
+      const paket = (z, c, ziel) => { const a = new Array(19).fill(0); a[11] = z; a[12] = c; a[14] = 0x82; a[15] = ziel ? 0x08 : 0; return a; };
+      const sende = (z, c, ziel) => { for (let i = 0; i < 3; i++) { OMEGA_TEST.feedNotify(paket(z, c, ziel), { car: auto }); jetzt += 15; } };
+      // Das Auto steht hinter der Linie auf einer Geraden (wie nach der Aufstellung).
+      let z = 10;
+      sende(z, 0x02, false);
+      dashLapZaehler = dashLastTileCounter;          // wie raceClockTick beim Losfahren
+      for (let runde = 1; runde <= 4 && !ende; runde++) {
+        jetzt += 1500; sende(++z, 0x02, false);
+        jetzt += 1500; sende(++z, START, false);     // Barcode
+        jetzt += 455;  sende(z, START, true);        // Ziellinie: Runde
+        jetzt += 600;  sende(z, START, false);       // Bit faellt
+      }
+      if (ende !== 1) f.push('kein Rennende (Runden ' + raceLapTimes.length + ', Zustand ' + raceState + ')');
+      else if (endeBeiRunden !== 3) f.push('Ende erst nach ' + endeBeiRunden + ' Runden');
+    } finally {
+      Date.now = uhr;
+      finishRace = echt.fin; speakLap = echt.sp; playLapChime = echt.ch;
+      raceState = g.state; raceLapTimes = g.laps; raceLapStart = g.start; dashLapStart = g.dash;
+      raceFormationLap = g.form; playerCar = g.sp; raceMode = g.rm; raceLimit = g.lim;
+      dashMarkerPrev = g.mp; dashLastActedCode = g.ac; dashLastActedAt = g.aa; dashPendingCode = g.pc;
+      dashPendingSeen = g.ps; dashLastTileCounter = g.lc; dashZielGesehen = g.zg; dashZielAt = g.za;
+      dashStartLapAt = g.sa; dashZielAuto = g.zauto; dashLapZaehler = g.lz; raceAwaitingMove = g.aw;
+      currentTrackTiles = g.tiles; sectorCount = g.sc; raceLapEvents = g.ev; dashLapTimes = g.dt; sectorReset();
+      if ($('race-status')) $('race-status').textContent = g.status;
+      if (sw && sw.checked !== g.rail) { sw.checked = g.rail; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Ende genau nach der 3. Ziellinie' };
+  });
+
   stAdd('Woerterbuch ohne doppelte Schluessel', () => {
     const imObjekt = Object.keys(I18N_EN).length;
     // Die Quelle steht im eigenen <script>. Sie zu lesen ist billiger und ehrlicher als die
@@ -17437,11 +17497,15 @@
     const rows = $('st-rows');
     $('st-run').disabled = true;
     $('st-status').textContent = 'laeuft …';
-    rows.innerHTML = ST_TESTS.map(t =>
+    // ?st=Teilstring laesst nur passende Tests laufen (v0.9.43, zum gezielten Nachpruefen).
+    let nur = null;
+    try { nur = new URLSearchParams(location.search).get('st'); } catch (e) { nur = null; }
+    const liste = nur ? ST_TESTS.filter((x) => x.name.toLowerCase().indexOf(nur.toLowerCase()) >= 0) : ST_TESTS;
+    rows.innerHTML = liste.map(t =>
       '<tr class="st-run"><td>' + t.name + '</td><td>…</td><td></td></tr>').join('');
     let gut = 0, schlecht = 0, offen = 0;
-    for (let i = 0; i < ST_TESTS.length; i++) {
-      const t = ST_TESTS[i];
+    for (let i = 0; i < liste.length; i++) {
+      const t = liste[i];
       let r;
       try {
         r = await t.fn();
