@@ -1073,3 +1073,24 @@
   }
   setTimeout(konsoleEinrichten, 0);
 
+  // ---- GROESSE DER REITERLEISTEN (v0.9.37) ----------------------------------------------
+  // Zwei Regler unter Optionen > Allgemein; der Wert ist ein Zoom auf die Reiterknoepfe (Schrift,
+  // Abstaende und Hoehe zusammen). Gespeichert wird er wie jeder Regler (98b-sicherung.js).
+  (function reiterGroesse() {
+    const setzen = (id, varName) => {
+      const el = $(id);
+      if (!el) return;
+      const v = Math.max(0.6, Math.min(1.8, parseFloat(el.value) || 1));
+      document.documentElement.style.setProperty(varName, String(v));
+      if ($(id + '-val')) $(id + '-val').textContent = Math.round(v * 100) + '%';
+    };
+    [['setting-reiter1', '--reiter1'], ['setting-reiter2', '--reiter2']].forEach(([id, v]) => {
+      const el = $(id);
+      if (!el) return;
+      ['input', 'change'].forEach((art) => el.addEventListener(art, () => setzen(id, v)));
+      setzen(id, v);
+      // Nach dem Wiederherstellen der gespeicherten Regler (98b) noch einmal.
+      setTimeout(() => setzen(id, v), 300);
+    });
+  })();
+

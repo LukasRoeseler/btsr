@@ -1377,6 +1377,9 @@
   /* Rammstrafe (v0.9.21): rot auf dem Boxenknopf und im Ergebnis. */
   .gt3-act.strafe { color: #ff5252; box-shadow: inset 0 0 0 2px #ff5252; }
   .rammer-tag { color: #ff5252; font-weight: 700; letter-spacing: .04em; margin-left: .4em; }
+  /* Groesse der Reiterleisten (v0.9.37): ein Faktor je Leiste, 1 = bisher. */
+  #k-leiste .k-reiter button { zoom: var(--reiter1, 1); }
+  .k-leiste2 .k-reiter button { zoom: var(--reiter2, 1); }
   .ch-ausgang { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 4px 0 8px;
     padding: 8px 10px; border-radius: 8px; background: rgba(255, 176, 46, .14); color: #ffcf7a; font-size: 13px; }
   /* Challenges: Spiegel-Knopf unter der Karte (v0.9.33) */
@@ -4387,7 +4390,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.36</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.38</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5502,6 +5505,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Rundenzeit an der Ziellinie: Auf der Schiene misst und sagt Spieler 1 die Runde jetzt an der Ziellinie an, die das Auto selbst meldet (Byte 15, etwa 35 cm nach dem Barcode, aus den btsnoop-Mitschnitten), nicht mehr am Barcode; der Barcode bleibt R&#252;ckfall f&#252;r Autos ohne diese Meldung. Tastenbelegung: Eine neue Zuweisung auf eine schon belegte Taste tauscht jetzt die beiden Aktionen, statt beim n&#228;chsten Start zur&#252;ckzufallen, und eine alte Aufr&#228;umregel setzt eigene Tasten (z. B. Rennstart auf Kreuz) nicht mehr bei jedem Laden zur&#252;ck. Optionen &#8594; Allgemein: zwei Regler f&#252;r die Gr&#246;&#223;e der Haupttabs und der Unter-Tabs (60&#8211;180 %, 100 % wie bisher).</li>
         <li>Crash-Richtung jetzt gemessen statt gelernt: Beim Beschleunigen wandert der Gyro-Punkt im Cockpit nach vorn, also hei&#223;t Byte 1 f&#228;llt &#8222;von hinten geschoben&#8220;, Byte 1 steigt &#8222;vorne eingeschlagen&#8220;, &#252;berwiegendes Byte 3 &#8222;von der Seite&#8220; (45&#176; Toleranz). &#8222;Nur der Rammer bremst&#8220; (fr&#252;her &#8222;Kein Bremsen bei Auffahrunfall&#8220;): Gebremst wird nur, wer vorne einschl&#228;gt; wer von hinten oder von der Seite getroffen wird, f&#228;hrt weiter. Rammer-Strafe: Rammer ist, wer vorne eingeschlagen ist, w&#228;hrend der andere von hinten oder der Seite getroffen wurde (frontal z&#228;hlt nicht); das gilt auch f&#252;r Ghosts. Im Derby kostet vorn einschlagen 10 %, getroffen werden 20 %.</li>
         <li>Bestenliste: Kann eine Zeit nicht hochgeladen werden, kommt ein Hinweis mit Strecke und Grund (z. B. &#8222;keine Verbindung zum Server&#8220; oder die Ablehnung durch die Bestenliste), nie mitten im Rennen und nie &#252;ber einem anderen Dialog. Auf der Challenge-Seite steht, wie viele Zeiten noch warten, mit &#8222;Jetzt senden&#8220;. Hoch- und Herunterladen der Bestenliste laufen nur, wenn gerade kein Rennen l&#228;uft, damit das Steuern nicht verz&#246;gert wird.</li>
         <li>Bestenliste: Die Listen liegen im Zwischenspeicher und erscheinen sofort, beim App-Start und alle 10 Minuten wird im Hintergrund nachgeladen; eine Strecke ohne Zeiten zeigt das sofort, statt lange zu laden. Hochgeladene Zeiten bleiben in einer Warteschlange, bis das Sheet sie best&#228;tigt, und eine Ablehnung wird mit Grund gemeldet. W&#246;chentliche Challenges: Die Resttage stehen oben neben &#8222;Woche X/20&#8220;, unter jeder Strecke stehen Spieler und Ergebnisse. Spiegeln ist jetzt ein Knopf mit Symbol unter der Karte. FAHREN, Strecke: Druckvorlagen nur bei FREI, Editor nur bei AUF DER BAHN. Wischen wechselt den Reiter nicht mehr, wenn die Geste am Bildschirmrand beginnt (Systemleiste).</li>
@@ -8833,6 +8837,24 @@
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Allgemein</h2>
 <div class="opt-head">Allgemein</div>
+      <!-- v0.9.37, BESTELLT: "Slider fuer Groesse der Haupttabs und der Sub-Tabs, Standard die
+           aktuellen Werte, aber beide noch groesser und kleiner erlauben." -->
+      <div class="opt-row"><div class="opt-label">Größe der Haupttabs<small>FAHREN, CHALLENGES,
+          WLAN MEHRSPIELER, OPTIONEN. 100&nbsp;% ist die bisherige Größe.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-reiter1" min="0.6" max="1.8" step="0.1" value="1" data-preset-skip>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-reiter1-val">100%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Größe der Unter-Tabs<small>Die zweite Leiste je
+          Menü, z.&nbsp;B. Allgemein, Fahrgefühl, Ton in den Optionen. 100&nbsp;% ist die bisherige Größe.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-reiter2" min="0.6" max="1.8" step="0.1" value="1" data-preset-skip>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-reiter2-val">100%</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Cockpit-Ansicht<small>Nur das Aussehen des
           Cockpit-Schirms &ndash; Anzeigen, Tasten und Physik bleiben, wie sie sind.
           &bdquo;GT3&ldquo; ist die Vorgabe: Carbon und wei&szlig;e Schrift auf
@@ -12362,6 +12384,10 @@
     "Spieler 1": "Player 1",
     "Spieler 2": "Player 2",
     "Spieler 3": "Player 3",
+    "Größe der Haupttabs": "Size of the main tabs",
+    "FAHREN, CHALLENGES, WLAN MEHRSPIELER, OPTIONEN. 100 % ist die bisherige Größe.": "DRIVE, CHALLENGES, WIFI MULTIPLAYER, OPTIONS. 100 % is the previous size.",
+    "Größe der Unter-Tabs": "Size of the sub-tabs",
+    "Die zweite Leiste je Menü, z. B. Allgemein, Fahrgefühl, Ton in den Optionen. 100 % ist die bisherige Größe.": "The second bar of each menu, e.g. General, Driving feel, Sound in the options. 100 % is the previous size.",
     "Nur der Rammer bremst": "Only the rammer brakes",
     "Gilt, wenn „Bremsen bei Crash“ an ist: Gebremst wird nur, wer vorne einschlägt (der Auffahrende oder ein Auto an der Wand). Wer von hinten oder von der Seite getroffen wird, fährt weiter. Die Richtung kommt aus dem Bewegungssensor, mit 45° Toleranz.": "Applies when “Braking on crash” is on: only a car that hits with its front is braked (the one running into another, or a car hitting the wall). A car hit from behind or from the side keeps going. The direction comes from the motion sensor, with 45° tolerance.",
     "SEITLICH GETROFFEN": "HIT FROM THE SIDE",
@@ -12720,6 +12746,7 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Rundenzeit an der Ziellinie: Auf der Schiene misst und sagt Spieler 1 die Runde jetzt an der Ziellinie an, die das Auto selbst meldet (Byte 15, etwa 35 cm nach dem Barcode, aus den btsnoop-Mitschnitten), nicht mehr am Barcode; der Barcode bleibt Rückfall für Autos ohne diese Meldung. Tastenbelegung: Eine neue Zuweisung auf eine schon belegte Taste tauscht jetzt die beiden Aktionen, statt beim nächsten Start zurückzufallen, und eine alte Aufräumregel setzt eigene Tasten (z. B. Rennstart auf Kreuz) nicht mehr bei jedem Laden zurück. Optionen → Allgemein: zwei Regler für die Größe der Haupttabs und der Unter-Tabs (60–180 %, 100 % wie bisher).": "Lap time at the finish line: on the rail, player 1 now times and announces the lap at the finish line that the car reports itself (byte 15, about 35 cm after the barcode, from the btsnoop captures), no longer at the barcode; the barcode remains the fallback for cars without this report. Button mapping: a new assignment to a button that is already taken now swaps the two actions instead of reverting on the next start, and an old clean-up rule no longer resets your own buttons (e.g. race start on Cross) on every load. Options → General: two sliders for the size of the main tabs and the sub-tabs (60–180 %, 100 % as before).",
     "Crash-Richtung jetzt gemessen statt gelernt: Beim Beschleunigen wandert der Gyro-Punkt im Cockpit nach vorn, also heißt Byte 1 fällt „von hinten geschoben“, Byte 1 steigt „vorne eingeschlagen“, überwiegendes Byte 3 „von der Seite“ (45° Toleranz). „Nur der Rammer bremst“ (früher „Kein Bremsen bei Auffahrunfall“): Gebremst wird nur, wer vorne einschlägt; wer von hinten oder von der Seite getroffen wird, fährt weiter. Rammer-Strafe: Rammer ist, wer vorne eingeschlagen ist, während der andere von hinten oder der Seite getroffen wurde (frontal zählt nicht); das gilt auch für Ghosts. Im Derby kostet vorn einschlagen 10 %, getroffen werden 20 %.": "Crash direction is now measured instead of learned: when accelerating, the gyro dot in the cockpit moves forward, so byte 1 falling means “pushed from behind”, byte 1 rising means “hit with the front”, and byte 3 dominating means “from the side” (45° tolerance). “Only the rammer brakes” (formerly “No braking when rear-ended”): only a car that hits with its front is braked; a car hit from behind or from the side keeps going. Ramming penalty: the rammer is the car that hit with its front while the other was hit from behind or the side (head-on does not count); this applies to ghosts too. In derby, hitting with the front costs 10 %, being hit costs 20 %.",
     "Bestenliste: Kann eine Zeit nicht hochgeladen werden, kommt ein Hinweis mit Strecke und Grund (z. B. „keine Verbindung zum Server“ oder die Ablehnung durch die Bestenliste), nie mitten im Rennen und nie über einem anderen Dialog. Auf der Challenge-Seite steht, wie viele Zeiten noch warten, mit „Jetzt senden“. Hoch- und Herunterladen der Bestenliste laufen nur, wenn gerade kein Rennen läuft, damit das Steuern nicht verzögert wird.": "Leaderboard: if a time cannot be uploaded, a notice shows the track and the reason (e.g. “no connection to the server” or a rejection by the leaderboard), never in the middle of a race and never over another dialog. The challenge page shows how many times are still waiting, with “Send now”. Leaderboard uploads and downloads only run when no race is in progress, so steering is not delayed.",
     "Bestenliste: Die Listen liegen im Zwischenspeicher und erscheinen sofort, beim App-Start und alle 10 Minuten wird im Hintergrund nachgeladen; eine Strecke ohne Zeiten zeigt das sofort, statt lange zu laden. Hochgeladene Zeiten bleiben in einer Warteschlange, bis das Sheet sie bestätigt, und eine Ablehnung wird mit Grund gemeldet. Wöchentliche Challenges: Die Resttage stehen oben neben „Woche X/20“, unter jeder Strecke stehen Spieler und Ergebnisse. Spiegeln ist jetzt ein Knopf mit Symbol unter der Karte. FAHREN, Strecke: Druckvorlagen nur bei FREI, Editor nur bei AUF DER BAHN. Wischen wechselt den Reiter nicht mehr, wenn die Geste am Bildschirmrand beginnt (Systemleiste).": "Leaderboard: lists are cached and appear immediately; they are refreshed in the background at app start and every 10 minutes, and a track without times shows that right away instead of loading for a long time. Uploaded times stay in a queue until the sheet confirms them, and a rejection is reported with its reason. Weekly challenges: the remaining days appear at the top next to “Week X/20”, and players and results appear under each track. Mirroring is now an icon button under the map. DRIVE, track: print templates only for FREE, the editor only for ON THE TRACK. Swiping no longer switches tabs when the gesture starts at the screen edge (system bar).",
@@ -24318,6 +24345,27 @@
   }
   setTimeout(konsoleEinrichten, 0);
 
+  // ---- GROESSE DER REITERLEISTEN (v0.9.37) ----------------------------------------------
+  // Zwei Regler unter Optionen > Allgemein; der Wert ist ein Zoom auf die Reiterknoepfe (Schrift,
+  // Abstaende und Hoehe zusammen). Gespeichert wird er wie jeder Regler (98b-sicherung.js).
+  (function reiterGroesse() {
+    const setzen = (id, varName) => {
+      const el = $(id);
+      if (!el) return;
+      const v = Math.max(0.6, Math.min(1.8, parseFloat(el.value) || 1));
+      document.documentElement.style.setProperty(varName, String(v));
+      if ($(id + '-val')) $(id + '-val').textContent = Math.round(v * 100) + '%';
+    };
+    [['setting-reiter1', '--reiter1'], ['setting-reiter2', '--reiter2']].forEach(([id, v]) => {
+      const el = $(id);
+      if (!el) return;
+      ['input', 'change'].forEach((art) => el.addEventListener(art, () => setzen(id, v)));
+      setzen(id, v);
+      // Nach dem Wiederherstellen der gespeicherten Regler (98b) noch einmal.
+      setTimeout(() => setzen(id, v), 300);
+    });
+  })();
+
   // ============================ TUTORIAL (experimentell) ================================
   //
   // BESTELLT: "To the title screen, also add a tutorial button. When I click it, it leads me
@@ -30007,6 +30055,8 @@
   // Es gibt keinen zweiten Detektor in der App, und das ist Absicht.
 
   let dashOnMarker = false;   // byte 15 bit 3: the car is physically over a marker
+  // v0.9.37: Ziellinie auf der Schiene (siehe handleDashboardBytes).
+  let dashZielGesehen = false, dashZielAt = 0, dashStartLapAt = 0, dashZielAuto = null;
   // Vorheriger Stand des Musterkontakts, fuer die Flankenerkennung im Ausdruck-Modus.
   let dashMarkerPrev = false;
   // Debounce state for the tile code. See dashboardNotifyHandler for why both guards exist.
@@ -32464,11 +32514,10 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     // darunter schrieb in #dash-battery, ein Element der entfernten alten Karte.
     dashBattery = bytes[10];
 
-    // Byte 15 was read as "off track". The 2026-08-19 snoop logs disprove that: it is 0x08
-    // for exactly as long as the car sits on a printed marker (~1s at driving speed), in the
-    // same packet in which the crossing counter increments, in every capture. So the old
-    // warning lit up precisely when the car crossed start/finish. It is a marker-contact
-    // flag, and that is what it now says.
+    // Byte 15 was read as "off track". The 2026-08-19 snoop logs disprove that: on a PRINTED
+    // sheet it rises in the same packet as the start pattern. On the RAIL (logs 16.-21.08.)
+    // it rises at the finish line, ~455 ms after the barcode, and is then held ~1 s by a
+    // timer in the car - only the rising edge is a place (v0.9.37).
     const markerVorher = dashMarkerPrev;
     dashOnMarker = (bytes[15] & 0x08) !== 0;
     dashMarkerPrev = dashOnMarker;
@@ -32520,6 +32569,32 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       } else if (frei && code === pitMarkerCode) {
         dashLastActedCode = code; dashLastActedAt = jetzt;
         onPitMarkerCrossed();
+      }
+    }
+
+    // ---- DIE ZIELLINIE AUF DER SCHIENE (v0.9.37) ---------------------------------------
+    // BESTELLT: "Bei Start/Ziel gibt es (nicht am Anfang beim Barcode, sondern spaeter) eine
+    // Ziellinie. An der sollte Zeit gemessen und angesagt werden, nicht beim Barcode." Die
+    // btsnoop-Mitschnitte der Original-App (13.-21.08.) zeigen: das Auto meldet sie selbst -
+    // Byte 15 Bit 3 steigt im Mittel 455 ms nach dem Barcode (78-84 % des Startteils, rund
+    // 35 cm weiter) und haelt dann ~1 s. Nur die STEIGENDE Flanke ist ein Ort; das Fallen ist
+    // ein Zeitgeber. Ghosts und Spieler 2/3 zaehlen schon so (carRaceNotify); hier jetzt
+    // auch Spieler 1. Hat das Auto die Ziellinie einmal gemeldet, zaehlt der Barcode nicht
+    // mehr; bis dahin bleibt er der Rueckfall (Autos, die das Bit nie melden).
+    if (dashZielAuto !== playerCar) { dashZielAuto = playerCar; dashZielGesehen = false; dashZielAt = 0; }
+    if (trackMode !== 'off' && dashOnMarker && !markerVorher) {
+      const jetzt = Date.now();
+      const zaehlen = () => {
+        dashZielAt = jetzt;
+        if (!pitDoubleCheck(jetzt)) playerLapCrossed();
+      };
+      if (!dashZielGesehen) {
+        dashZielGesehen = true;
+        log('Ziellinie: das Auto meldet sie selbst (Byte 15) - ab jetzt wird dort gemessen.', 'info');
+        // Hat der Barcode diese Ueberfahrt gerade schon gezaehlt, nicht doppelt.
+        if (jetzt - dashStartLapAt < 1500) dashZielAt = jetzt; else zaehlen();
+      } else if (jetzt - dashZielAt >= TILE_REPEAT_BLOCK_MS) {
+        zaehlen();
       }
     }
 
@@ -32662,7 +32737,10 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       // Die Doppelpruefung auch hier, und genau wie auf dem Ausdruck-Weg VOR dem Zaehlen:
       // bewegt sich der Kachelzaehler zwischen den beiden Kontakten eines Paares, laeuft
       // der zweite ueber DIESEN Weg.
+      // Auf der Schiene zaehlt die Ziellinie, sobald das Auto sie meldet (siehe oben).
+      if (trackMode !== 'off' && dashZielGesehen) return;
       if (pitDoubleCheck(nowCode)) return;
+      dashStartLapAt = nowCode;
       const gezaehlt = playerLapCrossed();
       if (gezaehlt) return;
     }
@@ -41002,49 +41080,30 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   // angefasst und das Tauschen ist gefahrlos. Wer selbst zugewiesen hat, behaelt seine
   // Zuweisung - den Speicherschluessel zu erhoehen waere billiger gewesen und haette jede
   // eigene Zuweisung weggeworfen.
+  // v0.9.37, GEMELDET: "Kann es sein, dass die Tastenbelegung nicht gespeichert wird?"
+  // Gespeichert wurde sie - aber diese Aufraeumregel lief bei JEDEM Laden und setzte einzelne
+  // Tasten zurueck, sobald sie auf einer ALTEN Vorgabe lagen: Rennstart auf Kreuz (0) oder
+  // Select (8), gelbe Flagge auf Quadrat (2), Streckenansicht auf 10. Wer sich genau so eine
+  // Taste gelegt hatte, fand nach dem Neustart wieder die Werksbelegung vor.
+  // Jetzt: eine Versionsmarke (__v) in jeder gespeicherten Belegung. Die beiden PAAR-Regeln
+  // (alte Werksbelegungen aus der Zeit vor v0.5) greifen nur bei einer Belegung ohne Marke,
+  // also hoechstens einmal; die Einzeltasten-Regeln entfallen ganz - sie trafen seit
+  // Wochen nur noch eigene Wahl.
+  const BINDINGS_V = 2;
   function migrateBindings(b) {
+    if (b && b.__v >= BINDINGS_V) return b;
     const ist = (x, i) => x && x.type === 'button' && x.index === i;
     if (ist(b.pitstop, 4) && ist(b.trackview, 9)) {
       b.pitstop = { ...DEFAULT_BINDINGS.pitstop };
       b.trackview = { ...DEFAULT_BINDINGS.trackview };
       b.__migrated = true;
     }
-    // v0.5: LB und RB werden Leseart und Getriebe. Verschoben wird nur, wenn Rennstart und
-    // Streckenansicht noch genau auf den ALTEN Vorgaben liegen (RB=5 und LB=4) - dann hat
-    // sie niemand angefasst. Wer selbst zugewiesen hat, behaelt seine Zuweisung; die drei
-    // neuen Aktionen bekommt er trotzdem, weil loadBindings die Vorgaben untermischt.
     if (ist(b.racestart, 5) && ist(b.trackview, 4)) {
       b.racestart = { ...DEFAULT_BINDINGS.racestart };
       b.trackview = { ...DEFAULT_BINDINGS.trackview };
       b.__migrated2 = true;
     }
-    // v0.5.1: gelbe Flagge auf Kreuz, Rennstart auf Select, Streckenansicht und Wetter
-    // unbelegt. JE AKTION UNABHAENGIG und nicht gekoppelt - die gekoppelte Fassung darueber
-    // ist zweimal danebengegangen, und genau daran lag, dass L1 zwei Bedeutungen hatte: wer
-    // trackview gespeichert hatte und racestart nicht, wurde von ihr nicht erfasst.
-    //
-    // Verschoben wird nur, wer noch auf SEINER alten Vorgabe liegt. Wer selbst zugewiesen
-    // hat, behaelt seine Zuweisung, und der Kollisionsaufloeser faengt, was dabei doppelt
-    // liegen bleibt.
-    const ALT = { yellowflag: 2, racestart: 0, trackview: 10 };
-    for (const n of Object.keys(ALT)) {
-      if (ist(b[n], ALT[n])) {
-        b[n] = { ...DEFAULT_BINDINGS[n] };
-        b.__migrated3 = true;
-      }
-    }
-    // v0.4.50: Select traegt das Wetter, Rennstart bekommt ab Werk keine Taste.
-    //
-    // JE AKTION UNABHAENGIG, wie darueber, und aus demselben Grund: die gekoppelte Fassung
-    // ist in diesem Projekt zweimal danebengegangen. Wer racestart noch auf Select hat, wird
-    // entlastet - Select traegt seit v0.7 den Bahn-Lesemodus (trackReadMode), nicht mehr
-    // das Wetter; ein gespeichertes altes "weather" bleibt als toter Schluessel liegen
-    // (die Aktion gibt es nicht mehr, resolveBindingCollisions() liest nur Namen aus
-    // DEFAULT_BINDINGS und sieht ihn deshalb gar nicht).
-    if (ist(b.racestart, 8)) {
-      b.racestart = { ...DEFAULT_BINDINGS.racestart };
-      b.__migrated4 = true;
-    }
+    b.__v = BINDINGS_V;
     return b;
   }
 
@@ -41212,9 +41271,11 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     for (let nr = 1; nr <= SPIELER_MAX; nr++) {
       const pad = spieler['p' + nr] || null;
       const id = pad && pad.id ? String(pad.id).slice(0, 120) : null;
-      if (id === padBelegungFuer[nr]) continue;
+      // v0.9.37: faellt ein Bluetooth-Pad kurz aus (id null), bleibt der zuletzt bekannte
+      // Controller stehen. Vorher wurde er vergessen; eine Aenderung in diesem Moment landete
+      // nicht in SEINER Kopie, und beim Wiederverbinden kam die alte Belegung zurueck.
+      if (!id || id === padBelegungFuer[nr]) continue;
       padBelegungFuer[nr] = id;
-      if (!id) continue;
       let roh = null;
       try { roh = localStorage.getItem(PAD_BELEGUNG_PRAEFIX + id); } catch (e) { /* privat */ }
       if (!roh) continue;
@@ -41238,13 +41299,6 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   let bindEditSpieler = 1;
   function activeBindings() { return bindingsVon(bindEditSpieler); }
   function activeSaveBindings() { return saveBindingsVon(bindEditSpieler); }
-  if (bindings.__migrated3) {
-    delete bindings.__migrated3;
-    saveBindings();
-    log('Controller: gelbe Flagge liegt jetzt auf Kreuz (PS) bzw. A (Xbox), Rennstart auf '
-        + 'Select. Streckenansicht und Wetter sind ab Werk unbelegt - der linke Stick soll '
-        + 'beim Lenken nichts ausloesen.', 'info');
-  }
   if (bindings.__migrated) {
     delete bindings.__migrated;
     saveBindings();
@@ -41561,6 +41615,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       }
     }
     if (!bester) return;
+    const vorher = ziel[action] ? { ...ziel[action] } : null;
     if (bester.art === 'axis') {
       // Die Richtung: hat sich die Achse nach unten bewegt, ist sie invertiert. Gemessen
       // wird gegen die RUHELAGE und nicht gegen null.
@@ -41582,10 +41637,29 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       log(`Zuordnung gesetzt (Spieler ${bindEditSpieler}): ${BIND_ACTION_LABELS[action]} `
           + `-> Knopf ${bester.i}`, 'info');
     }
+    bindingKollisionTauschen(ziel, action, vorher);
     activeSaveBindings();
     listeningFor = null;
     bindRuhe = null;
     renderBindTable();
+  }
+  // v0.9.37, GEMELDET: "Kann es sein, dass die Tastenbelegung nicht gespeichert wird?" - Lag die
+  // neue Taste schon auf einer anderen Aktion, wurden BEIDE so gespeichert. Beim naechsten Laden
+  // loeste resolveBindingCollisions() das zugunsten der Aktion auf ihrer Werkstaste - die neue
+  // Zuweisung fiel zurueck und sah ungespeichert aus. Jetzt wird sofort getauscht: die andere
+  // Aktion bekommt die bisherige Taste der neuen (oder ist unbelegt, wenn es keine gab).
+  function bindingKollisionTauschen(ziel, action, vorher) {
+    const k = bindingKey(ziel[action]);
+    if (!k) return [];
+    const getauscht = [];
+    for (const n of Object.keys(BIND_ACTION_LABELS)) {
+      if (n === action || bindingKey(ziel[n]) !== k) continue;
+      ziel[n] = vorher && bindingKey(vorher) !== k ? { ...vorher } : null;
+      getauscht.push(n);
+      log('Controller: ' + BIND_ACTION_LABELS[n] + ' lag auf derselben Taste - '
+          + (ziel[n] ? 'jetzt auf der bisherigen von ' + BIND_ACTION_LABELS[action] : 'jetzt unbelegt') + '.', 'info');
+    }
+    return getauscht;
   }
 
   // ---- Eine Achse auf ihre gelernte Spanne umrechnen ----------------------------------
@@ -78155,6 +78229,87 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (chUploadGrund(Object.assign(new Error('Rundenzahl stimmt nicht'), { endgueltig: true })) !== t('Rundenzahl stimmt nicht')) f.push('Ablehnung ohne Grund');
     } finally { raceState = merk; }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Rennen sperrt den Netzverkehr, Gruende im Klartext' };
+  });
+
+  stAdd('Tastenbelegung: eigene Wahl ueberlebt das Laden (auch alte Vorgabe-Tasten)', () => {
+    const f = [];
+    const roh = localStorage.getItem(GAMEPAD_BINDINGS_KEY);
+    const merk = JSON.parse(JSON.stringify(bindings));
+    try {
+      // Wie beim Zuweisen in der Tabelle: neue Taste setzen, dann Doppelbelegung tauschen.
+      const setze = (action, idx) => {
+        const vorher = bindings[action] ? { ...bindings[action] } : null;
+        bindings[action] = { type: 'button', index: idx, label: 'Knopf ' + idx };
+        bindingKollisionTauschen(bindings, action, vorher);
+      };
+      setze('racestart', 0);      // Kreuz: ab Werk die gelbe Flagge
+      setze('yellowflag', 2);     // Quadrat: ab Werk Runterschalten
+      saveBindings();
+      const neu = loadBindings();
+      if (!neu.racestart || neu.racestart.index !== 0) f.push('Rennstart auf Kreuz geht beim Laden verloren');
+      if (!neu.yellowflag || neu.yellowflag.index !== 2) f.push('gelbe Flagge auf Quadrat geht beim Laden verloren');
+      const keys = Object.keys(BIND_ACTION_LABELS).map((n) => bindingKey(neu[n])).filter(Boolean);
+      if (new Set(keys).size !== keys.length) f.push('Doppelbelegung gespeichert');
+      const zweimal = loadBindings();
+      if (JSON.stringify(zweimal) !== JSON.stringify(neu)) f.push('zweites Laden aendert die Belegung');
+      // Eine Belegung ohne Versionsmarke (alte Werksbelegung 4/9) wird genau einmal umgestellt.
+      const alt = migrateBindings({ ...DEFAULT_BINDINGS, pitstop: { type: 'button', index: 4 }, trackview: { type: 'button', index: 9 } });
+      if (alt.pitstop.index === 4) f.push('alte Werksbelegung nicht umgestellt');
+      if (alt.__v !== BINDINGS_V) f.push('keine Versionsmarke');
+    } finally {
+      bindings = merk;
+      if (roh === null) localStorage.removeItem(GAMEPAD_BINDINGS_KEY); else localStorage.setItem(GAMEPAD_BINDINGS_KEY, roh);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eigene Tasten bleiben, Aufraeumen nur einmal mit Versionsmarke' };
+  });
+
+  stAdd('Ziellinie auf der Schiene: Spieler 1 misst an Byte 15, nicht am Barcode', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.feedNotify) return { skip: true, mass: 'feedNotify nicht vorhanden' };
+    const f = [];
+    const sw = $('setting-ontrack');
+    const uhr = Date.now;
+    const g = { state: raceState, laps: raceLapTimes.slice(), start: raceLapStart, dash: dashLapStart,
+                part: racePartialMs, form: raceFormationLap, rail: sw ? sw.checked : true, sp: playerCar,
+                mp: dashMarkerPrev, ac: dashLastActedCode, aa: dashLastActedAt, pc: dashPendingCode,
+                ps: dashPendingSeen, lc: dashLastTileCounter, zg: dashZielGesehen, za: dashZielAt,
+                sa: dashStartLapAt, zauto: dashZielAuto };
+    let jetzt = uhr.call(Date);
+    try {
+      Date.now = () => jetzt;
+      if (sw && !sw.checked) { sw.checked = true; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+      const auto = { device: { id: 'st-ziel', name: 'Pruefwagen' }, role: 'player', rx: null, tx: null,
+                     tileCode: 0xff, tileCount: null, lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null };
+      playerCar = auto;
+      raceState = 'racing'; raceFormationLap = false; raceLapTimes = [];
+      raceLapStart = jetzt - 5000; dashLapStart = jetzt - 5000; racePartialMs = null;
+      dashMarkerPrev = false; dashLastActedCode = null; dashLastActedAt = 0;
+      dashPendingCode = null; dashPendingSeen = 0; dashLastTileCounter = null;
+      const START = [0x01, 0x0a].find((c) => isStartCode(c));
+      const paket = (zaehler, code, ziel) => { const a = new Array(19).fill(0); a[11] = zaehler; a[12] = code; a[14] = 0x82; a[15] = ziel ? 0x08 : 0; return a; };
+      const sende = (z, c, ziel, n) => { for (let i = 0; i < (n || 2); i++) OMEGA_TEST.feedNotify(paket(z, c, ziel), { car: auto }); };
+      sende(6, 0x04, false);                 // vorher eine Gerade
+      jetzt += 600; sende(7, START, false);  // Barcode, Bit noch nie gesehen: Rueckfall zaehlt
+      if (raceLapTimes.length !== 1) f.push('Rueckfall ueber den Barcode zaehlt nicht (' + raceLapTimes.length + ')');
+      jetzt += 455; sende(7, START, true);   // Ziellinie derselben Ueberfahrt: nicht doppelt
+      if (raceLapTimes.length !== 1) f.push('erste Ziellinie direkt nach der Barcode-Runde doppelt gezaehlt');
+      jetzt += 1000; sende(8, 0x04, false);
+      jetzt += 4000; sende(9, START, false); // naechster Barcode: zaehlt NICHT mehr
+      if (raceLapTimes.length !== 1) f.push('Barcode zaehlt trotz gemeldeter Ziellinie');
+      jetzt += 455; sende(9, START, true);   // Ziellinie: zaehlt
+      if (raceLapTimes.length !== 2) f.push('Ziellinie zaehlt die Runde nicht (' + raceLapTimes.length + ')');
+      else if (Math.abs(raceLapTimes[1].ms - 5910) > 5) f.push('Rundenzeit nicht ab der Ziellinie: ' + raceLapTimes[1].ms);
+      jetzt += 300; sende(9, START, false); sende(9, START, true);  // Flackern innerhalb der Sperre
+      if (raceLapTimes.length !== 2) f.push('Flackern zaehlt doppelt');
+    } finally {
+      Date.now = uhr;
+      raceState = g.state; raceLapTimes = g.laps; raceLapStart = g.start; dashLapStart = g.dash;
+      racePartialMs = g.part; raceFormationLap = g.form; playerCar = g.sp;
+      dashMarkerPrev = g.mp; dashLastActedCode = g.ac; dashLastActedAt = g.aa; dashPendingCode = g.pc;
+      dashPendingSeen = g.ps; dashLastTileCounter = g.lc; dashZielGesehen = g.zg; dashZielAt = g.za;
+      dashStartLapAt = g.sa; dashZielAuto = g.zauto;
+      if (sw && sw.checked !== g.rail) { sw.checked = g.rail; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Barcode nur bis zur ersten Ziellinie, danach misst Byte 15, nicht doppelt' };
   });
 
   stAdd('Woerterbuch ohne doppelte Schluessel', () => {

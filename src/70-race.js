@@ -7,6 +7,8 @@
   // Es gibt keinen zweiten Detektor in der App, und das ist Absicht.
 
   let dashOnMarker = false;   // byte 15 bit 3: the car is physically over a marker
+  // v0.9.37: Ziellinie auf der Schiene (siehe handleDashboardBytes).
+  let dashZielGesehen = false, dashZielAt = 0, dashStartLapAt = 0, dashZielAuto = null;
   // Vorheriger Stand des Musterkontakts, fuer die Flankenerkennung im Ausdruck-Modus.
   let dashMarkerPrev = false;
   // Debounce state for the tile code. See dashboardNotifyHandler for why both guards exist.
@@ -2464,11 +2466,10 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     // darunter schrieb in #dash-battery, ein Element der entfernten alten Karte.
     dashBattery = bytes[10];
 
-    // Byte 15 was read as "off track". The 2026-08-19 snoop logs disprove that: it is 0x08
-    // for exactly as long as the car sits on a printed marker (~1s at driving speed), in the
-    // same packet in which the crossing counter increments, in every capture. So the old
-    // warning lit up precisely when the car crossed start/finish. It is a marker-contact
-    // flag, and that is what it now says.
+    // Byte 15 was read as "off track". The 2026-08-19 snoop logs disprove that: on a PRINTED
+    // sheet it rises in the same packet as the start pattern. On the RAIL (logs 16.-21.08.)
+    // it rises at the finish line, ~455 ms after the barcode, and is then held ~1 s by a
+    // timer in the car - only the rising edge is a place (v0.9.37).
     const markerVorher = dashMarkerPrev;
     dashOnMarker = (bytes[15] & 0x08) !== 0;
     dashMarkerPrev = dashOnMarker;
@@ -2520,6 +2521,32 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       } else if (frei && code === pitMarkerCode) {
         dashLastActedCode = code; dashLastActedAt = jetzt;
         onPitMarkerCrossed();
+      }
+    }
+
+    // ---- DIE ZIELLINIE AUF DER SCHIENE (v0.9.37) ---------------------------------------
+    // BESTELLT: "Bei Start/Ziel gibt es (nicht am Anfang beim Barcode, sondern spaeter) eine
+    // Ziellinie. An der sollte Zeit gemessen und angesagt werden, nicht beim Barcode." Die
+    // btsnoop-Mitschnitte der Original-App (13.-21.08.) zeigen: das Auto meldet sie selbst -
+    // Byte 15 Bit 3 steigt im Mittel 455 ms nach dem Barcode (78-84 % des Startteils, rund
+    // 35 cm weiter) und haelt dann ~1 s. Nur die STEIGENDE Flanke ist ein Ort; das Fallen ist
+    // ein Zeitgeber. Ghosts und Spieler 2/3 zaehlen schon so (carRaceNotify); hier jetzt
+    // auch Spieler 1. Hat das Auto die Ziellinie einmal gemeldet, zaehlt der Barcode nicht
+    // mehr; bis dahin bleibt er der Rueckfall (Autos, die das Bit nie melden).
+    if (dashZielAuto !== playerCar) { dashZielAuto = playerCar; dashZielGesehen = false; dashZielAt = 0; }
+    if (trackMode !== 'off' && dashOnMarker && !markerVorher) {
+      const jetzt = Date.now();
+      const zaehlen = () => {
+        dashZielAt = jetzt;
+        if (!pitDoubleCheck(jetzt)) playerLapCrossed();
+      };
+      if (!dashZielGesehen) {
+        dashZielGesehen = true;
+        log('Ziellinie: das Auto meldet sie selbst (Byte 15) - ab jetzt wird dort gemessen.', 'info');
+        // Hat der Barcode diese Ueberfahrt gerade schon gezaehlt, nicht doppelt.
+        if (jetzt - dashStartLapAt < 1500) dashZielAt = jetzt; else zaehlen();
+      } else if (jetzt - dashZielAt >= TILE_REPEAT_BLOCK_MS) {
+        zaehlen();
       }
     }
 
@@ -2662,7 +2689,10 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       // Die Doppelpruefung auch hier, und genau wie auf dem Ausdruck-Weg VOR dem Zaehlen:
       // bewegt sich der Kachelzaehler zwischen den beiden Kontakten eines Paares, laeuft
       // der zweite ueber DIESEN Weg.
+      // Auf der Schiene zaehlt die Ziellinie, sobald das Auto sie meldet (siehe oben).
+      if (trackMode !== 'off' && dashZielGesehen) return;
       if (pitDoubleCheck(nowCode)) return;
+      dashStartLapAt = nowCode;
       const gezaehlt = playerLapCrossed();
       if (gezaehlt) return;
     }

@@ -17016,6 +17016,87 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Rennen sperrt den Netzverkehr, Gruende im Klartext' };
   });
 
+  stAdd('Tastenbelegung: eigene Wahl ueberlebt das Laden (auch alte Vorgabe-Tasten)', () => {
+    const f = [];
+    const roh = localStorage.getItem(GAMEPAD_BINDINGS_KEY);
+    const merk = JSON.parse(JSON.stringify(bindings));
+    try {
+      // Wie beim Zuweisen in der Tabelle: neue Taste setzen, dann Doppelbelegung tauschen.
+      const setze = (action, idx) => {
+        const vorher = bindings[action] ? { ...bindings[action] } : null;
+        bindings[action] = { type: 'button', index: idx, label: 'Knopf ' + idx };
+        bindingKollisionTauschen(bindings, action, vorher);
+      };
+      setze('racestart', 0);      // Kreuz: ab Werk die gelbe Flagge
+      setze('yellowflag', 2);     // Quadrat: ab Werk Runterschalten
+      saveBindings();
+      const neu = loadBindings();
+      if (!neu.racestart || neu.racestart.index !== 0) f.push('Rennstart auf Kreuz geht beim Laden verloren');
+      if (!neu.yellowflag || neu.yellowflag.index !== 2) f.push('gelbe Flagge auf Quadrat geht beim Laden verloren');
+      const keys = Object.keys(BIND_ACTION_LABELS).map((n) => bindingKey(neu[n])).filter(Boolean);
+      if (new Set(keys).size !== keys.length) f.push('Doppelbelegung gespeichert');
+      const zweimal = loadBindings();
+      if (JSON.stringify(zweimal) !== JSON.stringify(neu)) f.push('zweites Laden aendert die Belegung');
+      // Eine Belegung ohne Versionsmarke (alte Werksbelegung 4/9) wird genau einmal umgestellt.
+      const alt = migrateBindings({ ...DEFAULT_BINDINGS, pitstop: { type: 'button', index: 4 }, trackview: { type: 'button', index: 9 } });
+      if (alt.pitstop.index === 4) f.push('alte Werksbelegung nicht umgestellt');
+      if (alt.__v !== BINDINGS_V) f.push('keine Versionsmarke');
+    } finally {
+      bindings = merk;
+      if (roh === null) localStorage.removeItem(GAMEPAD_BINDINGS_KEY); else localStorage.setItem(GAMEPAD_BINDINGS_KEY, roh);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eigene Tasten bleiben, Aufraeumen nur einmal mit Versionsmarke' };
+  });
+
+  stAdd('Ziellinie auf der Schiene: Spieler 1 misst an Byte 15, nicht am Barcode', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.feedNotify) return { skip: true, mass: 'feedNotify nicht vorhanden' };
+    const f = [];
+    const sw = $('setting-ontrack');
+    const uhr = Date.now;
+    const g = { state: raceState, laps: raceLapTimes.slice(), start: raceLapStart, dash: dashLapStart,
+                part: racePartialMs, form: raceFormationLap, rail: sw ? sw.checked : true, sp: playerCar,
+                mp: dashMarkerPrev, ac: dashLastActedCode, aa: dashLastActedAt, pc: dashPendingCode,
+                ps: dashPendingSeen, lc: dashLastTileCounter, zg: dashZielGesehen, za: dashZielAt,
+                sa: dashStartLapAt, zauto: dashZielAuto };
+    let jetzt = uhr.call(Date);
+    try {
+      Date.now = () => jetzt;
+      if (sw && !sw.checked) { sw.checked = true; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+      const auto = { device: { id: 'st-ziel', name: 'Pruefwagen' }, role: 'player', rx: null, tx: null,
+                     tileCode: 0xff, tileCount: null, lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null };
+      playerCar = auto;
+      raceState = 'racing'; raceFormationLap = false; raceLapTimes = [];
+      raceLapStart = jetzt - 5000; dashLapStart = jetzt - 5000; racePartialMs = null;
+      dashMarkerPrev = false; dashLastActedCode = null; dashLastActedAt = 0;
+      dashPendingCode = null; dashPendingSeen = 0; dashLastTileCounter = null;
+      const START = [0x01, 0x0a].find((c) => isStartCode(c));
+      const paket = (zaehler, code, ziel) => { const a = new Array(19).fill(0); a[11] = zaehler; a[12] = code; a[14] = 0x82; a[15] = ziel ? 0x08 : 0; return a; };
+      const sende = (z, c, ziel, n) => { for (let i = 0; i < (n || 2); i++) OMEGA_TEST.feedNotify(paket(z, c, ziel), { car: auto }); };
+      sende(6, 0x04, false);                 // vorher eine Gerade
+      jetzt += 600; sende(7, START, false);  // Barcode, Bit noch nie gesehen: Rueckfall zaehlt
+      if (raceLapTimes.length !== 1) f.push('Rueckfall ueber den Barcode zaehlt nicht (' + raceLapTimes.length + ')');
+      jetzt += 455; sende(7, START, true);   // Ziellinie derselben Ueberfahrt: nicht doppelt
+      if (raceLapTimes.length !== 1) f.push('erste Ziellinie direkt nach der Barcode-Runde doppelt gezaehlt');
+      jetzt += 1000; sende(8, 0x04, false);
+      jetzt += 4000; sende(9, START, false); // naechster Barcode: zaehlt NICHT mehr
+      if (raceLapTimes.length !== 1) f.push('Barcode zaehlt trotz gemeldeter Ziellinie');
+      jetzt += 455; sende(9, START, true);   // Ziellinie: zaehlt
+      if (raceLapTimes.length !== 2) f.push('Ziellinie zaehlt die Runde nicht (' + raceLapTimes.length + ')');
+      else if (Math.abs(raceLapTimes[1].ms - 5910) > 5) f.push('Rundenzeit nicht ab der Ziellinie: ' + raceLapTimes[1].ms);
+      jetzt += 300; sende(9, START, false); sende(9, START, true);  // Flackern innerhalb der Sperre
+      if (raceLapTimes.length !== 2) f.push('Flackern zaehlt doppelt');
+    } finally {
+      Date.now = uhr;
+      raceState = g.state; raceLapTimes = g.laps; raceLapStart = g.start; dashLapStart = g.dash;
+      racePartialMs = g.part; raceFormationLap = g.form; playerCar = g.sp;
+      dashMarkerPrev = g.mp; dashLastActedCode = g.ac; dashLastActedAt = g.aa; dashPendingCode = g.pc;
+      dashPendingSeen = g.ps; dashLastTileCounter = g.lc; dashZielGesehen = g.zg; dashZielAt = g.za;
+      dashStartLapAt = g.sa; dashZielAuto = g.zauto;
+      if (sw && sw.checked !== g.rail) { sw.checked = g.rail; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Barcode nur bis zur ersten Ziellinie, danach misst Byte 15, nicht doppelt' };
+  });
+
   stAdd('Woerterbuch ohne doppelte Schluessel', () => {
     const imObjekt = Object.keys(I18N_EN).length;
     // Die Quelle steht im eigenen <script>. Sie zu lesen ist billiger und ehrlicher als die
