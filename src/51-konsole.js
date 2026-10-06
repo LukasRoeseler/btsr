@@ -267,6 +267,7 @@
   // Wischgeste dem Inhalt. Mindestens 60 px, deutlich waagrecht, in hoechstens 0,7 s.
   (function wischenAnbinden() {
     const NICHT = '.tp-karte, input, select, textarea, canvas, .k-pause, .lb-wrap, #mp-info, .k-kein-wischen';
+    const WISCH_RAND_PX = 48;
     let a = null;
     document.addEventListener('touchstart', (e) => {
       a = null;
@@ -279,7 +280,13 @@
           if (ox === 'auto' || ox === 'scroll') return;
         }
       }
-      a = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: performance.now() };
+      // v0.9.33, GEMELDET: "Swipen passiert auch, wenn ich rechts nur meine Handy-Buttons haben
+      // moechte und dazu vom Rand aus 1 cm nach innen wische." Eine Geste, die am Rand
+      // beginnt, gehoert dem System (Navigationsleiste, Zurueck-Geste) - quer liegt die
+      // Unterkante des Telefons links oder rechts. Rund 1,2 cm (48 px) an allen Seiten ausser oben.
+      const x0 = e.touches[0].clientX, y0 = e.touches[0].clientY;
+      if (x0 < WISCH_RAND_PX || x0 > window.innerWidth - WISCH_RAND_PX || y0 > window.innerHeight - WISCH_RAND_PX) return;
+      a = { x: x0, y: y0, t: performance.now() };
     }, { passive: true });
     document.addEventListener('touchend', (e) => {
       if (!a || !e.changedTouches.length) return;
@@ -794,9 +801,10 @@
       ? [[t('Teile'), String(kTeile())], ['Code', kCode() || '–']]
       : [[t('Modus'), t('Ausdruck, ohne Bahn')], [t('Streckenfoto'), foto ? t('hochgeladen') : t('keins')]]);
     ['fa-scan', 'fa-laden'].forEach((id) => { if ($(id)) $(id).hidden = !bahn; });
-    // BESTELLT: "wenn ich auf TRACK klicke, sollen alle Optionen sichtbar sein" - auch im
-    // Bahn-Modus sollen die Druckvorlagen erreichbar bleiben.
-    if ($('fa-druck')) $('fa-druck').hidden = false;
+    // v0.9.33, BESTELLT: Druckvorlagen und Editor je nach Modus - die Vorlagen sind fuer die
+    // gedruckte Strecke (FREI), der Editor baut die Carrera-Bahn nach (AUF DER BAHN).
+    if ($('fa-druck')) $('fa-druck').hidden = bahn;
+    if ($('fa-editor')) $('fa-editor').hidden = !bahn;
     if ($('fa-foto')) $('fa-foto').hidden = bahn;
     if ($('fa-foto-weg')) $('fa-foto-weg').hidden = bahn || !foto;
     $('fa-profil-titel').textContent = ($('race-act-mode-txt') || {}).textContent || '–';

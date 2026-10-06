@@ -1377,6 +1377,14 @@
   /* Rammstrafe (v0.9.21): rot auf dem Boxenknopf und im Ergebnis. */
   .gt3-act.strafe { color: #ff5252; box-shadow: inset 0 0 0 2px #ff5252; }
   .rammer-tag { color: #ff5252; font-weight: 700; letter-spacing: .04em; margin-left: .4em; }
+  .ch-ausgang { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 4px 0 8px;
+    padding: 8px 10px; border-radius: 8px; background: rgba(255, 176, 46, .14); color: #ffcf7a; font-size: 13px; }
+  /* Challenges: Spiegel-Knopf unter der Karte (v0.9.33) */
+  .ch-karte-knoepfe { display: flex; justify-content: center; gap: 8px; margin: 6px 0 4px; }
+  .ch-spiegel-knopf { width: 48px; height: 40px; padding: 0; display: grid; place-items: center;
+    border-radius: 10px; }
+  .ch-spiegel-knopf svg { width: 26px; height: 26px; }
+  .ch-spiegel-knopf.an { background: var(--k-blau, #0b84d6); color: #fff; border-color: transparent; }
   /* Fahren: Fahrgefuehl-Kachel mit groesserer Schrift (v0.9.31) */
   .k-fahren-unten #fa-profil .k-kt { font-size: clamp(14px, 2.6vh, 22px); }
   .k-fahren-unten #fa-profil .k-kk { font-size: clamp(11px, 2vh, 15px); }
@@ -4379,7 +4387,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.32</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.35</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5244,6 +5252,14 @@
       <div class="ch-links">
         <div class="ch-karte" id="ch-karte" tabindex="0" role="button" data-ch-voll
              title="Vergr&ouml;&szlig;ern (X) / Verkleinern (X oder Kreis)" aria-label="Streckenkarte vergr&ouml;&szlig;ern"></div>
+        <!-- v0.9.33: Spiegeln als Knopf mit Symbol direkt unter der Karte; das Kaestchen bleibt
+             unsichtbar als Zustand (chSpiegel, Speicherung). -->
+        <div class="ch-karte-knoepfe">
+          <button type="button" class="ch-spiegel-knopf" id="ch-spiegel-knopf" aria-pressed="false"
+                  title="Strecke spiegeln: Kurven links/rechts tauschen und die Schleife r&uuml;ckw&auml;rts fahren"
+                  aria-label="Strecke spiegeln"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18" stroke-dasharray="2 2.5"/><path d="M9 6 3 18h6z"/><path d="M15 6l6 12h-6z" fill="currentColor" fill-opacity=".35"/></svg></button>
+        </div>
         <p class="muted" id="ch-idee"></p>
         <p class="ch-fakten" id="ch-fakten" data-i18n-skip></p>
         <p class="ch-teile" id="ch-teile" data-i18n-skip></p>
@@ -5254,9 +5270,7 @@
           <div class="muted" id="ch-erg-text" data-i18n-skip></div>
         </div>
         <button type="button" class="ch-umschalter" id="ch-modus" aria-label="Modus umschalten"><span data-m="hotlap">Beste Runde</span><span data-m="rennen">Rennen</span></button>
-        <label class="tgl" id="ch-spiegel-zeile" title="Strecke spiegeln: Kurven links/rechts tauschen und die Schleife rueckwaerts fahren">
-          <input type="checkbox" id="ch-spiegel"> Strecke spiegeln
-        </label>
+        <input type="checkbox" id="ch-spiegel" hidden data-preset-skip>
         <p class="ch-medaille-hinweis" id="ch-medaille-hinweis" data-i18n-skip></p>
         <div class="ch-name-zeile"><label for="ch-name">Name in der Bestenliste</label>
           <input type="text" id="ch-name" maxlength="16" data-preset-skip></div>
@@ -5264,6 +5278,10 @@
       </div>
       <div class="ch-rechts">
         <h3>Bestenliste</h3>
+        <div class="ch-ausgang" id="ch-ausgang-lage" hidden>
+          <span id="ch-ausgang-text" data-i18n-skip></span>
+          <button type="button" id="ch-ausgang-senden">Jetzt senden</button>
+        </div>
         <p class="muted" id="ch-liste-status" data-i18n-skip></p>
         <p class="muted ch-stats" id="ch-stats" data-i18n-skip></p>
         <div class="ch-perz" id="ch-perz" data-i18n-skip></div>
@@ -5484,6 +5502,8 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Bestenliste: Kann eine Zeit nicht hochgeladen werden, kommt ein Hinweis mit Strecke und Grund (z. B. &#8222;keine Verbindung zum Server&#8220; oder die Ablehnung durch die Bestenliste), nie mitten im Rennen und nie &#252;ber einem anderen Dialog. Auf der Challenge-Seite steht, wie viele Zeiten noch warten, mit &#8222;Jetzt senden&#8220;. Hoch- und Herunterladen der Bestenliste laufen nur, wenn gerade kein Rennen l&#228;uft, damit das Steuern nicht verz&#246;gert wird.</li>
+        <li>Bestenliste: Die Listen liegen im Zwischenspeicher und erscheinen sofort, beim App-Start und alle 10 Minuten wird im Hintergrund nachgeladen; eine Strecke ohne Zeiten zeigt das sofort, statt lange zu laden. Hochgeladene Zeiten bleiben in einer Warteschlange, bis das Sheet sie best&#228;tigt, und eine Ablehnung wird mit Grund gemeldet. W&#246;chentliche Challenges: Die Resttage stehen oben neben &#8222;Woche X/20&#8220;, unter jeder Strecke stehen Spieler und Ergebnisse. Spiegeln ist jetzt ein Knopf mit Symbol unter der Karte. FAHREN, Strecke: Druckvorlagen nur bei FREI, Editor nur bei AUF DER BAHN. Wischen wechselt den Reiter nicht mehr, wenn die Geste am Bildschirmrand beginnt (Systemleiste).</li>
         <li>WLAN-Mehrspieler: genauerer gemeinsamer Start. Die Zeit wird beim Eintreffen der Antwort gemessen, nicht erst nach dem Einlesen, und im Vorlauf gleicht jedes Telefon die Host-Uhr acht Mal nach und stellt die Ampel nach. Rennende f&#252;r alle: Hat ein Mitspieler die Rundenzahl erreicht, ist bei allen die laufende Runde die letzte. Neu: &#8222;Rennen f&#252;r alle beenden&#8220; (WLAN-Reiter und R&#252;ckfrage beim Verlassen des Rennens). An den Host gehen jetzt die Rennrunden inklusive Fr&#252;hstart-Strafe.</li>
         <li>FAHREN: Die Autos-Kachel zeigt ab zwei verbundenen Autos alle (ohne Foto als Farbfl&#228;che), die Motorsound-Kachel ist weg (Motor jetzt nur in der Garage), Fahrgef&#252;hl und Start sind gr&#246;&#223;er. Garage: ein neues Foto erscheint sofort links in der Auto-Kachel. Podium: gr&#246;&#223;ere Namen, bei zwei Autos nur Platz 1 und 2, allein ein Solo-Podest mit Gesamtzeit, bester Runde und Vergleich mit deiner Bestzeit auf der Strecke. Cockpit: die Rundenliste zeigt h&#246;chstens f&#252;nf Runden und schiebt nichts mehr aus dem Bild. Ohne Bahn zeigt die Renn&#252;bersicht dein Streckenfoto bzw. den Platzhalter statt des Layouts. Freies Training: kein &#8222;Automatisch aufstellen&#8220;. Knockout hei&#223;t jetzt &#8222;NPC Knockout&#8220;, braucht mindestens einen Ghost und schaltet &#8222;Auf der Bahn&#8220; ein.</li>
         <li>Derby: Ein Crash gegen die Wand beendet das Spiel nicht mehr. Es endet erst, wenn jemand das Kill-Ziel erreicht oder nur noch ein Teilnehmer f&#228;hrt; allein ohne Gegner nur von Hand. 2 Spieler: Auto 2 und 3 haben beim Boxenstopp dieselben T&#246;ne wie Auto 1 (Tanken, Reparatur, Schrauber), auf ihrer Stereoseite. Latenz: Spieler 2 und 3 senden &#252;ber denselben Weg wie Auto 1 (der neueste Befehl ersetzt den wartenden), und der Schirm &#8222;Beide&#8220; wird direkt nach dem Senden gezeichnet.</li>
@@ -12343,6 +12363,30 @@
     "Spieler 1": "Player 1",
     "Spieler 2": "Player 2",
     "Spieler 3": "Player 3",
+    "Deine Zeit auf {s} konnte nicht hochgeladen werden: {g}. Sie ist gespeichert und wird automatisch erneut gesendet.": "Your time on {s} could not be uploaded: {g}. It is saved and will be sent again automatically.",
+    "es läuft gerade ein Rennen": "a race is running right now",
+    "der Server hat nicht richtig geantwortet": "the server did not answer properly",
+    "keine Verbindung zum Server": "no connection to the server",
+    "zu viele Uploads kurz hintereinander": "too many uploads in a row",
+    "unbekannter Fehler": "unknown error",
+    "Zeit nicht hochgeladen": "Time not uploaded",
+    "Die Bestenliste hat deine Zeit auf {s} abgelehnt: {g}. Sie bleibt in deinen eigenen Zeiten.": "The leaderboard rejected your time on {s}: {g}. It stays in your own times.",
+    "Zeit noch nicht hochgeladen": "Time not uploaded yet",
+    "1 Zeit wartet auf den Upload": "1 time waiting to be uploaded",
+    "{n} Zeiten warten auf den Upload": "{n} times waiting to be uploaded",
+    "zuletzt": "last",
+    "Ergebnis abgelehnt": "Result rejected",
+    "Ergebnis noch nicht hochgeladen": "Result not uploaded yet",
+    "wird automatisch erneut versucht.": "will be retried automatically.",
+    "Nach dem Rennen": "After the race",
+    "Jetzt senden": "Send now",
+    "OK": "OK",
+    "Zeit unplausibel": "implausible time",
+    "Rundenzahl stimmt nicht": "wrong number of laps",
+    "Runde unter der Mindestzeit": "a lap is below the minimum time",
+    "Gesamtzeit passt nicht zu den Runden": "total time does not match the laps",
+    "unbekannte Challenge": "unknown challenge",
+    "beste Runde passt nicht zu den Runden": "best lap does not match the laps",
     "Rennen für alle beenden": "End race for everyone",
     "Rennen für alle beendet": "Race ended for everyone",
     "Ein Mitspieler ist im Ziel, laufende Runde zählt noch": "Another player has finished, the current lap still counts",
@@ -12676,6 +12720,8 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Bestenliste: Kann eine Zeit nicht hochgeladen werden, kommt ein Hinweis mit Strecke und Grund (z. B. „keine Verbindung zum Server“ oder die Ablehnung durch die Bestenliste), nie mitten im Rennen und nie über einem anderen Dialog. Auf der Challenge-Seite steht, wie viele Zeiten noch warten, mit „Jetzt senden“. Hoch- und Herunterladen der Bestenliste laufen nur, wenn gerade kein Rennen läuft, damit das Steuern nicht verzögert wird.": "Leaderboard: if a time cannot be uploaded, a notice shows the track and the reason (e.g. “no connection to the server” or a rejection by the leaderboard), never in the middle of a race and never over another dialog. The challenge page shows how many times are still waiting, with “Send now”. Leaderboard uploads and downloads only run when no race is in progress, so steering is not delayed.",
+    "Bestenliste: Die Listen liegen im Zwischenspeicher und erscheinen sofort, beim App-Start und alle 10 Minuten wird im Hintergrund nachgeladen; eine Strecke ohne Zeiten zeigt das sofort, statt lange zu laden. Hochgeladene Zeiten bleiben in einer Warteschlange, bis das Sheet sie bestätigt, und eine Ablehnung wird mit Grund gemeldet. Wöchentliche Challenges: Die Resttage stehen oben neben „Woche X/20“, unter jeder Strecke stehen Spieler und Ergebnisse. Spiegeln ist jetzt ein Knopf mit Symbol unter der Karte. FAHREN, Strecke: Druckvorlagen nur bei FREI, Editor nur bei AUF DER BAHN. Wischen wechselt den Reiter nicht mehr, wenn die Geste am Bildschirmrand beginnt (Systemleiste).": "Leaderboard: lists are cached and appear immediately; they are refreshed in the background at app start and every 10 minutes, and a track without times shows that right away instead of loading for a long time. Uploaded times stay in a queue until the sheet confirms them, and a rejection is reported with its reason. Weekly challenges: the remaining days appear at the top next to “Week X/20”, and players and results appear under each track. Mirroring is now an icon button under the map. DRIVE, track: print templates only for FREE, the editor only for ON THE TRACK. Swiping no longer switches tabs when the gesture starts at the screen edge (system bar).",
     "WLAN-Mehrspieler: genauerer gemeinsamer Start. Die Zeit wird beim Eintreffen der Antwort gemessen, nicht erst nach dem Einlesen, und im Vorlauf gleicht jedes Telefon die Host-Uhr acht Mal nach und stellt die Ampel nach. Rennende für alle: Hat ein Mitspieler die Rundenzahl erreicht, ist bei allen die laufende Runde die letzte. Neu: „Rennen für alle beenden“ (WLAN-Reiter und Rückfrage beim Verlassen des Rennens). An den Host gehen jetzt die Rennrunden inklusive Frühstart-Strafe.": "WiFi multiplayer: a more precise shared start. The time is measured when the response arrives, not after reading it, and during the lead-in every phone re-syncs with the host clock eight times and adjusts the start lights. Race end for everyone: once a player reaches the lap count, the current lap is the last one for everybody. New: “End race for everyone” (WiFi tab and the question when leaving the race). The host now receives race laps including the jump-start penalty.",
     "FAHREN: Die Autos-Kachel zeigt ab zwei verbundenen Autos alle (ohne Foto als Farbfläche), die Motorsound-Kachel ist weg (Motor jetzt nur in der Garage), Fahrgefühl und Start sind größer. Garage: ein neues Foto erscheint sofort links in der Auto-Kachel. Podium: größere Namen, bei zwei Autos nur Platz 1 und 2, allein ein Solo-Podest mit Gesamtzeit, bester Runde und Vergleich mit deiner Bestzeit auf der Strecke. Cockpit: die Rundenliste zeigt höchstens fünf Runden und schiebt nichts mehr aus dem Bild. Ohne Bahn zeigt die Rennübersicht dein Streckenfoto bzw. den Platzhalter statt des Layouts. Freies Training: kein „Automatisch aufstellen“. Knockout heißt jetzt „NPC Knockout“, braucht mindestens einen Ghost und schaltet „Auf der Bahn“ ein.": "DRIVE: the cars tile shows every car once two are connected (a car without a photo appears as a colour block), the engine-sound tile is gone (engine now only in the garage), and driving feel and start are larger. Garage: a new photo appears right away in the car tile on the left. Podium: larger names; with two cars only places 1 and 2; alone, a solo podium with total time, best lap and a comparison with your best time on the track. Cockpit: the lap list shows at most five laps and no longer pushes anything off screen. Without the track, the race overview shows your track photo or the placeholder instead of the layout. Free practice: no “Line up automatically”. Knockout is now called “NPC Knockout”; it needs at least one ghost and switches on “On the track”.",
     "Derby: Ein Crash gegen die Wand beendet das Spiel nicht mehr. Es endet erst, wenn jemand das Kill-Ziel erreicht oder nur noch ein Teilnehmer fährt; allein ohne Gegner nur von Hand. 2 Spieler: Auto 2 und 3 haben beim Boxenstopp dieselben Töne wie Auto 1 (Tanken, Reparatur, Schrauber), auf ihrer Stereoseite. Latenz: Spieler 2 und 3 senden über denselben Weg wie Auto 1 (der neueste Befehl ersetzt den wartenden), und der Schirm „Beide“ wird direkt nach dem Senden gezeichnet.": "Derby: a crash into the wall no longer ends the game. It ends only when someone reaches the kill target or only one participant is still driving; alone without opponents, only by hand. 2 players: cars 2 and 3 get the same pit-stop sounds as car 1 (refuelling, repair, wrench), on their own stereo side. Latency: players 2 and 3 send through the same path as car 1 (the newest command replaces the waiting one), and the “Both” screen is drawn right after sending.",
@@ -23465,6 +23511,7 @@
   // Wischgeste dem Inhalt. Mindestens 60 px, deutlich waagrecht, in hoechstens 0,7 s.
   (function wischenAnbinden() {
     const NICHT = '.tp-karte, input, select, textarea, canvas, .k-pause, .lb-wrap, #mp-info, .k-kein-wischen';
+    const WISCH_RAND_PX = 48;
     let a = null;
     document.addEventListener('touchstart', (e) => {
       a = null;
@@ -23477,7 +23524,13 @@
           if (ox === 'auto' || ox === 'scroll') return;
         }
       }
-      a = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: performance.now() };
+      // v0.9.33, GEMELDET: "Swipen passiert auch, wenn ich rechts nur meine Handy-Buttons haben
+      // moechte und dazu vom Rand aus 1 cm nach innen wische." Eine Geste, die am Rand
+      // beginnt, gehoert dem System (Navigationsleiste, Zurueck-Geste) - quer liegt die
+      // Unterkante des Telefons links oder rechts. Rund 1,2 cm (48 px) an allen Seiten ausser oben.
+      const x0 = e.touches[0].clientX, y0 = e.touches[0].clientY;
+      if (x0 < WISCH_RAND_PX || x0 > window.innerWidth - WISCH_RAND_PX || y0 > window.innerHeight - WISCH_RAND_PX) return;
+      a = { x: x0, y: y0, t: performance.now() };
     }, { passive: true });
     document.addEventListener('touchend', (e) => {
       if (!a || !e.changedTouches.length) return;
@@ -23992,9 +24045,10 @@
       ? [[t('Teile'), String(kTeile())], ['Code', kCode() || '–']]
       : [[t('Modus'), t('Ausdruck, ohne Bahn')], [t('Streckenfoto'), foto ? t('hochgeladen') : t('keins')]]);
     ['fa-scan', 'fa-laden'].forEach((id) => { if ($(id)) $(id).hidden = !bahn; });
-    // BESTELLT: "wenn ich auf TRACK klicke, sollen alle Optionen sichtbar sein" - auch im
-    // Bahn-Modus sollen die Druckvorlagen erreichbar bleiben.
-    if ($('fa-druck')) $('fa-druck').hidden = false;
+    // v0.9.33, BESTELLT: Druckvorlagen und Editor je nach Modus - die Vorlagen sind fuer die
+    // gedruckte Strecke (FREI), der Editor baut die Carrera-Bahn nach (AUF DER BAHN).
+    if ($('fa-druck')) $('fa-druck').hidden = bahn;
+    if ($('fa-editor')) $('fa-editor').hidden = !bahn;
     if ($('fa-foto')) $('fa-foto').hidden = bahn;
     if ($('fa-foto-weg')) $('fa-foto-weg').hidden = bahn || !foto;
     $('fa-profil-titel').textContent = ($('race-act-mode-txt') || {}).textContent || '–';
@@ -37596,20 +37650,128 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     // meist schon gelaufen, nur die Antwort fehlt. Deshalb bis zu zwei Wiederholungen, und
     // "zu schnell hintereinander" (die 15-s-Drossel je Geraet im Skript) heisst beim Wiederholen:
     // der erste Versuch ist angekommen. So entsteht keine doppelte Zeile.
-    const senden = (versuch) => fetch(o.url, { method: 'POST', body: JSON.stringify(eintrag) })
+    // v0.9.33: ZUERST in die Warteschlange (CH_AUSGANG), dann senden. Eine Zeit verlaesst die
+    // Schlange erst, wenn das Sheet sie bestaetigt hat oder sie endgueltig ablehnt (dann mit
+    // Grund als Meldung) - kein Funkloch und keine Google-Echo-404 verliert sie mehr.
+    eintrag.nr = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+    eintrag.url = o.url;
+    chAusgangSchreiben(chAusgangLesen().concat([eintrag]));
+    chAusgangZeichnen();
+    if (!chNetzErlaubt()) { chSpaeter(); chUploadInfo = { ok: false, spaeter: true, grund: t('es läuft gerade ein Rennen') }; return Promise.resolve(false); }
+    return chEintragSenden(eintrag);
+  }
+  // Der letzte Upload-Ausgang fuer den Ergebnisdialog: { ok, endgueltig, spaeter, grund }.
+  let chUploadInfo = null;
+  // BESTELLT (v0.9.33): "Bau ein, dass mir gemeldet wird, wenn eine Zeit nicht hochgeladen
+  // werden kann und warum." Aus der technischen Ursache ein Satz, den man versteht.
+  function chUploadGrund(e) {
+    const m = String((e && e.message) || e || '');
+    if (e && e.endgueltig) return t(m);
+    if (e && e.name === 'SyntaxError') return t('der Server hat nicht richtig geantwortet');
+    if (/Failed to fetch|NetworkError|Load failed|Network request failed|offline/i.test(m)) return t('keine Verbindung zum Server');
+    if (m === 'zu schnell') return t('zu viele Uploads kurz hintereinander');
+    return m || t('unbekannter Fehler');
+  }
+  const CH_AUSGANG = 'omegasim-ch-ausgang';
+  function chAusgangLesen() { const a = chLesen(CH_AUSGANG, []); return Array.isArray(a) ? a : []; }
+  function chAusgangSchreiben(a) { try { localStorage.setItem(CH_AUSGANG, JSON.stringify(a.slice(-50))); } catch (e) { /* voll */ } }
+  function chAusgangRaus(nr) { chAusgangSchreiben(chAusgangLesen().filter((x) => x.nr !== nr)); }
+  function chEintragSenden(eintrag) {
+    const daten = Object.assign({}, eintrag); delete daten.nr; delete daten.url;
+    const senden = (versuch) => fetch(eintrag.url, { method: 'POST', body: JSON.stringify(daten) })
       .then((r) => r.json())
       .then((j) => {
         if (j && j.ok) return true;
         if (versuch > 0 && j && j.fehler === 'zu schnell hintereinander') return true;
+        if (j && j.fehler === 'zu schnell hintereinander') throw new Error('zu schnell');   // spaeter nochmal
         throw Object.assign(new Error((j && j.fehler) || 'abgelehnt'), { endgueltig: true });
       })
       .catch((e) => {
         if (!e.endgueltig && versuch < 2) return new Promise((ok) => setTimeout(ok, 1500)).then(() => senden(versuch + 1));
-        log('Challenge: Hochladen fehlgeschlagen: ' + e.message, 'warn');
-        return false;
+        throw e;
       });
-    return senden(0);
+    return senden(0).then(() => {
+      chAusgangRaus(eintrag.nr);
+      chUploadInfo = { ok: true };
+      log('Challenge: Zeit hochgeladen (' + eintrag.challenge + ').', 'info');
+      chAusgangZeichnen();
+      setTimeout(() => chAuffrischen(true), 2500);
+      return true;
+    }, (e) => {
+      const grund = chUploadGrund(e);
+      const name = (chDef(eintrag.challenge) || {}).name || eintrag.challenge;
+      if (e.endgueltig) {
+        chAusgangRaus(eintrag.nr);
+        chUploadInfo = { ok: false, endgueltig: true, grund };
+        log('Challenge: Zeit (' + name + ') vom Sheet abgelehnt: ' + e.message, 'err');
+        chMeldung(t('Zeit nicht hochgeladen'),
+          t('Die Bestenliste hat deine Zeit auf {s} abgelehnt: {g}. Sie bleibt in deinen eigenen Zeiten.')
+            .replace('{s}', name).replace('{g}', grund));
+      } else {
+        // In der Schlange vermerken; gemeldet wird je Zeit nur beim ersten Fehlschlag.
+        const a = chAusgangLesen();
+        const x = a.find((y) => y.nr === eintrag.nr);
+        const erstesMal = !(x && x.fehler);
+        if (x) { x.fehler = grund; x.versuche = (x.versuche || 0) + 1; chAusgangSchreiben(a); }
+        chUploadInfo = { ok: false, spaeter: true, grund };
+        log('Challenge: Hochladen (' + name + ') gerade nicht moeglich: ' + grund + '. Wird wiederholt.', 'warn');
+        if (erstesMal) {
+          chMeldung(t('Zeit noch nicht hochgeladen'),
+            t('Deine Zeit auf {s} konnte nicht hochgeladen werden: {g}. Sie ist gespeichert und wird automatisch erneut gesendet.')
+              .replace('{s}', name).replace('{g}', grund));
+        }
+      }
+      chAusgangZeichnen();
+      return false;
+    });
   }
+  // Ein Hinweis, den man auch sieht: als Dialog, aber nie mitten im Rennen und nie ueber einem
+  // anderen offenen Dialog (z. B. dem Challenge-Ergebnis) - dann wartet er, bis Ruhe ist.
+  const chMeldungen = [];
+  function chMeldung(titel, text) {
+    chMeldungen.push([titel, text]);
+    chMeldungZeigen();
+  }
+  function chMeldungZeigen() {
+    if (!chMeldungen.length) return;
+    const offen = typeof konsoleFrageOffen === 'function' && konsoleFrageOffen();
+    if (offen || !chNetzErlaubt()) { setTimeout(chMeldungZeigen, 2000); return; }
+    const [titel, text] = chMeldungen.shift();
+    konsoleFrage(titel, text, [[t('OK'), () => setTimeout(chMeldungZeigen, 300)]]);
+  }
+  // Lage der Schlange auf der Challenge-Seite: wie viele Zeiten warten, und warum.
+  function chAusgangZeichnen() {
+    const el = $('ch-ausgang-lage');
+    if (!el) return;
+    const a = chAusgangLesen();
+    el.hidden = !a.length;
+    if (!a.length) return;
+    const grund = (a.find((x) => x.fehler) || {}).fehler;
+    $('ch-ausgang-text').textContent = (a.length === 1 ? t('1 Zeit wartet auf den Upload')
+      : t('{n} Zeiten warten auf den Upload').replace('{n}', a.length))
+      + (grund ? ' – ' + t('zuletzt') + ': ' + grund : '');
+  }
+  // Was noch in der Schlange liegt, nacheinander nachreichen (das Skript nimmt je Geraet
+  // hoechstens einen Eintrag alle 15 s an).
+  let chAusgangLaeuft = false;
+  function chAusgangSenden() {
+    if (chAusgangLaeuft) return;
+    const a = chAusgangLesen();
+    if (!a.length) return;
+    if (!chNetzErlaubt()) { chSpaeter(); return; }
+    chAusgangLaeuft = true;
+    chEintragSenden(a[0]).then(() => {
+      chAusgangLaeuft = false;
+      if (chAusgangLesen().length) setTimeout(chAusgangSenden, 16000);
+    });
+  }
+  setTimeout(() => { chCacheLaden(); chAuffrischen(); chAusgangSenden(); chAusgangZeichnen(); }, 1500);
+  if ($('ch-ausgang-senden')) $('ch-ausgang-senden').addEventListener('click', () => {
+    if (!chNetzErlaubt()) { showHudToast(t('Nach dem Rennen')); return; }
+    chAusgangSenden();
+  });
+  setInterval(() => { chAuffrischen(true); chAusgangSenden(); }, 10 * 60000);
+  window.addEventListener('online', () => { chAusgangSenden(); chAuffrischen(true); });
   // ---- SCHNAPPSCHUSS AUS DEM REPO (v0.8.34) ----
   // BESTELLT: "das Google Sheet ab und zu in GitHub speichern per Action ... die lokalen + die
   // in der letzten Stunde gefetchten". Die Action (.github/workflows/challenges.yml) legt
@@ -37634,9 +37796,84 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       .catch(() => null);
     return chSchnapp;
   }
+  // ---- BESTENLISTE: ZWISCHENSPEICHER UND HINTERGRUND (v0.9.33) -------------------------
+  // GEMELDET: "Bei Monzetta laedt jedes Mal, wenn ich die Strecke oeffne, erst lange die
+  // Bestenliste, und dann heisst es, es gaebe keine Zeiten. Geht das nicht beim Starten der
+  // App im Hintergrund und dann im Zwischenspeicher?" Ursache: eine Strecke OHNE Zeiten steht
+  // nicht im Schnappschuss, und das wurde als "unbekannt" gelesen - also jedes Mal live bei
+  // Google gefragt (Sekunden), mit dem Ergebnis "leer".
+  // Jetzt: ein vollstaendiger Satz Listen (Schnappschuss oder ?alle=1) liegt im Speicher
+  // (CH_CACHE) und gilt sofort; eine Strecke, die darin fehlt, HAT keine Zeiten. Beim Start
+  // und alle zehn Minuten wird im Hintergrund nachgeladen, nach einem Hochladen sofort.
+  const CH_CACHE = 'omegasim-ch-cache';
+  let chGesamtStand = 0, chGeholtAt = 0, chAuffrischenLaeuft = null;
+  function chGesamtUebernehmen(listen, at, speichern) {
+    if (!listen || !(at >= chGesamtStand)) return false;
+    // Was der neue Satz nicht mehr enthaelt, hat (online) keine Zeiten mehr.
+    Object.keys(chListen).forEach((k) => { if (!listen[k] && chListen[k] && chListen[k].online) chListen[k] = { zeiten: [], online: true, anzahl: 0, stand: new Date(at).toISOString() }; });
+    for (const k of Object.keys(listen)) {
+      const l = listen[k] || {};
+      chListen[k] = { zeiten: l.zeiten || [], online: true, anzahl: l.anzahl || 0, stand: new Date(at).toISOString() };
+    }
+    chGesamtStand = at;
+    if (speichern) { try { localStorage.setItem(CH_CACHE, JSON.stringify({ at, listen })); } catch (e) { /* voll */ } }
+    try { chZaehlen(listen); } catch (e) { /* Kacheln noch nicht da */ }
+    if (chSeiteOffen()) chZeichneListe();
+    return true;
+  }
+  function chCacheLaden() {
+    const c = chLesen(CH_CACHE, null);
+    if (c && c.listen && c.at) chGesamtUebernehmen(c.listen, c.at, false);
+  }
+  // BESTELLT (v0.9.33): "Stelle sicher, dass Hoch- und Runterladen nicht zu Verzoegerungen beim
+  // Steuern fuehren, ansonsten nur dann, wenn kein Rennen laeuft." Der Abruf selbst laeuft
+  // nebenher, aber das Einlesen, Zaehlen, Neuzeichnen und Speichern danach kostet den Haupt-
+  // Thread einige Millisekunden - genau den, auf dem auch der 45-ms-Sendetakt laeuft. Also:
+  // waehrend Countdown, Rennen und Auslaufrunde gar kein Netzverkehr der Bestenliste; was
+  // ansteht, wird verschoben und laeuft danach.
+  function chNetzErlaubt() {
+    return !(typeof raceState !== 'undefined' && ['countdown', 'racing', 'finishing'].indexOf(raceState) >= 0);
+  }
+  let chSpaeterTimer = null;
+  function chSpaeter() {
+    if (chSpaeterTimer) return;
+    chSpaeterTimer = setTimeout(() => { chSpaeterTimer = null; chAusgangSenden(); chAuffrischen(); }, 20000);
+  }
+  function chAuffrischen(erzwingen) {
+    const o = chOnline();
+    if (!o.url || o.url !== CH_STANDARD_URL) return Promise.resolve();
+    if (!chNetzErlaubt()) { chSpaeter(); return Promise.resolve(); }
+    if (chAuffrischenLaeuft) return chAuffrischenLaeuft;
+    if (!erzwingen && Date.now() - chGeholtAt < 120000) return Promise.resolve();
+    chAuffrischenLaeuft = chSchnappschuss()
+      .then((j) => { if (j && j.listen) chGesamtUebernehmen(j.listen, Date.parse(j.stand), true); })
+      .then(() => fetch(o.url + (o.url.indexOf('?') >= 0 ? '&' : '?') + 'alle=1', { cache: 'no-store' })
+        .then((r) => r.json())
+        .then((j) => { if (j && j.ok && j.listen) chGesamtUebernehmen(j.listen, Date.now(), true); })
+        .catch(() => { /* offline: Zwischenspeicher bleibt */ }))
+      .then(() => { chGeholtAt = Date.now(); chAuffrischenLaeuft = null; },
+            () => { chAuffrischenLaeuft = null; });
+    return chAuffrischenLaeuft;
+  }
   function chListeLaden(schl, frisch) {
     const o = chOnline();
     if (!o.url) { chListen[schl] = { zeiten: null, online: false }; return Promise.resolve(); }
+    if (o.url === CH_STANDARD_URL) {
+      // Sofort aus dem Speicher; fehlt die Strecke in einem vollstaendigen Satz, ist sie leer.
+      if (!chListen[schl] && chGesamtStand) {
+        chListen[schl] = { zeiten: [], online: true, anzahl: 0, stand: new Date(chGesamtStand).toISOString() };
+      }
+      if (chListen[schl] && chListen[schl].online) {
+        if (chSeiteOffen()) chZeichneListe();
+        chAuffrischen(!!frisch);
+        return Promise.resolve();
+      }
+      chListen[schl] = Object.assign(chListen[schl] || {}, { laedt: true });
+      return chAuffrischen(true).then(() => {
+        if (!chListen[schl] || chListen[schl].laedt) chListen[schl] = { zeiten: [], online: true, anzahl: 0, stand: null };
+        if (chSeiteOffen()) chZeichneListe();
+      });
+    }
     chListen[schl] = Object.assign(chListen[schl] || {}, { laedt: true });
     const schnapp = !frisch && o.url === CH_STANDARD_URL ? chSchnappschuss() : Promise.resolve(null);
     return schnapp.then((j) => {
@@ -37942,8 +38179,11 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
           text += '\n\n' + chSterneName(sterne) + ' ' + chSterneZeichen(sterne);
           const o = chOnline();
           if (o.url && o.hochladen) {
+            const info = chUploadInfo || {};
             text += '\n\n' + (hochgeladen === true ? t('Ergebnis hochgeladen.')
-              : hochgeladen === false ? t('Ergebnis konnte nicht hochgeladen werden – steht nur lokal.')
+              : hochgeladen === false
+                ? (info.endgueltig ? t('Ergebnis abgelehnt') + ': ' + (info.grund || '')
+                   : t('Ergebnis noch nicht hochgeladen') + (info.grund ? ': ' + info.grund : '') + ' – ' + t('wird automatisch erneut versucht.'))
               : t('Ergebnis wird hochgeladen …'));
           }
         }
@@ -38267,8 +38507,8 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
         + def.runden + ' ' + t('Runden') + ' · ' + wechsel;
       // Sichtbar auch im Konsolen-Layout, das die Beschreibungszeile der Kacheln ausblendet.
       // Die Woche steht seit v0.9.20 nur noch einmal, neben der Ueberschrift (BESTELLT).
-      kachel.querySelector('.ch-k-woche').textContent =
-        w.tage <= 1 ? t('neu morgen') : t('neu in {n} Tagen').replace('{n}', w.tage);
+      // v0.9.33: die Tage stehen einmal oben neben der Woche; hier unten die Spieler.
+      kachel.querySelector('.ch-k-woche').textContent = '';
       // "Beliebteste Strecke" (BESTELLT): ein Banner auf der Kachel mit den meisten Spielern.
       const banner = kachel.querySelector('.ch-k-beliebt');
       if (banner) banner.hidden = !chBeliebtesteId || chBeliebtesteId !== def.id;
@@ -38278,7 +38518,10 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       chErgebnisseZeigen(kachel, def.id);
     });
     const kopf = $('ch-woche-kopf');
-    if (kopf && CHALLENGES[0]) kopf.textContent = t('Woche') + ' ' + CHALLENGES[0].woche + '/20';
+    if (kopf && CHALLENGES[0]) {
+      kopf.textContent = t('Woche') + ' ' + CHALLENGES[0].woche + '/20 · '
+        + (w.tage <= 1 ? t('neu morgen') : t('neu in {n} Tagen').replace('{n}', w.tage));
+    }
     chDauerKachelnZeichnen();
   }
   // Dauerrennen-Kacheln (sub-ch-e): feste Strecken, keine Wochenrotation.
@@ -38321,8 +38564,26 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     em.hidden = n === null;
     // BESTELLT (v0.9.20): "je Strecke noch anzeigen, wie viele Spieler gespielt haben".
     const sp = chSpielerJe ? (chSpielerJe[id] || 0) : 0;
-    em.textContent = (n === 1 ? t('1 Ergebnis') : t('{n} Ergebnisse').replace('{n}', n))
-      + ' · ' + (sp === 1 ? t('1 Spieler') : t('{n} Spieler').replace('{n}', sp));
+    em.textContent = (sp === 1 ? t('1 Spieler') : t('{n} Spieler').replace('{n}', sp))
+      + ' · ' + (n === 1 ? t('1 Ergebnis') : t('{n} Ergebnisse').replace('{n}', n));
+  }
+  // Spieler und Ergebnisse je Strecke aus einem vollstaendigen Satz Listen (v0.9.33: auch aus
+  // dem Zwischenspeicher und dem Live-Abruf, nicht nur dem Schnappschuss).
+  function chZaehlen(listen) {
+    const summe = {}, geraete = {};
+    Object.keys(listen).forEach((k) => {
+      const id = k.split('|')[0];
+      summe[id] = (summe[id] || 0) + (listen[k].anzahl || 0);
+      if (!geraete[id]) geraete[id] = new Set();
+      for (const z of (listen[k].zeiten || [])) geraete[id].add(z.geraet || ('?' + z.fahrer + '_' + z.zeit_ms));
+    });
+    chSpielerJe = {};
+    Object.keys(geraete).forEach((id) => { chSpielerJe[id] = geraete[id].size; });
+    let best = null;
+    CHALLENGES.map((d) => d.id).forEach((id) => { if (summe[id] > 0 && (best === null || summe[id] > summe[best])) best = id; });
+    chBeliebtesteId = best;
+    chErgebnisse = summe;
+    chKachelnZeichnen();
   }
   function chBeliebteste() {
     chSchnappschuss().then((j) => {
@@ -38413,8 +38674,18 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   // kann". Der Umschalter zeichnet die Karte neu und merkt den Zustand fuer den Start.
   $('ch-spiegel').addEventListener('change', () => {
     chSpiegel = $('ch-spiegel').checked;
+    if ($('ch-spiegel-knopf')) {
+      $('ch-spiegel-knopf').setAttribute('aria-pressed', chSpiegel ? 'true' : 'false');
+      $('ch-spiegel-knopf').classList.toggle('an', chSpiegel);
+    }
     chZeichneDetail();
   });
+  if ($('ch-spiegel-knopf')) {
+    $('ch-spiegel-knopf').addEventListener('click', () => {
+      $('ch-spiegel').checked = !$('ch-spiegel').checked;
+      $('ch-spiegel').dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  }
   $('ch-start').addEventListener('click', () => { if (chLauf) challengeAbbrechen(); else challengeStartenDialog(); });
   ['ch-url', 'ch-fahrer', 'ch-hochladen'].forEach((id) => $(id).addEventListener('change', chOnlineSpeichern));
   // Derselbe Name direkt auf der Strecken-Seite (BESTELLT: "im Challenges-Bildschirm nochmal
@@ -77851,6 +78122,48 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if ($('mp-ready-screen')) $('mp-ready-screen').hidden = true;
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Mitspieler im Ziel -> letzte Runde, Ende-Signal erkannt, Ampel nur im Countdown' };
+  });
+
+  stAdd('Bestenliste: aus dem Zwischenspeicher sofort, fehlende Strecke = leer, Warteschlange haelt', () => {
+    const f = [];
+    const merk = { stand: chGesamtStand, geholt: chGeholtAt, listen: JSON.stringify(chListen),
+                   cache: localStorage.getItem(CH_CACHE), aus: localStorage.getItem(CH_AUSGANG) };
+    try {
+      chGeholtAt = Date.now();                       // kein Netzabruf in diesem Test
+      chGesamtStand = 0;
+      chGesamtUebernehmen({ 'wa01-imolina|hotlap|pro': { anzahl: 1, zeiten: [{ zeit_ms: 4639, geraet: 'x' }] } }, Date.now(), false);
+      delete chListen['oval|hotlap|pro'];
+      chListeLaden('oval|hotlap|pro');
+      const l = chListen['oval|hotlap|pro'];
+      if (!l || l.laedt || !l.online || !Array.isArray(l.zeiten) || l.zeiten.length) f.push('fehlende Strecke laedt statt sofort leer: ' + JSON.stringify(l));
+      if (!chListen['wa01-imolina|hotlap|pro'] || chListen['wa01-imolina|hotlap|pro'].zeiten.length !== 1) f.push('Liste aus dem Satz fehlt');
+      if (chGesamtUebernehmen({}, chGesamtStand - 1000, false)) f.push('aelterer Stand ueberschreibt neueren');
+      chAusgangSchreiben([{ nr: 'a', challenge: 'oval' }, { nr: 'b', challenge: 'oval' }]);
+      chAusgangRaus('a');
+      const a = chAusgangLesen();
+      if (a.length !== 1 || a[0].nr !== 'b') f.push('Warteschlange: ' + JSON.stringify(a));
+    } finally {
+      chGesamtStand = merk.stand; chGeholtAt = merk.geholt;
+      Object.keys(chListen).forEach((k) => delete chListen[k]);
+      Object.assign(chListen, JSON.parse(merk.listen));
+      if (merk.cache === null) localStorage.removeItem(CH_CACHE); else localStorage.setItem(CH_CACHE, merk.cache);
+      if (merk.aus === null) localStorage.removeItem(CH_AUSGANG); else localStorage.setItem(CH_AUSGANG, merk.aus);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'sofort leer statt Laden, neuerer Stand gewinnt, Schlange haelt bis zur Bestaetigung' };
+  });
+
+  stAdd('Bestenliste: kein Netz im Rennen, verstaendliche Upload-Gruende', () => {
+    const f = [];
+    const merk = raceState;
+    try {
+      for (const z of ['countdown', 'racing', 'finishing']) { raceState = z; if (chNetzErlaubt()) f.push('Netz erlaubt bei ' + z); }
+      for (const z of ['idle', 'finished']) { raceState = z; if (!chNetzErlaubt()) f.push('Netz gesperrt bei ' + z); }
+      if (chUploadGrund(new TypeError('Failed to fetch')) !== t('keine Verbindung zum Server')) f.push('Netzfehler ohne Klartext');
+      const se = new SyntaxError('Unexpected token <');
+      if (chUploadGrund(se) !== t('der Server hat nicht richtig geantwortet')) f.push('Echo-Seite ohne Klartext');
+      if (chUploadGrund(Object.assign(new Error('Rundenzahl stimmt nicht'), { endgueltig: true })) !== t('Rundenzahl stimmt nicht')) f.push('Ablehnung ohne Grund');
+    } finally { raceState = merk; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Rennen sperrt den Netzverkehr, Gruende im Klartext' };
   });
 
   stAdd('Woerterbuch ohne doppelte Schluessel', () => {

@@ -838,20 +838,128 @@
     // meist schon gelaufen, nur die Antwort fehlt. Deshalb bis zu zwei Wiederholungen, und
     // "zu schnell hintereinander" (die 15-s-Drossel je Geraet im Skript) heisst beim Wiederholen:
     // der erste Versuch ist angekommen. So entsteht keine doppelte Zeile.
-    const senden = (versuch) => fetch(o.url, { method: 'POST', body: JSON.stringify(eintrag) })
+    // v0.9.33: ZUERST in die Warteschlange (CH_AUSGANG), dann senden. Eine Zeit verlaesst die
+    // Schlange erst, wenn das Sheet sie bestaetigt hat oder sie endgueltig ablehnt (dann mit
+    // Grund als Meldung) - kein Funkloch und keine Google-Echo-404 verliert sie mehr.
+    eintrag.nr = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+    eintrag.url = o.url;
+    chAusgangSchreiben(chAusgangLesen().concat([eintrag]));
+    chAusgangZeichnen();
+    if (!chNetzErlaubt()) { chSpaeter(); chUploadInfo = { ok: false, spaeter: true, grund: t('es läuft gerade ein Rennen') }; return Promise.resolve(false); }
+    return chEintragSenden(eintrag);
+  }
+  // Der letzte Upload-Ausgang fuer den Ergebnisdialog: { ok, endgueltig, spaeter, grund }.
+  let chUploadInfo = null;
+  // BESTELLT (v0.9.33): "Bau ein, dass mir gemeldet wird, wenn eine Zeit nicht hochgeladen
+  // werden kann und warum." Aus der technischen Ursache ein Satz, den man versteht.
+  function chUploadGrund(e) {
+    const m = String((e && e.message) || e || '');
+    if (e && e.endgueltig) return t(m);
+    if (e && e.name === 'SyntaxError') return t('der Server hat nicht richtig geantwortet');
+    if (/Failed to fetch|NetworkError|Load failed|Network request failed|offline/i.test(m)) return t('keine Verbindung zum Server');
+    if (m === 'zu schnell') return t('zu viele Uploads kurz hintereinander');
+    return m || t('unbekannter Fehler');
+  }
+  const CH_AUSGANG = 'omegasim-ch-ausgang';
+  function chAusgangLesen() { const a = chLesen(CH_AUSGANG, []); return Array.isArray(a) ? a : []; }
+  function chAusgangSchreiben(a) { try { localStorage.setItem(CH_AUSGANG, JSON.stringify(a.slice(-50))); } catch (e) { /* voll */ } }
+  function chAusgangRaus(nr) { chAusgangSchreiben(chAusgangLesen().filter((x) => x.nr !== nr)); }
+  function chEintragSenden(eintrag) {
+    const daten = Object.assign({}, eintrag); delete daten.nr; delete daten.url;
+    const senden = (versuch) => fetch(eintrag.url, { method: 'POST', body: JSON.stringify(daten) })
       .then((r) => r.json())
       .then((j) => {
         if (j && j.ok) return true;
         if (versuch > 0 && j && j.fehler === 'zu schnell hintereinander') return true;
+        if (j && j.fehler === 'zu schnell hintereinander') throw new Error('zu schnell');   // spaeter nochmal
         throw Object.assign(new Error((j && j.fehler) || 'abgelehnt'), { endgueltig: true });
       })
       .catch((e) => {
         if (!e.endgueltig && versuch < 2) return new Promise((ok) => setTimeout(ok, 1500)).then(() => senden(versuch + 1));
-        log('Challenge: Hochladen fehlgeschlagen: ' + e.message, 'warn');
-        return false;
+        throw e;
       });
-    return senden(0);
+    return senden(0).then(() => {
+      chAusgangRaus(eintrag.nr);
+      chUploadInfo = { ok: true };
+      log('Challenge: Zeit hochgeladen (' + eintrag.challenge + ').', 'info');
+      chAusgangZeichnen();
+      setTimeout(() => chAuffrischen(true), 2500);
+      return true;
+    }, (e) => {
+      const grund = chUploadGrund(e);
+      const name = (chDef(eintrag.challenge) || {}).name || eintrag.challenge;
+      if (e.endgueltig) {
+        chAusgangRaus(eintrag.nr);
+        chUploadInfo = { ok: false, endgueltig: true, grund };
+        log('Challenge: Zeit (' + name + ') vom Sheet abgelehnt: ' + e.message, 'err');
+        chMeldung(t('Zeit nicht hochgeladen'),
+          t('Die Bestenliste hat deine Zeit auf {s} abgelehnt: {g}. Sie bleibt in deinen eigenen Zeiten.')
+            .replace('{s}', name).replace('{g}', grund));
+      } else {
+        // In der Schlange vermerken; gemeldet wird je Zeit nur beim ersten Fehlschlag.
+        const a = chAusgangLesen();
+        const x = a.find((y) => y.nr === eintrag.nr);
+        const erstesMal = !(x && x.fehler);
+        if (x) { x.fehler = grund; x.versuche = (x.versuche || 0) + 1; chAusgangSchreiben(a); }
+        chUploadInfo = { ok: false, spaeter: true, grund };
+        log('Challenge: Hochladen (' + name + ') gerade nicht moeglich: ' + grund + '. Wird wiederholt.', 'warn');
+        if (erstesMal) {
+          chMeldung(t('Zeit noch nicht hochgeladen'),
+            t('Deine Zeit auf {s} konnte nicht hochgeladen werden: {g}. Sie ist gespeichert und wird automatisch erneut gesendet.')
+              .replace('{s}', name).replace('{g}', grund));
+        }
+      }
+      chAusgangZeichnen();
+      return false;
+    });
   }
+  // Ein Hinweis, den man auch sieht: als Dialog, aber nie mitten im Rennen und nie ueber einem
+  // anderen offenen Dialog (z. B. dem Challenge-Ergebnis) - dann wartet er, bis Ruhe ist.
+  const chMeldungen = [];
+  function chMeldung(titel, text) {
+    chMeldungen.push([titel, text]);
+    chMeldungZeigen();
+  }
+  function chMeldungZeigen() {
+    if (!chMeldungen.length) return;
+    const offen = typeof konsoleFrageOffen === 'function' && konsoleFrageOffen();
+    if (offen || !chNetzErlaubt()) { setTimeout(chMeldungZeigen, 2000); return; }
+    const [titel, text] = chMeldungen.shift();
+    konsoleFrage(titel, text, [[t('OK'), () => setTimeout(chMeldungZeigen, 300)]]);
+  }
+  // Lage der Schlange auf der Challenge-Seite: wie viele Zeiten warten, und warum.
+  function chAusgangZeichnen() {
+    const el = $('ch-ausgang-lage');
+    if (!el) return;
+    const a = chAusgangLesen();
+    el.hidden = !a.length;
+    if (!a.length) return;
+    const grund = (a.find((x) => x.fehler) || {}).fehler;
+    $('ch-ausgang-text').textContent = (a.length === 1 ? t('1 Zeit wartet auf den Upload')
+      : t('{n} Zeiten warten auf den Upload').replace('{n}', a.length))
+      + (grund ? ' – ' + t('zuletzt') + ': ' + grund : '');
+  }
+  // Was noch in der Schlange liegt, nacheinander nachreichen (das Skript nimmt je Geraet
+  // hoechstens einen Eintrag alle 15 s an).
+  let chAusgangLaeuft = false;
+  function chAusgangSenden() {
+    if (chAusgangLaeuft) return;
+    const a = chAusgangLesen();
+    if (!a.length) return;
+    if (!chNetzErlaubt()) { chSpaeter(); return; }
+    chAusgangLaeuft = true;
+    chEintragSenden(a[0]).then(() => {
+      chAusgangLaeuft = false;
+      if (chAusgangLesen().length) setTimeout(chAusgangSenden, 16000);
+    });
+  }
+  setTimeout(() => { chCacheLaden(); chAuffrischen(); chAusgangSenden(); chAusgangZeichnen(); }, 1500);
+  if ($('ch-ausgang-senden')) $('ch-ausgang-senden').addEventListener('click', () => {
+    if (!chNetzErlaubt()) { showHudToast(t('Nach dem Rennen')); return; }
+    chAusgangSenden();
+  });
+  setInterval(() => { chAuffrischen(true); chAusgangSenden(); }, 10 * 60000);
+  window.addEventListener('online', () => { chAusgangSenden(); chAuffrischen(true); });
   // ---- SCHNAPPSCHUSS AUS DEM REPO (v0.8.34) ----
   // BESTELLT: "das Google Sheet ab und zu in GitHub speichern per Action ... die lokalen + die
   // in der letzten Stunde gefetchten". Die Action (.github/workflows/challenges.yml) legt
@@ -876,9 +984,84 @@
       .catch(() => null);
     return chSchnapp;
   }
+  // ---- BESTENLISTE: ZWISCHENSPEICHER UND HINTERGRUND (v0.9.33) -------------------------
+  // GEMELDET: "Bei Monzetta laedt jedes Mal, wenn ich die Strecke oeffne, erst lange die
+  // Bestenliste, und dann heisst es, es gaebe keine Zeiten. Geht das nicht beim Starten der
+  // App im Hintergrund und dann im Zwischenspeicher?" Ursache: eine Strecke OHNE Zeiten steht
+  // nicht im Schnappschuss, und das wurde als "unbekannt" gelesen - also jedes Mal live bei
+  // Google gefragt (Sekunden), mit dem Ergebnis "leer".
+  // Jetzt: ein vollstaendiger Satz Listen (Schnappschuss oder ?alle=1) liegt im Speicher
+  // (CH_CACHE) und gilt sofort; eine Strecke, die darin fehlt, HAT keine Zeiten. Beim Start
+  // und alle zehn Minuten wird im Hintergrund nachgeladen, nach einem Hochladen sofort.
+  const CH_CACHE = 'omegasim-ch-cache';
+  let chGesamtStand = 0, chGeholtAt = 0, chAuffrischenLaeuft = null;
+  function chGesamtUebernehmen(listen, at, speichern) {
+    if (!listen || !(at >= chGesamtStand)) return false;
+    // Was der neue Satz nicht mehr enthaelt, hat (online) keine Zeiten mehr.
+    Object.keys(chListen).forEach((k) => { if (!listen[k] && chListen[k] && chListen[k].online) chListen[k] = { zeiten: [], online: true, anzahl: 0, stand: new Date(at).toISOString() }; });
+    for (const k of Object.keys(listen)) {
+      const l = listen[k] || {};
+      chListen[k] = { zeiten: l.zeiten || [], online: true, anzahl: l.anzahl || 0, stand: new Date(at).toISOString() };
+    }
+    chGesamtStand = at;
+    if (speichern) { try { localStorage.setItem(CH_CACHE, JSON.stringify({ at, listen })); } catch (e) { /* voll */ } }
+    try { chZaehlen(listen); } catch (e) { /* Kacheln noch nicht da */ }
+    if (chSeiteOffen()) chZeichneListe();
+    return true;
+  }
+  function chCacheLaden() {
+    const c = chLesen(CH_CACHE, null);
+    if (c && c.listen && c.at) chGesamtUebernehmen(c.listen, c.at, false);
+  }
+  // BESTELLT (v0.9.33): "Stelle sicher, dass Hoch- und Runterladen nicht zu Verzoegerungen beim
+  // Steuern fuehren, ansonsten nur dann, wenn kein Rennen laeuft." Der Abruf selbst laeuft
+  // nebenher, aber das Einlesen, Zaehlen, Neuzeichnen und Speichern danach kostet den Haupt-
+  // Thread einige Millisekunden - genau den, auf dem auch der 45-ms-Sendetakt laeuft. Also:
+  // waehrend Countdown, Rennen und Auslaufrunde gar kein Netzverkehr der Bestenliste; was
+  // ansteht, wird verschoben und laeuft danach.
+  function chNetzErlaubt() {
+    return !(typeof raceState !== 'undefined' && ['countdown', 'racing', 'finishing'].indexOf(raceState) >= 0);
+  }
+  let chSpaeterTimer = null;
+  function chSpaeter() {
+    if (chSpaeterTimer) return;
+    chSpaeterTimer = setTimeout(() => { chSpaeterTimer = null; chAusgangSenden(); chAuffrischen(); }, 20000);
+  }
+  function chAuffrischen(erzwingen) {
+    const o = chOnline();
+    if (!o.url || o.url !== CH_STANDARD_URL) return Promise.resolve();
+    if (!chNetzErlaubt()) { chSpaeter(); return Promise.resolve(); }
+    if (chAuffrischenLaeuft) return chAuffrischenLaeuft;
+    if (!erzwingen && Date.now() - chGeholtAt < 120000) return Promise.resolve();
+    chAuffrischenLaeuft = chSchnappschuss()
+      .then((j) => { if (j && j.listen) chGesamtUebernehmen(j.listen, Date.parse(j.stand), true); })
+      .then(() => fetch(o.url + (o.url.indexOf('?') >= 0 ? '&' : '?') + 'alle=1', { cache: 'no-store' })
+        .then((r) => r.json())
+        .then((j) => { if (j && j.ok && j.listen) chGesamtUebernehmen(j.listen, Date.now(), true); })
+        .catch(() => { /* offline: Zwischenspeicher bleibt */ }))
+      .then(() => { chGeholtAt = Date.now(); chAuffrischenLaeuft = null; },
+            () => { chAuffrischenLaeuft = null; });
+    return chAuffrischenLaeuft;
+  }
   function chListeLaden(schl, frisch) {
     const o = chOnline();
     if (!o.url) { chListen[schl] = { zeiten: null, online: false }; return Promise.resolve(); }
+    if (o.url === CH_STANDARD_URL) {
+      // Sofort aus dem Speicher; fehlt die Strecke in einem vollstaendigen Satz, ist sie leer.
+      if (!chListen[schl] && chGesamtStand) {
+        chListen[schl] = { zeiten: [], online: true, anzahl: 0, stand: new Date(chGesamtStand).toISOString() };
+      }
+      if (chListen[schl] && chListen[schl].online) {
+        if (chSeiteOffen()) chZeichneListe();
+        chAuffrischen(!!frisch);
+        return Promise.resolve();
+      }
+      chListen[schl] = Object.assign(chListen[schl] || {}, { laedt: true });
+      return chAuffrischen(true).then(() => {
+        if (!chListen[schl] || chListen[schl].laedt) chListen[schl] = { zeiten: [], online: true, anzahl: 0, stand: null };
+        if (chSeiteOffen()) chZeichneListe();
+      });
+    }
     chListen[schl] = Object.assign(chListen[schl] || {}, { laedt: true });
     const schnapp = !frisch && o.url === CH_STANDARD_URL ? chSchnappschuss() : Promise.resolve(null);
     return schnapp.then((j) => {
@@ -1184,8 +1367,11 @@
           text += '\n\n' + chSterneName(sterne) + ' ' + chSterneZeichen(sterne);
           const o = chOnline();
           if (o.url && o.hochladen) {
+            const info = chUploadInfo || {};
             text += '\n\n' + (hochgeladen === true ? t('Ergebnis hochgeladen.')
-              : hochgeladen === false ? t('Ergebnis konnte nicht hochgeladen werden – steht nur lokal.')
+              : hochgeladen === false
+                ? (info.endgueltig ? t('Ergebnis abgelehnt') + ': ' + (info.grund || '')
+                   : t('Ergebnis noch nicht hochgeladen') + (info.grund ? ': ' + info.grund : '') + ' – ' + t('wird automatisch erneut versucht.'))
               : t('Ergebnis wird hochgeladen …'));
           }
         }
@@ -1509,8 +1695,8 @@
         + def.runden + ' ' + t('Runden') + ' · ' + wechsel;
       // Sichtbar auch im Konsolen-Layout, das die Beschreibungszeile der Kacheln ausblendet.
       // Die Woche steht seit v0.9.20 nur noch einmal, neben der Ueberschrift (BESTELLT).
-      kachel.querySelector('.ch-k-woche').textContent =
-        w.tage <= 1 ? t('neu morgen') : t('neu in {n} Tagen').replace('{n}', w.tage);
+      // v0.9.33: die Tage stehen einmal oben neben der Woche; hier unten die Spieler.
+      kachel.querySelector('.ch-k-woche').textContent = '';
       // "Beliebteste Strecke" (BESTELLT): ein Banner auf der Kachel mit den meisten Spielern.
       const banner = kachel.querySelector('.ch-k-beliebt');
       if (banner) banner.hidden = !chBeliebtesteId || chBeliebtesteId !== def.id;
@@ -1520,7 +1706,10 @@
       chErgebnisseZeigen(kachel, def.id);
     });
     const kopf = $('ch-woche-kopf');
-    if (kopf && CHALLENGES[0]) kopf.textContent = t('Woche') + ' ' + CHALLENGES[0].woche + '/20';
+    if (kopf && CHALLENGES[0]) {
+      kopf.textContent = t('Woche') + ' ' + CHALLENGES[0].woche + '/20 · '
+        + (w.tage <= 1 ? t('neu morgen') : t('neu in {n} Tagen').replace('{n}', w.tage));
+    }
     chDauerKachelnZeichnen();
   }
   // Dauerrennen-Kacheln (sub-ch-e): feste Strecken, keine Wochenrotation.
@@ -1563,8 +1752,26 @@
     em.hidden = n === null;
     // BESTELLT (v0.9.20): "je Strecke noch anzeigen, wie viele Spieler gespielt haben".
     const sp = chSpielerJe ? (chSpielerJe[id] || 0) : 0;
-    em.textContent = (n === 1 ? t('1 Ergebnis') : t('{n} Ergebnisse').replace('{n}', n))
-      + ' · ' + (sp === 1 ? t('1 Spieler') : t('{n} Spieler').replace('{n}', sp));
+    em.textContent = (sp === 1 ? t('1 Spieler') : t('{n} Spieler').replace('{n}', sp))
+      + ' · ' + (n === 1 ? t('1 Ergebnis') : t('{n} Ergebnisse').replace('{n}', n));
+  }
+  // Spieler und Ergebnisse je Strecke aus einem vollstaendigen Satz Listen (v0.9.33: auch aus
+  // dem Zwischenspeicher und dem Live-Abruf, nicht nur dem Schnappschuss).
+  function chZaehlen(listen) {
+    const summe = {}, geraete = {};
+    Object.keys(listen).forEach((k) => {
+      const id = k.split('|')[0];
+      summe[id] = (summe[id] || 0) + (listen[k].anzahl || 0);
+      if (!geraete[id]) geraete[id] = new Set();
+      for (const z of (listen[k].zeiten || [])) geraete[id].add(z.geraet || ('?' + z.fahrer + '_' + z.zeit_ms));
+    });
+    chSpielerJe = {};
+    Object.keys(geraete).forEach((id) => { chSpielerJe[id] = geraete[id].size; });
+    let best = null;
+    CHALLENGES.map((d) => d.id).forEach((id) => { if (summe[id] > 0 && (best === null || summe[id] > summe[best])) best = id; });
+    chBeliebtesteId = best;
+    chErgebnisse = summe;
+    chKachelnZeichnen();
   }
   function chBeliebteste() {
     chSchnappschuss().then((j) => {
@@ -1655,8 +1862,18 @@
   // kann". Der Umschalter zeichnet die Karte neu und merkt den Zustand fuer den Start.
   $('ch-spiegel').addEventListener('change', () => {
     chSpiegel = $('ch-spiegel').checked;
+    if ($('ch-spiegel-knopf')) {
+      $('ch-spiegel-knopf').setAttribute('aria-pressed', chSpiegel ? 'true' : 'false');
+      $('ch-spiegel-knopf').classList.toggle('an', chSpiegel);
+    }
     chZeichneDetail();
   });
+  if ($('ch-spiegel-knopf')) {
+    $('ch-spiegel-knopf').addEventListener('click', () => {
+      $('ch-spiegel').checked = !$('ch-spiegel').checked;
+      $('ch-spiegel').dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  }
   $('ch-start').addEventListener('click', () => { if (chLauf) challengeAbbrechen(); else challengeStartenDialog(); });
   ['ch-url', 'ch-fahrer', 'ch-hochladen'].forEach((id) => $(id).addEventListener('change', chOnlineSpeichern));
   // Derselbe Name direkt auf der Strecken-Seite (BESTELLT: "im Challenges-Bildschirm nochmal

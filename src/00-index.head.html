@@ -1377,6 +1377,14 @@
   /* Rammstrafe (v0.9.21): rot auf dem Boxenknopf und im Ergebnis. */
   .gt3-act.strafe { color: #ff5252; box-shadow: inset 0 0 0 2px #ff5252; }
   .rammer-tag { color: #ff5252; font-weight: 700; letter-spacing: .04em; margin-left: .4em; }
+  .ch-ausgang { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 4px 0 8px;
+    padding: 8px 10px; border-radius: 8px; background: rgba(255, 176, 46, .14); color: #ffcf7a; font-size: 13px; }
+  /* Challenges: Spiegel-Knopf unter der Karte (v0.9.33) */
+  .ch-karte-knoepfe { display: flex; justify-content: center; gap: 8px; margin: 6px 0 4px; }
+  .ch-spiegel-knopf { width: 48px; height: 40px; padding: 0; display: grid; place-items: center;
+    border-radius: 10px; }
+  .ch-spiegel-knopf svg { width: 26px; height: 26px; }
+  .ch-spiegel-knopf.an { background: var(--k-blau, #0b84d6); color: #fff; border-color: transparent; }
   /* Fahren: Fahrgefuehl-Kachel mit groesserer Schrift (v0.9.31) */
   .k-fahren-unten #fa-profil .k-kt { font-size: clamp(14px, 2.6vh, 22px); }
   .k-fahren-unten #fa-profil .k-kk { font-size: clamp(11px, 2vh, 15px); }
@@ -4379,7 +4387,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.32</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.35</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5244,6 +5252,14 @@
       <div class="ch-links">
         <div class="ch-karte" id="ch-karte" tabindex="0" role="button" data-ch-voll
              title="Vergr&ouml;&szlig;ern (X) / Verkleinern (X oder Kreis)" aria-label="Streckenkarte vergr&ouml;&szlig;ern"></div>
+        <!-- v0.9.33: Spiegeln als Knopf mit Symbol direkt unter der Karte; das Kaestchen bleibt
+             unsichtbar als Zustand (chSpiegel, Speicherung). -->
+        <div class="ch-karte-knoepfe">
+          <button type="button" class="ch-spiegel-knopf" id="ch-spiegel-knopf" aria-pressed="false"
+                  title="Strecke spiegeln: Kurven links/rechts tauschen und die Schleife r&uuml;ckw&auml;rts fahren"
+                  aria-label="Strecke spiegeln"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18" stroke-dasharray="2 2.5"/><path d="M9 6 3 18h6z"/><path d="M15 6l6 12h-6z" fill="currentColor" fill-opacity=".35"/></svg></button>
+        </div>
         <p class="muted" id="ch-idee"></p>
         <p class="ch-fakten" id="ch-fakten" data-i18n-skip></p>
         <p class="ch-teile" id="ch-teile" data-i18n-skip></p>
@@ -5254,9 +5270,7 @@
           <div class="muted" id="ch-erg-text" data-i18n-skip></div>
         </div>
         <button type="button" class="ch-umschalter" id="ch-modus" aria-label="Modus umschalten"><span data-m="hotlap">Beste Runde</span><span data-m="rennen">Rennen</span></button>
-        <label class="tgl" id="ch-spiegel-zeile" title="Strecke spiegeln: Kurven links/rechts tauschen und die Schleife rueckwaerts fahren">
-          <input type="checkbox" id="ch-spiegel"> Strecke spiegeln
-        </label>
+        <input type="checkbox" id="ch-spiegel" hidden data-preset-skip>
         <p class="ch-medaille-hinweis" id="ch-medaille-hinweis" data-i18n-skip></p>
         <div class="ch-name-zeile"><label for="ch-name">Name in der Bestenliste</label>
           <input type="text" id="ch-name" maxlength="16" data-preset-skip></div>
@@ -5264,6 +5278,10 @@
       </div>
       <div class="ch-rechts">
         <h3>Bestenliste</h3>
+        <div class="ch-ausgang" id="ch-ausgang-lage" hidden>
+          <span id="ch-ausgang-text" data-i18n-skip></span>
+          <button type="button" id="ch-ausgang-senden">Jetzt senden</button>
+        </div>
         <p class="muted" id="ch-liste-status" data-i18n-skip></p>
         <p class="muted ch-stats" id="ch-stats" data-i18n-skip></p>
         <div class="ch-perz" id="ch-perz" data-i18n-skip></div>
@@ -5484,6 +5502,8 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Bestenliste: Kann eine Zeit nicht hochgeladen werden, kommt ein Hinweis mit Strecke und Grund (z. B. &#8222;keine Verbindung zum Server&#8220; oder die Ablehnung durch die Bestenliste), nie mitten im Rennen und nie &#252;ber einem anderen Dialog. Auf der Challenge-Seite steht, wie viele Zeiten noch warten, mit &#8222;Jetzt senden&#8220;. Hoch- und Herunterladen der Bestenliste laufen nur, wenn gerade kein Rennen l&#228;uft, damit das Steuern nicht verz&#246;gert wird.</li>
+        <li>Bestenliste: Die Listen liegen im Zwischenspeicher und erscheinen sofort, beim App-Start und alle 10 Minuten wird im Hintergrund nachgeladen; eine Strecke ohne Zeiten zeigt das sofort, statt lange zu laden. Hochgeladene Zeiten bleiben in einer Warteschlange, bis das Sheet sie best&#228;tigt, und eine Ablehnung wird mit Grund gemeldet. W&#246;chentliche Challenges: Die Resttage stehen oben neben &#8222;Woche X/20&#8220;, unter jeder Strecke stehen Spieler und Ergebnisse. Spiegeln ist jetzt ein Knopf mit Symbol unter der Karte. FAHREN, Strecke: Druckvorlagen nur bei FREI, Editor nur bei AUF DER BAHN. Wischen wechselt den Reiter nicht mehr, wenn die Geste am Bildschirmrand beginnt (Systemleiste).</li>
         <li>WLAN-Mehrspieler: genauerer gemeinsamer Start. Die Zeit wird beim Eintreffen der Antwort gemessen, nicht erst nach dem Einlesen, und im Vorlauf gleicht jedes Telefon die Host-Uhr acht Mal nach und stellt die Ampel nach. Rennende f&#252;r alle: Hat ein Mitspieler die Rundenzahl erreicht, ist bei allen die laufende Runde die letzte. Neu: &#8222;Rennen f&#252;r alle beenden&#8220; (WLAN-Reiter und R&#252;ckfrage beim Verlassen des Rennens). An den Host gehen jetzt die Rennrunden inklusive Fr&#252;hstart-Strafe.</li>
         <li>FAHREN: Die Autos-Kachel zeigt ab zwei verbundenen Autos alle (ohne Foto als Farbfl&#228;che), die Motorsound-Kachel ist weg (Motor jetzt nur in der Garage), Fahrgef&#252;hl und Start sind gr&#246;&#223;er. Garage: ein neues Foto erscheint sofort links in der Auto-Kachel. Podium: gr&#246;&#223;ere Namen, bei zwei Autos nur Platz 1 und 2, allein ein Solo-Podest mit Gesamtzeit, bester Runde und Vergleich mit deiner Bestzeit auf der Strecke. Cockpit: die Rundenliste zeigt h&#246;chstens f&#252;nf Runden und schiebt nichts mehr aus dem Bild. Ohne Bahn zeigt die Renn&#252;bersicht dein Streckenfoto bzw. den Platzhalter statt des Layouts. Freies Training: kein &#8222;Automatisch aufstellen&#8220;. Knockout hei&#223;t jetzt &#8222;NPC Knockout&#8220;, braucht mindestens einen Ghost und schaltet &#8222;Auf der Bahn&#8220; ein.</li>
         <li>Derby: Ein Crash gegen die Wand beendet das Spiel nicht mehr. Es endet erst, wenn jemand das Kill-Ziel erreicht oder nur noch ein Teilnehmer f&#228;hrt; allein ohne Gegner nur von Hand. 2 Spieler: Auto 2 und 3 haben beim Boxenstopp dieselben T&#246;ne wie Auto 1 (Tanken, Reparatur, Schrauber), auf ihrer Stereoseite. Latenz: Spieler 2 und 3 senden &#252;ber denselben Weg wie Auto 1 (der neueste Befehl ersetzt den wartenden), und der Schirm &#8222;Beide&#8220; wird direkt nach dem Senden gezeichnet.</li>

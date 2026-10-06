@@ -16981,6 +16981,48 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Mitspieler im Ziel -> letzte Runde, Ende-Signal erkannt, Ampel nur im Countdown' };
   });
 
+  stAdd('Bestenliste: aus dem Zwischenspeicher sofort, fehlende Strecke = leer, Warteschlange haelt', () => {
+    const f = [];
+    const merk = { stand: chGesamtStand, geholt: chGeholtAt, listen: JSON.stringify(chListen),
+                   cache: localStorage.getItem(CH_CACHE), aus: localStorage.getItem(CH_AUSGANG) };
+    try {
+      chGeholtAt = Date.now();                       // kein Netzabruf in diesem Test
+      chGesamtStand = 0;
+      chGesamtUebernehmen({ 'wa01-imolina|hotlap|pro': { anzahl: 1, zeiten: [{ zeit_ms: 4639, geraet: 'x' }] } }, Date.now(), false);
+      delete chListen['oval|hotlap|pro'];
+      chListeLaden('oval|hotlap|pro');
+      const l = chListen['oval|hotlap|pro'];
+      if (!l || l.laedt || !l.online || !Array.isArray(l.zeiten) || l.zeiten.length) f.push('fehlende Strecke laedt statt sofort leer: ' + JSON.stringify(l));
+      if (!chListen['wa01-imolina|hotlap|pro'] || chListen['wa01-imolina|hotlap|pro'].zeiten.length !== 1) f.push('Liste aus dem Satz fehlt');
+      if (chGesamtUebernehmen({}, chGesamtStand - 1000, false)) f.push('aelterer Stand ueberschreibt neueren');
+      chAusgangSchreiben([{ nr: 'a', challenge: 'oval' }, { nr: 'b', challenge: 'oval' }]);
+      chAusgangRaus('a');
+      const a = chAusgangLesen();
+      if (a.length !== 1 || a[0].nr !== 'b') f.push('Warteschlange: ' + JSON.stringify(a));
+    } finally {
+      chGesamtStand = merk.stand; chGeholtAt = merk.geholt;
+      Object.keys(chListen).forEach((k) => delete chListen[k]);
+      Object.assign(chListen, JSON.parse(merk.listen));
+      if (merk.cache === null) localStorage.removeItem(CH_CACHE); else localStorage.setItem(CH_CACHE, merk.cache);
+      if (merk.aus === null) localStorage.removeItem(CH_AUSGANG); else localStorage.setItem(CH_AUSGANG, merk.aus);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'sofort leer statt Laden, neuerer Stand gewinnt, Schlange haelt bis zur Bestaetigung' };
+  });
+
+  stAdd('Bestenliste: kein Netz im Rennen, verstaendliche Upload-Gruende', () => {
+    const f = [];
+    const merk = raceState;
+    try {
+      for (const z of ['countdown', 'racing', 'finishing']) { raceState = z; if (chNetzErlaubt()) f.push('Netz erlaubt bei ' + z); }
+      for (const z of ['idle', 'finished']) { raceState = z; if (!chNetzErlaubt()) f.push('Netz gesperrt bei ' + z); }
+      if (chUploadGrund(new TypeError('Failed to fetch')) !== t('keine Verbindung zum Server')) f.push('Netzfehler ohne Klartext');
+      const se = new SyntaxError('Unexpected token <');
+      if (chUploadGrund(se) !== t('der Server hat nicht richtig geantwortet')) f.push('Echo-Seite ohne Klartext');
+      if (chUploadGrund(Object.assign(new Error('Rundenzahl stimmt nicht'), { endgueltig: true })) !== t('Rundenzahl stimmt nicht')) f.push('Ablehnung ohne Grund');
+    } finally { raceState = merk; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Rennen sperrt den Netzverkehr, Gruende im Klartext' };
+  });
+
   stAdd('Woerterbuch ohne doppelte Schluessel', () => {
     const imObjekt = Object.keys(I18N_EN).length;
     // Die Quelle steht im eigenen <script>. Sie zu lesen ist billiger und ehrlicher als die
