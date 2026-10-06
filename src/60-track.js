@@ -3057,8 +3057,13 @@
                  + (raumRect.my > 0 ? String(raumRect.my).replace('.', ',') : '–') + ' m';
       // v0.9.39: UNTER die Strecke (vorne in body) und mit den Moebeln aus dem Raumdesigner.
       // Die Flaechen sind <rect>, damit raumRechteckSchieben() sie beim Ziehen mitnimmt.
-      const moebel = typeof raumMoebelSvg === 'function' && raumRect.mx > 0 && raumRect.my > 0
-        ? raumMoebelSvg(raumRect.x + ox, raumRect.y + oy, TRACK_UNITS_PER_CM) : '';
+      // try: eine Zeichnung, die beim Laden scheitert, darf nie wieder die ganze App anhalten.
+      let moebel = '';
+      try {
+        if (typeof raumMoebelSvg === 'function' && raumRect.mx > 0 && raumRect.my > 0) {
+          moebel = raumMoebelSvg(raumRect.x + ox, raumRect.y + oy, TRACK_UNITS_PER_CM);
+        }
+      } catch (e) { moebel = ''; }
       body = `<g class="tp-raum">${moebel}<rect x="${(raumRect.x + ox).toFixed(1)}" y="${(raumRect.y + oy).toFixed(1)}" `
         + `width="${raumRect.w.toFixed(1)}" height="${raumRect.h.toFixed(1)}" fill="none" `
         + `stroke="rgba(110,160,255,.7)" stroke-width="2" stroke-dasharray="7 5"/>`
@@ -3615,6 +3620,17 @@
   // Default 0 m x 0 m = keine Begrenzung: die Zufallsstrecke ignoriert den Raum, bis der
   // Nutzer eine Groesse eintraegt. Ein Wert 0 je Achse heisst "diese Richtung unbegrenzt".
   const RAUM_KEY = 'omegasim-raum';
+  // ---- RAUMGESTALTER-KONSTANTEN, HIER und nicht in 60b-raum.js (v0.9.44) -------------
+  // GEMELDET (Start-Diagnose, APK 0.9.43): "Uncaught ReferenceError: Cannot access
+  // 'RAUM_ZELLE_CM' before initialization". Die Editor-Vorschau zeichnet beim LADEN schon den
+  // Raum mit Moebeln (raumMoebelSvg -> raumFormLaden), und das lief, bevor 60b-raum.js seine
+  // const angelegt hatte - temporale Todeszone, die ganze App stand. Die Funktionen sind
+  // hochgezogen, die Konstanten nicht; deshalb gehoeren sie vor den ersten Aufruf.
+  const RAUM_FORM_KEY = 'omegasim-raum-form';
+  const RAUM_ZELLE_CM = 10;
+  const RAUM_FIT_CM = 5;                    // Raster der Einpassung
+  const RAUM_RAND_CM = 2;                   // Abstand der Bahnkante zu Wand und Moebeln
+  const RAUM_STANDARD = { x: 3, y: 2.5 };
   // ---- DIE STRECKE IM RAUM VERSCHIEBEN (v0.9.11) ---------------------------------------
   // Der Versatz (cm) legt das Raum-Rechteck gegen die Strecke - fuers Aufbauen auf dem Boden:
   // wo im Zimmer liegt die Strecke? Er aendert die Strecke nicht. var, weil refreshTrackPreview()

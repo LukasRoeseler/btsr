@@ -4435,7 +4435,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.43</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.44</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5550,6 +5550,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Behoben: 0.9.43 startete auf Ger&#228;ten mit eingetragenem Raum nicht (&#8222;Cannot access 'RAUM_ZELLE_CM' before initialization&#8220;) &#8211; die Editor-Vorschau zeichnete beim Laden schon die M&#246;bel, bevor deren Konstanten angelegt waren; die neue Start-Diagnose hat den Fehler angezeigt. Schalten klingt jetzt mechanisch: Schaltwalze und Klauenring rasten metallisch ein, darunter der Ruck im Antriebsstrang (statt des dumpfen &#8222;d&#252;b&#8220;). Lichthupe: Vorder- und R&#252;cklicht gehen gemeinsam aus und an, das Bremslicht leuchtet nicht mehr mit.</li>
         <li>Rennende: Die Rennuhr startete erst bei 75 % der H&#246;chstgeschwindigkeit (die Schwelle &#8222;3 km/h&#8220; wurde mit dem Modelltempo verglichen) &#8211; wer das nie erreichte, fuhr Runden, die nicht z&#228;hlten, und das Rennen endete nie. Jetzt startet sie bei 3 km/h auf dem Tacho oder sp&#228;testens an der ersten Ziellinie; die Fr&#252;hstart-Erkennung hatte denselben Fehler. Raumgestalter wie der Editor: &#8222;Raumgestalter starten&#8220; &#246;ffnet das Vollbild, oben die Werkzeugleiste mit &#8222;Schlie&#223;en&#8220;, die Fl&#228;che in einer eigenen Zeile darunter, der Men&#252;kopf liegt nicht mehr &#252;ber den Kn&#246;pfen. Rundenzeiten-Diagramm: wei&#223;er Saum unter jeder Linie, damit auch ein schwarzes Auto sichtbar ist.</li>
         <li>Lenkung GT3, F1 und Realismus GT3: voller Einschlag ist wieder erreichbar. Seit dem neuen Lenkweg begrenzte das &#8222;Lenkansprechen&#8220; dieser Voreinstellungen den gr&#246;&#223;ten Einschlag (Realismus GT3 gemessen 19 von 45&#176; im Schritttempo, mit kalten Reifen 11&#176;); jetzt 3,0 wie Pro, und Realismus GT3 gleicht kalte Reifen mit Lenkkalibrierung 1,6 aus. Pro und Arcade unver&#228;ndert. Zufallsstrecke: Ladeanimation (Gerade, Kurve, Haarnadel) im Editor, die Suche l&#228;uft daf&#252;r in kleinen St&#252;cken. Mehrspieler: dieselbe Animation im Bereitschaftsschirm, solange auf die anderen gewartet wird.</li>
         <li>Rundenrennen enden jetzt mit der Zielrunde: Wer die eingestellte Rundenzahl f&#228;hrt, ist sofort im Ziel (Ende-Ton und Ergebnis); vorher endete ein 5-Runden-Rennen erst bei der &#220;berfahrt nach Runde 5, im Mehrspieler also scheinbar nie. Die Renn&#252;bersicht zeigt dich im Mehrspieler nicht mehr doppelt (Name und Auto). Derby: Auto 1 nimmt wieder Schaden (seitlich &#8722;20 %, vorn &#8722;10 %), vorher ging der Treffer ins Leere und nur der Controller r&#252;ttelte. Mehrspieler auf schwachen Handys: im Rennen fragt das Handy den Host nur noch alle 3 s ab, meldet Positionen f&#252;r Zuschauer alle 0,5 s und zeichnet die Ranglisten-Tabelle erst nach dem Rennen, damit der Steuertakt Luft hat.</li>
@@ -12858,6 +12859,7 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Behoben: 0.9.43 startete auf Geräten mit eingetragenem Raum nicht („Cannot access 'RAUM_ZELLE_CM' before initialization“) – die Editor-Vorschau zeichnete beim Laden schon die Möbel, bevor deren Konstanten angelegt waren; die neue Start-Diagnose hat den Fehler angezeigt. Schalten klingt jetzt mechanisch: Schaltwalze und Klauenring rasten metallisch ein, darunter der Ruck im Antriebsstrang (statt des dumpfen „düb“). Lichthupe: Vorder- und Rücklicht gehen gemeinsam aus und an, das Bremslicht leuchtet nicht mehr mit.": "Fixed: 0.9.43 did not start on devices with a room set (“Cannot access 'RAUM_ZELLE_CM' before initialization”) – the editor preview already drew the furniture while loading, before its constants existed; the new start diagnostics showed the error. Gear changes now sound mechanical: shift drum and dog ring engage with a metallic click, with the driveline jolt underneath (instead of the dull “dub”). Headlight flash: front and rear lights go off and on together, the brake light no longer lights up.",
     "Rennende: Die Rennuhr startete erst bei 75 % der Höchstgeschwindigkeit (die Schwelle „3 km/h“ wurde mit dem Modelltempo verglichen) – wer das nie erreichte, fuhr Runden, die nicht zählten, und das Rennen endete nie. Jetzt startet sie bei 3 km/h auf dem Tacho oder spätestens an der ersten Ziellinie; die Frühstart-Erkennung hatte denselben Fehler. Raumgestalter wie der Editor: „Raumgestalter starten“ öffnet das Vollbild, oben die Werkzeugleiste mit „Schließen“, die Fläche in einer eigenen Zeile darunter, der Menükopf liegt nicht mehr über den Knöpfen. Rundenzeiten-Diagramm: weißer Saum unter jeder Linie, damit auch ein schwarzes Auto sichtbar ist.": "Race end: the race clock only started at 75 % of top speed (the “3 km/h” threshold was compared with the model speed) – anyone who never reached that drove laps that did not count, and the race never ended. Now it starts at 3 km/h on the speedometer or at the first finish line at the latest; false-start detection had the same bug. Room designer like the editor: “Start room designer” opens full screen, toolbar with “Close” at the top, the area in its own row below, the menu header no longer covers the buttons. Lap time chart: white outline under every line so a black car is visible too.",
     "Strecke wird gesucht …": "Searching for a track …",
     "Lenkung GT3, F1 und Realismus GT3: voller Einschlag ist wieder erreichbar. Seit dem neuen Lenkweg begrenzte das „Lenkansprechen“ dieser Voreinstellungen den größten Einschlag (Realismus GT3 gemessen 19 von 45° im Schritttempo, mit kalten Reifen 11°); jetzt 3,0 wie Pro, und Realismus GT3 gleicht kalte Reifen mit Lenkkalibrierung 1,6 aus. Pro und Arcade unverändert. Zufallsstrecke: Ladeanimation (Gerade, Kurve, Haarnadel) im Editor, die Suche läuft dafür in kleinen Stücken. Mehrspieler: dieselbe Animation im Bereitschaftsschirm, solange auf die anderen gewartet wird.": "Steering GT3, F1 and Realism GT3: full lock is reachable again. Since the new steering path, the “steering response” of these presets capped the largest angle (Realism GT3 measured 19 of 45° at walking pace, 11° on cold tyres); now 3.0 like Pro, and Realism GT3 compensates cold tyres with steering calibration 1.6. Pro and Arcade unchanged. Random track: loading animation (straight, curve, hairpin) in the editor; the search now runs in small chunks for this. Multiplayer: the same animation on the ready screen while waiting for the others.",
@@ -27885,8 +27887,13 @@
                  + (raumRect.my > 0 ? String(raumRect.my).replace('.', ',') : '–') + ' m';
       // v0.9.39: UNTER die Strecke (vorne in body) und mit den Moebeln aus dem Raumdesigner.
       // Die Flaechen sind <rect>, damit raumRechteckSchieben() sie beim Ziehen mitnimmt.
-      const moebel = typeof raumMoebelSvg === 'function' && raumRect.mx > 0 && raumRect.my > 0
-        ? raumMoebelSvg(raumRect.x + ox, raumRect.y + oy, TRACK_UNITS_PER_CM) : '';
+      // try: eine Zeichnung, die beim Laden scheitert, darf nie wieder die ganze App anhalten.
+      let moebel = '';
+      try {
+        if (typeof raumMoebelSvg === 'function' && raumRect.mx > 0 && raumRect.my > 0) {
+          moebel = raumMoebelSvg(raumRect.x + ox, raumRect.y + oy, TRACK_UNITS_PER_CM);
+        }
+      } catch (e) { moebel = ''; }
       body = `<g class="tp-raum">${moebel}<rect x="${(raumRect.x + ox).toFixed(1)}" y="${(raumRect.y + oy).toFixed(1)}" `
         + `width="${raumRect.w.toFixed(1)}" height="${raumRect.h.toFixed(1)}" fill="none" `
         + `stroke="rgba(110,160,255,.7)" stroke-width="2" stroke-dasharray="7 5"/>`
@@ -28443,6 +28450,17 @@
   // Default 0 m x 0 m = keine Begrenzung: die Zufallsstrecke ignoriert den Raum, bis der
   // Nutzer eine Groesse eintraegt. Ein Wert 0 je Achse heisst "diese Richtung unbegrenzt".
   const RAUM_KEY = 'omegasim-raum';
+  // ---- RAUMGESTALTER-KONSTANTEN, HIER und nicht in 60b-raum.js (v0.9.44) -------------
+  // GEMELDET (Start-Diagnose, APK 0.9.43): "Uncaught ReferenceError: Cannot access
+  // 'RAUM_ZELLE_CM' before initialization". Die Editor-Vorschau zeichnet beim LADEN schon den
+  // Raum mit Moebeln (raumMoebelSvg -> raumFormLaden), und das lief, bevor 60b-raum.js seine
+  // const angelegt hatte - temporale Todeszone, die ganze App stand. Die Funktionen sind
+  // hochgezogen, die Konstanten nicht; deshalb gehoeren sie vor den ersten Aufruf.
+  const RAUM_FORM_KEY = 'omegasim-raum-form';
+  const RAUM_ZELLE_CM = 10;
+  const RAUM_FIT_CM = 5;                    // Raster der Einpassung
+  const RAUM_RAND_CM = 2;                   // Abstand der Bahnkante zu Wand und Moebeln
+  const RAUM_STANDARD = { x: 3, y: 2.5 };
   // ---- DIE STRECKE IM RAUM VERSCHIEBEN (v0.9.11) ---------------------------------------
   // Der Versatz (cm) legt das Raum-Rechteck gegen die Strecke - fuers Aufbauen auf dem Boden:
   // wo im Zimmer liegt die Strecke? Er aendert die Strecke nicht. var, weil refreshTrackPreview()
@@ -30402,11 +30420,8 @@
   // Seite bis zu 12,5 cm ueber. Dazu lag das Rechteck in der Zeichnung um raumVersatz
   // verschoben, den niemand nach dem Wuerfeln zuruecksetzte. raumEinpassen() rechnet mit der
   // halben Bahnbreite plus 2 cm Abstand und liefert die Lage gleich mit.
-  const RAUM_FORM_KEY = 'omegasim-raum-form';
-  const RAUM_ZELLE_CM = 10;
-  const RAUM_FIT_CM = 5;                    // Raster der Einpassung
-  const RAUM_RAND_CM = 2;                   // Abstand der Bahnkante zu Wand und Moebeln
-  const RAUM_STANDARD = { x: 3, y: 2.5 };
+  // Die Konstanten (RAUM_FORM_KEY, RAUM_ZELLE_CM, RAUM_FIT_CM, RAUM_RAND_CM, RAUM_STANDARD)
+  // stehen in 60-track.js bei RAUM_KEY - siehe dort, warum.
 
   // ---- Speichern: Lauflaengen, abwechselnd Boden und Moebel, Boden zuerst ----
   function raumFormKodieren(g) {
@@ -35926,13 +35941,13 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       // eingeschaltetem Licht waere "an" nichts Sichtbares. Ein kurzes Aus ist das, was ein
       // Ein-Bit-System an dieser Stelle zeigen kann.
       head = on ? !baseHead : baseHead;
-      // GEMELDET: "bei Lichthupe blinkt auch das Ruecklicht, soll es aber nicht." Das
-      // Protokoll kennt kein eigenes Ruecklicht-Bit (Byte 14, CARRERA_HYBRID.md: nur
-      // Scheinwerfer 0x02, Bremse 0x01, Blinken 0x04) - die Firmware schaltet das
-      // Ruecklicht offenbar mit dem Scheinwerfer. Solange die Hupe den Scheinwerfer
-      // AUSschaltet, haelt deshalb das Bremslicht-Bit das Heck hell. Am echten Auto zu
-      // bestaetigen.
-      if (baseHead && !head) brake = true;
+      // v0.9.44 GEMELDET: "Bei der Lichthupe blinken nun die Bremslichter. Mach es so, dass
+      // beide Lichter an und aus gehen und nicht das Bremslicht an und das Vorderlicht aus."
+      // Hier stand bis v0.9.43 ein erzwungenes Bremslicht-Bit, solange der Scheinwerfer aus
+      // war (auf eine fruehere Meldung, das Heck solle nicht mitblinken). Das Protokoll hat
+      // kein eigenes Ruecklicht-Bit - die Firmware schaltet das Ruecklicht mit dem
+      // Scheinwerfer. Ohne den Eingriff gehen also vorn und hinten GEMEINSAM aus und an;
+      // das Bremslicht bleibt beim echten Bremsen. Wie bei Auto 2 (headlichtVon).
     } else if (lightFx.damage) {
       head = Math.floor(now / 90) % 2 === 0;    // fast, agitated flicker
     } else if (lightFx.fuel) {

@@ -320,6 +320,63 @@ def paddle_shift(up=True, seed=11):
     return (out / (np.max(np.abs(out)) + 1e-9) * 0.55).astype(np.float32)
 
 
+def mechanical_shift(up=True, seed=21):
+    """Mechanischer Schaltvorgang eines sequenziellen Renngetriebes (v0.9.44).
+
+    BESTELLT: "Spiele beim Gaenge wechseln einen mechanischen passenden Ton ab und nicht das
+    aktuelle 'duelb'." paddle_shift() war auf Wunsch absichtlich dumpf gebaut - ein tiefer
+    Ruck ohne Metall -, und genau das klang nach "duelb". Hier drei Schichten, die man an
+    einem echten Klauengetriebe hoert:
+
+      1. die SCHALTWALZE rastet: ein kurzer, heller, unharmonischer Anschlag (2-5 kHz),
+      2. ~12 ms spaeter greift der KLAUENRING: ein metallisches "Klonk" (0,8-2 kHz),
+      3. der Antriebsstrang nimmt Last auf: ein tiefer Ruck, darunter.
+    Dazu zwei, drei leise Nachschlaege (Zahnflankenspiel). Jede Schicht bekommt 1,5-6 ms
+    Anstieg - so ist es mechanisch, aber kein harter Klick, den die erste Fassung hatte.
+    Runter ist tiefer und etwas laenger, mit einem zweiten Rasten.
+    """
+    rng = np.random.default_rng(seed)
+    seconds = 0.20 if up else 0.26
+    n = int(seconds * SR)
+    out = np.zeros(n, dtype=np.float32)
+
+    def rise(length, ms):
+        lt = np.arange(length) / SR
+        return (1 - np.exp(-lt / (ms / 1000.0))).astype(np.float32)
+
+    def schlag(at_s, partials, amp, rise_ms):
+        a = int(at_s * SR)
+        if a >= n:
+            return
+        m = n - a
+        lt = np.arange(m) / SR
+        y = np.zeros(m, dtype=np.float32)
+        for f, pa, dec in partials:
+            jit = 1.0 + 0.015 * (rng.random() - 0.5)
+            y += (pa * np.exp(-lt * dec) * np.sin(2 * np.pi * f * jit * lt + rng.uniform(0, 6.28))).astype(np.float32)
+        out[a:] += amp * y * rise(m, rise_ms)
+
+    if up:
+        walze = ((2350.0, 1.0, 190.0), (3480.0, 0.7, 240.0), (4920.0, 0.4, 300.0))
+        klaue = ((920.0, 1.0, 70.0), (1410.0, 0.75, 90.0), (2060.0, 0.4, 120.0))
+        schlag(0.000, walze, 0.30, 1.5)
+        schlag(0.012, klaue, 0.62, 2.0)
+        schlag(0.014, ((118.0, 1.0, 30.0), (236.0, 0.3, 45.0)), 0.48, 6.0)
+        for k, at in enumerate((0.030, 0.041, 0.050)):
+            schlag(at, ((1650.0 + 140 * k, 1.0, 260.0), (2600.0, 0.5, 320.0)), 0.10 / (k + 1), 1.0)
+    else:
+        walze = ((1980.0, 1.0, 170.0), (2950.0, 0.7, 220.0), (4300.0, 0.4, 280.0))
+        klaue = ((760.0, 1.0, 60.0), (1170.0, 0.75, 80.0), (1720.0, 0.4, 110.0))
+        schlag(0.000, walze, 0.28, 1.5)
+        schlag(0.010, walze, 0.16, 1.5)            # zweites Rasten beim Runterschalten
+        schlag(0.020, klaue, 0.60, 2.0)
+        schlag(0.022, ((92.0, 1.0, 26.0), (184.0, 0.3, 40.0)), 0.50, 6.0)
+        for k, at in enumerate((0.040, 0.052, 0.062)):
+            schlag(at, ((1450.0 + 120 * k, 1.0, 240.0), (2300.0, 0.5, 300.0)), 0.10 / (k + 1), 1.0)
+    out = saturate(out, 0.6)
+    return (out / (np.max(np.abs(out)) + 1e-9) * 0.6).astype(np.float32)
+
+
 def render_rpm_curve(cfg, rpm_of_t, dur, seed, load_of_t=None):
     """Firing synthesis with a CHANGING engine speed.
 
@@ -615,7 +672,7 @@ def main():
 
     meta['shift'] = {}
     for up, name, secs in ((True, 'shift_up', 0.20), (False, 'shift_down', 0.26)):
-        sz = to_ogg(paddle_shift(up=up, seed=11 if up else 12), name, q='5')
+        sz = to_ogg(mechanical_shift(up=up, seed=21 if up else 22), name, q='5')
         meta['shift']['up' if up else 'down'] = {'file': name + '.ogg', 'seconds': secs}
         print('%-17s %d KB  %.2fs' % (name, sz // 1024, secs))
 

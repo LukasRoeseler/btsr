@@ -4949,13 +4949,13 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       // eingeschaltetem Licht waere "an" nichts Sichtbares. Ein kurzes Aus ist das, was ein
       // Ein-Bit-System an dieser Stelle zeigen kann.
       head = on ? !baseHead : baseHead;
-      // GEMELDET: "bei Lichthupe blinkt auch das Ruecklicht, soll es aber nicht." Das
-      // Protokoll kennt kein eigenes Ruecklicht-Bit (Byte 14, CARRERA_HYBRID.md: nur
-      // Scheinwerfer 0x02, Bremse 0x01, Blinken 0x04) - die Firmware schaltet das
-      // Ruecklicht offenbar mit dem Scheinwerfer. Solange die Hupe den Scheinwerfer
-      // AUSschaltet, haelt deshalb das Bremslicht-Bit das Heck hell. Am echten Auto zu
-      // bestaetigen.
-      if (baseHead && !head) brake = true;
+      // v0.9.44 GEMELDET: "Bei der Lichthupe blinken nun die Bremslichter. Mach es so, dass
+      // beide Lichter an und aus gehen und nicht das Bremslicht an und das Vorderlicht aus."
+      // Hier stand bis v0.9.43 ein erzwungenes Bremslicht-Bit, solange der Scheinwerfer aus
+      // war (auf eine fruehere Meldung, das Heck solle nicht mitblinken). Das Protokoll hat
+      // kein eigenes Ruecklicht-Bit - die Firmware schaltet das Ruecklicht mit dem
+      // Scheinwerfer. Ohne den Eingriff gehen also vorn und hinten GEMEINSAM aus und an;
+      // das Bremslicht bleibt beim echten Bremsen. Wie bei Auto 2 (headlichtVon).
     } else if (lightFx.damage) {
       head = Math.floor(now / 90) % 2 === 0;    // fast, agitated flicker
     } else if (lightFx.fuel) {

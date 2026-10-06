@@ -20,11 +20,8 @@
   // Seite bis zu 12,5 cm ueber. Dazu lag das Rechteck in der Zeichnung um raumVersatz
   // verschoben, den niemand nach dem Wuerfeln zuruecksetzte. raumEinpassen() rechnet mit der
   // halben Bahnbreite plus 2 cm Abstand und liefert die Lage gleich mit.
-  const RAUM_FORM_KEY = 'omegasim-raum-form';
-  const RAUM_ZELLE_CM = 10;
-  const RAUM_FIT_CM = 5;                    // Raster der Einpassung
-  const RAUM_RAND_CM = 2;                   // Abstand der Bahnkante zu Wand und Moebeln
-  const RAUM_STANDARD = { x: 3, y: 2.5 };
+  // Die Konstanten (RAUM_FORM_KEY, RAUM_ZELLE_CM, RAUM_FIT_CM, RAUM_RAND_CM, RAUM_STANDARD)
+  // stehen in 60-track.js bei RAUM_KEY - siehe dort, warum.
 
   // ---- Speichern: Lauflaengen, abwechselnd Boden und Moebel, Boden zuerst ----
   function raumFormKodieren(g) {
