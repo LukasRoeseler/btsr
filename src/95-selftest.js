@@ -17057,44 +17057,91 @@
                 part: racePartialMs, form: raceFormationLap, rail: sw ? sw.checked : true, sp: playerCar,
                 mp: dashMarkerPrev, ac: dashLastActedCode, aa: dashLastActedAt, pc: dashPendingCode,
                 ps: dashPendingSeen, lc: dashLastTileCounter, zg: dashZielGesehen, za: dashZielAt,
-                sa: dashStartLapAt, zauto: dashZielAuto };
+                sa: dashStartLapAt, zauto: dashZielAuto, lz: dashLapZaehler, aw: raceAwaitingMove,
+                tiles: currentTrackTiles, sc: sectorCount, ss: sectorStart, si: sectorIndex,
+                st: sectorTimes.slice(), sh: sectorHistory.slice() };
     let jetzt = uhr.call(Date);
     try {
       Date.now = () => jetzt;
       if (sw && !sw.checked) { sw.checked = true; sw.dispatchEvent(new Event('change', { bubbles: true })); }
       const auto = { device: { id: 'st-ziel', name: 'Pruefwagen' }, role: 'player', rx: null, tx: null,
                      tileCode: 0xff, tileCount: null, lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null };
-      playerCar = auto;
-      raceState = 'racing'; raceFormationLap = false; raceLapTimes = [];
-      raceLapStart = jetzt - 5000; dashLapStart = jetzt - 5000; racePartialMs = null;
-      dashMarkerPrev = false; dashLastActedCode = null; dashLastActedAt = 0;
-      dashPendingCode = null; dashPendingSeen = 0; dashLastTileCounter = null;
       const START = [0x01, 0x0a].find((c) => isStartCode(c));
       const paket = (zaehler, code, ziel) => { const a = new Array(19).fill(0); a[11] = zaehler; a[12] = code; a[14] = 0x82; a[15] = ziel ? 0x08 : 0; return a; };
       const sende = (z, c, ziel, n) => { for (let i = 0; i < (n || 2); i++) OMEGA_TEST.feedNotify(paket(z, c, ziel), { car: auto }); };
-      sende(6, 0x04, false);                 // vorher eine Gerade
-      jetzt += 600; sende(7, START, false);  // Barcode, Bit noch nie gesehen: Rueckfall zaehlt
+      const neu = () => {
+        playerCar = auto; raceState = 'racing'; raceFormationLap = false; raceLapTimes = [];
+        raceAwaitingMove = false; raceLapStart = jetzt; dashLapStart = jetzt; racePartialMs = null;
+        dashMarkerPrev = false; dashLastActedCode = null; dashLastActedAt = 0;
+        dashPendingCode = null; dashPendingSeen = 0; dashLastTileCounter = null;
+        dashZielAuto = null; dashLapZaehler = null; sectorCount = 1; sectorReset(); sectorHistory = [];
+        currentTrackTiles = [{ type: TILE_TYPE.START }, { type: TILE_TYPE.STRAIGHT }];
+      };
+      const ms = (i) => raceLapTimes[i] ? raceLapTimes[i].ms : null;
+
+      // A) Rueckfall, Uebergang, Messen an der Linie, Flackern, Auto parkt vor der Linie.
+      neu(); raceLapStart = jetzt - 5000; dashLapStart = jetzt - 5000;
+      sende(6, 0x04, false);
+      jetzt += 600; sende(7, START, false);  // Barcode, Linie noch nie gesehen: Rueckfall zaehlt
       if (raceLapTimes.length !== 1) f.push('Rueckfall ueber den Barcode zaehlt nicht (' + raceLapTimes.length + ')');
-      jetzt += 455; sende(7, START, true);   // Ziellinie derselben Ueberfahrt: nicht doppelt
-      if (raceLapTimes.length !== 1) f.push('erste Ziellinie direkt nach der Barcode-Runde doppelt gezaehlt');
+      jetzt += 455; sende(7, START, true);   // Linie derselben Durchfahrt: Uhr nachziehen
+      if (raceLapTimes.length !== 1) f.push('erste Linie direkt nach der Barcode-Runde doppelt gezaehlt');
       jetzt += 1000; sende(8, 0x04, false);
       jetzt += 4000; sende(9, START, false); // naechster Barcode: zaehlt NICHT mehr
       if (raceLapTimes.length !== 1) f.push('Barcode zaehlt trotz gemeldeter Ziellinie');
-      jetzt += 455; sende(9, START, true);   // Ziellinie: zaehlt
+      jetzt += 455; sende(9, START, true);   // Linie: zaehlt, ab der Linie gemessen
       if (raceLapTimes.length !== 2) f.push('Ziellinie zaehlt die Runde nicht (' + raceLapTimes.length + ')');
-      else if (Math.abs(raceLapTimes[1].ms - 5910) > 5) f.push('Rundenzeit nicht ab der Ziellinie: ' + raceLapTimes[1].ms);
-      jetzt += 300; sende(9, START, false); sende(9, START, true);  // Flackern innerhalb der Sperre
+      else if (Math.abs(ms(1) - 5455) > 5) f.push('Rundenzeit nicht Linie zu Linie: ' + ms(1));
+      jetzt += 300; sende(9, START, false); sende(9, START, true);  // Flackern
       if (raceLapTimes.length !== 2) f.push('Flackern zaehlt doppelt');
+      jetzt += 1000; sende(10, 0x04, false);
+      jetzt += 4000; sende(11, START, false); // Barcode ...
+      jetzt += 11000;                        // ... Auto steht 11 s vor der Linie (wie im Mitschnitt)
+      sende(11, START, true);
+      if (raceLapTimes.length !== 3) f.push('geparktes Auto: ' + raceLapTimes.length + ' statt 3 Runden');
+      else if (Math.abs(ms(2) - 16300) > 5) f.push('geparktes Auto: Runde ' + ms(2) + ' statt 16300');
+
+      // B) Rennstart AUF dem Startteil vor dem Streifen: keine Runde von unter einer Sekunde.
+      neu(); dashZielAuto = auto; dashZielGesehen = true; dashZielAt = 0;
+      sende(20, START, false);
+      dashLapZaehler = dashLastTileCounter;   // wie raceClockTick beim Losfahren
+      jetzt += 700; sende(20, START, true);
+      if (raceLapTimes.length) f.push('Start vor dem Streifen zaehlt eine Runde von ' + ms(0) + ' ms');
+      jetzt += 1000; sende(21, 0x04, false);
+      jetzt += 4000; sende(22, START, false);
+      jetzt += 455; sende(22, START, true);
+      if (raceLapTimes.length !== 1 || Math.abs(ms(0) - 5455) > 5) {
+        f.push('Runde 1 nach Start vor dem Streifen: ' + ms(0) + ' statt 5455 ms');
+      }
+
+      // C) Zweite Start/Ziel-Gerade (Sektor): Runde 1 endet an der Rundenlinie, nicht eine
+      //    Runde spaeter, und die Sektorgrenze zaehlt keine Runde.
+      neu(); dashZielAuto = auto; dashZielGesehen = true; dashZielAt = 0;
+      currentTrackTiles = [{ type: TILE_TYPE.START }, { type: TILE_TYPE.STRAIGHT },
+                           { type: TILE_TYPE.START }, { type: TILE_TYPE.STRAIGHT }];
+      sende(30, 0x04, false);
+      dashLapZaehler = dashLastTileCounter;
+      jetzt += 2000; sende(31, START, false);
+      jetzt += 455; sende(31, START, true);  // Sektorgrenze
+      if (raceLapTimes.length) f.push('Sektorgrenze zaehlt als Runde');
+      jetzt += 2000; sende(32, 0x04, false);
+      jetzt += 2000; sende(33, START, false);
+      jetzt += 455; sende(33, START, true);  // Rundenlinie
+      if (raceLapTimes.length !== 1) f.push('zweite Start/Ziel-Gerade: ' + raceLapTimes.length + ' statt 1 Runde');
+      else if (Math.abs(ms(0) - 6910) > 5) f.push('zweite Start/Ziel-Gerade: Runde ' + ms(0) + ' statt 6910');
+      if (sectorHistory.length !== 1 || sectorHistory[0].length !== 2) f.push('Sektoren: ' + JSON.stringify(sectorHistory));
     } finally {
       Date.now = uhr;
       raceState = g.state; raceLapTimes = g.laps; raceLapStart = g.start; dashLapStart = g.dash;
       racePartialMs = g.part; raceFormationLap = g.form; playerCar = g.sp;
       dashMarkerPrev = g.mp; dashLastActedCode = g.ac; dashLastActedAt = g.aa; dashPendingCode = g.pc;
       dashPendingSeen = g.ps; dashLastTileCounter = g.lc; dashZielGesehen = g.zg; dashZielAt = g.za;
-      dashStartLapAt = g.sa; dashZielAuto = g.zauto;
+      dashStartLapAt = g.sa; dashZielAuto = g.zauto; dashLapZaehler = g.lz; raceAwaitingMove = g.aw;
+      currentTrackTiles = g.tiles; sectorCount = g.sc; sectorStart = g.ss; sectorIndex = g.si;
+      sectorTimes = g.st; sectorHistory = g.sh;
       if (sw && sw.checked !== g.rail) { sw.checked = g.rail; sw.dispatchEvent(new Event('change', { bubbles: true })); }
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Barcode nur bis zur ersten Ziellinie, danach misst Byte 15, nicht doppelt' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Linie zu Linie, geparktes Auto, Start vor dem Streifen und zweite Start/Ziel-Gerade richtig' };
   });
 
   stAdd('Woerterbuch ohne doppelte Schluessel', () => {

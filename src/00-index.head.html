@@ -4390,7 +4390,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.38</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.39</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5505,6 +5505,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Streckenteile wie die Originalschienen: wei&#223;er Randstreifen mit gef&#252;llten Pfeilen in gleichem Abstand auf beiden Seiten (links blau, rechts rot), Steckzapfen an den Teilenden, matt schwarze Fahrbahn. Tempo nachgemessen (btsnoop): Vollgas sind real 5,45 km/h, im Ma&#223;stab 272 km/h; der Tacho rechnet jetzt damit, und bei Gasfaktor 100 % (Realismus GT3) stimmt er genau; Pro und Arcade behalten ihren Faktor und fahren sich wie vorher. Rundenz&#228;hlung auf der Schiene: keine Doppelrunde mehr, wenn ein Auto zwischen Barcode und Ziellinie h&#228;lt, keine Mini-Runde beim Start vor dem Streifen, keine Phantomrunde bei Ghosts und Spieler 2/3 beim Losfahren; mit einer zweiten Start/Ziel-Geraden z&#228;hlt Runde 1 richtig.</li>
         <li>Rundenzeit an der Ziellinie: Auf der Schiene misst und sagt Spieler 1 die Runde jetzt an der Ziellinie an, die das Auto selbst meldet (Byte 15, etwa 35 cm nach dem Barcode, aus den btsnoop-Mitschnitten), nicht mehr am Barcode; der Barcode bleibt R&#252;ckfall f&#252;r Autos ohne diese Meldung. Tastenbelegung: Eine neue Zuweisung auf eine schon belegte Taste tauscht jetzt die beiden Aktionen, statt beim n&#228;chsten Start zur&#252;ckzufallen, und eine alte Aufr&#228;umregel setzt eigene Tasten (z. B. Rennstart auf Kreuz) nicht mehr bei jedem Laden zur&#252;ck. Optionen &#8594; Allgemein: zwei Regler f&#252;r die Gr&#246;&#223;e der Haupttabs und der Unter-Tabs (60&#8211;180 %, 100 % wie bisher).</li>
         <li>Crash-Richtung jetzt gemessen statt gelernt: Beim Beschleunigen wandert der Gyro-Punkt im Cockpit nach vorn, also hei&#223;t Byte 1 f&#228;llt &#8222;von hinten geschoben&#8220;, Byte 1 steigt &#8222;vorne eingeschlagen&#8220;, &#252;berwiegendes Byte 3 &#8222;von der Seite&#8220; (45&#176; Toleranz). &#8222;Nur der Rammer bremst&#8220; (fr&#252;her &#8222;Kein Bremsen bei Auffahrunfall&#8220;): Gebremst wird nur, wer vorne einschl&#228;gt; wer von hinten oder von der Seite getroffen wird, f&#228;hrt weiter. Rammer-Strafe: Rammer ist, wer vorne eingeschlagen ist, w&#228;hrend der andere von hinten oder der Seite getroffen wurde (frontal z&#228;hlt nicht); das gilt auch f&#252;r Ghosts. Im Derby kostet vorn einschlagen 10 %, getroffen werden 20 %.</li>
         <li>Bestenliste: Kann eine Zeit nicht hochgeladen werden, kommt ein Hinweis mit Strecke und Grund (z. B. &#8222;keine Verbindung zum Server&#8220; oder die Ablehnung durch die Bestenliste), nie mitten im Rennen und nie &#252;ber einem anderen Dialog. Auf der Challenge-Seite steht, wie viele Zeiten noch warten, mit &#8222;Jetzt senden&#8220;. Hoch- und Herunterladen der Bestenliste laufen nur, wenn gerade kein Rennen l&#228;uft, damit das Steuern nicht verz&#246;gert wird.</li>
@@ -9274,15 +9275,14 @@
           durch Simulations-H&ouml;chstgeschwindigkeit; bei 100 % bekommt das Auto also erst
           volle Leistung, wenn die Simulation ihre H&ouml;chstgeschwindigkeit erreicht hat,
           und das dauert gemessen fast 25 Sekunden Vollgas. &Uuml;ber 100 % erreicht es die
-          volle Leistung fr&uuml;her, ohne dass der Tacho anders skaliert. Das ist auch
-          ehrlicher als es klingt: das Modellauto f&auml;hrt real 5,9 km/h, egal was die
-          Simulation glaubt &ndash; dieser Faktor ist die Abbildung zwischen beidem, und dass
-          er fr&uuml;her genau 1 war, war eine Annahme und keine Messung.</small></div>
+          volle Leistung fr&uuml;her, ohne dass der Tacho anders skaliert. Nur bei 100 % (Realismus
+          GT3) zeigt der Tacho genau das 50-fache des echten Tempos (gemessen: Vollgas
+          5,45 km/h, im Ma&szlig;stab 272 km/h). Pro und Arcade fahren mit eigenem Faktor.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="setting-topspeed" min="0.2" max="2" step="0.05" value="1.8">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-topspeed-val">160%</span>
+          <span class="opt-val" id="setting-topspeed-val">180%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Reifengrip</div>
         <div class="opt-slider">

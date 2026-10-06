@@ -9,6 +9,8 @@
   let dashOnMarker = false;   // byte 15 bit 3: the car is physically over a marker
   // v0.9.37: Ziellinie auf der Schiene (siehe handleDashboardBytes).
   let dashZielGesehen = false, dashZielAt = 0, dashStartLapAt = 0, dashZielAuto = null;
+  // v0.9.39: der Kachelzaehler an der letzten Rundengrenze (siehe die Ziellinie).
+  let dashLapZaehler = null;
   // Vorheriger Stand des Musterkontakts, fuer die Flankenerkennung im Ausdruck-Modus.
   let dashMarkerPrev = false;
   // Debounce state for the tile code. See dashboardNotifyHandler for why both guards exist.
@@ -505,6 +507,9 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       raceAwaitingMove = false;
       raceLapStart = Date.now();
       raceStartedAt = Date.now();
+      // Die Kachel, auf der das Auto beim Start steht: eine Ziellinie darauf ist keine Runde.
+      dashLapZaehler = dashLastTileCounter;
+      sectorReset();
     }
     maybeSwitchRaceWeather();
     wxWechselTick();
@@ -614,16 +619,30 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
                                 lastActed: 0, lastCount: null };
     const r = car.race;
     const now = Date.now();
+    // Die Kachel, auf der das Auto stand, als diese Wertung begann (tileCount wird erst
+    // NACH diesem Aufruf auf das neue Paket gesetzt).
+    if (r.lapZaehler === undefined) r.lapZaehler = car.tileCount === undefined ? null : car.tileCount;
 
     // DIE SPERRE HAT VORRANG, und sobald ein Auto sie einmal gezeigt hat, gilt nur noch
     // sie. Die alte Regel bleibt fuer Autos, die sie nie melden - sie einfach zu loeschen
     // hiesse, ein Verhalten wegzunehmen, das auf anderen Bahnen vielleicht das einzige ist.
+    // v0.9.39: wie bei Spieler 1 (handleDashboardBytes) - eine Linie auf der Kachel der
+    // letzten Rundengrenze zieht nur die Uhr nach. Ob das Auto die Linie meldet, merkt sich das AUTO
+    // (car.zielGesehen), nicht die Wertung: car.race wird bei jedem Rennstart neu angelegt.
     if (zielSperreFlanke(r, b)) {
+      // Im Ausdruck-Modus steigt das Bit auf JEDEM Muster - Runde nur am Startmuster.
+      if (trackMode === 'off' && !isStartCode(b[12])) return;
       r.sperreGesehen = true;
-      if (now - r.lastActed >= TILE_REPEAT_BLOCK_MS) {
-        r.lastActed = now;
-        carLapCrossed(car);
+      car.zielGesehen = true;
+      if (now - r.lastActed < TILE_REPEAT_BLOCK_MS) return;
+      r.lastActed = now;
+      if (trackMode !== 'off' && r.lapZaehler !== null && b[11] === r.lapZaehler) {
+        if (r.lapStart !== null) r.lapStart = now;
+        if (r.sek && r.sek.start !== null) r.sek.start = now;
+        return;
       }
+      r.lapZaehler = b[11];
+      carLapCrossed(car);
       return;
     }
 
@@ -636,12 +655,13 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     // Der Rueckfall zaehlt nur, solange dieses Auto die Sperre noch nie gemeldet hat.
     // Sonst laege die Runde zweimal: einmal am Anfang des Startbereichs und einmal am
     // Streifen, und die Rundenzeiten wuerden abwechselnd zu kurz und zu lang.
-    if (r.sperreGesehen) return;
+    if (r.sperreGesehen || car.zielGesehen) return;
     // isStartCode und nicht der Vergleich mit einem Wert: das Originalblatt meldet 0x0a,
     // die frueher angenommene 0x01 bleibt daneben gueltig.
     if (!isStartCode(code)) return;
     if (now - r.lastActed < TILE_REPEAT_BLOCK_MS) return;
     r.lastActed = now;
+    r.lapZaehler = count;
     carLapCrossed(car);
   }
 
@@ -1800,6 +1820,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       raceAwaitingMove = false;
       raceLapStart = Date.now();
       raceStartedAt = raceLapStart;
+      dashLapZaehler = dashLastTileCounter;
     }
     if (raceClockTimer) clearInterval(raceClockTimer);
     raceClockTimer = setInterval(raceClockTick, 250);
@@ -2533,20 +2554,33 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     // ein Zeitgeber. Ghosts und Spieler 2/3 zaehlen schon so (carRaceNotify); hier jetzt
     // auch Spieler 1. Hat das Auto die Ziellinie einmal gemeldet, zaehlt der Barcode nicht
     // mehr; bis dahin bleibt er der Rueckfall (Autos, die das Bit nie melden).
-    if (dashZielAuto !== playerCar) { dashZielAuto = playerCar; dashZielGesehen = false; dashZielAt = 0; }
+    //
+    // v0.9.39 (gegengeprueft an 44 Ziellinien der Mitschnitte): Barcode und Ziellinie sind
+    // EINE Durchfahrt desselben Teils; jede Runde hatte genau eine Linie, auch wenn der
+    // Barcode einmal als 0x00 misslesen war. Liegt die Ziellinie auf DERSELBEN Kachel wie die letzte
+    // Rundengrenze (Kachelzaehler unveraendert), war das keine neue Runde: entweder hat der
+    // Barcode-Rueckfall sie gerade gezaehlt, oder das Auto stand beim Rennstart auf dem
+    // Startteil vor dem Streifen. Dann wird nur die Uhr an die Linie nachgezogen. Vorher
+    // gab es dort eine Runde von unter einer Sekunde bzw. eine doppelte Runde, wenn das
+    // Auto zwischen Barcode und Linie stehen blieb.
+    if (dashZielAuto !== playerCar) {
+      dashZielAuto = playerCar; dashZielGesehen = false; dashZielAt = 0;
+      dashLapZaehler = null;
+    }
     if (trackMode !== 'off' && dashOnMarker && !markerVorher) {
-      const jetzt = Date.now();
-      const zaehlen = () => {
-        dashZielAt = jetzt;
-        if (!pitDoubleCheck(jetzt)) playerLapCrossed();
-      };
+      const jetzt = Date.now(), zaehler = bytes[11];
       if (!dashZielGesehen) {
         dashZielGesehen = true;
         log('Ziellinie: das Auto meldet sie selbst (Byte 15) - ab jetzt wird dort gemessen.', 'info');
-        // Hat der Barcode diese Ueberfahrt gerade schon gezaehlt, nicht doppelt.
-        if (jetzt - dashStartLapAt < 1500) dashZielAt = jetzt; else zaehlen();
-      } else if (jetzt - dashZielAt >= TILE_REPEAT_BLOCK_MS) {
-        zaehlen();
+      }
+      if (jetzt - dashZielAt < TILE_REPEAT_BLOCK_MS) {
+        // Flackern derselben Linie.
+      } else if (dashLapZaehler !== null && zaehler === dashLapZaehler) {
+        dashZielAt = jetzt;
+        zielUhrNachziehen(jetzt);
+      } else {
+        dashZielAt = jetzt;
+        if (!pitDoubleCheck(jetzt)) { dashLapZaehler = zaehler; playerLapCrossed(); }
       }
     }
 
@@ -2693,6 +2727,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       if (trackMode !== 'off' && dashZielGesehen) return;
       if (pitDoubleCheck(nowCode)) return;
       dashStartLapAt = nowCode;
+      dashLapZaehler = counter;
       const gezaehlt = playerLapCrossed();
       if (gezaehlt) return;
     }
@@ -2788,6 +2823,14 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   function sectorCrossed(now) {
     const ziel = sektorZiel();
     if (ziel <= 1) return true;
+    // v0.9.39: Im Rennen beginnt der erste Sektor mit dem Start, wie in carLapCrossed() je
+    // Auto. Vorher war der erste Kontakt nur der Anfang - mit einer zweiten Start/Ziel-
+    // Geraden zaehlte Runde 1 dann erst an der zweiten Ueberfahrt der Rundenlinie.
+    if (sectorStart === null && (raceState === 'racing' || raceState === 'finishing')
+        && !raceFormationLap && raceLapStart !== null) {
+      sectorStart = raceLapStart;
+      sectorIndex = 0;
+    }
     if (sectorStart === null) {
       // Der erste Kontakt ueberhaupt: er beginnt den ersten Sektor und ist noch keine
       // Sektorgrenze. Ohne diesen Fall waere der erste Sektor die Zeit seit dem Rennstart
@@ -2853,6 +2896,15 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       });
     }
     host.innerHTML = teile.join('');
+  }
+
+  // Die Uhr an die Ziellinie nachziehen, ohne eine Runde zu zaehlen (siehe die Ziellinie in
+  // handleDashboardBytes): die laufende Runde beginnt an der Linie.
+  function zielUhrNachziehen(jetzt) {
+    if (dashLapStart !== null) dashLapStart = jetzt;
+    if (sectorStart !== null) sectorStart = jetzt;
+    if ((raceState === 'racing' || raceState === 'finishing') && raceLapStart !== null
+        && !raceAwaitingMove) raceLapStart = jetzt;
   }
 
   function playerLapCrossed() {
@@ -3661,7 +3713,8 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   let pitMarkerCode = null;
   // 80 km/h on the racing display, the speed a real pit lane limiter holds. The display
   // reads speedKmh * REAL_SCALE (71.25), so 80 / 71.25 / 4.0 top speed = 0.2807.
-  const PIT_SPEED_FACTOR = 80 / REAL_SCALE / 4.0;
+  // v0.9.39: in TACHO-km/h, damit die Box auf dem Tacho 80 zeigt (siehe TACHO_SCALE).
+  const PIT_SPEED_FACTOR = 80 / TACHO_SCALE / 4.0;
   let pitState = 'off';        // off | limited | servicing
   let pitModus = 'minigame';   // Boxen-Minigame, siehe pitSpielStart()
   let pitSpiel = null;
@@ -5039,15 +5092,16 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   let trackTimeOn = 0, trackTimeOff = 0, trackTimeLast = null, trackTimeUiLast = 0;
 
   // ---- Actual ground speed, measured rather than scaled ----
-  // The displayed speed is simulated: internal units times REAL_SCALE (71.25), a factor
-  // chosen so full throttle reads 285 km/h. It was never checked against the car. Measuring
+  // The displayed speed is simulated: internal units times TACHO_SCALE (68.1, v0.9.39), so
+  // full throttle reads 272 km/h. It was never checked against the car. Measuring
   // the btsnoop logs says a lap of 3 straights and 8 curves is 4.39 m and takes 7.2 s, i.e.
   // the car really does about 2.2 km/h, and roughly 2 km/h at the moment the display says
   // 100. So a fixed divisor would be somewhere around 1:50 - but the two are not
   // proportional, because the real car saturates with throttle while the simulation does
   // not. Hence no divisor: the tile crossings give the true speed directly and calibrate
   // themselves, and any future drift in REAL_SCALE shows up here instead of hiding.
-  const TILE_LEN_M = { 0x01: 0.43, 0x02: 0.43 };     // start/finish and straight
+  // Start/Ziel ~40 cm: in gleichen Computerrunden 6 % kuerzer als eine Gerade (v0.9.39).
+  const TILE_LEN_M = { 0x01: 0.40, 0x02: 0.43 };
   const CURVE_LEN_M = TRACK_RADIUS_CM / 100 * (TRACK_TURN_DEG * Math.PI / 180);
   const REAL_SPEED_WINDOW = 3;                       // tiles to average over
   let realTileCount = null, realTileTime = null, realTileType = null;
@@ -5056,8 +5110,10 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   function tileLengthM(type) {
     if (TILE_LEN_M[type] !== undefined) return TILE_LEN_M[type];
     if (type === TILE_TYPE.CURVE_LEFT || type === TILE_TYPE.CURVE_RIGHT) return CURVE_LEN_M;
-    if (type === TILE_TYPE.HAIRPIN) {
-      return TRACK_HAIRPIN_RADIUS_CM / 100 * (TRACK_HAIRPIN_DEG * Math.PI / 180);
+    // v0.9.39: beide Haarnadeln, MIT der geraden Sektion davor (21,9 cm).
+    if (type === TILE_TYPE.HAIRPIN || type === TILE_TYPE.HAIRPIN_LEFT) {
+      return TRACK_HAIRPIN_RADIUS_CM / 100 * (TRACK_HAIRPIN_DEG * Math.PI / 180)
+           + TRACK_HAIRPIN_LEAD_CM / 100;
     }
     return null;                                     // off track, or a code we cannot size
   }
@@ -5108,7 +5164,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     // constant. The two curves have different shapes - the real car is linear in throttle,
     // the simulation has drag - so expect it to wander either side of 50 rather than sit on
     // it. A steady offset in one direction is the signal worth acting on.
-    const sim = Math.abs(physEngine.state.speedKmh) * REAL_SCALE;
+    const sim = Math.abs(physEngine.state.speedKmh) * TACHO_SCALE;
     const el2 = $('dash-real-ratio');
     if (sim > 5 && realSpeedKmh > 0.05) {
       const f = sim / realSpeedKmh;

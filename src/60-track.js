@@ -2675,6 +2675,68 @@
   // Als Modulkonstante, weil karteAutosSetzen() denselben Wert braucht.
   const PUNKT_R = 3.2;
 
+  // ---- Der Randstreifen der Originalteile -------------------------------------------
+  //
+  // Masse aus den Produktfotos, relativ zur Bahnbreite: Streifen ~9,5 % (wie
+  // TRACK_KERB_RATIO), Pfeil ~75 % der Streifenhoehe hoch und gut doppelt so lang, Luecke
+  // ein Drittel des Pfeils. Der Abstand gilt je SEITE nach Bogenlaenge auf der
+  // Streifenmitte; je Teil wird er so gestreckt, dass eine ganze Zahl Pfeile passt.
+  const ECHT_STREIFEN = TRACK_KERB_W;
+  const ECHT_PFEIL_H = 0.75, ECHT_PFEIL_L = 2.3, ECHT_TAKT = 3.1;   // je Streifenhoehe
+  const ECHT_BLAU = '#2f9fe6', ECHT_ROT = '#ff4d22', ECHT_WEISS = '#f3f5f8';
+  function echtRandstreifen(pts, nrm, half, kachelTab, nTeile, P2) {
+    const bw = ECHT_STREIFEN, mitte = half - bw / 2;
+    const ph = bw * ECHT_PFEIL_H, pl = ph * ECHT_PFEIL_L, kerbe = ph / 2;
+    const takt = ph * ECHT_TAKT;
+    let out = '';
+    for (const [seite, farbe] of [[1, ECHT_BLAU], [-1, ECHT_ROT]]) {
+      const linie = offsetPath(pts, nrm, mitte * seite);
+      out += `<path d="M ${linie.map(P2).join(' L ')}" fill="none" stroke="${ECHT_WEISS}" `
+           + `stroke-width="${bw.toFixed(2)}" stroke-linecap="butt" stroke-linejoin="round"/>`;
+      let d = '', zapfen = '';
+      for (let k = 0; k < nTeile; k++) {
+        const i0 = kachelTab.start[k];
+        const i1 = k + 1 < nTeile ? kachelTab.start[k + 1] : pts.length - 1;
+        if (i0 === undefined || i1 === undefined || i1 <= i0) continue;
+        // Bogenlaenge entlang DIESER Seite.
+        const seg = linie.slice(i0, i1 + 1), acc = [0];
+        for (let q = 1; q < seg.length; q++) {
+          acc.push(acc[q - 1] + Math.hypot(seg[q][0] - seg[q - 1][0], seg[q][1] - seg[q - 1][1]));
+        }
+        const L = acc[acc.length - 1];
+        const rand = bw * 0.9;                       // Platz fuer die Steckzapfen
+        if (L < pl + 2 * rand) continue;
+        const n = Math.max(1, Math.round((L - 2 * rand) / takt)), schritt = (L - 2 * rand) / n;
+        const bei = (sv) => {
+          let q = 1;
+          while (q < acc.length - 1 && acc[q] < sv) q++;
+          const t = (sv - acc[q - 1]) / Math.max(1e-9, acc[q] - acc[q - 1]);
+          const x = seg[q - 1][0] + (seg[q][0] - seg[q - 1][0]) * t;
+          const y = seg[q - 1][1] + (seg[q][1] - seg[q - 1][1]) * t;
+          const dl = Math.hypot(seg[q][0] - seg[q - 1][0], seg[q][1] - seg[q - 1][1]) || 1;
+          return { x, y, ux: (seg[q][0] - seg[q - 1][0]) / dl, uy: (seg[q][1] - seg[q - 1][1]) / dl };
+        };
+        for (let j = 0; j < n; j++) {
+          const m = bei(rand + (j + 0.5) * schritt);
+          const vx = -m.uy, vy = m.ux;
+          const P = (u, v) => [m.x + m.ux * u + vx * v, m.y + m.uy * u + vy * v];
+          const h = ph / 2, l = pl / 2;
+          // Gefuellter Pfeil mit gekerbtem Ende: Spitze vorn, Kerbe hinten.
+          const ecken = [P(-l, -h), P(l - kerbe, -h), P(l, 0), P(l - kerbe, h), P(-l, h), P(-l + kerbe, 0)];
+          d += ` M ${ecken.map(P2).join(' L ')} Z`;
+        }
+        // Steckzapfen an beiden Enden des Teils.
+        for (const sv of [rand * 0.45, L - rand * 0.45]) {
+          const m = bei(sv);
+          const [cx, cy] = P2([m.x, m.y]).split(' ');
+          zapfen += `<circle cx="${cx}" cy="${cy}" r="${(bw * 0.18).toFixed(2)}" fill="#1b1d22"/>`;
+        }
+      }
+      out += `<path d="${d.trim()}" fill="${farbe}" stroke="none"/>` + zapfen;
+    }
+    return out;
+  }
+
   function renderTrackPreview(tiles, currentIndex, opts) {
     const o = opts || {};
     if (!tiles || tiles.length === 0) {
@@ -2733,7 +2795,7 @@
     let body = '';
     if (o.detailed) {
       // 1) The roadway itself: one very wide black stroke along the centreline.
-      body += `<path d="${poly(centre)}" fill="none" stroke="#14181f" stroke-width="${half * 2}" stroke-linecap="butt" stroke-linejoin="round"/>`;
+      body += `<path d="${poly(centre)}" fill="none" stroke="${o.echt ? '#0d0f13' : '#14181f'}" stroke-width="${half * 2}" stroke-linecap="butt" stroke-linejoin="round"/>`;
 
       // 2) Pit bulge, on the driver's RIGHT — the blue side, as on the real track. It used
       //    to be drawn on the positive normal, which the sign check above shows is the LEFT.
@@ -2804,7 +2866,9 @@
         const i = kachelTab.start[k];
         const A = [pts[i].x + nrm[i].x * half, pts[i].y + nrm[i].y * half];
         const B = [pts[i].x - nrm[i].x * half, pts[i].y - nrm[i].y * half];
-        body += `<path d="M ${P2(A)} L ${P2(B)}" stroke="#ffffff" stroke-width="1.6" opacity=".85"/>`;
+        body += o.echt
+          ? `<path d="M ${P2(A)} L ${P2(B)}" stroke="#3a404b" stroke-width="0.6"/>`
+          : `<path d="M ${P2(A)} L ${P2(B)}" stroke="#ffffff" stroke-width="1.6" opacity=".85"/>`;
       }
 
       // 4) Kerbs. Left = blue/white, right = red/white, both relative to travel direction.
@@ -2828,28 +2892,20 @@
         });
       } else {
         // WIE DIE ECHTEN TEILE (Editor). BESTELLT: "Die Teile sollen wie die echten aussehen
-        // (also an den Raendern muessen so leichte Pfeile in die Fahrtrichtung sein)". Ein
-        // weisser Randstreifen, darauf Pfeilspitzen in Fahrtrichtung: links blau, rechts rot
-        // - dieselben Farben wie die Randsteine. Als einzelne Pfade und NICHT als
-        // <g transform>: der Selbsttest zaehlt jede verschobene Gruppe als Auto.
-        const kw2 = kw * 2.2;
-        const kL = offsetPath(pts, nrm, half + kw2 / 2), kR = offsetPath(pts, nrm, -(half + kw2 / 2));
-        [[kL, 1, '#5aa9ff'], [kR, -1, '#ff5c5c']].forEach(([path, seite, col]) => {
-          body += `<path d="${poly(path)}" fill="none" stroke="#f3f5f8" stroke-width="${kw2}" stroke-linecap="butt"/>`;
-          let d = '';
-          for (let q = 1; q < pts.length - 1; q += 2) {
-            const p = pts[q], n = nrm[q];
-            const rad = p.heading * Math.PI / 180;
-            const vx = Math.sin(rad), vy = -Math.cos(rad);
-            const cx = p.x + n.x * seite * (half + kw2 / 2), cy = p.y + n.y * seite * (half + kw2 / 2);
-            const s = kw2 * 0.5;
-            const tip = [cx + vx * s, cy + vy * s];
-            const a = [cx - vx * s * 0.5 + n.x * s * 0.8, cy - vy * s * 0.5 + n.y * s * 0.8];
-            const b = [cx - vx * s * 0.5 - n.x * s * 0.8, cy - vy * s * 0.5 - n.y * s * 0.8];
-            d += ` M ${P2(a)} L ${P2(tip)} L ${P2(b)}`;
-          }
-          body += `<path d="${d.trim()}" fill="none" stroke="${col}" stroke-width="${(kw2 * 0.28).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round"/>`;
-        });
+        // (also an den Raendern muessen so leichte Pfeile in die Fahrtrichtung sein)".
+        //
+        // v0.9.39, BESTELLT: "Die Pfeile sind aktuell auf der Innenseite von Kurven enger und
+        // aussen weiter gefaechert. Die Teile sollten genau wie die Originalschienen aussehen."
+        // Die Pfeile sassen an jedem zweiten Abtastpunkt der MITTELLINIE - in einer Kurve
+        // liegen die innen dichter und aussen weiter auseinander. Auf den Originalteilen
+        // (Produktfotos) ist es anders: matt schwarze Fahrbahn, ein weisser Randstreifen
+        // INNERHALB der 25 cm, darauf gefuellte Pfeile mit gekerbtem Ende, links blau, rechts
+        // rot, und zwar in GLEICHEM ABSTAND auf jeder Seite - der Aussenrand einer Kurve hat
+        // deshalb mehr Pfeile, nicht weitere. Jedes Teil beginnt seine Pfeilreihe neu und hat
+        // an den Enden die Steckzapfen (schwarze Punkte auf dem Streifen).
+        // Als einzelne Pfade und NICHT als <g transform>: der Selbsttest zaehlt jede
+        // verschobene Gruppe als Auto.
+        body += echtRandstreifen(pts, nrm, half, kachelTab, tiles.length, P2);
       }
       // DAS GEWAEHLTE TEIL (Editor): gelb ueberzogen, damit man sieht, wo eingefuegt und was
       // entfernt wird.

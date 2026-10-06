@@ -4390,7 +4390,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.38</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.39</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5505,6 +5505,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Streckenteile wie die Originalschienen: wei&#223;er Randstreifen mit gef&#252;llten Pfeilen in gleichem Abstand auf beiden Seiten (links blau, rechts rot), Steckzapfen an den Teilenden, matt schwarze Fahrbahn. Tempo nachgemessen (btsnoop): Vollgas sind real 5,45 km/h, im Ma&#223;stab 272 km/h; der Tacho rechnet jetzt damit, und bei Gasfaktor 100 % (Realismus GT3) stimmt er genau; Pro und Arcade behalten ihren Faktor und fahren sich wie vorher. Rundenz&#228;hlung auf der Schiene: keine Doppelrunde mehr, wenn ein Auto zwischen Barcode und Ziellinie h&#228;lt, keine Mini-Runde beim Start vor dem Streifen, keine Phantomrunde bei Ghosts und Spieler 2/3 beim Losfahren; mit einer zweiten Start/Ziel-Geraden z&#228;hlt Runde 1 richtig.</li>
         <li>Rundenzeit an der Ziellinie: Auf der Schiene misst und sagt Spieler 1 die Runde jetzt an der Ziellinie an, die das Auto selbst meldet (Byte 15, etwa 35 cm nach dem Barcode, aus den btsnoop-Mitschnitten), nicht mehr am Barcode; der Barcode bleibt R&#252;ckfall f&#252;r Autos ohne diese Meldung. Tastenbelegung: Eine neue Zuweisung auf eine schon belegte Taste tauscht jetzt die beiden Aktionen, statt beim n&#228;chsten Start zur&#252;ckzufallen, und eine alte Aufr&#228;umregel setzt eigene Tasten (z. B. Rennstart auf Kreuz) nicht mehr bei jedem Laden zur&#252;ck. Optionen &#8594; Allgemein: zwei Regler f&#252;r die Gr&#246;&#223;e der Haupttabs und der Unter-Tabs (60&#8211;180 %, 100 % wie bisher).</li>
         <li>Crash-Richtung jetzt gemessen statt gelernt: Beim Beschleunigen wandert der Gyro-Punkt im Cockpit nach vorn, also hei&#223;t Byte 1 f&#228;llt &#8222;von hinten geschoben&#8220;, Byte 1 steigt &#8222;vorne eingeschlagen&#8220;, &#252;berwiegendes Byte 3 &#8222;von der Seite&#8220; (45&#176; Toleranz). &#8222;Nur der Rammer bremst&#8220; (fr&#252;her &#8222;Kein Bremsen bei Auffahrunfall&#8220;): Gebremst wird nur, wer vorne einschl&#228;gt; wer von hinten oder von der Seite getroffen wird, f&#228;hrt weiter. Rammer-Strafe: Rammer ist, wer vorne eingeschlagen ist, w&#228;hrend der andere von hinten oder der Seite getroffen wurde (frontal z&#228;hlt nicht); das gilt auch f&#252;r Ghosts. Im Derby kostet vorn einschlagen 10 %, getroffen werden 20 %.</li>
         <li>Bestenliste: Kann eine Zeit nicht hochgeladen werden, kommt ein Hinweis mit Strecke und Grund (z. B. &#8222;keine Verbindung zum Server&#8220; oder die Ablehnung durch die Bestenliste), nie mitten im Rennen und nie &#252;ber einem anderen Dialog. Auf der Challenge-Seite steht, wie viele Zeiten noch warten, mit &#8222;Jetzt senden&#8220;. Hoch- und Herunterladen der Bestenliste laufen nur, wenn gerade kein Rennen l&#228;uft, damit das Steuern nicht verz&#246;gert wird.</li>
@@ -9274,15 +9275,14 @@
           durch Simulations-H&ouml;chstgeschwindigkeit; bei 100 % bekommt das Auto also erst
           volle Leistung, wenn die Simulation ihre H&ouml;chstgeschwindigkeit erreicht hat,
           und das dauert gemessen fast 25 Sekunden Vollgas. &Uuml;ber 100 % erreicht es die
-          volle Leistung fr&uuml;her, ohne dass der Tacho anders skaliert. Das ist auch
-          ehrlicher als es klingt: das Modellauto f&auml;hrt real 5,9 km/h, egal was die
-          Simulation glaubt &ndash; dieser Faktor ist die Abbildung zwischen beidem, und dass
-          er fr&uuml;her genau 1 war, war eine Annahme und keine Messung.</small></div>
+          volle Leistung fr&uuml;her, ohne dass der Tacho anders skaliert. Nur bei 100 % (Realismus
+          GT3) zeigt der Tacho genau das 50-fache des echten Tempos (gemessen: Vollgas
+          5,45 km/h, im Ma&szlig;stab 272 km/h). Pro und Arcade fahren mit eigenem Faktor.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="setting-topspeed" min="0.2" max="2" step="0.05" value="1.8">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-topspeed-val">160%</span>
+          <span class="opt-val" id="setting-topspeed-val">180%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Reifengrip</div>
         <div class="opt-slider">
@@ -12746,6 +12746,7 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Streckenteile wie die Originalschienen: weißer Randstreifen mit gefüllten Pfeilen in gleichem Abstand auf beiden Seiten (links blau, rechts rot), Steckzapfen an den Teilenden, matt schwarze Fahrbahn. Tempo nachgemessen (btsnoop): Vollgas sind real 5,45 km/h, im Maßstab 272 km/h; der Tacho rechnet jetzt damit, und bei Gasfaktor 100 % (Realismus GT3) stimmt er genau; Pro und Arcade behalten ihren Faktor und fahren sich wie vorher. Rundenzählung auf der Schiene: keine Doppelrunde mehr, wenn ein Auto zwischen Barcode und Ziellinie hält, keine Mini-Runde beim Start vor dem Streifen, keine Phantomrunde bei Ghosts und Spieler 2/3 beim Losfahren; mit einer zweiten Start/Ziel-Geraden zählt Runde 1 richtig.": "Track pieces like the original rails: white edge strip with filled arrows evenly spaced on both sides (left blue, right red), connector pins at the piece ends, matt black road. Speed re-measured (btsnoop): full throttle is really 5.45 km/h, 272 km/h at scale; the speedometer now uses this, and at throttle factor 100 % (Realism GT3) it is exact; Pro and Arcade keep their factor and drive as before. Lap counting on the rail: no double lap when a car stops between barcode and finish line, no mini lap when starting in front of the line, no phantom lap for ghosts and players 2/3 when pulling away; with a second start/finish straight, lap 1 counts correctly.",
     "Rundenzeit an der Ziellinie: Auf der Schiene misst und sagt Spieler 1 die Runde jetzt an der Ziellinie an, die das Auto selbst meldet (Byte 15, etwa 35 cm nach dem Barcode, aus den btsnoop-Mitschnitten), nicht mehr am Barcode; der Barcode bleibt Rückfall für Autos ohne diese Meldung. Tastenbelegung: Eine neue Zuweisung auf eine schon belegte Taste tauscht jetzt die beiden Aktionen, statt beim nächsten Start zurückzufallen, und eine alte Aufräumregel setzt eigene Tasten (z. B. Rennstart auf Kreuz) nicht mehr bei jedem Laden zurück. Optionen → Allgemein: zwei Regler für die Größe der Haupttabs und der Unter-Tabs (60–180 %, 100 % wie bisher).": "Lap time at the finish line: on the rail, player 1 now times and announces the lap at the finish line that the car reports itself (byte 15, about 35 cm after the barcode, from the btsnoop captures), no longer at the barcode; the barcode remains the fallback for cars without this report. Button mapping: a new assignment to a button that is already taken now swaps the two actions instead of reverting on the next start, and an old clean-up rule no longer resets your own buttons (e.g. race start on Cross) on every load. Options → General: two sliders for the size of the main tabs and the sub-tabs (60–180 %, 100 % as before).",
     "Crash-Richtung jetzt gemessen statt gelernt: Beim Beschleunigen wandert der Gyro-Punkt im Cockpit nach vorn, also heißt Byte 1 fällt „von hinten geschoben“, Byte 1 steigt „vorne eingeschlagen“, überwiegendes Byte 3 „von der Seite“ (45° Toleranz). „Nur der Rammer bremst“ (früher „Kein Bremsen bei Auffahrunfall“): Gebremst wird nur, wer vorne einschlägt; wer von hinten oder von der Seite getroffen wird, fährt weiter. Rammer-Strafe: Rammer ist, wer vorne eingeschlagen ist, während der andere von hinten oder der Seite getroffen wurde (frontal zählt nicht); das gilt auch für Ghosts. Im Derby kostet vorn einschlagen 10 %, getroffen werden 20 %.": "Crash direction is now measured instead of learned: when accelerating, the gyro dot in the cockpit moves forward, so byte 1 falling means “pushed from behind”, byte 1 rising means “hit with the front”, and byte 3 dominating means “from the side” (45° tolerance). “Only the rammer brakes” (formerly “No braking when rear-ended”): only a car that hits with its front is braked; a car hit from behind or from the side keeps going. Ramming penalty: the rammer is the car that hit with its front while the other was hit from behind or the side (head-on does not count); this applies to ghosts too. In derby, hitting with the front costs 10 %, being hit costs 20 %.",
     "Bestenliste: Kann eine Zeit nicht hochgeladen werden, kommt ein Hinweis mit Strecke und Grund (z. B. „keine Verbindung zum Server“ oder die Ablehnung durch die Bestenliste), nie mitten im Rennen und nie über einem anderen Dialog. Auf der Challenge-Seite steht, wie viele Zeiten noch warten, mit „Jetzt senden“. Hoch- und Herunterladen der Bestenliste laufen nur, wenn gerade kein Rennen läuft, damit das Steuern nicht verzögert wird.": "Leaderboard: if a time cannot be uploaded, a notice shows the track and the reason (e.g. “no connection to the server” or a rejection by the leaderboard), never in the middle of a race and never over another dialog. The challenge page shows how many times are still waiting, with “Send now”. Leaderboard uploads and downloads only run when no race is in progress, so steering is not delayed.",
@@ -14147,7 +14148,7 @@
     "Automatik, 2,0 s auf 100, voller Grip, kein Reifenverschleiß und kein Tankgewicht. Das Tempo ist gedrosselt, die Bremse dafür die kräftigste von allen, also der kürzeste Bremsweg, und die Lenkkalibrierung auf 250 Prozent: der volle Einschlag liegt schon bei einem Viertel Stick an. Crashs bremsen, machen aber keinen Schaden. Zum Fahren ohne Nachdenken.": "Automatic, 2.0 s to 100, full grip, no tyre wear and no fuel weight. Top speed is throttled, while the brake is the strongest of them all, so the shortest braking distance, and steering calibration at 250 percent: full lock arrives at a quarter of stick travel. Crashes brake but cause no damage. For driving without thinking.",
     "Von Hand schalten, 2,4 s auf 100, stärkster Reifenverschleiß, volles Tankgewicht, die am feinsten dosierbare Lenkung (52 % des Anschlags bei vollem Stick, man muss also weit ziehen) und die kürzeste Bremse. Das Ausrollen ist kurz, weil der Luftwiderstand hier die größte Einzelkraft ist.": "Manual shifting, 2.4 s to 100, the strongest tyre wear, full fuel weight, the most finely metered steering (52 % of the lock at full stick, so you have to pull a long way) and the shortest braking. The coast-down is short because drag is the largest single force here.",
     "Gasfaktor": "Throttle factor",
-    "Faktor auf das Motorbyte, das zum Auto geht. Das Byte ist Tempo geteilt durch Simulations-Höchstgeschwindigkeit; bei 100 % bekommt das Auto also erst volle Leistung, wenn die Simulation ihre Höchstgeschwindigkeit erreicht hat, und das dauert gemessen fast 25 Sekunden Vollgas. Über 100 % erreicht es die volle Leistung früher, ohne dass der Tacho anders skaliert. Das ist auch ehrlicher als es klingt: das Modellauto fährt real 5,9 km/h, egal was die Simulation glaubt – dieser Faktor ist die Abbildung zwischen beidem, und dass er früher genau 1 war, war eine Annahme und keine Messung.": "Factor applied to the motor byte that goes to the car. The byte is speed divided by the simulated top speed, so at 100 % the car only gets full power once the simulation has reached its top speed – and that takes a measured 25 seconds of full throttle. Above 100 % it reaches full power sooner without the speedometer scaling differently. That is also more honest than it sounds: the model car really does 5.9 km/h whatever the simulation believes – this factor is the mapping between the two, and the fact that it used to be exactly 1 was an assumption, not a measurement.",
+    "Faktor auf das Motorbyte, das zum Auto geht. Das Byte ist Tempo geteilt durch Simulations-Höchstgeschwindigkeit; bei 100 % bekommt das Auto also erst volle Leistung, wenn die Simulation ihre Höchstgeschwindigkeit erreicht hat, und das dauert gemessen fast 25 Sekunden Vollgas. Über 100 % erreicht es die volle Leistung früher, ohne dass der Tacho anders skaliert. Nur bei 100 % (Realismus GT3) zeigt der Tacho genau das 50-fache des echten Tempos (gemessen: Vollgas 5,45 km/h, im Maßstab 272 km/h). Pro und Arcade fahren mit eigenem Faktor.": "Factor applied to the motor byte that goes to the car. The byte is speed divided by the simulated top speed, so at 100 % the car only gets full power once the simulation has reached its top speed – and that takes a measured 25 seconds of full throttle. Above 100 % it reaches full power sooner without the speedometer scaling differently. Only at 100 % (Realism GT3) does the speedometer show exactly 50 times the real speed (measured: full throttle 5.45 km/h, 272 km/h at scale). Pro and Arcade use their own factor.",
     "Reifen: Füllhöhe ist Restprofil, Farbe die Temperatur. Links und rechts werden getrennt gerechnet, vorn und hinten nicht – die beiden einer Seite laufen deshalb gleich. Antippen schaltet die Reifensimulation aus, beim Boxenstopp den Reifenwechsel.": "Tyres: fill height is remaining tread, colour is temperature. Left and right are tracked separately, front and rear are not – the two on one side therefore move together. Tapping switches the tyre simulation off, and during a pit stop the tyre change.",
     // Zusaetze v0.5: Kennzeichnungen, Crash-Schwelle, Startseite, Pad-Aktionen.
     "Reifenverschleiß, Reifentemperatur, Bremstemperatur": "Tyre wear, tyre temperature, brake temperature",
@@ -16399,6 +16400,20 @@
   // defined. The cockpit shows the measured factor live, so any drift is visible rather than
   // assumed.
   const REAL_SCALE = 50 * 5.9 / 4.0;   // 73.75
+  // ---- NACHGEMESSEN (v0.9.39) ---------------------------------------------------------
+  // Die 5,9 km/h oben waren falsch abgelesen: die 2,46 km/h gehoeren zu Gasbyte 56 von 127,
+  // also 44 % und nicht 40 %. Neu ausgewertet (alle Geraden der Mitschnitte 16.-21.08.):
+  //     Byte 43  0,86 s je 43-cm-Gerade   1,81 km/h
+  //     Byte 50  0,74 s                    2,11 km/h
+  //     Byte 56  0,63 s                    2,46 km/h
+  // Proportional zum Gas, 0,0119 m/s je Schritt, Vollgas (127) also 1,51 m/s = 5,45 km/h,
+  // im Massstab 1:50 rund 272 km/h (Hochrechnung, +-10 %; 31 ganze Runden bestaetigen die
+  // Steigung). REAL_SCALE bleibt die Einheit, in der die PHYSIK abgestimmt ist (Anfahrhilfe,
+  // Luftwiderstand, Schwellen) - sie zu aendern hiesse, das Fahrverhalten zu aendern. Der
+  // TACHO rechnet mit dem gemessenen Faktor: Simulations-Hoechstgeschwindigkeit (4,0) bei
+  // Gasfaktor 100 % = Byte 127 = 272 km/h. Das stimmt genau bei Gasfaktor 100 % (ab Werk);
+  // ueber 100 % bekommt das Auto Vollgas, bevor der Tacho oben ist.
+  const TACHO_SCALE = 50 * 5.45 / 4.0;   // 68.1
 
   const IDLE_RPM = 1500, REDLINE_RPM = 9000, LIMITER_SOFT_RPM = 400;
   const GT3_GEARS = [
@@ -19408,7 +19423,7 @@
       // Dieselbe Rechnung, die die Doku fuer ihre Gangtabelle benutzt: topFrac mal
       // Hoechstgeschwindigkeit, hier in Tacho-Kilometern, also mit REAL_SCALE.
       const gaenge = cfg.gears.map((g, i) => (i + 1) + '. '
-        + Math.round(g.topFrac * cfg.topSpeedKmh * REAL_SCALE)).join(' \u00b7 ');
+        + Math.round(g.topFrac * cfg.topSpeedKmh * TACHO_SCALE)).join(' \u00b7 ');
       el.textContent = cfg.gears.length + ' ' + t('G\u00e4nge') + ' \u00b7 '
         + gaenge + ' km/h \u00b7 ' + t('Schaltzeit') + ' ' + cfg.shiftMs + ' ms';
     };
@@ -19876,7 +19891,7 @@
     const v = parseFloat(el.value);
     physEngine.config.minMoveThrottle = v;
     // Im Massstab, nicht als Anteil: 0,16 sagt niemandem etwas, 47 km/h schon.
-    const kmh = Math.round(v * physEngine.config.topSpeedKmh * REAL_SCALE);
+    const kmh = Math.round(v * physEngine.config.topSpeedKmh * TACHO_SCALE);
     $('setting-minmove-val').textContent = Math.round(v * 100) + '% \u00b7 ' + kmh + ' km/h';
   }
   if ($('setting-throttle-gamma')) {
@@ -20766,7 +20781,7 @@
     // Die Schaltlichter aus SEINER Drehzahl. Dieselbe Funktion wie die grosse Leiste im
     // Cockpit - siehe schaltLampen(), dort steht auch die Farbregel.
     schaltLampen($(pre + '-shift'), st.rpmFrac, st.onLimiter);
-    schreibeWert($(pre + '-speed'), Math.round(Math.abs(st.speedKmh) * REAL_SCALE));
+    schreibeWert($(pre + '-speed'), Math.round(Math.abs(st.speedKmh) * TACHO_SCALE));
     schreibeWert($(pre + '-gear'), gearLabel(st));
     schreibeWert($(pre + '-name'), car ? garageLabel(car) : 'kein Auto');
     // Tank in Litern, wie ueberall sonst in dieser App.
@@ -20871,8 +20886,8 @@
       if (z3.box.lage === 'angefordert') {
         fuss.textContent = t('P{n} Boxenstopp: bremsen und anhalten – {a} km/h, nötig unter {b}, dann Finger vom Gas.')
           .replace('{n}', 3)
-          .replace('{a}', Math.round(Math.abs(z3.motor.state.speedKmh) * REAL_SCALE))
-          .replace('{b}', Math.round(PIT_STANDSTILL_KMH * REAL_SCALE));
+          .replace('{a}', Math.round(Math.abs(z3.motor.state.speedKmh) * TACHO_SCALE))
+          .replace('{b}', Math.round(PIT_STANDSTILL_KMH * TACHO_SCALE));
       } else {
         const offen = [];
         if (z3.tank.stand < 100 - 0.05) offen.push('tankt');
@@ -21097,7 +21112,7 @@
     // top speed instead of deriving the top speed from the known scale. The cars are 1:50,
     // the measured ground speed at full throttle is about 5.9 km/h, so the dash reads
     // 5.9 x 50 = 295 km/h flat out. See the derivation at REAL_SCALE.
-    $('race-speed').textContent = Math.round(Math.abs(st.speedKmh) * REAL_SCALE);
+    $('race-speed').textContent = Math.round(Math.abs(st.speedKmh) * TACHO_SCALE);
 
     // Shift LEDs. Green, then red, then BLUE for the last two. The blue pair above red,
     // not below it, is what real GT3 wheels use for "shift now", and it makes the strip
@@ -21369,7 +21384,7 @@
       pit.classList.add('on');
       $('race-pit-text').textContent = pitState === 'limited'
         ? 'PIT LIMITER ENGAGED \u00b7 '
-          + Math.round(PIT_SPEED_FACTOR * physEngine.config.topSpeedKmh * REAL_SCALE) + ' KM/H'
+          + Math.round(PIT_SPEED_FACTOR * physEngine.config.topSpeedKmh * TACHO_SCALE) + ' KM/H'
         : (pitSpielAktiv()
           ? 'PIT GAME \u00b7 ' + pitSpielRest().toFixed(1) + 's \u00b7 \u2713 ' + pitSpiel.treffer
             + '/' + PIT_SPIEL_ANZAHL
@@ -27309,6 +27324,68 @@
   // Als Modulkonstante, weil karteAutosSetzen() denselben Wert braucht.
   const PUNKT_R = 3.2;
 
+  // ---- Der Randstreifen der Originalteile -------------------------------------------
+  //
+  // Masse aus den Produktfotos, relativ zur Bahnbreite: Streifen ~9,5 % (wie
+  // TRACK_KERB_RATIO), Pfeil ~75 % der Streifenhoehe hoch und gut doppelt so lang, Luecke
+  // ein Drittel des Pfeils. Der Abstand gilt je SEITE nach Bogenlaenge auf der
+  // Streifenmitte; je Teil wird er so gestreckt, dass eine ganze Zahl Pfeile passt.
+  const ECHT_STREIFEN = TRACK_KERB_W;
+  const ECHT_PFEIL_H = 0.75, ECHT_PFEIL_L = 2.3, ECHT_TAKT = 3.1;   // je Streifenhoehe
+  const ECHT_BLAU = '#2f9fe6', ECHT_ROT = '#ff4d22', ECHT_WEISS = '#f3f5f8';
+  function echtRandstreifen(pts, nrm, half, kachelTab, nTeile, P2) {
+    const bw = ECHT_STREIFEN, mitte = half - bw / 2;
+    const ph = bw * ECHT_PFEIL_H, pl = ph * ECHT_PFEIL_L, kerbe = ph / 2;
+    const takt = ph * ECHT_TAKT;
+    let out = '';
+    for (const [seite, farbe] of [[1, ECHT_BLAU], [-1, ECHT_ROT]]) {
+      const linie = offsetPath(pts, nrm, mitte * seite);
+      out += `<path d="M ${linie.map(P2).join(' L ')}" fill="none" stroke="${ECHT_WEISS}" `
+           + `stroke-width="${bw.toFixed(2)}" stroke-linecap="butt" stroke-linejoin="round"/>`;
+      let d = '', zapfen = '';
+      for (let k = 0; k < nTeile; k++) {
+        const i0 = kachelTab.start[k];
+        const i1 = k + 1 < nTeile ? kachelTab.start[k + 1] : pts.length - 1;
+        if (i0 === undefined || i1 === undefined || i1 <= i0) continue;
+        // Bogenlaenge entlang DIESER Seite.
+        const seg = linie.slice(i0, i1 + 1), acc = [0];
+        for (let q = 1; q < seg.length; q++) {
+          acc.push(acc[q - 1] + Math.hypot(seg[q][0] - seg[q - 1][0], seg[q][1] - seg[q - 1][1]));
+        }
+        const L = acc[acc.length - 1];
+        const rand = bw * 0.9;                       // Platz fuer die Steckzapfen
+        if (L < pl + 2 * rand) continue;
+        const n = Math.max(1, Math.round((L - 2 * rand) / takt)), schritt = (L - 2 * rand) / n;
+        const bei = (sv) => {
+          let q = 1;
+          while (q < acc.length - 1 && acc[q] < sv) q++;
+          const t = (sv - acc[q - 1]) / Math.max(1e-9, acc[q] - acc[q - 1]);
+          const x = seg[q - 1][0] + (seg[q][0] - seg[q - 1][0]) * t;
+          const y = seg[q - 1][1] + (seg[q][1] - seg[q - 1][1]) * t;
+          const dl = Math.hypot(seg[q][0] - seg[q - 1][0], seg[q][1] - seg[q - 1][1]) || 1;
+          return { x, y, ux: (seg[q][0] - seg[q - 1][0]) / dl, uy: (seg[q][1] - seg[q - 1][1]) / dl };
+        };
+        for (let j = 0; j < n; j++) {
+          const m = bei(rand + (j + 0.5) * schritt);
+          const vx = -m.uy, vy = m.ux;
+          const P = (u, v) => [m.x + m.ux * u + vx * v, m.y + m.uy * u + vy * v];
+          const h = ph / 2, l = pl / 2;
+          // Gefuellter Pfeil mit gekerbtem Ende: Spitze vorn, Kerbe hinten.
+          const ecken = [P(-l, -h), P(l - kerbe, -h), P(l, 0), P(l - kerbe, h), P(-l, h), P(-l + kerbe, 0)];
+          d += ` M ${ecken.map(P2).join(' L ')} Z`;
+        }
+        // Steckzapfen an beiden Enden des Teils.
+        for (const sv of [rand * 0.45, L - rand * 0.45]) {
+          const m = bei(sv);
+          const [cx, cy] = P2([m.x, m.y]).split(' ');
+          zapfen += `<circle cx="${cx}" cy="${cy}" r="${(bw * 0.18).toFixed(2)}" fill="#1b1d22"/>`;
+        }
+      }
+      out += `<path d="${d.trim()}" fill="${farbe}" stroke="none"/>` + zapfen;
+    }
+    return out;
+  }
+
   function renderTrackPreview(tiles, currentIndex, opts) {
     const o = opts || {};
     if (!tiles || tiles.length === 0) {
@@ -27367,7 +27444,7 @@
     let body = '';
     if (o.detailed) {
       // 1) The roadway itself: one very wide black stroke along the centreline.
-      body += `<path d="${poly(centre)}" fill="none" stroke="#14181f" stroke-width="${half * 2}" stroke-linecap="butt" stroke-linejoin="round"/>`;
+      body += `<path d="${poly(centre)}" fill="none" stroke="${o.echt ? '#0d0f13' : '#14181f'}" stroke-width="${half * 2}" stroke-linecap="butt" stroke-linejoin="round"/>`;
 
       // 2) Pit bulge, on the driver's RIGHT — the blue side, as on the real track. It used
       //    to be drawn on the positive normal, which the sign check above shows is the LEFT.
@@ -27438,7 +27515,9 @@
         const i = kachelTab.start[k];
         const A = [pts[i].x + nrm[i].x * half, pts[i].y + nrm[i].y * half];
         const B = [pts[i].x - nrm[i].x * half, pts[i].y - nrm[i].y * half];
-        body += `<path d="M ${P2(A)} L ${P2(B)}" stroke="#ffffff" stroke-width="1.6" opacity=".85"/>`;
+        body += o.echt
+          ? `<path d="M ${P2(A)} L ${P2(B)}" stroke="#3a404b" stroke-width="0.6"/>`
+          : `<path d="M ${P2(A)} L ${P2(B)}" stroke="#ffffff" stroke-width="1.6" opacity=".85"/>`;
       }
 
       // 4) Kerbs. Left = blue/white, right = red/white, both relative to travel direction.
@@ -27462,28 +27541,20 @@
         });
       } else {
         // WIE DIE ECHTEN TEILE (Editor). BESTELLT: "Die Teile sollen wie die echten aussehen
-        // (also an den Raendern muessen so leichte Pfeile in die Fahrtrichtung sein)". Ein
-        // weisser Randstreifen, darauf Pfeilspitzen in Fahrtrichtung: links blau, rechts rot
-        // - dieselben Farben wie die Randsteine. Als einzelne Pfade und NICHT als
-        // <g transform>: der Selbsttest zaehlt jede verschobene Gruppe als Auto.
-        const kw2 = kw * 2.2;
-        const kL = offsetPath(pts, nrm, half + kw2 / 2), kR = offsetPath(pts, nrm, -(half + kw2 / 2));
-        [[kL, 1, '#5aa9ff'], [kR, -1, '#ff5c5c']].forEach(([path, seite, col]) => {
-          body += `<path d="${poly(path)}" fill="none" stroke="#f3f5f8" stroke-width="${kw2}" stroke-linecap="butt"/>`;
-          let d = '';
-          for (let q = 1; q < pts.length - 1; q += 2) {
-            const p = pts[q], n = nrm[q];
-            const rad = p.heading * Math.PI / 180;
-            const vx = Math.sin(rad), vy = -Math.cos(rad);
-            const cx = p.x + n.x * seite * (half + kw2 / 2), cy = p.y + n.y * seite * (half + kw2 / 2);
-            const s = kw2 * 0.5;
-            const tip = [cx + vx * s, cy + vy * s];
-            const a = [cx - vx * s * 0.5 + n.x * s * 0.8, cy - vy * s * 0.5 + n.y * s * 0.8];
-            const b = [cx - vx * s * 0.5 - n.x * s * 0.8, cy - vy * s * 0.5 - n.y * s * 0.8];
-            d += ` M ${P2(a)} L ${P2(tip)} L ${P2(b)}`;
-          }
-          body += `<path d="${d.trim()}" fill="none" stroke="${col}" stroke-width="${(kw2 * 0.28).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round"/>`;
-        });
+        // (also an den Raendern muessen so leichte Pfeile in die Fahrtrichtung sein)".
+        //
+        // v0.9.39, BESTELLT: "Die Pfeile sind aktuell auf der Innenseite von Kurven enger und
+        // aussen weiter gefaechert. Die Teile sollten genau wie die Originalschienen aussehen."
+        // Die Pfeile sassen an jedem zweiten Abtastpunkt der MITTELLINIE - in einer Kurve
+        // liegen die innen dichter und aussen weiter auseinander. Auf den Originalteilen
+        // (Produktfotos) ist es anders: matt schwarze Fahrbahn, ein weisser Randstreifen
+        // INNERHALB der 25 cm, darauf gefuellte Pfeile mit gekerbtem Ende, links blau, rechts
+        // rot, und zwar in GLEICHEM ABSTAND auf jeder Seite - der Aussenrand einer Kurve hat
+        // deshalb mehr Pfeile, nicht weitere. Jedes Teil beginnt seine Pfeilreihe neu und hat
+        // an den Enden die Steckzapfen (schwarze Punkte auf dem Streifen).
+        // Als einzelne Pfade und NICHT als <g transform>: der Selbsttest zaehlt jede
+        // verschobene Gruppe als Auto.
+        body += echtRandstreifen(pts, nrm, half, kachelTab, tiles.length, P2);
       }
       // DAS GEWAEHLTE TEIL (Editor): gelb ueberzogen, damit man sieht, wo eingefuegt und was
       // entfernt wird.
@@ -30057,6 +30128,8 @@
   let dashOnMarker = false;   // byte 15 bit 3: the car is physically over a marker
   // v0.9.37: Ziellinie auf der Schiene (siehe handleDashboardBytes).
   let dashZielGesehen = false, dashZielAt = 0, dashStartLapAt = 0, dashZielAuto = null;
+  // v0.9.39: der Kachelzaehler an der letzten Rundengrenze (siehe die Ziellinie).
+  let dashLapZaehler = null;
   // Vorheriger Stand des Musterkontakts, fuer die Flankenerkennung im Ausdruck-Modus.
   let dashMarkerPrev = false;
   // Debounce state for the tile code. See dashboardNotifyHandler for why both guards exist.
@@ -30553,6 +30626,9 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       raceAwaitingMove = false;
       raceLapStart = Date.now();
       raceStartedAt = Date.now();
+      // Die Kachel, auf der das Auto beim Start steht: eine Ziellinie darauf ist keine Runde.
+      dashLapZaehler = dashLastTileCounter;
+      sectorReset();
     }
     maybeSwitchRaceWeather();
     wxWechselTick();
@@ -30662,16 +30738,30 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
                                 lastActed: 0, lastCount: null };
     const r = car.race;
     const now = Date.now();
+    // Die Kachel, auf der das Auto stand, als diese Wertung begann (tileCount wird erst
+    // NACH diesem Aufruf auf das neue Paket gesetzt).
+    if (r.lapZaehler === undefined) r.lapZaehler = car.tileCount === undefined ? null : car.tileCount;
 
     // DIE SPERRE HAT VORRANG, und sobald ein Auto sie einmal gezeigt hat, gilt nur noch
     // sie. Die alte Regel bleibt fuer Autos, die sie nie melden - sie einfach zu loeschen
     // hiesse, ein Verhalten wegzunehmen, das auf anderen Bahnen vielleicht das einzige ist.
+    // v0.9.39: wie bei Spieler 1 (handleDashboardBytes) - eine Linie auf der Kachel der
+    // letzten Rundengrenze zieht nur die Uhr nach. Ob das Auto die Linie meldet, merkt sich das AUTO
+    // (car.zielGesehen), nicht die Wertung: car.race wird bei jedem Rennstart neu angelegt.
     if (zielSperreFlanke(r, b)) {
+      // Im Ausdruck-Modus steigt das Bit auf JEDEM Muster - Runde nur am Startmuster.
+      if (trackMode === 'off' && !isStartCode(b[12])) return;
       r.sperreGesehen = true;
-      if (now - r.lastActed >= TILE_REPEAT_BLOCK_MS) {
-        r.lastActed = now;
-        carLapCrossed(car);
+      car.zielGesehen = true;
+      if (now - r.lastActed < TILE_REPEAT_BLOCK_MS) return;
+      r.lastActed = now;
+      if (trackMode !== 'off' && r.lapZaehler !== null && b[11] === r.lapZaehler) {
+        if (r.lapStart !== null) r.lapStart = now;
+        if (r.sek && r.sek.start !== null) r.sek.start = now;
+        return;
       }
+      r.lapZaehler = b[11];
+      carLapCrossed(car);
       return;
     }
 
@@ -30684,12 +30774,13 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     // Der Rueckfall zaehlt nur, solange dieses Auto die Sperre noch nie gemeldet hat.
     // Sonst laege die Runde zweimal: einmal am Anfang des Startbereichs und einmal am
     // Streifen, und die Rundenzeiten wuerden abwechselnd zu kurz und zu lang.
-    if (r.sperreGesehen) return;
+    if (r.sperreGesehen || car.zielGesehen) return;
     // isStartCode und nicht der Vergleich mit einem Wert: das Originalblatt meldet 0x0a,
     // die frueher angenommene 0x01 bleibt daneben gueltig.
     if (!isStartCode(code)) return;
     if (now - r.lastActed < TILE_REPEAT_BLOCK_MS) return;
     r.lastActed = now;
+    r.lapZaehler = count;
     carLapCrossed(car);
   }
 
@@ -31848,6 +31939,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       raceAwaitingMove = false;
       raceLapStart = Date.now();
       raceStartedAt = raceLapStart;
+      dashLapZaehler = dashLastTileCounter;
     }
     if (raceClockTimer) clearInterval(raceClockTimer);
     raceClockTimer = setInterval(raceClockTick, 250);
@@ -32581,20 +32673,33 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     // ein Zeitgeber. Ghosts und Spieler 2/3 zaehlen schon so (carRaceNotify); hier jetzt
     // auch Spieler 1. Hat das Auto die Ziellinie einmal gemeldet, zaehlt der Barcode nicht
     // mehr; bis dahin bleibt er der Rueckfall (Autos, die das Bit nie melden).
-    if (dashZielAuto !== playerCar) { dashZielAuto = playerCar; dashZielGesehen = false; dashZielAt = 0; }
+    //
+    // v0.9.39 (gegengeprueft an 44 Ziellinien der Mitschnitte): Barcode und Ziellinie sind
+    // EINE Durchfahrt desselben Teils; jede Runde hatte genau eine Linie, auch wenn der
+    // Barcode einmal als 0x00 misslesen war. Liegt die Ziellinie auf DERSELBEN Kachel wie die letzte
+    // Rundengrenze (Kachelzaehler unveraendert), war das keine neue Runde: entweder hat der
+    // Barcode-Rueckfall sie gerade gezaehlt, oder das Auto stand beim Rennstart auf dem
+    // Startteil vor dem Streifen. Dann wird nur die Uhr an die Linie nachgezogen. Vorher
+    // gab es dort eine Runde von unter einer Sekunde bzw. eine doppelte Runde, wenn das
+    // Auto zwischen Barcode und Linie stehen blieb.
+    if (dashZielAuto !== playerCar) {
+      dashZielAuto = playerCar; dashZielGesehen = false; dashZielAt = 0;
+      dashLapZaehler = null;
+    }
     if (trackMode !== 'off' && dashOnMarker && !markerVorher) {
-      const jetzt = Date.now();
-      const zaehlen = () => {
-        dashZielAt = jetzt;
-        if (!pitDoubleCheck(jetzt)) playerLapCrossed();
-      };
+      const jetzt = Date.now(), zaehler = bytes[11];
       if (!dashZielGesehen) {
         dashZielGesehen = true;
         log('Ziellinie: das Auto meldet sie selbst (Byte 15) - ab jetzt wird dort gemessen.', 'info');
-        // Hat der Barcode diese Ueberfahrt gerade schon gezaehlt, nicht doppelt.
-        if (jetzt - dashStartLapAt < 1500) dashZielAt = jetzt; else zaehlen();
-      } else if (jetzt - dashZielAt >= TILE_REPEAT_BLOCK_MS) {
-        zaehlen();
+      }
+      if (jetzt - dashZielAt < TILE_REPEAT_BLOCK_MS) {
+        // Flackern derselben Linie.
+      } else if (dashLapZaehler !== null && zaehler === dashLapZaehler) {
+        dashZielAt = jetzt;
+        zielUhrNachziehen(jetzt);
+      } else {
+        dashZielAt = jetzt;
+        if (!pitDoubleCheck(jetzt)) { dashLapZaehler = zaehler; playerLapCrossed(); }
       }
     }
 
@@ -32741,6 +32846,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       if (trackMode !== 'off' && dashZielGesehen) return;
       if (pitDoubleCheck(nowCode)) return;
       dashStartLapAt = nowCode;
+      dashLapZaehler = counter;
       const gezaehlt = playerLapCrossed();
       if (gezaehlt) return;
     }
@@ -32836,6 +32942,14 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   function sectorCrossed(now) {
     const ziel = sektorZiel();
     if (ziel <= 1) return true;
+    // v0.9.39: Im Rennen beginnt der erste Sektor mit dem Start, wie in carLapCrossed() je
+    // Auto. Vorher war der erste Kontakt nur der Anfang - mit einer zweiten Start/Ziel-
+    // Geraden zaehlte Runde 1 dann erst an der zweiten Ueberfahrt der Rundenlinie.
+    if (sectorStart === null && (raceState === 'racing' || raceState === 'finishing')
+        && !raceFormationLap && raceLapStart !== null) {
+      sectorStart = raceLapStart;
+      sectorIndex = 0;
+    }
     if (sectorStart === null) {
       // Der erste Kontakt ueberhaupt: er beginnt den ersten Sektor und ist noch keine
       // Sektorgrenze. Ohne diesen Fall waere der erste Sektor die Zeit seit dem Rennstart
@@ -32901,6 +33015,15 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       });
     }
     host.innerHTML = teile.join('');
+  }
+
+  // Die Uhr an die Ziellinie nachziehen, ohne eine Runde zu zaehlen (siehe die Ziellinie in
+  // handleDashboardBytes): die laufende Runde beginnt an der Linie.
+  function zielUhrNachziehen(jetzt) {
+    if (dashLapStart !== null) dashLapStart = jetzt;
+    if (sectorStart !== null) sectorStart = jetzt;
+    if ((raceState === 'racing' || raceState === 'finishing') && raceLapStart !== null
+        && !raceAwaitingMove) raceLapStart = jetzt;
   }
 
   function playerLapCrossed() {
@@ -33709,7 +33832,8 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   let pitMarkerCode = null;
   // 80 km/h on the racing display, the speed a real pit lane limiter holds. The display
   // reads speedKmh * REAL_SCALE (71.25), so 80 / 71.25 / 4.0 top speed = 0.2807.
-  const PIT_SPEED_FACTOR = 80 / REAL_SCALE / 4.0;
+  // v0.9.39: in TACHO-km/h, damit die Box auf dem Tacho 80 zeigt (siehe TACHO_SCALE).
+  const PIT_SPEED_FACTOR = 80 / TACHO_SCALE / 4.0;
   let pitState = 'off';        // off | limited | servicing
   let pitModus = 'minigame';   // Boxen-Minigame, siehe pitSpielStart()
   let pitSpiel = null;
@@ -35087,15 +35211,16 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   let trackTimeOn = 0, trackTimeOff = 0, trackTimeLast = null, trackTimeUiLast = 0;
 
   // ---- Actual ground speed, measured rather than scaled ----
-  // The displayed speed is simulated: internal units times REAL_SCALE (71.25), a factor
-  // chosen so full throttle reads 285 km/h. It was never checked against the car. Measuring
+  // The displayed speed is simulated: internal units times TACHO_SCALE (68.1, v0.9.39), so
+  // full throttle reads 272 km/h. It was never checked against the car. Measuring
   // the btsnoop logs says a lap of 3 straights and 8 curves is 4.39 m and takes 7.2 s, i.e.
   // the car really does about 2.2 km/h, and roughly 2 km/h at the moment the display says
   // 100. So a fixed divisor would be somewhere around 1:50 - but the two are not
   // proportional, because the real car saturates with throttle while the simulation does
   // not. Hence no divisor: the tile crossings give the true speed directly and calibrate
   // themselves, and any future drift in REAL_SCALE shows up here instead of hiding.
-  const TILE_LEN_M = { 0x01: 0.43, 0x02: 0.43 };     // start/finish and straight
+  // Start/Ziel ~40 cm: in gleichen Computerrunden 6 % kuerzer als eine Gerade (v0.9.39).
+  const TILE_LEN_M = { 0x01: 0.40, 0x02: 0.43 };
   const CURVE_LEN_M = TRACK_RADIUS_CM / 100 * (TRACK_TURN_DEG * Math.PI / 180);
   const REAL_SPEED_WINDOW = 3;                       // tiles to average over
   let realTileCount = null, realTileTime = null, realTileType = null;
@@ -35104,8 +35229,10 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   function tileLengthM(type) {
     if (TILE_LEN_M[type] !== undefined) return TILE_LEN_M[type];
     if (type === TILE_TYPE.CURVE_LEFT || type === TILE_TYPE.CURVE_RIGHT) return CURVE_LEN_M;
-    if (type === TILE_TYPE.HAIRPIN) {
-      return TRACK_HAIRPIN_RADIUS_CM / 100 * (TRACK_HAIRPIN_DEG * Math.PI / 180);
+    // v0.9.39: beide Haarnadeln, MIT der geraden Sektion davor (21,9 cm).
+    if (type === TILE_TYPE.HAIRPIN || type === TILE_TYPE.HAIRPIN_LEFT) {
+      return TRACK_HAIRPIN_RADIUS_CM / 100 * (TRACK_HAIRPIN_DEG * Math.PI / 180)
+           + TRACK_HAIRPIN_LEAD_CM / 100;
     }
     return null;                                     // off track, or a code we cannot size
   }
@@ -35156,7 +35283,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     // constant. The two curves have different shapes - the real car is linear in throttle,
     // the simulation has drag - so expect it to wander either side of 50 rather than sit on
     // it. A steady offset in one direction is the signal worth acting on.
-    const sim = Math.abs(physEngine.state.speedKmh) * REAL_SCALE;
+    const sim = Math.abs(physEngine.state.speedKmh) * TACHO_SCALE;
     const el2 = $('dash-real-ratio');
     if (sim > 5 && realSpeedKmh > 0.05) {
       const f = sim / realSpeedKmh;
@@ -51596,7 +51723,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         e.state.isShifting = false; shiftedAt = null;
       }
       trace.push({ t, want: sTarget, got: out.servoAngle,
-                   kmh: e.state.speedKmh * REAL_SCALE, gear: e.state.currentGear });
+                   kmh: e.state.speedKmh * TACHO_SCALE, gear: e.state.currentGear });
     }
     psLastRun = trace;
     psRenderResult();
@@ -53737,7 +53864,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     fahrgefuehlWerte() {
       return { throttleGamma: physEngine.config.throttleGamma,
                minMoveThrottle: physEngine.config.minMoveThrottle,
-               topSpeedKmh: physEngine.config.topSpeedKmh, massstab: REAL_SCALE,
+               topSpeedKmh: physEngine.config.topSpeedKmh, massstab: TACHO_SCALE,
                steerExpo: physEngine.config.steerExpo };
     },
 
@@ -78272,44 +78399,91 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                 part: racePartialMs, form: raceFormationLap, rail: sw ? sw.checked : true, sp: playerCar,
                 mp: dashMarkerPrev, ac: dashLastActedCode, aa: dashLastActedAt, pc: dashPendingCode,
                 ps: dashPendingSeen, lc: dashLastTileCounter, zg: dashZielGesehen, za: dashZielAt,
-                sa: dashStartLapAt, zauto: dashZielAuto };
+                sa: dashStartLapAt, zauto: dashZielAuto, lz: dashLapZaehler, aw: raceAwaitingMove,
+                tiles: currentTrackTiles, sc: sectorCount, ss: sectorStart, si: sectorIndex,
+                st: sectorTimes.slice(), sh: sectorHistory.slice() };
     let jetzt = uhr.call(Date);
     try {
       Date.now = () => jetzt;
       if (sw && !sw.checked) { sw.checked = true; sw.dispatchEvent(new Event('change', { bubbles: true })); }
       const auto = { device: { id: 'st-ziel', name: 'Pruefwagen' }, role: 'player', rx: null, tx: null,
                      tileCode: 0xff, tileCount: null, lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null };
-      playerCar = auto;
-      raceState = 'racing'; raceFormationLap = false; raceLapTimes = [];
-      raceLapStart = jetzt - 5000; dashLapStart = jetzt - 5000; racePartialMs = null;
-      dashMarkerPrev = false; dashLastActedCode = null; dashLastActedAt = 0;
-      dashPendingCode = null; dashPendingSeen = 0; dashLastTileCounter = null;
       const START = [0x01, 0x0a].find((c) => isStartCode(c));
       const paket = (zaehler, code, ziel) => { const a = new Array(19).fill(0); a[11] = zaehler; a[12] = code; a[14] = 0x82; a[15] = ziel ? 0x08 : 0; return a; };
       const sende = (z, c, ziel, n) => { for (let i = 0; i < (n || 2); i++) OMEGA_TEST.feedNotify(paket(z, c, ziel), { car: auto }); };
-      sende(6, 0x04, false);                 // vorher eine Gerade
-      jetzt += 600; sende(7, START, false);  // Barcode, Bit noch nie gesehen: Rueckfall zaehlt
+      const neu = () => {
+        playerCar = auto; raceState = 'racing'; raceFormationLap = false; raceLapTimes = [];
+        raceAwaitingMove = false; raceLapStart = jetzt; dashLapStart = jetzt; racePartialMs = null;
+        dashMarkerPrev = false; dashLastActedCode = null; dashLastActedAt = 0;
+        dashPendingCode = null; dashPendingSeen = 0; dashLastTileCounter = null;
+        dashZielAuto = null; dashLapZaehler = null; sectorCount = 1; sectorReset(); sectorHistory = [];
+        currentTrackTiles = [{ type: TILE_TYPE.START }, { type: TILE_TYPE.STRAIGHT }];
+      };
+      const ms = (i) => raceLapTimes[i] ? raceLapTimes[i].ms : null;
+
+      // A) Rueckfall, Uebergang, Messen an der Linie, Flackern, Auto parkt vor der Linie.
+      neu(); raceLapStart = jetzt - 5000; dashLapStart = jetzt - 5000;
+      sende(6, 0x04, false);
+      jetzt += 600; sende(7, START, false);  // Barcode, Linie noch nie gesehen: Rueckfall zaehlt
       if (raceLapTimes.length !== 1) f.push('Rueckfall ueber den Barcode zaehlt nicht (' + raceLapTimes.length + ')');
-      jetzt += 455; sende(7, START, true);   // Ziellinie derselben Ueberfahrt: nicht doppelt
-      if (raceLapTimes.length !== 1) f.push('erste Ziellinie direkt nach der Barcode-Runde doppelt gezaehlt');
+      jetzt += 455; sende(7, START, true);   // Linie derselben Durchfahrt: Uhr nachziehen
+      if (raceLapTimes.length !== 1) f.push('erste Linie direkt nach der Barcode-Runde doppelt gezaehlt');
       jetzt += 1000; sende(8, 0x04, false);
       jetzt += 4000; sende(9, START, false); // naechster Barcode: zaehlt NICHT mehr
       if (raceLapTimes.length !== 1) f.push('Barcode zaehlt trotz gemeldeter Ziellinie');
-      jetzt += 455; sende(9, START, true);   // Ziellinie: zaehlt
+      jetzt += 455; sende(9, START, true);   // Linie: zaehlt, ab der Linie gemessen
       if (raceLapTimes.length !== 2) f.push('Ziellinie zaehlt die Runde nicht (' + raceLapTimes.length + ')');
-      else if (Math.abs(raceLapTimes[1].ms - 5910) > 5) f.push('Rundenzeit nicht ab der Ziellinie: ' + raceLapTimes[1].ms);
-      jetzt += 300; sende(9, START, false); sende(9, START, true);  // Flackern innerhalb der Sperre
+      else if (Math.abs(ms(1) - 5455) > 5) f.push('Rundenzeit nicht Linie zu Linie: ' + ms(1));
+      jetzt += 300; sende(9, START, false); sende(9, START, true);  // Flackern
       if (raceLapTimes.length !== 2) f.push('Flackern zaehlt doppelt');
+      jetzt += 1000; sende(10, 0x04, false);
+      jetzt += 4000; sende(11, START, false); // Barcode ...
+      jetzt += 11000;                        // ... Auto steht 11 s vor der Linie (wie im Mitschnitt)
+      sende(11, START, true);
+      if (raceLapTimes.length !== 3) f.push('geparktes Auto: ' + raceLapTimes.length + ' statt 3 Runden');
+      else if (Math.abs(ms(2) - 16300) > 5) f.push('geparktes Auto: Runde ' + ms(2) + ' statt 16300');
+
+      // B) Rennstart AUF dem Startteil vor dem Streifen: keine Runde von unter einer Sekunde.
+      neu(); dashZielAuto = auto; dashZielGesehen = true; dashZielAt = 0;
+      sende(20, START, false);
+      dashLapZaehler = dashLastTileCounter;   // wie raceClockTick beim Losfahren
+      jetzt += 700; sende(20, START, true);
+      if (raceLapTimes.length) f.push('Start vor dem Streifen zaehlt eine Runde von ' + ms(0) + ' ms');
+      jetzt += 1000; sende(21, 0x04, false);
+      jetzt += 4000; sende(22, START, false);
+      jetzt += 455; sende(22, START, true);
+      if (raceLapTimes.length !== 1 || Math.abs(ms(0) - 5455) > 5) {
+        f.push('Runde 1 nach Start vor dem Streifen: ' + ms(0) + ' statt 5455 ms');
+      }
+
+      // C) Zweite Start/Ziel-Gerade (Sektor): Runde 1 endet an der Rundenlinie, nicht eine
+      //    Runde spaeter, und die Sektorgrenze zaehlt keine Runde.
+      neu(); dashZielAuto = auto; dashZielGesehen = true; dashZielAt = 0;
+      currentTrackTiles = [{ type: TILE_TYPE.START }, { type: TILE_TYPE.STRAIGHT },
+                           { type: TILE_TYPE.START }, { type: TILE_TYPE.STRAIGHT }];
+      sende(30, 0x04, false);
+      dashLapZaehler = dashLastTileCounter;
+      jetzt += 2000; sende(31, START, false);
+      jetzt += 455; sende(31, START, true);  // Sektorgrenze
+      if (raceLapTimes.length) f.push('Sektorgrenze zaehlt als Runde');
+      jetzt += 2000; sende(32, 0x04, false);
+      jetzt += 2000; sende(33, START, false);
+      jetzt += 455; sende(33, START, true);  // Rundenlinie
+      if (raceLapTimes.length !== 1) f.push('zweite Start/Ziel-Gerade: ' + raceLapTimes.length + ' statt 1 Runde');
+      else if (Math.abs(ms(0) - 6910) > 5) f.push('zweite Start/Ziel-Gerade: Runde ' + ms(0) + ' statt 6910');
+      if (sectorHistory.length !== 1 || sectorHistory[0].length !== 2) f.push('Sektoren: ' + JSON.stringify(sectorHistory));
     } finally {
       Date.now = uhr;
       raceState = g.state; raceLapTimes = g.laps; raceLapStart = g.start; dashLapStart = g.dash;
       racePartialMs = g.part; raceFormationLap = g.form; playerCar = g.sp;
       dashMarkerPrev = g.mp; dashLastActedCode = g.ac; dashLastActedAt = g.aa; dashPendingCode = g.pc;
       dashPendingSeen = g.ps; dashLastTileCounter = g.lc; dashZielGesehen = g.zg; dashZielAt = g.za;
-      dashStartLapAt = g.sa; dashZielAuto = g.zauto;
+      dashStartLapAt = g.sa; dashZielAuto = g.zauto; dashLapZaehler = g.lz; raceAwaitingMove = g.aw;
+      currentTrackTiles = g.tiles; sectorCount = g.sc; sectorStart = g.ss; sectorIndex = g.si;
+      sectorTimes = g.st; sectorHistory = g.sh;
       if (sw && sw.checked !== g.rail) { sw.checked = g.rail; sw.dispatchEvent(new Event('change', { bubbles: true })); }
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Barcode nur bis zur ersten Ziellinie, danach misst Byte 15, nicht doppelt' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Linie zu Linie, geparktes Auto, Start vor dem Streifen und zweite Start/Ziel-Gerade richtig' };
   });
 
   stAdd('Woerterbuch ohne doppelte Schluessel', () => {

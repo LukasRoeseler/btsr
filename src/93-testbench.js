@@ -1905,7 +1905,7 @@
     fahrgefuehlWerte() {
       return { throttleGamma: physEngine.config.throttleGamma,
                minMoveThrottle: physEngine.config.minMoveThrottle,
-               topSpeedKmh: physEngine.config.topSpeedKmh, massstab: REAL_SCALE,
+               topSpeedKmh: physEngine.config.topSpeedKmh, massstab: TACHO_SCALE,
                steerExpo: physEngine.config.steerExpo };
     },
 
