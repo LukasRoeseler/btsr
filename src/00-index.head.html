@@ -3435,6 +3435,25 @@
        500 ms begrenzt und laeuft nicht bei jedem normalen Neuzeichnen. */
   }
   #track-preview-svg.track-baut { animation: trackBaut .5s ease-out; }
+  /* LADEANIMATION (v0.9.42, 59-lade.js): drei Streckenteile leuchten nacheinander auf. */
+  .lade-traeger { position: relative; }
+  .lade-ueber { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 12px; background: rgba(0,0,0,.78); }
+  .lade-teile { display: flex; gap: 12px; justify-content: center; }
+  .lade-teile svg { width: 76px; height: 76px; opacity: .4; animation: ladeTeil 1.2s ease-in-out infinite; }
+  .lade-teile svg:nth-child(2) { animation-delay: .2s; }
+  .lade-teile svg:nth-child(3) { animation-delay: .4s; }
+  @keyframes ladeTeil {
+    0%, 100% { opacity: .4; transform: translateY(0) scale(.9); }
+    30% { opacity: 1; transform: translateY(-8px) scale(1.08); }
+    60% { opacity: .55; transform: translateY(0) scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lade-teile svg { animation-duration: 2.4s; }
+    @keyframes ladeTeil { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+  }
+  .lade-text { font-size: 14px; font-weight: 600; color: var(--ink); letter-spacing: .03em; }
+  .mp-ready-lade { margin: 6px 0 10px; }
   @keyframes trackBaut {
     0% { opacity: 0; transform: scale(.92); }
     60% { opacity: 1; }
@@ -4416,7 +4435,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.41</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.42</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5531,6 +5550,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Lenkung GT3, F1 und Realismus GT3: voller Einschlag ist wieder erreichbar. Seit dem neuen Lenkweg begrenzte das &#8222;Lenkansprechen&#8220; dieser Voreinstellungen den gr&#246;&#223;ten Einschlag (Realismus GT3 gemessen 19 von 45&#176; im Schritttempo, mit kalten Reifen 11&#176;); jetzt 3,0 wie Pro, und Realismus GT3 gleicht kalte Reifen mit Lenkkalibrierung 1,6 aus. Pro und Arcade unver&#228;ndert. Zufallsstrecke: Ladeanimation (Gerade, Kurve, Haarnadel) im Editor, die Suche l&#228;uft daf&#252;r in kleinen St&#252;cken. Mehrspieler: dieselbe Animation im Bereitschaftsschirm, solange auf die anderen gewartet wird.</li>
         <li>Rundenrennen enden jetzt mit der Zielrunde: Wer die eingestellte Rundenzahl f&#228;hrt, ist sofort im Ziel (Ende-Ton und Ergebnis); vorher endete ein 5-Runden-Rennen erst bei der &#220;berfahrt nach Runde 5, im Mehrspieler also scheinbar nie. Die Renn&#252;bersicht zeigt dich im Mehrspieler nicht mehr doppelt (Name und Auto). Derby: Auto 1 nimmt wieder Schaden (seitlich &#8722;20 %, vorn &#8722;10 %), vorher ging der Treffer ins Leere und nur der Controller r&#252;ttelte. Mehrspieler auf schwachen Handys: im Rennen fragt das Handy den Host nur noch alle 3 s ab, meldet Positionen f&#252;r Zuschauer alle 0,5 s und zeichnet die Ranglisten-Tabelle erst nach dem Rennen, damit der Steuertakt Luft hat.</li>
         <li>Raumdesigner (experimentell) unter Strecke &#8594; Meine Teile: den Raum in 10-cm-Feldern als Boden oder M&#246;bel malen, mit Pinsel (10/30/60 cm) oder Rechteck, Vorlagen Rechteck, L, U und Oval, R&#252;ckg&#228;ngig und &#8222;Strecke einpassen&#8220;. Geht mit Finger, Maus, Tastatur und Gamepad (Stick/Steuerkreuz bewegt, &#10005; malt, &#9633; M&#246;bel/Boden, &#9651; Pinsel/Rechteck, L1/R1 Gr&#246;&#223;e, &#9675; fertig). Zufallsstrecken passen jetzt wirklich hinein: gepr&#252;ft wird mit der vollen Bahnbreite plus 2 cm Abstand statt nur mit der Mittellinie, um M&#246;bel herum, und der Raum wird im Editor gleich richtig um die Strecke gelegt.</li>
         <li>Streckenteile wie die Originalschienen: wei&#223;er Randstreifen mit gef&#252;llten Pfeilen in gleichem Abstand auf beiden Seiten (links blau, rechts rot), Steckzapfen an den Teilenden, matt schwarze Fahrbahn. Tempo nachgemessen (btsnoop): Vollgas sind real 5,45 km/h, im Ma&#223;stab 272 km/h; der Tacho rechnet jetzt damit, und bei Gasfaktor 100 % (Realismus GT3) stimmt er genau; Pro und Arcade behalten ihren Faktor und fahren sich wie vorher. Rundenz&#228;hlung auf der Schiene: keine Doppelrunde mehr, wenn ein Auto zwischen Barcode und Ziellinie h&#228;lt, keine Mini-Runde beim Start vor dem Streifen, keine Phantomrunde bei Ghosts und Spieler 2/3 beim Losfahren; mit einer zweiten Start/Ziel-Geraden z&#228;hlt Runde 1 richtig.</li>
@@ -11552,6 +11572,7 @@
     <div class="k-pause-dialog">
       <h2>Rennen für alle: bereit? <span class="wip-tag">experimentell</span></h2>
       <p class="muted" id="mp-ready-info" data-i18n-skip></p>
+      <div class="mp-ready-lade" id="mp-ready-lade" hidden></div>
       <div class="grid-liste" id="mp-ready-liste"></div>
       <div class="k-frage-knoepfe">
         <button type="button" class="primary" id="mp-ready-bereit" hidden>Bereit</button>
@@ -11575,4 +11596,21 @@
   </div>
 </div>
 
+<!-- START-DIAGNOSE (v0.9.42). GEMELDET: "Apk-Fassung 0.9.41 startete nicht und wurde verworfen
+     auf einem von 2 Geraeten." Der ganze Code ist EIN Skript; bricht er beim Laden irgendwo ab,
+     erreicht er die Bestaetigung an den Update-Waechter nie, und die App rollt nach 25 s still
+     zurueck - ohne dass irgendwo steht, warum. Dieser Block merkt sich den ERSTEN Fehler, der
+     Block nach dem Hauptskript zeigt ihn an. Absichtlich ES5: er muss auch dort laufen, wo das
+     Hauptskript an der Syntax scheitert. -->
+<script>
+  window.__omegaStartFehler = null;
+  window.addEventListener('error', function (e) {
+    if (window.__omegaFertig || window.__omegaStartFehler) return;
+    window.__omegaStartFehler = {
+      m: String((e && e.message) || (e && e.error) || '?'),
+      z: (e && e.lineno) || 0, s: (e && e.colno) || 0,
+      st: (e && e.error && e.error.stack) ? String(e.error.stack).slice(0, 700) : ''
+    };
+  });
+</script>
 <script>

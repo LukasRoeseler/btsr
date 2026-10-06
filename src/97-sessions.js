@@ -855,6 +855,11 @@
         : (bereitListe.indexOf(mp.id) >= 0 ? t('Du bist bereit. Warte, bis gestartet wird.')
            : t('Tippe auf „Bereit“, sobald du soweit bist.'));
     }
+    // v0.9.42 BESTELLT: Ladeanimation, solange auf die anderen Handys gewartet wird - beim
+    // Starter, bis alle bereit sind, bei den anderen, bis gestartet wird (59-lade.js).
+    if (typeof ladeAnimationSetzen === 'function') {
+      ladeAnimationSetzen($('mp-ready-lade'), istInitiator ? !alleBereit : bereitListe.indexOf(mp.id) >= 0);
+    }
     if ($('mp-ready-bereit')) $('mp-ready-bereit').hidden = istInitiator || bereitListe.indexOf(mp.id) >= 0;
     if ($('mp-ready-start')) {
       $('mp-ready-start').hidden = !istInitiator;

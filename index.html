@@ -3435,6 +3435,25 @@
        500 ms begrenzt und laeuft nicht bei jedem normalen Neuzeichnen. */
   }
   #track-preview-svg.track-baut { animation: trackBaut .5s ease-out; }
+  /* LADEANIMATION (v0.9.42, 59-lade.js): drei Streckenteile leuchten nacheinander auf. */
+  .lade-traeger { position: relative; }
+  .lade-ueber { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 12px; background: rgba(0,0,0,.78); }
+  .lade-teile { display: flex; gap: 12px; justify-content: center; }
+  .lade-teile svg { width: 76px; height: 76px; opacity: .4; animation: ladeTeil 1.2s ease-in-out infinite; }
+  .lade-teile svg:nth-child(2) { animation-delay: .2s; }
+  .lade-teile svg:nth-child(3) { animation-delay: .4s; }
+  @keyframes ladeTeil {
+    0%, 100% { opacity: .4; transform: translateY(0) scale(.9); }
+    30% { opacity: 1; transform: translateY(-8px) scale(1.08); }
+    60% { opacity: .55; transform: translateY(0) scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lade-teile svg { animation-duration: 2.4s; }
+    @keyframes ladeTeil { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+  }
+  .lade-text { font-size: 14px; font-weight: 600; color: var(--ink); letter-spacing: .03em; }
+  .mp-ready-lade { margin: 6px 0 10px; }
   @keyframes trackBaut {
     0% { opacity: 0; transform: scale(.92); }
     60% { opacity: 1; }
@@ -4416,7 +4435,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.41</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.42</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5531,6 +5550,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Lenkung GT3, F1 und Realismus GT3: voller Einschlag ist wieder erreichbar. Seit dem neuen Lenkweg begrenzte das &#8222;Lenkansprechen&#8220; dieser Voreinstellungen den gr&#246;&#223;ten Einschlag (Realismus GT3 gemessen 19 von 45&#176; im Schritttempo, mit kalten Reifen 11&#176;); jetzt 3,0 wie Pro, und Realismus GT3 gleicht kalte Reifen mit Lenkkalibrierung 1,6 aus. Pro und Arcade unver&#228;ndert. Zufallsstrecke: Ladeanimation (Gerade, Kurve, Haarnadel) im Editor, die Suche l&#228;uft daf&#252;r in kleinen St&#252;cken. Mehrspieler: dieselbe Animation im Bereitschaftsschirm, solange auf die anderen gewartet wird.</li>
         <li>Rundenrennen enden jetzt mit der Zielrunde: Wer die eingestellte Rundenzahl f&#228;hrt, ist sofort im Ziel (Ende-Ton und Ergebnis); vorher endete ein 5-Runden-Rennen erst bei der &#220;berfahrt nach Runde 5, im Mehrspieler also scheinbar nie. Die Renn&#252;bersicht zeigt dich im Mehrspieler nicht mehr doppelt (Name und Auto). Derby: Auto 1 nimmt wieder Schaden (seitlich &#8722;20 %, vorn &#8722;10 %), vorher ging der Treffer ins Leere und nur der Controller r&#252;ttelte. Mehrspieler auf schwachen Handys: im Rennen fragt das Handy den Host nur noch alle 3 s ab, meldet Positionen f&#252;r Zuschauer alle 0,5 s und zeichnet die Ranglisten-Tabelle erst nach dem Rennen, damit der Steuertakt Luft hat.</li>
         <li>Raumdesigner (experimentell) unter Strecke &#8594; Meine Teile: den Raum in 10-cm-Feldern als Boden oder M&#246;bel malen, mit Pinsel (10/30/60 cm) oder Rechteck, Vorlagen Rechteck, L, U und Oval, R&#252;ckg&#228;ngig und &#8222;Strecke einpassen&#8220;. Geht mit Finger, Maus, Tastatur und Gamepad (Stick/Steuerkreuz bewegt, &#10005; malt, &#9633; M&#246;bel/Boden, &#9651; Pinsel/Rechteck, L1/R1 Gr&#246;&#223;e, &#9675; fertig). Zufallsstrecken passen jetzt wirklich hinein: gepr&#252;ft wird mit der vollen Bahnbreite plus 2 cm Abstand statt nur mit der Mittellinie, um M&#246;bel herum, und der Raum wird im Editor gleich richtig um die Strecke gelegt.</li>
         <li>Streckenteile wie die Originalschienen: wei&#223;er Randstreifen mit gef&#252;llten Pfeilen in gleichem Abstand auf beiden Seiten (links blau, rechts rot), Steckzapfen an den Teilenden, matt schwarze Fahrbahn. Tempo nachgemessen (btsnoop): Vollgas sind real 5,45 km/h, im Ma&#223;stab 272 km/h; der Tacho rechnet jetzt damit, und bei Gasfaktor 100 % (Realismus GT3) stimmt er genau; Pro und Arcade behalten ihren Faktor und fahren sich wie vorher. Rundenz&#228;hlung auf der Schiene: keine Doppelrunde mehr, wenn ein Auto zwischen Barcode und Ziellinie h&#228;lt, keine Mini-Runde beim Start vor dem Streifen, keine Phantomrunde bei Ghosts und Spieler 2/3 beim Losfahren; mit einer zweiten Start/Ziel-Geraden z&#228;hlt Runde 1 richtig.</li>
@@ -11552,6 +11572,7 @@
     <div class="k-pause-dialog">
       <h2>Rennen für alle: bereit? <span class="wip-tag">experimentell</span></h2>
       <p class="muted" id="mp-ready-info" data-i18n-skip></p>
+      <div class="mp-ready-lade" id="mp-ready-lade" hidden></div>
       <div class="grid-liste" id="mp-ready-liste"></div>
       <div class="k-frage-knoepfe">
         <button type="button" class="primary" id="mp-ready-bereit" hidden>Bereit</button>
@@ -11575,6 +11596,23 @@
   </div>
 </div>
 
+<!-- START-DIAGNOSE (v0.9.42). GEMELDET: "Apk-Fassung 0.9.41 startete nicht und wurde verworfen
+     auf einem von 2 Geraeten." Der ganze Code ist EIN Skript; bricht er beim Laden irgendwo ab,
+     erreicht er die Bestaetigung an den Update-Waechter nie, und die App rollt nach 25 s still
+     zurueck - ohne dass irgendwo steht, warum. Dieser Block merkt sich den ERSTEN Fehler, der
+     Block nach dem Hauptskript zeigt ihn an. Absichtlich ES5: er muss auch dort laufen, wo das
+     Hauptskript an der Syntax scheitert. -->
+<script>
+  window.__omegaStartFehler = null;
+  window.addEventListener('error', function (e) {
+    if (window.__omegaFertig || window.__omegaStartFehler) return;
+    window.__omegaStartFehler = {
+      m: String((e && e.message) || (e && e.error) || '?'),
+      z: (e && e.lineno) || 0, s: (e && e.colno) || 0,
+      st: (e && e.error && e.error.stack) ? String(e.error.stack).slice(0, 700) : ''
+    };
+  });
+</script>
 <script>
 
   // =========================================================================
@@ -12815,6 +12853,8 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Strecke wird gesucht …": "Searching for a track …",
+    "Lenkung GT3, F1 und Realismus GT3: voller Einschlag ist wieder erreichbar. Seit dem neuen Lenkweg begrenzte das „Lenkansprechen“ dieser Voreinstellungen den größten Einschlag (Realismus GT3 gemessen 19 von 45° im Schritttempo, mit kalten Reifen 11°); jetzt 3,0 wie Pro, und Realismus GT3 gleicht kalte Reifen mit Lenkkalibrierung 1,6 aus. Pro und Arcade unverändert. Zufallsstrecke: Ladeanimation (Gerade, Kurve, Haarnadel) im Editor, die Suche läuft dafür in kleinen Stücken. Mehrspieler: dieselbe Animation im Bereitschaftsschirm, solange auf die anderen gewartet wird.": "Steering GT3, F1 and Realism GT3: full lock is reachable again. Since the new steering path, the “steering response” of these presets capped the largest angle (Realism GT3 measured 19 of 45° at walking pace, 11° on cold tyres); now 3.0 like Pro, and Realism GT3 compensates cold tyres with steering calibration 1.6. Pro and Arcade unchanged. Random track: loading animation (straight, curve, hairpin) in the editor; the search now runs in small chunks for this. Multiplayer: the same animation on the ready screen while waiting for the others.",
     "Rundenrennen enden jetzt mit der Zielrunde: Wer die eingestellte Rundenzahl fährt, ist sofort im Ziel (Ende-Ton und Ergebnis); vorher endete ein 5-Runden-Rennen erst bei der Überfahrt nach Runde 5, im Mehrspieler also scheinbar nie. Die Rennübersicht zeigt dich im Mehrspieler nicht mehr doppelt (Name und Auto). Derby: Auto 1 nimmt wieder Schaden (seitlich −20 %, vorn −10 %), vorher ging der Treffer ins Leere und nur der Controller rüttelte. Mehrspieler auf schwachen Handys: im Rennen fragt das Handy den Host nur noch alle 3 s ab, meldet Positionen für Zuschauer alle 0,5 s und zeichnet die Ranglisten-Tabelle erst nach dem Rennen, damit der Steuertakt Luft hat.": "Lap races now end with the final lap: whoever completes the set number of laps finishes immediately (end sound and results); before, a 5-lap race only ended at the crossing after lap 5, so in multiplayer it seemed never to end. The race overview no longer shows you twice in multiplayer (name and car). Derby: car 1 takes damage again (side −20 %, front −10 %); before, the hit went nowhere and only the controller rumbled. Multiplayer on slow phones: during the race the phone polls the host only every 3 s, reports positions for spectators every 0.5 s and redraws the leaderboard table only after the race, so the control loop has room.",
     "Raum gestalten": "Design room",
     "Raumdesigner": "Room designer",
@@ -24735,6 +24775,52 @@
     window.addEventListener('resize', () => { if (kTourOffen) konsoleTourSpot(); });
   })();
   // =========================================================================
+  // Ladeanimation: drei Streckenteile, die nacheinander aufleuchten (v0.9.42)
+  // =========================================================================
+  // BESTELLT: "Zeige im Editorfeld eine Ladeanimation (zB ein sich drehendes Carrera Hybrid
+  // Streckenteil, oder durchlaufende Streckenteile [gerade, kurve, haarnadel]) waehrend der
+  // Zufallsalgorithmus laeuft. Zeige ebenfalls eine Ladeanimation (ggf dieselbe) waehrend der
+  // Host das Rennen fuer alle gestartet hat und auf Rueckmeldung der anderen Handys wartet."
+  //
+  // Gerade, 60-Grad-Kurve und Haarnadel im Stil der Originalteile: schwarze Fahrbahn,
+  // weisser Rand mit roten Pfeilfeldern. Nur transform und opacity werden animiert - die
+  // laufen im Compositor weiter, auch wenn der Hauptfaden kurz rechnet.
+  const LADE_TEILE = [
+    'M20 38 V2',                                   // Gerade
+    'M10 38 V26 A15 15 0 0 1 25 11 H38',           // Kurve
+    'M9 38 V19 A11 11 0 0 1 31 19 V38',            // Haarnadel
+  ];
+  function ladeTeilSvg(d) {
+    return '<svg viewBox="0 0 40 40" aria-hidden="true">'
+      + '<path d="' + d + '" fill="none" stroke="#f3f5f8" stroke-width="16"/>'
+      + '<path d="' + d + '" fill="none" stroke="#ff4d22" stroke-width="16" stroke-dasharray="3.4 2.6"/>'
+      + '<path d="' + d + '" fill="none" stroke="#2b303a" stroke-width="10"/>'
+      + '</svg>';
+  }
+  function ladeAnimationHtml(text) {
+    return '<div class="lade-teile">' + LADE_TEILE.map(ladeTeilSvg).join('') + '</div>'
+      + (text ? '<div class="lade-text">' + String(text).replace(/</g, '&lt;') + '</div>' : '');
+  }
+  // Als Einblendung UEBER einem Feld (Editor). Rueckgabe: das Element, .remove() beendet sie.
+  function ladeAnimationZeigen(host, text) {
+    const el = document.createElement('div');
+    el.className = 'lade-ueber';
+    el.setAttribute('role', 'status');
+    el.innerHTML = ladeAnimationHtml(text);
+    host.classList.add('lade-traeger');
+    host.appendChild(el);
+    const weg = el.remove.bind(el);
+    el.remove = () => { weg(); if (!host.querySelector('.lade-ueber')) host.classList.remove('lade-traeger'); };
+    return el;
+  }
+  // Fest in einem Platzhalter (Bereitschaftsschirm): an/aus, ohne bei jedem Abruf neu zu bauen.
+  function ladeAnimationSetzen(slot, an) {
+    if (!slot) return;
+    if (an && !slot.firstChild) slot.innerHTML = ladeAnimationHtml('');
+    if (!an && slot.firstChild) slot.innerHTML = '';
+    slot.hidden = !an;
+  }
+  // =========================================================================
   // Die Strecke: Modell, Geometrie, Editor, Scan
   // =========================================================================
   // Kachelfolge, Mittellinie, Ideallinie (Minimalkruemmung), Bremsprofil, Zeichnung,
@@ -29266,25 +29352,23 @@
     ]);
   }
 
-  function trackZufall() {
+  function trackZufallVorbereiten() {
     const b = teileBestand();
-    if (trackZufallTotalLeer(b)) { trackZufallKeineTeile(); return false; }
+    if (trackZufallTotalLeer(b)) { trackZufallKeineTeile(); return null; }
     const hat = (typ) => Math.max(0, Math.floor(+b[typ] || 0));
     if (!(hat(TILE_TYPE.START) > 0)) {
       showHudToast(t('Zufall: Kein Startteil vorhanden'));
-      return false;
+      return null;
     }
     if (hat(TILE_TYPE.STRAIGHT) + hat(TILE_TYPE.ENGE) + hat(TILE_TYPE.PIT) * 2 < 1) {
       showHudToast(t('Zufall: Nicht genug Geraden'));
-      return false;
+      return null;
     }
     // Beste Kandidaten: einer, der nicht in den letzten Codes vorkommt (Dedup ueber ein Fenster,
     // nicht nur die letzte Strecke), einer, der nur nicht der allerletzte ist (Rueckfall, damit
     // "nicht zweimal dieselbe in Folge" trotzdem gilt), und einer, der es egal ist. Ueber viele
     // Versuche wird der mit den wenigsten ungenutzten Teilen behalten - so naehert sich die
     // Zufallsstrecke dem Ziel, den ganzen Bestand zu verbrauchen.
-    let beste = null, besteAnders = null, besteGleich = null;
-    let raumZuKlein = false;
     const letzte = trackZufallCodes.length ? trackZufallCodes[trackZufallCodes.length - 1] : null;
     // Wenigste uebrige Teile gewinnt; zwei Haarnadeln am Stueck zaehlen dabei wie 1,5 weitere
     // uebrige Teile (v0.9.13) - getrennte Haarnadeln gehen damit vor, ohne dass Strecken ganz
@@ -29294,56 +29378,72 @@
     const startZeit = performance.now();
     const zufallSchritt = [TILE_TYPE.WEIT_LEFT, TILE_TYPE.WEIT_RIGHT, TILE_TYPE.KLEIN_LEFT, TILE_TYPE.KLEIN_RIGHT]
       .some((t) => hat(t) > 0) ? 30 : 60;
-    for (let versuch = 0; versuch < 400; versuch++) {
-      if (performance.now() - startZeit > 3000) break;
-      const dir = Math.random() < 0.5 ? 1 : -1;
-      const r = Math.random();
-      const nc = r < 0.05 ? 1 : r < 0.5 ? 2 : r < 0.75 ? 3 : r < 0.93 ? 4 : 5;
-      const used = {};
-      const turns = trackZufallRunTurns(dir, nc, zufallSchritt);
-      if (!turns) continue;
-      trackZufallGegenlauf(turns, dir, b);
-      const runs = [];
-      let gut = true;
-      for (const t of turns) {
-        const run = trackZufallRun(t, used, b);
-        if (!run) { gut = false; break; }
-        runs.push(run);
-      }
-      if (!gut) continue;
-      // Netto-0-Schikanen einsetzen, solange welche passen: verbraucht uebrige Kurvenpaare,
-      // damit die Strecke mehr vom Bestand nutzt. Jede Einsetzung muss den Schluss halten.
-      for (let wi = 0; wi < 3; wi++) {
-        const wig = trackZufallWiggle(used, b);
-        if (!wig) break;
-        const pos = Math.floor(Math.random() * (runs.length + 1));
-        const test = runs.slice();
-        test.splice(pos, 0, wig);
-        const g = trackZufallSolveGaps(test, 3, TRACK_SCHLUSS_STRENG_CM);
-        if (!g) continue;
-        runs.splice(pos, 0, wig);
-        for (const t of wig) used[t] = (used[t] || 0) + 1;
-      }
-      const gaps = trackZufallSolveGaps(runs, 3, TRACK_SCHLUSS_STRENG_CM);
-      if (!gaps) continue;
-      const tiles = trackZufallBaueTiles(runs, gaps, b);
-      if (!tiles) continue;
-      trackRotationDeg = 0;
-      if (!trackZufallPasst(tiles)) continue;
-      // Fussabdruck: die Strecke muss in den angegebenen Raum passen (45°-Schritte).
-      const rot = trackZufallPasstRaum(tiles);
-      if (rot < 0) { raumZuKlein = true; continue; }
-      const rest = trackZufallRest(tiles, b);
-      const code = trackToCode(tiles, 0);
-      // Haarnadeln direkt nacheinander (auch ueber das Rundenende)?
-      const nadel = (x) => x.type === TILE_TYPE.HAIRPIN || x.type === TILE_TYPE.HAIRPIN_LEFT;
-      const nadelPaar = tiles.some((x, i) => nadel(x) && nadel(tiles[(i + 1) % tiles.length]));
-      const kandidat = { tiles, rest, code, rot, nadelPaar };
-      if (!trackZufallCodeKennt(code) && besser(beste, kandidat)) beste = kandidat;
-      if (code !== letzte && besser(besteAnders, kandidat)) besteAnders = kandidat;
-      if (besser(besteGleich, kandidat)) besteGleich = kandidat;
+    return { b, letzte, besser, startZeit, zufallSchritt, versuch: 0,
+             beste: null, besteAnders: null, besteGleich: null, raumZuKlein: false };
+  }
+  // Ein einzelner Versuch der Suche (v0.9.42 aus der Schleife geloest, damit die Suche in
+  // Haeppchen laufen und dabei eine Ladeanimation zeigen kann).
+  function trackZufallVersuch(z) {
+    const b = z.b, zufallSchritt = z.zufallSchritt;
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    const r = Math.random();
+    const nc = r < 0.05 ? 1 : r < 0.5 ? 2 : r < 0.75 ? 3 : r < 0.93 ? 4 : 5;
+    const used = {};
+    const turns = trackZufallRunTurns(dir, nc, zufallSchritt);
+    if (!turns) return;
+    trackZufallGegenlauf(turns, dir, b);
+    const runs = [];
+    let gut = true;
+    for (const t of turns) {
+      const run = trackZufallRun(t, used, b);
+      if (!run) { gut = false; break; }
+      runs.push(run);
     }
-    const wahl = beste || besteAnders;
+    if (!gut) return;
+    // Netto-0-Schikanen einsetzen, solange welche passen: verbraucht uebrige Kurvenpaare,
+    // damit die Strecke mehr vom Bestand nutzt. Jede Einsetzung muss den Schluss halten.
+    for (let wi = 0; wi < 3; wi++) {
+      const wig = trackZufallWiggle(used, b);
+      if (!wig) break;
+      const pos = Math.floor(Math.random() * (runs.length + 1));
+      const test = runs.slice();
+      test.splice(pos, 0, wig);
+      const g = trackZufallSolveGaps(test, 3, TRACK_SCHLUSS_STRENG_CM);
+      if (!g) continue;
+      runs.splice(pos, 0, wig);
+      for (const t of wig) used[t] = (used[t] || 0) + 1;
+    }
+    const gaps = trackZufallSolveGaps(runs, 3, TRACK_SCHLUSS_STRENG_CM);
+    if (!gaps) return;
+    const tiles = trackZufallBaueTiles(runs, gaps, b);
+    if (!tiles) return;
+    trackRotationDeg = 0;
+    if (!trackZufallPasst(tiles)) return;
+    // Fussabdruck: die Strecke muss in den angegebenen Raum passen (45°-Schritte).
+    const rot = trackZufallPasstRaum(tiles);
+    if (rot < 0) { z.raumZuKlein = true; return; }
+    const rest = trackZufallRest(tiles, b);
+    const code = trackToCode(tiles, 0);
+    // Haarnadeln direkt nacheinander (auch ueber das Rundenende)?
+    const nadel = (x) => x.type === TILE_TYPE.HAIRPIN || x.type === TILE_TYPE.HAIRPIN_LEFT;
+    const nadelPaar = tiles.some((x, i) => nadel(x) && nadel(tiles[(i + 1) % tiles.length]));
+    const kandidat = { tiles, rest, code, rot, nadelPaar };
+    if (!trackZufallCodeKennt(code) && z.besser(z.beste, kandidat)) z.beste = kandidat;
+    if (code !== z.letzte && z.besser(z.besteAnders, kandidat)) z.besteAnders = kandidat;
+    if (z.besser(z.besteGleich, kandidat)) z.besteGleich = kandidat;
+  }
+  function trackZufallRunde(z, bisMs) {
+    while (z.versuch < 400) {
+      const jetzt = performance.now();
+      if (jetzt - z.startZeit > z.budgetMs) return true;
+      if (jetzt >= bisMs) return false;
+      z.versuch++;
+      trackZufallVersuch(z);
+    }
+    return true;
+  }
+  function trackZufallAbschluss(z) {
+    const wahl = z.beste || z.besteAnders;
     if (wahl) {
       trackMerken();
       currentTrackTiles = wahl.tiles;
@@ -29363,16 +29463,72 @@
       showHudToast(t('Zufällige Strecke gebaut'));
       return true;
     }
-    if (besteGleich) {
+    if (z.besteGleich) {
       showHudToast(t('Zufall: Keine neue Variante möglich'));
       return false;
     }
-    if (raumZuKlein) {
+    if (z.raumZuKlein) {
       showHudToast(t('Zufall: Raum zu klein für einen Rundkurs'));
       return false;
     }
     showHudToast(t('Zufall: Nicht genug Kurventeile für einen Rundkurs'));
     return false;
+  }
+  // Am Stueck, wie bisher (Selbsttests und alles, was ein Ergebnis sofort braucht).
+  function trackZufall() {
+    const z = trackZufallVorbereiten();
+    if (!z) return false;
+    z.budgetMs = 3000;
+    while (!trackZufallRunde(z, Infinity)) { /* bis fertig */ }
+    return trackZufallAbschluss(z);
+  }
+  // ---- MIT LADEANIMATION (v0.9.42) ---------------------------------------------------
+  // BESTELLT: "Zeige im Editorfeld eine Ladeanimation (zB ein sich drehendes Carrera Hybrid
+  // Streckenteil, oder durchlaufende Streckenteile [gerade, kurve, haarnadel]) waehrend der
+  // Zufallsalgorithmus laeuft." Die Suche lief bisher bis zu 3 s am Stueck auf dem
+  // Hauptfaden - in der Zeit haette keine Animation laufen koennen. Jetzt in Haeppchen von
+  // 40 ms mit einer Pause dazwischen. Das Rechenbudget bleibt 3 s REINE Rechenzeit; die
+  // Animation steht mindestens 450 ms, sonst blitzt sie nur auf.
+  let trackZufallLaeuft = false;
+  async function trackZufallMitAnimation() {
+    if (trackZufallLaeuft) return false;
+    const z = trackZufallVorbereiten();
+    if (!z) return false;
+    trackZufallLaeuft = true;
+    const host = $('track-preview-svg');
+    const lade = typeof ladeAnimationZeigen === 'function' && host
+      ? ladeAnimationZeigen(host, t('Strecke wird gesucht …')) : null;
+    const anfang = performance.now();
+    let gerechnet = 0;
+    try {
+      z.budgetMs = Infinity;                      // Budget hier selbst nach Rechenzeit
+      await ladePause();
+      for (;;) {
+        const t0 = performance.now();
+        const fertig = trackZufallRunde(z, t0 + 40);
+        gerechnet += performance.now() - t0;
+        if (fertig || gerechnet > 3000) break;
+        await ladePause();
+      }
+      const rest = 450 - (performance.now() - anfang);
+      if (rest > 0) await new Promise((ok) => setTimeout(ok, rest));
+    } finally {
+      if (lade) lade.remove();
+      trackZufallLaeuft = false;
+    }
+    return trackZufallAbschluss(z);
+  }
+  // Eine Pause, die der Browser auch im verborgenen Reiter nicht auf 1 s streckt
+  // (MessageChannel statt setTimeout) - und trotzdem einen Bildaufbau zulaesst.
+  function ladePause() {
+    return new Promise((ok) => {
+      let erledigt = false;
+      const weiter = () => { if (!erledigt) { erledigt = true; ok(); } };
+      requestAnimationFrame(weiter);
+      const k = new MessageChannel();
+      k.port1.onmessage = weiter;
+      k.port2.postMessage(0);
+    });
   }
   // Nur der Endpunkt der Strecke - billig, ohne die 14 Abtastungen je Kachel. Wird als
   // Vorfilter genutzt (doppelte Toleranz), damit nicht jede Kandidaten-Strecke die teure
@@ -29449,7 +29605,7 @@
     const u = ((c.x - a.x) * d1y - (c.y - a.y) * d1x) / den;
     return t > 0 && t < 1 && u > 0 && u < 1;
   }
-  $('track-random').onclick = () => trackZufall();
+  $('track-random').onclick = () => trackZufallMitAnimation();
 
   // Hier standen sechs Bindungen auf Knopf-ids, die es seit dem Umbau auf die Bildleiste
   // nicht mehr gibt (track-add-start und fuenf weitere). Sie prueften auf Vorhandensein und
@@ -80461,6 +80617,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         : (bereitListe.indexOf(mp.id) >= 0 ? t('Du bist bereit. Warte, bis gestartet wird.')
            : t('Tippe auf „Bereit“, sobald du soweit bist.'));
     }
+    // v0.9.42 BESTELLT: Ladeanimation, solange auf die anderen Handys gewartet wird - beim
+    // Starter, bis alle bereit sind, bei den anderen, bis gestartet wird (59-lade.js).
+    if (typeof ladeAnimationSetzen === 'function') {
+      ladeAnimationSetzen($('mp-ready-lade'), istInitiator ? !alleBereit : bereitListe.indexOf(mp.id) >= 0);
+    }
     if ($('mp-ready-bereit')) $('mp-ready-bereit').hidden = istInitiator || bereitListe.indexOf(mp.id) >= 0;
     if ($('mp-ready-start')) {
       $('mp-ready-start').hidden = !istInitiator;
@@ -81056,7 +81217,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
           // Nicht noch einmal anbieten, bis eine NOCH neuere Fassung da ist.
           einstellung.verworfen = s.zurueckgerollt;
           merken();
-          meldung(t('Die Fassung') + ' ' + s.zurueckgerollt + ' ' + t('startete nicht und wurde verworfen.'), true);
+          // v0.9.42: mit dem Fehler, den die START-DIAGNOSE (00-index.head.html) gemerkt hat.
+          let grund = '';
+          try {
+            const sf = JSON.parse(localStorage.getItem('omegasim-startfehler') || 'null');
+            if (sf && sf.v === s.zurueckgerollt && sf.f) grund = ' ' + sf.f.m + ' (' + sf.f.z + ':' + sf.f.s + ')';
+          } catch (e) { /* ohne Speicher */ }
+          meldung(t('Die Fassung') + ' ' + s.zurueckgerollt + ' ' + t('startete nicht und wurde verworfen.') + grund, true);
           showHudToast(t('Update verworfen'));
           upd('vergessen').catch(() => {});
         }
@@ -81293,7 +81460,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       text: 'Von Hand schalten, 2,9 s auf 100, Reifenverschleiß und Tankgewicht knapp zur Hälfte. Bremsfading, Windschatten und ungleicher Verschleiß sind voll an. Die harte, gegen echte Werte kalibrierte Fassung steht daneben als Realismus GT3.',
       v: { 'setting-grip': 0.87, 'setting-brakepower': 1.15, 'setting-autoshift': false,
            'setting-zero-to-top': 2.9, 'setting-coast-drag': 0.9, 'setting-fuelweight': 0.45,
-           'setting-tyres': 0.9, 'phys-steerresp': 1.9, 'setting-brakebias': 60,
+           // v0.9.42 GEMELDET: "Realismus GT3 laesst sich nicht fahren, weil das Auto kaum lenkt -
+           // auch wenn es fast nicht faehrt." Seit dem neuen Lenkweg (v0.8.40, steerVoll) ist
+           // phys-steerresp eine TRIMMUNG mit Bezug 3,0: der groesste Einschlag ist resp/3. 1,3
+           // hiess also hoechstens 43 % - gemessen 19 von 45 Grad bei 10 km/h, mit kalten Reifen
+           // 11. Die Werte stammten aus dem alten Weg, in dem resp x Kalibrierung bei 1 gedeckelt
+           // wurde. 3,0: voller Einschlag bei vollem Stick, wie an einem echten Auto im Stand.
+           'setting-tyres': 0.9, 'phys-steerresp': 3.0, 'setting-brakebias': 60,
            // Lenkkalibrierung 1,0 heisst: der uebertragene Winkel ist genau der gerechnete.
            // Die Klassen ab GT3 sind gegen gemessenes Verhalten abgestimmt, und eine
            // Kalibrierung darauf waere ein Aufschlag auf eine Messung.
@@ -81326,7 +81499,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       text: 'Von Hand schalten, 2,5 s auf 100, stärkster Reifenverschleiß der drei Klassen und die kürzeste Bremse. Die am feinsten dosierbare Lenkung, langes Ausrollen, und Windschatten wirkt am stärksten. Reifenwärmer an.',
       v: { 'setting-grip': 0.97, 'setting-brakepower': 1.45, 'setting-autoshift': false,
            'setting-zero-to-top': 2.5, 'setting-coast-drag': 1.2, 'setting-fuelweight': 0.6,
-           'setting-tyres': 1.2, 'phys-steerresp': 1.6, 'setting-brakebias': 63,
+           // v0.9.42: Lenkansprechen 3,0 statt 1,6 - Begruendung bei GT3.
+           'setting-tyres': 1.2, 'phys-steerresp': 3.0, 'setting-brakebias': 63,
            // Lenkkalibrierung 1,0 heisst: der uebertragene Winkel ist genau der gerechnete.
            // Die Klassen ab GT3 sind gegen gemessenes Verhalten abgestimmt, und eine
            // Kalibrierung darauf waere ein Aufschlag auf eine Messung.
@@ -81366,11 +81540,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       text: 'Von Hand schalten, 3,2 s auf 100 – die gemessene Reihe, gegen die die Physik gefittet ist –, voller Reifenverschleiß und volles Tankgewicht. Wenig Grip, schwache Bremse, langes Ausrollen, keine Reifenwärmer. Das ist die haerteste der sechs Abstimmungen und die einzige, deren Zahlen aus Messungen kommen und nicht aus einer Anpassung. Ein Fahrfehler kostet hier Zeit.',
       v: { 'setting-grip': 0.72, 'setting-brakepower': 0.85, 'setting-autoshift': false,
            'setting-zero-to-top': 3.2, 'setting-coast-drag': 1.25, 'setting-fuelweight': 1.0,
-           'setting-tyres': 2.0, 'phys-steerresp': 1.3, 'setting-brakebias': 62,
+           // v0.9.42: Lenkansprechen 3,0 statt 1,3 - Begruendung bei GT3.
+           'setting-tyres': 2.0, 'phys-steerresp': 3.0, 'setting-brakebias': 62,
+           // v0.9.42: 1,6 statt 1,0. Kalte Reifen (jeder Start, keine Waermer) greifen zu 58 %,
+           // und steerGrip wirkt auch im Schritttempo - mit 1,0 kamen dort 11 Grad an. 1,6 gibt
+           // kalt im Langsamen ~42 Grad, beim Anbremsen aus 120 km/h bleibt Untersteuern.
            // Lenkkalibrierung 1,0 heisst: der uebertragene Winkel ist genau der gerechnete.
            // Die Klassen ab GT3 sind gegen gemessenes Verhalten abgestimmt, und eine
            // Kalibrierung darauf waere ein Aufschlag auf eine Messung.
-           'setting-steer-calib': 1.0,
+           'setting-steer-calib': 1.6,
            'phys-accel': 1.0,
            'setting-crash-threshold': 30,
            // Bei Kalibrierung 1,0 wirkt schon 1,0 deutlich: 25 Grad statt 41 bei 100 km/h.
@@ -83111,7 +83289,35 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Element dort, mitten im Code, ohne Ruecksicht darauf, dass zwei Schrägstriche davor
   // stehen. Der Klammerpruefer in build.py hat es gemeldet (er zerlegt das gebaute
   // Dokument mit derselben Regel), und deshalb ist es nie in den Browser gekommen.
+  // Das Hauptskript ist bis zum Ende gelaufen (siehe START-DIAGNOSE in 00-index.head.html).
+  window.__omegaFertig = true;
 })();
+</script>
+<script>
+  // START-DIAGNOSE, zweiter Teil: lief das Hauptskript nicht durch, den Fehler anzeigen und
+  // merken, statt dass die App nach 25 s still zurueckrollt. ES5, siehe erster Teil.
+  (function () {
+    if (window.__omegaFertig) return;
+    var f = window.__omegaStartFehler || { m: 'kein Fehlerereignis', z: 0, s: 0, st: '' };
+    var v = '';
+    try { v = (document.getElementById('app-version') || {}).textContent || ''; } catch (e) { v = ''; }
+    var ua = navigator.userAgent || '';
+    try {
+      localStorage.setItem('omegasim-startfehler', JSON.stringify({ v: v, f: f, ua: ua, at: Date.now() }));
+    } catch (e) { /* privat */ }
+    var d = document.createElement('div');
+    d.setAttribute('role', 'alert');
+    d.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#0b0c0f;color:#f4f6fb;'
+      + 'padding:18px;font:14px/1.45 system-ui,sans-serif;overflow:auto';
+    var esc = function (x) { return String(x).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); };
+    d.innerHTML = '<h2 style="margin:0 0 8px;color:#ff5c5c">OmegaSim ' + esc(v) + ' konnte nicht starten</h2>'
+      + '<p style="margin:0 0 10px">Bitte einen Screenshot davon an den Entwickler schicken. '
+      + 'Die App kehrt beim n&auml;chsten Start zur vorigen Fassung zur&uuml;ck.</p>'
+      + '<p style="margin:0 0 6px"><b>' + esc(f.m) + '</b> (Zeile ' + esc(f.z) + ', Spalte ' + esc(f.s) + ')</p>'
+      + (f.st ? '<pre style="white-space:pre-wrap;font-size:11px;color:#c9d1e0;margin:0 0 8px">' + esc(f.st) + '</pre>' : '')
+      + '<p style="font-size:11px;color:#a9b2c4;margin:0">' + esc(ua) + '</p>';
+    (document.body || document.documentElement).appendChild(d);
+  })();
 </script>
 </body>
 </html>

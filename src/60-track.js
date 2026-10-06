@@ -4530,25 +4530,23 @@
     ]);
   }
 
-  function trackZufall() {
+  function trackZufallVorbereiten() {
     const b = teileBestand();
-    if (trackZufallTotalLeer(b)) { trackZufallKeineTeile(); return false; }
+    if (trackZufallTotalLeer(b)) { trackZufallKeineTeile(); return null; }
     const hat = (typ) => Math.max(0, Math.floor(+b[typ] || 0));
     if (!(hat(TILE_TYPE.START) > 0)) {
       showHudToast(t('Zufall: Kein Startteil vorhanden'));
-      return false;
+      return null;
     }
     if (hat(TILE_TYPE.STRAIGHT) + hat(TILE_TYPE.ENGE) + hat(TILE_TYPE.PIT) * 2 < 1) {
       showHudToast(t('Zufall: Nicht genug Geraden'));
-      return false;
+      return null;
     }
     // Beste Kandidaten: einer, der nicht in den letzten Codes vorkommt (Dedup ueber ein Fenster,
     // nicht nur die letzte Strecke), einer, der nur nicht der allerletzte ist (Rueckfall, damit
     // "nicht zweimal dieselbe in Folge" trotzdem gilt), und einer, der es egal ist. Ueber viele
     // Versuche wird der mit den wenigsten ungenutzten Teilen behalten - so naehert sich die
     // Zufallsstrecke dem Ziel, den ganzen Bestand zu verbrauchen.
-    let beste = null, besteAnders = null, besteGleich = null;
-    let raumZuKlein = false;
     const letzte = trackZufallCodes.length ? trackZufallCodes[trackZufallCodes.length - 1] : null;
     // Wenigste uebrige Teile gewinnt; zwei Haarnadeln am Stueck zaehlen dabei wie 1,5 weitere
     // uebrige Teile (v0.9.13) - getrennte Haarnadeln gehen damit vor, ohne dass Strecken ganz
@@ -4558,56 +4556,72 @@
     const startZeit = performance.now();
     const zufallSchritt = [TILE_TYPE.WEIT_LEFT, TILE_TYPE.WEIT_RIGHT, TILE_TYPE.KLEIN_LEFT, TILE_TYPE.KLEIN_RIGHT]
       .some((t) => hat(t) > 0) ? 30 : 60;
-    for (let versuch = 0; versuch < 400; versuch++) {
-      if (performance.now() - startZeit > 3000) break;
-      const dir = Math.random() < 0.5 ? 1 : -1;
-      const r = Math.random();
-      const nc = r < 0.05 ? 1 : r < 0.5 ? 2 : r < 0.75 ? 3 : r < 0.93 ? 4 : 5;
-      const used = {};
-      const turns = trackZufallRunTurns(dir, nc, zufallSchritt);
-      if (!turns) continue;
-      trackZufallGegenlauf(turns, dir, b);
-      const runs = [];
-      let gut = true;
-      for (const t of turns) {
-        const run = trackZufallRun(t, used, b);
-        if (!run) { gut = false; break; }
-        runs.push(run);
-      }
-      if (!gut) continue;
-      // Netto-0-Schikanen einsetzen, solange welche passen: verbraucht uebrige Kurvenpaare,
-      // damit die Strecke mehr vom Bestand nutzt. Jede Einsetzung muss den Schluss halten.
-      for (let wi = 0; wi < 3; wi++) {
-        const wig = trackZufallWiggle(used, b);
-        if (!wig) break;
-        const pos = Math.floor(Math.random() * (runs.length + 1));
-        const test = runs.slice();
-        test.splice(pos, 0, wig);
-        const g = trackZufallSolveGaps(test, 3, TRACK_SCHLUSS_STRENG_CM);
-        if (!g) continue;
-        runs.splice(pos, 0, wig);
-        for (const t of wig) used[t] = (used[t] || 0) + 1;
-      }
-      const gaps = trackZufallSolveGaps(runs, 3, TRACK_SCHLUSS_STRENG_CM);
-      if (!gaps) continue;
-      const tiles = trackZufallBaueTiles(runs, gaps, b);
-      if (!tiles) continue;
-      trackRotationDeg = 0;
-      if (!trackZufallPasst(tiles)) continue;
-      // Fussabdruck: die Strecke muss in den angegebenen Raum passen (45°-Schritte).
-      const rot = trackZufallPasstRaum(tiles);
-      if (rot < 0) { raumZuKlein = true; continue; }
-      const rest = trackZufallRest(tiles, b);
-      const code = trackToCode(tiles, 0);
-      // Haarnadeln direkt nacheinander (auch ueber das Rundenende)?
-      const nadel = (x) => x.type === TILE_TYPE.HAIRPIN || x.type === TILE_TYPE.HAIRPIN_LEFT;
-      const nadelPaar = tiles.some((x, i) => nadel(x) && nadel(tiles[(i + 1) % tiles.length]));
-      const kandidat = { tiles, rest, code, rot, nadelPaar };
-      if (!trackZufallCodeKennt(code) && besser(beste, kandidat)) beste = kandidat;
-      if (code !== letzte && besser(besteAnders, kandidat)) besteAnders = kandidat;
-      if (besser(besteGleich, kandidat)) besteGleich = kandidat;
+    return { b, letzte, besser, startZeit, zufallSchritt, versuch: 0,
+             beste: null, besteAnders: null, besteGleich: null, raumZuKlein: false };
+  }
+  // Ein einzelner Versuch der Suche (v0.9.42 aus der Schleife geloest, damit die Suche in
+  // Haeppchen laufen und dabei eine Ladeanimation zeigen kann).
+  function trackZufallVersuch(z) {
+    const b = z.b, zufallSchritt = z.zufallSchritt;
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    const r = Math.random();
+    const nc = r < 0.05 ? 1 : r < 0.5 ? 2 : r < 0.75 ? 3 : r < 0.93 ? 4 : 5;
+    const used = {};
+    const turns = trackZufallRunTurns(dir, nc, zufallSchritt);
+    if (!turns) return;
+    trackZufallGegenlauf(turns, dir, b);
+    const runs = [];
+    let gut = true;
+    for (const t of turns) {
+      const run = trackZufallRun(t, used, b);
+      if (!run) { gut = false; break; }
+      runs.push(run);
     }
-    const wahl = beste || besteAnders;
+    if (!gut) return;
+    // Netto-0-Schikanen einsetzen, solange welche passen: verbraucht uebrige Kurvenpaare,
+    // damit die Strecke mehr vom Bestand nutzt. Jede Einsetzung muss den Schluss halten.
+    for (let wi = 0; wi < 3; wi++) {
+      const wig = trackZufallWiggle(used, b);
+      if (!wig) break;
+      const pos = Math.floor(Math.random() * (runs.length + 1));
+      const test = runs.slice();
+      test.splice(pos, 0, wig);
+      const g = trackZufallSolveGaps(test, 3, TRACK_SCHLUSS_STRENG_CM);
+      if (!g) continue;
+      runs.splice(pos, 0, wig);
+      for (const t of wig) used[t] = (used[t] || 0) + 1;
+    }
+    const gaps = trackZufallSolveGaps(runs, 3, TRACK_SCHLUSS_STRENG_CM);
+    if (!gaps) return;
+    const tiles = trackZufallBaueTiles(runs, gaps, b);
+    if (!tiles) return;
+    trackRotationDeg = 0;
+    if (!trackZufallPasst(tiles)) return;
+    // Fussabdruck: die Strecke muss in den angegebenen Raum passen (45°-Schritte).
+    const rot = trackZufallPasstRaum(tiles);
+    if (rot < 0) { z.raumZuKlein = true; return; }
+    const rest = trackZufallRest(tiles, b);
+    const code = trackToCode(tiles, 0);
+    // Haarnadeln direkt nacheinander (auch ueber das Rundenende)?
+    const nadel = (x) => x.type === TILE_TYPE.HAIRPIN || x.type === TILE_TYPE.HAIRPIN_LEFT;
+    const nadelPaar = tiles.some((x, i) => nadel(x) && nadel(tiles[(i + 1) % tiles.length]));
+    const kandidat = { tiles, rest, code, rot, nadelPaar };
+    if (!trackZufallCodeKennt(code) && z.besser(z.beste, kandidat)) z.beste = kandidat;
+    if (code !== z.letzte && z.besser(z.besteAnders, kandidat)) z.besteAnders = kandidat;
+    if (z.besser(z.besteGleich, kandidat)) z.besteGleich = kandidat;
+  }
+  function trackZufallRunde(z, bisMs) {
+    while (z.versuch < 400) {
+      const jetzt = performance.now();
+      if (jetzt - z.startZeit > z.budgetMs) return true;
+      if (jetzt >= bisMs) return false;
+      z.versuch++;
+      trackZufallVersuch(z);
+    }
+    return true;
+  }
+  function trackZufallAbschluss(z) {
+    const wahl = z.beste || z.besteAnders;
     if (wahl) {
       trackMerken();
       currentTrackTiles = wahl.tiles;
@@ -4627,16 +4641,72 @@
       showHudToast(t('Zufällige Strecke gebaut'));
       return true;
     }
-    if (besteGleich) {
+    if (z.besteGleich) {
       showHudToast(t('Zufall: Keine neue Variante möglich'));
       return false;
     }
-    if (raumZuKlein) {
+    if (z.raumZuKlein) {
       showHudToast(t('Zufall: Raum zu klein für einen Rundkurs'));
       return false;
     }
     showHudToast(t('Zufall: Nicht genug Kurventeile für einen Rundkurs'));
     return false;
+  }
+  // Am Stueck, wie bisher (Selbsttests und alles, was ein Ergebnis sofort braucht).
+  function trackZufall() {
+    const z = trackZufallVorbereiten();
+    if (!z) return false;
+    z.budgetMs = 3000;
+    while (!trackZufallRunde(z, Infinity)) { /* bis fertig */ }
+    return trackZufallAbschluss(z);
+  }
+  // ---- MIT LADEANIMATION (v0.9.42) ---------------------------------------------------
+  // BESTELLT: "Zeige im Editorfeld eine Ladeanimation (zB ein sich drehendes Carrera Hybrid
+  // Streckenteil, oder durchlaufende Streckenteile [gerade, kurve, haarnadel]) waehrend der
+  // Zufallsalgorithmus laeuft." Die Suche lief bisher bis zu 3 s am Stueck auf dem
+  // Hauptfaden - in der Zeit haette keine Animation laufen koennen. Jetzt in Haeppchen von
+  // 40 ms mit einer Pause dazwischen. Das Rechenbudget bleibt 3 s REINE Rechenzeit; die
+  // Animation steht mindestens 450 ms, sonst blitzt sie nur auf.
+  let trackZufallLaeuft = false;
+  async function trackZufallMitAnimation() {
+    if (trackZufallLaeuft) return false;
+    const z = trackZufallVorbereiten();
+    if (!z) return false;
+    trackZufallLaeuft = true;
+    const host = $('track-preview-svg');
+    const lade = typeof ladeAnimationZeigen === 'function' && host
+      ? ladeAnimationZeigen(host, t('Strecke wird gesucht …')) : null;
+    const anfang = performance.now();
+    let gerechnet = 0;
+    try {
+      z.budgetMs = Infinity;                      // Budget hier selbst nach Rechenzeit
+      await ladePause();
+      for (;;) {
+        const t0 = performance.now();
+        const fertig = trackZufallRunde(z, t0 + 40);
+        gerechnet += performance.now() - t0;
+        if (fertig || gerechnet > 3000) break;
+        await ladePause();
+      }
+      const rest = 450 - (performance.now() - anfang);
+      if (rest > 0) await new Promise((ok) => setTimeout(ok, rest));
+    } finally {
+      if (lade) lade.remove();
+      trackZufallLaeuft = false;
+    }
+    return trackZufallAbschluss(z);
+  }
+  // Eine Pause, die der Browser auch im verborgenen Reiter nicht auf 1 s streckt
+  // (MessageChannel statt setTimeout) - und trotzdem einen Bildaufbau zulaesst.
+  function ladePause() {
+    return new Promise((ok) => {
+      let erledigt = false;
+      const weiter = () => { if (!erledigt) { erledigt = true; ok(); } };
+      requestAnimationFrame(weiter);
+      const k = new MessageChannel();
+      k.port1.onmessage = weiter;
+      k.port2.postMessage(0);
+    });
   }
   // Nur der Endpunkt der Strecke - billig, ohne die 14 Abtastungen je Kachel. Wird als
   // Vorfilter genutzt (doppelte Toleranz), damit nicht jede Kandidaten-Strecke die teure
@@ -4713,7 +4783,7 @@
     const u = ((c.x - a.x) * d1y - (c.y - a.y) * d1x) / den;
     return t > 0 && t < 1 && u > 0 && u < 1;
   }
-  $('track-random').onclick = () => trackZufall();
+  $('track-random').onclick = () => trackZufallMitAnimation();
 
   // Hier standen sechs Bindungen auf Knopf-ids, die es seit dem Umbau auf die Bildleiste
   // nicht mehr gibt (track-add-start und fuenf weitere). Sie prueften auf Vorhandensein und
