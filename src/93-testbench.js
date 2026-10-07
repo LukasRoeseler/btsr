@@ -5198,6 +5198,7 @@
           return { tonHz: Math.round(w.tonHz), cut: w.cutTiefe,
                    whineHz: Math.round(w.whineHz), whineGain: +w.whineGain.toFixed(4),
                    pfeifHz: Math.round(w.pfeifHz), pfeifGain: +w.pfeifGain.toFixed(4),
+                   rollHz: Math.round(w.rollHz), rollGain: +w.rollGain.toFixed(4),
                    knaller: w.knaller, schaltKnall: +(w.schaltKnall || 0).toFixed(3),
                    abblasen: +(w.abblasen || 0).toFixed(3),
                    druck: +(w.ladedruck || 0).toFixed(3), aus: !!w.aus };

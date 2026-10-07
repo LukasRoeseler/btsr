@@ -4457,7 +4457,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.45</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.48</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5573,6 +5573,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>T&#246;ne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen h&#246;her (um 800 Hz statt 620) und mit zitternder Tonh&#246;he wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil l&#228;nger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zus&#228;tzen (experimentell): Abrollger&#228;usch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.</li>
         <li>Raum hat ein eigenes Men&#252; (Strecke &#8594; Raum, und &#8222;Raum&#8220; in der FAHREN-Streckenkachel auf der Bahn): Gr&#246;&#223;e, Raumgestalter, Tutorial und gespeicherte R&#228;ume mit Namen zum Laden und L&#246;schen. Im Editor blendet der Schalter &#8222;Raum&#8220; den Raum aus; ausgeblendet z&#228;hlt er auch f&#252;r Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, &#220;bersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen w&#228;hlt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr &#8222;f&#252;r alle?&#8220;, wenn niemand sonst da ist.</li>
         <li>Behoben: 0.9.43 startete auf Ger&#228;ten mit eingetragenem Raum nicht (&#8222;Cannot access 'RAUM_ZELLE_CM' before initialization&#8220;) &#8211; die Editor-Vorschau zeichnete beim Laden schon die M&#246;bel, bevor deren Konstanten angelegt waren; die neue Start-Diagnose hat den Fehler angezeigt. Schalten klingt jetzt mechanisch: Schaltwalze und Klauenring rasten metallisch ein, darunter der Ruck im Antriebsstrang (statt des dumpfen &#8222;d&#252;b&#8220;). Lichthupe: Vorder- und R&#252;cklicht gehen gemeinsam aus und an, das Bremslicht leuchtet nicht mehr mit.</li>
         <li>Rennende: Die Rennuhr startete erst bei 75 % der H&#246;chstgeschwindigkeit (die Schwelle &#8222;3 km/h&#8220; wurde mit dem Modelltempo verglichen) &#8211; wer das nie erreichte, fuhr Runden, die nicht z&#228;hlten, und das Rennen endete nie. Jetzt startet sie bei 3 km/h auf dem Tacho oder sp&#228;testens an der ersten Ziellinie; die Fr&#252;hstart-Erkennung hatte denselben Fehler. Raumgestalter wie der Editor: &#8222;Raumgestalter starten&#8220; &#246;ffnet das Vollbild, oben die Werkzeugleiste mit &#8222;Schlie&#223;en&#8220;, die Fl&#228;che in einer eigenen Zeile darunter, der Men&#252;kopf liegt nicht mehr &#252;ber den Kn&#246;pfen. Rundenzeiten-Diagramm: wei&#223;er Saum unter jeder Linie, damit auch ein schwarzes Auto sichtbar ist.</li>
@@ -9702,14 +9703,15 @@
 <div class="opt-head">Ton</div>
       <div class="opt-row"><div class="opt-label">Motorsound</div><label class="tgl"><input type="checkbox" id="sound-enable" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Motorton-Zus&auml;tze
-          <small>Sechs mechanische Ger&auml;usche &uuml;ber dem Motorton, alle an diesem
+          <small>Sieben mechanische Ger&auml;usche &uuml;ber dem Motorton, alle an diesem
           einen Schalter &ndash; zum Vergleichen einfach ausschalten. Nichts davon ist eine
-          Aufnahme, alle sechs sind gerechnet und h&auml;ngen an Werten, die die Simulation
+          Aufnahme, alle sieben sind gerechnet und h&auml;ngen an Werten, die die Simulation
           ohnehin f&uuml;hrt: die H&ouml;hen laufen mit der Last (ein Motor im Schub ist
           dunkler und nicht nur leiser), am Begrenzer stottert die Z&uuml;ndung mit 28 Hz,
           beim Gaswegnehmen knallt es im Auspuff, beim Hochschalten unter Last einmal
           kr&auml;ftig, das Getriebe heult mit der Raddrehzahl statt mit der Motordrehzahl,
-          und die drei aufgeladenen Motoren bekommen ein Laderpfeifen samt Abblasen.
+          die drei aufgeladenen Motoren bekommen ein Laderpfeifen samt Abblasen, und beim
+          Rollen rauschen Reifen und Fahrtwind, lauter und heller mit dem Tempo.
           Wie stark ein Motor knallt, steht je Motor in den Tondaten &ndash; der Formel 1
           mit Turbo knallt kaum, der Flat-Plane-V8 ohne Lader am meisten. Was hier
           absichtlich NICHT drin ist: eine H&ouml;rposition. Cockpit gegen

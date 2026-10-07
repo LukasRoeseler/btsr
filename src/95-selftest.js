@@ -5692,6 +5692,18 @@
     if (!(rollt > 0)) schlecht.push('kein Heulen beim Rollen');
     if (!(kurz > lang * 1.5)) schlecht.push('Heulen haengt nicht am Gang');
 
+    // 5b. ABROLLGERAEUSCH (v0.9.46): im Stand still, mit dem Tempo lauter UND heller, und
+    //     unabhaengig vom Gas - ein rollendes Auto rollt hoerbar, auch ohne Last.
+    const rStand = eins([{ load: 0, speedKmh: 0 }]);
+    const rHalb = eins([{ load: 0, speedKmh: top * 0.5 }]);
+    const rVoll = eins([{ load: 0, speedKmh: top }]);
+    const rVollGas = eins([{ load: 1, speedKmh: top }]);
+    teile.push('Abrollen ' + rHalb.rollGain + '/' + rVoll.rollGain + ' bei ' + rHalb.rollHz + '/' + rVoll.rollHz + ' Hz');
+    if (rStand.rollGain !== 0) schlecht.push('Abrollen im Stand');
+    if (!(rVoll.rollGain > rHalb.rollGain && rHalb.rollGain > 0)) schlecht.push('Abrollen waechst nicht mit dem Tempo');
+    if (!(rVoll.rollHz > rHalb.rollHz)) schlecht.push('Abrollen wird nicht heller');
+    if (rVollGas.rollGain !== rVoll.rollGain) schlecht.push('Abrollen haengt am Gas');
+
     // 6. Der Lader: NUR bei aufgeladenen Motoren, und mit Verzoegerung. Der Ladedruck darf
     //    nicht im ersten Takt stehen - genau diese Verzoegerung ist das Turboloch.
     const sauger = eins([{ load: 1, rpmFrac: 0.9 }], { turbo: false }).pfeifGain;
@@ -5738,6 +5750,7 @@
     if (aus.cut !== 0) reste.push('Stottern');
     if (aus.whineGain !== 0) reste.push('Heulen');
     if (aus.pfeifGain !== 0) reste.push('Pfeifen');
+    if (aus.rollGain !== 0) reste.push('Abrollen');
     if (aus.knaller !== 0) reste.push('Knaller');
     if (!aus.aus) reste.push('Kennzeichnung');
     if (reste.length) schlecht.push('ausgeschaltet bleibt: ' + reste.join(', '));

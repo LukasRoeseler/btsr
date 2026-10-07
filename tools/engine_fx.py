@@ -173,18 +173,37 @@ def tyre_squeal(seconds=1.6, seed=23):
     n = int(seconds * SR)
     t = np.arange(n) / SR
     out = np.zeros(n, dtype=np.float32)
-    # Three broad resonances. Not a harmonic series — a tyre carcass is not a string.
-    for f0, amp, q in ((620.0, 1.00, 11.0), (980.0, 0.70, 13.0), (1650.0, 0.34, 15.0)):
+    # v0.9.46 NACH EINER REFERENZ VERMESSEN (eine GT3-Reifenaufnahme, nur lokal angehoert,
+    # nicht im Projekt): Spitze 760-1000 Hz statt starr 620, gut ein Drittel der Energie
+    # ueber 1 kHz statt 14 Prozent, und die Tonhoehe ZITTERT - von 50 ms zu 50 ms springt die
+    # Spitze um 5-25 Prozent. Das ist das Haften-und-Rutschen der Lauflaeche. Der alte Ton
+    # stand auf einer Frequenz und klang dadurch wie ein Pfeifen.
+    #
+    # Das Zittern als ZEITVERZERRUNG mit ganzen Perioden je Schleife: so bleibt die Naht
+    # nahtlos (ein Filter in der Zeit wuerde sie aufreissen), und alle drei Schichten zittern
+    # gemeinsam, wie eine Lauflaeche es tut.
+    def zittern(y):
+        i = np.arange(n, dtype=np.float64)
+        d = np.zeros(n)
+        for c, hub in ((int(round(seconds * 7.5)), 0.035), (int(round(seconds * 2.5)), 0.03)):
+            d += hub * n / (2 * np.pi * c) * np.sin(2 * np.pi * c * i / n + rng.uniform(0, 6.28))
+        pos = (i + d) % n
+        k = np.floor(pos).astype(int); fr_ = pos - k
+        return (y[k] * (1 - fr_) + y[(k + 1) % n] * fr_).astype(np.float32)
+
+    # Drei breite Resonanzen. Keine Obertonreihe - eine Karkasse ist keine Saite.
+    for f0, amp, q in ((790.0, 1.00, 10.0), (1080.0, 0.60, 12.0), (1950.0, 0.36, 13.0)):
         layer = resonant_noise(n, f0, q, rng)
         # A slower, deeper wobble than the brake squeal: a tyre at the limit judders as the
         # contact patch grips and releases, and that is a slower process than pad chatter.
         cycles = max(1, int(round(seconds * rng.uniform(1.4, 2.4))))
         wob = 1.0 + 0.30 * np.sin(2 * np.pi * cycles * t / seconds + rng.uniform(0, 6.28))
         out += (amp * layer * wob).astype(np.float32)
+    out = zittern(out)
     # The scrub bed carries more weight here than in the brake squeal (0.18 there): the
     # broadband part IS the sound of rubber shearing, not a filler under a tone.
-    out += 0.42 * circular_noise(n, 1300.0, rng)
-    out += 0.16 * circular_noise(n, 430.0, rng)     # carcass rumble
+    out += 0.42 * circular_noise(n, 1500.0, rng)
+    out += 0.12 * circular_noise(n, 430.0, rng)     # carcass rumble
     return (out / (np.max(np.abs(out)) + 1e-9) * 0.85).astype(np.float32)
 
 
@@ -356,23 +375,41 @@ def mechanical_shift(up=True, seed=21):
             y += (pa * np.exp(-lt * dec) * np.sin(2 * np.pi * f * jit * lt + rng.uniform(0, 6.28))).astype(np.float32)
         out[a:] += amp * y * rise(m, rise_ms)
 
+    # v0.9.46: METALL IST GERAEUSCH, NICHT TON. Gegen eine Referenzaufnahme vermessen (ein
+    # GT3-Gangwechsel, nur lokal angehoert): spektrale Flachheit 0,29 - die v0.9.44-Fassung
+    # aus reinen Sinus-Teiltoenen hatte 0,02 und klang darum immer noch nach einem Ton. Jeder
+    # Anschlag bekommt jetzt einen RAUSCHANTEIL durch dieselbe Resonanz, und die Sinus
+    # bleiben nur als leises Klingeln darueber.
+    def rausch_schlag(at_s, f0, q, amp, dec, rise_ms):
+        a = int(at_s * SR)
+        if a >= n:
+            return
+        m = n - a
+        lt = np.arange(m) / SR
+        y = resonant_noise(m, f0, q, rng)
+        out[a:] += amp * y * np.exp(-lt * dec).astype(np.float32) * rise(m, rise_ms)
+
     if up:
         walze = ((2350.0, 1.0, 190.0), (3480.0, 0.7, 240.0), (4920.0, 0.4, 300.0))
         klaue = ((920.0, 1.0, 70.0), (1410.0, 0.75, 90.0), (2060.0, 0.4, 120.0))
-        schlag(0.000, walze, 0.30, 1.5)
-        schlag(0.012, klaue, 0.62, 2.0)
-        schlag(0.014, ((118.0, 1.0, 30.0), (236.0, 0.3, 45.0)), 0.48, 6.0)
+        schlag(0.000, walze, 0.12, 1.5)
+        rausch_schlag(0.000, 3200.0, 1.6, 0.55, 160.0, 1.2)
+        schlag(0.012, klaue, 0.26, 2.0)
+        rausch_schlag(0.012, 1300.0, 1.4, 1.30, 75.0, 1.8)
+        schlag(0.014, ((118.0, 1.0, 34.0), (236.0, 0.3, 45.0)), 0.30, 6.0)
         for k, at in enumerate((0.030, 0.041, 0.050)):
-            schlag(at, ((1650.0 + 140 * k, 1.0, 260.0), (2600.0, 0.5, 320.0)), 0.10 / (k + 1), 1.0)
+            rausch_schlag(at, 1800.0 + 160 * k, 2.5, 0.30 / (k + 1), 240.0, 1.0)
     else:
         walze = ((1980.0, 1.0, 170.0), (2950.0, 0.7, 220.0), (4300.0, 0.4, 280.0))
         klaue = ((760.0, 1.0, 60.0), (1170.0, 0.75, 80.0), (1720.0, 0.4, 110.0))
-        schlag(0.000, walze, 0.28, 1.5)
-        schlag(0.010, walze, 0.16, 1.5)            # zweites Rasten beim Runterschalten
-        schlag(0.020, klaue, 0.60, 2.0)
-        schlag(0.022, ((92.0, 1.0, 26.0), (184.0, 0.3, 40.0)), 0.50, 6.0)
+        schlag(0.000, walze, 0.11, 1.5)
+        rausch_schlag(0.000, 2700.0, 1.6, 0.52, 150.0, 1.2)
+        rausch_schlag(0.010, 2700.0, 1.6, 0.30, 150.0, 1.2)   # zweites Rasten
+        schlag(0.020, klaue, 0.24, 2.0)
+        rausch_schlag(0.020, 1050.0, 1.4, 1.25, 65.0, 1.8)
+        schlag(0.022, ((92.0, 1.0, 30.0), (184.0, 0.3, 40.0)), 0.32, 6.0)
         for k, at in enumerate((0.040, 0.052, 0.062)):
-            schlag(at, ((1450.0 + 120 * k, 1.0, 240.0), (2300.0, 0.5, 300.0)), 0.10 / (k + 1), 1.0)
+            rausch_schlag(at, 1550.0 + 140 * k, 2.5, 0.30 / (k + 1), 230.0, 1.0)
     out = saturate(out, 0.6)
     return (out / (np.max(np.abs(out)) + 1e-9) * 0.6).astype(np.float32)
 
