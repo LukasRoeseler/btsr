@@ -3013,6 +3013,9 @@
   body:not(.track-fs) #track-fs-host > .tp-bar { display: none; }
   /* Im Editor-Vollbild kein Menuekopf: er lag ueber der Aktionsleiste (gesehen bei 800 x 370). */
   body.track-fs header#k-kopf { display: none !important; }
+  /* v0.9.45: im Vollbild gehoert jede Geste der Karte (Strecke im Raum ziehen) - ohne das bricht
+     der Browser einen Fingerzug nach wenigen Pixeln als Bildlauf ab. */
+  body.track-fs #track-preview-svg { touch-action: none; }
   .tp-info { font-size: 12px; color: #eef0f4; margin-left: 10px; white-space: nowrap; }
   .tp-info .tp-fehlt { color: var(--bad); font-weight: 700; }
   .tp-info .tp-da { color: var(--good); }
@@ -3095,6 +3098,22 @@
   .raum-ds-info { font-size: 12px; color: var(--ink-2); }
   .raum-ds-info.schlecht { color: var(--warn); }
   .raum-ds-tasten { font-size: 10.5px; color: var(--muted); }
+  .raum-ds-hilfe { margin-left: auto; min-height: 34px; min-width: 34px; padding: 4px 10px; font-weight: 800; }
+  .raum-ds-hilfe + .raum-ds-fertig { margin-left: 0; }
+  body.raum-ds-offen .k-tour { z-index: 9500; }
+  .raum-gespeichert-titel { margin: 18px 0 6px; font-size: 14px; }
+  .raum-speichern-zeile { gap: 8px; align-items: center; }
+  .raum-speichern-zeile input { flex: 1 1 180px; max-width: 260px; }
+  .raum-liste { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; max-width: 560px; }
+  .raum-eintrag { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 6px;
+    border: 1px solid transparent; background: rgba(255,255,255,.03); }
+  .raum-eintrag.aktiv { border-color: var(--info); background: rgba(0,163,224,.10); }
+  .raum-eintrag .raum-eintrag-bild { width: 64px; height: 40px; flex: 0 0 auto; }
+  .raum-eintrag .raum-eintrag-bild svg { width: 100%; height: 100%; display: block; }
+  .raum-eintrag .raum-eintrag-name { flex: 1 1 auto; min-width: 0; color: var(--ink); }
+  .raum-eintrag .raum-eintrag-mass { color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .raum-eintrag button { min-height: 30px; padding: 4px 10px; }
+  .raum-eintrag .raum-weg { width: 30px; aspect-ratio: 1; padding: 0; border-radius: 50%; }
   /* HOCHFORMAT, schmal (Telefon im Browser): untereinander, mit Bildlauf. */
   @media (max-width: 760px) and (orientation: portrait) {
     header#k-kopf { grid-template-columns: 1fr auto; }
@@ -3439,18 +3458,18 @@
   .lade-traeger { position: relative; }
   .lade-ueber { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 12px; background: rgba(0,0,0,.78); }
-  .lade-teile { display: flex; gap: 12px; justify-content: center; }
-  .lade-teile svg { width: 76px; height: 76px; opacity: .4; animation: ladeTeil 1.2s ease-in-out infinite; }
-  .lade-teile svg:nth-child(2) { animation-delay: .2s; }
-  .lade-teile svg:nth-child(3) { animation-delay: .4s; }
-  @keyframes ladeTeil {
-    0%, 100% { opacity: .4; transform: translateY(0) scale(.9); }
-    30% { opacity: 1; transform: translateY(-8px) scale(1.08); }
-    60% { opacity: .55; transform: translateY(0) scale(1); }
-  }
+  /* v0.9.45: ein Teil dreht sich in 500 ms einmal im Uhrzeigersinn, abwechselnd Gerade und
+     Rechtskurve (59-lade.js). steps(1): die Ebene springt zur Haelfte des Takts um. */
+  .lade-dreh { position: relative; width: 96px; height: 96px; }
+  .lade-ebene { position: absolute; inset: 0; display: grid; place-items: center; }
+  .lade-ebene svg, .lade-ebene .tp-karte { width: 100%; height: 100%; max-width: none; max-height: none; }
+  .lade-a { animation: ladeDreh .5s linear infinite, ladeWechselA 1s steps(1, end) infinite; }
+  .lade-b { animation: ladeDreh .5s linear infinite, ladeWechselB 1s steps(1, end) infinite; }
+  @keyframes ladeDreh { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes ladeWechselA { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 0; } }
+  @keyframes ladeWechselB { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) {
-    .lade-teile svg { animation-duration: 2.4s; }
-    @keyframes ladeTeil { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+    .lade-a, .lade-b { animation-duration: 2s, 4s; }
   }
   .lade-text { font-size: 14px; font-weight: 600; color: var(--ink); letter-spacing: .03em; }
   .mp-ready-lade { margin: 6px 0 10px; }
@@ -3619,7 +3638,10 @@
     border-radius: 50%; font-size: 13px; line-height: 1; padding: 0 !important; display: grid;
     place-items: center; background: var(--danger, #c0392b);
     color: #fff; border: none; cursor: pointer; }
-  /* Community Strecken: Liste der eingereichten Strecken. */
+  /* Community-Bestzeiten: Liste der eingereichten Strecken. */
+  .community-modus { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .05em;
+    text-transform: uppercase; padding: 1px 6px; border-radius: 4px; vertical-align: 1px;
+    background: rgba(0,163,224,.18); color: var(--info); border: 1px solid rgba(0,163,224,.45); }
   .community-liste { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
   .community-mini { flex: none; width: 74px; height: 52px; display: grid; place-items: center; background: rgba(0,0,0,.25); border-radius: 6px; overflow: hidden; }
   .community-mini svg { width: 100%; height: 100%; }
@@ -4435,7 +4457,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.44</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.45</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4476,6 +4498,7 @@
           <button type="button" class="k-knopf" id="fa-scan">Scan</button>
           <button type="button" class="k-knopf" id="fa-editor">Editor</button>
           <button type="button" class="k-knopf" id="fa-laden">Laden</button>
+          <button type="button" class="k-knopf" id="fa-raum">Raum</button>
           <button type="button" class="k-knopf" id="fa-druck" hidden>Druckvorlagen</button>
           <button type="button" class="k-knopf" id="fa-foto" hidden title="Optimal: quer, z. B. 4:3 oder 16:9">Foto</button>
           <button type="button" class="k-knopf" id="fa-foto-weg" hidden>Foto löschen</button>
@@ -5232,12 +5255,12 @@
           <span>Gemeinsame Bestenliste &uuml;ber ein Google Sheet.</span>
         </button>
       </div>
-      <h3 class="k-zwischen">Community Strecken</h3>
+      <h3 class="k-zwischen">Community-Bestzeiten</h3>
       <div class="misc-grid">
         <button class="misc-tile subpage-open" data-sub="ch-community">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 34c0-4 3-8 8-8s8 3 8 8M20 14a6 6 0 1 1 0 12 6 6 0 0 1 0-12z"/><path d="M28 14c4-2 10-1 12 4M36 26c-2 4-6 6-10 6" stroke="var(--accent)"/></svg>
-          <b>Community Strecken</b>
-          <span>Eigene Strecken eintragen und Bestzeiten teilen.</span>
+          <b>Community-Bestzeiten</b>
+          <span>Eigene Strecken mit Abstimmung einreichen und Bestzeiten teilen.</span>
         </button>
       </div>
     </div>
@@ -5270,7 +5293,7 @@
     </div>
     <div class="card subpage" id="sub-ch-community">
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
-      <h2>Community Strecken</h2>
+      <h2>Community-Bestzeiten <span class="wip-tag">experimentell</span></h2>
       <div id="community-bereich"></div>
     </div>
     <div class="card subpage" id="sub-ch-online">
@@ -5550,6 +5573,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Raum hat ein eigenes Men&#252; (Strecke &#8594; Raum, und &#8222;Raum&#8220; in der FAHREN-Streckenkachel auf der Bahn): Gr&#246;&#223;e, Raumgestalter, Tutorial und gespeicherte R&#228;ume mit Namen zum Laden und L&#246;schen. Im Editor blendet der Schalter &#8222;Raum&#8220; den Raum aus; ausgeblendet z&#228;hlt er auch f&#252;r Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, &#220;bersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen w&#228;hlt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr &#8222;f&#252;r alle?&#8220;, wenn niemand sonst da ist.</li>
         <li>Behoben: 0.9.43 startete auf Ger&#228;ten mit eingetragenem Raum nicht (&#8222;Cannot access 'RAUM_ZELLE_CM' before initialization&#8220;) &#8211; die Editor-Vorschau zeichnete beim Laden schon die M&#246;bel, bevor deren Konstanten angelegt waren; die neue Start-Diagnose hat den Fehler angezeigt. Schalten klingt jetzt mechanisch: Schaltwalze und Klauenring rasten metallisch ein, darunter der Ruck im Antriebsstrang (statt des dumpfen &#8222;d&#252;b&#8220;). Lichthupe: Vorder- und R&#252;cklicht gehen gemeinsam aus und an, das Bremslicht leuchtet nicht mehr mit.</li>
         <li>Rennende: Die Rennuhr startete erst bei 75 % der H&#246;chstgeschwindigkeit (die Schwelle &#8222;3 km/h&#8220; wurde mit dem Modelltempo verglichen) &#8211; wer das nie erreichte, fuhr Runden, die nicht z&#228;hlten, und das Rennen endete nie. Jetzt startet sie bei 3 km/h auf dem Tacho oder sp&#228;testens an der ersten Ziellinie; die Fr&#252;hstart-Erkennung hatte denselben Fehler. Raumgestalter wie der Editor: &#8222;Raumgestalter starten&#8220; &#246;ffnet das Vollbild, oben die Werkzeugleiste mit &#8222;Schlie&#223;en&#8220;, die Fl&#228;che in einer eigenen Zeile darunter, der Men&#252;kopf liegt nicht mehr &#252;ber den Kn&#246;pfen. Rundenzeiten-Diagramm: wei&#223;er Saum unter jeder Linie, damit auch ein schwarzes Auto sichtbar ist.</li>
         <li>Lenkung GT3, F1 und Realismus GT3: voller Einschlag ist wieder erreichbar. Seit dem neuen Lenkweg begrenzte das &#8222;Lenkansprechen&#8220; dieser Voreinstellungen den gr&#246;&#223;ten Einschlag (Realismus GT3 gemessen 19 von 45&#176; im Schritttempo, mit kalten Reifen 11&#176;); jetzt 3,0 wie Pro, und Realismus GT3 gleicht kalte Reifen mit Lenkkalibrierung 1,6 aus. Pro und Arcade unver&#228;ndert. Zufallsstrecke: Ladeanimation (Gerade, Kurve, Haarnadel) im Editor, die Suche l&#228;uft daf&#252;r in kleinen St&#252;cken. Mehrspieler: dieselbe Animation im Bereitschaftsschirm, solange auf die anderen gewartet wird.</li>
@@ -10984,6 +11008,11 @@
           <b>Meine Teile</b>
           <span>Wie viele Teile du von jeder Sorte hast. Der Editor zeigt, was fehlt.</span>
         </button>
+        <button class="misc-tile subpage-open" data-sub="raum">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h36v32H6z" stroke-dasharray="4 3"/><path d="M28 8v14h14" stroke="var(--bad)"/><path d="M14 33V24a6 6 0 0 1 12 0v9"/></svg>
+          <b>Raum</b>
+          <span>Gr&ouml;&szlig;e und Form des Platzes f&uuml;r die Bahn, mit gespeicherten R&auml;umen.</span>
+        </button>
         <button class="misc-tile subpage-open" data-sub="print">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V8h20v10"/><rect x="8" y="18" width="32" height="14" rx="2"/><path d="M14 32h20v10H14z" stroke="var(--bad)"/></svg>
@@ -11034,6 +11063,11 @@
                  stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="3.5"/>
               <path class="tp-akzent" d="M9 9l6 6M15 9l-6 6" stroke-width="2.4"/></svg>
             <span class="tp-cap">Tasten</span></button>
+          <button class="tp-btn tp-schalter" id="track-opt-raum" title="Raum anzeigen" aria-label="Raum anzeigen" aria-pressed="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4z" stroke-dasharray="3 2.2" stroke-opacity=".6"/>
+              <path class="tp-akzent" d="M8 16V11a4 4 0 0 1 8 0v5" stroke-width="2.4"/></svg>
+            <span class="tp-cap">Raum</span></button>
           <button class="tp-btn" id="track-undo" title="R&uuml;ckg&auml;ngig" aria-label="R&uuml;ckg&auml;ngig">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                  stroke-linecap="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/>
@@ -11158,11 +11192,20 @@
         <button id="teile-enge">+ Engstelle</button>
         <button id="teile-leer">Alles auf 0</button>
       </div>
+      <div class="teile-liste" id="teile-liste"></div>
+    </div>
+    <!-- v0.9.45 BESTELLT: "Schiebe den Raumdesigner in ein eigenes Menue ... Erlaube mir,
+         Raeume abzuspeichern mit Namen und im selben Menue auszuwaehlen." -->
+    <div class="card subpage" id="sub-raum">
+      <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
+      <h2>Raum <span class="wip-tag">experimentell</span></h2>
+      <p class="muted">Der Platz, auf dem deine Bahn liegt: Gr&ouml;&szlig;e, Form und M&ouml;bel.
+        Zufallsstrecken aus dem Editor passen dann hinein. 0 hei&szlig;t: keine Grenze.</p>
       <!-- BESTELLT: "let me determine the maximum size of the room as a rectangle (x and y, in
            meters, format X.Y). The generated track must fit into that rectangle. Remember that
            you can turn the track in 45° steps." 0 x 0 = keine Begrenzung. -->
       <div class="row" style="gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px">
-        <span class="muted">Zufallsstrecke: max. Raum (m)</span>
+        <span class="muted">Raumgröße (m)</span>
         <span class="raum-zeile" data-achse="x">
           <label for="teile-raum-x">Breite</label>
           <button class="raum-knopf" id="raum-x-minus" type="button" aria-label="Breite weniger">&#8722;</button>
@@ -11176,14 +11219,19 @@
           <button class="raum-knopf" id="raum-y-plus" type="button" aria-label="Tiefe mehr">+</button>
         </span>
       </div>
-      <!-- v0.9.39 BESTELLT: "Raumdesigner im Meine-Teile-Menue, mit dem ich auch andere Formen
-           erstellen kann" (60b-raum.js). -->
+      <!-- v0.9.39 BESTELLT: "Raumdesigner ... mit dem ich auch andere Formen erstellen kann"
+           (60b-raum.js); seit v0.9.45 im eigenen Menue. -->
       <div class="raum-ds-zeile">
         <button id="raum-designer-auf" type="button" class="primary te-start">Raumgestalter starten</button>
-        <span class="wip-tag">experimentell</span>
+        <button id="raum-tour" type="button">Tutorial</button>
         <div class="raum-mini" id="raum-mini" role="button" aria-label="Raum gestalten"></div>
       </div>
-      <div class="teile-liste" id="teile-liste"></div>
+      <h3 class="raum-gespeichert-titel">Gespeicherte R&auml;ume</h3>
+      <div class="row raum-speichern-zeile">
+        <input type="text" id="raum-name" placeholder="Name des Raums" maxlength="32">
+        <button id="raum-speichern" type="button">Speichern</button>
+      </div>
+      <div class="raum-liste" id="raum-liste"></div>
     </div>
     <div class="card subpage" id="sub-scan">
       <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
@@ -11550,6 +11598,7 @@
         <button type="button" id="raum-ds-undo">R&uuml;ckg&auml;ngig</button>
         <button type="button" id="raum-ds-probe">Strecke einpassen</button>
       </div>
+      <button type="button" id="raum-ds-hilfe" class="raum-ds-hilfe" aria-label="Tutorial">?</button>
       <button type="button" id="raum-ds-fertig" class="raum-ds-fertig">Schlie&szlig;en</button>
     </div>
     <div class="raum-ds-flaeche" id="raum-ds-flaeche"></div>
@@ -12497,6 +12546,7 @@
     "Spieler 1": "Player 1",
     "Spieler 2": "Player 2",
     "Spieler 3": "Player 3",
+    "Raum anzeigen": "Show room",
     "Größe der Haupttabs": "Size of the main tabs",
     "FAHREN, CHALLENGES, WLAN MEHRSPIELER, OPTIONEN. 100 % ist die bisherige Größe.": "DRIVE, CHALLENGES, WIFI MULTIPLAYER, OPTIONS. 100 % is the previous size.",
     "Größe der Unter-Tabs": "Size of the sub-tabs",
@@ -12859,6 +12909,35 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Raum": "Room",
+    "Größe und Form des Platzes für die Bahn, mit gespeicherten Räumen.": "Size and shape of the space for the track, with saved rooms.",
+    "Der Platz, auf dem deine Bahn liegt: Größe, Form und Möbel. Zufallsstrecken aus dem Editor passen dann hinein. 0 heißt: keine Grenze.": "The space your track lies on: size, shape and furniture. Random tracks from the editor then fit into it. 0 means no limit.",
+    "Gespeicherte Räume": "Saved rooms",
+    "Name des Raums": "Room name",
+    "Bitte einen Namen eingeben": "Please enter a name",
+    "Erst eine Raumgröße eintragen": "Enter a room size first",
+    "Raum gespeichert": "Room saved",
+    "Raum geladen": "Room loaded",
+    "Noch kein Raum gespeichert.": "No room saved yet.",
+    "Raum löschen": "Delete room",
+    "Raum löschen?": "Delete room?",
+    "Bist du sicher?": "Are you sure?",
+    "Der Raumgestalter": "The room designer",
+    "Hier zeichnest du den Platz, auf dem deine Bahn liegt: Boden, auf dem sie stehen darf, und Möbel, die im Weg sind. Zufallsstrecken aus dem Editor passen dann hinein.": "Here you draw the space your track lies on: floor it may stand on, and furniture in the way. Random tracks from the editor then fit into it.",
+    "Malen": "Paint",
+    "Tippen oder ziehen malt. Am Gamepad bewegen Stick oder Steuerkreuz den Cursor, Kreuz (Leertaste) malt, gehalten weiter.": "Tap or drag to paint. On the gamepad, stick or d-pad move the cursor, Cross (space) paints, and keeps painting while held.",
+    "Möbel oder Boden": "Furniture or floor",
+    "Möbel sperrt Fläche, Boden gibt sie wieder frei. Quadrat (M) schaltet um.": "Furniture blocks area, floor frees it again. Square (M) toggles.",
+    "Pinsel oder Rechteck": "Brush or rectangle",
+    "Der Pinsel malt, solange du drückst. Beim Rechteck ziehst du von Ecke zu Ecke, am Gamepad Kreuz für die erste und Kreuz für die zweite Ecke. Dreieck (R) schaltet um.": "The brush paints while you press. For a rectangle you drag from corner to corner; on the gamepad, Cross for the first and Cross for the second corner. Triangle (R) toggles.",
+    "Pinselgröße": "Brush size",
+    "10, 30 oder 60 cm. L1 und R1 wechseln die Größe.": "10, 30 or 60 cm. L1 and R1 change the size.",
+    "Vorlagen": "Templates",
+    "Rechteck, L, U und Oval als schneller Anfang. Danach mit dem Pinsel anpassen.": "Rectangle, L, U and oval as a quick start. Then adjust with the brush.",
+    "Select bzw. Share (Strg+Z) nimmt den letzten Strich zurück, auch mehrmals.": "Select or Share (Ctrl+Z) undoes the last stroke, also several times.",
+    "Zeigt die Strecke aus dem Editor im Raum, gedreht und verschoben, so dass die ganze Bahn mit 2 cm Abstand hineinpasst.": "Shows the editor track in the room, rotated and shifted so the whole track fits with 2 cm clearance.",
+    "Kreis oder Esc schließt. Unter Strecke, Raum speicherst du den Raum mit Namen und lädst ihn später wieder.": "Circle or Esc closes. Under Track, Room you save the room with a name and load it again later.",
+    "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
     "Behoben: 0.9.43 startete auf Geräten mit eingetragenem Raum nicht („Cannot access 'RAUM_ZELLE_CM' before initialization“) – die Editor-Vorschau zeichnete beim Laden schon die Möbel, bevor deren Konstanten angelegt waren; die neue Start-Diagnose hat den Fehler angezeigt. Schalten klingt jetzt mechanisch: Schaltwalze und Klauenring rasten metallisch ein, darunter der Ruck im Antriebsstrang (statt des dumpfen „düb“). Lichthupe: Vorder- und Rücklicht gehen gemeinsam aus und an, das Bremslicht leuchtet nicht mehr mit.": "Fixed: 0.9.43 did not start on devices with a room set (“Cannot access 'RAUM_ZELLE_CM' before initialization”) – the editor preview already drew the furniture while loading, before its constants existed; the new start diagnostics showed the error. Gear changes now sound mechanical: shift drum and dog ring engage with a metallic click, with the driveline jolt underneath (instead of the dull “dub”). Headlight flash: front and rear lights go off and on together, the brake light no longer lights up.",
     "Rennende: Die Rennuhr startete erst bei 75 % der Höchstgeschwindigkeit (die Schwelle „3 km/h“ wurde mit dem Modelltempo verglichen) – wer das nie erreichte, fuhr Runden, die nicht zählten, und das Rennen endete nie. Jetzt startet sie bei 3 km/h auf dem Tacho oder spätestens an der ersten Ziellinie; die Frühstart-Erkennung hatte denselben Fehler. Raumgestalter wie der Editor: „Raumgestalter starten“ öffnet das Vollbild, oben die Werkzeugleiste mit „Schließen“, die Fläche in einer eigenen Zeile darunter, der Menükopf liegt nicht mehr über den Knöpfen. Rundenzeiten-Diagramm: weißer Saum unter jeder Linie, damit auch ein schwarzes Auto sichtbar ist.": "Race end: the race clock only started at 75 % of top speed (the “3 km/h” threshold was compared with the model speed) – anyone who never reached that drove laps that did not count, and the race never ended. Now it starts at 3 km/h on the speedometer or at the first finish line at the latest; false-start detection had the same bug. Room designer like the editor: “Start room designer” opens full screen, toolbar with “Close” at the top, the area in its own row below, the menu header no longer covers the buttons. Lap time chart: white outline under every line so a black car is visible too.",
     "Strecke wird gesucht …": "Searching for a track …",
@@ -13181,7 +13260,7 @@
     "+ 30°-Außenkurven-Set": "+ 30° outer curve set",
     "+ Engstelle": "+ Narrow section",
     "Alles auf 0": "All to 0",
-    "Zufallsstrecke: max. Raum (m)": "Random track: max. room (m)",
+    "Raumgröße (m)": "Room size (m)",
     "Breite": "Width",
     "Tiefe": "Depth",
     "Breite weniger": "Less width",
@@ -13650,8 +13729,8 @@
     "NOTHALT": "EMERGENCY STOP",
     "Name der Aufnahme": "Recording name",
     "Name der Strecke": "Track name",
-    "Community Strecken": "Community tracks",
-    "Eigene Strecken eintragen und Bestzeiten teilen.": "Submit your own tracks and share best times.",
+    "Community-Bestzeiten": "Community best times",
+    "Eigene Strecken mit Abstimmung einreichen und Bestzeiten teilen.": "Submit your own tracks with a setup and share best times.",
     "Eigene Strecke einreichen": "Submit my track",
     "Noch keine Community-Strecken. Reiche deine Strecke ein.": "No community tracks yet. Submit your track.",
     "Noch keine Zeit": "No time yet",
@@ -13660,7 +13739,7 @@
     "Zeit eintragen": "Enter time",
     "Strecke einreichen": "Submit track",
     "Keine Strecke im Editor. Scanne oder baue zuerst eine Strecke.": "No track in the editor. Scan or build a track first.",
-    "So sieht deine Strecke aus. Bitte prüfe das Bild, dann wird sie eingereicht.": "This is what your track looks like. Please check the picture, then it will be submitted.",
+    "So sieht deine Strecke aus. Wähle die Abstimmung, mit der alle sie fahren.": "This is your track. Choose the setup everyone drives it with.",
     "Strecke {n} eingereicht.": "Track {n} submitted.",
     "Zeit für die Community-Strecke {n} eingetragen.": "Time for community track {n} recorded.",
     "Erst die laufende Challenge beenden": "Finish the running challenge first",
@@ -23548,6 +23627,8 @@
   // Im Browser dasselbe ueber einen Verlaufseintrag: Zurueck landet auf popstate statt die
   // Seite zu verlassen, und auf dem Startbildschirm geht es wie gewohnt zurueck.
   function omegaZurueck() {
+    // Raumgestalter offen: die Zurueck-Taste schliesst ihn (v0.9.45, "komme nicht mehr raus").
+    if (typeof raumDsOffen === 'function' && raumDsOffen()) { raumDsSchliessen(); return true; }
     if ($('mp-info') && !$('mp-info').hidden && typeof mpiStop === 'function') { mpiStop(); return true; }
     const imEditor = document.body.classList.contains('track-fs');
     const tour = typeof konsoleTourOffen === 'function' && konsoleTourOffen();
@@ -24222,7 +24303,9 @@
     kZeilen($('fa-strecke-info'), bahn
       ? [[t('Teile'), String(kTeile())], ['Code', kCode() || '–']]
       : [[t('Modus'), t('Ausdruck, ohne Bahn')], [t('Streckenfoto'), foto ? t('hochgeladen') : t('keins')]]);
-    ['fa-scan', 'fa-laden'].forEach((id) => { if ($(id)) $(id).hidden = !bahn; });
+    // v0.9.45 BESTELLT: "zeige im FAHREN-Menue in der Streckenkachel (wenn sie auf Bahn
+    // eingestellt ist) 'Raum' an".
+    ['fa-scan', 'fa-laden', 'fa-raum'].forEach((id) => { if ($(id)) $(id).hidden = !bahn; });
     // v0.9.33, BESTELLT: Druckvorlagen und Editor je nach Modus - die Vorlagen sind fuer die
     // gedruckte Strecke (FREI), der Editor baut die Carrera-Bahn nach (AUF DER BAHN).
     if ($('fa-druck')) $('fa-druck').hidden = bahn;
@@ -24431,6 +24514,7 @@
     kn('fa-scan', () => konsoleZeige('track', 'scan'));
     kn('fa-editor', () => konsoleZeige('track', 'edit'));
     kn('fa-laden', () => konsoleZeige('track', 'laden'));
+    kn('fa-raum', () => konsoleZeige('track', 'raum'));
     kn('fa-druck', () => konsoleZeige('track', 'print'));
     kn('fa-profil', () => konsoleZeige('options', 'opt-feel'));
     // BESTELLT: "wenn ich auf den Header tippe, soll es zur naechsten Option schalten".
@@ -24608,6 +24692,29 @@
       text: 'L3 oder Esc schließt den Editor. Die Strecke bleibt, speichern kannst du sie unter Strecke laden.' },
   ];
 
+  // v0.9.45 BESTELLT: "Baue ein Tutorial fuer den Raum-Editor mit ein, so wie beim
+  // Streckeneditor." Die Ziele liegen im Raumgestalter (Vollbild, 60b-raum.js).
+  const K_RAUM = [
+    { tab: 'track', sub: 'raum', ziel: null, bild: 'strecke-bahn', titel: 'Der Raumgestalter',
+      text: 'Hier zeichnest du den Platz, auf dem deine Bahn liegt: Boden, auf dem sie stehen darf, und Möbel, die im Weg sind. Zufallsstrecken aus dem Editor passen dann hinein.' },
+    { tab: 'track', sub: 'raum', ziel: ['#raum-ds-flaeche'], taste: '✕', titel: 'Malen',
+      text: 'Tippen oder ziehen malt. Am Gamepad bewegen Stick oder Steuerkreuz den Cursor, Kreuz (Leertaste) malt, gehalten weiter.' },
+    { tab: 'track', sub: 'raum', ziel: ['[data-rd-modus="moebel"]', '[data-rd-modus="boden"]'], taste: '□', titel: 'Möbel oder Boden',
+      text: 'Möbel sperrt Fläche, Boden gibt sie wieder frei. Quadrat (M) schaltet um.' },
+    { tab: 'track', sub: 'raum', ziel: ['[data-rd-werkzeug="pinsel"]', '[data-rd-werkzeug="rechteck"]'], taste: '△', titel: 'Pinsel oder Rechteck',
+      text: 'Der Pinsel malt, solange du drückst. Beim Rechteck ziehst du von Ecke zu Ecke, am Gamepad Kreuz für die erste und Kreuz für die zweite Ecke. Dreieck (R) schaltet um.' },
+    { tab: 'track', sub: 'raum', ziel: ['[data-rd-groesse="10"]', '[data-rd-groesse="60"]'], taste: 'L1 · R1', titel: 'Pinselgröße',
+      text: '10, 30 oder 60 cm. L1 und R1 wechseln die Größe.' },
+    { tab: 'track', sub: 'raum', ziel: ['.raum-ds-vorlagen'], bild: 'strecke-frei', titel: 'Vorlagen',
+      text: 'Rechteck, L, U und Oval als schneller Anfang. Danach mit dem Pinsel anpassen.' },
+    { tab: 'track', sub: 'raum', ziel: ['#raum-ds-undo'], taste: 'SHARE', titel: 'Rückgängig',
+      text: 'Select bzw. Share (Strg+Z) nimmt den letzten Strich zurück, auch mehrmals.' },
+    { tab: 'track', sub: 'raum', ziel: ['#raum-ds-probe'], taste: 'OPTIONS', titel: 'Strecke einpassen',
+      text: 'Zeigt die Strecke aus dem Editor im Raum, gedreht und verschoben, so dass die ganze Bahn mit 2 cm Abstand hineinpasst.' },
+    { tab: 'track', sub: 'raum', ziel: ['#raum-ds-fertig'], taste: '○', titel: 'Schließen',
+      text: 'Kreis oder Esc schließt. Unter Strecke, Raum speicherst du den Raum mit Namen und lädst ihn später wieder.' },
+  ];
+
   const K_PAD_NAMEN = { 0: '✕', 1: '○', 2: '□', 3: '△', 4: 'L1', 5: 'R1', 6: 'L2', 7: 'R2', 8: 'SHARE',
     9: 'OPTIONS', 10: 'L3', 11: 'R3', 12: '▲', 13: '▼', 14: '◀', 15: '▶', 16: 'PS' };
   const kTourPadVorher = [];
@@ -24617,7 +24724,7 @@
   function konsoleTourPad(pad) {
     if (!kTourOffen) return false;
     // Editor-Fuehrung: im Vollbild bedient sonst der Editor den Pad; hier blaettert er nur.
-    if (kTourListe === K_EDITOR) {
+    if (kTourListe === K_EDITOR || kTourListe === K_RAUM) {
       const neu = [];
       for (let i = 0; i < pad.buttons.length; i++) {
         const n = !!(pad.buttons[i] && pad.buttons[i].pressed);
@@ -24656,7 +24763,7 @@
     return true;
   }
   // Wo eine Fuehrung endet: das Tutorial auf Fahren, die Steuerung dort, wo sie hinfuehrt.
-  const K_TOUR_ENDE = new Map([[K_TOUR, 'fahren'], [K_STEUERUNG, 'bleiben'], [K_EDITOR, 'bleiben']]);
+  const K_TOUR_ENDE = new Map([[K_TOUR, 'fahren'], [K_STEUERUNG, 'bleiben'], [K_EDITOR, 'bleiben'], [K_RAUM, 'bleiben']]);
 
   let kTourOffen = false;
   let kTourSchritt = 0;
@@ -24783,30 +24890,40 @@
     window.addEventListener('resize', () => { if (kTourOffen) konsoleTourSpot(); });
   })();
   // =========================================================================
-  // Ladeanimation: drei Streckenteile, die nacheinander aufleuchten (v0.9.42)
+  // Ladeanimation: ein Streckenteil, das sich dreht (v0.9.45)
   // =========================================================================
-  // BESTELLT: "Zeige im Editorfeld eine Ladeanimation (zB ein sich drehendes Carrera Hybrid
-  // Streckenteil, oder durchlaufende Streckenteile [gerade, kurve, haarnadel]) waehrend der
-  // Zufallsalgorithmus laeuft. Zeige ebenfalls eine Ladeanimation (ggf dieselbe) waehrend der
-  // Host das Rennen fuer alle gestartet hat und auf Rueckmeldung der anderen Handys wartet."
+  // BESTELLT (v0.9.42): eine Ladeanimation im Editor, waehrend der Zufallsalgorithmus laeuft,
+  // und im Mehrspieler, waehrend auf die anderen Handys gewartet wird.
   //
-  // Gerade, 60-Grad-Kurve und Haarnadel im Stil der Originalteile: schwarze Fahrbahn,
-  // weisser Rand mit roten Pfeilfeldern. Nur transform und opacity werden animiert - die
-  // laufen im Compositor weiter, auch wenn der Hauptfaden kurz rechnet.
-  const LADE_TEILE = [
-    'M20 38 V2',                                   // Gerade
-    'M10 38 V26 A15 15 0 0 1 25 11 H38',           // Kurve
-    'M9 38 V19 A11 11 0 0 1 31 19 V38',            // Haarnadel
-  ];
-  function ladeTeilSvg(d) {
-    return '<svg viewBox="0 0 40 40" aria-hidden="true">'
-      + '<path d="' + d + '" fill="none" stroke="#f3f5f8" stroke-width="16"/>'
-      + '<path d="' + d + '" fill="none" stroke="#ff4d22" stroke-width="16" stroke-dasharray="3.4 2.6"/>'
-      + '<path d="' + d + '" fill="none" stroke="#2b303a" stroke-width="10"/>'
-      + '</svg>';
+  // v0.9.45 BESTELLT: "Nimm ein huebsch gerendertes Gerade-Streckenteil und zeig an, wie es
+  // sich im Uhrzeigersinn dreht. Nach einer Drehung wird es durch eine Rechtskurve ersetzt,
+  // dann wieder von vorne. Eine Drehung sollte ca. 500 ms dauern."
+  //
+  // Die Teile zeichnet DERSELBE Zeichner wie den Editor (renderTrackPreview mit echt: true),
+  // also mit Randstreifen, Pfeilen und Steckzapfen der Originalteile - kein zweites Aussehen.
+  // Animiert wird nur transform und opacity: das laeuft im Compositor weiter, auch wenn der
+  // Hauptfaden kurz rechnet. Zwei Ebenen, beide drehen sich in 500 ms einmal; die eine ist in
+  // der ersten, die andere in der zweiten Haelfte eines 1-s-Takts sichtbar.
+  let ladeTeileCache = null;
+  function ladeTeileSvg() {
+    if (ladeTeileCache) return ladeTeileCache;
+    const teil = (typ) => {
+      try {
+        // Enger Rand und ohne die Kartenklasse (die bringt Grund und Rahmen mit): nur das Teil.
+        return renderTrackPreview([{ type: typ }], null,
+          { detailed: true, echt: true, ohneLinie: true, ohneLinieRechnen: true, rand: 3 }).html
+          .replace('class="tp-karte"', 'class="lade-teil"');
+      } catch (e) { return ''; }
+    };
+    const gerade = teil(TILE_TYPE.STRAIGHT), kurve = teil(TILE_TYPE.CURVE_RIGHT);
+    if (gerade && kurve) ladeTeileCache = [gerade, kurve];
+    return [gerade, kurve];
   }
   function ladeAnimationHtml(text) {
-    return '<div class="lade-teile">' + LADE_TEILE.map(ladeTeilSvg).join('') + '</div>'
+    const [gerade, kurve] = ladeTeileSvg();
+    return '<div class="lade-dreh" aria-hidden="true">'
+      + '<div class="lade-ebene lade-a">' + gerade + '</div>'
+      + '<div class="lade-ebene lade-b">' + kurve + '</div></div>'
       + (text ? '<div class="lade-text">' + String(text).replace(/</g, '&lt;') + '</div>' : '');
   }
   // Als Einblendung UEBER einem Feld (Editor). Rueckgabe: das Element, .remove() beendet sie.
@@ -27568,7 +27685,16 @@
   }
 
   function renderTrackPreview(tiles, currentIndex, opts) {
-    const o = opts || {};
+    const o = Object.assign({}, opts || {});
+    // v0.9.45 BESTELLT: "Die Vorschaubilder aller Strecken sollten im CH-Streckendesign sein
+    // und nicht einfach graue Linien. Und nicht nur im Editor sollte das mit den Pfeilen auf
+    // dem Randstreifen korrekt sein, sondern ueberall (z.B. FAHREN-Menue in der
+    // Streckenkachel)." Also: Originalteile (echt) sind die Vorgabe, und wer gar nichts
+    // angibt - bisher die graue Linie -, bekommt sie auch. Fuer diese Vorschaubilder wird die
+    // Ideallinie NICHT gerechnet (sie kostet den Grossteil der ~94 ms und wird dort nie
+    // gezeigt). Wer den alten Stil will, sagt echt: false.
+    if (o.detailed === undefined) { o.detailed = true; o.ohneLinieRechnen = true; }
+    if (o.echt === undefined) o.echt = true;
     if (!tiles || tiles.length === 0) {
       return { html: '<p class="muted">Keine Streckenteile.</p>', closed: false };
     }
@@ -27588,7 +27714,8 @@
     const closed = schluss.closed;
 
     const half = TRACK_HALF_W;
-    const pad = o.detailed ? half + 14 : 30;
+    // o.rand: eigener Rand in Kartenpunkten (Ladeanimation: das Teil soll den Platz fuellen).
+    const pad = o.rand !== undefined ? o.rand : (o.detailed ? half + 14 : 30);
     const all = [...pts.map(p => [p.x, p.y])];
     if (o.detailed) {
       all.push(...offsetPath(pts, nrm, half + 6), ...offsetPath(pts, nrm, -(half + 6)));
@@ -27762,10 +27889,10 @@
       //    the centreline would colour a corner the car no longer takes that tightly.
       // tiles MIT: der Kurvenausgang braucht die Kacheltypen, um Scheitel und Ausgang
       // zu finden - siehe formLine().
-      const line = buildLine(pts, nrm, { closed, tiles });
-      const ideal = pts.map((p, i) => [p.x + nrm[i].x * line.alpha[i],
-                                       p.y + nrm[i].y * line.alpha[i]]);
-      const brake = brakeProfile(ideal, closed);
+      const line = o.ohneLinieRechnen ? null : buildLine(pts, nrm, { closed, tiles });
+      const ideal = line ? pts.map((p, i) => [p.x + nrm[i].x * line.alpha[i],
+                                              p.y + nrm[i].y * line.alpha[i]]) : [];
+      const brake = line ? brakeProfile(ideal, closed) : [];
       // One short segment per sample pair, each with its own colour. A single path with a
       // gradient cannot follow an arbitrary curve, so the curve is cut instead.
       const IDEAL_W = 1.1;   // was 2.2; halved on request, the line was heavier than the kerbs
@@ -27898,7 +28025,11 @@
         + `width="${raumRect.w.toFixed(1)}" height="${raumRect.h.toFixed(1)}" fill="none" `
         + `stroke="rgba(110,160,255,.7)" stroke-width="2" stroke-dasharray="7 5"/>`
         + `<text x="${(raumRect.x + ox + fs * 0.4).toFixed(1)}" y="${(raumRect.y + oy + fs * 1.2).toFixed(1)}" `
-        + `font-size="${fs.toFixed(1)}" fill="rgba(140,180,255,.85)">${mass}</text></g>` + body;
+        + `font-size="${fs.toFixed(1)}" fill="rgba(140,180,255,.85)">${mass}</text></g>`
+        // Die Strecke als EINE Gruppe darueber: beim Ziehen verschiebt sich nur sie, per
+        // CSS-transform (kein transform-Attribut - der Selbsttest zaehlt solche Gruppen als
+        // Autos), und der Raum bleibt liegen.
+        + '<g class="tp-strecke">' + body + '</g>';
     }
     const html = `<svg class="tp-karte" viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}">${gridSvg}${body}</svg>`;
     // DIE GEOMETRIE MIT HERAUS, damit ein Aufrufer Punkte setzen kann, ohne die Strecke neu
@@ -28217,16 +28348,18 @@
   var editorSchalter = (function () {
     // Ideallinie ab v0.9.22 AUS, bis man sie anklickt; ein frueher gespeichertes "an" (ohne
     // v: 2) zaehlt nicht, sonst bliebe sie bei allen an, die den Editor je geoeffnet haben.
-    const z = { linie: false, tasten: true, v: 2 };
+    const z = { linie: false, tasten: true, raum: true, v: 2 };
     try {
       const s = JSON.parse(localStorage.getItem('omegasim-editor-schalter') || '{}');
       if (typeof s.linie === 'boolean' && s.v === 2) z.linie = s.linie;
       if (typeof s.tasten === 'boolean') z.tasten = s.tasten;
+      if (typeof s.raum === 'boolean') z.raum = s.raum;
     } catch (e) { /* ohne Speicher: an */ }
     return z;
   })();
   function editorSchalterZeigen() {
-    [['track-opt-linie', editorSchalter.linie], ['track-opt-tasten', editorSchalter.tasten]].forEach(([id, an]) => {
+    [['track-opt-linie', editorSchalter.linie], ['track-opt-tasten', editorSchalter.tasten],
+     ['track-opt-raum', editorSchalter.raum]].forEach(([id, an]) => {
       const b = $(id);
       if (b) { b.classList.toggle('an', an); b.setAttribute('aria-pressed', an ? 'true' : 'false'); }
     });
@@ -28237,7 +28370,7 @@
     editorSchalter[was] = !editorSchalter[was];
     try { localStorage.setItem('omegasim-editor-schalter', JSON.stringify(editorSchalter)); } catch (e) { /* egal */ }
     editorSchalterZeigen();
-    if (was === 'linie') refreshTrackPreview();
+    if (was === 'linie' || was === 'raum') refreshTrackPreview();
   }
 
   // DIE STRECKE IM EDITOR UEBERLEBT EINEN NEUSTART (v0.9.6). Vorher stand nach dem Neuladen
@@ -28268,6 +28401,9 @@
     return true;
   }
   function refreshTrackPreview() {
+    // Waehrend die Strecke im Raum gezogen wird, nicht neu zeichnen - das setzte den Zug
+    // zurueck (GEMELDET: "bewegt sich immer nur ein kleines bisschen"). Nach dem Loslassen.
+    if (raumZug) { raumZug.nachher = true; return; }
     editorStreckeMerken();
     // Die Kachelzahl entscheidet, ob der Windschatten ueberhaupt rechnen kann. Hier gerufen
     // und nicht in 50-drive.js beim Laden: dort ist currentTrackTiles noch in der temporalen
@@ -28278,7 +28414,7 @@
     // Start/Ziel-Linie.
     if (trackSel !== null && trackSel >= currentTrackTiles.length) trackSel = null;
     const imEditor = document.body.classList.contains('track-fs');
-    const raum = teileRaum();
+    const raum = editorSchalter.raum ? teileRaum() : { x: 0, y: 0 };
     const result = renderTrackPreview(currentTrackTiles, null,
       { detailed: true, cars: trackCarMarks(), echt: true, auswahl: imEditor ? trackSelIndex() : null,
         ohneLinie: !editorSchalter.linie, grid: true,
@@ -28496,8 +28632,33 @@
     clearTimeout(raumNeuZeichnen);
     raumNeuZeichnen = setTimeout(() => { raumVersatzSpeichern(); refreshTrackPreview(); }, 350);
   }
+  // ---- DIE STRECKE IM RAUM ZIEHEN (v0.9.45) -------------------------------------------
+  // GEMELDET: "Im Editor klappt das Druecken und Ziehen des Raumumrisses bzw. der Strecke im
+  // Raum nicht. Das bewegt sich immer nur ein kleines bisschen." Drei Ursachen: der Zug
+  // verschob das Raumrechteck GEGEN die Fingerrichtung, auf Touch brach der Browser die
+  // Geste nach wenigen Pixeln ab (kein touch-action: none), und jedes Neuzeichnen mitten im
+  // Zug setzte ihn zurueck. Jetzt bleibt der Raum (der Boden) liegen und die STRECKE folgt
+  // Finger, Maus und rechtem Stick; neu gezeichnet wird erst nach dem Loslassen.
+  var raumZug = null;   // { x, y } Verschiebung in Kartenpunkten, solange gezogen wird
+  function streckeImRaumSchieben(dxEinh, dyEinh) {
+    const g = document.querySelector('#track-preview-svg .tp-strecke');
+    if (!g || !document.querySelector('#track-preview-svg .tp-raum')) return false;
+    if (!raumZug) raumZug = { x: 0, y: 0, nachher: false };
+    raumZug.x += dxEinh; raumZug.y += dyEinh;
+    g.style.transform = 'translate(' + raumZug.x.toFixed(1) + 'px,' + raumZug.y.toFixed(1) + 'px)';
+    // Strecke nach rechts = Raum relativ zur Strecke nach links.
+    raumVersatz.x -= dxEinh / TRACK_UNITS_PER_CM;
+    raumVersatz.y -= dyEinh / TRACK_UNITS_PER_CM;
+    return true;
+  }
+  function raumZugEnde() {
+    if (!raumZug) return;
+    raumZug = null;
+    raumVersatzSpeichern();
+    refreshTrackPreview();
+  }
   // Rechter Stick im Editor-Vollbild (aus pollGamepad): schiebt mit bis zu 60 cm/s; R3 zentriert.
-  let raumStickAt = 0, raumR3Vor = false;
+  let raumStickAt = 0, raumR3Vor = false, raumStickZiel = null;
   function raumVersatzStick(ax, ay, r3) {
     const jetzt = performance.now();
     const dt = Math.min(0.1, (jetzt - (raumStickAt || jetzt)) / 1000);
@@ -28506,11 +28667,15 @@
     raumR3Vor = r3;
     const tot = 0.2;
     const x = Math.abs(ax) > tot ? ax : 0, y = Math.abs(ay) > tot ? ay : 0;
-    if (!x && !y) return;
-    // Der Stick bewegt die STRECKE: nach rechts gedrueckt wandert sie nach rechts, also der
-    // Raum nach links.
+    if (!x && !y) {
+      if (raumZug && raumStickZiel) { clearTimeout(raumStickZiel); raumStickZiel = setTimeout(raumZugEnde, 250); }
+      return;
+    }
     const cm = 60 * dt;
-    if (raumRechteckSchieben(-x * cm * TRACK_UNITS_PER_CM, -y * cm * TRACK_UNITS_PER_CM)) raumSpaeterZeichnen();
+    if (streckeImRaumSchieben(x * cm * TRACK_UNITS_PER_CM, y * cm * TRACK_UNITS_PER_CM)) {
+      clearTimeout(raumStickZiel);
+      raumStickZiel = setTimeout(raumZugEnde, 250);
+    }
   }
   (function raumZiehenAnbinden() {
     const host = $('track-preview-svg');
@@ -28528,7 +28693,8 @@
     host.addEventListener('pointermove', (e) => {
       if (!a || e.pointerId !== a.id) return;
       const dx = e.clientX - a.x, dy = e.clientY - a.y;
-      if (!gezogen && Math.hypot(dx, dy) < 8) return;
+      if (!gezogen && Math.hypot(dx, dy) < 6) return;
+      if (!gezogen) { try { host.setPointerCapture(e.pointerId); } catch (x) { /* egal */ } }
       gezogen = true;
       e.preventDefault();
       if (a.pan) {
@@ -28536,8 +28702,7 @@
         editorPan.x += dx; editorPan.y += dy;
         trackZoomAnwenden();
       } else {
-        // Finger nach rechts = Strecke nach rechts = Raum nach links.
-        raumRechteckSchieben(-dx * a.k, -dy * a.k);
+        streckeImRaumSchieben(dx * a.k, dy * a.k);
       }
       a.x = e.clientX; a.y = e.clientY;
     });
@@ -28547,9 +28712,10 @@
       e.preventDefault();
       trackZoom(e.deltaY < 0 ? 0.1 : -0.1);
     }, { passive: false });
-    const ende = () => { if (a && gezogen) raumSpaeterZeichnen(); a = null; };
+    const ende = () => { if (a && gezogen) raumZugEnde(); a = null; };
     host.addEventListener('pointerup', ende);
-    host.addEventListener('pointercancel', () => { a = null; });
+    host.addEventListener('pointercancel', ende);
+    host.addEventListener('lostpointercapture', ende);
     // Ein Zug ist kein Antippen: den Klick danach nicht als Kachelwahl werten.
     host.addEventListener('click', (e) => { if (gezogen) { e.stopPropagation(); e.preventDefault(); gezogen = false; } }, true);
   })();
@@ -28971,6 +29137,7 @@
     { id: 'track-save-toolbar' },
     { id: 'track-opt-linie' },
     { id: 'track-opt-tasten' },
+    { id: 'track-opt-raum' },
     { id: 'track-undo' },
     { id: 'track-delete-sel' },
     { id: 'track-rotate-left' },
@@ -29640,6 +29807,9 @@
   $('track-undo').onclick = () => { trackRueckgaengig(); };
   $('track-opt-linie').onclick = () => { editorSchalterUm('linie'); };
   $('track-opt-tasten').onclick = () => { editorSchalterUm('tasten'); };
+  // v0.9.45 BESTELLT: "im Editor Option (Toggle) zum Raum ein- und ausblenden (bei
+  // ausgeblendet wird er auch nicht beruecksichtigt bei Zufallsstrecken)" - raumEinpassen().
+  $('track-opt-raum').onclick = () => { editorSchalterUm('raum'); };
   $('track-delete-sel').onclick = () => { trackTeilEntfernen(); };
   $('track-clear').onclick = () => { trackMerken(); currentTrackTiles = freshTrackTiles(); trackSel = null; refreshTrackPreview(); };
 
@@ -30537,7 +30707,12 @@
   // geraden zuerst), versatz der raumVersatz (cm), mit dem renderTrackPreview() den Raum so
   // um die Strecke legt, dass sie passt, und t die Verschiebung der Streckenpunkte (cm) in
   // Raumkoordinaten (Ecke oben links = 0,0).
-  function raumEinpassen(tiles) {
+  function raumEinpassen(tiles, immer) {
+    // v0.9.45: im Editor ausgeblendet = fuer Zufallsstrecken nicht beruecksichtigt. Der
+    // Raumgestalter selbst (rdProbe) fragt mit immer = true.
+    if (!immer && typeof editorSchalter !== 'undefined' && editorSchalter.raum === false) {
+      return { rot: 0, versatz: { x: 0, y: 0 }, t: null };
+    }
     const r = teileRaum();
     const W = r.x * 100, H = r.y * 100;
     if (W <= 0 && H <= 0) return { rot: 0, versatz: { x: 0, y: 0 }, t: null };
@@ -30718,7 +30893,7 @@
   function rdProbe() {
     const tiles = currentTrackTiles || [];
     if (tiles.length < 3) { rd.probe = { text: t('Im Editor ist noch keine Strecke.') }; rdZeichnen(); return; }
-    const fit = raumEinpassen(tiles);
+    const fit = raumEinpassen(tiles, true);
     if (!fit || !fit.t) { rd.probe = { text: t('Die Editor-Strecke passt nicht in diesen Raum.'), schlecht: true }; rdZeichnen(); return; }
     const merk = trackRotationDeg;
     let pts;
@@ -30830,6 +31005,8 @@
     if (!el || el.hidden) return;
     el.hidden = true;
     document.body.classList.remove('raum-ds-offen');
+    // Laeuft gerade das Raum-Tutorial, endet es mit dem Gestalter.
+    if (typeof konsoleTourOffen === 'function' && konsoleTourOffen() && typeof konsoleTourZu === 'function') konsoleTourZu(true);
     try {
       if (document.fullscreenElement && document.exitFullscreen
           && !document.body.classList.contains('track-fs')) document.exitFullscreen().catch(() => {});
@@ -30898,9 +31075,115 @@
     return true;
   }
 
+  // ---- GESPEICHERTE RAEUME (v0.9.45) ---------------------------------------------------
+  // BESTELLT: "Erlaube mir, Raeume abzuspeichern mit Namen und im selben Menue auszuwaehlen."
+  // Ein Raum ist Groesse plus Form; gespeichert unter seinem Namen. Laden schreibt beides in
+  // den aktuellen Raum (omegasim-raum, omegasim-raum-form) - alles andere liest weiter dort.
+  const RAEUME_KEY = 'omegasim-raeume', RAUM_AKTIV_KEY = 'omegasim-raum-aktiv';
+  function raeumeLesen() {
+    try { const x = JSON.parse(localStorage.getItem(RAEUME_KEY) || '{}'); return x && typeof x === 'object' ? x : {}; }
+    catch (e) { return {}; }
+  }
+  function raeumeSchreiben(r) {
+    try { localStorage.setItem(RAEUME_KEY, JSON.stringify(r)); } catch (e) { /* privat */ }
+  }
+  function raumAktivName() {
+    try { return localStorage.getItem(RAUM_AKTIV_KEY) || ''; } catch (e) { return ''; }
+  }
+  function raumSpeichernUnter(name) {
+    name = String(name || '').trim().slice(0, 32);
+    if (!name) { showHudToast(t('Bitte einen Namen eingeben')); return false; }
+    const r = teileRaum();
+    if (!(r.x > 0 && r.y > 0)) { showHudToast(t('Erst eine Raumgröße eintragen')); return false; }
+    const f = raumFormLaden();
+    const alle = raeumeLesen();
+    alle[name] = { x: r.x, y: r.y, w: f.w, h: f.h, g: raumFormKodieren(f.g), at: Date.now() };
+    raeumeSchreiben(alle);
+    try { localStorage.setItem(RAUM_AKTIV_KEY, name); } catch (e) { /* privat */ }
+    showHudToast(t('Raum gespeichert') + ': ' + name);
+    raumListeZeichnen();
+    return true;
+  }
+  function raumLadenName(name) {
+    const r = raeumeLesen()[name];
+    if (!r) return false;
+    teileRaumSpeichern({ x: r.x, y: r.y });
+    try {
+      localStorage.setItem(RAUM_FORM_KEY, JSON.stringify({ v: 1, w: r.w, h: r.h, g: r.g }));
+      localStorage.setItem(RAUM_AKTIV_KEY, name);
+    } catch (e) { /* privat */ }
+    const fx = $('teile-raum-x'), fy = $('teile-raum-y');
+    if (fx) fx.value = String(r.x);
+    if (fy) fy.value = String(r.y);
+    raumMiniZeichnen();
+    raumListeZeichnen();
+    if (typeof refreshTrackPreview === 'function') refreshTrackPreview();
+    showHudToast(t('Raum geladen') + ': ' + name);
+    return true;
+  }
+  function raumLoeschenName(name) {
+    const alle = raeumeLesen();
+    delete alle[name];
+    raeumeSchreiben(alle);
+    if (raumAktivName() === name) { try { localStorage.removeItem(RAUM_AKTIV_KEY); } catch (e) { /* privat */ } }
+    raumListeZeichnen();
+  }
+  function raumListeZeichnen() {
+    const host = $('raum-liste');
+    if (!host) return;
+    const alle = raeumeLesen(), aktiv = raumAktivName();
+    const namen = Object.keys(alle).sort((a, b) => a.localeCompare(b));
+    host.innerHTML = '';
+    if (!namen.length) {
+      host.innerHTML = '<p class="muted" style="margin:0">' + t('Noch kein Raum gespeichert.') + '</p>';
+      return;
+    }
+    for (const name of namen) {
+      const r = alle[name];
+      const z = document.createElement('div');
+      z.className = 'raum-eintrag' + (name === aktiv ? ' aktiv' : '');
+      const f = { w: r.w, h: r.h, g: raumFormDekodieren(r.g, r.w * r.h) };
+      const esc = String(name).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+      z.innerHTML = '<span class="raum-eintrag-bild">' + rdSvg(f, { rand: 6 }) + '</svg></span>'
+        + '<span class="raum-eintrag-name" data-i18n-skip>' + esc + '</span>'
+        + '<span class="raum-eintrag-mass">' + String(r.x).replace('.', ',') + ' \u00d7 ' + String(r.y).replace('.', ',') + ' m</span>';
+      const laden = document.createElement('button');
+      laden.type = 'button'; laden.textContent = t('Laden');
+      laden.addEventListener('click', () => raumLadenName(name));
+      const weg = document.createElement('button');
+      weg.type = 'button'; weg.className = 'raum-weg warn'; weg.textContent = '\u00d7';
+      weg.setAttribute('aria-label', t('Raum löschen'));
+      weg.addEventListener('click', () => {
+        if (typeof konsoleFrage === 'function') {
+          konsoleFrage(t('Raum löschen?'), t('Bist du sicher?') + ' ' + name,
+            [[t('Löschen'), () => raumLoeschenName(name)], [t('Abbrechen'), null]], true);
+        } else raumLoeschenName(name);
+      });
+      z.appendChild(laden); z.appendChild(weg);
+      host.appendChild(z);
+    }
+  }
+
+  // ---- TUTORIAL (v0.9.45) ---------------------------------------------------------------
+  // BESTELLT: "Baue ein Tutorial fuer den Raum-Editor mit ein, so wie beim Streckeneditor."
+  // Dieselbe Fuehrung (konsoleTourStart, 51b-tutorial.js) mit der Liste K_RAUM.
+  async function raumTourStarten() {
+    if (!raumDsOffen()) raumDsOeffnen();
+    if (typeof konsoleTourStart === 'function' && typeof K_RAUM !== 'undefined') konsoleTourStart(K_RAUM);
+  }
+
   (function raumDsAnbinden() {
     const auf = $('raum-designer-auf');
     if (auf) auf.addEventListener('click', raumDsOeffnen);
+    if ($('raum-tour')) $('raum-tour').addEventListener('click', raumTourStarten);
+    if ($('raum-ds-hilfe')) $('raum-ds-hilfe').addEventListener('click', raumTourStarten);
+    if ($('raum-speichern')) {
+      $('raum-speichern').addEventListener('click', () => {
+        const feld = $('raum-name');
+        if (raumSpeichernUnter(feld ? feld.value : '') && feld) feld.value = '';
+      });
+    }
+    raumListeZeichnen();
     const mini = $('raum-mini');
     if (mini) mini.addEventListener('click', raumDsOeffnen);
     const ds = $('raum-ds');
@@ -30961,6 +31244,8 @@
     // Menuesteuerung die Tasten nicht auch bekommt.
     window.addEventListener('keydown', (e) => {
       if (!raumDsOffen()) return;
+      // Laeuft die Fuehrung, gehoeren ihr die Tasten (Weiter/Zurueck).
+      if (typeof konsoleTourOffen === 'function' && konsoleTourOffen()) return;
       const k = e.key.toLowerCase();
       const schritt = e.shiftKey ? 50 : RAUM_ZELLE_CM;
       let genutzt = true;
@@ -38232,7 +38517,8 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     // Direkt nach Kennung, ohne Zusammenfuehrung: chDef laeuft auch im Fahrtakt.
     let tr = communityLesen().tracks.find((t) => t.id === id);
     if (!tr && communityOnline) tr = communityOnline.tracks.find((t) => t.id === id);
-    if (tr) return { id: tr.id, code: tr.code, name: tr.name, runden: 1, pit: 0, wx: null, community: true };
+    if (tr) return { id: tr.id, code: tr.code, name: tr.name, runden: 1, pit: 0, wx: null, community: true,
+                     preset: communityPresetGueltig(tr.preset) };
     return CHALLENGES[0];
   }
   function chSchluessel(id, modus, preset) { return id + '|' + modus + '|' + preset; }
@@ -38546,7 +38832,9 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     if (!on) return lokal;
     const sicht = { tracks: [], times: {}, nextId: lokal.nextId, online: true };
     for (const tr of on.tracks) {
-      sicht.tracks.push({ id: tr.id, code: tr.code, name: tr.name, online: true });
+      const lokalGleich = lokal.tracks.find((x) => x.code === tr.code);
+      sicht.tracks.push({ id: tr.id, code: tr.code, name: tr.name, online: true,
+                          preset: communityPresetGueltig(tr.preset || (lokalGleich && lokalGleich.preset)) });
       sicht.times[tr.id] = (on.zeiten[tr.id] || []).map((z) => ({ zeit: z.zeit_ms, fahrer: z.fahrer || '', geraet: z.geraet,
         datum: Date.parse(z.zeitpunkt) || 0 }));
     }
@@ -38554,7 +38842,8 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       const p = codeToTrack(tr.code);
       const gleich = p ? sicht.tracks.find((x) => { const q = codeToTrack(x.code); return q && communityGleiche(p.tiles, q.tiles); }) : null;
       const ziel = gleich ? gleich.id : tr.id;
-      if (!gleich) sicht.tracks.push({ id: tr.id, code: tr.code, name: tr.name, online: false });
+      if (!gleich) sicht.tracks.push({ id: tr.id, code: tr.code, name: tr.name, online: false,
+                                       preset: communityPresetGueltig(tr.preset) });
       const liste = sicht.times[ziel] = sicht.times[ziel] || [];
       for (const z of (lokal.times[tr.id] || [])) {
         if (!liste.some((x) => x.geraet === z.geraet && Math.abs(x.zeit - z.zeit) < 2)) liste.push(z);
@@ -38572,7 +38861,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       return p && !communityOnline.tracks.some((x) => { const q = codeToTrack(x.code); return q && communityGleiche(p.tiles, q.tiles); });
     });
     fehlen.slice(0, 3).forEach((tr, i) => setTimeout(() => {
-      communityPost({ art: 'community-strecke', code: tr.code, name: tr.name }).then((r) => {
+      communityPost({ art: 'community-strecke', code: tr.code, name: tr.name, preset: communityPresetGueltig(tr.preset) }).then((r) => {
         if (!r || !r.ok || !r.id) return;
         const meine = (lokal.times[tr.id] || []).filter((z) => z.geraet === chGeraet());
         if (meine.length) setTimeout(() => communityPost({ art: 'community-zeit', id: r.id, zeit_ms: meine[0].zeit, fahrer: meine[0].fahrer }), 11000);
@@ -38596,11 +38885,25 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     return null;
   }
   // Nimmt eine Strecke auf (oder fuehrt sie mit einer vorhandenen zusammen) und liefert die id.
-  function communityEinreichen(data, tiles, name) {
+  // ---- DIE ABSTIMMUNG EINER COMMUNITY-STRECKE (v0.9.45) ------------------------------
+  // BESTELLT: "Aendere Community-Strecken zu 'Community-Bestzeiten' und baue dort ein, dass die
+  // Person, die die Strecke einreicht, auch die Presets einreicht. Mach das erstmal nur mit den
+  // Standard-Presets und nichts Komplizierterem (Arcade, Pro, GT3, ...) und zeige den Modus mit
+  // der Strecke in der Vorschau und im jeweiligen Challenge-Submenue an."
+  // Nur die festen Voreinstellungen, keine eigene Abstimmung. Unbekannt oder alt = Pro, wie
+  // alle Challenges bisher.
+  const COMMUNITY_PRESETS = ['arcade', 'pro', 'gt3', 'f1', 'realgt3'];
+  function communityPresetGueltig(p) { return COMMUNITY_PRESETS.indexOf(p) >= 0 ? p : 'pro'; }
+  function communityPresetName(p) {
+    const k = communityPresetGueltig(p);
+    return (typeof window.__presetLabel === 'function' ? t(window.__presetLabel(k)) : k);
+  }
+  function communityEinreichen(data, tiles, name, preset) {
     const vorhanden = communityFinde(data, tiles);
     if (vorhanden) return vorhanden.id;
     const id = String(data.nextId || 1).padStart(4, '0');
-    data.tracks.push({ id, code: communityCode(tiles), name: (name || 'Strecke ' + id).slice(0, 32) });
+    data.tracks.push({ id, code: communityCode(tiles), name: (name || 'Strecke ' + id).slice(0, 32),
+                       preset: communityPresetGueltig(preset) });
     data.nextId = (data.nextId || 1) + 1;
     communitySchreiben(data);
     return id;
@@ -38667,23 +38970,26 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       // Vorschau (Streckenkarte) steht im Frage-Dialog, erst auf Einreichen wird gespeichert.
       const vorschau = (typeof renderTrackPreview === 'function')
         ? renderTrackPreview(currentTrackTiles, null, { detailed: true, cars: [] }).html : '';
-      konsoleFrage(t('Strecke einreichen'),
-        t('So sieht deine Strecke aus. Bitte prüfe das Bild, dann wird sie eingereicht.'),
-        [[t('Einreichen'), () => {
+      const einreichen = (preset) => {
            const name = prompt(t('Name der Strecke'), '') || 'Strecke ' + String(data.nextId || 1).padStart(4, '0');
            // Gibt es sie online schon (auch gespiegelt)? Dann nur deren Kennung nehmen.
            const schon = data.online ? data.tracks.find((x) => { const q = codeToTrack(x.code); return q && communityGleiche(currentTrackTiles, q.tiles); }) : null;
            if (schon) { showHudToast(t('Diese Strecke gibt es schon: {n}').replace('{n}', schon.id + ' · ' + schon.name)); return; }
            const lokal = communityLesen();
-           const id = communityEinreichen(lokal, currentTrackTiles, name);
+           const id = communityEinreichen(lokal, currentTrackTiles, name, preset);
            communitySchreiben(lokal);
-           communityPost({ art: 'community-strecke', code: communityCode(currentTrackTiles), name }).then((r) => {
+           communityPost({ art: 'community-strecke', code: communityCode(currentTrackTiles), name,
+                           preset: communityPresetGueltig(preset) }).then((r) => {
              showHudToast(r && r.ok ? t('Strecke {n} für alle eingereicht.').replace('{n}', r.id) : t('Strecke {n} eingereicht (nur auf diesem Gerät).').replace('{n}', id));
              communityHolen(true).then(() => communityZeichnen());
            });
            communityZeichnen();
-         }],
-         [t('Abbrechen'), null]], true, vorschau);
+      };
+      // Die Abstimmung waehlt man im selben Dialog, unter dem Bild: ein Knopf je Voreinstellung.
+      konsoleFrage(t('Strecke einreichen'),
+        t('So sieht deine Strecke aus. Wähle die Abstimmung, mit der alle sie fahren.'),
+        COMMUNITY_PRESETS.map((k) => [communityPresetName(k), () => einreichen(k)])
+          .concat([[t('Abbrechen'), null]]), true, vorschau);
     };
     bereich.appendChild(ein);
     bereich.appendChild(stand);
@@ -38714,6 +39020,12 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       const b = document.createElement('b');
       b.setAttribute('data-i18n-skip', '');
       b.textContent = tr.id + ' \u00b7 ' + tr.name + (tr.online === false && data.online ? ' (' + t('nur hier') + ')' : '');
+      // Der Modus (Abstimmung) neben dem Namen, als Marke wie in der Vorschau.
+      const modus = document.createElement('span');
+      modus.className = 'community-modus';
+      modus.textContent = communityPresetName(tr.preset);
+      b.appendChild(document.createTextNode(' '));
+      b.appendChild(modus);
       const best = communityBesteZeit(data, tr.id);
       const spieler = communitySpieler(data, tr.id);
       const em = document.createElement('em');
@@ -39097,12 +39409,15 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       return;
     }
     const def = chDef(chWahl);
-    chLauf = { id: def.id, modus: chModus, preset: chPreset, phase: 'stehen', stillSeit: 0,
+    // v0.9.45: eine Community-Strecke faehrt mit der Abstimmung, die beim Einreichen gewaehlt
+    // wurde; alle anderen Challenges wie bisher mit Pro.
+    const preset = def.community ? def.preset : chPreset;
+    chLauf = { id: def.id, modus: chModus, preset, phase: 'stehen', stillSeit: 0,
                hinweisAt: 0, fruehstart: false, probe: !playerCar, merk: chMerken(),
                gelesen: [], pruefung: [], geaendert: false, pruefAt: 0,
                community: !!def.community };
-    chAnwenden(def, chModus, chPreset);
-    chLauf.soll = chWachWerte(chPreset);
+    chAnwenden(def, chModus, preset);
+    chLauf.soll = chWachWerte(preset);
     chSperre(true);
     showTab('race');
     showHudToast(t('Auto auf Start/Ziel stellen und anhalten'));
@@ -58034,7 +58349,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                // Die Randsteinfarben, damit ein Test das CH-Aussehen nachpruefen kann:
                // schwarze Fahrbahn, rot-weiss links, blau-weiss rechts.
                farben: [...new Set([...doc.querySelectorAll('path')]
-                 .map(e => e.getAttribute('stroke')).filter(Boolean))],
+                 // Strich UND Fuellung: die Pfeile der Originalteile sind gefuellt (v0.9.45).
+                 .flatMap(e => [e.getAttribute('stroke'), e.getAttribute('fill')]).filter((x) => x && x !== 'none'))],
                echte: trackCarMarks ? trackCarMarks().length : null };
     },
 
@@ -64895,8 +65211,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // welche Farbe traegt, prueft diese Stelle nicht - siehe kerbLeft/kerbRight in
     // 60-track.js fuer die Zuordnung selbst).
     const f = mitte.farben || [];
-    for (const [farbe, was] of [['#14181f', 'Fahrbahn'], ['#ff5c5c', 'roter Randstein'],
-                                ['#5aa9ff', 'blauer Randstein'], ['#ffffff', 'Stossfugen']]) {
+    // v0.9.45: Originalteile sind die Vorgabe (mattschwarze Fahrbahn, Pfeile in Blau und Rot,
+    // dunkle Naht) - siehe echtRandstreifen in 60-track.js.
+    for (const [farbe, was] of [['#0d0f13', 'Fahrbahn'], ['#ff4d22', 'rote Pfeile'],
+                                ['#2f9fe6', 'blaue Pfeile'], ['#3a404b', 'Stossfugen']]) {
       if (f.indexOf(farbe) < 0) schlecht.push(was + ' fehlt (' + farbe + ')');
     }
     teile.push(f.length + ' Farben im Bild');
@@ -66515,8 +66833,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // 4. Und die gezeichneten Stossfugen: genau eine je Kachel.
       const html = OMEGA_TEST.trackMarks(code).html;
       const doc = new DOMParser().parseFromString(html, 'text/html');
+      // Seit v0.9.45 sind die Originalteile die Vorgabe: die Fuge ist eine feine dunkle Naht
+      // (#3a404b, 0,6); der alte weisse Strich gilt weiter fuer echt: false.
       const n = [...doc.querySelectorAll('path')].filter((x) =>
-        x.getAttribute('stroke') === '#ffffff' && x.getAttribute('stroke-width') === '1.6').length;
+        (x.getAttribute('stroke') === '#ffffff' && x.getAttribute('stroke-width') === '1.6')
+        || (x.getAttribute('stroke') === '#3a404b' && x.getAttribute('stroke-width') === '0.6')).length;
       fugen += n;
       if (n !== p.tiles.length) {
         schlecht.push(code + ': ' + n + ' Stossfugen fuer ' + p.tiles.length + ' Kacheln');
@@ -79705,6 +80026,65 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Ende genau nach der 3. Ziellinie' };
   });
 
+  // ---- v0.9.45: Raum-Menue, Raum-Schalter im Editor, Mehrspieler-Frage ----
+  stAdd('Raum: speichern, laden, loeschen; Editor-Schalter blendet ihn fuer Zufallsstrecken aus', () => {
+    const f = [];
+    const keys = ['omegasim-raum', 'omegasim-raum-form', 'omegasim-raeume', 'omegasim-raum-aktiv'];
+    const ls = {};
+    keys.forEach((k) => { ls[k] = localStorage.getItem(k); });
+    const merkSchalter = editorSchalter.raum;
+    try {
+      keys.forEach((k) => localStorage.removeItem(k));
+      teileRaumSpeichern({ x: 2, y: 1.5 });
+      if (!raumSpeichernUnter('Probe A')) f.push('Speichern scheitert');
+      teileRaumSpeichern({ x: 3.5, y: 2.5 });
+      raumSpeichernUnter('Probe B');
+      raumLadenName('Probe A');
+      const r = teileRaum();
+      if (r.x !== 2 || r.y !== 1.5) f.push('Laden setzt die Groesse nicht: ' + JSON.stringify(r));
+      if (raumAktivName() !== 'Probe A') f.push('aktiver Raum: ' + raumAktivName());
+      raumLoeschenName('Probe B');
+      if (raeumeLesen()['Probe B']) f.push('Loeschen wirkt nicht');
+      // Schalter aus: kein Raum fuer Zufallsstrecken; der Gestalter fragt trotzdem.
+      const tiles = [TILE_TYPE.START, TILE_TYPE.STRAIGHT, TILE_TYPE.CURVE_RIGHT, TILE_TYPE.CURVE_RIGHT,
+        TILE_TYPE.CURVE_RIGHT, TILE_TYPE.STRAIGHT, TILE_TYPE.STRAIGHT, TILE_TYPE.CURVE_RIGHT,
+        TILE_TYPE.CURVE_RIGHT, TILE_TYPE.CURVE_RIGHT].map((type) => ({ type }));
+      teileRaumSpeichern({ x: 0.5, y: 0.5 });              // viel zu klein
+      editorSchalter.raum = true;
+      if (raumEinpassen(tiles)) f.push('zu kleiner Raum wird angenommen');
+      editorSchalter.raum = false;
+      const aus = raumEinpassen(tiles);
+      if (!aus || aus.t !== null) f.push('ausgeblendeter Raum zaehlt trotzdem');
+      if (raumEinpassen(tiles, true)) f.push('Gestalter (immer) ignoriert den Raum');
+    } finally {
+      editorSchalter.raum = merkSchalter;
+      keys.forEach((k) => { if (ls[k] === null) localStorage.removeItem(k); else localStorage.setItem(k, ls[k]); });
+      raumListeZeichnen();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Raeume unter Namen, Schalter aus = keine Grenze, Gestalter prueft trotzdem' };
+  });
+
+  stAdd('Mehrspieler: Einzelrennen fragt nur, wenn andere da sind', () => {
+    const f = [];
+    const merk = { an: mp.an, id: mp.id, stand: mpLetzterStand, um: mp.frageUmgehen };
+    const echtFrage = konsoleFrage;
+    let gefragt = 0;
+    try {
+      konsoleFrage = () => { gefragt++; };
+      mp.an = true; mp.id = 'ich'; mp.frageUmgehen = false;
+      mpLetzterStand = { fahrer: [{ id: 'ich', name: 'Ich' }] };
+      if (mpRennenFrage() || gefragt) f.push('fragt, obwohl nur ich da bin');
+      mpLetzterStand = { fahrer: [{ id: 'ich' }, { id: 'du', alter: 40 }] };
+      if (mpRennenFrage() || gefragt) f.push('fragt wegen eines abgemeldeten Fahrers');
+      mpLetzterStand = { fahrer: [{ id: 'ich' }, { id: 'du', alter: 2 }] };
+      if (!mpRennenFrage() || gefragt !== 1) f.push('fragt nicht, obwohl jemand da ist');
+    } finally {
+      konsoleFrage = echtFrage;
+      mp.an = merk.an; mp.id = merk.id; mpLetzterStand = merk.stand; mp.frageUmgehen = merk.um;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'allein oder mit Abgemeldeten keine Frage, mit Mitspieler schon' };
+  });
+
   stAdd('Woerterbuch ohne doppelte Schluessel', () => {
     const imObjekt = Object.keys(I18N_EN).length;
     // Die Quelle steht im eigenen <script>. Sie zu lesen ist billiger und ehrlicher als die
@@ -80798,6 +81178,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Aus toggleRace (70-race.js): im Mehrspieler erst fragen. true = Dialog offen.
   function mpRennenFrage() {
     if (!mp.an || mp.frageUmgehen) return false;
+    // v0.9.45 GEMELDET: "Nach Multiplayer-Rennen ein Einspielerrennen starten ist komisch:
+    // obwohl ich MP beendet habe, werde ich gefragt, ob ich das Rennen fuer alle starten will."
+    // Gefragt wird nur noch, wenn wirklich ANDERE da sind: aktive Fahrer ausser mir in der
+    // letzten Rangliste des Hosts. Allein im Raum (oder ohne Kontakt) startet es einfach.
+    const andere = ((mpLetzterStand && mpLetzterStand.fahrer) || [])
+      .filter((f) => f && f.id && f.id !== mp.id && mpAktiv(f));
+    if (!andere.length) return false;
     konsoleFrage(t('Mehrspieler-Rennen'),
       t('Für alle zugleich starten (gemeinsame Ampel, gleiches Wetter) oder nur für dich?'),
       [[t('Für alle'), () => mpRennenFuerAlle()],

@@ -2738,7 +2738,16 @@
   }
 
   function renderTrackPreview(tiles, currentIndex, opts) {
-    const o = opts || {};
+    const o = Object.assign({}, opts || {});
+    // v0.9.45 BESTELLT: "Die Vorschaubilder aller Strecken sollten im CH-Streckendesign sein
+    // und nicht einfach graue Linien. Und nicht nur im Editor sollte das mit den Pfeilen auf
+    // dem Randstreifen korrekt sein, sondern ueberall (z.B. FAHREN-Menue in der
+    // Streckenkachel)." Also: Originalteile (echt) sind die Vorgabe, und wer gar nichts
+    // angibt - bisher die graue Linie -, bekommt sie auch. Fuer diese Vorschaubilder wird die
+    // Ideallinie NICHT gerechnet (sie kostet den Grossteil der ~94 ms und wird dort nie
+    // gezeigt). Wer den alten Stil will, sagt echt: false.
+    if (o.detailed === undefined) { o.detailed = true; o.ohneLinieRechnen = true; }
+    if (o.echt === undefined) o.echt = true;
     if (!tiles || tiles.length === 0) {
       return { html: '<p class="muted">Keine Streckenteile.</p>', closed: false };
     }
@@ -2758,7 +2767,8 @@
     const closed = schluss.closed;
 
     const half = TRACK_HALF_W;
-    const pad = o.detailed ? half + 14 : 30;
+    // o.rand: eigener Rand in Kartenpunkten (Ladeanimation: das Teil soll den Platz fuellen).
+    const pad = o.rand !== undefined ? o.rand : (o.detailed ? half + 14 : 30);
     const all = [...pts.map(p => [p.x, p.y])];
     if (o.detailed) {
       all.push(...offsetPath(pts, nrm, half + 6), ...offsetPath(pts, nrm, -(half + 6)));
@@ -2932,10 +2942,10 @@
       //    the centreline would colour a corner the car no longer takes that tightly.
       // tiles MIT: der Kurvenausgang braucht die Kacheltypen, um Scheitel und Ausgang
       // zu finden - siehe formLine().
-      const line = buildLine(pts, nrm, { closed, tiles });
-      const ideal = pts.map((p, i) => [p.x + nrm[i].x * line.alpha[i],
-                                       p.y + nrm[i].y * line.alpha[i]]);
-      const brake = brakeProfile(ideal, closed);
+      const line = o.ohneLinieRechnen ? null : buildLine(pts, nrm, { closed, tiles });
+      const ideal = line ? pts.map((p, i) => [p.x + nrm[i].x * line.alpha[i],
+                                              p.y + nrm[i].y * line.alpha[i]]) : [];
+      const brake = line ? brakeProfile(ideal, closed) : [];
       // One short segment per sample pair, each with its own colour. A single path with a
       // gradient cannot follow an arbitrary curve, so the curve is cut instead.
       const IDEAL_W = 1.1;   // was 2.2; halved on request, the line was heavier than the kerbs
@@ -3068,7 +3078,11 @@
         + `width="${raumRect.w.toFixed(1)}" height="${raumRect.h.toFixed(1)}" fill="none" `
         + `stroke="rgba(110,160,255,.7)" stroke-width="2" stroke-dasharray="7 5"/>`
         + `<text x="${(raumRect.x + ox + fs * 0.4).toFixed(1)}" y="${(raumRect.y + oy + fs * 1.2).toFixed(1)}" `
-        + `font-size="${fs.toFixed(1)}" fill="rgba(140,180,255,.85)">${mass}</text></g>` + body;
+        + `font-size="${fs.toFixed(1)}" fill="rgba(140,180,255,.85)">${mass}</text></g>`
+        // Die Strecke als EINE Gruppe darueber: beim Ziehen verschiebt sich nur sie, per
+        // CSS-transform (kein transform-Attribut - der Selbsttest zaehlt solche Gruppen als
+        // Autos), und der Raum bleibt liegen.
+        + '<g class="tp-strecke">' + body + '</g>';
     }
     const html = `<svg class="tp-karte" viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}">${gridSvg}${body}</svg>`;
     // DIE GEOMETRIE MIT HERAUS, damit ein Aufrufer Punkte setzen kann, ohne die Strecke neu
@@ -3387,16 +3401,18 @@
   var editorSchalter = (function () {
     // Ideallinie ab v0.9.22 AUS, bis man sie anklickt; ein frueher gespeichertes "an" (ohne
     // v: 2) zaehlt nicht, sonst bliebe sie bei allen an, die den Editor je geoeffnet haben.
-    const z = { linie: false, tasten: true, v: 2 };
+    const z = { linie: false, tasten: true, raum: true, v: 2 };
     try {
       const s = JSON.parse(localStorage.getItem('omegasim-editor-schalter') || '{}');
       if (typeof s.linie === 'boolean' && s.v === 2) z.linie = s.linie;
       if (typeof s.tasten === 'boolean') z.tasten = s.tasten;
+      if (typeof s.raum === 'boolean') z.raum = s.raum;
     } catch (e) { /* ohne Speicher: an */ }
     return z;
   })();
   function editorSchalterZeigen() {
-    [['track-opt-linie', editorSchalter.linie], ['track-opt-tasten', editorSchalter.tasten]].forEach(([id, an]) => {
+    [['track-opt-linie', editorSchalter.linie], ['track-opt-tasten', editorSchalter.tasten],
+     ['track-opt-raum', editorSchalter.raum]].forEach(([id, an]) => {
       const b = $(id);
       if (b) { b.classList.toggle('an', an); b.setAttribute('aria-pressed', an ? 'true' : 'false'); }
     });
@@ -3407,7 +3423,7 @@
     editorSchalter[was] = !editorSchalter[was];
     try { localStorage.setItem('omegasim-editor-schalter', JSON.stringify(editorSchalter)); } catch (e) { /* egal */ }
     editorSchalterZeigen();
-    if (was === 'linie') refreshTrackPreview();
+    if (was === 'linie' || was === 'raum') refreshTrackPreview();
   }
 
   // DIE STRECKE IM EDITOR UEBERLEBT EINEN NEUSTART (v0.9.6). Vorher stand nach dem Neuladen
@@ -3438,6 +3454,9 @@
     return true;
   }
   function refreshTrackPreview() {
+    // Waehrend die Strecke im Raum gezogen wird, nicht neu zeichnen - das setzte den Zug
+    // zurueck (GEMELDET: "bewegt sich immer nur ein kleines bisschen"). Nach dem Loslassen.
+    if (raumZug) { raumZug.nachher = true; return; }
     editorStreckeMerken();
     // Die Kachelzahl entscheidet, ob der Windschatten ueberhaupt rechnen kann. Hier gerufen
     // und nicht in 50-drive.js beim Laden: dort ist currentTrackTiles noch in der temporalen
@@ -3448,7 +3467,7 @@
     // Start/Ziel-Linie.
     if (trackSel !== null && trackSel >= currentTrackTiles.length) trackSel = null;
     const imEditor = document.body.classList.contains('track-fs');
-    const raum = teileRaum();
+    const raum = editorSchalter.raum ? teileRaum() : { x: 0, y: 0 };
     const result = renderTrackPreview(currentTrackTiles, null,
       { detailed: true, cars: trackCarMarks(), echt: true, auswahl: imEditor ? trackSelIndex() : null,
         ohneLinie: !editorSchalter.linie, grid: true,
@@ -3666,8 +3685,33 @@
     clearTimeout(raumNeuZeichnen);
     raumNeuZeichnen = setTimeout(() => { raumVersatzSpeichern(); refreshTrackPreview(); }, 350);
   }
+  // ---- DIE STRECKE IM RAUM ZIEHEN (v0.9.45) -------------------------------------------
+  // GEMELDET: "Im Editor klappt das Druecken und Ziehen des Raumumrisses bzw. der Strecke im
+  // Raum nicht. Das bewegt sich immer nur ein kleines bisschen." Drei Ursachen: der Zug
+  // verschob das Raumrechteck GEGEN die Fingerrichtung, auf Touch brach der Browser die
+  // Geste nach wenigen Pixeln ab (kein touch-action: none), und jedes Neuzeichnen mitten im
+  // Zug setzte ihn zurueck. Jetzt bleibt der Raum (der Boden) liegen und die STRECKE folgt
+  // Finger, Maus und rechtem Stick; neu gezeichnet wird erst nach dem Loslassen.
+  var raumZug = null;   // { x, y } Verschiebung in Kartenpunkten, solange gezogen wird
+  function streckeImRaumSchieben(dxEinh, dyEinh) {
+    const g = document.querySelector('#track-preview-svg .tp-strecke');
+    if (!g || !document.querySelector('#track-preview-svg .tp-raum')) return false;
+    if (!raumZug) raumZug = { x: 0, y: 0, nachher: false };
+    raumZug.x += dxEinh; raumZug.y += dyEinh;
+    g.style.transform = 'translate(' + raumZug.x.toFixed(1) + 'px,' + raumZug.y.toFixed(1) + 'px)';
+    // Strecke nach rechts = Raum relativ zur Strecke nach links.
+    raumVersatz.x -= dxEinh / TRACK_UNITS_PER_CM;
+    raumVersatz.y -= dyEinh / TRACK_UNITS_PER_CM;
+    return true;
+  }
+  function raumZugEnde() {
+    if (!raumZug) return;
+    raumZug = null;
+    raumVersatzSpeichern();
+    refreshTrackPreview();
+  }
   // Rechter Stick im Editor-Vollbild (aus pollGamepad): schiebt mit bis zu 60 cm/s; R3 zentriert.
-  let raumStickAt = 0, raumR3Vor = false;
+  let raumStickAt = 0, raumR3Vor = false, raumStickZiel = null;
   function raumVersatzStick(ax, ay, r3) {
     const jetzt = performance.now();
     const dt = Math.min(0.1, (jetzt - (raumStickAt || jetzt)) / 1000);
@@ -3676,11 +3720,15 @@
     raumR3Vor = r3;
     const tot = 0.2;
     const x = Math.abs(ax) > tot ? ax : 0, y = Math.abs(ay) > tot ? ay : 0;
-    if (!x && !y) return;
-    // Der Stick bewegt die STRECKE: nach rechts gedrueckt wandert sie nach rechts, also der
-    // Raum nach links.
+    if (!x && !y) {
+      if (raumZug && raumStickZiel) { clearTimeout(raumStickZiel); raumStickZiel = setTimeout(raumZugEnde, 250); }
+      return;
+    }
     const cm = 60 * dt;
-    if (raumRechteckSchieben(-x * cm * TRACK_UNITS_PER_CM, -y * cm * TRACK_UNITS_PER_CM)) raumSpaeterZeichnen();
+    if (streckeImRaumSchieben(x * cm * TRACK_UNITS_PER_CM, y * cm * TRACK_UNITS_PER_CM)) {
+      clearTimeout(raumStickZiel);
+      raumStickZiel = setTimeout(raumZugEnde, 250);
+    }
   }
   (function raumZiehenAnbinden() {
     const host = $('track-preview-svg');
@@ -3698,7 +3746,8 @@
     host.addEventListener('pointermove', (e) => {
       if (!a || e.pointerId !== a.id) return;
       const dx = e.clientX - a.x, dy = e.clientY - a.y;
-      if (!gezogen && Math.hypot(dx, dy) < 8) return;
+      if (!gezogen && Math.hypot(dx, dy) < 6) return;
+      if (!gezogen) { try { host.setPointerCapture(e.pointerId); } catch (x) { /* egal */ } }
       gezogen = true;
       e.preventDefault();
       if (a.pan) {
@@ -3706,8 +3755,7 @@
         editorPan.x += dx; editorPan.y += dy;
         trackZoomAnwenden();
       } else {
-        // Finger nach rechts = Strecke nach rechts = Raum nach links.
-        raumRechteckSchieben(-dx * a.k, -dy * a.k);
+        streckeImRaumSchieben(dx * a.k, dy * a.k);
       }
       a.x = e.clientX; a.y = e.clientY;
     });
@@ -3717,9 +3765,10 @@
       e.preventDefault();
       trackZoom(e.deltaY < 0 ? 0.1 : -0.1);
     }, { passive: false });
-    const ende = () => { if (a && gezogen) raumSpaeterZeichnen(); a = null; };
+    const ende = () => { if (a && gezogen) raumZugEnde(); a = null; };
     host.addEventListener('pointerup', ende);
-    host.addEventListener('pointercancel', () => { a = null; });
+    host.addEventListener('pointercancel', ende);
+    host.addEventListener('lostpointercapture', ende);
     // Ein Zug ist kein Antippen: den Klick danach nicht als Kachelwahl werten.
     host.addEventListener('click', (e) => { if (gezogen) { e.stopPropagation(); e.preventDefault(); gezogen = false; } }, true);
   })();
@@ -4141,6 +4190,7 @@
     { id: 'track-save-toolbar' },
     { id: 'track-opt-linie' },
     { id: 'track-opt-tasten' },
+    { id: 'track-opt-raum' },
     { id: 'track-undo' },
     { id: 'track-delete-sel' },
     { id: 'track-rotate-left' },
@@ -4810,6 +4860,9 @@
   $('track-undo').onclick = () => { trackRueckgaengig(); };
   $('track-opt-linie').onclick = () => { editorSchalterUm('linie'); };
   $('track-opt-tasten').onclick = () => { editorSchalterUm('tasten'); };
+  // v0.9.45 BESTELLT: "im Editor Option (Toggle) zum Raum ein- und ausblenden (bei
+  // ausgeblendet wird er auch nicht beruecksichtigt bei Zufallsstrecken)" - raumEinpassen().
+  $('track-opt-raum').onclick = () => { editorSchalterUm('raum'); };
   $('track-delete-sel').onclick = () => { trackTeilEntfernen(); };
   $('track-clear').onclick = () => { trackMerken(); currentTrackTiles = freshTrackTiles(); trackSel = null; refreshTrackPreview(); };
 

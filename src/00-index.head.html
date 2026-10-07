@@ -3013,6 +3013,9 @@
   body:not(.track-fs) #track-fs-host > .tp-bar { display: none; }
   /* Im Editor-Vollbild kein Menuekopf: er lag ueber der Aktionsleiste (gesehen bei 800 x 370). */
   body.track-fs header#k-kopf { display: none !important; }
+  /* v0.9.45: im Vollbild gehoert jede Geste der Karte (Strecke im Raum ziehen) - ohne das bricht
+     der Browser einen Fingerzug nach wenigen Pixeln als Bildlauf ab. */
+  body.track-fs #track-preview-svg { touch-action: none; }
   .tp-info { font-size: 12px; color: #eef0f4; margin-left: 10px; white-space: nowrap; }
   .tp-info .tp-fehlt { color: var(--bad); font-weight: 700; }
   .tp-info .tp-da { color: var(--good); }
@@ -3095,6 +3098,22 @@
   .raum-ds-info { font-size: 12px; color: var(--ink-2); }
   .raum-ds-info.schlecht { color: var(--warn); }
   .raum-ds-tasten { font-size: 10.5px; color: var(--muted); }
+  .raum-ds-hilfe { margin-left: auto; min-height: 34px; min-width: 34px; padding: 4px 10px; font-weight: 800; }
+  .raum-ds-hilfe + .raum-ds-fertig { margin-left: 0; }
+  body.raum-ds-offen .k-tour { z-index: 9500; }
+  .raum-gespeichert-titel { margin: 18px 0 6px; font-size: 14px; }
+  .raum-speichern-zeile { gap: 8px; align-items: center; }
+  .raum-speichern-zeile input { flex: 1 1 180px; max-width: 260px; }
+  .raum-liste { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; max-width: 560px; }
+  .raum-eintrag { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 6px;
+    border: 1px solid transparent; background: rgba(255,255,255,.03); }
+  .raum-eintrag.aktiv { border-color: var(--info); background: rgba(0,163,224,.10); }
+  .raum-eintrag .raum-eintrag-bild { width: 64px; height: 40px; flex: 0 0 auto; }
+  .raum-eintrag .raum-eintrag-bild svg { width: 100%; height: 100%; display: block; }
+  .raum-eintrag .raum-eintrag-name { flex: 1 1 auto; min-width: 0; color: var(--ink); }
+  .raum-eintrag .raum-eintrag-mass { color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .raum-eintrag button { min-height: 30px; padding: 4px 10px; }
+  .raum-eintrag .raum-weg { width: 30px; aspect-ratio: 1; padding: 0; border-radius: 50%; }
   /* HOCHFORMAT, schmal (Telefon im Browser): untereinander, mit Bildlauf. */
   @media (max-width: 760px) and (orientation: portrait) {
     header#k-kopf { grid-template-columns: 1fr auto; }
@@ -3439,18 +3458,18 @@
   .lade-traeger { position: relative; }
   .lade-ueber { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 12px; background: rgba(0,0,0,.78); }
-  .lade-teile { display: flex; gap: 12px; justify-content: center; }
-  .lade-teile svg { width: 76px; height: 76px; opacity: .4; animation: ladeTeil 1.2s ease-in-out infinite; }
-  .lade-teile svg:nth-child(2) { animation-delay: .2s; }
-  .lade-teile svg:nth-child(3) { animation-delay: .4s; }
-  @keyframes ladeTeil {
-    0%, 100% { opacity: .4; transform: translateY(0) scale(.9); }
-    30% { opacity: 1; transform: translateY(-8px) scale(1.08); }
-    60% { opacity: .55; transform: translateY(0) scale(1); }
-  }
+  /* v0.9.45: ein Teil dreht sich in 500 ms einmal im Uhrzeigersinn, abwechselnd Gerade und
+     Rechtskurve (59-lade.js). steps(1): die Ebene springt zur Haelfte des Takts um. */
+  .lade-dreh { position: relative; width: 96px; height: 96px; }
+  .lade-ebene { position: absolute; inset: 0; display: grid; place-items: center; }
+  .lade-ebene svg, .lade-ebene .tp-karte { width: 100%; height: 100%; max-width: none; max-height: none; }
+  .lade-a { animation: ladeDreh .5s linear infinite, ladeWechselA 1s steps(1, end) infinite; }
+  .lade-b { animation: ladeDreh .5s linear infinite, ladeWechselB 1s steps(1, end) infinite; }
+  @keyframes ladeDreh { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes ladeWechselA { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 0; } }
+  @keyframes ladeWechselB { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) {
-    .lade-teile svg { animation-duration: 2.4s; }
-    @keyframes ladeTeil { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+    .lade-a, .lade-b { animation-duration: 2s, 4s; }
   }
   .lade-text { font-size: 14px; font-weight: 600; color: var(--ink); letter-spacing: .03em; }
   .mp-ready-lade { margin: 6px 0 10px; }
@@ -3619,7 +3638,10 @@
     border-radius: 50%; font-size: 13px; line-height: 1; padding: 0 !important; display: grid;
     place-items: center; background: var(--danger, #c0392b);
     color: #fff; border: none; cursor: pointer; }
-  /* Community Strecken: Liste der eingereichten Strecken. */
+  /* Community-Bestzeiten: Liste der eingereichten Strecken. */
+  .community-modus { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .05em;
+    text-transform: uppercase; padding: 1px 6px; border-radius: 4px; vertical-align: 1px;
+    background: rgba(0,163,224,.18); color: var(--info); border: 1px solid rgba(0,163,224,.45); }
   .community-liste { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
   .community-mini { flex: none; width: 74px; height: 52px; display: grid; place-items: center; background: rgba(0,0,0,.25); border-radius: 6px; overflow: hidden; }
   .community-mini svg { width: 100%; height: 100%; }
@@ -4435,7 +4457,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.44</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.45</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4476,6 +4498,7 @@
           <button type="button" class="k-knopf" id="fa-scan">Scan</button>
           <button type="button" class="k-knopf" id="fa-editor">Editor</button>
           <button type="button" class="k-knopf" id="fa-laden">Laden</button>
+          <button type="button" class="k-knopf" id="fa-raum">Raum</button>
           <button type="button" class="k-knopf" id="fa-druck" hidden>Druckvorlagen</button>
           <button type="button" class="k-knopf" id="fa-foto" hidden title="Optimal: quer, z. B. 4:3 oder 16:9">Foto</button>
           <button type="button" class="k-knopf" id="fa-foto-weg" hidden>Foto löschen</button>
@@ -5232,12 +5255,12 @@
           <span>Gemeinsame Bestenliste &uuml;ber ein Google Sheet.</span>
         </button>
       </div>
-      <h3 class="k-zwischen">Community Strecken</h3>
+      <h3 class="k-zwischen">Community-Bestzeiten</h3>
       <div class="misc-grid">
         <button class="misc-tile subpage-open" data-sub="ch-community">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 34c0-4 3-8 8-8s8 3 8 8M20 14a6 6 0 1 1 0 12 6 6 0 0 1 0-12z"/><path d="M28 14c4-2 10-1 12 4M36 26c-2 4-6 6-10 6" stroke="var(--accent)"/></svg>
-          <b>Community Strecken</b>
-          <span>Eigene Strecken eintragen und Bestzeiten teilen.</span>
+          <b>Community-Bestzeiten</b>
+          <span>Eigene Strecken mit Abstimmung einreichen und Bestzeiten teilen.</span>
         </button>
       </div>
     </div>
@@ -5270,7 +5293,7 @@
     </div>
     <div class="card subpage" id="sub-ch-community">
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
-      <h2>Community Strecken</h2>
+      <h2>Community-Bestzeiten <span class="wip-tag">experimentell</span></h2>
       <div id="community-bereich"></div>
     </div>
     <div class="card subpage" id="sub-ch-online">
@@ -5550,6 +5573,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Raum hat ein eigenes Men&#252; (Strecke &#8594; Raum, und &#8222;Raum&#8220; in der FAHREN-Streckenkachel auf der Bahn): Gr&#246;&#223;e, Raumgestalter, Tutorial und gespeicherte R&#228;ume mit Namen zum Laden und L&#246;schen. Im Editor blendet der Schalter &#8222;Raum&#8220; den Raum aus; ausgeblendet z&#228;hlt er auch f&#252;r Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, &#220;bersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen w&#228;hlt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr &#8222;f&#252;r alle?&#8220;, wenn niemand sonst da ist.</li>
         <li>Behoben: 0.9.43 startete auf Ger&#228;ten mit eingetragenem Raum nicht (&#8222;Cannot access 'RAUM_ZELLE_CM' before initialization&#8220;) &#8211; die Editor-Vorschau zeichnete beim Laden schon die M&#246;bel, bevor deren Konstanten angelegt waren; die neue Start-Diagnose hat den Fehler angezeigt. Schalten klingt jetzt mechanisch: Schaltwalze und Klauenring rasten metallisch ein, darunter der Ruck im Antriebsstrang (statt des dumpfen &#8222;d&#252;b&#8220;). Lichthupe: Vorder- und R&#252;cklicht gehen gemeinsam aus und an, das Bremslicht leuchtet nicht mehr mit.</li>
         <li>Rennende: Die Rennuhr startete erst bei 75 % der H&#246;chstgeschwindigkeit (die Schwelle &#8222;3 km/h&#8220; wurde mit dem Modelltempo verglichen) &#8211; wer das nie erreichte, fuhr Runden, die nicht z&#228;hlten, und das Rennen endete nie. Jetzt startet sie bei 3 km/h auf dem Tacho oder sp&#228;testens an der ersten Ziellinie; die Fr&#252;hstart-Erkennung hatte denselben Fehler. Raumgestalter wie der Editor: &#8222;Raumgestalter starten&#8220; &#246;ffnet das Vollbild, oben die Werkzeugleiste mit &#8222;Schlie&#223;en&#8220;, die Fl&#228;che in einer eigenen Zeile darunter, der Men&#252;kopf liegt nicht mehr &#252;ber den Kn&#246;pfen. Rundenzeiten-Diagramm: wei&#223;er Saum unter jeder Linie, damit auch ein schwarzes Auto sichtbar ist.</li>
         <li>Lenkung GT3, F1 und Realismus GT3: voller Einschlag ist wieder erreichbar. Seit dem neuen Lenkweg begrenzte das &#8222;Lenkansprechen&#8220; dieser Voreinstellungen den gr&#246;&#223;ten Einschlag (Realismus GT3 gemessen 19 von 45&#176; im Schritttempo, mit kalten Reifen 11&#176;); jetzt 3,0 wie Pro, und Realismus GT3 gleicht kalte Reifen mit Lenkkalibrierung 1,6 aus. Pro und Arcade unver&#228;ndert. Zufallsstrecke: Ladeanimation (Gerade, Kurve, Haarnadel) im Editor, die Suche l&#228;uft daf&#252;r in kleinen St&#252;cken. Mehrspieler: dieselbe Animation im Bereitschaftsschirm, solange auf die anderen gewartet wird.</li>
@@ -10984,6 +11008,11 @@
           <b>Meine Teile</b>
           <span>Wie viele Teile du von jeder Sorte hast. Der Editor zeigt, was fehlt.</span>
         </button>
+        <button class="misc-tile subpage-open" data-sub="raum">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h36v32H6z" stroke-dasharray="4 3"/><path d="M28 8v14h14" stroke="var(--bad)"/><path d="M14 33V24a6 6 0 0 1 12 0v9"/></svg>
+          <b>Raum</b>
+          <span>Gr&ouml;&szlig;e und Form des Platzes f&uuml;r die Bahn, mit gespeicherten R&auml;umen.</span>
+        </button>
         <button class="misc-tile subpage-open" data-sub="print">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V8h20v10"/><rect x="8" y="18" width="32" height="14" rx="2"/><path d="M14 32h20v10H14z" stroke="var(--bad)"/></svg>
@@ -11034,6 +11063,11 @@
                  stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="3.5"/>
               <path class="tp-akzent" d="M9 9l6 6M15 9l-6 6" stroke-width="2.4"/></svg>
             <span class="tp-cap">Tasten</span></button>
+          <button class="tp-btn tp-schalter" id="track-opt-raum" title="Raum anzeigen" aria-label="Raum anzeigen" aria-pressed="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4z" stroke-dasharray="3 2.2" stroke-opacity=".6"/>
+              <path class="tp-akzent" d="M8 16V11a4 4 0 0 1 8 0v5" stroke-width="2.4"/></svg>
+            <span class="tp-cap">Raum</span></button>
           <button class="tp-btn" id="track-undo" title="R&uuml;ckg&auml;ngig" aria-label="R&uuml;ckg&auml;ngig">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                  stroke-linecap="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/>
@@ -11158,11 +11192,20 @@
         <button id="teile-enge">+ Engstelle</button>
         <button id="teile-leer">Alles auf 0</button>
       </div>
+      <div class="teile-liste" id="teile-liste"></div>
+    </div>
+    <!-- v0.9.45 BESTELLT: "Schiebe den Raumdesigner in ein eigenes Menue ... Erlaube mir,
+         Raeume abzuspeichern mit Namen und im selben Menue auszuwaehlen." -->
+    <div class="card subpage" id="sub-raum">
+      <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
+      <h2>Raum <span class="wip-tag">experimentell</span></h2>
+      <p class="muted">Der Platz, auf dem deine Bahn liegt: Gr&ouml;&szlig;e, Form und M&ouml;bel.
+        Zufallsstrecken aus dem Editor passen dann hinein. 0 hei&szlig;t: keine Grenze.</p>
       <!-- BESTELLT: "let me determine the maximum size of the room as a rectangle (x and y, in
            meters, format X.Y). The generated track must fit into that rectangle. Remember that
            you can turn the track in 45° steps." 0 x 0 = keine Begrenzung. -->
       <div class="row" style="gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px">
-        <span class="muted">Zufallsstrecke: max. Raum (m)</span>
+        <span class="muted">Raumgröße (m)</span>
         <span class="raum-zeile" data-achse="x">
           <label for="teile-raum-x">Breite</label>
           <button class="raum-knopf" id="raum-x-minus" type="button" aria-label="Breite weniger">&#8722;</button>
@@ -11176,14 +11219,19 @@
           <button class="raum-knopf" id="raum-y-plus" type="button" aria-label="Tiefe mehr">+</button>
         </span>
       </div>
-      <!-- v0.9.39 BESTELLT: "Raumdesigner im Meine-Teile-Menue, mit dem ich auch andere Formen
-           erstellen kann" (60b-raum.js). -->
+      <!-- v0.9.39 BESTELLT: "Raumdesigner ... mit dem ich auch andere Formen erstellen kann"
+           (60b-raum.js); seit v0.9.45 im eigenen Menue. -->
       <div class="raum-ds-zeile">
         <button id="raum-designer-auf" type="button" class="primary te-start">Raumgestalter starten</button>
-        <span class="wip-tag">experimentell</span>
+        <button id="raum-tour" type="button">Tutorial</button>
         <div class="raum-mini" id="raum-mini" role="button" aria-label="Raum gestalten"></div>
       </div>
-      <div class="teile-liste" id="teile-liste"></div>
+      <h3 class="raum-gespeichert-titel">Gespeicherte R&auml;ume</h3>
+      <div class="row raum-speichern-zeile">
+        <input type="text" id="raum-name" placeholder="Name des Raums" maxlength="32">
+        <button id="raum-speichern" type="button">Speichern</button>
+      </div>
+      <div class="raum-liste" id="raum-liste"></div>
     </div>
     <div class="card subpage" id="sub-scan">
       <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
@@ -11550,6 +11598,7 @@
         <button type="button" id="raum-ds-undo">R&uuml;ckg&auml;ngig</button>
         <button type="button" id="raum-ds-probe">Strecke einpassen</button>
       </div>
+      <button type="button" id="raum-ds-hilfe" class="raum-ds-hilfe" aria-label="Tutorial">?</button>
       <button type="button" id="raum-ds-fertig" class="raum-ds-fertig">Schlie&szlig;en</button>
     </div>
     <div class="raum-ds-flaeche" id="raum-ds-flaeche"></div>

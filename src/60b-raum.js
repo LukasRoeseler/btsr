@@ -137,7 +137,12 @@
   // geraden zuerst), versatz der raumVersatz (cm), mit dem renderTrackPreview() den Raum so
   // um die Strecke legt, dass sie passt, und t die Verschiebung der Streckenpunkte (cm) in
   // Raumkoordinaten (Ecke oben links = 0,0).
-  function raumEinpassen(tiles) {
+  function raumEinpassen(tiles, immer) {
+    // v0.9.45: im Editor ausgeblendet = fuer Zufallsstrecken nicht beruecksichtigt. Der
+    // Raumgestalter selbst (rdProbe) fragt mit immer = true.
+    if (!immer && typeof editorSchalter !== 'undefined' && editorSchalter.raum === false) {
+      return { rot: 0, versatz: { x: 0, y: 0 }, t: null };
+    }
     const r = teileRaum();
     const W = r.x * 100, H = r.y * 100;
     if (W <= 0 && H <= 0) return { rot: 0, versatz: { x: 0, y: 0 }, t: null };
@@ -318,7 +323,7 @@
   function rdProbe() {
     const tiles = currentTrackTiles || [];
     if (tiles.length < 3) { rd.probe = { text: t('Im Editor ist noch keine Strecke.') }; rdZeichnen(); return; }
-    const fit = raumEinpassen(tiles);
+    const fit = raumEinpassen(tiles, true);
     if (!fit || !fit.t) { rd.probe = { text: t('Die Editor-Strecke passt nicht in diesen Raum.'), schlecht: true }; rdZeichnen(); return; }
     const merk = trackRotationDeg;
     let pts;
@@ -430,6 +435,8 @@
     if (!el || el.hidden) return;
     el.hidden = true;
     document.body.classList.remove('raum-ds-offen');
+    // Laeuft gerade das Raum-Tutorial, endet es mit dem Gestalter.
+    if (typeof konsoleTourOffen === 'function' && konsoleTourOffen() && typeof konsoleTourZu === 'function') konsoleTourZu(true);
     try {
       if (document.fullscreenElement && document.exitFullscreen
           && !document.body.classList.contains('track-fs')) document.exitFullscreen().catch(() => {});
@@ -498,9 +505,115 @@
     return true;
   }
 
+  // ---- GESPEICHERTE RAEUME (v0.9.45) ---------------------------------------------------
+  // BESTELLT: "Erlaube mir, Raeume abzuspeichern mit Namen und im selben Menue auszuwaehlen."
+  // Ein Raum ist Groesse plus Form; gespeichert unter seinem Namen. Laden schreibt beides in
+  // den aktuellen Raum (omegasim-raum, omegasim-raum-form) - alles andere liest weiter dort.
+  const RAEUME_KEY = 'omegasim-raeume', RAUM_AKTIV_KEY = 'omegasim-raum-aktiv';
+  function raeumeLesen() {
+    try { const x = JSON.parse(localStorage.getItem(RAEUME_KEY) || '{}'); return x && typeof x === 'object' ? x : {}; }
+    catch (e) { return {}; }
+  }
+  function raeumeSchreiben(r) {
+    try { localStorage.setItem(RAEUME_KEY, JSON.stringify(r)); } catch (e) { /* privat */ }
+  }
+  function raumAktivName() {
+    try { return localStorage.getItem(RAUM_AKTIV_KEY) || ''; } catch (e) { return ''; }
+  }
+  function raumSpeichernUnter(name) {
+    name = String(name || '').trim().slice(0, 32);
+    if (!name) { showHudToast(t('Bitte einen Namen eingeben')); return false; }
+    const r = teileRaum();
+    if (!(r.x > 0 && r.y > 0)) { showHudToast(t('Erst eine Raumgröße eintragen')); return false; }
+    const f = raumFormLaden();
+    const alle = raeumeLesen();
+    alle[name] = { x: r.x, y: r.y, w: f.w, h: f.h, g: raumFormKodieren(f.g), at: Date.now() };
+    raeumeSchreiben(alle);
+    try { localStorage.setItem(RAUM_AKTIV_KEY, name); } catch (e) { /* privat */ }
+    showHudToast(t('Raum gespeichert') + ': ' + name);
+    raumListeZeichnen();
+    return true;
+  }
+  function raumLadenName(name) {
+    const r = raeumeLesen()[name];
+    if (!r) return false;
+    teileRaumSpeichern({ x: r.x, y: r.y });
+    try {
+      localStorage.setItem(RAUM_FORM_KEY, JSON.stringify({ v: 1, w: r.w, h: r.h, g: r.g }));
+      localStorage.setItem(RAUM_AKTIV_KEY, name);
+    } catch (e) { /* privat */ }
+    const fx = $('teile-raum-x'), fy = $('teile-raum-y');
+    if (fx) fx.value = String(r.x);
+    if (fy) fy.value = String(r.y);
+    raumMiniZeichnen();
+    raumListeZeichnen();
+    if (typeof refreshTrackPreview === 'function') refreshTrackPreview();
+    showHudToast(t('Raum geladen') + ': ' + name);
+    return true;
+  }
+  function raumLoeschenName(name) {
+    const alle = raeumeLesen();
+    delete alle[name];
+    raeumeSchreiben(alle);
+    if (raumAktivName() === name) { try { localStorage.removeItem(RAUM_AKTIV_KEY); } catch (e) { /* privat */ } }
+    raumListeZeichnen();
+  }
+  function raumListeZeichnen() {
+    const host = $('raum-liste');
+    if (!host) return;
+    const alle = raeumeLesen(), aktiv = raumAktivName();
+    const namen = Object.keys(alle).sort((a, b) => a.localeCompare(b));
+    host.innerHTML = '';
+    if (!namen.length) {
+      host.innerHTML = '<p class="muted" style="margin:0">' + t('Noch kein Raum gespeichert.') + '</p>';
+      return;
+    }
+    for (const name of namen) {
+      const r = alle[name];
+      const z = document.createElement('div');
+      z.className = 'raum-eintrag' + (name === aktiv ? ' aktiv' : '');
+      const f = { w: r.w, h: r.h, g: raumFormDekodieren(r.g, r.w * r.h) };
+      const esc = String(name).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+      z.innerHTML = '<span class="raum-eintrag-bild">' + rdSvg(f, { rand: 6 }) + '</svg></span>'
+        + '<span class="raum-eintrag-name" data-i18n-skip>' + esc + '</span>'
+        + '<span class="raum-eintrag-mass">' + String(r.x).replace('.', ',') + ' \u00d7 ' + String(r.y).replace('.', ',') + ' m</span>';
+      const laden = document.createElement('button');
+      laden.type = 'button'; laden.textContent = t('Laden');
+      laden.addEventListener('click', () => raumLadenName(name));
+      const weg = document.createElement('button');
+      weg.type = 'button'; weg.className = 'raum-weg warn'; weg.textContent = '\u00d7';
+      weg.setAttribute('aria-label', t('Raum löschen'));
+      weg.addEventListener('click', () => {
+        if (typeof konsoleFrage === 'function') {
+          konsoleFrage(t('Raum löschen?'), t('Bist du sicher?') + ' ' + name,
+            [[t('Löschen'), () => raumLoeschenName(name)], [t('Abbrechen'), null]], true);
+        } else raumLoeschenName(name);
+      });
+      z.appendChild(laden); z.appendChild(weg);
+      host.appendChild(z);
+    }
+  }
+
+  // ---- TUTORIAL (v0.9.45) ---------------------------------------------------------------
+  // BESTELLT: "Baue ein Tutorial fuer den Raum-Editor mit ein, so wie beim Streckeneditor."
+  // Dieselbe Fuehrung (konsoleTourStart, 51b-tutorial.js) mit der Liste K_RAUM.
+  async function raumTourStarten() {
+    if (!raumDsOffen()) raumDsOeffnen();
+    if (typeof konsoleTourStart === 'function' && typeof K_RAUM !== 'undefined') konsoleTourStart(K_RAUM);
+  }
+
   (function raumDsAnbinden() {
     const auf = $('raum-designer-auf');
     if (auf) auf.addEventListener('click', raumDsOeffnen);
+    if ($('raum-tour')) $('raum-tour').addEventListener('click', raumTourStarten);
+    if ($('raum-ds-hilfe')) $('raum-ds-hilfe').addEventListener('click', raumTourStarten);
+    if ($('raum-speichern')) {
+      $('raum-speichern').addEventListener('click', () => {
+        const feld = $('raum-name');
+        if (raumSpeichernUnter(feld ? feld.value : '') && feld) feld.value = '';
+      });
+    }
+    raumListeZeichnen();
     const mini = $('raum-mini');
     if (mini) mini.addEventListener('click', raumDsOeffnen);
     const ds = $('raum-ds');
@@ -561,6 +674,8 @@
     // Menuesteuerung die Tasten nicht auch bekommt.
     window.addEventListener('keydown', (e) => {
       if (!raumDsOffen()) return;
+      // Laeuft die Fuehrung, gehoeren ihr die Tasten (Weiter/Zurueck).
+      if (typeof konsoleTourOffen === 'function' && konsoleTourOffen()) return;
       const k = e.key.toLowerCase();
       const schritt = e.shiftKey ? 50 : RAUM_ZELLE_CM;
       let genutzt = true;

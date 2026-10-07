@@ -1,28 +1,38 @@
   // =========================================================================
-  // Ladeanimation: drei Streckenteile, die nacheinander aufleuchten (v0.9.42)
+  // Ladeanimation: ein Streckenteil, das sich dreht (v0.9.45)
   // =========================================================================
-  // BESTELLT: "Zeige im Editorfeld eine Ladeanimation (zB ein sich drehendes Carrera Hybrid
-  // Streckenteil, oder durchlaufende Streckenteile [gerade, kurve, haarnadel]) waehrend der
-  // Zufallsalgorithmus laeuft. Zeige ebenfalls eine Ladeanimation (ggf dieselbe) waehrend der
-  // Host das Rennen fuer alle gestartet hat und auf Rueckmeldung der anderen Handys wartet."
+  // BESTELLT (v0.9.42): eine Ladeanimation im Editor, waehrend der Zufallsalgorithmus laeuft,
+  // und im Mehrspieler, waehrend auf die anderen Handys gewartet wird.
   //
-  // Gerade, 60-Grad-Kurve und Haarnadel im Stil der Originalteile: schwarze Fahrbahn,
-  // weisser Rand mit roten Pfeilfeldern. Nur transform und opacity werden animiert - die
-  // laufen im Compositor weiter, auch wenn der Hauptfaden kurz rechnet.
-  const LADE_TEILE = [
-    'M20 38 V2',                                   // Gerade
-    'M10 38 V26 A15 15 0 0 1 25 11 H38',           // Kurve
-    'M9 38 V19 A11 11 0 0 1 31 19 V38',            // Haarnadel
-  ];
-  function ladeTeilSvg(d) {
-    return '<svg viewBox="0 0 40 40" aria-hidden="true">'
-      + '<path d="' + d + '" fill="none" stroke="#f3f5f8" stroke-width="16"/>'
-      + '<path d="' + d + '" fill="none" stroke="#ff4d22" stroke-width="16" stroke-dasharray="3.4 2.6"/>'
-      + '<path d="' + d + '" fill="none" stroke="#2b303a" stroke-width="10"/>'
-      + '</svg>';
+  // v0.9.45 BESTELLT: "Nimm ein huebsch gerendertes Gerade-Streckenteil und zeig an, wie es
+  // sich im Uhrzeigersinn dreht. Nach einer Drehung wird es durch eine Rechtskurve ersetzt,
+  // dann wieder von vorne. Eine Drehung sollte ca. 500 ms dauern."
+  //
+  // Die Teile zeichnet DERSELBE Zeichner wie den Editor (renderTrackPreview mit echt: true),
+  // also mit Randstreifen, Pfeilen und Steckzapfen der Originalteile - kein zweites Aussehen.
+  // Animiert wird nur transform und opacity: das laeuft im Compositor weiter, auch wenn der
+  // Hauptfaden kurz rechnet. Zwei Ebenen, beide drehen sich in 500 ms einmal; die eine ist in
+  // der ersten, die andere in der zweiten Haelfte eines 1-s-Takts sichtbar.
+  let ladeTeileCache = null;
+  function ladeTeileSvg() {
+    if (ladeTeileCache) return ladeTeileCache;
+    const teil = (typ) => {
+      try {
+        // Enger Rand und ohne die Kartenklasse (die bringt Grund und Rahmen mit): nur das Teil.
+        return renderTrackPreview([{ type: typ }], null,
+          { detailed: true, echt: true, ohneLinie: true, ohneLinieRechnen: true, rand: 3 }).html
+          .replace('class="tp-karte"', 'class="lade-teil"');
+      } catch (e) { return ''; }
+    };
+    const gerade = teil(TILE_TYPE.STRAIGHT), kurve = teil(TILE_TYPE.CURVE_RIGHT);
+    if (gerade && kurve) ladeTeileCache = [gerade, kurve];
+    return [gerade, kurve];
   }
   function ladeAnimationHtml(text) {
-    return '<div class="lade-teile">' + LADE_TEILE.map(ladeTeilSvg).join('') + '</div>'
+    const [gerade, kurve] = ladeTeileSvg();
+    return '<div class="lade-dreh" aria-hidden="true">'
+      + '<div class="lade-ebene lade-a">' + gerade + '</div>'
+      + '<div class="lade-ebene lade-b">' + kurve + '</div></div>'
       + (text ? '<div class="lade-text">' + String(text).replace(/</g, '&lt;') + '</div>' : '');
   }
   // Als Einblendung UEBER einem Feld (Editor). Rueckgabe: das Element, .remove() beendet sie.

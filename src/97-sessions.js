@@ -913,6 +913,13 @@
   // Aus toggleRace (70-race.js): im Mehrspieler erst fragen. true = Dialog offen.
   function mpRennenFrage() {
     if (!mp.an || mp.frageUmgehen) return false;
+    // v0.9.45 GEMELDET: "Nach Multiplayer-Rennen ein Einspielerrennen starten ist komisch:
+    // obwohl ich MP beendet habe, werde ich gefragt, ob ich das Rennen fuer alle starten will."
+    // Gefragt wird nur noch, wenn wirklich ANDERE da sind: aktive Fahrer ausser mir in der
+    // letzten Rangliste des Hosts. Allein im Raum (oder ohne Kontakt) startet es einfach.
+    const andere = ((mpLetzterStand && mpLetzterStand.fahrer) || [])
+      .filter((f) => f && f.id && f.id !== mp.id && mpAktiv(f));
+    if (!andere.length) return false;
     konsoleFrage(t('Mehrspieler-Rennen'),
       t('Für alle zugleich starten (gemeinsame Ampel, gleiches Wetter) oder nur für dich?'),
       [[t('Für alle'), () => mpRennenFuerAlle()],

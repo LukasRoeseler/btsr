@@ -5155,7 +5155,8 @@
                // Die Randsteinfarben, damit ein Test das CH-Aussehen nachpruefen kann:
                // schwarze Fahrbahn, rot-weiss links, blau-weiss rechts.
                farben: [...new Set([...doc.querySelectorAll('path')]
-                 .map(e => e.getAttribute('stroke')).filter(Boolean))],
+                 // Strich UND Fuellung: die Pfeile der Originalteile sind gefuellt (v0.9.45).
+                 .flatMap(e => [e.getAttribute('stroke'), e.getAttribute('fill')]).filter((x) => x && x !== 'none'))],
                echte: trackCarMarks ? trackCarMarks().length : null };
     },
 

@@ -2633,8 +2633,10 @@
     // welche Farbe traegt, prueft diese Stelle nicht - siehe kerbLeft/kerbRight in
     // 60-track.js fuer die Zuordnung selbst).
     const f = mitte.farben || [];
-    for (const [farbe, was] of [['#14181f', 'Fahrbahn'], ['#ff5c5c', 'roter Randstein'],
-                                ['#5aa9ff', 'blauer Randstein'], ['#ffffff', 'Stossfugen']]) {
+    // v0.9.45: Originalteile sind die Vorgabe (mattschwarze Fahrbahn, Pfeile in Blau und Rot,
+    // dunkle Naht) - siehe echtRandstreifen in 60-track.js.
+    for (const [farbe, was] of [['#0d0f13', 'Fahrbahn'], ['#ff4d22', 'rote Pfeile'],
+                                ['#2f9fe6', 'blaue Pfeile'], ['#3a404b', 'Stossfugen']]) {
       if (f.indexOf(farbe) < 0) schlecht.push(was + ' fehlt (' + farbe + ')');
     }
     teile.push(f.length + ' Farben im Bild');
@@ -4253,8 +4255,11 @@
       // 4. Und die gezeichneten Stossfugen: genau eine je Kachel.
       const html = OMEGA_TEST.trackMarks(code).html;
       const doc = new DOMParser().parseFromString(html, 'text/html');
+      // Seit v0.9.45 sind die Originalteile die Vorgabe: die Fuge ist eine feine dunkle Naht
+      // (#3a404b, 0,6); der alte weisse Strich gilt weiter fuer echt: false.
       const n = [...doc.querySelectorAll('path')].filter((x) =>
-        x.getAttribute('stroke') === '#ffffff' && x.getAttribute('stroke-width') === '1.6').length;
+        (x.getAttribute('stroke') === '#ffffff' && x.getAttribute('stroke-width') === '1.6')
+        || (x.getAttribute('stroke') === '#3a404b' && x.getAttribute('stroke-width') === '0.6')).length;
       fugen += n;
       if (n !== p.tiles.length) {
         schlecht.push(code + ': ' + n + ' Stossfugen fuer ' + p.tiles.length + ' Kacheln');
@@ -17441,6 +17446,65 @@
       if (sw && sw.checked !== g.rail) { sw.checked = g.rail; sw.dispatchEvent(new Event('change', { bubbles: true })); }
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Ende genau nach der 3. Ziellinie' };
+  });
+
+  // ---- v0.9.45: Raum-Menue, Raum-Schalter im Editor, Mehrspieler-Frage ----
+  stAdd('Raum: speichern, laden, loeschen; Editor-Schalter blendet ihn fuer Zufallsstrecken aus', () => {
+    const f = [];
+    const keys = ['omegasim-raum', 'omegasim-raum-form', 'omegasim-raeume', 'omegasim-raum-aktiv'];
+    const ls = {};
+    keys.forEach((k) => { ls[k] = localStorage.getItem(k); });
+    const merkSchalter = editorSchalter.raum;
+    try {
+      keys.forEach((k) => localStorage.removeItem(k));
+      teileRaumSpeichern({ x: 2, y: 1.5 });
+      if (!raumSpeichernUnter('Probe A')) f.push('Speichern scheitert');
+      teileRaumSpeichern({ x: 3.5, y: 2.5 });
+      raumSpeichernUnter('Probe B');
+      raumLadenName('Probe A');
+      const r = teileRaum();
+      if (r.x !== 2 || r.y !== 1.5) f.push('Laden setzt die Groesse nicht: ' + JSON.stringify(r));
+      if (raumAktivName() !== 'Probe A') f.push('aktiver Raum: ' + raumAktivName());
+      raumLoeschenName('Probe B');
+      if (raeumeLesen()['Probe B']) f.push('Loeschen wirkt nicht');
+      // Schalter aus: kein Raum fuer Zufallsstrecken; der Gestalter fragt trotzdem.
+      const tiles = [TILE_TYPE.START, TILE_TYPE.STRAIGHT, TILE_TYPE.CURVE_RIGHT, TILE_TYPE.CURVE_RIGHT,
+        TILE_TYPE.CURVE_RIGHT, TILE_TYPE.STRAIGHT, TILE_TYPE.STRAIGHT, TILE_TYPE.CURVE_RIGHT,
+        TILE_TYPE.CURVE_RIGHT, TILE_TYPE.CURVE_RIGHT].map((type) => ({ type }));
+      teileRaumSpeichern({ x: 0.5, y: 0.5 });              // viel zu klein
+      editorSchalter.raum = true;
+      if (raumEinpassen(tiles)) f.push('zu kleiner Raum wird angenommen');
+      editorSchalter.raum = false;
+      const aus = raumEinpassen(tiles);
+      if (!aus || aus.t !== null) f.push('ausgeblendeter Raum zaehlt trotzdem');
+      if (raumEinpassen(tiles, true)) f.push('Gestalter (immer) ignoriert den Raum');
+    } finally {
+      editorSchalter.raum = merkSchalter;
+      keys.forEach((k) => { if (ls[k] === null) localStorage.removeItem(k); else localStorage.setItem(k, ls[k]); });
+      raumListeZeichnen();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Raeume unter Namen, Schalter aus = keine Grenze, Gestalter prueft trotzdem' };
+  });
+
+  stAdd('Mehrspieler: Einzelrennen fragt nur, wenn andere da sind', () => {
+    const f = [];
+    const merk = { an: mp.an, id: mp.id, stand: mpLetzterStand, um: mp.frageUmgehen };
+    const echtFrage = konsoleFrage;
+    let gefragt = 0;
+    try {
+      konsoleFrage = () => { gefragt++; };
+      mp.an = true; mp.id = 'ich'; mp.frageUmgehen = false;
+      mpLetzterStand = { fahrer: [{ id: 'ich', name: 'Ich' }] };
+      if (mpRennenFrage() || gefragt) f.push('fragt, obwohl nur ich da bin');
+      mpLetzterStand = { fahrer: [{ id: 'ich' }, { id: 'du', alter: 40 }] };
+      if (mpRennenFrage() || gefragt) f.push('fragt wegen eines abgemeldeten Fahrers');
+      mpLetzterStand = { fahrer: [{ id: 'ich' }, { id: 'du', alter: 2 }] };
+      if (!mpRennenFrage() || gefragt !== 1) f.push('fragt nicht, obwohl jemand da ist');
+    } finally {
+      konsoleFrage = echtFrage;
+      mp.an = merk.an; mp.id = merk.id; mpLetzterStand = merk.stand; mp.frageUmgehen = merk.um;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'allein oder mit Abgemeldeten keine Frage, mit Mitspieler schon' };
   });
 
   stAdd('Woerterbuch ohne doppelte Schluessel', () => {

@@ -302,7 +302,8 @@
     // Direkt nach Kennung, ohne Zusammenfuehrung: chDef laeuft auch im Fahrtakt.
     let tr = communityLesen().tracks.find((t) => t.id === id);
     if (!tr && communityOnline) tr = communityOnline.tracks.find((t) => t.id === id);
-    if (tr) return { id: tr.id, code: tr.code, name: tr.name, runden: 1, pit: 0, wx: null, community: true };
+    if (tr) return { id: tr.id, code: tr.code, name: tr.name, runden: 1, pit: 0, wx: null, community: true,
+                     preset: communityPresetGueltig(tr.preset) };
     return CHALLENGES[0];
   }
   function chSchluessel(id, modus, preset) { return id + '|' + modus + '|' + preset; }
@@ -616,7 +617,9 @@
     if (!on) return lokal;
     const sicht = { tracks: [], times: {}, nextId: lokal.nextId, online: true };
     for (const tr of on.tracks) {
-      sicht.tracks.push({ id: tr.id, code: tr.code, name: tr.name, online: true });
+      const lokalGleich = lokal.tracks.find((x) => x.code === tr.code);
+      sicht.tracks.push({ id: tr.id, code: tr.code, name: tr.name, online: true,
+                          preset: communityPresetGueltig(tr.preset || (lokalGleich && lokalGleich.preset)) });
       sicht.times[tr.id] = (on.zeiten[tr.id] || []).map((z) => ({ zeit: z.zeit_ms, fahrer: z.fahrer || '', geraet: z.geraet,
         datum: Date.parse(z.zeitpunkt) || 0 }));
     }
@@ -624,7 +627,8 @@
       const p = codeToTrack(tr.code);
       const gleich = p ? sicht.tracks.find((x) => { const q = codeToTrack(x.code); return q && communityGleiche(p.tiles, q.tiles); }) : null;
       const ziel = gleich ? gleich.id : tr.id;
-      if (!gleich) sicht.tracks.push({ id: tr.id, code: tr.code, name: tr.name, online: false });
+      if (!gleich) sicht.tracks.push({ id: tr.id, code: tr.code, name: tr.name, online: false,
+                                       preset: communityPresetGueltig(tr.preset) });
       const liste = sicht.times[ziel] = sicht.times[ziel] || [];
       for (const z of (lokal.times[tr.id] || [])) {
         if (!liste.some((x) => x.geraet === z.geraet && Math.abs(x.zeit - z.zeit) < 2)) liste.push(z);
@@ -642,7 +646,7 @@
       return p && !communityOnline.tracks.some((x) => { const q = codeToTrack(x.code); return q && communityGleiche(p.tiles, q.tiles); });
     });
     fehlen.slice(0, 3).forEach((tr, i) => setTimeout(() => {
-      communityPost({ art: 'community-strecke', code: tr.code, name: tr.name }).then((r) => {
+      communityPost({ art: 'community-strecke', code: tr.code, name: tr.name, preset: communityPresetGueltig(tr.preset) }).then((r) => {
         if (!r || !r.ok || !r.id) return;
         const meine = (lokal.times[tr.id] || []).filter((z) => z.geraet === chGeraet());
         if (meine.length) setTimeout(() => communityPost({ art: 'community-zeit', id: r.id, zeit_ms: meine[0].zeit, fahrer: meine[0].fahrer }), 11000);
@@ -666,11 +670,25 @@
     return null;
   }
   // Nimmt eine Strecke auf (oder fuehrt sie mit einer vorhandenen zusammen) und liefert die id.
-  function communityEinreichen(data, tiles, name) {
+  // ---- DIE ABSTIMMUNG EINER COMMUNITY-STRECKE (v0.9.45) ------------------------------
+  // BESTELLT: "Aendere Community-Strecken zu 'Community-Bestzeiten' und baue dort ein, dass die
+  // Person, die die Strecke einreicht, auch die Presets einreicht. Mach das erstmal nur mit den
+  // Standard-Presets und nichts Komplizierterem (Arcade, Pro, GT3, ...) und zeige den Modus mit
+  // der Strecke in der Vorschau und im jeweiligen Challenge-Submenue an."
+  // Nur die festen Voreinstellungen, keine eigene Abstimmung. Unbekannt oder alt = Pro, wie
+  // alle Challenges bisher.
+  const COMMUNITY_PRESETS = ['arcade', 'pro', 'gt3', 'f1', 'realgt3'];
+  function communityPresetGueltig(p) { return COMMUNITY_PRESETS.indexOf(p) >= 0 ? p : 'pro'; }
+  function communityPresetName(p) {
+    const k = communityPresetGueltig(p);
+    return (typeof window.__presetLabel === 'function' ? t(window.__presetLabel(k)) : k);
+  }
+  function communityEinreichen(data, tiles, name, preset) {
     const vorhanden = communityFinde(data, tiles);
     if (vorhanden) return vorhanden.id;
     const id = String(data.nextId || 1).padStart(4, '0');
-    data.tracks.push({ id, code: communityCode(tiles), name: (name || 'Strecke ' + id).slice(0, 32) });
+    data.tracks.push({ id, code: communityCode(tiles), name: (name || 'Strecke ' + id).slice(0, 32),
+                       preset: communityPresetGueltig(preset) });
     data.nextId = (data.nextId || 1) + 1;
     communitySchreiben(data);
     return id;
@@ -737,23 +755,26 @@
       // Vorschau (Streckenkarte) steht im Frage-Dialog, erst auf Einreichen wird gespeichert.
       const vorschau = (typeof renderTrackPreview === 'function')
         ? renderTrackPreview(currentTrackTiles, null, { detailed: true, cars: [] }).html : '';
-      konsoleFrage(t('Strecke einreichen'),
-        t('So sieht deine Strecke aus. Bitte prüfe das Bild, dann wird sie eingereicht.'),
-        [[t('Einreichen'), () => {
+      const einreichen = (preset) => {
            const name = prompt(t('Name der Strecke'), '') || 'Strecke ' + String(data.nextId || 1).padStart(4, '0');
            // Gibt es sie online schon (auch gespiegelt)? Dann nur deren Kennung nehmen.
            const schon = data.online ? data.tracks.find((x) => { const q = codeToTrack(x.code); return q && communityGleiche(currentTrackTiles, q.tiles); }) : null;
            if (schon) { showHudToast(t('Diese Strecke gibt es schon: {n}').replace('{n}', schon.id + ' · ' + schon.name)); return; }
            const lokal = communityLesen();
-           const id = communityEinreichen(lokal, currentTrackTiles, name);
+           const id = communityEinreichen(lokal, currentTrackTiles, name, preset);
            communitySchreiben(lokal);
-           communityPost({ art: 'community-strecke', code: communityCode(currentTrackTiles), name }).then((r) => {
+           communityPost({ art: 'community-strecke', code: communityCode(currentTrackTiles), name,
+                           preset: communityPresetGueltig(preset) }).then((r) => {
              showHudToast(r && r.ok ? t('Strecke {n} für alle eingereicht.').replace('{n}', r.id) : t('Strecke {n} eingereicht (nur auf diesem Gerät).').replace('{n}', id));
              communityHolen(true).then(() => communityZeichnen());
            });
            communityZeichnen();
-         }],
-         [t('Abbrechen'), null]], true, vorschau);
+      };
+      // Die Abstimmung waehlt man im selben Dialog, unter dem Bild: ein Knopf je Voreinstellung.
+      konsoleFrage(t('Strecke einreichen'),
+        t('So sieht deine Strecke aus. Wähle die Abstimmung, mit der alle sie fahren.'),
+        COMMUNITY_PRESETS.map((k) => [communityPresetName(k), () => einreichen(k)])
+          .concat([[t('Abbrechen'), null]]), true, vorschau);
     };
     bereich.appendChild(ein);
     bereich.appendChild(stand);
@@ -784,6 +805,12 @@
       const b = document.createElement('b');
       b.setAttribute('data-i18n-skip', '');
       b.textContent = tr.id + ' \u00b7 ' + tr.name + (tr.online === false && data.online ? ' (' + t('nur hier') + ')' : '');
+      // Der Modus (Abstimmung) neben dem Namen, als Marke wie in der Vorschau.
+      const modus = document.createElement('span');
+      modus.className = 'community-modus';
+      modus.textContent = communityPresetName(tr.preset);
+      b.appendChild(document.createTextNode(' '));
+      b.appendChild(modus);
       const best = communityBesteZeit(data, tr.id);
       const spieler = communitySpieler(data, tr.id);
       const em = document.createElement('em');
@@ -1167,12 +1194,15 @@
       return;
     }
     const def = chDef(chWahl);
-    chLauf = { id: def.id, modus: chModus, preset: chPreset, phase: 'stehen', stillSeit: 0,
+    // v0.9.45: eine Community-Strecke faehrt mit der Abstimmung, die beim Einreichen gewaehlt
+    // wurde; alle anderen Challenges wie bisher mit Pro.
+    const preset = def.community ? def.preset : chPreset;
+    chLauf = { id: def.id, modus: chModus, preset, phase: 'stehen', stillSeit: 0,
                hinweisAt: 0, fruehstart: false, probe: !playerCar, merk: chMerken(),
                gelesen: [], pruefung: [], geaendert: false, pruefAt: 0,
                community: !!def.community };
-    chAnwenden(def, chModus, chPreset);
-    chLauf.soll = chWachWerte(chPreset);
+    chAnwenden(def, chModus, preset);
+    chLauf.soll = chWachWerte(preset);
     chSperre(true);
     showTab('race');
     showHudToast(t('Auto auf Start/Ziel stellen und anhalten'));
