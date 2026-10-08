@@ -17863,6 +17863,57 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Seite mit Karte, Abstimmung, 2 Zeiten, Spiegeln, Kreis zurueck in die Liste' };
   });
 
+  // v0.9.62: Die 3er-Serie (beste Summe aus drei gueltigen Runden) gilt jetzt auch fuer
+  // Community-Strecken; die Rundenzeiten kommen mit dem Eintrag (runden/runden_ms).
+  stAdd('Community: 3er-Serie aus drei gueltigen Runden', () => {
+    const f = [];
+    const KEY = 'omegasim-community';
+    const merkLs = localStorage.getItem(KEY);
+    const merk = { wahl: chWahl, modus: chModus, spiegel: chSpiegel, online: communityOnline };
+    const onVorher = [...document.querySelectorAll('.subpage.on')];
+    const homeVorher = [...document.querySelectorAll('.subpage-home')].map((h) => h.style.display);
+    const detailVorher = { eltern: $('ch-detail').parentNode, hidden: $('ch-detail').hidden };
+    try {
+      communityOnline = null;
+      const vorlage = CH_ALLE.find((d) => d.kat === 'C') || CH_ALLE[0];
+      const minMs = chMinRundeMs({ code: vorlage.code, runden: vorlage.runden });
+      const l = Math.round(minMs * 1.5), l2 = Math.round(minMs * 2.0);
+      localStorage.setItem(KEY, JSON.stringify({ nextId: 10000,
+        tracks: [{ id: '9999', code: vorlage.code, name: 'Probe', preset: 'gt3' }],
+        times: { 9999: [
+          { zeit: l, fahrer: 'A', geraet: 'x1', datum: 1, runden: [l, l, l] },
+          { zeit: l2, fahrer: 'B', geraet: 'x2', datum: 2, runden: [l2, l2, l2] }
+        ] } }));
+      chSpiegel = false; chWahl = '9999'; chModus = 'hotlap';
+      challengeSeiteZeigen('9999');
+      if (!$('ch-detail').closest('#sub-ch-strecke')) f.push('Seite geht nicht auf');
+      // 3er-Serie wird jetzt angezeigt (vorher bei Community ausgeblendet).
+      if ($('ch-zweite-3er').hidden) f.push('3er-Ueberschrift bleibt versteckt');
+      if ($('ch-hinweis-3er').hidden) f.push('3er-Hinweis bleibt versteckt');
+      const z3 = [...$('ch-liste-3er').querySelectorAll('tr')];
+      if (z3.length !== 2) f.push('3er-Serie ' + z3.length + ' statt 2 Zeilen');
+      else {
+        const zell = (r) => [...r.querySelectorAll('td')].map((td) => td.textContent);
+        const erste = zell(z3[0]), zweite = zell(z3[1]);
+        if (erste[1].indexOf('A') < 0) f.push('A nicht zuerst: ' + erste[1]);
+        if (zweite[1].indexOf('B') < 0) f.push('B nicht zweit: ' + zweite[1]);
+      }
+    } finally {
+      if (merkLs === null) localStorage.removeItem(KEY); else localStorage.setItem(KEY, merkLs);
+      chWahl = merk.wahl; chModus = merk.modus; chSpiegel = merk.spiegel;
+      if (!communityOnline) communityOnline = merk.online;
+      $('ch-spiegel').checked = chSpiegel;
+      $('ch-spiegel-knopf').classList.toggle('an', chSpiegel);
+      document.querySelectorAll('.subpage.on').forEach((p) => p.classList.remove('on'));
+      onVorher.forEach((p) => p.classList.add('on'));
+      document.querySelectorAll('.subpage-home').forEach((h, i) => { h.style.display = homeVorher[i]; });
+      if (detailVorher.eltern && $('ch-detail').parentNode !== detailVorher.eltern) detailVorher.eltern.appendChild($('ch-detail'));
+      $('ch-detail').hidden = detailVorher.hidden;
+      try { chZeichneDetail(); } catch (e) { /* egal */ }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '3er-Serie sichtbar, A vor B, 2 Zeilen' };
+  });
+
   stAdd('Raum: speichern, laden, loeschen; Editor-Schalter blendet ihn fuer Zufallsstrecken aus', () => {
     const f = [];
     const keys = ['omegasim-raum', 'omegasim-raum-form', 'omegasim-raeume', 'omegasim-raum-aktiv'];

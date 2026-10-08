@@ -636,7 +636,7 @@
       sicht.tracks.push({ id: tr.id, code: tr.code, name: tr.name, online: true,
                           preset: communityPresetGueltig(tr.preset || (lokalGleich && lokalGleich.preset)) });
       sicht.times[tr.id] = (on.zeiten[tr.id] || []).map((z) => ({ zeit: z.zeit_ms, fahrer: z.fahrer || '', geraet: z.geraet,
-        datum: Date.parse(z.zeitpunkt) || 0 }));
+        datum: Date.parse(z.zeitpunkt) || 0, runden_ms: Array.isArray(z.runden_ms) ? z.runden_ms.map(Number) : undefined }));
     }
     for (const tr of lokal.tracks) {
       const p = codeToTrack(tr.code);
@@ -664,7 +664,8 @@
       communityPost({ art: 'community-strecke', code: tr.code, name: tr.name, preset: communityPresetGueltig(tr.preset) }).then((r) => {
         if (!r || !r.ok || !r.id) return;
         const meine = (lokal.times[tr.id] || []).filter((z) => z.geraet === chGeraet());
-        if (meine.length) setTimeout(() => communityPost({ art: 'community-zeit', id: r.id, zeit_ms: meine[0].zeit, fahrer: meine[0].fahrer }), 11000);
+        if (meine.length) setTimeout(() => communityPost({ art: 'community-zeit', id: r.id, zeit_ms: meine[0].zeit, fahrer: meine[0].fahrer,
+          runden_ms: Array.isArray(meine[0].runden) ? meine[0].runden.map(Math.round) : undefined }), 11000);
         communityHolen(true).then(() => { if ($('community-bereich')) communityZeichnen(); });
       });
     }, i * 11000));
@@ -708,11 +709,14 @@
     communitySchreiben(data);
     return id;
   }
-  // Tragt eine Zeit ein (beste je Geraet bleibt bestehen, die Liste ist sortiert).
-  function communityZeit(data, trackId, zeit, fahrer) {
+  // Tragt eine Zeit ein (beste je Geraet bleibt bestehen, die Liste ist sortiert). Die
+  // Rundenzeiten (runden, ms) kommen mit, damit die 3er-Serie auch fuer Community-Strecken
+  // rechnen kann; aeltere Eintraege ohne sie werden bei der 3er-Serie uebersprungen.
+  function communityZeit(data, trackId, zeit, fahrer, runden) {
     const geraet = chGeraet();
     const liste = data.times[trackId] = data.times[trackId] || [];
-    liste.push({ zeit: Math.round(zeit), fahrer: (fahrer || '').slice(0, 16), geraet, datum: Date.now() });
+    liste.push({ zeit: Math.round(zeit), fahrer: (fahrer || '').slice(0, 16), geraet, datum: Date.now(),
+      runden: Array.isArray(runden) ? runden.map(Math.round) : undefined });
     liste.sort((a, b) => a.zeit - b.zeit);
     if (liste.length > 50) liste.length = 50;
     communitySchreiben(data);
@@ -1396,8 +1400,9 @@
       // woechentliche Challenge-Bestenliste. Alles andere (Ampel, Teilepruefung, Zeitmessung)
       // ist dieselbe Challenge-Maschinerie.
       if (lauf.community) {
-        communityZeit(communityLesen(), erg.id, erg.zeit, erg.fahrer);
-        hochgeladen = communityPost({ art: 'community-zeit', id: erg.id, zeit_ms: Math.round(erg.zeit), fahrer: erg.fahrer || '' })
+        communityZeit(communityLesen(), erg.id, erg.zeit, erg.fahrer, erg.runden);
+        hochgeladen = communityPost({ art: 'community-zeit', id: erg.id, zeit_ms: Math.round(erg.zeit), fahrer: erg.fahrer || '',
+          runden_ms: Array.isArray(erg.runden) ? erg.runden.map(Math.round) : undefined })
           .then((r) => {
             hochgeladen = !!(r && r.ok);
             communityHolen(true).then(() => { communityZeichnen(); if (chSeiteOffen()) chZeichneListe(); });
@@ -1461,8 +1466,11 @@
     const idC = schl.split('|')[0], defC = chDef(idC);
     if (defC && defC.community && defC.id === idC) {
       const data = communitySicht();
+      // Online-Eintraege tragen runden_ms, lokale runden; beides auf runden_ms vereinheitlichen,
+      // damit die 3er-Serie rechnen kann (chZeichneDreier liest z.runden_ms).
       const eintraege = (data.times[idC] || []).map((z) => ({ zeit_ms: +z.zeit, fahrer: z.fahrer || '',
-        geraet: z.geraet, auto: '' }));
+        geraet: z.geraet, auto: '', runden_ms: Array.isArray(z.runden_ms) ? z.runden_ms
+          : (Array.isArray(z.runden) ? z.runden : undefined) }));
       return { zeiten: eintraege.map((z) => z.zeit_ms), online: !!data.online, eintraege };
     }
     const l = chListen[schl];
@@ -1770,8 +1778,9 @@
     const modus = schl.split('|')[1];
     // Ueberschrift und Hinweis gehoeren zur 3er-Serie: nur bei Beste-Runde zeigen.
     const def = chDef(schl.split('|')[0]);
-    // Community-Zeiten kommen ohne Rundenzeiten an: keine 3er-Serie.
-    const ohne = modus !== 'hotlap' || !!def.community;
+    // Community-Strecken tragen ihre Rundenzeiten jetzt selbst (runden_ms), also doch eine
+    // 3er-Serie. Nur Rennen (feste Runden) nicht.
+    const ohne = modus !== 'hotlap';
     const h3 = $('ch-zweite-3er'), hinweis = $('ch-hinweis-3er');
     if (h3) h3.hidden = ohne;
     if (hinweis) hinweis.hidden = ohne;

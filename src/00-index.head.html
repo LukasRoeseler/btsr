@@ -4459,7 +4459,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.61</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.62</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5578,6 +5578,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Community-Bestzeiten: Die 3er-Serie (bester Durchschnitt aus drei aufeinanderfolgenden Runden) gilt jetzt auch f&#252;r Community-Strecken. Daf&#252;r speichert die App die Rundenzeiten zu jedem Eintrag und l&#228;dt sie mit hoch; das Apps Script muss neu bereitgestellt werden, damit es die Rundenzeiten auch f&#252;r die Online-Zeiten &#252;bernimmt.</li>
         <li>Ghosts: Die &#220;berholrate ist jetzt eine echte Rate (Vorgabe 0,1 &#220;berholman&#246;ver je Runde je 4 Autos, bei 6 Autos und 10 Runden also 1 bis 2). Vorher &#228;nderte der Regler nur die Reichweite, und jede Ann&#228;herung wurde zum Angriff. Die Startreihen fahren gestaffelt ab Gr&#252;n los, 250 ms je Zweierreihe. Vorher z&#228;hlte die Staffel erst ab deiner ersten Bewegung und wirkte praktisch nicht.</li>
         <li>Gelbe Flagge auf der Bahn: Dein Auto f&#228;hrt jetzt im Tempo der Ghosts weiter und lenkt selbst. Die Tempogrenze lag unter dem Tempo, ab dem das Auto die Bahn liest, deshalb fiel es aus der Selbstf&#252;hrung und fuhr geradeaus. In Kurven und Haarnadeln drosselt es wie die Ghosts, und die Selbstf&#252;hrung greift auch direkt nach dem Hinstellen, bevor die Kachel verortet ist.</li>
         <li>NPC Knockout: Ghosts, die die Bahn verlassen, sind jetzt wirklich raus. Ein Ghost, der steht und blinkt, z&#228;hlt als &#8222;Bahn verlassen&#8220;, ebenso einer, der 5 s keine Kachel mehr schafft (vorher konnte nie ein Ghost ausscheiden). Sind alle Ghosts raus, kommt die Siegesfanfare und das Ergebnis. Ein verlorenes Leben spielt einen kurzen traurigen Ton, das letzte den Game-over-Ton, danach das Rennende mit Ergebnis.</li>

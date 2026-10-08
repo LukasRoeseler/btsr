@@ -4459,7 +4459,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.61</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.62</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5578,6 +5578,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Community-Bestzeiten: Die 3er-Serie (bester Durchschnitt aus drei aufeinanderfolgenden Runden) gilt jetzt auch f&#252;r Community-Strecken. Daf&#252;r speichert die App die Rundenzeiten zu jedem Eintrag und l&#228;dt sie mit hoch; das Apps Script muss neu bereitgestellt werden, damit es die Rundenzeiten auch f&#252;r die Online-Zeiten &#252;bernimmt.</li>
         <li>Ghosts: Die &#220;berholrate ist jetzt eine echte Rate (Vorgabe 0,1 &#220;berholman&#246;ver je Runde je 4 Autos, bei 6 Autos und 10 Runden also 1 bis 2). Vorher &#228;nderte der Regler nur die Reichweite, und jede Ann&#228;herung wurde zum Angriff. Die Startreihen fahren gestaffelt ab Gr&#252;n los, 250 ms je Zweierreihe. Vorher z&#228;hlte die Staffel erst ab deiner ersten Bewegung und wirkte praktisch nicht.</li>
         <li>Gelbe Flagge auf der Bahn: Dein Auto f&#228;hrt jetzt im Tempo der Ghosts weiter und lenkt selbst. Die Tempogrenze lag unter dem Tempo, ab dem das Auto die Bahn liest, deshalb fiel es aus der Selbstf&#252;hrung und fuhr geradeaus. In Kurven und Haarnadeln drosselt es wie die Ghosts, und die Selbstf&#252;hrung greift auch direkt nach dem Hinstellen, bevor die Kachel verortet ist.</li>
         <li>NPC Knockout: Ghosts, die die Bahn verlassen, sind jetzt wirklich raus. Ein Ghost, der steht und blinkt, z&#228;hlt als &#8222;Bahn verlassen&#8220;, ebenso einer, der 5 s keine Kachel mehr schafft (vorher konnte nie ein Ghost ausscheiden). Sind alle Ghosts raus, kommt die Siegesfanfare und das Ergebnis. Ein verlorenes Leben spielt einen kurzen traurigen Ton, das letzte den Game-over-Ton, danach das Rennende mit Ergebnis.</li>
@@ -12965,6 +12966,7 @@
     "Ghosts: Die Ghost-Befehle laufen jetzt im selben 45-ms-Takt wie dein Auto, direkt nach deinem Paket. Vorher hatte jeder Ghost einen eigenen Takt, dessen Ungenauigkeit in deinen Steuertakt hineinfunkte – mit drei Ghosts fühlte sich das unruhig an. Dein Befehl geht jetzt immer zuerst.": "Ghosts: the ghost commands now run in the same 45 ms heartbeat as your car, right after your packet. Previously each ghost had its own timer whose jitter bled into your control loop – with three ghosts it felt jittery. Your command now always goes first.",
     "Automatische Aufstellung: Alle Autos fahren jetzt gleichzeitig auf ihre Startplätze – die Ghosts genauso wie dein Auto. Vorher rollte nur dein Auto los, die Ghosts blieben stehen. Während der Positionsfahrt gilt die maximale Querlage (links/rechts abwechselnd nach Startplatz), und dein Auto fährt mit den Spur-Bytes, die es von selbst auf die Seite seines Platzes bringen. Das experimentelle Kästchen „Aufstellung mit größter Querlage“ ist weg – die maximale Breite gilt immer. Im Cockpit steht währenddessen „AUFSTELLUNG · AUTOPILOT“.": "Automatic grid setup: all cars now drive to their grid slots at the same time – the ghosts just like your car. Before, only your car rolled off and the ghosts stayed put. During the positioning drive the maximum lateral offset applies (alternating left/right by grid slot), and your car drives on the lane bytes that bring it to the side of its slot by itself. The experimental checkbox “grid setup with maximum lateral offset” is gone – the maximum width always applies. The cockpit reads “GRID SETUP · AUTOPILOT” meanwhile.",
     "Zieleinlauf: Die Ghosts parken nach dem Rennen jetzt abwechselnd maximal weit links und rechts statt alle an derselben Seite. Vorher stauten sich bei mehr als zwei Autos alle an einem Rand, und die Nachzügler fuhren auf die Vorderen auf. Die Seite kommt aus der Startaufstellung (gerader Platz rechts, ungerader links), und mit der Kachelstaffel darunter liegen zwei gleichseitige Autos immer zwei Plätze auseinander – das Feld parkt weiter auseinander, und die andere Bahnhälfte bleibt für dein Auto frei.": "Finish roll-out: after the race the ghosts now park alternately as far left and right as possible instead of all on the same side. Before, with more than two cars everyone piled up on one edge and the tail-enders drove onto the ones ahead. The side comes from the starting grid (even slot right, odd slot left), and with the tile stagger beneath it two same-side cars are always two slots apart – the field parks further apart, and the other half of the track stays free for your car.",
+    "Community-Bestzeiten: Die 3er-Serie (bester Durchschnitt aus drei aufeinanderfolgenden Runden) gilt jetzt auch für Community-Strecken. Dafür speichert die App die Rundenzeiten zu jedem Eintrag und lädt sie mit hoch; das Apps Script muss neu bereitgestellt werden, damit es die Rundenzeiten auch für die Online-Zeiten übernimmt.": "Community best times: the 3-lap series (best average of three consecutive laps) now also applies to community tracks. To do this, the app stores the lap times with every entry and uploads them as well; the Apps Script needs to be redeployed so that it also takes over the lap times for the online times.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -38981,7 +38983,7 @@
       sicht.tracks.push({ id: tr.id, code: tr.code, name: tr.name, online: true,
                           preset: communityPresetGueltig(tr.preset || (lokalGleich && lokalGleich.preset)) });
       sicht.times[tr.id] = (on.zeiten[tr.id] || []).map((z) => ({ zeit: z.zeit_ms, fahrer: z.fahrer || '', geraet: z.geraet,
-        datum: Date.parse(z.zeitpunkt) || 0 }));
+        datum: Date.parse(z.zeitpunkt) || 0, runden_ms: Array.isArray(z.runden_ms) ? z.runden_ms.map(Number) : undefined }));
     }
     for (const tr of lokal.tracks) {
       const p = codeToTrack(tr.code);
@@ -39009,7 +39011,8 @@
       communityPost({ art: 'community-strecke', code: tr.code, name: tr.name, preset: communityPresetGueltig(tr.preset) }).then((r) => {
         if (!r || !r.ok || !r.id) return;
         const meine = (lokal.times[tr.id] || []).filter((z) => z.geraet === chGeraet());
-        if (meine.length) setTimeout(() => communityPost({ art: 'community-zeit', id: r.id, zeit_ms: meine[0].zeit, fahrer: meine[0].fahrer }), 11000);
+        if (meine.length) setTimeout(() => communityPost({ art: 'community-zeit', id: r.id, zeit_ms: meine[0].zeit, fahrer: meine[0].fahrer,
+          runden_ms: Array.isArray(meine[0].runden) ? meine[0].runden.map(Math.round) : undefined }), 11000);
         communityHolen(true).then(() => { if ($('community-bereich')) communityZeichnen(); });
       });
     }, i * 11000));
@@ -39053,11 +39056,14 @@
     communitySchreiben(data);
     return id;
   }
-  // Tragt eine Zeit ein (beste je Geraet bleibt bestehen, die Liste ist sortiert).
-  function communityZeit(data, trackId, zeit, fahrer) {
+  // Tragt eine Zeit ein (beste je Geraet bleibt bestehen, die Liste ist sortiert). Die
+  // Rundenzeiten (runden, ms) kommen mit, damit die 3er-Serie auch fuer Community-Strecken
+  // rechnen kann; aeltere Eintraege ohne sie werden bei der 3er-Serie uebersprungen.
+  function communityZeit(data, trackId, zeit, fahrer, runden) {
     const geraet = chGeraet();
     const liste = data.times[trackId] = data.times[trackId] || [];
-    liste.push({ zeit: Math.round(zeit), fahrer: (fahrer || '').slice(0, 16), geraet, datum: Date.now() });
+    liste.push({ zeit: Math.round(zeit), fahrer: (fahrer || '').slice(0, 16), geraet, datum: Date.now(),
+      runden: Array.isArray(runden) ? runden.map(Math.round) : undefined });
     liste.sort((a, b) => a.zeit - b.zeit);
     if (liste.length > 50) liste.length = 50;
     communitySchreiben(data);
@@ -39741,8 +39747,9 @@
       // woechentliche Challenge-Bestenliste. Alles andere (Ampel, Teilepruefung, Zeitmessung)
       // ist dieselbe Challenge-Maschinerie.
       if (lauf.community) {
-        communityZeit(communityLesen(), erg.id, erg.zeit, erg.fahrer);
-        hochgeladen = communityPost({ art: 'community-zeit', id: erg.id, zeit_ms: Math.round(erg.zeit), fahrer: erg.fahrer || '' })
+        communityZeit(communityLesen(), erg.id, erg.zeit, erg.fahrer, erg.runden);
+        hochgeladen = communityPost({ art: 'community-zeit', id: erg.id, zeit_ms: Math.round(erg.zeit), fahrer: erg.fahrer || '',
+          runden_ms: Array.isArray(erg.runden) ? erg.runden.map(Math.round) : undefined })
           .then((r) => {
             hochgeladen = !!(r && r.ok);
             communityHolen(true).then(() => { communityZeichnen(); if (chSeiteOffen()) chZeichneListe(); });
@@ -39806,8 +39813,11 @@
     const idC = schl.split('|')[0], defC = chDef(idC);
     if (defC && defC.community && defC.id === idC) {
       const data = communitySicht();
+      // Online-Eintraege tragen runden_ms, lokale runden; beides auf runden_ms vereinheitlichen,
+      // damit die 3er-Serie rechnen kann (chZeichneDreier liest z.runden_ms).
       const eintraege = (data.times[idC] || []).map((z) => ({ zeit_ms: +z.zeit, fahrer: z.fahrer || '',
-        geraet: z.geraet, auto: '' }));
+        geraet: z.geraet, auto: '', runden_ms: Array.isArray(z.runden_ms) ? z.runden_ms
+          : (Array.isArray(z.runden) ? z.runden : undefined) }));
       return { zeiten: eintraege.map((z) => z.zeit_ms), online: !!data.online, eintraege };
     }
     const l = chListen[schl];
@@ -40115,8 +40125,9 @@
     const modus = schl.split('|')[1];
     // Ueberschrift und Hinweis gehoeren zur 3er-Serie: nur bei Beste-Runde zeigen.
     const def = chDef(schl.split('|')[0]);
-    // Community-Zeiten kommen ohne Rundenzeiten an: keine 3er-Serie.
-    const ohne = modus !== 'hotlap' || !!def.community;
+    // Community-Strecken tragen ihre Rundenzeiten jetzt selbst (runden_ms), also doch eine
+    // 3er-Serie. Nur Rennen (feste Runden) nicht.
+    const ohne = modus !== 'hotlap';
     const h3 = $('ch-zweite-3er'), hinweis = $('ch-hinweis-3er');
     if (h3) h3.hidden = ohne;
     if (hinweis) hinweis.hidden = ohne;
@@ -81013,6 +81024,57 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       try { chZeichneDetail(); } catch (e) { /* egal */ }
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Seite mit Karte, Abstimmung, 2 Zeiten, Spiegeln, Kreis zurueck in die Liste' };
+  });
+
+  // v0.9.62: Die 3er-Serie (beste Summe aus drei gueltigen Runden) gilt jetzt auch fuer
+  // Community-Strecken; die Rundenzeiten kommen mit dem Eintrag (runden/runden_ms).
+  stAdd('Community: 3er-Serie aus drei gueltigen Runden', () => {
+    const f = [];
+    const KEY = 'omegasim-community';
+    const merkLs = localStorage.getItem(KEY);
+    const merk = { wahl: chWahl, modus: chModus, spiegel: chSpiegel, online: communityOnline };
+    const onVorher = [...document.querySelectorAll('.subpage.on')];
+    const homeVorher = [...document.querySelectorAll('.subpage-home')].map((h) => h.style.display);
+    const detailVorher = { eltern: $('ch-detail').parentNode, hidden: $('ch-detail').hidden };
+    try {
+      communityOnline = null;
+      const vorlage = CH_ALLE.find((d) => d.kat === 'C') || CH_ALLE[0];
+      const minMs = chMinRundeMs({ code: vorlage.code, runden: vorlage.runden });
+      const l = Math.round(minMs * 1.5), l2 = Math.round(minMs * 2.0);
+      localStorage.setItem(KEY, JSON.stringify({ nextId: 10000,
+        tracks: [{ id: '9999', code: vorlage.code, name: 'Probe', preset: 'gt3' }],
+        times: { 9999: [
+          { zeit: l, fahrer: 'A', geraet: 'x1', datum: 1, runden: [l, l, l] },
+          { zeit: l2, fahrer: 'B', geraet: 'x2', datum: 2, runden: [l2, l2, l2] }
+        ] } }));
+      chSpiegel = false; chWahl = '9999'; chModus = 'hotlap';
+      challengeSeiteZeigen('9999');
+      if (!$('ch-detail').closest('#sub-ch-strecke')) f.push('Seite geht nicht auf');
+      // 3er-Serie wird jetzt angezeigt (vorher bei Community ausgeblendet).
+      if ($('ch-zweite-3er').hidden) f.push('3er-Ueberschrift bleibt versteckt');
+      if ($('ch-hinweis-3er').hidden) f.push('3er-Hinweis bleibt versteckt');
+      const z3 = [...$('ch-liste-3er').querySelectorAll('tr')];
+      if (z3.length !== 2) f.push('3er-Serie ' + z3.length + ' statt 2 Zeilen');
+      else {
+        const zell = (r) => [...r.querySelectorAll('td')].map((td) => td.textContent);
+        const erste = zell(z3[0]), zweite = zell(z3[1]);
+        if (erste[1].indexOf('A') < 0) f.push('A nicht zuerst: ' + erste[1]);
+        if (zweite[1].indexOf('B') < 0) f.push('B nicht zweit: ' + zweite[1]);
+      }
+    } finally {
+      if (merkLs === null) localStorage.removeItem(KEY); else localStorage.setItem(KEY, merkLs);
+      chWahl = merk.wahl; chModus = merk.modus; chSpiegel = merk.spiegel;
+      if (!communityOnline) communityOnline = merk.online;
+      $('ch-spiegel').checked = chSpiegel;
+      $('ch-spiegel-knopf').classList.toggle('an', chSpiegel);
+      document.querySelectorAll('.subpage.on').forEach((p) => p.classList.remove('on'));
+      onVorher.forEach((p) => p.classList.add('on'));
+      document.querySelectorAll('.subpage-home').forEach((h, i) => { h.style.display = homeVorher[i]; });
+      if (detailVorher.eltern && $('ch-detail').parentNode !== detailVorher.eltern) detailVorher.eltern.appendChild($('ch-detail'));
+      $('ch-detail').hidden = detailVorher.hidden;
+      try { chZeichneDetail(); } catch (e) { /* egal */ }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '3er-Serie sichtbar, A vor B, 2 Zeilen' };
   });
 
   stAdd('Raum: speichern, laden, loeschen; Editor-Schalter blendet ihn fuer Zufallsstrecken aus', () => {
