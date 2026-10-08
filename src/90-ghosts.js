@@ -3423,6 +3423,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Streckencode kam. Auf dem Tisch heisst das: er dreht sich neben der Bahn im Kreis, und
   // wer ihn zurueckstellt, muss ihn im Fahren treffen. Jetzt bleibt er stehen, bis man ihn
   // schuettelt - dieselbe Handbewegung, mit der man ihn ohnehin zurueckstellt.
+  const KO_STEHT_MS = 5000;   // Knockout: so lange ohne neue Kachel = steckt fest = raus
   function parkCar(car, reason) {
     if (car.parked === reason) return;
     car.parked = reason;
@@ -3437,6 +3438,18 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       pitPlatzRaeumen(car);
     }
     if (car.rx) writeToCar(car, 0, 0, trackModeBit() | LIGHT_HEAD);
+    // v0.9.51: ABGANG ZAEHLEN UND KNOCKOUT HIER, an der einen Stelle, an der ein Ghost
+    // wirklich als "neben der Bahn" stehen bleibt. Beides stand im ghostTick hinter
+    // `offTrack && !g.cutOut` - aber offTrack ist car.parked, und parkCar setzt cutOut im
+    // selben Zug: der Zweig lief NIE. GEMELDET: "Es wird nicht korrekt erkannt, wenn
+    // Geister die Bahn verlassen. Wenn ein Auto steht und blinkt, soll es zaehlen als
+    // 'Bahn verlassen'." Ein geparkter Ghost ist genau dieses Auto (er blinkt im 260-ms-Takt).
+    if (car.ghost && reason === 'Bahn verlassen') {
+      if (!car.race) car.race = { laps: [], lapStart: null, pending: null, seen: 0,
+                                  lastActed: 0, lastCount: null };
+      car.race.offLap = (car.race.offLap || 0) + 1;
+      if (typeof knockoutGeistRaus === 'function') knockoutGeistRaus(car);
+    }
     log(garageLabel(car) + ': steht (' + reason + '). Auto anheben, zur\u00fcckstellen und '
         + 'kurz sch\u00fctteln, dann f\u00e4hrt es weiter.', 'err');
     // ---- UND WORAN ES LAG, MIT ZAHLEN ----------------------------------------------
@@ -7604,12 +7617,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // oder "die Linie schmeisst ihn raus" nicht entscheidbar, und dann wird der Regler nach
     // Gefuehl gedreht. Gezaehlt wird die FLANKE, nicht das Paket - ein zwei Sekunden langer
     // Abgang ist ein Abgang, nicht vierzig.
-    if (offTrack && !g.cutOut) {
-      if (!car.race) car.race = { laps: [], lapStart: null, pending: null, seen: 0,
-                                  lastActed: 0, lastCount: null };
-      car.race.offLap = (car.race.offLap || 0) + 1;
-      // Knockout (experimentell): ein Geist, der von der Bahn ist, ist raus.
-      if (typeof knockoutGeistRaus === 'function') knockoutGeistRaus(car);
+    // (Die Zaehlung der Abgaenge und das Knockout-Aus stehen seit v0.9.51 in parkCar.)
+    // Knockout: ein Ghost, der faehrt, aber KOS_STEHT_MS lang keine Kachel mehr schafft,
+    // steckt fest (an der Wand, quer in der Haarnadel) - auch das ist raus, nicht nur das
+    // geparkte Auto. Nach der Startgnade, damit das Anrollen nicht zaehlt.
+    if (armed && !gnade && !g.pit && !g.finish && raceState === 'racing' && g.tileStart && now - g.tileStart > KO_STEHT_MS
+        && typeof knockoutGeistRaus === 'function') {
+      knockoutGeistRaus(car);
     }
     if (offTrack !== g.cutOut) {
       g.cutOut = offTrack;

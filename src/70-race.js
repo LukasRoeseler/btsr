@@ -202,13 +202,32 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     knockoutPruefen();
   }
   // Ein Mensch verliert ein Leben (Abkommen von der Bahn).
+  // v0.9.51 BESTELLT: "Leben werden korrekt abgezogen, spiele dazu noch einen traurigen
+  // kurzen Ton ab. Wenn alle Leben weg sind, dann Game-over-Ton abspielen und Rennende
+  // anzeigen." Der traurige Ton nur, wenn es WEITERGEHT - beim letzten Leben kommt der
+  // Game-over-Ton aus knockoutEnde, zwei Toene uebereinander waeren Brei.
   function knockoutLebenVerlieren(wer) {
     if (!knockoutLaeuft) return;
     const z = wer >= 2 ? zusatzPlatz(wer) : null;
     if (z) z.koLeben = Math.max(0, z.koLeben - 1);
     else knockoutLeben = Math.max(0, knockoutLeben - 1);
     showHudToast(t('Spieler {s}: noch {n} Leben').replace('{s}', z ? String(wer) : '1').replace('{n}', z ? z.koLeben : knockoutLeben));
+    if (knockoutUrteil() !== 'geister') playLebenWeg();
     knockoutPruefen();
+  }
+  // Ein Leben weg: zwei fallende Sinustoene, G4 nach Es4 - kurz, traurig, nicht schrill.
+  function playLebenWeg() {
+    if (typeof playTone !== 'function') return;
+    playTone(392, 0.16, 'sine', 0.24);
+    setTimeout(() => playTone(311, 0.26, 'sine', 0.24), 170);
+  }
+  // Game over: vier absteigende Halbtoene, der letzte lang - das bekannte "wah wah wah
+  // waaah". Rechteck, damit es auch aus dem Handylautsprecher kommt (alles ueber 250 Hz).
+  const GAME_OVER_NOTEN = [{ hz: 330, ab: 0, dauer: 0.22 }, { hz: 311, ab: 0.26, dauer: 0.22 },
+                           { hz: 294, ab: 0.52, dauer: 0.22 }, { hz: 277, ab: 0.78, dauer: 0.8 }];
+  function playGameOver() {
+    if (typeof playTone !== 'function') return;
+    for (const n of GAME_OVER_NOTEN) setTimeout(() => playTone(n.hz, n.dauer, 'square', 0.15), n.ab * 1000);
   }
   // Ende: alle Geister raus -> Sieg; alle Menschen raus -> Niederlage.
   // Die Entscheidung allein, ohne Folgen (v0.9.16, fuer den Selbsttest): null = weiter.
@@ -231,11 +250,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       if (typeof playRaceEndFanfare === 'function') playRaceEndFanfare();
       showHudToast(t('Knockout: Menschen gewinnen!'));
     } else {
-      if (typeof playTone === 'function') {   // dunkler Abwaertston
-        playTone(200, 0.12, 'square', 0.16);
-        setTimeout(() => playTone(140, 0.16, 'square', 0.14), 70);
-        setTimeout(() => playTone(110, 0.2, 'square', 0.12), 160);
-      }
+      playGameOver();
       showHudToast(t('Knockout: Geister gewinnen.'));
     }
     if (typeof finishRace === 'function') finishRace(false);

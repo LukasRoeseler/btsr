@@ -17398,6 +17398,51 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'alle drei Plaetze voll, schadenfrei, Reifen nach Waermer-Einstellung' };
   });
 
+  // ---- v0.9.51: Knockout ueber den echten Weg (parkCar) ----
+  stAdd('Knockout: geparkter Ghost ist raus, Toene fuer Leben, Game over und Sieg', () => {
+    const f = [];
+    const merk = { lauf: knockoutLaeuft, geister: knockoutGeister, sieger: knockoutSieger, leben: knockoutLeben,
+                   garage: garage.slice(), rs: raceState };
+    const echt = { stop: stopGhost, fin: finishRace, ton: playTone, fan: playRaceEndFanfare };
+    const toene = [];
+    let fanfare = 0, ende = 0;
+    const fake = (id) => ({ device: { id, name: id }, role: 'ghost', tag: id,
+                             ghost: { running: true, eliminated: false } });
+    try {
+      stopGhost = (c) => { if (c.ghost) c.ghost.running = false; };
+      finishRace = () => { ende++; };
+      playTone = (hz) => { toene.push(hz); };
+      playRaceEndFanfare = () => { fanfare++; };
+      const a = fake('ko-a'), b = fake('ko-b');
+      garage.length = 0; garage.push(a, b);
+      raceState = 'racing';
+      knockoutLaeuft = true; knockoutSieger = null; knockoutLeben = 3; knockoutGeister = knockoutGeisterZaehlen();
+      parkCar(a, 'Bahn verlassen');
+      if (!a.ghost.eliminated) f.push('geparkter Ghost nicht raus');
+      if (knockoutGeister !== 1) f.push('Geister ' + knockoutGeister + ' statt 1');
+      if (ende) f.push('Rennen nach dem ersten Ghost schon zu Ende');
+      parkCar(b, 'Bahn verlassen');
+      if (knockoutSieger !== 'menschen' || !fanfare || ende !== 1) f.push('nach dem letzten Ghost: ' + knockoutSieger + ', Fanfare ' + fanfare + ', Ende ' + ende);
+      // Leben: trauriger Ton, beim letzten der Game-over-Ton statt des traurigen.
+      a.parked = null; b.parked = null; a.ghost.eliminated = false; b.ghost.eliminated = false;
+      a.ghost.running = true; b.ghost.running = true;
+      knockoutLaeuft = true; knockoutSieger = null; knockoutLeben = 2; knockoutGeister = knockoutGeisterZaehlen();
+      toene.length = 0; ende = 0;
+      knockoutLebenVerlieren(1);
+      if (toene[0] !== 392) f.push('kein trauriger Ton beim Lebensverlust: ' + JSON.stringify(toene));
+      toene.length = 0;
+      knockoutLebenVerlieren(1);
+      if (knockoutSieger !== 'geister' || ende !== 1) f.push('letztes Leben: ' + knockoutSieger + ', Ende ' + ende);
+      if (toene.indexOf(392) >= 0) f.push('trauriger Ton zusaetzlich zum Game over');
+    } finally {
+      stopGhost = echt.stop; finishRace = echt.fin; playTone = echt.ton; playRaceEndFanfare = echt.fan;
+      garage.length = 0; merk.garage.forEach((c) => garage.push(c));
+      knockoutLaeuft = merk.lauf; knockoutGeister = merk.geister; knockoutSieger = merk.sieger;
+      knockoutLeben = merk.leben; raceState = merk.rs;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'geparkt = raus, Sieg mit Fanfare, Leben mit traurigem Ton, Game over beim letzten' };
+  });
+
   stAdd('Rundenrennen endet mit der Zielrunde, nicht eine Runde spaeter', () => {
     const f = [];
     const merk = { rs: raceState, rm: raceMode, lim: raceLimit, laps: raceLapTimes.slice(), ls: raceLapStart,
