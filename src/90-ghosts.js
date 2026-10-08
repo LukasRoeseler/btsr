@@ -7727,16 +7727,17 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // auf zu fahren".
     //
     // v0.9.74: Die Frist wird kurvenbewusst. Auf der Geraden (letzter Code keine Kurve) parkt
-    // der bestaetigte Abgang nach GHOST_OFFTRACK_CONFIRM_MS wie bisher. In einer Kurve liest
-    // auch ein Auto auf der Bahn 0x00, weil es unter der Leseschwelle ist - dort erst nach
-    // GHOST_OFFTRACK_KURVE_MS parken, und auch nur, wenn das Zieltempo nicht ohnehin unter der
-    // Schwelle lag (dann ist es langsam geplant und kein Abgang). So bleibt die Haarnadel
-    // verschont, und wer nach der laengeren Frist immer noch 0x00 liest, liegt neben der Bahn.
+    // der bestaetigte Abgang nach GHOST_OFFTRACK_CONFIRM_MS wie bisher - und nur, wenn das
+    // Zieltempo nicht ohnehin unter der Leseschwelle lag (sonst ist es ein langsamer
+    // Bremsbereich, kein Abgang). In einer Kurve liest auch ein Auto auf der Bahn 0x00, weil
+    // es unter der Leseschwelle ist - dort erst nach GHOST_OFFTRACK_KURVE_MS parken, und die
+    // Zieltempo-Bedingung entfaellt: die laengere Frist ist der Schutz der Haarnadel, und wer
+    // nach ihr immer noch 0x00 liest, liegt neben der Bahn - egal wie langsam er geplant war.
     const inKurve = ghostTurnOf(car.lastCode) !== 0;
     const offSchwelle = inKurve ? GHOST_OFFTRACK_KURVE_MS : GHOST_OFFTRACK_CONFIRM_MS;
     const offBestaetigt = g.offSince > 0 && (now - g.offSince) >= offSchwelle;
     const parken = !gnade && !raceFormationLap
-                   && ((offBestaetigt && g.lastTarget >= GHOST_READ_MIN)
+                   && ((offBestaetigt && (inKurve || g.lastTarget >= GHOST_READ_MIN))
                        || (ghostCfg.needCode && noCode && !zaehlerLaeuft));
     // ---- RECOVERY: erst versuchen zurueckzufahren, dann erst parken ------------------
     //

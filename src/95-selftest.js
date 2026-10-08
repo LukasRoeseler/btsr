@@ -14779,6 +14779,13 @@
                                           tileIndex: 2, lastCode: 0x02 });
     teile.push('Gerade: geparkt ' + !!ge.geparkt);
     if (!ge.geparkt) fehler.push('Gerade (echter Abgang) parkt nicht');
+    // 3. v0.9.74: derselbe Kurvenfall, aber 0x00 laenger als GHOST_OFFTRACK_KURVE_MS. Eine
+    //    Haarnadel raeumt in unter einer Sekunde - wer nach 3 s immer noch 0x00 liest, liegt
+    //    neben der Bahn, auch wenn er langsam geplant war (frueher blieb er stehen).
+    const hpl = OMEGA_TEST.recoveryProbe({ dauerMs: 4500, an: false, code: 'SG3H2G3R2',
+                                           tileIndex: 5, lastCode: 0x05 });
+    teile.push('Kurve lang 0x00: geparkt ' + !!hpl.geparkt);
+    if (!hpl.geparkt) fehler.push('Kurve mit langem 0x00 parkt nicht (liegt neben der Bahn)');
     return { ok: fehler.length === 0,
              mass: teile.join(' | ') + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
