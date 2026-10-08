@@ -5643,6 +5643,31 @@
       }
     },
 
+    // ---- GHOST-MOTORSOUND (v0.9.61, D8): Stereoseite und Lautstaerke -----------------
+    //
+    // Die Stereoseite haengt am Garagenplatz. Geprueft wird die VERWENDETE Zahl, nicht eine
+    // Absicht: ghostStimmePan() liest die Garage und verteilt das Feld ueber die Buehne.
+    // Der Leisefaktor kommt aus dem Ghost-Zustand, wie ihn startGhost() anlegt.
+    ghostSoundPan(n) {
+      const merkGarage = garage.splice(0, garage.length);
+      try {
+        const zahl = n || 3;
+        const autos = [];
+        for (let i = 0; i < zahl; i++) {
+          autos.push({ role: 'ghost', alias: 'G' + i,
+                       ghost: { stimme: { master: null, pan: null, nodes: null, over: null,
+                                          car: null, laut: 0.6 } } });
+        }
+        for (const c of autos) garage.push(c);
+        return { n: zahl,
+                 pan: autos.map((c) => +ghostStimmePan(c).toFixed(3)),
+                 leise: autos[0].ghost.stimme.laut };
+      } finally {
+        garage.splice(0, garage.length);
+        for (const c of merkGarage) garage.push(c);
+      }
+    },
+
     // ---- DER GHOST-BOXENSTOPP, ohne Hardware und ohne Wartezeit --------------------
     //
     // Gefahren wird mit gefaelschter Uhr durch ghostTick(), also durch den ECHTEN Pfad -

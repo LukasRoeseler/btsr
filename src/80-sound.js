@@ -1253,6 +1253,71 @@
     updateSampleEngineIn(z.stimme, motorDrehzahl(st, z.stimme.car), load, leise, z.motor, 1);
   }
 
+  // ---- GHOST-MOTORSOUND (v0.9.61, D8) ---------------------------------------------
+  //
+  // Die Ghosts hatten bisher keinen eigenen Motorsound - nur die Fahrerautos. Diese Stimme
+  // gibt jedem Ghost einen eigenen Klang nach dem Muster von z.stimme: dieselben Schleifen
+  // (geteilt, keine zweite Kopie von 132 Dateien), aber ein eigener Ausgang mit eigener
+  // Stereoseite und 40 % leiser. So klingt ein Feld aus mehreren Motoren nicht wie ein
+  // ver-stimmter Motor aus der Mitte.
+  let ghostSound = false;   // Standard: aus (Optionen -> Ton)
+  const GHOST_LEISE = 0.6;  // 40 % leiser als das Fahrerauto
+  function ghostStimmePan(car) {
+    // Stereoseite nach Garagenplatz: das Feld breitet sich ueber die Buehne aus statt aus
+    // der Mitte zu klingen. Gezaehlt wird unter den GHOSTS, damit Leerplaetze (Spieler-
+    // autos) keine Luecke reissen.
+    if (typeof garage === 'undefined') return 0;
+    const ghosts = garage.filter((c) => c.role === 'ghost');
+    const n = ghosts.length;
+    if (n <= 1) return 0;
+    const i = ghosts.indexOf(car);
+    return -0.8 + 1.6 * (i / (n - 1));
+  }
+  function ghostStimmeAusgang(car) {
+    if (!audioCtx || !audioCtx.createStereoPanner) return audioCtx.destination;
+    const st = car.ghost.stimme;
+    if (!st.pan) {
+      st.pan = audioCtx.createStereoPanner();
+      st.pan.connect(audioCtx.destination);
+    }
+    st.pan.pan.value = ghostStimmePan(car);
+    return st.pan;
+  }
+  function ghostStimmeStarten(car) {
+    if (!ghostSound || !soundEnabled || !audioCtx || !car.ghost) return false;
+    const modell = sampleEngine.car;
+    if (!modell || !sampleEngine.buffers[modell]) return false;
+    return startSampleEngineIn(car.ghost.stimme, modell, () => ghostStimmeAusgang(car));
+  }
+  function ghostStimmeStoppen(car) {
+    if (audioCtx && car.ghost && car.ghost.stimme) stopSampleEngineIn(car.ghost.stimme);
+  }
+  function updateGhostSound(car) {
+    if (!ghostSound || !soundEnabled || !audioCtx || !car.ghost || !car.ghost.stimme) return;
+    const st = car.ghost.stimme;
+    // Folgt dem Motor des Fahrerautos: hat der Fahrer umgestellt, startet die Ghost-Stimme
+    // mit dem neuen Modell neu (st.car wird von ghostStimmeStarten gesetzt).
+    if (st.car !== sampleEngine.car) { if (!ghostStimmeStarten(car)) return; }
+    else if (!st.nodes) { if (!ghostStimmeStarten(car)) return; }
+    const eng = car.ghost.engine;
+    if (!eng || !eng.state) return;
+    const load = Math.max(0, Math.min(1, eng.state.engineLoad || 0));
+    const leise = load <= 0.01 && (eng.state.virtualSpeed || 0) <= 0.01
+                  && Math.abs(eng.state.speedKmh || 0) < 0.05;
+    updateSampleEngineIn(st, motorDrehzahl(eng.state, st.car), load, leise, eng, 1);
+  }
+  // Der Schalter in Optionen -> Ton. Anschalten startet jede laufende Ghost-Stimme,
+  // Abschalten haelt sie an.
+  $('ghost-sound').addEventListener('change', (e) => {
+    ghostSound = e.target.checked;
+    if (typeof garage === 'undefined') return;
+    for (const c of garage) {
+      if (c.role !== 'ghost') continue;
+      if (ghostSound) ghostStimmeStarten(c);
+      else ghostStimmeStoppen(c);
+    }
+  });
+
   // ---- Was die Knoten gerade tun, fuer den Pruefstand ------------------------------
   //
   // Herausgegeben werden ZAHLEN und keine Knoten: ein Prueflauf, der einen GainNode in die
@@ -1361,6 +1426,8 @@
     // down — the quieter, crackling sound does that itself. Ducking it as hard as before
     // would just hide the loop that was made for this.
     let vol = engineVolume * (over ? 0.55 + 0.45 * load : 0.25 + 0.75 * load);
+    // v0.9.61 (D8): eine Stimme darf leiser sein als die Fahrerauto-Stimme (Ghosts: 0.6).
+    if (store.laut) vol *= store.laut;
     if (motor.state.onLimiter) vol *= 0.8 + 0.2 * Math.sign(Math.sin(Date.now() / 18));
     store.master.gain.setTargetAtTime(silent ? 0 : vol, t, 0.05);
   }

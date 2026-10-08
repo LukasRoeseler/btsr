@@ -13146,6 +13146,37 @@
                  + (maengel.length ? ' | ' + maengel.join(', ') : '') };
   });
 
+  // ---- Ghost-Motorsound (v0.9.61, D8) -------------------------------------------
+  //
+  // BESTELLT: je Ghost eine eigene Motorstimme, 40 % leiser und je Garagenplatz auf die
+  // Stereobuehne verteilt. Geprueft wird die VERWENDETE Stereoseite (ghostStimmePan liest
+  // die Garage) und der Leisefaktor aus dem Ghost-Zustand - nicht die eigentlichen
+  // Audioknoten, die nur mit Tonkontext und geladenen Schleifen entstehen.
+  stAdd('Ghost-Motorsound: Stereoseite je Garagenplatz, 40 % leiser', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostSoundPan) {
+      return { skip: true, mass: 'ghostSoundPan nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.ghostSoundPan(5);
+    if (!r || r.n !== 5) return { ok: false, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. Das Feld breitet sich ueber die Buehne aus: erster links, letzter rechts.
+    if (!(r.pan[0] < 0 && r.pan[r.n - 1] > 0)) {
+      fehler.push('Richtung: ' + r.pan.join(','));
+    }
+    // 2. Symmetrisch um die Mitte.
+    const mitte = (r.pan[0] + r.pan[r.n - 1]) / 2;
+    if (Math.abs(mitte) > 1e-9) fehler.push('nicht mittig: ' + mitte);
+    // 3. Der mittlere Ghost sitzt in der Mitte.
+    if (r.n % 2 === 1 && Math.abs(r.pan[(r.n - 1) / 2]) > 0.05) {
+      fehler.push('Mittel-Ghost nicht mittig');
+    }
+    // 4. 40 % leiser: Faktor 0.6.
+    if (Math.abs(r.leise - 0.6) > 1e-9) fehler.push('Leisefaktor ' + r.leise + ' statt 0.6');
+    return { ok: !fehler.length,
+             mass: fehler.length ? fehler.join(' | ') : 'Pan ' + r.pan.join(',')
+                   + ', Faktor ' + r.leise };
+  });
+
   // ---- Zwei Spieler DUERFEN verschiedene Motoren fahren ----------------------------
   //
   // BESTELLT: "Spieler 1 und Spieler 2 sollen verschiedene Motorsounds haben duerfen."

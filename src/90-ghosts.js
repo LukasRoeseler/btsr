@@ -2150,6 +2150,8 @@
 
   function stopGhost(car) {
     if (car.ghost) car.ghost.aufstellZiel = null;      // v0.9.22: Aufstellung endet mit
+    // v0.9.61 (D8): die Motorstimme des Ghosts mit anhalten.
+    if (car.ghost && typeof ghostStimmeStoppen === 'function') ghostStimmeStoppen(car);
     // AUCH den wartenden setTimeout, nicht nur den laufenden Zeitgeber - siehe
     // ghostTaktLoeschen(). Ein Halt in den ersten Millisekunden nach dem Start liess sonst
     // einen Zeitgeber zurueck, den niemand mehr kannte.
@@ -7078,6 +7080,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                   // beim ECHTEN Anfahren gilt - nach einem Zwischenstopp (parken/wieder
                   // anfahren) wuerde sie sonst die Boxen-Ausfahrt mit steer=0 ueberschreiben.
                   startLenkBis: 0, armedVorher: false, startLenkEinmalig: true,
+                  // v0.9.61 (D8): eigene Motorstimme. Gleiches Muster wie z.stimme, nur
+                  // leiser (laut 0.6 = 40 % leiser) und je Garagenplatz auf der Buehne
+                  // verteilt. Entsteht erst, wenn der Schalter in Optionen->Ton an ist.
+                  stimme: { master: null, pan: null, nodes: null, over: null, car: null, laut: 0.6 },
                   running: true };
     // Die erste Faelligkeit ziehen. Ohne sie steht pitFaellig auf 0 und der Ghost pittet in
     // der ersten Runde - ein Boxenstopp, bevor jemand eine Runde gefahren ist.
@@ -8368,6 +8374,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!ghostQuerTestAn() && now < (g.startLenkBis || 0)) steer = 0;
 
     const out = e.update({ steering: steer, throttle, brake, headlights: true }, dt);
+    // v0.9.61 (D8): die Motorstimme des Ghosts. Sie liest die frische Drehzahl/Last aus
+    // e.state und stellt sie auf die eigene Stereoseite - derselbe Takt wie der Ghost.
+    if (typeof updateGhostSound === 'function') updateGhostSound(car);
     // Put the car into the mode where it keeps itself on the track: bit 5 of byte 14, plus
     // the three-tile lookahead in bytes 16-18. Bit 7 stays CLEAR, because it was clear
     // throughout the guard-rail capture; the headlight bit and the brake bit are as sent

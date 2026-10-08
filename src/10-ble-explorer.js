@@ -1690,6 +1690,8 @@
     "Modus": "Mode",
     "Motorlautstärke": "Engine volume",
     "Motorsound": "Engine sound",
+    "Ghost-Motorsound": "Ghost engine sound",
+    "Jeder Ghost bekommt eine eigene Motorstimme: 40 % leiser als dein Auto und je Garagenplatz auf die Stereob\u00fchne verteilt, damit ein Feld aus mehreren Motoren nicht wie ein verstimmter Motor klingt. Standardm\u00e4\u00dfig aus.": "Each ghost gets its own engine voice: 40 % quieter than your car and spread across the stereo stage by garage slot, so a field of several engines does not sound like one out-of-tune motor. Off by default.",
     "Motorsound-Profil": "Engine sound profile",
     "Motorwerkstatt": "Engine workshop",
     "Muster zum Ausdrucken und Auslegen.": "Patterns to print out and lay down.",
