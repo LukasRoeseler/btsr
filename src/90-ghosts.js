@@ -977,7 +977,8 @@
     if (!car || !car.device || car.sim) return;
     const alle = carRollenLesen();
     alle[String(car.device.id)] = { role: car.role,
-      ghostSpeed: car.ghostSpeed === undefined ? null : car.ghostSpeed };
+      ghostStufe: car.ghostStufe === undefined || car.ghostStufe === null
+        ? 1 : car.ghostStufe };
     try { localStorage.setItem(CAR_ROLLEN_STORE, JSON.stringify(alle)); } catch (e) { /* voll */ }
   }
   function carStoreSchreiben(all) {
@@ -1475,11 +1476,13 @@
   }
   // BESTELLT: "baue ghost presets, die dann statt den 55% gewaehlt werden in der garage:
   // mittel (so wie aktuell), schnell (...60%), und einfach (...50%)". Statt einer feinen
-  // Prozentzahl waehlt man je Ghost eine von drei Stufen. "mittel" (null) folgt der Vorgabe
-  // aus den Optionen - also der bisherige Zustand, und der Reset-Knopf dorthin.
+  // Prozentzahl waehlt man je Ghost eine von drei Stufen. v0.9.56: die Stufe aendert nur das
+  // GERADENTEMPO (50/55/60 %); in der Kurve und Haarnadel gilt immer das Mittel-Tempo. Die
+  // Werte sind relativ zur Vorgabe aus den Optionen (ghostCfg.speed): Mittel folgt ihr,
+  // Einfach und Schnell skalieren sie. Der Reset-Knopf stellt Mittel wieder her.
   const GHOST_TEMPO_STUFEN = [
     { label: 'einfach', speed: 0.50 },
-    { label: 'mittel',  speed: null },
+    { label: 'mittel',  speed: 0.55 },
     { label: 'schnell', speed: 0.60 },
   ];
   function garageAufZeile(car) {
@@ -1490,15 +1493,12 @@
     const farbe = (d) => garageFarbeSetzen(car, CAR_COLORS[(fi + d + CAR_COLORS.length) % CAR_COLORS.length].id);
     box.appendChild(garWertZeile('Farbe ' + garageLabel(car), f.name, () => farbe(-1), () => farbe(1)));
     if (car.role === 'ghost') {
-      const eigen = car.ghostSpeed !== undefined && car.ghostSpeed !== null;
-      const basis = eigen ? car.ghostSpeed : ghostCfg.speed;
-      let stufe = 1;   // mittel als Fallback
-      const i = GHOST_TEMPO_STUFEN.findIndex((s) => s.speed !== null && Math.abs(s.speed - basis) < 0.001);
-      if (i >= 0) stufe = i;
       const st = GHOST_TEMPO_STUFEN;
+      let stufe = (car.ghostStufe === undefined || car.ghostStufe === null)
+        ? 1 : car.ghostStufe;
       const tempo = (d) => {
         stufe = (stufe + d + st.length) % st.length;
-        car.ghostSpeed = st[stufe].speed;
+        car.ghostStufe = stufe;
         carRolleMerken(car);
         renderGarage();
       };
@@ -1506,21 +1506,16 @@
       rst.type = 'button';
       rst.className = 'gar-speed-reset';
       rst.innerHTML = '&#8635;';
-      rst.title = 'Zurueck auf die Vorgabe aus den Optionen';
-      rst.style.visibility = eigen ? '' : 'hidden';
+      rst.title = 'Zurueck auf Mittel (Vorgabe)';
       rst.onclick = (e) => {
         e.stopPropagation();
-        car.ghostSpeed = null;
+        car.ghostStufe = 1;
         carRolleMerken(car);
-        showHudToast(garageLabel(car).toUpperCase() + ' FOLGT DER VORGABE');
+        showHudToast(garageLabel(car).toUpperCase() + ' TEMPO: MITTEL');
         renderGarage();
       };
       const stufeS = st[stufe];
-      const anzeige = stufeS.speed === null
-        ? t(stufeS.label) + ' (Vorgabe) \u00b7 ' + Math.round(ghostCfg.speed * 100) + ' %'
-        : (eigen && Math.abs(stufeS.speed - car.ghostSpeed) > 0.001
-             ? Math.round(car.ghostSpeed * 100) + ' %'
-             : t(stufeS.label) + ' \u00b7 ' + Math.round(stufeS.speed * 100) + ' %');
+      const anzeige = t(stufeS.label) + ' \u00b7 ' + Math.round(stufeS.speed * 100) + ' %';
       box.appendChild(garWertZeile('Ghost-Tempo', anzeige, () => tempo(-1), () => tempo(1), rst));
       const ch = document.createElement('div');
       ch.innerHTML = charakterZeile(car);
@@ -2038,7 +2033,11 @@
       // von selbst den Zwei-Spieler-Modus an, siehe dort).
       // Gemerkte Rolle zuerst (v0.9.6) - wenn sie frei ist; sonst wie bisher.
       const gemerkt = carRollenLesen()[String(car.device.id)];
-      if (gemerkt && typeof gemerkt.ghostSpeed === 'number') car.ghostSpeed = gemerkt.ghostSpeed;
+      // v0.9.56: Ghost-Stufe aus dem Speicher, mit Migration vom alten ghostSpeed-Wert.
+      if (gemerkt) {
+        if (typeof gemerkt.ghostStufe === 'number') car.ghostStufe = gemerkt.ghostStufe;
+        else if (typeof gemerkt.ghostSpeed === 'number') car.ghostStufe = ghostStufeAusSpeed(gemerkt.ghostSpeed);
+      }
       const frei = gemerkt && garRollenFrei(car).some((r) => r.id === gemerkt.role);
       if (frei && gemerkt.role !== 'none') setCarRole(car, gemerkt.role);
       else if (!playerCar) setCarRole(car, 'player');
@@ -5073,6 +5072,35 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (ghostTurnOf(car.tileCode)) return 1;          // in Kurven gleich
     return 1 + (p / 100) * g.tempoZ;
   }
+  // ---- Ghost-Presets (v0.9.56): Stufe statt feiner Prozentzahl ---------------------
+  //
+  // Drei Stufen je Auto - Einfach/Mittel/Schnell -, die nur das GERADENTEMPO aendern.
+  // In Kurven und Haarnadeln gilt immer das Mittel-Tempo (0,55), damit alle Stufen in der
+  // Kurve gleich schnell sind und die Kurvendrosselung dieselbe bleibt. Zurueckkommt ein
+  // Faktor auf der Geraden (0,50/0,55/0,60) und sonst das Mittel-Tempo.
+  function ghostStufeFaktor(car) {
+    const stufe = car.ghostStufe === undefined || car.ghostStufe === null
+      ? 1 : car.ghostStufe;
+    const s = GHOST_TEMPO_STUFEN[stufe];
+    const stufenTempo = s ? s.speed : 0.55;
+    // Stufe aendert nur das Geradentempo; in der Kurve gilt immer das Mittel-Tempo.
+    // Die Stufen sind relativ zur Vorgabe (ghostCfg.speed): Mittel folgt ihr, Einfach und
+    // Schnell skalieren sie um den Stufenwert gegenueber dem Mittelwert 0,55. Bei der
+    // Vorgabe 0,55 ergeben sich damit genau die 50/55/60 Prozent auf der Geraden.
+    const basis = ghostCfg.speed || 0.55;
+    if (ghostTurnOf(car.tileCode) !== 0) return basis;
+    return stufenTempo / 0.55 * basis;
+  }
+  // Alten ghostSpeed-Wert der naechsten Stufe zuordnen (Migration v0.9.56).
+  function ghostStufeAusSpeed(speed) {
+    if (speed === undefined || speed === null) return 1;
+    let bester = 1, besterD = Infinity;
+    for (let i = 0; i < GHOST_TEMPO_STUFEN.length; i++) {
+      const d = Math.abs(GHOST_TEMPO_STUFEN[i].speed - speed);
+      if (d < besterD) { besterD = d; bester = i; }
+    }
+    return bester;
+  }
   // Wartezeit nach Gruen fuer dieses Auto: Reihe = Startplatz / 2 (abgerundet).
   function ghostStaffelMs(car) {
     if (!ghostCfg.staffelStart) return 0;
@@ -7718,12 +7746,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // ---- speed ----
       // Eigenes Tempo je Auto, sonst das globale. So laesst sich ein Feld mit
       // unterschiedlich schnellen Gegnern aufstellen, statt dass alle gleich schnell fahren.
-      // Eigenes Tempo, wenn eines gesetzt ist, sonst die Vorgabe. Der Unterschied ist in
-      // der Garage jetzt sichtbar und zuruecknehmbar - er rastete vorher beim ersten
-      // Antippen dauerhaft ein und machte den globalen Regler fuer dieses Auto stumm, ohne
-      // dass irgendwo stand, dass das passiert ist.
-      let target = (car.ghostSpeed === undefined || car.ghostSpeed === null)
-        ? ghostCfg.speed : car.ghostSpeed;
+      // v0.9.56: die Ghost-Presets (Einfach/Mittel/Schnell) ersetzen die feine Prozentzahl.
+      // Die Stufe aendert nur das Geradentempo, in der Kurve gilt immer das Mittel-Tempo.
+      let target = ghostStufeFaktor(car);
       // Der gelernte Tempofaktor. Er steht VOR der gelben Flagge, damit das Limit unter
       // Gelb wirklich das Limit ist: ein lernender Ghost darf sich nicht ueber eine
       // Neutralisierung hinwegsetzen.

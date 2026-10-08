@@ -1494,6 +1494,32 @@
              mass: schlecht.length ? schlecht.join('; ') : 'alle Startseiten bleiben' };
   });
 
+  // ---- Ghost-Presets: Stufe aendert nur das Geradentempo (v0.9.56) ----
+  //
+  // Drei Stufen (Einfach/Mittel/Schnell) mit 50/55/60 Prozent auf der Geraden. In der
+  // Kurve und Haarnadel gilt immer das Mittel-Tempo, damit alle Stufen in der Kurve gleich
+  // schnell sind und die Kurvendrosselung dieselbe bleibt.
+  stAdd('Ghost-Presets: Kurventempo gleich, Geradentempo 50/55/60 (v0.9.56)', () => {
+    const f = [];
+    const merkSpeed = ghostCfg.speed;
+    const geraden = [], kurven = [];
+    try {
+      ghostCfg.speed = 0.55;
+      for (let stufe = 0; stufe < GHOST_TEMPO_STUFEN.length; stufe++) {
+        const aufGerade = ghostStufeFaktor({ ghostStufe: stufe, tileCode: TILE_TYPE.STRAIGHT });
+        const inKurve = ghostStufeFaktor({ ghostStufe: stufe, tileCode: TILE_TYPE.CURVE_RIGHT });
+        geraden.push(Math.round(aufGerade * 100));
+        kurven.push(Math.round(inKurve * 100));
+      }
+      if (geraden[0] !== 50 || geraden[1] !== 55 || geraden[2] !== 60) f.push('Gerade: ' + geraden.join('/'));
+      if (kurven[0] !== 55 || kurven[1] !== 55 || kurven[2] !== 55) f.push('Kurve: ' + kurven.join('/'));
+    } finally {
+      ghostCfg.speed = merkSpeed;
+    }
+    return { ok: !f.length,
+             mass: f.length ? f.join('; ') : 'Gerade 50/55/60, Kurve 55/55/55' };
+  });
+
   // ---- Reifenwaermer ----
   //
   // ZWEI Aussagen, und die zweite ist die, auf die es beim Fahren ankommt: die Temperatur
@@ -10334,7 +10360,7 @@
     const att = { role: 'ghost', device: { id: 'probe-tempo' }, alias: '', colorId: 'rot', sim: false, testSenke: [] };
     const f = [];
     if (typeof GHOST_TEMPO_STUFEN !== 'object' || GHOST_TEMPO_STUFEN.length !== 3) return { ok: false, mass: 'GHOST_TEMPO_STUFEN fehlt' };
-    if (GHOST_TEMPO_STUFEN[0].speed !== 0.50 || GHOST_TEMPO_STUFEN[1].speed !== null || GHOST_TEMPO_STUFEN[2].speed !== 0.60) {
+    if (GHOST_TEMPO_STUFEN[0].speed !== 0.50 || GHOST_TEMPO_STUFEN[1].speed !== 0.55 || GHOST_TEMPO_STUFEN[2].speed !== 0.60) {
       f.push('Stufen-Werte falsch');
     }
     const merkRollen = localStorage.getItem('chc.rollen.v1');
@@ -10346,24 +10372,24 @@
     const klick = (d) => { const z = finde(); if (z) z.querySelector('[data-d="' + d + '"]').click(); };
     const wert = () => { const z = finde(); return z ? z.querySelector('b').textContent : ''; };
     try {
-      att.ghostSpeed = null;
+      att.ghostStufe = 1;
       garAufAuto = att;
       renderGarage();
       if (!finde()) return { ok: false, mass: 'keine Ghost-Tempo-Zeile' };
-      if (!/mittel/.test(wert()) || !/Vorgabe/.test(wert())) f.push('Vorgabe zeigt nicht mittel: ' + wert());
+      if (!/mittel/.test(wert()) || !/55/.test(wert())) f.push('Mittel zeigt nicht 55 %: ' + wert());
       klick(1);
-      if (att.ghostSpeed !== 0.60) f.push('Rechts setzt nicht schnell (' + att.ghostSpeed + ')');
+      if (att.ghostStufe !== 2) f.push('Rechts setzt nicht schnell (' + att.ghostStufe + ')');
       if (!/schnell/.test(wert())) f.push('zeigt nicht schnell: ' + wert());
       klick(1);
-      if (att.ghostSpeed !== 0.50) f.push('Nochmal rechts setzt nicht einfach (' + att.ghostSpeed + ')');
+      if (att.ghostStufe !== 0) f.push('Nochmal rechts setzt nicht einfach (' + att.ghostStufe + ')');
       klick(1);
-      if (att.ghostSpeed !== null) f.push('Mittel setzt nicht auf Vorgabe (' + att.ghostSpeed + ')');
-      if (!/Vorgabe/.test(wert())) f.push('Mittel zeigt nicht Vorgabe: ' + wert());
+      if (att.ghostStufe !== 1) f.push('Mittel setzt nicht auf Stufe 1 (' + att.ghostStufe + ')');
+      if (!/mittel/.test(wert())) f.push('Mittel zeigt nicht: ' + wert());
       klick(-1);
-      if (att.ghostSpeed !== 0.50) f.push('Links von mittel setzt nicht einfach (' + att.ghostSpeed + ')');
+      if (att.ghostStufe !== 0) f.push('Links von mittel setzt nicht einfach (' + att.ghostStufe + ')');
       const z = finde();
       if (z && z.querySelector('.gar-speed-reset')) z.querySelector('.gar-speed-reset').click();
-      if (att.ghostSpeed !== null) f.push('Reset stellt Vorgabe nicht her (' + att.ghostSpeed + ')');
+      if (att.ghostStufe !== 1) f.push('Reset stellt Mittel nicht her (' + att.ghostStufe + ')');
     } finally {
       const i = garage.indexOf(att);
       if (i >= 0) garage.splice(i, 1);
@@ -10371,7 +10397,7 @@
       try { if (merkRollen === null) localStorage.removeItem('chc.rollen.v1'); else localStorage.setItem('chc.rollen.v1', merkRollen); } catch (e) { /* egal */ }
       renderGarage();
     }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'einfach/mittel/schnell blatteln, Reset zur Vorgabe' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'einfach/mittel/schnell blatteln, Reset zu Mittel' };
   });
 
   stAdd('Steuerung: läuft auf dem Cockpit, zeigt gedrückte Tasten, fährt dabei nicht', () => {
@@ -10823,10 +10849,10 @@
     const merkR = localStorage.getItem(CAR_ROLLEN_STORE), merkE = localStorage.getItem(EDITOR_STRECKE_STORE);
     const merkTiles = currentTrackTiles, merkRot = trackRotationDeg, merkB = bindings, merkFuer = padBelegungFuer[1];
     try {
-      const auto = { role: 'ghost', ghostSpeed: 0.6, device: { id: 'probe-rolle' } };
+      const auto = { role: 'ghost', ghostStufe: 2, device: { id: 'probe-rolle' } };
       carRolleMerken(auto);
       const r = carRollenLesen()['probe-rolle'];
-      if (!r || r.role !== 'ghost' || r.ghostSpeed !== 0.6) f.push('Rolle/Tempo nicht gemerkt');
+      if (!r || r.role !== 'ghost' || r.ghostStufe !== 2) f.push('Rolle/Tempo nicht gemerkt');
       currentTrackTiles = [{ type: TILE_TYPE.START }, { type: TILE_TYPE.STRAIGHT }, { type: TILE_TYPE.CURVE_RIGHT }];
       localStorage.setItem(EDITOR_STRECKE_STORE, JSON.stringify({ tiles: currentTrackTiles.map((x) => x.type), rotation: 90 }));
       currentTrackTiles = [{ type: TILE_TYPE.START }];
