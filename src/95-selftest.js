@@ -12367,7 +12367,7 @@
   // ist jetzt das Gegenteil, und der Unterschied ist der Wechsel: "alle nach rechts" war der
   // Fehler, "abwechselnd links und rechts" ist der Zweck - zwei Autos, die entgegengesetzt
   // einschlagen, gehen auseinander. Welche Seite welches Auto bekommt, prueft die Nachbarin
-  // "Zieleinlauf: abwechselnd links und rechts an den Rand"; hier geht es nur darum, dass
+  // "Zieleinlauf: in Kacheln gestaffelt, abwechselnd links und rechts"; hier geht es nur darum, dass
   // ueberhaupt ein Ausschlag hinausgeht und in beiden Fahrphasen derselbe.
   stAdd('Zieleinlauf: zur Seite ausrollen, anhalten, dreimal blinken', async () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostFinishTimeline) {
@@ -14571,7 +14571,7 @@
              mass: teile.join(' | ') + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
-  // ---- Zieleinlauf: abwechselnd links und rechts ----
+  // ---- Zieleinlauf: abwechselnd links und rechts (v0.9.59) ----
   //
   // GEMELDET: "Nach dem Rennen rammen die Ghosts alle ineinander hinein. Mache es so, dass
   // sie abwechselnd links und rechts am Rand stehen bleiben."
@@ -14580,7 +14580,7 @@
   // Bahn: wo ein Auto wirklich stehen bleibt, kann diese App nicht wissen - es meldet seine
   // Querlage nicht. Was sie zusichern kann, ist, dass zwei aufeinanderfolgende Autos
   // ENTGEGENGESETZT einschlagen und dass die Hinteren laenger rollen.
-  stAdd('Zieleinlauf: in Kacheln gestaffelt, alle links an den Rand', () => {
+  stAdd('Zieleinlauf: in Kacheln gestaffelt, abwechselnd links und rechts', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.finishSeiten) {
       return { skip: true, mass: 'finishSeiten nicht vorhanden' };
     }
@@ -14596,15 +14596,24 @@
     // Zwei Autos konnten dieselbe Stelle treffen.
     //
     // Jetzt zaehlt jedes Auto KACHELWECHSEL, und eine Kachel ist 43 cm bei 9,5 cm
-    // Fahrzeuglaenge - mehr als vier Fahrzeuglaengen Abstand, unabhaengig vom Tempo. Damit
-    // braucht es keine wechselnden Seiten mehr, und alle stehen links, wie bestellt: das
-    // Feld in einer Reihe, die andere Bahnhaelfte frei fuer das Auto des Fahrers.
+    // Fahrzeuglaenge - mehr als vier Fahrzeuglaengen Abstand, unabhaengig vom Tempo.
+    //
+    // v0.9.59 (D7): die Staffel allein reichte nicht mehr. Mit "alle links" stauten sich
+    // beide Bahnhaelfte-nach der eine Rand, und bei mehr als zwei Autos fuhren die Nach-
+    // zuegler auf die Vorderen auf. Jetzt wechselt die Seite je Startplatz (g.seite: ungerade
+    // links, gerade rechts), und weil zwei gleiche Seiten dadurch immer ZWEI Plaetze
+    // auseinanderliegen, parken sie doppelt so weit auseinander.
     const r = OMEGA_TEST.finishSeiten(6);
     const fehler = [];
     if (!r || r.length !== 6) return { ok: false, mass: 'kein Lauf' };
-    // 1. ALLE LINKS. Byte 7 negativ ist links.
+    // 1. ABWECHSELND NACH STARTPLATZ. Gerader Platz rechts, ungerader links.
     for (let i = 0; i < r.length; i++) {
-      if (!(r[i].seite < 0)) fehler.push('Auto ' + i + ': Seite ' + r[i].seite);
+      const soll = i % 2 ? -1 : 1;
+      if (r[i].seite !== soll) fehler.push('Auto ' + i + ': Seite ' + r[i].seite + ' statt ' + soll);
+      // Und benachbarte Plaetze (auch die beiden eines Zweierzugs) gehen auseinander.
+      if (i > 0 && r[i].seite === r[i - 1].seite) {
+        fehler.push('Auto ' + i + ' und ' + (i - 1) + ' stehen auf derselben Seite');
+      }
     }
     // 2. STRENG ABNEHMEND, und jetzt darf es streng sein: die Kachelstaffel hat keinen
     //    Boden, der zwei Autos denselben Wert gibt. Der Letzte kommt auf null heraus.

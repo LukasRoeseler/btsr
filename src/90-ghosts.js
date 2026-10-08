@@ -3716,17 +3716,21 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   const FINISH_BLINKS = 3;
   const FINISH_BLINK_MS = 260;
   const FINISH_RAND = 1.0;          // voller Versatz zur Seite, mehr kann Byte 7 nicht
-  // ---- ALLE NACH LINKS, UND ZWAR ALLE ---------------------------------------------
+  // ---- ABWECHSELND LINKS UND RECHTS (v0.9.59) -------------------------------------
   //
-  // Vorher wechselten sich die Seiten ab (rechts, links, rechts ...), damit zwei
-  // hintereinander einlaufende Autos nicht dieselbe Stelle treffen. Mit der Kachelstaffel
-  // ist der Abstand laengs gesichert, und dann ist EINE Seite besser: das Feld steht in
-  // einer Reihe am selben Rand, und die andere Haelfte der Bahn bleibt frei - auch fuer das
-  // Auto des Fahrers, das ja noch faehrt.
+  // Vorher rollten alle an DENSELBEN Rand und standen dort in einer Reihe. Gemeldet: "2
+  // gehen gut, alle weiteren fahren auf die anderen auf." Die Kachelstaffel sichert zwar den
+  // Abstand LAENGS, aber bei mehr als zwei Autos staut sich eine Seite voll, und die
+  // Nachzuegler fahren auf die Vorderen auf.
   //
-  // LINKS, wie bestellt. Byte 7 negativ ist links (positiv ist rechts, geometrisch
-  // nachgemessen: +4 gibt einen Bahnradius von 38,8 Einheiten, -4 nur 30,7).
-  const FINISH_SEITE = -1;
+  // Jetzt wechselt die Seite je Startplatz (g.seite: ungerader Platz links, gerader rechts,
+  // dieselbe Konvention wie formationOffset), und die Staffel liegt darunter. Damit stehen
+  // zwei gleichseitige Autos nie direkt hintereinander - sie sind immer zwei Plaetze ausein-
+  // ander und haben doppelt so viel Abstand. Die andere Bahnhaelfte bleibt fuer das Auto des
+  // Fahrers frei, das ja noch faehrt.
+  //
+  // LINKS ist Byte 7 negativ (positiv ist rechts, geometrisch nachgemessen: +4 gibt einen
+  // Bahnradius von 38,8 Einheiten, -4 nur 30,7).
 
   // ====================================================================================
   // GHOST-BOXENSTOPP (experimentell)
@@ -4347,15 +4351,24 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const kacheln = platz < 0
       ? 0
       : Math.max(0, Math.min(FINISH_KACHELN_MAX, feld - 1 - platz));
+    // v0.9.59 (D7): abwechselnd maximal weit links und rechts statt alle links. Vorher
+    // rollten alle an denselben Rand und fuhren bei mehr als zwei Autos aufeinander auf.
+    // Die Seite kommt aus der Startaufstellung (g.seite: ungerader Platz links, gerader
+    // rechts - dieselbe Konvention wie formationOffset); ein Auto ohne Aufstellplatz nimmt
+    // die Seite seines Einlaufs (Finish-Reihenfolge), damit die Reihe trotzdem abwechselt.
+    // Mit der Kachelstaffel darunter sind zwei gleiche Seiten nie direkte Nachbarn, und die
+    // Autos parken weiter auseinander.
+    const seite = g.seite || (platz % 2 ? -1 : 1);
     g.finish = { phase: 'roll', at: Date.now(),
-                 seite: FINISH_SEITE,
+                 seite,
                  kacheln,
                  // Der Zaehlerstand beim Einlauf. Byte 11 laeuft ueber, deshalb wird die
                  // Differenz mit & 0xff gerechnet und nicht als Subtraktion zweier Zahlen.
                  kachelStart: car.tileCount === null || car.tileCount === undefined
                    ? null : car.tileCount };
     log(garageLabel(car) + ': rollt ' + kacheln
-        + (kacheln === 1 ? ' Kachel' : ' Kacheln') + ' aus und h\u00e4lt links am Rand.',
+        + (kacheln === 1 ? ' Kachel' : ' Kacheln') + ' aus und h\u00e4lt ' + (seite < 0 ? 'links' : 'rechts')
+        + ' am Rand.',
         'info');
   }
 

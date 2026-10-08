@@ -5603,7 +5603,10 @@
           const gesendet = [];
           autos.push({ role: 'ghost', alias: 'F' + i, tileCode: 0x02,
                        tileCount: 0, testSenke: gesendet,
-                       ghost: { tileIndex: 0, engine: null } });
+                       ghost: { tileIndex: 0, engine: null,
+                                // Startplatz-Seite, wie sie startGhost() setzt (v0.9.59):
+                                // ungerader Platz links, gerader rechts.
+                                seite: i % 2 ? -1 : 1 } });
         }
         for (const c of autos) garage.push(c);
         for (const car of autos) {
