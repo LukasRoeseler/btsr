@@ -11235,6 +11235,24 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Pro gesetzt, danach alles wie vorher' };
   });
 
+  // v0.9.64: Pro-Pacejka ist Pro plus der Steuerungsmodus "pacejka". Wer Pro-Pacejka
+  // gewaehlt hat, erfuellt damit auch den ganzen Pro-Satz - der erste Treffer waere "Pro".
+  // Die Anzeige (Fahrmodus-Knopf, Kachel "N/6") muss aber den SPEZIFISCHEREN Satz zeigen.
+  stAdd('Voreinstellungen: Pro-Pacejka und Pro sind getrennt erkennbar (v0.9.64)', () => {
+    const f = [];
+    const vorher = chMerken();
+    try {
+      window.__applyPreset('propacejka');
+      if (window.__presetActive() !== 'propacejka') f.push('Pro-Pacejka -> ' + window.__presetActive());
+      window.__applyPreset('pro');
+      chSetzen('phys-mode', 'physik');
+      if (window.__presetActive() !== 'pro') f.push('Pro -> ' + window.__presetActive());
+    } finally {
+      chZuruecksetzen(vorher);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Pro-Pacejka und Pro getrennt erkannt' };
+  });
+
   stAdd('Challenges: Balkonia hat 1 Pflichtstopp und ein Regenfenster Minute 2-4', () => {
     const f = [];
     const def = chDef('dauer-balkonia');

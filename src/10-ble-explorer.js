@@ -2311,7 +2311,7 @@
     // Block 2 (v0.5): die Legende zeigt nur die eingestellte Variante.
     "Eigene Abstimmung": "Custom setup",
     "kein fertiger Satz": "not a ready-made set",
-    "Mindestens ein Regler weicht von allen fünf Voreinstellungen ab. Ein Klick oben setzt wieder einen ganzen Satz.": "At least one control differs from all five presets. A click above sets a whole set again.",
+    "Mindestens ein Regler weicht von allen sechs Voreinstellungen ab. Ein Klick oben setzt wieder einen ganzen Satz.": "At least one control differs from all six presets. A click above sets a whole set again.",
     "Eigen": "Custom",
     // Block 3 (v0.5): abseits der Fahrbahn.
     "ABSEITS · GAS GEDROSSELT": "OFF TRACK · THROTTLE LIMITED",

@@ -259,7 +259,7 @@
            'setting-topspeed': 1.0 },
     },
   };
-  // v0.9.63: Pro-Pacejka - die Pro-Abstimmung, aber mit dem Pacejka-Lenkmodell. Es ist
+  // v0.9.64: Pro-Pacejka - die Pro-Abstimmung, aber mit dem Pacejka-Lenkmodell. Es ist
   // dieselbe Tabelle wie Pro plus der Steuerungsmodus "pacejka", damit man die Magic
   // Formula als EINEN Namen anwaehlen kann, statt zwei Stellen zu bedienen.
   PRESETS.propacejka = {
@@ -429,17 +429,25 @@
 
   function presetAktiv() {
     const ist = presetRead();
+    // Nicht die ERSTE passende Variante, sondern die SPEZIFISCHSTE. Seit v0.9.64 ist
+    // Pro-Pacejka dieselbe Tabelle wie Pro plus der Steuerungsmodus "pacejka" - wer also
+    // Pro-Pacejka gewaehlt hat, erfuellt auch den ganzen Pro-Satz. Gaege hier nur der erste
+    // Treffer zurueck, meldete die Anzeige "Pro 2/6", obwohl Pro-Pacejka eingestellt ist. Die
+    // spezifischere Variante hat mehr Regler, also gewinnt bei gleicher Erfuellung die mit
+    // der groesseren Tabelle.
+    let bester = null, besteN = -1;
     for (const [key, p] of Object.entries(PRESETS)) {
-      let passt = true;
+      let passt = true, n = 0;
       for (const [id, soll] of Object.entries(p.v)) {
         // Ein Schluessel, dessen Element es nicht (mehr) gibt, darf die Variante nicht
         // stillschweigend passend machen: dann waere jede Voreinstellung "aktiv", sobald
         // genug Regler fehlen.
         if (!(id in ist) || !presetGleich(ist[id], soll)) { passt = false; break; }
+        n++;
       }
-      if (passt) return key;
+      if (passt && n > besteN) { bester = key; besteN = n; }
     }
-    return null;
+    return bester;
   }
 
   function renderPresetLegende() {
@@ -454,7 +462,7 @@
     if (!host) return;
     if (!key) {
       host.innerHTML = '<div class="preset-leg"><b>Eigene Abstimmung</b> <span class="muted">'
-        + 'kein fertiger Satz</span><small>Mindestens ein Regler weicht von allen f\u00fcnf '
+        + 'kein fertiger Satz</span><small>Mindestens ein Regler weicht von allen sechs '
         + 'Voreinstellungen ab. Ein Klick oben setzt wieder einen ganzen Satz.</small></div>';
       return;
     }
