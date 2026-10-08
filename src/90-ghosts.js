@@ -2107,7 +2107,13 @@
     shakeNotify(car, b);
     // 0x00 is a valid REPORT but not a valid READING, so it must not refresh the
     // last-seen-code timestamp — otherwise a car sitting beside the track looks alive.
-    if (code !== 0xff && code !== TILE_OFFTRACK) car.lastCodeAt = Date.now();
+    if (code !== 0xff && code !== TILE_OFFTRACK) {
+      car.lastCodeAt = Date.now();
+      // v0.9.64: der letzte GUELTIGE Code. Der Abgangsmelder braucht ihn als Gegenprobe:
+      // war der zuletzt gelesene Code eine Kurve/Haarnadel, liest der Ghost dort 0x00, weil
+      // er (unter der Leseschwelle) langsam ist - nicht, weil er neben der Bahn liegt.
+      car.lastCode = code;
+    }
     if (code !== car.tileCode) { car.tileCode = code; }
     if (car.tileCount !== b[11]) { car.tileCount = b[11]; car.tileAt = Date.now(); }
     // ---- DAS ABSEITS VON AUTO 2, aus SEINEN Bytes --------------------------------
@@ -7684,8 +7690,19 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // GHOST_UNPARK_RAMP_MS = 2500 ms, das Auto rollt in diesen drei Sekunden also kaum an.
     // Liegt es wirklich neben der Bahn, meldet es weiter 0x00 und steht danach wieder.
     const gnade = g.gnadeBis && now < g.gnadeBis;
+    // v0.9.64: Die Haarnadel faehrt der Ghost mit 33 % - unter GHOST_READ_MIN (35 %), also
+    // unter der Leseschwelle. Dort meldet das Auto 0x00, obwohl es auf der Bahn ist, und
+    // wird nach 900 ms als "Bahn verlassen" geparkt. Zwei Gegenproben, unabhaengig vom
+    // Kachelzaehler (der laeuft auch neben der Bahn weiter):
+    //   - war der zuletzt GUELTIGE Code eine Kurve/Haarnadel (car.lastCode), ist das Auto
+    //     dort absichtlich langsam und liest deshalb 0x00 - kein Parken;
+    //   - liegt das ZIELTEMPO unter der Leseschwelle, ist es ebenfalls langsam geplant.
+    // Auf einer Geraden (Ziel ueber der Schwelle, letzter Code gerade) bleibt der
+    // Abgangsmelder scharf.
+    const inKurve = ghostTurnOf(car.lastCode) !== 0;
     const parken = !gnade && !raceFormationLap
-                   && (offConfirmed || (ghostCfg.needCode && noCode && !zaehlerLaeuft));
+                   && ((offConfirmed && !inKurve && g.lastTarget >= GHOST_READ_MIN)
+                       || (ghostCfg.needCode && noCode && !zaehlerLaeuft));
     // ---- RECOVERY: erst versuchen zurueckzufahren, dann erst parken ------------------
     //
     // BESTELLT (Phase 12, Punkt 8): "Auf Basis der bekannten Strecke und des bekannten

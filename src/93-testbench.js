@@ -5450,7 +5450,8 @@
         // soll - ausdruecklich geloescht, sonst maskiert sie die ersten drei Sekunden
         // jedes Laufs.
         car.ghost.gnadeBis = 0;
-        car.ghost.tileIndex = 2;
+        car.ghost.tileIndex = opt.tileIndex === undefined ? 2 : opt.tileIndex;
+        car.lastCode = opt.lastCode;
         car.tileCode = 0x02;
         car.tileCount = 5;
         // attrappeGhost() liefert die Physik unkalibriert (topSpeedKmh im einstelligen
@@ -5481,7 +5482,8 @@
               * car.ghost.engine.config.topSpeedKmh;
           }
           ghostTick(car);
-          verlauf.push({ t, parked: car.parked, versucht: !!car.ghost.recoverUntil });
+          verlauf.push({ t, parked: car.parked, versucht: !!car.ghost.recoverUntil,
+                         lastTarget: car.ghost.lastTarget, tileCode: car.tileCode });
           if (car.parked) break;
         }
         return { geparkt: car.parked, versuchLief: verlauf.some((v) => v.versucht),

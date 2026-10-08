@@ -14690,6 +14690,34 @@
              mass: teile.join(' | ') + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Haarnadel: langsam, liest 0x00, wird aber nicht geparkt (v0.9.64) ----
+  //
+  // GEMELDET: "Ghosts bleiben in der Haarnadel stehen und blinken." Die Haarnadel faehrt der
+  // Ghost mit 33 % - unter GHOST_READ_MIN (35 %), also unter der Leseschwelle. Dort meldet
+  // das Auto 0x00, obwohl es auf der Bahn ist, und wird nach 900 ms als "Bahn verlassen"
+  // geparkt. Der Abgangsmelder darf nur zuschlagen, wenn der letzte GUELTIGE Code eine
+  // Gerade war (Ziel ueber der Leseschwelle). In der Kurve/Haarnadel liest 0x00 "langsam",
+  // nicht "neben der Bahn".
+  stAdd('Haarnadel: langsamer Ghost liest 0x00, wird aber nicht geparkt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.recoveryProbe) {
+      return { skip: true, mass: 'recoveryProbe nicht vorhanden' };
+    }
+    const fehler = [], teile = [];
+    // 1. In der Haarnadel (letzter Code 0x05), 0x00 steht: NICHT parken.
+    const hp = OMEGA_TEST.recoveryProbe({ dauerMs: 1500, an: false, code: 'SG3H2G3R2',
+                                          tileIndex: 5, lastCode: 0x05 });
+    teile.push('Haarnadel: geparkt ' + !!hp.geparkt);
+    if (hp.geparkt) fehler.push('Haarnadel wird als "Bahn verlassen" geparkt');
+    // 2. Kontrolle: derselbe Lauf, aber der letzte Code war eine Gerade (0x02) - das ist
+    //    ein echter Abgang und muss parken.
+    const ge = OMEGA_TEST.recoveryProbe({ dauerMs: 1500, an: false, code: 'SG4R4G4',
+                                          tileIndex: 2, lastCode: 0x02 });
+    teile.push('Gerade: geparkt ' + !!ge.geparkt);
+    if (!ge.geparkt) fehler.push('Gerade (echter Abgang) parkt nicht');
+    return { ok: fehler.length === 0,
+             mass: teile.join(' | ') + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Zieleinlauf: abwechselnd links und rechts (v0.9.59) ----
   //
   // GEMELDET: "Nach dem Rennen rammen die Ghosts alle ineinander hinein. Mache es so, dass
