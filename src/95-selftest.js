@@ -11275,6 +11275,8 @@
   // v0.9.64: Pro-Pacejka ist Pro plus der Steuerungsmodus "pacejka". Wer Pro-Pacejka
   // gewaehlt hat, erfuellt damit auch den ganzen Pro-Satz - der erste Treffer waere "Pro".
   // Die Anzeige (Fahrmodus-Knopf, Kachel "N/6") muss aber den SPEZIFISCHEREN Satz zeigen.
+  // v0.9.72: Pro setzt den Modus ausdruecklich auf "physik" - sonst bliebe nach dem
+  // Wechsel von Pro-Pacejka der alte Modus stehen und "Pro" erschiene wieder als "6/6".
   stAdd('Voreinstellungen: Pro-Pacejka und Pro sind getrennt erkennbar (v0.9.64)', () => {
     const f = [];
     const vorher = chMerken();
@@ -11282,7 +11284,7 @@
       window.__applyPreset('propacejka');
       if (window.__presetActive() !== 'propacejka') f.push('Pro-Pacejka -> ' + window.__presetActive());
       window.__applyPreset('pro');
-      chSetzen('phys-mode', 'physik');
+      if ($('phys-mode').value !== 'physik') f.push('Pro laesst Steuerungsmodus ' + $('phys-mode').value);
       if (window.__presetActive() !== 'pro') f.push('Pro -> ' + window.__presetActive());
     } finally {
       chZuruecksetzen(vorher);

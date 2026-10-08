@@ -83,7 +83,12 @@
       // Vorgabe, und wer beim ersten Start von Hand schalten muss und es nicht weiss, bleibt
       // im 1. Gang haengen - dann ist das Auto genau so traege, wie gemeldet wurde. Von Hand
       // schalten steht ab GT3 zur Verfuegung, und der Knopf RB schaltet es jederzeit um.
-      v: { 'setting-grip': 1.0, 'setting-brakepower': 1.4, 'setting-autoshift': true,
+      // Der Steuerungsmodus gehoert ausdruecklich zu Pro: es ist die Pro-Abstimmung im
+      // normalen Modell. Ohne diese Zeile bleibt beim Wechsel von Pro-Pacejka zurueck auf
+      // Pro der alte Modus "pacejka" stehen, und die Anzeige erkennt dann Pro-Pacejka
+      // (die spezifischere Tabelle) statt Pro - die Kachel zeigt "6/6" statt "2/6".
+      v: { 'phys-mode': 'physik', 'setting-grip': 1.0, 'setting-brakepower': 1.4,
+           'setting-autoshift': true,
            // 2,6 statt 3,2 s: gemessen brauchte das Motorbyte mit den alten Werten 24,9 s
            // Vollgas bis 90 %. Pro ist die Vorgabe und muss sich wie ein Auto anfuehlen,
            // nicht wie ein Anfahrversuch.
@@ -429,12 +434,12 @@
 
   function presetAktiv() {
     const ist = presetRead();
-    // Nicht die ERSTE passende Variante, sondern die SPEZIFISCHSTE. Seit v0.9.64 ist
-    // Pro-Pacejka dieselbe Tabelle wie Pro plus der Steuerungsmodus "pacejka" - wer also
-    // Pro-Pacejka gewaehlt hat, erfuellt auch den ganzen Pro-Satz. Gaege hier nur der erste
-    // Treffer zurueck, meldete die Anzeige "Pro 2/6", obwohl Pro-Pacejka eingestellt ist. Die
-    // spezifischere Variante hat mehr Regler, also gewinnt bei gleicher Erfuellung die mit
-    // der groesseren Tabelle.
+    // Nicht die ERSTE passende Variante, sondern die SPEZIFISCHSTE. Pro-Pacejka ist Pro
+    // plus der Steuerungsmodus "pacejka", und seit Pro den Modus ausdruecklich auf "physik"
+    // setzt, schliessen sich die beiden aus: wer Pro-Pacejka eingestellt hat, erfuellt den
+    // Pro-Satz nicht mehr (der Modus weicht ab). Der erste Treffer waere sonst trotzdem
+    // "Pro", wenn beide passen wuerden; bei gleicher Erfuellung gewinnt die mit der
+    // groesseren Tabelle (die spezifischere).
     let bester = null, besteN = -1;
     for (const [key, p] of Object.entries(PRESETS)) {
       let passt = true, n = 0;
