@@ -13224,6 +13224,47 @@
                    + ', Faktor ' + r.leise };
   });
 
+  // ---- Ghost-Motorsound: Knoten-Lebenszyklus (v0.9.64) ---------------------------
+  //
+  // BESTELLT: "nach langer Laufzeit Ruckler". startGhost() ersetzt car.ghost.stimme bei
+  // jedem Rennstart, aber ein Neustart DERSELBEN Stimme (Motorenwechsel, Ghost-Sound an/aus)
+  // benutzt denselben master weiter. Ohne disconnect der Band-gains sammelten sich die alten
+  // gains am master an. Geprueft wird der Lebenszyklus: starten, stoppen, nochmal starten -
+  // die Knotenzahl muss jedes Mal stimmen und der master nach dem Stoppen losgeloest sein.
+  stAdd('Ghost-Motorsound: Knoten-Lebenszyklus (start/stop/restart ohne Anwachsen)', () => {
+    if (!window.OMEGA_TEST || !audioCtx || !sampleEngine.ready) {
+      return { skip: true, mass: 'kein Tonkontext oder Schleifen noch nicht geladen' };
+    }
+    const geladen = SAMPLE_CARS.filter((c) => sampleEngine.buffers[c]);
+    if (!geladen.length) return { skip: true, mass: 'kein Motor geladen' };
+    const modell = geladen[0];
+    const car = { role: 'ghost', alias: 'Probe', device: { id: 'probe-sound-xyz' },
+                  ghost: { stimme: { master: null, pan: null, nodes: null, over: null, car: null, laut: 0.6 },
+                           running: true } };
+    const merkCar = sampleEngine.car, merkSound = ghostSound, merkEnabled = soundEnabled;
+    try {
+      sampleEngine.car = modell;
+      ghostSound = true; soundEnabled = true;
+      const fehler = [];
+      let vorher = 0;
+      for (let i = 0; i < 3; i++) {
+        if (!ghostStimmeStarten(car)) { fehler.push('Start ' + (i + 1) + ' fehlgeschlagen'); break; }
+        const lage = stimmeLage(car.ghost.stimme, car.ghost.stimme.pan);
+        if (i === 0) vorher = lage.baender;
+        else if (lage.baender !== vorher) fehler.push('Baender gewachsen: ' + vorher + ' -> ' + lage.baender);
+        ghostStimmeStoppen(car);
+        const nach = stimmeLage(car.ghost.stimme, null);
+        if (nach.baender !== 0) fehler.push('Nach Stopp nicht leer: ' + nach.baender);
+        if (car.ghost.stimme.pan !== null) fehler.push('Panner nicht losgeloest');
+      }
+      return { ok: !fehler.length,
+               mass: fehler.length ? fehler.join(' | ') : 'Baender ' + vorher + ', 3x start/stop' };
+    } finally {
+      ghostSound = merkSound; soundEnabled = merkEnabled; sampleEngine.car = merkCar;
+      ghostStimmeStoppen(car);
+    }
+  });
+
   // ---- Zwei Spieler DUERFEN verschiedene Motoren fahren ----------------------------
   //
   // BESTELLT: "Spieler 1 und Spieler 2 sollen verschiedene Motorsounds haben duerfen."

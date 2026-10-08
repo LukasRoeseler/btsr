@@ -1137,8 +1137,21 @@
 
   function stopSampleEngineIn(store) {
     if (!store.nodes) return;
-    for (const n of store.nodes) { try { n.src.stop(); } catch (e) { /* already stopped */ } }
-    if (store.over) { try { store.over.src.stop(); } catch (e) { /* already stopped */ } }
+    for (const n of store.nodes) {
+      try { n.src.stop(); } catch (e) { /* already stopped */ }
+      // v0.9.64: auch die Band-Verstaerkung vom master LOESEN. Vorher blieben die gain-Knoten
+      // mit dem master verbunden, und weil startSampleEngineIn() denselben master weiter
+      // benutzt (nur der Ausgang wird neu verbunden), sammelten sich bei jedem Neustart
+      // (Motorenwechsel, Ghost-Sound an/aus) die alten gains am master an - eine immer
+      // laengere Kette, die im Hintergrund weiter rechnet. Der master ist bei einem
+      // Rennstart ohnehin ein frisches Objekt (startGhost), aber ein Neustart DERSELBEN
+      // Stimme haette sonst weiter gewachsen.
+      try { n.gain.disconnect(); } catch (e) { /* war nicht verbunden */ }
+    }
+    if (store.over) {
+      try { store.over.src.stop(); } catch (e) { /* already stopped */ }
+      try { store.over.gain.disconnect(); } catch (e) { /* war nicht verbunden */ }
+    }
     store.nodes = null;
     store.over = null;
     store.car = null;
@@ -1307,6 +1320,9 @@
     if (!ghostSound || !soundEnabled || !audioCtx || !car.ghost) return false;
     // v0.9.64: je Ghost abschaltbar (der Schalter in Optionen -> Ton bleibt der Hauptschalter).
     if (car.ghostSound === false) return false;
+    // v0.9.64: nur ein laufender Ghost bekommt eine Stimme. Ein geparkter hat keinen Takt,
+    // der sie aktualisiert - er startete sonst stille Sources, die im Hintergrund weiterrechnen.
+    if (!car.ghost.running) return false;
     const modell = sampleEngine.car;
     if (!modell || !sampleEngine.buffers[modell]) return false;
     return startSampleEngineIn(car.ghost.stimme, modell, () => ghostStimmeAusgang(car));
@@ -1341,8 +1357,11 @@
     ghostSound = e.target.checked;
     if (typeof garage === 'undefined') return;
     for (const c of garage) {
-      if (c.role !== 'ghost') continue;
-      if (ghostSound) ghostStimmeStarten(c);
+      if (c.role !== 'ghost' || !c.ghost) continue;
+      // v0.9.64: nur laufende Ghosts besorgen sich eine Stimme. Ein geparkter Ghost hat
+      // keine Stimme, die jemand aktualisiert (updateGhostSound haengt am Sendetakt) - er
+      // wuerde sonst stille Buffer-Sources starten, die im Hintergrund weiterrechnen.
+      if (ghostSound && c.ghost.running) ghostStimmeStarten(c);
       else ghostStimmeStoppen(c);
     }
   });
