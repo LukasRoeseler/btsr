@@ -1469,6 +1469,31 @@
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Ghost-Seiten aus der Startaufstellung (v0.9.56) ----
+  //
+  // ghostLane() soll die Startseite (ghost.seite) liefern und nicht die Garagen-Paritaet.
+  // Sonst dreht ein Zwei-Spur-Paar bei jedem Takt um, sobald die Positionen jittern. Die
+  // Startseite wechselt je Platz (gerade rechts, ungerade links), und sie muss in der
+  // abgefragten Spur wieder auftauchen.
+  stAdd('Ghost-Seiten: Startseite bleibt (v0.9.56)', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.seitenProbe) {
+      return { skip: true, mass: 'seitenProbe nicht vorhanden' };
+    }
+    const schlecht = [];
+    for (const n of [2, 3, 4, 6]) {
+      const r = OMEGA_TEST.seitenProbe(n);
+      if (!r) { schlecht.push(n + ': kein Lauf'); continue; }
+      for (let i = 0; i < n; i++) {
+        const erwartet = (i % 2 ? -1 : 1);
+        if (Math.abs(r.spuren[i] - erwartet) > 1e-9) {
+          schlecht.push(n + ': Platz ' + i + ' Spur ' + r.spuren[i] + ' statt ' + erwartet);
+        }
+      }
+    }
+    return { ok: !schlecht.length,
+             mass: schlecht.length ? schlecht.join('; ') : 'alle Startseiten bleiben' };
+  });
+
   // ---- Reifenwaermer ----
   //
   // ZWEI Aussagen, und die zweite ist die, auf die es beim Fahren ankommt: die Temperatur
@@ -10303,6 +10328,50 @@
       renderGarage();
     }
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Karte mit Farbbild, Rolle mit Pfeil, Foto, Aufklappzeile, Ghost-Knopf auf Starten' };
+  });
+
+  stAdd('Garage: Ghost-Tempo als drei Stufen (einfach/mittel/schnell), Blaettern setzt sie', () => {
+    const att = { role: 'ghost', device: { id: 'probe-tempo' }, alias: '', colorId: 'rot', sim: false, testSenke: [] };
+    const f = [];
+    if (typeof GHOST_TEMPO_STUFEN !== 'object' || GHOST_TEMPO_STUFEN.length !== 3) return { ok: false, mass: 'GHOST_TEMPO_STUFEN fehlt' };
+    if (GHOST_TEMPO_STUFEN[0].speed !== 0.50 || GHOST_TEMPO_STUFEN[1].speed !== null || GHOST_TEMPO_STUFEN[2].speed !== 0.60) {
+      f.push('Stufen-Werte falsch');
+    }
+    const merkRollen = localStorage.getItem('chc.rollen.v1');
+    garage.push(att);
+    const finde = () => [...$('gar-list').querySelectorAll('.gar-a-rechts .gk-zeile')].find((z) => {
+      const l = z.querySelector('.gk-l');
+      return l && /Ghost-Tempo/.test(l.textContent);
+    });
+    const klick = (d) => { const z = finde(); if (z) z.querySelector('[data-d="' + d + '"]').click(); };
+    const wert = () => { const z = finde(); return z ? z.querySelector('b').textContent : ''; };
+    try {
+      att.ghostSpeed = null;
+      garAufAuto = att;
+      renderGarage();
+      if (!finde()) return { ok: false, mass: 'keine Ghost-Tempo-Zeile' };
+      if (!/mittel/.test(wert()) || !/Vorgabe/.test(wert())) f.push('Vorgabe zeigt nicht mittel: ' + wert());
+      klick(1);
+      if (att.ghostSpeed !== 0.60) f.push('Rechts setzt nicht schnell (' + att.ghostSpeed + ')');
+      if (!/schnell/.test(wert())) f.push('zeigt nicht schnell: ' + wert());
+      klick(1);
+      if (att.ghostSpeed !== 0.50) f.push('Nochmal rechts setzt nicht einfach (' + att.ghostSpeed + ')');
+      klick(1);
+      if (att.ghostSpeed !== null) f.push('Mittel setzt nicht auf Vorgabe (' + att.ghostSpeed + ')');
+      if (!/Vorgabe/.test(wert())) f.push('Mittel zeigt nicht Vorgabe: ' + wert());
+      klick(-1);
+      if (att.ghostSpeed !== 0.50) f.push('Links von mittel setzt nicht einfach (' + att.ghostSpeed + ')');
+      const z = finde();
+      if (z && z.querySelector('.gar-speed-reset')) z.querySelector('.gar-speed-reset').click();
+      if (att.ghostSpeed !== null) f.push('Reset stellt Vorgabe nicht her (' + att.ghostSpeed + ')');
+    } finally {
+      const i = garage.indexOf(att);
+      if (i >= 0) garage.splice(i, 1);
+      garAufAuto = null;
+      try { if (merkRollen === null) localStorage.removeItem('chc.rollen.v1'); else localStorage.setItem('chc.rollen.v1', merkRollen); } catch (e) { /* egal */ }
+      renderGarage();
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'einfach/mittel/schnell blatteln, Reset zur Vorgabe' };
   });
 
   stAdd('Steuerung: läuft auf dem Cockpit, zeigt gedrückte Tasten, fährt dabei nicht', () => {

@@ -1473,6 +1473,15 @@
     z.appendChild(rg);
     return z;
   }
+  // BESTELLT: "baue ghost presets, die dann statt den 55% gewaehlt werden in der garage:
+  // mittel (so wie aktuell), schnell (...60%), und einfach (...50%)". Statt einer feinen
+  // Prozentzahl waehlt man je Ghost eine von drei Stufen. "mittel" (null) folgt der Vorgabe
+  // aus den Optionen - also der bisherige Zustand, und der Reset-Knopf dorthin.
+  const GHOST_TEMPO_STUFEN = [
+    { label: 'einfach', speed: 0.50 },
+    { label: 'mittel',  speed: null },
+    { label: 'schnell', speed: 0.60 },
+  ];
   function garageAufZeile(car) {
     const box = document.createElement('div');
     box.className = 'gk-aufzeile';
@@ -1482,9 +1491,14 @@
     box.appendChild(garWertZeile('Farbe ' + garageLabel(car), f.name, () => farbe(-1), () => farbe(1)));
     if (car.role === 'ghost') {
       const eigen = car.ghostSpeed !== undefined && car.ghostSpeed !== null;
-      const v = eigen ? car.ghostSpeed : ghostCfg.speed;
+      const basis = eigen ? car.ghostSpeed : ghostCfg.speed;
+      let stufe = 1;   // mittel als Fallback
+      const i = GHOST_TEMPO_STUFEN.findIndex((s) => s.speed !== null && Math.abs(s.speed - basis) < 0.001);
+      if (i >= 0) stufe = i;
+      const st = GHOST_TEMPO_STUFEN;
       const tempo = (d) => {
-        car.ghostSpeed = Math.round(Math.max(GHOST_READ_MIN, Math.min(1, v + 0.05 * d)) * 100) / 100;
+        stufe = (stufe + d + st.length) % st.length;
+        car.ghostSpeed = st[stufe].speed;
         carRolleMerken(car);
         renderGarage();
       };
@@ -1501,8 +1515,13 @@
         showHudToast(garageLabel(car).toUpperCase() + ' FOLGT DER VORGABE');
         renderGarage();
       };
-      box.appendChild(garWertZeile('Ghost-Tempo', Math.round(v * 100) + ' %' + (eigen ? '' : ' (Vorgabe)'),
-                                   () => tempo(-1), () => tempo(1), rst));
+      const stufeS = st[stufe];
+      const anzeige = stufeS.speed === null
+        ? t(stufeS.label) + ' (Vorgabe) \u00b7 ' + Math.round(ghostCfg.speed * 100) + ' %'
+        : (eigen && Math.abs(stufeS.speed - car.ghostSpeed) > 0.001
+             ? Math.round(car.ghostSpeed * 100) + ' %'
+             : t(stufeS.label) + ' \u00b7 ' + Math.round(stufeS.speed * 100) + ' %');
+      box.appendChild(garWertZeile('Ghost-Tempo', anzeige, () => tempo(-1), () => tempo(1), rst));
       const ch = document.createElement('div');
       ch.innerHTML = charakterZeile(car);
       if (ch.firstElementChild) box.appendChild(ch.firstElementChild);
@@ -2658,7 +2677,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // ein Rennen hinweg, und das soll niemand ungefragt bekommen.
     learnPace: false,
     leaderBrake: true,  // gestaffelt ueber das ganze Feld, siehe ghostFeldStaffel()
-    leaderBrakePct: 0.10,
+    leaderBrakePct: 0.14,
     // Default ON: the measurement says this is the mode in which the car holds the track by
     // itself, which is the only configuration in which a ghost works at all today.
     railMode: true,
@@ -5073,9 +5092,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (o !== car && o.ghost && ghostNahe(car, o)) { nb = o; break; }
     }
     if (!nb) return null;
-    const a = ghostOrtGes(car), b = ghostOrtGes(nb);
-    const vorn = (a === null || b === null) ? garage.indexOf(car) < garage.indexOf(nb) : a >= b;
-    return vorn ? dir * GHOST_PAAR_INNEN : 0;
+    // v0.9.56: Innen bekommt das Auto, dessen Startseite zur Kurveninnenseite passt, statt
+    // immer das vordere. So bleibt ein Paar in seiner Aufstellungs-Seite, und wer innen
+    // liegt, haengt nicht vom Zufall ab, wer gerade voraus ist.
+    const innen = car.ghost.seite === dir;
+    return innen ? dir * GHOST_PAAR_INNEN : 0;
   }
 
   const GHOST_START_REAKTION_MS = [80, 300];
@@ -6943,6 +6964,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Lenkung, Gas UND die Geschwindigkeit auf null - der Knopf startete also nachweislich
     // einen Ghost, der sich nicht bewegen konnte, obwohl der Kommentar daneben "freies
     // Fahren mit Begleitung" behauptete.
+    const gp = gridPosOf(car);
     car.ghost = { engine: e, tileIndex: null, lastCount: car.tileCount,
                   lastTick: 0, bias: 0, laps: 0, cutOut: false, freeRun: false,
                   // Recovery-Versuch nach einem Abgang - siehe ghostRecoveryTick().
@@ -6980,7 +7002,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                   // Aufstellung laeuft sonst 22 Mal je Sekunde je Auto. -1 heisst "steht
                   // nicht in der Liste", und dann gibt es keinen Versatz - eine Paritaet aus
                   // -1 waere geraten und keine Aufstellung.
-                  gridPos: gridPosOf(car),
+                  gridPos: gp,
+                  // Die Seite aus der Startaufstellung, v0.9.56: dieselbe Konvention wie
+                  // formationOffset (gerader Platz links, ungerader rechts). Sie haelt die
+                  // Zwei-Spur-Aufteilung stabil - ghostLane() und ghostAssignBias() lesen
+                  // sie, und ghostPaarKurve() gibt damit die Kurveninnenseite dem Auto, das
+                  // schon auf der richtigen Seite liegt. 0 heisst "nicht in der Aufstellung".
+                  seite: gp >= 0 ? (gp % 2 ? -1 : 1) : 0,
                   // Die Kachelabstaende der letzten Wechsel, fuer die Plausibilitaet des
                   // Zaehlers. Leer heisst "noch nichts gesehen", und dann zaehlt er nicht.
                   tileRing: [],
@@ -8708,7 +8736,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Die Startbedingung faellt damit weg - sie tat genau das, was jetzt immer gilt.
     // GHOST_START_ENG_MS bleibt als Konstante stehen, weil sie dokumentiert, woher die
     // Zweierregel kommt.
-    return k % 2 === 0 ? -1 : 1;
+    //
+    // v0.9.56: die Seite kommt aus der Startaufstellung (g.seite), nicht mehr aus der
+    // Garagen-Paritaet. So behaelt ein Ghost die Seite, auf der er gestartet ist, und ein
+    // Paar dreht nicht bei jedem Takt um. Fuer Autos ausserhalb der Aufstellung bleibt die
+    // Garagen-Paritaet der Rueckfall.
+    const seite = (car.ghost && car.ghost.seite) ? car.ghost.seite : (k % 2 === 0 ? -1 : 1);
+    return seite;
   }
 
   // ---- Die Seiten einer Gruppe --------------------------------------------------------
@@ -8808,16 +8842,27 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Nachgezogen statt gesetzt. Ein Sprung von 0 auf den vollen Versatz ist ein Ruck am
     // Lenkservo, und der sieht aus wie ein Fehler statt wie ein Ausweichen.
     for (const c of gs) {
-      const t = want.get(c) || 0;
-      const cur = c.ghost.bias || 0;
+      let t = want.get(c) || 0;
+      const g = c.ghost;
+      // Hysterese (v0.9.56): solange ein Paar nah bleibt, behaelt es seine Startseite.
+      // Vorher wurde bei jedem Takt neu nach Position sortiert, und bei zwei Autos, die
+      // praktisch auf derselben Stelle stehen, entschied der Geraetename - das Paar konnte
+      // also bei jedem Takt die Seiten tauschen. Gewechselt wird erst, wenn das Paar mehr
+      // als 0,5 Kacheln auseinanderliegt.
+      if (g.seite && near.indexOf(c) >= 0) {
+        const nah = near.some((o) => o !== c
+                              && Math.abs(ghostProgress(c) - ghostProgress(o)) <= 0.5);
+        if (nah) t = g.seite;
+      }
+      const cur = g.bias || 0;
       const d = t - cur;
       c.ghost.bias = Math.abs(d) <= schritt ? t : cur + Math.sign(d) * schritt;
       // Einmal melden, wenn es greift - sonst sieht man nicht, ob die Logik ueberhaupt
       // ausloest, und "die fahren nicht versetzt" bleibt eine Vermutung.
-      const near = t !== 0;
-      if (near !== !!c.ghost.wasNear) {
-        c.ghost.wasNear = near;
-        if (near) log(garageLabel(c) + ': nebeneinander, weicht aus.', 'info');
+      const nearFlag = t !== 0;
+      if (nearFlag !== !!c.ghost.wasNear) {
+        c.ghost.wasNear = nearFlag;
+        if (nearFlag) log(garageLabel(c) + ': nebeneinander, weicht aus.', 'info');
       }
     }
   }

@@ -6822,6 +6822,25 @@
       }
     },
 
+    // v0.9.56: ghostLane() soll die Startseite (ghost.seite) liefern, nicht die
+    // Garagen-Paritaet. Diese Sonde setzt die Startseite nach dem Aufstellungsmuster
+    // (gerader Platz rechts +1, ungerader links -1) und fragt ghostLane() ab.
+    seitenProbe(n) {
+      const merkGarage = garage.splice(0, garage.length);
+      try {
+        const autos = [];
+        for (let i = 0; i < (n || 6); i++) {
+          autos.push({ role: 'ghost', alias: 'S' + i,
+                       ghost: { tileIndex: 0, seite: (i % 2 ? -1 : 1) } });
+        }
+        for (const c of autos) garage.push(c);
+        return { spuren: autos.map((c) => ghostLane(c)) };
+      } finally {
+        garage.splice(0, garage.length);
+        merkGarage.forEach((c) => garage.push(c));
+      }
+    },
+
     // Die Wetterlage von aussen setzen, ueber denselben Weg wie die Kachel. Gebraucht vom
     // Regenformen-Test, der vorher mit box.click() auf eine Lage zusteuerte - das ging,
     // solange die Kachel ein Zwei-Wege-Schalter war, und haengt seit v0.6.17 am
