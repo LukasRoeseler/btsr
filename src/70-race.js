@@ -150,6 +150,8 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
                             // Querversatz der Startaufstellung in der Einfuehrungsrunde.
   let raceFormationLap = false;
   let raceStartedAt = null;
+  // Zeitpunkt von Gruen (stehender Start). Die Reihenstaffel der Ghosts zaehlt davon.
+  let raceGreenAt = null;
   let raceClockTimer = null;
 
   // Was in der Rundenkachel steht. Drei Faelle, und der dritte ist der Grund fuer diese
@@ -1801,6 +1803,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     // A flying start goes to the formation lap first: the cars roll at pit-lane speed
     // and no laps count until the field crosses the line.
     raceFormationLap = raceFlying;
+    raceGreenAt = raceFlying ? null : Date.now();
     fruehstartGruen();
     rammReset();
     // FRISCH ZAEHLEN. Ohne das traegt ein zweites Rennen die Ueberfahrten des ersten mit
@@ -1910,6 +1913,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   // requestRaceStop() uebergibt ausdruecklich false.
   function finishRace(auslaufen) {
     raceState = 'finished';
+    raceGreenAt = null;
     fruehstartReset();
     derbyEinstellungenZurueck();
     derbyLaeuft = false; knockoutLaeuft = false;

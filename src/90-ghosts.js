@@ -2607,7 +2607,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // vergrößert werden (dazu slider)" und "Pro 4 Autos ... wie viele Überholmanöver pro
     // Runde ... auf 0m5 setzen". Beide experimentell.
     feldAbstand: 0,        // 0-100 %: vergroessert die Abstaende zwischen den Autos
-    ueberholRate: 0.5,     // Ueberholmanoever pro Runde pro 4 Autos (0.1er Schritte)
+    ueberholRate: 0.1,     // Ueberholmanoever pro Runde pro 4 Autos (v0.9.55: echte Rate)
     // ---- GHOST-BOXENSTOPP ----------------------------------------------------------
     //
     // pitAn steht auf AN, obwohl es neu und experimentell ist: bestellt war ein Feature, das
@@ -2652,7 +2652,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // ghostPaarKurve.
     tempoStreuung: 0,
     staffelStart: true,
-    staffelMs: 200,
+    staffelMs: 250,
     paarKurve: true,
     // Lernen von Runde zu Runde, standardmaessig aus: es aendert das Fahrverhalten ueber
     // ein Rennen hinweg, und das soll niemand ungefragt bekommen.
@@ -5642,6 +5642,30 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     return n;
   }
+  // ---- DIE UEBERHOLRATE ALS KONTINGENT (v0.9.55) -----------------------------------
+  //
+  // GEMELDET: "Setze Anzahl Ueberholmanoever standardmaessig auf 0.1 pro Runde pro 4 Autos.
+  // Bei einem 10-Runden-Rennen waren es immer noch eher 1 pro Runde bei 6 Autos."
+  // Der Regler skalierte nur die REICHWEITE, ab der angegriffen wird - jede Annaeherung
+  // wurde trotzdem nach gut drei Sekunden zum Angriff. Jetzt ein Guthaben: je gefahrener
+  // Feldrunde kommt Rate x (Autos/4) dazu, jeder Angriff kostet eins. 0,1 bei 6 Autos und
+  // 10 Runden sind 1,5 Angriffe. Nur im Rennen; ausserhalb wird wie bisher gewuerfelt.
+  const ueberholKonto = { guthaben: 0, stand: null, at: 0 };
+  function ueberholKontoGilt() { return raceState === 'racing' || raceState === 'finishing'; }
+  function ueberholKontoTick(now) {
+    if (!ueberholKontoGilt()) { ueberholKonto.guthaben = 0; ueberholKonto.stand = null; return; }
+    if (now - ueberholKonto.at < 200) return;
+    ueberholKonto.at = now;
+    const feld = ghostFieldRacing();
+    const L = (currentTrackTiles && currentTrackTiles.length) || 0;
+    if (feld.length < 2 || L < 3) return;
+    const mittel = feld.reduce((s, c) => s + ghostProgress(c), 0) / feld.length / L;
+    if (ueberholKonto.stand === null) { ueberholKonto.stand = mittel; return; }
+    const d = Math.max(0, Math.min(0.5, mittel - ueberholKonto.stand));
+    ueberholKonto.stand = mittel;
+    ueberholKonto.guthaben = Math.min(1.5, ueberholKonto.guthaben
+      + (ghostCfg.ueberholRate || 0) * (feld.length / 4) * d);
+  }
   function ghostAttackeErlaubt(car) {
     const feld = ghostFieldRacing();
     const autos = feld.filter((o) => o.ghost).length;
@@ -5869,7 +5893,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Angriff beginnt - kleinere Reichweite = weniger Ueberholmanoever.
     const feldF = 1 + (ghostCfg.feldAbstand || 0) / 100;
     // 0.5 ist die bisherige Abstimmung: bei der Vorgabe bleibt die Reichweite unveraendert.
-    const ueberF = Math.max(0.1, (ghostCfg.ueberholRate || 0.5) / 0.5);
+    // Seit v0.9.55 steuert die Rate das Guthaben (ueberholKonto), nicht mehr die Reichweite.
+    const ueberF = 1;
+    ueberholKontoTick(now);
     const onStraight = aheadTight.tight === 0;
     // DIE ANNAEHERUNGSRATE GENAU EINMAL JE TAKT, und deshalb steht sie hier oben. Sie ist
     // eine ABLEITUNG mit Zustand (g.gapLast, g.gapAt): ein zweiter Aufruf im selben Takt
@@ -6031,6 +6057,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         && !haarnadelVoraus
         && irgendeineSeiteFrei
         && ghostAttackeErlaubt(car)
+        && (!ueberholKontoGilt() || ueberholKonto.guthaben >= 1)
         && now > (g.passBlockUntil || 0)
         && now - (g.attackTriedAt || 0) > SPICE_ATTACK_RETRY_MS) {
       g.attackTriedAt = now;
@@ -6043,6 +6070,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         // frueh abgelaufen.
         g.attackUntil = now + SPICE_ANSAGE_MS + SPICE_PASS_MAX_MS + SPICE_PASS_TUCK_MS;
         g.passSince = now;
+        if (ueberholKontoGilt()) ueberholKonto.guthaben -= 1;
         // ---- ERST ANSAGEN, DANN AUSSCHWENKEN --------------------------------------
         g.passPhase = 'ansage';
         g.ansageSeit = now;
@@ -7838,10 +7866,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Startphase - und vor der Anfahrrampe, die ihre eigene Aufgabe hat.
       // STARTVERSATZ JE REIHE (v0.9.5): Reihe 1 (Platz 1/2) sofort, jede weitere ghostCfg.staffelMs
       // spaeter. Unabhaengig von der Startreaktion und vor ihr - beide addieren sich.
-      const reihenWarten = raceStartedAt ? ghostStaffelMs(car) : 0;
-      if (reihenWarten && now - raceStartedAt < reihenWarten) target = 0;
-      if (ghostCfg.wuerzeStart && raceStartedAt && g.startReaktion) {
-        const seitGruen = now - raceStartedAt;
+      // v0.9.55: AB GRUEN gezaehlt (raceGreenAt), nicht ab der ersten Bewegung des Fahrers
+      // (raceStartedAt) - die steht bei Gruen noch auf null, die Staffel wirkte also nicht,
+      // und wenn der Fahrer dann losfuhr, wurden schon rollende hintere Reihen gestoppt.
+      const reihenWarten = raceGreenAt ? ghostStaffelMs(car) : 0;
+      if (reihenWarten && now - raceGreenAt < reihenWarten) target = 0;
+      if (ghostCfg.wuerzeStart && raceGreenAt && g.startReaktion) {
+        const seitGruen = now - raceGreenAt;
         if (seitGruen < g.startReaktion) target = 0;
         else if (seitGruen < g.startReaktion + GHOST_START_VORSICHT_MS) {
           target *= GHOST_START_VORSICHT;

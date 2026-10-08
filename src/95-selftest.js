@@ -17467,6 +17467,34 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Grenze >= ' + GHOST_READ_MIN + ', Kurve und Haarnadel gedrosselt wie bei den Ghosts' };
   });
 
+  // ---- v0.9.55: Ueberholrate als Kontingent ----
+  stAdd('Ueberholrate: 0.1 je Runde je 4 Autos ergibt bei 6 Autos und 10 Runden 1 bis 2 Angriffe', () => {
+    const f = [];
+    const merk = { rs: raceState, feld: ghostFieldRacing, prog: ghostProgress, tiles: currentTrackTiles,
+                   rate: ghostCfg.ueberholRate, konto: Object.assign({}, ueberholKonto) };
+    let angriffe = 0;
+    try {
+      const autos = [1, 2, 3, 4, 5, 6].map((i) => ({ id: i, tiles: 0 }));
+      ghostFieldRacing = () => autos;
+      ghostProgress = (c) => c.tiles;
+      currentTrackTiles = new Array(10).fill(0).map(() => ({ type: TILE_TYPE.STRAIGHT }));
+      raceState = 'racing'; ghostCfg.ueberholRate = 0.1;
+      ueberholKonto.guthaben = 0; ueberholKonto.stand = null; ueberholKonto.at = 0;
+      let uhr = 1e6;
+      for (let schritt = 0; schritt <= 1000; schritt++) {       // 10 Runden in 1000 Schritten
+        autos.forEach((a) => { a.tiles = schritt / 10; });
+        uhr += 250;
+        ueberholKontoTick(uhr);
+        if (ueberholKonto.guthaben >= 1) { ueberholKonto.guthaben -= 1; angriffe++; }
+      }
+      if (angriffe < 1 || angriffe > 2) f.push(angriffe + ' Angriffe');
+    } finally {
+      raceState = merk.rs; ghostFieldRacing = merk.feld; ghostProgress = merk.prog; currentTrackTiles = merk.tiles;
+      ghostCfg.ueberholRate = merk.rate; Object.assign(ueberholKonto, merk.konto);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : angriffe + ' Angriff(e) in 10 Runden mit 6 Autos' };
+  });
+
   stAdd('Rundenrennen endet mit der Zielrunde, nicht eine Runde spaeter', () => {
     const f = [];
     const merk = { rs: raceState, rm: raceMode, lim: raceLimit, laps: raceLapTimes.slice(), ls: raceLapStart,

@@ -285,6 +285,23 @@
         } catch (e) { /* dann eben nur fuer diese Sitzung */ }
       }
     }
+    // ---- EINMALIG (v0.9.55): neue Vorgaben fuer Ueberholrate und Reihenstaffel ----------
+    // Dieselbe Regel wie darueber: nur wer noch genau auf der alten Vorgabe steht.
+    {
+      let erledigt = false;
+      try { erledigt = localStorage.getItem('chc.migrate.ghost55.v1') === '1'; } catch (e) { /* privat */ }
+      if (!erledigt) {
+        const alt = { 'ghost-ueber': [0.5, 0.1], 'ghost-staffel-ms': [200, 250] };
+        let geaendert = false;
+        for (const [id, [von, nach]] of Object.entries(alt)) {
+          if (cfg[id] === von) { cfg[id] = nach; geaendert = true; }
+        }
+        try {
+          localStorage.setItem('chc.migrate.ghost55.v1', '1');
+          if (geaendert) localStorage.setItem(AUTO_STORE, JSON.stringify(cfg));
+        } catch (e) { /* dann eben nur fuer diese Sitzung */ }
+      }
+    }
     // AUCH HIER GEPRUEFT. Die eigene Ablage ist nicht vertrauenswuerdiger als eine Datei:
     // sie kann aus einer aelteren Fassung stammen, in der ein Regler andere Grenzen hatte.
     const { bad } = presetPruefen(cfg);

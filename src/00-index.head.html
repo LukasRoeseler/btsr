@@ -4462,7 +4462,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.54</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.55</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5585,6 +5585,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Ghosts: Die &#220;berholrate ist jetzt eine echte Rate (Vorgabe 0,1 &#220;berholman&#246;ver je Runde je 4 Autos, bei 6 Autos und 10 Runden also 1 bis 2). Vorher &#228;nderte der Regler nur die Reichweite, und jede Ann&#228;herung wurde zum Angriff. Die Startreihen fahren gestaffelt ab Gr&#252;n los, 250 ms je Zweierreihe. Vorher z&#228;hlte die Staffel erst ab deiner ersten Bewegung und wirkte praktisch nicht.</li>
         <li>Gelbe Flagge auf der Bahn: Dein Auto f&#228;hrt jetzt im Tempo der Ghosts weiter und lenkt selbst. Die Tempogrenze lag unter dem Tempo, ab dem das Auto die Bahn liest, deshalb fiel es aus der Selbstf&#252;hrung und fuhr geradeaus. In Kurven und Haarnadeln drosselt es wie die Ghosts, und die Selbstf&#252;hrung greift auch direkt nach dem Hinstellen, bevor die Kachel verortet ist.</li>
         <li>NPC Knockout: Ghosts, die die Bahn verlassen, sind jetzt wirklich raus. Ein Ghost, der steht und blinkt, z&#228;hlt als &#8222;Bahn verlassen&#8220;, ebenso einer, der 5 s keine Kachel mehr schafft (vorher konnte nie ein Ghost ausscheiden). Sind alle Ghosts raus, kommt die Siegesfanfare und das Ergebnis. Ein verlorenes Leben spielt einen kurzen traurigen Ton, das letzte den Game-over-Ton, danach das Rennende mit Ergebnis.</li>
         <li>Rundenz&#228;hlung: Wer von hinter der Startlinie losf&#228;hrt (z. B. Platz 4), bekam beim ersten &#220;berqueren eine Runde von etwa 2 s, die danach jede echte Bestzeit verdeckte. Jetzt ist das erste &#220;berqueren nur die Startlinie, Runde 1 l&#228;uft vom Start bis zum Ende der ersten vollen Runde, und unm&#246;glich kurze Runden z&#228;hlen nie als Bestzeit. Rennstart setzt alle Autos zur&#252;ck: Tank voll, Schaden null (auch Spieler 1 und 3), Reifen kalt oder mit Reifenw&#228;rmer warm. Der Ton f&#252;r eine ung&#252;ltige Runde ist lauter und f&#252;r Handylautsprecher h&#246;rbar (zwei kurze, fallende Summt&#246;ne).</li>
@@ -10088,12 +10089,12 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-feld-val">0%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Ghost: Überholmanöver je Runde<span class="wip-tag">experimentell</span><small>Pro 4 Autos, wie viele Überholmanöver pro Runde. 0.5 = eines alle 2 Runden.</small></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Überholmanöver je Runde<span class="wip-tag">experimentell</span><small>Pro 4 Autos, wie viele Überholmanöver pro Runde. 0.1 = eines alle 10 Runden; bei 6 Autos und 10 Runden also etwa 1 bis 2.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-ueber" min="0" max="2" step="0.1" value="0.5">
+          <input type="range" id="ghost-ueber" min="0" max="1" step="0.05" value="0.1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="ghost-ueber-val">0.5</span>
+          <span class="opt-val" id="ghost-ueber-val">0.1</span>
         </div></div>
       <!-- v0.9.5. BESTELLT: "gibt es fuer ghosts schon einen slider, der die heterogenitaet der
            geschwindigkeiten angibt, also dass manche autos im schnitt minimal schneller sind auf
@@ -10115,9 +10116,9 @@
       <div class="opt-row"><div class="opt-label">Ghost: Versatz je Startreihe<span class="wip-tag">experimentell</span><small>Wie viel später jede weitere Zweierreihe losfährt.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-staffel-ms" min="50" max="600" step="50" value="200">
+          <input type="range" id="ghost-staffel-ms" min="50" max="600" step="50" value="250">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="ghost-staffel-ms-val">200 ms</span>
+          <span class="opt-val" id="ghost-staffel-ms-val">250 ms</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Ghost: Zu zweit in Kurven innen/Mitte<span class="wip-tag">experimentell</span><small>Fahren zwei Autos nebeneinander in eine Kurve, nimmt das vordere die Innenseite und das hintere die Mitte, statt außen zu fahren und abzufliegen.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-paar-kurve" checked><span></span></label></div>
