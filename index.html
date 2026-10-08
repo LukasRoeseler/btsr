@@ -11256,21 +11256,12 @@
     <div class="card subpage" id="sub-scan">
       <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
       <h2>Streckenscan</h2>
-      <!-- Der Live-Scan stand im Editor; er ist ein Scan und gehoert hierher. -->
-      <div class="row" style="margin-top:10px">
-        <button class="primary" id="track-scan-start">Live-Scan starten</button>
-        <button id="track-scan-stop" disabled>Scan stoppen</button>
-        <span class="muted" id="track-scan-status">bereit</span>
-      </div>
-
-
       <p class="muted">Das Auto f&auml;hrt mit mittlerem Tempo &uuml;ber die Bahn und h&auml;lt an, sobald ein geschlossener Rundkurs gemessen ist. Die Strecke steht danach im Editor.</p>
       <div class="row" style="gap:8px; flex-wrap:wrap">
-        <button id="gar-scan-start" title="Faehrt automatisch eine Runde und uebernimmt sie, sobald sie als geschlossener Rundkurs erkannt ist">Streckenscan</button>
+        <button class="primary" id="gar-scan-start" title="Faehrt automatisch eine Runde und uebernimmt sie, sobald sie als geschlossener Rundkurs erkannt ist">Streckenscan</button>
         <button id="gar-scan-stop" hidden>Scan abbrechen</button>
       </div>
       <p class="muted" id="gar-scan-status" style="font-size:11.5px; margin:-6px 0 10px 0" data-i18n-skip></p>
-      <p class="muted" style="font-size:11.5px">Live mitlesen, w&auml;hrend du selbst f&auml;hrst: im Streckeneditor, &bdquo;Live-Scan starten&ldquo;.</p>
     </div>
     <div class="card subpage" id="sub-print">
       <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
@@ -12886,6 +12877,8 @@
     "Getriebe & Fahrleistung": "Gearbox & performance",
     "Ghost braucht Streckencode": "Ghost needs a track code",
     "Ghost-Tempo": "Ghost pace",
+    "Ghost-Sound": "Ghost sound",
+    "An": "On",
     "einfach": "easy",
     "schnell": "fast",
     "Ghost: Führenden bremsen": "Ghost: hold the leader back",
@@ -12971,7 +12964,7 @@
     "Gelbe Flagge auf der Bahn: Dein Auto fährt jetzt im Tempo der Ghosts weiter und lenkt selbst. Die Tempogrenze lag unter dem Tempo, ab dem das Auto die Bahn liest, deshalb fiel es aus der Selbstführung und fuhr geradeaus. In Kurven und Haarnadeln drosselt es wie die Ghosts, und die Selbstführung greift auch direkt nach dem Hinstellen, bevor die Kachel verortet ist.": "Yellow flag on the track: your car now keeps going at the ghosts' pace and steers itself. The speed limit was below the speed at which the car reads the track, so it dropped out of self-steering and drove straight on. In corners and hairpins it slows like the ghosts, and self-steering also works right after the car is put down, before its tile is located.",
     "Ghosts: Die Überholrate ist jetzt eine echte Rate (Vorgabe 0,1 Überholmanöver je Runde je 4 Autos, bei 6 Autos und 10 Runden also 1 bis 2). Vorher änderte der Regler nur die Reichweite, und jede Annäherung wurde zum Angriff. Die Startreihen fahren gestaffelt ab Grün los, 250 ms je Zweierreihe. Vorher zählte die Staffel erst ab deiner ersten Bewegung und wirkte praktisch nicht.": "Ghosts: the overtaking rate is now a real rate (default 0.1 overtakes per lap per 4 cars, so 1 to 2 with 6 cars over 10 laps). Previously the slider only changed the range, and every approach turned into an attack. Grid rows start staggered from green, 250 ms per row of two. Previously the stagger only counted from your first movement and had practically no effect.",
     "Ghosts: Die Seiten der Startaufstellung bleiben jetzt erhalten. Jeder Ghost behält die Seite, auf der er gestartet ist (links/rechts), statt sie bei jedem Takt mit dem Garagenplatz zu tauschen – ein Paar wechselt erst, wenn es mehr als eine halbe Kachel auseinanderliegt. In der Kurve bekommt die Innenseite das Auto, dessen Startseite dorthin passt, statt immer das vordere. Die Feldstaffel bremst den Ersten etwas stärker ab (0,14 statt 0,10).": "Ghosts: the starting-grid sides are now kept. Each ghost keeps the side it started on (left/right) instead of swapping it with the garage slot every tick – a pair only swaps when it is more than half a tile apart. In a corner the inside goes to the car whose start side matches it, instead of always the leading car. The field stagger now slows the leader a bit more (0.14 instead of 0.10).",
-    "Ghost-Presets in der Garage: Statt der feinen Prozentzahl wählst du je Ghost eine von drei Stufen – Einfach, Mittel, Schnell. Die Stufe ändert nur das Tempo auf der Geraden (50/55/60 %); in Kurven und Haarnadeln fahren alle Stufen gleich schnell mit dem Mittel-Tempo. Die gewählte Stufe wird pro Auto gespeichert, alte Werte werden der nächsten Stufe zugeordnet.": "Ghost presets in the garage: instead of a fine percentage you pick one of three levels per ghost – Easy, Medium, Fast. The level only changes the speed on straights (50/55/60 %); in corners and hairpins all levels run at the same medium pace. The chosen level is saved per car; old values are mapped to the nearest level.",
+    "Ghost-Presets in der Garage: Statt der feinen Prozentzahl wählst du je Ghost eine von drei Stufen – Einfach, Mittel, Schnell. Die Stufe ändert nur das Tempo auf der Geraden (45/55/65 %); in Kurven und Haarnadeln fahren alle Stufen gleich schnell mit dem Mittel-Tempo. Die gewählte Stufe wird pro Auto gespeichert, alte Werte werden der nächsten Stufe zugeordnet.": "Ghost presets in the garage: instead of a fine percentage you pick one of three levels per ghost – Easy, Medium, Fast. The level only changes the speed on straights (45/55/65 %); in corners and hairpins all levels run at the same medium pace. The chosen level is saved per car; old values are mapped to the nearest level.",
     "Ghosts: Die Ghost-Befehle laufen jetzt im selben 45-ms-Takt wie dein Auto, direkt nach deinem Paket. Vorher hatte jeder Ghost einen eigenen Takt, dessen Ungenauigkeit in deinen Steuertakt hineinfunkte – mit drei Ghosts fühlte sich das unruhig an. Dein Befehl geht jetzt immer zuerst.": "Ghosts: the ghost commands now run in the same 45 ms heartbeat as your car, right after your packet. Previously each ghost had its own timer whose jitter bled into your control loop – with three ghosts it felt jittery. Your command now always goes first.",
     "Automatische Aufstellung: Alle Autos fahren jetzt gleichzeitig auf ihre Startplätze – die Ghosts genauso wie dein Auto. Vorher rollte nur dein Auto los, die Ghosts blieben stehen. Während der Positionsfahrt gilt die maximale Querlage (links/rechts abwechselnd nach Startplatz), und dein Auto fährt mit den Spur-Bytes, die es von selbst auf die Seite seines Platzes bringen. Das experimentelle Kästchen „Aufstellung mit größter Querlage“ ist weg – die maximale Breite gilt immer. Im Cockpit steht währenddessen „AUFSTELLUNG · AUTOPILOT“.": "Automatic grid setup: all cars now drive to their grid slots at the same time – the ghosts just like your car. Before, only your car rolled off and the ghosts stayed put. During the positioning drive the maximum lateral offset applies (alternating left/right by grid slot), and your car drives on the lane bytes that bring it to the side of its slot by itself. The experimental checkbox “grid setup with maximum lateral offset” is gone – the maximum width always applies. The cockpit reads “GRID SETUP · AUTOPILOT” meanwhile.",
     "Zieleinlauf: Die Ghosts parken nach dem Rennen jetzt abwechselnd maximal weit links und rechts statt alle an derselben Seite. Vorher stauten sich bei mehr als zwei Autos alle an einem Rand, und die Nachzügler fuhren auf die Vorderen auf. Die Seite kommt aus der Startaufstellung (gerader Platz rechts, ungerader links), und mit der Kachelstaffel darunter liegen zwei gleichseitige Autos immer zwei Plätze auseinander – das Feld parkt weiter auseinander, und die andere Bahnhälfte bleibt für dein Auto frei.": "Finish roll-out: after the race the ghosts now park alternately as far left and right as possible instead of all on the same side. Before, with more than two cars everyone piled up on one edge and the tail-enders drove onto the ones ahead. The side comes from the starting grid (even slot right, odd slot left), and with the tile stagger beneath it two same-side cars are always two slots apart – the field parks further apart, and the other half of the track stays free for your car.",
@@ -22003,6 +21996,12 @@
       return { grund: 'scan', throttle: 0, brake: 1, steer: 0, lenkt: false };
     }
     if (typeof garageScan !== 'undefined' && garageScan.aktiv && garageScan.car === meinAuto) {
+      // v0.9.64: beim automatischen Streckenscan soll ein Auto, das von der Bahn kommt,
+      // ANHALTEN statt weiterzufahren - sonst faehrt es die Kurve hinaus und der Scan liest
+      // nichts mehr. Erst wieder Gas, wenn es wieder auf der Bahn ist.
+      if (abseitsJetztFuer(wer || 1)) {
+        return { grund: 'scan', throttle: 0, brake: 1, steer: 0, lenkt: false };
+      }
       const v = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
       const dt = Math.max(0.01, Math.min(0.25, (Date.now() - (regler.at || Date.now())) / 1000));
       regler.at = Date.now();
@@ -30110,85 +30109,6 @@
   }
   refreshTrackList();
 
-  // ---- Live track scan: subscribe to NUS TX, watch byte 11 (tile counter) for
-  // changes, majority-vote byte 12 (tile type) across samples seen during that tile's
-  // dwell to reject transition noise ----
-  let trackScanning = false;
-  let trackScanLastCounter = null;
-  let trackScanTypeVotes = {};
-
-  // Zwei Einspeiser, ein Verarbeiter. Der Ereignis-Weg bleibt fuer den Entwickler-Tab, der
-  // Byte-Weg kommt aus onCarNotify - siehe startTrackScan, warum das noetig ist.
-  function trackScanNotifyHandler(e) {
-    trackScanBytes(notifyBytes(e.target.value));
-  }
-
-  function trackScanBytes(bytes) {
-    if (!trackScanning) return;
-    if (bytes.length < 16) return;
-    // BUGFIX: byte 9 is the free-running per-PACKET counter (changes on ~every notify,
-    // every ~45-70ms) — using it here treated almost every packet as a new tile
-    // boundary, flooding the track with bogus single-sample tiles. Byte 11 is the
-    // actual per-TILE counter (only changes when the car enters a new physical piece).
-    const counter = bytes[11];
-    const type = bytes[12];
-    if (trackScanLastCounter === null) {
-      trackScanLastCounter = counter;
-      trackScanTypeVotes = {};
-    }
-    if (counter !== trackScanLastCounter) {
-      // Mehrheit NUR unter echten Streckencodes. Das war der Fehler: 0xff heisst "gerade
-      // keine Lesung" und ist der haeufigste Wert von allen - in einem Mitschnitt 16719 von
-      // 16719 Paketen, im Dreiwagenrennen 7066 von 9623. Die Mehrheit war also fast immer
-      // 0xff, fiel durch die Typpruefung, und die Kachel wurde STILL verworfen. Die
-      // Streckenanzeige blieb bei "S", ohne dass irgendwo stand, warum.
-      let bestType = null, bestCount = -1, dropped = 0;
-      for (const [t, c] of Object.entries(trackScanTypeVotes)) {
-        const ty = parseInt(t, 10);
-        if (ty === 0xff || ty === TILE_OFFTRACK) { dropped += c; continue; }
-        if (c > bestCount) { bestCount = c; bestType = ty; }
-      }
-      // FERTIG BEI DER ZWEITEN START/ZIEL-UEBERFAHRT (v0.9.4). BESTELLT: "wenn livescan fertig,
-      // dann auto anhalten". Vorher lief der Live-Scan, bis man von Hand stoppte - und schrieb
-      // dabei die zweite Runde hinten an. Jetzt: Start/Ziel nach mindestens vier Teilen ist das
-      // Ende der Runde; die Strecke bleibt, das Auto haelt an.
-      if (bestType != null && isStartCode(bestType) && currentTrackTiles.length >= 5) {
-        const auto = trackScanCar;
-        refreshTrackPreview();
-        stopTrackScan();
-        $('track-scan-status').textContent = t('Scan fertig: {n} Teile, Runde geschlossen.').replace('{n}', currentTrackTiles.length);
-        showHudToast(t('STRECKE GESCANNT: {n} TEILE').replace('{n}', currentTrackTiles.length));
-        if (typeof scanAnhalten === 'function') scanAnhalten(auto || playerCar);
-        try { trackFertigKlang(); } catch (err) { /* ohne Ton */ }
-        return;
-      }
-      if (bestType != null && Object.values(TILE_TYPE).includes(bestType)) {
-        currentTrackTiles.push({ type: bestType });
-        refreshTrackPreview();
-        $('track-scan-status').textContent = t('Scan läuft: {n} Teile (zuletzt: {t})')
-          .replace('{n}', currentTrackTiles.length)
-          .replace('{t}', TILE_LABEL[bestType] ? t(TILE_LABEL[bestType]) : bestType);
-      } else {
-        // Nicht mehr stumm: eine Kachel ohne einen einzigen echten Code ist eine Auskunft
-        // und kein Nichts. Genau dieses Schweigen hat den Fehler oben verdeckt.
-        trackScanSkipped++;
-        const scanStatusVorlage = dropped
-          ? 'Scan läuft: {n} Teile, {k} ohne lesbaren Code ({p} Pakete ohne Lesung)'
-          : 'Scan läuft: {n} Teile, {k} ohne lesbaren Code';
-        $('track-scan-status').textContent = t(scanStatusVorlage)
-          .replace('{n}', currentTrackTiles.length)
-          .replace('{k}', trackScanSkipped)
-          .replace('{p}', dropped);
-      }
-      trackScanLastCounter = counter;
-      trackScanTypeVotes = {};
-    }
-    trackScanTypeVotes[type] = (trackScanTypeVotes[type] || 0) + 1;
-  }
-
-  let trackScanSkipped = 0;
-  let trackScanCar = null;
-
   // ---- Rohcode-Monitor ----
   // Absichtlich getrennt vom Streckenscan: der Scan interpretiert (Mehrheit je Kachel,
   // unbekannte Werte verworfen), dieser hier zaehlt nur. Fuer die Frage "welchen Code hat
@@ -30444,46 +30364,9 @@
         + 'jetzt Vorausblick.', 'info');
     showHudToast('STRECKE GELERNT: ' + got.length + ' TEILE');
   }
-  async function startTrackScan() {
-    trackScanSkipped = 0;
-    // Zuerst das Auto aus der Garage: dessen Meldungen laufen schon durch onCarNotify, es
-    // braucht also gar keine zweite Anmeldung. Nur wenn keines da ist, wird der Weg ueber
-    // den BLE-Explorer versucht - der funktioniert weiterhin, ist aber nicht mehr die
-    // Voraussetzung.
-    trackScanCar = playerCar || garage.find(c => c.tx) || null;
-    if (!trackScanCar) {
-      const entry = charByUuid.get(NUS_TX);
-      if (!entry) {
-        alert('Kein Auto verbunden. Erst in der Garage verbinden, dann scannen.');
-        return;
-      }
-      try {
-        if (!entry._trackScanSubscribed) {
-          await entry.char.startNotifications();
-          entry.char.addEventListener('characteristicvaluechanged', trackScanNotifyHandler);
-          entry._trackScanSubscribed = true;
-        }
-      } catch (err) { alert('Notify-Fehler: ' + err.message); return; }
-    }
-    currentTrackTiles = freshTrackTiles();
-    trackScanLastCounter = null;
-    trackScanTypeVotes = {};
-    trackScanning = true;
-    refreshTrackPreview();
-    $('track-scan-start').disabled = true;
-    $('track-scan-stop').disabled = false;
-    $('track-scan-status').textContent = t('Scan läuft: 0 Teile ({q})')
-      .replace('{q}', trackScanCar ? garageLabel(trackScanCar) : 'BLE-Explorer');
-  }
-  function stopTrackScan() {
-    trackScanning = false;
-    trackScanCar = null;
-    $('track-scan-start').disabled = false;
-    $('track-scan-stop').disabled = true;
-    $('track-scan-status').textContent = `Scan gestoppt (${currentTrackTiles.length} Teile).`;
-  }
-  $('track-scan-start').onclick = startTrackScan;
-  $('track-scan-stop').onclick = stopTrackScan;
+  // v0.9.64: der Live-Scan-Knopf ist aus der Scan-Unterseite entfernt (nur der automatische
+  // Streckenscan bleibt). Der Live-Scan (mitlesen waehrend man selbst faehrt) ist damit aus
+  // der Oberflaeche verschwunden; trackScanning/trackScanCar existieren nicht mehr.
 
   // ---- STRECKENSCAN AUS DER GARAGE: MIT AUTOPILOT, MIT SCHLUSSPRUEFUNG ---------------
   //
@@ -30528,10 +30411,6 @@
   }
 
   function garageScanStart() {
-    if (trackScanning) {
-      alert('Der manuelle Streckeneditor-Scan läuft noch – dort zuerst stoppen.');
-      return;
-    }
     const car = playerCar || garage.find((c) => c.role === 'player') || garage[0];
     if (!car) { alert('Kein Auto verbunden. Erst in der Garage verbinden.'); return; }
     garageScan.aktiv = true;
@@ -41531,7 +41410,14 @@
     store.nodes = null;
     store.over = null;
     store.car = null;
-    if (store.master) store.master.gain.setTargetAtTime(0, audioCtx.currentTime, 0.03);
+    if (store.master) {
+      // v0.9.64: den Ausgang LOESEN, sonst bleibt eine verwaiste Gain-Kette am Ziel haengen.
+      // startGhost() ersetzt car.ghost.stimme bei jedem Rennstart durch ein frisches Objekt;
+      // ohne disconnect blieben die alten master/pan-Knoten verbunden und sammelten sich
+      // ueber viele Rennen im Audiographen an - die Ruckler nach langer Laufzeit.
+      try { store.master.disconnect(); } catch (e) { /* war nicht verbunden */ }
+      store.master.gain.setTargetAtTime(0, audioCtx.currentTime, 0.03);
+    }
   }
 
   // `modell` ist der Motorname aus dem Menue (die Schluessel von loops.json), NICHT ein
@@ -41687,15 +41573,24 @@
   }
   function ghostStimmeStarten(car) {
     if (!ghostSound || !soundEnabled || !audioCtx || !car.ghost) return false;
+    // v0.9.64: je Ghost abschaltbar (der Schalter in Optionen -> Ton bleibt der Hauptschalter).
+    if (car.ghostSound === false) return false;
     const modell = sampleEngine.car;
     if (!modell || !sampleEngine.buffers[modell]) return false;
     return startSampleEngineIn(car.ghost.stimme, modell, () => ghostStimmeAusgang(car));
   }
   function ghostStimmeStoppen(car) {
-    if (audioCtx && car.ghost && car.ghost.stimme) stopSampleEngineIn(car.ghost.stimme);
+    if (!audioCtx || !car.ghost || !car.ghost.stimme) return;
+    const st = car.ghost.stimme;
+    stopSampleEngineIn(st);
+    // v0.9.64: auch den Panner loesen, sonst bleibt er (verbunden mit dem Ziel) als Leiche
+    // im Graphen, wenn startGhost() das stimme-Objekt beim naechsten Rennstart ersetzt.
+    if (st.pan) { try { st.pan.disconnect(); } catch (e) { /* egal */ } st.pan = null; }
   }
   function updateGhostSound(car) {
     if (!ghostSound || !soundEnabled || !audioCtx || !car.ghost || !car.ghost.stimme) return;
+    // v0.9.64: ein je Auto abgeschalteter Ghost soll auch still sein.
+    if (car.ghostSound === false) { ghostStimmeStoppen(car); return; }
     const st = car.ghost.stimme;
     // Folgt dem Motor des Fahrerautos: hat der Fahrer umgestellt, startet die Ghost-Stimme
     // mit dem neuen Modell neu (st.car wird von ghostStimmeStarten gesetzt).
@@ -43671,7 +43566,9 @@
     const alle = carRollenLesen();
     alle[String(car.device.id)] = { role: car.role,
       ghostStufe: car.ghostStufe === undefined || car.ghostStufe === null
-        ? 1 : car.ghostStufe };
+        ? 1 : car.ghostStufe,
+      // v0.9.64: Ghost-Sound je Auto. Vorgabe an (true); explizit ausgeschaelt bleibt false.
+      ghostSound: car.ghostSound === false ? false : true };
     try { localStorage.setItem(CAR_ROLLEN_STORE, JSON.stringify(alle)); } catch (e) { /* voll */ }
   }
   function carStoreSchreiben(all) {
@@ -44170,13 +44067,14 @@
   // BESTELLT: "baue ghost presets, die dann statt den 55% gewaehlt werden in der garage:
   // mittel (so wie aktuell), schnell (...60%), und einfach (...50%)". Statt einer feinen
   // Prozentzahl waehlt man je Ghost eine von drei Stufen. v0.9.56: die Stufe aendert nur das
-  // GERADENTEMPO (50/55/60 %); in der Kurve und Haarnadel gilt immer das Mittel-Tempo. Die
+  // GERADENTEMPO (45/55/65 %); in der Kurve und Haarnadel gilt immer das Mittel-Tempo. Die
   // Werte sind relativ zur Vorgabe aus den Optionen (ghostCfg.speed): Mittel folgt ihr,
   // Einfach und Schnell skalieren sie. Der Reset-Knopf stellt Mittel wieder her.
+  // v0.9.64: die Spannweite groesser - 45/55/65 %, damit die Stufen deutlicher zu hoeren sind.
   const GHOST_TEMPO_STUFEN = [
-    { label: 'einfach', speed: 0.50 },
+    { label: 'einfach', speed: 0.45 },
     { label: 'mittel',  speed: 0.55 },
-    { label: 'schnell', speed: 0.60 },
+    { label: 'schnell', speed: 0.65 },
   ];
   function garageAufZeile(car) {
     const box = document.createElement('div');
@@ -44210,6 +44108,18 @@
       const stufeS = st[stufe];
       const anzeige = t(stufeS.label) + ' \u00b7 ' + Math.round(stufeS.speed * 100) + ' %';
       box.appendChild(garWertZeile('Ghost-Tempo', anzeige, () => tempo(-1), () => tempo(1), rst));
+      // v0.9.64: Ghost-Sound je Auto (der Schalter in Optionen -> Ton bleibt der Hauptschalter;
+      // hier ist es das einzelne Auto). Ein Klick toggelt an/aus, wie links/rechts in der Zeile.
+      const soundUmschalten = () => {
+        const neu = car.ghostSound === false;   // aus -> an, sonst aus
+        car.ghostSound = neu;
+        carRolleMerken(car);
+        if (neu) { if (typeof ghostStimmeStarten === 'function') ghostStimmeStarten(car); }
+        else if (typeof ghostStimmeStoppen === 'function') ghostStimmeStoppen(car);
+        renderGarage();
+      };
+      box.appendChild(garWertZeile('Ghost-Sound', t(car.ghostSound === false ? 'Aus' : 'An'),
+        soundUmschalten, soundUmschalten));
       const ch = document.createElement('div');
       ch.innerHTML = charakterZeile(car);
       if (ch.firstElementChild) box.appendChild(ch.firstElementChild);
@@ -44730,6 +44640,8 @@
       if (gemerkt) {
         if (typeof gemerkt.ghostStufe === 'number') car.ghostStufe = gemerkt.ghostStufe;
         else if (typeof gemerkt.ghostSpeed === 'number') car.ghostStufe = ghostStufeAusSpeed(gemerkt.ghostSpeed);
+        // v0.9.64: Ghost-Sound je Auto.
+        if (typeof gemerkt.ghostSound === 'boolean') car.ghostSound = gemerkt.ghostSound;
       }
       const frei = gemerkt && garRollenFrei(car).some((r) => r.id === gemerkt.role);
       if (frei && gemerkt.role !== 'none') setCarRole(car, gemerkt.role);
@@ -44811,25 +44723,17 @@
     } else if (car.role === 'ghost' && typeof rammMessenGeist === 'function') {
       rammMessenGeist(car, b);
     }
-    // Der Streckenscan haengt jetzt an DIESEM Strom. Er hatte eine eigene Anmeldung ueber
-    // charByUuid, und die wird nur von exploreServices() im Entwickler-Tab gefuellt - nach
-    // einer Verbindung ueber die Garage war sie leer und der Scan brach mit "NUS TX nicht
-    // gefunden" ab. Genau derselbe Fehler war beim Armaturenbrett schon einmal gefunden und
-    // dort behoben worden (siehe den Kommentar oben), beim Scan blieb er stehen.
-    if (trackScanning && trackScanCar === car) trackScanBytes(b);
     // BESTELLT: "Streckenscan ... button in der garage." Eigener Verbraucher, siehe die
-    // Begruendung bei garageScan in 60-track.js - laeuft nur fuer SEIN Auto und nur,
-    // solange nicht auch noch von Hand gescannt wird (derselbe Wettlauf-Grund wie unten).
-    if (typeof garageScan !== 'undefined' && garageScan.aktiv && garageScan.car === car
-        && !trackScanning) {
+    // Begruendung bei garageScan in 60-track.js - laeuft nur fuer SEIN Auto.
+    if (typeof garageScan !== 'undefined' && garageScan.aktiv && garageScan.car === car) {
       garageScanTick(b);
     }
-    // Lernen laeuft nur, wenn nicht gerade von Hand ODER aus der Garage gescannt wird -
-    // alle drei gleichzeitig in dieselbe Karte schreiben zu lassen waere ein Wettlauf.
-    // Sonst haette der Garagenscan seine eigene, GEPRUEFTE Runde noch nicht fertig, waehrend
-    // learnTick() schon eine UNGEPRUEFTE committet - genau die Pruefung, die bestellt wurde.
+    // Lernen laeuft nur, wenn nicht gerade aus der Garage gescannt wird - beide gleichzeitig
+    // in dieselbe Karte schreiben zu lassen waere ein Wettlauf. Sonst haette der Garagenscan
+    // seine eigene, GEPRUEFTE Runde noch nicht fertig, waehrend learnTick() schon eine
+    // UNGEPRUEFTE committet - genau die Pruefung, die bestellt wurde.
     const garagenscanLaeuft = typeof garageScan !== 'undefined' && garageScan.aktiv;
-    if (!trackScanning && !garagenscanLaeuft && (car === playerCar || car.role === 'ghost')) {
+    if (!garagenscanLaeuft && (car === playerCar || car.role === 'ghost')) {
       // Das erste passende Auto bekommt das Lernen und behaelt es, bis zurueckgesetzt wird.
       // Der Fahrer hat Vorrang: er faehrt die Runde bewusst, ein Ghost faehrt, was er kann.
       if (!learn.car || (car === playerCar && learn.car !== playerCar)) {
@@ -47786,7 +47690,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Drei Stufen je Auto - Einfach/Mittel/Schnell -, die nur das GERADENTEMPO aendern.
   // In Kurven und Haarnadeln gilt immer das Mittel-Tempo (0,55), damit alle Stufen in der
   // Kurve gleich schnell sind und die Kurvendrosselung dieselbe bleibt. Zurueckkommt ein
-  // Faktor auf der Geraden (0,50/0,55/0,60) und sonst das Mittel-Tempo.
+  // Faktor auf der Geraden (0,45/0,55/0,65) und sonst das Mittel-Tempo.
   function ghostStufeFaktor(car) {
     const stufe = car.ghostStufe === undefined || car.ghostStufe === null
       ? 1 : car.ghostStufe;
@@ -47795,7 +47699,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Stufe aendert nur das Geradentempo; in der Kurve gilt immer das Mittel-Tempo.
     // Die Stufen sind relativ zur Vorgabe (ghostCfg.speed): Mittel folgt ihr, Einfach und
     // Schnell skalieren sie um den Stufenwert gegenueber dem Mittelwert 0,55. Bei der
-    // Vorgabe 0,55 ergeben sich damit genau die 50/55/60 Prozent auf der Geraden.
+    // Vorgabe 0,55 ergeben sich damit genau die 45/55/65 Prozent auf der Geraden.
     const basis = ghostCfg.speed || 0.55;
     if (ghostTurnOf(car.tileCode) !== 0) return basis;
     return stufenTempo / 0.55 * basis;
@@ -64683,10 +64587,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
 
   // ---- Ghost-Presets: Stufe aendert nur das Geradentempo (v0.9.56) ----
   //
-  // Drei Stufen (Einfach/Mittel/Schnell) mit 50/55/60 Prozent auf der Geraden. In der
+  // Drei Stufen (Einfach/Mittel/Schnell) mit 45/55/65 Prozent auf der Geraden. In der
   // Kurve und Haarnadel gilt immer das Mittel-Tempo, damit alle Stufen in der Kurve gleich
   // schnell sind und die Kurvendrosselung dieselbe bleibt.
-  stAdd('Ghost-Presets: Kurventempo gleich, Geradentempo 50/55/60 (v0.9.56)', () => {
+  stAdd('Ghost-Presets: Kurventempo gleich, Geradentempo 45/55/65 (v0.9.64)', () => {
     const f = [];
     const merkSpeed = ghostCfg.speed;
     const geraden = [], kurven = [];
@@ -64698,13 +64602,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         geraden.push(Math.round(aufGerade * 100));
         kurven.push(Math.round(inKurve * 100));
       }
-      if (geraden[0] !== 50 || geraden[1] !== 55 || geraden[2] !== 60) f.push('Gerade: ' + geraden.join('/'));
+      if (geraden[0] !== 45 || geraden[1] !== 55 || geraden[2] !== 65) f.push('Gerade: ' + geraden.join('/'));
       if (kurven[0] !== 55 || kurven[1] !== 55 || kurven[2] !== 55) f.push('Kurve: ' + kurven.join('/'));
     } finally {
       ghostCfg.speed = merkSpeed;
     }
     return { ok: !f.length,
-             mass: f.length ? f.join('; ') : 'Gerade 50/55/60, Kurve 55/55/55' };
+             mass: f.length ? f.join('; ') : 'Gerade 45/55/65, Kurve 55/55/55' };
   });
 
   // ---- Reifenwaermer ----
@@ -73574,7 +73478,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const att = { role: 'ghost', device: { id: 'probe-tempo' }, alias: '', colorId: 'rot', sim: false, testSenke: [] };
     const f = [];
     if (typeof GHOST_TEMPO_STUFEN !== 'object' || GHOST_TEMPO_STUFEN.length !== 3) return { ok: false, mass: 'GHOST_TEMPO_STUFEN fehlt' };
-    if (GHOST_TEMPO_STUFEN[0].speed !== 0.50 || GHOST_TEMPO_STUFEN[1].speed !== 0.55 || GHOST_TEMPO_STUFEN[2].speed !== 0.60) {
+    if (GHOST_TEMPO_STUFEN[0].speed !== 0.45 || GHOST_TEMPO_STUFEN[1].speed !== 0.55 || GHOST_TEMPO_STUFEN[2].speed !== 0.65) {
       f.push('Stufen-Werte falsch');
     }
     const merkRollen = localStorage.getItem('chc.rollen.v1');
@@ -73594,6 +73498,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       klick(1);
       if (att.ghostStufe !== 2) f.push('Rechts setzt nicht schnell (' + att.ghostStufe + ')');
       if (!/schnell/.test(wert())) f.push('zeigt nicht schnell: ' + wert());
+      if (!/65/.test(wert())) f.push('schnell zeigt nicht 65 %: ' + wert());
       klick(1);
       if (att.ghostStufe !== 0) f.push('Nochmal rechts setzt nicht einfach (' + att.ghostStufe + ')');
       klick(1);
@@ -73601,6 +73506,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!/mittel/.test(wert())) f.push('Mittel zeigt nicht: ' + wert());
       klick(-1);
       if (att.ghostStufe !== 0) f.push('Links von mittel setzt nicht einfach (' + att.ghostStufe + ')');
+      if (!/45/.test(wert())) f.push('einfach zeigt nicht 45 %: ' + wert());
       const z = finde();
       if (z && z.querySelector('.gar-speed-reset')) z.querySelector('.gar-speed-reset').click();
       if (att.ghostStufe !== 1) f.push('Reset stellt Mittel nicht her (' + att.ghostStufe + ')');
@@ -73803,7 +73709,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!drin('laden', 'track-kacheln') || drin('edit', 'track-kacheln')) f.push('gespeicherte Strecken nicht (nur) unter Laden');
     if (!drin('edit', 'track-preview-svg')) f.push('Editor-Karte nicht im Editor');
     if (drin('laden', 'track-preview-svg')) f.push('Editor unter Laden');
-    if (!drin('scan', 'track-scan-start') || drin('edit', 'track-scan-start')) f.push('Live-Scan nicht (nur) im Scan');
+    if (!drin('scan', 'gar-scan-start')) f.push('Streckenscan nicht im Scan');
     if (!drin('teile', 'teile-liste')) f.push('Meine Teile fehlt');
     const kacheln = [...document.querySelectorAll('#sub-home-track .subpage-open')].map((k) => k.dataset.sub);
     if (new Set(kacheln).size !== kacheln.length) f.push('zwei Kacheln oeffnen dieselbe Unterseite: ' + kacheln.join(','));

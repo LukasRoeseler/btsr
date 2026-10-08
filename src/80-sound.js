@@ -1142,7 +1142,14 @@
     store.nodes = null;
     store.over = null;
     store.car = null;
-    if (store.master) store.master.gain.setTargetAtTime(0, audioCtx.currentTime, 0.03);
+    if (store.master) {
+      // v0.9.64: den Ausgang LOESEN, sonst bleibt eine verwaiste Gain-Kette am Ziel haengen.
+      // startGhost() ersetzt car.ghost.stimme bei jedem Rennstart durch ein frisches Objekt;
+      // ohne disconnect blieben die alten master/pan-Knoten verbunden und sammelten sich
+      // ueber viele Rennen im Audiographen an - die Ruckler nach langer Laufzeit.
+      try { store.master.disconnect(); } catch (e) { /* war nicht verbunden */ }
+      store.master.gain.setTargetAtTime(0, audioCtx.currentTime, 0.03);
+    }
   }
 
   // `modell` ist der Motorname aus dem Menue (die Schluessel von loops.json), NICHT ein
@@ -1298,15 +1305,24 @@
   }
   function ghostStimmeStarten(car) {
     if (!ghostSound || !soundEnabled || !audioCtx || !car.ghost) return false;
+    // v0.9.64: je Ghost abschaltbar (der Schalter in Optionen -> Ton bleibt der Hauptschalter).
+    if (car.ghostSound === false) return false;
     const modell = sampleEngine.car;
     if (!modell || !sampleEngine.buffers[modell]) return false;
     return startSampleEngineIn(car.ghost.stimme, modell, () => ghostStimmeAusgang(car));
   }
   function ghostStimmeStoppen(car) {
-    if (audioCtx && car.ghost && car.ghost.stimme) stopSampleEngineIn(car.ghost.stimme);
+    if (!audioCtx || !car.ghost || !car.ghost.stimme) return;
+    const st = car.ghost.stimme;
+    stopSampleEngineIn(st);
+    // v0.9.64: auch den Panner loesen, sonst bleibt er (verbunden mit dem Ziel) als Leiche
+    // im Graphen, wenn startGhost() das stimme-Objekt beim naechsten Rennstart ersetzt.
+    if (st.pan) { try { st.pan.disconnect(); } catch (e) { /* egal */ } st.pan = null; }
   }
   function updateGhostSound(car) {
     if (!ghostSound || !soundEnabled || !audioCtx || !car.ghost || !car.ghost.stimme) return;
+    // v0.9.64: ein je Auto abgeschalteter Ghost soll auch still sein.
+    if (car.ghostSound === false) { ghostStimmeStoppen(car); return; }
     const st = car.ghost.stimme;
     // Folgt dem Motor des Fahrerautos: hat der Fahrer umgestellt, startet die Ghost-Stimme
     // mit dem neuen Modell neu (st.car wird von ghostStimmeStarten gesetzt).

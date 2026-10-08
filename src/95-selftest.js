@@ -1496,10 +1496,10 @@
 
   // ---- Ghost-Presets: Stufe aendert nur das Geradentempo (v0.9.56) ----
   //
-  // Drei Stufen (Einfach/Mittel/Schnell) mit 50/55/60 Prozent auf der Geraden. In der
+  // Drei Stufen (Einfach/Mittel/Schnell) mit 45/55/65 Prozent auf der Geraden. In der
   // Kurve und Haarnadel gilt immer das Mittel-Tempo, damit alle Stufen in der Kurve gleich
   // schnell sind und die Kurvendrosselung dieselbe bleibt.
-  stAdd('Ghost-Presets: Kurventempo gleich, Geradentempo 50/55/60 (v0.9.56)', () => {
+  stAdd('Ghost-Presets: Kurventempo gleich, Geradentempo 45/55/65 (v0.9.64)', () => {
     const f = [];
     const merkSpeed = ghostCfg.speed;
     const geraden = [], kurven = [];
@@ -1511,13 +1511,13 @@
         geraden.push(Math.round(aufGerade * 100));
         kurven.push(Math.round(inKurve * 100));
       }
-      if (geraden[0] !== 50 || geraden[1] !== 55 || geraden[2] !== 60) f.push('Gerade: ' + geraden.join('/'));
+      if (geraden[0] !== 45 || geraden[1] !== 55 || geraden[2] !== 65) f.push('Gerade: ' + geraden.join('/'));
       if (kurven[0] !== 55 || kurven[1] !== 55 || kurven[2] !== 55) f.push('Kurve: ' + kurven.join('/'));
     } finally {
       ghostCfg.speed = merkSpeed;
     }
     return { ok: !f.length,
-             mass: f.length ? f.join('; ') : 'Gerade 50/55/60, Kurve 55/55/55' };
+             mass: f.length ? f.join('; ') : 'Gerade 45/55/65, Kurve 55/55/55' };
   });
 
   // ---- Reifenwaermer ----
@@ -10387,7 +10387,7 @@
     const att = { role: 'ghost', device: { id: 'probe-tempo' }, alias: '', colorId: 'rot', sim: false, testSenke: [] };
     const f = [];
     if (typeof GHOST_TEMPO_STUFEN !== 'object' || GHOST_TEMPO_STUFEN.length !== 3) return { ok: false, mass: 'GHOST_TEMPO_STUFEN fehlt' };
-    if (GHOST_TEMPO_STUFEN[0].speed !== 0.50 || GHOST_TEMPO_STUFEN[1].speed !== 0.55 || GHOST_TEMPO_STUFEN[2].speed !== 0.60) {
+    if (GHOST_TEMPO_STUFEN[0].speed !== 0.45 || GHOST_TEMPO_STUFEN[1].speed !== 0.55 || GHOST_TEMPO_STUFEN[2].speed !== 0.65) {
       f.push('Stufen-Werte falsch');
     }
     const merkRollen = localStorage.getItem('chc.rollen.v1');
@@ -10407,6 +10407,7 @@
       klick(1);
       if (att.ghostStufe !== 2) f.push('Rechts setzt nicht schnell (' + att.ghostStufe + ')');
       if (!/schnell/.test(wert())) f.push('zeigt nicht schnell: ' + wert());
+      if (!/65/.test(wert())) f.push('schnell zeigt nicht 65 %: ' + wert());
       klick(1);
       if (att.ghostStufe !== 0) f.push('Nochmal rechts setzt nicht einfach (' + att.ghostStufe + ')');
       klick(1);
@@ -10414,6 +10415,7 @@
       if (!/mittel/.test(wert())) f.push('Mittel zeigt nicht: ' + wert());
       klick(-1);
       if (att.ghostStufe !== 0) f.push('Links von mittel setzt nicht einfach (' + att.ghostStufe + ')');
+      if (!/45/.test(wert())) f.push('einfach zeigt nicht 45 %: ' + wert());
       const z = finde();
       if (z && z.querySelector('.gar-speed-reset')) z.querySelector('.gar-speed-reset').click();
       if (att.ghostStufe !== 1) f.push('Reset stellt Mittel nicht her (' + att.ghostStufe + ')');
@@ -10616,7 +10618,7 @@
     if (!drin('laden', 'track-kacheln') || drin('edit', 'track-kacheln')) f.push('gespeicherte Strecken nicht (nur) unter Laden');
     if (!drin('edit', 'track-preview-svg')) f.push('Editor-Karte nicht im Editor');
     if (drin('laden', 'track-preview-svg')) f.push('Editor unter Laden');
-    if (!drin('scan', 'track-scan-start') || drin('edit', 'track-scan-start')) f.push('Live-Scan nicht (nur) im Scan');
+    if (!drin('scan', 'gar-scan-start')) f.push('Streckenscan nicht im Scan');
     if (!drin('teile', 'teile-liste')) f.push('Meine Teile fehlt');
     const kacheln = [...document.querySelectorAll('#sub-home-track .subpage-open')].map((k) => k.dataset.sub);
     if (new Set(kacheln).size !== kacheln.length) f.push('zwei Kacheln oeffnen dieselbe Unterseite: ' + kacheln.join(','));

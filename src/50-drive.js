@@ -2647,6 +2647,12 @@
       return { grund: 'scan', throttle: 0, brake: 1, steer: 0, lenkt: false };
     }
     if (typeof garageScan !== 'undefined' && garageScan.aktiv && garageScan.car === meinAuto) {
+      // v0.9.64: beim automatischen Streckenscan soll ein Auto, das von der Bahn kommt,
+      // ANHALTEN statt weiterzufahren - sonst faehrt es die Kurve hinaus und der Scan liest
+      // nichts mehr. Erst wieder Gas, wenn es wieder auf der Bahn ist.
+      if (abseitsJetztFuer(wer || 1)) {
+        return { grund: 'scan', throttle: 0, brake: 1, steer: 0, lenkt: false };
+      }
       const v = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
       const dt = Math.max(0.01, Math.min(0.25, (Date.now() - (regler.at || Date.now())) / 1000));
       regler.at = Date.now();

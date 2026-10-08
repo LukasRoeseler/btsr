@@ -978,7 +978,9 @@
     const alle = carRollenLesen();
     alle[String(car.device.id)] = { role: car.role,
       ghostStufe: car.ghostStufe === undefined || car.ghostStufe === null
-        ? 1 : car.ghostStufe };
+        ? 1 : car.ghostStufe,
+      // v0.9.64: Ghost-Sound je Auto. Vorgabe an (true); explizit ausgeschaelt bleibt false.
+      ghostSound: car.ghostSound === false ? false : true };
     try { localStorage.setItem(CAR_ROLLEN_STORE, JSON.stringify(alle)); } catch (e) { /* voll */ }
   }
   function carStoreSchreiben(all) {
@@ -1477,13 +1479,14 @@
   // BESTELLT: "baue ghost presets, die dann statt den 55% gewaehlt werden in der garage:
   // mittel (so wie aktuell), schnell (...60%), und einfach (...50%)". Statt einer feinen
   // Prozentzahl waehlt man je Ghost eine von drei Stufen. v0.9.56: die Stufe aendert nur das
-  // GERADENTEMPO (50/55/60 %); in der Kurve und Haarnadel gilt immer das Mittel-Tempo. Die
+  // GERADENTEMPO (45/55/65 %); in der Kurve und Haarnadel gilt immer das Mittel-Tempo. Die
   // Werte sind relativ zur Vorgabe aus den Optionen (ghostCfg.speed): Mittel folgt ihr,
   // Einfach und Schnell skalieren sie. Der Reset-Knopf stellt Mittel wieder her.
+  // v0.9.64: die Spannweite groesser - 45/55/65 %, damit die Stufen deutlicher zu hoeren sind.
   const GHOST_TEMPO_STUFEN = [
-    { label: 'einfach', speed: 0.50 },
+    { label: 'einfach', speed: 0.45 },
     { label: 'mittel',  speed: 0.55 },
-    { label: 'schnell', speed: 0.60 },
+    { label: 'schnell', speed: 0.65 },
   ];
   function garageAufZeile(car) {
     const box = document.createElement('div');
@@ -1517,6 +1520,18 @@
       const stufeS = st[stufe];
       const anzeige = t(stufeS.label) + ' \u00b7 ' + Math.round(stufeS.speed * 100) + ' %';
       box.appendChild(garWertZeile('Ghost-Tempo', anzeige, () => tempo(-1), () => tempo(1), rst));
+      // v0.9.64: Ghost-Sound je Auto (der Schalter in Optionen -> Ton bleibt der Hauptschalter;
+      // hier ist es das einzelne Auto). Ein Klick toggelt an/aus, wie links/rechts in der Zeile.
+      const soundUmschalten = () => {
+        const neu = car.ghostSound === false;   // aus -> an, sonst aus
+        car.ghostSound = neu;
+        carRolleMerken(car);
+        if (neu) { if (typeof ghostStimmeStarten === 'function') ghostStimmeStarten(car); }
+        else if (typeof ghostStimmeStoppen === 'function') ghostStimmeStoppen(car);
+        renderGarage();
+      };
+      box.appendChild(garWertZeile('Ghost-Sound', t(car.ghostSound === false ? 'Aus' : 'An'),
+        soundUmschalten, soundUmschalten));
       const ch = document.createElement('div');
       ch.innerHTML = charakterZeile(car);
       if (ch.firstElementChild) box.appendChild(ch.firstElementChild);
@@ -2037,6 +2052,8 @@
       if (gemerkt) {
         if (typeof gemerkt.ghostStufe === 'number') car.ghostStufe = gemerkt.ghostStufe;
         else if (typeof gemerkt.ghostSpeed === 'number') car.ghostStufe = ghostStufeAusSpeed(gemerkt.ghostSpeed);
+        // v0.9.64: Ghost-Sound je Auto.
+        if (typeof gemerkt.ghostSound === 'boolean') car.ghostSound = gemerkt.ghostSound;
       }
       const frei = gemerkt && garRollenFrei(car).some((r) => r.id === gemerkt.role);
       if (frei && gemerkt.role !== 'none') setCarRole(car, gemerkt.role);
@@ -2118,25 +2135,17 @@
     } else if (car.role === 'ghost' && typeof rammMessenGeist === 'function') {
       rammMessenGeist(car, b);
     }
-    // Der Streckenscan haengt jetzt an DIESEM Strom. Er hatte eine eigene Anmeldung ueber
-    // charByUuid, und die wird nur von exploreServices() im Entwickler-Tab gefuellt - nach
-    // einer Verbindung ueber die Garage war sie leer und der Scan brach mit "NUS TX nicht
-    // gefunden" ab. Genau derselbe Fehler war beim Armaturenbrett schon einmal gefunden und
-    // dort behoben worden (siehe den Kommentar oben), beim Scan blieb er stehen.
-    if (trackScanning && trackScanCar === car) trackScanBytes(b);
     // BESTELLT: "Streckenscan ... button in der garage." Eigener Verbraucher, siehe die
-    // Begruendung bei garageScan in 60-track.js - laeuft nur fuer SEIN Auto und nur,
-    // solange nicht auch noch von Hand gescannt wird (derselbe Wettlauf-Grund wie unten).
-    if (typeof garageScan !== 'undefined' && garageScan.aktiv && garageScan.car === car
-        && !trackScanning) {
+    // Begruendung bei garageScan in 60-track.js - laeuft nur fuer SEIN Auto.
+    if (typeof garageScan !== 'undefined' && garageScan.aktiv && garageScan.car === car) {
       garageScanTick(b);
     }
-    // Lernen laeuft nur, wenn nicht gerade von Hand ODER aus der Garage gescannt wird -
-    // alle drei gleichzeitig in dieselbe Karte schreiben zu lassen waere ein Wettlauf.
-    // Sonst haette der Garagenscan seine eigene, GEPRUEFTE Runde noch nicht fertig, waehrend
-    // learnTick() schon eine UNGEPRUEFTE committet - genau die Pruefung, die bestellt wurde.
+    // Lernen laeuft nur, wenn nicht gerade aus der Garage gescannt wird - beide gleichzeitig
+    // in dieselbe Karte schreiben zu lassen waere ein Wettlauf. Sonst haette der Garagenscan
+    // seine eigene, GEPRUEFTE Runde noch nicht fertig, waehrend learnTick() schon eine
+    // UNGEPRUEFTE committet - genau die Pruefung, die bestellt wurde.
     const garagenscanLaeuft = typeof garageScan !== 'undefined' && garageScan.aktiv;
-    if (!trackScanning && !garagenscanLaeuft && (car === playerCar || car.role === 'ghost')) {
+    if (!garagenscanLaeuft && (car === playerCar || car.role === 'ghost')) {
       // Das erste passende Auto bekommt das Lernen und behaelt es, bis zurueckgesetzt wird.
       // Der Fahrer hat Vorrang: er faehrt die Runde bewusst, ein Ghost faehrt, was er kann.
       if (!learn.car || (car === playerCar && learn.car !== playerCar)) {
@@ -5093,7 +5102,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Drei Stufen je Auto - Einfach/Mittel/Schnell -, die nur das GERADENTEMPO aendern.
   // In Kurven und Haarnadeln gilt immer das Mittel-Tempo (0,55), damit alle Stufen in der
   // Kurve gleich schnell sind und die Kurvendrosselung dieselbe bleibt. Zurueckkommt ein
-  // Faktor auf der Geraden (0,50/0,55/0,60) und sonst das Mittel-Tempo.
+  // Faktor auf der Geraden (0,45/0,55/0,65) und sonst das Mittel-Tempo.
   function ghostStufeFaktor(car) {
     const stufe = car.ghostStufe === undefined || car.ghostStufe === null
       ? 1 : car.ghostStufe;
@@ -5102,7 +5111,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Stufe aendert nur das Geradentempo; in der Kurve gilt immer das Mittel-Tempo.
     // Die Stufen sind relativ zur Vorgabe (ghostCfg.speed): Mittel folgt ihr, Einfach und
     // Schnell skalieren sie um den Stufenwert gegenueber dem Mittelwert 0,55. Bei der
-    // Vorgabe 0,55 ergeben sich damit genau die 50/55/60 Prozent auf der Geraden.
+    // Vorgabe 0,55 ergeben sich damit genau die 45/55/65 Prozent auf der Geraden.
     const basis = ghostCfg.speed || 0.55;
     if (ghostTurnOf(car.tileCode) !== 0) return basis;
     return stufenTempo / 0.55 * basis;

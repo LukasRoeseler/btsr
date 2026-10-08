@@ -5090,85 +5090,6 @@
   }
   refreshTrackList();
 
-  // ---- Live track scan: subscribe to NUS TX, watch byte 11 (tile counter) for
-  // changes, majority-vote byte 12 (tile type) across samples seen during that tile's
-  // dwell to reject transition noise ----
-  let trackScanning = false;
-  let trackScanLastCounter = null;
-  let trackScanTypeVotes = {};
-
-  // Zwei Einspeiser, ein Verarbeiter. Der Ereignis-Weg bleibt fuer den Entwickler-Tab, der
-  // Byte-Weg kommt aus onCarNotify - siehe startTrackScan, warum das noetig ist.
-  function trackScanNotifyHandler(e) {
-    trackScanBytes(notifyBytes(e.target.value));
-  }
-
-  function trackScanBytes(bytes) {
-    if (!trackScanning) return;
-    if (bytes.length < 16) return;
-    // BUGFIX: byte 9 is the free-running per-PACKET counter (changes on ~every notify,
-    // every ~45-70ms) — using it here treated almost every packet as a new tile
-    // boundary, flooding the track with bogus single-sample tiles. Byte 11 is the
-    // actual per-TILE counter (only changes when the car enters a new physical piece).
-    const counter = bytes[11];
-    const type = bytes[12];
-    if (trackScanLastCounter === null) {
-      trackScanLastCounter = counter;
-      trackScanTypeVotes = {};
-    }
-    if (counter !== trackScanLastCounter) {
-      // Mehrheit NUR unter echten Streckencodes. Das war der Fehler: 0xff heisst "gerade
-      // keine Lesung" und ist der haeufigste Wert von allen - in einem Mitschnitt 16719 von
-      // 16719 Paketen, im Dreiwagenrennen 7066 von 9623. Die Mehrheit war also fast immer
-      // 0xff, fiel durch die Typpruefung, und die Kachel wurde STILL verworfen. Die
-      // Streckenanzeige blieb bei "S", ohne dass irgendwo stand, warum.
-      let bestType = null, bestCount = -1, dropped = 0;
-      for (const [t, c] of Object.entries(trackScanTypeVotes)) {
-        const ty = parseInt(t, 10);
-        if (ty === 0xff || ty === TILE_OFFTRACK) { dropped += c; continue; }
-        if (c > bestCount) { bestCount = c; bestType = ty; }
-      }
-      // FERTIG BEI DER ZWEITEN START/ZIEL-UEBERFAHRT (v0.9.4). BESTELLT: "wenn livescan fertig,
-      // dann auto anhalten". Vorher lief der Live-Scan, bis man von Hand stoppte - und schrieb
-      // dabei die zweite Runde hinten an. Jetzt: Start/Ziel nach mindestens vier Teilen ist das
-      // Ende der Runde; die Strecke bleibt, das Auto haelt an.
-      if (bestType != null && isStartCode(bestType) && currentTrackTiles.length >= 5) {
-        const auto = trackScanCar;
-        refreshTrackPreview();
-        stopTrackScan();
-        $('track-scan-status').textContent = t('Scan fertig: {n} Teile, Runde geschlossen.').replace('{n}', currentTrackTiles.length);
-        showHudToast(t('STRECKE GESCANNT: {n} TEILE').replace('{n}', currentTrackTiles.length));
-        if (typeof scanAnhalten === 'function') scanAnhalten(auto || playerCar);
-        try { trackFertigKlang(); } catch (err) { /* ohne Ton */ }
-        return;
-      }
-      if (bestType != null && Object.values(TILE_TYPE).includes(bestType)) {
-        currentTrackTiles.push({ type: bestType });
-        refreshTrackPreview();
-        $('track-scan-status').textContent = t('Scan läuft: {n} Teile (zuletzt: {t})')
-          .replace('{n}', currentTrackTiles.length)
-          .replace('{t}', TILE_LABEL[bestType] ? t(TILE_LABEL[bestType]) : bestType);
-      } else {
-        // Nicht mehr stumm: eine Kachel ohne einen einzigen echten Code ist eine Auskunft
-        // und kein Nichts. Genau dieses Schweigen hat den Fehler oben verdeckt.
-        trackScanSkipped++;
-        const scanStatusVorlage = dropped
-          ? 'Scan läuft: {n} Teile, {k} ohne lesbaren Code ({p} Pakete ohne Lesung)'
-          : 'Scan läuft: {n} Teile, {k} ohne lesbaren Code';
-        $('track-scan-status').textContent = t(scanStatusVorlage)
-          .replace('{n}', currentTrackTiles.length)
-          .replace('{k}', trackScanSkipped)
-          .replace('{p}', dropped);
-      }
-      trackScanLastCounter = counter;
-      trackScanTypeVotes = {};
-    }
-    trackScanTypeVotes[type] = (trackScanTypeVotes[type] || 0) + 1;
-  }
-
-  let trackScanSkipped = 0;
-  let trackScanCar = null;
-
   // ---- Rohcode-Monitor ----
   // Absichtlich getrennt vom Streckenscan: der Scan interpretiert (Mehrheit je Kachel,
   // unbekannte Werte verworfen), dieser hier zaehlt nur. Fuer die Frage "welchen Code hat
@@ -5424,46 +5345,9 @@
         + 'jetzt Vorausblick.', 'info');
     showHudToast('STRECKE GELERNT: ' + got.length + ' TEILE');
   }
-  async function startTrackScan() {
-    trackScanSkipped = 0;
-    // Zuerst das Auto aus der Garage: dessen Meldungen laufen schon durch onCarNotify, es
-    // braucht also gar keine zweite Anmeldung. Nur wenn keines da ist, wird der Weg ueber
-    // den BLE-Explorer versucht - der funktioniert weiterhin, ist aber nicht mehr die
-    // Voraussetzung.
-    trackScanCar = playerCar || garage.find(c => c.tx) || null;
-    if (!trackScanCar) {
-      const entry = charByUuid.get(NUS_TX);
-      if (!entry) {
-        alert('Kein Auto verbunden. Erst in der Garage verbinden, dann scannen.');
-        return;
-      }
-      try {
-        if (!entry._trackScanSubscribed) {
-          await entry.char.startNotifications();
-          entry.char.addEventListener('characteristicvaluechanged', trackScanNotifyHandler);
-          entry._trackScanSubscribed = true;
-        }
-      } catch (err) { alert('Notify-Fehler: ' + err.message); return; }
-    }
-    currentTrackTiles = freshTrackTiles();
-    trackScanLastCounter = null;
-    trackScanTypeVotes = {};
-    trackScanning = true;
-    refreshTrackPreview();
-    $('track-scan-start').disabled = true;
-    $('track-scan-stop').disabled = false;
-    $('track-scan-status').textContent = t('Scan läuft: 0 Teile ({q})')
-      .replace('{q}', trackScanCar ? garageLabel(trackScanCar) : 'BLE-Explorer');
-  }
-  function stopTrackScan() {
-    trackScanning = false;
-    trackScanCar = null;
-    $('track-scan-start').disabled = false;
-    $('track-scan-stop').disabled = true;
-    $('track-scan-status').textContent = `Scan gestoppt (${currentTrackTiles.length} Teile).`;
-  }
-  $('track-scan-start').onclick = startTrackScan;
-  $('track-scan-stop').onclick = stopTrackScan;
+  // v0.9.64: der Live-Scan-Knopf ist aus der Scan-Unterseite entfernt (nur der automatische
+  // Streckenscan bleibt). Der Live-Scan (mitlesen waehrend man selbst faehrt) ist damit aus
+  // der Oberflaeche verschwunden; trackScanning/trackScanCar existieren nicht mehr.
 
   // ---- STRECKENSCAN AUS DER GARAGE: MIT AUTOPILOT, MIT SCHLUSSPRUEFUNG ---------------
   //
@@ -5508,10 +5392,6 @@
   }
 
   function garageScanStart() {
-    if (trackScanning) {
-      alert('Der manuelle Streckeneditor-Scan läuft noch – dort zuerst stoppen.');
-      return;
-    }
     const car = playerCar || garage.find((c) => c.role === 'player') || garage[0];
     if (!car) { alert('Kein Auto verbunden. Erst in der Garage verbinden.'); return; }
     garageScan.aktiv = true;
