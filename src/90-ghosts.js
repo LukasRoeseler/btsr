@@ -2384,16 +2384,16 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Ghost ist das sein Ghost-Zustand, fuer den Fahrer ein eigenes Objekt. Er wird beim
   // ersten Aufruf gesetzt und nicht im Konstruktor - ein Auto, das nie in einer
   // Einfuehrungsrunde faehrt, braucht keine Phase.
-  function formationOffset(halter, gridPos, now) {
+  function formationOffset(halter, gridPos, now, breite) {
     if (halter.weavePhase === undefined) halter.weavePhase = Math.random() * 6.283;
     let v = Math.sin(now / 700 + halter.weavePhase) * GHOST_WEAVE;
     if (gridPos >= 0) {
       const seit = gridPos % 2 ? -1 : 1;
-      // BESTELLT: "alle abwechselnd link und rechts (max querlage) anhalten". Bei "Autos
-      // fahren selbst in Position" (gridSelbst, experimentell) wird die maximale Querlage
-      // angesteuert, sonst der bisherige Versatz.
-      const breite = (typeof gridSelbst !== 'undefined' && gridSelbst) ? GHOST_GRID_MAX : GHOST_GRID_OFFSET;
-      v += seit * breite;
+      // v0.9.58 (D6): die Querlage kommt als Parameter. Die Einfuehrungsrunde nimmt den
+      // bisherigen Versatz (GHOST_GRID_OFFSET), die Positionsfahrt der Aufstellung die
+      // maximale Breite (GHOST_GRID_MAX) - abwechselnd links/rechts nach Startplatz. Das
+      // experimentelle Kästchen gridSelbst entfaellt, die maximale Breite gilt immer.
+      v += seit * (breite === undefined ? GHOST_GRID_OFFSET : breite);
     }
     return v;
   }
@@ -2414,11 +2414,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   const formationFahrer = {};
   const formationFahrerZwei = {};
   const formationFahrerJe = { 2: formationFahrerZwei, 3: {} };
-  function formationDriverOffset(car) {
+  function formationDriverOffset(car, breite) {
     const c = car || garage.find(x => x.role === 'player');
     const nr = c ? spielerNrVon(c) : 0;
     const halter = nr >= 2 ? (formationFahrerJe[nr] || formationFahrerZwei) : formationFahrer;
-    return formationOffset(halter, gridPosOf(c), Date.now());
+    return formationOffset(halter, gridPosOf(c), Date.now(), breite);
   }
   const GHOST_OFFTRACK_MS = 1500;   // measured: tiles last 0.4-2.7 s with no 0xff between
   // Wie lange 0x00 stehen muss, bevor der Ghost anhaelt. Vorher hielt ein EINZIGES 0x00-Paket
@@ -4696,6 +4696,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const flaggenText = flagState === 'yellow' ? (grund === 'yellow' ? 'GELB · AUTOPILOT' : 'GELB')
                      : flagState === 'restart' ? 'ANFAHRT'
                      : grund === 'formation' ? 'EINFÜHRUNGSRUNDE · AUTOPILOT'
+                     : grund === 'aufstellen' ? 'AUFSTELLUNG · AUTOPILOT'
                      : raceFormationLap ? 'EINFÜHRUNGSRUNDE' : '';
       el.textContent = flaggenText ? t(flaggenText) : '';
       el.style.display = el.textContent ? '' : 'none';
@@ -7719,7 +7720,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // noch zu Ende. Ohne diesen Zweig steht es in dem Moment still, in dem die Flagge
     // faellt - und genau das war der Bericht.
     const armed = (raceState === 'racing' || raceState === 'finishing'
-                   || g.freeRun || g.auslauf)
+                   || g.freeRun || g.auslauf
+                   // v0.9.58 (D6): auch die Positionsfahrt der Aufstellung ist "scharf" -
+                   // so rollen alle Ghosts und Spielerautos gleichzeitig zu ihren Plaetzen.
+                   || (g.aufstellZiel !== undefined && g.aufstellZiel !== null))
                   && !car.parked;
     // Startlenkung gerade: die Frist beginnt an der FLANKE zum Anfahren (armed), nicht beim
     // startGhost-Aufruf - beim Rennstart liegt der lange vor der Ampel. Einmalig: nur der
@@ -8091,6 +8095,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Auf die Bahn stellen muss man von Hand - das kann die App nicht -, aber wer fahrend
       // nebeneinander liegt, ist damit gesagt.
       if (raceFormationLap) weave = formationOffset(g, g.gridPos, now);
+      else if (g.aufstellZiel !== undefined && g.aufstellZiel !== null) weave = formationOffset(g, g.gridPos, now, GHOST_GRID_MAX);
       if (ghostCfg.railMode) {
         // Zero steering plus the anti-ramming offset. There is no lateral feedback to close
         // a loop with, so this is deliberately the conservative choice rather than a guess.

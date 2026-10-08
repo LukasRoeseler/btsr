@@ -16982,6 +16982,43 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'rollt an, Bremse des Fahrers gilt, haelt am Platz, gibt nach dem Start frei' };
   });
 
+  // v0.9.58 (D6): die Aufstellung faehrt mit der MAXIMALEN Querlage und mit Spur-Bytes, und
+  // sie wird ein autopilotGrund. Vorher schaltete das Kästchen gridSelbst die Breite nur um,
+  // und die Autos fuhren gar nicht von selbst los, weil `armed` die Aufstellung nicht kannte.
+  stAdd('Aufstellung v0.9.58: max. Querlage, Spur-Bytes, autopilotGrund', () => {
+    const f = [];
+    const merk = { p1: playerCar, tm: trackMode, fl: flagState, rfl: raceFormationLap, rgo: raceGridOrder };
+    const auto = { device: { id: 'probe-aufst-2' }, role: 'player', alias: 'P2', testSenke: [] };
+    try {
+      trackMode = 'on'; flagState = 'green'; raceFormationLap = false; raceGridOrder = ['probe-aufst-2'];
+      // Max. Querlage: benachbarte Plaetze gehen auseinander und deutlich ueber den
+      // Einfuehrungsrunden-Versatz hinaus (GHOST_GRID_MAX statt GHOST_GRID_OFFSET).
+      const a = {}; a.weavePhase = 1.234; const t = 1000000;
+      const m0 = formationOffset(a, 0, t, GHOST_GRID_MAX), m1 = formationOffset(a, 1, t, GHOST_GRID_MAX);
+      if (!(m0 > 0 && m1 < 0)) f.push('max. Querlage ohne Vorzeichenwechsel ' + m0.toFixed(3) + '/' + m1.toFixed(3));
+      if (!(Math.abs(m0) <= GHOST_WEAVE + GHOST_GRID_MAX + 1e-9)) f.push('max. Querlage zu gross: ' + m0.toFixed(3));
+      if (!(Math.abs(m0) > GHOST_GRID_OFFSET + GHOST_WEAVE)) f.push('nicht max. Querlage angesteuert: ' + m0.toFixed(3));
+      // Die Aufstellung wird ein autopilotGrund, also laeuft die Fahrhilfe und der
+      // Cockpit-Schriftzug kann sie zeigen.
+      playerCar = auto;
+      aufstellSpieler.clear();
+      aufstellSpieler.set(auto, { ziel: 5, seit: Date.now(), fertig: false });
+      if (autopilotGrund() !== 'aufstellen') f.push('autopilotGrund meldet die Aufstellung nicht');
+      if (!driverAssistAktiv()) f.push('Fahrhilfe nicht aktiv waehrend der Aufstellung');
+      // Der Autopilot sendet Spur-Bytes (Querlage), nicht Lenkung null.
+      const r = autopilot(0, 1);
+      if (!r || r.grund !== 'aufstellen') f.push('Autopilot uebernimmt nicht (' + (r && r.grund) + ')');
+      if (r && !(Math.abs(r.steer) > 1e-6)) f.push('kein Spur-Byte (steer=0) waehrend der Aufstellung');
+      if (r && !(Math.abs(r.steer) <= GHOST_WEAVE + GHOST_GRID_MAX + 1e-9)) f.push('Spur-Byte ausserhalb des Rahmens: ' + r.steer);
+      aufstellenStoppen(false);
+    } finally {
+      aufstellSpieler.clear(); playerCar = merk.p1; trackMode = merk.tm; flagState = merk.fl;
+      raceFormationLap = merk.rfl; raceGridOrder = merk.rgo; autopilotZuruecksetzen();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ')
+              : 'max. Breite abwechselnd, Spur-Bytes gesendet, Grund + Fahrhilfe aktiv' };
+  });
+
   stAdd('Statistik: Sieger, Medaillen, Kilometer-Korrektur', () => {
     const f = [];
     const s1 = { modus: 'laps', autos: [{ rolle: 'player', laps: [5000, 5000, 5000] }, { rolle: 'ghost', laps: [4000, 4000] }] };

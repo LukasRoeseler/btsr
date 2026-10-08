@@ -2600,6 +2600,11 @@
     // trackMode ist ein STRING ('on'/'off') und kein Boolean - ein !trackMode waere hier
     // immer falsch gewesen.
     if (trackMode !== 'on') return null;
+    // v0.9.58 (D6): die Aufstellung wird ein Grund. Sie laeuft VOR dem Rennen, also ohne
+    // Einfuehrungsrunde und ohne Gelb - das Fahrerauto faehrt mit Spur-Bytes zu seinem
+    // Startplatz und wird dort gehalten. Nur wenn SEIN Auto in der Aufstellung steht, sonst
+    // wuerde ein fremdes Feld den Cockpit-Schriftzug zeigen.
+    if (typeof aufstellenSpielerZiel === 'function' && aufstellenSpielerZiel(playerCar)) return 'aufstellen';
     if (raceFormationLap) {
       // Beides kann gelten: wenn in der Einfuehrungsrunde jemand abfliegt. Dann gewinnt der
       // LANGSAMERE, und das ist keine Rangfolge, sondern eine Rechnung.
@@ -2670,8 +2675,11 @@
       const dtS = Math.max(0.01, Math.min(0.25, (Date.now() - (regler.at || Date.now())) / 1000));
       regler.at = Date.now();
       const g = ghostSpeedControl(regler, formationPace(), vA, dtS);
-      if (fahrerBremse > 0.05) return { grund: 'aufstellen', throttle: 0, brake: fahrerBremse, steer: 0, lenkt: false };
-      return { grund: 'aufstellen', throttle: g.throttle, brake: g.brake, steer: 0,
+      // v0.9.58 (D6): mit Spur-Bytes - dieselbe Querlage wie die Ghosts, in maximaler
+      // Breite, damit das Auto von selbst auf die Seite seines Startplatzes faellt.
+      const lenk = typeof formationDriverOffset === 'function' ? formationDriverOffset(meinAuto, GHOST_GRID_MAX) : 0;
+      if (fahrerBremse > 0.05) return { grund: 'aufstellen', throttle: 0, brake: fahrerBremse, steer: lenk, lenkt: false };
+      return { grund: 'aufstellen', throttle: g.throttle, brake: g.brake, steer: lenk,
                lenkt: !abseitsJetztFuer(wer || 1) };
     }
     const grund = autopilotGrund();

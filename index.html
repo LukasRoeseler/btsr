@@ -2740,7 +2740,6 @@
   .gt3-gridschirm .grid-bild { grid-area: bild; max-height: none; height: 100%; }
   .gt3-gridschirm .grid-bild .tp-karte, .gt3-gridschirm .grid-bild img { max-height: 100%; width: 100%; height: 100%; }
   .gt3-gridschirm .grid-hinweis { grid-area: hinweis; font-size: clamp(13px, 2vw, 19px); }
-  .gt3-gridschirm .grid-selbst { grid-area: selbst; font-size: clamp(12px, 1.8vw, 17px); margin: 4px 0; }
   .gt3-gridschirm .grid-liste { grid-area: liste; font-size: clamp(13px, 2vw, 19px); }
   .gt3-gridschirm .grid-fuss { grid-area: fuss; flex-wrap: wrap; }
   .gt3-gridschirm .grid-fuss button { font-size: clamp(15px, 2.4vw, 24px);
@@ -3395,8 +3394,6 @@
   .grid-liste .grid-row { background: var(--panel); margin-bottom: 0; }
 .grid-fuss { flex: 0 0 auto; justify-content: flex-end; gap: 10px; }
 .grid-start-gross { font-size: clamp(16px, 2.4vw, 26px); padding: clamp(10px, 1.8vw, 18px) clamp(28px, 6vw, 70px); }
-.grid-selbst { display: flex; align-items: center; gap: 8px; margin: 10px 0 4px 0;
-  font-size: clamp(10px, 1.2vw, 13px); color: var(--muted); }
 .grid-hinweis { flex: 0 0 auto; margin: 0; font-size: clamp(10px, 1.2vw, 13px);
     line-height: 1.35; color: var(--gt3-strip-ink); opacity: .9; }
   .grid-pos { font-family: monospace; font-weight: 700; min-width: 26px; color: var(--muted); }
@@ -4462,7 +4459,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.58</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.59</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5164,10 +5161,6 @@
           <span id="grid-kopf-info" data-i18n-skip></span></div>
         <div class="grid-bild" id="grid-bild" data-i18n-skip></div>
         <p class="grid-hinweis" id="grid-hinweis">Alle Autos stehen auf den Teilen <b>vor</b> Start/Ziel. Erst wenn du Start/Ziel zum ersten Mal &uuml;berf&auml;hrst, beginnt Runde&nbsp;1.</p>
-        <label class="grid-selbst" id="grid-selbst-wrap">
-          <input type="checkbox" id="grid-selbst">
-          <span class="wip-tag">experimentell</span> Aufstellung mit gr&ouml;&szlig;ter Querlage (links/rechts)
-        </label>
         <div class="grid-liste" id="grid-liste"></div>
         <div class="schirm-fuss grid-fuss">
           <button type="button" id="grid-abbrechen">Abbrechen</button>
@@ -12965,6 +12958,7 @@
     "Ghosts: Die Seiten der Startaufstellung bleiben jetzt erhalten. Jeder Ghost behält die Seite, auf der er gestartet ist (links/rechts), statt sie bei jedem Takt mit dem Garagenplatz zu tauschen – ein Paar wechselt erst, wenn es mehr als eine halbe Kachel auseinanderliegt. In der Kurve bekommt die Innenseite das Auto, dessen Startseite dorthin passt, statt immer das vordere. Die Feldstaffel bremst den Ersten etwas stärker ab (0,14 statt 0,10).": "Ghosts: the starting-grid sides are now kept. Each ghost keeps the side it started on (left/right) instead of swapping it with the garage slot every tick – a pair only swaps when it is more than half a tile apart. In a corner the inside goes to the car whose start side matches it, instead of always the leading car. The field stagger now slows the leader a bit more (0.14 instead of 0.10).",
     "Ghost-Presets in der Garage: Statt der feinen Prozentzahl wählst du je Ghost eine von drei Stufen – Einfach, Mittel, Schnell. Die Stufe ändert nur das Tempo auf der Geraden (50/55/60 %); in Kurven und Haarnadeln fahren alle Stufen gleich schnell mit dem Mittel-Tempo. Die gewählte Stufe wird pro Auto gespeichert, alte Werte werden der nächsten Stufe zugeordnet.": "Ghost presets in the garage: instead of a fine percentage you pick one of three levels per ghost – Easy, Medium, Fast. The level only changes the speed on straights (50/55/60 %); in corners and hairpins all levels run at the same medium pace. The chosen level is saved per car; old values are mapped to the nearest level.",
     "Ghosts: Die Ghost-Befehle laufen jetzt im selben 45-ms-Takt wie dein Auto, direkt nach deinem Paket. Vorher hatte jeder Ghost einen eigenen Takt, dessen Ungenauigkeit in deinen Steuertakt hineinfunkte – mit drei Ghosts fühlte sich das unruhig an. Dein Befehl geht jetzt immer zuerst.": "Ghosts: the ghost commands now run in the same 45 ms heartbeat as your car, right after your packet. Previously each ghost had its own timer whose jitter bled into your control loop – with three ghosts it felt jittery. Your command now always goes first.",
+    "Automatische Aufstellung: Alle Autos fahren jetzt gleichzeitig auf ihre Startplätze – die Ghosts genauso wie dein Auto. Vorher rollte nur dein Auto los, die Ghosts blieben stehen. Während der Positionsfahrt gilt die maximale Querlage (links/rechts abwechselnd nach Startplatz), und dein Auto fährt mit den Spur-Bytes, die es von selbst auf die Seite seines Platzes bringen. Das experimentelle Kästchen „Aufstellung mit größter Querlage“ ist weg – die maximale Breite gilt immer. Im Cockpit steht währenddessen „AUFSTELLUNG · AUTOPILOT“.": "Automatic grid setup: all cars now drive to their grid slots at the same time – the ghosts just like your car. Before, only your car rolled off and the ghosts stayed put. During the positioning drive the maximum lateral offset applies (alternating left/right by grid slot), and your car drives on the lane bytes that bring it to the side of its slot by itself. The experimental checkbox “grid setup with maximum lateral offset” is gone – the maximum width always applies. The cockpit reads “GRID SETUP · AUTOPILOT” meanwhile.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -13106,7 +13100,6 @@
     "Spieler {s}: noch {n} Leben": "Player {s}: {n} lives left",
     "Geist aus": "Ghost out",
     "Du": "You",
-    "Aufstellung mit größter Querlage (links/rechts)": "Grid with widest offset (left/right)",
     "Weg": "Path",
     "alte APK": "old APK",
     "geschrieben": "written",
@@ -14634,6 +14627,7 @@
     "Schaltzeit": "shift time",
     "EINFÜHRUNGSRUNDE · AUTOPILOT": "FORMATION LAP · AUTOPILOT",
     "EINFÜHRUNGSRUNDE": "FORMATION LAP",
+    "AUFSTELLUNG · AUTOPILOT": "GRID SETUP · AUTOPILOT",
     "GELB": "YELLOW",
     "ANFAHRT": "ROLLING UP",
     "Einführungsrunde": "Formation lap",
@@ -21943,6 +21937,11 @@
     // trackMode ist ein STRING ('on'/'off') und kein Boolean - ein !trackMode waere hier
     // immer falsch gewesen.
     if (trackMode !== 'on') return null;
+    // v0.9.58 (D6): die Aufstellung wird ein Grund. Sie laeuft VOR dem Rennen, also ohne
+    // Einfuehrungsrunde und ohne Gelb - das Fahrerauto faehrt mit Spur-Bytes zu seinem
+    // Startplatz und wird dort gehalten. Nur wenn SEIN Auto in der Aufstellung steht, sonst
+    // wuerde ein fremdes Feld den Cockpit-Schriftzug zeigen.
+    if (typeof aufstellenSpielerZiel === 'function' && aufstellenSpielerZiel(playerCar)) return 'aufstellen';
     if (raceFormationLap) {
       // Beides kann gelten: wenn in der Einfuehrungsrunde jemand abfliegt. Dann gewinnt der
       // LANGSAMERE, und das ist keine Rangfolge, sondern eine Rechnung.
@@ -22013,8 +22012,11 @@
       const dtS = Math.max(0.01, Math.min(0.25, (Date.now() - (regler.at || Date.now())) / 1000));
       regler.at = Date.now();
       const g = ghostSpeedControl(regler, formationPace(), vA, dtS);
-      if (fahrerBremse > 0.05) return { grund: 'aufstellen', throttle: 0, brake: fahrerBremse, steer: 0, lenkt: false };
-      return { grund: 'aufstellen', throttle: g.throttle, brake: g.brake, steer: 0,
+      // v0.9.58 (D6): mit Spur-Bytes - dieselbe Querlage wie die Ghosts, in maximaler
+      // Breite, damit das Auto von selbst auf die Seite seines Startplatzes faellt.
+      const lenk = typeof formationDriverOffset === 'function' ? formationDriverOffset(meinAuto, GHOST_GRID_MAX) : 0;
+      if (fahrerBremse > 0.05) return { grund: 'aufstellen', throttle: 0, brake: fahrerBremse, steer: lenk, lenkt: false };
+      return { grund: 'aufstellen', throttle: g.throttle, brake: g.brake, steer: lenk,
                lenkt: !abseitsJetztFuer(wer || 1) };
     }
     const grund = autopilotGrund();
@@ -31474,9 +31476,6 @@
   // which is what "sobald das erste Auto über Start fährt" means literally.
   let raceFlying = false;
   let raceGridOrder = [];      // device ids, first = pole
-let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentell). Hiess bis v0.9.2
-                            // "Autos fahren selbst in Position" - das tat er nie, er aendert nur den
-                            // Querversatz der Startaufstellung in der Einfuehrungsrunde.
   let raceFormationLap = false;
   let raceStartedAt = null;
   // Zeitpunkt von Gruen (stehender Start). Die Reihenstaffel der Ghosts zaehlt davon.
@@ -32936,13 +32935,6 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   if ($('grid-start')) $('grid-start').addEventListener('click', raceGridStart);
   if ($('grid-abbrechen')) $('grid-abbrechen').addEventListener('click', raceGridAbbrechen);
   if ($('grid-auto')) $('grid-auto').addEventListener('click', () => aufstellenStarten());
-  // BESTELLT: "eine option, dass die autos selbst in position fahren ... (als experimentell
-  // kennzeichnen)". Der Schalter setzt gridSelbst, das die Ghosts auf ihre Startplaetze
-  // (abwechselnd links/rechts, max Querlage) faehrt statt sie von Hand aufzustellen.
-  if ($('grid-selbst')) {
-    gridSelbst = $('grid-selbst').checked;
-    $('grid-selbst').addEventListener('change', (e) => { gridSelbst = e.target.checked; });
-  }
 
   $('race-flying').addEventListener('change', (e) => {
     raceFlying = e.target.checked;
@@ -44975,16 +44967,16 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Ghost ist das sein Ghost-Zustand, fuer den Fahrer ein eigenes Objekt. Er wird beim
   // ersten Aufruf gesetzt und nicht im Konstruktor - ein Auto, das nie in einer
   // Einfuehrungsrunde faehrt, braucht keine Phase.
-  function formationOffset(halter, gridPos, now) {
+  function formationOffset(halter, gridPos, now, breite) {
     if (halter.weavePhase === undefined) halter.weavePhase = Math.random() * 6.283;
     let v = Math.sin(now / 700 + halter.weavePhase) * GHOST_WEAVE;
     if (gridPos >= 0) {
       const seit = gridPos % 2 ? -1 : 1;
-      // BESTELLT: "alle abwechselnd link und rechts (max querlage) anhalten". Bei "Autos
-      // fahren selbst in Position" (gridSelbst, experimentell) wird die maximale Querlage
-      // angesteuert, sonst der bisherige Versatz.
-      const breite = (typeof gridSelbst !== 'undefined' && gridSelbst) ? GHOST_GRID_MAX : GHOST_GRID_OFFSET;
-      v += seit * breite;
+      // v0.9.58 (D6): die Querlage kommt als Parameter. Die Einfuehrungsrunde nimmt den
+      // bisherigen Versatz (GHOST_GRID_OFFSET), die Positionsfahrt der Aufstellung die
+      // maximale Breite (GHOST_GRID_MAX) - abwechselnd links/rechts nach Startplatz. Das
+      // experimentelle Kästchen gridSelbst entfaellt, die maximale Breite gilt immer.
+      v += seit * (breite === undefined ? GHOST_GRID_OFFSET : breite);
     }
     return v;
   }
@@ -45005,11 +44997,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   const formationFahrer = {};
   const formationFahrerZwei = {};
   const formationFahrerJe = { 2: formationFahrerZwei, 3: {} };
-  function formationDriverOffset(car) {
+  function formationDriverOffset(car, breite) {
     const c = car || garage.find(x => x.role === 'player');
     const nr = c ? spielerNrVon(c) : 0;
     const halter = nr >= 2 ? (formationFahrerJe[nr] || formationFahrerZwei) : formationFahrer;
-    return formationOffset(halter, gridPosOf(c), Date.now());
+    return formationOffset(halter, gridPosOf(c), Date.now(), breite);
   }
   const GHOST_OFFTRACK_MS = 1500;   // measured: tiles last 0.4-2.7 s with no 0xff between
   // Wie lange 0x00 stehen muss, bevor der Ghost anhaelt. Vorher hielt ein EINZIGES 0x00-Paket
@@ -47287,6 +47279,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const flaggenText = flagState === 'yellow' ? (grund === 'yellow' ? 'GELB · AUTOPILOT' : 'GELB')
                      : flagState === 'restart' ? 'ANFAHRT'
                      : grund === 'formation' ? 'EINFÜHRUNGSRUNDE · AUTOPILOT'
+                     : grund === 'aufstellen' ? 'AUFSTELLUNG · AUTOPILOT'
                      : raceFormationLap ? 'EINFÜHRUNGSRUNDE' : '';
       el.textContent = flaggenText ? t(flaggenText) : '';
       el.style.display = el.textContent ? '' : 'none';
@@ -50310,7 +50303,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // noch zu Ende. Ohne diesen Zweig steht es in dem Moment still, in dem die Flagge
     // faellt - und genau das war der Bericht.
     const armed = (raceState === 'racing' || raceState === 'finishing'
-                   || g.freeRun || g.auslauf)
+                   || g.freeRun || g.auslauf
+                   // v0.9.58 (D6): auch die Positionsfahrt der Aufstellung ist "scharf" -
+                   // so rollen alle Ghosts und Spielerautos gleichzeitig zu ihren Plaetzen.
+                   || (g.aufstellZiel !== undefined && g.aufstellZiel !== null))
                   && !car.parked;
     // Startlenkung gerade: die Frist beginnt an der FLANKE zum Anfahren (armed), nicht beim
     // startGhost-Aufruf - beim Rennstart liegt der lange vor der Ampel. Einmalig: nur der
@@ -50682,6 +50678,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Auf die Bahn stellen muss man von Hand - das kann die App nicht -, aber wer fahrend
       // nebeneinander liegt, ist damit gesagt.
       if (raceFormationLap) weave = formationOffset(g, g.gridPos, now);
+      else if (g.aufstellZiel !== undefined && g.aufstellZiel !== null) weave = formationOffset(g, g.gridPos, now, GHOST_GRID_MAX);
       if (ghostCfg.railMode) {
         // Zero steering plus the anti-ramming offset. There is no lateral feedback to close
         // a loop with, so this is deliberately the conservative choice rather than a guess.
@@ -80010,6 +80007,43 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       autopilotZuruecksetzen();
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'rollt an, Bremse des Fahrers gilt, haelt am Platz, gibt nach dem Start frei' };
+  });
+
+  // v0.9.58 (D6): die Aufstellung faehrt mit der MAXIMALEN Querlage und mit Spur-Bytes, und
+  // sie wird ein autopilotGrund. Vorher schaltete das Kästchen gridSelbst die Breite nur um,
+  // und die Autos fuhren gar nicht von selbst los, weil `armed` die Aufstellung nicht kannte.
+  stAdd('Aufstellung v0.9.58: max. Querlage, Spur-Bytes, autopilotGrund', () => {
+    const f = [];
+    const merk = { p1: playerCar, tm: trackMode, fl: flagState, rfl: raceFormationLap, rgo: raceGridOrder };
+    const auto = { device: { id: 'probe-aufst-2' }, role: 'player', alias: 'P2', testSenke: [] };
+    try {
+      trackMode = 'on'; flagState = 'green'; raceFormationLap = false; raceGridOrder = ['probe-aufst-2'];
+      // Max. Querlage: benachbarte Plaetze gehen auseinander und deutlich ueber den
+      // Einfuehrungsrunden-Versatz hinaus (GHOST_GRID_MAX statt GHOST_GRID_OFFSET).
+      const a = {}; a.weavePhase = 1.234; const t = 1000000;
+      const m0 = formationOffset(a, 0, t, GHOST_GRID_MAX), m1 = formationOffset(a, 1, t, GHOST_GRID_MAX);
+      if (!(m0 > 0 && m1 < 0)) f.push('max. Querlage ohne Vorzeichenwechsel ' + m0.toFixed(3) + '/' + m1.toFixed(3));
+      if (!(Math.abs(m0) <= GHOST_WEAVE + GHOST_GRID_MAX + 1e-9)) f.push('max. Querlage zu gross: ' + m0.toFixed(3));
+      if (!(Math.abs(m0) > GHOST_GRID_OFFSET + GHOST_WEAVE)) f.push('nicht max. Querlage angesteuert: ' + m0.toFixed(3));
+      // Die Aufstellung wird ein autopilotGrund, also laeuft die Fahrhilfe und der
+      // Cockpit-Schriftzug kann sie zeigen.
+      playerCar = auto;
+      aufstellSpieler.clear();
+      aufstellSpieler.set(auto, { ziel: 5, seit: Date.now(), fertig: false });
+      if (autopilotGrund() !== 'aufstellen') f.push('autopilotGrund meldet die Aufstellung nicht');
+      if (!driverAssistAktiv()) f.push('Fahrhilfe nicht aktiv waehrend der Aufstellung');
+      // Der Autopilot sendet Spur-Bytes (Querlage), nicht Lenkung null.
+      const r = autopilot(0, 1);
+      if (!r || r.grund !== 'aufstellen') f.push('Autopilot uebernimmt nicht (' + (r && r.grund) + ')');
+      if (r && !(Math.abs(r.steer) > 1e-6)) f.push('kein Spur-Byte (steer=0) waehrend der Aufstellung');
+      if (r && !(Math.abs(r.steer) <= GHOST_WEAVE + GHOST_GRID_MAX + 1e-9)) f.push('Spur-Byte ausserhalb des Rahmens: ' + r.steer);
+      aufstellenStoppen(false);
+    } finally {
+      aufstellSpieler.clear(); playerCar = merk.p1; trackMode = merk.tm; flagState = merk.fl;
+      raceFormationLap = merk.rfl; raceGridOrder = merk.rgo; autopilotZuruecksetzen();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ')
+              : 'max. Breite abwechselnd, Spur-Bytes gesendet, Grund + Fahrhilfe aktiv' };
   });
 
   stAdd('Statistik: Sieger, Medaillen, Kilometer-Korrektur', () => {
