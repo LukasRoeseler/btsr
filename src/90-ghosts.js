@@ -5611,13 +5611,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
 
   // Im Sendetakt, damit der Vorausblick zu dem Paket passt, mit dem er hinausgeht. Ein
   // eigener, langsamerer Takt waere ein Vorausblick, der der Lenkung nachlaeuft.
-  // EIN Takt fuer beide Autos, und die Reihenfolge ist fest. Ein zweiter setInterval waere
-  // dieselbe Falle wie zwei Sendewege: zwei Buchfuehrungen, die sich im Wechsel
-  // ueberschreiben koennten, wo eine Schleife genuegt.
-  setInterval(() => {
-    spielerOrtTick(playerCar);
-    for (const z of zusatzAktiv()) spielerOrtTick(z.car);
-  }, CONTROL_SEND_INTERVAL_MS);
+  // v0.9.57: spielerOrtTick laeuft jetzt im Herzschlag (controlHeartbeat in 20-protocol.js)
+  // VOR der Physik, damit der Vorausblick zum Paket passt. Dieser eigene setInterval faellt
+  // weg - ein zweiter Takt waere dieselbe Falle wie zwei Sendewege.
 
   function ghostFieldRacing() {
     // Auto 2 gehoert ins Feld, sobald es fuehrt UND einen Ortungssatz hat. Beides
@@ -7116,6 +7112,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   //    ein ghostTick sind 0,05 ms -, aber jeder von ihnen schreibt weiter an sein Auto,
   //    und ein Ghost, den man angehalten hat, soll nicht weiterfahren.
   function ghostTaktLoeschen(car) {
+    car.imTakt = false;
+    car.taktPlatz = 0;
+    car.taktTeile = 0;
     if (car.startTimer) { clearTimeout(car.startTimer); car.startTimer = null; }
     if (car.timer) { clearInterval(car.timer); car.timer = null; }
   }
@@ -7139,16 +7138,24 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Einen Ghost auf seinen Platz im Takt setzen. platz von 1 an, teile = Zahl der Autos.
   function ghostTaktSetzen(car, platz, teile) {
     ghostTaktLoeschen(car);
-    // herzschlagAt steht in 20-protocol.js. Ohne bisherigen Herzschlag (0) ist es der
-    // Versatz vom Seitenstart - dieselbe Auskunft wie vorher, nur ohne falschen Kommentar.
-    const warten = ghostTaktVersatz(platz, teile, performance.now() - herzschlagAt);
-    car.startTimer = setTimeout(() => {
-      car.startTimer = null;
-      // Die Wache fragt jetzt, ob dieses Auto ueberhaupt noch faehrt, und nicht nur, ob es
-      // ein Ghost ist. Ein angehaltener Ghost behaelt seine Rolle.
-      if (car.role !== 'ghost' || !car.ghost || !car.ghost.running) return;
-      car.timer = setInterval(() => ghostTick(car), CONTROL_SEND_INTERVAL_MS);
-    }, Math.round(warten));
+    // v0.9.57: der Takt kommt jetzt aus dem Herzschlag (ghostHerzschlag in 90-ghosts.js,
+    // gerufen aus controlHeartbeat in 20-protocol.js) statt aus einem eigenen setInterval.
+    // car.imTakt meldet den Ghost dort an; der Herzschlag selbst sorgt fuer die Reihenfolge
+    // (Spieler zuerst, dann die Ghosts) und writeToCar() fuer das "verwerfen, wenn noch
+    // einer laeuft". Platz und Teile bleiben als Beleg der Staffelung erhalten.
+    car.imTakt = true;
+    car.taktPlatz = platz;
+    car.taktTeile = teile;
+  }
+
+  // v0.9.57: die Ghost-Takte laufen im selben 45-ms-Herzschlag wie der Spieler, damit der
+  // Jitter eigener setInterval nicht mehr in den Spielertakt hineinfunkt. Gerufen aus
+  // controlHeartbeat() in 20-protocol.js NACH spielerZweiSenden(). Das Schreiben selbst
+  // bleibt beim "verwerfen, wenn noch einer laeuft" in writeToCar().
+  function ghostHerzschlag() {
+    for (const car of garage) {
+      if (car.imTakt && car.ghost && car.ghost.running) ghostTick(car);
+    }
   }
 
   // Alle fahrenden Ghosts neu verteilen. Gerufen aus startGhost, also immer dann, wenn sich

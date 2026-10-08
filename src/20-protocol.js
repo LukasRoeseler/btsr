@@ -415,6 +415,15 @@
     if (padLoopRunning && typeof kAktiverTab === 'function' && kAktiverTab() === 'race') {
       try { pollGamepad(); } catch (e) { /* der Bildtakt liest weiter */ }
     }
+    // v0.9.57: der Spielerort wird im Herzschlag gesetzt, VOR der Physik - sonst laeuft der
+    // Vorausblick einen Takt hinterher. Vorher sass das in einem eigenen setInterval in
+    // 90-ghosts.js und konnte das Paket dieses Takts verpassen.
+    if (typeof spielerOrtTick === 'function') {
+      spielerOrtTick(playerCar);
+      if (typeof zusatzAktiv === 'function') {
+        for (const z of zusatzAktiv()) spielerOrtTick(z.car);
+      }
+    }
     physicsStep();
     pitLaneTick();
     let steer = physicsEnabled ? physOutSteer : steerX;
@@ -422,6 +431,9 @@
     if (driftModus) steer = driftGegenlenken(steer);
     sendControlValue(steer, throttle);
     spielerZweiSenden();
+    // v0.9.57: die Ghost-Takte aus demselben Herzschlag, NACH dem Spielerpaket - so geht der
+    // Spielerbefehl immer zuerst, und die Ghosts stoeren den Spielertakt nicht mehr.
+    if (typeof ghostHerzschlag === 'function') ghostHerzschlag();
     // ERST SENDEN, DANN MALEN (v0.8.41): das Cockpit wird nach dem Absetzen gezeichnet und
     // gedrosselt - in der App zeichnet die WebView auf dem UI-Thread, und jede Malarbeit vor
     // dem Senden verzoegert dort die Bluetooth-Antworten (50-drive.js, cockpitNachSenden).
