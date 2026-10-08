@@ -1740,7 +1740,7 @@
       const merk = {};
       const kaesten = { lap: 'setting-announce', damage: 'setting-announce-damage',
                         fuel: 'setting-announce-fuel', tyre: 'setting-announce-tyre',
-                        rain: 'setting-announce-rain' };
+                        rain: 'setting-announce-rain', battery: 'setting-announce-battery' };
       // Die Kaestchen setzen und hinterher zuruecklegen: der Test darf die Einstellung
       // des Nutzers nicht behalten.
       try {
@@ -1762,7 +1762,7 @@
         // und der naechste Test in der Datei erbte ein bereits 'rain: true' geflanktes
         // Latch - eine Meldung fiel, die zur eigenen Zustandsfolge gar nicht gehoerte.
         const merkLatch = Object.assign({}, ansageLatch);
-        Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null });
+        Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null, battery: false });
         // BESTELLT: die Aufnahme hat jetzt IMMER Vorrang vor der Live-Stimme (ansage()),
         // nicht nur ohne speechSynthesis. Diese Probe will aber ausdruecklich den
         // Live-Pfad beobachten (ueber die Attrappe unten) - ist der Browser, in dem der
@@ -1809,7 +1809,7 @@
     ansagenFunkProbe(schritte) {
       const kaesten = { lap: 'setting-announce', damage: 'setting-announce-damage',
                         fuel: 'setting-announce-fuel', tyre: 'setting-announce-tyre',
-                        rain: 'setting-announce-rain' };
+                        rain: 'setting-announce-rain', battery: 'setting-announce-battery' };
       const merk = {};
       try {
         Object.keys(kaesten).forEach((art) => {
@@ -1833,7 +1833,7 @@
         // Zustand, eine vorangegangene Probe kann eine Flanke hinterlassen haben, die
         // zu DIESER Zustandsfolge nicht gehoert.
         const merkLatch = Object.assign({}, ansageLatch);
-        Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null });
+        Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null, battery: false });
         try {
           delete window.speechSynthesis;
           const folge = schritte.map((w) => ({ w, fiel: ansagenPruefen(w) }));
@@ -1875,7 +1875,7 @@
       playFx = (puffer) => { abgespielt.push(puffer && puffer.markiert); return true; };
       const gesagt = [];
       const merkLatch = Object.assign({}, ansageLatch);
-      Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null });
+      Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null, battery: false });
       try {
         Object.defineProperty(window, 'speechSynthesis', {
           configurable: true,

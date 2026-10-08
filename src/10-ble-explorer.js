@@ -411,6 +411,9 @@
     "Einmal, wenn der schlechteste der vier Reifen nur noch 10 % hat. Der schlechteste zählt: ein Auto mit drei guten Reifen und einem abgefahrenen fährt nicht drei Viertel gut.": "Once, when the worst of the four tyres is down to 10 %. The worst one counts: a car with three good tyres and one worn out does not drive three quarters well.",
     "Regen ansagen": "Announce rain",
     "Wenn es anfängt zu regnen und wenn es aufhört. Beim Laden wird nichts gesagt, erst beim Wechsel.": "When it starts raining and when it stops. Nothing is said on load, only on a change.",
+    "Akku ansagen": "Announce battery",
+    "Einmal, wenn der Akku unter 25 % fällt. Erst nach dem Laden wieder scharf.": "Once, when the battery falls below 25 %. Armed again only after charging.",
+    "Akku fast leer": "Battery low",
     "Gaskennlinie": "Throttle curve",
     "Lenkkennlinie": "Steering curve",
     "Bremskennlinie": "Brake curve",
@@ -731,6 +734,10 @@
     "Von Hand schalten, 4,4 s auf 100, Reifenverschleiß und Tankgewicht wie GT3, aber mehr Grip und eine gutmütigere Bremse. Die Klasse darunter fährt sich nicht leichter, weil sie mehr verzeiht, sondern weil sie langsamer ist.":
       "Manual gearbox, 4.4 s to 100, tyre wear and fuel weight as GT3, but more grip and gentler brakes. The class below is not easier because it forgives more, but because it is slower.",
     "Das schärfste, was das Modell hergibt": "The sharpest the model has",
+    "Pro-Pacejka": "Pro-Pacejka",
+    "Pro mit Pacejka-Lenkmodell": "Pro with Pacejka handling model",
+    "Die Pro-Abstimmung (Automatik, 2,6 s auf 100, voller Grip, Reifenmodell an, kein Tankgewicht) mit dem experimentellen Pacejka-Lenkmodell: unterhalb der Haftgrenze fährt es sich wie Physik, darüber spürbar Übersteuern und Untersteuern, beides vibriert und quietscht. Zum Ausprobieren der Magic Formula, ohne die Klassen-Abstimmung.":
+      "The Pro setup (automatic, 2.6 s to 100, full grip, tyre model on, no fuel weight) with the experimental Pacejka handling model: below the grip limit it drives like Physics, above it oversteer and understeer are noticeable, both rumble and squeal. To try out the Magic Formula, without the class tuning.",
 
     // Die Kachelseite der Optionen
     "Einstellungen": "Settings",

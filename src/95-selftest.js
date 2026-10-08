@@ -4906,6 +4906,33 @@
                    + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Akku: einmal unter 25 %, erst nach der Erholung wieder ----
+  //
+  // BESTELLT "Akku-Ansage < 25 %". Die Schwelle liegt bewusst ueber der 10 % der anderen
+  // Zustandsansagen (ANSAGE_SCHWELLE), deshalb eine eigene.
+  stAdd('Ansagen: Akku meldet einmal unter 25 %, erst nach Erholung wieder', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ansagenFolge) {
+      return { skip: true, mass: 'ansagenFolge nicht vorhanden' };
+    }
+    const folge = [
+      { health: 1, fuel: 1, tyre: 1, rain: false, battery: 1 },
+      { health: 1, fuel: 1, tyre: 1, rain: false, battery: 0.30 },  // ueber 25 %: nichts
+      { health: 1, fuel: 1, tyre: 1, rain: false, battery: 0.24 },  // unter 25 %: melden
+      { health: 1, fuel: 1, tyre: 1, rain: false, battery: 0.20 },  // Gegenprobe: nicht nochmal
+      { health: 1, fuel: 1, tyre: 1, rain: false, battery: 0.50 },  // Erholung
+      { health: 1, fuel: 1, tyre: 1, rain: false, battery: 0.20 },  // wieder scharf: melden
+    ];
+    const r = OMEGA_TEST.ansagenFolge(folge);
+    const fiel = r.folge.map(x => x.fiel.join(','));
+    const soll = ['', '', 'battery', '', '', 'battery'];
+    const schlecht = [];
+    for (let i = 0; i < soll.length; i++) {
+      if (fiel[i] !== soll[i]) schlecht.push('Schritt ' + i + ': "' + fiel[i] + '" statt "' + soll[i] + '"');
+    }
+    return { ok: schlecht.length === 0,
+             mass: fiel.map(x => x || '-').join(' ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Und die fuenf Schalter schalten wirklich ab ----
   //
   // Die Gegenprobe zum Test darueber: mit allen Kaestchen AUS darf keine einzige Meldung
@@ -4992,13 +5019,13 @@
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
-  // ---- Jede der fuenf Meldungen hat eine Aufnahme in beiden Sprachen ----------------
+  // ---- Jede der Meldungen hat eine Aufnahme in beiden Sprachen --------------------
   //
   // Statischer Gegencheck zur Regel oben: die Regel kann den richtigen SCHLUESSEL
   // ziehen und trotzdem leer ausgehen, wenn audio/voice.json eine Sprache oder eine
   // Meldung vergisst. tools/voice_synth.py schreibt die Datei; dieser Test haelt sie
-  // gegen die fuenf Schluessel, die ansage()/ansagenPruefen() tatsaechlich benutzen.
-  stAdd('Ansage-Aufnahmen: fuenf Meldungen, beide Sprachen, im Manifest', async () => {
+  // gegen die Schluessel, die ansage()/ansagenPruefen() tatsaechlich benutzen.
+  stAdd('Ansage-Aufnahmen: alle Meldungen, beide Sprachen, im Manifest', async () => {
     if (location.protocol === 'file:') {
       return { skip: true, mass: 'ohne Server kein Manifest' };
     }
@@ -5006,7 +5033,7 @@
     try {
       man = await fetch('audio/voice.json', { cache: 'reload' }).then((r) => r.json());
     } catch (e) { return { skip: true, mass: 'Manifest nicht ladbar: ' + e.message }; }
-    const erwartet = ['damage', 'fuel', 'tyre', 'rainstart', 'rainstop'];
+    const erwartet = ['damage', 'fuel', 'tyre', 'rainstart', 'rainstop', 'battery'];
     const schlecht = [];
     for (const k of erwartet) {
       if (!man[k]) { schlecht.push(k + ' fehlt ganz'); continue; }

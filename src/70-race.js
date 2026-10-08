@@ -3477,7 +3477,9 @@
              tyre: reifen,
              // Es gibt genau zwei Wetter, 'dry' und 'rain'. Ein drittes hier zu erlauben
              // waere ein Zustand, den niemand setzt, und beim naechsten Lesen eine Frage.
-             rain: weather === 'rain' };
+             rain: weather === 'rain',
+             // Akku als Anteil (0..1); ohne Auto (dashBattery === null) keine Meldung.
+             battery: dashBattery === null ? null : batteryPercent(dashBattery) / 100 };
   }
   setInterval(() => {
     if (typeof ansagenPruefen !== 'function') return;

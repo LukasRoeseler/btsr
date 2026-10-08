@@ -626,8 +626,11 @@
   // steigt - beim Tank also nach dem Tanken, beim Schaden nach der Reparatur.
   const ANSAGE_SCHWELLE = 0.10;   // 10 %, wie in der Aufgabe
   const ANSAGE_HYSTERESE = 0.18;  // erst darueber ist die Meldung wieder scharf
-  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true };
-  const ansageLatch = { damage: false, fuel: false, tyre: false, rain: null };
+  // Akku: BESTELLT "Akku-Ansage < 25 %" - eine eigene Schwelle, nicht die 10 % oben.
+  const AKKU_SCHWELLE = 0.25;
+  const AKKU_HYSTERESE = 0.32;
+  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false };
+  const ansageLatch = { damage: false, fuel: false, tyre: false, rain: null, battery: false };
 
   // HIER STAND DER FUNKFILTER als Live-Effekt auf der Browserstimme, und er ist auf Bitte
   // des Nutzers wieder heraus. Was er konnte: Knacken beim Aufschalten, ein Rauschteppich
@@ -737,6 +740,15 @@
         if (ansage('rain', t, w.rain ? 'rainstart' : 'rainstop')) raus.push('rain');
       }
     }
+    // Akku: unter 25 % einmal melden, erst ueber der Hysterese wieder scharf.
+    if (w.battery !== null && w.battery !== undefined) {
+      if (w.battery <= AKKU_SCHWELLE && !ansageLatch.battery) {
+        ansageLatch.battery = true;
+        if (ansage('battery', de ? 'Akku fast leer' : 'Battery low')) raus.push('battery');
+      } else if (w.battery > AKKU_HYSTERESE) {
+        ansageLatch.battery = false;
+      }
+    }
     return raus;
   }
 
@@ -754,7 +766,8 @@
   // toten Schalter ergeben hat.
   const ANSAGE_KAESTCHEN = { 'setting-announce': 'lap', 'setting-announce-damage': 'damage',
                              'setting-announce-fuel': 'fuel', 'setting-announce-tyre': 'tyre',
-                             'setting-announce-rain': 'rain', 'setting-announce-pit': 'pit' };
+                             'setting-announce-rain': 'rain', 'setting-announce-pit': 'pit',
+                             'setting-announce-battery': 'battery' };
   Object.keys(ANSAGE_KAESTCHEN).forEach((id) => {
     const el = $(id);
     if (!el) return;

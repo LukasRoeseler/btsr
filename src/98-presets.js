@@ -259,6 +259,19 @@
            'setting-topspeed': 1.0 },
     },
   };
+  // v0.9.63: Pro-Pacejka - die Pro-Abstimmung, aber mit dem Pacejka-Lenkmodell. Es ist
+  // dieselbe Tabelle wie Pro plus der Steuerungsmodus "pacejka", damit man die Magic
+  // Formula als EINEN Namen anwaehlen kann, statt zwei Stellen zu bedienen.
+  PRESETS.propacejka = {
+    label: 'Pro-Pacejka',
+    kurz: 'Pro mit Pacejka-Lenkmodell',
+    text: 'Die Pro-Abstimmung (Automatik, 2,6 s auf 100, voller Grip, Reifenmodell an, '
+        + 'kein Tankgewicht) mit dem experimentellen Pacejka-Lenkmodell: unterhalb der '
+        + 'Haftgrenze f\u00e4hrt es sich wie Physik, dar\u00fcber sp\u00fcrbar \u00dcbersteuern und '
+        + 'Untersteuern, beides vibriert und quietscht. Zum Ausprobieren der Magic Formula, '
+        + 'ohne die Klassen-Abstimmung.',
+    v: Object.assign({}, PRESETS.pro.v, { 'phys-mode': 'pacejka' }),
+  };
   // Bis v0.4 hiess GT3 "real". Aeltere exportierte Abstimmungen und der Knopf im
   // Garagenschirm duerfen den alten Namen weiter benutzen.
   const PRESET_ALIAS = { real: 'gt3', realismus: 'gt3' };
