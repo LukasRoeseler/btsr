@@ -2703,9 +2703,11 @@
     // dieser Autopilot ueberhaupt - braucht das Auto genau diese Lesung, um sich auf der
     // Bahn zu halten. Ohne den Boden waere der Autopilot also die Ursache dafuer, dass das
     // Auto abfliegt. Dieselbe Zeile steht seit v0.5.51 auch bei den Ghosts.
+    // v0.9.51: unter Gelb mit der Kurvendrosselung der Ghosts (autopilotKurvenFaktor) -
+    // "mit dem Tempo der Ghosts", nicht mit Geradentempo durch die Haarnadel.
     const ziel = grund === 'formation'
       ? formationPace()
-      : Math.max(yellowFactor(), GHOST_READ_MIN);
+      : Math.max(yellowFactor(), GHOST_READ_MIN) * autopilotKurvenFaktor(meinAuto);
     const v = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
     const dtA = Math.max(0.01, Math.min(0.25,
       (Date.now() - (regler.at || Date.now())) / 1000));

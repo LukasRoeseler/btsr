@@ -4593,6 +4593,29 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // BESTELLT (v0.9.27): "Option in den Renneinstellungen: gelbe Flagge deaktivieren
   // (Standard: aus)". An: weder Knopf noch Taste rufen Gelb aus.
   function gelbDeaktiviert() { const el = $('race-gelb-aus'); return !!(el && el.checked); }
+  // ---- DIE GRENZE DES FAHRERAUTOS UNTER GELB (v0.9.51) -----------------------------
+  //
+  // GEMELDET: "Gelbe Flagge soll mein Auto mit dem Tempo der Ghosts weiterfahren lassen und
+  // auch richtig lenken, das klappt nicht."
+  //
+  // Der Autopilot zielte auf max(Gelb-Tempo, GHOST_READ_MIN) = 0,35 - wie die Ghosts -,
+  // aber die Physik des Fahrerautos war auf yellowFactor() = 0,244 gedeckelt. Das Auto kam
+  // also nie ueber 0,244, der Regler stand auf Vollgas, und unter 0,35 liest es die Bahn
+  // nicht mehr: es fiel aus der Selbstfuehrung und fuhr geradeaus. Auf der Bahn, wo der
+  // Autopilot greift, gilt deshalb dieselbe Grenze wie fuer die Ghosts. Im Ausdruck-Modus
+  // faehrt man selbst, dort bleibt es beim Gelb-Tempo.
+  function gelbGrenze() {
+    return trackMode === 'on' ? Math.max(yellowFactor(), GHOST_READ_MIN) : yellowFactor();
+  }
+  // Die Kurvendrosselung der Ghosts fuer ein Fahrerauto im Autopiloten: dieselbe Regel wie
+  // die Kachelregel in ghostTick (curveSlow in der 60-Grad-Kurve, doppelt in Haarnadel und
+  // Engstelle, hoechstens 85 %), an der GEMELDETEN Kachel unter dem Auto. So faehrt es
+  // unter Gelb wirklich im Tempo der Ghosts und nicht mit Geradentempo durch die Kurve.
+  function autopilotKurvenFaktor(car) {
+    if (!car || car.tileCode === undefined || car.tileCode === null) return 1;
+    const here = ghostTileInfo(car.tileCode).curve;
+    return here > 0 ? 1 - Math.min(0.85, ghostCfg.curveSlow * here) : 1;
+  }
   function setFlag(next) {
     if (next === flagState) return;
     if (next === 'yellow' && gelbDeaktiviert()) {
@@ -4601,7 +4624,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     flagState = next;
     if (next === 'yellow') {
-      limitYellow = yellowFactor();
+      limitYellow = gelbGrenze();
       applySpeedLimit();
       // Angriffe abbrechen: waehrend Gelb wird nicht ueberholt.
       garage.forEach(c => { if (c.ghost) { c.ghost.attackUntil = 0; c.ghost.attackSide = 0; } });
@@ -5525,10 +5548,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // fahren kann".
     const wer = spielerNrVon(c) || 1;
     if (trackMode === 'on' && driverAssistAktiv() && !abseitsJetztFuer(wer)) {
+      // v0.9.51: AUCH OHNE VORAUSBLICK, wie bei den Ghosts (ghostTick). Ohne Vorausblick -
+      // das Auto stand oder wurde gerade zurueckgestellt, die Kachel ist noch nicht verortet -
+      // gingen gar keine Spur-Bytes hinaus, und der Autopilot schickte steer = 0 als
+      // RADWINKEL: das Auto fuhr unter Gelb geradeaus aus der Kurve. Die Bytes 10/15 allein
+      // schalten die Selbstfuehrung ein; 16-18 (die Ansage) kommen, sobald der Ort steht.
       const la = ghostLookahead(c);
-      c.modeBytes = la
-        ? Object.assign({ 10: AUTO_MODE.b10, 15: AUTO_MODE.b15 }, la)
-        : null;
+      c.modeBytes = Object.assign({ 10: AUTO_MODE.b10, 15: AUTO_MODE.b15 }, la || {});
     } else {
       c.modeBytes = null;
     }

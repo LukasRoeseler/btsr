@@ -17443,6 +17443,30 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'geparkt = raus, Sieg mit Fanfare, Leben mit traurigem Ton, Game over beim letzten' };
   });
 
+  // ---- v0.9.51: Gelbe Flagge mit dem Tempo der Ghosts ----
+  stAdd('Gelb: Fahrerauto darf so schnell wie die Ghosts, Kurven gedrosselt', () => {
+    const f = [];
+    const merk = { tm: trackMode, ly: limitYellow, lim: physEngine.config.speedLimitFactor };
+    try {
+      trackMode = 'on';
+      const grenze = gelbGrenze();
+      if (grenze < GHOST_READ_MIN) f.push('Grenze ' + grenze.toFixed(3) + ' unter der Lese-Mindestgeschwindigkeit');
+      limitYellow = grenze; applySpeedLimit();
+      if (physEngine.config.speedLimitFactor < GHOST_READ_MIN) f.push('Physik gedeckelt auf ' + physEngine.config.speedLimitFactor.toFixed(3));
+      trackMode = 'off';
+      if (gelbGrenze() !== yellowFactor()) f.push('im Ausdruck-Modus nicht das Gelb-Tempo');
+      const gerade = autopilotKurvenFaktor({ tileCode: TILE_TYPE.STRAIGHT });
+      const kurve = autopilotKurvenFaktor({ tileCode: TILE_TYPE.CURVE_RIGHT });
+      const nadel = autopilotKurvenFaktor({ tileCode: TILE_TYPE.HAIRPIN });
+      if (gerade !== 1) f.push('Gerade gedrosselt: ' + gerade);
+      if (!(kurve < 1 && nadel < kurve)) f.push('Kurve ' + kurve + ', Haarnadel ' + nadel);
+    } finally {
+      trackMode = merk.tm; limitYellow = merk.ly; applySpeedLimit();
+      physEngine.config.speedLimitFactor = merk.lim;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Grenze >= ' + GHOST_READ_MIN + ', Kurve und Haarnadel gedrosselt wie bei den Ghosts' };
+  });
+
   stAdd('Rundenrennen endet mit der Zielrunde, nicht eine Runde spaeter', () => {
     const f = [];
     const merk = { rs: raceState, rm: raceMode, lim: raceLimit, laps: raceLapTimes.slice(), ls: raceLapStart,
