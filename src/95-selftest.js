@@ -15353,7 +15353,9 @@
     try {
       raceState = 'racing';
       raceLapTimes = [];
-      raceLapStart = Date.now();
+      // Eine Minute gefahren: seit v0.9.51 ist eine erste Ueberfahrt kurz nach dem Start nur
+      // die Startlinie (eigener Test unten), und genau das soll dieser Test nicht pruefen.
+      raceLapStart = Date.now() - 60000;
       dashLapStart = Date.now();
       racePartialMs = null;
       const bei0 = raceLapTimes.length;
@@ -17327,6 +17329,75 @@
   }));
 
   // v0.9.41 GEMELDET: "Das Multiplayer Renn-Ende wird nicht getriggert ... 5-Runden-Rennen."
+  // ---- v0.9.51: Start hinter der Linie ergibt keine Kurzrunde ----
+  stAdd('Start hinter der Linie: erste Ueberfahrt ist keine Runde, Kurzrunden nie Bestzeit', () => {
+    const f = [];
+    const merk = { rs: raceState, rm: raceMode, lim: raceLimit, laps: raceLapTimes.slice(), ls: raceLapStart,
+                   dl: dashLapStart, dt: dashLapTimes.slice(), form: raceFormationLap, aw: raceAwaitingMove,
+                   tiles: currentTrackTiles, sc: sectorCount, ev: raceLapEvents.slice(),
+                   status: $('race-status') ? $('race-status').textContent : '' };
+    const echt = { fin: finishRace, sp: speakLap, ch: playLapChime };
+    const besteTon = [];
+    try {
+      finishRace = () => { raceState = 'finished'; };
+      speakLap = () => {}; playLapChime = (b) => { besteTon.push(!!b); };
+      raceMode = 'laps'; raceLimit = 20; raceState = 'racing'; raceFormationLap = false; raceAwaitingMove = false;
+      sectorCount = 1; sectorReset();
+      const vorlage = CH_ALLE.find((d) => d.id === 'oval') || CH_ALLE[0];
+      currentTrackTiles = codeToTrack(vorlage.code).tiles;
+      const min = rundeMinMs();
+      // Platz 4: zwei Kacheln bis zur Linie, nach gut einer Sekunde.
+      raceLapTimes = []; raceLapStart = Date.now() - 1100;
+      const start = raceLapStart;
+      playerLapCrossed();
+      if (raceLapTimes.length) f.push('Startlinie als Runde gebucht (' + raceLapTimes[0].ms + ' ms)');
+      if (raceLapStart !== start) f.push('Uhr neu gestartet statt weiterzulaufen');
+      // Die erste volle Runde: Zeit ab dem Start, inklusive Anlauf.
+      raceLapStart = Date.now() - (min + 4000);
+      playerLapCrossed();
+      if (raceLapTimes.length !== 1) f.push('erste volle Runde fehlt');
+      // Eine Kurzrunde mitten im Rennen (Zaehlfehler) verdeckt keine echte Bestzeit.
+      raceLapTimes = [{ lap: 1, ms: min + 4000 }, { lap: 2, ms: 600 }];
+      raceLapStart = Date.now() - (min + 2000);
+      besteTon.length = 0;
+      playerLapCrossed();
+      if (besteTon[0] !== true) f.push('echte Bestzeit nach einer Kurzrunde nicht als Bestzeit erkannt');
+      if (!(min >= 1500)) f.push('Mindestzeit ' + min);
+    } finally {
+      finishRace = echt.fin; speakLap = echt.sp; playLapChime = echt.ch;
+      raceState = merk.rs; raceMode = merk.rm; raceLimit = merk.lim; raceLapTimes = merk.laps; raceLapStart = merk.ls;
+      dashLapStart = merk.dl; dashLapTimes = merk.dt; raceFormationLap = merk.form; raceAwaitingMove = merk.aw;
+      currentTrackTiles = merk.tiles; sectorCount = merk.sc; raceLapEvents = merk.ev; sectorReset();
+      if ($('race-status')) $('race-status').textContent = merk.status;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Startlinie keine Runde, Uhr laeuft weiter, Bestzeit trotz Kurzrunde erkannt' };
+  });
+
+  // ---- v0.9.51: Rennstart setzt alle Autos zurueck ----
+  stAdd('Rennstart: Tank voll, Schaden null, Reifen kalt fuer Spieler 1 bis 3', () => {
+    const f = [];
+    const z2 = zusatzPlatz(2), z3 = zusatzPlatz(3);
+    const merk = { dmg: damage, lf: lightDamage.front, t2: z2.tank.stand, s2: z2.schaden.wert, t3: z3.tank.stand,
+                   s3: z3.schaden.wert, tyre: physEngine.state.tyreTempC, tyre2: physEngine2.state.tyreTempC };
+    try {
+      damage = 0.6; lightDamage.front = true;
+      z2.tank.stand = 20; z2.schaden.wert = 0.5; z3.tank.stand = 10; z3.schaden.wert = 0.7;
+      physEngine2.state.tyreTempC = 70;
+      // Genau der Block aus startRaceCountdown, ohne Countdown und Wetter.
+      raceStartZuruecksetzen(80);
+      if (damage !== 0 || lightDamage.front) f.push('Spieler 1 behaelt Schaden');
+      if (z2.tank.stand !== 80 || z2.schaden.wert !== 0) f.push('Spieler 2: Tank ' + z2.tank.stand + ', Schaden ' + z2.schaden.wert);
+      if (z3.tank.stand !== 80 || z3.schaden.wert !== 0) f.push('Spieler 3: Tank ' + z3.tank.stand + ', Schaden ' + z3.schaden.wert);
+      const soll2 = physEngine2.config.tyreBlankets ? physEngine2.config.tyreOptimalC : physEngine2.config.tyreAmbientC;
+      if (physEngine2.state.tyreTempC !== soll2) f.push('Spieler 2: Reifen ' + physEngine2.state.tyreTempC + ' statt ' + soll2);
+    } finally {
+      damage = merk.dmg; lightDamage.front = merk.lf; z2.tank.stand = merk.t2; z2.schaden.wert = merk.s2;
+      z3.tank.stand = merk.t3; z3.schaden.wert = merk.s3; physEngine.state.tyreTempC = merk.tyre;
+      physEngine2.state.tyreTempC = merk.tyre2; updateDamageFuelUI();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'alle drei Plaetze voll, schadenfrei, Reifen nach Waermer-Einstellung' };
+  });
+
   stAdd('Rundenrennen endet mit der Zielrunde, nicht eine Runde spaeter', () => {
     const f = [];
     const merk = { rs: raceState, rm: raceMode, lim: raceLimit, laps: raceLapTimes.slice(), ls: raceLapStart,

@@ -1010,20 +1010,37 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
   // Ungueltige Runde (Challenge: Strecke nicht erkannt oder zu schnell). Ein tiefer, dumpfer
   // Ton statt des hellen Runden-/Bestzeit-Klangs - so hoert man sofort, dass die Runde nicht
   // zaehlt, ohne dass ein Fehler-Dialog den Fahrtablauf stoert.
+  // v0.9.51 BESTELLT: "Spiele den Sound fuer ungueltige Runde so ab, dass man ihn besser
+  // hoert." Vorher ein Sinus von 190 auf 140 Hz bei 0,16: das liegt unter dem, was ein
+  // Handylautsprecher ueberhaupt wiedergibt (ab etwa 250 Hz), und war halb so laut wie der
+  // Rundenton. Jetzt zwei kurze Summstoesse, die abwaerts gehen - "aeh-aeh", das bekannte
+  // Zeichen fuer "falsch" -, als Rechteck mit Obertoenen bis in den Bereich, den kleine
+  // Lautsprecher gut spielen, und lauter als der Rundenton.
+  const UNGUELTIG_STOESSE = [{ ab: 0, von: 330, bis: 294, dauer: 0.17 },
+                             { ab: 0.22, von: 262, bis: 233, dauer: 0.24 }];
   function playLapChimeUngueltig() {
     if (!soundEnabled || !audioCtx) return;
-    const t = audioCtx.currentTime;
-    const o = audioCtx.createOscillator();
-    o.type = 'sine';
-    o.frequency.setValueAtTime(190, t);
-    o.frequency.linearRampToValueAtTime(140, t + 0.22);
-    const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0.001, t);
-    g.gain.linearRampToValueAtTime(0.16, t + 0.03);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
-    o.connect(g).connect(audioCtx.destination);
-    o.start(t);
-    o.stop(t + 0.3);
+    const t0 = audioCtx.currentTime;
+    const tp = audioCtx.createBiquadFilter();
+    tp.type = 'lowpass';
+    tp.frequency.value = 1800;
+    tp.Q.value = 0.7;
+    tp.connect(audioCtx.destination);
+    for (const s of UNGUELTIG_STOESSE) {
+      const t = t0 + s.ab;
+      const o = audioCtx.createOscillator();
+      o.type = 'square';
+      o.frequency.setValueAtTime(s.von, t);
+      o.frequency.linearRampToValueAtTime(s.bis, t + s.dauer);
+      const g = audioCtx.createGain();
+      g.gain.setValueAtTime(0.001, t);
+      g.gain.linearRampToValueAtTime(0.34, t + 0.012);
+      g.gain.setValueAtTime(0.34, t + s.dauer - 0.04);
+      g.gain.exponentialRampToValueAtTime(0.001, t + s.dauer);
+      o.connect(g).connect(tp);
+      o.start(t);
+      o.stop(t + s.dauer + 0.02);
+    }
   }
 
   // ---- Tempolimit: eine Stelle, drei Quellen ----
@@ -1660,8 +1677,11 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
     // BEIDE Autos mit derselben Startmenge und beide schadenfrei. Ein Rennen, in dem das
     // eine Auto voll und das andere halb leer startet, waere kein Rennen - das ist die
     // Zusage, unter der der Zwei-Spieler-Modus gebaut ist.
-    tankZweiFuellen(fuel);
-    schadenZweiZuruecksetzen();
+    // v0.9.51 BESTELLT: "Wenn ich ein Rennen starte, setze die Autos zurueck (voller Tank,
+    // kein Schaden, kalte Reifen [wenn kein Reifenwaermer])." Der Kommentar oben versprach
+    // "beide schadenfrei", gesetzt wurde aber nur Auto 2 - Auto 1 behielt seinen Schaden,
+    // und Spieler 3 behielt Tank und Schaden. Jetzt alle Plaetze.
+    raceStartZuruecksetzen(fuel);
     updateDamageFuelUI();
     racePitDone = 0;
     syncRaceGridOrder();
@@ -2914,6 +2934,25 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
         && !raceAwaitingMove) raceLapStart = jetzt;
   }
 
+  // Die kuerzeste Zeit, in der eine ganze Runde ueberhaupt gefahren werden kann: die Strecke
+  // mit 2,5 m/s, rund 50 % ueber dem gemessenen Hoechsttempo der Autos (1,64 m/s) - dieselbe
+  // Regel wie chMinRundeMs der Challenges. Ohne bekannte Strecke 1,5 s.
+  function rundeMinMs() {
+    const tiles = (typeof currentTrackTiles !== 'undefined' && currentTrackTiles) || [];
+    if (tiles.length < 3 || typeof trackLaengeM !== 'function') return 1500;
+    return Math.max(1500, Math.round(trackLaengeM(tiles) / 2.5 * 1000));
+  }
+  function raceStartZuruecksetzen(tankProzent) {
+    damage = 0;
+    lightDamage.front = false; lightDamage.rear = false;
+    zusatzPlaetze().forEach((z) => {
+      tankFuellenVon(z, tankProzent);
+      schadenZuruecksetzenVon(z);
+      // Reifen nur, wo es den Motor schon gibt (Platz 2 immer, weitere wenn belegt): der
+      // Zugriff auf z.motor legt sonst einen Motor fuer einen leeren Platz an.
+      if (z.nr === 2 || z.car) resetTyres(z.motor);
+    });
+  }
   function playerLapCrossed() {
     const now = Date.now();
     // v0.9.43: Wartet die Rennuhr noch auf die erste Bewegung, BEWEIST eine Ueberfahrt die
@@ -2922,6 +2961,20 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       raceAwaitingMove = false;
       raceLapStart = now; raceStartedAt = now;
       if (dashLapStart !== null) dashLapStart = now;
+      return false;
+    }
+    // v0.9.51 GEMELDET: "Wenn ich vor der Startgeraden losfahre (z. B. von Platz 4), wird bei
+    // der Geraden und dem Strich gezaehlt und ich kriege eine absurd schnelle Runde (2 s).
+    // Meine eigentlichen Bestzeiten werden dann nicht mehr als solche angesagt."
+    // Die Aufstellung stellt das Feld VOR die Linie (aufstellZielKachel: Reihe 1 auf der
+    // Kachel vor Start/Ziel, jede weitere eine Kachel dahinter). Die erste Ueberfahrt nach dem
+    // Losfahren ist dann nur das Ueberqueren der Startlinie, wie bei einem echten Rennen: die
+    // Uhr laeuft weiter, Runde 1 geht vom Start bis zum Ende der ersten VOLLEN Runde.
+    // Erkannt an der Zeit: schneller als die kuerzeste moegliche Runde (rundeMinMs) kann keine
+    // ganze Runde gewesen sein.
+    if ((raceState === 'racing' || raceState === 'finishing') && !raceFormationLap
+        && raceLapStart !== null && raceLapTimes.length === 0 && now - raceLapStart < rundeMinMs()) {
+      log('Startlinie ueberquert nach ' + (now - raceLapStart) + ' ms: das war keine Runde, die Uhr laeuft weiter.', 'info');
       return false;
     }
     // Sektoren zuerst: war das nur eine Sektorgrenze, ist die Runde nicht vorbei und alles
@@ -2944,8 +2997,13 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       const rundeMs = now - raceLapStart + fruehstartZuschlag(1, raceLapTimes.length);
       // Beste Zeit? VOR dem Einfuegen geprueft, sonst vergleicht die Runde sich mit sich
       // selbst und jede waere die beste.
-      const besteBisher = raceLapTimes.length
-        ? Math.min.apply(null, raceLapTimes.map(l => l.ms)) : Infinity;
+      // Nur PLAUSIBLE Runden zaehlen als Bestzeit (v0.9.51): eine Runde unter der kuerzest
+      // moeglichen Zeit ist ein Zaehlfehler, und als "beste" haette sie jede echte Bestzeit
+      // fuer den Rest des Rennens verdeckt.
+      const minMs = rundeMinMs();
+      const plausibel = raceLapTimes.filter(l => l.ms >= minMs);
+      const besteBisher = plausibel.length
+        ? Math.min.apply(null, plausibel.map(l => l.ms)) : Infinity;
       raceLapTimes.push({ lap: raceLapTimes.length + 1, ms: rundeMs });
       // Challenge: Runde gegen die Strecke pruefen. Liefert true, wenn die Runde NICHT zaehlt
       // (Strecke nicht erkannt oder zu schnell) - dann tiefer Ton statt des hellen Rundenklangs.
@@ -2958,7 +3016,7 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       raceLapStart = now;
       // Die erste Runde ist nicht "die beste" - sie ist die einzige, und ein Bestzeit-Ton
       // beim ersten Mal nimmt ihm die Bedeutung fuer alle weiteren.
-      const istBest = raceLapTimes.length > 1 && rundeMs < besteBisher;
+      const istBest = raceLapTimes.length > 1 && rundeMs >= minMs && rundeMs < besteBisher;
       if (challengeUngueltig) playLapChimeUngueltig();
       else playLapChime(istBest);
       // Die Ansage NEBEN dem Ton und nicht statt ihm: der Ton kommt sofort, die Stimme
@@ -2997,8 +3055,9 @@ let gridSelbst = false;      // Aufstellung mit groesster Querlage (experimentel
       // Runde zur besten. Genau dieser Fehler ist im Rennzweig darueber ausdruecklich
       // vermieden, und hier gilt er genauso.
       const rundeMs = dashLapTimes[dashLapTimes.length - 1];
-      const frueher = dashLapTimes.slice(0, -1);
-      const istBest = frueher.length > 0 && rundeMs < Math.min.apply(null, frueher);
+      const minMs = rundeMinMs();
+      const frueher = dashLapTimes.slice(0, -1).filter(ms => ms >= minMs);
+      const istBest = frueher.length > 0 && rundeMs >= minMs && rundeMs < Math.min.apply(null, frueher);
       playLapChime(istBest);
       speakLap(rundeMs, istBest);
     }
