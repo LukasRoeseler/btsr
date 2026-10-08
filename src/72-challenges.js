@@ -1601,6 +1601,7 @@
     const m = trackLaengeM(tiles);
     $('ch-fakten').textContent = t('Länge') + ' ' + chZahl(m, 2) + ' m · '
       + t('Platzbedarf') + ' ' + chZahl(bw, 2) + ' × ' + chZahl(bh, 2) + ' m · '
+      + def.runden + ' ' + t('Runden') + ' · '
       + (def.community ? t('Abstimmung') + ' ' + communityPresetName(def.preset) : chSetsText(def));
     // Community: kein Rennmodus, der Umschalter faellt weg.
     if ($('ch-modus')) $('ch-modus').hidden = !!def.community;

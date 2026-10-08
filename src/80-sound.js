@@ -631,6 +631,9 @@
   const AKKU_HYSTERESE = 0.32;
   const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false };
   const ansageLatch = { damage: false, fuel: false, tyre: false, rain: null, battery: false };
+  // JE Auto ein Latch fuer die Akku-Meldung: jedes Auto meldet unter 25 % einmal, erst nach
+  // der Erholung wieder scharf. Ein gemeinsames Latch wuerde nur das ERSTE Auto melden.
+  const batteryLatchSet = new Set();
 
   // HIER STAND DER FUNKFILTER als Live-Effekt auf der Browserstimme, und er ist auf Bitte
   // des Nutzers wieder heraus. Was er konnte: Knacken beim Aufschalten, ein Rauschteppich
@@ -740,8 +743,38 @@
         if (ansage('rain', t, w.rain ? 'rainstart' : 'rainstop')) raus.push('rain');
       }
     }
-    // Akku: unter 25 % einmal melden, erst ueber der Hysterese wieder scharf.
-    if (w.battery !== null && w.battery !== undefined) {
+    // Akku: unter 25 % einmal JE Auto melden, erst ueber der Hysterese wieder scharf.
+    // `batteries` ist die Liste aller Autos mit Akku (BESTELLT "Akku-Ansage < 25 % mit
+    // Autonummer"); ohne sie (Selbsttest/alter Aufrufer) der einzelne `battery`-Wert.
+    const bts = w.batteries;
+    if (Array.isArray(bts) && bts.length) {
+      for (const b of bts) {
+        if (b.value <= AKKU_SCHWELLE && !batteryLatchSet.has(b.car)) {
+          batteryLatchSet.add(b.car);
+          // Ansage UND Blinken haengen an demselben Kaestchen: ausgeschaltet heisst keine
+          // Meldung. Ohne Stimme (App-WebView) faellt ansage() auf die Aufnahme zurueck.
+          if (ansageAn.battery) {
+            const name = b.label || '';
+            const text = de ? name + ': Akku fast leer' : name + ': battery low';
+            // Die Aufnahme "Akku fast leer" kennt das Auto nicht. Mit Stimme wird der Name
+            // mitgesagt; ohne (App-WebView) faellt die Meldung auf die Aufnahme zurueck.
+            const ok = ('speechSynthesis' in window)
+              ? ansage('battery', text, 'battery-named')
+              : ansage('battery', text);
+            if (ok) raus.push('battery');
+            // Lichter des Autos zehn Mal blinken lassen. Das Fahrerauto ueber die
+            // Lichtaufloesung (nur Lichter, kein Gas), andere Autos ueber blinkCar().
+            if (typeof blinkCar === 'function') {
+              if (typeof playerCar !== 'undefined' && b.car === playerCar
+                  && typeof lichtBatterieBlink === 'function') lichtBatterieBlink();
+              else blinkCar(b.car);
+            }
+          }
+        } else if (b.value > AKKU_HYSTERESE) {
+          batteryLatchSet.delete(b.car);
+        }
+      }
+    } else if (w.battery !== null && w.battery !== undefined) {
       if (w.battery <= AKKU_SCHWELLE && !ansageLatch.battery) {
         ansageLatch.battery = true;
         if (ansage('battery', de ? 'Akku fast leer' : 'Battery low')) raus.push('battery');

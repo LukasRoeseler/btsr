@@ -1763,6 +1763,11 @@
         // Latch - eine Meldung fiel, die zur eigenen Zustandsfolge gar nicht gehoerte.
         const merkLatch = Object.assign({}, ansageLatch);
         Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null, battery: false });
+        // Das Akku-Latch ist JE AUTO (batteryLatchSet in 80-sound.js) und genauso geteilt -
+        // dieselbe Vorsicht wie oben: eine vorangegangene Probe darf kein Auto-Latch
+        // hinterlassen.
+        const merkBatt = new Set(batteryLatchSet);
+        batteryLatchSet.clear();
         // BESTELLT: die Aufnahme hat jetzt IMMER Vorrang vor der Live-Stimme (ansage()),
         // nicht nur ohne speechSynthesis. Diese Probe will aber ausdruecklich den
         // Live-Pfad beobachten (ueber die Attrappe unten) - ist der Browser, in dem der
@@ -1786,6 +1791,8 @@
             delete window.speechSynthesis;
           }
           Object.assign(ansageLatch, merkLatch);
+          batteryLatchSet.clear();
+          merkBatt.forEach((c) => batteryLatchSet.add(c));
           Object.keys(voiceBuffers).forEach((k) => delete voiceBuffers[k]);
           Object.assign(voiceBuffers, echtBuffers);
         }
@@ -1834,6 +1841,8 @@
         // zu DIESER Zustandsfolge nicht gehoert.
         const merkLatch = Object.assign({}, ansageLatch);
         Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null, battery: false });
+        const merkBatt = new Set(batteryLatchSet);
+        batteryLatchSet.clear();
         try {
           delete window.speechSynthesis;
           const folge = schritte.map((w) => ({ w, fiel: ansagenPruefen(w) }));
@@ -1847,6 +1856,8 @@
                                   { configurable: true, value: echtSpeech });
           }
           Object.assign(ansageLatch, merkLatch);
+          batteryLatchSet.clear();
+          merkBatt.forEach((c) => batteryLatchSet.add(c));
         }
       } finally {
         Object.keys(merk).forEach((art) => {

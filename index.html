@@ -3455,18 +3455,14 @@
   .lade-traeger { position: relative; }
   .lade-ueber { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 12px; background: rgba(0,0,0,.78); }
-  /* v0.9.45: ein Teil dreht sich in 500 ms einmal im Uhrzeigersinn, abwechselnd Gerade und
-     Rechtskurve (59-lade.js). steps(1): die Ebene springt zur Haelfte des Takts um. */
+  /* v0.9.64: ein Gerade-Teil dreht sich in 1 s einmal im Uhrzeigersinn (59-lade.js). */
   .lade-dreh { position: relative; width: 96px; height: 96px; }
   .lade-ebene { position: absolute; inset: 0; display: grid; place-items: center; }
   .lade-ebene svg, .lade-ebene .tp-karte { width: 100%; height: 100%; max-width: none; max-height: none; }
-  .lade-a { animation: ladeDreh .5s linear infinite, ladeWechselA 1s steps(1, end) infinite; }
-  .lade-b { animation: ladeDreh .5s linear infinite, ladeWechselB 1s steps(1, end) infinite; }
+  .lade-a { animation: ladeDreh 1s linear infinite; }
   @keyframes ladeDreh { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-  @keyframes ladeWechselA { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 0; } }
-  @keyframes ladeWechselB { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) {
-    .lade-a, .lade-b { animation-duration: 2s, 4s; }
+    .lade-a { animation-duration: 2s; }
   }
   .lade-text { font-size: 14px; font-weight: 600; color: var(--ink); letter-spacing: .03em; }
   .mp-ready-lade { margin: 6px 0 10px; }
@@ -24979,23 +24975,21 @@
   let ladeTeileCache = null;
   function ladeTeileSvg() {
     if (ladeTeileCache) return ladeTeileCache;
-    const teil = (typ) => {
+    const gerade = (() => {
       try {
         // Enger Rand und ohne die Kartenklasse (die bringt Grund und Rahmen mit): nur das Teil.
-        return renderTrackPreview([{ type: typ }], null,
+        return renderTrackPreview([{ type: TILE_TYPE.STRAIGHT }], null,
           { detailed: true, echt: true, ohneLinie: true, ohneLinieRechnen: true, rand: 3 }).html
           .replace('class="tp-karte"', 'class="lade-teil"');
       } catch (e) { return ''; }
-    };
-    const gerade = teil(TILE_TYPE.STRAIGHT), kurve = teil(TILE_TYPE.CURVE_RIGHT);
-    if (gerade && kurve) ladeTeileCache = [gerade, kurve];
-    return [gerade, kurve];
+    })();
+    ladeTeileCache = [gerade];
+    return [gerade];
   }
   function ladeAnimationHtml(text) {
-    const [gerade, kurve] = ladeTeileSvg();
+    const [gerade] = ladeTeileSvg();
     return '<div class="lade-dreh" aria-hidden="true">'
-      + '<div class="lade-ebene lade-a">' + gerade + '</div>'
-      + '<div class="lade-ebene lade-b">' + kurve + '</div></div>'
+      + '<div class="lade-ebene lade-a">' + gerade + '</div></div>'
       + (text ? '<div class="lade-text">' + String(text).replace(/</g, '&lt;') + '</div>' : '');
   }
   // Als Einblendung UEBER einem Feld (Editor). Rueckgabe: das Element, .remove() beendet sie.
@@ -27989,7 +27983,16 @@
     let ersteStart = true;
     for (let ti = 0; ti < tiles.length; ti++) {
       if (tiles[ti].type !== TILE_TYPE.START) continue;
-      const pi = kachelTab && kachelTab.start ? kachelTab.start[ti] : 0;
+      let pi = kachelTab && kachelTab.start ? kachelTab.start[ti] : 0;
+      // Die gruene Start/Ziel-Linie liegt bei ~66 % der Startkachel, nicht an ihrer Kante.
+      // Eine Linie ganz am Rand eines Teils sagt nicht, wo genau sie liegt (BESTELLT: "nicht
+      // am Anfang des Teils, sondern ein Stueck spaeter, sonst weiss man nicht, ob Start
+      // oder Ziel"). Die gelben Sektorgrenzen bleiben an der Kante.
+      if (ersteStart && kachelTab && kachelTab.zahl) {
+        pi = kachelTab.start[ti] + Math.round(kachelTab.zahl[ti] * 0.66);
+        const maxP = kachelTab.start[ti] + kachelTab.zahl[ti] - 1;
+        if (pi > maxP) pi = maxP;
+      }
       const p = pts[pi] || pts[0];
       if (!p) continue;
       const sA = [p.x + nrm[pi].x * half, p.y + nrm[pi].y * half];
@@ -34708,7 +34711,15 @@
              // waere ein Zustand, den niemand setzt, und beim naechsten Lesen eine Frage.
              rain: weather === 'rain',
              // Akku als Anteil (0..1); ohne Auto (dashBattery === null) keine Meldung.
-             battery: dashBattery === null ? null : batteryPercent(dashBattery) / 100 };
+             battery: dashBattery === null ? null : batteryPercent(dashBattery) / 100,
+             // JEDES Auto mit einem Akku-Wert, nicht nur der Fahrer (BESTELLT "Akku-Ansage
+             // < 25 % mit Autonummer"). Das Fahrer-Auto steht auch hier drin, der eine Wert
+             // `battery` oben bleibt fuer alte Aufrufer.
+             batteries: (typeof garage !== 'undefined' ? garage : []).filter((c) => c
+               && c.battery !== undefined && c.battery !== null)
+               .map((c) => ({ car: c,
+                              label: typeof garageLabel === 'function' ? garageLabel(c) : '',
+                              value: batteryPercent(c.battery) / 100 })) };
   }
   setInterval(() => {
     if (typeof ansagenPruefen !== 'function') return;
@@ -36219,7 +36230,7 @@
   // FLAG, and this function derives both the on-screen lamps and byte 14 from them in a
   // fixed priority order. Blink phases come from the clock rather than from timers, so
   // nothing can fall out of step.
-  const lightFx = { flashUntil: 0, damage: false, fuel: false, rain: false };
+  const lightFx = { flashUntil: 0, damage: false, fuel: false, rain: false, batteryUntil: 0 };
   // Drei Impulse in der Taktung, die sich bewaehrt hat. Zwei Anlaeufe davor: zuerst
   // 80-ms-Umschlaege ueber 480 ms, also ein Stroboskop mit 12,5 Hz, das sich als Warnblinken
   // liest; dann ein einzelner Impuls von 280 ms, dessen LAENGE stimmte, der aber nur einmal
@@ -36229,6 +36240,13 @@
   // Entscheidungen sind und beim naechsten Mal einzeln nachgezogen werden sollen.
   const FLASH_ON_MS = 220;
   const FLASH_OFF_MS = 130;
+  // Akku-Warnblinken: dieselbe Taktung wie blinkCar() in 90-ghosts.js (150 ms je
+  // Umschaltphase, zehn Mal an/aus), damit das Fahrerauto und ein anderes Auto dieselbe
+  // Warnung zeigen. Ein eigener Zustand statt einer Erweiterung des Blitzes: die Lichthupe
+  // ist die Absicht eines Fahrers, die Akku-Warnung eine Meldung des Systems.
+  const BATT_BLINK_HALF_MS = 150;
+  const BATT_BLINK_TOGGLES = 10;
+  const BATT_BLINK_MS = BATT_BLINK_HALF_MS * BATT_BLINK_TOGGLES;
   const FLASH_PULSES = 3;
   const FLASH_PERIOD_MS = FLASH_ON_MS + FLASH_OFF_MS;
   // Die letzte Pause zaehlt nicht mit: nach dem dritten Impuls ist es vorbei, und eine
@@ -36259,6 +36277,10 @@
       head = Math.floor(now / 90) % 2 === 0;    // fast, agitated flicker
     } else if (lightFx.fuel) {
       head = Math.floor(now / 350) % 2 === 0;   // slow, deliberate blink
+    } else if (now < lightFx.batteryUntil) {
+      // Akku-Warnblinken: zehn Umschaltphasen wie blinkCar(), aus der Uhr abgeleitet.
+      const elapsed = BATT_BLINK_MS - (lightFx.batteryUntil - now);
+      head = (Math.floor(elapsed / BATT_BLINK_HALF_MS) % 2 === 0) ? !baseHead : baseHead;
     } else if (pitState !== 'off') {
       // ---- BOXENMODUS: DASSELBE BLINKEN WIE BEI EINEM GHOST -----------------------
       //
@@ -36301,6 +36323,13 @@
     lightFx.flashUntil = Date.now() + FLASH_MS;
     showHudToast('Lichthupe');
     playFlashSound();
+  }
+
+  // Akku-Warnblinken fuer das Fahrerauto: zehn Umschaltphasen, ohne Gas oder Lenkung zu
+  // beruehren. Andere Autos nutzen blinkCar() aus 90-ghosts.js.
+  function lichtBatterieBlink() {
+    if (Date.now() < lightFx.batteryUntil) return;
+    lightFx.batteryUntil = Date.now() + BATT_BLINK_MS;
   }
 
   // ---- DIESELBE LICHTHUPE FUER AUTO 2 -----------------------------------------------
@@ -39838,6 +39867,7 @@
     const m = trackLaengeM(tiles);
     $('ch-fakten').textContent = t('Länge') + ' ' + chZahl(m, 2) + ' m · '
       + t('Platzbedarf') + ' ' + chZahl(bw, 2) + ' × ' + chZahl(bh, 2) + ' m · '
+      + def.runden + ' ' + t('Runden') + ' · '
       + (def.community ? t('Abstimmung') + ' ' + communityPresetName(def.preset) : chSetsText(def));
     // Community: kein Rennmodus, der Umschalter faellt weg.
     if ($('ch-modus')) $('ch-modus').hidden = !!def.community;
@@ -40899,6 +40929,9 @@
   const AKKU_HYSTERESE = 0.32;
   const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false };
   const ansageLatch = { damage: false, fuel: false, tyre: false, rain: null, battery: false };
+  // JE Auto ein Latch fuer die Akku-Meldung: jedes Auto meldet unter 25 % einmal, erst nach
+  // der Erholung wieder scharf. Ein gemeinsames Latch wuerde nur das ERSTE Auto melden.
+  const batteryLatchSet = new Set();
 
   // HIER STAND DER FUNKFILTER als Live-Effekt auf der Browserstimme, und er ist auf Bitte
   // des Nutzers wieder heraus. Was er konnte: Knacken beim Aufschalten, ein Rauschteppich
@@ -41008,8 +41041,38 @@
         if (ansage('rain', t, w.rain ? 'rainstart' : 'rainstop')) raus.push('rain');
       }
     }
-    // Akku: unter 25 % einmal melden, erst ueber der Hysterese wieder scharf.
-    if (w.battery !== null && w.battery !== undefined) {
+    // Akku: unter 25 % einmal JE Auto melden, erst ueber der Hysterese wieder scharf.
+    // `batteries` ist die Liste aller Autos mit Akku (BESTELLT "Akku-Ansage < 25 % mit
+    // Autonummer"); ohne sie (Selbsttest/alter Aufrufer) der einzelne `battery`-Wert.
+    const bts = w.batteries;
+    if (Array.isArray(bts) && bts.length) {
+      for (const b of bts) {
+        if (b.value <= AKKU_SCHWELLE && !batteryLatchSet.has(b.car)) {
+          batteryLatchSet.add(b.car);
+          // Ansage UND Blinken haengen an demselben Kaestchen: ausgeschaltet heisst keine
+          // Meldung. Ohne Stimme (App-WebView) faellt ansage() auf die Aufnahme zurueck.
+          if (ansageAn.battery) {
+            const name = b.label || '';
+            const text = de ? name + ': Akku fast leer' : name + ': battery low';
+            // Die Aufnahme "Akku fast leer" kennt das Auto nicht. Mit Stimme wird der Name
+            // mitgesagt; ohne (App-WebView) faellt die Meldung auf die Aufnahme zurueck.
+            const ok = ('speechSynthesis' in window)
+              ? ansage('battery', text, 'battery-named')
+              : ansage('battery', text);
+            if (ok) raus.push('battery');
+            // Lichter des Autos zehn Mal blinken lassen. Das Fahrerauto ueber die
+            // Lichtaufloesung (nur Lichter, kein Gas), andere Autos ueber blinkCar().
+            if (typeof blinkCar === 'function') {
+              if (typeof playerCar !== 'undefined' && b.car === playerCar
+                  && typeof lichtBatterieBlink === 'function') lichtBatterieBlink();
+              else blinkCar(b.car);
+            }
+          }
+        } else if (b.value > AKKU_HYSTERESE) {
+          batteryLatchSet.delete(b.car);
+        }
+      }
+    } else if (w.battery !== null && w.battery !== undefined) {
       if (w.battery <= AKKU_SCHWELLE && !ansageLatch.battery) {
         ansageLatch.battery = true;
         if (ansage('battery', de ? 'Akku fast leer' : 'Battery low')) raus.push('battery');
@@ -55467,6 +55530,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         // Latch - eine Meldung fiel, die zur eigenen Zustandsfolge gar nicht gehoerte.
         const merkLatch = Object.assign({}, ansageLatch);
         Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null, battery: false });
+        // Das Akku-Latch ist JE AUTO (batteryLatchSet in 80-sound.js) und genauso geteilt -
+        // dieselbe Vorsicht wie oben: eine vorangegangene Probe darf kein Auto-Latch
+        // hinterlassen.
+        const merkBatt = new Set(batteryLatchSet);
+        batteryLatchSet.clear();
         // BESTELLT: die Aufnahme hat jetzt IMMER Vorrang vor der Live-Stimme (ansage()),
         // nicht nur ohne speechSynthesis. Diese Probe will aber ausdruecklich den
         // Live-Pfad beobachten (ueber die Attrappe unten) - ist der Browser, in dem der
@@ -55490,6 +55558,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
             delete window.speechSynthesis;
           }
           Object.assign(ansageLatch, merkLatch);
+          batteryLatchSet.clear();
+          merkBatt.forEach((c) => batteryLatchSet.add(c));
           Object.keys(voiceBuffers).forEach((k) => delete voiceBuffers[k]);
           Object.assign(voiceBuffers, echtBuffers);
         }
@@ -55538,6 +55608,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         // zu DIESER Zustandsfolge nicht gehoert.
         const merkLatch = Object.assign({}, ansageLatch);
         Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null, battery: false });
+        const merkBatt = new Set(batteryLatchSet);
+        batteryLatchSet.clear();
         try {
           delete window.speechSynthesis;
           const folge = schritte.map((w) => ({ w, fiel: ansagenPruefen(w) }));
@@ -55551,6 +55623,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                                   { configurable: true, value: echtSpeech });
           }
           Object.assign(ansageLatch, merkLatch);
+          batteryLatchSet.clear();
+          merkBatt.forEach((c) => batteryLatchSet.add(c));
         }
       } finally {
         Object.keys(merk).forEach((art) => {
@@ -68070,6 +68144,41 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     return { ok: schlecht.length === 0,
              mass: fiel.map(x => x || '-').join(' ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Akku JE AUTO: jedes Auto unter 25 % meldet, mit Autonummer ----
+  //
+  // BESTELLT "Akku-Ansage < 25 % mit Autonummer". Der Test darueber prueft den einen
+  // `battery`-Wert; dieser hier die Liste `batteries` (alle Autos). Zwei Autos: eines unter,
+  // eines ueber der Schwelle, dann beide unter, Erholung, beide wieder unter. `blinking: true`
+  // haelt blinkCar() still - geprueft wird die Ansage, nicht der Lichtblink.
+  stAdd('Ansagen: Akku je Auto unter 25 % (Autonummer)', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ansagenFolge) {
+      return { skip: true, mass: 'ansagenFolge nicht vorhanden' };
+    }
+    const a = { blinking: true }, b = { blinking: true };
+    const folge = [
+      { health: 1, fuel: 1, tyre: 1, rain: false,
+        batteries: [{ car: a, label: 'Alpha', value: 0.20 }, { car: b, label: 'Beta', value: 0.30 }] },
+      { health: 1, fuel: 1, tyre: 1, rain: false,
+        batteries: [{ car: a, label: 'Alpha', value: 0.20 }, { car: b, label: 'Beta', value: 0.20 }] },
+      { health: 1, fuel: 1, tyre: 1, rain: false,
+        batteries: [{ car: a, label: 'Alpha', value: 0.50 }, { car: b, label: 'Beta', value: 0.50 }] },
+      { health: 1, fuel: 1, tyre: 1, rain: false,
+        batteries: [{ car: a, label: 'Alpha', value: 0.20 }, { car: b, label: 'Beta', value: 0.20 }] },
+    ];
+    const r = OMEGA_TEST.ansagenFolge(folge);
+    const fiel = r.folge.map(x => x.fiel.join(','));
+    const soll = ['battery', 'battery', '', 'battery,battery'];
+    const schlecht = [];
+    for (let i = 0; i < soll.length; i++) {
+      if (fiel[i] !== soll[i]) schlecht.push('Schritt ' + i + ': "' + fiel[i] + '" statt "' + soll[i] + '"');
+    }
+    const gesagt = r.gesagt.filter(s => /Alpha|Beta/.test(s));
+    const nennt = gesagt.length >= 3 && gesagt.every(s => /Alpha|Beta/.test(s));
+    return { ok: schlecht.length === 0 && nennt,
+             mass: fiel.map(x => x || '-').join(' ') + ' | ' + gesagt.join(' ; ')
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
   // ---- Und die fuenf Schalter schalten wirklich ab ----

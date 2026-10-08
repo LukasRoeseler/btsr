@@ -4933,6 +4933,41 @@
              mass: fiel.map(x => x || '-').join(' ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Akku JE AUTO: jedes Auto unter 25 % meldet, mit Autonummer ----
+  //
+  // BESTELLT "Akku-Ansage < 25 % mit Autonummer". Der Test darueber prueft den einen
+  // `battery`-Wert; dieser hier die Liste `batteries` (alle Autos). Zwei Autos: eines unter,
+  // eines ueber der Schwelle, dann beide unter, Erholung, beide wieder unter. `blinking: true`
+  // haelt blinkCar() still - geprueft wird die Ansage, nicht der Lichtblink.
+  stAdd('Ansagen: Akku je Auto unter 25 % (Autonummer)', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ansagenFolge) {
+      return { skip: true, mass: 'ansagenFolge nicht vorhanden' };
+    }
+    const a = { blinking: true }, b = { blinking: true };
+    const folge = [
+      { health: 1, fuel: 1, tyre: 1, rain: false,
+        batteries: [{ car: a, label: 'Alpha', value: 0.20 }, { car: b, label: 'Beta', value: 0.30 }] },
+      { health: 1, fuel: 1, tyre: 1, rain: false,
+        batteries: [{ car: a, label: 'Alpha', value: 0.20 }, { car: b, label: 'Beta', value: 0.20 }] },
+      { health: 1, fuel: 1, tyre: 1, rain: false,
+        batteries: [{ car: a, label: 'Alpha', value: 0.50 }, { car: b, label: 'Beta', value: 0.50 }] },
+      { health: 1, fuel: 1, tyre: 1, rain: false,
+        batteries: [{ car: a, label: 'Alpha', value: 0.20 }, { car: b, label: 'Beta', value: 0.20 }] },
+    ];
+    const r = OMEGA_TEST.ansagenFolge(folge);
+    const fiel = r.folge.map(x => x.fiel.join(','));
+    const soll = ['battery', 'battery', '', 'battery,battery'];
+    const schlecht = [];
+    for (let i = 0; i < soll.length; i++) {
+      if (fiel[i] !== soll[i]) schlecht.push('Schritt ' + i + ': "' + fiel[i] + '" statt "' + soll[i] + '"');
+    }
+    const gesagt = r.gesagt.filter(s => /Alpha|Beta/.test(s));
+    const nennt = gesagt.length >= 3 && gesagt.every(s => /Alpha|Beta/.test(s));
+    return { ok: schlecht.length === 0 && nennt,
+             mass: fiel.map(x => x || '-').join(' ') + ' | ' + gesagt.join(' ; ')
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Und die fuenf Schalter schalten wirklich ab ----
   //
   // Die Gegenprobe zum Test darueber: mit allen Kaestchen AUS darf keine einzige Meldung

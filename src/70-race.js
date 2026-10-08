@@ -3479,7 +3479,15 @@
              // waere ein Zustand, den niemand setzt, und beim naechsten Lesen eine Frage.
              rain: weather === 'rain',
              // Akku als Anteil (0..1); ohne Auto (dashBattery === null) keine Meldung.
-             battery: dashBattery === null ? null : batteryPercent(dashBattery) / 100 };
+             battery: dashBattery === null ? null : batteryPercent(dashBattery) / 100,
+             // JEDES Auto mit einem Akku-Wert, nicht nur der Fahrer (BESTELLT "Akku-Ansage
+             // < 25 % mit Autonummer"). Das Fahrer-Auto steht auch hier drin, der eine Wert
+             // `battery` oben bleibt fuer alte Aufrufer.
+             batteries: (typeof garage !== 'undefined' ? garage : []).filter((c) => c
+               && c.battery !== undefined && c.battery !== null)
+               .map((c) => ({ car: c,
+                              label: typeof garageLabel === 'function' ? garageLabel(c) : '',
+                              value: batteryPercent(c.battery) / 100 })) };
   }
   setInterval(() => {
     if (typeof ansagenPruefen !== 'function') return;
@@ -4990,7 +4998,7 @@
   // FLAG, and this function derives both the on-screen lamps and byte 14 from them in a
   // fixed priority order. Blink phases come from the clock rather than from timers, so
   // nothing can fall out of step.
-  const lightFx = { flashUntil: 0, damage: false, fuel: false, rain: false };
+  const lightFx = { flashUntil: 0, damage: false, fuel: false, rain: false, batteryUntil: 0 };
   // Drei Impulse in der Taktung, die sich bewaehrt hat. Zwei Anlaeufe davor: zuerst
   // 80-ms-Umschlaege ueber 480 ms, also ein Stroboskop mit 12,5 Hz, das sich als Warnblinken
   // liest; dann ein einzelner Impuls von 280 ms, dessen LAENGE stimmte, der aber nur einmal
@@ -5000,6 +5008,13 @@
   // Entscheidungen sind und beim naechsten Mal einzeln nachgezogen werden sollen.
   const FLASH_ON_MS = 220;
   const FLASH_OFF_MS = 130;
+  // Akku-Warnblinken: dieselbe Taktung wie blinkCar() in 90-ghosts.js (150 ms je
+  // Umschaltphase, zehn Mal an/aus), damit das Fahrerauto und ein anderes Auto dieselbe
+  // Warnung zeigen. Ein eigener Zustand statt einer Erweiterung des Blitzes: die Lichthupe
+  // ist die Absicht eines Fahrers, die Akku-Warnung eine Meldung des Systems.
+  const BATT_BLINK_HALF_MS = 150;
+  const BATT_BLINK_TOGGLES = 10;
+  const BATT_BLINK_MS = BATT_BLINK_HALF_MS * BATT_BLINK_TOGGLES;
   const FLASH_PULSES = 3;
   const FLASH_PERIOD_MS = FLASH_ON_MS + FLASH_OFF_MS;
   // Die letzte Pause zaehlt nicht mit: nach dem dritten Impuls ist es vorbei, und eine
@@ -5030,6 +5045,10 @@
       head = Math.floor(now / 90) % 2 === 0;    // fast, agitated flicker
     } else if (lightFx.fuel) {
       head = Math.floor(now / 350) % 2 === 0;   // slow, deliberate blink
+    } else if (now < lightFx.batteryUntil) {
+      // Akku-Warnblinken: zehn Umschaltphasen wie blinkCar(), aus der Uhr abgeleitet.
+      const elapsed = BATT_BLINK_MS - (lightFx.batteryUntil - now);
+      head = (Math.floor(elapsed / BATT_BLINK_HALF_MS) % 2 === 0) ? !baseHead : baseHead;
     } else if (pitState !== 'off') {
       // ---- BOXENMODUS: DASSELBE BLINKEN WIE BEI EINEM GHOST -----------------------
       //
@@ -5072,6 +5091,13 @@
     lightFx.flashUntil = Date.now() + FLASH_MS;
     showHudToast('Lichthupe');
     playFlashSound();
+  }
+
+  // Akku-Warnblinken fuer das Fahrerauto: zehn Umschaltphasen, ohne Gas oder Lenkung zu
+  // beruehren. Andere Autos nutzen blinkCar() aus 90-ghosts.js.
+  function lichtBatterieBlink() {
+    if (Date.now() < lightFx.batteryUntil) return;
+    lightFx.batteryUntil = Date.now() + BATT_BLINK_MS;
   }
 
   // ---- DIESELBE LICHTHUPE FUER AUTO 2 -----------------------------------------------

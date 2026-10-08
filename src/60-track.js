@@ -2970,7 +2970,16 @@
     let ersteStart = true;
     for (let ti = 0; ti < tiles.length; ti++) {
       if (tiles[ti].type !== TILE_TYPE.START) continue;
-      const pi = kachelTab && kachelTab.start ? kachelTab.start[ti] : 0;
+      let pi = kachelTab && kachelTab.start ? kachelTab.start[ti] : 0;
+      // Die gruene Start/Ziel-Linie liegt bei ~66 % der Startkachel, nicht an ihrer Kante.
+      // Eine Linie ganz am Rand eines Teils sagt nicht, wo genau sie liegt (BESTELLT: "nicht
+      // am Anfang des Teils, sondern ein Stueck spaeter, sonst weiss man nicht, ob Start
+      // oder Ziel"). Die gelben Sektorgrenzen bleiben an der Kante.
+      if (ersteStart && kachelTab && kachelTab.zahl) {
+        pi = kachelTab.start[ti] + Math.round(kachelTab.zahl[ti] * 0.66);
+        const maxP = kachelTab.start[ti] + kachelTab.zahl[ti] - 1;
+        if (pi > maxP) pi = maxP;
+      }
       const p = pts[pi] || pts[0];
       if (!p) continue;
       const sA = [p.x + nrm[pi].x * half, p.y + nrm[pi].y * half];

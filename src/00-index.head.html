@@ -3455,18 +3455,14 @@
   .lade-traeger { position: relative; }
   .lade-ueber { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 12px; background: rgba(0,0,0,.78); }
-  /* v0.9.45: ein Teil dreht sich in 500 ms einmal im Uhrzeigersinn, abwechselnd Gerade und
-     Rechtskurve (59-lade.js). steps(1): die Ebene springt zur Haelfte des Takts um. */
+  /* v0.9.64: ein Gerade-Teil dreht sich in 1 s einmal im Uhrzeigersinn (59-lade.js). */
   .lade-dreh { position: relative; width: 96px; height: 96px; }
   .lade-ebene { position: absolute; inset: 0; display: grid; place-items: center; }
   .lade-ebene svg, .lade-ebene .tp-karte { width: 100%; height: 100%; max-width: none; max-height: none; }
-  .lade-a { animation: ladeDreh .5s linear infinite, ladeWechselA 1s steps(1, end) infinite; }
-  .lade-b { animation: ladeDreh .5s linear infinite, ladeWechselB 1s steps(1, end) infinite; }
+  .lade-a { animation: ladeDreh 1s linear infinite; }
   @keyframes ladeDreh { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-  @keyframes ladeWechselA { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 0; } }
-  @keyframes ladeWechselB { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) {
-    .lade-a, .lade-b { animation-duration: 2s, 4s; }
+    .lade-a { animation-duration: 2s; }
   }
   .lade-text { font-size: 14px; font-weight: 600; color: var(--ink); letter-spacing: .03em; }
   .mp-ready-lade { margin: 6px 0 10px; }
