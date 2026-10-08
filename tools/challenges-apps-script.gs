@@ -180,7 +180,9 @@ function zeileZuEintrag(sp, z) {
 // bekommt die Kopfzelle beim ersten Eintrag nachgetragen.
 const C_BLATT = 'Community', C_KOPF = ['zeitpunkt', 'id', 'code', 'name', 'geraet', 'preset'];
 const C_PRESETS = ['arcade', 'pro', 'gt3', 'f1', 'realgt3'];
-const CZ_BLATT = 'CommunityZeiten', CZ_KOPF = ['zeitpunkt', 'id', 'zeit_ms', 'fahrer', 'geraet'];
+// v0.9.62: runden_ms (Rundenzeiten je Lauf) mit, damit die 3er-Serie auch fuer Community
+// Strecken rechnen kann. Alte Zeilen haben die Spalte nicht und gelten als leer.
+const CZ_BLATT = 'CommunityZeiten', CZ_KOPF = ['zeitpunkt', 'id', 'zeit_ms', 'fahrer', 'geraet', 'runden_ms'];
 function blattMit(name, kopf) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sh = ss.getSheetByName(name);
@@ -218,8 +220,9 @@ function communityPost(d) {
       if (!communityStrecken().some((t) => t.id === id)) return { ok: false, fehler: 'unbekannte Strecke' };
       const z = Number(d.zeit_ms);
       if (!isFinite(z) || z < 1000 || z > 3600000) return { ok: false, fehler: 'Zeit unplausibel' };
+      const runden = Array.isArray(d.runden_ms) ? d.runden_ms.map(Number).filter((x) => isFinite(x)) : [];
       blattMit(CZ_BLATT, CZ_KOPF).appendRow([new Date(), id, Math.round(z), String(d.fahrer || '').slice(0, 16),
-        String(d.geraet).slice(0, 40)]);
+        String(d.geraet).slice(0, 40), runden.length ? JSON.stringify(runden) : '']);
       return { ok: true };
     }
     return { ok: false, fehler: 'unbekannte Art' };
@@ -229,7 +232,10 @@ function communityGet() {
   const zeiten = {};
   blattMit(CZ_BLATT, CZ_KOPF).getDataRange().getValues().slice(1).forEach((z) => {
     const id = String(z[1]);
-    (zeiten[id] = zeiten[id] || []).push({ zeitpunkt: z[0], zeit_ms: Number(z[2]), fahrer: z[3], geraet: z[4] });
+    let rundenMs = [];
+    try { rundenMs = JSON.parse(z[5] || '[]'); } catch (e) { rundenMs = []; }
+    (zeiten[id] = zeiten[id] || []).push({ zeitpunkt: z[0], zeit_ms: Number(z[2]), fahrer: z[3], geraet: z[4],
+      runden_ms: Array.isArray(rundenMs) ? rundenMs : [] });
   });
   Object.keys(zeiten).forEach((id) => { zeiten[id] = zeiten[id].sort((a, b) => a.zeit_ms - b.zeit_ms).slice(0, 100); });
   return { ok: true, community: true, tracks: communityStrecken(), zeiten: zeiten };
