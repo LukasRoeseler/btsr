@@ -6415,6 +6415,7 @@
           role: 'ghost', alias: 'Sonde', writeInFlight: false,
           tileCode: 0x02, tileCount: (lage === 'ohne') ? null : 0,
           lastCodeAt: (lage === 'ohne') ? 0 : uhr, yaw: 0,
+          ghostStufe: opt.stufe,
           rx: { properties: { writeWithoutResponse: true },
                 writeValueWithoutResponse(b) {
                   bytes.push([b[7] > 127 ? b[7] - 256 : b[7],

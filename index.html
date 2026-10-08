@@ -50511,6 +50511,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // 20 Prozent in der Kurve und 40 in der Haarnadel oder Engstelle.
       const abzugKachel = tight > 0 ? Math.min(0.85, curveSlowIch * tight) : 0;
       target *= 1 - Math.max(abzugProfil, abzugKachel);
+      // v0.9.64: In der Kurve gilt das Mittel-Tempo, nicht das Stufen-Tempo. Der Kachelabzug
+      // wirkt bisher auf das GERADENTempo (schnell = 0,65 -> 0,52 vor der Kurve), und der
+      // Ghost kommt damit heisser in die Kurve als das Mittel-Tempo (0,44) - er kann sie
+      // verlassen. Der Boden nimmt das Kurvenziel (Mittel-Tempo * Abzug) als Obergrenze,
+      // damit alle Stufen gleich schnell in die Kurve gehen. Nur wenn ueberhaupt ein Abzug
+      // greift - auf einer reinen Geraden bleibt das Stufen-Tempo.
+      if (Math.max(abzugProfil, abzugKachel) > 0) {
+        target = Math.min(target, (ghostCfg.speed || 0.55) * (1 - Math.max(abzugProfil, abzugKachel)));
+      }
       // BESTELLT: "wenn sie nah beieinander fahren ... 5% langsamer fahren in den kurven."
       // Nur in der Kurve (Abzug aktiv) und nur bei nahem Nachbarn.
       if ((tight > 0 || bd !== null) && ghostNah(car)) target *= 1 - 0.05;
@@ -60093,6 +60102,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
           role: 'ghost', alias: 'Sonde', writeInFlight: false,
           tileCode: 0x02, tileCount: (lage === 'ohne') ? null : 0,
           lastCodeAt: (lage === 'ohne') ? 0 : uhr, yaw: 0,
+          ghostStufe: opt.stufe,
           rx: { properties: { writeWithoutResponse: true },
                 writeValueWithoutResponse(b) {
                   bytes.push([b[7] > 127 ? b[7] - 256 : b[7],
