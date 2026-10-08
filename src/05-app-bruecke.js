@@ -249,6 +249,10 @@
       // SCHNELLES VERBINDUNGSINTERVALL. Android waehlt sonst 30-50 ms, und der Sendetakt ist
       // 45 ms - dann faellt jedes zweite Paket auf das naechste Intervall. 1 = HIGH.
       ruf('requestConnectionPriority', { deviceId: id, connectionPriority: 1 }).catch(() => {});
+      // v0.9.74: OmegaBle-Status SOFORT abfragen, statt auf den ersten Steuerbefehl zu warten.
+      // Sonst geht der erste Befehl noch ueber den langsamen Bridge-Rundlauf des Community-
+      // Plugins, obwohl OmegaBle schon bereit waere.
+      if (omegaBleVerfuegbar()) omegaBleBereit({ deviceId: id });
       // Und alle 10 s nachlegen (v0.9.2): manche Autos/Telefone handeln das Intervall spaeter
       // wieder hoch, und ein langsames Intervall fuehlt sich genau wie Eingabeverzoegerung an.
       clearInterval(this._prio);

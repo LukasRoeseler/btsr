@@ -4455,7 +4455,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.73</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.74</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -11927,6 +11927,10 @@
       // SCHNELLES VERBINDUNGSINTERVALL. Android waehlt sonst 30-50 ms, und der Sendetakt ist
       // 45 ms - dann faellt jedes zweite Paket auf das naechste Intervall. 1 = HIGH.
       ruf('requestConnectionPriority', { deviceId: id, connectionPriority: 1 }).catch(() => {});
+      // v0.9.74: OmegaBle-Status SOFORT abfragen, statt auf den ersten Steuerbefehl zu warten.
+      // Sonst geht der erste Befehl noch ueber den langsamen Bridge-Rundlauf des Community-
+      // Plugins, obwohl OmegaBle schon bereit waere.
+      if (omegaBleVerfuegbar()) omegaBleBereit({ deviceId: id });
       // Und alle 10 s nachlegen (v0.9.2): manche Autos/Telefone handeln das Intervall spaeter
       // wieder hoch, und ein langsames Intervall fuehlt sich genau wie Eingabeverzoegerung an.
       clearInterval(this._prio);
@@ -45125,6 +45129,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // was Byte 12 dazwischen meldet. Das unterscheidet, was Zeit allein nicht unterscheiden
   // kann, naemlich einen Ausfall der Lesung von einem Abflug.
   const GHOST_OFFTRACK_CONFIRM_MS = 900;
+  // v0.9.74: In einer Kurve/Haarnadel liest der langsame Ghost 0x00, weil er unter der
+  // Leseschwelle ist - das ist KEIN Abgang. Aber ein Auto, das wirklich neben der Bahn liegt
+  // und gerade aus einer Kurve gekommen ist, liest ebenfalls 0x00 und wurde mit der normalen
+  // Schwelle (GHOST_OFFTRACK_CONFIRM_MS) dauerhaft nicht geparkt. Darum gilt in der Kurve
+  // eine laengere Frist: wer nach so langer Zeit immer noch 0x00 liest, ist raus.
+  const GHOST_OFFTRACK_KURVE_MS = 3000;
   // BESTELLT (Phase 12, Punkt 8): "auf Basis der bekannten Strecke und des bekannten
   // Ortes... zurueckfahren, zumindest fuer 3s versuchen - ausser es faehrt in der Zeit
   // irgendwo gegen." Drei Sekunden ab dem bestaetigten Abgang (GHOST_OFFTRACK_CONFIRM_MS
@@ -45492,6 +45502,19 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return -1;
   }
 
+  // ALLE Start/Ziel-Kacheln, nicht nur die erste. Seit v0.9.64 sind weitere START-Kacheln
+  // Sektorgrenzen (gelb), nur die erste ist die Rundenlinie (gruen). Ein Ghost, der eine
+  // Sektorgrenze ueberfaehrt, liest denselben START-Code wie an der Rundenlinie - und darf
+  // den Ort nicht auf die ERSTE Kachel zuruecksetzen und eine Runde zaehlen.
+  function ortStartIndices(tiles) {
+    const out = [];
+    for (let i = 0; i < tiles.length; i++) {
+      const t = tiles[i];
+      if (t && (t.type === TILE_TYPE.START || isStartCode(t.type))) out.push(i);
+    }
+    return out;
+  }
+
   // Mindestens so viele Stimmen, und mindestens so viel Vorsprung vor JEDEM anderen Versatz.
   const ORT_STIMMEN_MIN = 4;
   const ORT_VORSPRUNG = 3;
@@ -45514,8 +45537,19 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // es gilt jede Runde neu: verliert der Zaehler unterwegs eine Kachel, ist es beim
     // naechsten Zieldurchgang wieder in Ordnung.
     if (isStartCode(code)) {
-      const ziel = ortStartIndex(tiles);
-      if (ziel >= 0 && g.tileIndex !== ziel) {
+      // v0.9.74: nicht mehr blind auf die ERSTE Start-Kachel. Bei mehreren Start-Kacheln
+      // (Rundenlinie + Sektorgrenzen) ist der Ort nur dann eindeutig, wenn man die Kachel
+      // nimmt, die der laufende Kachelzaehler gerade meldet - sonst setzt eine Sektorgrenze
+      // den Ghost auf die Rundenlinie zurueck und zaehlt ihm eine Runde zu viel.
+      const ziele = ortStartIndices(tiles);
+      if (!ziele.length) return;
+      let ziel = ziele[0], besterD = Infinity;
+      for (const z of ziele) {
+        let d = Math.abs(z - g.tileIndex);
+        d = Math.min(d, n - d);
+        if (d < besterD) { besterD = d; ziel = z; }
+      }
+      if (g.tileIndex !== ziel) {
         const vor = g.tileIndex;
         g.tileIndex = ziel;
         // DIE RUNDENZAEHLUNG haengt am Index 0 (siehe die Ueberfahrt in ghostTick). Wurde
@@ -50273,7 +50307,6 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     } else {
       g.offSince = 0;
     }
-    const offSteht = g.offSince > 0 && (now - g.offSince) >= GHOST_OFFTRACK_CONFIRM_MS;
     // Ein bestaetigter Abgang STELLT AB. Vorher war das ein Zustand, der von selbst wieder
     // wegging, sobald ein Code kam - das Auto fuhr dann neben der Bahn weiter, statt auf
     // die Hand zu warten, die es zurueckstellt.
@@ -50308,12 +50341,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const zaehlerPlausibel = ring.length > 0
       && (ring.reduce((a, b) => a + b, 0) / ring.length) >= GHOST_TILE_MS_MIN;
     const zaehlerLaeuft = !!(zaehlerFrisch && zaehlerPlausibel);
-    // offConfirmed steht jetzt ALLEIN, ohne das Zaehler-Veto. Das Veto war die Gegenprobe
+    // offSteht steht jetzt ALLEIN, ohne das Zaehler-Veto. Das Veto war die Gegenprobe
     // gegen "ein fahrendes Auto steht und blinkt" - aber ein Auto, das 900 ms lang 0x00
     // liest, ist nicht auf der Bahn, sondern neben ihr (eine einzelne 0x00-Luecke zwischen
     // zwei Kacheln dauert im Median 32 ms). Der Kachelzaehler laeuft neben der Bahn weiter,
     // weil die Firmware ihn nicht anhaelt, und taugt deshalb nicht als Unterscheider.
-    const offConfirmed = offSteht;
     // DIE BEWEISLAGE ENTSCHEIDET, und bis v0.4.55 tat sie es nicht - der Ghost blieb neben
     // der Bahn nicht stehen. Zwei Vetos konnten den Halt verhindern, und mindestens eines
     // griff immer:
@@ -50329,7 +50361,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     //
     // Also nach der Beweislage getrennt, statt die Vetos zu raten:
     //
-    //   offConfirmed ist ein POSITIVES ZEUGNIS - 0x00 steht 900 ms, und einzelne 0x00-Pakete
+    //   offSteht ist ein POSITIVES ZEUGNIS - 0x00 steht 900 ms, und einzelne 0x00-Pakete
     //   zwischen zwei Kacheln dauern im Median 32 ms. Das genuegt allein.
     //   noCode ist das FEHLEN eines Zeugnisses und behaelt beide Gegenproben: nur mit
     //   needCode, und nur wenn der Kachelzaehler auch steht.
@@ -50362,16 +50394,23 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const gnade = g.gnadeBis && now < g.gnadeBis;
     // v0.9.64: Die Haarnadel faehrt der Ghost mit 33 % - unter GHOST_READ_MIN (35 %), also
     // unter der Leseschwelle. Dort meldet das Auto 0x00, obwohl es auf der Bahn ist, und
-    // wird nach 900 ms als "Bahn verlassen" geparkt. Zwei Gegenproben, unabhaengig vom
-    // Kachelzaehler (der laeuft auch neben der Bahn weiter):
-    //   - war der zuletzt GUELTIGE Code eine Kurve/Haarnadel (car.lastCode), ist das Auto
-    //     dort absichtlich langsam und liest deshalb 0x00 - kein Parken;
-    //   - liegt das ZIELTEMPO unter der Leseschwelle, ist es ebenfalls langsam geplant.
-    // Auf einer Geraden (Ziel ueber der Schwelle, letzter Code gerade) bleibt der
-    // Abgangsmelder scharf.
+    // wurde nach 900 ms als "Bahn verlassen" geparkt. Die damalige Gegenprobe (letzter Code
+    // eine Kurve / Zieltempo unter der Schwelle) war aber zu grob: ein Ghost, der wirklich
+    // neben der Bahn lag, aber gerade aus einer Kurve kam oder langsam geplant war, wurde
+    // damit dauerhaft NICHT geparkt und fuhr weiter - genau der gemeldete "sie hoeren nicht
+    // auf zu fahren".
+    //
+    // v0.9.74: Die Frist wird kurvenbewusst. Auf der Geraden (letzter Code keine Kurve) parkt
+    // der bestaetigte Abgang nach GHOST_OFFTRACK_CONFIRM_MS wie bisher. In einer Kurve liest
+    // auch ein Auto auf der Bahn 0x00, weil es unter der Leseschwelle ist - dort erst nach
+    // GHOST_OFFTRACK_KURVE_MS parken, und auch nur, wenn das Zieltempo nicht ohnehin unter der
+    // Schwelle lag (dann ist es langsam geplant und kein Abgang). So bleibt die Haarnadel
+    // verschont, und wer nach der laengeren Frist immer noch 0x00 liest, liegt neben der Bahn.
     const inKurve = ghostTurnOf(car.lastCode) !== 0;
+    const offSchwelle = inKurve ? GHOST_OFFTRACK_KURVE_MS : GHOST_OFFTRACK_CONFIRM_MS;
+    const offBestaetigt = g.offSince > 0 && (now - g.offSince) >= offSchwelle;
     const parken = !gnade && !raceFormationLap
-                   && ((offConfirmed && !inKurve && g.lastTarget >= GHOST_READ_MIN)
+                   && ((offBestaetigt && g.lastTarget >= GHOST_READ_MIN)
                        || (ghostCfg.needCode && noCode && !zaehlerLaeuft));
     // ---- RECOVERY: erst versuchen zurueckzufahren, dann erst parken ------------------
     //
@@ -50903,11 +50942,18 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         const passSeite = (spice.attack || 0) !== 0 ? Math.sign(spice.attack)
                         : (weiche !== 0 ? Math.sign(weiche) : 0);
         const paar = pq === null && !underYellow && passSeite === 0 ? ghostPaarKurve(car) : null;
+        // v0.9.74: Nebeneinander (g.bias wurde von ghostAssignBias gesetzt) soll die
+        // SEITENZUTEILUNG gewinnen, nicht die Ideallinie. GEMELDET: "die Autos schieben sich
+        // an, wenn sie nah beieinander sind." Die Ideallinie steht seit v0.5.54 auf 200 %
+        // und kann den seitlichen Versatz (bias) wieder auslöschen - beide Autos landen auf
+        // derselben Linie und schieben. Waehrend einer Gruppe wird die Linie deshalb auf
+        // einen kleinen Rest gefahren, damit der Versatz die Seite bestimmt.
+        const linieNah = (g.bias !== 0) ? 0.15 : 1;
         const quer = pq !== null ? pq
           : underYellow ? 0
           : passSeite !== 0 ? passSeite * passAussen()
           : paar !== null ? paar * GHOST_LINE_STEER
-          : ghostLineOffset(car) * ghostCfg.line * GHOST_LINE_STEER * linieGewicht;
+          : ghostLineOffset(car) * ghostCfg.line * GHOST_LINE_STEER * linieGewicht * linieNah;
         // BESTELLT (diese Runde): "querlage bei boxenstopps klappt nicht, die autos
         // bleiben mitten auf der strecke stehen." Der Kommentar zwei Absaetze ueber pq
         // sagt es schon: "waehrend eines Stopps gibt es keine Linie, keine Wuerze und
@@ -55750,6 +55796,64 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         Date.now = echtNow;
         ghostCfg.needCode = merkNeed;
         garage.forEach(c => { if (String(c.alias || '') === 'Parkprobe') {
+          ghostTaktLoeschen(c); if (c.ghost) c.ghost.running = false; } });
+        garage.splice(0, garage.length, ...merkGarage);
+        currentTrackTiles = keepTiles;
+        lineCache = null;
+      }
+    },
+
+    // ---- Zwei Sektoren: die Sektorgrenze zaehlt keine Runde (v0.9.74) ----------------
+    //
+    // Die Rundenlinie ist die ERSTE Startkachel, jede weitere ist eine Sektorgrenze (gelb).
+    // Ein Ghost liest an beiden denselben Startcode. Bis v0.9.74 setzte ortAbgleich den Ort
+    // bei JEDEM Startcode auf die erste Kachel und zaehlte eine Runde - auf einer
+    // Zwei-Sektor-Strecke also zwei Runden pro physischer Runde. Geprueft wird: ueberfaehrt
+    // der Ghost die Sektorgrenze, bleibt der Ort dort und es zaehlt keine Runde; an der
+    // Rundenlinie zaehlt genau eine.
+    sectorProbe(o) {
+      const opt = o || {};
+      const merkGarage = garage.slice();
+      const keepTiles = currentTrackTiles;
+      const echtNow = Date.now;
+      try {
+        currentTrackTiles = codeToTrack(opt.code || 'SG2SG2R2').tiles;
+        lineCache = null;
+        let uhr = echtNow();
+        Date.now = () => uhr;
+        const car = { role: 'ghost', alias: 'Sektorprobe', writeInFlight: false,
+                      tileCode: 0x02, tileCount: 0, lastCodeAt: uhr, lastCode: 0x02, yaw: 0,
+                      rx: { properties: { writeWithoutResponse: true },
+                            writeValueWithoutResponse() { return Promise.resolve(); } } };
+        garage.push(car);
+        startGhost(car);
+        ghostTaktLoeschen(car);
+        car.ghost.freeRun = true;
+        car.ghost.gnadeBis = 0;
+        const g = car.ghost;
+        // Der Ghost steht kurz vor der Sektorgrenze (Kachel 3 in 'SG2SG2R2').
+        g.tileIndex = 2;
+        g.lastCount = null;
+        g.tileStart = uhr;
+        // Der Kachelwechsel loest ortAbgleich aus: der Zaehler springt auf die naechste
+        // Kachel, und das Auto meldet dort den START-Code der Sektorgrenze.
+        car.tileCount = 1;
+        car.tileCode = 0x0a;
+        uhr += CONTROL_SEND_INTERVAL_MS;
+        ghostTick(car);
+        const nachSektor = { tileIndex: g.tileIndex, laps: g.laps };
+        // Und eine Runde spaeter an der Rundenlinie (Kachel 0) muss EINE Runde zaehlen.
+        g.tileIndex = 7;
+        g.lastCount = 1;
+        car.tileCount = 2;
+        car.tileCode = 0x0a;
+        uhr += CONTROL_SEND_INTERVAL_MS;
+        ghostTick(car);
+        const nachLinie = { tileIndex: g.tileIndex, laps: g.laps };
+        return { nachSektor, nachLinie, anzahl: currentTrackTiles.length };
+      } finally {
+        Date.now = echtNow;
+        garage.forEach(c => { if (String(c.alias || '') === 'Sektorprobe') {
           ghostTaktLoeschen(c); if (c.ghost) c.ghost.running = false; } });
         garage.splice(0, garage.length, ...merkGarage);
         currentTrackTiles = keepTiles;
@@ -68674,6 +68778,34 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     return { ok: schlecht.length === 0,
              mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Ghosts und Sektoren: die Sektorgrenze zaehlt keine Runde (v0.9.74) ----
+  //
+  // GEMELDET: "Ghosts verstehen nicht, dass es zwei Sektoren gibt." Die Rundenlinie ist die
+  // ERSTE Startkachel, jede weitere eine Sektorgrenze - beide melden denselben Startcode.
+  // Bis v0.9.74 setzte ortAbgleich den Ort bei JEDEM Startcode auf die erste Kachel und
+  // zaehlte eine Runde. Geprueft wird: Sektorgrenze -> keine Runde, Rundenlinie -> eine.
+  stAdd('Ghost: zwei Sektoren, Sektorgrenze zaehlt keine Runde', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.sectorProbe) {
+      return { skip: true, mass: 'sectorProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.sectorProbe({});
+    const schlecht = [];
+    if (!r || !r.nachSektor) return { ok: false, mass: 'kein Lauf' };
+    if (r.nachSektor.laps !== 0) {
+      schlecht.push('Sektorgrenze zaehlt ' + r.nachSektor.laps + ' Runde(n)');
+    }
+    if (r.nachSektor.tileIndex === 0 && r.anzahl > 1) {
+      schlecht.push('Sektorgrenze setzt den Ort auf die Rundenlinie (Kachel 0)');
+    }
+    if (r.nachLinie.laps !== 1) {
+      schlecht.push('Rundenlinie zaehlt ' + r.nachLinie.laps + ' statt 1 Runde');
+    }
+    return { ok: schlecht.length === 0,
+             mass: 'Sektor: Kachel ' + r.nachSektor.tileIndex + ', Runden ' + r.nachSektor.laps
+                   + ' | Linie: Kachel ' + r.nachLinie.tileIndex + ', Runden ' + r.nachLinie.laps
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
   // ---- Ghosts: ein Neustart kommt aus dem Kreis heraus ----

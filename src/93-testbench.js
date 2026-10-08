@@ -1990,6 +1990,64 @@
       }
     },
 
+    // ---- Zwei Sektoren: die Sektorgrenze zaehlt keine Runde (v0.9.74) ----------------
+    //
+    // Die Rundenlinie ist die ERSTE Startkachel, jede weitere ist eine Sektorgrenze (gelb).
+    // Ein Ghost liest an beiden denselben Startcode. Bis v0.9.74 setzte ortAbgleich den Ort
+    // bei JEDEM Startcode auf die erste Kachel und zaehlte eine Runde - auf einer
+    // Zwei-Sektor-Strecke also zwei Runden pro physischer Runde. Geprueft wird: ueberfaehrt
+    // der Ghost die Sektorgrenze, bleibt der Ort dort und es zaehlt keine Runde; an der
+    // Rundenlinie zaehlt genau eine.
+    sectorProbe(o) {
+      const opt = o || {};
+      const merkGarage = garage.slice();
+      const keepTiles = currentTrackTiles;
+      const echtNow = Date.now;
+      try {
+        currentTrackTiles = codeToTrack(opt.code || 'SG2SG2R2').tiles;
+        lineCache = null;
+        let uhr = echtNow();
+        Date.now = () => uhr;
+        const car = { role: 'ghost', alias: 'Sektorprobe', writeInFlight: false,
+                      tileCode: 0x02, tileCount: 0, lastCodeAt: uhr, lastCode: 0x02, yaw: 0,
+                      rx: { properties: { writeWithoutResponse: true },
+                            writeValueWithoutResponse() { return Promise.resolve(); } } };
+        garage.push(car);
+        startGhost(car);
+        ghostTaktLoeschen(car);
+        car.ghost.freeRun = true;
+        car.ghost.gnadeBis = 0;
+        const g = car.ghost;
+        // Der Ghost steht kurz vor der Sektorgrenze (Kachel 3 in 'SG2SG2R2').
+        g.tileIndex = 2;
+        g.lastCount = null;
+        g.tileStart = uhr;
+        // Der Kachelwechsel loest ortAbgleich aus: der Zaehler springt auf die naechste
+        // Kachel, und das Auto meldet dort den START-Code der Sektorgrenze.
+        car.tileCount = 1;
+        car.tileCode = 0x0a;
+        uhr += CONTROL_SEND_INTERVAL_MS;
+        ghostTick(car);
+        const nachSektor = { tileIndex: g.tileIndex, laps: g.laps };
+        // Und eine Runde spaeter an der Rundenlinie (Kachel 0) muss EINE Runde zaehlen.
+        g.tileIndex = 7;
+        g.lastCount = 1;
+        car.tileCount = 2;
+        car.tileCode = 0x0a;
+        uhr += CONTROL_SEND_INTERVAL_MS;
+        ghostTick(car);
+        const nachLinie = { tileIndex: g.tileIndex, laps: g.laps };
+        return { nachSektor, nachLinie, anzahl: currentTrackTiles.length };
+      } finally {
+        Date.now = echtNow;
+        garage.forEach(c => { if (String(c.alias || '') === 'Sektorprobe') {
+          ghostTaktLoeschen(c); if (c.ghost) c.ghost.running = false; } });
+        garage.splice(0, garage.length, ...merkGarage);
+        currentTrackTiles = keepTiles;
+        lineCache = null;
+      }
+    },
+
     // ---- Kommt ein geparkter Ghost durch einen Neustart wieder hoch? ---------------
     //
     // Der gemeldete Fall: "nach einer Weile bleiben sie einfach stehen und blinken.

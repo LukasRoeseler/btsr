@@ -5463,6 +5463,34 @@
              mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Ghosts und Sektoren: die Sektorgrenze zaehlt keine Runde (v0.9.74) ----
+  //
+  // GEMELDET: "Ghosts verstehen nicht, dass es zwei Sektoren gibt." Die Rundenlinie ist die
+  // ERSTE Startkachel, jede weitere eine Sektorgrenze - beide melden denselben Startcode.
+  // Bis v0.9.74 setzte ortAbgleich den Ort bei JEDEM Startcode auf die erste Kachel und
+  // zaehlte eine Runde. Geprueft wird: Sektorgrenze -> keine Runde, Rundenlinie -> eine.
+  stAdd('Ghost: zwei Sektoren, Sektorgrenze zaehlt keine Runde', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.sectorProbe) {
+      return { skip: true, mass: 'sectorProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.sectorProbe({});
+    const schlecht = [];
+    if (!r || !r.nachSektor) return { ok: false, mass: 'kein Lauf' };
+    if (r.nachSektor.laps !== 0) {
+      schlecht.push('Sektorgrenze zaehlt ' + r.nachSektor.laps + ' Runde(n)');
+    }
+    if (r.nachSektor.tileIndex === 0 && r.anzahl > 1) {
+      schlecht.push('Sektorgrenze setzt den Ort auf die Rundenlinie (Kachel 0)');
+    }
+    if (r.nachLinie.laps !== 1) {
+      schlecht.push('Rundenlinie zaehlt ' + r.nachLinie.laps + ' statt 1 Runde');
+    }
+    return { ok: schlecht.length === 0,
+             mass: 'Sektor: Kachel ' + r.nachSektor.tileIndex + ', Runden ' + r.nachSektor.laps
+                   + ' | Linie: Kachel ' + r.nachLinie.tileIndex + ', Runden ' + r.nachLinie.laps
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Ghosts: ein Neustart kommt aus dem Kreis heraus ----
   //
   // Geparkt heisst Gas 0, also keine Fahrt, also kein gelesenes Muster, also parkt der
