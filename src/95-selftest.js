@@ -1231,11 +1231,10 @@
   stAdd('Uebersetzung: kein Deutsch im englischen Modus', () => {
     const knopf = $('lang-toggle');
     if (!knopf) return { skip: true, mass: 'kein Sprachumschalter' };
-    const vorher = document.documentElement.getAttribute('lang');
-    const warEnglisch = vorher === 'en';
+    const vorher = lang;
     try {
-      if (!warEnglisch) knopf.click();
-      if (document.documentElement.getAttribute('lang') !== 'en') {
+      if (lang !== 'en') setLang('en');
+      if (lang !== 'en') {
         return { skip: true, mass: 'Umschalten auf Englisch hat nicht gegriffen' };
       }
       const DE = /(?:^|[\s(])(?:werden|wurde|wird|nicht|damit|deshalb|jedoch|welche|meldet|liegt|steht|braucht|dieselbe|derselbe|jedes|jeder|Werte|Blatt|Aufnahmen|Strecken|gespeichert|Ausdruck|Reifen|Bremse|Lenkung|Boxengasse)(?:[\s.,;:!?)]|$)|[\u00e4\u00f6\u00fc\u00df\u00c4\u00d6\u00dc]/;
@@ -1272,7 +1271,7 @@
     } finally {
       // Die Sprache MUSS zurueck: ein Test, der die Oberflaeche umstellt und so stehen
       // laesst, ist selbst der naechste Fehlerbericht.
-      if (!warEnglisch && document.documentElement.getAttribute('lang') === 'en') knopf.click();
+      if (lang !== vorher) setLang(vorher);
     }
   });
 

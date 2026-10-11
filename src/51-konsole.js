@@ -916,7 +916,7 @@
       return false;
     }
     if (kAktiverTab() !== 'home') return false;
-    if (neu === 14 || neu === 15 || neu === 4 || neu === 5) { setLang(lang === 'de' ? 'en' : 'de'); return true; }
+    if (neu === 14 || neu === 15 || neu === 4 || neu === 5) { wechsleSprache(); return true; }
     // BESTELLT: "'Press any key' und 'press triangle for tutorial' ist auch etwas
     // verwirrend. Ich wuerde sagen: X zum Starten, Dreieck fuer Tutorial, Kreis fuer
     // Steuerung." Alle anderen Tasten tun auf dem Titel nichts mehr.
@@ -956,7 +956,7 @@
     if (kAktiverTab() === 'home' && !e.ctrlKey && !e.altKey && !e.metaKey && k !== 'tab' && k !== 'shift') {
       e.preventDefault(); e.stopImmediatePropagation();
       // Tastatur wie am Pad: Enter, Leertaste oder X starten, T das Tutorial, S die Steuerung.
-      if (k === 'arrowleft' || k === 'arrowright') setLang(lang === 'de' ? 'en' : 'de');
+      if (k === 'arrowleft' || k === 'arrowright') wechsleSprache();
       else if (k === 't') konsoleTourStart(K_TOUR);
       else if (k === 's') konsoleTourStart(K_STEUERUNG);
       else if (k === 'enter' || k === ' ' || k === 'x') konsoleTitelWeiter();

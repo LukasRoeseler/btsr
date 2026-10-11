@@ -403,8 +403,10 @@
         if (!res.ok) throw new Error('HTTP ' + res.status);
         zahlenManifest = await res.json();
       }
+      // Spanisch hat keine eigenen Aufnahmen: die englischen als Platzhalter.
+      const sprQuelle = spr === 'es' ? 'en' : spr;
       const satz = {};
-      for (const [k, datei] of Object.entries(zahlenManifest[spr] || {})) {
+      for (const [k, datei] of Object.entries(zahlenManifest[sprQuelle] || {})) {
         const r = await fetch('audio/' + datei);
         if (!r.ok) throw new Error(datei);
         satz[k] = await audioCtx.decodeAudioData(await r.arrayBuffer());
@@ -459,7 +461,8 @@
   // 'rain' hat zwei Aufnahmen (an/aus) und braucht den spezifischeren Schluessel.
   function playAnsageClip(key) {
     const satz = voiceBuffers[key];
-    const puffer = satz && satz[lang];
+    // Spanisch hat keine eigene Aufnahme: die englische als Platzhalter.
+    const puffer = satz && (satz[lang] || satz.en);
     if (!puffer) return false;
     return playFx(puffer, 1.0);
   }

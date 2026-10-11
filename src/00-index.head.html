@@ -564,10 +564,8 @@
     .home-topbar .foot-brand { display: none; }
     #lang-toggle { min-width: 104px; }
   }
-  /* Die aktive Sprache steht hell, die andere gedimmt - ein Umschalter, der zeigt, was
-     gerade gilt, statt nur was man anklicken kann. */
-  #lang-toggle b { font-weight: 700; opacity: .45; }
-  #lang-toggle b.on { opacity: 1; color: var(--ink);
+  /* Ein einziger Knopf, der durch die Sprachen zykelt; die aktuelle steht drauf. */
+  #lang-toggle b { font-weight: 700; color: var(--ink);
     text-shadow: 1px 0 0 var(--glitch-r), -1px 0 0 var(--glitch-c); }
   /* DAS hidden-ATTRIBUT WIRKT WIEDER. Die Vorgabe des Browsers dafuer ist
      `[hidden] { display: none }`, und die verliert gegen JEDE Autoren-Regel, die display
@@ -2498,9 +2496,8 @@
   .k-titel .home-titel-text { font-size: clamp(40px, 8.2vw, 150px); }
   .k-slogan { font-size: clamp(14px, 2vw, 28px); letter-spacing: .06em; font-weight: 400; margin: 0; max-width: 900px; }
   #tab-home #lang-toggle { display: flex; gap: 0; padding: 0; background: transparent; border: 0; }
-  #tab-home #lang-toggle b { padding: 8px 22px; font-size: 15px; letter-spacing: .14em; color: var(--k-dim);
-    background: rgba(10,12,18,.7); border: 2px solid rgba(255,255,255,.4); }
-  #tab-home #lang-toggle b.on { background: #fff; color: var(--k-tinte); border-color: #fff; }
+  #tab-home #lang-toggle b { padding: 8px 22px; font-size: 15px; letter-spacing: .14em; color: var(--k-tinte);
+    background: #fff; border: 2px solid #fff; }
   .k-druecken { font-size: clamp(14px, 1.8vw, 24px); letter-spacing: .3em; text-transform: uppercase;
     animation: k-blink 1.6s ease-in-out infinite; margin-top: 3vh; }
   @keyframes k-blink { 50% { opacity: .3; } }
@@ -4418,8 +4415,8 @@
         class="home-titel-text k-glitch-rot" data-text="SIM">SIM</span>
     </div>
       <h2 class="k-slogan">Vollst&auml;ndige Gestaltungsfreiheit f&uuml;r deine Carrera Hybrid&nbsp;Bahn</h2>
-      <button type="button" id="lang-toggle" aria-label="Sprache wechseln / switch language">
-        <b id="lang-de">DEUTSCH</b><b id="lang-en">ENGLISH</b>
+      <button type="button" id="lang-toggle" aria-label="Sprache wechseln / switch language / cambiar idioma">
+        <b id="lang-label">DEUTSCH</b>
       </button>
       <!-- TUTORIAL (51b-tutorial.js): Klick, Dreieck oder T. -->
       <div class="k-tutorial-reihe">
@@ -4455,7 +4452,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.76</span></span>
+        <span class="foot-ver">v<span id="app-version">0.9.86</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -10775,7 +10772,7 @@
       <h2>System</h2>
       <div class="opt-row"><div class="opt-label">Sprache
           <small>Dieselbe Wahl wie auf dem Titelbildschirm.</small></div>
-        <select id="setting-sprache" data-preset-skip><option value="de">Deutsch</option><option value="en">English</option></select></div>
+        <select id="setting-sprache" data-preset-skip><option value="de">Deutsch</option><option value="en">English</option><option value="es">Español</option></select></div>
       <div class="opt-row"><div class="opt-label">Entwicklertools zeigen
           <small>Blendet im Hauptmen&uuml; die Kachel Entwickler ein: Doku, Programmierschule, BLE-Werkbank, Selbsttest, Code-Sonde, Zahlensysteme, Aufnahme-Modus. Auch mit ?dev in der Adresse.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-dev" data-preset-skip><span></span></label></div>
