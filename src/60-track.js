@@ -2688,26 +2688,130 @@
   const ECHT_STREIFEN = TRACK_KERB_W;
   const ECHT_PFEIL_H = 0.75, ECHT_PFEIL_L = 2.3, ECHT_TAKT = 3.1;   // je Streifenhoehe
   const ECHT_BLAU = '#2f9fe6', ECHT_ROT = '#ff4d22', ECHT_WEISS = '#f3f5f8';
-  // ---- HAARNADEL-KERBS (v1.0.15) ----------------------------------------------------------
-  // BESTELLT: "Haarnadel-Kerbs passend zu photos/haarnadel.png." Auf dem Originalteil sind die
-  // Pfeile im Bogen der Haarnadel anders als ueberall sonst: AUSSEN lange, schraeg zur Bahn
-  // zeigende Pfeile (etwa zweieinhalbmal so lang, in groesserem Abstand), INNEN am Scheitel
-  // kurze, fast quer stehende Keile. Auf den geraden Schenkeln bleiben die kleinen Pfeile.
-  // "Im Bogen" heisst: die Richtung dreht sich dort an dieser Stelle merklich.
-  const NADEL_KERBS_AN = false;
-  const NADEL_KAPPA = 0.025;                 // Richtungsaenderung je Einheit, ab der es Bogen ist
-  const NADEL_AUSSEN = { lang: 2.6, takt: 1.7, winkel: 52, breit: 1.6 };
-  const NADEL_INNEN = { lang: 1.35, takt: 1.5, winkel: 78, breit: 1.5 };
+  // ---- HAARNADEL-KERBS (v1.0.18, dritter Versuch) -------------------------------------------
+  // BESTELLT: "Haarnadel-Kerbs passend zu photos/haarnadel.png" - und nach zwei Entwuerfen: "Die
+  // Form der Pfeile passt nicht. Es sind keine Pfeile mehr sondern verzerrte Pfeile, der weisse
+  // Hintergrund ist breiter an verschiedenen Stellen. Versuche, die Abbildungen exakt
+  // nachzuzeichnen."
+  //
+  // DESHALB NICHT MEHR GERECHNET, SONDERN ABGEMESSEN: Jeder Pfeil und jeder Keil im Bogen ist
+  // als Kontur aus dem Foto gelesen (OpenCV: Bogenmittelpunkt, Radius der Aussen- und der
+  // Innenkante, Konturen je Farbflaeche). NADEL_FORMEN haelt je Seite die Formen in einem
+  // Bahn-Koordinatensystem: a = Winkel im Bogen (0 Eingang, 180 Ausgang), u = laengs in
+  // Fahrtrichtung, v = weg von der Bahn, beides in Einheiten des Kantenradius. Gezeichnet wird
+  // jede Form STARR (nur gleichmaessig skaliert) an ihrem Winkel - so bleibt jede Form so, wie
+  // sie auf dem Teil aussieht. Die weisse Flaeche folgt ebenfalls dem Foto: aussen eine Huelle
+  // knapp um die Pfeile, innen der ganze Kreis. Der gewoehnliche weisse Streifen faellt auf
+  // Haarnadelteilen weg. Mitte der linken Haarnadel = Spiegelbild: das ergibt sich von selbst,
+  // weil u immer in Fahrtrichtung und v immer von der Bahn weg zeigt.
+  // Zur Ansicht: ?nadel=1 in der Adresse schaltet sie ein, bis der Entwurf abgesegnet ist.
+  const NADEL_KERBS_AN = /[?&]nadel=1\b/.test(location.search);
+  const NADEL_FORMEN = {"aussen":{"formen":[{"a":10.32,"p":[[0.0727,0.0499],[0.0408,0.0841],[-0.0709,0.0866],[-0.0456,0.057],[-0.0714,0.0266],[0.038,0.0208]]},{"a":23.49,"p":[[0.0728,0.0397],[0.0458,0.0739],[-0.0711,0.0751],[-0.0437,0.0473],[-0.0694,0.0147],[0.0387,0.0127]]},{"a":36.78,"p":[[0.0723,0.0401],[0.0449,0.0721],[-0.0736,0.0712],[-0.0456,0.0431],[-0.0687,0.0083],[0.042,0.0104]]},{"a":50.05,"p":[[0.0735,0.0423],[0.0427,0.0754],[-0.0745,0.0711],[-0.0444,0.0459],[-0.0671,0.0099],[0.0421,0.0136]]},{"a":63.26,"p":[[0.0719,0.0496],[0.0431,0.0798],[-0.0749,0.0764],[-0.0461,0.0462],[-0.065,0.0149],[0.0405,0.0183]]},{"a":76.3,"p":[[0.0735,0.0524],[0.0276,0.1012],[-0.0778,0.0835],[-0.0422,0.0518],[-0.0645,0.0196],[0.0431,0.0223]]},{"a":88.69,"p":[[0.085,0.0551],[0.0112,0.1439],[-0.0961,0.1154],[-0.0301,0.055],[-0.0561,0.0246],[0.059,0.0248]]},{"a":100.84,"p":[[-0.1166,0.1565],[-0.0146,0.056],[-0.0396,0.0227],[0.0667,0.0202],[0.1016,0.0468],[-0.0014,0.1815]]},{"a":113.19,"p":[[-0.1325,0.1906],[-0.0009,0.0546],[-0.0256,0.0196],[0.0835,0.0144],[0.1178,0.0413],[-0.0083,0.2072]]},{"a":125.99,"p":[[-0.1412,0.2104],[0.0056,0.0465],[-0.0212,0.0165],[0.0921,0.0086],[0.1245,0.0356],[-0.013,0.2203]]},{"a":139.05,"p":[[-0.1489,0.2095],[0.0099,0.0456],[-0.0155,0.012],[0.0962,0.008],[0.128,0.0361],[-0.0119,0.2132]]},{"a":152.77,"p":[[-0.1459,0.1916],[0.0005,0.0468],[-0.0224,0.0144],[0.0868,0.0119],[0.1185,0.0366],[0.0058,0.1798]]},{"a":167.12,"p":[[-0.1269,0.1511],[-0.0215,0.0578],[-0.0418,0.0193],[0.0656,0.0236],[0.0978,0.0508],[0.0316,0.1263]]},{"a":181.41,"p":[[-0.0817,0.1034],[-0.0415,0.0679],[-0.0631,0.0337],[0.0517,0.0449],[0.0762,0.0764],[0.0474,0.1038]]}],"huelle":[[0,0.1131],[3,0.1131],[6,0.1131],[9,0.1131],[12,0.1131],[15,0.1126],[18,0.1121],[21,0.1098],[24,0.1075],[27,0.105],[30,0.1029],[33,0.1005],[36,0.1006],[39,0.1007],[42,0.1012],[45,0.1017],[48,0.1032],[51,0.1041],[54,0.1057],[57,0.1071],[60,0.1121],[63,0.1164],[66,0.1235],[69,0.1299],[72,0.1419],[75,0.1505],[78,0.1615],[81,0.1698],[84,0.183],[87,0.1905],[90,0.1998],[93,0.2067],[96,0.2168],[99,0.2219],[102,0.2277],[105,0.2317],[108,0.2376],[111,0.2402],[114,0.2429],[117,0.2448],[120,0.2468],[123,0.2468],[126,0.2468],[129,0.2468],[132,0.2468],[135,0.2454],[138,0.244],[141,0.2426],[144,0.2411],[147,0.2354],[150,0.2311],[153,0.2244],[156,0.2177],[159,0.211],[162,0.2029],[165,0.1948],[168,0.1841],[171,0.1734],[174,0.1627],[177,0.159],[180,0.1528]]},"innen":{"formen":[{"a":15.67,"p":[[0.4003,0.2432],[0.3344,0.1138],[0.2668,0.0835],[-0.1922,0.0643],[-0.061,0.1458],[-0.4252,0.5341],[-0.1545,0.6553]]},{"a":94.66,"p":[[0.1486,0.063],[-0.203,0.0725],[-0.3788,0.1345],[-0.2314,0.1891],[-0.1051,0.9216],[0.1638,0.8331],[0.2468,0.2168]]},{"a":163.07,"p":[[-0.3941,0.1397],[-0.2488,0.1837],[0.0361,0.5187],[0.1412,0.4018],[0.2806,0.3349],[0.2096,0.1448],[0.09,0.0487],[-0.2037,0.0684]]}],"huelle":[[0,0.2355],[3,0.2355],[6,0.2355],[9,0.2473],[12,0.2592],[15,0.271],[18,0.2829],[21,0.2947],[24,0.438],[27,0.5813],[30,0.7247],[33,0.868],[36,0.97],[39,0.97],[42,0.97],[45,0.97],[48,0.97],[51,0.868],[54,0.7247],[57,0.5813],[60,0.438],[63,0.2947],[66,0.2915],[69,0.2883],[72,0.2852],[75,0.282],[78,0.282],[81,0.2852],[84,0.2883],[87,0.2915],[90,0.2947],[93,0.2947],[96,0.2971],[99,0.2994],[102,0.3018],[105,0.3041],[108,0.3065],[111,0.3065],[114,0.3065],[117,0.3065],[120,0.3041],[123,0.4274],[126,0.5507],[129,0.6739],[132,0.7972],[135,0.9228],[138,0.9228],[141,0.9228],[144,0.9228],[147,0.7972],[150,0.7343],[153,0.6714],[156,0.6085],[159,0.5457],[162,0.6084],[165,0.6084],[168,0.6084],[171,0.6084],[174,0.6084],[177,0.6084],[180,0.6084]]}};
+  // Zeichnet die Kerbs EINER Seite eines Haarnadelteils. kante: Punkte der Bahnkante dieser
+  // Seite, mitte: die Mittellinie (fuer "weg von der Bahn"). Rueckgabe { weiss, farbe } als
+  // SVG-Pfaddaten, oder null, wenn das Teil gar nicht wie eine Haarnadel dreht.
+  function nadelKerbs(kante, mitte, i0, i1, aussen, versatz, bw, P2) {
+    const n = i1 - i0;
+    if (n < 4) return null;
+    // Winkel und Laenge an der MITTELLINIE gemessen: die innere Kante ist bei diesem engen
+    // Radius zu unruhig (der erste Versuch verklumpte dort alle Keile an einer Stelle).
+    const dreh = [0], lang = [0];
+    let vorher = null;
+    for (let q = 1; q <= n; q++) {
+      const a = mitte[i0 + q - 1], b = mitte[i0 + q];
+      const h = Math.atan2(b.y - a.y, b.x - a.x);
+      lang.push(lang[q - 1] + Math.hypot(b.x - a.x, b.y - a.y));
+      if (vorher !== null) {
+        let dd = h - vorher;
+        while (dd > Math.PI) dd -= 2 * Math.PI;
+        while (dd < -Math.PI) dd += 2 * Math.PI;
+        dreh.push(dreh[q - 1] + Math.abs(dd));
+      } else dreh.push(0);
+      vorher = h;
+    }
+    const gesamt = dreh[n];
+    if (gesamt < Math.PI * 0.6) return null;
+    // Wo der Bogen beginnt und endet (Indizes ab i0): davor und danach ist das Teil gerade, und
+    // dort gelten die gewoehnlichen Pfeile und der weisse Streifen - wie auf dem Foto.
+    let von = 0, bis = n;
+    while (von < n && dreh[von + 1] <= 1e-6) von++;
+    while (bis > 0 && dreh[bis - 1] >= gesamt - 1e-6) bis--;
+    // Radius NUR ueber den Bogen (das gerade Stueck wuerde ihn sonst aufblaehen).
+    const rMitte = (lang[bis] - lang[von]) / gesamt;
+    // Der Radius der GEZEICHNETEN Bahnkante (aussen wie innen): die Formen sitzen auf der Kante,
+    // die man sieht. Das gezeichnete Teil hat innen etwas mehr Platz als das Foto.
+    const R = Math.max(1e-3, aussen ? rMitte + versatz : rMitte - versatz);
+    // Ort auf der Kante, Fahrtrichtung und "weg von der Bahn" beim Winkel alpha (Grad, 0..180).
+    const bei = (alpha) => {
+      const ziel = Math.max(1e-6, Math.min(gesamt - 1e-6, alpha / 180 * gesamt));
+      let q = 1;
+      while (q < n && dreh[q] < ziel) q++;
+      const f = (ziel - dreh[q - 1]) / Math.max(1e-9, dreh[q] - dreh[q - 1]);
+      const ma = mitte[i0 + q - 1], mb = mitte[i0 + q];
+      const mx = ma.x + (mb.x - ma.x) * f, my = ma.y + (mb.y - ma.y) * f;
+      const dl = Math.hypot(mb.x - ma.x, mb.y - ma.y) || 1;
+      const tx = (mb.x - ma.x) / dl, ty = (mb.y - ma.y) / dl;
+      const a = kante[i0 + q - 1], b = kante[i0 + q];
+      const kx = a[0] + (b[0] - a[0]) * f, ky = a[1] + (b[1] - a[1]) * f;
+      const nl = Math.hypot(kx - mx, ky - my) || 1;
+      const nx = (kx - mx) / nl, ny = (ky - my) / nl;
+      // Die Kante als Mittelpunkt plus Abstand, nicht die versetzte Linie selbst (glatter):
+      // aussen um den Versatz nach aussen, innen bis auf R an den Bogenmittelpunkt heran.
+      const ab = aussen ? versatz : rMitte - R;
+      return { x: mx + nx * ab, y: my + ny * ab, tx, ty, nx, ny };
+    };
+    const tab = NADEL_FORMEN[aussen ? 'aussen' : 'innen'];
+    let farbe = '';
+    for (const fo of tab.formen) {
+      const m = bei(fo.a);
+      const ecken = fo.p.map(([u, v]) => [m.x + (m.tx * u + m.nx * v) * R, m.y + (m.ty * u + m.ny * v) * R]);
+      farbe += ` M ${ecken.map(P2).join(' L ')} Z`;
+    }
+    const vor = [], zurueck = [];
+    // An beiden Enden des Bogens laeuft die weisse Flaeche auf die Streifenbreite der Geraden
+    // aus - sonst steht dort eine Stufe, wo das naechste Teil anschliesst.
+    const band = bw / R;
+    for (const [a, v0] of tab.huelle) {
+      const rand = Math.min(1, Math.min(a, 180 - a) / 15);
+      const v = band + (Math.max(v0, band) - band) * rand;
+      const m = bei(a);
+      vor.push([m.x, m.y]);
+      zurueck.push([m.x + m.nx * v * R, m.y + m.ny * v * R]);
+    }
+    const weiss = `M ${vor.concat(zurueck.reverse()).map(P2).join(' L ')} Z`;
+    return { weiss, farbe, von, bis };
+  }
   function echtRandstreifen(pts, nrm, half, kachelTab, nTeile, P2, tiles) {
     const bw = ECHT_STREIFEN, mitte = half - bw / 2;
     const ph = bw * ECHT_PFEIL_H, pl = ph * ECHT_PFEIL_L, kerbe = ph / 2;
     const takt = ph * ECHT_TAKT;
+    const istNadel = (k) => NADEL_KERBS_AN && !!(tiles && tiles[k]
+      && (tiles[k].type === TILE_TYPE.HAIRPIN || tiles[k].type === TILE_TYPE.HAIRPIN_LEFT));
+    const mitNadeln = NADEL_KERBS_AN && tiles && tiles.some((x, k) => istNadel(k));
     let out = '';
     for (const [seite, farbe] of [[1, ECHT_BLAU], [-1, ECHT_ROT]]) {
       const linie = offsetPath(pts, nrm, mitte * seite);
-      out += `<path d="M ${linie.map(P2).join(' L ')}" fill="none" stroke="${ECHT_WEISS}" `
-           + `stroke-width="${bw.toFixed(2)}" stroke-linecap="butt" stroke-linejoin="round"/>`;
-      let d = '', zapfen = '';
+      if (!mitNadeln) {
+        out += `<path d="M ${linie.map(P2).join(' L ')}" fill="none" stroke="${ECHT_WEISS}" `
+             + `stroke-width="${bw.toFixed(2)}" stroke-linecap="butt" stroke-linejoin="round"/>`;
+      } else {
+        // Der weisse Streifen in Stuecken: ueber Haarnadelteilen nicht (dort die Huelle).
+        let stuecke = '', lauf = null;
+        for (let k = 0; k <= nTeile; k++) {
+          const ende = k === nTeile || istNadel(k);
+          const i0 = k < nTeile ? kachelTab.start[k] : pts.length - 1;
+          if (!ende && lauf === null) lauf = i0;
+          if (ende && lauf !== null) {
+            const bis = k < nTeile ? kachelTab.start[k] : pts.length - 1;
+            if (bis > lauf) stuecke += ` M ${linie.slice(lauf, bis + 1).map(P2).join(' L ')}`;
+            lauf = null;
+          }
+        }
+        if (stuecke) out += `<path d="${stuecke.trim()}" fill="none" stroke="${ECHT_WEISS}" `
+             + `stroke-width="${bw.toFixed(2)}" stroke-linecap="butt" stroke-linejoin="round"/>`;
+      }
+      const kante = mitNadeln ? offsetPath(pts, nrm, (half - bw) * seite) : null;
+      let d = '', zapfen = '', weissNadel = '', streifenGerade = '';
       for (let k = 0; k < nTeile; k++) {
         const i0 = kachelTab.start[k];
         const i1 = k + 1 < nTeile ? kachelTab.start[k + 1] : pts.length - 1;
@@ -2720,17 +2824,6 @@
         const L = acc[acc.length - 1];
         const rand = bw * 0.9;                       // Platz fuer die Steckzapfen
         if (L < pl + 2 * rand) continue;
-        // Haarnadel? Dann ist die laengere Seite (gegen die Mittellinie) die Aussenseite.
-        const typ = tiles && tiles[k] ? tiles[k].type : null;
-        // v1.0.17: vorerst AUS - GEMELDET "Haarnadel-Vorschau sieht voellig falsch aus". Bis zum
-        // Nachbau gelten die normalen Pfeile; die Zeichnung unten bleibt fuer den neuen Versuch.
-        const nadel = NADEL_KERBS_AN && (typ === TILE_TYPE.HAIRPIN || typ === TILE_TYPE.HAIRPIN_LEFT);
-        let aussen = false;
-        if (nadel) {
-          let lc = 0;
-          for (let q = i0 + 1; q <= i1; q++) lc += Math.hypot(pts[q].x - pts[q - 1].x, pts[q].y - pts[q - 1].y);
-          aussen = L > lc;
-        }
         const n = Math.max(1, Math.round((L - 2 * rand) / takt)), schritt = (L - 2 * rand) / n;
         const bei = (sv) => {
           let q = 1;
@@ -2741,46 +2834,25 @@
           const dl = Math.hypot(seg[q][0] - seg[q - 1][0], seg[q][1] - seg[q - 1][1]) || 1;
           return { x, y, ux: (seg[q][0] - seg[q - 1][0]) / dl, uy: (seg[q][1] - seg[q - 1][1]) / dl };
         };
-        // Wie stark dreht sich die Richtung an der Stelle sv? (Bogen der Haarnadel)
-        const kruemmt = (sv) => {
-          const dsv = Math.max(1, takt * 0.6);
-          const a = bei(Math.max(0, sv - dsv)), b = bei(Math.min(L, sv + dsv));
-          const w = Math.atan2(a.ux * b.uy - a.uy * b.ux, a.ux * b.ux + a.uy * b.uy);
-          return Math.abs(w) / (2 * dsv);
-        };
-        // Im Bogen: eigene Folge mit groesserem Abstand und langen, gedrehten Pfeilen.
-        const stil = aussen ? NADEL_AUSSEN : NADEL_INNEN;
-        const bogen = [];
-        if (nadel) {
-          const tb = takt * stil.takt;
-          for (let sv = rand + tb / 2; sv < L - rand; sv += tb) if (kruemmt(sv) > NADEL_KAPPA) bogen.push(sv);
-          for (const sv of bogen) {
-            const m = bei(sv);
-            // Normale zur Aussenseite dieses Streifens (weg von der Bahn): fuer die Aussenseite
-            // die Seite weg vom Bogenmittelpunkt.
-            let vx = -m.uy, vy = m.ux;
-            const probe = bei(Math.min(L, sv + takt));
-            const dreh = m.ux * probe.uy - m.uy * probe.ux;          // >0: Linkskurve
-            const wegVonMitte = aussen ? -Math.sign(dreh || 1) : Math.sign(dreh || 1);
-            vx *= wegVonMitte; vy *= wegVonMitte;
-            // Pfeilachse: um `winkel` aus der Fahrtrichtung zur Bahn hin gedreht.
-            const wr = stil.winkel * Math.PI / 180;
-            const ax = m.ux * Math.cos(wr) - vx * Math.sin(wr), ay = m.uy * Math.cos(wr) - vy * Math.sin(wr);
-            const qx = -ay, qy = ax;
-            // Breiter als die kleinen Pfeile: auf dem Foto fuellen sie den Streifen fast ganz.
-            const lang = pl * stil.lang, h = ph * stil.breit / 2;
-            // Der Pfeil sitzt mit seiner Spitze am inneren Rand des Streifens und reicht nach aussen.
-            const cx = m.x + vx * (lang * Math.sin(wr) / 2 - bw / 2), cy = m.y + vy * (lang * Math.sin(wr) / 2 - bw / 2);
-            const P = (u, v) => [cx + ax * u + qx * v, cy + ay * u + qy * v];
-            const l = lang / 2, kk = Math.min(kerbe, l * 0.4);
-            const ecken = [P(-l, -h), P(l - kk, -h), P(l, 0), P(l - kk, h), P(-l, h), P(-l + kk, 0)];
-            d += ` M ${ecken.map(P2).join(' L ')} Z`;
+        // Haarnadel: die abgemessenen Formen statt der kleinen Pfeile. Die laengere Seite
+        // (gegen die Mittellinie) ist die Aussenseite.
+        let nadelBogen = null;
+        if (istNadel(k)) {
+          let lc = 0;
+          for (let q = i0 + 1; q <= i1; q++) lc += Math.hypot(pts[q].x - pts[q - 1].x, pts[q].y - pts[q - 1].y);
+          const r = nadelKerbs(kante, pts, i0, i1, L > lc, half - bw, bw, P2);
+          if (r) {
+            weissNadel += ' ' + r.weiss; d += r.farbe;
+            // Gerade Stuecke des Teils: weisser Streifen und kleine Pfeile wie sonst.
+            if (r.von > 0) streifenGerade += ` M ${linie.slice(i0, i0 + r.von + 1).map(P2).join(' L ')}`;
+            if (r.bis < i1 - i0) streifenGerade += ` M ${linie.slice(i0 + r.bis, i1 + 1).map(P2).join(' L ')}`;
+            nadelBogen = [acc[r.von], acc[r.bis]];
           }
         }
-        const imBogen = (sv) => bogen.some((b) => Math.abs(b - sv) < takt * stil.takt * 0.75);
         for (let j = 0; j < n; j++) {
-          if (nadel && bogen.length && imBogen(rand + (j + 0.5) * schritt)) continue;
-          const m = bei(rand + (j + 0.5) * schritt);
+          const svj = rand + (j + 0.5) * schritt;
+          if (nadelBogen && svj > nadelBogen[0] - pl * 0.6 && svj < nadelBogen[1] + pl * 0.6) continue;
+          const m = bei(svj);
           const vx = -m.uy, vy = m.ux;
           const P = (u, v) => [m.x + m.ux * u + vx * v, m.y + m.uy * u + vy * v];
           const h = ph / 2, l = pl / 2;
@@ -2795,6 +2867,9 @@
           zapfen += `<circle cx="${cx}" cy="${cy}" r="${(bw * 0.18).toFixed(2)}" fill="#1b1d22"/>`;
         }
       }
+      if (streifenGerade) out += `<path d="${streifenGerade.trim()}" fill="none" stroke="${ECHT_WEISS}" `
+           + `stroke-width="${bw.toFixed(2)}" stroke-linecap="butt" stroke-linejoin="round"/>`;
+      if (weissNadel) out += `<path d="${weissNadel.trim()}" fill="${ECHT_WEISS}" stroke="none"/>`;
       out += `<path d="${d.trim()}" fill="${farbe}" stroke="none"/>` + zapfen;
     }
     return out;

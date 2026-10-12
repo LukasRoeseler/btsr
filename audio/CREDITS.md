@@ -25,9 +25,21 @@ mit veraenderter Abspielrate (wie Speed Dreams selbst es zur Laufzeit tut), dazu
 gedaempftes Schubband und eine Lautstaerkeangleichung an die uebrigen Motoren. Die
 Aufnahmedrehzahl ist aus der Zuendfrequenz geschaetzt; die Motoren sind deshalb WIP.
 
+### Toro R-GT (Free Art License 1.3) — seit v1.0.18
+
+| Motor in der App | Datei in Speed Dreams | Quelle und Lizenz |
+|---|---|---|
+| Toro R-GT (V12) | `data/sound/toro-rgt.wav` | Speed-Dreams-Team; ohne Einzelangabe, also nach der Vorgabe der Speed-Dreams-Daten unter der **Free Art License 1.3** (https://artlibre.org/licence/lal/en/) |
+
+Die Dateien `audio/sd_toro_*.ogg` sind aus dieser Aufnahme gerechnet (Abspielrate je
+Drehzahlband, Schubband gedaempft, Lautstaerke angeglichen; `tools/sd_engines.py`) und
+stehen damit ebenfalls unter der Free Art License 1.3. Das Original liegt in den
+Spieldaten von Speed Dreams 2.4 (https://www.speed-dreams.net). Der Code von OmegaSim
+bleibt MIT; die Klangdateien werden nur mitgeliefert und geladen.
+
 Nicht verwendet: `v6_raw.wav` und `rotary2.wav` (als "CC-BY" aus YouTube-Videos
-angegeben, Rechte unklar), `skid_metal.wav` (ohne Lizenzangabe) und die aelteren
-Fahrzeugklaenge der Spieldaten (GPL).
+angegeben, Rechte unklar), `skid_metal.wav` (ohne Lizenzangabe) und die uebrigen
+aelteren Fahrzeugklaenge der Spieldaten.
 
 ## Vollstaendig synthetisch — kein Aufnahmematerial
 

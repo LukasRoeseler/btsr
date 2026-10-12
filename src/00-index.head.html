@@ -4604,7 +4604,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.17</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.18</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5732,6 +5732,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Neuer Motor aus Speed Dreams: Toro R-GT (V12), in der Gruppe &#8222;Speed Dreams, Aufnahmen&#8220;. Die Aufnahme stammt aus den Speed-Dreams-Spieldaten und steht unter der Free Art License; Quellen in audio/CREDITS.md.</li>
         <li>Hotfix: 1.0.16 startete nicht, wenn im Editor eine Strecke gemerkt war (die SIMULATOR-Linie wurde beim Laden zu fr&#252;h angefragt) &#8211; behoben. Die Ideallinie wird jetzt gleich nach jeder &#196;nderung an der Strecke im Hintergrund berechnet; solange das l&#228;uft, zeigt ein drehendes Streckenteil am Rand &#8222;Ideallinie wird berechnet &#8230;&#8220;. Die neuen Haarnadel-Kerbs sind vorerst wieder aus.</li>
         <li>Haarnadeln sehen jetzt aus wie das Originalteil: im Bogen au&#223;en lange, breite Pfeile schr&#228;g zur Bahn, innen am Scheitel kurze Keile; auf den geraden Schenkeln bleiben die kleinen Pfeile. Gilt f&#252;r Editor, Vorschaubilder und das Streckenbild.</li>
         <li>Streckenbild: neuer Knopf &#8222;Bild&#8220; in der Editorleiste speichert ein PNG mit Strecke (Ideallinie und Raum wie gerade eingeschaltet), Name, Streckencode, L&#228;nge, Platzbedarf, Teilezahl und Link; in der App unter Bilder/OmegaSim (neue APK n&#246;tig). SIMULATOR ist jetzt die Standard-Ideallinie. Meisterschaft: Vorgabe sind zwei Events (Qualifying, Runden), &#8222;Meisterschaft starten&#8220; ist als WIP gekennzeichnet, und eine pausierte Meisterschaft l&#228;sst sich fortsetzen &#8211; die FAHREN-Kachel zeigt &#8222;Fortsetzen: Event X/Y&#8220; und &#246;ffnet direkt den Zwischenstand mit &#8222;Weiter&#8220;, im Planer steht oben &#8222;Meisterschaft fortsetzen&#8220;. Titelschirm: &#8222;Starten&#8220; ist farbig hinterlegt. Die Kachel mit dem Garage-Knopf zeigt das Garagenfoto.</li>
@@ -7723,6 +7724,12 @@
         <div class="snd-row"><audio controls preload="none" src="audio/sd_v12weich_mid.ogg"></audio><div><b>Speed Dreams: Italienischer V12, weich, Mittelband (5098/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/sound/v12_smooth2.wav): cheesepuff, Freesound 112075 (CC0), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/sd_v12weich_high.ogg"></audio><div><b>Speed Dreams: Italienischer V12, weich, oberes Band (8500/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/sound/v12_smooth2.wav): cheesepuff, Freesound 112075 (CC0), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/sd_v12weich_over.ogg"></audio><div><b>Speed Dreams: Italienischer V12, weich, Schub (3058/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/sound/v12_smooth2.wav): cheesepuff, Freesound 112075 (CC0), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_toro_idle.ogg"></audio><div><b>Speed Dreams: Toro R-GT (V12), Leerlauf (1100/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/sound/toro-rgt.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_toro_low.ogg"></audio><div><b>Speed Dreams: Toro R-GT (V12), Zwischenband (1834/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/sound/toro-rgt.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_toro_low2.ogg"></audio><div><b>Speed Dreams: Toro R-GT (V12), zweites Zwischenband (3058/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/sound/toro-rgt.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_toro_mid.ogg"></audio><div><b>Speed Dreams: Toro R-GT (V12), Mittelband (5098/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/sound/toro-rgt.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_toro_high.ogg"></audio><div><b>Speed Dreams: Toro R-GT (V12), oberes Band (8500/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/sound/toro-rgt.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_toro_over.ogg"></audio><div><b>Speed Dreams: Toro R-GT (V12), Schub (3058/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/sound/toro-rgt.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
       </div>
       <p class="muted" style="font-size:11.5px">
         Vollst&auml;ndige Herkunftsangaben in <code>audio/CREDITS.md</code>.
@@ -10093,6 +10100,7 @@
           <option value="sd_v8alt">Alter amerikanischer V8</option>
           <option value="sd_v12">Italienischer V12, roh</option>
           <option value="sd_v12weich">Italienischer V12, weich</option>
+          <option value="sd_toro">Toro R-GT: V12</option>
           </optgroup>
         </select></div>
       <!-- BESTELLT: "Spieler 1 und Spieler 2 sollen verschiedene Motorsounds haben

@@ -1600,5 +1600,58 @@
   },
   "idleRpm": 1100,
   "limiterRpm": 8500
+ },
+ "sd_toro": {
+  "label": "Speed Dreams: Toro R-GT (V12)",
+  "cylinders": 12,
+  "source": "Aufnahme aus Speed Dreams 2.4 (data/sound/toro-rgt.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en)",
+  "crackle": 0.4,
+  "turbo": false,
+  "loops": {
+   "idle": {
+    "file": "sd_toro_idle.ogg",
+    "baseRpm": 1100,
+    "firingHz": 110.0,
+    "seconds": 4.5348,
+    "load": 1.0
+   },
+   "low": {
+    "file": "sd_toro_low.ogg",
+    "baseRpm": 1834,
+    "firingHz": 183.4,
+    "seconds": 2.7199,
+    "load": 1.0
+   },
+   "low2": {
+    "file": "sd_toro_low2.ogg",
+    "baseRpm": 3058,
+    "firingHz": 305.8,
+    "seconds": 1.6312,
+    "load": 1.0
+   },
+   "mid": {
+    "file": "sd_toro_mid.ogg",
+    "baseRpm": 5098,
+    "firingHz": 509.8,
+    "seconds": 0.9785,
+    "load": 1.0
+   },
+   "high": {
+    "file": "sd_toro_high.ogg",
+    "baseRpm": 8500,
+    "firingHz": 850.0,
+    "seconds": 0.5868,
+    "load": 1.0
+   },
+   "over": {
+    "file": "sd_toro_over.ogg",
+    "baseRpm": 3058,
+    "firingHz": 305.8,
+    "seconds": 1.6312,
+    "load": 0.0
+   }
+  },
+  "idleRpm": 1100,
+  "limiterRpm": 8500
  }
 }

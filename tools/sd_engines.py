@@ -3,10 +3,13 @@
 
     python tools/sd_engines.py <Ordner mit data/sound aus Speed Dreams 2.4>
 
-BESTELLT: Motorklaenge aus Speed Dreams. Verwendet werden NUR die Proben, die
-data/sound/SoundCredits.txt ausdruecklich als CC0 ausweist (Freesound, Nov. 2024). Die
-uebrigen Speed-Dreams-Klaenge sind entweder CC-BY von YouTube-Mitschnitten, ohne Angabe
-oder Teil der GPL-Spieldaten - die bleiben draussen.
+BESTELLT: Motorklaenge aus Speed Dreams. Verwendet werden die Proben, die
+data/sound/SoundCredits.txt ausdruecklich als CC0 ausweist (Freesound, Nov. 2024), und seit
+v1.0.18 ausserdem der Toro R-GT (BESTELLT: "Dann Toro R-GT einbauen, die anderen sein
+lassen"). Fuer ihn gibt es keine Einzelangabe; er faellt unter die Vorgabe der Speed-Dreams-
+Daten, die Free Art License 1.3 (https://artlibre.org/licence/lal/en/). Die daraus gerechneten
+Baender stehen damit ebenfalls unter der Free Art License. Die uebrigen Klaenge (CC-BY aus
+YouTube-Mitschnitten, ohne Angabe) bleiben draussen.
 
 WIE TORCS/SPEED DREAMS ES MACHT: eine einzige Schleife, deren Abspielrate mit der Drehzahl
 steigt. Die App blendet stattdessen zwischen Baendern ueber und spielt jedes hoechstens
@@ -49,6 +52,8 @@ MOTOREN = [
      'cheesepuff, Freesound 112075 (CC0)'),
     ('sd_v12weich', 'v12_smooth2.wav', 'Speed Dreams: Italienischer V12, weich', 12, 1100, 8500, 0.25,
      'cheesepuff, Freesound 112075 (CC0)'),
+    ('sd_toro', 'toro-rgt.wav', 'Speed Dreams: Toro R-GT (V12)', 12, 1100, 8500, 0.4,
+     'Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en)'),
 ]
 
 
