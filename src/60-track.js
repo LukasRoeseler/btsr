@@ -2688,7 +2688,16 @@
   const ECHT_STREIFEN = TRACK_KERB_W;
   const ECHT_PFEIL_H = 0.75, ECHT_PFEIL_L = 2.3, ECHT_TAKT = 3.1;   // je Streifenhoehe
   const ECHT_BLAU = '#2f9fe6', ECHT_ROT = '#ff4d22', ECHT_WEISS = '#f3f5f8';
-  function echtRandstreifen(pts, nrm, half, kachelTab, nTeile, P2) {
+  // ---- HAARNADEL-KERBS (v1.0.15) ----------------------------------------------------------
+  // BESTELLT: "Haarnadel-Kerbs passend zu photos/haarnadel.png." Auf dem Originalteil sind die
+  // Pfeile im Bogen der Haarnadel anders als ueberall sonst: AUSSEN lange, schraeg zur Bahn
+  // zeigende Pfeile (etwa zweieinhalbmal so lang, in groesserem Abstand), INNEN am Scheitel
+  // kurze, fast quer stehende Keile. Auf den geraden Schenkeln bleiben die kleinen Pfeile.
+  // "Im Bogen" heisst: die Richtung dreht sich dort an dieser Stelle merklich.
+  const NADEL_KAPPA = 0.025;                 // Richtungsaenderung je Einheit, ab der es Bogen ist
+  const NADEL_AUSSEN = { lang: 2.6, takt: 1.7, winkel: 52, breit: 1.6 };
+  const NADEL_INNEN = { lang: 1.35, takt: 1.5, winkel: 78, breit: 1.5 };
+  function echtRandstreifen(pts, nrm, half, kachelTab, nTeile, P2, tiles) {
     const bw = ECHT_STREIFEN, mitte = half - bw / 2;
     const ph = bw * ECHT_PFEIL_H, pl = ph * ECHT_PFEIL_L, kerbe = ph / 2;
     const takt = ph * ECHT_TAKT;
@@ -2710,6 +2719,15 @@
         const L = acc[acc.length - 1];
         const rand = bw * 0.9;                       // Platz fuer die Steckzapfen
         if (L < pl + 2 * rand) continue;
+        // Haarnadel? Dann ist die laengere Seite (gegen die Mittellinie) die Aussenseite.
+        const typ = tiles && tiles[k] ? tiles[k].type : null;
+        const nadel = typ === TILE_TYPE.HAIRPIN || typ === TILE_TYPE.HAIRPIN_LEFT;
+        let aussen = false;
+        if (nadel) {
+          let lc = 0;
+          for (let q = i0 + 1; q <= i1; q++) lc += Math.hypot(pts[q].x - pts[q - 1].x, pts[q].y - pts[q - 1].y);
+          aussen = L > lc;
+        }
         const n = Math.max(1, Math.round((L - 2 * rand) / takt)), schritt = (L - 2 * rand) / n;
         const bei = (sv) => {
           let q = 1;
@@ -2720,7 +2738,45 @@
           const dl = Math.hypot(seg[q][0] - seg[q - 1][0], seg[q][1] - seg[q - 1][1]) || 1;
           return { x, y, ux: (seg[q][0] - seg[q - 1][0]) / dl, uy: (seg[q][1] - seg[q - 1][1]) / dl };
         };
+        // Wie stark dreht sich die Richtung an der Stelle sv? (Bogen der Haarnadel)
+        const kruemmt = (sv) => {
+          const dsv = Math.max(1, takt * 0.6);
+          const a = bei(Math.max(0, sv - dsv)), b = bei(Math.min(L, sv + dsv));
+          const w = Math.atan2(a.ux * b.uy - a.uy * b.ux, a.ux * b.ux + a.uy * b.uy);
+          return Math.abs(w) / (2 * dsv);
+        };
+        // Im Bogen: eigene Folge mit groesserem Abstand und langen, gedrehten Pfeilen.
+        const stil = aussen ? NADEL_AUSSEN : NADEL_INNEN;
+        const bogen = [];
+        if (nadel) {
+          const tb = takt * stil.takt;
+          for (let sv = rand + tb / 2; sv < L - rand; sv += tb) if (kruemmt(sv) > NADEL_KAPPA) bogen.push(sv);
+          for (const sv of bogen) {
+            const m = bei(sv);
+            // Normale zur Aussenseite dieses Streifens (weg von der Bahn): fuer die Aussenseite
+            // die Seite weg vom Bogenmittelpunkt.
+            let vx = -m.uy, vy = m.ux;
+            const probe = bei(Math.min(L, sv + takt));
+            const dreh = m.ux * probe.uy - m.uy * probe.ux;          // >0: Linkskurve
+            const wegVonMitte = aussen ? -Math.sign(dreh || 1) : Math.sign(dreh || 1);
+            vx *= wegVonMitte; vy *= wegVonMitte;
+            // Pfeilachse: um `winkel` aus der Fahrtrichtung zur Bahn hin gedreht.
+            const wr = stil.winkel * Math.PI / 180;
+            const ax = m.ux * Math.cos(wr) - vx * Math.sin(wr), ay = m.uy * Math.cos(wr) - vy * Math.sin(wr);
+            const qx = -ay, qy = ax;
+            // Breiter als die kleinen Pfeile: auf dem Foto fuellen sie den Streifen fast ganz.
+            const lang = pl * stil.lang, h = ph * stil.breit / 2;
+            // Der Pfeil sitzt mit seiner Spitze am inneren Rand des Streifens und reicht nach aussen.
+            const cx = m.x + vx * (lang * Math.sin(wr) / 2 - bw / 2), cy = m.y + vy * (lang * Math.sin(wr) / 2 - bw / 2);
+            const P = (u, v) => [cx + ax * u + qx * v, cy + ay * u + qy * v];
+            const l = lang / 2, kk = Math.min(kerbe, l * 0.4);
+            const ecken = [P(-l, -h), P(l - kk, -h), P(l, 0), P(l - kk, h), P(-l, h), P(-l + kk, 0)];
+            d += ` M ${ecken.map(P2).join(' L ')} Z`;
+          }
+        }
+        const imBogen = (sv) => bogen.some((b) => Math.abs(b - sv) < takt * stil.takt * 0.75);
         for (let j = 0; j < n; j++) {
+          if (nadel && bogen.length && imBogen(rand + (j + 0.5) * schritt)) continue;
           const m = bei(rand + (j + 0.5) * schritt);
           const vx = -m.uy, vy = m.ux;
           const P = (u, v) => [m.x + m.ux * u + vx * v, m.y + m.uy * u + vy * v];
@@ -2919,7 +2975,7 @@
         // an den Enden die Steckzapfen (schwarze Punkte auf dem Streifen).
         // Als einzelne Pfade und NICHT als <g transform>: der Selbsttest zaehlt jede
         // verschobene Gruppe als Auto.
-        body += echtRandstreifen(pts, nrm, half, kachelTab, tiles.length, P2);
+        body += echtRandstreifen(pts, nrm, half, kachelTab, tiles.length, P2, tiles);
       }
       // DAS GEWAEHLTE TEIL (Editor): gelb ueberzogen, damit man sieht, wo eingefuegt und was
       // entfernt wird.
