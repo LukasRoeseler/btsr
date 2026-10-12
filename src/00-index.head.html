@@ -4593,7 +4593,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.13</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.14</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5721,6 +5721,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Neues Linienmodell SIMULATOR (WIP): f&#228;hrt bis zu 200 Linien &#8211; die acht vorhandenen und glatte Abwandlungen davon &#8211; je drei Runden mit derselben Fahrphysik wie dein Auto (Getriebe, Reifen, Zug im Reibkreis) und beh&#228;lt die schnellste. Die Mindestgeschwindigkeit der Ghosts (35 %) und eine Grenze f&#252;r schnelle Querwechsel gelten als Schranken. Die Suche dauert wenige Sekunden im Hintergrund, pausiert im Rennen und wird je Strecke gespeichert; bis dahin gilt die Luuke-Linie. Ein getestetes Beispiel, keine bewiesene Bestlinie.</li>
         <li>Motorkl&#228;nge aus Speed Dreams (WIP): sechs echte Aufnahmen (CC0) als neue Gruppe im Motormen&#252; &#8211; Japanischer GT-V8, Deutscher V10, Australischer Muscle-V8, Alter amerikanischer V8 und zwei italienische V12. Neben der Bahn rollt dein Auto jetzt h&#246;rbar &#252;ber Gras und Schotter, lauter mit dem Tempo (Lautst&#228;rke mit dem Reifenregler). Quellen in audio/CREDITS.md.</li>
         <li>Pflichtstopps z&#228;hlen jetzt f&#252;r alle gesteuerten Autos: Spieler 2 und 3 bekommen dieselbe Zeitstrafe je verpasstem Stopp, und im WLAN-Mehrspieler melden die Telefone Gesamtzeit und Strafe an den Host (neue APK bzw. neuer Host n&#246;tig), damit die Meisterschaft sie wertet. Safety Car: neue Option &#8222;erst aufschlie&#223;en&#8220; (Vorgabe an): unter Gelb fahren alle mit etwa 45 % heran und ab zwei Kacheln Abstand mit 35 % weiter, in Kurven und Haarnadeln gedrosselt. Die Studie ist vorerst nur im Entwicklermodus sichtbar.</li>
         <li>Studie (experimentell, Optionen): freiwillige Teilnahme ab 18 mit Einwilligung, Alter und Geschlecht; 18 Aussagen des NARQ (Bewunderung und Rivalit&#228;t), Selbsteinsch&#228;tzung des Fahrk&#246;nnens und ein Reaktionstest mit dem Controller (10 Durchg&#228;nge, Fr&#252;hstarts z&#228;hlen). Gesendet wird erst am Ende, in ein eigenes, nicht &#246;ffentlich abrufbares Blatt; verkn&#252;pft &#252;ber die Ger&#228;tekennung. Der Reaktionstest l&#228;sst sich danach ohne Senden &#252;ben.</li>
@@ -10623,7 +10624,11 @@
           <br>Die Zeiten kommen aus den eingestellten Fahrwerten &ndash; Spitze, Zug und
           Bremse aus der aktiven Simulationsklasse; nur die Querbeschleunigung bleibt eine
           Annahme, weil kein Byte sie meldet. Ob es auf dem Teppich stimmt, sagen Rundenzeit
-          und Abg&auml;nge.</small></div>
+          und Abg&auml;nge.
+          <br>SIMULATOR (WIP) f&auml;hrt bis zu 200&nbsp;Linien je drei Runden mit derselben Fahrphysik
+          wie dein Auto und beh&auml;lt die schnellste &ndash; ein getestetes Beispiel, keine bewiesene
+          Bestlinie. Die Suche l&auml;uft im Hintergrund (pausiert im Rennen); bis sie fertig ist, gilt
+          die Luuke-Linie.</small></div>
         <div class="row" style="gap:6px; flex-wrap:wrap">
           <button type="button" class="mw-preset" data-linemodel="curvature">Kr&uuml;mmung</button>
           <button type="button" class="mw-preset" data-linemodel="laptime">Rundenzeit</button>
@@ -10633,6 +10638,7 @@
           <button type="button" class="mw-preset" data-linemodel="innen3">Innen (gemittelt)</button>
           <button type="button" class="mw-preset" data-linemodel="aussenin">Außen-Innen</button>
           <button type="button" class="mw-preset sel" data-linemodel="luuke">Luuke-Linie</button>
+          <button type="button" class="mw-preset" data-linemodel="simulator">SIMULATOR<span class="wip-tag">WIP</span></button>
         </div></div>
       <!-- DIE LINIE DIREKT NEBEN DER WAHL. Gemeldet: "ich habe 2 Ideallinie Modi, aber wenn
            ich dazwischen waehle, aendert sich die eingezeichnete Linie nicht." Sie aendert

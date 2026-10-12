@@ -9188,7 +9188,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   const LINIENMODELL_NAME = {
     curvature: 'Kr\u00fcmmung', laptime: 'Rundenzeit', lateapex: 'Late Apex',
     dreistufig: '3-stufig', mitte: 'Fahrbahnmitte', innen3: 'Innen (gemittelt)',
-    aussenin: 'Außen-Innen', luuke: 'Luuke-Linie',
+    aussenin: 'Außen-Innen', luuke: 'Luuke-Linie', simulator: 'SIMULATOR',
   };
 
   // ---- Die gewaehlte Linie zeigen, direkt neben der Wahl ----
@@ -9255,7 +9255,22 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       + ' ' + teile.join(' \u00b7 ') + '. '
       + t('Die Zeiten kommen aus den eingestellten Fahrwerten; die Querbeschleunigung ist '
           + 'darin eine Annahme.')
-      + (eigene ? '' : ' ' + t('Gezeigt ist die Vorgabestrecke; im Editor steht noch keine.'));
+      + (eigene ? '' : ' ' + t('Gezeigt ist die Vorgabestrecke; im Editor steht noch keine.'))
+      + (getLineModel() === 'simulator' ? ' ' + simInfoText() : '');
+  }
+  // v1.0.14: Stand der SIMULATOR-Linie fuer die Vorschau (61-simlinie.js).
+  function simInfoText() {
+    const s = typeof simStand === 'function' ? simStand() : { laeuft: false };
+    if (s.laeuft) return t('SIMULATOR rechnet: {a} von {b} Linien gefahren, bis dahin gilt die Luuke-Linie.')
+      .replace('{a}', s.auswertungen).replace('{b}', s.von);
+    const e = s.letztes;
+    if (e && e.zeit) {
+      const luuke = e.saat && e.saat.luuke;
+      return t('SIMULATOR: getestetes Beispiel, keine bewiesene Bestlinie. In der Physik gefahren: {z} s je Runde.')
+        .replace('{z}', e.zeit.toFixed(2))
+        + (luuke ? ' ' + t('Luuke-Linie dort: {l} s.').replace('{l}', luuke.toFixed(2)) : '');
+    }
+    return t('SIMULATOR: getestetes Beispiel, keine bewiesene Bestlinie.');
   }
 
   // ---- Linienmodell und Lernen bedienen ----

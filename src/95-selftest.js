@@ -18054,6 +18054,31 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eine Rolle, Hindernis, nicht im Ergebnis, 45 % weit / 35 % nah, Option aus 35 %' };
   });
 
+  // ---- v1.0.14: SIMULATOR-Linie (61-simlinie.js) ----
+  stAdd('SIMULATOR-Linie: drei Runden in der Physik, Querrate begrenzt, Beulen bleiben in der Bahn', () => {
+    const f = [];
+    const tiles = (codeToTrack(TRACK_VORGABE_CODE) || {}).tiles;
+    const pts = trackCenterline(tiles), nrm = trackNormals(pts, true);
+    const o = { closed: trackSchluss(pts).closed, tiles };
+    const gz = fahrGrenzen();
+    Object.assign(o, { aLat: gz.aLat, aAcc: gz.aAcc, aBrk: gz.aBrk, vMax: gz.vMax });
+    const luuke = buildLine(pts, nrm, Object.assign({}, o, { model: 'luuke' })).alpha;
+    const r = simFahren(luuke, pts, nrm, o);
+    if (!r.ok) f.push('Luuke-Linie faehrt keine drei Runden: ' + r.grund);
+    else {
+      if (r.runden.length !== 3) f.push(r.runden.length + ' Runden statt 3');
+      if (Math.abs(r.runden[1] - r.runden[2]) > 0.3) f.push('Runde 2 und 3 weichen ab: ' + r.runden.join('/'));
+      if (!(r.runden[0] > r.runden[1])) f.push('Runde 1 (stehender Start) nicht langsamer: ' + r.runden.join('/'));
+    }
+    const lim = TRACK_HALF_W - 3;
+    const zick = pts.map((_, i) => (i % 2 ? lim : -lim));
+    const rz = simFahren(zick, pts, nrm, o);
+    if (rz.ok) f.push('Zickzack-Linie trotz Querrate angenommen (lim ' + lim.toFixed(2) + ', n ' + pts.length + ', ' + JSON.stringify(rz).slice(0, 120) + ')');
+    const b = simBeule(luuke, lim);
+    if (b.some((x) => Math.abs(x) > lim + 1e-9)) f.push('Beule verlaesst die Bahn');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Luuke ' + (r.runden || []).join(' / ') + ' s, Zickzack verworfen' };
+  });
+
   // ---- v1.0: Studie (98f-studie.js) ----
   stAdd('Studie: NARQ-Facetten nach Back et al. (2013), Median der Reaktionszeiten', () => {
     const f = [];

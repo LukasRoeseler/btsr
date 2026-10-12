@@ -1650,7 +1650,7 @@
   // 'dreistufig' ist KEINE Optimierung und steht deshalb am Ende: die drei davor suchen
   // ein Optimum, dieses folgt einer Vorschrift. Die Begruendung steht bei dreiStufenLine().
   const LINE_MODELLE = ['curvature', 'laptime', 'lateapex', 'dreistufig', 'mitte', 'innen3',
-                        'aussenin', 'luuke'];
+                        'aussenin', 'luuke', 'simulator'];
 
   function setLineModel(m) {
     if (LINE_MODELLE.indexOf(m) < 0) return;
@@ -2294,6 +2294,8 @@
       : m === 'innen3' ? innenGemitteltLine(pts, nrm, o)
       : m === 'aussenin' ? aussenInnenLine(pts, nrm, o)
       : m === 'luuke' ? luukeLinie(pts, nrm, o)
+      // v1.0.14: gefahren statt gerechnet (61-simlinie.js); bis die Suche fertig ist, die Luuke-Linie.
+      : m === 'simulator' ? simulatorLinie(pts, nrm, o)
       : formLine(pts, nrm, o, 'zeit', 0.15, 0.85);
     line.model = m;
     line.grenzen = g;
