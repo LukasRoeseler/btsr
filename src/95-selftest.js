@@ -11361,7 +11361,9 @@
     const k = chKalibrierFaktor();
     if (Math.abs(chGeoGold(def) * k - 16000) > 1) f.push('Faktor trifft Balkonia nicht (' + Math.round(chGeoGold(def) * k) + ')');
     const imo = chDef('wa01-imolina');
-    if (chSterneSchwellen(imo).gold !== Math.round(chGeoGold(imo) * k)) f.push('Imolina nicht mit demselben Faktor');
+    // v0.10.6: die anderen Strecken folgen der Gold-Geraden (zwei Bezugspunkte, siehe
+    // chGoldFormel), nicht mehr dem reinen Faktor.
+    if (chSterneSchwellen(imo).gold !== Math.round(chGoldFormel(chGeoGold(imo)))) f.push('Imolina nicht nach der Gold-Formel');
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Faktor ' + k.toFixed(3) + ', Imolina Gold ' + chSterneSchwellen(imo).gold + ' ms' };
   });
 
@@ -17966,6 +17968,50 @@
       if (raceLimitReached()) f.push('10 min Limit nach 5 min schon erreicht');
     } finally { raceMode = merk.m; raceLimit = merk.l; raceState = merk.s; raceStartedAt = merk.st; }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : '0 = ohne Ende, sonst nach Minuten' };
+  });
+
+  // ---- v0.10.6: Gold-Formel und Bestzeit-Modus ----
+  stAdd('Gold-Formel: Balkonia 16 s und Omega Testing Track 2 7,2 s, laengere Strecken langsamer', () => {
+    const f = [];
+    const balk = CH_ALLE.find((d) => d.id === 'dauer-balkonia');
+    const g1 = chSterneSchwellen({ id: 'x', code: balk.code }).gold;
+    const g2 = chSterneSchwellen({ id: 'x', code: 'SGR4LGHG' }).gold;
+    if (Math.abs(g1 - 16000) > 5) f.push('Balkonia ' + g1);
+    if (Math.abs(g2 - 7200) > 5) f.push('Track 2 ' + g2);
+    let ab = 0;
+    const liste = CH_ALLE.map((d) => ({ g: chGeoGold(d), gold: chSterneSchwellen(Object.assign({}, d, { id: 'x' })).gold }))
+      .sort((a, b) => a.g - b.g);
+    for (let i = 1; i < liste.length; i++) if (liste[i].gold + 1 < liste[i - 1].gold) ab++;
+    if (ab) f.push(ab + ' Strecken nicht monoton');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Balkonia ' + (g1 / 1000).toFixed(2) + ' s, Track 2 ' + (g2 / 1000).toFixed(2) + ' s' };
+  });
+
+  stAdd('Bestzeit-Modus: nur mit Bahn, Zeiten je Strecke (gespiegelt gleich), Medaille nach Gold-Formel', () => {
+    const f = [];
+    const merk = { m: raceMode, tm: trackMode, tiles: currentTrackTiles, ls: localStorage.getItem(BESTZEIT_STORE) };
+    try {
+      raceMode = 'bestzeit';
+      trackMode = 'off';
+      if (bestzeitBereit(false)) f.push('ohne Bahn bereit');
+      trackMode = 'on';
+      const tiles = codeToTrack('SGR4LGHG').tiles;
+      currentTrackTiles = tiles;
+      if (!bestzeitBereit(false)) f.push('mit Bahn und Strecke nicht bereit');
+      localStorage.removeItem(BESTZEIT_STORE);
+      const auto = { device: { id: 'bz-test' }, tag: 'BZ' };
+      const r1 = bestzeitRunde(9000, auto, tiles);
+      const r2 = bestzeitRunde(7000, auto, chSpiegelTiles(tiles));   // gespiegelt = dieselbe
+      if (!r1 || !r1.neu || !r2 || !r2.neu) f.push('neue Bestzeit nicht erkannt');
+      if (r2.sterne !== 3) f.push('7,0 s auf Track 2 ist kein Gold (' + r2.sterne + ')');
+      const alle = bestzeitLesen();
+      if (Object.keys(alle).length !== 1) f.push(Object.keys(alle).length + ' Eintraege statt 1 (Spiegel nicht zusammengelegt)');
+      const b = bestzeitAktuell(auto);
+      if (!b || b.beste !== 7000 || b.medaille !== 3) f.push('Bestzeit/Medaille: ' + JSON.stringify(b));
+    } finally {
+      raceMode = merk.m; trackMode = merk.tm; currentTrackTiles = merk.tiles;
+      if (merk.ls === null) localStorage.removeItem(BESTZEIT_STORE); else localStorage.setItem(BESTZEIT_STORE, merk.ls);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bahn noetig, Spiegel = gleiche Strecke, Gold bei 7,0 s' };
   });
 
   stAdd('Rundenrennen endet mit der Zielrunde, nicht eine Runde spaeter', () => {

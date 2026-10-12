@@ -4461,7 +4461,7 @@
         <button type="button" id="k-starten-start" class="k-tutorial-knopf">Starten
           <span class="k-tutorial-taste" data-i18n-skip>&#10005; / Enter</span></button>
       </div>
-      <div class="k-druecken"><span data-i18n-skip>&#10005;</span> zum Starten</div>
+      <!-- v0.10.6: "✕ zum Starten" entfernt - der Knopf "Starten" daneben sagt dasselbe (BESTELLT). -->
       <!-- BESTELLT: "auf der Titelseite zur .apk verlinken, falls die App nicht darueber
            geoeffnet ist, mit direktem Download der neuesten APK". Sichtbar nur im Browser und
            nicht auf iPhone/iPad (97b-app.js). Die Adresse zeigt auf die feste Datei OmegaSim.apk
@@ -4485,7 +4485,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.10.5</span></span>
+        <span class="foot-ver">v<span id="app-version">0.10.6</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5613,6 +5613,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Neuer Modus &#8222;Bestzeit&#8220; (experimentell): Bestzeit auf deiner eigenen Strecke mit Medaillen nach der Gold-Formel. Geht nur auf der Bahn mit eingescannter Strecke (sonst ein Hinweis wie bei NPC Knockout), es fahren nur gesteuerte Autos, Ghosts bleiben stehen. Zeiten und Medaillen werden je Strecke gespeichert (gespiegelt z&#228;hlt als dieselbe): Wer die Strecke wieder aufbaut, hat seine alten Zeiten. Die FAHREN-Kachel zeigt die Bestzeit, die Statistik z&#228;hlt die Medaillen mit. Gold-Formel neu kalibriert: Balkonia 16 s und Omega Testing Track 2 7,2 s, alle anderen Strecken dazwischen und dar&#252;ber.</li>
         <li>Fahrgef&#252;hl und Men&#252;s: Neue Abstimmung Sim+ (wie Pro mit direkterer Lenkung, mehr Beschleunigung und viel st&#228;rkerer Bremse). Im FAHREN-Men&#252; und am Cockpit-Knopf stehen nur noch Arcade, Sim+, Pro und Pacejka; GT3, F1 und Realismus GT3 bleiben in den Optionen. Arcade lenkt st&#228;rker und erreicht jetzt den vollen Einschlag, GT3 und F1 behalten ihn auch mit kalten Reifen (der Lenkregler reicht bis 400 %). Drift-Modus entfernt; &#8222;Aus&#8220; hei&#223;t jetzt RC: Gas l&#228;uft in 2 s aus, die Bremse greift sofort, ein zweiter Bremsdruck im Stand f&#228;hrt r&#252;ckw&#228;rts. Gelbe Flagge: alle Autos etwa 35 %, auch im Ausdruck-Modus. Reifenmischungen unterscheiden sich st&#228;rker (weich 120 % Griff und schneller Verschlei&#223;, hart 85 % und langlebig). Bremsquietschen leiser. Garage: Rollenpfeile immer an derselben Stelle, Akkustand je Auto, Fahrgef&#252;hl je gesteuertem Auto w&#228;hlbar, neues Garagenbild. Startaufstellung: Abbrechen, Automatisch aufstellen und Start mit dem Steuerkreuz w&#228;hlbar, X best&#228;tigt. Titelschirm mit &#8222;Starten&#8220;. Unten links im FAHREN-Men&#252; die Kachel Meisterschaft (kommt bald). &#8222;Freies Training&#8220; hei&#223;t &#8222;Training&#8220; und hat ein Zeitlimit (0 = ohne Ende). &#8222;Controller tauschen&#8220; entfernt.</li>
         <li>App-Latenz (neue APK n&#246;tig, &#228;ltere fahren wie bisher): Befehle an die Autos gehen in der App jetzt direkt an den Bluetooth-Schreibthread, ohne den Umweg &#252;ber den Android-Hauptthread, &#252;ber den auch alle Meldungen der Autos laufen. Das Gamepad wird bei einem Controller direkt aus der App gelesen (Sticks und Trigger), Android b&#252;ndelt die Stick-Ereignisse nicht mehr im Bildtakt, und der Ton l&#228;uft mit kleinem Puffer. Die Verbindungspriorit&#228;t wird nicht mehr alle 10 s neu ausgehandelt (kleine H&#228;nger). &#8222;Funk-Rundlauf&#8220; zeigt jetzt die echten Werte: Br&#252;ckenzeit, Takt des Steuerherzschlags, Gamepad direkt, Tonverz&#246;gerung; der alte Wert ist in der App als &#8222;nur JS&#8220; gekennzeichnet.</li>
         <li>Fehler behoben (Pr&#252;fung der &#196;nderungen seit 0.9.56): Ghosts, die die Bahn verlassen, halten wieder an (Gerade 0,9 s, Kurve 1,2 s, Haarnadel 1,8 s, sofort wenn sie auf dem Teppich weiterz&#228;hlen). Nah nebeneinander bekommen zwei Ghosts immer gegens&#228;tzliche Seiten und behalten ihre Reihenfolge von links nach rechts, statt sich anzuschieben. Ghost-Motorsound spielt auch ohne Sample des eigenen Autos, und die Garage zeigt, ob er wirklich an ist. Automatisch aufstellen h&#228;lt erst nach dem Startteil am richtigen Platz und geht erst kurz davor ganz an den Rand. Ein Auto, das Ghost war, lenkt als gesteuertes Auto nicht mehr selbst. Das Boxen-Minispiel kommt wieder, wenn kein zweiter Spieler f&#228;hrt. Fliegender Start: Einf&#252;hrungsrunde mit Kurvendrosselung, Ende beim zweiten &#220;berfahren des ersten Autos. Akku: Wert gegl&#228;ttet, leer schon bei h&#246;herem Rohwert, Warnblinken nur noch mit den Lichtern (vorher kurz ohne Gas und Lenkung). Statistik: gespeicherte Strecken werden gez&#228;hlt, jedes Auto erscheint mit eigenen Kilometern, Spieler 2/3 z&#228;hlen mit, Kilometer nur mit verbundenem Auto, &#8222;Beste Runde&#8220; entfernt. 2/3-Spieler-Schirm: letzte und beste Runde gro&#223;, alle Kn&#246;pfe sichtbar.</li>
@@ -8594,6 +8595,11 @@
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="9" cy="9" r="3"/><circle cx="15" cy="15" r="3"/><path d="M9 12v9M15 12V3"/>
           </svg><b>Demolition Derby</b><span class="wip-tag">experimentell</span></button>
+        <button type="button" class="mode-tile kachelbild bestzeit" data-mode="bestzeit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="14" r="5"/><path d="M9 3l3 6 3-6M12 12v4"/>
+          </svg><b>Bestzeit</b><span class="wip-tag">experimentell</span></button>
       </div>
       <select id="race-mode" hidden style="display:none">
         <option value="practice" selected>Training</option>
@@ -8602,6 +8608,7 @@
         <option value="laps">Runden</option>
         <option value="knockout">NPC Knockout</option>
         <option value="derby">Demolition Derby</option>
+        <option value="bestzeit">Bestzeit</option>
       </select></div>
       <p class="muted" id="race-mode-hint" style="font-size:11.5px; margin:8px 0 0 0"></p>
 
@@ -8609,7 +8616,7 @@
            Beschriftung links, Bedienelement rechts. Vorher standen acht Einstellungen in
            zwei waagerechten Reihen, und auf dem Telefon brachen sie unvorhersehbar um. -->
       <div class="opt-row"><div class="opt-label"><span id="race-limit-label">Minuten</span>
-          <small>Bei freiem Training ohne Bedeutung.</small></div>
+          <small>Beim Training und bei Bestzeit: 0 hei&szlig;t ohne Ende.</small></div>
         <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="race-limit" value="0" min="0" max="120" step="1" style="width:84px"><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
       <div class="opt-row"><div class="opt-label">Sektoren
           <span class="wip-tag">experimentell</span>
@@ -12474,6 +12481,10 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "Nur gesteuerte Autos, Medaillen nach der Gold-Formel. Zeitlimit in Minuten, 0 = bis du beendest.": "Controlled cars only, medals by the gold formula. Time limit in minutes, 0 = until you stop.",
+    "Bestzeit braucht die Bahn: „Auf der Bahn“ und eine eingescannte Strecke": "Best time needs the track: “On the track” and a scanned layout",
+    "Neue Bestzeit auf dieser Strecke!": "New best time on this track!",
+    "Beim Training und bei Bestzeit: 0 heißt ohne Ende.": "In practice and best time: 0 means no end.",
     "Pacejka": "Pacejka",
     "Sim+": "Sim+",
     "Pro mit mehr Lenkung, Beschleunigung und Bremse": "Pro with more steering, acceleration and braking",
@@ -12775,7 +12786,6 @@
     "Bauart": "Layout",
     "Baue eine Strecke manuell aus Teilen zusammen, oder scanne sie live, während das Auto einmal die Runde fährt (Auto muss verbunden sein). Bekannte Teiltypen: Start/Ziel, Gerade, Rechtskurve (bestätigt aus echten Streckendaten). Linkskurve ist eine": "Build a track by hand from parts, or scan it live while the car drives one lap (a car must be connected). Known part types: start/finish, straight, right curve (confirmed from real track data). The left curve is an",
     "Bedienung mit Maus oder Finger. Das Gamepad ist hier ausgebaut: es griff vorher auf jedem Tab und auf jedes Bedienelement, und daraus kamen Fehlbedienungen. Es steuert jetzt nur noch das Auto, den Streckeneditor im Vollbild und das Boxenstopp-Menü.": "Operated with the mouse or a finger. The gamepad has been removed here: it used to act on every tab and every control, and that caused mis-operation. It now only drives the car, the track editor in fullscreen, and the pit-stop menu.",
-    "Bei freiem Training ohne Bedeutung.": "Has no meaning in free practice.",
     "Beim Boxenstopp: Reparatur an/aus": "During a pit stop: repair on/off",
     "Beim Boxenstopp: Tanken an/aus": "During a pit stop: refuelling on/off",
     "Bekannt (aus einer unabhängigen Reverse-Engineering-Runde zum selben Auto, per BLE-Sniffer ermittelt): echte Kommando-Pakete sind": "Known (from an independent reverse-engineering effort on the same car, obtained with a BLE sniffer): real command packets are",
@@ -13034,6 +13044,7 @@
     "Fehler behoben (Prüfung der Änderungen seit 0.9.56): Ghosts, die die Bahn verlassen, halten wieder an (Gerade 0,9 s, Kurve 1,2 s, Haarnadel 1,8 s, sofort wenn sie auf dem Teppich weiterzählen). Nah nebeneinander bekommen zwei Ghosts immer gegensätzliche Seiten und behalten ihre Reihenfolge von links nach rechts, statt sich anzuschieben. Ghost-Motorsound spielt auch ohne Sample des eigenen Autos, und die Garage zeigt, ob er wirklich an ist. Automatisch aufstellen hält erst nach dem Startteil am richtigen Platz und geht erst kurz davor ganz an den Rand. Ein Auto, das Ghost war, lenkt als gesteuertes Auto nicht mehr selbst. Das Boxen-Minispiel kommt wieder, wenn kein zweiter Spieler fährt. Fliegender Start: Einführungsrunde mit Kurvendrosselung, Ende beim zweiten Überfahren des ersten Autos. Akku: Wert geglättet, leer schon bei höherem Rohwert, Warnblinken nur noch mit den Lichtern (vorher kurz ohne Gas und Lenkung). Statistik: gespeicherte Strecken werden gezählt, jedes Auto erscheint mit eigenen Kilometern, Spieler 2/3 zählen mit, Kilometer nur mit verbundenem Auto, „Beste Runde“ entfernt. 2/3-Spieler-Schirm: letzte und beste Runde groß, alle Knöpfe sichtbar.": "Bugs fixed (review of the changes since 0.9.56): ghosts that leave the track stop again (straight 0.9 s, curve 1.2 s, hairpin 1.8 s, immediately if they keep counting on the carpet). Two ghosts close together always get opposite sides and keep their left-to-right order instead of pushing each other. Ghost engine sound plays even without your own car's sample, and the garage shows whether it is really on. Auto grid positioning stops at the right place only after passing the start piece and moves to the edge only shortly before. A car that was a ghost no longer steers by itself when controlled. The pit minigame is back when no second player is driving. Flying start: formation lap with corner slowdown, ends when the first car crosses the line for the second time. Battery: value smoothed, empty at a higher raw value, warning blink only with the lights (previously briefly without throttle and steering). Statistics: saved tracks are counted, every car appears with its own distance, players 2/3 count, distance only with a connected car, “Best lap” removed. 2/3-player screen: last and best lap large, all buttons visible.",
     "App-Latenz (neue APK nötig, ältere fahren wie bisher): Befehle an die Autos gehen in der App jetzt direkt an den Bluetooth-Schreibthread, ohne den Umweg über den Android-Hauptthread, über den auch alle Meldungen der Autos laufen. Das Gamepad wird bei einem Controller direkt aus der App gelesen (Sticks und Trigger), Android bündelt die Stick-Ereignisse nicht mehr im Bildtakt, und der Ton läuft mit kleinem Puffer. Die Verbindungspriorität wird nicht mehr alle 10 s neu ausgehandelt (kleine Hänger). „Funk-Rundlauf“ zeigt jetzt die echten Werte: Brückenzeit, Takt des Steuerherzschlags, Gamepad direkt, Tonverzögerung; der alte Wert ist in der App als „nur JS“ gekennzeichnet.": "App latency (new APK needed, older ones work as before): commands to the cars now go straight to the Bluetooth write thread instead of detouring through Android's main thread, which also carries every message from the cars. With one controller the gamepad is read directly by the app (sticks and triggers), Android no longer batches stick events per frame, and sound runs with a small buffer. The connection priority is no longer renegotiated every 10 s (small hitches). “Radio round trip” now shows real values: bridge time, control heartbeat timing, direct gamepad, sound delay; the old value is marked “JS only” in the app.",
     "Fahrgefühl und Menüs: Neue Abstimmung Sim+ (wie Pro mit direkterer Lenkung, mehr Beschleunigung und viel stärkerer Bremse). Im FAHREN-Menü und am Cockpit-Knopf stehen nur noch Arcade, Sim+, Pro und Pacejka; GT3, F1 und Realismus GT3 bleiben in den Optionen. Arcade lenkt stärker und erreicht jetzt den vollen Einschlag, GT3 und F1 behalten ihn auch mit kalten Reifen (der Lenkregler reicht bis 400 %). Drift-Modus entfernt; „Aus“ heißt jetzt RC: Gas läuft in 2 s aus, die Bremse greift sofort, ein zweiter Bremsdruck im Stand fährt rückwärts. Gelbe Flagge: alle Autos etwa 35 %, auch im Ausdruck-Modus. Reifenmischungen unterscheiden sich stärker (weich 120 % Griff und schneller Verschleiß, hart 85 % und langlebig). Bremsquietschen leiser. Garage: Rollenpfeile immer an derselben Stelle, Akkustand je Auto, Fahrgefühl je gesteuertem Auto wählbar, neues Garagenbild. Startaufstellung: Abbrechen, Automatisch aufstellen und Start mit dem Steuerkreuz wählbar, X bestätigt. Titelschirm mit „Starten“. Unten links im FAHREN-Menü die Kachel Meisterschaft (kommt bald). „Freies Training“ heißt „Training“ und hat ein Zeitlimit (0 = ohne Ende). „Controller tauschen“ entfernt.": "Driving feel and menus: new setup Sim+ (like Pro with more direct steering, more acceleration and much stronger brakes). The DRIVE menu and the cockpit button now only offer Arcade, Sim+, Pro and Pacejka; GT3, F1 and Realism GT3 stay in the options. Arcade steers more and now reaches full lock, GT3 and F1 keep it even on cold tyres (the steering slider goes up to 400 %). Drift mode removed; “Off” is now RC: throttle coasts down over 2 s, the brake acts at once, a second brake press while standing drives backwards. Yellow flag: all cars about 35 %, also in print mode. Tyre compounds differ more (soft 120 % grip and fast wear, hard 85 % and long-lasting). Brake squeal quieter. Garage: role arrows always in the same place, battery level per car, driving feel selectable per controlled car, new garage picture. Grid screen: Cancel, Auto grid and Start selectable with the D-pad, X confirms. Title screen with “Start”. Bottom left of the DRIVE menu: the Championship tile (coming soon). “Free practice” is now “Practice” with a time limit (0 = no end). “Swap controllers” removed.",
+    "Neuer Modus „Bestzeit“ (experimentell): Bestzeit auf deiner eigenen Strecke mit Medaillen nach der Gold-Formel. Geht nur auf der Bahn mit eingescannter Strecke (sonst ein Hinweis wie bei NPC Knockout), es fahren nur gesteuerte Autos, Ghosts bleiben stehen. Zeiten und Medaillen werden je Strecke gespeichert (gespiegelt zählt als dieselbe): Wer die Strecke wieder aufbaut, hat seine alten Zeiten. Die FAHREN-Kachel zeigt die Bestzeit, die Statistik zählt die Medaillen mit. Gold-Formel neu kalibriert: Balkonia 16 s und Omega Testing Track 2 7,2 s, alle anderen Strecken dazwischen und darüber.": "New mode “Best time” (experimental): best lap on your own track with medals by the gold formula. Only on the track with a scanned layout (otherwise a notice like NPC Knockout), only controlled cars drive, ghosts stay put. Times and medals are stored per track (mirrored counts as the same): rebuild the track and your old times are back. The DRIVE tile shows the best time, the statistics count the medals. Gold formula recalibrated: Balkonia 16 s and Omega Testing Track 2 7.2 s, all other tracks in between and beyond.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -13538,7 +13549,7 @@
     "Bahn": "Track",
     "Frei": "Free",
     "Teile": "pieces",
-    "Bestzeit": "Best lap",
+    "Bestzeit": "Best time",
     "Abstimmung": "Setup",
     "Status": "Status",
     "Bluetooth-Auswahl öffnen": "open Bluetooth chooser",
@@ -13572,7 +13583,6 @@
     "Gegner": "Opponents",
     "Scan": "Scan",
     "Editor": "Editor",
-    "zum Starten": "to start",
     "Menü": "Menu",
     "Gas ist aus, solange das Menü offen ist – das Auto rollt aus. Ghosts fahren im Rennen weiter.": "Throttle is off while the menu is open – the car rolls out. Ghosts keep racing.",
     "Weiterfahren": "Continue",
@@ -15344,7 +15354,6 @@
     "BLE-Explorer": "Explorador BLE",
     "BLE-Explorer, Kalibrierung, Makros: die Werkbank unter der Oberfläche.": "Explorador BLE, calibración, macros: el banco de trabajo bajo la superficie.",
     "Bauart": "Disposición",
-    "Bei freiem Training ohne Bedeutung.": "Sin efecto en entrenamiento libre.",
     "Beim Boxenstopp: Reparatur an/aus": "En la parada en boxes: reparación on/off",
     "Beim Boxenstopp: Tanken an/aus": "En la parada en boxes: repostaje on/off",
     "Belegung": "Asignaciones",
@@ -15894,7 +15903,6 @@
     "Gegner": "Rivales",
     "Scan": "Escaneo",
     "Editor": "Editor",
-    "zum Starten": "para iniciar",
     "Menü": "Menú",
     "Gas ist aus, solange das Menü offen ist – das Auto rollt aus. Ghosts fahren im Rennen weiter.": "El gas está apagado mientras el menú está abierto: el coche rueda por inercia. Los fantasmas siguen corriendo.",
     "Weiterfahren": "Continuar",
@@ -25338,7 +25346,7 @@
     // Rennoptionen-Kachel wechselt mit dem Rennmodus das Bild (BESTELLT v0.8.53).
     const rmBild = { practice: 'rennoptionen-practice', endurance: 'rennoptionen-endurance',
                      qualifying: 'rennoptionen-qualifying', laps: 'rennoptionen-laps',
-                     knockout: 'knockout', derby: 'derby' }[rm.value];
+                     knockout: 'knockout', derby: 'derby', bestzeit: 'challenges' }[rm.value];
     const rb = $('fa-renn-bild');
     if (rb && rmBild && rb.dataset.bild !== rmBild) {
       rb.style.backgroundImage = 'url(img/' + rmBild + '.jpg)';
@@ -25347,7 +25355,11 @@
     const wx = $('race-wx-start');
     kZeilen($('fa-renn-info'), [
       // Freies Training laeuft ohne Ende: dort steht das Unendlich statt einer Minutenzahl.
-      rm.value === 'practice' ? [t('Dauer'), (+(($('race-limit') || {}).value) > 0 ? $('race-limit').value + ' min' : '∞')]
+      rm.value === 'bestzeit' ? [t('Bestzeit'), (() => {
+        const b = typeof bestzeitAktuell === 'function' ? bestzeitAktuell(playerCar) : null;
+        return b ? formatLapTime(b.beste) + ' ' + (typeof chSterneZeichen === 'function' ? chSterneZeichen(b.medaille) : '') : '–';
+      })()]
+      : rm.value === 'practice' ? [t('Dauer'), (+(($('race-limit') || {}).value) > 0 ? $('race-limit').value + ' min' : '∞')]
         : [($('race-limit-label') || {}).textContent || t('Dauer'), ($('race-limit') || {}).value || '–'],
       [t('Wetter'), wx && wx.selectedOptions[0] ? wx.selectedOptions[0].textContent : '–'],
       [t('Pflichtboxenstopps'), ($('race-pit-required') || {}).value || '0'],
@@ -32357,6 +32369,13 @@
     practice:   { label: 'Training', unit: 'Minuten', timed: false,
                   hint: 'Zeitlimit in Minuten, 0 = bis du beendest.' },
     endurance:  { label: 'Endurance', unit: 'Minuten', timed: true, hint: 'Meiste Runden in der Zeit.' },
+    // v0.10.6 BESTELLT: "Medaillen fuer eigene Strecken: einen siebten Modus, der nur geht,
+    // wenn ich eine Bahn habe (sonst Meldung wie bei NPC Knockout): Bestzeit fuer die
+    // eingegebene Strecke mit Medaillen nach der Gold-Formel. Die Strecke wird gespeichert,
+    // sodass man bei derselben Strecke wieder seine alten Zeiten hat. Hier fahren nur vom
+    // Spieler gesteuerte Autos, keine Ghosts - auch wenn sie verbunden sind, bleiben sie stehen."
+    bestzeit:   { label: 'Bestzeit', unit: 'Minuten', timed: false,
+                  hint: 'Nur gesteuerte Autos, Medaillen nach der Gold-Formel. Zeitlimit in Minuten, 0 = bis du beendest.' },
     qualifying: { label: 'Qualifying', unit: 'Minuten', timed: true, hint: 'Schnellste Einzelrunde zählt.' },
     laps:       { label: 'Runden', unit: 'Runden', timed: true, hint: 'Wer zuerst die Rundenzahl hat.' },
     // BESTELLT: "neuer rennmodus (experimentell): knockout." Die Wertung ist nicht zeit- oder
@@ -32437,7 +32456,7 @@
   function raceLimitReached() {
     if (raceState !== 'racing') return false;
     // Training: mit Zeitlimit (> 0) endet es nach der Zeit, mit 0 nur von Hand.
-    if (raceMode === 'practice') {
+    if (raceMode === 'practice' || raceMode === 'bestzeit') {
       return raceLimit > 0 && raceStartedAt !== null && (Date.now() - raceStartedAt) >= raceLimit * 60000;
     }
     if (!RACE_MODES[raceMode].timed) return false;
@@ -33026,6 +33045,10 @@
       const nrSp = spielerNrVon(car);
       const ms = now - r.lapStart + (nrSp >= 2 ? fruehstartZuschlag(nrSp, r.laps.length) : 0), offs = r.offLap || 0;
       r.laps.push({ lap: r.laps.length + 1, ms, off: offs });
+      // v0.10.6: Bestzeit-Modus - auch Spieler 2/3 sammeln Zeiten und Medaillen.
+      if (raceMode === 'bestzeit' && spielerNrVon(car) >= 2 && ms >= rundeMinMs()) {
+        bestzeitMeldung(bestzeitRunde(ms, car), ms, spielerNrVon(car));
+      }
       if (spielerNrVon(car) >= 2) {
         const beste2 = r.laps.every((l) => l.ms >= ms);
         const istBest2 = beste2 && r.laps.length > 1;
@@ -33942,9 +33965,71 @@
     }
     return true;
   }
+  // ---- BESTZEIT-MODUS (v0.10.6) --------------------------------------------------------
+  function bestzeitBereit(melden) {
+    if (raceMode !== 'bestzeit') return true;
+    const tiles = (typeof currentTrackTiles !== 'undefined' && currentTrackTiles) || [];
+    if (trackMode !== 'on' || tiles.length < 3) {
+      if (melden) showHudToast(t('Bestzeit braucht die Bahn: „Auf der Bahn“ und eine eingescannte Strecke'));
+      return false;
+    }
+    return true;
+  }
+  // Die Strecke als Schluessel: gespiegelt gilt als dieselbe (wie bei den Community-Strecken).
+  const BESTZEIT_STORE = 'omegasim-bestzeiten';
+  function bestzeitSchluessel(tiles) {
+    const a = trackToCode(tiles, 0);
+    let b = a;
+    try { b = trackToCode(chSpiegelTiles(tiles), 0); } catch (e) { /* ohne Spiegel */ }
+    return a < b ? a : b;
+  }
+  function bestzeitLesen() {
+    try { return JSON.parse(localStorage.getItem(BESTZEIT_STORE) || '{}') || {}; } catch (e) { return {}; }
+  }
+  function bestzeitSchreiben(d) {
+    try { localStorage.setItem(BESTZEIT_STORE, JSON.stringify(d)); } catch (e) { /* voll */ }
+  }
+  function bestzeitDef(tiles) { return { id: 'eigen', code: trackToCode(tiles, 0), runden: 1 }; }
+  // Eine gueltige Runde eines gesteuerten Autos. Rueckgabe: { sterne, neu } fuer Ton/Anzeige.
+  function bestzeitRunde(ms, car, tilesOpt) {
+    const tiles = tilesOpt || currentTrackTiles;
+    if (!tiles || tiles.length < 3 || !(ms > 0)) return null;
+    const sterne = chSterne(bestzeitDef(tiles), 'hotlap', ms);
+    const alle = bestzeitLesen();
+    const k = bestzeitSchluessel(tiles);
+    const e = alle[k] || (alle[k] = { code: trackToCode(tiles, 0), fahrer: {} });
+    const wer = car && car.device ? String(car.device.id) : 'spieler1';
+    const f = e.fahrer[wer] || (e.fahrer[wer] = { name: '', beste: null, medaille: 0, runden: 0 });
+    f.name = car ? garageLabel(car) : t('Spieler 1');
+    f.runden += 1;
+    const neu = f.beste === null || ms < f.beste;
+    if (neu) { f.beste = Math.round(ms); f.datum = Date.now(); }
+    if (sterne > f.medaille) f.medaille = sterne;
+    bestzeitSchreiben(alle);
+    return { sterne, neu };
+  }
+  // Fuer die FAHREN-Kachel und das Ergebnis: die Bestzeit auf der aktuellen Strecke.
+  function bestzeitAktuell(car) {
+    const tiles = currentTrackTiles;
+    if (!tiles || tiles.length < 3) return null;
+    const e = bestzeitLesen()[bestzeitSchluessel(tiles)];
+    if (!e) return null;
+    const wer = car && car.device ? String(car.device.id) : null;
+    const liste = Object.entries(e.fahrer).filter(([id]) => !wer || id === wer).map(([, f]) => f)
+      .filter((f) => f.beste);
+    if (!liste.length) return null;
+    return liste.reduce((a, b) => (a.beste <= b.beste ? a : b));
+  }
+  function bestzeitMeldung(r, ms, nr) {
+    if (!r) return;
+    const name = typeof chSterneName === 'function' ? chSterneName(r.sterne) : '';
+    showHudToast((nr >= 2 ? 'P' + nr + ': ' : '') + (r.neu ? t('Neue Bestzeit auf dieser Strecke!') + ' ' : '')
+      + formatLapTime(ms) + (name ? ' · ' + name : ''));
+  }
   function startRaceCountdown(gruenZiel, mpPlan) {
     if (raceState !== 'idle' && raceState !== 'finished') return; // ignore while armed/racing
     if (!knockoutBereit(true)) return;
+    if (!bestzeitBereit(true)) return;
     // EINSCHALTRAMPE: der Schirm zieht in 300 ms von schwarz auf Wert hoch, wie ein TFT beim
     // Einschalten. Hier und nicht in raceGreen(), weil der Schirm mit dem Knopfdruck
     // "angeht" und nicht erst bei Gruen - im Countdown will man ihn schon lesen.
@@ -34354,8 +34439,9 @@
     // a control that vanishes makes people wonder whether they broke something.
     // DERBY (v0.8.126): das Limit ist das KILLS-ZIEL und wird deshalb aktiviert - sonst
     // koennte man es nicht auf 1 setzen. Die Voreinstellung setzt der Moduswechsel unten.
-    $('race-limit').disabled = !m.timed && raceMode !== 'derby' && raceMode !== 'practice';
-    $('race-limit').min = raceMode === 'practice' ? '0' : '1';
+    const ohneEnde = raceMode === 'practice' || raceMode === 'bestzeit';
+    $('race-limit').disabled = !m.timed && raceMode !== 'derby' && !ohneEnde;
+    $('race-limit').min = ohneEnde ? '0' : '1';
     // 0.7, not 0.45. On white 0.45 was a legible grey; on black it collapsed to 2.7:1,
     // and this label still has to be readable while it says which unit is NOT in use.
     $('race-limit-label').style.opacity = (m.timed || raceMode === 'derby') ? '' : '0.7';
@@ -34397,14 +34483,16 @@
     raceMode = e.target.value;
     // Sensible default per mode rather than carrying a minute count over into a lap count.
     // DERBY (v0.8.126): das Limit ist das KILLS-ZIEL, Voreinstellung 1.
-    raceLimit = raceMode === 'laps' ? 10 : (raceMode === 'derby' ? 1 : (raceMode === 'practice' ? 0 : 2));
+    raceLimit = raceMode === 'laps' ? 10 : (raceMode === 'derby' ? 1
+      : ((raceMode === 'practice' || raceMode === 'bestzeit') ? 0 : 2));
     $('race-limit').value = raceLimit;
     applyRaceModeUi();
     if (raceMode === 'knockout') knockoutBereit(true);
+    if (raceMode === 'bestzeit') bestzeitBereit(true);
   });
   $('race-limit').addEventListener('input', (e) => {
     const v = parseInt(e.target.value, 10);
-    if (Number.isFinite(v) && (v >= 1 || (v === 0 && raceMode === 'practice'))) raceLimit = v;
+    if (Number.isFinite(v) && (v >= 1 || (v === 0 && (raceMode === 'practice' || raceMode === 'bestzeit')))) raceLimit = v;
   });
 
   $('race-wx-start').addEventListener('change', (e) => {
@@ -35339,6 +35427,9 @@
       // Die Ansage NEBEN dem Ton und nicht statt ihm: der Ton kommt sofort, die Stimme
       // braucht eine Sekunde. Wer sie abschaltet, hoert weiter, dass eine Runde voll ist.
       if (!challengeUngueltig) speakLap(rundeMs, istBest);
+      if (raceMode === 'bestzeit' && !challengeUngueltig && rundeMs >= minMs) {
+        bestzeitMeldung(bestzeitRunde(rundeMs, playerCar), rundeMs, 1);
+      }
       // v0.9.41 GEMELDET: "Das Multiplayer Renn-Ende wird nicht getriggert ... 5-Runden-Rennen."
       // Die Zielrunde schaltete nur auf 'finishing' (raceClockTick), beendet wurde erst bei der
       // NAECHSTEN Ueberfahrt - ein 5-Runden-Rennen ging also ueber 6 Runden. Wer die Zielzahl
@@ -38416,7 +38507,7 @@
   // erhoehen - und links/rechts kann den Schirm weiterblaettern, solange nichts angewaehlt
   // ist.
   let raceScreenLimitArmed = false;
-  const RACE_MODE_ORDER = ['practice', 'endurance', 'qualifying', 'laps', 'knockout', 'derby'];
+  const RACE_MODE_ORDER = ['practice', 'endurance', 'qualifying', 'laps', 'knockout', 'derby', 'bestzeit'];
 
   // NUR WENN DAS COCKPIT AUCH ZU SEHEN IST. cockpitScreen bleibt beim Tabwechsel stehen -
   // ohne diese Bedingung schluckte der Schirm auf JEDEM Tab die Pfeiltasten, und Fahren
@@ -39715,8 +39806,31 @@
       const gold = Math.round(fest * 1000);
       return { silber: Math.round(gold * CH_STERNE_SILBER_FAKTOR), gold };
     }
-    const gold = chGeoGold(def) * chKalibrierFaktor();
+    const gold = chGoldFormel(chGeoGold(def));
     return { silber: Math.round(gold * CH_STERNE_SILBER_FAKTOR), gold: Math.round(gold) };
+  }
+  // ---- GOLD = FESTER ANTEIL + FAKTOR x GEOMETRIE (v0.10.6) ---------------------------
+  // BESTELLT: "Bestzeiten nochmal kalibrieren. Fuer Omega Testing Track 2 ist es schwierig,
+  // unter 7 s zu kommen. Gold sollte 7,2 sein." Mit dem reinen Faktor (Balkonia 16 s) kam
+  // Track 2 auf 6,4 s - eine kurze Strecke hat einen festen Anteil (Anfahren aus der Kurve,
+  // Haarnadel), der nicht mit der Laenge schrumpft. Zwei Bezugspunkte legen eine Gerade fest:
+  // Balkonia 16 s, Track 2 (SGR4LGHG) 7,2 s. Beide werden genau getroffen.
+  const CH_GOLD_PUNKTE = [{ id: 'dauer-balkonia', s: 16 }, { code: 'SGR4LGHG', s: 7.2 }];
+  let chGoldGerade = null;
+  function chGoldFormel(geoMs) {
+    if (chGoldGerade === null) {
+      const p = CH_GOLD_PUNKTE.map((x) => {
+        const def = x.id ? CH_ALLE.find((d) => d.id === x.id) : { code: x.code };
+        return { g: def ? chGeoGold(def) : 0, s: x.s * 1000 };
+      }).filter((x) => x.g > 0);
+      if (p.length >= 2 && p[1].g !== p[0].g) {
+        const f = (p[1].s - p[0].s) / (p[1].g - p[0].g);
+        chGoldGerade = { f, c: p[0].s - f * p[0].g };
+      } else {
+        chGoldGerade = { f: chKalibrierFaktor(), c: 0 };
+      }
+    }
+    return chGoldGerade.c + chGoldGerade.f * geoMs;
   }
   // Die reine Geometrie-Zeit einer Runde (ms): Geraden bei Vollgas, Kurven langsamer.
   function chGeoGold(def) {
@@ -53020,6 +53134,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
 
   // Ghosts launch on green, not before.
   function launchGhosts() {
+    // v0.10.6: im Bestzeit-Modus fahren nur gesteuerte Autos - die Ghosts bleiben stehen.
+    if (typeof raceMode !== 'undefined' && raceMode === 'bestzeit') {
+      log('Bestzeit-Modus: Ghosts bleiben stehen.', 'info');
+      return;
+    }
     // Die Seiten des Zieleinlaufs von vorn. Bisher geschah das nur beim Rennstart - wer
     // zweimal "Ghosts losfahren" und "anhalten" drueckt, lief den Zaehler hoch, und ab dem
     // fuenften Einlauf steht die Rollzeit auf ihrem Boden. Dann staffelt nichts mehr.
@@ -75906,7 +76025,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const k = chKalibrierFaktor();
     if (Math.abs(chGeoGold(def) * k - 16000) > 1) f.push('Faktor trifft Balkonia nicht (' + Math.round(chGeoGold(def) * k) + ')');
     const imo = chDef('wa01-imolina');
-    if (chSterneSchwellen(imo).gold !== Math.round(chGeoGold(imo) * k)) f.push('Imolina nicht mit demselben Faktor');
+    // v0.10.6: die anderen Strecken folgen der Gold-Geraden (zwei Bezugspunkte, siehe
+    // chGoldFormel), nicht mehr dem reinen Faktor.
+    if (chSterneSchwellen(imo).gold !== Math.round(chGoldFormel(chGeoGold(imo)))) f.push('Imolina nicht nach der Gold-Formel');
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Faktor ' + k.toFixed(3) + ', Imolina Gold ' + chSterneSchwellen(imo).gold + ' ms' };
   });
 
@@ -82513,6 +82634,50 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join(' | ') : '0 = ohne Ende, sonst nach Minuten' };
   });
 
+  // ---- v0.10.6: Gold-Formel und Bestzeit-Modus ----
+  stAdd('Gold-Formel: Balkonia 16 s und Omega Testing Track 2 7,2 s, laengere Strecken langsamer', () => {
+    const f = [];
+    const balk = CH_ALLE.find((d) => d.id === 'dauer-balkonia');
+    const g1 = chSterneSchwellen({ id: 'x', code: balk.code }).gold;
+    const g2 = chSterneSchwellen({ id: 'x', code: 'SGR4LGHG' }).gold;
+    if (Math.abs(g1 - 16000) > 5) f.push('Balkonia ' + g1);
+    if (Math.abs(g2 - 7200) > 5) f.push('Track 2 ' + g2);
+    let ab = 0;
+    const liste = CH_ALLE.map((d) => ({ g: chGeoGold(d), gold: chSterneSchwellen(Object.assign({}, d, { id: 'x' })).gold }))
+      .sort((a, b) => a.g - b.g);
+    for (let i = 1; i < liste.length; i++) if (liste[i].gold + 1 < liste[i - 1].gold) ab++;
+    if (ab) f.push(ab + ' Strecken nicht monoton');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Balkonia ' + (g1 / 1000).toFixed(2) + ' s, Track 2 ' + (g2 / 1000).toFixed(2) + ' s' };
+  });
+
+  stAdd('Bestzeit-Modus: nur mit Bahn, Zeiten je Strecke (gespiegelt gleich), Medaille nach Gold-Formel', () => {
+    const f = [];
+    const merk = { m: raceMode, tm: trackMode, tiles: currentTrackTiles, ls: localStorage.getItem(BESTZEIT_STORE) };
+    try {
+      raceMode = 'bestzeit';
+      trackMode = 'off';
+      if (bestzeitBereit(false)) f.push('ohne Bahn bereit');
+      trackMode = 'on';
+      const tiles = codeToTrack('SGR4LGHG').tiles;
+      currentTrackTiles = tiles;
+      if (!bestzeitBereit(false)) f.push('mit Bahn und Strecke nicht bereit');
+      localStorage.removeItem(BESTZEIT_STORE);
+      const auto = { device: { id: 'bz-test' }, tag: 'BZ' };
+      const r1 = bestzeitRunde(9000, auto, tiles);
+      const r2 = bestzeitRunde(7000, auto, chSpiegelTiles(tiles));   // gespiegelt = dieselbe
+      if (!r1 || !r1.neu || !r2 || !r2.neu) f.push('neue Bestzeit nicht erkannt');
+      if (r2.sterne !== 3) f.push('7,0 s auf Track 2 ist kein Gold (' + r2.sterne + ')');
+      const alle = bestzeitLesen();
+      if (Object.keys(alle).length !== 1) f.push(Object.keys(alle).length + ' Eintraege statt 1 (Spiegel nicht zusammengelegt)');
+      const b = bestzeitAktuell(auto);
+      if (!b || b.beste !== 7000 || b.medaille !== 3) f.push('Bestzeit/Medaille: ' + JSON.stringify(b));
+    } finally {
+      raceMode = merk.m; trackMode = merk.tm; currentTrackTiles = merk.tiles;
+      if (merk.ls === null) localStorage.removeItem(BESTZEIT_STORE); else localStorage.setItem(BESTZEIT_STORE, merk.ls);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bahn noetig, Spiegel = gleiche Strecke, Gold bei 7,0 s' };
+  });
+
   stAdd('Rundenrennen endet mit der Zielrunde, nicht eine Runde spaeter', () => {
     const f = [];
     const merk = { rs: raceState, rm: raceMode, lim: raceLimit, laps: raceLapTimes.slice(), ls: raceLapStart,
@@ -86547,6 +86712,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         if (n >= 1 && n <= 3) d.medaillen[n] += 1;
       }
     } catch (e) { /* ohne Challenge-Daten keine Medaillen */ }
+    // v0.10.6: die Medaillen aus dem Bestzeit-Modus (je Strecke und Fahrer die beste).
+    try {
+      const bz = bestzeitLesen();
+      for (const k of Object.keys(bz)) {
+        for (const f of Object.values(bz[k].fahrer || {})) {
+          if (f.medaille >= 1 && f.medaille <= 3) d.medaillen[f.medaille] += 1;
+        }
+      }
+    } catch (e) { /* ohne Bestzeiten */ }
     try {
       // v0.9.87: die Ablage ist ein OBJEKT (Name -> Strecke), kein Feld - gezaehlt wurde
       // deshalb immer 0 ("gespeicherte Strecken gehen nicht").

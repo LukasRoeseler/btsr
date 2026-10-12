@@ -4461,7 +4461,7 @@
         <button type="button" id="k-starten-start" class="k-tutorial-knopf">Starten
           <span class="k-tutorial-taste" data-i18n-skip>&#10005; / Enter</span></button>
       </div>
-      <div class="k-druecken"><span data-i18n-skip>&#10005;</span> zum Starten</div>
+      <!-- v0.10.6: "✕ zum Starten" entfernt - der Knopf "Starten" daneben sagt dasselbe (BESTELLT). -->
       <!-- BESTELLT: "auf der Titelseite zur .apk verlinken, falls die App nicht darueber
            geoeffnet ist, mit direktem Download der neuesten APK". Sichtbar nur im Browser und
            nicht auf iPhone/iPad (97b-app.js). Die Adresse zeigt auf die feste Datei OmegaSim.apk
@@ -4485,7 +4485,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.10.5</span></span>
+        <span class="foot-ver">v<span id="app-version">0.10.6</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5613,6 +5613,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Neuer Modus &#8222;Bestzeit&#8220; (experimentell): Bestzeit auf deiner eigenen Strecke mit Medaillen nach der Gold-Formel. Geht nur auf der Bahn mit eingescannter Strecke (sonst ein Hinweis wie bei NPC Knockout), es fahren nur gesteuerte Autos, Ghosts bleiben stehen. Zeiten und Medaillen werden je Strecke gespeichert (gespiegelt z&#228;hlt als dieselbe): Wer die Strecke wieder aufbaut, hat seine alten Zeiten. Die FAHREN-Kachel zeigt die Bestzeit, die Statistik z&#228;hlt die Medaillen mit. Gold-Formel neu kalibriert: Balkonia 16 s und Omega Testing Track 2 7,2 s, alle anderen Strecken dazwischen und dar&#252;ber.</li>
         <li>Fahrgef&#252;hl und Men&#252;s: Neue Abstimmung Sim+ (wie Pro mit direkterer Lenkung, mehr Beschleunigung und viel st&#228;rkerer Bremse). Im FAHREN-Men&#252; und am Cockpit-Knopf stehen nur noch Arcade, Sim+, Pro und Pacejka; GT3, F1 und Realismus GT3 bleiben in den Optionen. Arcade lenkt st&#228;rker und erreicht jetzt den vollen Einschlag, GT3 und F1 behalten ihn auch mit kalten Reifen (der Lenkregler reicht bis 400 %). Drift-Modus entfernt; &#8222;Aus&#8220; hei&#223;t jetzt RC: Gas l&#228;uft in 2 s aus, die Bremse greift sofort, ein zweiter Bremsdruck im Stand f&#228;hrt r&#252;ckw&#228;rts. Gelbe Flagge: alle Autos etwa 35 %, auch im Ausdruck-Modus. Reifenmischungen unterscheiden sich st&#228;rker (weich 120 % Griff und schneller Verschlei&#223;, hart 85 % und langlebig). Bremsquietschen leiser. Garage: Rollenpfeile immer an derselben Stelle, Akkustand je Auto, Fahrgef&#252;hl je gesteuertem Auto w&#228;hlbar, neues Garagenbild. Startaufstellung: Abbrechen, Automatisch aufstellen und Start mit dem Steuerkreuz w&#228;hlbar, X best&#228;tigt. Titelschirm mit &#8222;Starten&#8220;. Unten links im FAHREN-Men&#252; die Kachel Meisterschaft (kommt bald). &#8222;Freies Training&#8220; hei&#223;t &#8222;Training&#8220; und hat ein Zeitlimit (0 = ohne Ende). &#8222;Controller tauschen&#8220; entfernt.</li>
         <li>App-Latenz (neue APK n&#246;tig, &#228;ltere fahren wie bisher): Befehle an die Autos gehen in der App jetzt direkt an den Bluetooth-Schreibthread, ohne den Umweg &#252;ber den Android-Hauptthread, &#252;ber den auch alle Meldungen der Autos laufen. Das Gamepad wird bei einem Controller direkt aus der App gelesen (Sticks und Trigger), Android b&#252;ndelt die Stick-Ereignisse nicht mehr im Bildtakt, und der Ton l&#228;uft mit kleinem Puffer. Die Verbindungspriorit&#228;t wird nicht mehr alle 10 s neu ausgehandelt (kleine H&#228;nger). &#8222;Funk-Rundlauf&#8220; zeigt jetzt die echten Werte: Br&#252;ckenzeit, Takt des Steuerherzschlags, Gamepad direkt, Tonverz&#246;gerung; der alte Wert ist in der App als &#8222;nur JS&#8220; gekennzeichnet.</li>
         <li>Fehler behoben (Pr&#252;fung der &#196;nderungen seit 0.9.56): Ghosts, die die Bahn verlassen, halten wieder an (Gerade 0,9 s, Kurve 1,2 s, Haarnadel 1,8 s, sofort wenn sie auf dem Teppich weiterz&#228;hlen). Nah nebeneinander bekommen zwei Ghosts immer gegens&#228;tzliche Seiten und behalten ihre Reihenfolge von links nach rechts, statt sich anzuschieben. Ghost-Motorsound spielt auch ohne Sample des eigenen Autos, und die Garage zeigt, ob er wirklich an ist. Automatisch aufstellen h&#228;lt erst nach dem Startteil am richtigen Platz und geht erst kurz davor ganz an den Rand. Ein Auto, das Ghost war, lenkt als gesteuertes Auto nicht mehr selbst. Das Boxen-Minispiel kommt wieder, wenn kein zweiter Spieler f&#228;hrt. Fliegender Start: Einf&#252;hrungsrunde mit Kurvendrosselung, Ende beim zweiten &#220;berfahren des ersten Autos. Akku: Wert gegl&#228;ttet, leer schon bei h&#246;herem Rohwert, Warnblinken nur noch mit den Lichtern (vorher kurz ohne Gas und Lenkung). Statistik: gespeicherte Strecken werden gez&#228;hlt, jedes Auto erscheint mit eigenen Kilometern, Spieler 2/3 z&#228;hlen mit, Kilometer nur mit verbundenem Auto, &#8222;Beste Runde&#8220; entfernt. 2/3-Spieler-Schirm: letzte und beste Runde gro&#223;, alle Kn&#246;pfe sichtbar.</li>
@@ -8594,6 +8595,11 @@
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="9" cy="9" r="3"/><circle cx="15" cy="15" r="3"/><path d="M9 12v9M15 12V3"/>
           </svg><b>Demolition Derby</b><span class="wip-tag">experimentell</span></button>
+        <button type="button" class="mode-tile kachelbild bestzeit" data-mode="bestzeit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="14" r="5"/><path d="M9 3l3 6 3-6M12 12v4"/>
+          </svg><b>Bestzeit</b><span class="wip-tag">experimentell</span></button>
       </div>
       <select id="race-mode" hidden style="display:none">
         <option value="practice" selected>Training</option>
@@ -8602,6 +8608,7 @@
         <option value="laps">Runden</option>
         <option value="knockout">NPC Knockout</option>
         <option value="derby">Demolition Derby</option>
+        <option value="bestzeit">Bestzeit</option>
       </select></div>
       <p class="muted" id="race-mode-hint" style="font-size:11.5px; margin:8px 0 0 0"></p>
 
@@ -8609,7 +8616,7 @@
            Beschriftung links, Bedienelement rechts. Vorher standen acht Einstellungen in
            zwei waagerechten Reihen, und auf dem Telefon brachen sie unvorhersehbar um. -->
       <div class="opt-row"><div class="opt-label"><span id="race-limit-label">Minuten</span>
-          <small>Bei freiem Training ohne Bedeutung.</small></div>
+          <small>Beim Training und bei Bestzeit: 0 hei&szlig;t ohne Ende.</small></div>
         <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="race-limit" value="0" min="0" max="120" step="1" style="width:84px"><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
       <div class="opt-row"><div class="opt-label">Sektoren
           <span class="wip-tag">experimentell</span>

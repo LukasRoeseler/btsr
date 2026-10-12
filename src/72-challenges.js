@@ -369,8 +369,31 @@
       const gold = Math.round(fest * 1000);
       return { silber: Math.round(gold * CH_STERNE_SILBER_FAKTOR), gold };
     }
-    const gold = chGeoGold(def) * chKalibrierFaktor();
+    const gold = chGoldFormel(chGeoGold(def));
     return { silber: Math.round(gold * CH_STERNE_SILBER_FAKTOR), gold: Math.round(gold) };
+  }
+  // ---- GOLD = FESTER ANTEIL + FAKTOR x GEOMETRIE (v0.10.6) ---------------------------
+  // BESTELLT: "Bestzeiten nochmal kalibrieren. Fuer Omega Testing Track 2 ist es schwierig,
+  // unter 7 s zu kommen. Gold sollte 7,2 sein." Mit dem reinen Faktor (Balkonia 16 s) kam
+  // Track 2 auf 6,4 s - eine kurze Strecke hat einen festen Anteil (Anfahren aus der Kurve,
+  // Haarnadel), der nicht mit der Laenge schrumpft. Zwei Bezugspunkte legen eine Gerade fest:
+  // Balkonia 16 s, Track 2 (SGR4LGHG) 7,2 s. Beide werden genau getroffen.
+  const CH_GOLD_PUNKTE = [{ id: 'dauer-balkonia', s: 16 }, { code: 'SGR4LGHG', s: 7.2 }];
+  let chGoldGerade = null;
+  function chGoldFormel(geoMs) {
+    if (chGoldGerade === null) {
+      const p = CH_GOLD_PUNKTE.map((x) => {
+        const def = x.id ? CH_ALLE.find((d) => d.id === x.id) : { code: x.code };
+        return { g: def ? chGeoGold(def) : 0, s: x.s * 1000 };
+      }).filter((x) => x.g > 0);
+      if (p.length >= 2 && p[1].g !== p[0].g) {
+        const f = (p[1].s - p[0].s) / (p[1].g - p[0].g);
+        chGoldGerade = { f, c: p[0].s - f * p[0].g };
+      } else {
+        chGoldGerade = { f: chKalibrierFaktor(), c: 0 };
+      }
+    }
+    return chGoldGerade.c + chGoldGerade.f * geoMs;
   }
   // Die reine Geometrie-Zeit einer Runde (ms): Geraden bei Vollgas, Kurven langsamer.
   function chGeoGold(def) {

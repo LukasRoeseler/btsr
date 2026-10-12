@@ -78,6 +78,15 @@
         if (n >= 1 && n <= 3) d.medaillen[n] += 1;
       }
     } catch (e) { /* ohne Challenge-Daten keine Medaillen */ }
+    // v0.10.6: die Medaillen aus dem Bestzeit-Modus (je Strecke und Fahrer die beste).
+    try {
+      const bz = bestzeitLesen();
+      for (const k of Object.keys(bz)) {
+        for (const f of Object.values(bz[k].fahrer || {})) {
+          if (f.medaille >= 1 && f.medaille <= 3) d.medaillen[f.medaille] += 1;
+        }
+      }
+    } catch (e) { /* ohne Bestzeiten */ }
     try {
       // v0.9.87: die Ablage ist ein OBJEKT (Name -> Strecke), kein Feld - gezaehlt wurde
       // deshalb immer 0 ("gespeicherte Strecken gehen nicht").

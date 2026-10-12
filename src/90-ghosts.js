@@ -9246,6 +9246,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
 
   // Ghosts launch on green, not before.
   function launchGhosts() {
+    // v0.10.6: im Bestzeit-Modus fahren nur gesteuerte Autos - die Ghosts bleiben stehen.
+    if (typeof raceMode !== 'undefined' && raceMode === 'bestzeit') {
+      log('Bestzeit-Modus: Ghosts bleiben stehen.', 'info');
+      return;
+    }
     // Die Seiten des Zieleinlaufs von vorn. Bisher geschah das nur beim Rennstart - wer
     // zweimal "Ghosts losfahren" und "anhalten" drueckt, lief den Zaehler hoch, und ab dem
     // fuenften Einlauf steht die Rollzeit auf ihrem Boden. Dann staffelt nichts mehr.

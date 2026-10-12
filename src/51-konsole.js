@@ -752,7 +752,7 @@
     // Rennoptionen-Kachel wechselt mit dem Rennmodus das Bild (BESTELLT v0.8.53).
     const rmBild = { practice: 'rennoptionen-practice', endurance: 'rennoptionen-endurance',
                      qualifying: 'rennoptionen-qualifying', laps: 'rennoptionen-laps',
-                     knockout: 'knockout', derby: 'derby' }[rm.value];
+                     knockout: 'knockout', derby: 'derby', bestzeit: 'challenges' }[rm.value];
     const rb = $('fa-renn-bild');
     if (rb && rmBild && rb.dataset.bild !== rmBild) {
       rb.style.backgroundImage = 'url(img/' + rmBild + '.jpg)';
@@ -761,7 +761,11 @@
     const wx = $('race-wx-start');
     kZeilen($('fa-renn-info'), [
       // Freies Training laeuft ohne Ende: dort steht das Unendlich statt einer Minutenzahl.
-      rm.value === 'practice' ? [t('Dauer'), (+(($('race-limit') || {}).value) > 0 ? $('race-limit').value + ' min' : '∞')]
+      rm.value === 'bestzeit' ? [t('Bestzeit'), (() => {
+        const b = typeof bestzeitAktuell === 'function' ? bestzeitAktuell(playerCar) : null;
+        return b ? formatLapTime(b.beste) + ' ' + (typeof chSterneZeichen === 'function' ? chSterneZeichen(b.medaille) : '') : '–';
+      })()]
+      : rm.value === 'practice' ? [t('Dauer'), (+(($('race-limit') || {}).value) > 0 ? $('race-limit').value + ' min' : '∞')]
         : [($('race-limit-label') || {}).textContent || t('Dauer'), ($('race-limit') || {}).value || '–'],
       [t('Wetter'), wx && wx.selectedOptions[0] ? wx.selectedOptions[0].textContent : '–'],
       [t('Pflichtboxenstopps'), ($('race-pit-required') || {}).value || '0'],

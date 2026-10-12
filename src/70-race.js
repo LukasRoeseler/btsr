@@ -105,6 +105,13 @@
     practice:   { label: 'Training', unit: 'Minuten', timed: false,
                   hint: 'Zeitlimit in Minuten, 0 = bis du beendest.' },
     endurance:  { label: 'Endurance', unit: 'Minuten', timed: true, hint: 'Meiste Runden in der Zeit.' },
+    // v0.10.6 BESTELLT: "Medaillen fuer eigene Strecken: einen siebten Modus, der nur geht,
+    // wenn ich eine Bahn habe (sonst Meldung wie bei NPC Knockout): Bestzeit fuer die
+    // eingegebene Strecke mit Medaillen nach der Gold-Formel. Die Strecke wird gespeichert,
+    // sodass man bei derselben Strecke wieder seine alten Zeiten hat. Hier fahren nur vom
+    // Spieler gesteuerte Autos, keine Ghosts - auch wenn sie verbunden sind, bleiben sie stehen."
+    bestzeit:   { label: 'Bestzeit', unit: 'Minuten', timed: false,
+                  hint: 'Nur gesteuerte Autos, Medaillen nach der Gold-Formel. Zeitlimit in Minuten, 0 = bis du beendest.' },
     qualifying: { label: 'Qualifying', unit: 'Minuten', timed: true, hint: 'Schnellste Einzelrunde zählt.' },
     laps:       { label: 'Runden', unit: 'Runden', timed: true, hint: 'Wer zuerst die Rundenzahl hat.' },
     // BESTELLT: "neuer rennmodus (experimentell): knockout." Die Wertung ist nicht zeit- oder
@@ -185,7 +192,7 @@
   function raceLimitReached() {
     if (raceState !== 'racing') return false;
     // Training: mit Zeitlimit (> 0) endet es nach der Zeit, mit 0 nur von Hand.
-    if (raceMode === 'practice') {
+    if (raceMode === 'practice' || raceMode === 'bestzeit') {
       return raceLimit > 0 && raceStartedAt !== null && (Date.now() - raceStartedAt) >= raceLimit * 60000;
     }
     if (!RACE_MODES[raceMode].timed) return false;
@@ -774,6 +781,10 @@
       const nrSp = spielerNrVon(car);
       const ms = now - r.lapStart + (nrSp >= 2 ? fruehstartZuschlag(nrSp, r.laps.length) : 0), offs = r.offLap || 0;
       r.laps.push({ lap: r.laps.length + 1, ms, off: offs });
+      // v0.10.6: Bestzeit-Modus - auch Spieler 2/3 sammeln Zeiten und Medaillen.
+      if (raceMode === 'bestzeit' && spielerNrVon(car) >= 2 && ms >= rundeMinMs()) {
+        bestzeitMeldung(bestzeitRunde(ms, car), ms, spielerNrVon(car));
+      }
       if (spielerNrVon(car) >= 2) {
         const beste2 = r.laps.every((l) => l.ms >= ms);
         const istBest2 = beste2 && r.laps.length > 1;
@@ -1690,9 +1701,71 @@
     }
     return true;
   }
+  // ---- BESTZEIT-MODUS (v0.10.6) --------------------------------------------------------
+  function bestzeitBereit(melden) {
+    if (raceMode !== 'bestzeit') return true;
+    const tiles = (typeof currentTrackTiles !== 'undefined' && currentTrackTiles) || [];
+    if (trackMode !== 'on' || tiles.length < 3) {
+      if (melden) showHudToast(t('Bestzeit braucht die Bahn: „Auf der Bahn“ und eine eingescannte Strecke'));
+      return false;
+    }
+    return true;
+  }
+  // Die Strecke als Schluessel: gespiegelt gilt als dieselbe (wie bei den Community-Strecken).
+  const BESTZEIT_STORE = 'omegasim-bestzeiten';
+  function bestzeitSchluessel(tiles) {
+    const a = trackToCode(tiles, 0);
+    let b = a;
+    try { b = trackToCode(chSpiegelTiles(tiles), 0); } catch (e) { /* ohne Spiegel */ }
+    return a < b ? a : b;
+  }
+  function bestzeitLesen() {
+    try { return JSON.parse(localStorage.getItem(BESTZEIT_STORE) || '{}') || {}; } catch (e) { return {}; }
+  }
+  function bestzeitSchreiben(d) {
+    try { localStorage.setItem(BESTZEIT_STORE, JSON.stringify(d)); } catch (e) { /* voll */ }
+  }
+  function bestzeitDef(tiles) { return { id: 'eigen', code: trackToCode(tiles, 0), runden: 1 }; }
+  // Eine gueltige Runde eines gesteuerten Autos. Rueckgabe: { sterne, neu } fuer Ton/Anzeige.
+  function bestzeitRunde(ms, car, tilesOpt) {
+    const tiles = tilesOpt || currentTrackTiles;
+    if (!tiles || tiles.length < 3 || !(ms > 0)) return null;
+    const sterne = chSterne(bestzeitDef(tiles), 'hotlap', ms);
+    const alle = bestzeitLesen();
+    const k = bestzeitSchluessel(tiles);
+    const e = alle[k] || (alle[k] = { code: trackToCode(tiles, 0), fahrer: {} });
+    const wer = car && car.device ? String(car.device.id) : 'spieler1';
+    const f = e.fahrer[wer] || (e.fahrer[wer] = { name: '', beste: null, medaille: 0, runden: 0 });
+    f.name = car ? garageLabel(car) : t('Spieler 1');
+    f.runden += 1;
+    const neu = f.beste === null || ms < f.beste;
+    if (neu) { f.beste = Math.round(ms); f.datum = Date.now(); }
+    if (sterne > f.medaille) f.medaille = sterne;
+    bestzeitSchreiben(alle);
+    return { sterne, neu };
+  }
+  // Fuer die FAHREN-Kachel und das Ergebnis: die Bestzeit auf der aktuellen Strecke.
+  function bestzeitAktuell(car) {
+    const tiles = currentTrackTiles;
+    if (!tiles || tiles.length < 3) return null;
+    const e = bestzeitLesen()[bestzeitSchluessel(tiles)];
+    if (!e) return null;
+    const wer = car && car.device ? String(car.device.id) : null;
+    const liste = Object.entries(e.fahrer).filter(([id]) => !wer || id === wer).map(([, f]) => f)
+      .filter((f) => f.beste);
+    if (!liste.length) return null;
+    return liste.reduce((a, b) => (a.beste <= b.beste ? a : b));
+  }
+  function bestzeitMeldung(r, ms, nr) {
+    if (!r) return;
+    const name = typeof chSterneName === 'function' ? chSterneName(r.sterne) : '';
+    showHudToast((nr >= 2 ? 'P' + nr + ': ' : '') + (r.neu ? t('Neue Bestzeit auf dieser Strecke!') + ' ' : '')
+      + formatLapTime(ms) + (name ? ' · ' + name : ''));
+  }
   function startRaceCountdown(gruenZiel, mpPlan) {
     if (raceState !== 'idle' && raceState !== 'finished') return; // ignore while armed/racing
     if (!knockoutBereit(true)) return;
+    if (!bestzeitBereit(true)) return;
     // EINSCHALTRAMPE: der Schirm zieht in 300 ms von schwarz auf Wert hoch, wie ein TFT beim
     // Einschalten. Hier und nicht in raceGreen(), weil der Schirm mit dem Knopfdruck
     // "angeht" und nicht erst bei Gruen - im Countdown will man ihn schon lesen.
@@ -2102,8 +2175,9 @@
     // a control that vanishes makes people wonder whether they broke something.
     // DERBY (v0.8.126): das Limit ist das KILLS-ZIEL und wird deshalb aktiviert - sonst
     // koennte man es nicht auf 1 setzen. Die Voreinstellung setzt der Moduswechsel unten.
-    $('race-limit').disabled = !m.timed && raceMode !== 'derby' && raceMode !== 'practice';
-    $('race-limit').min = raceMode === 'practice' ? '0' : '1';
+    const ohneEnde = raceMode === 'practice' || raceMode === 'bestzeit';
+    $('race-limit').disabled = !m.timed && raceMode !== 'derby' && !ohneEnde;
+    $('race-limit').min = ohneEnde ? '0' : '1';
     // 0.7, not 0.45. On white 0.45 was a legible grey; on black it collapsed to 2.7:1,
     // and this label still has to be readable while it says which unit is NOT in use.
     $('race-limit-label').style.opacity = (m.timed || raceMode === 'derby') ? '' : '0.7';
@@ -2145,14 +2219,16 @@
     raceMode = e.target.value;
     // Sensible default per mode rather than carrying a minute count over into a lap count.
     // DERBY (v0.8.126): das Limit ist das KILLS-ZIEL, Voreinstellung 1.
-    raceLimit = raceMode === 'laps' ? 10 : (raceMode === 'derby' ? 1 : (raceMode === 'practice' ? 0 : 2));
+    raceLimit = raceMode === 'laps' ? 10 : (raceMode === 'derby' ? 1
+      : ((raceMode === 'practice' || raceMode === 'bestzeit') ? 0 : 2));
     $('race-limit').value = raceLimit;
     applyRaceModeUi();
     if (raceMode === 'knockout') knockoutBereit(true);
+    if (raceMode === 'bestzeit') bestzeitBereit(true);
   });
   $('race-limit').addEventListener('input', (e) => {
     const v = parseInt(e.target.value, 10);
-    if (Number.isFinite(v) && (v >= 1 || (v === 0 && raceMode === 'practice'))) raceLimit = v;
+    if (Number.isFinite(v) && (v >= 1 || (v === 0 && (raceMode === 'practice' || raceMode === 'bestzeit')))) raceLimit = v;
   });
 
   $('race-wx-start').addEventListener('change', (e) => {
@@ -3087,6 +3163,9 @@
       // Die Ansage NEBEN dem Ton und nicht statt ihm: der Ton kommt sofort, die Stimme
       // braucht eine Sekunde. Wer sie abschaltet, hoert weiter, dass eine Runde voll ist.
       if (!challengeUngueltig) speakLap(rundeMs, istBest);
+      if (raceMode === 'bestzeit' && !challengeUngueltig && rundeMs >= minMs) {
+        bestzeitMeldung(bestzeitRunde(rundeMs, playerCar), rundeMs, 1);
+      }
       // v0.9.41 GEMELDET: "Das Multiplayer Renn-Ende wird nicht getriggert ... 5-Runden-Rennen."
       // Die Zielrunde schaltete nur auf 'finishing' (raceClockTick), beendet wurde erst bei der
       // NAECHSTEN Ueberfahrt - ein 5-Runden-Rennen ging also ueber 6 Runden. Wer die Zielzahl
@@ -6164,7 +6243,7 @@
   // erhoehen - und links/rechts kann den Schirm weiterblaettern, solange nichts angewaehlt
   // ist.
   let raceScreenLimitArmed = false;
-  const RACE_MODE_ORDER = ['practice', 'endurance', 'qualifying', 'laps', 'knockout', 'derby'];
+  const RACE_MODE_ORDER = ['practice', 'endurance', 'qualifying', 'laps', 'knockout', 'derby', 'bestzeit'];
 
   // NUR WENN DAS COCKPIT AUCH ZU SEHEN IST. cockpitScreen bleibt beim Tabwechsel stehen -
   // ohne diese Bedingung schluckte der Schirm auf JEDEM Tab die Pfeiltasten, und Fahren
