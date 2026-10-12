@@ -1468,12 +1468,16 @@
     { id: 'player', name: 'Spieler 1', kurz: 'SPIELER 1' },
     { id: 'player2', name: 'Spieler 2', kurz: 'SPIELER 2' },
     { id: 'player3', name: 'Spieler 3', kurz: 'SPIELER 3' },
+    // v1.0 BESTELLT: "Safetycar-Funktion (experimentell): neben 'Ghost' kann ich Safetycar
+    // einstellen." Hoechstens eines - wie die Spielerrollen. Vor "Ghost", damit der Pfeil von
+    // Ghost wie bisher zu "Aus" fuehrt.
+    { id: 'safetycar', name: 'Safety Car', kurz: 'SAFETY CAR' },
     { id: 'ghost', name: 'Ghost', kurz: 'GHOST' },
     { id: 'none', name: 'Aus', kurz: 'AUS' },
   ];
   // Die Rollen, die dieses Auto bekommen darf: Spieler-Rollen nur, wenn kein ANDERES Auto sie hat.
   function garRollenFrei(car) {
-    return GAR_ROLLEN.filter((r) => !/^player\d?$/.test(r.id)
+    return GAR_ROLLEN.filter((r) => !/^player\d?$|^safetycar$/.test(r.id)
       || !garage.some((c) => c !== car && c.role === r.id));
   }
   let garAufAuto = null;
@@ -1817,7 +1821,7 @@
       const row = document.createElement('div');
       row.className = 'opt-row gar-row gar-karte gar-a-zeile' + (car.role === 'player' ? ' is-player'
                                  : zusatzPlatzVonRolle(car.role) ? ' is-zwei'
-                                 : car.role === 'ghost' ? ' is-ghost' : '')
+                                 : car.role === 'ghost' ? ' is-ghost' : car.role === 'safetycar' ? ' is-safety' : '')
                     + (garAufAuto === car ? ' gk-auf' : '');
       row.dataset.xSprung = '.gar-a-rechts .opt-row';
       const f = carColor(car);
@@ -4770,6 +4774,52 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // BESTELLT (v0.9.27): "Option in den Renneinstellungen: gelbe Flagge deaktivieren
   // (Standard: aus)". An: weder Knopf noch Taste rufen Gelb aus.
   function gelbDeaktiviert() { const el = $('race-gelb-aus'); return !!(el && el.checked); }
+  // ---- SAFETY CAR (v0.10.7, experimentell) -------------------------------------------
+  // BESTELLT: "Das parkt am Streckenrand und faehrt los, wenn Gelb aktiviert wird. Danach
+  // faehrt es bei der Startgeraden rechts ran. Es darf nie von Ghosts ueberholt werden."
+  // Gefahren wird es von der Ghost-Logik (startGhost/ghostTick): unter Gelb im Gelb-Tempo mit
+  // Kurvendrosselung. Nach Gruen faehrt es bis Start/Ziel und haelt dort rechts am Rand
+  // (dieselbe Abstellfolge wie der Zieleinlauf: ausrollen, bremsen, blinken, stehen).
+  const SC_BLINK_MS = 750, SC_BLINK_AN_MS = 250, SC_NAH_KACHELN = 2;
+  function safetyCar() { return garage.find((c) => c.role === 'safetycar') || null; }
+  function safetyCarFaehrt() {
+    const sc = safetyCar();
+    return !!(sc && sc.ghost && sc.ghost.running && !sc.ghost.finish);
+  }
+  function safetyCarRaus() {
+    const sc = safetyCar();
+    if (!sc || (sc.ghost && sc.ghost.running)) return;
+    startGhost(sc);
+    if (sc.ghost) { sc.ghost.freeRun = true; sc.ghost.scHeim = false; }
+    showHudToast(t('Safety Car auf der Strecke'));
+    log(garageLabel(sc) + ': Safety Car faehrt los.', 'info');
+  }
+  function safetyCarHeim() {
+    const sc = safetyCar();
+    if (sc && sc.ghost && sc.ghost.running) {
+      sc.ghost.scHeim = true;
+      showHudToast(t('Safety Car kommt an Start/Ziel herein'));
+    }
+  }
+  // An Start/Ziel nach Gruen: rechts ran, eine Kachel ausrollen, stehen.
+  function safetyCarAbstellen(sc) {
+    const g = sc.ghost;
+    if (!g || g.finish) return;
+    g.scHeim = false;
+    g.finish = { phase: 'roll', at: Date.now(), seite: 1, kacheln: 1,
+                 kachelStart: sc.tileCount === null || sc.tileCount === undefined ? null : sc.tileCount };
+    log(garageLabel(sc) + ': Safety Car faehrt rechts ran.', 'info');
+  }
+  // Ist dieses Auto nah hinter dem Safety Car (hoechstens SC_NAH_KACHELN)?
+  function nahAmSafetyCar(car) {
+    const sc = safetyCar();
+    if (!sc || sc === car || !sc.ghost || !car || !car.ghost) return false;
+    const n = currentTrackTiles ? currentTrackTiles.length : 0;
+    const a = ghostOrt(car), b = ghostOrt(sc);
+    if (!n || a === null || b === null) return true;      // ohne Ort: vorsichtig
+    const d = ((b - a) % n + n) % n;
+    return d <= SC_NAH_KACHELN;
+  }
   // ---- DIE GRENZE DES FAHRERAUTOS UNTER GELB (v0.9.51) -----------------------------
   //
   // GEMELDET: "Gelbe Flagge soll mein Auto mit dem Tempo der Ghosts weiterfahren lassen und
@@ -4804,7 +4854,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     flagState = next;
     if (next === 'yellow') {
-      limitYellow = gelbGrenze();
+      // Mit Safety Car faehrt das Feld normal, bis es aufschliesst; die Grenze fuer das
+      // Fahrerauto setzt dann der Autopilot (autopilotGrund), nicht die Physik.
+      limitYellow = safetyCar() ? 1 : gelbGrenze();
+      safetyCarRaus();
       applySpeedLimit();
       // Angriffe abbrechen: waehrend Gelb wird nicht ueberholt.
       garage.forEach(c => { if (c.ghost) { c.ghost.attackUntil = 0; c.ghost.attackSide = 0; } });
@@ -4815,6 +4868,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       setRaceLights(0);
     } else if (next === 'green') {
       limitYellow = 1;
+      safetyCarHeim();
       applySpeedLimit();
       log('Gr\u00fcn. Volle Kontrolle.', 'info');
       showHudToast('GR\u00dcN');
@@ -5786,7 +5840,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // geprueft und nicht nur die Rolle: ohne eingescannte Strecke gibt es keinen Satz, und
     // ein Auto ohne Ort im Feld waere fuer jeden Abstand eine Null.
     return garage.filter(c => c.ghost && (c.role === 'ghost' || c === playerCar
-                                          || (zweiSpieler && spielerNrVon(c) >= 2)));
+                                          || (zweiSpieler && spielerNrVon(c) >= 2)
+                                          || (c.role === 'safetycar' && c.ghost.running)));
   }
 
   // ---- Die beste bekannte Querlage EINES Autos, egal welcher Art -------------------
@@ -6263,6 +6318,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // genau diese Kolonne aufloesen, und bei Boxentempo ist dafuer kein Grund: dort geht
     // es nicht um Position, sondern darum, geordnet zur Ziellinie zu kommen.
     if (ghostCfg.wuerzeUeberholen && !raceFormationLap
+        && !(ah && ah.car && ah.car.role === 'safetycar')     // das Safety Car wird nie ueberholt
         && !g.attackUntil && g.closeSince && now - g.closeSince > SPICE_ATTACK_ARM_MS
         && platz >= SPICE_PASS_PLATZ_MIN
         && !haarnadelVoraus
@@ -7981,7 +8037,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Ghosts ist nach unten nicht frei waehlbar: es ist durch das Fahrzeug begrenzt und
       // nicht durch Geschmack. Wer langsamer will, muss YELLOW_KMH erhoehen koennen - kann
       // er nicht, weil das Auto dann nicht mehr liest.
-      if (underYellow) {
+      // v0.10.7: Faehrt ein Safety Car, drosseln die anderen erst in seiner Naehe auf das
+      // Gelb-Tempo (BESTELLT: "normal fahren, bis sie nah am Safety Car sind, dann auf 35 %").
+      if (underYellow && (car.role === 'safetycar' || !safetyCarFaehrt() || nahAmSafetyCar(car))) {
         target = Math.min(target, Math.max(yellowFactor(), GHOST_READ_MIN));
       }
       // ---- Tempoprofil statt eines einzigen Kurvenabschlags ----
@@ -8630,7 +8688,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (akkuBlinkAus(car, now)) lights &= ~(LIGHT_HEAD | LIGHT_BRAKE) & 0xff;
     // Unter Gelb blinken alle, und ein stehendes Auto blinkt schneller - so findet man auf
     // dem Tisch sofort, welches gemeint ist.
-    if (flagState !== 'green' || car.parked) {
+    if (car.role === 'safetycar' && !car.parked) {
+      // BESTELLT: "Safetycar-Lichter blinken bei gelber Flagge alle 750 ms fuer 250 ms auf."
+      const on = flagState !== 'green' && (Date.now() % SC_BLINK_MS) < SC_BLINK_AN_MS;
+      lights = trackModeBit() | (on ? LIGHT_HEAD : 0);
+    } else if (flagState !== 'green' || car.parked) {
       const period = car.parked ? 260 : 520;
       const on = Math.floor(Date.now() / period) % 2 === 0;
       lights = trackModeBit() | (on ? LIGHT_HEAD : 0) | (on ? 0 : LIGHT_BRAKE);

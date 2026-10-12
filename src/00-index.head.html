@@ -2922,6 +2922,7 @@
   .gar-a-zeile.is-player .gk-rolle { background: var(--k-blau); color: var(--k-blau-text); }
   .gar-a-zeile.is-zwei .gk-rolle { background: #ffb02e; color: #1a1100; }
   .gar-a-zeile.is-ghost .gk-rolle { background: #6b5bd6; color: #fff; }
+  .gar-a-zeile.is-safety .gk-rolle { background: #f5c400; color: #1a1500; }
   .gar-a-zeile.is-ghost .gk-rolle button, .gar-a-zeile.is-player .gk-rolle button { color: inherit; }
   .gar-a-aktion > button { width: 100%; text-align: left; }
   /* v0.9.24: die Knoepfe ganz unten groesser (Motorsound steht jetzt nur noch hier). */
@@ -4485,7 +4486,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.10.6</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.7</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5611,6 +5612,10 @@
     <div class="card subpage" id="sub-patchnotes">
       <button class="misc-back goto-tab" data-tab="options">&larr; Optionen</button>
       <h2>Patchnotes</h2>
+      <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
+      <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Safety Car (experimentell): In der Garage gibt es neben &#8222;Ghost&#8220; die Rolle &#8222;Safety Car&#8220; (eines je Rennen). Es parkt am Rand, f&#228;hrt bei gelber Flagge los und blinkt alle 750 ms kurz auf. Die anderen Autos fahren unter Gelb normal weiter, bis sie bis auf zwei Kacheln aufgeschlossen haben, dann 35 % (dein Auto &#252;bernimmt dann der Autopilot). Ghosts &#252;berholen das Safety Car nie. Nach Gr&#252;n f&#228;hrt es bis Start/Ziel und h&#228;lt dort rechts am Rand. Es z&#228;hlt keine Runden und steht nicht im Ergebnis.</li>
+      </ul>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
         <li>Neuer Modus &#8222;Bestzeit&#8220; (experimentell): Bestzeit auf deiner eigenen Strecke mit Medaillen nach der Gold-Formel. Geht nur auf der Bahn mit eingescannter Strecke (sonst ein Hinweis wie bei NPC Knockout), es fahren nur gesteuerte Autos, Ghosts bleiben stehen. Zeiten und Medaillen werden je Strecke gespeichert (gespiegelt z&#228;hlt als dieselbe): Wer die Strecke wieder aufbaut, hat seine alten Zeiten. Die FAHREN-Kachel zeigt die Bestzeit, die Statistik z&#228;hlt die Medaillen mit. Gold-Formel neu kalibriert: Balkonia 16 s und Omega Testing Track 2 7,2 s, alle anderen Strecken dazwischen und dar&#252;ber.</li>

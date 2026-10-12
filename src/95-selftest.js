@@ -13557,7 +13557,7 @@
     if (!window.OMEGA_TEST || !OMEGA_TEST.garagenZeileProbe) {
       return { skip: true, mass: 'garagenZeileProbe nicht vorhanden' };
     }
-    const SOLL = ['player', 'player2', 'player3', 'ghost', 'none'];
+    const SOLL = ['player', 'player2', 'player3', 'safetycar', 'ghost', 'none'];
     const aus = OMEGA_TEST.garagenZeileProbe({ zwei: false });
     const an = OMEGA_TEST.garagenZeileProbe({ zwei: true, role: 'player2' });
     const maengel = [];
@@ -18012,6 +18012,31 @@
       if (merk.ls === null) localStorage.removeItem(BESTZEIT_STORE); else localStorage.setItem(BESTZEIT_STORE, merk.ls);
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bahn noetig, Spiegel = gleiche Strecke, Gold bei 7,0 s' };
+  });
+
+  // ---- v0.10.7: Safety Car ----
+  stAdd('Safety Car: eine Rolle, nie ueberholt, andere drosseln erst nah dran, Blinktakt', () => {
+    const f = [];
+    const merk = { garage: garage.slice(), tiles: currentTrackTiles, flag: flagState };
+    const echt = { start: startGhost };
+    try {
+      currentTrackTiles = codeToTrack('SG4R4G4').tiles;
+      const sc = { device: { id: 'sc' }, role: 'safetycar', tag: 'SC', ghost: { running: true, tileIndex: 6, tilesTotal: 6 } };
+      const nah = { device: { id: 'g1' }, role: 'ghost', tag: 'G1', ghost: { running: true, tileIndex: 5, tilesTotal: 5 } };
+      const weit = { device: { id: 'g2' }, role: 'ghost', tag: 'G2', ghost: { running: true, tileIndex: 1, tilesTotal: 1 } };
+      garage.length = 0; garage.push(sc, nah, weit);
+      if (garRollenFrei(nah).some((r) => r.id === 'safetycar')) f.push('zweites Safety Car waehlbar');
+      if (!safetyCarFaehrt()) f.push('Safety Car faehrt nicht');
+      if (!nahAmSafetyCar(nah)) f.push('1 Kachel dahinter gilt nicht als nah');
+      if (nahAmSafetyCar(weit)) f.push('5 Kacheln dahinter gilt als nah');
+      if (ghostFieldRacing().indexOf(sc) < 0) f.push('Safety Car ist kein Hindernis im Feld');
+      if (raceAllCars().some((c) => c.role === 'safetycar')) f.push('Safety Car im Ergebnis');
+    } finally {
+      startGhost = echt.start;
+      garage.length = 0; merk.garage.forEach((c) => garage.push(c));
+      currentTrackTiles = merk.tiles; flagState = merk.flag;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eine Rolle, Hindernis, Naehe 2 Kacheln, nicht im Ergebnis' };
   });
 
   stAdd('Rundenrennen endet mit der Zielrunde, nicht eine Runde spaeter', () => {

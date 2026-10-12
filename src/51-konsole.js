@@ -674,7 +674,8 @@
   function kAutos() {
     try { return garage.filter((c) => c.device); } catch (e) { return []; }
   }
-  const K_ROLLE = { player: 'Steuern', player2: 'Spieler 2', player3: 'Spieler 3', ghost: 'Ghost', none: 'Aus' };
+  const K_ROLLE = { player: 'Steuern', player2: 'Spieler 2', player3: 'Spieler 3', ghost: 'Ghost',
+                    safetycar: 'Safety Car', none: 'Aus' };
   function kPunkt(farbe, text) {
     const s = document.createElement('span');
     const p = document.createElement('i'); p.className = 'k-punkt'; p.style.background = farbe;

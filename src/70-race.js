@@ -726,6 +726,11 @@
   // Derselbe Grund wie bei playerLapCrossed(): eine Stelle, die eine Runde zaehlt, und die
   // Testtaste nimmt sie mit.
   function carLapCrossed(car) {
+    // v0.10.7: das Safety Car faehrt keine Runden - es wartet nur auf Start/Ziel nach Gruen.
+    if (car.role === 'safetycar') {
+      if (car.ghost && car.ghost.scHeim && typeof safetyCarAbstellen === 'function') safetyCarAbstellen(car);
+      return;
+    }
     if (!car.race) car.race = { laps: [], lapStart: null, pending: null, seen: 0,
                                 lastActed: 0, lastCount: null };
     const r = car.race, now = Date.now();
@@ -872,7 +877,7 @@
     // diesen Fix blieb c.race.laps beim Spieler auf 0 stehen, raceLimitReached() konnte nur
     // ueber einen GHOST ausloesen, und ein Rundenrennen ohne (oder mit zu langsamen) Ghosts
     // endete nie.
-    const out = garage.map(c => ({ name: garageLabel(c), role: c.role, id: String(c.device && c.device.id),
+    const out = garage.filter(c => c.role !== 'safetycar').map(c => ({ name: garageLabel(c), role: c.role, id: String(c.device && c.device.id),
                                    farbe: carColor(c).hex, kennung: c.tag,
                                    // Der Ort auf der Schiene. Auto 2 geht ueber
                                    // ghostOrtGes(): es hat seit v0.6.46 einen eigenen
@@ -2027,6 +2032,8 @@
   // requestRaceStop() uebergibt ausdruecklich false.
   function finishRace(auslaufen) {
     raceState = 'finished';
+    // Das Safety Car steht beim Rennende - es hat in keinem Ergebnis etwas zu suchen.
+    garage.forEach((c) => { if (c.role === 'safetycar' && c.ghost && c.ghost.running) stopGhost(c); });
     raceGreenAt = null;
     fruehstartReset();
     derbyEinstellungenZurueck();

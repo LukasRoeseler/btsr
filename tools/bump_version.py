@@ -53,6 +53,9 @@ PROJEKT_START = datetime.date(2026, 8, 3)
 PUSH_VERSATZ = {datetime.date(2026, 10, 5): 27}
 
 
+VERSION1_WOCHE = 10
+
+
 def version():
     first = git('log', '--reverse', '--format=%aI').splitlines()[0]
     start = min(datetime.datetime.fromisoformat(first).date(), PROJEKT_START)
@@ -68,7 +71,13 @@ def version():
     n = int(git('rev-list', '--count', 'HEAD',
                 '--since=%s 00:00:00' % block.isoformat()))
     # +1, weil der Commit, fuer den diese Nummer gilt, noch nicht existiert.
-    return '0.%d.%d' % (week, n + 1 + PUSH_VERSATZ.get(block, 0)), start, block
+    push = n + 1 + PUSH_VERSATZ.get(block, 0)
+    # VERSION 1 (BESTELLT am 12.10.2026, Woche 10): "Versionierung ab jetzt 1.0.[commitnumber]
+    # und ab naechster Woche dann 1.1.x". Ab Woche 10 zaehlt die Mittelzahl die Wochen seit
+    # 1.0; davor bleibt die alte Form 0.<Woche>.<Push>.
+    if week >= VERSION1_WOCHE:
+        return '1.%d.%d' % (week - VERSION1_WOCHE, push), start, block
+    return '0.%d.%d' % (week, push), start, block
 
 
 def main():

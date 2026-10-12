@@ -2922,6 +2922,7 @@
   .gar-a-zeile.is-player .gk-rolle { background: var(--k-blau); color: var(--k-blau-text); }
   .gar-a-zeile.is-zwei .gk-rolle { background: #ffb02e; color: #1a1100; }
   .gar-a-zeile.is-ghost .gk-rolle { background: #6b5bd6; color: #fff; }
+  .gar-a-zeile.is-safety .gk-rolle { background: #f5c400; color: #1a1500; }
   .gar-a-zeile.is-ghost .gk-rolle button, .gar-a-zeile.is-player .gk-rolle button { color: inherit; }
   .gar-a-aktion > button { width: 100%; text-align: left; }
   /* v0.9.24: die Knoepfe ganz unten groesser (Motorsound steht jetzt nur noch hier). */
@@ -4485,7 +4486,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.10.6</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.7</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5611,6 +5612,10 @@
     <div class="card subpage" id="sub-patchnotes">
       <button class="misc-back goto-tab" data-tab="options">&larr; Optionen</button>
       <h2>Patchnotes</h2>
+      <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
+      <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Safety Car (experimentell): In der Garage gibt es neben &#8222;Ghost&#8220; die Rolle &#8222;Safety Car&#8220; (eines je Rennen). Es parkt am Rand, f&#228;hrt bei gelber Flagge los und blinkt alle 750 ms kurz auf. Die anderen Autos fahren unter Gelb normal weiter, bis sie bis auf zwei Kacheln aufgeschlossen haben, dann 35 % (dein Auto &#252;bernimmt dann der Autopilot). Ghosts &#252;berholen das Safety Car nie. Nach Gr&#252;n f&#228;hrt es bis Start/Ziel und h&#228;lt dort rechts am Rand. Es z&#228;hlt keine Runden und steht nicht im Ergebnis.</li>
+      </ul>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
         <li>Neuer Modus &#8222;Bestzeit&#8220; (experimentell): Bestzeit auf deiner eigenen Strecke mit Medaillen nach der Gold-Formel. Geht nur auf der Bahn mit eingescannter Strecke (sonst ein Hinweis wie bei NPC Knockout), es fahren nur gesteuerte Autos, Ghosts bleiben stehen. Zeiten und Medaillen werden je Strecke gespeichert (gespiegelt z&#228;hlt als dieselbe): Wer die Strecke wieder aufbaut, hat seine alten Zeiten. Die FAHREN-Kachel zeigt die Bestzeit, die Statistik z&#228;hlt die Medaillen mit. Gold-Formel neu kalibriert: Balkonia 16 s und Omega Testing Track 2 7,2 s, alle anderen Strecken dazwischen und dar&#252;ber.</li>
@@ -12481,6 +12486,9 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "Safety Car": "Safety car",
+    "Safety Car auf der Strecke": "Safety car on track",
+    "Safety Car kommt an Start/Ziel herein": "Safety car comes in at start/finish",
     "Nur gesteuerte Autos, Medaillen nach der Gold-Formel. Zeitlimit in Minuten, 0 = bis du beendest.": "Controlled cars only, medals by the gold formula. Time limit in minutes, 0 = until you stop.",
     "Bestzeit braucht die Bahn: „Auf der Bahn“ und eine eingescannte Strecke": "Best time needs the track: “On the track” and a scanned layout",
     "Neue Bestzeit auf dieser Strecke!": "New best time on this track!",
@@ -13045,6 +13053,7 @@
     "App-Latenz (neue APK nötig, ältere fahren wie bisher): Befehle an die Autos gehen in der App jetzt direkt an den Bluetooth-Schreibthread, ohne den Umweg über den Android-Hauptthread, über den auch alle Meldungen der Autos laufen. Das Gamepad wird bei einem Controller direkt aus der App gelesen (Sticks und Trigger), Android bündelt die Stick-Ereignisse nicht mehr im Bildtakt, und der Ton läuft mit kleinem Puffer. Die Verbindungspriorität wird nicht mehr alle 10 s neu ausgehandelt (kleine Hänger). „Funk-Rundlauf“ zeigt jetzt die echten Werte: Brückenzeit, Takt des Steuerherzschlags, Gamepad direkt, Tonverzögerung; der alte Wert ist in der App als „nur JS“ gekennzeichnet.": "App latency (new APK needed, older ones work as before): commands to the cars now go straight to the Bluetooth write thread instead of detouring through Android's main thread, which also carries every message from the cars. With one controller the gamepad is read directly by the app (sticks and triggers), Android no longer batches stick events per frame, and sound runs with a small buffer. The connection priority is no longer renegotiated every 10 s (small hitches). “Radio round trip” now shows real values: bridge time, control heartbeat timing, direct gamepad, sound delay; the old value is marked “JS only” in the app.",
     "Fahrgefühl und Menüs: Neue Abstimmung Sim+ (wie Pro mit direkterer Lenkung, mehr Beschleunigung und viel stärkerer Bremse). Im FAHREN-Menü und am Cockpit-Knopf stehen nur noch Arcade, Sim+, Pro und Pacejka; GT3, F1 und Realismus GT3 bleiben in den Optionen. Arcade lenkt stärker und erreicht jetzt den vollen Einschlag, GT3 und F1 behalten ihn auch mit kalten Reifen (der Lenkregler reicht bis 400 %). Drift-Modus entfernt; „Aus“ heißt jetzt RC: Gas läuft in 2 s aus, die Bremse greift sofort, ein zweiter Bremsdruck im Stand fährt rückwärts. Gelbe Flagge: alle Autos etwa 35 %, auch im Ausdruck-Modus. Reifenmischungen unterscheiden sich stärker (weich 120 % Griff und schneller Verschleiß, hart 85 % und langlebig). Bremsquietschen leiser. Garage: Rollenpfeile immer an derselben Stelle, Akkustand je Auto, Fahrgefühl je gesteuertem Auto wählbar, neues Garagenbild. Startaufstellung: Abbrechen, Automatisch aufstellen und Start mit dem Steuerkreuz wählbar, X bestätigt. Titelschirm mit „Starten“. Unten links im FAHREN-Menü die Kachel Meisterschaft (kommt bald). „Freies Training“ heißt „Training“ und hat ein Zeitlimit (0 = ohne Ende). „Controller tauschen“ entfernt.": "Driving feel and menus: new setup Sim+ (like Pro with more direct steering, more acceleration and much stronger brakes). The DRIVE menu and the cockpit button now only offer Arcade, Sim+, Pro and Pacejka; GT3, F1 and Realism GT3 stay in the options. Arcade steers more and now reaches full lock, GT3 and F1 keep it even on cold tyres (the steering slider goes up to 400 %). Drift mode removed; “Off” is now RC: throttle coasts down over 2 s, the brake acts at once, a second brake press while standing drives backwards. Yellow flag: all cars about 35 %, also in print mode. Tyre compounds differ more (soft 120 % grip and fast wear, hard 85 % and long-lasting). Brake squeal quieter. Garage: role arrows always in the same place, battery level per car, driving feel selectable per controlled car, new garage picture. Grid screen: Cancel, Auto grid and Start selectable with the D-pad, X confirms. Title screen with “Start”. Bottom left of the DRIVE menu: the Championship tile (coming soon). “Free practice” is now “Practice” with a time limit (0 = no end). “Swap controllers” removed.",
     "Neuer Modus „Bestzeit“ (experimentell): Bestzeit auf deiner eigenen Strecke mit Medaillen nach der Gold-Formel. Geht nur auf der Bahn mit eingescannter Strecke (sonst ein Hinweis wie bei NPC Knockout), es fahren nur gesteuerte Autos, Ghosts bleiben stehen. Zeiten und Medaillen werden je Strecke gespeichert (gespiegelt zählt als dieselbe): Wer die Strecke wieder aufbaut, hat seine alten Zeiten. Die FAHREN-Kachel zeigt die Bestzeit, die Statistik zählt die Medaillen mit. Gold-Formel neu kalibriert: Balkonia 16 s und Omega Testing Track 2 7,2 s, alle anderen Strecken dazwischen und darüber.": "New mode “Best time” (experimental): best lap on your own track with medals by the gold formula. Only on the track with a scanned layout (otherwise a notice like NPC Knockout), only controlled cars drive, ghosts stay put. Times and medals are stored per track (mirrored counts as the same): rebuild the track and your old times are back. The DRIVE tile shows the best time, the statistics count the medals. Gold formula recalibrated: Balkonia 16 s and Omega Testing Track 2 7.2 s, all other tracks in between and beyond.",
+    "Safety Car (experimentell): In der Garage gibt es neben „Ghost“ die Rolle „Safety Car“ (eines je Rennen). Es parkt am Rand, fährt bei gelber Flagge los und blinkt alle 750 ms kurz auf. Die anderen Autos fahren unter Gelb normal weiter, bis sie bis auf zwei Kacheln aufgeschlossen haben, dann 35 % (dein Auto übernimmt dann der Autopilot). Ghosts überholen das Safety Car nie. Nach Grün fährt es bis Start/Ziel und hält dort rechts am Rand. Es zählt keine Runden und steht nicht im Ergebnis.": "Safety car (experimental): next to “Ghost” the garage now has the role “Safety car” (one per race). It parks at the edge, drives off when the yellow flag comes out and flashes briefly every 750 ms. The other cars keep racing under yellow until they are within two tiles of it, then 35 % (your car is taken over by the autopilot). Ghosts never overtake the safety car. After green it drives to start/finish and stops at the right edge. It counts no laps and is not in the results.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -22979,7 +22988,11 @@
       return (flagState === 'yellow' && yellowFactor() < formationPace())
         ? 'yellow' : 'formation';
     }
-    return flagState === 'yellow' ? 'yellow' : null;
+    if (flagState !== 'yellow') return null;
+    // v0.10.7: mit Safety Car faehrt man selbst, bis man aufgeschlossen hat.
+    if (typeof safetyCarFaehrt === 'function' && safetyCarFaehrt()
+        && typeof nahAmSafetyCar === 'function' && !nahAmSafetyCar(playerCar)) return null;
+    return 'yellow';
   }
 
   // ---- UND ER GILT SEIT v0.6.53 FUER BEIDE AUTOS -------------------------------------
@@ -25268,7 +25281,8 @@
   function kAutos() {
     try { return garage.filter((c) => c.device); } catch (e) { return []; }
   }
-  const K_ROLLE = { player: 'Steuern', player2: 'Spieler 2', player3: 'Spieler 3', ghost: 'Ghost', none: 'Aus' };
+  const K_ROLLE = { player: 'Steuern', player2: 'Spieler 2', player3: 'Spieler 3', ghost: 'Ghost',
+                    safetycar: 'Safety Car', none: 'Aus' };
   function kPunkt(farbe, text) {
     const s = document.createElement('span');
     const p = document.createElement('i'); p.className = 'k-punkt'; p.style.background = farbe;
@@ -32990,6 +33004,11 @@
   // Derselbe Grund wie bei playerLapCrossed(): eine Stelle, die eine Runde zaehlt, und die
   // Testtaste nimmt sie mit.
   function carLapCrossed(car) {
+    // v0.10.7: das Safety Car faehrt keine Runden - es wartet nur auf Start/Ziel nach Gruen.
+    if (car.role === 'safetycar') {
+      if (car.ghost && car.ghost.scHeim && typeof safetyCarAbstellen === 'function') safetyCarAbstellen(car);
+      return;
+    }
     if (!car.race) car.race = { laps: [], lapStart: null, pending: null, seen: 0,
                                 lastActed: 0, lastCount: null };
     const r = car.race, now = Date.now();
@@ -33136,7 +33155,7 @@
     // diesen Fix blieb c.race.laps beim Spieler auf 0 stehen, raceLimitReached() konnte nur
     // ueber einen GHOST ausloesen, und ein Rundenrennen ohne (oder mit zu langsamen) Ghosts
     // endete nie.
-    const out = garage.map(c => ({ name: garageLabel(c), role: c.role, id: String(c.device && c.device.id),
+    const out = garage.filter(c => c.role !== 'safetycar').map(c => ({ name: garageLabel(c), role: c.role, id: String(c.device && c.device.id),
                                    farbe: carColor(c).hex, kennung: c.tag,
                                    // Der Ort auf der Schiene. Auto 2 geht ueber
                                    // ghostOrtGes(): es hat seit v0.6.46 einen eigenen
@@ -34291,6 +34310,8 @@
   // requestRaceStop() uebergibt ausdruecklich false.
   function finishRace(auslaufen) {
     raceState = 'finished';
+    // Das Safety Car steht beim Rennende - es hat in keinem Ergebnis etwas zu suchen.
+    garage.forEach((c) => { if (c.role === 'safetycar' && c.ghost && c.ghost.running) stopGhost(c); });
     raceGreenAt = null;
     fruehstartReset();
     derbyEinstellungenZurueck();
@@ -45356,12 +45377,16 @@
     { id: 'player', name: 'Spieler 1', kurz: 'SPIELER 1' },
     { id: 'player2', name: 'Spieler 2', kurz: 'SPIELER 2' },
     { id: 'player3', name: 'Spieler 3', kurz: 'SPIELER 3' },
+    // v1.0 BESTELLT: "Safetycar-Funktion (experimentell): neben 'Ghost' kann ich Safetycar
+    // einstellen." Hoechstens eines - wie die Spielerrollen. Vor "Ghost", damit der Pfeil von
+    // Ghost wie bisher zu "Aus" fuehrt.
+    { id: 'safetycar', name: 'Safety Car', kurz: 'SAFETY CAR' },
     { id: 'ghost', name: 'Ghost', kurz: 'GHOST' },
     { id: 'none', name: 'Aus', kurz: 'AUS' },
   ];
   // Die Rollen, die dieses Auto bekommen darf: Spieler-Rollen nur, wenn kein ANDERES Auto sie hat.
   function garRollenFrei(car) {
-    return GAR_ROLLEN.filter((r) => !/^player\d?$/.test(r.id)
+    return GAR_ROLLEN.filter((r) => !/^player\d?$|^safetycar$/.test(r.id)
       || !garage.some((c) => c !== car && c.role === r.id));
   }
   let garAufAuto = null;
@@ -45705,7 +45730,7 @@
       const row = document.createElement('div');
       row.className = 'opt-row gar-row gar-karte gar-a-zeile' + (car.role === 'player' ? ' is-player'
                                  : zusatzPlatzVonRolle(car.role) ? ' is-zwei'
-                                 : car.role === 'ghost' ? ' is-ghost' : '')
+                                 : car.role === 'ghost' ? ' is-ghost' : car.role === 'safetycar' ? ' is-safety' : '')
                     + (garAufAuto === car ? ' gk-auf' : '');
       row.dataset.xSprung = '.gar-a-rechts .opt-row';
       const f = carColor(car);
@@ -48658,6 +48683,52 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // BESTELLT (v0.9.27): "Option in den Renneinstellungen: gelbe Flagge deaktivieren
   // (Standard: aus)". An: weder Knopf noch Taste rufen Gelb aus.
   function gelbDeaktiviert() { const el = $('race-gelb-aus'); return !!(el && el.checked); }
+  // ---- SAFETY CAR (v0.10.7, experimentell) -------------------------------------------
+  // BESTELLT: "Das parkt am Streckenrand und faehrt los, wenn Gelb aktiviert wird. Danach
+  // faehrt es bei der Startgeraden rechts ran. Es darf nie von Ghosts ueberholt werden."
+  // Gefahren wird es von der Ghost-Logik (startGhost/ghostTick): unter Gelb im Gelb-Tempo mit
+  // Kurvendrosselung. Nach Gruen faehrt es bis Start/Ziel und haelt dort rechts am Rand
+  // (dieselbe Abstellfolge wie der Zieleinlauf: ausrollen, bremsen, blinken, stehen).
+  const SC_BLINK_MS = 750, SC_BLINK_AN_MS = 250, SC_NAH_KACHELN = 2;
+  function safetyCar() { return garage.find((c) => c.role === 'safetycar') || null; }
+  function safetyCarFaehrt() {
+    const sc = safetyCar();
+    return !!(sc && sc.ghost && sc.ghost.running && !sc.ghost.finish);
+  }
+  function safetyCarRaus() {
+    const sc = safetyCar();
+    if (!sc || (sc.ghost && sc.ghost.running)) return;
+    startGhost(sc);
+    if (sc.ghost) { sc.ghost.freeRun = true; sc.ghost.scHeim = false; }
+    showHudToast(t('Safety Car auf der Strecke'));
+    log(garageLabel(sc) + ': Safety Car faehrt los.', 'info');
+  }
+  function safetyCarHeim() {
+    const sc = safetyCar();
+    if (sc && sc.ghost && sc.ghost.running) {
+      sc.ghost.scHeim = true;
+      showHudToast(t('Safety Car kommt an Start/Ziel herein'));
+    }
+  }
+  // An Start/Ziel nach Gruen: rechts ran, eine Kachel ausrollen, stehen.
+  function safetyCarAbstellen(sc) {
+    const g = sc.ghost;
+    if (!g || g.finish) return;
+    g.scHeim = false;
+    g.finish = { phase: 'roll', at: Date.now(), seite: 1, kacheln: 1,
+                 kachelStart: sc.tileCount === null || sc.tileCount === undefined ? null : sc.tileCount };
+    log(garageLabel(sc) + ': Safety Car faehrt rechts ran.', 'info');
+  }
+  // Ist dieses Auto nah hinter dem Safety Car (hoechstens SC_NAH_KACHELN)?
+  function nahAmSafetyCar(car) {
+    const sc = safetyCar();
+    if (!sc || sc === car || !sc.ghost || !car || !car.ghost) return false;
+    const n = currentTrackTiles ? currentTrackTiles.length : 0;
+    const a = ghostOrt(car), b = ghostOrt(sc);
+    if (!n || a === null || b === null) return true;      // ohne Ort: vorsichtig
+    const d = ((b - a) % n + n) % n;
+    return d <= SC_NAH_KACHELN;
+  }
   // ---- DIE GRENZE DES FAHRERAUTOS UNTER GELB (v0.9.51) -----------------------------
   //
   // GEMELDET: "Gelbe Flagge soll mein Auto mit dem Tempo der Ghosts weiterfahren lassen und
@@ -48692,7 +48763,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     flagState = next;
     if (next === 'yellow') {
-      limitYellow = gelbGrenze();
+      // Mit Safety Car faehrt das Feld normal, bis es aufschliesst; die Grenze fuer das
+      // Fahrerauto setzt dann der Autopilot (autopilotGrund), nicht die Physik.
+      limitYellow = safetyCar() ? 1 : gelbGrenze();
+      safetyCarRaus();
       applySpeedLimit();
       // Angriffe abbrechen: waehrend Gelb wird nicht ueberholt.
       garage.forEach(c => { if (c.ghost) { c.ghost.attackUntil = 0; c.ghost.attackSide = 0; } });
@@ -48703,6 +48777,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       setRaceLights(0);
     } else if (next === 'green') {
       limitYellow = 1;
+      safetyCarHeim();
       applySpeedLimit();
       log('Gr\u00fcn. Volle Kontrolle.', 'info');
       showHudToast('GR\u00dcN');
@@ -49674,7 +49749,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // geprueft und nicht nur die Rolle: ohne eingescannte Strecke gibt es keinen Satz, und
     // ein Auto ohne Ort im Feld waere fuer jeden Abstand eine Null.
     return garage.filter(c => c.ghost && (c.role === 'ghost' || c === playerCar
-                                          || (zweiSpieler && spielerNrVon(c) >= 2)));
+                                          || (zweiSpieler && spielerNrVon(c) >= 2)
+                                          || (c.role === 'safetycar' && c.ghost.running)));
   }
 
   // ---- Die beste bekannte Querlage EINES Autos, egal welcher Art -------------------
@@ -50151,6 +50227,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // genau diese Kolonne aufloesen, und bei Boxentempo ist dafuer kein Grund: dort geht
     // es nicht um Position, sondern darum, geordnet zur Ziellinie zu kommen.
     if (ghostCfg.wuerzeUeberholen && !raceFormationLap
+        && !(ah && ah.car && ah.car.role === 'safetycar')     // das Safety Car wird nie ueberholt
         && !g.attackUntil && g.closeSince && now - g.closeSince > SPICE_ATTACK_ARM_MS
         && platz >= SPICE_PASS_PLATZ_MIN
         && !haarnadelVoraus
@@ -51869,7 +51946,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Ghosts ist nach unten nicht frei waehlbar: es ist durch das Fahrzeug begrenzt und
       // nicht durch Geschmack. Wer langsamer will, muss YELLOW_KMH erhoehen koennen - kann
       // er nicht, weil das Auto dann nicht mehr liest.
-      if (underYellow) {
+      // v0.10.7: Faehrt ein Safety Car, drosseln die anderen erst in seiner Naehe auf das
+      // Gelb-Tempo (BESTELLT: "normal fahren, bis sie nah am Safety Car sind, dann auf 35 %").
+      if (underYellow && (car.role === 'safetycar' || !safetyCarFaehrt() || nahAmSafetyCar(car))) {
         target = Math.min(target, Math.max(yellowFactor(), GHOST_READ_MIN));
       }
       // ---- Tempoprofil statt eines einzigen Kurvenabschlags ----
@@ -52518,7 +52597,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (akkuBlinkAus(car, now)) lights &= ~(LIGHT_HEAD | LIGHT_BRAKE) & 0xff;
     // Unter Gelb blinken alle, und ein stehendes Auto blinkt schneller - so findet man auf
     // dem Tisch sofort, welches gemeint ist.
-    if (flagState !== 'green' || car.parked) {
+    if (car.role === 'safetycar' && !car.parked) {
+      // BESTELLT: "Safetycar-Lichter blinken bei gelber Flagge alle 750 ms fuer 250 ms auf."
+      const on = flagState !== 'green' && (Date.now() % SC_BLINK_MS) < SC_BLINK_AN_MS;
+      lights = trackModeBit() | (on ? LIGHT_HEAD : 0);
+    } else if (flagState !== 'green' || car.parked) {
       const period = car.parked ? 260 : 520;
       const on = Math.floor(Date.now() / period) % 2 === 0;
       lights = trackModeBit() | (on ? LIGHT_HEAD : 0) | (on ? 0 : LIGHT_BRAKE);
@@ -78221,7 +78304,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!window.OMEGA_TEST || !OMEGA_TEST.garagenZeileProbe) {
       return { skip: true, mass: 'garagenZeileProbe nicht vorhanden' };
     }
-    const SOLL = ['player', 'player2', 'player3', 'ghost', 'none'];
+    const SOLL = ['player', 'player2', 'player3', 'safetycar', 'ghost', 'none'];
     const aus = OMEGA_TEST.garagenZeileProbe({ zwei: false });
     const an = OMEGA_TEST.garagenZeileProbe({ zwei: true, role: 'player2' });
     const maengel = [];
@@ -82676,6 +82759,31 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (merk.ls === null) localStorage.removeItem(BESTZEIT_STORE); else localStorage.setItem(BESTZEIT_STORE, merk.ls);
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bahn noetig, Spiegel = gleiche Strecke, Gold bei 7,0 s' };
+  });
+
+  // ---- v0.10.7: Safety Car ----
+  stAdd('Safety Car: eine Rolle, nie ueberholt, andere drosseln erst nah dran, Blinktakt', () => {
+    const f = [];
+    const merk = { garage: garage.slice(), tiles: currentTrackTiles, flag: flagState };
+    const echt = { start: startGhost };
+    try {
+      currentTrackTiles = codeToTrack('SG4R4G4').tiles;
+      const sc = { device: { id: 'sc' }, role: 'safetycar', tag: 'SC', ghost: { running: true, tileIndex: 6, tilesTotal: 6 } };
+      const nah = { device: { id: 'g1' }, role: 'ghost', tag: 'G1', ghost: { running: true, tileIndex: 5, tilesTotal: 5 } };
+      const weit = { device: { id: 'g2' }, role: 'ghost', tag: 'G2', ghost: { running: true, tileIndex: 1, tilesTotal: 1 } };
+      garage.length = 0; garage.push(sc, nah, weit);
+      if (garRollenFrei(nah).some((r) => r.id === 'safetycar')) f.push('zweites Safety Car waehlbar');
+      if (!safetyCarFaehrt()) f.push('Safety Car faehrt nicht');
+      if (!nahAmSafetyCar(nah)) f.push('1 Kachel dahinter gilt nicht als nah');
+      if (nahAmSafetyCar(weit)) f.push('5 Kacheln dahinter gilt als nah');
+      if (ghostFieldRacing().indexOf(sc) < 0) f.push('Safety Car ist kein Hindernis im Feld');
+      if (raceAllCars().some((c) => c.role === 'safetycar')) f.push('Safety Car im Ergebnis');
+    } finally {
+      startGhost = echt.start;
+      garage.length = 0; merk.garage.forEach((c) => garage.push(c));
+      currentTrackTiles = merk.tiles; flagState = merk.flag;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eine Rolle, Hindernis, Naehe 2 Kacheln, nicht im Ergebnis' };
   });
 
   stAdd('Rundenrennen endet mit der Zielrunde, nicht eine Runde spaeter', () => {

@@ -2635,7 +2635,11 @@
       return (flagState === 'yellow' && yellowFactor() < formationPace())
         ? 'yellow' : 'formation';
     }
-    return flagState === 'yellow' ? 'yellow' : null;
+    if (flagState !== 'yellow') return null;
+    // v0.10.7: mit Safety Car faehrt man selbst, bis man aufgeschlossen hat.
+    if (typeof safetyCarFaehrt === 'function' && safetyCarFaehrt()
+        && typeof nahAmSafetyCar === 'function' && !nahAmSafetyCar(playerCar)) return null;
+    return 'yellow';
   }
 
   // ---- UND ER GILT SEIT v0.6.53 FUER BEIDE AUTOS -------------------------------------
