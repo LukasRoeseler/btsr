@@ -2636,9 +2636,8 @@
         ? 'yellow' : 'formation';
     }
     if (flagState !== 'yellow') return null;
-    // v0.10.7: mit Safety Car faehrt man selbst, bis man aufgeschlossen hat.
-    if (typeof safetyCarFaehrt === 'function' && safetyCarFaehrt()
-        && typeof nahAmSafetyCar === 'function' && !nahAmSafetyCar(playerCar)) return null;
+    // v1.0.9 BESTELLT: "Bei meinem Auto sollte bei Safetycar sofort der Autopilot uebernehmen,
+    // nicht erst, wenn ich nah am Safetycar bin." Also wie jede gelbe Flagge.
     return 'yellow';
   }
 

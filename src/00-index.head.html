@@ -2918,6 +2918,97 @@
     overflow: hidden; text-overflow: ellipsis; }
   .gar-akku { white-space: nowrap; }
   #race-gridscreen button.pad-fokus { outline: 3px solid var(--k-blau, #3d8bff); outline-offset: 2px; }
+  /* ---- MEISTERSCHAFT (73-meisterschaft.js), nach mockup/meisterschaft.html ---- */
+  .meister-schirm:not([hidden]) { position: fixed; inset: 0; z-index: 390; display: flex; flex-direction: column;
+    background: #0c0e14 url(img/meisterschaft-bg.jpg) center/cover; color: #eef0f4;
+    font-family: "Bahnschrift SemiCondensed", "Bahnschrift", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
+    font-size: clamp(11px, 1.7vw, 15px); padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  .meister-schirm::before { content: ""; position: absolute; inset: 0; background: rgba(8,10,15,.86); pointer-events: none; }
+  .meister-schirm > * { position: relative; }
+  .ms-kopf { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,.1); background: rgba(5,7,12,.6); }
+  .ms-kopf b { letter-spacing: .12em; text-transform: uppercase; font-size: 1.1em; }
+  .ms-hint { margin-left: auto; font-size: .8em; color: #a3acbd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ms-zu { background: none; border: 0; color: #a3acbd; font-size: 1.2em; padding: 2px 6px; cursor: pointer; }
+  .ms-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 10px; padding: 8px 10px 10px; flex: 1; min-height: 0; }
+  .ms-liste { position: relative; display: flex; flex-direction: column; gap: 5px; overflow-y: auto; min-height: 0; padding: 2px; }
+  .ms-trenner { margin: 6px 0 1px; font-size: .78em; letter-spacing: .14em; text-transform: uppercase; color: #a3acbd; display: flex; align-items: center; gap: 8px; }
+  .ms-trenner::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,.12); }
+  .ms-ev { display: grid; grid-template-columns: 6px 1.6em 3.6em minmax(0,1fr) 10.5em; gap: 8px; align-items: center; background: #151821;
+    padding: 4px 8px 4px 0; border: 2px solid transparent; cursor: pointer; }
+  .ms-ev i { align-self: stretch; }
+  .ms-nr { font-size: 1.35em; font-weight: 900; text-align: center; color: #a3acbd; }
+  .ms-bild { height: 2.6em; background: #0b0d12; display: grid; place-items: center; overflow: hidden; }
+  .ms-bild svg { width: 100%; height: 100%; }
+  .ms-frei { font-size: .7em; color: #a3acbd; font-weight: 800; }
+  .ms-name { min-width: 0; }
+  .ms-name b { display: block; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ms-name span { display: block; font-size: .82em; color: #a3acbd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .meister-schirm .sel { border-color: #fff !important; }
+  .ms-grid.detail-aktiv .ms-liste .sel { border-color: rgba(255,255,255,.35) !important; }
+  .ms-wert { display: grid; grid-template-columns: 1.1em minmax(0,1fr) 1.1em; align-items: center; gap: 2px; font-weight: 800; letter-spacing: .05em;
+    font-size: .9em; text-transform: uppercase; }
+  .ms-pf { color: #00a3e0; text-align: center; cursor: pointer; user-select: none; }
+  .ms-w { text-align: center; padding: 2px 4px; background: #3b3f48; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .f-qualifying .ms-w { background: #6b5bd6; }
+  .f-runden .ms-w { background: #00a3e0; color: #04070c; }
+  .f-endurance .ms-w { background: #ffb02e; color: #1a1100; }
+  .f-training .ms-w { background: #2c6e49; }
+  .ms-knopf { background: #1d212b; border: 2px solid transparent; color: #fff; padding: 7px 10px; font-family: inherit; font-size: .95em;
+    letter-spacing: .05em; text-transform: uppercase; font-weight: 700; cursor: pointer; text-align: center; }
+  .ms-knopf.primary { background: #00a3e0; color: #04070c; }
+  .ms-neu { background: transparent; border: 2px dashed rgba(255,255,255,.22); color: #a3acbd; }
+  .ms-neu.sel { border-style: solid; color: #fff; }
+  .ms-gz, .ms-wz { display: grid; grid-template-columns: minmax(0,1fr) 14em; align-items: center; gap: 6px; background: #181c25;
+    padding: 4px 8px; border: 2px solid transparent; cursor: pointer; }
+  .ms-l { color: #a3acbd; font-size: .82em; text-transform: uppercase; letter-spacing: .06em; }
+  .ms-detail { background: rgba(17,20,27,.92); border-top: 3px solid #00a3e0; padding: 7px 8px; display: flex; flex-direction: column; gap: 4px; min-height: 0; overflow-y: auto; }
+  .ms-detail h3 { margin: 0 0 2px; font-size: 1em; letter-spacing: .1em; text-transform: uppercase; display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+  .ms-detail h3 small { color: #a3acbd; font-weight: 400; letter-spacing: .03em; text-transform: none; font-size: .82em; }
+  .ms-wz.aus { opacity: .38; cursor: default; }
+  .ms-wz.aus .ms-pf { visibility: hidden; }
+  .ms-wz.fehlt .ms-w { outline: 1px solid #ff2b5e; }
+  .ms-info { display: block; font-size: .85em; color: #a3acbd; line-height: 1.4; margin: 2px 0 0; }
+  .ms-info b { color: #eef0f4; }
+  .ms-rot { color: #ff8fa8; } .ms-gelb { color: #ffd166; }
+  .ms-fuss { display: flex; gap: 6px; margin-top: auto; flex-wrap: wrap; }
+  .ms-fuss .ms-knopf { flex: 1; font-size: .85em; padding: 6px; }
+  .ms-fuss-senk { flex-direction: column; }
+  .ms-weg { color: #ffb3c4; }
+  .ms-punkte { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; margin-top: 4px; }
+  .ms-punkte div { background: #181c25; text-align: center; padding: 3px 0; font-size: .82em; }
+  .ms-punkte div b { display: block; font-size: 1.1em; }
+  .ms-stand { width: 100%; border-collapse: collapse; }
+  .ms-stand th { color: #a3acbd; font-size: .78em; text-transform: uppercase; letter-spacing: .06em; text-align: center; padding: 3px 6px; font-weight: 400; }
+  .ms-stand th:nth-child(2) { text-align: left; } .ms-stand th.r { text-align: right; }
+  .ms-stand td { padding: 4px 6px; background: #151821; border-bottom: 2px solid #0c0e14; white-space: nowrap; }
+  .ms-stand td.pos { font-weight: 900; font-size: 1.15em; width: 1.8em; text-align: center; }
+  .ms-stand td.p1 { color: #f5c542; } .ms-stand td.p2 { color: #c9d1dc; } .ms-stand td.p3 { color: #d08a4f; }
+  .ms-stand td.e { color: #a3acbd; text-align: center; }
+  .ms-stand td.pkt { font-weight: 900; font-size: 1.15em; text-align: right; }
+  .ms-stand sup { font-size: .65em; color: #c08cff; margin-left: 2px; }
+  .ms-band { display: inline-block; width: 5px; height: 1em; vertical-align: middle; margin-right: 6px; }
+  .ms-rl { font-size: .7em; padding: 1px 4px; background: #6b5bd6; margin-left: 6px; letter-spacing: .05em; text-transform: uppercase; }
+  .ms-titel { display: block; font-size: 1.15em; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; }
+  .ms-meister { font-size: 1.3em; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; color: #f5c542; padding: 4px 0; }
+  .ms-aufst { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; font-size: .9em; margin-top: 3px; }
+  .ms-aufst div { background: #181c25; padding: 3px 6px; }
+  .ms-aufst div:nth-child(even) { transform: translateY(.6em); }
+  .ms-toast { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); background: #f3f4f6; color: #0b0c10; padding: 6px 12px;
+    font-weight: 700; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90%; text-align: center; }
+  .ms-toast.an { opacity: 1; }
+  .ms-mp { margin: 6px 0; }
+  .ms-mp-kopf { font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  .ms-mp-titel { color: var(--muted, #a3acbd); margin: 2px 0 4px; }
+  .ms-mp-stand { border-collapse: collapse; width: 100%; }
+  .ms-mp-stand td { padding: 2px 6px; border-bottom: 1px solid rgba(255,255,255,.1); }
+  .ms-mp-stand td:last-child { text-align: right; font-weight: 800; }
+  @media (max-width: 640px), (orientation: portrait) {
+    .ms-grid { grid-template-columns: 1fr; overflow-y: auto; }
+    .ms-liste, .ms-detail { overflow: visible; }
+    .ms-ev { grid-template-columns: 6px 1.4em 3em minmax(0,1fr) 8.5em; }
+    .ms-gz, .ms-wz { grid-template-columns: minmax(0,1fr) 11em; }
+    .ms-hint { display: none; }
+  }
   .gar-akku.knapp { color: var(--bad); font-weight: 800; }
   .gar-a-zeile.is-player .gk-rolle { background: var(--k-blau); color: var(--k-blau-text); }
   .gar-a-zeile.is-zwei .gk-rolle { background: #ffb02e; color: #1a1100; }
@@ -4486,7 +4577,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.8</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.10</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4544,7 +4635,7 @@
            (Ford und BMW von hinten), statt Fahrgefuehl (das ist ja in Garage und Optionen)."
            Die Kennung bleibt fa-profil, weil Menuefuehrung und Tutorial sie kennen. -->
       <div class="k-kachel k-klein k-meister" id="fa-profil" role="button" tabindex="0">
-        <span class="k-kk">Meisterschaft <span class="wip-tag">bald</span></span>
+        <span class="k-kk">Meisterschaft <span class="wip-tag">experimentell</span></span>
         <span class="k-kopf"><span class="k-kt">Meisterschaft erstellen</span></span>
         <span class="k-ki"></span>
       </div>
@@ -5614,6 +5705,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Meisterschaft (experimentell, 8. Modus): Die Kachel unten links in FAHREN &#246;ffnet den Planer. Jede Zeile ist ein Event mit Strecke (aktuell im Editor, gespeicherte Strecke oder freie Bahn), Format (Training, Qualifying, Runden, Endurance), Umfang, Wetter, stehendem oder fliegendem Start, Startaufstellung und Pflichtstopps; darunter Fahrgef&#252;hl, Aufstellung des ersten Rennens, Punkteschema, Punkt f&#252;r die schnellste Runde und Teilnehmer. Nach jedem Event kommt der Zwischenstand mit der n&#228;chsten Startaufstellung, pausieren und sp&#228;ter fortsetzen geht. Im WLAN-Mehrspieler leitet das planende Telefon: jedes Event startet f&#252;r alle, die anderen sehen Event und Stand auf dem Bereitschaftsschirm. Safety Car: unter Gelb &#252;bernimmt der Autopilot sofort, alle fahren etwa 35 %, niemand &#252;berholt. Pflichtstopps bis 3.</li>
         <li>Safety Car (experimentell): In der Garage gibt es neben &#8222;Ghost&#8220; die Rolle &#8222;Safety Car&#8220; (eines je Rennen). Es parkt am Rand, f&#228;hrt bei gelber Flagge los und blinkt alle 750 ms kurz auf. Die anderen Autos fahren unter Gelb normal weiter, bis sie bis auf zwei Kacheln aufgeschlossen haben, dann 35 % (dein Auto &#252;bernimmt dann der Autopilot). Ghosts &#252;berholen das Safety Car nie. Nach Gr&#252;n f&#228;hrt es bis Start/Ziel und h&#228;lt dort rechts am Rand. Es z&#228;hlt keine Runden und steht nicht im Ergebnis.</li>
       </ul>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
@@ -8731,6 +8823,7 @@
           <option value="0" selected>keine</option>
           <option value="1">1</option>
           <option value="2">2</option>
+          <option value="3">3</option>
         </select></div>
       <div class="opt-row"><div class="opt-label">Strafe je verpasstem Stopp (s)</div>
         <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="race-pit-penalty" value="10" min="0" max="300" step="1" style="width:84px"><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
@@ -11683,11 +11776,20 @@
        ein Rennen "fuer alle" startet, sehen alle Telefone diesen Schirm, egal auf welchem Reiter.
        Vorher lag er im Cockpit, der Knopf aber im Mehrspieler-Reiter - niemand sah ihn. Jeder
        meldet sich bereit; der Initiator startet, sobald alle anderen bereit sind. -->
+  <!-- MEISTERSCHAFT (73-meisterschaft.js): Planer und Zwischenstand, ueber allem ausser den Dialogen.
+       Der Inhalt entsteht im Code und wird dort mit t() uebersetzt. -->
+  <div class="meister-schirm" id="meister-schirm" data-i18n-skip hidden>
+    <div class="ms-kopf"><b id="ms-titel"></b><span class="wip-tag" id="ms-wip"></span><span class="ms-hint" id="ms-hint"></span>
+      <button type="button" class="ms-zu" id="ms-zu" aria-label="Schließen">&#10005;</button></div>
+    <div class="ms-grid" id="ms-grid"><div class="ms-liste" id="ms-liste"></div><div class="ms-detail" id="ms-detail"></div></div>
+    <div class="ms-toast" id="ms-toast"></div>
+  </div>
   <div class="k-pause" id="mp-ready-screen" hidden>
     <div class="k-pause-dialog">
       <h2>Rennen für alle: bereit? <span class="wip-tag">experimentell</span></h2>
       <p class="muted" id="mp-ready-info" data-i18n-skip></p>
       <div class="mp-ready-lade" id="mp-ready-lade" hidden></div>
+      <div class="ms-mp" id="mp-ready-meister" data-i18n-skip hidden></div>
       <div class="grid-liste" id="mp-ready-liste"></div>
       <div class="k-frage-knoepfe">
         <button type="button" class="primary" id="mp-ready-bereit" hidden>Bereit</button>

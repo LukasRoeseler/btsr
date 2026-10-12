@@ -2918,6 +2918,97 @@
     overflow: hidden; text-overflow: ellipsis; }
   .gar-akku { white-space: nowrap; }
   #race-gridscreen button.pad-fokus { outline: 3px solid var(--k-blau, #3d8bff); outline-offset: 2px; }
+  /* ---- MEISTERSCHAFT (73-meisterschaft.js), nach mockup/meisterschaft.html ---- */
+  .meister-schirm:not([hidden]) { position: fixed; inset: 0; z-index: 390; display: flex; flex-direction: column;
+    background: #0c0e14 url(img/meisterschaft-bg.jpg) center/cover; color: #eef0f4;
+    font-family: "Bahnschrift SemiCondensed", "Bahnschrift", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
+    font-size: clamp(11px, 1.7vw, 15px); padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  .meister-schirm::before { content: ""; position: absolute; inset: 0; background: rgba(8,10,15,.86); pointer-events: none; }
+  .meister-schirm > * { position: relative; }
+  .ms-kopf { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,.1); background: rgba(5,7,12,.6); }
+  .ms-kopf b { letter-spacing: .12em; text-transform: uppercase; font-size: 1.1em; }
+  .ms-hint { margin-left: auto; font-size: .8em; color: #a3acbd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ms-zu { background: none; border: 0; color: #a3acbd; font-size: 1.2em; padding: 2px 6px; cursor: pointer; }
+  .ms-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 10px; padding: 8px 10px 10px; flex: 1; min-height: 0; }
+  .ms-liste { position: relative; display: flex; flex-direction: column; gap: 5px; overflow-y: auto; min-height: 0; padding: 2px; }
+  .ms-trenner { margin: 6px 0 1px; font-size: .78em; letter-spacing: .14em; text-transform: uppercase; color: #a3acbd; display: flex; align-items: center; gap: 8px; }
+  .ms-trenner::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,.12); }
+  .ms-ev { display: grid; grid-template-columns: 6px 1.6em 3.6em minmax(0,1fr) 10.5em; gap: 8px; align-items: center; background: #151821;
+    padding: 4px 8px 4px 0; border: 2px solid transparent; cursor: pointer; }
+  .ms-ev i { align-self: stretch; }
+  .ms-nr { font-size: 1.35em; font-weight: 900; text-align: center; color: #a3acbd; }
+  .ms-bild { height: 2.6em; background: #0b0d12; display: grid; place-items: center; overflow: hidden; }
+  .ms-bild svg { width: 100%; height: 100%; }
+  .ms-frei { font-size: .7em; color: #a3acbd; font-weight: 800; }
+  .ms-name { min-width: 0; }
+  .ms-name b { display: block; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ms-name span { display: block; font-size: .82em; color: #a3acbd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .meister-schirm .sel { border-color: #fff !important; }
+  .ms-grid.detail-aktiv .ms-liste .sel { border-color: rgba(255,255,255,.35) !important; }
+  .ms-wert { display: grid; grid-template-columns: 1.1em minmax(0,1fr) 1.1em; align-items: center; gap: 2px; font-weight: 800; letter-spacing: .05em;
+    font-size: .9em; text-transform: uppercase; }
+  .ms-pf { color: #00a3e0; text-align: center; cursor: pointer; user-select: none; }
+  .ms-w { text-align: center; padding: 2px 4px; background: #3b3f48; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .f-qualifying .ms-w { background: #6b5bd6; }
+  .f-runden .ms-w { background: #00a3e0; color: #04070c; }
+  .f-endurance .ms-w { background: #ffb02e; color: #1a1100; }
+  .f-training .ms-w { background: #2c6e49; }
+  .ms-knopf { background: #1d212b; border: 2px solid transparent; color: #fff; padding: 7px 10px; font-family: inherit; font-size: .95em;
+    letter-spacing: .05em; text-transform: uppercase; font-weight: 700; cursor: pointer; text-align: center; }
+  .ms-knopf.primary { background: #00a3e0; color: #04070c; }
+  .ms-neu { background: transparent; border: 2px dashed rgba(255,255,255,.22); color: #a3acbd; }
+  .ms-neu.sel { border-style: solid; color: #fff; }
+  .ms-gz, .ms-wz { display: grid; grid-template-columns: minmax(0,1fr) 14em; align-items: center; gap: 6px; background: #181c25;
+    padding: 4px 8px; border: 2px solid transparent; cursor: pointer; }
+  .ms-l { color: #a3acbd; font-size: .82em; text-transform: uppercase; letter-spacing: .06em; }
+  .ms-detail { background: rgba(17,20,27,.92); border-top: 3px solid #00a3e0; padding: 7px 8px; display: flex; flex-direction: column; gap: 4px; min-height: 0; overflow-y: auto; }
+  .ms-detail h3 { margin: 0 0 2px; font-size: 1em; letter-spacing: .1em; text-transform: uppercase; display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+  .ms-detail h3 small { color: #a3acbd; font-weight: 400; letter-spacing: .03em; text-transform: none; font-size: .82em; }
+  .ms-wz.aus { opacity: .38; cursor: default; }
+  .ms-wz.aus .ms-pf { visibility: hidden; }
+  .ms-wz.fehlt .ms-w { outline: 1px solid #ff2b5e; }
+  .ms-info { display: block; font-size: .85em; color: #a3acbd; line-height: 1.4; margin: 2px 0 0; }
+  .ms-info b { color: #eef0f4; }
+  .ms-rot { color: #ff8fa8; } .ms-gelb { color: #ffd166; }
+  .ms-fuss { display: flex; gap: 6px; margin-top: auto; flex-wrap: wrap; }
+  .ms-fuss .ms-knopf { flex: 1; font-size: .85em; padding: 6px; }
+  .ms-fuss-senk { flex-direction: column; }
+  .ms-weg { color: #ffb3c4; }
+  .ms-punkte { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; margin-top: 4px; }
+  .ms-punkte div { background: #181c25; text-align: center; padding: 3px 0; font-size: .82em; }
+  .ms-punkte div b { display: block; font-size: 1.1em; }
+  .ms-stand { width: 100%; border-collapse: collapse; }
+  .ms-stand th { color: #a3acbd; font-size: .78em; text-transform: uppercase; letter-spacing: .06em; text-align: center; padding: 3px 6px; font-weight: 400; }
+  .ms-stand th:nth-child(2) { text-align: left; } .ms-stand th.r { text-align: right; }
+  .ms-stand td { padding: 4px 6px; background: #151821; border-bottom: 2px solid #0c0e14; white-space: nowrap; }
+  .ms-stand td.pos { font-weight: 900; font-size: 1.15em; width: 1.8em; text-align: center; }
+  .ms-stand td.p1 { color: #f5c542; } .ms-stand td.p2 { color: #c9d1dc; } .ms-stand td.p3 { color: #d08a4f; }
+  .ms-stand td.e { color: #a3acbd; text-align: center; }
+  .ms-stand td.pkt { font-weight: 900; font-size: 1.15em; text-align: right; }
+  .ms-stand sup { font-size: .65em; color: #c08cff; margin-left: 2px; }
+  .ms-band { display: inline-block; width: 5px; height: 1em; vertical-align: middle; margin-right: 6px; }
+  .ms-rl { font-size: .7em; padding: 1px 4px; background: #6b5bd6; margin-left: 6px; letter-spacing: .05em; text-transform: uppercase; }
+  .ms-titel { display: block; font-size: 1.15em; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; }
+  .ms-meister { font-size: 1.3em; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; color: #f5c542; padding: 4px 0; }
+  .ms-aufst { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; font-size: .9em; margin-top: 3px; }
+  .ms-aufst div { background: #181c25; padding: 3px 6px; }
+  .ms-aufst div:nth-child(even) { transform: translateY(.6em); }
+  .ms-toast { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); background: #f3f4f6; color: #0b0c10; padding: 6px 12px;
+    font-weight: 700; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90%; text-align: center; }
+  .ms-toast.an { opacity: 1; }
+  .ms-mp { margin: 6px 0; }
+  .ms-mp-kopf { font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  .ms-mp-titel { color: var(--muted, #a3acbd); margin: 2px 0 4px; }
+  .ms-mp-stand { border-collapse: collapse; width: 100%; }
+  .ms-mp-stand td { padding: 2px 6px; border-bottom: 1px solid rgba(255,255,255,.1); }
+  .ms-mp-stand td:last-child { text-align: right; font-weight: 800; }
+  @media (max-width: 640px), (orientation: portrait) {
+    .ms-grid { grid-template-columns: 1fr; overflow-y: auto; }
+    .ms-liste, .ms-detail { overflow: visible; }
+    .ms-ev { grid-template-columns: 6px 1.4em 3em minmax(0,1fr) 8.5em; }
+    .ms-gz, .ms-wz { grid-template-columns: minmax(0,1fr) 11em; }
+    .ms-hint { display: none; }
+  }
   .gar-akku.knapp { color: var(--bad); font-weight: 800; }
   .gar-a-zeile.is-player .gk-rolle { background: var(--k-blau); color: var(--k-blau-text); }
   .gar-a-zeile.is-zwei .gk-rolle { background: #ffb02e; color: #1a1100; }
@@ -4486,7 +4577,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.8</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.10</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4544,7 +4635,7 @@
            (Ford und BMW von hinten), statt Fahrgefuehl (das ist ja in Garage und Optionen)."
            Die Kennung bleibt fa-profil, weil Menuefuehrung und Tutorial sie kennen. -->
       <div class="k-kachel k-klein k-meister" id="fa-profil" role="button" tabindex="0">
-        <span class="k-kk">Meisterschaft <span class="wip-tag">bald</span></span>
+        <span class="k-kk">Meisterschaft <span class="wip-tag">experimentell</span></span>
         <span class="k-kopf"><span class="k-kt">Meisterschaft erstellen</span></span>
         <span class="k-ki"></span>
       </div>
@@ -5614,6 +5705,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Meisterschaft (experimentell, 8. Modus): Die Kachel unten links in FAHREN &#246;ffnet den Planer. Jede Zeile ist ein Event mit Strecke (aktuell im Editor, gespeicherte Strecke oder freie Bahn), Format (Training, Qualifying, Runden, Endurance), Umfang, Wetter, stehendem oder fliegendem Start, Startaufstellung und Pflichtstopps; darunter Fahrgef&#252;hl, Aufstellung des ersten Rennens, Punkteschema, Punkt f&#252;r die schnellste Runde und Teilnehmer. Nach jedem Event kommt der Zwischenstand mit der n&#228;chsten Startaufstellung, pausieren und sp&#228;ter fortsetzen geht. Im WLAN-Mehrspieler leitet das planende Telefon: jedes Event startet f&#252;r alle, die anderen sehen Event und Stand auf dem Bereitschaftsschirm. Safety Car: unter Gelb &#252;bernimmt der Autopilot sofort, alle fahren etwa 35 %, niemand &#252;berholt. Pflichtstopps bis 3.</li>
         <li>Safety Car (experimentell): In der Garage gibt es neben &#8222;Ghost&#8220; die Rolle &#8222;Safety Car&#8220; (eines je Rennen). Es parkt am Rand, f&#228;hrt bei gelber Flagge los und blinkt alle 750 ms kurz auf. Die anderen Autos fahren unter Gelb normal weiter, bis sie bis auf zwei Kacheln aufgeschlossen haben, dann 35 % (dein Auto &#252;bernimmt dann der Autopilot). Ghosts &#252;berholen das Safety Car nie. Nach Gr&#252;n f&#228;hrt es bis Start/Ziel und h&#228;lt dort rechts am Rand. Es z&#228;hlt keine Runden und steht nicht im Ergebnis.</li>
       </ul>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
@@ -8731,6 +8823,7 @@
           <option value="0" selected>keine</option>
           <option value="1">1</option>
           <option value="2">2</option>
+          <option value="3">3</option>
         </select></div>
       <div class="opt-row"><div class="opt-label">Strafe je verpasstem Stopp (s)</div>
         <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="race-pit-penalty" value="10" min="0" max="300" step="1" style="width:84px"><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
@@ -11683,11 +11776,20 @@
        ein Rennen "fuer alle" startet, sehen alle Telefone diesen Schirm, egal auf welchem Reiter.
        Vorher lag er im Cockpit, der Knopf aber im Mehrspieler-Reiter - niemand sah ihn. Jeder
        meldet sich bereit; der Initiator startet, sobald alle anderen bereit sind. -->
+  <!-- MEISTERSCHAFT (73-meisterschaft.js): Planer und Zwischenstand, ueber allem ausser den Dialogen.
+       Der Inhalt entsteht im Code und wird dort mit t() uebersetzt. -->
+  <div class="meister-schirm" id="meister-schirm" data-i18n-skip hidden>
+    <div class="ms-kopf"><b id="ms-titel"></b><span class="wip-tag" id="ms-wip"></span><span class="ms-hint" id="ms-hint"></span>
+      <button type="button" class="ms-zu" id="ms-zu" aria-label="Schließen">&#10005;</button></div>
+    <div class="ms-grid" id="ms-grid"><div class="ms-liste" id="ms-liste"></div><div class="ms-detail" id="ms-detail"></div></div>
+    <div class="ms-toast" id="ms-toast"></div>
+  </div>
   <div class="k-pause" id="mp-ready-screen" hidden>
     <div class="k-pause-dialog">
       <h2>Rennen für alle: bereit? <span class="wip-tag">experimentell</span></h2>
       <p class="muted" id="mp-ready-info" data-i18n-skip></p>
       <div class="mp-ready-lade" id="mp-ready-lade" hidden></div>
+      <div class="ms-mp" id="mp-ready-meister" data-i18n-skip hidden></div>
       <div class="grid-liste" id="mp-ready-liste"></div>
       <div class="k-frage-knoepfe">
         <button type="button" class="primary" id="mp-ready-bereit" hidden>Bereit</button>
@@ -12486,6 +12588,97 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "+ Event hinzufügen": "+ Add event",
+    "Aktuell im Editor": "Current in editor",
+    "Alle verbundenen Autos: Spieler 1–3, Ghosts und im Mehrspieler die anderen Telefone werden gewertet. Nur Spieler: Ghosts fahren als Verkehr mit, bekommen aber keine Punkte. Das Safety Car fährt nie in der Wertung.": "All connected cars: players 1–3, ghosts and, in multiplayer, the other phones are scored. Players only: ghosts drive along as traffic but get no points. The safety car is never scored.",
+    "Aufstellung": "Grid",
+    "Bereit?": "Ready?",
+    "Bestimmt die Aufstellung des nächsten Rennens.": "Sets the grid of the next race.",
+    "Eine Meisterschaft braucht mindestens ein Event": "A championship needs at least one event",
+    "Eine laufende Meisterschaft wird dabei beendet.": "A championship in progress will be ended.",
+    "Endstand": "Final standings",
+    "Event abgebrochen, es wird nicht gewertet": "Event aborted, it is not scored",
+    "Event": "Event",
+    "Events": "events",
+    "FREI": "FREE",
+    "Freie Bahn": "Free track",
+    "Für die ganze Meisterschaft": "For the whole championship",
+    "Gilt fürs erste Rennen, wenn davor kein Qualifying liegt. Beste heißt: schnellste gespeicherte Runde auf dieser Strecke; ohne Daten entscheidet der Zufall. Danach bestimmen die Punkte die Aufstellung (je Event änderbar).": "Applies to the first race if no qualifying comes before it. Best means: fastest saved lap on this track; without data it is random. After that the points set the grid (changeable per event).",
+    "Gleichstand: mehr Siege, dann mehr zweite Plätze, dann das letzte Rennen.": "Tie: more wins, then more second places, then the last race.",
+    "Höchstens 10 Events": "At most 10 events",
+    "Keine": "None",
+    "Mehrspieler: du leitest die Meisterschaft. Jedes Event startet für alle, mit": "Multiplayer: you run the championship. Every event starts for everyone, with",
+    "Meister": "Champion",
+    "Meisterschaft beendet": "Championship finished",
+    "Meisterschaft starten": "Start championship",
+    "Mindestens 1, jedes Event braucht eine klare Dauer": "At least 1, every event needs a clear length",
+    "Mindestens ein Event muss Runden oder Endurance sein.": "At least one event must be Laps or Endurance.",
+    "Noch keine Wertung.": "No results yet.",
+    "Nochmal drücken zum Beenden": "Press again to end",
+    "Nächstes Event": "Next event",
+    "Punkte je Platz bei 6 Autos": "Points per place with 6 cars",
+    "Punkte": "Points",
+    "Startaufstellung": "Starting grid",
+    "Strecke nicht mehr gespeichert, es gilt die aktuelle": "Track no longer saved, using the current one",
+    "Strecke umbauen": "Rebuild the track",
+    "Verbunden": "Connected",
+    "Vorher fehlt ein Qualifying.": "A qualifying is missing before it.",
+    "Wie in der Garage: jedes Telefon fährt mit seinem eigenen Fahrgefühl. Alle wie Spieler 1: im Mehrspieler bekommen alle Telefone das des Meisterschaftsleiters. Ein festes Preset gilt für alle gesteuerten Autos. Ghosts betrifft das nicht.": "As in the garage: every phone drives with its own driving feel. All like player 1: in multiplayer every phone gets the one of the championship leader. A fixed preset applies to all controlled cars. Ghosts are not affected.",
+    "Zum Einfahren, ohne Wertung.": "For warming up, not scored.",
+    "Zwischenstand nach Event": "Standings after event",
+    "entfällt": "n/a",
+    "erstes Rennen": "first race",
+    "für die schnellste Runde eines Rennens": "for the fastest lap of a race",
+    "keine Punkte": "no points",
+    "mit Punkten": "with points",
+    "ohne Punkte": "without points",
+    "nach Qualifying": "by qualifying",
+    "▲▼ Einstellung · ◀▶ Wert · ○ zurück": "▲▼ setting · ◀▶ value · ○ back",
+    "▲▼ Zeile · ◀▶ ändern · ✕ Event einstellen · ○ schließen": "▲▼ row · ◀▶ change · ✕ edit event · ○ close",
+    "▲▼ wählen · ✕ bestätigen · ○ schließen": "▲▼ select · ✕ confirm · ○ close",
+    "✕ startet Event 1. Zwischen den Events kommt der Zwischenstand.": "✕ starts event 1. The standings come between events.",
+    "Alle verbundenen Autos": "All connected cars",
+    "Alle: Arcade": "All: Arcade",
+    "Alle: Pro": "All: Pro",
+    "Alle: Pacejka": "All: Pacejka",
+    "Alle: Sim+": "All: Sim+",
+    "Automatisch": "Automatic",
+    "Beste zuerst": "Best first",
+    "Beste zuletzt": "Best last",
+    "Sonnig": "Sunny",
+    "Meisterschaft beenden": "End championship",
+    "F1 · 25-18-15-12-10": "F1 · 25-18-15-12-10",
+    "Fliegend": "Flying",
+    "Stehend": "Standing",
+    "Garagen-Reihenfolge": "Garage order",
+    "Wie in der Garage": "As in the garage",
+    "+1 Punkt": "+1 point",
+    "Klassisch · 10-6-4-3-2": "Classic · 10-6-4-3-2",
+    "Wie letztes Ergebnis": "Like last result",
+    "Linear · N … 1": "Linear · N … 1",
+    "Keine Punkte": "No points",
+    "Neue Meisterschaft planen": "Plan new championship",
+    "Alle wie Spieler 1": "All like player 1",
+    "Meisterschaft planen": "Plan championship",
+    "Nach Punkten · Führender hinten": "By points · leader last",
+    "Nach Punkten · Führender vorn": "By points · leader first",
+    "Nach letztem Qualifying": "By last qualifying",
+    "Nur Spieler (P1–P3)": "Players only (P1–P3)",
+    "Weiter: Event": "Next: event",
+    "Pause · später weiter": "Pause · continue later",
+    "Format": "Format",
+    "Wirklich löschen?": "Really delete?",
+    "Pflichtstopps": "Mandatory stops",
+    "Schnellste Runde": "Fastest lap",
+    "Startaufstellung 1. Event": "Grid for event 1",
+    "Teilnehmer": "Participants",
+    "Umfang": "Length",
+    "▲ Früher": "▲ Earlier",
+    "Qualifying": "Qualifying",
+    "Endurance": "Endurance",
+    "Min": "min",
+    "Stopp": "stop",
+    "Stopps": "stops",
     "Safety Car": "Safety car",
     "Safety Car auf der Strecke": "Safety car on track",
     "Safety Car kommt an Start/Ziel herein": "Safety car comes in at start/finish",
@@ -12505,7 +12698,6 @@
     "Meisterschaft": "Championship",
     "Meisterschaft erstellen": "Create championship",
     "bald": "soon",
-    "Meisterschaft: kommt bald – der Entwurf ist in Arbeit.": "Championship: coming soon – the design is in progress.",
     "Training": "Practice",
     "Zeitlimit in Minuten, 0 = bis du beendest.": "Time limit in minutes, 0 = until you stop.",
     "Offen": "Open",
@@ -13054,6 +13246,7 @@
     "Fahrgefühl und Menüs: Neue Abstimmung Sim+ (wie Pro mit direkterer Lenkung, mehr Beschleunigung und viel stärkerer Bremse). Im FAHREN-Menü und am Cockpit-Knopf stehen nur noch Arcade, Sim+, Pro und Pacejka; GT3, F1 und Realismus GT3 bleiben in den Optionen. Arcade lenkt stärker und erreicht jetzt den vollen Einschlag, GT3 und F1 behalten ihn auch mit kalten Reifen (der Lenkregler reicht bis 400 %). Drift-Modus entfernt; „Aus“ heißt jetzt RC: Gas läuft in 2 s aus, die Bremse greift sofort, ein zweiter Bremsdruck im Stand fährt rückwärts. Gelbe Flagge: alle Autos etwa 35 %, auch im Ausdruck-Modus. Reifenmischungen unterscheiden sich stärker (weich 120 % Griff und schneller Verschleiß, hart 85 % und langlebig). Bremsquietschen leiser. Garage: Rollenpfeile immer an derselben Stelle, Akkustand je Auto, Fahrgefühl je gesteuertem Auto wählbar, neues Garagenbild. Startaufstellung: Abbrechen, Automatisch aufstellen und Start mit dem Steuerkreuz wählbar, X bestätigt. Titelschirm mit „Starten“. Unten links im FAHREN-Menü die Kachel Meisterschaft (kommt bald). „Freies Training“ heißt „Training“ und hat ein Zeitlimit (0 = ohne Ende). „Controller tauschen“ entfernt.": "Driving feel and menus: new setup Sim+ (like Pro with more direct steering, more acceleration and much stronger brakes). The DRIVE menu and the cockpit button now only offer Arcade, Sim+, Pro and Pacejka; GT3, F1 and Realism GT3 stay in the options. Arcade steers more and now reaches full lock, GT3 and F1 keep it even on cold tyres (the steering slider goes up to 400 %). Drift mode removed; “Off” is now RC: throttle coasts down over 2 s, the brake acts at once, a second brake press while standing drives backwards. Yellow flag: all cars about 35 %, also in print mode. Tyre compounds differ more (soft 120 % grip and fast wear, hard 85 % and long-lasting). Brake squeal quieter. Garage: role arrows always in the same place, battery level per car, driving feel selectable per controlled car, new garage picture. Grid screen: Cancel, Auto grid and Start selectable with the D-pad, X confirms. Title screen with “Start”. Bottom left of the DRIVE menu: the Championship tile (coming soon). “Free practice” is now “Practice” with a time limit (0 = no end). “Swap controllers” removed.",
     "Neuer Modus „Bestzeit“ (experimentell): Bestzeit auf deiner eigenen Strecke mit Medaillen nach der Gold-Formel. Geht nur auf der Bahn mit eingescannter Strecke (sonst ein Hinweis wie bei NPC Knockout), es fahren nur gesteuerte Autos, Ghosts bleiben stehen. Zeiten und Medaillen werden je Strecke gespeichert (gespiegelt zählt als dieselbe): Wer die Strecke wieder aufbaut, hat seine alten Zeiten. Die FAHREN-Kachel zeigt die Bestzeit, die Statistik zählt die Medaillen mit. Gold-Formel neu kalibriert: Balkonia 16 s und Omega Testing Track 2 7,2 s, alle anderen Strecken dazwischen und darüber.": "New mode “Best time” (experimental): best lap on your own track with medals by the gold formula. Only on the track with a scanned layout (otherwise a notice like NPC Knockout), only controlled cars drive, ghosts stay put. Times and medals are stored per track (mirrored counts as the same): rebuild the track and your old times are back. The DRIVE tile shows the best time, the statistics count the medals. Gold formula recalibrated: Balkonia 16 s and Omega Testing Track 2 7.2 s, all other tracks in between and beyond.",
     "Safety Car (experimentell): In der Garage gibt es neben „Ghost“ die Rolle „Safety Car“ (eines je Rennen). Es parkt am Rand, fährt bei gelber Flagge los und blinkt alle 750 ms kurz auf. Die anderen Autos fahren unter Gelb normal weiter, bis sie bis auf zwei Kacheln aufgeschlossen haben, dann 35 % (dein Auto übernimmt dann der Autopilot). Ghosts überholen das Safety Car nie. Nach Grün fährt es bis Start/Ziel und hält dort rechts am Rand. Es zählt keine Runden und steht nicht im Ergebnis.": "Safety car (experimental): next to “Ghost” the garage now has the role “Safety car” (one per race). It parks at the edge, drives off when the yellow flag comes out and flashes briefly every 750 ms. The other cars keep racing under yellow until they are within two tiles of it, then 35 % (your car is taken over by the autopilot). Ghosts never overtake the safety car. After green it drives to start/finish and stops at the right edge. It counts no laps and is not in the results.",
+    "Meisterschaft (experimentell, 8. Modus): Die Kachel unten links in FAHREN öffnet den Planer. Jede Zeile ist ein Event mit Strecke (aktuell im Editor, gespeicherte Strecke oder freie Bahn), Format (Training, Qualifying, Runden, Endurance), Umfang, Wetter, stehendem oder fliegendem Start, Startaufstellung und Pflichtstopps; darunter Fahrgefühl, Aufstellung des ersten Rennens, Punkteschema, Punkt für die schnellste Runde und Teilnehmer. Nach jedem Event kommt der Zwischenstand mit der nächsten Startaufstellung, pausieren und später fortsetzen geht. Im WLAN-Mehrspieler leitet das planende Telefon: jedes Event startet für alle, die anderen sehen Event und Stand auf dem Bereitschaftsschirm. Safety Car: unter Gelb übernimmt der Autopilot sofort, alle fahren etwa 35 %, niemand überholt. Pflichtstopps bis 3.": "Championship (experimental, 8th mode): the tile at the bottom left of DRIVE opens the planner. Every row is an event with track (current in editor, saved track or free track), format (practice, qualifying, laps, endurance), length, weather, standing or flying start, starting grid and mandatory stops; below it driving feel, grid for the first race, points system, point for the fastest lap and participants. After every event the standings appear with the next grid; you can pause and continue later. In Wi-Fi multiplayer the planning phone leads: every event starts for everyone, the others see event and standings on the ready screen. Safety car: under yellow the autopilot takes over at once, everyone drives at about 35 %, nobody overtakes. Mandatory stops up to 3.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -22989,9 +23182,8 @@
         ? 'yellow' : 'formation';
     }
     if (flagState !== 'yellow') return null;
-    // v0.10.7: mit Safety Car faehrt man selbst, bis man aufgeschlossen hat.
-    if (typeof safetyCarFaehrt === 'function' && safetyCarFaehrt()
-        && typeof nahAmSafetyCar === 'function' && !nahAmSafetyCar(playerCar)) return null;
+    // v1.0.9 BESTELLT: "Bei meinem Auto sollte bei Safetycar sofort der Autopilot uebernehmen,
+    // nicht erst, wenn ich nah am Safetycar bin." Also wie jede gelbe Flagge.
     return 'yellow';
   }
 
@@ -25565,6 +25757,8 @@
   window.addEventListener('keydown', (e) => {
     const k = (e.key || '').toLowerCase();
     if (e.target && e.target.closest && e.target.closest('input[type="text"], input[type="number"], textarea, select')) return;
+    // Der Meisterschaftsschirm hat seine eigene Tastatur (73-meisterschaft.js).
+    if (typeof meisterOffen === 'function' && meisterOffen() && !kFrageOffen) return;
     if (kAktiverTab() === 'home' && !e.ctrlKey && !e.altKey && !e.metaKey && k !== 'tab' && k !== 'shift') {
       e.preventDefault(); e.stopImmediatePropagation();
       // Tastatur wie am Pad: Enter, Leertaste oder X starten, T das Tutorial, S die Steuerung.
@@ -25629,7 +25823,7 @@
     kn('fa-laden', () => konsoleZeige('track', 'laden'));
     kn('fa-raum', () => konsoleZeige('track', 'raum'));
     kn('fa-druck', () => konsoleZeige('track', 'print'));
-    kn('fa-profil', () => showHudToast(t('Meisterschaft: kommt bald – der Entwurf ist in Arbeit.')));
+    kn('fa-profil', () => meisterOeffnen());
     // BESTELLT: "wenn ich auf den Header tippe, soll es zur naechsten Option schalten".
     // Der Kachelkopf (Titel + Wert) dreht die Schaltstellung weiter, der Rest der Kachel
     // oeffnet wie bisher die Unterseite. Das Gamepad bleibt unveraendert (Quadrat/links/rechts).
@@ -34403,6 +34597,9 @@
     // Uebersicht; sonst eine Einblendung "Rennen beendet - Ergebnis ansehen", und Options
     // bzw. ein Klick fuehrt dann ins Cockpit auf die Uebersicht (51-konsole.js).
     // Eine Challenge zeigt ihr Ergebnis selbst (Wertung, Bestenliste, Nochmal).
+    // Meisterschaft (73-meisterschaft.js): wertet, sobald alle im Ziel sind, und zeigt danach
+    // den Zwischenstand. Das normale Ergebnis kommt trotzdem zuerst.
+    if (typeof meisterRennenEnde === 'function') meisterRennenEnde(willAuslaufen);
     if (typeof challengeRennenEnde === 'function' && challengeRennenEnde(willAuslaufen)) { /* erledigt */ }
     else if (typeof konsoleRennenBeendet === 'function') konsoleRennenBeendet();
     else {
@@ -41511,6 +41708,878 @@
     });
   });
   setTimeout(chKachelnZeichnen, 0);
+  // ============================== MEISTERSCHAFT (v1.0, experimentell) ==============================
+  //
+  // BESTELLT: "Wie bei Garage, nur dass jede Zeile ein Rennen ist. Ich kann aus meinen geladenen
+  // Strecken aber auch freies Fahren waehlen, standardmaessig ist immer das, was aktuell gerade
+  // im Streckeneditor ist, gewaehlt. Je Event waehle ich dann das Format, Wetter, und Umfang
+  // [...] Je Rennen ausserdem Startaufstellung, Pflichtboxenstopps, fliegender oder stehender
+  // Start waehlen. Globale Optionen unten drunter: Presets [...], Startaufstellung [...]."
+  // Abgesegnet als mockup/meisterschaft.html ("sieht wundervoll aus. Bitte so einbauen").
+  // Dazu: "Wenn moeglich, Meisterschaft auch fuer Multiplayer funktionsfaehig machen (Host ist
+  // Meisterschaftsleiter)."
+  //
+  // KEIN EIGENES RENNEN. Ein Event setzt nur die Renneinstellungen, die es schon gibt (Modus,
+  // Laenge, Wetter, fliegender Start, Pflichtstopps, Strecke, Startaufstellung), und startet
+  // dann den normalen Ablauf: Startaufstellung, Ampel, Rennen, Zielflagge. finishRace() ruft
+  // meisterRennenEnde(), und erst wenn alle im Ziel sind, wird gewertet.
+  //
+  // MEHRSPIELER: Das Telefon, das die Meisterschaft plant, ist der Leiter. Es startet jedes
+  // Event "fuer alle" (mpRennenFuerAlle); der Plan traegt Strecke und Zwischenstand mit, die
+  // anderen Telefone zeigen ihn auf dem Bereitschaftsschirm. Gewertet wird nur beim Leiter: die
+  // Menschen aus der Rangliste des Hosts (ihre Reihenfolge IST der Zieleinlauf, der Host sortiert
+  // nach Runden und dem Zeitpunkt der letzten Runde), die eigenen Ghosts und Spieler 2/3 aus
+  // raceAllCars(). Wo beide Listen dieselbe Rundenzahl haben, entscheidet das eigene Auto als
+  // Anker: wer lokal schneller war als es, steht vor ihm.
+  const MEISTER_STORE = 'omegasim-meisterschaft';
+  const MEISTER_MAX_EVENTS = 10;
+  const MEISTER_FORMATE = [
+    { id: 'training', modus: 'practice', name: 'Training', einheit: 'Min', punkte: false },
+    { id: 'qualifying', modus: 'qualifying', name: 'Qualifying', einheit: 'Min', punkte: false },
+    { id: 'runden', modus: 'laps', name: 'Runden', einheit: 'Runden', punkte: true },
+    { id: 'endurance', modus: 'endurance', name: 'Endurance', einheit: 'Min', punkte: true },
+  ];
+  const MEISTER_WETTER = [['dry', 'Sonnig'], ['rain', 'Regen'], ['wechsel', 'Wechselhaft']];
+  const MEISTER_START = [['stehend', 'Stehend'], ['fliegend', 'Fliegend']];
+  const MEISTER_AUFST = [['auto', 'Automatisch'], ['punkte_hinten', 'Nach Punkten · Führender hinten'],
+    ['punkte_vorn', 'Nach Punkten · Führender vorn'], ['quali', 'Nach letztem Qualifying'],
+    ['letztes', 'Wie letztes Ergebnis'], ['zufall', 'Zufall']];
+  const MEISTER_GLOBAL = [
+    { id: 'fahrgefuehl', l: 'Fahrgefühl', w: [['garage', 'Wie in der Garage'], ['p1', 'Alle wie Spieler 1'],
+      ['arcade', 'Alle: Arcade'], ['simplus', 'Alle: Sim+'], ['pro', 'Alle: Pro'], ['propacejka', 'Alle: Pacejka']] },
+    { id: 'start1', l: 'Startaufstellung 1. Event', w: [['zufall', 'Zufall'], ['beste_zuletzt', 'Beste zuletzt'],
+      ['beste_zuerst', 'Beste zuerst'], ['garage', 'Garagen-Reihenfolge']] },
+    { id: 'punkte', l: 'Punkte', w: [['f1', 'F1 · 25-18-15-12-10'], ['klassisch', 'Klassisch · 10-6-4-3-2'],
+      ['linear', 'Linear · N … 1']] },
+    { id: 'fl', l: 'Schnellste Runde', w: [['ja', '+1 Punkt'], ['nein', 'Keine Punkte']] },
+    { id: 'teilnehmer', l: 'Teilnehmer', w: [['alle', 'Alle verbundenen Autos'], ['spieler', 'Nur Spieler (P1–P3)']] },
+  ];
+  const MEISTER_PUNKTE = { f1: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1], klassisch: [10, 6, 4, 3, 2, 1] };
+  const MEISTER_FARBEN = ['#2ee06a', '#ffb02e', '#00a3e0', '#e84bb0', '#9c8cff', '#ff6b4a'];
+
+  function meisterEventNeu() {
+    return { strecke: 'aktuell', format: 'runden', umfang: 15, wetter: 'dry', start: 'stehend', aufst: 'auto', stopps: 0 };
+  }
+  function meisterPlanVorgabe() {
+    return {
+      events: [
+        Object.assign(meisterEventNeu(), { format: 'qualifying', umfang: 5 }),
+        meisterEventNeu(),
+        Object.assign(meisterEventNeu(), { format: 'endurance', umfang: 20, wetter: 'wechsel', stopps: 1 }),
+      ],
+      global: { fahrgefuehl: 'garage', start1: 'zufall', punkte: 'f1', fl: 'ja', teilnehmer: 'alle' },
+    };
+  }
+  function meisterLesen() {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(MEISTER_STORE) || 'null'); } catch (e) { d = null; }
+    if (!d || !d.plan || !Array.isArray(d.plan.events) || !d.plan.events.length) d = { plan: meisterPlanVorgabe(), lauf: null };
+    d.plan.global = Object.assign(meisterPlanVorgabe().global, d.plan.global || {});
+    return d;
+  }
+  let meister = meisterLesen();
+  function meisterSpeichern() {
+    try { localStorage.setItem(MEISTER_STORE, JSON.stringify(meister)); } catch (e) { /* privat */ }
+  }
+
+  function meisterFormat(ev) { return MEISTER_FORMATE.find((f) => f.id === ev.format) || MEISTER_FORMATE[2]; }
+  function meisterIstRennen(ev) { return meisterFormat(ev).punkte; }
+  function meisterGlobalWert(id) {
+    const g = MEISTER_GLOBAL.find((x) => x.id === id);
+    const v = meister.plan.global[id];
+    return g.w.some((w) => w[0] === v) ? v : g.w[0][0];
+  }
+  function meisterName(liste, id) { const x = liste.find((w) => w[0] === id); return t(x ? x[1] : liste[0][1]); }
+  function meisterGespeicherte() {
+    let s = {};
+    try { s = typeof loadTrackStore === 'function' ? loadTrackStore() : {}; } catch (e) { s = {}; }
+    return Object.keys(s).sort((a, b) => a.localeCompare(b));
+  }
+  function meisterStrecken() { return ['aktuell'].concat(meisterGespeicherte(), ['frei']); }
+  function meisterStreckeName(s) {
+    if (s === 'aktuell') return t('Aktuell im Editor');
+    if (s === 'frei') return t('Freie Bahn');
+    return s;
+  }
+
+  // ---- WERTUNG (rein, ohne DOM: der Selbsttest ruft sie direkt) ------------------------------
+  // feld: [{ key, laps, total, beste }] in beliebiger Reihenfolge. Gewertet wird, wer eine Runde
+  // hat; Qualifying nach bester Runde, sonst mehr Runden, dann kuerzere Gesamtzeit (wie
+  // renderRaceResults). Rueckgabe: die gewerteten Keys in Zielreihenfolge.
+  function meisterKlassieren(feld, quali) {
+    return feld.filter((x) => x.laps > 0).slice().sort((a, b) => (quali
+      ? (a.beste - b.beste)
+      : ((b.laps - a.laps) || (a.total - b.total)))).map((x) => x.key);
+  }
+  function meisterPunkteFuer(schema, platz, anzahl) {
+    if (schema === 'linear') return Math.max(0, anzahl - platz);
+    const tab = MEISTER_PUNKTE[schema] || MEISTER_PUNKTE.f1;
+    return platz < tab.length ? tab[platz] : 0;
+  }
+  // Gibt je Key { pos, pkt, fl } zurueck. flKey: wer die schnellste Runde fuhr (oder null).
+  function meisterPunkteVergeben(reihe, schema, flKey, flPunkt) {
+    const out = {};
+    reihe.forEach((k, i) => { out[k] = { pos: i + 1, pkt: meisterPunkteFuer(schema, i, reihe.length), fl: false }; });
+    if (flPunkt && flKey && out[flKey]) { out[flKey].fl = true; out[flKey].pkt += 1; }
+    return out;
+  }
+  // Gesamtwertung: Punkte, dann mehr Siege, mehr zweite Plaetze, ..., dann das letzte Event.
+  function meisterTabelle(lauf) {
+    const f = Object.keys(lauf.fahrer || {}).map((k) => Object.assign({ key: k }, lauf.fahrer[k]));
+    const plaetze = (x, p) => (x.je || []).filter((e) => e && e.pkt !== undefined && e.pos === p).length;
+    const letztes = (x) => { const e = (x.je || [])[(x.je || []).length - 1]; return e && e.pos ? e.pos : 99; };
+    f.sort((a, b) => {
+      if (b.pkt !== a.pkt) return b.pkt - a.pkt;
+      for (let p = 1; p <= 10; p++) { const d = plaetze(b, p) - plaetze(a, p); if (d) return d; }
+      return letztes(a) - letztes(b);
+    });
+    return f;
+  }
+  // Mehrspieler: Menschen in Host-Reihenfolge, die eigenen uebrigen Autos nach Runden einsortiert;
+  // bei gleicher Rundenzahl entscheidet ihr Abstand zum eigenen Auto (anker).
+  // fern: [{ key, laps, beste }] in Host-Reihenfolge; lokal: [{ key, laps, total, beste }].
+  function meisterMischen(fern, lokal, anker, quali) {
+    if (quali) return meisterKlassieren(fern.concat(lokal), true);
+    const ankerLokal = lokal.find((x) => x.key === anker);
+    const reihe = fern.filter((x) => x.laps > 0).slice();
+    lokal.filter((x) => x.laps > 0 && x.key !== anker).sort((a, b) => (b.laps - a.laps) || (a.total - b.total)).forEach((x) => {
+      let i = reihe.findIndex((r) => {
+        if (r.laps !== x.laps) return r.laps < x.laps;
+        // Gleiche Rundenzahl: nur am Anker laesst sich messen, wer vorn war. Schneller als das
+        // eigene Auto heisst direkt davor, sonst ans Ende der Gruppe.
+        return r.key === anker && !!ankerLokal && x.total < ankerLokal.total;
+      });
+      if (i < 0) i = reihe.length;
+      reihe.splice(i, 0, x);
+    });
+    return reihe.map((x) => x.key);
+  }
+
+  // ---- WER FAEHRT MIT --------------------------------------------------------------------
+  function meisterMpAndere() {
+    try {
+      if (typeof mp === 'undefined' || !mp.an || !mpLetzterStand) return [];
+      return (mpLetzterStand.fahrer || []).filter((f) => f && f.id && f.id !== mp.id && mpAktiv(f));
+    } catch (e) { return []; }
+  }
+  function meisterLokalKey(c) { return 'c:' + c.id; }
+  function meisterEigenKey() {
+    if (meisterMpAndere().length) return 'mp:' + mp.id;
+    const p = garage.find((c) => c.role === 'player');
+    return p ? 'c:' + String(p.device.id) : 'c:spieler';
+  }
+  function meisterNurSpieler() { return meisterGlobalWert('teilnehmer') === 'spieler'; }
+  function meisterDarfMit(rolle) { return !meisterNurSpieler() || /^player/.test(rolle || ''); }
+  // Das Feld dieses Events, gemessen: Rueckgabe { reihe, info: {key: {name, farbe, rolle, beste}} }.
+  function meisterFeldMessen(ev) {
+    const quali = ev.format === 'qualifying';
+    const info = {};
+    const lokal = raceAllCars().filter((c) => meisterDarfMit(c.role)).map((c) => {
+      const ms = (c.laps || []).map((l) => l.ms);
+      let total = ms.reduce((a, b) => a + b, 0);
+      if (c.role === 'player' && typeof racePenaltyMs === 'function') total += racePenaltyMs();
+      const key = c.id ? 'c:' + c.id : 'c:spieler';
+      info[key] = { name: c.name, farbe: c.farbe, rolle: c.role };
+      return { key, laps: ms.length, total, beste: ms.length ? Math.min.apply(null, ms) : Infinity, rolle: c.role };
+    });
+    const andere = meisterMpAndere();
+    if (!andere.length) return { reihe: meisterKlassieren(lokal, quali), info, lokal };
+    const eigen = (mpLetzterStand.fahrer || []).find((f) => f.id === mp.id);
+    const fern = (mpLetzterStand.fahrer || []).filter((f) => f && f.id && (f.id === mp.id || mpAktiv(f))).map((f) => {
+      const key = 'mp:' + f.id;
+      info[key] = { name: f.name || f.id, farbe: null, rolle: f.id === mp.id ? 'player' : 'mp' };
+      return { key, laps: f.laps || 0, beste: Number.isFinite(f.beste) ? f.beste * 1000 : Infinity, total: 0 };
+    });
+    // Das eigene Auto: lokal gemessen, aber unter seinem Mehrspieler-Key (der Anker).
+    const p1 = lokal.find((x) => x.rolle === 'player');
+    const anker = 'mp:' + mp.id;
+    const rest = lokal.filter((x) => x !== p1);
+    if (p1) {
+      if (info[p1.key]) info[anker] = Object.assign({}, info[p1.key], { name: (eigen && eigen.name) || info[p1.key].name });
+      rest.push(Object.assign({}, p1, { key: anker }));
+    }
+    return { reihe: meisterMischen(fern, rest, anker, quali).filter((k, i, a) => a.indexOf(k) === i), info, lokal };
+  }
+
+  // ---- STARTAUFSTELLUNG ------------------------------------------------------------------
+  function meisterAufstAufgeloest(i) {
+    const evs = meister.plan.events, ev = evs[i];
+    if (!ev || !meisterIstRennen(ev)) return null;
+    if (ev.aufst !== 'auto') return ev.aufst;
+    if (i > 0 && evs[i - 1].format === 'qualifying') return 'quali';
+    return evs.slice(0, i).some(meisterIstRennen) ? 'punkte_hinten' : 'erst';
+  }
+  function meisterAufstText(i) {
+    const a = meisterAufstAufgeloest(i);
+    if (a === null) return t('entfällt');
+    if (a === 'erst') return meisterName(MEISTER_GLOBAL[1].w, meisterGlobalWert('start1')) + ' (' + t('erstes Rennen') + ')';
+    if (a === 'quali') return t('nach Qualifying');
+    return meisterName(MEISTER_AUFST, a);
+  }
+  function meisterAufstFehler(i) {
+    const evs = meister.plan.events, ev = evs[i];
+    if (!ev || !meisterIstRennen(ev) || ev.aufst !== 'quali') return '';
+    return evs.slice(0, i).some((x) => x.format === 'qualifying') ? '' : t('Vorher fehlt ein Qualifying.');
+  }
+  function meisterMischeln(a) {
+    const r = a.slice();
+    for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const x = r[i]; r[i] = r[j]; r[j] = x; }
+    return r;
+  }
+  // Beste Runde je Auto auf der aktuellen Strecke aus den gespeicherten Sitzungen (ueber den Namen,
+  // denn die Sitzungen halten keine Geraetekennung).
+  function meisterBesteAufStrecke() {
+    const beste = {};
+    try {
+      const code = currentTrackTiles && currentTrackTiles.length > 1 ? trackToCode(currentTrackTiles) : '';
+      if (!code) return beste;
+      sessionStore().sessions.filter((s) => s.strecke === code).forEach((s) => (s.autos || []).forEach((a) => {
+        const m = (a.laps || []).length ? Math.min.apply(null, a.laps) : null;
+        if (m && (!beste[a.name] || m < beste[a.name])) beste[a.name] = m;
+      }));
+    } catch (e) { /* ohne Daten */ }
+    return beste;
+  }
+  // Die Reihenfolge der LOKALEN Autos (Geraetekennungen) fuer raceGridOrder.
+  function meisterStartReihe(i) {
+    const lauf = meister.lauf;
+    const autos = garage.filter((c) => c.device && c.role !== 'safetycar' && c.role !== 'none');
+    const id = (c) => String(c.device.id);
+    const keyVon = (c) => (meisterMpAndere().length && c.role === 'player') ? 'mp:' + mp.id : 'c:' + id(c);
+    const a = meisterAufstAufgeloest(i);
+    const nachListe = (liste) => {
+      const pos = (c) => { const k = liste.indexOf(keyVon(c)); return k < 0 ? 999 : k; };
+      return autos.slice().sort((x, y) => pos(x) - pos(y)).map(id);
+    };
+    if (a === 'quali') return nachListe((lauf && lauf.quali) || []);
+    if (a === 'letztes') return nachListe((lauf && lauf.letztes) || []);
+    if (a === 'punkte_hinten' || a === 'punkte_vorn') {
+      const tab = meisterTabelle(lauf || { fahrer: {} }).map((x) => x.key);
+      return nachListe(a === 'punkte_vorn' ? tab : tab.reverse());
+    }
+    if (a === 'zufall') return meisterMischeln(autos.map(id));
+    const s1 = meisterGlobalWert('start1');
+    if (s1 === 'garage') return autos.map(id);
+    if (s1 === 'beste_zuletzt' || s1 === 'beste_zuerst') {
+      const b = meisterBesteAufStrecke();
+      const mit = meisterMischeln(autos).map((c) => ({ c, ms: b[garageLabel(c)] || Infinity }));
+      mit.sort((x, y) => (s1 === 'beste_zuerst' ? x.ms - y.ms : (y.ms === Infinity ? -1 : (x.ms === Infinity ? 1 : y.ms - x.ms))));
+      return mit.map((x) => id(x.c));
+    }
+    return meisterMischeln(autos.map(id));
+  }
+
+  // ---- EVENT STARTEN ---------------------------------------------------------------------
+  function meisterBahn(an) {
+    const cb = $('setting-ontrack');
+    if (!cb || cb.checked === !!an) return;
+    cb.checked = !!an;
+    cb.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  function meisterStreckeCodeSetzen(code) {
+    if (!code || typeof codeToTrack !== 'function') return false;
+    const jetzt = currentTrackTiles && currentTrackTiles.length > 1 ? trackToCode(currentTrackTiles, trackRotationDeg) : '';
+    if (jetzt === code) return true;
+    const tr = codeToTrack(code);
+    if (!tr) return false;
+    currentTrackTiles = tr.tiles;
+    trackRotationDeg = tr.rotation || 0;
+    if (typeof refreshTrackPreview === 'function') refreshTrackPreview();
+    return true;
+  }
+  // Die Strecke des Events: Rueckgabe { code, bahn } fuer den Mehrspieler-Plan.
+  function meisterStreckeAnwenden(ev) {
+    const lauf = meister.lauf;
+    if (ev.strecke === 'frei') { meisterBahn(false); return { code: '', bahn: false }; }
+    if (ev.strecke === 'aktuell') {
+      if (lauf && lauf.aktuellCode) meisterStreckeCodeSetzen(lauf.aktuellCode);
+      meisterBahn(lauf ? lauf.bahnVorher !== false : true);
+    } else if (meisterGespeicherte().indexOf(ev.strecke) >= 0) {
+      trackLaden(ev.strecke);
+      meisterBahn(true);
+    } else {
+      msMeldung(t('Strecke nicht mehr gespeichert, es gilt die aktuelle'));
+    }
+    const code = currentTrackTiles && currentTrackTiles.length > 1 ? trackToCode(currentTrackTiles, trackRotationDeg) : '';
+    return { code, bahn: !!($('setting-ontrack') || {}).checked };
+  }
+  function meisterLaufNeu() {
+    let code = '';
+    try { code = currentTrackTiles && currentTrackTiles.length > 1 ? trackToCode(currentTrackTiles, trackRotationDeg) : ''; } catch (e) { code = ''; }
+    return { id: Date.now(), idx: 0, fahrer: {}, quali: [], letztes: [], fertig: false, laeuft: null,
+             aktuellCode: code, bahnVorher: !!($('setting-ontrack') || {}).checked, mp: meisterMpAndere().length > 0 };
+  }
+  let meisterStreckeMp = null;
+  function meisterEventStarten() {
+    const lauf = meister.lauf;
+    if (!lauf || lauf.fertig) return;
+    const ev = meister.plan.events[lauf.idx];
+    if (!ev) return;
+    if (kRennenLaeuft()) { msMeldung(t('Erst das laufende Rennen beenden')); return; }
+    const f = meisterFormat(ev);
+    const rennen = meisterIstRennen(ev);
+    meisterStreckeMp = meisterStreckeAnwenden(ev);
+    chSetzen('race-mode', f.modus);
+    chSetzen('race-limit', Math.max(1, ev.umfang | 0));
+    if (String(raceLimit) !== String(Math.max(1, ev.umfang | 0))) raceLimit = Math.max(1, ev.umfang | 0);
+    chSetzen('race-wx-start', ev.wetter);
+    chSetzen('race-wx-change', false);
+    chSetzen('race-flying', rennen && ev.start === 'fliegend');
+    chSetzen('race-pit-required', String(rennen ? Math.min(3, ev.stopps | 0) : 0));
+    const fg = meisterGlobalWert('fahrgefuehl');
+    if (fg !== 'garage' && fg !== 'p1' && typeof applyPreset === 'function') {
+      try { applyPreset(fg); } catch (e) { /* bleibt */ }
+    }
+    raceGridOrder = meisterStartReihe(lauf.idx);
+    lauf.laeuft = { idx: lauf.idx, modus: f.modus, seit: Date.now() };
+    meisterSpeichern();
+    meisterSchliessen();
+    msMeldung(t('Meisterschaft') + ' · ' + t('Event') + ' ' + (lauf.idx + 1) + '/' + meister.plan.events.length);
+    if (meisterMpAndere().length && typeof mpRennenFuerAlle === 'function') {
+      showTab('race');
+      mpRennenFuerAlle();
+    } else konsoleLosfahren();
+  }
+
+  // ---- EVENT ENDE --------------------------------------------------------------------------
+  // Aus finishRace(). Gewertet wird erst, wenn alle Ghosts im Ziel sind (ghostAuslaufFertig
+  // malt dann das Ergebnis neu) und - im Mehrspieler - die letzten Runden beim Host angekommen
+  // sind.
+  let meisterWarten = null;
+  function meisterRennenEnde(regulaer) {
+    const lauf = meister.lauf;
+    if (!lauf || !lauf.laeuft || lauf.fertig) return false;
+    if (lauf.laeuft.modus !== raceMode || Date.now() - lauf.laeuft.seit > 6 * 3600000) { lauf.laeuft = null; meisterSpeichern(); return false; }
+    // Ein Training von Hand beenden ist normal (es vergibt keine Punkte), ein Rennen nicht.
+    const ev = meister.plan.events[lauf.laeuft.idx];
+    if (!regulaer && ev && ev.format === 'training') regulaer = true;
+    if (!regulaer) {
+      lauf.laeuft = null;
+      meisterSpeichern();
+      msMeldung(t('Event abgebrochen, es wird nicht gewertet'));
+      setTimeout(() => meisterOeffnen('stand'), 2500);
+      return true;
+    }
+    const bis = Date.now() + 95000, ab = Date.now() + (meisterMpAndere().length ? 3500 : 0);
+    if (meisterWarten) clearInterval(meisterWarten);
+    meisterWarten = setInterval(() => {
+      const rollt = garage.some((c) => c.role === 'ghost' && c.ghost && c.ghost.auslauf);
+      if ((rollt || Date.now() < ab) && Date.now() < bis) {
+        if (meisterMpAndere().length && typeof mpHolen === 'function') mpHolen(true);
+        return;
+      }
+      clearInterval(meisterWarten); meisterWarten = null;
+      meisterWerten();
+    }, 500);
+    return true;
+  }
+  function meisterWerten() {
+    const lauf = meister.lauf;
+    if (!lauf || !lauf.laeuft) return;
+    const idx = lauf.laeuft.idx, ev = meister.plan.events[idx];
+    lauf.laeuft = null;
+    if (!ev) return;
+    const m = meisterFeldMessen(ev);
+    // Jeder, der mitfuhr, bekommt eine Zeile, auch ohne Punkte.
+    Object.keys(m.info).forEach((k) => {
+      if (!lauf.fahrer[k]) lauf.fahrer[k] = { name: m.info[k].name, farbe: m.info[k].farbe, rolle: m.info[k].rolle, pkt: 0, je: [] };
+      const f = lauf.fahrer[k];
+      f.name = m.info[k].name || f.name;
+      if (m.info[k].farbe) f.farbe = m.info[k].farbe;
+    });
+    let ergebnis = {};
+    if (meisterIstRennen(ev)) {
+      // Schnellste Runde unter den Gewerteten.
+      let flKey = null, fl = Infinity;
+      const besteVon = {};
+      m.lokal.forEach((x) => { besteVon[x.key] = x.beste; });
+      if (meisterMpAndere().length) {
+        (mpLetzterStand.fahrer || []).forEach((f) => { if (Number.isFinite(f.beste)) besteVon['mp:' + f.id] = f.beste * 1000; });
+      }
+      m.reihe.forEach((k) => { if (besteVon[k] < fl) { fl = besteVon[k]; flKey = k; } });
+      ergebnis = meisterPunkteVergeben(m.reihe, meisterGlobalWert('punkte'), flKey, meisterGlobalWert('fl') === 'ja');
+      lauf.letztes = m.reihe.slice();
+    } else {
+      m.reihe.forEach((k, i) => { ergebnis[k] = { pos: i + 1 }; });
+      if (ev.format === 'qualifying') lauf.quali = m.reihe.slice();
+    }
+    Object.keys(lauf.fahrer).forEach((k) => {
+      const f = lauf.fahrer[k];
+      while (f.je.length < idx) f.je.push(null);
+      const e = ergebnis[k] || (m.info[k] ? { pos: null, pkt: meisterIstRennen(ev) ? 0 : undefined } : null);
+      f.je[idx] = e;
+      if (e && e.pkt) f.pkt += e.pkt;
+    });
+    lauf.idx = idx + 1;
+    lauf.fertig = lauf.idx >= meister.plan.events.length;
+    meisterSpeichern();
+    if (lauf.fertig && meisterMpAndere().length) meisterMpEndstandSenden();
+    // Erst das Rennergebnis sehen lassen, dann den Stand.
+    setTimeout(() => meisterOeffnen('stand'), 2500);
+  }
+
+  // ---- MEHRSPIELER --------------------------------------------------------------------------
+  // In den Plan, den der Leiter "fuer alle" verschickt (mpPlanBauen).
+  function meisterMpInfo() {
+    const lauf = meister.lauf;
+    if (!lauf || !lauf.laeuft) return null;
+    const ev = meister.plan.events[lauf.laeuft.idx];
+    return {
+      id: lauf.id, nr: lauf.laeuft.idx + 1, von: meister.plan.events.length,
+      titel: meisterStreckeName(ev.strecke) + ' · ' + t(meisterFormat(ev).name) + ' ' + ev.umfang + ' ' + t(meisterFormat(ev).einheit),
+      strecke: meisterStreckeMp, stand: meisterStandKurz(lauf),
+    };
+  }
+  function meisterMpPreset() {
+    const fg = meisterGlobalWert('fahrgefuehl');
+    if (!meister.lauf || !meister.lauf.laeuft || fg === 'garage') return null;
+    if (fg === 'p1') return window.__presetActive ? window.__presetActive() : null;
+    return fg;
+  }
+  function meisterStandKurz(lauf) {
+    return meisterTabelle(lauf).slice(0, 12).map((x) => ({ n: String(x.name || '').slice(0, 24), p: x.pkt }));
+  }
+  async function meisterMpEndstandSenden() {
+    try {
+      const plan = { meister: { id: meister.lauf.id, fertig: true, nr: meister.plan.events.length,
+        von: meister.plan.events.length, titel: t('Endstand'), stand: meisterStandKurz(meister.lauf) } };
+      await fetch(mpUrl('/mp/race'), { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan, phase: 'bereit', initiator: mp.id }) });
+      setTimeout(() => { fetch(mpUrl('/mp/race/cancel'), { method: 'POST', cache: 'no-store' }).catch(() => {}); }, 20000);
+    } catch (e) { /* die anderen sehen dann nur ihr Rennergebnis */ }
+  }
+  // Auf den anderen Telefonen: Strecke des Events uebernehmen (aus mpRennenUebernehmen).
+  function meisterMpUebernehmen(plan) {
+    const m = plan && plan.meister;
+    if (!m || !m.strecke) return;
+    if (m.strecke.bahn === false) { meisterBahn(false); return; }
+    if (m.strecke.code) meisterStreckeCodeSetzen(m.strecke.code);
+    meisterBahn(true);
+  }
+  // Bereitschaftsschirm der anderen: Event und Stand des Leiters.
+  function meisterMpBereitHtml(plan) {
+    const m = plan && plan.meister;
+    if (!m) return '';
+    const esc = mpBereitEsc;
+    let h = '<div class="ms-mp-kopf">' + esc(t('Meisterschaft')) + ' · ' + esc(m.fertig ? t('Endstand') : (t('Event') + ' ' + m.nr + '/' + m.von))
+      + '</div>' + (m.fertig ? '' : '<div class="ms-mp-titel">' + esc(m.titel || '') + '</div>');
+    if (Array.isArray(m.stand) && m.stand.length) {
+      h += '<table class="ms-mp-stand">' + m.stand.map((s, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(s.n)
+        + '</td><td>' + (s.p | 0) + '</td></tr>').join('') + '</table>';
+    }
+    return h;
+  }
+
+  // ---- SCHIRM ------------------------------------------------------------------------------
+  let msAnsicht = 'plan', msZeile = 0, msDetail = -1, msEvent = 0, msLoeschenArm = -1, msStandFokus = 0;
+  let msPadVorher = [], msPadAchse = 0, msOffen = false;
+  function meisterOffen() { return msOffen; }
+  // Meldungen: im offenen Schirm dort (der Cockpit-Streifen ist dann nicht zu sehen), sonst im Cockpit.
+  let msMeldungZeit = null;
+  function msMeldung(text) {
+    const el = msOffen ? $('ms-toast') : null;
+    if (!el) { showHudToast(text); return; }
+    el.textContent = text;
+    el.classList.add('an');
+    clearTimeout(msMeldungZeit);
+    msMeldungZeit = setTimeout(() => el.classList.remove('an'), 2200);
+  }
+  // Das Markup steht in 00-index.head.html (#meister-schirm); hier nur einmal verdrahten.
+  function msEl() {
+    const el = $('meister-schirm');
+    if (el && !el.dataset.verdrahtet) {
+      el.dataset.verdrahtet = '1';
+      $('ms-zu').addEventListener('click', meisterSchliessen);
+      $('ms-liste').addEventListener('click', msListeKlick);
+      $('ms-detail').addEventListener('click', msDetailKlick);
+    }
+    return el;
+  }
+  function meisterOeffnen(ansicht) {
+    meister = meisterLesen();
+    const lauf = meister.lauf;
+    msAnsicht = ansicht || (lauf && (lauf.idx > 0 || lauf.laeuft) ? 'stand' : 'plan');
+    msZeile = 0; msDetail = -1; msEvent = 0; msLoeschenArm = -1; msStandFokus = 0;
+    msPadVorher = []; msPadAchse = 1;   // gehaltene Taste vom Oeffnen nicht gleich auswerten
+    const el = msEl();
+    if (!el) return;
+    el.hidden = false;
+    msOffen = true;
+    msZeichnen();
+  }
+  function meisterSchliessen() {
+    const el = $('meister-schirm');
+    if (el) { el.hidden = true; el.querySelector('#ms-liste').innerHTML = ''; el.querySelector('#ms-detail').innerHTML = ''; }
+    msOffen = false;
+  }
+  function msEsc(s) { return String(s === undefined || s === null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }
+  function msWert(text, klasse) {
+    return '<span class="ms-wert ' + (klasse || '') + '"><span class="ms-pf" data-d="-1">◀</span><span class="ms-w">' + msEsc(text)
+      + '</span><span class="ms-pf" data-d="1">▶</span></span>';
+  }
+  function msZeilen() {
+    const z = meister.plan.events.map((e, i) => ({ art: 'ev', i }));
+    z.push({ art: 'neu' });
+    MEISTER_GLOBAL.forEach((g, i) => z.push({ art: 'gl', i }));
+    z.push({ art: 'los' });
+    return z;
+  }
+  function msStreckeBild(s) {
+    let tiles = null;
+    try {
+      if (s === 'aktuell') tiles = currentTrackTiles;
+      else if (s !== 'frei') { const st = loadTrackStore()[s]; tiles = st && st.tiles; }
+      if (tiles && tiles.length >= 2 && typeof renderTrackPreview === 'function') return renderTrackPreview(tiles, null, { cars: [] }).html;
+    } catch (e) { /* ohne Bild */ }
+    return '<span class="ms-frei">' + msEsc(s === 'frei' ? t('FREI') : '–') + '</span>';
+  }
+  function msUnterzeile(ev) {
+    const f = meisterFormat(ev);
+    return ev.umfang + ' ' + t(f.einheit) + ' · ' + meisterName(MEISTER_WETTER, ev.wetter)
+      + (meisterIstRennen(ev)
+        ? ' · ' + meisterName(MEISTER_START, ev.start) + (ev.stopps ? ' · ' + ev.stopps + ' ' + t(ev.stopps > 1 ? 'Stopps' : 'Stopp') : '')
+        : ' · ' + t('keine Punkte'));
+  }
+  function msZeichnen() {
+    if (!msOffen) return;
+    $('ms-titel').textContent = t(msAnsicht === 'plan' ? 'Meisterschaft planen' : 'Meisterschaft');
+    $('ms-wip').textContent = t('experimentell');
+    if (msAnsicht === 'plan') msPlanZeichnen(); else msStandZeichnen();
+  }
+  function msPlanZeichnen() {
+    const z = msZeilen(), evs = meister.plan.events;
+    if (msZeile >= z.length) msZeile = z.length - 1;
+    let h = '';
+    z.forEach((r, k) => {
+      const sel = k === msZeile ? ' sel' : '';
+      if (r.art === 'ev') {
+        const e = evs[r.i], f = meisterFormat(e);
+        h += '<div class="ms-ev' + sel + '" data-k="' + k + '"><i style="background:' + MEISTER_FARBEN[r.i % MEISTER_FARBEN.length] + '"></i>'
+          + '<span class="ms-nr">' + (r.i + 1) + '</span><span class="ms-bild">' + msStreckeBild(e.strecke) + '</span>'
+          + '<span class="ms-name"><b>' + msEsc(meisterStreckeName(e.strecke)) + '</b><span>' + msEsc(msUnterzeile(e)) + '</span></span>'
+          + msWert(t(f.name), 'f-' + f.id) + '</div>';
+      } else if (r.art === 'neu') {
+        h += '<button type="button" class="ms-knopf ms-neu' + sel + '" data-k="' + k + '">' + msEsc(t('+ Event hinzufügen')) + '</button>'
+          + '<div class="ms-trenner">' + msEsc(t('Für die ganze Meisterschaft')) + '</div>';
+      } else if (r.art === 'gl') {
+        const g = MEISTER_GLOBAL[r.i];
+        h += '<div class="ms-gz' + sel + '" data-k="' + k + '"><span class="ms-l">' + msEsc(t(g.l)) + '</span>'
+          + msWert(meisterName(g.w, meisterGlobalWert(g.id))) + '</div>';
+      } else {
+        h += '<button type="button" class="ms-knopf primary' + sel + '" data-k="' + k + '">'
+          + msEsc(t('Meisterschaft starten')) + ' · ' + evs.length + ' ' + msEsc(t('Events')) + '</button>';
+      }
+    });
+    const liste = $('ms-liste');
+    liste.innerHTML = h;
+    msSichtbar(liste);
+    $('ms-grid').classList.toggle('detail-aktiv', msDetail >= 0);
+    $('ms-hint').textContent = msDetail >= 0 ? t('▲▼ Einstellung · ◀▶ Wert · ○ zurück')
+      : t('▲▼ Zeile · ◀▶ ändern · ✕ Event einstellen · ○ schließen');
+    msPlanDetailZeichnen();
+  }
+  function msSichtbar(host) {
+    const s = host.querySelector('.sel');
+    if (!s) return;
+    if (s.offsetTop < host.scrollTop) host.scrollTop = s.offsetTop - 4;
+    else if (s.offsetTop + s.offsetHeight > host.scrollTop + host.clientHeight) host.scrollTop = s.offsetTop + s.offsetHeight - host.clientHeight + 4;
+  }
+  function msDetailZeilen(i) {
+    const e = meister.plan.events[i], r = meisterIstRennen(e), f = meisterFormat(e);
+    return [
+      { l: 'Strecke', w: meisterStreckeName(e.strecke), feld: 'strecke' },
+      { l: 'Format', w: t(f.name), feld: 'format' },
+      { l: 'Umfang', w: e.umfang + ' ' + t(f.einheit), feld: 'umfang' },
+      { l: 'Wetter', w: meisterName(MEISTER_WETTER, e.wetter), feld: 'wetter' },
+      { l: 'Start', w: r ? meisterName(MEISTER_START, e.start) : t('entfällt'), feld: 'start', aus: !r },
+      { l: 'Startaufstellung', w: r ? meisterName(MEISTER_AUFST, e.aufst) : t('entfällt'), feld: 'aufst', aus: !r, fehlt: !!meisterAufstFehler(i) },
+      { l: 'Pflichtstopps', w: r ? (e.stopps ? String(e.stopps) : t('Keine')) : t('entfällt'), feld: 'stopps', aus: !r },
+      { knopf: 'hoch', l: '▲ Früher' }, { knopf: 'kopie', l: 'Kopieren' },
+      { knopf: 'weg', l: msLoeschenArm === i ? 'Wirklich löschen?' : 'Löschen' },
+    ];
+  }
+  function msPlanDetailZeichnen() {
+    const z = msZeilen()[msZeile], host = $('ms-detail');
+    let h = '';
+    if (z && z.art === 'ev') msEvent = z.i;
+    if (msDetail < 0 && z && z.art === 'gl') {
+      const g = MEISTER_GLOBAL[z.i];
+      h += '<h3>' + msEsc(t(g.l)) + '</h3>';
+      if (g.id === 'fahrgefuehl') h += '<p class="ms-info">' + msEsc(t('Wie in der Garage: jedes Telefon fährt mit seinem eigenen Fahrgefühl. Alle wie Spieler 1: im Mehrspieler bekommen alle Telefone das des Meisterschaftsleiters. Ein festes Preset gilt für alle gesteuerten Autos. Ghosts betrifft das nicht.')) + '</p>';
+      if (g.id === 'start1') h += '<p class="ms-info">' + msEsc(t('Gilt fürs erste Rennen, wenn davor kein Qualifying liegt. Beste heißt: schnellste gespeicherte Runde auf dieser Strecke; ohne Daten entscheidet der Zufall. Danach bestimmen die Punkte die Aufstellung (je Event änderbar).')) + '</p>';
+      if (g.id === 'punkte' || g.id === 'fl') {
+        const schema = meisterGlobalWert('punkte');
+        h += '<p class="ms-info">' + msEsc(t('Punkte je Platz bei 6 Autos')) + (meisterGlobalWert('fl') === 'ja' ? ', <b>+1</b> ' + msEsc(t('für die schnellste Runde eines Rennens')) : '') + ':</p><div class="ms-punkte">';
+        for (let p = 0; p < (schema === 'f1' ? 10 : 6); p++) h += '<div>P' + (p + 1) + '<b>' + meisterPunkteFuer(schema, p, 6) + '</b></div>';
+        h += '</div><p class="ms-info">' + msEsc(t('Gleichstand: mehr Siege, dann mehr zweite Plätze, dann das letzte Rennen.')) + '</p>';
+      }
+      if (g.id === 'teilnehmer') h += '<p class="ms-info">' + msEsc(t('Alle verbundenen Autos: Spieler 1–3, Ghosts und im Mehrspieler die anderen Telefone werden gewertet. Nur Spieler: Ghosts fahren als Verkehr mit, bekommen aber keine Punkte. Das Safety Car fährt nie in der Wertung.')) + '</p>';
+    } else if (msDetail < 0 && z && z.art === 'los') {
+      h += '<h3>' + msEsc(t('Bereit?')) + '</h3>';
+      const fehler = meister.plan.events.map((e, i) => { const f = meisterAufstFehler(i); return f ? t('Event') + ' ' + (i + 1) + ': ' + f : ''; }).filter(Boolean);
+      const rennen = meister.plan.events.filter(meisterIstRennen).length;
+      if (!rennen) fehler.push(t('Mindestens ein Event muss Runden oder Endurance sein.'));
+      const autos = garage.filter((c) => c.device && c.role !== 'safetycar' && meisterDarfMit(c.role)).map(garageLabel);
+      h += '<p class="ms-info">' + meister.plan.events.length + ' ' + msEsc(t('Events')) + ', ' + rennen + ' ' + msEsc(t('mit Punkten')) + '. '
+        + msEsc(t('Verbunden')) + ': ' + (autos.length ? autos.map(msEsc).join(', ') : msEsc(t('kein Auto'))) + '.</p>';
+      const andere = meisterMpAndere();
+      if (andere.length) h += '<p class="ms-info">' + msEsc(t('Mehrspieler: du leitest die Meisterschaft. Jedes Event startet für alle, mit')) + ' ' + andere.map((f) => msEsc(f.name || f.id)).join(', ') + '.</p>';
+      h += fehler.length ? '<p class="ms-info ms-rot">' + fehler.map(msEsc).join('<br>') + '</p>'
+        : '<p class="ms-info">' + msEsc(t('✕ startet Event 1. Zwischen den Events kommt der Zwischenstand.')) + '</p>';
+      if (meister.lauf && !meister.lauf.fertig && meister.lauf.idx > 0) h += '<p class="ms-info ms-rot">' + msEsc(t('Eine laufende Meisterschaft wird dabei beendet.')) + '</p>';
+    } else {
+      const i = Math.min(msEvent, meister.plan.events.length - 1), e = meister.plan.events[i];
+      h += '<h3>' + msEsc(t('Event')) + ' ' + (i + 1) + '<small>' + msEsc(t(meisterIstRennen(e) ? 'mit Punkten' : 'ohne Punkte')) + '</small></h3>';
+      const dz = msDetailZeilen(i);
+      dz.forEach((r, k) => {
+        const sel = k === msDetail ? ' sel' : '';
+        if (r.knopf) {
+          if (k === 7) h += '<div class="ms-fuss">';
+          h += '<button type="button" class="ms-knopf' + (r.knopf === 'weg' ? ' ms-weg' : '') + sel + '" data-d="' + k + '">' + msEsc(t(r.l)) + '</button>';
+          if (k === dz.length - 1) h += '</div>';
+          return;
+        }
+        h += '<div class="ms-wz' + sel + (r.aus ? ' aus' : '') + (r.fehlt ? ' fehlt' : '') + '" data-d="' + k + '"><span class="ms-l">' + msEsc(t(r.l)) + '</span>' + msWert(r.w) + '</div>';
+      });
+      const info = meisterIstRennen(e) ? t('Aufstellung') + ': ' + meisterAufstText(i) + '.'
+        : (e.format === 'qualifying' ? t('Bestimmt die Aufstellung des nächsten Rennens.') : t('Zum Einfahren, ohne Wertung.'));
+      const fe = meisterAufstFehler(i);
+      h += '<p class="ms-info">' + msEsc(info) + (fe ? ' <span class="ms-rot">' + msEsc(fe) + '</span>' : '') + '</p>';
+    }
+    host.innerHTML = h;
+    msSichtbar(host);
+  }
+  function msStandKnoepfe() {
+    const lauf = meister.lauf;
+    if (!lauf) return [['plan', 'Meisterschaft planen']];
+    if (lauf.fertig) return [['neu', 'Neue Meisterschaft planen'], ['zu', 'Schließen']];
+    return [['weiter', 'Weiter: Event'], ['zu', 'Pause · später weiter'], ['ende', 'Meisterschaft beenden']];
+  }
+  function msStandZeichnen() {
+    const lauf = meister.lauf, evs = meister.plan.events;
+    if (!lauf) { msAnsicht = 'plan'; msPlanZeichnen(); return; }
+    $('ms-grid').classList.remove('detail-aktiv');
+    const tab = meisterTabelle(lauf);
+    const n = Math.min(lauf.idx, evs.length);
+    const spalten = [];
+    for (let i = Math.max(0, n - 4); i < n; i++) spalten.push(i);
+    let h = '<div class="ms-trenner">' + msEsc(lauf.fertig ? t('Endstand') : t('Zwischenstand nach Event') + ' ' + n + ' / ' + evs.length) + '</div>';
+    if (!tab.length) h += '<p class="ms-info">' + msEsc(t('Noch keine Wertung.')) + '</p>';
+    else {
+      h += '<table class="ms-stand"><tr><th></th><th>' + msEsc(t('Auto')) + '</th>'
+        + spalten.map((i) => '<th>' + (evs[i].format === 'qualifying' ? 'Q' : (evs[i].format === 'training' ? 'T' : 'R')) + (i + 1) + '</th>').join('')
+        + '<th class="r">' + msEsc(t('Punkte')) + '</th></tr>';
+      tab.forEach((x, k) => {
+        h += '<tr><td class="pos p' + (k + 1) + '">' + (k + 1) + '</td><td><span class="ms-band" style="background:' + (x.farbe || '#9aa4b8') + '"></span>'
+          + msEsc(x.name) + (x.rolle === 'ghost' ? ' <span class="ms-rl">Ghost</span>' : '') + '</td>'
+          + spalten.map((i) => {
+            const e = x.je[i];
+            if (!e) return '<td class="e">–</td>';
+            if (e.pkt === undefined) return '<td class="e">' + (e.pos ? 'P' + e.pos : '–') + '</td>';
+            return '<td class="e">' + e.pkt + (e.fl ? '<sup>FL</sup>' : '') + '</td>';
+          }).join('') + '<td class="pkt">' + x.pkt + '</td></tr>';
+      });
+      h += '</table>';
+    }
+    if (lauf.fertig && tab.length) h = '<div class="ms-meister">🏆 ' + msEsc(tab[0].name) + ' · ' + msEsc(t('Meister')) + '</div>' + h;
+    $('ms-liste').innerHTML = h;
+    let d = '';
+    if (!lauf.fertig) {
+      const ev = evs[lauf.idx];
+      d += '<span class="ms-info">' + msEsc(t('Nächstes Event')) + ' · ' + (lauf.idx + 1) + ' / ' + evs.length + '</span>'
+        + '<span class="ms-titel">' + msEsc(meisterStreckeName(ev.strecke)) + ' · ' + msEsc(t(meisterFormat(ev).name)) + ' ' + ev.umfang + ' ' + msEsc(t(meisterFormat(ev).einheit)) + '</span>'
+        + '<span class="ms-info">' + msEsc(msUnterzeile(ev)) + '</span>';
+      if (meisterIstRennen(ev)) {
+        d += '<span class="ms-info">' + msEsc(t('Startaufstellung')) + ': ' + msEsc(meisterAufstText(lauf.idx)) + '</span>';
+        const reihe = meisterStartReihe(lauf.idx).map((id) => garage.find((c) => String(c.device.id) === id)).filter(Boolean);
+        if (reihe.length && !/zufall|erst/.test(String(meisterAufstAufgeloest(lauf.idx))))
+          d += '<div class="ms-aufst">' + reihe.map((c, i) => '<div>' + (i + 1) + ' · ' + msEsc(garageLabel(c)) + '</div>').join('') + '</div>';
+      }
+      if (ev.strecke !== 'aktuell' && ev.strecke !== 'frei') d += '<span class="ms-info ms-gelb">' + msEsc(t('Strecke umbauen')) + ': ' + msEsc(ev.strecke) + '</span>';
+    } else d += '<span class="ms-titel">' + msEsc(t('Meisterschaft beendet')) + '</span>';
+    const k = msStandKnoepfe();
+    if (msStandFokus >= k.length) msStandFokus = k.length - 1;
+    d += '<div class="ms-fuss ms-fuss-senk">' + k.map((b, i) => '<button type="button" class="ms-knopf' + (i === 0 ? ' primary' : '') + (i === msStandFokus ? ' sel' : '')
+      + '" data-akt="' + b[0] + '">' + msEsc(t(b[1])) + (b[0] === 'weiter' ? ' ' + (lauf.idx + 1) : '') + '</button>').join('') + '</div>';
+    $('ms-detail').innerHTML = d;
+    $('ms-hint').textContent = t('▲▼ wählen · ✕ bestätigen · ○ schließen');
+  }
+
+  // ---- BEDIENUNG -----------------------------------------------------------------------------
+  function msRund(v, n) { return ((v % n) + n) % n; }
+  function msAendern(i, feld, d) {
+    const e = meister.plan.events[i];
+    const f = meisterFormat(e);
+    if (feld === 'umfang') {
+      const schritt = f.einheit === 'Runden' ? 1 : (e.umfang >= 10 ? 5 : 1);
+      const neu = Math.max(1, Math.min(f.einheit === 'Runden' ? 200 : 240, e.umfang + d * schritt));
+      if (neu === e.umfang && d < 0) msMeldung(t('Mindestens 1, jedes Event braucht eine klare Dauer'));
+      e.umfang = neu;
+    } else if (feld === 'format') {
+      const k = MEISTER_FORMATE.findIndex((x) => x.id === e.format);
+      e.format = MEISTER_FORMATE[msRund(k + d, MEISTER_FORMATE.length)].id;
+      if (meisterFormat(e).einheit !== f.einheit) e.umfang = meisterFormat(e).einheit === 'Runden' ? 15 : (e.format === 'endurance' ? 20 : 5);
+    } else if (feld === 'strecke') {
+      const s = meisterStrecken();
+      e.strecke = s[msRund(s.indexOf(e.strecke) + d, s.length)];
+    } else if (feld === 'stopps') {
+      e.stopps = msRund((e.stopps | 0) + d, 4);
+    } else {
+      const liste = { wetter: MEISTER_WETTER, start: MEISTER_START, aufst: MEISTER_AUFST }[feld];
+      const k = liste.findIndex((w) => w[0] === e[feld]);
+      e[feld] = liste[msRund(k + d, liste.length)][0];
+    }
+    meisterSpeichern();
+  }
+  function msLinks(d) {
+    if (msAnsicht !== 'plan') { msHoch(d); return; }
+    if (msDetail >= 0) {
+      const r = msDetailZeilen(msEvent)[msDetail];
+      if (r && !r.aus && !r.knopf) { msAendern(msEvent, r.feld, d); msLoeschenArm = -1; }
+      msZeichnen(); return;
+    }
+    const z = msZeilen()[msZeile];
+    if (z.art === 'ev') msAendern(z.i, 'format', d);
+    else if (z.art === 'gl') {
+      const g = MEISTER_GLOBAL[z.i];
+      const k = g.w.findIndex((w) => w[0] === meisterGlobalWert(g.id));
+      meister.plan.global[g.id] = g.w[msRund(k + d, g.w.length)][0];
+      meisterSpeichern();
+    }
+    msZeichnen();
+  }
+  function msHoch(d) {
+    if (msAnsicht !== 'plan') {
+      msStandFokus = Math.max(0, Math.min(msStandKnoepfe().length - 1, msStandFokus + d));
+      msZeichnen(); return;
+    }
+    if (msDetail >= 0) {
+      const dz = msDetailZeilen(msEvent);
+      let k = msDetail;
+      do { k += d; } while (k >= 0 && k < dz.length && dz[k].aus);
+      if (k >= 0 && k < dz.length) msDetail = k;
+    } else msZeile = Math.max(0, Math.min(msZeilen().length - 1, msZeile + d));
+    msZeichnen();
+  }
+  function msBestaetigen() {
+    if (msAnsicht !== 'plan') { const k = msStandKnoepfe()[msStandFokus]; if (k) msStandAktion(k[0]); return; }
+    if (msDetail >= 0) {
+      const r = msDetailZeilen(msEvent)[msDetail];
+      if (r && r.knopf) msEventAktion(r.knopf);
+      else msLinks(1);
+      return;
+    }
+    const z = msZeilen()[msZeile];
+    if (z.art === 'ev') { msEvent = z.i; msDetail = 0; }
+    else if (z.art === 'neu') msNeu();
+    else if (z.art === 'los') { msStarten(); return; }
+    else if (z.art === 'gl') { msLinks(1); return; }
+    msZeichnen();
+  }
+  function msZurueck() {
+    if (msAnsicht === 'plan' && msDetail >= 0) { msDetail = -1; msLoeschenArm = -1; msZeile = msEvent; msZeichnen(); return; }
+    meisterSchliessen();
+  }
+  function msNeu() {
+    if (meister.plan.events.length >= MEISTER_MAX_EVENTS) { msMeldung(t('Höchstens 10 Events')); return; }
+    meister.plan.events.push(meisterEventNeu());
+    msEvent = meister.plan.events.length - 1; msZeile = msEvent; msDetail = 0;
+    meisterSpeichern();
+  }
+  function msEventAktion(a) {
+    const evs = meister.plan.events, i = msEvent;
+    if (a === 'weg') {
+      if (evs.length <= 1) { msMeldung(t('Eine Meisterschaft braucht mindestens ein Event')); return; }
+      if (msLoeschenArm !== i) { msLoeschenArm = i; msZeichnen(); return; }
+      evs.splice(i, 1);
+      msLoeschenArm = -1; msEvent = Math.min(i, evs.length - 1); msZeile = msEvent; msDetail = -1;
+    } else if (a === 'kopie') {
+      if (evs.length >= MEISTER_MAX_EVENTS) { msMeldung(t('Höchstens 10 Events')); return; }
+      evs.splice(i + 1, 0, JSON.parse(JSON.stringify(evs[i])));
+      msEvent = i + 1; msZeile = i + 1;
+    } else if (a === 'hoch' && i > 0) {
+      const x = evs[i - 1]; evs[i - 1] = evs[i]; evs[i] = x;
+      msEvent = i - 1; msZeile = i - 1;
+    }
+    meisterSpeichern();
+    msZeichnen();
+  }
+  function msStarten() {
+    const fehler = meister.plan.events.map((e, i) => meisterAufstFehler(i)).find(Boolean);
+    if (fehler) { msMeldung(fehler); return; }
+    if (!meister.plan.events.some(meisterIstRennen)) { msMeldung(t('Mindestens ein Event muss Runden oder Endurance sein.')); return; }
+    meister.lauf = meisterLaufNeu();
+    meisterSpeichern();
+    meisterEventStarten();
+  }
+  function msStandAktion(a) {
+    if (a === 'weiter') meisterEventStarten();
+    else if (a === 'zu') meisterSchliessen();
+    else if (a === 'plan' || a === 'neu') { if (a === 'neu') { meister.lauf = null; meisterSpeichern(); } msAnsicht = 'plan'; msZeile = 0; msDetail = -1; msZeichnen(); }
+    else if (a === 'ende') {
+      // Zweimal druecken: das erste Mal nur scharf machen (kein nativer Dialog).
+      if (Date.now() - msEndeArm < 4000) {
+        meister.lauf.fertig = true; meisterSpeichern(); msStandFokus = 0; msEndeArm = 0; msZeichnen(); return;
+      }
+      msEndeArm = Date.now();
+      msMeldung(t('Nochmal drücken zum Beenden'));
+    }
+  }
+  let msEndeArm = 0;
+  function msListeKlick(ev) {
+    if (msAnsicht !== 'plan') return;
+    const el = ev.target.closest('[data-k]');
+    if (!el) return;
+    msDetail = -1; msLoeschenArm = -1;
+    msZeile = +el.getAttribute('data-k');
+    const pf = ev.target.closest('.ms-pf');
+    if (pf) { msLinks(+pf.getAttribute('data-d')); return; }
+    const z = msZeilen()[msZeile];
+    if (z.art === 'neu' || z.art === 'los') { msBestaetigen(); return; }
+    msZeichnen();
+  }
+  function msDetailKlick(ev) {
+    const b = ev.target.closest('[data-akt]');
+    if (b) { msStandFokus = msStandKnoepfe().findIndex((k) => k[0] === b.getAttribute('data-akt')); msStandAktion(b.getAttribute('data-akt')); return; }
+    const el = ev.target.closest('[data-d]');
+    if (!el || el.classList.contains('aus') || msAnsicht !== 'plan') return;
+    msDetail = +el.getAttribute('data-d');
+    const pf = ev.target.closest('.ms-pf');
+    if (pf) { msLinks(+pf.getAttribute('data-d')); return; }
+    if (el.tagName === 'BUTTON') { msBestaetigen(); return; }
+    msZeichnen();
+  }
+  // Steuerkreuz und Tasten (aus pollGamepad, vor allen anderen Menues). true = verbraucht.
+  function meisterPad(pad) {
+    if (!msOffen || (typeof konsoleFrageOffen === 'function' && konsoleFrageOffen())) return false;
+    let neu = -1;
+    for (let i = 0; i < pad.buttons.length; i++) {
+      const n = !!(pad.buttons[i] && pad.buttons[i].pressed);
+      if (n && !msPadVorher[i]) neu = i;
+      msPadVorher[i] = n;
+    }
+    const ax = pad.axes || [];
+    const achse = Math.abs(ax[1] || 0) > 0.6 ? (ax[1] > 0 ? 2 : -2) : (Math.abs(ax[0] || 0) > 0.6 ? (ax[0] > 0 ? 1 : -1) : 0);
+    const achseNeu = achse !== msPadAchse ? achse : 0;
+    msPadAchse = achse;
+    if (neu === 12 || achseNeu === -2) msHoch(-1);
+    else if (neu === 13 || achseNeu === 2) msHoch(1);
+    else if (neu === 14 || achseNeu === -1) msLinks(-1);
+    else if (neu === 15 || achseNeu === 1) msLinks(1);
+    else if (neu === 0) msBestaetigen();
+    else if (neu === 1) msZurueck();
+    return true;
+  }
+  window.addEventListener('keydown', (e) => {
+    if (!msOffen || (typeof konsoleFrageOffen === 'function' && konsoleFrageOffen())) return;
+    const k = e.key;
+    if (k === 'ArrowUp') msHoch(-1); else if (k === 'ArrowDown') msHoch(1);
+    else if (k === 'ArrowLeft') msLinks(-1); else if (k === 'ArrowRight') msLinks(1);
+    else if (k === 'Enter' || k === ' ') msBestaetigen();
+    else if (k === 'Escape' || k === 'Backspace') msZurueck();
+    else return;
+    e.preventDefault(); e.stopPropagation();
+  }, true);
   // =========================================================================
   // Der Ton
   // =========================================================================
@@ -48765,7 +49834,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (next === 'yellow') {
       // Mit Safety Car faehrt das Feld normal, bis es aufschliesst; die Grenze fuer das
       // Fahrerauto setzt dann der Autopilot (autopilotGrund), nicht die Physik.
-      limitYellow = safetyCar() ? 1 : gelbGrenze();
+      // v1.0.9 BESTELLT: "~35 % Geschwindigkeit bei allen ohne Messung der Naehe zum
+      // Safetycar und keine Ueberholmanoever" - mit und ohne Safety Car dieselbe Grenze.
+      limitYellow = gelbGrenze();
       safetyCarRaus();
       applySpeedLimit();
       // Angriffe abbrechen: waehrend Gelb wird nicht ueberholt.
@@ -50227,6 +51298,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // genau diese Kolonne aufloesen, und bei Boxentempo ist dafuer kein Grund: dort geht
     // es nicht um Position, sondern darum, geordnet zur Ziellinie zu kommen.
     if (ghostCfg.wuerzeUeberholen && !raceFormationLap
+        && flagState !== 'yellow'                             // unter Gelb (auch Safety Car) nie
         && !(ah && ah.car && ah.car.role === 'safetycar')     // das Safety Car wird nie ueberholt
         && !g.attackUntil && g.closeSince && now - g.closeSince > SPICE_ATTACK_ARM_MS
         && platz >= SPICE_PASS_PLATZ_MIN
@@ -51948,7 +53020,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // er nicht, weil das Auto dann nicht mehr liest.
       // v0.10.7: Faehrt ein Safety Car, drosseln die anderen erst in seiner Naehe auf das
       // Gelb-Tempo (BESTELLT: "normal fahren, bis sie nah am Safety Car sind, dann auf 35 %").
-      if (underYellow && (car.role === 'safetycar' || !safetyCarFaehrt() || nahAmSafetyCar(car))) {
+      // v1.0.9: ohne Naehemessung - unter Gelb faehrt jeder ~35 %, auch hinter dem Safety Car.
+      if (underYellow) {
         target = Math.min(target, Math.max(yellowFactor(), GHOST_READ_MIN));
       }
       // ---- Tempoprofil statt eines einzigen Kurvenabschlags ----
@@ -53517,6 +54590,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (r && !gridPadVorher) raceGridFokus(r);
       gridPadVorher = !!r;
     } else gridPadVorher = false;
+    // Meisterschaft offen: Steuerkreuz und Tasten gehoeren ihrem Schirm (73-meisterschaft.js).
+    if (typeof meisterPad === 'function' && meisterPad(pad)) return;
     // TITELBILDSCHIRM (ACC-Menue): jede Taste fuehrt ins Hauptmenue, links/rechts wechselt die
     // Sprache. Solange danach noch eine Taste gehalten wird, tut dieser Takt nichts weiter -
     // sonst oeffnete dasselbe gehaltene Kreuz im Hauptmenue gleich die naechste Kachel.
@@ -82762,9 +83837,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   });
 
   // ---- v0.10.7: Safety Car ----
-  stAdd('Safety Car: eine Rolle, nie ueberholt, andere drosseln erst nah dran, Blinktakt', () => {
+  stAdd('Safety Car: eine Rolle, nie ueberholt, unter Gelb alle sofort ~35 %', () => {
     const f = [];
-    const merk = { garage: garage.slice(), tiles: currentTrackTiles, flag: flagState };
+    const merk = { garage: garage.slice(), tiles: currentTrackTiles, flag: flagState, ly: limitYellow };
     const echt = { start: startGhost };
     try {
       currentTrackTiles = codeToTrack('SG4R4G4').tiles;
@@ -82778,12 +83853,82 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (nahAmSafetyCar(weit)) f.push('5 Kacheln dahinter gilt als nah');
       if (ghostFieldRacing().indexOf(sc) < 0) f.push('Safety Car ist kein Hindernis im Feld');
       if (raceAllCars().some((c) => c.role === 'safetycar')) f.push('Safety Car im Ergebnis');
+      // v1.0.9: Gelb mit Safety Car drosselt sofort alle, ohne Naehemessung.
+      startGhost = () => {};
+      flagState = 'green';
+      setFlag('yellow');
+      if (Math.abs(limitYellow - gelbGrenze()) > 1e-9) f.push('Grenze mit Safety Car ' + limitYellow + ' statt ' + gelbGrenze());
     } finally {
       startGhost = echt.start;
       garage.length = 0; merk.garage.forEach((c) => garage.push(c));
-      currentTrackTiles = merk.tiles; flagState = merk.flag;
+      currentTrackTiles = merk.tiles; flagState = merk.flag; limitYellow = merk.ly;
+      if (typeof applySpeedLimit === 'function') applySpeedLimit();
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eine Rolle, Hindernis, Naehe 2 Kacheln, nicht im Ergebnis' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eine Rolle, Hindernis, nicht im Ergebnis, Gelb sofort ~35 %' };
+  });
+
+  // ---- v1.0: Meisterschaft (73-meisterschaft.js) ----
+  stAdd('Meisterschaft: Wertung, Punkte, schnellste Runde, Gleichstand', () => {
+    const f = [];
+    const feld = [{ key: 'a', laps: 5, total: 50000, beste: 9000 }, { key: 'b', laps: 5, total: 49000, beste: 9500 },
+                  { key: 'c', laps: 4, total: 30000, beste: 8000 }, { key: 'd', laps: 0, total: 0, beste: Infinity }];
+    if (meisterKlassieren(feld, false).join() !== 'b,a,c') f.push('Rennen: ' + meisterKlassieren(feld, false).join());
+    if (meisterKlassieren(feld, true).join() !== 'c,a,b') f.push('Qualifying: ' + meisterKlassieren(feld, true).join());
+    const p = meisterPunkteVergeben(['b', 'a', 'c'], 'f1', 'a', true);
+    if (p.b.pkt !== 25 || p.a.pkt !== 19 || !p.a.fl || p.c.pkt !== 15) f.push('F1 mit FL: ' + JSON.stringify(p));
+    const l = meisterPunkteVergeben(['b', 'a', 'c'], 'linear', 'a', false);
+    if (l.b.pkt !== 3 || l.a.pkt !== 2 || l.c.pkt !== 1 || l.a.fl) f.push('linear: ' + JSON.stringify(l));
+    const tab = meisterTabelle({ fahrer: {
+      x: { name: 'X', pkt: 30, je: [{ pos: 2, pkt: 18 }, { pos: 3, pkt: 12 }] },
+      y: { name: 'Y', pkt: 30, je: [{ pos: 1, pkt: 25 }, { pos: 6, pkt: 5 }] },
+      z: { name: 'Z', pkt: 40, je: [{ pos: 1, pkt: 25 }, { pos: 3, pkt: 15 }] } } });
+    if (tab.map((x) => x.key).join() !== 'z,y,x') f.push('Gleichstand nach Siegen: ' + tab.map((x) => x.key).join());
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Runden vor Zeit, Pole nach bester Runde, 25-18+1-15, Siege entscheiden' };
+  });
+
+  stAdd('Meisterschaft im Mehrspieler: eigene Ghosts per Anker in die Host-Reihenfolge', () => {
+    const fern = [{ key: 'r1', laps: 5 }, { key: 'me', laps: 5 }, { key: 'r2', laps: 5 }, { key: 'r3', laps: 4 }];
+    const lokal = [{ key: 'me', laps: 5, total: 50000 }, { key: 'g1', laps: 5, total: 49000 }, { key: 'g2', laps: 5, total: 52000 },
+                   { key: 'g3', laps: 4, total: 40000 }, { key: 'g4', laps: 6, total: 61000 }];
+    const r = meisterMischen(fern, lokal, 'me', false).join();
+    const soll = 'g4,r1,g1,me,r2,g2,r3,g3';
+    return { ok: r === soll, mass: r === soll ? soll : 'ist ' + r + ', soll ' + soll };
+  });
+
+  stAdd('Meisterschaft: automatische Aufstellung, Event werten, naechste Startreihe nach Punkten', () => {
+    const f = [];
+    const merk = { m: meister, garage: garage.slice(), store: localStorage.getItem(MEISTER_STORE), rac: raceAllCars, oeff: meisterOeffnen, rm: raceMode };
+    try {
+      meisterOeffnen = () => {};
+      meister = { plan: meisterPlanVorgabe(), lauf: null };
+      meister.plan.events = [Object.assign(meisterEventNeu(), { format: 'qualifying', umfang: 5 }), meisterEventNeu(), meisterEventNeu()];
+      if (meisterAufstAufgeloest(0) !== null) f.push('Qualifying hat eine Aufstellung');
+      if (meisterAufstAufgeloest(1) !== 'quali') f.push('nach Qualifying nicht nach Qualifying: ' + meisterAufstAufgeloest(1));
+      if (meisterAufstAufgeloest(2) !== 'punkte_hinten') f.push('drittes Event nicht nach Punkten: ' + meisterAufstAufgeloest(2));
+      meister.plan.events[0].format = 'runden'; meister.plan.events[0].aufst = 'quali';
+      if (!meisterAufstFehler(0)) f.push('Qualifying-Aufstellung ohne Qualifying nicht gemeldet');
+      meister.plan.events[0].aufst = 'auto';
+      if (meisterAufstAufgeloest(0) !== 'erst') f.push('erstes Rennen nicht global: ' + meisterAufstAufgeloest(0));
+      garage.length = 0;
+      garage.push({ device: { id: 'a' }, role: 'ghost', tag: 'A' }, { device: { id: 'b' }, role: 'ghost', tag: 'B' });
+      raceAllCars = () => [{ name: 'A', role: 'ghost', id: 'a', farbe: '#f00', laps: [{ ms: 1000 }, { ms: 1000 }] },
+                           { name: 'B', role: 'ghost', id: 'b', farbe: '#0f0', laps: [{ ms: 900 }, { ms: 1100 }, { ms: 1100 }] }];
+      meister.lauf = Object.assign(meisterLaufNeu(), { laeuft: { idx: 1, modus: raceMode, seit: Date.now() }, idx: 1 });
+      meisterWerten();
+      const a = meister.lauf.fahrer['c:a'], b = meister.lauf.fahrer['c:b'];
+      if (!a || !b) f.push('Fahrer fehlen: ' + Object.keys(meister.lauf.fahrer).join());
+      else {
+        if (b.pkt !== 26) f.push('Sieger B (mehr Runden, schnellste Runde) hat ' + b.pkt + ' statt 26');
+        if (a.pkt !== 18) f.push('A hat ' + a.pkt + ' statt 18');
+      }
+      if (meister.lauf.idx !== 2) f.push('naechstes Event ' + meister.lauf.idx + ' statt 2');
+      if (meisterStartReihe(2).join() !== 'a,b') f.push('Fuehrender nicht hinten: ' + meisterStartReihe(2).join());
+    } finally {
+      meister = merk.m; raceAllCars = merk.rac; meisterOeffnen = merk.oeff; raceMode = merk.rm;
+      garage.length = 0; merk.garage.forEach((c) => garage.push(c));
+      try { if (merk.store === null) localStorage.removeItem(MEISTER_STORE); else localStorage.setItem(MEISTER_STORE, merk.store); } catch (e) { /* privat */ }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Q -> Aufstellung, Fehler gemeldet, 26/18 Punkte, Fuehrender hinten' };
   });
 
   stAdd('Rundenrennen endet mit der Zielrunde, nicht eine Runde spaeter', () => {
@@ -84038,6 +85183,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     chSetzen('race-flying', !!plan.fliegend);
     chSetzen('race-pit-required', String(plan.pit || 0));
     if (plan.tank) chSetzen('race-fuel-start', plan.tank);
+    if (plan.meister && typeof meisterMpUebernehmen === 'function') meisterMpUebernehmen(plan);
     // BESTELLT: "der Host kann die Renneinstellungen (Tempo, Handling, Beschleunigung,
     // Schaden, Reifenverschleiss) auf alle erzwingen, wie es die Arcade/Pro-Presets bei den
     // Challenges tun." Der Host schickt `preset` (Arcade/Pro ...) im Plan; die Mitglieder
@@ -84071,6 +85217,16 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         && typeof window.__presetActive === 'function') {
       const p = window.__presetActive();
       if (p) plan.preset = p;
+    }
+    // Meisterschaft (73-meisterschaft.js): Event, Strecke und Zwischenstand fuer die anderen,
+    // und ein erzwungenes Fahrgefuehl, wenn der Leiter eins gewaehlt hat.
+    if (typeof meisterMpInfo === 'function') {
+      const m = meisterMpInfo();
+      if (m) {
+        plan.meister = m;
+        const p = meisterMpPreset();
+        if (p) plan.preset = p;
+      }
     }
     return plan;
   }
@@ -84122,6 +85278,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const leute = ((d && d.fahrer) || []).filter(mpAktiv);
     const istInitiator = mp.id === initiator;
     const andere = leute.filter((f) => f.id && f.id !== initiator);
+    // Meisterschaft: Event und Stand des Leiters; nach dem letzten Event nur der Endstand.
+    const ms = $('mp-ready-meister');
+    const msHtml = (typeof meisterMpBereitHtml === 'function') ? meisterMpBereitHtml(rennen.plan) : '';
+    if (ms) { if (ms.innerHTML !== msHtml) ms.innerHTML = msHtml; ms.hidden = !msHtml; }
+    const msEnde = !!(rennen.plan && rennen.plan.meister && rennen.plan.meister.fertig);
     const alleBereit = andere.every((f) => bereitListe.indexOf(f.id) >= 0);
     const host = $('mp-ready-liste');
     if (host) {
@@ -84147,9 +85308,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (typeof ladeAnimationSetzen === 'function') {
       ladeAnimationSetzen($('mp-ready-lade'), istInitiator ? !alleBereit : bereitListe.indexOf(mp.id) >= 0);
     }
-    if ($('mp-ready-bereit')) $('mp-ready-bereit').hidden = istInitiator || bereitListe.indexOf(mp.id) >= 0;
+    if ($('mp-ready-bereit')) $('mp-ready-bereit').hidden = msEnde || istInitiator || bereitListe.indexOf(mp.id) >= 0;
     if ($('mp-ready-start')) {
-      $('mp-ready-start').hidden = !istInitiator;
+      $('mp-ready-start').hidden = msEnde || !istInitiator;
       $('mp-ready-start').disabled = !alleBereit;
     }
     if ($('mp-ready-abbrechen')) $('mp-ready-abbrechen').hidden = !istInitiator;

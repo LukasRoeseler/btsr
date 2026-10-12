@@ -2125,6 +2125,9 @@
     // Uebersicht; sonst eine Einblendung "Rennen beendet - Ergebnis ansehen", und Options
     // bzw. ein Klick fuehrt dann ins Cockpit auf die Uebersicht (51-konsole.js).
     // Eine Challenge zeigt ihr Ergebnis selbst (Wertung, Bestenliste, Nochmal).
+    // Meisterschaft (73-meisterschaft.js): wertet, sobald alle im Ziel sind, und zeigt danach
+    // den Zwischenstand. Das normale Ergebnis kommt trotzdem zuerst.
+    if (typeof meisterRennenEnde === 'function') meisterRennenEnde(willAuslaufen);
     if (typeof challengeRennenEnde === 'function' && challengeRennenEnde(willAuslaufen)) { /* erledigt */ }
     else if (typeof konsoleRennenBeendet === 'function') konsoleRennenBeendet();
     else {

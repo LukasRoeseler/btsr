@@ -958,6 +958,8 @@
   window.addEventListener('keydown', (e) => {
     const k = (e.key || '').toLowerCase();
     if (e.target && e.target.closest && e.target.closest('input[type="text"], input[type="number"], textarea, select')) return;
+    // Der Meisterschaftsschirm hat seine eigene Tastatur (73-meisterschaft.js).
+    if (typeof meisterOffen === 'function' && meisterOffen() && !kFrageOffen) return;
     if (kAktiverTab() === 'home' && !e.ctrlKey && !e.altKey && !e.metaKey && k !== 'tab' && k !== 'shift') {
       e.preventDefault(); e.stopImmediatePropagation();
       // Tastatur wie am Pad: Enter, Leertaste oder X starten, T das Tutorial, S die Steuerung.
@@ -1022,7 +1024,7 @@
     kn('fa-laden', () => konsoleZeige('track', 'laden'));
     kn('fa-raum', () => konsoleZeige('track', 'raum'));
     kn('fa-druck', () => konsoleZeige('track', 'print'));
-    kn('fa-profil', () => showHudToast(t('Meisterschaft: kommt bald – der Entwurf ist in Arbeit.')));
+    kn('fa-profil', () => meisterOeffnen());
     // BESTELLT: "wenn ich auf den Header tippe, soll es zur naechsten Option schalten".
     // Der Kachelkopf (Titel + Wert) dreht die Schaltstellung weiter, der Rest der Kachel
     // oeffnet wie bisher die Unterseite. Das Gamepad bleibt unveraendert (Quadrat/links/rechts).

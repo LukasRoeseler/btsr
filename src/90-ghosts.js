@@ -4856,7 +4856,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (next === 'yellow') {
       // Mit Safety Car faehrt das Feld normal, bis es aufschliesst; die Grenze fuer das
       // Fahrerauto setzt dann der Autopilot (autopilotGrund), nicht die Physik.
-      limitYellow = safetyCar() ? 1 : gelbGrenze();
+      // v1.0.9 BESTELLT: "~35 % Geschwindigkeit bei allen ohne Messung der Naehe zum
+      // Safetycar und keine Ueberholmanoever" - mit und ohne Safety Car dieselbe Grenze.
+      limitYellow = gelbGrenze();
       safetyCarRaus();
       applySpeedLimit();
       // Angriffe abbrechen: waehrend Gelb wird nicht ueberholt.
@@ -6318,6 +6320,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // genau diese Kolonne aufloesen, und bei Boxentempo ist dafuer kein Grund: dort geht
     // es nicht um Position, sondern darum, geordnet zur Ziellinie zu kommen.
     if (ghostCfg.wuerzeUeberholen && !raceFormationLap
+        && flagState !== 'yellow'                             // unter Gelb (auch Safety Car) nie
         && !(ah && ah.car && ah.car.role === 'safetycar')     // das Safety Car wird nie ueberholt
         && !g.attackUntil && g.closeSince && now - g.closeSince > SPICE_ATTACK_ARM_MS
         && platz >= SPICE_PASS_PLATZ_MIN
@@ -8039,7 +8042,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // er nicht, weil das Auto dann nicht mehr liest.
       // v0.10.7: Faehrt ein Safety Car, drosseln die anderen erst in seiner Naehe auf das
       // Gelb-Tempo (BESTELLT: "normal fahren, bis sie nah am Safety Car sind, dann auf 35 %").
-      if (underYellow && (car.role === 'safetycar' || !safetyCarFaehrt() || nahAmSafetyCar(car))) {
+      // v1.0.9: ohne Naehemessung - unter Gelb faehrt jeder ~35 %, auch hinter dem Safety Car.
+      if (underYellow) {
         target = Math.min(target, Math.max(yellowFactor(), GHOST_READ_MIN));
       }
       // ---- Tempoprofil statt eines einzigen Kurvenabschlags ----
@@ -9608,6 +9612,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (r && !gridPadVorher) raceGridFokus(r);
       gridPadVorher = !!r;
     } else gridPadVorher = false;
+    // Meisterschaft offen: Steuerkreuz und Tasten gehoeren ihrem Schirm (73-meisterschaft.js).
+    if (typeof meisterPad === 'function' && meisterPad(pad)) return;
     // TITELBILDSCHIRM (ACC-Menue): jede Taste fuehrt ins Hauptmenue, links/rechts wechselt die
     // Sprache. Solange danach noch eine Taste gehalten wird, tut dieser Takt nichts weiter -
     // sonst oeffnete dasselbe gehaltene Kreuz im Hauptmenue gleich die naechste Kachel.

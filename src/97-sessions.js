@@ -767,6 +767,7 @@
     chSetzen('race-flying', !!plan.fliegend);
     chSetzen('race-pit-required', String(plan.pit || 0));
     if (plan.tank) chSetzen('race-fuel-start', plan.tank);
+    if (plan.meister && typeof meisterMpUebernehmen === 'function') meisterMpUebernehmen(plan);
     // BESTELLT: "der Host kann die Renneinstellungen (Tempo, Handling, Beschleunigung,
     // Schaden, Reifenverschleiss) auf alle erzwingen, wie es die Arcade/Pro-Presets bei den
     // Challenges tun." Der Host schickt `preset` (Arcade/Pro ...) im Plan; die Mitglieder
@@ -800,6 +801,16 @@
         && typeof window.__presetActive === 'function') {
       const p = window.__presetActive();
       if (p) plan.preset = p;
+    }
+    // Meisterschaft (73-meisterschaft.js): Event, Strecke und Zwischenstand fuer die anderen,
+    // und ein erzwungenes Fahrgefuehl, wenn der Leiter eins gewaehlt hat.
+    if (typeof meisterMpInfo === 'function') {
+      const m = meisterMpInfo();
+      if (m) {
+        plan.meister = m;
+        const p = meisterMpPreset();
+        if (p) plan.preset = p;
+      }
     }
     return plan;
   }
@@ -851,6 +862,11 @@
     const leute = ((d && d.fahrer) || []).filter(mpAktiv);
     const istInitiator = mp.id === initiator;
     const andere = leute.filter((f) => f.id && f.id !== initiator);
+    // Meisterschaft: Event und Stand des Leiters; nach dem letzten Event nur der Endstand.
+    const ms = $('mp-ready-meister');
+    const msHtml = (typeof meisterMpBereitHtml === 'function') ? meisterMpBereitHtml(rennen.plan) : '';
+    if (ms) { if (ms.innerHTML !== msHtml) ms.innerHTML = msHtml; ms.hidden = !msHtml; }
+    const msEnde = !!(rennen.plan && rennen.plan.meister && rennen.plan.meister.fertig);
     const alleBereit = andere.every((f) => bereitListe.indexOf(f.id) >= 0);
     const host = $('mp-ready-liste');
     if (host) {
@@ -876,9 +892,9 @@
     if (typeof ladeAnimationSetzen === 'function') {
       ladeAnimationSetzen($('mp-ready-lade'), istInitiator ? !alleBereit : bereitListe.indexOf(mp.id) >= 0);
     }
-    if ($('mp-ready-bereit')) $('mp-ready-bereit').hidden = istInitiator || bereitListe.indexOf(mp.id) >= 0;
+    if ($('mp-ready-bereit')) $('mp-ready-bereit').hidden = msEnde || istInitiator || bereitListe.indexOf(mp.id) >= 0;
     if ($('mp-ready-start')) {
-      $('mp-ready-start').hidden = !istInitiator;
+      $('mp-ready-start').hidden = msEnde || !istInitiator;
       $('mp-ready-start').disabled = !alleBereit;
     }
     if ($('mp-ready-abbrechen')) $('mp-ready-abbrechen').hidden = !istInitiator;

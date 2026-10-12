@@ -18015,9 +18015,9 @@
   });
 
   // ---- v0.10.7: Safety Car ----
-  stAdd('Safety Car: eine Rolle, nie ueberholt, andere drosseln erst nah dran, Blinktakt', () => {
+  stAdd('Safety Car: eine Rolle, nie ueberholt, unter Gelb alle sofort ~35 %', () => {
     const f = [];
-    const merk = { garage: garage.slice(), tiles: currentTrackTiles, flag: flagState };
+    const merk = { garage: garage.slice(), tiles: currentTrackTiles, flag: flagState, ly: limitYellow };
     const echt = { start: startGhost };
     try {
       currentTrackTiles = codeToTrack('SG4R4G4').tiles;
@@ -18031,12 +18031,82 @@
       if (nahAmSafetyCar(weit)) f.push('5 Kacheln dahinter gilt als nah');
       if (ghostFieldRacing().indexOf(sc) < 0) f.push('Safety Car ist kein Hindernis im Feld');
       if (raceAllCars().some((c) => c.role === 'safetycar')) f.push('Safety Car im Ergebnis');
+      // v1.0.9: Gelb mit Safety Car drosselt sofort alle, ohne Naehemessung.
+      startGhost = () => {};
+      flagState = 'green';
+      setFlag('yellow');
+      if (Math.abs(limitYellow - gelbGrenze()) > 1e-9) f.push('Grenze mit Safety Car ' + limitYellow + ' statt ' + gelbGrenze());
     } finally {
       startGhost = echt.start;
       garage.length = 0; merk.garage.forEach((c) => garage.push(c));
-      currentTrackTiles = merk.tiles; flagState = merk.flag;
+      currentTrackTiles = merk.tiles; flagState = merk.flag; limitYellow = merk.ly;
+      if (typeof applySpeedLimit === 'function') applySpeedLimit();
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eine Rolle, Hindernis, Naehe 2 Kacheln, nicht im Ergebnis' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eine Rolle, Hindernis, nicht im Ergebnis, Gelb sofort ~35 %' };
+  });
+
+  // ---- v1.0: Meisterschaft (73-meisterschaft.js) ----
+  stAdd('Meisterschaft: Wertung, Punkte, schnellste Runde, Gleichstand', () => {
+    const f = [];
+    const feld = [{ key: 'a', laps: 5, total: 50000, beste: 9000 }, { key: 'b', laps: 5, total: 49000, beste: 9500 },
+                  { key: 'c', laps: 4, total: 30000, beste: 8000 }, { key: 'd', laps: 0, total: 0, beste: Infinity }];
+    if (meisterKlassieren(feld, false).join() !== 'b,a,c') f.push('Rennen: ' + meisterKlassieren(feld, false).join());
+    if (meisterKlassieren(feld, true).join() !== 'c,a,b') f.push('Qualifying: ' + meisterKlassieren(feld, true).join());
+    const p = meisterPunkteVergeben(['b', 'a', 'c'], 'f1', 'a', true);
+    if (p.b.pkt !== 25 || p.a.pkt !== 19 || !p.a.fl || p.c.pkt !== 15) f.push('F1 mit FL: ' + JSON.stringify(p));
+    const l = meisterPunkteVergeben(['b', 'a', 'c'], 'linear', 'a', false);
+    if (l.b.pkt !== 3 || l.a.pkt !== 2 || l.c.pkt !== 1 || l.a.fl) f.push('linear: ' + JSON.stringify(l));
+    const tab = meisterTabelle({ fahrer: {
+      x: { name: 'X', pkt: 30, je: [{ pos: 2, pkt: 18 }, { pos: 3, pkt: 12 }] },
+      y: { name: 'Y', pkt: 30, je: [{ pos: 1, pkt: 25 }, { pos: 6, pkt: 5 }] },
+      z: { name: 'Z', pkt: 40, je: [{ pos: 1, pkt: 25 }, { pos: 3, pkt: 15 }] } } });
+    if (tab.map((x) => x.key).join() !== 'z,y,x') f.push('Gleichstand nach Siegen: ' + tab.map((x) => x.key).join());
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Runden vor Zeit, Pole nach bester Runde, 25-18+1-15, Siege entscheiden' };
+  });
+
+  stAdd('Meisterschaft im Mehrspieler: eigene Ghosts per Anker in die Host-Reihenfolge', () => {
+    const fern = [{ key: 'r1', laps: 5 }, { key: 'me', laps: 5 }, { key: 'r2', laps: 5 }, { key: 'r3', laps: 4 }];
+    const lokal = [{ key: 'me', laps: 5, total: 50000 }, { key: 'g1', laps: 5, total: 49000 }, { key: 'g2', laps: 5, total: 52000 },
+                   { key: 'g3', laps: 4, total: 40000 }, { key: 'g4', laps: 6, total: 61000 }];
+    const r = meisterMischen(fern, lokal, 'me', false).join();
+    const soll = 'g4,r1,g1,me,r2,g2,r3,g3';
+    return { ok: r === soll, mass: r === soll ? soll : 'ist ' + r + ', soll ' + soll };
+  });
+
+  stAdd('Meisterschaft: automatische Aufstellung, Event werten, naechste Startreihe nach Punkten', () => {
+    const f = [];
+    const merk = { m: meister, garage: garage.slice(), store: localStorage.getItem(MEISTER_STORE), rac: raceAllCars, oeff: meisterOeffnen, rm: raceMode };
+    try {
+      meisterOeffnen = () => {};
+      meister = { plan: meisterPlanVorgabe(), lauf: null };
+      meister.plan.events = [Object.assign(meisterEventNeu(), { format: 'qualifying', umfang: 5 }), meisterEventNeu(), meisterEventNeu()];
+      if (meisterAufstAufgeloest(0) !== null) f.push('Qualifying hat eine Aufstellung');
+      if (meisterAufstAufgeloest(1) !== 'quali') f.push('nach Qualifying nicht nach Qualifying: ' + meisterAufstAufgeloest(1));
+      if (meisterAufstAufgeloest(2) !== 'punkte_hinten') f.push('drittes Event nicht nach Punkten: ' + meisterAufstAufgeloest(2));
+      meister.plan.events[0].format = 'runden'; meister.plan.events[0].aufst = 'quali';
+      if (!meisterAufstFehler(0)) f.push('Qualifying-Aufstellung ohne Qualifying nicht gemeldet');
+      meister.plan.events[0].aufst = 'auto';
+      if (meisterAufstAufgeloest(0) !== 'erst') f.push('erstes Rennen nicht global: ' + meisterAufstAufgeloest(0));
+      garage.length = 0;
+      garage.push({ device: { id: 'a' }, role: 'ghost', tag: 'A' }, { device: { id: 'b' }, role: 'ghost', tag: 'B' });
+      raceAllCars = () => [{ name: 'A', role: 'ghost', id: 'a', farbe: '#f00', laps: [{ ms: 1000 }, { ms: 1000 }] },
+                           { name: 'B', role: 'ghost', id: 'b', farbe: '#0f0', laps: [{ ms: 900 }, { ms: 1100 }, { ms: 1100 }] }];
+      meister.lauf = Object.assign(meisterLaufNeu(), { laeuft: { idx: 1, modus: raceMode, seit: Date.now() }, idx: 1 });
+      meisterWerten();
+      const a = meister.lauf.fahrer['c:a'], b = meister.lauf.fahrer['c:b'];
+      if (!a || !b) f.push('Fahrer fehlen: ' + Object.keys(meister.lauf.fahrer).join());
+      else {
+        if (b.pkt !== 26) f.push('Sieger B (mehr Runden, schnellste Runde) hat ' + b.pkt + ' statt 26');
+        if (a.pkt !== 18) f.push('A hat ' + a.pkt + ' statt 18');
+      }
+      if (meister.lauf.idx !== 2) f.push('naechstes Event ' + meister.lauf.idx + ' statt 2');
+      if (meisterStartReihe(2).join() !== 'a,b') f.push('Fuehrender nicht hinten: ' + meisterStartReihe(2).join());
+    } finally {
+      meister = merk.m; raceAllCars = merk.rac; meisterOeffnen = merk.oeff; raceMode = merk.rm;
+      garage.length = 0; merk.garage.forEach((c) => garage.push(c));
+      try { if (merk.store === null) localStorage.removeItem(MEISTER_STORE); else localStorage.setItem(MEISTER_STORE, merk.store); } catch (e) { /* privat */ }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Q -> Aufstellung, Fehler gemeldet, 26/18 Punkte, Fuehrender hinten' };
   });
 
   stAdd('Rundenrennen endet mit der Zielrunde, nicht eine Runde spaeter', () => {
