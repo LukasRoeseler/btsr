@@ -2694,6 +2694,7 @@
   // zeigende Pfeile (etwa zweieinhalbmal so lang, in groesserem Abstand), INNEN am Scheitel
   // kurze, fast quer stehende Keile. Auf den geraden Schenkeln bleiben die kleinen Pfeile.
   // "Im Bogen" heisst: die Richtung dreht sich dort an dieser Stelle merklich.
+  const NADEL_KERBS_AN = false;
   const NADEL_KAPPA = 0.025;                 // Richtungsaenderung je Einheit, ab der es Bogen ist
   const NADEL_AUSSEN = { lang: 2.6, takt: 1.7, winkel: 52, breit: 1.6 };
   const NADEL_INNEN = { lang: 1.35, takt: 1.5, winkel: 78, breit: 1.5 };
@@ -2721,7 +2722,9 @@
         if (L < pl + 2 * rand) continue;
         // Haarnadel? Dann ist die laengere Seite (gegen die Mittellinie) die Aussenseite.
         const typ = tiles && tiles[k] ? tiles[k].type : null;
-        const nadel = typ === TILE_TYPE.HAIRPIN || typ === TILE_TYPE.HAIRPIN_LEFT;
+        // v1.0.17: vorerst AUS - GEMELDET "Haarnadel-Vorschau sieht voellig falsch aus". Bis zum
+        // Nachbau gelten die normalen Pfeile; die Zeichnung unten bleibt fuer den neuen Versuch.
+        const nadel = NADEL_KERBS_AN && (typ === TILE_TYPE.HAIRPIN || typ === TILE_TYPE.HAIRPIN_LEFT);
         let aussen = false;
         if (nadel) {
           let lc = 0;
@@ -3527,6 +3530,10 @@
     // zurueck (GEMELDET: "bewegt sich immer nur ein kleines bisschen"). Nach dem Loslassen.
     if (raumZug) { raumZug.nachher = true; return; }
     editorStreckeMerken();
+    // v1.0.17: SIMULATOR-Linie fuer die neue Strecke im Hintergrund anstossen (61-simlinie.js).
+    // Beim Laden laeuft das VOR 61-simlinie.js: simVorrechnen ist hochgezogen, und alles, was
+    // es sofort anfasst, ist var - der Rest laeuft erst im Zeitgeber nach dem Aufbau.
+    if (typeof simVorrechnen === 'function') simVorrechnen();
     // Die Kachelzahl entscheidet, ob der Windschatten ueberhaupt rechnen kann. Hier gerufen
     // und nicht in 50-drive.js beim Laden: dort ist currentTrackTiles noch in der temporalen
     // Todeszone, siehe den Kommentar bei dirtyAirVerfuegbar().

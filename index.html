@@ -3596,6 +3596,12 @@
     align-items: center; justify-content: center; gap: 12px; background: rgba(0,0,0,.78); }
   /* v0.9.64: ein Gerade-Teil dreht sich in 1 s einmal im Uhrzeigersinn (59-lade.js). */
   .lade-dreh { position: relative; width: 96px; height: 96px; }
+  /* v1.0.17: kleine Einblendung am Rand, solange die SIMULATOR-Linie gesucht wird. */
+  .sim-lade:not([hidden]) { position: fixed; left: calc(10px + env(safe-area-inset-left)); bottom: calc(10px + env(safe-area-inset-bottom));
+    z-index: 380; display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 6px; background: rgba(5,7,12,.85);
+    border: 1px solid rgba(255,255,255,.15); border-radius: 6px; color: #eef0f4; font-size: 12.5px; font-weight: 600;
+    letter-spacing: .03em; pointer-events: none; }
+  .sim-lade .lade-dreh { width: 30px; height: 30px; }
   .lade-ebene { position: absolute; inset: 0; display: grid; place-items: center; }
   .lade-ebene svg, .lade-ebene .tp-karte { width: 100%; height: 100%; max-width: none; max-height: none; }
   .lade-a { animation: ladeDreh 1s linear infinite; }
@@ -4598,7 +4604,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.16</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.17</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5726,6 +5732,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Hotfix: 1.0.16 startete nicht, wenn im Editor eine Strecke gemerkt war (die SIMULATOR-Linie wurde beim Laden zu fr&#252;h angefragt) &#8211; behoben. Die Ideallinie wird jetzt gleich nach jeder &#196;nderung an der Strecke im Hintergrund berechnet; solange das l&#228;uft, zeigt ein drehendes Streckenteil am Rand &#8222;Ideallinie wird berechnet &#8230;&#8220;. Die neuen Haarnadel-Kerbs sind vorerst wieder aus.</li>
         <li>Haarnadeln sehen jetzt aus wie das Originalteil: im Bogen au&#223;en lange, breite Pfeile schr&#228;g zur Bahn, innen am Scheitel kurze Keile; auf den geraden Schenkeln bleiben die kleinen Pfeile. Gilt f&#252;r Editor, Vorschaubilder und das Streckenbild.</li>
         <li>Streckenbild: neuer Knopf &#8222;Bild&#8220; in der Editorleiste speichert ein PNG mit Strecke (Ideallinie und Raum wie gerade eingeschaltet), Name, Streckencode, L&#228;nge, Platzbedarf, Teilezahl und Link; in der App unter Bilder/OmegaSim (neue APK n&#246;tig). SIMULATOR ist jetzt die Standard-Ideallinie. Meisterschaft: Vorgabe sind zwei Events (Qualifying, Runden), &#8222;Meisterschaft starten&#8220; ist als WIP gekennzeichnet, und eine pausierte Meisterschaft l&#228;sst sich fortsetzen &#8211; die FAHREN-Kachel zeigt &#8222;Fortsetzen: Event X/Y&#8220; und &#246;ffnet direkt den Zwischenstand mit &#8222;Weiter&#8220;, im Planer steht oben &#8222;Meisterschaft fortsetzen&#8220;. Titelschirm: &#8222;Starten&#8220; ist farbig hinterlegt. Die Kachel mit dem Garage-Knopf zeigt das Garagenfoto.</li>
         <li>Neues Linienmodell SIMULATOR (WIP): f&#228;hrt bis zu 200 Linien &#8211; die acht vorhandenen und glatte Abwandlungen davon &#8211; je drei Runden mit derselben Fahrphysik wie dein Auto (Getriebe, Reifen, Zug im Reibkreis) und beh&#228;lt die schnellste. Die Mindestgeschwindigkeit der Ghosts (35 %) und eine Grenze f&#252;r schnelle Querwechsel gelten als Schranken. Die Suche dauert wenige Sekunden im Hintergrund, pausiert im Rennen und wird je Strecke gespeichert; bis dahin gilt die Luuke-Linie. Ein getestetes Beispiel, keine bewiesene Bestlinie.</li>
@@ -11383,6 +11390,9 @@
           <span class="tp-tasten" id="track-fs-tasten"></span>
         </div>
         <div id="track-preview-svg"></div>
+        <!-- v1.0.17 BESTELLT: "sobald die Strecke fertig ist ein Ladesymbol am Rand (die drehende
+             Gerade) mit 'Ideallinie wird berechnet'" - solange die SIMULATOR-Suche laeuft. -->
+        <div class="sim-lade" id="sim-lade" role="status" hidden><span class="sim-lade-dreh" id="sim-lade-dreh"></span><span>Ideallinie wird berechnet &hellip;</span></div>
         <div class="tp-bar" id="track-palette"></div>
         <span class="tp-space" id="track-space"></span>
       </div>
@@ -12691,6 +12701,7 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "Ideallinie wird berechnet …": "Calculating racing line …",
     "Meisterschaft fortsetzen": "Continue championship",
     "Fortsetzen: Event": "Continue: event",
     "Plan ansehen": "View plan",
@@ -13455,6 +13466,7 @@
     "Neues Linienmodell SIMULATOR (WIP): fährt bis zu 200 Linien – die acht vorhandenen und glatte Abwandlungen davon – je drei Runden mit derselben Fahrphysik wie dein Auto (Getriebe, Reifen, Zug im Reibkreis) und behält die schnellste. Die Mindestgeschwindigkeit der Ghosts (35 %) und eine Grenze für schnelle Querwechsel gelten als Schranken. Die Suche dauert wenige Sekunden im Hintergrund, pausiert im Rennen und wird je Strecke gespeichert; bis dahin gilt die Luuke-Linie. Ein getestetes Beispiel, keine bewiesene Bestlinie.": "New line model SIMULATOR (WIP): drives up to 200 lines – the eight existing ones and smooth variations of them – for three laps each with the same driving physics as your car (gearbox, tyres, traction in the friction circle) and keeps the fastest. The ghosts' minimum speed (35 %) and a limit on fast lateral changes act as constraints. The search takes a few seconds in the background, pauses during a race and is stored per track; until then the Luuke line applies. A tested example, not a proven best line.",
     "Streckenbild: neuer Knopf „Bild“ in der Editorleiste speichert ein PNG mit Strecke (Ideallinie und Raum wie gerade eingeschaltet), Name, Streckencode, Länge, Platzbedarf, Teilezahl und Link; in der App unter Bilder/OmegaSim (neue APK nötig). SIMULATOR ist jetzt die Standard-Ideallinie. Meisterschaft: Vorgabe sind zwei Events (Qualifying, Runden), „Meisterschaft starten“ ist als WIP gekennzeichnet, und eine pausierte Meisterschaft lässt sich fortsetzen – die FAHREN-Kachel zeigt „Fortsetzen: Event X/Y“ und öffnet direkt den Zwischenstand mit „Weiter“, im Planer steht oben „Meisterschaft fortsetzen“. Titelschirm: „Starten“ ist farbig hinterlegt. Die Kachel mit dem Garage-Knopf zeigt das Garagenfoto.": "Track picture: a new “Picture” button in the editor toolbar saves a PNG with the track (racing line and room as currently switched on), name, track code, length, footprint, piece count and link; in the app under Pictures/OmegaSim (new APK needed). SIMULATOR is now the default racing line. Championship: the default is two events (qualifying, laps), “Start championship” is marked WIP, and a paused championship can be continued – the DRIVE tile shows “Continue: event X/Y” and opens the standings with “Next” directly, and the planner shows “Continue championship” at the top. Title screen: “Start” is highlighted. The tile with the garage button shows the garage photo.",
     "Haarnadeln sehen jetzt aus wie das Originalteil: im Bogen außen lange, breite Pfeile schräg zur Bahn, innen am Scheitel kurze Keile; auf den geraden Schenkeln bleiben die kleinen Pfeile. Gilt für Editor, Vorschaubilder und das Streckenbild.": "Hairpins now look like the original piece: in the bend long, wide arrows angled towards the track on the outside and short wedges at the apex on the inside; the straight legs keep the small arrows. Applies to the editor, previews and the track picture.",
+    "Hotfix: 1.0.16 startete nicht, wenn im Editor eine Strecke gemerkt war (die SIMULATOR-Linie wurde beim Laden zu früh angefragt) – behoben. Die Ideallinie wird jetzt gleich nach jeder Änderung an der Strecke im Hintergrund berechnet; solange das läuft, zeigt ein drehendes Streckenteil am Rand „Ideallinie wird berechnet …“. Die neuen Haarnadel-Kerbs sind vorerst wieder aus.": "Hotfix: 1.0.16 did not start when a track was remembered in the editor (the SIMULATOR line was requested too early while loading) – fixed. The racing line is now calculated in the background right after every change to the track; while that runs, a spinning track piece at the edge shows “Calculating racing line …”. The new hairpin kerbs are switched off again for now.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -29160,6 +29172,7 @@
   // zeigende Pfeile (etwa zweieinhalbmal so lang, in groesserem Abstand), INNEN am Scheitel
   // kurze, fast quer stehende Keile. Auf den geraden Schenkeln bleiben die kleinen Pfeile.
   // "Im Bogen" heisst: die Richtung dreht sich dort an dieser Stelle merklich.
+  const NADEL_KERBS_AN = false;
   const NADEL_KAPPA = 0.025;                 // Richtungsaenderung je Einheit, ab der es Bogen ist
   const NADEL_AUSSEN = { lang: 2.6, takt: 1.7, winkel: 52, breit: 1.6 };
   const NADEL_INNEN = { lang: 1.35, takt: 1.5, winkel: 78, breit: 1.5 };
@@ -29187,7 +29200,9 @@
         if (L < pl + 2 * rand) continue;
         // Haarnadel? Dann ist die laengere Seite (gegen die Mittellinie) die Aussenseite.
         const typ = tiles && tiles[k] ? tiles[k].type : null;
-        const nadel = typ === TILE_TYPE.HAIRPIN || typ === TILE_TYPE.HAIRPIN_LEFT;
+        // v1.0.17: vorerst AUS - GEMELDET "Haarnadel-Vorschau sieht voellig falsch aus". Bis zum
+        // Nachbau gelten die normalen Pfeile; die Zeichnung unten bleibt fuer den neuen Versuch.
+        const nadel = NADEL_KERBS_AN && (typ === TILE_TYPE.HAIRPIN || typ === TILE_TYPE.HAIRPIN_LEFT);
         let aussen = false;
         if (nadel) {
           let lc = 0;
@@ -29993,6 +30008,10 @@
     // zurueck (GEMELDET: "bewegt sich immer nur ein kleines bisschen"). Nach dem Loslassen.
     if (raumZug) { raumZug.nachher = true; return; }
     editorStreckeMerken();
+    // v1.0.17: SIMULATOR-Linie fuer die neue Strecke im Hintergrund anstossen (61-simlinie.js).
+    // Beim Laden laeuft das VOR 61-simlinie.js: simVorrechnen ist hochgezogen, und alles, was
+    // es sofort anfasst, ist var - der Rest laeuft erst im Zeitgeber nach dem Aufbau.
+    if (typeof simVorrechnen === 'function') simVorrechnen();
     // Die Kachelzahl entscheidet, ob der Windschatten ueberhaupt rechnen kann. Hier gerufen
     // und nicht in 50-drive.js beim Laden: dort ist currentTrackTiles noch in der temporalen
     // Todeszone, siehe den Kommentar bei dirtyAirVerfuegbar().
@@ -32916,9 +32935,18 @@
     try { localStorage.setItem(SIM_STORE, JSON.stringify(d)); } catch (err) { /* voll oder privat */ }
   }
 
+  // TEMPORALE TODESZONE (v1.0.17, GEMELDET: "1.0.16 konnte nicht starten ... Cannot access
+  // 'simErgebnisse' before initialization"). Seit SIMULATOR die Vorgabe ist, zeichnet der
+  // Editor mit einer gemerkten Strecke schon beim Laden von 60-track.js - bevor diese Datei
+  // ihre Konstanten angelegt hat. Dann gilt die Luuke-Linie; am Ende dieser Datei wird neu
+  // gezeichnet, sobald alles steht.
+  function simBereit() {
+    try { return typeof simErgebnisse === 'object' && typeof SIM_STORE === 'string'; } catch (e) { return false; }
+  }
   // Aus buildLine(): fertige Linie, sonst die Luuke-Linie als Zwischenstand und Suche starten.
   function simulatorLinie(pts, nrm, o) {
     const basis = luukeLinie(pts, nrm, o);
+    if (!simBereit()) return Object.assign(basis, { vorlaeufig: true });
     if (!o.closed || !o.tiles || o.tiles.length < 3) return Object.assign(basis, { vorlaeufig: true });
     const key = simSchluessel(o.tiles, o.closed);
     const fertig = simErgebnisse[key] || simAusSpeicher(key, pts.length);
@@ -33035,8 +33063,16 @@
     const lauf = { key, abbruch: false, auswertungen: 0, beste: null };
     if (simLauf) simLauf.abbruch = true;
     simLauf = lauf;
+    simLadeAnzeige(true);
     simSuche(lauf, pts, nrm, o).catch((err) => { log('SIMULATOR-Linie: ' + err.message, 'err'); })
-      .then(() => { if (simLauf === lauf) simLauf = null; });
+      .then(() => { if (simLauf === lauf) simLauf = null; simLadeAnzeige(!!simLauf); });
+  }
+  // Das drehende Streckenteil am Rand, solange gesucht wird (59-lade.js).
+  function simLadeAnzeige(an) {
+    const el = $('sim-lade');
+    if (!el) return;
+    if (typeof ladeAnimationSetzen === 'function') ladeAnimationSetzen($('sim-lade-dreh'), an);
+    el.hidden = !an;
   }
   async function simSuche(lauf, pts, nrm, o) {
     const limit = (o.limit !== undefined ? o.limit : TRACK_HALF_W - 3);
@@ -33088,6 +33124,29 @@
     return simLauf ? { laeuft: true, auswertungen: simLauf.auswertungen, von: SIM_MAX_AUSWERTUNGEN }
       : { laeuft: false, letztes: simLetztes };
   }
+  // VORRECHNEN (v1.0.17, BESTELLT: "sobald die Strecke fertig ist ein Ladesymbol ... 'Ideallinie
+  // wird berechnet'"). Nach jeder Aenderung im Editor (refreshTrackPreview) und nach dem Laden:
+  // kurz warten, dann die Linie der Ghosts anfordern - ist es eine neue geschlossene Strecke,
+  // startet damit die Suche samt Einblendung. Auch wenn die Linie im Editor ausgeblendet ist.
+  // var und nicht let: simVorrechnen() wird schon beim Laden aus 60-track.js gerufen, bevor diese
+  // Zeile laeuft - ein let stuende dann in der temporalen Todeszone (genau der Fehler von 1.0.16).
+  var simVorrechnenZeit = null;
+  function simVorrechnen() {
+    if (simVorrechnenZeit) clearTimeout(simVorrechnenZeit);
+    simVorrechnenZeit = setTimeout(() => {
+      simVorrechnenZeit = null;
+      try {
+        if (getLineModel() !== 'simulator' || !currentTrackTiles || currentTrackTiles.length < 3) return;
+        if (typeof ghostLine === 'function') ghostLine();
+      } catch (e) { /* ohne Ghosts */ }
+    }, 600);
+  }
+  // Nach dem Aufbau: eine beim Laden vorlaeufig gezeichnete Linie (siehe simBereit) ersetzen.
+  setTimeout(() => {
+    try { lineCache = null; } catch (e) { /* ohne Ghosts */ }
+    try { if (currentTrackTiles && currentTrackTiles.length >= 3) refreshTrackPreview(); } catch (e) { /* Editor fehlt */ }
+    simVorrechnen();
+  }, 0);
   // =========================================================================
   // Das Rennen: Armaturenbrett, Modi, Boxengasse, Wetter
   // =========================================================================

@@ -47,9 +47,18 @@
     try { localStorage.setItem(SIM_STORE, JSON.stringify(d)); } catch (err) { /* voll oder privat */ }
   }
 
+  // TEMPORALE TODESZONE (v1.0.17, GEMELDET: "1.0.16 konnte nicht starten ... Cannot access
+  // 'simErgebnisse' before initialization"). Seit SIMULATOR die Vorgabe ist, zeichnet der
+  // Editor mit einer gemerkten Strecke schon beim Laden von 60-track.js - bevor diese Datei
+  // ihre Konstanten angelegt hat. Dann gilt die Luuke-Linie; am Ende dieser Datei wird neu
+  // gezeichnet, sobald alles steht.
+  function simBereit() {
+    try { return typeof simErgebnisse === 'object' && typeof SIM_STORE === 'string'; } catch (e) { return false; }
+  }
   // Aus buildLine(): fertige Linie, sonst die Luuke-Linie als Zwischenstand und Suche starten.
   function simulatorLinie(pts, nrm, o) {
     const basis = luukeLinie(pts, nrm, o);
+    if (!simBereit()) return Object.assign(basis, { vorlaeufig: true });
     if (!o.closed || !o.tiles || o.tiles.length < 3) return Object.assign(basis, { vorlaeufig: true });
     const key = simSchluessel(o.tiles, o.closed);
     const fertig = simErgebnisse[key] || simAusSpeicher(key, pts.length);
@@ -166,8 +175,16 @@
     const lauf = { key, abbruch: false, auswertungen: 0, beste: null };
     if (simLauf) simLauf.abbruch = true;
     simLauf = lauf;
+    simLadeAnzeige(true);
     simSuche(lauf, pts, nrm, o).catch((err) => { log('SIMULATOR-Linie: ' + err.message, 'err'); })
-      .then(() => { if (simLauf === lauf) simLauf = null; });
+      .then(() => { if (simLauf === lauf) simLauf = null; simLadeAnzeige(!!simLauf); });
+  }
+  // Das drehende Streckenteil am Rand, solange gesucht wird (59-lade.js).
+  function simLadeAnzeige(an) {
+    const el = $('sim-lade');
+    if (!el) return;
+    if (typeof ladeAnimationSetzen === 'function') ladeAnimationSetzen($('sim-lade-dreh'), an);
+    el.hidden = !an;
   }
   async function simSuche(lauf, pts, nrm, o) {
     const limit = (o.limit !== undefined ? o.limit : TRACK_HALF_W - 3);
@@ -219,3 +236,26 @@
     return simLauf ? { laeuft: true, auswertungen: simLauf.auswertungen, von: SIM_MAX_AUSWERTUNGEN }
       : { laeuft: false, letztes: simLetztes };
   }
+  // VORRECHNEN (v1.0.17, BESTELLT: "sobald die Strecke fertig ist ein Ladesymbol ... 'Ideallinie
+  // wird berechnet'"). Nach jeder Aenderung im Editor (refreshTrackPreview) und nach dem Laden:
+  // kurz warten, dann die Linie der Ghosts anfordern - ist es eine neue geschlossene Strecke,
+  // startet damit die Suche samt Einblendung. Auch wenn die Linie im Editor ausgeblendet ist.
+  // var und nicht let: simVorrechnen() wird schon beim Laden aus 60-track.js gerufen, bevor diese
+  // Zeile laeuft - ein let stuende dann in der temporalen Todeszone (genau der Fehler von 1.0.16).
+  var simVorrechnenZeit = null;
+  function simVorrechnen() {
+    if (simVorrechnenZeit) clearTimeout(simVorrechnenZeit);
+    simVorrechnenZeit = setTimeout(() => {
+      simVorrechnenZeit = null;
+      try {
+        if (getLineModel() !== 'simulator' || !currentTrackTiles || currentTrackTiles.length < 3) return;
+        if (typeof ghostLine === 'function') ghostLine();
+      } catch (e) { /* ohne Ghosts */ }
+    }, 600);
+  }
+  // Nach dem Aufbau: eine beim Laden vorlaeufig gezeichnete Linie (siehe simBereit) ersetzen.
+  setTimeout(() => {
+    try { lineCache = null; } catch (e) { /* ohne Ghosts */ }
+    try { if (currentTrackTiles && currentTrackTiles.length >= 3) refreshTrackPreview(); } catch (e) { /* Editor fehlt */ }
+    simVorrechnen();
+  }, 0);

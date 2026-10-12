@@ -3596,6 +3596,12 @@
     align-items: center; justify-content: center; gap: 12px; background: rgba(0,0,0,.78); }
   /* v0.9.64: ein Gerade-Teil dreht sich in 1 s einmal im Uhrzeigersinn (59-lade.js). */
   .lade-dreh { position: relative; width: 96px; height: 96px; }
+  /* v1.0.17: kleine Einblendung am Rand, solange die SIMULATOR-Linie gesucht wird. */
+  .sim-lade:not([hidden]) { position: fixed; left: calc(10px + env(safe-area-inset-left)); bottom: calc(10px + env(safe-area-inset-bottom));
+    z-index: 380; display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 6px; background: rgba(5,7,12,.85);
+    border: 1px solid rgba(255,255,255,.15); border-radius: 6px; color: #eef0f4; font-size: 12.5px; font-weight: 600;
+    letter-spacing: .03em; pointer-events: none; }
+  .sim-lade .lade-dreh { width: 30px; height: 30px; }
   .lade-ebene { position: absolute; inset: 0; display: grid; place-items: center; }
   .lade-ebene svg, .lade-ebene .tp-karte { width: 100%; height: 100%; max-width: none; max-height: none; }
   .lade-a { animation: ladeDreh 1s linear infinite; }
@@ -4598,7 +4604,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.16</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.17</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5726,6 +5732,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Hotfix: 1.0.16 startete nicht, wenn im Editor eine Strecke gemerkt war (die SIMULATOR-Linie wurde beim Laden zu fr&#252;h angefragt) &#8211; behoben. Die Ideallinie wird jetzt gleich nach jeder &#196;nderung an der Strecke im Hintergrund berechnet; solange das l&#228;uft, zeigt ein drehendes Streckenteil am Rand &#8222;Ideallinie wird berechnet &#8230;&#8220;. Die neuen Haarnadel-Kerbs sind vorerst wieder aus.</li>
         <li>Haarnadeln sehen jetzt aus wie das Originalteil: im Bogen au&#223;en lange, breite Pfeile schr&#228;g zur Bahn, innen am Scheitel kurze Keile; auf den geraden Schenkeln bleiben die kleinen Pfeile. Gilt f&#252;r Editor, Vorschaubilder und das Streckenbild.</li>
         <li>Streckenbild: neuer Knopf &#8222;Bild&#8220; in der Editorleiste speichert ein PNG mit Strecke (Ideallinie und Raum wie gerade eingeschaltet), Name, Streckencode, L&#228;nge, Platzbedarf, Teilezahl und Link; in der App unter Bilder/OmegaSim (neue APK n&#246;tig). SIMULATOR ist jetzt die Standard-Ideallinie. Meisterschaft: Vorgabe sind zwei Events (Qualifying, Runden), &#8222;Meisterschaft starten&#8220; ist als WIP gekennzeichnet, und eine pausierte Meisterschaft l&#228;sst sich fortsetzen &#8211; die FAHREN-Kachel zeigt &#8222;Fortsetzen: Event X/Y&#8220; und &#246;ffnet direkt den Zwischenstand mit &#8222;Weiter&#8220;, im Planer steht oben &#8222;Meisterschaft fortsetzen&#8220;. Titelschirm: &#8222;Starten&#8220; ist farbig hinterlegt. Die Kachel mit dem Garage-Knopf zeigt das Garagenfoto.</li>
         <li>Neues Linienmodell SIMULATOR (WIP): f&#228;hrt bis zu 200 Linien &#8211; die acht vorhandenen und glatte Abwandlungen davon &#8211; je drei Runden mit derselben Fahrphysik wie dein Auto (Getriebe, Reifen, Zug im Reibkreis) und beh&#228;lt die schnellste. Die Mindestgeschwindigkeit der Ghosts (35 %) und eine Grenze f&#252;r schnelle Querwechsel gelten als Schranken. Die Suche dauert wenige Sekunden im Hintergrund, pausiert im Rennen und wird je Strecke gespeichert; bis dahin gilt die Luuke-Linie. Ein getestetes Beispiel, keine bewiesene Bestlinie.</li>
@@ -11383,6 +11390,9 @@
           <span class="tp-tasten" id="track-fs-tasten"></span>
         </div>
         <div id="track-preview-svg"></div>
+        <!-- v1.0.17 BESTELLT: "sobald die Strecke fertig ist ein Ladesymbol am Rand (die drehende
+             Gerade) mit 'Ideallinie wird berechnet'" - solange die SIMULATOR-Suche laeuft. -->
+        <div class="sim-lade" id="sim-lade" role="status" hidden><span class="sim-lade-dreh" id="sim-lade-dreh"></span><span>Ideallinie wird berechnet &hellip;</span></div>
         <div class="tp-bar" id="track-palette"></div>
         <span class="tp-space" id="track-space"></span>
       </div>
