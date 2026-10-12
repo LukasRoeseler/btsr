@@ -1,5 +1,5 @@
-{"version":"0.10.4","apk":2,"dateien":[
-{"p":"index.html","h":"643ae1cd6f170cb1bca644457238c97c8d3933c1e510f202fa6755644259d68b","g":5210074},
+{"version":"0.10.5","apk":2,"dateien":[
+{"p":"index.html","h":"6de4284fd467880fceff9febbc97e4da43aa0861dc4ddd3cec4f137c44dfdc37","g":5228746},
 {"p":"mp-overview.html","h":"61388dad99cb805de167fe9a10b9ffdb1d4655c450f175f4eeb9ede3a24d04aa","g":9956},
 {"p":"manifest.webmanifest","h":"868416fe2c9d41ebed0b5d479f07bbd16679dd4835e9c526da9eae8046e1e36a","g":639},
 {"p":"favicon.svg","h":"bc804f771d409b0efff2f2a78238a91d843d8d02efc2c614c6bdc544763de931","g":5456},
@@ -392,8 +392,8 @@
 {"p":"img/derby.jpg","h":"b321fb777a8c332fd04f7151a0484f60b7f18b98e272e465274470dc2e2883ed","g":885969},
 {"p":"img/fahren-bg.jpg","h":"9504091918a966911ccca711616b8209dca2eb97aa358f707d53b6e2df4d7d78","g":32353},
 {"p":"img/fahren.jpg","h":"9504091918a966911ccca711616b8209dca2eb97aa358f707d53b6e2df4d7d78","g":32353},
-{"p":"img/garage-bg.jpg","h":"2169b4324606e60a6a7829cf17e9a87115c3542fd1bebd1fef7b16fb55d535cb","g":222443},
-{"p":"img/garage.jpg","h":"48bd04f6f243074ec3ca666aae58f20cbf0eb37f32cf394e0005bec4cfa43f20","g":55870},
+{"p":"img/garage-bg.jpg","h":"6e7b0c2490d36caf42c9251a473a23eb7cdae9a663601ff3d1ddf5485e776eba","g":109015},
+{"p":"img/garage.jpg","h":"66324b86265cc280e6ed8f627d48964f5bafa7e40661dcf0e50162baabdf93bb","g":44707},
 {"p":"img/haupt-bg.jpg","h":"d4a72da189756065b9a31addae549d78abff972023a7db91f559915b8b6d9c48","g":111068},
 {"p":"img/haupt.jpg","h":"82dc4ba2ecf2769bce4e3320d953d25b06440e2e4d396072e6425db9a4796699","g":53711},
 {"p":"img/info-bg.jpg","h":"ec2de427d029334ba8403c600cf7935e44434cef014032e6d9ca86b9cef5e6a9","g":147210},
@@ -401,6 +401,8 @@
 {"p":"img/knockout.jpg","h":"13aedb2c13140ccd0cf4739b3b2847f20cf25c20c35dac6f28941b976697ece0","g":957704},
 {"p":"img/mehrspieler-bg.jpg","h":"ee7e53b4641ba5b6f3a53d9daed403c2253d89e1136835cf29acd151ea303824","g":369659},
 {"p":"img/mehrspieler.jpg","h":"4df84ed38d9fc5846a1ca4f40fa4372c700baf63749c4e4c7d9d969db354bb0c","g":80442},
+{"p":"img/meisterschaft-bg.jpg","h":"1902980ced07639fd47183b96576287b98a44eacc074cd5e4b7a2172c2b05347","g":85083},
+{"p":"img/meisterschaft.jpg","h":"59a3babcf9df727424b58db8f90f15fec0cd45b850f11b155894b31a7f097659","g":36231},
 {"p":"img/optionen-bg.jpg","h":"6224ea06db4838b4557e8b4b520a5b35aa6a85b2fb89dd9b3f3f4d9a3bdc9945","g":82697},
 {"p":"img/optionen.jpg","h":"e544aca4ec559fd5dcdb00e5fa2cfae4424a3133326db55b7a1d092646c49e33","g":48938},
 {"p":"img/rennen-bg.jpg","h":"5db36093f7204d76fca897b46d10dac6fe451ddf4f0e319ba24778ddc3e4c917","g":168200},

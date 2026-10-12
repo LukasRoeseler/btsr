@@ -99,8 +99,11 @@
     // `timed: false` is what makes practice different: no limit is checked, so it runs
     // until it is stopped. Everything else about it is an ordinary session — the ghosts
     // drive, laps are recorded, the results table fills.
-    practice:   { label: 'Freies Training', unit: 'Minuten', timed: false,
-                  hint: 'Läuft, bis du beendest.' },
+    // v0.10.5 BESTELLT: "freies Fahren (= umbenennen in Training) braucht ein Zeitlimit; baue
+    // das ein und mach es standardmaessig auf 0 (= unendlich)". timed bleibt false: ohne Limit
+    // laeuft es weiter, mit Limit gilt raceLimitReached() wie bei Endurance.
+    practice:   { label: 'Training', unit: 'Minuten', timed: false,
+                  hint: 'Zeitlimit in Minuten, 0 = bis du beendest.' },
     endurance:  { label: 'Endurance', unit: 'Minuten', timed: true, hint: 'Meiste Runden in der Zeit.' },
     qualifying: { label: 'Qualifying', unit: 'Minuten', timed: true, hint: 'Schnellste Einzelrunde zählt.' },
     laps:       { label: 'Runden', unit: 'Runden', timed: true, hint: 'Wer zuerst die Rundenzahl hat.' },
@@ -119,7 +122,7 @@
                   hint: 'Experimentell: rammen, Health 0-100, Sieg nach Kills.' },
   };
   let raceMode = 'practice';
-  let raceLimit = 2;              // minutes, or laps in 'laps' mode
+  let raceLimit = 0;              // minutes, or laps in 'laps' mode; Training: 0 = ohne Ende
 
   // ---- Knockout (v0.8.96, experimentell) ----
   // Jeder menschliche Fahrer hat KO_Leben Leben; ein Abkommen kostet eins. Ein Geist ist
@@ -181,7 +184,11 @@
 
   function raceLimitReached() {
     if (raceState !== 'racing') return false;
-    if (!RACE_MODES[raceMode].timed) return false;   // free practice: only a human ends it
+    // Training: mit Zeitlimit (> 0) endet es nach der Zeit, mit 0 nur von Hand.
+    if (raceMode === 'practice') {
+      return raceLimit > 0 && raceStartedAt !== null && (Date.now() - raceStartedAt) >= raceLimit * 60000;
+    }
+    if (!RACE_MODES[raceMode].timed) return false;
     if (raceMode === 'laps') {
       return raceAllCars().some(c => c.laps.length >= raceLimit);
     }
@@ -1599,6 +1606,27 @@
     // v0.9.31: im freien Training gibt es keine Startaufstellung - also auch keinen Knopf.
     if ($('grid-auto')) $('grid-auto').hidden = raceMode === 'practice';
     gs.hidden = false;
+    gridFokusIdx = -1;
+    raceGridFokus(0);
+  }
+  // v0.10.5 BESTELLT: "Rennstartmenue: mach Abbrechen und Start anwaehlbar, dann mit X
+  // bestaetigen." Steuerkreuz links/rechts (oder hoch/runter) waehlt, X drueckt den gewaehlten
+  // Knopf. Ab Werk steht die Auswahl auf Start - wer nur X drueckt, startet wie bisher.
+  let gridFokusIdx = -1;
+  function gridKnoepfe() {
+    return ['grid-abbrechen', 'grid-auto', 'grid-start'].map((id) => $(id)).filter((b) => b && !b.hidden);
+  }
+  function raceGridFokus(d) {
+    const k = gridKnoepfe();
+    if (!k.length) return;
+    if (gridFokusIdx < 0 || gridFokusIdx >= k.length) gridFokusIdx = k.length - 1;
+    gridFokusIdx = Math.max(0, Math.min(k.length - 1, gridFokusIdx + d));
+    k.forEach((b, i) => b.classList.toggle('pad-fokus', i === gridFokusIdx));
+  }
+  function raceGridBestaetigen() {
+    const k = gridKnoepfe();
+    const b = k.length ? k[gridFokusIdx >= 0 && gridFokusIdx < k.length ? gridFokusIdx : k.length - 1] : null;
+    if (b) b.click(); else raceGridStart();
   }
   function raceGridStart() {
     const gs = $('race-gridscreen');
@@ -2074,7 +2102,8 @@
     // a control that vanishes makes people wonder whether they broke something.
     // DERBY (v0.8.126): das Limit ist das KILLS-ZIEL und wird deshalb aktiviert - sonst
     // koennte man es nicht auf 1 setzen. Die Voreinstellung setzt der Moduswechsel unten.
-    $('race-limit').disabled = !m.timed && raceMode !== 'derby';
+    $('race-limit').disabled = !m.timed && raceMode !== 'derby' && raceMode !== 'practice';
+    $('race-limit').min = raceMode === 'practice' ? '0' : '1';
     // 0.7, not 0.45. On white 0.45 was a legible grey; on black it collapsed to 2.7:1,
     // and this label still has to be readable while it says which unit is NOT in use.
     $('race-limit-label').style.opacity = (m.timed || raceMode === 'derby') ? '' : '0.7';
@@ -2116,14 +2145,14 @@
     raceMode = e.target.value;
     // Sensible default per mode rather than carrying a minute count over into a lap count.
     // DERBY (v0.8.126): das Limit ist das KILLS-ZIEL, Voreinstellung 1.
-    raceLimit = raceMode === 'laps' ? 10 : (raceMode === 'derby' ? 1 : 2);
+    raceLimit = raceMode === 'laps' ? 10 : (raceMode === 'derby' ? 1 : (raceMode === 'practice' ? 0 : 2));
     $('race-limit').value = raceLimit;
     applyRaceModeUi();
     if (raceMode === 'knockout') knockoutBereit(true);
   });
   $('race-limit').addEventListener('input', (e) => {
     const v = parseInt(e.target.value, 10);
-    if (Number.isFinite(v) && v >= 1) raceLimit = v;
+    if (Number.isFinite(v) && (v >= 1 || (v === 0 && raceMode === 'practice'))) raceLimit = v;
   });
 
   $('race-wx-start').addEventListener('change', (e) => {
@@ -3540,11 +3569,12 @@
   // waere ausgerechnet die Mischung, die man nicht erkennt. Das ist ein gemessener Grund und
   // keine Vorliebe.
   const TYRE_MIX = {
-    weich:  { griff: 1.12, nass: 0.45, verschleiss: 1.8, aqua: true,
+    // v0.10.5 BESTELLT: "Unterschied zwischen Reifenmischungen staerker machen."
+    weich:  { griff: 1.20, nass: 0.45, verschleiss: 2.2, aqua: true,
               farbe: '#e5261e', name: 'weich' },
     mittel: { griff: 1.00, nass: 0.45, verschleiss: 1.0, aqua: true,
               farbe: '#f7d117', name: 'mittel' },
-    hart:   { griff: 0.92, nass: 0.45, verschleiss: 0.6, aqua: true,
+    hart:   { griff: 0.85, nass: 0.45, verschleiss: 0.5, aqua: true,
               farbe: '#f2f4f8', name: 'hart' },
     regen:  { griff: 0.88, nass: 0.80, verschleiss: 1.0, aqua: false,
               farbe: '#2f6fd0', name: 'Regen' },

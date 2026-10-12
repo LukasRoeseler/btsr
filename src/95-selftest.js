@@ -17814,8 +17814,9 @@
       if (grenze < GHOST_READ_MIN) f.push('Grenze ' + grenze.toFixed(3) + ' unter der Lese-Mindestgeschwindigkeit');
       limitYellow = grenze; applySpeedLimit();
       if (physEngine.config.speedLimitFactor < GHOST_READ_MIN) f.push('Physik gedeckelt auf ' + physEngine.config.speedLimitFactor.toFixed(3));
+      // v0.10.5: auch im Ausdruck-Modus 35 % (BESTELLT "alle Autos auf ca. 35 % drosseln").
       trackMode = 'off';
-      if (gelbGrenze() !== yellowFactor()) f.push('im Ausdruck-Modus nicht das Gelb-Tempo');
+      if (gelbGrenze() < GHOST_READ_MIN) f.push('im Ausdruck-Modus unter der Lese-Mindestgeschwindigkeit');
       const gerade = autopilotKurvenFaktor({ tileCode: TILE_TYPE.STRAIGHT });
       const kurve = autopilotKurvenFaktor({ tileCode: TILE_TYPE.CURVE_RIGHT });
       const nadel = autopilotKurvenFaktor({ tileCode: TILE_TYPE.HAIRPIN });
@@ -17909,6 +17910,63 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Maximum ueber 5 s, Lichtfenster statt Fahrpakete' };
   });
 
+
+  // ---- v0.10.5: Block 3 ----
+  stAdd('RC-Modus: Gas laeuft in 2 s aus, Bremse sofort, zweiter Bremsdruck im Stand = rueckwaerts', () => {
+    const f = [];
+    rcZuruecksetzen();
+    let t0 = 1000;
+    // In 45-ms-Takten wie der Herzschlag (rcGas begrenzt einen Takt auf 200 ms).
+    const schritt = (y, ms) => { let v = 0; for (let x = 0; x < ms; x += 45) { t0 += Math.min(45, ms - x); v = rcGas(y, t0); } return v; };
+    schritt(1, 45);
+    let v = schritt(0, 1000);
+    if (!(v > 0.4 && v < 0.6)) f.push('nach 1 s ohne Gas ' + v.toFixed(2) + ' statt ~0,5');
+    v = schritt(0, 1100);
+    if (v !== 0) f.push('nach 2 s nicht ausgelaufen: ' + v);
+    schritt(1, 45);
+    v = schritt(-1, 45);
+    if (!(v < 0)) f.push('Bremse greift nicht sofort');
+    v = schritt(-1, 700);
+    if (v !== 0) f.push('erste Bremse faehrt nach 600 ms weiter rueckwaerts: ' + v);
+    schritt(0, 500);                       // loslassen, Auto "steht"
+    v = schritt(-0.8, 45);                 // zweiter Druck
+    if (!(v < -0.5)) f.push('zweiter Bremsdruck im Stand faehrt nicht rueckwaerts: ' + v);
+    v = schritt(0, 45);
+    if (v !== 0) f.push('Rueckwaerts haelt nach dem Loslassen an: ' + v);
+    rcZuruecksetzen();
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Auslaufen 2 s, Bremse sofort, Rueckwaerts erst beim zweiten Druck' };
+  });
+
+  stAdd('Abstimmungen: FAHREN zeigt Arcade, Sim+, Pro, Pacejka; Lenkeinschlag erreichbar ausser Realismus GT3', () => {
+    const f = [];
+    const fahren = window.__presetKeysFahren ? window.__presetKeysFahren() : [];
+    if (fahren.join(',') !== 'arcade,simplus,pro,propacejka') f.push('FAHREN: ' + fahren.join(','));
+    for (const k of ['arcade', 'simplus', 'gt3', 'f1']) {
+      const v = window.__presetValues(k) || {};
+      const resp = v['phys-steerresp'] === undefined ? 3 : v['phys-steerresp'];
+      if (resp < 3) f.push(k + ': Lenkansprechen ' + resp + ' (voller Einschlag nie erreichbar)');
+      if (v['setting-steer-calib'] !== undefined && v['setting-steer-calib'] < 2) f.push(k + ': Kalibrierung ' + v['setting-steer-calib']);
+    }
+    const sim = window.__presetValues('simplus') || {}, pro = window.__presetValues('pro') || {};
+    if (!(sim['setting-brakepower'] > pro['setting-brakepower'] + 0.5)) f.push('Sim+ bremst nicht viel staerker als Pro');
+    if (!(sim['phys-accel'] > pro['phys-accel'])) f.push('Sim+ beschleunigt nicht staerker');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'vier im FAHREN-Menue, Sim+ staerker als Pro, Einschlag erreichbar' };
+  });
+
+  stAdd('Training: Zeitlimit 0 laeuft ohne Ende, ein Limit beendet es', () => {
+    const f = [];
+    const merk = { m: raceMode, l: raceLimit, s: raceState, st: raceStartedAt };
+    try {
+      raceMode = 'practice'; raceState = 'racing'; raceStartedAt = Date.now() - 5 * 60000;
+      raceLimit = 0;
+      if (raceLimitReached()) f.push('Limit 0 beendet das Training');
+      raceLimit = 3;
+      if (!raceLimitReached()) f.push('3 min Limit nach 5 min nicht erreicht');
+      raceLimit = 10;
+      if (raceLimitReached()) f.push('10 min Limit nach 5 min schon erreicht');
+    } finally { raceMode = merk.m; raceLimit = merk.l; raceState = merk.s; raceStartedAt = merk.st; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '0 = ohne Ende, sonst nach Minuten' };
+  });
 
   stAdd('Rundenrennen endet mit der Zielrunde, nicht eine Runde spaeter', () => {
     const f = [];

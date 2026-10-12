@@ -354,7 +354,8 @@
       return { anzahl: s ? s.options.length : 0, index: s ? s.selectedIndex : -1 };
     }
     if (quad === 'profil') {
-      const keys = window.__presetKeys ? window.__presetKeys() : [];
+      const keys = window.__presetKeysFahren ? window.__presetKeysFahren()
+        : (window.__presetKeys ? window.__presetKeys() : []);
       const aktiv = window.__presetActive ? window.__presetActive() : null;
       return { anzahl: keys.length, index: aktiv ? keys.indexOf(aktiv) : -1 };
     }
@@ -760,7 +761,7 @@
     const wx = $('race-wx-start');
     kZeilen($('fa-renn-info'), [
       // Freies Training laeuft ohne Ende: dort steht das Unendlich statt einer Minutenzahl.
-      rm.value === 'practice' ? [t('Dauer'), '∞']
+      rm.value === 'practice' ? [t('Dauer'), (+(($('race-limit') || {}).value) > 0 ? $('race-limit').value + ' min' : '∞')]
         : [($('race-limit-label') || {}).textContent || t('Dauer'), ($('race-limit') || {}).value || '–'],
       [t('Wetter'), wx && wx.selectedOptions[0] ? wx.selectedOptions[0].textContent : '–'],
       [t('Pflichtboxenstopps'), ($('race-pit-required') || {}).value || '0'],
@@ -813,7 +814,7 @@
     if ($('fa-editor')) $('fa-editor').hidden = !bahn;
     if ($('fa-foto')) $('fa-foto').hidden = bahn;
     if ($('fa-foto-weg')) $('fa-foto-weg').hidden = bahn || !foto;
-    $('fa-profil-titel').textContent = ($('race-act-mode-txt') || {}).textContent || '–';
+    // (fa-profil ist seit v0.10.5 die Meisterschaft-Kachel, ohne Abstimmungsanzeige.)
 
     const training = rm.value === 'practice';
     $('fa-start-titel').textContent = kRennenLaeuft() ? t('Zurück ins Rennen')
@@ -824,8 +825,7 @@
     // 27 Motoren) wuerden die Punkte nicht mehr passen - dort stehen Pfeile im Markup.
     // Fuer 6..10 Stellungen ohne Pfeile reicht auch der Platz nicht mehr: dann eine kompakte
     // "N/M"-Anzeige statt der Punkte (BESTELLT: "N/8"-Readout, wenn die Punkte drangeln).
-    [['fa-strecke-punkte', 'bahn'], ['fa-renn-punkte', 'renntyp'],
-     ['fa-profil-punkte', 'profil']].forEach(([id, quad]) => {
+    [['fa-strecke-punkte', 'bahn'], ['fa-renn-punkte', 'renntyp']].forEach(([id, quad]) => {
       const host = $(id);
       if (!host) return;
       const p = kQuadPunkte(quad);
@@ -1017,11 +1017,11 @@
     kn('fa-laden', () => konsoleZeige('track', 'laden'));
     kn('fa-raum', () => konsoleZeige('track', 'raum'));
     kn('fa-druck', () => konsoleZeige('track', 'print'));
-    kn('fa-profil', () => konsoleZeige('options', 'opt-feel'));
+    kn('fa-profil', () => showHudToast(t('Meisterschaft: kommt bald – der Entwurf ist in Arbeit.')));
     // BESTELLT: "wenn ich auf den Header tippe, soll es zur naechsten Option schalten".
     // Der Kachelkopf (Titel + Wert) dreht die Schaltstellung weiter, der Rest der Kachel
     // oeffnet wie bisher die Unterseite. Das Gamepad bleibt unveraendert (Quadrat/links/rechts).
-    [['fa-strecke', 'bahn'], ['fa-renn', 'renntyp'], ['fa-profil', 'profil']]
+    [['fa-strecke', 'bahn'], ['fa-renn', 'renntyp']]
       .forEach(([tileId, quad]) => {
         const tile = $(tileId);
         if (!tile) return;

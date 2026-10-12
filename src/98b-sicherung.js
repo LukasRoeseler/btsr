@@ -285,6 +285,20 @@
         } catch (e) { /* dann eben nur fuer diese Sitzung */ }
       }
     }
+    // ---- EINMALIG (v0.10.5): Bremston leiser, Drift-Modus entfernt -----------------------
+    {
+      let erledigt = false;
+      try { erledigt = localStorage.getItem('chc.migrate.v0105.v1') === '1'; } catch (e) { /* privat */ }
+      if (!erledigt) {
+        let geaendert = false;
+        if (cfg['brake-volume'] === 0.3) { cfg['brake-volume'] = 0.2; geaendert = true; }
+        if (cfg['phys-mode'] === 'drift') { cfg['phys-mode'] = 'physik'; geaendert = true; }
+        try {
+          localStorage.setItem('chc.migrate.v0105.v1', '1');
+          if (geaendert) localStorage.setItem(AUTO_STORE, JSON.stringify(cfg));
+        } catch (e) { /* dann eben nur fuer diese Sitzung */ }
+      }
+    }
     // ---- EINMALIG (v0.9.55): neue Vorgaben fuer Ueberholrate und Reihenstaffel ----------
     // Dieselbe Regel wie darueber: nur wer noch genau auf der alten Vorgabe steht.
     {

@@ -29,7 +29,7 @@
       // BESTELLT (v0.9.21): "Hoechstgeschwindigkeit drosseln, dafuer Bremsstaerke sehr stark".
       v: { 'setting-grip': 1.0, 'setting-brakepower': 2.5, 'setting-autoshift': true,
            'setting-zero-to-top': 2.0, 'setting-coast-drag': 0.4, 'setting-fuelweight': 0,
-           'setting-tyres': 0, 'phys-steerresp': 2.6, 'setting-brakebias': 56,
+           'setting-tyres': 0, 'phys-steerresp': 3.4, 'setting-brakebias': 56,
            // Die engste Lenkung von allen: bei 250 Prozent liegt der volle Anschlag schon
            // bei einem Viertel Stick an. Weiter als 45 Grad kommt auch das nicht - das ist
            // die Mechanik des Autos.
@@ -158,11 +158,11 @@
            // hiess also hoechstens 43 % - gemessen 19 von 45 Grad bei 10 km/h, mit kalten Reifen
            // 11. Die Werte stammten aus dem alten Weg, in dem resp x Kalibrierung bei 1 gedeckelt
            // wurde. 3,0: voller Einschlag bei vollem Stick, wie an einem echten Auto im Stand.
-           'setting-tyres': 0.9, 'phys-steerresp': 3.0, 'setting-brakebias': 60,
+           'setting-tyres': 0.9, 'phys-steerresp': 3.2, 'setting-brakebias': 60,
            // Lenkkalibrierung 1,0 heisst: der uebertragene Winkel ist genau der gerechnete.
            // Die Klassen ab GT3 sind gegen gemessenes Verhalten abgestimmt, und eine
            // Kalibrierung darauf waere ein Aufschlag auf eine Messung.
-           'setting-steer-calib': 1.55,
+           'setting-steer-calib': 2.0,
            'phys-accel': 1.0,
            'setting-crash-threshold': 35,
            // Bei Kalibrierung 1,0 wirkt schon 1,0 deutlich: 25 Grad statt 41 bei 100 km/h.
@@ -192,11 +192,11 @@
       v: { 'setting-grip': 0.97, 'setting-brakepower': 1.45, 'setting-autoshift': false,
            'setting-zero-to-top': 2.5, 'setting-coast-drag': 1.2, 'setting-fuelweight': 0.6,
            // v0.9.42: Lenkansprechen 3,0 statt 1,6 - Begruendung bei GT3.
-           'setting-tyres': 1.2, 'phys-steerresp': 3.0, 'setting-brakebias': 63,
+           'setting-tyres': 1.2, 'phys-steerresp': 3.2, 'setting-brakebias': 63,
            // Lenkkalibrierung 1,0 heisst: der uebertragene Winkel ist genau der gerechnete.
            // Die Klassen ab GT3 sind gegen gemessenes Verhalten abgestimmt, und eine
            // Kalibrierung darauf waere ein Aufschlag auf eine Messung.
-           'setting-steer-calib': 1.4,
+           'setting-steer-calib': 2.0,
            'phys-accel': 1.0,
            'setting-crash-threshold': 30,
            // Der schaerfste Reibkreis, aber nicht am Notboden: bei Kalibrierung 1,0 gibt 1,15
@@ -268,7 +268,7 @@
   // dieselbe Tabelle wie Pro plus der Steuerungsmodus "pacejka", damit man die Magic
   // Formula als EINEN Namen anwaehlen kann, statt zwei Stellen zu bedienen.
   PRESETS.propacejka = {
-    label: 'Pro-Pacejka',
+    label: 'Pacejka',
     kurz: 'Pro mit Pacejka-Lenkmodell',
     text: 'Die Pro-Abstimmung (Automatik, 2,6 s auf 100, voller Grip, Reifenmodell an, '
         + 'kein Tankgewicht) mit dem experimentellen Pacejka-Lenkmodell: unterhalb der '
@@ -277,6 +277,24 @@
         + 'ohne die Klassen-Abstimmung.',
     v: Object.assign({}, PRESETS.pro.v, { 'phys-mode': 'pacejka' }),
   };
+  // ---- SIM+ (v0.10.5) ---------------------------------------------------------------
+  // BESTELLT: "Sim+ (so wie Pro, aber mit etwas staerkerer Lenkung, staerkerer Beschleunigung,
+  // viel staerkerer Bremse)". Und: "Ueberall ausser bei GT3 Realismus den maximalen Lenkwinkel
+  // erhoehen" - der Servo erreicht den vollen Einschlag, solange Lenkansprechen >= 3 und
+  // Lenkkalibrierung x Griff >= 1; Arcade stand mit 2,6 darunter (nie voller Einschlag), GT3
+  // und F1 verloren ihn mit 1,55/1,4 schon bei leicht kalten Reifen. Pro bleibt, wie bestellt.
+  PRESETS.simplus = {
+    label: 'Sim+',
+    kurz: 'Pro mit mehr Lenkung, Beschleunigung und Bremse',
+    text: 'Wie Pro (Automatik, voller Grip, Reifenmodell an), aber mit direkterer Lenkung, '
+        + '2,3 s auf 100 und einer deutlich kr\u00e4ftigeren Bremse. F\u00fcr alle, denen Pro '
+        + 'etwas zu tr\u00e4ge ist, ohne in Arcade zu wechseln.',
+    v: Object.assign({}, PRESETS.pro.v, { 'phys-steerresp': 3.3, 'phys-accel': 1.15,
+                                          'setting-zero-to-top': 2.3, 'setting-brakepower': 2.2 }),
+  };
+  // Im FAHREN-Menue und am Cockpit-Knopf nur diese vier (BESTELLT: "die anderen Modi noch im
+  // Optionen-Menue lassen, aber nicht im FAHREN-Menue in der Kachel anzeigen").
+  const PRESETS_FAHREN = ['arcade', 'simplus', 'pro', 'propacejka'];
   // Bis v0.4 hiess GT3 "real". Aeltere exportierte Abstimmungen und der Knopf im
   // Garagenschirm duerfen den alten Namen weiter benutzen.
   const PRESET_ALIAS = { real: 'gt3', realismus: 'gt3' };
@@ -396,6 +414,7 @@
   // gekostet, deshalb steht er als Kommentar an beiden Enden.
   window.__applyPreset = applyPreset;
   window.__presetKeys = () => Object.keys(PRESETS);
+  window.__presetKeysFahren = () => PRESETS_FAHREN.filter((k) => PRESETS[k]);
   // Fuer den Cockpit-Knopf: er soll ab der EINGESTELLTEN Variante weiterschalten und nicht
   // immer bei der ersten anfangen. Ein Knopf, der aus "GT3" ein "Arcade" macht, wirkt wie
   // ein Ruecksprung. Als Funktion und nicht als Wert, weil sich die Antwort mit jedem

@@ -1388,6 +1388,8 @@
   .ch-spiegel-knopf.an { background: var(--k-blau, #0b84d6); color: #fff; border-color: transparent; }
   /* Fahren: Fahrgefuehl-Kachel mit groesserer Schrift (v0.9.31) */
   .k-fahren-unten #fa-profil .k-kt { font-size: clamp(14px, 2.6vh, 22px); }
+  #fa-profil.k-meister { background: linear-gradient(90deg, rgba(8,10,14,.88) 0%, rgba(8,10,14,.45) 70%),
+    url(img/meisterschaft.jpg) center 40% / cover no-repeat; }
   .k-fahren-unten #fa-profil .k-kk { font-size: clamp(11px, 2vh, 15px); }
   /* Galerie: Auto ohne Foto als Farbflaeche mit Zeichen */
   .k-auto-zelle.k-auto-ohne-foto { position: relative; }
@@ -2901,7 +2903,22 @@
   .gar-a-zeile .gk-text { display: flex; flex-direction: column; min-width: 0; }
   .gar-a-zeile .gk-text b { font-size: 14px; letter-spacing: .05em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .gar-a-zeile .gar-id { font-size: 10.5px; color: var(--k-dim); padding: 0; }
-  .gar-a-zeile .gk-rolle { margin: 0; min-width: 132px; }
+  /* v0.10.5 BESTELLT: "Pfeile immer an derselben Stelle." Feste Spalten statt Fliesstext:
+     links Pfeil, Mitte der Name (fest breit, mittig), rechts Pfeil; der Hinweis
+     "experimentell" in einer eigenen Zeile darunter. */
+  .gar-a-zeile .gk-rolle { margin: 0; width: 176px; min-width: 176px; display: grid;
+    grid-template-columns: 30px minmax(0, 1fr) 30px; align-items: center; }
+  .gar-a-zeile .gk-rolle > button[data-d="-1"] { grid-column: 1; grid-row: 1; }
+  .gar-a-zeile .gk-rolle > b { grid-column: 2; grid-row: 1; text-align: center; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; }
+  .gar-a-zeile .gk-rolle > button[data-d="1"] { grid-column: 3; grid-row: 1; }
+  .gar-a-zeile .gk-rolle > .wip-tag { grid-column: 1 / -1; grid-row: 2; justify-self: center;
+    font-size: 9px; margin: 0; }
+  .gk-w > b { display: inline-block; min-width: 10em; text-align: center; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; }
+  .gar-akku { white-space: nowrap; }
+  #race-gridscreen button.pad-fokus { outline: 3px solid var(--k-blau, #3d8bff); outline-offset: 2px; }
+  .gar-akku.knapp { color: var(--bad); font-weight: 800; }
   .gar-a-zeile.is-player .gk-rolle { background: var(--k-blau); color: var(--k-blau-text); }
   .gar-a-zeile.is-zwei .gk-rolle { background: #ffb02e; color: #1a1100; }
   .gar-a-zeile.is-ghost .gk-rolle { background: #6b5bd6; color: #fff; }
@@ -4439,6 +4456,10 @@
              Controller mit allen Tasten sieht und die Belegung aendern kann". -->
         <button type="button" id="k-steuerung-start" class="k-tutorial-knopf">Steuerung
           <span class="k-tutorial-taste" data-i18n-skip>&#9675; / S</span></button>
+        <!-- v0.10.5 BESTELLT: "Auf dem Startscreen 'Starten' als dritten Button neben Tutorial
+             und Steuerung." Derselbe Weg wie X / Enter. -->
+        <button type="button" id="k-starten-start" class="k-tutorial-knopf">Starten
+          <span class="k-tutorial-taste" data-i18n-skip>&#10005; / Enter</span></button>
       </div>
       <div class="k-druecken"><span data-i18n-skip>&#10005;</span> zum Starten</div>
       <!-- BESTELLT: "auf der Titelseite zur .apk verlinken, falls die App nicht darueber
@@ -4464,7 +4485,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.10.4</span></span>
+        <span class="foot-ver">v<span id="app-version">0.10.5</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4518,9 +4539,12 @@
         <span class="k-ki" id="fa-renn-info"></span>
       </div>
       <div class="k-gitter k-fahren-unten">
-      <div class="k-kachel k-klein" id="fa-profil" role="button" tabindex="0" data-quad="profil">
-        <span class="k-kk">Fahrgefühl</span>
-        <span class="k-kopf"><span class="k-kt" id="fa-profil-titel"></span><span class="k-quad-punkte" id="fa-profil-punkte" aria-hidden="true"></span></span>
+      <!-- v0.10.5 BESTELLT: "Meisterschaft-Button unten links im FAHREN-Menue, Bild im Ordner
+           (Ford und BMW von hinten), statt Fahrgefuehl (das ist ja in Garage und Optionen)."
+           Die Kennung bleibt fa-profil, weil Menuefuehrung und Tutorial sie kennen. -->
+      <div class="k-kachel k-klein k-meister" id="fa-profil" role="button" tabindex="0">
+        <span class="k-kk">Meisterschaft <span class="wip-tag">bald</span></span>
+        <span class="k-kopf"><span class="k-kt">Meisterschaft erstellen</span></span>
         <span class="k-ki"></span>
       </div>
         <div class="k-kachel k-start" id="fa-start" role="button" tabindex="0">
@@ -5589,6 +5613,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Fahrgef&#252;hl und Men&#252;s: Neue Abstimmung Sim+ (wie Pro mit direkterer Lenkung, mehr Beschleunigung und viel st&#228;rkerer Bremse). Im FAHREN-Men&#252; und am Cockpit-Knopf stehen nur noch Arcade, Sim+, Pro und Pacejka; GT3, F1 und Realismus GT3 bleiben in den Optionen. Arcade lenkt st&#228;rker und erreicht jetzt den vollen Einschlag, GT3 und F1 behalten ihn auch mit kalten Reifen (der Lenkregler reicht bis 400 %). Drift-Modus entfernt; &#8222;Aus&#8220; hei&#223;t jetzt RC: Gas l&#228;uft in 2 s aus, die Bremse greift sofort, ein zweiter Bremsdruck im Stand f&#228;hrt r&#252;ckw&#228;rts. Gelbe Flagge: alle Autos etwa 35 %, auch im Ausdruck-Modus. Reifenmischungen unterscheiden sich st&#228;rker (weich 120 % Griff und schneller Verschlei&#223;, hart 85 % und langlebig). Bremsquietschen leiser. Garage: Rollenpfeile immer an derselben Stelle, Akkustand je Auto, Fahrgef&#252;hl je gesteuertem Auto w&#228;hlbar, neues Garagenbild. Startaufstellung: Abbrechen, Automatisch aufstellen und Start mit dem Steuerkreuz w&#228;hlbar, X best&#228;tigt. Titelschirm mit &#8222;Starten&#8220;. Unten links im FAHREN-Men&#252; die Kachel Meisterschaft (kommt bald). &#8222;Freies Training&#8220; hei&#223;t &#8222;Training&#8220; und hat ein Zeitlimit (0 = ohne Ende). &#8222;Controller tauschen&#8220; entfernt.</li>
         <li>App-Latenz (neue APK n&#246;tig, &#228;ltere fahren wie bisher): Befehle an die Autos gehen in der App jetzt direkt an den Bluetooth-Schreibthread, ohne den Umweg &#252;ber den Android-Hauptthread, &#252;ber den auch alle Meldungen der Autos laufen. Das Gamepad wird bei einem Controller direkt aus der App gelesen (Sticks und Trigger), Android b&#252;ndelt die Stick-Ereignisse nicht mehr im Bildtakt, und der Ton l&#228;uft mit kleinem Puffer. Die Verbindungspriorit&#228;t wird nicht mehr alle 10 s neu ausgehandelt (kleine H&#228;nger). &#8222;Funk-Rundlauf&#8220; zeigt jetzt die echten Werte: Br&#252;ckenzeit, Takt des Steuerherzschlags, Gamepad direkt, Tonverz&#246;gerung; der alte Wert ist in der App als &#8222;nur JS&#8220; gekennzeichnet.</li>
         <li>Fehler behoben (Pr&#252;fung der &#196;nderungen seit 0.9.56): Ghosts, die die Bahn verlassen, halten wieder an (Gerade 0,9 s, Kurve 1,2 s, Haarnadel 1,8 s, sofort wenn sie auf dem Teppich weiterz&#228;hlen). Nah nebeneinander bekommen zwei Ghosts immer gegens&#228;tzliche Seiten und behalten ihre Reihenfolge von links nach rechts, statt sich anzuschieben. Ghost-Motorsound spielt auch ohne Sample des eigenen Autos, und die Garage zeigt, ob er wirklich an ist. Automatisch aufstellen h&#228;lt erst nach dem Startteil am richtigen Platz und geht erst kurz davor ganz an den Rand. Ein Auto, das Ghost war, lenkt als gesteuertes Auto nicht mehr selbst. Das Boxen-Minispiel kommt wieder, wenn kein zweiter Spieler f&#228;hrt. Fliegender Start: Einf&#252;hrungsrunde mit Kurvendrosselung, Ende beim zweiten &#220;berfahren des ersten Autos. Akku: Wert gegl&#228;ttet, leer schon bei h&#246;herem Rohwert, Warnblinken nur noch mit den Lichtern (vorher kurz ohne Gas und Lenkung). Statistik: gespeicherte Strecken werden gez&#228;hlt, jedes Auto erscheint mit eigenen Kilometern, Spieler 2/3 z&#228;hlen mit, Kilometer nur mit verbundenem Auto, &#8222;Beste Runde&#8220; entfernt. 2/3-Spieler-Schirm: letzte und beste Runde gro&#223;, alle Kn&#246;pfe sichtbar.</li>
         <li>Community-Bestzeiten: Die 3er-Serie (bester Durchschnitt aus drei aufeinanderfolgenden Runden) gilt jetzt auch f&#252;r Community-Strecken. Daf&#252;r speichert die App die Rundenzeiten zu jedem Eintrag und l&#228;dt sie mit hoch; das Apps Script muss neu bereitgestellt werden, damit es die Rundenzeiten auch f&#252;r die Online-Zeiten &#252;bernimmt.</li>
@@ -8543,7 +8568,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" aria-hidden="true">
             <circle cx="12" cy="13" r="8"/><path d="M12 13V8.5M12 2h0M9 3h6"/>
-          </svg><b>Freies Training</b></button>
+          </svg><b>Training</b></button>
         <button type="button" class="mode-tile kachelbild endurance" data-mode="endurance">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" aria-hidden="true">
@@ -8571,7 +8596,7 @@
           </svg><b>Demolition Derby</b><span class="wip-tag">experimentell</span></button>
       </div>
       <select id="race-mode" hidden style="display:none">
-        <option value="practice" selected>Freies Training</option>
+        <option value="practice" selected>Training</option>
         <option value="endurance">Endurance</option>
         <option value="qualifying">Qualifying</option>
         <option value="laps">Runden</option>
@@ -8585,7 +8610,7 @@
            zwei waagerechten Reihen, und auf dem Telefon brachen sie unvorhersehbar um. -->
       <div class="opt-row"><div class="opt-label"><span id="race-limit-label">Minuten</span>
           <small>Bei freiem Training ohne Bedeutung.</small></div>
-        <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="race-limit" value="2" min="1" max="120" step="1" style="width:84px"><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
+        <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="race-limit" value="0" min="0" max="120" step="1" style="width:84px"><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
       <div class="opt-row"><div class="opt-label">Sektoren
           <span class="wip-tag">experimentell</span>
           <small>&Uuml;berfahrten je Runde. <b>Im Bahn-Modus</b> (Editor) bestimmt die Strecke
@@ -8988,11 +9013,10 @@
           erkannt. Beides zugleich gibt es nicht.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-ontrack" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Steuerungsmodus
-          <small>Physik: Drehmoment, G&auml;nge, Reibkreis &ndash; die Vorgabe. Aus: rohe
-          Stickstellung ohne G&auml;nge, wie ein Fernsteuerungsauto. Drift: rohes Gas wie
-          bei &bdquo;Aus&ldquo;, dazu ein automatisches Gegensteuern gegen das gemessene
-          Drehsignal des Autos und eine weichere Lenkung. Der Drift-Modus ist experimentell,
-          und die Zeile darunter sagt, warum.</small>
+          <small>Physik: Drehmoment, G&auml;nge, Reibkreis &ndash; die Vorgabe. RC: die
+          Stickstellung direkt wie bei einem Fernsteuerungsauto, ohne G&auml;nge. Gas wegnehmen
+          l&auml;uft in zwei Sekunden aus, die Bremse greift sofort, und ein zweiter Druck auf
+          die Bremse, wenn das Auto steht, f&auml;hrt r&uuml;ckw&auml;rts.</small>
           <small>Pacejka: wie Physik, dazu Reifen mit Haftgrenze nach der Magic Formula. Das
           Einspurmodell beschreibt, wie sich das Auto dreht; Pacejka beschreibt, wie viel
           Seitenkraft ein Reifen h&auml;lt, bevor er rutscht. Unterhalb der Grenze f&auml;hrt es
@@ -9004,8 +9028,7 @@
         <select id="phys-mode">
           <option value="physik" selected>Physik</option>
           <option value="pacejka">Pacejka (experimentell)</option>
-          <option value="aus">Aus, rohe Stickstellung</option>
-          <option value="drift">Drift (experimentell)</option>
+          <option value="aus">RC (experimentell)</option>
         </select></div>
       <!-- BESTELLT: "Eventuell sage ich spaeter, dass das Uebersteuern abgeschaltet werden
            soll" - deshalb von Anfang an ein eigener Schalter. -->
@@ -9028,7 +9051,7 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-pac-grenze-val">70%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Gegensteuern im Drift
+      <div class="opt-row" hidden><div class="opt-label">Gegensteuern im Drift
           <span class="wip-tag">experimentell</span>
           <small>Wie stark gegen das Ausbrechen gelenkt wird, gemessen am Drehsignal aus
           Byte 3 der Meldungen. 50 Prozent entspricht der Vorgabe, nach der gefragt wurde.
@@ -9524,7 +9547,7 @@
       <div class="opt-row"><div class="opt-label">Lenkansprechen<small>Auch auf dem Steuerkreuz hoch/runter &ndash; links/rechts bl&auml;ttert seit v0.5.18 die Cockpit-Schirme. Der volle Lenkeinschlag ist mechanisch 45&nbsp;Grad; bei 100&nbsp;% fordert voller Stick genau ihn an.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="phys-steerresp" min="0.5" max="3" step="0.05" value="3">
+          <input type="range" id="phys-steerresp" min="0.5" max="4" step="0.05" value="3">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="phys-steerresp-val">150%</span>
         </div></div>
@@ -9800,9 +9823,9 @@
           getrennt leiser zu bekommen.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="brake-volume" min="0" max="1" step="0.05" value="0.3">
+          <input type="range" id="brake-volume" min="0" max="1" step="0.05" value="0.2">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="brake-volume-val">30%</span>
+          <span class="opt-val" id="brake-volume-val">20%</span>
         </div></div>
       <div class="opt-row" id="sound-profile-zeile" hidden style="display:none" data-motor-garage="1"><div class="opt-label">Motorsound-Profil<small>Alle sind aus
           Zylinderzahl, Kurbelwelle, Bankaufteilung und Z&uuml;ndfolge gerechnet &ndash; keine
@@ -10882,7 +10905,8 @@
           getrennte Takte waren die Ursache des Stotterns mit echtem Controller, und dieser
           Modus wiederholt den Fehler nicht.</small></div>
         <label class="tgl"><input type="checkbox" id="opt-zwei-an" data-preset-skip></label></div>
-      <div class="opt-row"><div class="opt-label">Controller tauschen<small>Welcher der
+      <!-- v0.10.5 BESTELLT: "Mehrspieler-Optionen: Controller-tauschen-Funktion entfernen." -->
+      <div class="opt-row" hidden><div class="opt-label">Controller tauschen<small>Welcher der
           beiden erkannten Controller Auto&nbsp;1 f&auml;hrt. Die Reihenfolge kommt vom
           Browser und ist nicht w&auml;hlbar: hier ist der Schalter daf&uuml;r.</small></div>
         <label class="tgl"><input type="checkbox" id="opt-zwei-tausch"></label></div>
@@ -10903,10 +10927,10 @@
       <p class="muted">Ehrlicher als es zu verschweigen &ndash; jeder Punkt h&auml;ngt an
         einem Z&auml;hler oder einer Ortung, die es nur einmal gibt:</p>
       <div class="help-grid">
-        <kbd>Box</kbd><span>Der Boxenstopp von Auto&nbsp;2 ist schmal: er tankt voll und
-          repariert ganz, ohne Vorwahl und ohne Reifenwechsel. Die Reifenwahl ist eine
-          globale Einstellung &ndash; &bdquo;auf weich&ldquo; f&uuml;r ein einzelnes Auto
-          ist eine Aussage, die das Modell nicht trennen kann.</span>
+        <kbd>Box</kbd><span>Der Boxenstopp von Auto&nbsp;2 und 3 tankt auf die gew&auml;hlte
+          Menge, repariert und zieht die gew&auml;hlte Reifenmischung auf (Wahlkacheln auf dem
+          Schirm &bdquo;Beide&ldquo;). Ausgel&ouml;st wird er per Knopf, nicht &uuml;ber die
+          Boxengasse der Strecke.</span>
         <kbd>Ton</kbd><span>Das Motormodell selbst darf Auto&nbsp;2 seit Kurzem frei
           w&auml;hlen (eigener Knopf auf dem Vergleichsschirm &bdquo;Beide&ldquo;). Was
           es weiterhin nicht hat, ist eine eigene Zusatzkette: kein Turbopfeifen, keine
@@ -12450,6 +12474,21 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "Pacejka": "Pacejka",
+    "Sim+": "Sim+",
+    "Pro mit mehr Lenkung, Beschleunigung und Bremse": "Pro with more steering, acceleration and braking",
+    "Wie Pro (Automatik, voller Grip, Reifenmodell an), aber mit direkterer Lenkung, 2,3 s auf 100 und einer deutlich kräftigeren Bremse. Für alle, denen Pro etwas zu träge ist, ohne in Arcade zu wechseln.": "Like Pro (automatic, full grip, tyre model on), but with more direct steering, 2.3 s to 100 and much stronger brakes. For anyone who finds Pro a bit sluggish without switching to Arcade.",
+    "Physik: Drehmoment, Gänge, Reibkreis – die Vorgabe. RC: die Stickstellung direkt wie bei einem Fernsteuerungsauto, ohne Gänge. Gas wegnehmen läuft in zwei Sekunden aus, die Bremse greift sofort, und ein zweiter Druck auf die Bremse, wenn das Auto steht, fährt rückwärts.": "Physics: torque, gears, friction circle – the default. RC: the stick position directly, like a remote-controlled car, without gears. Lifting off the throttle coasts down over two seconds, the brake acts at once, and a second press of the brake while the car stands drives backwards.",
+    "RC (experimentell)": "RC (experimental)",
+    "eigene": "custom",
+    "Der Boxenstopp von Auto 2 und 3 tankt auf die gewählte Menge, repariert und zieht die gewählte Reifenmischung auf (Wahlkacheln auf dem Schirm „Beide“). Ausgelöst wird er per Knopf, nicht über die Boxengasse der Strecke.": "The pit stop of cars 2 and 3 refuels to the chosen amount, repairs and fits the chosen tyre compound (selection tiles on the “Both” screen). It is triggered by a button, not by the pit lane of the track.",
+    "Bald: mehrere Rennen hintereinander, mit Punkten und Startaufstellung. Die Abstimmung (Fahrgefühl) und den Motorsound wählst du je Auto in der Garage.": "Coming soon: several races in a row, with points and grid order. You choose the setup (driving feel) and the engine sound per car in the garage.",
+    "Meisterschaft": "Championship",
+    "Meisterschaft erstellen": "Create championship",
+    "bald": "soon",
+    "Meisterschaft: kommt bald – der Entwurf ist in Arbeit.": "Championship: coming soon – the design is in progress.",
+    "Training": "Practice",
+    "Zeitlimit in Minuten, 0 = bis du beendest.": "Time limit in minutes, 0 = until you stop.",
     "Offen": "Open",
     "Vibration überhaupt": "Vibration at all",
     "Der Hauptschalter. Steht er aus, brummt nichts, egal was darunter angekreuzt ist. Seit v0.5.18 ist er standardmäßig an. Vorher stand er aus, und damit kamen auch die Vorgaben darunter nie zum Tragen – gemeldet wurde das als „Vibration geht nicht“. Wer keinen Rüttler hat, merkt von einem angeschalteten Hauptschalter nichts. Das Handy vibriert nicht mit, das Protokoll kennt dafür nichts.":
@@ -12621,7 +12660,6 @@
     "Ein Mitspieler ist im Ziel, laufende Runde zählt noch": "Another player has finished, the current lap still counts",
     "Erst mitmachen": "Join first",
     "Letzte Runde": "Last lap",
-    "Die Abstimmung deines Autos. Den Motorsound wählst du je Auto in der Garage; jeder Klang kommt aus einer Motorsimulation.": "Your car's setup. You choose the engine sound per car in the garage; every sound comes from an engine simulation.",
     "Erste Wertung auf dieser Strecke": "First result on this track",
     "Neue Bestzeit!": "New personal best!",
     "auf deine Bestzeit": "off your personal best",
@@ -12995,6 +13033,7 @@
     "Community-Bestzeiten: Die 3er-Serie (bester Durchschnitt aus drei aufeinanderfolgenden Runden) gilt jetzt auch für Community-Strecken. Dafür speichert die App die Rundenzeiten zu jedem Eintrag und lädt sie mit hoch; das Apps Script muss neu bereitgestellt werden, damit es die Rundenzeiten auch für die Online-Zeiten übernimmt.": "Community best times: the 3-lap series (best average of three consecutive laps) now also applies to community tracks. To do this, the app stores the lap times with every entry and uploads them as well; the Apps Script needs to be redeployed so that it also takes over the lap times for the online times.",
     "Fehler behoben (Prüfung der Änderungen seit 0.9.56): Ghosts, die die Bahn verlassen, halten wieder an (Gerade 0,9 s, Kurve 1,2 s, Haarnadel 1,8 s, sofort wenn sie auf dem Teppich weiterzählen). Nah nebeneinander bekommen zwei Ghosts immer gegensätzliche Seiten und behalten ihre Reihenfolge von links nach rechts, statt sich anzuschieben. Ghost-Motorsound spielt auch ohne Sample des eigenen Autos, und die Garage zeigt, ob er wirklich an ist. Automatisch aufstellen hält erst nach dem Startteil am richtigen Platz und geht erst kurz davor ganz an den Rand. Ein Auto, das Ghost war, lenkt als gesteuertes Auto nicht mehr selbst. Das Boxen-Minispiel kommt wieder, wenn kein zweiter Spieler fährt. Fliegender Start: Einführungsrunde mit Kurvendrosselung, Ende beim zweiten Überfahren des ersten Autos. Akku: Wert geglättet, leer schon bei höherem Rohwert, Warnblinken nur noch mit den Lichtern (vorher kurz ohne Gas und Lenkung). Statistik: gespeicherte Strecken werden gezählt, jedes Auto erscheint mit eigenen Kilometern, Spieler 2/3 zählen mit, Kilometer nur mit verbundenem Auto, „Beste Runde“ entfernt. 2/3-Spieler-Schirm: letzte und beste Runde groß, alle Knöpfe sichtbar.": "Bugs fixed (review of the changes since 0.9.56): ghosts that leave the track stop again (straight 0.9 s, curve 1.2 s, hairpin 1.8 s, immediately if they keep counting on the carpet). Two ghosts close together always get opposite sides and keep their left-to-right order instead of pushing each other. Ghost engine sound plays even without your own car's sample, and the garage shows whether it is really on. Auto grid positioning stops at the right place only after passing the start piece and moves to the edge only shortly before. A car that was a ghost no longer steers by itself when controlled. The pit minigame is back when no second player is driving. Flying start: formation lap with corner slowdown, ends when the first car crosses the line for the second time. Battery: value smoothed, empty at a higher raw value, warning blink only with the lights (previously briefly without throttle and steering). Statistics: saved tracks are counted, every car appears with its own distance, players 2/3 count, distance only with a connected car, “Best lap” removed. 2/3-player screen: last and best lap large, all buttons visible.",
     "App-Latenz (neue APK nötig, ältere fahren wie bisher): Befehle an die Autos gehen in der App jetzt direkt an den Bluetooth-Schreibthread, ohne den Umweg über den Android-Hauptthread, über den auch alle Meldungen der Autos laufen. Das Gamepad wird bei einem Controller direkt aus der App gelesen (Sticks und Trigger), Android bündelt die Stick-Ereignisse nicht mehr im Bildtakt, und der Ton läuft mit kleinem Puffer. Die Verbindungspriorität wird nicht mehr alle 10 s neu ausgehandelt (kleine Hänger). „Funk-Rundlauf“ zeigt jetzt die echten Werte: Brückenzeit, Takt des Steuerherzschlags, Gamepad direkt, Tonverzögerung; der alte Wert ist in der App als „nur JS“ gekennzeichnet.": "App latency (new APK needed, older ones work as before): commands to the cars now go straight to the Bluetooth write thread instead of detouring through Android's main thread, which also carries every message from the cars. With one controller the gamepad is read directly by the app (sticks and triggers), Android no longer batches stick events per frame, and sound runs with a small buffer. The connection priority is no longer renegotiated every 10 s (small hitches). “Radio round trip” now shows real values: bridge time, control heartbeat timing, direct gamepad, sound delay; the old value is marked “JS only” in the app.",
+    "Fahrgefühl und Menüs: Neue Abstimmung Sim+ (wie Pro mit direkterer Lenkung, mehr Beschleunigung und viel stärkerer Bremse). Im FAHREN-Menü und am Cockpit-Knopf stehen nur noch Arcade, Sim+, Pro und Pacejka; GT3, F1 und Realismus GT3 bleiben in den Optionen. Arcade lenkt stärker und erreicht jetzt den vollen Einschlag, GT3 und F1 behalten ihn auch mit kalten Reifen (der Lenkregler reicht bis 400 %). Drift-Modus entfernt; „Aus“ heißt jetzt RC: Gas läuft in 2 s aus, die Bremse greift sofort, ein zweiter Bremsdruck im Stand fährt rückwärts. Gelbe Flagge: alle Autos etwa 35 %, auch im Ausdruck-Modus. Reifenmischungen unterscheiden sich stärker (weich 120 % Griff und schneller Verschleiß, hart 85 % und langlebig). Bremsquietschen leiser. Garage: Rollenpfeile immer an derselben Stelle, Akkustand je Auto, Fahrgefühl je gesteuertem Auto wählbar, neues Garagenbild. Startaufstellung: Abbrechen, Automatisch aufstellen und Start mit dem Steuerkreuz wählbar, X bestätigt. Titelschirm mit „Starten“. Unten links im FAHREN-Menü die Kachel Meisterschaft (kommt bald). „Freies Training“ heißt „Training“ und hat ein Zeitlimit (0 = ohne Ende). „Controller tauschen“ entfernt.": "Driving feel and menus: new setup Sim+ (like Pro with more direct steering, more acceleration and much stronger brakes). The DRIVE menu and the cockpit button now only offer Arcade, Sim+, Pro and Pacejka; GT3, F1 and Realism GT3 stay in the options. Arcade steers more and now reaches full lock, GT3 and F1 keep it even on cold tyres (the steering slider goes up to 400 %). Drift mode removed; “Off” is now RC: throttle coasts down over 2 s, the brake acts at once, a second brake press while standing drives backwards. Yellow flag: all cars about 35 %, also in print mode. Tyre compounds differ more (soft 120 % grip and fast wear, hard 85 % and long-lasting). Brake squeal quieter. Garage: role arrows always in the same place, battery level per car, driving feel selectable per controlled car, new garage picture. Grid screen: Cancel, Auto grid and Start selectable with the D-pad, X confirms. Title screen with “Start”. Bottom left of the DRIVE menu: the Championship tile (coming soon). “Free practice” is now “Practice” with a time limit (0 = no end). “Swap controllers” removed.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -13661,8 +13700,6 @@
     "Was Auto 2 in dieser Fassung nicht hat": "What car 2 does not have in this version",
     "Ehrlicher als es zu verschweigen – jeder Punkt hängt an einem Zähler oder einer Ortung, die es nur einmal gibt:":
       "More honest than leaving it out – every item hangs off a counter or a position estimate that exists only once:",
-    "Der Boxenstopp von Auto 2 ist schmal: er tankt voll und repariert ganz, ohne Vorwahl und ohne Reifenwechsel. Die Reifenwahl ist eine globale Einstellung – „auf weich“ für ein einzelnes Auto ist eine Aussage, die das Modell nicht trennen kann.":
-      "Car 2's pit stop is a narrow one: it fills the tank and repairs fully, with no pre-selection and no tyre change. The tyre compound is a global setting – \"switch to softs\" for a single car is a statement the model cannot separate.",
     "Dazu einen eigenen Tank: Verbrauch nach Gas und Zeit mit demselben Regler wie Auto 1, das Tankgewicht in seiner Fahrphysik, die Warnstufen als Meldung und den Notlauf des leeren Tanks – und der geht über eine Rampe zu, nicht in einem Takt.":
       "Plus a fuel tank of its own: consumption by throttle and time on the same slider as car 1, the fuel weight in its driving model, the warning levels as a message, and the limp mode of an empty tank – which closes over a ramp, not in one tick.",
     "Dazu einen eigenen Schaden: Crasherkennung aus seinen eigenen Sensorbytes, Leistungsverlust mit dem Schaden, Notlauf im Totalschaden und ausgefallene Lampen – und die Kontrollleuchten des einen sagen nichts mehr über das andere Auto.":
@@ -14681,10 +14718,6 @@
     "Prüfstand": "test rig",
     "Physik":
       "Physics",
-    "Aus, rohe Stickstellung":
-      "Off, raw stick position",
-    "Drift (experimentell)":
-      "Drift (experimental)",
     "Gegensteuern im Drift":
       "Countersteer in drift",
     "Drift-Probe (4 s)":
@@ -14693,8 +14726,6 @@
       "Ghosts are finishing the lap",
     "Alle im Ziel":
       "Everyone home",
-    "Physik: Drehmoment, Gänge, Reibkreis – die Vorgabe. Aus: rohe Stickstellung ohne Gänge, wie ein Fernsteuerungsauto. Drift: rohes Gas wie bei „Aus“, dazu ein automatisches Gegensteuern gegen das gemessene Drehsignal des Autos und eine weichere Lenkung. Der Drift-Modus ist experimentell, und die Zeile darunter sagt, warum.":
-      "Physics: torque, gears, friction circle – the default. Off: raw stick position with no gears, like a radio-controlled car. Drift: raw throttle as with “Off”, plus automatic countersteer against the car's measured rotation signal and softer steering. Drift mode is experimental, and the line below says why.",
     "Wie stark gegen das Ausbrechen gelenkt wird, gemessen am Drehsignal aus Byte 3 der Meldungen. 50 Prozent entspricht der Vorgabe, nach der gefragt wurde. Was daran unsicher ist, und zwar beides zugleich: das Signal ist unbestätigt – es schwankt erst, wenn das Auto fährt, und wechselte in genau einer Aufnahme das Vorzeichen mit der Kurvenrichtung. Und es ist unkalibriert: sein Maßstab wird selbst nachgeführt, weil die wirkliche Amplitude unbekannt ist. Deshalb hängt die Stärke davon ab, welchen größten Gierwert die Sitzung bisher gesehen hat. Der Knopf „Drift-Probe“ unter „Querablage messen“ misst, ob das Signal bei gerader Vollgasfahrt überhaupt ausschlägt.":
       "How hard the car steers against a slide, measured from the rotation signal in byte 3 of the notifications. 50 per cent is the default that was asked for. What is uncertain about it, and it is two things at once: the signal is unconfirmed – it only varies once the car is moving, and flipped sign with cornering direction in exactly one recording. And it is uncalibrated: its scale is self-adjusting because the real amplitude is unknown. So the strength depends on the largest yaw value the session has seen so far. The “Drift probe” button under “Measure lateral offset” measures whether the signal moves at all under straight full throttle.",
     "Rennen":
@@ -16745,6 +16776,43 @@
   // dreiwertiger Zustand, damit die neun bestehenden Verzweigungen auf physicsEnabled
   // unveraendert bleiben.
   let driftModus = false;
+  // ---- RC-MODUS (v0.10.5) -------------------------------------------------------------
+  // BESTELLT: "Drift-Modus weg, Roh-Input-Modus aendern: wenn ich vom Gas gehe, dann nicht
+  // direkt auf 0, sondern nur sehr schnell (in 2 s), und beim Bremse-Druecken sofort. Wenn
+  // das Auto steht und ich nochmal Bremse druecke, dann Rueckwaertsgang. Nenn den Modus RC."
+  // Das Auto meldet sein Tempo nicht; "steht" heisst deshalb: der Befehl ist seit RC_STEHT_MS
+  // null. Die Bremse ist im Rohmodus der negative Befehl (Motor gegen die Fahrtrichtung) -
+  // beim ersten Druck nur RC_BREMS_MS lang, danach null, damit das Auto nicht von selbst
+  // rueckwaerts losfaehrt.
+  const RC_AUSLAUF_MS = 2000, RC_BREMS_MS = 600, RC_STEHT_MS = 400;
+  const rcLage = { wert: 0, at: 0, bremseVorher: false, bremsBis: 0, rueck: false, nullSeit: 0 };
+  function rcGas(y, jetztTest) {
+    const jetzt = jetztTest === undefined ? performance.now() : jetztTest;
+    const dt = rcLage.at ? Math.min(200, Math.max(0, jetzt - rcLage.at)) : 45;
+    rcLage.at = jetzt;
+    const gas = Math.max(0, y || 0), bremse = Math.max(0, -(y || 0));
+    const gedrueckt = bremse > 0.05;
+    const flanke = gedrueckt && !rcLage.bremseVorher;
+    rcLage.bremseVorher = gedrueckt;
+    if (gas > 0.02) {
+      rcLage.rueck = false; rcLage.bremsBis = 0;
+      rcLage.wert = gas >= rcLage.wert ? gas : Math.max(gas, rcLage.wert - dt / RC_AUSLAUF_MS);
+    } else if (gedrueckt) {
+      if (flanke) {
+        const steht = rcLage.wert === 0 && rcLage.nullSeit && jetzt - rcLage.nullSeit >= RC_STEHT_MS;
+        if (steht) rcLage.rueck = true;
+        else if (!rcLage.rueck) rcLage.bremsBis = jetzt + RC_BREMS_MS;
+      }
+      rcLage.wert = (rcLage.rueck || jetzt < rcLage.bremsBis) ? -bremse : 0;
+    } else {
+      rcLage.rueck = false; rcLage.bremsBis = 0;
+      rcLage.wert = rcLage.wert > 0 ? Math.max(0, rcLage.wert - dt / RC_AUSLAUF_MS) : 0;
+    }
+    if (rcLage.wert !== 0) rcLage.nullSeit = 0;
+    else if (!rcLage.nullSeit) rcLage.nullSeit = jetzt;
+    return rcLage.wert;
+  }
+  function rcZuruecksetzen() { Object.assign(rcLage, { wert: 0, at: 0, bremseVorher: false, bremsBis: 0, rueck: false, nullSeit: 0 }); }
   let gegenlenkStaerke = 0.5;
   // DER QUERLAGE-PRUEFSTAND. Er wird in 90-ghosts.js gelesen und von einem Regler in
   // 80-sound.js geschrieben - und 80 kommt VOR 90. Eine Deklaration bei der Leseseite waere
@@ -16857,7 +16925,9 @@
       physicsStep();
       pitLaneTick();
       let steer = physicsEnabled ? physOutSteer : steerX;
-      let throttle = physicsEnabled ? physOutThrottle : throttleY;
+      // v0.10.5: der Rohmodus heisst jetzt RC und laeuft durch rcGas() (Auslaufen, Bremse,
+      // Rueckwaerts nach zweitem Druck). Drift gibt es nicht mehr.
+      let throttle = physicsEnabled ? physOutThrottle : rcGas(throttleY);
       if (driftModus) steer = driftGegenlenken(steer);
       sendControlValue(steer, throttle);
       spielerZweiSenden();
@@ -20361,7 +20431,9 @@
     $('race-act-mode').addEventListener('click', () => {
       // In einer Challenge ist die Abstimmung festgelegt (72-challenges.js).
       if (typeof challengeLaeuft === 'function' && challengeLaeuft()) { showHudToast(t('Während der Challenge gesperrt')); return; }
-      const keys = window.__presetKeys ? window.__presetKeys() : [];
+      // v0.10.5: nur die vier Fahren-Abstimmungen (Arcade, Sim+, Pro, Pacejka).
+      const keys = window.__presetKeysFahren ? window.__presetKeysFahren()
+        : (window.__presetKeys ? window.__presetKeys() : []);
       if (!keys.length) return;
       // Beim ersten Druck da anfangen, wo die Regler stehen: sonst springt der Knopf von
       // einer eingestellten GT3-Abstimmung auf Arcade zurueck. Ist gar keine Variante
@@ -20678,8 +20750,7 @@
     if (melden) {
       log('Steuerungsmodus: ' + (v === 'physik' ? 'Physik'
                              : v === 'pacejka' ? 'Pacejka (experimentell)'
-                             : v === 'drift' ? 'Drift (experimentell)'
-                             : 'Aus, rohe Stickstellung'), 'info');
+                             : 'RC (Auslaufen, Bremse zweimal = rueckwaerts)'), 'info');
     }
   }
   if ($('phys-mode')) {
@@ -24869,7 +24940,8 @@
       return { anzahl: s ? s.options.length : 0, index: s ? s.selectedIndex : -1 };
     }
     if (quad === 'profil') {
-      const keys = window.__presetKeys ? window.__presetKeys() : [];
+      const keys = window.__presetKeysFahren ? window.__presetKeysFahren()
+        : (window.__presetKeys ? window.__presetKeys() : []);
       const aktiv = window.__presetActive ? window.__presetActive() : null;
       return { anzahl: keys.length, index: aktiv ? keys.indexOf(aktiv) : -1 };
     }
@@ -25275,7 +25347,7 @@
     const wx = $('race-wx-start');
     kZeilen($('fa-renn-info'), [
       // Freies Training laeuft ohne Ende: dort steht das Unendlich statt einer Minutenzahl.
-      rm.value === 'practice' ? [t('Dauer'), '∞']
+      rm.value === 'practice' ? [t('Dauer'), (+(($('race-limit') || {}).value) > 0 ? $('race-limit').value + ' min' : '∞')]
         : [($('race-limit-label') || {}).textContent || t('Dauer'), ($('race-limit') || {}).value || '–'],
       [t('Wetter'), wx && wx.selectedOptions[0] ? wx.selectedOptions[0].textContent : '–'],
       [t('Pflichtboxenstopps'), ($('race-pit-required') || {}).value || '0'],
@@ -25328,7 +25400,7 @@
     if ($('fa-editor')) $('fa-editor').hidden = !bahn;
     if ($('fa-foto')) $('fa-foto').hidden = bahn;
     if ($('fa-foto-weg')) $('fa-foto-weg').hidden = bahn || !foto;
-    $('fa-profil-titel').textContent = ($('race-act-mode-txt') || {}).textContent || '–';
+    // (fa-profil ist seit v0.10.5 die Meisterschaft-Kachel, ohne Abstimmungsanzeige.)
 
     const training = rm.value === 'practice';
     $('fa-start-titel').textContent = kRennenLaeuft() ? t('Zurück ins Rennen')
@@ -25339,8 +25411,7 @@
     // 27 Motoren) wuerden die Punkte nicht mehr passen - dort stehen Pfeile im Markup.
     // Fuer 6..10 Stellungen ohne Pfeile reicht auch der Platz nicht mehr: dann eine kompakte
     // "N/M"-Anzeige statt der Punkte (BESTELLT: "N/8"-Readout, wenn die Punkte drangeln).
-    [['fa-strecke-punkte', 'bahn'], ['fa-renn-punkte', 'renntyp'],
-     ['fa-profil-punkte', 'profil']].forEach(([id, quad]) => {
+    [['fa-strecke-punkte', 'bahn'], ['fa-renn-punkte', 'renntyp']].forEach(([id, quad]) => {
       const host = $(id);
       if (!host) return;
       const p = kQuadPunkte(quad);
@@ -25532,11 +25603,11 @@
     kn('fa-laden', () => konsoleZeige('track', 'laden'));
     kn('fa-raum', () => konsoleZeige('track', 'raum'));
     kn('fa-druck', () => konsoleZeige('track', 'print'));
-    kn('fa-profil', () => konsoleZeige('options', 'opt-feel'));
+    kn('fa-profil', () => showHudToast(t('Meisterschaft: kommt bald – der Entwurf ist in Arbeit.')));
     // BESTELLT: "wenn ich auf den Header tippe, soll es zur naechsten Option schalten".
     // Der Kachelkopf (Titel + Wert) dreht die Schaltstellung weiter, der Rest der Kachel
     // oeffnet wie bisher die Unterseite. Das Gamepad bleibt unveraendert (Quadrat/links/rechts).
-    [['fa-strecke', 'bahn'], ['fa-renn', 'renntyp'], ['fa-profil', 'profil']]
+    [['fa-strecke', 'bahn'], ['fa-renn', 'renntyp']]
       .forEach(([tileId, quad]) => {
         const tile = $(tileId);
         if (!tile) return;
@@ -25642,8 +25713,8 @@
       text: 'Auf der Bahn liest das Auto die Schiene. Scanne deine Strecke oder bau sie im Editor nach. Ohne Bahn druckst du Vorlagen aus.' },
     { tab: 'fahren', ziel: ['#fa-renn'], bild: 'rennen', titel: 'Rennoptionen',
       text: 'Training, Qualifying, Rennen oder Endurance. Dazu Wetter, Pflichtstopps, Tank und Reifenverschleiß.' },
-    { tab: 'fahren', ziel: ['#fa-profil'], bild: 'optionen', titel: 'Fahrgefühl',
-      text: 'Die Abstimmung deines Autos. Den Motorsound wählst du je Auto in der Garage; jeder Klang kommt aus einer Motorsimulation.' },
+    { tab: 'fahren', ziel: ['#fa-profil'], bild: 'rennen', titel: 'Meisterschaft',
+      text: 'Bald: mehrere Rennen hintereinander, mit Punkten und Startaufstellung. Die Abstimmung (Fahrgefühl) und den Motorsound wählst du je Auto in der Garage.' },
     { tab: 'fahren', ziel: ['#fa-start'], bild: 'start', titel: 'Losfahren',
       text: 'Ein Druck startet die Ampel. Im Cockpit fordert Kreuz den Boxenstopp an, Options öffnet das Menü.' },
     { tab: 'fahren', ziel: null, bild: 'box', titel: 'Boxenstopp als Minigame',
@@ -25900,6 +25971,7 @@
     const kn = (id, fn) => { const el = $(id); if (el) el.addEventListener('click', fn); };
     kn('k-tutorial-start', (e) => { e.stopPropagation(); konsoleTourStart(K_TOUR); });
     kn('k-steuerung-start', (e) => { e.stopPropagation(); konsoleTourStart(K_STEUERUNG); });
+    kn('k-starten-start', (e) => { e.stopPropagation(); konsoleTitelWeiter(); });
     kn('k-tour-weiter', () => konsoleTourWeiter());
     kn('k-tour-zurueck', () => konsoleTourZurueck());
     kn('k-tour-ende', () => konsoleTourZu(false));
@@ -32279,8 +32351,11 @@
     // `timed: false` is what makes practice different: no limit is checked, so it runs
     // until it is stopped. Everything else about it is an ordinary session — the ghosts
     // drive, laps are recorded, the results table fills.
-    practice:   { label: 'Freies Training', unit: 'Minuten', timed: false,
-                  hint: 'Läuft, bis du beendest.' },
+    // v0.10.5 BESTELLT: "freies Fahren (= umbenennen in Training) braucht ein Zeitlimit; baue
+    // das ein und mach es standardmaessig auf 0 (= unendlich)". timed bleibt false: ohne Limit
+    // laeuft es weiter, mit Limit gilt raceLimitReached() wie bei Endurance.
+    practice:   { label: 'Training', unit: 'Minuten', timed: false,
+                  hint: 'Zeitlimit in Minuten, 0 = bis du beendest.' },
     endurance:  { label: 'Endurance', unit: 'Minuten', timed: true, hint: 'Meiste Runden in der Zeit.' },
     qualifying: { label: 'Qualifying', unit: 'Minuten', timed: true, hint: 'Schnellste Einzelrunde zählt.' },
     laps:       { label: 'Runden', unit: 'Runden', timed: true, hint: 'Wer zuerst die Rundenzahl hat.' },
@@ -32299,7 +32374,7 @@
                   hint: 'Experimentell: rammen, Health 0-100, Sieg nach Kills.' },
   };
   let raceMode = 'practice';
-  let raceLimit = 2;              // minutes, or laps in 'laps' mode
+  let raceLimit = 0;              // minutes, or laps in 'laps' mode; Training: 0 = ohne Ende
 
   // ---- Knockout (v0.8.96, experimentell) ----
   // Jeder menschliche Fahrer hat KO_Leben Leben; ein Abkommen kostet eins. Ein Geist ist
@@ -32361,7 +32436,11 @@
 
   function raceLimitReached() {
     if (raceState !== 'racing') return false;
-    if (!RACE_MODES[raceMode].timed) return false;   // free practice: only a human ends it
+    // Training: mit Zeitlimit (> 0) endet es nach der Zeit, mit 0 nur von Hand.
+    if (raceMode === 'practice') {
+      return raceLimit > 0 && raceStartedAt !== null && (Date.now() - raceStartedAt) >= raceLimit * 60000;
+    }
+    if (!RACE_MODES[raceMode].timed) return false;
     if (raceMode === 'laps') {
       return raceAllCars().some(c => c.laps.length >= raceLimit);
     }
@@ -33779,6 +33858,27 @@
     // v0.9.31: im freien Training gibt es keine Startaufstellung - also auch keinen Knopf.
     if ($('grid-auto')) $('grid-auto').hidden = raceMode === 'practice';
     gs.hidden = false;
+    gridFokusIdx = -1;
+    raceGridFokus(0);
+  }
+  // v0.10.5 BESTELLT: "Rennstartmenue: mach Abbrechen und Start anwaehlbar, dann mit X
+  // bestaetigen." Steuerkreuz links/rechts (oder hoch/runter) waehlt, X drueckt den gewaehlten
+  // Knopf. Ab Werk steht die Auswahl auf Start - wer nur X drueckt, startet wie bisher.
+  let gridFokusIdx = -1;
+  function gridKnoepfe() {
+    return ['grid-abbrechen', 'grid-auto', 'grid-start'].map((id) => $(id)).filter((b) => b && !b.hidden);
+  }
+  function raceGridFokus(d) {
+    const k = gridKnoepfe();
+    if (!k.length) return;
+    if (gridFokusIdx < 0 || gridFokusIdx >= k.length) gridFokusIdx = k.length - 1;
+    gridFokusIdx = Math.max(0, Math.min(k.length - 1, gridFokusIdx + d));
+    k.forEach((b, i) => b.classList.toggle('pad-fokus', i === gridFokusIdx));
+  }
+  function raceGridBestaetigen() {
+    const k = gridKnoepfe();
+    const b = k.length ? k[gridFokusIdx >= 0 && gridFokusIdx < k.length ? gridFokusIdx : k.length - 1] : null;
+    if (b) b.click(); else raceGridStart();
   }
   function raceGridStart() {
     const gs = $('race-gridscreen');
@@ -34254,7 +34354,8 @@
     // a control that vanishes makes people wonder whether they broke something.
     // DERBY (v0.8.126): das Limit ist das KILLS-ZIEL und wird deshalb aktiviert - sonst
     // koennte man es nicht auf 1 setzen. Die Voreinstellung setzt der Moduswechsel unten.
-    $('race-limit').disabled = !m.timed && raceMode !== 'derby';
+    $('race-limit').disabled = !m.timed && raceMode !== 'derby' && raceMode !== 'practice';
+    $('race-limit').min = raceMode === 'practice' ? '0' : '1';
     // 0.7, not 0.45. On white 0.45 was a legible grey; on black it collapsed to 2.7:1,
     // and this label still has to be readable while it says which unit is NOT in use.
     $('race-limit-label').style.opacity = (m.timed || raceMode === 'derby') ? '' : '0.7';
@@ -34296,14 +34397,14 @@
     raceMode = e.target.value;
     // Sensible default per mode rather than carrying a minute count over into a lap count.
     // DERBY (v0.8.126): das Limit ist das KILLS-ZIEL, Voreinstellung 1.
-    raceLimit = raceMode === 'laps' ? 10 : (raceMode === 'derby' ? 1 : 2);
+    raceLimit = raceMode === 'laps' ? 10 : (raceMode === 'derby' ? 1 : (raceMode === 'practice' ? 0 : 2));
     $('race-limit').value = raceLimit;
     applyRaceModeUi();
     if (raceMode === 'knockout') knockoutBereit(true);
   });
   $('race-limit').addEventListener('input', (e) => {
     const v = parseInt(e.target.value, 10);
-    if (Number.isFinite(v) && v >= 1) raceLimit = v;
+    if (Number.isFinite(v) && (v >= 1 || (v === 0 && raceMode === 'practice'))) raceLimit = v;
   });
 
   $('race-wx-start').addEventListener('change', (e) => {
@@ -35720,11 +35821,12 @@
   // waere ausgerechnet die Mischung, die man nicht erkennt. Das ist ein gemessener Grund und
   // keine Vorliebe.
   const TYRE_MIX = {
-    weich:  { griff: 1.12, nass: 0.45, verschleiss: 1.8, aqua: true,
+    // v0.10.5 BESTELLT: "Unterschied zwischen Reifenmischungen staerker machen."
+    weich:  { griff: 1.20, nass: 0.45, verschleiss: 2.2, aqua: true,
               farbe: '#e5261e', name: 'weich' },
     mittel: { griff: 1.00, nass: 0.45, verschleiss: 1.0, aqua: true,
               farbe: '#f7d117', name: 'mittel' },
-    hart:   { griff: 0.92, nass: 0.45, verschleiss: 0.6, aqua: true,
+    hart:   { griff: 0.85, nass: 0.45, verschleiss: 0.5, aqua: true,
               farbe: '#f2f4f8', name: 'hart' },
     regen:  { griff: 0.88, nass: 0.80, verschleiss: 1.0, aqua: false,
               farbe: '#2f6fd0', name: 'Regen' },
@@ -42223,7 +42325,7 @@
   // 0,3 statt 0,6: halbiert. Der Startwert steht hier UND im Markup - zwei Orte fuer
   // eine Zahl, und beim Nachziehen muessen beide mit. Genau diese Klasse hat bei den
   // Voreinstellungen siebzehn Abweichungen ergeben.
-  let brakeVolume = 0.3;       // rain and thunder: own control, weather stays audible
+  let brakeVolume = 0.2;      // v0.10.5: leiser (BESTELLT "Bremse noch etwas leiser")       // rain and thunder: own control, weather stays audible
   // Eigene Lautstaerke, aus demselben Grund wie beim Bremsenquietschen: an engineVolume
   // gehaengt liesse es sich nur zusammen mit dem Motor leiser stellen, also gar nicht.
   // Der Startwert steht hier UND im Markup - beim Nachziehen muessen beide mit.
@@ -44496,6 +44598,7 @@
   const prevDpad = { up: false, down: false, left: false, right: false };
   let prevLightFlash = false, prevPitstop = false, prevTrackReadMode = false;
   let prevRaceStart = false, prevTrackView = false, prevResetCar = false;
+  let gridPadVorher = false;
 
   function padButtonPressed(pad, index) {
     const btn = pad.buttons[index];
@@ -45157,6 +45260,14 @@
     renderRaceGrid();
   }
   // Eine Wertzeile im Stil der Menues: Beschriftung .... < Wert >
+  // v0.10.5 BESTELLT: "In der Garage Akkustand je Auto anzeigen." Geglaettet (akkuGlaetten),
+  // dazu der kleinste je gemeldete Rohwert - mit ihm laesst sich AKKU_LEER nachmessen.
+  function garAkkuText(car) {
+    if (car.battery === null || car.battery === undefined || typeof batteryPercent !== 'function') return '';
+    const p = batteryPercent(car.battery);
+    return ' &middot; <span class="gar-akku' + (p < 25 ? ' knapp' : '') + '">' + t('Akku') + ' ' + p + '&nbsp;%'
+      + (car.akkuMinRoh !== undefined ? ' (min ' + car.akkuMinRoh + ')' : '') + '</span>';
+  }
   function garWertZeile(titel, wert, zurueck, vor, extra) {
     const z = document.createElement('div');
     // Optionszeile mit einem versteckten Schieber von -1 bis 1 (v0.9.12): so verstellt das
@@ -45245,6 +45356,21 @@
       ch.innerHTML = charakterZeile(car);
       if (ch.firstElementChild) box.appendChild(ch.firstElementChild);
     } else {
+      // v0.10.5 BESTELLT: "Lass mich in der Garage bei gesteuerten Autos das Fahrgefuehl ueber
+      // Preset einstellen." Dieselben vier wie im FAHREN-Menue. Die Abstimmung gilt fuer alle
+      // gesteuerten Autos zugleich (Spieler 2/3 uebernehmen die von Spieler 1).
+      if (/^player/.test(car.role) && window.__presetKeysFahren && window.__applyPreset) {
+        const keys = window.__presetKeysFahren();
+        const aktiv = window.__presetActive ? window.__presetActive() : null;
+        const i = keys.indexOf(aktiv);
+        const wahl = (d) => {
+          const k = keys[((i < 0 ? (d > 0 ? -1 : 0) : i) + d + keys.length) % keys.length];
+          window.__applyPreset(k);
+          renderGarage();
+        };
+        box.appendChild(garWertZeile('Fahrgefühl', i >= 0 ? window.__presetLabel(keys[i]) : t('eigene'),
+                                     () => wahl(-1), () => wahl(1)));
+      }
       // BESTELLT: "garage bedienfreundlich machen, je auto (wenn gesteuert) auch presets
       // anzeigen und motorsound." Presets stehen in der Leiste darunter (#gar-preset); hier
       // kommt der Motorsound des gesteuerten Autos dazu (pro Spieler: sound-profile bzw.
@@ -45480,7 +45606,7 @@
         <i class="gk-streifen" style="background:${f.hex}"></i>
         <div class="gk-bild${foto ? ' mit-foto' : ''}" style='${bild}'>${foto ? '' : `<span class="gk-zeichen">${car.tagChar || ''}</span>`}</div>
         <div class="gk-text"><b data-i18n-skip>${esc(name)}</b>
-          <span class="gar-id" data-i18n-skip>${esc(car.tag || '')} &middot; ${esc(String(car.device.id).slice(0, 10))}${car.blinking ? ' &middot; ' + t('blinkt') : ''}</span></div>
+          <span class="gar-id" data-i18n-skip>${esc(car.tag || '')} &middot; ${esc(String(car.device.id).slice(0, 10))}${car.blinking ? ' &middot; ' + t('blinkt') : ''}${garAkkuText(car)}</span></div>
         <div class="gk-rolle" data-rollen="${GAR_ROLLEN.map((r) => r.id).join(',')}" data-rolle="${rolle.id}">
           <button type="button" data-act="rolle" data-d="-1" aria-label="Rolle zurück">&#9664;</button>
           <b>${t(rolle.name)}</b>${zusatzPlatzVonRolle(rolle.id) ? '<span class="wip-tag">experimentell</span>' : ''}
@@ -48363,7 +48489,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // ALLERERSTE STUFE: ist das Autos-in-Position-Fenster offen (70-race.js), startet dieselbe
     // Taste das Rennen (X statt Touch). Alles dahinter bleibt unberuehrt.
     if (typeof raceGridOffen === 'function' && raceGridOffen()) {
-      if (flagNow && !prevYellowFlag) raceGridStart();
+      if (flagNow && !prevYellowFlag) raceGridBestaetigen();
       prevYellowFlag = flagNow;
       return;
     }
@@ -48429,8 +48555,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // nicht mehr: es fiel aus der Selbstfuehrung und fuhr geradeaus. Auf der Bahn, wo der
   // Autopilot greift, gilt deshalb dieselbe Grenze wie fuer die Ghosts. Im Ausdruck-Modus
   // faehrt man selbst, dort bleibt es beim Gelb-Tempo.
+  // v0.10.5 BESTELLT: "Bei gelber Flagge alle Autos auf ca. 35 % drosseln (so koennen sie
+  // gerade noch um die Strecke fahren, ohne anzuhalten)." Also auch im Ausdruck-Modus und fuer
+  // jedes Auto dieselbe Grenze - darunter liest das Auto die Bahn nicht mehr.
   function gelbGrenze() {
-    return trackMode === 'on' ? Math.max(yellowFactor(), GHOST_READ_MIN) : yellowFactor();
+    return Math.max(yellowFactor(), GHOST_READ_MIN);
   }
   // Die Kurvendrosselung der Ghosts fuer ein Fahrerauto im Autopiloten: dieselbe Regel wie
   // die Kachelregel in ghostTick (curveSlow in der 60-Grad-Kurve, doppelt in Haarnadel und
@@ -52933,7 +53062,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Achsnummern. Deshalb werden erst die gemappten genommen und die rohen nur, wenn sonst
   // keine da sind - vorher entschied `find()` das fuer ein Pad, jetzt fuer die Liste.
   let padTauschen = false;
-  function padTauschenSetzen(v) { padTauschen = !!v; }
+  // v0.10.5: "Controller tauschen" ist entfernt (BESTELLT) - auch ein gespeichertes "an"
+  // greift nicht mehr. Die Reihenfolge der Pads ergibt sich aus der Rollenvergabe.
+  function padTauschenSetzen(v) { padTauschen = false; }
   function padTauschenLesen() { return padTauschen; }
   function padsSortiert() {
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
@@ -53177,6 +53308,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     padConnected = true;
     padLastPollTime = performance.now();
+    // Startaufstellung offen: das Steuerkreuz waehlt den Knopf (X bestaetigt, flagTasteTick).
+    if (typeof raceGridOffen === 'function' && raceGridOffen()) {
+      const r = (padDpad(pad, 'left') || padDpad(pad, 'up')) ? -1
+        : ((padDpad(pad, 'right') || padDpad(pad, 'down')) ? 1 : 0);
+      if (r && !gridPadVorher) raceGridFokus(r);
+      gridPadVorher = !!r;
+    } else gridPadVorher = false;
     // TITELBILDSCHIRM (ACC-Menue): jede Taste fuehrt ins Hauptmenue, links/rechts wechselt die
     // Sprache. Solange danach noch eine Taste gehalten wird, tut dieser Takt nichts weiter -
     // sonst oeffnete dasselbe gehaltene Kreuz im Hauptmenue gleich die naechste Kachel.
@@ -82221,8 +82359,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (grenze < GHOST_READ_MIN) f.push('Grenze ' + grenze.toFixed(3) + ' unter der Lese-Mindestgeschwindigkeit');
       limitYellow = grenze; applySpeedLimit();
       if (physEngine.config.speedLimitFactor < GHOST_READ_MIN) f.push('Physik gedeckelt auf ' + physEngine.config.speedLimitFactor.toFixed(3));
+      // v0.10.5: auch im Ausdruck-Modus 35 % (BESTELLT "alle Autos auf ca. 35 % drosseln").
       trackMode = 'off';
-      if (gelbGrenze() !== yellowFactor()) f.push('im Ausdruck-Modus nicht das Gelb-Tempo');
+      if (gelbGrenze() < GHOST_READ_MIN) f.push('im Ausdruck-Modus unter der Lese-Mindestgeschwindigkeit');
       const gerade = autopilotKurvenFaktor({ tileCode: TILE_TYPE.STRAIGHT });
       const kurve = autopilotKurvenFaktor({ tileCode: TILE_TYPE.CURVE_RIGHT });
       const nadel = autopilotKurvenFaktor({ tileCode: TILE_TYPE.HAIRPIN });
@@ -82316,6 +82455,63 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Maximum ueber 5 s, Lichtfenster statt Fahrpakete' };
   });
 
+
+  // ---- v0.10.5: Block 3 ----
+  stAdd('RC-Modus: Gas laeuft in 2 s aus, Bremse sofort, zweiter Bremsdruck im Stand = rueckwaerts', () => {
+    const f = [];
+    rcZuruecksetzen();
+    let t0 = 1000;
+    // In 45-ms-Takten wie der Herzschlag (rcGas begrenzt einen Takt auf 200 ms).
+    const schritt = (y, ms) => { let v = 0; for (let x = 0; x < ms; x += 45) { t0 += Math.min(45, ms - x); v = rcGas(y, t0); } return v; };
+    schritt(1, 45);
+    let v = schritt(0, 1000);
+    if (!(v > 0.4 && v < 0.6)) f.push('nach 1 s ohne Gas ' + v.toFixed(2) + ' statt ~0,5');
+    v = schritt(0, 1100);
+    if (v !== 0) f.push('nach 2 s nicht ausgelaufen: ' + v);
+    schritt(1, 45);
+    v = schritt(-1, 45);
+    if (!(v < 0)) f.push('Bremse greift nicht sofort');
+    v = schritt(-1, 700);
+    if (v !== 0) f.push('erste Bremse faehrt nach 600 ms weiter rueckwaerts: ' + v);
+    schritt(0, 500);                       // loslassen, Auto "steht"
+    v = schritt(-0.8, 45);                 // zweiter Druck
+    if (!(v < -0.5)) f.push('zweiter Bremsdruck im Stand faehrt nicht rueckwaerts: ' + v);
+    v = schritt(0, 45);
+    if (v !== 0) f.push('Rueckwaerts haelt nach dem Loslassen an: ' + v);
+    rcZuruecksetzen();
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Auslaufen 2 s, Bremse sofort, Rueckwaerts erst beim zweiten Druck' };
+  });
+
+  stAdd('Abstimmungen: FAHREN zeigt Arcade, Sim+, Pro, Pacejka; Lenkeinschlag erreichbar ausser Realismus GT3', () => {
+    const f = [];
+    const fahren = window.__presetKeysFahren ? window.__presetKeysFahren() : [];
+    if (fahren.join(',') !== 'arcade,simplus,pro,propacejka') f.push('FAHREN: ' + fahren.join(','));
+    for (const k of ['arcade', 'simplus', 'gt3', 'f1']) {
+      const v = window.__presetValues(k) || {};
+      const resp = v['phys-steerresp'] === undefined ? 3 : v['phys-steerresp'];
+      if (resp < 3) f.push(k + ': Lenkansprechen ' + resp + ' (voller Einschlag nie erreichbar)');
+      if (v['setting-steer-calib'] !== undefined && v['setting-steer-calib'] < 2) f.push(k + ': Kalibrierung ' + v['setting-steer-calib']);
+    }
+    const sim = window.__presetValues('simplus') || {}, pro = window.__presetValues('pro') || {};
+    if (!(sim['setting-brakepower'] > pro['setting-brakepower'] + 0.5)) f.push('Sim+ bremst nicht viel staerker als Pro');
+    if (!(sim['phys-accel'] > pro['phys-accel'])) f.push('Sim+ beschleunigt nicht staerker');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'vier im FAHREN-Menue, Sim+ staerker als Pro, Einschlag erreichbar' };
+  });
+
+  stAdd('Training: Zeitlimit 0 laeuft ohne Ende, ein Limit beendet es', () => {
+    const f = [];
+    const merk = { m: raceMode, l: raceLimit, s: raceState, st: raceStartedAt };
+    try {
+      raceMode = 'practice'; raceState = 'racing'; raceStartedAt = Date.now() - 5 * 60000;
+      raceLimit = 0;
+      if (raceLimitReached()) f.push('Limit 0 beendet das Training');
+      raceLimit = 3;
+      if (!raceLimitReached()) f.push('3 min Limit nach 5 min nicht erreicht');
+      raceLimit = 10;
+      if (raceLimitReached()) f.push('10 min Limit nach 5 min schon erreicht');
+    } finally { raceMode = merk.m; raceLimit = merk.l; raceState = merk.s; raceStartedAt = merk.st; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '0 = ohne Ende, sonst nach Minuten' };
+  });
 
   stAdd('Rundenrennen endet mit der Zielrunde, nicht eine Runde spaeter', () => {
     const f = [];
@@ -84402,7 +84598,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // BESTELLT (v0.9.21): "Hoechstgeschwindigkeit drosseln, dafuer Bremsstaerke sehr stark".
       v: { 'setting-grip': 1.0, 'setting-brakepower': 2.5, 'setting-autoshift': true,
            'setting-zero-to-top': 2.0, 'setting-coast-drag': 0.4, 'setting-fuelweight': 0,
-           'setting-tyres': 0, 'phys-steerresp': 2.6, 'setting-brakebias': 56,
+           'setting-tyres': 0, 'phys-steerresp': 3.4, 'setting-brakebias': 56,
            // Die engste Lenkung von allen: bei 250 Prozent liegt der volle Anschlag schon
            // bei einem Viertel Stick an. Weiter als 45 Grad kommt auch das nicht - das ist
            // die Mechanik des Autos.
@@ -84531,11 +84727,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
            // hiess also hoechstens 43 % - gemessen 19 von 45 Grad bei 10 km/h, mit kalten Reifen
            // 11. Die Werte stammten aus dem alten Weg, in dem resp x Kalibrierung bei 1 gedeckelt
            // wurde. 3,0: voller Einschlag bei vollem Stick, wie an einem echten Auto im Stand.
-           'setting-tyres': 0.9, 'phys-steerresp': 3.0, 'setting-brakebias': 60,
+           'setting-tyres': 0.9, 'phys-steerresp': 3.2, 'setting-brakebias': 60,
            // Lenkkalibrierung 1,0 heisst: der uebertragene Winkel ist genau der gerechnete.
            // Die Klassen ab GT3 sind gegen gemessenes Verhalten abgestimmt, und eine
            // Kalibrierung darauf waere ein Aufschlag auf eine Messung.
-           'setting-steer-calib': 1.55,
+           'setting-steer-calib': 2.0,
            'phys-accel': 1.0,
            'setting-crash-threshold': 35,
            // Bei Kalibrierung 1,0 wirkt schon 1,0 deutlich: 25 Grad statt 41 bei 100 km/h.
@@ -84565,11 +84761,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       v: { 'setting-grip': 0.97, 'setting-brakepower': 1.45, 'setting-autoshift': false,
            'setting-zero-to-top': 2.5, 'setting-coast-drag': 1.2, 'setting-fuelweight': 0.6,
            // v0.9.42: Lenkansprechen 3,0 statt 1,6 - Begruendung bei GT3.
-           'setting-tyres': 1.2, 'phys-steerresp': 3.0, 'setting-brakebias': 63,
+           'setting-tyres': 1.2, 'phys-steerresp': 3.2, 'setting-brakebias': 63,
            // Lenkkalibrierung 1,0 heisst: der uebertragene Winkel ist genau der gerechnete.
            // Die Klassen ab GT3 sind gegen gemessenes Verhalten abgestimmt, und eine
            // Kalibrierung darauf waere ein Aufschlag auf eine Messung.
-           'setting-steer-calib': 1.4,
+           'setting-steer-calib': 2.0,
            'phys-accel': 1.0,
            'setting-crash-threshold': 30,
            // Der schaerfste Reibkreis, aber nicht am Notboden: bei Kalibrierung 1,0 gibt 1,15
@@ -84641,7 +84837,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // dieselbe Tabelle wie Pro plus der Steuerungsmodus "pacejka", damit man die Magic
   // Formula als EINEN Namen anwaehlen kann, statt zwei Stellen zu bedienen.
   PRESETS.propacejka = {
-    label: 'Pro-Pacejka',
+    label: 'Pacejka',
     kurz: 'Pro mit Pacejka-Lenkmodell',
     text: 'Die Pro-Abstimmung (Automatik, 2,6 s auf 100, voller Grip, Reifenmodell an, '
         + 'kein Tankgewicht) mit dem experimentellen Pacejka-Lenkmodell: unterhalb der '
@@ -84650,6 +84846,24 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         + 'ohne die Klassen-Abstimmung.',
     v: Object.assign({}, PRESETS.pro.v, { 'phys-mode': 'pacejka' }),
   };
+  // ---- SIM+ (v0.10.5) ---------------------------------------------------------------
+  // BESTELLT: "Sim+ (so wie Pro, aber mit etwas staerkerer Lenkung, staerkerer Beschleunigung,
+  // viel staerkerer Bremse)". Und: "Ueberall ausser bei GT3 Realismus den maximalen Lenkwinkel
+  // erhoehen" - der Servo erreicht den vollen Einschlag, solange Lenkansprechen >= 3 und
+  // Lenkkalibrierung x Griff >= 1; Arcade stand mit 2,6 darunter (nie voller Einschlag), GT3
+  // und F1 verloren ihn mit 1,55/1,4 schon bei leicht kalten Reifen. Pro bleibt, wie bestellt.
+  PRESETS.simplus = {
+    label: 'Sim+',
+    kurz: 'Pro mit mehr Lenkung, Beschleunigung und Bremse',
+    text: 'Wie Pro (Automatik, voller Grip, Reifenmodell an), aber mit direkterer Lenkung, '
+        + '2,3 s auf 100 und einer deutlich kr\u00e4ftigeren Bremse. F\u00fcr alle, denen Pro '
+        + 'etwas zu tr\u00e4ge ist, ohne in Arcade zu wechseln.',
+    v: Object.assign({}, PRESETS.pro.v, { 'phys-steerresp': 3.3, 'phys-accel': 1.15,
+                                          'setting-zero-to-top': 2.3, 'setting-brakepower': 2.2 }),
+  };
+  // Im FAHREN-Menue und am Cockpit-Knopf nur diese vier (BESTELLT: "die anderen Modi noch im
+  // Optionen-Menue lassen, aber nicht im FAHREN-Menue in der Kachel anzeigen").
+  const PRESETS_FAHREN = ['arcade', 'simplus', 'pro', 'propacejka'];
   // Bis v0.4 hiess GT3 "real". Aeltere exportierte Abstimmungen und der Knopf im
   // Garagenschirm duerfen den alten Namen weiter benutzen.
   const PRESET_ALIAS = { real: 'gt3', realismus: 'gt3' };
@@ -84769,6 +84983,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // gekostet, deshalb steht er als Kommentar an beiden Enden.
   window.__applyPreset = applyPreset;
   window.__presetKeys = () => Object.keys(PRESETS);
+  window.__presetKeysFahren = () => PRESETS_FAHREN.filter((k) => PRESETS[k]);
   // Fuer den Cockpit-Knopf: er soll ab der EINGESTELLTEN Variante weiterschalten und nicht
   // immer bei der ersten anfangen. Ein Knopf, der aus "GT3" ein "Arcade" macht, wirkt wie
   // ein Ruecksprung. Als Funktion und nicht als Wert, weil sich die Antwort mit jedem
@@ -85301,6 +85516,20 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         }
         try {
           localStorage.setItem('chc.migrate.kennlinien245.v1', '1');
+          if (geaendert) localStorage.setItem(AUTO_STORE, JSON.stringify(cfg));
+        } catch (e) { /* dann eben nur fuer diese Sitzung */ }
+      }
+    }
+    // ---- EINMALIG (v0.10.5): Bremston leiser, Drift-Modus entfernt -----------------------
+    {
+      let erledigt = false;
+      try { erledigt = localStorage.getItem('chc.migrate.v0105.v1') === '1'; } catch (e) { /* privat */ }
+      if (!erledigt) {
+        let geaendert = false;
+        if (cfg['brake-volume'] === 0.3) { cfg['brake-volume'] = 0.2; geaendert = true; }
+        if (cfg['phys-mode'] === 'drift') { cfg['phys-mode'] = 'physik'; geaendert = true; }
+        try {
+          localStorage.setItem('chc.migrate.v0105.v1', '1');
           if (geaendert) localStorage.setItem(AUTO_STORE, JSON.stringify(cfg));
         } catch (e) { /* dann eben nur fuer diese Sitzung */ }
       }

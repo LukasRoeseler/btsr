@@ -95,7 +95,9 @@
     $('race-act-mode').addEventListener('click', () => {
       // In einer Challenge ist die Abstimmung festgelegt (72-challenges.js).
       if (typeof challengeLaeuft === 'function' && challengeLaeuft()) { showHudToast(t('Während der Challenge gesperrt')); return; }
-      const keys = window.__presetKeys ? window.__presetKeys() : [];
+      // v0.10.5: nur die vier Fahren-Abstimmungen (Arcade, Sim+, Pro, Pacejka).
+      const keys = window.__presetKeysFahren ? window.__presetKeysFahren()
+        : (window.__presetKeys ? window.__presetKeys() : []);
       if (!keys.length) return;
       // Beim ersten Druck da anfangen, wo die Regler stehen: sonst springt der Knopf von
       // einer eingestellten GT3-Abstimmung auf Arcade zurueck. Ist gar keine Variante
@@ -412,8 +414,7 @@
     if (melden) {
       log('Steuerungsmodus: ' + (v === 'physik' ? 'Physik'
                              : v === 'pacejka' ? 'Pacejka (experimentell)'
-                             : v === 'drift' ? 'Drift (experimentell)'
-                             : 'Aus, rohe Stickstellung'), 'info');
+                             : 'RC (Auslaufen, Bremse zweimal = rueckwaerts)'), 'info');
     }
   }
   if ($('phys-mode')) {

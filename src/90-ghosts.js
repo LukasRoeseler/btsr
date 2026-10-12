@@ -824,6 +824,7 @@
   const prevDpad = { up: false, down: false, left: false, right: false };
   let prevLightFlash = false, prevPitstop = false, prevTrackReadMode = false;
   let prevRaceStart = false, prevTrackView = false, prevResetCar = false;
+  let gridPadVorher = false;
 
   function padButtonPressed(pad, index) {
     const btn = pad.buttons[index];
@@ -1485,6 +1486,14 @@
     renderRaceGrid();
   }
   // Eine Wertzeile im Stil der Menues: Beschriftung .... < Wert >
+  // v0.10.5 BESTELLT: "In der Garage Akkustand je Auto anzeigen." Geglaettet (akkuGlaetten),
+  // dazu der kleinste je gemeldete Rohwert - mit ihm laesst sich AKKU_LEER nachmessen.
+  function garAkkuText(car) {
+    if (car.battery === null || car.battery === undefined || typeof batteryPercent !== 'function') return '';
+    const p = batteryPercent(car.battery);
+    return ' &middot; <span class="gar-akku' + (p < 25 ? ' knapp' : '') + '">' + t('Akku') + ' ' + p + '&nbsp;%'
+      + (car.akkuMinRoh !== undefined ? ' (min ' + car.akkuMinRoh + ')' : '') + '</span>';
+  }
   function garWertZeile(titel, wert, zurueck, vor, extra) {
     const z = document.createElement('div');
     // Optionszeile mit einem versteckten Schieber von -1 bis 1 (v0.9.12): so verstellt das
@@ -1573,6 +1582,21 @@
       ch.innerHTML = charakterZeile(car);
       if (ch.firstElementChild) box.appendChild(ch.firstElementChild);
     } else {
+      // v0.10.5 BESTELLT: "Lass mich in der Garage bei gesteuerten Autos das Fahrgefuehl ueber
+      // Preset einstellen." Dieselben vier wie im FAHREN-Menue. Die Abstimmung gilt fuer alle
+      // gesteuerten Autos zugleich (Spieler 2/3 uebernehmen die von Spieler 1).
+      if (/^player/.test(car.role) && window.__presetKeysFahren && window.__applyPreset) {
+        const keys = window.__presetKeysFahren();
+        const aktiv = window.__presetActive ? window.__presetActive() : null;
+        const i = keys.indexOf(aktiv);
+        const wahl = (d) => {
+          const k = keys[((i < 0 ? (d > 0 ? -1 : 0) : i) + d + keys.length) % keys.length];
+          window.__applyPreset(k);
+          renderGarage();
+        };
+        box.appendChild(garWertZeile('Fahrgefühl', i >= 0 ? window.__presetLabel(keys[i]) : t('eigene'),
+                                     () => wahl(-1), () => wahl(1)));
+      }
       // BESTELLT: "garage bedienfreundlich machen, je auto (wenn gesteuert) auch presets
       // anzeigen und motorsound." Presets stehen in der Leiste darunter (#gar-preset); hier
       // kommt der Motorsound des gesteuerten Autos dazu (pro Spieler: sound-profile bzw.
@@ -1808,7 +1832,7 @@
         <i class="gk-streifen" style="background:${f.hex}"></i>
         <div class="gk-bild${foto ? ' mit-foto' : ''}" style='${bild}'>${foto ? '' : `<span class="gk-zeichen">${car.tagChar || ''}</span>`}</div>
         <div class="gk-text"><b data-i18n-skip>${esc(name)}</b>
-          <span class="gar-id" data-i18n-skip>${esc(car.tag || '')} &middot; ${esc(String(car.device.id).slice(0, 10))}${car.blinking ? ' &middot; ' + t('blinkt') : ''}</span></div>
+          <span class="gar-id" data-i18n-skip>${esc(car.tag || '')} &middot; ${esc(String(car.device.id).slice(0, 10))}${car.blinking ? ' &middot; ' + t('blinkt') : ''}${garAkkuText(car)}</span></div>
         <div class="gk-rolle" data-rollen="${GAR_ROLLEN.map((r) => r.id).join(',')}" data-rolle="${rolle.id}">
           <button type="button" data-act="rolle" data-d="-1" aria-label="Rolle zurück">&#9664;</button>
           <b>${t(rolle.name)}</b>${zusatzPlatzVonRolle(rolle.id) ? '<span class="wip-tag">experimentell</span>' : ''}
@@ -4691,7 +4715,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // ALLERERSTE STUFE: ist das Autos-in-Position-Fenster offen (70-race.js), startet dieselbe
     // Taste das Rennen (X statt Touch). Alles dahinter bleibt unberuehrt.
     if (typeof raceGridOffen === 'function' && raceGridOffen()) {
-      if (flagNow && !prevYellowFlag) raceGridStart();
+      if (flagNow && !prevYellowFlag) raceGridBestaetigen();
       prevYellowFlag = flagNow;
       return;
     }
@@ -4757,8 +4781,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // nicht mehr: es fiel aus der Selbstfuehrung und fuhr geradeaus. Auf der Bahn, wo der
   // Autopilot greift, gilt deshalb dieselbe Grenze wie fuer die Ghosts. Im Ausdruck-Modus
   // faehrt man selbst, dort bleibt es beim Gelb-Tempo.
+  // v0.10.5 BESTELLT: "Bei gelber Flagge alle Autos auf ca. 35 % drosseln (so koennen sie
+  // gerade noch um die Strecke fahren, ohne anzuhalten)." Also auch im Ausdruck-Modus und fuer
+  // jedes Auto dieselbe Grenze - darunter liest das Auto die Bahn nicht mehr.
   function gelbGrenze() {
-    return trackMode === 'on' ? Math.max(yellowFactor(), GHOST_READ_MIN) : yellowFactor();
+    return Math.max(yellowFactor(), GHOST_READ_MIN);
   }
   // Die Kurvendrosselung der Ghosts fuer ein Fahrerauto im Autopiloten: dieselbe Regel wie
   // die Kachelregel in ghostTick (curveSlow in der 60-Grad-Kurve, doppelt in Haarnadel und
@@ -9261,7 +9288,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Achsnummern. Deshalb werden erst die gemappten genommen und die rohen nur, wenn sonst
   // keine da sind - vorher entschied `find()` das fuer ein Pad, jetzt fuer die Liste.
   let padTauschen = false;
-  function padTauschenSetzen(v) { padTauschen = !!v; }
+  // v0.10.5: "Controller tauschen" ist entfernt (BESTELLT) - auch ein gespeichertes "an"
+  // greift nicht mehr. Die Reihenfolge der Pads ergibt sich aus der Rollenvergabe.
+  function padTauschenSetzen(v) { padTauschen = false; }
   function padTauschenLesen() { return padTauschen; }
   function padsSortiert() {
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
@@ -9505,6 +9534,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     padConnected = true;
     padLastPollTime = performance.now();
+    // Startaufstellung offen: das Steuerkreuz waehlt den Knopf (X bestaetigt, flagTasteTick).
+    if (typeof raceGridOffen === 'function' && raceGridOffen()) {
+      const r = (padDpad(pad, 'left') || padDpad(pad, 'up')) ? -1
+        : ((padDpad(pad, 'right') || padDpad(pad, 'down')) ? 1 : 0);
+      if (r && !gridPadVorher) raceGridFokus(r);
+      gridPadVorher = !!r;
+    } else gridPadVorher = false;
     // TITELBILDSCHIRM (ACC-Menue): jede Taste fuehrt ins Hauptmenue, links/rechts wechselt die
     // Sprache. Solange danach noch eine Taste gehalten wird, tut dieser Takt nichts weiter -
     // sonst oeffnete dasselbe gehaltene Kreuz im Hauptmenue gleich die naechste Kachel.

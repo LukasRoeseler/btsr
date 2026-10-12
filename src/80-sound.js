@@ -947,7 +947,7 @@
   // 0,3 statt 0,6: halbiert. Der Startwert steht hier UND im Markup - zwei Orte fuer
   // eine Zahl, und beim Nachziehen muessen beide mit. Genau diese Klasse hat bei den
   // Voreinstellungen siebzehn Abweichungen ergeben.
-  let brakeVolume = 0.3;       // rain and thunder: own control, weather stays audible
+  let brakeVolume = 0.2;      // v0.10.5: leiser (BESTELLT "Bremse noch etwas leiser")       // rain and thunder: own control, weather stays audible
   // Eigene Lautstaerke, aus demselben Grund wie beim Bremsenquietschen: an engineVolume
   // gehaengt liesse es sich nur zusammen mit dem Motor leiser stellen, also gar nicht.
   // Der Startwert steht hier UND im Markup - beim Nachziehen muessen beide mit.

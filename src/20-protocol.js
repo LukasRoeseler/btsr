@@ -342,6 +342,43 @@
   // dreiwertiger Zustand, damit die neun bestehenden Verzweigungen auf physicsEnabled
   // unveraendert bleiben.
   let driftModus = false;
+  // ---- RC-MODUS (v0.10.5) -------------------------------------------------------------
+  // BESTELLT: "Drift-Modus weg, Roh-Input-Modus aendern: wenn ich vom Gas gehe, dann nicht
+  // direkt auf 0, sondern nur sehr schnell (in 2 s), und beim Bremse-Druecken sofort. Wenn
+  // das Auto steht und ich nochmal Bremse druecke, dann Rueckwaertsgang. Nenn den Modus RC."
+  // Das Auto meldet sein Tempo nicht; "steht" heisst deshalb: der Befehl ist seit RC_STEHT_MS
+  // null. Die Bremse ist im Rohmodus der negative Befehl (Motor gegen die Fahrtrichtung) -
+  // beim ersten Druck nur RC_BREMS_MS lang, danach null, damit das Auto nicht von selbst
+  // rueckwaerts losfaehrt.
+  const RC_AUSLAUF_MS = 2000, RC_BREMS_MS = 600, RC_STEHT_MS = 400;
+  const rcLage = { wert: 0, at: 0, bremseVorher: false, bremsBis: 0, rueck: false, nullSeit: 0 };
+  function rcGas(y, jetztTest) {
+    const jetzt = jetztTest === undefined ? performance.now() : jetztTest;
+    const dt = rcLage.at ? Math.min(200, Math.max(0, jetzt - rcLage.at)) : 45;
+    rcLage.at = jetzt;
+    const gas = Math.max(0, y || 0), bremse = Math.max(0, -(y || 0));
+    const gedrueckt = bremse > 0.05;
+    const flanke = gedrueckt && !rcLage.bremseVorher;
+    rcLage.bremseVorher = gedrueckt;
+    if (gas > 0.02) {
+      rcLage.rueck = false; rcLage.bremsBis = 0;
+      rcLage.wert = gas >= rcLage.wert ? gas : Math.max(gas, rcLage.wert - dt / RC_AUSLAUF_MS);
+    } else if (gedrueckt) {
+      if (flanke) {
+        const steht = rcLage.wert === 0 && rcLage.nullSeit && jetzt - rcLage.nullSeit >= RC_STEHT_MS;
+        if (steht) rcLage.rueck = true;
+        else if (!rcLage.rueck) rcLage.bremsBis = jetzt + RC_BREMS_MS;
+      }
+      rcLage.wert = (rcLage.rueck || jetzt < rcLage.bremsBis) ? -bremse : 0;
+    } else {
+      rcLage.rueck = false; rcLage.bremsBis = 0;
+      rcLage.wert = rcLage.wert > 0 ? Math.max(0, rcLage.wert - dt / RC_AUSLAUF_MS) : 0;
+    }
+    if (rcLage.wert !== 0) rcLage.nullSeit = 0;
+    else if (!rcLage.nullSeit) rcLage.nullSeit = jetzt;
+    return rcLage.wert;
+  }
+  function rcZuruecksetzen() { Object.assign(rcLage, { wert: 0, at: 0, bremseVorher: false, bremsBis: 0, rueck: false, nullSeit: 0 }); }
   let gegenlenkStaerke = 0.5;
   // DER QUERLAGE-PRUEFSTAND. Er wird in 90-ghosts.js gelesen und von einem Regler in
   // 80-sound.js geschrieben - und 80 kommt VOR 90. Eine Deklaration bei der Leseseite waere
@@ -454,7 +491,9 @@
       physicsStep();
       pitLaneTick();
       let steer = physicsEnabled ? physOutSteer : steerX;
-      let throttle = physicsEnabled ? physOutThrottle : throttleY;
+      // v0.10.5: der Rohmodus heisst jetzt RC und laeuft durch rcGas() (Auslaufen, Bremse,
+      // Rueckwaerts nach zweitem Druck). Drift gibt es nicht mehr.
+      let throttle = physicsEnabled ? physOutThrottle : rcGas(throttleY);
       if (driftModus) steer = driftGegenlenken(steer);
       sendControlValue(steer, throttle);
       spielerZweiSenden();

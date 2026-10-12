@@ -1388,6 +1388,8 @@
   .ch-spiegel-knopf.an { background: var(--k-blau, #0b84d6); color: #fff; border-color: transparent; }
   /* Fahren: Fahrgefuehl-Kachel mit groesserer Schrift (v0.9.31) */
   .k-fahren-unten #fa-profil .k-kt { font-size: clamp(14px, 2.6vh, 22px); }
+  #fa-profil.k-meister { background: linear-gradient(90deg, rgba(8,10,14,.88) 0%, rgba(8,10,14,.45) 70%),
+    url(img/meisterschaft.jpg) center 40% / cover no-repeat; }
   .k-fahren-unten #fa-profil .k-kk { font-size: clamp(11px, 2vh, 15px); }
   /* Galerie: Auto ohne Foto als Farbflaeche mit Zeichen */
   .k-auto-zelle.k-auto-ohne-foto { position: relative; }
@@ -2901,7 +2903,22 @@
   .gar-a-zeile .gk-text { display: flex; flex-direction: column; min-width: 0; }
   .gar-a-zeile .gk-text b { font-size: 14px; letter-spacing: .05em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .gar-a-zeile .gar-id { font-size: 10.5px; color: var(--k-dim); padding: 0; }
-  .gar-a-zeile .gk-rolle { margin: 0; min-width: 132px; }
+  /* v0.10.5 BESTELLT: "Pfeile immer an derselben Stelle." Feste Spalten statt Fliesstext:
+     links Pfeil, Mitte der Name (fest breit, mittig), rechts Pfeil; der Hinweis
+     "experimentell" in einer eigenen Zeile darunter. */
+  .gar-a-zeile .gk-rolle { margin: 0; width: 176px; min-width: 176px; display: grid;
+    grid-template-columns: 30px minmax(0, 1fr) 30px; align-items: center; }
+  .gar-a-zeile .gk-rolle > button[data-d="-1"] { grid-column: 1; grid-row: 1; }
+  .gar-a-zeile .gk-rolle > b { grid-column: 2; grid-row: 1; text-align: center; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; }
+  .gar-a-zeile .gk-rolle > button[data-d="1"] { grid-column: 3; grid-row: 1; }
+  .gar-a-zeile .gk-rolle > .wip-tag { grid-column: 1 / -1; grid-row: 2; justify-self: center;
+    font-size: 9px; margin: 0; }
+  .gk-w > b { display: inline-block; min-width: 10em; text-align: center; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; }
+  .gar-akku { white-space: nowrap; }
+  #race-gridscreen button.pad-fokus { outline: 3px solid var(--k-blau, #3d8bff); outline-offset: 2px; }
+  .gar-akku.knapp { color: var(--bad); font-weight: 800; }
   .gar-a-zeile.is-player .gk-rolle { background: var(--k-blau); color: var(--k-blau-text); }
   .gar-a-zeile.is-zwei .gk-rolle { background: #ffb02e; color: #1a1100; }
   .gar-a-zeile.is-ghost .gk-rolle { background: #6b5bd6; color: #fff; }
@@ -4439,6 +4456,10 @@
              Controller mit allen Tasten sieht und die Belegung aendern kann". -->
         <button type="button" id="k-steuerung-start" class="k-tutorial-knopf">Steuerung
           <span class="k-tutorial-taste" data-i18n-skip>&#9675; / S</span></button>
+        <!-- v0.10.5 BESTELLT: "Auf dem Startscreen 'Starten' als dritten Button neben Tutorial
+             und Steuerung." Derselbe Weg wie X / Enter. -->
+        <button type="button" id="k-starten-start" class="k-tutorial-knopf">Starten
+          <span class="k-tutorial-taste" data-i18n-skip>&#10005; / Enter</span></button>
       </div>
       <div class="k-druecken"><span data-i18n-skip>&#10005;</span> zum Starten</div>
       <!-- BESTELLT: "auf der Titelseite zur .apk verlinken, falls die App nicht darueber
@@ -4464,7 +4485,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.10.4</span></span>
+        <span class="foot-ver">v<span id="app-version">0.10.5</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4518,9 +4539,12 @@
         <span class="k-ki" id="fa-renn-info"></span>
       </div>
       <div class="k-gitter k-fahren-unten">
-      <div class="k-kachel k-klein" id="fa-profil" role="button" tabindex="0" data-quad="profil">
-        <span class="k-kk">Fahrgefühl</span>
-        <span class="k-kopf"><span class="k-kt" id="fa-profil-titel"></span><span class="k-quad-punkte" id="fa-profil-punkte" aria-hidden="true"></span></span>
+      <!-- v0.10.5 BESTELLT: "Meisterschaft-Button unten links im FAHREN-Menue, Bild im Ordner
+           (Ford und BMW von hinten), statt Fahrgefuehl (das ist ja in Garage und Optionen)."
+           Die Kennung bleibt fa-profil, weil Menuefuehrung und Tutorial sie kennen. -->
+      <div class="k-kachel k-klein k-meister" id="fa-profil" role="button" tabindex="0">
+        <span class="k-kk">Meisterschaft <span class="wip-tag">bald</span></span>
+        <span class="k-kopf"><span class="k-kt">Meisterschaft erstellen</span></span>
         <span class="k-ki"></span>
       </div>
         <div class="k-kachel k-start" id="fa-start" role="button" tabindex="0">
@@ -5589,6 +5613,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Fahrgef&#252;hl und Men&#252;s: Neue Abstimmung Sim+ (wie Pro mit direkterer Lenkung, mehr Beschleunigung und viel st&#228;rkerer Bremse). Im FAHREN-Men&#252; und am Cockpit-Knopf stehen nur noch Arcade, Sim+, Pro und Pacejka; GT3, F1 und Realismus GT3 bleiben in den Optionen. Arcade lenkt st&#228;rker und erreicht jetzt den vollen Einschlag, GT3 und F1 behalten ihn auch mit kalten Reifen (der Lenkregler reicht bis 400 %). Drift-Modus entfernt; &#8222;Aus&#8220; hei&#223;t jetzt RC: Gas l&#228;uft in 2 s aus, die Bremse greift sofort, ein zweiter Bremsdruck im Stand f&#228;hrt r&#252;ckw&#228;rts. Gelbe Flagge: alle Autos etwa 35 %, auch im Ausdruck-Modus. Reifenmischungen unterscheiden sich st&#228;rker (weich 120 % Griff und schneller Verschlei&#223;, hart 85 % und langlebig). Bremsquietschen leiser. Garage: Rollenpfeile immer an derselben Stelle, Akkustand je Auto, Fahrgef&#252;hl je gesteuertem Auto w&#228;hlbar, neues Garagenbild. Startaufstellung: Abbrechen, Automatisch aufstellen und Start mit dem Steuerkreuz w&#228;hlbar, X best&#228;tigt. Titelschirm mit &#8222;Starten&#8220;. Unten links im FAHREN-Men&#252; die Kachel Meisterschaft (kommt bald). &#8222;Freies Training&#8220; hei&#223;t &#8222;Training&#8220; und hat ein Zeitlimit (0 = ohne Ende). &#8222;Controller tauschen&#8220; entfernt.</li>
         <li>App-Latenz (neue APK n&#246;tig, &#228;ltere fahren wie bisher): Befehle an die Autos gehen in der App jetzt direkt an den Bluetooth-Schreibthread, ohne den Umweg &#252;ber den Android-Hauptthread, &#252;ber den auch alle Meldungen der Autos laufen. Das Gamepad wird bei einem Controller direkt aus der App gelesen (Sticks und Trigger), Android b&#252;ndelt die Stick-Ereignisse nicht mehr im Bildtakt, und der Ton l&#228;uft mit kleinem Puffer. Die Verbindungspriorit&#228;t wird nicht mehr alle 10 s neu ausgehandelt (kleine H&#228;nger). &#8222;Funk-Rundlauf&#8220; zeigt jetzt die echten Werte: Br&#252;ckenzeit, Takt des Steuerherzschlags, Gamepad direkt, Tonverz&#246;gerung; der alte Wert ist in der App als &#8222;nur JS&#8220; gekennzeichnet.</li>
         <li>Fehler behoben (Pr&#252;fung der &#196;nderungen seit 0.9.56): Ghosts, die die Bahn verlassen, halten wieder an (Gerade 0,9 s, Kurve 1,2 s, Haarnadel 1,8 s, sofort wenn sie auf dem Teppich weiterz&#228;hlen). Nah nebeneinander bekommen zwei Ghosts immer gegens&#228;tzliche Seiten und behalten ihre Reihenfolge von links nach rechts, statt sich anzuschieben. Ghost-Motorsound spielt auch ohne Sample des eigenen Autos, und die Garage zeigt, ob er wirklich an ist. Automatisch aufstellen h&#228;lt erst nach dem Startteil am richtigen Platz und geht erst kurz davor ganz an den Rand. Ein Auto, das Ghost war, lenkt als gesteuertes Auto nicht mehr selbst. Das Boxen-Minispiel kommt wieder, wenn kein zweiter Spieler f&#228;hrt. Fliegender Start: Einf&#252;hrungsrunde mit Kurvendrosselung, Ende beim zweiten &#220;berfahren des ersten Autos. Akku: Wert gegl&#228;ttet, leer schon bei h&#246;herem Rohwert, Warnblinken nur noch mit den Lichtern (vorher kurz ohne Gas und Lenkung). Statistik: gespeicherte Strecken werden gez&#228;hlt, jedes Auto erscheint mit eigenen Kilometern, Spieler 2/3 z&#228;hlen mit, Kilometer nur mit verbundenem Auto, &#8222;Beste Runde&#8220; entfernt. 2/3-Spieler-Schirm: letzte und beste Runde gro&#223;, alle Kn&#246;pfe sichtbar.</li>
         <li>Community-Bestzeiten: Die 3er-Serie (bester Durchschnitt aus drei aufeinanderfolgenden Runden) gilt jetzt auch f&#252;r Community-Strecken. Daf&#252;r speichert die App die Rundenzeiten zu jedem Eintrag und l&#228;dt sie mit hoch; das Apps Script muss neu bereitgestellt werden, damit es die Rundenzeiten auch f&#252;r die Online-Zeiten &#252;bernimmt.</li>
@@ -8543,7 +8568,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" aria-hidden="true">
             <circle cx="12" cy="13" r="8"/><path d="M12 13V8.5M12 2h0M9 3h6"/>
-          </svg><b>Freies Training</b></button>
+          </svg><b>Training</b></button>
         <button type="button" class="mode-tile kachelbild endurance" data-mode="endurance">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" aria-hidden="true">
@@ -8571,7 +8596,7 @@
           </svg><b>Demolition Derby</b><span class="wip-tag">experimentell</span></button>
       </div>
       <select id="race-mode" hidden style="display:none">
-        <option value="practice" selected>Freies Training</option>
+        <option value="practice" selected>Training</option>
         <option value="endurance">Endurance</option>
         <option value="qualifying">Qualifying</option>
         <option value="laps">Runden</option>
@@ -8585,7 +8610,7 @@
            zwei waagerechten Reihen, und auf dem Telefon brachen sie unvorhersehbar um. -->
       <div class="opt-row"><div class="opt-label"><span id="race-limit-label">Minuten</span>
           <small>Bei freiem Training ohne Bedeutung.</small></div>
-        <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="race-limit" value="2" min="1" max="120" step="1" style="width:84px"><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
+        <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="race-limit" value="0" min="0" max="120" step="1" style="width:84px"><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
       <div class="opt-row"><div class="opt-label">Sektoren
           <span class="wip-tag">experimentell</span>
           <small>&Uuml;berfahrten je Runde. <b>Im Bahn-Modus</b> (Editor) bestimmt die Strecke
@@ -8988,11 +9013,10 @@
           erkannt. Beides zugleich gibt es nicht.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-ontrack" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Steuerungsmodus
-          <small>Physik: Drehmoment, G&auml;nge, Reibkreis &ndash; die Vorgabe. Aus: rohe
-          Stickstellung ohne G&auml;nge, wie ein Fernsteuerungsauto. Drift: rohes Gas wie
-          bei &bdquo;Aus&ldquo;, dazu ein automatisches Gegensteuern gegen das gemessene
-          Drehsignal des Autos und eine weichere Lenkung. Der Drift-Modus ist experimentell,
-          und die Zeile darunter sagt, warum.</small>
+          <small>Physik: Drehmoment, G&auml;nge, Reibkreis &ndash; die Vorgabe. RC: die
+          Stickstellung direkt wie bei einem Fernsteuerungsauto, ohne G&auml;nge. Gas wegnehmen
+          l&auml;uft in zwei Sekunden aus, die Bremse greift sofort, und ein zweiter Druck auf
+          die Bremse, wenn das Auto steht, f&auml;hrt r&uuml;ckw&auml;rts.</small>
           <small>Pacejka: wie Physik, dazu Reifen mit Haftgrenze nach der Magic Formula. Das
           Einspurmodell beschreibt, wie sich das Auto dreht; Pacejka beschreibt, wie viel
           Seitenkraft ein Reifen h&auml;lt, bevor er rutscht. Unterhalb der Grenze f&auml;hrt es
@@ -9004,8 +9028,7 @@
         <select id="phys-mode">
           <option value="physik" selected>Physik</option>
           <option value="pacejka">Pacejka (experimentell)</option>
-          <option value="aus">Aus, rohe Stickstellung</option>
-          <option value="drift">Drift (experimentell)</option>
+          <option value="aus">RC (experimentell)</option>
         </select></div>
       <!-- BESTELLT: "Eventuell sage ich spaeter, dass das Uebersteuern abgeschaltet werden
            soll" - deshalb von Anfang an ein eigener Schalter. -->
@@ -9028,7 +9051,7 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-pac-grenze-val">70%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Gegensteuern im Drift
+      <div class="opt-row" hidden><div class="opt-label">Gegensteuern im Drift
           <span class="wip-tag">experimentell</span>
           <small>Wie stark gegen das Ausbrechen gelenkt wird, gemessen am Drehsignal aus
           Byte 3 der Meldungen. 50 Prozent entspricht der Vorgabe, nach der gefragt wurde.
@@ -9524,7 +9547,7 @@
       <div class="opt-row"><div class="opt-label">Lenkansprechen<small>Auch auf dem Steuerkreuz hoch/runter &ndash; links/rechts bl&auml;ttert seit v0.5.18 die Cockpit-Schirme. Der volle Lenkeinschlag ist mechanisch 45&nbsp;Grad; bei 100&nbsp;% fordert voller Stick genau ihn an.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="phys-steerresp" min="0.5" max="3" step="0.05" value="3">
+          <input type="range" id="phys-steerresp" min="0.5" max="4" step="0.05" value="3">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="phys-steerresp-val">150%</span>
         </div></div>
@@ -9800,9 +9823,9 @@
           getrennt leiser zu bekommen.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="brake-volume" min="0" max="1" step="0.05" value="0.3">
+          <input type="range" id="brake-volume" min="0" max="1" step="0.05" value="0.2">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="brake-volume-val">30%</span>
+          <span class="opt-val" id="brake-volume-val">20%</span>
         </div></div>
       <div class="opt-row" id="sound-profile-zeile" hidden style="display:none" data-motor-garage="1"><div class="opt-label">Motorsound-Profil<small>Alle sind aus
           Zylinderzahl, Kurbelwelle, Bankaufteilung und Z&uuml;ndfolge gerechnet &ndash; keine
@@ -10882,7 +10905,8 @@
           getrennte Takte waren die Ursache des Stotterns mit echtem Controller, und dieser
           Modus wiederholt den Fehler nicht.</small></div>
         <label class="tgl"><input type="checkbox" id="opt-zwei-an" data-preset-skip></label></div>
-      <div class="opt-row"><div class="opt-label">Controller tauschen<small>Welcher der
+      <!-- v0.10.5 BESTELLT: "Mehrspieler-Optionen: Controller-tauschen-Funktion entfernen." -->
+      <div class="opt-row" hidden><div class="opt-label">Controller tauschen<small>Welcher der
           beiden erkannten Controller Auto&nbsp;1 f&auml;hrt. Die Reihenfolge kommt vom
           Browser und ist nicht w&auml;hlbar: hier ist der Schalter daf&uuml;r.</small></div>
         <label class="tgl"><input type="checkbox" id="opt-zwei-tausch"></label></div>
@@ -10903,10 +10927,10 @@
       <p class="muted">Ehrlicher als es zu verschweigen &ndash; jeder Punkt h&auml;ngt an
         einem Z&auml;hler oder einer Ortung, die es nur einmal gibt:</p>
       <div class="help-grid">
-        <kbd>Box</kbd><span>Der Boxenstopp von Auto&nbsp;2 ist schmal: er tankt voll und
-          repariert ganz, ohne Vorwahl und ohne Reifenwechsel. Die Reifenwahl ist eine
-          globale Einstellung &ndash; &bdquo;auf weich&ldquo; f&uuml;r ein einzelnes Auto
-          ist eine Aussage, die das Modell nicht trennen kann.</span>
+        <kbd>Box</kbd><span>Der Boxenstopp von Auto&nbsp;2 und 3 tankt auf die gew&auml;hlte
+          Menge, repariert und zieht die gew&auml;hlte Reifenmischung auf (Wahlkacheln auf dem
+          Schirm &bdquo;Beide&ldquo;). Ausgel&ouml;st wird er per Knopf, nicht &uuml;ber die
+          Boxengasse der Strecke.</span>
         <kbd>Ton</kbd><span>Das Motormodell selbst darf Auto&nbsp;2 seit Kurzem frei
           w&auml;hlen (eigener Knopf auf dem Vergleichsschirm &bdquo;Beide&ldquo;). Was
           es weiterhin nicht hat, ist eine eigene Zusatzkette: kein Turbopfeifen, keine
