@@ -1642,7 +1642,9 @@
   // danach: die Ghosts "sind tuer an tuer gefahren" - innen3 kommt nie auf die Aussenseite
   // (siehe dort), alle Ghosts draengen sich also auf dieselbe Bahnhaelfte. Und: "Luuke-
   // Modus ist gut". Zurueck auf Luuke - Innen bleibt waehlbar.
-  let lineModel = 'luuke';
+  // v1.0.15 BESTELLT: "Mach die neue Ideallinie zum Default." Bis die Suche fertig ist (wenige
+  // Sekunden), faehrt simulatorLinie() die Luuke-Linie.
+  let lineModel = 'simulator';
 
   // Die gueltigen Modellnamen an EINER Stelle. Vorher stand die Liste als zwei
   // Vergleiche in setLineModel und ein weiteres Mal als Bedingung in buildLine - beim

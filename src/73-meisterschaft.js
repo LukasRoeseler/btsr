@@ -52,10 +52,10 @@
   }
   function meisterPlanVorgabe() {
     return {
+      // v1.0.15 BESTELLT: "Meisterschaft standard: nicht 3 Events, sondern Qualifying und Runden."
       events: [
         Object.assign(meisterEventNeu(), { format: 'qualifying', umfang: 5 }),
         meisterEventNeu(),
-        Object.assign(meisterEventNeu(), { format: 'endurance', umfang: 20, wetter: 'wechsel', stopps: 1 }),
       ],
       global: { fahrgefuehl: 'garage', start1: 'zufall', punkte: 'f1', fl: 'ja', teilnehmer: 'alle' },
     };
@@ -68,8 +68,21 @@
     return d;
   }
   let meister = meisterLesen();
+  setTimeout(() => { try { meisterKachelText(); } catch (e) { /* ohne Kachel */ } }, 0);
   function meisterSpeichern() {
     try { localStorage.setItem(MEISTER_STORE, JSON.stringify(meister)); } catch (e) { /* privat */ }
+    meisterKachelText();
+  }
+  // Die FAHREN-Kachel sagt, ob eine Meisterschaft pausiert ist und wo es weitergeht.
+  function meisterKachelText() {
+    const k = $('fa-profil');
+    const kt = k ? k.querySelector('.k-kt') : null;
+    if (!kt) return;
+    const l = meister && meister.lauf;
+    const txt = l && !l.fertig
+      ? t('Fortsetzen: Event') + ' ' + (l.idx + 1) + '/' + meister.plan.events.length
+      : t('Meisterschaft erstellen');
+    if (kt.textContent !== txt) kt.textContent = txt;
   }
 
   function meisterFormat(ev) { return MEISTER_FORMATE.find((f) => f.id === ev.format) || MEISTER_FORMATE[2]; }
@@ -499,7 +512,8 @@
   function meisterOeffnen(ansicht) {
     meister = meisterLesen();
     const lauf = meister.lauf;
-    msAnsicht = ansicht || (lauf && (lauf.idx > 0 || lauf.laeuft) ? 'stand' : 'plan');
+    // Laeuft eine Meisterschaft (auch pausiert vor dem ersten Ergebnis), kommt der Stand mit "Weiter".
+    msAnsicht = ansicht || (lauf && !lauf.fertig ? 'stand' : 'plan');
     msZeile = 0; msDetail = -1; msEvent = 0; msLoeschenArm = -1; msStandFokus = 0;
     msPadVorher = []; msPadAchse = 1;   // gehaltene Taste vom Oeffnen nicht gleich auswerten
     const el = msEl();
@@ -518,8 +532,10 @@
     return '<span class="ms-wert ' + (klasse || '') + '"><span class="ms-pf" data-d="-1">◀</span><span class="ms-w">' + msEsc(text)
       + '</span><span class="ms-pf" data-d="1">▶</span></span>';
   }
+  function msLaeuftNoch() { return !!(meister.lauf && !meister.lauf.fertig); }
   function msZeilen() {
-    const z = meister.plan.events.map((e, i) => ({ art: 'ev', i }));
+    const z = msLaeuftNoch() ? [{ art: 'weiter' }] : [];
+    meister.plan.events.forEach((e, i) => z.push({ art: 'ev', i }));
     z.push({ art: 'neu' });
     MEISTER_GLOBAL.forEach((g, i) => z.push({ art: 'gl', i }));
     z.push({ art: 'los' });
@@ -553,7 +569,12 @@
     let h = '';
     z.forEach((r, k) => {
       const sel = k === msZeile ? ' sel' : '';
-      if (r.art === 'ev') {
+      if (r.art === 'weiter') {
+        // v1.0.15 BESTELLT: "Wenn ich eine Meisterschaft pausiert habe, wo kann ich sie dann
+        // weiterfahren? ... sollte es einen Knopf geben im Meisterschaftsmenue."
+        h += '<button type="button" class="ms-knopf primary ms-weiter' + sel + '" data-k="' + k + '">\u25B6 '
+          + msEsc(t('Meisterschaft fortsetzen')) + ' · ' + msEsc(t('Event')) + ' ' + (meister.lauf.idx + 1) + '/' + evs.length + '</button>';
+      } else if (r.art === 'ev') {
         const e = evs[r.i], f = meisterFormat(e);
         h += '<div class="ms-ev' + sel + '" data-k="' + k + '"><i style="background:' + MEISTER_FARBEN[r.i % MEISTER_FARBEN.length] + '"></i>'
           + '<span class="ms-nr">' + (r.i + 1) + '</span><span class="ms-bild">' + msStreckeBild(e.strecke) + '</span>'
@@ -568,7 +589,8 @@
           + msWert(meisterName(g.w, meisterGlobalWert(g.id))) + '</div>';
       } else {
         h += '<button type="button" class="ms-knopf primary' + sel + '" data-k="' + k + '">'
-          + msEsc(t('Meisterschaft starten')) + ' · ' + evs.length + ' ' + msEsc(t('Events')) + '</button>';
+          + msEsc(t('Meisterschaft starten')) + ' · ' + evs.length + ' ' + msEsc(t('Events'))
+          + ' <span class="wip-tag">WIP</span></button>';
       }
     });
     const liste = $('ms-liste');
@@ -654,7 +676,7 @@
     const lauf = meister.lauf;
     if (!lauf) return [['plan', 'Meisterschaft planen']];
     if (lauf.fertig) return [['neu', 'Neue Meisterschaft planen'], ['zu', 'Schließen']];
-    return [['weiter', 'Weiter: Event'], ['zu', 'Pause · später weiter'], ['ende', 'Meisterschaft beenden']];
+    return [['weiter', 'Weiter: Event'], ['zu', 'Pause · später weiter'], ['plan', 'Plan ansehen'], ['ende', 'Meisterschaft beenden']];
   }
   function msStandZeichnen() {
     const lauf = meister.lauf, evs = meister.plan.events;
@@ -771,7 +793,8 @@
       return;
     }
     const z = msZeilen()[msZeile];
-    if (z.art === 'ev') { msEvent = z.i; msDetail = 0; }
+    if (z.art === 'weiter') { msAnsicht = 'stand'; msStandFokus = 0; }
+    else if (z.art === 'ev') { msEvent = z.i; msDetail = 0; }
     else if (z.art === 'neu') msNeu();
     else if (z.art === 'los') { msStarten(); return; }
     else if (z.art === 'gl') { msLinks(1); return; }
@@ -836,7 +859,7 @@
     const pf = ev.target.closest('.ms-pf');
     if (pf) { msLinks(+pf.getAttribute('data-d')); return; }
     const z = msZeilen()[msZeile];
-    if (z.art === 'neu' || z.art === 'los') { msBestaetigen(); return; }
+    if (z.art === 'neu' || z.art === 'los' || z.art === 'weiter') { msBestaetigen(); return; }
     msZeichnen();
   }
   function msDetailKlick(ev) {

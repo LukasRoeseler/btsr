@@ -2813,6 +2813,11 @@
   .k-tutorial-knopf { font-family: var(--k-font); letter-spacing: .12em; text-transform: uppercase; font-size: 13px;
     background: rgba(10,12,18,.7); color: #fff; border: 2px solid var(--k-blau); border-radius: 0; padding: 6px 16px; }
   .k-tutorial-knopf:hover { background: var(--k-blau); color: var(--k-blau-text); }
+  /* v1.0.15 BESTELLT: "Startknopf auf Startbildschirm farblich anders hinterlegen, damit er klarer wird." */
+  .k-tutorial-knopf.k-starten-haupt { background: var(--k-blau, #00a3e0); color: var(--k-blau-text, #04070c);
+    border-color: var(--k-blau, #00a3e0); font-weight: 800; }
+  .k-tutorial-knopf.k-starten-haupt .k-tutorial-taste { color: inherit; opacity: .75; }
+  .k-tutorial-knopf.k-starten-haupt:hover { background: #fff; border-color: #fff; color: #04070c; }
   .k-tutorial-taste { margin-left: 8px; color: var(--k-dim); font-size: 11px; letter-spacing: .04em; }
   .k-tour { position: fixed; inset: 0; z-index: 450; font-family: var(--k-font); }
   body.track-fs .k-tour { z-index: 900; }
@@ -4566,7 +4571,7 @@
           <span class="k-tutorial-taste" data-i18n-skip>&#9675; / S</span></button>
         <!-- v0.10.5 BESTELLT: "Auf dem Startscreen 'Starten' als dritten Button neben Tutorial
              und Steuerung." Derselbe Weg wie X / Enter. -->
-        <button type="button" id="k-starten-start" class="k-tutorial-knopf">Starten
+        <button type="button" id="k-starten-start" class="k-tutorial-knopf k-starten-haupt">Starten
           <span class="k-tutorial-taste" data-i18n-skip>&#10005; / Enter</span></button>
       </div>
       <!-- v0.10.6: "✕ zum Starten" entfernt - der Knopf "Starten" daneben sagt dasselbe (BESTELLT). -->
@@ -4593,7 +4598,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.14</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.15</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4616,7 +4621,7 @@
       <div class="k-kachel " id="fa-auto" role="button" tabindex="0">
         <span class="k-kk">Autos</span>
         <span class="k-kt" id="fa-auto-titel"></span>
-        <span class="k-kb" id="fa-auto-bild" style="background-image:url(img/auto.jpg)"></span>
+        <span class="k-kb" id="fa-auto-bild" style="background-image:url(img/garage.jpg)"></span>
         <span class="k-ki" id="fa-auto-info"></span>
         <!-- BESTELLT: "Autos-Menü sollte auch Option für Garage haben zum Einstellen" - auch
              ohne verbundenes Auto (gemerkte Autos, Farben, Rollen). -->
@@ -5721,6 +5726,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Streckenbild: neuer Knopf &#8222;Bild&#8220; in der Editorleiste speichert ein PNG mit Strecke (Ideallinie und Raum wie gerade eingeschaltet), Name, Streckencode, L&#228;nge, Platzbedarf, Teilezahl und Link; in der App unter Bilder/OmegaSim (neue APK n&#246;tig). SIMULATOR ist jetzt die Standard-Ideallinie. Meisterschaft: Vorgabe sind zwei Events (Qualifying, Runden), &#8222;Meisterschaft starten&#8220; ist als WIP gekennzeichnet, und eine pausierte Meisterschaft l&#228;sst sich fortsetzen &#8211; die FAHREN-Kachel zeigt &#8222;Fortsetzen: Event X/Y&#8220; und &#246;ffnet direkt den Zwischenstand mit &#8222;Weiter&#8220;, im Planer steht oben &#8222;Meisterschaft fortsetzen&#8220;. Titelschirm: &#8222;Starten&#8220; ist farbig hinterlegt. Die Kachel mit dem Garage-Knopf zeigt das Garagenfoto.</li>
         <li>Neues Linienmodell SIMULATOR (WIP): f&#228;hrt bis zu 200 Linien &#8211; die acht vorhandenen und glatte Abwandlungen davon &#8211; je drei Runden mit derselben Fahrphysik wie dein Auto (Getriebe, Reifen, Zug im Reibkreis) und beh&#228;lt die schnellste. Die Mindestgeschwindigkeit der Ghosts (35 %) und eine Grenze f&#252;r schnelle Querwechsel gelten als Schranken. Die Suche dauert wenige Sekunden im Hintergrund, pausiert im Rennen und wird je Strecke gespeichert; bis dahin gilt die Luuke-Linie. Ein getestetes Beispiel, keine bewiesene Bestlinie.</li>
         <li>Motorkl&#228;nge aus Speed Dreams (WIP): sechs echte Aufnahmen (CC0) als neue Gruppe im Motormen&#252; &#8211; Japanischer GT-V8, Deutscher V10, Australischer Muscle-V8, Alter amerikanischer V8 und zwei italienische V12. Neben der Bahn rollt dein Auto jetzt h&#246;rbar &#252;ber Gras und Schotter, lauter mit dem Tempo (Lautst&#228;rke mit dem Reifenregler). Quellen in audio/CREDITS.md.</li>
         <li>Pflichtstopps z&#228;hlen jetzt f&#252;r alle gesteuerten Autos: Spieler 2 und 3 bekommen dieselbe Zeitstrafe je verpasstem Stopp, und im WLAN-Mehrspieler melden die Telefone Gesamtzeit und Strafe an den Host (neue APK bzw. neuer Host n&#246;tig), damit die Meisterschaft sie wertet. Safety Car: neue Option &#8222;erst aufschlie&#223;en&#8220; (Vorgabe an): unter Gelb fahren alle mit etwa 45 % heran und ab zwei Kacheln Abstand mit 35 % weiter, in Kurven und Haarnadeln gedrosselt. Die Studie ist vorerst nur im Entwicklermodus sichtbar.</li>
@@ -10637,8 +10643,8 @@
           <button type="button" class="mw-preset" data-linemodel="mitte">Fahrbahnmitte</button>
           <button type="button" class="mw-preset" data-linemodel="innen3">Innen (gemittelt)</button>
           <button type="button" class="mw-preset" data-linemodel="aussenin">Außen-Innen</button>
-          <button type="button" class="mw-preset sel" data-linemodel="luuke">Luuke-Linie</button>
-          <button type="button" class="mw-preset" data-linemodel="simulator">SIMULATOR<span class="wip-tag">WIP</span></button>
+          <button type="button" class="mw-preset" data-linemodel="luuke">Luuke-Linie</button>
+          <button type="button" class="mw-preset sel" data-linemodel="simulator">SIMULATOR<span class="wip-tag">WIP</span></button>
         </div></div>
       <!-- DIE LINIE DIREKT NEBEN DER WAHL. Gemeldet: "ich habe 2 Ideallinie Modi, aber wenn
            ich dazwischen waehle, aendert sich die eingezeichnete Linie nicht." Sie aendert
@@ -11298,6 +11304,13 @@
                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/>
               <path d="M8 4v5h7V4M8 20v-6h8v6"/></svg>
             <span class="tp-cap">Speichern</span></button>
+          <!-- v1.0.15 BESTELLT: "Editor-Screenshot: huebsches PNG mit Strecke, Code, Link, Massen,
+               Laenge." Ideallinie und Raum folgen den Schaltern daneben (60c-streckenbild.js). -->
+          <button class="tp-btn" id="track-bild" title="Streckenbild speichern (PNG)" aria-label="Streckenbild speichern">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/>
+              <circle cx="12" cy="13" r="3.5"/></svg>
+            <span class="tp-cap">Bild</span></button>
           <!-- BESTELLT: "oben links eine Checkbox (so gross wie die Zurueck- und Entfernen-
                Buttons) fuer Ideallinie und eine fuer Tastenkuerzel anzeigen ... ein
                Idealliniensymbol mit farbigem Rand wenn aktiv und grauem Rand wenn inaktiv und

@@ -739,7 +739,7 @@
         });
         ab.appendChild(gal);
       } else {
-        ab.style.backgroundImage = afoto ? 'url("' + afoto + '")' : 'url(img/auto.jpg)';
+        ab.style.backgroundImage = afoto ? 'url("' + afoto + '")' : 'url(img/garage.jpg)';   // v1.0.15: Garagenfoto (BESTELLT)
         ab.innerHTML = '';
       }
       ab.dataset.bild = abNeu;
