@@ -1763,17 +1763,18 @@
     // auf Hoehe von "Spieler 1"/"Spieler 2".
     const car2 = typeof playerCar2 !== 'undefined' ? playerCar2 : null;
     const lage = typeof boxZweiLage === 'function' ? boxZweiLage() : 'aus';
+    // v0.9.87: Spieler 1 aus raceLapTimes - dieselbe Quelle wie Ergebnis und Cockpit (vorher
+    // car.race.laps, und die Zaehlungen konnten auseinanderlaufen). Dazu letzte und beste
+    // Runde je Spalte.
+    const runden1 = (typeof raceLapTimes !== 'undefined' && raceLapTimes.length) ? raceLapTimes
+      : ((typeof playerCar !== 'undefined' && playerCar && playerCar.race && playerCar.race.laps) || []);
     const r1z = $('vgl1-runde');
-    if (r1z) {
-      const r1 = ((typeof playerCar !== 'undefined' && playerCar && playerCar.race
-                   && playerCar.race.laps) || []).length;
-      r1z.textContent = 'Runde ' + r1;
-    }
+    if (r1z) r1z.textContent = t('Runde') + ' ' + runden1.length;
+    vglZeiten('vgl1', runden1);
+    const runden2 = (car2 && car2.race && car2.race.laps) || [];
     const r2z = $('vgl2-runde');
-    if (r2z) {
-      const r2 = ((car2 && car2.race && car2.race.laps) || []).length;
-      r2z.textContent = 'Runde ' + r2;
-    }
+    if (r2z) r2z.textContent = t('Runde') + ' ' + runden2.length;
+    vglZeiten('vgl2', runden2);
 
     // ---- DIE FUSSZEILE SAGT, WAS DER BOXENSTOPP GERADE BRAUCHT -----------------------
     //
@@ -1795,8 +1796,10 @@
     if ($('vgl3-spalte')) $('vgl3-spalte').hidden = !drei;
     if (drei) {
       vglSpalte('vgl3', z3.car, z3.motor, z3.tank.stand, z3.schaden.wert);
+      const runden3 = (z3.car.race && z3.car.race.laps) || [];
       const r3z = $('vgl3-runde');
-      if (r3z) r3z.textContent = 'Runde ' + ((z3.car.race && z3.car.race.laps) || []).length;
+      if (r3z) r3z.textContent = t('Runde') + ' ' + runden3.length;
+      vglZeiten('vgl3', runden3);
     }
     const fuss = $('p2s-fuss');
     // Steht Spieler 3 gerade in der Box, gehoert die Fusszeile ihm (Spieler 2 hat Vorrang).
@@ -1955,6 +1958,12 @@
   // Und NICHT am Tacho. Der aendert sich jeden Takt - dort ist der Versatz ein Dauerzittern
   // und keine Rueckmeldung. Verwendet wird sie fuer die Werte, die SPRINGEN: Gang,
   // Rundenzahl, Rundenzeiten.
+  // Letzte und beste Runde einer Spalte des Vergleichsschirms. `runden`: [{ms}] oder [ms].
+  function vglZeiten(pre, runden) {
+    const ms = (runden || []).map((l) => (typeof l === 'number' ? l : l && l.ms)).filter((x) => x > 0);
+    schreibeWert($(pre + '-letzte'), ms.length ? formatLapTime(ms[ms.length - 1]) : '\u2013');
+    schreibeWert($(pre + '-beste'), ms.length ? formatLapTime(Math.min.apply(null, ms)) : '\u2013');
+  }
   function schreibeWert(el, txt) {
     if (!el) return;
     const neu = String(txt);
@@ -2673,7 +2682,8 @@
                steer: 0, lenkt: !abseitsJetztFuer(wer || 1) };
     }
     // Automatische Aufstellung (v0.9.24, 90-ghosts.js): zum Startplatz, dort halten.
-    if (typeof aufstellenSpielerZiel === 'function' && aufstellenSpielerZiel(meinAuto)) {
+    // v0.9.87: nur auf der Bahn - im Ausdruck-Modus wuerde die Querlage als Radwinkel gelesen.
+    if (trackMode === 'on' && typeof aufstellenSpielerZiel === 'function' && aufstellenSpielerZiel(meinAuto)) {
       if (aufstellenSpielerAngekommen(meinAuto)) {
         return { grund: 'aufstellen', throttle: 0, brake: 1, steer: 0, lenkt: false };
       }
@@ -2683,7 +2693,8 @@
       const g = ghostSpeedControl(regler, formationPace(), vA, dtS);
       // v0.9.58 (D6): mit Spur-Bytes - dieselbe Querlage wie die Ghosts, in maximaler
       // Breite, damit das Auto von selbst auf die Seite seines Startplatzes faellt.
-      const lenk = typeof formationDriverOffset === 'function' ? formationDriverOffset(meinAuto, GHOST_GRID_MAX) : 0;
+      const lenk = typeof formationDriverOffset === 'function'
+        ? formationDriverOffset(meinAuto, aufstellenSpielerBreite(meinAuto)) : 0;
       if (fahrerBremse > 0.05) return { grund: 'aufstellen', throttle: 0, brake: fahrerBremse, steer: lenk, lenkt: false };
       return { grund: 'aufstellen', throttle: g.throttle, brake: g.brake, steer: lenk,
                lenkt: !abseitsJetztFuer(wer || 1) };
@@ -2719,9 +2730,10 @@
     // Auto abfliegt. Dieselbe Zeile steht seit v0.5.51 auch bei den Ghosts.
     // v0.9.51: unter Gelb mit der Kurvendrosselung der Ghosts (autopilotKurvenFaktor) -
     // "mit dem Tempo der Ghosts", nicht mit Geradentempo durch die Haarnadel.
-    const ziel = grund === 'formation'
-      ? formationPace()
-      : Math.max(yellowFactor(), GHOST_READ_MIN) * autopilotKurvenFaktor(meinAuto);
+    // v0.9.87: auch die Einfuehrungsrunde mit der Kurvendrosselung der Ghosts - "wie bei
+    // gelber Flagge" (BESTELLT fuer den fliegenden Start).
+    const ziel = (grund === 'formation' ? formationPace() : Math.max(yellowFactor(), GHOST_READ_MIN))
+      * autopilotKurvenFaktor(meinAuto);
     const v = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
     const dtA = Math.max(0.01, Math.min(0.25,
       (Date.now() - (regler.at || Date.now())) / 1000));
@@ -3028,7 +3040,8 @@
     // Speicherzugriff: localStorage ist synchron und wuerde den 45-ms-Sendetakt stoeren.
     // v0.9.25: das Modelltempo (km/h auf der Bahn), NICHT mal REAL_SCALE - trackDistance()
     // skaliert selbst (siehe sessionKmKorrigieren in 97-sessions.js).
-    trackDistance(physEngine.state.speedKmh, dt);
+    // v0.9.87: nur mit verbundenem Auto - ohne zaehlte die Simulation im Leerlauf mit.
+    if (typeof playerCar !== 'undefined' && playerCar) trackDistance(physEngine.state.speedKmh, dt);
     physOutSteer = out.servoAngle;
     physOutThrottle = out.motorPWM;
   }

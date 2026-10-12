@@ -9781,10 +9781,12 @@
     if (!(r.tempo.formation > 0.2 && r.tempo.formation < 0.6)) {
       fehler.push('Formationstempo ' + r.tempo.formation);
     }
-    // 5. UND ER ENDET BEI DER DRITTEN UEBERFAHRT IRGENDEINES AUTOS - nicht frueher.
+    // 5. v0.9.87 BESTELLT: "bis das erste Auto ueber Start/Ziel zum 2. Mal faehrt". Ohne
+    //    Sektoren also die zweite Ueberfahrt irgendeines Autos (Folge a,b,c,d,a: Index 4).
     const ende = r.verlauf.findIndex((v) => v.beendet);
-    if (ende !== 8) {
-      fehler.push('endet nach ' + (ende + 1) + ' Ueberfahrten statt nach 9');
+    const soll = formationNoetig() * 4 - 4;
+    if (ende !== soll) {
+      fehler.push('endet nach ' + (ende + 1) + ' Ueberfahrten statt nach ' + (soll + 1));
     }
     if (r.nochFormation) fehler.push('Einfuehrungsrunde endet gar nicht');
     return { ok: !fehler.length,
@@ -17853,6 +17855,60 @@
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : angriffe + ' Angriff(e) in 10 Runden mit 6 Autos' };
   });
+
+  // ---- v0.9.87: Block 1 (Fehler aus der Pruefung) ----
+  stAdd('Ghost-Seiten: nahes Paar gegensaetzlich, Reihenfolge nach Querlage, kein Kreuzen', () => {
+    const f = [];
+    const a = { device: { id: 'a' }, ghost: { seite: 1 } }, b = { device: { id: 'b' }, ghost: { seite: 1 } };
+    // Gleiche Startseite, beide mittig: trotzdem gegensaetzlich.
+    let q = { a: 0, b: 0 }, o = { a: 5.2, b: 5.0 };
+    let m = ghostSeitenVergeben([a, b], (c) => q[c.device.id], ghostSeiteVorzug, (c) => o[c.device.id]);
+    if (m.get(a) === m.get(b)) f.push('gleiche Startseite -> gleiche Seite');
+    // Wer weiter links faehrt, bleibt links - auch wenn der Ort rauscht und sich vertauscht.
+    q = { a: -0.4, b: 0.3 };
+    for (const rausch of [[5.0, 5.3], [5.3, 5.0], [4.9, 5.1]]) {
+      o = { a: rausch[0], b: rausch[1] };
+      m = ghostSeitenVergeben([a, b], (c) => q[c.device.id], ghostSeiteVorzug, (c) => o[c.device.id]);
+      if (!(m.get(a) < m.get(b))) { f.push('Ortsrauschen vertauscht die Seiten'); break; }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'gegensaetzlich, stabil gegen Ortsrauschen' };
+  });
+
+  stAdd('Rollenwechsel: Ex-Ghost als Fahrerauto ohne Ghost-Zustand und ohne Spur-Bytes', () => {
+    const f = [];
+    const car = { device: { id: 'rw-test', name: 'RW' }, role: 'ghost', tag: 'RW',
+                  ghost: { running: false, tileIndex: 3 }, modeBytes: { 10: 0x20 }, railLight: 0x0a, parked: null };
+    const merk = { garage: garage.slice(), player: playerCar, rend: renderGarage, merken: carRolleMerken };
+    try {
+      renderGarage = () => {}; carRolleMerken = () => {};
+      garage.length = 0; garage.push(car);
+      setCarRole(car, 'none');
+      if (car.ghost !== null) f.push('Ghost-Zustand bleibt');
+      if (car.modeBytes !== null) f.push('Spur-Bytes bleiben');
+      if (car.railLight !== null) f.push('Leitplanken-Licht bleibt');
+    } finally {
+      renderGarage = merk.rend; carRolleMerken = merk.merken; playerCar = merk.player;
+      garage.length = 0; merk.garage.forEach((c) => garage.push(c));
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Ghost-Zustand, Spur-Bytes und Licht geloescht' };
+  });
+
+  stAdd('Akku: geglaettet (Maximum 5 s), Warnblinken nur ueber die Lichter', () => {
+    const f = [];
+    const h = {};
+    akkuGlaetten(h, 150, 1000); akkuGlaetten(h, 141, 1500);
+    if (akkuGlaetten(h, 143, 2000) !== 150) f.push('Einbruch unter Gas nicht geglaettet');
+    if (akkuGlaetten(h, 144, 7000) !== 144) f.push('altes Maximum haelt laenger als 5 s');
+    if (h.akkuMinRoh !== 141) f.push('Minimum ' + h.akkuMinRoh);
+    const car = { role: 'ghost', ghost: { running: true } };
+    akkuBlinken(car);
+    if (!car.akkuBlinkBis) f.push('fahrender Ghost: kein Lichtfenster');
+    let aus = 0;
+    for (let tt = 0; tt < 1500; tt += 50) if (akkuBlinkAus(car, car.akkuBlinkBis - 1500 + tt)) aus++;
+    if (!aus || aus > 20) f.push('Lichtmaske ' + aus + ' von 30');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Maximum ueber 5 s, Lichtfenster statt Fahrpakete' };
+  });
+
 
   stAdd('Rundenrennen endet mit der Zielrunde, nicht eine Runde spaeter', () => {
     const f = [];

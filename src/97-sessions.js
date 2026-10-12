@@ -110,9 +110,15 @@
   // vorbei ist. Er greift auf raceAllCars() zu, also auf dieselbe Funktion, aus der auch
   // die Ergebnistabelle und der CSV-Export lesen - damit gibt es keine zweite Wahrheit
   // darueber, wer welche Runden gefahren hat.
+  // Zaehler auf null beim Rennstart (70-race.js) - vorher lief er seit dem letzten
+  // gespeicherten Rennen weiter, auch ohne Auto und ohne Bahn.
+  function distanceReset() { simMeters = 0; realMeters = 0; }
   function sessionRecord() {
-    const autos = raceAllCars().filter(c => c.laps.length);
-    if (!autos.length) return null;
+    // v0.9.87: auch Autos ohne vollendete Runde, solange sie mitgefahren sind (gesteuert
+    // oder Ghost) - GEMELDET: "es wird ein Auto nicht angezeigt".
+    const alle = raceAllCars();
+    if (!alle.some(c => c.laps.length)) return null;
+    const autos = alle.filter(c => c.laps.length || /^player|^ghost$/.test(c.role || ''));
     const o = sessionStore();
     const weg = distanceSnapshot();
 
@@ -159,9 +165,17 @@
 
     // Und die Summen je Auto. Sie stehen NEBEN den Sitzungen und werden nicht daraus
     // gerechnet: die Sitzungsliste ist begrenzt, die Summen sollen es nicht sein.
+    const streckeM = (typeof trackLaengeM === 'function' && currentTrackTiles && currentTrackTiles.length > 2)
+      ? trackLaengeM(currentTrackTiles) : 0;
     for (const c of autos) {
-      const auto = garage.find(g => garageLabel(g) === c.name);
+      // v0.9.87: ueber die Geraetekennung, nicht ueber den Namen - zwei Autos mit gleichem
+      // Namen wurden sonst zusammengelegt.
+      const auto = c.id ? garage.find(g => String(g.device.id) === c.id) : garage.find(g => garageLabel(g) === c.name);
       const id = auto ? String(auto.device.id) : ('name:' + c.name);
+      // Die eigene Strecke je Auto: Spieler 1 aus der Physik, alle anderen aus ihren Runden
+      // (Runden x Streckenlaenge). Vorher bekam jedes Auto die des Fahrerautos.
+      const eigenReal = c.role === 'player' ? weg.realKm : +(c.laps.length * streckeM / 1000).toFixed(4);
+      const eigenSim = c.role === 'player' ? weg.simKm : +(eigenReal * REAL_SCALE).toFixed(3);
       const e = o.cars[id] || { name: c.name, km: 0, realKm: 0, runden: 0, besteMs: null,
                                 sitzungen: 0 };
       e.name = c.name;
@@ -170,10 +184,12 @@
       // Die Strecke wird auf ALLE Autos gebucht, weil nur das Fahrerauto eine Physik hat und
       // die Ghosts dieselbe Runde fahren. Das ist eine Naeherung, und sie steht hier als
       // solche: ein Ghost fuhr nicht genau dieselbe Linie.
-      e.km = +(e.km + weg.simKm).toFixed(3);
-      e.realKm = +(e.realKm + weg.realKm).toFixed(4);
-      const beste = Math.min.apply(null, c.laps.map(l => l.ms));
-      if (e.besteMs === null || beste < e.besteMs) e.besteMs = beste;
+      e.km = +(e.km + eigenSim).toFixed(3);
+      e.realKm = +(e.realKm + eigenReal).toFixed(4);
+      if (c.laps.length) {
+        const beste = Math.min.apply(null, c.laps.map(l => l.ms));
+        if (e.besteMs === null || beste < e.besteMs) e.besteMs = beste;
+      }
       o.cars[id] = e;
     }
 

@@ -333,7 +333,8 @@
     // Schluessel, Name, und wie man den Inhalt zaehlt. `zahl` gibt null zurueck, wenn es
     // nichts zu zaehlen gibt - dann wird die Zeile weggelassen.
     ['chc.layout.v1', 'Fahrzeug-Layout', (v) => (v && Object.keys(v).length) || null],
-    ['carrera-hybrid-tracks', 'Strecken', (v) => (Array.isArray(v) ? v.length : null)],
+    ['carrera-hybrid-tracks', 'Strecken', (v) => (Array.isArray(v) ? v.length
+                                                 : (v && typeof v === 'object' ? Object.keys(v).length : null))],
     ['chc.sessions.v1', 'Sitzungen', (v) => (Array.isArray(v) ? v.length
                                              : (v && Array.isArray(v.sessions) ? v.sessions.length : null))],
     ['carrera-hybrid-macros', 'Aufnahmen', (v) => (Array.isArray(v) ? v.length

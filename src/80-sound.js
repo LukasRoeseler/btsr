@@ -770,6 +770,7 @@
             if (typeof blinkCar === 'function') {
               if (typeof playerCar !== 'undefined' && b.car === playerCar
                   && typeof lichtBatterieBlink === 'function') lichtBatterieBlink();
+              else if (typeof akkuBlinken === 'function') akkuBlinken(b.car);
               else blinkCar(b.car);
             }
           }
@@ -1359,9 +1360,23 @@
     // v0.9.64: nur ein laufender Ghost bekommt eine Stimme. Ein geparkter hat keinen Takt,
     // der sie aktualisiert - er startete sonst stille Sources, die im Hintergrund weiterrechnen.
     if (!car.ghost.running) return false;
-    const modell = sampleEngine.car;
-    if (!modell || !sampleEngine.buffers[modell]) return false;
+    const modell = ghostStimmeModell();
+    if (!modell) return false;
     return startSampleEngineIn(car.ghost.stimme, modell, () => ghostStimmeAusgang(car));
+  }
+  // v0.9.87: DAS MODELL HAENGT NICHT MEHR AM SPIELER-SAMPLE. GEMELDET: "Ghost-Sound geht
+  // nicht." Die Stimme nahm sampleEngine.car - das ist null, solange das Fahrerauto ein
+  // gerechnetes Profil faehrt oder sein Sample noch nicht spielt, und dann blieb jeder
+  // Ghost stumm. Jetzt: das Fahrer-Sample, sonst das gewaehlte Profil, sonst das erste
+  // vollstaendig geladene Modell. Geladen wird dafuer bei Bedarf.
+  function ghostStimmeModell() {
+    const geladen = (k) => !!(k && sampleEngine.buffers[k] && powerBands(k).length);
+    if (geladen(sampleEngine.car)) return sampleEngine.car;
+    const sel = $('sound-profile');
+    if (sel && geladen(sel.value)) return sel.value;
+    for (const k of Object.keys(sampleEngine.buffers)) if (geladen(k)) return k;
+    if (!sampleEngine.ready && !sampleEngine.loading && typeof loadEngineSamples === 'function') loadEngineSamples();
+    return null;
   }
   function ghostStimmeStoppen(car) {
     if (!audioCtx || !car.ghost || !car.ghost.stimme) return;
@@ -1378,8 +1393,10 @@
     const st = car.ghost.stimme;
     // Folgt dem Motor des Fahrerautos: hat der Fahrer umgestellt, startet die Ghost-Stimme
     // mit dem neuen Modell neu (st.car wird von ghostStimmeStarten gesetzt).
-    if (st.car !== sampleEngine.car) { if (!ghostStimmeStarten(car)) return; }
-    else if (!st.nodes) { if (!ghostStimmeStarten(car)) return; }
+    // Neu starten nur, wenn sich das Modell wirklich aendert - nicht, weil das Fahrer-Sample
+    // gerade fehlt (dann blieb die alte Stimme vorher stehen oder brach ab).
+    const soll = ghostStimmeModell();
+    if (!st.nodes || (soll && st.car !== soll)) { if (!ghostStimmeStarten(car)) return; }
     const eng = car.ghost.engine;
     if (!eng || !eng.state) return;
     const load = Math.max(0, Math.min(1, eng.state.engineLoad || 0));

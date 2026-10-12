@@ -418,22 +418,27 @@
     // v0.9.57: der Spielerort wird im Herzschlag gesetzt, VOR der Physik - sonst laeuft der
     // Vorausblick einen Takt hinterher. Vorher sass das in einem eigenen setInterval in
     // 90-ghosts.js und konnte das Paket dieses Takts verpassen.
-    if (typeof spielerOrtTick === 'function') {
-      spielerOrtTick(playerCar);
-      if (typeof zusatzAktiv === 'function') {
-        for (const z of zusatzAktiv()) spielerOrtTick(z.car);
+    // v0.9.87: in try/finally. Eine Ausnahme im Spielerteil (Physik, Senden) liess sonst
+    // den ganzen Rest aus - die Ghosts bekamen keinen Takt und fuhren mit ihrem letzten
+    // Befehl weiter, auch neben der Bahn.
+    try {
+      if (typeof spielerOrtTick === 'function') {
+        spielerOrtTick(playerCar);
+        if (typeof zusatzAktiv === 'function') {
+          for (const z of zusatzAktiv()) spielerOrtTick(z.car);
+        }
       }
+      physicsStep();
+      pitLaneTick();
+      let steer = physicsEnabled ? physOutSteer : steerX;
+      let throttle = physicsEnabled ? physOutThrottle : throttleY;
+      if (driftModus) steer = driftGegenlenken(steer);
+      sendControlValue(steer, throttle);
+      spielerZweiSenden();
+    } finally {
+      // v0.9.57: die Ghost-Takte aus demselben Herzschlag, NACH dem Spielerpaket.
+      if (typeof ghostHerzschlag === 'function') ghostHerzschlag();
     }
-    physicsStep();
-    pitLaneTick();
-    let steer = physicsEnabled ? physOutSteer : steerX;
-    let throttle = physicsEnabled ? physOutThrottle : throttleY;
-    if (driftModus) steer = driftGegenlenken(steer);
-    sendControlValue(steer, throttle);
-    spielerZweiSenden();
-    // v0.9.57: die Ghost-Takte aus demselben Herzschlag, NACH dem Spielerpaket - so geht der
-    // Spielerbefehl immer zuerst, und die Ghosts stoeren den Spielertakt nicht mehr.
-    if (typeof ghostHerzschlag === 'function') ghostHerzschlag();
     // ERST SENDEN, DANN MALEN (v0.8.41): das Cockpit wird nach dem Absetzen gezeichnet und
     // gedrosselt - in der App zeichnet die WebView auf dem UI-Thread, und jede Malarbeit vor
     // dem Senden verzoegert dort die Bluetooth-Antworten (50-drive.js, cockpitNachSenden).
@@ -529,7 +534,8 @@
     // es fuer Auto 1 mit headlightsOn tut - defensiv gerufen, weil headlichtZwei() in
     // 70-race.js steht, einer SPAETEREN Datei; zur Laufzeit (dieser Takt laeuft erst nach
     // dem vollstaendigen Aufbau) ist sie da.
-    const kopflicht2 = headlichtVon(z, z.licht);
+    const kopflicht2 = headlichtVon(z, z.licht)
+      && !(typeof akkuBlinkAus === 'function' && akkuBlinkAus(z.car, Date.now()));
     writeToCar(z.car, steer, throttle,
                trackModeBit() | (kopflicht2 ? LIGHT_HEAD : 0)
                  | (z.outBrake ? LIGHT_BRAKE : 0),

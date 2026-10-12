@@ -1895,8 +1895,20 @@
      .vgl-aktionen buendelt beide und traegt das margin-top: auto, das vorher am
      Boxenstopp-Knopf selbst stand - so ruecken sie als Gruppe ans Ende der Spalte, statt
      dass der Motorklang-Knopf allein absackt. */
-  .vgl-aktionen { display: flex; flex-direction: column; gap: clamp(3px, .6vw, 7px);
-    margin-top: auto; }
+  /* v0.9.87: in EINER Zeile. GEMELDET: "bei 2 und 3 Spielern war der untere Button unsichtbar."
+     Drei Knoepfe untereinander machten die Spalte hoeher als den Schirm, und .gt3-schirm
+     schneidet ab (overflow: hidden) - der Motor-Knopf fiel unten heraus. */
+  .vgl-aktionen { display: flex; flex-direction: row; gap: clamp(3px, .6vw, 7px);
+    margin-top: auto; min-width: 0; }
+  .vgl-aktionen > .gt3-act { flex: 1 1 0; min-width: 0; padding-left: 2px; padding-right: 2px; }
+  .vgl-spalte { min-height: 0; }
+  /* v0.9.87 BESTELLT: "2/3-Spieler-Screen anpassen, sodass Rundenzeiten (zumindest die
+     letzte) gut sichtbar sind." Letzte und beste Runde je Spalte, gross. */
+  .vgl-zeiten { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(4px, .8vw, 10px); min-width: 0; }
+  .vgl-zeiten > div { display: flex; flex-direction: column; min-width: 0; }
+  .vgl-zeiten b { font: 700 clamp(18px, 3.6vw, 34px)/1.05 var(--mono, ui-monospace, monospace);
+    color: var(--gt3-tile-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .vgl-zeiten > div + div b { color: #c77dff; }
   .vgl-box { margin-top: 0; }
   .vgl-fuss { min-width: 0; }
   /* ---- EINE ZEILE, UND SIE MUSS ES AUCH BLEIBEN -----------------------------------
@@ -4452,7 +4464,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.9.86</span></span>
+        <span class="foot-ver">v<span id="app-version">0.10.3</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5022,6 +5034,8 @@
             <div class="vgl-tempo"><span class="gt3-val big" id="vgl1-speed"
                  data-i18n-skip>0</span><span class="vgl-einheit">km/h</span>
               <span class="vgl-gang" id="vgl1-gear" data-i18n-skip>N</span></div>
+            <div class="vgl-zeiten"><div><span class="vgl-einheit">Letzte</span><b id="vgl1-letzte" data-i18n-skip>&ndash;</b></div>
+              <div><span class="vgl-einheit">Beste</span><b id="vgl1-beste" data-i18n-skip>&ndash;</b></div></div>
             <div class="vgl-werte">
               <div class="gt3-box"><div class="gt3-lbl">Tank</div>
                 <div class="gt3-val sm" id="vgl1-fuel" data-i18n-skip>110 l</div>
@@ -5067,6 +5081,8 @@
             <div class="vgl-tempo"><span class="gt3-val big" id="vgl2-speed"
                  data-i18n-skip>0</span><span class="vgl-einheit">km/h</span>
               <span class="vgl-gang" id="vgl2-gear" data-i18n-skip>N</span></div>
+            <div class="vgl-zeiten"><div><span class="vgl-einheit">Letzte</span><b id="vgl2-letzte" data-i18n-skip>&ndash;</b></div>
+              <div><span class="vgl-einheit">Beste</span><b id="vgl2-beste" data-i18n-skip>&ndash;</b></div></div>
             <div class="vgl-werte">
               <div class="gt3-box"><div class="gt3-lbl">Tank</div>
                 <div class="gt3-val sm" id="vgl2-fuel" data-i18n-skip>110 l</div>
@@ -5107,6 +5123,8 @@
             <div class="vgl-tempo"><span class="gt3-val big" id="vgl3-speed"
                  data-i18n-skip>0</span><span class="vgl-einheit">km/h</span>
               <span class="vgl-gang" id="vgl3-gear" data-i18n-skip>N</span></div>
+            <div class="vgl-zeiten"><div><span class="vgl-einheit">Letzte</span><b id="vgl3-letzte" data-i18n-skip>&ndash;</b></div>
+              <div><span class="vgl-einheit">Beste</span><b id="vgl3-beste" data-i18n-skip>&ndash;</b></div></div>
             <div class="vgl-werte">
               <div class="gt3-box"><div class="gt3-lbl">Tank</div>
                 <div class="gt3-val sm" id="vgl3-fuel" data-i18n-skip>110 l</div>
@@ -5571,6 +5589,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>Fehler behoben (Pr&#252;fung der &#196;nderungen seit 0.9.56): Ghosts, die die Bahn verlassen, halten wieder an (Gerade 0,9 s, Kurve 1,2 s, Haarnadel 1,8 s, sofort wenn sie auf dem Teppich weiterz&#228;hlen). Nah nebeneinander bekommen zwei Ghosts immer gegens&#228;tzliche Seiten und behalten ihre Reihenfolge von links nach rechts, statt sich anzuschieben. Ghost-Motorsound spielt auch ohne Sample des eigenen Autos, und die Garage zeigt, ob er wirklich an ist. Automatisch aufstellen h&#228;lt erst nach dem Startteil am richtigen Platz und geht erst kurz davor ganz an den Rand. Ein Auto, das Ghost war, lenkt als gesteuertes Auto nicht mehr selbst. Das Boxen-Minispiel kommt wieder, wenn kein zweiter Spieler f&#228;hrt. Fliegender Start: Einf&#252;hrungsrunde mit Kurvendrosselung, Ende beim zweiten &#220;berfahren des ersten Autos. Akku: Wert gegl&#228;ttet, leer schon bei h&#246;herem Rohwert, Warnblinken nur noch mit den Lichtern (vorher kurz ohne Gas und Lenkung). Statistik: gespeicherte Strecken werden gez&#228;hlt, jedes Auto erscheint mit eigenen Kilometern, Spieler 2/3 z&#228;hlen mit, Kilometer nur mit verbundenem Auto, &#8222;Beste Runde&#8220; entfernt. 2/3-Spieler-Schirm: letzte und beste Runde gro&#223;, alle Kn&#246;pfe sichtbar.</li>
         <li>Community-Bestzeiten: Die 3er-Serie (bester Durchschnitt aus drei aufeinanderfolgenden Runden) gilt jetzt auch f&#252;r Community-Strecken. Daf&#252;r speichert die App die Rundenzeiten zu jedem Eintrag und l&#228;dt sie mit hoch; das Apps Script muss neu bereitgestellt werden, damit es die Rundenzeiten auch f&#252;r die Online-Zeiten &#252;bernimmt.</li>
         <li>Ghosts: Die &#220;berholrate ist jetzt eine echte Rate (Vorgabe 0,1 &#220;berholman&#246;ver je Runde je 4 Autos, bei 6 Autos und 10 Runden also 1 bis 2). Vorher &#228;nderte der Regler nur die Reichweite, und jede Ann&#228;herung wurde zum Angriff. Die Startreihen fahren gestaffelt ab Gr&#252;n los, 250 ms je Zweierreihe. Vorher z&#228;hlte die Staffel erst ab deiner ersten Bewegung und wirkte praktisch nicht.</li>
         <li>Gelbe Flagge auf der Bahn: Dein Auto f&#228;hrt jetzt im Tempo der Ghosts weiter und lenkt selbst. Die Tempogrenze lag unter dem Tempo, ab dem das Auto die Bahn liest, deshalb fiel es aus der Selbstf&#252;hrung und fuhr geradeaus. In Kurven und Haarnadeln drosselt es wie die Ghosts, und die Selbstf&#252;hrung greift auch direkt nach dem Hinstellen, bevor die Kachel verortet ist.</li>

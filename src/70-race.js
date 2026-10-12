@@ -43,7 +43,21 @@
   // leerfahren und den kleinsten je gemeldeten Rohwert festhalten. Bis dahin ist die
   // vorsichtigere Skala die richtige - eine Anzeige, die zu wenig verspricht, kostet
   // nichts, eine die zu viel verspricht kostet das Rennen.
-  const AKKU_LEER = 131, AKKU_VOLL = 155;
+  // v0.9.87: 138 statt 131. GEMELDET: "Autos blinken und verlieren die Verbindung, bevor
+  // der Akku als leer angezeigt wird." Der kleinste Rohwert je Auto wird mitgeschrieben
+  // (akkuMinRoh, Garage) - damit laesst sich die Zahl spaeter nachmessen.
+  const AKKU_LEER = 138, AKKU_VOLL = 155;
+  const AKKU_FENSTER_MS = 5000;
+  function akkuGlaetten(halter, roh, now) {
+    const h = halter.akkuHist || (halter.akkuHist = []);
+    h.push({ t: now, v: roh });
+    while (h.length && now - h[0].t > AKKU_FENSTER_MS) h.shift();
+    if (halter.akkuMinRoh === undefined || roh < halter.akkuMinRoh) halter.akkuMinRoh = roh;
+    let m = 0;
+    for (const e of h) if (e.v > m) m = e.v;
+    return m;
+  }
+  const dashAkkuHalter = {};
 
   function batteryPercent(raw) {
     return Math.max(0, Math.min(100,
@@ -586,12 +600,21 @@
   // zwei ankommt, IST der Erste. Eine Rangliste waere ein zweiter Ort fuer dieselbe Aussage.
   // Der Schluessel ist die Geraete-id, fuer das eigene Auto der feste String 'spieler'.
   let formationZaehler = new Map();
+  // v0.9.87 BESTELLT: "Fliegender Start: Ghosts und Spieler sollen wie bei gelber Flagge so
+  // lange fahren, bis das erste Auto ueber Start/Ziel zum 2. Mal faehrt." Das Feld steht vor
+  // der Linie: die erste Ueberfahrt ist die Startlinie, die zweite das Ende der Runde. Mit
+  // Sektoren meldet jede Sektorgrenze eine Ueberfahrt - eine Runde sind dann sektorZiel()
+  // Kontakte. Vorher endete die Runde mit Sektoren schon nach dem ersten Drittel.
+  function formationNoetig() {
+    const k = typeof sektorZiel === 'function' ? Math.max(1, sektorZiel()) : 1;
+    return 1 + k;
+  }
 
   function formationUeberfahrt(schluessel) {
     if (!raceFormationLap) return;
     const n = (formationZaehler.get(schluessel) || 0) + 1;
     formationZaehler.set(schluessel, n);
-    if (n < FORMATION_UEBERFAHRTEN) {
+    if (n < formationNoetig()) {
       // Ein Zwischenstand, kein Ereignis: die Meldung sagt, dass es noch eine Runde ist,
       // sonst haelt man die stille Vorbeifahrt fuer einen Fehler.
       showHudToast(t('Einführungsrunde: noch eine Runde'));
@@ -831,7 +854,7 @@
     // diesen Fix blieb c.race.laps beim Spieler auf 0 stehen, raceLimitReached() konnte nur
     // ueber einen GHOST ausloesen, und ein Rundenrennen ohne (oder mit zu langsamen) Ghosts
     // endete nie.
-    const out = garage.map(c => ({ name: garageLabel(c), role: c.role,
+    const out = garage.map(c => ({ name: garageLabel(c), role: c.role, id: String(c.device && c.device.id),
                                    farbe: carColor(c).hex, kennung: c.tag,
                                    // Der Ort auf der Schiene. Auto 2 geht ueber
                                    // ghostOrtGes(): es hat seit v0.6.46 einen eigenen
@@ -2521,7 +2544,7 @@
     }
     // dashBattery wird weiter gebraucht: die Akkukachel im Cockpit liest ihn. Die Zeile
     // darunter schrieb in #dash-battery, ein Element der entfernten alten Karte.
-    dashBattery = bytes[10];
+    dashBattery = akkuGlaetten(dashAkkuHalter, bytes[10], Date.now());
 
     // Byte 15 was read as "off track". The 2026-08-19 snoop logs disprove that: on a PRINTED
     // sheet it rises in the same packet as the start pattern. On the RAIL (logs 16.-21.08.)
@@ -2952,6 +2975,7 @@
     return Math.max(1500, Math.round(trackLaengeM(tiles) / 2.5 * 1000));
   }
   function raceStartZuruecksetzen(tankProzent) {
+    if (typeof distanceReset === 'function') distanceReset();   // Statistik: je Rennen neu
     damage = 0;
     lightDamage.front = false; lightDamage.rear = false;
     zusatzPlaetze().forEach((z) => {
@@ -2986,6 +3010,9 @@
       log('Startlinie ueberquert nach ' + (now - raceLapStart) + ' ms: das war keine Runde, die Uhr laeuft weiter.', 'info');
       return false;
     }
+    // Einfuehrungsrunde: JEDER Kontakt zaehlt, wie bei den Ghosts (formationNoetig rechnet
+    // die Sektoren ein). Vor dem Sektorfilter, damit beide dieselbe Zaehlweise haben.
+    if (raceFormationLap) { formationUeberfahrt('spieler'); return true; }
     // Sektoren zuerst: war das nur eine Sektorgrenze, ist die Runde nicht vorbei und alles
     // Weitere darf nicht laufen - weder die Rundenzeit noch der Ton noch das Rennende.
     if (!sectorCrossed(now)) return false;
@@ -3000,7 +3027,7 @@
 
     // Race mode: only count laps while a race is armed. "finishing" means RB/R1 was
     // pressed already — this crossing completes the last lap, then the race ends.
-    if (raceFormationLap) { formationUeberfahrt('spieler'); return true; }
+    // (Die Einfuehrungsrunde zaehlt seit v0.9.87 weiter oben, vor dem Sektorfilter.)
     if ((raceState === 'racing' || raceState === 'finishing') && raceLapStart !== null) {
       const wasFinishing = raceState === 'finishing';
       const rundeMs = now - raceLapStart + fruehstartZuschlag(1, raceLapTimes.length);
@@ -3874,7 +3901,10 @@
       pitSpiel = null;
       // BESTELLT: "2spielermodus: kein pitgame machen". Im Zwei-Spieler-Modus faehrt
       // jeder seine eigenen Stopps ohne Minispiel.
-      if (pitModus === 'minigame' && !zweiSpieler) pitSpielStart();
+      // v0.9.87: "kein zweiter Spieler aktiv" statt "Mehrspieler-Schalter aus". GEMELDET:
+      // "Pit-Minigame geht nicht mehr." Der Schalter bleibt gespeichert an, sobald einmal eine
+      // Spieler-2-Rolle vergeben war - danach gab es das Minispiel auch allein nicht mehr.
+      if (pitModus === 'minigame' && !(typeof zusatzAktiv === 'function' && zusatzAktiv().length)) pitSpielStart();
       // The plan was chosen while rolling down the pit lane; only now is it locked in.
       if (!pitPlan) pitPlan = makePitPlan();
       if (pitPlan.tyres) {
