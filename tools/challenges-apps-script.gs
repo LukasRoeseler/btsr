@@ -241,9 +241,48 @@ function communityGet() {
   return { ok: true, community: true, tracks: communityStrecken(), zeiten: zeiten };
 }
 
+// ---- STUDIE (v1.0) ----
+const S_BLATT = 'Studie';
+const S_KOPF = ['zeitpunkt', 'geraet', 'alter', 'geschlecht', 'volljaehrig', 'einwilligung', 'narq', 'bewunderung',
+  'rivalitaet', 'selbst', 'rt_ms', 'rt_median', 'fruehstarts', 'verpasst', 'quelle', 'controller', 'version', 'sprache'];
+function studiePost(d) {
+  if (!d.geraet) return { ok: false, fehler: 'keine Geräte-Kennung' };
+  const alter = Number(d.alter);
+  if (!(alter >= 18 && alter <= 99 && Math.round(alter) === alter)) return { ok: false, fehler: 'Alter unplausibel' };
+  if (['w', 'm', 'd', 'k'].indexOf(d.geschlecht) < 0) return { ok: false, fehler: 'Geschlecht unbekannt' };
+  if (d.volljaehrig !== true || d.einwilligung !== true) return { ok: false, fehler: 'ohne Einwilligung' };
+  const narq = Array.isArray(d.narq) ? d.narq.map(Number) : [];
+  if (narq.length !== 18 || narq.some((x) => !(x >= 1 && x <= 6 && Math.round(x) === x))) return { ok: false, fehler: 'NARQ unvollständig' };
+  const selbst = Number(d.selbst);
+  if (!(selbst >= 1 && selbst <= 7)) return { ok: false, fehler: 'Selbsteinschätzung fehlt' };
+  const rt = Array.isArray(d.rt_ms) ? d.rt_ms.map(Number) : [];
+  if (rt.length !== 10 || rt.some((x) => !(x >= 50 && x <= 3000))) return { ok: false, fehler: 'Reaktionszeiten unplausibel' };
+  const mw = (nr) => nr.reduce((a, i) => a + narq[i - 1], 0) / nr.length;
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    // Die Facettenwerte rechnet der Server selbst nach, statt sie dem Telefon zu glauben.
+    blattMit(S_BLATT, S_KOPF).appendRow([new Date(), String(d.geraet).slice(0, 40), alter, d.geschlecht, true, true,
+      JSON.stringify(narq), mw([1, 2, 3, 5, 7, 8, 15, 16, 18]), mw([4, 6, 9, 10, 11, 12, 13, 14, 17]), selbst,
+      JSON.stringify(rt), Number(d.rt_median) || '', Math.max(0, Number(d.fruehstarts) || 0), Math.max(0, Number(d.verpasst) || 0),
+      String(d.quelle || '').slice(0, 20), String(d.controller || '').slice(0, 80), String(d.version || '').slice(0, 20),
+      String(d.sprache || '').slice(0, 5)]);
+  } finally { lock.releaseLock(); }
+  return { ok: true };
+}
+
 function doPost(e) {
   let d;
   try { d = JSON.parse(e.postData.contents); } catch (err) { return antwort({ ok: false, fehler: 'kein JSON' }); }
+  // STUDIE (v1.0): eigenes Blatt, nur Schreiben. doGet liest dieses Blatt NIE - die Web-App ist
+  // oeffentlich, und hier stehen Alter, Geschlecht und Fragebogenantworten.
+  if (d && d.art === 'studie') {
+    const cache = CacheService.getScriptCache();
+    const cs = 's_' + String(d.geraet).slice(0, 40);
+    if (cache.get(cs)) return antwort({ ok: false, fehler: 'zu schnell hintereinander' });
+    cache.put(cs, '1', 60);
+    return antwort(studiePost(d));
+  }
   if (d && (d.art === 'community-strecke' || d.art === 'community-zeit')) {
     const cache = CacheService.getScriptCache();
     const cs = 'c_' + String(d.geraet).slice(0, 40);

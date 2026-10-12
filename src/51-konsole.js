@@ -960,6 +960,8 @@
     if (e.target && e.target.closest && e.target.closest('input[type="text"], input[type="number"], textarea, select')) return;
     // Der Meisterschaftsschirm hat seine eigene Tastatur (73-meisterschaft.js).
     if (typeof meisterOffen === 'function' && meisterOffen() && !kFrageOffen) return;
+    // Reaktionstest der Studie (98f-studie.js): jede Taste ist dort ein Druck.
+    if (typeof studieTestAktiv === 'function' && studieTestAktiv()) return;
     if (kAktiverTab() === 'home' && !e.ctrlKey && !e.altKey && !e.metaKey && k !== 'tab' && k !== 'shift') {
       e.preventDefault(); e.stopImmediatePropagation();
       // Tastatur wie am Pad: Enter, Leertaste oder X starten, T das Tutorial, S die Steuerung.

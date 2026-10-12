@@ -2918,6 +2918,22 @@
     overflow: hidden; text-overflow: ellipsis; }
   .gar-akku { white-space: nowrap; }
   #race-gridscreen button.pad-fokus { outline: 3px solid var(--k-blau, #3d8bff); outline-offset: 2px; }
+  /* ---- STUDIE (98f-studie.js) ---- */
+  .studie-text p { line-height: 1.45; margin: 4px 0 8px; }
+  .studie-text code, #studie-inhalt code { font-size: .9em; }
+  .studie-knoepfe { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .studie-frage { font-size: clamp(17px, 3vw, 24px); font-weight: 700; margin: 10px 0 14px; line-height: 1.3; }
+  .studie-skala { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+  .studie-skala.sieben { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .studie-skala button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 2px; min-height: 64px; }
+  .studie-skala button b { font-size: 1.4em; }
+  .studie-skala button small { font-size: 10px; line-height: 1.15; opacity: .8; text-align: center; }
+  .studie-rt { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 52vh;
+    background: #3b3f48; color: #fff; user-select: none; touch-action: manipulation; cursor: pointer; }
+  .studie-rt b { font-size: clamp(26px, 6vw, 56px); letter-spacing: .06em; }
+  .studie-rt[data-zustand="jetzt"] { background: #19c26b; }
+  .studie-rt[data-zustand="frueh"] { background: #b3263f; }
+  .studie-rt[data-zustand="gut"] { background: #1d4f8a; }
   /* ---- MEISTERSCHAFT (73-meisterschaft.js), nach mockup/meisterschaft.html ---- */
   .meister-schirm:not([hidden]) { position: fixed; inset: 0; z-index: 390; display: flex; flex-direction: column;
     background: #0c0e14 url(img/meisterschaft-bg.jpg) center/cover; color: #eef0f4;
@@ -4577,7 +4593,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.10</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.11</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5705,6 +5721,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Studie (experimentell, Optionen): freiwillige Teilnahme ab 18 mit Einwilligung, Alter und Geschlecht; 18 Aussagen des NARQ (Bewunderung und Rivalit&#228;t), Selbsteinsch&#228;tzung des Fahrk&#246;nnens und ein Reaktionstest mit dem Controller (10 Durchg&#228;nge, Fr&#252;hstarts z&#228;hlen). Gesendet wird erst am Ende, in ein eigenes, nicht &#246;ffentlich abrufbares Blatt; verkn&#252;pft &#252;ber die Ger&#228;tekennung. Der Reaktionstest l&#228;sst sich danach ohne Senden &#252;ben.</li>
         <li>Meisterschaft (experimentell, 8. Modus): Die Kachel unten links in FAHREN &#246;ffnet den Planer. Jede Zeile ist ein Event mit Strecke (aktuell im Editor, gespeicherte Strecke oder freie Bahn), Format (Training, Qualifying, Runden, Endurance), Umfang, Wetter, stehendem oder fliegendem Start, Startaufstellung und Pflichtstopps; darunter Fahrgef&#252;hl, Aufstellung des ersten Rennens, Punkteschema, Punkt f&#252;r die schnellste Runde und Teilnehmer. Nach jedem Event kommt der Zwischenstand mit der n&#228;chsten Startaufstellung, pausieren und sp&#228;ter fortsetzen geht. Im WLAN-Mehrspieler leitet das planende Telefon: jedes Event startet f&#252;r alle, die anderen sehen Event und Stand auf dem Bereitschaftsschirm. Safety Car: unter Gelb &#252;bernimmt der Autopilot sofort, alle fahren etwa 35 %, niemand &#252;berholt. Pflichtstopps bis 3.</li>
         <li>Safety Car (experimentell): In der Garage gibt es neben &#8222;Ghost&#8220; die Rolle &#8222;Safety Car&#8220; (eines je Rennen). Es parkt am Rand, f&#228;hrt bei gelber Flagge los und blinkt alle 750 ms kurz auf. Die anderen Autos fahren unter Gelb normal weiter, bis sie bis auf zwei Kacheln aufgeschlossen haben, dann 35 % (dein Auto &#252;bernimmt dann der Autopilot). Ghosts &#252;berholen das Safety Car nie. Nach Gr&#252;n f&#228;hrt es bis Start/Ziel und h&#228;lt dort rechts am Rand. Es z&#228;hlt keine Runden und steht nicht im Ergebnis.</li>
       </ul>
@@ -9003,6 +9020,12 @@
           <b>Statistiken</b>
           <span>Kilometer, Sitzungen, Fahrzeit, Rennen, Siege, Medaillen und das Ranking deiner Autos.</span>
         </button>
+        <button class="misc-tile subpage-open" data-sub="opt-studie">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6h12M20 6v12L9 38a3 3 0 0 0 3 4h24a3 3 0 0 0 3-4L28 18V6"/><path d="M14 30h20" stroke="var(--bad)"/></svg>
+          <b>Studie <span class="wip-tag">experimentell</span></b>
+          <span>Persönlichkeit, Reaktionszeit und Fahrkönnen. Freiwillig, etwa 5 Minuten, ab 18.</span>
+        </button>
       </div>
       <!-- INFO OHNE EIGENE EBENE (v0.8.35). BESTELLT: "Die Kacheln aus INFO alles einzeln
            auflisten, aber extra gruppiert mit Zwischenueberschrift, um klar zu unterscheiden
@@ -10994,6 +11017,13 @@
       <h2>Statistiken</h2>
       <div id="stat-inhalt"></div>
     </div>
+    <!-- STUDIE (98f-studie.js): Einwilligung, NARQ, Selbsteinschaetzung, Reaktionstest. Der Inhalt
+         entsteht im Code und wird dort mit t() uebersetzt. -->
+    <div class="card subpage" id="sub-opt-studie">
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
+      <h2>Studie <span class="wip-tag">experimentell</span></h2>
+      <div id="studie-inhalt" data-i18n-skip></div>
+    </div>
 
     <div class="card subpage" id="sub-opt-zwei">
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
@@ -12588,6 +12618,77 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "18 Aussagen zur Persönlichkeit bewerten, eine Frage zu deinem Fahrkönnen beantworten und einen Reaktionstest mit dem Controller machen (10 Durchgänge). Dauer etwa 5 Minuten.": "Rate 18 statements about personality, answer one question about your driving skill and do a reaction test with the controller (10 trials). About 5 minutes.",
+    "Alter zwischen 18 und 99 eintragen.": "Enter an age between 18 and 99.",
+    "Alter": "Age",
+    "Alter, Geschlecht, deine Antworten, die Reaktionszeiten, der Name des Controllers, die App-Version und die zufällige Gerätekennung dieser App. Über die Gerätekennung werden die Antworten mit deinen hochgeladenen Challenge-Zeiten verknüpft (dort steht dein Fahrername, falls du einen eingetragen hast). Dein Klarname wird nicht abgefragt.": "Age, gender, your answers, the reaction times, the controller name, the app version and the random device ID of this app. The device ID links your answers to your uploaded challenge times (which contain your driver name if you entered one). Your real name is not asked for.",
+    "Aussage": "Statement",
+    "Bitte bestätigen, dass du mindestens 18 bist.": "Please confirm that you are at least 18.",
+    "Controller erkannt": "Controller detected",
+    "Danke für deine Teilnahme!": "Thank you for taking part!",
+    "Danke, du hast teilgenommen am": "Thank you, you took part on",
+    "Deine Gerätekennung": "Your device ID",
+    "Deine Reaktionszeit (Median)": "Your reaction time (median)",
+    "Die Daten sind noch nicht angekommen; sie werden beim nächsten Öffnen erneut gesendet.": "The data has not arrived yet; it will be sent again next time you open this page.",
+    "Du kannst jederzeit abbrechen. Vor dem letzten Schritt wird nichts gesendet. Mit deiner Gerätekennung kannst du später die Löschung verlangen.": "You can stop at any time. Nothing is sent before the last step. With your device ID you can request deletion later.",
+    "Freiwillig": "Voluntary",
+    "Frühstarts": "False starts",
+    "Geschlecht wählen (auch „keine Angabe“ geht).": "Choose a gender (“prefer not to say” is fine).",
+    "Geschlecht": "Gender",
+    "Gleich wird das Feld unten grün. Drück dann so schnell du kannst eine Taste am Controller. Drückst du vorher, zählt das als Frühstart und der Durchgang wird wiederholt.": "The field below will turn green. Then press a controller button as fast as you can. If you press earlier, it counts as a false start and the trial is repeated.",
+    "Hängen Persönlichkeit, Reaktionszeit und die eigene Einschätzung mit den Rundenzeiten in OmegaSim zusammen?": "Are personality, reaction time and self-assessment related to lap times in OmegaSim?",
+    "Ich bin mindestens 18 Jahre alt.": "I am at least 18 years old.",
+    "Ich habe den Text gelesen und willige ein.": "I have read the text and consent.",
+    "In einer Tabelle des Projekts, die nicht öffentlich abrufbar ist. Ausgewertet wird nur für Forschung; veröffentlicht werden nur zusammengefasste Ergebnisse.": "In a project spreadsheet that is not publicly readable. It is analysed for research only; only aggregated results are published.",
+    "JETZT!": "NOW!",
+    "Kein Controller erkannt. Drück eine Taste am Controller, damit er erscheint; ohne Controller zählt Tippen auf das Feld.": "No controller detected. Press a controller button so it appears; without a controller, tapping the field counts.",
+    "Keine Adresse für den Upload eingestellt; die Daten bleiben auf dem Gerät.": "No upload address set; the data stays on the device.",
+    "Kontakt": "Contact",
+    "Ohne Einwilligung geht es nicht weiter.": "You cannot continue without consent.",
+    "Reaktionstest starten": "Start reaction test",
+    "Reaktionstest üben (wird nicht gesendet)": "Practise the reaction test (not sent)",
+    "Senden fehlgeschlagen, wird beim nächsten Öffnen erneut versucht": "Sending failed, it will be retried next time you open this page",
+    "Warte …": "Wait …",
+    "Was du tust": "What you do",
+    "Was gespeichert wird": "What is stored",
+    "Wie gut fährst du Carrera Hybrid, verglichen mit anderen?": "How well do you drive Carrera Hybrid compared to others?",
+    "Wie sehr trifft das auf dich zu?": "How much does this apply to you?",
+    "Wird gesendet …": "Sending …",
+    "Wo": "Where",
+    "Worum es geht": "What it is about",
+    "Zu früh! Der Durchgang wird wiederholt.": "Too early! The trial is repeated.",
+    "Zu langsam, nochmal.": "Too slow, again.",
+    "durchschnittlich": "average",
+    "folgt": "to follow",
+    "viel besser": "much better",
+    "viel schlechter": "much worse",
+    "Übung beendet.": "Practice finished.",
+    "trifft gar nicht zu": "do not agree at all",
+    "trifft voll und ganz zu": "agree completely",
+    "weiblich": "female",
+    "männlich": "male",
+    "divers": "diverse",
+    "keine Angabe": "prefer not to say",
+    "Studie": "Study",
+    "Persönlichkeit, Reaktionszeit und Fahrkönnen. Freiwillig, etwa 5 Minuten, ab 18.": "Personality, reaction time and driving skill. Voluntary, about 5 minutes, 18+.",
+    "Ich bin großartig.": "I am great.",
+    "Ich werde einmal berühmt sein.": "I will someday be famous.",
+    "Ich zeige anderen gern, wie besonders ich bin.": "I show others how special I am.",
+    "Ich reagiere genervt, wenn mir jemand anderes die Show stiehlt.": "I react annoyed if another person steals the show from me.",
+    "Ich genieße meine Erfolge sehr.": "I enjoy my successes very much.",
+    "Ich freue mich heimlich über Misserfolge meiner Rivalen.": "I secretly take pleasure in the failure of my rivals.",
+    "Meistens gelingt es mir, in Gesprächen die Aufmerksamkeit auf mich zu ziehen.": "Most of the time I am able to draw people's attention to myself in conversations.",
+    "Ich verdiene es, als große Persönlichkeit angesehen zu werden.": "I deserve to be seen as a great personality.",
+    "Ich will, dass meine Rivalen scheitern.": "I want my rivals to fail.",
+    "Ich genieße es, wenn andere mir unterlegen sind.": "I enjoy it when another person is inferior to me.",
+    "Ich ärgere mich häufig, wenn ich kritisiert werde.": "I often get annoyed when I am criticized.",
+    "Ich kann es kaum ertragen, wenn eine andere Person im Mittelpunkt steht.": "I can barely stand it if another person is at the center of events.",
+    "Die meisten Menschen werden nichts Großes erreichen.": "Most people won't achieve anything.",
+    "Andere Menschen sind nichts wert.": "Other people are worth nothing.",
+    "Etwas ganz Besonderes zu sein, gibt mir viel Kraft.": "Being a very special person gives me a lot of strength.",
+    "Mit meinen besonderen Beiträgen schaffe ich es, im Mittelpunkt zu stehen.": "I manage to be the center of attention with my outstanding contributions.",
+    "Die meisten Menschen sind irgendwie Versager.": "Most people are somehow losers.",
+    "Meistens gehe ich sehr geschickt mit anderen Menschen um.": "Mostly, I am very adept at dealing with other people.",
     "+ Event hinzufügen": "+ Add event",
     "Aktuell im Editor": "Current in editor",
     "Alle verbundenen Autos: Spieler 1–3, Ghosts und im Mehrspieler die anderen Telefone werden gewertet. Nur Spieler: Ghosts fahren als Verkehr mit, bekommen aber keine Punkte. Das Safety Car fährt nie in der Wertung.": "All connected cars: players 1–3, ghosts and, in multiplayer, the other phones are scored. Players only: ghosts drive along as traffic but get no points. The safety car is never scored.",
@@ -13247,6 +13348,7 @@
     "Neuer Modus „Bestzeit“ (experimentell): Bestzeit auf deiner eigenen Strecke mit Medaillen nach der Gold-Formel. Geht nur auf der Bahn mit eingescannter Strecke (sonst ein Hinweis wie bei NPC Knockout), es fahren nur gesteuerte Autos, Ghosts bleiben stehen. Zeiten und Medaillen werden je Strecke gespeichert (gespiegelt zählt als dieselbe): Wer die Strecke wieder aufbaut, hat seine alten Zeiten. Die FAHREN-Kachel zeigt die Bestzeit, die Statistik zählt die Medaillen mit. Gold-Formel neu kalibriert: Balkonia 16 s und Omega Testing Track 2 7,2 s, alle anderen Strecken dazwischen und darüber.": "New mode “Best time” (experimental): best lap on your own track with medals by the gold formula. Only on the track with a scanned layout (otherwise a notice like NPC Knockout), only controlled cars drive, ghosts stay put. Times and medals are stored per track (mirrored counts as the same): rebuild the track and your old times are back. The DRIVE tile shows the best time, the statistics count the medals. Gold formula recalibrated: Balkonia 16 s and Omega Testing Track 2 7.2 s, all other tracks in between and beyond.",
     "Safety Car (experimentell): In der Garage gibt es neben „Ghost“ die Rolle „Safety Car“ (eines je Rennen). Es parkt am Rand, fährt bei gelber Flagge los und blinkt alle 750 ms kurz auf. Die anderen Autos fahren unter Gelb normal weiter, bis sie bis auf zwei Kacheln aufgeschlossen haben, dann 35 % (dein Auto übernimmt dann der Autopilot). Ghosts überholen das Safety Car nie. Nach Grün fährt es bis Start/Ziel und hält dort rechts am Rand. Es zählt keine Runden und steht nicht im Ergebnis.": "Safety car (experimental): next to “Ghost” the garage now has the role “Safety car” (one per race). It parks at the edge, drives off when the yellow flag comes out and flashes briefly every 750 ms. The other cars keep racing under yellow until they are within two tiles of it, then 35 % (your car is taken over by the autopilot). Ghosts never overtake the safety car. After green it drives to start/finish and stops at the right edge. It counts no laps and is not in the results.",
     "Meisterschaft (experimentell, 8. Modus): Die Kachel unten links in FAHREN öffnet den Planer. Jede Zeile ist ein Event mit Strecke (aktuell im Editor, gespeicherte Strecke oder freie Bahn), Format (Training, Qualifying, Runden, Endurance), Umfang, Wetter, stehendem oder fliegendem Start, Startaufstellung und Pflichtstopps; darunter Fahrgefühl, Aufstellung des ersten Rennens, Punkteschema, Punkt für die schnellste Runde und Teilnehmer. Nach jedem Event kommt der Zwischenstand mit der nächsten Startaufstellung, pausieren und später fortsetzen geht. Im WLAN-Mehrspieler leitet das planende Telefon: jedes Event startet für alle, die anderen sehen Event und Stand auf dem Bereitschaftsschirm. Safety Car: unter Gelb übernimmt der Autopilot sofort, alle fahren etwa 35 %, niemand überholt. Pflichtstopps bis 3.": "Championship (experimental, 8th mode): the tile at the bottom left of DRIVE opens the planner. Every row is an event with track (current in editor, saved track or free track), format (practice, qualifying, laps, endurance), length, weather, standing or flying start, starting grid and mandatory stops; below it driving feel, grid for the first race, points system, point for the fastest lap and participants. After every event the standings appear with the next grid; you can pause and continue later. In Wi-Fi multiplayer the planning phone leads: every event starts for everyone, the others see event and standings on the ready screen. Safety car: under yellow the autopilot takes over at once, everyone drives at about 35 %, nobody overtakes. Mandatory stops up to 3.",
+    "Studie (experimentell, Optionen): freiwillige Teilnahme ab 18 mit Einwilligung, Alter und Geschlecht; 18 Aussagen des NARQ (Bewunderung und Rivalität), Selbsteinschätzung des Fahrkönnens und ein Reaktionstest mit dem Controller (10 Durchgänge, Frühstarts zählen). Gesendet wird erst am Ende, in ein eigenes, nicht öffentlich abrufbares Blatt; verknüpft über die Gerätekennung. Der Reaktionstest lässt sich danach ohne Senden üben.": "Study (experimental, Options): voluntary participation from 18 with consent, age and gender; the 18 NARQ statements (admiration and rivalry), a self-rating of driving skill and a reaction test with the controller (10 trials, false starts are counted). Data is only sent at the end, to a separate sheet that is not publicly readable; linked via the device ID. Afterwards the reaction test can be practised without sending.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -16465,6 +16567,7 @@
       zweiSpielerKachelZeichnen();
     }
     if (key === 'opt-stats' && typeof statZeichnen === 'function') statZeichnen();
+    if (key === 'opt-studie' && typeof studieZeichnen === 'function') studieZeichnen();
     // Challenges: der gemeinsame Inhalt wird in die geoeffnete Seite gehaengt (72-challenges.js).
     if (key && key.indexOf('ch-') === 0 && typeof challengeSeiteZeigen === 'function') challengeSeiteZeigen(key.slice(3));
     window.scrollTo(0, 0);
@@ -25759,6 +25862,8 @@
     if (e.target && e.target.closest && e.target.closest('input[type="text"], input[type="number"], textarea, select')) return;
     // Der Meisterschaftsschirm hat seine eigene Tastatur (73-meisterschaft.js).
     if (typeof meisterOffen === 'function' && meisterOffen() && !kFrageOffen) return;
+    // Reaktionstest der Studie (98f-studie.js): jede Taste ist dort ein Druck.
+    if (typeof studieTestAktiv === 'function' && studieTestAktiv()) return;
     if (kAktiverTab() === 'home' && !e.ctrlKey && !e.altKey && !e.metaKey && k !== 'tab' && k !== 'shift') {
       e.preventDefault(); e.stopImmediatePropagation();
       // Tastatur wie am Pad: Enter, Leertaste oder X starten, T das Tutorial, S die Steuerung.
@@ -54592,6 +54697,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     } else gridPadVorher = false;
     // Meisterschaft offen: Steuerkreuz und Tasten gehoeren ihrem Schirm (73-meisterschaft.js).
     if (typeof meisterPad === 'function' && meisterPad(pad)) return;
+    // Reaktionstest der Studie: das Pad gehoert dem Test (er fragt es selbst ab).
+    if (typeof studieTestAktiv === 'function' && studieTestAktiv()) return;
     // TITELBILDSCHIRM (ACC-Menue): jede Taste fuehrt ins Hauptmenue, links/rechts wechselt die
     // Sprache. Solange danach noch eine Taste gehalten wird, tut dieser Takt nichts weiter -
     // sonst oeffnete dasselbe gehaltene Kreuz im Hauptmenue gleich die naechste Kachel.
@@ -83867,6 +83974,19 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eine Rolle, Hindernis, nicht im Ergebnis, Gelb sofort ~35 %' };
   });
 
+  // ---- v1.0: Studie (98f-studie.js) ----
+  stAdd('Studie: NARQ-Facetten nach Back et al. (2013), Median der Reaktionszeiten', () => {
+    const f = [];
+    const a = new Array(18).fill(1);
+    [1, 2, 3, 5, 7, 8, 15, 16, 18].forEach((i) => { a[i - 1] = 6; });
+    const w = narqWerte(a);
+    if (w.bewunderung !== 6 || w.rivalitaet !== 1) f.push('Facetten vertauscht: ' + JSON.stringify(w));
+    if (narqWerte(a.slice(0, 17)).bewunderung !== null) f.push('unvollstaendig ergibt einen Wert');
+    if (NARQ_ADM.concat(NARQ_RIV).sort((x, y) => x - y).join() !== Array.from({ length: 18 }, (_, i) => i + 1).join()) f.push('Items nicht genau einmal verteilt');
+    if (rtMedian([300, 200, 250]) !== 250 || rtMedian([200, 300]) !== 250) f.push('Median falsch');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '9 Bewunderung / 9 Rivalitaet, Median ok' };
+  });
+
   // ---- v1.0: Meisterschaft (73-meisterschaft.js) ----
   stAdd('Meisterschaft: Wertung, Punkte, schnellste Runde, Gleichstand', () => {
     const f = [];
@@ -88047,6 +88167,315 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     html += '<p class="muted stat-fuss">' + esc(t('Gespeichert werden die letzten 200 Sitzungen; die Kilometer und Runden je Auto zählen ohne Grenze. Die Höchstgeschwindigkeit zeichnet die App nicht auf. Ghosts werden die Strecke des Fahrerautos gutgeschrieben.')) + '</p>';
     host.innerHTML = html;
   }
+  // ============================== STUDIE (v1.0, experimentell) ==============================
+  //
+  // BESTELLT: Persoenlichkeitstest (NARQ, Narzissmus) plus Selbsteinschaetzung des CH-Fahrkoennens
+  // und ein Reaktionszeittest mit dem Gamepad, in den Optionen. Alter, Geschlecht und die
+  // Bestaetigung 18+ sind Pflicht. Die Ergebnisse gehen in ein eigenes Blatt "Studie" im Sheet
+  // der Challenges ("Ja, eigenes Blatt"), verknuepft ueber die Geraetekennung, nie per GET
+  // lesbar, mit Einwilligungstext.
+  //
+  // NARQ: Back, Kuefner, Dufner, Gerlach, Rauthmann & Denissen (2013), JPSP 105(6), 1013-1037.
+  // 18 Aussagen, 6-stufig (1 = trifft gar nicht zu ... 6 = trifft voll und ganz zu).
+  // Bewunderung (Admiration): Items 1, 2, 3, 5, 7, 8, 15, 16, 18; Rivalitaet: 4, 6, 9, 10, 11, 12,
+  // 13, 14, 17. Werte = Mittelwerte. DER DEUTSCHE WORTLAUT IST AUS DEM GEDAECHTNIS NOTIERT und
+  // muss vor dem Einsatz gegen das Original geprueft werden.
+  //
+  // NICHTS WIRD VOR DEM LETZTEN SCHRITT GESENDET. Abbrechen heisst: nichts ist passiert.
+  const STUDIE_STORE = 'omegasim-studie';
+  // Kontakt fuer Rueckfragen und Loeschwuensche (Einwilligungstext). Leer = Hinweis "folgt".
+  const STUDIE_KONTAKT = '';
+  const NARQ_ITEMS = [
+    'Ich bin großartig.',
+    'Ich werde einmal berühmt sein.',
+    'Ich zeige anderen gern, wie besonders ich bin.',
+    'Ich reagiere genervt, wenn mir jemand anderes die Show stiehlt.',
+    'Ich genieße meine Erfolge sehr.',
+    'Ich freue mich heimlich über Misserfolge meiner Rivalen.',
+    'Meistens gelingt es mir, in Gesprächen die Aufmerksamkeit auf mich zu ziehen.',
+    'Ich verdiene es, als große Persönlichkeit angesehen zu werden.',
+    'Ich will, dass meine Rivalen scheitern.',
+    'Ich genieße es, wenn andere mir unterlegen sind.',
+    'Ich ärgere mich häufig, wenn ich kritisiert werde.',
+    'Ich kann es kaum ertragen, wenn eine andere Person im Mittelpunkt steht.',
+    'Die meisten Menschen werden nichts Großes erreichen.',
+    'Andere Menschen sind nichts wert.',
+    'Etwas ganz Besonderes zu sein, gibt mir viel Kraft.',
+    'Mit meinen besonderen Beiträgen schaffe ich es, im Mittelpunkt zu stehen.',
+    'Die meisten Menschen sind irgendwie Versager.',
+    'Meistens gehe ich sehr geschickt mit anderen Menschen um.',
+  ];
+  const NARQ_ADM = [1, 2, 3, 5, 7, 8, 15, 16, 18], NARQ_RIV = [4, 6, 9, 10, 11, 12, 13, 14, 17];
+  const NARQ_SKALA = ['trifft gar nicht zu', '', '', '', '', 'trifft voll und ganz zu'];
+  const STUDIE_GESCHLECHT = [['w', 'weiblich'], ['m', 'männlich'], ['d', 'divers'], ['k', 'keine Angabe']];
+  const RT_DURCHGAENGE = 10, RT_MIN_WARTE = 1500, RT_MAX_WARTE = 4000, RT_FRUEH_MS = 100, RT_FENSTER_MS = 2000;
+
+  // Rein, fuer den Selbsttest: Mittelwerte der beiden Facetten (null, wenn etwas fehlt).
+  function narqWerte(antworten) {
+    const mw = (nr) => {
+      const v = nr.map((i) => antworten[i - 1]);
+      return v.every((x) => x >= 1 && x <= 6) ? Math.round(v.reduce((a, b) => a + b, 0) / v.length * 1000) / 1000 : null;
+    };
+    return { bewunderung: mw(NARQ_ADM), rivalitaet: mw(NARQ_RIV) };
+  }
+  function rtMedian(liste) {
+    if (!liste.length) return null;
+    const s = liste.slice().sort((a, b) => a - b), m = s.length >> 1;
+    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+  }
+
+  function studieLesen() {
+    try { return JSON.parse(localStorage.getItem(STUDIE_STORE) || 'null') || {}; } catch (e) { return {}; }
+  }
+  function studieSchreiben(d) { try { localStorage.setItem(STUDIE_STORE, JSON.stringify(d)); } catch (e) { /* privat */ } }
+
+  // Laufender Durchgang (nur im Speicher, bis gesendet wird).
+  let st = null;
+  function studieNeu() {
+    return { schritt: 'start', alter: '', geschlecht: '', volljaehrig: false, einwilligung: false,
+             narq: new Array(NARQ_ITEMS.length).fill(0), item: 0, selbst: 0, rt: [], frueh: 0, verpasst: 0,
+             quelle: '', controller: '', nurUeben: false };
+  }
+  function stEsc(s) { return String(s === undefined || s === null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }
+
+  function studieZeichnen() {
+    const host = $('studie-inhalt');
+    if (!host) return;
+    if (!st) st = studieNeu();
+    const d = studieLesen();
+    if (d.ausstehend && st.schritt === 'start') studieSenden(d.ausstehend, true);
+    let h = '';
+    if (st.schritt === 'start' && d.gesendet && !st.nochmal) {
+      h += '<p>' + stEsc(t('Danke, du hast teilgenommen am')) + ' ' + stEsc(new Date(d.gesendet).toLocaleDateString()) + '.</p>'
+        + (d.ausstehend ? '<p class="muted">' + stEsc(t('Die Daten sind noch nicht angekommen; sie werden beim nächsten Öffnen erneut gesendet.')) + '</p>' : '')
+        + '<p class="muted">' + stEsc(t('Deine Gerätekennung')) + ': <code>' + stEsc(chGeraet()) + '</code></p>'
+        + '<div class="studie-knoepfe"><button type="button" class="primary" data-st="ueben">' + stEsc(t('Reaktionstest üben (wird nicht gesendet)')) + '</button></div>';
+    } else if (st.schritt === 'start') {
+      h += '<div class="studie-text">'
+        + '<p><b>' + stEsc(t('Worum es geht')) + ':</b> ' + stEsc(t('Hängen Persönlichkeit, Reaktionszeit und die eigene Einschätzung mit den Rundenzeiten in OmegaSim zusammen?')) + '</p>'
+        + '<p><b>' + stEsc(t('Was du tust')) + ':</b> ' + stEsc(t('18 Aussagen zur Persönlichkeit bewerten, eine Frage zu deinem Fahrkönnen beantworten und einen Reaktionstest mit dem Controller machen (10 Durchgänge). Dauer etwa 5 Minuten.')) + '</p>'
+        + '<p><b>' + stEsc(t('Was gespeichert wird')) + ':</b> ' + stEsc(t('Alter, Geschlecht, deine Antworten, die Reaktionszeiten, der Name des Controllers, die App-Version und die zufällige Gerätekennung dieser App. Über die Gerätekennung werden die Antworten mit deinen hochgeladenen Challenge-Zeiten verknüpft (dort steht dein Fahrername, falls du einen eingetragen hast). Dein Klarname wird nicht abgefragt.')) + '</p>'
+        + '<p><b>' + stEsc(t('Wo')) + ':</b> ' + stEsc(t('In einer Tabelle des Projekts, die nicht öffentlich abrufbar ist. Ausgewertet wird nur für Forschung; veröffentlicht werden nur zusammengefasste Ergebnisse.')) + '</p>'
+        + '<p><b>' + stEsc(t('Freiwillig')) + ':</b> ' + stEsc(t('Du kannst jederzeit abbrechen. Vor dem letzten Schritt wird nichts gesendet. Mit deiner Gerätekennung kannst du später die Löschung verlangen.')) + ' <code>' + stEsc(chGeraet()) + '</code></p>'
+        + '<p><b>' + stEsc(t('Kontakt')) + ':</b> ' + stEsc(STUDIE_KONTAKT || t('folgt')) + '</p></div>'
+        + '<div class="opt-row"><div class="opt-label">' + stEsc(t('Alter')) + '</div><input type="number" id="st-alter" min="18" max="99" step="1" style="width:84px" value="' + stEsc(st.alter) + '"></div>'
+        + '<div class="opt-row"><div class="opt-label">' + stEsc(t('Geschlecht')) + '</div><select id="st-geschlecht"><option value="">–</option>'
+        + STUDIE_GESCHLECHT.map((g) => '<option value="' + g[0] + '"' + (st.geschlecht === g[0] ? ' selected' : '') + '>' + stEsc(t(g[1])) + '</option>').join('') + '</select></div>'
+        + '<div class="opt-row"><div class="opt-label">' + stEsc(t('Ich bin mindestens 18 Jahre alt.')) + '</div><label class="tgl"><input type="checkbox" id="st-18"' + (st.volljaehrig ? ' checked' : '') + '></label></div>'
+        + '<div class="opt-row"><div class="opt-label">' + stEsc(t('Ich habe den Text gelesen und willige ein.')) + '</div><label class="tgl"><input type="checkbox" id="st-ok"' + (st.einwilligung ? ' checked' : '') + '></label></div>'
+        + '<p class="muted" id="st-hinweis"></p>'
+        + '<div class="studie-knoepfe"><button type="button" class="primary" data-st="weiter" id="st-weiter">' + stEsc(t('Weiter')) + '</button></div>';
+    } else if (st.schritt === 'narq') {
+      const i = st.item;
+      h += '<p class="muted">' + stEsc(t('Aussage')) + ' ' + (i + 1) + ' / ' + NARQ_ITEMS.length + ' · ' + stEsc(t('Wie sehr trifft das auf dich zu?')) + '</p>'
+        + '<div class="studie-frage">' + stEsc(t(NARQ_ITEMS[i])) + '</div>'
+        + '<div class="studie-skala">' + [1, 2, 3, 4, 5, 6].map((v) => '<button type="button" data-st="narq" data-v="' + v + '"' + (st.narq[i] === v ? ' class="primary"' : '') + '><b>' + v + '</b>'
+          + (NARQ_SKALA[v - 1] ? '<small>' + stEsc(t(NARQ_SKALA[v - 1])) + '</small>' : '') + '</button>').join('') + '</div>'
+        + '<div class="studie-knoepfe"><button type="button" data-st="zurueck">' + stEsc(t('Zurück')) + '</button><button type="button" class="warn" data-st="abbrechen">' + stEsc(t('Abbrechen')) + '</button></div>';
+    } else if (st.schritt === 'selbst') {
+      h += '<div class="studie-frage">' + stEsc(t('Wie gut fährst du Carrera Hybrid, verglichen mit anderen?')) + '</div>'
+        + '<div class="studie-skala sieben">' + [1, 2, 3, 4, 5, 6, 7].map((v) => '<button type="button" data-st="selbst" data-v="' + v + '"' + (st.selbst === v ? ' class="primary"' : '') + '><b>' + v + '</b>'
+          + (v === 1 ? '<small>' + stEsc(t('viel schlechter')) + '</small>' : v === 4 ? '<small>' + stEsc(t('durchschnittlich')) + '</small>' : v === 7 ? '<small>' + stEsc(t('viel besser')) + '</small>' : '') + '</button>').join('') + '</div>'
+        + '<div class="studie-knoepfe"><button type="button" data-st="zurueck">' + stEsc(t('Zurück')) + '</button><button type="button" class="warn" data-st="abbrechen">' + stEsc(t('Abbrechen')) + '</button></div>';
+    } else if (st.schritt === 'rt-info') {
+      const pad = studiePadFinden();
+      h += '<div class="studie-text"><p>' + stEsc(t('Gleich wird das Feld unten grün. Drück dann so schnell du kannst eine Taste am Controller. Drückst du vorher, zählt das als Frühstart und der Durchgang wird wiederholt.')) + '</p>'
+        + '<p class="muted">' + (pad ? stEsc(t('Controller erkannt')) + ': ' + stEsc(pad.id) : stEsc(t('Kein Controller erkannt. Drück eine Taste am Controller, damit er erscheint; ohne Controller zählt Tippen auf das Feld.'))) + '</p></div>'
+        + '<div class="studie-knoepfe"><button type="button" class="primary" data-st="rt-los">' + stEsc(t('Reaktionstest starten')) + '</button>'
+        + (st.nurUeben ? '' : '<button type="button" class="warn" data-st="abbrechen">' + stEsc(t('Abbrechen')) + '</button>') + '</div>';
+    } else if (st.schritt === 'rt') {
+      h += '<div class="studie-rt" id="st-rt-feld" data-zustand="warte"><b id="st-rt-text">' + stEsc(t('Warte …')) + '</b>'
+        + '<small id="st-rt-stand">' + st.rt.length + ' / ' + RT_DURCHGAENGE + '</small></div>';
+    } else if (st.schritt === 'senden') {
+      h += '<p>' + stEsc(t('Wird gesendet …')) + '</p>';
+    } else if (st.schritt === 'danke') {
+      const med = rtMedian(st.rt);
+      h += '<p><b>' + stEsc(st.nurUeben ? t('Übung beendet.') : t('Danke für deine Teilnahme!')) + '</b></p>'
+        + '<p>' + stEsc(t('Deine Reaktionszeit (Median)')) + ': <b>' + (med ? Math.round(med) + ' ms' : '–') + '</b> · '
+        + stEsc(t('Frühstarts')) + ': ' + st.frueh + '</p>'
+        + (st.fehler ? '<p class="muted">' + stEsc(st.fehler) + '</p>' : '')
+        + '<div class="studie-knoepfe"><button type="button" class="primary" data-st="fertig">' + stEsc(t('Fertig')) + '</button></div>';
+    }
+    host.innerHTML = h;
+    studieFormPruefen();
+    if (st.schritt === 'rt') studieRtStarten();
+  }
+
+  function studieFormPruefen() {
+    const b = $('st-weiter');
+    if (!b) return;
+    const a = parseInt(($('st-alter') || {}).value, 10);
+    st.alter = Number.isFinite(a) ? a : '';
+    st.geschlecht = ($('st-geschlecht') || {}).value || '';
+    st.volljaehrig = !!($('st-18') || {}).checked;
+    st.einwilligung = !!($('st-ok') || {}).checked;
+    let fehlt = '';
+    if (!(a >= 18 && a <= 99)) fehlt = t('Alter zwischen 18 und 99 eintragen.');
+    else if (!st.geschlecht) fehlt = t('Geschlecht wählen (auch „keine Angabe“ geht).');
+    else if (!st.volljaehrig) fehlt = t('Bitte bestätigen, dass du mindestens 18 bist.');
+    else if (!st.einwilligung) fehlt = t('Ohne Einwilligung geht es nicht weiter.');
+    b.disabled = !!fehlt;
+    if ($('st-hinweis')) $('st-hinweis').textContent = fehlt;
+  }
+
+  // ---- Reaktionstest -------------------------------------------------------------------------
+  // Zeitbasis performance.now(). Das Signal gilt ab dem Bild NACH dem Umfaerben (zweiter
+  // requestAnimationFrame), das ist der Moment, in dem es auf dem Schirm steht. Der Tastendruck
+  // nimmt, wenn vorhanden, den Zeitstempel des Gamepads (Gamepad.timestamp: wann sich sein Zustand
+  // zuletzt aenderte) statt des Abfragezeitpunkts.
+  let rt = null;
+  function studiePadFinden() {
+    try { return Array.from(navigator.getGamepads ? navigator.getGamepads() : []).find((p) => p && p.connected) || null; } catch (e) { return null; }
+  }
+  function studiePadGedrueckt(p) { return !!(p && p.buttons && p.buttons.some((b) => b && b.pressed)); }
+  // Nur solange die Seite offen ist: wer mitten im Test zurueckgeht, bricht ihn ab (sonst
+  // blieben Tasten und Pad fuer Menue und Auto gesperrt).
+  function studieTestAktiv() {
+    if (!st || st.schritt !== 'rt') return false;
+    const seite = $('sub-opt-studie');
+    if (seite && seite.classList.contains('on')) return true;
+    st.schritt = 'rt-info'; rt = null;
+    return false;
+  }
+  function studieRtStarten() {
+    if (rt) return;
+    rt = { phase: 'warte', signal: 0, ende: 0, vorher: true, kanal: new MessageChannel() };
+    st.controller = (studiePadFinden() || {}).id || '';
+    const feld = $('st-rt-feld');
+    feld.addEventListener('pointerdown', () => studieDruck(performance.now(), 'tippen'));
+    rt.kanal.port1.onmessage = studieRtTakt;
+    studieRtDurchgang();
+  }
+  function studieRtDurchgang() {
+    const feld = $('st-rt-feld');
+    if (!feld || !rt) return;
+    rt.phase = 'warte';
+    feld.dataset.zustand = 'warte';
+    $('st-rt-text').textContent = t('Warte …');
+    $('st-rt-stand').textContent = st.rt.length + ' / ' + RT_DURCHGAENGE;
+    rt.signalAb = performance.now() + RT_MIN_WARTE + Math.random() * (RT_MAX_WARTE - RT_MIN_WARTE);
+    rt.signal = 0;
+    rt.kanal.port2.postMessage(0);
+  }
+  // Ein MessagePort-Takt statt setTimeout: wird nicht gedrosselt und fragt das Pad etwa jede
+  // Millisekunde ab, nur solange der Test laeuft.
+  function studieRtTakt() {
+    if (!rt || !studieTestAktiv()) { rt = null; return; }
+    const jetzt = performance.now();
+    const p = studiePadFinden();
+    const unten = studiePadGedrueckt(p);
+    if (unten && !rt.vorher) {
+      const ts = p && p.timestamp && p.timestamp <= jetzt && p.timestamp > jetzt - 50 ? p.timestamp : jetzt;
+      studieDruck(ts, 'controller');
+    }
+    rt.vorher = unten;
+    if (!rt) return;
+    const zeigen = () => {
+      $('st-rt-feld').dataset.zustand = 'jetzt';
+      $('st-rt-text').textContent = t('JETZT!');
+    };
+    if (rt.phase === 'warte' && jetzt >= rt.signalAb) {
+      rt.phase = 'umfaerben';
+      rt.umfaerbenAb = jetzt;
+      requestAnimationFrame(() => {
+        if (!rt || rt.phase !== 'umfaerben') return;
+        zeigen();
+        requestAnimationFrame((ts) => { if (rt && rt.phase === 'umfaerben') { rt.signal = ts; rt.phase = 'signal'; } });
+      });
+    } else if (rt.phase === 'umfaerben' && jetzt - rt.umfaerbenAb > 100) {
+      // Kein Bildtakt (Fenster verdeckt, Energiesparen): dann ohne ihn, ab jetzt.
+      zeigen();
+      rt.signal = jetzt; rt.phase = 'signal';
+    } else if (rt.phase === 'signal' && jetzt - rt.signal > RT_FENSTER_MS) {
+      st.verpasst++;
+      studieRtMeldung(t('Zu langsam, nochmal.'));
+      return;
+    }
+    if (rt.phase !== 'pause') rt.kanal.port2.postMessage(0);
+  }
+  function studieDruck(zeit, quelle) {
+    if (!rt) return;
+    if (rt.phase === 'warte' || rt.phase === 'umfaerben' || (rt.phase === 'signal' && zeit - rt.signal < RT_FRUEH_MS)) {
+      st.frueh++;
+      studieRtMeldung(t('Zu früh! Der Durchgang wird wiederholt.'));
+      return;
+    }
+    if (rt.phase !== 'signal') return;
+    st.rt.push(Math.round((zeit - rt.signal) * 10) / 10);
+    if (!st.quelle) st.quelle = quelle; else if (st.quelle !== quelle) st.quelle = 'gemischt';
+    if (st.rt.length >= RT_DURCHGAENGE) { rt.phase = 'pause'; studieRtFertig(); return; }
+    studieRtMeldung(Math.round(zeit - rt.signal) + ' ms', true);
+  }
+  function studieRtMeldung(text, gut) {
+    rt.phase = 'pause';
+    const feld = $('st-rt-feld');
+    if (feld) feld.dataset.zustand = gut ? 'gut' : 'frueh';
+    if ($('st-rt-text')) $('st-rt-text').textContent = text;
+    if ($('st-rt-stand')) $('st-rt-stand').textContent = st.rt.length + ' / ' + RT_DURCHGAENGE;
+    setTimeout(() => { if (rt && studieTestAktiv()) { rt.phase = 'warte'; studieRtDurchgang(); } }, 1200);
+  }
+  function studieRtFertig() {
+    rt = null;
+    if (st.nurUeben) { st.schritt = 'danke'; studieZeichnen(); return; }
+    const w = narqWerte(st.narq);
+    const daten = { art: 'studie', alter: st.alter, geschlecht: st.geschlecht, volljaehrig: true, einwilligung: true,
+      narq: st.narq, bewunderung: w.bewunderung, rivalitaet: w.rivalitaet, selbst: st.selbst,
+      rt_ms: st.rt, rt_median: rtMedian(st.rt), fruehstarts: st.frueh, verpasst: st.verpasst,
+      quelle: st.quelle, controller: String(st.controller).slice(0, 80),
+      version: (($('app-version') || {}).textContent || '').slice(0, 20), sprache: typeof lang === 'string' ? lang : '' };
+    const d = studieLesen();
+    d.gesendet = new Date().toISOString();
+    d.ausstehend = daten;
+    studieSchreiben(d);
+    st.schritt = 'senden';
+    studieZeichnen();
+    studieSenden(daten, false);
+  }
+  function studieSenden(daten, still) {
+    const url = (chOnline() || {}).url;
+    if (!url) { if (!still) { st.fehler = t('Keine Adresse für den Upload eingestellt; die Daten bleiben auf dem Gerät.'); st.schritt = 'danke'; studieZeichnen(); } return; }
+    fetch(url, { method: 'POST', body: JSON.stringify(Object.assign({ geraet: chGeraet() }, daten)) })
+      .then((r) => r.json())
+      .then((j) => {
+        if (!j || !j.ok) throw new Error((j && j.fehler) || 'abgelehnt');
+        const d = studieLesen(); d.ausstehend = null; studieSchreiben(d);
+        if (!still) { st.schritt = 'danke'; studieZeichnen(); }
+      })
+      .catch((e) => {
+        if (still) return;
+        st.fehler = t('Senden fehlgeschlagen, wird beim nächsten Öffnen erneut versucht') + ' (' + e.message + ').';
+        st.schritt = 'danke'; studieZeichnen();
+      });
+  }
+
+  function studieKlick(ev) {
+    const b = ev.target.closest('[data-st]');
+    if (!b || b.disabled) return;
+    const a = b.dataset.st, v = parseInt(b.dataset.v, 10);
+    if (a === 'weiter') { studieFormPruefen(); if (b.disabled) return; st.schritt = 'narq'; st.item = 0; }
+    else if (a === 'narq') {
+      st.narq[st.item] = v;
+      if (st.item < NARQ_ITEMS.length - 1) st.item++; else st.schritt = 'selbst';
+    } else if (a === 'selbst') { st.selbst = v; st.schritt = 'rt-info'; }
+    else if (a === 'zurueck') {
+      if (st.schritt === 'selbst') { st.schritt = 'narq'; st.item = NARQ_ITEMS.length - 1; }
+      else if (st.item > 0) st.item--; else st.schritt = 'start';
+    } else if (a === 'abbrechen' || a === 'fertig') { st = studieNeu(); }
+    else if (a === 'ueben') { st = Object.assign(studieNeu(), { nurUeben: true, schritt: 'rt-info' }); }
+    else if (a === 'rt-los') { st.rt = []; st.frueh = 0; st.verpasst = 0; st.quelle = ''; st.schritt = 'rt'; }
+    studieZeichnen();
+  }
+  if ($('studie-inhalt')) {
+    $('studie-inhalt').addEventListener('click', studieKlick);
+    $('studie-inhalt').addEventListener('input', studieFormPruefen);
+    $('studie-inhalt').addEventListener('change', studieFormPruefen);
+  }
+  // Leertaste/Enter waehrend des Tests: als Druck, ohne dass Menue oder Fahrtasten reagieren.
+  window.addEventListener('keydown', (e) => {
+    if (!studieTestAktiv() || e.repeat) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    studieDruck(performance.now(), 'taste');
+  }, true);
 
   // ---- ENDE DES GEMEINSAMEN GUELTIGKEITSBEREICHS --------------------------------
   //

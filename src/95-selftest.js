@@ -18045,6 +18045,19 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eine Rolle, Hindernis, nicht im Ergebnis, Gelb sofort ~35 %' };
   });
 
+  // ---- v1.0: Studie (98f-studie.js) ----
+  stAdd('Studie: NARQ-Facetten nach Back et al. (2013), Median der Reaktionszeiten', () => {
+    const f = [];
+    const a = new Array(18).fill(1);
+    [1, 2, 3, 5, 7, 8, 15, 16, 18].forEach((i) => { a[i - 1] = 6; });
+    const w = narqWerte(a);
+    if (w.bewunderung !== 6 || w.rivalitaet !== 1) f.push('Facetten vertauscht: ' + JSON.stringify(w));
+    if (narqWerte(a.slice(0, 17)).bewunderung !== null) f.push('unvollstaendig ergibt einen Wert');
+    if (NARQ_ADM.concat(NARQ_RIV).sort((x, y) => x - y).join() !== Array.from({ length: 18 }, (_, i) => i + 1).join()) f.push('Items nicht genau einmal verteilt');
+    if (rtMedian([300, 200, 250]) !== 250 || rtMedian([200, 300]) !== 250) f.push('Median falsch');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '9 Bewunderung / 9 Rivalitaet, Median ok' };
+  });
+
   // ---- v1.0: Meisterschaft (73-meisterschaft.js) ----
   stAdd('Meisterschaft: Wertung, Punkte, schnellste Runde, Gleichstand', () => {
     const f = [];

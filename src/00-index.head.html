@@ -2918,6 +2918,22 @@
     overflow: hidden; text-overflow: ellipsis; }
   .gar-akku { white-space: nowrap; }
   #race-gridscreen button.pad-fokus { outline: 3px solid var(--k-blau, #3d8bff); outline-offset: 2px; }
+  /* ---- STUDIE (98f-studie.js) ---- */
+  .studie-text p { line-height: 1.45; margin: 4px 0 8px; }
+  .studie-text code, #studie-inhalt code { font-size: .9em; }
+  .studie-knoepfe { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .studie-frage { font-size: clamp(17px, 3vw, 24px); font-weight: 700; margin: 10px 0 14px; line-height: 1.3; }
+  .studie-skala { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+  .studie-skala.sieben { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .studie-skala button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 2px; min-height: 64px; }
+  .studie-skala button b { font-size: 1.4em; }
+  .studie-skala button small { font-size: 10px; line-height: 1.15; opacity: .8; text-align: center; }
+  .studie-rt { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 52vh;
+    background: #3b3f48; color: #fff; user-select: none; touch-action: manipulation; cursor: pointer; }
+  .studie-rt b { font-size: clamp(26px, 6vw, 56px); letter-spacing: .06em; }
+  .studie-rt[data-zustand="jetzt"] { background: #19c26b; }
+  .studie-rt[data-zustand="frueh"] { background: #b3263f; }
+  .studie-rt[data-zustand="gut"] { background: #1d4f8a; }
   /* ---- MEISTERSCHAFT (73-meisterschaft.js), nach mockup/meisterschaft.html ---- */
   .meister-schirm:not([hidden]) { position: fixed; inset: 0; z-index: 390; display: flex; flex-direction: column;
     background: #0c0e14 url(img/meisterschaft-bg.jpg) center/cover; color: #eef0f4;
@@ -4577,7 +4593,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.10</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.11</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5705,6 +5721,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Studie (experimentell, Optionen): freiwillige Teilnahme ab 18 mit Einwilligung, Alter und Geschlecht; 18 Aussagen des NARQ (Bewunderung und Rivalit&#228;t), Selbsteinsch&#228;tzung des Fahrk&#246;nnens und ein Reaktionstest mit dem Controller (10 Durchg&#228;nge, Fr&#252;hstarts z&#228;hlen). Gesendet wird erst am Ende, in ein eigenes, nicht &#246;ffentlich abrufbares Blatt; verkn&#252;pft &#252;ber die Ger&#228;tekennung. Der Reaktionstest l&#228;sst sich danach ohne Senden &#252;ben.</li>
         <li>Meisterschaft (experimentell, 8. Modus): Die Kachel unten links in FAHREN &#246;ffnet den Planer. Jede Zeile ist ein Event mit Strecke (aktuell im Editor, gespeicherte Strecke oder freie Bahn), Format (Training, Qualifying, Runden, Endurance), Umfang, Wetter, stehendem oder fliegendem Start, Startaufstellung und Pflichtstopps; darunter Fahrgef&#252;hl, Aufstellung des ersten Rennens, Punkteschema, Punkt f&#252;r die schnellste Runde und Teilnehmer. Nach jedem Event kommt der Zwischenstand mit der n&#228;chsten Startaufstellung, pausieren und sp&#228;ter fortsetzen geht. Im WLAN-Mehrspieler leitet das planende Telefon: jedes Event startet f&#252;r alle, die anderen sehen Event und Stand auf dem Bereitschaftsschirm. Safety Car: unter Gelb &#252;bernimmt der Autopilot sofort, alle fahren etwa 35 %, niemand &#252;berholt. Pflichtstopps bis 3.</li>
         <li>Safety Car (experimentell): In der Garage gibt es neben &#8222;Ghost&#8220; die Rolle &#8222;Safety Car&#8220; (eines je Rennen). Es parkt am Rand, f&#228;hrt bei gelber Flagge los und blinkt alle 750 ms kurz auf. Die anderen Autos fahren unter Gelb normal weiter, bis sie bis auf zwei Kacheln aufgeschlossen haben, dann 35 % (dein Auto &#252;bernimmt dann der Autopilot). Ghosts &#252;berholen das Safety Car nie. Nach Gr&#252;n f&#228;hrt es bis Start/Ziel und h&#228;lt dort rechts am Rand. Es z&#228;hlt keine Runden und steht nicht im Ergebnis.</li>
       </ul>
@@ -9003,6 +9020,12 @@
           <b>Statistiken</b>
           <span>Kilometer, Sitzungen, Fahrzeit, Rennen, Siege, Medaillen und das Ranking deiner Autos.</span>
         </button>
+        <button class="misc-tile subpage-open" data-sub="opt-studie">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6h12M20 6v12L9 38a3 3 0 0 0 3 4h24a3 3 0 0 0 3-4L28 18V6"/><path d="M14 30h20" stroke="var(--bad)"/></svg>
+          <b>Studie <span class="wip-tag">experimentell</span></b>
+          <span>Persönlichkeit, Reaktionszeit und Fahrkönnen. Freiwillig, etwa 5 Minuten, ab 18.</span>
+        </button>
       </div>
       <!-- INFO OHNE EIGENE EBENE (v0.8.35). BESTELLT: "Die Kacheln aus INFO alles einzeln
            auflisten, aber extra gruppiert mit Zwischenueberschrift, um klar zu unterscheiden
@@ -10993,6 +11016,13 @@
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Statistiken</h2>
       <div id="stat-inhalt"></div>
+    </div>
+    <!-- STUDIE (98f-studie.js): Einwilligung, NARQ, Selbsteinschaetzung, Reaktionstest. Der Inhalt
+         entsteht im Code und wird dort mit t() uebersetzt. -->
+    <div class="card subpage" id="sub-opt-studie">
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
+      <h2>Studie <span class="wip-tag">experimentell</span></h2>
+      <div id="studie-inhalt" data-i18n-skip></div>
     </div>
 
     <div class="card subpage" id="sub-opt-zwei">

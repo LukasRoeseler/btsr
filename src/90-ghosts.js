@@ -9614,6 +9614,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     } else gridPadVorher = false;
     // Meisterschaft offen: Steuerkreuz und Tasten gehoeren ihrem Schirm (73-meisterschaft.js).
     if (typeof meisterPad === 'function' && meisterPad(pad)) return;
+    // Reaktionstest der Studie: das Pad gehoert dem Test (er fragt es selbst ab).
+    if (typeof studieTestAktiv === 'function' && studieTestAktiv()) return;
     // TITELBILDSCHIRM (ACC-Menue): jede Taste fuehrt ins Hauptmenue, links/rechts wechselt die
     // Sprache. Solange danach noch eine Taste gehalten wird, tut dieser Takt nichts weiter -
     // sonst oeffnete dasselbe gehaltene Kreuz im Hauptmenue gleich die naechste Kachel.
