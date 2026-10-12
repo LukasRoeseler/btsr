@@ -2750,7 +2750,9 @@
     // "mit dem Tempo der Ghosts", nicht mit Geradentempo durch die Haarnadel.
     // v0.9.87: auch die Einfuehrungsrunde mit der Kurvendrosselung der Ghosts - "wie bei
     // gelber Flagge" (BESTELLT fuer den fliegenden Start).
-    const ziel = (grund === 'formation' ? formationPace() : Math.max(yellowFactor(), GHOST_READ_MIN))
+    // v1.0.12: unter Gelb mit Safety Car erst ~45 % zum Aufschliessen (gelbZielFuer).
+    const ziel = (grund === 'formation' ? formationPace()
+      : (typeof gelbZielFuer === 'function' ? gelbZielFuer(meinAuto) : Math.max(yellowFactor(), GHOST_READ_MIN)))
       * autopilotKurvenFaktor(meinAuto);
     const v = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
     const dtA = Math.max(0.01, Math.min(0.25,

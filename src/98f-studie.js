@@ -296,6 +296,14 @@
     else if (a === 'rt-los') { st.rt = []; st.frueh = 0; st.verpasst = 0; st.quelle = ''; st.schritt = 'rt'; }
     studieZeichnen();
   }
+  // v1.0.12 BESTELLT: "Studie erstmal nur zum Testen drin haben." Die Kachel erscheint nur im
+  // Entwicklermodus (Optionen > Entwickler bzw. ?dev in der Adresse).
+  function studieKachelZeigen() {
+    const k = $('opt-studie-kachel');
+    if (k) k.hidden = !(typeof konsoleDev === 'function' && konsoleDev());
+  }
+  studieKachelZeigen();
+  if ($('setting-dev')) $('setting-dev').addEventListener('change', studieKachelZeigen);
   if ($('studie-inhalt')) {
     $('studie-inhalt').addEventListener('click', studieKlick);
     $('studie-inhalt').addEventListener('input', studieFormPruefen);

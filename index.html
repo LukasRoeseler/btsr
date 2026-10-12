@@ -4593,7 +4593,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.11</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.12</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5721,6 +5721,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Pflichtstopps z&#228;hlen jetzt f&#252;r alle gesteuerten Autos: Spieler 2 und 3 bekommen dieselbe Zeitstrafe je verpasstem Stopp, und im WLAN-Mehrspieler melden die Telefone Gesamtzeit und Strafe an den Host (neue APK bzw. neuer Host n&#246;tig), damit die Meisterschaft sie wertet. Safety Car: neue Option &#8222;erst aufschlie&#223;en&#8220; (Vorgabe an): unter Gelb fahren alle mit etwa 45 % heran und ab zwei Kacheln Abstand mit 35 % weiter, in Kurven und Haarnadeln gedrosselt. Die Studie ist vorerst nur im Entwicklermodus sichtbar.</li>
         <li>Studie (experimentell, Optionen): freiwillige Teilnahme ab 18 mit Einwilligung, Alter und Geschlecht; 18 Aussagen des NARQ (Bewunderung und Rivalit&#228;t), Selbsteinsch&#228;tzung des Fahrk&#246;nnens und ein Reaktionstest mit dem Controller (10 Durchg&#228;nge, Fr&#252;hstarts z&#228;hlen). Gesendet wird erst am Ende, in ein eigenes, nicht &#246;ffentlich abrufbares Blatt; verkn&#252;pft &#252;ber die Ger&#228;tekennung. Der Reaktionstest l&#228;sst sich danach ohne Senden &#252;ben.</li>
         <li>Meisterschaft (experimentell, 8. Modus): Die Kachel unten links in FAHREN &#246;ffnet den Planer. Jede Zeile ist ein Event mit Strecke (aktuell im Editor, gespeicherte Strecke oder freie Bahn), Format (Training, Qualifying, Runden, Endurance), Umfang, Wetter, stehendem oder fliegendem Start, Startaufstellung und Pflichtstopps; darunter Fahrgef&#252;hl, Aufstellung des ersten Rennens, Punkteschema, Punkt f&#252;r die schnellste Runde und Teilnehmer. Nach jedem Event kommt der Zwischenstand mit der n&#228;chsten Startaufstellung, pausieren und sp&#228;ter fortsetzen geht. Im WLAN-Mehrspieler leitet das planende Telefon: jedes Event startet f&#252;r alle, die anderen sehen Event und Stand auf dem Bereitschaftsschirm. Safety Car: unter Gelb &#252;bernimmt der Autopilot sofort, alle fahren etwa 35 %, niemand &#252;berholt. Pflichtstopps bis 3.</li>
         <li>Safety Car (experimentell): In der Garage gibt es neben &#8222;Ghost&#8220; die Rolle &#8222;Safety Car&#8220; (eines je Rennen). Es parkt am Rand, f&#228;hrt bei gelber Flagge los und blinkt alle 750 ms kurz auf. Die anderen Autos fahren unter Gelb normal weiter, bis sie bis auf zwei Kacheln aufgeschlossen haben, dann 35 % (dein Auto &#252;bernimmt dann der Autopilot). Ghosts &#252;berholen das Safety Car nie. Nach Gr&#252;n f&#228;hrt es bis Start/Ziel und h&#228;lt dort rechts am Rand. Es z&#228;hlt keine Runden und steht nicht im Ergebnis.</li>
@@ -8780,6 +8781,11 @@
       <div class="opt-row"><div class="opt-label">Gelbe Flagge deaktivieren<small>An: Der Knopf
           &bdquo;Gelbe Flagge&ldquo; und das Halten der Boxentaste rufen kein Gelb mehr aus.</small></div>
         <label class="tgl"><input type="checkbox" id="race-gelb-aus"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Safety Car: erst aufschlie&szlig;en<span class="wip-tag">experimentell</span><small>An:
+          Unter Gelb mit Safety Car fahren alle mit etwa 45&nbsp;% heran und ab zwei Kacheln Abstand
+          mit 35&nbsp;% weiter, in Kurven und Haarnadeln gedrosselt. Aus: alle sofort 35&nbsp;%.
+          &Uuml;berholt wird unter Gelb nie.</small></div>
+        <label class="tgl"><input type="checkbox" id="race-sc-aufschliessen" checked><span></span></label></div>
 
       <div id="race-grid-wrap" style="display:none; margin-top:12px">
         <label class="small">Startaufstellung, ziehen oder mit den Pfeilen sortieren</label>
@@ -9020,7 +9026,7 @@
           <b>Statistiken</b>
           <span>Kilometer, Sitzungen, Fahrzeit, Rennen, Siege, Medaillen und das Ranking deiner Autos.</span>
         </button>
-        <button class="misc-tile subpage-open" data-sub="opt-studie">
+        <button class="misc-tile subpage-open" data-sub="opt-studie" id="opt-studie-kachel" hidden>
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6h12M20 6v12L9 38a3 3 0 0 0 3 4h24a3 3 0 0 0 3-4L28 18V6"/><path d="M14 30h20" stroke="var(--bad)"/></svg>
           <b>Studie <span class="wip-tag">experimentell</span></b>
@@ -12618,6 +12624,9 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "Pflichtstopp": "mandatory stop",
+    "Safety Car: erst aufschließen": "Safety car: close up first",
+    "An: Unter Gelb mit Safety Car fahren alle mit etwa 45 % heran und ab zwei Kacheln Abstand mit 35 % weiter, in Kurven und Haarnadeln gedrosselt. Aus: alle sofort 35 %. Überholt wird unter Gelb nie.": "On: under yellow with a safety car everyone closes up at about 45 % and continues at 35 % from two tiles behind, slowed in curves and hairpins. Off: everyone at 35 % at once. Nobody ever overtakes under yellow.",
     "18 Aussagen zur Persönlichkeit bewerten, eine Frage zu deinem Fahrkönnen beantworten und einen Reaktionstest mit dem Controller machen (10 Durchgänge). Dauer etwa 5 Minuten.": "Rate 18 statements about personality, answer one question about your driving skill and do a reaction test with the controller (10 trials). About 5 minutes.",
     "Alter zwischen 18 und 99 eintragen.": "Enter an age between 18 and 99.",
     "Alter": "Age",
@@ -13349,6 +13358,7 @@
     "Safety Car (experimentell): In der Garage gibt es neben „Ghost“ die Rolle „Safety Car“ (eines je Rennen). Es parkt am Rand, fährt bei gelber Flagge los und blinkt alle 750 ms kurz auf. Die anderen Autos fahren unter Gelb normal weiter, bis sie bis auf zwei Kacheln aufgeschlossen haben, dann 35 % (dein Auto übernimmt dann der Autopilot). Ghosts überholen das Safety Car nie. Nach Grün fährt es bis Start/Ziel und hält dort rechts am Rand. Es zählt keine Runden und steht nicht im Ergebnis.": "Safety car (experimental): next to “Ghost” the garage now has the role “Safety car” (one per race). It parks at the edge, drives off when the yellow flag comes out and flashes briefly every 750 ms. The other cars keep racing under yellow until they are within two tiles of it, then 35 % (your car is taken over by the autopilot). Ghosts never overtake the safety car. After green it drives to start/finish and stops at the right edge. It counts no laps and is not in the results.",
     "Meisterschaft (experimentell, 8. Modus): Die Kachel unten links in FAHREN öffnet den Planer. Jede Zeile ist ein Event mit Strecke (aktuell im Editor, gespeicherte Strecke oder freie Bahn), Format (Training, Qualifying, Runden, Endurance), Umfang, Wetter, stehendem oder fliegendem Start, Startaufstellung und Pflichtstopps; darunter Fahrgefühl, Aufstellung des ersten Rennens, Punkteschema, Punkt für die schnellste Runde und Teilnehmer. Nach jedem Event kommt der Zwischenstand mit der nächsten Startaufstellung, pausieren und später fortsetzen geht. Im WLAN-Mehrspieler leitet das planende Telefon: jedes Event startet für alle, die anderen sehen Event und Stand auf dem Bereitschaftsschirm. Safety Car: unter Gelb übernimmt der Autopilot sofort, alle fahren etwa 35 %, niemand überholt. Pflichtstopps bis 3.": "Championship (experimental, 8th mode): the tile at the bottom left of DRIVE opens the planner. Every row is an event with track (current in editor, saved track or free track), format (practice, qualifying, laps, endurance), length, weather, standing or flying start, starting grid and mandatory stops; below it driving feel, grid for the first race, points system, point for the fastest lap and participants. After every event the standings appear with the next grid; you can pause and continue later. In Wi-Fi multiplayer the planning phone leads: every event starts for everyone, the others see event and standings on the ready screen. Safety car: under yellow the autopilot takes over at once, everyone drives at about 35 %, nobody overtakes. Mandatory stops up to 3.",
     "Studie (experimentell, Optionen): freiwillige Teilnahme ab 18 mit Einwilligung, Alter und Geschlecht; 18 Aussagen des NARQ (Bewunderung und Rivalität), Selbsteinschätzung des Fahrkönnens und ein Reaktionstest mit dem Controller (10 Durchgänge, Frühstarts zählen). Gesendet wird erst am Ende, in ein eigenes, nicht öffentlich abrufbares Blatt; verknüpft über die Gerätekennung. Der Reaktionstest lässt sich danach ohne Senden üben.": "Study (experimental, Options): voluntary participation from 18 with consent, age and gender; the 18 NARQ statements (admiration and rivalry), a self-rating of driving skill and a reaction test with the controller (10 trials, false starts are counted). Data is only sent at the end, to a separate sheet that is not publicly readable; linked via the device ID. Afterwards the reaction test can be practised without sending.",
+    "Pflichtstopps zählen jetzt für alle gesteuerten Autos: Spieler 2 und 3 bekommen dieselbe Zeitstrafe je verpasstem Stopp, und im WLAN-Mehrspieler melden die Telefone Gesamtzeit und Strafe an den Host (neue APK bzw. neuer Host nötig), damit die Meisterschaft sie wertet. Safety Car: neue Option „erst aufschließen“ (Vorgabe an): unter Gelb fahren alle mit etwa 45 % heran und ab zwei Kacheln Abstand mit 35 % weiter, in Kurven und Haarnadeln gedrosselt. Die Studie ist vorerst nur im Entwicklermodus sichtbar.": "Mandatory stops now count for all controlled cars: players 2 and 3 get the same time penalty per missed stop, and in Wi-Fi multiplayer the phones report total time and penalty to the host (new APK or host needed) so the championship scores them. Safety car: new option “close up first” (on by default): under yellow everyone closes up at about 45 % and continues at 35 % from two tiles behind, slowed in curves and hairpins. The study is only visible in developer mode for now.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -23399,7 +23409,9 @@
     // "mit dem Tempo der Ghosts", nicht mit Geradentempo durch die Haarnadel.
     // v0.9.87: auch die Einfuehrungsrunde mit der Kurvendrosselung der Ghosts - "wie bei
     // gelber Flagge" (BESTELLT fuer den fliegenden Start).
-    const ziel = (grund === 'formation' ? formationPace() : Math.max(yellowFactor(), GHOST_READ_MIN))
+    // v1.0.12: unter Gelb mit Safety Car erst ~45 % zum Aufschliessen (gelbZielFuer).
+    const ziel = (grund === 'formation' ? formationPace()
+      : (typeof gelbZielFuer === 'function' ? gelbZielFuer(meinAuto) : Math.max(yellowFactor(), GHOST_READ_MIN)))
       * autopilotKurvenFaktor(meinAuto);
     const v = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
     const dtA = Math.max(0.01, Math.min(0.25,
@@ -34397,6 +34409,8 @@
     raceStartZuruecksetzen(fuel);
     updateDamageFuelUI();
     racePitDone = 0;
+    // v1.0.12 BESTELLT: "Pflichtstopps bitte fuer alle spieler gesteuerten Autos zaehlen."
+    if (typeof zusatzPlaetze === 'function') zusatzPlaetze().forEach((z) => { z.pitDone = 0; });
     syncRaceGridOrder();
     scheduleRaceWeatherChange();
     raceLapEvents = [];
@@ -34597,6 +34611,18 @@
     const missed = Math.max(0, racePitRequired - racePitDone);
     return missed * racePitPenaltyS * 1000;
   }
+  // Dieselbe Strafe fuer Spieler 2/3 (v1.0.12): je verpasstem Pflichtstopp racePitPenaltyS.
+  function strafeMsVon(wer) {
+    if (!wer || wer === 1) return racePenaltyMs();
+    const z = typeof zusatzPlatz === 'function' ? zusatzPlatz(wer) : null;
+    if (!z) return 0;
+    return Math.max(0, racePitRequired - (z.pitDone || 0)) * racePitPenaltyS * 1000;
+  }
+  // Welcher Spielerplatz faehrt dieses Auto (Rolle player, player2, player3)? 0 = keiner.
+  function spielerPlatzVonRolle(rolle) {
+    const m = /^player(\d?)$/.exec(rolle || '');
+    return m ? (parseInt(m[1], 10) || 1) : 0;
+  }
 
   // Wie lange ein Ghost hoechstens noch faehrt, um seine Runde zu beenden. 90 s ist
   // grosszuegig - eine Runde auf einer Wohnzimmerbahn dauert gemessen unter 20 s -, und die
@@ -34682,7 +34708,11 @@
       + (racePartialMs !== null
          ? `, letzte Runde unvollendet nach ${formatLapTime(racePartialMs)}` : '')
       + (missed > 0 ? `, ${missed} Pflichtstopp${missed === 1 ? '' : 's'} verpasst, `
-                      + `+${missed * racePitPenaltyS} s Strafe` : '');
+                      + `+${missed * racePitPenaltyS} s Strafe` : '')
+      + ((typeof zusatzAktiv === 'function' ? zusatzAktiv() : []).map((z) => {
+        const s = strafeMsVon(z.nr) / 1000;
+        return s > 0 ? `, P${z.nr}: +${s} s Strafe` : '';
+      }).join(''));
     // DER RUNDENZAEHLER, aber nur bei einer echten Zielflagge. Wer von Hand abbricht,
     // bekommt keine Fanfare - dieselbe Ueberlegung, mit der die Ghosts dann auch nicht
     // auslaufen: ein Abbruch ist kein Zieleinlauf.
@@ -37292,6 +37322,12 @@
       showHudToast('P' + z.nr + ': BOXENSTOPP ABGEBROCHEN');
       log('P' + z.nr + ': Boxenstopp abgebrochen.', 'info');
       return;
+    }
+    if (raceState === 'racing' || raceState === 'finishing') {
+      z.pitDone = (z.pitDone || 0) + 1;
+      if (racePitRequired > 0 && z.pitDone <= racePitRequired) {
+        showHudToast('P' + z.nr + ': ' + t('Pflichtstopp') + ' ' + z.pitDone + '/' + racePitRequired);
+      }
     }
     log('P' + z.nr + ': Boxenstopp beendet nach ' + stand.toFixed(1) + ' s, '
         + fuelLiters(getankt) + ' l getankt, ' + Math.round(rep) + ' % repariert.', 'info');
@@ -41982,7 +42018,9 @@
     const lokal = raceAllCars().filter((c) => meisterDarfMit(c.role)).map((c) => {
       const ms = (c.laps || []).map((l) => l.ms);
       let total = ms.reduce((a, b) => a + b, 0);
-      if (c.role === 'player' && typeof racePenaltyMs === 'function') total += racePenaltyMs();
+      // Verpasste Pflichtstopps: fuer jedes gesteuerte Auto (Spieler 1-3), v1.0.12.
+      const platz = typeof spielerPlatzVonRolle === 'function' ? spielerPlatzVonRolle(c.role) : 0;
+      if (platz && typeof strafeMsVon === 'function') total += strafeMsVon(platz);
       const key = c.id ? 'c:' + c.id : 'c:spieler';
       info[key] = { name: c.name, farbe: c.farbe, rolle: c.role };
       return { key, laps: ms.length, total, beste: ms.length ? Math.min.apply(null, ms) : Infinity, rolle: c.role };
@@ -41993,7 +42031,9 @@
     const fern = (mpLetzterStand.fahrer || []).filter((f) => f && f.id && (f.id === mp.id || mpAktiv(f))).map((f) => {
       const key = 'mp:' + f.id;
       info[key] = { name: f.name || f.id, farbe: null, rolle: f.id === mp.id ? 'player' : 'mp' };
-      return { key, laps: f.laps || 0, beste: Number.isFinite(f.beste) ? f.beste * 1000 : Infinity, total: 0 };
+      // Neue Hosts melden Gesamtzeit und Strafe (v1.0.12); dann zaehlt beides wie lokal.
+      const total = Number.isFinite(f.summe) ? f.summe + (Number.isFinite(f.strafe) ? f.strafe : 0) : null;
+      return { key, laps: f.laps || 0, beste: Number.isFinite(f.beste) ? f.beste * 1000 : Infinity, total };
     });
     // Das eigene Auto: lokal gemessen, aber unter seinem Mehrspieler-Key (der Anker).
     const p1 = lokal.find((x) => x.rolle === 'player');
@@ -42003,6 +42043,13 @@
       if (info[p1.key]) info[anker] = Object.assign({}, info[p1.key], { name: (eigen && eigen.name) || info[p1.key].name });
       rest.push(Object.assign({}, p1, { key: anker }));
     }
+    // Kennt der Host von allen die Gesamtzeit, wird alles gemeinsam sortiert (mit Strafen);
+    // sonst nach Host-Reihenfolge mit dem eigenen Auto als Anker.
+    if (fern.every((x) => x.total !== null)) {
+      const alle = fern.filter((x) => x.key !== anker || !p1).concat(rest);
+      return { reihe: meisterKlassieren(alle, quali).filter((k, i, a) => a.indexOf(k) === i), info, lokal };
+    }
+    fern.forEach((x) => { if (x.total === null) x.total = 0; });
     return { reihe: meisterMischen(fern, rest, anker, quali).filter((k, i, a) => a.indexOf(k) === i), info, lokal };
   }
 
@@ -49920,6 +49967,19 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function gelbGrenze() {
     return Math.max(yellowFactor(), GHOST_READ_MIN);
   }
+  // ---- AUFSCHLIESSEN ZUM SAFETY CAR (v1.0.12, Option, Vorgabe an) ----------------------
+  // BESTELLT: "Mach das Ranfahren zum Safetycar als eine Option (Standard = an), also alle mit
+  // ~45 % ranfahren und dann mit 35 % weiter. Dabei auch Kurvendrosselung beruecksichtigen,
+  // damit sie nicht mit 45 % aus der Haarnadel fliegen." Die Kurvendrosselung kommt danach:
+  // bei den Ghosts das Tempoprofil in ghostTick, beim Fahrerauto autopilotKurvenFaktor.
+  const SC_AUFSCHLUSS = 0.45;
+  function scAufschliessenAn() { const el = $('race-sc-aufschliessen'); return el ? !!el.checked : true; }
+  function gelbZielFuer(car) {
+    if (car && car.role !== 'safetycar' && scAufschliessenAn() && safetyCarFaehrt() && !nahAmSafetyCar(car)) {
+      return Math.max(SC_AUFSCHLUSS, gelbGrenze());
+    }
+    return gelbGrenze();
+  }
   // Die Kurvendrosselung der Ghosts fuer ein Fahrerauto im Autopiloten: dieselbe Regel wie
   // die Kachelregel in ghostTick (curveSlow in der 60-Grad-Kurve, doppelt in Haarnadel und
   // Engstelle, hoechstens 85 %), an der GEMELDETEN Kachel unter dem Auto. So faehrt es
@@ -49941,7 +50001,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Fahrerauto setzt dann der Autopilot (autopilotGrund), nicht die Physik.
       // v1.0.9 BESTELLT: "~35 % Geschwindigkeit bei allen ohne Messung der Naehe zum
       // Safetycar und keine Ueberholmanoever" - mit und ohne Safety Car dieselbe Grenze.
-      limitYellow = gelbGrenze();
+      limitYellow = (safetyCar() && scAufschliessenAn()) ? Math.max(SC_AUFSCHLUSS, gelbGrenze()) : gelbGrenze();
       safetyCarRaus();
       applySpeedLimit();
       // Angriffe abbrechen: waehrend Gelb wird nicht ueberholt.
@@ -53125,9 +53185,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // er nicht, weil das Auto dann nicht mehr liest.
       // v0.10.7: Faehrt ein Safety Car, drosseln die anderen erst in seiner Naehe auf das
       // Gelb-Tempo (BESTELLT: "normal fahren, bis sie nah am Safety Car sind, dann auf 35 %").
-      // v1.0.9: ohne Naehemessung - unter Gelb faehrt jeder ~35 %, auch hinter dem Safety Car.
+      // v1.0.9: unter Gelb faehrt jeder ~35 %. v1.0.12: mit der Option "aufschliessen" bis
+      // zum Safety Car ~45 %, dann 35 % (gelbZielFuer); die Kurvendrosselung folgt unten.
       if (underYellow) {
-        target = Math.min(target, Math.max(yellowFactor(), GHOST_READ_MIN));
+        target = Math.min(target, gelbZielFuer(car));
       }
       // ---- Tempoprofil statt eines einzigen Kurvenabschlags ----
       // Vorher gab es genau zwei Zustaende: "Kurve in Sicht" oder nicht, und beide bekamen
@@ -83944,7 +84005,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   });
 
   // ---- v0.10.7: Safety Car ----
-  stAdd('Safety Car: eine Rolle, nie ueberholt, unter Gelb alle sofort ~35 %', () => {
+  stAdd('Safety Car: eine Rolle, nie ueberholt, aufschliessen ~45 % dann 35 % (Option)', () => {
     const f = [];
     const merk = { garage: garage.slice(), tiles: currentTrackTiles, flag: flagState, ly: limitYellow };
     const echt = { start: startGhost };
@@ -83960,18 +84021,27 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (nahAmSafetyCar(weit)) f.push('5 Kacheln dahinter gilt als nah');
       if (ghostFieldRacing().indexOf(sc) < 0) f.push('Safety Car ist kein Hindernis im Feld');
       if (raceAllCars().some((c) => c.role === 'safetycar')) f.push('Safety Car im Ergebnis');
-      // v1.0.9: Gelb mit Safety Car drosselt sofort alle, ohne Naehemessung.
-      startGhost = () => {};
-      flagState = 'green';
-      setFlag('yellow');
-      if (Math.abs(limitYellow - gelbGrenze()) > 1e-9) f.push('Grenze mit Safety Car ' + limitYellow + ' statt ' + gelbGrenze());
+      // v1.0.12: Option "erst aufschliessen": weit weg ~45 %, nah 35 %; aus: alle 35 %.
+      const cb = $('race-sc-aufschliessen'), cbMerk = cb ? cb.checked : true;
+      try {
+        if (cb) cb.checked = true;
+        if (Math.abs(gelbZielFuer(weit) - Math.max(0.45, gelbGrenze())) > 1e-9) f.push('weit weg nicht ~45 %: ' + gelbZielFuer(weit));
+        if (Math.abs(gelbZielFuer(nah) - gelbGrenze()) > 1e-9) f.push('nah dran nicht 35 %: ' + gelbZielFuer(nah));
+        if (Math.abs(gelbZielFuer(sc) - gelbGrenze()) > 1e-9) f.push('Safety Car selbst nicht 35 %');
+        startGhost = () => {};
+        flagState = 'green';
+        setFlag('yellow');
+        if (limitYellow < 0.449) f.push('Fahrerauto auf ' + limitYellow + ' gedeckelt, kann nicht aufschliessen');
+        if (cb) cb.checked = false;
+        if (Math.abs(gelbZielFuer(weit) - gelbGrenze()) > 1e-9) f.push('Option aus: weit weg nicht 35 %');
+      } finally { if (cb) cb.checked = cbMerk; }
     } finally {
       startGhost = echt.start;
       garage.length = 0; merk.garage.forEach((c) => garage.push(c));
       currentTrackTiles = merk.tiles; flagState = merk.flag; limitYellow = merk.ly;
       if (typeof applySpeedLimit === 'function') applySpeedLimit();
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eine Rolle, Hindernis, nicht im Ergebnis, Gelb sofort ~35 %' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eine Rolle, Hindernis, nicht im Ergebnis, 45 % weit / 35 % nah, Option aus 35 %' };
   });
 
   // ---- v1.0: Studie (98f-studie.js) ----
@@ -85121,8 +85191,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       : ((typeof dashLapTimes !== 'undefined' && dashLapTimes) || []);
     const beste = zeiten.length ? Math.min.apply(null, zeiten) / 1000 : null;
     const letzte = zeiten.length ? zeiten[zeiten.length - 1] / 1000 : null;
+    // v1.0.12: Gesamtzeit und Strafe fuer verpasste Pflichtstopps (Meisterschaft des Leiters).
+    const summe = imRennen ? zeiten.reduce((a, b) => a + b, 0) : null;
+    const strafe = imRennen && typeof racePenaltyMs === 'function' ? racePenaltyMs() : null;
     return { id: mp.id, name: mp.name || 'ohne Namen', laps: zeiten.length,
-             letzte, beste,
+             letzte, beste, summe, strafe,
              abgaenge: (typeof offtrackZaehler !== 'undefined') ? offtrackZaehler : 0 };
   }
 
@@ -88465,6 +88538,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     else if (a === 'rt-los') { st.rt = []; st.frueh = 0; st.verpasst = 0; st.quelle = ''; st.schritt = 'rt'; }
     studieZeichnen();
   }
+  // v1.0.12 BESTELLT: "Studie erstmal nur zum Testen drin haben." Die Kachel erscheint nur im
+  // Entwicklermodus (Optionen > Entwickler bzw. ?dev in der Adresse).
+  function studieKachelZeigen() {
+    const k = $('opt-studie-kachel');
+    if (k) k.hidden = !(typeof konsoleDev === 'function' && konsoleDev());
+  }
+  studieKachelZeigen();
+  if ($('setting-dev')) $('setting-dev').addEventListener('change', studieKachelZeigen);
   if ($('studie-inhalt')) {
     $('studie-inhalt').addEventListener('click', studieKlick);
     $('studie-inhalt').addEventListener('input', studieFormPruefen);

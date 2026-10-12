@@ -4593,7 +4593,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.11</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.12</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5721,6 +5721,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Pflichtstopps z&#228;hlen jetzt f&#252;r alle gesteuerten Autos: Spieler 2 und 3 bekommen dieselbe Zeitstrafe je verpasstem Stopp, und im WLAN-Mehrspieler melden die Telefone Gesamtzeit und Strafe an den Host (neue APK bzw. neuer Host n&#246;tig), damit die Meisterschaft sie wertet. Safety Car: neue Option &#8222;erst aufschlie&#223;en&#8220; (Vorgabe an): unter Gelb fahren alle mit etwa 45 % heran und ab zwei Kacheln Abstand mit 35 % weiter, in Kurven und Haarnadeln gedrosselt. Die Studie ist vorerst nur im Entwicklermodus sichtbar.</li>
         <li>Studie (experimentell, Optionen): freiwillige Teilnahme ab 18 mit Einwilligung, Alter und Geschlecht; 18 Aussagen des NARQ (Bewunderung und Rivalit&#228;t), Selbsteinsch&#228;tzung des Fahrk&#246;nnens und ein Reaktionstest mit dem Controller (10 Durchg&#228;nge, Fr&#252;hstarts z&#228;hlen). Gesendet wird erst am Ende, in ein eigenes, nicht &#246;ffentlich abrufbares Blatt; verkn&#252;pft &#252;ber die Ger&#228;tekennung. Der Reaktionstest l&#228;sst sich danach ohne Senden &#252;ben.</li>
         <li>Meisterschaft (experimentell, 8. Modus): Die Kachel unten links in FAHREN &#246;ffnet den Planer. Jede Zeile ist ein Event mit Strecke (aktuell im Editor, gespeicherte Strecke oder freie Bahn), Format (Training, Qualifying, Runden, Endurance), Umfang, Wetter, stehendem oder fliegendem Start, Startaufstellung und Pflichtstopps; darunter Fahrgef&#252;hl, Aufstellung des ersten Rennens, Punkteschema, Punkt f&#252;r die schnellste Runde und Teilnehmer. Nach jedem Event kommt der Zwischenstand mit der n&#228;chsten Startaufstellung, pausieren und sp&#228;ter fortsetzen geht. Im WLAN-Mehrspieler leitet das planende Telefon: jedes Event startet f&#252;r alle, die anderen sehen Event und Stand auf dem Bereitschaftsschirm. Safety Car: unter Gelb &#252;bernimmt der Autopilot sofort, alle fahren etwa 35 %, niemand &#252;berholt. Pflichtstopps bis 3.</li>
         <li>Safety Car (experimentell): In der Garage gibt es neben &#8222;Ghost&#8220; die Rolle &#8222;Safety Car&#8220; (eines je Rennen). Es parkt am Rand, f&#228;hrt bei gelber Flagge los und blinkt alle 750 ms kurz auf. Die anderen Autos fahren unter Gelb normal weiter, bis sie bis auf zwei Kacheln aufgeschlossen haben, dann 35 % (dein Auto &#252;bernimmt dann der Autopilot). Ghosts &#252;berholen das Safety Car nie. Nach Gr&#252;n f&#228;hrt es bis Start/Ziel und h&#228;lt dort rechts am Rand. Es z&#228;hlt keine Runden und steht nicht im Ergebnis.</li>
@@ -8780,6 +8781,11 @@
       <div class="opt-row"><div class="opt-label">Gelbe Flagge deaktivieren<small>An: Der Knopf
           &bdquo;Gelbe Flagge&ldquo; und das Halten der Boxentaste rufen kein Gelb mehr aus.</small></div>
         <label class="tgl"><input type="checkbox" id="race-gelb-aus"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Safety Car: erst aufschlie&szlig;en<span class="wip-tag">experimentell</span><small>An:
+          Unter Gelb mit Safety Car fahren alle mit etwa 45&nbsp;% heran und ab zwei Kacheln Abstand
+          mit 35&nbsp;% weiter, in Kurven und Haarnadeln gedrosselt. Aus: alle sofort 35&nbsp;%.
+          &Uuml;berholt wird unter Gelb nie.</small></div>
+        <label class="tgl"><input type="checkbox" id="race-sc-aufschliessen" checked><span></span></label></div>
 
       <div id="race-grid-wrap" style="display:none; margin-top:12px">
         <label class="small">Startaufstellung, ziehen oder mit den Pfeilen sortieren</label>
@@ -9020,7 +9026,7 @@
           <b>Statistiken</b>
           <span>Kilometer, Sitzungen, Fahrzeit, Rennen, Siege, Medaillen und das Ranking deiner Autos.</span>
         </button>
-        <button class="misc-tile subpage-open" data-sub="opt-studie">
+        <button class="misc-tile subpage-open" data-sub="opt-studie" id="opt-studie-kachel" hidden>
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6h12M20 6v12L9 38a3 3 0 0 0 3 4h24a3 3 0 0 0 3-4L28 18V6"/><path d="M14 30h20" stroke="var(--bad)"/></svg>
           <b>Studie <span class="wip-tag">experimentell</span></b>

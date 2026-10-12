@@ -1820,6 +1820,8 @@
     raceStartZuruecksetzen(fuel);
     updateDamageFuelUI();
     racePitDone = 0;
+    // v1.0.12 BESTELLT: "Pflichtstopps bitte fuer alle spieler gesteuerten Autos zaehlen."
+    if (typeof zusatzPlaetze === 'function') zusatzPlaetze().forEach((z) => { z.pitDone = 0; });
     syncRaceGridOrder();
     scheduleRaceWeatherChange();
     raceLapEvents = [];
@@ -2020,6 +2022,18 @@
     const missed = Math.max(0, racePitRequired - racePitDone);
     return missed * racePitPenaltyS * 1000;
   }
+  // Dieselbe Strafe fuer Spieler 2/3 (v1.0.12): je verpasstem Pflichtstopp racePitPenaltyS.
+  function strafeMsVon(wer) {
+    if (!wer || wer === 1) return racePenaltyMs();
+    const z = typeof zusatzPlatz === 'function' ? zusatzPlatz(wer) : null;
+    if (!z) return 0;
+    return Math.max(0, racePitRequired - (z.pitDone || 0)) * racePitPenaltyS * 1000;
+  }
+  // Welcher Spielerplatz faehrt dieses Auto (Rolle player, player2, player3)? 0 = keiner.
+  function spielerPlatzVonRolle(rolle) {
+    const m = /^player(\d?)$/.exec(rolle || '');
+    return m ? (parseInt(m[1], 10) || 1) : 0;
+  }
 
   // Wie lange ein Ghost hoechstens noch faehrt, um seine Runde zu beenden. 90 s ist
   // grosszuegig - eine Runde auf einer Wohnzimmerbahn dauert gemessen unter 20 s -, und die
@@ -2105,7 +2119,11 @@
       + (racePartialMs !== null
          ? `, letzte Runde unvollendet nach ${formatLapTime(racePartialMs)}` : '')
       + (missed > 0 ? `, ${missed} Pflichtstopp${missed === 1 ? '' : 's'} verpasst, `
-                      + `+${missed * racePitPenaltyS} s Strafe` : '');
+                      + `+${missed * racePitPenaltyS} s Strafe` : '')
+      + ((typeof zusatzAktiv === 'function' ? zusatzAktiv() : []).map((z) => {
+        const s = strafeMsVon(z.nr) / 1000;
+        return s > 0 ? `, P${z.nr}: +${s} s Strafe` : '';
+      }).join(''));
     // DER RUNDENZAEHLER, aber nur bei einer echten Zielflagge. Wer von Hand abbricht,
     // bekommt keine Fanfare - dieselbe Ueberlegung, mit der die Ghosts dann auch nicht
     // auslaufen: ein Abbruch ist kein Zieleinlauf.
@@ -4715,6 +4733,12 @@
       showHudToast('P' + z.nr + ': BOXENSTOPP ABGEBROCHEN');
       log('P' + z.nr + ': Boxenstopp abgebrochen.', 'info');
       return;
+    }
+    if (raceState === 'racing' || raceState === 'finishing') {
+      z.pitDone = (z.pitDone || 0) + 1;
+      if (racePitRequired > 0 && z.pitDone <= racePitRequired) {
+        showHudToast('P' + z.nr + ': ' + t('Pflichtstopp') + ' ' + z.pitDone + '/' + racePitRequired);
+      }
     }
     log('P' + z.nr + ': Boxenstopp beendet nach ' + stand.toFixed(1) + ' s, '
         + fuelLiters(getankt) + ' l getankt, ' + Math.round(rep) + ' % repariert.', 'info');

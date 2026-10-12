@@ -4837,6 +4837,19 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function gelbGrenze() {
     return Math.max(yellowFactor(), GHOST_READ_MIN);
   }
+  // ---- AUFSCHLIESSEN ZUM SAFETY CAR (v1.0.12, Option, Vorgabe an) ----------------------
+  // BESTELLT: "Mach das Ranfahren zum Safetycar als eine Option (Standard = an), also alle mit
+  // ~45 % ranfahren und dann mit 35 % weiter. Dabei auch Kurvendrosselung beruecksichtigen,
+  // damit sie nicht mit 45 % aus der Haarnadel fliegen." Die Kurvendrosselung kommt danach:
+  // bei den Ghosts das Tempoprofil in ghostTick, beim Fahrerauto autopilotKurvenFaktor.
+  const SC_AUFSCHLUSS = 0.45;
+  function scAufschliessenAn() { const el = $('race-sc-aufschliessen'); return el ? !!el.checked : true; }
+  function gelbZielFuer(car) {
+    if (car && car.role !== 'safetycar' && scAufschliessenAn() && safetyCarFaehrt() && !nahAmSafetyCar(car)) {
+      return Math.max(SC_AUFSCHLUSS, gelbGrenze());
+    }
+    return gelbGrenze();
+  }
   // Die Kurvendrosselung der Ghosts fuer ein Fahrerauto im Autopiloten: dieselbe Regel wie
   // die Kachelregel in ghostTick (curveSlow in der 60-Grad-Kurve, doppelt in Haarnadel und
   // Engstelle, hoechstens 85 %), an der GEMELDETEN Kachel unter dem Auto. So faehrt es
@@ -4858,7 +4871,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Fahrerauto setzt dann der Autopilot (autopilotGrund), nicht die Physik.
       // v1.0.9 BESTELLT: "~35 % Geschwindigkeit bei allen ohne Messung der Naehe zum
       // Safetycar und keine Ueberholmanoever" - mit und ohne Safety Car dieselbe Grenze.
-      limitYellow = gelbGrenze();
+      limitYellow = (safetyCar() && scAufschliessenAn()) ? Math.max(SC_AUFSCHLUSS, gelbGrenze()) : gelbGrenze();
       safetyCarRaus();
       applySpeedLimit();
       // Angriffe abbrechen: waehrend Gelb wird nicht ueberholt.
@@ -8042,9 +8055,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // er nicht, weil das Auto dann nicht mehr liest.
       // v0.10.7: Faehrt ein Safety Car, drosseln die anderen erst in seiner Naehe auf das
       // Gelb-Tempo (BESTELLT: "normal fahren, bis sie nah am Safety Car sind, dann auf 35 %").
-      // v1.0.9: ohne Naehemessung - unter Gelb faehrt jeder ~35 %, auch hinter dem Safety Car.
+      // v1.0.9: unter Gelb faehrt jeder ~35 %. v1.0.12: mit der Option "aufschliessen" bis
+      // zum Safety Car ~45 %, dann 35 % (gelbZielFuer); die Kurvendrosselung folgt unten.
       if (underYellow) {
-        target = Math.min(target, Math.max(yellowFactor(), GHOST_READ_MIN));
+        target = Math.min(target, gelbZielFuer(car));
       }
       // ---- Tempoprofil statt eines einzigen Kurvenabschlags ----
       // Vorher gab es genau zwei Zustaende: "Kurve in Sicht" oder nicht, und beide bekamen

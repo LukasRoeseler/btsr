@@ -18015,7 +18015,7 @@
   });
 
   // ---- v0.10.7: Safety Car ----
-  stAdd('Safety Car: eine Rolle, nie ueberholt, unter Gelb alle sofort ~35 %', () => {
+  stAdd('Safety Car: eine Rolle, nie ueberholt, aufschliessen ~45 % dann 35 % (Option)', () => {
     const f = [];
     const merk = { garage: garage.slice(), tiles: currentTrackTiles, flag: flagState, ly: limitYellow };
     const echt = { start: startGhost };
@@ -18031,18 +18031,27 @@
       if (nahAmSafetyCar(weit)) f.push('5 Kacheln dahinter gilt als nah');
       if (ghostFieldRacing().indexOf(sc) < 0) f.push('Safety Car ist kein Hindernis im Feld');
       if (raceAllCars().some((c) => c.role === 'safetycar')) f.push('Safety Car im Ergebnis');
-      // v1.0.9: Gelb mit Safety Car drosselt sofort alle, ohne Naehemessung.
-      startGhost = () => {};
-      flagState = 'green';
-      setFlag('yellow');
-      if (Math.abs(limitYellow - gelbGrenze()) > 1e-9) f.push('Grenze mit Safety Car ' + limitYellow + ' statt ' + gelbGrenze());
+      // v1.0.12: Option "erst aufschliessen": weit weg ~45 %, nah 35 %; aus: alle 35 %.
+      const cb = $('race-sc-aufschliessen'), cbMerk = cb ? cb.checked : true;
+      try {
+        if (cb) cb.checked = true;
+        if (Math.abs(gelbZielFuer(weit) - Math.max(0.45, gelbGrenze())) > 1e-9) f.push('weit weg nicht ~45 %: ' + gelbZielFuer(weit));
+        if (Math.abs(gelbZielFuer(nah) - gelbGrenze()) > 1e-9) f.push('nah dran nicht 35 %: ' + gelbZielFuer(nah));
+        if (Math.abs(gelbZielFuer(sc) - gelbGrenze()) > 1e-9) f.push('Safety Car selbst nicht 35 %');
+        startGhost = () => {};
+        flagState = 'green';
+        setFlag('yellow');
+        if (limitYellow < 0.449) f.push('Fahrerauto auf ' + limitYellow + ' gedeckelt, kann nicht aufschliessen');
+        if (cb) cb.checked = false;
+        if (Math.abs(gelbZielFuer(weit) - gelbGrenze()) > 1e-9) f.push('Option aus: weit weg nicht 35 %');
+      } finally { if (cb) cb.checked = cbMerk; }
     } finally {
       startGhost = echt.start;
       garage.length = 0; merk.garage.forEach((c) => garage.push(c));
       currentTrackTiles = merk.tiles; flagState = merk.flag; limitYellow = merk.ly;
       if (typeof applySpeedLimit === 'function') applySpeedLimit();
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eine Rolle, Hindernis, nicht im Ergebnis, Gelb sofort ~35 %' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eine Rolle, Hindernis, nicht im Ergebnis, 45 % weit / 35 % nah, Option aus 35 %' };
   });
 
   // ---- v1.0: Studie (98f-studie.js) ----

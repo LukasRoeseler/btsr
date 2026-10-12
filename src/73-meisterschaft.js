@@ -167,7 +167,9 @@
     const lokal = raceAllCars().filter((c) => meisterDarfMit(c.role)).map((c) => {
       const ms = (c.laps || []).map((l) => l.ms);
       let total = ms.reduce((a, b) => a + b, 0);
-      if (c.role === 'player' && typeof racePenaltyMs === 'function') total += racePenaltyMs();
+      // Verpasste Pflichtstopps: fuer jedes gesteuerte Auto (Spieler 1-3), v1.0.12.
+      const platz = typeof spielerPlatzVonRolle === 'function' ? spielerPlatzVonRolle(c.role) : 0;
+      if (platz && typeof strafeMsVon === 'function') total += strafeMsVon(platz);
       const key = c.id ? 'c:' + c.id : 'c:spieler';
       info[key] = { name: c.name, farbe: c.farbe, rolle: c.role };
       return { key, laps: ms.length, total, beste: ms.length ? Math.min.apply(null, ms) : Infinity, rolle: c.role };
@@ -178,7 +180,9 @@
     const fern = (mpLetzterStand.fahrer || []).filter((f) => f && f.id && (f.id === mp.id || mpAktiv(f))).map((f) => {
       const key = 'mp:' + f.id;
       info[key] = { name: f.name || f.id, farbe: null, rolle: f.id === mp.id ? 'player' : 'mp' };
-      return { key, laps: f.laps || 0, beste: Number.isFinite(f.beste) ? f.beste * 1000 : Infinity, total: 0 };
+      // Neue Hosts melden Gesamtzeit und Strafe (v1.0.12); dann zaehlt beides wie lokal.
+      const total = Number.isFinite(f.summe) ? f.summe + (Number.isFinite(f.strafe) ? f.strafe : 0) : null;
+      return { key, laps: f.laps || 0, beste: Number.isFinite(f.beste) ? f.beste * 1000 : Infinity, total };
     });
     // Das eigene Auto: lokal gemessen, aber unter seinem Mehrspieler-Key (der Anker).
     const p1 = lokal.find((x) => x.rolle === 'player');
@@ -188,6 +192,13 @@
       if (info[p1.key]) info[anker] = Object.assign({}, info[p1.key], { name: (eigen && eigen.name) || info[p1.key].name });
       rest.push(Object.assign({}, p1, { key: anker }));
     }
+    // Kennt der Host von allen die Gesamtzeit, wird alles gemeinsam sortiert (mit Strafen);
+    // sonst nach Host-Reihenfolge mit dem eigenen Auto als Anker.
+    if (fern.every((x) => x.total !== null)) {
+      const alle = fern.filter((x) => x.key !== anker || !p1).concat(rest);
+      return { reihe: meisterKlassieren(alle, quali).filter((k, i, a) => a.indexOf(k) === i), info, lokal };
+    }
+    fern.forEach((x) => { if (x.total === null) x.total = 0; });
     return { reihe: meisterMischen(fern, rest, anker, quali).filter((k, i, a) => a.indexOf(k) === i), info, lokal };
   }
 
