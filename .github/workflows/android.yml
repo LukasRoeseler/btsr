@@ -50,9 +50,10 @@ jobs:
         run: |
           if [[ "$GITHUB_REF_NAME" == apk-v* ]]; then V="${GITHUB_REF_NAME#apk-v}"; else
             V=$(python3 -c "import json;print(json.load(open('app-update.json'))['version'])"); fi
-          # 0.<Woche>.<Push> -> Woche*1000 + Push: steigt streng, wie Android es fuer
-          # Aktualisierungen verlangt.
-          CODE=$(python3 -c "v='$V'.split('.');print(int(v[1])*1000+int(v[2]))")
+          # <Major>.<Minor>.<Push> -> Major*100000 + Minor*1000 + Push: steigt streng, wie
+          # Android es fuer Aktualisierungen verlangt - auch beim Sprung von 0.10.x auf 1.0.x
+          # (vorher Woche*1000 + Push: 1.0.7 ergab 7 und lag unter 0.10.6 = 10006).
+          CODE=$(python3 -c "v='$V'.split('.');print(int(v[0])*100000+int(v[1])*1000+int(v[2]))")
           echo "name=$V" >> "$GITHUB_OUTPUT"
           echo "code=$CODE" >> "$GITHUB_OUTPUT"
           echo "Version $V, versionCode $CODE"
