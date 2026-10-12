@@ -394,8 +394,31 @@
     return Math.max(-1, Math.min(1, steer + zu));
   }
 
+  // v0.10.4: TAKTMESSUNG fuer "Funk-Rundlauf". Wie weit liegen zwei Herzschlaege wirklich
+  // auseinander (Soll 45 ms)? Ein ueberlasteter Hauptthread (App: Bluetooth-Meldungen ueber
+  // die Bruecke) zeigt sich hier als Ausreisser - eine Eingabe wartet dann bis zum naechsten.
+  const herzMess = { werte: [], dauer: [] };
+  function herzStatistik() {
+    const w = herzMess.werte.slice().sort((a, b) => a - b);
+    if (!w.length) return null;
+    const d = herzMess.dauer.slice().sort((a, b) => a - b);
+    return { mittel: w.reduce((a, b) => a + b, 0) / w.length, p95: w[Math.floor(w.length * 0.95)] || w[w.length - 1],
+             max: w[w.length - 1], ueber60: w.filter((x) => x > 60).length / w.length,
+             arbeitP95: d.length ? d[Math.floor(d.length * 0.95)] || d[d.length - 1] : 0 };
+  }
   function controlHeartbeat() {
-    herzschlagAt = performance.now();
+    const herzJetzt = performance.now();
+    if (herzschlagAt) {
+      herzMess.werte.push(herzJetzt - herzschlagAt);
+      if (herzMess.werte.length > 400) herzMess.werte.shift();
+    }
+    herzschlagAt = herzJetzt;
+    try { controlHeartbeatInnen(); } finally {
+      herzMess.dauer.push(performance.now() - herzJetzt);
+      if (herzMess.dauer.length > 400) herzMess.dauer.shift();
+    }
+  }
+  function controlHeartbeatInnen() {
     // The calibration runner drives its own carefully-timed sequence; stay out of its way.
     if (typeof calibRunning !== 'undefined' && calibRunning) return;
     // Safety watchdog: gamepad sampling runs on rAF, which the browser suspends while the

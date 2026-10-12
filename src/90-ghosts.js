@@ -9448,8 +9448,42 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
   }
 
+  // ---- DAS GAMEPAD DIREKT AUS DER APP (v0.10.4) -----------------------------------
+  //
+  // GEMELDET: "Latenz in der APK ist langsamer als im Browser." In der App kommt das Web-
+  // Gamepad ueber den Android-Hauptthread, den sich die WebView mit allen Bluetooth-Meldungen
+  // teilt. Die APK legt die Achsen jedes Stick-Ereignisses direkt ab (OmegaPadNativ.java);
+  // hier werden die vier Stickachsen und die zwei Trigger des EINEN Controllers damit
+  // ueberschrieben. Knoepfe und Steuerkreuz bleiben beim Web-Gamepad (sie sind
+  // Flankenereignisse, keine Dauerwerte). Mit zwei Controllern (Spieler 2/3) nicht - die
+  // Zuordnung Android-Geraet -> Web-Gamepad-Nummer ist nicht sicher.
+  const padNativLage = { an: false, letzte: null };
+  function padNativ(pad) {
+    padNativLage.an = false;
+    const o = window.OmegaPad;
+    if (!pad || !o || typeof o.lesen !== 'function' || pad.mapping !== 'standard') return pad;
+    if (typeof zweiSpieler !== 'undefined' && zweiSpieler) return pad;
+    let w;
+    try { w = String(o.lesen()).split(',').map(Number); } catch (e) { return pad; }
+    padNativLage.letzte = w;
+    if (w.length < 8 || w[7] !== 1 || !(w[6] >= 0)) return pad;
+    padNativLage.an = true;
+    const axes = Array.from(pad.axes || []);
+    axes[0] = w[0]; axes[1] = w[1]; axes[2] = w[2]; axes[3] = w[3];
+    const buttons = Array.from(pad.buttons || []);
+    const trig = (i, v) => { if (buttons[i]) buttons[i] = { pressed: v > 0.1, touched: v > 0, value: v }; };
+    trig(6, w[4]); trig(7, w[5]);
+    return { id: pad.id, index: pad.index, mapping: pad.mapping, connected: pad.connected,
+             timestamp: pad.timestamp, axes, buttons, vibrationActuator: pad.vibrationActuator };
+  }
+  function padNativInfo() {
+    const w = padNativLage.letzte;
+    if (!window.OmegaPad) return null;
+    return { an: padNativLage.an, geraete: w ? w[7] : 0, ereignisse: w ? w[8] : 0, zustellMs: w ? w[9] : null };
+  }
   function pollGamepad() {
     const spieler = padsFuerSpieler();
+    if (spieler.p1) spieler.p1 = padNativ(spieler.p1);
     padBelegungAbgleichen(spieler);
     // Spieler 2 zuerst, und ohne Bedingung auf `pad`: sein Eingang muss auch dann auf null
     // gehen, wenn Spieler 1 gar kein Pad hat (der Rumpf darunter kehrt dann frueh zurueck).

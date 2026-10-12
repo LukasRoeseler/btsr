@@ -4464,7 +4464,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.10.3</span></span>
+        <span class="foot-ver">v<span id="app-version">0.10.4</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5589,6 +5589,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.9</span></b></p>
       <ul class="muted" id="patchnotes-09" style="padding-left:20px; line-height:1.7">
+        <li>App-Latenz (neue APK n&#246;tig, &#228;ltere fahren wie bisher): Befehle an die Autos gehen in der App jetzt direkt an den Bluetooth-Schreibthread, ohne den Umweg &#252;ber den Android-Hauptthread, &#252;ber den auch alle Meldungen der Autos laufen. Das Gamepad wird bei einem Controller direkt aus der App gelesen (Sticks und Trigger), Android b&#252;ndelt die Stick-Ereignisse nicht mehr im Bildtakt, und der Ton l&#228;uft mit kleinem Puffer. Die Verbindungspriorit&#228;t wird nicht mehr alle 10 s neu ausgehandelt (kleine H&#228;nger). &#8222;Funk-Rundlauf&#8220; zeigt jetzt die echten Werte: Br&#252;ckenzeit, Takt des Steuerherzschlags, Gamepad direkt, Tonverz&#246;gerung; der alte Wert ist in der App als &#8222;nur JS&#8220; gekennzeichnet.</li>
         <li>Fehler behoben (Pr&#252;fung der &#196;nderungen seit 0.9.56): Ghosts, die die Bahn verlassen, halten wieder an (Gerade 0,9 s, Kurve 1,2 s, Haarnadel 1,8 s, sofort wenn sie auf dem Teppich weiterz&#228;hlen). Nah nebeneinander bekommen zwei Ghosts immer gegens&#228;tzliche Seiten und behalten ihre Reihenfolge von links nach rechts, statt sich anzuschieben. Ghost-Motorsound spielt auch ohne Sample des eigenen Autos, und die Garage zeigt, ob er wirklich an ist. Automatisch aufstellen h&#228;lt erst nach dem Startteil am richtigen Platz und geht erst kurz davor ganz an den Rand. Ein Auto, das Ghost war, lenkt als gesteuertes Auto nicht mehr selbst. Das Boxen-Minispiel kommt wieder, wenn kein zweiter Spieler f&#228;hrt. Fliegender Start: Einf&#252;hrungsrunde mit Kurvendrosselung, Ende beim zweiten &#220;berfahren des ersten Autos. Akku: Wert gegl&#228;ttet, leer schon bei h&#246;herem Rohwert, Warnblinken nur noch mit den Lichtern (vorher kurz ohne Gas und Lenkung). Statistik: gespeicherte Strecken werden gez&#228;hlt, jedes Auto erscheint mit eigenen Kilometern, Spieler 2/3 z&#228;hlen mit, Kilometer nur mit verbundenem Auto, &#8222;Beste Runde&#8220; entfernt. 2/3-Spieler-Schirm: letzte und beste Runde gro&#223;, alle Kn&#246;pfe sichtbar.</li>
         <li>Community-Bestzeiten: Die 3er-Serie (bester Durchschnitt aus drei aufeinanderfolgenden Runden) gilt jetzt auch f&#252;r Community-Strecken. Daf&#252;r speichert die App die Rundenzeiten zu jedem Eintrag und l&#228;dt sie mit hoch; das Apps Script muss neu bereitgestellt werden, damit es die Rundenzeiten auch f&#252;r die Online-Zeiten &#252;bernimmt.</li>
         <li>Ghosts: Die &#220;berholrate ist jetzt eine echte Rate (Vorgabe 0,1 &#220;berholman&#246;ver je Runde je 4 Autos, bei 6 Autos und 10 Runden also 1 bis 2). Vorher &#228;nderte der Regler nur die Reichweite, und jede Ann&#228;herung wurde zum Angriff. Die Startreihen fahren gestaffelt ab Gr&#252;n los, 250 ms je Zweierreihe. Vorher z&#228;hlte die Staffel erst ab deiner ersten Bewegung und wirkte praktisch nicht.</li>
@@ -11806,13 +11807,23 @@
     }
     return l.bereit === true;
   }
+  // v0.10.4: DER DIREKTE WEG zuerst (window.OmegaDirekt, ab APK 0.10.4): synchron auf dem
+  // JavaBridge-Thread, ohne JSON ueber den Android-Hauptthread. Aeltere APKs haben ihn nicht,
+  // dann wie bisher ueber Capacitor. Date.now() geht mit: die APK misst daran die Brueckenzeit.
   function omegaBleSchreiben(z, hex) {
     try {
+      const d = window.OmegaDirekt;
+      if (d && typeof d.schreibe === 'function') {
+        d.schreibe(z.deviceId, z.service, z.characteristic, hex, Date.now());
+        omegaDirektBenutzt = true;
+        return true;
+      }
       C.toNative('OmegaBle', 'writeControl', { deviceId: z.deviceId, service: z.service,
-                                               characteristic: z.characteristic, value: hex });
+                                               characteristic: z.characteristic, value: hex, t: Date.now() });
       return true;
     } catch (e) { return false; }
   }
+  let omegaDirektBenutzt = false;
   // Waehrend das Community-Plugin selbst ans GATT geht (Abo, Lesen, Schreiben mit Antwort),
   // schreibt OmegaBle nicht: Android erlaubt nur EINEN GATT-Vorgang zugleich. Gezaehlt, weil
   // mehrere Vorgaenge ueberlappen koennen; das Plugin hebt die Pause nach 1,5 s selbst auf.
@@ -11828,7 +11839,8 @@
   window.OMEGA_BRUECKE.omegaInfo = () => {
     if (!omegaBleVerfuegbar()) return { weg: 'Plugin' };
     const l = [...omegaLage.values()][0];
-    return { weg: l && l.bereit ? 'OmegaBle' : 'Plugin', alt: !!(l && l.alt), zaehler: l && l.zaehler };
+    return { weg: l && l.bereit ? (omegaDirektBenutzt ? 'OmegaBle direkt' : 'OmegaBle') : 'Plugin',
+             alt: !!(l && l.alt), zaehler: l && l.zaehler };
   };
 
   let bereit = null;
@@ -11943,13 +11955,13 @@
       // SCHNELLES VERBINDUNGSINTERVALL. Android waehlt sonst 30-50 ms, und der Sendetakt ist
       // 45 ms - dann faellt jedes zweite Paket auf das naechste Intervall. 1 = HIGH.
       ruf('requestConnectionPriority', { deviceId: id, connectionPriority: 1 }).catch(() => {});
-      // Und alle 10 s nachlegen (v0.9.2): manche Autos/Telefone handeln das Intervall spaeter
-      // wieder hoch, und ein langsames Intervall fuehlt sich genau wie Eingabeverzoegerung an.
-      clearInterval(this._prio);
-      this._prio = setInterval(() => {
-        if (!this.connected) { clearInterval(this._prio); return; }
-        ruf('requestConnectionPriority', { deviceId: id, connectionPriority: 1 }).catch(() => {});
-      }, 10000);
+      // v0.10.4: EINMAL nachlegen, nach 5 s, statt alle 10 s. Jede Anfrage kann eine neue
+      // Aushandlung des Verbindungsintervalls ausloesen - und waehrend der stockt der Funk
+      // kurz. Alle zehn Sekunden war das ein regelmaessiger kleiner Haenger je Auto.
+      clearTimeout(this._prio);
+      this._prio = setTimeout(() => {
+        if (this.connected) ruf('requestConnectionPriority', { deviceId: id, connectionPriority: 1 }).catch(() => {});
+      }, 5000);
       return this;
     }
     disconnect() {
@@ -12982,6 +12994,7 @@
     "Zieleinlauf: Die Ghosts parken nach dem Rennen jetzt abwechselnd maximal weit links und rechts statt alle an derselben Seite. Vorher stauten sich bei mehr als zwei Autos alle an einem Rand, und die Nachzügler fuhren auf die Vorderen auf. Die Seite kommt aus der Startaufstellung (gerader Platz rechts, ungerader links), und mit der Kachelstaffel darunter liegen zwei gleichseitige Autos immer zwei Plätze auseinander – das Feld parkt weiter auseinander, und die andere Bahnhälfte bleibt für dein Auto frei.": "Finish roll-out: after the race the ghosts now park alternately as far left and right as possible instead of all on the same side. Before, with more than two cars everyone piled up on one edge and the tail-enders drove onto the ones ahead. The side comes from the starting grid (even slot right, odd slot left), and with the tile stagger beneath it two same-side cars are always two slots apart – the field parks further apart, and the other half of the track stays free for your car.",
     "Community-Bestzeiten: Die 3er-Serie (bester Durchschnitt aus drei aufeinanderfolgenden Runden) gilt jetzt auch für Community-Strecken. Dafür speichert die App die Rundenzeiten zu jedem Eintrag und lädt sie mit hoch; das Apps Script muss neu bereitgestellt werden, damit es die Rundenzeiten auch für die Online-Zeiten übernimmt.": "Community best times: the 3-lap series (best average of three consecutive laps) now also applies to community tracks. To do this, the app stores the lap times with every entry and uploads them as well; the Apps Script needs to be redeployed so that it also takes over the lap times for the online times.",
     "Fehler behoben (Prüfung der Änderungen seit 0.9.56): Ghosts, die die Bahn verlassen, halten wieder an (Gerade 0,9 s, Kurve 1,2 s, Haarnadel 1,8 s, sofort wenn sie auf dem Teppich weiterzählen). Nah nebeneinander bekommen zwei Ghosts immer gegensätzliche Seiten und behalten ihre Reihenfolge von links nach rechts, statt sich anzuschieben. Ghost-Motorsound spielt auch ohne Sample des eigenen Autos, und die Garage zeigt, ob er wirklich an ist. Automatisch aufstellen hält erst nach dem Startteil am richtigen Platz und geht erst kurz davor ganz an den Rand. Ein Auto, das Ghost war, lenkt als gesteuertes Auto nicht mehr selbst. Das Boxen-Minispiel kommt wieder, wenn kein zweiter Spieler fährt. Fliegender Start: Einführungsrunde mit Kurvendrosselung, Ende beim zweiten Überfahren des ersten Autos. Akku: Wert geglättet, leer schon bei höherem Rohwert, Warnblinken nur noch mit den Lichtern (vorher kurz ohne Gas und Lenkung). Statistik: gespeicherte Strecken werden gezählt, jedes Auto erscheint mit eigenen Kilometern, Spieler 2/3 zählen mit, Kilometer nur mit verbundenem Auto, „Beste Runde“ entfernt. 2/3-Spieler-Schirm: letzte und beste Runde groß, alle Knöpfe sichtbar.": "Bugs fixed (review of the changes since 0.9.56): ghosts that leave the track stop again (straight 0.9 s, curve 1.2 s, hairpin 1.8 s, immediately if they keep counting on the carpet). Two ghosts close together always get opposite sides and keep their left-to-right order instead of pushing each other. Ghost engine sound plays even without your own car's sample, and the garage shows whether it is really on. Auto grid positioning stops at the right place only after passing the start piece and moves to the edge only shortly before. A car that was a ghost no longer steers by itself when controlled. The pit minigame is back when no second player is driving. Flying start: formation lap with corner slowdown, ends when the first car crosses the line for the second time. Battery: value smoothed, empty at a higher raw value, warning blink only with the lights (previously briefly without throttle and steering). Statistics: saved tracks are counted, every car appears with its own distance, players 2/3 count, distance only with a connected car, “Best lap” removed. 2/3-player screen: last and best lap large, all buttons visible.",
+    "App-Latenz (neue APK nötig, ältere fahren wie bisher): Befehle an die Autos gehen in der App jetzt direkt an den Bluetooth-Schreibthread, ohne den Umweg über den Android-Hauptthread, über den auch alle Meldungen der Autos laufen. Das Gamepad wird bei einem Controller direkt aus der App gelesen (Sticks und Trigger), Android bündelt die Stick-Ereignisse nicht mehr im Bildtakt, und der Ton läuft mit kleinem Puffer. Die Verbindungspriorität wird nicht mehr alle 10 s neu ausgehandelt (kleine Hänger). „Funk-Rundlauf“ zeigt jetzt die echten Werte: Brückenzeit, Takt des Steuerherzschlags, Gamepad direkt, Tonverzögerung; der alte Wert ist in der App als „nur JS“ gekennzeichnet.": "App latency (new APK needed, older ones work as before): commands to the cars now go straight to the Bluetooth write thread instead of detouring through Android's main thread, which also carries every message from the cars. With one controller the gamepad is read directly by the app (sticks and triggers), Android no longer batches stick events per frame, and sound runs with a small buffer. The connection priority is no longer renegotiated every 10 s (small hitches). “Radio round trip” now shows real values: bridge time, control heartbeat timing, direct gamepad, sound delay; the old value is marked “JS only” in the app.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -13778,6 +13791,12 @@
     "Name der Aufnahme": "Recording name",
     "Name der Strecke": "Track name",
     "Community-Bestzeiten": "Community best times",
+    "Takt": "Tick",
+    "Brücke": "bridge",
+    "ersetzt": "replaced",
+    "Pad direkt": "Direct pad",
+    "an": "on",
+    "nur JS": "JS only",
     "Community-Strecke mit {n} Teilen, gefahren mit der Abstimmung {p}.": "Community track with {n} pieces, driven with the {p} setup.",
     "Noch keine Zeiten eingetragen. Fahr die Strecke, dann erscheint deine Zeit hier.": "No times yet. Drive the track and your time appears here.",
     "Community-Bestenliste": "Community leaderboard",
@@ -16778,8 +16797,31 @@
     return Math.max(-1, Math.min(1, steer + zu));
   }
 
+  // v0.10.4: TAKTMESSUNG fuer "Funk-Rundlauf". Wie weit liegen zwei Herzschlaege wirklich
+  // auseinander (Soll 45 ms)? Ein ueberlasteter Hauptthread (App: Bluetooth-Meldungen ueber
+  // die Bruecke) zeigt sich hier als Ausreisser - eine Eingabe wartet dann bis zum naechsten.
+  const herzMess = { werte: [], dauer: [] };
+  function herzStatistik() {
+    const w = herzMess.werte.slice().sort((a, b) => a - b);
+    if (!w.length) return null;
+    const d = herzMess.dauer.slice().sort((a, b) => a - b);
+    return { mittel: w.reduce((a, b) => a + b, 0) / w.length, p95: w[Math.floor(w.length * 0.95)] || w[w.length - 1],
+             max: w[w.length - 1], ueber60: w.filter((x) => x > 60).length / w.length,
+             arbeitP95: d.length ? d[Math.floor(d.length * 0.95)] || d[d.length - 1] : 0 };
+  }
   function controlHeartbeat() {
-    herzschlagAt = performance.now();
+    const herzJetzt = performance.now();
+    if (herzschlagAt) {
+      herzMess.werte.push(herzJetzt - herzschlagAt);
+      if (herzMess.werte.length > 400) herzMess.werte.shift();
+    }
+    herzschlagAt = herzJetzt;
+    try { controlHeartbeatInnen(); } finally {
+      herzMess.dauer.push(performance.now() - herzJetzt);
+      if (herzMess.dauer.length > 400) herzMess.dauer.shift();
+    }
+  }
+  function controlHeartbeatInnen() {
     // The calibration runner drives its own carefully-timed sequence; stay out of its way.
     if (typeof calibRunning !== 'undefined' && calibRunning) return;
     // Safety watchdog: gamepad sampling runs on rAF, which the browser suspends while the
@@ -22597,8 +22639,22 @@
     const z = ob && ob.zaehler;
     const weg = ob ? ' · ' + t('Weg') + ' ' + ob.weg + (ob.alt ? ' (' + t('alte APK') + ')' : '')
       + (z ? ' · ' + z.geschrieben + ' ' + t('geschrieben') + ', ' + z.wiederholt + ' ' + t('wiederholt') + ', ' + z.verworfen + ' ' + t('verworfen') : '') : '';
-    el.textContent = (s ? Math.round(s.mittel) + ' / ' + Math.round(s.p95) + ' ms' + (s.haenger ? ' · ' + s.haenger + '× hing' : '')
-      : t('noch keine Befehle')) + weg + (wv ? ' · WebView ' + wv : '');
+    // v0.10.4: In der App misst der Schreibwert nur JS (der Aufruf kehrt sofort zurueck) -
+    // so gekennzeichnet. Dazu, was wirklich zaehlt: Brueckenzeit (APK), Takt des Herzschlags,
+    // Gamepad direkt, Ausgabelatenz des Tons.
+    const h = typeof herzStatistik === 'function' ? herzStatistik() : null;
+    const takt = h ? ' · ' + t('Takt') + ' ' + Math.round(h.mittel) + '/' + Math.round(h.p95) + '/' + Math.round(h.max) + ' ms'
+      + (h.ueber60 ? ' (' + Math.round(h.ueber60 * 100) + ' % > 60)' : '') + ', ' + t('Arbeit') + ' ' + h.arbeitP95.toFixed(1) + ' ms' : '';
+    const br = z && typeof z.brueckeMittel === 'number' && z.brueckeMittel >= 0
+      ? ' · ' + t('Brücke') + ' ' + z.brueckeMittel.toFixed(1) + '/' + z.brueckeMax + ' ms' : '';
+    const ersetzt = z && z.ersetzt ? ', ' + z.ersetzt + ' ' + t('ersetzt') : '';
+    const pn = typeof padNativInfo === 'function' ? padNativInfo() : null;
+    const pad = pn ? ' · ' + t('Pad direkt') + ' ' + (pn.an ? t('an') : t('aus')) + (pn.zustellMs !== null ? ' (' + pn.zustellMs + ' ms)' : '') : '';
+    const ton = (typeof audioCtx !== 'undefined' && audioCtx && typeof audioCtx.baseLatency === 'number')
+      ? ' · ' + t('Ton') + ' +' + Math.round(((audioCtx.baseLatency || 0) + (audioCtx.outputLatency || 0)) * 1000) + ' ms' : '';
+    const nurJs = ob ? ' (' + t('nur JS') + ')' : '';
+    el.textContent = (s ? Math.round(s.mittel) + ' / ' + Math.round(s.p95) + ' ms' + nurJs + (s.haenger ? ' · ' + s.haenger + '× hing' : '')
+      : t('noch keine Befehle')) + weg + ersetzt + br + takt + pad + ton + (wv ? ' · WebView ' + wv : '');
   }, 1000);
   // COCKPIT GEDROSSELT (v0.8.41): hoechstens alle COCKPIT_MAL_MS, nach dem Senden.
   const COCKPIT_MAL_MS = 90;
@@ -41234,7 +41290,11 @@
 
   function initEngineSound() {
     if (audioCtx) return;
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // v0.10.4: 'interactive' ausdruecklich. Ohne Angabe waehlt eine Android-WebView gern
+    // einen grossen Puffer - der Motorton kommt dann 100 ms und mehr nach dem Gas, und das
+    // fuehlt sich an wie Eingabeverzoegerung, obwohl das Auto laengst reagiert hat.
+    const AC = window.AudioContext || window.webkitAudioContext;
+    try { audioCtx = new AC({ latencyHint: 'interactive' }); } catch (e) { audioCtx = new AC(); }
     engineOsc = audioCtx.createOscillator();
     engineOsc.type = soundProfile.wave;
     engineOsc.frequency.value = soundProfile.baseFreq;
@@ -53060,8 +53120,42 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
   }
 
+  // ---- DAS GAMEPAD DIREKT AUS DER APP (v0.10.4) -----------------------------------
+  //
+  // GEMELDET: "Latenz in der APK ist langsamer als im Browser." In der App kommt das Web-
+  // Gamepad ueber den Android-Hauptthread, den sich die WebView mit allen Bluetooth-Meldungen
+  // teilt. Die APK legt die Achsen jedes Stick-Ereignisses direkt ab (OmegaPadNativ.java);
+  // hier werden die vier Stickachsen und die zwei Trigger des EINEN Controllers damit
+  // ueberschrieben. Knoepfe und Steuerkreuz bleiben beim Web-Gamepad (sie sind
+  // Flankenereignisse, keine Dauerwerte). Mit zwei Controllern (Spieler 2/3) nicht - die
+  // Zuordnung Android-Geraet -> Web-Gamepad-Nummer ist nicht sicher.
+  const padNativLage = { an: false, letzte: null };
+  function padNativ(pad) {
+    padNativLage.an = false;
+    const o = window.OmegaPad;
+    if (!pad || !o || typeof o.lesen !== 'function' || pad.mapping !== 'standard') return pad;
+    if (typeof zweiSpieler !== 'undefined' && zweiSpieler) return pad;
+    let w;
+    try { w = String(o.lesen()).split(',').map(Number); } catch (e) { return pad; }
+    padNativLage.letzte = w;
+    if (w.length < 8 || w[7] !== 1 || !(w[6] >= 0)) return pad;
+    padNativLage.an = true;
+    const axes = Array.from(pad.axes || []);
+    axes[0] = w[0]; axes[1] = w[1]; axes[2] = w[2]; axes[3] = w[3];
+    const buttons = Array.from(pad.buttons || []);
+    const trig = (i, v) => { if (buttons[i]) buttons[i] = { pressed: v > 0.1, touched: v > 0, value: v }; };
+    trig(6, w[4]); trig(7, w[5]);
+    return { id: pad.id, index: pad.index, mapping: pad.mapping, connected: pad.connected,
+             timestamp: pad.timestamp, axes, buttons, vibrationActuator: pad.vibrationActuator };
+  }
+  function padNativInfo() {
+    const w = padNativLage.letzte;
+    if (!window.OmegaPad) return null;
+    return { an: padNativLage.an, geraete: w ? w[7] : 0, ereignisse: w ? w[8] : 0, zustellMs: w ? w[9] : null };
+  }
   function pollGamepad() {
     const spieler = padsFuerSpieler();
+    if (spieler.p1) spieler.p1 = padNativ(spieler.p1);
     padBelegungAbgleichen(spieler);
     // Spieler 2 zuerst, und ohne Bedingung auf `pad`: sein Eingang muss auch dann auf null
     // gehen, wenn Spieler 1 gar kein Pad hat (der Rumpf darunter kehrt dann frueh zurueck).

@@ -2373,8 +2373,22 @@
     const z = ob && ob.zaehler;
     const weg = ob ? ' · ' + t('Weg') + ' ' + ob.weg + (ob.alt ? ' (' + t('alte APK') + ')' : '')
       + (z ? ' · ' + z.geschrieben + ' ' + t('geschrieben') + ', ' + z.wiederholt + ' ' + t('wiederholt') + ', ' + z.verworfen + ' ' + t('verworfen') : '') : '';
-    el.textContent = (s ? Math.round(s.mittel) + ' / ' + Math.round(s.p95) + ' ms' + (s.haenger ? ' · ' + s.haenger + '× hing' : '')
-      : t('noch keine Befehle')) + weg + (wv ? ' · WebView ' + wv : '');
+    // v0.10.4: In der App misst der Schreibwert nur JS (der Aufruf kehrt sofort zurueck) -
+    // so gekennzeichnet. Dazu, was wirklich zaehlt: Brueckenzeit (APK), Takt des Herzschlags,
+    // Gamepad direkt, Ausgabelatenz des Tons.
+    const h = typeof herzStatistik === 'function' ? herzStatistik() : null;
+    const takt = h ? ' · ' + t('Takt') + ' ' + Math.round(h.mittel) + '/' + Math.round(h.p95) + '/' + Math.round(h.max) + ' ms'
+      + (h.ueber60 ? ' (' + Math.round(h.ueber60 * 100) + ' % > 60)' : '') + ', ' + t('Arbeit') + ' ' + h.arbeitP95.toFixed(1) + ' ms' : '';
+    const br = z && typeof z.brueckeMittel === 'number' && z.brueckeMittel >= 0
+      ? ' · ' + t('Brücke') + ' ' + z.brueckeMittel.toFixed(1) + '/' + z.brueckeMax + ' ms' : '';
+    const ersetzt = z && z.ersetzt ? ', ' + z.ersetzt + ' ' + t('ersetzt') : '';
+    const pn = typeof padNativInfo === 'function' ? padNativInfo() : null;
+    const pad = pn ? ' · ' + t('Pad direkt') + ' ' + (pn.an ? t('an') : t('aus')) + (pn.zustellMs !== null ? ' (' + pn.zustellMs + ' ms)' : '') : '';
+    const ton = (typeof audioCtx !== 'undefined' && audioCtx && typeof audioCtx.baseLatency === 'number')
+      ? ' · ' + t('Ton') + ' +' + Math.round(((audioCtx.baseLatency || 0) + (audioCtx.outputLatency || 0)) * 1000) + ' ms' : '';
+    const nurJs = ob ? ' (' + t('nur JS') + ')' : '';
+    el.textContent = (s ? Math.round(s.mittel) + ' / ' + Math.round(s.p95) + ' ms' + nurJs + (s.haenger ? ' · ' + s.haenger + '× hing' : '')
+      : t('noch keine Befehle')) + weg + ersetzt + br + takt + pad + ton + (wv ? ' · WebView ' + wv : '');
   }, 1000);
   // COCKPIT GEDROSSELT (v0.8.41): hoechstens alle COCKPIT_MAL_MS, nach dem Senden.
   const COCKPIT_MAL_MS = 90;

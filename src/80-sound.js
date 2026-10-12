@@ -14,7 +14,11 @@
 
   function initEngineSound() {
     if (audioCtx) return;
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // v0.10.4: 'interactive' ausdruecklich. Ohne Angabe waehlt eine Android-WebView gern
+    // einen grossen Puffer - der Motorton kommt dann 100 ms und mehr nach dem Gas, und das
+    // fuehlt sich an wie Eingabeverzoegerung, obwohl das Auto laengst reagiert hat.
+    const AC = window.AudioContext || window.webkitAudioContext;
+    try { audioCtx = new AC({ latencyHint: 'interactive' }); } catch (e) { audioCtx = new AC(); }
     engineOsc = audioCtx.createOscillator();
     engineOsc.type = soundProfile.wave;
     engineOsc.frequency.value = soundProfile.baseFreq;
