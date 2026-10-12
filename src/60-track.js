@@ -2704,8 +2704,9 @@
   // knapp um die Pfeile, innen der ganze Kreis. Der gewoehnliche weisse Streifen faellt auf
   // Haarnadelteilen weg. Mitte der linken Haarnadel = Spiegelbild: das ergibt sich von selbst,
   // weil u immer in Fahrtrichtung und v immer von der Bahn weg zeigt.
-  // Zur Ansicht: ?nadel=1 in der Adresse schaltet sie ein, bis der Entwurf abgesegnet ist.
-  const NADEL_KERBS_AN = /[?&]nadel=1\b/.test(location.search);
+  // v1.0.20 freigegeben ("Haarnadel sieht jetzt super aus"); ?nadel=0 zeigt zum Vergleich die
+  // alten kleinen Pfeile.
+  const NADEL_KERBS_AN = !/[?&]nadel=0\b/.test(location.search);
   const NADEL_FORMEN = {"aussen":{"formen":[{"a":10.32,"p":[[0.0727,0.0499],[0.0408,0.0841],[-0.0709,0.0866],[-0.0456,0.057],[-0.0714,0.0266],[0.038,0.0208]]},{"a":23.49,"p":[[0.0728,0.0397],[0.0458,0.0739],[-0.0711,0.0751],[-0.0437,0.0473],[-0.0694,0.0147],[0.0387,0.0127]]},{"a":36.78,"p":[[0.0723,0.0401],[0.0449,0.0721],[-0.0736,0.0712],[-0.0456,0.0431],[-0.0687,0.0083],[0.042,0.0104]]},{"a":50.05,"p":[[0.0735,0.0423],[0.0427,0.0754],[-0.0745,0.0711],[-0.0444,0.0459],[-0.0671,0.0099],[0.0421,0.0136]]},{"a":63.26,"p":[[0.0719,0.0496],[0.0431,0.0798],[-0.0749,0.0764],[-0.0461,0.0462],[-0.065,0.0149],[0.0405,0.0183]]},{"a":76.3,"p":[[0.0735,0.0524],[0.0276,0.1012],[-0.0778,0.0835],[-0.0422,0.0518],[-0.0645,0.0196],[0.0431,0.0223]]},{"a":88.69,"p":[[0.085,0.0551],[0.0112,0.1439],[-0.0961,0.1154],[-0.0301,0.055],[-0.0561,0.0246],[0.059,0.0248]]},{"a":100.84,"p":[[-0.1166,0.1565],[-0.0146,0.056],[-0.0396,0.0227],[0.0667,0.0202],[0.1016,0.0468],[-0.0014,0.1815]]},{"a":113.19,"p":[[-0.1325,0.1906],[-0.0009,0.0546],[-0.0256,0.0196],[0.0835,0.0144],[0.1178,0.0413],[-0.0083,0.2072]]},{"a":125.99,"p":[[-0.1412,0.2104],[0.0056,0.0465],[-0.0212,0.0165],[0.0921,0.0086],[0.1245,0.0356],[-0.013,0.2203]]},{"a":139.05,"p":[[-0.1489,0.2095],[0.0099,0.0456],[-0.0155,0.012],[0.0962,0.008],[0.128,0.0361],[-0.0119,0.2132]]},{"a":152.77,"p":[[-0.1459,0.1916],[0.0005,0.0468],[-0.0224,0.0144],[0.0868,0.0119],[0.1185,0.0366],[0.0058,0.1798]]},{"a":167.12,"p":[[-0.1269,0.1511],[-0.0215,0.0578],[-0.0418,0.0193],[0.0656,0.0236],[0.0978,0.0508],[0.0316,0.1263]]},{"a":181.41,"p":[[-0.0817,0.1034],[-0.0415,0.0679],[-0.0631,0.0337],[0.0517,0.0449],[0.0762,0.0764],[0.0474,0.1038]]}],"huelle":[[0,0.1131],[3,0.1131],[6,0.1131],[9,0.1131],[12,0.1131],[15,0.1126],[18,0.1121],[21,0.1098],[24,0.1075],[27,0.105],[30,0.1029],[33,0.1005],[36,0.1006],[39,0.1007],[42,0.1012],[45,0.1017],[48,0.1032],[51,0.1041],[54,0.1057],[57,0.1071],[60,0.1121],[63,0.1164],[66,0.1235],[69,0.1299],[72,0.1419],[75,0.1505],[78,0.1615],[81,0.1698],[84,0.183],[87,0.1905],[90,0.1998],[93,0.2067],[96,0.2168],[99,0.2219],[102,0.2277],[105,0.2317],[108,0.2376],[111,0.2402],[114,0.2429],[117,0.2448],[120,0.2468],[123,0.2468],[126,0.2468],[129,0.2468],[132,0.2468],[135,0.2454],[138,0.244],[141,0.2426],[144,0.2411],[147,0.2354],[150,0.2311],[153,0.2244],[156,0.2177],[159,0.211],[162,0.2029],[165,0.1948],[168,0.1841],[171,0.1734],[174,0.1627],[177,0.159],[180,0.1528]]},"innen":{"formen":[{"a":15.67,"p":[[0.4003,0.2432],[0.3344,0.1138],[0.2668,0.0835],[-0.1922,0.0643],[-0.061,0.1458],[-0.4252,0.5341],[-0.1545,0.6553]]},{"a":94.66,"p":[[0.1486,0.063],[-0.203,0.0725],[-0.3788,0.1345],[-0.2314,0.1891],[-0.1051,0.9216],[0.1638,0.8331],[0.2468,0.2168]]},{"a":163.07,"p":[[-0.3941,0.1397],[-0.2488,0.1837],[0.0361,0.5187],[0.1412,0.4018],[0.2806,0.3349],[0.2096,0.1448],[0.09,0.0487],[-0.2037,0.0684]]}],"huelle":[[0,0.995],[4,0.995],[8,0.995],[12,0.995],[16,0.995],[20,0.995],[24,0.995],[28,0.995],[32,0.995],[36,0.995],[40,0.995],[44,0.995],[48,0.995],[52,0.995],[56,0.995],[60,0.995],[64,0.995],[68,0.995],[72,0.995],[76,0.995],[80,0.995],[84,0.995],[88,0.995],[92,0.995],[96,0.995],[100,0.995],[104,0.995],[108,0.995],[112,0.995],[116,0.995],[120,0.995],[124,0.995],[128,0.995],[132,0.995],[136,0.995],[140,0.995],[144,0.995],[148,0.995],[152,0.995],[156,0.995],[160,0.995],[164,0.995],[168,0.995],[172,0.995],[176,0.995],[180,0.995]]}};
   // Zeichnet die Kerbs EINER Seite eines Haarnadelteils. kante: Punkte der Bahnkante dieser
   // Seite, mitte: die Mittellinie (fuer "weg von der Bahn"). Rueckgabe { weiss, farbe } als
@@ -2768,16 +2769,34 @@
       farbe += ` M ${ecken.map(P2).join(' L ')} Z`;
     }
     const vor = [], zurueck = [];
-    // An beiden Enden des Bogens laeuft die weisse Flaeche auf die Streifenbreite der Geraden
-    // aus - sonst steht dort eine Stufe, wo das naechste Teil anschliesst.
+    // UEBERGANG IN DIE GERADE (v1.0.20, GEMELDET: "der Innenrand ist noch etwas komisch und die
+    // Stelle, wo der Aussenrand wieder die normale Breite annimmt, da ist ein komischer Schnitt").
+    // Die weisse Flaeche endet nicht hart an der Bogengrenze, sondern laeuft ein Stueck in die
+    // anschliessende Gerade hinein und verjuengt sich dort weich (S-Kurve) auf die Streifenbreite.
+    // Innen geht der Halbkreis so ohne Kerbe in die zwei schmalen Streifen der Schenkel ueber -
+    // vorher schloss ihn eine schiefe Kante, weil Bogenanfang und -ende verschieden hoch liegen.
     const band = bw / R;
-    for (const [a, v0] of tab.huelle) {
-      // Nur aussen: innen ist wie im Foto der ganze Kreis weiss, bis an den Bogenanfang.
-      const rand = aussen ? Math.min(1, Math.min(a, 180 - a) / 15) : 1;
-      const v = band + (Math.max(v0, band) - band) * rand;
+    const weich = (x) => x * x * (3 - 2 * x);
+    const lt = R * (aussen ? 0.75 : 2.2);                        // Laenge des Uebergangs
+    const ecke = (m, s, v) => {
+      const x = m.x + m.tx * s, y = m.y + m.ty * s;
+      vor.push([x, y]);
+      zurueck.push([x + m.nx * v * R, y + m.ny * v * R]);
+    };
+    const h = tab.huelle;
+    const m0 = bei(0), m1 = bei(180);
+    const v0 = Math.max(h[0][1], band), v1 = Math.max(h[h.length - 1][1], band);
+    for (let k = 8; k >= 1; k--) {                               // vor dem Bogen, auf die Gerade zurueck
+      const f = k / 8;
+      ecke(m0, -lt * f, band + (v0 - band) * weich(1 - f));
+    }
+    for (const [a, va] of h) {
       const m = bei(a);
-      vor.push([m.x, m.y]);
-      zurueck.push([m.x + m.nx * v * R, m.y + m.ny * v * R]);
+      ecke(m, 0, Math.max(va, band));
+    }
+    for (let k = 1; k <= 8; k++) {                               // nach dem Bogen, in die Gerade hinein
+      const f = k / 8;
+      ecke(m1, lt * f, band + (v1 - band) * weich(1 - f));
     }
     const weiss = `M ${vor.concat(zurueck.reverse()).map(P2).join(' L ')} Z`;
     return { weiss, farbe, von, bis };
