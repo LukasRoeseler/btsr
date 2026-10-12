@@ -129,6 +129,12 @@
     // sondern auch die Geometrie (Zylinderzahl, Zuendfolge, Bankaufteilung) recherchiert
     // statt einer mitgelieferten technischen Tabelle entnommen - siehe audio/CREDITS.md.
     'fordtudor37', 'kaefer1300',
+    // ---- SECHS AUFNAHMEN AUS SPEED DREAMS, v1.0.13, WIP ------------------------------
+    //
+    // BESTELLT: Motorklaenge aus Speed Dreams. Nur die CC0-Proben aus data/sound (siehe
+    // audio/CREDITS.md); tools/sd_engines.py rechnet aus jeder Schleife die Baender. Damit
+    // spielt die App zum ersten Mal wieder Aufnahmen statt gerechneter Motoren.
+    'sd_v8gt', 'sd_v10', 'sd_v8muscle', 'sd_v8alt', 'sd_v12', 'sd_v12weich',
   ];
   // KEINE FESTE LISTE MEHR. Bis v0.4.55 stand hier ['idle','mid','high'], und genau diese
   // Liste war die Annahme, die den Ton kaputt gemacht hat: sie kannte drei Namen, also konnte
@@ -330,6 +336,9 @@
       // Duldsam gegenueber einem aelteren audio/: fehlt der Eintrag, bleibt der Ton weg und
       // der Ladevorgang laeuft weiter. Genau daran hing schon einmal der Schaltton.
       if (fx.tyre) fxBuffers.tyre = await grab(fx.tyre.file);
+      // v1.0.13: Rollen ueber Gras/Schotter neben der Bahn (Speed Dreams, CC0). Duldsam: ein
+      // aelteres audio/ hat den Eintrag nicht.
+      if (fx.offroad) fxBuffers.offroad = await grab(fx.offroad.file);
       fxBuffers.pit = await grab(fx.pit.file);
       // Both are loops: they run for as long as their job does. Missing files are tolerated
       // (grab returns null) and the sound is simply absent rather than the load failing.
@@ -931,6 +940,33 @@
       const node = tyreNode;
       tyreNode = null; tyreGain = null;
       setTimeout(() => { try { node.stop(); } catch (e) { /* schon gestoppt */ } }, 400);
+    }
+  }
+
+  // ---- NEBEN DER BAHN (v1.0.13) ---------------------------------------------------------
+  // BESTELLT: Klaenge aus Speed Dreams. Solange das eigene Auto neben der Bahn faehrt (die
+  // Schiene meldet 0xff), rollt es hoerbar ueber Gras und Schotter; lauter mit dem Tempo.
+  // Lautstaerke mit dem Reifenregler, weil es dasselbe ist: Reifen auf Untergrund.
+  let offroadNode = null, offroadGain = null;
+  function setOffroad(menge) {
+    if (!fxBuffers.offroad || !audioCtx || !soundEnabled) return;
+    menge = Math.max(0, Math.min(1, menge || 0));
+    if (menge > 0.02 && !offroadNode) {
+      offroadNode = audioCtx.createBufferSource();
+      offroadNode.buffer = fxBuffers.offroad;
+      offroadNode.loop = true;
+      offroadGain = audioCtx.createGain();
+      offroadGain.gain.value = 0;
+      offroadNode.connect(offroadGain).connect(audioCtx.destination);
+      offroadNode.start();
+    }
+    if (!offroadGain) return;
+    offroadGain.gain.setTargetAtTime(menge * 0.9 * tyreVolume / 0.35, audioCtx.currentTime, 0.06);
+    if (offroadNode) offroadNode.playbackRate.setTargetAtTime(0.8 + 0.4 * menge, audioCtx.currentTime, 0.1);
+    if (menge <= 0.02 && offroadNode) {
+      const node = offroadNode;
+      offroadNode = null; offroadGain = null;
+      setTimeout(() => { try { node.stop(); } catch (e) { /* schon gestoppt */ } }, 500);
     }
   }
 
@@ -2340,6 +2376,10 @@
     const pacQuietsch = physEngine.config.pacejka
       ? Math.max(pst.pacNutzV || 0, pst.pacNutzH || 0) * 0.8 : 0;
     setTyreSqueal(Math.max(pst.latUse || 0, pacQuietsch));
+    // Neben der Bahn: nur auf der Bahn messbar (Schiene meldet 0xff), lauter mit dem Tempo.
+    const neben = typeof trackMode !== 'undefined' && trackMode === 'on'
+      && typeof abseitsJetzt === 'function' && abseitsJetzt();
+    setOffroad(neben ? Math.min(1, Math.abs(st.speedKmh) / (physEngine.config.topSpeedKmh * 0.5)) : 0);
 
     // VOR dem fruehen Ausstieg: die Zusaetze gelten in beiden Tonarten, nicht nur im
     // Schleifenzweig.

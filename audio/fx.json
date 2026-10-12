@@ -1430,5 +1430,11 @@
    "upshifts": 5,
    "downshifts": 5
   }
+ },
+ "offroad": {
+  "file": "sd_offroad.ogg",
+  "loop": true,
+  "seconds": 5.7,
+  "source": "Speed Dreams 2.4 data/sound/grass_ride.wav: Bidone, Freesound 66048 (CC0)"
  }
 }

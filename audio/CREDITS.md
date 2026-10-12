@@ -4,6 +4,31 @@ Drei klar getrennte Gruppen. Der Unterschied ist wichtig, weil nur eine davon
 fremdes Aufnahmematerial enthaelt, und eine dritte weder das eine noch das
 andere ist - eine Systemstimme, kein Mensch und keine Physik.
 
+## Aufnahmen aus Speed Dreams (CC0) — seit v1.0.13
+
+Sechs Motoren sind echte Aufnahmen. Sie stammen aus den Spieldaten von Speed Dreams 2.4
+(`data/sound/`), und verwendet werden nur die Proben, die dort in `SoundCredits.txt`
+ausdruecklich als CC0 gekennzeichnet sind (Zusammenstellung June Ravenmoon, 29.11.2024,
+nach den Freesound-Nutzungsbedingungen fuer CC0-Werke):
+
+| Motor in der App | Datei in Speed Dreams | Quelle |
+|---|---|---|
+| Japanischer GT-V8 (Vorbeifahrt) | `v8_formula.wav` | Heigh-hoo, https://freesound.org/people/Heigh-hoo/sounds/128611/ (CC0) |
+| Deutscher V10-Sportwagen | `v10_raw.wav` | kevp888, https://freesound.org/people/kevp888/sounds/649889/ (CC0) |
+| Australischer Muscle-V8 | `v8-ears68.wav` | Ears68, https://freesound.org/people/Ears68/sounds/260445/ (CC0) |
+| Alter amerikanischer V8 | `v8-cr4sht3st.wav` | cr4sht3st, https://freesound.org/people/cr4sht3st/sounds/157144/ (CC0) |
+| Italienischer V12, roh / weich | `v12_raw.wav`, `v12_smooth2.wav` | cheesepuff, https://freesound.org/people/cheesepuff/sounds/112075/ (CC0) |
+| Rollen neben der Bahn (Gras/Schotter, `sd_offroad.ogg`) | `grass_ride.wav` | Bidone, https://freesound.org/people/Bidone/sounds/66048/ (CC0) |
+
+`tools/sd_engines.py` macht aus jeder Schleife mehrere Drehzahlbaender: dieselbe Aufnahme
+mit veraenderter Abspielrate (wie Speed Dreams selbst es zur Laufzeit tut), dazu ein
+gedaempftes Schubband und eine Lautstaerkeangleichung an die uebrigen Motoren. Die
+Aufnahmedrehzahl ist aus der Zuendfrequenz geschaetzt; die Motoren sind deshalb WIP.
+
+Nicht verwendet: `v6_raw.wav` und `rotary2.wav` (als "CC-BY" aus YouTube-Videos
+angegeben, Rechte unklar), `skid_metal.wav` (ohne Lizenzangabe) und die aelteren
+Fahrzeugklaenge der Spieldaten (GPL).
+
 ## Vollstaendig synthetisch — kein Aufnahmematerial
 
 Siebenundzwanzig Motoren, und jeder gehoert zu einem wirklichen Auto (oder in zwei
