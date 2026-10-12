@@ -2923,6 +2923,13 @@
     overflow: hidden; text-overflow: ellipsis; }
   .gar-akku { white-space: nowrap; }
   #race-gridscreen button.pad-fokus { outline: 3px solid var(--k-blau, #3d8bff); outline-offset: 2px; }
+  /* v1.0.19: Time Attack auf dem Startschirm - Medaillenzeiten und bisher Gewonnenes. */
+  .gt3-gridschirm .grid-timeattack:not([hidden]) { grid-area: hinweis; font-size: clamp(12px, 1.8vw, 17px); line-height: 1.45;
+    background: rgba(0,0,0,.35); padding: 6px 10px; border-left: 3px solid var(--gold, #f5c542); }
+  .gt3-gridschirm .grid-timeattack:not([hidden]) ~ .grid-hinweis { display: none; }
+  .grid-timeattack .ta-kopf { font-weight: 800; letter-spacing: .06em; text-transform: uppercase; font-size: .8em; opacity: .8; margin-top: 4px; }
+  .grid-timeattack .ta-stand { border-collapse: collapse; }
+  .grid-timeattack .ta-stand td { padding: 1px 10px 1px 0; }
   /* ---- STUDIE (98f-studie.js) ---- */
   .studie-text p { line-height: 1.45; margin: 4px 0 8px; }
   .studie-text code, #studie-inhalt code { font-size: .9em; }
@@ -4604,7 +4611,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.18</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.19</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5314,6 +5321,7 @@
         <div class="schirm-kopf"><b>Bringe die Autos in Position</b>
           <span id="grid-kopf-info" data-i18n-skip></span></div>
         <div class="grid-bild" id="grid-bild" data-i18n-skip></div>
+        <div class="grid-timeattack" id="grid-timeattack" data-i18n-skip hidden></div>
         <p class="grid-hinweis" id="grid-hinweis">Alle Autos stehen auf den Teilen <b>vor</b> Start/Ziel. Erst wenn du Start/Ziel zum ersten Mal &uuml;berf&auml;hrst, beginnt Runde&nbsp;1.</p>
         <div class="grid-liste" id="grid-liste"></div>
         <div class="schirm-fuss grid-fuss">
@@ -5732,6 +5740,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Der Modus &#8222;Bestzeit&#8220; hei&#223;t jetzt Time Attack. Der Startschirm zeigt dort die Medaillenzeiten der Strecke (Gold, Silber, Bronze), die bisher gewonnenen Medaillen und die Bestzeit je Auto. Ideallinie: die SIMULATOR-Suche probiert jetzt auch Sehnen &#8211; gerade Verbindungen &#252;ber bis zu knapp drei Teile &#8211;, damit z. B. eine Links-Rechts-Folge als gerade Diagonale gefahren wird, wenn das schneller ist; auf der Vorgabestrecke 10,7 statt 11,5 s je Runde in der Physik. Die Doku (Info &#8250; Streckengeometrie und Ideallinie) erkl&#228;rt die SIMULATOR-Linie.</li>
         <li>Neuer Motor aus Speed Dreams: Toro R-GT (V12), in der Gruppe &#8222;Speed Dreams, Aufnahmen&#8220;. Die Aufnahme stammt aus den Speed-Dreams-Spieldaten und steht unter der Free Art License; Quellen in audio/CREDITS.md.</li>
         <li>Hotfix: 1.0.16 startete nicht, wenn im Editor eine Strecke gemerkt war (die SIMULATOR-Linie wurde beim Laden zu fr&#252;h angefragt) &#8211; behoben. Die Ideallinie wird jetzt gleich nach jeder &#196;nderung an der Strecke im Hintergrund berechnet; solange das l&#228;uft, zeigt ein drehendes Streckenteil am Rand &#8222;Ideallinie wird berechnet &#8230;&#8220;. Die neuen Haarnadel-Kerbs sind vorerst wieder aus.</li>
         <li>Haarnadeln sehen jetzt aus wie das Originalteil: im Bogen au&#223;en lange, breite Pfeile schr&#228;g zur Bahn, innen am Scheitel kurze Keile; auf den geraden Schenkeln bleiben die kleinen Pfeile. Gilt f&#252;r Editor, Vorschaubilder und das Streckenbild.</li>
@@ -7356,6 +7365,21 @@
         werden <em>sollte</em>; ob es geschieht, wei&szlig; niemand.
       </p>
       <p class="muted">
+        <strong>Die SIMULATOR-Linie (Standard seit 1.0.15).</strong> Die Linienmodelle oben rechnen eine Linie aus einer Regel (Kr&uuml;mmung, Rundenzeit im Punktmassenmodell, Scheitelvorschriften). SIMULATOR f&auml;hrt stattdessen Linien und beh&auml;lt die schnellste. Ausgangspunkt sind die acht vorhandenen Modelle; daraus entstehen bis zu 200 Kandidaten durch zwei Arten von Abwandlung: die Beule (ein glatter Buckel, der ein Kurvenst&uuml;ck seitlich verschiebt) und die Sehne (ein St&uuml;ck von bis zu knapp drei Teilen wird durch die gerade Verbindung seiner Endpunkte ersetzt, solange die in der Bahn bleibt &ndash; so entsteht die gerade Diagonale durch ein S statt zweier Lenkbewegungen).
+      </p>
+      <p class="muted">
+        <strong>Gefahren wird jeder Kandidat drei Runden</strong> mit einer stummen Kopie der Fahrphysik deines Autos: Getriebe (Automatik), Reifen und Temperatur, Masse und Tank wie eingestellt. Gas und Bremse folgen dem Tempoplan der Linie; der Lenkeinschlag folgt aus der Kr&uuml;mmung beim Radstand des Autos und kostet &uuml;ber den Reibkreis Zug &ndash; eine weitere Linie beschleunigt also fr&uuml;her heraus. Gewertet wird der Schnitt der Runden 2 und 3 (Runde 1 hat den stehenden Start).
+      </p>
+      <p class="muted">
+        <strong>Die Schranken der Ghosts gelten mit:</strong> wo der Tempoplan unter die Leseschwelle (35 %) fallen m&uuml;sste, f&auml;hrt ein Ghost trotzdem 35 % &ndash; das kostet die Linie eine halbe Sekunde je Runde. Und keine Linie darf schneller quer wechseln als die steilste der vorhandenen, die die Ghosts schon fahren.
+      </p>
+      <p class="muted">
+        <strong>Wann gerechnet wird:</strong> gleich nach jeder &Auml;nderung an einer geschlossenen Strecke, im Hintergrund (ein drehendes Teil am Rand zeigt &bdquo;Ideallinie wird berechnet&ldquo;), in wenigen Sekunden, pausiert w&auml;hrend eines Rennens. Das Ergebnis wird je Strecke und Fahrzeug gespeichert; bis es da ist, gilt die Luuke-Linie. Auf offenen Strecken gilt immer die Luuke-Linie.
+      </p>
+      <p class="muted">
+        <strong>Was sie nicht ist:</strong> eine bewiesene Bestlinie. Die Physik kennt keine Querbeschleunigung (kein Byte meldet sie); wie schnell eine Kurve geht, bleibt die Annahme aus den Fahrwerten. SIMULATOR ist die beste von bis zu 200 gefahrenen Linien &ndash; ein getestetes Beispiel. Ob es auf dem Teppich stimmt, sagen Rundenzeit und Abg&auml;nge.
+      </p>
+      <p class="muted">
         <strong>Welche Stelle der Linie gilt gerade?</strong> Das Auto meldet nur, <em>dass</em>
         es eine neue Kachel betreten hat &ndash; nicht, wo darauf. Die Phase darin kam deshalb
         aus der verstrichenen <em>Zeit</em>, geteilt durch die gemessene mittlere Dauer dieses
@@ -8773,7 +8797,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="14" r="5"/><path d="M9 3l3 6 3-6M12 12v4"/>
-          </svg><b>Bestzeit</b><span class="wip-tag">experimentell</span></button>
+          </svg><b>Time Attack</b><span class="wip-tag">experimentell</span></button>
       </div>
       <select id="race-mode" hidden style="display:none">
         <option value="practice" selected>Training</option>
@@ -8782,7 +8806,7 @@
         <option value="laps">Runden</option>
         <option value="knockout">NPC Knockout</option>
         <option value="derby">Demolition Derby</option>
-        <option value="bestzeit">Bestzeit</option>
+        <option value="bestzeit">Time Attack</option>
       </select></div>
       <p class="muted" id="race-mode-hint" style="font-size:11.5px; margin:8px 0 0 0"></p>
 
@@ -12709,6 +12733,21 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "Die SIMULATOR-Linie (Standard seit 1.0.15).": "The SIMULATOR line (default since 1.0.15).",
+    "Die Linienmodelle oben rechnen eine Linie aus einer Regel (Krümmung, Rundenzeit im Punktmassenmodell, Scheitelvorschriften). SIMULATOR fährt stattdessen Linien und behält die schnellste. Ausgangspunkt sind die acht vorhandenen Modelle; daraus entstehen bis zu 200 Kandidaten durch zwei Arten von Abwandlung: die Beule (ein glatter Buckel, der ein Kurvenstück seitlich verschiebt) und die Sehne (ein Stück von bis zu knapp drei Teilen wird durch die gerade Verbindung seiner Endpunkte ersetzt, solange die in der Bahn bleibt – so entsteht die gerade Diagonale durch ein S statt zweier Lenkbewegungen).": "The line models above calculate a line from a rule (curvature, lap time in a point-mass model, apex rules). SIMULATOR drives lines instead and keeps the fastest. It starts from the eight existing models; from them up to 200 candidates are made by two kinds of variation: the bump (a smooth hump that shifts a stretch of curve sideways) and the chord (a stretch of up to almost three pieces is replaced by the straight connection of its end points, as long as it stays on the track – this gives the straight diagonal through an S instead of two steering movements).",
+    "Gefahren wird jeder Kandidat drei Runden": "Every candidate is driven for three laps",
+    "mit einer stummen Kopie der Fahrphysik deines Autos: Getriebe (Automatik), Reifen und Temperatur, Masse und Tank wie eingestellt. Gas und Bremse folgen dem Tempoplan der Linie; der Lenkeinschlag folgt aus der Krümmung beim Radstand des Autos und kostet über den Reibkreis Zug – eine weitere Linie beschleunigt also früher heraus. Gewertet wird der Schnitt der Runden 2 und 3 (Runde 1 hat den stehenden Start).": "with a silent copy of your car's driving physics: gearbox (automatic), tyres and temperature, mass and fuel as set. Throttle and brake follow the line's speed plan; the steering angle follows from the curvature at the car's wheelbase and costs traction through the friction circle – so a wider line accelerates out earlier. Scored is the mean of laps 2 and 3 (lap 1 has the standing start).",
+    "Die Schranken der Ghosts gelten mit:": "The ghosts' limits apply too:",
+    "wo der Tempoplan unter die Leseschwelle (35 %) fallen müsste, fährt ein Ghost trotzdem 35 % – das kostet die Linie eine halbe Sekunde je Runde. Und keine Linie darf schneller quer wechseln als die steilste der vorhandenen, die die Ghosts schon fahren.": "where the speed plan would have to drop below the reading threshold (35 %), a ghost still drives 35 % – that costs the line half a second per lap. And no line may change sides faster than the steepest of the existing ones that the ghosts already drive.",
+    "Wann gerechnet wird:": "When it is calculated:",
+    "gleich nach jeder Änderung an einer geschlossenen Strecke, im Hintergrund (ein drehendes Teil am Rand zeigt „Ideallinie wird berechnet“), in wenigen Sekunden, pausiert während eines Rennens. Das Ergebnis wird je Strecke und Fahrzeug gespeichert; bis es da ist, gilt die Luuke-Linie. Auf offenen Strecken gilt immer die Luuke-Linie.": "right after every change to a closed track, in the background (a spinning piece at the edge shows “Calculating racing line”), within a few seconds, paused during a race. The result is stored per track and car; until it is there, the Luuke line applies. On open tracks the Luuke line always applies.",
+    "Was sie nicht ist:": "What it is not:",
+    "eine bewiesene Bestlinie. Die Physik kennt keine Querbeschleunigung (kein Byte meldet sie); wie schnell eine Kurve geht, bleibt die Annahme aus den Fahrwerten. SIMULATOR ist die beste von bis zu 200 gefahrenen Linien – ein getestetes Beispiel. Ob es auf dem Teppich stimmt, sagen Rundenzeit und Abgänge.": "a proven best line. The physics knows no lateral acceleration (no byte reports it); how fast a corner can be taken remains the assumption from the driving values. SIMULATOR is the best of up to 200 driven lines – a tested example. Whether it holds on the carpet is answered by lap times and excursions.",
+    "Time Attack": "Time Attack",
+    "Time Attack braucht die Bahn: „Auf der Bahn“ und eine eingescannte Strecke": "Time Attack needs the track: “On the track” and a scanned layout",
+    "Medaillen auf dieser Strecke": "Medals on this track",
+    "Noch keine Zeit auf dieser Strecke.": "No time on this track yet.",
+    "Bisher gewonnen": "Won so far",
     "Toro R-GT: V12": "Toro R-GT: V12",
     "Ideallinie wird berechnet …": "Calculating racing line …",
     "Meisterschaft fortsetzen": "Continue championship",
@@ -12905,7 +12944,6 @@
     "Safety Car auf der Strecke": "Safety car on track",
     "Safety Car kommt an Start/Ziel herein": "Safety car comes in at start/finish",
     "Nur gesteuerte Autos, Medaillen nach der Gold-Formel. Zeitlimit in Minuten, 0 = bis du beendest.": "Controlled cars only, medals by the gold formula. Time limit in minutes, 0 = until you stop.",
-    "Bestzeit braucht die Bahn: „Auf der Bahn“ und eine eingescannte Strecke": "Best time needs the track: “On the track” and a scanned layout",
     "Neue Bestzeit auf dieser Strecke!": "New best time on this track!",
     "Beim Training und bei Bestzeit: 0 heißt ohne Ende.": "In practice and best time: 0 means no end.",
     "Pacejka": "Pacejka",
@@ -13477,6 +13515,7 @@
     "Haarnadeln sehen jetzt aus wie das Originalteil: im Bogen außen lange, breite Pfeile schräg zur Bahn, innen am Scheitel kurze Keile; auf den geraden Schenkeln bleiben die kleinen Pfeile. Gilt für Editor, Vorschaubilder und das Streckenbild.": "Hairpins now look like the original piece: in the bend long, wide arrows angled towards the track on the outside and short wedges at the apex on the inside; the straight legs keep the small arrows. Applies to the editor, previews and the track picture.",
     "Hotfix: 1.0.16 startete nicht, wenn im Editor eine Strecke gemerkt war (die SIMULATOR-Linie wurde beim Laden zu früh angefragt) – behoben. Die Ideallinie wird jetzt gleich nach jeder Änderung an der Strecke im Hintergrund berechnet; solange das läuft, zeigt ein drehendes Streckenteil am Rand „Ideallinie wird berechnet …“. Die neuen Haarnadel-Kerbs sind vorerst wieder aus.": "Hotfix: 1.0.16 did not start when a track was remembered in the editor (the SIMULATOR line was requested too early while loading) – fixed. The racing line is now calculated in the background right after every change to the track; while that runs, a spinning track piece at the edge shows “Calculating racing line …”. The new hairpin kerbs are switched off again for now.",
     "Neuer Motor aus Speed Dreams: Toro R-GT (V12), in der Gruppe „Speed Dreams, Aufnahmen“. Die Aufnahme stammt aus den Speed-Dreams-Spieldaten und steht unter der Free Art License; Quellen in audio/CREDITS.md.": "New engine from Speed Dreams: Toro R-GT (V12), in the group “Speed Dreams, recordings”. The recording comes from the Speed Dreams game data and is under the Free Art License; sources in audio/CREDITS.md.",
+    "Der Modus „Bestzeit“ heißt jetzt Time Attack. Der Startschirm zeigt dort die Medaillenzeiten der Strecke (Gold, Silber, Bronze), die bisher gewonnenen Medaillen und die Bestzeit je Auto. Ideallinie: die SIMULATOR-Suche probiert jetzt auch Sehnen – gerade Verbindungen über bis zu knapp drei Teile –, damit z. B. eine Links-Rechts-Folge als gerade Diagonale gefahren wird, wenn das schneller ist; auf der Vorgabestrecke 10,7 statt 11,5 s je Runde in der Physik. Die Doku (Info › Streckengeometrie und Ideallinie) erklärt die SIMULATOR-Linie.": "The “Best time” mode is now called Time Attack. Its start screen shows the track's medal times (gold, silver, bronze), the medals won so far and the best time per car. Racing line: the SIMULATOR search now also tries chords – straight connections across up to almost three pieces – so that e.g. a left-right sequence is driven as a straight diagonal when that is faster; on the default track 10.7 instead of 11.5 s per lap in the physics. The documentation (Info › Track geometry and racing line) explains the SIMULATOR line.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -29194,7 +29233,7 @@
   // weil u immer in Fahrtrichtung und v immer von der Bahn weg zeigt.
   // Zur Ansicht: ?nadel=1 in der Adresse schaltet sie ein, bis der Entwurf abgesegnet ist.
   const NADEL_KERBS_AN = /[?&]nadel=1\b/.test(location.search);
-  const NADEL_FORMEN = {"aussen":{"formen":[{"a":10.32,"p":[[0.0727,0.0499],[0.0408,0.0841],[-0.0709,0.0866],[-0.0456,0.057],[-0.0714,0.0266],[0.038,0.0208]]},{"a":23.49,"p":[[0.0728,0.0397],[0.0458,0.0739],[-0.0711,0.0751],[-0.0437,0.0473],[-0.0694,0.0147],[0.0387,0.0127]]},{"a":36.78,"p":[[0.0723,0.0401],[0.0449,0.0721],[-0.0736,0.0712],[-0.0456,0.0431],[-0.0687,0.0083],[0.042,0.0104]]},{"a":50.05,"p":[[0.0735,0.0423],[0.0427,0.0754],[-0.0745,0.0711],[-0.0444,0.0459],[-0.0671,0.0099],[0.0421,0.0136]]},{"a":63.26,"p":[[0.0719,0.0496],[0.0431,0.0798],[-0.0749,0.0764],[-0.0461,0.0462],[-0.065,0.0149],[0.0405,0.0183]]},{"a":76.3,"p":[[0.0735,0.0524],[0.0276,0.1012],[-0.0778,0.0835],[-0.0422,0.0518],[-0.0645,0.0196],[0.0431,0.0223]]},{"a":88.69,"p":[[0.085,0.0551],[0.0112,0.1439],[-0.0961,0.1154],[-0.0301,0.055],[-0.0561,0.0246],[0.059,0.0248]]},{"a":100.84,"p":[[-0.1166,0.1565],[-0.0146,0.056],[-0.0396,0.0227],[0.0667,0.0202],[0.1016,0.0468],[-0.0014,0.1815]]},{"a":113.19,"p":[[-0.1325,0.1906],[-0.0009,0.0546],[-0.0256,0.0196],[0.0835,0.0144],[0.1178,0.0413],[-0.0083,0.2072]]},{"a":125.99,"p":[[-0.1412,0.2104],[0.0056,0.0465],[-0.0212,0.0165],[0.0921,0.0086],[0.1245,0.0356],[-0.013,0.2203]]},{"a":139.05,"p":[[-0.1489,0.2095],[0.0099,0.0456],[-0.0155,0.012],[0.0962,0.008],[0.128,0.0361],[-0.0119,0.2132]]},{"a":152.77,"p":[[-0.1459,0.1916],[0.0005,0.0468],[-0.0224,0.0144],[0.0868,0.0119],[0.1185,0.0366],[0.0058,0.1798]]},{"a":167.12,"p":[[-0.1269,0.1511],[-0.0215,0.0578],[-0.0418,0.0193],[0.0656,0.0236],[0.0978,0.0508],[0.0316,0.1263]]},{"a":181.41,"p":[[-0.0817,0.1034],[-0.0415,0.0679],[-0.0631,0.0337],[0.0517,0.0449],[0.0762,0.0764],[0.0474,0.1038]]}],"huelle":[[0,0.1131],[3,0.1131],[6,0.1131],[9,0.1131],[12,0.1131],[15,0.1126],[18,0.1121],[21,0.1098],[24,0.1075],[27,0.105],[30,0.1029],[33,0.1005],[36,0.1006],[39,0.1007],[42,0.1012],[45,0.1017],[48,0.1032],[51,0.1041],[54,0.1057],[57,0.1071],[60,0.1121],[63,0.1164],[66,0.1235],[69,0.1299],[72,0.1419],[75,0.1505],[78,0.1615],[81,0.1698],[84,0.183],[87,0.1905],[90,0.1998],[93,0.2067],[96,0.2168],[99,0.2219],[102,0.2277],[105,0.2317],[108,0.2376],[111,0.2402],[114,0.2429],[117,0.2448],[120,0.2468],[123,0.2468],[126,0.2468],[129,0.2468],[132,0.2468],[135,0.2454],[138,0.244],[141,0.2426],[144,0.2411],[147,0.2354],[150,0.2311],[153,0.2244],[156,0.2177],[159,0.211],[162,0.2029],[165,0.1948],[168,0.1841],[171,0.1734],[174,0.1627],[177,0.159],[180,0.1528]]},"innen":{"formen":[{"a":15.67,"p":[[0.4003,0.2432],[0.3344,0.1138],[0.2668,0.0835],[-0.1922,0.0643],[-0.061,0.1458],[-0.4252,0.5341],[-0.1545,0.6553]]},{"a":94.66,"p":[[0.1486,0.063],[-0.203,0.0725],[-0.3788,0.1345],[-0.2314,0.1891],[-0.1051,0.9216],[0.1638,0.8331],[0.2468,0.2168]]},{"a":163.07,"p":[[-0.3941,0.1397],[-0.2488,0.1837],[0.0361,0.5187],[0.1412,0.4018],[0.2806,0.3349],[0.2096,0.1448],[0.09,0.0487],[-0.2037,0.0684]]}],"huelle":[[0,0.2355],[3,0.2355],[6,0.2355],[9,0.2473],[12,0.2592],[15,0.271],[18,0.2829],[21,0.2947],[24,0.438],[27,0.5813],[30,0.7247],[33,0.868],[36,0.97],[39,0.97],[42,0.97],[45,0.97],[48,0.97],[51,0.868],[54,0.7247],[57,0.5813],[60,0.438],[63,0.2947],[66,0.2915],[69,0.2883],[72,0.2852],[75,0.282],[78,0.282],[81,0.2852],[84,0.2883],[87,0.2915],[90,0.2947],[93,0.2947],[96,0.2971],[99,0.2994],[102,0.3018],[105,0.3041],[108,0.3065],[111,0.3065],[114,0.3065],[117,0.3065],[120,0.3041],[123,0.4274],[126,0.5507],[129,0.6739],[132,0.7972],[135,0.9228],[138,0.9228],[141,0.9228],[144,0.9228],[147,0.7972],[150,0.7343],[153,0.6714],[156,0.6085],[159,0.5457],[162,0.6084],[165,0.6084],[168,0.6084],[171,0.6084],[174,0.6084],[177,0.6084],[180,0.6084]]}};
+  const NADEL_FORMEN = {"aussen":{"formen":[{"a":10.32,"p":[[0.0727,0.0499],[0.0408,0.0841],[-0.0709,0.0866],[-0.0456,0.057],[-0.0714,0.0266],[0.038,0.0208]]},{"a":23.49,"p":[[0.0728,0.0397],[0.0458,0.0739],[-0.0711,0.0751],[-0.0437,0.0473],[-0.0694,0.0147],[0.0387,0.0127]]},{"a":36.78,"p":[[0.0723,0.0401],[0.0449,0.0721],[-0.0736,0.0712],[-0.0456,0.0431],[-0.0687,0.0083],[0.042,0.0104]]},{"a":50.05,"p":[[0.0735,0.0423],[0.0427,0.0754],[-0.0745,0.0711],[-0.0444,0.0459],[-0.0671,0.0099],[0.0421,0.0136]]},{"a":63.26,"p":[[0.0719,0.0496],[0.0431,0.0798],[-0.0749,0.0764],[-0.0461,0.0462],[-0.065,0.0149],[0.0405,0.0183]]},{"a":76.3,"p":[[0.0735,0.0524],[0.0276,0.1012],[-0.0778,0.0835],[-0.0422,0.0518],[-0.0645,0.0196],[0.0431,0.0223]]},{"a":88.69,"p":[[0.085,0.0551],[0.0112,0.1439],[-0.0961,0.1154],[-0.0301,0.055],[-0.0561,0.0246],[0.059,0.0248]]},{"a":100.84,"p":[[-0.1166,0.1565],[-0.0146,0.056],[-0.0396,0.0227],[0.0667,0.0202],[0.1016,0.0468],[-0.0014,0.1815]]},{"a":113.19,"p":[[-0.1325,0.1906],[-0.0009,0.0546],[-0.0256,0.0196],[0.0835,0.0144],[0.1178,0.0413],[-0.0083,0.2072]]},{"a":125.99,"p":[[-0.1412,0.2104],[0.0056,0.0465],[-0.0212,0.0165],[0.0921,0.0086],[0.1245,0.0356],[-0.013,0.2203]]},{"a":139.05,"p":[[-0.1489,0.2095],[0.0099,0.0456],[-0.0155,0.012],[0.0962,0.008],[0.128,0.0361],[-0.0119,0.2132]]},{"a":152.77,"p":[[-0.1459,0.1916],[0.0005,0.0468],[-0.0224,0.0144],[0.0868,0.0119],[0.1185,0.0366],[0.0058,0.1798]]},{"a":167.12,"p":[[-0.1269,0.1511],[-0.0215,0.0578],[-0.0418,0.0193],[0.0656,0.0236],[0.0978,0.0508],[0.0316,0.1263]]},{"a":181.41,"p":[[-0.0817,0.1034],[-0.0415,0.0679],[-0.0631,0.0337],[0.0517,0.0449],[0.0762,0.0764],[0.0474,0.1038]]}],"huelle":[[0,0.1131],[3,0.1131],[6,0.1131],[9,0.1131],[12,0.1131],[15,0.1126],[18,0.1121],[21,0.1098],[24,0.1075],[27,0.105],[30,0.1029],[33,0.1005],[36,0.1006],[39,0.1007],[42,0.1012],[45,0.1017],[48,0.1032],[51,0.1041],[54,0.1057],[57,0.1071],[60,0.1121],[63,0.1164],[66,0.1235],[69,0.1299],[72,0.1419],[75,0.1505],[78,0.1615],[81,0.1698],[84,0.183],[87,0.1905],[90,0.1998],[93,0.2067],[96,0.2168],[99,0.2219],[102,0.2277],[105,0.2317],[108,0.2376],[111,0.2402],[114,0.2429],[117,0.2448],[120,0.2468],[123,0.2468],[126,0.2468],[129,0.2468],[132,0.2468],[135,0.2454],[138,0.244],[141,0.2426],[144,0.2411],[147,0.2354],[150,0.2311],[153,0.2244],[156,0.2177],[159,0.211],[162,0.2029],[165,0.1948],[168,0.1841],[171,0.1734],[174,0.1627],[177,0.159],[180,0.1528]]},"innen":{"formen":[{"a":15.67,"p":[[0.4003,0.2432],[0.3344,0.1138],[0.2668,0.0835],[-0.1922,0.0643],[-0.061,0.1458],[-0.4252,0.5341],[-0.1545,0.6553]]},{"a":94.66,"p":[[0.1486,0.063],[-0.203,0.0725],[-0.3788,0.1345],[-0.2314,0.1891],[-0.1051,0.9216],[0.1638,0.8331],[0.2468,0.2168]]},{"a":163.07,"p":[[-0.3941,0.1397],[-0.2488,0.1837],[0.0361,0.5187],[0.1412,0.4018],[0.2806,0.3349],[0.2096,0.1448],[0.09,0.0487],[-0.2037,0.0684]]}],"huelle":[[0,0.995],[4,0.995],[8,0.995],[12,0.995],[16,0.995],[20,0.995],[24,0.995],[28,0.995],[32,0.995],[36,0.995],[40,0.995],[44,0.995],[48,0.995],[52,0.995],[56,0.995],[60,0.995],[64,0.995],[68,0.995],[72,0.995],[76,0.995],[80,0.995],[84,0.995],[88,0.995],[92,0.995],[96,0.995],[100,0.995],[104,0.995],[108,0.995],[112,0.995],[116,0.995],[120,0.995],[124,0.995],[128,0.995],[132,0.995],[136,0.995],[140,0.995],[144,0.995],[148,0.995],[152,0.995],[156,0.995],[160,0.995],[164,0.995],[168,0.995],[172,0.995],[176,0.995],[180,0.995]]}};
   // Zeichnet die Kerbs EINER Seite eines Haarnadelteils. kante: Punkte der Bahnkante dieser
   // Seite, mitte: die Mittellinie (fuer "weg von der Bahn"). Rueckgabe { weiss, farbe } als
   // SVG-Pfaddaten, oder null, wenn das Teil gar nicht wie eine Haarnadel dreht.
@@ -29260,7 +29299,8 @@
     // aus - sonst steht dort eine Stufe, wo das naechste Teil anschliesst.
     const band = bw / R;
     for (const [a, v0] of tab.huelle) {
-      const rand = Math.min(1, Math.min(a, 180 - a) / 15);
+      // Nur aussen: innen ist wie im Foto der ganze Kreis weiss, bis an den Bogenanfang.
+      const rand = aussen ? Math.min(1, Math.min(a, 180 - a) / 15) : 1;
       const v = band + (Math.max(v0, band) - band) * rand;
       const m = bei(a);
       vor.push([m.x, m.y]);
@@ -33143,6 +33183,34 @@
     }
     return neu;
   }
+  // ---- DIE SEHNE (v1.0.19) -----------------------------------------------------------------
+  // BESTELLT: "Fine-Tuning machen (z. B. ist bei Links-Rechts-Kurvenfolge ein Lenken, obwohl es
+  // schneller waere, einfach geradeaus quer zu fahren)." Die Beule verschiebt nur ein Stueck
+  // seitlich; eine gerade Diagonale durch ein S braucht dagegen eine abgestimmte Aenderung ueber
+  // BEIDE Kurven, und die findet eine Folge kleiner Beulen praktisch nie. Die Sehne ersetzt ein
+  // Stueck von bis zu zwei Teilen durch die gerade Verbindung seiner Endpunkte, solange die in
+  // der Bahn bleibt. Ob das schneller ist, entscheidet wie immer die Physik.
+  function simSehne(alpha, pts, nrm, limit, closed) {
+    const n = alpha.length;
+    const at = (i) => ((i % n) + n) % n;
+    const lang = 8 + Math.floor(Math.random() * 34);            // 8..41 Punkte (knapp drei Teile)
+    const i0 = Math.floor(Math.random() * n);
+    if (!closed && i0 + lang >= n) return null;
+    const P = (i) => [pts[at(i)].x + nrm[at(i)].x * alpha[at(i)], pts[at(i)].y + nrm[at(i)].y * alpha[at(i)]];
+    const a = P(i0), b = P(i0 + lang);
+    // Fuer jeden Punkt dazwischen: wo schneidet seine Normale die Sehne? Daraus die Querlage.
+    const neu = alpha.slice();
+    const dx = b[0] - a[0], dy = b[1] - a[1];
+    for (let k = 1; k < lang; k++) {
+      const j = at(i0 + k), p = pts[j], m = nrm[j];
+      const nenner = m.x * dy - m.y * dx;
+      if (Math.abs(nenner) < 1e-9) return null;
+      const s = ((a[0] - p.x) * dy - (a[1] - p.y) * dx) / nenner;
+      if (!(Math.abs(s) <= limit)) return null;                  // verlaesst die Bahn
+      neu[j] = s;
+    }
+    return neu;
+  }
   function simStarten(key, pts, nrm, o) {
     if (simLauf && simLauf.key === key) return;
     const lauf = { key, abbruch: false, auswertungen: 0, beste: null };
@@ -33187,7 +33255,11 @@
       await simPause();
       if (lauf.abbruch) return;
       const eltern = feld[Math.floor(Math.random() * Math.min(3, feld.length))];
-      pruefe(simBeule(eltern.alpha, limit), eltern.herkunft + '+');
+      // Abwechselnd Beule und Sehne (die Sehne ist bei geschlossenen Strecken immer moeglich,
+      // faellt aber weg, wenn sie die Bahn verlaesst).
+      const sehne = Math.random() < 0.5 ? simSehne(eltern.alpha, pts, nrm, limit, !!o.closed) : null;
+      if (sehne) pruefe(sehne, eltern.herkunft + '/');
+      else pruefe(simBeule(eltern.alpha, limit), eltern.herkunft + '+');
     }
     const beste = feld[0];
     const e = { alpha: beste.alpha.map((a) => Math.round(a * 100) / 100), zeit: Math.round(beste.zeit * 1000) / 1000,
@@ -33344,7 +33416,8 @@
     // eingegebene Strecke mit Medaillen nach der Gold-Formel. Die Strecke wird gespeichert,
     // sodass man bei derselben Strecke wieder seine alten Zeiten hat. Hier fahren nur vom
     // Spieler gesteuerte Autos, keine Ghosts - auch wenn sie verbunden sind, bleiben sie stehen."
-    bestzeit:   { label: 'Bestzeit', unit: 'Minuten', timed: false,
+    // v1.0.19 BESTELLT: "Den Modus umbenennen in 'Time Attack' (auch auf Deutsch)."
+    bestzeit:   { label: 'Time Attack', unit: 'Minuten', timed: false,
                   hint: 'Nur gesteuerte Autos, Medaillen nach der Gold-Formel. Zeitlimit in Minuten, 0 = bis du beendest.' },
     qualifying: { label: 'Qualifying', unit: 'Minuten', timed: true, hint: 'Schnellste Einzelrunde zählt.' },
     laps:       { label: 'Runden', unit: 'Runden', timed: true, hint: 'Wer zuerst die Rundenzahl hat.' },
@@ -34853,6 +34926,13 @@
     raceGridZeilen($('grid-liste'));
     gridBildMalen();
     if ($('grid-kopf-info')) $('grid-kopf-info').textContent = '';
+    // Time Attack: Medaillenzeiten, bisher Gewonnenes und Bestzeit dieser Strecke.
+    const ta = $('grid-timeattack');
+    if (ta) {
+      const html = raceMode === 'bestzeit' ? bestzeitStartHtml() : '';
+      ta.innerHTML = html;
+      ta.hidden = !html;
+    }
     // v0.9.31: im freien Training gibt es keine Startaufstellung - also auch keinen Knopf.
     if ($('grid-auto')) $('grid-auto').hidden = raceMode === 'practice';
     gs.hidden = false;
@@ -34945,7 +35025,7 @@
     if (raceMode !== 'bestzeit') return true;
     const tiles = (typeof currentTrackTiles !== 'undefined' && currentTrackTiles) || [];
     if (trackMode !== 'on' || tiles.length < 3) {
-      if (melden) showHudToast(t('Bestzeit braucht die Bahn: „Auf der Bahn“ und eine eingescannte Strecke'));
+      if (melden) showHudToast(t('Time Attack braucht die Bahn: „Auf der Bahn“ und eine eingescannte Strecke'));
       return false;
     }
     return true;
@@ -34994,6 +35074,31 @@
       .filter((f) => f.beste);
     if (!liste.length) return null;
     return liste.reduce((a, b) => (a.beste <= b.beste ? a : b));
+  }
+  // ---- TIME ATTACK AUF DEM STARTSCHIRM (v1.0.19) ---------------------------------------
+  // BESTELLT: "Bei Bestzeit bitte noch auf dem Startbildschirm anzeigen, welche Medaillen bei
+  // welcher Zeit gewonnen werden. Bitte ausserdem anzeigen, welche Medaillen fuer diese Strecke
+  // schon gewonnen wurden und was die Bestzeit ist." Die Schwellen sind dieselben wie beim
+  // Werten (chSterneSchwellen ueber bestzeitDef), die Zeiten aus omegasim-bestzeiten.
+  function bestzeitStartHtml() {
+    const tiles = currentTrackTiles;
+    if (!tiles || tiles.length < 3 || typeof chMedailleHinweis !== 'function') return '';
+    const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+    let h = '<div class="ta-kopf">' + esc(t('Medaillen auf dieser Strecke')) + '</div>'
+      + '<div class="ta-schwellen">' + chMedailleHinweis(bestzeitDef(tiles), 'hotlap') + '</div>';
+    const e = bestzeitLesen()[bestzeitSchluessel(tiles)];
+    const fahrer = e ? Object.values(e.fahrer).filter((f) => f && f.beste) : [];
+    fahrer.sort((a, b) => a.beste - b.beste);
+    if (!fahrer.length) {
+      h += '<div class="ta-stand">' + esc(t('Noch keine Zeit auf dieser Strecke.')) + '</div>';
+    } else {
+      h += '<div class="ta-kopf">' + esc(t('Bisher gewonnen')) + '</div><table class="ta-stand">'
+        + fahrer.map((f) => '<tr><td>' + esc(f.name || '?') + '</td><td>' + esc(formatLapTime(f.beste)) + '</td><td>'
+          + (typeof chSterneText === 'function' ? chSterneText(f.medaille) : '') + ' '
+          + esc(typeof chSterneName === 'function' ? chSterneName(f.medaille) : '') + '</td></tr>').join('')
+        + '</table>';
+    }
+    return h;
   }
   function bestzeitMeldung(r, ms, nr) {
     if (!r) return;
@@ -84791,7 +84896,16 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (rz.ok) f.push('Zickzack-Linie trotz Querrate angenommen (lim ' + lim.toFixed(2) + ', n ' + pts.length + ', ' + JSON.stringify(rz).slice(0, 120) + ')');
     const b = simBeule(luuke, lim);
     if (b.some((x) => Math.abs(x) > lim + 1e-9)) f.push('Beule verlaesst die Bahn');
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Luuke ' + (r.runden || []).join(' / ') + ' s, Zickzack verworfen' };
+    // v1.0.19: Die Sehne bleibt in der Bahn, und wo sie gelingt, liegen ihre Punkte auf einer Geraden.
+    let sehnen = 0;
+    for (let v = 0; v < 40; v++) {
+      const sh = simSehne(luuke, pts, nrm, lim, true);
+      if (!sh) continue;
+      sehnen++;
+      if (sh.some((x) => Math.abs(x) > lim + 1e-9)) { f.push('Sehne verlaesst die Bahn'); break; }
+    }
+    if (!sehnen) f.push('keine einzige Sehne gelingt');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Luuke ' + (r.runden || []).join(' / ') + ' s, Zickzack verworfen, Sehnen ok' };
   });
 
   // ---- v1.0: Studie (98f-studie.js) ----

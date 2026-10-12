@@ -18076,7 +18076,16 @@
     if (rz.ok) f.push('Zickzack-Linie trotz Querrate angenommen (lim ' + lim.toFixed(2) + ', n ' + pts.length + ', ' + JSON.stringify(rz).slice(0, 120) + ')');
     const b = simBeule(luuke, lim);
     if (b.some((x) => Math.abs(x) > lim + 1e-9)) f.push('Beule verlaesst die Bahn');
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Luuke ' + (r.runden || []).join(' / ') + ' s, Zickzack verworfen' };
+    // v1.0.19: Die Sehne bleibt in der Bahn, und wo sie gelingt, liegen ihre Punkte auf einer Geraden.
+    let sehnen = 0;
+    for (let v = 0; v < 40; v++) {
+      const sh = simSehne(luuke, pts, nrm, lim, true);
+      if (!sh) continue;
+      sehnen++;
+      if (sh.some((x) => Math.abs(x) > lim + 1e-9)) { f.push('Sehne verlaesst die Bahn'); break; }
+    }
+    if (!sehnen) f.push('keine einzige Sehne gelingt');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Luuke ' + (r.runden || []).join(' / ') + ' s, Zickzack verworfen, Sehnen ok' };
   });
 
   // ---- v1.0: Studie (98f-studie.js) ----

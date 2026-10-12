@@ -2923,6 +2923,13 @@
     overflow: hidden; text-overflow: ellipsis; }
   .gar-akku { white-space: nowrap; }
   #race-gridscreen button.pad-fokus { outline: 3px solid var(--k-blau, #3d8bff); outline-offset: 2px; }
+  /* v1.0.19: Time Attack auf dem Startschirm - Medaillenzeiten und bisher Gewonnenes. */
+  .gt3-gridschirm .grid-timeattack:not([hidden]) { grid-area: hinweis; font-size: clamp(12px, 1.8vw, 17px); line-height: 1.45;
+    background: rgba(0,0,0,.35); padding: 6px 10px; border-left: 3px solid var(--gold, #f5c542); }
+  .gt3-gridschirm .grid-timeattack:not([hidden]) ~ .grid-hinweis { display: none; }
+  .grid-timeattack .ta-kopf { font-weight: 800; letter-spacing: .06em; text-transform: uppercase; font-size: .8em; opacity: .8; margin-top: 4px; }
+  .grid-timeattack .ta-stand { border-collapse: collapse; }
+  .grid-timeattack .ta-stand td { padding: 1px 10px 1px 0; }
   /* ---- STUDIE (98f-studie.js) ---- */
   .studie-text p { line-height: 1.45; margin: 4px 0 8px; }
   .studie-text code, #studie-inhalt code { font-size: .9em; }
@@ -4604,7 +4611,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.18</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.19</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5314,6 +5321,7 @@
         <div class="schirm-kopf"><b>Bringe die Autos in Position</b>
           <span id="grid-kopf-info" data-i18n-skip></span></div>
         <div class="grid-bild" id="grid-bild" data-i18n-skip></div>
+        <div class="grid-timeattack" id="grid-timeattack" data-i18n-skip hidden></div>
         <p class="grid-hinweis" id="grid-hinweis">Alle Autos stehen auf den Teilen <b>vor</b> Start/Ziel. Erst wenn du Start/Ziel zum ersten Mal &uuml;berf&auml;hrst, beginnt Runde&nbsp;1.</p>
         <div class="grid-liste" id="grid-liste"></div>
         <div class="schirm-fuss grid-fuss">
@@ -5732,6 +5740,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Der Modus &#8222;Bestzeit&#8220; hei&#223;t jetzt Time Attack. Der Startschirm zeigt dort die Medaillenzeiten der Strecke (Gold, Silber, Bronze), die bisher gewonnenen Medaillen und die Bestzeit je Auto. Ideallinie: die SIMULATOR-Suche probiert jetzt auch Sehnen &#8211; gerade Verbindungen &#252;ber bis zu knapp drei Teile &#8211;, damit z. B. eine Links-Rechts-Folge als gerade Diagonale gefahren wird, wenn das schneller ist; auf der Vorgabestrecke 10,7 statt 11,5 s je Runde in der Physik. Die Doku (Info &#8250; Streckengeometrie und Ideallinie) erkl&#228;rt die SIMULATOR-Linie.</li>
         <li>Neuer Motor aus Speed Dreams: Toro R-GT (V12), in der Gruppe &#8222;Speed Dreams, Aufnahmen&#8220;. Die Aufnahme stammt aus den Speed-Dreams-Spieldaten und steht unter der Free Art License; Quellen in audio/CREDITS.md.</li>
         <li>Hotfix: 1.0.16 startete nicht, wenn im Editor eine Strecke gemerkt war (die SIMULATOR-Linie wurde beim Laden zu fr&#252;h angefragt) &#8211; behoben. Die Ideallinie wird jetzt gleich nach jeder &#196;nderung an der Strecke im Hintergrund berechnet; solange das l&#228;uft, zeigt ein drehendes Streckenteil am Rand &#8222;Ideallinie wird berechnet &#8230;&#8220;. Die neuen Haarnadel-Kerbs sind vorerst wieder aus.</li>
         <li>Haarnadeln sehen jetzt aus wie das Originalteil: im Bogen au&#223;en lange, breite Pfeile schr&#228;g zur Bahn, innen am Scheitel kurze Keile; auf den geraden Schenkeln bleiben die kleinen Pfeile. Gilt f&#252;r Editor, Vorschaubilder und das Streckenbild.</li>
@@ -7356,6 +7365,21 @@
         werden <em>sollte</em>; ob es geschieht, wei&szlig; niemand.
       </p>
       <p class="muted">
+        <strong>Die SIMULATOR-Linie (Standard seit 1.0.15).</strong> Die Linienmodelle oben rechnen eine Linie aus einer Regel (Kr&uuml;mmung, Rundenzeit im Punktmassenmodell, Scheitelvorschriften). SIMULATOR f&auml;hrt stattdessen Linien und beh&auml;lt die schnellste. Ausgangspunkt sind die acht vorhandenen Modelle; daraus entstehen bis zu 200 Kandidaten durch zwei Arten von Abwandlung: die Beule (ein glatter Buckel, der ein Kurvenst&uuml;ck seitlich verschiebt) und die Sehne (ein St&uuml;ck von bis zu knapp drei Teilen wird durch die gerade Verbindung seiner Endpunkte ersetzt, solange die in der Bahn bleibt &ndash; so entsteht die gerade Diagonale durch ein S statt zweier Lenkbewegungen).
+      </p>
+      <p class="muted">
+        <strong>Gefahren wird jeder Kandidat drei Runden</strong> mit einer stummen Kopie der Fahrphysik deines Autos: Getriebe (Automatik), Reifen und Temperatur, Masse und Tank wie eingestellt. Gas und Bremse folgen dem Tempoplan der Linie; der Lenkeinschlag folgt aus der Kr&uuml;mmung beim Radstand des Autos und kostet &uuml;ber den Reibkreis Zug &ndash; eine weitere Linie beschleunigt also fr&uuml;her heraus. Gewertet wird der Schnitt der Runden 2 und 3 (Runde 1 hat den stehenden Start).
+      </p>
+      <p class="muted">
+        <strong>Die Schranken der Ghosts gelten mit:</strong> wo der Tempoplan unter die Leseschwelle (35 %) fallen m&uuml;sste, f&auml;hrt ein Ghost trotzdem 35 % &ndash; das kostet die Linie eine halbe Sekunde je Runde. Und keine Linie darf schneller quer wechseln als die steilste der vorhandenen, die die Ghosts schon fahren.
+      </p>
+      <p class="muted">
+        <strong>Wann gerechnet wird:</strong> gleich nach jeder &Auml;nderung an einer geschlossenen Strecke, im Hintergrund (ein drehendes Teil am Rand zeigt &bdquo;Ideallinie wird berechnet&ldquo;), in wenigen Sekunden, pausiert w&auml;hrend eines Rennens. Das Ergebnis wird je Strecke und Fahrzeug gespeichert; bis es da ist, gilt die Luuke-Linie. Auf offenen Strecken gilt immer die Luuke-Linie.
+      </p>
+      <p class="muted">
+        <strong>Was sie nicht ist:</strong> eine bewiesene Bestlinie. Die Physik kennt keine Querbeschleunigung (kein Byte meldet sie); wie schnell eine Kurve geht, bleibt die Annahme aus den Fahrwerten. SIMULATOR ist die beste von bis zu 200 gefahrenen Linien &ndash; ein getestetes Beispiel. Ob es auf dem Teppich stimmt, sagen Rundenzeit und Abg&auml;nge.
+      </p>
+      <p class="muted">
         <strong>Welche Stelle der Linie gilt gerade?</strong> Das Auto meldet nur, <em>dass</em>
         es eine neue Kachel betreten hat &ndash; nicht, wo darauf. Die Phase darin kam deshalb
         aus der verstrichenen <em>Zeit</em>, geteilt durch die gemessene mittlere Dauer dieses
@@ -8773,7 +8797,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="14" r="5"/><path d="M9 3l3 6 3-6M12 12v4"/>
-          </svg><b>Bestzeit</b><span class="wip-tag">experimentell</span></button>
+          </svg><b>Time Attack</b><span class="wip-tag">experimentell</span></button>
       </div>
       <select id="race-mode" hidden style="display:none">
         <option value="practice" selected>Training</option>
@@ -8782,7 +8806,7 @@
         <option value="laps">Runden</option>
         <option value="knockout">NPC Knockout</option>
         <option value="derby">Demolition Derby</option>
-        <option value="bestzeit">Bestzeit</option>
+        <option value="bestzeit">Time Attack</option>
       </select></div>
       <p class="muted" id="race-mode-hint" style="font-size:11.5px; margin:8px 0 0 0"></p>
 

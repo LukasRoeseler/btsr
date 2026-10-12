@@ -170,6 +170,34 @@
     }
     return neu;
   }
+  // ---- DIE SEHNE (v1.0.19) -----------------------------------------------------------------
+  // BESTELLT: "Fine-Tuning machen (z. B. ist bei Links-Rechts-Kurvenfolge ein Lenken, obwohl es
+  // schneller waere, einfach geradeaus quer zu fahren)." Die Beule verschiebt nur ein Stueck
+  // seitlich; eine gerade Diagonale durch ein S braucht dagegen eine abgestimmte Aenderung ueber
+  // BEIDE Kurven, und die findet eine Folge kleiner Beulen praktisch nie. Die Sehne ersetzt ein
+  // Stueck von bis zu zwei Teilen durch die gerade Verbindung seiner Endpunkte, solange die in
+  // der Bahn bleibt. Ob das schneller ist, entscheidet wie immer die Physik.
+  function simSehne(alpha, pts, nrm, limit, closed) {
+    const n = alpha.length;
+    const at = (i) => ((i % n) + n) % n;
+    const lang = 8 + Math.floor(Math.random() * 34);            // 8..41 Punkte (knapp drei Teile)
+    const i0 = Math.floor(Math.random() * n);
+    if (!closed && i0 + lang >= n) return null;
+    const P = (i) => [pts[at(i)].x + nrm[at(i)].x * alpha[at(i)], pts[at(i)].y + nrm[at(i)].y * alpha[at(i)]];
+    const a = P(i0), b = P(i0 + lang);
+    // Fuer jeden Punkt dazwischen: wo schneidet seine Normale die Sehne? Daraus die Querlage.
+    const neu = alpha.slice();
+    const dx = b[0] - a[0], dy = b[1] - a[1];
+    for (let k = 1; k < lang; k++) {
+      const j = at(i0 + k), p = pts[j], m = nrm[j];
+      const nenner = m.x * dy - m.y * dx;
+      if (Math.abs(nenner) < 1e-9) return null;
+      const s = ((a[0] - p.x) * dy - (a[1] - p.y) * dx) / nenner;
+      if (!(Math.abs(s) <= limit)) return null;                  // verlaesst die Bahn
+      neu[j] = s;
+    }
+    return neu;
+  }
   function simStarten(key, pts, nrm, o) {
     if (simLauf && simLauf.key === key) return;
     const lauf = { key, abbruch: false, auswertungen: 0, beste: null };
@@ -214,7 +242,11 @@
       await simPause();
       if (lauf.abbruch) return;
       const eltern = feld[Math.floor(Math.random() * Math.min(3, feld.length))];
-      pruefe(simBeule(eltern.alpha, limit), eltern.herkunft + '+');
+      // Abwechselnd Beule und Sehne (die Sehne ist bei geschlossenen Strecken immer moeglich,
+      // faellt aber weg, wenn sie die Bahn verlaesst).
+      const sehne = Math.random() < 0.5 ? simSehne(eltern.alpha, pts, nrm, limit, !!o.closed) : null;
+      if (sehne) pruefe(sehne, eltern.herkunft + '/');
+      else pruefe(simBeule(eltern.alpha, limit), eltern.herkunft + '+');
     }
     const beste = feld[0];
     const e = { alpha: beste.alpha.map((a) => Math.round(a * 100) / 100), zeit: Math.round(beste.zeit * 1000) / 1000,

@@ -110,7 +110,8 @@
     // eingegebene Strecke mit Medaillen nach der Gold-Formel. Die Strecke wird gespeichert,
     // sodass man bei derselben Strecke wieder seine alten Zeiten hat. Hier fahren nur vom
     // Spieler gesteuerte Autos, keine Ghosts - auch wenn sie verbunden sind, bleiben sie stehen."
-    bestzeit:   { label: 'Bestzeit', unit: 'Minuten', timed: false,
+    // v1.0.19 BESTELLT: "Den Modus umbenennen in 'Time Attack' (auch auf Deutsch)."
+    bestzeit:   { label: 'Time Attack', unit: 'Minuten', timed: false,
                   hint: 'Nur gesteuerte Autos, Medaillen nach der Gold-Formel. Zeitlimit in Minuten, 0 = bis du beendest.' },
     qualifying: { label: 'Qualifying', unit: 'Minuten', timed: true, hint: 'Schnellste Einzelrunde zählt.' },
     laps:       { label: 'Runden', unit: 'Runden', timed: true, hint: 'Wer zuerst die Rundenzahl hat.' },
@@ -1619,6 +1620,13 @@
     raceGridZeilen($('grid-liste'));
     gridBildMalen();
     if ($('grid-kopf-info')) $('grid-kopf-info').textContent = '';
+    // Time Attack: Medaillenzeiten, bisher Gewonnenes und Bestzeit dieser Strecke.
+    const ta = $('grid-timeattack');
+    if (ta) {
+      const html = raceMode === 'bestzeit' ? bestzeitStartHtml() : '';
+      ta.innerHTML = html;
+      ta.hidden = !html;
+    }
     // v0.9.31: im freien Training gibt es keine Startaufstellung - also auch keinen Knopf.
     if ($('grid-auto')) $('grid-auto').hidden = raceMode === 'practice';
     gs.hidden = false;
@@ -1711,7 +1719,7 @@
     if (raceMode !== 'bestzeit') return true;
     const tiles = (typeof currentTrackTiles !== 'undefined' && currentTrackTiles) || [];
     if (trackMode !== 'on' || tiles.length < 3) {
-      if (melden) showHudToast(t('Bestzeit braucht die Bahn: „Auf der Bahn“ und eine eingescannte Strecke'));
+      if (melden) showHudToast(t('Time Attack braucht die Bahn: „Auf der Bahn“ und eine eingescannte Strecke'));
       return false;
     }
     return true;
@@ -1760,6 +1768,31 @@
       .filter((f) => f.beste);
     if (!liste.length) return null;
     return liste.reduce((a, b) => (a.beste <= b.beste ? a : b));
+  }
+  // ---- TIME ATTACK AUF DEM STARTSCHIRM (v1.0.19) ---------------------------------------
+  // BESTELLT: "Bei Bestzeit bitte noch auf dem Startbildschirm anzeigen, welche Medaillen bei
+  // welcher Zeit gewonnen werden. Bitte ausserdem anzeigen, welche Medaillen fuer diese Strecke
+  // schon gewonnen wurden und was die Bestzeit ist." Die Schwellen sind dieselben wie beim
+  // Werten (chSterneSchwellen ueber bestzeitDef), die Zeiten aus omegasim-bestzeiten.
+  function bestzeitStartHtml() {
+    const tiles = currentTrackTiles;
+    if (!tiles || tiles.length < 3 || typeof chMedailleHinweis !== 'function') return '';
+    const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+    let h = '<div class="ta-kopf">' + esc(t('Medaillen auf dieser Strecke')) + '</div>'
+      + '<div class="ta-schwellen">' + chMedailleHinweis(bestzeitDef(tiles), 'hotlap') + '</div>';
+    const e = bestzeitLesen()[bestzeitSchluessel(tiles)];
+    const fahrer = e ? Object.values(e.fahrer).filter((f) => f && f.beste) : [];
+    fahrer.sort((a, b) => a.beste - b.beste);
+    if (!fahrer.length) {
+      h += '<div class="ta-stand">' + esc(t('Noch keine Zeit auf dieser Strecke.')) + '</div>';
+    } else {
+      h += '<div class="ta-kopf">' + esc(t('Bisher gewonnen')) + '</div><table class="ta-stand">'
+        + fahrer.map((f) => '<tr><td>' + esc(f.name || '?') + '</td><td>' + esc(formatLapTime(f.beste)) + '</td><td>'
+          + (typeof chSterneText === 'function' ? chSterneText(f.medaille) : '') + ' '
+          + esc(typeof chSterneName === 'function' ? chSterneName(f.medaille) : '') + '</td></tr>').join('')
+        + '</table>';
+    }
+    return h;
   }
   function bestzeitMeldung(r, ms, nr) {
     if (!r) return;
