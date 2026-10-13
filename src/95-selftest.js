@@ -2726,11 +2726,11 @@
              mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
-  // ---- Die Rundenzaehler-Fanfare ----
+  // ---- Die Rennende-Fanfare (Arcade-Jingle) ----
   //
   // Ihr Klang ist eine Sache fuers Ohr, ihre LAENGE nicht: eine Fanfare, die zehn Sekunden
   // dauert, haelt das Ergebnis auf. Geprueft wird, dass sie spielt und wie lange.
-  stAdd('Rundenzaehler-Fanfare spielt und ist kurz genug', () => {
+  stAdd('Rennende-Fanfare spielt und ist kurz genug', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.fanfareProbe) {
       return { skip: true, mass: 'fanfareProbe nicht vorhanden' };
     }
@@ -2738,7 +2738,7 @@
     if (!r) return { skip: true, mass: 'kein Audiokontext - braucht eine Nutzergeste' };
     const schlecht = [];
     if (!(r.noten >= 20)) schlecht.push('nur ' + r.noten + ' Toene');
-    if (!(r.dauer > 2 && r.dauer < 7)) schlecht.push('Dauer ' + r.dauer + ' s');
+    if (!(r.dauer > 1.5 && r.dauer < 4)) schlecht.push('Dauer ' + r.dauer + ' s');
     return { ok: schlecht.length === 0,
              mass: r.noten + ' Toene, ' + r.dauer + ' s'
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
