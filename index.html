@@ -4676,7 +4676,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.30</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.31</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5806,6 +5806,8 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>NPCs nebeneinander (WIP): Liegen zwei Autos h&#246;chstens eine Kachel auseinander, fahren sie als Paar links und rechts statt beide auf der Ideallinie &#8211; die Seite ersetzt jetzt die Linie, statt nur ein kleiner Zuschlag zu sein. Wer gerade weiter links liegt, bleibt links; in Kurven darf der &#196;u&#223;ere etwas nach innen. Ein drittes Auto und alle in der Haarnadel fahren hintereinander mit etwa einer Kachel Abstand. Dein Auto z&#228;hlt als Partner mit.</li>
+        <li>Automatische Aufstellung: Die Autos fahren jetzt nacheinander in der Reihenfolge der Startaufstellung los, je 1 s versetzt; bis dahin stehen sie.</li>
         <li>Safety Car (WIP): Es f&#228;hrt unter Gelb etwas langsamer als das Feld (85 % des Gelb-Tempos) und h&#228;lt selbst Abstand zum Vordermann, statt aufzufahren. Wer vor ihm liegt, f&#228;hrt davon, kommt von hinten wieder heran und reiht sich dahinter ein.</li>
         <li>Rennende: Die Motorger&#228;usche der NPCs verstummen sofort, auch w&#228;hrend der Auslaufrunde.</li>
         <li>Automatische Aufstellung: Ein NPC, der seit dem letzten Start dazukam (sp&#228;ter verbunden oder Rolle gewechselt, etwa vom Safety Car), bekam keinen Startplatz und blieb stehen &#8211; behoben. Ob ein Auto schon auf seinem Platz steht, wird nur noch aus einer frischen Ortung geschlossen.</li>
@@ -13744,6 +13746,8 @@
     "Automatische Aufstellung: Ein NPC, der seit dem letzten Start dazukam (später verbunden oder Rolle gewechselt, etwa vom Safety Car), bekam keinen Startplatz und blieb stehen – behoben. Ob ein Auto schon auf seinem Platz steht, wird nur noch aus einer frischen Ortung geschlossen.": "Automatic grid: an NPC that joined since the last start (connected later or changed role, e.g. from safety car) got no grid slot and stayed put – fixed. Whether a car already stands on its slot is now only judged from a fresh position.",
     "Rennende: Die Motorgeräusche der NPCs verstummen sofort, auch während der Auslaufrunde.": "Race end: the NPCs' engine sounds stop at once, also during the cool-down lap.",
     "Safety Car (WIP): Es fährt unter Gelb etwas langsamer als das Feld (85 % des Gelb-Tempos) und hält selbst Abstand zum Vordermann, statt aufzufahren. Wer vor ihm liegt, fährt davon, kommt von hinten wieder heran und reiht sich dahinter ein.": "Safety car (WIP): under yellow it drives a little slower than the field (85 % of yellow speed) and keeps its own distance to the car ahead instead of running into it. Cars ahead of it pull away, come round again from behind and line up behind it.",
+    "Automatische Aufstellung: Die Autos fahren jetzt nacheinander in der Reihenfolge der Startaufstellung los, je 1 s versetzt; bis dahin stehen sie.": "Automatic grid: the cars now set off one after another in grid order, 1 s apart; until then they stand still.",
+    "NPCs nebeneinander (WIP): Liegen zwei Autos höchstens eine Kachel auseinander, fahren sie als Paar links und rechts statt beide auf der Ideallinie – die Seite ersetzt jetzt die Linie, statt nur ein kleiner Zuschlag zu sein. Wer gerade weiter links liegt, bleibt links; in Kurven darf der Äußere etwas nach innen. Ein drittes Auto und alle in der Haarnadel fahren hintereinander mit etwa einer Kachel Abstand. Dein Auto zählt als Partner mit.": "NPCs side by side (WIP): when two cars are at most one tile apart they drive as a pair, left and right, instead of both on the racing line – the side now replaces the line instead of being a small add-on. Whoever is further left stays left; in curves the outer one may move a little inward. A third car, and everyone in the hairpin, follows in line with about one tile of gap. Your car counts as a partner too.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -23823,6 +23827,11 @@
       // Breite, damit das Auto von selbst auf die Seite seines Startplatzes faellt.
       const lenk = typeof formationDriverOffset === 'function'
         ? formationDriverOffset(meinAuto, aufstellenSpielerBreite(meinAuto)) : 0;
+      // v1.0.31: gestaffelter Start der Aufstellung - bis zu seinem Zeitpunkt steht das Auto.
+      const aA = aufstellenSpielerZiel(meinAuto);
+      if (aA && aA.ab && Date.now() < aA.ab) {
+        return { grund: 'aufstellen', throttle: 0, brake: fahrerBremse > 0.05 ? fahrerBremse : 1, steer: 0, lenkt: false };
+      }
       // v1.0.28: angekommen erst langsam auf der Seite weiter, damit das Auto gerade steht
       // (aufstellenSpielerAusrichten, 90-ghosts.js), dann halten.
       if (aufstellenSpielerAngekommen(meinAuto) && typeof aufstellenSpielerAusrichten === 'function'
@@ -49496,8 +49505,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         log(garageLabel(car) + ': steht schon auf Startplatz ' + (platz + 1) + '.', 'info');
         continue;
       }
+      // v1.0.31 BESTELLT: "Automatische Aufstellung ist die Vollkatastrophe. Mach es so, dass
+      // die Autos in Reihenfolge der Aufstellung nacheinander mit Abstand von 1 s losfahren."
+      // raceGridCars() liefert die Startreihenfolge; das k-te Auto, das fahren muss, wartet
+      // k * AUFSTELL_STAFFEL_MS (Bremse, Licht an) und faehrt dann los.
+      const ab = Date.now() + zahl * AUFSTELL_STAFFEL_MS;
       if (spielerNrVon(car) >= 1) {
-        aufstellSpieler.set(car, { ziel, seit: Date.now(), fertig: false });
+        aufstellSpieler.set(car, { ziel, seit: ab, ab, fertig: false });
         zahl++;
         continue;
       }
@@ -49505,11 +49519,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       startGhost(car);
       if (!car.ghost) continue;
       car.ghost.aufstellZiel = ziel;
-      car.ghost.aufstellSeit = Date.now();
+      car.ghost.aufstellSeit = ab;
+      car.ghost.aufstellAb = ab;
+      // Wer wartet, steht - und ein stehendes Auto haelt der Abgangsmelder sonst fuer abgeflogen.
+      car.ghost.gnadeBis = ab + GHOST_START_GNADE_MS;
       zahl++;
     }
     clearTimeout(aufstellenTimer);
-    if (zahl) aufstellenTimer = setTimeout(() => aufstellenStoppen(true), AUFSTELLEN_MAX_MS);
+    if (zahl) aufstellenTimer = setTimeout(() => aufstellenStoppen(true), AUFSTELLEN_MAX_MS + zahl * AUFSTELL_STAFFEL_MS);
     showHudToast(zahl ? t('Autos fahren in die Startaufstellung') : t('Alle Autos stehen schon'));
     log('Automatische Aufstellung: ' + zahl + ' Auto(s) fahren auf ihre Startplaetze.', 'info');
     return zahl;
@@ -49538,6 +49555,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return false;
   }
   const AUFSTELL_HALT_MS = 800;
+  const AUFSTELL_STAFFEL_MS = 1000;
   const AUFSTELL_ORT_FRISCH_MS = 3000;
   const AUFSTELL_GERADE_MS = 500;
   // v1.0.28 GEMELDET: "In der automatischen Aufstellung fahren die Autos zum Teil so langsam,
@@ -49708,7 +49726,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // 0,20 auf Wunsch (war 0,15). Die Haarnadel bekommt davon das Doppelte, also 40
     // Prozent - "in der Haarnadelkurve muss die Drosselung staerker sein" ist die
     // Kachelregel, nicht ein zweiter Regler.
-    curveSlow: 0.20,    // how much of that is given up in a curve
+    curveSlow: 0.20,
+    paare: true,        // v1.0.31: Paare links/rechts, Reihe dahinter (ghostPaare); Schalter fuer die Messsonde    // how much of that is given up in a curve
     // 0.5 statt 0. Die Naeherungslogik in ghostAssignBias gab es laengst - gleiche Runde
     // und Kachelindex hoechstens eins auseinander ergibt gegenlaeufige Versaetze - aber sie
     // wurde mit diesem Faktor multipliziert, und der stand auf Null. Das Feature war da und
@@ -55411,6 +55430,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const spice = underYellow ? { factor: 1, attack: 0 }
                                  : ghostSpice(car, ahead, haarnadelNah);
       target *= spice.factor;
+      // v1.0.31: hinter einem fremden Paar und vor der Haarnadel hintereinander (ghostReiheFaktor).
+      if (!underYellow) target *= ghostReiheFaktor(car);
       // Was gilt: die Kachel unter dem Auto, oder die naechste enge in Reichweite. Die
       // Reichweite haengt von der Enge ab - vor einer Haarnadel zwei Kacheln, vor einer
       // normalen Kurve eine.
@@ -55519,7 +55540,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (raceFormationLap) target = Math.min(target, formationPace());
       // Automatische Aufstellung (v0.9.22): im Formationstempo bis zum eigenen Startplatz.
       if (g.aufstellZiel !== undefined && g.aufstellZiel !== null) {
-        target = Math.min(target, aufstellTempo(car));
+        // v1.0.31: bis zu seinem Zeitpunkt wartet das Auto (aufstellAb, gestaffelt je 1 s).
+        target = g.aufstellAb && now < g.aufstellAb ? 0 : Math.min(target, aufstellTempo(car));
         aufstellenPruefen(car);
       }
       // ---- STARTREAKTION UND VORSICHT IN DER ERSTEN KURVE ---------------------------
@@ -55740,7 +55762,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         // sprunghaft auf die Linie zurueckfallen.
         // DER BOXENSTOPP HAT VORRANG, wie die gelbe Flagge einen Zeilenumbruch weiter. Waehrend
         // eines Stopps gibt es keine Linie, keine Wuerze und keine Spur - nur den Rand.
-        const pq = pitQuer(car);
+        // v1.0.31: im Paar ersetzt die Seite die Linie wie ein Boxenstopp (ghostPaarQuer).
+        const pqBox = pitQuer(car);
+        const pq = pqBox !== null ? pqBox : ghostPaarQuer(car);
         // ====================================================================================
         // BEIM UEBERHOLEN GILT EIN 2-STUFEN-MODELL
         // ====================================================================================
@@ -55936,7 +55960,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         const passSeite2 = (spice.attack || 0) !== 0 ? Math.sign(spice.attack)
                          : (weiche2 !== 0 ? Math.sign(weiche2) : 0);
         // Auch hier hat der Boxenstopp Vorrang - siehe die Rail-Verzweigung darueber.
-        const pq2 = pitQuer(car);
+        const pqBox2 = pitQuer(car);
+        const pq2 = pqBox2 !== null ? pqBox2 : ghostPaarQuer(car);
         if (pq2 !== null) {
           // Im Boxenstopp ERSETZT der Randversatz alles - auch den Lenkwinkel, mit dem
           // dieser Zweig beginnt. Ein Boxenstopp ist kein Zuschlag auf eine Kurvenfahrt.
@@ -56489,6 +56514,105 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const seiten = ghostSeiten(liste.length);
     return new Map(liste.map((c, k) => [c, seiten[k]]));
   }
+
+  // ====================================================================================
+  // PAARE UND REIHE (v1.0.31)
+  // ====================================================================================
+  //
+  // GEMELDET: "Ghosts kleben immer noch seitlich aneinander." VORSCHLAG des Nutzers, geprueft
+  // und umgesetzt: "hoechstens 2 Autos mit ca. 1 Kachel Abstand fahren links und rechts verteilt
+  // (in den Kurven darf der Aeussere etwas nach innen; in der Haarnadel am besten hintereinander,
+  // notfalls aneinanderklebend), und hintereinander am besten auch noch etwas Platz."
+  //
+  // WARUM ES KLEBTE: die Seitenverteilung (ghostAssignBias) ging nur als kleiner Zuschlag
+  // (GHOST_LANE_STEER 0,16 bzw. bias * 0,25) neben die Ideallinie mit 200 %. Zwei nahe Autos
+  // landeten also trotzdem auf derselben Linie. Ein Paar ERSETZT jetzt die Linie:
+  //   - Paar: zwei Autos, die auf der Runde hoechstens PAAR_NAH Kacheln auseinander liegen;
+  //     es loest sich erst bei PAAR_LOESEN (Hysterese - sonst zappeln die Seiten an der Grenze).
+  //     Wer gerade weiter links liegt, bekommt links; so kreuzt keiner den anderen. Das
+  //     Fahrerauto zaehlt als Partner mit (gelenkt wird nur der NPC).
+  //   - Seite: PAAR_QUER auf der Geraden und innen in der Kurve, aussen PAAR_AUSSEN_KURVE.
+  //   - Haarnadel (darauf oder in der naechsten Kachel): kein Paar. Der Hintere faellt auf
+  //     REIHE_ABSTAND zurueck - hintereinander statt nebeneinander.
+  //   - Dritter: wer hinter einem Paar faehrt, das nicht seines ist, haelt REIHE_ABSTAND.
+  // Nicht unter Gelb (dort gilt der Gelb-Abstand) und nicht waehrend einer Attacke oder eines
+  // Ausweichens (die haben ihre eigene Seite).
+  const PAAR_NAH = 1.0, PAAR_LOESEN = 1.4, PAAR_QUER = 0.9, PAAR_AUSSEN_KURVE = 0.55;
+  const REIHE_ABSTAND = 1.0, REIHE_MIN = 0.4, REIHE_BODEN = 0.6;
+  let paarCache = { at: -1, map: new Map() };
+  function paarId(c) { return String(c.device ? c.device.id : (c.tag || '')); }
+  // Auf der Haarnadel oder sie in der naechsten Kachel.
+  function ghostHaarnadelZone(car) {
+    const hier = car.tileCode !== null && car.tileCode !== undefined ? ghostTileInfo(car.tileCode).curve : 0;
+    if (hier >= 2) return true;
+    if (!car.ghost || car.ghost.tileIndex === null || car.ghost.tileIndex === undefined) return false;
+    return ghostAheadTightest(car, 1).tight >= 2;
+  }
+  // Wer faehrt gerade mit wem als Paar? Map Auto -> { mit, seite }. Je 100 ms neu.
+  function ghostPaare() {
+    const now = Date.now();
+    if (paarCache.at >= 0 && now - paarCache.at < 100 && now >= paarCache.at) return paarCache.map;
+    const map = new Map();
+    paarCache = { at: now, map };
+    const n = currentTrackTiles ? currentTrackTiles.length : 0;
+    if (!n || flagState !== 'green') return map;
+    const feld = ghostFieldRacing().filter((c) => !c.parked && ghostOrt(c) !== null
+      && !(c.ghost && (c.ghost.pit || c.ghost.randHalt || c.ghost.finish)));
+    const ort = new Map(feld.map((c) => [c, ghostOrt(c)]));
+    const abstand = (a, b) => {
+      const d = ((ort.get(b) - ort.get(a)) % n + n) % n;
+      return Math.min(d, n - d);
+    };
+    const darf = (a, b) => !ghostHaarnadelZone(a) && !ghostHaarnadelZone(b);
+    const paaren = (a, b) => {
+      const qa = ghostQuerVon(a), qb = ghostQuerVon(b);
+      let links = qa < qb - 0.1 ? a : qb < qa - 0.1 ? b : null;
+      if (!links) links = (ghostSeiteVorzug(a) || -1) <= (ghostSeiteVorzug(b) || 1) ? a : b;
+      const rechts = links === a ? b : a;
+      map.set(links, { mit: rechts, seite: -1 });
+      map.set(rechts, { mit: links, seite: 1 });
+    };
+    // Erst die bestehenden Paare (bis PAAR_LOESEN), dann neue (bis PAAR_NAH), vorn zuerst.
+    for (const a of feld) {
+      const g = a.ghost;
+      if (!g || !g.paarMit || map.has(a)) continue;
+      const b = feld.find((c) => c !== a && paarId(c) === g.paarMit);
+      if (b && !map.has(b) && abstand(a, b) <= PAAR_LOESEN && darf(a, b)) paaren(a, b);
+    }
+    const sortiert = feld.slice().sort((x, y) => ort.get(y) - ort.get(x));
+    // Nachbarn auf der Runde, auch ueber Start/Ziel hinweg (der Letzte und der Erste).
+    const m = sortiert.length;
+    for (let i = 0; m >= 2 && i < (m > 2 ? m : 1); i++) {
+      const a = sortiert[i], b = sortiert[(i + 1) % m];
+      if (map.has(a) || map.has(b)) continue;
+      if (abstand(a, b) <= PAAR_NAH && darf(a, b)) paaren(a, b);
+    }
+    for (const c of feld) if (c.ghost) c.ghost.paarMit = map.has(c) ? paarId(map.get(c).mit) : null;
+    return map;
+  }
+  // Die Querlage eines NPC im Paar, oder null (kein Paar, Gelb, Attacke, Ausweichen).
+  function ghostPaarQuer(car) {
+    const g = car && car.ghost;
+    if (!ghostCfg.paare || !g || g.nurOrt || flagState !== 'green' || g.attackUntil || (g.yieldUntil && Date.now() < g.yieldUntil)) return null;
+    const p = ghostPaare().get(car);
+    if (!p) return null;
+    const dir = ghostTurnOf(car.tileCode);
+    if (dir && p.seite !== Math.sign(dir)) return p.seite * PAAR_AUSSEN_KURVE;   // aussen in der Kurve
+    return p.seite * PAAR_QUER;
+  }
+  // Tempofaktor: hinter einem fremden Paar oder vor/in der Haarnadel hintereinander.
+  function ghostReiheFaktor(car) {
+    if (!ghostCfg.paare || flagState !== 'green' || !car || !car.ghost) return 1;
+    const v = gelbVordermann(car);
+    if (!v || v.gap >= REIHE_ABSTAND) return 1;
+    const paare = ghostPaare();
+    const meins = paare.get(car);
+    if (meins && meins.mit === v.car) return 1;              // mein Partner
+    if (!paare.has(v.car) && !ghostHaarnadelZone(car) && !ghostHaarnadelZone(v.car)) return 1;
+    const x = Math.max(0, Math.min(1, (v.gap - REIHE_MIN) / (REIHE_ABSTAND - REIHE_MIN)));
+    return REIHE_BODEN + (1 - REIHE_BODEN) * x;
+  }
+
   setInterval(ghostAssignBias, GHOST_BIAS_MS);
 
   // ---- Pruefzugang ----
@@ -76903,7 +77027,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       return { skip: true, mass: 'ghostSweep nicht vorhanden' };
     }
     const r = await OMEGA_TEST.ghostSweep(
-      [{ name: 'mit' }, { name: 'ohne', cfg: { wuerzeAbstand: false } }],
+      // v1.0.31: OHNE Paare in beiden Laeufen - die Paare (ghostPaare) trennen die Autos auch
+      // ohne Abstandhalter, und gemessen werden soll der Abstandhalter allein.
+      [{ name: 'mit', cfg: { paare: false } }, { name: 'ohne', cfg: { wuerzeAbstand: false, paare: false } }],
       { sekunden: 60, laeufe: 1, autos: 4, aufwaermSekunden: 10 });
     if (!r || !r.varianten || r.varianten.length !== 2) {
       return { skip: true, mass: 'die Sonde gab keine zwei Varianten zurueck' };
@@ -86791,12 +86917,16 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (gestartet.join() !== 'A,B') f.push('gestartet: ' + gestartet.join());
       if (!b.ghost || b.ghost.aufstellZiel === undefined || b.ghost.aufstellZiel === null) f.push('B ohne Startplatz');
       if (gridPosOf(sc) >= 0) f.push('Safety Car hat einen Startplatz');
+      // v1.0.31: nacheinander in Startreihenfolge, je 1 s versetzt.
+      if (a.ghost && b.ghost && Math.abs((b.ghost.aufstellAb - a.ghost.aufstellAb) - AUFSTELL_STAFFEL_MS) > 5) {
+        f.push('nicht 1 s versetzt: ' + (b.ghost.aufstellAb - a.ghost.aufstellAb) + ' ms');
+      }
     } finally {
       clearTimeout(aufstellenTimer);
       startGhost = merk.start; raceGridOrder = merk.rgo; currentTrackTiles = merk.tiles;
       garage.length = 0; merk.garage.forEach((c) => garage.push(c));
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'beide NPCs fahren los, Safety Car ohne Platz' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'beide NPCs fahren los, je 1 s versetzt, Safety Car ohne Platz' };
   });
 
   // ---- v1.0.30: NPC-Stimmen verstummen mit dem Rennende ----
@@ -86812,6 +86942,65 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (ich.ghost.stumm) f.push('Ortungssatz des Fahrerautos angefasst');
     } finally { garage.length = 0; merk.garage.forEach((c) => garage.push(c)); }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'NPC stumm bis zum naechsten Start' };
+  });
+
+  // ---- v1.0.31: Paare links/rechts, Dritter dahinter, Haarnadel hintereinander ----
+  stAdd('Paare v1.0.31: zwei nahe NPCs links/rechts, Dritter dahinter, Haarnadel hintereinander', () => {
+    const f = [];
+    const merk = { tiles: currentTrackTiles, ort: ghostOrt, feld: ghostFieldRacing, fl: flagState };
+    try {
+      currentTrackTiles = codeToTrack('SG4R2G4H2G2').tiles;
+      const tiles = currentTrackTiles;
+      const gerade = 2, kurve = tiles.findIndex((x) => ghostTurnOf(x.type) === 1 && tileTightness(x.type) === 1);
+      const haar = tiles.findIndex((x) => tileTightness(x.type) >= 2);
+      const auto = (id, k, ph) => ({ device: { id }, role: 'ghost', tileCode: tiles[k].type, _o: k + ph,
+                                      ghost: { running: true, tileIndex: k, querSoll: 0 } });
+      ghostOrt = (c) => (c._o === undefined ? null : c._o);
+      flagState = 'green';
+      const neu = () => { paarCache = { at: -1, map: new Map() }; };
+      // Zwei auf der Geraden, 0,5 Kacheln auseinander: Paar, verschiedene Seiten, voller Versatz.
+      const a = auto('pa', gerade, 0.6), b = auto('pb', gerade, 0.1);
+      a.ghost.querSoll = -0.2; b.ghost.querSoll = 0.2;
+      ghostFieldRacing = () => [a, b];
+      neu();
+      const qa = ghostPaarQuer(a), qb = ghostPaarQuer(b);
+      if (qa === null || qb === null) f.push('kein Paar auf der Geraden');
+      else {
+        if (!(qa < 0 && qb > 0)) f.push('Seiten ' + qa + '/' + qb + ' (wer links liegt, bleibt links)');
+        if (Math.abs(Math.abs(qa) - PAAR_QUER) > 1e-9) f.push('kein voller Versatz: ' + qa);
+      }
+      if (ghostReiheFaktor(b) !== 1) f.push('Partner wird gebremst');
+      // Dritter 0,6 Kacheln hinter dem Paar: haelt Abstand.
+      const c = auto('pc', gerade - 1, 0.5);
+      ghostFieldRacing = () => [a, b, c];
+      neu();
+      if (!(ghostReiheFaktor(c) < 1)) f.push('Dritter faehrt nicht dahinter');
+      if (ghostPaare().has(c)) f.push('Dritter bildet ein Paar');
+      // In der Kurve: der Aeussere etwas nach innen.
+      if (kurve >= 0) {
+        const ka = auto('ka', kurve, 0.6), kb = auto('kb', kurve, 0.2);
+        ka.ghost.querSoll = -0.3; kb.ghost.querSoll = 0.3;    // Rechtskurve: rechts = innen
+        ghostFieldRacing = () => [ka, kb];
+        neu();
+        const aussen = ghostPaarQuer(ka), innen = ghostPaarQuer(kb);
+        if (!(innen === PAAR_QUER && Math.abs(aussen + PAAR_AUSSEN_KURVE) < 1e-9)) f.push('Kurve: innen ' + innen + ', aussen ' + aussen);
+      }
+      // Haarnadel: kein Paar, der Hintere faellt zurueck.
+      const ha = auto('ha', haar, 0.5), hb = auto('hb', haar, 0.0);
+      ghostFieldRacing = () => [ha, hb];
+      neu();
+      if (ghostPaarQuer(ha) !== null || ghostPaarQuer(hb) !== null) f.push('Paar in der Haarnadel');
+      if (!(ghostReiheFaktor(hb) < 1)) f.push('in der Haarnadel nicht hintereinander');
+      // Unter Gelb gilt das alles nicht.
+      flagState = 'yellow';
+      ghostFieldRacing = () => [a, b];
+      neu();
+      if (ghostPaarQuer(a) !== null) f.push('Paar unter Gelb');
+    } finally {
+      currentTrackTiles = merk.tiles; ghostOrt = merk.ort; ghostFieldRacing = merk.feld; flagState = merk.fl;
+      paarCache = { at: -1, map: new Map() };
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Paar links/rechts, Kurve aussen enger, Dritter und Haarnadel hintereinander' };
   });
 
   stAdd('Telemetrie-Seite: Karte, Balken und Tempo aus zwei Runden, Rundenweg steigt', () => {

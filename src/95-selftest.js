@@ -8535,7 +8535,9 @@
       return { skip: true, mass: 'ghostSweep nicht vorhanden' };
     }
     const r = await OMEGA_TEST.ghostSweep(
-      [{ name: 'mit' }, { name: 'ohne', cfg: { wuerzeAbstand: false } }],
+      // v1.0.31: OHNE Paare in beiden Laeufen - die Paare (ghostPaare) trennen die Autos auch
+      // ohne Abstandhalter, und gemessen werden soll der Abstandhalter allein.
+      [{ name: 'mit', cfg: { paare: false } }, { name: 'ohne', cfg: { wuerzeAbstand: false, paare: false } }],
       { sekunden: 60, laeufe: 1, autos: 4, aufwaermSekunden: 10 });
     if (!r || !r.varianten || r.varianten.length !== 2) {
       return { skip: true, mass: 'die Sonde gab keine zwei Varianten zurueck' };
@@ -18423,12 +18425,16 @@
       if (gestartet.join() !== 'A,B') f.push('gestartet: ' + gestartet.join());
       if (!b.ghost || b.ghost.aufstellZiel === undefined || b.ghost.aufstellZiel === null) f.push('B ohne Startplatz');
       if (gridPosOf(sc) >= 0) f.push('Safety Car hat einen Startplatz');
+      // v1.0.31: nacheinander in Startreihenfolge, je 1 s versetzt.
+      if (a.ghost && b.ghost && Math.abs((b.ghost.aufstellAb - a.ghost.aufstellAb) - AUFSTELL_STAFFEL_MS) > 5) {
+        f.push('nicht 1 s versetzt: ' + (b.ghost.aufstellAb - a.ghost.aufstellAb) + ' ms');
+      }
     } finally {
       clearTimeout(aufstellenTimer);
       startGhost = merk.start; raceGridOrder = merk.rgo; currentTrackTiles = merk.tiles;
       garage.length = 0; merk.garage.forEach((c) => garage.push(c));
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'beide NPCs fahren los, Safety Car ohne Platz' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'beide NPCs fahren los, je 1 s versetzt, Safety Car ohne Platz' };
   });
 
   // ---- v1.0.30: NPC-Stimmen verstummen mit dem Rennende ----
@@ -18444,6 +18450,65 @@
       if (ich.ghost.stumm) f.push('Ortungssatz des Fahrerautos angefasst');
     } finally { garage.length = 0; merk.garage.forEach((c) => garage.push(c)); }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'NPC stumm bis zum naechsten Start' };
+  });
+
+  // ---- v1.0.31: Paare links/rechts, Dritter dahinter, Haarnadel hintereinander ----
+  stAdd('Paare v1.0.31: zwei nahe NPCs links/rechts, Dritter dahinter, Haarnadel hintereinander', () => {
+    const f = [];
+    const merk = { tiles: currentTrackTiles, ort: ghostOrt, feld: ghostFieldRacing, fl: flagState };
+    try {
+      currentTrackTiles = codeToTrack('SG4R2G4H2G2').tiles;
+      const tiles = currentTrackTiles;
+      const gerade = 2, kurve = tiles.findIndex((x) => ghostTurnOf(x.type) === 1 && tileTightness(x.type) === 1);
+      const haar = tiles.findIndex((x) => tileTightness(x.type) >= 2);
+      const auto = (id, k, ph) => ({ device: { id }, role: 'ghost', tileCode: tiles[k].type, _o: k + ph,
+                                      ghost: { running: true, tileIndex: k, querSoll: 0 } });
+      ghostOrt = (c) => (c._o === undefined ? null : c._o);
+      flagState = 'green';
+      const neu = () => { paarCache = { at: -1, map: new Map() }; };
+      // Zwei auf der Geraden, 0,5 Kacheln auseinander: Paar, verschiedene Seiten, voller Versatz.
+      const a = auto('pa', gerade, 0.6), b = auto('pb', gerade, 0.1);
+      a.ghost.querSoll = -0.2; b.ghost.querSoll = 0.2;
+      ghostFieldRacing = () => [a, b];
+      neu();
+      const qa = ghostPaarQuer(a), qb = ghostPaarQuer(b);
+      if (qa === null || qb === null) f.push('kein Paar auf der Geraden');
+      else {
+        if (!(qa < 0 && qb > 0)) f.push('Seiten ' + qa + '/' + qb + ' (wer links liegt, bleibt links)');
+        if (Math.abs(Math.abs(qa) - PAAR_QUER) > 1e-9) f.push('kein voller Versatz: ' + qa);
+      }
+      if (ghostReiheFaktor(b) !== 1) f.push('Partner wird gebremst');
+      // Dritter 0,6 Kacheln hinter dem Paar: haelt Abstand.
+      const c = auto('pc', gerade - 1, 0.5);
+      ghostFieldRacing = () => [a, b, c];
+      neu();
+      if (!(ghostReiheFaktor(c) < 1)) f.push('Dritter faehrt nicht dahinter');
+      if (ghostPaare().has(c)) f.push('Dritter bildet ein Paar');
+      // In der Kurve: der Aeussere etwas nach innen.
+      if (kurve >= 0) {
+        const ka = auto('ka', kurve, 0.6), kb = auto('kb', kurve, 0.2);
+        ka.ghost.querSoll = -0.3; kb.ghost.querSoll = 0.3;    // Rechtskurve: rechts = innen
+        ghostFieldRacing = () => [ka, kb];
+        neu();
+        const aussen = ghostPaarQuer(ka), innen = ghostPaarQuer(kb);
+        if (!(innen === PAAR_QUER && Math.abs(aussen + PAAR_AUSSEN_KURVE) < 1e-9)) f.push('Kurve: innen ' + innen + ', aussen ' + aussen);
+      }
+      // Haarnadel: kein Paar, der Hintere faellt zurueck.
+      const ha = auto('ha', haar, 0.5), hb = auto('hb', haar, 0.0);
+      ghostFieldRacing = () => [ha, hb];
+      neu();
+      if (ghostPaarQuer(ha) !== null || ghostPaarQuer(hb) !== null) f.push('Paar in der Haarnadel');
+      if (!(ghostReiheFaktor(hb) < 1)) f.push('in der Haarnadel nicht hintereinander');
+      // Unter Gelb gilt das alles nicht.
+      flagState = 'yellow';
+      ghostFieldRacing = () => [a, b];
+      neu();
+      if (ghostPaarQuer(a) !== null) f.push('Paar unter Gelb');
+    } finally {
+      currentTrackTiles = merk.tiles; ghostOrt = merk.ort; ghostFieldRacing = merk.feld; flagState = merk.fl;
+      paarCache = { at: -1, map: new Map() };
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Paar links/rechts, Kurve aussen enger, Dritter und Haarnadel hintereinander' };
   });
 
   stAdd('Telemetrie-Seite: Karte, Balken und Tempo aus zwei Runden, Rundenweg steigt', () => {

@@ -2737,6 +2737,11 @@
       // Breite, damit das Auto von selbst auf die Seite seines Startplatzes faellt.
       const lenk = typeof formationDriverOffset === 'function'
         ? formationDriverOffset(meinAuto, aufstellenSpielerBreite(meinAuto)) : 0;
+      // v1.0.31: gestaffelter Start der Aufstellung - bis zu seinem Zeitpunkt steht das Auto.
+      const aA = aufstellenSpielerZiel(meinAuto);
+      if (aA && aA.ab && Date.now() < aA.ab) {
+        return { grund: 'aufstellen', throttle: 0, brake: fahrerBremse > 0.05 ? fahrerBremse : 1, steer: 0, lenkt: false };
+      }
       // v1.0.28: angekommen erst langsam auf der Seite weiter, damit das Auto gerade steht
       // (aufstellenSpielerAusrichten, 90-ghosts.js), dann halten.
       if (aufstellenSpielerAngekommen(meinAuto) && typeof aufstellenSpielerAusrichten === 'function'
