@@ -4673,7 +4673,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.24</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.27</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5803,6 +5803,15 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Streckenscan: Das Spielerauto fuhr geradeaus statt &#252;ber die Bahn, sobald schon eine Strecke im Editor lag (die Spur-Bytes des Scans wurden im selben Takt wieder gel&#246;scht) &#8211; behoben. Mit dem Fahrgef&#252;hl RC griff au&#223;erdem der Autopilot gar nicht: kein Scan, keine Aufstellung, kein Gelb-Tempo. Jetzt rechnet er auch dort, solange er f&#228;hrt.</li>
+        <li>Gelbe Flagge: Dein Auto f&#228;hrt jetzt genauso schnell wie die NPCs. Vorher lag der Tempofaktor des Fahrgef&#252;hls (1,1 bis 1,8) auch auf dem Autopiloten.</li>
+        <li>Safety Car (WIP): Nach der gelben Phase f&#228;hrt es die letzten 2 s ganz rechts am Rand und h&#228;lt dort statt mitten auf der Bahn; geparkt ist das Licht aus. Nach einem Rempler startet es nach 1,5 s selbst neu, statt stehen zu bleiben. Boxenstopps fahren ebenfalls 2 s statt 1 s am Rand, bevor sie bremsen.</li>
+        <li>Startaufstellung: In Kurven und Haarnadeln deutlich langsamer (dieselben Anteile wie beim Streckenscan, mit Vorausblick), damit niemand mehr aus der Haarnadel fliegt. Beim Anhalten bleibt die Seite des Startplatzes stehen, statt zur Mitte zu rollen. Der Startschirm zeigt je Auto Reihe und Seite.</li>
+        <li>Challenger Gummiband (WIP): reagierte nach der ersten Runde nicht mehr auf dich, weil die Ortung deines Autos keine Runden z&#228;hlt &#8211; behoben. Es z&#228;hlt jetzt nur der Abstand auf der Runde, auch wenn bei dir einmal eine Runde nicht gez&#228;hlt wird.</li>
+        <li>Telemetrie (WIP): Runden wurden verworfen, sobald ein einziges Teil nicht gelesen wurde &#8211; auf der echten Bahn fast immer. Jetzt werden die Lesungen &#252;ber ihre Art der Strecke zugeordnet und fehlende Teile gesch&#228;tzt (mindestens drei Viertel m&#252;ssen passen). Die Telemetrie-Seite zeigt, wie viele Teile gesch&#228;tzt sind.</li>
+        <li>Time Attack (WIP): Am Ende kommt eine Zusammenfassung mit Runden, bester Runde und Medaille, Vergleich mit deiner bisherigen Bestzeit, Schnitt und Streuung, was zur n&#228;chsten Medaille fehlt, und was die Telemetrie aufgezeichnet hat (mit Knopf dorthin). Die Medaillen sind etwas leichter: Gold auf SGR4LGHG ab 7,3 s statt 7,2 s, die &#252;brigen Strecken entsprechend.</li>
+        <li>Meisterschaft: Ein von Hand beendetes Event z&#228;hlt mit 0 Punkten, und es geht beim n&#228;chsten weiter (vorher musste es neu gefahren werden). Die Startreihe des n&#228;chsten Events wird einmal festgelegt und im Zwischenstand mit Reihe und Seite gezeigt &#8211; auch bei Zufall stimmt sie jetzt mit dem Start &#252;berein. Der Startschirm nennt Event und Aufstellungsregel.</li>
+        <li>Fahrgef&#252;hl RC und Safety Car sind als WIP gekennzeichnet.</li>
         <li>Neue Rennende-Fanfare: ein Arcade-Jingle (&#8222;Stage clear&#8220;) statt des Rundenz&#228;hler-Tons. Drei aufsteigende Dreiklangsl&#228;ufe und ein Akkordtreffer, rund 2 Sekunden statt knapp 5. Gespielt bei Zielflagge, Derby-Sieg und NPC-Knockout-Sieg, wie bisher.</li>
         <li>Titelschirm: Der Schriftzug steht jetzt ruhig &#8211; Cyan &#252;ber, Rot unter jedem Buchstaben, ohne springende Streifen. Der Glitch l&#228;uft nur noch im Omega dahinter.</li>
         <li>Titelschirm: neuer Glitch-Effekt &#8211; die Farbkan&#228;le liegen &#252;ber und unter den Buchstaben statt daneben, und einzelne senkrechte Streifen springen kurz nach oben oder unten. Das Omega im Hintergrund ist deutlicher, rund statt langgezogen, passt auf den Bildschirm und glitcht genauso.</li>
@@ -8946,7 +8955,7 @@
       <div class="opt-row"><div class="opt-label">Gelbe Flagge deaktivieren<small>An: Der Knopf
           &bdquo;Gelbe Flagge&ldquo; und das Halten der Boxentaste rufen kein Gelb mehr aus.</small></div>
         <label class="tgl"><input type="checkbox" id="race-gelb-aus"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Safety Car: erst aufschlie&szlig;en<span class="wip-tag">experimentell</span><small>An:
+      <div class="opt-row"><div class="opt-label">Safety Car: erst aufschlie&szlig;en<span class="wip-tag">WIP</span><small>An:
           Unter Gelb mit Safety Car fahren alle mit etwa 45&nbsp;% heran und ab zwei Kacheln Abstand
           mit 35&nbsp;% weiter, in Kurven und Haarnadeln gedrosselt. Aus: alle sofort 35&nbsp;%.
           &Uuml;berholt wird unter Gelb nie.</small></div>

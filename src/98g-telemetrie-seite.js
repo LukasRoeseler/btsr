@@ -49,6 +49,10 @@
     return e.fahrer[w] ? e.fahrer[w][art] || null : null;
   }
 
+  // v1.0.25: Runden mit nicht gelesenen Teilen (70b-telemetrie.js) sagen, wie viele geschaetzt sind.
+  function teleGeschaetztText(sp) {
+    return sp && sp.geschaetzt ? ' · ' + t('{n} Teile geschätzt').replace('{n}', sp.geschaetzt) : '';
+  }
   function teleSeiteZeichnen() {
     const box = $('tele-inhalt');
     if (!box) return;
@@ -56,7 +60,7 @@
     const strecken = Object.keys(d).filter((k) => d[k] && d[k].fahrer && Object.keys(d[k].fahrer).length)
       .sort((x, y) => (d[y].datum || 0) - (d[x].datum || 0));
     if (!strecken.length) {
-      box.innerHTML = '<p class="muted">' + teleEsc(t('Noch keine aufgezeichnete Runde. Fahre ein Rennen oder Time Attack auf der Bahn mit eingescannter Strecke; gespeichert werden Runden, in denen alle Teile gelesen wurden.')) + '</p>';
+      box.innerHTML = '<p class="muted">' + teleEsc(t('Noch keine aufgezeichnete Runde. Fahre ein Rennen oder Time Attack auf der Bahn mit eingescannter Strecke; gespeichert wird jede gewertete Runde, in der sich mindestens drei Viertel der Teile zuordnen lassen (die übrigen werden geschätzt).')) + '</p>';
       return;
     }
     if (strecken.indexOf(teleWahl.strecke) < 0) teleWahl.strecke = strecken[0];
@@ -102,8 +106,8 @@
     const dA = teleDauern(tA, A.ms), dB = tB ? teleDauern(tB, B.ms) : null;
     const diff = A.ms - B.ms;
     h += '<div class="stat-raster">'
-      + '<div class="stat-kachel"><span>A · ' + teleEsc(nameVon(teleWahl.a)) + '</span><b>' + teleEsc(formatLapTime(A.ms)) + '</b><small>' + teleEsc(A.auto || '') + '</small></div>'
-      + '<div class="stat-kachel"><span>B · ' + teleEsc(nameVon(teleWahl.b)) + '</span><b>' + teleEsc(formatLapTime(B.ms)) + '</b><small>' + teleEsc(B.auto || '') + '</small></div>'
+      + '<div class="stat-kachel"><span>A · ' + teleEsc(nameVon(teleWahl.a)) + '</span><b>' + teleEsc(formatLapTime(A.ms)) + '</b><small>' + teleEsc((A.auto || '') + teleGeschaetztText(A)) + '</small></div>'
+      + '<div class="stat-kachel"><span>B · ' + teleEsc(nameVon(teleWahl.b)) + '</span><b>' + teleEsc(formatLapTime(B.ms)) + '</b><small>' + teleEsc((B.auto || '') + teleGeschaetztText(B)) + '</small></div>'
       + '<div class="stat-kachel"><span>A − B</span><b class="' + (diff <= 0 ? 'tele-gut' : 'tele-schlecht') + '">' + teleEsc(teleDeltaText(diff)) + ' s</b><small>' + n + ' ' + teleEsc(t('Teile')) + '</small></div></div>';
     if (!dB) {
       h += '<p class="muted">' + teleEsc(t('Die Runden passen nicht zur selben Strecke.')) + '</p>';

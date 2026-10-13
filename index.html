@@ -4673,7 +4673,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.24</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.27</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5803,6 +5803,15 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Streckenscan: Das Spielerauto fuhr geradeaus statt &#252;ber die Bahn, sobald schon eine Strecke im Editor lag (die Spur-Bytes des Scans wurden im selben Takt wieder gel&#246;scht) &#8211; behoben. Mit dem Fahrgef&#252;hl RC griff au&#223;erdem der Autopilot gar nicht: kein Scan, keine Aufstellung, kein Gelb-Tempo. Jetzt rechnet er auch dort, solange er f&#228;hrt.</li>
+        <li>Gelbe Flagge: Dein Auto f&#228;hrt jetzt genauso schnell wie die NPCs. Vorher lag der Tempofaktor des Fahrgef&#252;hls (1,1 bis 1,8) auch auf dem Autopiloten.</li>
+        <li>Safety Car (WIP): Nach der gelben Phase f&#228;hrt es die letzten 2 s ganz rechts am Rand und h&#228;lt dort statt mitten auf der Bahn; geparkt ist das Licht aus. Nach einem Rempler startet es nach 1,5 s selbst neu, statt stehen zu bleiben. Boxenstopps fahren ebenfalls 2 s statt 1 s am Rand, bevor sie bremsen.</li>
+        <li>Startaufstellung: In Kurven und Haarnadeln deutlich langsamer (dieselben Anteile wie beim Streckenscan, mit Vorausblick), damit niemand mehr aus der Haarnadel fliegt. Beim Anhalten bleibt die Seite des Startplatzes stehen, statt zur Mitte zu rollen. Der Startschirm zeigt je Auto Reihe und Seite.</li>
+        <li>Challenger Gummiband (WIP): reagierte nach der ersten Runde nicht mehr auf dich, weil die Ortung deines Autos keine Runden z&#228;hlt &#8211; behoben. Es z&#228;hlt jetzt nur der Abstand auf der Runde, auch wenn bei dir einmal eine Runde nicht gez&#228;hlt wird.</li>
+        <li>Telemetrie (WIP): Runden wurden verworfen, sobald ein einziges Teil nicht gelesen wurde &#8211; auf der echten Bahn fast immer. Jetzt werden die Lesungen &#252;ber ihre Art der Strecke zugeordnet und fehlende Teile gesch&#228;tzt (mindestens drei Viertel m&#252;ssen passen). Die Telemetrie-Seite zeigt, wie viele Teile gesch&#228;tzt sind.</li>
+        <li>Time Attack (WIP): Am Ende kommt eine Zusammenfassung mit Runden, bester Runde und Medaille, Vergleich mit deiner bisherigen Bestzeit, Schnitt und Streuung, was zur n&#228;chsten Medaille fehlt, und was die Telemetrie aufgezeichnet hat (mit Knopf dorthin). Die Medaillen sind etwas leichter: Gold auf SGR4LGHG ab 7,3 s statt 7,2 s, die &#252;brigen Strecken entsprechend.</li>
+        <li>Meisterschaft: Ein von Hand beendetes Event z&#228;hlt mit 0 Punkten, und es geht beim n&#228;chsten weiter (vorher musste es neu gefahren werden). Die Startreihe des n&#228;chsten Events wird einmal festgelegt und im Zwischenstand mit Reihe und Seite gezeigt &#8211; auch bei Zufall stimmt sie jetzt mit dem Start &#252;berein. Der Startschirm nennt Event und Aufstellungsregel.</li>
+        <li>Fahrgef&#252;hl RC und Safety Car sind als WIP gekennzeichnet.</li>
         <li>Neue Rennende-Fanfare: ein Arcade-Jingle (&#8222;Stage clear&#8220;) statt des Rundenz&#228;hler-Tons. Drei aufsteigende Dreiklangsl&#228;ufe und ein Akkordtreffer, rund 2 Sekunden statt knapp 5. Gespielt bei Zielflagge, Derby-Sieg und NPC-Knockout-Sieg, wie bisher.</li>
         <li>Titelschirm: Der Schriftzug steht jetzt ruhig &#8211; Cyan &#252;ber, Rot unter jedem Buchstaben, ohne springende Streifen. Der Glitch l&#228;uft nur noch im Omega dahinter.</li>
         <li>Titelschirm: neuer Glitch-Effekt &#8211; die Farbkan&#228;le liegen &#252;ber und unter den Buchstaben statt daneben, und einzelne senkrechte Streifen springen kurz nach oben oder unten. Das Omega im Hintergrund ist deutlicher, rund statt langgezogen, passt auf den Bildschirm und glitcht genauso.</li>
@@ -8946,7 +8955,7 @@
       <div class="opt-row"><div class="opt-label">Gelbe Flagge deaktivieren<small>An: Der Knopf
           &bdquo;Gelbe Flagge&ldquo; und das Halten der Boxentaste rufen kein Gelb mehr aus.</small></div>
         <label class="tgl"><input type="checkbox" id="race-gelb-aus"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Safety Car: erst aufschlie&szlig;en<span class="wip-tag">experimentell</span><small>An:
+      <div class="opt-row"><div class="opt-label">Safety Car: erst aufschlie&szlig;en<span class="wip-tag">WIP</span><small>An:
           Unter Gelb mit Safety Car fahren alle mit etwa 45&nbsp;% heran und ab zwei Kacheln Abstand
           mit 35&nbsp;% weiter, in Kurven und Haarnadeln gedrosselt. Aus: alle sofort 35&nbsp;%.
           &Uuml;berholt wird unter Gelb nie.</small></div>
@@ -12853,8 +12862,8 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
-    "RC": "RC",
-    "Alle: RC": "All: RC",
+    "RC (WIP)": "RC (WIP)",
+    "Alle: RC (WIP)": "All: RC (WIP)",
     "Arcade, nur viel extremer: wie ein Fernsteuerungsauto": "Arcade, only much more extreme: like a remote-control car",
     "Der Stick geht direkt ans Auto wie bei einer Fernsteuerung, ohne Gänge: Gas weg läuft in zwei Sekunden aus, die Bremse greift sofort, ein zweiter Bremsdruck im Stand fährt rückwärts. Lenkung, Bremse und Anzug stehen am Anschlag, kein Reifenverschleiß, kein Tankgewicht, Crashs ohne Schaden.": "The stick goes straight to the car like a remote control, without gears: lifting off coasts out in two seconds, the brake bites at once, a second brake press at standstill drives backwards. Steering, brake and acceleration are at the limit, no tyre wear, no fuel weight, crashes without damage.",
     "Aktuell keine Ergebnisse verfügbar. Nach einem Rennen stehen sie hier.": "No results available yet. They appear here after a race.",
@@ -12879,7 +12888,20 @@
     "Telemetrie": "Telemetry",
     "Deine Runden Teil für Teil: wo du Zeit gewinnst und verlierst, Tempo, Gas und Bremse.": "Your laps piece by piece: where you gain and lose time, speed, throttle and brake.",
     "Telemetrie ansehen": "View telemetry",
-    "Noch keine aufgezeichnete Runde. Fahre ein Rennen oder Time Attack auf der Bahn mit eingescannter Strecke; gespeichert werden Runden, in denen alle Teile gelesen wurden.": "No recorded lap yet. Drive a race or Time Attack on the track with a scanned layout; laps in which every piece was read are saved.",
+    "Time Attack beendet": "Time Attack finished",
+    "{n} gewertet": "{n} counted",
+    "Keine gewertete Runde.": "No counted lap.",
+    "Vorher": "Before",
+    "Deine Bestzeit hier": "Your best time here",
+    "Neue Medaille": "New medal",
+    "Erste Zeit auf dieser Strecke.": "First time on this track.",
+    "Schnitt": "Average",
+    "Bis {m} fehlen {d} s": "{d} s short of {m}",
+    "{n} Runden aufgezeichnet": "{n} laps recorded",
+    "{n} davon mit geschätzten Teilen": "{n} of them with estimated pieces",
+    "{n} nicht zuzuordnen": "{n} could not be matched",
+    "{n} Teile geschätzt": "{n} pieces estimated",
+    "Noch keine aufgezeichnete Runde. Fahre ein Rennen oder Time Attack auf der Bahn mit eingescannter Strecke; gespeichert wird jede gewertete Runde, in der sich mindestens drei Viertel der Teile zuordnen lassen (die übrigen werden geschätzt).": "No recorded lap yet. Drive a race or Time Attack on the track with a scanned layout; every counted lap is saved in which at least three quarters of the pieces can be matched (the rest are estimated).",
     "Für diese Auswahl gibt es keine Runde.": "There is no lap for this selection.",
     "Die Runden passen nicht zur selben Strecke.": "The laps do not belong to the same track.",
     "Gewinn und Verlust je Teil": "Gain and loss per piece",
@@ -13020,7 +13042,10 @@
     "Eine Meisterschaft braucht mindestens ein Event": "A championship needs at least one event",
     "Eine laufende Meisterschaft wird dabei beendet.": "A championship in progress will be ended.",
     "Endstand": "Final standings",
-    "Event abgebrochen, es wird nicht gewertet": "Event aborted, it is not scored",
+    "Event abgebrochen: zählt mit 0 Punkten": "Event aborted: counts as 0 points",
+    "Wertung, sobald alle im Ziel sind …": "Scoring once everyone has finished …",
+    "abgebrochen": "aborted",
+    "Reihe {r}": "Row {r}",
     "Event": "Event",
     "Events": "events",
     "FREI": "FREE",
@@ -13684,6 +13709,15 @@
     "Titelschirm: neuer Glitch-Effekt – die Farbkanäle liegen über und unter den Buchstaben statt daneben, und einzelne senkrechte Streifen springen kurz nach oben oder unten. Das Omega im Hintergrund ist deutlicher, rund statt langgezogen, passt auf den Bildschirm und glitcht genauso.": "Title screen: new glitch effect – the colour channels sit above and below the letters instead of beside them, and single vertical strips briefly jump up or down. The omega in the background is clearer, round instead of stretched, fits on the screen and glitches the same way.",
     "Titelschirm: Der Schriftzug steht jetzt ruhig – Cyan über, Rot unter jedem Buchstaben, ohne springende Streifen. Der Glitch läuft nur noch im Omega dahinter.": "Title screen: the lettering now stays still – cyan above, red below every letter, without jumping strips. The glitch only runs in the omega behind it.",
     "Neue Rennende-Fanfare: ein Arcade-Jingle („Stage clear“) statt des Rundenzähler-Tons. Drei aufsteigende Dreiklangsläufe und ein Akkordtreffer, rund 2 Sekunden statt knapp 5. Gespielt bei Zielflagge, Derby-Sieg und NPC-Knockout-Sieg, wie bisher.": "New race-end fanfare: an arcade jingle (\"stage clear\") replaces the lap-counter tune. Three rising arpeggios and a chord hit, about 2 seconds instead of almost 5. Played at the chequered flag, a Derby win and an NPC Knockout win, as before.",
+    "Fahrgefühl RC und Safety Car sind als WIP gekennzeichnet.": "The RC driving feel and the safety car are marked as WIP.",
+    "Meisterschaft: Ein von Hand beendetes Event zählt mit 0 Punkten, und es geht beim nächsten weiter (vorher musste es neu gefahren werden). Die Startreihe des nächsten Events wird einmal festgelegt und im Zwischenstand mit Reihe und Seite gezeigt – auch bei Zufall stimmt sie jetzt mit dem Start überein. Der Startschirm nennt Event und Aufstellungsregel.": "Championship: an event ended by hand counts as 0 points and the next one follows (previously it had to be driven again). The grid of the next event is fixed once and shown in the standings with row and side – with random order too it now matches the start. The start screen names the event and the grid rule.",
+    "Time Attack (WIP): Am Ende kommt eine Zusammenfassung mit Runden, bester Runde und Medaille, Vergleich mit deiner bisherigen Bestzeit, Schnitt und Streuung, was zur nächsten Medaille fehlt, und was die Telemetrie aufgezeichnet hat (mit Knopf dorthin). Die Medaillen sind etwas leichter: Gold auf SGR4LGHG ab 7,3 s statt 7,2 s, die übrigen Strecken entsprechend.": "Time Attack (WIP): at the end a summary shows laps, best lap and medal, the comparison with your previous best, average and spread, what is missing for the next medal, and what telemetry recorded (with a button to it). Medals are a little easier: gold on SGR4LGHG from 7.3 s instead of 7.2 s, the other tracks accordingly.",
+    "Telemetrie (WIP): Runden wurden verworfen, sobald ein einziges Teil nicht gelesen wurde – auf der echten Bahn fast immer. Jetzt werden die Lesungen über ihre Art der Strecke zugeordnet und fehlende Teile geschätzt (mindestens drei Viertel müssen passen). Die Telemetrie-Seite zeigt, wie viele Teile geschätzt sind.": "Telemetry (WIP): laps were discarded as soon as a single piece was not read – almost always on the real track. Readings are now matched to the track by their kind and missing pieces are estimated (at least three quarters must match). The telemetry page shows how many pieces were estimated.",
+    "Challenger Gummiband (WIP): reagierte nach der ersten Runde nicht mehr auf dich, weil die Ortung deines Autos keine Runden zählt – behoben. Es zählt jetzt nur der Abstand auf der Runde, auch wenn bei dir einmal eine Runde nicht gezählt wird.": "Challenger rubber band (WIP): stopped reacting to you after the first lap because your car's positioning does not count laps – fixed. Only the gap on the lap counts now, even if one of your laps is not counted.",
+    "Startaufstellung: In Kurven und Haarnadeln deutlich langsamer (dieselben Anteile wie beim Streckenscan, mit Vorausblick), damit niemand mehr aus der Haarnadel fliegt. Beim Anhalten bleibt die Seite des Startplatzes stehen, statt zur Mitte zu rollen. Der Startschirm zeigt je Auto Reihe und Seite.": "Grid: much slower in curves and hairpins (the same factors as the track scan, with look-ahead), so nobody flies out of the hairpin any more. When stopping, the car keeps the side of its grid slot instead of rolling to the middle. The start screen shows row and side for each car.",
+    "Safety Car (WIP): Nach der gelben Phase fährt es die letzten 2 s ganz rechts am Rand und hält dort statt mitten auf der Bahn; geparkt ist das Licht aus. Nach einem Rempler startet es nach 1,5 s selbst neu, statt stehen zu bleiben. Boxenstopps fahren ebenfalls 2 s statt 1 s am Rand, bevor sie bremsen.": "Safety car (WIP): after the yellow phase it drives the last 2 s at the far right edge and stops there instead of mid-track; when parked its lights are off. After being bumped it restarts by itself after 1.5 s instead of staying put. Pit stops likewise drive 2 s instead of 1 s at the edge before braking.",
+    "Gelbe Flagge: Dein Auto fährt jetzt genauso schnell wie die NPCs. Vorher lag der Tempofaktor des Fahrgefühls (1,1 bis 1,8) auch auf dem Autopiloten.": "Yellow flag: your car now drives exactly as fast as the NPCs. Previously the speed factor of the driving feel (1.1 to 1.8) was applied to the autopilot too.",
+    "Streckenscan: Das Spielerauto fuhr geradeaus statt über die Bahn, sobald schon eine Strecke im Editor lag (die Spur-Bytes des Scans wurden im selben Takt wieder gelöscht) – behoben. Mit dem Fahrgefühl RC griff außerdem der Autopilot gar nicht: kein Scan, keine Aufstellung, kein Gelb-Tempo. Jetzt rechnet er auch dort, solange er fährt.": "Track scan: the player car drove straight instead of along the track as soon as a layout was already in the editor (the scan's lane bytes were cleared again in the same tick) – fixed. With the RC driving feel the autopilot did not engage at all: no scan, no grid, no yellow-flag speed. It now runs there too whenever it is driving.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -15757,8 +15791,8 @@
   // nachzieht. Bewusst KEINE Ansagen (Rundenzeit, Tank, Schaden): dafuer gibt es noch keine
   // spanischen Aufnahmen, und die Sprachausgabe nutzt die englische als Platzhalter.
   const I18N_ES = {
-    "RC": "RC",
-    "Alle: RC": "Todos: RC",
+    "RC (WIP)": "RC (WIP)",
+    "Alle: RC (WIP)": "Todos: RC (WIP)",
     "Arcade, nur viel extremer: wie ein Fernsteuerungsauto": "Arcade, pero mucho más extremo: como un coche teledirigido",
     "Der Stick geht direkt ans Auto wie bei einer Fernsteuerung, ohne Gänge: Gas weg läuft in zwei Sekunden aus, die Bremse greift sofort, ein zweiter Bremsdruck im Stand fährt rückwärts. Lenkung, Bremse und Anzug stehen am Anschlag, kein Reifenverschleiß, kein Tankgewicht, Crashs ohne Schaden.": "El stick va directo al coche como un mando a distancia, sin marchas: al soltar el gas rueda dos segundos, el freno actúa al instante y una segunda pulsación parado va marcha atrás. Dirección, freno y aceleración al máximo, sin desgaste de neumáticos, sin peso de combustible, choques sin daño.",
     "Aktuell keine Ergebnisse verfügbar. Nach einem Rennen stehen sie hier.": "Aún no hay resultados. Aparecerán aquí después de una carrera.",
@@ -15782,7 +15816,29 @@
     "Telemetrie": "Telemetría",
     "Deine Runden Teil für Teil: wo du Zeit gewinnst und verlierst, Tempo, Gas und Bremse.": "Tus vueltas pieza a pieza: dónde ganas y pierdes tiempo, velocidad, gas y freno.",
     "Telemetrie ansehen": "Ver telemetría",
-    "Noch keine aufgezeichnete Runde. Fahre ein Rennen oder Time Attack auf der Bahn mit eingescannter Strecke; gespeichert werden Runden, in denen alle Teile gelesen wurden.": "Aún no hay ninguna vuelta grabada. Corre una carrera o Time Attack en la pista con un trazado escaneado; se guardan las vueltas en las que se leyeron todas las piezas.",
+    "Event abgebrochen: zählt mit 0 Punkten": "Evento interrumpido: cuenta con 0 puntos",
+    "Wertung, sobald alle im Ziel sind …": "Puntuación cuando todos hayan llegado …",
+    "abgebrochen": "interrumpido",
+    "Reihe {r}": "Fila {r}",
+    "links": "izquierda",
+    "rechts": "derecha",
+    "Time Attack beendet": "Time Attack terminado",
+    "Runden": "Vueltas",
+    "{n} gewertet": "{n} válidas",
+    "Keine gewertete Runde.": "Ninguna vuelta válida.",
+    "Runde": "Vuelta",
+    "Vorher": "Antes",
+    "Deine Bestzeit hier": "Tu mejor tiempo aquí",
+    "Neue Medaille": "Nueva medalla",
+    "Erste Zeit auf dieser Strecke.": "Primer tiempo en este circuito.",
+    "Schnitt": "Media",
+    "Streuung": "Dispersión",
+    "Bis {m} fehlen {d} s": "Faltan {d} s para {m}",
+    "{n} Runden aufgezeichnet": "{n} vueltas grabadas",
+    "{n} davon mit geschätzten Teilen": "{n} de ellas con piezas estimadas",
+    "{n} nicht zuzuordnen": "{n} no se pudieron asignar",
+    "{n} Teile geschätzt": "{n} piezas estimadas",
+    "Noch keine aufgezeichnete Runde. Fahre ein Rennen oder Time Attack auf der Bahn mit eingescannter Strecke; gespeichert wird jede gewertete Runde, in der sich mindestens drei Viertel der Teile zuordnen lassen (die übrigen werden geschätzt).": "Aún no hay ninguna vuelta grabada. Corre una carrera o Time Attack en la pista con un trazado escaneado; se guarda cada vuelta válida en la que se pueden asignar al menos tres cuartas partes de las piezas (las demás se estiman).",
     "Strecke": "Circuito",
     "Fahrer": "Piloto",
     "Für diese Auswahl gibt es keine Runde.": "No hay ninguna vuelta para esta selección.",
@@ -17341,7 +17397,14 @@
     // Hoechstgeschwindigkeit bremste das Auto mit einem Fuenftel. Das ist nicht, was ein
     // Regler namens "Geschwindigkeit" verspricht, und es fuehlte sich an, als stimme mit
     // ihm etwas nicht - was es auch tat, nur nicht in der Richtung.
-    if (throttle > 0) throttle *= topSpeedScale;
+    // v1.0.25 GEMELDET: "Spieler-1-Auto faehrt bei gelber Flagge schneller als die NPCs,
+    // sollte aber genauso schnell fahren." Jedes Fahrgefuehl setzt diesen Faktor (1,1 bis
+    // 1,8), und er lag auch auf dem Gas, das der Autopilot gerechnet hat - die NPCs bekommen
+    // ihn nicht. Faehrt der Autopilot (Gelb, Einfuehrungsrunde, Aufstellung, Scan), geht das
+    // Gas also ungestreckt hinaus, wie bei einem NPC.
+    const apFaehrt = overrideThrottle !== undefined && typeof autopilotGreiftFuer === 'function'
+      && autopilotGreiftFuer(1);
+    if (throttle > 0 && !apFaehrt) throttle *= topSpeedScale;
     throttle *= batteryCompensationScale();
     // NUR den Verbrauch zaehlen. Die Drosselung sitzt in physicsStep(), also vor der
     // Physik - sonst zeigt der Tacho die Simulation und das Auto bekommt weniger.
@@ -17466,6 +17529,9 @@
   // Datei, die ihn braucht, kann das nicht passieren.
   let ghostQuerTest = 0;
   let physOutSteer = 0, physOutThrottle = 0;
+  // v1.0.25: true, wenn physicsStep() diesen Takt NUR fuer den Autopiloten gerechnet hat
+  // (Steuerungsmodus "Aus", z. B. Fahrgefuehl RC, unter Gelb oder beim Scan).
+  let physApTakt = false;
   // Und dasselbe Paar fuer Spieler 2. Es steht neben dem ersten, weil es dieselbe Rolle
   // hat: der geformte Ausgang der Physik, den der Herzschlag verschickt.
   let physOut2Steer = 0, physOut2Throttle = 0, physOut2Brake = false;
@@ -17569,10 +17635,13 @@
       }
       physicsStep();
       pitLaneTick();
-      let steer = physicsEnabled ? physOutSteer : steerX;
+      // v1.0.25: im Modus "Aus" (RC) rechnet physicsStep() nur, wenn der Autopilot faehrt -
+      // dann gilt dessen Ausgabe (physApTakt), sonst der rohe Stick.
+      const physJetzt = physicsEnabled || physApTakt;
+      let steer = physJetzt ? physOutSteer : steerX;
       // v0.10.5: der Rohmodus heisst jetzt RC und laeuft durch rcGas() (Auslaufen, Bremse,
       // Rueckwaerts nach zweitem Druck). Drift gibt es nicht mehr.
-      let throttle = physicsEnabled ? physOutThrottle : rcGas(throttleY);
+      let throttle = physJetzt ? physOutThrottle : rcGas(throttleY);
       if (driftModus) steer = driftGegenlenken(steer);
       sendControlValue(steer, throttle);
       spielerZweiSenden();
@@ -17619,8 +17688,10 @@
   function spielerSendenVon(z) {
     if (!z.car) return;
     physicsStepVon(z);
-    let steer = physicsEnabled ? z.outSteer : z.steer;
-    let throttle = physicsEnabled ? z.outThrottle : z.throttle;
+    // v1.0.25: auch im Modus "Aus" (RC) die Physik-Ausgabe, solange der Autopilot faehrt.
+    const physJetzt = physicsEnabled || !!z.apTakt;
+    let steer = physJetzt ? z.outSteer : z.steer;
+    let throttle = physJetzt ? z.outThrottle : z.throttle;
     // ---- DIE ZWEI GLOBALEN, DIE NICHT IN config STEHEN -----------------------------
     //
     // BESTELLT: "Globale einstellungen gelten für beide autos gleichermaßen."
@@ -17638,7 +17709,8 @@
     //                             eine gemeinsame Naeherung ist hier besser als gar keine -
     //                             zwei Autos mit verschieden kompensierten Akkus waeren im
     //                             Rennen ungleich schnell, ohne dass man den Grund sieht.
-    if (throttle > 0) throttle *= topSpeedScale;
+    // Unter Autopilot ungestreckt, wie bei Auto 1 (sendControlValue).
+    if (throttle > 0 && !(typeof autopilotGreiftFuer === 'function' && autopilotGreiftFuer(z.nr))) throttle *= topSpeedScale;
     throttle *= batteryCompensationScale();
     // Kein Drift-Gegenlenken fuer Auto 2 (v0.9.15): driftGegenlenken liest den Kreisel und das
     // Tempo von AUTO 1 - fuer Auto 2 lenkte es also nach den Daten des falschen Autos.
@@ -23638,6 +23710,33 @@
   const SCAN_TEMPO = 0.6, SCAN_TEMPO_HAARNADEL = 0.4;
   const scanStopp = { car: null, bis: 0 };
   function scanAnhalten(car) { if (car) { scanStopp.car = car; scanStopp.bis = Date.now() + 1500; } }
+  // ---- GREIFT DER AUTOPILOT GERADE? (v1.0.25) --------------------------------------
+  //
+  // GEMELDET: "Streckenscan: das Spielerauto faehrt einfach geradeaus" und "Meine
+  // Geschwindigkeit, wenn das Safety Car aktiviert ist, ist viel zu gross." Gemeinsame
+  // Ursache: autopilot() wird aus physicsStep() gerufen, und die steigt im Steuerungsmodus
+  // "Aus" sofort aus - den setzt das neue Fahrgefuehl RC (v1.0.22). Mit RC gab es also weder
+  // Scan noch Aufstellung noch Gelb-Tempo; das Auto fuhr den rohen Stick.
+  //
+  // Diese Frage beantwortet dieselben Bedingungen wie autopilot(), ohne dessen Regler
+  // anzufassen. Ist sie wahr, rechnet physicsStep() auch im Modus "Aus" einen Takt, und der
+  // Sendeweg nimmt dessen Ausgabe.
+  // Startwert des Modells, wenn es im Modus "Aus" fuer den Autopiloten einsteigt: das Tempo,
+  // das der rohe Stick gerade verlangt (bei RC ist das Gas der Tempoanteil).
+  function apEinstieg(motor, gas) {
+    const st = motor.state, v = Math.max(0, Math.min(1, gas || 0)) * motor.config.topSpeedKmh;
+    st.speedKmh = v;
+    if ('virtualSpeed' in st) st.virtualSpeed = v;
+  }
+  function autopilotGreiftFuer(wer) {
+    const zPl = wer >= 2 ? zusatzPlatz(wer) : null;
+    const car = zPl ? zPl.car : playerCar;
+    if (!car) return false;
+    if (scanStopp.car === car && Date.now() < scanStopp.bis) return true;
+    if (typeof garageScan !== 'undefined' && garageScan.aktiv && garageScan.car === car) return true;
+    if (trackMode === 'on' && typeof aufstellenSpielerZiel === 'function' && aufstellenSpielerZiel(car)) return true;
+    return !!autopilotGrund();
+  }
   function autopilot(fahrerBremse, wer) {
     const zPl = wer >= 2 ? zusatzPlatz(wer) : null;
     const zwei = !!zPl;
@@ -23687,17 +23786,24 @@
     // Automatische Aufstellung (v0.9.24, 90-ghosts.js): zum Startplatz, dort halten.
     // v0.9.87: nur auf der Bahn - im Ausdruck-Modus wuerde die Querlage als Radwinkel gelesen.
     if (trackMode === 'on' && typeof aufstellenSpielerZiel === 'function' && aufstellenSpielerZiel(meinAuto)) {
-      if (aufstellenSpielerAngekommen(meinAuto)) {
-        return { grund: 'aufstellen', throttle: 0, brake: 1, steer: 0, lenkt: false };
-      }
-      const vA = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
-      const dtS = Math.max(0.01, Math.min(0.25, (Date.now() - (regler.at || Date.now())) / 1000));
-      regler.at = Date.now();
-      const g = ghostSpeedControl(regler, formationPace(), vA, dtS);
       // v0.9.58 (D6): mit Spur-Bytes - dieselbe Querlage wie die Ghosts, in maximaler
       // Breite, damit das Auto von selbst auf die Seite seines Startplatzes faellt.
       const lenk = typeof formationDriverOffset === 'function'
         ? formationDriverOffset(meinAuto, aufstellenSpielerBreite(meinAuto)) : 0;
+      if (aufstellenSpielerAngekommen(meinAuto)) {
+        // v1.0.25 GEMELDET: "die Querlage beim Stehenbleiben passt nicht." Hier stand
+        // steer 0 und lenkt false: im Bremsen kam der Stick des Fahrers (meist 0 = Mitte)
+        // als Querlage an, und das Auto rollte zur Bahnmitte. Die Seite bleibt bis zum Stand.
+        // Ohne das Schlaengeln: nur die Seite des Startplatzes, wie beim NPC (aufstellenPruefen).
+        const platzA = typeof gridPosOf === 'function' ? gridPosOf(meinAuto) : -1;
+        const seiteA = platzA >= 0 ? (platzA % 2 ? -1 : 1) * GHOST_GRID_MAX : lenk;
+        return { grund: 'aufstellen', throttle: 0, brake: 1, steer: seiteA, lenkt: !abseitsJetztFuer(wer || 1) };
+      }
+      const vA = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
+      const dtS = Math.max(0.01, Math.min(0.25, (Date.now() - (regler.at || Date.now())) / 1000));
+      regler.at = Date.now();
+      // v1.0.25: mit Kurven- und Haarnadeldrosselung wie die NPCs (aufstellTempo, 90-ghosts.js).
+      const g = ghostSpeedControl(regler, typeof aufstellTempo === 'function' ? aufstellTempo(meinAuto) : formationPace(), vA, dtS);
       if (fahrerBremse > 0.05) return { grund: 'aufstellen', throttle: 0, brake: fahrerBremse, steer: lenk, lenkt: false };
       return { grund: 'aufstellen', throttle: g.throttle, brake: g.brake, steer: lenk,
                lenkt: !abseitsJetztFuer(wer || 1) };
@@ -23955,7 +24061,15 @@
   let fuelCut = 1;
 
   function physicsStep() {
-    if (!physicsEnabled) { physLastTime = null; return; }
+    // v1.0.25: im Modus "Aus" (Fahrgefuehl RC) nur dann rechnen, wenn der Autopilot faehrt -
+    // siehe autopilotGreiftFuer(). Beim Einstieg steht das Modell noch auf dem Tempo von
+    // vorher; es bekommt deshalb das, was der Stick gerade verlangt, als Startwert.
+    physApTakt = false;
+    if (!physicsEnabled) {
+      if (!autopilotGreiftFuer(1)) { physLastTime = null; return; }
+      physApTakt = true;
+      if (physLastTime === null) apEinstieg(physEngine, typeof rcLage !== "undefined" ? rcLage.wert : throttleY);
+    }
     const now = performance.now();
     const dt = physLastTime ? Math.min(0.25, (now - physLastTime) / 1000) : CONTROL_SEND_INTERVAL_MS / 1000;
     physLastTime = now;
@@ -24077,7 +24191,12 @@
   // Was er HAT: eine eigene Physikinstanz, also eigene Gaenge, eigene Drehzahl, eigenes
   // Tempo, eigene Reifen- und Bremsentemperatur - alles, was den Wagen fahren laesst.
   function physicsStepVon(z) {
-    if (!physicsEnabled) { z.lastTime = null; return; }
+    z.apTakt = false;
+    if (!physicsEnabled) {
+      if (!autopilotGreiftFuer(z.nr)) { z.lastTime = null; return; }
+      z.apTakt = true;
+      if (z.lastTime === null) apEinstieg(z.motor, Math.max(0, z.throttle || 0));
+    }
     const now = performance.now();
     const dt = z.lastTime ? Math.min(0.25, (now - z.lastTime) / 1000)
                              : CONTROL_SEND_INTERVAL_MS / 1000;
@@ -35084,9 +35203,11 @@
       row.className = 'grid-row';
       row.draggable = false;
       row.dataset.id = String(car.device.id);
+      // v1.0.25: dazu, wo der Platz liegt (Reihe, Seite) - so stellt man von Hand richtig auf.
+      const wo = t('Reihe {r}').replace('{r}', Math.floor(i / 2) + 1) + ' · ' + (i % 2 ? t('links') : t('rechts'));
       row.innerHTML = `<span class="grid-pos">${i + 1}.</span>`
         + `<span class="grid-handle" draggable="true" title="Ziehen zum Umsortieren">&#8942;&#8942;</span>`
-        + `<span class="grid-name">${carDot(car)}${garageLabel(car)}</span>`
+        + `<span class="grid-name">${carDot(car)}${garageLabel(car)} <small class="grid-wo">${wo}</small></span>`
         + `<span class="grid-move">`
         + `<button data-mv="up" ${i === 0 ? 'disabled' : ''} aria-label="nach vorn">&#9650;</button>`
         + `<button data-mv="down" ${i === cars.length - 1 ? 'disabled' : ''} aria-label="nach hinten">&#9660;</button>`
@@ -35170,7 +35291,8 @@
     if (!gs) { if (raceGridWeiter) raceGridWeiter(); return; }
     raceGridZeilen($('grid-liste'));
     gridBildMalen();
-    if ($('grid-kopf-info')) $('grid-kopf-info').textContent = '';
+    // v1.0.25: im Meisterschafts-Event steht oben, welches Event und nach welcher Regel aufgestellt wird.
+    if ($('grid-kopf-info')) $('grid-kopf-info').textContent = typeof meisterGridInfo === 'function' ? meisterGridInfo() : '';
     // Time Attack: Medaillenzeiten, bisher Gewonnenes und Bestzeit dieser Strecke.
     const ta = $('grid-timeattack');
     if (ta) {
@@ -35373,10 +35495,78 @@
     showHudToast((nr >= 2 ? 'P' + nr + ': ' : '') + (r.neu ? t('Neue Bestzeit auf dieser Strecke!') + ' ' : '')
       + formatLapTime(ms) + (name ? ' · ' + name : ''));
   }
+  // ---- ZUSAMMENFASSUNG AM ENDE VON TIME ATTACK (v1.0.25, WIP) -----------------------
+  // BESTELLT: "Zeige mir eine Zusammenfassung meiner Ergebnisse, wenn Time Attack vorbei ist."
+  // Ein Fenster nach dem Stopp: Runden, beste Runde mit Medaille, Vergleich mit der Bestzeit
+  // von VOR dieser Fahrt (darum beim Start gemerkt - waehrend der Fahrt schreibt
+  // bestzeitRunde() sie schon fort), Schnitt und Streuung, was zur naechsten Medaille fehlt,
+  // und was die Telemetrie aufgezeichnet hat - mit dem Weg dorthin.
+  let bestzeitVorher = null;
+  function bestzeitVorherMerken() {
+    bestzeitVorher = null;
+    if (raceMode !== 'bestzeit') return;
+    const b = bestzeitAktuell(typeof playerCar !== 'undefined' ? playerCar : null);
+    bestzeitVorher = b ? { beste: b.beste, medaille: b.medaille || 0 } : { beste: null, medaille: 0 };
+  }
+  function bestzeitZusammenfassungText() {
+    const tiles = currentTrackTiles;
+    if (!tiles || tiles.length < 3) return null;
+    const minMs = rundeMinMs();
+    const alle = raceLapTimes.map((l) => l.ms);
+    const gueltig = alle.filter((ms) => ms >= minMs);
+    const z = [];
+    z.push(t('Runden') + ': ' + alle.length
+      + (gueltig.length !== alle.length ? ' (' + t('{n} gewertet').replace('{n}', gueltig.length) + ')' : ''));
+    if (!gueltig.length) { z.push(t('Keine gewertete Runde.')); return z.join('\n'); }
+    const beste = Math.min.apply(null, gueltig);
+    const nr = alle.indexOf(beste) + 1;
+    const def = bestzeitDef(tiles);
+    const sterne = chSterne(def, 'hotlap', beste);
+    z.push(t('Beste Runde') + ': ' + formatLapTime(beste) + ' (' + t('Runde') + ' ' + nr + ') · '
+      + chSterneName(sterne) + ' ' + chSterneZeichen(sterne));
+    const v = bestzeitVorher;
+    if (v && v.beste) {
+      z.push((beste < v.beste ? t('Neue Bestzeit auf dieser Strecke!') + ' ' + t('Vorher') : t('Deine Bestzeit hier'))
+        + ': ' + formatLapTime(v.beste) + ' (' + teleDeltaText(beste - v.beste) + ' s)');
+      if (sterne > (v.medaille || 0)) z.push(t('Neue Medaille') + ': ' + chSterneName(sterne));
+    } else {
+      z.push(t('Erste Zeit auf dieser Strecke.'));
+    }
+    if (gueltig.length >= 2) {
+      const mittel = gueltig.reduce((a, b) => a + b, 0) / gueltig.length;
+      const sd = Math.sqrt(gueltig.reduce((a, b) => a + (b - mittel) * (b - mittel), 0) / (gueltig.length - 1));
+      z.push(t('Schnitt') + ': ' + formatLapTime(mittel) + ' · ' + t('Streuung') + ' ±' + (sd / 1000).toFixed(2) + ' s');
+    }
+    if (sterne < 3) {
+      const sch = chSterneSchwellen(def);
+      const ziel = sterne >= 2 ? sch.gold : sch.silber;
+      z.push(t('Bis {m} fehlen {d} s').replace('{m}', chSterneName(sterne + 1))
+        .replace('{d}', ((beste - ziel) / 1000).toFixed(2)));
+    }
+    if (typeof teleSitzung !== 'undefined') {
+      const ts = teleSitzung;
+      z.push(t('Telemetrie') + ': ' + t('{n} Runden aufgezeichnet').replace('{n}', ts.gespeichert)
+        + (ts.geschaetzt ? ', ' + t('{n} davon mit geschätzten Teilen').replace('{n}', ts.geschaetzt) : '')
+        + (ts.verworfen ? ', ' + t('{n} nicht zuzuordnen').replace('{n}', ts.verworfen) : ''));
+    }
+    return z.join('\n');
+  }
+  function bestzeitZusammenfassungZeigen() {
+    if (raceMode !== 'bestzeit' || typeof konsoleFrage !== 'function') return;
+    const text = bestzeitZusammenfassungText();
+    if (text === null) return;
+    const knoepfe = [];
+    if (typeof teleBeste === 'function' && teleBeste(playerCar, currentTrackTiles)) {
+      knoepfe.push([t('Telemetrie ansehen'), () => teleSeiteOeffnen()]);
+    }
+    knoepfe.push([t('Schließen'), null]);
+    setTimeout(() => konsoleFrage(t('Time Attack beendet'), text, knoepfe, true), 900);
+  }
   function startRaceCountdown(gruenZiel, mpPlan) {
     if (raceState !== 'idle' && raceState !== 'finished') return; // ignore while armed/racing
     if (!knockoutBereit(true)) return;
     if (!bestzeitBereit(true)) return;
+    bestzeitVorherMerken();
     // EINSCHALTRAMPE: der Schirm zieht in 300 ms von schwarz auf Wert hoch, wie ein TFT beim
     // Einschalten. Hier und nicht in raceGreen(), weil der Schirm mit dem Knopfdruck
     // "angeht" und nicht erst bei Gruen - im Countdown will man ihn schon lesen.
@@ -35654,7 +35844,12 @@
   function finishRace(auslaufen) {
     raceState = 'finished';
     // Das Safety Car steht beim Rennende - es hat in keinem Ergebnis etwas zu suchen.
-    garage.forEach((c) => { if (c.role === 'safetycar' && c.ghost && c.ghost.running) stopGhost(c); });
+    garage.forEach((c) => {
+      if (c.role === 'safetycar' && c.ghost && c.ghost.running) {
+        stopGhost(c);
+        if (typeof safetyCarLichtAus === 'function') safetyCarLichtAus(c);
+      }
+    });
     raceGreenAt = null;
     fruehstartReset();
     derbyEinstellungenZurueck();
@@ -35765,6 +35960,8 @@
       if (typeof showTab === 'function') showTab('race');
       if (typeof cockpitScreenZu === 'function') cockpitScreenZu('uebersicht');
     }
+    // v1.0.25: Time Attack bekommt dazu seine Zusammenfassung.
+    bestzeitZusammenfassungZeigen();
     // Und ablegen. Hier, weil dies die eine Stelle ist, an der ein Rennen wirklich vorbei
     // ist - und nach showRaceSummary(), damit ein Fehlschlag beim Speichern das Ergebnis
     // nicht verdeckt.
@@ -40705,18 +40902,62 @@
   // Die reine Rechnung: aus den Teilwechseln einer Runde die Spur, oder null.
   // ev: [[t, code]] seit Rundenstart; der Wechsel auf Start/Ziel, der diese Ueberfahrt
   // ausgeloest hat, steht am Ende und gehoert zur naechsten Runde.
-  function teleSpurBauen(ev, ms, n, code) {
+  // soll (optional): die Teilecodes der Strecke, tiles[k].type.
+  //
+  // v1.0.25 GEMELDET: "Telemetrie klappt gar nicht. Ich bin Time Attack gefahren, aber finde
+  // die Daten nirgends." Verlangt waren GENAU n-1 Teilwechsel - auf der echten Bahn faellt
+  // aber oft ein Teil aus oder ein Wechsel kommt doppelt (dieselbe Erfahrung, nach der die
+  // Challenge-Pruefung 10 % Fehllesungen erlaubt). Dann wurde jede Runde verworfen.
+  // Jetzt: stimmt die Zahl nicht, werden die Lesungen ueber ihre ART (Gerade/rechts/links,
+  // chKlasse) der Strecke zugeordnet - laengste gemeinsame Folge wie bei chRundePruefen -,
+  // und fehlende Teile bekommen eine Zeit zwischen ihren Nachbarn. Gilt, solange mindestens
+  // TELE_ZUORDNUNG_MIN der Teile zugeordnet sind; `geschaetzt` sagt, wie viele es nicht waren.
+  function teleSpurBauen(ev, ms, n, code, soll) {
     if (!(ms > 0) || !(n >= 3)) return null;
-    const e = ev.slice();
+    const e = ev.filter((x) => x[1] !== 0x00 && x[1] !== 0xff);
     while (e.length && e[e.length - 1][0] >= ms - 5) e.pop();
-    if (e.length !== n - 1) return null;
-    const teile = [0];
-    for (const [t] of e) {
-      if (!(t > teile[teile.length - 1]) || t >= ms) return null;
-      teile.push(Math.round(t));
+    const fertig = (teile, geschaetzt) => {
+      for (let k = 1; k < teile.length; k++) if (!(teile[k] > teile[k - 1]) || teile[k] >= ms) return null;
+      const sp = { v: 1, code, n, ms: Math.round(ms), teile: teile.map(Math.round) };
+      if (geschaetzt) sp.geschaetzt = geschaetzt;
+      return sp;
+    };
+    if (e.length === n - 1) {
+      const sp = fertig([0].concat(e.map((x) => x[0])), 0);
+      if (sp) return sp;
     }
-    return { v: 1, code, n, ms: Math.round(ms), teile };
+    if (!Array.isArray(soll) || soll.length !== n || typeof chKlasse !== 'function') return null;
+    const a = soll.slice(1).map(chKlasse), b = e.map((x) => chKlasse(x[1]));
+    if (b.length > a.length * 1.5) return null;
+    // LCS mit Rueckverfolgung: Paare (Teil j, Lesung i).
+    const m = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+    for (let j = 1; j <= a.length; j++) {
+      for (let i = 1; i <= b.length; i++) {
+        m[j][i] = a[j - 1] === b[i - 1] ? m[j - 1][i - 1] + 1 : Math.max(m[j - 1][i], m[j][i - 1]);
+      }
+    }
+    const zeit = new Array(n).fill(null);
+    zeit[0] = 0;
+    let j = a.length, i = b.length, paare = 0;
+    while (j > 0 && i > 0) {
+      if (a[j - 1] === b[i - 1] && m[j][i] === m[j - 1][i - 1] + 1) { zeit[j] = e[i - 1][0]; paare++; j--; i--; }
+      else if (m[j - 1][i] >= m[j][i - 1]) j--;
+      else i--;
+    }
+    if (paare < Math.max(2, Math.ceil(TELE_ZUORDNUNG_MIN * (n - 1)))) return null;
+    // Luecken linear zwischen den Nachbarn; hinter dem letzten zugeordneten Teil bis ms.
+    for (let k = 1; k < n; k++) {
+      if (zeit[k] !== null) continue;
+      let r = k + 1;
+      while (r < n && zeit[r] === null) r++;
+      const tr = r < n ? zeit[r] : ms;
+      zeit[k] = zeit[k - 1] + (tr - zeit[k - 1]) / (r - k + 1);
+    }
+    return fertig(zeit, (n - 1) - paare);
   }
+  var TELE_ZUORDNUNG_MIN = 0.75;
+  // Was mit den Runden der laufenden Fahrt passiert ist - fuer die Zusammenfassung am Ende.
+  var teleSitzung = { gespeichert: 0, geschaetzt: 0, verworfen: 0 };
 
   // Aus playerLapCrossed, nach dem Einfuegen der Runde: Spur fertigstellen und merken.
   function teleRunde(start, jetzt, gewertet) {
@@ -40724,13 +40965,21 @@
     teleLauf = null;
     // Je Runde des Rennens eine Stelle, damit der Upload die Spur der schnellsten findet.
     const i = typeof raceLapTimes !== 'undefined' ? raceLapTimes.length - 1 : -1;
-    if (i === 0) teleRennSpuren = [];
+    if (i === 0) { teleRennSpuren = []; teleSitzung = { gespeichert: 0, geschaetzt: 0, verworfen: 0 }; }
     if (i >= 0) teleRennSpuren[i] = null;
     if (!l || l.start !== start) return null;
     const tiles = currentTrackTiles;
     if (!tiles || tiles.length < 3) return null;
-    const spur = teleSpurBauen(l.ev, jetzt - start, tiles.length, trackToCode(tiles, 0));
-    if (!spur) return null;
+    const spur = teleSpurBauen(l.ev, jetzt - start, tiles.length, trackToCode(tiles, 0), tiles.map((x) => x.type));
+    if (!spur) {
+      if (gewertet) {
+        teleSitzung.verworfen++;
+        log('Telemetrie: Runde nicht gespeichert - ' + l.ev.length + ' Teilwechsel gelesen, die Strecke hat '
+            + tiles.length + ' Teile, zu wenige liessen sich zuordnen.', 'info');
+      }
+      return null;
+    }
+    if (gewertet) { teleSitzung.gespeichert++; if (spur.geschaetzt) teleSitzung.geschaetzt++; }
     let pr = l.pr;
     if (pr.length > TELE_PROBEN_MAX) {
       const k = pr.length / TELE_PROBEN_MAX;
@@ -41408,7 +41657,9 @@
   // Track 2 auf 6,4 s - eine kurze Strecke hat einen festen Anteil (Anfahren aus der Kurve,
   // Haarnadel), der nicht mit der Laenge schrumpft. Zwei Bezugspunkte legen eine Gerade fest:
   // Balkonia 16 s, Track 2 (SGR4LGHG) 7,2 s. Beide werden genau getroffen.
-  const CH_GOLD_PUNKTE = [{ id: 'dauer-balkonia', s: 16 }, { code: 'SGR4LGHG', s: 7.2 }];
+  // v1.0.25 BESTELLT: "Die Medaillenzeiten sind zu hart, ich schaffe minimal 7,1 s auf SGR4LGHG.
+  // Gold waere hier fuer 7,3 angemessen (PRO)." Der zweite Bezugspunkt also 7,3 statt 7,2.
+  const CH_GOLD_PUNKTE = [{ id: 'dauer-balkonia', s: 16 }, { code: 'SGR4LGHG', s: 7.3 }];
   let chGoldGerade = null;
   function chGoldFormel(geoMs) {
     if (chGoldGerade === null) {
@@ -43237,7 +43488,7 @@
     ['letztes', 'Wie letztes Ergebnis'], ['zufall', 'Zufall']];
   const MEISTER_GLOBAL = [
     { id: 'fahrgefuehl', l: 'Fahrgefühl', w: [['garage', 'Wie in der Garage'], ['p1', 'Alle wie Spieler 1'],
-      ['arcade', 'Alle: Arcade'], ['simplus', 'Alle: Sim+'], ['pro', 'Alle: Pro'], ['propacejka', 'Alle: Pacejka'], ['rc', 'Alle: RC']] },
+      ['arcade', 'Alle: Arcade'], ['simplus', 'Alle: Sim+'], ['pro', 'Alle: Pro'], ['propacejka', 'Alle: Pacejka'], ['rc', 'Alle: RC (WIP)']] },
     { id: 'start1', l: 'Startaufstellung 1. Event', w: [['zufall', 'Zufall'], ['beste_zuletzt', 'Beste zuletzt'],
       ['beste_zuerst', 'Beste zuerst'], ['garage', 'Garagen-Reihenfolge']] },
     { id: 'punkte', l: 'Punkte', w: [['f1', 'F1 · 25-18-15-12-10'], ['klassisch', 'Klassisch · 10-6-4-3-2'],
@@ -43456,6 +43707,16 @@
     return beste;
   }
   // Die Reihenfolge der LOKALEN Autos (Geraetekennungen) fuer raceGridOrder.
+  // v1.0.25 BESTELLT: "vor dem Start des naechsten Rennens nochmal den Startbildschirm mit
+  // Startaufstellungsknopf und Anzeige, welches Auto wo stehen muesste". Bei Zufall wurde die
+  // Reihe beim Anzeigen und beim Start je neu gewuerfelt - die Anzeige stimmte also nicht.
+  // Jetzt wird sie je Event EINMAL festgelegt (lauf.reihe) und bis zum Start behalten.
+  function meisterStartReiheFest(i) {
+    const lauf = meister.lauf;
+    if (!lauf) return meisterStartReihe(i);
+    if (!lauf.reihe || lauf.reihe.idx !== i) lauf.reihe = { idx: i, ids: meisterStartReihe(i) };
+    return lauf.reihe.ids.slice();
+  }
   function meisterStartReihe(i) {
     const lauf = meister.lauf;
     const autos = garage.filter((c) => c.device && c.role !== 'safetycar' && c.role !== 'challenger' && c.role !== 'none');
@@ -43482,6 +43743,21 @@
       return mit.map((x) => id(x.c));
     }
     return meisterMischeln(autos.map(id));
+  }
+
+  // Wo ein Startplatz liegt: Reihe 1 auf der Kachel vor Start/Ziel, jede weitere eine dahinter;
+  // gerade Plaetze rechts, ungerade links (wie formationOffset und die automatische Aufstellung).
+  function meisterPlatzText(i) {
+    return t('Reihe {r}').replace('{r}', Math.floor(i / 2) + 1) + ' · ' + (i % 2 ? t('links') : t('rechts'));
+  }
+  // Fuer den Startschirm (raceGridAnzeigen): laeuft ein Meisterschafts-Event, welches.
+  function meisterGridInfo() {
+    const lauf = meister && meister.lauf;
+    if (!lauf || !lauf.laeuft) return '';
+    const ev = meister.plan.events[lauf.laeuft.idx];
+    if (!ev) return '';
+    return t('Meisterschaft') + ' · ' + t('Event') + ' ' + (lauf.laeuft.idx + 1) + '/' + meister.plan.events.length
+      + (meisterIstRennen(ev) ? ' · ' + t('Startaufstellung') + ': ' + meisterAufstText(lauf.laeuft.idx) : '');
   }
 
   // ---- EVENT STARTEN ---------------------------------------------------------------------
@@ -43545,7 +43821,7 @@
     if (fg !== 'garage' && fg !== 'p1' && typeof applyPreset === 'function') {
       try { applyPreset(fg); } catch (e) { /* bleibt */ }
     }
-    raceGridOrder = meisterStartReihe(lauf.idx);
+    raceGridOrder = meisterStartReiheFest(lauf.idx);
     lauf.laeuft = { idx: lauf.idx, modus: f.modus, seit: Date.now() };
     meisterSpeichern();
     meisterSchliessen();
@@ -43568,13 +43844,15 @@
     // Ein Training von Hand beenden ist normal (es vergibt keine Punkte), ein Rennen nicht.
     const ev = meister.plan.events[lauf.laeuft.idx];
     if (!regulaer && ev && ev.format === 'training') regulaer = true;
+    // v1.0.25 BESTELLT: "Wenn ich ein Rennen beende, wird es als 0 gezaehlt und ich kann beim
+    // naechsten Rennen weitermachen." Vorher blieb das Event offen und musste neu gefahren
+    // werden. Jetzt: alle bekommen fuer dieses Event 0 Punkte, und es geht zum naechsten.
     if (!regulaer) {
-      lauf.laeuft = null;
-      meisterSpeichern();
-      msMeldung(t('Event abgebrochen, es wird nicht gewertet'));
-      setTimeout(() => meisterOeffnen('stand'), 2500);
+      meisterWerten(true);
+      msMeldung(t('Event abgebrochen: zählt mit 0 Punkten'));
       return true;
     }
+    msMeldung(t('Wertung, sobald alle im Ziel sind …'));
     const bis = Date.now() + 95000, ab = Date.now() + (meisterMpAndere().length ? 3500 : 0);
     if (meisterWarten) clearInterval(meisterWarten);
     meisterWarten = setInterval(() => {
@@ -43588,13 +43866,15 @@
     }, 500);
     return true;
   }
-  function meisterWerten() {
+  function meisterWerten(abgebrochen) {
     const lauf = meister.lauf;
     if (!lauf || !lauf.laeuft) return;
     const idx = lauf.laeuft.idx, ev = meister.plan.events[idx];
     lauf.laeuft = null;
+    lauf.reihe = null;                 // die naechste Startreihe wird neu festgelegt
     if (!ev) return;
     const m = meisterFeldMessen(ev);
+    if (abgebrochen) { m.reihe = []; m.lokal = []; }
     // Jeder, der mitfuhr, bekommt eine Zeile, auch ohne Punkte.
     Object.keys(m.info).forEach((k) => {
       if (!lauf.fahrer[k]) lauf.fahrer[k] = { name: m.info[k].name, farbe: m.info[k].farbe, rolle: m.info[k].rolle, pkt: 0, je: [] };
@@ -43613,15 +43893,16 @@
       }
       m.reihe.forEach((k) => { if (besteVon[k] < fl) { fl = besteVon[k]; flKey = k; } });
       ergebnis = meisterPunkteVergeben(m.reihe, meisterGlobalWert('punkte'), flKey, meisterGlobalWert('fl') === 'ja');
-      lauf.letztes = m.reihe.slice();
+      if (!abgebrochen) lauf.letztes = m.reihe.slice();
     } else {
       m.reihe.forEach((k, i) => { ergebnis[k] = { pos: i + 1 }; });
-      if (ev.format === 'qualifying') lauf.quali = m.reihe.slice();
+      if (ev.format === 'qualifying' && !abgebrochen) lauf.quali = m.reihe.slice();
     }
     Object.keys(lauf.fahrer).forEach((k) => {
       const f = lauf.fahrer[k];
       while (f.je.length < idx) f.je.push(null);
-      const e = ergebnis[k] || (m.info[k] ? { pos: null, pkt: meisterIstRennen(ev) ? 0 : undefined } : null);
+      const e = abgebrochen ? { pos: null, pkt: meisterIstRennen(ev) ? 0 : undefined, ab: true }
+        : ergebnis[k] || (m.info[k] ? { pos: null, pkt: meisterIstRennen(ev) ? 0 : undefined } : null);
       f.je[idx] = e;
       if (e && e.pkt) f.pkt += e.pkt;
     });
@@ -43906,6 +44187,7 @@
           + spalten.map((i) => {
             const e = x.je[i];
             if (!e) return '<td class="e">–</td>';
+            if (e.ab) return '<td class="e" title="' + msEsc(t('abgebrochen')) + '">' + (e.pkt === undefined ? '✕' : '0') + '</td>';
             if (e.pkt === undefined) return '<td class="e">' + (e.pos ? 'P' + e.pos : '–') + '</td>';
             return '<td class="e">' + e.pkt + (e.fl ? '<sup>FL</sup>' : '') + '</td>';
           }).join('') + '<td class="pkt">' + x.pkt + '</td></tr>';
@@ -43922,9 +44204,10 @@
         + '<span class="ms-info">' + msEsc(msUnterzeile(ev)) + '</span>';
       if (meisterIstRennen(ev)) {
         d += '<span class="ms-info">' + msEsc(t('Startaufstellung')) + ': ' + msEsc(meisterAufstText(lauf.idx)) + '</span>';
-        const reihe = meisterStartReihe(lauf.idx).map((id) => garage.find((c) => String(c.device.id) === id)).filter(Boolean);
-        if (reihe.length && !/zufall|erst/.test(String(meisterAufstAufgeloest(lauf.idx))))
-          d += '<div class="ms-aufst">' + reihe.map((c, i) => '<div>' + (i + 1) + ' · ' + msEsc(garageLabel(c)) + '</div>').join('') + '</div>';
+        const reihe = meisterStartReiheFest(lauf.idx).map((id) => garage.find((c) => String(c.device.id) === id)).filter(Boolean);
+        if (reihe.length)
+          d += '<div class="ms-aufst">' + reihe.map((c, i) => '<div>' + (i + 1) + ' · ' + msEsc(garageLabel(c))
+            + ' <small>' + msEsc(meisterPlatzText(i)) + '</small></div>').join('') + '</div>';
       }
       if (ev.strecke !== 'aktuell' && ev.strecke !== 'frei') d += '<span class="ms-info ms-gelb">' + msEsc(t('Strecke umbauen')) + ': ' + msEsc(ev.strecke) + '</span>';
     } else d += '<span class="ms-titel">' + msEsc(t('Meisterschaft beendet')) + '</span>';
@@ -48064,6 +48347,8 @@
       car.railLight = null;
       car.parked = null;
     }
+    // v1.0.25: ein geparktes Safety Car steht dunkel.
+    if (role === 'safetycar' && typeof safetyCarLichtAus === 'function') safetyCarLichtAus(car);
     carRolleMerken(car);
     renderGarage();
     const name = role === 'player' ? 'Spieler 1' : zNeu ? 'Spieler ' + zNeu.nr
@@ -48496,7 +48781,8 @@
           <span class="gar-id" data-i18n-skip>${esc(car.tag || '')} &middot; ${esc(String(car.device.id).slice(0, 10))}${car.blinking ? ' &middot; ' + t('blinkt') : ''}${garAkkuText(car)}</span></div>
         <div class="gk-rolle" data-rollen="${GAR_ROLLEN.map((r) => r.id).join(',')}" data-rolle="${rolle.id}">
           <button type="button" data-act="rolle" data-d="-1" aria-label="Rolle zurück">&#9664;</button>
-          <b>${t(rolle.name)}</b>${zusatzPlatzVonRolle(rolle.id) ? '<span class="wip-tag">experimentell</span>' : ''}
+          <b>${t(rolle.name)}</b>${zusatzPlatzVonRolle(rolle.id) ? '<span class="wip-tag">experimentell</span>'
+            : (rolle.id === 'safetycar' || rolle.id === 'challenger') ? '<span class="wip-tag">WIP</span>' : ''}
           <button type="button" data-act="rolle" data-d="1" aria-label="Rolle vor">&#9654;</button>
         </div>
         <select class="gk-rolle-wahl" hidden data-preset-skip data-blaettern="1" aria-label="Rolle">${frei.map((r) =>
@@ -48910,6 +49196,7 @@
       car.ghost.running = false;
       car.ghost.finish = null;
       car.ghost.pit = null;
+      car.ghost.randHalt = null;
       pitPlatzRaeumen(car);
     }
     if (car.rx) writeToCar(car, 0, 0, trackModeBit() | LIGHT_HEAD);
@@ -49112,18 +49399,43 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     log('Automatische Aufstellung: ' + zahl + ' Auto(s) fahren auf ihre Startplaetze.', 'info');
     return zahl;
   }
+  // v1.0.25: auf dem Startplatz nicht mehr sofort stopGhost() (Lenkbyte ohne Spur-Bytes, das
+  // Auto rollte zur Mitte), sondern der Randhalt: bremsen mit der Querlage der Aufstellung.
   function aufstellenPruefen(car) {
     const g = car.ghost;
+    if (g.randHalt) return false;
     if (!aufstellStartPruefen(g, car)) return false;
     const o = ghostOrt(car);
     if (o === null || Math.floor(o) !== g.aufstellZiel || Date.now() - (g.aufstellSeit || 0) < 1200) return false;
-    stopGhost(car);
-    log(garageLabel(car) + ': steht auf seinem Startplatz.', 'info');
-    if (!aufstellenLaeuft()) {
-      clearTimeout(aufstellenTimer);
-      showHudToast(t('Startaufstellung steht'));
+    const platz = gridPosOf(car);
+    const seite = platz >= 0 && platz % 2 ? -1 : 1;     // wie formationOffset
+    randHaltStarten(car, { phase: 'halt', quer: seite * GHOST_GRID_MAX, haltMs: AUFSTELL_HALT_MS, fertig: (c) => {
+      log(garageLabel(c) + ': steht auf seinem Startplatz.', 'info');
+      if (!aufstellenLaeuft()) {
+        clearTimeout(aufstellenTimer);
+        showHudToast(t('Startaufstellung steht'));
+      }
+    } });
+    return false;
+  }
+  const AUFSTELL_HALT_MS = 800;
+  // ---- DAS TEMPO DER AUFSTELLUNG (v1.0.25) ---------------------------------------------
+  // GEMELDET: "Die Geschwindigkeit bei der Startaufstellung ist zu schnell, das Auto fliegt aus
+  // der Haarnadel. Pass das an die anderen Erkenntnisse mit min. und max. Geschwindigkeit an."
+  // Vorher ueberall Formationstempo - fuer NPCs als Deckel UEBER ihr Kurvenprofil, das bei
+  // diesem Tempo nicht mehr greift. Jetzt dieselben Anteile, die beim Streckenscan auf der Bahn
+  // erprobt sind (SCAN_TEMPO 0,6 und SCAN_TEMPO_HAARNADEL 0,4 des Formationstempos), mit dem
+  // Vorausblick der NPCs: vor einer Haarnadel zwei Kacheln, vor einer Kurve eine. Gerade bleibt
+  // beim Formationstempo (das Maximum).
+  function aufstellTempo(car) {
+    let tight = car && car.tileCode !== null && car.tileCode !== undefined ? ghostTileInfo(car.tileCode).curve : 0;
+    if (car && car.ghost && car.ghost.tileIndex !== null && car.ghost.tileIndex !== undefined
+        && ortStimmt(car) !== false) {
+      const v = ghostAheadTightest(car, 2);
+      if (v.dist <= (v.tight >= 2 ? 2 : 1)) tight = Math.max(tight, v.tight);
     }
-    return true;
+    const f = tight >= 2 ? SCAN_TEMPO_HAARNADEL : tight > 0 ? SCAN_TEMPO : 1;
+    return formationPace() * f;
   }
   function aufstellenStoppen(zeitUm) {
     clearTimeout(aufstellenTimer);
@@ -50635,8 +50947,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Mindestzeit mit einer RAND-BEDINGUNG verknuepft: die Phase endet erst, wenn die
   // Querlage wirklich am Rand steht (fruehestens nach PIT_RAND_MS), und notfalls nach
   // PIT_RAND_MAX_MS, damit ein Auto, das nie an den Rand kommt, nicht ewig faehrt.
-  const PIT_RAND_MS = 1000;
-  const PIT_RAND_MAX_MS = 2500;    // Sicherheitsgrenze, sonst fuehrt ein Hänger ewig
+  // v1.0.25 GEMELDET (beim Safety Car): "bleibt mitten auf der Strecke stehen ... so wie die
+  // Autos beim Pitten. Lass es die letzten 2 s vor dem Stehenbleiben maximal weit rechts
+  // fahren." Dieselben 2 s jetzt auch hier, statt einer Sekunde.
+  const PIT_RAND_MS = 2000;
+  const PIT_RAND_MAX_MS = 3500;    // Sicherheitsgrenze, sonst fuehrt ein Hänger ewig
   const PIT_RAND_TARGET = 0.95;    // Querlage, ab der "am Rand" gilt (Test verlangt 0.95)
   // Und die Bremse laeuft hoch statt zu schlagen. Bestellt: "relativ abrupt bremsen [...]
   // nicht direkt auf 0, dann rutscht es vll und steht zu schraeg." 350 ms sind rund ein
@@ -50806,6 +51121,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // RECHTS (Byte 7), geometrisch bestaetigt: bei konstantem Versatz gibt +4 einen Bahnradius
   // von 38,8 Einheiten gegen 30,7 bei -4 - der groessere Radius ist der aeussere.
   function pitQuer(car) {
+    // v1.0.25: der Randhalt (Safety Car, Aufstellung) haelt dieselbe Querlage wie ein Stopp.
+    const rh = car.ghost && car.ghost.randHalt;
+    if (rh) return rh.quer;
     const p = car.ghost && car.ghost.pit;
     if (!p) return null;
     // ---- DIE GASSE HINUNTER, DANN HEREIN ------------------------------------------
@@ -50831,6 +51149,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // richtige Wert fuer die Anfahrt: er ist der kleinste, bei dem das Auto die Bahn noch
   // liest - darunter parkt es sich selbst, und dafuer gibt es dort schon eine Pruefung.
   function pitZiel(car) {
+    const rh = car.ghost && car.ghost.randHalt;
+    if (rh) return rh.phase === 'rand' ? rh.tempo : 0;
     const p = car.ghost && car.ghost.pit;
     if (!p) return null;
     // 'rand' faehrt weiter - das ist der Sinn der Phase: eine Sekunde am Rand ROLLEN,
@@ -50851,6 +51171,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // aufs Byte geschrieben und nicht ueber das Ziel angefordert. Rueckgabe null heisst
   // "kein Griff", ein Wert heisst "so bremsen".
   function pitBremse(car) {
+    const rh = car.ghost && car.ghost.randHalt;
+    if (rh) return rh.phase === 'halt' ? Math.max(0, Math.min(1, (Date.now() - rh.at) / PIT_BREMS_RAMPE_MS)) : null;
     const p = car.ghost && car.ghost.pit;
     if (!p) return null;
     // In der Randphase wird NICHT gebremst - dort wird gefahren.
@@ -51020,6 +51342,52 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
 
   // Ein Takt der Boxenstopp-Maschine. Gibt zurueck, ob ein Stopp laeuft - der Aufrufer
   // braucht das fuer die Gnade und fuer die Ausweichmeldung an die anderen.
+  // ---- DER RANDHALT (v1.0.25): AM RAND FAHREN, DANN HALTEN ------------------------------
+  //
+  // BESTELLT: "Das Safety Car bleibt mitten auf der Strecke stehen, wenn die gelbe Phase vorbei
+  // ist, so wie die Autos beim Pitten. Lass es die letzten 2 s vor dem Stehenbleiben maximal
+  // weit rechts fahren." Und fuer die Startaufstellung: "die Querlage beim Stehenbleiben passt
+  // nicht (wie auch beim Safety Car)".
+  //
+  // Vorher hielten beide ueber Wege, die am Fahrmodus vorbeigehen: das Safety Car ueber die
+  // Zieleinlauf-Folge (rollen mit Gas null, Lenkbyte ohne Spur-Bytes, also als Radwinkel), die
+  // Aufstellung ueber stopGhost() sofort auf der Startkachel. In beiden Faellen ohne Fahrt zur
+  // Seite - und ein Auto bewegt sich nur in Fahrt quer.
+  //
+  // Jetzt ueber denselben Weg wie der Boxenstopp (pitQuer/pitZiel/pitBremse): Querlage am Rand
+  // im normalen Fahrmodus, erst `randMs` lang mit Fahrt ('rand'), dann Bremse hochgefahren
+  // ('halt'), dann stopGhost() und `fertig`. Die Aufstellung beginnt direkt mit 'halt' - sie
+  // faehrt die letzten zwei Kacheln schon mit voller Breite (aufstellBreite).
+  const RANDHALT_MAX_ZUSATZ_MS = 1500;   // laenger wartet 'rand' nicht auf die Querlage
+  function randHaltStarten(car, opt) {
+    const g = car.ghost;
+    if (!g) return;
+    g.randHalt = { phase: opt.phase || 'rand', at: Date.now(), quer: opt.quer,
+                   tempo: opt.tempo === undefined ? formationPace() : opt.tempo,
+                   randMs: opt.randMs || 0, haltMs: opt.haltMs || PIT_BREMS_MS, fertig: opt.fertig || null };
+  }
+  function randHaltTick(car) {
+    const g = car.ghost, h = g && g.randHalt;
+    if (!h) return false;
+    const now = Date.now();
+    g.gnadeBis = now + PIT_GNADE_MS;             // langsam am Rand ist kein Abflug
+    if (h.phase === 'rand') {
+      const seit = now - h.at;
+      const amRand = Math.abs(g.querSoll || 0) >= Math.abs(h.quer) * PIT_RAND_TARGET;
+      if ((seit >= h.randMs && amRand) || seit >= h.randMs + RANDHALT_MAX_ZUSATZ_MS) {
+        h.phase = 'halt'; h.at = now;
+      }
+      return true;
+    }
+    if (now - h.at >= h.haltMs) {
+      g.randHalt = null;
+      const fertig = h.fertig;
+      stopGhost(car);
+      if (fertig) fertig(car);
+    }
+    return true;
+  }
+
   function pitTick(car) {
     const g = car.ghost, p = g && g.pit;
     if (!p) return false;
@@ -51442,13 +51810,21 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function safetyCar() { return garage.find((c) => c.role === 'safetycar') || null; }
   function safetyCarFaehrt() {
     const sc = safetyCar();
-    return !!(sc && sc.ghost && sc.ghost.running && !sc.ghost.finish);
+    return !!(sc && sc.ghost && sc.ghost.running && !sc.ghost.finish && !sc.ghost.randHalt);
   }
   function safetyCarRaus() {
     const sc = safetyCar();
-    if (!sc || (sc.ghost && sc.ghost.running)) return;
+    if (!sc) return;
+    if (sc.ghost && sc.ghost.running) {
+      // Gelb, waehrend es gerade an den Rand faehrt: wieder hinaus statt abzustellen.
+      if (sc.ghost.randHalt || sc.ghost.scHeim) {
+        sc.ghost.randHalt = null; sc.ghost.scHeim = false; sc.ghost.scNeustarts = 0;
+        showHudToast(t('Safety Car auf der Strecke'));
+      }
+      return;
+    }
     startGhost(sc);
-    if (sc.ghost) { sc.ghost.freeRun = true; sc.ghost.scHeim = false; }
+    if (sc.ghost) { sc.ghost.freeRun = true; sc.ghost.scHeim = false; sc.ghost.scNeustarts = 0; }
     showHudToast(t('Safety Car auf der Strecke'));
     log(garageLabel(sc) + ': Safety Car faehrt los.', 'info');
   }
@@ -51459,14 +51835,40 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       showHudToast(t('Safety Car kommt an Start/Ziel herein'));
     }
   }
-  // An Start/Ziel nach Gruen: rechts ran, eine Kachel ausrollen, stehen.
+  // An Start/Ziel nach Gruen: rechts ran und stehen. v1.0.25 BESTELLT: "Lass es die letzten
+  // 2 s vor dem Stehenbleiben maximal weit rechts fahren" und "Mach die Lichter vom Safety
+  // Car aus, wenn es parkt." Vorher die Zieleinlauf-Folge (rollen mit Gas null) - dabei
+  // kam es nie an den Rand. Jetzt der Randhalt (siehe randHaltStarten).
+  const SC_RAND_MS = 2000;
   function safetyCarAbstellen(sc) {
     const g = sc.ghost;
-    if (!g || g.finish) return;
+    if (!g || g.finish || g.randHalt) return;
     g.scHeim = false;
-    g.finish = { phase: 'roll', at: Date.now(), seite: 1, kacheln: 1,
-                 kachelStart: sc.tileCount === null || sc.tileCount === undefined ? null : sc.tileCount };
+    randHaltStarten(sc, { quer: FINISH_RAND, randMs: SC_RAND_MS, fertig: (c) => {
+      safetyCarLichtAus(c);
+      log(garageLabel(c) + ': Safety Car steht rechts am Rand, Licht aus.', 'info');
+    } });
     log(garageLabel(sc) + ': Safety Car faehrt rechts ran.', 'info');
+  }
+  function safetyCarLichtAus(sc) {
+    if (sc && sc.rx && !(sc.ghost && sc.ghost.running)) writeToCar(sc, 0, 0, trackModeBit());
+  }
+  // ---- NACH EINEM REMPLER WEITER (v1.0.25) ---------------------------------------------
+  // GEMELDET: "Beim Rammen des Safety Car bleibt das einfach stehen." Ein Rempler laesst es
+  // die Bahn kurz nicht lesen, der Abgangsmelder parkt es, und ein geparktes Auto wartet
+  // aufs Schuetteln. Das Safety Car versucht es stattdessen nach SC_NEUSTART_MS selbst
+  // wieder, hoechstens SC_NEUSTARTS_MAX mal je gelber Phase - liegt es wirklich neben der
+  // Bahn, bleibt es danach stehen wie jedes andere Auto.
+  const SC_NEUSTART_MS = 1500, SC_NEUSTARTS_MAX = 4;
+  function safetyCarNeustart(car, now) {
+    const g = car.ghost;
+    if (!g || car.role !== 'safetycar') return;
+    if (!car.parked || car.parked !== 'Bahn verlassen') { g.scGeparktSeit = 0; return; }
+    if (!g.scGeparktSeit) { g.scGeparktSeit = now; return; }
+    if (now - g.scGeparktSeit < SC_NEUSTART_MS || (g.scNeustarts || 0) >= SC_NEUSTARTS_MAX) return;
+    g.scNeustarts = (g.scNeustarts || 0) + 1;
+    g.scGeparktSeit = 0;
+    unparkCar(car, 'Safety Car startet neu');
   }
   // Ist dieses Auto nah hinter dem Safety Car (hoechstens SC_NAH_KACHELN)?
   function nahAmSafetyCar(car) {
@@ -52432,6 +52834,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       c.modeBytes = (trackMode === 'on' && !abseitsJetztFuer(wer))
         ? { 10: AUTO_MODE.b10, 15: AUTO_MODE.b15, 16: jetzt, 17: 0x02, 18: 0x02 }
         : null;
+      // v1.0.25 GEMELDET: "Streckenscan: das Spielerauto faehrt einfach geradeaus. Das klappte
+      // mal und ist jetzt wieder kaputt." Die Annahme oben ("currentTrackTiles bleibt waehrend
+      // des Scans leer") gilt nicht mehr, seit die Editor-Strecke beim Laden zurueckkommt
+      // (v0.9.6): mit einer gelegten Strecke lief dieser Takt weiter bis ganz unten, und dort
+      // setzt der letzte Zweig modeBytes = null, weil driverAssistAktiv() waehrend eines Scans
+      // falsch ist. Das Auto las die Null dann als Radstellung. Waehrend des Scans gibt es
+      // hier nichts weiter zu tun - die Ortung gehoert zu einer Strecke, die gerade neu
+      // vermessen wird.
+      return;
     } else if (!currentTrackTiles || currentTrackTiles.length < 3) {
       // KEIN Scan, und die Strecke ist (noch) nicht bekannt genug fuer den normalen
       // Zweig unten - das Gate zwei Zeilen weiter unten wuerde ihn ohnehin nie
@@ -54310,6 +54721,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Zieleinlauf hat Vorrang vor allem anderen: keine Linie, keine Wuerze, kein
     // Leitplanken-Modus. Steht die Sequenz, gilt nur noch sie.
     if (g.finish) { ghostFinishTick(car); return; }
+    if (car.role === 'safetycar') safetyCarNeustart(car, now);
     // ---- DEN WEG AUF DIESER KACHEL MITFUEHREN, und zwar HIER OBEN --------------------
     //
     // Vor dem Kachelwechselblock, und das ist die richtige Reihenfolge: das Tempo im
@@ -54461,6 +54873,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // erneuert g.gnadeBis, und der Melder darunter fragt genau danach. Andersherum waere die
     // Gnade einen Takt zu spaet.
     const pitLaeuft = pitTick(car);
+    randHaltTick(car);
+    if (!car.ghost || !car.ghost.running) return;     // gerade abgestellt
 
     // Cut-out. Two detectors, and the first one is new: code 0x00 IS the off-track report,
     // so there is no need to wait for a timeout. The timeout stays as a backstop for the case
@@ -54875,8 +55289,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (raceFormationLap) target = Math.min(target, formationPace());
       // Automatische Aufstellung (v0.9.22): im Formationstempo bis zum eigenen Startplatz.
       if (g.aufstellZiel !== undefined && g.aufstellZiel !== null) {
-        target = Math.min(target, formationPace());
-        if (aufstellenPruefen(car)) return;
+        target = Math.min(target, aufstellTempo(car));
+        aufstellenPruefen(car);
       }
       // ---- STARTREAKTION UND VORSICHT IN DER ERSTEN KURVE ---------------------------
       //
@@ -57697,9 +58111,19 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (ist === null) return basis;
     let soll = null;
     if (ch.art === 'gummiband') {
-      const p = typeof playerCar !== 'undefined' && playerCar && playerCar.ghost ? ghostOrtGes(playerCar) : null;
-      if (p === null) return basis;
-      soll = p;
+      // v1.0.25 GEMELDET: "Gummiband reagiert nicht auf meine Zeiten - ob ich langsamer oder
+      // schneller fahre, er haelt seine Geschwindigkeit." Hier stand ghostOrtGes(playerCar):
+      // die Ortung des Fahrerautos zaehlt keine Runden (spielerOrtTick wickelt nur den Index),
+      // die des Challengers schon. Nach seiner ersten Runde lag er also rechnerisch eine ganze
+      // Runde vorn, und der Faktor stand fest am unteren Anschlag. Jetzt der Abstand auf der
+      // Runde, gewickelt auf -n/2 .. n/2: fuer ein Gummiband zaehlt nur, wer gerade vorn liegt.
+      // BESTELLT dazu: "auch wenn mein Auto mal versehentlich eine Runde nicht zaehlt (z. B. weil ich
+      // bei Start/Ziel von der Bahn komme)" - genau deshalb ohne Rundenzaehler: nur der Ort auf der
+      // Runde zaehlt, und den gleicht ortAbgleich() bei jeder Start/Ziel-Lesung neu ab.
+      const p = typeof playerCar !== 'undefined' && playerCar && playerCar.ghost ? ghostOrt(playerCar) : null;
+      const n = currentTrackTiles ? currentTrackTiles.length : 0;
+      if (p === null || !n) return basis;
+      soll = ist + challengerRundenAbstand(p, ist, n);
     } else {
       if (raceStartedAt === null || raceStartedAt === undefined) return basis;
       const tMs = Date.now() - raceStartedAt;
@@ -57710,6 +58134,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     ch.soll = ch.art === 'gummiband' ? null : soll;
     return challengerFaktorAnwenden(car, basis, soll - ist, !!(spice && spice.haeltAbstand));
+  }
+  // Abstand von b nach a auf einer Runde mit n Kacheln, gewickelt auf (-n/2, n/2].
+  function challengerRundenAbstand(a, b, n) {
+    let d = ((a - b) % n + n) % n;
+    if (d > n / 2) d -= n;
+    return d;
   }
   // Abweichung in Kacheln (positiv = er liegt hinten) -> Zieltempo.
   function challengerFaktorAnwenden(car, basis, abw, haeltAbstand) {
@@ -79767,7 +80197,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   //
   // Jetzt gibt es eine eigene Phase 'rand', in der GEFAHREN wird, und die Bremse laeuft
   // ueber eine Rampe hoch statt zu schlagen.
-  stAdd('Boxenstopp: eine Sekunde am Rand fahren, dann gerampt bremsen', () => {
+  stAdd('Boxenstopp: zwei Sekunden am Rand fahren, dann gerampt bremsen', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostPitProbe) {
       return { skip: true, mass: 'ghostPitProbe nicht vorhanden' };
     }
@@ -79782,10 +80212,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       fehler.push('Folge ' + echt.join('>') + ' statt ' + soll.join('>'));
     }
     // 2. IN 'rand' WIRD GEFAHREN, nicht gestanden. Das ist der Kern der Meldung: ohne
-    //    Fahrt gibt es keine Querbewegung. Bei 45 ms Takt sind 1000 ms rund 22 Takte.
+    //    Fahrt gibt es keine Querbewegung. Bei 45 ms Takt sind 2000 ms (v1.0.25, vorher
+    //    1000) rund 44 Takte.
     if (P.rand) {
-      if (!(P.rand.takte >= 18 && P.rand.takte <= 28)) {
-        fehler.push('Randphase ' + P.rand.takte + ' Takte, erwartet rund 22');
+      if (!(P.rand.takte >= 40 && P.rand.takte <= 52)) {
+        fehler.push('Randphase ' + P.rand.takte + ' Takte, erwartet rund 44');
       }
       if (!(P.rand.kmhEnde > 0.05)) {
         fehler.push('steht schon in der Randphase (' + P.rand.kmhEnde + ' km/h)');
@@ -85657,13 +86088,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   });
 
   // ---- v0.10.6: Gold-Formel und Bestzeit-Modus ----
-  stAdd('Gold-Formel: Balkonia 16 s und Omega Testing Track 2 7,2 s, laengere Strecken langsamer', () => {
+  stAdd('Gold-Formel: Balkonia 16 s und Omega Testing Track 2 7,3 s, laengere Strecken langsamer', () => {
     const f = [];
     const balk = CH_ALLE.find((d) => d.id === 'dauer-balkonia');
     const g1 = chSterneSchwellen({ id: 'x', code: balk.code }).gold;
     const g2 = chSterneSchwellen({ id: 'x', code: 'SGR4LGHG' }).gold;
     if (Math.abs(g1 - 16000) > 5) f.push('Balkonia ' + g1);
-    if (Math.abs(g2 - 7200) > 5) f.push('Track 2 ' + g2);
+    if (Math.abs(g2 - 7300) > 5) f.push('Track 2 ' + g2);
     let ab = 0;
     const liste = CH_ALLE.map((d) => ({ g: chGeoGold(d), gold: chSterneSchwellen(Object.assign({}, d, { id: 'x' })).gold }))
       .sort((a, b) => a.g - b.g);
@@ -85852,6 +86283,145 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Spur ' + n + ' Teile, Luecken/Rueckschritte abgelehnt, Spiegel, Delta, Speicher' };
   });
 
+  // ---- v1.0.25: Telemetrie auch mit nicht gelesenen oder doppelten Teilen ----
+  // GEMELDET: "Telemetrie klappt gar nicht." Verlangt waren genau n-1 Teilwechsel; jetzt werden
+  // die Lesungen ueber ihre Art der Strecke zugeordnet und Luecken geschaetzt.
+  stAdd('Telemetrie v1.0.25: fehlende und doppelte Teile werden zugeordnet, zu wenige abgelehnt', () => {
+    const f = [];
+    const tiles = codeToTrack('SG2R2G2L2G2H2G2').tiles, n = tiles.length;
+    const code = trackToCode(tiles, 0), soll = tiles.map((x) => x.type);
+    const ev = [];
+    for (let k = 1; k < n; k++) ev.push([k * 1000, tiles[k].type]);
+    // Eine Kurve in der Mitte nicht gelesen.
+    const kurve = tiles.findIndex((x, k) => k > 2 && tileIsCurve(x.type));
+    const luecke = ev.filter((x) => x[0] !== kurve * 1000);
+    const sp = teleSpurBauen(luecke, n * 1000, n, code, soll);
+    if (!sp) f.push('ein fehlendes Teil: keine Spur');
+    else {
+      if (sp.geschaetzt !== 1) f.push('geschaetzt ' + sp.geschaetzt + ' statt 1');
+      if (Math.abs(sp.teile[kurve] - kurve * 1000) > 1) f.push('Luecke geschaetzt auf ' + sp.teile[kurve] + ' statt ' + kurve * 1000);
+      if (sp.teile.length !== n) f.push('Laenge ' + sp.teile.length);
+    }
+    // Ohne Strecke (alter Aufruf) bleibt es bei "abgelehnt".
+    if (teleSpurBauen(luecke, n * 1000, n, code)) f.push('ohne Strecke trotzdem zugeordnet');
+    // Ein Teil doppelt gelesen, dazu Abseits-Meldungen: die zaehlen nicht.
+    const doppelt = ev.slice(0, 3).concat([[3500, tiles[3].type], [3600, 0x00]], ev.slice(3));
+    const sp2 = teleSpurBauen(doppelt, n * 1000, n, code, soll);
+    if (!sp2) f.push('doppeltes Teil: keine Spur');
+    // Die Haelfte fehlt: abgelehnt.
+    if (teleSpurBauen(ev.filter((x, i) => i % 2), n * 1000, n, code, soll)) f.push('halbe Runde ergibt eine Spur');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Luecke geschaetzt, Doppel und 0x00 ignoriert, halbe Runde abgelehnt' };
+  });
+
+  // ---- v1.0.25: Streckenscan mit gelegter Strecke, Autopilot auch im Modus "Aus" (RC) ----
+  stAdd('Scan mit gelegter Strecke behaelt die Spur-Bytes; Autopilot greift auch bei RC, ohne Tempofaktor', () => {
+    const f = [];
+    const merk = { tiles: currentTrackTiles, tm: trackMode, pc: playerCar, aktiv: garageScan.aktiv, car: garageScan.car,
+                   phys: physicsEnabled, fl: flagState, v: physEngine.state.speedKmh };
+    const auto = { device: { id: 'scan-probe' }, role: 'player', tileCode: TILE_TYPE.STRAIGHT, tileCount: 3, testSenke: [] };
+    try {
+      currentTrackTiles = codeToTrack('SG4R4G4').tiles;     // eine Strecke liegt schon
+      trackMode = 'on'; playerCar = auto; flagState = 'green';
+      garageScan.aktiv = true; garageScan.car = auto;
+      spielerOrtTick(auto);
+      if (!auto.modeBytes || auto.modeBytes[10] !== AUTO_MODE.b10) f.push('Scan mit gelegter Strecke ohne Spur-Bytes');
+      physicsEnabled = false;
+      if (!autopilotGreiftFuer(1)) f.push('Autopilot greift beim Scan im Modus Aus nicht');
+      physLastTime = null;
+      physicsStep();
+      if (!physApTakt) f.push('physicsStep rechnet im Modus Aus nicht fuer den Autopiloten');
+      garageScan.aktiv = false; garageScan.car = null;
+      physicsStep();
+      if (physApTakt) f.push('ohne Autopilot rechnet physicsStep im Modus Aus weiter');
+      flagState = 'yellow';
+      if (!autopilotGreiftFuer(1)) f.push('Autopilot greift unter Gelb nicht');
+    } finally {
+      currentTrackTiles = merk.tiles; trackMode = merk.tm; playerCar = merk.pc; garageScan.aktiv = merk.aktiv;
+      garageScan.car = merk.car; physicsEnabled = merk.phys; flagState = merk.fl; physLastTime = null; physApTakt = false;
+      physEngine.state.speedKmh = merk.v;
+      autopilotZuruecksetzen();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Spur-Bytes beim Scan, Autopilot bei RC fuer Scan und Gelb' };
+  });
+
+  // ---- v1.0.25: Safety Car haelt am Rand, Licht aus, startet nach einem Rempler neu ----
+  stAdd('Safety Car v1.0.25: 2 s rechts am Rand, dann halten, Licht aus; Neustart nach Rempler', () => {
+    const f = [];
+    const merk = { garage: garage.slice() };
+    const echtUnpark = unparkCar;
+    const sc = { device: { id: 'sc25' }, role: 'safetycar', tag: 'SC', rx: {}, testSenke: [],
+                 ghost: { running: true, tileIndex: 0, scHeim: true } };
+    try {
+      garage.length = 0; garage.push(sc);
+      safetyCarAbstellen(sc);
+      const h = sc.ghost.randHalt;
+      if (!h || h.phase !== 'rand') f.push('kein Randhalt');
+      if (pitQuer(sc) !== FINISH_RAND) f.push('Querlage ' + pitQuer(sc) + ' statt ganz rechts');
+      if (Math.abs(pitZiel(sc) - formationPace()) > 1e-9) f.push('faehrt am Rand nicht im Formationstempo');
+      if (pitBremse(sc) !== null) f.push('bremst schon am Rand');
+      if (safetyCarFaehrt()) f.push('zaehlt beim Abstellen noch als fahrend');
+      sc.ghost.querSoll = 1;
+      h.at = Date.now() - 1000; randHaltTick(sc);
+      if (h.phase !== 'rand') f.push('nach 1 s schon ' + h.phase + ' (bestellt: 2 s am Rand)');
+      h.at = Date.now() - SC_RAND_MS - 10; randHaltTick(sc);
+      if (h.phase !== 'halt') f.push('nach 2 s nicht in halt');
+      if (pitZiel(sc) !== 0) f.push('halt mit Zieltempo ' + pitZiel(sc));
+      h.at = Date.now() - h.haltMs - 10; randHaltTick(sc);
+      if (sc.ghost.running) f.push('steht danach nicht');
+      const letzt = sc.testSenke[sc.testSenke.length - 1];
+      if (!letzt || (letzt.lightBits & LIGHT_HEAD)) f.push('Licht nach dem Abstellen nicht aus');
+      // Rempler: geparkt -> nach SC_NEUSTART_MS faehrt es selbst weiter.
+      const neu = [];
+      unparkCar = (c, why) => { neu.push(why); c.parked = null; };
+      sc.ghost.running = true; sc.parked = 'Bahn verlassen'; sc.ghost.scNeustarts = 0;
+      safetyCarNeustart(sc, 1000);
+      safetyCarNeustart(sc, 1000 + SC_NEUSTART_MS + 1);
+      if (neu.length !== 1) f.push('nach einem Rempler kein Neustart');
+    } finally {
+      unparkCar = echtUnpark;
+      garage.length = 0; merk.garage.forEach((c) => garage.push(c));
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'rechts am Rand 2 s, dann halt, Licht aus, Neustart nach Rempler' };
+  });
+
+  // ---- v1.0.25: Aufstellung langsamer in Kurven und Haarnadeln ----
+  stAdd('Aufstellung v1.0.25: Haarnadel und Kurve langsamer als die Gerade, Gerade = Formationstempo', () => {
+    const f = [];
+    const merk = { tiles: currentTrackTiles };
+    try {
+      currentTrackTiles = codeToTrack('SG2H2G2J2').tiles;
+      const hi = currentTrackTiles.findIndex((x) => tileTightness(x.type) >= 2);
+      const gerade = { tileCode: TILE_TYPE.STRAIGHT, ghost: { nurOrt: true, tileIndex: 1 } };
+      const vorHaar = { tileCode: TILE_TYPE.STRAIGHT, ghost: { nurOrt: true, tileIndex: hi - 1 } };
+      const inHaar = { tileCode: TILE_TYPE.HAIRPIN, ghost: { nurOrt: true, tileIndex: hi } };
+      const g = aufstellTempo(gerade), v = aufstellTempo(vorHaar), h = aufstellTempo(inHaar);
+      if (hi > 3 && Math.abs(g - formationPace()) > 1e-9) f.push('Gerade ' + g);
+      if (!(v < formationPace() - 1e-9)) f.push('vor der Haarnadel nicht langsamer: ' + v);
+      if (Math.abs(h - formationPace() * SCAN_TEMPO_HAARNADEL) > 1e-9) f.push('Haarnadel ' + h);
+    } finally { currentTrackTiles = merk.tiles; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gerade Formationstempo, Haarnadel wie beim Scan' };
+  });
+
+  // ---- v1.0.25: Zusammenfassung am Ende von Time Attack ----
+  stAdd('Time Attack: Zusammenfassung mit bester Runde, Vergleich, Medaille und Telemetrie', () => {
+    const f = [];
+    const merk = { tiles: currentTrackTiles, laps: raceLapTimes, mode: raceMode, vor: bestzeitVorher };
+    try {
+      currentTrackTiles = codeToTrack('SGR4LGHG').tiles; raceMode = 'bestzeit';
+      const minMs = rundeMinMs();
+      raceLapTimes = [{ lap: 1, ms: minMs + 3000 }, { lap: 2, ms: minMs + 2000 }, { lap: 3, ms: 10 }];
+      bestzeitVorher = { beste: minMs + 2500, medaille: 1 };
+      const txt = bestzeitZusammenfassungText() || '';
+      if (txt.indexOf(formatLapTime(minMs + 2000)) < 0) f.push('beste Runde fehlt');
+      if (txt.indexOf('Runde 2') < 0 && txt.indexOf('Lap 2') < 0 && txt.indexOf('Vuelta 2') < 0) f.push('Rundennummer fehlt');
+      if (txt.indexOf('−0.50') < 0) f.push('Vergleich mit der alten Bestzeit fehlt');
+      if (txt.split('\n').length < 5) f.push('zu wenige Zeilen: ' + txt);
+    } finally {
+      currentTrackTiles = merk.tiles; raceLapTimes = merk.laps; raceMode = merk.mode; bestzeitVorher = merk.vor;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Runden, beste Runde, Vergleich, Schnitt, Telemetrie' };
+  });
+
   stAdd('Telemetrie-Seite: Karte, Balken und Tempo aus zwei Runden, Rundenweg steigt', () => {
     const f = [];
     const code = 'SG2H2G2J2', n = 9;
@@ -85937,7 +86507,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   stAdd('Challenger: eine Rolle nur auf der Bahn, folgt Spur oder dir, Takt, Soll-Punkt', () => {
     const f = [];
     const merk = { garage: garage.slice(), tm: trackMode, rs: raceState, fl: flagState, form: raceFormationLap,
-                   start: raceStartedAt, tiles: currentTrackTiles, ort: ghostOrtGes, pc: playerCar };
+                   start: raceStartedAt, tiles: currentTrackTiles, ort: ghostOrtGes, ort1: ghostOrt, pc: playerCar };
     try {
       currentTrackTiles = codeToTrack('SG2H2G2J2').tiles;
       const n = currentTrackTiles.length;
@@ -85970,17 +86540,26 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!m || m.index !== 3) f.push('Soll-Punkt nicht auf Kachel 3');
       // Gummiband: dein Ort statt der Spur.
       ch.ghost.challenger = { art: 'gummiband', soll: null };
+      ghostOrt = (c) => (c && c._ort !== undefined ? c._ort : null);
       playerCar = { ghost: { nurOrt: true }, _ort: 8 };
       ch._ort = 6;
       if (!(challengerZiel(ch, basis) > basis)) f.push('Gummiband: hinter dir nicht schneller');
       ch._ort = 10;
       if (!(challengerZiel(ch, basis) < basis)) f.push('Gummiband: vor dir nicht langsamer');
+      // v1.0.25: die Ortung des Fahrerautos zaehlt keine Runden. Eine Runde spaeter (der
+      // Challenger hat laps + 1) muss das Gummiband weiter auf den Abstand AUF DER RUNDE hoeren.
+      ghostOrt = (c) => (c && c._ort !== undefined ? ((c._ort % n) + n) % n : null);
+      ch._ort = 6 + n; playerCar._ort = 8;
+      if (!(challengerZiel(ch, basis) > basis)) f.push('Gummiband nach einer Runde: hinter dir nicht schneller');
+      ch._ort = 10 + n;
+      if (!(challengerZiel(ch, basis) < basis)) f.push('Gummiband nach einer Runde: vor dir nicht langsamer');
       if (challengerSollMarke()) f.push('Gummiband zeigt einen Soll-Punkt');
       // Unter Gelb gilt die Gelb-Regel, nicht der Challenger.
       flagState = 'yellow';
       if (challengerZiel(ch, basis) !== basis) f.push('unter Gelb uebersteuert');
       // In der Kurve enger gedeckelt.
-      flagState = 'green'; ch._ort = 0; ch.tileCode = TILE_TYPE.HAIRPIN;
+      // Ab hier liegt der Challenger zwei Kacheln hinter dir (Gummiband wickelt auf die Runde).
+      flagState = 'green'; ch._ort = 0; playerCar._ort = 2; ch.tileCode = TILE_TYPE.HAIRPIN;
       if (challengerZiel(ch, basis) > basis + 1e-9) f.push('in der Haarnadel schneller als ein NPC');
       // NPCs fahren die Haarnadel mit 33 % - die Untergrenze darf ihn nicht darueber heben.
       if (challengerZiel(ch, 0.33) > 0.33 + 1e-9) f.push('Haarnadel: Untergrenze hebt ueber 33 %: ' + challengerZiel(ch, 0.33));
@@ -85992,7 +86571,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     } finally {
       garage.length = 0; merk.garage.forEach((c) => garage.push(c));
       trackMode = merk.tm; raceState = merk.rs; flagState = merk.fl; raceFormationLap = merk.form;
-      raceStartedAt = merk.start; currentTrackTiles = merk.tiles; ghostOrtGes = merk.ort; playerCar = merk.pc;
+      raceStartedAt = merk.start; currentTrackTiles = merk.tiles; ghostOrtGes = merk.ort; ghostOrt = merk.ort1; playerCar = merk.pc;
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eine Rolle, nur Bahn, Takt, Spur hinten schneller/vorn langsamer, Gummiband, Gelb, Kurvendeckel, Soll-Punkt' };
   });
@@ -86136,12 +86715,27 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       }
       if (meister.lauf.idx !== 2) f.push('naechstes Event ' + meister.lauf.idx + ' statt 2');
       if (meisterStartReihe(2).join() !== 'a,b') f.push('Fuehrender nicht hinten: ' + meisterStartReihe(2).join());
+      // v1.0.25: Zufall wird je Event EINMAL festgelegt - Anzeige und Start stimmen ueberein.
+      meister.plan.events[2].aufst = 'zufall';
+      const r1 = meisterStartReiheFest(2).join();
+      let gleich = true;
+      for (let k = 0; k < 8; k++) if (meisterStartReiheFest(2).join() !== r1) gleich = false;
+      if (!gleich) f.push('Zufalls-Startreihe aendert sich zwischen Anzeige und Start');
+      // v1.0.25: ein abgebrochenes Event zaehlt mit 0 Punkten, und es geht weiter.
+      const vorA = meister.lauf.fahrer['c:a'].pkt;
+      meister.lauf.laeuft = { idx: 2, modus: raceMode, seit: Date.now() };
+      meisterRennenEnde(false);
+      if (meister.lauf.idx !== 3 || !meister.lauf.fertig) f.push('nach Abbruch nicht weiter (idx ' + meister.lauf.idx + ')');
+      const ea = meister.lauf.fahrer['c:a'].je[2];
+      if (!ea || ea.pkt !== 0 || !ea.ab) f.push('Abbruch nicht als 0 gewertet: ' + JSON.stringify(ea));
+      if (meister.lauf.fahrer['c:a'].pkt !== vorA) f.push('Abbruch veraendert die Punkte');
+      if (meister.lauf.letztes.join() === '') f.push('Abbruch loescht das letzte Ergebnis');
     } finally {
       meister = merk.m; raceAllCars = merk.rac; meisterOeffnen = merk.oeff; raceMode = merk.rm;
       garage.length = 0; merk.garage.forEach((c) => garage.push(c));
       try { if (merk.store === null) localStorage.removeItem(MEISTER_STORE); else localStorage.setItem(MEISTER_STORE, merk.store); } catch (e) { /* privat */ }
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Q -> Aufstellung, Fehler gemeldet, 26/18 Punkte, Fuehrender hinten' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Q -> Aufstellung, Fehler gemeldet, 26/18 Punkte, Fuehrender hinten, Zufall fest, Abbruch = 0' };
   });
 
   stAdd('Rundenrennen endet mit der Zielrunde, nicht eine Runde spaeter', () => {
@@ -88520,7 +89114,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Fernsteuerung, Gas weg laeuft in 2 s aus, Bremse sofort, zweiter Bremsdruck im Stand
   // rueckwaerts. Der Steuerungsmodus haengt damit nur noch am Fahrgefuehl.
   PRESETS.rc = {
-    label: 'RC',
+    // v1.0.25 BESTELLT: "Safety Car und RC-Modus beides als WIP labeln."
+    label: 'RC (WIP)',
     kurz: 'Arcade, nur viel extremer: wie ein Fernsteuerungsauto',
     text: 'Der Stick geht direkt ans Auto wie bei einer Fernsteuerung, ohne G\u00e4nge: Gas weg '
         + 'l\u00e4uft in zwei Sekunden aus, die Bremse greift sofort, ein zweiter Bremsdruck im '
@@ -90658,6 +91253,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return e.fahrer[w] ? e.fahrer[w][art] || null : null;
   }
 
+  // v1.0.25: Runden mit nicht gelesenen Teilen (70b-telemetrie.js) sagen, wie viele geschaetzt sind.
+  function teleGeschaetztText(sp) {
+    return sp && sp.geschaetzt ? ' · ' + t('{n} Teile geschätzt').replace('{n}', sp.geschaetzt) : '';
+  }
   function teleSeiteZeichnen() {
     const box = $('tele-inhalt');
     if (!box) return;
@@ -90665,7 +91264,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const strecken = Object.keys(d).filter((k) => d[k] && d[k].fahrer && Object.keys(d[k].fahrer).length)
       .sort((x, y) => (d[y].datum || 0) - (d[x].datum || 0));
     if (!strecken.length) {
-      box.innerHTML = '<p class="muted">' + teleEsc(t('Noch keine aufgezeichnete Runde. Fahre ein Rennen oder Time Attack auf der Bahn mit eingescannter Strecke; gespeichert werden Runden, in denen alle Teile gelesen wurden.')) + '</p>';
+      box.innerHTML = '<p class="muted">' + teleEsc(t('Noch keine aufgezeichnete Runde. Fahre ein Rennen oder Time Attack auf der Bahn mit eingescannter Strecke; gespeichert wird jede gewertete Runde, in der sich mindestens drei Viertel der Teile zuordnen lassen (die übrigen werden geschätzt).')) + '</p>';
       return;
     }
     if (strecken.indexOf(teleWahl.strecke) < 0) teleWahl.strecke = strecken[0];
@@ -90711,8 +91310,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const dA = teleDauern(tA, A.ms), dB = tB ? teleDauern(tB, B.ms) : null;
     const diff = A.ms - B.ms;
     h += '<div class="stat-raster">'
-      + '<div class="stat-kachel"><span>A · ' + teleEsc(nameVon(teleWahl.a)) + '</span><b>' + teleEsc(formatLapTime(A.ms)) + '</b><small>' + teleEsc(A.auto || '') + '</small></div>'
-      + '<div class="stat-kachel"><span>B · ' + teleEsc(nameVon(teleWahl.b)) + '</span><b>' + teleEsc(formatLapTime(B.ms)) + '</b><small>' + teleEsc(B.auto || '') + '</small></div>'
+      + '<div class="stat-kachel"><span>A · ' + teleEsc(nameVon(teleWahl.a)) + '</span><b>' + teleEsc(formatLapTime(A.ms)) + '</b><small>' + teleEsc((A.auto || '') + teleGeschaetztText(A)) + '</small></div>'
+      + '<div class="stat-kachel"><span>B · ' + teleEsc(nameVon(teleWahl.b)) + '</span><b>' + teleEsc(formatLapTime(B.ms)) + '</b><small>' + teleEsc((B.auto || '') + teleGeschaetztText(B)) + '</small></div>'
       + '<div class="stat-kachel"><span>A − B</span><b class="' + (diff <= 0 ? 'tele-gut' : 'tele-schlecht') + '">' + teleEsc(teleDeltaText(diff)) + ' s</b><small>' + n + ' ' + teleEsc(t('Teile')) + '</small></div></div>';
     if (!dB) {
       h += '<p class="muted">' + teleEsc(t('Die Runden passen nicht zur selben Strecke.')) + '</p>';

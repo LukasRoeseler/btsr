@@ -98,9 +98,19 @@
     if (ist === null) return basis;
     let soll = null;
     if (ch.art === 'gummiband') {
-      const p = typeof playerCar !== 'undefined' && playerCar && playerCar.ghost ? ghostOrtGes(playerCar) : null;
-      if (p === null) return basis;
-      soll = p;
+      // v1.0.25 GEMELDET: "Gummiband reagiert nicht auf meine Zeiten - ob ich langsamer oder
+      // schneller fahre, er haelt seine Geschwindigkeit." Hier stand ghostOrtGes(playerCar):
+      // die Ortung des Fahrerautos zaehlt keine Runden (spielerOrtTick wickelt nur den Index),
+      // die des Challengers schon. Nach seiner ersten Runde lag er also rechnerisch eine ganze
+      // Runde vorn, und der Faktor stand fest am unteren Anschlag. Jetzt der Abstand auf der
+      // Runde, gewickelt auf -n/2 .. n/2: fuer ein Gummiband zaehlt nur, wer gerade vorn liegt.
+      // BESTELLT dazu: "auch wenn mein Auto mal versehentlich eine Runde nicht zaehlt (z. B. weil ich
+      // bei Start/Ziel von der Bahn komme)" - genau deshalb ohne Rundenzaehler: nur der Ort auf der
+      // Runde zaehlt, und den gleicht ortAbgleich() bei jeder Start/Ziel-Lesung neu ab.
+      const p = typeof playerCar !== 'undefined' && playerCar && playerCar.ghost ? ghostOrt(playerCar) : null;
+      const n = currentTrackTiles ? currentTrackTiles.length : 0;
+      if (p === null || !n) return basis;
+      soll = ist + challengerRundenAbstand(p, ist, n);
     } else {
       if (raceStartedAt === null || raceStartedAt === undefined) return basis;
       const tMs = Date.now() - raceStartedAt;
@@ -111,6 +121,12 @@
     }
     ch.soll = ch.art === 'gummiband' ? null : soll;
     return challengerFaktorAnwenden(car, basis, soll - ist, !!(spice && spice.haeltAbstand));
+  }
+  // Abstand von b nach a auf einer Runde mit n Kacheln, gewickelt auf (-n/2, n/2].
+  function challengerRundenAbstand(a, b, n) {
+    let d = ((a - b) % n + n) % n;
+    if (d > n / 2) d -= n;
+    return d;
   }
   // Abweichung in Kacheln (positiv = er liegt hinten) -> Zieltempo.
   function challengerFaktorAnwenden(car, basis, abw, haeltAbstand) {

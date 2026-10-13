@@ -12081,7 +12081,7 @@
   //
   // Jetzt gibt es eine eigene Phase 'rand', in der GEFAHREN wird, und die Bremse laeuft
   // ueber eine Rampe hoch statt zu schlagen.
-  stAdd('Boxenstopp: eine Sekunde am Rand fahren, dann gerampt bremsen', () => {
+  stAdd('Boxenstopp: zwei Sekunden am Rand fahren, dann gerampt bremsen', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostPitProbe) {
       return { skip: true, mass: 'ghostPitProbe nicht vorhanden' };
     }
@@ -12096,10 +12096,11 @@
       fehler.push('Folge ' + echt.join('>') + ' statt ' + soll.join('>'));
     }
     // 2. IN 'rand' WIRD GEFAHREN, nicht gestanden. Das ist der Kern der Meldung: ohne
-    //    Fahrt gibt es keine Querbewegung. Bei 45 ms Takt sind 1000 ms rund 22 Takte.
+    //    Fahrt gibt es keine Querbewegung. Bei 45 ms Takt sind 2000 ms (v1.0.25, vorher
+    //    1000) rund 44 Takte.
     if (P.rand) {
-      if (!(P.rand.takte >= 18 && P.rand.takte <= 28)) {
-        fehler.push('Randphase ' + P.rand.takte + ' Takte, erwartet rund 22');
+      if (!(P.rand.takte >= 40 && P.rand.takte <= 52)) {
+        fehler.push('Randphase ' + P.rand.takte + ' Takte, erwartet rund 44');
       }
       if (!(P.rand.kmhEnde > 0.05)) {
         fehler.push('steht schon in der Randphase (' + P.rand.kmhEnde + ' km/h)');
@@ -17971,13 +17972,13 @@
   });
 
   // ---- v0.10.6: Gold-Formel und Bestzeit-Modus ----
-  stAdd('Gold-Formel: Balkonia 16 s und Omega Testing Track 2 7,2 s, laengere Strecken langsamer', () => {
+  stAdd('Gold-Formel: Balkonia 16 s und Omega Testing Track 2 7,3 s, laengere Strecken langsamer', () => {
     const f = [];
     const balk = CH_ALLE.find((d) => d.id === 'dauer-balkonia');
     const g1 = chSterneSchwellen({ id: 'x', code: balk.code }).gold;
     const g2 = chSterneSchwellen({ id: 'x', code: 'SGR4LGHG' }).gold;
     if (Math.abs(g1 - 16000) > 5) f.push('Balkonia ' + g1);
-    if (Math.abs(g2 - 7200) > 5) f.push('Track 2 ' + g2);
+    if (Math.abs(g2 - 7300) > 5) f.push('Track 2 ' + g2);
     let ab = 0;
     const liste = CH_ALLE.map((d) => ({ g: chGeoGold(d), gold: chSterneSchwellen(Object.assign({}, d, { id: 'x' })).gold }))
       .sort((a, b) => a.g - b.g);
@@ -18166,6 +18167,145 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Spur ' + n + ' Teile, Luecken/Rueckschritte abgelehnt, Spiegel, Delta, Speicher' };
   });
 
+  // ---- v1.0.25: Telemetrie auch mit nicht gelesenen oder doppelten Teilen ----
+  // GEMELDET: "Telemetrie klappt gar nicht." Verlangt waren genau n-1 Teilwechsel; jetzt werden
+  // die Lesungen ueber ihre Art der Strecke zugeordnet und Luecken geschaetzt.
+  stAdd('Telemetrie v1.0.25: fehlende und doppelte Teile werden zugeordnet, zu wenige abgelehnt', () => {
+    const f = [];
+    const tiles = codeToTrack('SG2R2G2L2G2H2G2').tiles, n = tiles.length;
+    const code = trackToCode(tiles, 0), soll = tiles.map((x) => x.type);
+    const ev = [];
+    for (let k = 1; k < n; k++) ev.push([k * 1000, tiles[k].type]);
+    // Eine Kurve in der Mitte nicht gelesen.
+    const kurve = tiles.findIndex((x, k) => k > 2 && tileIsCurve(x.type));
+    const luecke = ev.filter((x) => x[0] !== kurve * 1000);
+    const sp = teleSpurBauen(luecke, n * 1000, n, code, soll);
+    if (!sp) f.push('ein fehlendes Teil: keine Spur');
+    else {
+      if (sp.geschaetzt !== 1) f.push('geschaetzt ' + sp.geschaetzt + ' statt 1');
+      if (Math.abs(sp.teile[kurve] - kurve * 1000) > 1) f.push('Luecke geschaetzt auf ' + sp.teile[kurve] + ' statt ' + kurve * 1000);
+      if (sp.teile.length !== n) f.push('Laenge ' + sp.teile.length);
+    }
+    // Ohne Strecke (alter Aufruf) bleibt es bei "abgelehnt".
+    if (teleSpurBauen(luecke, n * 1000, n, code)) f.push('ohne Strecke trotzdem zugeordnet');
+    // Ein Teil doppelt gelesen, dazu Abseits-Meldungen: die zaehlen nicht.
+    const doppelt = ev.slice(0, 3).concat([[3500, tiles[3].type], [3600, 0x00]], ev.slice(3));
+    const sp2 = teleSpurBauen(doppelt, n * 1000, n, code, soll);
+    if (!sp2) f.push('doppeltes Teil: keine Spur');
+    // Die Haelfte fehlt: abgelehnt.
+    if (teleSpurBauen(ev.filter((x, i) => i % 2), n * 1000, n, code, soll)) f.push('halbe Runde ergibt eine Spur');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Luecke geschaetzt, Doppel und 0x00 ignoriert, halbe Runde abgelehnt' };
+  });
+
+  // ---- v1.0.25: Streckenscan mit gelegter Strecke, Autopilot auch im Modus "Aus" (RC) ----
+  stAdd('Scan mit gelegter Strecke behaelt die Spur-Bytes; Autopilot greift auch bei RC, ohne Tempofaktor', () => {
+    const f = [];
+    const merk = { tiles: currentTrackTiles, tm: trackMode, pc: playerCar, aktiv: garageScan.aktiv, car: garageScan.car,
+                   phys: physicsEnabled, fl: flagState, v: physEngine.state.speedKmh };
+    const auto = { device: { id: 'scan-probe' }, role: 'player', tileCode: TILE_TYPE.STRAIGHT, tileCount: 3, testSenke: [] };
+    try {
+      currentTrackTiles = codeToTrack('SG4R4G4').tiles;     // eine Strecke liegt schon
+      trackMode = 'on'; playerCar = auto; flagState = 'green';
+      garageScan.aktiv = true; garageScan.car = auto;
+      spielerOrtTick(auto);
+      if (!auto.modeBytes || auto.modeBytes[10] !== AUTO_MODE.b10) f.push('Scan mit gelegter Strecke ohne Spur-Bytes');
+      physicsEnabled = false;
+      if (!autopilotGreiftFuer(1)) f.push('Autopilot greift beim Scan im Modus Aus nicht');
+      physLastTime = null;
+      physicsStep();
+      if (!physApTakt) f.push('physicsStep rechnet im Modus Aus nicht fuer den Autopiloten');
+      garageScan.aktiv = false; garageScan.car = null;
+      physicsStep();
+      if (physApTakt) f.push('ohne Autopilot rechnet physicsStep im Modus Aus weiter');
+      flagState = 'yellow';
+      if (!autopilotGreiftFuer(1)) f.push('Autopilot greift unter Gelb nicht');
+    } finally {
+      currentTrackTiles = merk.tiles; trackMode = merk.tm; playerCar = merk.pc; garageScan.aktiv = merk.aktiv;
+      garageScan.car = merk.car; physicsEnabled = merk.phys; flagState = merk.fl; physLastTime = null; physApTakt = false;
+      physEngine.state.speedKmh = merk.v;
+      autopilotZuruecksetzen();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Spur-Bytes beim Scan, Autopilot bei RC fuer Scan und Gelb' };
+  });
+
+  // ---- v1.0.25: Safety Car haelt am Rand, Licht aus, startet nach einem Rempler neu ----
+  stAdd('Safety Car v1.0.25: 2 s rechts am Rand, dann halten, Licht aus; Neustart nach Rempler', () => {
+    const f = [];
+    const merk = { garage: garage.slice() };
+    const echtUnpark = unparkCar;
+    const sc = { device: { id: 'sc25' }, role: 'safetycar', tag: 'SC', rx: {}, testSenke: [],
+                 ghost: { running: true, tileIndex: 0, scHeim: true } };
+    try {
+      garage.length = 0; garage.push(sc);
+      safetyCarAbstellen(sc);
+      const h = sc.ghost.randHalt;
+      if (!h || h.phase !== 'rand') f.push('kein Randhalt');
+      if (pitQuer(sc) !== FINISH_RAND) f.push('Querlage ' + pitQuer(sc) + ' statt ganz rechts');
+      if (Math.abs(pitZiel(sc) - formationPace()) > 1e-9) f.push('faehrt am Rand nicht im Formationstempo');
+      if (pitBremse(sc) !== null) f.push('bremst schon am Rand');
+      if (safetyCarFaehrt()) f.push('zaehlt beim Abstellen noch als fahrend');
+      sc.ghost.querSoll = 1;
+      h.at = Date.now() - 1000; randHaltTick(sc);
+      if (h.phase !== 'rand') f.push('nach 1 s schon ' + h.phase + ' (bestellt: 2 s am Rand)');
+      h.at = Date.now() - SC_RAND_MS - 10; randHaltTick(sc);
+      if (h.phase !== 'halt') f.push('nach 2 s nicht in halt');
+      if (pitZiel(sc) !== 0) f.push('halt mit Zieltempo ' + pitZiel(sc));
+      h.at = Date.now() - h.haltMs - 10; randHaltTick(sc);
+      if (sc.ghost.running) f.push('steht danach nicht');
+      const letzt = sc.testSenke[sc.testSenke.length - 1];
+      if (!letzt || (letzt.lightBits & LIGHT_HEAD)) f.push('Licht nach dem Abstellen nicht aus');
+      // Rempler: geparkt -> nach SC_NEUSTART_MS faehrt es selbst weiter.
+      const neu = [];
+      unparkCar = (c, why) => { neu.push(why); c.parked = null; };
+      sc.ghost.running = true; sc.parked = 'Bahn verlassen'; sc.ghost.scNeustarts = 0;
+      safetyCarNeustart(sc, 1000);
+      safetyCarNeustart(sc, 1000 + SC_NEUSTART_MS + 1);
+      if (neu.length !== 1) f.push('nach einem Rempler kein Neustart');
+    } finally {
+      unparkCar = echtUnpark;
+      garage.length = 0; merk.garage.forEach((c) => garage.push(c));
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'rechts am Rand 2 s, dann halt, Licht aus, Neustart nach Rempler' };
+  });
+
+  // ---- v1.0.25: Aufstellung langsamer in Kurven und Haarnadeln ----
+  stAdd('Aufstellung v1.0.25: Haarnadel und Kurve langsamer als die Gerade, Gerade = Formationstempo', () => {
+    const f = [];
+    const merk = { tiles: currentTrackTiles };
+    try {
+      currentTrackTiles = codeToTrack('SG2H2G2J2').tiles;
+      const hi = currentTrackTiles.findIndex((x) => tileTightness(x.type) >= 2);
+      const gerade = { tileCode: TILE_TYPE.STRAIGHT, ghost: { nurOrt: true, tileIndex: 1 } };
+      const vorHaar = { tileCode: TILE_TYPE.STRAIGHT, ghost: { nurOrt: true, tileIndex: hi - 1 } };
+      const inHaar = { tileCode: TILE_TYPE.HAIRPIN, ghost: { nurOrt: true, tileIndex: hi } };
+      const g = aufstellTempo(gerade), v = aufstellTempo(vorHaar), h = aufstellTempo(inHaar);
+      if (hi > 3 && Math.abs(g - formationPace()) > 1e-9) f.push('Gerade ' + g);
+      if (!(v < formationPace() - 1e-9)) f.push('vor der Haarnadel nicht langsamer: ' + v);
+      if (Math.abs(h - formationPace() * SCAN_TEMPO_HAARNADEL) > 1e-9) f.push('Haarnadel ' + h);
+    } finally { currentTrackTiles = merk.tiles; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gerade Formationstempo, Haarnadel wie beim Scan' };
+  });
+
+  // ---- v1.0.25: Zusammenfassung am Ende von Time Attack ----
+  stAdd('Time Attack: Zusammenfassung mit bester Runde, Vergleich, Medaille und Telemetrie', () => {
+    const f = [];
+    const merk = { tiles: currentTrackTiles, laps: raceLapTimes, mode: raceMode, vor: bestzeitVorher };
+    try {
+      currentTrackTiles = codeToTrack('SGR4LGHG').tiles; raceMode = 'bestzeit';
+      const minMs = rundeMinMs();
+      raceLapTimes = [{ lap: 1, ms: minMs + 3000 }, { lap: 2, ms: minMs + 2000 }, { lap: 3, ms: 10 }];
+      bestzeitVorher = { beste: minMs + 2500, medaille: 1 };
+      const txt = bestzeitZusammenfassungText() || '';
+      if (txt.indexOf(formatLapTime(minMs + 2000)) < 0) f.push('beste Runde fehlt');
+      if (txt.indexOf('Runde 2') < 0 && txt.indexOf('Lap 2') < 0 && txt.indexOf('Vuelta 2') < 0) f.push('Rundennummer fehlt');
+      if (txt.indexOf('−0.50') < 0) f.push('Vergleich mit der alten Bestzeit fehlt');
+      if (txt.split('\n').length < 5) f.push('zu wenige Zeilen: ' + txt);
+    } finally {
+      currentTrackTiles = merk.tiles; raceLapTimes = merk.laps; raceMode = merk.mode; bestzeitVorher = merk.vor;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Runden, beste Runde, Vergleich, Schnitt, Telemetrie' };
+  });
+
   stAdd('Telemetrie-Seite: Karte, Balken und Tempo aus zwei Runden, Rundenweg steigt', () => {
     const f = [];
     const code = 'SG2H2G2J2', n = 9;
@@ -18251,7 +18391,7 @@
   stAdd('Challenger: eine Rolle nur auf der Bahn, folgt Spur oder dir, Takt, Soll-Punkt', () => {
     const f = [];
     const merk = { garage: garage.slice(), tm: trackMode, rs: raceState, fl: flagState, form: raceFormationLap,
-                   start: raceStartedAt, tiles: currentTrackTiles, ort: ghostOrtGes, pc: playerCar };
+                   start: raceStartedAt, tiles: currentTrackTiles, ort: ghostOrtGes, ort1: ghostOrt, pc: playerCar };
     try {
       currentTrackTiles = codeToTrack('SG2H2G2J2').tiles;
       const n = currentTrackTiles.length;
@@ -18284,17 +18424,26 @@
       if (!m || m.index !== 3) f.push('Soll-Punkt nicht auf Kachel 3');
       // Gummiband: dein Ort statt der Spur.
       ch.ghost.challenger = { art: 'gummiband', soll: null };
+      ghostOrt = (c) => (c && c._ort !== undefined ? c._ort : null);
       playerCar = { ghost: { nurOrt: true }, _ort: 8 };
       ch._ort = 6;
       if (!(challengerZiel(ch, basis) > basis)) f.push('Gummiband: hinter dir nicht schneller');
       ch._ort = 10;
       if (!(challengerZiel(ch, basis) < basis)) f.push('Gummiband: vor dir nicht langsamer');
+      // v1.0.25: die Ortung des Fahrerautos zaehlt keine Runden. Eine Runde spaeter (der
+      // Challenger hat laps + 1) muss das Gummiband weiter auf den Abstand AUF DER RUNDE hoeren.
+      ghostOrt = (c) => (c && c._ort !== undefined ? ((c._ort % n) + n) % n : null);
+      ch._ort = 6 + n; playerCar._ort = 8;
+      if (!(challengerZiel(ch, basis) > basis)) f.push('Gummiband nach einer Runde: hinter dir nicht schneller');
+      ch._ort = 10 + n;
+      if (!(challengerZiel(ch, basis) < basis)) f.push('Gummiband nach einer Runde: vor dir nicht langsamer');
       if (challengerSollMarke()) f.push('Gummiband zeigt einen Soll-Punkt');
       // Unter Gelb gilt die Gelb-Regel, nicht der Challenger.
       flagState = 'yellow';
       if (challengerZiel(ch, basis) !== basis) f.push('unter Gelb uebersteuert');
       // In der Kurve enger gedeckelt.
-      flagState = 'green'; ch._ort = 0; ch.tileCode = TILE_TYPE.HAIRPIN;
+      // Ab hier liegt der Challenger zwei Kacheln hinter dir (Gummiband wickelt auf die Runde).
+      flagState = 'green'; ch._ort = 0; playerCar._ort = 2; ch.tileCode = TILE_TYPE.HAIRPIN;
       if (challengerZiel(ch, basis) > basis + 1e-9) f.push('in der Haarnadel schneller als ein NPC');
       // NPCs fahren die Haarnadel mit 33 % - die Untergrenze darf ihn nicht darueber heben.
       if (challengerZiel(ch, 0.33) > 0.33 + 1e-9) f.push('Haarnadel: Untergrenze hebt ueber 33 %: ' + challengerZiel(ch, 0.33));
@@ -18306,7 +18455,7 @@
     } finally {
       garage.length = 0; merk.garage.forEach((c) => garage.push(c));
       trackMode = merk.tm; raceState = merk.rs; flagState = merk.fl; raceFormationLap = merk.form;
-      raceStartedAt = merk.start; currentTrackTiles = merk.tiles; ghostOrtGes = merk.ort; playerCar = merk.pc;
+      raceStartedAt = merk.start; currentTrackTiles = merk.tiles; ghostOrtGes = merk.ort; ghostOrt = merk.ort1; playerCar = merk.pc;
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eine Rolle, nur Bahn, Takt, Spur hinten schneller/vorn langsamer, Gummiband, Gelb, Kurvendeckel, Soll-Punkt' };
   });
@@ -18450,12 +18599,27 @@
       }
       if (meister.lauf.idx !== 2) f.push('naechstes Event ' + meister.lauf.idx + ' statt 2');
       if (meisterStartReihe(2).join() !== 'a,b') f.push('Fuehrender nicht hinten: ' + meisterStartReihe(2).join());
+      // v1.0.25: Zufall wird je Event EINMAL festgelegt - Anzeige und Start stimmen ueberein.
+      meister.plan.events[2].aufst = 'zufall';
+      const r1 = meisterStartReiheFest(2).join();
+      let gleich = true;
+      for (let k = 0; k < 8; k++) if (meisterStartReiheFest(2).join() !== r1) gleich = false;
+      if (!gleich) f.push('Zufalls-Startreihe aendert sich zwischen Anzeige und Start');
+      // v1.0.25: ein abgebrochenes Event zaehlt mit 0 Punkten, und es geht weiter.
+      const vorA = meister.lauf.fahrer['c:a'].pkt;
+      meister.lauf.laeuft = { idx: 2, modus: raceMode, seit: Date.now() };
+      meisterRennenEnde(false);
+      if (meister.lauf.idx !== 3 || !meister.lauf.fertig) f.push('nach Abbruch nicht weiter (idx ' + meister.lauf.idx + ')');
+      const ea = meister.lauf.fahrer['c:a'].je[2];
+      if (!ea || ea.pkt !== 0 || !ea.ab) f.push('Abbruch nicht als 0 gewertet: ' + JSON.stringify(ea));
+      if (meister.lauf.fahrer['c:a'].pkt !== vorA) f.push('Abbruch veraendert die Punkte');
+      if (meister.lauf.letztes.join() === '') f.push('Abbruch loescht das letzte Ergebnis');
     } finally {
       meister = merk.m; raceAllCars = merk.rac; meisterOeffnen = merk.oeff; raceMode = merk.rm;
       garage.length = 0; merk.garage.forEach((c) => garage.push(c));
       try { if (merk.store === null) localStorage.removeItem(MEISTER_STORE); else localStorage.setItem(MEISTER_STORE, merk.store); } catch (e) { /* privat */ }
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Q -> Aufstellung, Fehler gemeldet, 26/18 Punkte, Fuehrender hinten' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Q -> Aufstellung, Fehler gemeldet, 26/18 Punkte, Fuehrender hinten, Zufall fest, Abbruch = 0' };
   });
 
   stAdd('Rundenrennen endet mit der Zielrunde, nicht eine Runde spaeter', () => {

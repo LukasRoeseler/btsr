@@ -1525,9 +1525,11 @@
       row.className = 'grid-row';
       row.draggable = false;
       row.dataset.id = String(car.device.id);
+      // v1.0.25: dazu, wo der Platz liegt (Reihe, Seite) - so stellt man von Hand richtig auf.
+      const wo = t('Reihe {r}').replace('{r}', Math.floor(i / 2) + 1) + ' · ' + (i % 2 ? t('links') : t('rechts'));
       row.innerHTML = `<span class="grid-pos">${i + 1}.</span>`
         + `<span class="grid-handle" draggable="true" title="Ziehen zum Umsortieren">&#8942;&#8942;</span>`
-        + `<span class="grid-name">${carDot(car)}${garageLabel(car)}</span>`
+        + `<span class="grid-name">${carDot(car)}${garageLabel(car)} <small class="grid-wo">${wo}</small></span>`
         + `<span class="grid-move">`
         + `<button data-mv="up" ${i === 0 ? 'disabled' : ''} aria-label="nach vorn">&#9650;</button>`
         + `<button data-mv="down" ${i === cars.length - 1 ? 'disabled' : ''} aria-label="nach hinten">&#9660;</button>`
@@ -1611,7 +1613,8 @@
     if (!gs) { if (raceGridWeiter) raceGridWeiter(); return; }
     raceGridZeilen($('grid-liste'));
     gridBildMalen();
-    if ($('grid-kopf-info')) $('grid-kopf-info').textContent = '';
+    // v1.0.25: im Meisterschafts-Event steht oben, welches Event und nach welcher Regel aufgestellt wird.
+    if ($('grid-kopf-info')) $('grid-kopf-info').textContent = typeof meisterGridInfo === 'function' ? meisterGridInfo() : '';
     // Time Attack: Medaillenzeiten, bisher Gewonnenes und Bestzeit dieser Strecke.
     const ta = $('grid-timeattack');
     if (ta) {
@@ -1814,10 +1817,78 @@
     showHudToast((nr >= 2 ? 'P' + nr + ': ' : '') + (r.neu ? t('Neue Bestzeit auf dieser Strecke!') + ' ' : '')
       + formatLapTime(ms) + (name ? ' · ' + name : ''));
   }
+  // ---- ZUSAMMENFASSUNG AM ENDE VON TIME ATTACK (v1.0.25, WIP) -----------------------
+  // BESTELLT: "Zeige mir eine Zusammenfassung meiner Ergebnisse, wenn Time Attack vorbei ist."
+  // Ein Fenster nach dem Stopp: Runden, beste Runde mit Medaille, Vergleich mit der Bestzeit
+  // von VOR dieser Fahrt (darum beim Start gemerkt - waehrend der Fahrt schreibt
+  // bestzeitRunde() sie schon fort), Schnitt und Streuung, was zur naechsten Medaille fehlt,
+  // und was die Telemetrie aufgezeichnet hat - mit dem Weg dorthin.
+  let bestzeitVorher = null;
+  function bestzeitVorherMerken() {
+    bestzeitVorher = null;
+    if (raceMode !== 'bestzeit') return;
+    const b = bestzeitAktuell(typeof playerCar !== 'undefined' ? playerCar : null);
+    bestzeitVorher = b ? { beste: b.beste, medaille: b.medaille || 0 } : { beste: null, medaille: 0 };
+  }
+  function bestzeitZusammenfassungText() {
+    const tiles = currentTrackTiles;
+    if (!tiles || tiles.length < 3) return null;
+    const minMs = rundeMinMs();
+    const alle = raceLapTimes.map((l) => l.ms);
+    const gueltig = alle.filter((ms) => ms >= minMs);
+    const z = [];
+    z.push(t('Runden') + ': ' + alle.length
+      + (gueltig.length !== alle.length ? ' (' + t('{n} gewertet').replace('{n}', gueltig.length) + ')' : ''));
+    if (!gueltig.length) { z.push(t('Keine gewertete Runde.')); return z.join('\n'); }
+    const beste = Math.min.apply(null, gueltig);
+    const nr = alle.indexOf(beste) + 1;
+    const def = bestzeitDef(tiles);
+    const sterne = chSterne(def, 'hotlap', beste);
+    z.push(t('Beste Runde') + ': ' + formatLapTime(beste) + ' (' + t('Runde') + ' ' + nr + ') · '
+      + chSterneName(sterne) + ' ' + chSterneZeichen(sterne));
+    const v = bestzeitVorher;
+    if (v && v.beste) {
+      z.push((beste < v.beste ? t('Neue Bestzeit auf dieser Strecke!') + ' ' + t('Vorher') : t('Deine Bestzeit hier'))
+        + ': ' + formatLapTime(v.beste) + ' (' + teleDeltaText(beste - v.beste) + ' s)');
+      if (sterne > (v.medaille || 0)) z.push(t('Neue Medaille') + ': ' + chSterneName(sterne));
+    } else {
+      z.push(t('Erste Zeit auf dieser Strecke.'));
+    }
+    if (gueltig.length >= 2) {
+      const mittel = gueltig.reduce((a, b) => a + b, 0) / gueltig.length;
+      const sd = Math.sqrt(gueltig.reduce((a, b) => a + (b - mittel) * (b - mittel), 0) / (gueltig.length - 1));
+      z.push(t('Schnitt') + ': ' + formatLapTime(mittel) + ' · ' + t('Streuung') + ' ±' + (sd / 1000).toFixed(2) + ' s');
+    }
+    if (sterne < 3) {
+      const sch = chSterneSchwellen(def);
+      const ziel = sterne >= 2 ? sch.gold : sch.silber;
+      z.push(t('Bis {m} fehlen {d} s').replace('{m}', chSterneName(sterne + 1))
+        .replace('{d}', ((beste - ziel) / 1000).toFixed(2)));
+    }
+    if (typeof teleSitzung !== 'undefined') {
+      const ts = teleSitzung;
+      z.push(t('Telemetrie') + ': ' + t('{n} Runden aufgezeichnet').replace('{n}', ts.gespeichert)
+        + (ts.geschaetzt ? ', ' + t('{n} davon mit geschätzten Teilen').replace('{n}', ts.geschaetzt) : '')
+        + (ts.verworfen ? ', ' + t('{n} nicht zuzuordnen').replace('{n}', ts.verworfen) : ''));
+    }
+    return z.join('\n');
+  }
+  function bestzeitZusammenfassungZeigen() {
+    if (raceMode !== 'bestzeit' || typeof konsoleFrage !== 'function') return;
+    const text = bestzeitZusammenfassungText();
+    if (text === null) return;
+    const knoepfe = [];
+    if (typeof teleBeste === 'function' && teleBeste(playerCar, currentTrackTiles)) {
+      knoepfe.push([t('Telemetrie ansehen'), () => teleSeiteOeffnen()]);
+    }
+    knoepfe.push([t('Schließen'), null]);
+    setTimeout(() => konsoleFrage(t('Time Attack beendet'), text, knoepfe, true), 900);
+  }
   function startRaceCountdown(gruenZiel, mpPlan) {
     if (raceState !== 'idle' && raceState !== 'finished') return; // ignore while armed/racing
     if (!knockoutBereit(true)) return;
     if (!bestzeitBereit(true)) return;
+    bestzeitVorherMerken();
     // EINSCHALTRAMPE: der Schirm zieht in 300 ms von schwarz auf Wert hoch, wie ein TFT beim
     // Einschalten. Hier und nicht in raceGreen(), weil der Schirm mit dem Knopfdruck
     // "angeht" und nicht erst bei Gruen - im Countdown will man ihn schon lesen.
@@ -2095,7 +2166,12 @@
   function finishRace(auslaufen) {
     raceState = 'finished';
     // Das Safety Car steht beim Rennende - es hat in keinem Ergebnis etwas zu suchen.
-    garage.forEach((c) => { if (c.role === 'safetycar' && c.ghost && c.ghost.running) stopGhost(c); });
+    garage.forEach((c) => {
+      if (c.role === 'safetycar' && c.ghost && c.ghost.running) {
+        stopGhost(c);
+        if (typeof safetyCarLichtAus === 'function') safetyCarLichtAus(c);
+      }
+    });
     raceGreenAt = null;
     fruehstartReset();
     derbyEinstellungenZurueck();
@@ -2206,6 +2282,8 @@
       if (typeof showTab === 'function') showTab('race');
       if (typeof cockpitScreenZu === 'function') cockpitScreenZu('uebersicht');
     }
+    // v1.0.25: Time Attack bekommt dazu seine Zusammenfassung.
+    bestzeitZusammenfassungZeigen();
     // Und ablegen. Hier, weil dies die eine Stelle ist, an der ein Rennen wirklich vorbei
     // ist - und nach showRaceSummary(), damit ein Fehlschlag beim Speichern das Ergebnis
     // nicht verdeckt.

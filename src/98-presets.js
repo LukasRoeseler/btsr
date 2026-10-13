@@ -301,7 +301,8 @@
   // Fernsteuerung, Gas weg laeuft in 2 s aus, Bremse sofort, zweiter Bremsdruck im Stand
   // rueckwaerts. Der Steuerungsmodus haengt damit nur noch am Fahrgefuehl.
   PRESETS.rc = {
-    label: 'RC',
+    // v1.0.25 BESTELLT: "Safety Car und RC-Modus beides als WIP labeln."
+    label: 'RC (WIP)',
     kurz: 'Arcade, nur viel extremer: wie ein Fernsteuerungsauto',
     text: 'Der Stick geht direkt ans Auto wie bei einer Fernsteuerung, ohne G\u00e4nge: Gas weg '
         + 'l\u00e4uft in zwei Sekunden aus, die Bremse greift sofort, ein zweiter Bremsdruck im '
