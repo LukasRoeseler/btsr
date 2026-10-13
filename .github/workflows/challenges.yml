@@ -1,0 +1,39 @@
+# CHALLENGES-BESTENLISTE AUS DEM GOOGLE SHEET INS REPO.
+#
+# Stuendlich (und von Hand) holt tools/challenges_sync.py alle 16 Listen und schreibt
+# data/challenges.json. Committet wird nur, wenn sich etwas geaendert hat. Die App liest die
+# Datei ueber GitHub Pages und mischt die eigenen Zeiten dazu (72-challenges.js).
+#
+# Hinweis: GitHub schaltet geplante Laeufe ab, wenn 60 Tage lang nichts im Repo passiert ist;
+# dann einmal unter Actions > Challenges-Bestenliste "Enable workflow" druecken.
+name: Challenges-Bestenliste
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: challenges-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Listen holen
+        run: python3 tools/challenges_sync.py
+
+      - name: Nur bei Aenderung committen
+        run: |
+          if git diff --quiet -- data/challenges.json; then echo "unveraendert"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/challenges.json
+          git commit -m "Challenges-Bestenliste aktualisiert"
+          git push
