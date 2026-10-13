@@ -18043,7 +18043,8 @@
         if (cb) cb.checked = true;
         if (Math.abs(gelbZielFuer(weit) - Math.max(0.45, gelbGrenze())) > 1e-9) f.push('weit weg nicht ~45 %: ' + gelbZielFuer(weit));
         if (Math.abs(gelbZielFuer(nah) - gelbGrenze()) > 1e-9) f.push('nah dran nicht 35 %: ' + gelbZielFuer(nah));
-        if (Math.abs(gelbZielFuer(sc) - gelbGrenze()) > 1e-9) f.push('Safety Car selbst nicht 35 %');
+        // v1.0.30: das Safety Car faehrt langsamer als das Feld, damit sich alle dahinter aufreihen.
+        if (!(gelbZielFuer(sc) < gelbGrenze() - 1e-9)) f.push('Safety Car nicht langsamer als das Feld: ' + gelbZielFuer(sc));
         startGhost = () => {};
         flagState = 'green';
         setFlag('yellow');
@@ -18327,6 +18328,11 @@
       ghostFieldRacing = () => [ich, vorn];
       if (Math.abs(gelbAbstandFaktor(ich) - GELB_ABSTAND_BODEN) > 1e-9) f.push('dicht dahinter nicht gedrosselt: ' + gelbAbstandFaktor(ich));
       if (gelbAbstandFaktor(vorn) !== 1) f.push('der Vordere wird gedrosselt');
+      // v1.0.30: auch das Safety Car haelt Abstand zu einem Auto vor ihm.
+      const sc = { role: 'safetycar', _o: 2 };
+      ghostFieldRacing = () => [sc, vorn];
+      if (!(gelbAbstandFaktor(sc) < 1)) f.push('Safety Car haelt keinen Abstand');
+      ghostFieldRacing = () => [ich, vorn];
       vorn._o = 2 + GELB_ABSTAND_VOLL + 0.1;
       if (gelbAbstandFaktor(ich) !== 1) f.push('mit Abstand trotzdem gedrosselt');
       vorn._o = 3;
@@ -18423,6 +18429,21 @@
       garage.length = 0; merk.garage.forEach((c) => garage.push(c));
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'beide NPCs fahren los, Safety Car ohne Platz' };
+  });
+
+  // ---- v1.0.30: NPC-Stimmen verstummen mit dem Rennende ----
+  stAdd('Rennende v1.0.30: alle NPC-Stimmen aus, auch waehrend der Auslaufrunde', () => {
+    const f = [];
+    const merk = { garage: garage.slice() };
+    try {
+      const npc = { device: { id: 'st1' }, role: 'ghost', ghost: { running: true, auslauf: true, stimme: null } };
+      const ich = { device: { id: 'st2' }, role: 'player', ghost: { nurOrt: true } };
+      garage.length = 0; garage.push(npc, ich);
+      ghostStimmenRennende();
+      if (!npc.ghost.stumm) f.push('NPC nicht stumm');
+      if (ich.ghost.stumm) f.push('Ortungssatz des Fahrerautos angefasst');
+    } finally { garage.length = 0; merk.garage.forEach((c) => garage.push(c)); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'NPC stumm bis zum naechsten Start' };
   });
 
   stAdd('Telemetrie-Seite: Karte, Balken und Tempo aus zwei Runden, Rundenweg steigt', () => {

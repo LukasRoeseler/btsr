@@ -2249,6 +2249,8 @@
       if (!willAuslaufen) { stopGhost(c); return; }
       finishGhost(c);
     });
+    // v1.0.30: mit dem Rennende verstummen die NPCs (80-sound.js).
+    if (typeof ghostStimmenRennende === 'function') ghostStimmenRennende();
     if (willAuslaufen && garage.some(c => c.role === 'ghost' && c.ghost && c.ghost.auslauf)) {
       showHudToast(t('NPCs fahren die Runde zu Ende'));
     }

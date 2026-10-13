@@ -5100,8 +5100,16 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // bei den Ghosts das Tempoprofil in ghostTick, beim Fahrerauto autopilotKurvenFaktor.
   const SC_AUFSCHLUSS = 0.45;
   function scAufschliessenAn() { const el = $('race-sc-aufschliessen'); return el ? !!el.checked : true; }
+  // v1.0.30 GEMELDET: "Das Safety Car faehrt gegen andere Autos. Es sollten lieber alle gleich
+  // schnell fahren, wenn das so nicht klappt, oder es sollte langsamer fahren und alle reihen
+  // sich dahinter auf (idealerweise)." Also das Zweite: das Safety Car faehrt SC_TEMPO_ANTEIL des
+  // Gelb-Tempos und haelt selbst Abstand (gelbAbstandFaktor gilt jetzt auch fuer es). Wer vor
+  // ihm liegt, faehrt davon (mit ~45 % zum Aufschliessen), kommt von hinten wieder heran und
+  // reiht sich dahinter ein - ueberholt wird das Safety Car nie.
+  const SC_TEMPO_ANTEIL = 0.85;
   function gelbZielFuer(car) {
-    if (car && car.role !== 'safetycar' && scAufschliessenAn() && safetyCarFaehrt() && !nahAmSafetyCar(car)) {
+    if (car && car.role === 'safetycar') return gelbGrenze() * SC_TEMPO_ANTEIL;
+    if (car && scAufschliessenAn() && safetyCarFaehrt() && !nahAmSafetyCar(car)) {
       return Math.max(SC_AUFSCHLUSS, gelbGrenze());
     }
     return gelbGrenze();
@@ -8373,7 +8381,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (underYellow) {
         target = Math.min(target, gelbZielFuer(car));
         // v1.0.28: Abstand zum Vordermann (auch zu dir), siehe gelbAbstandFaktor().
-        if (car.role !== 'safetycar') target *= gelbAbstandFaktor(car);
+        target *= gelbAbstandFaktor(car);
       }
       // ---- Tempoprofil statt eines einzigen Kurvenabschlags ----
       // Vorher gab es genau zwei Zustaende: "Kurve in Sicht" oder nicht, und beide bekamen
