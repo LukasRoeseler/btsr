@@ -16571,7 +16571,8 @@
       // zwei nicht auseinanderlaufen - eine abgeschriebene 103 waere die naechste Zahl, die
       // beim naechsten Reglerdreh falsch wird.
       trackMode = 'on';
-      const zielAnteil = Math.max(yellowFactor(), GHOST_READ_MIN);
+      // v1.0.32: gelbGrenze() - dieselbe Funktion wie der Autopilot, seit der Anhebung um 15 %.
+      const zielAnteil = gelbGrenze();
       const zielKmh = zielAnteil * physEngine.config.topSpeedKmh * REAL_SCALE;
       const langsam = bei(zielKmh * 0.4);
       const schnell = bei(zielKmh * 2.5);
@@ -18258,9 +18259,12 @@
       h.at = Date.now() - SC_RAND_MS - 10; randHaltTick(sc);
       // v1.0.29: danach mit eingeschlagenen Raedern weiter an den Rand, dann halten.
       if (h.phase !== 'rad' || !(randHaltRadLenk(sc) > 0)) f.push('nach 2 s nicht mit Radeinschlag rechts (' + h.phase + ')');
-      h.at = Date.now() - SC_RAD_MS - 10; randHaltTick(sc);
-      if (h.phase !== 'halt') f.push('nach dem Einlenken nicht in halt');
-      if (!(randHaltRadLenk(sc) > 0)) f.push('haelt ohne Radeinschlag');
+      // v1.0.32: nur kurz rechts, dann gleich lang links, gehalten mit geraden Raedern.
+      h.at = Date.now() - SC_RAD_MS - 1; randHaltTick(sc);
+      if (h.phase !== 'gegen' || !(randHaltRadLenk(sc) < 0)) f.push('nach dem Einlenken nicht gegengelenkt (' + h.phase + ')');
+      h.at = Date.now() - SC_GEGEN_MS - 1; randHaltTick(sc);
+      if (h.phase !== 'halt') f.push('nach dem Gegenlenken nicht in halt');
+      if (randHaltRadLenk(sc) !== 0) f.push('haelt nicht mit geraden Raedern: ' + randHaltRadLenk(sc));
       if (pitZiel(sc) !== 0) f.push('halt mit Zieltempo ' + pitZiel(sc));
       h.at = Date.now() - h.haltMs - 10; randHaltTick(sc);
       if (sc.ghost.running) f.push('steht danach nicht');
@@ -18366,6 +18370,13 @@
         sc.ghost.tileIndex = 0;
         safetyCarHeimTick(sc);
         if (h.phase !== 'rad') f.push('an der Linie nicht eingelenkt (' + h.phase + ')');
+        // v1.0.32: andere Autos fahren an ihm links vorbei (Kachel davor, Start/Ziel, danach).
+        const npc = { device: { id: 'v1' }, role: 'ghost', ghost: { running: true, tileIndex: 0 } };
+        if (scVorbeiQuer(npc) !== SC_VORBEI_QUER || !(SC_VORBEI_QUER < 0)) f.push('auf Start/Ziel nicht links vorbei');
+        npc.ghost.tileIndex = 1;
+        if (scVorbeiQuer(npc) === null) f.push('auf der Folgeschiene nicht links');
+        npc.ghost.tileIndex = 4;
+        if (scVorbeiQuer(npc) !== null) f.push('mitten auf der Strecke links gezwungen');
       }
     } finally {
       currentTrackTiles = merk.tiles;

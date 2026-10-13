@@ -4676,7 +4676,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.31</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.32</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5806,6 +5806,8 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Gelbe Flagge: Alle Autos fahren 15 % schneller als bisher (knapp &#252;ber der Lesegrenze statt genau darauf), und dicht hinter dem Vordermann wird nur noch auf 70 % statt 55 % gedrosselt &#8211; damit niemand mehr verhungert und stehen bleibt.</li>
+        <li>Safety Car (WIP): Beim Abstellen lenkt es nur noch kurz nach rechts (ein Befehl, rund 10 ms) und gleich lang zur&#252;ck nach links, dann h&#228;lt es mit geraden R&#228;dern. Solange es an Start/Ziel steht oder abstellt, fahren alle anderen Autos auf der Kachel davor, auf Start/Ziel und der Folgeschiene mit Querlage links daran vorbei.</li>
         <li>NPCs nebeneinander (WIP): Liegen zwei Autos h&#246;chstens eine Kachel auseinander, fahren sie als Paar links und rechts statt beide auf der Ideallinie &#8211; die Seite ersetzt jetzt die Linie, statt nur ein kleiner Zuschlag zu sein. Wer gerade weiter links liegt, bleibt links; in Kurven darf der &#196;u&#223;ere etwas nach innen. Ein drittes Auto und alle in der Haarnadel fahren hintereinander mit etwa einer Kachel Abstand. Dein Auto z&#228;hlt als Partner mit.</li>
         <li>Automatische Aufstellung: Die Autos fahren jetzt nacheinander in der Reihenfolge der Startaufstellung los, je 1 s versetzt; bis dahin stehen sie.</li>
         <li>Safety Car (WIP): Es f&#228;hrt unter Gelb etwas langsamer als das Feld (85 % des Gelb-Tempos) und h&#228;lt selbst Abstand zum Vordermann, statt aufzufahren. Wer vor ihm liegt, f&#228;hrt davon, kommt von hinten wieder heran und reiht sich dahinter ein.</li>

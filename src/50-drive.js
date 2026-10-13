@@ -2832,7 +2832,9 @@
              // Der Kolonnenversatz SEINES Autos: er haengt am Startplatz
              // (gridPosOf) und an einer eigenen Schlaengelphase - zwei Autos in
              // einer Zweierkolonne sollen nicht auf derselben Spur rollen.
-             steer: grund === 'formation' && typeof formationDriverOffset === 'function'
+             // v1.0.32: am geparkten Safety Car links vorbei (scVorbeiQuer, 90-ghosts.js).
+             steer: (typeof scVorbeiQuer === 'function' && scVorbeiQuer(meinAuto) !== null) ? scVorbeiQuer(meinAuto)
+               : grund === 'formation' && typeof formationDriverOffset === 'function'
                ? formationDriverOffset(meinAuto) : 0,
              // ---- OB ER UEBERHAUPT LENKEN DARF -------------------------------------
              //

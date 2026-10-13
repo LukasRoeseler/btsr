@@ -4294,7 +4294,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // liest - darunter parkt es sich selbst, und dafuer gibt es dort schon eine Pruefung.
   function pitZiel(car) {
     const rh = car.ghost && car.ghost.randHalt;
-    if (rh) return rh.phase === 'rand' ? rh.tempo : rh.phase === 'rad' ? rh.tempo * RANDHALT_RAD_TEMPO : 0;
+    if (rh) return rh.phase === 'rand' ? rh.tempo : (rh.phase === 'rad' || rh.phase === 'gegen') ? rh.tempo * RANDHALT_RAD_TEMPO : 0;
     const p = car.ghost && car.ghost.pit;
     if (!p) return null;
     // 'rand' faehrt weiter - das ist der Sinn der Phase: eine Sekunde am Rand ROLLEN,
@@ -4511,7 +4511,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                    tempo: opt.tempo === undefined ? formationPace() : opt.tempo,
                    randMs: opt.randMs || 0, haltMs: opt.haltMs || PIT_BREMS_MS, fertig: opt.fertig || null,
                    nachRandMs: opt.nachRandMs || 0, randErreicht: 0,
-                   radLenk: opt.radLenk || 0, radMs: opt.radMs || 0 };
+                   radLenk: opt.radLenk || 0, radMs: opt.radMs || 0, gegenMs: opt.gegenMs || 0 };
   }
   // Nach der Randfahrt: mit radLenk erst noch mit eingeschlagenen Raedern an den Rand ('rad'),
   // sonst gleich halten.
@@ -4520,9 +4520,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     h.at = now;
   }
   // Die Lenkung am Rad (ohne Spur-Bytes), solange 'rad' oder danach 'halt' laeuft - oder null.
+  // v1.0.32: mit gegenMs erst rechts, dann gleich lang links (Raeder wieder gerade), und
+  // gehalten wird mit geraden Raedern.
   function randHaltRadLenk(car) {
     const h = car.ghost && car.ghost.randHalt;
-    return h && h.radLenk && (h.phase === 'rad' || h.phase === 'halt') ? h.radLenk : null;
+    if (!h || !h.radLenk) return null;
+    if (h.phase === 'rad') return h.radLenk;
+    if (h.phase === 'gegen') return -h.radLenk;
+    if (h.phase === 'halt') return h.gegenMs ? 0 : h.radLenk;
+    return null;
   }
   function randHaltTick(car) {
     const g = car.ghost, h = g && g.randHalt;
@@ -4542,7 +4548,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       return true;
     }
     if (h.phase === 'rad') {
-      if (now - h.at >= h.radMs) { h.phase = 'halt'; h.at = now; }
+      if (now - h.at >= h.radMs) { h.phase = h.gegenMs ? 'gegen' : 'halt'; h.at = now; }
+      return true;
+    }
+    if (h.phase === 'gegen') {
+      if (now - h.at >= h.gegenMs) { h.phase = 'halt'; h.at = now; }
       return true;
     }
     if (now - h.at >= h.haltMs) {
@@ -5016,7 +5026,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Die Querlage steht schon am Anschlag (FINISH_RAND = 1, mehr kann Byte 7 im Spurmodus nicht).
   // Also zum Schluss ohne Spur-Bytes, mit den RAEDERN nach rechts eingeschlagen, langsam an den
   // Rand rollen (SC_RAD_MS) und so auch halten.
-  const SC_RAD_LENK = 0.7, SC_RAD_MS = 700;
+  // v1.0.32 BESTELLT: "Das Safety Car faehrt zu lange nach rechts, mach es nur fuer 10 ms und
+  // dann 10 ms nach links." Eine Phase dauert mindestens einen Sendetakt (~45 ms), es geht also
+  // je ein Paket rechts und eines links hinaus, danach halten mit geraden Raedern.
+  const SC_RAD_LENK = 0.7, SC_RAD_MS = 10, SC_GEGEN_MS = 10;
   function safetyCarFertig(c) {
     safetyCarLichtAus(c);
     log(garageLabel(c) + ': Safety Car steht rechts am Rand, Licht aus.', 'info');
@@ -5034,7 +5047,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     if (!g.scHeim) return;
     g.scHeim = false;
-    randHaltStarten(sc, { quer: FINISH_RAND, randMs: SC_RAND_MS, radLenk: SC_RAD_LENK, radMs: SC_RAD_MS, fertig: safetyCarFertig });
+    randHaltStarten(sc, { quer: FINISH_RAND, randMs: SC_RAND_MS, radLenk: SC_RAD_LENK, radMs: SC_RAD_MS, gegenMs: SC_GEGEN_MS, fertig: safetyCarFertig });
     log(garageLabel(sc) + ': Safety Car faehrt rechts ran.', 'info');
   }
   // Aus ghostTick: auf dem Heimweg vor Start/Ziel an den rechten Rand.
@@ -5052,9 +5065,25 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (rest === 0 || rest > SC_RAND_KACHELN) return;
     g.scHeim = false;
     g.scVorLinie = true;
-    randHaltStarten(car, { quer: FINISH_RAND, randMs: SC_RAND_WARTE_MS, radLenk: SC_RAD_LENK, radMs: SC_RAD_MS, fertig: safetyCarFertig });
+    randHaltStarten(car, { quer: FINISH_RAND, randMs: SC_RAND_WARTE_MS, radLenk: SC_RAD_LENK, radMs: SC_RAD_MS, gegenMs: SC_GEGEN_MS, fertig: safetyCarFertig });
     g.randHalt.scLinie = true;
     log(garageLabel(car) + ': Safety Car zieht vor Start/Ziel nach rechts.', 'info');
+  }
+  // ---- AM GEPARKTEN SAFETY CAR LINKS VORBEI (v1.0.32) ---------------------------------
+  // BESTELLT: "Wenn ein Auto Safety Car ist, stelle sicher, dass alle Autos mit Querlage
+  // weiter links ueber die Startgerade und die Folgeschiene fahren." Es parkt rechts an
+  // Start/Ziel; solange es dort steht (oder gerade abstellt), fahren alle anderen auf der
+  // Kachel davor, auf Start/Ziel und der naechsten Kachel mit SC_VORBEI_QUER. Waehrend es
+  // unter Gelb faehrt, gilt das nicht.
+  const SC_VORBEI_QUER = -0.8;
+  function scVorbeiQuer(car) {
+    const sc = safetyCar();
+    if (!sc || sc === car || !car || !car.ghost) return null;
+    if (sc.ghost && sc.ghost.running && !sc.ghost.randHalt) return null;
+    const n = currentTrackTiles ? currentTrackTiles.length : 0;
+    const i = car.ghost.tileIndex;
+    if (!n || i === null || i === undefined) return null;
+    return (i === 0 || i === 1 || i === n - 1) ? SC_VORBEI_QUER : null;
   }
   function safetyCarLichtAus(sc) {
     if (sc && sc.rx && !(sc.ghost && sc.ghost.running)) writeToCar(sc, 0, 0, trackModeBit());
@@ -5100,8 +5129,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // v0.10.5 BESTELLT: "Bei gelber Flagge alle Autos auf ca. 35 % drosseln (so koennen sie
   // gerade noch um die Strecke fahren, ohne anzuhalten)." Also auch im Ausdruck-Modus und fuer
   // jedes Auto dieselbe Grenze - darunter liest das Auto die Bahn nicht mehr.
+  // v1.0.32 BESTELLT: "Mach Autos waehrend der gelben Phase etwas schneller, damit sie nicht
+  // verhungern." 15 % ueber der Lesegrenze statt genau auf ihr; mit Kurvendrosselung und
+  // Abstand lagen sie sonst deutlich darunter und blieben stehen.
+  const GELB_ANHEBUNG = 1.15;
   function gelbGrenze() {
-    return Math.max(yellowFactor(), GHOST_READ_MIN);
+    return Math.max(yellowFactor(), GHOST_READ_MIN) * GELB_ANHEBUNG;
   }
   // ---- AUFSCHLIESSEN ZUM SAFETY CAR (v1.0.12, Option, Vorgabe an) ----------------------
   // BESTELLT: "Mach das Ranfahren zum Safetycar als eine Option (Standard = an), also alle mit
@@ -5154,7 +5187,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // NPCs nicht ueberein). Ab GELB_ABSTAND_VOLL voll, darunter linear weniger, ab
   // GELB_ABSTAND_MIN nur noch GELB_ABSTAND_BODEN des Gelb-Tempos - ganz anhalten wuerde das
   // Auto unter die Leseschwelle bringen und den Abgangsmelder ausloesen.
-  const GELB_ABSTAND_VOLL = 1.5, GELB_ABSTAND_MIN = 0.5, GELB_ABSTAND_BODEN = 0.55;
+  // v1.0.32: Boden 0,7 statt 0,55 (BESTELLT: "damit sie nicht verhungern").
+  const GELB_ABSTAND_VOLL = 1.5, GELB_ABSTAND_MIN = 0.5, GELB_ABSTAND_BODEN = 0.7;
   function gelbVordermann(car) {
     const n = currentTrackTiles ? currentTrackTiles.length : 0;
     const a = ghostOrt(car);
@@ -8762,7 +8796,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         // eines Stopps gibt es keine Linie, keine Wuerze und keine Spur - nur den Rand.
         // v1.0.31: im Paar ersetzt die Seite die Linie wie ein Boxenstopp (ghostPaarQuer).
         const pqBox = pitQuer(car);
-        const pq = pqBox !== null ? pqBox : ghostPaarQuer(car);
+        const pqSc = pqBox === null ? scVorbeiQuer(car) : null;     // v1.0.32
+        const pq = pqBox !== null ? pqBox : pqSc !== null ? pqSc : ghostPaarQuer(car);
         // ====================================================================================
         // BEIM UEBERHOLEN GILT EIN 2-STUFEN-MODELL
         // ====================================================================================
@@ -8959,7 +8994,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                          : (weiche2 !== 0 ? Math.sign(weiche2) : 0);
         // Auch hier hat der Boxenstopp Vorrang - siehe die Rail-Verzweigung darueber.
         const pqBox2 = pitQuer(car);
-        const pq2 = pqBox2 !== null ? pqBox2 : ghostPaarQuer(car);
+        const pqSc2 = pqBox2 === null ? scVorbeiQuer(car) : null;
+        const pq2 = pqBox2 !== null ? pqBox2 : pqSc2 !== null ? pqSc2 : ghostPaarQuer(car);
         if (pq2 !== null) {
           // Im Boxenstopp ERSETZT der Randversatz alles - auch den Lenkwinkel, mit dem
           // dieser Zweig beginnt. Ein Boxenstopp ist kein Zuschlag auf eine Kurvenfahrt.
