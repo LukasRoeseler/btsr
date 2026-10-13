@@ -2481,12 +2481,28 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (n < 3) { showHudToast(t('Erst eine Strecke laden')); return 0; }
     let zahl = 0;
     aufstellSpieler.clear();
+    // v1.0.29 GEMELDET: "Ein NPC ist bei der automatischen Aufstellung nicht losgefahren, bleibt
+    // einfach stehen, Lichter schwarz. Der andere ist sehr schoen an seine Stelle gefahren."
+    // Der Platz kam aus raceGridOrder, und die wird erst beim Start abgeglichen. Ein Auto, das
+    // seitdem dazukam (spaeter verbunden, oder die Rolle gewechselt - etwa vom Safety Car, das
+    // seit v1.0.28 keinen Startplatz hat, oder vom entfallenen Challenger), hatte dort keinen
+    // Platz (gridPosOf -1) und wurde STILL uebersprungen, obwohl der Startschirm es zeigte.
+    // Ohne Befehl blieben auch seine Lichter, wie sie waren. Jetzt zuerst abgleichen, und jedes
+    // Ueberspringen steht im Log.
+    if (typeof syncRaceGridOrder === 'function') syncRaceGridOrder();
     for (const car of raceGridCars()) {
       const platz = gridPosOf(car);
-      if (platz < 0) continue;
+      if (platz < 0) { log(garageLabel(car) + ': kein Startplatz, faehrt nicht mit auf.', 'info'); continue; }
       const ziel = aufstellZielKachel(platz, n);
-      const o = car.ghost ? ghostOrt(car) : null;
-      if (o !== null && Math.floor(o) === ziel) continue;     // steht schon
+      // "Steht schon" nur mit FRISCHER Ortung: ein angehaltener NPC behaelt seinen letzten Ort,
+      // auch wenn er seitdem von Hand woandershin gestellt wurde.
+      const frisch = !!(car.ghost && car.lastCodeAt && Date.now() - car.lastCodeAt < AUFSTELL_ORT_FRISCH_MS
+                        && car.ghost.ortAngewandt);
+      const o = car.ghost && frisch ? ghostOrt(car) : null;
+      if (o !== null && Math.floor(o) === ziel) {
+        log(garageLabel(car) + ': steht schon auf Startplatz ' + (platz + 1) + '.', 'info');
+        continue;
+      }
       if (spielerNrVon(car) >= 1) {
         aufstellSpieler.set(car, { ziel, seit: Date.now(), fertig: false });
         zahl++;
@@ -2529,6 +2545,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return false;
   }
   const AUFSTELL_HALT_MS = 800;
+  const AUFSTELL_ORT_FRISCH_MS = 3000;
   const AUFSTELL_GERADE_MS = 500;
   // v1.0.28 GEMELDET: "In der automatischen Aufstellung fahren die Autos zum Teil so langsam,
   // dass sie fast den Kontakt verlieren." Die Scan-Anteile (0,6/0,4) waren zu wenig - beim Scan
@@ -4267,7 +4284,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // liest - darunter parkt es sich selbst, und dafuer gibt es dort schon eine Pruefung.
   function pitZiel(car) {
     const rh = car.ghost && car.ghost.randHalt;
-    if (rh) return rh.phase === 'rand' ? rh.tempo : 0;
+    if (rh) return rh.phase === 'rand' ? rh.tempo : rh.phase === 'rad' ? rh.tempo * RANDHALT_RAD_TEMPO : 0;
     const p = car.ghost && car.ghost.pit;
     if (!p) return null;
     // 'rand' faehrt weiter - das ist der Sinn der Phase: eine Sekunde am Rand ROLLEN,
@@ -4476,13 +4493,26 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // ('halt'), dann stopGhost() und `fertig`. Die Aufstellung beginnt direkt mit 'halt' - sie
   // faehrt die letzten zwei Kacheln schon mit voller Breite (aufstellBreite).
   const RANDHALT_MAX_ZUSATZ_MS = 1500;   // laenger wartet 'rand' nicht auf die Querlage
+  const RANDHALT_RAD_TEMPO = 0.7;        // Anteil des Randtempos beim Einlenken am Rad
   function randHaltStarten(car, opt) {
     const g = car.ghost;
     if (!g) return;
     g.randHalt = { phase: opt.phase || 'rand', at: Date.now(), quer: opt.quer,
                    tempo: opt.tempo === undefined ? formationPace() : opt.tempo,
                    randMs: opt.randMs || 0, haltMs: opt.haltMs || PIT_BREMS_MS, fertig: opt.fertig || null,
-                   nachRandMs: opt.nachRandMs || 0, randErreicht: 0 };
+                   nachRandMs: opt.nachRandMs || 0, randErreicht: 0,
+                   radLenk: opt.radLenk || 0, radMs: opt.radMs || 0 };
+  }
+  // Nach der Randfahrt: mit radLenk erst noch mit eingeschlagenen Raedern an den Rand ('rad'),
+  // sonst gleich halten.
+  function randHaltWeiter(h, now) {
+    h.phase = h.radLenk ? 'rad' : 'halt';
+    h.at = now;
+  }
+  // Die Lenkung am Rad (ohne Spur-Bytes), solange 'rad' oder danach 'halt' laeuft - oder null.
+  function randHaltRadLenk(car) {
+    const h = car.ghost && car.ghost.randHalt;
+    return h && h.radLenk && (h.phase === 'rad' || h.phase === 'halt') ? h.radLenk : null;
   }
   function randHaltTick(car) {
     const g = car.ghost, h = g && g.randHalt;
@@ -4497,8 +4527,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (amRand && !h.randErreicht) h.randErreicht = now;
       const gerade = !h.nachRandMs || (h.randErreicht && now - h.randErreicht >= h.nachRandMs);
       if ((seit >= h.randMs && amRand && gerade) || seit >= h.randMs + h.nachRandMs + RANDHALT_MAX_ZUSATZ_MS) {
-        h.phase = 'halt'; h.at = now;
+        randHaltWeiter(h, now);
       }
+      return true;
+    }
+    if (h.phase === 'rad') {
+      if (now - h.at >= h.radMs) { h.phase = 'halt'; h.at = now; }
       return true;
     }
     if (now - h.at >= h.haltMs) {
@@ -4968,6 +5002,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // SC_RAND_KACHELN vor Start/Ziel nach rechts (safetyCarHeimTick) und haelt an der Linie.
   // Ohne bekannten Ort bleibt die alte Folge (2 s ab der Linie) als Rueckfall.
   const SC_RAND_KACHELN = 2, SC_RAND_WARTE_MS = 12000;
+  // v1.0.29 GEMELDET: "Das Safety Car steht nicht weit genug rechts, es muss weiter nach rechts."
+  // Die Querlage steht schon am Anschlag (FINISH_RAND = 1, mehr kann Byte 7 im Spurmodus nicht).
+  // Also zum Schluss ohne Spur-Bytes, mit den RAEDERN nach rechts eingeschlagen, langsam an den
+  // Rand rollen (SC_RAD_MS) und so auch halten.
+  const SC_RAD_LENK = 0.7, SC_RAD_MS = 700;
   function safetyCarFertig(c) {
     safetyCarLichtAus(c);
     log(garageLabel(c) + ': Safety Car steht rechts am Rand, Licht aus.', 'info');
@@ -4978,14 +5017,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!g || g.finish) return;
     if (g.randHalt) {
       if (g.randHalt.scLinie && g.randHalt.phase === 'rand') {
-        g.randHalt.phase = 'halt'; g.randHalt.at = Date.now();
+        randHaltWeiter(g.randHalt, Date.now());
         log(garageLabel(sc) + ': Safety Car an Start/Ziel, haelt rechts.', 'info');
       }
       return;
     }
     if (!g.scHeim) return;
     g.scHeim = false;
-    randHaltStarten(sc, { quer: FINISH_RAND, randMs: SC_RAND_MS, fertig: safetyCarFertig });
+    randHaltStarten(sc, { quer: FINISH_RAND, randMs: SC_RAND_MS, radLenk: SC_RAD_LENK, radMs: SC_RAD_MS, fertig: safetyCarFertig });
     log(garageLabel(sc) + ': Safety Car faehrt rechts ran.', 'info');
   }
   // Aus ghostTick: auf dem Heimweg vor Start/Ziel an den rechten Rand.
@@ -5003,7 +5042,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (rest === 0 || rest > SC_RAND_KACHELN) return;
     g.scHeim = false;
     g.scVorLinie = true;
-    randHaltStarten(car, { quer: FINISH_RAND, randMs: SC_RAND_WARTE_MS, fertig: safetyCarFertig });
+    randHaltStarten(car, { quer: FINISH_RAND, randMs: SC_RAND_WARTE_MS, radLenk: SC_RAD_LENK, radMs: SC_RAD_MS, fertig: safetyCarFertig });
     g.randHalt.scLinie = true;
     log(garageLabel(car) + ': Safety Car zieht vor Start/Ziel nach rechts.', 'info');
   }
@@ -9006,7 +9045,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // die Beschleunigung.
     const lenkAus = ghostQuerTestAn() ? ghostQuerTest
                   : ((armed && !offTrack) ? out.servoAngle : 0);
-    writeToCar(car, (armed && !offTrack) ? lenkAus : 0, drive, lights, car.modeBytes);
+    // v1.0.29: zum Abstellen (Safety Car) zuletzt mit eingeschlagenen Raedern, ohne Spur-Bytes.
+    const radLenk = randHaltRadLenk(car);
+    if (radLenk !== null) writeToCar(car, radLenk, drive, lights, null);
+    else writeToCar(car, (armed && !offTrack) ? lenkAus : 0, drive, lights, car.modeBytes);
   }
 
   // ---- ghostLeader() ist ENTFALLEN ---------------------------------------------------

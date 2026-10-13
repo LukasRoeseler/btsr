@@ -1622,6 +1622,9 @@
     raceGridWeiter = typeof weiter === 'function' ? weiter : null;
     const gs = $('race-gridscreen');
     if (!gs) { if (raceGridWeiter) raceGridWeiter(); return; }
+    // v1.0.29: die angezeigte Reihenfolge IST die Startreihenfolge - auch fuer Autos, die seit
+    // dem letzten Start dazukamen (sonst kennt sie die automatische Aufstellung nicht).
+    syncRaceGridOrder();
     raceGridZeilen($('grid-liste'));
     gridBildMalen();
     // v1.0.25: im Meisterschafts-Event steht oben, welches Event und nach welcher Regel aufgestellt wird.

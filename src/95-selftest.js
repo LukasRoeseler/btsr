@@ -18253,7 +18253,11 @@
       h.at = Date.now() - 1000; randHaltTick(sc);
       if (h.phase !== 'rand') f.push('nach 1 s schon ' + h.phase + ' (bestellt: 2 s am Rand)');
       h.at = Date.now() - SC_RAND_MS - 10; randHaltTick(sc);
-      if (h.phase !== 'halt') f.push('nach 2 s nicht in halt');
+      // v1.0.29: danach mit eingeschlagenen Raedern weiter an den Rand, dann halten.
+      if (h.phase !== 'rad' || !(randHaltRadLenk(sc) > 0)) f.push('nach 2 s nicht mit Radeinschlag rechts (' + h.phase + ')');
+      h.at = Date.now() - SC_RAD_MS - 10; randHaltTick(sc);
+      if (h.phase !== 'halt') f.push('nach dem Einlenken nicht in halt');
+      if (!(randHaltRadLenk(sc) > 0)) f.push('haelt ohne Radeinschlag');
       if (pitZiel(sc) !== 0) f.push('halt mit Zieltempo ' + pitZiel(sc));
       h.at = Date.now() - h.haltMs - 10; randHaltTick(sc);
       if (sc.ghost.running) f.push('steht danach nicht');
@@ -18353,13 +18357,13 @@
         if (pitQuer(sc) !== FINISH_RAND) f.push('nicht ganz rechts: ' + pitQuer(sc));
         sc.ghost.tileIndex = 0;
         safetyCarHeimTick(sc);
-        if (h.phase !== 'halt') f.push('an der Linie nicht angehalten (' + h.phase + ')');
+        if (h.phase !== 'rad') f.push('an der Linie nicht eingelenkt (' + h.phase + ')');
       }
     } finally {
       currentTrackTiles = merk.tiles;
       garage.length = 0; merk.garage.forEach((c) => garage.push(c));
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'rechts ab ' + SC_RAND_KACHELN + ' Kacheln vor der Linie, haelt an der Linie' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'rechts ab ' + SC_RAND_KACHELN + ' Kacheln vor der Linie, an der Linie Raeder rechts, dann halten' };
   });
 
   stAdd('Telemetrie v1.0.28: alle Runden der Fahrt waehlbar, A und B nicht dieselbe Runde', () => {
@@ -18395,6 +18399,30 @@
       if ($('tele-inhalt')) $('tele-inhalt').innerHTML = '';
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : '4 Runden + beste, A = Runde vor der besten, neue Fahrt ersetzt' };
+  });
+
+  // ---- v1.0.29: Aufstellung startet auch Autos, die seit dem letzten Start dazukamen ----
+  stAdd('Aufstellung v1.0.29: auch ein Auto ausserhalb der alten Startreihenfolge faehrt los', () => {
+    const f = [];
+    const merk = { garage: garage.slice(), tiles: currentTrackTiles, rgo: raceGridOrder, start: startGhost };
+    const gestartet = [];
+    try {
+      currentTrackTiles = codeToTrack('SG4R4G4').tiles;
+      const a = { device: { id: 'aa' }, role: 'ghost', tag: 'A' }, b = { device: { id: 'bb' }, role: 'ghost', tag: 'B' };
+      const sc = { device: { id: 'sc' }, role: 'safetycar', tag: 'SC' };
+      garage.length = 0; garage.push(a, sc, b);
+      raceGridOrder = ['aa', 'sc'];                 // B kam spaeter dazu, SC war noch drin
+      startGhost = (c) => { gestartet.push(c.tag); c.ghost = { running: true }; };
+      aufstellenStarten();
+      if (gestartet.join() !== 'A,B') f.push('gestartet: ' + gestartet.join());
+      if (!b.ghost || b.ghost.aufstellZiel === undefined || b.ghost.aufstellZiel === null) f.push('B ohne Startplatz');
+      if (gridPosOf(sc) >= 0) f.push('Safety Car hat einen Startplatz');
+    } finally {
+      clearTimeout(aufstellenTimer);
+      startGhost = merk.start; raceGridOrder = merk.rgo; currentTrackTiles = merk.tiles;
+      garage.length = 0; merk.garage.forEach((c) => garage.push(c));
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'beide NPCs fahren los, Safety Car ohne Platz' };
   });
 
   stAdd('Telemetrie-Seite: Karte, Balken und Tempo aus zwei Runden, Rundenweg steigt', () => {
