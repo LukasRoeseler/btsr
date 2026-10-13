@@ -421,13 +421,11 @@
      RGB-Versatz. Die Farbkanaele liegen ueber (--gl-o) und unter (--gl-u) dem Buchstaben statt
      daneben; senkrechte Streifen springen kurz nach oben bzw. unten. In em, damit es bei jeder
      Titelgroesse gleich aussieht. */
+  /* v1.0.24 BESTELLT: "Glitch-Effekt nur beim Omega im Hintergrund und das Logo ansonsten wie
+     in der Vorschau im Vorschlag 2." Der Schriftzug steht ruhig: Cyan darueber, Rot darunter,
+     ohne springende Streifen - die springen nur noch im Omega (.home-omega, gl-v-a/b). */
   .gl-b { position: relative; display: inline-block;
-    text-shadow: 0 -.05em 0 var(--gl-o), 0 .05em 0 var(--gl-u); }
-  .gl-b::before, .gl-b::after { content: attr(data-t); position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; }
-  .gl-b::before { color: var(--gl-o); clip-path: inset(0 52% 0 0); transform: translateY(-.06em);
-    animation: gl-v-a 3s steps(1) infinite; animation-delay: var(--gl-d, 0s); }
-  .gl-b::after { color: var(--gl-u); clip-path: inset(0 0 0 55%); transform: translateY(.06em);
-    animation: gl-v-b 2.6s steps(1) infinite; animation-delay: var(--gl-e, 0s); }
+    text-shadow: 0 -.055em 0 var(--glitch-c), 0 .055em 0 var(--glitch-r); }
   @keyframes gl-v-a {
     0%, 84%, 100% { transform: translateY(-.06em); clip-path: inset(0 52% 0 0); }
     87% { transform: translateY(.12em); clip-path: inset(0 25% 0 30%); }
@@ -4675,7 +4673,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.23</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.24</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5805,6 +5803,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Titelschirm: Der Schriftzug steht jetzt ruhig &#8211; Cyan &#252;ber, Rot unter jedem Buchstaben, ohne springende Streifen. Der Glitch l&#228;uft nur noch im Omega dahinter.</li>
         <li>Titelschirm: neuer Glitch-Effekt &#8211; die Farbkan&#228;le liegen &#252;ber und unter den Buchstaben statt daneben, und einzelne senkrechte Streifen springen kurz nach oben oder unten. Das Omega im Hintergrund ist deutlicher, rund statt langgezogen, passt auf den Bildschirm und glitcht genauso.</li>
         <li>Neues Fahrgef&#252;hl RC (auch f&#252;r Spielerautos, in FAHREN, Garage, Cockpit und Meisterschaft): wie Arcade, nur viel extremer &#8211; der Stick geht direkt ans Auto wie bei einer Fernsteuerung, Gas weg l&#228;uft aus, zweimal Bremse im Stand f&#228;hrt r&#252;ckw&#228;rts. Der Steuerungsmodus h&#228;ngt jetzt am Fahrgef&#252;hl; die Einstellung Steuerungsmodus und die Pacejka-Regler sind ausgeblendet. NPC-Motor w&#228;hlbar: Vorgabe unter Optionen &#8250; Ton, je NPC in der Garage. Renntypen in der Reihenfolge Training, Time Attack, Qualifying, Runden, Endurance, NPC Knockout, Demolition Derby, Time Attack mit eigenem Kachelbild. Meisterschaft: Event fr&#252;her/sp&#228;ter nur mit &#9650;/&#9660;, L&#246;schen als rote M&#252;lltonne, das Schlie&#223;en-Kreuz steht links und ist gr&#246;&#223;er, die Zur&#252;ck-Taste schlie&#223;t auch. WLAN-Mehrspieler: Android-App zuerst, beide Kacheln gr&#246;&#223;er. Die dunklen Fl&#228;chen zwischen den Kacheln sind durchsichtiger. Lange Motornamen (Holden, Murci&#233;lago) brechen um. Renneinstellungen &#8250; Ergebnisse zeigt vor dem ersten Rennen einen Hinweis.</li>
         <li>Challenger (experimentell): neue Garagenrolle, nur beim Fahren auf der Bahn. Ein echtes Auto f&#228;hrt gegen dich, auch in Time Attack. Drei Modi (Renneinstellungen oder Time-Attack-Startschirm): Gegen meine Bestzeit &#8211; er f&#228;hrt deine beste aufgezeichnete Runde dieser Strecke Teil f&#252;r Teil nach; Gegen den Rekord &#8211; die Runde der Online-Bestzeit der Challenge bzw. Community-Strecke; Gummiband &#8211; er bleibt ungef&#228;hr auf deiner H&#246;he, vorn langsamer, hinten schneller. Kurven und Haarnadeln f&#228;hrt er wie die NPCs gedrosselt, unter Gelb gelten die Gelb-Regeln. Ein wei&#223;er Punkt auf der Karte zeigt, wo die nachgefahrene Runde gerade ist; ohne passende Runde f&#228;hrt er Gummiband.</li>
