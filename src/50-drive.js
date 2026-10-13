@@ -2737,6 +2737,18 @@
       // Breite, damit das Auto von selbst auf die Seite seines Startplatzes faellt.
       const lenk = typeof formationDriverOffset === 'function'
         ? formationDriverOffset(meinAuto, aufstellenSpielerBreite(meinAuto)) : 0;
+      // v1.0.28: angekommen erst langsam auf der Seite weiter, damit das Auto gerade steht
+      // (aufstellenSpielerAusrichten, 90-ghosts.js), dann halten.
+      if (aufstellenSpielerAngekommen(meinAuto) && typeof aufstellenSpielerAusrichten === 'function'
+          && aufstellenSpielerAusrichten(meinAuto)) {
+        const platzR = typeof gridPosOf === 'function' ? gridPosOf(meinAuto) : -1;
+        const seiteR = platzR >= 0 ? (platzR % 2 ? -1 : 1) * GHOST_GRID_MAX : lenk;
+        const vR = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
+        const dtR = Math.max(0.01, Math.min(0.25, (Date.now() - (regler.at || Date.now())) / 1000));
+        regler.at = Date.now();
+        const gR = ghostSpeedControl(regler, formationPace() * AUFSTELL_GERADE_TEMPO, vR, dtR);
+        return { grund: 'aufstellen', throttle: gR.throttle, brake: gR.brake, steer: seiteR, lenkt: !abseitsJetztFuer(wer || 1) };
+      }
       if (aufstellenSpielerAngekommen(meinAuto)) {
         // v1.0.25 GEMELDET: "die Querlage beim Stehenbleiben passt nicht." Hier stand
         // steer 0 und lenkt false: im Bremsen kam der Stick des Fahrers (meist 0 = Mitte)
@@ -2791,7 +2803,9 @@
     // v1.0.12: unter Gelb mit Safety Car erst ~45 % zum Aufschliessen (gelbZielFuer).
     const ziel = (grund === 'formation' ? formationPace()
       : (typeof gelbZielFuer === 'function' ? gelbZielFuer(meinAuto) : Math.max(yellowFactor(), GHOST_READ_MIN)))
-      * autopilotKurvenFaktor(meinAuto);
+      * autopilotKurvenFaktor(meinAuto)
+      // v1.0.28: unter Gelb Abstand zum Vordermann, wie die NPCs (gelbAbstandFaktor).
+      * (grund === 'yellow' && typeof gelbAbstandFaktor === 'function' ? gelbAbstandFaktor(meinAuto) : 1);
     const v = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
     const dtA = Math.max(0.01, Math.min(0.25,
       (Date.now() - (regler.at || Date.now())) / 1000));

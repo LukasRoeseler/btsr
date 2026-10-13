@@ -39,14 +39,29 @@
   }
   // Auswahlwerte sind "fahrer|beste" oder "fahrer|letzte"; ein blosses "beste"/"letzte" meint
   // den eigenen (ersten nicht fremden) Fahrer.
-  function teleWahlAufloesen(v, fahrer) {
+  // v1.0.28: "letzte" meint mit gemerkter Fahrt deren letzte Runde - und ist die zugleich die
+  // beste, die davor, damit A und B nicht dieselbe Runde zeigen (GEMELDET: "es wird nur
+  // letzte = beste Runde angezeigt").
+  function teleWahlAufloesen(v, fahrer, e) {
     if (String(v).indexOf('|') >= 0) return v;
     const ich = fahrer.find((w) => w.indexOf('fremd:') !== 0) || fahrer[0];
+    const f = e && e.fahrer[ich];
+    const runden = f && f.fahrt ? f.fahrt.runden : null;
+    if (v === 'letzte' && runden && runden.length) {
+      let j = runden.length - 1;
+      const gleich = (a, b) => a && b && a.ms === b.ms && a.datum === b.datum;
+      if (j > 0 && gleich(runden[j], f.beste)) j--;
+      return ich + '|r' + j;
+    }
     return ich + '|' + v;
   }
   function teleWahlSpur(e, v) {
     const [w, art] = String(v).split('|');
-    return e.fahrer[w] ? e.fahrer[w][art] || null : null;
+    const f = e.fahrer[w];
+    if (!f) return null;
+    const m = /^r(\d+)$/.exec(art || '');
+    if (m) return f.fahrt && f.fahrt.runden[+m[1]] || null;
+    return f[art] || null;
   }
 
   // v1.0.25: Runden mit nicht gelesenen Teilen (70b-telemetrie.js) sagen, wie viele geschaetzt sind.
@@ -66,11 +81,19 @@
     if (strecken.indexOf(teleWahl.strecke) < 0) teleWahl.strecke = strecken[0];
     const e = d[teleWahl.strecke];
     const fahrer = Object.keys(e.fahrer);
-    const art = { beste: t('Beste Runde'), letzte: t('Letzte Runde') };
+    const art = { beste: t('Beste Runde (alle Fahrten)'), letzte: t('Letzte Runde') };
     // Alle Runden dieser Strecke: eigene beste/letzte je Fahrer, fremde (online) als Bestzeit.
     const optionen = [];
     fahrer.forEach((w) => {
-      ['beste', 'letzte'].forEach((a) => {
+      // v1.0.28: alle Runden der letzten Fahrt, dann die beste aller Fahrten.
+      const fw = e.fahrer[w];
+      const runden = fw.fahrt && fw.fahrt.runden && w.indexOf('fremd:') !== 0 ? fw.fahrt.runden : [];
+      runden.forEach((sp, j) => {
+        const best = fw.beste && sp.ms === fw.beste.ms && sp.datum === fw.beste.datum;
+        optionen.push([w + '|r' + j, (sp.runde ? t('Runde') + ' ' + sp.runde : t('Runde') + ' ' + (j + 1))
+          + (best ? ' · ' + t('Bestzeit') : '') + ' (' + formatLapTime(sp.ms) + ')']);
+      });
+      (runden.length ? ['beste'] : ['beste', 'letzte']).forEach((a) => {
         const sp = e.fahrer[w][a];
         if (!sp) return;
         const name = w.indexOf('fremd:') === 0 ? sp.auto + ' · ' + t('Bestzeit')
@@ -82,8 +105,8 @@
     // (A letzte, B beste eigene Runde), sonst die erste vorhandene.
     const gibt = (v) => optionen.some((o) => o[0] === v);
     ['a', 'b'].forEach((x) => {
-      let v = teleWahlAufloesen(teleWahl[x], fahrer);
-      if (!gibt(v)) v = teleWahlAufloesen(x === 'a' ? 'letzte' : 'beste', fahrer);
+      let v = teleWahlAufloesen(teleWahl[x], fahrer, e);
+      if (!gibt(v)) v = teleWahlAufloesen(x === 'a' ? 'letzte' : 'beste', fahrer, e);
       if (!gibt(v) && optionen.length) v = optionen[0][0];
       teleWahl[x] = v;
     });

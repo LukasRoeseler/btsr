@@ -3584,6 +3584,9 @@
     border: 1px solid var(--border); border-radius: 6px; margin-bottom: 6px;
     background: var(--panel); }
   .grid-row.dragging { opacity: .45; }
+  /* v1.0.27/28: wo der Startplatz liegt; das Safety Car steht abgesetzt unter der Liste. */
+  .grid-wo { color: var(--muted); font-size: .85em; margin-left: 6px; font-weight: 400; }
+  .grid-row.grid-sc { margin-top: 10px; border-style: dashed; opacity: .9; }
   .grid-row.over { border-color: var(--accent); border-style: dashed; }
   /* ---- AUTOS IN POSITION: Deckfenster vor dem Countdown -------------------------- */
   .gt3-gridschirm { position: absolute; inset: 0; z-index: 10; display: flex;
@@ -4673,7 +4676,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.27</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.28</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5803,6 +5806,11 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Challenger und NPC zusammengelegt (WIP): Die Garagenrolle &#8222;Challenger&#8220; gibt es nicht mehr. In Time Attack auf der Bahn fahren jetzt alle NPCs als Challenger (gegen deine Bestzeit, gegen den Rekord oder Gummiband, in den Renneinstellungen und am Startschirm w&#228;hlbar); im Gummiband h&#228;lt sich jeder NPC eine Kachel versetzt an dir. In allen anderen Modi fahren NPCs wie bisher.</li>
+        <li>Telemetrie (WIP): Gespeichert werden jetzt alle gewerteten Runden der letzten Fahrt auf einer Strecke, nicht nur die letzte und die beste. A und B lassen sich aus diesen Runden und der besten aller Fahrten w&#228;hlen; ist die letzte Runde zugleich die beste, zeigt A die davor.</li>
+        <li>Gelbe Flagge: Unter Gelb halten NPCs und dein Auto jetzt Abstand zum Vordermann (ab 1,5 Kacheln langsamer, dicht dahinter etwa halbes Gelb-Tempo) &#8211; kein Anschieben und kein &#220;berholen hinter dem Safety Car mehr. Dein Auto bekommt unter Autopilot au&#223;erdem keinen Akku-Ausgleich mehr, der es bei vollem Akku langsamer als die NPCs machte.</li>
+        <li>Safety Car (WIP): Es zieht schon zwei Kacheln vor Start/Ziel ganz nach rechts und h&#228;lt an der Linie, statt erst dahinter mitten auf der Bahn. In der Startaufstellung ist es kein Startplatz mehr, sondern steht separat unter der Liste.</li>
+        <li>Startaufstellung: Die Autos fahren nach dem Erreichen der Seite noch eine halbe Sekunde langsam weiter, damit sie gerade stehen und nicht schr&#228;g. Kurven und Haarnadeln wieder etwas schneller (90 % bzw. 80 % des Formationstempos), damit kein Auto den Kontakt zur Bahn verliert.</li>
         <li>Streckenscan: Das Spielerauto fuhr geradeaus statt &#252;ber die Bahn, sobald schon eine Strecke im Editor lag (die Spur-Bytes des Scans wurden im selben Takt wieder gel&#246;scht) &#8211; behoben. Mit dem Fahrgef&#252;hl RC griff au&#223;erdem der Autopilot gar nicht: kein Scan, keine Aufstellung, kein Gelb-Tempo. Jetzt rechnet er auch dort, solange er f&#228;hrt.</li>
         <li>Gelbe Flagge: Dein Auto f&#228;hrt jetzt genauso schnell wie die NPCs. Vorher lag der Tempofaktor des Fahrgef&#252;hls (1,1 bis 1,8) auch auf dem Autopiloten.</li>
         <li>Safety Car (WIP): Nach der gelben Phase f&#228;hrt es die letzten 2 s ganz rechts am Rand und h&#228;lt dort statt mitten auf der Bahn; geparkt ist das Licht aus. Nach einem Rempler startet es nach 1,5 s selbst neu, statt stehen zu bleiben. Boxenstopps fahren ebenfalls 2 s statt 1 s am Rand, bevor sie bremsen.</li>
@@ -8960,13 +8968,13 @@
           mit 35&nbsp;% weiter, in Kurven und Haarnadeln gedrosselt. Aus: alle sofort 35&nbsp;%.
           &Uuml;berholt wird unter Gelb nie.</small></div>
         <label class="tgl"><input type="checkbox" id="race-sc-aufschliessen" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Challenger<span class="wip-tag">experimentell</span><small>Ein
-          Auto mit der Garagenrolle &bdquo;Challenger&ldquo; f&auml;hrt gegen dich, nur auf der Bahn und
-          auch in Time Attack. Gegen meine Bestzeit: es f&auml;hrt deine beste aufgezeichnete Runde
-          dieser Strecke nach. Gegen den Rekord: die Runde der Online-Bestzeit der Challenge oder
-          Community-Strecke. Gummiband: es h&auml;lt sich ungef&auml;hr auf deiner H&ouml;he &ndash; vorn
-          langsamer, hinten schneller. Fehlt die Runde, f&auml;hrt es Gummiband. Auf der Karte zeigt
-          ein wei&szlig;er Punkt, wo die Runde gerade ist.</small></div>
+      <div class="opt-row"><div class="opt-label">Time Attack: NPCs als Challenger<span class="wip-tag">WIP</span><small>In
+          Time Attack auf der Bahn fahren alle NPCs als Challenger gegen dich. Gegen meine Bestzeit:
+          sie fahren deine beste aufgezeichnete Runde dieser Strecke nach, jeder ab seinem Startplatz.
+          Gegen den Rekord: die Runde der Online-Bestzeit der Challenge oder Community-Strecke.
+          Gummiband: sie halten sich ungef&auml;hr auf deiner H&ouml;he &ndash; vorn langsamer, hinten
+          schneller, mehrere NPCs je eine Kachel versetzt. Fehlt die Runde, fahren sie Gummiband. Auf
+          der Karte zeigt ein wei&szlig;er Punkt, wo die Runde gerade ist.</small></div>
         <select id="race-challenger">
           <option value="beste" selected>Gegen meine Bestzeit</option>
           <option value="rekord">Gegen den Rekord</option>

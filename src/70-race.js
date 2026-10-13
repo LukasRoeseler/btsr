@@ -729,7 +729,7 @@
   function carLapCrossed(car) {
     // v0.10.7: das Safety Car faehrt keine Runden - es wartet nur auf Start/Ziel nach Gruen.
     if (car.role === 'safetycar') {
-      if (car.ghost && car.ghost.scHeim && typeof safetyCarAbstellen === 'function') safetyCarAbstellen(car);
+      if (car.ghost && (car.ghost.scHeim || car.ghost.randHalt) && typeof safetyCarAbstellen === 'function') safetyCarAbstellen(car);
       return;
     }
     if (!car.race) car.race = { laps: [], lapStart: null, pending: null, seen: 0,
@@ -1186,7 +1186,7 @@
       const st = x.st, isBest = st.best === fastest;
       return `<tr>
         <td style="${td}">${i + 1}</td>
-        <td style="${td}">${ergDot(x.c)}${x.c.name}${x.c.role === 'ghost' ? ' <span class="muted">(NPC)</span>' : x.c.role === 'challenger' ? ' <span class="muted">(Challenger)</span>' : ''}${rammerLabel(x.c)}</td>
+        <td style="${td}">${ergDot(x.c)}${x.c.name}${x.c.role === 'ghost' ? ' <span class="muted">(NPC)</span>' : ''}${rammerLabel(x.c)}</td>
         <td style="${tdr}">${st.n}</td>
         <td style="${tdr}${isBest ? '; color:var(--good); font-weight:700' : ''}">${formatLapTime(st.best)}</td>
         <td style="${tdr}">${formatLapTime(Math.round(st.mean))}</td>
@@ -1500,8 +1500,11 @@
 
   // The grid is stored as device ids, not as indices into `garage`: cars connect and
   // disconnect between races, and an index would silently point at a different car.
+  // v1.0.28 BESTELLT: "Das Safety Car sollte bei der Startaufstellung nicht bei den zu
+  // sortierenden Autos sein, aber separat als Safety Car unter der Liste angezeigt werden."
+  // Es nimmt also keinen Startplatz ein (gridPosOf -1) und faehrt nicht mit auf.
   function raceGridCars() {
-    const byId = new Map(garage.map(c => [String(c.device.id), c]));
+    const byId = new Map(garage.filter(c => c.role !== 'safetycar').map(c => [String(c.device.id), c]));
     const ordered = [];
     raceGridOrder.forEach(id => { const c = byId.get(id); if (c) { ordered.push(c); byId.delete(id); } });
     byId.forEach(c => ordered.push(c));   // newly connected cars join at the back
@@ -1570,6 +1573,14 @@
       });
       host.appendChild(row);
     });
+    const sc = garage.find(c => c.role === 'safetycar' && c.device);
+    if (sc) {
+      const row = document.createElement('div');
+      row.className = 'grid-row grid-sc';
+      row.innerHTML = `<span class="grid-pos">SC</span>`
+        + `<span class="grid-name">${carDot(sc)}${garageLabel(sc)} <small class="grid-wo">${t('Safety Car · steht rechts am Rand, fährt bei Gelb')}</small></span>`;
+      host.appendChild(row);
+    }
   }
 
   function renderRaceGrid() {
@@ -1799,9 +1810,10 @@
     }
     // v1.0.21: zur Telemetrie dieser Strecke, sobald es eine aufgezeichnete Runde gibt.
     // v1.0.21: steht ein Challenger in der Garage, hier auch sein Modus.
+    // v1.0.28: alle NPCs fahren in Time Attack als Challenger.
     if (typeof challenger === 'function' && challenger()) {
       const m = typeof challengerModus === 'function' ? challengerModus() : 'beste';
-      h += '<div class="ta-kopf">Challenger</div><select class="ta-challenger">'
+      h += '<div class="ta-kopf">' + esc(t('NPCs als Challenger')) + '</div><select class="ta-challenger">'
         + [['beste', t('Gegen meine Bestzeit')], ['rekord', t('Gegen den Rekord')], ['gummiband', t('Gummiband')]]
           .map(([v, txt]) => '<option value="' + v + '"' + (v === m ? ' selected' : '') + '>' + esc(txt) + '</option>').join('')
         + '</select>';
@@ -2233,11 +2245,6 @@
       // auch fuer den Abbruch, und die Ghosts rollten noch ein paar Kacheln weiter.
       if (!willAuslaufen) { stopGhost(c); return; }
       finishGhost(c);
-    });
-    // v1.0.21: der Challenger rollt aus (Zielflagge) bzw. haelt sofort (Abbruch).
-    garage.forEach(c => {
-      if (c.role !== 'challenger' || !c.ghost || !c.ghost.running || c.ghost.finish) return;
-      if (willAuslaufen) finishGhost(c); else stopGhost(c);
     });
     if (willAuslaufen && garage.some(c => c.role === 'ghost' && c.ghost && c.ghost.auslauf)) {
       showHudToast(t('NPCs fahren die Runde zu Ende'));

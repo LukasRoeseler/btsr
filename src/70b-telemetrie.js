@@ -127,7 +127,7 @@
     teleLauf = null;
     // Je Runde des Rennens eine Stelle, damit der Upload die Spur der schnellsten findet.
     const i = typeof raceLapTimes !== 'undefined' ? raceLapTimes.length - 1 : -1;
-    if (i === 0) { teleRennSpuren = []; teleSitzung = { gespeichert: 0, geschaetzt: 0, verworfen: 0 }; }
+    if (i === 0) { teleRennSpuren = []; teleSitzung = { gespeichert: 0, geschaetzt: 0, verworfen: 0 }; teleFahrtId = Date.now(); }
     if (i >= 0) teleRennSpuren[i] = null;
     if (!l || l.start !== start) return null;
     const tiles = currentTrackTiles;
@@ -149,6 +149,7 @@
     }
     spur.proben = pr;
     spur.datum = Date.now();
+    spur.runde = i + 1;
     spur.auto = typeof playerCar !== 'undefined' && playerCar ? garageLabel(playerCar) : '';
     if (i >= 0) teleRennSpuren[i] = spur;
     if (gewertet) teleMerken(spur, typeof playerCar !== 'undefined' ? playerCar : null);
@@ -183,6 +184,14 @@
       try { localStorage.setItem(TELE_STORE, JSON.stringify(d)); } catch (e2) { /* aufgegeben */ }
     }
   }
+  var teleFahrtId = 0;                 // eine Fahrt = ein Rennen/Time Attack, gesetzt bei Runde 1
+  var TELE_FAHRT_MAX = 30;             // so viele Runden einer Fahrt
+  function teleDuenn(spur, max) {
+    const pr = spur.proben || [];
+    if (pr.length <= max) return spur;
+    const k = pr.length / max;
+    return Object.assign({}, spur, { proben: Array.from({ length: max }, (_, j) => pr[Math.floor(j * k)]) });
+  }
   function teleWer(car) { return car && car.device ? String(car.device.id) : 'spieler1'; }
   // Beste und letzte Spur je Strecke (gespiegelt = gleich, wie Time Attack) und Fahrer.
   function teleMerken(spur, car) {
@@ -193,6 +202,17 @@
     e.datum = Date.now();
     const f = e.fahrer[teleWer(car)] || (e.fahrer[teleWer(car)] = {});
     f.letzte = spur;
+    // v1.0.28 GEMELDET: "In der Telemetrie wird nur letzte = beste Runde angezeigt." Gemerkt
+    // waren nur diese zwei. Jetzt dazu ALLE gewerteten Runden der letzten Fahrt auf dieser
+    // Strecke (f.fahrt), mit ausgeduennten Proben; die Fahrten anderer Strecken werden dabei
+    // geloescht - der Speicher reicht nicht fuer alle Runden aller Strecken.
+    if (!f.fahrt || f.fahrt.id !== teleFahrtId) f.fahrt = { id: teleFahrtId, runden: [] };
+    f.fahrt.runden.push(teleDuenn(spur, TELE_UPLOAD_PROBEN));
+    if (f.fahrt.runden.length > TELE_FAHRT_MAX) f.fahrt.runden.shift();
+    Object.keys(d).forEach((x) => {
+      if (x === k || !d[x].fahrer) return;
+      Object.values(d[x].fahrer).forEach((ff) => { if (ff) delete ff.fahrt; });
+    });
     if (!f.beste || spur.ms < f.beste.ms) f.beste = spur;
     const alle = Object.keys(d);
     if (alle.length > TELE_STRECKEN_MAX) {

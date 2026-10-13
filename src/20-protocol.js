@@ -270,7 +270,9 @@
     const apFaehrt = overrideThrottle !== undefined && typeof autopilotGreiftFuer === 'function'
       && autopilotGreiftFuer(1);
     if (throttle > 0 && !apFaehrt) throttle *= topSpeedScale;
-    throttle *= batteryCompensationScale();
+    // v1.0.28: unter Autopilot auch ohne Akku-Ausgleich - den haben die NPCs nicht, und er nimmt
+    // bei vollem Akku Gas weg (GEMELDET: "bei gelber Flagge ist mein Auto langsamer als der NPC").
+    if (!apFaehrt) throttle *= batteryCompensationScale();
     // NUR den Verbrauch zaehlen. Die Drosselung sitzt in physicsStep(), also vor der
     // Physik - sonst zeigt der Tacho die Simulation und das Auto bekommt weniger.
     fuelTankTick(throttle);
@@ -576,7 +578,7 @@
     //                             Rennen ungleich schnell, ohne dass man den Grund sieht.
     // Unter Autopilot ungestreckt, wie bei Auto 1 (sendControlValue).
     if (throttle > 0 && !(typeof autopilotGreiftFuer === 'function' && autopilotGreiftFuer(z.nr))) throttle *= topSpeedScale;
-    throttle *= batteryCompensationScale();
+    if (!(typeof autopilotGreiftFuer === 'function' && autopilotGreiftFuer(z.nr))) throttle *= batteryCompensationScale();
     // Kein Drift-Gegenlenken fuer Auto 2 (v0.9.15): driftGegenlenken liest den Kreisel und das
     // Tempo von AUTO 1 - fuer Auto 2 lenkte es also nach den Daten des falschen Autos.
     // ---- MIT VORAUSBLICK, seit v0.6.46 ---------------------------------------------

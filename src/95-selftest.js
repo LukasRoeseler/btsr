@@ -13558,7 +13558,7 @@
     if (!window.OMEGA_TEST || !OMEGA_TEST.garagenZeileProbe) {
       return { skip: true, mass: 'garagenZeileProbe nicht vorhanden' };
     }
-    const SOLL = ['player', 'player2', 'player3', 'safetycar', 'challenger', 'ghost', 'none'];
+    const SOLL = ['player', 'player2', 'player3', 'safetycar', 'ghost', 'none'];
     const aus = OMEGA_TEST.garagenZeileProbe({ zwei: false });
     const an = OMEGA_TEST.garagenZeileProbe({ zwei: true, role: 'player2' });
     const maengel = [];
@@ -17202,6 +17202,11 @@
       const rb = autopilot(0.8, 1);
       if (!rb || rb.throttle !== 0 || !(rb.brake >= 0.8)) f.push('Fahrerbremse wird ueberstimmt');
       aufstellSpieler.get(auto).fertig = true;
+      // v1.0.28: erst noch kurz auf der Seite weiter, damit es gerade steht.
+      physEngine.state.speedKmh = 0;
+      const roll = autopilot(0, 1);
+      if (!roll || !(roll.throttle > 0) || roll.brake === 1) f.push('rollt nach dem Ankommen nicht kurz weiter (gerade ziehen)');
+      aufstellSpieler.get(auto).geradeBis = Date.now() - 1;
       const h = autopilot(0, 1);
       if (!h || h.throttle !== 0 || h.brake !== 1) f.push('am Startplatz nicht gehalten');
       aufstellenStoppen(false);
@@ -18281,9 +18286,9 @@
       const g = aufstellTempo(gerade), v = aufstellTempo(vorHaar), h = aufstellTempo(inHaar);
       if (hi > 3 && Math.abs(g - formationPace()) > 1e-9) f.push('Gerade ' + g);
       if (!(v < formationPace() - 1e-9)) f.push('vor der Haarnadel nicht langsamer: ' + v);
-      if (Math.abs(h - formationPace() * SCAN_TEMPO_HAARNADEL) > 1e-9) f.push('Haarnadel ' + h);
+      if (Math.abs(h - formationPace() * AUFSTELL_HAARNADEL) > 1e-9) f.push('Haarnadel ' + h);
     } finally { currentTrackTiles = merk.tiles; }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gerade Formationstempo, Haarnadel wie beim Scan' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gerade Formationstempo, Kurve 90 %, Haarnadel 80 %' };
   });
 
   // ---- v1.0.25: Zusammenfassung am Ende von Time Attack ----
@@ -18304,6 +18309,92 @@
       currentTrackTiles = merk.tiles; raceLapTimes = merk.laps; raceMode = merk.mode; bestzeitVorher = merk.vor;
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Runden, beste Runde, Vergleich, Schnitt, Telemetrie' };
+  });
+
+  // ---- v1.0.28: Abstand unter Gelb, Safety Car haelt an Start/Ziel, Telemetrie je Runde ----
+  stAdd('Gelb v1.0.28: Abstand zum Vordermann auf der Runde (NPC und Fahrerauto)', () => {
+    const f = [];
+    const merk = { tiles: currentTrackTiles, ort: ghostOrt, feld: ghostFieldRacing };
+    try {
+      currentTrackTiles = codeToTrack('SG4R4G4').tiles;
+      const n = currentTrackTiles.length;
+      const ich = { role: 'player', _o: 2 }, vorn = { role: 'ghost', _o: 2.3 };
+      ghostOrt = (c) => (c._o === undefined ? null : c._o);
+      ghostFieldRacing = () => [ich, vorn];
+      if (Math.abs(gelbAbstandFaktor(ich) - GELB_ABSTAND_BODEN) > 1e-9) f.push('dicht dahinter nicht gedrosselt: ' + gelbAbstandFaktor(ich));
+      if (gelbAbstandFaktor(vorn) !== 1) f.push('der Vordere wird gedrosselt');
+      vorn._o = 2 + GELB_ABSTAND_VOLL + 0.1;
+      if (gelbAbstandFaktor(ich) !== 1) f.push('mit Abstand trotzdem gedrosselt');
+      vorn._o = 3;
+      const mitte = gelbAbstandFaktor(ich);
+      if (!(mitte > GELB_ABSTAND_BODEN && mitte < 1)) f.push('Zwischenbereich ' + mitte);
+      // Ueber die Ziellinie gewickelt: ich auf n-0.2, vorn auf 0.1.
+      ich._o = n - 0.2; vorn._o = 0.1;
+      if (Math.abs(gelbAbstandFaktor(ich) - GELB_ABSTAND_BODEN) > 1e-9) f.push('ueber Start/Ziel nicht erkannt');
+    } finally { currentTrackTiles = merk.tiles; ghostOrt = merk.ort; ghostFieldRacing = merk.feld; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'dicht dahinter Boden, mit Abstand voll, ueber die Linie gewickelt' };
+  });
+
+  stAdd('Safety Car v1.0.28: zieht vor Start/Ziel nach rechts und haelt an der Linie', () => {
+    const f = [];
+    const merk = { tiles: currentTrackTiles, garage: garage.slice() };
+    const sc = { device: { id: 'sc28' }, role: 'safetycar', tag: 'SC', rx: {}, testSenke: [], ghost: { running: true, scHeim: true, tileIndex: 1 } };
+    try {
+      currentTrackTiles = codeToTrack('SG4R4G4').tiles;
+      const n = currentTrackTiles.length;
+      garage.length = 0; garage.push(sc);
+      safetyCarHeimTick(sc);
+      if (sc.ghost.randHalt) f.push('weit vor der Linie schon am Rand');
+      sc.ghost.tileIndex = n - 1;
+      safetyCarHeimTick(sc);
+      const h = sc.ghost.randHalt;
+      if (!h || h.phase !== 'rand' || !h.scLinie) f.push('vor der Linie nicht nach rechts');
+      else {
+        if (pitQuer(sc) !== FINISH_RAND) f.push('nicht ganz rechts: ' + pitQuer(sc));
+        sc.ghost.tileIndex = 0;
+        safetyCarHeimTick(sc);
+        if (h.phase !== 'halt') f.push('an der Linie nicht angehalten (' + h.phase + ')');
+      }
+    } finally {
+      currentTrackTiles = merk.tiles;
+      garage.length = 0; merk.garage.forEach((c) => garage.push(c));
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'rechts ab ' + SC_RAND_KACHELN + ' Kacheln vor der Linie, haelt an der Linie' };
+  });
+
+  stAdd('Telemetrie v1.0.28: alle Runden der Fahrt waehlbar, A und B nicht dieselbe Runde', () => {
+    const f = [];
+    const tiles = codeToTrack('SG4R4G4').tiles, n = tiles.length;
+    const merk = { tiles: currentTrackTiles, st: localStorage.getItem(TELE_STORE), fid: teleFahrtId, wahl: Object.assign({}, teleWahl) };
+    try {
+      localStorage.removeItem(TELE_STORE);
+      currentTrackTiles = tiles; teleFahrtId = 4711;
+      const code = trackToCode(tiles, 0);
+      const spur = (ms, r) => ({ v: 1, code, n, ms, teile: Array.from({ length: n }, (_, k) => Math.round(k * ms / n)), proben: [], datum: 1000 + r, runde: r });
+      [9000, 8000, 8500, 7800].forEach((ms, j) => teleMerken(spur(ms, j + 1), null));
+      const e = teleLesen()[bestzeitSchluessel(tiles)];
+      const fw = e && e.fahrer.spieler1;
+      if (!fw || !fw.fahrt || fw.fahrt.runden.length !== 4) f.push('Runden der Fahrt: ' + (fw && fw.fahrt ? fw.fahrt.runden.length : 'keine'));
+      teleWahl = { strecke: null, a: 'letzte', b: 'beste' };
+      if ($('tele-inhalt')) {
+        teleSeiteZeichnen();
+        const sel = $('tele-inhalt').querySelectorAll('select');   // Strecke, A, B
+        const a = sel[1], b = sel[2];
+        if (!a || a.options.length < 5) f.push('Auswahl hat ' + (a ? a.options.length : 0) + ' Eintraege statt 4 Runden + beste');
+        if (a && b && a.value === b.value) f.push('A und B zeigen dieselbe Runde');
+        if (a && a.value !== 'spieler1|r2') f.push('A ist ' + (a && a.value) + ' statt der Runde vor der besten letzten');
+      }
+      // Eine neue Fahrt ersetzt die Runden der alten.
+      teleFahrtId = 4712;
+      teleMerken(spur(8800, 1), null);
+      const fw2 = teleLesen()[bestzeitSchluessel(tiles)].fahrer.spieler1;
+      if (fw2.fahrt.runden.length !== 1 || fw2.beste.ms !== 7800) f.push('neue Fahrt: ' + fw2.fahrt.runden.length + ' Runden, beste ' + fw2.beste.ms);
+    } finally {
+      currentTrackTiles = merk.tiles; teleFahrtId = merk.fid; teleWahl = merk.wahl;
+      if (merk.st === null) localStorage.removeItem(TELE_STORE); else localStorage.setItem(TELE_STORE, merk.st);
+      if ($('tele-inhalt')) $('tele-inhalt').innerHTML = '';
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '4 Runden + beste, A = Runde vor der besten, neue Fahrt ersetzt' };
   });
 
   stAdd('Telemetrie-Seite: Karte, Balken und Tempo aus zwei Runden, Rundenweg steigt', () => {
@@ -18388,23 +18479,35 @@
   });
 
   // ---- v1.0.21: Challenger (90d-challenger.js) ----
-  stAdd('Challenger: eine Rolle nur auf der Bahn, folgt Spur oder dir, Takt, Soll-Punkt', () => {
+  stAdd('Challenger: alle NPCs in Time Attack, folgt Spur oder dir, Takt, Soll-Punkt', () => {
     const f = [];
     const merk = { garage: garage.slice(), tm: trackMode, rs: raceState, fl: flagState, form: raceFormationLap,
                    start: raceStartedAt, tiles: currentTrackTiles, ort: ghostOrtGes, ort1: ghostOrt, pc: playerCar };
     try {
       currentTrackTiles = codeToTrack('SG2H2G2J2').tiles;
       const n = currentTrackTiles.length;
-      const ch = { device: { id: 'ch' }, role: 'challenger', tag: 'CH', tileCode: TILE_TYPE.STRAIGHT, _ort: 0,
+      const ch = { device: { id: 'ch' }, role: 'ghost', tag: 'CH', tileCode: TILE_TYPE.STRAIGHT, _ort: 0,
                    ghost: { running: true, tileIndex: 0, laps: 0, challenger: { art: 'beste', teile: Array.from({ length: n }, (_, k) => k * 1000), ms: n * 1000, ortStart: null, soll: null } } };
       const frei = { device: { id: 'f' }, role: 'none' };
+      const npc2 = { device: { id: 'n2' }, role: 'ghost', tag: 'N2' };
+      garage.length = 0; garage.push(ch, frei, npc2);
+      trackMode = 'on';
+      // v1.0.28: keine eigene Rolle mehr - in Time Attack fahren ALLE NPCs als Challenger.
+      if (garRollenFrei(frei).some((r) => r.id === 'challenger')) f.push('Rolle Challenger noch waehlbar');
+      {
+        const echtStart = startGhost, gestartet = [];
+        const chMerk = ch.ghost, chAuftrag = ch.ghost.challenger;
+        try {
+          startGhost = (c) => { gestartet.push(c.tag); if (!c.ghost) c.ghost = { running: true }; };
+          const nC = challengerStarten();
+          if (nC !== 2 || gestartet.join() !== 'CH,N2') f.push('Time Attack: ' + nC + ' NPCs als Challenger (' + gestartet.join() + ')');
+          if (!npc2.ghost || !npc2.ghost.challenger) f.push('zweiter NPC ohne Challenger-Auftrag');
+          trackMode = 'off';
+          if (challengerStarten() !== 0) f.push('Challenger im Ausdruck-Modus');
+          trackMode = 'on';
+        } finally { startGhost = echtStart; ch.ghost = chMerk; ch.ghost.challenger = chAuftrag; npc2.ghost = null; }
+      }
       garage.length = 0; garage.push(ch, frei);
-      trackMode = 'on';
-      if (garRollenFrei(frei).some((r) => r.id === 'challenger')) f.push('zweiter Challenger waehlbar');
-      trackMode = 'off';
-      const frei2 = { device: { id: 'f2' }, role: 'none' };
-      if (garRollenFrei(frei2).some((r) => r.id === 'challenger')) f.push('Challenger im Ausdruck-Modus waehlbar');
-      trackMode = 'on';
       ghostPhasenSetzen();
       if (!ch.imTakt) f.push('Challenger bekommt keinen Sendetakt');
       ghostTaktLoeschen(ch);

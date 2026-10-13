@@ -3584,6 +3584,9 @@
     border: 1px solid var(--border); border-radius: 6px; margin-bottom: 6px;
     background: var(--panel); }
   .grid-row.dragging { opacity: .45; }
+  /* v1.0.27/28: wo der Startplatz liegt; das Safety Car steht abgesetzt unter der Liste. */
+  .grid-wo { color: var(--muted); font-size: .85em; margin-left: 6px; font-weight: 400; }
+  .grid-row.grid-sc { margin-top: 10px; border-style: dashed; opacity: .9; }
   .grid-row.over { border-color: var(--accent); border-style: dashed; }
   /* ---- AUTOS IN POSITION: Deckfenster vor dem Countdown -------------------------- */
   .gt3-gridschirm { position: absolute; inset: 0; z-index: 10; display: flex;
@@ -4673,7 +4676,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.27</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.28</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5803,6 +5806,11 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Challenger und NPC zusammengelegt (WIP): Die Garagenrolle &#8222;Challenger&#8220; gibt es nicht mehr. In Time Attack auf der Bahn fahren jetzt alle NPCs als Challenger (gegen deine Bestzeit, gegen den Rekord oder Gummiband, in den Renneinstellungen und am Startschirm w&#228;hlbar); im Gummiband h&#228;lt sich jeder NPC eine Kachel versetzt an dir. In allen anderen Modi fahren NPCs wie bisher.</li>
+        <li>Telemetrie (WIP): Gespeichert werden jetzt alle gewerteten Runden der letzten Fahrt auf einer Strecke, nicht nur die letzte und die beste. A und B lassen sich aus diesen Runden und der besten aller Fahrten w&#228;hlen; ist die letzte Runde zugleich die beste, zeigt A die davor.</li>
+        <li>Gelbe Flagge: Unter Gelb halten NPCs und dein Auto jetzt Abstand zum Vordermann (ab 1,5 Kacheln langsamer, dicht dahinter etwa halbes Gelb-Tempo) &#8211; kein Anschieben und kein &#220;berholen hinter dem Safety Car mehr. Dein Auto bekommt unter Autopilot au&#223;erdem keinen Akku-Ausgleich mehr, der es bei vollem Akku langsamer als die NPCs machte.</li>
+        <li>Safety Car (WIP): Es zieht schon zwei Kacheln vor Start/Ziel ganz nach rechts und h&#228;lt an der Linie, statt erst dahinter mitten auf der Bahn. In der Startaufstellung ist es kein Startplatz mehr, sondern steht separat unter der Liste.</li>
+        <li>Startaufstellung: Die Autos fahren nach dem Erreichen der Seite noch eine halbe Sekunde langsam weiter, damit sie gerade stehen und nicht schr&#228;g. Kurven und Haarnadeln wieder etwas schneller (90 % bzw. 80 % des Formationstempos), damit kein Auto den Kontakt zur Bahn verliert.</li>
         <li>Streckenscan: Das Spielerauto fuhr geradeaus statt &#252;ber die Bahn, sobald schon eine Strecke im Editor lag (die Spur-Bytes des Scans wurden im selben Takt wieder gel&#246;scht) &#8211; behoben. Mit dem Fahrgef&#252;hl RC griff au&#223;erdem der Autopilot gar nicht: kein Scan, keine Aufstellung, kein Gelb-Tempo. Jetzt rechnet er auch dort, solange er f&#228;hrt.</li>
         <li>Gelbe Flagge: Dein Auto f&#228;hrt jetzt genauso schnell wie die NPCs. Vorher lag der Tempofaktor des Fahrgef&#252;hls (1,1 bis 1,8) auch auf dem Autopiloten.</li>
         <li>Safety Car (WIP): Nach der gelben Phase f&#228;hrt es die letzten 2 s ganz rechts am Rand und h&#228;lt dort statt mitten auf der Bahn; geparkt ist das Licht aus. Nach einem Rempler startet es nach 1,5 s selbst neu, statt stehen zu bleiben. Boxenstopps fahren ebenfalls 2 s statt 1 s am Rand, bevor sie bremsen.</li>
@@ -8960,13 +8968,13 @@
           mit 35&nbsp;% weiter, in Kurven und Haarnadeln gedrosselt. Aus: alle sofort 35&nbsp;%.
           &Uuml;berholt wird unter Gelb nie.</small></div>
         <label class="tgl"><input type="checkbox" id="race-sc-aufschliessen" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Challenger<span class="wip-tag">experimentell</span><small>Ein
-          Auto mit der Garagenrolle &bdquo;Challenger&ldquo; f&auml;hrt gegen dich, nur auf der Bahn und
-          auch in Time Attack. Gegen meine Bestzeit: es f&auml;hrt deine beste aufgezeichnete Runde
-          dieser Strecke nach. Gegen den Rekord: die Runde der Online-Bestzeit der Challenge oder
-          Community-Strecke. Gummiband: es h&auml;lt sich ungef&auml;hr auf deiner H&ouml;he &ndash; vorn
-          langsamer, hinten schneller. Fehlt die Runde, f&auml;hrt es Gummiband. Auf der Karte zeigt
-          ein wei&szlig;er Punkt, wo die Runde gerade ist.</small></div>
+      <div class="opt-row"><div class="opt-label">Time Attack: NPCs als Challenger<span class="wip-tag">WIP</span><small>In
+          Time Attack auf der Bahn fahren alle NPCs als Challenger gegen dich. Gegen meine Bestzeit:
+          sie fahren deine beste aufgezeichnete Runde dieser Strecke nach, jeder ab seinem Startplatz.
+          Gegen den Rekord: die Runde der Online-Bestzeit der Challenge oder Community-Strecke.
+          Gummiband: sie halten sich ungef&auml;hr auf deiner H&ouml;he &ndash; vorn langsamer, hinten
+          schneller, mehrere NPCs je eine Kachel versetzt. Fehlt die Runde, fahren sie Gummiband. Auf
+          der Karte zeigt ein wei&szlig;er Punkt, wo die Runde gerade ist.</small></div>
         <select id="race-challenger">
           <option value="beste" selected>Gegen meine Bestzeit</option>
           <option value="rekord">Gegen den Rekord</option>
@@ -12875,7 +12883,11 @@
     "Wirklich?": "Really?",
     "Safety Car und Challenger gibt es nur auf der Bahn": "Safety car and challenger exist only on the track",
     "Challenger": "Challenger",
-    "Ein Auto mit der Garagenrolle „Challenger“ fährt gegen dich, nur auf der Bahn und auch in Time Attack. Gegen meine Bestzeit: es fährt deine beste aufgezeichnete Runde dieser Strecke nach. Gegen den Rekord: die Runde der Online-Bestzeit der Challenge oder Community-Strecke. Gummiband: es hält sich ungefähr auf deiner Höhe – vorn langsamer, hinten schneller. Fehlt die Runde, fährt es Gummiband. Auf der Karte zeigt ein weißer Punkt, wo die Runde gerade ist.": "A car with the garage role “Challenger” races against you, only on the track and also in Time Attack. Against my best time: it replays your best recorded lap of this track. Against the record: the lap of the online best time of the challenge or community track. Rubber band: it stays roughly level with you – slower when ahead, faster when behind. Without a lap it drives rubber band. On the map a white dot shows where the lap currently is.",
+    "Time Attack: NPCs als Challenger": "Time Attack: NPCs as challengers",
+    "NPCs als Challenger": "NPCs as challengers",
+    "{n} NPCs": "{n} NPCs",
+    "Safety Car · steht rechts am Rand, fährt bei Gelb": "Safety car · parked at the right edge, drives under yellow",
+    "In Time Attack auf der Bahn fahren alle NPCs als Challenger gegen dich. Gegen meine Bestzeit: sie fahren deine beste aufgezeichnete Runde dieser Strecke nach, jeder ab seinem Startplatz. Gegen den Rekord: die Runde der Online-Bestzeit der Challenge oder Community-Strecke. Gummiband: sie halten sich ungefähr auf deiner Höhe – vorn langsamer, hinten schneller, mehrere NPCs je eine Kachel versetzt. Fehlt die Runde, fahren sie Gummiband. Auf der Karte zeigt ein weißer Punkt, wo die Runde gerade ist.": "In Time Attack on the track all NPCs drive as challengers against you. Against my best time: they drive your best recorded lap of this track, each from its own grid slot. Against the record: the lap of the online best time of the challenge or community track. Rubber band: they stay roughly level with you – slower when ahead, faster when behind, several NPCs one tile apart each. Without a lap they drive rubber band. On the map a white dot shows where the lap currently is.",
     "Gegen meine Bestzeit": "Against my best time",
     "Gegen den Rekord": "Against the record",
     "deine Bestzeit": "your best time",
@@ -12888,6 +12900,7 @@
     "Telemetrie": "Telemetry",
     "Deine Runden Teil für Teil: wo du Zeit gewinnst und verlierst, Tempo, Gas und Bremse.": "Your laps piece by piece: where you gain and lose time, speed, throttle and brake.",
     "Telemetrie ansehen": "View telemetry",
+    "Beste Runde (alle Fahrten)": "Best lap (all sessions)",
     "Time Attack beendet": "Time Attack finished",
     "{n} gewertet": "{n} counted",
     "Keine gewertete Runde.": "No counted lap.",
@@ -13718,6 +13731,11 @@
     "Safety Car (WIP): Nach der gelben Phase fährt es die letzten 2 s ganz rechts am Rand und hält dort statt mitten auf der Bahn; geparkt ist das Licht aus. Nach einem Rempler startet es nach 1,5 s selbst neu, statt stehen zu bleiben. Boxenstopps fahren ebenfalls 2 s statt 1 s am Rand, bevor sie bremsen.": "Safety car (WIP): after the yellow phase it drives the last 2 s at the far right edge and stops there instead of mid-track; when parked its lights are off. After being bumped it restarts by itself after 1.5 s instead of staying put. Pit stops likewise drive 2 s instead of 1 s at the edge before braking.",
     "Gelbe Flagge: Dein Auto fährt jetzt genauso schnell wie die NPCs. Vorher lag der Tempofaktor des Fahrgefühls (1,1 bis 1,8) auch auf dem Autopiloten.": "Yellow flag: your car now drives exactly as fast as the NPCs. Previously the speed factor of the driving feel (1.1 to 1.8) was applied to the autopilot too.",
     "Streckenscan: Das Spielerauto fuhr geradeaus statt über die Bahn, sobald schon eine Strecke im Editor lag (die Spur-Bytes des Scans wurden im selben Takt wieder gelöscht) – behoben. Mit dem Fahrgefühl RC griff außerdem der Autopilot gar nicht: kein Scan, keine Aufstellung, kein Gelb-Tempo. Jetzt rechnet er auch dort, solange er fährt.": "Track scan: the player car drove straight instead of along the track as soon as a layout was already in the editor (the scan's lane bytes were cleared again in the same tick) – fixed. With the RC driving feel the autopilot did not engage at all: no scan, no grid, no yellow-flag speed. It now runs there too whenever it is driving.",
+    "Startaufstellung: Die Autos fahren nach dem Erreichen der Seite noch eine halbe Sekunde langsam weiter, damit sie gerade stehen und nicht schräg. Kurven und Haarnadeln wieder etwas schneller (90 % bzw. 80 % des Formationstempos), damit kein Auto den Kontakt zur Bahn verliert.": "Grid: after reaching their side the cars roll on slowly for half a second so they stand straight instead of at an angle. Curves and hairpins a little faster again (90 % and 80 % of formation speed) so no car loses contact with the track.",
+    "Safety Car (WIP): Es zieht schon zwei Kacheln vor Start/Ziel ganz nach rechts und hält an der Linie, statt erst dahinter mitten auf der Bahn. In der Startaufstellung ist es kein Startplatz mehr, sondern steht separat unter der Liste.": "Safety car (WIP): it now moves to the far right two tiles before start/finish and stops at the line, instead of mid-track after it. In the grid it no longer takes a slot but is listed separately below.",
+    "Gelbe Flagge: Unter Gelb halten NPCs und dein Auto jetzt Abstand zum Vordermann (ab 1,5 Kacheln langsamer, dicht dahinter etwa halbes Gelb-Tempo) – kein Anschieben und kein Überholen hinter dem Safety Car mehr. Dein Auto bekommt unter Autopilot außerdem keinen Akku-Ausgleich mehr, der es bei vollem Akku langsamer als die NPCs machte.": "Yellow flag: under yellow NPCs and your car now keep their distance to the car ahead (slower from 1.5 tiles, about half yellow speed when close behind) – no more pushing or overtaking behind the safety car. Under autopilot your car also no longer gets battery compensation, which made it slower than the NPCs with a full battery.",
+    "Telemetrie (WIP): Gespeichert werden jetzt alle gewerteten Runden der letzten Fahrt auf einer Strecke, nicht nur die letzte und die beste. A und B lassen sich aus diesen Runden und der besten aller Fahrten wählen; ist die letzte Runde zugleich die beste, zeigt A die davor.": "Telemetry (WIP): all counted laps of the latest session on a track are now saved, not only the last and the best. A and B can be chosen from these laps and the best of all sessions; if the last lap is also the best, A shows the one before.",
+    "Challenger und NPC zusammengelegt (WIP): Die Garagenrolle „Challenger“ gibt es nicht mehr. In Time Attack auf der Bahn fahren jetzt alle NPCs als Challenger (gegen deine Bestzeit, gegen den Rekord oder Gummiband, in den Renneinstellungen und am Startschirm wählbar); im Gummiband hält sich jeder NPC eine Kachel versetzt an dir. In allen anderen Modi fahren NPCs wie bisher.": "Challenger and NPC merged (WIP): the garage role “Challenger” is gone. In Time Attack on the track all NPCs now drive as challengers (against your best time, against the record or rubber band, selectable in the race settings and on the start screen); with rubber band each NPC stays one tile apart around you. In all other modes NPCs drive as before.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -15816,6 +15834,11 @@
     "Telemetrie": "Telemetría",
     "Deine Runden Teil für Teil: wo du Zeit gewinnst und verlierst, Tempo, Gas und Bremse.": "Tus vueltas pieza a pieza: dónde ganas y pierdes tiempo, velocidad, gas y freno.",
     "Telemetrie ansehen": "Ver telemetría",
+    "Beste Runde (alle Fahrten)": "Mejor vuelta (todas las sesiones)",
+    "NPCs als Challenger": "NPC como challengers",
+    "Time Attack: NPCs als Challenger": "Time Attack: NPC como challengers",
+    "{n} NPCs": "{n} NPC",
+    "Safety Car · steht rechts am Rand, fährt bei Gelb": "Safety car · aparcado a la derecha, sale con amarilla",
     "Event abgebrochen: zählt mit 0 Punkten": "Evento interrumpido: cuenta con 0 puntos",
     "Wertung, sobald alle im Ziel sind …": "Puntuación cuando todos hayan llegado …",
     "abgebrochen": "interrumpido",
@@ -17405,7 +17428,9 @@
     const apFaehrt = overrideThrottle !== undefined && typeof autopilotGreiftFuer === 'function'
       && autopilotGreiftFuer(1);
     if (throttle > 0 && !apFaehrt) throttle *= topSpeedScale;
-    throttle *= batteryCompensationScale();
+    // v1.0.28: unter Autopilot auch ohne Akku-Ausgleich - den haben die NPCs nicht, und er nimmt
+    // bei vollem Akku Gas weg (GEMELDET: "bei gelber Flagge ist mein Auto langsamer als der NPC").
+    if (!apFaehrt) throttle *= batteryCompensationScale();
     // NUR den Verbrauch zaehlen. Die Drosselung sitzt in physicsStep(), also vor der
     // Physik - sonst zeigt der Tacho die Simulation und das Auto bekommt weniger.
     fuelTankTick(throttle);
@@ -17711,7 +17736,7 @@
     //                             Rennen ungleich schnell, ohne dass man den Grund sieht.
     // Unter Autopilot ungestreckt, wie bei Auto 1 (sendControlValue).
     if (throttle > 0 && !(typeof autopilotGreiftFuer === 'function' && autopilotGreiftFuer(z.nr))) throttle *= topSpeedScale;
-    throttle *= batteryCompensationScale();
+    if (!(typeof autopilotGreiftFuer === 'function' && autopilotGreiftFuer(z.nr))) throttle *= batteryCompensationScale();
     // Kein Drift-Gegenlenken fuer Auto 2 (v0.9.15): driftGegenlenken liest den Kreisel und das
     // Tempo von AUTO 1 - fuer Auto 2 lenkte es also nach den Daten des falschen Autos.
     // ---- MIT VORAUSBLICK, seit v0.6.46 ---------------------------------------------
@@ -23790,6 +23815,18 @@
       // Breite, damit das Auto von selbst auf die Seite seines Startplatzes faellt.
       const lenk = typeof formationDriverOffset === 'function'
         ? formationDriverOffset(meinAuto, aufstellenSpielerBreite(meinAuto)) : 0;
+      // v1.0.28: angekommen erst langsam auf der Seite weiter, damit das Auto gerade steht
+      // (aufstellenSpielerAusrichten, 90-ghosts.js), dann halten.
+      if (aufstellenSpielerAngekommen(meinAuto) && typeof aufstellenSpielerAusrichten === 'function'
+          && aufstellenSpielerAusrichten(meinAuto)) {
+        const platzR = typeof gridPosOf === 'function' ? gridPosOf(meinAuto) : -1;
+        const seiteR = platzR >= 0 ? (platzR % 2 ? -1 : 1) * GHOST_GRID_MAX : lenk;
+        const vR = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
+        const dtR = Math.max(0.01, Math.min(0.25, (Date.now() - (regler.at || Date.now())) / 1000));
+        regler.at = Date.now();
+        const gR = ghostSpeedControl(regler, formationPace() * AUFSTELL_GERADE_TEMPO, vR, dtR);
+        return { grund: 'aufstellen', throttle: gR.throttle, brake: gR.brake, steer: seiteR, lenkt: !abseitsJetztFuer(wer || 1) };
+      }
       if (aufstellenSpielerAngekommen(meinAuto)) {
         // v1.0.25 GEMELDET: "die Querlage beim Stehenbleiben passt nicht." Hier stand
         // steer 0 und lenkt false: im Bremsen kam der Stick des Fahrers (meist 0 = Mitte)
@@ -23844,7 +23881,9 @@
     // v1.0.12: unter Gelb mit Safety Car erst ~45 % zum Aufschliessen (gelbZielFuer).
     const ziel = (grund === 'formation' ? formationPace()
       : (typeof gelbZielFuer === 'function' ? gelbZielFuer(meinAuto) : Math.max(yellowFactor(), GHOST_READ_MIN)))
-      * autopilotKurvenFaktor(meinAuto);
+      * autopilotKurvenFaktor(meinAuto)
+      // v1.0.28: unter Gelb Abstand zum Vordermann, wie die NPCs (gelbAbstandFaktor).
+      * (grund === 'yellow' && typeof gelbAbstandFaktor === 'function' ? gelbAbstandFaktor(meinAuto) : 1);
     const v = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
     const dtA = Math.max(0.01, Math.min(0.25,
       (Date.now() - (regler.at || Date.now())) / 1000));
@@ -34407,7 +34446,7 @@
   function carLapCrossed(car) {
     // v0.10.7: das Safety Car faehrt keine Runden - es wartet nur auf Start/Ziel nach Gruen.
     if (car.role === 'safetycar') {
-      if (car.ghost && car.ghost.scHeim && typeof safetyCarAbstellen === 'function') safetyCarAbstellen(car);
+      if (car.ghost && (car.ghost.scHeim || car.ghost.randHalt) && typeof safetyCarAbstellen === 'function') safetyCarAbstellen(car);
       return;
     }
     if (!car.race) car.race = { laps: [], lapStart: null, pending: null, seen: 0,
@@ -34864,7 +34903,7 @@
       const st = x.st, isBest = st.best === fastest;
       return `<tr>
         <td style="${td}">${i + 1}</td>
-        <td style="${td}">${ergDot(x.c)}${x.c.name}${x.c.role === 'ghost' ? ' <span class="muted">(NPC)</span>' : x.c.role === 'challenger' ? ' <span class="muted">(Challenger)</span>' : ''}${rammerLabel(x.c)}</td>
+        <td style="${td}">${ergDot(x.c)}${x.c.name}${x.c.role === 'ghost' ? ' <span class="muted">(NPC)</span>' : ''}${rammerLabel(x.c)}</td>
         <td style="${tdr}">${st.n}</td>
         <td style="${tdr}${isBest ? '; color:var(--good); font-weight:700' : ''}">${formatLapTime(st.best)}</td>
         <td style="${tdr}">${formatLapTime(Math.round(st.mean))}</td>
@@ -35178,8 +35217,11 @@
 
   // The grid is stored as device ids, not as indices into `garage`: cars connect and
   // disconnect between races, and an index would silently point at a different car.
+  // v1.0.28 BESTELLT: "Das Safety Car sollte bei der Startaufstellung nicht bei den zu
+  // sortierenden Autos sein, aber separat als Safety Car unter der Liste angezeigt werden."
+  // Es nimmt also keinen Startplatz ein (gridPosOf -1) und faehrt nicht mit auf.
   function raceGridCars() {
-    const byId = new Map(garage.map(c => [String(c.device.id), c]));
+    const byId = new Map(garage.filter(c => c.role !== 'safetycar').map(c => [String(c.device.id), c]));
     const ordered = [];
     raceGridOrder.forEach(id => { const c = byId.get(id); if (c) { ordered.push(c); byId.delete(id); } });
     byId.forEach(c => ordered.push(c));   // newly connected cars join at the back
@@ -35248,6 +35290,14 @@
       });
       host.appendChild(row);
     });
+    const sc = garage.find(c => c.role === 'safetycar' && c.device);
+    if (sc) {
+      const row = document.createElement('div');
+      row.className = 'grid-row grid-sc';
+      row.innerHTML = `<span class="grid-pos">SC</span>`
+        + `<span class="grid-name">${carDot(sc)}${garageLabel(sc)} <small class="grid-wo">${t('Safety Car · steht rechts am Rand, fährt bei Gelb')}</small></span>`;
+      host.appendChild(row);
+    }
   }
 
   function renderRaceGrid() {
@@ -35477,9 +35527,10 @@
     }
     // v1.0.21: zur Telemetrie dieser Strecke, sobald es eine aufgezeichnete Runde gibt.
     // v1.0.21: steht ein Challenger in der Garage, hier auch sein Modus.
+    // v1.0.28: alle NPCs fahren in Time Attack als Challenger.
     if (typeof challenger === 'function' && challenger()) {
       const m = typeof challengerModus === 'function' ? challengerModus() : 'beste';
-      h += '<div class="ta-kopf">Challenger</div><select class="ta-challenger">'
+      h += '<div class="ta-kopf">' + esc(t('NPCs als Challenger')) + '</div><select class="ta-challenger">'
         + [['beste', t('Gegen meine Bestzeit')], ['rekord', t('Gegen den Rekord')], ['gummiband', t('Gummiband')]]
           .map(([v, txt]) => '<option value="' + v + '"' + (v === m ? ' selected' : '') + '>' + esc(txt) + '</option>').join('')
         + '</select>';
@@ -35911,11 +35962,6 @@
       // auch fuer den Abbruch, und die Ghosts rollten noch ein paar Kacheln weiter.
       if (!willAuslaufen) { stopGhost(c); return; }
       finishGhost(c);
-    });
-    // v1.0.21: der Challenger rollt aus (Zielflagge) bzw. haelt sofort (Abbruch).
-    garage.forEach(c => {
-      if (c.role !== 'challenger' || !c.ghost || !c.ghost.running || c.ghost.finish) return;
-      if (willAuslaufen) finishGhost(c); else stopGhost(c);
     });
     if (willAuslaufen && garage.some(c => c.role === 'ghost' && c.ghost && c.ghost.auslauf)) {
       showHudToast(t('NPCs fahren die Runde zu Ende'));
@@ -40965,7 +41011,7 @@
     teleLauf = null;
     // Je Runde des Rennens eine Stelle, damit der Upload die Spur der schnellsten findet.
     const i = typeof raceLapTimes !== 'undefined' ? raceLapTimes.length - 1 : -1;
-    if (i === 0) { teleRennSpuren = []; teleSitzung = { gespeichert: 0, geschaetzt: 0, verworfen: 0 }; }
+    if (i === 0) { teleRennSpuren = []; teleSitzung = { gespeichert: 0, geschaetzt: 0, verworfen: 0 }; teleFahrtId = Date.now(); }
     if (i >= 0) teleRennSpuren[i] = null;
     if (!l || l.start !== start) return null;
     const tiles = currentTrackTiles;
@@ -40987,6 +41033,7 @@
     }
     spur.proben = pr;
     spur.datum = Date.now();
+    spur.runde = i + 1;
     spur.auto = typeof playerCar !== 'undefined' && playerCar ? garageLabel(playerCar) : '';
     if (i >= 0) teleRennSpuren[i] = spur;
     if (gewertet) teleMerken(spur, typeof playerCar !== 'undefined' ? playerCar : null);
@@ -41021,6 +41068,14 @@
       try { localStorage.setItem(TELE_STORE, JSON.stringify(d)); } catch (e2) { /* aufgegeben */ }
     }
   }
+  var teleFahrtId = 0;                 // eine Fahrt = ein Rennen/Time Attack, gesetzt bei Runde 1
+  var TELE_FAHRT_MAX = 30;             // so viele Runden einer Fahrt
+  function teleDuenn(spur, max) {
+    const pr = spur.proben || [];
+    if (pr.length <= max) return spur;
+    const k = pr.length / max;
+    return Object.assign({}, spur, { proben: Array.from({ length: max }, (_, j) => pr[Math.floor(j * k)]) });
+  }
   function teleWer(car) { return car && car.device ? String(car.device.id) : 'spieler1'; }
   // Beste und letzte Spur je Strecke (gespiegelt = gleich, wie Time Attack) und Fahrer.
   function teleMerken(spur, car) {
@@ -41031,6 +41086,17 @@
     e.datum = Date.now();
     const f = e.fahrer[teleWer(car)] || (e.fahrer[teleWer(car)] = {});
     f.letzte = spur;
+    // v1.0.28 GEMELDET: "In der Telemetrie wird nur letzte = beste Runde angezeigt." Gemerkt
+    // waren nur diese zwei. Jetzt dazu ALLE gewerteten Runden der letzten Fahrt auf dieser
+    // Strecke (f.fahrt), mit ausgeduennten Proben; die Fahrten anderer Strecken werden dabei
+    // geloescht - der Speicher reicht nicht fuer alle Runden aller Strecken.
+    if (!f.fahrt || f.fahrt.id !== teleFahrtId) f.fahrt = { id: teleFahrtId, runden: [] };
+    f.fahrt.runden.push(teleDuenn(spur, TELE_UPLOAD_PROBEN));
+    if (f.fahrt.runden.length > TELE_FAHRT_MAX) f.fahrt.runden.shift();
+    Object.keys(d).forEach((x) => {
+      if (x === k || !d[x].fahrer) return;
+      Object.values(d[x].fahrer).forEach((ff) => { if (ff) delete ff.fahrt; });
+    });
     if (!f.beste || spur.ms < f.beste.ms) f.beste = spur;
     const alle = Object.keys(d);
     if (alle.length > TELE_STRECKEN_MAX) {
@@ -48379,18 +48445,19 @@
     // einstellen." Hoechstens eines - wie die Spielerrollen. Vor "Ghost", damit der Pfeil von
     // Ghost wie bisher zu "Aus" fuehrt.
     { id: 'safetycar', name: 'Safety Car', kurz: 'SAFETY CAR' },
-    // v1.0.21 BESTELLT: "Nenne diese Rolle 'Challenger'" - siehe 90d-challenger.js.
-    { id: 'challenger', name: 'Challenger', kurz: 'CHALLENGER' },
+    // v1.0.28: keine eigene Rolle "Challenger" mehr. BESTELLT: "Challenger und NPC
+    // zusammenlegen, beim Time Attack gelten alle NPCs als Challenger" (90d-challenger.js).
+    // Eine gemerkte Rolle 'challenger' ist damit nicht mehr frei und wird beim Verbinden NPC.
     { id: 'ghost', name: 'NPC', kurz: 'NPC' },
     { id: 'none', name: 'Aus', kurz: 'AUS' },
   ];
   // v1.0.21 BESTELLT: Safety Car (und der kommende Challenger) "sollten nur fuer Fahren auf
   // Bahn existieren" - beide fahren mit Spur-Bytes, im Ausdruck-Modus haelt sich kein Auto
   // selbst auf der Bahn.
-  const BAHN_ROLLEN = ['safetycar', 'challenger'];
+  const BAHN_ROLLEN = ['safetycar'];
   // Die Rollen, die dieses Auto bekommen darf: Spieler-Rollen nur, wenn kein ANDERES Auto sie hat.
   function garRollenFrei(car) {
-    return GAR_ROLLEN.filter((r) => (!/^player\d?$|^safetycar$|^challenger$/.test(r.id)
+    return GAR_ROLLEN.filter((r) => (!/^player\d?$|^safetycar$/.test(r.id)
       || !garage.some((c) => c !== car && c.role === r.id))
       && (trackMode === 'on' || BAHN_ROLLEN.indexOf(r.id) < 0 || (car && car.role === r.id)));
   }
@@ -48782,7 +48849,7 @@
         <div class="gk-rolle" data-rollen="${GAR_ROLLEN.map((r) => r.id).join(',')}" data-rolle="${rolle.id}">
           <button type="button" data-act="rolle" data-d="-1" aria-label="Rolle zurück">&#9664;</button>
           <b>${t(rolle.name)}</b>${zusatzPlatzVonRolle(rolle.id) ? '<span class="wip-tag">experimentell</span>'
-            : (rolle.id === 'safetycar' || rolle.id === 'challenger') ? '<span class="wip-tag">WIP</span>' : ''}
+            : rolle.id === 'safetycar' ? '<span class="wip-tag">WIP</span>' : ''}
           <button type="button" data-act="rolle" data-d="1" aria-label="Rolle vor">&#9654;</button>
         </div>
         <select class="gk-rolle-wahl" hidden data-preset-skip data-blaettern="1" aria-label="Rolle">${frei.map((r) =>
@@ -49370,6 +49437,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     return a.fertig;
   }
+  // Fahrerauto: true, solange es nach dem Ankommen noch AUFSTELL_GERADE_MS auf der Seite rollt.
+  function aufstellenSpielerAusrichten(car) {
+    const a = aufstellSpieler.get(car);
+    if (!a || !a.fertig) return false;
+    if (!a.geradeBis) a.geradeBis = Date.now() + AUFSTELL_GERADE_MS;
+    return Date.now() < a.geradeBis;
+  }
   function aufstellenStarten() {
     const n = currentTrackTiles ? currentTrackTiles.length : 0;
     if (n < 3) { showHudToast(t('Erst eine Strecke laden')); return 0; }
@@ -49409,7 +49483,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (o === null || Math.floor(o) !== g.aufstellZiel || Date.now() - (g.aufstellSeit || 0) < 1200) return false;
     const platz = gridPosOf(car);
     const seite = platz >= 0 && platz % 2 ? -1 : 1;     // wie formationOffset
-    randHaltStarten(car, { phase: 'halt', quer: seite * GHOST_GRID_MAX, haltMs: AUFSTELL_HALT_MS, fertig: (c) => {
+    // v1.0.28 BESTELLT: "Lass die Autos, wenn sie die Querlage haben, noch ganz kurz auf der
+    // Querlage weiterfahren, sodass sie gerade stehen und nicht schraeg." Also erst langsam
+    // weiter ('rand', AUFSTELL_GERADE_MS nach Erreichen der Seite), dann halten.
+    randHaltStarten(car, { phase: 'rand', quer: seite * GHOST_GRID_MAX, tempo: formationPace() * AUFSTELL_GERADE_TEMPO,
+                           nachRandMs: AUFSTELL_GERADE_MS, haltMs: AUFSTELL_HALT_MS, fertig: (c) => {
       log(garageLabel(c) + ': steht auf seinem Startplatz.', 'info');
       if (!aufstellenLaeuft()) {
         clearTimeout(aufstellenTimer);
@@ -49419,6 +49497,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return false;
   }
   const AUFSTELL_HALT_MS = 800;
+  const AUFSTELL_GERADE_MS = 500;
+  // v1.0.28 GEMELDET: "In der automatischen Aufstellung fahren die Autos zum Teil so langsam,
+  // dass sie fast den Kontakt verlieren." Die Scan-Anteile (0,6/0,4) waren zu wenig - beim Scan
+  // ist die Strecke unbekannt, hier sorgt der Vorausblick fuer rechtzeitiges Bremsen. Das
+  // Abfliegen aus der Haarnadel kam vor allem vom Fahrgefuehl RC, unter dem der Autopilot gar
+  // nicht lief (v1.0.27 behoben).
+  const AUFSTELL_KURVE = 0.9, AUFSTELL_HAARNADEL = 0.8, AUFSTELL_GERADE_TEMPO = 0.8;
   // ---- DAS TEMPO DER AUFSTELLUNG (v1.0.25) ---------------------------------------------
   // GEMELDET: "Die Geschwindigkeit bei der Startaufstellung ist zu schnell, das Auto fliegt aus
   // der Haarnadel. Pass das an die anderen Erkenntnisse mit min. und max. Geschwindigkeit an."
@@ -49434,7 +49519,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const v = ghostAheadTightest(car, 2);
       if (v.dist <= (v.tight >= 2 ? 2 : 1)) tight = Math.max(tight, v.tight);
     }
-    const f = tight >= 2 ? SCAN_TEMPO_HAARNADEL : tight > 0 ? SCAN_TEMPO : 1;
+    const f = tight >= 2 ? AUFSTELL_HAARNADEL : tight > 0 ? AUFSTELL_KURVE : 1;
     return formationPace() * f;
   }
   function aufstellenStoppen(zeitUm) {
@@ -51364,7 +51449,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!g) return;
     g.randHalt = { phase: opt.phase || 'rand', at: Date.now(), quer: opt.quer,
                    tempo: opt.tempo === undefined ? formationPace() : opt.tempo,
-                   randMs: opt.randMs || 0, haltMs: opt.haltMs || PIT_BREMS_MS, fertig: opt.fertig || null };
+                   randMs: opt.randMs || 0, haltMs: opt.haltMs || PIT_BREMS_MS, fertig: opt.fertig || null,
+                   nachRandMs: opt.nachRandMs || 0, randErreicht: 0 };
   }
   function randHaltTick(car) {
     const g = car.ghost, h = g && g.randHalt;
@@ -51374,7 +51460,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (h.phase === 'rand') {
       const seit = now - h.at;
       const amRand = Math.abs(g.querSoll || 0) >= Math.abs(h.quer) * PIT_RAND_TARGET;
-      if ((seit >= h.randMs && amRand) || seit >= h.randMs + RANDHALT_MAX_ZUSATZ_MS) {
+      // nachRandMs: so lange NACH dem Erreichen der Querlage weiterfahren, damit das Auto sich
+      // gerade zieht (v1.0.28, Aufstellung: "sodass sie gerade stehen und nicht schraeg").
+      if (amRand && !h.randErreicht) h.randErreicht = now;
+      const gerade = !h.nachRandMs || (h.randErreicht && now - h.randErreicht >= h.nachRandMs);
+      if ((seit >= h.randMs && amRand && gerade) || seit >= h.randMs + h.nachRandMs + RANDHALT_MAX_ZUSATZ_MS) {
         h.phase = 'halt'; h.at = now;
       }
       return true;
@@ -51840,15 +51930,50 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Car aus, wenn es parkt." Vorher die Zieleinlauf-Folge (rollen mit Gas null) - dabei
   // kam es nie an den Rand. Jetzt der Randhalt (siehe randHaltStarten).
   const SC_RAND_MS = 2000;
+  // v1.0.28 GEMELDET: "Das Safety Car hat mitten auf der Strecke und in der Mitte der Fahrbahn
+  // angehalten. Es soll bei Start/Ziel halten, und zwar ganz rechts." Die Randfahrt begann
+  // erst an der Linie und dauerte 2 s - es stand also gut zwei Kacheln dahinter. Jetzt zieht es
+  // SC_RAND_KACHELN vor Start/Ziel nach rechts (safetyCarHeimTick) und haelt an der Linie.
+  // Ohne bekannten Ort bleibt die alte Folge (2 s ab der Linie) als Rueckfall.
+  const SC_RAND_KACHELN = 2, SC_RAND_WARTE_MS = 12000;
+  function safetyCarFertig(c) {
+    safetyCarLichtAus(c);
+    log(garageLabel(c) + ': Safety Car steht rechts am Rand, Licht aus.', 'info');
+  }
+  // An der Linie (carLapCrossed oder Ort = Kachel 0).
   function safetyCarAbstellen(sc) {
     const g = sc.ghost;
-    if (!g || g.finish || g.randHalt) return;
+    if (!g || g.finish) return;
+    if (g.randHalt) {
+      if (g.randHalt.scLinie && g.randHalt.phase === 'rand') {
+        g.randHalt.phase = 'halt'; g.randHalt.at = Date.now();
+        log(garageLabel(sc) + ': Safety Car an Start/Ziel, haelt rechts.', 'info');
+      }
+      return;
+    }
+    if (!g.scHeim) return;
     g.scHeim = false;
-    randHaltStarten(sc, { quer: FINISH_RAND, randMs: SC_RAND_MS, fertig: (c) => {
-      safetyCarLichtAus(c);
-      log(garageLabel(c) + ': Safety Car steht rechts am Rand, Licht aus.', 'info');
-    } });
+    randHaltStarten(sc, { quer: FINISH_RAND, randMs: SC_RAND_MS, fertig: safetyCarFertig });
     log(garageLabel(sc) + ': Safety Car faehrt rechts ran.', 'info');
+  }
+  // Aus ghostTick: auf dem Heimweg vor Start/Ziel an den rechten Rand.
+  function safetyCarHeimTick(car) {
+    const g = car.ghost;
+    if (!g) return;
+    const n = currentTrackTiles ? currentTrackTiles.length : 0;
+    if (g.randHalt && g.randHalt.scLinie) {
+      if (g.randHalt.phase === 'rand' && g.tileIndex === 0 && g.scVorLinie) safetyCarAbstellen(car);
+      if (g.tileIndex !== 0) g.scVorLinie = true;
+      return;
+    }
+    if (!g.scHeim || g.randHalt || !n || g.tileIndex === null || g.tileIndex === undefined) return;
+    const rest = (n - g.tileIndex) % n;              // Kacheln bis Start/Ziel
+    if (rest === 0 || rest > SC_RAND_KACHELN) return;
+    g.scHeim = false;
+    g.scVorLinie = true;
+    randHaltStarten(car, { quer: FINISH_RAND, randMs: SC_RAND_WARTE_MS, fertig: safetyCarFertig });
+    g.randHalt.scLinie = true;
+    log(garageLabel(car) + ': Safety Car zieht vor Start/Ziel nach rechts.', 'info');
   }
   function safetyCarLichtAus(sc) {
     if (sc && sc.rx && !(sc.ghost && sc.ghost.running)) writeToCar(sc, 0, 0, trackModeBit());
@@ -51929,6 +52054,37 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       tight = Math.max(here, ahead.dist <= reach ? ahead.tight : 0);
     }
     return tight > 0 ? 1 - Math.min(0.85, ghostCfg.curveSlow * tight) : 1;
+  }
+  // ---- ABSTAND UNTER GELB (v1.0.28) ---------------------------------------------------
+  // GEMELDET: "Bei gelber Flagge ist mein Auto langsamer als der NPC, und der NPC schiebt mich
+  // an und ueberholt sogar (wir sind beide noch hinter dem Safety Car). Durch das zufaellige
+  // Ueberholmanoever schiebt mein Auto danach seins an - baue hier einen Abstand ein."
+  // Unter Gelb war die Wuerze ganz aus (alle gleich schnell) - und damit auch das Abstandhalten.
+  // Jetzt eine eigene Regel fuer alle ausser dem Safety Car: Abstand zum naechsten Auto vorn
+  // AUF DER RUNDE (gewickelt; die Zaehler ueber mehrere Runden stimmen zwischen Fahrerauto und
+  // NPCs nicht ueberein). Ab GELB_ABSTAND_VOLL voll, darunter linear weniger, ab
+  // GELB_ABSTAND_MIN nur noch GELB_ABSTAND_BODEN des Gelb-Tempos - ganz anhalten wuerde das
+  // Auto unter die Leseschwelle bringen und den Abgangsmelder ausloesen.
+  const GELB_ABSTAND_VOLL = 1.5, GELB_ABSTAND_MIN = 0.5, GELB_ABSTAND_BODEN = 0.55;
+  function gelbVordermann(car) {
+    const n = currentTrackTiles ? currentTrackTiles.length : 0;
+    const a = ghostOrt(car);
+    if (!n || a === null) return null;
+    let best = null;
+    for (const o of ghostFieldRacing()) {
+      if (o === car) continue;
+      const b = ghostOrt(o);
+      if (b === null) continue;
+      const d = ((b - a) % n + n) % n;
+      if (d > 0 && d < n / 2 && (!best || d < best.gap)) best = { car: o, gap: d };
+    }
+    return best;
+  }
+  function gelbAbstandFaktor(car) {
+    const v = gelbVordermann(car);
+    if (!v || v.gap >= GELB_ABSTAND_VOLL) return 1;
+    const x = Math.max(0, Math.min(1, (v.gap - GELB_ABSTAND_MIN) / (GELB_ABSTAND_VOLL - GELB_ABSTAND_MIN)));
+    return GELB_ABSTAND_BODEN + (1 - GELB_ABSTAND_BODEN) * x;
   }
   function setFlag(next) {
     if (next === flagState) return;
@@ -54721,7 +54877,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Zieleinlauf hat Vorrang vor allem anderen: keine Linie, keine Wuerze, kein
     // Leitplanken-Modus. Steht die Sequenz, gilt nur noch sie.
     if (g.finish) { ghostFinishTick(car); return; }
-    if (car.role === 'safetycar') safetyCarNeustart(car, now);
+    if (car.role === 'safetycar') { safetyCarNeustart(car, now); safetyCarHeimTick(car); }
     // ---- DEN WEG AUF DIESER KACHEL MITFUEHREN, und zwar HIER OBEN --------------------
     //
     // Vor dem Kachelwechselblock, und das ist die richtige Reihenfolge: das Tempo im
@@ -55145,6 +55301,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // zum Safety Car ~45 %, dann 35 % (gelbZielFuer); die Kurvendrosselung folgt unten.
       if (underYellow) {
         target = Math.min(target, gelbZielFuer(car));
+        // v1.0.28: Abstand zum Vordermann (auch zu dir), siehe gelbAbstandFaktor().
+        if (car.role !== 'safetycar') target *= gelbAbstandFaktor(car);
       }
       // ---- Tempoprofil statt eines einzigen Kurvenabschlags ----
       // Vorher gab es genau zwei Zustaende: "Kurve in Sicht" oder nicht, und beide bekamen
@@ -55348,7 +55506,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Rampe zu stehen waere falsch - die Rampe ist genau das, was den Ghost nach dem Stopp
       // wieder hochfaehrt.
       // v1.0.21: der Challenger folgt seiner Spur oder dir (90d-challenger.js).
-      if (car.role === 'challenger' && typeof challengerZiel === 'function') target = challengerZiel(car, target, spice);
+      // v1.0.28: jeder NPC mit Challenger-Auftrag (Time Attack), nicht mehr eine eigene Rolle.
+      if (g.challenger && typeof challengerZiel === 'function') target = challengerZiel(car, target, spice);
       const pz = pitZiel(car);
       if (pz !== null) target = pz;
       const v = Math.abs(e.state.speedKmh) / cfg.topSpeedKmh;
@@ -56429,11 +56588,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
 
   // Ghosts launch on green, not before.
   function launchGhosts() {
-    // v1.0.21: der Challenger faehrt in jedem Modus, auch in Time Attack (90d-challenger.js).
-    if (typeof challengerStarten === 'function') challengerStarten();
     // v0.10.6: im Bestzeit-Modus fahren nur gesteuerte Autos - die Ghosts bleiben stehen.
+    // v1.0.28: ausser auf der Bahn, dort fahren alle NPCs als Challenger (90d-challenger.js).
     if (typeof raceMode !== 'undefined' && raceMode === 'bestzeit') {
-      log('Bestzeit-Modus: NPCs bleiben stehen.', 'info');
+      const n = typeof challengerStarten === 'function' ? challengerStarten() : 0;
+      if (!n) log('Bestzeit-Modus: NPCs bleiben stehen.', 'info');
       return;
     }
     // Die Seiten des Zieleinlaufs von vorn. Bisher geschah das nur beim Rennstart - wer
@@ -58041,7 +58200,16 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   var CHALLENGER_MIN = 0.55, CHALLENGER_MAX = 1.6, CHALLENGER_MAX_KURVE = 1.1, CHALLENGER_MAX_HAARNADEL = 1.0;
   var challengerVorrat = { liste: null, r: null, holt: false };
 
-  function challenger() { return garage.find((c) => c.role === 'challenger') || null; }
+  // v1.0.28 BESTELLT: "Koennen wir Challenger und NPC zusammenlegen, und beim Time Attack gelten
+  // alle NPCs als Challenger?" Keine eigene Garagenrolle mehr: in Time Attack (nur auf der Bahn)
+  // faehrt jeder NPC mit einem Challenger-Auftrag (g.challenger), in allen anderen Modi wie
+  // immer. challenger() liefert den ersten dieser NPCs (fuer Startschirm und Vorbereitung).
+  function challengerAutos() { return garage.filter((c) => c.role === 'ghost' && c.device); }
+  function challenger() { return challengerAutos()[0] || null; }
+  // Im Gummiband halten sich alle NPCs an dir - damit sie nicht aufeinander fahren, bekommt
+  // jeder einen eigenen Versatz in Kacheln um deine Position: 0, -1, +1, -2, +2, ...
+  function challengerVersatz(k) { return k === 0 ? 0 : (k % 2 ? -1 : 1) * Math.ceil(k / 2) * CHALLENGER_ABSTAND; }
+  var CHALLENGER_ABSTAND = 1.0;
   function challengerModus() {
     const el = $('race-challenger');
     return el && CHALLENGER_MODI.indexOf(el.value) >= 0 ? el.value : 'beste';
@@ -58084,20 +58252,27 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return null;
   }
   // Aus launchGhosts, auch in Time Attack (dort bleiben nur die NPCs stehen).
+  // Aus launchGhosts in Time Attack. Rueckgabe: wie viele NPCs als Challenger fahren.
   function challengerStarten() {
-    const c = challenger();
-    if (!c || trackMode !== 'on') return;
+    const autos = challengerAutos();
+    if (!autos.length || trackMode !== 'on') return 0;
     const modus = challengerModus();
     let sp = challengerSpur(modus);
     if (!sp && modus === 'rekord') sp = challengerSpur('beste');
-    startGhost(c);
-    if (!c.ghost) return;
-    c.ghost.challenger = sp ? { art: sp.art, teile: sp.teile, ms: sp.ms, ortStart: null, soll: null }
-                            : { art: 'gummiband', soll: null };
-    const text = sp ? t('Challenger fährt') + ' ' + sp.name + ' (' + formatLapTime(sp.ms) + ')'
-      : (modus === 'gummiband' ? t('Challenger fährt Gummiband') : t('Keine Runde für den Challenger – er fährt Gummiband'));
+    let n = 0;
+    autos.forEach((c) => {
+      startGhost(c);
+      if (!c.ghost) return;
+      const versatz = challengerVersatz(n++);
+      c.ghost.challenger = sp ? { art: sp.art, teile: sp.teile, ms: sp.ms, ortStart: null, soll: null, versatz }
+                              : { art: 'gummiband', soll: null, versatz };
+    });
+    const text = (sp ? t('Challenger fährt') + ' ' + sp.name + ' (' + formatLapTime(sp.ms) + ')'
+      : (modus === 'gummiband' ? t('Challenger fährt Gummiband') : t('Keine Runde für den Challenger – er fährt Gummiband')))
+      + (n > 1 ? ' · ' + t('{n} NPCs').replace('{n}', n) : '');
     showHudToast(text);
-    log(garageLabel(c) + ': ' + text, 'info');
+    log('Time Attack: ' + n + ' NPC(s) als Challenger. ' + text, 'info');
+    return n;
   }
 
   // Aus ghostTick, nach allen Abschlaegen und vor dem Boxenstopp: das Zieltempo des Challengers.
@@ -58123,13 +58298,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const p = typeof playerCar !== 'undefined' && playerCar && playerCar.ghost ? ghostOrt(playerCar) : null;
       const n = currentTrackTiles ? currentTrackTiles.length : 0;
       if (p === null || !n) return basis;
-      soll = ist + challengerRundenAbstand(p, ist, n);
+      soll = ist + challengerRundenAbstand(p + (ch.versatz || 0), ist, n);
     } else {
       if (raceStartedAt === null || raceStartedAt === undefined) return basis;
       const tMs = Date.now() - raceStartedAt;
       if (tMs < 0) return basis;
       if (ch.ortStart === null) ch.ortStart = ist;
       const n = ch.teile.length;
+      // Ohne Versatz: jeder NPC faehrt die Runde ab seinem eigenen Startplatz (ortStart), die
+      // Startaufstellung haelt sie also schon auseinander.
       soll = ch.ortStart + Math.floor(tMs / ch.ms) * n + teleWeg(ch.teile, ch.ms, tMs % ch.ms);
     }
     ch.soll = ch.art === 'gummiband' ? null : soll;
@@ -58154,7 +58331,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
   // Fuer die Karte: wo die Spur gerade ist (nur bei Bestzeit/Rekord).
   function challengerSollMarke() {
-    const c = challenger();
+    const c = challengerAutos().find((x) => x.ghost && x.ghost.challenger && x.ghost.challenger.soll !== null);
     const ch = c && c.ghost && c.ghost.challenger;
     const n = currentTrackTiles ? currentTrackTiles.length : 0;
     if (!ch || ch.soll === null || ch.soll === undefined || !n) return null;
@@ -81674,7 +81851,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!window.OMEGA_TEST || !OMEGA_TEST.garagenZeileProbe) {
       return { skip: true, mass: 'garagenZeileProbe nicht vorhanden' };
     }
-    const SOLL = ['player', 'player2', 'player3', 'safetycar', 'challenger', 'ghost', 'none'];
+    const SOLL = ['player', 'player2', 'player3', 'safetycar', 'ghost', 'none'];
     const aus = OMEGA_TEST.garagenZeileProbe({ zwei: false });
     const an = OMEGA_TEST.garagenZeileProbe({ zwei: true, role: 'player2' });
     const maengel = [];
@@ -85318,6 +85495,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const rb = autopilot(0.8, 1);
       if (!rb || rb.throttle !== 0 || !(rb.brake >= 0.8)) f.push('Fahrerbremse wird ueberstimmt');
       aufstellSpieler.get(auto).fertig = true;
+      // v1.0.28: erst noch kurz auf der Seite weiter, damit es gerade steht.
+      physEngine.state.speedKmh = 0;
+      const roll = autopilot(0, 1);
+      if (!roll || !(roll.throttle > 0) || roll.brake === 1) f.push('rollt nach dem Ankommen nicht kurz weiter (gerade ziehen)');
+      aufstellSpieler.get(auto).geradeBis = Date.now() - 1;
       const h = autopilot(0, 1);
       if (!h || h.throttle !== 0 || h.brake !== 1) f.push('am Startplatz nicht gehalten');
       aufstellenStoppen(false);
@@ -86397,9 +86579,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const g = aufstellTempo(gerade), v = aufstellTempo(vorHaar), h = aufstellTempo(inHaar);
       if (hi > 3 && Math.abs(g - formationPace()) > 1e-9) f.push('Gerade ' + g);
       if (!(v < formationPace() - 1e-9)) f.push('vor der Haarnadel nicht langsamer: ' + v);
-      if (Math.abs(h - formationPace() * SCAN_TEMPO_HAARNADEL) > 1e-9) f.push('Haarnadel ' + h);
+      if (Math.abs(h - formationPace() * AUFSTELL_HAARNADEL) > 1e-9) f.push('Haarnadel ' + h);
     } finally { currentTrackTiles = merk.tiles; }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gerade Formationstempo, Haarnadel wie beim Scan' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gerade Formationstempo, Kurve 90 %, Haarnadel 80 %' };
   });
 
   // ---- v1.0.25: Zusammenfassung am Ende von Time Attack ----
@@ -86420,6 +86602,92 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       currentTrackTiles = merk.tiles; raceLapTimes = merk.laps; raceMode = merk.mode; bestzeitVorher = merk.vor;
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Runden, beste Runde, Vergleich, Schnitt, Telemetrie' };
+  });
+
+  // ---- v1.0.28: Abstand unter Gelb, Safety Car haelt an Start/Ziel, Telemetrie je Runde ----
+  stAdd('Gelb v1.0.28: Abstand zum Vordermann auf der Runde (NPC und Fahrerauto)', () => {
+    const f = [];
+    const merk = { tiles: currentTrackTiles, ort: ghostOrt, feld: ghostFieldRacing };
+    try {
+      currentTrackTiles = codeToTrack('SG4R4G4').tiles;
+      const n = currentTrackTiles.length;
+      const ich = { role: 'player', _o: 2 }, vorn = { role: 'ghost', _o: 2.3 };
+      ghostOrt = (c) => (c._o === undefined ? null : c._o);
+      ghostFieldRacing = () => [ich, vorn];
+      if (Math.abs(gelbAbstandFaktor(ich) - GELB_ABSTAND_BODEN) > 1e-9) f.push('dicht dahinter nicht gedrosselt: ' + gelbAbstandFaktor(ich));
+      if (gelbAbstandFaktor(vorn) !== 1) f.push('der Vordere wird gedrosselt');
+      vorn._o = 2 + GELB_ABSTAND_VOLL + 0.1;
+      if (gelbAbstandFaktor(ich) !== 1) f.push('mit Abstand trotzdem gedrosselt');
+      vorn._o = 3;
+      const mitte = gelbAbstandFaktor(ich);
+      if (!(mitte > GELB_ABSTAND_BODEN && mitte < 1)) f.push('Zwischenbereich ' + mitte);
+      // Ueber die Ziellinie gewickelt: ich auf n-0.2, vorn auf 0.1.
+      ich._o = n - 0.2; vorn._o = 0.1;
+      if (Math.abs(gelbAbstandFaktor(ich) - GELB_ABSTAND_BODEN) > 1e-9) f.push('ueber Start/Ziel nicht erkannt');
+    } finally { currentTrackTiles = merk.tiles; ghostOrt = merk.ort; ghostFieldRacing = merk.feld; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'dicht dahinter Boden, mit Abstand voll, ueber die Linie gewickelt' };
+  });
+
+  stAdd('Safety Car v1.0.28: zieht vor Start/Ziel nach rechts und haelt an der Linie', () => {
+    const f = [];
+    const merk = { tiles: currentTrackTiles, garage: garage.slice() };
+    const sc = { device: { id: 'sc28' }, role: 'safetycar', tag: 'SC', rx: {}, testSenke: [], ghost: { running: true, scHeim: true, tileIndex: 1 } };
+    try {
+      currentTrackTiles = codeToTrack('SG4R4G4').tiles;
+      const n = currentTrackTiles.length;
+      garage.length = 0; garage.push(sc);
+      safetyCarHeimTick(sc);
+      if (sc.ghost.randHalt) f.push('weit vor der Linie schon am Rand');
+      sc.ghost.tileIndex = n - 1;
+      safetyCarHeimTick(sc);
+      const h = sc.ghost.randHalt;
+      if (!h || h.phase !== 'rand' || !h.scLinie) f.push('vor der Linie nicht nach rechts');
+      else {
+        if (pitQuer(sc) !== FINISH_RAND) f.push('nicht ganz rechts: ' + pitQuer(sc));
+        sc.ghost.tileIndex = 0;
+        safetyCarHeimTick(sc);
+        if (h.phase !== 'halt') f.push('an der Linie nicht angehalten (' + h.phase + ')');
+      }
+    } finally {
+      currentTrackTiles = merk.tiles;
+      garage.length = 0; merk.garage.forEach((c) => garage.push(c));
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'rechts ab ' + SC_RAND_KACHELN + ' Kacheln vor der Linie, haelt an der Linie' };
+  });
+
+  stAdd('Telemetrie v1.0.28: alle Runden der Fahrt waehlbar, A und B nicht dieselbe Runde', () => {
+    const f = [];
+    const tiles = codeToTrack('SG4R4G4').tiles, n = tiles.length;
+    const merk = { tiles: currentTrackTiles, st: localStorage.getItem(TELE_STORE), fid: teleFahrtId, wahl: Object.assign({}, teleWahl) };
+    try {
+      localStorage.removeItem(TELE_STORE);
+      currentTrackTiles = tiles; teleFahrtId = 4711;
+      const code = trackToCode(tiles, 0);
+      const spur = (ms, r) => ({ v: 1, code, n, ms, teile: Array.from({ length: n }, (_, k) => Math.round(k * ms / n)), proben: [], datum: 1000 + r, runde: r });
+      [9000, 8000, 8500, 7800].forEach((ms, j) => teleMerken(spur(ms, j + 1), null));
+      const e = teleLesen()[bestzeitSchluessel(tiles)];
+      const fw = e && e.fahrer.spieler1;
+      if (!fw || !fw.fahrt || fw.fahrt.runden.length !== 4) f.push('Runden der Fahrt: ' + (fw && fw.fahrt ? fw.fahrt.runden.length : 'keine'));
+      teleWahl = { strecke: null, a: 'letzte', b: 'beste' };
+      if ($('tele-inhalt')) {
+        teleSeiteZeichnen();
+        const sel = $('tele-inhalt').querySelectorAll('select');   // Strecke, A, B
+        const a = sel[1], b = sel[2];
+        if (!a || a.options.length < 5) f.push('Auswahl hat ' + (a ? a.options.length : 0) + ' Eintraege statt 4 Runden + beste');
+        if (a && b && a.value === b.value) f.push('A und B zeigen dieselbe Runde');
+        if (a && a.value !== 'spieler1|r2') f.push('A ist ' + (a && a.value) + ' statt der Runde vor der besten letzten');
+      }
+      // Eine neue Fahrt ersetzt die Runden der alten.
+      teleFahrtId = 4712;
+      teleMerken(spur(8800, 1), null);
+      const fw2 = teleLesen()[bestzeitSchluessel(tiles)].fahrer.spieler1;
+      if (fw2.fahrt.runden.length !== 1 || fw2.beste.ms !== 7800) f.push('neue Fahrt: ' + fw2.fahrt.runden.length + ' Runden, beste ' + fw2.beste.ms);
+    } finally {
+      currentTrackTiles = merk.tiles; teleFahrtId = merk.fid; teleWahl = merk.wahl;
+      if (merk.st === null) localStorage.removeItem(TELE_STORE); else localStorage.setItem(TELE_STORE, merk.st);
+      if ($('tele-inhalt')) $('tele-inhalt').innerHTML = '';
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '4 Runden + beste, A = Runde vor der besten, neue Fahrt ersetzt' };
   });
 
   stAdd('Telemetrie-Seite: Karte, Balken und Tempo aus zwei Runden, Rundenweg steigt', () => {
@@ -86504,23 +86772,35 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   });
 
   // ---- v1.0.21: Challenger (90d-challenger.js) ----
-  stAdd('Challenger: eine Rolle nur auf der Bahn, folgt Spur oder dir, Takt, Soll-Punkt', () => {
+  stAdd('Challenger: alle NPCs in Time Attack, folgt Spur oder dir, Takt, Soll-Punkt', () => {
     const f = [];
     const merk = { garage: garage.slice(), tm: trackMode, rs: raceState, fl: flagState, form: raceFormationLap,
                    start: raceStartedAt, tiles: currentTrackTiles, ort: ghostOrtGes, ort1: ghostOrt, pc: playerCar };
     try {
       currentTrackTiles = codeToTrack('SG2H2G2J2').tiles;
       const n = currentTrackTiles.length;
-      const ch = { device: { id: 'ch' }, role: 'challenger', tag: 'CH', tileCode: TILE_TYPE.STRAIGHT, _ort: 0,
+      const ch = { device: { id: 'ch' }, role: 'ghost', tag: 'CH', tileCode: TILE_TYPE.STRAIGHT, _ort: 0,
                    ghost: { running: true, tileIndex: 0, laps: 0, challenger: { art: 'beste', teile: Array.from({ length: n }, (_, k) => k * 1000), ms: n * 1000, ortStart: null, soll: null } } };
       const frei = { device: { id: 'f' }, role: 'none' };
+      const npc2 = { device: { id: 'n2' }, role: 'ghost', tag: 'N2' };
+      garage.length = 0; garage.push(ch, frei, npc2);
+      trackMode = 'on';
+      // v1.0.28: keine eigene Rolle mehr - in Time Attack fahren ALLE NPCs als Challenger.
+      if (garRollenFrei(frei).some((r) => r.id === 'challenger')) f.push('Rolle Challenger noch waehlbar');
+      {
+        const echtStart = startGhost, gestartet = [];
+        const chMerk = ch.ghost, chAuftrag = ch.ghost.challenger;
+        try {
+          startGhost = (c) => { gestartet.push(c.tag); if (!c.ghost) c.ghost = { running: true }; };
+          const nC = challengerStarten();
+          if (nC !== 2 || gestartet.join() !== 'CH,N2') f.push('Time Attack: ' + nC + ' NPCs als Challenger (' + gestartet.join() + ')');
+          if (!npc2.ghost || !npc2.ghost.challenger) f.push('zweiter NPC ohne Challenger-Auftrag');
+          trackMode = 'off';
+          if (challengerStarten() !== 0) f.push('Challenger im Ausdruck-Modus');
+          trackMode = 'on';
+        } finally { startGhost = echtStart; ch.ghost = chMerk; ch.ghost.challenger = chAuftrag; npc2.ghost = null; }
+      }
       garage.length = 0; garage.push(ch, frei);
-      trackMode = 'on';
-      if (garRollenFrei(frei).some((r) => r.id === 'challenger')) f.push('zweiter Challenger waehlbar');
-      trackMode = 'off';
-      const frei2 = { device: { id: 'f2' }, role: 'none' };
-      if (garRollenFrei(frei2).some((r) => r.id === 'challenger')) f.push('Challenger im Ausdruck-Modus waehlbar');
-      trackMode = 'on';
       ghostPhasenSetzen();
       if (!ch.imTakt) f.push('Challenger bekommt keinen Sendetakt');
       ghostTaktLoeschen(ch);
@@ -91243,14 +91523,29 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
   // Auswahlwerte sind "fahrer|beste" oder "fahrer|letzte"; ein blosses "beste"/"letzte" meint
   // den eigenen (ersten nicht fremden) Fahrer.
-  function teleWahlAufloesen(v, fahrer) {
+  // v1.0.28: "letzte" meint mit gemerkter Fahrt deren letzte Runde - und ist die zugleich die
+  // beste, die davor, damit A und B nicht dieselbe Runde zeigen (GEMELDET: "es wird nur
+  // letzte = beste Runde angezeigt").
+  function teleWahlAufloesen(v, fahrer, e) {
     if (String(v).indexOf('|') >= 0) return v;
     const ich = fahrer.find((w) => w.indexOf('fremd:') !== 0) || fahrer[0];
+    const f = e && e.fahrer[ich];
+    const runden = f && f.fahrt ? f.fahrt.runden : null;
+    if (v === 'letzte' && runden && runden.length) {
+      let j = runden.length - 1;
+      const gleich = (a, b) => a && b && a.ms === b.ms && a.datum === b.datum;
+      if (j > 0 && gleich(runden[j], f.beste)) j--;
+      return ich + '|r' + j;
+    }
     return ich + '|' + v;
   }
   function teleWahlSpur(e, v) {
     const [w, art] = String(v).split('|');
-    return e.fahrer[w] ? e.fahrer[w][art] || null : null;
+    const f = e.fahrer[w];
+    if (!f) return null;
+    const m = /^r(\d+)$/.exec(art || '');
+    if (m) return f.fahrt && f.fahrt.runden[+m[1]] || null;
+    return f[art] || null;
   }
 
   // v1.0.25: Runden mit nicht gelesenen Teilen (70b-telemetrie.js) sagen, wie viele geschaetzt sind.
@@ -91270,11 +91565,19 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (strecken.indexOf(teleWahl.strecke) < 0) teleWahl.strecke = strecken[0];
     const e = d[teleWahl.strecke];
     const fahrer = Object.keys(e.fahrer);
-    const art = { beste: t('Beste Runde'), letzte: t('Letzte Runde') };
+    const art = { beste: t('Beste Runde (alle Fahrten)'), letzte: t('Letzte Runde') };
     // Alle Runden dieser Strecke: eigene beste/letzte je Fahrer, fremde (online) als Bestzeit.
     const optionen = [];
     fahrer.forEach((w) => {
-      ['beste', 'letzte'].forEach((a) => {
+      // v1.0.28: alle Runden der letzten Fahrt, dann die beste aller Fahrten.
+      const fw = e.fahrer[w];
+      const runden = fw.fahrt && fw.fahrt.runden && w.indexOf('fremd:') !== 0 ? fw.fahrt.runden : [];
+      runden.forEach((sp, j) => {
+        const best = fw.beste && sp.ms === fw.beste.ms && sp.datum === fw.beste.datum;
+        optionen.push([w + '|r' + j, (sp.runde ? t('Runde') + ' ' + sp.runde : t('Runde') + ' ' + (j + 1))
+          + (best ? ' · ' + t('Bestzeit') : '') + ' (' + formatLapTime(sp.ms) + ')']);
+      });
+      (runden.length ? ['beste'] : ['beste', 'letzte']).forEach((a) => {
         const sp = e.fahrer[w][a];
         if (!sp) return;
         const name = w.indexOf('fremd:') === 0 ? sp.auto + ' · ' + t('Bestzeit')
@@ -91286,8 +91589,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // (A letzte, B beste eigene Runde), sonst die erste vorhandene.
     const gibt = (v) => optionen.some((o) => o[0] === v);
     ['a', 'b'].forEach((x) => {
-      let v = teleWahlAufloesen(teleWahl[x], fahrer);
-      if (!gibt(v)) v = teleWahlAufloesen(x === 'a' ? 'letzte' : 'beste', fahrer);
+      let v = teleWahlAufloesen(teleWahl[x], fahrer, e);
+      if (!gibt(v)) v = teleWahlAufloesen(x === 'a' ? 'letzte' : 'beste', fahrer, e);
       if (!gibt(v) && optionen.length) v = optionen[0][0];
       teleWahl[x] = v;
     });
