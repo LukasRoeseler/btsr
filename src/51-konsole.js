@@ -129,6 +129,8 @@
     // Raumgestalter offen: die Zurueck-Taste schliesst ihn (v0.9.45, "komme nicht mehr raus").
     if (typeof raumDsOffen === 'function' && raumDsOffen()) { raumDsSchliessen(); return true; }
     if ($('mp-info') && !$('mp-info').hidden && typeof mpiStop === 'function') { mpiStop(); return true; }
+    // v1.0.22: die Zurueck-Taste schliesst auch die Meisterschaft (vorher kam man nur ueber das Kreuz raus).
+    if (typeof meisterOffen === 'function' && meisterOffen()) { meisterSchliessen(); return true; }
     const imEditor = document.body.classList.contains('track-fs');
     const tour = typeof konsoleTourOffen === 'function' && konsoleTourOffen();
     if (kAktiverTab() === 'home' && !imEditor && !tour && !kFrageOffen) return false;
@@ -224,7 +226,9 @@
         text: t(text), an: i === (konsoleReiter.renn || 0),
         wahl: () => {
           konsoleReiter.renn = i;
-          const el = $(id);
+          let el = $(id);
+          // Noch kein Rennen: der Platzhalter "Aktuell keine Ergebnisse verfuegbar" (v1.0.22).
+          if (id === 'race-results' && el && el.style.display === 'none' && $('race-results-leer')) el = $('race-results-leer');
           if (el && !el.hidden) el.scrollIntoView({ block: 'start' });
           konsoleZeichnen();
         },
@@ -753,7 +757,7 @@
     // Rennoptionen-Kachel wechselt mit dem Rennmodus das Bild (BESTELLT v0.8.53).
     const rmBild = { practice: 'rennoptionen-practice', endurance: 'rennoptionen-endurance',
                      qualifying: 'rennoptionen-qualifying', laps: 'rennoptionen-laps',
-                     knockout: 'knockout', derby: 'derby', bestzeit: 'challenges' }[rm.value];
+                     knockout: 'knockout', derby: 'derby', bestzeit: 'rennoptionen-bestzeit' }[rm.value];
     const rb = $('fa-renn-bild');
     if (rb && rmBild && rb.dataset.bild !== rmBild) {
       rb.style.backgroundImage = 'url(img/' + rmBild + '.jpg)';

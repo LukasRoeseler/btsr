@@ -17939,10 +17939,10 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Auslaufen 2 s, Bremse sofort, Rueckwaerts erst beim zweiten Druck' };
   });
 
-  stAdd('Abstimmungen: FAHREN zeigt Arcade, Sim+, Pro, Pacejka; Lenkeinschlag erreichbar ausser Realismus GT3', () => {
+  stAdd('Abstimmungen: FAHREN zeigt Arcade, Sim+, Pro, Pacejka, RC; Lenkeinschlag erreichbar ausser Realismus GT3', () => {
     const f = [];
     const fahren = window.__presetKeysFahren ? window.__presetKeysFahren() : [];
-    if (fahren.join(',') !== 'arcade,simplus,pro,propacejka') f.push('FAHREN: ' + fahren.join(','));
+    if (fahren.join(',') !== 'arcade,simplus,pro,propacejka,rc') f.push('FAHREN: ' + fahren.join(','));
     for (const k of ['arcade', 'simplus', 'gt3', 'f1']) {
       const v = window.__presetValues(k) || {};
       const resp = v['phys-steerresp'] === undefined ? 3 : v['phys-steerresp'];
@@ -17952,7 +17952,7 @@
     const sim = window.__presetValues('simplus') || {}, pro = window.__presetValues('pro') || {};
     if (!(sim['setting-brakepower'] > pro['setting-brakepower'] + 0.5)) f.push('Sim+ bremst nicht viel staerker als Pro');
     if (!(sim['phys-accel'] > pro['phys-accel'])) f.push('Sim+ beschleunigt nicht staerker');
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'vier im FAHREN-Menue, Sim+ staerker als Pro, Einschlag erreichbar' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'fuenf im FAHREN-Menue, Sim+ staerker als Pro, Einschlag erreichbar' };
   });
 
   stAdd('Training: Zeitlimit 0 laeuft ohne Ende, ein Limit beendet es', () => {
@@ -18309,6 +18309,42 @@
       raceStartedAt = merk.start; currentTrackTiles = merk.tiles; ghostOrtGes = merk.ort; playerCar = merk.pc;
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eine Rolle, nur Bahn, Takt, Spur hinten schneller/vorn langsamer, Gummiband, Gelb, Kurvendeckel, Soll-Punkt' };
+  });
+
+  // ---- v1.0.22: NPC-Motor waehlbar, und die Drehzahl folgt Gas und Bremse ----
+  stAdd('NPC-Motor: Wahl je Auto vor der Vorgabe, Drehzahl steigt beim Beschleunigen und faellt beim Bremsen', () => {
+    const f = [];
+    const el = $('ghost-motor');
+    if (!el || el.options.length < 5) f.push('Liste des NPC-Motors leer');
+    const merk = el ? el.value : '';
+    try {
+      if (el) el.value = 'sd_v10';
+      if (ghostMotorWunsch({}) !== 'sd_v10') f.push('Vorgabe aus Optionen nicht genommen');
+      if (ghostMotorWunsch({ ghostMotor: 'mustang' }) !== 'mustang') f.push('Wahl je Auto nicht vorrangig');
+    } finally { if (el) el.value = merk; }
+    // Die Ghost-Physik wie in startGhost: Automatik, Drehzahl aus dem eigenen Zustand.
+    const e = new CarreraPhysicsEngine();
+    Object.assign(e.config, physEngine.config);
+    e.config.gears = physEngine.config.gears;
+    e.config.autoShift = true; e.config.speedLimitFactor = 1;
+    if (typeof e.calibrateAccel === 'function') e.calibrateAccel();
+    e.state.driveMode = 'forward';
+    const rpm = [];
+    const schritt = (gas, bremse, sek) => {
+      for (let t0 = 0; t0 < sek; t0 += 0.045) {
+        e.update({ steering: 0, throttle: gas, brake: bremse, headlights: false }, 0.045);
+        rpm.push(motorDrehzahl(e.state, 'mustang'));
+      }
+    };
+    schritt(0.2, 0, 1); const leerlaufNah = rpm[rpm.length - 1];
+    schritt(1, 0, 2.5); const nachGas = Math.max(...rpm.slice(-30));
+    schritt(0, 1, 1.5); const nachBremse = rpm[rpm.length - 1];
+    const verschieden = new Set(rpm.map((x) => Math.round(x / 100))).size;
+    if (!(nachGas > leerlaufNah + 1000)) f.push('Drehzahl steigt beim Beschleunigen kaum: ' + Math.round(leerlaufNah) + ' -> ' + Math.round(nachGas));
+    if (!(nachBremse < nachGas - 1000)) f.push('Drehzahl faellt beim Bremsen kaum: ' + Math.round(nachGas) + ' -> ' + Math.round(nachBremse));
+    if (verschieden < 15) f.push('nur ' + verschieden + ' verschiedene Drehzahlstufen');
+    return { ok: !f.length, mass: f.length ? f.join(' | ')
+      : 'Wahl je Auto > Vorgabe; Drehzahl ' + Math.round(leerlaufNah) + ' -> ' + Math.round(nachGas) + ' -> ' + Math.round(nachBremse) + ' U/min, ' + verschieden + ' Stufen' };
   });
 
   // ---- v1.0.14: SIMULATOR-Linie (61-simlinie.js) ----

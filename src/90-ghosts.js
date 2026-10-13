@@ -981,7 +981,9 @@
       ghostStufe: car.ghostStufe === undefined || car.ghostStufe === null
         ? 1 : car.ghostStufe,
       // v0.9.64: Ghost-Sound je Auto. Vorgabe an (true); explizit ausgeschaelt bleibt false.
-      ghostSound: car.ghostSound === false ? false : true };
+      ghostSound: car.ghostSound === false ? false : true,
+      // v1.0.22: der NPC-Motor je Auto ("" = Vorgabe aus Optionen -> Ton).
+      ghostMotor: car.ghostMotor || '' };
     try { localStorage.setItem(CAR_ROLLEN_STORE, JSON.stringify(alle)); } catch (e) { /* voll */ }
   }
   function carStoreSchreiben(all) {
@@ -1605,6 +1607,19 @@
       };
       box.appendChild(garWertZeile('NPC-Sound', t(hoerbar ? 'An' : 'Aus'),
         soundUmschalten, soundUmschalten));
+      // v1.0.22 BESTELLT: "Lass mich den Motorensound von Ghosts einstellen." Je NPC; "Vorgabe"
+      // nimmt die Einstellung aus Optionen -> Ton.
+      if (typeof ghostMotorWerte === 'function') {
+        const werte = [{ v: '', name: t('Vorgabe') }].concat(ghostMotorWerte().filter((w) => w.v));
+        const j = Math.max(0, werte.findIndex((w) => w.v === (car.ghostMotor || '')));
+        const motorWahl = (d) => {
+          car.ghostMotor = werte[(j + d + werte.length) % werte.length].v;
+          carRolleMerken(car);
+          if (car.ghost && car.ghost.stimme && typeof ghostStimmeStoppen === 'function') ghostStimmeStoppen(car);
+          renderGarage();
+        };
+        box.appendChild(garWertZeile('NPC-Motor', werte[j].name, () => motorWahl(-1), () => motorWahl(1)));
+      }
       const ch = document.createElement('div');
       ch.innerHTML = charakterZeile(car);
       if (ch.firstElementChild) box.appendChild(ch.firstElementChild);
@@ -2142,6 +2157,7 @@
         else if (typeof gemerkt.ghostSpeed === 'number') car.ghostStufe = ghostStufeAusSpeed(gemerkt.ghostSpeed);
         // v0.9.64: Ghost-Sound je Auto.
         if (typeof gemerkt.ghostSound === 'boolean') car.ghostSound = gemerkt.ghostSound;
+        if (typeof gemerkt.ghostMotor === 'string') car.ghostMotor = gemerkt.ghostMotor;
       }
       const frei = gemerkt && garRollenFrei(car).some((r) => r.id === gemerkt.role);
       if (frei && gemerkt.role !== 'none') setCarRole(car, gemerkt.role);

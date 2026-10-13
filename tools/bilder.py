@@ -78,6 +78,9 @@ MOTIVE = {
     'rennoptionen-endurance': ('eb15c751-2d72-41aa-af6c-8e5bc54bee18.jpg', 0, (330, 170, 860, 470)),
     'rennoptionen-qualifying': '03a18c66-3e7f-4c80-a5f6-94465b9d43c7.jpg',
     'rennoptionen-laps': 'Gemini_Generated_Image_t5r42rt5r42rt5r4.jpg',
+    # v1.0.22 BESTELLT: "Thumbnail fuer Time Attack auch einfuegen wie bei den anderen Renntypen."
+    # Lichtspuren bei Nacht - schnell gegen die Uhr.
+    'rennoptionen-bestzeit': '6200027413_b0d71daac1_b.jpg',
     'asphalt': ('03a18c66-3e7f-4c80-a5f6-94465b9d43c7.jpg', 0, (0, 238, 420, 345)),
 }
 GROESSEN = {'-bg': 1920, '': 720}

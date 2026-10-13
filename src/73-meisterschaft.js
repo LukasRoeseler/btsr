@@ -36,7 +36,7 @@
     ['letztes', 'Wie letztes Ergebnis'], ['zufall', 'Zufall']];
   const MEISTER_GLOBAL = [
     { id: 'fahrgefuehl', l: 'Fahrgefühl', w: [['garage', 'Wie in der Garage'], ['p1', 'Alle wie Spieler 1'],
-      ['arcade', 'Alle: Arcade'], ['simplus', 'Alle: Sim+'], ['pro', 'Alle: Pro'], ['propacejka', 'Alle: Pacejka']] },
+      ['arcade', 'Alle: Arcade'], ['simplus', 'Alle: Sim+'], ['pro', 'Alle: Pro'], ['propacejka', 'Alle: Pacejka'], ['rc', 'Alle: RC']] },
     { id: 'start1', l: 'Startaufstellung 1. Event', w: [['zufall', 'Zufall'], ['beste_zuletzt', 'Beste zuletzt'],
       ['beste_zuerst', 'Beste zuerst'], ['garage', 'Garagen-Reihenfolge']] },
     { id: 'punkte', l: 'Punkte', w: [['f1', 'F1 · 25-18-15-12-10'], ['klassisch', 'Klassisch · 10-6-4-3-2'],
@@ -617,8 +617,11 @@
       { l: 'Start', w: r ? meisterName(MEISTER_START, e.start) : t('entfällt'), feld: 'start', aus: !r },
       { l: 'Startaufstellung', w: r ? meisterName(MEISTER_AUFST, e.aufst) : t('entfällt'), feld: 'aufst', aus: !r, fehlt: !!meisterAufstFehler(i) },
       { l: 'Pflichtstopps', w: r ? (e.stopps ? String(e.stopps) : t('Keine')) : t('entfällt'), feld: 'stopps', aus: !r },
-      { knopf: 'hoch', l: '▲ Früher' }, { knopf: 'kopie', l: 'Kopieren' },
-      { knopf: 'weg', l: msLoeschenArm === i ? 'Wirklich löschen?' : 'Löschen' },
+      // v1.0.22 BESTELLT: "FRUEHER nur mit dem Dreieck-Pfeil nach oben, LOESCHEN nur mit roetlicher
+      // Muelltonne, und dafuer auch einen SPAETER-Button (Dreieck nach unten)".
+      { knopf: 'hoch', l: 'Früher', zeichen: '▲' }, { knopf: 'runter', l: 'Später', zeichen: '▼' },
+      { knopf: 'kopie', l: 'Kopieren' },
+      { knopf: 'weg', l: msLoeschenArm === i ? 'Wirklich löschen?' : 'Löschen', tonne: true, arm: msLoeschenArm === i },
     ];
   }
   function msPlanDetailZeichnen() {
@@ -658,7 +661,11 @@
         const sel = k === msDetail ? ' sel' : '';
         if (r.knopf) {
           if (k === 7) h += '<div class="ms-fuss">';
-          h += '<button type="button" class="ms-knopf' + (r.knopf === 'weg' ? ' ms-weg' : '') + sel + '" data-d="' + k + '">' + msEsc(t(r.l)) + '</button>';
+          const inhalt = r.zeichen ? r.zeichen
+            : r.tonne ? MS_TONNE + (r.arm ? ' ' + msEsc(t('Wirklich?')) : '')
+            : msEsc(t(r.l));
+          h += '<button type="button" class="ms-knopf' + (r.knopf === 'weg' ? ' ms-weg' : '') + (r.zeichen || r.tonne ? ' ms-symbol' : '') + sel
+            + '" data-d="' + k + '" aria-label="' + msEsc(t(r.l)) + '" title="' + msEsc(t(r.l)) + '">' + inhalt + '</button>';
           if (k === dz.length - 1) h += '</div>';
           return;
         }
@@ -810,6 +817,7 @@
     msEvent = meister.plan.events.length - 1; msZeile = msEvent; msDetail = 0;
     meisterSpeichern();
   }
+  var MS_TONNE = '<svg class="ms-tonne" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>';
   function msEventAktion(a) {
     const evs = meister.plan.events, i = msEvent;
     if (a === 'weg') {
@@ -824,6 +832,9 @@
     } else if (a === 'hoch' && i > 0) {
       const x = evs[i - 1]; evs[i - 1] = evs[i]; evs[i] = x;
       msEvent = i - 1; msZeile = i - 1;
+    } else if (a === 'runter' && i < evs.length - 1) {
+      const x = evs[i + 1]; evs[i + 1] = evs[i]; evs[i] = x;
+      msEvent = i + 1; msZeile = i + 1;
     }
     meisterSpeichern();
     msZeichnen();

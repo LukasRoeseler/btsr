@@ -292,9 +292,33 @@
     v: Object.assign({}, PRESETS.pro.v, { 'phys-steerresp': 3.3, 'phys-accel': 1.15,
                                           'setting-zero-to-top': 2.3, 'setting-brakepower': 2.2 }),
   };
-  // Im FAHREN-Menue und am Cockpit-Knopf nur diese vier (BESTELLT: "die anderen Modi noch im
+  // ---- RC (v1.0.22) -----------------------------------------------------------------
+  // BESTELLT: "Hatte ich nicht auch mal einen RC Fahrgefuehl-Modus gewuenscht? Der soll so wie
+  // Arcade sein, nur viel extremer und 'RC' heissen und auch fuer Spielerautos anwaehlbar sein.
+  // Da Pacejka ja auch inzwischen in die Fahrgefuehl-Optionen integriert ist, wuerde das die
+  // Steuerungsmodus-Einstellung unnoetig machen." Also: Arcade mit allen Reglern am Anschlag
+  // (Lenkung, Bremse, Anzug) und dem Steuerungsmodus RC - Stick direkt wie bei einer
+  // Fernsteuerung, Gas weg laeuft in 2 s aus, Bremse sofort, zweiter Bremsdruck im Stand
+  // rueckwaerts. Der Steuerungsmodus haengt damit nur noch am Fahrgefuehl.
+  PRESETS.rc = {
+    label: 'RC',
+    kurz: 'Arcade, nur viel extremer: wie ein Fernsteuerungsauto',
+    text: 'Der Stick geht direkt ans Auto wie bei einer Fernsteuerung, ohne G\u00e4nge: Gas weg '
+        + 'l\u00e4uft in zwei Sekunden aus, die Bremse greift sofort, ein zweiter Bremsdruck im '
+        + 'Stand f\u00e4hrt r\u00fcckw\u00e4rts. Lenkung, Bremse und Anzug stehen am Anschlag, kein '
+        + 'Reifenverschlei\u00df, kein Tankgewicht, Crashs ohne Schaden.',
+    v: Object.assign({}, PRESETS.arcade.v, { 'phys-mode': 'aus', 'phys-steerresp': 4,
+      'setting-steer-calib': 3, 'setting-brakepower': 2.5, 'setting-zero-to-top': 1.5,
+      'phys-accel': 1.6, 'setting-topspeed': 1.5, 'setting-coast-drag': 0.3, 'setting-brake-steal': 0.2 }),
+  };
+  // Jedes Fahrgefuehl setzt seinen Steuerungsmodus SELBST: die Einstellung dafuer ist seit
+  // v1.0.22 ausgeblendet, und wer von RC oder Pacejka wechselt, muss wieder in "Physik" landen.
+  Object.keys(PRESETS).forEach((k) => {
+    if (!Object.prototype.hasOwnProperty.call(PRESETS[k].v, 'phys-mode')) PRESETS[k].v['phys-mode'] = 'physik';
+  });
+  // Im FAHREN-Menue und am Cockpit-Knopf nur diese (BESTELLT: "die anderen Modi noch im
   // Optionen-Menue lassen, aber nicht im FAHREN-Menue in der Kachel anzeigen").
-  const PRESETS_FAHREN = ['arcade', 'simplus', 'pro', 'propacejka'];
+  const PRESETS_FAHREN = ['arcade', 'simplus', 'pro', 'propacejka', 'rc'];
   // Bis v0.4 hiess GT3 "real". Aeltere exportierte Abstimmungen und der Knopf im
   // Garagenschirm duerfen den alten Namen weiter benutzen.
   const PRESET_ALIAS = { real: 'gt3', realismus: 'gt3' };

@@ -239,6 +239,8 @@
     background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/rennoptionen-qualifying.jpg) center / cover; }
   .mode-tile.kachelbild.laps {
     background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/rennoptionen-laps.jpg) center / cover; }
+  .mode-tile.kachelbild.bestzeit {
+    background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/rennoptionen-bestzeit.jpg) center / cover; }
   .mode-tile.kachelbild:hover, .mode-tile.kachelbild.sel { color: #fff; background-color: transparent; }
   .mode-tile.kachelbild.sel { border-color: var(--bad); box-shadow: inset 3px 0 0 var(--bad); }
   .wx-pick { display: flex; gap: 6px; }
@@ -2405,7 +2407,14 @@
 
   /* Buehne */
   main { max-width: 1320px; }
-  .card { background: rgba(14,16,22,.9); }
+  /* v1.0.22 BESTELLT: "Transparenz der dunklen Hintergruende zwischen den Optionen und dem
+     Bild-Hintergrund erhoehen" (die grosse Flaeche mit der weissen L-Ecke). Die Kacheln selbst
+     bleiben dunkel, nur die Flaeche dazwischen laesst das Bild durch. */
+  .card { background: rgba(14,16,22,.58); }
+  .misc-grid.mp-wege { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .mp-wege .misc-tile b { font-size: 17px; padding: 11px 10px; }
+  .mp-wege .misc-tile svg { width: 84px; height: 84px; margin: 22px auto 22px; }
+  .mp-wege .misc-tile span { display: block; font-size: 15px; padding: 0 14px 18px; text-align: center; }
   .card .card { background: rgba(255,255,255,.035); }
 
 
@@ -2938,8 +2947,13 @@
   .gar-a-zeile .gk-rolle > button[data-d="1"] { grid-column: 3; grid-row: 1; }
   .gar-a-zeile .gk-rolle > .wip-tag { grid-column: 1 / -1; grid-row: 2; justify-self: center;
     font-size: 9px; margin: 0; }
-  .gk-w > b { display: inline-block; min-width: 10em; text-align: center; white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis; }
+  /* v1.0.22 GEMELDET: "Die Namen von Holden Commodore und Lamborghini Murciélago R-GT sind so
+     breit, dass sie nicht auf den Bildschirm passen." Feste Breite (die Pfeile bleiben an ihrer
+     Stelle), lange Werte brechen in eine zweite Zeile um statt die Zeile zu sprengen. */
+  .gk-w > b { display: inline-block; width: 10em; text-align: center; white-space: normal;
+    overflow-wrap: anywhere; line-height: 1.15; }
+  #race-act-sound-txt, #vgl1-act-sound-txt, #vgl-act-sound-txt, #vgl3-act-sound-txt {
+    white-space: normal; overflow-wrap: anywhere; line-height: 1.1; }
   .gar-akku { white-space: nowrap; }
   #race-gridscreen button.pad-fokus { outline: 3px solid var(--k-blau, #3d8bff); outline-offset: 2px; }
   /* v1.0.19: Time Attack auf dem Startschirm - Medaillenzeiten und bisher Gewonnenes. */
@@ -2972,10 +2986,13 @@
     font-size: clamp(11px, 1.7vw, 15px); padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
   .meister-schirm::before { content: ""; position: absolute; inset: 0; background: rgba(8,10,15,.86); pointer-events: none; }
   .meister-schirm > * { position: relative; }
-  .ms-kopf { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,.1); background: rgba(5,7,12,.6); }
+  .ms-kopf { display: flex; align-items: center; gap: 8px; padding: max(6px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) 6px max(10px, env(safe-area-inset-left));
+    border-bottom: 1px solid rgba(255,255,255,.1); background: rgba(5,7,12,.6); }
   .ms-kopf b { letter-spacing: .12em; text-transform: uppercase; font-size: 1.1em; }
   .ms-hint { margin-left: auto; font-size: .8em; color: #a3acbd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .ms-zu { background: none; border: 0; color: #a3acbd; font-size: 1.2em; padding: 2px 6px; cursor: pointer; }
+  .ms-zu { flex: 0 0 auto; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.35); color: #fff;
+    font-size: 1.3em; line-height: 1; min-width: 2.2em; min-height: 2.2em; padding: 4px 8px; cursor: pointer; }
+  .ms-zu:hover { background: rgba(255,255,255,.2); }
   .ms-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 10px; padding: 8px 10px 10px; flex: 1; min-height: 0; }
   .ms-liste { position: relative; display: flex; flex-direction: column; gap: 5px; overflow-y: auto; min-height: 0; padding: 2px; }
   .ms-trenner { margin: 6px 0 1px; font-size: .78em; letter-spacing: .14em; text-transform: uppercase; color: #a3acbd; display: flex; align-items: center; gap: 8px; }
@@ -3021,6 +3038,9 @@
   .ms-fuss .ms-knopf { flex: 1; font-size: .85em; padding: 6px; }
   .ms-fuss-senk { flex-direction: column; }
   .ms-weg { color: #ffb3c4; }
+  .ms-fuss .ms-symbol { flex: 0 0 auto; min-width: 2.8em; font-size: 1.05em; }
+  .ms-tonne { width: 1.25em; height: 1.25em; vertical-align: -0.2em; fill: none; stroke: #ff5a6e; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round; }
   .ms-punkte { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; margin-top: 4px; }
   .ms-punkte div { background: #181c25; text-align: center; padding: 3px 0; font-size: .82em; }
   .ms-punkte div b { display: block; font-size: 1.1em; }
@@ -4630,7 +4650,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.21</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.22</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5760,6 +5780,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Neues Fahrgef&#252;hl RC (auch f&#252;r Spielerautos, in FAHREN, Garage, Cockpit und Meisterschaft): wie Arcade, nur viel extremer &#8211; der Stick geht direkt ans Auto wie bei einer Fernsteuerung, Gas weg l&#228;uft aus, zweimal Bremse im Stand f&#228;hrt r&#252;ckw&#228;rts. Der Steuerungsmodus h&#228;ngt jetzt am Fahrgef&#252;hl; die Einstellung Steuerungsmodus und die Pacejka-Regler sind ausgeblendet. NPC-Motor w&#228;hlbar: Vorgabe unter Optionen &#8250; Ton, je NPC in der Garage. Renntypen in der Reihenfolge Training, Time Attack, Qualifying, Runden, Endurance, NPC Knockout, Demolition Derby, Time Attack mit eigenem Kachelbild. Meisterschaft: Event fr&#252;her/sp&#228;ter nur mit &#9650;/&#9660;, L&#246;schen als rote M&#252;lltonne, das Schlie&#223;en-Kreuz steht links und ist gr&#246;&#223;er, die Zur&#252;ck-Taste schlie&#223;t auch. WLAN-Mehrspieler: Android-App zuerst, beide Kacheln gr&#246;&#223;er. Die dunklen Fl&#228;chen zwischen den Kacheln sind durchsichtiger. Lange Motornamen (Holden, Murci&#233;lago) brechen um. Renneinstellungen &#8250; Ergebnisse zeigt vor dem ersten Rennen einen Hinweis.</li>
         <li>Challenger (experimentell): neue Garagenrolle, nur beim Fahren auf der Bahn. Ein echtes Auto f&#228;hrt gegen dich, auch in Time Attack. Drei Modi (Renneinstellungen oder Time-Attack-Startschirm): Gegen meine Bestzeit &#8211; er f&#228;hrt deine beste aufgezeichnete Runde dieser Strecke Teil f&#252;r Teil nach; Gegen den Rekord &#8211; die Runde der Online-Bestzeit der Challenge bzw. Community-Strecke; Gummiband &#8211; er bleibt ungef&#228;hr auf deiner H&#246;he, vorn langsamer, hinten schneller. Kurven und Haarnadeln f&#228;hrt er wie die NPCs gedrosselt, unter Gelb gelten die Gelb-Regeln. Ein wei&#223;er Punkt auf der Karte zeigt, wo die nachgefahrene Runde gerade ist; ohne passende Runde f&#228;hrt er Gummiband.</li>
         <li>Telemetrie online (WIP, braucht ein neu bereitgestelltes Apps Script): Jede hochgeladene Challenge- oder Community-Zeit nimmt jetzt automatisch die Spur ihrer schnellsten Runde mit (Zwischenzeiten je Teil, Tempo, Gas, Bremse). Der Server beh&#228;lt je Bestenliste und Ger&#228;t nur die schnellste. In der Challenge-Bestenliste hat jede Zeile mit Spur einen Knopf &#8222;Telemetrie&#8220;: Er l&#228;dt die Runde und zeigt sie auf der Telemetrie-Seite als Vergleich B neben deinen eigenen Runden.</li>
         <li>Neue Seite Telemetrie (WIP, Optionen &#8250; Telemetrie, auch aus der Statistik und vom Time-Attack-Startschirm): Zwei deiner Runden einer Strecke im Vergleich, A gegen B (beste oder letzte). Die Strecke ist Teil f&#252;r Teil gr&#252;n oder rot gef&#228;rbt, je nachdem, wo A Zeit gewinnt oder verliert; darunter Balken mit dem Unterschied je Teil und die Tempokurve beider Runden &#252;ber den Rundenweg, dazu Gas und Bremse von A.</li>
@@ -8546,16 +8567,17 @@
            Entwicklung und funktioniert nicht fehlerfrei." -->
       <p class="mp-warnung">Mehrspieler ist aktuell noch in der Entwicklung und funktioniert nicht fehlerfrei.</p>
 
-      <div class="misc-grid">
-        <button class="misc-tile subpage-open" data-sub="mp-pc">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="9" width="36" height="23" rx="2"/><path d="M18 40h12M24 32v8" stroke="var(--bad)"/></svg>
-          <b>&Uuml;ber PC mit Python</b>
-          <span>Der PC tr&auml;gt die Rangliste, die Telefone treten im WLAN bei.</span>
-        </button>
+      <!-- v1.0.22 BESTELLT: "Android App an erster Stelle und beides groesser". -->
+      <div class="misc-grid mp-wege">
         <button class="misc-tile subpage-open" data-sub="mp-app">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="15" y="4" width="18" height="40" rx="3"/><path d="M21 38h6" stroke="var(--bad)"/></svg>
           <b>&Uuml;ber Android-App</b>
           <span>Ein Telefon mit der App ist Host, ganz ohne PC.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="mp-pc">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="9" width="36" height="23" rx="2"/><path d="M18 40h12M24 32v8" stroke="var(--bad)"/></svg>
+          <b>&Uuml;ber PC mit Python</b>
+          <span>Der PC tr&auml;gt die Rangliste, die Telefone treten im WLAN bei.</span>
         </button>
       </div>
     </div>
@@ -8795,16 +8817,18 @@
            versteckte Auswahlfeld, die Kacheln ziehen nach. -->
       <div class="opt-row opt-breit" id="race-mode-zeile"><div class="opt-label">Renntyp</div>
       <div class="mode-grid" id="race-mode-tiles">
+        <!-- v1.0.22 BESTELLT: Reihenfolge Training, Time Attack, Qualifying, Runden, Endurance,
+             NPC Knockout, Demolition Derby. -->
         <button type="button" class="mode-tile kachelbild practice" data-mode="practice">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" aria-hidden="true">
             <circle cx="12" cy="13" r="8"/><path d="M12 13V8.5M12 2h0M9 3h6"/>
           </svg><b>Training</b></button>
-        <button type="button" class="mode-tile kachelbild endurance" data-mode="endurance">
+        <button type="button" class="mode-tile kachelbild bestzeit" data-mode="bestzeit">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-               stroke-linecap="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="9"/><path d="M12 12V6M12 12l4.5 3"/>
-          </svg><b>Endurance</b></button>
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="14" r="5"/><path d="M9 3l3 6 3-6M12 12v4"/>
+          </svg><b>Time Attack</b><span class="wip-tag">experimentell</span></button>
         <button type="button" class="mode-tile kachelbild qualifying" data-mode="qualifying">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -8815,6 +8839,11 @@
                stroke-linecap="round" aria-hidden="true">
             <path d="M4 8a8 5 0 1 0 16 0 8 5 0 1 0-16 0"/><path d="M12 3v3M12 13v-3"/>
           </svg><b>Runden</b></button>
+        <button type="button" class="mode-tile kachelbild endurance" data-mode="endurance">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/><path d="M12 12V6M12 12l4.5 3"/>
+          </svg><b>Endurance</b></button>
         <button type="button" class="mode-tile kachelbild knockout" data-mode="knockout">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -8825,20 +8854,15 @@
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="9" cy="9" r="3"/><circle cx="15" cy="15" r="3"/><path d="M9 12v9M15 12V3"/>
           </svg><b>Demolition Derby</b><span class="wip-tag">experimentell</span></button>
-        <button type="button" class="mode-tile kachelbild bestzeit" data-mode="bestzeit">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="14" r="5"/><path d="M9 3l3 6 3-6M12 12v4"/>
-          </svg><b>Time Attack</b><span class="wip-tag">experimentell</span></button>
       </div>
       <select id="race-mode" hidden style="display:none">
         <option value="practice" selected>Training</option>
-        <option value="endurance">Endurance</option>
+        <option value="bestzeit">Time Attack</option>
         <option value="qualifying">Qualifying</option>
         <option value="laps">Runden</option>
+        <option value="endurance">Endurance</option>
         <option value="knockout">NPC Knockout</option>
         <option value="derby">Demolition Derby</option>
-        <option value="bestzeit">Time Attack</option>
       </select></div>
       <p class="muted" id="race-mode-hint" style="font-size:11.5px; margin:8px 0 0 0"></p>
 
@@ -9004,6 +9028,9 @@
         Eine Runde zählt, sobald das Auto das Start/Ziel-Muster auf der Strecke überfährt
         (dasselbe Signal, das auch der Streckenscanner ausliest): kein eigener Sensor in der App.
       </p>
+      <!-- v1.0.22 GEMELDET: "Wenn ich in Renneinstellungen auf Ergebnisse klicke, wird nichts
+           angezeigt." Bis zum ersten Rennen steht hier dieser Platzhalter. -->
+      <p class="muted" id="race-results-leer" style="margin-top:14px">Aktuell keine Ergebnisse verf&uuml;gbar. Nach einem Rennen stehen sie hier.</p>
       <div id="race-results" style="display:none; margin-top:14px">
         <h3 style="margin:0 0 8px 0; font-size:14px">Ergebnis, alle verbundenen Autos</h3>
         <div class="doc-table-wrap" style="max-height:280px; overflow-y:auto; border:1px solid var(--border); border-radius:6px">
@@ -9279,7 +9306,10 @@
           Am 26.08. mit der Original-App gemessen: ein Ausdruck wird nur in der Stellung Aus
           erkannt. Beides zugleich gibt es nicht.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-ontrack" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Steuerungsmodus
+      <!-- v1.0.22: Steuerungsmodus und Pacejka-Regler ausgeblendet - der Modus haengt am
+           Fahrgefuehl (Arcade/Sim+/Pro = Physik, Pacejka, RC). Die Elemente bleiben fuer die
+           Presets und die Sicherung im Dokument. -->
+      <div class="opt-row" hidden><div class="opt-label">Steuerungsmodus
           <small>Physik: Drehmoment, G&auml;nge, Reibkreis &ndash; die Vorgabe. RC: die
           Stickstellung direkt wie bei einem Fernsteuerungsauto, ohne G&auml;nge. Gas wegnehmen
           l&auml;uft in zwei Sekunden aus, die Bremse greift sofort, und ein zweiter Druck auf
@@ -9299,14 +9329,14 @@
         </select></div>
       <!-- BESTELLT: "Eventuell sage ich spaeter, dass das Uebersteuern abgeschaltet werden
            soll" - deshalb von Anfang an ein eigener Schalter. -->
-      <div class="opt-row"><div class="opt-label">&Uuml;bersteuern (Pacejka)
+      <div class="opt-row" hidden><div class="opt-label">&Uuml;bersteuern (Pacejka)
           <span class="wip-tag">experimentell</span>
           <small>Nur im Modus Pacejka. An: unter Vollgas in der Kurve und beim Anbremsen
           kommt das Heck, das Auto lenkt von selbst weiter ein und verliert Vortrieb, bis du
           gegenlenkst oder vom Pedal gehst (h&ouml;chstens 2 s). Aus: das Heck bricht nie aus,
           nur das Schieben &uuml;ber die Vorderr&auml;der bleibt.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-pac-ueber" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Haftgrenze (Pacejka)
+      <div class="opt-row" hidden><div class="opt-label">Haftgrenze (Pacejka)
           <span class="wip-tag">experimentell</span>
           <small>Nur im Modus Pacejka. Wo der Scheitel der Reifenkurve liegt, gemessen an der
           Querausnutzung des Reibkreises. Kleiner hei&szlig;t fr&uuml;her am Limit. Bei 70 %
@@ -10021,6 +10051,12 @@
           je Garagenplatz auf die Stereob&uuml;hne verteilt, damit ein Feld aus mehreren Motoren
           nicht wie ein verstimmter Motor klingt. Standardm&auml;&szlig;ig aus.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-sound"><span></span></label></div>
+      <!-- v1.0.22 BESTELLT: "Lass mich den Motorensound von Ghosts einstellen". Die Liste fuellt
+           80-sound.js aus #sound-profile (nur Motoren mit Aufnahmen/Schleifen). -->
+      <div class="opt-row"><div class="opt-label">NPC-Motor
+          <small>Welcher Motor bei den NPCs klingt, wenn in der Garage f&uuml;r das Auto nichts anderes
+          eingestellt ist. &bdquo;Wie Spieler 1&ldquo; nimmt deinen Motor.</small></div>
+        <select id="ghost-motor"><option value="">Wie Spieler 1</option></select></div>
       <div class="opt-row"><div class="opt-label">Motorton-Zus&auml;tze
           <small>Sieben mechanische Ger&auml;usche &uuml;ber dem Motorton, alle an diesem
           einen Schalter &ndash; zum Vergleichen einfach ausschalten. Bis auf den Auspuffknall
@@ -11980,8 +12016,10 @@
   <!-- MEISTERSCHAFT (73-meisterschaft.js): Planer und Zwischenstand, ueber allem ausser den Dialogen.
        Der Inhalt entsteht im Code und wird dort mit t() uebersetzt. -->
   <div class="meister-schirm" id="meister-schirm" data-i18n-skip hidden>
-    <div class="ms-kopf"><b id="ms-titel"></b><span class="wip-tag" id="ms-wip"></span><span class="ms-hint" id="ms-hint"></span>
-      <button type="button" class="ms-zu" id="ms-zu" aria-label="Schließen">&#10005;</button></div>
+    <!-- v1.0.22 GEMELDET: "Aus dem Meisterschaftsmenue komme ich nicht raus, weil das Kreuz oben rechts
+         hinter dem Tab ist." Das Kreuz steht jetzt links vorn, gross, und die Zurueck-Taste schliesst auch. -->
+    <div class="ms-kopf"><button type="button" class="ms-zu" id="ms-zu" aria-label="Schließen">&#10005;</button>
+      <b id="ms-titel"></b><span class="wip-tag" id="ms-wip"></span><span class="ms-hint" id="ms-hint"></span></div>
     <div class="ms-grid" id="ms-grid"><div class="ms-liste" id="ms-liste"></div><div class="ms-detail" id="ms-detail"></div></div>
     <div class="ms-toast" id="ms-toast"></div>
   </div>

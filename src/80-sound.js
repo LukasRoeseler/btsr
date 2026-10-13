@@ -1406,6 +1406,13 @@
     st.pan.pan.value = ghostStimmePan(car);
     return st.pan;
   }
+  // v1.0.22: der NPC-Motor - je Auto (Garage), sonst die Vorgabe in Optionen -> Ton, sonst
+  // wie Spieler 1. Ein noch nicht geladenes Modell faellt bis zum Laden auf den Rueckfall.
+  function ghostMotorWunsch(car) {
+    if (car && car.ghostMotor) return car.ghostMotor;
+    const el = $('ghost-motor');
+    return el && el.value ? el.value : '';
+  }
   function ghostStimmeStarten(car) {
     if (!ghostSound || !soundEnabled || !audioCtx || !car.ghost) return false;
     // v0.9.64: je Ghost abschaltbar (der Schalter in Optionen -> Ton bleibt der Hauptschalter).
@@ -1413,7 +1420,7 @@
     // v0.9.64: nur ein laufender Ghost bekommt eine Stimme. Ein geparkter hat keinen Takt,
     // der sie aktualisiert - er startete sonst stille Sources, die im Hintergrund weiterrechnen.
     if (!car.ghost.running) return false;
-    const modell = ghostStimmeModell();
+    const modell = ghostStimmeModell(car);
     if (!modell) return false;
     return startSampleEngineIn(car.ghost.stimme, modell, () => ghostStimmeAusgang(car));
   }
@@ -1422,8 +1429,10 @@
   // gerechnetes Profil faehrt oder sein Sample noch nicht spielt, und dann blieb jeder
   // Ghost stumm. Jetzt: das Fahrer-Sample, sonst das gewaehlte Profil, sonst das erste
   // vollstaendig geladene Modell. Geladen wird dafuer bei Bedarf.
-  function ghostStimmeModell() {
+  function ghostStimmeModell(car) {
     const geladen = (k) => !!(k && sampleEngine.buffers[k] && powerBands(k).length);
+    const wunsch = ghostMotorWunsch(car);
+    if (geladen(wunsch)) return wunsch;
     if (geladen(sampleEngine.car)) return sampleEngine.car;
     const sel = $('sound-profile');
     if (sel && geladen(sel.value)) return sel.value;
@@ -1448,7 +1457,7 @@
     // mit dem neuen Modell neu (st.car wird von ghostStimmeStarten gesetzt).
     // Neu starten nur, wenn sich das Modell wirklich aendert - nicht, weil das Fahrer-Sample
     // gerade fehlt (dann blieb die alte Stimme vorher stehen oder brach ab).
-    const soll = ghostStimmeModell();
+    const soll = ghostStimmeModell(car);
     if (!st.nodes || (soll && st.car !== soll)) { if (!ghostStimmeStarten(car)) return; }
     const eng = car.ghost.engine;
     if (!eng || !eng.state) return;
@@ -1457,6 +1466,34 @@
                   && Math.abs(eng.state.speedKmh || 0) < 0.05;
     updateSampleEngineIn(st, motorDrehzahl(eng.state, st.car), load, leise, eng, 1);
   }
+  // Die Liste des NPC-Motors: dieselben Gruppen wie #sound-profile, nur Motoren mit Schleifen.
+  function ghostMotorListeFuellen() {
+    const el = $('ghost-motor'), quelle = $('sound-profile');
+    if (!el || !quelle || el.options.length > 1) return;
+    const merk = el.getAttribute('data-wert') || '';
+    for (const kind of quelle.children) {
+      if (kind.tagName === 'OPTGROUP') {
+        const g = document.createElement('optgroup');
+        g.label = kind.label;
+        for (const o of kind.children) if (SAMPLE_CARS.indexOf(o.value) >= 0) g.appendChild(o.cloneNode(true));
+        if (g.children.length) el.appendChild(g);
+      } else if (kind.tagName === 'OPTION' && SAMPLE_CARS.indexOf(kind.value) >= 0) {
+        el.appendChild(kind.cloneNode(true));
+      }
+    }
+    [...el.querySelectorAll('option')].forEach((o) => { o.selected = false; o.removeAttribute('selected'); });
+    el.value = merk;
+  }
+  ghostMotorListeFuellen();
+  // Die NPC-Motoren, die die Garage durchblaettert: "" (wie Spieler 1) und jeder Motor der Liste.
+  function ghostMotorWerte() {
+    const el = $('ghost-motor');
+    return el ? [...el.options].map((o) => ({ v: o.value, name: o.value ? motorNamen(o) : t('Wie Spieler 1') })) : [{ v: '', name: '' }];
+  }
+  if ($('ghost-motor')) $('ghost-motor').addEventListener('change', () => {
+    if (typeof garage === 'undefined') return;
+    for (const c of garage) if (c.role === 'ghost' && c.ghost && c.ghost.stimme && c.ghost.stimme.nodes && !c.ghostMotor) ghostStimmeStoppen(c);
+  });
   // Der Schalter in Optionen -> Ton. Anschalten startet jede laufende Ghost-Stimme,
   // Abschalten haelt sie an.
   $('ghost-sound').addEventListener('change', (e) => {

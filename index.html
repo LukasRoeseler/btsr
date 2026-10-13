@@ -239,6 +239,8 @@
     background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/rennoptionen-qualifying.jpg) center / cover; }
   .mode-tile.kachelbild.laps {
     background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/rennoptionen-laps.jpg) center / cover; }
+  .mode-tile.kachelbild.bestzeit {
+    background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/rennoptionen-bestzeit.jpg) center / cover; }
   .mode-tile.kachelbild:hover, .mode-tile.kachelbild.sel { color: #fff; background-color: transparent; }
   .mode-tile.kachelbild.sel { border-color: var(--bad); box-shadow: inset 3px 0 0 var(--bad); }
   .wx-pick { display: flex; gap: 6px; }
@@ -2405,7 +2407,14 @@
 
   /* Buehne */
   main { max-width: 1320px; }
-  .card { background: rgba(14,16,22,.9); }
+  /* v1.0.22 BESTELLT: "Transparenz der dunklen Hintergruende zwischen den Optionen und dem
+     Bild-Hintergrund erhoehen" (die grosse Flaeche mit der weissen L-Ecke). Die Kacheln selbst
+     bleiben dunkel, nur die Flaeche dazwischen laesst das Bild durch. */
+  .card { background: rgba(14,16,22,.58); }
+  .misc-grid.mp-wege { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .mp-wege .misc-tile b { font-size: 17px; padding: 11px 10px; }
+  .mp-wege .misc-tile svg { width: 84px; height: 84px; margin: 22px auto 22px; }
+  .mp-wege .misc-tile span { display: block; font-size: 15px; padding: 0 14px 18px; text-align: center; }
   .card .card { background: rgba(255,255,255,.035); }
 
 
@@ -2938,8 +2947,13 @@
   .gar-a-zeile .gk-rolle > button[data-d="1"] { grid-column: 3; grid-row: 1; }
   .gar-a-zeile .gk-rolle > .wip-tag { grid-column: 1 / -1; grid-row: 2; justify-self: center;
     font-size: 9px; margin: 0; }
-  .gk-w > b { display: inline-block; min-width: 10em; text-align: center; white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis; }
+  /* v1.0.22 GEMELDET: "Die Namen von Holden Commodore und Lamborghini Murciélago R-GT sind so
+     breit, dass sie nicht auf den Bildschirm passen." Feste Breite (die Pfeile bleiben an ihrer
+     Stelle), lange Werte brechen in eine zweite Zeile um statt die Zeile zu sprengen. */
+  .gk-w > b { display: inline-block; width: 10em; text-align: center; white-space: normal;
+    overflow-wrap: anywhere; line-height: 1.15; }
+  #race-act-sound-txt, #vgl1-act-sound-txt, #vgl-act-sound-txt, #vgl3-act-sound-txt {
+    white-space: normal; overflow-wrap: anywhere; line-height: 1.1; }
   .gar-akku { white-space: nowrap; }
   #race-gridscreen button.pad-fokus { outline: 3px solid var(--k-blau, #3d8bff); outline-offset: 2px; }
   /* v1.0.19: Time Attack auf dem Startschirm - Medaillenzeiten und bisher Gewonnenes. */
@@ -2972,10 +2986,13 @@
     font-size: clamp(11px, 1.7vw, 15px); padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
   .meister-schirm::before { content: ""; position: absolute; inset: 0; background: rgba(8,10,15,.86); pointer-events: none; }
   .meister-schirm > * { position: relative; }
-  .ms-kopf { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,.1); background: rgba(5,7,12,.6); }
+  .ms-kopf { display: flex; align-items: center; gap: 8px; padding: max(6px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) 6px max(10px, env(safe-area-inset-left));
+    border-bottom: 1px solid rgba(255,255,255,.1); background: rgba(5,7,12,.6); }
   .ms-kopf b { letter-spacing: .12em; text-transform: uppercase; font-size: 1.1em; }
   .ms-hint { margin-left: auto; font-size: .8em; color: #a3acbd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .ms-zu { background: none; border: 0; color: #a3acbd; font-size: 1.2em; padding: 2px 6px; cursor: pointer; }
+  .ms-zu { flex: 0 0 auto; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.35); color: #fff;
+    font-size: 1.3em; line-height: 1; min-width: 2.2em; min-height: 2.2em; padding: 4px 8px; cursor: pointer; }
+  .ms-zu:hover { background: rgba(255,255,255,.2); }
   .ms-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 10px; padding: 8px 10px 10px; flex: 1; min-height: 0; }
   .ms-liste { position: relative; display: flex; flex-direction: column; gap: 5px; overflow-y: auto; min-height: 0; padding: 2px; }
   .ms-trenner { margin: 6px 0 1px; font-size: .78em; letter-spacing: .14em; text-transform: uppercase; color: #a3acbd; display: flex; align-items: center; gap: 8px; }
@@ -3021,6 +3038,9 @@
   .ms-fuss .ms-knopf { flex: 1; font-size: .85em; padding: 6px; }
   .ms-fuss-senk { flex-direction: column; }
   .ms-weg { color: #ffb3c4; }
+  .ms-fuss .ms-symbol { flex: 0 0 auto; min-width: 2.8em; font-size: 1.05em; }
+  .ms-tonne { width: 1.25em; height: 1.25em; vertical-align: -0.2em; fill: none; stroke: #ff5a6e; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round; }
   .ms-punkte { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; margin-top: 4px; }
   .ms-punkte div { background: #181c25; text-align: center; padding: 3px 0; font-size: .82em; }
   .ms-punkte div b { display: block; font-size: 1.1em; }
@@ -4630,7 +4650,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.21</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.22</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5760,6 +5780,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Neues Fahrgef&#252;hl RC (auch f&#252;r Spielerautos, in FAHREN, Garage, Cockpit und Meisterschaft): wie Arcade, nur viel extremer &#8211; der Stick geht direkt ans Auto wie bei einer Fernsteuerung, Gas weg l&#228;uft aus, zweimal Bremse im Stand f&#228;hrt r&#252;ckw&#228;rts. Der Steuerungsmodus h&#228;ngt jetzt am Fahrgef&#252;hl; die Einstellung Steuerungsmodus und die Pacejka-Regler sind ausgeblendet. NPC-Motor w&#228;hlbar: Vorgabe unter Optionen &#8250; Ton, je NPC in der Garage. Renntypen in der Reihenfolge Training, Time Attack, Qualifying, Runden, Endurance, NPC Knockout, Demolition Derby, Time Attack mit eigenem Kachelbild. Meisterschaft: Event fr&#252;her/sp&#228;ter nur mit &#9650;/&#9660;, L&#246;schen als rote M&#252;lltonne, das Schlie&#223;en-Kreuz steht links und ist gr&#246;&#223;er, die Zur&#252;ck-Taste schlie&#223;t auch. WLAN-Mehrspieler: Android-App zuerst, beide Kacheln gr&#246;&#223;er. Die dunklen Fl&#228;chen zwischen den Kacheln sind durchsichtiger. Lange Motornamen (Holden, Murci&#233;lago) brechen um. Renneinstellungen &#8250; Ergebnisse zeigt vor dem ersten Rennen einen Hinweis.</li>
         <li>Challenger (experimentell): neue Garagenrolle, nur beim Fahren auf der Bahn. Ein echtes Auto f&#228;hrt gegen dich, auch in Time Attack. Drei Modi (Renneinstellungen oder Time-Attack-Startschirm): Gegen meine Bestzeit &#8211; er f&#228;hrt deine beste aufgezeichnete Runde dieser Strecke Teil f&#252;r Teil nach; Gegen den Rekord &#8211; die Runde der Online-Bestzeit der Challenge bzw. Community-Strecke; Gummiband &#8211; er bleibt ungef&#228;hr auf deiner H&#246;he, vorn langsamer, hinten schneller. Kurven und Haarnadeln f&#228;hrt er wie die NPCs gedrosselt, unter Gelb gelten die Gelb-Regeln. Ein wei&#223;er Punkt auf der Karte zeigt, wo die nachgefahrene Runde gerade ist; ohne passende Runde f&#228;hrt er Gummiband.</li>
         <li>Telemetrie online (WIP, braucht ein neu bereitgestelltes Apps Script): Jede hochgeladene Challenge- oder Community-Zeit nimmt jetzt automatisch die Spur ihrer schnellsten Runde mit (Zwischenzeiten je Teil, Tempo, Gas, Bremse). Der Server beh&#228;lt je Bestenliste und Ger&#228;t nur die schnellste. In der Challenge-Bestenliste hat jede Zeile mit Spur einen Knopf &#8222;Telemetrie&#8220;: Er l&#228;dt die Runde und zeigt sie auf der Telemetrie-Seite als Vergleich B neben deinen eigenen Runden.</li>
         <li>Neue Seite Telemetrie (WIP, Optionen &#8250; Telemetrie, auch aus der Statistik und vom Time-Attack-Startschirm): Zwei deiner Runden einer Strecke im Vergleich, A gegen B (beste oder letzte). Die Strecke ist Teil f&#252;r Teil gr&#252;n oder rot gef&#228;rbt, je nachdem, wo A Zeit gewinnt oder verliert; darunter Balken mit dem Unterschied je Teil und die Tempokurve beider Runden &#252;ber den Rundenweg, dazu Gas und Bremse von A.</li>
@@ -8546,16 +8567,17 @@
            Entwicklung und funktioniert nicht fehlerfrei." -->
       <p class="mp-warnung">Mehrspieler ist aktuell noch in der Entwicklung und funktioniert nicht fehlerfrei.</p>
 
-      <div class="misc-grid">
-        <button class="misc-tile subpage-open" data-sub="mp-pc">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="9" width="36" height="23" rx="2"/><path d="M18 40h12M24 32v8" stroke="var(--bad)"/></svg>
-          <b>&Uuml;ber PC mit Python</b>
-          <span>Der PC tr&auml;gt die Rangliste, die Telefone treten im WLAN bei.</span>
-        </button>
+      <!-- v1.0.22 BESTELLT: "Android App an erster Stelle und beides groesser". -->
+      <div class="misc-grid mp-wege">
         <button class="misc-tile subpage-open" data-sub="mp-app">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="15" y="4" width="18" height="40" rx="3"/><path d="M21 38h6" stroke="var(--bad)"/></svg>
           <b>&Uuml;ber Android-App</b>
           <span>Ein Telefon mit der App ist Host, ganz ohne PC.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="mp-pc">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="9" width="36" height="23" rx="2"/><path d="M18 40h12M24 32v8" stroke="var(--bad)"/></svg>
+          <b>&Uuml;ber PC mit Python</b>
+          <span>Der PC tr&auml;gt die Rangliste, die Telefone treten im WLAN bei.</span>
         </button>
       </div>
     </div>
@@ -8795,16 +8817,18 @@
            versteckte Auswahlfeld, die Kacheln ziehen nach. -->
       <div class="opt-row opt-breit" id="race-mode-zeile"><div class="opt-label">Renntyp</div>
       <div class="mode-grid" id="race-mode-tiles">
+        <!-- v1.0.22 BESTELLT: Reihenfolge Training, Time Attack, Qualifying, Runden, Endurance,
+             NPC Knockout, Demolition Derby. -->
         <button type="button" class="mode-tile kachelbild practice" data-mode="practice">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" aria-hidden="true">
             <circle cx="12" cy="13" r="8"/><path d="M12 13V8.5M12 2h0M9 3h6"/>
           </svg><b>Training</b></button>
-        <button type="button" class="mode-tile kachelbild endurance" data-mode="endurance">
+        <button type="button" class="mode-tile kachelbild bestzeit" data-mode="bestzeit">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-               stroke-linecap="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="9"/><path d="M12 12V6M12 12l4.5 3"/>
-          </svg><b>Endurance</b></button>
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="14" r="5"/><path d="M9 3l3 6 3-6M12 12v4"/>
+          </svg><b>Time Attack</b><span class="wip-tag">experimentell</span></button>
         <button type="button" class="mode-tile kachelbild qualifying" data-mode="qualifying">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -8815,6 +8839,11 @@
                stroke-linecap="round" aria-hidden="true">
             <path d="M4 8a8 5 0 1 0 16 0 8 5 0 1 0-16 0"/><path d="M12 3v3M12 13v-3"/>
           </svg><b>Runden</b></button>
+        <button type="button" class="mode-tile kachelbild endurance" data-mode="endurance">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/><path d="M12 12V6M12 12l4.5 3"/>
+          </svg><b>Endurance</b></button>
         <button type="button" class="mode-tile kachelbild knockout" data-mode="knockout">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -8825,20 +8854,15 @@
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="9" cy="9" r="3"/><circle cx="15" cy="15" r="3"/><path d="M9 12v9M15 12V3"/>
           </svg><b>Demolition Derby</b><span class="wip-tag">experimentell</span></button>
-        <button type="button" class="mode-tile kachelbild bestzeit" data-mode="bestzeit">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="14" r="5"/><path d="M9 3l3 6 3-6M12 12v4"/>
-          </svg><b>Time Attack</b><span class="wip-tag">experimentell</span></button>
       </div>
       <select id="race-mode" hidden style="display:none">
         <option value="practice" selected>Training</option>
-        <option value="endurance">Endurance</option>
+        <option value="bestzeit">Time Attack</option>
         <option value="qualifying">Qualifying</option>
         <option value="laps">Runden</option>
+        <option value="endurance">Endurance</option>
         <option value="knockout">NPC Knockout</option>
         <option value="derby">Demolition Derby</option>
-        <option value="bestzeit">Time Attack</option>
       </select></div>
       <p class="muted" id="race-mode-hint" style="font-size:11.5px; margin:8px 0 0 0"></p>
 
@@ -9004,6 +9028,9 @@
         Eine Runde zählt, sobald das Auto das Start/Ziel-Muster auf der Strecke überfährt
         (dasselbe Signal, das auch der Streckenscanner ausliest): kein eigener Sensor in der App.
       </p>
+      <!-- v1.0.22 GEMELDET: "Wenn ich in Renneinstellungen auf Ergebnisse klicke, wird nichts
+           angezeigt." Bis zum ersten Rennen steht hier dieser Platzhalter. -->
+      <p class="muted" id="race-results-leer" style="margin-top:14px">Aktuell keine Ergebnisse verf&uuml;gbar. Nach einem Rennen stehen sie hier.</p>
       <div id="race-results" style="display:none; margin-top:14px">
         <h3 style="margin:0 0 8px 0; font-size:14px">Ergebnis, alle verbundenen Autos</h3>
         <div class="doc-table-wrap" style="max-height:280px; overflow-y:auto; border:1px solid var(--border); border-radius:6px">
@@ -9279,7 +9306,10 @@
           Am 26.08. mit der Original-App gemessen: ein Ausdruck wird nur in der Stellung Aus
           erkannt. Beides zugleich gibt es nicht.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-ontrack" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Steuerungsmodus
+      <!-- v1.0.22: Steuerungsmodus und Pacejka-Regler ausgeblendet - der Modus haengt am
+           Fahrgefuehl (Arcade/Sim+/Pro = Physik, Pacejka, RC). Die Elemente bleiben fuer die
+           Presets und die Sicherung im Dokument. -->
+      <div class="opt-row" hidden><div class="opt-label">Steuerungsmodus
           <small>Physik: Drehmoment, G&auml;nge, Reibkreis &ndash; die Vorgabe. RC: die
           Stickstellung direkt wie bei einem Fernsteuerungsauto, ohne G&auml;nge. Gas wegnehmen
           l&auml;uft in zwei Sekunden aus, die Bremse greift sofort, und ein zweiter Druck auf
@@ -9299,14 +9329,14 @@
         </select></div>
       <!-- BESTELLT: "Eventuell sage ich spaeter, dass das Uebersteuern abgeschaltet werden
            soll" - deshalb von Anfang an ein eigener Schalter. -->
-      <div class="opt-row"><div class="opt-label">&Uuml;bersteuern (Pacejka)
+      <div class="opt-row" hidden><div class="opt-label">&Uuml;bersteuern (Pacejka)
           <span class="wip-tag">experimentell</span>
           <small>Nur im Modus Pacejka. An: unter Vollgas in der Kurve und beim Anbremsen
           kommt das Heck, das Auto lenkt von selbst weiter ein und verliert Vortrieb, bis du
           gegenlenkst oder vom Pedal gehst (h&ouml;chstens 2 s). Aus: das Heck bricht nie aus,
           nur das Schieben &uuml;ber die Vorderr&auml;der bleibt.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-pac-ueber" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Haftgrenze (Pacejka)
+      <div class="opt-row" hidden><div class="opt-label">Haftgrenze (Pacejka)
           <span class="wip-tag">experimentell</span>
           <small>Nur im Modus Pacejka. Wo der Scheitel der Reifenkurve liegt, gemessen an der
           Querausnutzung des Reibkreises. Kleiner hei&szlig;t fr&uuml;her am Limit. Bei 70 %
@@ -10021,6 +10051,12 @@
           je Garagenplatz auf die Stereob&uuml;hne verteilt, damit ein Feld aus mehreren Motoren
           nicht wie ein verstimmter Motor klingt. Standardm&auml;&szlig;ig aus.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-sound"><span></span></label></div>
+      <!-- v1.0.22 BESTELLT: "Lass mich den Motorensound von Ghosts einstellen". Die Liste fuellt
+           80-sound.js aus #sound-profile (nur Motoren mit Aufnahmen/Schleifen). -->
+      <div class="opt-row"><div class="opt-label">NPC-Motor
+          <small>Welcher Motor bei den NPCs klingt, wenn in der Garage f&uuml;r das Auto nichts anderes
+          eingestellt ist. &bdquo;Wie Spieler 1&ldquo; nimmt deinen Motor.</small></div>
+        <select id="ghost-motor"><option value="">Wie Spieler 1</option></select></div>
       <div class="opt-row"><div class="opt-label">Motorton-Zus&auml;tze
           <small>Sieben mechanische Ger&auml;usche &uuml;ber dem Motorton, alle an diesem
           einen Schalter &ndash; zum Vergleichen einfach ausschalten. Bis auf den Auspuffknall
@@ -11980,8 +12016,10 @@
   <!-- MEISTERSCHAFT (73-meisterschaft.js): Planer und Zwischenstand, ueber allem ausser den Dialogen.
        Der Inhalt entsteht im Code und wird dort mit t() uebersetzt. -->
   <div class="meister-schirm" id="meister-schirm" data-i18n-skip hidden>
-    <div class="ms-kopf"><b id="ms-titel"></b><span class="wip-tag" id="ms-wip"></span><span class="ms-hint" id="ms-hint"></span>
-      <button type="button" class="ms-zu" id="ms-zu" aria-label="Schließen">&#10005;</button></div>
+    <!-- v1.0.22 GEMELDET: "Aus dem Meisterschaftsmenue komme ich nicht raus, weil das Kreuz oben rechts
+         hinter dem Tab ist." Das Kreuz steht jetzt links vorn, gross, und die Zurueck-Taste schliesst auch. -->
+    <div class="ms-kopf"><button type="button" class="ms-zu" id="ms-zu" aria-label="Schließen">&#10005;</button>
+      <b id="ms-titel"></b><span class="wip-tag" id="ms-wip"></span><span class="ms-hint" id="ms-hint"></span></div>
     <div class="ms-grid" id="ms-grid"><div class="ms-liste" id="ms-liste"></div><div class="ms-detail" id="ms-detail"></div></div>
     <div class="ms-toast" id="ms-toast"></div>
   </div>
@@ -12789,6 +12827,17 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "RC": "RC",
+    "Alle: RC": "All: RC",
+    "Arcade, nur viel extremer: wie ein Fernsteuerungsauto": "Arcade, only much more extreme: like a remote-control car",
+    "Der Stick geht direkt ans Auto wie bei einer Fernsteuerung, ohne Gänge: Gas weg läuft in zwei Sekunden aus, die Bremse greift sofort, ein zweiter Bremsdruck im Stand fährt rückwärts. Lenkung, Bremse und Anzug stehen am Anschlag, kein Reifenverschleiß, kein Tankgewicht, Crashs ohne Schaden.": "The stick goes straight to the car like a remote control, without gears: lifting off coasts out in two seconds, the brake bites at once, a second brake press at standstill drives backwards. Steering, brake and acceleration are at the limit, no tyre wear, no fuel weight, crashes without damage.",
+    "Aktuell keine Ergebnisse verfügbar. Nach einem Rennen stehen sie hier.": "No results available yet. They appear here after a race.",
+    "NPC-Motor": "NPC engine",
+    "Wie Spieler 1": "Like player 1",
+    "Vorgabe": "Default",
+    "Welcher Motor bei den NPCs klingt, wenn in der Garage für das Auto nichts anderes eingestellt ist. „Wie Spieler 1“ nimmt deinen Motor.": "Which engine the NPCs sound like when nothing else is set for the car in the garage. “Like player 1” uses your engine.",
+    "Früher": "Earlier",
+    "Wirklich?": "Really?",
     "Safety Car und Challenger gibt es nur auf der Bahn": "Safety car and challenger exist only on the track",
     "Challenger": "Challenger",
     "Ein Auto mit der Garagenrolle „Challenger“ fährt gegen dich, nur auf der Bahn und auch in Time Attack. Gegen meine Bestzeit: es fährt deine beste aufgezeichnete Runde dieser Strecke nach. Gegen den Rekord: die Runde der Online-Bestzeit der Challenge oder Community-Strecke. Gummiband: es hält sich ungefähr auf deiner Höhe – vorn langsamer, hinten schneller. Fehlt die Runde, fährt es Gummiband. Auf der Karte zeigt ein weißer Punkt, wo die Runde gerade ist.": "A car with the garage role “Challenger” races against you, only on the track and also in Time Attack. Against my best time: it replays your best recorded lap of this track. Against the record: the lap of the online best time of the challenge or community track. Rubber band: it stays roughly level with you – slower when ahead, faster when behind. Without a lap it drives rubber band. On the map a white dot shows where the lap currently is.",
@@ -13021,7 +13070,6 @@
     "Startaufstellung 1. Event": "Grid for event 1",
     "Teilnehmer": "Participants",
     "Umfang": "Length",
-    "▲ Früher": "▲ Earlier",
     "Qualifying": "Qualifying",
     "Endurance": "Endurance",
     "Min": "min",
@@ -13606,6 +13654,7 @@
     "Neue Seite Telemetrie (WIP, Optionen › Telemetrie, auch aus der Statistik und vom Time-Attack-Startschirm): Zwei deiner Runden einer Strecke im Vergleich, A gegen B (beste oder letzte). Die Strecke ist Teil für Teil grün oder rot gefärbt, je nachdem, wo A Zeit gewinnt oder verliert; darunter Balken mit dem Unterschied je Teil und die Tempokurve beider Runden über den Rundenweg, dazu Gas und Bremse von A.": "New Telemetry page (WIP, Options › Telemetry, also from the statistics and the Time Attack start screen): two of your laps on one track compared, A against B (best or last). The track is coloured green or red piece by piece, depending on where A gains or loses time; below are bars with the difference per piece and the speed curve of both laps over the lap distance, plus throttle and brake of A.",
     "Telemetrie online (WIP, braucht ein neu bereitgestelltes Apps Script): Jede hochgeladene Challenge- oder Community-Zeit nimmt jetzt automatisch die Spur ihrer schnellsten Runde mit (Zwischenzeiten je Teil, Tempo, Gas, Bremse). Der Server behält je Bestenliste und Gerät nur die schnellste. In der Challenge-Bestenliste hat jede Zeile mit Spur einen Knopf „Telemetrie“: Er lädt die Runde und zeigt sie auf der Telemetrie-Seite als Vergleich B neben deinen eigenen Runden.": "Telemetry online (WIP, needs a redeployed Apps Script): every uploaded challenge or community time now automatically carries the trace of its fastest lap (split times per piece, speed, throttle, brake). The server keeps only the fastest per leaderboard and device. In the challenge leaderboard every row with a trace has a “Telemetry” button: it loads the lap and shows it on the telemetry page as comparison B next to your own laps.",
     "Challenger (experimentell): neue Garagenrolle, nur beim Fahren auf der Bahn. Ein echtes Auto fährt gegen dich, auch in Time Attack. Drei Modi (Renneinstellungen oder Time-Attack-Startschirm): Gegen meine Bestzeit – er fährt deine beste aufgezeichnete Runde dieser Strecke Teil für Teil nach; Gegen den Rekord – die Runde der Online-Bestzeit der Challenge bzw. Community-Strecke; Gummiband – er bleibt ungefähr auf deiner Höhe, vorn langsamer, hinten schneller. Kurven und Haarnadeln fährt er wie die NPCs gedrosselt, unter Gelb gelten die Gelb-Regeln. Ein weißer Punkt auf der Karte zeigt, wo die nachgefahrene Runde gerade ist; ohne passende Runde fährt er Gummiband.": "Challenger (experimental): new garage role, only when driving on the track. A real car races against you, also in Time Attack. Three modes (race settings or the Time Attack start screen): Against my best time – it replays your best recorded lap of this track piece by piece; Against the record – the lap of the online best time of the challenge or community track; Rubber band – it stays roughly level with you, slower when ahead, faster when behind. It takes corners and hairpins throttled like the NPCs, under yellow the yellow rules apply. A white dot on the map shows where the replayed lap currently is; without a matching lap it drives rubber band.",
+    "Neues Fahrgefühl RC (auch für Spielerautos, in FAHREN, Garage, Cockpit und Meisterschaft): wie Arcade, nur viel extremer – der Stick geht direkt ans Auto wie bei einer Fernsteuerung, Gas weg läuft aus, zweimal Bremse im Stand fährt rückwärts. Der Steuerungsmodus hängt jetzt am Fahrgefühl; die Einstellung Steuerungsmodus und die Pacejka-Regler sind ausgeblendet. NPC-Motor wählbar: Vorgabe unter Optionen › Ton, je NPC in der Garage. Renntypen in der Reihenfolge Training, Time Attack, Qualifying, Runden, Endurance, NPC Knockout, Demolition Derby, Time Attack mit eigenem Kachelbild. Meisterschaft: Event früher/später nur mit ▲/▼, Löschen als rote Mülltonne, das Schließen-Kreuz steht links und ist größer, die Zurück-Taste schließt auch. WLAN-Mehrspieler: Android-App zuerst, beide Kacheln größer. Die dunklen Flächen zwischen den Kacheln sind durchsichtiger. Lange Motornamen (Holden, Murciélago) brechen um. Renneinstellungen › Ergebnisse zeigt vor dem ersten Rennen einen Hinweis.": "New driving feel RC (also for player cars, in DRIVE, garage, cockpit and championship): like Arcade, only much more extreme – the stick goes straight to the car like a remote control, lifting off coasts, braking twice at standstill drives backwards. The steering mode now follows the driving feel; the steering mode setting and the Pacejka sliders are hidden. NPC engine selectable: default under Options › Sound, per NPC in the garage. Race types in the order Training, Time Attack, Qualifying, Laps, Endurance, NPC Knockout, Demolition Derby, Time Attack with its own tile image. Championship: event earlier/later only with ▲/▼, delete as a red bin, the close cross sits on the left and is bigger, the back button closes too. Wi-Fi multiplayer: Android app first, both tiles bigger. The dark areas between the tiles are more transparent. Long engine names (Holden, Murciélago) wrap. Race settings › Results shows a note before the first race.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -15679,6 +15728,17 @@
   // nachzieht. Bewusst KEINE Ansagen (Rundenzeit, Tank, Schaden): dafuer gibt es noch keine
   // spanischen Aufnahmen, und die Sprachausgabe nutzt die englische als Platzhalter.
   const I18N_ES = {
+    "RC": "RC",
+    "Alle: RC": "Todos: RC",
+    "Arcade, nur viel extremer: wie ein Fernsteuerungsauto": "Arcade, pero mucho más extremo: como un coche teledirigido",
+    "Der Stick geht direkt ans Auto wie bei einer Fernsteuerung, ohne Gänge: Gas weg läuft in zwei Sekunden aus, die Bremse greift sofort, ein zweiter Bremsdruck im Stand fährt rückwärts. Lenkung, Bremse und Anzug stehen am Anschlag, kein Reifenverschleiß, kein Tankgewicht, Crashs ohne Schaden.": "El stick va directo al coche como un mando a distancia, sin marchas: al soltar el gas rueda dos segundos, el freno actúa al instante y una segunda pulsación parado va marcha atrás. Dirección, freno y aceleración al máximo, sin desgaste de neumáticos, sin peso de combustible, choques sin daño.",
+    "Aktuell keine Ergebnisse verfügbar. Nach einem Rennen stehen sie hier.": "Aún no hay resultados. Aparecerán aquí después de una carrera.",
+    "NPC-Motor": "Motor NPC",
+    "Wie Spieler 1": "Como el jugador 1",
+    "Vorgabe": "Predeterminado",
+    "Welcher Motor bei den NPCs klingt, wenn in der Garage für das Auto nichts anderes eingestellt ist. „Wie Spieler 1“ nimmt deinen Motor.": "Qué motor suena en los NPC cuando en el garaje no hay otro ajuste para el coche. «Como el jugador 1» usa tu motor.",
+    "Früher": "Antes",
+    "Wirklich?": "¿Seguro?",
     "Safety Car und Challenger gibt es nur auf der Bahn": "El safety car y el challenger solo existen en la pista",
     "Gegen meine Bestzeit": "Contra mi mejor tiempo",
     "Gegen den Rekord": "Contra el récord",
@@ -25282,6 +25342,8 @@
     // Raumgestalter offen: die Zurueck-Taste schliesst ihn (v0.9.45, "komme nicht mehr raus").
     if (typeof raumDsOffen === 'function' && raumDsOffen()) { raumDsSchliessen(); return true; }
     if ($('mp-info') && !$('mp-info').hidden && typeof mpiStop === 'function') { mpiStop(); return true; }
+    // v1.0.22: die Zurueck-Taste schliesst auch die Meisterschaft (vorher kam man nur ueber das Kreuz raus).
+    if (typeof meisterOffen === 'function' && meisterOffen()) { meisterSchliessen(); return true; }
     const imEditor = document.body.classList.contains('track-fs');
     const tour = typeof konsoleTourOffen === 'function' && konsoleTourOffen();
     if (kAktiverTab() === 'home' && !imEditor && !tour && !kFrageOffen) return false;
@@ -25377,7 +25439,9 @@
         text: t(text), an: i === (konsoleReiter.renn || 0),
         wahl: () => {
           konsoleReiter.renn = i;
-          const el = $(id);
+          let el = $(id);
+          // Noch kein Rennen: der Platzhalter "Aktuell keine Ergebnisse verfuegbar" (v1.0.22).
+          if (id === 'race-results' && el && el.style.display === 'none' && $('race-results-leer')) el = $('race-results-leer');
           if (el && !el.hidden) el.scrollIntoView({ block: 'start' });
           konsoleZeichnen();
         },
@@ -25906,7 +25970,7 @@
     // Rennoptionen-Kachel wechselt mit dem Rennmodus das Bild (BESTELLT v0.8.53).
     const rmBild = { practice: 'rennoptionen-practice', endurance: 'rennoptionen-endurance',
                      qualifying: 'rennoptionen-qualifying', laps: 'rennoptionen-laps',
-                     knockout: 'knockout', derby: 'derby', bestzeit: 'challenges' }[rm.value];
+                     knockout: 'knockout', derby: 'derby', bestzeit: 'rennoptionen-bestzeit' }[rm.value];
     const rb = $('fa-renn-bild');
     if (rb && rmBild && rb.dataset.bild !== rmBild) {
       rb.style.backgroundImage = 'url(img/' + rmBild + '.jpg)';
@@ -35372,6 +35436,7 @@
     learnReset();
     raceLapStart = null;
     $('race-results').style.display = 'none';
+    if ($('race-results-leer')) $('race-results-leer').hidden = false;
     $('race-lap-current-row').style.display = '';
     $('race-lap-current').textContent = '-';
     // Freies Training braucht keine Ampel: es gibt niemanden, gegen den man gleichzeitig
@@ -35657,6 +35722,7 @@
     $('race-start-btn').disabled = false;
     $('race-lap-current-row').style.display = 'none';
     $('race-results').style.display = '';
+    if ($('race-results-leer')) $('race-results-leer').hidden = true;
     renderRaceResults();
     renderPositionPlot();
     // Und einmal sichtbar dort, wo gerade gedrueckt wurde. Ohne das erschien das Ergebnis
@@ -43150,7 +43216,7 @@
     ['letztes', 'Wie letztes Ergebnis'], ['zufall', 'Zufall']];
   const MEISTER_GLOBAL = [
     { id: 'fahrgefuehl', l: 'Fahrgefühl', w: [['garage', 'Wie in der Garage'], ['p1', 'Alle wie Spieler 1'],
-      ['arcade', 'Alle: Arcade'], ['simplus', 'Alle: Sim+'], ['pro', 'Alle: Pro'], ['propacejka', 'Alle: Pacejka']] },
+      ['arcade', 'Alle: Arcade'], ['simplus', 'Alle: Sim+'], ['pro', 'Alle: Pro'], ['propacejka', 'Alle: Pacejka'], ['rc', 'Alle: RC']] },
     { id: 'start1', l: 'Startaufstellung 1. Event', w: [['zufall', 'Zufall'], ['beste_zuletzt', 'Beste zuletzt'],
       ['beste_zuerst', 'Beste zuerst'], ['garage', 'Garagen-Reihenfolge']] },
     { id: 'punkte', l: 'Punkte', w: [['f1', 'F1 · 25-18-15-12-10'], ['klassisch', 'Klassisch · 10-6-4-3-2'],
@@ -43731,8 +43797,11 @@
       { l: 'Start', w: r ? meisterName(MEISTER_START, e.start) : t('entfällt'), feld: 'start', aus: !r },
       { l: 'Startaufstellung', w: r ? meisterName(MEISTER_AUFST, e.aufst) : t('entfällt'), feld: 'aufst', aus: !r, fehlt: !!meisterAufstFehler(i) },
       { l: 'Pflichtstopps', w: r ? (e.stopps ? String(e.stopps) : t('Keine')) : t('entfällt'), feld: 'stopps', aus: !r },
-      { knopf: 'hoch', l: '▲ Früher' }, { knopf: 'kopie', l: 'Kopieren' },
-      { knopf: 'weg', l: msLoeschenArm === i ? 'Wirklich löschen?' : 'Löschen' },
+      // v1.0.22 BESTELLT: "FRUEHER nur mit dem Dreieck-Pfeil nach oben, LOESCHEN nur mit roetlicher
+      // Muelltonne, und dafuer auch einen SPAETER-Button (Dreieck nach unten)".
+      { knopf: 'hoch', l: 'Früher', zeichen: '▲' }, { knopf: 'runter', l: 'Später', zeichen: '▼' },
+      { knopf: 'kopie', l: 'Kopieren' },
+      { knopf: 'weg', l: msLoeschenArm === i ? 'Wirklich löschen?' : 'Löschen', tonne: true, arm: msLoeschenArm === i },
     ];
   }
   function msPlanDetailZeichnen() {
@@ -43772,7 +43841,11 @@
         const sel = k === msDetail ? ' sel' : '';
         if (r.knopf) {
           if (k === 7) h += '<div class="ms-fuss">';
-          h += '<button type="button" class="ms-knopf' + (r.knopf === 'weg' ? ' ms-weg' : '') + sel + '" data-d="' + k + '">' + msEsc(t(r.l)) + '</button>';
+          const inhalt = r.zeichen ? r.zeichen
+            : r.tonne ? MS_TONNE + (r.arm ? ' ' + msEsc(t('Wirklich?')) : '')
+            : msEsc(t(r.l));
+          h += '<button type="button" class="ms-knopf' + (r.knopf === 'weg' ? ' ms-weg' : '') + (r.zeichen || r.tonne ? ' ms-symbol' : '') + sel
+            + '" data-d="' + k + '" aria-label="' + msEsc(t(r.l)) + '" title="' + msEsc(t(r.l)) + '">' + inhalt + '</button>';
           if (k === dz.length - 1) h += '</div>';
           return;
         }
@@ -43924,6 +43997,7 @@
     msEvent = meister.plan.events.length - 1; msZeile = msEvent; msDetail = 0;
     meisterSpeichern();
   }
+  var MS_TONNE = '<svg class="ms-tonne" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>';
   function msEventAktion(a) {
     const evs = meister.plan.events, i = msEvent;
     if (a === 'weg') {
@@ -43938,6 +44012,9 @@
     } else if (a === 'hoch' && i > 0) {
       const x = evs[i - 1]; evs[i - 1] = evs[i]; evs[i] = x;
       msEvent = i - 1; msZeile = i - 1;
+    } else if (a === 'runter' && i < evs.length - 1) {
+      const x = evs[i + 1]; evs[i + 1] = evs[i]; evs[i] = x;
+      msEvent = i + 1; msZeile = i + 1;
     }
     meisterSpeichern();
     msZeichnen();
@@ -45426,6 +45503,13 @@
     st.pan.pan.value = ghostStimmePan(car);
     return st.pan;
   }
+  // v1.0.22: der NPC-Motor - je Auto (Garage), sonst die Vorgabe in Optionen -> Ton, sonst
+  // wie Spieler 1. Ein noch nicht geladenes Modell faellt bis zum Laden auf den Rueckfall.
+  function ghostMotorWunsch(car) {
+    if (car && car.ghostMotor) return car.ghostMotor;
+    const el = $('ghost-motor');
+    return el && el.value ? el.value : '';
+  }
   function ghostStimmeStarten(car) {
     if (!ghostSound || !soundEnabled || !audioCtx || !car.ghost) return false;
     // v0.9.64: je Ghost abschaltbar (der Schalter in Optionen -> Ton bleibt der Hauptschalter).
@@ -45433,7 +45517,7 @@
     // v0.9.64: nur ein laufender Ghost bekommt eine Stimme. Ein geparkter hat keinen Takt,
     // der sie aktualisiert - er startete sonst stille Sources, die im Hintergrund weiterrechnen.
     if (!car.ghost.running) return false;
-    const modell = ghostStimmeModell();
+    const modell = ghostStimmeModell(car);
     if (!modell) return false;
     return startSampleEngineIn(car.ghost.stimme, modell, () => ghostStimmeAusgang(car));
   }
@@ -45442,8 +45526,10 @@
   // gerechnetes Profil faehrt oder sein Sample noch nicht spielt, und dann blieb jeder
   // Ghost stumm. Jetzt: das Fahrer-Sample, sonst das gewaehlte Profil, sonst das erste
   // vollstaendig geladene Modell. Geladen wird dafuer bei Bedarf.
-  function ghostStimmeModell() {
+  function ghostStimmeModell(car) {
     const geladen = (k) => !!(k && sampleEngine.buffers[k] && powerBands(k).length);
+    const wunsch = ghostMotorWunsch(car);
+    if (geladen(wunsch)) return wunsch;
     if (geladen(sampleEngine.car)) return sampleEngine.car;
     const sel = $('sound-profile');
     if (sel && geladen(sel.value)) return sel.value;
@@ -45468,7 +45554,7 @@
     // mit dem neuen Modell neu (st.car wird von ghostStimmeStarten gesetzt).
     // Neu starten nur, wenn sich das Modell wirklich aendert - nicht, weil das Fahrer-Sample
     // gerade fehlt (dann blieb die alte Stimme vorher stehen oder brach ab).
-    const soll = ghostStimmeModell();
+    const soll = ghostStimmeModell(car);
     if (!st.nodes || (soll && st.car !== soll)) { if (!ghostStimmeStarten(car)) return; }
     const eng = car.ghost.engine;
     if (!eng || !eng.state) return;
@@ -45477,6 +45563,34 @@
                   && Math.abs(eng.state.speedKmh || 0) < 0.05;
     updateSampleEngineIn(st, motorDrehzahl(eng.state, st.car), load, leise, eng, 1);
   }
+  // Die Liste des NPC-Motors: dieselben Gruppen wie #sound-profile, nur Motoren mit Schleifen.
+  function ghostMotorListeFuellen() {
+    const el = $('ghost-motor'), quelle = $('sound-profile');
+    if (!el || !quelle || el.options.length > 1) return;
+    const merk = el.getAttribute('data-wert') || '';
+    for (const kind of quelle.children) {
+      if (kind.tagName === 'OPTGROUP') {
+        const g = document.createElement('optgroup');
+        g.label = kind.label;
+        for (const o of kind.children) if (SAMPLE_CARS.indexOf(o.value) >= 0) g.appendChild(o.cloneNode(true));
+        if (g.children.length) el.appendChild(g);
+      } else if (kind.tagName === 'OPTION' && SAMPLE_CARS.indexOf(kind.value) >= 0) {
+        el.appendChild(kind.cloneNode(true));
+      }
+    }
+    [...el.querySelectorAll('option')].forEach((o) => { o.selected = false; o.removeAttribute('selected'); });
+    el.value = merk;
+  }
+  ghostMotorListeFuellen();
+  // Die NPC-Motoren, die die Garage durchblaettert: "" (wie Spieler 1) und jeder Motor der Liste.
+  function ghostMotorWerte() {
+    const el = $('ghost-motor');
+    return el ? [...el.options].map((o) => ({ v: o.value, name: o.value ? motorNamen(o) : t('Wie Spieler 1') })) : [{ v: '', name: '' }];
+  }
+  if ($('ghost-motor')) $('ghost-motor').addEventListener('change', () => {
+    if (typeof garage === 'undefined') return;
+    for (const c of garage) if (c.role === 'ghost' && c.ghost && c.ghost.stimme && c.ghost.stimme.nodes && !c.ghostMotor) ghostStimmeStoppen(c);
+  });
   // Der Schalter in Optionen -> Ton. Anschalten startet jede laufende Ghost-Stimme,
   // Abschalten haelt sie an.
   $('ghost-sound').addEventListener('change', (e) => {
@@ -47465,7 +47579,9 @@
       ghostStufe: car.ghostStufe === undefined || car.ghostStufe === null
         ? 1 : car.ghostStufe,
       // v0.9.64: Ghost-Sound je Auto. Vorgabe an (true); explizit ausgeschaelt bleibt false.
-      ghostSound: car.ghostSound === false ? false : true };
+      ghostSound: car.ghostSound === false ? false : true,
+      // v1.0.22: der NPC-Motor je Auto ("" = Vorgabe aus Optionen -> Ton).
+      ghostMotor: car.ghostMotor || '' };
     try { localStorage.setItem(CAR_ROLLEN_STORE, JSON.stringify(alle)); } catch (e) { /* voll */ }
   }
   function carStoreSchreiben(all) {
@@ -48089,6 +48205,19 @@
       };
       box.appendChild(garWertZeile('NPC-Sound', t(hoerbar ? 'An' : 'Aus'),
         soundUmschalten, soundUmschalten));
+      // v1.0.22 BESTELLT: "Lass mich den Motorensound von Ghosts einstellen." Je NPC; "Vorgabe"
+      // nimmt die Einstellung aus Optionen -> Ton.
+      if (typeof ghostMotorWerte === 'function') {
+        const werte = [{ v: '', name: t('Vorgabe') }].concat(ghostMotorWerte().filter((w) => w.v));
+        const j = Math.max(0, werte.findIndex((w) => w.v === (car.ghostMotor || '')));
+        const motorWahl = (d) => {
+          car.ghostMotor = werte[(j + d + werte.length) % werte.length].v;
+          carRolleMerken(car);
+          if (car.ghost && car.ghost.stimme && typeof ghostStimmeStoppen === 'function') ghostStimmeStoppen(car);
+          renderGarage();
+        };
+        box.appendChild(garWertZeile('NPC-Motor', werte[j].name, () => motorWahl(-1), () => motorWahl(1)));
+      }
       const ch = document.createElement('div');
       ch.innerHTML = charakterZeile(car);
       if (ch.firstElementChild) box.appendChild(ch.firstElementChild);
@@ -48626,6 +48755,7 @@
         else if (typeof gemerkt.ghostSpeed === 'number') car.ghostStufe = ghostStufeAusSpeed(gemerkt.ghostSpeed);
         // v0.9.64: Ghost-Sound je Auto.
         if (typeof gemerkt.ghostSound === 'boolean') car.ghostSound = gemerkt.ghostSound;
+        if (typeof gemerkt.ghostMotor === 'string') car.ghostMotor = gemerkt.ghostMotor;
       }
       const frei = gemerkt && garRollenFrei(car).some((r) => r.id === gemerkt.role);
       if (frei && gemerkt.role !== 'none') setCarRole(car, gemerkt.role);
@@ -85474,10 +85604,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Auslaufen 2 s, Bremse sofort, Rueckwaerts erst beim zweiten Druck' };
   });
 
-  stAdd('Abstimmungen: FAHREN zeigt Arcade, Sim+, Pro, Pacejka; Lenkeinschlag erreichbar ausser Realismus GT3', () => {
+  stAdd('Abstimmungen: FAHREN zeigt Arcade, Sim+, Pro, Pacejka, RC; Lenkeinschlag erreichbar ausser Realismus GT3', () => {
     const f = [];
     const fahren = window.__presetKeysFahren ? window.__presetKeysFahren() : [];
-    if (fahren.join(',') !== 'arcade,simplus,pro,propacejka') f.push('FAHREN: ' + fahren.join(','));
+    if (fahren.join(',') !== 'arcade,simplus,pro,propacejka,rc') f.push('FAHREN: ' + fahren.join(','));
     for (const k of ['arcade', 'simplus', 'gt3', 'f1']) {
       const v = window.__presetValues(k) || {};
       const resp = v['phys-steerresp'] === undefined ? 3 : v['phys-steerresp'];
@@ -85487,7 +85617,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const sim = window.__presetValues('simplus') || {}, pro = window.__presetValues('pro') || {};
     if (!(sim['setting-brakepower'] > pro['setting-brakepower'] + 0.5)) f.push('Sim+ bremst nicht viel staerker als Pro');
     if (!(sim['phys-accel'] > pro['phys-accel'])) f.push('Sim+ beschleunigt nicht staerker');
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'vier im FAHREN-Menue, Sim+ staerker als Pro, Einschlag erreichbar' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'fuenf im FAHREN-Menue, Sim+ staerker als Pro, Einschlag erreichbar' };
   });
 
   stAdd('Training: Zeitlimit 0 laeuft ohne Ende, ein Limit beendet es', () => {
@@ -85844,6 +85974,42 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       raceStartedAt = merk.start; currentTrackTiles = merk.tiles; ghostOrtGes = merk.ort; playerCar = merk.pc;
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eine Rolle, nur Bahn, Takt, Spur hinten schneller/vorn langsamer, Gummiband, Gelb, Kurvendeckel, Soll-Punkt' };
+  });
+
+  // ---- v1.0.22: NPC-Motor waehlbar, und die Drehzahl folgt Gas und Bremse ----
+  stAdd('NPC-Motor: Wahl je Auto vor der Vorgabe, Drehzahl steigt beim Beschleunigen und faellt beim Bremsen', () => {
+    const f = [];
+    const el = $('ghost-motor');
+    if (!el || el.options.length < 5) f.push('Liste des NPC-Motors leer');
+    const merk = el ? el.value : '';
+    try {
+      if (el) el.value = 'sd_v10';
+      if (ghostMotorWunsch({}) !== 'sd_v10') f.push('Vorgabe aus Optionen nicht genommen');
+      if (ghostMotorWunsch({ ghostMotor: 'mustang' }) !== 'mustang') f.push('Wahl je Auto nicht vorrangig');
+    } finally { if (el) el.value = merk; }
+    // Die Ghost-Physik wie in startGhost: Automatik, Drehzahl aus dem eigenen Zustand.
+    const e = new CarreraPhysicsEngine();
+    Object.assign(e.config, physEngine.config);
+    e.config.gears = physEngine.config.gears;
+    e.config.autoShift = true; e.config.speedLimitFactor = 1;
+    if (typeof e.calibrateAccel === 'function') e.calibrateAccel();
+    e.state.driveMode = 'forward';
+    const rpm = [];
+    const schritt = (gas, bremse, sek) => {
+      for (let t0 = 0; t0 < sek; t0 += 0.045) {
+        e.update({ steering: 0, throttle: gas, brake: bremse, headlights: false }, 0.045);
+        rpm.push(motorDrehzahl(e.state, 'mustang'));
+      }
+    };
+    schritt(0.2, 0, 1); const leerlaufNah = rpm[rpm.length - 1];
+    schritt(1, 0, 2.5); const nachGas = Math.max(...rpm.slice(-30));
+    schritt(0, 1, 1.5); const nachBremse = rpm[rpm.length - 1];
+    const verschieden = new Set(rpm.map((x) => Math.round(x / 100))).size;
+    if (!(nachGas > leerlaufNah + 1000)) f.push('Drehzahl steigt beim Beschleunigen kaum: ' + Math.round(leerlaufNah) + ' -> ' + Math.round(nachGas));
+    if (!(nachBremse < nachGas - 1000)) f.push('Drehzahl faellt beim Bremsen kaum: ' + Math.round(nachGas) + ' -> ' + Math.round(nachBremse));
+    if (verschieden < 15) f.push('nur ' + verschieden + ' verschiedene Drehzahlstufen');
+    return { ok: !f.length, mass: f.length ? f.join(' | ')
+      : 'Wahl je Auto > Vorgabe; Drehzahl ' + Math.round(leerlaufNah) + ' -> ' + Math.round(nachGas) + ' -> ' + Math.round(nachBremse) + ' U/min, ' + verschieden + ' Stufen' };
   });
 
   // ---- v1.0.14: SIMULATOR-Linie (61-simlinie.js) ----
@@ -88324,9 +88490,33 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     v: Object.assign({}, PRESETS.pro.v, { 'phys-steerresp': 3.3, 'phys-accel': 1.15,
                                           'setting-zero-to-top': 2.3, 'setting-brakepower': 2.2 }),
   };
-  // Im FAHREN-Menue und am Cockpit-Knopf nur diese vier (BESTELLT: "die anderen Modi noch im
+  // ---- RC (v1.0.22) -----------------------------------------------------------------
+  // BESTELLT: "Hatte ich nicht auch mal einen RC Fahrgefuehl-Modus gewuenscht? Der soll so wie
+  // Arcade sein, nur viel extremer und 'RC' heissen und auch fuer Spielerautos anwaehlbar sein.
+  // Da Pacejka ja auch inzwischen in die Fahrgefuehl-Optionen integriert ist, wuerde das die
+  // Steuerungsmodus-Einstellung unnoetig machen." Also: Arcade mit allen Reglern am Anschlag
+  // (Lenkung, Bremse, Anzug) und dem Steuerungsmodus RC - Stick direkt wie bei einer
+  // Fernsteuerung, Gas weg laeuft in 2 s aus, Bremse sofort, zweiter Bremsdruck im Stand
+  // rueckwaerts. Der Steuerungsmodus haengt damit nur noch am Fahrgefuehl.
+  PRESETS.rc = {
+    label: 'RC',
+    kurz: 'Arcade, nur viel extremer: wie ein Fernsteuerungsauto',
+    text: 'Der Stick geht direkt ans Auto wie bei einer Fernsteuerung, ohne G\u00e4nge: Gas weg '
+        + 'l\u00e4uft in zwei Sekunden aus, die Bremse greift sofort, ein zweiter Bremsdruck im '
+        + 'Stand f\u00e4hrt r\u00fcckw\u00e4rts. Lenkung, Bremse und Anzug stehen am Anschlag, kein '
+        + 'Reifenverschlei\u00df, kein Tankgewicht, Crashs ohne Schaden.',
+    v: Object.assign({}, PRESETS.arcade.v, { 'phys-mode': 'aus', 'phys-steerresp': 4,
+      'setting-steer-calib': 3, 'setting-brakepower': 2.5, 'setting-zero-to-top': 1.5,
+      'phys-accel': 1.6, 'setting-topspeed': 1.5, 'setting-coast-drag': 0.3, 'setting-brake-steal': 0.2 }),
+  };
+  // Jedes Fahrgefuehl setzt seinen Steuerungsmodus SELBST: die Einstellung dafuer ist seit
+  // v1.0.22 ausgeblendet, und wer von RC oder Pacejka wechselt, muss wieder in "Physik" landen.
+  Object.keys(PRESETS).forEach((k) => {
+    if (!Object.prototype.hasOwnProperty.call(PRESETS[k].v, 'phys-mode')) PRESETS[k].v['phys-mode'] = 'physik';
+  });
+  // Im FAHREN-Menue und am Cockpit-Knopf nur diese (BESTELLT: "die anderen Modi noch im
   // Optionen-Menue lassen, aber nicht im FAHREN-Menue in der Kachel anzeigen").
-  const PRESETS_FAHREN = ['arcade', 'simplus', 'pro', 'propacejka'];
+  const PRESETS_FAHREN = ['arcade', 'simplus', 'pro', 'propacejka', 'rc'];
   // Bis v0.4 hiess GT3 "real". Aeltere exportierte Abstimmungen und der Knopf im
   // Garagenschirm duerfen den alten Namen weiter benutzen.
   const PRESET_ALIAS = { real: 'gt3', realismus: 'gt3' };

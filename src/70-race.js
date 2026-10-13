@@ -1906,6 +1906,7 @@
     learnReset();
     raceLapStart = null;
     $('race-results').style.display = 'none';
+    if ($('race-results-leer')) $('race-results-leer').hidden = false;
     $('race-lap-current-row').style.display = '';
     $('race-lap-current').textContent = '-';
     // Freies Training braucht keine Ampel: es gibt niemanden, gegen den man gleichzeitig
@@ -2191,6 +2192,7 @@
     $('race-start-btn').disabled = false;
     $('race-lap-current-row').style.display = 'none';
     $('race-results').style.display = '';
+    if ($('race-results-leer')) $('race-results-leer').hidden = true;
     renderRaceResults();
     renderPositionPlot();
     // Und einmal sichtbar dort, wo gerade gedrueckt wurde. Ohne das erschien das Ergebnis

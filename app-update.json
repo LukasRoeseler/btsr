@@ -1,5 +1,5 @@
-{"version":"1.0.21","apk":2,"dateien":[
-{"p":"index.html","h":"108c24d5b8a670b36a6ba9dbc489224a42ac47a89a622938570e353d7cb29f35","g":5525361},
+{"version":"1.0.22","apk":2,"dateien":[
+{"p":"index.html","h":"dfdb7e7d14e864b762573348421a65bae480da789fd3070be57aabcd84c9d443","g":5542910},
 {"p":"mp-overview.html","h":"61388dad99cb805de167fe9a10b9ffdb1d4655c450f175f4eeb9ede3a24d04aa","g":9956},
 {"p":"manifest.webmanifest","h":"868416fe2c9d41ebed0b5d479f07bbd16679dd4835e9c526da9eae8046e1e36a","g":639},
 {"p":"favicon.svg","h":"bc804f771d409b0efff2f2a78238a91d843d8d02efc2c614c6bdc544763de931","g":5456},
@@ -454,6 +454,8 @@
 {"p":"img/optionen.jpg","h":"e544aca4ec559fd5dcdb00e5fa2cfae4424a3133326db55b7a1d092646c49e33","g":48938},
 {"p":"img/rennen-bg.jpg","h":"5db36093f7204d76fca897b46d10dac6fe451ddf4f0e319ba24778ddc3e4c917","g":168200},
 {"p":"img/rennen.jpg","h":"39677dd98c9da8644c17f21477a3fb342362480641cf070b3bbfbe4eb2aba4c0","g":89505},
+{"p":"img/rennoptionen-bestzeit-bg.jpg","h":"fe007a853f961f4c97663a86c1b39e30123ecdb7ac7cd752589d8d843975bb3b","g":96238},
+{"p":"img/rennoptionen-bestzeit.jpg","h":"4fd4f62b8dafb6a56e38e9185f555872cca64d2a0b4b2c9ad41d90e350ff9402","g":51167},
 {"p":"img/rennoptionen-bg.jpg","h":"4c3c6d4dec335ef7f357161e3c0a3e26b4856ed987e91739bc697096245ac721","g":28159},
 {"p":"img/rennoptionen-endurance-bg.jpg","h":"4c3c6d4dec335ef7f357161e3c0a3e26b4856ed987e91739bc697096245ac721","g":28159},
 {"p":"img/rennoptionen-endurance.jpg","h":"4c3c6d4dec335ef7f357161e3c0a3e26b4856ed987e91739bc697096245ac721","g":28159},
