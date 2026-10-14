@@ -626,6 +626,18 @@
         // eine Abweichung, die niemand verstellt hat. Den Bremsweg beruehrt der Wert nicht -
         // steerGrip geht in die Lenkung und nicht in die Verzoegerung.
         brakeUseGain: 1.15,
+        // v1.0.44 BESTELLT: "Bremsen zur Abschwaechung der Lenkung soll von der simulierten
+        // Gewichtsverlagerung abhaengen." Bei 1 skaliert frontUse mit der tatsaechlichen
+        // Vorderachslast (loadFrontStatic/loadFront): eine eingetauchte Nase traegt mehr
+        // Bremse, bevor sie die Lenkung frisst - daraus entsteht Trail-Braking von selbst
+        // (Nase taucht schnell, Reifenkraft baut langsam). Schalten tun es die Realismus-
+        // Presets (98-presets.js PRESETS_BREMSSTEAL_LAST: Pro, Sim+, Pacejka, GT3, F1,
+        // Realismus GT3); Omega bleibt eingefroren und Arcade/RC fahren den einfachen
+        // Reibkreis. 0 = der bisherige flache Faktor.
+        // Das REIFENMODELL ist ueber die Schlussmultiplikation mit st.tyreGrip gekoppelt
+        // (steerGrip weiter unten): kalte/abgefahrene Reifen verkleinern die Kapazitaet,
+        // derselbe Bremsbedarf frisst einen groesseren Anteil - die Lenkung leidet mehr.
+        brakeStealLast: 1,
 
         // ---- Bremstemperatur und Fading (Block 4.1) ----
         //
@@ -1592,7 +1604,19 @@
       // Die Balance wirkt auf die ANFORDERUNG an die Vorderachse und damit in jedem Gang
       // und bei jedem Tempo.
       const biasK = cfg.brakeBias / Math.max(1e-6, cfg.brakeBiasRef);
-      const frontUse = Math.max(0, -st.longUse) * cfg.brakeUseGain * biasK * lastFrac;
+      // v1.0.44: Gewichtsverlagerungs-gekoppelter Bremssteal. `wf` ist 1 (der flache alte
+      // Faktor), solange brakeStealLast aus ist; bei 1 skaliert es mit loadFrontStatic/
+      // loadFront. Unter Bremsen taucht die Nase (loadFront > static), also wird wf < 1 und
+      // die Bremse frisst weniger von der Vorderachskapazitaet - die Lenkung bleibt laenger
+      // (Trail-Braking). Loest man die Bremse, faellt loadFront schnell zurueck (loadTau)
+      // und longUse geht gegen 0 (useTauBrems) - frontUse wird null und die Lenkung kehrt
+      // sofort zurueck. Die Klemme 0,4 haelt die Bremse im Extrem davor, die Vorderachse
+      // gar nicht mehr zu belasten. Das Reifenmodell wirkt ueber die Schlussmultiplikation
+      // mit st.tyreGrip weiter unten: weniger Grip, weniger Kapazitaet, gleicher Bedarf.
+      const wf = cfg.brakeStealLast
+        ? Math.max(0.4, Math.min(1, cfg.loadFrontStatic / Math.max(0.05, st.loadFront)))
+        : 1;
+      const frontUse = Math.max(0, -st.longUse) * cfg.brakeUseGain * biasK * lastFrac * wf;
       // The 0.12 floor is a dry-weather reserve: it stops the car ever being completely
       // helpless. In the wet there is no such reserve - once the brake has eaten the front
       // axle, the friction circle really is empty and the steering does nothing. So the

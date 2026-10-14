@@ -4676,7 +4676,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.42</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.43</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5806,7 +5806,11 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Fahrgef&#252;hl Pro (und damit Sim+ und Pacejka): Bremsen nimmt Lenkung jetzt 95 % statt 115 % &#8211; mit dem schnelleren Bremsaufbau l&#228;sst die Lenkung beim Anbremsen fr&#252;h nach, f&#228;llt bei einer Vollbremsung aber nicht mehr auf den Notboden. Omega bleibt bei 115 %.</li>
+        <li>Trail-Braking: Der Bremssteal h&#228;ngt bei den Realismus-Fahrgef&#252;hlen (Pro, Sim+, Pacejka, GT3, F1, Realismus GT3) jetzt an der simulierten Gewichtsverlagerung. Beim Anbremsen taucht die Nase, die belastete Vorderachse tr&#228;gt mehr Bremse, bevor sie die Lenkung nimmt &#8211; so kannst du in die Kurve hineinbremsen, und beim L&#246;sen der Bremse kommt die Lenkung sofort zur&#252;ck. Omega bleibt beim flachen Faktor.</li>
         <li>Fahrphysik: Die Bremskraft baut jetzt eigenst&#228;ndig und deutlich schneller auf (0,12 s statt 0,45 s), damit beim Anbremsen die Lenkung schon am Kurveneingang nachl&#228;sst und nicht erst nach einer ganzen Kurve &#8211; wie bei einem echten Auto. Gas baut weiter weich auf. Gilt f&#252;r alle Fahrgef&#252;hle au&#223;er Omega (bleibt bei 0,45 s). Neuer Regler Bremsaufbau in den Physik-Optionen unter &#8222;Bremsen nimmt Lenkung&#8220;.</li>
+        <li>Optionen: Neue Kachel &#8222;Daten sichern&#8220; &#8211; alle Daten in einer Datei sichern und wieder laden (Einstellungen, Strecken, Zeiten, Autos und Tastenbelegung). Die bisherige Sicherung liegt jetzt in der eigenen Unterseite.</li>
+        <li>Ton: Neuer Regler &#8222;Knallst&#228;rke&#8220; f&#252;r die Auspuffknaller. Au&#223;erdem knallt der Auspuff jetzt auch beim Ausrollen bei Drehzahl (Engine Braking) und nicht nur beim Gaswegnehmen.</li>
         <li>App-Reaktionszeit (neue APK n&#246;tig): Die zwei Direktwege der APK (Steuerbefehle am Android-Hauptthread vorbei, Gamepad direkt) kamen in der Seite nicht an &#8211; jeder Befehl lief weiter &#252;ber den langsamen Weg. Fehlt der Direktweg beim Start, meldet die App ihn jetzt neu an und l&#228;dt einmal neu. Die Messzeile Funk-Rundlauf sagt, wenn ein Direktweg trotzdem fehlt, und nennt den Grund.</li>
         <li>Meisterschaft und Safety Car sind nicht mehr als experimentell bzw. WIP gekennzeichnet.</li>
         <li>Startaufstellung: Die Einlenkst&#228;rke steht ab Werk auf 0 (auch ein gemerkter Wert wurde zur&#252;ckgesetzt). Die Autos fahren genau mittig bis zu ihrem Platz und halten dort sofort mit voller Bremse; mit Einlenken erst ein Takt zur Seite, einer zur&#252;ck, dann sofort halten.</li>
@@ -9244,7 +9248,13 @@
         <button class="misc-tile subpage-open" data-sub="opt-system">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="24" r="6" stroke="var(--bad)"/><path d="M24 5v6M24 37v6M5 24h6M37 24h6M10.6 10.6l4.2 4.2M33.2 33.2l4.2 4.2M10.6 37.4l4.2-4.2M33.2 14.8l4.2-4.2"/></svg>
           <b>System</b>
-          <span>Sprache, Sicherung, gemerkte Autos, App und Entwicklertools.</span>
+          <span>Sprache, App und Entwicklertools.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="opt-sicherung">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M24 6a9 9 0 0 1 9 9c0 4-2 6-2 9h-14c0-3-2-5-2-9a9 9 0 0 1 9-9z"/><path d="M14 27h20M16 33h16" stroke="var(--bad)"/><path d="M14 39h20"/></svg>
+          <b>Daten sichern</b>
+          <span>Alle Daten in einer Datei: Einstellungen, Strecken, Zeiten, Autos und Tastenbelegung.</span>
         </button>
         <button class="misc-tile subpage-open" data-sub="opt-zwei">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
@@ -9794,7 +9804,7 @@
           <!-- max von 1.5 auf 2.5: Arcade brauchte BESTELLT "die Bremskraft um 50%
                verstaerken" mehr Kopf, als der alte Deckel (1.5) hatte - der Arcade-Wert
                selbst stand schon genau AUF dem alten Maximum. -->
-          <input type="range" id="setting-brakepower" min="0.3" max="2.5" step="0.05" value="1.4">
+          <input type="range" id="setting-brakepower" min="0.3" max="3.0" step="0.05" value="1.4">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-brakepower-val">1.00</span>
         </div></div>
@@ -10013,9 +10023,9 @@
       <div class="opt-row"><div class="opt-label">Bremsen nimmt Lenkung<small>Der Reibkreis: was die Bremse an der Vorderachse verbraucht, fehlt der Lenkung. 0 hei&szlig;t, Bremsen und Lenken behindern sich nicht; h&ouml;here Werte lassen das Auto beim Anbremsen deutlich schlechter einlenken. Zu beachten: die Lenkwinkel-Kalibrierung darunter holt genau das wieder zur&uuml;ck, also wirkt ein starker Wert erst, wenn die Kalibrierung ihn nicht mehr ausgleichen kann.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-brake-steal" min="0" max="1.5" step="0.05" value="1.15">
+          <input type="range" id="setting-brake-steal" min="0" max="1.5" step="0.05" value="0.95">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-brake-steal-val">115%</span>
+          <span class="opt-val" id="setting-brake-steal-val">95%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Bremsaufbau<small>Wie schnell die Bremskraft am Reifen
           ansteht - und damit, wie fr&uuml;h beim Anbremsen die Lenkung nachl&auml;sst (siehe &bdquo;Bremsen nimmt
@@ -10163,6 +10173,15 @@
           von Auspuff, Ansaugung und Mechanik, und die stecken heute alle drei in einer
           Schleife.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-engine-extras" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Knallst&auml;rke
+          <small>Lautst&auml;rke der Auspuffknaller (Schubknaller beim Gaswegnehmen und der
+          Schaltknall). 0 schaltet die Knaller aus, ohne die &uuml;brigen Zus&auml;tze anzufassen.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-knall-volume" min="0" max="1" step="0.05" value="1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-knall-volume-val">100%</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Rundenzeiten ansagen
           <small>Nach jeder Runde die Zeit, und bei einer eigenen Bestzeit ein Wort dazu.
           Gesprochen von der eingebauten Stimme des Browsers &ndash; kein Dienst, kein Netz,
@@ -11235,7 +11254,9 @@
       <div class="opt-row" id="opt-app-zeile" hidden><div class="opt-label">App &amp; Updates
           <small>Nur in der Android-App: Version, Updates ohne neue APK.</small></div>
         <button type="button" class="goto-tab" data-tab="info" data-k-sub="app">&Ouml;ffnen</button></div>
-    <div class="card k-in-system" id="sich-karte">
+    <div class="card subpage" id="sub-opt-sicherung">
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
+      <div class="card k-in-system" id="sich-karte">
       <h2>Sicherung</h2>
       <p class="muted" style="font-size:12px">
         Alles, was diese App sich merkt, in einer Datei: Fahreinstellungen und
@@ -11289,6 +11310,7 @@
         R&uuml;ckversicherung. Laden f&uuml;hrt zusammen statt zu ersetzen: nichts Neueres
         geht verloren, auch eine &auml;ltere Sicherung l&auml;dt noch.
       </p>
+      </div>
     </div>
 
     </div>

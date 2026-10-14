@@ -27,7 +27,9 @@
       // Deckel des Reglers) auf 2.25. Der Regler selbst hat jetzt Platz bis 2.5, siehe
       // #setting-brakepower im Markup.
       // BESTELLT (v0.9.21): "Hoechstgeschwindigkeit drosseln, dafuer Bremsstaerke sehr stark".
-      v: { 'setting-grip': 1.0, 'setting-brakepower': 2.5, 'setting-autoshift': true,
+      // v1.0.44 BESTELLT: "mach die bremse bei arcade staerker (kuerzerer Weg)". Der Regler
+      // reicht jetzt bis 3.0, Arcade geht auf 2.8 - die kraeftigste Bremse von allen.
+      v: { 'setting-grip': 1.0, 'setting-brakepower': 2.8, 'setting-autoshift': true,
            'setting-zero-to-top': 2.0, 'setting-coast-drag': 0.4, 'setting-fuelweight': 0,
            'setting-tyres': 0, 'phys-steerresp': 3.4, 'setting-brakebias': 56,
            // Die engste Lenkung von allen: bei 250 Prozent liegt der volle Anschlag schon
@@ -116,7 +118,11 @@
            // darueber 45 auf 26 Grad und laesst 40 bis 60 km/h unberuehrt. Ueber
            // 1,15 faellt es auf den Notboden von 11 Grad, und dann lenkt das Auto
            // unter Bremsen gar nicht mehr.
-           'setting-brake-steal': 1.15,
+           // v1.0.43 BESTELLT: "Bremsen nimmt Lenkung auf 95 %". Mit dem schnellen Bremsaufbau
+           // (0,12 s) schlugen 115 % voll durch: bei einer Vollbremsung aus hohem Tempo lag die
+           // Lenkung nach einer halben Sekunde auf dem Notboden. Sim+ und Pacejka erben den Wert;
+           // Omega behaelt 1,15 (eingefroren).
+           'setting-brake-steal': 0.95,
            // Waermer an, weil Pro die Vorgabe ist: wer zum ersten Mal faehrt, soll nicht drei
            // Runden auf Grip warten und das fuer das Fahrverhalten halten.
            'setting-tyre-blankets': false,
@@ -405,6 +411,24 @@
 
   function presetSay(t) { $('preset-status').textContent = t; }
 
+  // v1.0.44: Der gewichtsverlagerungs-gekoppelte Bremssteal (brakeStealLast in
+  // 40-physics.js) haengt an der VOREINSTELLUNG, nicht an einem Regler. Er wird aus dem
+  // AKTIVEN Preset abgeleitet und nicht aus einem Merker - so stimmt er auch nach einem
+  // Neuladen, wenn die Selbstsicherung die Regler zurueckholt. presetAktiv() misst die
+  // Regler, also steht die Antwort nach einem applyPreset() oder nach autoSicherungLaden()
+  // beide Male richtig.
+  //
+  // BESTELLT (v1.0.44): "verbessere bei Pro und den Realismus presets die Physik." Die
+  // Realismus-Presets sind die, die das Reifenmodell und einen echten Reibkreis fahren:
+  // Pro, Sim+, Pacejka, GT3, F1 und Realismus GT3. Omega ist eingefroren (bleibt beim
+  // flachen Faktor), und Arcade/RC fahren absichtlich den einfachen Reibkreis.
+  const PRESETS_BREMSSTEAL_LAST = ['pro', 'simplus', 'propacejka', 'gt3', 'f1', 'realgt3'];
+  function setzeBrakeStealLast() {
+    if (typeof physEngine !== 'undefined' && physEngine.config) {
+      physEngine.config.brakeStealLast = PRESETS_BREMSSTEAL_LAST.includes(presetAktiv()) ? 1 : 0;
+    }
+  }
+
   // v1.0.36: welches Preset zuletzt gesetzt wurde. Omega und Pro haben (noch) dieselben Werte -
   // gemessen allein waere die Anzeige dann immer "Pro". Bei Gleichstand gewinnt das gewaehlte.
   const PRESET_ZULETZT_STORE = 'omegasim-preset-zuletzt';
@@ -420,6 +444,7 @@
     for (const [id, val] of Object.entries(p.v)) {
       if (presetSet(id, val)) n++; else missing.push(id);
     }
+    setzeBrakeStealLast();
     presetSay(p.label + ': ' + n + ' Regler gesetzt'
               + (missing.length ? ', nicht gefunden: ' + missing.join(', ') : ''));
     $('preset-json').value = JSON.stringify(presetRead());

@@ -5250,7 +5250,8 @@
     sndExtras(folge, o) {
       const opt = o || {};
       const merk = { crackle: xs.crackle, turbo: xs.turbo, ein: extrasOn,
-                     last: xs.letzteLast, schalt: xs.schaltAn, druck: xs.ladedruck };
+                     last: xs.letzteLast, schalt: xs.schaltAn, druck: xs.ladedruck,
+                     ausroll: xs.ausrollCd };
       try {
         if (opt.crackle !== undefined) xs.crackle = opt.crackle;
         if (opt.turbo !== undefined) xs.turbo = !!opt.turbo;
@@ -5258,6 +5259,7 @@
         xs.letzteLast = opt.startLast === undefined ? 0 : opt.startLast;
         xs.schaltAn = false;
         xs.ladedruck = 0;
+        xs.ausrollCd = 0;
         const dt = opt.dt === undefined ? 0.045 : opt.dt;
         return (folge || []).map(z => {
           const st = { rpmFrac: z.rpmFrac || 0, onLimiter: !!z.onLimiter,
@@ -5275,6 +5277,7 @@
       } finally {
         xs.crackle = merk.crackle; xs.turbo = merk.turbo; extrasOn = merk.ein;
         xs.letzteLast = merk.last; xs.schaltAn = merk.schalt; xs.ladedruck = merk.druck;
+        xs.ausrollCd = merk.ausroll;
       }
     },
 

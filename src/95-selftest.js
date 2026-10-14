@@ -16438,18 +16438,22 @@
       // verlangt deshalb: nicht steigend ueberall, streng fallend im nicht gesaettigten
       // Bereich, und wo es flach ist, MUSS es der Boden sein. Ein beliebiges Plateau waere
       // weiterhin ein Fehler.
+      //
+      // v1.0.44: Der gewichtsverlagerungs-gekoppelte Bremssteal (brakeStealLast, Realismus-
+      // Presets) haelt die Lenkung jetzt auch bei stark vorderachslastiger Balance oben: eine
+      // eintauchende Nase traegt mehr Bremse, bevor sie die Lenkung frisst. Die Balance
+      // bleibt wirksam (streng fallend, deutliche Spanne), aber 80 % vorn faellt nicht mehr
+      // auf den Notboden - das ist die gewuenschte Trail-Braking-Seite, kein Fehler.
       const nichtSteigend = v.bei140 >= m.bei140 - 1e-9 && m.bei140 >= h.bei140 - 1e-9;
       const strengOben = v.bei140 > m.bei140;
-      const amBoden = h.bei140 < 0.2;
       const spanne = v.bei140 - h.bei140;
       const standGleich = Math.abs(v.stand - h.stand) < 0.02 && h.stand > 0.95;
-      return { ok: nichtSteigend && strengOben && amBoden && spanne > 0.25 && standGleich,
+      return { ok: nichtSteigend && strengOben && spanne > 0.25 && standGleich,
                mass: '140 km/h: 50 % vorn ' + Math.round(v.bei140 * 100)
                      + ' %, 62 % vorn ' + Math.round(m.bei140 * 100)
                      + ' %, 80 % vorn ' + Math.round(h.bei140 * 100)
                      + ' % | Spanne ' + Math.round(spanne * 100)
-                     + ' Punkte, im Stand ' + Math.round(h.stand * 100) + ' %'
-                     + (h.bei140 < 0.2 ? ' | 80 % vorn liegt auf dem Notboden' : '') };
+                     + ' Punkte, im Stand ' + Math.round(h.stand * 100) + ' %' };
     }
   });
 

@@ -4676,7 +4676,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.42</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.43</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5806,7 +5806,11 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Fahrgef&#252;hl Pro (und damit Sim+ und Pacejka): Bremsen nimmt Lenkung jetzt 95 % statt 115 % &#8211; mit dem schnelleren Bremsaufbau l&#228;sst die Lenkung beim Anbremsen fr&#252;h nach, f&#228;llt bei einer Vollbremsung aber nicht mehr auf den Notboden. Omega bleibt bei 115 %.</li>
+        <li>Trail-Braking: Der Bremssteal h&#228;ngt bei den Realismus-Fahrgef&#252;hlen (Pro, Sim+, Pacejka, GT3, F1, Realismus GT3) jetzt an der simulierten Gewichtsverlagerung. Beim Anbremsen taucht die Nase, die belastete Vorderachse tr&#228;gt mehr Bremse, bevor sie die Lenkung nimmt &#8211; so kannst du in die Kurve hineinbremsen, und beim L&#246;sen der Bremse kommt die Lenkung sofort zur&#252;ck. Omega bleibt beim flachen Faktor.</li>
         <li>Fahrphysik: Die Bremskraft baut jetzt eigenst&#228;ndig und deutlich schneller auf (0,12 s statt 0,45 s), damit beim Anbremsen die Lenkung schon am Kurveneingang nachl&#228;sst und nicht erst nach einer ganzen Kurve &#8211; wie bei einem echten Auto. Gas baut weiter weich auf. Gilt f&#252;r alle Fahrgef&#252;hle au&#223;er Omega (bleibt bei 0,45 s). Neuer Regler Bremsaufbau in den Physik-Optionen unter &#8222;Bremsen nimmt Lenkung&#8220;.</li>
+        <li>Optionen: Neue Kachel &#8222;Daten sichern&#8220; &#8211; alle Daten in einer Datei sichern und wieder laden (Einstellungen, Strecken, Zeiten, Autos und Tastenbelegung). Die bisherige Sicherung liegt jetzt in der eigenen Unterseite.</li>
+        <li>Ton: Neuer Regler &#8222;Knallst&#228;rke&#8220; f&#252;r die Auspuffknaller. Au&#223;erdem knallt der Auspuff jetzt auch beim Ausrollen bei Drehzahl (Engine Braking) und nicht nur beim Gaswegnehmen.</li>
         <li>App-Reaktionszeit (neue APK n&#246;tig): Die zwei Direktwege der APK (Steuerbefehle am Android-Hauptthread vorbei, Gamepad direkt) kamen in der Seite nicht an &#8211; jeder Befehl lief weiter &#252;ber den langsamen Weg. Fehlt der Direktweg beim Start, meldet die App ihn jetzt neu an und l&#228;dt einmal neu. Die Messzeile Funk-Rundlauf sagt, wenn ein Direktweg trotzdem fehlt, und nennt den Grund.</li>
         <li>Meisterschaft und Safety Car sind nicht mehr als experimentell bzw. WIP gekennzeichnet.</li>
         <li>Startaufstellung: Die Einlenkst&#228;rke steht ab Werk auf 0 (auch ein gemerkter Wert wurde zur&#252;ckgesetzt). Die Autos fahren genau mittig bis zu ihrem Platz und halten dort sofort mit voller Bremse; mit Einlenken erst ein Takt zur Seite, einer zur&#252;ck, dann sofort halten.</li>
@@ -9244,7 +9248,13 @@
         <button class="misc-tile subpage-open" data-sub="opt-system">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="24" r="6" stroke="var(--bad)"/><path d="M24 5v6M24 37v6M5 24h6M37 24h6M10.6 10.6l4.2 4.2M33.2 33.2l4.2 4.2M10.6 37.4l4.2-4.2M33.2 14.8l4.2-4.2"/></svg>
           <b>System</b>
-          <span>Sprache, Sicherung, gemerkte Autos, App und Entwicklertools.</span>
+          <span>Sprache, App und Entwicklertools.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="opt-sicherung">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M24 6a9 9 0 0 1 9 9c0 4-2 6-2 9h-14c0-3-2-5-2-9a9 9 0 0 1 9-9z"/><path d="M14 27h20M16 33h16" stroke="var(--bad)"/><path d="M14 39h20"/></svg>
+          <b>Daten sichern</b>
+          <span>Alle Daten in einer Datei: Einstellungen, Strecken, Zeiten, Autos und Tastenbelegung.</span>
         </button>
         <button class="misc-tile subpage-open" data-sub="opt-zwei">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
@@ -9794,7 +9804,7 @@
           <!-- max von 1.5 auf 2.5: Arcade brauchte BESTELLT "die Bremskraft um 50%
                verstaerken" mehr Kopf, als der alte Deckel (1.5) hatte - der Arcade-Wert
                selbst stand schon genau AUF dem alten Maximum. -->
-          <input type="range" id="setting-brakepower" min="0.3" max="2.5" step="0.05" value="1.4">
+          <input type="range" id="setting-brakepower" min="0.3" max="3.0" step="0.05" value="1.4">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-brakepower-val">1.00</span>
         </div></div>
@@ -10013,9 +10023,9 @@
       <div class="opt-row"><div class="opt-label">Bremsen nimmt Lenkung<small>Der Reibkreis: was die Bremse an der Vorderachse verbraucht, fehlt der Lenkung. 0 hei&szlig;t, Bremsen und Lenken behindern sich nicht; h&ouml;here Werte lassen das Auto beim Anbremsen deutlich schlechter einlenken. Zu beachten: die Lenkwinkel-Kalibrierung darunter holt genau das wieder zur&uuml;ck, also wirkt ein starker Wert erst, wenn die Kalibrierung ihn nicht mehr ausgleichen kann.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-brake-steal" min="0" max="1.5" step="0.05" value="1.15">
+          <input type="range" id="setting-brake-steal" min="0" max="1.5" step="0.05" value="0.95">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-brake-steal-val">115%</span>
+          <span class="opt-val" id="setting-brake-steal-val">95%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Bremsaufbau<small>Wie schnell die Bremskraft am Reifen
           ansteht - und damit, wie fr&uuml;h beim Anbremsen die Lenkung nachl&auml;sst (siehe &bdquo;Bremsen nimmt
@@ -10163,6 +10173,15 @@
           von Auspuff, Ansaugung und Mechanik, und die stecken heute alle drei in einer
           Schleife.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-engine-extras" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Knallst&auml;rke
+          <small>Lautst&auml;rke der Auspuffknaller (Schubknaller beim Gaswegnehmen und der
+          Schaltknall). 0 schaltet die Knaller aus, ohne die &uuml;brigen Zus&auml;tze anzufassen.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-knall-volume" min="0" max="1" step="0.05" value="1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-knall-volume-val">100%</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Rundenzeiten ansagen
           <small>Nach jeder Runde die Zeit, und bei einer eigenen Bestzeit ein Wort dazu.
           Gesprochen von der eingebauten Stimme des Browsers &ndash; kein Dienst, kein Netz,
@@ -11235,7 +11254,9 @@
       <div class="opt-row" id="opt-app-zeile" hidden><div class="opt-label">App &amp; Updates
           <small>Nur in der Android-App: Version, Updates ohne neue APK.</small></div>
         <button type="button" class="goto-tab" data-tab="info" data-k-sub="app">&Ouml;ffnen</button></div>
-    <div class="card k-in-system" id="sich-karte">
+    <div class="card subpage" id="sub-opt-sicherung">
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
+      <div class="card k-in-system" id="sich-karte">
       <h2>Sicherung</h2>
       <p class="muted" style="font-size:12px">
         Alles, was diese App sich merkt, in einer Datei: Fahreinstellungen und
@@ -11289,6 +11310,7 @@
         R&uuml;ckversicherung. Laden f&uuml;hrt zusammen statt zu ersetzen: nichts Neueres
         geht verloren, auch eine &auml;ltere Sicherung l&auml;dt noch.
       </p>
+      </div>
     </div>
 
     </div>
@@ -13837,6 +13859,10 @@
     "Meisterschaft und Safety Car sind nicht mehr als experimentell bzw. WIP gekennzeichnet.": "Championship and safety car are no longer marked as experimental or WIP.",
     "App-Reaktionszeit (neue APK nötig): Die zwei Direktwege der APK (Steuerbefehle am Android-Hauptthread vorbei, Gamepad direkt) kamen in der Seite nicht an – jeder Befehl lief weiter über den langsamen Weg. Fehlt der Direktweg beim Start, meldet die App ihn jetzt neu an und lädt einmal neu. Die Messzeile Funk-Rundlauf sagt, wenn ein Direktweg trotzdem fehlt, und nennt den Grund.": "App response time (new APK needed): the APK's two direct paths (control commands bypassing the Android main thread, direct gamepad) never reached the page – every command still took the slow path. If the direct path is missing at start-up, the app now registers it again and reloads once. The radio round-trip line says if a direct path is still missing and names the reason.",
     "Fahrphysik: Die Bremskraft baut jetzt eigenständig und deutlich schneller auf (0,12 s statt 0,45 s), damit beim Anbremsen die Lenkung schon am Kurveneingang nachlässt und nicht erst nach einer ganzen Kurve – wie bei einem echten Auto. Gas baut weiter weich auf. Gilt für alle Fahrgefühle außer Omega (bleibt bei 0,45 s). Neuer Regler Bremsaufbau in den Physik-Optionen unter „Bremsen nimmt Lenkung“.": "Driving physics: braking force now builds up on its own and much faster (0.12 s instead of 0.45 s), so the steering fades right at corner entry when braking instead of only after a whole corner – as in a real car. The throttle still builds up softly. Applies to all driving feels except Omega (stays at 0.45 s). New slider brake build-up in the physics options under “Braking takes steering”.",
+    "Fahrgefühl Pro (und damit Sim+ und Pacejka): Bremsen nimmt Lenkung jetzt 95 % statt 115 % – mit dem schnelleren Bremsaufbau lässt die Lenkung beim Anbremsen früh nach, fällt bei einer Vollbremsung aber nicht mehr auf den Notboden. Omega bleibt bei 115 %.": "Driving feel Pro (and with it Sim+ and Pacejka): braking takes steering is now 95 % instead of 115 % – with the faster brake build-up the steering fades early when braking but no longer drops to the floor under full braking. Omega stays at 115 %.",
+    "Trail-Braking: Der Bremssteal hängt bei den Realismus-Fahrgefühlen (Pro, Sim+, Pacejka, GT3, F1, Realismus GT3) jetzt an der simulierten Gewichtsverlagerung. Beim Anbremsen taucht die Nase, die belastete Vorderachse trägt mehr Bremse, bevor sie die Lenkung nimmt – so kannst du in die Kurve hineinbremsen, und beim Lösen der Bremse kommt die Lenkung sofort zurück. Omega bleibt beim flachen Faktor.": "Trail braking: with the realism driving feels (Pro, Sim+, Pacejka, GT3, F1, Realism GT3) the braking-steal now follows the simulated weight transfer. When you brake the nose dives and the loaded front axle carries more braking before it eats the steering – so you can brake into the corner, and when you release the brake the steering comes back at once. Omega keeps the flat factor.",
+    "Optionen: Neue Kachel „Daten sichern“ – alle Daten in einer Datei sichern und wieder laden (Einstellungen, Strecken, Zeiten, Autos und Tastenbelegung). Die bisherige Sicherung liegt jetzt in der eigenen Unterseite.": "Options: new “Back up data” tile – save and reload all data in one file (settings, tracks, times, cars and button mapping). The previous backup now lives in its own subpage.",
+    "Ton: Neuer Regler „Knallstärke“ für die Auspuffknaller. Außerdem knallt der Auspuff jetzt auch beim Ausrollen bei Drehzahl (Engine Braking) und nicht nur beim Gaswegnehmen.": "Sound: new “Pop volume” slider for the exhaust pops. The exhaust now also pops on overrun at revs (engine braking) and not only when lifting off the throttle.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -14388,7 +14414,9 @@
     "Rechtliches": "Legal",
     "Unabhängig, offen, ohne Gewähr – und was gezählt wird.": "Independent, open, without warranty – and what is counted.",
     "System": "System",
-    "Sprache, Sicherung, gemerkte Autos, App und Entwicklertools.": "Language, backup, remembered cars, app and developer tools.",
+    "Sprache, App und Entwicklertools.": "Language, app and developer tools.",
+    "Daten sichern": "Back up data",
+    "Alle Daten in einer Datei: Einstellungen, Strecken, Zeiten, Autos und Tastenbelegung.": "All data in one file: settings, tracks, times, cars and button mapping.",
     "Sprache": "Language",
     "Dieselbe Wahl wie auf dem Titelbildschirm.": "The same choice as on the title screen.",
     "Entwicklertools zeigen": "Show developer tools",
@@ -15831,6 +15859,8 @@
     "Modern, 2000er (hell)": "Modern, 2000s (light)",
     "Klassiker: Walnuss und Chrom": "Classic: walnut and chrome",
     "Motorton-Zusätze": "Engine sound extras",
+    "Knallstärke": "Pop volume",
+    "Lautstärke der Auspuffknaller (Schubknaller beim Gaswegnehmen und der Schaltknall). 0 schaltet die Knaller aus, ohne die übrigen Zusätze anzufassen.": "Volume of the exhaust pops (overrun pops on lift-off and the shift pop). 0 turns the pops off without touching the other extras.",
     "Zahlensysteme": "Number systems",
     "Binär- und Hex-Trainer: eine vierstellige Zahl, du übersetzt sie in Dezimal.": "Binary and hex trainer: a four-digit number, you translate it to decimal.",
     "Zwei kurze Trainer, kein Zeitdruck: eine vierstellige Zahl im jeweiligen Zahlensystem, du tippst die passende Dezimalzahl ein und bekommst sofort Bescheid, dazu eine laufende Trefferquote.": "Two short trainers, no time pressure: a four-digit number in the respective number system, you type in the matching decimal number and get an immediate answer, plus a running score.",
@@ -16237,6 +16267,8 @@
     "NPC braucht Streckencode": "El NPC necesita un código de pista",
     "NPC-Tempo": "Ritmo del NPC",
     "NPC-Sound": "Sonido del NPC",
+    "Knallstärke": "Volumen de petardeo",
+    "Lautstärke der Auspuffknaller (Schubknaller beim Gaswegnehmen und der Schaltknall). 0 schaltet die Knaller aus, ohne die übrigen Zusätze anzufassen.": "Volumen de los petardeos del escape (petardeo al soltar el gas y el petardeo de cambio). 0 los apaga sin tocar los demás extras.",
     "An": "On",
     "einfach": "fácil",
     "schnell": "rápido",
@@ -16743,7 +16775,9 @@
     "Rechtliches": "Legal",
     "Unabhängig, offen, ohne Gewähr – und was gezählt wird.": "Independiente, abierto, sin garantía – y qué se cuenta.",
     "System": "Sistema",
-    "Sprache, Sicherung, gemerkte Autos, App und Entwicklertools.": "Idioma, copia de seguridad, coches recordados, app y herramientas de desarrollador.",
+    "Sprache, App und Entwicklertools.": "Idioma, app y herramientas de desarrollador.",
+    "Daten sichern": "Guardar datos",
+    "Alle Daten in einer Datei: Einstellungen, Strecken, Zeiten, Autos und Tastenbelegung.": "Todos los datos en un archivo: ajustes, circuitos, tiempos, coches y asignación de botones.",
     "Sprache": "Idioma",
     "Dieselbe Wahl wie auf dem Titelbildschirm.": "La misma elección que en la pantalla de inicio.",
     "Entwicklertools zeigen": "Mostrar herramientas de desarrollador",
@@ -19247,6 +19281,18 @@
         // eine Abweichung, die niemand verstellt hat. Den Bremsweg beruehrt der Wert nicht -
         // steerGrip geht in die Lenkung und nicht in die Verzoegerung.
         brakeUseGain: 1.15,
+        // v1.0.44 BESTELLT: "Bremsen zur Abschwaechung der Lenkung soll von der simulierten
+        // Gewichtsverlagerung abhaengen." Bei 1 skaliert frontUse mit der tatsaechlichen
+        // Vorderachslast (loadFrontStatic/loadFront): eine eingetauchte Nase traegt mehr
+        // Bremse, bevor sie die Lenkung frisst - daraus entsteht Trail-Braking von selbst
+        // (Nase taucht schnell, Reifenkraft baut langsam). Schalten tun es die Realismus-
+        // Presets (98-presets.js PRESETS_BREMSSTEAL_LAST: Pro, Sim+, Pacejka, GT3, F1,
+        // Realismus GT3); Omega bleibt eingefroren und Arcade/RC fahren den einfachen
+        // Reibkreis. 0 = der bisherige flache Faktor.
+        // Das REIFENMODELL ist ueber die Schlussmultiplikation mit st.tyreGrip gekoppelt
+        // (steerGrip weiter unten): kalte/abgefahrene Reifen verkleinern die Kapazitaet,
+        // derselbe Bremsbedarf frisst einen groesseren Anteil - die Lenkung leidet mehr.
+        brakeStealLast: 1,
 
         // ---- Bremstemperatur und Fading (Block 4.1) ----
         //
@@ -20213,7 +20259,19 @@
       // Die Balance wirkt auf die ANFORDERUNG an die Vorderachse und damit in jedem Gang
       // und bei jedem Tempo.
       const biasK = cfg.brakeBias / Math.max(1e-6, cfg.brakeBiasRef);
-      const frontUse = Math.max(0, -st.longUse) * cfg.brakeUseGain * biasK * lastFrac;
+      // v1.0.44: Gewichtsverlagerungs-gekoppelter Bremssteal. `wf` ist 1 (der flache alte
+      // Faktor), solange brakeStealLast aus ist; bei 1 skaliert es mit loadFrontStatic/
+      // loadFront. Unter Bremsen taucht die Nase (loadFront > static), also wird wf < 1 und
+      // die Bremse frisst weniger von der Vorderachskapazitaet - die Lenkung bleibt laenger
+      // (Trail-Braking). Loest man die Bremse, faellt loadFront schnell zurueck (loadTau)
+      // und longUse geht gegen 0 (useTauBrems) - frontUse wird null und die Lenkung kehrt
+      // sofort zurueck. Die Klemme 0,4 haelt die Bremse im Extrem davor, die Vorderachse
+      // gar nicht mehr zu belasten. Das Reifenmodell wirkt ueber die Schlussmultiplikation
+      // mit st.tyreGrip weiter unten: weniger Grip, weniger Kapazitaet, gleicher Bedarf.
+      const wf = cfg.brakeStealLast
+        ? Math.max(0.4, Math.min(1, cfg.loadFrontStatic / Math.max(0.05, st.loadFront)))
+        : 1;
+      const frontUse = Math.max(0, -st.longUse) * cfg.brakeUseGain * biasK * lastFrac * wf;
       // The 0.12 floor is a dry-weather reserve: it stops the car ever being completely
       // helpless. In the wet there is no such reserve - once the brake has eaten the front
       // axle, the friction circle really is empty and the steering does nothing. So the
@@ -46712,6 +46770,9 @@
   // und die stecken beim Generator alle drei in einer Schleife. Dafuer braucht es zwei Stems
   // je Band, also 71 weitere Dateien. Das ist die naechste Entscheidung, nicht diese.
   let extrasOn = true;
+  // v1.0.44: Lautstaerke der Auspuffknaller (Schubknaller + Schaltknall), Regler in den
+  // Tonoptionen. 0 schaltet sie aus, ohne die uebrigen Zusatzquellen anzufassen.
+  let knallVolume = 1;
   const xs = { gebaut: false, ein: null, ton: null, cut: null, add: null,
                lfo: null, lfoTiefe: null, rausch: null,
                whine: null, whineGain: null, whineFilter: null,
@@ -46720,6 +46781,8 @@
                roll: null, rollGain: null, rollQuelle: null, rauschLang: null,
                letzteLast: 0, schaltAn: false, ladedruck: 0, letzterTakt: 0,
                cutTiefe: 0,
+               // v1.0.44: Abklingzeit des Ausroll-Burbles, damit es kein Dauerfeuer wird.
+               ausrollCd: 0,
                knaller: 0, boGezaehlt: 0 };
 
   // Ein Rauschpuffer, EINMAL. Jeder Knaller ist derselbe Puffer mit anderem Ausschnitt und
@@ -46978,13 +47041,26 @@
     let knaller = 0, knallStaerke = 0;
     if (dLast < -0.15 && rpmFrac > 0.4 && knallStark > 0.02 && !st.isShifting) {
       knaller = 1 + Math.floor(3 * knallStark * rpmFrac);
-      knallStaerke = 0.05 + 0.16 * knallStark * rpmFrac;
+      knallStaerke = (0.05 + 0.16 * knallStark * rpmFrac) * knallVolume;
+    }
+
+    // 3b. Ausroll-Burble (v1.0.44): ein Auspuff knallt nicht nur beim Gaswegnehmen, sondern
+    //     auch im Schub bei Drehzahl - das Gemisch verbrennt im Rohr. Damit es kein
+    //     Maschinengewehr wird, feuert es hoechstens alle ~0,45 s und nur, wenn die Last
+    //     schon unten ist (Schub), die Drehzahl hoch ist und kein Gangwechsel laeuft. Der
+    //     Abfallknaller oben bleibt das lautere Ereignis, das Burble das leisere Dauerfeuer.
+    xs.ausrollCd = (xs.ausrollCd || 0) - Math.max(0, dt || 0);
+    if (load < 0.08 && rpmFrac > 0.5 && knallStark > 0.02
+        && !st.isShifting && xs.ausrollCd <= 0) {
+      knaller += 1;
+      knallStaerke += (0.03 + 0.05 * knallStark * rpmFrac) * knallVolume;
+      xs.ausrollCd = 0.45;
     }
 
     // 4. Schaltknall: die FLANKE von isShifting, und nur unter Last. Ein sequenzielles
     //    Getriebe knallt beim Hochschalten unter Vollgas - beim Ausrollen nicht.
     const schaltKnall = (st.isShifting && !xs.schaltAn && load > 0.45)
-      ? 0.13 + 0.1 * knallStark : 0;
+      ? (0.13 + 0.1 * knallStark) * knallVolume : 0;
     xs.schaltAn = !!st.isShifting;
 
     // 5. Getriebeheulen. RADdrehzahl mal Uebersetzung und nicht rpm: ein geradverzahntes
@@ -47071,6 +47147,15 @@
   if ($('setting-engine-extras')) {
     extrasOn = $('setting-engine-extras').checked;
     $('setting-engine-extras').addEventListener('change', (e) => { extrasOn = e.target.checked; });
+  }
+  if ($('setting-knall-volume')) {
+    knallVolume = +$('setting-knall-volume').value;
+    const knallVal = $('setting-knall-volume-val');
+    const aus = () => { knallVolume = +$('setting-knall-volume').value; };
+    $('setting-knall-volume').addEventListener('input', aus);
+    $('setting-knall-volume').addEventListener('change', aus);
+    // Anzeige in Prozent, wie die uebrigen Regler.
+    if (knallVal) knallVal.textContent = Math.round(knallVolume * 100) + '%';
   }
 
   function updateEngineSound(throttleMagnitude) {
@@ -64643,7 +64728,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     sndExtras(folge, o) {
       const opt = o || {};
       const merk = { crackle: xs.crackle, turbo: xs.turbo, ein: extrasOn,
-                     last: xs.letzteLast, schalt: xs.schaltAn, druck: xs.ladedruck };
+                     last: xs.letzteLast, schalt: xs.schaltAn, druck: xs.ladedruck,
+                     ausroll: xs.ausrollCd };
       try {
         if (opt.crackle !== undefined) xs.crackle = opt.crackle;
         if (opt.turbo !== undefined) xs.turbo = !!opt.turbo;
@@ -64651,6 +64737,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         xs.letzteLast = opt.startLast === undefined ? 0 : opt.startLast;
         xs.schaltAn = false;
         xs.ladedruck = 0;
+        xs.ausrollCd = 0;
         const dt = opt.dt === undefined ? 0.045 : opt.dt;
         return (folge || []).map(z => {
           const st = { rpmFrac: z.rpmFrac || 0, onLimiter: !!z.onLimiter,
@@ -64668,6 +64755,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       } finally {
         xs.crackle = merk.crackle; xs.turbo = merk.turbo; extrasOn = merk.ein;
         xs.letzteLast = merk.last; xs.schaltAn = merk.schalt; xs.ladedruck = merk.druck;
+        xs.ausrollCd = merk.ausroll;
       }
     },
 
@@ -85335,18 +85423,22 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // verlangt deshalb: nicht steigend ueberall, streng fallend im nicht gesaettigten
       // Bereich, und wo es flach ist, MUSS es der Boden sein. Ein beliebiges Plateau waere
       // weiterhin ein Fehler.
+      //
+      // v1.0.44: Der gewichtsverlagerungs-gekoppelte Bremssteal (brakeStealLast, Realismus-
+      // Presets) haelt die Lenkung jetzt auch bei stark vorderachslastiger Balance oben: eine
+      // eintauchende Nase traegt mehr Bremse, bevor sie die Lenkung frisst. Die Balance
+      // bleibt wirksam (streng fallend, deutliche Spanne), aber 80 % vorn faellt nicht mehr
+      // auf den Notboden - das ist die gewuenschte Trail-Braking-Seite, kein Fehler.
       const nichtSteigend = v.bei140 >= m.bei140 - 1e-9 && m.bei140 >= h.bei140 - 1e-9;
       const strengOben = v.bei140 > m.bei140;
-      const amBoden = h.bei140 < 0.2;
       const spanne = v.bei140 - h.bei140;
       const standGleich = Math.abs(v.stand - h.stand) < 0.02 && h.stand > 0.95;
-      return { ok: nichtSteigend && strengOben && amBoden && spanne > 0.25 && standGleich,
+      return { ok: nichtSteigend && strengOben && spanne > 0.25 && standGleich,
                mass: '140 km/h: 50 % vorn ' + Math.round(v.bei140 * 100)
                      + ' %, 62 % vorn ' + Math.round(m.bei140 * 100)
                      + ' %, 80 % vorn ' + Math.round(h.bei140 * 100)
                      + ' % | Spanne ' + Math.round(spanne * 100)
-                     + ' Punkte, im Stand ' + Math.round(h.stand * 100) + ' %'
-                     + (h.bei140 < 0.2 ? ' | 80 % vorn liegt auf dem Notboden' : '') };
+                     + ' Punkte, im Stand ' + Math.round(h.stand * 100) + ' %' };
     }
   });
 
@@ -90064,7 +90156,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Deckel des Reglers) auf 2.25. Der Regler selbst hat jetzt Platz bis 2.5, siehe
       // #setting-brakepower im Markup.
       // BESTELLT (v0.9.21): "Hoechstgeschwindigkeit drosseln, dafuer Bremsstaerke sehr stark".
-      v: { 'setting-grip': 1.0, 'setting-brakepower': 2.5, 'setting-autoshift': true,
+      // v1.0.44 BESTELLT: "mach die bremse bei arcade staerker (kuerzerer Weg)". Der Regler
+      // reicht jetzt bis 3.0, Arcade geht auf 2.8 - die kraeftigste Bremse von allen.
+      v: { 'setting-grip': 1.0, 'setting-brakepower': 2.8, 'setting-autoshift': true,
            'setting-zero-to-top': 2.0, 'setting-coast-drag': 0.4, 'setting-fuelweight': 0,
            'setting-tyres': 0, 'phys-steerresp': 3.4, 'setting-brakebias': 56,
            // Die engste Lenkung von allen: bei 250 Prozent liegt der volle Anschlag schon
@@ -90153,7 +90247,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
            // darueber 45 auf 26 Grad und laesst 40 bis 60 km/h unberuehrt. Ueber
            // 1,15 faellt es auf den Notboden von 11 Grad, und dann lenkt das Auto
            // unter Bremsen gar nicht mehr.
-           'setting-brake-steal': 1.15,
+           // v1.0.43 BESTELLT: "Bremsen nimmt Lenkung auf 95 %". Mit dem schnellen Bremsaufbau
+           // (0,12 s) schlugen 115 % voll durch: bei einer Vollbremsung aus hohem Tempo lag die
+           // Lenkung nach einer halben Sekunde auf dem Notboden. Sim+ und Pacejka erben den Wert;
+           // Omega behaelt 1,15 (eingefroren).
+           'setting-brake-steal': 0.95,
            // Waermer an, weil Pro die Vorgabe ist: wer zum ersten Mal faehrt, soll nicht drei
            // Runden auf Grip warten und das fuer das Fahrverhalten halten.
            'setting-tyre-blankets': false,
@@ -90442,6 +90540,24 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
 
   function presetSay(t) { $('preset-status').textContent = t; }
 
+  // v1.0.44: Der gewichtsverlagerungs-gekoppelte Bremssteal (brakeStealLast in
+  // 40-physics.js) haengt an der VOREINSTELLUNG, nicht an einem Regler. Er wird aus dem
+  // AKTIVEN Preset abgeleitet und nicht aus einem Merker - so stimmt er auch nach einem
+  // Neuladen, wenn die Selbstsicherung die Regler zurueckholt. presetAktiv() misst die
+  // Regler, also steht die Antwort nach einem applyPreset() oder nach autoSicherungLaden()
+  // beide Male richtig.
+  //
+  // BESTELLT (v1.0.44): "verbessere bei Pro und den Realismus presets die Physik." Die
+  // Realismus-Presets sind die, die das Reifenmodell und einen echten Reibkreis fahren:
+  // Pro, Sim+, Pacejka, GT3, F1 und Realismus GT3. Omega ist eingefroren (bleibt beim
+  // flachen Faktor), und Arcade/RC fahren absichtlich den einfachen Reibkreis.
+  const PRESETS_BREMSSTEAL_LAST = ['pro', 'simplus', 'propacejka', 'gt3', 'f1', 'realgt3'];
+  function setzeBrakeStealLast() {
+    if (typeof physEngine !== 'undefined' && physEngine.config) {
+      physEngine.config.brakeStealLast = PRESETS_BREMSSTEAL_LAST.includes(presetAktiv()) ? 1 : 0;
+    }
+  }
+
   // v1.0.36: welches Preset zuletzt gesetzt wurde. Omega und Pro haben (noch) dieselben Werte -
   // gemessen allein waere die Anzeige dann immer "Pro". Bei Gleichstand gewinnt das gewaehlte.
   const PRESET_ZULETZT_STORE = 'omegasim-preset-zuletzt';
@@ -90457,6 +90573,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     for (const [id, val] of Object.entries(p.v)) {
       if (presetSet(id, val)) n++; else missing.push(id);
     }
+    setzeBrakeStealLast();
     presetSay(p.label + ': ' + n + ' Regler gesetzt'
               + (missing.length ? ', nicht gefunden: ' + missing.join(', ') : ''));
     $('preset-json').value = JSON.stringify(presetRead());
@@ -91296,6 +91413,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   if (autoGeladen) {
     log('Einstellungen aus der letzten Sitzung geladen: ' + autoGeladen + ' Regler.', 'info');
   }
+  // v1.0.44: Der gewichtsverlagerungs-gekoppelte Bremssteal haengt am AKTIVEN Preset
+  // (98-presets.js setzeBrakeStealLast). Nachdem die Selbstsicherung die Regler
+  // zurueckgeholt hat, stimmt das aktive Preset - also den Schalter jetzt setzen.
+  if (typeof setzeBrakeStealLast === 'function') setzeBrakeStealLast();
   // ---- DIE ANZEIGETEXTE DER SCHIEBEREGLER, EINMAL BEIM LADEN --------------------
   //
   // GEMESSEN, und es war eine Ueberraschung: ZEHN Regler zeigten einen Text, der nicht zu

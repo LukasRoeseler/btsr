@@ -2060,6 +2060,9 @@
   // und die stecken beim Generator alle drei in einer Schleife. Dafuer braucht es zwei Stems
   // je Band, also 71 weitere Dateien. Das ist die naechste Entscheidung, nicht diese.
   let extrasOn = true;
+  // v1.0.44: Lautstaerke der Auspuffknaller (Schubknaller + Schaltknall), Regler in den
+  // Tonoptionen. 0 schaltet sie aus, ohne die uebrigen Zusatzquellen anzufassen.
+  let knallVolume = 1;
   const xs = { gebaut: false, ein: null, ton: null, cut: null, add: null,
                lfo: null, lfoTiefe: null, rausch: null,
                whine: null, whineGain: null, whineFilter: null,
@@ -2068,6 +2071,8 @@
                roll: null, rollGain: null, rollQuelle: null, rauschLang: null,
                letzteLast: 0, schaltAn: false, ladedruck: 0, letzterTakt: 0,
                cutTiefe: 0,
+               // v1.0.44: Abklingzeit des Ausroll-Burbles, damit es kein Dauerfeuer wird.
+               ausrollCd: 0,
                knaller: 0, boGezaehlt: 0 };
 
   // Ein Rauschpuffer, EINMAL. Jeder Knaller ist derselbe Puffer mit anderem Ausschnitt und
@@ -2326,13 +2331,26 @@
     let knaller = 0, knallStaerke = 0;
     if (dLast < -0.15 && rpmFrac > 0.4 && knallStark > 0.02 && !st.isShifting) {
       knaller = 1 + Math.floor(3 * knallStark * rpmFrac);
-      knallStaerke = 0.05 + 0.16 * knallStark * rpmFrac;
+      knallStaerke = (0.05 + 0.16 * knallStark * rpmFrac) * knallVolume;
+    }
+
+    // 3b. Ausroll-Burble (v1.0.44): ein Auspuff knallt nicht nur beim Gaswegnehmen, sondern
+    //     auch im Schub bei Drehzahl - das Gemisch verbrennt im Rohr. Damit es kein
+    //     Maschinengewehr wird, feuert es hoechstens alle ~0,45 s und nur, wenn die Last
+    //     schon unten ist (Schub), die Drehzahl hoch ist und kein Gangwechsel laeuft. Der
+    //     Abfallknaller oben bleibt das lautere Ereignis, das Burble das leisere Dauerfeuer.
+    xs.ausrollCd = (xs.ausrollCd || 0) - Math.max(0, dt || 0);
+    if (load < 0.08 && rpmFrac > 0.5 && knallStark > 0.02
+        && !st.isShifting && xs.ausrollCd <= 0) {
+      knaller += 1;
+      knallStaerke += (0.03 + 0.05 * knallStark * rpmFrac) * knallVolume;
+      xs.ausrollCd = 0.45;
     }
 
     // 4. Schaltknall: die FLANKE von isShifting, und nur unter Last. Ein sequenzielles
     //    Getriebe knallt beim Hochschalten unter Vollgas - beim Ausrollen nicht.
     const schaltKnall = (st.isShifting && !xs.schaltAn && load > 0.45)
-      ? 0.13 + 0.1 * knallStark : 0;
+      ? (0.13 + 0.1 * knallStark) * knallVolume : 0;
     xs.schaltAn = !!st.isShifting;
 
     // 5. Getriebeheulen. RADdrehzahl mal Uebersetzung und nicht rpm: ein geradverzahntes
@@ -2419,6 +2437,15 @@
   if ($('setting-engine-extras')) {
     extrasOn = $('setting-engine-extras').checked;
     $('setting-engine-extras').addEventListener('change', (e) => { extrasOn = e.target.checked; });
+  }
+  if ($('setting-knall-volume')) {
+    knallVolume = +$('setting-knall-volume').value;
+    const knallVal = $('setting-knall-volume-val');
+    const aus = () => { knallVolume = +$('setting-knall-volume').value; };
+    $('setting-knall-volume').addEventListener('input', aus);
+    $('setting-knall-volume').addEventListener('change', aus);
+    // Anzeige in Prozent, wie die uebrigen Regler.
+    if (knallVal) knallVal.textContent = Math.round(knallVolume * 100) + '%';
   }
 
   function updateEngineSound(throttleMagnitude) {

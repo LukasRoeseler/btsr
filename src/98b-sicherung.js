@@ -533,6 +533,10 @@
   if (autoGeladen) {
     log('Einstellungen aus der letzten Sitzung geladen: ' + autoGeladen + ' Regler.', 'info');
   }
+  // v1.0.44: Der gewichtsverlagerungs-gekoppelte Bremssteal haengt am AKTIVEN Preset
+  // (98-presets.js setzeBrakeStealLast). Nachdem die Selbstsicherung die Regler
+  // zurueckgeholt hat, stimmt das aktive Preset - also den Schalter jetzt setzen.
+  if (typeof setzeBrakeStealLast === 'function') setzeBrakeStealLast();
   // ---- DIE ANZEIGETEXTE DER SCHIEBEREGLER, EINMAL BEIM LADEN --------------------
   //
   // GEMESSEN, und es war eine Ueberraschung: ZEHN Regler zeigten einen Text, der nicht zu
