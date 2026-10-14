@@ -2735,33 +2735,21 @@
     if (trackMode === 'on' && typeof aufstellenSpielerZiel === 'function' && aufstellenSpielerZiel(meinAuto)) {
       // v0.9.58 (D6): mit Spur-Bytes - dieselbe Querlage wie die Ghosts, in maximaler
       // Breite, damit das Auto von selbst auf die Seite seines Startplatzes faellt.
-      const lenk = typeof formationDriverOffset === 'function'
-        ? formationDriverOffset(meinAuto, aufstellenSpielerBreite(meinAuto)) : 0;
+      // v1.0.37 BESTELLT: "Die Autos sollen fuer die automatische Aufstellung mittig fahren und
+      // erst kurz vor ihrer Zielposition in die jeweilige Richtung einlenken und dann
+      // zuruecklenken." Anfahrt also mit Querlage 0.
+      const lenk = 0;
       // v1.0.31: gestaffelter Start der Aufstellung - bis zu seinem Zeitpunkt steht das Auto.
       const aA = aufstellenSpielerZiel(meinAuto);
       if (aA && aA.ab && Date.now() < aA.ab) {
         return { grund: 'aufstellen', throttle: 0, brake: fahrerBremse > 0.05 ? fahrerBremse : 1, steer: 0, lenkt: false };
       }
-      // v1.0.28: angekommen erst langsam auf der Seite weiter, damit das Auto gerade steht
-      // (aufstellenSpielerAusrichten, 90-ghosts.js), dann halten.
-      if (aufstellenSpielerAngekommen(meinAuto) && typeof aufstellenSpielerAusrichten === 'function'
-          && aufstellenSpielerAusrichten(meinAuto)) {
-        const platzR = typeof gridPosOf === 'function' ? gridPosOf(meinAuto) : -1;
-        const seiteR = platzR >= 0 ? (platzR % 2 ? -1 : 1) * GHOST_GRID_MAX : lenk;
-        const vR = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
-        const dtR = Math.max(0.01, Math.min(0.25, (Date.now() - (regler.at || Date.now())) / 1000));
-        regler.at = Date.now();
-        const gR = ghostSpeedControl(regler, formationPace() * AUFSTELL_GERADE_TEMPO, vR, dtR);
-        return { grund: 'aufstellen', throttle: gR.throttle, brake: gR.brake, steer: seiteR, lenkt: !abseitsJetztFuer(wer || 1) };
-      }
+      // Angekommen: ein Takt Einschlag zur Seite, ein Takt zurueck (aufstellenSpielerEinlenken),
+      // ohne Spur-Bytes (spielerOrtTick), dann stehen. radLenk geht am Fahrzeugmodell vorbei
+      // direkt aufs Lenkbyte (physicsStep).
       if (aufstellenSpielerAngekommen(meinAuto)) {
-        // v1.0.25 GEMELDET: "die Querlage beim Stehenbleiben passt nicht." Hier stand
-        // steer 0 und lenkt false: im Bremsen kam der Stick des Fahrers (meist 0 = Mitte)
-        // als Querlage an, und das Auto rollte zur Bahnmitte. Die Seite bleibt bis zum Stand.
-        // Ohne das Schlaengeln: nur die Seite des Startplatzes, wie beim NPC (aufstellenPruefen).
-        const platzA = typeof gridPosOf === 'function' ? gridPosOf(meinAuto) : -1;
-        const seiteA = platzA >= 0 ? (platzA % 2 ? -1 : 1) * GHOST_GRID_MAX : lenk;
-        return { grund: 'aufstellen', throttle: 0, brake: 1, steer: seiteA, lenkt: !abseitsJetztFuer(wer || 1) };
+        const rad = typeof aufstellenSpielerEinlenken === 'function' ? aufstellenSpielerEinlenken(meinAuto) : 0;
+        return { grund: 'aufstellen', throttle: 0, brake: rad ? 0 : 1, steer: 0, lenkt: false, radLenk: rad || 0 };
       }
       const vA = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
       const dtS = Math.max(0.01, Math.min(0.25, (Date.now() - (regler.at || Date.now())) / 1000));
@@ -3133,6 +3121,8 @@
     if (typeof playerCar !== 'undefined' && playerCar) trackDistance(physEngine.state.speedKmh, dt);
     physOutSteer = out.servoAngle;
     physOutThrottle = out.motorPWM;
+    // v1.0.37: Einlenk-Takt beim Einparken direkt aufs Lenkbyte (am Modell vorbei).
+    if (ap && typeof ap.radLenk === 'number') physOutSteer = ap.radLenk;
   }
 
   // ====================================================================================

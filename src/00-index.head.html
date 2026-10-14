@@ -4676,7 +4676,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.36</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.37</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5806,6 +5806,11 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Streckenscan: Ist kein Spieler 1 verbunden, f&#228;hrt jetzt das erste verbundene Auto den Scan (mittig, im Scan-Tempo, neben der Bahn ohne Gas). Vorher wurde es zwar ausgew&#228;hlt, blieb aber stehen.</li>
+        <li>Safety Car (WIP): Es startet vom letzten Startplatz (auch in der automatischen Aufstellung), f&#228;hrt die erste Runde hinter dem Feld mit und parkt danach rechts an Start/Ziel &#8211; so wissen alle Autos, wo es steht. Unter Gelb f&#228;hrt es weiter langsamer als das Feld, bleibt aber nie mehr stehen (mindestens 30 %); vorher dr&#252;ckten Abstandsregel und Kurvendrosselung es unter die Lesegrenze.</li>
+        <li>Automatische Aufstellung: Die Autos fahren mittig zu ihrem Platz und lenken erst dort einen kurzen Takt zur Seite und einen zur&#252;ck, dann halten sie. Vorher zogen sie sich noch eine halbe Sekunde gerade und die erste Reihe rutschte dabei &#252;ber die Startlinie. Mittig fliegen sie in Kurven auch nicht mehr nach au&#223;en.</li>
+        <li>Automatische Aufstellung schneller: Ein NPC, der seinen Ort an Start/Ziel sicher kennt und noch dort steht, wo er war, f&#228;hrt jetzt direkt zu seinem Platz statt erst eine Runde &#252;ber Start/Ziel. Die Staffel beim Losfahren ist 0,5 s statt 1 s und gilt nur noch zwischen Autos, die auf der Bahn nah beieinander stehen.</li>
+        <li>Einparken: Der Regler stellt jetzt die Einlenkst&#228;rke ein (0&#8211;100 %, Vorgabe voll) statt der Dauer; der Takt bleibt bei rund 10 ms. Gilt f&#252;r die Startaufstellung vor und nach dem Rennen und das Safety Car.</li>
         <li>Neues Fahrgef&#252;hl Omega (nach Pacejka): die Pro-Abstimmung, wie sie in v0.9 war, Wert f&#252;r Wert &#8211; und eingefroren. Wird Pro k&#252;nftig angepasst, bleibt Omega gleich; ein Selbsttest wacht dar&#252;ber. Die Anzeige zeigt bei gleichen Werten das zuletzt gew&#228;hlte Fahrgef&#252;hl.</li>
         <li>Rundenzeiten: F&#228;hrst du aus der Startaufstellung vor der Linie los, z&#228;hlt die erste &#220;berfahrt nicht mehr als Runde (vorher gab es Runden von 1 bis 2 s) &#8211; Runde 1 beginnt an der Linie. Erkannt an den gefahrenen Kacheln (weniger als eine halbe Strecke = Anlauf); wer hinter der Linie startet, bekommt seine erste volle Runde wie bisher.</li>
         <li>Safety Car (WIP): Autos, die zu ihrem Startplatz fahren, werden nicht mehr links am geparkten Safety Car vorbeigeschickt &#8211; die erste Startreihe steht direkt vor Start/Ziel, und ihr rechtes Auto wurde sonst auf die falsche Seite gezwungen.</li>
@@ -8981,17 +8986,16 @@
           mit 35&nbsp;% weiter, in Kurven und Haarnadeln gedrosselt. Aus: alle sofort 35&nbsp;%.
           &Uuml;berholt wird unter Gelb nie.</small></div>
         <label class="tgl"><input type="checkbox" id="race-sc-aufschliessen" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Einparken: Lenkimpuls<span class="wip-tag">WIP</span><small>Beim
-          Einparken (Startaufstellung vor und nach dem Rennen, Safety Car) lenkt das Auto zuletzt so
-          viele Millisekunden mit vollem Einschlag zu seiner Seite und danach gleich lange zur&uuml;ck.
-          Damit kalibrierst du, dass die Autos am Rand stehen &ndash; nicht im Weg, aber auch nicht
-          neben der Bahn. 0 = kein Impuls. Ein Befehl dauert mindestens einen Sendetakt (rund
-          45&nbsp;ms).</small></div>
+      <div class="opt-row"><div class="opt-label">Einparken: Einlenkst&auml;rke<span class="wip-tag">WIP</span><small>Beim
+          Einparken (Startaufstellung vor und nach dem Rennen, Safety Car) f&auml;hrt das Auto mittig
+          bis zu seinem Platz, lenkt dort einen kurzen Takt (rund 10&nbsp;ms) zu seiner Seite und
+          einen zur&uuml;ck und h&auml;lt. Hier stellst du ein, wie stark es einlenkt: 100&nbsp;% ist der
+          volle Einschlag, kleiner, wenn die Autos neben die Bahn rutschen. 0 = gar nicht.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="race-einpark-ms" min="0" max="400" step="10" value="10" data-preset-skip>
+          <input type="range" id="race-einpark-staerke" min="0" max="1" step="0.05" value="1" data-preset-skip>
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="race-einpark-ms-val">10 ms</span>
+          <span class="opt-val" id="race-einpark-staerke-val">100 %</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Time Attack: NPCs als Challenger<span class="wip-tag">WIP</span><small>In
           Time Attack auf der Bahn fahren alle NPCs als Challenger gegen dich. Gegen meine Bestzeit:

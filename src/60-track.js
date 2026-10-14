@@ -5615,6 +5615,7 @@
   function garageScanAbbrechen(meldung) {
     garageScan.aktiv = false;
     garageScan.car = null;
+    if (typeof scanFahrStopp === 'function') scanFahrStopp();     // v1.0.37: NPC-Scanfahrer
     const gehen = $('gar-scan-start'), stopp = $('gar-scan-stop');
     if (gehen) { gehen.hidden = false; gehen.disabled = false; }
     if (stopp) stopp.hidden = true;
@@ -5637,6 +5638,8 @@
     if (gehen) gehen.hidden = true;
     if (stopp) stopp.hidden = false;
     garageScanStatus('Wartet auf die erste Überfahrt von Start/Ziel …');
+    // v1.0.37: ohne Spieler 1 faehrt das erste verbundene Auto mit eigenem Takt (90-ghosts.js).
+    if (typeof scanFahrStart === 'function') scanFahrStart(car);
     log('Garagenscan gestartet: ' + garageLabel(car)
         + ' fährt mit Autopilot (Querlage 0, Formationstempo), bis der Rundkurs '
         + 'geschlossen gemessen wurde.', 'info');

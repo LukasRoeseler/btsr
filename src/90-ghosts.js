@@ -2469,12 +2469,22 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     return a.fertig;
   }
-  // Fahrerauto: true, solange es nach dem Ankommen noch AUFSTELL_GERADE_MS auf der Seite rollt.
-  function aufstellenSpielerAusrichten(car) {
+  // Fahrerauto (v1.0.37): nach dem Ankommen ein Takt Uebergang, ein Takt Einlenken zur Seite,
+  // ein Takt zurueck, danach stehen. Rueckgabe: der Radwinkel dieses Takts (ohne Spur-Bytes)
+  // oder null, solange noch nicht angekommen. aufstellenSpielerOhneSpur() sagt
+  // spielerOrtTick(), dass ab dem Ankommen keine Spur-Bytes mehr hinausgehen.
+  function aufstellenSpielerEinlenken(car) {
     const a = aufstellSpieler.get(car);
-    if (!a || !a.fertig) return false;
-    if (!a.geradeBis) a.geradeBis = Date.now() + AUFSTELL_GERADE_MS;
-    return Date.now() < a.geradeBis;
+    if (!a || !a.fertig) return null;
+    a.takt = (a.takt || 0) + 1;
+    const platz = gridPosOf(car);
+    const seite = platz >= 0 && platz % 2 ? -1 : 1;
+    const w = EINPARK_LENK * einparkStaerke();
+    return a.takt === 2 ? seite * w : a.takt === 3 ? -seite * w : 0;
+  }
+  function aufstellenSpielerOhneSpur(car) {
+    const a = car ? aufstellSpieler.get(car) : null;
+    return !!(a && a.fertig);
   }
   function aufstellenStarten() {
     const n = currentTrackTiles ? currentTrackTiles.length : 0;
@@ -2490,7 +2500,16 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Ohne Befehl blieben auch seine Lichter, wie sie waren. Jetzt zuerst abgleichen, und jedes
     // Ueberspringen steht im Log.
     if (typeof syncRaceGridOrder === 'function') syncRaceGridOrder();
-    for (const car of raceGridCars()) {
+    // v1.0.37 GEMELDET: "Bei 5 Autos und Spieler 1 ist die Verzoegerung sehr gross." Zwei
+    // Ursachen: 1 s Staffel je Auto (das sechste wartete 5 s) und die Pflicht, vor dem Parken
+    // einmal ueber Start/Ziel zu fahren (bis zu fast zwei Runden). Jetzt: Staffel 0,5 s und nur
+    // gegen Autos, die auf der Bahn nah davor stehen (AUFSTELL_STAFFEL_NAH Kacheln); und wer
+    // seinen Ort sicher kennt (Start/Ziel gesehen, Code passt noch), faehrt direkt zum Platz.
+    const n2 = n;
+    const gestartet = [];
+    const aufzustellen = raceGridCars().concat(garage.filter((c) => c.role === 'safetycar' && c.device
+      && !(c.ghost && c.ghost.running)));
+    for (const car of aufzustellen) {
       const platz = gridPosOf(car);
       if (platz < 0) { log(garageLabel(car) + ': kein Startplatz, faehrt nicht mit auf.', 'info'); continue; }
       const ziel = aufstellZielKachel(platz, n);
@@ -2507,15 +2526,22 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // die Autos in Reihenfolge der Aufstellung nacheinander mit Abstand von 1 s losfahren."
       // raceGridCars() liefert die Startreihenfolge; das k-te Auto, das fahren muss, wartet
       // k * AUFSTELL_STAFFEL_MS (Bremse, Licht an) und faehrt dann los.
-      const ab = Date.now() + zahl * AUFSTELL_STAFFEL_MS;
+      const hier = car.ghost ? ghostOrt(car) : null;
+      const nah = hier === null ? gestartet.length
+        : gestartet.filter((o) => o === null || Math.min(((hier - o) % n2 + n2) % n2, ((o - hier) % n2 + n2) % n2) <= AUFSTELL_STAFFEL_NAH).length;
+      const ab = Date.now() + nah * AUFSTELL_STAFFEL_MS;
+      gestartet.push(hier);
       if (spielerNrVon(car) >= 1) {
-        aufstellSpieler.set(car, { ziel, seit: ab, ab, fertig: false });
+        aufstellSpieler.set(car, { ziel, seit: ab, ab, fertig: false,
+                                   startGesehen: !!(car.ghost && car.ghost.ortSicher) });
         zahl++;
         continue;
       }
-      if (car.role !== 'ghost') continue;
+      if (car.role !== 'ghost' && car.role !== 'safetycar') continue;
       startGhost(car);
       if (!car.ghost) continue;
+      if (car.role === 'safetycar') car.ghost.freeRun = false;
+      if (car.ghost.ortSicher) car.ghost.startGesehen = true;
       car.ghost.aufstellZiel = ziel;
       car.ghost.aufstellSeit = ab;
       car.ghost.aufstellAb = ab;
@@ -2525,6 +2551,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     clearTimeout(aufstellenTimer);
     if (zahl) aufstellenTimer = setTimeout(() => aufstellenStoppen(true), AUFSTELLEN_MAX_MS + zahl * AUFSTELL_STAFFEL_MS);
+    log('Automatische Aufstellung: Staffel ' + AUFSTELL_STAFFEL_MS + ' ms nur bei Autos in '
+        + AUFSTELL_STAFFEL_NAH + ' Kacheln Naehe; bekannter Ort spart die Runde ueber Start/Ziel.', 'info');
     showHudToast(zahl ? t('Autos fahren in die Startaufstellung') : t('Alle Autos stehen schon'));
     log('Automatische Aufstellung: ' + zahl + ' Auto(s) fahren auf ihre Startplaetze.', 'info');
     return zahl;
@@ -2539,13 +2567,18 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (o === null || Math.floor(o) !== g.aufstellZiel || Date.now() - (g.aufstellSeit || 0) < 1200) return false;
     const platz = g.aufstellPlatz !== undefined ? g.aufstellPlatz : gridPosOf(car);
     const seite = platz >= 0 && platz % 2 ? -1 : 1;     // wie formationOffset
-    const ms = einparkMs();
-    // v1.0.28 BESTELLT: "Lass die Autos, wenn sie die Querlage haben, noch ganz kurz auf der
-    // Querlage weiterfahren, sodass sie gerade stehen und nicht schraeg." Also erst langsam
-    // weiter ('rand', AUFSTELL_GERADE_MS nach Erreichen der Seite), dann halten.
-    randHaltStarten(car, { phase: 'rand', quer: seite * GHOST_GRID_MAX, tempo: formationPace() * AUFSTELL_GERADE_TEMPO,
-                           nachRandMs: AUFSTELL_GERADE_MS, haltMs: AUFSTELL_HALT_MS,
-                           radLenk: ms > 0 ? seite * EINPARK_LENK : 0, radMs: ms, gegenMs: ms, fertig: (c) => {
+    // v1.0.37 GEMELDET: "Bei automatischer Aufstellung parkt das erste Auto nicht vor der
+    // Startgeraden, sondern dahinter" und BESTELLT: "Die Autos sollen fuer die automatische
+    // Aufstellung mittig fahren und erst kurz vor ihrer Zielposition in die jeweilige Richtung
+    // einlenken und dann zuruecklenken. Lass das bei 10 ms und lass mich im Schieberegler
+    // einstellen, wie stark eingelenkt wird." Die Randfahrt mit 0,5 s Geradeziehen (v1.0.28)
+    // trug die erste Reihe ueber die Linie. Jetzt: auf der Zielkachel sofort ein Takt Einschlag
+    // zur Seite (EINPARK_MS, Staerke aus dem Regler), ein Takt zurueck, dann bremsen - alles
+    // ohne Spur-Bytes, damit die Spurfuehrung das Auto nicht wieder zur Mitte zieht.
+    const staerke = einparkStaerke();
+    randHaltStarten(car, { phase: 'rad', quer: 0, tempo: formationPace(), haltMs: AUFSTELL_HALT_MS,
+                           radLenk: staerke > 0 ? seite * EINPARK_LENK * staerke : 0,
+                           radMs: EINPARK_MS, gegenMs: EINPARK_MS, fertig: (c) => {
       log(garageLabel(c) + ': steht auf seinem Startplatz.', 'info');
       if (g.nachZiel) blinkCar(c);
       if (!aufstellenLaeuft()) {
@@ -2556,15 +2589,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return false;
   }
   const AUFSTELL_HALT_MS = 800;
-  const AUFSTELL_STAFFEL_MS = 1000;
+  const AUFSTELL_STAFFEL_MS = 500, AUFSTELL_STAFFEL_NAH = 2;
   const AUFSTELL_ORT_FRISCH_MS = 3000;
-  const AUFSTELL_GERADE_MS = 500;
   // v1.0.28 GEMELDET: "In der automatischen Aufstellung fahren die Autos zum Teil so langsam,
   // dass sie fast den Kontakt verlieren." Die Scan-Anteile (0,6/0,4) waren zu wenig - beim Scan
   // ist die Strecke unbekannt, hier sorgt der Vorausblick fuer rechtzeitiges Bremsen. Das
   // Abfliegen aus der Haarnadel kam vor allem vom Fahrgefuehl RC, unter dem der Autopilot gar
   // nicht lief (v1.0.27 behoben).
-  const AUFSTELL_KURVE = 0.9, AUFSTELL_HAARNADEL = 0.8, AUFSTELL_GERADE_TEMPO = 0.8;
+  const AUFSTELL_KURVE = 0.9, AUFSTELL_HAARNADEL = 0.8;
   // ---- DAS TEMPO DER AUFSTELLUNG (v1.0.25) ---------------------------------------------
   // GEMELDET: "Die Geschwindigkeit bei der Startaufstellung ist zu schnell, das Auto fliegt aus
   // der Haarnadel. Pass das an die anderen Erkenntnisse mit min. und max. Geschwindigkeit an."
@@ -2597,6 +2629,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Abschriften von indexOf(String(car.device.id)) waeren die naechste Abweichung.
   function gridPosOf(car) {
     if (!car || !car.device || typeof raceGridOrder === 'undefined') return -1;
+    // v1.0.37 BESTELLT: "Mach, dass das Safety Car von der letzten Stelle startet und nach der
+    // ersten Runde an seinem Rand parkt." Es steht nicht in der sortierbaren Liste
+    // (raceGridCars), bekommt aber den Platz hinter dem letzten Auto.
+    if (car.role === 'safetycar') return raceGridCars().length;
     return raceGridOrder.indexOf(String(car.device.id));
   }
 
@@ -3081,6 +3117,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // es gilt jede Runde neu: verliert der Zaehler unterwegs eine Kachel, ist es beim
     // naechsten Zieldurchgang wieder in Ordnung.
     if (isStartCode(code)) {
+      g.ortSicher = true;             // v1.0.37: der Ort ist exakt, nicht geschaetzt
       // v0.9.74: nicht mehr blind auf die ERSTE Start-Kachel. Bei mehreren Start-Kacheln
       // (Rundenlinie + Sektorgrenzen) ist der Ort nur dann eindeutig, wenn man die Kachel
       // nimmt, die der laufende Kachelzaehler gerade meldet - sonst setzt eine Sektorgrenze
@@ -4514,15 +4551,19 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // aber auch nicht von der Bahn fahren." Gilt fuer jedes Einparken mit Randhalt: die
   // Aufstellung vor und nach dem Rennen und das Safety Car. 0 = kein Impuls. Ein Befehl
   // dauert mindestens einen Sendetakt (~45 ms), kleinere Werte wirken also wie ein Takt.
-  const EINPARK_LENK = 1.0, EINPARK_STORE = 'omegasim-einpark-ms', EINPARK_VORGABE = 10;
-  function einparkMs() {
-    const el = $('race-einpark-ms');
-    const v = el ? parseFloat(el.value) : EINPARK_VORGABE;
-    return Number.isFinite(v) ? Math.max(0, v) : EINPARK_VORGABE;
+  // v1.0.37 BESTELLT: "Lass das bei 10 ms und lass mich im Schieberegler einstellen, wie stark
+  // eingelenkt wird (Standard = voll, und dann runterregeln lassen)." Die Dauer ist jetzt fest
+  // (EINPARK_MS), der Regler gibt die Staerke des Einschlags (0-100 %).
+  const EINPARK_LENK = 1.0, EINPARK_MS = 10, EINPARK_STORE = 'omegasim-einpark-staerke';
+  function einparkMs() { return EINPARK_MS; }
+  function einparkStaerke() {
+    const el = $('race-einpark-staerke');
+    const v = el ? parseFloat(el.value) : 1;
+    return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 1;
   }
-  if ($('race-einpark-ms')) {
-    const el = $('race-einpark-ms');
-    const zeigen = () => { if ($('race-einpark-ms-val')) $('race-einpark-ms-val').textContent = Math.round(einparkMs()) + ' ms'; };
+  if ($('race-einpark-staerke')) {
+    const el = $('race-einpark-staerke');
+    const zeigen = () => { if ($('race-einpark-staerke-val')) $('race-einpark-staerke-val').textContent = Math.round(einparkStaerke() * 100) + ' %'; };
     try { const w = localStorage.getItem(EINPARK_STORE); if (w !== null && w !== '') el.value = w; } catch (e) { /* privat */ }
     el.addEventListener('input', () => {
       zeigen();
@@ -5043,6 +5084,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!sc) return;
     if (sc.ghost && sc.ghost.running) {
       // Gelb, waehrend es gerade an den Rand faehrt: wieder hinaus statt abzustellen.
+      sc.ghost.scErsteRunde = false;
       if (sc.ghost.randHalt || sc.ghost.scHeim) {
         sc.ghost.randHalt = null; sc.ghost.scHeim = false; sc.ghost.scNeustarts = 0;
         showHudToast(t('Safety Car auf der Strecke'));
@@ -5098,9 +5140,42 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     if (!g.scHeim) return;
     g.scHeim = false;
-    randHaltStarten(sc, { quer: FINISH_RAND, randMs: SC_RAND_MS, radLenk: einparkMs() > 0 ? SC_RAD_LENK : 0, radMs: einparkMs(), gegenMs: einparkMs(), fertig: safetyCarFertig });
+    randHaltStarten(sc, { quer: FINISH_RAND, randMs: SC_RAND_MS, radLenk: SC_RAD_LENK * einparkStaerke(), radMs: EINPARK_MS, gegenMs: EINPARK_MS, fertig: safetyCarFertig });
     log(garageLabel(sc) + ': Safety Car faehrt rechts ran.', 'info');
   }
+  // ---- DIE ERSTE RUNDE (v1.0.37) -----------------------------------------------------------
+  // BESTELLT: "Mach, dass das Safety Car von der letzten Stelle startet und nach der ersten Runde
+  // an seinem Rand parkt. Dann wissen alle Autos immer, wo es steht, und koennen gut ausweichen."
+  // Aus launchGhosts: es faehrt hinter dem Feld los (letzter Startplatz, also auch die letzte
+  // Reihe der Startstaffel), zaehlt die erste Ueberfahrt von Start/Ziel (carLapCrossed) und
+  // stellt sich danach - eine volle Runde spaeter - rechts an Start/Ziel ab (safetyCarHeimTick).
+  function safetyCarStartrunde() {
+    const sc = safetyCar();
+    if (!sc || trackMode !== 'on' || !currentTrackTiles || currentTrackTiles.length < 3) return false;
+    if (sc.ghost && sc.ghost.running) return false;
+    startGhost(sc);
+    if (!sc.ghost) return false;
+    sc.ghost.freeRun = true; sc.ghost.scHeim = false; sc.ghost.scErsteRunde = true;
+    log(garageLabel(sc) + ': Safety Car faehrt die erste Runde hinter dem Feld mit.', 'info');
+    return true;
+  }
+  // Aus carLapCrossed: die erste Ueberfahrt beendet die Startphase, danach geht es heim.
+  function safetyCarLinie(sc) {
+    const g = sc.ghost;
+    if (!g) return;
+    if (g.scErsteRunde) {
+      g.scErsteRunde = false;
+      g.scHeim = true;
+      log(garageLabel(sc) + ': Safety Car ueber Start/Ziel, parkt nach dieser Runde.', 'info');
+      return;
+    }
+    if (g.scHeim || g.randHalt) safetyCarAbstellen(sc);
+  }
+  // v1.0.37 GEMELDET: "Das Safety Car hat scheinbar gebremst, um die Autos aufholen zu lassen,
+  // dann wurde es gerammt. Falls das beabsichtigt ist, bitte Safety Car nicht anhalten."
+  // Langsamer als das Feld ja, aber Abstandsregel und Kurvendrosselung zusammen drueckten es
+  // unter die Lesegrenze, bis es stand. Unter Gelb nie langsamer als SC_MIN_TEMPO.
+  const SC_MIN_TEMPO = 0.30;
   // Aus ghostTick: auf dem Heimweg vor Start/Ziel an den rechten Rand.
   function safetyCarHeimTick(car) {
     const g = car.ghost;
@@ -5116,7 +5191,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (rest === 0 || rest > SC_RAND_KACHELN) return;
     g.scHeim = false;
     g.scVorLinie = true;
-    randHaltStarten(car, { quer: FINISH_RAND, randMs: SC_RAND_WARTE_MS, radLenk: einparkMs() > 0 ? SC_RAD_LENK : 0, radMs: einparkMs(), gegenMs: einparkMs(), fertig: safetyCarFertig });
+    randHaltStarten(car, { quer: FINISH_RAND, randMs: SC_RAND_WARTE_MS, radLenk: SC_RAD_LENK * einparkStaerke(), radMs: EINPARK_MS, gegenMs: EINPARK_MS, fertig: safetyCarFertig });
     g.randHalt.scLinie = true;
     log(garageLabel(car) + ': Safety Car zieht vor Start/Ziel nach rechts.', 'info');
   }
@@ -6121,6 +6196,38 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                      TILE_TYPE.CURVE_RIGHT, TILE_TYPE.HAIRPIN_LEFT, TILE_TYPE.HAIRPIN];
     return bekannt.indexOf(code) >= 0 ? code : 0x02;
   }
+  // ---- STRECKENSCAN MIT EINEM AUTO OHNE SPIELERROLLE (v1.0.37) ---------------------------
+  // BESTELLT: "Wenn kein Spieler 1 verbunden ist, lass zum Streckenscan das erste verbundene Auto
+  // losfahren." garageScanStart() waehlte es schon, aber gefahren hat der Scan nur ueber den
+  // Autopiloten der Fahrerautos (autopilot() in 50-drive.js) - ein NPC stand also still. Ein
+  // eigener Takt wie dort: Querlage 0 mit Spur-Bytes (Byte 16 = gerade gelesene Kachel), Tempo
+  // SCAN_TEMPO bzw. SCAN_TEMPO_HAARNADEL vom Formationstempo, neben der Bahn kein Gas.
+  let scanFahrTakt = null, scanFahrAuto = null;
+  function scanFahrStart(car) {
+    scanFahrStopp();
+    if (!car || car === playerCar || spielerNrVon(car) >= 1) return false;
+    if (car.ghost && car.ghost.running) stopGhost(car);
+    scanFahrAuto = car;
+    scanFahrTakt = setInterval(scanFahrTick, CONTROL_SEND_INTERVAL_MS);
+    log(garageLabel(car) + ': faehrt den Streckenscan (kein Spieler 1).', 'info');
+    return true;
+  }
+  function scanFahrTick() {
+    const car = scanFahrAuto;
+    if (!car || typeof garageScan === 'undefined' || !garageScan.aktiv || garageScan.car !== car) { scanFahrStopp(); return; }
+    const neben = car.tileCode === TILE_OFFTRACK;
+    const ziel = formationPace() * (scanInHaarnadel(car) ? SCAN_TEMPO_HAARNADEL : SCAN_TEMPO);
+    const gas = neben ? 0 : Math.max(ziel, (physEngine.config.minMoveThrottle || 0.05) * 1.5);
+    const spur = trackMode === 'on' && !neben
+      ? { 10: AUTO_MODE.b10, 15: AUTO_MODE.b15, 16: scanLiveCode(car.tileCode), 17: 0x02, 18: 0x02 } : null;
+    writeToCar(car, 0, gas, trackModeBit() | LIGHT_HEAD | (neben ? LIGHT_BRAKE : 0), spur);
+  }
+  function scanFahrStopp() {
+    if (scanFahrTakt) { clearInterval(scanFahrTakt); scanFahrTakt = null; }
+    const car = scanFahrAuto;
+    scanFahrAuto = null;
+    if (car) writeToCar(car, 0, 0, trackModeBit() | LIGHT_HEAD);
+  }
   function scanInHaarnadel(car) {
     const code = car ? car.tileCode : null;
     return code === TILE_TYPE.HAIRPIN || code === TILE_TYPE.HAIRPIN_LEFT;
@@ -6244,7 +6351,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Bestellung "gib mir die volle Kontrolle, damit ich selbst zurueck auf die Strecke
     // fahren kann".
     const wer = spielerNrVon(c) || 1;
-    if (trackMode === 'on' && driverAssistAktiv() && !abseitsJetztFuer(wer)) {
+    // v1.0.37: nach dem Ankommen in der Aufstellung ohne Spur-Bytes (Einlenk-Takt als Radwinkel).
+    if (trackMode === 'on' && driverAssistAktiv() && !abseitsJetztFuer(wer)
+        && !(typeof aufstellenSpielerOhneSpur === 'function' && aufstellenSpielerOhneSpur(c))) {
       // v0.9.51: AUCH OHNE VORAUSBLICK, wie bei den Ghosts (ghostTick). Ohne Vorausblick -
       // das Auto stand oder wurde gerade zurueckgestellt, die Kachel ist noch nicht verortet -
       // gingen gar keine Spur-Bytes hinaus, und der Autopilot schickte steer = 0 als
@@ -7640,6 +7749,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // einen Ghost, der sich nicht bewegen konnte, obwohl der Kommentar daneben "freies
     // Fahren mit Begleitung" behauptete.
     const gp = gridPosOf(car);
+    // v1.0.37: den sicheren Ort des alten Zustands uebernehmen (siehe aufstellenStarten). Nur,
+    // wenn er an Start/Ziel abgeglichen war, das Auto gerade liest und der gemeldete Code zur
+    // Kachel passt - wer von Hand umgestellt wurde, liest einen anderen Code.
+    const altG = car.ghost;
+    const tilesJ = currentTrackTiles || [];
+    const altOrt = (altG && !altG.nurOrt && altG.ortSicher && altG.tileIndex !== null && altG.tileIndex !== undefined
+      && car.lastCodeAt && Date.now() - car.lastCodeAt < AUFSTELL_ORT_FRISCH_MS
+      && tilesJ[altG.tileIndex] && ortPasst(tilesJ[altG.tileIndex].type, car.tileCode)) ? altG.tileIndex : null;
     car.ghost = { engine: e, tileIndex: null, lastCount: car.tileCount,
                   lastTick: 0, bias: 0, laps: 0, cutOut: false, freeRun: false,
                   // Recovery-Versuch nach einem Abgang - siehe ghostRecoveryTick().
@@ -7720,6 +7837,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                   // verteilt. Entsteht erst, wenn der Schalter in Optionen->Ton an ist.
                   stimme: { master: null, pan: null, nodes: null, over: null, car: null, laut: 0.6 },
                   running: true };
+    if (altOrt !== null) {
+      car.ghost.tileIndex = altOrt; car.ghost.ortAngewandt = true; car.ghost.ortSicher = true;
+    }
     // Die erste Faelligkeit ziehen. Ohne sie steht pitFaellig auf 0 und der Ghost pittet in
     // der ersten Runde - ein Boxenstopp, bevor jemand eine Runde gefahren ist.
     pitFaelligZiehen(car.ghost);
@@ -8694,6 +8814,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // v1.0.21: der Challenger folgt seiner Spur oder dir (90d-challenger.js).
       // v1.0.28: jeder NPC mit Challenger-Auftrag (Time Attack), nicht mehr eine eigene Rolle.
       if (g.challenger && typeof challengerZiel === 'function') target = challengerZiel(car, target, spice);
+      // v1.0.37: das Safety Car bleibt unter Gelb nie stehen (SC_MIN_TEMPO).
+      if (car.role === 'safetycar' && flagState !== 'green' && !g.randHalt) target = Math.max(target, SC_MIN_TEMPO);
       const pz = pitZiel(car);
       if (pz !== null) target = pz;
       const v = Math.abs(e.state.speedKmh) / cfg.topSpeedKmh;
@@ -8857,7 +8979,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         // v1.0.31: im Paar ersetzt die Seite die Linie wie ein Boxenstopp (ghostPaarQuer).
         const pqBox = pitQuer(car);
         const pqSc = pqBox === null ? scVorbeiQuer(car) : null;     // v1.0.32
-        const pq = pqBox !== null ? pqBox : pqSc !== null ? pqSc : ghostPaarQuer(car);
+        // v1.0.37: Anfahrt zum Startplatz mittig (Querlage 0), siehe aufstellenPruefen.
+        const pqAuf = (g.aufstellZiel !== undefined && g.aufstellZiel !== null) ? 0 : null;
+        const pq = pqBox !== null ? pqBox : pqSc !== null ? pqSc : pqAuf !== null ? pqAuf : ghostPaarQuer(car);
         // ====================================================================================
         // BEIM UEBERHOLEN GILT EIN 2-STUFEN-MODELL
         // ====================================================================================
@@ -9055,7 +9179,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         // Auch hier hat der Boxenstopp Vorrang - siehe die Rail-Verzweigung darueber.
         const pqBox2 = pitQuer(car);
         const pqSc2 = pqBox2 === null ? scVorbeiQuer(car) : null;
-        const pq2 = pqBox2 !== null ? pqBox2 : pqSc2 !== null ? pqSc2 : ghostPaarQuer(car);
+        const pq2 = pqBox2 !== null ? pqBox2 : pqSc2 !== null ? pqSc2
+          : (g.aufstellZiel !== undefined && g.aufstellZiel !== null) ? 0 : ghostPaarQuer(car);
         if (pq2 !== null) {
           // Im Boxenstopp ERSETZT der Randversatz alles - auch den Lenkwinkel, mit dem
           // dieser Zweig beginnt. Ein Boxenstopp ist kein Zuschlag auf eine Kurvenfahrt.
@@ -9882,6 +10007,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
 
   // Ghosts launch on green, not before.
   function launchGhosts() {
+    // v1.0.37: das Safety Car faehrt die erste Runde mit (nicht in Time Attack, Derby, Knockout).
+    if (typeof raceMode === 'undefined' || ['laps', 'endurance', 'qualifying', 'practice'].indexOf(raceMode) >= 0) {
+      safetyCarStartrunde();
+    }
     // v0.10.6: im Bestzeit-Modus fahren nur gesteuerte Autos - die Ghosts bleiben stehen.
     // v1.0.28: ausser auf der Bahn, dort fahren alle NPCs als Challenger (90d-challenger.js).
     if (typeof raceMode !== 'undefined' && raceMode === 'bestzeit') {

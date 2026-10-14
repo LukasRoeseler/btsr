@@ -733,7 +733,7 @@
   function carLapCrossed(car) {
     // v0.10.7: das Safety Car faehrt keine Runden - es wartet nur auf Start/Ziel nach Gruen.
     if (car.role === 'safetycar') {
-      if (car.ghost && (car.ghost.scHeim || car.ghost.randHalt) && typeof safetyCarAbstellen === 'function') safetyCarAbstellen(car);
+      if (car.ghost && typeof safetyCarLinie === 'function') safetyCarLinie(car);
       return;
     }
     if (!car.race) car.race = { laps: [], lapStart: null, pending: null, seen: 0,

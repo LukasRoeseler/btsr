@@ -17205,12 +17205,15 @@
       const rb = autopilot(0.8, 1);
       if (!rb || rb.throttle !== 0 || !(rb.brake >= 0.8)) f.push('Fahrerbremse wird ueberstimmt');
       aufstellSpieler.get(auto).fertig = true;
-      // v1.0.28: erst noch kurz auf der Seite weiter, damit es gerade steht.
-      physEngine.state.speedKmh = 0;
-      const roll = autopilot(0, 1);
-      if (!roll || !(roll.throttle > 0) || roll.brake === 1) f.push('rollt nach dem Ankommen nicht kurz weiter (gerade ziehen)');
-      aufstellSpieler.get(auto).geradeBis = Date.now() - 1;
+      // v1.0.37: ein Takt Uebergang, ein Takt Einlenken, ein Takt zurueck, dann stehen.
+      autopilot(0, 1);
+      const ein = autopilot(0, 1), zur = autopilot(0, 1);
+      if (!ein || !(Math.abs(ein.radLenk) > 0) || !zur || Math.sign(zur.radLenk) !== -Math.sign(ein.radLenk)) {
+        f.push('kein Einlenk-Takt mit Gegenlenken: ' + (ein && ein.radLenk) + '/' + (zur && zur.radLenk));
+      }
+      if (!aufstellenSpielerOhneSpur(auto)) f.push('nach dem Ankommen weiter mit Spur-Bytes');
       const h = autopilot(0, 1);
+      if (h && h.radLenk !== 0) f.push('steht mit eingeschlagenen Raedern: ' + h.radLenk);
       if (!h || h.throttle !== 0 || h.brake !== 1) f.push('am Startplatz nicht gehalten');
       aufstellenStoppen(false);
       const frei = autopilot(0, 1);
@@ -17248,15 +17251,15 @@
       // Der Autopilot sendet Spur-Bytes (Querlage), nicht Lenkung null.
       const r = autopilot(0, 1);
       if (!r || r.grund !== 'aufstellen') f.push('Autopilot uebernimmt nicht (' + (r && r.grund) + ')');
-      if (r && !(Math.abs(r.steer) > 1e-6)) f.push('kein Spur-Byte (steer=0) waehrend der Aufstellung');
-      if (r && !(Math.abs(r.steer) <= GHOST_WEAVE + GHOST_GRID_MAX + 1e-9)) f.push('Spur-Byte ausserhalb des Rahmens: ' + r.steer);
+      // v1.0.37 BESTELLT: Anfahrt mittig - die Querlage ist 0, die Spur-Bytes bleiben (Fahrhilfe).
+      if (r && Math.abs(r.steer) > 1e-6) f.push('Anfahrt nicht mittig: ' + r.steer);
       aufstellenStoppen(false);
     } finally {
       aufstellSpieler.clear(); playerCar = merk.p1; trackMode = merk.tm; flagState = merk.fl;
       raceFormationLap = merk.rfl; raceGridOrder = merk.rgo; autopilotZuruecksetzen();
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ')
-              : 'max. Breite abwechselnd, Spur-Bytes gesendet, Grund + Fahrhilfe aktiv' };
+              : 'max. Breite abwechselnd, Anfahrt mittig, Grund + Fahrhilfe aktiv' };
   });
 
   stAdd('Statistik: Sieger, Medaillen, Kilometer-Korrektur', () => {
@@ -18436,9 +18439,10 @@
       raceGridOrder = ['aa', 'sc'];                 // B kam spaeter dazu, SC war noch drin
       startGhost = (c) => { gestartet.push(c.tag); c.ghost = { running: true }; };
       aufstellenStarten();
-      if (gestartet.join() !== 'A,B') f.push('gestartet: ' + gestartet.join());
+      if (gestartet.join() !== 'A,B,SC') f.push('gestartet: ' + gestartet.join());
       if (!b.ghost || b.ghost.aufstellZiel === undefined || b.ghost.aufstellZiel === null) f.push('B ohne Startplatz');
-      if (gridPosOf(sc) >= 0) f.push('Safety Car hat einen Startplatz');
+      // v1.0.37: das Safety Car startet vom letzten Platz (hinter A und B) und faehrt mit auf.
+      if (gridPosOf(sc) !== 2) f.push('Safety Car nicht auf dem letzten Platz: ' + gridPosOf(sc));
       // v1.0.31: nacheinander in Startreihenfolge, je 1 s versetzt.
       if (a.ghost && b.ghost && Math.abs((b.ghost.aufstellAb - a.ghost.aufstellAb) - AUFSTELL_STAFFEL_MS) > 5) {
         f.push('nicht 1 s versetzt: ' + (b.ghost.aufstellAb - a.ghost.aufstellAb) + ' ms');
@@ -18448,7 +18452,7 @@
       startGhost = merk.start; raceGridOrder = merk.rgo; currentTrackTiles = merk.tiles;
       garage.length = 0; merk.garage.forEach((c) => garage.push(c));
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'beide NPCs fahren los, je 1 s versetzt, Safety Car ohne Platz' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'beide NPCs fahren los, gestaffelt, Safety Car auf den letzten Platz' };
   });
 
   // ---- v1.0.30: NPC-Stimmen verstummen mit dem Rennende ----
@@ -18619,6 +18623,81 @@
       sectorCount = merk.sc; sectorReset();
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Anlauf 2 Kacheln: Runde 1 ab der Linie; volle Runde zaehlt' };
+  });
+
+  // ---- v1.0.37: sicherer Ort ueberlebt den Start (keine Pflichtrunde ueber Start/Ziel) ----
+  stAdd('Aufstellung v1.0.37: sicherer Ort bleibt beim Start erhalten, sonst nicht', () => {
+    const f = [];
+    const merk = { tiles: currentTrackTiles, garage: garage.slice() };
+    const car = { device: { id: 'ort37' }, role: 'ghost', alias: 'O', testSenke: [], tileCount: 5 };
+    try {
+      currentTrackTiles = codeToTrack('SG4R4G4').tiles;
+      garage.length = 0; garage.push(car);
+      car.tileCode = currentTrackTiles[3].type; car.lastCodeAt = Date.now();
+      car.ghost = { tileIndex: 3, ortSicher: true, ortAngewandt: true, running: false };
+      startGhost(car);
+      if (car.ghost.tileIndex !== 3 || !car.ghost.ortSicher) f.push('sicherer Ort verloren: ' + car.ghost.tileIndex);
+      stopGhost(car);
+      // Von Hand umgestellt: der Code passt nicht mehr zur gemerkten Kachel.
+      car.ghost.ortSicher = true; car.ghost.tileIndex = 3;
+      car.tileCode = currentTrackTiles[5].type === currentTrackTiles[3].type ? 0x7e : currentTrackTiles[5].type;
+      startGhost(car);
+      if (car.ghost.tileIndex === 3) f.push('Ort trotz fremdem Code uebernommen');
+      stopGhost(car);
+    } finally {
+      if (car.ghost) stopGhost(car);
+      currentTrackTiles = merk.tiles; garage.length = 0; merk.garage.forEach((c) => garage.push(c));
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'sicherer Ort uebernommen, nach Umstellen verworfen' };
+  });
+
+  // ---- v1.0.37: Safety Car faehrt die erste Runde mit, parkt danach; unter Gelb nie stehen ----
+  stAdd('Safety Car v1.0.37: erste Runde hinter dem Feld, dann parken; unter Gelb Mindesttempo', () => {
+    const f = [];
+    const merk = { garage: garage.slice(), tiles: currentTrackTiles, tm: trackMode, start: startGhost };
+    const sc = { device: { id: 'sc37' }, role: 'safetycar', tag: 'SC', testSenke: [] };
+    try {
+      currentTrackTiles = codeToTrack('SG4R4G4').tiles; trackMode = 'on';
+      garage.length = 0; garage.push(sc);
+      startGhost = (c) => { c.ghost = { running: true, tileIndex: 9 }; };
+      if (!safetyCarStartrunde()) f.push('Startrunde nicht gestartet');
+      if (!sc.ghost.freeRun || !sc.ghost.scErsteRunde) f.push('keine Startrunde');
+      safetyCarLinie(sc);                       // erste Ueberfahrt: nur Startphase vorbei
+      if (sc.ghost.scErsteRunde || !sc.ghost.scHeim || sc.ghost.randHalt) f.push('nach der ersten Ueberfahrt nicht auf dem Heimweg');
+      safetyCarLinie(sc);                       // zweite Ueberfahrt (ohne Ort): abstellen
+      if (!sc.ghost.randHalt) f.push('nach der ersten Runde nicht abgestellt');
+      if (!(SC_MIN_TEMPO >= 0.3)) f.push('Mindesttempo ' + SC_MIN_TEMPO);
+    } finally {
+      startGhost = merk.start; trackMode = merk.tm; currentTrackTiles = merk.tiles;
+      garage.length = 0; merk.garage.forEach((c) => garage.push(c));
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Startrunde, Heimweg nach der ersten Ueberfahrt, Abstellen, Mindesttempo ' + SC_MIN_TEMPO };
+  });
+
+  // ---- v1.0.37: Streckenscan faehrt auch ein Auto ohne Spielerrolle ----
+  stAdd('Streckenscan v1.0.37: ohne Spieler 1 faehrt das erste verbundene Auto', () => {
+    const f = [];
+    const merk = { garage: garage.slice(), pc: playerCar, aktiv: garageScan.aktiv, car: garageScan.car, tm: trackMode };
+    const npc = { device: { id: 'scan37' }, role: 'ghost', tag: 'N', testSenke: [], tileCode: TILE_TYPE.STRAIGHT };
+    try {
+      garage.length = 0; garage.push(npc); playerCar = null; trackMode = 'on';
+      garageScan.aktiv = true; garageScan.car = npc;
+      if (!scanFahrStart(npc)) f.push('Scanfahrer nicht gestartet');
+      scanFahrTick();
+      const p1 = npc.testSenke[npc.testSenke.length - 1];
+      if (!p1 || !(p1.throttle > 0) || p1.steer !== 0) f.push('faehrt nicht mittig los: ' + JSON.stringify(p1));
+      npc.tileCode = TILE_OFFTRACK; scanFahrTick();
+      const p2 = npc.testSenke[npc.testSenke.length - 1];
+      if (!p2 || p2.throttle !== 0) f.push('neben der Bahn weiter Gas');
+      garageScanAbbrechen('');
+      const p3 = npc.testSenke[npc.testSenke.length - 1];
+      if (!p3 || p3.throttle !== 0 || scanFahrTakt) f.push('nach dem Scan nicht angehalten');
+    } finally {
+      scanFahrStopp();
+      garageScan.aktiv = merk.aktiv; garageScan.car = merk.car; playerCar = merk.pc; trackMode = merk.tm;
+      garage.length = 0; merk.garage.forEach((c) => garage.push(c));
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'faehrt mittig, haelt neben der Bahn, stoppt mit dem Scan' };
   });
 
   stAdd('Telemetrie-Seite: Karte, Balken und Tempo aus zwei Runden, Rundenweg steigt', () => {
