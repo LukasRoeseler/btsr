@@ -2392,8 +2392,11 @@
     const ton = (typeof audioCtx !== 'undefined' && audioCtx && typeof audioCtx.baseLatency === 'number')
       ? ' · ' + t('Ton') + ' +' + Math.round(((audioCtx.baseLatency || 0) + (audioCtx.outputLatency || 0)) * 1000) + ' ms' : '';
     const nurJs = ob ? ' (' + t('nur JS') + ')' : '';
+    // v1.0.40: sagen, wenn ein Direktweg der APK fehlt (und warum, soweit bekannt).
+    const fehlt = ob ? (ob.direkt ? '' : ' · ' + t('Direktweg fehlt') + (ob.neuVersucht ? ' (' + t('nach Neuladen') + ')' : ''))
+      + (ob.pad ? '' : ' · ' + t('Pad direkt fehlt')) + (ob.direktFehler ? ' · ' + ob.direktFehler : '') : '';
     el.textContent = (s ? Math.round(s.mittel) + ' / ' + Math.round(s.p95) + ' ms' + nurJs + (s.haenger ? ' · ' + s.haenger + '× hing' : '')
-      : t('noch keine Befehle')) + weg + ersetzt + br + takt + pad + ton + (wv ? ' · WebView ' + wv : '');
+      : t('noch keine Befehle')) + weg + fehlt + ersetzt + br + takt + pad + ton + (wv ? ' · WebView ' + wv : '');
   }, 1000);
   // COCKPIT GEDROSSELT (v0.8.41): hoechstens alle COCKPIT_MAL_MS, nach dem Senden.
   const COCKPIT_MAL_MS = 90;

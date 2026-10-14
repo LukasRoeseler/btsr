@@ -93,19 +93,53 @@ public class OmegaBlePlugin extends Plugin {
         // aufgerufen, ohne beides. Angemeldet VOR dem Laden der Seite (load() laeuft beim
         // Registrieren der Plugins), sonst saehe die Seite es erst nach einem Neuladen.
         // Dazu das Gamepad direkt (OmegaPadNativ).
-        Runnable anmelden = () -> {
-            try {
-                WebView wv = getBridge().getWebView();
-                wv.addJavascriptInterface(new Direkt(), "OmegaDirekt");
-                wv.addJavascriptInterface(new OmegaPadNativ.Js(), "OmegaPad");
-            } catch (Throwable e) { /* dann bleibt der Plugin-Weg */ }
-        };
+        Runnable anmelden = () -> direktAnmelden();
         if (Looper.myLooper() == Looper.getMainLooper()) anmelden.run();
         else getActivity().runOnUiThread(anmelden);
     }
 
+    // v1.0.40 GEMELDET: In der APK zeigte "Funk-Rundlauf" "Weg OmegaBle" statt "OmegaBle direkt"
+    // und kein "Pad direkt" - beide Direktwege waren in der Seite nicht angekommen, jeder
+    // Steuerbefehl ging weiter als JSON ueber den Hauptthread. Ein Fehler beim Anmelden wurde
+    // bisher verschluckt; jetzt wird er gemerkt (status: direktFehler), und die Seite kann die
+    // Anmeldung mit direktNeu() wiederholen - die WebView laedt danach einmal neu, denn ein
+    // JavascriptInterface gilt erst ab dem naechsten Laden der Seite.
+    private volatile boolean direktAngemeldet = false;
+    private volatile String direktFehler = "";
+    private void direktAnmelden() {
+        try {
+            WebView wv = getBridge().getWebView();
+            try { wv.removeJavascriptInterface("OmegaDirekt"); } catch (Throwable e) { /* war nicht da */ }
+            try { wv.removeJavascriptInterface("OmegaPad"); } catch (Throwable e) { /* war nicht da */ }
+            wv.addJavascriptInterface(new Direkt(), "OmegaDirekt");
+            wv.addJavascriptInterface(new OmegaPadNativ.Js(), "OmegaPad");
+            direktAngemeldet = true;
+            direktFehler = "";
+        } catch (Throwable e) {
+            direktFehler = String.valueOf(e);
+        }
+    }
+
+    /** Die Direktwege neu anmelden und die Seite einmal neu laden (von der Seite gerufen). */
+    @PluginMethod
+    public void direktNeu(PluginCall call) {
+        getActivity().runOnUiThread(() -> {
+            direktAnmelden();
+            JSObject r = new JSObject();
+            r.put("direkt", direktAngemeldet);
+            r.put("direktFehler", direktFehler);
+            call.resolve(r);
+            if (direktAngemeldet) {
+                try {
+                    WebView wv = getBridge().getWebView();
+                    wv.postDelayed(wv::reload, 150);
+                } catch (Throwable e) { /* ohne Neuladen bleibt der Plugin-Weg */ }
+            }
+        });
+    }
+
     /** Von der Seite synchron gerufen (window.OmegaDirekt.schreibe). */
-    private final class Direkt {
+    public final class Direkt {
         @JavascriptInterface
         public void schreibe(String deviceId, String service, String characteristic, String value, double tJs) {
             brueckeMessen(tJs);
@@ -179,7 +213,9 @@ public class OmegaBlePlugin extends Plugin {
         r.put("brueckeMittel", n > 0 ? (double) brueckeSumme.get() / n : -1);
         r.put("brueckeMax", brueckeMax.getAndSet(0));
         r.put("bereit", bereit);
-        r.put("version", 3);
+        r.put("direkt", direktAngemeldet);
+        r.put("direktFehler", direktFehler);
+        r.put("version", 4);
         call.resolve(r);
     }
 

@@ -23,7 +23,7 @@ import android.webkit.JavascriptInterface;
  * lassen sich nicht sicher einer Web-Gamepad-Nummer zuordnen; dann meldet lesen() die Zahl
  * der Geraete, und die Seite bleibt beim Web-Gamepad.
  */
-final class OmegaPadNativ {
+public final class OmegaPadNativ {
     private OmegaPadNativ() {}
 
     static volatile float lx, ly, rx, ry, lt, rt;
@@ -61,7 +61,7 @@ final class OmegaPadNativ {
     }
 
     /** Fuer die Seite: synchron, ohne Hauptthread. */
-    static final class Js {
+    public static final class Js {
         @JavascriptInterface
         public String lesen() {
             long jetzt = SystemClock.uptimeMillis();

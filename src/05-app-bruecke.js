@@ -129,6 +129,23 @@
     } catch (e) { return false; }
   }
   let omegaDirektBenutzt = false;
+  // ---- DER DIREKTWEG FEHLT: EINMAL NEU ANMELDEN (v1.0.40) -------------------------------
+  // GEMELDET (Messzeile der APK): "Weg OmegaBle" statt "OmegaBle direkt", kein "Pad direkt" -
+  // die Direktwege aus v0.10.4 waren in der Seite nicht angekommen, jeder Steuerbefehl ging als
+  // JSON ueber den Android-Hauptthread (in Chrome gibt es diesen Umweg nicht). Gleich beim Start,
+  // bevor ein Auto verbunden ist: fehlt window.OmegaDirekt, meldet OmegaBle die Direktwege neu
+  // an und laedt die Seite einmal neu (direktNeu). Hoechstens einmal je Sitzung (sessionStorage),
+  // damit nichts im Kreis laeuft; klappt es dann immer noch nicht, sagt es die Messzeile.
+  let omegaDirektVersucht = false;
+  setTimeout(() => {
+    if (window.OmegaDirekt || !omegaBleVerfuegbar()) return;
+    let schon = null;
+    try { schon = sessionStorage.getItem('omegaDirektNeu'); } catch (e) { /* privat */ }
+    omegaDirektVersucht = !!schon;
+    if (schon) return;
+    try { sessionStorage.setItem('omegaDirektNeu', '1'); } catch (e) { /* privat */ }
+    C.nativePromise('OmegaBle', 'direktNeu', {}).catch(() => {});
+  }, 0);
   // Waehrend das Community-Plugin selbst ans GATT geht (Abo, Lesen, Schreiben mit Antwort),
   // schreibt OmegaBle nicht: Android erlaubt nur EINEN GATT-Vorgang zugleich. Gezaehlt, weil
   // mehrere Vorgaenge ueberlappen koennen; das Plugin hebt die Pause nach 1,5 s selbst auf.
@@ -145,7 +162,10 @@
     if (!omegaBleVerfuegbar()) return { weg: 'Plugin' };
     const l = [...omegaLage.values()][0];
     return { weg: l && l.bereit ? (omegaDirektBenutzt ? 'OmegaBle direkt' : 'OmegaBle') : 'Plugin',
-             alt: !!(l && l.alt), zaehler: l && l.zaehler };
+             alt: !!(l && l.alt), zaehler: l && l.zaehler,
+             // v1.0.40: ob die Direktwege da sind, und warum nicht.
+             direkt: !!window.OmegaDirekt, pad: !!window.OmegaPad, neuVersucht: omegaDirektVersucht,
+             direktFehler: (l && l.zaehler && l.zaehler.direktFehler) || '' };
   };
 
   let bereit = null;
