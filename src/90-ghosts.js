@@ -5164,6 +5164,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const g = sc.ghost;
     if (!g) return;
     if (g.scErsteRunde) {
+      // Fliegender Start: die Ueberfahrten der Einfuehrungsrunde zaehlen nicht - die erste Runde
+      // ist die erste RENNrunde.
+      if (raceFormationLap) return;
       g.scErsteRunde = false;
       g.scHeim = true;
       log(garageLabel(sc) + ': Safety Car ueber Start/Ziel, parkt nach dieser Runde.', 'info');
@@ -8596,6 +8599,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Gelb-Tempo (BESTELLT: "normal fahren, bis sie nah am Safety Car sind, dann auf 35 %").
       // v1.0.9: unter Gelb faehrt jeder ~35 %. v1.0.12: mit der Option "aufschliessen" bis
       // zum Safety Car ~45 %, dann 35 % (gelbZielFuer); die Kurvendrosselung folgt unten.
+      // v1.0.38 BESTELLT: "Das Safety Car soll die erste Runde etwas langsamer hinterherfahren,
+      // damit es niemanden ueberholt. Auch bei fliegendem Start." Hoechstens Formationstempo und
+      // Abstand zum Vordermann wie unter Gelb.
+      if (car.role === 'safetycar' && g.scErsteRunde && !underYellow) {
+        target = Math.min(target, formationPace()) * gelbAbstandFaktor(car);
+      }
       if (underYellow) {
         target = Math.min(target, gelbZielFuer(car));
         // v1.0.28: Abstand zum Vordermann (auch zu dir), siehe gelbAbstandFaktor().
@@ -8633,7 +8642,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // braucht aber bis zu 4 - siehe ghostHaarnadelInSicht() und der dritte Parameter von
       // ghostSpice().
       const haarnadelNah = ghostHaarnadelInSicht(car, SPICE_PASS_KEIN_HAARNADEL_VORAUS);
-      const spice = underYellow ? { factor: 1, attack: 0 }
+      // v1.0.38: das Safety Car setzt nie zum Ueberholen an (BESTELLT: "damit es niemanden ueberholt").
+      const spice = (underYellow || car.role === 'safetycar') ? { factor: 1, attack: 0 }
                                  : ghostSpice(car, ahead, haarnadelNah);
       target *= spice.factor;
       // v1.0.31: hinter einem fremden Paar und vor der Haarnadel hintereinander (ghostReiheFaktor).
@@ -9775,7 +9785,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     paarCache = { at: now, map };
     const n = currentTrackTiles ? currentTrackTiles.length : 0;
     if (!n || flagState !== 'green') return map;
-    const feld = ghostFieldRacing().filter((c) => !c.parked && ghostOrt(c) !== null
+    const feld = ghostFieldRacing().filter((c) => c.role !== 'safetycar' && !c.parked && ghostOrt(c) !== null
       && !(c.ghost && (c.ghost.pit || c.ghost.randHalt || c.ghost.finish
                        || (c.ghost.aufstellZiel !== undefined && c.ghost.aufstellZiel !== null))));
     const ort = new Map(feld.map((c) => [c, ghostOrt(c)]));

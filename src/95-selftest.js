@@ -18662,6 +18662,10 @@
       startGhost = (c) => { c.ghost = { running: true, tileIndex: 9 }; };
       if (!safetyCarStartrunde()) f.push('Startrunde nicht gestartet');
       if (!sc.ghost.freeRun || !sc.ghost.scErsteRunde) f.push('keine Startrunde');
+      // v1.0.38: Ueberfahrten in der Einfuehrungsrunde (fliegender Start) zaehlen nicht.
+      const formMerk = raceFormationLap;
+      raceFormationLap = true; safetyCarLinie(sc); raceFormationLap = formMerk;
+      if (!sc.ghost.scErsteRunde) f.push('Einfuehrungsrunde beendet die Startrunde');
       safetyCarLinie(sc);                       // erste Ueberfahrt: nur Startphase vorbei
       if (sc.ghost.scErsteRunde || !sc.ghost.scHeim || sc.ghost.randHalt) f.push('nach der ersten Ueberfahrt nicht auf dem Heimweg');
       safetyCarLinie(sc);                       // zweite Ueberfahrt (ohne Ort): abstellen
