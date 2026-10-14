@@ -4676,7 +4676,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.35</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.36</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5806,6 +5806,8 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Neues Fahrgef&#252;hl Omega (nach Pacejka): die Pro-Abstimmung, wie sie in v0.9 war, Wert f&#252;r Wert &#8211; und eingefroren. Wird Pro k&#252;nftig angepasst, bleibt Omega gleich; ein Selbsttest wacht dar&#252;ber. Die Anzeige zeigt bei gleichen Werten das zuletzt gew&#228;hlte Fahrgef&#252;hl.</li>
+        <li>Rundenzeiten: F&#228;hrst du aus der Startaufstellung vor der Linie los, z&#228;hlt die erste &#220;berfahrt nicht mehr als Runde (vorher gab es Runden von 1 bis 2 s) &#8211; Runde 1 beginnt an der Linie. Erkannt an den gefahrenen Kacheln (weniger als eine halbe Strecke = Anlauf); wer hinter der Linie startet, bekommt seine erste volle Runde wie bisher.</li>
         <li>Safety Car (WIP): Autos, die zu ihrem Startplatz fahren, werden nicht mehr links am geparkten Safety Car vorbeigeschickt &#8211; die erste Startreihe steht direkt vor Start/Ziel, und ihr rechtes Auto wurde sonst auf die falsche Seite gezwungen.</li>
         <li>Nach Rennende (WIP): Die NPCs fahren nach dem Zieleinlauf im Aufstelltempo eine Runde zur&#252;ck in die Startaufstellung &#8211; in der Reihenfolge des Zieleinlaufs, die vorderen Pl&#228;tze bleiben f&#252;r die Fahrerautos frei. Dort stehen sie auf ihrer Seite und blinken. Ohne eingescannte Strecke (Ausdruck-Modus) rollen sie wie bisher aus.</li>
         <li>Neue Option Einparken: Lenkimpuls (WIP, Renneinstellungen): wie viele Millisekunden ein Auto beim Einparken zuletzt mit vollem Einschlag zu seiner Seite lenkt und danach gleich lange zur&#252;ck &#8211; zum Kalibrieren, dass die Autos am Rand stehen, ohne von der Bahn zu fahren. Gilt f&#252;r die Startaufstellung vor und nach dem Rennen und das Safety Car; 0 = kein Impuls, Vorgabe 10 ms.</li>

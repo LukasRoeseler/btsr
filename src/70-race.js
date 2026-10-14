@@ -11,6 +11,9 @@
   let dashZielGesehen = false, dashZielAt = 0, dashStartLapAt = 0, dashZielAuto = null;
   // v0.9.39: der Kachelzaehler an der letzten Rundengrenze (siehe die Ziellinie).
   let dashLapZaehler = null;
+  // v1.0.36: der Kachelzaehler beim Losfahren - fuer die Frage, ob die erste Ueberfahrt nur
+  // der Anlauf zur Linie war (siehe playerLapCrossed).
+  let raceAnlaufZaehler = null;
   // Vorheriger Stand des Musterkontakts, fuer die Flankenerkennung im Ausdruck-Modus.
   let dashMarkerPrev = false;
   // Debounce state for the tile code. See dashboardNotifyHandler for why both guards exist.
@@ -559,6 +562,7 @@
       raceStartedAt = Date.now();
       // Die Kachel, auf der das Auto beim Start steht: eine Ziellinie darauf ist keine Runde.
       dashLapZaehler = dashLastTileCounter;
+      raceAnlaufZaehler = trackMode === 'on' ? dashLastTileCounter : null;
       sectorReset();
     }
     maybeSwitchRaceWeather();
@@ -2071,6 +2075,7 @@
     // null, bis raceClockTick() ueber raceMoveErkannt() die erste Bewegung sieht.
     raceLapStart = null;
     raceAwaitingMove = true;
+    raceAnlaufZaehler = null;
     // In einer Challenge faehrt man allein: keine Ghosts.
     const imChallenge = typeof challengeLaeuft === 'function' && challengeLaeuft();
     if (!imChallenge) launchGhosts();   // green means green for everyone
@@ -3285,9 +3290,30 @@
     // Erkannt an der Zeit: schneller als die kuerzeste moegliche Runde (rundeMinMs) kann keine
     // ganze Runde gewesen sein.
     if ((raceState === 'racing' || raceState === 'finishing') && !raceFormationLap
-        && raceLapStart !== null && raceLapTimes.length === 0 && now - raceLapStart < rundeMinMs()) {
+        && raceLapStart !== null && raceLapTimes.length === 0 && now - raceLapStart < rundeMinMs()
+        // v1.0.36: mit Kachelzaehler entscheidet die Anlauf-Regel darunter (Runde 1 ab der Linie).
+        && raceAnlaufZaehler === null) {
       log('Startlinie ueberquert nach ' + (now - raceLapStart) + ' ms: das war keine Runde, die Uhr laeuft weiter.', 'info');
       return false;
+    }
+    // v1.0.36 BESTELLT: "Rundenzeiten erst ab Runde 2 zaehlen, damit nicht Runden mit 1 oder 2 s
+    // dabei sind." Die Zeitgrenze oben reicht nicht: rundeMinMs ist auf kurzen Strecken 1,5 s,
+    // und wer aus Reihe 2 oder 3 nach 2 s die Linie erreicht, bekam eine 2-s-Runde. Jetzt
+    // zaehlen die KACHELN seit dem Losfahren (nur auf der Bahn, dort laeuft der Zaehler): weniger
+    // als eine halbe Strecke heisst Anlauf, und Runde 1 beginnt an der Linie. Wer hinter der
+    // Linie startet, faehrt eine ganze Runde bis zur ersten Ueberfahrt - die zaehlt wie bisher.
+    if ((raceState === 'racing' || raceState === 'finishing') && !raceFormationLap
+        && raceLapStart !== null && raceLapTimes.length === 0 && raceAnlaufZaehler !== null
+        && dashLastTileCounter !== null && dashLastTileCounter !== undefined) {
+      const nK = currentTrackTiles ? currentTrackTiles.length : 0;
+      const gefahren = (dashLastTileCounter - raceAnlaufZaehler) & 0xff;
+      raceAnlaufZaehler = null;
+      if (nK >= 3 && gefahren < nK / 2) {
+        log('Startlinie nach ' + gefahren + ' Kacheln: Anlauf, Runde 1 beginnt jetzt.', 'info');
+        raceLapStart = now;
+        if (dashLapStart !== null) dashLapStart = now;
+        return false;
+      }
     }
     // Einfuehrungsrunde: JEDER Kontakt zaehlt, wie bei den Ghosts (formationNoetig rechnet
     // die Sektoren ein). Vor dem Sektorfilter, damit beide dieselbe Zaehlweise haben.

@@ -17948,10 +17948,10 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Auslaufen 2 s, Bremse sofort, Rueckwaerts erst beim zweiten Druck' };
   });
 
-  stAdd('Abstimmungen: FAHREN zeigt Arcade, Sim+, Pro, Pacejka, RC; Lenkeinschlag erreichbar ausser Realismus GT3', () => {
+  stAdd('Abstimmungen: FAHREN zeigt Arcade, Sim+, Pro, Pacejka, Omega, RC; Lenkeinschlag erreichbar ausser Realismus GT3', () => {
     const f = [];
     const fahren = window.__presetKeysFahren ? window.__presetKeysFahren() : [];
-    if (fahren.join(',') !== 'arcade,simplus,pro,propacejka,rc') f.push('FAHREN: ' + fahren.join(','));
+    if (fahren.join(',') !== 'arcade,simplus,pro,propacejka,omega,rc') f.push('FAHREN: ' + fahren.join(','));
     for (const k of ['arcade', 'simplus', 'gt3', 'f1']) {
       const v = window.__presetValues(k) || {};
       const resp = v['phys-steerresp'] === undefined ? 3 : v['phys-steerresp'];
@@ -17961,7 +17961,7 @@
     const sim = window.__presetValues('simplus') || {}, pro = window.__presetValues('pro') || {};
     if (!(sim['setting-brakepower'] > pro['setting-brakepower'] + 0.5)) f.push('Sim+ bremst nicht viel staerker als Pro');
     if (!(sim['phys-accel'] > pro['phys-accel'])) f.push('Sim+ beschleunigt nicht staerker');
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'fuenf im FAHREN-Menue, Sim+ staerker als Pro, Einschlag erreichbar' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'sechs im FAHREN-Menue, Sim+ staerker als Pro, Einschlag erreichbar' };
   });
 
   stAdd('Training: Zeitlimit 0 laeuft ohne Ende, ein Limit beendet es', () => {
@@ -18555,6 +18555,70 @@
       garage.length = 0; merk.garage.forEach((c) => garage.push(c)); finishSeitenZaehlerZuruecksetzen();
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Platz nach Einlauf hinter den Menschen, Ausdruck-Modus wie bisher' };
+  });
+
+  // ---- v1.0.36: Omega ist Pro aus v0.9.50 und bleibt bitgleich ----
+  // Die Liste steht hier ABSICHTLICH ein zweites Mal: sie ist der Wortlaut von Pro in v0.9.50
+  // (aus der APK gelesen) plus phys-mode. Wer Omega aendert, muss auch diesen Test aendern -
+  // und das soll er nicht.
+  stAdd('Omega bleibt bitgleich (Pro aus v0.9.50), Anzeige zeigt das gewaehlte bei Gleichstand', () => {
+    const f = [];
+    const soll = { 'phys-mode': 'physik', 'setting-grip': 1, 'setting-brakepower': 1.4, 'setting-autoshift': true,
+      'setting-zero-to-top': 2.6, 'setting-coast-drag': 0.6, 'setting-fuelweight': 1, 'setting-tyres': 1,
+      'phys-steerresp': 3, 'setting-brakebias': 62, 'setting-steer-calib': 2.5, 'setting-brake-steal': 1.15,
+      'setting-tyre-blankets': false, 'phys-accel': 1, 'setting-fuel-drain': 1, 'setting-crash-count': 4,
+      'setting-crash-damage': true, 'setting-crash-schaden': true, 'setting-crash-bremse': true,
+      'setting-crash-auffahr': true, 'setting-crash-threshold': 40, 'setting-repair-time': 4,
+      'setting-brake-fade': true, 'setting-brake-fade-strength': 1.5, 'setting-dirtyair': false,
+      'setting-dirtyair-strength': 1, 'setting-tyre-asym': true, 'setting-tyre-pressure': 1.8,
+      'setting-topspeed': 1.8 };
+    const ist = window.__presetValues ? window.__presetValues('omega') : null;
+    if (!ist) return { ok: false, mass: 'kein Preset omega' };
+    const sortiert = (o) => JSON.stringify(Object.keys(o).sort().map((k) => [k, o[k]]));
+    if (sortiert(ist) !== sortiert(soll)) f.push('Omega weicht ab: ' + Object.keys(Object.assign({}, soll, ist)).filter((k) => ist[k] !== soll[k]).join(', '));
+    // Anzeige: gleiche Werte wie Pro -> das zuletzt gewaehlte gewinnt.
+    const merk = presetZuletzt;
+    try {
+      presetZuletzt = 'omega';
+      const a1 = window.__presetActive();
+      presetZuletzt = 'pro';
+      const a2 = window.__presetActive();
+      if ((a1 === 'pro' || a1 === 'omega') && a1 !== 'omega') f.push('Omega gewaehlt, Anzeige ' + a1);
+      if ((a2 === 'pro' || a2 === 'omega') && a2 !== 'pro') f.push('Pro gewaehlt, Anzeige ' + a2);
+    } finally { presetZuletzt = merk; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Omega = Pro aus v0.9.50, Anzeige folgt der Wahl' };
+  });
+
+  // ---- v1.0.36: Runde 1 beginnt an der Linie, wenn die erste Ueberfahrt nur der Anlauf war ----
+  stAdd('Rundenzeiten: Anlauf zur Linie zaehlt nicht als Runde (Kacheln seit dem Losfahren)', () => {
+    const f = [];
+    const merk = { rs: raceState, laps: raceLapTimes, ls: raceLapStart, form: raceFormationLap, tm: trackMode,
+                   tiles: currentTrackTiles, z: dashLastTileCounter, az: raceAnlaufZaehler, dl: dashLapStart,
+                   rm: raceMode, dt: dashLapTimes.slice(), ev: raceLapEvents.slice(), sc: sectorCount };
+    try {
+      currentTrackTiles = codeToTrack('SG4R4G4').tiles;          // 13 Teile
+      trackMode = 'on'; raceState = 'racing'; raceFormationLap = false; raceLapTimes = [];
+      raceMode = 'practice'; sectorCount = 1; sectorReset();
+      const jetzt = Date.now();
+      raceLapStart = jetzt - 2500; raceAnlaufZaehler = 10; dashLastTileCounter = 12;   // 2 Kacheln
+      playerLapCrossed();
+      if (raceLapTimes.length) f.push('Anlauf von 2 Kacheln als Runde gezaehlt: ' + raceLapTimes[0].ms);
+      if (!(Date.now() - raceLapStart < 200)) f.push('Runde 1 beginnt nicht an der Linie');
+      // Start hinter der Linie: die erste Ueberfahrt nach einer ganzen Runde zaehlt.
+      raceLapTimes = []; raceLapStart = Date.now() - 9000; raceAnlaufZaehler = 250; dashLastTileCounter = 7;  // 13 Kacheln, ueber 255
+      const vorher = raceLapTimes.length;
+      raceAnlaufZaehler = 250;
+      const echt = { ch: playLapChime, sp: speakLap };
+      playLapChime = () => {}; speakLap = () => {};
+      try { playerLapCrossed(); } finally { playLapChime = echt.ch; speakLap = echt.sp; }
+      if (raceLapTimes.length !== vorher + 1) f.push('volle erste Runde nicht gezaehlt');
+    } finally {
+      raceState = merk.rs; raceLapTimes = merk.laps; raceLapStart = merk.ls; raceFormationLap = merk.form;
+      trackMode = merk.tm; currentTrackTiles = merk.tiles; dashLastTileCounter = merk.z; raceAnlaufZaehler = merk.az;
+      dashLapStart = merk.dl; raceMode = merk.rm; dashLapTimes = merk.dt; raceLapEvents = merk.ev;
+      sectorCount = merk.sc; sectorReset();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Anlauf 2 Kacheln: Runde 1 ab der Linie; volle Runde zaehlt' };
   });
 
   stAdd('Telemetrie-Seite: Karte, Balken und Tempo aus zwei Runden, Rundenweg steigt', () => {
