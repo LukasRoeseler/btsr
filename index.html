@@ -4676,7 +4676,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.38</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.39</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4734,7 +4734,7 @@
            (Ford und BMW von hinten), statt Fahrgefuehl (das ist ja in Garage und Optionen)."
            Die Kennung bleibt fa-profil, weil Menuefuehrung und Tutorial sie kennen. -->
       <div class="k-kachel k-klein k-meister" id="fa-profil" role="button" tabindex="0">
-        <span class="k-kk">Meisterschaft <span class="wip-tag">experimentell</span></span>
+        <span class="k-kk">Meisterschaft</span>
         <span class="k-kopf"><span class="k-kt">Meisterschaft erstellen</span></span>
         <span class="k-ki"></span>
       </div>
@@ -5806,6 +5806,9 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Meisterschaft und Safety Car sind nicht mehr als experimentell bzw. WIP gekennzeichnet.</li>
+        <li>Startaufstellung: Die Einlenkst&#228;rke steht ab Werk auf 0 (auch ein gemerkter Wert wurde zur&#252;ckgesetzt). Die Autos fahren genau mittig bis zu ihrem Platz und halten dort sofort mit voller Bremse; mit Einlenken erst ein Takt zur Seite, einer zur&#252;ck, dann sofort halten.</li>
+        <li>Ende der Safety-Car-Phase: Dein Auto bleibt beim Autopiloten, bis der Ton-Countdown heruntergelaufen ist. Danach springt das Tempo nicht mehr hoch &#8211; das Auto &#252;bernimmt sein aktuelles Tempo und rollt von dort aus, solange du kein Gas gibst (vorher kam schlagartig der Tempofaktor des Fahrgef&#252;hls dazu).</li>
         <li>Safety Car (WIP): In seiner ersten Runde f&#228;hrt es h&#246;chstens im Formationstempo hinterher und h&#228;lt Abstand zum Vordermann; zum &#220;berholen setzt es nie an. Beim fliegenden Start z&#228;hlt die Einf&#252;hrungsrunde nicht mit &#8211; es parkt erst nach der ersten Rennrunde.</li>
         <li>Streckenscan: Ist kein Spieler 1 verbunden, f&#228;hrt jetzt das erste verbundene Auto den Scan (mittig, im Scan-Tempo, neben der Bahn ohne Gas). Vorher wurde es zwar ausgew&#228;hlt, blieb aber stehen.</li>
         <li>Safety Car (WIP): Es startet vom letzten Startplatz (auch in der automatischen Aufstellung), f&#228;hrt die erste Runde hinter dem Feld mit und parkt danach rechts an Start/Ziel &#8211; so wissen alle Autos, wo es steht. Unter Gelb f&#228;hrt es weiter langsamer als das Feld, bleibt aber nie mehr stehen (mindestens 30 %); vorher dr&#252;ckten Abstandsregel und Kurvendrosselung es unter die Lesegrenze.</li>
@@ -8982,7 +8985,7 @@
       <div class="opt-row"><div class="opt-label">Gelbe Flagge deaktivieren<small>An: Der Knopf
           &bdquo;Gelbe Flagge&ldquo; und das Halten der Boxentaste rufen kein Gelb mehr aus.</small></div>
         <label class="tgl"><input type="checkbox" id="race-gelb-aus"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Safety Car: erst aufschlie&szlig;en<span class="wip-tag">WIP</span><small>An:
+      <div class="opt-row"><div class="opt-label">Safety Car: erst aufschlie&szlig;en<small>An:
           Unter Gelb mit Safety Car fahren alle mit etwa 45&nbsp;% heran und ab zwei Kacheln Abstand
           mit 35&nbsp;% weiter, in Kurven und Haarnadeln gedrosselt. Aus: alle sofort 35&nbsp;%.
           &Uuml;berholt wird unter Gelb nie.</small></div>
@@ -8994,9 +8997,9 @@
           volle Einschlag, kleiner, wenn die Autos neben die Bahn rutschen. 0 = gar nicht.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="race-einpark-staerke" min="0" max="1" step="0.05" value="1" data-preset-skip>
+          <input type="range" id="race-einpark-staerke" min="0" max="1" step="0.05" value="0" data-preset-skip>
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="race-einpark-staerke-val">100 %</span>
+          <span class="opt-val" id="race-einpark-staerke-val">0 %</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Time Attack: NPCs als Challenger<span class="wip-tag">WIP</span><small>In
           Time Attack auf der Bahn fahren alle NPCs als Challenger gegen dich. Gegen meine Bestzeit:
@@ -12092,7 +12095,7 @@
     <!-- v1.0.22 GEMELDET: "Aus dem Meisterschaftsmenue komme ich nicht raus, weil das Kreuz oben rechts
          hinter dem Tab ist." Das Kreuz steht jetzt links vorn, gross, und die Zurueck-Taste schliesst auch. -->
     <div class="ms-kopf"><button type="button" class="ms-zu" id="ms-zu" aria-label="Schließen">&#10005;</button>
-      <b id="ms-titel"></b><span class="wip-tag" id="ms-wip"></span><span class="ms-hint" id="ms-hint"></span></div>
+      <b id="ms-titel"></b><span class="ms-hint" id="ms-hint"></span></div>
     <div class="ms-grid" id="ms-grid"><div class="ms-liste" id="ms-liste"></div><div class="ms-detail" id="ms-detail"></div></div>
     <div class="ms-toast" id="ms-toast"></div>
   </div>
@@ -13791,6 +13794,9 @@
     "Safety Car (WIP): Es startet vom letzten Startplatz (auch in der automatischen Aufstellung), fährt die erste Runde hinter dem Feld mit und parkt danach rechts an Start/Ziel – so wissen alle Autos, wo es steht. Unter Gelb fährt es weiter langsamer als das Feld, bleibt aber nie mehr stehen (mindestens 30 %); vorher drückten Abstandsregel und Kurvendrosselung es unter die Lesegrenze.": "Safety car (WIP): it starts from the last grid slot (in the automatic grid too), drives the first lap behind the field and then parks on the right at start/finish – so every car knows where it stands. Under yellow it still drives slower than the field but never stops any more (at least 30 %); before, the gap rule and curve throttling pushed it below the reading threshold.",
     "Streckenscan: Ist kein Spieler 1 verbunden, fährt jetzt das erste verbundene Auto den Scan (mittig, im Scan-Tempo, neben der Bahn ohne Gas). Vorher wurde es zwar ausgewählt, blieb aber stehen.": "Track scan: if no player 1 is connected, the first connected car now drives the scan (in the middle, at scan speed, no throttle off the track). Before, it was selected but stood still.",
     "Safety Car (WIP): In seiner ersten Runde fährt es höchstens im Formationstempo hinterher und hält Abstand zum Vordermann; zum Überholen setzt es nie an. Beim fliegenden Start zählt die Einführungsrunde nicht mit – es parkt erst nach der ersten Rennrunde.": "Safety car (WIP): in its first lap it follows at formation speed at most and keeps its distance to the car ahead; it never starts an overtake. With a flying start the formation lap does not count – it only parks after the first racing lap.",
+    "Ende der Safety-Car-Phase: Dein Auto bleibt beim Autopiloten, bis der Ton-Countdown heruntergelaufen ist. Danach springt das Tempo nicht mehr hoch – das Auto übernimmt sein aktuelles Tempo und rollt von dort aus, solange du kein Gas gibst (vorher kam schlagartig der Tempofaktor des Fahrgefühls dazu).": "End of the safety car phase: your car stays on the autopilot until the tone countdown has run out. After that the speed no longer jumps up – the car keeps its current speed and coasts from there unless you accelerate (before, the driving feel's speed factor kicked in all at once).",
+    "Startaufstellung: Die Einlenkstärke steht ab Werk auf 0 (auch ein gemerkter Wert wurde zurückgesetzt). Die Autos fahren genau mittig bis zu ihrem Platz und halten dort sofort mit voller Bremse; mit Einlenken erst ein Takt zur Seite, einer zurück, dann sofort halten.": "Grid: the steering strength is 0 by default (a saved value was reset too). The cars drive exactly in the middle to their slot and stop there at once with full brake; with steering enabled, first one tick to the side, one back, then stop at once.",
+    "Meisterschaft und Safety Car sind nicht mehr als experimentell bzw. WIP gekennzeichnet.": "Championship and safety car are no longer marked as experimental or WIP.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -23778,7 +23784,10 @@
       return (flagState === 'yellow' && yellowFactor() < formationPace())
         ? 'yellow' : 'formation';
     }
-    if (flagState !== 'yellow') return null;
+    // v1.0.39 BESTELLT: "Lass mich erst wieder die Kontrolle uebernehmen, nachdem der Toene-
+    // Countdown heruntergelaufen ist, wenn die Safety-Car-Phase endet." Die Anfahrt ('restart')
+    // gehoert also noch zum Autopiloten.
+    if (flagState !== 'yellow' && flagState !== 'restart') return null;
     // v1.0.9 BESTELLT: "Bei meinem Auto sollte bei Safetycar sofort der Autopilot uebernehmen,
     // nicht erst, wenn ich nah am Safetycar bin." Also wie jede gelbe Flagge.
     return 'yellow';
@@ -23813,6 +23822,28 @@
     const st = motor.state, v = Math.max(0, Math.min(1, gas || 0)) * motor.config.topSpeedKmh;
     st.speedKmh = v;
     if ('virtualSpeed' in st) st.virtualSpeed = v;
+  }
+  // ---- UEBERGABE VOM AUTOPILOTEN AN DEN FAHRER (v1.0.39) ---------------------------------
+  // BESTELLT: "Stell meine Geschwindigkeit nicht ploetzlich hoch, denn das faehrt mein Auto von
+  // der Bahn. Wenn die Safety-Car-Phase um ist, soll das Auto von der aktuellen Geschwindigkeit
+  // entkoppelt werden und von da aus ausrollen (ausser ich gebe Gas)." Unter Autopilot geht das
+  // Gas ungestreckt hinaus (ohne topSpeedScale und Akku-Ausgleich, siehe sendControlValue).
+  // Mit dem Ende kommen beide Faktoren zurueck - das Modell rollte mit seinem Tempo weiter, und
+  // dasselbe Tempo ergab ploetzlich bis zu 1,8-mal so viel Gas. Also wird das Modell beim
+  // Uebergang durch denselben Faktor geteilt: es geht genau das Gas von vorher hinaus, und von
+  // dort rollt das Auto aus. Im Modus RC (ohne Modell) dasselbe ueber den Auslaufwert.
+  let apVorher = false;
+  function apUebergabe() {
+    const f = Math.max(0.05, (topSpeedScale || 1)
+      * (typeof batteryCompensationScale === 'function' ? batteryCompensationScale() : 1));
+    if (physicsEnabled) {
+      const st = physEngine.state;
+      st.speedKmh /= f;
+      if (typeof st.virtualSpeed === 'number') st.virtualSpeed /= f;
+    } else if (typeof rcLage !== 'undefined') {
+      rcLage.wert = Math.max(0, Math.min(1, (physOutThrottle || 0) / f));
+    }
+    log('Autopilot aus: Tempo uebernommen (Faktor ' + f.toFixed(2) + '), Auto rollt von dort aus.', 'info');
   }
   function autopilotGreiftFuer(wer) {
     const zPl = wer >= 2 ? zusatzPlatz(wer) : null;
@@ -24161,7 +24192,7 @@
     // vorher; es bekommt deshalb das, was der Stick gerade verlangt, als Startwert.
     physApTakt = false;
     if (!physicsEnabled) {
-      if (!autopilotGreiftFuer(1)) { physLastTime = null; return; }
+      if (!autopilotGreiftFuer(1)) { if (apVorher) apUebergabe(); apVorher = false; physLastTime = null; return; }
       physApTakt = true;
       if (physLastTime === null) apEinstieg(physEngine, typeof rcLage !== "undefined" ? rcLage.wert : throttleY);
     }
@@ -24199,6 +24230,8 @@
     // Bei gelber Flagge und in der Einfuehrungsrunde faehrt das Auto selbst. Siehe
     // autopilotGrund() fuer die zwei Gruende und autopilot() fuer die Regelung.
     const ap = autopilot(rawBrake);
+    if (!ap && apVorher) apUebergabe();
+    apVorher = !!ap;
     if (ap) {
       rawThrottle = ap.throttle;
       rawBrake = ap.brake;
@@ -44200,7 +44233,6 @@
   function msZeichnen() {
     if (!msOffen) return;
     $('ms-titel').textContent = t(msAnsicht === 'plan' ? 'Meisterschaft planen' : 'Meisterschaft');
-    $('ms-wip').textContent = t('experimentell');
     if (msAnsicht === 'plan') msPlanZeichnen(); else msStandZeichnen();
   }
   function msPlanZeichnen() {
@@ -44230,7 +44262,7 @@
       } else {
         h += '<button type="button" class="ms-knopf primary' + sel + '" data-k="' + k + '">'
           + msEsc(t('Meisterschaft starten')) + ' · ' + evs.length + ' ' + msEsc(t('Events'))
-          + ' <span class="wip-tag">WIP</span></button>';
+          + '</button>';
       }
     });
     const liste = $('ms-liste');
@@ -48953,7 +48985,7 @@
         <div class="gk-rolle" data-rollen="${GAR_ROLLEN.map((r) => r.id).join(',')}" data-rolle="${rolle.id}">
           <button type="button" data-act="rolle" data-d="-1" aria-label="Rolle zurück">&#9664;</button>
           <b>${t(rolle.name)}</b>${zusatzPlatzVonRolle(rolle.id) ? '<span class="wip-tag">experimentell</span>'
-            : rolle.id === 'safetycar' ? '<span class="wip-tag">WIP</span>' : ''}
+            : ''}
           <button type="button" data-act="rolle" data-d="1" aria-label="Rolle vor">&#9654;</button>
         </div>
         <select class="gk-rolle-wahl" hidden data-preset-skip data-blaettern="1" aria-label="Rolle">${frei.map((r) =>
@@ -49648,7 +49680,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // zur Seite (EINPARK_MS, Staerke aus dem Regler), ein Takt zurueck, dann bremsen - alles
     // ohne Spur-Bytes, damit die Spurfuehrung das Auto nicht wieder zur Mitte zieht.
     const staerke = einparkStaerke();
-    randHaltStarten(car, { phase: 'rad', quer: 0, tempo: formationPace(), haltMs: AUFSTELL_HALT_MS,
+    // v1.0.39 BESTELLT: "10 ms in die eine Richtung lenken, dann 10 ms in die andere, dann sofort
+    // halten. Bis dahin genau mittig fahren." Ohne Einlenken (Vorgabe 0) gleich halten; die Bremse
+    // greift sofort voll (sofort), ohne die Rampe des Boxenstopps.
+    randHaltStarten(car, { phase: staerke > 0 ? 'rad' : 'halt', quer: 0, tempo: formationPace(), haltMs: AUFSTELL_HALT_MS, sofort: true,
                            radLenk: staerke > 0 ? seite * EINPARK_LENK * staerke : 0,
                            radMs: EINPARK_MS, gegenMs: EINPARK_MS, fertig: (c) => {
       log(garageLabel(c) + ': steht auf seinem Startplatz.', 'info');
@@ -51428,7 +51463,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // "kein Griff", ein Wert heisst "so bremsen".
   function pitBremse(car) {
     const rh = car.ghost && car.ghost.randHalt;
-    if (rh) return rh.phase === 'halt' ? Math.max(0, Math.min(1, (Date.now() - rh.at) / PIT_BREMS_RAMPE_MS)) : null;
+    if (rh) return rh.phase === 'halt' ? (rh.sofort ? 1 : Math.max(0, Math.min(1, (Date.now() - rh.at) / PIT_BREMS_RAMPE_MS))) : null;
     const p = car.ghost && car.ghost.pit;
     if (!p) return null;
     // In der Randphase wird NICHT gebremst - dort wird gefahren.
@@ -51626,12 +51661,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // v1.0.37 BESTELLT: "Lass das bei 10 ms und lass mich im Schieberegler einstellen, wie stark
   // eingelenkt wird (Standard = voll, und dann runterregeln lassen)." Die Dauer ist jetzt fest
   // (EINPARK_MS), der Regler gibt die Staerke des Einschlags (0-100 %).
-  const EINPARK_LENK = 1.0, EINPARK_MS = 10, EINPARK_STORE = 'omegasim-einpark-staerke';
+  // v1.0.39 BESTELLT: "Einlenken bei Startaufstellung standardmaessig auf 0 - das fuehrt nur dazu,
+  // dass die Autos runterrollen." Neuer Speicherschluessel, damit auch ein gemerktes 100 % auf 0 geht.
+  const EINPARK_LENK = 1.0, EINPARK_MS = 10, EINPARK_STORE = 'omegasim-einpark-staerke-v2';
   function einparkMs() { return EINPARK_MS; }
   function einparkStaerke() {
     const el = $('race-einpark-staerke');
-    const v = el ? parseFloat(el.value) : 1;
-    return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 1;
+    const v = el ? parseFloat(el.value) : 0;
+    return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0;
   }
   if ($('race-einpark-staerke')) {
     const el = $('race-einpark-staerke');
@@ -51650,7 +51687,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                    tempo: opt.tempo === undefined ? formationPace() : opt.tempo,
                    randMs: opt.randMs || 0, haltMs: opt.haltMs || PIT_BREMS_MS, fertig: opt.fertig || null,
                    nachRandMs: opt.nachRandMs || 0, randErreicht: 0,
-                   radLenk: opt.radLenk || 0, radMs: opt.radMs || 0, gegenMs: opt.gegenMs || 0 };
+                   radLenk: opt.radLenk || 0, radMs: opt.radMs || 0, gegenMs: opt.gegenMs || 0,
+                   sofort: !!opt.sofort };
   }
   // Nach der Randfahrt: mit radLenk erst noch mit eingeschlagenen Raedern an den Rand ('rad'),
   // sonst gleich halten.
@@ -86004,8 +86042,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!rb || rb.throttle !== 0 || !(rb.brake >= 0.8)) f.push('Fahrerbremse wird ueberstimmt');
       aufstellSpieler.get(auto).fertig = true;
       // v1.0.37: ein Takt Uebergang, ein Takt Einlenken, ein Takt zurueck, dann stehen.
+      // (v1.0.39: ab Werk ohne Einlenken - fuer diesen Teil den Regler auf 100 %.)
+      const reglerEP = $('race-einpark-staerke'), reglerEPMerk = reglerEP ? reglerEP.value : null; if (reglerEP) reglerEP.value = '1';
       autopilot(0, 1);
       const ein = autopilot(0, 1), zur = autopilot(0, 1);
+      if (reglerEP) reglerEP.value = reglerEPMerk;
       if (!ein || !(Math.abs(ein.radLenk) > 0) || !zur || Math.sign(zur.radLenk) !== -Math.sign(ein.radLenk)) {
         f.push('kein Einlenk-Takt mit Gegenlenken: ' + (ein && ein.radLenk) + '/' + (zur && zur.radLenk));
       }
@@ -87032,7 +87073,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     } finally {
       currentTrackTiles = merk.tiles; trackMode = merk.tm; playerCar = merk.pc; garageScan.aktiv = merk.aktiv;
       garageScan.car = merk.car; physicsEnabled = merk.phys; flagState = merk.fl; physLastTime = null; physApTakt = false;
-      physEngine.state.speedKmh = merk.v;
+      physEngine.state.speedKmh = merk.v; apVorher = false;
+      if (typeof rcZuruecksetzen === 'function') rcZuruecksetzen();
       autopilotZuruecksetzen();
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Spur-Bytes beim Scan, Autopilot bei RC fuer Scan und Gelb' };
@@ -87047,7 +87089,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                  ghost: { running: true, tileIndex: 0, scHeim: true } };
     try {
       garage.length = 0; garage.push(sc);
+      const reglerEP = $('race-einpark-staerke'), reglerEPMerk = reglerEP ? reglerEP.value : null; if (reglerEP) reglerEP.value = '1';
       safetyCarAbstellen(sc);
+      if (reglerEP) reglerEP.value = reglerEPMerk;
       const h = sc.ghost.randHalt;
       if (!h || h.phase !== 'rand') f.push('kein Randhalt');
       if (pitQuer(sc) !== FINISH_RAND) f.push('Querlage ' + pitQuer(sc) + ' statt ganz rechts');
@@ -87163,7 +87207,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       safetyCarHeimTick(sc);
       if (sc.ghost.randHalt) f.push('weit vor der Linie schon am Rand');
       sc.ghost.tileIndex = n - 1;
+      const reglerEP = $('race-einpark-staerke'), reglerEPMerk = reglerEP ? reglerEP.value : null; if (reglerEP) reglerEP.value = '1';
       safetyCarHeimTick(sc);
+      if (reglerEP) reglerEP.value = reglerEPMerk;
       const h = sc.ghost.randHalt;
       if (!h || h.phase !== 'rand' || !h.scLinie) f.push('vor der Linie nicht nach rechts');
       else {
@@ -87500,6 +87546,30 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       garage.length = 0; merk.garage.forEach((c) => garage.push(c));
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'faehrt mittig, haelt neben der Bahn, stoppt mit dem Scan' };
+  });
+
+  // ---- v1.0.39: Kontrolle erst nach dem Countdown, danach Ausrollen vom aktuellen Tempo ----
+  stAdd('Gelb v1.0.39: Autopilot bis zum Ende der Anfahrt, Uebergabe ohne Temposprung; Einparken ohne Einlenken', () => {
+    const f = [];
+    const merk = { fl: flagState, tm: trackMode, top: topSpeedScale, v: physEngine.state.speedKmh, vv: physEngine.state.virtualSpeed,
+                   phys: physicsEnabled, pc: playerCar, form: raceFormationLap };
+    try {
+      trackMode = 'on'; raceFormationLap = false; playerCar = null;
+      flagState = 'restart';
+      if (autopilotGrund() !== 'yellow') f.push('in der Anfahrt (Countdown) schon die Kontrolle zurueck');
+      flagState = 'green';
+      if (autopilotGrund() !== null) f.push('nach Gruen weiter Autopilot');
+      physicsEnabled = true; topSpeedScale = 1.5; physEngine.state.speedKmh = 30;
+      apUebergabe();
+      const erwartet = 30 / (1.5 * batteryCompensationScale());
+      if (Math.abs(physEngine.state.speedKmh - erwartet) > 1e-6) f.push('Modelltempo nach der Uebergabe ' + physEngine.state.speedKmh + ' statt ' + erwartet.toFixed(2));
+      if (!($('race-einpark-staerke') && $('race-einpark-staerke').defaultValue === '0')) f.push('Einlenkstaerke nicht ab Werk 0');
+    } finally {
+      flagState = merk.fl; trackMode = merk.tm; topSpeedScale = merk.top; physEngine.state.speedKmh = merk.v;
+      physEngine.state.virtualSpeed = merk.vv; physicsEnabled = merk.phys; playerCar = merk.pc; raceFormationLap = merk.form;
+      apVorher = false;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Autopilot bis Gruen, Uebergabe ohne Sprung, Einlenken ab Werk 0' };
   });
 
   stAdd('Telemetrie-Seite: Karte, Balken und Tempo aus zwei Runden, Rundenweg steigt', () => {

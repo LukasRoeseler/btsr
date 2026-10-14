@@ -1881,7 +1881,7 @@
         <div class="gk-rolle" data-rollen="${GAR_ROLLEN.map((r) => r.id).join(',')}" data-rolle="${rolle.id}">
           <button type="button" data-act="rolle" data-d="-1" aria-label="Rolle zurück">&#9664;</button>
           <b>${t(rolle.name)}</b>${zusatzPlatzVonRolle(rolle.id) ? '<span class="wip-tag">experimentell</span>'
-            : rolle.id === 'safetycar' ? '<span class="wip-tag">WIP</span>' : ''}
+            : ''}
           <button type="button" data-act="rolle" data-d="1" aria-label="Rolle vor">&#9654;</button>
         </div>
         <select class="gk-rolle-wahl" hidden data-preset-skip data-blaettern="1" aria-label="Rolle">${frei.map((r) =>
@@ -2576,7 +2576,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // zur Seite (EINPARK_MS, Staerke aus dem Regler), ein Takt zurueck, dann bremsen - alles
     // ohne Spur-Bytes, damit die Spurfuehrung das Auto nicht wieder zur Mitte zieht.
     const staerke = einparkStaerke();
-    randHaltStarten(car, { phase: 'rad', quer: 0, tempo: formationPace(), haltMs: AUFSTELL_HALT_MS,
+    // v1.0.39 BESTELLT: "10 ms in die eine Richtung lenken, dann 10 ms in die andere, dann sofort
+    // halten. Bis dahin genau mittig fahren." Ohne Einlenken (Vorgabe 0) gleich halten; die Bremse
+    // greift sofort voll (sofort), ohne die Rampe des Boxenstopps.
+    randHaltStarten(car, { phase: staerke > 0 ? 'rad' : 'halt', quer: 0, tempo: formationPace(), haltMs: AUFSTELL_HALT_MS, sofort: true,
                            radLenk: staerke > 0 ? seite * EINPARK_LENK * staerke : 0,
                            radMs: EINPARK_MS, gegenMs: EINPARK_MS, fertig: (c) => {
       log(garageLabel(c) + ': steht auf seinem Startplatz.', 'info');
@@ -4356,7 +4359,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // "kein Griff", ein Wert heisst "so bremsen".
   function pitBremse(car) {
     const rh = car.ghost && car.ghost.randHalt;
-    if (rh) return rh.phase === 'halt' ? Math.max(0, Math.min(1, (Date.now() - rh.at) / PIT_BREMS_RAMPE_MS)) : null;
+    if (rh) return rh.phase === 'halt' ? (rh.sofort ? 1 : Math.max(0, Math.min(1, (Date.now() - rh.at) / PIT_BREMS_RAMPE_MS))) : null;
     const p = car.ghost && car.ghost.pit;
     if (!p) return null;
     // In der Randphase wird NICHT gebremst - dort wird gefahren.
@@ -4554,12 +4557,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // v1.0.37 BESTELLT: "Lass das bei 10 ms und lass mich im Schieberegler einstellen, wie stark
   // eingelenkt wird (Standard = voll, und dann runterregeln lassen)." Die Dauer ist jetzt fest
   // (EINPARK_MS), der Regler gibt die Staerke des Einschlags (0-100 %).
-  const EINPARK_LENK = 1.0, EINPARK_MS = 10, EINPARK_STORE = 'omegasim-einpark-staerke';
+  // v1.0.39 BESTELLT: "Einlenken bei Startaufstellung standardmaessig auf 0 - das fuehrt nur dazu,
+  // dass die Autos runterrollen." Neuer Speicherschluessel, damit auch ein gemerktes 100 % auf 0 geht.
+  const EINPARK_LENK = 1.0, EINPARK_MS = 10, EINPARK_STORE = 'omegasim-einpark-staerke-v2';
   function einparkMs() { return EINPARK_MS; }
   function einparkStaerke() {
     const el = $('race-einpark-staerke');
-    const v = el ? parseFloat(el.value) : 1;
-    return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 1;
+    const v = el ? parseFloat(el.value) : 0;
+    return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0;
   }
   if ($('race-einpark-staerke')) {
     const el = $('race-einpark-staerke');
@@ -4578,7 +4583,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                    tempo: opt.tempo === undefined ? formationPace() : opt.tempo,
                    randMs: opt.randMs || 0, haltMs: opt.haltMs || PIT_BREMS_MS, fertig: opt.fertig || null,
                    nachRandMs: opt.nachRandMs || 0, randErreicht: 0,
-                   radLenk: opt.radLenk || 0, radMs: opt.radMs || 0, gegenMs: opt.gegenMs || 0 };
+                   radLenk: opt.radLenk || 0, radMs: opt.radMs || 0, gegenMs: opt.gegenMs || 0,
+                   sofort: !!opt.sofort };
   }
   // Nach der Randfahrt: mit radLenk erst noch mit eingeschlagenen Raedern an den Rand ('rad'),
   // sonst gleich halten.

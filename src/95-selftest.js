@@ -17206,8 +17206,11 @@
       if (!rb || rb.throttle !== 0 || !(rb.brake >= 0.8)) f.push('Fahrerbremse wird ueberstimmt');
       aufstellSpieler.get(auto).fertig = true;
       // v1.0.37: ein Takt Uebergang, ein Takt Einlenken, ein Takt zurueck, dann stehen.
+      // (v1.0.39: ab Werk ohne Einlenken - fuer diesen Teil den Regler auf 100 %.)
+      const reglerEP = $('race-einpark-staerke'), reglerEPMerk = reglerEP ? reglerEP.value : null; if (reglerEP) reglerEP.value = '1';
       autopilot(0, 1);
       const ein = autopilot(0, 1), zur = autopilot(0, 1);
+      if (reglerEP) reglerEP.value = reglerEPMerk;
       if (!ein || !(Math.abs(ein.radLenk) > 0) || !zur || Math.sign(zur.radLenk) !== -Math.sign(ein.radLenk)) {
         f.push('kein Einlenk-Takt mit Gegenlenken: ' + (ein && ein.radLenk) + '/' + (zur && zur.radLenk));
       }
@@ -18234,7 +18237,8 @@
     } finally {
       currentTrackTiles = merk.tiles; trackMode = merk.tm; playerCar = merk.pc; garageScan.aktiv = merk.aktiv;
       garageScan.car = merk.car; physicsEnabled = merk.phys; flagState = merk.fl; physLastTime = null; physApTakt = false;
-      physEngine.state.speedKmh = merk.v;
+      physEngine.state.speedKmh = merk.v; apVorher = false;
+      if (typeof rcZuruecksetzen === 'function') rcZuruecksetzen();
       autopilotZuruecksetzen();
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Spur-Bytes beim Scan, Autopilot bei RC fuer Scan und Gelb' };
@@ -18249,7 +18253,9 @@
                  ghost: { running: true, tileIndex: 0, scHeim: true } };
     try {
       garage.length = 0; garage.push(sc);
+      const reglerEP = $('race-einpark-staerke'), reglerEPMerk = reglerEP ? reglerEP.value : null; if (reglerEP) reglerEP.value = '1';
       safetyCarAbstellen(sc);
+      if (reglerEP) reglerEP.value = reglerEPMerk;
       const h = sc.ghost.randHalt;
       if (!h || h.phase !== 'rand') f.push('kein Randhalt');
       if (pitQuer(sc) !== FINISH_RAND) f.push('Querlage ' + pitQuer(sc) + ' statt ganz rechts');
@@ -18365,7 +18371,9 @@
       safetyCarHeimTick(sc);
       if (sc.ghost.randHalt) f.push('weit vor der Linie schon am Rand');
       sc.ghost.tileIndex = n - 1;
+      const reglerEP = $('race-einpark-staerke'), reglerEPMerk = reglerEP ? reglerEP.value : null; if (reglerEP) reglerEP.value = '1';
       safetyCarHeimTick(sc);
+      if (reglerEP) reglerEP.value = reglerEPMerk;
       const h = sc.ghost.randHalt;
       if (!h || h.phase !== 'rand' || !h.scLinie) f.push('vor der Linie nicht nach rechts');
       else {
@@ -18702,6 +18710,30 @@
       garage.length = 0; merk.garage.forEach((c) => garage.push(c));
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'faehrt mittig, haelt neben der Bahn, stoppt mit dem Scan' };
+  });
+
+  // ---- v1.0.39: Kontrolle erst nach dem Countdown, danach Ausrollen vom aktuellen Tempo ----
+  stAdd('Gelb v1.0.39: Autopilot bis zum Ende der Anfahrt, Uebergabe ohne Temposprung; Einparken ohne Einlenken', () => {
+    const f = [];
+    const merk = { fl: flagState, tm: trackMode, top: topSpeedScale, v: physEngine.state.speedKmh, vv: physEngine.state.virtualSpeed,
+                   phys: physicsEnabled, pc: playerCar, form: raceFormationLap };
+    try {
+      trackMode = 'on'; raceFormationLap = false; playerCar = null;
+      flagState = 'restart';
+      if (autopilotGrund() !== 'yellow') f.push('in der Anfahrt (Countdown) schon die Kontrolle zurueck');
+      flagState = 'green';
+      if (autopilotGrund() !== null) f.push('nach Gruen weiter Autopilot');
+      physicsEnabled = true; topSpeedScale = 1.5; physEngine.state.speedKmh = 30;
+      apUebergabe();
+      const erwartet = 30 / (1.5 * batteryCompensationScale());
+      if (Math.abs(physEngine.state.speedKmh - erwartet) > 1e-6) f.push('Modelltempo nach der Uebergabe ' + physEngine.state.speedKmh + ' statt ' + erwartet.toFixed(2));
+      if (!($('race-einpark-staerke') && $('race-einpark-staerke').defaultValue === '0')) f.push('Einlenkstaerke nicht ab Werk 0');
+    } finally {
+      flagState = merk.fl; trackMode = merk.tm; topSpeedScale = merk.top; physEngine.state.speedKmh = merk.v;
+      physEngine.state.virtualSpeed = merk.vv; physicsEnabled = merk.phys; playerCar = merk.pc; raceFormationLap = merk.form;
+      apVorher = false;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Autopilot bis Gruen, Uebergabe ohne Sprung, Einlenken ab Werk 0' };
   });
 
   stAdd('Telemetrie-Seite: Karte, Balken und Tempo aus zwei Runden, Rundenweg steigt', () => {

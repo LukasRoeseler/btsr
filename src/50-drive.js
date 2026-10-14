@@ -2639,7 +2639,10 @@
       return (flagState === 'yellow' && yellowFactor() < formationPace())
         ? 'yellow' : 'formation';
     }
-    if (flagState !== 'yellow') return null;
+    // v1.0.39 BESTELLT: "Lass mich erst wieder die Kontrolle uebernehmen, nachdem der Toene-
+    // Countdown heruntergelaufen ist, wenn die Safety-Car-Phase endet." Die Anfahrt ('restart')
+    // gehoert also noch zum Autopiloten.
+    if (flagState !== 'yellow' && flagState !== 'restart') return null;
     // v1.0.9 BESTELLT: "Bei meinem Auto sollte bei Safetycar sofort der Autopilot uebernehmen,
     // nicht erst, wenn ich nah am Safetycar bin." Also wie jede gelbe Flagge.
     return 'yellow';
@@ -2674,6 +2677,28 @@
     const st = motor.state, v = Math.max(0, Math.min(1, gas || 0)) * motor.config.topSpeedKmh;
     st.speedKmh = v;
     if ('virtualSpeed' in st) st.virtualSpeed = v;
+  }
+  // ---- UEBERGABE VOM AUTOPILOTEN AN DEN FAHRER (v1.0.39) ---------------------------------
+  // BESTELLT: "Stell meine Geschwindigkeit nicht ploetzlich hoch, denn das faehrt mein Auto von
+  // der Bahn. Wenn die Safety-Car-Phase um ist, soll das Auto von der aktuellen Geschwindigkeit
+  // entkoppelt werden und von da aus ausrollen (ausser ich gebe Gas)." Unter Autopilot geht das
+  // Gas ungestreckt hinaus (ohne topSpeedScale und Akku-Ausgleich, siehe sendControlValue).
+  // Mit dem Ende kommen beide Faktoren zurueck - das Modell rollte mit seinem Tempo weiter, und
+  // dasselbe Tempo ergab ploetzlich bis zu 1,8-mal so viel Gas. Also wird das Modell beim
+  // Uebergang durch denselben Faktor geteilt: es geht genau das Gas von vorher hinaus, und von
+  // dort rollt das Auto aus. Im Modus RC (ohne Modell) dasselbe ueber den Auslaufwert.
+  let apVorher = false;
+  function apUebergabe() {
+    const f = Math.max(0.05, (topSpeedScale || 1)
+      * (typeof batteryCompensationScale === 'function' ? batteryCompensationScale() : 1));
+    if (physicsEnabled) {
+      const st = physEngine.state;
+      st.speedKmh /= f;
+      if (typeof st.virtualSpeed === 'number') st.virtualSpeed /= f;
+    } else if (typeof rcLage !== 'undefined') {
+      rcLage.wert = Math.max(0, Math.min(1, (physOutThrottle || 0) / f));
+    }
+    log('Autopilot aus: Tempo uebernommen (Faktor ' + f.toFixed(2) + '), Auto rollt von dort aus.', 'info');
   }
   function autopilotGreiftFuer(wer) {
     const zPl = wer >= 2 ? zusatzPlatz(wer) : null;
@@ -3022,7 +3047,7 @@
     // vorher; es bekommt deshalb das, was der Stick gerade verlangt, als Startwert.
     physApTakt = false;
     if (!physicsEnabled) {
-      if (!autopilotGreiftFuer(1)) { physLastTime = null; return; }
+      if (!autopilotGreiftFuer(1)) { if (apVorher) apUebergabe(); apVorher = false; physLastTime = null; return; }
       physApTakt = true;
       if (physLastTime === null) apEinstieg(physEngine, typeof rcLage !== "undefined" ? rcLage.wert : throttleY);
     }
@@ -3060,6 +3085,8 @@
     // Bei gelber Flagge und in der Einfuehrungsrunde faehrt das Auto selbst. Siehe
     // autopilotGrund() fuer die zwei Gruende und autopilot() fuer die Regelung.
     const ap = autopilot(rawBrake);
+    if (!ap && apVorher) apUebergabe();
+    apVorher = !!ap;
     if (ap) {
       rawThrottle = ap.throttle;
       rawBrake = ap.brake;

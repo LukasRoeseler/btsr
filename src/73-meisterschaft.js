@@ -590,7 +590,6 @@
   function msZeichnen() {
     if (!msOffen) return;
     $('ms-titel').textContent = t(msAnsicht === 'plan' ? 'Meisterschaft planen' : 'Meisterschaft');
-    $('ms-wip').textContent = t('experimentell');
     if (msAnsicht === 'plan') msPlanZeichnen(); else msStandZeichnen();
   }
   function msPlanZeichnen() {
@@ -620,7 +619,7 @@
       } else {
         h += '<button type="button" class="ms-knopf primary' + sel + '" data-k="' + k + '">'
           + msEsc(t('Meisterschaft starten')) + ' · ' + evs.length + ' ' + msEsc(t('Events'))
-          + ' <span class="wip-tag">WIP</span></button>';
+          + '</button>';
       }
     });
     const liste = $('ms-liste');

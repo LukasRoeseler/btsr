@@ -4676,7 +4676,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.38</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.39</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4734,7 +4734,7 @@
            (Ford und BMW von hinten), statt Fahrgefuehl (das ist ja in Garage und Optionen)."
            Die Kennung bleibt fa-profil, weil Menuefuehrung und Tutorial sie kennen. -->
       <div class="k-kachel k-klein k-meister" id="fa-profil" role="button" tabindex="0">
-        <span class="k-kk">Meisterschaft <span class="wip-tag">experimentell</span></span>
+        <span class="k-kk">Meisterschaft</span>
         <span class="k-kopf"><span class="k-kt">Meisterschaft erstellen</span></span>
         <span class="k-ki"></span>
       </div>
@@ -5806,6 +5806,9 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Meisterschaft und Safety Car sind nicht mehr als experimentell bzw. WIP gekennzeichnet.</li>
+        <li>Startaufstellung: Die Einlenkst&#228;rke steht ab Werk auf 0 (auch ein gemerkter Wert wurde zur&#252;ckgesetzt). Die Autos fahren genau mittig bis zu ihrem Platz und halten dort sofort mit voller Bremse; mit Einlenken erst ein Takt zur Seite, einer zur&#252;ck, dann sofort halten.</li>
+        <li>Ende der Safety-Car-Phase: Dein Auto bleibt beim Autopiloten, bis der Ton-Countdown heruntergelaufen ist. Danach springt das Tempo nicht mehr hoch &#8211; das Auto &#252;bernimmt sein aktuelles Tempo und rollt von dort aus, solange du kein Gas gibst (vorher kam schlagartig der Tempofaktor des Fahrgef&#252;hls dazu).</li>
         <li>Safety Car (WIP): In seiner ersten Runde f&#228;hrt es h&#246;chstens im Formationstempo hinterher und h&#228;lt Abstand zum Vordermann; zum &#220;berholen setzt es nie an. Beim fliegenden Start z&#228;hlt die Einf&#252;hrungsrunde nicht mit &#8211; es parkt erst nach der ersten Rennrunde.</li>
         <li>Streckenscan: Ist kein Spieler 1 verbunden, f&#228;hrt jetzt das erste verbundene Auto den Scan (mittig, im Scan-Tempo, neben der Bahn ohne Gas). Vorher wurde es zwar ausgew&#228;hlt, blieb aber stehen.</li>
         <li>Safety Car (WIP): Es startet vom letzten Startplatz (auch in der automatischen Aufstellung), f&#228;hrt die erste Runde hinter dem Feld mit und parkt danach rechts an Start/Ziel &#8211; so wissen alle Autos, wo es steht. Unter Gelb f&#228;hrt es weiter langsamer als das Feld, bleibt aber nie mehr stehen (mindestens 30 %); vorher dr&#252;ckten Abstandsregel und Kurvendrosselung es unter die Lesegrenze.</li>
@@ -8982,7 +8985,7 @@
       <div class="opt-row"><div class="opt-label">Gelbe Flagge deaktivieren<small>An: Der Knopf
           &bdquo;Gelbe Flagge&ldquo; und das Halten der Boxentaste rufen kein Gelb mehr aus.</small></div>
         <label class="tgl"><input type="checkbox" id="race-gelb-aus"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Safety Car: erst aufschlie&szlig;en<span class="wip-tag">WIP</span><small>An:
+      <div class="opt-row"><div class="opt-label">Safety Car: erst aufschlie&szlig;en<small>An:
           Unter Gelb mit Safety Car fahren alle mit etwa 45&nbsp;% heran und ab zwei Kacheln Abstand
           mit 35&nbsp;% weiter, in Kurven und Haarnadeln gedrosselt. Aus: alle sofort 35&nbsp;%.
           &Uuml;berholt wird unter Gelb nie.</small></div>
@@ -8994,9 +8997,9 @@
           volle Einschlag, kleiner, wenn die Autos neben die Bahn rutschen. 0 = gar nicht.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="race-einpark-staerke" min="0" max="1" step="0.05" value="1" data-preset-skip>
+          <input type="range" id="race-einpark-staerke" min="0" max="1" step="0.05" value="0" data-preset-skip>
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="race-einpark-staerke-val">100 %</span>
+          <span class="opt-val" id="race-einpark-staerke-val">0 %</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Time Attack: NPCs als Challenger<span class="wip-tag">WIP</span><small>In
           Time Attack auf der Bahn fahren alle NPCs als Challenger gegen dich. Gegen meine Bestzeit:
@@ -12092,7 +12095,7 @@
     <!-- v1.0.22 GEMELDET: "Aus dem Meisterschaftsmenue komme ich nicht raus, weil das Kreuz oben rechts
          hinter dem Tab ist." Das Kreuz steht jetzt links vorn, gross, und die Zurueck-Taste schliesst auch. -->
     <div class="ms-kopf"><button type="button" class="ms-zu" id="ms-zu" aria-label="Schließen">&#10005;</button>
-      <b id="ms-titel"></b><span class="wip-tag" id="ms-wip"></span><span class="ms-hint" id="ms-hint"></span></div>
+      <b id="ms-titel"></b><span class="ms-hint" id="ms-hint"></span></div>
     <div class="ms-grid" id="ms-grid"><div class="ms-liste" id="ms-liste"></div><div class="ms-detail" id="ms-detail"></div></div>
     <div class="ms-toast" id="ms-toast"></div>
   </div>
