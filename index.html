@@ -4676,7 +4676,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.41</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.42</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5806,6 +5806,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Fahrphysik: Die Bremskraft baut jetzt eigenst&#228;ndig und deutlich schneller auf (0,12 s statt 0,45 s), damit beim Anbremsen die Lenkung schon am Kurveneingang nachl&#228;sst und nicht erst nach einer ganzen Kurve &#8211; wie bei einem echten Auto. Gas baut weiter weich auf. Gilt f&#252;r alle Fahrgef&#252;hle au&#223;er Omega (bleibt bei 0,45 s). Neuer Regler Bremsaufbau in den Physik-Optionen unter &#8222;Bremsen nimmt Lenkung&#8220;.</li>
         <li>App-Reaktionszeit (neue APK n&#246;tig): Die zwei Direktwege der APK (Steuerbefehle am Android-Hauptthread vorbei, Gamepad direkt) kamen in der Seite nicht an &#8211; jeder Befehl lief weiter &#252;ber den langsamen Weg. Fehlt der Direktweg beim Start, meldet die App ihn jetzt neu an und l&#228;dt einmal neu. Die Messzeile Funk-Rundlauf sagt, wenn ein Direktweg trotzdem fehlt, und nennt den Grund.</li>
         <li>Meisterschaft und Safety Car sind nicht mehr als experimentell bzw. WIP gekennzeichnet.</li>
         <li>Startaufstellung: Die Einlenkst&#228;rke steht ab Werk auf 0 (auch ein gemerkter Wert wurde zur&#252;ckgesetzt). Die Autos fahren genau mittig bis zu ihrem Platz und halten dort sofort mit voller Bremse; mit Einlenken erst ein Takt zur Seite, einer zur&#252;ck, dann sofort halten.</li>
@@ -10016,6 +10017,17 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-brake-steal-val">115%</span>
         </div></div>
+      <div class="opt-row"><div class="opt-label">Bremsaufbau<small>Wie schnell die Bremskraft am Reifen
+          ansteht - und damit, wie fr&uuml;h beim Anbremsen die Lenkung nachl&auml;sst (siehe &bdquo;Bremsen nimmt
+          Lenkung&ldquo;). Zeitkonstante in Sekunden: nach dieser Zeit sind rund zwei Drittel erreicht. Ein
+          echtes Auto liegt bei etwa 0,1&ndash;0,2&nbsp;s; Omega f&auml;hrt mit dem alten Wert 0,45&nbsp;s. Das Gas
+          baut weiter weich auf.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="phys-brake-tau" min="0.05" max="0.6" step="0.01" value="0.12">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="phys-brake-tau-val">0,12 s</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Lenkwinkel-Kalibrierung<small>Für enge Strecken. Der Regler sitzt hinter dem Reibkreis: beim Anbremsen einer Kurve beschneidet der die Lenkung auf etwa 60 Prozent, und bei 200 Prozent erreicht dieser beschnittene Wunsch wieder den vollen Anschlag. Weiter als 45 Grad kann kein Wert lenken, das ist die Mechanik des Autos und nicht die App. Der Preis ist Feingefühl: je höher, desto früher liegt der Anschlag an und desto weniger sagt der letzte Teil des Sticks.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -12954,6 +12966,8 @@
     "Telemetrie": "Telemetry",
     "Deine Runden Teil für Teil: wo du Zeit gewinnst und verlierst, Tempo, Gas und Bremse.": "Your laps piece by piece: where you gain and lose time, speed, throttle and brake.",
     "Telemetrie ansehen": "View telemetry",
+    "Bremsaufbau": "Brake build-up",
+    "Wie schnell die Bremskraft am Reifen ansteht - und damit, wie früh beim Anbremsen die Lenkung nachlässt (siehe „Bremsen nimmt Lenkung“). Zeitkonstante in Sekunden: nach dieser Zeit sind rund zwei Drittel erreicht. Ein echtes Auto liegt bei etwa 0,1–0,2 s; Omega fährt mit dem alten Wert 0,45 s. Das Gas baut weiter weich auf.": "How quickly the braking force builds up at the tyre – and so how early the steering fades when braking (see “Braking takes steering”). Time constant in seconds: after this time about two thirds are reached. A real car is around 0.1–0.2 s; Omega uses the old value of 0.45 s. The throttle still builds up softly.",
     "Direktweg fehlt": "direct path missing",
     "nach Neuladen": "after reload",
     "Pad direkt fehlt": "direct pad missing",
@@ -13822,6 +13836,7 @@
     "Startaufstellung: Die Einlenkstärke steht ab Werk auf 0 (auch ein gemerkter Wert wurde zurückgesetzt). Die Autos fahren genau mittig bis zu ihrem Platz und halten dort sofort mit voller Bremse; mit Einlenken erst ein Takt zur Seite, einer zurück, dann sofort halten.": "Grid: the steering strength is 0 by default (a saved value was reset too). The cars drive exactly in the middle to their slot and stop there at once with full brake; with steering enabled, first one tick to the side, one back, then stop at once.",
     "Meisterschaft und Safety Car sind nicht mehr als experimentell bzw. WIP gekennzeichnet.": "Championship and safety car are no longer marked as experimental or WIP.",
     "App-Reaktionszeit (neue APK nötig): Die zwei Direktwege der APK (Steuerbefehle am Android-Hauptthread vorbei, Gamepad direkt) kamen in der Seite nicht an – jeder Befehl lief weiter über den langsamen Weg. Fehlt der Direktweg beim Start, meldet die App ihn jetzt neu an und lädt einmal neu. Die Messzeile Funk-Rundlauf sagt, wenn ein Direktweg trotzdem fehlt, und nennt den Grund.": "App response time (new APK needed): the APK's two direct paths (control commands bypassing the Android main thread, direct gamepad) never reached the page – every command still took the slow path. If the direct path is missing at start-up, the app now registers it again and reloads once. The radio round-trip line says if a direct path is still missing and names the reason.",
+    "Fahrphysik: Die Bremskraft baut jetzt eigenständig und deutlich schneller auf (0,12 s statt 0,45 s), damit beim Anbremsen die Lenkung schon am Kurveneingang nachlässt und nicht erst nach einer ganzen Kurve – wie bei einem echten Auto. Gas baut weiter weich auf. Gilt für alle Fahrgefühle außer Omega (bleibt bei 0,45 s). Neuer Regler Bremsaufbau in den Physik-Optionen unter „Bremsen nimmt Lenkung“.": "Driving physics: braking force now builds up on its own and much faster (0.12 s instead of 0.45 s), so the steering fades right at corner entry when braking instead of only after a whole corner – as in a real car. The throttle still builds up softly. Applies to all driving feels except Omega (stays at 0.45 s). New slider brake build-up in the physics options under “Braking takes steering”.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -15920,6 +15935,8 @@
     "Telemetrie": "Telemetría",
     "Deine Runden Teil für Teil: wo du Zeit gewinnst und verlierst, Tempo, Gas und Bremse.": "Tus vueltas pieza a pieza: dónde ganas y pierdes tiempo, velocidad, gas y freno.",
     "Telemetrie ansehen": "Ver telemetría",
+    "Bremsaufbau": "Aplicación del freno",
+    "Wie schnell die Bremskraft am Reifen ansteht - und damit, wie früh beim Anbremsen die Lenkung nachlässt (siehe „Bremsen nimmt Lenkung“). Zeitkonstante in Sekunden: nach dieser Zeit sind rund zwei Drittel erreicht. Ein echtes Auto liegt bei etwa 0,1–0,2 s; Omega fährt mit dem alten Wert 0,45 s. Das Gas baut weiter weich auf.": "Con qué rapidez se aplica la fuerza de frenado en el neumático, y por tanto cuándo empieza a perderse dirección al frenar (véase «Frenar quita dirección»). Constante de tiempo en segundos: tras este tiempo se alcanzan unos dos tercios. Un coche real está en 0,1–0,2 s; Omega usa el valor antiguo de 0,45 s. El acelerador sigue actuando de forma suave.",
     "Direktweg fehlt": "falta la vía directa",
     "nach Neuladen": "tras recargar",
     "Pad direkt fehlt": "falta el mando directo",
@@ -19162,6 +19179,12 @@
         transferK: 0.30,      // share of the load that moves at 1g
         loadTau: 0.08,        // body pitch (squat and dive): fast
         useTau: 0.45,         // longitudinal tyre force build-up: distinctly slower
+        // v1.0.42 GEMELDET: "Beim Bremsen nimmt die Lenkung erst ab, wenn ich schon eine 90-Grad-
+        // Kurve gefahren bin." Mit 0,45 s fuer Gas UND Bremse kam der Reibkreis erst nach rund
+        // einer Sekunde voll an. Ein echter Bremsdruck mit Reifenkraft steht nach 0,1-0,2 s; das
+        // weiche Anfahren (useTau) bleibt. BESTELLT: eigener Aufbauwert fuer die Bremse, auch fuer
+        // Pro, mit Regler (phys-brake-tau). Omega behaelt 0,45 (eingefroren).
+        useTauBrems: 0.12,
         // ---- Rueckwaertsgang in der Automatik ----
         // Bis unter diese Fahrt darf Viereck den Rueckwaertsgang legen, Kreis holt ihn
         // wieder heraus. Als Bruchteil der Spitze, nicht in km/h: st.speedKmh laeuft in
@@ -20038,7 +20061,9 @@
                    : (inputs.throttle > 0.02 ? inputs.throttle
                    : (rolling ? -cfg.coastPitch : 0));   // coasting: engine braking
       const aL = 1 - Math.exp(-dt / cfg.loadTau);
-      const aU = 1 - Math.exp(-dt / cfg.useTau);
+      // Bremsen (und das Loesen der Bremse) baut mit dem eigenen, kuerzeren Wert auf.
+      const tauU = (demand < 0 || st.longUse < -0.02) ? (cfg.useTauBrems || cfg.useTau) : cfg.useTau;
+      const aU = 1 - Math.exp(-dt / tauU);
       // Hier stand 0.5 als Literal, und das war die statische Achslastverteilung: der
       // einzige Ort, an dem sie ueberhaupt vorkam. Damit hatten alle Autos dasselbe
       // Fahrwerk.
@@ -22637,7 +22662,7 @@
   }
 
   ['phys-steerresp', 'phys-accel', 'setting-steer-calib', 'setting-brake-steal',
-   'setting-throttle-steer-relief'].forEach(id => {
+   'setting-throttle-steer-relief', 'phys-brake-tau'].forEach(id => {
     const input = $(id);
     const readout = $(id + '-val');
     const apply = () => {
@@ -22664,6 +22689,11 @@
         // Ein Grad-Wert waere hier die falsche Einheit und die naechste Verwechslung: der
         // Winkel ist immer auf 45 Grad gedeckelt, egal was hier steht.
         readout.textContent = Math.round(v * 100) + '%';
+      }
+      // v1.0.42: Aufbauzeit der Bremse (siehe useTauBrems in 40-physics.js).
+      if (id === 'phys-brake-tau') {
+        physEngine.config.useTauBrems = v;
+        readout.textContent = v.toFixed(2).replace('.', ',') + ' s';
       }
       if (id === 'setting-throttle-steer-relief') {
         physEngine.config.throttleSteerRelief = v;
@@ -70160,7 +70190,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // ist: legt die KALIBRIERUNG bei 1,0 etwas drauf?
     const messe = (kalib, lenk) => OMEGA_TEST.physSteerGrip({
       kmh: 60, throttle: 0, brake: 1, steering: lenk,
-      patch: { steerCalib: kalib, tyreAsymEffect: 0 } });
+      // v1.0.42: mit dem alten Bremsaufbau (0,45 s) - der Messzeitpunkt ist darauf abgestimmt,
+      // gefragt ist die Kalibrierung und nicht, wie schnell die Bremse ansteht.
+      patch: { steerCalib: kalib, tyreAsymEffect: 0, useTauBrems: 0.45 } });
     const proben = [1, 1.5, 2, 2.5, 3].map(k => messe(k, 1));
     if (proben[0].winkel === undefined) return { skip: true, mass: 'winkel nicht herausgegeben' };
     let gedeckelt = true, monoton = true;
@@ -74033,9 +74065,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Eingabefolge. Weicht "Physik" auch nur in der sechsten Stelle ab, ist das Handling
   // veraendert worden.
   stAdd('Pacejka: Modus "Physik" bitgleich mit dem Stand davor', () => {
+    // v1.0.42: der Bremsaufbau hat einen eigenen Wert (useTauBrems, ab Werk 0,12 s) - BESTELLT
+    // "hier muss die Physik diesmal nicht bitgleich sein". Mit dem alten Wert 0,45 s (so faehrt
+    // Omega) muss alles andere weiter genau gleich sein; das prueft dieser Test jetzt.
     const soll = [
-      [null, { servo: 140.952063, betrag: 314.834272, kmh: 1510.680251 }],
-      [{ steerCalib: 2.5, steerResponse: 3.0 },
+      [{ useTauBrems: 0.45 }, { servo: 140.952063, betrag: 314.834272, kmh: 1510.680251 }],
+      [{ steerCalib: 2.5, steerResponse: 3.0, useTauBrems: 0.45 },
        { servo: 277.874076, betrag: 684.31507, kmh: 1510.690502 }],
     ];
     const schlecht = [];
@@ -75571,7 +75606,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const namen = ['neutral', 'gt3front', 'gt3mid', 'gt3rear', 'f1'];
     const werte = namen.map(n => {
       const r = OMEGA_TEST.physLayoutDrive(n, { kmh: 140, throttle: 0, brake: 1,
-                                                steering: 1, patch: { steerCalib: 2.0 } });
+                                                steering: 1, patch: { steerCalib: 2.0, useTauBrems: 0.45 } });
       const v = OMEGA_TEST.physLayouts()[n];
       return { n, grad: r.grad, sg: r.steerGrip, vorn: v.vorn, ms: v.daempfungMs, iz: v.iz };
     });
@@ -85275,7 +85310,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     {
       const q = (pct) => {
         const r = OMEGA_TEST.physSteerTrace({ bisKmh: 200, brake: 1, steering: 0.6,
-                                              cfg: { brakeBias: pct / 100 } });
+                                              cfg: { brakeBias: pct / 100, useTauBrems: 0.45 } });
         let b = null;
         for (const x of r.bremsspur) {
           if (!b || Math.abs(x.kmh - 140) < Math.abs(b.kmh - 140)) b = x;
@@ -87450,21 +87485,17 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       'setting-crash-auffahr': true, 'setting-crash-threshold': 40, 'setting-repair-time': 4,
       'setting-brake-fade': true, 'setting-brake-fade-strength': 1.5, 'setting-dirtyair': false,
       'setting-dirtyair-strength': 1, 'setting-tyre-asym': true, 'setting-tyre-pressure': 1.8,
-      'setting-topspeed': 1.8 };
+      'setting-topspeed': 1.8,
+      // v1.0.42: neuer Physikwert, Omega haelt den alten Bremsaufbau fest.
+      'phys-brake-tau': 0.45 };
     const ist = window.__presetValues ? window.__presetValues('omega') : null;
     if (!ist) return { ok: false, mass: 'kein Preset omega' };
     const sortiert = (o) => JSON.stringify(Object.keys(o).sort().map((k) => [k, o[k]]));
     if (sortiert(ist) !== sortiert(soll)) f.push('Omega weicht ab: ' + Object.keys(Object.assign({}, soll, ist)).filter((k) => ist[k] !== soll[k]).join(', '));
-    // Anzeige: gleiche Werte wie Pro -> das zuletzt gewaehlte gewinnt.
-    const merk = presetZuletzt;
-    try {
-      presetZuletzt = 'omega';
-      const a1 = window.__presetActive();
-      presetZuletzt = 'pro';
-      const a2 = window.__presetActive();
-      if ((a1 === 'pro' || a1 === 'omega') && a1 !== 'omega') f.push('Omega gewaehlt, Anzeige ' + a1);
-      if ((a2 === 'pro' || a2 === 'omega') && a2 !== 'pro') f.push('Pro gewaehlt, Anzeige ' + a2);
-    } finally { presetZuletzt = merk; }
+    // v1.0.42: Pro hat jetzt den schnellen Bremsaufbau, Omega behaelt den alten - die zwei
+    // unterscheiden sich also (die Anzeige braucht den Gleichstand-Kniff nicht mehr dafuer).
+    const pro = window.__presetValues('pro') || {};
+    if (!(pro['phys-brake-tau'] < ist['phys-brake-tau'])) f.push('Pro baut die Bremse nicht schneller auf als Omega');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Omega = Pro aus v0.9.50, Anzeige folgt der Wahl' };
   });
 
@@ -90304,7 +90335,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
          'setting-crash-auffahr': true, 'setting-crash-threshold': 40, 'setting-repair-time': 4,
          'setting-brake-fade': true, 'setting-brake-fade-strength': 1.5, 'setting-dirtyair': false,
          'setting-dirtyair-strength': 1, 'setting-tyre-asym': true, 'setting-tyre-pressure': 1.8,
-         'setting-topspeed': 1.8 },
+         'setting-topspeed': 1.8,
+         // v1.0.42: der Bremsaufbau kam als eigener Wert dazu - Omega behaelt den alten (0,45 s).
+         'phys-brake-tau': 0.45 },
   };
   // ---- SIM+ (v0.10.5) ---------------------------------------------------------------
   // BESTELLT: "Sim+ (so wie Pro, aber mit etwas staerkerer Lenkung, staerkerer Beschleunigung,
@@ -90345,6 +90378,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // v1.0.22 ausgeblendet, und wer von RC oder Pacejka wechselt, muss wieder in "Physik" landen.
   Object.keys(PRESETS).forEach((k) => {
     if (!Object.prototype.hasOwnProperty.call(PRESETS[k].v, 'phys-mode')) PRESETS[k].v['phys-mode'] = 'physik';
+    // v1.0.42 BESTELLT: eigener Bremsaufbau, auch fuer Pro (0,12 s). Ausser Omega (0,45 s) setzt
+    // jedes Fahrgefuehl ihn, damit ein Wechsel von Omega den alten Wert nicht stehen laesst.
+    if (!Object.prototype.hasOwnProperty.call(PRESETS[k].v, 'phys-brake-tau')) PRESETS[k].v['phys-brake-tau'] = 0.12;
   });
   // Im FAHREN-Menue und am Cockpit-Knopf nur diese (BESTELLT: "die anderen Modi noch im
   // Optionen-Menue lassen, aber nicht im FAHREN-Menue in der Kachel anzeigen").

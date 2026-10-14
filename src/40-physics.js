@@ -558,6 +558,12 @@
         transferK: 0.30,      // share of the load that moves at 1g
         loadTau: 0.08,        // body pitch (squat and dive): fast
         useTau: 0.45,         // longitudinal tyre force build-up: distinctly slower
+        // v1.0.42 GEMELDET: "Beim Bremsen nimmt die Lenkung erst ab, wenn ich schon eine 90-Grad-
+        // Kurve gefahren bin." Mit 0,45 s fuer Gas UND Bremse kam der Reibkreis erst nach rund
+        // einer Sekunde voll an. Ein echter Bremsdruck mit Reifenkraft steht nach 0,1-0,2 s; das
+        // weiche Anfahren (useTau) bleibt. BESTELLT: eigener Aufbauwert fuer die Bremse, auch fuer
+        // Pro, mit Regler (phys-brake-tau). Omega behaelt 0,45 (eingefroren).
+        useTauBrems: 0.12,
         // ---- Rueckwaertsgang in der Automatik ----
         // Bis unter diese Fahrt darf Viereck den Rueckwaertsgang legen, Kreis holt ihn
         // wieder heraus. Als Bruchteil der Spitze, nicht in km/h: st.speedKmh laeuft in
@@ -1434,7 +1440,9 @@
                    : (inputs.throttle > 0.02 ? inputs.throttle
                    : (rolling ? -cfg.coastPitch : 0));   // coasting: engine braking
       const aL = 1 - Math.exp(-dt / cfg.loadTau);
-      const aU = 1 - Math.exp(-dt / cfg.useTau);
+      // Bremsen (und das Loesen der Bremse) baut mit dem eigenen, kuerzeren Wert auf.
+      const tauU = (demand < 0 || st.longUse < -0.02) ? (cfg.useTauBrems || cfg.useTau) : cfg.useTau;
+      const aU = 1 - Math.exp(-dt / tauU);
       // Hier stand 0.5 als Literal, und das war die statische Achslastverteilung: der
       // einzige Ort, an dem sie ueberhaupt vorkam. Damit hatten alle Autos dasselbe
       // Fahrwerk.

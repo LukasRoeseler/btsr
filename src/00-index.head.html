@@ -4676,7 +4676,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.41</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.42</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5806,6 +5806,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Fahrphysik: Die Bremskraft baut jetzt eigenst&#228;ndig und deutlich schneller auf (0,12 s statt 0,45 s), damit beim Anbremsen die Lenkung schon am Kurveneingang nachl&#228;sst und nicht erst nach einer ganzen Kurve &#8211; wie bei einem echten Auto. Gas baut weiter weich auf. Gilt f&#252;r alle Fahrgef&#252;hle au&#223;er Omega (bleibt bei 0,45 s). Neuer Regler Bremsaufbau in den Physik-Optionen unter &#8222;Bremsen nimmt Lenkung&#8220;.</li>
         <li>App-Reaktionszeit (neue APK n&#246;tig): Die zwei Direktwege der APK (Steuerbefehle am Android-Hauptthread vorbei, Gamepad direkt) kamen in der Seite nicht an &#8211; jeder Befehl lief weiter &#252;ber den langsamen Weg. Fehlt der Direktweg beim Start, meldet die App ihn jetzt neu an und l&#228;dt einmal neu. Die Messzeile Funk-Rundlauf sagt, wenn ein Direktweg trotzdem fehlt, und nennt den Grund.</li>
         <li>Meisterschaft und Safety Car sind nicht mehr als experimentell bzw. WIP gekennzeichnet.</li>
         <li>Startaufstellung: Die Einlenkst&#228;rke steht ab Werk auf 0 (auch ein gemerkter Wert wurde zur&#252;ckgesetzt). Die Autos fahren genau mittig bis zu ihrem Platz und halten dort sofort mit voller Bremse; mit Einlenken erst ein Takt zur Seite, einer zur&#252;ck, dann sofort halten.</li>
@@ -10015,6 +10016,17 @@
           <input type="range" id="setting-brake-steal" min="0" max="1.5" step="0.05" value="1.15">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-brake-steal-val">115%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Bremsaufbau<small>Wie schnell die Bremskraft am Reifen
+          ansteht - und damit, wie fr&uuml;h beim Anbremsen die Lenkung nachl&auml;sst (siehe &bdquo;Bremsen nimmt
+          Lenkung&ldquo;). Zeitkonstante in Sekunden: nach dieser Zeit sind rund zwei Drittel erreicht. Ein
+          echtes Auto liegt bei etwa 0,1&ndash;0,2&nbsp;s; Omega f&auml;hrt mit dem alten Wert 0,45&nbsp;s. Das Gas
+          baut weiter weich auf.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="phys-brake-tau" min="0.05" max="0.6" step="0.01" value="0.12">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="phys-brake-tau-val">0,12 s</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Lenkwinkel-Kalibrierung<small>Für enge Strecken. Der Regler sitzt hinter dem Reibkreis: beim Anbremsen einer Kurve beschneidet der die Lenkung auf etwa 60 Prozent, und bei 200 Prozent erreicht dieser beschnittene Wunsch wieder den vollen Anschlag. Weiter als 45 Grad kann kein Wert lenken, das ist die Mechanik des Autos und nicht die App. Der Preis ist Feingefühl: je höher, desto früher liegt der Anschlag an und desto weniger sagt der letzte Teil des Sticks.</small></div>
         <div class="opt-slider">

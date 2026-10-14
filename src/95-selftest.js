@@ -1293,7 +1293,9 @@
     // ist: legt die KALIBRIERUNG bei 1,0 etwas drauf?
     const messe = (kalib, lenk) => OMEGA_TEST.physSteerGrip({
       kmh: 60, throttle: 0, brake: 1, steering: lenk,
-      patch: { steerCalib: kalib, tyreAsymEffect: 0 } });
+      // v1.0.42: mit dem alten Bremsaufbau (0,45 s) - der Messzeitpunkt ist darauf abgestimmt,
+      // gefragt ist die Kalibrierung und nicht, wie schnell die Bremse ansteht.
+      patch: { steerCalib: kalib, tyreAsymEffect: 0, useTauBrems: 0.45 } });
     const proben = [1, 1.5, 2, 2.5, 3].map(k => messe(k, 1));
     if (proben[0].winkel === undefined) return { skip: true, mass: 'winkel nicht herausgegeben' };
     let gedeckelt = true, monoton = true;
@@ -5166,9 +5168,12 @@
   // Eingabefolge. Weicht "Physik" auch nur in der sechsten Stelle ab, ist das Handling
   // veraendert worden.
   stAdd('Pacejka: Modus "Physik" bitgleich mit dem Stand davor', () => {
+    // v1.0.42: der Bremsaufbau hat einen eigenen Wert (useTauBrems, ab Werk 0,12 s) - BESTELLT
+    // "hier muss die Physik diesmal nicht bitgleich sein". Mit dem alten Wert 0,45 s (so faehrt
+    // Omega) muss alles andere weiter genau gleich sein; das prueft dieser Test jetzt.
     const soll = [
-      [null, { servo: 140.952063, betrag: 314.834272, kmh: 1510.680251 }],
-      [{ steerCalib: 2.5, steerResponse: 3.0 },
+      [{ useTauBrems: 0.45 }, { servo: 140.952063, betrag: 314.834272, kmh: 1510.680251 }],
+      [{ steerCalib: 2.5, steerResponse: 3.0, useTauBrems: 0.45 },
        { servo: 277.874076, betrag: 684.31507, kmh: 1510.690502 }],
     ];
     const schlecht = [];
@@ -6704,7 +6709,7 @@
     const namen = ['neutral', 'gt3front', 'gt3mid', 'gt3rear', 'f1'];
     const werte = namen.map(n => {
       const r = OMEGA_TEST.physLayoutDrive(n, { kmh: 140, throttle: 0, brake: 1,
-                                                steering: 1, patch: { steerCalib: 2.0 } });
+                                                steering: 1, patch: { steerCalib: 2.0, useTauBrems: 0.45 } });
       const v = OMEGA_TEST.physLayouts()[n];
       return { n, grad: r.grad, sg: r.steerGrip, vorn: v.vorn, ms: v.daempfungMs, iz: v.iz };
     });
@@ -16408,7 +16413,7 @@
     {
       const q = (pct) => {
         const r = OMEGA_TEST.physSteerTrace({ bisKmh: 200, brake: 1, steering: 0.6,
-                                              cfg: { brakeBias: pct / 100 } });
+                                              cfg: { brakeBias: pct / 100, useTauBrems: 0.45 } });
         let b = null;
         for (const x of r.bremsspur) {
           if (!b || Math.abs(x.kmh - 140) < Math.abs(b.kmh - 140)) b = x;
@@ -18583,21 +18588,17 @@
       'setting-crash-auffahr': true, 'setting-crash-threshold': 40, 'setting-repair-time': 4,
       'setting-brake-fade': true, 'setting-brake-fade-strength': 1.5, 'setting-dirtyair': false,
       'setting-dirtyair-strength': 1, 'setting-tyre-asym': true, 'setting-tyre-pressure': 1.8,
-      'setting-topspeed': 1.8 };
+      'setting-topspeed': 1.8,
+      // v1.0.42: neuer Physikwert, Omega haelt den alten Bremsaufbau fest.
+      'phys-brake-tau': 0.45 };
     const ist = window.__presetValues ? window.__presetValues('omega') : null;
     if (!ist) return { ok: false, mass: 'kein Preset omega' };
     const sortiert = (o) => JSON.stringify(Object.keys(o).sort().map((k) => [k, o[k]]));
     if (sortiert(ist) !== sortiert(soll)) f.push('Omega weicht ab: ' + Object.keys(Object.assign({}, soll, ist)).filter((k) => ist[k] !== soll[k]).join(', '));
-    // Anzeige: gleiche Werte wie Pro -> das zuletzt gewaehlte gewinnt.
-    const merk = presetZuletzt;
-    try {
-      presetZuletzt = 'omega';
-      const a1 = window.__presetActive();
-      presetZuletzt = 'pro';
-      const a2 = window.__presetActive();
-      if ((a1 === 'pro' || a1 === 'omega') && a1 !== 'omega') f.push('Omega gewaehlt, Anzeige ' + a1);
-      if ((a2 === 'pro' || a2 === 'omega') && a2 !== 'pro') f.push('Pro gewaehlt, Anzeige ' + a2);
-    } finally { presetZuletzt = merk; }
+    // v1.0.42: Pro hat jetzt den schnellen Bremsaufbau, Omega behaelt den alten - die zwei
+    // unterscheiden sich also (die Anzeige braucht den Gleichstand-Kniff nicht mehr dafuer).
+    const pro = window.__presetValues('pro') || {};
+    if (!(pro['phys-brake-tau'] < ist['phys-brake-tau'])) f.push('Pro baut die Bremse nicht schneller auf als Omega');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Omega = Pro aus v0.9.50, Anzeige folgt der Wahl' };
   });
 

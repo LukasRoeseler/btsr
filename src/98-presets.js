@@ -298,7 +298,9 @@
          'setting-crash-auffahr': true, 'setting-crash-threshold': 40, 'setting-repair-time': 4,
          'setting-brake-fade': true, 'setting-brake-fade-strength': 1.5, 'setting-dirtyair': false,
          'setting-dirtyair-strength': 1, 'setting-tyre-asym': true, 'setting-tyre-pressure': 1.8,
-         'setting-topspeed': 1.8 },
+         'setting-topspeed': 1.8,
+         // v1.0.42: der Bremsaufbau kam als eigener Wert dazu - Omega behaelt den alten (0,45 s).
+         'phys-brake-tau': 0.45 },
   };
   // ---- SIM+ (v0.10.5) ---------------------------------------------------------------
   // BESTELLT: "Sim+ (so wie Pro, aber mit etwas staerkerer Lenkung, staerkerer Beschleunigung,
@@ -339,6 +341,9 @@
   // v1.0.22 ausgeblendet, und wer von RC oder Pacejka wechselt, muss wieder in "Physik" landen.
   Object.keys(PRESETS).forEach((k) => {
     if (!Object.prototype.hasOwnProperty.call(PRESETS[k].v, 'phys-mode')) PRESETS[k].v['phys-mode'] = 'physik';
+    // v1.0.42 BESTELLT: eigener Bremsaufbau, auch fuer Pro (0,12 s). Ausser Omega (0,45 s) setzt
+    // jedes Fahrgefuehl ihn, damit ein Wechsel von Omega den alten Wert nicht stehen laesst.
+    if (!Object.prototype.hasOwnProperty.call(PRESETS[k].v, 'phys-brake-tau')) PRESETS[k].v['phys-brake-tau'] = 0.12;
   });
   // Im FAHREN-Menue und am Cockpit-Knopf nur diese (BESTELLT: "die anderen Modi noch im
   // Optionen-Menue lassen, aber nicht im FAHREN-Menue in der Kachel anzeigen").

@@ -1464,7 +1464,7 @@
   }
 
   ['phys-steerresp', 'phys-accel', 'setting-steer-calib', 'setting-brake-steal',
-   'setting-throttle-steer-relief'].forEach(id => {
+   'setting-throttle-steer-relief', 'phys-brake-tau'].forEach(id => {
     const input = $(id);
     const readout = $(id + '-val');
     const apply = () => {
@@ -1491,6 +1491,11 @@
         // Ein Grad-Wert waere hier die falsche Einheit und die naechste Verwechslung: der
         // Winkel ist immer auf 45 Grad gedeckelt, egal was hier steht.
         readout.textContent = Math.round(v * 100) + '%';
+      }
+      // v1.0.42: Aufbauzeit der Bremse (siehe useTauBrems in 40-physics.js).
+      if (id === 'phys-brake-tau') {
+        physEngine.config.useTauBrems = v;
+        readout.textContent = v.toFixed(2).replace('.', ',') + ' s';
       }
       if (id === 'setting-throttle-steer-relief') {
         physEngine.config.throttleSteerRelief = v;
