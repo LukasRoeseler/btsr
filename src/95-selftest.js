@@ -18377,6 +18377,9 @@
         if (scVorbeiQuer(npc) === null) f.push('auf der Folgeschiene nicht links');
         npc.ghost.tileIndex = 4;
         if (scVorbeiQuer(npc) !== null) f.push('mitten auf der Strecke links gezwungen');
+        // v1.0.35: auf dem Weg zum Startplatz nicht (die erste Reihe steht vor Start/Ziel).
+        npc.ghost.tileIndex = 0; npc.ghost.aufstellZiel = 12;
+        if (scVorbeiQuer(npc) !== null) f.push('auf dem Weg zum Startplatz links gezwungen');
       }
     } finally {
       currentTrackTiles = merk.tiles;

@@ -5131,6 +5131,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const sc = safetyCar();
     if (!sc || sc === car || !car || !car.ghost) return null;
     if (sc.ghost && sc.ghost.running && !sc.ghost.randHalt) return null;
+    // v1.0.35: wer zu seinem Startplatz faehrt, faehrt nicht vorbei - die erste Reihe steht auf
+    // der Kachel VOR Start/Ziel, und ihr rechtes Auto wurde sonst nach links gezwungen.
+    if (car.ghost.aufstellZiel !== undefined && car.ghost.aufstellZiel !== null) return null;
     const n = currentTrackTiles ? currentTrackTiles.length : 0;
     const i = car.ghost.tileIndex;
     if (!n || i === null || i === undefined) return null;
