@@ -4676,7 +4676,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.32</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.34</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5806,6 +5806,8 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Nach Rennende (WIP): Die NPCs fahren nach dem Zieleinlauf im Aufstelltempo eine Runde zur&#252;ck in die Startaufstellung &#8211; in der Reihenfolge des Zieleinlaufs, die vorderen Pl&#228;tze bleiben f&#252;r die Fahrerautos frei. Dort stehen sie auf ihrer Seite und blinken. Ohne eingescannte Strecke (Ausdruck-Modus) rollen sie wie bisher aus.</li>
+        <li>Neue Option Einparken: Lenkimpuls (WIP, Renneinstellungen): wie viele Millisekunden ein Auto beim Einparken zuletzt mit vollem Einschlag zu seiner Seite lenkt und danach gleich lange zur&#252;ck &#8211; zum Kalibrieren, dass die Autos am Rand stehen, ohne von der Bahn zu fahren. Gilt f&#252;r die Startaufstellung vor und nach dem Rennen und das Safety Car; 0 = kein Impuls, Vorgabe 10 ms.</li>
         <li>Gelbe Flagge: Alle Autos fahren 15 % schneller als bisher (knapp &#252;ber der Lesegrenze statt genau darauf), und dicht hinter dem Vordermann wird nur noch auf 70 % statt 55 % gedrosselt &#8211; damit niemand mehr verhungert und stehen bleibt.</li>
         <li>Safety Car (WIP): Beim Abstellen lenkt es nur noch kurz nach rechts (ein Befehl, rund 10 ms) und gleich lang zur&#252;ck nach links, dann h&#228;lt es mit geraden R&#228;dern. Solange es an Start/Ziel steht oder abstellt, fahren alle anderen Autos auf der Kachel davor, auf Start/Ziel und der Folgeschiene mit Querlage links daran vorbei.</li>
         <li>NPCs nebeneinander (WIP): Liegen zwei Autos h&#246;chstens eine Kachel auseinander, fahren sie als Paar links und rechts statt beide auf der Ideallinie &#8211; die Seite ersetzt jetzt die Linie, statt nur ein kleiner Zuschlag zu sein. Wer gerade weiter links liegt, bleibt links; in Kurven darf der &#196;u&#223;ere etwas nach innen. Ein drittes Auto und alle in der Haarnadel fahren hintereinander mit etwa einer Kachel Abstand. Dein Auto z&#228;hlt als Partner mit.</li>
@@ -8976,6 +8978,18 @@
           mit 35&nbsp;% weiter, in Kurven und Haarnadeln gedrosselt. Aus: alle sofort 35&nbsp;%.
           &Uuml;berholt wird unter Gelb nie.</small></div>
         <label class="tgl"><input type="checkbox" id="race-sc-aufschliessen" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Einparken: Lenkimpuls<span class="wip-tag">WIP</span><small>Beim
+          Einparken (Startaufstellung vor und nach dem Rennen, Safety Car) lenkt das Auto zuletzt so
+          viele Millisekunden mit vollem Einschlag zu seiner Seite und danach gleich lange zur&uuml;ck.
+          Damit kalibrierst du, dass die Autos am Rand stehen &ndash; nicht im Weg, aber auch nicht
+          neben der Bahn. 0 = kein Impuls. Ein Befehl dauert mindestens einen Sendetakt (rund
+          45&nbsp;ms).</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="race-einpark-ms" min="0" max="400" step="10" value="10" data-preset-skip>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="race-einpark-ms-val">10 ms</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Time Attack: NPCs als Challenger<span class="wip-tag">WIP</span><small>In
           Time Attack auf der Bahn fahren alle NPCs als Challenger gegen dich. Gegen meine Bestzeit:
           sie fahren deine beste aufgezeichnete Runde dieser Strecke nach, jeder ab seinem Startplatz.

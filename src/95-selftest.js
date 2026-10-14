@@ -18260,9 +18260,9 @@
       // v1.0.29: danach mit eingeschlagenen Raedern weiter an den Rand, dann halten.
       if (h.phase !== 'rad' || !(randHaltRadLenk(sc) > 0)) f.push('nach 2 s nicht mit Radeinschlag rechts (' + h.phase + ')');
       // v1.0.32: nur kurz rechts, dann gleich lang links, gehalten mit geraden Raedern.
-      h.at = Date.now() - SC_RAD_MS - 1; randHaltTick(sc);
+      h.at = Date.now() - einparkMs() - 1; randHaltTick(sc);
       if (h.phase !== 'gegen' || !(randHaltRadLenk(sc) < 0)) f.push('nach dem Einlenken nicht gegengelenkt (' + h.phase + ')');
-      h.at = Date.now() - SC_GEGEN_MS - 1; randHaltTick(sc);
+      h.at = Date.now() - einparkMs() - 1; randHaltTick(sc);
       if (h.phase !== 'halt') f.push('nach dem Gegenlenken nicht in halt');
       if (randHaltRadLenk(sc) !== 0) f.push('haelt nicht mit geraden Raedern: ' + randHaltRadLenk(sc));
       if (pitZiel(sc) !== 0) f.push('halt mit Zieltempo ' + pitZiel(sc));
@@ -18520,6 +18520,38 @@
       paarCache = { at: -1, map: new Map() };
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Paar links/rechts, Kurve aussen enger, Dritter und Haarnadel hintereinander' };
+  });
+
+  // ---- v1.0.33: nach dem Ziel zurueck in die Startaufstellung, nach Zieleinlauf ----
+  stAdd('Zieleinlauf v1.0.33: NPCs fahren nach Einlauf auf ihre Startplaetze (Menschen vorn frei)', () => {
+    const f = [];
+    const merk = { garage: garage.slice(), tm: trackMode, tiles: currentTrackTiles, pc: playerCar };
+    try {
+      currentTrackTiles = codeToTrack('SG4R4G4').tiles;
+      const n = currentTrackTiles.length;
+      trackMode = 'on';
+      const ich = { device: { id: 'mensch' }, role: 'player' };
+      const a = { device: { id: 'na' }, role: 'ghost', alias: 'NA', ghost: { running: true, auslauf: true } };
+      const b = { device: { id: 'nb' }, role: 'ghost', alias: 'NB', ghost: { running: true, auslauf: true } };
+      garage.length = 0; garage.push(ich, a, b); playerCar = ich;
+      finishSeitenZaehlerZuruecksetzen(2);
+      finishGhost(a); finishGhost(b);
+      if (a.ghost.finish || b.ghost.finish) f.push('rollt noch nach der alten Folge aus');
+      if (a.ghost.aufstellZiel !== aufstellZielKachel(1, n)) f.push('Erster nicht auf Platz 2: ' + a.ghost.aufstellZiel);
+      if (b.ghost.aufstellZiel !== aufstellZielKachel(2, n)) f.push('Zweiter nicht auf Platz 3: ' + b.ghost.aufstellZiel);
+      if (!a.ghost.startGesehen || a.ghost.auslauf) f.push('Startlinie/Auslauf nicht gesetzt');
+      // Im Ausdruck-Modus wie bisher ausrollen.
+      trackMode = 'off';
+      const c = { device: { id: 'nc' }, role: 'ghost', alias: 'NC', ghost: { running: true } };
+      garage.push(c);
+      finishGhost(c);
+      if (!c.ghost.finish) f.push('im Ausdruck-Modus keine Ausrollfolge');
+      if (!(einparkMs() >= 0)) f.push('Lenkimpuls ohne Wert');
+    } finally {
+      trackMode = merk.tm; currentTrackTiles = merk.tiles; playerCar = merk.pc;
+      garage.length = 0; merk.garage.forEach((c) => garage.push(c)); finishSeitenZaehlerZuruecksetzen();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Platz nach Einlauf hinter den Menschen, Ausdruck-Modus wie bisher' };
   });
 
   stAdd('Telemetrie-Seite: Karte, Balken und Tempo aus zwei Runden, Rundenweg steigt', () => {
