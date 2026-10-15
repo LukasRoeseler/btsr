@@ -1653,5 +1653,51 @@
   },
   "idleRpm": 1100,
   "limiterRpm": 8000
+ },
+ "mustang2v": {
+  "label": "Ford Mustang GT3 v2 (Aufnahme, Motorhaube)",
+  "cylinders": 8,
+  "source": "Aufnahme des Nutzers (photos/25648.mp4), stetige Segmente; Drehzahlen aus der Video-Anzeige",
+  "crackle": 0.55,
+  "turbo": false,
+  "loops": {
+   "idle": {
+    "file": "mustang2v_idle.ogg",
+    "baseRpm": 1600,
+    "firingHz": 106.7,
+    "seconds": 1.8499999999999999,
+    "load": 1.0
+   },
+   "low": {
+    "file": "mustang2v_low.ogg",
+    "baseRpm": 3000,
+    "firingHz": 200.0,
+    "seconds": 3.4903854875283447,
+    "load": 1.0
+   },
+   "mid": {
+    "file": "mustang2v_mid.ogg",
+    "baseRpm": 5660,
+    "firingHz": 377.3,
+    "seconds": 1.8499999999999999,
+    "load": 1.0
+   },
+   "high": {
+    "file": "mustang2v_high.ogg",
+    "baseRpm": 8340,
+    "firingHz": 556.0,
+    "seconds": 1.8499999999999999,
+    "load": 1.0
+   },
+   "over": {
+    "file": "mustang2v_over.ogg",
+    "baseRpm": 5660,
+    "firingHz": 377.3,
+    "seconds": 1.8500226757369616,
+    "load": 0.0
+   }
+  },
+  "idleRpm": 1600,
+  "limiterRpm": 8340
  }
 }

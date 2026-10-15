@@ -554,7 +554,7 @@
         // capRaw (siehe dort) - 0 ist unveraendert, 1 hebt die Abschwaechung unter Gas
         // ganz auf. 0,25 als Vorgabe: eine kleine, spuerbare Verbesserung ("noch besser
         // machen"), kein voller Wegfall.
-        throttleSteerRelief: 0.25,
+        throttleSteerRelief: 0.6,
         transferK: 0.30,      // share of the load that moves at 1g
         loadTau: 0.08,        // body pitch (squat and dive): fast
         useTau: 0.45,         // longitudinal tyre force build-up: distinctly slower
@@ -638,6 +638,13 @@
         // (steerGrip weiter unten): kalte/abgefahrene Reifen verkleinern die Kapazitaet,
         // derselbe Bremsbedarf frisst einen groesseren Anteil - die Lenkung leidet mehr.
         brakeStealLast: 1,
+        // v1.0.45: Trail-Braking-Bonus. Leichtes Bremsen verlagert Last nach vorn und gibt
+        // der Vorderachse kurzzeitig etwas mehr Grip - die Lenkung gewinnt ein Stueck. Der
+        // Bonus ist bewusst klein (trailBonusGain) und faellt bei harter Bremse auf 0
+        // (trailBonusFade), weil dann der Reibkreis (frontUse) die Lenkung kostet. So bleibt
+        // es "leicht merkbar" statt in den alten Fehler (steerGrip 1,25) zurueckzufallen.
+        trailBonusGain: 0.08,
+        trailBonusFade: 0.7,
 
         // ---- Bremstemperatur und Fading (Block 4.1) ----
         //
@@ -1617,13 +1624,26 @@
         ? Math.max(0.4, Math.min(1, cfg.loadFrontStatic / Math.max(0.05, st.loadFront)))
         : 1;
       const frontUse = Math.max(0, -st.longUse) * cfg.brakeUseGain * biasK * lastFrac * wf;
+      // v1.0.45: Trail-Braking-Bonus. Nur wenn das Bremspedal wirklich gedrueckt ist (nicht
+      // beim Ausrollen) und die Fahrt traegt (lastFrac), verlagert sich Last nach vorn und
+      // die Vorderachse beisst kurzzeitig besser. Der Bonus ist eine Dreieckskurve: 0 ohne
+      // Druck, Maximum bei mittlerem Druck, 0 bei harter Bremse (dort kostet der Reibkreis).
+      const braked = inputs.brake > 0.02;
+      const brakeFrac = braked ? Math.max(0, -st.longUse) * lastFrac : 0;
+      const trailX = Math.min(1, brakeFrac / Math.max(1e-6, cfg.trailBonusFade));
+      const trailBonus = cfg.trailBonusGain * 4 * trailX * (1 - trailX);
       // The 0.12 floor is a dry-weather reserve: it stops the car ever being completely
       // helpless. In the wet there is no such reserve - once the brake has eaten the front
       // axle, the friction circle really is empty and the steering does nothing. So the
       // floor is scaled away with wetness instead of a separate rule being invented.
-      st.steerGrip = Math.max(0.12 * (1 - wet), Math.min(1,
+      st.steerGrip = (Math.max(0.12 * (1 - wet), Math.min(1,
         Math.sqrt(Math.max(0, frontCap * frontCap - frontUse * frontUse))))
-        * st.tyreGrip;   // cold or worn tyres will not turn the car either
+        + trailBonus) * st.tyreGrip;   // cold or worn tyres will not turn the car either
+      // v1.0.45: Referenz-Grip fuer die Kalibrierung. Das ist der statische, "normale" Grip
+      // der Vorderachse (neutrale Last, kein Reibkreis) - die Kalibrierung gleicht genau ihn
+      // aus. Das dynamische Verhaeltnis steerGrip/steerGripRef (Bremssteal, Trail-Bonus,
+      // Gas) bleibt daneben sichtbar und kommt am Lenkrad an.
+      st.steerGripRef = frontAxle * surfSteer * luft * st.tyreGrip;
       // Rear axle drives. Normalised to the on-power equilibrium (see config), so this term
       // is 1 once the car has squatted and below 1 only while the rear is still light — the
       // soft first moments of a throttle application, not a free performance bonus.
@@ -2041,8 +2061,14 @@
       // vorzeichenbehafteten Bereichs. Die 45 Grad sind eine Grenze des Autos, nicht der App,
       // und kein Reglerwert kann darueber hinaus.
       st.steerDemand = this.state.dampedSteering * st.aquaFactor * st.steerGrip;
+      // v1.0.45: Der Deckel wirkt nur noch auf KALIBRIERUNG mal statischem Grip (steerGripRef),
+      // nicht mehr auf den dynamischen Griff (steerGrip). Vorher kappte Math.min(1,
+      // steerCalib*steerGrip) bei 250 % Kalibrierung jeden Griff unter 0,4 weg und der
+      // Bremssteal/Trail-Bonus war unsichtbar. Das Verhaeltnis steerGrip/steerGripRef bleibt
+      // also sichtbar, waehrend die Kalibrierung weiter den statischen Gripverlust ausgleicht.
+      const gripRatio = st.steerGrip / Math.max(1e-6, st.steerGripRef);
       this.outputs.servoAngle = Math.max(-1, Math.min(1, cfg.steerVoll
-        ? this.state.dampedSteering * Math.min(1, cfg.steerCalib * st.aquaFactor * st.steerGrip) + zug
+        ? this.state.dampedSteering * Math.min(1, cfg.steerCalib * st.aquaFactor * st.steerGripRef) * gripRatio + zug
         : st.steerDemand * cfg.steerCalib + zug));
       // Pacejka formt den Befehl NACH dem Deckel, siehe dort. Nur hinter dem Schalter:
       // "Physik" rechnet keinen Schritt davon.

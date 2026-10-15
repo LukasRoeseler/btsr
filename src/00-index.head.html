@@ -3340,6 +3340,18 @@
     background: linear-gradient(90deg, var(--tint-2), transparent);
     border-left: 3px solid var(--navy); }
 
+  /* Die Tutorial-Liste in den Optionen (v1.0.45): jede Zeile ist eine .opt-row mit einem
+     Knopf darin, damit sie der menuNav wie jede Einstellungszeile ansteuern kann. */
+  .opt-row.tut-zeile { grid-template-columns: 1fr; padding: 6px; }
+  .tut-knopf { display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+    width: 100%; padding: 12px 14px; text-align: left; color: #eef0f4;
+    background: var(--tint-2); border: 1px solid rgba(255,255,255,.07); border-radius: 8px;
+    font: inherit; cursor: pointer; }
+  .tut-knopf:hover { background: var(--tint-3); }
+  .tut-knopf b { font-size: 14px; }
+  .tut-knopf span { font-size: 12px; color: var(--muted, #9aa4b1); }
+  .tut-knopf.menu-nav-sel { outline: 2px solid #fff; background: rgba(0,163,224,.22); }
+
   /* Section headings in the documentation. The tab had grown to twenty cards in the order
      they were WRITTEN, which is not the order anyone reads them in. */
   .doc-sec { margin: 26px 0 4px 0; padding: 10px 14px; font-size: 13px; font-weight: 700;
@@ -4676,7 +4688,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.43</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.45</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4706,6 +4718,7 @@
         <span class="k-knopfreihe">
           <button type="button" class="k-knopf" id="fa-verbinden">Verbinden</button>
           <button type="button" class="k-knopf" id="fa-garage">Garage</button>
+          <button type="button" class="k-knopf" id="fa-reinig" hidden>Reinigungsfahrzeug starten</button>
         </span>
       </div>
       <div class="k-kachel " id="fa-strecke" role="button" tabindex="0" data-quad="bahn">
@@ -4718,6 +4731,7 @@
           <button type="button" class="k-knopf" id="fa-editor">Editor</button>
           <button type="button" class="k-knopf" id="fa-laden">Laden</button>
           <button type="button" class="k-knopf" id="fa-raum">Raum</button>
+          <button type="button" class="k-knopf" id="fa-reinig-stre" hidden>Reinigungsfahrzeug starten</button>
           <button type="button" class="k-knopf" id="fa-druck" hidden>Druckvorlagen</button>
           <button type="button" class="k-knopf" id="fa-foto" hidden title="Optimal: quer, z. B. 4:3 oder 16:9">Foto</button>
           <button type="button" class="k-knopf" id="fa-foto-weg" hidden>Foto löschen</button>
@@ -5076,7 +5090,7 @@
            die Zahl der ids in allen Ansichten gleich bleibt. -->
       <div class="pit-spiel" id="pit-spiel" hidden>
         <div class="ps-karte">
-          <div class="ps-kopf"><span id="pit-spiel-zaehler" data-i18n-skip>1/10</span>
+          <div class="ps-kopf"><span id="pit-spiel-zaehler" data-i18n-skip>1/8</span>
             <b>BOX</b><span id="pit-spiel-rest" data-i18n-skip></span></div>
           <div class="ps-mitte">
             <svg class="ps-ring" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="45"/></svg>
@@ -5945,7 +5959,7 @@
         <li>Kopfzeile nochmals flacher, Omega oben links f&uuml;hrt zum Startbildschirm, Info unter Optionen, neuer Reiter Challenges (WIP). Tutorial-Texte k&uuml;rzer; Steuerung l&auml;uft auf dem Cockpit, zeigt gedr&uuml;ckte Tasten und f&auml;hrt dabei nicht. Neue Stimmungsbilder (KI) f&uuml;r Titel, Rennoptionen, Start, Strecke, Optionen, Info und Challenges.</li>
         <li>Garage als Karten mit eigenem Foto je Auto (sonst seine Farbe), Rolle mit &#9664; &#9654;, Einstellen klappt Farbe, Tempo und Charakter auf; ein Knopf startet und h&auml;lt die Ghosts. Titel: &#10005; startet, &#9651; Tutorial, &#9675; neue F&uuml;hrung &bdquo;Steuerung&ldquo; bis zur Controller-Belegung. Minigame: Fenster 0,1 s l&auml;nger, falsche Taste kostet Zeit. Freies Training zeigt &infin;. Mehrspieler-App wie Vorschlag A. App: Status- und Navigationsleiste werden zuverl&auml;ssiger ausgeblendet.</li>
         <li>Tutorial auf dem Titelbildschirm (experimentell): f&uuml;hrt in neun Schritten &uuml;ber die echten Schirme, mit Controller, Tastatur oder Finger.</li>
-        <li>Boxen-Minigame (experimentell, ab Werk an, unter Optionen &gt; Allgemein &gt; Tank &amp; Schaden): alles wird gewechselt, losfahren erst am Ende, zehn Tasten &#9633;/&#9675; in der Mitte k&uuml;rzen den Stopp bis auf die H&auml;lfte.</li>
+        <li>Boxen-Minigame (experimentell, ab Werk an, unter Optionen &gt; Allgemein &gt; Tank &amp; Schaden): alles wird gewechselt, losfahren erst am Ende, acht Tasten &#9633;/&#9675; in der Mitte k&uuml;rzen den Stopp um 40 Prozent.</li>
         <li>Pacejka: &Uuml;bersteuern sp&uuml;rbar &ndash; Vollgas in der Kurve bringt das Heck, der Vortrieb geht zur&uuml;ck, der Rutsch h&auml;lt ohne Stick, bis man gegenlenkt oder vom Pedal geht, st&auml;rkere Vibration; mit dem Schalter &bdquo;&Uuml;bersteuern&ldquo; abschaltbar (experimentell).</li>
         <li>Men&uuml;: Kopf halb so hoch, flachere Kn&ouml;pfe und Unterreiter, Kachelfotos als Hintergrund gut sichtbar, kleinere Titel, Erkl&auml;rungen nur noch im &#9432;. Letzte Auswahl je Seite bleibt, nach dem Rennen &bdquo;Nochmal&ldquo;, in der Garage blinkt das Auto beim Dar&uuml;berfahren. Weniger automatische Spr&uuml;nge: Rennende im Men&uuml; nur als Einblendung, gr&uuml;ne Ampel und Vollbild-Ende behalten den Cockpit-Schirm, Options f&uuml;hrt zur&uuml;ck auf die Seite, von der man kam.</li>
         <li>App: nach Schlie&szlig;en und &Ouml;ffnen l&auml;sst sich das Auto wieder verbinden (es hing an der alten Verbindung fest); ab der n&auml;chsten APK trennt die App beim Schlie&szlig;en sauber.</li>
@@ -7745,6 +7759,11 @@
         <div class="snd-row"><audio controls preload="none" src="audio/mustang_mid.ogg"></audio><div><b>Ford Mustang GT3 (V8, Cross-Plane), Mittelband (3900/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mustang_high.ogg"></audio><div><b>Ford Mustang GT3 (V8, Cross-Plane), oberes Band (7000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mustang_over.ogg"></audio><div><b>Ford Mustang GT3 (V8, Cross-Plane), Schub (3900/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/mustang2v_idle.ogg"></audio><div><b>Ford Mustang GT3 v2 (V8, Cross-Plane), Leerlauf (1600/min)</b><br><span class="muted" style="font-size:11px">Aufnahme des Nutzers (photos/25648.mp4), Drehzahl aus der Video-Anzeige</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/mustang2v_low.ogg"></audio><div><b>Ford Mustang GT3 v2 (V8, Cross-Plane), Zwischenband (3000/min)</b><br><span class="muted" style="font-size:11px">Aufnahme des Nutzers (photos/25648.mp4), aus dem Mittelband abwaerts gerechnet</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/mustang2v_mid.ogg"></audio><div><b>Ford Mustang GT3 v2 (V8, Cross-Plane), Mittelband (5660/min)</b><br><span class="muted" style="font-size:11px">Aufnahme des Nutzers (photos/25648.mp4), Drehzahl aus der Video-Anzeige</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/mustang2v_high.ogg"></audio><div><b>Ford Mustang GT3 v2 (V8, Cross-Plane), oberes Band (8340/min)</b><br><span class="muted" style="font-size:11px">Aufnahme des Nutzers (photos/25648.mp4), Drehzahl aus der Video-Anzeige</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/mustang2v_over.ogg"></audio><div><b>Ford Mustang GT3 v2 (V8, Cross-Plane), Schub (5660/min)</b><br><span class="muted" style="font-size:11px">Aufnahme des Nutzers (photos/25648.mp4), aus dem Mittelband abgedunkelt</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_idle.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), Leerlauf (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_low.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), Zwischenband (2510/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_low2.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), Zwischenband (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
@@ -9280,6 +9299,12 @@
           <b>Studie <span class="wip-tag">experimentell</span></b>
           <span>Persönlichkeit, Reaktionszeit und Fahrkönnen. Freiwillig, etwa 5 Minuten, ab 18.</span>
         </button>
+        <button class="misc-tile subpage-open" data-sub="opt-tutorials">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M24 8a8 8 0 0 0-8-6H8v34h10a8 8 0 0 1 6 3 8 8 0 0 1 6-3h8V2h-8a8 8 0 0 0-6 6z"/><path d="M24 8v31" stroke="var(--bad)"/></svg>
+          <b>Tutorials</b>
+          <span>Alle F&uuml;hrungen: erste Schritte, Steuerung, Editor, Safety Car, Meisterschaft, Time Attack und Challenges.</span>
+        </button>
       </div>
       <!-- INFO OHNE EIGENE EBENE (v0.8.35). BESTELLT: "Die Kacheln aus INFO alles einzeln
            auflisten, aber extra gruppiert mit Zwischenueberschrift, um klar zu unterscheiden
@@ -9991,9 +10016,9 @@
           das ruehrt dieser Regler nicht an.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-throttle-steer-relief" min="0" max="1" step="0.05" value="0.25">
+          <input type="range" id="setting-throttle-steer-relief" min="0" max="1" step="0.05" value="0.6">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-throttle-steer-relief-val">25%</span>
+          <span class="opt-val" id="setting-throttle-steer-relief-val">60%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Lenkd&auml;mpfung
           <span class="wip-tag">WIP</span>
@@ -10259,6 +10284,7 @@
           <option value="p992gt3r" selected>Porsche 911 GT3 R: Boxer-6, Einzeldrosseln</option>
           <option value="m4gt3">BMW M4 GT3: Reihen-6</option>
           <option value="mustang">Ford Mustang GT3: V8, Cross-Plane</option>
+          <option value="mustang2v">Ford Mustang GT3 v2: V8, Cross-Plane (Aufnahme)</option>
           <option value="f296gt3">Ferrari 296 GT3: V6, 120 Grad</option>
           <option value="amggt3">Mercedes-AMG GT3: V8, Cross-Plane</option>
           <option value="c6r">Corvette C6.R: V8, Cross-Plane, OHV</option>
@@ -11445,6 +11471,19 @@
         Fahrhilfe und der Leitplanken-Modus gelten auch f&uuml;r ihn, und neben der Bahn
         wird sein Gas gedrosselt und sein Controller brummt &ndash; sein eigener,
         nicht der von Auto&nbsp;1.</p>
+    </div>
+
+    <div class="card subpage" id="sub-opt-tutorials">
+      <div class="opt-head">Tutorials</div>
+      <div class="opt-row"><div class="opt-label">Alle F&uuml;hrungen an einem Ort. Jede startet auf dem passenden Schirm.</div></div>
+      <div class="opt-row tut-zeile"><button class="tut-knopf" data-tour="start"><b>Tutorial</b><span>Erste Schritte &uuml;ber die echten Schirme.</span></button></div>
+      <div class="opt-row tut-zeile"><button class="tut-knopf" data-tour="steuerung"><b>Steuerung</b><span>Gamepad beim Fahren: Tasten ansehen und dr&uuml;cken.</span></button></div>
+      <div class="opt-row tut-zeile"><button class="tut-knopf" data-tour="editor"><b>Streckeneditor</b><span>Teile ausw&auml;hlen, einf&uuml;gen, drehen, r&uuml;ckg&auml;ngig.</span></button></div>
+      <div class="opt-row tut-zeile"><button class="tut-knopf" data-tour="raum"><b>Raumgestalter</b><span>Boden und M&ouml;bel zeichnen, Strecke einpassen.</span></button></div>
+      <div class="opt-row tut-zeile"><button class="tut-knopf" data-tour="safety"><b>Safety Car</b><span>Von hinten losfahren, am Rand parken, andere &uuml;berholen.</span></button></div>
+      <div class="opt-row tut-zeile"><button class="tut-knopf" data-tour="meister"><b>Meisterschaft</b><span>Mehrere Rennen, Punkte, Startaufstellung.</span></button></div>
+      <div class="opt-row tut-zeile"><button class="tut-knopf" data-tour="time"><b>Time Attack &amp; Telemetrie</b><span>Gegen die Uhr, und die Runde Teil f&uuml;r Teil lesen.</span></button></div>
+      <div class="opt-row tut-zeile"><button class="tut-knopf" data-tour="challenges"><b>Challenges</b><span>Feste Aufgaben: Runde, Zeit, Gegner.</span></button></div>
     </div>
 
   </section>

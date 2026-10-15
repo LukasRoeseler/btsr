@@ -267,7 +267,7 @@
   }
   function meisterStartReihe(i) {
     const lauf = meister.lauf;
-    const autos = garage.filter((c) => c.device && c.role !== 'safetycar' && c.role !== 'challenger' && c.role !== 'none');
+    const autos = garage.filter((c) => c.device && c.role !== 'safetycar' && c.role !== 'reinig' && c.role !== 'challenger' && c.role !== 'none');
     const id = (c) => String(c.device.id);
     const keyVon = (c) => (meisterMpAndere().length && c.role === 'player') ? 'mp:' + mp.id : 'c:' + id(c);
     const a = meisterAufstAufgeloest(i);
@@ -674,7 +674,7 @@
       const fehler = meister.plan.events.map((e, i) => { const f = meisterAufstFehler(i); return f ? t('Event') + ' ' + (i + 1) + ': ' + f : ''; }).filter(Boolean);
       const rennen = meister.plan.events.filter(meisterIstRennen).length;
       if (!rennen) fehler.push(t('Mindestens ein Event muss Runden oder Endurance sein.'));
-      const autos = garage.filter((c) => c.device && c.role !== 'safetycar' && c.role !== 'challenger' && meisterDarfMit(c.role)).map(garageLabel);
+      const autos = garage.filter((c) => c.device && c.role !== 'safetycar' && c.role !== 'reinig' && c.role !== 'challenger' && meisterDarfMit(c.role)).map(garageLabel);
       h += '<p class="ms-info">' + meister.plan.events.length + ' ' + msEsc(t('Events')) + ', ' + rennen + ' ' + msEsc(t('mit Punkten')) + '. '
         + msEsc(t('Verbunden')) + ': ' + (autos.length ? autos.map(msEsc).join(', ') : msEsc(t('kein Auto'))) + '.</p>';
       const andere = meisterMpAndere();

@@ -1450,7 +1450,7 @@
     carRolleMerken(car);
     renderGarage();
     const name = role === 'player' ? 'Spieler 1' : zNeu ? 'Spieler ' + zNeu.nr
-               : role === 'ghost' ? 'NPC' : role === 'challenger' ? 'Challenger' : role === 'safetycar' ? 'Safety Car' : 'keine';
+               : role === 'ghost' ? 'NPC' : role === 'challenger' ? 'Challenger' : role === 'safetycar' ? 'Safety Car' : role === 'reinig' ? 'Reinigungsfahrzeug' : 'keine';
     log(`${garageLabel(car)}: Rolle ${name}`, 'info');
   }
 
@@ -1477,6 +1477,9 @@
     // einstellen." Hoechstens eines - wie die Spielerrollen. Vor "Ghost", damit der Pfeil von
     // Ghost wie bisher zu "Aus" fuehrt.
     { id: 'safetycar', name: 'Safety Car', kurz: 'SAFETY CAR' },
+    // v1.0.45 BESTELLT: "Reinigungsfahrzeug (WIP) Modus in Garage, geht nur bei Fahren auf
+    // Fahrbahn." Es faehrt eine Reinigungsrunde (Start/Ziel, dann mittig, links, rechts).
+    { id: 'reinig', name: 'Reinigungsfahrzeug (WIP)', kurz: 'REINIGUNG' },
     // v1.0.28: keine eigene Rolle "Challenger" mehr. BESTELLT: "Challenger und NPC
     // zusammenlegen, beim Time Attack gelten alle NPCs als Challenger" (90d-challenger.js).
     // Eine gemerkte Rolle 'challenger' ist damit nicht mehr frei und wird beim Verbinden NPC.
@@ -1486,10 +1489,10 @@
   // v1.0.21 BESTELLT: Safety Car (und der kommende Challenger) "sollten nur fuer Fahren auf
   // Bahn existieren" - beide fahren mit Spur-Bytes, im Ausdruck-Modus haelt sich kein Auto
   // selbst auf der Bahn.
-  const BAHN_ROLLEN = ['safetycar'];
+  const BAHN_ROLLEN = ['safetycar', 'reinig'];
   // Die Rollen, die dieses Auto bekommen darf: Spieler-Rollen nur, wenn kein ANDERES Auto sie hat.
   function garRollenFrei(car) {
-    return GAR_ROLLEN.filter((r) => (!/^player\d?$|^safetycar$/.test(r.id)
+    return GAR_ROLLEN.filter((r) => (!/^player\d?$|^safetycar$|^reinig$/.test(r.id)
       || !garage.some((c) => c !== car && c.role === r.id))
       && (trackMode === 'on' || BAHN_ROLLEN.indexOf(r.id) < 0 || (car && car.role === r.id)));
   }
@@ -1505,7 +1508,7 @@
         n++;
       }
     });
-    if (n) showHudToast(t('Safety Car und Challenger gibt es nur auf der Bahn'));
+    if (n) showHudToast(t('Safety Car, Reinigungsfahrzeug und Challenger gibt es nur auf der Bahn'));
     return n;
   }
   let garAufAuto = null;
@@ -5133,6 +5136,56 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     safetyCarLichtAus(c);
     log(garageLabel(c) + ': Safety Car steht rechts am Rand, Licht aus.', 'info');
   }
+  // ---- REINIGUNGSFAHRZEUG (v1.0.45, WIP) ----------------------------------------------
+  // BESTELLT: "Reinigungsfahrzeug (WIP) Modus in Garage, geht nur bei Fahren auf Fahrbahn.
+  // Wenn an, dann kann ich dort im Automenue und im Streckenmenue auf 'Reinigungsfahrzeug
+  // starten' klicken und dann faehrt es los. Erst bis Start/Ziel kommt, dann mittig, dann
+  // links, dann rechts, sodass die Bahn in ihrer Breite sauber ist."
+  //
+  // Die Rolle ist rein auf der Bahn (BAHN_ROLLEN). Gestartet wird sie ueber den Knopf in den
+  // Menues (reinigStarten). Der Ghost faehrt eine Reinigungsrunde: erst bis Start/Ziel
+  // (Kachel 0), dann je eine Runde mittig (bias 0), links (bias -1), rechts (bias +1), und
+  // bleibt danach stehen (reinigFertig). Das Reinigungsfahrzeug faellt aus dem Rennen und der
+  // Wertung heraus, weil es nur von Hand gestartet wird und nie in raceGridCars() landet.
+  function reinigStarten() {
+    const car = garage.find((c) => c.role === 'reinig');
+    if (!car || trackMode !== 'on') return;
+    if (car.ghost && car.ghost.running) return;
+    startGhost(car);
+    if (!car.ghost) return;
+    car.ghost.freeRun = true;
+    car.ghost.reinigPhase = 'anfahrt';
+    car.ghost.reinigLap = car.ghost.laps || 0;
+    showHudToast(t('Reinigungsfahrzeug startet'));
+    log(garageLabel(car) + ': Reinigungsfahrzeug faehrt los.', 'info');
+  }
+  // Der Zustand der Reinigung. Steht die Phase fest, gilt nur noch sie.
+  function reinigTick(car) {
+    const g = car.ghost;
+    if (!g || car.role !== 'reinig') return;
+    const phase = g.reinigPhase || 'anfahrt';
+    if (phase === 'fertig') return;
+    // Die Lane je Phase: mittig 0, links -1, rechts +1.
+    g.bias = phase === 'links' ? -1 : phase === 'rechts' ? 1 : 0;
+    const n = currentTrackTiles ? currentTrackTiles.length : 0;
+    if (!n || g.tileIndex === null || g.tileIndex === undefined) return;
+    if (phase === 'anfahrt') {
+      // Erst bis Start/Ziel (Kachel 0), dann beginnt die Reinigung.
+      if (g.tileIndex === 0) { g.reinigPhase = 'mitte'; g.reinigLap = g.laps || 0; }
+    } else {
+      // Je eine Runde in dieser Lane, dann die naechste.
+      if ((g.laps || 0) - (g.reinigLap || 0) >= 1) {
+        g.reinigLap = g.laps || 0;
+        g.reinigPhase = phase === 'mitte' ? 'links' : phase === 'links' ? 'rechts' : 'fertig';
+        if (g.reinigPhase === 'fertig') reinigFertig(car);
+      }
+    }
+  }
+  function reinigFertig(car) {
+    stopGhost(car);
+    showHudToast(t('Bahn gereinigt'));
+    log(garageLabel(car) + ': Reinigungsfahrzeug fertig, Bahn gereinigt.', 'info');
+  }
   // An der Linie (carLapCrossed oder Ort = Kachel 0).
   function safetyCarAbstellen(sc) {
     const g = sc.ghost;
@@ -7950,7 +8003,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Ghost-Zustand an, aber den Takt bekamen hier nur Autos mit der Rolle 'ghost' - das Safety
   // Car lief also auf dem Papier (safetyCarFaehrt() war wahr) und bekam nie ein Paket.
   function ghostPhasenSetzen() {
-    const fahren = garage.filter(c => (c.role === 'ghost' || c.role === 'safetycar' || c.role === 'challenger') && c.ghost && c.ghost.running);
+    const fahren = garage.filter(c => (c.role === 'ghost' || c.role === 'safetycar' || c.role === 'challenger' || c.role === 'reinig') && c.ghost && c.ghost.running);
     fahren.forEach((c, i) => ghostTaktSetzen(c, i + 1, fahren.length + 1));
   }
 
@@ -8184,6 +8237,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Leitplanken-Modus. Steht die Sequenz, gilt nur noch sie.
     if (g.finish) { ghostFinishTick(car); return; }
     if (car.role === 'safetycar') { safetyCarNeustart(car, now); safetyCarHeimTick(car); }
+    if (car.role === 'reinig') reinigTick(car);
     // ---- DEN WEG AUF DIESER KACHEL MITFUEHREN, und zwar HIER OBEN --------------------
     //
     // Vor dem Kachelwechselblock, und das ist die richtige Reihenfolge: das Tempo im
@@ -9610,6 +9664,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // v0.9.87: Die Spur folgt der aktuellen Ausweichseite (bias), sonst der Startseite. Vorher
     // zog die Spur mit der Startseite gegen den Ausweichversatz, sobald der in die andere
     // Richtung zeigte - zwei Kraefte gegeneinander sind ein Auto in der Mitte.
+    // v1.0.45: Das Reinigungsfahrzeug bekommt seine Lane aus der Reinig-Phase (g.bias), nicht
+    // aus dem Feld - es faellt aus der ghost/challenger-Liste heraus (siehe reinigTick).
+    if (car && car.role === 'reinig') {
+      const b = (car.ghost && car.ghost.bias) || 0;
+      return Math.abs(b) > 0.05 ? Math.sign(b) : 0;
+    }
     const gs = garage.filter(c => (c.role === 'ghost' || c.role === 'challenger') && c.ghost);
     if (gs.length < 2) return 0;
     const k = gs.indexOf(car);
@@ -9791,7 +9851,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     paarCache = { at: now, map };
     const n = currentTrackTiles ? currentTrackTiles.length : 0;
     if (!n || flagState !== 'green') return map;
-    const feld = ghostFieldRacing().filter((c) => c.role !== 'safetycar' && !c.parked && ghostOrt(c) !== null
+    const feld = ghostFieldRacing().filter((c) => c.role !== 'safetycar' && c.role !== 'reinig' && !c.parked && ghostOrt(c) !== null
       && !(c.ghost && (c.ghost.pit || c.ghost.randHalt || c.ghost.finish
                        || (c.ghost.aufstellZiel !== undefined && c.ghost.aufstellZiel !== null))));
     const ort = new Map(feld.map((c) => [c, ghostOrt(c)]));

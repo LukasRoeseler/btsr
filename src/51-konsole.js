@@ -679,7 +679,7 @@
     try { return garage.filter((c) => c.device); } catch (e) { return []; }
   }
   const K_ROLLE = { player: 'Steuern', player2: 'Spieler 2', player3: 'Spieler 3', ghost: 'NPC',
-                    safetycar: 'Safety Car', challenger: 'Challenger', none: 'Aus' };
+                    safetycar: 'Safety Car', challenger: 'Challenger', reinig: 'Reinigungsfahrzeug (WIP)', none: 'Aus' };
   function kPunkt(farbe, text) {
     const s = document.createElement('span');
     const p = document.createElement('i'); p.className = 'k-punkt'; p.style.background = farbe;
@@ -823,6 +823,11 @@
     if ($('fa-editor')) $('fa-editor').hidden = !bahn;
     if ($('fa-foto')) $('fa-foto').hidden = bahn;
     if ($('fa-foto-weg')) $('fa-foto-weg').hidden = bahn || !foto;
+    // v1.0.45 BESTELLT: "Reinigungsfahrzeug (WIP)" - der Knopf erscheint im Autos- und im
+    // Strecken-Menue, nur auf der Bahn und nur wenn die Rolle 'reinig' gesetzt ist.
+    const reinigAn = bahn && garage.some((c) => c.role === 'reinig');
+    if ($('fa-reinig')) $('fa-reinig').hidden = !reinigAn;
+    if ($('fa-reinig-stre')) $('fa-reinig-stre').hidden = !reinigAn;
     // (fa-profil ist seit v0.10.5 die Meisterschaft-Kachel, ohne Abstimmungsanzeige.)
 
     const training = rm.value === 'practice';
@@ -1031,6 +1036,9 @@
     kn('fa-raum', () => konsoleZeige('track', 'raum'));
     kn('fa-druck', () => konsoleZeige('track', 'print'));
     kn('fa-profil', () => meisterOeffnen());
+    // v1.0.45 BESTELLT: "Reinigungsfahrzeug starten" im Autos- und Strecken-Menue.
+    kn('fa-reinig', () => reinigStarten());
+    kn('fa-reinig-stre', () => reinigStarten());
     // BESTELLT: "wenn ich auf den Header tippe, soll es zur naechsten Option schalten".
     // Der Kachelkopf (Titel + Wert) dreht die Schaltstellung weiter, der Rest der Kachel
     // oeffnet wie bisher die Unterseite. Das Gamepad bleibt unveraendert (Quadrat/links/rechts).

@@ -113,6 +113,43 @@
       text: 'Kreis oder Esc schließt. Unter Strecke, Raum speicherst du den Raum mit Namen und lädst ihn später wieder.' },
   ];
 
+  // v1.0.45 BESTELLT: "in den Optionen eine extra Kachel mit Tutorials ... Neue Tutorials:
+  // Safetycar erklaeren (von hinten losfahren, parkt dann am Rand und andere NPCs ueberholen
+  // automatisch). Tutorial fuer Meisterschaft. Tutorial fuer Time Attack und Lesen von
+  // Telemetrie. Tutorial fuer Challenges." Alle drei laufen auf den echten Schirmen.
+  const K_SAFETY = [
+    { tab: 'fahren', ziel: ['#fa-auto'], bild: 'auto', titel: 'Safety Car: die Rolle',
+      text: 'In der Garage gibst du einem Auto die Rolle Safety Car. Es gibt nur eines je Rennen und nur auf der Bahn. Es zaehlt keine Runde und steht nicht im Ergebnis.' },
+    { tab: 'fahren', ziel: null, bild: 'start', titel: 'Faehrt von hinten los',
+      text: 'Bei gelber Flagge faehrt das Safety Car los. Dein Auto und die NPCs schliessen von hinten auf und drosseln auf rund 35 Prozent.' },
+    { tab: 'fahren', ziel: null, bild: 'strecke-bahn', titel: 'Parkt am Rand',
+      text: 'Nach Gruen faehrt es bis Start/Ziel und haelt rechts am Rand. Die Lichter gehen aus, es steht wie ein geparktes Auto.' },
+    { tab: 'fahren', ziel: null, bild: 'fahren', titel: 'Andere ueberholen automatisch',
+      text: 'Nach Gruen ueberholen die anderen Autos das Safety Car automatisch und fahren weiter. Es wartet am Rand auf die naechste gelbe Phase.' },
+  ];
+  const K_MEISTER = [
+    { tab: 'fahren', ziel: ['#fa-profil'], bild: 'rennen', titel: 'Meisterschaft',
+      text: 'Mehrere Rennen hintereinander. Unter der Kachel Meisterschaft waehlst du die Rennen und siehst den Punktestand.' },
+    { tab: 'fahren', ziel: null, bild: 'start', titel: 'Punkte und Aufstellung',
+      text: 'Je Platzierung gibt es Punkte. Die Startaufstellung des naechsten Rennens richtet sich nach dem Zwischenstand.' },
+    { tab: 'fahren', ziel: ['#fa-renn'], bild: 'rennoptionen', titel: 'Einstellungen je Rennen',
+      text: 'Dauer, Wetter, Pflichtstopps und die Abstimmung stellst du wie in einem normalen Rennen ein.' },
+  ];
+  const K_TIMEATTACK = [
+    { tab: 'fahren', ziel: ['#fa-renn'], bild: 'rennen', titel: 'Time Attack',
+      text: 'Im Renntyp Bestzeit faehrst du allein gegen die Uhr. NPCs fahren als Verkehr, zaehlen aber nicht in der Wertung.' },
+    { tab: 'fahren', ziel: null, bild: 'start', titel: 'Telemetrie lesen',
+      text: 'Unter Optionen, Telemetrie waehlst du deine Runde. Die Karte zeigt Teil fuer Teil, wo du Zeit gewinnst und verlierst, Tempo, Gas und Bremse.' },
+    { tab: 'options', sub: 'opt-telemetrie', ziel: null, bild: 'strecke-bahn', titel: 'Telemetrie-Seite',
+      text: 'Vergleiche deine Runden. Die Telemetrie ist noch im Aufbau (WIP), aber die Karte zeigt schon, wo du Zeit liegen laesst.' },
+  ];
+  const K_CHALLENGES = [
+    { tab: 'challenges', ziel: null, bild: 'rennen', titel: 'Challenges',
+      text: 'Feste Aufgaben mit Ziel: eine Runde, eine Zeit, ein Gegner. Hier im Reiter Challenges findest du die Aufgaben und deine Medaillen.' },
+    { tab: 'challenges', ziel: null, bild: 'start', titel: 'Einstellen',
+      text: 'Unter der Streckenkarte stellst du Modus und Preset ein. Erfuellst du das Ziel, bekommst du eine Medaille.' },
+  ];
+
   const K_PAD_NAMEN = { 0: '✕', 1: '○', 2: '□', 3: '△', 4: 'L1', 5: 'R1', 6: 'L2', 7: 'R2', 8: 'SHARE',
     9: 'OPTIONS', 10: 'L3', 11: 'R3', 12: '▲', 13: '▼', 14: '◀', 15: '▶', 16: 'PS' };
   const kTourPadVorher = [];
@@ -161,7 +198,8 @@
     return true;
   }
   // Wo eine Fuehrung endet: das Tutorial auf Fahren, die Steuerung dort, wo sie hinfuehrt.
-  const K_TOUR_ENDE = new Map([[K_TOUR, 'fahren'], [K_STEUERUNG, 'bleiben'], [K_EDITOR, 'bleiben'], [K_RAUM, 'bleiben']]);
+  const K_TOUR_ENDE = new Map([[K_TOUR, 'fahren'], [K_STEUERUNG, 'bleiben'], [K_EDITOR, 'bleiben'], [K_RAUM, 'bleiben'],
+                               [K_SAFETY, 'fahren'], [K_MEISTER, 'fahren'], [K_TIMEATTACK, 'fahren'], [K_CHALLENGES, 'fahren']]);
 
   let kTourOffen = false;
   let kTourSchritt = 0;
@@ -283,6 +321,13 @@
     kn('k-tutorial-start', (e) => { e.stopPropagation(); konsoleTourStart(K_TOUR); });
     kn('k-steuerung-start', (e) => { e.stopPropagation(); konsoleTourStart(K_STEUERUNG); });
     kn('k-starten-start', (e) => { e.stopPropagation(); konsoleTitelWeiter(); });
+    // v1.0.45 BESTELLT: "in den Optionen eine extra Kachel mit Tutorials" - jede Kachel in
+    // der Liste startet ihre Fuehrung auf dem passenden Schirm.
+    const K_TOUREN = { start: K_TOUR, steuerung: K_STEUERUNG, editor: K_EDITOR, raum: K_RAUM,
+                       safety: K_SAFETY, meister: K_MEISTER, time: K_TIMEATTACK, challenges: K_CHALLENGES };
+    document.querySelectorAll('.tut-knopf').forEach((el) => {
+      el.addEventListener('click', (e) => { e.stopPropagation(); konsoleTourStart(K_TOUREN[el.dataset.tour] || K_TOUR); });
+    });
     kn('k-tour-weiter', () => konsoleTourWeiter());
     kn('k-tour-zurueck', () => konsoleTourZurueck());
     kn('k-tour-ende', () => konsoleTourZu(false));

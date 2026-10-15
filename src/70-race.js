@@ -882,7 +882,7 @@
     // diesen Fix blieb c.race.laps beim Spieler auf 0 stehen, raceLimitReached() konnte nur
     // ueber einen GHOST ausloesen, und ein Rundenrennen ohne (oder mit zu langsamen) Ghosts
     // endete nie.
-    const out = garage.filter(c => c.role !== 'safetycar').map(c => ({ name: garageLabel(c), role: c.role, id: String(c.device && c.device.id),
+    const out = garage.filter(c => c.role !== 'safetycar' && c.role !== 'reinig').map(c => ({ name: garageLabel(c), role: c.role, id: String(c.device && c.device.id),
                                    farbe: carColor(c).hex, kennung: c.tag,
                                    // Der Ort auf der Schiene. Auto 2 geht ueber
                                    // ghostOrtGes(): es hat seit v0.6.46 einen eigenen
@@ -1508,7 +1508,7 @@
   // sortierenden Autos sein, aber separat als Safety Car unter der Liste angezeigt werden."
   // Es nimmt also keinen Startplatz ein (gridPosOf -1) und faehrt nicht mit auf.
   function raceGridCars() {
-    const byId = new Map(garage.filter(c => c.role !== 'safetycar').map(c => [String(c.device.id), c]));
+    const byId = new Map(garage.filter(c => c.role !== 'safetycar' && c.role !== 'reinig').map(c => [String(c.device.id), c]));
     const ordered = [];
     raceGridOrder.forEach(id => { const c = byId.get(id); if (c) { ordered.push(c); byId.delete(id); } });
     byId.forEach(c => ordered.push(c));   // newly connected cars join at the back
@@ -2187,7 +2187,7 @@
     raceState = 'finished';
     // Das Safety Car steht beim Rennende - es hat in keinem Ergebnis etwas zu suchen.
     garage.forEach((c) => {
-      if (c.role === 'safetycar' && c.ghost && c.ghost.running) {
+      if ((c.role === 'safetycar' || c.role === 'reinig') && c.ghost && c.ghost.running) {
         stopGhost(c);
         if (typeof safetyCarLichtAus === 'function') safetyCarLichtAus(c);
       }
@@ -4154,8 +4154,14 @@
   let pitState = 'off';        // off | limited | servicing
   let pitModus = 'minigame';   // Boxen-Minigame, siehe pitSpielStart()
   let pitSpiel = null;
-  const PIT_SPIEL_ANZAHL = 10;
+  const PIT_SPIEL_ANZAHL = 8;
   const PIT_SPIEL_BONUS = 0.05;
+  // v1.0.45 BESTELLT: nach dem letzten Knopf mindestens 1 s Erholung, laenger als Strafzeit
+  // bei falschen Tasten. Erholung zusaetzlich zur Bonus-Strafe (5 % je falsche Taste).
+  const PIT_ERHOL_BASE = 1.0;
+  const PIT_ERHOL_PRO_FEHLER = 0.3;
+  // v1.0.45 BESTELLT: die Zeit zum Druecken 0,5 s laenger. Das Fenster war T/Anzahl + 0,2 s.
+  const PIT_SPIEL_FENSTER_EXTRA = 0.2 + 0.5;
   let pitServiceStart = null;
   let pitFuelGained = 0, pitDamageRepaired = 0;
   const PIT_FUEL_PER_SEC = 22;
@@ -4493,10 +4499,10 @@
     // letzte Knopf im Spiel ist immer Kreis, damit ein danach gedruecktes Quadrat (K) nicht
     // aus Versehen in den Rueckwaertsgang schaltet.
     if (folge.length) folge[folge.length - 1] = 'kreis';
-    // Fenster 200 ms laenger als ein Zehntel. Zuerst 100 ms (BESTELLT: "Mach die Zeiten im
-    // Pitstop ca. 100 ms laenger"), seit v0.8.38 200 ms (BESTELLT: "nicht 600 ms sondern 200 ms").
-    pitSpiel = { T, bonus: 0, folge, i: 0, fensterAb: 0, fensterS: T / PIT_SPIEL_ANZAHL + 0.2,
-                 treffer: 0, fehler: 0, blitz: '', blitzBis: 0, fuel0: fuel, dmg0: damage };
+    // Fenster 0,7 s laenger als ein Zehntel: erst 100 ms, dann 200 ms (v0.8.38), seit v1.0.45
+    // 0,5 s mehr (BESTELLT: "Mach die Zeit, die ich zum Druecken habe nochmal 0,5 s laenger").
+    pitSpiel = { T, bonus: 0, folge, i: 0, fensterAb: 0, fensterS: T / PIT_SPIEL_ANZAHL + PIT_SPIEL_FENSTER_EXTRA,
+                 treffer: 0, fehler: 0, blitz: '', blitzBis: 0, erholBis: 0, fuel0: fuel, dmg0: damage };
     showHudToast(t('Boxen-Minigame: Quadrat und Kreis!'));
   }
   // welche: 'quad' | 'kreis'. true = die Taste gehoert dem Spiel (kein Schalten).
@@ -4506,8 +4512,8 @@
     if (sp.i >= sp.folge.length) return true;
     // BESTELLT: "Wenn ich die falsche Taste druecke, fuege Zeit hinzu. Wenn ich richtig
     // druecke, ziehe Zeit ab." Beides um 5 % der Grundzeit.
-    if (welche === sp.folge[sp.i]) { sp.bonus += PIT_SPIEL_BONUS * sp.T; sp.treffer++; sp.blitz = 'ok'; pitSpielTon(true); }
-    else { sp.bonus -= PIT_SPIEL_BONUS * sp.T; sp.fehler++; sp.blitz = 'falsch'; pitSpielTon(false); }
+    if (welche === sp.folge[sp.i]) { sp.bonus += PIT_SPIEL_BONUS * sp.T; sp.treffer++; sp.blitz = 'ok'; pitSpielTon(true, sp.i); }
+    else { sp.bonus -= PIT_SPIEL_BONUS * sp.T; sp.fehler++; sp.blitz = 'falsch'; pitSpielTon(false, sp.i); }
     sp.blitzBis = pitStandElapsed + 0.3;
     sp.i++;
     sp.fensterAb = pitStandElapsed;
@@ -4517,10 +4523,19 @@
   // BESTELLT: "give positive and negative feedback noises for button presses". Richtig: ein
   // heller, aufsteigender Ton. Falsch: ein dunkler, abfallender Brummton. playTone() schaltet
   // sich selbst aus, wenn der Ton aus oder audioCtx noch nicht da ist.
-  function pitSpielTon(gut) {
+  // v1.0.45 BESTELLT: der Erfolgston wird mit jedem Knopf HOEHER, und der letzte ganz hoch.
+  function pitSpielTon(gut, i) {
     if (gut) {
-      playTone(880, 0.06, 'sine', 0.2);
-      setTimeout(() => playTone(1320, 0.09, 'sine', 0.2), 45);
+      const letzter = i === PIT_SPIEL_ANZAHL - 1;
+      if (letzter) {
+        playTone(1560, 0.08, 'sine', 0.2);
+        setTimeout(() => playTone(1960, 0.10, 'sine', 0.2), 60);
+        setTimeout(() => playTone(2400, 0.14, 'sine', 0.2), 120);
+      } else {
+        const f = 660 + i * 55;
+        playTone(f, 0.06, 'sine', 0.2);
+        setTimeout(() => playTone(f * 1.5, 0.08, 'sine', 0.2), 45);
+      }
     } else {
       playTone(200, 0.12, 'square', 0.16);
       setTimeout(() => playTone(140, 0.14, 'square', 0.14), 70);
@@ -4548,6 +4563,11 @@
       pitDone = { refuel: true, tyres: true, repair: true };
       if (pl.repair) damage = 0;
       if (pl.refuel) fuel = Math.max(fuel, tankZielNorm(pl.refuel));
+      // v1.0.45 BESTELLT: nach dem letzten Knopf mindestens 1 s Erholung, laenger je Fehler
+      // (Strafzeit). Erst danach ist der Stopp vorbei und das Auto darf losfahren.
+      if (!sp.erholBis) sp.erholBis = pitStandElapsed + PIT_ERHOL_BASE + sp.fehler * PIT_ERHOL_PRO_FEHLER;
+    }
+    if (anteil >= 1 && !pitReady && sp.erholBis && pitStandElapsed >= sp.erholBis) {
       pitFertig();
       log('Boxen-Minigame: ' + sp.treffer + ' von ' + PIT_SPIEL_ANZAHL + ' getroffen, '
           + pitStandElapsed.toFixed(1) + ' s statt ' + sp.T.toFixed(1) + ' s.', 'info');
@@ -4574,7 +4594,10 @@
     el.style.setProperty('--fenster', sym
       ? String(Math.max(0, 1 - (pitStandElapsed - sp.fensterAb) / sp.fensterS)) : '0');
     $('pit-spiel-zaehler').textContent = Math.min(sp.i + 1, PIT_SPIEL_ANZAHL) + '/' + PIT_SPIEL_ANZAHL;
-    $('pit-spiel-rest').textContent = pitSpielRest().toFixed(1).replace('.', ',') + ' s';
+    const erholt = sp.erholBis && pitStandElapsed < sp.erholBis;
+    const rest = erholt ? sp.erholBis - pitStandElapsed : pitSpielRest();
+    el.dataset.erholt = erholt ? '1' : '';
+    $('pit-spiel-rest').textContent = rest.toFixed(1).replace('.', ',') + ' s';
     $('pit-spiel-treffer').textContent = '✓ ' + sp.treffer;
   }
   if ($('pit-spiel-quad')) $('pit-spiel-quad').addEventListener('click', () => pitSpielTaste('quad'));

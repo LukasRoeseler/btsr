@@ -1305,9 +1305,12 @@
     }
     // Bei 1,0 muss der uebertragene Winkel genau der Wunsch sein - kein stiller Aufschlag.
     const neutral = Math.abs(proben[0].winkel - proben[0].wunsch) < 1e-9;
-    // Und die Kalibrierung muss WIRKEN: bei 60 km/h unter Bremsen beschneidet der Reibkreis
-    // auf etwa 35 Grad, und 2,0 muss den vollen Anschlag zurueckholen.
-    const holt = proben[0].grad < 44 && messe(2, 1).grad === 45;
+    // Und der Reibkreis muss SICHTBAR bleiben: beim Bremsen beschneidet er die Lenkung
+    // (etwa auf 40 Grad bei 1,0), und die Kalibrierung darf das nicht wieder zuschrauben.
+    // v1.0.45: die alte Pruefung ("2,0 muss den vollen Anschlag zurueckholen") testete genau
+    // die Kompensation, die den Bremssteal/Trail-Bonus unsichtbar machte. Die ist absichtlich
+    // aufgehoben - der Gripverlust soll am Lenkrad ankommen.
+    const holt = proben[0].grad < 44 && messe(2, 1).grad < 45;
     // Auch in der Gegenrichtung, und mit demselben Betrag: eine Kalibrierung, die nur nach
     // einer Seite wirkt, waere ein Lenkoffset.
     const links = messe(2, -1);
@@ -5171,10 +5174,13 @@
     // v1.0.42: der Bremsaufbau hat einen eigenen Wert (useTauBrems, ab Werk 0,12 s) - BESTELLT
     // "hier muss die Physik diesmal nicht bitgleich sein". Mit dem alten Wert 0,45 s (so faehrt
     // Omega) muss alles andere weiter genau gleich sein; das prueft dieser Test jetzt.
+    // v1.0.45: neu gemessen, weil der Lenk-Deckel (steerCalib*steerGripRef statt
+    // steerCalib*steerGrip) die Servo- und Betragssummen verschiebt. Die Fahrphysik (kmh) ist
+    // unveraendert - nur die Lenkung kam dazu.
     const soll = [
-      [{ useTauBrems: 0.45 }, { servo: 140.952063, betrag: 314.834272, kmh: 1510.680251 }],
+      [{ useTauBrems: 0.45 }, { servo: 158.252759, betrag: 332.134969, kmh: 1510.680251 }],
       [{ steerCalib: 2.5, steerResponse: 3.0, useTauBrems: 0.45 },
-       { servo: 277.874076, betrag: 684.31507, kmh: 1510.690502 }],
+       { servo: 315.45918, betrag: 721.900174, kmh: 1510.690502 }],
     ];
     const schlecht = [];
     for (const [patch, erwartet] of soll) {
@@ -10235,10 +10241,12 @@
       if (!r.gasGesperrt) f.push('Gas nicht gesperrt');
       if (!r.rueckGesperrt) f.push('Rueckwaerts nicht gesperrt');
       if (!r.fertig) f.push('nicht fertig geworden (' + r.stand + ')');
-      if (Math.abs(r.dauer - r.T) > 0.15) f.push('Dauer ' + r.dauer.toFixed(2) + ' s statt ' + r.T.toFixed(2));
-      // Fenster = ein Zehntel + 200 ms (70-race.js, pitSpielStart).
-      // 0,15 s Toleranz: endet das letzte Fenster knapp vor dem Stopp, sieht der Testtakt es nicht mehr.
-      const erwartet = Math.floor((r.T - 0.15) / (r.T / 10 + 0.2));
+      // v1.0.45: nach dem letzten Knopf 1 s Erholung (kein Fehler hier), danach erst fertig.
+      if (Math.abs(r.dauer - (r.T + PIT_ERHOL_BASE)) > 0.3) f.push('Dauer ' + r.dauer.toFixed(2) + ' s statt ' + (r.T + PIT_ERHOL_BASE).toFixed(2));
+      // Fenster = ein Achtel + 700 ms (70-race.js, pitSpielStart). Erwartung = wie viele
+      // Symbole bis zum fertig-Werden von selbst ablaufen (ohne Tasten).
+      const fensterS = r.T / PIT_SPIEL_ANZAHL + PIT_SPIEL_FENSTER_EXTRA;
+      const erwartet = Math.floor((r.T + PIT_ERHOL_BASE) / fensterS);
       if (r.i < erwartet) f.push('nur ' + r.i + ' Symbole abgelaufen statt ' + erwartet);
       if (fuelSimOn() && r.fuel < 99.9) f.push('Tank am Ende ' + r.fuel.toFixed(1));
       if (r.plan.repair && r.damage > 0.01) f.push('Schaden am Ende ' + r.damage.toFixed(1));
@@ -10246,18 +10254,21 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'T ' + (r.T || 0).toFixed(1) + ' s, voll abgewartet, ' + r.i + ' Symbole abgelaufen, Gas und Rueckwaerts zu' };
   });
 
-  stAdd('Boxen-Minigame: zehn richtige halbieren die Zeit, falsche kosten Zeit', () => {
+  stAdd('Boxen-Minigame: acht richtige halbieren die Zeit, falsche kosten Zeit', () => {
     const a = pitSpielLauf('richtig');
     const b = pitSpielLauf('falsch');
     const f = a.f.concat(b.f);
     if (!f.length) {
-      if (a.treffer !== 10) f.push(a.treffer + ' Treffer statt 10');
-      if (Math.abs(a.dauer - a.T / 2) > 0.2) f.push('mit 10 Treffern ' + a.dauer.toFixed(2) + ' s statt ' + (a.T / 2).toFixed(2));
+      if (a.treffer !== 8) f.push(a.treffer + ' Treffer statt 8');
+      // Acht richtige geben je 5 % Bonus: 0,6 * T plus 1 s Erholung (v1.0.45).
+      const aSoll = 0.6 * a.T + PIT_ERHOL_BASE;
+      if (Math.abs(a.dauer - aSoll) > 0.3) f.push('mit 8 Treffern ' + a.dauer.toFixed(2) + ' s statt ' + aSoll.toFixed(2));
       if (b.treffer !== 0 || !(b.bonus < 0)) f.push('falsche Tasten: Treffer ' + b.treffer + ', Bonus ' + b.bonus);
-      // Zehn falsche kosten je 5 %: anderthalbfache Zeit.
-      if (Math.abs(b.dauer - 1.5 * b.T) > 0.2) f.push('mit falschen Tasten ' + b.dauer.toFixed(2) + ' s statt ' + (1.5 * b.T).toFixed(2));
+      // Acht falsche kosten je 5 % (1,4 * T) plus Erholung mit 8 Fehlern (Strafzeit).
+      const bSoll = 1.4 * b.T + PIT_ERHOL_BASE + 8 * PIT_ERHOL_PRO_FEHLER;
+      if (Math.abs(b.dauer - bSoll) > 0.4) f.push('mit falschen Tasten ' + b.dauer.toFixed(2) + ' s statt ' + bSoll.toFixed(2));
     }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'halbe Zeit mit 10 Treffern (' + a.dauer.toFixed(1) + ' von ' + a.T.toFixed(1) + ' s), zehn falsche: ' + b.dauer.toFixed(1) + ' s' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'halbe Zeit mit 8 Treffern (' + a.dauer.toFixed(1) + ' von ' + a.T.toFixed(1) + ' s), acht falsche: ' + b.dauer.toFixed(1) + ' s' };
   });
 
   stAdd('Boxen-Minigame: Quadrat und Kreis schalten waehrenddessen nicht, Kreuz bricht ab', () => {
@@ -13565,7 +13576,7 @@
     if (!window.OMEGA_TEST || !OMEGA_TEST.garagenZeileProbe) {
       return { skip: true, mass: 'garagenZeileProbe nicht vorhanden' };
     }
-    const SOLL = ['player', 'player2', 'player3', 'safetycar', 'ghost', 'none'];
+    const SOLL = ['player', 'player2', 'player3', 'safetycar', 'reinig', 'ghost', 'none'];
     const aus = OMEGA_TEST.garagenZeileProbe({ zwei: false });
     const an = OMEGA_TEST.garagenZeileProbe({ zwei: true, role: 'player2' });
     const maengel = [];
