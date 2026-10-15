@@ -786,6 +786,18 @@
     let schlimmster = 99, wo = '';
     let geprueft = 0;
     const sel = 'p, span, b, div.opt-label, label, h1, h2, h3, td, th, li, button';
+    // GEMELDET (v1.0.45): der Pruefer mass versteckte Kinder. Ein Kind ist unsichtbar, wenn
+    // ein VORFAHR display:none/visibility:hidden/opacity:0 hat - das Element selbst kann
+    // dabei durchaus display:block sein. Der Test pruefte aber nur das EIGENE display und
+    // sah den Vorfahren nicht. Loesung: alle Vorfahren mitpruefen; unsichtbarer Text ist
+    // ausgenommen (1.4.3 gilt fuer das, was niemand sieht).
+    const sichtbar = (el) => {
+      for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+        const cs = getComputedStyle(n);
+        if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity === 0) return false;
+      }
+      return true;
+    };
     for (const el of document.querySelectorAll(sel)) {
       if (!el.textContent.trim()) continue;
       // Unsichtbares und Abgeschaltetes ist ausgenommen: 1.4.3 gilt nicht fuer
@@ -801,13 +813,13 @@
       // einen Wert, der zufaellig durchging - die Ausnahme ist also neu aufgeschrieben und
       // nicht neu erfunden.
       if (el.closest('.gt3-marke')) continue;
-      const cs = getComputedStyle(el);
-      if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity === 0) continue;
-      const vg = stParse(cs.color);
+      if (!sichtbar(el)) continue;
+      const vg = stParse(getComputedStyle(el).color);
       if (!vg) continue;
       const hg = stBackdrop(el);
       const l1 = stLum(stMix(vg, hg)), l2 = stLum(hg);
       const k = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+      const cs = getComputedStyle(el);
       const gross = parseFloat(cs.fontSize) >= 24
                     || (parseFloat(cs.fontSize) >= 18.66 && +cs.fontWeight >= 700);
       const grenze = gross ? 3.0 : 4.5;

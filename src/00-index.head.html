@@ -2502,7 +2502,10 @@
   .k-quad-punkte i.an { background: var(--k-blau); }
   /* Kompakte "N/M"-Anzeige statt vieler Punkte (viele Schaltstellungen, keine Pfeile). */
   .k-quad-punkte .k-quad-zahl { font-size: 12px; font-weight: 800; line-height: 1;
-    color: var(--k-blau); letter-spacing: .02em; }
+    /* v1.0.45: 4,82:1 statt 2,61:1 - der Zaehler sitzt auf dem hellen k-kopf (--k-weiss),
+       und --k-blau (#00a3e0) war dafuer zu hell. WCAG 1.4.3 braucht 4,5:1 fuer kleinen
+       Text, deshalb ein dunkleres Blau. */
+    color: #0072a6; letter-spacing: .02em; }
   /* Motorsound: Pfeile LINKS und RECHTS vom Wert (nicht beide rechts). Der Wert nimmt die
      Mitte (flex:1), damit er beim Blaettern nicht breiter/breiter wird und die Pfeile nicht
      springen; lange Namen laufen in die Ellipse. Die Dreiecke sind blau mit grauem Rand -
