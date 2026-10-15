@@ -566,6 +566,7 @@
     margin-bottom: 8px; line-height: 1.55;
   }
   .dank-wer { display: block; color: var(--ink); font-weight: 600; letter-spacing: .03em; }
+  .dank-rolle { display: block; margin-top: 2px; font-size: 12.5px; color: var(--ink-2); }
   .dank-quelle {
     display: block; margin-top: 4px;
     font-family: monospace; font-size: 11px; color: var(--muted);
@@ -5755,7 +5756,7 @@
 
     <div class="card subpage" id="sub-dank">
       <button class="misc-back goto-tab" data-tab="options">&larr; Optionen</button>
-      <h2>Danksagungen</h2>
+      <h2>Credits</h2>
       <!-- ---- KEINE AUSZEICHNUNG MITTEN IM SATZ ----------------------------------
            Ein <b> oder <code> innerhalb eines Satzes ZERLEGT den Textknoten, und die
            Uebersetzung arbeitet je Textknoten. Eine erste Fassung dieser Sektion machte
@@ -5764,6 +5765,14 @@
            Deshalb hier durchgehend: EIN Satz ist EIN Knoten, und alles, was nicht
            uebersetzt werden soll - Eigennamen und Dateinamen - steht daneben in einem
            eigenen Element mit data-i18n-skip. -->
+      <h3>Coders</h3>
+      <ul class="dank-liste">
+        <li><span class="dank-wer" data-i18n-skip>Luuke42</span>
+          <span class="dank-rolle">Autor und Hauptentwickler von OmegaSim &ndash; die gesamte App: Programm, Fahrphysik, Sounds, Men&uuml;, Strecken, Selbsttest. Auch das Safety Car selbst (die urspr&uuml;ngliche Variante &bdquo;Fahrbahn&ldquo;: f&auml;hrt beim Start die erste Runde mit und h&auml;lt nach Gelb rechts an Start/Ziel).</span></li>
+        <li><span class="dank-wer" data-i18n-skip>Playdater1974</span>
+          <span class="dank-rolle">Zwei zus&auml;tzliche Parkmodi f&uuml;r das Safety Car: &bdquo;Fahrbahn, wartet bis Gelb&ldquo; (f&auml;hrt beim Start nicht mit) und &bdquo;Neben der Strecke von Hand&ldquo; (wartet neben der Strecke, kehrt nach Gelb zum Startpunkt zur&uuml;ck und verl&auml;sst die Bahn). Dazu die einstellbare Ausfahrt mit den Reglern und die Grenze, dass Folgeautos nie schneller sind als das Safety Car. Gebaut und am Tisch getestet.</span></li>
+      </ul>
+      <h3>Danksagungen</h3>
       <p class="muted">Dieses Projekt steckt voller Dinge, die jemand anders herausgefunden, ausprobiert oder geduldig zur&uuml;ckgemeldet hat. Namentlich:</p>
       <ul class="dank-liste">
         <li><span class="dank-wer" data-i18n-skip>KaiGS</span>
@@ -9345,7 +9354,7 @@
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M24 40C10 30 6 22 6 15a9 9 0 0 1 18-2 9 9 0 0 1 18 2c0 7-4 15-18 25z"/>
           </svg>
-          <b>Danksagungen</b>
+          <b>Credits</b>
           <span>Wer geholfen hat, und woher die Kl&auml;nge kommen.</span>
         </button>
         <button class="misc-tile info-open" data-sub="patchnotes">
