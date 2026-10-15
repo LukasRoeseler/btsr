@@ -21,7 +21,7 @@
     { id: 'general', root: 'sub-opt-general', titel: 'Allgemein' },
     { id: 'feel', root: 'sub-opt-feel', titel: 'Fahrgefühl', werks: true },
     { id: 'sound', root: 'sub-opt-sound', titel: 'Ton' },
-    { id: 'ghosts', root: 'sub-opt-ghosts', titel: 'Autonome Gegner' },
+    { id: 'ghosts', root: 'sub-opt-ghosts', titel: 'NPCs' },
     { id: 'pad', root: 'sub-opt-pad', titel: 'Controller', pad: true },
     { id: 'race', root: 'tab-control', titel: 'Renneinstellungen' },
   ];
