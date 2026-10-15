@@ -5175,12 +5175,13 @@
     // "hier muss die Physik diesmal nicht bitgleich sein". Mit dem alten Wert 0,45 s (so faehrt
     // Omega) muss alles andere weiter genau gleich sein; das prueft dieser Test jetzt.
     // v1.0.45: neu gemessen, weil der Lenk-Deckel (steerCalib*steerGripRef statt
-    // steerCalib*steerGrip) die Servo- und Betragssummen verschiebt. Die Fahrphysik (kmh) ist
-    // unveraendert - nur die Lenkung kam dazu.
+    // steerCalib*steerGrip) die Servo- und Betragssummen verschiebt und der Trail-Braking-
+    // Bonus (v1.0.45) die Bremsphase aendert. Die Fahrphysik (kmh) bleibt in Fall 1 gleich,
+    // in Fall 2 (steerCalib 2,5) aendert sie sich mit dem Lenk-Deckel.
     const soll = [
-      [{ useTauBrems: 0.45 }, { servo: 158.252759, betrag: 332.134969, kmh: 1510.680251 }],
+      [{ useTauBrems: 0.45 }, { servo: 165.937722, betrag: 394.736943, kmh: 1510.680251 }],
       [{ steerCalib: 2.5, steerResponse: 3.0, useTauBrems: 0.45 },
-       { servo: 315.45918, betrag: 721.900174, kmh: 1510.690502 }],
+       { servo: 309.502465, betrag: 789.559991, kmh: 1510.558737 }],
     ];
     const schlecht = [];
     for (const [patch, erwartet] of soll) {
