@@ -768,7 +768,13 @@
         // Ab 0,30 kleben Layouts am Notboden von 0,12, und dann sind sie nicht mehr
         // unterscheidbar, sondern nur noch alle unfahrbar. Bei 0,15 lenken bei 60 km/h alle
         // noch (45 bis 39 Grad), und die Reihenfolge folgt der Vorderachslast.
-        frontAxleEffect: 0.15,
+        //
+        // SEIT v1.0.45 bleibt die Nase unter Bremsen laenger belastet (brakeStealLast, wf),
+        // und steerGripRef ist der layout-unabhaengige Kalibrierbezug. Damit ist die alte
+        // Messung ("ab 0,30 am Notboden") ueberholt: der gemessene Grip liegt bei 0,5 weit
+        // ueber der Trockenreserve (gt3rear 0,77), und die Spanne zwischen neutral und Heck
+        // betraegt 5 Grad - genug, um die Layouts zu unterscheiden, ohne dass eines klebt.
+        frontAxleEffect: 0.5,
 
         // ---- Einspurmodell (Instrument) ----------------------------------------------
         //
@@ -1643,7 +1649,13 @@
       // der Vorderachse (neutrale Last, kein Reibkreis) - die Kalibrierung gleicht genau ihn
       // aus. Das dynamische Verhaeltnis steerGrip/steerGripRef (Bremssteal, Trail-Bonus,
       // Gas) bleibt daneben sichtbar und kommt am Lenkrad an.
-      st.steerGripRef = frontAxle * surfSteer * luft * st.tyreGrip;
+      //
+      // OHNE frontAxle: der Referenzwert ist der des NEUTRALEN Layouts und damit layout-
+      // unabhaengig. Stuende das frontAxle hier, traegten steerGrip UND steerGripRef dieselbe
+      // Achslast, und gripRatio = steerGrip/steerGripRef kuerzte sie heraus - alle Layouts
+      // gaeben denselben Lenkwinkel (gemessen: Spanne 0 Grad). So traegt der Zaehler die
+      // Achslast und der Referenzwert bleibt der Kalibrierbezug.
+      st.steerGripRef = surfSteer * luft * st.tyreGrip;
       // Rear axle drives. Normalised to the on-power equilibrium (see config), so this term
       // is 1 once the car has squatted and below 1 only while the rear is still light — the
       // soft first moments of a throttle application, not a free performance bonus.

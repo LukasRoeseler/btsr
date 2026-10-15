@@ -1623,30 +1623,31 @@
   }
 
   async function exitRaceFullscreen() {
-    try {
-      if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
-      else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
-    } catch (e) { /* already out */ }
-    try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }
-    catch (e) { /* never locked */ }
-    document.body.classList.remove('race-fs', 'race-turn');
-    $('race-fs').hidden = false; $('race-fs-exit').hidden = true;
-    // GEFUNDEN: cockpitScreen blieb sonst auf 'pit'/'renneinstellungen' stehen, auch nach
-    // dem Verlassen des Vollbilds. pitScreenOffen()/raceScreenOffen() (70-race.js) pruefen
-    // NUR cockpitScreenIst().id, nicht ob tab-race ueberhaupt noch aktiv/im Vollbild ist -
-    // ein Wechsel auf einen anderen Tab liess das D-Pad dort also weiter "essen", bevor
-    // menuNavMove() es je sah. cockpitScreenZu('main') hier behebt das an der Quelle.
-    // SEIT v0.8.24 NUR NOCH VORUEBERGEHEND: der gewaehlte Schirm wird gemerkt. Bleibt man im
-    // Cockpit (Vollbild per Wischen oder Knopf verlassen), steht er sofort wieder da; wer
-    // den Tab verlaesst, bekommt ihn beim Zurueckkommen (cockpitScreenWiederherstellen,
-    // gerufen beim Tabwechsel in 10-ble-explorer.js). Der Grund fuer 'main' bleibt:
-    // ausserhalb des Cockpits darf kein Box- oder Rennschirm das Steuerkreuz essen.
+    // GEFUNDEN (v1.0.45): Schirm-Zustand UND Vollbild-Layout standen HINTER dem
+    // `await document.exitFullscreen()`. Haengt der echte Vollbild-Ausstieg (async, Headless,
+    // Geste), bleibt race-fs stehen und ausserhalb des Cockpits ein Box-/Rennschirm, der das
+    // Steuerkreuz frass - und der rechte Stick scrollte nicht. Deshalb JETZT zuerst, vor jedem
+    // await, und synchron.
+    //
+    // Der gemerkte Schirm (cockpitScreenMerk) bleibt: wer im Cockpit bleibt (Vollbild per
+    // Wischen/Knopf verlassen), bekommt ihn sofort wieder; wer den Tab verlaesst, beim
+    // Zurueckkommen (cockpitScreenWiederherstellen, gerufen beim Tabwechsel in
+    // 10-ble-explorer.js). Der Grund fuer 'main' bleibt: ausserhalb des Cockpits darf kein
+    // Box- oder Rennschirm das Steuerkreuz essen.
     const war = cockpitScreenIst().id;
     cockpitScreenZu('main');
     if (war !== 'main') {
       cockpitScreenMerk = war;
       if (document.body.classList.contains('race-mode')) cockpitScreenWiederherstellen();
     }
+    document.body.classList.remove('race-fs', 'race-turn');
+    $('race-fs').hidden = false; $('race-fs-exit').hidden = true;
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
+      else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
+    } catch (e) { /* already out */ }
+    try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }
+    catch (e) { /* never locked */ }
     cockpitPassung();
     setTimeout(() => cockpitPassung(), 120);
   }

@@ -19540,7 +19540,13 @@
         // Ab 0,30 kleben Layouts am Notboden von 0,12, und dann sind sie nicht mehr
         // unterscheidbar, sondern nur noch alle unfahrbar. Bei 0,15 lenken bei 60 km/h alle
         // noch (45 bis 39 Grad), und die Reihenfolge folgt der Vorderachslast.
-        frontAxleEffect: 0.15,
+        //
+        // SEIT v1.0.45 bleibt die Nase unter Bremsen laenger belastet (brakeStealLast, wf),
+        // und steerGripRef ist der layout-unabhaengige Kalibrierbezug. Damit ist die alte
+        // Messung ("ab 0,30 am Notboden") ueberholt: der gemessene Grip liegt bei 0,5 weit
+        // ueber der Trockenreserve (gt3rear 0,77), und die Spanne zwischen neutral und Heck
+        // betraegt 5 Grad - genug, um die Layouts zu unterscheiden, ohne dass eines klebt.
+        frontAxleEffect: 0.5,
 
         // ---- Einspurmodell (Instrument) ----------------------------------------------
         //
@@ -20415,7 +20421,13 @@
       // der Vorderachse (neutrale Last, kein Reibkreis) - die Kalibrierung gleicht genau ihn
       // aus. Das dynamische Verhaeltnis steerGrip/steerGripRef (Bremssteal, Trail-Bonus,
       // Gas) bleibt daneben sichtbar und kommt am Lenkrad an.
-      st.steerGripRef = frontAxle * surfSteer * luft * st.tyreGrip;
+      //
+      // OHNE frontAxle: der Referenzwert ist der des NEUTRALEN Layouts und damit layout-
+      // unabhaengig. Stuende das frontAxle hier, traegten steerGrip UND steerGripRef dieselbe
+      // Achslast, und gripRatio = steerGrip/steerGripRef kuerzte sie heraus - alle Layouts
+      // gaeben denselben Lenkwinkel (gemessen: Spanne 0 Grad). So traegt der Zaehler die
+      // Achslast und der Referenzwert bleibt der Kalibrierbezug.
+      st.steerGripRef = surfSteer * luft * st.tyreGrip;
       // Rear axle drives. Normalised to the on-power equilibrium (see config), so this term
       // is 1 once the car has squatted and below 1 only while the rear is still light — the
       // soft first moments of a throttle application, not a free performance bonus.
@@ -23022,30 +23034,31 @@
   }
 
   async function exitRaceFullscreen() {
-    try {
-      if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
-      else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
-    } catch (e) { /* already out */ }
-    try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }
-    catch (e) { /* never locked */ }
-    document.body.classList.remove('race-fs', 'race-turn');
-    $('race-fs').hidden = false; $('race-fs-exit').hidden = true;
-    // GEFUNDEN: cockpitScreen blieb sonst auf 'pit'/'renneinstellungen' stehen, auch nach
-    // dem Verlassen des Vollbilds. pitScreenOffen()/raceScreenOffen() (70-race.js) pruefen
-    // NUR cockpitScreenIst().id, nicht ob tab-race ueberhaupt noch aktiv/im Vollbild ist -
-    // ein Wechsel auf einen anderen Tab liess das D-Pad dort also weiter "essen", bevor
-    // menuNavMove() es je sah. cockpitScreenZu('main') hier behebt das an der Quelle.
-    // SEIT v0.8.24 NUR NOCH VORUEBERGEHEND: der gewaehlte Schirm wird gemerkt. Bleibt man im
-    // Cockpit (Vollbild per Wischen oder Knopf verlassen), steht er sofort wieder da; wer
-    // den Tab verlaesst, bekommt ihn beim Zurueckkommen (cockpitScreenWiederherstellen,
-    // gerufen beim Tabwechsel in 10-ble-explorer.js). Der Grund fuer 'main' bleibt:
-    // ausserhalb des Cockpits darf kein Box- oder Rennschirm das Steuerkreuz essen.
+    // GEFUNDEN (v1.0.45): Schirm-Zustand UND Vollbild-Layout standen HINTER dem
+    // `await document.exitFullscreen()`. Haengt der echte Vollbild-Ausstieg (async, Headless,
+    // Geste), bleibt race-fs stehen und ausserhalb des Cockpits ein Box-/Rennschirm, der das
+    // Steuerkreuz frass - und der rechte Stick scrollte nicht. Deshalb JETZT zuerst, vor jedem
+    // await, und synchron.
+    //
+    // Der gemerkte Schirm (cockpitScreenMerk) bleibt: wer im Cockpit bleibt (Vollbild per
+    // Wischen/Knopf verlassen), bekommt ihn sofort wieder; wer den Tab verlaesst, beim
+    // Zurueckkommen (cockpitScreenWiederherstellen, gerufen beim Tabwechsel in
+    // 10-ble-explorer.js). Der Grund fuer 'main' bleibt: ausserhalb des Cockpits darf kein
+    // Box- oder Rennschirm das Steuerkreuz essen.
     const war = cockpitScreenIst().id;
     cockpitScreenZu('main');
     if (war !== 'main') {
       cockpitScreenMerk = war;
       if (document.body.classList.contains('race-mode')) cockpitScreenWiederherstellen();
     }
+    document.body.classList.remove('race-fs', 'race-turn');
+    $('race-fs').hidden = false; $('race-fs-exit').hidden = true;
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
+      else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
+    } catch (e) { /* already out */ }
+    try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }
+    catch (e) { /* never locked */ }
     cockpitPassung();
     setTimeout(() => cockpitPassung(), 120);
   }
@@ -85442,10 +85455,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                                  + r.bremsspur.length + ' Punkte' };
     }
     const q = (x) => x.winkel / Math.max(1e-6, roll);
-    // Bei hoher Fahrt hoechstens 70 % - deutlich weniger, aber nicht null. Bei niedriger
+    // Bei hoher Fahrt hoechstens ~70 % - deutlich weniger, aber nicht null. Seit v1.0.44
+    // (brakeStealLast) haengt die Bremsschwaechung an der Gewichtsverlagerung: unter
+    // Bremsen taucht die Nase, die Vorderachse traegt mehr, der Reibkreis frisst weniger -
+    // gemessen 70,2 % statt der 70 % des flachen Faktors. Die Grenze bleibt eng, damit
+    // "deutlich weniger" geprueft wird, aber nicht mehr an der Kante. Bei niedriger
     // Fahrt mindestens 85 %. Und im Stand mindestens 95 %: dort darf die Bremse gar keine
     // Rolle mehr spielen.
-    const ok = q(hoch) < 0.70 && q(hoch) > 0.10
+    const ok = q(hoch) < 0.72 && q(hoch) > 0.10
                && q(tief) > 0.85
                && r.imStand / Math.max(1e-6, roll) > 0.95;
     return { ok,

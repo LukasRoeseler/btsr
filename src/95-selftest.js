@@ -16178,10 +16178,14 @@
                                  + r.bremsspur.length + ' Punkte' };
     }
     const q = (x) => x.winkel / Math.max(1e-6, roll);
-    // Bei hoher Fahrt hoechstens 70 % - deutlich weniger, aber nicht null. Bei niedriger
+    // Bei hoher Fahrt hoechstens ~70 % - deutlich weniger, aber nicht null. Seit v1.0.44
+    // (brakeStealLast) haengt die Bremsschwaechung an der Gewichtsverlagerung: unter
+    // Bremsen taucht die Nase, die Vorderachse traegt mehr, der Reibkreis frisst weniger -
+    // gemessen 70,2 % statt der 70 % des flachen Faktors. Die Grenze bleibt eng, damit
+    // "deutlich weniger" geprueft wird, aber nicht mehr an der Kante. Bei niedriger
     // Fahrt mindestens 85 %. Und im Stand mindestens 95 %: dort darf die Bremse gar keine
     // Rolle mehr spielen.
-    const ok = q(hoch) < 0.70 && q(hoch) > 0.10
+    const ok = q(hoch) < 0.72 && q(hoch) > 0.10
                && q(tief) > 0.85
                && r.imStand / Math.max(1e-6, roll) > 0.95;
     return { ok,
