@@ -1780,6 +1780,7 @@
     ['ghost-charakter', 'charakter'],
     ['ghost-w-start', 'wuerzeStart'],
     ['ghost-w-recovery', 'wuerzeRecovery'],
+    ['ghost-w-recovery-lenk', 'rueckwegLenkung'],
     ['ghost-staffel', 'staffelStart'],
     ['ghost-paar-kurve', 'paarKurve'],
     // Die zwei Boxenstopp-Schalter. Sie gehoeren in dieselbe Liste, weil sie dieselbe Form
