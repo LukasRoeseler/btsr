@@ -4543,6 +4543,43 @@
   }
   .race-light.on-red { background: var(--bad); box-shadow: 0 0 10px 2px rgba(179,19,31,.55); }
   .race-light.on-green { background: var(--good); box-shadow: 0 0 10px 2px rgba(28,122,77,.55); }
+
+  /* ---- GT3-Startampel als Overlay (max. 50 % Bildschirm) ----
+     Echtes FIA/GT3-Muster: 5 Saeulen x 2 Lampen. Erscheint beim Countdown und beim
+     Safety-Car-Neustart, zentriert ueber dem Cockpit, und verschwindet nach der Freigabe.
+     Auf 50 % Breite und Hoehe begrenzt; die Lampen skalieren mit der Fensterbreite. */
+  #ampel-overlay {
+    display: none; position: fixed; left: 50%; top: 50%;
+    transform: translate(-50%, -50%) scale(.94);
+    z-index: 60; pointer-events: none;
+    width: min(50vw, 50vh);
+    padding: clamp(8px, 1.6vw, 22px) clamp(8px, 1.6vw, 24px) clamp(10px, 2vw, 28px);
+    border-radius: 0 0 clamp(10px, 2vw, 26px) clamp(10px, 2vw, 26px);
+    background: linear-gradient(180deg, #0c0e13, #05070a);
+    border: 1px solid #22262f; border-top: 0;
+    box-shadow: 0 14px 48px rgba(0,0,0,.85);
+    opacity: 0; transition: opacity .3s ease, transform .3s ease;
+  }
+  #ampel-overlay.on { display: block; opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  .ampel-beam { display: flex; gap: clamp(6px, 1.4vw, 22px); justify-content: center; align-items: flex-end; }
+  .ampel-col { display: flex; flex-direction: column; gap: clamp(5px, 1vw, 14px); }
+  .ampel-lamp {
+    width: clamp(16px, 6.5vw, 84px); height: clamp(16px, 6.5vw, 84px);
+    border-radius: 50%; background: #16181e;
+    box-shadow: inset 0 0 0 1px #2b303a;
+    transition: background .06s linear, box-shadow .06s linear;
+  }
+  .ampel-lamp.red {
+    background: #ff2d3a;
+    box-shadow: inset 0 0 0 1px #ff6b74, 0 0 clamp(12px, 4vw, 40px) clamp(2px, .6vw, 7px) rgba(255,45,58,.62);
+  }
+  .ampel-mast {
+    height: clamp(8px, 1.6vw, 18px); width: 78%; margin: clamp(7px, 1.6vw, 18px) auto 0;
+    border-radius: 3px; background: linear-gradient(90deg, #1a1d24, #2c313c, #1a1d24);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #ampel-overlay { transition: none; }
+  }
 </style>
 </head>
 <body>
@@ -4776,6 +4813,19 @@
         <div class="gantry-col"><div class="gantry-lamp" data-col="5"></div><div class="gantry-lamp" data-col="5"></div></div>
       </div>
       <div class="gantry-mast"></div>
+    </div>
+    <!-- GT3-STARTAMPEL ALS OVERLAY (v1.0.57): echtes FIA/GT3-Muster - 5 rote Lampen je
+         Sekunde, dann eine zufaellige 1-3 s Pause, dann alle aus = Start. Kein Gruen.
+         Ansteuerung ueber setRaceLights() (dieselbe Zustandsquelle wie das Cockpit). -->
+    <div id="ampel-overlay" aria-hidden="true">
+      <div class="ampel-beam">
+        <div class="ampel-col"><div class="ampel-lamp" data-col="1"></div><div class="ampel-lamp" data-col="1"></div></div>
+        <div class="ampel-col"><div class="ampel-lamp" data-col="2"></div><div class="ampel-lamp" data-col="2"></div></div>
+        <div class="ampel-col"><div class="ampel-lamp" data-col="3"></div><div class="ampel-lamp" data-col="3"></div></div>
+        <div class="ampel-col"><div class="ampel-lamp" data-col="4"></div><div class="ampel-lamp" data-col="4"></div></div>
+        <div class="ampel-col"><div class="ampel-lamp" data-col="5"></div><div class="ampel-lamp" data-col="5"></div></div>
+      </div>
+      <div class="ampel-mast"></div>
     </div>
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
       <filter id="race-gamma" color-interpolation-filters="sRGB">
@@ -8898,7 +8948,8 @@
           <span class="race-light" id="race-light-1"></span>
           <span class="race-light" id="race-light-2"></span>
           <span class="race-light" id="race-light-3"></span>
-          <span class="race-light" id="race-light-go"></span>
+          <span class="race-light" id="race-light-4"></span>
+          <span class="race-light" id="race-light-5"></span>
         </div>
         <div>
           <!-- data-i18n-skip, wie #log und #hud-toast: der Text wird zur LAUFZEIT
@@ -35397,37 +35448,36 @@
   }
 
   function setRaceLights(step) {
-    // step: 0 = all off, 1-3 = that many reds lit (bottom to top like a real start light
-    // sequence), 'go' = green.
-    ['race-light-1', 'race-light-2', 'race-light-3', 'race-light-go'].forEach(id => {
-      $(id).classList.remove('on-red', 'on-green');
+    // step: 0 = alle aus, 1-5 = so viele rote Saeulen (echte Startampel, unten nach oben),
+    // 'go' = alle aus (Start; kein Gruen, wie am FIA/GT3-Gantry).
+    ['race-light-1', 'race-light-2', 'race-light-3', 'race-light-4', 'race-light-5'].forEach(id => {
+      const el = $(id); if (el) el.classList.remove('on-red', 'on-green');
     });
-    if (step === 'go') { $('race-light-go').classList.add('on-green'); }
-    else for (let i = 1; i <= step; i++) $(`race-light-${i}`).classList.add('on-red');
+    if (step !== 'go') for (let i = 1; i <= step; i++) { const el = $(`race-light-${i}`); if (el) el.classList.add('on-red'); }
     paintGantry(step);
   }
 
-  // Same state, drawn as the gantry over the cockpit. There are five columns but only three
-  // countdown steps, so a step lights a proportional share rather than one column - three
-  // steps over five columns is 2, 3, 5. A real FIA gantry has five one-second steps; this
-  // countdown has three, and inventing two extra steps would make the lights disagree with
-  // the beeps the driver is actually hearing.
-  const GANTRY_COLS = [0, 2, 3, 5];
+  // Same state, drawn as the gantry over the cockpit AND as the grosse GT3-Overlay.
+  // Fuenf Saeulen, eine je Sekunde (1..5); beim Start gehen alle zusammen aus (kein Gruen).
   function paintGantry(step) {
     const g = $('race-gantry');
-    if (!g) return;
-    const lamps = g.querySelectorAll('.gantry-lamp');
-    lamps.forEach(l => l.classList.remove('red', 'green'));
-    if (step === 'go') {
-      // All reds out and green: that IS the start signal, on a real gantry and here.
-      lamps.forEach(l => l.classList.add('green'));
-      g.classList.add('on');
-      return;
+    if (g) {
+      const lamps = g.querySelectorAll('.gantry-lamp');
+      lamps.forEach(l => l.classList.remove('red', 'green'));
+      if (step === 'go') { g.classList.add('on'); }
+      else if (!step) { g.classList.remove('on'); }
+      else {
+        g.classList.add('on');
+        lamps.forEach(l => { if (+l.dataset.col <= step) l.classList.add('red'); });
+      }
     }
-    if (!step) { g.classList.remove('on'); return; }
-    g.classList.add('on');
-    const cols = GANTRY_COLS[Math.max(0, Math.min(3, step))] || 0;
-    lamps.forEach(l => { if (+l.dataset.col <= cols) l.classList.add('red'); });
+    const ov = $('ampel-overlay');
+    if (!ov) return;
+    ov.classList.toggle('on', step !== 0);
+    const lamps = ov.querySelectorAll('.ampel-lamp');
+    lamps.forEach(l => l.classList.remove('red'));
+    if (step === 'go' || !step) return;
+    lamps.forEach(l => { if (+l.dataset.col <= step) l.classList.add('red'); });
   }
 
   // Results for EVERY car that was connected, which is what was asked for and what did not
@@ -35978,9 +36028,16 @@
   // BESTELLT: "Im Multiplayer muss die Ampel ueberall gleichzeitig kommen." Die Lichter haengen
   // an festen Zeitpunkten vor Gruen statt an einem 1-s-Intervall - so kommt Gruen auf allen
   // Telefonen im selben Moment, wenn alle dieselbe (abgeglichene) Gruenzeit haben. Lokal ist
-  // Gruen einfach jetzt + 3 s.
-  function ampelZeitplan(gruen) {
-    return [[gruen - 3000, 3], [gruen - 2000, 2], [gruen - 1000, 1], [gruen, 0]];
+  // Gruen einfach jetzt + Countdown.
+  // Echtes FIA/GT3-Muster: 5 rote Lampen je Sekunde (1..5), dann eine zufaellige 1-3 s Pause
+  // (verzog), dann gehen alle gleichzeitig aus = Start (kein Gruen). verzog wird im
+  // Mehrspieler vom Host vorgegeben (plan.ampelVerzog), damit es auf allen gleich ist.
+  function ampelZeitplan(gruen, verzog) {
+    const v = verzog || 1000;
+    const a = [];
+    for (let i = 1; i <= 5; i++) a.push([gruen - v - (5 - i) * 1000, i]);
+    a.push([gruen, 0]);
+    return a;
   }
   // gruenZiel: lokale Uhrzeit (ms) fuer Gruen, sonst in 3 s. mpPlan: Wetterplan und Wind eines
   // gemeinsamen Mehrspieler-Rennens (97-sessions.js).
@@ -36285,7 +36342,13 @@
     // auf, und ein Countdown, aus dem man nicht herauskommt, ist eine Falle.
     $('race-stop-btn').disabled = false;
     $('race-status').textContent = 'Countdown…';
-    const plan = ampelZeitplan(gruenBei || Date.now() + 3000);
+    // Zufaellige 1-3 s Pause vor dem Start; im Mehrspieler gibt der Host sie im Plan vor,
+    // damit alle gleichzeitig losfahren (sonst wuerde jedes Telefon anders wuerfeln).
+    const ampelVerzog = (mpPlan && Number.isFinite(mpPlan.ampelVerzog)) ? mpPlan.ampelVerzog
+                      : (1000 + Math.random() * 2000);
+    // Lokal: Gruen so setzen, dass die 1. Lampe 600 ms nach dem Start erscheint
+    // (1. Lampe = gruen - verzog - 4000).
+    const plan = ampelZeitplan(gruenBei || Date.now() + 4600 + ampelVerzog, ampelVerzog);
     clearTimeout(raceCountdownTimer);
     const schritt = (k) => {
       if (raceState !== 'countdown') return;
@@ -36297,7 +36360,7 @@
       if (stufe > 0 && warte < -400 && k + 1 < plan.length) { schritt(k + 1); return; }
       if (stufe > 0) {
         setRaceLights(stufe);
-        playTone(440 + (3 - stufe) * 60, 0.18, 'square', 0.18);
+        playTone(440 + (stufe - 1) * 60, 0.18, 'square', 0.18);
         schritt(k + 1);
         return;
       }
@@ -53454,23 +53517,28 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
 
   // Aus Gelb heraus wird nicht einfach umgeschaltet, sondern angefahren: dieselbe Ampel wie
   // beim Start, damit der Moment, ab dem wieder ueberholt werden darf, fuer alle derselbe
-  // und sichtbar ist.
+  // und sichtbar ist. Echtes FIA/GT3-Muster: 5 rote Lampen je Sekunde (1..5), dann eine
+  // zufaellige 1-3 s Pause, dann gehen alle aus = Start (kein Gruen).
   function yellowRestart() {
     if (flagState !== 'yellow') return;
     flagState = 'restart';
     updateFlagUi();
-    let step = 3;
-    setRaceLights(3);
-    playTone(660, 0.18, 'square', 0.18);
-    const t = setInterval(() => {
-      step--;
-      if (step > 0) { setRaceLights(step); playTone(660, 0.18, 'square', 0.18); return; }
-      clearInterval(t);
+    const verzog = 1000 + Math.random() * 2000;
+    for (let i = 1; i <= 5; i++) {
+      setTimeout(() => {
+        if (flagState !== 'restart') return;
+        setRaceLights(i);
+        playTone(440 + (i - 1) * 60, 0.18, 'square', 0.18);
+      }, 600 + (i - 1) * 1000);
+    }
+    // Nach der 5. Lampe (600 + 4*1000 = 4600 ms) die zufaellige Pause, dann alle aus.
+    setTimeout(() => {
+      if (flagState !== 'restart') return;
       setRaceLights('go');
       playTone(880, 0.35, 'square', 0.22);
       setFlag('green');
       setTimeout(() => setRaceLights(0), 900);
-    }, 1000);
+    }, 4600 + verzog);
   }
 
   // ---- Rennwuerze ----
@@ -80826,8 +80894,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
 
   stAdd('Mehrspieler: Ampel nach Frist, Uhrabgleich, gemeinsamer Wetterplan', () => {
     const f = [];
-    const z = ampelZeitplan(10000);
-    if (JSON.stringify(z) !== JSON.stringify([[7000, 3], [8000, 2], [9000, 1], [10000, 0]])) f.push('Zeitplan ' + JSON.stringify(z));
+    const z = ampelZeitplan(10000, 2000);
+    if (JSON.stringify(z) !== JSON.stringify([[4000, 1], [5000, 2], [6000, 3], [7000, 4], [8000, 5], [10000, 0]])) f.push('Zeitplan ' + JSON.stringify(z));
     const merkP = mp.proben.slice(), merkO = mp.offset;
     try {
       mp.proben = [];
@@ -80858,7 +80926,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       Date.now = merk.now; raceWxStart = merk.wx; raceMode = merk.mode; raceLimit = merk.lim;
       raceState = merk.st; mpWetter = null; setWeather(merk.wetter);
     }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Lichter -3/-2/-1/0 s, Versatz vom kuerzesten Weg, Wetter folgt dem Plan' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : '5 rote Lampen je Sekunde + Zufallsverzug, Versatz vom kuerzesten Weg, Wetter folgt dem Plan' };
   });
 
   stAdd('Lenkkennlinie: voll genau bei X %, Anfang unter linear, symmetrisch, am Servo', () => {
@@ -90659,7 +90727,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const w = Math.random() * 2 * Math.PI;
     const plan = { modus: raceMode, limit: raceLimit, wx: raceWxStart, wxChange: raceWxChange,
                    fliegend: raceFlying, pit: racePitRequired, tank: raceFuelStartL,
-                   wetterPlan: wetterPlanBauen(), wind: { x: Math.cos(w), y: Math.sin(w) } };
+                   wetterPlan: wetterPlanBauen(), wind: { x: Math.cos(w), y: Math.sin(w) },
+                   ampelVerzog: 1000 + Math.random() * 2000 };
     // BESTELLT: "der Host erzwingt die Renneinstellungen auf allen." Wenn der Schalter an ist,
     // schickt der Host seine eigene aktive Abstimmung (Arcade/Pro/...) als `preset` mit; die
     // Mitglieder wenden sie beim Uebernehmen an (mpRennenUebernehmen).

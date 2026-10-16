@@ -11036,8 +11036,8 @@
 
   stAdd('Mehrspieler: Ampel nach Frist, Uhrabgleich, gemeinsamer Wetterplan', () => {
     const f = [];
-    const z = ampelZeitplan(10000);
-    if (JSON.stringify(z) !== JSON.stringify([[7000, 3], [8000, 2], [9000, 1], [10000, 0]])) f.push('Zeitplan ' + JSON.stringify(z));
+    const z = ampelZeitplan(10000, 2000);
+    if (JSON.stringify(z) !== JSON.stringify([[4000, 1], [5000, 2], [6000, 3], [7000, 4], [8000, 5], [10000, 0]])) f.push('Zeitplan ' + JSON.stringify(z));
     const merkP = mp.proben.slice(), merkO = mp.offset;
     try {
       mp.proben = [];
@@ -11068,7 +11068,7 @@
       Date.now = merk.now; raceWxStart = merk.wx; raceMode = merk.mode; raceLimit = merk.lim;
       raceState = merk.st; mpWetter = null; setWeather(merk.wetter);
     }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Lichter -3/-2/-1/0 s, Versatz vom kuerzesten Weg, Wetter folgt dem Plan' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : '5 rote Lampen je Sekunde + Zufallsverzug, Versatz vom kuerzesten Weg, Wetter folgt dem Plan' };
   });
 
   stAdd('Lenkkennlinie: voll genau bei X %, Anfang unter linear, symmetrisch, am Servo', () => {

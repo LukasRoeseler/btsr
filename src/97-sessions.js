@@ -796,7 +796,8 @@
     const w = Math.random() * 2 * Math.PI;
     const plan = { modus: raceMode, limit: raceLimit, wx: raceWxStart, wxChange: raceWxChange,
                    fliegend: raceFlying, pit: racePitRequired, tank: raceFuelStartL,
-                   wetterPlan: wetterPlanBauen(), wind: { x: Math.cos(w), y: Math.sin(w) } };
+                   wetterPlan: wetterPlanBauen(), wind: { x: Math.cos(w), y: Math.sin(w) },
+                   ampelVerzog: 1000 + Math.random() * 2000 };
     // BESTELLT: "der Host erzwingt die Renneinstellungen auf allen." Wenn der Schalter an ist,
     // schickt der Host seine eigene aktive Abstimmung (Arcade/Pro/...) als `preset` mit; die
     // Mitglieder wenden sie beim Uebernehmen an (mpRennenUebernehmen).

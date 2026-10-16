@@ -5846,23 +5846,28 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
 
   // Aus Gelb heraus wird nicht einfach umgeschaltet, sondern angefahren: dieselbe Ampel wie
   // beim Start, damit der Moment, ab dem wieder ueberholt werden darf, fuer alle derselbe
-  // und sichtbar ist.
+  // und sichtbar ist. Echtes FIA/GT3-Muster: 5 rote Lampen je Sekunde (1..5), dann eine
+  // zufaellige 1-3 s Pause, dann gehen alle aus = Start (kein Gruen).
   function yellowRestart() {
     if (flagState !== 'yellow') return;
     flagState = 'restart';
     updateFlagUi();
-    let step = 3;
-    setRaceLights(3);
-    playTone(660, 0.18, 'square', 0.18);
-    const t = setInterval(() => {
-      step--;
-      if (step > 0) { setRaceLights(step); playTone(660, 0.18, 'square', 0.18); return; }
-      clearInterval(t);
+    const verzog = 1000 + Math.random() * 2000;
+    for (let i = 1; i <= 5; i++) {
+      setTimeout(() => {
+        if (flagState !== 'restart') return;
+        setRaceLights(i);
+        playTone(440 + (i - 1) * 60, 0.18, 'square', 0.18);
+      }, 600 + (i - 1) * 1000);
+    }
+    // Nach der 5. Lampe (600 + 4*1000 = 4600 ms) die zufaellige Pause, dann alle aus.
+    setTimeout(() => {
+      if (flagState !== 'restart') return;
       setRaceLights('go');
       playTone(880, 0.35, 'square', 0.22);
       setFlag('green');
       setTimeout(() => setRaceLights(0), 900);
-    }, 1000);
+    }, 4600 + verzog);
   }
 
   // ---- Rennwuerze ----

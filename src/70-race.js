@@ -1132,37 +1132,36 @@
   }
 
   function setRaceLights(step) {
-    // step: 0 = all off, 1-3 = that many reds lit (bottom to top like a real start light
-    // sequence), 'go' = green.
-    ['race-light-1', 'race-light-2', 'race-light-3', 'race-light-go'].forEach(id => {
-      $(id).classList.remove('on-red', 'on-green');
+    // step: 0 = alle aus, 1-5 = so viele rote Saeulen (echte Startampel, unten nach oben),
+    // 'go' = alle aus (Start; kein Gruen, wie am FIA/GT3-Gantry).
+    ['race-light-1', 'race-light-2', 'race-light-3', 'race-light-4', 'race-light-5'].forEach(id => {
+      const el = $(id); if (el) el.classList.remove('on-red', 'on-green');
     });
-    if (step === 'go') { $('race-light-go').classList.add('on-green'); }
-    else for (let i = 1; i <= step; i++) $(`race-light-${i}`).classList.add('on-red');
+    if (step !== 'go') for (let i = 1; i <= step; i++) { const el = $(`race-light-${i}`); if (el) el.classList.add('on-red'); }
     paintGantry(step);
   }
 
-  // Same state, drawn as the gantry over the cockpit. There are five columns but only three
-  // countdown steps, so a step lights a proportional share rather than one column - three
-  // steps over five columns is 2, 3, 5. A real FIA gantry has five one-second steps; this
-  // countdown has three, and inventing two extra steps would make the lights disagree with
-  // the beeps the driver is actually hearing.
-  const GANTRY_COLS = [0, 2, 3, 5];
+  // Same state, drawn as the gantry over the cockpit AND as the grosse GT3-Overlay.
+  // Fuenf Saeulen, eine je Sekunde (1..5); beim Start gehen alle zusammen aus (kein Gruen).
   function paintGantry(step) {
     const g = $('race-gantry');
-    if (!g) return;
-    const lamps = g.querySelectorAll('.gantry-lamp');
-    lamps.forEach(l => l.classList.remove('red', 'green'));
-    if (step === 'go') {
-      // All reds out and green: that IS the start signal, on a real gantry and here.
-      lamps.forEach(l => l.classList.add('green'));
-      g.classList.add('on');
-      return;
+    if (g) {
+      const lamps = g.querySelectorAll('.gantry-lamp');
+      lamps.forEach(l => l.classList.remove('red', 'green'));
+      if (step === 'go') { g.classList.add('on'); }
+      else if (!step) { g.classList.remove('on'); }
+      else {
+        g.classList.add('on');
+        lamps.forEach(l => { if (+l.dataset.col <= step) l.classList.add('red'); });
+      }
     }
-    if (!step) { g.classList.remove('on'); return; }
-    g.classList.add('on');
-    const cols = GANTRY_COLS[Math.max(0, Math.min(3, step))] || 0;
-    lamps.forEach(l => { if (+l.dataset.col <= cols) l.classList.add('red'); });
+    const ov = $('ampel-overlay');
+    if (!ov) return;
+    ov.classList.toggle('on', step !== 0);
+    const lamps = ov.querySelectorAll('.ampel-lamp');
+    lamps.forEach(l => l.classList.remove('red'));
+    if (step === 'go' || !step) return;
+    lamps.forEach(l => { if (+l.dataset.col <= step) l.classList.add('red'); });
   }
 
   // Results for EVERY car that was connected, which is what was asked for and what did not
@@ -1713,9 +1712,16 @@
   // BESTELLT: "Im Multiplayer muss die Ampel ueberall gleichzeitig kommen." Die Lichter haengen
   // an festen Zeitpunkten vor Gruen statt an einem 1-s-Intervall - so kommt Gruen auf allen
   // Telefonen im selben Moment, wenn alle dieselbe (abgeglichene) Gruenzeit haben. Lokal ist
-  // Gruen einfach jetzt + 3 s.
-  function ampelZeitplan(gruen) {
-    return [[gruen - 3000, 3], [gruen - 2000, 2], [gruen - 1000, 1], [gruen, 0]];
+  // Gruen einfach jetzt + Countdown.
+  // Echtes FIA/GT3-Muster: 5 rote Lampen je Sekunde (1..5), dann eine zufaellige 1-3 s Pause
+  // (verzog), dann gehen alle gleichzeitig aus = Start (kein Gruen). verzog wird im
+  // Mehrspieler vom Host vorgegeben (plan.ampelVerzog), damit es auf allen gleich ist.
+  function ampelZeitplan(gruen, verzog) {
+    const v = verzog || 1000;
+    const a = [];
+    for (let i = 1; i <= 5; i++) a.push([gruen - v - (5 - i) * 1000, i]);
+    a.push([gruen, 0]);
+    return a;
   }
   // gruenZiel: lokale Uhrzeit (ms) fuer Gruen, sonst in 3 s. mpPlan: Wetterplan und Wind eines
   // gemeinsamen Mehrspieler-Rennens (97-sessions.js).
@@ -2020,7 +2026,13 @@
     // auf, und ein Countdown, aus dem man nicht herauskommt, ist eine Falle.
     $('race-stop-btn').disabled = false;
     $('race-status').textContent = 'Countdown…';
-    const plan = ampelZeitplan(gruenBei || Date.now() + 3000);
+    // Zufaellige 1-3 s Pause vor dem Start; im Mehrspieler gibt der Host sie im Plan vor,
+    // damit alle gleichzeitig losfahren (sonst wuerde jedes Telefon anders wuerfeln).
+    const ampelVerzog = (mpPlan && Number.isFinite(mpPlan.ampelVerzog)) ? mpPlan.ampelVerzog
+                      : (1000 + Math.random() * 2000);
+    // Lokal: Gruen so setzen, dass die 1. Lampe 600 ms nach dem Start erscheint
+    // (1. Lampe = gruen - verzog - 4000).
+    const plan = ampelZeitplan(gruenBei || Date.now() + 4600 + ampelVerzog, ampelVerzog);
     clearTimeout(raceCountdownTimer);
     const schritt = (k) => {
       if (raceState !== 'countdown') return;
@@ -2032,7 +2044,7 @@
       if (stufe > 0 && warte < -400 && k + 1 < plan.length) { schritt(k + 1); return; }
       if (stufe > 0) {
         setRaceLights(stufe);
-        playTone(440 + (3 - stufe) * 60, 0.18, 'square', 0.18);
+        playTone(440 + (stufe - 1) * 60, 0.18, 'square', 0.18);
         schritt(k + 1);
         return;
       }
