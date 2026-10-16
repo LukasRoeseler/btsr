@@ -5832,6 +5832,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.0</span></b></p>
       <ul class="muted" id="patchnotes-10" style="padding-left:20px; line-height:1.7">
+        <li>Safety Car, &bdquo;Neben der Strecke von Hand&ldquo;: Neuer Regler &bdquo;Rand-Vorlauf&ldquo;: Die Randfahrt darf fr&uuml;her beginnen als das Abbremsen der Anfahrt, damit das Auto vor dem Rechts-Impuls ruhiger am Rand liegt (Vorgabe 0 = wie bisher). Die Ausfahrt klappt auch, wenn der Kachelz&auml;hler die Ausfahrtkachel &uuml;berspringt (dann bis zu zwei Kacheln sp&auml;ter), und eine &uuml;bersprungene Fensterkachel kostet keine Zusatzrunde mehr.</li>
         <li>Safety Car (experimentell): Neue Auswahl &bdquo;Wo parkt das Safety Car?&ldquo; (Optionen, Seite NPCs). &bdquo;Fahrbahn&ldquo; ist das bisherige Verhalten, bei &bdquo;Fahrbahn, wartet bis Gelb&ldquo; f&auml;hrt es beim Start nicht mit. Bei &bdquo;Neben der Strecke von Hand&ldquo; wartet das Safety Car neben der Strecke, zum Beispiel in einer Boxengasse (von Hand etwa 40 Grad schr&auml;g zur Bahn hin aufgestellt), und f&auml;hrt bei Gelb los. Es merkt sich als Startpunkt die Kachel, auf der es zuerst gelesen wird (einmal je Rennen), kehrt nach Gr&uuml;n dorthin zur&uuml;ck und verl&auml;sst die Bahn: Rechts-Impuls, Gegenschub, Links-Impuls, Gegenschub, Ausrollen, Halt mit leicht nach links eingeschlagenen R&auml;dern. Neun Regler (Impulse, Gegensch&uuml;be, R&auml;der am Ende, Ausfahrt-Zeitpunkt in Viertelkacheln, Anfahrt, Einfahrtstempo, Heimtempo) stellen den Ablauf auf Auto und Untergrund ein. Die Anfahrt beginnt nur voll und mit abgeglichenem Kachelz&auml;hler, damit jede Einfahrt gleich abl&auml;uft. Das Men&uuml; &bdquo;Autonome Gegner&ldquo; hei&szlig;t jetzt &bdquo;NPCs&ldquo;.</li>
         <li>Gelbe Flagge: Ein Auto (NPC oder Spielerauto im Autopiloten), das h&ouml;chstens 1,5 Kacheln hinter dem fahrenden Safety Car liegt, bekommt nie ein h&ouml;heres Tempo-Ziel als das Safety Car selbst (90 bis 100 %). Vorher war das Ziel der Folgeautos im freien Lauf rund 18 % h&ouml;her, und nur ein Abstandsfaktor aus gesch&auml;tzten Positionen bremste sie. Nach mehreren Runden Safety Car konnte das Spielerauto es deshalb auffahren und anschieben.</li>
         <li>Fahrgef&#252;hl Pro (und damit Sim+ und Pacejka): Bremsen nimmt Lenkung jetzt 95 % statt 115 % &#8211; mit dem schnelleren Bremsaufbau l&#228;sst die Lenkung beim Anbremsen fr&#252;h nach, f&#228;llt bei einer Vollbremsung aber nicht mehr auf den Notboden. Omega bleibt bei 115 %.</li>
@@ -11007,25 +11008,33 @@
           <small>Wie viele Kacheln vor der Ausfahrt das Safety Car vom Heimtempo auf das Einfahrtstempo langsamer wird und an den rechten Rand f&auml;hrt. Mehr: es wird fr&uuml;her langsam. Zu wenig: Es ist beim Einfahren noch zu schnell. Die Anfahrt beginnt nur, wenn sie voll vor dem Auto liegt und der Kachelz&auml;hler an Start/Ziel abgeglichen ist. Sonst f&auml;hrt das Safety Car eine Runde weiter, damit jede Einfahrt gleich abl&auml;uft. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="sc-einfahrt-kacheln" min="1" max="6" step="1" value="4">
+          <input type="range" id="sc-einfahrt-kacheln" min="1" max="6" step="1" value="5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="sc-einfahrt-kacheln-val">4</span>
+          <span class="opt-val" id="sc-einfahrt-kacheln-val">5</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Safety Car: Rand-Vorlauf
+          <small>Wie viele Kacheln VOR der Anfahrt das Safety Car schon an den rechten Rand f&auml;hrt, ohne dabei langsamer zu werden. Je fr&uuml;her es am Rand f&auml;hrt, desto ruhiger liegt es vor dem Rechts-Impuls, weil die Querbewegung bei h&ouml;herem Tempo mehr Weg zur&uuml;cklegt. Das Tempo bleibt bis zur Anfahrt beim Heimtempo. 0 = die Randfahrt beginnt erst mit der Anfahrt. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="sc-rand-vorlauf" min="0" max="6" step="1" value="2">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="sc-rand-vorlauf-val">2</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Safety Car: Einfahrtstempo
           <small>Tempo des Safety Cars auf der Anfahrt zur Ausfahrt, in Prozent der H&ouml;chstgeschwindigkeit. F&auml;hrt es zu schnell ein, senke den Wert. In Kurven f&auml;hrt es nie schneller als die Kurvendrosselung erlaubt, wie in der Gelbphase. Unter 30 % liest das Auto die Bahn nicht mehr zuverl&auml;ssig, deshalb geht der Regler nicht tiefer. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="sc-einfahrt-tempo" min="30" max="100" step="5" value="35">
+          <input type="range" id="sc-einfahrt-tempo" min="30" max="100" step="5" value="40">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="sc-einfahrt-tempo-val">35 %</span>
+          <span class="opt-val" id="sc-einfahrt-tempo-val">40 %</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Safety Car: Ausfahrt-Zeitpunkt
           <small>Ab welcher Stelle das Safety Car nach rechts von der Bahn lenkt, vom Startpunkt aus gerechnet in Kacheln, einstellbar in Viertelschritten: 0 ist der Anfang der Kachel des Startpunkts, negative Werte liegen davor (fr&uuml;her), positive dahinter (sp&auml;ter). Meist braucht es negative Werte, weil das Auto nach dem Einlenken noch ein St&uuml;ck weiterrollt, bis es die Bahn verl&auml;sst. F&auml;hrt es zu fr&uuml;h von der Bahn, erh&ouml;he den Wert, zu sp&auml;t: senke ihn. Die Stelle innerhalb einer Kachel wird aus dem zur&uuml;ckgelegten Weg gesch&auml;tzt. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="sc-ausfahrt-kachel" min="-5" max="5" step="0.25" value="-2">
+          <input type="range" id="sc-ausfahrt-kachel" min="-5" max="5" step="0.25" value="-2.75">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="sc-ausfahrt-kachel-val">-2</span>
+          <span class="opt-val" id="sc-ausfahrt-kachel-val">-2,75</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Safety Car: Rechts-Impuls
           <small>Wie lange das Safety Car beim Verlassen der Bahn mit voll nach rechts eingeschlagenen R&auml;dern f&auml;hrt, in Millisekunden. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;. Zu wenig: Es bleibt am Rand der Bahn stehen. Zu viel: Es f&auml;hrt zu weit von der Strecke weg. Zum Kalibrieren schrittweise erh&ouml;hen.</small></div>
@@ -11055,17 +11064,17 @@
           <small>Wie lange das Safety Car nach dem Links-Impuls kurz r&uuml;ckw&auml;rts schiebt, in Millisekunden. Das Auto hat keine echte Bremse, Gas weg hei&szlig;t nur Ausrollen. Ein kurzer R&uuml;ckw&auml;rtsimpuls bremst es wirklich ab. Zu lang, und es rollt r&uuml;ckw&auml;rts. Danach rollt es noch etwa 0,3 s mit geraden R&auml;dern aus, dann stehen die R&auml;der leicht links. 0 = aus. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="sc-gegenschub-ms" min="0" max="500" step="25" value="250">
+          <input type="range" id="sc-gegenschub-ms" min="0" max="500" step="25" value="450">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="sc-gegenschub-ms-val">250 ms</span>
+          <span class="opt-val" id="sc-gegenschub-ms-val">450 ms</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Safety Car: R&auml;der am Ende
           <small>Wie stark die R&auml;der am Ende, wenn das Auto steht, nach links eingeschlagen sind, in Prozent des vollen Einschlags. So steht das Auto bereit, um beim n&auml;chsten Einsatz sauber aus der Box zu fahren. 0 = R&auml;der gerade. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="sc-endlenk-pct" min="0" max="100" step="5" value="40">
+          <input type="range" id="sc-endlenk-pct" min="0" max="100" step="5" value="20">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="sc-endlenk-pct-val">40 %</span>
+          <span class="opt-val" id="sc-endlenk-pct-val">20 %</span>
         </div></div>
       
       <!-- ================================================================================

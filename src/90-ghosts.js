@@ -4359,7 +4359,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // liest - darunter parkt es sich selbst, und dafuer gibt es dort schon eine Pruefung.
   function pitZiel(car) {
     const rh = car.ghost && car.ghost.randHalt;
-    if (rh) return rh.phase === 'rand' ? rh.tempo : (rh.phase === 'rad' || rh.phase === 'gegen') ? rh.tempo * RANDHALT_RAD_TEMPO : 0;
+    if (rh) {
+      // Rand-Vorlauf: vor der eigentlichen Anfahrt gilt kein Randhalt-Tempo, nur die Querlage laeuft.
+      if (rh.phase === 'rand' && rh.tempoAb && car.ghost.scRest > rh.tempoAb) return null;
+      return rh.phase === 'rand' ? rh.tempo : (rh.phase === 'rad' || rh.phase === 'gegen') ? rh.tempo * RANDHALT_RAD_TEMPO : 0;
+    }
     const p = car.ghost && car.ghost.pit;
     if (!p) return null;
     // 'rand' faehrt weiter - das ist der Sinn der Phase: eine Sekunde am Rand ROLLEN,
@@ -4611,6 +4615,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                    radLenk: opt.radLenk || 0, radMs: opt.radMs || 0, gegenMs: opt.gegenMs || 0,
                    bremsMs: opt.bremsMs || 0, endLenk: opt.endLenk || 0, gegenschubMs: opt.gegenschubMs || 0,
                    gegenschubRadMs: opt.gegenschubRadMs || 0, radEnde: 0, nominal: !!opt.nominal,
+                   tempoAb: opt.tempoAb || 0,
                    sofort: !!opt.sofort };
   }
   // Nach der Randfahrt: mit radLenk erst noch mit eingeschlagenen Raedern an den Rand ('rad'),
@@ -5207,23 +5212,34 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!ortStartIndices(currentTrackTiles || []).length) return true;
     return !!g.ortSicher;
   }
+  // GEMELDET: \"Die Ausfahrt wird NICHT zuverlaessig erkannt und gefahren.\" GEMESSEN (Simulation, Zaehler
+  // ueberspringt eine Kachel): Die Ausfahrt verlangte, dass der Zaehler die Ausfahrtkachel GENAU meldet. Ein
+  // Zaehler, der sie auslaesst - Byte 11 verpasst eine Kachel, was bei den niedrigen Tempi des Safety Cars
+  // (um die Lesegrenze) vorkommt, oder der Abgleich an Start/Ziel springt -, meldete sie nie, und das
+  // Safety Car fuhr in vier Runden NIE aus. Jetzt gilt es als erreicht, sobald der Zaehler die Kachel
+  // erreicht ODER bis zu SC_AUSFAHRT_NACHHOL_KACHELN Kacheln dahinter steht (dann eine Kachel spaeter,
+  // aber ueberhaupt). Die Randfahrt beginnt vor der Kachel, also kann es dahinter nicht fruehzeitig
+  // ausloesen. Mit Bruchteil wie bisher: die Phase muss ihn erreicht haben.
+  const SC_AUSFAHRT_NACHHOL_KACHELN = 2;
   function scAusfahrtErreicht(car, abstell) {
     const g = car.ghost;
     if (!g) return false;
     const n = currentTrackTiles ? currentTrackTiles.length : 0;
+    if (!n) return false;
     const frac = scAbstellFrac(car);
-    if (g.tileIndex === abstell) {
+    const dahinter = ((g.tileIndex - abstell) % n + n) % n;       // Kacheln hinter der Ausfahrtkachel (0 = darauf)
+    if (dahinter === 0) {
       if (frac <= 0) return true;
       const o = ghostOrt(car);
       return o === null ? true : (o - g.tileIndex) >= frac;
     }
-    return frac > 0 && n > 0 && g.tileIndex === (abstell + 1) % n;
+    return dahinter <= SC_AUSFAHRT_NACHHOL_KACHELN;
   }
   // Die Verschiebung der Ausfahrt gegen den Startpunkt in Kacheln: negativ = davor, positiv = dahinter.
   function scAusfahrtKachel() {
     const el = $('sc-ausfahrt-kachel');
-    const v = el ? Math.round(parseFloat(el.value) * 4) / 4 : -2;      // Viertelkacheln
-    return Number.isFinite(v) ? Math.max(-SC_AUSFAHRT_KACHEL_MAX, Math.min(SC_AUSFAHRT_KACHEL_MAX, v)) : -2;
+    const v = el ? Math.round(parseFloat(el.value) * 4) / 4 : -2.75;   // Viertelkacheln
+    return Number.isFinite(v) ? Math.max(-SC_AUSFAHRT_KACHEL_MAX, Math.min(SC_AUSFAHRT_KACHEL_MAX, v)) : -2.75;
   }
   // BESTELLT (Test am Tisch): \"Er faehrt zu weit, ueber den Startpunkt hinaus. Nach dem Linksimpuls
   // die Bremse aktivieren (Parameter Bremsimpuls); nach dem Bremsen die Raeder leicht nach links
@@ -5245,8 +5261,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   const SC_AUSROLL_MS = 300;
   function scGegenschubMs() {
     const el = $('sc-gegenschub-ms');
-    const v = el ? parseFloat(el.value) : 250;
-    return Number.isFinite(v) ? Math.max(0, Math.min(500, v)) : 250;
+    const v = el ? parseFloat(el.value) : 450;
+    return Number.isFinite(v) ? Math.max(0, Math.min(500, v)) : 450;
   }
   // Zweiter Gegenschub (BESTELLT: \"nach dem Rechtsimpuls schon mal einen Gegenimpuls\"): direkt nach dem
   // Rechts-Impuls, bevor das Links-Lenken beginnt, damit das Auto Tempo abbaut, solange es rollt.
@@ -5272,8 +5288,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Wie weit die Raeder am Ende nach links stehen, 0..1 des vollen Einschlags.
   function scEndLenk() {
     const el = $('sc-endlenk-pct');
-    const v = el ? parseFloat(el.value) : 40;
-    return Number.isFinite(v) ? Math.max(0, Math.min(100, v)) / 100 : 0.4;
+    const v = el ? parseFloat(el.value) : 20;
+    return Number.isFinite(v) ? Math.max(0, Math.min(100, v)) / 100 : 0.2;
   }
   // BESTELLT (Test am Tisch): \"Das Auto ist bei der Boxeneinfahrt zu schnell. Kann die Geschwindigkeit
   // schon beim Reinfahren reduziert werden?\" Vorher: bis zwei Kacheln vor der Ausfahrt das normale
@@ -5286,10 +5302,22 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // damit und liest die Bahn dabei noch. (Als eigene Konstante, weil die Regler beim Laden initialisiert
   // werden, bevor SC_MIN_TEMPO weiter unten deklariert ist.)
   const SC_EINFAHRT_MIN = 0.30;
+  // BESTELLT: \"Das Safety Car soll sich bei der Anfahrt schon an den rechten Rand einordnen - dann waeren wir
+  // stabiler vor dem Rechtsimpuls.\" und \"einen Gegenschubparameter vor dem Rechtsimpuls, bevor das Auto die
+  // Strecke verlaesst\". GEMESSEN: der Querlage-Befehl steht ~0,3 s nach Beginn der Randfahrt am Anschlag,
+  // aber das ECHTE Auto braucht fuer die Querbewegung Weg - und Abbremsen und Randfahrt begannen zugleich.
+  // Jetzt darf die Randfahrt frueher beginnen: Rand-Vorlauf (Kacheln VOR der Anfahrt, Vorgabe 0 = wie bisher).
+  // Bis zur eigentlichen Anfahrt (g.scRest <= tempoAb) bleibt das Tempo beim Heimtempo (pitZiel null), nur die
+  // Querlage laeuft.
+  function scRandVorlauf() {
+    const el = $('sc-rand-vorlauf');
+    const v = el ? Math.round(parseFloat(el.value)) : 2;
+    return Number.isFinite(v) ? Math.max(0, Math.min(6, v)) : 2;
+  }
   function scAnfahrtKacheln() {
     const el = $('sc-einfahrt-kacheln');
-    const v = el ? Math.round(parseFloat(el.value)) : 4;
-    return Number.isFinite(v) ? Math.max(1, Math.min(6, v)) : 4;
+    const v = el ? Math.round(parseFloat(el.value)) : 5;
+    return Number.isFinite(v) ? Math.max(1, Math.min(6, v)) : 5;
   }
   // BESTELLT (mit Bild der Einstellungen): \"Das Safety Car ist in der finalen Runde etwas schneller als
   // in der ersten Runde; deshalb kommt es noch etwas schnell in die Einfahrt.\" Nach Gruen fuhr es mit dem
@@ -5303,8 +5331,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
   function scEinfahrtTempo() {
     const el = $('sc-einfahrt-tempo');
-    const v = el ? parseFloat(el.value) : 35;
-    return Number.isFinite(v) ? Math.max(SC_EINFAHRT_MIN, Math.min(1, v / 100)) : 0.35;
+    const v = el ? parseFloat(el.value) : 40;
+    return Number.isFinite(v) ? Math.max(SC_EINFAHRT_MIN, Math.min(1, v / 100)) : 0.4;
   }
   function scAusfahrtLinksMs() {
     const el = $('sc-ausfahrt-links-ms');
@@ -5335,6 +5363,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const zeigenT = () => { if ($('sc-einfahrt-tempo-val')) $('sc-einfahrt-tempo-val').textContent = Math.round(scEinfahrtTempo() * 100) + ' %'; };
     $('sc-einfahrt-tempo').addEventListener('input', zeigenT);
     zeigenT();
+  }
+  if ($('sc-rand-vorlauf')) {
+    const zeigenV = () => { if ($('sc-rand-vorlauf-val')) $('sc-rand-vorlauf-val').textContent = String(scRandVorlauf()); };
+    $('sc-rand-vorlauf').addEventListener('input', zeigenV);
+    zeigenV();
   }
   if ($('sc-gegenschub-rad-ms')) {
     const zeigenR = () => { if ($('sc-gegenschub-rad-ms-val')) $('sc-gegenschub-rad-ms-val').textContent = Math.round(scGegenschubRadMs()) + ' ms'; };
@@ -5554,7 +5587,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const n = currentTrackTiles ? currentTrackTiles.length : 0;
     const abstell = scAbstellKachel(car);             // wo das Abstellen beginnt (Start/Ziel, Startpunkt oder eine Kachel davor)
     if (g.randHalt && g.randHalt.scLinie) {
-      if (g.randHalt.phase === 'rand' && g.scVorLinie && scAusfahrtErreicht(car, abstell)) safetyCarAbstellen(car);
+      if (n && g.tileIndex !== null && g.tileIndex !== undefined) g.scRest = ((abstell - g.tileIndex) % n + n) % n;   // Kacheln bis zur Ausfahrtkachel (fuer den Rand-Vorlauf)
+      if (g.randHalt.phase === 'rand' && g.scVorLinie && scAusfahrtErreicht(car, abstell)) {
+        if (g.tileIndex !== abstell) log(garageLabel(car) + ': Safety Car: Ausfahrtkachel ' + abstell + ' vom Zaehler uebersprungen, faehrt auf Kachel ' + g.tileIndex + ' aus.', 'info');
+        safetyCarAbstellen(car);
+      }
       if (g.tileIndex !== abstell) g.scVorLinie = true;
       return;
     }
@@ -5563,7 +5600,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const rest = ((abstell - g.tileIndex) % n + n) % n;  // Kacheln bis zum Abstellen
     // Neben der Strecke beginnt die Anfahrt einstellbar frueher (Regler), sonst zwei Kacheln davor.
     const fenster = aus ? scAnfahrtKacheln() : SC_RAND_KACHELN;
-    if (rest === 0 || rest > fenster) return;
+    // Rand-Vorlauf: die Randfahrt darf frueher beginnen als das Abbremsen (hoechstens eine Kachel weniger als die Runde lang).
+    const randFenster = aus ? Math.min(fenster + scRandVorlauf(), Math.max(fenster, n - 1)) : fenster;
+    if (rest === 0 || rest > randFenster) return;
     if (aus) {
       // GEMELDET: \"Die Einfahrt ist in mehreren Durchlaeufen immer wieder leicht anders, obwohl -2 und
       // Anfahrt 3 eingestellt sind; dadurch klappen die Lenkimpulse nicht mehr richtig.\" Zwei Ursachen,
@@ -5576,7 +5615,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // zwei Runden lang, damit es nie endlos weiterfaehrt.
       const lauf = g.scHeimKacheln || 0;
       const grund = (!scOrtSicher(car) && lauf <= 2 * n) ? 'Ort noch nicht an Start/Ziel abgeglichen'
-                  : (rest < fenster && lauf <= n) ? 'die Anfahrt wuerde nicht voll beginnen' : null;
+                  : (rest < randFenster - 1 && lauf <= n) ? 'die Anfahrt wuerde nicht voll beginnen' : null;     // eine uebersprungene Fensterkachel (rest == fenster - 1) ist erlaubt
       if (grund) {
         if (g.scWarteGrund !== grund) {
           g.scWarteGrund = grund;
@@ -5594,8 +5633,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                            radMs: aus ? scAusfahrtMs() : EINPARK_MS, gegenMs: aus ? scAusfahrtLinksMs() : EINPARK_MS,
                            bremsMs: aus ? scGegenschubMs() + SC_AUSROLL_MS : 0, endLenk: aus ? scEndLenk() : 0,
                            gegenschubMs: aus ? scGegenschubMs() : 0, gegenschubRadMs: aus ? scGegenschubRadMs() : 0,
+                           tempoAb: aus ? fenster : 0,
                            nominal: aus, fertig: safetyCarFertig });
     g.randHalt.scLinie = true;
+    g.scRest = rest;
     log(garageLabel(car) + (aus ? ': Safety Car zieht zur Ausfahrt nach rechts.' : ': Safety Car zieht vor Start/Ziel nach rechts.'), 'info');
   }
   // ---- AM GEPARKTEN SAFETY CAR LINKS VORBEI (v1.0.32) ---------------------------------
@@ -9261,7 +9302,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // v1.0.37: das Safety Car bleibt unter Gelb nie stehen (SC_MIN_TEMPO).
       if (car.role === 'safetycar' && flagState !== 'green' && !g.randHalt) target = Math.max(target, SC_MIN_TEMPO);
       // Heimweg nach Gruen (Safety Car neben der Strecke): Hoechsttempo einstellbar (scHeimTempo, Vorgabe 100 %).
-      if (car.role === 'safetycar' && g.scHeim && !g.randHalt && scNebenModus()) target = Math.max(SC_MIN_TEMPO, Math.min(target, scHeimTempo()));
+      const scVorlaufRand = g.randHalt && g.randHalt.nominal && g.randHalt.phase === 'rand' && g.randHalt.tempoAb && g.scRest > g.randHalt.tempoAb;
+      if (car.role === 'safetycar' && ((g.scHeim && !g.randHalt) || scVorlaufRand) && scNebenModus()) target = Math.max(SC_MIN_TEMPO, Math.min(target, scHeimTempo()));
       const pz = pitZiel(car);
       if (pz !== null) {
         // Anfahrt neben der Strecke: das Einfahrtstempo ist eine OBERGRENZE, und in Kurven gilt dieselbe
