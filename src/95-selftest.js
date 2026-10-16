@@ -13761,6 +13761,97 @@
                  + (maengel.length ? ' | ' + maengel.join(', ') : ' | eigene Physik, Anzeige folgt') };
   });
 
+  // ---- NPC: Rueckweg mit Lenkung ----
+  stAdd('NPC: Rueckweg mit Lenkung - Richtung aus dem Streckencode, zuruecksetzen, lenken, bis 4,5 s', () => {
+    const f = [], info = [];
+    const cb = $('ghost-w-recovery-lenk'), sz = $('ghost-rw-zurueck-ms'), sl = $('ghost-rw-lenk-ms');
+    if (!cb || !sz || !sl) return { ok: false, mass: 'Schalter oder Regler fehlen' };
+    const merk = { garage: garage.splice(0, garage.length), tiles: currentTrackTiles, rec: ghostCfg.wuerzeRecovery, len: ghostCfg.rueckwegLenkung, fl: flagState, now: Date.now, z: sz.value, l: sl.value };
+    const autos = [];
+    try {
+      if (cb.defaultChecked) f.push('Vorgabe von Rueckweg mit Lenkung nicht aus');
+      if (+sz.defaultValue !== 250 || +sl.defaultValue !== 600) f.push('Vorgaben Zuruecksetzen/Lenkimpuls nicht 250 / 600: ' + sz.defaultValue + ' / ' + sl.defaultValue);
+      ghostCfg.wuerzeRecovery = true; flagState = 'green';
+      sz.value = '250'; sl.value = '600';
+      const lauf = (code, wahl, lenkAn, opt) => {
+        const o = opt || {};
+        currentTrackTiles = codeToTrack(code).tiles; lineCache = null;
+        const idx = currentTrackTiles.findIndex(wahl);
+        const car = OMEGA_TEST.attrappeGhost('RW'); garage.push(car); autos.push(car);
+        const g = car.ghost; g.freeRun = true; g.gnadeBis = 0; g.tileIndex = idx; car.lastCode = undefined; car.tileCode = 0x00; car.tileCount = 5;
+        if (g.engine && g.engine.config) g.engine.config.topSpeedKmh = 300;
+        ghostCfg.rueckwegLenkung = lenkAn;
+        let uhr = merk.now(); Date.now = () => uhr;
+        const pakete = []; let start = null, parkT = null;
+        try {
+          for (let t = 0; t < 8000; t += 60) {
+            uhr += 60;
+            const gueltig = t < (o.vorher || 0);                           // erst kurz auf der Bahn (Querlage wird gemerkt), dann Abgang
+            car.tileCode = gueltig ? 0x02 : 0x00;
+            if (gueltig && o.quer !== undefined) g.querIst = o.quer;
+            if (g.engine && g.engine.state) g.engine.state.speedKmh = (o.steht ? 0 : 0.3) * 300;
+            car.testSenke.length = 0; ghostTick(car);
+            if (start === null && g.recoverUntil) start = uhr;
+            const p = car.testSenke[car.testSenke.length - 1];
+            if (start !== null && p) pakete.push({ t: uhr - start, steer: p.steer, gas: p.throttle });
+            if (car.parked) { parkT = start === null ? null : uhr - start; break; }
+          }
+        } finally { Date.now = merk.now; }
+        return { innen: g.rwInnen, pakete, parkT, idx };
+      };
+      const imFenster = (r, a, b) => r.pakete.filter((p) => p.t >= a && p.t < b);
+      const rechts = (x) => ghostTurnOf(x.type) === 1, links = (x) => ghostTurnOf(x.type) === -1;
+      // 1. Rechtskurve: innen ist rechts. Erst zuruecksetzen, dann die Raeder voll rechts, bis 4,5 s.
+      const r1 = lauf('SG4R4G4', rechts, true);
+      if (r1.innen !== 1) f.push('Rechtskurve: innen nicht rechts: ' + r1.innen);
+      const zu1 = imFenster(r1, 0, 230), le1 = imFenster(r1, 330, 800);
+      if (!zu1.length || !zu1.every((p) => p.gas < -0.4 && p.steer === 0)) f.push('Rechtskurve: kein Zuruecksetzen mit geraden Raedern: ' + JSON.stringify(zu1.slice(0, 2)));
+      if (!le1.length || !le1.every((p) => p.steer === 1 && p.gas > -0.1)) f.push('Rechtskurve: Raeder nicht voll rechts bei Vorwaertsfahrt: ' + JSON.stringify(le1.slice(0, 2)));
+      if (r1.parkT === null || Math.abs(r1.parkT - 4500) > 200) f.push('Rechtskurve: parkt nicht nach ca. 4,5 s: ' + r1.parkT);
+      info.push('Rechtskurve: innen rechts, parkt nach ' + r1.parkT + ' ms');
+      // 2. Linkskurve: innen ist links.
+      const r2 = lauf('SG4L4G4', links, true);
+      const le2 = imFenster(r2, 330, 800);
+      if (r2.innen !== -1) f.push('Linkskurve: innen nicht links: ' + r2.innen);
+      if (!le2.length || !le2.every((p) => p.steer === -1)) f.push('Linkskurve: Raeder nicht voll links: ' + JSON.stringify(le2.slice(0, 2)));
+      // 3. Mehrere Versuche: der zweite Zyklus beginnt nach 250 + 600 + 300 = 1150 ms.
+      const zu2 = imFenster(r1, 1150, 1370);
+      if (!zu2.length || !zu2.every((p) => p.gas < -0.4)) f.push('zweiter Versuch beginnt nicht mit Zuruecksetzen');
+      // 4. Zuruecksetzen 0: gleich lenken.
+      sz.value = '0';
+      const r4 = lauf('SG4R4G4', rechts, true);
+      const le4 = imFenster(r4, 0, 500);
+      if (!le4.length || !le4.every((p) => p.steer === 1 && p.gas > -0.1)) f.push('Zuruecksetzen 0: nicht gleich gelenkt');
+      sz.value = '250';
+      // 5. Gerade: die Gegenseite der Querlage (am rechten Rand nach links).
+      const gerade = (x, i, a) => ghostTurnOf(x.type) === 0 && i > 1 && ghostTurnOf(a[i - 1].type) === 0 && ghostTurnOf(a[(i + 1) % a.length].type) === 0;
+      const r5 = lauf('SG4R4G4', gerade, true, { quer: 0.9, vorher: 300 });
+      if (r5.innen !== -1) f.push('Gerade, Querlage rechts: Richtung nicht links: ' + r5.innen);
+      const r5b = lauf('SG4R4G4', gerade, true, { quer: -0.9, vorher: 300 });
+      if (r5b.innen !== 1) f.push('Gerade, Querlage links: Richtung nicht rechts: ' + r5b.innen);
+      const r5c = lauf('SG4R4G4', gerade, true, { quer: 0, vorher: 300 });
+      if (r5c.innen !== 0 || r5c.pakete.some((p) => p.steer === 1 || p.steer === -1 || p.gas < -0.4)) f.push('Gerade ohne Seite: es lenkt oder setzt zurueck, obwohl die Richtung unbekannt ist');
+      // 6. Ohne die Option: wie bisher, 3 s, kein Zuruecksetzen.
+      const r6 = lauf('SG4R4G4', rechts, false);
+      if (r6.pakete.some((p) => p.gas < -0.4)) f.push('ohne Option: Zuruecksetzen');
+      if (r6.parkT === null || Math.abs(r6.parkT - 3000) > 200) f.push('ohne Option: parkt nicht nach ca. 3 s: ' + r6.parkT);
+      // 7. Steht das Modelltempo bei 0: bisher Abbruch nach 0,5 s (\"kein Vorankommen\"), mit Lenkung laeuft der Versuch weiter.
+      const r7a = lauf('SG4R4G4', rechts, false, { steht: true });
+      const r7b = lauf('SG4R4G4', rechts, true, { steht: true });
+      if (!(r7a.parkT !== null && r7a.parkT < 1500)) f.push('ohne Option und bei Stillstand: kein Abbruch nach kurzer Zeit: ' + r7a.parkT);
+      if (!(r7b.parkT !== null && r7b.parkT > 4000)) f.push('mit Lenkung und bei Stillstand: Abbruch zu frueh: ' + r7b.parkT);
+      info.push('Stillstand: ohne Option Abbruch nach ' + r7a.parkT + ' ms, mit Lenkung nach ' + r7b.parkT + ' ms');
+    } finally {
+      Date.now = merk.now;
+      for (const c of autos) { c.parked = null; stopGhost(c); }
+      garage.splice(0, garage.length); for (const c of merk.garage) garage.push(c);
+      currentTrackTiles = merk.tiles; lineCache = null;
+      ghostCfg.wuerzeRecovery = merk.rec; ghostCfg.rueckwegLenkung = merk.len; flagState = merk.fl;
+      sz.value = merk.z; sl.value = merk.l;
+    }
+    return { ok: !f.length, mass: info.join(' | ') + (f.length ? ' || FEHLER: ' + f.join(' | ') : '') };
+  });
+
   stAdd('Schalter und Spiegel sagen beim Laden dasselbe', () => {
     const PAARE = [
       ['amb-enable', () => ambienceEnabled],
@@ -13779,6 +13870,7 @@
       ['ghost-charakter', () => ghostCfg.charakter],
       ['ghost-w-start', () => ghostCfg.wuerzeStart],
       ['ghost-w-recovery', () => ghostCfg.wuerzeRecovery],
+      ['ghost-w-recovery-lenk', () => ghostCfg.rueckwegLenkung],
       ['ghost-learn', () => ghostCfg.learn],
       ['ghost-learn-pace', () => ghostCfg.learnPace],
       ['ghost-needcode', () => ghostCfg.needCode],

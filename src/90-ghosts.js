@@ -2734,6 +2734,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Schalter in den Optionen.
   const GHOST_RECOVER_STUCK_V = 0.05;    // Anteil der Hoechstgeschwindigkeit
   const GHOST_RECOVER_STUCK_MS = 500;    // so lange muss es anliegen, kein Fehlalarm
+  // Rueckweg MIT Lenkung: mehr Zeit fuer mehrere Versuche (ein Zyklus dauert rund 1,1 s).
+  const GHOST_RECOVER_LENK_MS = 4500;
+  const GHOST_RECOVER_BAHN_MS = 300;     // zwischen zwei Versuchen: normale Spurfuehrung, damit das Auto die Bahn wieder liest
   // Wie frisch muss der letzte Kachelwechsel sein, damit der Zaehler als LAUFEND gilt?
   // GHOST_TILE_MS_MAX ist die laengste je gefahrene Kachel; wer darueber liegt, steht.
   const GHOST_ZAEHLER_FRISCH_MS = 4000;
@@ -2987,6 +2990,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Begruendung bei ghostRecoveryVersuchen()), und das ist ungeprueft an einem echten
     // Auto - wer es einschaltet, tut es mit offenen Augen.
     wuerzeRecovery: false,
+    // BESTELLT: \"Ziemlich oft bleiben Ghosts am Rand haengen, meist in Aussenkurven, weil Banden dran sind.
+    // Er muesste am Streckencode sehen, wie es weitergeht, und nach links oder rechts lenken.\" Erweitert
+    // den Rueckweg um aktives Lenken (siehe rwSchritt). Standard AUS, ungeprueft an einem echten Auto.
+    rueckwegLenkung: false,
   };
 
   // ---- Der Anfangsabgleich der fuenf Wuerz-Kaestchen ---------------------------------
@@ -3261,6 +3268,67 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Frage fuer einen Typ. Hier stand eine zweite Aufzaehlung, und beim Nachtragen der
     // 30-Grad-Kurven habe ich prompt nur eine der beiden erwischt.
     return ghostTurnOf(t);
+  }
+
+  // ---- RUECKWEG MIT LENKUNG (NPC, WIP) --------------------------------------------------
+  // Der bestehende Rueckweg (wuerzeRecovery) laesst die Ideallinie lenken und erkennt \"haengt fest\" am
+  // MODELLtempo - das steigt mit dem Gas, auch wenn das echte Auto an der Bande steht. Der Autor hat
+  // bewusst keine eigene Lenkrichtung erfunden: eine falsch geratene Seite lenkt WEITER weg. Hier ist die
+  // Richtung aber nicht geraten: wer in einer AUSSENkurve an der Bande haengt, kommt auf der INNENseite der
+  // Kurve weg, und die kennt die App aus dem Streckencode (ghostTurnDir: links -1, rechts +1). Auf der
+  // Geraden gilt die Gegenseite der Querlage (am rechten Rand nach links). Ein Versuch ist ein Zyklus aus
+  // Zurueckschieben (Rueckwaertsschub wie beim Safety Car), Raeder voll zur Innenseite bei Vorwaertsfahrt
+  // (ohne Spur-Bytes) und kurz normaler Spurfuehrung, mit der Querlage zur Innenseite.
+  function rwZurueckMs() {
+    const el = $('ghost-rw-zurueck-ms');
+    const v = el ? parseFloat(el.value) : 250;
+    return Number.isFinite(v) ? Math.max(0, Math.min(600, v)) : 250;
+  }
+  function rwLenkMs() {
+    const el = $('ghost-rw-lenk-ms');
+    const v = el ? parseFloat(el.value) : 600;
+    return Number.isFinite(v) ? Math.max(200, Math.min(1200, v)) : 600;
+  }
+  if ($('ghost-rw-zurueck-ms')) {
+    const zeigenZ = () => { if ($('ghost-rw-zurueck-ms-val')) $('ghost-rw-zurueck-ms-val').textContent = Math.round(rwZurueckMs()) + ' ms'; };
+    $('ghost-rw-zurueck-ms').addEventListener('input', zeigenZ);
+    zeigenZ();
+  }
+  if ($('ghost-rw-lenk-ms')) {
+    const zeigenL = () => { if ($('ghost-rw-lenk-ms-val')) $('ghost-rw-lenk-ms-val').textContent = Math.round(rwLenkMs()) + ' ms'; };
+    $('ghost-rw-lenk-ms').addEventListener('input', zeigenL);
+    zeigenL();
+  }
+  // Die Seite, zu der das Auto sich befreien soll: +1 rechts, -1 links, 0 unbekannt.
+  function rwInnen(car) {
+    const g = car && car.ghost;
+    if (!g) return 0;
+    const n = currentTrackTiles ? currentTrackTiles.length : 0;
+    if (n >= 2 && g.tileIndex !== null && g.tileIndex !== undefined) {
+      // letzte bekannte Kachel, dann die naechste, dann die vorige (der Zaehler bleibt beim Ausfall stehen)
+      for (const vor of [0, 1, n - 1]) {
+        const d = ghostTurnDir(car, vor);
+        if (d) return d;
+      }
+    }
+    const q = g.rwLetzteQuer !== undefined ? g.rwLetzteQuer : (g.querIst !== undefined && g.querIst !== null ? g.querIst : g.querSoll);
+    return Math.abs(q || 0) >= 0.3 ? (q > 0 ? -1 : 1) : 0;
+  }
+  // Wo im Versuchszyklus sind wir? null, solange kein Rueckweg mit Lenkung laeuft.
+  function rwSchritt(car, now) {
+    const g = car && car.ghost;
+    if (!ghostCfg.wuerzeRecovery || !ghostCfg.rueckwegLenkung || !g || !g.rwAktiv || !g.recoverUntil || car.parked || now >= g.recoverUntil) return null;
+    const zurueck = rwZurueckMs(), lenk = rwLenkMs();
+    const p = (now - (g.recoverStart || now)) % (zurueck + lenk + GHOST_RECOVER_BAHN_MS);
+    const dir = g.rwInnen || 0;
+    if (p < zurueck) return { phase: 'zurueck', dir };
+    if (p < zurueck + lenk) return { phase: 'lenken', dir };
+    return { phase: 'bahn', dir };
+  }
+  // Die Querlage zwischen zwei Versuchen: zur Innenseite, damit die Spurfuehrung das Auto von der Bande wegzieht.
+  function rwQuer(car, now) {
+    const r = rwSchritt(car, now);
+    return (r && r.phase === 'bahn' && r.dir) ? r.dir * 0.6 : null;
   }
 
   // Wie weit sind wir durch die aktuelle Kachel? 0 am Anfang, 1 am Ende.
@@ -8831,6 +8899,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // 0xff ist "kein Wert", keine Lesung: es darf die Abgangsuhr nicht zuruecksetzen.
       g.offSince = 0;
     }
+    // Die Querlage VOR dem Abgang merken: der Rueckweg mit Lenkung braucht sie auf der Geraden (rwInnen),
+    // und nach dem Abgang laeuft g.querIst schon wieder ihrem Ziel nach.
+    if (!g.offSince && g.querIst !== undefined && g.querIst !== null) g.rwLetzteQuer = g.querIst;
     // Ein bestaetigter Abgang STELLT AB. Vorher war das ein Zustand, der von selbst wieder
     // wegging, sobald ein Code kam - das Auto fuhr dann neben der Bahn weiter, statt auf
     // die Hand zu warten, die es zurueckstellt.
@@ -8968,7 +9039,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // lenken statt zurueck, und genau davor warnt die Bestellung ausdruecklich.
     if (parken && !car.parked) {
       if (ghostCfg.wuerzeRecovery) {
-        if (!g.recoverUntil) g.recoverUntil = now + GHOST_RECOVER_MS;
+        if (!g.recoverUntil) {
+          // Mit Lenkung nur, wenn die Richtung bekannt ist - sonst waere Zuruecksetzen und Lenken geraten.
+          const innen = ghostCfg.rueckwegLenkung ? rwInnen(car) : 0;
+          const lenkAn = innen !== 0;
+          g.recoverStart = now;
+          g.recoverUntil = now + (lenkAn ? GHOST_RECOVER_LENK_MS : GHOST_RECOVER_MS);
+          g.rwInnen = innen; g.rwAktiv = lenkAn;
+          if (ghostCfg.rueckwegLenkung) log(garageLabel(car) + ': Rückweg ' + (lenkAn ? 'mit Lenkung, innen ist ' + (innen > 0 ? 'rechts' : 'links') + '.' : 'ohne Lenkung, die Richtung ist nicht bekannt.'), 'info');
+        }
         if (now < g.recoverUntil) {
           // "FAEHRT ES IRGENDWO GEGEN": kein Bytesignal verfuegbar (siehe die Begruendung
           // bei GHOST_RECOVER_STUCK_V), also der groebere, aber robuste Ersatz - Gas liegt
@@ -8976,7 +9055,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
           const topKmh = g.engine && g.engine.config ? g.engine.config.topSpeedKmh : 0;
           const vAnteil = (g.engine && g.engine.state && topKmh)
             ? Math.abs(g.engine.state.speedKmh || 0) / topKmh : 0;
-          if (vAnteil < GHOST_RECOVER_STUCK_V) {
+          if (!g.rwAktiv && vAnteil < GHOST_RECOVER_STUCK_V) {                        // mit Lenkung ist das Stehen der Grund fuer den Versuch
             if (!g.recoverStuckSince) g.recoverStuckSince = now;
             else if (now - g.recoverStuckSince > GHOST_RECOVER_STUCK_MS) {
               log(garageLabel(car) + ': Rückweg abgebrochen, kein Vorankommen (vermutlich '
@@ -8987,7 +9066,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
             g.recoverStuckSince = 0;
           }
         } else {
-          log(garageLabel(car) + ': Rückweg nach ' + (GHOST_RECOVER_MS / 1000)
+          log(garageLabel(car) + ': Rückweg nach ' + ((g.recoverStart ? g.recoverUntil - g.recoverStart : GHOST_RECOVER_MS) / 1000)
               + ' s nicht gefunden.', 'err');
           parkCar(car, 'Bahn verlassen');
         }
@@ -8998,7 +9077,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // parken ist nicht (mehr) noetig, waehrend ein Versuch lief - der Rueckweg hat
       // funktioniert, nicht zwingend an derselben Stelle, wie bestellt.
       log(garageLabel(car) + ': Rückweg gefunden, wieder auf der Bahn.', 'info');
-      g.recoverUntil = 0; g.recoverStuckSince = 0;
+      g.recoverUntil = 0; g.recoverStuckSince = 0; g.recoverStart = 0; g.rwInnen = 0; g.rwAktiv = false;
     }
     const offTrack = !!car.parked;
     // Wer steht, warnt die anderen - solange das Rennen laeuft und er nicht in der
@@ -9483,7 +9562,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         const pqSc = pqBox === null ? scVorbeiQuer(car) : null;     // v1.0.32
         // v1.0.37: Anfahrt zum Startplatz mittig (Querlage 0), siehe aufstellenPruefen.
         const pqAuf = (g.aufstellZiel !== undefined && g.aufstellZiel !== null) ? 0 : null;
-        const pq = pqBox !== null ? pqBox : pqSc !== null ? pqSc : pqAuf !== null ? pqAuf : ghostPaarQuer(car);
+        const pqRw = rwQuer(car, now);                                  // Rueckweg mit Lenkung: zur Innenseite
+        const pq = pqRw !== null ? pqRw : pqBox !== null ? pqBox : pqSc !== null ? pqSc : pqAuf !== null ? pqAuf : ghostPaarQuer(car);
         // ====================================================================================
         // BEIM UEBERHOLEN GILT EIN 2-STUFEN-MODELL
         // ====================================================================================
@@ -9794,8 +9874,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const lenkAus = ghostQuerTestAn() ? ghostQuerTest
                   : ((armed && !offTrack) ? out.servoAngle : 0);
     // v1.0.29: zum Abstellen (Safety Car) zuletzt mit eingeschlagenen Raedern, ohne Spur-Bytes.
-    const radLenk = randHaltRadLenk(car);
-    if (radLenk !== null) writeToCar(car, radLenk, drive, lights, null);
+    let radLenk = randHaltRadLenk(car);
+    let driveOut = drive;
+    // Rueckweg mit Lenkung: zuruecksetzen, Raeder zur Kurveninnenseite, dann wieder auf die Bahn (rwSchritt).
+    const rw = radLenk === null ? rwSchritt(car, now) : null;
+    if (rw && rw.phase === 'zurueck') { radLenk = 0; driveOut = SC_GEGENSCHUB; }
+    else if (rw && rw.phase === 'lenken' && rw.dir) radLenk = rw.dir;
+    if (radLenk !== null) writeToCar(car, radLenk, driveOut, lights, null);
     else writeToCar(car, (armed && !offTrack) ? lenkAus : 0, drive, lights, car.modeBytes);
   }
 

@@ -10779,6 +10779,24 @@
            es abschalten kann." Standard AUS - ungeprueft an einem echten Auto. -->
       <div class="opt-row"><div class="opt-label">NPC: Rückweg nach einem Abgang<small>Statt sofort zu parken, versucht das Auto bis zu 3 Sekunden, selbst auf die Strecke zurückzufahren - anhand der zuletzt bekannten Stelle und der Ideallinie dort. Kommt es dabei nicht voran (vermutlich ein Hindernis), oder gelingt es in 3 Sekunden nicht, parkt es wie bisher. Es muss nicht an derselben Stelle wieder auffahren.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-w-recovery"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">NPC: R&uuml;ckweg mit Lenkung <span class="wip-tag">experimentell</span><small>Erweitert &bdquo;R&uuml;ckweg nach einem Abgang&ldquo;: H&auml;ngt das Auto fest, zum Beispiel in einer Au&szlig;enkurve an der Bande, setzt es kurz zur&uuml;ck, schl&auml;gt die R&auml;der zur Innenseite der Kurve ein (die Richtung kennt die App aus dem Streckencode) und f&auml;hrt dann wieder auf der Bahn weiter. Das wiederholt es bis zu 4,5 Sekunden, dann parkt es wie bisher. Die App nimmt dabei an, dass das Auto an der Au&szlig;enseite der Kurve h&auml;ngt. Ist die Richtung nicht bekannt, lenkt es nicht. Wirkt nur, wenn &bdquo;R&uuml;ckweg nach einem Abgang&ldquo; an ist. Ungepr&uuml;ft an einem echten Auto.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-w-recovery-lenk"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">NPC: R&uuml;ckweg Zur&uuml;cksetzen
+          <small>Wie lange das Auto beim R&uuml;ckweg mit Lenkung zuerst r&uuml;ckw&auml;rts schiebt, in Millisekunden, um von der Bande wegzukommen. 0 = nicht zur&uuml;cksetzen, nur lenken. Zu lang, und es rollt weit von der Bande weg. Gilt nur bei &bdquo;R&uuml;ckweg mit Lenkung&ldquo;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-rw-zurueck-ms" min="0" max="600" step="50" value="250">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-rw-zurueck-ms-val">250 ms</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">NPC: R&uuml;ckweg Lenkimpuls
+          <small>Wie lange das Auto beim R&uuml;ckweg mit Lenkung die R&auml;der voll zur Innenseite der Kurve eingeschlagen hat und dabei vorw&auml;rts f&auml;hrt, in Millisekunden. Danach folgt kurz die normale Spurf&uuml;hrung, dann beginnt ein neuer Versuch. Gilt nur bei &bdquo;R&uuml;ckweg mit Lenkung&ldquo;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-rw-lenk-ms" min="200" max="1200" step="50" value="600">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-rw-lenk-ms-val">600 ms</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">NPC: Ideallinie
           <!-- Seit v0.5.9 wirkt dieser Regler deutlich staerker: der Deckel aus
                learnSteerCap() ging von 0,55 auf 1,0, gemessen an dem, was die Original-App
