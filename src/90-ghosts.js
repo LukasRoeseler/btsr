@@ -3294,10 +3294,76 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     $('ghost-rw-zurueck-ms').addEventListener('input', zeigenZ);
     zeigenZ();
   }
+  if ($('ghost-rw-weich')) {
+    const zeigenRW = () => { if ($('ghost-rw-weich-val')) $('ghost-rw-weich-val').textContent = Math.round(rwWeich() * 100) + ' %'; };
+    $('ghost-rw-weich').addEventListener('input', zeigenRW);
+    zeigenRW();
+  }
   if ($('ghost-rw-lenk-ms')) {
     const zeigenL = () => { if ($('ghost-rw-lenk-ms-val')) $('ghost-rw-lenk-ms-val').textContent = Math.round(rwLenkMs()) + ' ms'; };
     $('ghost-rw-lenk-ms').addEventListener('input', zeigenL);
     zeigenL();
+  }
+  // WEICH. GEMELDET: \"Das Rangieren wirkt etwas hektisch\" - voller Rueckwaertsschub, Raeder sofort voll
+  // eingeschlagen, nach 0,3 s der naechste Versuch. Der Regler (0..100 %, Vorgabe 0 = wie getestet) macht
+  // drei Dinge: der Rueckwaertsschub laeuft aus, die Raeder werden eingeschlagen und vor dem Ende wieder
+  // geloest (Rampe, bis zu 35 % der Lenkzeit je Seite) und die Pause zwischen den Versuchen waechst bis
+  // auf 1 s. Dafuer gibt es weniger Versuche in den 4,5 s.
+  function rwWeich() {
+    const el = $('ghost-rw-weich');
+    const v = el ? parseFloat(el.value) : 0;
+    return Number.isFinite(v) ? Math.max(0, Math.min(1, v / 100)) : 0;
+  }
+  // TEMPO UND PAUSE. GEMELDET: \"Kann man das Tempo beim Rangieren reduzieren? Und die Zeit zwischen den Versuchen
+  // hoeher einstellen, bis 2 Sekunden?\" Das Gas nach dem Zuruecksetzen kam aus der Fahrsteuerung, die das
+  // Modelltempo vom Stehen an der Bande weiterfuehrte - das Modell hatte waehrend des Haengens weiter
+  // beschleunigt, das echte Auto bekam dann einen Satz nach vorn. Jetzt begrenzt rwTempo() das Gas, solange
+  // die Raeder eingeschlagen sind; zwischen den Versuchen gilt mindestens die Leseschwelle, sonst liest das
+  // Auto die Bahn nicht wieder. rwPauseMs() ist die Pause zwischen zwei Versuchen (vorher nur ueber
+  // \"weich\" bis 1 s); \"weich\" gibt weiter eine Untergrenze vor.
+  function rwTempo() {
+    const el = $('ghost-rw-tempo');
+    const v = el ? parseFloat(el.value) : 50;
+    return Number.isFinite(v) ? Math.max(0.25, Math.min(1, v / 100)) : 0.5;
+  }
+  function rwPauseMs() {
+    const el = $('ghost-rw-pause-ms');
+    const v = el ? parseFloat(el.value) : 300;
+    return Number.isFinite(v) ? Math.max(300, Math.min(2000, v)) : 300;
+  }
+  if ($('ghost-rw-tempo')) {
+    const zeigenRT = () => { if ($('ghost-rw-tempo-val')) $('ghost-rw-tempo-val').textContent = Math.round(rwTempo() * 100) + ' %'; };
+    $('ghost-rw-tempo').addEventListener('input', zeigenRT);
+    zeigenRT();
+  }
+  if ($('ghost-rw-pause-ms')) {
+    const zeigenRP = () => { if ($('ghost-rw-pause-ms-val')) $('ghost-rw-pause-ms-val').textContent = Math.round(rwPauseMs()) + ' ms'; };
+    $('ghost-rw-pause-ms').addEventListener('input', zeigenRP);
+    zeigenRP();
+  }
+  // WARTEZEIT. GEMELDET: \"Manchmal kommt der Ghost gegen die Bande und koennte weiterfahren, faengt aber schon
+  // mit dem Rangieren an. Das ist unrealistisch.\" Der Rueckweg begann sofort mit der Bestaetigung des
+  // Abgangs (0,9 s Gerade, 1,2 s Kurve, 1,8 s Haarnadel). Jetzt faehrt das Auto nach der Bestaetigung noch
+  // rwWarteMs() normal weiter (Spurfuehrung wie im alten Rueckweg), und die 4,5 s Rangieren beginnen erst
+  // danach. Liest es in der Wartezeit wieder einen gueltigen Code, endet der Rueckweg, ohne zu rangieren.
+  function rwWarteMs() {
+    const el = $('ghost-rw-warte-ms');
+    const v = el ? parseFloat(el.value) : 1000;
+    return Number.isFinite(v) ? Math.max(0, Math.min(5000, v)) : 1000;
+  }
+  if ($('ghost-rw-warte-ms')) {
+    const zeigenWM = () => { if ($('ghost-rw-warte-ms-val')) $('ghost-rw-warte-ms-val').textContent = Math.round(rwWarteMs()) + ' ms'; };
+    $('ghost-rw-warte-ms').addEventListener('input', zeigenWM);
+    zeigenWM();
+  }
+  const rwGlatt = (x) => { const c = Math.max(0, Math.min(1, x)); return c * c * (3 - 2 * c); };
+  // Die Lenkstaerke im Lauf einer Lenkphase (x 0..1): Rampe hoch, voll, Rampe runter.
+  function rwRampe(x, w) {
+    const f = 0.35 * w;
+    if (!(f > 0)) return 1;
+    if (x < f) return rwGlatt(x / f);
+    if (x > 1 - f) return rwGlatt((1 - x) / f);
+    return 1;
   }
   // Die Seite, zu der das Auto sich befreien soll: +1 rechts, -1 links, 0 unbekannt.
   function rwInnen(car) {
@@ -3318,12 +3384,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function rwSchritt(car, now) {
     const g = car && car.ghost;
     if (!ghostCfg.wuerzeRecovery || !ghostCfg.rueckwegLenkung || !g || !g.rwAktiv || !g.recoverUntil || car.parked || now >= g.recoverUntil) return null;
+    if (now < (g.rwBeginn || 0)) return null;                               // Wartezeit: noch kein Rangieren
     const zurueck = rwZurueckMs(), lenk = rwLenkMs();
-    const p = (now - (g.recoverStart || now)) % (zurueck + lenk + GHOST_RECOVER_BAHN_MS);
+    const bahn = Math.max(rwPauseMs(), GHOST_RECOVER_BAHN_MS + 700 * rwWeich());   // Pause zwischen den Versuchen: eingestellt, mit \"weich\" mindestens bis 1 s
+    const p = (now - (g.rwBeginn || g.recoverStart || now)) % (zurueck + lenk + bahn);
     const dir = g.rwInnen || 0;
-    if (p < zurueck) return { phase: 'zurueck', dir };
-    if (p < zurueck + lenk) return { phase: 'lenken', dir };
-    return { phase: 'bahn', dir };
+    if (p < zurueck) return { phase: 'zurueck', dir, anteil: zurueck > 0 ? p / zurueck : 0 };
+    if (p < zurueck + lenk) return { phase: 'lenken', dir, anteil: (p - zurueck) / lenk };
+    return { phase: 'bahn', dir, anteil: (p - zurueck - lenk) / bahn };
   }
   // Die Querlage zwischen zwei Versuchen: zur Innenseite, damit die Spurfuehrung das Auto von der Bande wegzieht.
   function rwQuer(car, now) {
@@ -9041,12 +9109,20 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (ghostCfg.wuerzeRecovery) {
         if (!g.recoverUntil) {
           // Mit Lenkung nur, wenn die Richtung bekannt ist - sonst waere Zuruecksetzen und Lenken geraten.
-          const innen = ghostCfg.rueckwegLenkung ? rwInnen(car) : 0;
+          // GEMELDET: \"das Safety Car rangiert beim Rausfahren aus der Boxengasse manchmal, obwohl es schon auf der
+          // Strecke ist.\" Es faehrt unter Gelb mit SC_MIN_TEMPO (0,30) UNTER der Leseschwelle, liest in Kurven
+          // also auch auf der Bahn 0x00 und galt dann als \"Abgang\" - mit der Lenkung wurde zurueckgesetzt und
+          // eingeschlagen. Jetzt nie beim Safety Car, nie bevor das Auto je einen gueltigen Code gelesen hat
+          // (aus der Box: rwLetzteQuer undefined) und nie, wenn das Ziel unter der Leseschwelle lag.
+          const lenkErlaubt = ghostCfg.rueckwegLenkung && car.role !== 'safetycar' && g.rwLetzteQuer !== undefined
+                              && !(g.lastTarget !== undefined && g.lastTarget < GHOST_READ_MIN);
+          const innen = lenkErlaubt ? rwInnen(car) : 0;
           const lenkAn = innen !== 0;
           g.recoverStart = now;
-          g.recoverUntil = now + (lenkAn ? GHOST_RECOVER_LENK_MS : GHOST_RECOVER_MS);
+          g.rwBeginn = now + (lenkAn ? rwWarteMs() : 0);                       // erst nach der Wartezeit rangieren
+          g.recoverUntil = g.rwBeginn + (lenkAn ? GHOST_RECOVER_LENK_MS : GHOST_RECOVER_MS);
           g.rwInnen = innen; g.rwAktiv = lenkAn;
-          if (ghostCfg.rueckwegLenkung) log(garageLabel(car) + ': Rückweg ' + (lenkAn ? 'mit Lenkung, innen ist ' + (innen > 0 ? 'rechts' : 'links') + '.' : 'ohne Lenkung, die Richtung ist nicht bekannt.'), 'info');
+          if (ghostCfg.rueckwegLenkung) log(garageLabel(car) + ': Rückweg ' + (lenkAn ? 'mit Lenkung, innen ist ' + (innen > 0 ? 'rechts' : 'links') + ', Rangieren nach ' + Math.round(rwWarteMs()) + ' ms.' : 'ohne Lenkung' + (lenkErlaubt ? ', die Richtung ist nicht bekannt.' : '.')), 'info');
         }
         if (now < g.recoverUntil) {
           // "FAEHRT ES IRGENDWO GEGEN": kein Bytesignal verfuegbar (siehe die Begruendung
@@ -9077,7 +9153,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // parken ist nicht (mehr) noetig, waehrend ein Versuch lief - der Rueckweg hat
       // funktioniert, nicht zwingend an derselben Stelle, wie bestellt.
       log(garageLabel(car) + ': Rückweg gefunden, wieder auf der Bahn.', 'info');
-      g.recoverUntil = 0; g.recoverStuckSince = 0; g.recoverStart = 0; g.rwInnen = 0; g.rwAktiv = false;
+      g.recoverUntil = 0; g.recoverStuckSince = 0; g.recoverStart = 0; g.rwBeginn = 0; g.rwInnen = 0; g.rwAktiv = false;
     }
     const offTrack = !!car.parked;
     // Wer steht, warnt die anderen - solange das Rennen laeuft und er nicht in der
@@ -9878,10 +9954,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     let driveOut = drive;
     // Rueckweg mit Lenkung: zuruecksetzen, Raeder zur Kurveninnenseite, dann wieder auf die Bahn (rwSchritt).
     const rw = radLenk === null ? rwSchritt(car, now) : null;
-    if (rw && rw.phase === 'zurueck') { radLenk = 0; driveOut = SC_GEGENSCHUB; }
-    else if (rw && rw.phase === 'lenken' && rw.dir) radLenk = rw.dir;
+    if (rw && rw.phase === 'zurueck') { radLenk = 0; driveOut = SC_GEGENSCHUB * (1 - rwWeich() * rwGlatt(rw.anteil)); }
+    else if (rw && rw.phase === 'lenken' && rw.dir) radLenk = rw.dir * rwRampe(rw.anteil, rwWeich());
+    // Tempo beim Rangieren begrenzen: bei eingeschlagenen Raedern rwTempo(), zwischen den Versuchen mindestens die Leseschwelle.
+    if (rw && rw.phase === 'lenken') driveOut = Math.min(driveOut, rwTempo());
+    const driveBahn = (rw && rw.phase === 'bahn') ? Math.min(drive, Math.max(rwTempo(), GHOST_READ_MIN)) : drive;
     if (radLenk !== null) writeToCar(car, radLenk, driveOut, lights, null);
-    else writeToCar(car, (armed && !offTrack) ? lenkAus : 0, drive, lights, car.modeBytes);
+    else writeToCar(car, (armed && !offTrack) ? lenkAus : 0, driveBahn, lights, car.modeBytes);
   }
 
   // ---- ghostLeader() ist ENTFALLEN ---------------------------------------------------

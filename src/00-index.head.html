@@ -10814,6 +10814,38 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-rw-lenk-ms-val">600 ms</span>
         </div></div>
+      <div class="opt-row"><div class="opt-label">NPC: R&uuml;ckweg weich
+          <small>Wie weich das Rangieren beim R&uuml;ckweg mit Lenkung abl&auml;uft, in Prozent. Bei 0 setzt das Auto mit vollem R&uuml;ckw&auml;rtsschub zur&uuml;ck, schl&auml;gt die R&auml;der sofort voll ein und beginnt nach 0,3 s den n&auml;chsten Versuch, das wirkt hektisch. Mit h&ouml;herem Wert l&auml;uft der R&uuml;ckw&auml;rtsschub sanft aus, die R&auml;der werden langsam eingeschlagen und vor dem Ende wieder gel&ouml;st, und zwischen den Versuchen liegt eine l&auml;ngere Pause, bis zu 1 s bei 100 %. Es gibt dann weniger Versuche in den 4,5 Sekunden, jeder ist ruhiger. Gilt nur bei &bdquo;R&uuml;ckweg mit Lenkung&ldquo;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-rw-weich" min="0" max="100" step="5" value="0">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-rw-weich-val">0 %</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">NPC: R&uuml;ckweg, Wartezeit vor dem 1. Versuch
+          <small>Wie lange das Auto nach einem erkannten Abgang noch normal weiterf&auml;hrt, bevor es mit dem ERSTEN Rangierversuch beginnt, in Millisekunden. Das gilt nur einmal, vor dem ersten Versuch. Die Zeit zwischen zwei Versuchen stellst du bei &bdquo;R&uuml;ckweg, Pause zwischen den Versuchen&ldquo; ein. St&ouml;&szlig;t das Auto nur kurz an die Bande und kommt von allein weiter, soll es nicht sofort rangieren. Bekommt es in dieser Zeit wieder einen g&uuml;ltigen Code, f&auml;hrt es einfach weiter und rangiert gar nicht. 0 = sofort. Die Zeit kommt zu der Frist dazu, nach der ein Abgang &uuml;berhaupt erkannt wird (0,9 s auf der Geraden, 1,2 s in Kurven, 1,8 s in Haarnadeln). Die 4,5 Sekunden f&uuml;rs Rangieren beginnen erst nach der Wartezeit. Gilt nur bei &bdquo;R&uuml;ckweg mit Lenkung&ldquo;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-rw-warte-ms" min="0" max="5000" step="100" value="1000">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-rw-warte-ms-val">1000 ms</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">NPC: R&uuml;ckweg Tempo
+          <small>Wie schnell das Auto beim Rangieren nach vorn f&auml;hrt, in Prozent der H&ouml;chstgeschwindigkeit. Bisher fuhr es nach dem Zur&uuml;cksetzen mit dem Tempo weiter, das die Fahrsteuerung gerade im Kopf hatte, also oft ruckartig. Der Wert begrenzt das Gas, solange die R&auml;der eingeschlagen sind. Zwischen den Versuchen, wenn es wieder die Bahn lesen soll, gilt mindestens die Leseschwelle (35 %), darunter liest das Auto die Bahn nicht zuverl&auml;ssig. Zu niedrig, und das Auto kommt nicht von der Bande weg. Gilt nur bei &bdquo;R&uuml;ckweg mit Lenkung&ldquo;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-rw-tempo" min="25" max="100" step="5" value="50">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-rw-tempo-val">50 %</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">NPC: R&uuml;ckweg, Pause zwischen den Versuchen
+          <small>Wie lange das Auto nach jedem Rangierversuch wartet und normal auf der Bahn f&auml;hrt, bevor der n&auml;chste Versuch beginnt, in Millisekunden. Das gilt nach jedem Versuch. Die Zeit vor dem ERSTEN Versuch stellst du bei &bdquo;R&uuml;ckweg, Wartezeit vor dem 1. Versuch&ldquo; ein. Eine l&auml;ngere Pause l&auml;sst dem Auto Zeit, wieder einen Code zu lesen, und wirkt weniger hektisch. Mit &bdquo;R&uuml;ckweg weich&ldquo; gilt mindestens die dort eingestellte Pause (bis zu 1 s). Es gibt dann weniger Versuche in den 4,5 Sekunden. Gilt nur bei &bdquo;R&uuml;ckweg mit Lenkung&ldquo;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-rw-pause-ms" min="300" max="2000" step="100" value="300">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-rw-pause-ms-val">300 ms</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">NPC: Ideallinie
           <!-- Seit v0.5.9 wirkt dieser Regler deutlich staerker: der Deckel aus
                learnSteerCap() ging von 0,55 auf 1,0, gemessen an dem, was die Original-App

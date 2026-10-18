@@ -13765,32 +13765,37 @@
   // ---- NPC: Rueckweg mit Lenkung ----
   stAdd('NPC: Rueckweg mit Lenkung - Richtung aus dem Streckencode, zuruecksetzen, lenken, bis 4,5 s', () => {
     const f = [], info = [];
-    const cb = $('ghost-w-recovery-lenk'), sz = $('ghost-rw-zurueck-ms'), sl = $('ghost-rw-lenk-ms');
-    if (!cb || !sz || !sl) return { ok: false, mass: 'Schalter oder Regler fehlen' };
-    const merk = { garage: garage.splice(0, garage.length), tiles: currentTrackTiles, rec: ghostCfg.wuerzeRecovery, len: ghostCfg.rueckwegLenkung, fl: flagState, now: Date.now, z: sz.value, l: sl.value };
+    const cb = $('ghost-w-recovery-lenk'), sz = $('ghost-rw-zurueck-ms'), sl = $('ghost-rw-lenk-ms'), sw = $('ghost-rw-weich'), swt = $('ghost-rw-warte-ms'), srt = $('ghost-rw-tempo'), srp = $('ghost-rw-pause-ms');
+    if (!cb || !sz || !sl || !sw || !swt || !srt || !srp) return { ok: false, mass: 'Schalter oder Regler fehlen' };
+    const merk = { garage: garage.splice(0, garage.length), tiles: currentTrackTiles, rec: ghostCfg.wuerzeRecovery, len: ghostCfg.rueckwegLenkung, fl: flagState, now: Date.now, z: sz.value, l: sl.value, w: sw.value, wt: swt.value, rt: srt.value, rp: srp.value };
     const autos = [];
     try {
       if (cb.defaultChecked) f.push('Vorgabe von Rueckweg mit Lenkung nicht aus');
       if (+sz.defaultValue !== 250 || +sl.defaultValue !== 600) f.push('Vorgaben Zuruecksetzen/Lenkimpuls nicht 250 / 600: ' + sz.defaultValue + ' / ' + sl.defaultValue);
+      if (+sw.defaultValue !== 0) f.push('Vorgabe Rueckweg weich nicht 0: ' + sw.defaultValue);
+      if (+swt.defaultValue !== 1000) f.push('Vorgabe Rueckweg Wartezeit nicht 1000: ' + swt.defaultValue);
+      if (+srt.defaultValue !== 50 || +srp.defaultValue !== 300) f.push('Vorgaben Rueckweg Tempo/Pause nicht 50 / 300: ' + srt.defaultValue + ' / ' + srp.defaultValue);
       ghostCfg.wuerzeRecovery = true; flagState = 'green';
-      sz.value = '250'; sl.value = '600';
+      sz.value = '250'; sl.value = '600'; sw.value = '0'; swt.value = '0'; srt.value = '100'; srp.value = '300';        // die folgenden Pruefungen gehen von sofortigem Rangieren aus (Vorgabe Wartezeit: 1000 ms)
       const lauf = (code, wahl, lenkAn, opt) => {
         const o = opt || {};
         currentTrackTiles = codeToTrack(code).tiles; lineCache = null;
         const idx = currentTrackTiles.findIndex(wahl);
         const car = OMEGA_TEST.attrappeGhost('RW'); garage.push(car); autos.push(car);
+        if (o.rolle) car.role = o.rolle;
         const g = car.ghost; g.freeRun = true; g.gnadeBis = 0; g.tileIndex = idx; car.lastCode = undefined; car.tileCode = 0x00; car.tileCount = 5;
         if (g.engine && g.engine.config) g.engine.config.topSpeedKmh = 300;
         ghostCfg.rueckwegLenkung = lenkAn;
         let uhr = merk.now(); Date.now = () => uhr;
         const pakete = []; let start = null, parkT = null;
         try {
-          for (let t = 0; t < 8000; t += 60) {
+          for (let t = 0; t < 10000; t += 60) {
             uhr += 60;
-            const gueltig = t < (o.vorher || 0);                           // erst kurz auf der Bahn (Querlage wird gemerkt), dann Abgang
-            car.tileCode = gueltig ? 0x02 : 0x00;
+            const gueltig = t < (o.vorher === undefined ? 300 : o.vorher);  // erst kurz auf der Bahn (Querlage wird gemerkt), dann Abgang
+            const wiederDa = o.zurueckNach !== undefined && start !== null && uhr - start >= o.zurueckNach;   // das Auto liest wieder einen Code
+            car.tileCode = (gueltig || wiederDa) ? 0x02 : 0x00;
             if (gueltig && o.quer !== undefined) g.querIst = o.quer;
-            if (g.engine && g.engine.state) g.engine.state.speedKmh = (o.steht ? 0 : 0.3) * 300;
+            if (g.engine && g.engine.state) g.engine.state.speedKmh = (o.steht ? 0 : (o.v || 0.3)) * 300;
             car.testSenke.length = 0; ghostTick(car);
             if (start === null && g.recoverUntil) start = uhr;
             const p = car.testSenke[car.testSenke.length - 1];
@@ -13842,13 +13847,69 @@
       if (!(r7a.parkT !== null && r7a.parkT < 1500)) f.push('ohne Option und bei Stillstand: kein Abbruch nach kurzer Zeit: ' + r7a.parkT);
       if (!(r7b.parkT !== null && r7b.parkT > 4000)) f.push('mit Lenkung und bei Stillstand: Abbruch zu frueh: ' + r7b.parkT);
       info.push('Stillstand: ohne Option Abbruch nach ' + r7a.parkT + ' ms, mit Lenkung nach ' + r7b.parkT + ' ms');
+      // 8. Safety Car: nie rangieren (liest unter Gelb in Kurven auf der Bahn 0x00), es verhaelt sich wie bisher (3 s).
+      const r8 = lauf('SG4R4G4', rechts, true, { rolle: 'safetycar' });
+      if (r8.pakete.some((p) => p.gas < -0.4 || p.steer === 1 || p.steer === -1)) f.push('Safety Car: Rueckweg mit Lenkung greift');
+      if (r8.parkT === null || Math.abs(r8.parkT - 3000) > 200) f.push('Safety Car: parkt nicht nach ca. 3 s: ' + r8.parkT);
+      // 9. Ein Auto, das nie einen gueltigen Code gelesen hat (aus der Box), rangiert nicht.
+      const r9 = lauf('SG4R4G4', rechts, true, { vorher: 0 });
+      if (r9.pakete.some((p) => p.gas < -0.4 || p.steer === 1 || p.steer === -1)) f.push('ohne je gueltigen Code: Rueckweg mit Lenkung greift');
+      // 10. Weich: Schub laeuft aus, Raeder werden eingeschlagen und geloest, laengere Pause zwischen den Versuchen.
+      sw.value = '100';
+      const r10 = lauf('SG4R4G4', rechts, true);
+      const zu10 = imFenster(r10, 0, 250), le10 = imFenster(r10, 250, 850);
+      if (!zu10.length || !(zu10[0].gas < -0.4) || !(zu10[zu10.length - 1].gas > -0.1)) f.push('weich: Rueckwaertsschub laeuft nicht aus: ' + JSON.stringify([zu10[0], zu10[zu10.length - 1]]));
+      if (!le10.length || !(Math.abs(le10[0].steer) < 1)) f.push('weich: Raeder werden nicht langsam eingeschlagen: ' + JSON.stringify(le10[0]));
+      if (!le10.some((p) => p.steer === 1)) f.push('weich: die Raeder erreichen den vollen Einschlag nie');
+      if (!(Math.abs(le10[le10.length - 1].steer) < 1)) f.push('weich: Raeder werden am Ende nicht geloest: ' + JSON.stringify(le10[le10.length - 1]));
+      const nach10 = imFenster(r10, 1850, 1910);
+      if (!nach10.length || !nach10.every((p) => p.gas < -0.4)) f.push('weich: zweiter Versuch nicht nach 1,85 s (Pause 1 s): ' + JSON.stringify(nach10.slice(0, 2)));
+      if (imFenster(r10, 1150, 1500).some((p) => p.gas < -0.4)) f.push('weich: zweiter Versuch beginnt schon nach 1,15 s');
+      if (r10.parkT === null || Math.abs(r10.parkT - 4500) > 200) f.push('weich: parkt nicht nach ca. 4,5 s: ' + r10.parkT);
+      info.push('weich 100 %: Schub laeuft aus, Raeder ' + le10[0].steer.toFixed(2) + ' -> voll -> ' + le10[le10.length - 1].steer.toFixed(2));
+      // 11. Wartezeit: erst nach 1,5 s rangieren, und wird in dieser Zeit wieder ein Code gelesen, gar nicht.
+      sw.value = '0'; swt.value = '1500';
+      const r11 = lauf('SG4R4G4', rechts, true);
+      if (r11.pakete.filter((p) => p.t < 1500).some((p) => p.gas < -0.4 || p.steer === 1 || p.steer === -1)) f.push('Wartezeit: rangiert schon vor Ablauf');
+      const zu11 = imFenster(r11, 1500, 1730);
+      if (!zu11.length || !zu11.every((p) => p.gas < -0.4)) f.push('Wartezeit: nach 1,5 s beginnt es nicht mit dem Zuruecksetzen: ' + JSON.stringify(zu11.slice(0, 2)));
+      if (r11.parkT === null || Math.abs(r11.parkT - 6000) > 250) f.push('Wartezeit: parkt nicht nach ca. 6 s (1,5 s + 4,5 s): ' + r11.parkT);
+      const r12 = lauf('SG4R4G4', rechts, true, { zurueckNach: 800 });
+      if (r12.pakete.some((p) => p.gas < -0.4 || p.steer === 1 || p.steer === -1)) f.push('Wartezeit: rangiert, obwohl es nach 0,8 s wieder einen Code liest');
+      if (r12.parkT !== null) f.push('Wartezeit: parkt, obwohl es wieder auf der Bahn ist: ' + r12.parkT);
+      info.push('Wartezeit 1,5 s: erst danach Rangieren, parkt nach ' + r11.parkT + ' ms; wieder auf der Bahn nach 0,8 s: kein Rangieren');
+      swt.value = '0';
+      // 12. Pause: bis 2 s zwischen den Versuchen (Zyklus 250 + 600 + 2000 = 2850 ms), vorher kein neuer Schub.
+      srp.value = '2000';
+      const r13 = lauf('SG4R4G4', rechts, true);
+      if (imFenster(r13, 1150, 2800).some((p) => p.gas < -0.4)) f.push('Pause 2 s: zweiter Versuch beginnt schon vor 2,85 s');
+      const nach13 = imFenster(r13, 2850, 2910);
+      if (!nach13.length || !nach13.every((p) => p.gas < -0.4)) f.push('Pause 2 s: zweiter Versuch nicht nach 2,85 s: ' + JSON.stringify(nach13.slice(0, 2)));
+      srp.value = '300';
+      // 13. Tempo: bei eingeschlagenen Raedern nie mehr als der Wert, ohne Begrenzung (100 %) deutlich mehr.
+      srt.value = '40';
+      const r14 = lauf('SG4R4G4', rechts, true, { v: 0.8 });
+      const le14 = imFenster(r14, 330, 800);
+      if (!le14.length || !le14.every((p) => p.gas <= 0.4 + 0.01)) f.push('Tempo 40 %: Gas ueber 0,4 beim Lenken: ' + JSON.stringify(le14.slice(0, 2)));
+      const ba14 = imFenster(r14, 880, 1130);
+      if (!ba14.length || !ba14.every((p) => p.gas <= Math.max(0.4, GHOST_READ_MIN) + 0.01)) f.push('Tempo 40 %: zwischen den Versuchen ueber dem Wert: ' + JSON.stringify(ba14.slice(0, 2)));
+      srt.value = '25';                                  // der unterste Wert: beim Lenken 0,25, zwischen den Versuchen mindestens die Leseschwelle
+      const r16 = lauf('SG4R4G4', rechts, true, { v: 0.8 });
+      if (!imFenster(r16, 330, 800).every((p) => p.gas <= 0.25 + 0.01)) f.push('Tempo 25 %: Gas ueber 0,25 beim Lenken');
+      if (!imFenster(r16, 880, 1130).every((p) => p.gas <= GHOST_READ_MIN + 0.01)) f.push('Tempo 25 %: zwischen den Versuchen ueber der Leseschwelle');
+      srt.value = '100';
+      const r15 = lauf('SG4R4G4', rechts, true, { v: 0.8 });
+      if (!imFenster(r15, 330, 800).some((p) => p.gas > 0.6)) f.push('Tempo 100 %: das Gas wird trotzdem begrenzt');
+      info.push('Pause 2 s: zweiter Versuch nach 2,85 s | Tempo 40 %: Gas beim Lenken <= ' + Math.max.apply(null, le14.map((p) => p.gas)).toFixed(2) + ', ohne Begrenzung bis ' + Math.max.apply(null, imFenster(r15, 330, 800).map((p) => p.gas)).toFixed(2));
+      swt.value = '0';
+      sw.value = '0';
     } finally {
       Date.now = merk.now;
       for (const c of autos) { c.parked = null; stopGhost(c); }
       garage.splice(0, garage.length); for (const c of merk.garage) garage.push(c);
       currentTrackTiles = merk.tiles; lineCache = null;
       ghostCfg.wuerzeRecovery = merk.rec; ghostCfg.rueckwegLenkung = merk.len; flagState = merk.fl;
-      sz.value = merk.z; sl.value = merk.l;
+      sz.value = merk.z; sl.value = merk.l; sw.value = merk.w; swt.value = merk.wt; srt.value = merk.rt; srp.value = merk.rp;
     }
     return { ok: !f.length, mass: info.join(' | ') + (f.length ? ' || FEHLER: ' + f.join(' | ') : '') };
   });
