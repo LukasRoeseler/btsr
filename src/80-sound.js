@@ -137,6 +137,10 @@
     'sd_v8gt', 'sd_v10', 'sd_v8muscle', 'sd_v8alt', 'sd_v12', 'sd_v12weich',
     // v1.0.18 BESTELLT: "Toro R-GT einbauen" - aus den Speed-Dreams-Spieldaten, Free Art License.
     'sd_toro',
+    // ---- ZWEI AUFNAHMEN DES NUTZERS, aus photos/newaudio --------------------------
+    // BESTELLT: eigene Aufnahmen; Drehzahlen aus der Video-Anzeige (siehe loops.json).
+    // DIESELBE REIHENFOLGE wie im Menue (am Ende der Liste).
+    'amg_gt3', 'huracan_gt3_evo',
   ];
   // KEINE FESTE LISTE MEHR. Bis v0.4.55 stand hier ['idle','mid','high'], und genau diese
   // Liste war die Annahme, die den Ton kaputt gemacht hat: sie kannte drei Namen, also konnte

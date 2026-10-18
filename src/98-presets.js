@@ -352,8 +352,15 @@
     if (!Object.prototype.hasOwnProperty.call(PRESETS[k].v, 'phys-brake-tau')) PRESETS[k].v['phys-brake-tau'] = 0.12;
   });
   // Im FAHREN-Menue und am Cockpit-Knopf nur diese (BESTELLT: "die anderen Modi noch im
-  // Optionen-Menue lassen, aber nicht im FAHREN-Menue in der Kachel anzeigen").
-  const PRESETS_FAHREN = ['arcade', 'simplus', 'pro', 'propacejka', 'omega', 'rc'];
+  // Optionen-Menue lassen, aber nicht im FAHREN-Menue in der Kachel anzeigen"). Seit der
+  // Reduzierung (BESTELLT: "Behalte dabei: arcade, sim+, pacejka; pacejka als standard")
+  // sind es nur noch die drei - sie erscheinen auch in der Garage, die uebrigen bleiben in
+  // den Optionen.
+  const PRESETS_FAHREN = ['arcade', 'simplus', 'propacejka'];
+  // Reihenfolge im Optionen-Menue (preset-buttons und die Preset-Liste je Menue): die drei
+  // gebraeuchlichen zuerst, der Rest darunter (BESTELLT: "schiebe ein paar nach unten").
+  const PRESETS_REIHENFOLGE = ['arcade', 'simplus', 'propacejka',
+                               'pro', 'gt3', 'f1', 'realgt3', 'omega', 'rc'];
   // Bis v0.4 hiess GT3 "real". Aeltere exportierte Abstimmungen und der Knopf im
   // Garagenschirm duerfen den alten Namen weiter benutzen.
   const PRESET_ALIAS = { real: 'gt3', realismus: 'gt3' };
@@ -481,7 +488,13 @@
   function renderPresetButtons(host, klein) {
     if (!host) return;
     host.innerHTML = '';
-    for (const [key, p] of Object.entries(PRESETS)) {
+    // klein = die Leiste in der Garage: dort sind seit der Reduzierung nur die drei
+    // Fahren-Abstimmungen zu sehen (BESTELLT: "blende sie in der garagenwahl aus"). Das
+    // Optionen-Menue zeigt alle, aber in PRESETS_REIHENFOLGE - die drei gebraeuchlichen
+    // zuerst, der Rest darunter.
+    const keys = (klein ? PRESETS_FAHREN : PRESETS_REIHENFOLGE).filter((k) => PRESETS[k]);
+    for (const key of keys) {
+      const p = PRESETS[key];
       const b = document.createElement('button');
       b.type = 'button';
       b.id = klein ? '' : 'preset-' + key;

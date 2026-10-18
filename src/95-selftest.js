@@ -1336,20 +1336,20 @@
       + (spiegel ? '' : ' | NICHT GESPIEGELT') };
   });
 
-  // ---- Die Markup-Vorgaben MUESSEN die Voreinstellung Pro sein ----
+  // ---- Die Markup-Vorgaben MUESSEN die Voreinstellung Pacejka sein ----
   //
-  // Pro ist die Vorgabe. Steht ein Regler beim Laden anders, zeigt die Legende "eigene
-  // Abstimmung", ohne dass jemand etwas verstellt hat - und gefahren wird eine Mischung, die
-  // in keiner Voreinstellung steht.
+  // Pacejka ist die Vorgabe (BESTELLT: "pajecka als standard"). Steht ein Regler beim Laden
+  // anders, zeigt die Legende "eigene Abstimmung", ohne dass jemand etwas verstellt hat - und
+  // gefahren wird eine Mischung, die in keiner Voreinstellung steht.
   //
   // Das ist genau einmal passiert, und zwar unbemerkt: das Markup stand Wert fuer Wert auf
   // dem ALTEN Pro, siebzehn Abweichungen. Zwei Orte fuer eine Aussage laufen auseinander,
   // sobald einer nachgezogen wird - und ein Vorgabewert sagt beim Ansehen nicht, aus welcher
   // Voreinstellung er stammt.
-  stAdd('Markup-Vorgaben sind die Voreinstellung Pro', () => {
+  stAdd('Markup-Vorgaben sind die Voreinstellung Pacejka', () => {
     if (!window.__presetValues) return { skip: true, mass: 'presetValues nicht erreichbar' };
-    const soll = window.__presetValues('pro');
-    if (!soll) return { skip: true, mass: 'Voreinstellung pro nicht vorhanden' };
+    const soll = window.__presetValues('propacejka');
+    if (!soll) return { skip: true, mass: 'Voreinstellung propacejka nicht vorhanden' };
     const ab = [];
     for (const k of Object.keys(soll)) {
       const el = $(k);
@@ -1359,14 +1359,14 @@
       // Sitzung, und der Test wuerde dann messen, was der Nutzer gerade tut.
       if (el.type === 'checkbox') {
         if (el.defaultChecked !== !!soll[k]) {
-          ab.push(k + ': Markup ' + el.defaultChecked + ', Pro ' + soll[k]);
+          ab.push(k + ': Markup ' + el.defaultChecked + ', Pacejka ' + soll[k]);
         }
       } else if (Math.abs(parseFloat(el.defaultValue) - parseFloat(soll[k])) > 1e-9) {
-        ab.push(k + ': Markup ' + el.defaultValue + ', Pro ' + soll[k]);
+        ab.push(k + ': Markup ' + el.defaultValue + ', Pacejka ' + soll[k]);
       }
     }
     return { ok: ab.length === 0,
-             mass: ab.length === 0 ? Object.keys(soll).length + ' Vorgaben stimmen mit Pro'
+             mass: ab.length === 0 ? Object.keys(soll).length + ' Vorgaben stimmen mit Pacejka'
                                    : ab.length + ' Abweichungen \u2013 ' + ab.slice(0, 3).join('; ') };
   });
 
@@ -5191,9 +5191,9 @@
     // Bonus (v1.0.45) die Bremsphase aendert. Die Fahrphysik (kmh) bleibt in Fall 1 gleich,
     // in Fall 2 (steerCalib 2,5) aendert sie sich mit dem Lenk-Deckel.
     const soll = [
-      [{ useTauBrems: 0.45 }, { servo: 165.937722, betrag: 394.736943, kmh: 1510.680251 }],
+      [{ useTauBrems: 0.45 }, { servo: 167.035121, betrag: 403.67963, kmh: 1510.680251 }],
       [{ steerCalib: 2.5, steerResponse: 3.0, useTauBrems: 0.45 },
-       { servo: 309.502465, betrag: 789.559991, kmh: 1510.558737 }],
+       { servo: 308.971995, betrag: 795.122787, kmh: 1510.610919 }],
     ];
     const schlecht = [];
     for (const [patch, erwartet] of soll) {
@@ -6728,7 +6728,8 @@
     const namen = ['neutral', 'gt3front', 'gt3mid', 'gt3rear', 'f1'];
     const werte = namen.map(n => {
       const r = OMEGA_TEST.physLayoutDrive(n, { kmh: 140, throttle: 0, brake: 1,
-                                                steering: 1, patch: { steerCalib: 2.0, useTauBrems: 0.45 } });
+                                                steering: 1, patch: { steerCalib: 2.0, useTauBrems: 0.45,
+                                                                       pacejka: false } });
       const v = OMEGA_TEST.physLayouts()[n];
       return { n, grad: r.grad, sg: r.steerGrip, vorn: v.vorn, ms: v.daempfungMs, iz: v.iz };
     });
@@ -18083,10 +18084,10 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Auslaufen 2 s, Bremse sofort, Rueckwaerts erst beim zweiten Druck' };
   });
 
-  stAdd('Abstimmungen: FAHREN zeigt Arcade, Sim+, Pro, Pacejka, Omega, RC; Lenkeinschlag erreichbar ausser Realismus GT3', () => {
+  stAdd('Abstimmungen: FAHREN zeigt nur Arcade, Sim+, Pacejka; Lenkeinschlag erreichbar ausser Realismus GT3', () => {
     const f = [];
     const fahren = window.__presetKeysFahren ? window.__presetKeysFahren() : [];
-    if (fahren.join(',') !== 'arcade,simplus,pro,propacejka,omega,rc') f.push('FAHREN: ' + fahren.join(','));
+    if (fahren.join(',') !== 'arcade,simplus,propacejka') f.push('FAHREN: ' + fahren.join(','));
     for (const k of ['arcade', 'simplus', 'gt3', 'f1']) {
       const v = window.__presetValues(k) || {};
       const resp = v['phys-steerresp'] === undefined ? 3 : v['phys-steerresp'];

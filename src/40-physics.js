@@ -554,7 +554,7 @@
         // capRaw (siehe dort) - 0 ist unveraendert, 1 hebt die Abschwaechung unter Gas
         // ganz auf. 0,25 als Vorgabe: eine kleine, spuerbare Verbesserung ("noch besser
         // machen"), kein voller Wegfall.
-        throttleSteerRelief: 0.6,
+        throttleSteerRelief: 0.65,
         transferK: 0.30,      // share of the load that moves at 1g
         loadTau: 0.08,        // body pitch (squat and dive): fast
         useTau: 0.45,         // longitudinal tyre force build-up: distinctly slower

@@ -84,7 +84,11 @@
     const s = mnpBereich(mnpLesenStore(), b.id);
     const l = [];
     if (b.werks && typeof PRESETS === 'object') {
-      for (const k of Object.keys(PRESETS)) l.push({ key: '*' + k, name: PRESETS[k].label, werks: true, werte: () => PRESETS[k].v });
+      // PRESETS_REIHENFOLGE (98-presets.js): die drei gebraeuchlichen zuerst, der Rest
+      // darunter - dieselbe Ordnung wie die Knopfleiste.
+      const keys = (typeof PRESETS_REIHENFOLGE !== 'undefined' ? PRESETS_REIHENFOLGE : Object.keys(PRESETS))
+        .filter((k) => PRESETS[k]);
+      for (const k of keys) l.push({ key: '*' + k, name: PRESETS[k].label, werks: true, werte: () => PRESETS[k].v });
     }
     l.push({ key: '*werk', name: t('Werkseinstellung'), werks: true, werte: () => mnpWerksWerte(b) });
     for (const n of Object.keys(s.eigene).sort()) l.push({ key: n, name: n, werte: () => s.eigene[n] });
