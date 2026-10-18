@@ -2111,6 +2111,53 @@
   // ohne Namen in der Werbung faellt damit nicht mehr durch.
   // opt.stumm: kein alert(), sondern die Lage zurueckgeben - das ACC-Menue zeigt sie in
   // seinem eigenen, mit dem Pad bedienbaren Dialog (samt "Trotzdem starten", 51-konsole.js).
+  // ---- AUTO-RECONNECT (v1.0.73) -----------------------------------------------------
+  // GEMELDET (Xbox- und PS4-Controller): ein gekoppeltes Bluetooth-Gamepad belegt den BLE-
+  // Kanal, und die Verbindung eines Autos kann dann abreissen ("nur kurz verbinden").
+  // Statt das Auto zu entfernen, verbindet die App es mit Backoff neu. Die erste HIGH-Prio-
+  // Anfrage bleibt; nur die 5-s-Nachverhandlung wird bei gekoppeltem Gamepad ausgelassen
+  // (siehe 05-app-bruecke.js).
+  const VERBINDE_NEU_MS = 1000;
+  const VERBINDE_NEU_MAX = 5;
+  async function verbindeGatt(car) {
+    const srv = await car.device.gatt.connect();
+    const nus = await srv.getPrimaryService(NUS_SERVICE);
+    const rx = await nus.getCharacteristic(NUS_RX);
+    const tx = await nus.getCharacteristic(NUS_TX);
+    car.server = srv;
+    car.rx = rx;
+    car.tx = tx;
+    await tx.startNotifications();
+    tx.addEventListener('characteristicvaluechanged', (e) => onCarNotify(car, e));
+    return car;
+  }
+  function reconnectCar(car) {
+    if (car.trennend || car.reconnectLaeuft) return;
+    if ((car.reconnectVersuche || 0) >= VERBINDE_NEU_MAX) {
+      log(`${garageLabel(car)}: Neu verbinden nach ${VERBINDE_NEU_MAX} Versuchen fehlgeschlagen.`, 'err');
+      removeCar(car);
+      return;
+    }
+    car.reconnectLaeuft = true;
+    const versuch = (car.reconnectVersuche || 0) + 1;
+    car.reconnectVersuche = versuch;
+    const warte = VERBINDE_NEU_MS * versuch;
+    log(`${garageLabel(car)}: Verbinde neu (Versuch ${versuch}/${VERBINDE_NEU_MAX}) in ${Math.round(warte / 1000)} s.`, 'info');
+    setTimeout(async () => {
+      if (car.trennend) { car.reconnectLaeuft = false; return; }
+      try {
+        await verbindeGatt(car);
+        car.reconnectVersuche = 0;
+        log(`${garageLabel(car)} wieder verbunden.`, 'info');
+      } catch (e) {
+        log(`${garageLabel(car)}: Neu verbinden fehlgeschlagen: ${(e && e.message) || e}`, 'err');
+        car.reconnectLaeuft = false;
+        reconnectCar(car);
+        return;
+      }
+      car.reconnectLaeuft = false;
+    }, warte);
+  }
   async function garageConnect(opt) {
     const lage = await bluetoothLageGenau();
     if (lage !== 'ok') {
@@ -2132,22 +2179,20 @@
         log('Dieses Auto ist bereits verbunden.', 'info');
         return;
       }
-      const srv = await dev.gatt.connect();
-      const nus = await srv.getPrimaryService(NUS_SERVICE);
-      const rx = await nus.getCharacteristic(NUS_RX);
-      const tx = await nus.getCharacteristic(NUS_TX);
       const car = {
-        device: dev, server: srv, rx, tx,
+        device: dev, server: null, rx: null, tx: null,
         role: 'none', writeInFlight: false, blinking: false,
         // Live telemetry, filled by the notify handler below.
         tileCode: 0xff, tileCount: null, lastCodeAt: 0, yaw: 0,
         ghost: null, timer: null,
+        // Auto-Reconnect (v1.0.73): siehe reconnectCar.
+        trennend: false, reconnectLaeuft: false, reconnectVersuche: 0,
       };
-      await tx.startNotifications();
-      tx.addEventListener('characteristicvaluechanged', (e) => onCarNotify(car, e));
+      await verbindeGatt(car);
       dev.addEventListener('gattserverdisconnected', () => {
-        log(`${garageLabel(car)} getrennt.`, 'err');
-        removeCar(car);
+        if (car.trennend) return;
+        log(`${garageLabel(car)} getrennt - verbinde neu.`, 'warn');
+        reconnectCar(car);
       });
       garage.push(car);
       carAssign(car);
@@ -2324,6 +2369,7 @@
 
   async function disconnectCar(car) {
     stopGhost(car);
+    car.trennend = true;
     try { if (car.device.gatt.connected) car.device.gatt.disconnect(); } catch (e) { /* gone */ }
     removeCar(car);
   }

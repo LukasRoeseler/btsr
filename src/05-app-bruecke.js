@@ -167,6 +167,15 @@
              direkt: !!window.OmegaDirekt, pad: !!window.OmegaPad, neuVersucht: omegaDirektVersucht,
              direktFehler: (l && l.zaehler && l.zaehler.direktFehler) || '' };
   };
+  // GEMELDET (Xbox- und PS4-Controller): ein gekoppeltes Bluetooth-Gamepad belegt den BLE-
+  // Kanal, und die 5-s-Prio-Nachverhandlung eines Autos kann die Verbindung dann abreissen.
+  // Diese Pruefung sagt, ob ein Gamepad anliegt. Die Web-Gamepad-API meldet ein Pad erst
+  // nach der ersten Eingabe - fuer die Abriss-Problematik reicht das, denn ein Controller,
+  // der gerade das Spiel steuert, hat laengst Eingaben geliefert.
+  function gamepadGekoppelt() {
+    try { return !!(navigator.getGamepads && Array.from(navigator.getGamepads()).some(p => p)); }
+    catch (e) { return false; }
+  }
 
   let bereit = null;
   function starten() {
@@ -283,9 +292,14 @@
       // v0.10.4: EINMAL nachlegen, nach 5 s, statt alle 10 s. Jede Anfrage kann eine neue
       // Aushandlung des Verbindungsintervalls ausloesen - und waehrend der stockt der Funk
       // kurz. Alle zehn Sekunden war das ein regelmaessiger kleiner Haenger je Auto.
+      // GEMELDET (Xbox/PS4-Controller): ist gleichzeitig ein Bluetooth-Gamepad gekoppelt,
+      // reisst diese Nachverhandlung die Auto-Verbindung ab. Dann auslassen - die erste
+      // HIGH-Anfrage reicht, und ohne Neuverhandlung bleibt der Funk stabiler.
       clearTimeout(this._prio);
       this._prio = setTimeout(() => {
-        if (this.connected) ruf('requestConnectionPriority', { deviceId: id, connectionPriority: 1 }).catch(() => {});
+        if (this.connected && !gamepadGekoppelt()) {
+          ruf('requestConnectionPriority', { deviceId: id, connectionPriority: 1 }).catch(() => {});
+        }
       }, 5000);
       return this;
     }
