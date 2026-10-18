@@ -4729,7 +4729,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.0.66</span></span>
+        <span class="foot-ver">v<span id="app-version">1.0.72</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -10085,18 +10085,22 @@
       <!-- BESTELLT: "bei gas lenkstärke noch besser machen und mir einen slider geben
            (minimal weniger abschwächen die Lenkung)." Betrifft NUR die Gas-Seite des
            Reibkreises (capRaw in 40-physics.js, wirkt nur bei uF < 1, also beim
-           Beschleunigen) - beim Bremsen aendert dieser Regler nichts. 0 % ist das bisher
-           gemessene Verhalten, 100 % hebt die Abschwaechung unter Gas ganz auf. -->
+           Beschleunigen) - beim Bremsen aendert dieser Regler nichts. Der Wert ist das
+           MAXIMUM der Lindering; die Abschwaechung skaliert mit der Beschleunigung
+           (sanftes Gas laesst die Lenkung fast unberuehrt, volles Gas schwaecht am
+           staerksten). 0 % ist das bisher gemessene Verhalten, 100 % hebt die
+           Abschwaechung unter Gas ganz auf. -->
       <div class="opt-row"><div class="opt-label">Lenkkraft unter Gas <span class="wip-tag">WIP</span>
-          <small>Wie stark die Lastverlagerung beim Beschleunigen die Lenkung schwaecht.
-          0&nbsp;% ist unveraendert (die Vorderachse entlastet sich normal), 100&nbsp;%
-          hebt die Abschwaechung unter Gas ganz auf - unabhaengig vom Bremsverhalten,
-          das ruehrt dieser Regler nicht an.</small></div>
+          <small>Wie stark die Lastverlagerung beim Beschleunigen die Lenkung schwaecht -
+          abhaengig davon, wie stark du gerade beschleunigst. 0&nbsp;% ist unveraendert
+          (die Vorderachse entlastet sich normal), 100&nbsp;% hebt die Abschwaechung unter
+          Gas ganz auf - unabhaengig vom Bremsverhalten, das ruehrt dieser Regler nicht
+          an.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-throttle-steer-relief" min="0" max="1" step="0.05" value="0.65">
+          <input type="range" id="setting-throttle-steer-relief" min="0" max="1" step="0.05" value="0.75">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-throttle-steer-relief-val">65%</span>
+          <span class="opt-val" id="setting-throttle-steer-relief-val">75%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Lenkd&auml;mpfung
           <span class="wip-tag">WIP</span>

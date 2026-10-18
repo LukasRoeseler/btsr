@@ -552,9 +552,11 @@
         // BESTELLT: "bei gas lenkstärke noch besser machen und mir einen slider geben
         // (minimal weniger abschwächen die Lenkung)." Lindert NUR die Gas-Seite von
         // capRaw (siehe dort) - 0 ist unveraendert, 1 hebt die Abschwaechung unter Gas
-        // ganz auf. 0,25 als Vorgabe: eine kleine, spuerbare Verbesserung ("noch besser
-        // machen"), kein voller Wegfall.
-        throttleSteerRelief: 0.65,
+        // ganz auf. Seit v1.0.67 ist der Wert das MAXIMUM der Lindering, das mit der
+        // Beschleunigung skaliert (siehe capRaw2). 0,75 als Vorgabe: die Abschwaechung
+        // unter vollem Gas faellt von 0,19 auf 0,14, und sanftes Gas laesst die Lenkung
+        // nahezu unberuehrt.
+        throttleSteerRelief: 0.75,
         transferK: 0.30,      // share of the load that moves at 1g
         loadTau: 0.08,        // body pitch (squat and dive): fast
         useTau: 0.45,         // longitudinal tyre force build-up: distinctly slower
@@ -1560,10 +1562,17 @@
       // deckelt der Deckel bei 1 ohnehin schon, ein Eingriff dort waere wirkungslos oder
       // faelsche genau die Messung, die den Deckel begruendet.
       //
-      // cfg.throttleSteerRelief (0..1) schiebt capRaw NUR im Gas-Fall von seinem Rohwert
-      // Richtung 1 (voller Ausschlag): 0 = unveraendert wie bisher, 1 = unter Gas keine
-      // Abschwaechung mehr, egal wie stark die Vorderachse entlastet ist.
-      const capRaw2 = uF < 1 ? capRaw + cfg.throttleSteerRelief * (1 - capRaw) : capRaw;
+      // cfg.throttleSteerRelief (0..1) ist jetzt das MAXIMUM der Lindering. Die
+      // Abschwaechung (1 - capRaw2) ist die Roh-Abschwaechung (1 - capRaw) mal der
+      // tatsaechlichen Laengsausnutzung (st.longUse, "wie stark ich beschleunige") mal dem
+      // Restfaktor (1 - cfg.throttleSteerRelief): sanftes Gas laesst die Lenkung fast
+      // unberuehrt, volles Gas schwaecht am staerksten - und das Maximum faellt mit dem
+      // Regler. 0 = volle Abschwaechung wie bisher, 1 = unter Gas keine Abschwaechung mehr,
+      // egal wie stark die Vorderachse entlastet ist.
+      const gasAnteil = Math.max(0, Math.min(1, st.longUse));
+      const capRaw2 = uF < 1
+        ? 1 - (1 - capRaw) * gasAnteil * (1 - cfg.throttleSteerRelief)
+        : capRaw;
       // Der Deckel bei 1 bleibt, und er ist eine Aussage ueber das SERVO: steerGrip
       // skaliert den ausgegebenen Lenkwinkel, und ueber Vollausschlag hinaus gibt es dort
       // nichts zu holen. Ohne ihn waere der Reibkreis beim Bremsen groesser als im Rollen,

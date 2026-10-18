@@ -5191,9 +5191,9 @@
     // Bonus (v1.0.45) die Bremsphase aendert. Die Fahrphysik (kmh) bleibt in Fall 1 gleich,
     // in Fall 2 (steerCalib 2,5) aendert sie sich mit dem Lenk-Deckel.
     const soll = [
-      [{ useTauBrems: 0.45 }, { servo: 167.035121, betrag: 403.67963, kmh: 1510.680251 }],
+      [{ useTauBrems: 0.45 }, { servo: 171.593185, betrag: 425.026854, kmh: 1510.680251 }],
       [{ steerCalib: 2.5, steerResponse: 3.0, useTauBrems: 0.45 },
-       { servo: 308.971995, betrag: 795.122787, kmh: 1510.610919 }],
+       { servo: 306.581701, betrag: 803.105754, kmh: 1510.725779 }],
     ];
     const schlecht = [];
     for (const [patch, erwartet] of soll) {
