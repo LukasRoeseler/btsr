@@ -14962,7 +14962,45 @@
     if (!vfBox.querySelector('[data-vf="los"]') || !vfBox.querySelector('.gk-zeile') || !vfBox.querySelector('.vf-ton-status')) f.push('Garagen-Optionen unvollstaendig');
     if (vfTonGeladen('') || vfTonGeladen('gibtsnicht')) f.push('vfTonGeladen meldet Leeres als geladen');
     if (!(Math.abs(gefangen.r) < 0.05 && Math.abs(gefangen.vy) < 0.3)) f.push('faengt sich nicht: r ' + gefangen.r + ' vy ' + gefangen.vy);
+    // V5R (Werte wie img/autos/v5r/auto.json): Federung - Bremsen nickt die Nase, Rechtskurve legt nach links,
+    // Ruhe bleibt Ruhe; Fahrprofil aus den Daten bleibt stabil und faengt sich.
+    const d5 = { masse: 1180, gefedert: 1056, schwerpunktHoehe: 0.255, a: 1.294, b: 1.347, vorderachse: 1.225, hinterachse: -1.416,
+      laenge: 4.643, breite: 2.0, hoehe: 1.163, massenVerteilung: 0.85, lenkGrad: 21, bremsVorn: 0.59, auftriebVorn: 0.403, auftriebHinten: 0.443,
+      fluegelVorn: 0.18, fluegelHinten: 0.41, reifen: { vorn: { radius: 0.328, breite: 0.31, spur: 1.6, bodenfreiheit: 0.065, mu: 1.214 },
+        hinten: { radius: 0.343, breite: 0.31, spur: 1.56, bodenfreiheit: 0.076, mu: 1.214 } },
+      feder: { vorn: { k: 170000, druck: 15000, zug: 22000, weg: 0.1, stab: 75000 }, hinten: { k: 130000, druck: 10000, zug: 20000, weg: 0.1, stab: 25000 } } };
+    const fed = (ax, ay) => { const z = { z: 0, vz: 0, th: 0, vth: 0, ph: 0, vph: 0 }; for (let i = 0; i < 60; i++) vfFederung(z, ax, ay, 1 / 60, d5, 0); return z; };
+    const brems = fed(-14, 0), kurve = fed(0, 14), ruhe = fed(0, 0);
+    if (!(brems.th > 0.002)) f.push('Bremsen nickt nicht: ' + brems.th);
+    if (!(kurve.ph < -0.003)) f.push('Rechtskurve legt nicht nach links: ' + kurve.ph);
+    if (Math.abs(ruhe.th) + Math.abs(ruhe.ph) + Math.abs(ruhe.z) > 1e-9) f.push('Ruhe bewegt sich');
+    if (Math.abs(kurve.ph) > 0.03) f.push('Rollen zu gross: ' + kurve.ph);
+    const P5 = vfPhysikAus(d5);
+    const lauf5 = (v, ax, an, l, sek, z) => { z = z || { vy: 0, r: 0 }; for (let i = 0; i < sek * 60; i++) { vfDynamik(z, v, ax, an, l, 1 / 60, 1, P5); v = Math.max(0, v + ax / 60); } return z; };
+    const v5 = lauf5(30, 0, 0, 0.5, 3), v5frei = lauf5(27, 0, 0, 0, 1.5, lauf5(35, -15, 0, 0.3, 0.5));
+    if (!(v5.r > 0 && Math.abs(Math.atan2(v5.vy, 30)) < 0.1)) f.push('V5R rollt nicht stabil: r ' + v5.r + ' vy ' + v5.vy);
+    if (!(Math.abs(v5frei.r) < 0.05)) f.push('V5R faengt sich nach dem Anbremsen nicht: ' + v5frei.r);
+    if (!(P5.kH > P5.kV && P5.kV > 0)) f.push('Abtrieb falsch');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'geradeaus ' + soll.toFixed(1) + ' E/s, Haftgrenze 1 g, Ort und Codes stimmen' };
+  });
+
+  stAdd('Virtuell: Auto-Modell (V5R) laedt, Teile passen zu auto.bin, Texturen und Lichter da', async () => {
+    if (location.protocol === 'file:') return { skip: true, mass: 'file://, der Browser verbietet das Laden' };
+    const f = [];
+    let daten;
+    try { daten = await vfModellDaten(); } catch (e) { return { ok: false, mass: 'nicht ladbar: ' + e.message }; }
+    const m = daten.meta;
+    m.teile.forEach((t) => {
+      if (t.index0 + t.indizes > daten.indizes.length) f.push(t.name + ': Indizes ausserhalb');
+      let mx = 0;
+      for (let i = t.index0; i < t.index0 + t.indizes; i++) mx = Math.max(mx, daten.indizes[i]);
+      if (mx >= t.ecken) f.push(t.name + ': Index ' + mx + ' >= ' + t.ecken);
+    });
+    ['karosserie', 'scheinwerfer', 'ruecklicht', 'glas', 'rad'].forEach((r) => { if (!m.teile.some((t) => t.rolle === r)) f.push('keine Rolle ' + r); });
+    if (!(m.lichter.brems.length >= 2 && m.lichter.front.length >= 2)) f.push('Lichter fehlen');
+    const texs = [...new Set(m.teile.map((t) => t.tex))];
+    for (const x of texs) { const r = await fetch(VF_MODELL_PFAD + x, { method: 'HEAD' }).catch(() => null); if (!r || !r.ok) f.push('Textur fehlt: ' + x); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : m.name + ': ' + m.teile.length + ' Teile, ' + (daten.indizes.length / 3) + ' Dreiecke, ' + texs.length + ' Texturen' };
   });
 
   stAdd('Aufstellung: Mittelgasse, versetzte Haltepunkte, Impuls mit Tempo und Dauer aus den Reglern', () => {

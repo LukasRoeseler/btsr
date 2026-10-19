@@ -16,7 +16,8 @@
   //
   // BILD: eigener, kleiner WebGL-Renderer (keine Bibliothek): Boden, Fahrbahn aus der Mittellinie des
   // Editors (trackCenterline/trackNormals), Randsteine wie im Editor (links blau-weiss, rechts
-  // rot-weiss), Teilegrenzen, Start/Ziel, das Auto als Kasten in seiner Farbe, Verfolgerkamera.
+  // rot-weiss), Teilegrenzen, Start/Ziel, Verfolgerkamera. Das Auto ist seit v1.1.9 der Vulture V5R aus
+  // Speed Dreams (Modell, Lichter, Federung, Fahrdaten); der Kasten in Autofarbe bleibt als Rueckfall.
   const VF_RAD_GRAD = 26;           // groesster Radeinschlag bei vollem Lenkbefehl
   const VF_ACHSE = 7.0;             // Radstand in Streckeneinheiten (~7,5 cm)
   const VF_MU = 1.0;                // Haftbeiwert auf trockener Bahn (mal gripScale fuer Regen)
@@ -190,8 +191,10 @@
                    lenkGrad: 16, bremsVorn: 0.75, antriebMax: 7.0, tc: 0.60, abs: 0.80, lastEmpf: 0.15 };
   // z: { vy (m/s, rechts +), r (rad/s, rechts +) }, vx (m/s), ax (m/s^2 Laengsbeschleunigung, aus der
   // Laengs-G der App), antrieb (0..1 Gasanteil), lenk (-1..1), mu (Griff-Faktor).
-  function vfDynamik(z, vx, ax, antrieb, lenk, dt, mu) {
-    const P = VF_GT3, g = 9.81, L = P.a + P.b;
+  // P: Fahrprofil (VF_GT3 oder vfPhysikAus() eines Autos). kV/kH: Abtrieb je Achse in N je (m/s)^2.
+  function vfDynamik(z, vx, ax, antrieb, lenk, dt, mu, P) {
+    P = P || VF_GT3;
+    const g = 9.81, L = P.a + P.b;
     const delta = Math.max(-1, Math.min(1, lenk)) * P.lenkGrad * Math.PI / 180;
     if (vx < 3) {
       z.vy = 0; z.r = vx * Math.tan(delta) / L; z.aV = 0; z.aH = 0;
@@ -199,10 +202,12 @@
     }
     const f = mu === undefined ? 1 : mu;
     const dFz = P.m * Math.max(-12, Math.min(8, ax)) * P.h / L;
-    const fzV = Math.max(800, P.m * g * P.b / L - dFz), fzH = Math.max(800, P.m * g * P.a / L + dFz);
+    // Abtrieb waechst mit dem Quadrat des Tempos (gedeckelt bei 90 m/s).
+    const va = Math.min(vx, 90) * Math.min(vx, 90);
     // Lastempfindlichkeit: der Reibwert sinkt mit der Radlast. Das haelt ein Auto unter Last
     // gutmuetig, weil die entlastete Achse relativ mehr Griff behaelt.
     const fz0V = P.m * g * P.b / L, fz0H = P.m * g * P.a / L;
+    const fzV = Math.max(800, fz0V - dFz + (P.kV || 0) * va), fzH = Math.max(800, fz0H + dFz + (P.kH || 0) * va);
     const maxV = P.muV * f * fzV * (1 - P.lastEmpf * (fzV / fz0V - 1));
     const maxH = P.muH * f * fzH * (1 - P.lastEmpf * (fzH / fz0H - 1));
     const brems = ax < 0 ? P.m * -ax : 0;
@@ -225,6 +230,171 @@
     z.vy = Math.max(-vx, Math.min(vx, z.vy));
     z.r = Math.max(-5, Math.min(5, z.r));
     return z;
+  }
+  // ---- DAS AUTO AUS SPEED DREAMS (v1.1.9) ------------------------------------------------------
+  // BESTELLT: "Baue das v5r Auto aus Speeddreams ein. Das Auto soll auch Lichter und Bremslichter haben
+  // und sich beim Lenken, Gas geben und Bremsen entsprechend verhalten durch Neigung ueber simulierte
+  // Stossdaempfer." Der Vulture V5R (ls1-vulture-v5r, GPL-2+), umgewandelt mit tools/sd_auto.py nach
+  // img/autos/v5r/: Modell ohne Innenraum, Rad, Lichtorte und die Fahrzeugdaten aus der .xml. Laengen in
+  // Metern, im Auto +x links, +y oben, +z vorn; gezeichnet mal VF_AUTO.L / Laenge (so lang wie der Kasten).
+  const VF_MODELL_PFAD = 'img/autos/v5r/';
+  const VF_AUTO_STORE = 'omegasim-vf-auto';
+  const VF_FEDER_STORE = 'omegasim-vf-feder';
+  const VF_FEDER_WERTE = [1, 2, 3, 5, 8];
+  function vfAutoWahl() { try { return localStorage.getItem(VF_AUTO_STORE) === 'kasten' ? 'kasten' : 'v5r'; } catch (e) { return 'v5r'; } }
+  // Die echte Neigung eines GT1 ist klein (0,5 Grad Rollen bei 1,5 g) und bei Modellgroesse unsichtbar.
+  // Der Faktor vergroessert nur den AUSSCHLAG; Federraten, Daempfer und Zeitverhalten bleiben die echten.
+  function vfFederSicht() {
+    try { const v = +localStorage.getItem(VF_FEDER_STORE); return VF_FEDER_WERTE.indexOf(v) >= 0 ? v : 5; } catch (e) { return 5; }
+  }
+  // Fahrprofil fuer vfDynamik aus den Daten der .xml. Die Reibwerte von Speed Dreams sind ohne den dortigen
+  // Reifentemperatur-Zuschlag gerechnet: mal 1,3 vorn, hinten wie beim GT3 abgestimmt 28 % mehr (breitere
+  // Reifen, Abtrieb hinten). Abtrieb in N je (m/s)^2 aus Auftriebsbeiwert plus Fluegel, je Achse.
+  function vfPhysikAus(d) {
+    const mu = (d.reifen && d.reifen.vorn ? d.reifen.vorn.mu : 1.2) * 1.3;
+    return Object.assign({}, VF_GT3, {
+      m: d.masse, Iz: d.masse * (d.laenge * d.laenge + d.breite * d.breite) / 12 * (d.massenVerteilung || 0.85),
+      a: d.a, b: d.b, h: d.schwerpunktHoehe, muV: mu, muH: mu * 1.28, lenkGrad: d.lenkGrad, bremsVorn: d.bremsVorn,
+      kV: 0.5 * 1.23 * ((d.auftriebVorn || 0) + (d.fluegelVorn || 0)), kH: 0.5 * 1.23 * ((d.auftriebHinten || 0) + (d.fluegelHinten || 0)) });
+  }
+  // ---- Federung: vier Ecken mit Feder, Daempfer (Druck/Zug) und Stabilisator --------------------
+  // Zustand f: z (Einfedern, m, + = tiefer), th (Nicken, rad, + = Nase runter), ph (Rollen, rad, + = rechts
+  // runter) und ihre Geschwindigkeiten. ax: Laengsbeschleunigung (m/s^2, + = Gas), ay: Querbeschleunigung
+  // (+ = nach rechts, also Rechtskurve). Bremsen drueckt die Nase, Gas das Heck, eine Rechtskurve legt das
+  // Auto auf die linke Seite. Gerechnet wird nur die Abweichung von der Ruhelage (das Eigengewicht traegt
+  // die Feder schon).
+  function vfFederung(f, ax, ay, dt, d, stoss) {
+    const m = d.gefedert || d.masse, h = d.schwerpunktHoehe;
+    const Ix = m * (d.breite * d.breite + d.hoehe * d.hoehe) / 12, Iy = m * (d.laenge * d.laenge + d.hoehe * d.hoehe) / 12;
+    const tv = d.reifen.vorn.spur / 2, th_ = d.reifen.hinten.spur / 2, fv = d.feder.vorn, fh = d.feder.hinten;
+    // Ecken: x vom Schwerpunkt nach vorn, y nach rechts
+    const ecken = [[d.a, tv, fv], [d.a, -tv, fv], [-d.b, th_, fh], [-d.b, -th_, fh]];
+    const schritte = Math.max(1, Math.ceil(dt / 0.002)), hs = dt / schritte;
+    for (let s = 0; s < schritte; s++) {
+      const F = [];
+      for (const [x, y, k] of ecken) {
+        const dd = f.z + f.th * x + f.ph * y, vv = f.vz + f.vth * x + f.vph * y;
+        F.push(k.k * dd + (vv > 0 ? k.druck : k.zug) * vv);
+      }
+      // Stabilisatoren: Kraft aus dem Unterschied rechts minus links je Achse
+      for (const [i, k] of [[0, fv], [2, fh]]) {
+        const dr = ecken[i][0] * f.th + ecken[i][1] * f.ph, dl = ecken[i + 1][0] * f.th + ecken[i + 1][1] * f.ph;
+        const st = (k.stab || 0) * (dr - dl);
+        F[i] += st; F[i + 1] -= st;
+      }
+      let sF = 0, sx = 0, sy = 0;
+      for (let i = 0; i < 4; i++) { sF += F[i]; sx += F[i] * ecken[i][0]; sy += F[i] * ecken[i][1]; }
+      const az = ((stoss || 0) - sF) / m;
+      const ath = (m * -ax * h - sx) / Iy;
+      const aph = (m * -ay * h * 0.8 - sy) / Ix;
+      f.vz += az * hs; f.vth += ath * hs; f.vph += aph * hs;
+      f.z += f.vz * hs; f.th += f.vth * hs; f.ph += f.vph * hs;
+    }
+    // Federweg begrenzt (Speed Dreams: suspension course)
+    const weg = Math.min(fv.weg || 0.1, fh.weg || 0.1);
+    f.z = Math.max(-weg, Math.min(weg, f.z));
+    return f;
+  }
+  // ---- Matrizen fuer das Modell ----------------------------------------------------------------
+  const vfT = (x, y, z) => [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1];
+  const vfS = (x, y, z) => [x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1];
+  const vfRx = (a) => { const c = Math.cos(a), s = Math.sin(a); return [1, 0, 0, 0, 0, c, s, 0, 0, -s, c, 0, 0, 0, 0, 1]; };
+  const vfRy = (a) => { const c = Math.cos(a), s = Math.sin(a); return [c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, 0, 0, 0, 1]; };
+  const vfRz = (a) => { const c = Math.cos(a), s = Math.sin(a); return [c, s, 0, 0, -s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]; };
+  const vfKette = (...m) => m.reduce((a, b) => vfMal(a, b));
+  // Normalenmatrix: invers-transponierte 3x3 (das Rad ist ungleich skaliert und rechts gespiegelt).
+  function vfNormalen(w) {
+    const a = w[0], b = w[4], c = w[8], d = w[1], e = w[5], f = w[9], g = w[2], h = w[6], i = w[10];
+    const A = e * i - f * h, B = -(d * i - f * g), C = d * h - e * g;
+    const det = a * A + b * B + c * C || 1;
+    // Kofaktoren C[r][c]; die Normalenmatrix ist C / det, spaltenweise abgelegt
+    const C10 = -(b * i - c * h), C11 = a * i - c * g, C12 = -(a * h - b * g);
+    const C20 = b * f - c * e, C21 = -(a * f - c * d), C22 = a * e - b * d;
+    return [A / det, C10 / det, C20 / det, B / det, C11 / det, C21 / det, C / det, C12 / det, C22 / det];
+  }
+  function vfProgrammTex(gl) {
+    const p = gl.createProgram();
+    gl.attachShader(p, vfShader(gl, gl.VERTEX_SHADER,
+      'attribute vec3 p; attribute vec3 n; attribute vec2 uv; uniform mat4 m; uniform mat4 w; uniform mat3 nm;'
+      + 'varying vec2 vuv; varying vec3 vn; varying float vd;'
+      + 'void main(){ vec4 q = w * vec4(p, 1.0); gl_Position = m * q; vuv = uv; vn = nm * n; vd = gl_Position.w; }'));
+    gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
+      'precision mediump float; varying vec2 vuv; varying vec3 vn; varying float vd;'
+      + 'uniform sampler2D tx; uniform vec3 tint; uniform float emis; uniform float alpha; uniform float am; uniform float licht; uniform vec3 nebel;'
+      + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 N = normalize(vn);'
+      + ' float d = max(dot(N, normalize(vec3(0.35, 0.9, 0.25))), 0.0); float s = pow(max(dot(N, normalize(vec3(0.2, 0.75, -0.6))), 0.0), 24.0);'
+      + ' float l = mix(1.0, 0.42 + 0.66 * d, licht); vec3 c = t.rgb * tint * (l + emis) + vec3(s * 0.35 * licht);'
+      + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(c, nebel, f), mix(alpha, alpha * t.a, am)); }'));
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    const u = {};
+    ['m', 'w', 'nm', 'tx', 'tint', 'emis', 'alpha', 'am', 'licht', 'nebel'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
+    return { p, u, ap: gl.getAttribLocation(p, 'p'), an: gl.getAttribLocation(p, 'n'), auv: gl.getAttribLocation(p, 'uv') };
+  }
+  // Daten einmal je Sitzung holen (fetch: ueber file:// nicht ladbar, dann bleibt der Kasten).
+  let vfModellLaden = null;
+  function vfModellDaten() {
+    if (!vfModellLaden) {
+      vfModellLaden = Promise.all([
+        fetch(VF_MODELL_PFAD + 'auto.json').then((r) => { if (!r.ok) throw new Error('auto.json ' + r.status); return r.json(); }),
+        fetch(VF_MODELL_PFAD + 'auto.bin').then((r) => { if (!r.ok) throw new Error('auto.bin ' + r.status); return r.arrayBuffer(); }),
+      ]).then(([meta, bin]) => {
+        if (bin.byteLength < meta.indexAb + meta.indizes * 2) throw new Error('auto.bin zu kurz');
+        return { meta, ecken: new Float32Array(bin, 0, meta.ecken * 8), indizes: new Uint16Array(bin, meta.indexAb, meta.indizes) };
+      }).catch((e) => { vfModellLaden = null; throw e; });
+    }
+    return vfModellLaden;
+  }
+  function vfTextur(gl, url, rgba) {
+    const tx = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tx);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(rgba || [150, 150, 155, 255]));
+    if (!url) return tx;
+    const bild = new Image();
+    bild.onload = () => {
+      if (VF.gl !== gl) return;
+      gl.bindTexture(gl.TEXTURE_2D, tx);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bild);
+      const zwei = (v) => (v & (v - 1)) === 0;
+      if (zwei(bild.width) && zwei(bild.height)) {
+        gl.generateMipmap(gl.TEXTURE_2D);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+      } else {
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      }
+    };
+    bild.src = url;
+    return tx;
+  }
+  // Ein weicher Lichtfleck (fuer Leuchten und den Lichtkegel), gerechnet statt geladen.
+  function vfGlanzTextur(gl) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const g = c.getContext('2d'), r = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(0.35, 'rgba(255,255,255,0.55)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = r; g.fillRect(0, 0, 64, 64);
+    const tx = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tx);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    return tx;
+  }
+  function vfModellBauen(gl, daten) {
+    const vbo = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+    gl.bufferData(gl.ARRAY_BUFFER, daten.ecken, gl.STATIC_DRAW);
+    const ibo = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, daten.indizes, gl.STATIC_DRAW);
+    const tex = {};
+    daten.meta.teile.forEach((t) => { if (!tex[t.tex]) tex[t.tex] = vfTextur(gl, VF_MODELL_PFAD + t.tex); });
+    const schatten = daten.meta.schatten ? vfTextur(gl, VF_MODELL_PFAD + daten.meta.schatten, [0, 0, 0, 0]) : null;
+    // Eine kleine Flaeche fuer Schatten, Lichtkegel und Leuchten (wird je Bild neu beschrieben).
+    const quad = gl.createBuffer();
+    return { meta: daten.meta, d: daten.meta.physik, vbo, ibo, tex, schatten, glanz: vfGlanzTextur(gl), quad };
   }
   // Naechster Mittellinienpunkt in einem Fenster um den letzten (die Strecke kann sich kreuzen).
   function vfOrt(pts, nrm, x, y, idx) {
@@ -280,6 +450,7 @@
       const neu = vfSchritt(VF, kmh, lenk, dt, physEngine.config.gripScale);
       VF.x = neu.x; VF.y = neu.y; VF.h = neu.h;
       VF.dyn = { vy: 0, r: 0 };
+      VF.ax = 0; VF.ay = 0;
     } else {
       const vVoll = kmh * REAL_SCALE / 3.6;                                  // m/s eines GT3
       // Laengs: die Laengs-G der App (-1 = Vollbremsung) auf GT3-Werte (1,5 g), nicht die Ableitung
@@ -287,7 +458,8 @@
       const ax = (st.gLong || 0) * 15;
       if (!VF.dyn) VF.dyn = { vy: 0, r: 0 };
       vfDynamik(VF.dyn, vVoll, ax, Math.max(0, st.longUse || 0), lenk, dt,
-        (physEngine.config.gripScale || 1) * (VF.abseits ? 0.55 : 1));
+        (physEngine.config.gripScale || 1) * (VF.abseits ? 0.55 : 1), VF.P);
+      VF.ax = ax; VF.ay = vVoll * VF.dyn.r;
       // Weg in der Bahnwelt: Tempo des Modellautos, Richtung = Kurs + Schwimmwinkel.
       VF.h += VF.dyn.r * dt * 180 / Math.PI;
       const beta = Math.atan2(VF.dyn.vy, Math.max(0.1, vVoll));
@@ -296,6 +468,15 @@
       VF.x += Math.sin(rich) * vE * dt;
       VF.y -= Math.cos(rich) * vE * dt;
     }
+    // Raeder drehen mit dem Weg, Federung folgt Laengs- und Querbeschleunigung (neben der Bahn ruettelt es).
+    const wegE = kmh / 3.6 * 100 * TRACK_UNITS_PER_CM * dt;
+    VF.raddreh = ((VF.raddreh || 0) + wegE / (VF_AUTO.L / 4.64 * 0.335)) % (Math.PI * 2);
+    if (VF.modell) {
+      if (!VF.feder) VF.feder = { z: 0, vz: 0, th: 0, vth: 0, ph: 0, vph: 0 };
+      const stoss = VF.abseits && Math.abs(kmh) > 0.05 ? (Math.random() - 0.5) * VF.modell.d.masse * 9 : 0;
+      vfFederung(VF.feder, VF.ax || 0, VF.ay || 0, dt, VF.modell.d, stoss);
+    }
+    VF.lenkWinkel = Math.max(-1, Math.min(1, lenk)) * (VF.P ? VF.P.lenkGrad : VF_GT3.lenkGrad) * Math.PI / 180;
     const o = vfOrt(VF.pts, VF.nrm, VF.x, VF.y, VF.idx);
     VF.idx = o.idx;
     const ab = Math.abs(o.quer) > TRACK_HALF_W * 1.19 + VF_AUTO.B * 0.3;
@@ -314,6 +495,7 @@
     physEngine.state.speedKmh = 0;
     VF.abseits = false;
     VF.dyn = { vy: 0, r: 0 };
+    VF.feder = null;
     showHudToast(t('Zurück auf die Bahn gesetzt'));
   }
   function vfMalen() {
@@ -342,7 +524,110 @@
       gl.drawArrays(gl.TRIANGLES, 0, pu.n);
     };
     zeichne(VF.bahn, VF_EINS);
-    zeichne(VF.auto, vfLage(VF.x, VF.y, VF.h));
+    [gl.getAttribLocation(VF.prog, 'p'), gl.getAttribLocation(VF.prog, 'c')].forEach((a) => gl.disableVertexAttribArray(a));
+    if (VF.modell && VF.tprog) vfModellMalen(gl, pv, vfBlick(VF.kam, ziel, [0, 1, 0]));
+    else {
+      gl.enableVertexAttribArray(gl.getAttribLocation(VF.prog, 'p')); gl.enableVertexAttribArray(gl.getAttribLocation(VF.prog, 'c'));
+      zeichne(VF.auto, vfLage(VF.x, VF.y, VF.h));
+    }
+  }
+  function vfModellMalen(gl, pv, blick) {
+    const M = VF.modell, d = M.d, T = VF.tprog, u = T.u;
+    const s = VF_AUTO.L / d.laenge;
+    const lage = vfMal(vfLage(VF.x, VF.y, VF.h), vfS(s, s, s));
+    const g = vfFederSicht(), fe = VF.feder || { z: 0, th: 0, ph: 0 };
+    const zSp = d.vorderachse - d.a, boden = (d.reifen.vorn.bodenfreiheit + d.reifen.hinten.bodenfreiheit) / 2;
+    // Aufbau: um den Schwerpunkt genickt und gerollt, eingefedert nach unten.
+    const aufbau = vfKette(lage, vfT(0, boden - fe.z * g, zSp), vfT(0, d.schwerpunktHoehe, 0), vfRx(fe.th * g), vfRz(fe.ph * g),
+      vfT(0, -d.schwerpunktHoehe, -zSp));
+    const licht = typeof headlightsOn === 'undefined' ? true : !!headlightsOn;
+    const bremst = !!(physEngine.outputs && physEngine.outputs.lights && physEngine.outputs.lights.brake);
+    gl.useProgram(T.p);
+    gl.uniformMatrix4fv(u.m, false, new Float32Array(pv));
+    gl.uniform3f(u.nebel, 0.55, 0.66, 0.78);
+    gl.uniform1i(u.tx, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    [T.ap, T.an, T.auv].forEach((a) => gl.enableVertexAttribArray(a));
+    const setze = (w, tint, emis, alpha, am, hell) => {
+      gl.uniformMatrix4fv(u.w, false, new Float32Array(w));
+      gl.uniformMatrix3fv(u.nm, false, new Float32Array(vfNormalen(w)));
+      gl.uniform3f(u.tint, tint[0], tint[1], tint[2]); gl.uniform1f(u.emis, emis);
+      gl.uniform1f(u.alpha, alpha); gl.uniform1f(u.am, am); gl.uniform1f(u.licht, hell);
+    };
+    const teil = (t) => {
+      gl.bindBuffer(gl.ARRAY_BUFFER, M.vbo);
+      gl.vertexAttribPointer(T.ap, 3, gl.FLOAT, false, 32, t.ecke0 * 32);
+      gl.vertexAttribPointer(T.an, 3, gl.FLOAT, false, 32, t.ecke0 * 32 + 12);
+      gl.vertexAttribPointer(T.auv, 2, gl.FLOAT, false, 32, t.ecke0 * 32 + 24);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, M.ibo);
+      gl.bindTexture(gl.TEXTURE_2D, M.tex[t.tex]);
+      gl.drawElements(gl.TRIANGLES, t.indizes, gl.UNSIGNED_SHORT, t.index0 * 2);
+    };
+    const flaeche = (ecken, tx) => {      // ecken: je Ecke x y z u v (Welt)
+      const a = [];
+      ecken.forEach((e) => a.push(e[0], e[1], e[2], 0, 1, 0, e[3], e[4]));
+      gl.bindBuffer(gl.ARRAY_BUFFER, M.quad);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(a), gl.DYNAMIC_DRAW);
+      gl.vertexAttribPointer(T.ap, 3, gl.FLOAT, false, 32, 0);
+      gl.vertexAttribPointer(T.an, 3, gl.FLOAT, false, 32, 12);
+      gl.vertexAttribPointer(T.auv, 2, gl.FLOAT, false, 32, 24);
+      gl.bindTexture(gl.TEXTURE_2D, tx);
+      gl.drawArrays(gl.TRIANGLES, 0, ecken.length);
+    };
+    const ort = (w, p) => [w[0] * p[0] + w[4] * p[1] + w[8] * p[2] + w[12], w[1] * p[0] + w[5] * p[1] + w[9] * p[2] + w[13], w[2] * p[0] + w[6] * p[1] + w[10] * p[2] + w[14]];
+    // 1. Schatten unter dem Auto (Boden, nicht mitgeneigt)
+    if (M.schatten) {
+      gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
+      setze(VF_EINS, [1, 1, 1], 0, 0.75, 1, 0);
+      const hb = d.breite * 0.62, hl = d.laenge * 0.55;
+      const q = [[hb, 0.012, hl + zSp, 0, 0], [-hb, 0.012, hl + zSp, 1, 0], [-hb, 0.012, -hl + zSp, 1, 1], [hb, 0.012, -hl + zSp, 0, 1]].map((p) => ort(lage, p).concat(p.slice(3)));
+      flaeche([q[0], q[1], q[2], q[0], q[2], q[3]], M.schatten);
+      gl.depthMask(true); gl.disable(gl.BLEND);
+    }
+    // 2. Aufbau, undurchsichtige Teile; Scheinwerfer und Ruecklicht leuchten selbst
+    const ruecklichtEmis = bremst ? 1.7 : (licht ? 0.55 : 0);
+    M.meta.teile.forEach((t) => {
+      if (t.gruppe !== 'auto' || t.rolle === 'glas' || t.rolle === 'scheinwerferglas') return;
+      const emis = t.rolle === 'scheinwerfer' ? (licht ? 1.3 : 0) : t.rolle === 'ruecklicht' ? ruecklichtEmis : 0;
+      setze(aufbau, [1, 1, 1], emis, 1, 0, 1);
+      teil(t);
+    });
+    // 3. Raeder: Mitte auf Reifenradius, vorn eingeschlagen, alle drehen; rechts gespiegelt (Muttern aussen)
+    const radTeile = M.meta.teile.filter((t) => t.gruppe === 'rad');
+    [[1, 'vorn', d.vorderachse], [-1, 'vorn', d.vorderachse], [1, 'hinten', d.hinterachse], [-1, 'hinten', d.hinterachse]].forEach(([seite, ax, z]) => {
+      const r = d.reifen[ax];
+      const w = vfKette(lage, vfT(seite * r.spur / 2, r.radius, z), vfRy(ax === 'vorn' ? -(VF.lenkWinkel || 0) : 0), vfRx(VF.raddreh || 0),
+        vfS(seite * r.breite, 2 * r.radius, 2 * r.radius));
+      radTeile.forEach((t) => { setze(w, [1, 1, 1], 0, 1, 0, 1); teil(t); });
+    });
+    // 4. Scheiben und Scheinwerferglas (durchscheinend, getoent)
+    gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
+    M.meta.teile.forEach((t) => {
+      if (t.rolle === 'glas') { setze(aufbau, [0.18, 0.22, 0.27], 0, 0.86, 0, 1); teil(t); }
+      if (t.rolle === 'scheinwerferglas') { setze(aufbau, [1, 1, 1], licht ? 0.6 : 0, 0.9, 1, 1); teil(t); }
+    });
+    // 5. Leuchten: Lichtpunkte (zur Kamera gedreht) und vorn der Lichtkegel auf der Bahn
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+    const rechts = [blick[0], blick[4], blick[8]], oben = [blick[1], blick[5], blick[9]];
+    const punkt = (p, gr, farbe, staerke) => {
+      const c = ort(aufbau, p), k = gr * s;
+      const e = (a, b) => [c[0] + (rechts[0] * a + oben[0] * b) * k, c[1] + (rechts[1] * a + oben[1] * b) * k, c[2] + (rechts[2] * a + oben[2] * b) * k];
+      const q = [e(-1, -1).concat([0, 0]), e(1, -1).concat([1, 0]), e(1, 1).concat([1, 1]), e(-1, 1).concat([0, 1])];
+      setze(VF_EINS, farbe, 0, staerke, 1, 0);
+      flaeche([q[0], q[1], q[2], q[0], q[2], q[3]], M.glanz);
+    };
+    if (licht) {
+      const vorn = d.laenge / 2 + zSp;
+      const kegel = [[0.9, 0.02, vorn, 0.25, 0.5], [-0.9, 0.02, vorn, 0.75, 0.5], [-3.2, 0.02, vorn + 13, 1, 1], [3.2, 0.02, vorn + 13, 0, 1]]
+        .map((p) => ort(lage, p).concat(p.slice(3)));
+      setze(VF_EINS, [1, 0.95, 0.82], 0, 0.30, 1, 0);
+      flaeche([kegel[0], kegel[1], kegel[2], kegel[0], kegel[2], kegel[3]], M.glanz);
+      (M.meta.lichter.front || []).forEach((l) => punkt(l, l[3] * 2.6, [1, 0.96, 0.85], 0.95));
+      (M.meta.lichter.rueck || []).forEach((l) => punkt(l, l[3] * 1.6, [1, 0.1, 0.06], 0.45));
+    }
+    if (bremst) (M.meta.lichter.brems || []).forEach((l) => punkt(l, l[3] * 2.4, [1, 0.08, 0.04], 0.95));
+    gl.depthMask(true); gl.disable(gl.BLEND);
+    [T.ap, T.an, T.auv].forEach((a) => gl.disableVertexAttribArray(a));
   }
   function vfZeit(ms) { return ms === null || ms === undefined ? '–' : (ms / 1000).toFixed(2) + ' s'; }
   function vfHud() {
@@ -371,7 +656,7 @@
     schicht.innerHTML = '<canvas class="vf-bild"></canvas><div class="vf-hud" data-i18n-skip>'
       + '<b class="vf-tempo"></b><span class="vf-runde"></span><span class="vf-zeiten"></span>'
       + '<span class="vf-abseits" hidden>' + t('Neben der Bahn') + '</span></div>'
-      + '<div class="vf-knoepfe"><button type="button" data-vf="reset">' + t('Zurücksetzen') + '</button>'
+      + '<div class="vf-knoepfe"><button type="button" data-vf="licht">' + t('Licht') + '</button><button type="button" data-vf="reset">' + t('Zurücksetzen') + '</button>'
       + '<button type="button" data-vf="zu" aria-label="' + t('Beenden') + '">&#10005;</button></div>'
       + '<span class="vf-wip">' + t('Virtuell') + ' <span class="wip-tag">WIP</span></span>';
     document.body.appendChild(schicht);
@@ -402,6 +687,17 @@
     setCarRole(car, 'player');
     VF.car = car;
     VF.auto = vfAutoBauen(gl, vfHex(carColor(car).hex));
+    VF.modell = null; VF.P = null; VF.feder = null; VF.raddreh = 0;
+    if (vfAutoWahl() === 'v5r') {
+      try { VF.tprog = vfProgrammTex(gl); } catch (e) { VF.tprog = null; }
+      if (VF.tprog) {
+        vfModellDaten().then((daten) => {
+          if (!VF.aktiv || VF.gl !== gl) return;
+          VF.modell = vfModellBauen(gl, daten);
+          VF.P = vfPhysikAus(daten.meta.physik);
+        }).catch(() => showHudToast(t('Auto-Modell nicht ladbar – es fährt der Kasten')));
+      }
+    }
     // Start eine halbe Kachel vor Start/Ziel, in Fahrtrichtung.
     const s = Math.max(0, VF.pts.findIndex((p) => p.tile >= 0 && tiles[p.tile] && tiles[p.tile].type === TILE_TYPE.START));
     const start = ((s - Math.round(TRACK_SAMPLES_PER_TILE / 2)) % VF.pts.length + VF.pts.length) % VF.pts.length;
@@ -413,6 +709,13 @@
       if (!b) return;
       if (b.dataset.vf === 'zu') virtuellBeenden();
       else if (b.dataset.vf === 'reset') vfZuruecksetzen();
+      else if (b.dataset.vf === 'licht') {
+        // Dasselbe wie Dreieck im Cockpit: der Schalter im Armaturenbrett bleibt gleich.
+        headlightsOn = !headlightsOn;
+        const cb = $('dash-head-toggle');
+        if (cb) cb.checked = headlightsOn;
+        showHudToast(t(headlightsOn ? 'Licht an' : 'Licht aus'));
+      }
     });
     VF.dyn = { vy: 0, r: 0 };
     vfMotorsound();
@@ -469,6 +772,22 @@
       renderGarage();
     };
     rechts.appendChild(garWertZeile(t('Motorsound'), werte[j].name, () => wahl(-1), () => wahl(1)));
+    // v1.1.9: welches Auto, und wie deutlich die Federung sichtbar neigt.
+    const autos = [{ v: 'v5r', name: 'Vulture V5.R (Speed Dreams)' }, { v: 'kasten', name: t('Einfaches Modell') }];
+    const ja = Math.max(0, autos.findIndex((a) => a.v === vfAutoWahl()));
+    const autoWahl = (dd) => {
+      try { localStorage.setItem(VF_AUTO_STORE, autos[(ja + dd + autos.length) % autos.length].v); } catch (e) { /* egal */ }
+      renderGarage();
+    };
+    rechts.appendChild(garWertZeile(t('Auto'), autos[ja].name, () => autoWahl(-1), () => autoWahl(1)));
+    if (autos[ja].v === 'v5r') {
+      const jf = VF_FEDER_WERTE.indexOf(vfFederSicht());
+      const federWahl = (dd) => {
+        try { localStorage.setItem(VF_FEDER_STORE, String(VF_FEDER_WERTE[Math.max(0, Math.min(VF_FEDER_WERTE.length - 1, jf + dd))])); } catch (e) { /* egal */ }
+        renderGarage();
+      };
+      rechts.appendChild(garWertZeile(t('Neigung sichtbar'), VF_FEDER_WERTE[jf] + '×', () => federWahl(-1), () => federWahl(1)));
+    }
     const status = document.createElement('p');
     status.className = 'muted vf-ton-status';
     status.textContent = vfTonStatus();

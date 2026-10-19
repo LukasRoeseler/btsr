@@ -137,6 +137,8 @@
     'sd_v8gt', 'sd_v10', 'sd_v8muscle', 'sd_v8alt', 'sd_v12', 'sd_v12weich',
     // v1.0.18 BESTELLT: "Toro R-GT einbauen" - aus den Speed-Dreams-Spieldaten, Free Art License.
     'sd_toro',
+    // v1.1.9 BESTELLT: der Vulture V5R aus Speed Dreams (virtuelle Fahrt), sein eigener V8 (GPL-2+).
+    'sd_v5r',
     // ---- ZWEI AUFNAHMEN DES NUTZERS, aus photos/newaudio --------------------------
     // BESTELLT: eigene Aufnahmen; Drehzahlen aus der Video-Anzeige (siehe loops.json).
     // DIESELBE REIHENFOLGE wie im Menue (am Ende der Liste).
