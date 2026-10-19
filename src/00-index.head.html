@@ -9985,6 +9985,44 @@
         Getriebe &amp; Fahrleistung
       </div>
       <div class="opt-row"><div class="opt-label">Automatikgetriebe<small>An: Quadrat/X legt unter 10 km/h den Rückwärtsgang, Kreis/B holt ihn heraus. Aus: von Hand schalten, unter dem 1. Gang liegt der Leerlauf und darunter im Stand der Rückwärtsgang.</small></div><label class="tgl"><input type="checkbox" id="setting-autoshift" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">R&uuml;ckw&auml;rtsgang: Gas und Bremse zusammen <span class="wip-tag">experimentell</span>
+          <small>R&uuml;ckw&auml;rtsgang wie am Original-Controller: Sind im Stand Gas und Bremse zugleich gedr&uuml;ckt, legt das Auto den R&uuml;ckw&auml;rtsgang ein und f&auml;hrt r&uuml;ckw&auml;rts, solange beide gedr&uuml;ckt bleiben. L&auml;sst du beide f&uuml;r die Haltezeit los, rollt das Auto aus (siehe Ausrollen), schaltet danach wieder in den 1. Gang und f&auml;hrt vorw&auml;rts. Nur Gas oder nur Bremse fahren im R&uuml;ckw&auml;rtsgang nicht r&uuml;ckw&auml;rts (die Bremse bremst weiter). Gilt nur in der Automatik (Automatikgetriebe an) und nicht im Fahrgef&uuml;hl RC. Wirkt nicht im Autopiloten (Gelbe Flagge, Einf&uuml;hrungsrunde, Streckenscan). Die Regler darunter stellen ein, wie fest gedr&uuml;ckt werden muss, wie lange, bis zu welchem Tempo und wie das Auto ausrollt. Experimentell.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-gasbrake-reverse"><span></span></label></div>
+      <!-- KEIN <small>: optInfoEinrichten() (98c-opt-info.js) versteckt jedes <small> in einem .opt-label hinter dem i-Knopf,
+           und diese Zeile soll sichtbar bleiben und sich laufend aendern. -->
+      <div class="opt-row"><div class="opt-label">Live-Anzeige<br><span id="setting-gasbrake-reverse-status" style="display:block; margin-top:3px; font-size:12px; color:var(--muted, #8a93a6)">noch kein Signal</span></div></div>
+      <div class="opt-row"><div class="opt-label">R&uuml;ckw&auml;rtsgang: Druckschwelle
+          <small>Ab wie viel Auslenkung Gas und Bremse jeweils als &bdquo;gedr&uuml;ckt&ldquo; z&auml;hlen, in Prozent des vollen Wegs. Niedriger l&ouml;st leichter aus, auch bei leichtem Antippen beider Pedale. Gilt nur bei &bdquo;Gas und Bremse zusammen&ldquo;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-gasbrake-reverse-druck" min="10" max="100" step="5" value="50">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-gasbrake-reverse-druck-val">50 %</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">R&uuml;ckw&auml;rtsgang: Haltezeit
+          <small>Wie lange Gas und Bremse zugleich gedr&uuml;ckt bleiben m&uuml;ssen, bevor der R&uuml;ckw&auml;rtsgang einlegt, in Millisekunden. Dieselbe Zeit gilt umgekehrt: Sind beide Pedale so lange ganz losgelassen (unter 10 %), rollt das Auto aus der R&uuml;ckw&auml;rtsfahrt aus und schaltet danach wieder in den 1. Gang. 0 = sofort. H&ouml;her sch&uuml;tzt vor einem zuf&auml;lligen kurzen &Uuml;berschneiden und vor einem versehentlichen Wechsel nach vorn, wenn du kurz beide Pedale losl&auml;sst. Gilt nur bei &bdquo;Gas und Bremse zusammen&ldquo;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-gasbrake-reverse-ms" min="0" max="500" step="10" value="100">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-gasbrake-reverse-ms-val">100 ms</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">R&uuml;ckw&auml;rtsgang: Geschwindigkeitsgrenze
+          <small>Bis zu welchem Tempo der R&uuml;ckw&auml;rtsgang auf diesem Weg einlegt, in km/h. Dar&uuml;ber passiert nichts, auch wenn beide Pedale gedr&uuml;ckt sind - dieselbe Grenze gilt auch f&uuml;r die Schalttasten im Automatikgetriebe. Gilt nur bei &bdquo;Gas und Bremse zusammen&ldquo;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-gasbrake-reverse-kmh" min="0" max="40" step="1" value="10">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-gasbrake-reverse-kmh-val">10 km/h</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">R&uuml;ckw&auml;rtsgang: Ausrollen
+          <small>Wie lange das Auto nach dem Loslassen beider Pedale noch r&uuml;ckw&auml;rts ausrollt, bevor es wieder in den 1. Gang schaltet, in Millisekunden (grob: bis es steht). Das Modelltempo l&auml;uft dabei weich auf null, das Auto bleibt also nicht abrupt stehen. 0 = sofort stehen bleiben und nach vorn schalten. Dr&uuml;ckst du in dieser Zeit wieder beide Pedale, f&auml;hrst du weiter r&uuml;ckw&auml;rts. Gilt nur bei &bdquo;Gas und Bremse zusammen&ldquo;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-gasbrake-reverse-aus" min="0" max="3000" step="50" value="600">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-gasbrake-reverse-aus-val">600 ms</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Höchstgeschwindigkeit (km/h)</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>

@@ -11160,6 +11160,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Wert und faehrt weiter, wenn man den Controller abzieht - genau der Fehler, der in
       // diesem Projekt schon einmal ein Auto von allein fahren liess.
       z.steer = 0; z.throttle = 0;
+      if (typeof gasBremseRueckwaertsPruefen === 'function') gasBremseRueckwaertsPruefen(0, 0, z);   // Haltezeit-Uhr zuruecksetzen
       return;
     }
     // ---- ERFASSUNG FUER SPIELER 2s EIGENE BELEGUNG ---------------------------------
@@ -11179,7 +11180,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const gas = applyDeadzone(Math.max(0, readBindingValue(pad, z.bindings.throttle)), TRIGGER_DEADZONE);
     const bremse = applyDeadzone(Math.max(0, readBindingValue(pad, z.bindings.brake)), TRIGGER_DEADZONE);
     z.steer = applyDeadzone(readBindingValue(pad, z.bindings.steering));
-    z.throttle = gas - bremse;
+    // Gas und Bremse getrennt pruefen, BEVOR sie zu einer Zahl werden (siehe 50-drive.js).
+    const gbUeber = (typeof gasBremseRueckwaertsPruefen === 'function') ? gasBremseRueckwaertsPruefen(gas, bremse, z) : null;
+    z.throttle = gbUeber !== null ? gbUeber : gas - bremse;
     // Schalten, flankengetriggert wie bei Spieler 1. Ohne das koennte ein Spieler 2 mit
     // Handschaltung nicht schalten - und die Handschaltung ist eine Einstellung, die fuer
     // beide gilt.
@@ -11281,7 +11284,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // gehen, wenn Spieler 1 gar kein Pad hat (der Rumpf darunter kehrt dann frueh zurueck).
     for (const z of zusatzPlaetze()) {
       if (zweiSpieler) pollPadZusatz(spieler['p' + z.nr] || null, z);
-      else { z.steer = 0; z.throttle = 0; }
+      else {
+        z.steer = 0; z.throttle = 0;
+        if (typeof gasBremseRueckwaertsPruefen === 'function') gasBremseRueckwaertsPruefen(0, 0, z);
+      }
     }
     const pad = spieler.p1;
     if (!pad) {
@@ -11360,7 +11366,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // applyDeadzone already returns exactly 0 inside the deadzone, so a pad at rest is
       // silent here and no longer overwrites whatever the keyboard is holding.
       applySteerInput(SRC.PAD, steerRaw);
-      applyThrottleInput(SRC.PAD, throttleRaw - brakeRaw);
+      // Rueckwaertsgang per Gas+Bremse (50-drive.js): im von dort eingelegten Rueckwaertsgang gilt statt "Gas minus
+      // Bremse" (das waere bei beiden Pedalen 0) der Rueckgabewert.
+      const gbUeber = (typeof gasBremseRueckwaertsPruefen === 'function') ? gasBremseRueckwaertsPruefen(throttleRaw, brakeRaw) : null;
+      applyThrottleInput(SRC.PAD, gbUeber !== null ? gbUeber : throttleRaw - brakeRaw);
 
       // Headlight flash, edge-triggered: one press = one three-blink burst, the way GT3
       // drivers signal a pass. The handbrake that used to sit on this button is gone, and

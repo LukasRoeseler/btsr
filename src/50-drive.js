@@ -464,6 +464,182 @@
     $('setting-pac-ueber').addEventListener('change', ueber);
     ueber();
   }
+  // ---- RUECKWAERTSGANG: GAS UND BREMSE ZUSAMMEN (WIP) ------------------------------------
+  // BESTELLT: "Rueckwaertsgang ausloesen, wenn im Stand Gas und Bremse gleichzeitig gedrueckt werden, wie in der
+  // Original-App. Ich fahre nur rueckwaerts, wenn beide Tasten gedrueckt sind. Ich fahre wieder vorwaerts, wenn
+  // ich beide Tasten fuer zum Beispiel 200 ms nicht betaetige - dazu derselbe Parameter, die Haltezeit."
+  //
+  // Gas und Bremse laufen in dieser App technisch als EINE vorzeichenbehaftete Zahl (throttleY = Gas minus
+  // Bremse): "beides voll" hebt sich darin zu 0 auf und ist von "nichts gedrueckt" nicht zu unterscheiden. Die
+  // rohen, UNVERRECHNETEN Werte beider Pedale gibt es nur an der jeweiligen Eingabequelle selbst (Gamepad-
+  // Trigger in pollGamepad/pollPadZusatz, Pfeiltasten in der Tastaturabfrage) - dort ruft jede Quelle diese
+  // Funktion mit ihren rohen Werten auf, BEVOR sie zu throttleY verrechnet werden.
+  //
+  // DER ABLAUF, wenn diese Funktion den Rueckwaertsgang eingelegt hat (gbRueck[nr]):
+  //   beide Pedale gedrueckt   -> Gas nach hinten (der Rueckgabewert ist der Gaswert; "Gas minus Bremse" waere 0)
+  //   nur ein Pedal            -> kein Antrieb (Rueckgabe 0 bzw. die Bremse); die Bremse bremst weiter
+  //   beide ganz los           -> nach der Haltezeit zurueck in den 1. Gang, wie die Vorwaerts-Schalttaste (Kreis/B)
+  // Ein Rueckwaertsgang, den die Schalttaste eingelegt hat, bleibt unberuehrt: dort gilt wie bisher Gas = rueckwaerts.
+  // Nur Automatik, nicht RC, nicht unter Autopilot.
+  //
+  // JE SPIELER UND JE EINGABEQUELLE EINE EIGENE HALTEZEIT-UHR zum Einlegen (Schluessel "1/pad", "1/tast", "2/pad", ...).
+  // GEMELDET: im Cockpit kam das R nie, auf der Optionsseite schon. Die Tastaturabfrage laeuft im Cockpit alle
+  // 30 ms auch ohne Taste und meldete dann "kein Pedal" - das setzte die Uhr zurueck, die das Gamepad gerade
+  // hochzaehlte. Eine ruhige Quelle darf eine andere nie stoeren. Fuers ZURUECKSCHALTEN gilt dasselbe andersherum:
+  // "beide los" heisst, dass ALLE Quellen des Spielers ruhig sind - dafuer merkt sich gbAktivAm[nr] den letzten
+  // Zeitpunkt, an dem irgendeine Quelle ein Pedal gedrueckt hatte.
+  const gbHaltSeit = Object.create(null);
+  const gbToast = Object.create(null);
+  const gbRueck = Object.create(null);
+  const gbAktivAm = Object.create(null);
+  const gbAus = Object.create(null);        // je Spieler: Zeitpunkt des letzten Ausroll-Schritts (0 = nicht am Ausrollen)
+  const GB_LOS = 0.1;                       // darunter gilt ein Pedal als ganz losgelassen
+  const GB_STEHT_KMH = 0.5;                 // darunter gilt das Auto beim Ausrollen als stehend (Byte dann praktisch 0)
+  function gasBremseAn() { const el = $('setting-gasbrake-reverse'); return !!(el && el.checked); }
+  function gasBremseDruck() {
+    const el = $('setting-gasbrake-reverse-druck');
+    const v = el ? parseFloat(el.value) : 50;
+    return Number.isFinite(v) ? Math.max(0.1, Math.min(1, v / 100)) : 0.5;
+  }
+  function gasBremseHaltMs() {
+    const el = $('setting-gasbrake-reverse-ms');
+    const v = el ? parseFloat(el.value) : 100;
+    return Number.isFinite(v) ? Math.max(0, Math.min(500, v)) : 100;
+  }
+  function gasBremseKmh() {
+    const el = $('setting-gasbrake-reverse-kmh');
+    const v = el ? parseFloat(el.value) : 10;
+    return Number.isFinite(v) ? Math.max(0, Math.min(40, v)) : 10;
+  }
+  function gasBremseAusMs() {
+    const el = $('setting-gasbrake-reverse-aus');
+    const v = el ? parseFloat(el.value) : 600;
+    return Number.isFinite(v) ? Math.max(0, Math.min(3000, v)) : 600;
+  }
+  for (const [id, lies, einheit] of [
+    ['setting-gasbrake-reverse-druck', () => Math.round(gasBremseDruck() * 100), ' %'],
+    ['setting-gasbrake-reverse-ms', () => Math.round(gasBremseHaltMs()), ' ms'],
+    ['setting-gasbrake-reverse-kmh', () => Math.round(gasBremseKmh()), ' km/h'],
+    ['setting-gasbrake-reverse-aus', () => Math.round(gasBremseAusMs()), ' ms'],
+  ]) {
+    const reg = $(id);
+    if (!reg) continue;
+    const zeigen = () => { const v = $(id + '-val'); if (v) v.textContent = lies() + einheit; };
+    reg.addEventListener('input', zeigen); zeigen();
+  }
+  // Live-Anzeige unter der Option (nur Spieler 1): was die App gerade sieht und warum sie (noch) nicht
+  // einlegt. Geschrieben wird hoechstens alle 150 ms und nur, solange die Seite sichtbar ist
+  // (offsetParent), damit der Takt davon nichts merkt. HINWEIS: kein <small> - optInfoEinrichten()
+  // (98c-opt-info.js) versteckt jedes <small> in einem Zeilenlabel hinter dem i-Knopf.
+  let gbAufrufe = 0, gbStatusAt = 0;
+  function gbStatus(gasRoh, bremsRoh, kmhAnz, grund) {
+    const el = $('setting-gasbrake-reverse-status');
+    if (!el || !el.offsetParent) return;
+    const jetzt = Date.now();
+    // Springt die Uhr zurueck (jetzt < gbStatusAt), wird trotzdem geschrieben - sonst bliebe die Anzeige
+    // stumm, bis die Uhr den alten Zeitpunkt wieder erreicht hat.
+    if (jetzt >= gbStatusAt && jetzt - gbStatusAt < 150) return;
+    gbStatusAt = jetzt;
+    const st = physEngine.state;
+    const aus = (typeof physOutThrottle === 'number') ? physOutThrottle : 0;
+    el.textContent = t('Gas') + ' ' + Math.round(gasRoh * 100) + ' % · ' + t('Bremse') + ' ' + Math.round(bremsRoh * 100) + ' % · '
+                   + Math.round(st.speedKmh * REAL_SCALE) + ' km/h · ' + t('Gang') + ' ' + gearLabel(st) + ' · '
+                   + t('Ausgabe') + ' ' + aus.toFixed(2) + ' · ' + t(grund) + ' · #' + gbAufrufe;
+  }
+  // gasRoh/bremsRoh: 0..1, UNVERRECHNET. Digitale Quellen (Tastatur) duerfen 0 oder 1 uebergeben.
+  // z: der Zusatzplatz von Spieler 2 oder 3 (zusatzPlatz(nr)); ohne z gilt Spieler 1. Jeder Spieler hat seine
+  // eigene Physik-Instanz (physEngine bzw. z.motor), eigene Uhren und seinen eigenen Autopilot-Zustand.
+  // quelle: 'pad' (Vorgabe) oder 'tast' (Pfeiltasten).
+  // RUECKGABE: null = nichts zu aendern (der Aufrufer rechnet wie bisher Gas minus Bremse), sonst die logische
+  // Gaszahl (-1..1), die der Aufrufer STATTDESSEN an die Physik gibt.
+  function gasBremseRueckwaertsPruefen(gasRoh, bremsRoh, z, quelle) {
+    const nr = z ? z.nr : 1;
+    const uhrKey = nr + '/' + (quelle || 'pad');
+    const motor = z ? z.motor : physEngine;
+    const cfg = motor.config, st = motor.state;
+    const kmhAnz = Math.abs(st.speedKmh) * REAL_SCALE;
+    if (!z) gbAufrufe++;
+    if (st.driveMode !== 'reverse') { gbRueck[nr] = false; gbAus[nr] = 0; }   // per Schalttaste oder Reset verlassen: nicht mehr unser Gang
+    if (!gasBremseAn()) {
+      gbHaltSeit[uhrKey] = 0; gbToast[uhrKey] = null; gbRueck[nr] = false; gbAus[nr] = 0;
+      if (!z) gbStatus(gasRoh, bremsRoh, kmhAnz, 'Option aus');
+      return null;
+    }
+    const jetzt = Date.now();
+    // Das gilt fuer BEIDE Richtungen: RC unberuehrt, nicht unter Autopilot, nur Automatik.
+    const frei = physicsEnabled && !driftModus && cfg.autoShift
+                 && !(typeof autopilotGreiftFuer === 'function' && autopilotGreiftFuer(nr));
+    const schwelle = gasBremseDruck();
+    const beide = gasRoh >= schwelle && bremsRoh >= schwelle;
+
+    // ---- IM RUECKWAERTSGANG, DEN DIESE FUNKTION EINGELEGT HAT -------------------------------------
+    if (gbRueck[nr] && frei) {
+      if (gasRoh >= GB_LOS || bremsRoh >= GB_LOS) { gbAktivAm[nr] = jetzt; gbAus[nr] = 0; }   // Pedal wieder betaetigt: kein Ausrollen mehr
+      else if (!st.isShifting && jetzt - (gbAktivAm[nr] || 0) >= gasBremseHaltMs()) {
+        // Beide Pedale (und alle Quellen) waren fuer die Haltezeit ganz los. ZUERST AUSROLLEN, dann vorwaerts.
+        // GEMELDET: "er bleibt beim Loslassen abrupt stehen". Das Modell rollt von selbst weich aus, aber
+        // triggerShift(1) setzt das Tempo SOFORT auf null (wie beim Druck auf die Schalttaste) - das Auto bekam
+        // schlagartig das Byte 0. Darum laeuft das Modelltempo hier ueber die eingestellte Ausrollzeit weich
+        // (exponentiell, Zeitkonstante = Ausrollzeit / 3) auf null, und erst wenn es steht, geht es in den
+        // 1. Gang. Das Byte folgt dem Tempo, faellt also ohne Sprung. Mit 0 wie vorher: sofort.
+        const ausMs = gasBremseAusMs();
+        const vAnz = Math.abs(st.speedKmh) * REAL_SCALE;
+        if (ausMs > 0 && vAnz > GB_STEHT_KMH) {
+          const dt = gbAus[nr] ? Math.max(0, Math.min(200, jetzt - gbAus[nr])) : 0;     // erster Schritt: noch nichts abziehen
+          gbAus[nr] = jetzt;
+          st.speedKmh *= Math.exp(-dt / (ausMs / 3));
+          if (!z) gbStatus(gasRoh, bremsRoh, kmhAnz, 'Rückwärtsgang: rollt aus');
+          return 0;
+        }
+        gbRueck[nr] = false; gbHaltSeit[uhrKey] = 0; gbAus[nr] = 0;
+        motor.triggerShift(1);
+        if (!z) gbStatus(gasRoh, bremsRoh, kmhAnz, 'vorwärts eingelegt');
+        return 0;
+      }
+      if (!z) {
+        gbStatus(gasRoh, bremsRoh, kmhAnz, beide ? 'Rückwärtsfahrt: beide Pedale'
+          : (gasRoh >= GB_LOS || bremsRoh >= GB_LOS) ? 'Rückwärtsgang: nur ein Pedal, kein Antrieb' : 'Rückwärtsgang: Pedale los, Haltezeit läuft');
+      }
+      return beide ? gasRoh : -bremsRoh;                              // nur bei BEIDEN Pedalen Gas nach hinten
+    }
+
+    // ---- RUECKWAERTSGANG EINLEGEN: im Stand Gas und Bremse zugleich -------------------------------
+    if (!beide) {
+      gbHaltSeit[uhrKey] = 0; gbToast[uhrKey] = null;
+      if (!z) gbStatus(gasRoh, bremsRoh, kmhAnz, 'ein Pedal fehlt oder unter der Druckschwelle');
+      return null;
+    }
+    // Die Haltezeit-Uhr laeuft NUR, solange auch alle anderen Bedingungen erfuellt sind. Sonst zaehlte sie
+    // waehrend eines Autopiloten (Gelb, Scan) oder bei zu hohem Tempo mit, und beim Ende des Autopiloten
+    // haette das Auto bei noch gehaltenen Pedalen sofort eingelegt.
+    let grund = null;
+    if (!physicsEnabled || driftModus) grund = 'Fahrgefühl RC';
+    else if (typeof autopilotGreiftFuer === 'function' && autopilotGreiftFuer(nr)) grund = 'Autopilot fährt';
+    else if (!cfg.autoShift) grund = 'Automatikgetriebe aus';
+    else if (st.driveMode === 'reverse') grund = 'Rückwärtsgang liegt schon an';
+    else if (kmhAnz >= gasBremseKmh()) grund = 'zu schnell';
+    if (grund) {
+      gbHaltSeit[uhrKey] = 0;
+      if (!z) {
+        gbStatus(gasRoh, bremsRoh, kmhAnz, grund);
+        // Im Cockpit ist die Optionsseite nicht zu sehen: ein Grund, der das Einlegen verhindert, wird dort
+        // einmal je Druck (und bei jedem Wechsel des Grundes) kurz eingeblendet, statt stumm zu bleiben.
+        if (grund !== gbToast[uhrKey]) {
+          gbToast[uhrKey] = grund;
+          if (typeof showHudToast === 'function') showHudToast(t('Gas') + '+' + t('Bremse') + ': ' + t(grund));
+        }
+      }
+      return null;
+    }
+    if (!gbHaltSeit[uhrKey]) gbHaltSeit[uhrKey] = jetzt;
+    if (jetzt - gbHaltSeit[uhrKey] < gasBremseHaltMs()) { if (!z) gbStatus(gasRoh, bremsRoh, kmhAnz, 'Haltezeit läuft'); return null; }
+    st.driveMode = 'reverse'; st.currentGear = 0; st.speedKmh = 0; st.neutralRpm = 0;
+    motor.meldung('R\u00fcckw\u00e4rtsgang'); motor.ruck(0.3, 0.2, 90, 'schalt'); motor.schaltTon(-1);
+    gbHaltSeit[uhrKey] = 0; gbRueck[nr] = true; gbAktivAm[nr] = jetzt; gbAus[nr] = 0;
+    if (!z) gbStatus(gasRoh, bremsRoh, kmhAnz, 'eingelegt');
+    return gasRoh;                                                   // beide gedrueckt: gleich Gas nach hinten
+  }
+
   if ($('setting-pac-grenze')) {
     const grenze = (v) => {
       physEngine.config.pacejkaGrenze = physEngine2.config.pacejkaGrenze = v;
