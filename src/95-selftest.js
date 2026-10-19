@@ -10292,6 +10292,561 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'T ' + (r.T || 0).toFixed(1) + ' s, voll abgewartet, ' + r.i + ' Symbole abgelaufen, Gas und Rueckwaerts zu' };
   });
 
+  // ---- Rueckwaertsgang: Gas und Bremse zusammen ----
+  stAdd('R\u00fcckw\u00e4rtsgang: Gas und Bremse zusammen (Druckschwelle, Haltezeit, Tempogrenze, RC und Autopilot ausgenommen)', () => {
+    const an = $('setting-gasbrake-reverse'), druck = $('setting-gasbrake-reverse-druck'),
+          ms = $('setting-gasbrake-reverse-ms'), kmh = $('setting-gasbrake-reverse-kmh'),
+          modus = $('phys-mode');
+    if (!an || !druck || !ms || !kmh) return { ok: false, mass: 'Schalter oder Regler fehlen' };
+    const merk = { an: an.checked, druck: druck.value, ms: ms.value, kmh: kmh.value, modus: modus ? modus.value : 'physik',
+                   mode: physEngine.state.driveMode, gear: physEngine.state.currentGear, kmhIst: physEngine.state.speedKmh,
+                   autoShift: physEngine.config.autoShift, now: Date.now, tab: kAktiverTab(), car: playerCar, scan: { car: scanStopp.car, bis: scanStopp.bis } };
+    const info = [], f = [];
+    const stell = (e, v) => { if (e.type === 'checkbox') e.checked = v; else e.value = String(v); e.dispatchEvent(new Event((e.type === 'checkbox' || e.tagName === 'SELECT') ? 'change' : 'input', { bubbles: true })); };
+    const echtPads = navigator.getGamepads;
+    const pad = (gas, brake) => ({
+      id: 'Selbsttest (STANDARD GAMEPAD)', index: 0, connected: true, mapping: 'standard',
+      timestamp: performance.now(), axes: [0, 0, 0, 0],
+      buttons: Array.from({ length: 17 }, (x, i) => ({ pressed: false, touched: false, value: i === 7 ? gas : i === 6 ? brake : 0 })),
+    });
+    const drueckeEinmal = (gas, brake) => { navigator.getGamepads = () => [pad(gas, brake), null, null, null]; pollGamepad(); };
+    try {
+      if (an.defaultChecked) f.push('Vorgabe von "Gas und Bremse zusammen" nicht aus');
+      if (+druck.defaultValue !== 50 || +ms.defaultValue !== 100 || +kmh.defaultValue !== 10) {
+        f.push('Vorgaben nicht 50 % / 100 ms / 10 km/h: ' + druck.defaultValue + ' / ' + ms.defaultValue + ' / ' + kmh.defaultValue);
+      }
+      showTab('race');            // auf der Startseite verbraucht der Titel jede Pad-Eingabe (konsolePadTitel)
+      stell(an, true); stell(druck, '50'); stell(ms, '100'); stell(kmh, '10');
+      if (modus) stell(modus, 'physik');
+      physEngine.config.autoShift = true;
+      let uhr = merk.now(); Date.now = () => uhr;
+      const setzeStand = () => { physEngine.state.driveMode = 'forward'; physEngine.state.currentGear = 1; physEngine.state.speedKmh = 0; };
+      // 1. Unter der Haltezeit (90 ms von 100): noch kein Rueckwaertsgang.
+      setzeStand();
+      drueckeEinmal(1, 1);
+      uhr += 90; drueckeEinmal(1, 1);
+      if (physEngine.state.driveMode === 'reverse') f.push('legt schon vor Ablauf der Haltezeit ein');
+      // 2. Nach Ablauf der Haltezeit (insgesamt > 100 ms): Rueckwaertsgang liegt an.
+      uhr += 20; drueckeEinmal(1, 1);
+      if (physEngine.state.driveMode !== 'reverse') f.push('legt nach der Haltezeit nicht ein');
+      else info.push('legt nach ' + 110 + ' ms ein');
+      // 3. Unter der Druckschwelle (nur 30 % auf beiden Seiten): kein Rueckwaertsgang.
+      setzeStand(); uhr += 1000;
+      drueckeEinmal(0.3, 0.3);
+      uhr += 200; drueckeEinmal(0.3, 0.3);
+      if (physEngine.state.driveMode === 'reverse') f.push('legt auch unter der Druckschwelle ein');
+      // 4. Nur ein Pedal gedrueckt: kein Rueckwaertsgang.
+      setzeStand(); uhr += 1000;
+      drueckeEinmal(1, 0);
+      uhr += 200; drueckeEinmal(1, 0);
+      if (physEngine.state.driveMode === 'reverse') f.push('legt mit nur einem Pedal ein');
+      drueckeEinmal(0, 1);
+      uhr += 200; drueckeEinmal(0, 1);
+      if (physEngine.state.driveMode === 'reverse') f.push('legt mit nur der Bremse ein');
+      // 5. Ueber der Geschwindigkeitsgrenze (15 km/h, Grenze 10 km/h): kein Rueckwaertsgang.
+      setzeStand(); uhr += 1000;
+      physEngine.state.speedKmh = 15 / REAL_SCALE;
+      drueckeEinmal(1, 1);
+      uhr += 200; drueckeEinmal(1, 1);
+      if (physEngine.state.driveMode === 'reverse') f.push('legt ueber der Geschwindigkeitsgrenze ein');
+      // 6. Ohne Automatik (Automatikgetriebe aus): kein Rueckwaertsgang auf diesem Weg.
+      setzeStand(); uhr += 1000;
+      physEngine.config.autoShift = false;
+      drueckeEinmal(1, 1);
+      uhr += 200; drueckeEinmal(1, 1);
+      if (physEngine.state.driveMode === 'reverse') f.push('legt auch ohne Automatikgetriebe ein');
+      physEngine.config.autoShift = true;
+      // 7. Fahrgefuehl RC (Steuerungsmodus 'aus'): bleibt unberuehrt.
+      if (modus) {
+        setzeStand(); uhr += 1000;
+        stell(modus, 'aus');
+        drueckeEinmal(1, 1);
+        uhr += 200; drueckeEinmal(1, 1);
+        if (physEngine.state.driveMode === 'reverse') f.push('legt auch im Fahrgefuehl RC ein');
+        stell(modus, 'physik');
+      } else f.push('Steuerungsmodus-Auswahl fehlt, RC nicht pruefbar');
+      // 8. Option aus: kein Rueckwaertsgang, auch mit beiden Pedalen voll und lange genug.
+      setzeStand(); uhr += 1000;
+      stell(an, false);
+      drueckeEinmal(1, 1);
+      uhr += 200; drueckeEinmal(1, 1);
+      if (physEngine.state.driveMode === 'reverse') f.push('legt trotz ausgeschalteter Option ein');
+      stell(an, true);
+      // 9. Tastatur: Pfeil hoch UND runter zugleich loest genauso aus.
+      setzeStand(); uhr += 1000;
+      gasBremseRueckwaertsPruefen(0, 0, null, 'tast');
+      gasBremseRueckwaertsPruefen(1, 1, null, 'tast');
+      uhr += 200; gasBremseRueckwaertsPruefen(1, 1, null, 'tast');
+      if (physEngine.state.driveMode !== 'reverse') f.push('Tastaturpfad (digitale 0/1-Werte) loest nicht aus');
+      // 10. Autopilot (hier: Streckenscan-Halt des Spielerautos): kein Eingriff.
+      setzeStand(); uhr += 1000;
+      playerCar = playerCar || { role: 'player' };
+      scanStopp.car = playerCar; scanStopp.bis = uhr + 60000;
+      if (!autopilotGreiftFuer(1)) f.push('Autopilot-Fall nicht herstellbar');
+      else {
+        gasBremseRueckwaertsPruefen(1, 1);
+        uhr += 200; gasBremseRueckwaertsPruefen(1, 1);
+        if (physEngine.state.driveMode === 'reverse') f.push('legt unter Autopilot ein');
+        // 11. Endet der Autopilot bei noch gehaltenen Pedalen, laeuft die Haltezeit ERST DANN los.
+        scanStopp.car = null; scanStopp.bis = 0;
+        gasBremseRueckwaertsPruefen(1, 1);
+        if (physEngine.state.driveMode === 'reverse') f.push('legt sofort nach dem Ende des Autopiloten ein (die Uhr lief mit)');
+        uhr += 200; gasBremseRueckwaertsPruefen(1, 1);
+        if (physEngine.state.driveMode !== 'reverse') f.push('legt nach dem Ende des Autopiloten und der Haltezeit nicht ein');
+      }
+      // 12. Die Tastaturabfrage laeuft im Cockpit alle 30 ms AUCH OHNE Taste (0/0). Sie darf die Haltezeit des
+      // Gamepads nicht zuruecksetzen (so war es: im Cockpit blieb es ewig bei "Haltezeit laeuft", auf der
+      // Optionsseite, wo die Tastaturabfrage aus ist, klappte es).
+      setzeStand(); uhr += 1000;
+      for (let ms = 0; ms <= 130; ms += 10) {
+        uhr += 10;
+        gasBremseRueckwaertsPruefen(1, 1);                                   // Gamepad: beide Trigger gehalten (jeder Frame)
+        if (ms % 30 === 0) gasBremseRueckwaertsPruefen(0, 0, null, 'tast');  // Tastatur: nichts gedrueckt (alle 30 ms)
+      }
+      if (physEngine.state.driveMode !== 'reverse') f.push('die leere Tastaturabfrage setzt die Haltezeit des Gamepads zurueck');
+      // und umgekehrt: die Pfeiltasten halten beide, das (angesteckte, aber ruhige) Gamepad meldet jeden Frame 0/0.
+      setzeStand(); uhr += 1000;
+      for (let ms = 0; ms <= 130; ms += 10) {
+        uhr += 10;
+        gasBremseRueckwaertsPruefen(1, 1, null, 'tast');
+        gasBremseRueckwaertsPruefen(0, 0);
+      }
+      if (physEngine.state.driveMode !== 'reverse') f.push('das ruhige Gamepad setzt die Haltezeit der Tastatur zurueck');
+    } finally {
+      navigator.getGamepads = echtPads;
+      try { pollGamepad(); } catch (e) { /* ohne Pad */ }
+      Date.now = merk.now;
+      playerCar = merk.car; scanStopp.car = merk.scan.car; scanStopp.bis = merk.scan.bis;
+      if (merk.tab) { try { showTab(merk.tab); } catch (e) { /* Tab nicht vorhanden */ } }
+      stell(an, merk.an); stell(druck, merk.druck); stell(ms, merk.ms); stell(kmh, merk.kmh);
+      if (modus) stell(modus, merk.modus);
+      physEngine.config.autoShift = merk.autoShift;
+      physEngine.state.driveMode = merk.mode; physEngine.state.currentGear = merk.gear; physEngine.state.speedKmh = merk.kmhIst;
+    }
+    return { ok: !f.length, mass: (info.length ? info.join(' | ') + ' | ' : '') + (f.length ? 'FEHLER: ' + f.join(' | ') : 'alle Bedingungen gepr\u00fcft') };
+  });
+
+  stAdd('R\u00fcckw\u00e4rtsgang: Gas und Bremse zusammen bei Spieler 2 und 3 (eigene Physik, eigene Haltezeit, RC und Autopilot ausgenommen)', () => {
+    const an = $('setting-gasbrake-reverse'), druck = $('setting-gasbrake-reverse-druck'),
+          ms = $('setting-gasbrake-reverse-ms'), kmh = $('setting-gasbrake-reverse-kmh'),
+          modus = $('phys-mode');
+    if (!an || !druck || !ms || !kmh || !modus) return { ok: false, mass: 'Schalter oder Regler fehlen' };
+    const z2 = zusatzPlatz(2), z3 = zusatzPlatz(3);
+    const stande = (m) => ({ mode: m.state.driveMode, gear: m.state.currentGear, kmh: m.state.speedKmh, auto: m.config.autoShift });
+    const merk = { an: an.checked, druck: druck.value, ms: ms.value, kmh: kmh.value, modus: modus.value, now: Date.now,
+                   tab: kAktiverTab(), car2: z2.car, car3: z3.car, scan: { car: scanStopp.car, bis: scanStopp.bis },
+                   m1: stande(physEngine), m2: stande(z2.motor), m3: stande(z3.motor) };
+    const f = [], info = [];
+    const stell = (e, v) => { if (e.type === 'checkbox') e.checked = v; else e.value = String(v); e.dispatchEvent(new Event((e.type === 'checkbox' || e.tagName === 'SELECT') ? 'change' : 'input', { bubbles: true })); };
+    const setze = (m) => { m.config.autoShift = true; m.state.driveMode = 'forward'; m.state.currentGear = 1; m.state.speedKmh = 0; };
+    const zurueck = (m, v) => { m.config.autoShift = v.auto; m.state.driveMode = v.mode; m.state.currentGear = v.gear; m.state.speedKmh = v.kmh; };
+    // Ein Pad nach der EIGENEN Belegung des Platzes (nicht nach einer festen Knopfnummer).
+    const pad = (z, gas, brake) => {
+      const b = Array.from({ length: 17 }, () => ({ pressed: false, touched: false, value: 0 }));
+      b[z.bindings.throttle.index] = { pressed: gas > 0.5, touched: gas > 0, value: gas };
+      b[z.bindings.brake.index] = { pressed: brake > 0.5, touched: brake > 0, value: brake };
+      return { id: 'Selbsttest (STANDARD GAMEPAD)', index: z.nr, connected: true, mapping: 'standard',
+               timestamp: performance.now(), axes: [0, 0, 0, 0], buttons: b };
+    };
+    try {
+      showTab('race');
+      stell(an, true); stell(druck, '50'); stell(ms, '100'); stell(kmh, '10'); stell(modus, 'physik');
+      let uhr = merk.now(); Date.now = () => uhr;
+      for (const z of [z2, z3]) {
+        if (z.bindings.throttle.type !== 'button' || z.bindings.brake.type !== 'button') {
+          return { ok: false, mass: 'Belegung von Spieler ' + z.nr + ' nicht als Knopf: Test nicht aussagekraeftig' };
+        }
+      }
+      // 1. Spieler 2: nach der Haltezeit liegt der Rueckwaertsgang an, bei Spieler 1 und 3 nicht.
+      setze(physEngine); setze(z2.motor); setze(z3.motor);
+      pollPadZusatz(pad(z2, 1, 1), z2);
+      uhr += 90; pollPadZusatz(pad(z2, 1, 1), z2);
+      if (z2.motor.state.driveMode === 'reverse') f.push('Spieler 2 legt vor Ablauf der Haltezeit ein');
+      uhr += 20; pollPadZusatz(pad(z2, 1, 1), z2);
+      if (z2.motor.state.driveMode !== 'reverse') f.push('Spieler 2 legt nach der Haltezeit nicht ein');
+      if (physEngine.state.driveMode === 'reverse') f.push('Spieler 2 loest den Rueckwaertsgang von Spieler 1 aus');
+      if (z3.motor.state.driveMode === 'reverse') f.push('Spieler 2 loest den Rueckwaertsgang von Spieler 3 aus');
+      // 2. Eigene Uhr: Spieler 2 drueckt seit 110 ms, Spieler 3 erst seit 20 ms - nur Spieler 2 darf einlegen.
+      setze(physEngine); setze(z2.motor); setze(z3.motor);
+      uhr += 1000;
+      pollPadZusatz(pad(z2, 1, 1), z2);
+      uhr += 90; pollPadZusatz(pad(z3, 1, 1), z3);
+      uhr += 20;
+      pollPadZusatz(pad(z2, 1, 1), z2); pollPadZusatz(pad(z3, 1, 1), z3);
+      if (z2.motor.state.driveMode !== 'reverse') f.push('Spieler 2 legt mit eigener Haltezeit nicht ein');
+      if (z3.motor.state.driveMode === 'reverse') f.push('Spieler 3 legt nach nur 20 ms ein: die Uhr von Spieler 2 gilt mit');
+      uhr += 100; pollPadZusatz(pad(z3, 1, 1), z3);
+      if (z3.motor.state.driveMode !== 'reverse') f.push('Spieler 3 legt nach der eigenen Haltezeit nicht ein');
+      else info.push('Spieler 2 und 3 mit eigener Uhr');
+      // 3. Ueber der Geschwindigkeitsgrenze (15 km/h): kein Rueckwaertsgang.
+      setze(z2.motor); uhr += 1000;
+      z2.motor.state.speedKmh = 15 / REAL_SCALE;
+      pollPadZusatz(pad(z2, 1, 1), z2); uhr += 200; pollPadZusatz(pad(z2, 1, 1), z2);
+      if (z2.motor.state.driveMode === 'reverse') f.push('Spieler 2 legt ueber der Geschwindigkeitsgrenze ein');
+      // 4. Nur ein Pedal / unter der Druckschwelle.
+      setze(z2.motor); uhr += 1000;
+      pollPadZusatz(pad(z2, 1, 0), z2); uhr += 200; pollPadZusatz(pad(z2, 1, 0), z2);
+      pollPadZusatz(pad(z2, 0.3, 0.3), z2); uhr += 200; pollPadZusatz(pad(z2, 0.3, 0.3), z2);
+      if (z2.motor.state.driveMode === 'reverse') f.push('Spieler 2 legt mit einem Pedal oder unter der Druckschwelle ein');
+      // 5. Ohne Automatikgetriebe.
+      setze(z3.motor); uhr += 1000; z3.motor.config.autoShift = false;
+      pollPadZusatz(pad(z3, 1, 1), z3); uhr += 200; pollPadZusatz(pad(z3, 1, 1), z3);
+      if (z3.motor.state.driveMode === 'reverse') f.push('Spieler 3 legt ohne Automatikgetriebe ein');
+      // 6. Fahrgefuehl RC (Steuerungsmodus 'aus'): unberuehrt.
+      setze(z2.motor); uhr += 1000; stell(modus, 'aus');
+      pollPadZusatz(pad(z2, 1, 1), z2); uhr += 200; pollPadZusatz(pad(z2, 1, 1), z2);
+      if (z2.motor.state.driveMode === 'reverse') f.push('Spieler 2 legt im Fahrgefuehl RC ein');
+      stell(modus, 'physik');
+      // 7. Option aus.
+      setze(z2.motor); uhr += 1000; stell(an, false);
+      pollPadZusatz(pad(z2, 1, 1), z2); uhr += 200; pollPadZusatz(pad(z2, 1, 1), z2);
+      if (z2.motor.state.driveMode === 'reverse') f.push('Spieler 2 legt trotz ausgeschalteter Option ein');
+      stell(an, true);
+      // 8. Autopilot bei Spieler 2 (Streckenscan-Halt seines Autos): kein Eingriff.
+      setze(z2.motor); uhr += 1000;
+      z2.car = z2.car || { role: 'player2' };
+      scanStopp.car = z2.car; scanStopp.bis = uhr + 60000;
+      if (!autopilotGreiftFuer(2)) f.push('Autopilot-Fall fuer Spieler 2 nicht herstellbar');
+      else {
+        pollPadZusatz(pad(z2, 1, 1), z2); uhr += 200; pollPadZusatz(pad(z2, 1, 1), z2);
+        if (z2.motor.state.driveMode === 'reverse') f.push('Spieler 2 legt unter Autopilot ein');
+      }
+      // 9. Pad weg: die Haltezeit-Uhr wird zurueckgesetzt, ein spaeteres Gleichzeitig-Druecken zaehlt neu.
+      scanStopp.car = null; scanStopp.bis = 0;
+      setze(z2.motor); uhr += 1000;
+      pollPadZusatz(pad(z2, 1, 1), z2);
+      uhr += 90; pollPadZusatz(null, z2);                          // Pad abgezogen
+      uhr += 500; pollPadZusatz(pad(z2, 1, 1), z2);               // wieder da, erster Takt
+      if (z2.motor.state.driveMode === 'reverse') f.push('Spieler 2 legt ein, obwohl die Uhr nach dem Abziehen des Pads weiterlief');
+    } finally {
+      Date.now = merk.now;
+      scanStopp.car = merk.scan.car; scanStopp.bis = merk.scan.bis;
+      z2.car = merk.car2; z3.car = merk.car3;
+      if (merk.tab) { try { showTab(merk.tab); } catch (e) { /* Tab nicht vorhanden */ } }
+      stell(an, merk.an); stell(druck, merk.druck); stell(ms, merk.ms); stell(kmh, merk.kmh); stell(modus, merk.modus);
+      zurueck(physEngine, merk.m1); zurueck(z2.motor, merk.m2); zurueck(z3.motor, merk.m3);
+    }
+    return { ok: !f.length, mass: (info.length ? info.join(' | ') + ' | ' : '') + (f.length ? 'FEHLER: ' + f.join(' | ') : 'alle Bedingungen gepr\u00fcft') };
+  });
+
+  stAdd('R\u00fcckw\u00e4rtsgang: die Live-Anzeige nennt zu jedem Zeitpunkt den Grund', () => {
+    const an = $('setting-gasbrake-reverse'), modus = $('phys-mode'), el = $('setting-gasbrake-reverse-status');
+    if (!an || !modus || !el) return { ok: false, mass: 'Schalter oder Anzeige fehlen' };
+    const merk = { an: an.checked, modus: modus.value, now: Date.now, mode: physEngine.state.driveMode, gear: physEngine.state.currentGear,
+                   kmh: physEngine.state.speedKmh, auto: physEngine.config.autoShift, text: el.textContent,
+                   op: Object.getOwnPropertyDescriptor(el, 'offsetParent') };
+    const stell = (e, v) => { if (e.type === 'checkbox') e.checked = v; else e.value = String(v); e.dispatchEvent(new Event((e.type === 'checkbox' || e.tagName === 'SELECT') ? 'change' : 'input', { bubbles: true })); };
+    const f = [];
+    // Die Info-Logik (98c-opt-info.js) versteckt jedes <small> in einem Zeilenlabel. Die Anzeige darf keines sein
+    // und nicht darin stecken, sonst bleibt sie fuer immer unsichtbar (so war es in der ersten Fassung).
+    if (el.closest('small') || el.closest('.opt-info-versteckt') || el.classList.contains('opt-info-versteckt')) f.push('die Live-Anzeige steckt in einem versteckten Info-Text');
+    try {
+      Object.defineProperty(el, 'offsetParent', { configurable: true, get: () => document.body });   // "sichtbar"
+      let uhr = merk.now(); Date.now = () => uhr;
+      const setze = () => { physEngine.config.autoShift = true; physEngine.state.driveMode = 'forward'; physEngine.state.currentGear = 1; physEngine.state.speedKmh = 0; };
+      const pruefe = (gas, bremse, erwartet, name) => {
+        uhr += 400;                                    // am 150-ms-Takt der Anzeige vorbei
+        gasBremseRueckwaertsPruefen(gas, bremse);
+        const text = el.textContent;
+        if (text.indexOf(t(erwartet)) < 0) f.push(name + ': "' + text + '" nennt nicht "' + t(erwartet) + '"');
+        return text;
+      };
+      stell(modus, 'physik'); setze();
+      stell(an, false);
+      pruefe(1, 1, 'Option aus', 'Option aus');
+      stell(an, true);
+      pruefe(1, 0, 'ein Pedal fehlt oder unter der Druckschwelle', 'ein Pedal');
+      const t1 = pruefe(0.84, 1, 'Haltezeit l\u00e4uft', 'Haltezeit');
+      if (t1.indexOf('84 %') < 0 || t1.indexOf('100 %') < 0) f.push('Gas- und Bremswert fehlen in der Anzeige: ' + t1);
+      physEngine.state.speedKmh = 15 / REAL_SCALE;
+      pruefe(1, 1, 'zu schnell', 'zu schnell');
+      // Im Cockpit erscheint der Grund auch als kurze Einblendung (die Optionsseite ist dort nicht zu sehen).
+      const toast = $('hud-toast');
+      if (!toast || toast.textContent.indexOf(t('zu schnell')) < 0) f.push('im Cockpit fehlt die Einblendung des Grundes: "' + (toast ? toast.textContent : 'kein Element') + '"');
+      setze(); physEngine.config.autoShift = false;
+      pruefe(1, 1, 'Automatikgetriebe aus', 'ohne Automatik');
+      setze(); stell(modus, 'aus');
+      pruefe(1, 1, 'Fahrgef\u00fchl RC', 'RC');
+      stell(modus, 'physik'); setze();
+      gasBremseRueckwaertsPruefen(1, 1);
+      uhr += 400; pruefe(1, 1, 'eingelegt', 'eingelegt');
+      if (physEngine.state.driveMode !== 'reverse') f.push('liegt nach der Anzeige "eingelegt" nicht an');
+      if (el.textContent.indexOf(t('Gang') + ' R') < 0) f.push('die Anzeige nennt nach dem Einlegen nicht den Gang R: ' + el.textContent);
+      pruefe(1, 1, 'R\u00fcckw\u00e4rtsfahrt: beide Pedale', 'Rueckwaertsfahrt');
+    } finally {
+      Date.now = merk.now;
+      if (merk.op) Object.defineProperty(el, 'offsetParent', merk.op); else delete el.offsetParent;
+      stell(an, merk.an); stell(modus, merk.modus);
+      physEngine.config.autoShift = merk.auto; physEngine.state.driveMode = merk.mode; physEngine.state.currentGear = merk.gear; physEngine.state.speedKmh = merk.kmh;
+      el.textContent = merk.text;
+    }
+    return { ok: !f.length, mass: f.length ? 'FEHLER: ' + f.join(' | ') : 'sieben Zust\u00e4nde, jeweils mit dem richtigen Grund' };
+  });
+
+  stAdd('R\u00fcckw\u00e4rtsgang: nur mit beiden Pedalen r\u00fcckw\u00e4rts, ohne Pedale nach der Haltezeit wieder vorw\u00e4rts', () => {
+    const an = $('setting-gasbrake-reverse'), ms = $('setting-gasbrake-reverse-ms'), modus = $('phys-mode');
+    if (!an || !ms || !modus) return { ok: false, mass: 'Schalter oder Regler fehlen' };
+    const z2 = zusatzPlatz(2);
+    const stand = (m) => ({ mode: m.state.driveMode, gear: m.state.currentGear, kmh: m.state.speedKmh, auto: m.config.autoShift });
+    const merk = { an: an.checked, ms: ms.value, modus: modus.value, now: Date.now, tab: kAktiverTab(), car2: z2.car, car1: playerCar,
+                   scan: { car: scanStopp.car, bis: scanStopp.bis }, m1: stand(physEngine), m2: stand(z2.motor), thr: throttleY };
+    const f = [], info = [];
+    const stell = (e, v) => { if (e.type === 'checkbox') e.checked = v; else e.value = String(v); e.dispatchEvent(new Event((e.type === 'checkbox' || e.tagName === 'SELECT') ? 'change' : 'input', { bubbles: true })); };
+    const st = physEngine.state;
+    const echtPads = navigator.getGamepads;
+    // Vorwaerts-Zustand herstellen UND die Merker der Funktion (gbRueck) damit loeschen.
+    const vor = (m) => { const mm = m || physEngine; mm.config.autoShift = true; mm.state.driveMode = 'forward'; mm.state.currentGear = 1; mm.state.speedKmh = 0; mm.state.isShifting = false; };
+    try {
+      showTab('race');
+      stell(an, true); stell(ms, '100'); stell(modus, 'physik');
+      let uhr = merk.now(); Date.now = () => uhr;
+      const r = (g, b, dt, z, q) => { uhr += dt; return gasBremseRueckwaertsPruefen(g, b, z, q); };
+      const neuStart = (m, z) => { vor(m); r(0, 0, 1000, z); };       // ruhig, Merker weg
+      const einlegen = (z) => { r(1, 1, 0, z); return r(1, 1, 110, z); };
+      // 1. Einlegen: nach der Haltezeit liegt R an, und GLEICH Gas nach hinten (Rueckgabe = Gaswert statt 0).
+      neuStart();
+      r(1, 1, 0);
+      const vorZeit = r(1, 1, 90);
+      if (vorZeit !== null) f.push('liefert schon vor der Haltezeit einen Wert: ' + vorZeit);
+      const eingelegt = r(1, 1, 20);
+      if (st.driveMode !== 'reverse') f.push('legt nach der Haltezeit nicht ein');
+      if (eingelegt !== 1) f.push('beim Einlegen kein Gas nach hinten: ' + eingelegt);
+      // 2. Solange beide gedrueckt sind: Gas nach hinten, mit dem Gaswert (nicht 0 wie Gas minus Bremse).
+      const mit07 = r(0.7, 1, 50);
+      if (Math.abs(mit07 - 0.7) > 1e-9) f.push('beide Pedale: Gas ' + mit07 + ' statt 0,7');
+      // 3. Nur ein Pedal im Rueckwaertsgang: kein Antrieb. Gas allein 0, Bremse allein bremst.
+      const nurGas = r(1, 0, 50);
+      if (nurGas !== 0 && nurGas !== -0) f.push('nur Gas treibt im Rueckwaertsgang an: ' + nurGas);
+      if (st.driveMode !== 'reverse') f.push('nur Gas verlaesst den Rueckwaertsgang');
+      const nurBremse = r(0, 0.6, 50);
+      if (Math.abs(nurBremse + 0.6) > 1e-9) f.push('nur Bremse bremst nicht (Rueckgabe ' + nurBremse + ')');
+      // 4. Beide los: erst nach der Haltezeit (100 ms) wieder vorwaerts, 1. Gang.
+      r(0, 0, 0); r(0, 0, 90);
+      if (st.driveMode !== 'reverse') f.push('schaltet schon nach 90 ms ohne Pedale nach vorn');
+      r(0, 0, 20);
+      if (st.driveMode !== 'forward') f.push('schaltet nach der Haltezeit ohne Pedale nicht nach vorn: ' + st.driveMode);
+      else if (gearLabel(st) !== '1') f.push('statt des 1. Gangs steht ' + gearLabel(st));
+      else info.push('beide los: nach 110 ms wieder im 1. Gang');
+      // 5. Kurz loslassen (50 ms) und wieder beide druecken: bleibt im Rueckwaertsgang.
+      neuStart(); einlegen();
+      r(0, 0, 0); r(0, 0, 50); r(1, 1, 10);
+      if (st.driveMode !== 'reverse') f.push('ein kurzes Loslassen (50 ms) schaltet nach vorn');
+      // 6. Ein Pedal, auch nur leicht (30 %, ueber "los", unter der Druckschwelle), zaehlt als betaetigt: kein Wechsel.
+      neuStart(); einlegen();
+      for (let i = 0; i < 10; i++) r(0.3, 0, 100);
+      if (st.driveMode !== 'reverse') f.push('30 % Gas gelten als losgelassen');
+      // 7. Dieselbe Haltezeit-Regelung: bei 300 ms noch nicht nach 200 ms, aber nach 310 ms.
+      stell(ms, '300'); neuStart();
+      r(1, 1, 0); r(1, 1, 310);                                         // bei 300 ms Haltezeit erst nach 310 ms eingelegt
+      if (st.driveMode !== 'reverse') f.push('Haltezeit 300: legt nach 310 ms nicht ein');
+      r(0, 0, 0); r(0, 0, 200);
+      if (st.driveMode !== 'reverse') f.push('Haltezeit 300: schaltet schon nach 200 ms nach vorn');
+      r(0, 0, 110);
+      if (st.driveMode !== 'forward') f.push('Haltezeit 300: schaltet nach 310 ms nicht nach vorn');
+      stell(ms, '100');
+      // 8. Ein per Schalttaste eingelegter Rueckwaertsgang bleibt unberuehrt: Gas faehrt rueckwaerts, nichts schaltet von allein.
+      vor(); r(0, 0, 1000);
+      st.driveMode = 'reverse'; st.currentGear = 0;                   // wie Quadrat/X in der Automatik
+      const klassisch = r(1, 0, 10);
+      if (klassisch !== null) f.push('ein per Schalttaste eingelegter Rueckwaertsgang wird veraendert: ' + klassisch);
+      r(0, 0, 0); r(0, 0, 600);
+      if (st.driveMode !== 'reverse') f.push('ein per Schalttaste eingelegter Rueckwaertsgang schaltet von allein nach vorn');
+      // 9. RC, ohne Automatik, Autopilot: weder ein Wert noch ein Wechsel.
+      neuStart(); einlegen();
+      stell(modus, 'aus');
+      const rc = r(1, 1, 10);
+      if (rc !== null) f.push('im Fahrgefuehl RC wird eingegriffen: ' + rc);
+      r(0, 0, 0); r(0, 0, 400);
+      if (st.driveMode !== 'reverse') f.push('im Fahrgefuehl RC schaltet es von allein nach vorn');
+      stell(modus, 'physik');
+      neuStart(); einlegen();
+      physEngine.config.autoShift = false;
+      const ohneAuto = r(1, 1, 10);
+      if (ohneAuto !== null) f.push('ohne Automatikgetriebe wird eingegriffen: ' + ohneAuto);
+      physEngine.config.autoShift = true;
+      neuStart(); einlegen();
+      playerCar = playerCar || { role: 'player' };
+      scanStopp.car = playerCar; scanStopp.bis = uhr + 60000;
+      if (!autopilotGreiftFuer(1)) f.push('Autopilot-Fall nicht herstellbar');
+      else {
+        const ap = r(1, 1, 10);
+        if (ap !== null) f.push('unter Autopilot wird eingegriffen: ' + ap);
+        r(0, 0, 0); r(0, 0, 400);
+        if (st.driveMode !== 'reverse') f.push('unter Autopilot schaltet es von allein nach vorn');
+      }
+      scanStopp.car = null; scanStopp.bis = 0;
+      // 10. Zwei Quellen: eine ruhige Tastatur (0/0, alle 30 ms) darf das Gamepad beim Rueckwaertsfahren nicht nach vorn schalten ...
+      neuStart(); einlegen();
+      let schaltetVor = false;
+      for (let ms2 = 0; ms2 <= 400; ms2 += 10) {
+        r(1, 1, 10);
+        if (ms2 % 30 === 0) { const k = r(0, 0, 0, null, 'tast'); if (k !== 0 && k !== -0) schaltetVor = true; }
+      }
+      if (st.driveMode !== 'reverse') f.push('eine ruhige Tastaturabfrage schaltet das fahrende Gamepad nach vorn');
+      // ... und erst wenn ALLE Quellen ruhig sind, geht es nach der Haltezeit nach vorn.
+      r(0, 0, 0); r(0, 0, 0, null, 'tast');
+      for (let ms2 = 0; ms2 <= 150; ms2 += 10) { r(0, 0, 10); r(0, 0, 0, null, 'tast'); }
+      if (st.driveMode !== 'forward') f.push('mit ruhigem Gamepad und ruhiger Tastatur geht es nicht nach vorn');
+      // ... und die Pfeiltasten allein (beide gehalten) fahren rueckwaerts: Rueckgabe = 1.
+      neuStart();
+      r(1, 1, 0, null, 'tast'); r(1, 1, 110, null, 'tast');
+      if (st.driveMode !== 'reverse') f.push('Pfeil hoch und runter legen nicht ein');
+      const tastFahrt = r(1, 1, 10, null, 'tast');
+      if (tastFahrt !== 1) f.push('Pfeiltasten: kein Gas nach hinten (' + tastFahrt + ')');
+      // 11. Ganzer Kreislauf: einlegen, rueckwaerts, loslassen = vorwaerts, wieder einlegen.
+      neuStart(); einlegen();
+      r(1, 1, 50); r(0, 0, 0); r(0, 0, 110);
+      if (st.driveMode !== 'forward') f.push('Kreislauf: kein Wechsel nach vorn');
+      uhr += 500; einlegen();
+      if (st.driveMode !== 'reverse') f.push('Kreislauf: zweites Einlegen klappt nicht');
+      // 12. Spieler 2: eigene Physik und eigene Merker, Spieler 1 bleibt unberuehrt.
+      neuStart(); vor(z2.motor); r(0, 0, 1000, z2);
+      r(1, 1, 0, z2); const z2ein = r(1, 1, 110, z2);
+      if (z2.motor.state.driveMode !== 'reverse') f.push('Spieler 2 legt nicht ein');
+      if (z2ein !== 1) f.push('Spieler 2: kein Gas nach hinten (' + z2ein + ')');
+      if (st.driveMode === 'reverse') f.push('Spieler 2 legt den Rueckwaertsgang von Spieler 1 ein');
+      r(0, 0, 0, z2); r(0, 0, 110, z2);
+      if (z2.motor.state.driveMode !== 'forward') f.push('Spieler 2 schaltet ohne Pedale nicht nach vorn');
+      // 13. Echter Weg ueber das Gamepad: throttleY bekommt den Gaswert, nicht Gas minus Bremse (0).
+      neuStart();
+      const pad = (g, b) => { const bt = Array.from({ length: 17 }, (x, i) => ({ pressed: false, touched: false, value: i === 7 ? g : i === 6 ? b : 0 }));
+        bt[7].pressed = g > 0.5; bt[6].pressed = b > 0.5;
+        return { id: 'Selbsttest (STANDARD GAMEPAD)', index: 0, connected: true, mapping: 'standard', timestamp: performance.now(), axes: [0, 0, 0, 0], buttons: bt }; };
+      const poll = (g, b, dt) => { uhr += dt; navigator.getGamepads = () => [pad(g, b), null, null, null]; pollGamepad(); };
+      poll(1, 1, 0); poll(1, 1, 110); poll(0.8, 1, 20);
+      if (st.driveMode !== 'reverse') f.push('Gamepad: legt nicht ein');
+      const gas08 = applyDeadzone(0.8, TRIGGER_DEADZONE);                // der Trigger-Totbereich rechnet 0,8 leicht um
+      if (Math.abs(throttleY - gas08) > 1e-6) f.push('Gamepad: throttleY ist ' + throttleY + ' statt ' + gas08 + ' (Gas, nicht Gas minus Bremse)');
+      poll(1, 0, 20);
+      if (Math.abs(throttleY) > 1e-6) f.push('Gamepad: nur Gas im Rueckwaertsgang treibt an (throttleY ' + throttleY + ')');
+      poll(0, 0, 0); poll(0, 0, 110); poll(0, 0, 20);
+      if (st.driveMode !== 'forward') f.push('Gamepad: schaltet ohne Pedale nicht nach vorn');
+    } finally {
+      navigator.getGamepads = echtPads;
+      try { pollGamepad(); } catch (e) { /* ohne Pad */ }
+      Date.now = merk.now;
+      playerCar = merk.car1; scanStopp.car = merk.scan.car; scanStopp.bis = merk.scan.bis; z2.car = merk.car2;
+      if (merk.tab) { try { showTab(merk.tab); } catch (e) { /* Tab nicht vorhanden */ } }
+      stell(an, merk.an); stell(ms, merk.ms); stell(modus, merk.modus);
+      for (const [m, v] of [[physEngine, merk.m1], [z2.motor, merk.m2]]) { m.config.autoShift = v.auto; m.state.driveMode = v.mode; m.state.currentGear = v.gear; m.state.speedKmh = v.kmh; }
+      throttleY = merk.thr;
+    }
+    return { ok: !f.length, mass: (info.length ? info.join(' | ') + ' | ' : '') + (f.length ? 'FEHLER: ' + f.join(' | ') : 'alle Bedingungen gepr\u00fcft') };
+  });
+
+  stAdd('R\u00fcckw\u00e4rtsgang: nach dem Loslassen rollt das Auto aus, statt abrupt zu stehen (Ausrollzeit, Byte ohne Sprung)', () => {
+    const an = $('setting-gasbrake-reverse'), ms = $('setting-gasbrake-reverse-ms'), aus = $('setting-gasbrake-reverse-aus'), modus = $('phys-mode');
+    if (!an || !ms || !aus || !modus) return { ok: false, mass: 'Schalter oder Regler fehlen' };
+    const z2 = zusatzPlatz(2);
+    const stand = (m) => ({ mode: m.state.driveMode, gear: m.state.currentGear, kmh: m.state.speedKmh, auto: m.config.autoShift });
+    const merk = { an: an.checked, ms: ms.value, aus: aus.value, modus: modus.value, now: Date.now, tab: kAktiverTab(), car2: z2.car,
+                   m1: stand(physEngine), m2: stand(z2.motor) };
+    const f = [], info = [];
+    const stell = (e, v) => { if (e.type === 'checkbox') e.checked = v; else e.value = String(v); e.dispatchEvent(new Event((e.type === 'checkbox' || e.tagName === 'SELECT') ? 'change' : 'input', { bubbles: true })); };
+    const st = physEngine.state;
+    const vor = (m) => { const mm = m || physEngine; mm.config.autoShift = true; mm.state.driveMode = 'forward'; mm.state.currentGear = 1; mm.state.speedKmh = 0; mm.state.isShifting = false; };
+    const kmh = (m) => ((m || physEngine).state.speedKmh * REAL_SCALE);
+    try {
+      if (+aus.defaultValue !== 600) f.push('Vorgabe Ausrollen nicht 600 ms: ' + aus.defaultValue);
+      if (+aus.max !== 3000) f.push('Obergrenze Ausrollen nicht 3000 ms: ' + aus.max);
+      showTab('race');
+      stell(an, true); stell(ms, '100'); stell(aus, '600'); stell(modus, 'physik');
+      let uhr = merk.now(); Date.now = () => uhr;
+      const r = (g, b, dt, z, q) => { uhr += dt; return gasBremseRueckwaertsPruefen(g, b, z, q); };
+      const start = (m, z) => { vor(m); r(0, 0, 1000, z); };
+      const einlegen = (z) => { r(1, 1, 0, z); return r(1, 1, 110, z); };
+      // ---- 1. Echter Verlauf mit der Physik: rueckwaerts beschleunigen, beide Pedale los, das BYTE darf nicht springen ----
+      const lauf = (ausMs) => {
+        stell(aus, String(ausMs)); start(); einlegen();
+        for (let i = 0; i < 40; i++) {
+          const u = r(1, 1, 45);
+          physEngine.update({ throttle: u === null ? 0 : Math.max(0, u), brake: 0, steering: 0 }, 0.045);
+        }
+        const v0 = kmh();
+        let letzt = null, sprung = 0, vorNach = null, t = 0, vorher = v0, steigt = false;
+        for (let i = 0; i < 200; i++) {
+          const u = r(0, 0, 45); t += 45;
+          const o = physEngine.update({ throttle: u !== null && u > 0 ? u : 0, brake: u !== null && u < 0 ? -u : 0, steering: 0 }, 0.045);
+          const byte = o.motorPWM;
+          if (letzt !== null) sprung = Math.max(sprung, Math.abs(byte - letzt));
+          letzt = byte;
+          if (kmh() < vorher - 1e-9) steigt = true;                           // (Tempo bleibt negativ, Betrag faellt)
+          if (vorNach === null && st.driveMode === 'forward') vorNach = t;
+          vorher = kmh();
+        }
+        return { v0, sprung, vorNach, vEnde: kmh(), modeEnde: st.driveMode, label: gearLabel(st) };
+      };
+      const sanft = lauf(600);
+      if (!(sanft.v0 < -8)) f.push('der Test faehrt nicht schnell genug rueckwaerts: ' + sanft.v0.toFixed(1) + ' km/h');
+      if (!(sanft.sprung < 0.12)) f.push('beim Ausrollen springt das Byte um ' + sanft.sprung.toFixed(3));
+      if (sanft.vorNach === null) f.push('nach dem Ausrollen kein Wechsel nach vorn');
+      else if (sanft.vorNach < 400) f.push('Wechsel nach vorn schon nach ' + sanft.vorNach + ' ms (kein Ausrollen)');
+      if (sanft.modeEnde !== 'forward' || sanft.label !== '1') f.push('am Ende nicht im 1. Gang: ' + sanft.modeEnde + ' ' + sanft.label);
+      if (Math.abs(sanft.vEnde) > 1) f.push('am Ende noch ' + sanft.vEnde.toFixed(1) + ' km/h');
+      info.push('Ausrollen 600 ms: ' + sanft.v0.toFixed(0) + ' km/h, groesster Bytesprung ' + sanft.sprung.toFixed(3) + ', vorwaerts nach ' + sanft.vorNach + ' ms');
+      // Mit 0 ms wie vorher: der Wechsel nullt das Tempo sofort - das Byte springt (so war das gemeldete abrupte Stehenbleiben).
+      const hart = lauf(0);
+      if (!(hart.sprung > 0.2)) f.push('mit Ausrollen 0 springt das Byte nicht wie vorher (' + hart.sprung.toFixed(3) + ')');
+      if (!(hart.vorNach !== null && hart.vorNach <= 200)) f.push('mit Ausrollen 0 geht es nicht sofort nach vorn: ' + hart.vorNach);
+      // Laenger ausrollen heisst spaeter vorwaerts.
+      const lang = lauf(1200);
+      if (!(lang.vorNach !== null && sanft.vorNach !== null && lang.vorNach > sanft.vorNach + 300)) f.push('1200 ms rollt nicht merklich laenger aus als 600 ms: ' + lang.vorNach + ' gegen ' + sanft.vorNach);
+      // Die Obergrenze (3000 ms) rollt noch laenger aus, ohne Sprung, und endet im 1. Gang. Auch ein Wert ueber der Grenze wird auf 3000 begrenzt.
+      const maximal = lauf(3000);
+      if (!(maximal.sprung < 0.12)) f.push('3000 ms: das Byte springt um ' + maximal.sprung.toFixed(3));
+      if (!(maximal.vorNach !== null && maximal.vorNach > lang.vorNach + 800)) f.push('3000 ms rollt nicht merklich laenger aus als 1200 ms: ' + maximal.vorNach + ' gegen ' + lang.vorNach);
+      if (maximal.modeEnde !== 'forward' || Math.abs(maximal.vEnde) > 1) f.push('3000 ms: am Ende nicht vorwaerts und stehend: ' + maximal.modeEnde + ' ' + maximal.vEnde.toFixed(1));
+      aus.max = '9999'; stell(aus, '9999');
+      if (gasBremseAusMs() !== 3000) f.push('ein Wert ueber der Grenze wird nicht auf 3000 ms begrenzt: ' + gasBremseAusMs());
+      aus.max = '3000';
+      info.push('Ausrollen 3000 ms: vorwaerts nach ' + maximal.vorNach + ' ms');
+      stell(aus, '600');
+      // ---- 2. Direkter Verlauf ohne Physik: weicher Abstieg, nie null auf einen Schlag ----
+      start(); einlegen(); st.speedKmh = -0.3;
+      const v00 = Math.abs(kmh());
+      r(0, 0, 0); r(0, 0, 100);                                                    // Haltezeit abgelaufen: erster Ausroll-Schritt, noch nichts abgezogen
+      const erster = Math.abs(kmh());
+      if (st.driveMode !== 'reverse') f.push('nach der Haltezeit schon vorwaerts trotz Fahrt');
+      if (erster < v00 * 0.95) f.push('der erste Ausroll-Schritt zieht schon ' + (100 - 100 * erster / v00).toFixed(0) + ' % ab');
+      let vor_ = erster, maxRel = 0;
+      for (let i = 0; i < 20; i++) { r(0, 0, 20); const v = Math.abs(kmh()); maxRel = Math.max(maxRel, vor_ > 0 ? (vor_ - v) / vor_ : 0); vor_ = v; if (st.driveMode === 'forward') break; }
+      if (!(maxRel < 0.2)) f.push('ein einzelner Schritt nimmt ' + (maxRel * 100).toFixed(0) + ' % des Tempos weg');
+      // ---- 3. Pedal waehrend des Ausrollens: kein Wechsel nach vorn, Ausrollen bricht ab; beide gedrueckt = wieder Gas nach hinten ----
+      start(); einlegen(); st.speedKmh = -0.3;
+      r(0, 0, 0); r(0, 0, 100); r(0, 0, 100);
+      const mitte = kmh();
+      const wieder = r(0.8, 1, 10);
+      if (st.driveMode !== 'reverse') f.push('beide Pedale waehrend des Ausrollens: kein Rueckwaertsgang mehr');
+      if (Math.abs(wieder - 0.8) > 1e-9) f.push('beide Pedale waehrend des Ausrollens: kein Gas nach hinten (' + wieder + ')');
+      r(0.8, 1, 200);
+      if (Math.abs(kmh() - mitte) > 1e-9) f.push('das Ausrollen laeuft weiter, obwohl beide Pedale wieder gedrueckt sind');
+      const bremseNur = r(0, 0.6, 20);
+      if (Math.abs(bremseNur + 0.6) > 1e-9) f.push('Bremse waehrend des Ausrollens: Rueckgabe ' + bremseNur);
+      // ---- 4. Steht das Auto schon, geht es nach der Haltezeit sofort nach vorn (kein Ausrollen noetig) ----
+      start(); einlegen(); st.speedKmh = 0;
+      r(0, 0, 0); r(0, 0, 110);
+      if (st.driveMode !== 'forward') f.push('stehendes Auto: kein sofortiger Wechsel nach vorn');
+      // ---- 5. Ein per Schalttaste eingelegter Rueckwaertsgang rollt nicht "aus", sondern bleibt unberuehrt ----
+      start(); st.driveMode = 'reverse'; st.currentGear = 0; st.speedKmh = -0.3;
+      r(0, 0, 0); r(0, 0, 600);
+      if (Math.abs(kmh() + 0.3 * REAL_SCALE) > 1e-6 || st.driveMode !== 'reverse') f.push('ein per Schalttaste eingelegter Rueckwaertsgang wird veraendert');
+      // ---- 6. Spieler 2: rollt mit seiner eigenen Physik aus, Spieler 1 bleibt unberuehrt ----
+      start(); start(z2.motor, z2); einlegen(z2); z2.motor.state.speedKmh = -0.3;
+      const p1 = kmh();
+      r(0, 0, 0, z2); r(0, 0, 100, z2); r(0, 0, 100, z2);
+      if (z2.motor.state.driveMode !== 'reverse') f.push('Spieler 2 schaltet trotz Fahrt sofort nach vorn');
+      if (!(Math.abs(kmh(z2.motor)) < 0.3 * REAL_SCALE - 0.5)) f.push('Spieler 2 rollt nicht aus: ' + kmh(z2.motor).toFixed(1) + ' km/h');
+      if (kmh() !== p1) f.push('Spieler 2 veraendert das Tempo von Spieler 1');
+    } finally {
+      Date.now = merk.now;
+      z2.car = merk.car2;
+      if (merk.tab) { try { showTab(merk.tab); } catch (e) { /* Tab nicht vorhanden */ } }
+      stell(an, merk.an); stell(ms, merk.ms); stell(aus, merk.aus); stell(modus, merk.modus);
+      for (const [m, v] of [[physEngine, merk.m1], [z2.motor, merk.m2]]) { m.config.autoShift = v.auto; m.state.driveMode = v.mode; m.state.currentGear = v.gear; m.state.speedKmh = v.kmh; }
+    }
+    return { ok: !f.length, mass: (info.length ? info.join(' | ') + ' | ' : '') + (f.length ? 'FEHLER: ' + f.join(' | ') : 'alle Bedingungen gepr\u00fcft') };
+  });
+
   stAdd('Boxen-Minigame: acht richtige halbieren die Zeit, falsche kosten Zeit', () => {
     const a = pitSpielLauf('richtig');
     const b = pitSpielLauf('falsch');

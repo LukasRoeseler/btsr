@@ -476,8 +476,12 @@
       if (keys.has('ArrowDown')) ty -= 1;
     }
     if (keys.has(' ')) { sx = 0; ty = 0; }
+    let gbUeber = null;
+    if (typeof gasBremseRueckwaertsPruefen === 'function' && !menuNavActive()) {
+      gbUeber = gasBremseRueckwaertsPruefen(keys.has('ArrowUp') ? 1 : 0, keys.has('ArrowDown') ? 1 : 0, null, 'tast');
+    }
     applySteerInput(SRC.KEY, sx);
-    applyThrottleInput(SRC.KEY, ty);
+    applyThrottleInput(SRC.KEY, (gbUeber !== null && !keys.has(' ')) ? gbUeber : ty);
   }, 30);
 
   function emergencyStop() {
