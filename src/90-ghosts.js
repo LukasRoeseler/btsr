@@ -1939,7 +1939,12 @@
     plusKnopf.onclick = () => { const c = $('gar-connect'); if (c) c.click(); };
     plus.appendChild(plusKnopf);
     links.appendChild(plus);
+    ['gar-stop-ghosts', 'gar-go', 'gar-disconnect-all', 'gar-to-cockpit'].forEach((id) => {
+      const z = garAktionsZeile(id);
+      if (z) links.appendChild(z);
+    });
     // v1.1.3: virtuelle Fahrt (60d-virtuell.js) - ein Auto ohne Bluetooth auf der Editor-Strecke.
+    // BESTELLT: ganz unten, unter "Zum Cockpit".
     const virt = document.createElement('div');
     virt.className = 'opt-row opt-breit gar-a-aktion';
     const virtKnopf = document.createElement('button');
@@ -1948,10 +1953,6 @@
     virtKnopf.onclick = () => { if (typeof virtuellStarten === 'function') virtuellStarten(); };
     virt.appendChild(virtKnopf);
     links.appendChild(virt);
-    ['gar-stop-ghosts', 'gar-go', 'gar-disconnect-all', 'gar-to-cockpit'].forEach((id) => {
-      const z = garAktionsZeile(id);
-      if (z) links.appendChild(z);
-    });
     // Rechte Seite: das gewaehlte Auto.
     const car = garAufAuto;
     if (car) {

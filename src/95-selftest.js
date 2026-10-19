@@ -14935,11 +14935,11 @@
     const f = [];
     // 1 s mit 100 km/h (Anzeige) geradeaus nach Norden (h = 0): y nimmt ab, x bleibt.
     let l = { x: 0, y: 0, h: 0 };
-    for (let i = 0; i < 100; i++) l = vfSchritt(l, 100, 0, 0.01, 1);
+    for (let i = 0; i < 100; i++) l = vfSchritt(l, 100 / REAL_SCALE, 0, 0.01, 1);   // echte km/h (Anzeige 100)
     const soll = 100 / REAL_SCALE / 3.6 * 100 * TRACK_UNITS_PER_CM;
     if (Math.abs(l.x) > 1e-6 || Math.abs(-l.y - soll) > 0.01 * soll) f.push('geradeaus falsch: ' + l.x.toFixed(2) + '/' + l.y.toFixed(2) + ' statt ' + soll.toFixed(2));
     // Voller Einschlag rechts: Kurs steigt (Rechtskurve); schnell begrenzt die Haftung die Drehrate.
-    const langsam = vfSchritt({ x: 0, y: 0, h: 0 }, 20, 1, 0.01, 1), schnell = vfSchritt({ x: 0, y: 0, h: 0 }, 450, 1, 0.01, 1);
+    const langsam = vfSchritt({ x: 0, y: 0, h: 0 }, 20 / REAL_SCALE, 1, 0.01, 1), schnell = vfSchritt({ x: 0, y: 0, h: 0 }, 450 / REAL_SCALE, 1, 0.01, 1);
     if (!(langsam.h > 0)) f.push('rechts lenkt nicht nach rechts');
     const v300 = 450 / REAL_SCALE / 3.6 * 100 * TRACK_UNITS_PER_CM;
     if (Math.abs(schnell.w * v300 - 9.81 * 100 * TRACK_UNITS_PER_CM) > 1) f.push('Haftgrenze nicht wirksam: a = ' + (schnell.w * v300).toFixed(1));
@@ -14948,6 +14948,15 @@
     const o = vfOrt(pts, nrm, pts[20].x + nrm[20].x * 3, pts[20].y + nrm[20].y * 3, 18);
     if (o.idx !== 20 || Math.abs(o.quer - 3) > 0.01) f.push('Ort falsch: ' + o.idx + ' / ' + o.quer.toFixed(2));
     if (vfCode(TILE_TYPE.START) !== START_CODE_RAIL || vfCode(TILE_TYPE.STRAIGHT) !== 0x02 || vfCode(TILE_TYPE.PIT) !== 0x07) f.push('Codes falsch');
+    // Fahrmodell (GT3): Lenkung rechts dreht rechts; Querbeschleunigung nie ueber der Haftung; Vollgas
+    // am Limit laesst das Heck mehr rutschen als Rollen; nach dem Loslassen faengt sich das Auto.
+    const lauf = (v, an, l, sek, z) => { z = z || { vy: 0, r: 0 }; for (let i = 0; i < sek * 60; i++) vfDynamik(z, v, 0, an, l, 1 / 60, 1); return z; };
+    const roll = lauf(20, 0, 0.5, 2), gas = lauf(20, 1, 0.5, 2);
+    if (!(roll.r > 0)) f.push('Rechts dreht nicht rechts: ' + roll.r);
+    if (!(Math.abs(roll.r * 20) <= VF_GT3.muH * 9.81)) f.push('Querbeschleunigung ueber der Haftung: ' + (roll.r * 20).toFixed(1));
+    if (!(Math.abs(gas.aH) > Math.abs(roll.aH))) f.push('kein Uebersteuern unter Gas: ' + gas.aH + ' / ' + roll.aH);
+    const gefangen = lauf(20, 0, 0, 2, lauf(20, 1, 0.8, 1));
+    if (!(Math.abs(gefangen.r) < 0.05 && Math.abs(gefangen.vy) < 0.3)) f.push('faengt sich nicht: r ' + gefangen.r + ' vy ' + gefangen.vy);
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'geradeaus ' + soll.toFixed(1) + ' E/s, Haftgrenze 1 g, Ort und Codes stimmen' };
   });
 

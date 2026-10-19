@@ -158,9 +158,12 @@
   const VF_EINS = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 
   // ---- Fahren (rein, fuer den Selbsttest ohne Bild) -------------------------------------------
-  // Ein Schritt: Tempo (Anzeige-km/h), Lenkbefehl (-1..1), dt (s). Liefert die neue Lage.
+  // Ein Schritt: Tempo (ECHTE km/h des Modellautos, wie physEngine.state.speedKmh - die Anzeige ist
+  // das mal REAL_SCALE), Lenkbefehl (-1..1), dt (s). Liefert die neue Lage.
+  // v1.1.3 GEMELDET: "Die Tasten funktionieren, aber das Auto bewegt sich nicht." Hier stand zusaetzlich
+  // "/ REAL_SCALE" - das Auto fuhr 74-mal zu langsam und schien zu stehen.
   function vfSchritt(lage, kmh, lenk, dt, grip) {
-    const v = Math.abs(kmh) / REAL_SCALE / 3.6 * 100 * TRACK_UNITS_PER_CM * Math.sign(kmh || 1);   // Einheiten/s
+    const v = Math.abs(kmh) / 3.6 * 100 * TRACK_UNITS_PER_CM * Math.sign(kmh || 1);   // Einheiten/s
     const delta = Math.max(-1, Math.min(1, lenk)) * VF_RAD_GRAD * Math.PI / 180;
     let w = Math.abs(v) > 1e-6 ? v * Math.tan(delta) / VF_ACHSE : 0;               // rad/s (Einspurmodell)
     const aMax = VF_MU * (grip === undefined ? 1 : grip) * 9.81 * 100 * TRACK_UNITS_PER_CM;   // Einheiten/s^2
@@ -169,6 +172,59 @@
     const h = lage.h + w * dt * 180 / Math.PI;
     const r = h * Math.PI / 180;
     return { x: lage.x + Math.sin(r) * v * dt, y: lage.y - Math.cos(r) * v * dt, h, w };
+  }
+  // ---- FAHRMODELL WIE IN ACC (v1.1.3) --------------------------------------------------------
+  // BESTELLT: "besseres Handling (eher wie Assetto Corsa Competizione)". Ein dynamisches Einspurmodell
+  // eines GT3 in Originalgroesse - die Physik der App rechnet ohnehin in GT3-Tempo (Anzeige = echtes
+  // Tempo mal REAL_SCALE), und die Gierrate ist bei massstabsgleicher Verkleinerung dieselbe, also
+  // laeuft das Modell in Originalgroesse und nur der Weg wird verkleinert.
+  //   Reifen: Pacejka Fy = D sin(C atan(B a)), D aus Reibwert mal Radlast
+  //   Radlast: statisch plus Laengsverlagerung m * ax * h / L (Bremsen belastet vorn, Gas hinten)
+  //   Reibkreis: Antrieb nimmt hinten Seitenkraft, Bremsen vorn (75 %) und hinten (25 %); ABS und
+  //   Traktionskontrolle lassen jeweils einen Rest. Hinten mehr Griff (breitere Reifen, Abtrieb), so
+  //   bleibt das Auto am Limit leicht untersteuernd, wie ein GT3 ab Werk.
+  // Daraus folgen von selbst: Untersteuern am Kurveneingang mit zu viel Tempo, Trail-Braking (leicht
+  // bremsen dreht das Auto ein), Uebersteuern unter Vollgas am Ausgang, Gegenlenken faengt es.
+  // Unter 3 m/s rein kinematisch (kein Rutschen im Stand).
+  const VF_GT3 = { m: 1300, Iz: 2300, a: 1.20, b: 1.50, h: 0.38, muV: 1.60, muH: 2.05, BV: 9.0, BH: 11.0, C: 1.35,
+                   lenkGrad: 16, bremsVorn: 0.75, antriebMax: 7.0, tc: 0.60, abs: 0.80, lastEmpf: 0.15 };
+  // z: { vy (m/s, rechts +), r (rad/s, rechts +) }, vx (m/s), ax (m/s^2 Laengsbeschleunigung, aus der
+  // Laengs-G der App), antrieb (0..1 Gasanteil), lenk (-1..1), mu (Griff-Faktor).
+  function vfDynamik(z, vx, ax, antrieb, lenk, dt, mu) {
+    const P = VF_GT3, g = 9.81, L = P.a + P.b;
+    const delta = Math.max(-1, Math.min(1, lenk)) * P.lenkGrad * Math.PI / 180;
+    if (vx < 3) {
+      z.vy = 0; z.r = vx * Math.tan(delta) / L; z.aV = 0; z.aH = 0;
+      return z;
+    }
+    const f = mu === undefined ? 1 : mu;
+    const dFz = P.m * Math.max(-12, Math.min(8, ax)) * P.h / L;
+    const fzV = Math.max(800, P.m * g * P.b / L - dFz), fzH = Math.max(800, P.m * g * P.a / L + dFz);
+    // Lastempfindlichkeit: der Reibwert sinkt mit der Radlast. Das haelt ein Auto unter Last
+    // gutmuetig, weil die entlastete Achse relativ mehr Griff behaelt.
+    const fz0V = P.m * g * P.b / L, fz0H = P.m * g * P.a / L;
+    const maxV = P.muV * f * fzV * (1 - P.lastEmpf * (fzV / fz0V - 1));
+    const maxH = P.muH * f * fzH * (1 - P.lastEmpf * (fzH / fz0H - 1));
+    const brems = ax < 0 ? P.m * -ax : 0;
+    // ABS und Traktionskontrolle wie im GT3: beide lassen dem Reifen einen Rest Seitenkraft.
+    const fxV = Math.min(P.abs * maxV, P.bremsVorn * brems);
+    const fxH = Math.min((ax < 0 ? P.abs : P.tc) * maxH,
+      ax < 0 ? (1 - P.bremsVorn) * brems : Math.max(0, antrieb) * P.m * P.antriebMax);
+    const dV = Math.sqrt(maxV * maxV - fxV * fxV), dH = Math.sqrt(maxH * maxH - fxH * fxH);
+    const schritte = Math.max(1, Math.ceil(dt / 0.002));
+    const h = dt / schritte;
+    for (let i = 0; i < schritte; i++) {
+      const aV = Math.atan2(z.vy + P.a * z.r, vx) - delta;
+      const aH = Math.atan2(z.vy - P.b * z.r, vx);
+      const fyV = -dV * Math.sin(P.C * Math.atan(P.BV * aV));
+      const fyH = -dH * Math.sin(P.C * Math.atan(P.BH * aH));
+      z.vy += h * ((fyV * Math.cos(delta) + fyH) / P.m - vx * z.r);
+      z.r += h * ((P.a * fyV * Math.cos(delta) - P.b * fyH) / P.Iz);
+      z.aV = aV; z.aH = aH;
+    }
+    z.vy = Math.max(-vx, Math.min(vx, z.vy));
+    z.r = Math.max(-5, Math.min(5, z.r));
+    return z;
   }
   // Naechster Mittellinienpunkt in einem Fenster um den letzten (die Strecke kann sich kreuzen).
   function vfOrt(pts, nrm, x, y, idx) {
@@ -215,9 +271,31 @@
     const dt = VF.letzt ? Math.min(0.05, (now - VF.letzt) / 1000) : 0.016;
     VF.letzt = now;
     const st = physEngine.state;
-    const lenk = physEngine.outputs ? physEngine.outputs.servoAngle || 0 : 0;
-    const neu = vfSchritt(VF, st.speedKmh || 0, lenk, dt, physEngine.config.gripScale);
-    VF.x = neu.x; VF.y = neu.y; VF.h = neu.h;
+    // Lenkung des Fahrers (gedaempft), nicht der Servobefehl: der traegt die Griffkorrekturen fuer das
+    // echte Auto, und hier rechnet das Reifenmodell den Griff selbst.
+    const lenk = typeof st.dampedSteering === 'number' ? st.dampedSteering : (physEngine.outputs ? physEngine.outputs.servoAngle || 0 : 0);
+    const kmh = st.speedKmh || 0;
+    if (kmh < 0) {
+      // Rueckwaerts (Rangieren): rein kinematisch wie bisher.
+      const neu = vfSchritt(VF, kmh, lenk, dt, physEngine.config.gripScale);
+      VF.x = neu.x; VF.y = neu.y; VF.h = neu.h;
+      VF.dyn = { vy: 0, r: 0 };
+    } else {
+      const vVoll = kmh * REAL_SCALE / 3.6;                                  // m/s eines GT3
+      // Laengs: die Laengs-G der App (-1 = Vollbremsung) auf GT3-Werte (1,5 g), nicht die Ableitung
+      // des Modellauto-Tempos - das beschleunigt umgerechnet weit ueber jedes echte Auto.
+      const ax = (st.gLong || 0) * 15;
+      if (!VF.dyn) VF.dyn = { vy: 0, r: 0 };
+      vfDynamik(VF.dyn, vVoll, ax, Math.max(0, st.longUse || 0), lenk, dt,
+        (physEngine.config.gripScale || 1) * (VF.abseits ? 0.55 : 1));
+      // Weg in der Bahnwelt: Tempo des Modellautos, Richtung = Kurs + Schwimmwinkel.
+      VF.h += VF.dyn.r * dt * 180 / Math.PI;
+      const beta = Math.atan2(VF.dyn.vy, Math.max(0.1, vVoll));
+      const vE = kmh / 3.6 * 100 * TRACK_UNITS_PER_CM;
+      const rich = VF.h * Math.PI / 180 + beta;
+      VF.x += Math.sin(rich) * vE * dt;
+      VF.y -= Math.cos(rich) * vE * dt;
+    }
     const o = vfOrt(VF.pts, VF.nrm, VF.x, VF.y, VF.idx);
     VF.idx = o.idx;
     const ab = Math.abs(o.quer) > TRACK_HALF_W * 1.19 + VF_AUTO.B * 0.3;
@@ -235,6 +313,7 @@
     VF.x = p.x; VF.y = p.y; VF.h = p.heading;
     physEngine.state.speedKmh = 0;
     VF.abseits = false;
+    VF.dyn = { vy: 0, r: 0 };
     showHudToast(t('Zurück auf die Bahn gesetzt'));
   }
   function vfMalen() {
@@ -269,7 +348,7 @@
   function vfHud() {
     const el = VF.hud;
     if (!el) return;
-    const kmh = Math.round(Math.abs(physEngine.state.speedKmh || 0));
+    const kmh = Math.round(Math.abs(physEngine.state.speedKmh || 0) * REAL_SCALE);   // Anzeige wie im Cockpit
     const lauf = VF.rundeAb ? Date.now() - VF.rundeAb : null;
     el.querySelector('.vf-tempo').textContent = kmh + ' km/h';
     el.querySelector('.vf-runde').textContent = t('Runde') + ' ' + vfZeit(lauf);
@@ -281,6 +360,10 @@
   function virtuellStarten() {
     if (VF.aktiv) return;
     if (!physicsEnabled) { showHudToast(t('Virtuell braucht ein Fahrgefühl mit Physik (nicht RC)')); return; }
+    // Editor-Strecke und gemerkte Rollen gehoeren dem Fahrer: die Ersatzstrecke (Balkonia) und die Rolle
+    // des virtuellen Autos werden beim Beenden wieder zurueckgenommen.
+    VF.tilesVorher = currentTrackTiles;
+    try { VF.editorVorher = localStorage.getItem(EDITOR_STRECKE_STORE); } catch (e) { VF.editorVorher = undefined; }
     const tiles = vfTilesWaehlen();
     if (!tiles) { showHudToast(t('Erst eine Strecke bauen')); return; }
     const schicht = document.createElement('div');
@@ -331,10 +414,37 @@
       if (b.dataset.vf === 'zu') virtuellBeenden();
       else if (b.dataset.vf === 'reset') vfZuruecksetzen();
     });
+    VF.dyn = { vy: 0, r: 0 };
+    vfMotorsound();
     if (typeof showTab === 'function') showTab('race');
     VF.takt = setInterval(vfPaket, VF_TAKT_MS);
     VF.raf = requestAnimationFrame(vfBild);
     showHudToast(t('Virtuelle Fahrt: frei fahren, ✕ beendet'));
+  }
+  // v1.1.3 GEMELDET: "ein komischer hoher Ton ab und zu" und BESTELLT "auch Motorensounds". Ohne
+  // gestarteten Aufnahme-Motor spielt die App den einfachen Oszillator (ein Ton, der mit der Drehzahl
+  // steigt). Der Start ist ein Klick, also darf der Ton hier anlaufen: Aufnahmen laden und den
+  // gewaehlten Motor starten, sonst den ersten geladenen.
+  function vfMotorsound() {
+    try {
+      if (!soundEnabled) return;
+      initEngineSound();
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      const starte = () => {
+        if (sampleEngine.nodes) return true;
+        const wahl = $('sound-profile') ? $('sound-profile').value : '';
+        const k = SAMPLE_CARS.indexOf(wahl) >= 0 && sampleEngine.buffers[wahl] ? wahl
+          : SAMPLE_CARS.find((c) => sampleEngine.buffers[c]);
+        if (!k || !startSampleEngine(k)) return false;
+        VF.motorVonUns = true;
+        return true;
+      };
+      if (!sampleEngine.ready && !sampleEngine.loading) loadEngineSamples();
+      if (!starte()) {
+        let n = 0;
+        const iv = setInterval(() => { n++; if (!VF.aktiv || starte() || n > 40) clearInterval(iv); }, 250);
+      }
+    } catch (e) { /* ohne Ton weiterfahren */ }
   }
   function virtuellBeenden() {
     if (!VF.aktiv) return;
@@ -344,6 +454,22 @@
     const car = VF.car;
     VF.car = null;
     if (car) removeCar(car);
+    try {
+      const r = JSON.parse(localStorage.getItem(CAR_ROLLEN_STORE) || '{}');
+      if (r && r.virtuell) { delete r.virtuell; localStorage.setItem(CAR_ROLLEN_STORE, JSON.stringify(r)); }
+    } catch (e) { /* egal */ }
+    if (VF.tilesVorher !== undefined && currentTrackTiles !== VF.tilesVorher) {
+      currentTrackTiles = VF.tilesVorher;
+      if (typeof refreshTrackPreview === 'function') refreshTrackPreview();
+      try {
+        if (VF.editorVorher === null) localStorage.removeItem(EDITOR_STRECKE_STORE);
+        else if (VF.editorVorher !== undefined) localStorage.setItem(EDITOR_STRECKE_STORE, VF.editorVorher);
+      } catch (e) { /* egal */ }
+    }
+    VF.tilesVorher = undefined;
+    // Den selbst gestarteten Motor wieder aus, wenn kein echtes Auto mehr da ist.
+    if (VF.motorVonUns && !garage.length) { try { stopSampleEngine(); } catch (e) { /* egal */ } }
+    VF.motorVonUns = false;
     if (VF.vorherSpieler && garage.indexOf(VF.vorherSpieler) >= 0 && VF.vorherRolle) setCarRole(VF.vorherSpieler, VF.vorherRolle);
     trackMode = VF.trackModeVorher || trackMode;
     if (VF.schicht) VF.schicht.remove();

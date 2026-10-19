@@ -956,6 +956,10 @@
         // zeigt den Ergebnis-Dialog. Nichts zaehlt mehr, auch der Abbruch in die Rennmaschine.
         if (typeof challengeLaeuft === 'function' && challengeLaeuft() && kRennenLaeuft()) {
           requestRaceStop();
+        } else if (typeof vfAktiv === 'function' && vfAktiv()) {
+          // Virtuelle Fahrt: Options beendet sie wie Escape (zurueck in die Garage), statt das Menue
+          // unter der 3D-Schicht zu oeffnen.
+          virtuellBeenden();
         } else {
           konsoleZumMenue();
         }
@@ -970,6 +974,12 @@
   // sie sehen, und damit Esc/Q/E/Leertaste in Menues nicht zusaetzlich fahren.
   window.addEventListener('keydown', (e) => {
     const k = (e.key || '').toLowerCase();
+    // v1.1.3: waehrend der virtuellen Fahrt (60d-virtuell.js) gehoeren die Tasten dem Fahren; Escape beendet sie.
+    // Dieser Zuhoerer laeuft in der Capture-Phase vor allen anderen - ohne diese Zeile oeffnete Escape das Menue.
+    if (typeof vfAktiv === 'function' && vfAktiv()) {
+      if (k === 'escape') { e.preventDefault(); e.stopImmediatePropagation(); virtuellBeenden(); }
+      return;
+    }
     if (e.target && e.target.closest && e.target.closest('input[type="text"], input[type="number"], textarea, select')) return;
     // Der Meisterschaftsschirm hat seine eigene Tastatur (73-meisterschaft.js).
     if (typeof meisterOffen === 'function' && meisterOffen() && !kFrageOffen) return;
