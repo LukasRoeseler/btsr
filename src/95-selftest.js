@@ -14376,6 +14376,46 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'USB 47 Byte, BT 77 Byte mit CRC, Effekt 0x26' };
   });
 
+  stAdd('Virtuell: Fahrt geradeaus, Haftgrenze in der Kurve, Ort auf der Mittellinie, Codes', () => {
+    const f = [];
+    // 1 s mit 100 km/h (Anzeige) geradeaus nach Norden (h = 0): y nimmt ab, x bleibt.
+    let l = { x: 0, y: 0, h: 0 };
+    for (let i = 0; i < 100; i++) l = vfSchritt(l, 100, 0, 0.01, 1);
+    const soll = 100 / REAL_SCALE / 3.6 * 100 * TRACK_UNITS_PER_CM;
+    if (Math.abs(l.x) > 1e-6 || Math.abs(-l.y - soll) > 0.01 * soll) f.push('geradeaus falsch: ' + l.x.toFixed(2) + '/' + l.y.toFixed(2) + ' statt ' + soll.toFixed(2));
+    // Voller Einschlag rechts: Kurs steigt (Rechtskurve); schnell begrenzt die Haftung die Drehrate.
+    const langsam = vfSchritt({ x: 0, y: 0, h: 0 }, 20, 1, 0.01, 1), schnell = vfSchritt({ x: 0, y: 0, h: 0 }, 450, 1, 0.01, 1);
+    if (!(langsam.h > 0)) f.push('rechts lenkt nicht nach rechts');
+    const v300 = 450 / REAL_SCALE / 3.6 * 100 * TRACK_UNITS_PER_CM;
+    if (Math.abs(schnell.w * v300 - 9.81 * 100 * TRACK_UNITS_PER_CM) > 1) f.push('Haftgrenze nicht wirksam: a = ' + (schnell.w * v300).toFixed(1));
+    // Ort: auf einer Teststrecke liegt der Startpunkt auf der Mittellinie.
+    const tiles = codeToTrack('SG4R4G4').tiles, pts = trackCenterline(tiles), nrm = trackNormals(pts);
+    const o = vfOrt(pts, nrm, pts[20].x + nrm[20].x * 3, pts[20].y + nrm[20].y * 3, 18);
+    if (o.idx !== 20 || Math.abs(o.quer - 3) > 0.01) f.push('Ort falsch: ' + o.idx + ' / ' + o.quer.toFixed(2));
+    if (vfCode(TILE_TYPE.START) !== START_CODE_RAIL || vfCode(TILE_TYPE.STRAIGHT) !== 0x02 || vfCode(TILE_TYPE.PIT) !== 0x07) f.push('Codes falsch');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'geradeaus ' + soll.toFixed(1) + ' E/s, Haftgrenze 1 g, Ort und Codes stimmen' };
+  });
+
+  stAdd('Aufstellung: Mittelgasse, versetzte Haltepunkte, Impuls mit Tempo und Dauer aus den Reglern', () => {
+    const f = [];
+    // Haltepunkt: rechts (P1, gerade) weiter vorn als links (P2, ungerade)
+    if (!(aufstellHaltBruch(0) > aufstellHaltBruch(1))) f.push('rechts nicht vor links');
+    if (aufstellAmPunkt(4.1, 4, 0) || !aufstellAmPunkt(4.6, 4, 0)) f.push('rechter Haltepunkt falsch');
+    if (!aufstellAmPunkt(4.2, 4, 1) || aufstellAmPunkt(3.9, 4, 1)) f.push('linker Haltepunkt falsch');
+    const msEl = $('race-einpark-ms'), tEl = $('race-einpark-tempo');
+    const merk = [msEl && msEl.value, tEl && tEl.value];
+    try {
+      if (msEl) msEl.value = '60';
+      if (tEl) tEl.value = '0.25';
+      if (einparkMs() !== 60 || Math.abs(einparkTempo() - 0.25) > 1e-9) f.push('Regler wirken nicht: ' + einparkMs() + ' / ' + einparkTempo());
+      const car = { ghost: {} };
+      randHaltStarten(car, { phase: 'rad', quer: 0, tempo: 0.4, radLenk: 1, radTempo: einparkTempo(), radMs: einparkMs(), gegenMs: einparkMs() });
+      if (Math.abs(pitZiel(car) - 0.25) > 1e-9) f.push('Impulstempo nicht 25 %: ' + pitZiel(car));
+      if (car.ghost.randHalt.radMs !== 60) f.push('Impulsdauer nicht 60 ms');
+    } finally { if (msEl) msEl.value = merk[0]; if (tEl) tEl.value = merk[1]; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'rechts bei 0,55, links bei 0,15 der Kachel; Impuls aus den Reglern' };
+  });
+
   // ---- v1.1.3: NPC-Fahrmodus "Realistisch" ----
   stAdd('NPC Fahrmodus Realistisch: Trigger-Rampe beim Gas, Bremse nach Ueberschuss, Sim+-Werte', () => {
     const f = [];
@@ -17634,12 +17674,17 @@
       else if (!(r.throttle > 0)) f.push('rollt nicht los');
       const rb = autopilot(0.8, 1);
       if (!rb || rb.throttle !== 0 || !(rb.brake >= 0.8)) f.push('Fahrerbremse wird ueberstimmt');
-      aufstellSpieler.get(auto).fertig = true;
-      // v1.0.37: ein Takt Uebergang, ein Takt Einlenken, ein Takt zurueck, dann stehen.
-      // (v1.0.39: ab Werk ohne Einlenken - fuer diesen Teil den Regler auf 100 %.)
+      const aA = aufstellSpieler.get(auto);
+      aA.fertig = true;
+      // v1.1.3: zeitbasiert - einparkMs() zur Seite, einparkMs() zurueck, dann stehen.
       const reglerEP = $('race-einpark-staerke'), reglerEPMerk = reglerEP ? reglerEP.value : null; if (reglerEP) reglerEP.value = '1';
-      autopilot(0, 1);
-      const ein = autopilot(0, 1), zur = autopilot(0, 1);
+      const msI = einparkMs();
+      aA.fertigAt = Date.now() - 1;
+      const ein = autopilot(0, 1);
+      if (ein && !(ein.throttle > 0)) f.push('faehrt beim Impuls nicht');
+      aA.fertigAt = Date.now() - msI - 1;
+      const zur = autopilot(0, 1);
+      aA.fertigAt = Date.now() - 2 * msI - 1;
       if (reglerEP) reglerEP.value = reglerEPMerk;
       if (!ein || !(Math.abs(ein.radLenk) > 0) || !zur || Math.sign(zur.radLenk) !== -Math.sign(ein.radLenk)) {
         f.push('kein Einlenk-Takt mit Gegenlenken: ' + (ein && ein.radLenk) + '/' + (zur && zur.radLenk));
@@ -19388,7 +19433,7 @@
       sc.ghost = { running: true, scHeim: true, ortSicher: true, scHeimKacheln: 999, tileIndex: 0, laps: 0 };
       safetyCarLinie(sc);
       if (!sc.ghost.randHalt) f.push('Fahrbahn: parkt nicht mehr an Start/Ziel');
-      else if (sc.ghost.randHalt.radMs !== EINPARK_MS || sc.ghost.randHalt.gegenMs !== EINPARK_MS) f.push('Fahrbahn: anderer Lenkimpuls');
+      else if (sc.ghost.randHalt.radMs !== einparkMs() || sc.ghost.randHalt.gegenMs !== einparkMs()) f.push('Fahrbahn: anderer Lenkimpuls');
       sc.ghost = { running: true, randHalt: { scLinie: true } };
       if (scVorbeiQuer(fremd(0)) !== SC_VORBEI_QUER) f.push('Fahrbahn: nicht links vorbei an Start/Ziel');
     } finally {
@@ -19765,7 +19810,10 @@
       apUebergabe();
       const erwartet = 30 / (1.5 * batteryCompensationScale());
       if (Math.abs(physEngine.state.speedKmh - erwartet) > 1e-6) f.push('Modelltempo nach der Uebergabe ' + physEngine.state.speedKmh + ' statt ' + erwartet.toFixed(2));
-      if (!($('race-einpark-staerke') && $('race-einpark-staerke').defaultValue === '0')) f.push('Einlenkstaerke nicht ab Werk 0');
+      // v1.1.3: der Lenkimpuls ist ab Werk an (100 %, 45 ms, 30 %).
+      if (!($('race-einpark-staerke') && $('race-einpark-staerke').defaultValue === '1')) f.push('Einlenkstaerke nicht ab Werk 100 %');
+      if (!($('race-einpark-ms') && $('race-einpark-ms').defaultValue === '45')) f.push('Impulsdauer nicht ab Werk 45 ms');
+      if (!($('race-einpark-tempo') && $('race-einpark-tempo').defaultValue === '0.3')) f.push('Impulstempo nicht ab Werk 30 %');
     } finally {
       flagState = merk.fl; trackMode = merk.tm; topSpeedScale = merk.top; physEngine.state.speedKmh = merk.v;
       physEngine.state.virtualSpeed = merk.vv; physicsEnabled = merk.phys; playerCar = merk.pc; raceFormationLap = merk.form;

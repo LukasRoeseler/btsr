@@ -252,6 +252,8 @@
   }
 
   function menuNavActive() {
+    // v1.1.3: in der virtuellen Fahrt fahren die Pfeiltasten (60d-virtuell.js).
+    if (typeof vfAktiv === 'function' && vfAktiv()) return false;
     menuNavEnsureContext();
     return menuNavRows().length > 0;
   }

@@ -2788,7 +2788,13 @@
       // direkt aufs Lenkbyte (physicsStep).
       if (aufstellenSpielerAngekommen(meinAuto)) {
         const rad = typeof aufstellenSpielerEinlenken === 'function' ? aufstellenSpielerEinlenken(meinAuto) : 0;
-        return { grund: 'aufstellen', throttle: 0, brake: rad ? 0 : 1, steer: 0, lenkt: false, radLenk: rad || 0 };
+        // v1.1.3: waehrend des Impulses mit einparkTempo (30 %) fahren, danach sofort voll bremsen.
+        if (rad) {
+          const vI = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
+          const gI = ghostSpeedControl(regler, typeof einparkTempo === 'function' ? einparkTempo() : 0.3, vI, 0.045);
+          return { grund: 'aufstellen', throttle: gI.throttle, brake: gI.brake, steer: 0, lenkt: false, radLenk: rad };
+        }
+        return { grund: 'aufstellen', throttle: 0, brake: 1, steer: 0, lenkt: false, radLenk: 0 };
       }
       const vA = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
       const dtS = Math.max(0.01, Math.min(0.25, (Date.now() - (regler.at || Date.now())) / 1000));

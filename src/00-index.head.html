@@ -3625,6 +3625,17 @@
     border: 1px solid var(--border); border-radius: 6px; margin-bottom: 6px;
     background: var(--panel); }
   .grid-row.dragging { opacity: .45; }
+  /* v1.1.3: virtuelle Fahrt (60d-virtuell.js), ueber allem ausser der Pause. */
+  .vf-schicht { position: fixed; inset: 0; z-index: 300; background: #8ca8c6; }
+  .vf-bild { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  .vf-hud { position: absolute; left: max(10px, env(safe-area-inset-left)); top: max(8px, env(safe-area-inset-top)); display: grid; gap: 2px;
+    background: rgba(5,7,12,.62); color: #f3f4f6; padding: 6px 10px; border-radius: 8px; font-variant-numeric: tabular-nums;
+    font-family: "Bahnschrift SemiCondensed", "Roboto Condensed", system-ui, sans-serif; font-size: clamp(12px, 1.8vw, 16px); }
+  .vf-hud b { font-size: 1.6em; line-height: 1; }
+  .vf-abseits { color: #ffb02e; font-weight: 700; }
+  .vf-knoepfe { position: absolute; right: max(10px, env(safe-area-inset-right)); top: max(8px, env(safe-area-inset-top)); display: flex; gap: 6px; }
+  .vf-knoepfe button { background: rgba(5,7,12,.62); color: #fff; border: 1px solid rgba(255,255,255,.35); padding: 6px 12px; min-height: 2.2em; }
+  .vf-wip { position: absolute; left: 10px; bottom: 8px; color: #0b0c10; font-weight: 700; font-size: 12px; }
   /* v1.1.3: Autobild und Versatz - rechts stehende Autos (P1, P3 ...) nach rechts, links stehende
      nach links geschoben, wie auf einem Startplan. */
   .grid-auto { flex: 0 0 auto; width: clamp(56px, 9vw, 104px); height: clamp(34px, 5.6vw, 62px);
@@ -5922,6 +5933,9 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Studie (WIP, jetzt f&#252;r alle sichtbar): NARQ-S, Selbsteinsch&#228;tzung, Reaktionstest und danach die Fahrverhaltens-Challenge &#8211; 5 Runden Homington (Grundpackung) mit Sim+, ohne Bestenliste. Danach siehst du deine Werte neben dem Mittel aller und den aktuellen Stand der Hypothesen, ohne Namen. Teilnahme freiwillig, ab 18, Alter und Geschlecht werden abgefragt, die Daten werden anonymisiert &#246;ffentlich zug&#228;nglich gemacht. Kontakt: roeseler.lukas@gmail.com.</li>
+        <li>Automatische Aufstellung: Alle Autos fahren genau mittig zu ihren Pl&#228;tzen, auch an schon geparkten vorbei. Am eigenen Haltepunkt &#8211; rechts weiter vorn in der Kachel, links weiter hinten &#8211; lenkt das Auto 45 ms zu seiner Seite und 45 ms zur&#252;ck, bei 30 % Tempo, und bremst dann sofort voll. Neue Regler f&#252;r Dauer und Tempo des Lenkimpulses.</li>
+        <li>Virtuell fahren (WIP, Garage): ein Auto ohne Bluetooth f&#228;hrt frei auf der Editor-Strecke (ohne Strecke auf Balkonia), in 3D mit Verfolgerkamera und Motorsound. Tempo aus dem Fahrgef&#252;hl, Lenkung nach dem Einspurmodell mit Haftgrenze, neben der Bahn bremst der Teppich. Rundenzeiten, Rennen und Time Attack laufen wie mit einem echten Auto.</li>
         <li>Meisterschaft: Die obere Zeile mit dem Schlie&#223;en-Knopf liegt jetzt &#252;ber der Reiterleiste (vorher musste man erst auf Omega tippen). In der Startaufstellung der Meisterschaft steht P1 jetzt auch im Bild rechts.</li>
         <li>Garage: Im Querformat scrollen die linke Liste und die rechten Einstellungen unabh&#228;ngig voneinander, wie in der Meisterschaft. Neu je gesteuertem Auto: Selbstlenkung (wie Optionen, aus, h&#228;lt die Spur, lenkt selbst) &#8211; gilt auch f&#252;r Spieler 2 und 3 und wird gemerkt.</li>
         <li>Startaufstellung: gr&#246;&#223;ere Autobilder (Foto aus der Garage oder Farbe) und ein seitlicher Versatz &#8211; wer rechts steht, ist nach rechts ger&#252;ckt, wer links steht, nach links.</li>
@@ -9150,16 +9164,37 @@
           mit 35&nbsp;% weiter, in Kurven und Haarnadeln gedrosselt. Aus: alle sofort 35&nbsp;%.
           &Uuml;berholt wird unter Gelb nie.</small></div>
         <label class="tgl"><input type="checkbox" id="race-sc-aufschliessen" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Einparken: Einlenkst&auml;rke<span class="wip-tag">WIP</span><small>Beim
-          Einparken (Startaufstellung vor und nach dem Rennen, Safety Car) f&auml;hrt das Auto mittig
-          bis zu seinem Platz, lenkt dort einen kurzen Takt (rund 10&nbsp;ms) zu seiner Seite und
-          einen zur&uuml;ck und h&auml;lt. Hier stellst du ein, wie stark es einlenkt: 100&nbsp;% ist der
-          volle Einschlag, kleiner, wenn die Autos neben die Bahn rutschen. 0 = gar nicht.</small></div>
+      <div class="opt-row"><div class="opt-label">Einparken: Einlenkst&auml;rke<span class="wip-tag">WIP</span><small>Bei der
+          automatischen Aufstellung (vor und nach dem Rennen) fahren alle Autos genau mittig, auch an
+          schon geparkten vorbei. Am eigenen Haltepunkt &ndash; rechts weiter vorn in der Kachel, links
+          weiter hinten &ndash; lenkt das Auto kurz zu seiner Seite und genauso lang zur&uuml;ck und bremst
+          dann sofort voll. Hier stellst du ein, wie stark es einlenkt: 100&nbsp;% ist der volle
+          Einschlag, kleiner, wenn die Autos neben die Bahn rutschen. 0 = gar nicht.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="race-einpark-staerke" min="0" max="1" step="0.05" value="0" data-preset-skip>
+          <input type="range" id="race-einpark-staerke" min="0" max="1" step="0.05" value="1" data-preset-skip>
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="race-einpark-staerke-val">0 %</span>
+          <span class="opt-val" id="race-einpark-staerke-val">100 %</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Einparken: Dauer des Lenkimpulses<span class="wip-tag">WIP</span><small>Wie
+          viele Millisekunden das Auto zu seiner Seite lenkt &ndash; und danach genauso lang zur&uuml;ck.
+          Vorgabe 45&nbsp;ms, das ist ein Sendetakt. Bleibt das Auto zu weit in der Mitte stehen, erh&ouml;he
+          den Wert; rutscht es neben die Bahn, senke ihn.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="race-einpark-ms" min="10" max="300" step="5" value="45" data-preset-skip>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="race-einpark-ms-val">45 ms</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Einparken: Tempo beim Lenkimpuls<span class="wip-tag">WIP</span><small>Wie
+          schnell das Auto w&auml;hrend der beiden Lenkimpulse f&auml;hrt, in Prozent der H&ouml;chstgeschwindigkeit.
+          Vorgabe 30&nbsp;%. Schneller hei&szlig;t: derselbe Impuls bringt das Auto weiter zur Seite, und es
+          rollt nach dem Bremsen etwas weiter.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="race-einpark-tempo" min="0.15" max="0.6" step="0.01" value="0.3" data-preset-skip>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="race-einpark-tempo-val">30 %</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Time Attack: NPCs als Challenger<span class="wip-tag">WIP</span><small>In
           Time Attack auf der Bahn fahren alle NPCs als Challenger gegen dich. Gegen meine Bestzeit:
@@ -9431,8 +9466,8 @@
         <button class="misc-tile subpage-open" data-sub="opt-studie" id="opt-studie-kachel" hidden>
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6h12M20 6v12L9 38a3 3 0 0 0 3 4h24a3 3 0 0 0 3-4L28 18V6"/><path d="M14 30h20" stroke="var(--bad)"/></svg>
-          <b>Studie <span class="wip-tag">experimentell</span></b>
-          <span>Persönlichkeit, Reaktionszeit und Fahrkönnen. Freiwillig, etwa 5 Minuten, ab 18.</span>
+          <b>Studie <span class="wip-tag">WIP</span></b>
+          <span>Persönlichkeit, Reaktionszeit und Fahrverhalten. Freiwillig, ab 18, Daten anonymisiert öffentlich.</span>
         </button>
         <button class="misc-tile subpage-open" data-sub="opt-tutorials">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"

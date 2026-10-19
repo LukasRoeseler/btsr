@@ -1939,6 +1939,15 @@
     plusKnopf.onclick = () => { const c = $('gar-connect'); if (c) c.click(); };
     plus.appendChild(plusKnopf);
     links.appendChild(plus);
+    // v1.1.3: virtuelle Fahrt (60d-virtuell.js) - ein Auto ohne Bluetooth auf der Editor-Strecke.
+    const virt = document.createElement('div');
+    virt.className = 'opt-row opt-breit gar-a-aktion';
+    const virtKnopf = document.createElement('button');
+    virtKnopf.type = 'button';
+    virtKnopf.innerHTML = t('Virtuell fahren') + ' <span class="wip-tag">WIP</span>';
+    virtKnopf.onclick = () => { if (typeof virtuellStarten === 'function') virtuellStarten(); };
+    virt.appendChild(virtKnopf);
+    links.appendChild(virt);
     ['gar-stop-ghosts', 'gar-go', 'gar-disconnect-all', 'gar-to-cockpit'].forEach((id) => {
       const z = garAktionsZeile(id);
       if (z) links.appendChild(z);
@@ -2582,8 +2591,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (a.fertig) return true;
     if (!aufstellStartPruefen(a, car)) return false;
     const o = car.ghost ? ghostOrt(car) : null;
-    if (o !== null && Math.floor(o) === a.ziel && Date.now() - a.seit > 1200) {
+    if (aufstellAmPunkt(o, a.ziel, gridPosOf(car)) && Date.now() - a.seit > 1200) {
       a.fertig = true;
+      a.fertigAt = Date.now();
       log(garageLabel(car) + ': steht auf seinem Startplatz.', 'info');
       if (!aufstellenLaeuft()) { clearTimeout(aufstellenTimer); showHudToast(t('Startaufstellung steht')); }
     }
@@ -2596,11 +2606,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function aufstellenSpielerEinlenken(car) {
     const a = aufstellSpieler.get(car);
     if (!a || !a.fertig) return null;
-    a.takt = (a.takt || 0) + 1;
+    // v1.1.3: zeitbasiert wie bei den NPCs - einparkMs() zur Seite, einparkMs() zurueck, dann 0.
     const platz = gridPosOf(car);
     const seite = platz >= 0 && platz % 2 ? -1 : 1;
     const w = EINPARK_LENK * einparkStaerke();
-    return a.takt === 2 ? seite * w : a.takt === 3 ? -seite * w : 0;
+    if (!a.fertigAt) a.fertigAt = Date.now();
+    const seit = Date.now() - a.fertigAt;
+    const ms = einparkMs();
+    return w <= 0 ? 0 : seit < ms ? seite * w : seit < 2 * ms ? -seite * w : 0;
   }
   function aufstellenSpielerOhneSpur(car) {
     const a = car ? aufstellSpieler.get(car) : null;
@@ -2684,8 +2697,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (g.randHalt) return false;
     if (!aufstellStartPruefen(g, car)) return false;
     const o = ghostOrt(car);
-    if (o === null || Math.floor(o) !== g.aufstellZiel || Date.now() - (g.aufstellSeit || 0) < 1200) return false;
     const platz = g.aufstellPlatz !== undefined ? g.aufstellPlatz : gridPosOf(car);
+    if (!aufstellAmPunkt(o, g.aufstellZiel, platz) || Date.now() - (g.aufstellSeit || 0) < 1200) return false;
     const seite = platz >= 0 && platz % 2 ? -1 : 1;     // wie formationOffset
     // v1.0.37 GEMELDET: "Bei automatischer Aufstellung parkt das erste Auto nicht vor der
     // Startgeraden, sondern dahinter" und BESTELLT: "Die Autos sollen fuer die automatische
@@ -2699,9 +2712,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // v1.0.39 BESTELLT: "10 ms in die eine Richtung lenken, dann 10 ms in die andere, dann sofort
     // halten. Bis dahin genau mittig fahren." Ohne Einlenken (Vorgabe 0) gleich halten; die Bremse
     // greift sofort voll (sofort), ohne die Rampe des Boxenstopps.
+    // v1.1.3: Impuls zur Seite und zurueck (einparkMs, Vorgabe 45 ms) bei einparkTempo (30 %), dann
+    // sofort volle Bremse (sofort) - ohne Kontrolle nach dem Halt.
     randHaltStarten(car, { phase: staerke > 0 ? 'rad' : 'halt', quer: 0, tempo: formationPace(), haltMs: AUFSTELL_HALT_MS, sofort: true,
-                           radLenk: staerke > 0 ? seite * EINPARK_LENK * staerke : 0,
-                           radMs: EINPARK_MS, gegenMs: EINPARK_MS, fertig: (c) => {
+                           radLenk: staerke > 0 ? seite * EINPARK_LENK * staerke : 0, radTempo: einparkTempo(),
+                           radMs: einparkMs(), gegenMs: einparkMs(), fertig: (c) => {
       log(garageLabel(c) + ': steht auf seinem Startplatz.', 'info');
       if (g.nachZiel) blinkCar(c);
       if (!aufstellenLaeuft()) {
@@ -4691,7 +4706,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (rh) {
       // Rand-Vorlauf: vor der eigentlichen Anfahrt gilt kein Randhalt-Tempo, nur die Querlage laeuft.
       if (rh.phase === 'rand' && rh.tempoAb && car.ghost.scRest > rh.tempoAb) return null;
-      return rh.phase === 'rand' ? rh.tempo : (rh.phase === 'rad' || rh.phase === 'gegen') ? rh.tempo * RANDHALT_RAD_TEMPO : 0;
+      return rh.phase === 'rand' ? rh.tempo
+        : (rh.phase === 'rad' || rh.phase === 'gegen') ? (rh.radTempo || rh.tempo * RANDHALT_RAD_TEMPO) : 0;
     }
     const p = car.ghost && car.ghost.pit;
     if (!p) return null;
@@ -4917,22 +4933,46 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // (EINPARK_MS), der Regler gibt die Staerke des Einschlags (0-100 %).
   // v1.0.39 BESTELLT: "Einlenken bei Startaufstellung standardmaessig auf 0 - das fuehrt nur dazu,
   // dass die Autos runterrollen." Neuer Speicherschluessel, damit auch ein gemerktes 100 % auf 0 geht.
-  const EINPARK_LENK = 1.0, EINPARK_MS = 10, EINPARK_STORE = 'omegasim-einpark-staerke-v2';
-  function einparkMs() { return EINPARK_MS; }
-  function einparkStaerke() {
-    const el = $('race-einpark-staerke');
-    const v = el ? parseFloat(el.value) : 0;
-    return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0;
+  // v1.1.3 BESTELLT: "Einparken mit Lenkimpuls, aber schwaecher als das Safety Car (das von der
+  // Schiene faehrt). 45 ms rechts, 45 ms links, bei ca. 30 % Tempo, dann direkt bremsen auf 0 km/h.
+  // Keine Kontrolle nach dem Halt. Kalibrierungsregler: wie schnell das Auto beim Impuls faehrt und
+  // wie viele ms der Lenkimpuls dauert." Neue Speicherschluessel (v3), damit die alte Vorgabe 0 %
+  // nicht stehen bleibt: der Impuls ist jetzt ab Werk an (100 % Einschlag, 45 ms, 30 %).
+  const EINPARK_LENK = 1.0, EINPARK_MS = 45, EINPARK_TEMPO = 0.30, EINPARK_STORE = 'omegasim-einpark-staerke-v3';
+  const EINPARK_MS_STORE = 'omegasim-einpark-ms-v1', EINPARK_TEMPO_STORE = 'omegasim-einpark-tempo-v1';
+  function einparkWert(id, vorgabe, lo, hi) {
+    const el = $(id);
+    const v = el ? parseFloat(el.value) : vorgabe;
+    return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : vorgabe;
   }
-  if ($('race-einpark-staerke')) {
-    const el = $('race-einpark-staerke');
-    const zeigen = () => { if ($('race-einpark-staerke-val')) $('race-einpark-staerke-val').textContent = Math.round(einparkStaerke() * 100) + ' %'; };
-    try { const w = localStorage.getItem(EINPARK_STORE); if (w !== null && w !== '') el.value = w; } catch (e) { /* privat */ }
+  function einparkMs() { return einparkWert('race-einpark-ms', EINPARK_MS, 10, 300); }
+  function einparkTempo() { return einparkWert('race-einpark-tempo', EINPARK_TEMPO, 0.15, 0.6); }
+  function einparkStaerke() { return einparkWert('race-einpark-staerke', 1, 0, 1); }
+  [['race-einpark-staerke', EINPARK_STORE, (v) => Math.round(v * 100) + ' %'],
+   ['race-einpark-ms', EINPARK_MS_STORE, (v) => Math.round(v) + ' ms'],
+   ['race-einpark-tempo', EINPARK_TEMPO_STORE, (v) => Math.round(v * 100) + ' %']].forEach(([id, store, text]) => {
+    const el = $(id);
+    if (!el) return;
+    const zeigen = () => { if ($(id + '-val')) $(id + '-val').textContent = text(parseFloat(el.value)); };
+    try { const w = localStorage.getItem(store); if (w !== null && w !== '') el.value = w; } catch (e) { /* privat */ }
     el.addEventListener('input', () => {
       zeigen();
-      try { localStorage.setItem(EINPARK_STORE, el.value); } catch (e) { /* privat */ }
+      try { localStorage.setItem(store, el.value); } catch (e) { /* privat */ }
     });
     zeigen();
+  });
+  // ---- WO IN DER KACHEL GEHALTEN WIRD (v1.1.3) --------------------------------------------
+  // BESTELLT: "Die Autos muessen so parken, dass sie nicht im Weg stehen." Zwei Autos einer Reihe
+  // halten nicht mehr nebeneinander am Kachelanfang, sondern versetzt: rechts (gerader Platz, P1)
+  // weiter vorn, links weiter hinten - wie auf einem echten Startplan. Bis dahin fahren alle genau
+  // mittig (Mittelgasse), auch an schon geparkten Autos vorbei; erst am eigenen Punkt lenkt das
+  // Auto zu seiner Seite (Lenkimpuls) und bremst.
+  const AUFSTELL_BRUCH_RECHTS = 0.55, AUFSTELL_BRUCH_LINKS = 0.15;
+  function aufstellHaltBruch(platz) { return platz >= 0 && platz % 2 ? AUFSTELL_BRUCH_LINKS : AUFSTELL_BRUCH_RECHTS; }
+  // Steht der Ort (Kachel + Phase) auf der Zielkachel und mindestens am Haltepunkt?
+  function aufstellAmPunkt(o, ziel, platz) {
+    if (o === null || o === undefined || Math.floor(o) !== ziel) return false;
+    return (o - Math.floor(o)) >= aufstellHaltBruch(platz) - 1e-9;
   }
   function randHaltStarten(car, opt) {
     const g = car.ghost;
@@ -4942,6 +4982,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                    randMs: opt.randMs || 0, haltMs: opt.haltMs || PIT_BREMS_MS, fertig: opt.fertig || null,
                    nachRandMs: opt.nachRandMs || 0, randErreicht: 0,
                    radLenk: opt.radLenk || 0, radMs: opt.radMs || 0, gegenMs: opt.gegenMs || 0,
+                   radTempo: opt.radTempo || 0,
                    bremsMs: opt.bremsMs || 0, endLenk: opt.endLenk || 0, gegenschubMs: opt.gegenschubMs || 0,
                    gegenschubRadMs: opt.gegenschubRadMs || 0, radEnde: 0, nominal: !!opt.nominal,
                    tempoAb: opt.tempoAb || 0,
@@ -5966,7 +6007,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     if (!g.scHeim) return;
     g.scHeim = false;
-    randHaltStarten(sc, { quer: FINISH_RAND, randMs: SC_RAND_MS, radLenk: SC_RAD_LENK * einparkStaerke(), radMs: EINPARK_MS, gegenMs: EINPARK_MS, fertig: safetyCarFertig });
+    randHaltStarten(sc, { quer: FINISH_RAND, randMs: SC_RAND_MS, radLenk: SC_RAD_LENK * einparkStaerke(), radMs: einparkMs(), gegenMs: einparkMs(), fertig: safetyCarFertig });
     log(garageLabel(sc) + ': Safety Car faehrt rechts ran.', 'info');
   }
   // ---- DIE ERSTE RUNDE (v1.0.37) -----------------------------------------------------------
@@ -6063,7 +6104,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Am Rand der Fahrbahn: kurzer Lenkimpuls und zurueck. Neben die Strecke: lange voll rechts, dann voll links.
     randHaltStarten(car, { quer: FINISH_RAND, randMs: SC_RAND_WARTE_MS, tempo: aus ? scEinfahrtTempo() : undefined,
                            radLenk: aus ? SC_AUSFAHRT_LENK : SC_RAD_LENK * einparkStaerke(),
-                           radMs: aus ? scAusfahrtMs() : EINPARK_MS, gegenMs: aus ? scAusfahrtLinksMs() : EINPARK_MS,
+                           radMs: aus ? scAusfahrtMs() : einparkMs(), gegenMs: aus ? scAusfahrtLinksMs() : einparkMs(),
                            bremsMs: aus ? scGegenschubMs() + SC_AUSROLL_MS : 0, endLenk: aus ? scEndLenk() : 0,
                            gegenschubMs: aus ? scGegenschubMs() : 0, gegenschubRadMs: aus ? scGegenschubRadMs() : 0,
                            tempoAb: aus ? fenster : 0,
@@ -9902,7 +9943,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // nebeneinander liegt, ist damit gesagt.
       if (raceFormationLap) weave = formationOffset(g, g.gridPos, now);
       else if (g.aufstellZiel !== undefined && g.aufstellZiel !== null) {
-        weave = formationOffset(g, g.gridPos, now, aufstellBreite(g, car, g.aufstellZiel));
+        // v1.1.3: Mittelgasse - genau mittig bis zum eigenen Haltepunkt (dort lenkt der Impuls).
+        weave = 0;
       }
       if (ghostCfg.railMode) {
         // Zero steering plus the anti-ramming offset. There is no lateral feedback to close

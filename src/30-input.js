@@ -437,7 +437,8 @@
     // Auto. raceScreenPad() prueft selbst, ob der Schirm offen ist, und verstellt bei der
     // angewaehlten Dauer/Runden-Zeile - sonst bleibt links/rechts beim Schirmblaettern.
     if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)
-        && typeof raceScreenOffen === 'function' && raceScreenOffen()) {
+        && typeof raceScreenOffen === 'function' && raceScreenOffen()
+        && !(typeof vfAktiv === 'function' && vfAktiv())) {
       const dir = e.key === 'ArrowUp' ? 'up' : e.key === 'ArrowDown' ? 'down'
                 : e.key === 'ArrowLeft' ? 'left' : 'right';
       raceScreenPad(dir);

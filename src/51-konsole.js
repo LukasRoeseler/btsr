@@ -64,6 +64,8 @@
   // MENUE statt FAHREN: ueberall ausser im Cockpit, und im Cockpit, solange dessen Menue
   // offen ist. Daran haengt, ob Kreuz/Kreis/Quadrat/L1/R1/Options Menue- oder Fahrtasten sind.
   function konsoleMenue() {
+    // v1.1.3: in der virtuellen Fahrt faehrt das Pad, kein Menue (60d-virtuell.js).
+    if (typeof vfAktiv === 'function' && vfAktiv()) return false;
     return kAktiverTab() !== 'race' || kFrageOffen
       || (typeof konsoleTourOffen === 'function' && konsoleTourOffen());
   }
@@ -1030,8 +1032,18 @@
     kn('fa-verbinden', () => { konsoleVerbinden(); });
     kn('fa-garage', () => konsoleZeige('garage'));
     kn('fa-start', () => { konsoleLosfahren(); });
-    kn('fa-renn', () => konsoleZeige('control'));
-    kn('fa-strecke', (e) => { if (!e.target.closest('.k-knopf')) konsoleZeige('track'); });
+    // v1.1.3 BESTELLT: "Tippe ich bei der Kachel STRECKE auf STRECKE oder AUF DER BAHN, soll
+    // umgeschaltet werden; tippe ich auf das Bild, oeffnet sich das Menue dazu." Vorher schaltete nur
+    // der Text selbst um, ein Tipp daneben in der Kopfzeile oeffnete das Menue. Jetzt oeffnet nur das
+    // Bild (und Gamepad/Tastatur, die die Kachel als Ganzes ausloesen: e.target ist dann die Kachel),
+    // alles andere ausser den Knoepfen schaltet um.
+    const kachelKlick = (quad, oeffnen) => (e) => {
+      if (e.target.closest('.k-knopf')) return;
+      if (e.target === e.currentTarget || e.target.closest('.k-kb')) { oeffnen(); return; }
+      konsoleQuadWechsel(quad, 1);
+    };
+    kn('fa-renn', kachelKlick('renntyp', () => konsoleZeige('control')));
+    kn('fa-strecke', kachelKlick('bahn', () => konsoleZeige('track')));
     kn('fa-scan', () => konsoleZeige('track', 'scan'));
     kn('fa-editor', () => konsoleZeige('track', 'edit'));
     kn('fa-laden', () => konsoleZeige('track', 'laden'));
@@ -1044,17 +1056,7 @@
     // BESTELLT: "wenn ich auf den Header tippe, soll es zur naechsten Option schalten".
     // Der Kachelkopf (Titel + Wert) dreht die Schaltstellung weiter, der Rest der Kachel
     // oeffnet wie bisher die Unterseite. Das Gamepad bleibt unveraendert (Quadrat/links/rechts).
-    [['fa-strecke', 'bahn'], ['fa-renn', 'renntyp']]
-      .forEach(([tileId, quad]) => {
-        const tile = $(tileId);
-        if (!tile) return;
-        tile.querySelectorAll('.k-kk, .k-kt').forEach((el) => {
-          el.addEventListener('click', (e) => {
-            e.stopPropagation();
-            konsoleQuadWechsel(quad, 1);
-          });
-        });
-      });
+    // (v1.1.3: das Umschalten steckt jetzt in kachelKlick oben - fuer die ganze Kachel ausser dem Bild.)
     // Die Pfeile des Motorsound-Kachelkopfs blaettern vor und zurueck (nicht das Gamepad).
     document.querySelectorAll('.k-arrow').forEach((el) => {
       el.addEventListener('click', (e) => {

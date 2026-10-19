@@ -148,6 +148,11 @@
     d.kat = k; d.woche = i + 1; d.sets = CH_KAT_SETS[k]; CH_ALLE.push(d);
   }));
   CH_DAUER.forEach((d) => CH_ALLE.push(d));
+  // v1.1.3 BESTELLT: Fahrverhaltens-Challenge der Studie (98f-studie.js). Homington aus der
+  // Grundpackung, 5 Runden, Sim+, trocken. Bewusst NICHT in CH_ALLE: keine Bestenliste, keine
+  // Medaillen, kein Upload unter einem Namen - die Werte gehen nur mit der Studie hinaus.
+  const CH_STUDIE = { id: 'studie-homington', name: 'Homington', code: 'SGR2GRGRLR3G@270', runden: 5,
+                      kat: 'E', sets: ['grund'], studie: true, preset: 'simplus' };
   // BESTELLT (Balkonia): ein festes Wetterfenster im Rennen (z. B. "Regen von Minute 2 bis 4").
   // Der Plan wird beim Anwenden der Challenge aus def.wx gebaut und im Rennstart (70-race.js)
   // ueber den vorhandenen mpWetter-Mechanismus gefahren; nach dem Lauf zurueckgesetzt.
@@ -301,6 +306,7 @@
   function chDef(id) {
     const c = CH_ALLE.find((x) => x.id === id);
     if (c) return c;
+    if (id === CH_STUDIE.id) return CH_STUDIE;
     // Community-Strecke als Challenge fahren: die Strecke wird aus dem eingereichten Code
     // aufgebaut, ein Lauf mit Ampel, Wertung nach erkannten Teilen.
     // Direkt nach Kennung, ohne Zusammenfuehrung: chDef laeuft auch im Fahrtakt.
@@ -1256,7 +1262,7 @@
     const def = chDef(chWahl);
     // v0.9.45: eine Community-Strecke faehrt mit der Abstimmung, die beim Einreichen gewaehlt
     // wurde; alle anderen Challenges wie bisher mit Pro.
-    const preset = def.community ? def.preset : chPreset;
+    const preset = (def.community || def.studie) ? def.preset : chPreset;
     chLauf = { id: def.id, modus: chModus, preset, phase: 'stehen', stillSeit: 0,
                hinweisAt: 0, fruehstart: false, probe: !playerCar, merk: chMerken(),
                gelesen: [], pruefung: [], geaendert: false, pruefAt: 0,
@@ -1274,6 +1280,12 @@
   // alles auf dem Startbildschirm." Der Startbildschirm fragt den Namen ab (Pflicht, sonst
   // startet nichts), zeigt das angeschlossene Auto und speichert den Namen fuer die
   // Bestenliste. Fuer Nicht-Challenge-Fahrten ist das nicht noetig.
+  // Fuer die Studie: die Studienstrecke als Rennen starten (Ampel, Teilepruefung wie jede Challenge).
+  function studieChallengeStarten() {
+    chWahl = CH_STUDIE.id; chModus = 'rennen'; chSpiegel = false;
+    challengeStarten();
+    return !!chLauf;
+  }
   function challengeStartenDialog() {
     const o = chOnline();
     const auto = playerCar ? garageLabel(playerCar) : '';
@@ -1418,6 +1430,13 @@
     chSperre(false);
     chZuruecksetzen(lauf.merk);
     chLetzt = erg;
+    // v1.1.3: die Studienfahrt geht nur an die Studie (kein Speichern als Challenge-Zeit, kein Upload).
+    if (def.studie) {
+      const stil = typeof fahrstilWerte === 'function' ? fahrstilWerte(rundenMs) : null;
+      if (typeof studieFahrtFertig === 'function') studieFahrtFertig(erg, stil);
+      chZeichneDetail();
+      return true;
+    }
     const schl = chSchluessel(erg.id, erg.modus, erg.preset);
     // BESTELLT: "Nach einem Rennen auch sagen, ob mein Ergebnis hochgeladen wurde."
     // chHochladen liefert true/false; ein Fehler beim Hochladen soll NICHT den ganzen
