@@ -1514,6 +1514,9 @@
     return n;
   }
   let garAufAuto = null;
+  // v1.1.3 BESTELLT: "Wenn ich virtuell klicke, dann sollen rechts noch Optionen kommen." true = rechts
+  // stehen die Optionen der virtuellen Fahrt (60d-virtuell.js) statt eines Autos.
+  let garVirtuellAuf = false;
   let garFotoFuer = null;
   function garageFarbeSetzen(car, id) {
     car.colorId = id;
@@ -1909,7 +1912,7 @@
       // Ein Tipp auf die Zeile waehlt das Auto fuer die rechte Seite.
       row.onclick = (e) => {
         if (e.target.closest('button, input, select')) return;
-        if (garAufAuto !== car) { garAufAuto = car; renderGarage(); }
+        if (garAufAuto !== car || garVirtuellAuf) { garAufAuto = car; garVirtuellAuf = false; renderGarage(); }
       };
       row.querySelectorAll('button[data-act="rolle"]').forEach((b) => {
         b.onclick = (e) => {
@@ -1919,12 +1922,14 @@
           const k = fr.findIndex((r) => r.id === car.role);
           const n = fr[((k < 0 ? fr.length - 1 : k) + +b.dataset.d + fr.length) % fr.length];
           garAufAuto = car;
+          garVirtuellAuf = false;
           setCarRole(car, n.id);
         };
       });
       // Steuerkreuz links/rechts auf der Zeile (menuNavAdjust verstellt das versteckte Feld).
       row.querySelector('select.gk-rolle-wahl').addEventListener('change', (e) => {
         garAufAuto = car;
+        garVirtuellAuf = false;
         setCarRole(car, e.target.value);
       });
       links.appendChild(row);
@@ -1950,12 +1955,16 @@
     const virtKnopf = document.createElement('button');
     virtKnopf.type = 'button';
     virtKnopf.innerHTML = t('Virtuell fahren') + ' <span class="wip-tag">WIP</span>';
-    virtKnopf.onclick = () => { if (typeof virtuellStarten === 'function') virtuellStarten(); };
+    virtKnopf.setAttribute('aria-pressed', garVirtuellAuf ? 'true' : 'false');
+    if (garVirtuellAuf) virtKnopf.classList.add('primary');
+    virtKnopf.onclick = () => { garVirtuellAuf = true; renderGarage(); };
     virt.appendChild(virtKnopf);
     links.appendChild(virt);
-    // Rechte Seite: das gewaehlte Auto.
-    const car = garAufAuto;
-    if (car) {
+    // Rechte Seite: das gewaehlte Auto, oder die Optionen der virtuellen Fahrt.
+    const car = garVirtuellAuf ? null : garAufAuto;
+    if (garVirtuellAuf && typeof vfGarageOptionen === 'function') {
+      vfGarageOptionen(rechts);
+    } else if (car) {
       const kopf = document.createElement('h3');
       kopf.className = 'gar-a-titel';
       kopf.setAttribute('data-i18n-skip', '');

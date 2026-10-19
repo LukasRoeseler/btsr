@@ -421,28 +421,101 @@
     VF.raf = requestAnimationFrame(vfBild);
     showHudToast(t('Virtuelle Fahrt: frei fahren, ✕ beendet'));
   }
+  // ---- Optionen rechts in der Garage (v1.1.3) ---------------------------------------------
+  // BESTELLT: "Wenn ich virtuell klicke, dann sollen rechts noch Optionen kommen - aktuell erstmal nur
+  // Motorsound, den ich da aus den ueblichen Optionen auswaehlen kann." Dieselbe Liste wie Optionen ->
+  // Ton, eigene Wahl fuer die virtuelle Fahrt ("Wie in Optionen" = die dortige). Darunter steht, was
+  // der Ton gerade tut - GEMELDET war zweimal "Motorsound funktioniert nicht", und ohne Anzeige ist
+  // nicht zu sehen, ob die Aufnahme fehlt, noch laedt oder der Ersatzton spielt.
+  const VF_MOTOR_STORE = 'omegasim-vf-motor';
+  function vfMotorGewaehlt() { try { return localStorage.getItem(VF_MOTOR_STORE) || ''; } catch (e) { return ''; } }
+  function vfMotorZiel() { return vfMotorGewaehlt() || ($('sound-profile') ? $('sound-profile').value : ''); }
+  // Wirklich geladen: buffers[k] steht schon als {} da, waehrend die Schleifen noch laden.
+  function vfTonGeladen(k) { return !!(k && sampleEngine.buffers[k] && powerBands(k).length); }
+  // Aus einem Klick heraus: Tonausgabe anwerfen und die Aufnahmen holen (auch ein zweites Mal, wenn
+  // das erste Laden gescheitert ist).
+  function vfTonVorbereiten() {
+    try {
+      if (!soundEnabled) return;
+      initEngineSound();
+      if (audioCtx && audioCtx.state !== 'running') audioCtx.resume();
+      if (!sampleEngine.ready && !sampleEngine.loading) loadEngineSamples();
+    } catch (e) { /* ohne Ton weiter */ }
+  }
+  function vfTonStatus() {
+    if (!soundEnabled) return t('Ton ist aus (Optionen > Ton).');
+    if (location.protocol === 'file:') return t('Direkt von der Festplatte geöffnet: hier lassen sich die Aufnahmen nicht laden, es spielt der Ersatzton. Mit „Start OmegaSim.bat“ starten.');
+    if (audioCtx && audioCtx.state !== 'running') return t('Ton wartet auf einen Tipp.');
+    const k = vfMotorZiel();
+    if (VF.aktiv && sampleEngine.nodes && sampleEngine.car === k) return t('Aufnahme spielt.');
+    if (vfTonGeladen(k)) return t('Aufnahme geladen und bereit.');
+    if (sampleEngine.loading) return t('Aufnahmen werden geladen …');
+    return t('Keine Aufnahmen gefunden – es spielt der Ersatzton.');
+  }
+  function vfGarageOptionen(rechts) {
+    vfTonVorbereiten();
+    const kopf = document.createElement('h3');
+    kopf.className = 'gar-a-titel';
+    kopf.textContent = t('Virtuelles Auto');
+    rechts.appendChild(kopf);
+    const sel = $('sound-profile');
+    const global = sel && sel.selectedIndex >= 0 ? motorNamen(sel.options[sel.selectedIndex]) : '';
+    const werte = [{ v: '', name: t('Wie in Optionen') + (global ? ' (' + global + ')' : '') }]
+      .concat(sel ? [...sel.options].filter((o) => o.value).map((o) => ({ v: o.value, name: motorNamen(o) })) : []);
+    const j = Math.max(0, werte.findIndex((w) => w.v === vfMotorGewaehlt()));
+    const wahl = (d) => {
+      const n = werte[(j + d + werte.length) % werte.length].v;
+      try { if (n) localStorage.setItem(VF_MOTOR_STORE, n); else localStorage.removeItem(VF_MOTOR_STORE); } catch (e) { /* egal */ }
+      renderGarage();
+    };
+    rechts.appendChild(garWertZeile(t('Motorsound'), werte[j].name, () => wahl(-1), () => wahl(1)));
+    const status = document.createElement('p');
+    status.className = 'muted vf-ton-status';
+    status.textContent = vfTonStatus();
+    rechts.appendChild(status);
+    const iv = setInterval(() => {
+      if (!status.isConnected) { clearInterval(iv); return; }
+      const s = vfTonStatus();
+      if (status.textContent !== s) status.textContent = s;
+    }, 500);
+    const z = document.createElement('div');
+    z.className = 'opt-row opt-breit gar-a-aktion';
+    const los = document.createElement('button');
+    los.type = 'button';
+    los.className = 'primary';
+    los.dataset.vf = 'los';
+    los.textContent = t('Losfahren');
+    los.onclick = () => virtuellStarten();
+    z.appendChild(los);
+    rechts.appendChild(z);
+  }
+
   // v1.1.3 GEMELDET: "ein komischer hoher Ton ab und zu" und BESTELLT "auch Motorensounds". Ohne
   // gestarteten Aufnahme-Motor spielt die App den einfachen Oszillator (ein Ton, der mit der Drehzahl
   // steigt). Der Start ist ein Klick, also darf der Ton hier anlaufen: Aufnahmen laden und den
   // gewaehlten Motor starten, sonst den ersten geladenen.
+  // Der gewaehlte Motor (Optionen rechts in der Garage). Ist er noch nicht geladen, spielt solange ein
+  // geladener, und der Takt wechselt, sobald der gewaehlte da ist. Beim Beenden kommt der vorherige
+  // Motor wieder.
   function vfMotorsound() {
     try {
       if (!soundEnabled) return;
-      initEngineSound();
-      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      vfTonVorbereiten();
+      VF.motorVorher = sampleEngine.nodes ? sampleEngine.car : null;
       const starte = () => {
-        if (sampleEngine.nodes) return true;
-        const wahl = $('sound-profile') ? $('sound-profile').value : '';
-        const k = SAMPLE_CARS.indexOf(wahl) >= 0 && sampleEngine.buffers[wahl] ? wahl
-          : SAMPLE_CARS.find((c) => sampleEngine.buffers[c]);
-        if (!k || !startSampleEngine(k)) return false;
-        VF.motorVonUns = true;
-        return true;
+        const k = vfMotorZiel();
+        const nimm = vfTonGeladen(k) ? k : SAMPLE_CARS.find(vfTonGeladen);
+        if (!nimm) return false;
+        if (!(sampleEngine.nodes && sampleEngine.car === nimm)) {
+          if (!startSampleEngine(nimm)) return false;
+          VF.motorVonUns = true;
+        }
+        return nimm === k || (!sampleEngine.loading && !vfTonGeladen(k));
       };
-      if (!sampleEngine.ready && !sampleEngine.loading) loadEngineSamples();
+      clearInterval(VF.tonIv);
       if (!starte()) {
         let n = 0;
-        const iv = setInterval(() => { n++; if (!VF.aktiv || starte() || n > 40) clearInterval(iv); }, 250);
+        VF.tonIv = setInterval(() => { n++; if (!VF.aktiv || starte() || n > 240) clearInterval(VF.tonIv); }, 250);
       }
     } catch (e) { /* ohne Ton weiterfahren */ }
   }
@@ -468,12 +541,18 @@
     }
     VF.tilesVorher = undefined;
     // Den selbst gestarteten Motor wieder aus, wenn kein echtes Auto mehr da ist.
-    if (VF.motorVonUns && !garage.length) { try { stopSampleEngine(); } catch (e) { /* egal */ } }
-    VF.motorVonUns = false;
+    clearInterval(VF.tonIv);
+    try {
+      if (VF.motorVorher && sampleEngine.car !== VF.motorVorher) startSampleEngine(VF.motorVorher);
+      else if (VF.motorVonUns && !VF.motorVorher && !garage.length) stopSampleEngine();
+    } catch (e) { /* egal */ }
+    VF.motorVonUns = false; VF.motorVorher = null;
     if (VF.vorherSpieler && garage.indexOf(VF.vorherSpieler) >= 0 && VF.vorherRolle) setCarRole(VF.vorherSpieler, VF.vorherRolle);
     trackMode = VF.trackModeVorher || trackMode;
     if (VF.schicht) VF.schicht.remove();
     VF.schicht = null; VF.gl = null;
     renderGarage();
+    // Zurueck in die Garage, wo die Optionen der virtuellen Fahrt stehen (dort startet die naechste).
+    if (typeof showTab === 'function') showTab('garage');
   }
   window.addEventListener('keydown', (e) => { if (VF.aktiv && e.key === 'Escape') { e.stopImmediatePropagation(); virtuellBeenden(); } }, true);

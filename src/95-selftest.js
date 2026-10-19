@@ -14956,6 +14956,11 @@
     if (!(Math.abs(roll.r * 20) <= VF_GT3.muH * 9.81)) f.push('Querbeschleunigung ueber der Haftung: ' + (roll.r * 20).toFixed(1));
     if (!(Math.abs(gas.aH) > Math.abs(roll.aH))) f.push('kein Uebersteuern unter Gas: ' + gas.aH + ' / ' + roll.aH);
     const gefangen = lauf(20, 0, 0, 2, lauf(20, 1, 0.8, 1));
+    // Optionen rechts in der Garage: Motorsound-Zeile, Tonstatus, Losfahren.
+    const vfBox = document.createElement('div');
+    vfGarageOptionen(vfBox);
+    if (!vfBox.querySelector('[data-vf="los"]') || !vfBox.querySelector('.gk-zeile') || !vfBox.querySelector('.vf-ton-status')) f.push('Garagen-Optionen unvollstaendig');
+    if (vfTonGeladen('') || vfTonGeladen('gibtsnicht')) f.push('vfTonGeladen meldet Leeres als geladen');
     if (!(Math.abs(gefangen.r) < 0.05 && Math.abs(gefangen.vy) < 0.3)) f.push('faengt sich nicht: r ' + gefangen.r + ' vy ' + gefangen.vy);
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'geradeaus ' + soll.toFixed(1) + ' E/s, Haftgrenze 1 g, Ort und Codes stimmen' };
   });

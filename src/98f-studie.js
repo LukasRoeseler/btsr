@@ -82,8 +82,8 @@
         + '<div class="opt-row"><div class="opt-label">' + stEsc(t('Alter')) + '</div><input type="number" id="st-alter" min="18" max="99" step="1" style="width:84px" value="' + stEsc(st.alter) + '"></div>'
         + '<div class="opt-row"><div class="opt-label">' + stEsc(t('Geschlecht')) + '</div><select id="st-geschlecht"><option value="">–</option>'
         + STUDIE_GESCHLECHT.map((g) => '<option value="' + g[0] + '"' + (st.geschlecht === g[0] ? ' selected' : '') + '>' + stEsc(t(g[1])) + '</option>').join('') + '</select></div>'
-        + '<div class="opt-row"><div class="opt-label">' + stEsc(t('Ich bin mindestens 18 Jahre alt.')) + '</div><label class="tgl"><input type="checkbox" id="st-18"' + (st.volljaehrig ? ' checked' : '') + '></label></div>'
-        + '<div class="opt-row"><div class="opt-label">' + stEsc(t('Ich habe den Text gelesen, nehme freiwillig teil und bin einverstanden, dass meine Daten in anonymisierter Form öffentlich zugänglich gemacht werden.')) + '</div><label class="tgl"><input type="checkbox" id="st-ok"' + (st.einwilligung ? ' checked' : '') + '></label></div>'
+        + '<div class="opt-row"><div class="opt-label">' + stEsc(t('Ich bin mindestens 18 Jahre alt.')) + '</div><label class="tgl"><input type="checkbox" id="st-18"' + (st.volljaehrig ? ' checked' : '') + '><span></span></label></div>'
+        + '<div class="opt-row"><div class="opt-label">' + stEsc(t('Ich habe den Text gelesen, nehme freiwillig teil und bin einverstanden, dass meine Daten in anonymisierter Form öffentlich zugänglich gemacht werden.')) + '</div><label class="tgl"><input type="checkbox" id="st-ok"' + (st.einwilligung ? ' checked' : '') + '><span></span></label></div>'
         + '<p class="muted" id="st-hinweis"></p>'
         + '<div class="studie-knoepfe"><button type="button" class="primary" data-st="weiter" id="st-weiter">' + stEsc(t('Weiter')) + '</button></div>';
     } else if (st.schritt === 'narq') {
