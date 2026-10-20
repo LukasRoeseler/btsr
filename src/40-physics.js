@@ -510,7 +510,9 @@
         // Aus heisst: kein einziger Rechenschritt davon laeuft, und "Physik" ist bitgleich
         // mit dem Stand davor (Selbsttest "Physik bitgleich").
         pacejka: false,
-        pacejkaUebersteuern: true,   // BESTELLT: "evtl. sage ich spaeter, Uebersteuern aus"
+        // v1.1.25 BESTELLT: "Schalte bei den Pacejka-Presets aus, dass das Auto uebersteuert, also weiterlenkt,
+        // obwohl ich selbst nicht lenke, und gib mir die Option, das wieder anzustellen." Ab Werk aus.
+        pacejkaUebersteuern: false,
         // Die Haftgrenze in Einheiten der Querausnutzung (latUse ohne Deckel). 0,7 heisst:
         // voller Einschlag ist ab etwa 115 km/h am Limit, halber ab 230 - dieselbe Skala,
         // die auch das Quietschen benutzt (TYRE_SQUEAL_START 0,6 liegt knapp darunter).

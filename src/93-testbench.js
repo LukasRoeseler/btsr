@@ -79,6 +79,23 @@
       carRetag(); renderGarage();
       return garage.filter((c) => c.probe).length;
     },
+    // v1.1.25: Aufstellungsschirm und Podest fuer die Sichtpruefung (mit garageProbe-Autos).
+    gridZeigen() { raceGridAnzeigen(null); return $('race-gridscreen') ? !$('race-gridscreen').hidden : false; },
+    gridZu() { const gs = $('race-gridscreen'); if (gs) gs.hidden = true; },
+    podestProbe(an) {
+      const autos = garage.filter((c) => c.probe);
+      if (an) {
+        autos.forEach((c, i) => { c.race = c.race || {}; c.race.laps = [{ ms: 9000 + i * 400 }, { ms: 9100 + i * 300 }]; });
+        this._podestMerk = raceState; raceState = 'finished';
+      } else {
+        autos.forEach((c) => { if (c.race) c.race.laps = []; });
+        raceState = this._podestMerk || 'idle';
+      }
+      ovPodestMalen();
+      if (an) { showTab('race'); cockpitScreenZu('uebersicht'); ovScreenRender(); }
+      const h = $('ov-podest');
+      return h ? { sichtbar: !h.hidden, bilder: h.querySelectorAll('.ov-auto').length } : null;
+    },
     garageProbeWeg() {
       for (let i = garage.length - 1; i >= 0; i--) if (garage[i].probe) garage.splice(i, 1);
       garAufAuto = null; renderGarage();

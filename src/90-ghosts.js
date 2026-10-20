@@ -1923,7 +1923,6 @@
       const f = carColor(car);
       const foto = autoFoto(car);
       const rolle = GAR_ROLLEN.find((r) => r.id === car.role) || GAR_ROLLEN.find((r) => r.id === 'none');
-      const frei = garRollenFrei(car);
       const bild = foto
         ? 'background-image:url("' + foto + '")'
         : 'background:linear-gradient(135deg,' + f.hex + ' 0%,' + f.hex + ' 55%,rgba(0,0,0,.55) 100%);color:' + f.ink;
@@ -1933,14 +1932,10 @@
         <div class="gk-bild${foto ? ' mit-foto' : ''}" style='${bild}'>${foto ? '' : `<span class="gk-zeichen">${car.tagChar || ''}</span>`}</div>
         <div class="gk-text"><b data-i18n-skip>${esc(name)}</b>
           <span class="gar-id" data-i18n-skip>${esc(car.tag || '')} &middot; ${esc(String(car.device.id).slice(0, 10))}${car.blinking ? ' &middot; ' + t('blinkt') : ''}${garAkkuText(car)}</span></div>
-        <div class="gk-rolle" data-rollen="${GAR_ROLLEN.map((r) => r.id).join(',')}" data-rolle="${rolle.id}">
-          <button type="button" data-act="rolle" data-d="-1" aria-label="Rolle zurück">&#9664;</button>
+        <div class="gk-rolle gk-rolle-nur" data-rollen="${GAR_ROLLEN.map((r) => r.id).join(',')}" data-rolle="${rolle.id}">
           <b>${t(rolle.name)}</b>${zusatzPlatzVonRolle(rolle.id) ? '<span class="wip-tag">experimentell</span>'
             : ''}
-          <button type="button" data-act="rolle" data-d="1" aria-label="Rolle vor">&#9654;</button>
-        </div>
-        <select class="gk-rolle-wahl" hidden data-preset-skip data-blaettern="1" aria-label="Rolle">${frei.map((r) =>
-          `<option value="${r.id}"${r.id === car.role ? ' selected' : ''}>${r.name}</option>`).join('')}</select>`;
+        </div>`;
       row._car = car;
       row.onmouseenter = () => garageBlinkSanft(car);
       // Ein Tipp auf die Zeile waehlt das Auto fuer die rechte Seite.
@@ -1948,24 +1943,9 @@
         if (e.target.closest('button, input, select')) return;
         if (garAufAuto !== car || garVirtuellAuf) { garAufAuto = car; garVirtuellAuf = false; renderGarage(); }
       };
-      row.querySelectorAll('button[data-act="rolle"]').forEach((b) => {
-        b.onclick = (e) => {
-          e.stopPropagation();
-          // Nur FREIE Rollen (v0.9.6), siehe garRollenFrei.
-          const fr = garRollenFrei(car);
-          const k = fr.findIndex((r) => r.id === car.role);
-          const n = fr[((k < 0 ? fr.length - 1 : k) + +b.dataset.d + fr.length) % fr.length];
-          garAufAuto = car;
-          garVirtuellAuf = false;
-          setCarRole(car, n.id);
-        };
-      });
-      // Steuerkreuz links/rechts auf der Zeile (menuNavAdjust verstellt das versteckte Feld).
-      row.querySelector('select.gk-rolle-wahl').addEventListener('change', (e) => {
-        garAufAuto = car;
-        garVirtuellAuf = false;
-        setCarRole(car, e.target.value);
-      });
+      // v1.1.25 BESTELLT: "Zeige in der Garage links je Auto die Rolle an, aber mach, dass ich sie rechts
+      // ganz oben einstelle." Links steht die Rolle nur noch als Etikett; eingestellt wird sie rechts in der
+      // ersten Zeile (garRollenZeile).
       links.appendChild(row);
     });
     // Aktionen, einspaltig unter den Autos.
@@ -2006,6 +1986,7 @@
       kopf.setAttribute('data-i18n-skip', '');
       kopf.textContent = car.alias || car.tag || garageLabel(car);
       rechts.appendChild(kopf);
+      rechts.appendChild(garRollenZeile(car));
       // Name
       const zn = document.createElement('div');
       zn.className = 'opt-row gk-zeile gar-a-name';
@@ -2062,6 +2043,42 @@
     list.appendChild(rechts);
     refreshGarageGo();
     garAktionenAbgleichen();
+  }
+
+  // Die Rolle des gewaehlten Autos, als erste Zeile rechts: Pfeile wie bisher (nur FREIE Rollen, v0.9.6),
+  // dazu das versteckte Feld, das Steuerkreuz links/rechts verstellt (menuNavAdjust).
+  function garRollenZeile(car) {
+    const rolle = GAR_ROLLEN.find((r) => r.id === car.role) || GAR_ROLLEN.find((r) => r.id === 'none');
+    const frei = garRollenFrei(car);
+    const z = document.createElement('div');
+    z.className = 'opt-row gk-zeile gar-a-rolle' + (car.role === 'player' ? ' is-player'
+      : zusatzPlatzVonRolle(car.role) ? ' is-zwei' : car.role === 'ghost' ? ' is-ghost'
+      : car.role === 'safetycar' ? ' is-safety' : car.role === 'challenger' ? ' is-challenger' : '');
+    z.innerHTML = `<span class="gk-l">${t('Rolle')}</span>
+      <span class="gk-w gk-rolle" data-rollen="${GAR_ROLLEN.map((r) => r.id).join(',')}" data-rolle="${rolle.id}">
+        <button type="button" data-act="rolle" data-d="-1" aria-label="Rolle zurück">&#9664;</button>
+        <b>${t(rolle.name)}</b>${zusatzPlatzVonRolle(rolle.id) ? '<span class="wip-tag">experimentell</span>' : ''}
+        <button type="button" data-act="rolle" data-d="1" aria-label="Rolle vor">&#9654;</button>
+      </span>
+      <select class="gk-rolle-wahl" hidden data-preset-skip data-blaettern="1" aria-label="Rolle">${frei.map((r) =>
+        `<option value="${r.id}"${r.id === car.role ? ' selected' : ''}>${r.name}</option>`).join('')}</select>`;
+    z.querySelectorAll('button[data-act="rolle"]').forEach((b) => {
+      b.onclick = (e) => {
+        e.stopPropagation();
+        const fr = garRollenFrei(car);
+        const k = fr.findIndex((r) => r.id === car.role);
+        const n = fr[((k < 0 ? fr.length - 1 : k) + +b.dataset.d + fr.length) % fr.length];
+        garAufAuto = car;
+        garVirtuellAuf = false;
+        setCarRole(car, n.id);
+      };
+    });
+    z.querySelector('select.gk-rolle-wahl').addEventListener('change', (e) => {
+      garAufAuto = car;
+      garVirtuellAuf = false;
+      setCarRole(car, e.target.value);
+    });
+    return z;
   }
 
   // "Losfahren" is the one button that turns a set of assigned roles into actually driving.

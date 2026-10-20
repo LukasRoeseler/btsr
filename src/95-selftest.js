@@ -5280,14 +5280,15 @@
   stAdd('Pacejka: Vollgas in der Kurve bringt das Heck, Vortrieb geht weg', () => {
     if (!OMEGA_TEST.pacejkaFolge) return { skip: true, mass: 'Probe fehlt' };
     const f = [];
-    const an = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [{ takte: 30, gas: 1, lenk: 0.8 }] })[0];
+    // v1.1.25: Uebersteuern ist ab Werk aus - hier ausdruecklich an.
+    const an = OMEGA_TEST.pacejkaFolge({ kmh: 150, patch: { pacejkaUebersteuern: true }, abschnitte: [{ takte: 30, gas: 1, lenk: 0.8 }] })[0];
     const aus = OMEGA_TEST.pacejkaFolge({ kmh: 150, patch: { pacejkaUebersteuern: false },
                                           abschnitte: [{ takte: 30, gas: 1, lenk: 0.8 }] })[0];
     if (an.maxUeber < 0.1) f.push('Vollgas bringt kein Uebersteuern (hinten ' + an.nutzH.toFixed(2) + ', vorn ' + an.nutzV.toFixed(2) + ')');
     if (!(an.minVortrieb < 0.8)) f.push('Vortrieb bleibt ' + an.minVortrieb.toFixed(2));
     if (!an.leistung) f.push('nicht als Leistungsuebersteuern erkannt');
     if (aus.maxUeber !== 0 || aus.minVortrieb !== 1) f.push('Schalter aus: Zuschlag ' + aus.maxUeber.toFixed(2) + ', Vortrieb ' + aus.minVortrieb.toFixed(2));
-    const halb = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [{ takte: 30, gas: 0.5, lenk: 0.8 }] })[0];
+    const halb = OMEGA_TEST.pacejkaFolge({ kmh: 150, patch: { pacejkaUebersteuern: true }, abschnitte: [{ takte: 30, gas: 0.5, lenk: 0.8 }] })[0];
     if (halb.maxUeber > 0) f.push('schon bei halbem Gas: ' + halb.maxUeber.toFixed(2));
     return { ok: !f.length, mass: f.length ? f.join('; ')
       : 'Zuschlag ' + an.maxUeber.toFixed(2) + ', Vortrieb bis ' + an.minVortrieb.toFixed(2) + ', aus: nichts, halbes Gas: nichts' };
@@ -5298,20 +5299,20 @@
     const f = [];
     const rutsch = { takte: 25, gas: 1, lenk: 0.8 };
     // Stick los, Gas bleibt: 0,7 s spaeter lenkt das Auto noch immer ein.
-    const a = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [rutsch, { takte: 16, gas: 1, lenk: 0 }] });
+    const a = OMEGA_TEST.pacejkaFolge({ kmh: 150, patch: { pacejkaUebersteuern: true }, abschnitte: [rutsch, { takte: 16, gas: 1, lenk: 0 }] });
     if (!(a[0].ueber > 0.1)) f.push('kein Rutsch vorher (' + a[0].ueber.toFixed(2) + ')');
     if (!(a[1].ueber > 0.8 * a[0].ueber)) f.push('ohne Stick klingt es ab: ' + a[0].ueber.toFixed(2) + ' -> ' + a[1].ueber.toFixed(2));
     if (!(Math.abs(a[1].servo) > 0.1)) f.push('ohne Stick lenkt das Auto nicht weiter (' + a[1].servo.toFixed(2) + ')');
     // Gegenlenken faengt. MASSVOLL gegengelenkt: mit -0,5 bei Vollgas faengt es den Rutsch
     // zwar, faehrt dann aber eine neue, scharfe Kurve in die andere Richtung - und die bringt
     // unter Vollgas wieder das Heck (gemessen). Das ist das Pendeln, kein Fehler.
-    const b = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [rutsch, { takte: 10, gas: 1, lenk: -0.2 }] });
+    const b = OMEGA_TEST.pacejkaFolge({ kmh: 150, patch: { pacejkaUebersteuern: true }, abschnitte: [rutsch, { takte: 10, gas: 1, lenk: -0.2 }] });
     if (!(b[1].ueber < 0.02)) f.push('Gegenlenken faengt nicht: ' + b[1].ueber.toFixed(2));
     // Pedal weg faengt.
-    const c = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [rutsch, { takte: 20, gas: 0, lenk: 0 }] });
+    const c = OMEGA_TEST.pacejkaFolge({ kmh: 150, patch: { pacejkaUebersteuern: true }, abschnitte: [rutsch, { takte: 20, gas: 0, lenk: 0 }] });
     if (!(c[1].ueber < 0.02)) f.push('vom Gas gehen faengt nicht: ' + c[1].ueber.toFixed(2));
     // Deckel: hoechstens pacejkaHaltMax, dann klingt es ab.
-    const d = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [rutsch, { takte: 70, gas: 1, lenk: 0 }] });
+    const d = OMEGA_TEST.pacejkaFolge({ kmh: 150, patch: { pacejkaUebersteuern: true }, abschnitte: [rutsch, { takte: 70, gas: 1, lenk: 0 }] });
     if (!(d[1].ueber < 0.05)) f.push('haelt ueber den Deckel hinaus: ' + d[1].ueber.toFixed(2));
     return { ok: !f.length, mass: f.length ? f.join('; ')
       : 'haelt ' + a[0].ueber.toFixed(2) + ' -> ' + a[1].ueber.toFixed(2) + ' ohne Stick, Gegenlenken, Pedal und Deckel fangen' };
@@ -11026,8 +11027,13 @@
       if (!karte()) return { ok: false, mass: 'keine Karte gezeichnet' };
       if (!/linear-gradient/.test(karte().querySelector('.gk-bild').getAttribute('style') || '')) f.push('ohne Foto nicht die Farbe als Bild');
       if (!$('gar-list').querySelector('.gar-karte-neu')) f.push('keine Zeile "+ Auto verbinden"');
-      if (!karte().classList.contains('opt-row') || !karte().querySelector('select.gk-rolle-wahl')) f.push('Auto-Zeile ist keine Optionszeile mit Rollenfeld');
-      karte().querySelector('[data-act="rolle"][data-d="1"]').click();
+      // v1.1.25: links nur das Etikett, eingestellt wird rechts ganz oben.
+      if (!karte().classList.contains('opt-row') || !karte().querySelector('.gk-rolle-nur')) f.push('Auto-Zeile zeigt die Rolle nicht als Etikett');
+      if (karte().querySelector('button[data-act="rolle"], select.gk-rolle-wahl')) f.push('links noch Rollen-Pfeile');
+      garAufAuto = att; renderGarage();
+      const rz = $('gar-list').querySelector('.gar-a-rechts .opt-row');
+      if (!rz || !rz.classList.contains('gar-a-rolle') || !rz.querySelector('select.gk-rolle-wahl')) f.push('Rolle nicht als erste Zeile rechts');
+      $('gar-list').querySelector('.gar-a-rechts [data-act="rolle"][data-d="1"]').click();
       if (att.role !== 'none') f.push('Rolle vor fuehrt zu ' + att.role + ' statt Aus');
       // Freie Rollen: hat ein anderes Auto "Spieler 1", bietet der Pfeil sie nicht an.
       const anderer = { role: 'player', device: { id: 'probe-andere' }, alias: '', colorId: 'blau', sim: false, testSenke: [] };
@@ -21106,10 +21112,16 @@
       npcZahlCache.at = 0;
       const ab = npcSendeAbstand();
       if (!(ab >= 100 && ab <= 140)) f.push('Abstand bei 4 NPCs ' + ab + ' ms');
-      for (let i = 0; i < 20; i++) {           // ~0,9 s im 45-ms-Takt, Gas wechselt staendig
-        for (const c of autos) { await writeToCar(c, 0, 0.3 + i * 0.01, 0); }
-        await new Promise((r) => setTimeout(r, 45));
-      }
+      // Feste Uhr statt echter Zeitgeber: im verborgenen Fenster sind die gedrosselt (gemessen: 53/s statt 37/s).
+      const echtPN = performance.now.bind(performance);
+      let uhr = echtPN() + 10000;
+      performance.now = () => uhr;
+      try {
+        for (let i = 0; i < 20; i++) {           // 0,9 s im 45-ms-Takt, Gas wechselt staendig
+          for (const c of autos) { await writeToCar(c, 0, 0.3 + i * 0.01, 0); }
+          uhr += 45;
+        }
+      } finally { performance.now = echtPN; }
       const proS = paket.length / 0.9;
       if (proS > 45) f.push('zu viele Pakete: ' + proS.toFixed(0) + '/s');
       const vor = paket.length;

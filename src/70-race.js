@@ -1573,13 +1573,37 @@
       : 'background:linear-gradient(135deg,' + f.hex + ' 0%,' + f.hex + ' 60%,rgba(0,0,0,.5) 100%);color:' + f.ink;
     return '<span class="grid-auto" style="' + stil + '" aria-hidden="true">' + (foto ? '' : (car.tagChar || '')) + '</span>';
   }
-  function raceGridZeilen(host) {
+  // v1.1.25 BESTELLT: "Mach eine kleine Animation, wenn ich die Autos neu sortiere, dann ist es einfacher,
+  // das nachzuvollziehen." FLIP: vor dem Neuzeichnen die Lage jeder Zeile merken, danach jede verschobene
+  // Zeile von ihrer alten Lage an ihren neuen Platz gleiten lassen; das bewegte Auto leuchtet kurz auf.
+  function gridLagenMerken(host) {
+    const m = new Map();
+    host.querySelectorAll('.grid-row[data-id]').forEach((r) => m.set(r.dataset.id, r.getBoundingClientRect()));
+    return m;
+  }
+  function gridGleiten(host, alt, bewegt) {
+    if (!alt || !alt.size || typeof Element.prototype.animate !== 'function') return;
+    host.querySelectorAll('.grid-row[data-id]').forEach((r) => {
+      const a = alt.get(r.dataset.id);
+      if (!a) return;
+      const n = r.getBoundingClientRect();
+      const dx = a.left - n.left, dy = a.top - n.top;
+      if (r.dataset.id === bewegt) r.classList.add('grid-bewegt');
+      // Auch bei "Bewegung reduzieren" im System: die Animation ist ausdruecklich bestellt und kurz.
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+      r.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px)' }, { transform: 'none' }],
+                { duration: GRID_GLEITEN_MS, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    });
+  }
+  const GRID_GLEITEN_MS = 320;
+  function raceGridZeilen(host, bewegt) {
     if (!host) return;
     const cars = raceGridCars();
     if (!cars.length) {
       host.innerHTML = '<p class="muted" style="margin:0">Keine Autos verbunden.</p>';
       return;
     }
+    const alt = bewegt ? gridLagenMerken(host) : null;
     host.innerHTML = '';
     cars.forEach((car, i) => {
       const row = document.createElement('div');
@@ -1609,8 +1633,19 @@
           if (to < 0 || to >= order.length) return;
           order.splice(to, 0, order.splice(from, 1)[0]);
           raceGridOrder = order;
-          raceGridZeilen(host);
+          raceGridZeilen(host, row.dataset.id);
+          // Der Fokus bleibt auf dem Pfeil des bewegten Autos, damit man es mehrmals weiterschieben kann.
+          const neu = host.querySelector('.grid-row[data-id="' + CSS.escape(row.dataset.id) + '"] button[data-mv="' + b.dataset.mv + '"]');
+          if (neu && !neu.disabled && document.activeElement === document.body) neu.focus({ preventScroll: true });
         };
+      });
+      // v1.1.25 BESTELLT: "Wenn ich dort auf ein Auto druecke, mach, dass es die Lichter blinkt."
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('button, .grid-handle')) return;
+        if (typeof blinkCar === 'function' && car.rx) blinkCar(car);
+        row.classList.remove('grid-blinkt');
+        void row.offsetWidth;
+        row.classList.add('grid-blinkt');
       });
       const handle = row.querySelector('.grid-handle');
       handle.addEventListener('dragstart', (e) => {
@@ -1631,10 +1666,11 @@
         if (from < 0 || to < 0) return;
         order.splice(to, 0, order.splice(from, 1)[0]);
         raceGridOrder = order;
-        raceGridZeilen(host);
+        raceGridZeilen(host, dragged);
       });
       host.appendChild(row);
     });
+    gridGleiten(host, alt, bewegt);
     const sc = garage.find(c => c.role === 'safetycar' && c.device);
     if (sc) {
       const row = document.createElement('div');
@@ -6776,7 +6812,7 @@
       } else if (fuehrer && x === fuehrer) {
         luecke = '\u2014';
       }
-      return { pos: i + 1, name: x.c.name, farbe: x.c.farbe, rolle: x.c.role,
+      return { pos: i + 1, name: x.c.name, farbe: x.c.farbe, rolle: x.c.role, id: x.c.id,
                runden: x.n, summe: x.summe, luecke, letzte: x.letzte, beste: x.beste,
                // Die schnellste Runde des ganzen Feldes wird hervorgehoben, wie auf einer
                // Zeittafel. Verglichen wird SPAETER, wenn alle Zeilen vorliegen.
@@ -6884,7 +6920,13 @@
       return;
     }
     host.hidden = false;
-    const nameHtml = (z) => '<span class="name"><i class="ov-farbe" style="background:'
+    // v1.1.25 BESTELLT: "Zeige die Autobildchen auf dem Gewinnerbildschirm." Ueber dem Namen das Bild aus der
+    // Garage (Foto oder Farbe mit Kennbuchstabe), wie auf dem Aufstellungsschirm.
+    const bildHtml = (z) => {
+      const car = z && z.id ? garage.find((c) => c.device && String(c.device.id) === z.id) : null;
+      return car ? gridAutoBild(car).replace('class="grid-auto"', 'class="grid-auto ov-auto"') : '';
+    };
+    const nameHtml = (z) => bildHtml(z) + '<span class="name"><i class="ov-farbe" style="background:'
       + (z.farbe || 'transparent') + '"></i>' + z.name + '</span>';
     let html;
     if (zeilen.length === 1) {

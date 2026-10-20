@@ -2142,6 +2142,10 @@
     font-size: clamp(10px, 1.5vw, 15px); font-weight: 800; overflow: hidden;
     text-overflow: ellipsis; white-space: nowrap; }
   .ov-podest .name.leer { opacity: 0; }
+  /* v1.1.25: Autobild ueber dem Namen; der Sieger etwas groesser. */
+  .ov-podest .ov-auto { width: auto; aspect-ratio: 1.65 / 1; height: clamp(22px, 8vh, 62px); font-size: clamp(11px, 3vh, 20px); }
+  .ov-podest .platz-1 .ov-auto, .ov-podest .platz-solo .ov-auto { height: clamp(26px, 10vh, 78px);
+    box-shadow: 0 0 0 2px #f5c518, 0 4px 14px rgba(0,0,0,.45); }
   .ov-podest .zeit { color: var(--gt3-strip-ink, #a9b2c4); font-family: monospace;
     font-size: clamp(9px, 1.2vw, 12px); }
   /* Die Gesamtzeit des Siegers: groesser und in der Goldfarbe, damit der Blick dort landet. */
@@ -3133,6 +3137,19 @@
   .gar-a-zeile.is-ghost .gk-rolle { background: #6b5bd6; color: #fff; }
   .gar-a-zeile.is-safety .gk-rolle { background: #f5c400; color: #1a1500; }
   .gar-a-zeile.is-ghost .gk-rolle button, .gar-a-zeile.is-player .gk-rolle button { color: inherit; }
+  /* v1.1.25: links nur das Etikett, eingestellt wird rechts in der ersten Zeile (gar-a-rolle). */
+  .gar-a-zeile .gk-rolle.gk-rolle-nur { grid-template-columns: minmax(0, 1fr); padding: 6px 4px; }
+  .gar-a-zeile .gk-rolle.gk-rolle-nur > b { grid-column: 1; }
+  .gar-a-rolle .gk-rolle { margin: 0; min-width: 190px; display: grid; grid-template-columns: 34px minmax(0, 1fr) 34px;
+    align-items: center; font-size: 14px; padding: 4px; }
+  .gar-a-rolle .gk-rolle > b { text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gar-a-rolle .gk-rolle > .wip-tag { grid-column: 1 / -1; justify-self: center; margin: 0; }
+  .gar-a-rolle .gk-rolle button { font-size: 15px; padding: 4px 8px; }
+  .gar-a-rolle.is-player .gk-rolle { background: var(--k-blau); color: var(--k-blau-text); }
+  .gar-a-rolle.is-zwei .gk-rolle { background: #ffb02e; color: #1a1100; }
+  .gar-a-rolle.is-ghost .gk-rolle { background: #6b5bd6; color: #fff; }
+  .gar-a-rolle.is-safety .gk-rolle { background: #f5c400; color: #1a1500; }
+  .gar-a-rolle.is-ghost .gk-rolle button, .gar-a-rolle.is-player .gk-rolle button { color: inherit; }
   .gar-a-aktion > button { width: 100%; text-align: left; }
   /* v0.9.24: die Knoepfe ganz unten groesser (Motorsound steht jetzt nur noch hier). */
   .gar-a-rechts .gar-a-aktion > button { min-height: 50px; font-size: clamp(14px, 1.8vw, 17px);
@@ -3690,8 +3707,16 @@
   .grid-handle:active { cursor: grabbing; }
   .grid-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
     white-space: nowrap; }
-  .grid-move { display: flex; gap: 4px; }
+  .grid-move { display: flex; gap: 6px; }
   .grid-move button { width: 30px; height: 30px; padding: 0; font-size: 13px; }
+  /* v1.1.25 BESTELLT: "Mache die Bilder der Autos und die Tasten mit den Pfeilen etwas groesser." */
+  .gt3-gridschirm .grid-auto { width: clamp(72px, 12vw, 136px); height: clamp(44px, 7.4vw, 82px); }
+  .gt3-gridschirm .grid-move button { width: clamp(40px, 5.6vw, 54px); height: clamp(40px, 5.6vw, 54px); font-size: clamp(16px, 2.2vw, 22px); }
+  .gt3-gridschirm .grid-row { cursor: pointer; }
+  .grid-row.grid-bewegt { animation: gridBewegt 900ms ease-out; }
+  @keyframes gridBewegt { 0%, 35% { box-shadow: 0 0 0 2px var(--accent, #0b84d6); } 100% { box-shadow: 0 0 0 0 transparent; } }
+  .grid-row.grid-blinkt .grid-auto { animation: gridBlinkt 1.5s steps(1, end); }
+  @keyframes gridBlinkt { 0%, 20%, 40%, 60%, 80% { filter: brightness(1.8); } 10%, 30%, 50%, 70%, 90%, 100% { filter: none; } }
 
   /* ---- Track editor: fullscreen and the symbol palette ----
      In fullscreen the map takes the whole screen and the palette sits UNDER it, small, so
@@ -4798,7 +4823,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.24</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.25</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5951,6 +5976,10 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Gewinnerschirm: Auf dem Podest steht &#252;ber jedem Namen das Autobild (Foto oder Farbe), der Sieger etwas gr&#246;&#223;er.</li>
+        <li>Aufstellungsschirm vor dem Rennstart: Beim Umsortieren gleiten die Autos an ihren neuen Platz, das bewegte Auto leuchtet kurz auf. Autobilder und Pfeiltasten sind gr&#246;&#223;er, und ein Tipp auf ein Auto l&#228;sst seine Lichter blinken.</li>
+        <li>Garage: Links steht je Auto nur noch die Rolle als Etikett; eingestellt wird sie rechts in der ersten Zeile (&#8222;Rolle&#8220;, mit Pfeilen bzw. Steuerkreuz links/rechts).</li>
+        <li>Pacejka: &#220;bersteuern ist ab Werk aus &#8211; das Auto lenkt nicht mehr von selbst weiter, wenn du nicht lenkst. Wieder anstellen: Optionen &#8594; Allgemein &#8594; &#8222;&#220;bersteuern (Pacejka)&#8220;. Ein gespeichertes &#8222;an&#8220; wird einmalig auf aus gestellt.</li>
         <li>Funkweg (APK): 1.1.23 schaltete ein Auto schon aufs Plugin, wenn OmegaBle wegen &#220;berlast mehr verwarf als schrieb &#8211; das ist aber Last und kein toter Weg. Jetzt nur noch, wenn zwei Pr&#252;fungen in Folge gar nichts mehr geschrieben wurde.</li>
         <li>Funklast mit mehreren NPCs (gemeldet: &#8222;Mit einem NPC klappt es gut&#8220;, mit mehreren halten Autos nicht, fahren chaotisch, das eigene Auto reagiert nicht): Jedes fahrende Auto schrieb alle 45 ms &#8211; mit vier NPCs und dir rund 110 Pakete pro Sekunde &#252;ber einen Bluetooth-Adapter, der dann belegt war, wiederholte und verwarf, auch deine Pakete. Jetzt teilen sich die NPCs zusammen etwa 30 Pakete pro Sekunde (ein NPC allein f&#228;hrt weiter im vollen Takt, bei vier schreibt jeder etwa alle 0,1 s; ein unver&#228;nderter Befehl nur alle 0,2 s). Halt (Gas auf 0) und Einparkman&#246;ver gehen weiter sofort und im vollen Takt. Der Halt nach Rennende wird alle 135 ms statt alle 45 ms nachgeschickt.</li>
         <li>Automatische Aufstellung: Wer seinen Ort schon &#252;ber Start/Ziel abgesichert hat, f&#228;hrt wieder direkt auf seinen Platz (wie bis 1.1.20) statt erst noch einmal &#252;ber Start/Ziel &#8211; das sparte bis zu einer ganzen Runde.</li>
@@ -9674,13 +9703,13 @@
         </select></div>
       <!-- BESTELLT: "Eventuell sage ich spaeter, dass das Uebersteuern abgeschaltet werden
            soll" - deshalb von Anfang an ein eigener Schalter. -->
-      <div class="opt-row" hidden><div class="opt-label">&Uuml;bersteuern (Pacejka)
+      <div class="opt-row"><div class="opt-label">&Uuml;bersteuern (Pacejka)
           <span class="wip-tag">experimentell</span>
           <small>Nur im Modus Pacejka. An: unter Vollgas in der Kurve und beim Anbremsen
           kommt das Heck, das Auto lenkt von selbst weiter ein und verliert Vortrieb, bis du
-          gegenlenkst oder vom Pedal gehst (h&ouml;chstens 2 s). Aus: das Heck bricht nie aus,
-          nur das Schieben &uuml;ber die Vorderr&auml;der bleibt.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-pac-ueber" checked><span></span></label></div>
+          gegenlenkst oder vom Pedal gehst (h&ouml;chstens 2 s). Aus (Vorgabe): das Auto lenkt nie
+          von selbst weiter, nur das Schieben &uuml;ber die Vorderr&auml;der bleibt.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-pac-ueber"><span></span></label></div>
       <div class="opt-row" hidden><div class="opt-label">Haftgrenze (Pacejka)
           <span class="wip-tag">experimentell</span>
           <small>Nur im Modus Pacejka. Wo der Scheitel der Reifenkurve liegt, gemessen an der
@@ -14662,6 +14691,10 @@
     "Automatische Aufstellung: Wer seinen Ort schon über Start/Ziel abgesichert hat, fährt wieder direkt auf seinen Platz (wie bis 1.1.20) statt erst noch einmal über Start/Ziel – das sparte bis zu einer ganzen Runde.": "Automatic line-up: a car whose position is already confirmed via start/finish drives straight to its spot again (as up to 1.1.20) instead of crossing start/finish first – that saved up to a full lap.",
     "Funklast mit mehreren NPCs (gemeldet: „Mit einem NPC klappt es gut“, mit mehreren halten Autos nicht, fahren chaotisch, das eigene Auto reagiert nicht): Jedes fahrende Auto schrieb alle 45 ms – mit vier NPCs und dir rund 110 Pakete pro Sekunde über einen Bluetooth-Adapter, der dann belegt war, wiederholte und verwarf, auch deine Pakete. Jetzt teilen sich die NPCs zusammen etwa 30 Pakete pro Sekunde (ein NPC allein fährt weiter im vollen Takt, bei vier schreibt jeder etwa alle 0,1 s; ein unveränderter Befehl nur alle 0,2 s). Halt (Gas auf 0) und Einparkmanöver gehen weiter sofort und im vollen Takt. Der Halt nach Rennende wird alle 135 ms statt alle 45 ms nachgeschickt.": "Radio load with several NPCs (reported: “with one NPC it works well”; with several, cars don’t stop, drive erratically and your own car doesn’t respond): every moving car wrote every 45 ms – with four NPCs and you about 110 packets per second through one Bluetooth adapter, which then was busy, retried and dropped, including your packets. NPCs now share about 30 packets per second (a single NPC still runs at full rate; with four each writes about every 0.1 s; an unchanged command only every 0.2 s). Stops (throttle to 0) and parking manoeuvres still go out immediately and at full rate. The stop after the race is repeated every 135 ms instead of every 45 ms.",
     "Funkweg (APK): 1.1.23 schaltete ein Auto schon aufs Plugin, wenn OmegaBle wegen Überlast mehr verwarf als schrieb – das ist aber Last und kein toter Weg. Jetzt nur noch, wenn zwei Prüfungen in Folge gar nichts mehr geschrieben wurde.": "Radio path (APK): 1.1.23 already moved a car to the plugin when OmegaBle dropped more than it wrote because of load – but that is load, not a dead path. Now only when nothing at all was written in two checks in a row.",
+    "Pacejka: Übersteuern ist ab Werk aus – das Auto lenkt nicht mehr von selbst weiter, wenn du nicht lenkst. Wieder anstellen: Optionen → Allgemein → „Übersteuern (Pacejka)“. Ein gespeichertes „an“ wird einmalig auf aus gestellt.": "Pacejka: oversteer is off by default – the car no longer keeps steering on its own when you don’t steer. Turn it back on in Options → General → “Oversteer (Pacejka)”. A saved “on” is switched off once.",
+    "Garage: Links steht je Auto nur noch die Rolle als Etikett; eingestellt wird sie rechts in der ersten Zeile („Rolle“, mit Pfeilen bzw. Steuerkreuz links/rechts).": "Garage: on the left each car now only shows its role as a label; you set it on the right in the first row (“Role”, with arrows or d-pad left/right).",
+    "Aufstellungsschirm vor dem Rennstart: Beim Umsortieren gleiten die Autos an ihren neuen Platz, das bewegte Auto leuchtet kurz auf. Autobilder und Pfeiltasten sind größer, und ein Tipp auf ein Auto lässt seine Lichter blinken.": "Grid screen before the start: when you reorder, the cars slide to their new place and the moved car briefly lights up. Car pictures and arrow buttons are bigger, and tapping a car makes its lights flash.",
+    "Gewinnerschirm: Auf dem Podest steht über jedem Namen das Autobild (Foto oder Farbe), der Sieger etwas größer.": "Winner screen: the podium shows each car’s picture (photo or colour) above the name, the winner a bit larger.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -15311,7 +15344,7 @@
     "Pacejka: wie Physik, dazu Reifen mit Haftgrenze nach der Magic Formula. Das Einspurmodell beschreibt, wie sich das Auto dreht; Pacejka beschreibt, wie viel Seitenkraft ein Reifen hält, bevor er rutscht. Unterhalb der Grenze fährt es sich wie Physik. Schiebt die Vorderachse über die Grenze, kommt weniger Einschlag an (Untersteuern). Kommt das Heck – unter Vollgas in der Kurve oder beim Anbremsen –, lenkt die App in die Kurve dazu, auch wenn du den Stick loslässt, und der Vortrieb geht zurück (Übersteuern). Fangen: gegenlenken oder vom Pedal gehen. Beides vibriert und quietscht. Experimentell.": "Pacejka: like Physics, plus tyres with a grip limit following the Magic Formula. The single-track model describes how the car rotates; Pacejka describes how much lateral force a tyre holds before it slides. Below the limit it drives like Physics. If the front axle goes over the limit, less steering arrives (understeer). If the rear goes – at full throttle in a corner or when braking into it –, the app adds steering into the corner, even when you let go of the stick, and drive drops (oversteer). To catch it: countersteer or come off the pedal. Both vibrate and squeal. Experimental.",
     "Pacejka (experimentell)": "Pacejka (experimental)",
     "Übersteuern (Pacejka)": "Oversteer (Pacejka)",
-    "Nur im Modus Pacejka. An: unter Vollgas in der Kurve und beim Anbremsen kommt das Heck, das Auto lenkt von selbst weiter ein und verliert Vortrieb, bis du gegenlenkst oder vom Pedal gehst (höchstens 2 s). Aus: das Heck bricht nie aus, nur das Schieben über die Vorderräder bleibt.": "Pacejka mode only. On: at full throttle in a corner and when braking into it the rear steps out, the car keeps turning in by itself and loses drive until you countersteer or come off the pedal (at most 2 s). Off: the rear never steps out, only pushing over the front wheels remains.",
+    "Nur im Modus Pacejka. An: unter Vollgas in der Kurve und beim Anbremsen kommt das Heck, das Auto lenkt von selbst weiter ein und verliert Vortrieb, bis du gegenlenkst oder vom Pedal gehst (höchstens 2 s). Aus (Vorgabe): das Auto lenkt nie von selbst weiter, nur das Schieben über die Vorderräder bleibt.": "Pacejka mode only. On: at full throttle in a corner and when braking into it the rear steps out, the car keeps turning in by itself and loses drive until you countersteer or come off the pedal (at most 2 s). Off (default): the car never keeps steering by itself, only pushing over the front wheels remains.",
     "Haftgrenze (Pacejka)": "Grip limit (Pacejka)",
     "Nur im Modus Pacejka. Wo der Scheitel der Reifenkurve liegt, gemessen an der Querausnutzung des Reibkreises. Kleiner heißt früher am Limit. Bei 70 % ist voller Einschlag ab etwa 115 km/h zu viel. Regen und kalte Reifen senken die Grenze zusätzlich.": "Pacejka mode only. Where the peak of the tyre curve sits, measured against the lateral use of the friction circle. Lower means reaching the limit earlier. At 70 % full lock is too much from about 115 km/h. Rain and cold tyres lower the limit further.",
     "Unter- und Übersteuern": "Understeer and oversteer",
@@ -16005,6 +16038,7 @@
     "langsam": "slow",
     "lenken links (auch A)": "steer left (also A)",
     "{n} Auto(s) fest auf Plugin": "{n} car(s) held on the plugin",
+    "Rolle": "Role",
     "lenken rechts (auch D)": "steer right (also D)",
     "Gas (auch W)": "Throttle (also W)",
     "Bremse (auch S)": "Brake (also S)",
@@ -20211,7 +20245,9 @@
         // Aus heisst: kein einziger Rechenschritt davon laeuft, und "Physik" ist bitgleich
         // mit dem Stand davor (Selbsttest "Physik bitgleich").
         pacejka: false,
-        pacejkaUebersteuern: true,   // BESTELLT: "evtl. sage ich spaeter, Uebersteuern aus"
+        // v1.1.25 BESTELLT: "Schalte bei den Pacejka-Presets aus, dass das Auto uebersteuert, also weiterlenkt,
+        // obwohl ich selbst nicht lenke, und gib mir die Option, das wieder anzustellen." Ab Werk aus.
+        pacejkaUebersteuern: false,
         // Die Haftgrenze in Einheiten der Querausnutzung (latUse ohne Deckel). 0,7 heisst:
         // voller Einschlag ist ab etwa 115 km/h am Limit, halber ab 230 - dieselbe Skala,
         // die auch das Quietschen benutzt (TYRE_SQUEAL_START 0,6 liegt knapp darunter).
@@ -38028,13 +38064,37 @@
       : 'background:linear-gradient(135deg,' + f.hex + ' 0%,' + f.hex + ' 60%,rgba(0,0,0,.5) 100%);color:' + f.ink;
     return '<span class="grid-auto" style="' + stil + '" aria-hidden="true">' + (foto ? '' : (car.tagChar || '')) + '</span>';
   }
-  function raceGridZeilen(host) {
+  // v1.1.25 BESTELLT: "Mach eine kleine Animation, wenn ich die Autos neu sortiere, dann ist es einfacher,
+  // das nachzuvollziehen." FLIP: vor dem Neuzeichnen die Lage jeder Zeile merken, danach jede verschobene
+  // Zeile von ihrer alten Lage an ihren neuen Platz gleiten lassen; das bewegte Auto leuchtet kurz auf.
+  function gridLagenMerken(host) {
+    const m = new Map();
+    host.querySelectorAll('.grid-row[data-id]').forEach((r) => m.set(r.dataset.id, r.getBoundingClientRect()));
+    return m;
+  }
+  function gridGleiten(host, alt, bewegt) {
+    if (!alt || !alt.size || typeof Element.prototype.animate !== 'function') return;
+    host.querySelectorAll('.grid-row[data-id]').forEach((r) => {
+      const a = alt.get(r.dataset.id);
+      if (!a) return;
+      const n = r.getBoundingClientRect();
+      const dx = a.left - n.left, dy = a.top - n.top;
+      if (r.dataset.id === bewegt) r.classList.add('grid-bewegt');
+      // Auch bei "Bewegung reduzieren" im System: die Animation ist ausdruecklich bestellt und kurz.
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+      r.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px)' }, { transform: 'none' }],
+                { duration: GRID_GLEITEN_MS, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    });
+  }
+  const GRID_GLEITEN_MS = 320;
+  function raceGridZeilen(host, bewegt) {
     if (!host) return;
     const cars = raceGridCars();
     if (!cars.length) {
       host.innerHTML = '<p class="muted" style="margin:0">Keine Autos verbunden.</p>';
       return;
     }
+    const alt = bewegt ? gridLagenMerken(host) : null;
     host.innerHTML = '';
     cars.forEach((car, i) => {
       const row = document.createElement('div');
@@ -38064,8 +38124,19 @@
           if (to < 0 || to >= order.length) return;
           order.splice(to, 0, order.splice(from, 1)[0]);
           raceGridOrder = order;
-          raceGridZeilen(host);
+          raceGridZeilen(host, row.dataset.id);
+          // Der Fokus bleibt auf dem Pfeil des bewegten Autos, damit man es mehrmals weiterschieben kann.
+          const neu = host.querySelector('.grid-row[data-id="' + CSS.escape(row.dataset.id) + '"] button[data-mv="' + b.dataset.mv + '"]');
+          if (neu && !neu.disabled && document.activeElement === document.body) neu.focus({ preventScroll: true });
         };
+      });
+      // v1.1.25 BESTELLT: "Wenn ich dort auf ein Auto druecke, mach, dass es die Lichter blinkt."
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('button, .grid-handle')) return;
+        if (typeof blinkCar === 'function' && car.rx) blinkCar(car);
+        row.classList.remove('grid-blinkt');
+        void row.offsetWidth;
+        row.classList.add('grid-blinkt');
       });
       const handle = row.querySelector('.grid-handle');
       handle.addEventListener('dragstart', (e) => {
@@ -38086,10 +38157,11 @@
         if (from < 0 || to < 0) return;
         order.splice(to, 0, order.splice(from, 1)[0]);
         raceGridOrder = order;
-        raceGridZeilen(host);
+        raceGridZeilen(host, dragged);
       });
       host.appendChild(row);
     });
+    gridGleiten(host, alt, bewegt);
     const sc = garage.find(c => c.role === 'safetycar' && c.device);
     if (sc) {
       const row = document.createElement('div');
@@ -43231,7 +43303,7 @@
       } else if (fuehrer && x === fuehrer) {
         luecke = '\u2014';
       }
-      return { pos: i + 1, name: x.c.name, farbe: x.c.farbe, rolle: x.c.role,
+      return { pos: i + 1, name: x.c.name, farbe: x.c.farbe, rolle: x.c.role, id: x.c.id,
                runden: x.n, summe: x.summe, luecke, letzte: x.letzte, beste: x.beste,
                // Die schnellste Runde des ganzen Feldes wird hervorgehoben, wie auf einer
                // Zeittafel. Verglichen wird SPAETER, wenn alle Zeilen vorliegen.
@@ -43339,7 +43411,13 @@
       return;
     }
     host.hidden = false;
-    const nameHtml = (z) => '<span class="name"><i class="ov-farbe" style="background:'
+    // v1.1.25 BESTELLT: "Zeige die Autobildchen auf dem Gewinnerbildschirm." Ueber dem Namen das Bild aus der
+    // Garage (Foto oder Farbe mit Kennbuchstabe), wie auf dem Aufstellungsschirm.
+    const bildHtml = (z) => {
+      const car = z && z.id ? garage.find((c) => c.device && String(c.device.id) === z.id) : null;
+      return car ? gridAutoBild(car).replace('class="grid-auto"', 'class="grid-auto ov-auto"') : '';
+    };
+    const nameHtml = (z) => bildHtml(z) + '<span class="name"><i class="ov-farbe" style="background:'
       + (z.farbe || 'transparent') + '"></i>' + z.name + '</span>';
     let html;
     if (zeilen.length === 1) {
@@ -52111,7 +52189,6 @@
       const f = carColor(car);
       const foto = autoFoto(car);
       const rolle = GAR_ROLLEN.find((r) => r.id === car.role) || GAR_ROLLEN.find((r) => r.id === 'none');
-      const frei = garRollenFrei(car);
       const bild = foto
         ? 'background-image:url("' + foto + '")'
         : 'background:linear-gradient(135deg,' + f.hex + ' 0%,' + f.hex + ' 55%,rgba(0,0,0,.55) 100%);color:' + f.ink;
@@ -52121,14 +52198,10 @@
         <div class="gk-bild${foto ? ' mit-foto' : ''}" style='${bild}'>${foto ? '' : `<span class="gk-zeichen">${car.tagChar || ''}</span>`}</div>
         <div class="gk-text"><b data-i18n-skip>${esc(name)}</b>
           <span class="gar-id" data-i18n-skip>${esc(car.tag || '')} &middot; ${esc(String(car.device.id).slice(0, 10))}${car.blinking ? ' &middot; ' + t('blinkt') : ''}${garAkkuText(car)}</span></div>
-        <div class="gk-rolle" data-rollen="${GAR_ROLLEN.map((r) => r.id).join(',')}" data-rolle="${rolle.id}">
-          <button type="button" data-act="rolle" data-d="-1" aria-label="Rolle zurück">&#9664;</button>
+        <div class="gk-rolle gk-rolle-nur" data-rollen="${GAR_ROLLEN.map((r) => r.id).join(',')}" data-rolle="${rolle.id}">
           <b>${t(rolle.name)}</b>${zusatzPlatzVonRolle(rolle.id) ? '<span class="wip-tag">experimentell</span>'
             : ''}
-          <button type="button" data-act="rolle" data-d="1" aria-label="Rolle vor">&#9654;</button>
-        </div>
-        <select class="gk-rolle-wahl" hidden data-preset-skip data-blaettern="1" aria-label="Rolle">${frei.map((r) =>
-          `<option value="${r.id}"${r.id === car.role ? ' selected' : ''}>${r.name}</option>`).join('')}</select>`;
+        </div>`;
       row._car = car;
       row.onmouseenter = () => garageBlinkSanft(car);
       // Ein Tipp auf die Zeile waehlt das Auto fuer die rechte Seite.
@@ -52136,24 +52209,9 @@
         if (e.target.closest('button, input, select')) return;
         if (garAufAuto !== car || garVirtuellAuf) { garAufAuto = car; garVirtuellAuf = false; renderGarage(); }
       };
-      row.querySelectorAll('button[data-act="rolle"]').forEach((b) => {
-        b.onclick = (e) => {
-          e.stopPropagation();
-          // Nur FREIE Rollen (v0.9.6), siehe garRollenFrei.
-          const fr = garRollenFrei(car);
-          const k = fr.findIndex((r) => r.id === car.role);
-          const n = fr[((k < 0 ? fr.length - 1 : k) + +b.dataset.d + fr.length) % fr.length];
-          garAufAuto = car;
-          garVirtuellAuf = false;
-          setCarRole(car, n.id);
-        };
-      });
-      // Steuerkreuz links/rechts auf der Zeile (menuNavAdjust verstellt das versteckte Feld).
-      row.querySelector('select.gk-rolle-wahl').addEventListener('change', (e) => {
-        garAufAuto = car;
-        garVirtuellAuf = false;
-        setCarRole(car, e.target.value);
-      });
+      // v1.1.25 BESTELLT: "Zeige in der Garage links je Auto die Rolle an, aber mach, dass ich sie rechts
+      // ganz oben einstelle." Links steht die Rolle nur noch als Etikett; eingestellt wird sie rechts in der
+      // ersten Zeile (garRollenZeile).
       links.appendChild(row);
     });
     // Aktionen, einspaltig unter den Autos.
@@ -52194,6 +52252,7 @@
       kopf.setAttribute('data-i18n-skip', '');
       kopf.textContent = car.alias || car.tag || garageLabel(car);
       rechts.appendChild(kopf);
+      rechts.appendChild(garRollenZeile(car));
       // Name
       const zn = document.createElement('div');
       zn.className = 'opt-row gk-zeile gar-a-name';
@@ -52250,6 +52309,42 @@
     list.appendChild(rechts);
     refreshGarageGo();
     garAktionenAbgleichen();
+  }
+
+  // Die Rolle des gewaehlten Autos, als erste Zeile rechts: Pfeile wie bisher (nur FREIE Rollen, v0.9.6),
+  // dazu das versteckte Feld, das Steuerkreuz links/rechts verstellt (menuNavAdjust).
+  function garRollenZeile(car) {
+    const rolle = GAR_ROLLEN.find((r) => r.id === car.role) || GAR_ROLLEN.find((r) => r.id === 'none');
+    const frei = garRollenFrei(car);
+    const z = document.createElement('div');
+    z.className = 'opt-row gk-zeile gar-a-rolle' + (car.role === 'player' ? ' is-player'
+      : zusatzPlatzVonRolle(car.role) ? ' is-zwei' : car.role === 'ghost' ? ' is-ghost'
+      : car.role === 'safetycar' ? ' is-safety' : car.role === 'challenger' ? ' is-challenger' : '');
+    z.innerHTML = `<span class="gk-l">${t('Rolle')}</span>
+      <span class="gk-w gk-rolle" data-rollen="${GAR_ROLLEN.map((r) => r.id).join(',')}" data-rolle="${rolle.id}">
+        <button type="button" data-act="rolle" data-d="-1" aria-label="Rolle zurück">&#9664;</button>
+        <b>${t(rolle.name)}</b>${zusatzPlatzVonRolle(rolle.id) ? '<span class="wip-tag">experimentell</span>' : ''}
+        <button type="button" data-act="rolle" data-d="1" aria-label="Rolle vor">&#9654;</button>
+      </span>
+      <select class="gk-rolle-wahl" hidden data-preset-skip data-blaettern="1" aria-label="Rolle">${frei.map((r) =>
+        `<option value="${r.id}"${r.id === car.role ? ' selected' : ''}>${r.name}</option>`).join('')}</select>`;
+    z.querySelectorAll('button[data-act="rolle"]').forEach((b) => {
+      b.onclick = (e) => {
+        e.stopPropagation();
+        const fr = garRollenFrei(car);
+        const k = fr.findIndex((r) => r.id === car.role);
+        const n = fr[((k < 0 ? fr.length - 1 : k) + +b.dataset.d + fr.length) % fr.length];
+        garAufAuto = car;
+        garVirtuellAuf = false;
+        setCarRole(car, n.id);
+      };
+    });
+    z.querySelector('select.gk-rolle-wahl').addEventListener('change', (e) => {
+      garAufAuto = car;
+      garVirtuellAuf = false;
+      setCarRole(car, e.target.value);
+    });
+    return z;
   }
 
   // "Losfahren" is the one button that turns a set of assigned roles into actually driving.
@@ -63657,6 +63752,23 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       }
       carRetag(); renderGarage();
       return garage.filter((c) => c.probe).length;
+    },
+    // v1.1.25: Aufstellungsschirm und Podest fuer die Sichtpruefung (mit garageProbe-Autos).
+    gridZeigen() { raceGridAnzeigen(null); return $('race-gridscreen') ? !$('race-gridscreen').hidden : false; },
+    gridZu() { const gs = $('race-gridscreen'); if (gs) gs.hidden = true; },
+    podestProbe(an) {
+      const autos = garage.filter((c) => c.probe);
+      if (an) {
+        autos.forEach((c, i) => { c.race = c.race || {}; c.race.laps = [{ ms: 9000 + i * 400 }, { ms: 9100 + i * 300 }]; });
+        this._podestMerk = raceState; raceState = 'finished';
+      } else {
+        autos.forEach((c) => { if (c.race) c.race.laps = []; });
+        raceState = this._podestMerk || 'idle';
+      }
+      ovPodestMalen();
+      if (an) { showTab('race'); cockpitScreenZu('uebersicht'); ovScreenRender(); }
+      const h = $('ov-podest');
+      return h ? { sichtbar: !h.hidden, bilder: h.querySelectorAll('.ov-auto').length } : null;
     },
     garageProbeWeg() {
       for (let i = garage.length - 1; i >= 0; i--) if (garage[i].probe) garage.splice(i, 1);
@@ -78411,14 +78523,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   stAdd('Pacejka: Vollgas in der Kurve bringt das Heck, Vortrieb geht weg', () => {
     if (!OMEGA_TEST.pacejkaFolge) return { skip: true, mass: 'Probe fehlt' };
     const f = [];
-    const an = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [{ takte: 30, gas: 1, lenk: 0.8 }] })[0];
+    // v1.1.25: Uebersteuern ist ab Werk aus - hier ausdruecklich an.
+    const an = OMEGA_TEST.pacejkaFolge({ kmh: 150, patch: { pacejkaUebersteuern: true }, abschnitte: [{ takte: 30, gas: 1, lenk: 0.8 }] })[0];
     const aus = OMEGA_TEST.pacejkaFolge({ kmh: 150, patch: { pacejkaUebersteuern: false },
                                           abschnitte: [{ takte: 30, gas: 1, lenk: 0.8 }] })[0];
     if (an.maxUeber < 0.1) f.push('Vollgas bringt kein Uebersteuern (hinten ' + an.nutzH.toFixed(2) + ', vorn ' + an.nutzV.toFixed(2) + ')');
     if (!(an.minVortrieb < 0.8)) f.push('Vortrieb bleibt ' + an.minVortrieb.toFixed(2));
     if (!an.leistung) f.push('nicht als Leistungsuebersteuern erkannt');
     if (aus.maxUeber !== 0 || aus.minVortrieb !== 1) f.push('Schalter aus: Zuschlag ' + aus.maxUeber.toFixed(2) + ', Vortrieb ' + aus.minVortrieb.toFixed(2));
-    const halb = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [{ takte: 30, gas: 0.5, lenk: 0.8 }] })[0];
+    const halb = OMEGA_TEST.pacejkaFolge({ kmh: 150, patch: { pacejkaUebersteuern: true }, abschnitte: [{ takte: 30, gas: 0.5, lenk: 0.8 }] })[0];
     if (halb.maxUeber > 0) f.push('schon bei halbem Gas: ' + halb.maxUeber.toFixed(2));
     return { ok: !f.length, mass: f.length ? f.join('; ')
       : 'Zuschlag ' + an.maxUeber.toFixed(2) + ', Vortrieb bis ' + an.minVortrieb.toFixed(2) + ', aus: nichts, halbes Gas: nichts' };
@@ -78429,20 +78542,20 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const f = [];
     const rutsch = { takte: 25, gas: 1, lenk: 0.8 };
     // Stick los, Gas bleibt: 0,7 s spaeter lenkt das Auto noch immer ein.
-    const a = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [rutsch, { takte: 16, gas: 1, lenk: 0 }] });
+    const a = OMEGA_TEST.pacejkaFolge({ kmh: 150, patch: { pacejkaUebersteuern: true }, abschnitte: [rutsch, { takte: 16, gas: 1, lenk: 0 }] });
     if (!(a[0].ueber > 0.1)) f.push('kein Rutsch vorher (' + a[0].ueber.toFixed(2) + ')');
     if (!(a[1].ueber > 0.8 * a[0].ueber)) f.push('ohne Stick klingt es ab: ' + a[0].ueber.toFixed(2) + ' -> ' + a[1].ueber.toFixed(2));
     if (!(Math.abs(a[1].servo) > 0.1)) f.push('ohne Stick lenkt das Auto nicht weiter (' + a[1].servo.toFixed(2) + ')');
     // Gegenlenken faengt. MASSVOLL gegengelenkt: mit -0,5 bei Vollgas faengt es den Rutsch
     // zwar, faehrt dann aber eine neue, scharfe Kurve in die andere Richtung - und die bringt
     // unter Vollgas wieder das Heck (gemessen). Das ist das Pendeln, kein Fehler.
-    const b = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [rutsch, { takte: 10, gas: 1, lenk: -0.2 }] });
+    const b = OMEGA_TEST.pacejkaFolge({ kmh: 150, patch: { pacejkaUebersteuern: true }, abschnitte: [rutsch, { takte: 10, gas: 1, lenk: -0.2 }] });
     if (!(b[1].ueber < 0.02)) f.push('Gegenlenken faengt nicht: ' + b[1].ueber.toFixed(2));
     // Pedal weg faengt.
-    const c = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [rutsch, { takte: 20, gas: 0, lenk: 0 }] });
+    const c = OMEGA_TEST.pacejkaFolge({ kmh: 150, patch: { pacejkaUebersteuern: true }, abschnitte: [rutsch, { takte: 20, gas: 0, lenk: 0 }] });
     if (!(c[1].ueber < 0.02)) f.push('vom Gas gehen faengt nicht: ' + c[1].ueber.toFixed(2));
     // Deckel: hoechstens pacejkaHaltMax, dann klingt es ab.
-    const d = OMEGA_TEST.pacejkaFolge({ kmh: 150, abschnitte: [rutsch, { takte: 70, gas: 1, lenk: 0 }] });
+    const d = OMEGA_TEST.pacejkaFolge({ kmh: 150, patch: { pacejkaUebersteuern: true }, abschnitte: [rutsch, { takte: 70, gas: 1, lenk: 0 }] });
     if (!(d[1].ueber < 0.05)) f.push('haelt ueber den Deckel hinaus: ' + d[1].ueber.toFixed(2));
     return { ok: !f.length, mass: f.length ? f.join('; ')
       : 'haelt ' + a[0].ueber.toFixed(2) + ' -> ' + a[1].ueber.toFixed(2) + ' ohne Stick, Gegenlenken, Pedal und Deckel fangen' };
@@ -84157,8 +84270,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!karte()) return { ok: false, mass: 'keine Karte gezeichnet' };
       if (!/linear-gradient/.test(karte().querySelector('.gk-bild').getAttribute('style') || '')) f.push('ohne Foto nicht die Farbe als Bild');
       if (!$('gar-list').querySelector('.gar-karte-neu')) f.push('keine Zeile "+ Auto verbinden"');
-      if (!karte().classList.contains('opt-row') || !karte().querySelector('select.gk-rolle-wahl')) f.push('Auto-Zeile ist keine Optionszeile mit Rollenfeld');
-      karte().querySelector('[data-act="rolle"][data-d="1"]').click();
+      // v1.1.25: links nur das Etikett, eingestellt wird rechts ganz oben.
+      if (!karte().classList.contains('opt-row') || !karte().querySelector('.gk-rolle-nur')) f.push('Auto-Zeile zeigt die Rolle nicht als Etikett');
+      if (karte().querySelector('button[data-act="rolle"], select.gk-rolle-wahl')) f.push('links noch Rollen-Pfeile');
+      garAufAuto = att; renderGarage();
+      const rz = $('gar-list').querySelector('.gar-a-rechts .opt-row');
+      if (!rz || !rz.classList.contains('gar-a-rolle') || !rz.querySelector('select.gk-rolle-wahl')) f.push('Rolle nicht als erste Zeile rechts');
+      $('gar-list').querySelector('.gar-a-rechts [data-act="rolle"][data-d="1"]').click();
       if (att.role !== 'none') f.push('Rolle vor fuehrt zu ' + att.role + ' statt Aus');
       // Freie Rollen: hat ein anderes Auto "Spieler 1", bietet der Pfeil sie nicht an.
       const anderer = { role: 'player', device: { id: 'probe-andere' }, alias: '', colorId: 'blau', sim: false, testSenke: [] };
@@ -94237,10 +94355,16 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       npcZahlCache.at = 0;
       const ab = npcSendeAbstand();
       if (!(ab >= 100 && ab <= 140)) f.push('Abstand bei 4 NPCs ' + ab + ' ms');
-      for (let i = 0; i < 20; i++) {           // ~0,9 s im 45-ms-Takt, Gas wechselt staendig
-        for (const c of autos) { await writeToCar(c, 0, 0.3 + i * 0.01, 0); }
-        await new Promise((r) => setTimeout(r, 45));
-      }
+      // Feste Uhr statt echter Zeitgeber: im verborgenen Fenster sind die gedrosselt (gemessen: 53/s statt 37/s).
+      const echtPN = performance.now.bind(performance);
+      let uhr = echtPN() + 10000;
+      performance.now = () => uhr;
+      try {
+        for (let i = 0; i < 20; i++) {           // 0,9 s im 45-ms-Takt, Gas wechselt staendig
+          for (const c of autos) { await writeToCar(c, 0, 0.3 + i * 0.01, 0); }
+          uhr += 45;
+        }
+      } finally { performance.now = echtPN; }
       const proS = paket.length / 0.9;
       if (proS > 45) f.push('zu viele Pakete: ' + proS.toFixed(0) + '/s');
       const vor = paket.length;
@@ -97172,6 +97296,22 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         if (cfg['sc-einfahrt-tempo'] !== undefined && Number(cfg['sc-einfahrt-tempo']) > 30) { cfg['sc-einfahrt-tempo'] = 30; geaendert = true; }
         try {
           localStorage.setItem('chc.migrate.sc1121.v1', '1');
+          if (geaendert) localStorage.setItem(AUTO_STORE, JSON.stringify(cfg));
+        } catch (e) { /* dann eben nur fuer diese Sitzung */ }
+      }
+    }
+    // ---- EINMALIG (v1.1.25): Uebersteuern im Pacejka-Modus aus ------------------------------
+    // BESTELLT: "Schalte bei den Pacejka-Presets aus, dass das Auto uebersteuert." Die neue Vorgabe ist aus;
+    // ein gespeichertes "an" aus der Zeit, als der Schalter verborgen und ab Werk an war, wird einmal auf aus
+    // gestellt. Wer es danach wieder anstellt, behaelt es.
+    {
+      let erledigt = false;
+      try { erledigt = localStorage.getItem('chc.migrate.pac1125.v1') === '1'; } catch (e) { /* privat */ }
+      if (!erledigt) {
+        let geaendert = false;
+        if (cfg['setting-pac-ueber'] === true || cfg['setting-pac-ueber'] === 'true') { cfg['setting-pac-ueber'] = false; geaendert = true; }
+        try {
+          localStorage.setItem('chc.migrate.pac1125.v1', '1');
           if (geaendert) localStorage.setItem(AUTO_STORE, JSON.stringify(cfg));
         } catch (e) { /* dann eben nur fuer diese Sitzung */ }
       }

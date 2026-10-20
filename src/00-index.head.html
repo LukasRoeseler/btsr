@@ -2142,6 +2142,10 @@
     font-size: clamp(10px, 1.5vw, 15px); font-weight: 800; overflow: hidden;
     text-overflow: ellipsis; white-space: nowrap; }
   .ov-podest .name.leer { opacity: 0; }
+  /* v1.1.25: Autobild ueber dem Namen; der Sieger etwas groesser. */
+  .ov-podest .ov-auto { width: auto; aspect-ratio: 1.65 / 1; height: clamp(22px, 8vh, 62px); font-size: clamp(11px, 3vh, 20px); }
+  .ov-podest .platz-1 .ov-auto, .ov-podest .platz-solo .ov-auto { height: clamp(26px, 10vh, 78px);
+    box-shadow: 0 0 0 2px #f5c518, 0 4px 14px rgba(0,0,0,.45); }
   .ov-podest .zeit { color: var(--gt3-strip-ink, #a9b2c4); font-family: monospace;
     font-size: clamp(9px, 1.2vw, 12px); }
   /* Die Gesamtzeit des Siegers: groesser und in der Goldfarbe, damit der Blick dort landet. */
@@ -3133,6 +3137,19 @@
   .gar-a-zeile.is-ghost .gk-rolle { background: #6b5bd6; color: #fff; }
   .gar-a-zeile.is-safety .gk-rolle { background: #f5c400; color: #1a1500; }
   .gar-a-zeile.is-ghost .gk-rolle button, .gar-a-zeile.is-player .gk-rolle button { color: inherit; }
+  /* v1.1.25: links nur das Etikett, eingestellt wird rechts in der ersten Zeile (gar-a-rolle). */
+  .gar-a-zeile .gk-rolle.gk-rolle-nur { grid-template-columns: minmax(0, 1fr); padding: 6px 4px; }
+  .gar-a-zeile .gk-rolle.gk-rolle-nur > b { grid-column: 1; }
+  .gar-a-rolle .gk-rolle { margin: 0; min-width: 190px; display: grid; grid-template-columns: 34px minmax(0, 1fr) 34px;
+    align-items: center; font-size: 14px; padding: 4px; }
+  .gar-a-rolle .gk-rolle > b { text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gar-a-rolle .gk-rolle > .wip-tag { grid-column: 1 / -1; justify-self: center; margin: 0; }
+  .gar-a-rolle .gk-rolle button { font-size: 15px; padding: 4px 8px; }
+  .gar-a-rolle.is-player .gk-rolle { background: var(--k-blau); color: var(--k-blau-text); }
+  .gar-a-rolle.is-zwei .gk-rolle { background: #ffb02e; color: #1a1100; }
+  .gar-a-rolle.is-ghost .gk-rolle { background: #6b5bd6; color: #fff; }
+  .gar-a-rolle.is-safety .gk-rolle { background: #f5c400; color: #1a1500; }
+  .gar-a-rolle.is-ghost .gk-rolle button, .gar-a-rolle.is-player .gk-rolle button { color: inherit; }
   .gar-a-aktion > button { width: 100%; text-align: left; }
   /* v0.9.24: die Knoepfe ganz unten groesser (Motorsound steht jetzt nur noch hier). */
   .gar-a-rechts .gar-a-aktion > button { min-height: 50px; font-size: clamp(14px, 1.8vw, 17px);
@@ -3690,8 +3707,16 @@
   .grid-handle:active { cursor: grabbing; }
   .grid-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
     white-space: nowrap; }
-  .grid-move { display: flex; gap: 4px; }
+  .grid-move { display: flex; gap: 6px; }
   .grid-move button { width: 30px; height: 30px; padding: 0; font-size: 13px; }
+  /* v1.1.25 BESTELLT: "Mache die Bilder der Autos und die Tasten mit den Pfeilen etwas groesser." */
+  .gt3-gridschirm .grid-auto { width: clamp(72px, 12vw, 136px); height: clamp(44px, 7.4vw, 82px); }
+  .gt3-gridschirm .grid-move button { width: clamp(40px, 5.6vw, 54px); height: clamp(40px, 5.6vw, 54px); font-size: clamp(16px, 2.2vw, 22px); }
+  .gt3-gridschirm .grid-row { cursor: pointer; }
+  .grid-row.grid-bewegt { animation: gridBewegt 900ms ease-out; }
+  @keyframes gridBewegt { 0%, 35% { box-shadow: 0 0 0 2px var(--accent, #0b84d6); } 100% { box-shadow: 0 0 0 0 transparent; } }
+  .grid-row.grid-blinkt .grid-auto { animation: gridBlinkt 1.5s steps(1, end); }
+  @keyframes gridBlinkt { 0%, 20%, 40%, 60%, 80% { filter: brightness(1.8); } 10%, 30%, 50%, 70%, 90%, 100% { filter: none; } }
 
   /* ---- Track editor: fullscreen and the symbol palette ----
      In fullscreen the map takes the whole screen and the palette sits UNDER it, small, so
@@ -4798,7 +4823,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.24</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.25</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5951,6 +5976,10 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Gewinnerschirm: Auf dem Podest steht &#252;ber jedem Namen das Autobild (Foto oder Farbe), der Sieger etwas gr&#246;&#223;er.</li>
+        <li>Aufstellungsschirm vor dem Rennstart: Beim Umsortieren gleiten die Autos an ihren neuen Platz, das bewegte Auto leuchtet kurz auf. Autobilder und Pfeiltasten sind gr&#246;&#223;er, und ein Tipp auf ein Auto l&#228;sst seine Lichter blinken.</li>
+        <li>Garage: Links steht je Auto nur noch die Rolle als Etikett; eingestellt wird sie rechts in der ersten Zeile (&#8222;Rolle&#8220;, mit Pfeilen bzw. Steuerkreuz links/rechts).</li>
+        <li>Pacejka: &#220;bersteuern ist ab Werk aus &#8211; das Auto lenkt nicht mehr von selbst weiter, wenn du nicht lenkst. Wieder anstellen: Optionen &#8594; Allgemein &#8594; &#8222;&#220;bersteuern (Pacejka)&#8220;. Ein gespeichertes &#8222;an&#8220; wird einmalig auf aus gestellt.</li>
         <li>Funkweg (APK): 1.1.23 schaltete ein Auto schon aufs Plugin, wenn OmegaBle wegen &#220;berlast mehr verwarf als schrieb &#8211; das ist aber Last und kein toter Weg. Jetzt nur noch, wenn zwei Pr&#252;fungen in Folge gar nichts mehr geschrieben wurde.</li>
         <li>Funklast mit mehreren NPCs (gemeldet: &#8222;Mit einem NPC klappt es gut&#8220;, mit mehreren halten Autos nicht, fahren chaotisch, das eigene Auto reagiert nicht): Jedes fahrende Auto schrieb alle 45 ms &#8211; mit vier NPCs und dir rund 110 Pakete pro Sekunde &#252;ber einen Bluetooth-Adapter, der dann belegt war, wiederholte und verwarf, auch deine Pakete. Jetzt teilen sich die NPCs zusammen etwa 30 Pakete pro Sekunde (ein NPC allein f&#228;hrt weiter im vollen Takt, bei vier schreibt jeder etwa alle 0,1 s; ein unver&#228;nderter Befehl nur alle 0,2 s). Halt (Gas auf 0) und Einparkman&#246;ver gehen weiter sofort und im vollen Takt. Der Halt nach Rennende wird alle 135 ms statt alle 45 ms nachgeschickt.</li>
         <li>Automatische Aufstellung: Wer seinen Ort schon &#252;ber Start/Ziel abgesichert hat, f&#228;hrt wieder direkt auf seinen Platz (wie bis 1.1.20) statt erst noch einmal &#252;ber Start/Ziel &#8211; das sparte bis zu einer ganzen Runde.</li>
@@ -9674,13 +9703,13 @@
         </select></div>
       <!-- BESTELLT: "Eventuell sage ich spaeter, dass das Uebersteuern abgeschaltet werden
            soll" - deshalb von Anfang an ein eigener Schalter. -->
-      <div class="opt-row" hidden><div class="opt-label">&Uuml;bersteuern (Pacejka)
+      <div class="opt-row"><div class="opt-label">&Uuml;bersteuern (Pacejka)
           <span class="wip-tag">experimentell</span>
           <small>Nur im Modus Pacejka. An: unter Vollgas in der Kurve und beim Anbremsen
           kommt das Heck, das Auto lenkt von selbst weiter ein und verliert Vortrieb, bis du
-          gegenlenkst oder vom Pedal gehst (h&ouml;chstens 2 s). Aus: das Heck bricht nie aus,
-          nur das Schieben &uuml;ber die Vorderr&auml;der bleibt.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-pac-ueber" checked><span></span></label></div>
+          gegenlenkst oder vom Pedal gehst (h&ouml;chstens 2 s). Aus (Vorgabe): das Auto lenkt nie
+          von selbst weiter, nur das Schieben &uuml;ber die Vorderr&auml;der bleibt.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-pac-ueber"><span></span></label></div>
       <div class="opt-row" hidden><div class="opt-label">Haftgrenze (Pacejka)
           <span class="wip-tag">experimentell</span>
           <small>Nur im Modus Pacejka. Wo der Scheitel der Reifenkurve liegt, gemessen an der

@@ -302,6 +302,22 @@
         } catch (e) { /* dann eben nur fuer diese Sitzung */ }
       }
     }
+    // ---- EINMALIG (v1.1.25): Uebersteuern im Pacejka-Modus aus ------------------------------
+    // BESTELLT: "Schalte bei den Pacejka-Presets aus, dass das Auto uebersteuert." Die neue Vorgabe ist aus;
+    // ein gespeichertes "an" aus der Zeit, als der Schalter verborgen und ab Werk an war, wird einmal auf aus
+    // gestellt. Wer es danach wieder anstellt, behaelt es.
+    {
+      let erledigt = false;
+      try { erledigt = localStorage.getItem('chc.migrate.pac1125.v1') === '1'; } catch (e) { /* privat */ }
+      if (!erledigt) {
+        let geaendert = false;
+        if (cfg['setting-pac-ueber'] === true || cfg['setting-pac-ueber'] === 'true') { cfg['setting-pac-ueber'] = false; geaendert = true; }
+        try {
+          localStorage.setItem('chc.migrate.pac1125.v1', '1');
+          if (geaendert) localStorage.setItem(AUTO_STORE, JSON.stringify(cfg));
+        } catch (e) { /* dann eben nur fuer diese Sitzung */ }
+      }
+    }
     // ---- EINMALIG (v1.1.15): Safety Car minimal naeher auf der Fahrbahn --------------------
     // BESTELLT: "Das einzige Problem war, dass es 5 mm zu weit am Rand war ... uebernimm die Werte, nur
     // minimal naeher auf der Fahrbahn." Wer genau den getesteten Rechts-Impuls (100 ms) stehen hat,
