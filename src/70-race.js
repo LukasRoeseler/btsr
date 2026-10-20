@@ -1975,6 +1975,9 @@
     bestzeitVorherMerken();
     // v1.1.3: ein neues Rennen beginnt nie unter Gelb (stand vorher aus dem letzten Rennen).
     if (flagState !== 'green') gelbBeenden();
+    // v1.1.20: auch nie mit einer noch laufenden Aufstellung (gestartet ohne den Startschirm, z. B. R1):
+    // deren Autopilot haette das Fahrerauto mitten im Rennen zu seinem Startplatz gesteuert.
+    if (typeof aufstellenStoppen === 'function') aufstellenStoppen(false);
     // EINSCHALTRAMPE: der Schirm zieht in 300 ms von schwarz auf Wert hoch, wie ein TFT beim
     // Einschalten. Hier und nicht in raceGreen(), weil der Schirm mit dem Knopfdruck
     // "angeht" und nicht erst bei Gruen - im Countdown will man ihn schon lesen.

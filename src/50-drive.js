@@ -2818,6 +2818,7 @@
     fahrhilfeModus = FAHRHILFE_MODI.indexOf(v) >= 0 ? v : 'aus';
   }
 
+  function aufstellRennenLaeuft() { return raceState === 'racing' || raceState === 'countdown' || raceState === 'finishing'; }
   function autopilotGrund() {
     // Ausdruck-Stellung: nicht lenkfaehig. Ohne Leitplanken haelt sich das Auto nicht selbst
     // auf der Bahn, und ein Autopilot ohne Querregelung faehrt es geradeaus in die Bande.
@@ -2828,7 +2829,11 @@
     // Einfuehrungsrunde und ohne Gelb - das Fahrerauto faehrt mit Spur-Bytes zu seinem
     // Startplatz und wird dort gehalten. Nur wenn SEIN Auto in der Aufstellung steht, sonst
     // wuerde ein fremdes Feld den Cockpit-Schriftzug zeigen.
-    if (typeof aufstellenSpielerZiel === 'function' && aufstellenSpielerZiel(playerCar)) return 'aufstellen';
+    // v1.1.20 GEMELDET: "Nach der gelben Flagge konnte ich mein Auto nicht mehr steuern, es ist random
+    // losgefahren und hat komisch gelenkt." Die Aufstellung hat hier Vorrang vor allem anderen - im laufenden
+    // Rennen darf sie aber nie greifen (eine liegengebliebene Aufstellung fuhr das Auto zum Startplatz).
+    if (typeof aufstellenSpielerZiel === 'function' && aufstellenSpielerZiel(playerCar)
+        && !aufstellRennenLaeuft()) return 'aufstellen';
     if (raceFormationLap) {
       // Beides kann gelten: wenn in der Einfuehrungsrunde jemand abfliegt. Dann gewinnt der
       // LANGSAMERE, und das ist keine Rangfolge, sondern eine Rechnung.
@@ -2906,7 +2911,7 @@
     if (!car) return false;
     if (scanStopp.car === car && Date.now() < scanStopp.bis) return true;
     if (typeof garageScan !== 'undefined' && garageScan.aktiv && garageScan.car === car) return true;
-    if (trackMode === 'on' && typeof aufstellenSpielerZiel === 'function' && aufstellenSpielerZiel(car)) return true;
+    if (trackMode === 'on' && typeof aufstellenSpielerZiel === 'function' && aufstellenSpielerZiel(car) && !aufstellRennenLaeuft()) return true;
     return !!autopilotGrund();
   }
   function autopilot(fahrerBremse, wer) {
@@ -2957,7 +2962,7 @@
     }
     // Automatische Aufstellung (v0.9.24, 90-ghosts.js): zum Startplatz, dort halten.
     // v0.9.87: nur auf der Bahn - im Ausdruck-Modus wuerde die Querlage als Radwinkel gelesen.
-    if (trackMode === 'on' && typeof aufstellenSpielerZiel === 'function' && aufstellenSpielerZiel(meinAuto)) {
+    if (trackMode === 'on' && typeof aufstellenSpielerZiel === 'function' && aufstellenSpielerZiel(meinAuto) && !aufstellRennenLaeuft()) {
       // v0.9.58 (D6): mit Spur-Bytes - dieselbe Querlage wie die Ghosts, in maximaler
       // Breite, damit das Auto von selbst auf die Seite seines Startplatzes faellt.
       // v1.0.37 BESTELLT: "Die Autos sollen fuer die automatische Aufstellung mittig fahren und

@@ -4798,7 +4798,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.19</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.20</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5951,6 +5951,8 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Fahrerauto: Eine liegengebliebene automatische Aufstellung (z. B. Rennen mit R1 statt &#252;ber den Startschirm gestartet) konnte mitten im Rennen den Autopiloten anwerfen &#8211; das Auto fuhr selbst los und lenkte die Einparkimpulse. Jedes Rennen beendet jetzt eine laufende Aufstellung, und w&#228;hrend eines Rennens greift sie nie.</li>
+        <li>NPCs halten zuverl&#228;ssig an (Rennen beenden, &#8222;NPCs anhalten&#8220;, Boxen- und Parkende): Der Halt ging bisher nur einmal hinaus, und war das vorige Paket noch unterwegs, wurde er verworfen &#8211; das Auto fuhr mit seinem letzten Befehl weiter. Jetzt wird der Halt 1,5 s lang im Sendetakt nachgeschickt.</li>
         <li>Automatische Aufstellung (und R&#252;ckfahrt nach dem Rennen): Die Autos fahren bis zu ihrem Platz genau mittig und parken dann mit derselben Folge wie das Safety Car &#8211; Impuls zur eigenen Seite, Gegenschub, Impuls zur&#252;ck, Gegenschub und Ausrollen, R&#228;der am Ende leicht zur Bahn; f&#252;r linke Pl&#228;tze gespiegelt. Die Werte kommen aus Optionen > Safety Car. Das Ziehen an den Rand aus 1.1.17 ist wieder raus; die Regler &#8222;Einparken: Dauer/Tempo&#8220; entfallen, die Einlenkst&#228;rke bleibt.</li>
         <li>Automatische Aufstellung und R&#252;ckfahrt nach dem Rennen: Die Code-Pr&#252;fung vor dem Halt aus 1.1.17 ist wieder raus &#8211; bei mehreren gleichen Teilen half sie nicht, und nach dem Rennen hielten NPCs mit unpassendem Code gar nicht mehr an. Das Fahren an den Rand bleibt.</li>
         <li>Funk mit mehreren Autos (APK): Der Sendeweg wechselte mit NPCs st&#228;ndig zwischen OmegaBle und dem Plugin. W&#228;hrend das Plugin ein Auto verbindet oder abonniert, pausiert OmegaBle f&#252;r alle Autos; das galt bisher jedes Mal als Ausfall. Jetzt z&#228;hlt Verworfenes w&#228;hrend einer Pause nicht, und erst zwei Ausf&#228;lle in Folge schalten auf das Plugin um.</li>
@@ -14613,6 +14615,8 @@
     "Funk mit mehreren Autos (APK): Der Sendeweg wechselte mit NPCs ständig zwischen OmegaBle und dem Plugin. Während das Plugin ein Auto verbindet oder abonniert, pausiert OmegaBle für alle Autos; das galt bisher jedes Mal als Ausfall. Jetzt zählt Verworfenes während einer Pause nicht, und erst zwei Ausfälle in Folge schalten auf das Plugin um.": "Radio with several cars (APK): with NPCs, the send path kept switching between OmegaBle and the plugin. While the plugin connects or subscribes a car, OmegaBle pauses for all cars; that used to count as a failure every time. Now discards during a pause do not count, and only two failures in a row switch to the plugin.",
     "Automatische Aufstellung und Rückfahrt nach dem Rennen: Die Code-Prüfung vor dem Halt aus 1.1.17 ist wieder raus – bei mehreren gleichen Teilen half sie nicht, und nach dem Rennen hielten NPCs mit unpassendem Code gar nicht mehr an. Das Fahren an den Rand bleibt.": "Automatic line-up and return after the race: the code check before stopping from 1.1.17 is removed again – with several identical pieces it did not help, and after the race NPCs with a mismatching code no longer stopped at all. Moving to the edge stays.",
     "Automatische Aufstellung (und Rückfahrt nach dem Rennen): Die Autos fahren bis zu ihrem Platz genau mittig und parken dann mit derselben Folge wie das Safety Car – Impuls zur eigenen Seite, Gegenschub, Impuls zurück, Gegenschub und Ausrollen, Räder am Ende leicht zur Bahn; für linke Plätze gespiegelt. Die Werte kommen aus Optionen > Safety Car. Das Ziehen an den Rand aus 1.1.17 ist wieder raus; die Regler „Einparken: Dauer/Tempo“ entfallen, die Einlenkstärke bleibt.": "Automatic line-up (and return after the race): the cars drive exactly in the centre up to their spot and then park with the same sequence as the safety car – pulse to their side, counter-thrust, pulse back, counter-thrust and roll-out, wheels slightly towards the track at the end; mirrored for left spots. The values come from Options > Safety Car. Moving to the edge from 1.1.17 is removed again; the \"Parking: duration/speed\" sliders are gone, the steering strength stays.",
+    "NPCs halten zuverlässig an (Rennen beenden, „NPCs anhalten“, Boxen- und Parkende): Der Halt ging bisher nur einmal hinaus, und war das vorige Paket noch unterwegs, wurde er verworfen – das Auto fuhr mit seinem letzten Befehl weiter. Jetzt wird der Halt 1,5 s lang im Sendetakt nachgeschickt.": "NPCs stop reliably (ending a race, \"Stop NPCs\", end of pit stops and parking): the stop used to go out only once, and if the previous packet was still in flight it was discarded – the car kept going with its last command. Now the stop is resent for 1.5 s at the send rate.",
+    "Fahrerauto: Eine liegengebliebene automatische Aufstellung (z. B. Rennen mit R1 statt über den Startschirm gestartet) konnte mitten im Rennen den Autopiloten anwerfen – das Auto fuhr selbst los und lenkte die Einparkimpulse. Jedes Rennen beendet jetzt eine laufende Aufstellung, und während eines Rennens greift sie nie.": "Player car: a left-over automatic line-up (e.g. race started with R1 instead of the grid screen) could start the autopilot mid-race – the car drove off by itself and steered the parking pulses. Every race now ends a running line-up, and it never applies during a race.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -25189,6 +25193,7 @@
     fahrhilfeModus = FAHRHILFE_MODI.indexOf(v) >= 0 ? v : 'aus';
   }
 
+  function aufstellRennenLaeuft() { return raceState === 'racing' || raceState === 'countdown' || raceState === 'finishing'; }
   function autopilotGrund() {
     // Ausdruck-Stellung: nicht lenkfaehig. Ohne Leitplanken haelt sich das Auto nicht selbst
     // auf der Bahn, und ein Autopilot ohne Querregelung faehrt es geradeaus in die Bande.
@@ -25199,7 +25204,11 @@
     // Einfuehrungsrunde und ohne Gelb - das Fahrerauto faehrt mit Spur-Bytes zu seinem
     // Startplatz und wird dort gehalten. Nur wenn SEIN Auto in der Aufstellung steht, sonst
     // wuerde ein fremdes Feld den Cockpit-Schriftzug zeigen.
-    if (typeof aufstellenSpielerZiel === 'function' && aufstellenSpielerZiel(playerCar)) return 'aufstellen';
+    // v1.1.20 GEMELDET: "Nach der gelben Flagge konnte ich mein Auto nicht mehr steuern, es ist random
+    // losgefahren und hat komisch gelenkt." Die Aufstellung hat hier Vorrang vor allem anderen - im laufenden
+    // Rennen darf sie aber nie greifen (eine liegengebliebene Aufstellung fuhr das Auto zum Startplatz).
+    if (typeof aufstellenSpielerZiel === 'function' && aufstellenSpielerZiel(playerCar)
+        && !aufstellRennenLaeuft()) return 'aufstellen';
     if (raceFormationLap) {
       // Beides kann gelten: wenn in der Einfuehrungsrunde jemand abfliegt. Dann gewinnt der
       // LANGSAMERE, und das ist keine Rangfolge, sondern eine Rechnung.
@@ -25277,7 +25286,7 @@
     if (!car) return false;
     if (scanStopp.car === car && Date.now() < scanStopp.bis) return true;
     if (typeof garageScan !== 'undefined' && garageScan.aktiv && garageScan.car === car) return true;
-    if (trackMode === 'on' && typeof aufstellenSpielerZiel === 'function' && aufstellenSpielerZiel(car)) return true;
+    if (trackMode === 'on' && typeof aufstellenSpielerZiel === 'function' && aufstellenSpielerZiel(car) && !aufstellRennenLaeuft()) return true;
     return !!autopilotGrund();
   }
   function autopilot(fahrerBremse, wer) {
@@ -25328,7 +25337,7 @@
     }
     // Automatische Aufstellung (v0.9.24, 90-ghosts.js): zum Startplatz, dort halten.
     // v0.9.87: nur auf der Bahn - im Ausdruck-Modus wuerde die Querlage als Radwinkel gelesen.
-    if (trackMode === 'on' && typeof aufstellenSpielerZiel === 'function' && aufstellenSpielerZiel(meinAuto)) {
+    if (trackMode === 'on' && typeof aufstellenSpielerZiel === 'function' && aufstellenSpielerZiel(meinAuto) && !aufstellRennenLaeuft()) {
       // v0.9.58 (D6): mit Spur-Bytes - dieselbe Querlage wie die Ghosts, in maximaler
       // Breite, damit das Auto von selbst auf die Seite seines Startplatzes faellt.
       // v1.0.37 BESTELLT: "Die Autos sollen fuer die automatische Aufstellung mittig fahren und
@@ -38358,6 +38367,9 @@
     bestzeitVorherMerken();
     // v1.1.3: ein neues Rennen beginnt nie unter Gelb (stand vorher aus dem letzten Rennen).
     if (flagState !== 'green') gelbBeenden();
+    // v1.1.20: auch nie mit einer noch laufenden Aufstellung (gestartet ohne den Startschirm, z. B. R1):
+    // deren Autopilot haette das Fahrerauto mitten im Rennen zu seinem Startplatz gesteuert.
+    if (typeof aufstellenStoppen === 'function') aufstellenStoppen(false);
     // EINSCHALTRAMPE: der Schirm zieht in 300 ms von schwarz auf Wert hoch, wie ein TFT beim
     // Einschalten. Hier und nicht in raceGreen(), weil der Schirm mit dem Knopfdruck
     // "angeht" und nicht erst bei Gruen - im Countdown will man ihn schon lesen.
@@ -52546,9 +52558,33 @@
       pitPlatzRaeumen(car);
     }
     if (car.rx) writeToCar(car, 0, 0, trackModeBit() | LIGHT_HEAD);
+    car.haltPaket = { lenk: 0, licht: trackModeBit() | LIGHT_HEAD };
+    stoppNachsenden(car);
     // Der Knopf "Ghosts anhalten" haengt daran. Hier und nicht an den sieben Aufrufstellen:
     // eine davon wird sonst vergessen, und dann steht ein scharfer Knopf ohne Ghost.
     refreshGarageGo();
+  }
+  // v1.1.20 GEMELDET: "Nach Rennen beenden muessen sofort ALLE NPCs stehen bleiben. Aktuell fahren manche
+  // noch weiter." stopGhost() schickte den Halt EINMAL, und writeToCar() verwirft ein Paket, solange das
+  // vorige noch unterwegs ist (auf dem Plugin-Weg bis 300 ms) - dann kam der Halt nie an, und das Auto
+  // fuhr mit seinem letzten Befehl weiter, bis man es abschaltete. Jetzt geht der Halt STOPP_NACHSENDEN_MS
+  // lang im Sendetakt nach, solange das Auto nicht wieder faehrt oder gesteuert wird.
+  const STOPP_NACHSENDEN_MS = 1500;
+  function stoppNachsenden(car) {
+    if (!car || !car.rx) return;
+    car.stoppBis = Date.now() + STOPP_NACHSENDEN_MS;
+    if (car.stoppTakt) return;
+    car.stoppTakt = setInterval(() => {
+      const gesteuert = car === playerCar || (typeof spielerNrVon === 'function' && spielerNrVon(car) >= 2);
+      if (Date.now() > car.stoppBis || !car.rx || garage.indexOf(car) < 0 || gesteuert
+          || (car.ghost && car.ghost.running)) {
+        clearInterval(car.stoppTakt); car.stoppTakt = null;
+        return;
+      }
+      // Das LETZTE Haltpaket (das Safety Car haelt z. B. mit Licht aus und leicht eingeschlagenen Raedern).
+      const h = car.haltPaket || { lenk: 0, licht: trackModeBit() | LIGHT_HEAD };
+      writeToCar(car, h.lenk, 0, h.licht);
+    }, CONTROL_SEND_INTERVAL_MS);
   }
 
   function removeCar(car) {
@@ -56321,7 +56357,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
   // lenk: Radstellung beim letzten Befehl (-1..1, negativ = links); Vorgabe gerade.
   function safetyCarLichtAus(sc, lenk) {
-    if (sc && sc.rx && !(sc.ghost && sc.ghost.running)) writeToCar(sc, lenk || 0, 0, trackModeBit());
+    if (sc && sc.rx && !(sc.ghost && sc.ghost.running)) {
+      writeToCar(sc, lenk || 0, 0, trackModeBit());
+      sc.haltPaket = { lenk: lenk || 0, licht: trackModeBit() };      // so geht auch das Nachsenden hinaus
+    }
   }
   // ---- NACH EINEM REMPLER WEITER (v1.0.25) ---------------------------------------------
   // GEMELDET: "Beim Rammen des Safety Car bleibt das einfach stehen." Ein Rempler laesst es

@@ -2444,9 +2444,33 @@
       pitPlatzRaeumen(car);
     }
     if (car.rx) writeToCar(car, 0, 0, trackModeBit() | LIGHT_HEAD);
+    car.haltPaket = { lenk: 0, licht: trackModeBit() | LIGHT_HEAD };
+    stoppNachsenden(car);
     // Der Knopf "Ghosts anhalten" haengt daran. Hier und nicht an den sieben Aufrufstellen:
     // eine davon wird sonst vergessen, und dann steht ein scharfer Knopf ohne Ghost.
     refreshGarageGo();
+  }
+  // v1.1.20 GEMELDET: "Nach Rennen beenden muessen sofort ALLE NPCs stehen bleiben. Aktuell fahren manche
+  // noch weiter." stopGhost() schickte den Halt EINMAL, und writeToCar() verwirft ein Paket, solange das
+  // vorige noch unterwegs ist (auf dem Plugin-Weg bis 300 ms) - dann kam der Halt nie an, und das Auto
+  // fuhr mit seinem letzten Befehl weiter, bis man es abschaltete. Jetzt geht der Halt STOPP_NACHSENDEN_MS
+  // lang im Sendetakt nach, solange das Auto nicht wieder faehrt oder gesteuert wird.
+  const STOPP_NACHSENDEN_MS = 1500;
+  function stoppNachsenden(car) {
+    if (!car || !car.rx) return;
+    car.stoppBis = Date.now() + STOPP_NACHSENDEN_MS;
+    if (car.stoppTakt) return;
+    car.stoppTakt = setInterval(() => {
+      const gesteuert = car === playerCar || (typeof spielerNrVon === 'function' && spielerNrVon(car) >= 2);
+      if (Date.now() > car.stoppBis || !car.rx || garage.indexOf(car) < 0 || gesteuert
+          || (car.ghost && car.ghost.running)) {
+        clearInterval(car.stoppTakt); car.stoppTakt = null;
+        return;
+      }
+      // Das LETZTE Haltpaket (das Safety Car haelt z. B. mit Licht aus und leicht eingeschlagenen Raedern).
+      const h = car.haltPaket || { lenk: 0, licht: trackModeBit() | LIGHT_HEAD };
+      writeToCar(car, h.lenk, 0, h.licht);
+    }, CONTROL_SEND_INTERVAL_MS);
   }
 
   function removeCar(car) {
@@ -6219,7 +6243,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
   // lenk: Radstellung beim letzten Befehl (-1..1, negativ = links); Vorgabe gerade.
   function safetyCarLichtAus(sc, lenk) {
-    if (sc && sc.rx && !(sc.ghost && sc.ghost.running)) writeToCar(sc, lenk || 0, 0, trackModeBit());
+    if (sc && sc.rx && !(sc.ghost && sc.ghost.running)) {
+      writeToCar(sc, lenk || 0, 0, trackModeBit());
+      sc.haltPaket = { lenk: lenk || 0, licht: trackModeBit() };      // so geht auch das Nachsenden hinaus
+    }
   }
   // ---- NACH EINEM REMPLER WEITER (v1.0.25) ---------------------------------------------
   // GEMELDET: "Beim Rammen des Safety Car bleibt das einfach stehen." Ein Rempler laesst es

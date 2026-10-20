@@ -4798,7 +4798,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.19</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.20</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5951,6 +5951,8 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Fahrerauto: Eine liegengebliebene automatische Aufstellung (z. B. Rennen mit R1 statt &#252;ber den Startschirm gestartet) konnte mitten im Rennen den Autopiloten anwerfen &#8211; das Auto fuhr selbst los und lenkte die Einparkimpulse. Jedes Rennen beendet jetzt eine laufende Aufstellung, und w&#228;hrend eines Rennens greift sie nie.</li>
+        <li>NPCs halten zuverl&#228;ssig an (Rennen beenden, &#8222;NPCs anhalten&#8220;, Boxen- und Parkende): Der Halt ging bisher nur einmal hinaus, und war das vorige Paket noch unterwegs, wurde er verworfen &#8211; das Auto fuhr mit seinem letzten Befehl weiter. Jetzt wird der Halt 1,5 s lang im Sendetakt nachgeschickt.</li>
         <li>Automatische Aufstellung (und R&#252;ckfahrt nach dem Rennen): Die Autos fahren bis zu ihrem Platz genau mittig und parken dann mit derselben Folge wie das Safety Car &#8211; Impuls zur eigenen Seite, Gegenschub, Impuls zur&#252;ck, Gegenschub und Ausrollen, R&#228;der am Ende leicht zur Bahn; f&#252;r linke Pl&#228;tze gespiegelt. Die Werte kommen aus Optionen > Safety Car. Das Ziehen an den Rand aus 1.1.17 ist wieder raus; die Regler &#8222;Einparken: Dauer/Tempo&#8220; entfallen, die Einlenkst&#228;rke bleibt.</li>
         <li>Automatische Aufstellung und R&#252;ckfahrt nach dem Rennen: Die Code-Pr&#252;fung vor dem Halt aus 1.1.17 ist wieder raus &#8211; bei mehreren gleichen Teilen half sie nicht, und nach dem Rennen hielten NPCs mit unpassendem Code gar nicht mehr an. Das Fahren an den Rand bleibt.</li>
         <li>Funk mit mehreren Autos (APK): Der Sendeweg wechselte mit NPCs st&#228;ndig zwischen OmegaBle und dem Plugin. W&#228;hrend das Plugin ein Auto verbindet oder abonniert, pausiert OmegaBle f&#252;r alle Autos; das galt bisher jedes Mal als Ausfall. Jetzt z&#228;hlt Verworfenes w&#228;hrend einer Pause nicht, und erst zwei Ausf&#228;lle in Folge schalten auf das Plugin um.</li>
