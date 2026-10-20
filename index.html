@@ -3627,6 +3627,24 @@
   .grid-row.dragging { opacity: .45; }
   /* v1.1.3: virtuelle Fahrt (60d-virtuell.js), ueber allem ausser der Pause. */
   .vf-schicht { position: fixed; inset: 0; z-index: 300; background: #8ca8c6; }
+  /* v1.1.11: Streckenbild gross zeigen (Screenshot oder lange druecken), statt nur herunterzuladen. */
+  .sb-schau { position: fixed; inset: 0; z-index: 500; background: rgba(5,7,12,.95); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px; padding: max(10px, env(safe-area-inset-top)) 12px 12px; }
+  .sb-schau .sb-bild { max-width: 100%; max-height: 74vh; object-fit: contain; border-radius: 6px; box-shadow: 0 6px 30px rgba(0,0,0,.6); }
+  .sb-schau .sb-hinweis { margin: 0; color: #cfd5e0; font-size: 14px; text-align: center; }
+  .sb-schau .sb-knoepfe { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .sb-schau .sb-knoepfe button { min-height: 44px; padding: 8px 18px; }
+  /* v1.1.11: waehrend der virtuellen Fahrt ruht die Seite darunter (nichts wird neu gezeichnet); was
+     dabei zu sehen sein muss - Startaufstellung, Ampel, Meldungen -, kommt ueber die 3D-Schicht. */
+  /* main liegt dabei UEBER der 3D-Schicht (eigener Stapel, z 301): unsichtbar und ohne Treffer fuer
+     Klicks, aber die sichtbar geschalteten Kinder darin stehen ueber dem Bild. Ein z-index allein
+     auf den Kindern half nicht - ein Vorfahr bildet seinen eigenen Stapel. */
+  body.vf-an main { visibility: hidden; position: relative; z-index: 301; }
+  body.vf-an #race-gridscreen, body.vf-an #ampel-overlay, body.vf-an #hud-toast-wrap { visibility: visible; }
+  body.vf-an #race-gridscreen { position: fixed; z-index: 400; }
+  body.vf-an #ampel-overlay { z-index: 400; }
+  body.vf-an #hud-toast-wrap { position: fixed; z-index: 400; top: max(52px, env(safe-area-inset-top)); left: 50%; right: auto;
+    transform: translateX(-50%); pointer-events: none; }
   .vf-bild { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
   .vf-hud { position: absolute; left: max(10px, env(safe-area-inset-left)); top: max(8px, env(safe-area-inset-top)); display: grid; gap: 2px;
     background: rgba(5,7,12,.62); color: #f3f4f6; padding: 6px 10px; border-radius: 8px; font-variant-numeric: tabular-nums;
@@ -4780,7 +4798,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.15</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.16</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5933,6 +5951,15 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Automatische Aufstellung: Lenkimpuls wie beim Safety Car (100 ms bei 40 % Tempo statt 45 ms bei 30 %); weil die Autos aus der Mittelgasse kommen, stehen sie damit weiter innen als das Safety Car. Der rechte Haltepunkt r&#252;ckt daf&#252;r noch etwas vor. Beide Regler stehen auf den neuen Werten (auch wenn vorher anders eingestellt).</li>
+        <li>Streckenscan etwas schneller: gerade 23,5 % statt 21 %, Haarnadel 16,5 % statt 14 % der H&#246;chstgeschwindigkeit &#8211; in der Haarnadel war das Auto gerade an der Grenze, an der es Balken und Querlage noch liest.</li>
+        <li>Safety Car: alle Einstellungen in einem eigenen Men&#252; (neue Kachel &#8222;Safety Car&#8220; in den Optionen) statt verteilt auf NPCs und Renneinstellungen. Neue Vorgaben aus dem Test: Anfahrt 3, Rechts-Impuls 90 ms (minimal n&#228;her an der Fahrbahn), Gegenschub nach rechts 100 ms, Links-Impuls 100 ms, Einpark-Teil Start/Ziel. Auf der Fahrbahn parkt es etwas weniger weit am Rand. Beim Losfahren macht es jetzt immer einen kurzen Links-Rechts-Impuls (falls es am Rand ein St&#252;ck daneben steht). Kommt Gelb, w&#228;hrend es schon einparkt, parkt es zu Ende und f&#228;hrt dann neu los &#8211; vorher fuhr es dann schr&#228;g von der Bahn.</li>
+        <li>Editor: &#8222;Bild speichern&#8220; zeigt das Streckenbild jetzt gro&#223; an &#8211; Screenshot machen oder lange dr&#252;cken; dazu Teilen (wo das Handy es kann), Speichern und Schlie&#223;en. Vorher passierte auf dem Handy oft nichts.</li>
+        <li>Studie: Die Fahrverhaltens-Challenge geht jetzt auch virtuell &#8211; dieselbe Strecke (Homington), dieselben 5 Runden, ohne Bahn und Auto; auf Wunsch zus&#228;tzlich zur Fahrt auf der Bahn. Vorher steht, wie lange alles dauert (Fragen etwa 3, Bahn etwa 10, virtuell etwa 5 Minuten). Die virtuelle Fahrt wird getrennt gespeichert (Apps Script neu bereitstellen).</li>
+        <li>R&#252;ckw&#228;rtsgang: halb so schnell wie bisher, und neu der Regler &#8222;Tempo r&#252;ckw&#228;rts&#8220; im Fahrgef&#252;hl (10&#8211;100 %, Vorgabe 50 %). Das Auto f&#228;hrt wirklich langsamer, auch mit Gas und Bremse zusammen; der Autopilot (gelbe Flagge, Aufstellung) ist ausgenommen.</li>
+        <li>Boxen-Minigame: nur noch 5 Tasten; nach jeder ist das Feld 250 ms leer. Jedes Fenster ist ein F&#252;nftel der Standzeit minus diese Pause, so passt alles in die Zeit; ein Treffer spart 8 % (f&#252;nf zusammen wie bisher 40 %).</li>
+        <li>Virtuell fahren: fl&#252;ssiger und direkter &#8211; gelenkt wird direkt mit dem Stick (voller Einschlag in 0,12 s) statt &#252;ber die Servod&#228;mpfung des echten Autos, die Kamera folgt nach der Zeit statt je Bild, die Seite darunter ruht, auf dem Handy etwas geringere Aufl&#246;sung. Neu: R3 (rechten Stick dr&#252;cken) oder C schaltet die Kamera: Verfolger, nahe Verfolger, Motorhaube. Startaufstellung, Ampel und Meldungen sind jetzt auch w&#228;hrend der virtuellen Fahrt zu sehen.</li>
+        <li>Garage: Die Abstimmungsleiste unten ist weg (die Abstimmung steht rechts beim gesteuerten Auto). Mit dem Controller wie in der Meisterschaft: X auf einem markierten Auto w&#228;hlt es und springt in die rechte Spalte, hoch/runter bleibt in der Spalte, Kreis geht zur&#252;ck zum Auto.</li>
         <li>Automatische Aufstellung: Die Autos halten fr&#252;her (rechts nach knapp einem Drittel der Kachel, links am Kachelanfang), und direkt nach dem Lenkimpuls steht das Tempo auf 0 &#8211; das erste Auto rollte bisher &#252;ber die Ziellinie.</li>
         <li>Virtuell fahren (WIP): Das Auto ist jetzt der Vulture V5.R aus Speed Dreams &#8211; echtes 3D-Modell mit Lackierung, R&#228;dern (vorn eingeschlagen, alle drehen) und Schatten. Scheinwerfer mit Lichtkegel, R&#252;ck- und Bremslichter leuchten (Licht &#252;ber den neuen Knopf &#8222;Licht&#8220; oder Dreieck). Federung mit den Federn, D&#228;mpfern und Stabilisatoren des Autos: Bremsen nickt die Nase, Gas dr&#252;ckt das Heck, Kurven legen das Auto zur Seite, neben der Bahn r&#252;ttelt es. Gefahren wird mit seinen Daten (1180 kg, Schwerpunkt, Radstand, 21&#176; Einschlag, Bremsbalance, Abtrieb). In der Garage w&#228;hlbar: Auto (V5.R oder einfaches Modell) und &#8222;Neigung sichtbar&#8220; (1&#215; bis 8&#215;). Neuer Motorklang: Vulture V5.R, 7,0 l V8.</li>
         <li>Studie: Die Schalter &#8222;mindestens 18&#8220; und &#8222;einverstanden&#8220; lie&#223;en sich nicht antippen (der sichtbare Schalter fehlte) &#8211; jetzt geht es weiter.</li>
@@ -9170,11 +9197,6 @@
       <div class="opt-row"><div class="opt-label">Gelbe Flagge deaktivieren<small>An: Der Knopf
           &bdquo;Gelbe Flagge&ldquo; und das Halten der Boxentaste rufen kein Gelb mehr aus.</small></div>
         <label class="tgl"><input type="checkbox" id="race-gelb-aus"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Safety Car: erst aufschlie&szlig;en<small>An:
-          Unter Gelb mit Safety Car fahren alle mit etwa 45&nbsp;% heran und ab zwei Kacheln Abstand
-          mit 35&nbsp;% weiter, in Kurven und Haarnadeln gedrosselt. Aus: alle sofort 35&nbsp;%.
-          &Uuml;berholt wird unter Gelb nie.</small></div>
-        <label class="tgl"><input type="checkbox" id="race-sc-aufschliessen" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Einparken: Einlenkst&auml;rke<span class="wip-tag">WIP</span><small>Bei der
           automatischen Aufstellung (vor und nach dem Rennen) fahren alle Autos genau mittig, auch an
           schon geparkten vorbei. Am eigenen Haltepunkt &ndash; rechts weiter vorn in der Kachel, links
@@ -9193,9 +9215,9 @@
           den Wert; rutscht es neben die Bahn, senke ihn.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="race-einpark-ms" min="10" max="300" step="5" value="45" data-preset-skip>
+          <input type="range" id="race-einpark-ms" min="10" max="300" step="5" value="100" data-preset-skip>
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="race-einpark-ms-val">45 ms</span>
+          <span class="opt-val" id="race-einpark-ms-val">100 ms</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Einparken: Tempo beim Lenkimpuls<span class="wip-tag">WIP</span><small>Wie
           schnell das Auto w&auml;hrend der beiden Lenkimpulse f&auml;hrt, in Prozent der H&ouml;chstgeschwindigkeit.
@@ -9203,9 +9225,9 @@
           rollt nach dem Bremsen etwas weiter.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="race-einpark-tempo" min="0.15" max="0.6" step="0.01" value="0.3" data-preset-skip>
+          <input type="range" id="race-einpark-tempo" min="0.15" max="0.6" step="0.01" value="0.4" data-preset-skip>
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="race-einpark-tempo-val">30 %</span>
+          <span class="opt-val" id="race-einpark-tempo-val">40 %</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Time Attack: NPCs als Challenger<span class="wip-tag">WIP</span><small>In
           Time Attack auf der Bahn fahren alle NPCs als Challenger gegen dich. Gegen meine Bestzeit:
@@ -9435,6 +9457,12 @@
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 42V18a13 13 0 0 1 26 0v24l-4.33-4-4.34 4-4.33-4-4.33 4-4.34-4z"/><circle cx="19.5" cy="19" r="2.4" fill="currentColor"/><circle cx="28.5" cy="19" r="2.4" fill="currentColor"/></svg>
           <b>NPCs</b>
           <span>NPCs: Tempo, Linie, Rennw&uuml;rze, Lernen. Teilweise noch im Aufbau.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="opt-safetycar">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 30l3-9a4 4 0 0 1 4-3h18a4 4 0 0 1 4 3l3 9v6H8z"/><path d="M8 30h32"/><circle cx="15" cy="36" r="3"/><circle cx="33" cy="36" r="3"/><path d="M19 13h10" stroke="#ffb020"/><path d="M21 13v-3h6v3" stroke="#ffb020"/></svg>
+          <b>Safety Car</b>
+          <span>Unter Gelb, Parken und Losfahren &ndash; alles an einem Ort.</span>
         </button>
         <button class="misc-tile subpage-open" data-sub="opt-pad">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
@@ -10311,6 +10339,13 @@
           <input type="range" id="phys-accel" min="0.4" max="2.0" step="0.05" value="1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="phys-accel-val">1.00</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Tempo r&uuml;ckw&auml;rts<small>H&ouml;chsttempo im R&uuml;ckw&auml;rtsgang, in Prozent des bisherigen Werts. 50&nbsp;% ist die Vorgabe seit 1.1.11 (vorher 100&nbsp;%). Gilt auch f&uuml;r &bdquo;Gas und Bremse zusammen&ldquo;; das Auto f&auml;hrt dabei wirklich langsamer, nicht nur die Anzeige. Wenn das Auto selbst f&auml;hrt (gelbe Flagge, Aufstellung), gilt der Regler nicht.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="phys-rueck-tempo" min="10" max="100" step="5" value="50">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="phys-rueck-tempo-val">50%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Gaskennlinie <span class="wip-tag">WIP</span>
           <small>Wie der Gasweg des Controllers auf die Beschleunigung abgebildet wird. Die Enden liegen immer fest: kein Gas hei&szlig;t keine Beschleunigung, Vollgas hei&szlig;t volle Beschleunigung &ndash; ge&auml;ndert wird nur, was dazwischen passiert. 1,0 ist die Gerade und &auml;ndert nichts. &Uuml;ber 1,0 streckt den unteren Bereich: ein Viertel Gasweg gibt bei 1,8 nur noch 8&nbsp;% statt 25&nbsp;%. Genau das braucht ein Trigger mit gro&szlig;er Totzone &ndash; ein DualShock&nbsp;4 oder DualSense gibt schon bei leichtem Druck viel ab, und dann l&auml;sst sich kein Tempo halten. Unter 1,0 macht es umgekehrt spitzer, f&uuml;r Pedale mit langem Weg.</small></div>
@@ -11270,96 +11305,6 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-leader-pct-val">10%</span>
         </div></div>
-      <div class="opt-head">Safety Car</div>
-      <div class="opt-row"><div class="opt-label">Wo parkt das Safety Car? <span class="wip-tag">experimentell</span>
-          <small>Fahrbahn: Das Safety Car f&auml;hrt beim Start die erste Runde hinter dem Feld mit und h&auml;lt nach der Gelbphase rechts am Rand der Strecke an Start/Ziel. Fahrbahn, wartet bis Gelb: Wie Fahrbahn, aber es f&auml;hrt beim Start nicht mit und wartet, bis Gelb kommt. Neben der Strecke von Hand: Du stellst das Safety Car vor dem Rennen neben die Strecke, zum Beispiel in eine Boxengasse, und zwar schr&auml;g zur Bahn hin in einem Winkel von etwa 40 Grad, damit es beim Losfahren sauber auf die Bahn kommt. Es wartet dort und f&auml;hrt bei Gelb los. Sein Startpunkt ist die Kachel, auf der es nach dem Losfahren zuerst gelesen wird. Er wird einmal je Rennen gemessen, sobald das Auto Start/Ziel passiert hat. Nach Gr&uuml;n f&auml;hrt es zur&uuml;ck, wird langsamer und verl&auml;sst die Bahn am Startpunkt in dieser Reihenfolge: Rechts-Impuls, Gegenschub, Links-Impuls, Gegenschub, Ausrollen, Halt mit leicht nach links eingeschlagenen R&auml;dern. Die Regler darunter stellen diesen Ablauf ein und wirken nur bei dieser Auswahl. Die Vorgaben stammen aus einem Test am Tisch. Bei anderem Auto oder Untergrund m&uuml;ssen sie angepasst werden.</small></div>
-        <select id="sc-parkplatz">
-          <option value="fahrbahn" selected>Fahrbahn</option>
-          <option value="neben">Neben der Strecke von Hand</option>
-          <option value="wartet">Fahrbahn, wartet bis Gelb</option>
-        </select></div>
-      <div class="opt-row"><div class="opt-label">Safety Car: Einpark-Teil
-          <small>Das Streckenteil, an dem das Safety Car neben der Strecke parkt und von dem aus die Ausfahrt gerechnet wird (Regler &bdquo;Ausfahrt-Zeitpunkt&ldquo;). Automatisch: die Kachel, auf der es nach dem Losfahren zuerst gelesen wird, einmal je Rennen gemessen. Mit einem gew&auml;hlten Teil braucht es diese Messung nicht. Die Wahl gilt nur f&uuml;r die gerade geladene Strecke und nur bei &bdquo;Neben der Strecke von Hand&ldquo;. Ein- und Ausparken laufen als feste Folge mit weichen Lenk&uuml;berg&auml;ngen.</small></div>
-        <select id="sc-ausfahrt-teil" data-preset-skip><option value="">automatisch (gemessen)</option></select></div>
-      <div class="opt-row"><div class="opt-label">Safety Car: Heimtempo
-          <small>H&ouml;chsttempo des Safety Cars nach Gr&uuml;n auf dem Weg zur Box, in Prozent der H&ouml;chstgeschwindigkeit. 100 = unbegrenzt, so schnell wie die &uuml;brigen NPCs. Niedriger hei&szlig;t, es muss vor der Anfahrt weniger Tempo abbauen, ist aber ein Hindernis f&uuml;r schnellere Autos, die dahinter auflaufen. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="sc-heimtempo" min="30" max="100" step="5" value="50">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="sc-heimtempo-val">50 %</span>
-        </div></div>      <div class="opt-row"><div class="opt-label">Safety Car: Anfahrt
-          <small>Wie viele Kacheln vor der Ausfahrt das Safety Car vom Heimtempo auf das Einfahrtstempo langsamer wird und an den rechten Rand f&auml;hrt. Mehr: es wird fr&uuml;her langsam. Zu wenig: Es ist beim Einfahren noch zu schnell. Die Anfahrt beginnt nur, wenn sie voll vor dem Auto liegt und der Kachelz&auml;hler an Start/Ziel abgeglichen ist. Sonst f&auml;hrt das Safety Car eine Runde weiter, damit jede Einfahrt gleich abl&auml;uft. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="sc-einfahrt-kacheln" min="1" max="6" step="1" value="5">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="sc-einfahrt-kacheln-val">5</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Safety Car: Rand-Vorlauf
-          <small>Wie viele Kacheln VOR der Anfahrt das Safety Car schon an den rechten Rand f&auml;hrt, ohne dabei langsamer zu werden. Je fr&uuml;her es am Rand f&auml;hrt, desto ruhiger liegt es vor dem Rechts-Impuls, weil die Querbewegung bei h&ouml;herem Tempo mehr Weg zur&uuml;cklegt. Das Tempo bleibt bis zur Anfahrt beim Heimtempo. 0 = die Randfahrt beginnt erst mit der Anfahrt. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="sc-rand-vorlauf" min="0" max="6" step="1" value="2">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="sc-rand-vorlauf-val">2</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Safety Car: Einfahrtstempo
-          <small>Tempo des Safety Cars auf der Anfahrt zur Ausfahrt, in Prozent der H&ouml;chstgeschwindigkeit. F&auml;hrt es zu schnell ein, senke den Wert. In Kurven f&auml;hrt es nie schneller als die Kurvendrosselung erlaubt, wie in der Gelbphase. Unter 30 % liest das Auto die Bahn nicht mehr zuverl&auml;ssig, deshalb geht der Regler nicht tiefer. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="sc-einfahrt-tempo" min="30" max="100" step="5" value="40">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="sc-einfahrt-tempo-val">40 %</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Safety Car: Ausfahrt-Zeitpunkt
-          <small>Ab welcher Stelle das Safety Car nach rechts von der Bahn lenkt, vom Startpunkt aus gerechnet in Kacheln, einstellbar in Viertelschritten: 0 ist der Anfang der Kachel des Startpunkts, negative Werte liegen davor (fr&uuml;her), positive dahinter (sp&auml;ter). Meist braucht es negative Werte, weil das Auto nach dem Einlenken noch ein St&uuml;ck weiterrollt, bis es die Bahn verl&auml;sst. F&auml;hrt es zu fr&uuml;h von der Bahn, erh&ouml;he den Wert, zu sp&auml;t: senke ihn. Die Stelle innerhalb einer Kachel wird aus dem zur&uuml;ckgelegten Weg gesch&auml;tzt. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="sc-ausfahrt-kachel" min="-5" max="5" step="0.25" value="-2.75">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="sc-ausfahrt-kachel-val">-2,75</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Safety Car: Rechts-Impuls
-          <small>Wie lange das Safety Car beim Verlassen der Bahn mit voll nach rechts eingeschlagenen R&auml;dern f&auml;hrt, in Millisekunden. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;. Zu wenig: Es bleibt am Rand der Bahn stehen. Zu viel: Es f&auml;hrt zu weit von der Strecke weg. Zum Kalibrieren schrittweise erh&ouml;hen.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="sc-ausfahrt-ms" min="0" max="2000" step="50" value="400">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="sc-ausfahrt-ms-val">400 ms</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Safety Car: Gegenschub nach Rechts-Impuls
-          <small>Wie lange das Safety Car direkt nach dem Rechts-Impuls kurz r&uuml;ckw&auml;rts schiebt, in Millisekunden, um schon vor dem Links-Impuls Tempo abzubauen. Dreht sich das Auto danach weniger, m&uuml;ssen Rechts- und Links-Impuls neu abgestimmt werden. 0 = aus. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="sc-gegenschub-rad-ms" min="0" max="500" step="25" value="0">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="sc-gegenschub-rad-ms-val">0 ms</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Safety Car: Links-Impuls
-          <small>Wie lange das Safety Car nach dem Rechts-Impuls mit voll nach links eingeschlagenen R&auml;dern f&auml;hrt, in Millisekunden, damit es sich wieder gerade stellt. Gleich lang wie der Rechts-Impuls ist ein guter Startwert. K&uuml;rzer: Das Auto steht am Ende schr&auml;g, mit der Front von der Bahn weg. L&auml;nger: schr&auml;g zur Bahn hin. Ein Sendetakt dauert rund 45 ms, kleinere Schritte als 50 ms wirken nicht. 0 = kein Gegenlenken, die R&auml;der bleiben bis zum Halt rechts. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="sc-ausfahrt-links-ms" min="0" max="2000" step="50" value="700">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="sc-ausfahrt-links-ms-val">700 ms</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Safety Car: Gegenschub nach Links-Impuls
-          <small>Wie lange das Safety Car nach dem Links-Impuls kurz r&uuml;ckw&auml;rts schiebt, in Millisekunden. Das Auto hat keine echte Bremse, Gas weg hei&szlig;t nur Ausrollen. Ein kurzer R&uuml;ckw&auml;rtsimpuls bremst es wirklich ab. Zu lang, und es rollt r&uuml;ckw&auml;rts. Danach rollt es noch etwa 0,3 s mit geraden R&auml;dern aus, dann stehen die R&auml;der leicht links. 0 = aus. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="sc-gegenschub-ms" min="0" max="500" step="25" value="450">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="sc-gegenschub-ms-val">450 ms</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Safety Car: R&auml;der am Ende
-          <small>Wie stark die R&auml;der am Ende, wenn das Auto steht, nach links eingeschlagen sind, in Prozent des vollen Einschlags. So steht das Auto bereit, um beim n&auml;chsten Einsatz sauber aus der Box zu fahren. 0 = R&auml;der gerade. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="sc-endlenk-pct" min="0" max="100" step="5" value="20">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="sc-endlenk-pct-val">20 %</span>
-        </div></div>
       
       <!-- ================================================================================
            RENNEN SIMULIEREN
@@ -11410,6 +11355,110 @@
         <div class="sim-tafel" id="sim-tafel" data-i18n-skip></div>
       </div>
 
+    </div>
+    <!-- v1.1.15 BESTELLT: "Sammle alle Safety-Car-Optionen in einem eigenen Menue, das ist gerade voellig
+         chaotisch an verschiedenen Orten. Es soll eine eigene Kachel in den Optionen bekommen." Vorher NPCs
+         (Parken, Impulse) und Renneinstellungen (erst aufschliessen). -->
+    <div class="card subpage" id="sub-opt-safetycar">
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
+      <h2>Safety Car</h2>
+      <p class="muted">Das Safety Car ist eine Rolle in der Garage (eines je Rennen). Hier steht alles, was es tut: unter Gelb, beim Parken und beim Losfahren. Beim Losfahren macht es immer einen kurzen Links-Rechts-Impuls, damit es wieder auf die Bahn kommt, falls es am Rand ein St&uuml;ck daneben steht.</p>
+      <div class="opt-head">Unter Gelb</div>
+      <div class="opt-row"><div class="opt-label">Safety Car: erst aufschlie&szlig;en<small>An:
+          Unter Gelb mit Safety Car fahren alle mit etwa 45&nbsp;% heran und ab zwei Kacheln Abstand
+          mit 35&nbsp;% weiter, in Kurven und Haarnadeln gedrosselt. Aus: alle sofort 35&nbsp;%.
+          &Uuml;berholt wird unter Gelb nie.</small></div>
+        <label class="tgl"><input type="checkbox" id="race-sc-aufschliessen" checked><span></span></label></div>
+      <div class="opt-head">Parken und Losfahren</div>
+      <div class="opt-row"><div class="opt-label">Wo parkt das Safety Car? <span class="wip-tag">experimentell</span>
+          <small>Fahrbahn: Das Safety Car f&auml;hrt beim Start die erste Runde hinter dem Feld mit und h&auml;lt nach der Gelbphase rechts am Rand der Strecke an Start/Ziel. Fahrbahn, wartet bis Gelb: Wie Fahrbahn, aber es f&auml;hrt beim Start nicht mit und wartet, bis Gelb kommt. Neben der Strecke von Hand: Du stellst das Safety Car vor dem Rennen neben die Strecke, zum Beispiel in eine Boxengasse, und zwar schr&auml;g zur Bahn hin in einem Winkel von etwa 40 Grad, damit es beim Losfahren sauber auf die Bahn kommt. Es wartet dort und f&auml;hrt bei Gelb los. Sein Startpunkt ist die Kachel, auf der es nach dem Losfahren zuerst gelesen wird. Er wird einmal je Rennen gemessen, sobald das Auto Start/Ziel passiert hat. Nach Gr&uuml;n f&auml;hrt es zur&uuml;ck, wird langsamer und verl&auml;sst die Bahn am Startpunkt in dieser Reihenfolge: Rechts-Impuls, Gegenschub, Links-Impuls, Gegenschub, Ausrollen, Halt mit leicht nach links eingeschlagenen R&auml;dern. Die Regler darunter stellen diesen Ablauf ein und wirken nur bei dieser Auswahl. Die Vorgaben stammen aus einem Test am Tisch. Bei anderem Auto oder Untergrund m&uuml;ssen sie angepasst werden.</small></div>
+        <select id="sc-parkplatz">
+          <option value="fahrbahn" selected>Fahrbahn</option>
+          <option value="neben">Neben der Strecke von Hand</option>
+          <option value="wartet">Fahrbahn, wartet bis Gelb</option>
+        </select></div>
+      <div class="opt-row"><div class="opt-label">Safety Car: Einpark-Teil
+          <small>Das Streckenteil, an dem das Safety Car neben der Strecke parkt und von dem aus die Ausfahrt gerechnet wird (Regler &bdquo;Ausfahrt-Zeitpunkt&ldquo;). Automatisch: die Kachel, auf der es nach dem Losfahren zuerst gelesen wird, einmal je Rennen gemessen. Mit einem gew&auml;hlten Teil braucht es diese Messung nicht. Die Wahl gilt nur f&uuml;r die gerade geladene Strecke und nur bei &bdquo;Neben der Strecke von Hand&ldquo;. Ein- und Ausparken laufen als feste Folge mit weichen Lenk&uuml;berg&auml;ngen.</small></div>
+        <select id="sc-ausfahrt-teil" data-preset-skip><option value="">automatisch (gemessen)</option></select></div>
+      <div class="opt-row"><div class="opt-label">Safety Car: Heimtempo
+          <small>H&ouml;chsttempo des Safety Cars nach Gr&uuml;n auf dem Weg zur Box, in Prozent der H&ouml;chstgeschwindigkeit. 100 = unbegrenzt, so schnell wie die &uuml;brigen NPCs. Niedriger hei&szlig;t, es muss vor der Anfahrt weniger Tempo abbauen, ist aber ein Hindernis f&uuml;r schnellere Autos, die dahinter auflaufen. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="sc-heimtempo" min="30" max="100" step="5" value="50">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="sc-heimtempo-val">50 %</span>
+        </div></div>      <div class="opt-row"><div class="opt-label">Safety Car: Anfahrt
+          <small>Wie viele Kacheln vor der Ausfahrt das Safety Car vom Heimtempo auf das Einfahrtstempo langsamer wird und an den rechten Rand f&auml;hrt. Mehr: es wird fr&uuml;her langsam. Zu wenig: Es ist beim Einfahren noch zu schnell. Die Anfahrt beginnt nur, wenn sie voll vor dem Auto liegt und der Kachelz&auml;hler an Start/Ziel abgeglichen ist. Sonst f&auml;hrt das Safety Car eine Runde weiter, damit jede Einfahrt gleich abl&auml;uft. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="sc-einfahrt-kacheln" min="1" max="6" step="1" value="3">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="sc-einfahrt-kacheln-val">3</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Safety Car: Rand-Vorlauf
+          <small>Wie viele Kacheln VOR der Anfahrt das Safety Car schon an den rechten Rand f&auml;hrt, ohne dabei langsamer zu werden. Je fr&uuml;her es am Rand f&auml;hrt, desto ruhiger liegt es vor dem Rechts-Impuls, weil die Querbewegung bei h&ouml;herem Tempo mehr Weg zur&uuml;cklegt. Das Tempo bleibt bis zur Anfahrt beim Heimtempo. 0 = die Randfahrt beginnt erst mit der Anfahrt. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="sc-rand-vorlauf" min="0" max="6" step="1" value="2">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="sc-rand-vorlauf-val">2</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Safety Car: Einfahrtstempo
+          <small>Tempo des Safety Cars auf der Anfahrt zur Ausfahrt, in Prozent der H&ouml;chstgeschwindigkeit. F&auml;hrt es zu schnell ein, senke den Wert. In Kurven f&auml;hrt es nie schneller als die Kurvendrosselung erlaubt, wie in der Gelbphase. Unter 30 % liest das Auto die Bahn nicht mehr zuverl&auml;ssig, deshalb geht der Regler nicht tiefer. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="sc-einfahrt-tempo" min="30" max="100" step="5" value="40">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="sc-einfahrt-tempo-val">40 %</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Safety Car: Ausfahrt-Zeitpunkt
+          <small>Ab welcher Stelle das Safety Car nach rechts von der Bahn lenkt, vom Startpunkt aus gerechnet in Kacheln, einstellbar in Viertelschritten: 0 ist der Anfang der Kachel des Startpunkts, negative Werte liegen davor (fr&uuml;her), positive dahinter (sp&auml;ter). Meist braucht es negative Werte, weil das Auto nach dem Einlenken noch ein St&uuml;ck weiterrollt, bis es die Bahn verl&auml;sst. F&auml;hrt es zu fr&uuml;h von der Bahn, erh&ouml;he den Wert, zu sp&auml;t: senke ihn. Die Stelle innerhalb einer Kachel wird aus dem zur&uuml;ckgelegten Weg gesch&auml;tzt. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="sc-ausfahrt-kachel" min="-5" max="5" step="0.25" value="-2.75">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="sc-ausfahrt-kachel-val">-2,75</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Safety Car: Rechts-Impuls
+          <small>Wie lange das Safety Car beim Verlassen der Bahn mit voll nach rechts eingeschlagenen R&auml;dern f&auml;hrt, in Millisekunden. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;. Zu wenig: Es bleibt am Rand der Bahn stehen. Zu viel: Es f&auml;hrt zu weit von der Strecke weg. Zum Kalibrieren schrittweise erh&ouml;hen.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="sc-ausfahrt-ms" min="0" max="2000" step="10" value="90">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="sc-ausfahrt-ms-val">90 ms</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Safety Car: Gegenschub nach Rechts-Impuls
+          <small>Wie lange das Safety Car direkt nach dem Rechts-Impuls kurz r&uuml;ckw&auml;rts schiebt, in Millisekunden, um schon vor dem Links-Impuls Tempo abzubauen. Dreht sich das Auto danach weniger, m&uuml;ssen Rechts- und Links-Impuls neu abgestimmt werden. 0 = aus. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="sc-gegenschub-rad-ms" min="0" max="500" step="25" value="100">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="sc-gegenschub-rad-ms-val">100 ms</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Safety Car: Links-Impuls
+          <small>Wie lange das Safety Car nach dem Rechts-Impuls mit voll nach links eingeschlagenen R&auml;dern f&auml;hrt, in Millisekunden, damit es sich wieder gerade stellt. Gleich lang wie der Rechts-Impuls ist ein guter Startwert. K&uuml;rzer: Das Auto steht am Ende schr&auml;g, mit der Front von der Bahn weg. L&auml;nger: schr&auml;g zur Bahn hin. Ein Sendetakt dauert rund 45 ms, kleinere Schritte als 50 ms wirken nicht. 0 = kein Gegenlenken, die R&auml;der bleiben bis zum Halt rechts. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="sc-ausfahrt-links-ms" min="0" max="2000" step="10" value="100">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="sc-ausfahrt-links-ms-val">100 ms</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Safety Car: Gegenschub nach Links-Impuls
+          <small>Wie lange das Safety Car nach dem Links-Impuls kurz r&uuml;ckw&auml;rts schiebt, in Millisekunden. Das Auto hat keine echte Bremse, Gas weg hei&szlig;t nur Ausrollen. Ein kurzer R&uuml;ckw&auml;rtsimpuls bremst es wirklich ab. Zu lang, und es rollt r&uuml;ckw&auml;rts. Danach rollt es noch etwa 0,3 s mit geraden R&auml;dern aus, dann stehen die R&auml;der leicht links. 0 = aus. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="sc-gegenschub-ms" min="0" max="500" step="25" value="450">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="sc-gegenschub-ms-val">450 ms</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Safety Car: R&auml;der am Ende
+          <small>Wie stark die R&auml;der am Ende, wenn das Auto steht, nach links eingeschlagen sind, in Prozent des vollen Einschlags. So steht das Auto bereit, um beim n&auml;chsten Einsatz sauber aus der Box zu fahren. 0 = R&auml;der gerade. Gilt nur bei &bdquo;Neben der Strecke von Hand&ldquo;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="sc-endlenk-pct" min="0" max="100" step="5" value="20">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="sc-endlenk-pct-val">20 %</span>
+        </div></div>
     </div>
     <div class="card subpage" id="sub-opt-pad">
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
@@ -13460,6 +13509,32 @@
     "Virtuell braucht ein Fahrgefühl mit Physik (nicht RC)": "Virtual needs a handling with physics (not RC)",
     "Dieses Gerät kann kein WebGL": "This device has no WebGL",
     "Virtuelle Fahrt: frei fahren, ✕ beendet": "Virtual drive: drive freely, ✕ exits",
+    "Start/Ziel (jede Strecke)": "Start/finish (any track)",
+    "Parken und Losfahren": "Parking and pulling away",
+    "Unter Gelb": "Under yellow",
+    "Das Safety Car ist eine Rolle in der Garage (eines je Rennen). Hier steht alles, was es tut: unter Gelb, beim Parken und beim Losfahren. Beim Losfahren macht es immer einen kurzen Links-Rechts-Impuls, damit es wieder auf die Bahn kommt, falls es am Rand ein Stück daneben steht.": "The safety car is a role in the garage (one per race). Everything it does is here: under yellow, when parking and when pulling away. When pulling away it always makes a short left-right pulse so it gets back onto the track if it stands a bit off at the edge.",
+    "Unter Gelb, Parken und Losfahren – alles an einem Ort.": "Under yellow, parking and pulling away – all in one place.",
+    "Verfolgerkamera": "Chase camera",
+    "Nahe Verfolgerkamera": "Close chase camera",
+    "Motorhaube": "Bonnet camera",
+    "Tempo rückwärts": "Reverse speed",
+    "Höchsttempo im Rückwärtsgang, in Prozent des bisherigen Werts. 50 % ist die Vorgabe seit 1.1.11 (vorher 100 %). Gilt auch für „Gas und Bremse zusammen“; das Auto fährt dabei wirklich langsamer, nicht nur die Anzeige. Wenn das Auto selbst fährt (gelbe Flagge, Aufstellung), gilt der Regler nicht.": "Top speed in reverse, as a percentage of the previous value. 50 % is the default since 1.1.11 (before: 100 %). Also applies to \"throttle and brake together\"; the car really drives slower, not just the display. When the car drives itself (yellow flag, line-up), the slider does not apply.",
+    "Wie lange": "How long",
+    "Fragen und Reaktionstest etwa 3 Minuten. Fahrt auf der Bahn etwa 10 Minuten (Strecke aufbauen etwa 5, fünf Runden etwa 3–5). Virtuelle Fahrt etwa 5 Minuten. Insgesamt also 3 bis 18 Minuten, je nachdem, was du fährst.": "Questions and reaction test about 3 minutes. Drive on the track about 10 minutes (building the track about 5, five laps about 3–5). Virtual drive about 5 minutes. So 3 to 18 minutes in total, depending on what you drive.",
+    "6 Aussagen zur Persönlichkeit bewerten, eine Frage zu deinem Fahrkönnen beantworten, einen Reaktionstest mit dem Controller machen (10 Durchgänge) und danach, wenn du magst, eine Fahrverhaltens-Challenge fahren: 5 Runden auf Homington (nur Teile der Grundpackung) mit dem Fahrgefühl Sim+ – auf der echten Bahn, virtuell in der App oder beides.": "Rate 6 statements about personality, answer one question about your driving skill, do a reaction test with the controller (10 rounds) and then, if you like, drive a driving-behaviour challenge: 5 laps on Homington (base set pieces only) with the Sim+ handling – on the real track, virtually in the app, or both.",
+    "Auf der Bahn: Baue Homington aus der Grundpackung auf (der Plan erscheint beim Start), stelle dein Auto auf Start/Ziel und fahre 5 Runden – etwa 10 Minuten.": "On the track: build Homington from the base set (the plan appears at the start), put your car on start/finish and drive 5 laps – about 10 minutes.",
+    "Virtuell: dieselbe Strecke und dieselben 5 Runden in der App, ohne Bahn und Auto – etwa 5 Minuten. Du kannst beides fahren, nacheinander.": "Virtual: the same track and the same 5 laps in the app, without track or car – about 5 minutes. You can drive both, one after the other.",
+    "Fahrgefühl Sim+, trocken, keine Bestenliste. Gemessen werden Rundenzeiten, Gas, Bremse, Lenkung und Abflüge. Ohne Fahrt kannst du auch gleich abschließen.": "Sim+ handling, dry, no leaderboard. Measured are lap times, throttle, brake, steering and off-track moments. You can also finish right away without driving.",
+    "Auf der Bahn fahren": "Drive on the track",
+    "gefahren, nicht gewertet": "driven, not counted",
+    "beste Runde": "best lap",
+    "noch nicht": "not yet",
+    "Auch auf der Bahn fahren (etwa 10 Minuten)": "Also drive on the track (about 10 minutes)",
+    "Auch virtuell fahren (etwa 5 Minuten)": "Also drive virtually (about 5 minutes)",
+    "Abschließen und senden": "Finish and send",
+    "Screenshot machen oder das Bild lange drücken, um es zu speichern.": "Take a screenshot or long-press the image to save it.",
+    "Teilen": "Share",
+    "Teilen geht hier nicht – bitte einen Screenshot machen": "Sharing does not work here – please take a screenshot",
     "Auto-Modell nicht ladbar – es fährt der Kasten": "Car model could not load – the box drives instead",
     "Neigung sichtbar": "Visible body lean",
     "Einfaches Modell": "Simple model",
@@ -13477,7 +13552,6 @@
     "Wie viele Millisekunden das Auto zu seiner Seite lenkt – und danach genauso lang zurück. Vorgabe 45 ms, das ist ein Sendetakt. Bleibt das Auto zu weit in der Mitte stehen, erhöhe den Wert; rutscht es neben die Bahn, senke ihn.": "How many milliseconds the car steers to its side – and then just as long back. Default 45 ms, that is one send cycle. If the car stops too close to the middle, increase it; if it slides off the track, lower it.",
     "Einparken: Tempo beim Lenkimpuls": "Parking: speed during the pulse",
     "Wie schnell das Auto während der beiden Lenkimpulse fährt, in Prozent der Höchstgeschwindigkeit. Vorgabe 30 %. Schneller heißt: derselbe Impuls bringt das Auto weiter zur Seite, und es rollt nach dem Bremsen etwas weiter.": "How fast the car drives during the two steering pulses, in percent of top speed. Default 30 %. Faster means the same pulse moves the car further to the side, and it rolls a little further after braking.",
-    "6 Aussagen zur Persönlichkeit bewerten, eine Frage zu deinem Fahrkönnen beantworten, einen Reaktionstest mit dem Controller machen (10 Durchgänge) und danach, wenn du magst, eine Fahrverhaltens-Challenge fahren: 5 Runden auf Homington (nur Teile der Grundpackung) mit dem Fahrgefühl Sim+. Ohne Fahrt etwa 3 Minuten, mit Fahrt etwa 10.": "Rate 6 statements about personality, answer one question about your driving skill, do a reaction test with the controller (10 trials) and then, if you like, drive a driving-behaviour challenge: 5 laps on Homington (basic set pieces only) with the Sim+ handling. About 3 minutes without the drive, about 10 with it.",
     "Alter, Geschlecht, deine Antworten, die Reaktionszeiten, der Name des Controllers, die App-Version, die zufällige Gerätekennung dieser App und – mit Fahrt – Rundenzeiten und Fahrstil-Kennwerte (Gas, Bremse, Lenkung, Abflüge). Dein Name wird nicht abgefragt, und die Studienfahrt erscheint in keiner Bestenliste.": "Age, gender, your answers, the reaction times, the controller's name, the app version, this app's random device ID and – with the drive – lap times and driving-style measures (throttle, brake, steering, off-tracks). Your name is not asked for, and the study drive appears in no leaderboard.",
     "In einer Tabelle des Projekts. Öffentlich zugänglich gemacht werden die Daten nur in anonymisierter Form: ohne Gerätekennung, ohne Zeitpunkt und ohne Controller-Namen, in zufälliger Reihenfolge. Ausgewertet wird für Forschung und Lehre.": "In a table of the project. The data are made publicly available only in anonymised form: without device ID, without time stamp and without controller name, in random order. They are analysed for research and teaching.",
     "Die Teilnahme ist freiwillig, und du musst mindestens 18 Jahre alt sein. Du kannst jederzeit abbrechen; vor dem letzten Schritt wird nichts gesendet. Mit deiner Gerätekennung kannst du später die Löschung verlangen, solange die Daten noch nicht anonymisiert veröffentlicht sind.": "Participation is voluntary, and you must be at least 18 years old. You can stop at any time; nothing is sent before the last step. With your device ID you can later ask for deletion, as long as the data have not yet been published in anonymised form.",
@@ -14511,6 +14585,15 @@
     "Studie: Die Schalter „mindestens 18“ und „einverstanden“ ließen sich nicht antippen (der sichtbare Schalter fehlte) – jetzt geht es weiter.": "Study: the \"at least 18\" and \"I agree\" switches could not be tapped (the visible switch was missing) – you can now continue.",
     "Virtuell fahren (WIP): Das Auto ist jetzt der Vulture V5.R aus Speed Dreams – echtes 3D-Modell mit Lackierung, Rädern (vorn eingeschlagen, alle drehen) und Schatten. Scheinwerfer mit Lichtkegel, Rück- und Bremslichter leuchten (Licht über den neuen Knopf „Licht“ oder Dreieck). Federung mit den Federn, Dämpfern und Stabilisatoren des Autos: Bremsen nickt die Nase, Gas drückt das Heck, Kurven legen das Auto zur Seite, neben der Bahn rüttelt es. Gefahren wird mit seinen Daten (1180 kg, Schwerpunkt, Radstand, 21° Einschlag, Bremsbalance, Abtrieb). In der Garage wählbar: Auto (V5.R oder einfaches Modell) und „Neigung sichtbar“ (1× bis 8×). Neuer Motorklang: Vulture V5.R, 7,0 l V8.": "Virtual driving (WIP): the car is now the Vulture V5.R from Speed Dreams – a real 3D model with livery, wheels (front ones steer, all spin) and a shadow. Headlights with a light cone, tail and brake lights glow (lights via the new \"Lights\" button or triangle). Suspension with the car's springs, dampers and anti-roll bars: braking dips the nose, throttle squats the rear, corners lean the car, off the track it shakes. It drives with its own data (1180 kg, centre of gravity, wheelbase, 21° lock, brake balance, downforce). Selectable in the garage: car (V5.R or simple model) and \"Visible body lean\" (1× to 8×). New engine sound: Vulture V5.R, 7.0 l V8.",
     "Automatische Aufstellung: Die Autos halten früher (rechts nach knapp einem Drittel der Kachel, links am Kachelanfang), und direkt nach dem Lenkimpuls steht das Tempo auf 0 – das erste Auto rollte bisher über die Ziellinie.": "Automatic line-up: the cars stop earlier (right after about a third of the tile, left at the tile start), and right after the steering pulse the speed is set to 0 – the first car used to roll over the finish line.",
+    "Garage: Die Abstimmungsleiste unten ist weg (die Abstimmung steht rechts beim gesteuerten Auto). Mit dem Controller wie in der Meisterschaft: X auf einem markierten Auto wählt es und springt in die rechte Spalte, hoch/runter bleibt in der Spalte, Kreis geht zurück zum Auto.": "Garage: the tuning bar at the bottom is gone (tuning is on the right for the driven car). With the controller like in the championship: X on a highlighted car selects it and jumps to the right column, up/down stays in the column, circle goes back to the car.",
+    "Virtuell fahren: flüssiger und direkter – gelenkt wird direkt mit dem Stick (voller Einschlag in 0,12 s) statt über die Servodämpfung des echten Autos, die Kamera folgt nach der Zeit statt je Bild, die Seite darunter ruht, auf dem Handy etwas geringere Auflösung. Neu: R3 (rechten Stick drücken) oder C schaltet die Kamera: Verfolger, nahe Verfolger, Motorhaube. Startaufstellung, Ampel und Meldungen sind jetzt auch während der virtuellen Fahrt zu sehen.": "Virtual driving: smoother and more direct – steering comes straight from the stick (full lock in 0.12 s) instead of through the real car's servo damping, the camera follows by time instead of per frame, the page underneath rests, slightly lower resolution on phones. New: R3 (press the right stick) or C switches the camera: chase, close chase, bonnet. Start grid, lights and messages are now visible during the virtual drive too.",
+    "Boxen-Minigame: nur noch 5 Tasten; nach jeder ist das Feld 250 ms leer. Jedes Fenster ist ein Fünftel der Standzeit minus diese Pause, so passt alles in die Zeit; ein Treffer spart 8 % (fünf zusammen wie bisher 40 %).": "Pit minigame: only 5 buttons now; after each one the field is empty for 250 ms. Each window is a fifth of the stop time minus that pause, so everything fits the time; a hit saves 8 % (five together 40 %, as before).",
+    "Rückwärtsgang: halb so schnell wie bisher, und neu der Regler „Tempo rückwärts“ im Fahrgefühl (10–100 %, Vorgabe 50 %). Das Auto fährt wirklich langsamer, auch mit Gas und Bremse zusammen; der Autopilot (gelbe Flagge, Aufstellung) ist ausgenommen.": "Reverse: half as fast as before, and a new \"Reverse speed\" slider in the handling settings (10–100 %, default 50 %). The car really drives slower, also with throttle and brake together; the autopilot (yellow flag, line-up) is exempt.",
+    "Studie: Die Fahrverhaltens-Challenge geht jetzt auch virtuell – dieselbe Strecke (Homington), dieselben 5 Runden, ohne Bahn und Auto; auf Wunsch zusätzlich zur Fahrt auf der Bahn. Vorher steht, wie lange alles dauert (Fragen etwa 3, Bahn etwa 10, virtuell etwa 5 Minuten). Die virtuelle Fahrt wird getrennt gespeichert (Apps Script neu bereitstellen).": "Study: the driving-behaviour challenge now also works virtually – the same track (Homington), the same 5 laps, without track or car; optionally in addition to the drive on the track. Beforehand it says how long everything takes (questions about 3, track about 10, virtual about 5 minutes). The virtual drive is stored separately (redeploy the Apps Script).",
+    "Editor: „Bild speichern“ zeigt das Streckenbild jetzt groß an – Screenshot machen oder lange drücken; dazu Teilen (wo das Handy es kann), Speichern und Schließen. Vorher passierte auf dem Handy oft nichts.": "Editor: \"Save image\" now shows the track picture full size – take a screenshot or long-press it; plus Share (where the phone supports it), Save and Close. Before, often nothing happened on phones.",
+    "Safety Car: alle Einstellungen in einem eigenen Menü (neue Kachel „Safety Car“ in den Optionen) statt verteilt auf NPCs und Renneinstellungen. Neue Vorgaben aus dem Test: Anfahrt 3, Rechts-Impuls 90 ms (minimal näher an der Fahrbahn), Gegenschub nach rechts 100 ms, Links-Impuls 100 ms, Einpark-Teil Start/Ziel. Auf der Fahrbahn parkt es etwas weniger weit am Rand. Beim Losfahren macht es jetzt immer einen kurzen Links-Rechts-Impuls (falls es am Rand ein Stück daneben steht). Kommt Gelb, während es schon einparkt, parkt es zu Ende und fährt dann neu los – vorher fuhr es dann schräg von der Bahn.": "Safety car: all settings in their own menu (new \"Safety Car\" tile in the options) instead of spread over NPCs and race settings. New defaults from the test: approach 3, right pulse 90 ms (minimally closer to the track), counter-thrust after right 100 ms, left pulse 100 ms, parking part start/finish. On the track it parks slightly less far to the edge. When pulling away it now always makes a short left-right pulse (in case it stands a bit off at the edge). If yellow comes while it is already parking, it finishes parking and then starts again – before, it then drove off the track at an angle.",
+    "Streckenscan etwas schneller: gerade 23,5 % statt 21 %, Haarnadel 16,5 % statt 14 % der Höchstgeschwindigkeit – in der Haarnadel war das Auto gerade an der Grenze, an der es Balken und Querlage noch liest.": "Track scan slightly faster: straights 23.5 % instead of 21 %, hairpin 16.5 % instead of 14 % of top speed – in the hairpin the car was right at the limit where it still reads bars and lateral position.",
+    "Automatische Aufstellung: Lenkimpuls wie beim Safety Car (100 ms bei 40 % Tempo statt 45 ms bei 30 %); weil die Autos aus der Mittelgasse kommen, stehen sie damit weiter innen als das Safety Car. Der rechte Haltepunkt rückt dafür noch etwas vor. Beide Regler stehen auf den neuen Werten (auch wenn vorher anders eingestellt).": "Automatic line-up: steering pulse like the safety car (100 ms at 40 % speed instead of 45 ms at 30 %); since the cars come from the centre lane, they end up further inside than the safety car. The right halt point moves a bit forward to match. Both sliders are on the new values (even if set differently before).",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -16652,6 +16735,34 @@
     "Virtuell braucht ein Fahrgefühl mit Physik (nicht RC)": "El modo virtual necesita un manejo con física (no RC)",
     "Dieses Gerät kann kein WebGL": "Este dispositivo no tiene WebGL",
     "Virtuelle Fahrt: frei fahren, ✕ beendet": "Conducción virtual: libre, ✕ para salir",
+    "Start/Ziel (jede Strecke)": "Salida/meta (cualquier pista)",
+    "Parken und Losfahren": "Aparcar y arrancar",
+    "Unter Gelb": "Bajo amarilla",
+    "Das Safety Car ist eine Rolle in der Garage (eines je Rennen). Hier steht alles, was es tut: unter Gelb, beim Parken und beim Losfahren. Beim Losfahren macht es immer einen kurzen Links-Rechts-Impuls, damit es wieder auf die Bahn kommt, falls es am Rand ein Stück daneben steht.": "El coche de seguridad es un rol en el garaje (uno por carrera). Aquí está todo lo que hace: bajo amarilla, al aparcar y al arrancar. Al arrancar siempre hace un breve impulso izquierda-derecha para volver a la pista si queda un poco fuera en el borde.",
+    "Unter Gelb, Parken und Losfahren – alles an einem Ort.": "Bajo amarilla, aparcar y arrancar: todo en un sitio.",
+    "Verfolgerkamera": "Cámara de persecución",
+    "Nahe Verfolgerkamera": "Cámara de persecución cercana",
+    "Motorhaube": "Cámara en el capó",
+    "Tempo rückwärts": "Velocidad marcha atrás",
+    "Höchsttempo im Rückwärtsgang, in Prozent des bisherigen Werts. 50 % ist die Vorgabe seit 1.1.11 (vorher 100 %). Gilt auch für „Gas und Bremse zusammen“; das Auto fährt dabei wirklich langsamer, nicht nur die Anzeige. Wenn das Auto selbst fährt (gelbe Flagge, Aufstellung), gilt der Regler nicht.": "Velocidad máxima en marcha atrás, en porcentaje del valor anterior. 50 % es el valor por defecto desde 1.1.11 (antes 100 %). También vale para «acelerador y freno juntos»; el coche va de verdad más lento, no solo la indicación. Cuando el coche conduce solo (bandera amarilla, parrilla), el control no se aplica.",
+    "Wie lange": "Cuánto dura",
+    "Fragen und Reaktionstest etwa 3 Minuten. Fahrt auf der Bahn etwa 10 Minuten (Strecke aufbauen etwa 5, fünf Runden etwa 3–5). Virtuelle Fahrt etwa 5 Minuten. Insgesamt also 3 bis 18 Minuten, je nachdem, was du fährst.": "Preguntas y prueba de reacción unos 3 minutos. Carrera en la pista unos 10 minutos (montar la pista unos 5, cinco vueltas unos 3–5). Carrera virtual unos 5 minutos. En total de 3 a 18 minutos, según lo que conduzcas.",
+    "6 Aussagen zur Persönlichkeit bewerten, eine Frage zu deinem Fahrkönnen beantworten, einen Reaktionstest mit dem Controller machen (10 Durchgänge) und danach, wenn du magst, eine Fahrverhaltens-Challenge fahren: 5 Runden auf Homington (nur Teile der Grundpackung) mit dem Fahrgefühl Sim+ – auf der echten Bahn, virtuell in der App oder beides.": "Valorar 6 afirmaciones sobre la personalidad, responder una pregunta sobre tu habilidad, hacer una prueba de reacción con el mando (10 rondas) y después, si quieres, un reto de conducción: 5 vueltas en Homington (solo piezas del set básico) con el manejo Sim+ – en la pista real, virtualmente en la app o ambas.",
+    "Auf der Bahn: Baue Homington aus der Grundpackung auf (der Plan erscheint beim Start), stelle dein Auto auf Start/Ziel und fahre 5 Runden – etwa 10 Minuten.": "En la pista: monta Homington con el set básico (el plano aparece al empezar), pon tu coche en salida/meta y da 5 vueltas – unos 10 minutos.",
+    "Virtuell: dieselbe Strecke und dieselben 5 Runden in der App, ohne Bahn und Auto – etwa 5 Minuten. Du kannst beides fahren, nacheinander.": "Virtual: la misma pista y las mismas 5 vueltas en la app, sin pista ni coche – unos 5 minutos. Puedes hacer ambas, una tras otra.",
+    "Fahrgefühl Sim+, trocken, keine Bestenliste. Gemessen werden Rundenzeiten, Gas, Bremse, Lenkung und Abflüge. Ohne Fahrt kannst du auch gleich abschließen.": "Manejo Sim+, seco, sin clasificación. Se miden tiempos de vuelta, acelerador, freno, dirección y salidas de pista. También puedes terminar ya sin conducir.",
+    "Auf der Bahn fahren": "Conducir en la pista",
+    "gefahren, nicht gewertet": "conducido, no válido",
+    "beste Runde": "mejor vuelta",
+    "noch nicht": "todavía no",
+    "Auch auf der Bahn fahren (etwa 10 Minuten)": "Conducir también en la pista (unos 10 minutos)",
+    "Auch virtuell fahren (etwa 5 Minuten)": "Conducir también virtual (unos 5 minutos)",
+    "Abschließen und senden": "Terminar y enviar",
+    "Screenshot machen oder das Bild lange drücken, um es zu speichern.": "Haz una captura o mantén pulsada la imagen para guardarla.",
+    "Teilen": "Compartir",
+    "Speichern": "Guardar",
+    "Schließen": "Cerrar",
+    "Teilen geht hier nicht – bitte einen Screenshot machen": "Aquí no se puede compartir: haz una captura",
     "Auto-Modell nicht ladbar – es fährt der Kasten": "No se pudo cargar el modelo: conduce la caja",
     "Neigung sichtbar": "Inclinación visible",
     "Einfaches Modell": "Modelo simple",
@@ -16669,7 +16780,6 @@
     "Wie viele Millisekunden das Auto zu seiner Seite lenkt – und danach genauso lang zurück. Vorgabe 45 ms, das ist ein Sendetakt. Bleibt das Auto zu weit in der Mitte stehen, erhöhe den Wert; rutscht es neben die Bahn, senke ihn.": "Cuántos milisegundos gira el coche hacia su lado y después lo mismo de vuelta. Por defecto 45 ms, un ciclo de envío. Si el coche queda demasiado en el centro, súbelo; si se sale de la pista, bájalo.",
     "Einparken: Tempo beim Lenkimpuls": "Aparcar: velocidad durante el impulso",
     "Wie schnell das Auto während der beiden Lenkimpulse fährt, in Prozent der Höchstgeschwindigkeit. Vorgabe 30 %. Schneller heißt: derselbe Impuls bringt das Auto weiter zur Seite, und es rollt nach dem Bremsen etwas weiter.": "A qué velocidad va el coche durante los dos impulsos, en porcentaje de la velocidad máxima. Por defecto 30 %. Más rápido significa que el mismo impulso lo lleva más al lado y rueda algo más tras frenar.",
-    "6 Aussagen zur Persönlichkeit bewerten, eine Frage zu deinem Fahrkönnen beantworten, einen Reaktionstest mit dem Controller machen (10 Durchgänge) und danach, wenn du magst, eine Fahrverhaltens-Challenge fahren: 5 Runden auf Homington (nur Teile der Grundpackung) mit dem Fahrgefühl Sim+. Ohne Fahrt etwa 3 Minuten, mit Fahrt etwa 10.": "Valorar 6 afirmaciones sobre la personalidad, responder una pregunta sobre tu habilidad al volante, hacer una prueba de reacción con el mando (10 intentos) y después, si quieres, conducir un reto de comportamiento: 5 vueltas en Homington (solo piezas del set básico) con el manejo Sim+. Unos 3 minutos sin la carrera, unos 10 con ella.",
     "Alter, Geschlecht, deine Antworten, die Reaktionszeiten, der Name des Controllers, die App-Version, die zufällige Gerätekennung dieser App und – mit Fahrt – Rundenzeiten und Fahrstil-Kennwerte (Gas, Bremse, Lenkung, Abflüge). Dein Name wird nicht abgefragt, und die Studienfahrt erscheint in keiner Bestenliste.": "Edad, género, tus respuestas, los tiempos de reacción, el nombre del mando, la versión de la app, el identificador aleatorio de este dispositivo y, con la carrera, los tiempos por vuelta y medidas del estilo de conducción (acelerador, freno, dirección, salidas). No se pide tu nombre y la carrera del estudio no aparece en ninguna clasificación.",
     "In einer Tabelle des Projekts. Öffentlich zugänglich gemacht werden die Daten nur in anonymisierter Form: ohne Gerätekennung, ohne Zeitpunkt und ohne Controller-Namen, in zufälliger Reihenfolge. Ausgewertet wird für Forschung und Lehre.": "En una tabla del proyecto. Los datos solo se publican de forma anonimizada: sin identificador del dispositivo, sin fecha y sin nombre del mando, en orden aleatorio. Se analizan para investigación y docencia.",
     "Die Teilnahme ist freiwillig, und du musst mindestens 18 Jahre alt sein. Du kannst jederzeit abbrechen; vor dem letzten Schritt wird nichts gesendet. Mit deiner Gerätekennung kannst du später die Löschung verlangen, solange die Daten noch nicht anonymisiert veröffentlicht sind.": "La participación es voluntaria y debes tener al menos 18 años. Puedes parar en cualquier momento; nada se envía antes del último paso. Con tu identificador puedes pedir más tarde que se borren, mientras los datos aún no se hayan publicado de forma anonimizada.",
@@ -20373,6 +20483,9 @@
         // display is plenty. reverseOutputSpan below caps the byte on top of this, which
         // makes R both slower and weaker than forward.
         reverseTopFrac: 0.11,
+        // v1.1.11: Anteil davon, den der Fahrer rueckwaerts bekommt (Regler "Tempo rueckwaerts",
+        // Vorgabe 50 %). Der Autopilot faehrt mit dem vollen Wert (inputs.apFaehrt).
+        reverseTempo: 0.5,
         reverseRatio: 3.00,
         reverseOutputSpan: 0.50,
       };
@@ -21426,7 +21539,10 @@
       if (reversing) {
         // In R the THROTTLE drives backwards and the brake slows down.
         st.engineLoad = inputs.throttle;
-        const revCeiling = revTopKmh * cfg.speedLimitFactor;
+        // Die Grenze sinkt, die Ausgabe bleibt Tempo / revTopKmh: halbe Grenze heisst halbes Byte, das
+        // Auto faehrt also wirklich langsamer und nicht nur die Anzeige.
+        const revAnteil = inputs.apFaehrt ? 1 : Math.max(0.05, Math.min(1, cfg.reverseTempo === undefined ? 1 : cfg.reverseTempo));
+        const revCeiling = revTopKmh * revAnteil * cfg.speedLimitFactor;
         if (inputs.brake > 0.02) {
           isBraking = true;
           const uR = Math.abs(st.speedKmh) / cfg.topSpeedKmh;
@@ -23876,7 +23992,7 @@
   }
 
   ['phys-steerresp', 'phys-accel', 'setting-steer-calib', 'setting-brake-steal',
-   'setting-throttle-steer-relief', 'phys-brake-tau'].forEach(id => {
+   'setting-throttle-steer-relief', 'phys-brake-tau', 'phys-rueck-tempo'].forEach(id => {
     const input = $(id);
     const readout = $(id + '-val');
     const apply = () => {
@@ -23908,6 +24024,12 @@
       if (id === 'phys-brake-tau') {
         physEngine.config.useTauBrems = v;
         readout.textContent = v.toFixed(2).replace('.', ',') + ' s';
+      }
+      // v1.1.11 BESTELLT: "Drossele die Geschwindigkeit im Rueckwaertsgang auf 50 % der aktuellen und
+      // fuege einen Fahrgefuehl-Regler hinzu." Wirkt in 40-physics.js auf die Tempogrenze rueckwaerts.
+      if (id === 'phys-rueck-tempo') {
+        physEngine.config.reverseTempo = v / 100;
+        readout.textContent = Math.round(v) + '%';
       }
       if (id === 'setting-throttle-steer-relief') {
         physEngine.config.throttleSteerRelief = v;
@@ -25083,7 +25205,11 @@
   // Moeglich wurde es durch die Ortung aus v0.6.46: autopilotGrund() ist global (Flagge,
   // Einfuehrungsrunde, Bahn/Ausdruck-Stellung), der Rest haengt am Auto - Motor, Regler,
   // Kolonnenversatz, Abseits-Antwort. `wer` ist 1, wenn nichts dasteht.
-  const SCAN_TEMPO = 0.6, SCAN_TEMPO_HAARNADEL = 0.4;
+  // v1.1.15 GEMELDET: "Die Geschwindigkeit zum Streckenscan ist am unteren Ende der Mindestgeschwindigkeit.
+  // In der Haarnadel ist das Auto gerade so schnell genug, dass es noch Balken und Querlage bestimmen
+  // kann. Schiebe die Mindestgeschwindigkeit leicht ueber das (2-3 %)." Mal formationPace (0,35):
+  // gerade 0,21 -> 0,235, Haarnadel 0,14 -> 0,165 der Hoechstgeschwindigkeit (je 2,5 Prozentpunkte).
+  const SCAN_TEMPO = 0.67, SCAN_TEMPO_HAARNADEL = 0.47;
   const scanStopp = { car: null, bis: 0 };
   function scanAnhalten(car) { if (car) { scanStopp.car = car; scanStopp.bis = Date.now() + 1500; } }
   // ---- GREIFT DER AUTOPILOT GERADE? (v1.0.25) --------------------------------------
@@ -25569,7 +25695,7 @@
     const ps = physEngine.state;
     ps.dirtyAir += (ziel - ps.dirtyAir) * Math.min(1, dt * 4);
     const out = physEngine.update({ steering: steer, throttle: rawThrottle, brake: rawBrake,
-                                    headlights: headlightsOn }, dt);
+                                    headlights: headlightsOn, apFaehrt: !!ap }, dt);
     pacejkaRueckmeldung(physEngine, 1);
     // Telemetrie: etwa 10 Proben je Sekunde (Tempo, Gas, Bremse, Gang, Lenkung).
     if (typeof teleProbe === 'function') teleProbe(rawThrottle, rawBrake);
@@ -26594,12 +26720,34 @@
     // Der ERSTE Tastendruck in einem frischen Menue zeigt nur Zeile 0 - er bewegt noch
     // nicht. Sonst huepft "runter" sofort zur zweiten Zeile, ohne dass die erste je zu
     // sehen war.
-    if (menuNavGezeigt) {
+    // v1.1.11 Garage wie die Meisterschaft: links (Autos, Aktionen) und rechts (Einstellungen) sind zwei
+    // Listen; hoch/runter bleibt in der Spalte, in der der Fokus steht.
+    const spalte = (r) => (r && r.el && r.el.closest) ? r.el.closest('.gar-a-links, .gar-a-rechts') : null;
+    const sp = spalte(rows[menuNavIndex]);
+    if (menuNavGezeigt && sp) {
+      const idx = rows.map((r, i) => i).filter((i) => spalte(rows[i]) === sp);
+      const k = idx.indexOf(menuNavIndex);
+      menuNavIndex = idx[((k + (dir === 'up' ? -1 : 1)) % idx.length + idx.length) % idx.length];
+    } else if (menuNavGezeigt) {
       menuNavIndex = ((menuNavIndex + (dir === 'up' ? -1 : 1)) % rows.length + rows.length) % rows.length;
     }
     menuNavGezeigt = true;
     menuNavRender();
     menuNavTonBewegen();
+  }
+  // Kreis in der rechten Garagenspalte: zurueck auf das gewaehlte Auto (oder "Virtuell fahren") links,
+  // statt die Garage zu verlassen. true = erledigt.
+  function menuNavGarageZurueck() {
+    if (typeof kAktiverTab !== 'function' || kAktiverTab() !== 'garage') return false;
+    const rows = menuNavRows();
+    const cur = rows[menuNavIndex];
+    if (!cur || !cur.el || !cur.el.closest || !cur.el.closest('.gar-a-rechts')) return false;
+    const ziel = rows.findIndex((r) => r.el.matches && r.el.matches('.gar-a-links .gk-auf'));
+    if (ziel < 0) return false;
+    menuNavIndex = ziel; menuNavArmed = false; menuNavGezeigt = true;
+    menuNavRender();
+    menuNavTonBewegen();
+    return true;
   }
 
   // X/Enter auf der fokussierten Zeile: Kachel/Knopf -> klicken, Kontrollkaestchen ->
@@ -26614,14 +26762,17 @@
       menuNavTonAktivieren();
       return;
     }
-    const rows = menuNavRows();
+    let rows = menuNavRows();
     if (!rows.length) return;
     menuNavGezeigt = true;
     const row = rows[menuNavIndex];
     // Sprungziel (v0.9.12, Garage): X auf einer Zeile mit data-x-sprung springt zur ersten
-    // passenden Zeile, statt das Feld zu "bewaffnen".
+    // passenden Zeile, statt das Feld zu "bewaffnen". v1.1.11: vorher waehlt die Zeile sich selbst
+    // (_vorSprung, z. B. das markierte Auto), dann ist rechts schon das Richtige zu sehen.
     if (row.el && row.el.dataset && row.el.dataset.xSprung) {
-      const ziel = rows.findIndex((r) => r.el.matches && r.el.matches(row.el.dataset.xSprung));
+      const sprung = row.el.dataset.xSprung;
+      if (typeof row.el._vorSprung === 'function') { row.el._vorSprung(); rows = menuNavRows(); }
+      const ziel = rows.findIndex((r) => r.el.matches && r.el.matches(sprung));
       if (ziel >= 0) { menuNavIndex = ziel; menuNavArmed = false; menuNavRender(); menuNavTonAktivieren(); return; }
     }
     if (row.kind === 'range' || row.kind === 'select') {
@@ -26958,6 +27109,8 @@
     if (typeof konsoleTourOffen === 'function' && konsoleTourOffen()) { konsoleTourZurueck(); return true; }
     const lb = $('lb-wrap');
     if (lb && lb.classList.contains('on') && $('lb-close')) { $('lb-close').click(); return true; }
+    if (typeof streckenbildOffen === 'function' && streckenbildOffen()) { streckenbildZu(); return true; }
+    if (typeof menuNavGarageZurueck === 'function' && menuNavGarageZurueck()) return true;
     const tab = kAktiverTab();
     // Eine Community-Strecke (v0.9.49) geht zurueck in ihre Liste, nicht auf die Kacheln.
     if (typeof chCommunitySeiteOffen === 'function' && chCommunitySeiteOffen()) { showSubpage('ch-community'); return true; }
@@ -27768,6 +27921,7 @@
     // Dieser Zuhoerer laeuft in der Capture-Phase vor allen anderen - ohne diese Zeile oeffnete Escape das Menue.
     if (typeof vfAktiv === 'function' && vfAktiv()) {
       if (k === 'escape') { e.preventDefault(); e.stopImmediatePropagation(); virtuellBeenden(); }
+      else if (k === 'c' && !e.repeat) { e.preventDefault(); vfKameraWechseln(); }
       return;
     }
     if (e.target && e.target.closest && e.target.closest('input[type="text"], input[type="number"], textarea, select')) return;
@@ -27837,10 +27991,14 @@
     // der Text selbst um, ein Tipp daneben in der Kopfzeile oeffnete das Menue. Jetzt oeffnet nur das
     // Bild (und Gamepad/Tastatur, die die Kachel als Ganzes ausloesen: e.target ist dann die Kachel),
     // alles andere ausser den Knoepfen schaltet um.
+    // v1.1.15 GEMELDET: "Wenn ich auf das Bild klicke, fuehre mich zu den Optionen. Wenn ich auf eine der
+    // beiden Ueberschriften druecke, aendere den Modus." Die Infozeile (.k-ki) liegt ueber dem groessten
+    // Teil des Bildes, und ein Tipp dort schaltete bisher um. Jetzt umgekehrt: NUR die beiden
+    // Ueberschriften (.k-kk, .k-kopf) schalten, alles andere auf der Kachel oeffnet die Optionen.
     const kachelKlick = (quad, oeffnen) => (e) => {
       if (e.target.closest('.k-knopf')) return;
-      if (e.target === e.currentTarget || e.target.closest('.k-kb')) { oeffnen(); return; }
-      konsoleQuadWechsel(quad, 1);
+      if (e.target.closest('.k-kk, .k-kopf')) { konsoleQuadWechsel(quad, 1); return; }
+      oeffnen();
     };
     kn('fa-renn', kachelKlick('renntyp', () => konsoleZeige('control')));
     kn('fa-strecke', kachelKlick('bahn', () => konsoleZeige('track')));
@@ -34891,11 +35049,52 @@
     } finally { halter.remove(); }
   }
 
+  // v1.1.11 GEMELDET: "Bild speichern im Editor klappt auf dem Handy nicht. Bitte ueber einen anderen
+  // Weg (ggf. einfach das Bild einblenden, sodass man selbst einen Screenshot macht)." Der Knopf zeigt
+  // das Bild jetzt gross an: Screenshot oder lange druecken geht immer; dazu Teilen (wo das Handy es
+  // kann), Speichern (der bisherige Weg) und Schliessen (auch Kreis/Escape).
   async function streckenbildSpeichern() {
     let bild = null;
     try { bild = await streckenbildErzeugen(); } catch (e) { showHudToast(t('Bild ging nicht') + ': ' + e.message); return; }
     if (!bild) return;
+    streckenbildZeigen(bild);
+  }
+  function streckenbildOffen() { return !!document.querySelector('.sb-schau'); }
+  function streckenbildZu() { const o = document.querySelector('.sb-schau'); if (o) o.remove(); }
+  function streckenbildZeigen(bild) {
+    streckenbildZu();
     const name = 'OmegaSim-' + bild.code.replace(/[^A-Za-z0-9]/g, '').slice(0, 40);
+    const o = document.createElement('div');
+    o.className = 'sb-schau';
+    o.innerHTML = '<p class="sb-hinweis">' + t('Screenshot machen oder das Bild lange drücken, um es zu speichern.') + '</p>'
+      + '<img class="sb-bild" alt="">'
+      + '<div class="sb-knoepfe">' + (navigator.share ? '<button type="button" data-sb="teilen">' + t('Teilen') + '</button>' : '')
+      + '<button type="button" data-sb="speichern">' + t('Speichern') + '</button>'
+      + '<button type="button" class="primary" data-sb="zu">' + t('Schließen') + '</button></div>';
+    o.querySelector('img').src = bild.url;
+    o.addEventListener('click', (e) => {
+      const k = e.target.closest('[data-sb]');
+      if (!k) { if (e.target === o) streckenbildZu(); return; }
+      if (k.dataset.sb === 'zu') streckenbildZu();
+      else if (k.dataset.sb === 'speichern') streckenbildAblegen(bild, name);
+      else if (k.dataset.sb === 'teilen') streckenbildTeilen(bild, name);
+    });
+    document.body.appendChild(o);
+  }
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && streckenbildOffen()) { e.preventDefault(); e.stopImmediatePropagation(); streckenbildZu(); }
+  }, true);
+  async function streckenbildTeilen(bild, name) {
+    try {
+      const blob = await (await fetch(bild.url)).blob();
+      const datei = new File([blob], name + '.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [datei] })) await navigator.share({ files: [datei], title: name });
+      else await navigator.share({ title: name, text: t('Streckencode') + ': ' + bild.code });
+    } catch (e) {
+      if (e && e.name !== 'AbortError') showHudToast(t('Teilen geht hier nicht – bitte einen Screenshot machen'));
+    }
+  }
+  async function streckenbildAblegen(bild, name) {
     const C = window.Capacitor;
     // v1.1.3: in der App ohne Plugin ehrlich melden - ein Daten-URL-Download tut in der WebView
     // nichts, und vorher hiess es trotzdem "Bild gespeichert".
@@ -35364,10 +35563,18 @@
     const dt = VF.letzt ? Math.min(0.05, (now - VF.letzt) / 1000) : 0.016;
     VF.letzt = now;
     const st = physEngine.state;
-    // Lenkung des Fahrers (gedaempft), nicht der Servobefehl: der traegt die Griffkorrekturen fuer das
-    // echte Auto, und hier rechnet das Reifenmodell den Griff selbst.
-    const lenk = typeof st.dampedSteering === 'number' ? st.dampedSteering : (physEngine.outputs ? physEngine.outputs.servoAngle || 0 : 0);
+    VF.dtBild = dt;
     const kmh = st.speedKmh || 0;
+    // v1.1.11 GEMELDET: "Virtuelles Fahren ruckelt und ist sehr traege." Bisher lenkte das Auto mit
+    // physEngine.state.dampedSteering: das rechnet die Physik nur alle 45 ms (Treppenstufen in der
+    // Gierrate = Ruckeln), mit der Servodaempfung und der Lenkbegrenzung bei Tempo des ECHTEN Autos
+    // (= traege). Jetzt direkt der Stick (steerX), voller Einschlag in 0,12 s, bei hohem Tempo etwas
+    // weniger Einschlag wie ein Spiel-Lenkfilter; den Rest erledigt das Reifenmodell.
+    const vVollL = Math.abs(kmh) * REAL_SCALE / 3.6;
+    const lenkZiel = Math.max(-1, Math.min(1, typeof steerX === 'number' ? steerX : 0)) / (1 + (vVollL / 55) * (vVollL / 55));
+    const schritt = dt / 0.12;
+    VF.lenkIst = (VF.lenkIst || 0) + Math.max(-schritt, Math.min(schritt, lenkZiel - (VF.lenkIst || 0)));
+    const lenk = VF.lenkIst;
     if (kmh < 0) {
       // Rueckwaerts (Rangieren): rein kinematisch wie bisher.
       const neu = vfSchritt(VF, kmh, lenk, dt, physEngine.config.gripScale);
@@ -35423,36 +35630,73 @@
   }
   function vfMalen() {
     const gl = VF.gl, cv = VF.cv;
-    const dpr = Math.min(1.5, window.devicePixelRatio || 1);
+    // Handy (Touch): hoechstens 1,25-fache Aufloesung - die Pixelzahl ist auf dem Handy der teuerste Teil.
+    const dpr = Math.min(navigator.maxTouchPoints > 0 ? 1.25 : 1.5, window.devicePixelRatio || 1);
     const w = Math.round(cv.clientWidth * dpr), h = Math.round(cv.clientHeight * dpr);
     if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
     gl.viewport(0, 0, w, h);
     gl.clearColor(0.55, 0.66, 0.78, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    const r = VF.h * Math.PI / 180, fx = Math.sin(r), fz = -Math.cos(r);
-    const auge = [VF.x - fx * 30, 13, VF.y - fz * 30];
-    VF.kam = VF.kam ? VF.kam.map((k, i) => k + (auge[i] - k) * 0.18) : auge;
-    const ziel = [VF.x + fx * 14, 1.5, VF.y + fz * 14];
-    const pv = vfMal(vfPerspektive(62 * Math.PI / 180, w / Math.max(1, h), 0.5, 3000), vfBlick(VF.kam, ziel, [0, 1, 0]));
+    const k = vfKamera(VF.dtBild || 0.016);
+    const blick = vfBlick(k.auge, k.ziel, [0, 1, 0]);
+    const pv = vfMal(vfPerspektive(k.fov * Math.PI / 180, w / Math.max(1, h), k.nah, 3000), blick);
     gl.useProgram(VF.prog);
-    gl.uniformMatrix4fv(gl.getUniformLocation(VF.prog, 'm'), false, new Float32Array(pv));
-    gl.uniform3f(gl.getUniformLocation(VF.prog, 'nebel'), 0.55, 0.66, 0.78);
+    if (!VF.loc) VF.loc = { m: gl.getUniformLocation(VF.prog, 'm'), w: gl.getUniformLocation(VF.prog, 'w'), nebel: gl.getUniformLocation(VF.prog, 'nebel'),
+                            p: gl.getAttribLocation(VF.prog, 'p'), c: gl.getAttribLocation(VF.prog, 'c') };
+    const L = VF.loc;
+    gl.uniformMatrix4fv(L.m, false, new Float32Array(pv));
+    gl.uniform3f(L.nebel, 0.55, 0.66, 0.78);
     const zeichne = (pu, welt) => {
-      gl.uniformMatrix4fv(gl.getUniformLocation(VF.prog, 'w'), false, new Float32Array(welt));
+      gl.uniformMatrix4fv(L.w, false, new Float32Array(welt));
       gl.bindBuffer(gl.ARRAY_BUFFER, pu.b);
-      const ap = gl.getAttribLocation(VF.prog, 'p'), ac = gl.getAttribLocation(VF.prog, 'c');
-      gl.enableVertexAttribArray(ap); gl.enableVertexAttribArray(ac);
-      gl.vertexAttribPointer(ap, 3, gl.FLOAT, false, 24, 0);
-      gl.vertexAttribPointer(ac, 3, gl.FLOAT, false, 24, 12);
+      gl.enableVertexAttribArray(L.p); gl.enableVertexAttribArray(L.c);
+      gl.vertexAttribPointer(L.p, 3, gl.FLOAT, false, 24, 0);
+      gl.vertexAttribPointer(L.c, 3, gl.FLOAT, false, 24, 12);
       gl.drawArrays(gl.TRIANGLES, 0, pu.n);
     };
     zeichne(VF.bahn, VF_EINS);
-    [gl.getAttribLocation(VF.prog, 'p'), gl.getAttribLocation(VF.prog, 'c')].forEach((a) => gl.disableVertexAttribArray(a));
-    if (VF.modell && VF.tprog) vfModellMalen(gl, pv, vfBlick(VF.kam, ziel, [0, 1, 0]));
+    gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+    if (VF.modell && VF.tprog) vfModellMalen(gl, pv, blick);
     else {
-      gl.enableVertexAttribArray(gl.getAttribLocation(VF.prog, 'p')); gl.enableVertexAttribArray(gl.getAttribLocation(VF.prog, 'c'));
       zeichne(VF.auto, vfLage(VF.x, VF.y, VF.h));
+      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
     }
+  }
+  // ---- Kamera (v1.1.11) --------------------------------------------------------------------
+  // BESTELLT: "Wenn ich den rechten Stick reindruecke im virtuellen Fahren, aendere die Kamera zu
+  // Motorhaube oder nahe Verfolgerkamera." R3 (bzw. die Lichthupen-Belegung) oder C schaltet weiter:
+  // Verfolger -> nah -> Motorhaube -> Verfolger. Nachgefuehrt nach der ZEIT (nicht je Bild): auf einem
+  // langsamen Handy lief die Kamera vorher bei weniger Bildern spuerbar hinterher.
+  const VF_KAMERAS = [{ id: 'verfolger', name: 'Verfolgerkamera' }, { id: 'nah', name: 'Nahe Verfolgerkamera' }, { id: 'haube', name: 'Motorhaube' }];
+  const VF_KAMERA_STORE = 'omegasim-vf-kamera';
+  function vfKameraId() {
+    if (!VF.kamera) { try { VF.kamera = localStorage.getItem(VF_KAMERA_STORE) || 'verfolger'; } catch (e) { VF.kamera = 'verfolger'; } }
+    return VF_KAMERAS.some((k) => k.id === VF.kamera) ? VF.kamera : 'verfolger';
+  }
+  function vfKameraWechseln() {
+    const i = VF_KAMERAS.findIndex((k) => k.id === vfKameraId());
+    const neu = VF_KAMERAS[(i + 1) % VF_KAMERAS.length];
+    VF.kamera = neu.id; VF.kam = null;
+    try { localStorage.setItem(VF_KAMERA_STORE, neu.id); } catch (e) { /* egal */ }
+    showHudToast(t(neu.name));
+  }
+  function vfKamera(dt) {
+    const r = VF.h * Math.PI / 180, fx = Math.sin(r), fz = -Math.cos(r);
+    const id = vfKameraId();
+    if (id === 'haube') {
+      // Auf der Motorhaube (Speed Dreams: Bonnet 0,75 m vor, 0,95 m hoch), fest am Auto.
+      const s = VF.modell ? VF_AUTO.L / VF.modell.d.laenge : 2;
+      const vor = 0.75 * s, hoch = (0.95 + (VF.modell ? 0.07 : 0.25)) * s;
+      const auge = [VF.x + fx * vor, hoch, VF.y + fz * vor];
+      VF.kam = auge;
+      return { auge, ziel: [auge[0] + fx * 30, hoch - 1.2, auge[2] + fz * 30], fov: 70, nah: 0.3 };
+    }
+    const nah = id === 'nah';
+    const hinten = nah ? 15 : 30, hoehe = nah ? 6 : 13, tau = nah ? 0.08 : 0.15;
+    const soll = [VF.x - fx * hinten, hoehe, VF.y - fz * hinten];
+    const a = 1 - Math.exp(-Math.max(0, dt) / tau);
+    VF.kam = VF.kam ? VF.kam.map((q, i) => q + (soll[i] - q) * a) : soll;
+    return { auge: VF.kam, ziel: [VF.x + fx * (nah ? 10 : 14), nah ? 2.2 : 1.5, VF.y + fz * (nah ? 10 : 14)], fov: nah ? 66 : 62, nah: 0.5 };
   }
   function vfModellMalen(gl, pv, blick) {
     const M = VF.modell, d = M.d, T = VF.tprog, u = T.u;
@@ -35558,22 +35802,29 @@
     if (!el) return;
     const kmh = Math.round(Math.abs(physEngine.state.speedKmh || 0) * REAL_SCALE);   // Anzeige wie im Cockpit
     const lauf = VF.rundeAb ? Date.now() - VF.rundeAb : null;
-    el.querySelector('.vf-tempo').textContent = kmh + ' km/h';
-    el.querySelector('.vf-runde').textContent = t('Runde') + ' ' + vfZeit(lauf);
-    el.querySelector('.vf-zeiten').textContent = t('Letzte') + ' ' + vfZeit(VF.letzte) + ' · ' + t('Beste') + ' ' + vfZeit(VF.beste);
-    el.querySelector('.vf-abseits').hidden = !VF.abseits;
+    // Nur bei Aenderung schreiben: jedes textContent= ist Arbeit fuer die Seite, und das hier laeuft je Bild.
+    const setz = (sel, txt) => { const e = el.querySelector(sel); if (e.textContent !== txt) e.textContent = txt; };
+    setz('.vf-tempo', kmh + ' km/h');
+    setz('.vf-runde', t('Runde') + ' ' + vfZeit(lauf === null ? null : Math.floor(lauf / 100) * 100));
+    setz('.vf-zeiten', t('Letzte') + ' ' + vfZeit(VF.letzte) + ' · ' + t('Beste') + ' ' + vfZeit(VF.beste));
+    const ab = el.querySelector('.vf-abseits');
+    if (ab.hidden === VF.abseits) ab.hidden = !VF.abseits;
   }
 
   // ---- Starten und Beenden ------------------------------------------------------------------
-  function virtuellStarten() {
-    if (VF.aktiv) return;
-    if (!physicsEnabled) { showHudToast(t('Virtuell braucht ein Fahrgefühl mit Physik (nicht RC)')); return; }
+  // opts.tiles: diese Strecke statt der des Editors (die Studie faehrt Homington), opts.studie: die
+  // Fahrt gehoert der Studie (beim Beenden nicht in die Garage). true = gestartet.
+  function virtuellStarten(opts) {
+    opts = opts || {};
+    if (VF.aktiv) return false;
+    if (!physicsEnabled) { showHudToast(t('Virtuell braucht ein Fahrgefühl mit Physik (nicht RC)')); return false; }
     // Editor-Strecke und gemerkte Rollen gehoeren dem Fahrer: die Ersatzstrecke (Balkonia) und die Rolle
     // des virtuellen Autos werden beim Beenden wieder zurueckgenommen.
     VF.tilesVorher = currentTrackTiles;
     try { VF.editorVorher = localStorage.getItem(EDITOR_STRECKE_STORE); } catch (e) { VF.editorVorher = undefined; }
-    const tiles = vfTilesWaehlen();
-    if (!tiles) { showHudToast(t('Erst eine Strecke bauen')); return; }
+    const tiles = opts.tiles && opts.tiles.length >= 3 ? opts.tiles : vfTilesWaehlen();
+    if (!tiles) { showHudToast(t('Erst eine Strecke bauen')); return false; }
+    VF.studie = !!opts.studie;
     const schicht = document.createElement('div');
     schicht.className = 'vf-schicht';
     schicht.innerHTML = '<canvas class="vf-bild"></canvas><div class="vf-hud" data-i18n-skip>'
@@ -35585,10 +35836,14 @@
     document.body.appendChild(schicht);
     const cv = schicht.querySelector('canvas');
     const gl = cv.getContext('webgl', { antialias: true }) || cv.getContext('experimental-webgl');
-    if (!gl) { schicht.remove(); showHudToast(t('Dieses Gerät kann kein WebGL')); return; }
+    if (!gl) { schicht.remove(); showHudToast(t('Dieses Gerät kann kein WebGL')); return false; }
     try {
       VF.prog = vfProgramm(gl);
-    } catch (e) { schicht.remove(); showHudToast('WebGL: ' + e.message); return; }
+    } catch (e) { schicht.remove(); showHudToast('WebGL: ' + e.message); return false; }
+    VF.loc = null; VF.lenkIst = 0; VF.kam = null;
+    // Die Seite unter der 3D-Schicht ruht (kein Neuzeichnen); Startaufstellung, Ampel und Meldungen
+    // kommen per CSS darueber (body.vf-an).
+    document.body.classList.add('vf-an');
     gl.enable(gl.DEPTH_TEST);
     VF.gl = gl; VF.cv = cv; VF.schicht = schicht; VF.hud = schicht.querySelector('.vf-hud');
     VF.tiles = tiles;
@@ -35646,6 +35901,7 @@
     VF.takt = setInterval(vfPaket, VF_TAKT_MS);
     VF.raf = requestAnimationFrame(vfBild);
     showHudToast(t('Virtuelle Fahrt: frei fahren, ✕ beendet'));
+    return true;
   }
   // ---- Optionen rechts in der Garage (v1.1.3) ---------------------------------------------
   // BESTELLT: "Wenn ich virtuell klicke, dann sollen rechts noch Optionen kommen - aktuell erstmal nur
@@ -35763,7 +36019,15 @@
   }
   function virtuellBeenden() {
     if (!VF.aktiv) return;
+    // Laeuft eine Challenge (z. B. die Studienfahrt) mit dem virtuellen Auto, endet sie mit: abgebrochen,
+    // nicht gewertet (VF.abbruch sagt das der Studie, 98f-studie.js).
+    if (typeof chLauf !== 'undefined' && chLauf) {
+      VF.abbruch = true;
+      try { if (kRennenLaeuft()) requestRaceStop(); else challengeAbbrechen(); } catch (e) { /* weiter */ }
+      VF.abbruch = false;
+    }
     VF.aktiv = false;
+    document.body.classList.remove('vf-an');
     cancelAnimationFrame(VF.raf);
     clearInterval(VF.takt);
     const car = VF.car;
@@ -35795,7 +36059,9 @@
     VF.schicht = null; VF.gl = null;
     renderGarage();
     // Zurueck in die Garage, wo die Optionen der virtuellen Fahrt stehen (dort startet die naechste).
-    if (typeof showTab === 'function') showTab('garage');
+    // Eine Studienfahrt geht zurueck in die Studie (98f-studie.js zeigt sie selbst).
+    if (!VF.studie && typeof showTab === 'function') showTab('garage');
+    VF.studie = false;
   }
   window.addEventListener('keydown', (e) => { if (VF.aktiv && e.key === 'Escape') { e.stopImmediatePropagation(); virtuellBeenden(); } }, true);
   // ============================== SIMULATOR-LINIE (v1.0.14, WIP) ==============================
@@ -40360,14 +40626,22 @@
   let pitState = 'off';        // off | limited | servicing
   let pitModus = 'minigame';   // Boxen-Minigame, siehe pitSpielStart()
   let pitSpiel = null;
-  const PIT_SPIEL_ANZAHL = 8;
-  const PIT_SPIEL_BONUS = 0.05;
+  // v1.1.11 BESTELLT: "Pit-Minigame: mach nur 5 Button-Events, nach jedem 250 ms ausblenden. Sieh zu,
+  // dass es mit der Zeit noch ungefaehr passt." Fuenf Tasten statt acht; nach jeder (gedrueckt oder
+  // abgelaufen) ist das Feld 250 ms leer. Jedes Fenster ist ein Fuenftel der Standzeit minus diese
+  // Pause, so passen alle fuenf in die Zeit. Ein Treffer bringt 8 % statt 5 %: fuenf Treffer sparen
+  // wie bisher acht zusammen 40 %.
+  const PIT_SPIEL_ANZAHL = 5;
+  const PIT_SPIEL_BONUS = 0.08;
+  const PIT_SPIEL_PAUSE = 0.25;
   // v1.0.45 BESTELLT: nach dem letzten Knopf mindestens 1 s Erholung, laenger als Strafzeit
   // bei falschen Tasten. Erholung zusaetzlich zur Bonus-Strafe (5 % je falsche Taste).
   const PIT_ERHOL_BASE = 1.0;
   const PIT_ERHOL_PRO_FEHLER = 0.3;
-  // v1.0.45 BESTELLT: die Zeit zum Druecken 0,5 s laenger. Das Fenster war T/Anzahl + 0,2 s.
-  const PIT_SPIEL_FENSTER_EXTRA = 0.2 + 0.5;
+  // v1.0.45 BESTELLT: die Zeit zum Druecken 0,5 s laenger (T/Anzahl + 0,7 s). Seit v1.1.11 statt
+  // dessen T/Anzahl minus die Pause (siehe oben), mindestens PIT_SPIEL_FENSTER_MIN.
+  const PIT_SPIEL_FENSTER_MIN = 0.7;
+  function pitSpielFenster(T) { return Math.max(PIT_SPIEL_FENSTER_MIN, T / PIT_SPIEL_ANZAHL - PIT_SPIEL_PAUSE); }
   let pitServiceStart = null;
   let pitFuelGained = 0, pitDamageRepaired = 0;
   const PIT_FUEL_PER_SEC = 22;
@@ -40707,7 +40981,7 @@
     if (folge.length) folge[folge.length - 1] = 'kreis';
     // Fenster 0,7 s laenger als ein Zehntel: erst 100 ms, dann 200 ms (v0.8.38), seit v1.0.45
     // 0,5 s mehr (BESTELLT: "Mach die Zeit, die ich zum Druecken habe nochmal 0,5 s laenger").
-    pitSpiel = { T, bonus: 0, folge, i: 0, fensterAb: 0, fensterS: T / PIT_SPIEL_ANZAHL + PIT_SPIEL_FENSTER_EXTRA,
+    pitSpiel = { T, bonus: 0, folge, i: 0, fensterAb: 0, fensterS: pitSpielFenster(T),
                  treffer: 0, fehler: 0, blitz: '', blitzBis: 0, erholBis: 0, fuel0: fuel, dmg0: damage };
     showHudToast(t('Boxen-Minigame: Quadrat und Kreis!'));
   }
@@ -40716,13 +40990,15 @@
     if (!pitSpielAktiv()) return false;
     const sp = pitSpiel;
     if (sp.i >= sp.folge.length) return true;
+    // In der Pause nach einer Taste ist nichts zu druecken (die Taste gehoert trotzdem dem Spiel).
+    if (pitStandElapsed < sp.fensterAb) return true;
     // BESTELLT: "Wenn ich die falsche Taste druecke, fuege Zeit hinzu. Wenn ich richtig
     // druecke, ziehe Zeit ab." Beides um 5 % der Grundzeit.
     if (welche === sp.folge[sp.i]) { sp.bonus += PIT_SPIEL_BONUS * sp.T; sp.treffer++; sp.blitz = 'ok'; pitSpielTon(true, sp.i); }
     else { sp.bonus -= PIT_SPIEL_BONUS * sp.T; sp.fehler++; sp.blitz = 'falsch'; pitSpielTon(false, sp.i); }
     sp.blitzBis = pitStandElapsed + 0.3;
     sp.i++;
-    sp.fensterAb = pitStandElapsed;
+    sp.fensterAb = pitStandElapsed + PIT_SPIEL_PAUSE;    // das naechste Fenster beginnt nach der Pause
     pitSpielMalen();
     return true;
   }
@@ -40752,7 +41028,7 @@
     pitStandElapsed += dt;
     if (sp.i < sp.folge.length && pitStandElapsed - sp.fensterAb >= sp.fensterS) {
       sp.i++;
-      sp.fensterAb = pitStandElapsed;
+      sp.fensterAb = pitStandElapsed + PIT_SPIEL_PAUSE;
     }
     const anteil = Math.min(1, (pitStandElapsed + sp.bonus) / sp.T);
     if (pl.refuel) {
@@ -40794,7 +41070,8 @@
     el.hidden = !an;
     if (!an) return;
     const sp = pitSpiel;
-    const sym = sp.i < sp.folge.length ? sp.folge[sp.i] : '';
+    // In der Pause (vor fensterAb) ist das Feld leer.
+    const sym = sp.i < sp.folge.length && pitStandElapsed >= sp.fensterAb ? sp.folge[sp.i] : '';
     el.dataset.symbol = sym;
     el.dataset.blitz = pitStandElapsed < sp.blitzBis ? sp.blitz : '';
     el.style.setProperty('--fenster', sym
@@ -45169,9 +45446,15 @@
   // startet nichts), zeigt das angeschlossene Auto und speichert den Namen fuer die
   // Bestenliste. Fuer Nicht-Challenge-Fahrten ist das nicht noetig.
   // Fuer die Studie: die Studienstrecke als Rennen starten (Ampel, Teilepruefung wie jede Challenge).
-  function studieChallengeStarten() {
+  // virtuell (v1.1.11): erst die virtuelle Fahrt auf der Studienstrecke starten - ihr Auto ist dann das
+  // gesteuerte -, dann dieselbe Challenge wie auf der Bahn (Ampel, Teilepruefung, Runden, Fahrstil).
+  function studieChallengeStarten(virtuell) {
+    if (virtuell) {
+      if (typeof virtuellStarten !== 'function' || !virtuellStarten({ tiles: chTiles(CH_STUDIE), studie: true })) return false;
+    }
     chWahl = CH_STUDIE.id; chModus = 'rennen'; chSpiegel = false;
     challengeStarten();
+    if (!chLauf && virtuell && typeof virtuellBeenden === 'function') virtuellBeenden();
     return !!chLauf;
   }
   function challengeStartenDialog() {
@@ -51681,6 +51964,11 @@
                                  : car.role === 'ghost' ? ' is-ghost' : car.role === 'safetycar' ? ' is-safety' : car.role === 'challenger' ? ' is-challenger' : '')
                     + (garAufAuto === car ? ' gk-auf' : '');
       row.dataset.xSprung = '.gar-a-rechts .opt-row';
+      // v1.1.11 BESTELLT: "Das rechte soll automatisch gewaehlt werden, wenn ich ein Auto markiert habe
+      // und X druecke, wie bei der Meisterschaft." Vor dem Sprung wird das markierte Auto gewaehlt.
+      row._vorSprung = () => {
+        if (garAufAuto !== car || garVirtuellAuf) { garAufAuto = car; garVirtuellAuf = false; renderGarage(); }
+      };
       const f = carColor(car);
       const foto = autoFoto(car);
       const rolle = GAR_ROLLEN.find((r) => r.id === car.role) || GAR_ROLLEN.find((r) => r.id === 'none');
@@ -51746,7 +52034,9 @@
     // v1.1.3: virtuelle Fahrt (60d-virtuell.js) - ein Auto ohne Bluetooth auf der Editor-Strecke.
     // BESTELLT: ganz unten, unter "Zum Cockpit".
     const virt = document.createElement('div');
-    virt.className = 'opt-row opt-breit gar-a-aktion';
+    virt.className = 'opt-row opt-breit gar-a-aktion gar-a-virtuell' + (garVirtuellAuf ? ' gk-auf' : '');
+    virt.dataset.xSprung = '.gar-a-rechts .opt-row';
+    virt._vorSprung = () => { if (!garVirtuellAuf) { garVirtuellAuf = true; renderGarage(); } };
     const virtKnopf = document.createElement('button');
     virtKnopf.type = 'button';
     virtKnopf.innerHTML = t('Virtuell fahren') + ' <span class="wip-tag">WIP</span>';
@@ -54744,8 +55034,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Keine Kontrolle nach dem Halt. Kalibrierungsregler: wie schnell das Auto beim Impuls faehrt und
   // wie viele ms der Lenkimpuls dauert." Neue Speicherschluessel (v3), damit die alte Vorgabe 0 %
   // nicht stehen bleibt: der Impuls ist jetzt ab Werk an (100 % Einschlag, 45 ms, 30 %).
-  const EINPARK_LENK = 1.0, EINPARK_MS = 45, EINPARK_TEMPO = 0.30, EINPARK_STORE = 'omegasim-einpark-staerke-v3';
-  const EINPARK_MS_STORE = 'omegasim-einpark-ms-v1', EINPARK_TEMPO_STORE = 'omegasim-einpark-tempo-v1';
+  // v1.1.15 BESTELLT: "Fuer die automatische Aufstellung nutze aehnliche Werte [wie das Safety Car: 100 ms,
+  // 40 %], nur dass die Autos ca. 2 cm naeher an der Fahrbahnmitte stehen." Die Autos kommen aus der
+  // Mittelgasse (das Safety Car vom Rand), mit demselben Impuls stehen sie also weiter innen. Neue
+  // Speicherschluessel (v2), damit die neue Vorgabe auch auf Geraeten mit gemerktem Wert gilt.
+  const EINPARK_LENK = 1.0, EINPARK_MS = 100, EINPARK_TEMPO = 0.40, EINPARK_STORE = 'omegasim-einpark-staerke-v3';
+  const EINPARK_MS_STORE = 'omegasim-einpark-ms-v2', EINPARK_TEMPO_STORE = 'omegasim-einpark-tempo-v2';
   function einparkWert(id, vorgabe, lo, hi) {
     const el = $(id);
     const v = el ? parseFloat(el.value) : vorgabe;
@@ -54775,7 +55069,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Auto zu seiner Seite (Lenkimpuls) und bremst.
   // v1.1.11 GEMELDET: "Das erste Auto rollt immer ueber die Ziellinie" und BESTELLT "frueher anhalten":
   // die Haltepunkte ruecken vor (rechts 0,55 -> 0,30 der Kachel, links 0,15 -> 0); der Versatz bleibt.
-  const AUFSTELL_BRUCH_RECHTS = 0.30, AUFSTELL_BRUCH_LINKS = 0.0;
+  // v1.1.15: der laengere Impuls (100 ms bei 40 %) traegt weiter - rechts nochmals frueher (0,15).
+  const AUFSTELL_BRUCH_RECHTS = 0.15, AUFSTELL_BRUCH_LINKS = 0.0;
   function aufstellHaltBruch(platz) { return platz >= 0 && platz % 2 ? AUFSTELL_BRUCH_LINKS : AUFSTELL_BRUCH_RECHTS; }
   // Steht der Ort (Kachel + Phase) auf der Zielkachel und mindestens am Haltepunkt?
   function aufstellAmPunkt(o, ziel, platz) {
@@ -55320,7 +55615,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // ---- WO PARKT DAS SAFETY CAR: FAHRBAHN ODER NEBEN DER STRECKE VON HAND ---------------------
   // BESTELLT: "Das Safety Car soll zu Beginn ausserhalb der Strecke warten und diese Position
   // soll gespeichert werden. Bei gelber Flagge faehrt es raus. Nach dem Einsatz soll es
-  // versuchen, zum Startpunkt zurueckzukehren." Und: Der Regler sc-parkplatz (Optionen > NPCs)
+  // versuchen, zum Startpunkt zurueckzukehren." Und: Der Regler sc-parkplatz (Optionen > Safety Car)
   // bestimmt, WO es die Strecke verlaesst: 'fahrbahn' ist das bisherige Verhalten (Startrunde
   // hinter dem Feld, Halt am rechten Rand an Start/Ziel), 'neben' (von Hand neben die Strecke
   // gestellt) das neue: es wartet dort bis Gelb, kehrt danach zu seinem Startpunkt zurueck und
@@ -55344,7 +55639,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Vorgabe 0; -5..+5; negativ = davor). Bis v1.0.43+ war das fest EINE Kachel DAVOR - im Test war das
   // zu frueh, also ist es jetzt einstellbar. Damit es auf der Kachel des Startpunkts schon
   // Kachel des Startpunkts schon neben der Strecke steht.
-  const SC_AUSFAHRT_LENK = 1.0, SC_AUSFAHRT_MS_STD = 400, SC_AUSFAHRT_KACHEL_MAX = 5;
+  // v1.1.15: Vorgaben aus dem Test am Tisch (Rechts 100 ms, minimal weniger: 90 ms - siehe unten).
+  const SC_AUSFAHRT_LENK = 1.0, SC_AUSFAHRT_MS_STD = 90, SC_AUSFAHRT_KACHEL_MAX = 5;
   // GEMELDET (zweiter Einsatz im selben Rennen): \"Er war zu schnell und aus der Boxengasse wieder auf
   // die Hauptbahn gerollt.\" URSACHE: der Startpunkt wurde bei JEDEM Losfahren neu gemessen und
   // ueberschrieben. Steht das Auto nach dem Halt ein Stueck hinter der Box, beginnt der naechste Einsatz
@@ -55382,6 +55678,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function scTeilWahl(n) {
     const el = $('sc-ausfahrt-teil');
     if (!el || el.value === '') return null;
+    // v1.1.15: "start" = das Start/Ziel-Teil der geladenen Strecke (Vorgabe), egal welche Strecke.
+    if (el.value === 'start') {
+      const tiles = currentTrackTiles || [];
+      const i = tiles.findIndex((tl) => tl && typeof isStartCode === 'function' && isStartCode(tl.type));
+      return i >= 0 && i < n ? i : null;
+    }
     const [i, nGemerkt] = el.value.split('/').map((x) => parseInt(x, 10));
     if (!Number.isInteger(i) || nGemerkt !== n || i < 0 || i >= n) return null;
     return i;
@@ -55393,14 +55695,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const tiles = currentTrackTiles || [];
     const n = tiles.length;
     let gemerkt = el.value;
-    if (!gemerkt) { try { gemerkt = localStorage.getItem(SC_TEIL_STORE) || ''; } catch (e) { gemerkt = ''; } }
-    const opts = ['<option value="">' + stEscSc(t('automatisch (gemessen)')) + '</option>'];
+    if (!gemerkt) { try { const w = localStorage.getItem(SC_TEIL_STORE); gemerkt = w === null ? 'start' : w; } catch (e) { gemerkt = 'start'; } }
+    const opts = ['<option value="start">' + stEscSc(t('Start/Ziel (jede Strecke)')) + '</option>',
+                  '<option value="">' + stEscSc(t('automatisch (gemessen)')) + '</option>'];
     tiles.forEach((tl, i) => {
       const name = SC_TEIL_NAMEN[tl && tl.type] || ((typeof isStartCode === 'function' && tl && isStartCode(tl.type)) ? 'Start/Ziel' : 'Teil');
       opts.push('<option value="' + i + '/' + n + '">' + (i + 1) + ' · ' + stEscSc(t(name)) + '</option>');
     });
     el.innerHTML = opts.join('');
-    el.value = [...el.options].some((o) => o.value === gemerkt) ? gemerkt : '';
+    el.value = [...el.options].some((o) => o.value === gemerkt) ? gemerkt : 'start';
   }
   function stEscSc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
   if ($('sc-ausfahrt-teil')) {
@@ -55408,7 +55711,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Beim Oeffnen neu fuellen: die Strecke kann sich seit dem letzten Mal geaendert haben.
     ['focus', 'pointerdown'].forEach((ev) => el.addEventListener(ev, () => {
       const n = currentTrackTiles ? currentTrackTiles.length : 0;
-      if (el.options.length !== n + 1) scTeilAuswahlFuellen();
+      if (el.options.length !== n + 2) scTeilAuswahlFuellen();
     }));
     el.addEventListener('change', () => { try { localStorage.setItem(SC_TEIL_STORE, el.value); } catch (e) { /* privat */ } });
     setTimeout(scTeilAuswahlFuellen, 0);
@@ -55557,16 +55860,23 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Raeder am Ende"), das Auto rollt in SC_AUSPARK_ANLAUF_MS auf SC_AUSPARK_TEMPO an, nach
   // SC_AUSPARK_MS gehen die Raeder in SC_AUSPARK_GERADE_MS weich gerade, dann uebernimmt die Spur.
   const SC_AUSPARK_MS = 600, SC_AUSPARK_GERADE_MS = 200, SC_AUSPARK_ANLAUF_MS = 200, SC_AUSPARK_TEMPO = 0.37;
+  // v1.1.15 BESTELLT: "beim Losfahren automatisch einen Links-Rechts-Impuls (damit es, falls es doch mal
+  // neben der Bahn steht, wieder drauffahren kann)". Bei JEDEM Losfahren des Safety Cars, nach der
+  // Ausparkfolge (neben der Strecke) bzw. gleich (Fahrbahn): 100 ms voll links, 100 ms voll rechts.
+  const SC_AUSPARK_LINKS_MS = 100, SC_AUSPARK_RECHTS_MS = 100;
   function scAusparkSchritt(car, now) {
     const g = car.ghost, a = g && g.scAuspark;
     if (!a) return null;
     if (!a.at) a.at = now;
     const seit = now - a.at;
-    const ende = SC_AUSPARK_MS + SC_AUSPARK_GERADE_MS;
+    const vor = a.lenk > 0 ? SC_AUSPARK_MS + SC_AUSPARK_GERADE_MS : 0;      // Ausparkfolge nur mit Halt-Einschlag
+    const ende = vor + SC_AUSPARK_LINKS_MS + SC_AUSPARK_RECHTS_MS;
     if (seit >= ende) { g.scAuspark = null; return null; }
+    const drive = SC_AUSPARK_TEMPO * Math.min(1, seit / SC_AUSPARK_ANLAUF_MS);
+    if (seit >= vor) return { lenk: seit < vor + SC_AUSPARK_LINKS_MS ? -1 : 1, drive };
     const lenk0 = -a.lenk;
     const lenk = seit < SC_AUSPARK_MS ? lenk0 : lenk0 * (1 - (seit - SC_AUSPARK_MS) / SC_AUSPARK_GERADE_MS);
-    return { lenk, drive: SC_AUSPARK_TEMPO * Math.min(1, seit / SC_AUSPARK_ANLAUF_MS) };
+    return { lenk, drive };
   }
   // Wie weit die Raeder am Ende nach links stehen, 0..1 des vollen Einschlags.
   function scEndLenk() {
@@ -55599,8 +55909,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
   function scAnfahrtKacheln() {
     const el = $('sc-einfahrt-kacheln');
-    const v = el ? Math.round(parseFloat(el.value)) : 5;
-    return Number.isFinite(v) ? Math.max(1, Math.min(6, v)) : 5;
+    const v = el ? Math.round(parseFloat(el.value)) : 3;
+    return Number.isFinite(v) ? Math.max(1, Math.min(6, v)) : 3;
   }
   // BESTELLT (mit Bild der Einstellungen): \"Das Safety Car ist in der finalen Runde etwas schneller als
   // in der ersten Runde; deshalb kommt es noch etwas schnell in die Einfahrt.\" Nach Gruen fuhr es mit dem
@@ -55619,8 +55929,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
   function scAusfahrtLinksMs() {
     const el = $('sc-ausfahrt-links-ms');
-    const v = el ? parseFloat(el.value) : 700;
-    return Number.isFinite(v) ? Math.max(0, Math.min(2000, v)) : 700;
+    const v = el ? parseFloat(el.value) : 100;
+    return Number.isFinite(v) ? Math.max(0, Math.min(2000, v)) : 100;
   }
   function scAusfahrtMs() {
     const el = $('sc-ausfahrt-ms');
@@ -55686,6 +55996,17 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!sc) return;
     if (sc.ghost && sc.ghost.running) {
       // Gelb, waehrend es gerade an den Rand faehrt: wieder hinaus statt abzustellen.
+      // v1.1.15 GEMELDET: "Bei der dritten gelben Flagge ist das Safety Car von der Bahn gefahren und hat
+      // nicht gemerkt, wo es parken soll." Kam Gelb, als es schon EINLENKTE (Rechts-/Links-Impuls,
+      // Gegenschub, Halt), brach das die Folge mittendrin ab: das Auto stand schraeg am oder neben dem
+      // Rand und fuhr von dort ohne Ausparkfolge weiter. Jetzt parkt es die Folge zu Ende und faehrt
+      // danach neu los (safetyCarFertig) - mit Ausparkfolge und Links-Rechts-Impuls.
+      const rhPhase = sc.ghost.randHalt ? sc.ghost.randHalt.phase : null;
+      if (rhPhase && rhPhase !== 'rand') {
+        sc.ghost.scGelbNachParken = true;
+        log(garageLabel(sc) + ': Gelb waehrend des Einparkens - Safety Car parkt zu Ende und faehrt dann los.', 'info');
+        return;
+      }
       sc.ghost.scErsteRunde = false;
       if (sc.ghost.randHalt || sc.ghost.scHeim) {
         sc.ghost.randHalt = null; sc.ghost.scHeim = false; sc.ghost.scNeustarts = 0;
@@ -55696,7 +56017,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     startGhost(sc);
     if (sc.ghost) { sc.ghost.freeRun = true; sc.ghost.scHeim = false; sc.ghost.scNeustarts = 0; }
     // v1.1.3: neben der Strecke beginnt es mit der festen Ausparkfolge (scAusparkSchritt).
-    if (sc.ghost && scNebenModus()) sc.ghost.scAuspark = { at: 0, lenk: scEndLenk() };
+    if (sc.ghost) sc.ghost.scAuspark = { at: 0, lenk: scNebenModus() ? scEndLenk() : 0 };
     // Neben der Strecke: ab jetzt die Kacheln zaehlen, bis Start/Ziel gelesen wird (siehe ortAbgleich).
     if (sc.ghost && scNebenModus()) {
       sc.ghost.scBoxK = -1;
@@ -55748,9 +56069,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // je ein Paket rechts und eines links hinaus, danach halten mit geraden Raedern.
   // v1.0.33: Dauer aus dem Regler "Einparken: Lenkimpuls" (einparkMs), Einschlag voll.
   const SC_RAD_LENK = 1.0;
+  const SC_FAHRBAHN_QUER = 0.88, SC_FAHRBAHN_PULS_MS = 45;
   function safetyCarFertig(c) {
+    const gelbWartet = !!(c.ghost && c.ghost.scGelbNachParken);
     // Neben der Strecke: der letzte Befehl haelt die Raeder leicht links (sonst stuende es gerade).
     safetyCarLichtAus(c, scAusfahrt(c) ? -scEndLenk() : 0);
+    if (gelbWartet) {
+      // Gelb kam waehrend des Einparkens (safetyCarRaus): jetzt, wo es steht, neu losfahren.
+      setTimeout(() => { if (flagState === 'yellow' && safetyCar() === c) safetyCarRaus(); }, 300);
+    }
     log(garageLabel(c) + (scAusfahrt(c) ? ': Safety Car steht neben der Strecke, Licht aus.'
                                          : ': Safety Car steht rechts am Rand, Licht aus.'), 'info');
   }
@@ -55915,9 +56242,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     g.scHeim = false;
     g.scVorLinie = true;
     // Am Rand der Fahrbahn: kurzer Lenkimpuls und zurueck. Neben die Strecke: lange voll rechts, dann voll links.
-    randHaltStarten(car, { quer: FINISH_RAND, randMs: SC_RAND_WARTE_MS, tempo: aus ? scEinfahrtTempo() : undefined,
+    // v1.1.15: auf der Fahrbahn etwas weniger weit an den Rand (SC_FAHRBAHN_QUER) - es stand ~5 mm zu
+    // weit draussen und las "neben der Bahn" - und mit eigenem Impuls statt der Aufstellungswerte.
+    randHaltStarten(car, { quer: aus ? FINISH_RAND : SC_FAHRBAHN_QUER, randMs: SC_RAND_WARTE_MS, tempo: aus ? scEinfahrtTempo() : undefined,
                            radLenk: aus ? SC_AUSFAHRT_LENK : SC_RAD_LENK * einparkStaerke(),
-                           radMs: aus ? scAusfahrtMs() : einparkMs(), gegenMs: aus ? scAusfahrtLinksMs() : einparkMs(),
+                           radMs: aus ? scAusfahrtMs() : SC_FAHRBAHN_PULS_MS, gegenMs: aus ? scAusfahrtLinksMs() : SC_FAHRBAHN_PULS_MS,
                            bremsMs: aus ? scGegenschubMs() + SC_AUSROLL_MS : 0, endLenk: aus ? scEndLenk() : 0,
                            gegenschubMs: aus ? scGegenschubMs() : 0, gegenschubRadMs: aus ? scGegenschubRadMs() : 0,
                            tempoAb: aus ? fenster : 0,
@@ -61230,7 +61559,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // drivers signal a pass. The handbrake that used to sit on this button is gone, and
       // with it the special case that had to exclude it from selecting reverse.
       const flashNow = readBindingValue(pad, bindings.lightflash) > BUTTON_CAPTURE_THRESHOLD;
-      if (flashNow && !prevLightFlash) triggerHeadlightFlash();
+      // v1.1.11: in der virtuellen Fahrt schaltet R3 (die Lichthupen-Belegung) die Kamera weiter.
+      if (flashNow && !prevLightFlash) {
+        if (typeof vfAktiv === 'function' && vfAktiv()) vfKameraWechseln(); else triggerHeadlightFlash();
+      }
       prevLightFlash = flashNow;
 
       // Headlights on/off, edge-triggered. Drives the same checkbox the options menu uses
@@ -63107,6 +63439,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
           return Math.sqrt(d.reduce((s, v) => s + v * v, 0) / d.length);
         })(), cut: xs.gebaut ? xs.cut.gain.value : null };
     },
+    // Studie (98f-studie.js): direkt auf einen Schritt springen, ohne Fragebogen und Reaktionstest.
+    studieSpringen(schritt) { if (!st) st = studieNeu(); st.schritt = schritt; studieZeichnen(); return st.schritt; },
+    studieStand() { return st ? { schritt: st.schritt, art: st.fahrtArt || null, bahn: !!st.fahrt, virtuell: !!st.fahrtVirtuell } : null; },
+    vfStand() { return { aktiv: vfAktiv(), kamera: vfKameraId(), studie: !!VF.studie, chLauf: !!chLauf, phase: chLauf ? chLauf.phase : null }; },
     motorLesen() {
       const s = physEngine.state;
       return { rpm: Math.round(s.rpm), md: Math.round(motorDrehzahl(s)), gang: s.currentGear, kmh: +(s.speedKmh * REAL_SCALE).toFixed(0),
@@ -82896,11 +83232,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!r.fertig) f.push('nicht fertig geworden (' + r.stand + ')');
       // v1.0.45: nach dem letzten Knopf 1 s Erholung (kein Fehler hier), danach erst fertig.
       if (Math.abs(r.dauer - (r.T + PIT_ERHOL_BASE)) > 0.3) f.push('Dauer ' + r.dauer.toFixed(2) + ' s statt ' + (r.T + PIT_ERHOL_BASE).toFixed(2));
-      // Fenster = ein Achtel + 700 ms (70-race.js, pitSpielStart). Erwartung = wie viele
-      // Symbole bis zum fertig-Werden von selbst ablaufen (ohne Tasten).
-      const fensterS = r.T / PIT_SPIEL_ANZAHL + PIT_SPIEL_FENSTER_EXTRA;
-      const erwartet = Math.floor((r.T + PIT_ERHOL_BASE) / fensterS);
+      // v1.1.11: fuenf Symbole, Fenster = T/5 minus 250 ms Pause (70-race.js, pitSpielFenster). Ohne
+      // Tasten laufen sie in die Standzeit hinein ab: Erwartung = so viele, wie bis zum Ende passen.
+      const fensterS = pitSpielFenster(r.T);
+      const erwartet = Math.min(PIT_SPIEL_ANZAHL, Math.floor((r.T + PIT_ERHOL_BASE) / (fensterS + PIT_SPIEL_PAUSE)));
       if (r.i < erwartet) f.push('nur ' + r.i + ' Symbole abgelaufen statt ' + erwartet);
+      // Wo das Fenster nicht unter seinem Minimum liegt, fuellen fuenf Fenster samt Pausen genau die Standzeit.
+      if (fensterS > PIT_SPIEL_FENSTER_MIN && Math.abs(PIT_SPIEL_ANZAHL * (fensterS + PIT_SPIEL_PAUSE) - r.T) > 0.01)
+        f.push('fuenf Fenster passen nicht in die Zeit: ' + (PIT_SPIEL_ANZAHL * (fensterS + PIT_SPIEL_PAUSE)).toFixed(2) + ' s zu ' + r.T.toFixed(2));
       if (fuelSimOn() && r.fuel < 99.9) f.push('Tank am Ende ' + r.fuel.toFixed(1));
       if (r.plan.repair && r.damage > 0.01) f.push('Schaden am Ende ' + r.damage.toFixed(1));
     }
@@ -83462,21 +83801,21 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: (info.length ? info.join(' | ') + ' | ' : '') + (f.length ? 'FEHLER: ' + f.join(' | ') : 'alle Bedingungen gepr\u00fcft') };
   });
 
-  stAdd('Boxen-Minigame: acht richtige halbieren die Zeit, falsche kosten Zeit', () => {
+  stAdd('Boxen-Minigame: fuenf richtige sparen 40 %, falsche kosten Zeit', () => {
     const a = pitSpielLauf('richtig');
     const b = pitSpielLauf('falsch');
     const f = a.f.concat(b.f);
     if (!f.length) {
-      if (a.treffer !== 8) f.push(a.treffer + ' Treffer statt 8');
-      // Acht richtige geben je 5 % Bonus: 0,6 * T plus 1 s Erholung (v1.0.45).
+      if (a.treffer !== PIT_SPIEL_ANZAHL) f.push(a.treffer + ' Treffer statt ' + PIT_SPIEL_ANZAHL);
+      // Fuenf richtige geben je 8 % Bonus (v1.1.11; vorher acht mal 5 %): 0,6 * T plus 1 s Erholung.
       const aSoll = 0.6 * a.T + PIT_ERHOL_BASE;
-      if (Math.abs(a.dauer - aSoll) > 0.3) f.push('mit 8 Treffern ' + a.dauer.toFixed(2) + ' s statt ' + aSoll.toFixed(2));
+      if (Math.abs(a.dauer - aSoll) > 0.3) f.push('mit 5 Treffern ' + a.dauer.toFixed(2) + ' s statt ' + aSoll.toFixed(2));
       if (b.treffer !== 0 || !(b.bonus < 0)) f.push('falsche Tasten: Treffer ' + b.treffer + ', Bonus ' + b.bonus);
-      // Acht falsche kosten je 5 % (1,4 * T) plus Erholung mit 8 Fehlern (Strafzeit).
-      const bSoll = 1.4 * b.T + PIT_ERHOL_BASE + 8 * PIT_ERHOL_PRO_FEHLER;
+      // Fuenf falsche kosten je 8 % (1,4 * T) plus Erholung mit 5 Fehlern (Strafzeit).
+      const bSoll = 1.4 * b.T + PIT_ERHOL_BASE + PIT_SPIEL_ANZAHL * PIT_ERHOL_PRO_FEHLER;
       if (Math.abs(b.dauer - bSoll) > 0.4) f.push('mit falschen Tasten ' + b.dauer.toFixed(2) + ' s statt ' + bSoll.toFixed(2));
     }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'halbe Zeit mit 8 Treffern (' + a.dauer.toFixed(1) + ' von ' + a.T.toFixed(1) + ' s), acht falsche: ' + b.dauer.toFixed(1) + ' s' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : '40 % schneller mit 5 Treffern (' + a.dauer.toFixed(1) + ' von ' + a.T.toFixed(1) + ' s), fuenf falsche: ' + b.dauer.toFixed(1) + ' s' };
   });
 
   stAdd('Boxen-Minigame: Quadrat und Kreis schalten waehrenddessen nicht, Kreuz bricht ab', () => {
@@ -87442,7 +87781,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const ap = { ghost: { scAuspark: { at: 0, lenk: 0.2 } } };
     const a0 = scAusparkSchritt(ap, 5000), a1 = scAusparkSchritt(ap, 5000 + SC_AUSPARK_MS + SC_AUSPARK_GERADE_MS / 2);
     if (!a0 || a0.lenk !== -0.2 || !(a1 && Math.abs(a1.lenk + 0.1) < 1e-9)) f.push('Ausparken: ' + JSON.stringify([a0, a1]));
-    if (scAusparkSchritt(ap, 5000 + SC_AUSPARK_MS + SC_AUSPARK_GERADE_MS + 1) !== null) f.push('Ausparken endet nicht');
+    // v1.1.15: danach 100 ms links, 100 ms rechts (Links-Rechts-Impuls), dann Ende.
+    const nachVor = 5000 + SC_AUSPARK_MS + SC_AUSPARK_GERADE_MS;
+    const li = scAusparkSchritt(ap, nachVor + SC_AUSPARK_LINKS_MS / 2), re = scAusparkSchritt(ap, nachVor + SC_AUSPARK_LINKS_MS + SC_AUSPARK_RECHTS_MS / 2);
+    if (!li || li.lenk !== -1 || !re || re.lenk !== 1) f.push('Links-Rechts-Impuls fehlt: ' + JSON.stringify([li, re]));
+    if (scAusparkSchritt(ap, nachVor + SC_AUSPARK_LINKS_MS + SC_AUSPARK_RECHTS_MS + 1) !== null) f.push('Ausparken endet nicht');
+    // Fahrbahn (kein Halt-Einschlag): gleich der Links-Rechts-Impuls.
+    const apF = { ghost: { scAuspark: { at: 0, lenk: 0 } } };
+    const f0 = scAusparkSchritt(apF, 9000), f1 = scAusparkSchritt(apF, 9000 + SC_AUSPARK_LINKS_MS + 10);
+    if (!f0 || f0.lenk !== -1 || !f1 || f1.lenk !== 1) f.push('Fahrbahn: kein Links-Rechts-Impuls: ' + JSON.stringify([f0, f1]));
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'groesster Lenkschritt ' + max.toFixed(2) + ' je Paket, Flaeche gleich' };
   });
 
@@ -92087,7 +92434,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const h = sc.ghost.randHalt;
       if (!h || h.phase !== 'rand' || !h.scLinie) f.push('vor der Linie nicht nach rechts');
       else {
-        if (pitQuer(sc) !== FINISH_RAND) f.push('nicht ganz rechts: ' + pitQuer(sc));
+        // v1.1.15: auf der Fahrbahn minimal weniger weit an den Rand (SC_FAHRBAHN_QUER).
+        if (pitQuer(sc) !== SC_FAHRBAHN_QUER) f.push('nicht am Rand: ' + pitQuer(sc));
         sc.ghost.tileIndex = 0;
         safetyCarHeimTick(sc);
         if (h.phase !== 'rad') f.push('an der Linie nicht eingelenkt (' + h.phase + ')');
@@ -92566,7 +92914,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       sgs.value = merk.gs;
       // Gegenschub nach dem Rechts-Impuls: ab dem Ende von 'rad' kurz rueckwaerts, auch ohne Links-Impuls; Vorgabe aus.
       // v1.1.3: Vorgabe 0 - zwei Gegenschuebe hintereinander waren der Ruck beim Einparken.
-      if (+sgr.defaultValue !== 0) f.push('Vorgabe Gegenschub nach Rechts-Impuls nicht 0: ' + sgr.defaultValue);
+      // v1.1.15: Vorgabe 100 ms (Test am Tisch).
+      if (+sgr.defaultValue !== 100) f.push('Vorgabe Gegenschub nach Rechts-Impuls nicht 100: ' + sgr.defaultValue);
       sgr.value = '100';
       for (const linksMs of ['700', '0']) {
         sg.value = linksMs;
@@ -92585,7 +92934,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       }
       sg.value = merk.links; sgr.value = merk.gr;
       // Anfahrt: Fenster und Tempo kommen aus den Reglern; die Fahrbahn bleibt bei zwei Kacheln und Formationstempo.
-      if (+si.defaultValue !== 5 || +st.defaultValue !== 40) f.push('Vorgabe Anfahrt/Einfahrtstempo nicht 5 / 40: ' + si.defaultValue + ' / ' + st.defaultValue);
+      if (+si.defaultValue !== 3 || +st.defaultValue !== 40) f.push('Vorgabe Anfahrt/Einfahrtstempo nicht 3 / 40: ' + si.defaultValue + ' / ' + st.defaultValue);
       si.value = '4'; st.value = '60';
       sc.ghost = { running: true, scHeim: true, ortSicher: true, scHeimKacheln: 999, tileIndex: (abstell - 5 + n) % n, laps: 0 };
       safetyCarHeimTick(sc);
@@ -93034,8 +93383,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (Math.abs(physEngine.state.speedKmh - erwartet) > 1e-6) f.push('Modelltempo nach der Uebergabe ' + physEngine.state.speedKmh + ' statt ' + erwartet.toFixed(2));
       // v1.1.3: der Lenkimpuls ist ab Werk an (100 %, 45 ms, 30 %).
       if (!($('race-einpark-staerke') && $('race-einpark-staerke').defaultValue === '1')) f.push('Einlenkstaerke nicht ab Werk 100 %');
-      if (!($('race-einpark-ms') && $('race-einpark-ms').defaultValue === '45')) f.push('Impulsdauer nicht ab Werk 45 ms');
-      if (!($('race-einpark-tempo') && $('race-einpark-tempo').defaultValue === '0.3')) f.push('Impulstempo nicht ab Werk 30 %');
+      // v1.1.15: wie das Safety Car, 100 ms bei 40 %.
+      if (!($('race-einpark-ms') && $('race-einpark-ms').defaultValue === '100')) f.push('Impulsdauer nicht ab Werk 100 ms');
+      if (!($('race-einpark-tempo') && $('race-einpark-tempo').defaultValue === '0.4')) f.push('Impulstempo nicht ab Werk 40 %');
     } finally {
       flagState = merk.fl; trackMode = merk.tm; topSpeedScale = merk.top; physEngine.state.speedKmh = merk.v;
       physEngine.state.virtualSpeed = merk.vv; physicsEnabled = merk.phys; playerCar = merk.pc; raceFormationLap = merk.form;
@@ -96275,12 +96625,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
 
   // Sichtbar nur, wenn ein Auto gesteuert wird. renderGarage() ruft das mit; ausserdem
   // einmal beim Laden, damit die Leiste nicht sichtbar startet.
+  // v1.1.11 BESTELLT: "im Garagenmenue sind jetzt 3 scrollbare Fenster. Das untere soll weg." Die
+  // Abstimmung steht seit v0.10.5 rechts beim gesteuerten Auto (garageAufZeile); die Leiste darunter
+  // bleibt im Dokument (die Optionen ziehen ueber sie mit), wird aber nicht mehr gezeigt.
   function updateGaragePresetRow() {
     const host = $('gar-preset');
-    if (!host) return;
-    const fahrer = typeof playerCar !== 'undefined' && playerCar
-                   && garage.some(c => c === playerCar && c.role === 'player');
-    host.style.display = fahrer ? '' : 'none';
+    if (host) host.style.display = 'none';
   }
   window.__updateGaragePresetRow = updateGaragePresetRow;
   updateGaragePresetRow();
@@ -96582,6 +96932,22 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         }
         try {
           localStorage.setItem('chc.migrate.kennlinien245.v1', '1');
+          if (geaendert) localStorage.setItem(AUTO_STORE, JSON.stringify(cfg));
+        } catch (e) { /* dann eben nur fuer diese Sitzung */ }
+      }
+    }
+    // ---- EINMALIG (v1.1.15): Safety Car minimal naeher auf der Fahrbahn --------------------
+    // BESTELLT: "Das einzige Problem war, dass es 5 mm zu weit am Rand war ... uebernimm die Werte, nur
+    // minimal naeher auf der Fahrbahn." Wer genau den getesteten Rechts-Impuls (100 ms) stehen hat,
+    // bekommt 90 ms; jeder andere Wert bleibt, wie er ist.
+    {
+      let erledigt = false;
+      try { erledigt = localStorage.getItem('chc.migrate.sc1115.v1') === '1'; } catch (e) { /* privat */ }
+      if (!erledigt) {
+        let geaendert = false;
+        if (Number(cfg['sc-ausfahrt-ms']) === 100) { cfg['sc-ausfahrt-ms'] = 90; geaendert = true; }
+        try {
+          localStorage.setItem('chc.migrate.sc1115.v1', '1');
           if (geaendert) localStorage.setItem(AUTO_STORE, JSON.stringify(cfg));
         } catch (e) { /* dann eben nur fuer diese Sitzung */ }
       }
@@ -97190,6 +97556,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     { id: 'feel', root: 'sub-opt-feel', titel: 'Fahrgefühl', werks: true },
     { id: 'sound', root: 'sub-opt-sound', titel: 'Ton' },
     { id: 'ghosts', root: 'sub-opt-ghosts', titel: 'NPCs' },
+    { id: 'safetycar', root: 'sub-opt-safetycar', titel: 'Safety Car' },
     { id: 'pad', root: 'sub-opt-pad', titel: 'Controller', pad: true },
     { id: 'race', root: 'tab-control', titel: 'Renneinstellungen' },
   ];
@@ -97862,7 +98229,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     } else if (st.schritt === 'start') {
       h += '<div class="studie-text">'
         + '<p><b>' + stEsc(t('Worum es geht')) + ':</b> ' + stEsc(t('Hängen Persönlichkeit, Reaktionszeit und die eigene Einschätzung mit dem Fahrverhalten und den Rundenzeiten in OmegaSim zusammen?')) + '</p>'
-        + '<p><b>' + stEsc(t('Was du tust')) + ':</b> ' + stEsc(t('6 Aussagen zur Persönlichkeit bewerten, eine Frage zu deinem Fahrkönnen beantworten, einen Reaktionstest mit dem Controller machen (10 Durchgänge) und danach, wenn du magst, eine Fahrverhaltens-Challenge fahren: 5 Runden auf Homington (nur Teile der Grundpackung) mit dem Fahrgefühl Sim+. Ohne Fahrt etwa 3 Minuten, mit Fahrt etwa 10.')) + '</p>'
+        + '<p><b>' + stEsc(t('Was du tust')) + ':</b> ' + stEsc(t('6 Aussagen zur Persönlichkeit bewerten, eine Frage zu deinem Fahrkönnen beantworten, einen Reaktionstest mit dem Controller machen (10 Durchgänge) und danach, wenn du magst, eine Fahrverhaltens-Challenge fahren: 5 Runden auf Homington (nur Teile der Grundpackung) mit dem Fahrgefühl Sim+ – auf der echten Bahn, virtuell in der App oder beides.')) + '</p>'
+        + '<p><b>' + stEsc(t('Wie lange')) + ':</b> ' + stEsc(t('Fragen und Reaktionstest etwa 3 Minuten. Fahrt auf der Bahn etwa 10 Minuten (Strecke aufbauen etwa 5, fünf Runden etwa 3–5). Virtuelle Fahrt etwa 5 Minuten. Insgesamt also 3 bis 18 Minuten, je nachdem, was du fährst.')) + '</p>'
         + '<p><b>' + stEsc(t('Was gespeichert wird')) + ':</b> ' + stEsc(t('Alter, Geschlecht, deine Antworten, die Reaktionszeiten, der Name des Controllers, die App-Version, die zufällige Gerätekennung dieser App und – mit Fahrt – Rundenzeiten und Fahrstil-Kennwerte (Gas, Bremse, Lenkung, Abflüge). Dein Name wird nicht abgefragt, und die Studienfahrt erscheint in keiner Bestenliste.')) + '</p>'
         + '<p><b>' + stEsc(t('Wo')) + ':</b> ' + stEsc(t('In einer Tabelle des Projekts. Öffentlich zugänglich gemacht werden die Daten nur in anonymisierter Form: ohne Gerätekennung, ohne Zeitpunkt und ohne Controller-Namen, in zufälliger Reihenfolge. Ausgewertet wird für Forschung und Lehre.')) + '</p>'
         + '<p><b>' + stEsc(t('Freiwillig')) + ':</b> ' + stEsc(t('Die Teilnahme ist freiwillig, und du musst mindestens 18 Jahre alt sein. Du kannst jederzeit abbrechen; vor dem letzten Schritt wird nichts gesendet. Mit deiner Gerätekennung kannst du später die Löschung verlangen, solange die Daten noch nicht anonymisiert veröffentlicht sind.')) + ' <code>' + stEsc(chGeraet()) + '</code></p>'
@@ -97896,11 +98264,24 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       h += '<div class="studie-rt" id="st-rt-feld" data-zustand="warte"><b id="st-rt-text">' + stEsc(t('Warte …')) + '</b>'
         + '<small id="st-rt-stand">' + st.rt.length + ' / ' + RT_DURCHGAENGE + '</small></div>';
     } else if (st.schritt === 'fahrt-info') {
+      // v1.1.11 BESTELLT: "In der Studie erlaube mir, virtuell zu fahren (selbe Strecke, selbe
+      // Rundenanzahl zusaetzlich zur physischen Bahn); erklaere vorher, wie lange das alles dauert."
       h += '<div class="studie-text"><p><b>' + stEsc(t('Fahrverhaltens-Challenge')) + '</b></p>'
-        + '<p>' + stEsc(t('Baue Homington aus der Grundpackung auf (der Plan erscheint beim Start), stelle dein Auto auf Start/Ziel und fahre 5 Runden. Fahrgefühl Sim+, trocken, keine Bestenliste. Gemessen werden Rundenzeiten, Gas, Bremse, Lenkung und Abflüge.')) + '</p>'
-        + '<p class="muted">' + stEsc(t('Ohne Bahn oder Auto kannst du auch ohne Fahrt abschließen.')) + '</p></div>'
-        + '<div class="studie-knoepfe"><button type="button" class="primary" data-st="fahren">' + stEsc(t('Challenge fahren')) + '</button>'
+        + '<p>' + stEsc(t('Auf der Bahn: Baue Homington aus der Grundpackung auf (der Plan erscheint beim Start), stelle dein Auto auf Start/Ziel und fahre 5 Runden – etwa 10 Minuten.')) + '</p>'
+        + '<p>' + stEsc(t('Virtuell: dieselbe Strecke und dieselben 5 Runden in der App, ohne Bahn und Auto – etwa 5 Minuten. Du kannst beides fahren, nacheinander.')) + '</p>'
+        + '<p class="muted">' + stEsc(t('Fahrgefühl Sim+, trocken, keine Bestenliste. Gemessen werden Rundenzeiten, Gas, Bremse, Lenkung und Abflüge. Ohne Fahrt kannst du auch gleich abschließen.')) + '</p></div>'
+        + '<div class="studie-knoepfe"><button type="button" class="primary" data-st="fahren">' + stEsc(t('Auf der Bahn fahren')) + '</button>'
+        + '<button type="button" class="primary" data-st="fahren-virtuell">' + stEsc(t('Virtuell fahren')) + '</button>'
         + '<button type="button" data-st="ohne-fahrt">' + stEsc(t('Ohne Fahrt abschließen')) + '</button></div>';
+    } else if (st.schritt === 'fahrt-mehr') {
+      const fertig = (f) => f ? (f.gueltig ? t('gefahren') : t('gefahren, nicht gewertet')) + (f.beste_ms ? ' · ' + t('beste Runde') + ' ' + (f.beste_ms / 1000).toFixed(2).replace('.', ',') + ' s' : '') : t('noch nicht');
+      h += '<div class="studie-text"><p><b>' + stEsc(t('Fahrverhaltens-Challenge')) + '</b></p>'
+        + '<p>' + stEsc(t('Auf der Bahn')) + ': ' + stEsc(fertig(st.fahrt)) + '</p>'
+        + '<p>' + stEsc(t('Virtuell')) + ': ' + stEsc(fertig(st.fahrtVirtuell)) + '</p></div>'
+        + '<div class="studie-knoepfe">'
+        + (st.fahrt ? '' : '<button type="button" data-st="fahren">' + stEsc(t('Auch auf der Bahn fahren (etwa 10 Minuten)')) + '</button>')
+        + (st.fahrtVirtuell ? '' : '<button type="button" data-st="fahren-virtuell">' + stEsc(t('Auch virtuell fahren (etwa 5 Minuten)')) + '</button>')
+        + '<button type="button" class="primary" data-st="abschliessen">' + stEsc(t('Abschließen und senden')) + '</button></div>';
     } else if (st.schritt === 'fahrt-laeuft') {
       h += '<p>' + stEsc(t('Die Studienfahrt läuft. Nach der letzten Runde geht es hier weiter.')) + '</p>'
         + '<div class="studie-knoepfe"><button type="button" data-st="ohne-fahrt">' + stEsc(t('Ohne Fahrt abschließen')) + '</button></div>';
@@ -98049,19 +98430,36 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       quelle: st.quelle, controller: String(st.controller).slice(0, 80),
       version: (($('app-version') || {}).textContent || '').slice(0, 20), sprache: typeof lang === 'string' ? lang : '' };
     if (st.fahrt) daten.fahrt = st.fahrt;
+    if (st.fahrtVirtuell) daten.fahrt_virtuell = st.fahrtVirtuell;
     return daten;
   }
   // v1.1.3: aus 72-challenges.js, wenn die Studienfahrt endet.
   function studieFahrtFertig(erg, stil) {
     if (!st || st.schritt !== 'fahrt-laeuft') return;
+    const virtuell = st.fahrtArt === 'virtuell';
+    // Virtuelle Fahrt mit Escape/✕ beendet: abgebrochen, nicht gewertet - zurueck zur Auswahl.
+    if (virtuell && typeof VF !== 'undefined' && VF.abbruch) {
+      st.schritt = st.fahrt ? 'fahrt-mehr' : 'fahrt-info'; st.fahrtArt = null;
+      studieZurueckZeigen();
+      return;
+    }
     const r = Array.isArray(erg.runden) ? erg.runden.map(Math.round) : [];
-    st.fahrt = { strecke: 'studie-homington', preset: erg.preset || 'simplus', gueltig: !!erg.gueltig,
-                 grund: erg.gueltig ? '' : String(erg.grund || '').slice(0, 60), runden_ms: r.slice(0, 12),
-                 beste_ms: r.length ? Math.min.apply(null, r) : null, gesamt_ms: erg.gueltig ? Math.round(erg.zeit) : null,
-                 stil: stil || null };
+    const fahrt = { strecke: 'studie-homington', art: virtuell ? 'virtuell' : 'bahn', preset: erg.preset || 'simplus', gueltig: !!erg.gueltig,
+                    grund: erg.gueltig ? '' : String(erg.grund || '').slice(0, 60), runden_ms: r.slice(0, 12),
+                    beste_ms: r.length ? Math.min.apply(null, r) : null, gesamt_ms: erg.gueltig ? Math.round(erg.zeit) : null,
+                    stil: stil || null };
+    if (virtuell) st.fahrtVirtuell = fahrt; else st.fahrt = fahrt;
+    st.fahrtArt = null;
+    // Die virtuelle Fahrt endet mit der Challenge (einen Takt spaeter: die Challenge raeumt noch auf).
+    if (virtuell && typeof vfAktiv === 'function' && vfAktiv()) setTimeout(() => { virtuellBeenden(); studieZurueckZeigen(); }, 0);
+    if (st.fahrt && st.fahrtVirtuell) { studieZurueckZeigen(); studieAbschliessen(); return; }
+    st.schritt = 'fahrt-mehr';
+    studieZurueckZeigen();
+  }
+  function studieZurueckZeigen() {
     showTab('options');
     if (typeof subpageZeigen === 'function') subpageZeigen('opt-studie');
-    studieAbschliessen();
+    studieZeichnen();
   }
   function studieAbschliessen() {
     const daten = studieDaten();
@@ -98157,10 +98555,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     } else if (a === 'abbrechen' || a === 'fertig') { st = studieNeu(); }
     else if (a === 'ueben') { st = Object.assign(studieNeu(), { nurUeben: true, schritt: 'rt-info' }); }
     else if (a === 'rt-los') { st.rt = []; st.frueh = 0; st.verpasst = 0; st.quelle = ''; st.schritt = 'rt'; }
-    else if (a === 'fahren') {
+    else if (a === 'fahren' || a === 'fahren-virtuell') {
+      const zurueck = st.schritt;
       st.schritt = 'fahrt-laeuft';
-      if (typeof studieChallengeStarten !== 'function' || !studieChallengeStarten()) st.schritt = 'fahrt-info';
-    } else if (a === 'ohne-fahrt') { st.fahrt = null; studieAbschliessen(); return; }
+      st.fahrtArt = a === 'fahren-virtuell' ? 'virtuell' : 'bahn';
+      if (typeof studieChallengeStarten !== 'function' || !studieChallengeStarten(st.fahrtArt === 'virtuell')) {
+        st.schritt = zurueck; st.fahrtArt = null;
+      }
+    } else if (a === 'ohne-fahrt') { st.fahrt = null; st.fahrtVirtuell = null; studieAbschliessen(); return; }
+    else if (a === 'abschliessen') { studieAbschliessen(); return; }
     studieZeichnen();
   }
   // v1.0.12 BESTELLT: "Studie erstmal nur zum Testen drin haben." Die Kachel erscheint nur im

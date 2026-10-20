@@ -1640,7 +1640,7 @@
   }
 
   ['phys-steerresp', 'phys-accel', 'setting-steer-calib', 'setting-brake-steal',
-   'setting-throttle-steer-relief', 'phys-brake-tau'].forEach(id => {
+   'setting-throttle-steer-relief', 'phys-brake-tau', 'phys-rueck-tempo'].forEach(id => {
     const input = $(id);
     const readout = $(id + '-val');
     const apply = () => {
@@ -1672,6 +1672,12 @@
       if (id === 'phys-brake-tau') {
         physEngine.config.useTauBrems = v;
         readout.textContent = v.toFixed(2).replace('.', ',') + ' s';
+      }
+      // v1.1.11 BESTELLT: "Drossele die Geschwindigkeit im Rueckwaertsgang auf 50 % der aktuellen und
+      // fuege einen Fahrgefuehl-Regler hinzu." Wirkt in 40-physics.js auf die Tempogrenze rueckwaerts.
+      if (id === 'phys-rueck-tempo') {
+        physEngine.config.reverseTempo = v / 100;
+        readout.textContent = Math.round(v) + '%';
       }
       if (id === 'setting-throttle-steer-relief') {
         physEngine.config.throttleSteerRelief = v;
@@ -2847,7 +2853,11 @@
   // Moeglich wurde es durch die Ortung aus v0.6.46: autopilotGrund() ist global (Flagge,
   // Einfuehrungsrunde, Bahn/Ausdruck-Stellung), der Rest haengt am Auto - Motor, Regler,
   // Kolonnenversatz, Abseits-Antwort. `wer` ist 1, wenn nichts dasteht.
-  const SCAN_TEMPO = 0.6, SCAN_TEMPO_HAARNADEL = 0.4;
+  // v1.1.15 GEMELDET: "Die Geschwindigkeit zum Streckenscan ist am unteren Ende der Mindestgeschwindigkeit.
+  // In der Haarnadel ist das Auto gerade so schnell genug, dass es noch Balken und Querlage bestimmen
+  // kann. Schiebe die Mindestgeschwindigkeit leicht ueber das (2-3 %)." Mal formationPace (0,35):
+  // gerade 0,21 -> 0,235, Haarnadel 0,14 -> 0,165 der Hoechstgeschwindigkeit (je 2,5 Prozentpunkte).
+  const SCAN_TEMPO = 0.67, SCAN_TEMPO_HAARNADEL = 0.47;
   const scanStopp = { car: null, bis: 0 };
   function scanAnhalten(car) { if (car) { scanStopp.car = car; scanStopp.bis = Date.now() + 1500; } }
   // ---- GREIFT DER AUTOPILOT GERADE? (v1.0.25) --------------------------------------
@@ -3333,7 +3343,7 @@
     const ps = physEngine.state;
     ps.dirtyAir += (ziel - ps.dirtyAir) * Math.min(1, dt * 4);
     const out = physEngine.update({ steering: steer, throttle: rawThrottle, brake: rawBrake,
-                                    headlights: headlightsOn }, dt);
+                                    headlights: headlightsOn, apFaehrt: !!ap }, dt);
     pacejkaRueckmeldung(physEngine, 1);
     // Telemetrie: etwa 10 Proben je Sekunde (Tempo, Gas, Bremse, Gang, Lenkung).
     if (typeof teleProbe === 'function') teleProbe(rawThrottle, rawBrake);

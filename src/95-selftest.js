@@ -10281,11 +10281,14 @@
       if (!r.fertig) f.push('nicht fertig geworden (' + r.stand + ')');
       // v1.0.45: nach dem letzten Knopf 1 s Erholung (kein Fehler hier), danach erst fertig.
       if (Math.abs(r.dauer - (r.T + PIT_ERHOL_BASE)) > 0.3) f.push('Dauer ' + r.dauer.toFixed(2) + ' s statt ' + (r.T + PIT_ERHOL_BASE).toFixed(2));
-      // Fenster = ein Achtel + 700 ms (70-race.js, pitSpielStart). Erwartung = wie viele
-      // Symbole bis zum fertig-Werden von selbst ablaufen (ohne Tasten).
-      const fensterS = r.T / PIT_SPIEL_ANZAHL + PIT_SPIEL_FENSTER_EXTRA;
-      const erwartet = Math.floor((r.T + PIT_ERHOL_BASE) / fensterS);
+      // v1.1.11: fuenf Symbole, Fenster = T/5 minus 250 ms Pause (70-race.js, pitSpielFenster). Ohne
+      // Tasten laufen sie in die Standzeit hinein ab: Erwartung = so viele, wie bis zum Ende passen.
+      const fensterS = pitSpielFenster(r.T);
+      const erwartet = Math.min(PIT_SPIEL_ANZAHL, Math.floor((r.T + PIT_ERHOL_BASE) / (fensterS + PIT_SPIEL_PAUSE)));
       if (r.i < erwartet) f.push('nur ' + r.i + ' Symbole abgelaufen statt ' + erwartet);
+      // Wo das Fenster nicht unter seinem Minimum liegt, fuellen fuenf Fenster samt Pausen genau die Standzeit.
+      if (fensterS > PIT_SPIEL_FENSTER_MIN && Math.abs(PIT_SPIEL_ANZAHL * (fensterS + PIT_SPIEL_PAUSE) - r.T) > 0.01)
+        f.push('fuenf Fenster passen nicht in die Zeit: ' + (PIT_SPIEL_ANZAHL * (fensterS + PIT_SPIEL_PAUSE)).toFixed(2) + ' s zu ' + r.T.toFixed(2));
       if (fuelSimOn() && r.fuel < 99.9) f.push('Tank am Ende ' + r.fuel.toFixed(1));
       if (r.plan.repair && r.damage > 0.01) f.push('Schaden am Ende ' + r.damage.toFixed(1));
     }
@@ -10847,21 +10850,21 @@
     return { ok: !f.length, mass: (info.length ? info.join(' | ') + ' | ' : '') + (f.length ? 'FEHLER: ' + f.join(' | ') : 'alle Bedingungen gepr\u00fcft') };
   });
 
-  stAdd('Boxen-Minigame: acht richtige halbieren die Zeit, falsche kosten Zeit', () => {
+  stAdd('Boxen-Minigame: fuenf richtige sparen 40 %, falsche kosten Zeit', () => {
     const a = pitSpielLauf('richtig');
     const b = pitSpielLauf('falsch');
     const f = a.f.concat(b.f);
     if (!f.length) {
-      if (a.treffer !== 8) f.push(a.treffer + ' Treffer statt 8');
-      // Acht richtige geben je 5 % Bonus: 0,6 * T plus 1 s Erholung (v1.0.45).
+      if (a.treffer !== PIT_SPIEL_ANZAHL) f.push(a.treffer + ' Treffer statt ' + PIT_SPIEL_ANZAHL);
+      // Fuenf richtige geben je 8 % Bonus (v1.1.11; vorher acht mal 5 %): 0,6 * T plus 1 s Erholung.
       const aSoll = 0.6 * a.T + PIT_ERHOL_BASE;
-      if (Math.abs(a.dauer - aSoll) > 0.3) f.push('mit 8 Treffern ' + a.dauer.toFixed(2) + ' s statt ' + aSoll.toFixed(2));
+      if (Math.abs(a.dauer - aSoll) > 0.3) f.push('mit 5 Treffern ' + a.dauer.toFixed(2) + ' s statt ' + aSoll.toFixed(2));
       if (b.treffer !== 0 || !(b.bonus < 0)) f.push('falsche Tasten: Treffer ' + b.treffer + ', Bonus ' + b.bonus);
-      // Acht falsche kosten je 5 % (1,4 * T) plus Erholung mit 8 Fehlern (Strafzeit).
-      const bSoll = 1.4 * b.T + PIT_ERHOL_BASE + 8 * PIT_ERHOL_PRO_FEHLER;
+      // Fuenf falsche kosten je 8 % (1,4 * T) plus Erholung mit 5 Fehlern (Strafzeit).
+      const bSoll = 1.4 * b.T + PIT_ERHOL_BASE + PIT_SPIEL_ANZAHL * PIT_ERHOL_PRO_FEHLER;
       if (Math.abs(b.dauer - bSoll) > 0.4) f.push('mit falschen Tasten ' + b.dauer.toFixed(2) + ' s statt ' + bSoll.toFixed(2));
     }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'halbe Zeit mit 8 Treffern (' + a.dauer.toFixed(1) + ' von ' + a.T.toFixed(1) + ' s), acht falsche: ' + b.dauer.toFixed(1) + ' s' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : '40 % schneller mit 5 Treffern (' + a.dauer.toFixed(1) + ' von ' + a.T.toFixed(1) + ' s), fuenf falsche: ' + b.dauer.toFixed(1) + ' s' };
   });
 
   stAdd('Boxen-Minigame: Quadrat und Kreis schalten waehrenddessen nicht, Kreuz bricht ab', () => {
@@ -14827,7 +14830,15 @@
     const ap = { ghost: { scAuspark: { at: 0, lenk: 0.2 } } };
     const a0 = scAusparkSchritt(ap, 5000), a1 = scAusparkSchritt(ap, 5000 + SC_AUSPARK_MS + SC_AUSPARK_GERADE_MS / 2);
     if (!a0 || a0.lenk !== -0.2 || !(a1 && Math.abs(a1.lenk + 0.1) < 1e-9)) f.push('Ausparken: ' + JSON.stringify([a0, a1]));
-    if (scAusparkSchritt(ap, 5000 + SC_AUSPARK_MS + SC_AUSPARK_GERADE_MS + 1) !== null) f.push('Ausparken endet nicht');
+    // v1.1.15: danach 100 ms links, 100 ms rechts (Links-Rechts-Impuls), dann Ende.
+    const nachVor = 5000 + SC_AUSPARK_MS + SC_AUSPARK_GERADE_MS;
+    const li = scAusparkSchritt(ap, nachVor + SC_AUSPARK_LINKS_MS / 2), re = scAusparkSchritt(ap, nachVor + SC_AUSPARK_LINKS_MS + SC_AUSPARK_RECHTS_MS / 2);
+    if (!li || li.lenk !== -1 || !re || re.lenk !== 1) f.push('Links-Rechts-Impuls fehlt: ' + JSON.stringify([li, re]));
+    if (scAusparkSchritt(ap, nachVor + SC_AUSPARK_LINKS_MS + SC_AUSPARK_RECHTS_MS + 1) !== null) f.push('Ausparken endet nicht');
+    // Fahrbahn (kein Halt-Einschlag): gleich der Links-Rechts-Impuls.
+    const apF = { ghost: { scAuspark: { at: 0, lenk: 0 } } };
+    const f0 = scAusparkSchritt(apF, 9000), f1 = scAusparkSchritt(apF, 9000 + SC_AUSPARK_LINKS_MS + 10);
+    if (!f0 || f0.lenk !== -1 || !f1 || f1.lenk !== 1) f.push('Fahrbahn: kein Links-Rechts-Impuls: ' + JSON.stringify([f0, f1]));
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'groesster Lenkschritt ' + max.toFixed(2) + ' je Paket, Flaeche gleich' };
   });
 
@@ -19472,7 +19483,8 @@
       const h = sc.ghost.randHalt;
       if (!h || h.phase !== 'rand' || !h.scLinie) f.push('vor der Linie nicht nach rechts');
       else {
-        if (pitQuer(sc) !== FINISH_RAND) f.push('nicht ganz rechts: ' + pitQuer(sc));
+        // v1.1.15: auf der Fahrbahn minimal weniger weit an den Rand (SC_FAHRBAHN_QUER).
+        if (pitQuer(sc) !== SC_FAHRBAHN_QUER) f.push('nicht am Rand: ' + pitQuer(sc));
         sc.ghost.tileIndex = 0;
         safetyCarHeimTick(sc);
         if (h.phase !== 'rad') f.push('an der Linie nicht eingelenkt (' + h.phase + ')');
@@ -19951,7 +19963,8 @@
       sgs.value = merk.gs;
       // Gegenschub nach dem Rechts-Impuls: ab dem Ende von 'rad' kurz rueckwaerts, auch ohne Links-Impuls; Vorgabe aus.
       // v1.1.3: Vorgabe 0 - zwei Gegenschuebe hintereinander waren der Ruck beim Einparken.
-      if (+sgr.defaultValue !== 0) f.push('Vorgabe Gegenschub nach Rechts-Impuls nicht 0: ' + sgr.defaultValue);
+      // v1.1.15: Vorgabe 100 ms (Test am Tisch).
+      if (+sgr.defaultValue !== 100) f.push('Vorgabe Gegenschub nach Rechts-Impuls nicht 100: ' + sgr.defaultValue);
       sgr.value = '100';
       for (const linksMs of ['700', '0']) {
         sg.value = linksMs;
@@ -19970,7 +19983,7 @@
       }
       sg.value = merk.links; sgr.value = merk.gr;
       // Anfahrt: Fenster und Tempo kommen aus den Reglern; die Fahrbahn bleibt bei zwei Kacheln und Formationstempo.
-      if (+si.defaultValue !== 5 || +st.defaultValue !== 40) f.push('Vorgabe Anfahrt/Einfahrtstempo nicht 5 / 40: ' + si.defaultValue + ' / ' + st.defaultValue);
+      if (+si.defaultValue !== 3 || +st.defaultValue !== 40) f.push('Vorgabe Anfahrt/Einfahrtstempo nicht 3 / 40: ' + si.defaultValue + ' / ' + st.defaultValue);
       si.value = '4'; st.value = '60';
       sc.ghost = { running: true, scHeim: true, ortSicher: true, scHeimKacheln: 999, tileIndex: (abstell - 5 + n) % n, laps: 0 };
       safetyCarHeimTick(sc);
@@ -20419,8 +20432,9 @@
       if (Math.abs(physEngine.state.speedKmh - erwartet) > 1e-6) f.push('Modelltempo nach der Uebergabe ' + physEngine.state.speedKmh + ' statt ' + erwartet.toFixed(2));
       // v1.1.3: der Lenkimpuls ist ab Werk an (100 %, 45 ms, 30 %).
       if (!($('race-einpark-staerke') && $('race-einpark-staerke').defaultValue === '1')) f.push('Einlenkstaerke nicht ab Werk 100 %');
-      if (!($('race-einpark-ms') && $('race-einpark-ms').defaultValue === '45')) f.push('Impulsdauer nicht ab Werk 45 ms');
-      if (!($('race-einpark-tempo') && $('race-einpark-tempo').defaultValue === '0.3')) f.push('Impulstempo nicht ab Werk 30 %');
+      // v1.1.15: wie das Safety Car, 100 ms bei 40 %.
+      if (!($('race-einpark-ms') && $('race-einpark-ms').defaultValue === '100')) f.push('Impulsdauer nicht ab Werk 100 ms');
+      if (!($('race-einpark-tempo') && $('race-einpark-tempo').defaultValue === '0.4')) f.push('Impulstempo nicht ab Werk 40 %');
     } finally {
       flagState = merk.fl; trackMode = merk.tm; topSpeedScale = merk.top; physEngine.state.speedKmh = merk.v;
       physEngine.state.virtualSpeed = merk.vv; physicsEnabled = merk.phys; playerCar = merk.pc; raceFormationLap = merk.form;

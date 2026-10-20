@@ -871,6 +871,9 @@
         // display is plenty. reverseOutputSpan below caps the byte on top of this, which
         // makes R both slower and weaker than forward.
         reverseTopFrac: 0.11,
+        // v1.1.11: Anteil davon, den der Fahrer rueckwaerts bekommt (Regler "Tempo rueckwaerts",
+        // Vorgabe 50 %). Der Autopilot faehrt mit dem vollen Wert (inputs.apFaehrt).
+        reverseTempo: 0.5,
         reverseRatio: 3.00,
         reverseOutputSpan: 0.50,
       };
@@ -1924,7 +1927,10 @@
       if (reversing) {
         // In R the THROTTLE drives backwards and the brake slows down.
         st.engineLoad = inputs.throttle;
-        const revCeiling = revTopKmh * cfg.speedLimitFactor;
+        // Die Grenze sinkt, die Ausgabe bleibt Tempo / revTopKmh: halbe Grenze heisst halbes Byte, das
+        // Auto faehrt also wirklich langsamer und nicht nur die Anzeige.
+        const revAnteil = inputs.apFaehrt ? 1 : Math.max(0.05, Math.min(1, cfg.reverseTempo === undefined ? 1 : cfg.reverseTempo));
+        const revCeiling = revTopKmh * revAnteil * cfg.speedLimitFactor;
         if (inputs.brake > 0.02) {
           isBraking = true;
           const uR = Math.abs(st.speedKmh) / cfg.topSpeedKmh;

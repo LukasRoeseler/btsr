@@ -168,6 +168,8 @@
     if (typeof konsoleTourOffen === 'function' && konsoleTourOffen()) { konsoleTourZurueck(); return true; }
     const lb = $('lb-wrap');
     if (lb && lb.classList.contains('on') && $('lb-close')) { $('lb-close').click(); return true; }
+    if (typeof streckenbildOffen === 'function' && streckenbildOffen()) { streckenbildZu(); return true; }
+    if (typeof menuNavGarageZurueck === 'function' && menuNavGarageZurueck()) return true;
     const tab = kAktiverTab();
     // Eine Community-Strecke (v0.9.49) geht zurueck in ihre Liste, nicht auf die Kacheln.
     if (typeof chCommunitySeiteOffen === 'function' && chCommunitySeiteOffen()) { showSubpage('ch-community'); return true; }
@@ -978,6 +980,7 @@
     // Dieser Zuhoerer laeuft in der Capture-Phase vor allen anderen - ohne diese Zeile oeffnete Escape das Menue.
     if (typeof vfAktiv === 'function' && vfAktiv()) {
       if (k === 'escape') { e.preventDefault(); e.stopImmediatePropagation(); virtuellBeenden(); }
+      else if (k === 'c' && !e.repeat) { e.preventDefault(); vfKameraWechseln(); }
       return;
     }
     if (e.target && e.target.closest && e.target.closest('input[type="text"], input[type="number"], textarea, select')) return;
@@ -1047,10 +1050,14 @@
     // der Text selbst um, ein Tipp daneben in der Kopfzeile oeffnete das Menue. Jetzt oeffnet nur das
     // Bild (und Gamepad/Tastatur, die die Kachel als Ganzes ausloesen: e.target ist dann die Kachel),
     // alles andere ausser den Knoepfen schaltet um.
+    // v1.1.15 GEMELDET: "Wenn ich auf das Bild klicke, fuehre mich zu den Optionen. Wenn ich auf eine der
+    // beiden Ueberschriften druecke, aendere den Modus." Die Infozeile (.k-ki) liegt ueber dem groessten
+    // Teil des Bildes, und ein Tipp dort schaltete bisher um. Jetzt umgekehrt: NUR die beiden
+    // Ueberschriften (.k-kk, .k-kopf) schalten, alles andere auf der Kachel oeffnet die Optionen.
     const kachelKlick = (quad, oeffnen) => (e) => {
       if (e.target.closest('.k-knopf')) return;
-      if (e.target === e.currentTarget || e.target.closest('.k-kb')) { oeffnen(); return; }
-      konsoleQuadWechsel(quad, 1);
+      if (e.target.closest('.k-kk, .k-kopf')) { konsoleQuadWechsel(quad, 1); return; }
+      oeffnen();
     };
     kn('fa-renn', kachelKlick('renntyp', () => konsoleZeige('control')));
     kn('fa-strecke', kachelKlick('bahn', () => konsoleZeige('track')));

@@ -1281,9 +1281,15 @@
   // startet nichts), zeigt das angeschlossene Auto und speichert den Namen fuer die
   // Bestenliste. Fuer Nicht-Challenge-Fahrten ist das nicht noetig.
   // Fuer die Studie: die Studienstrecke als Rennen starten (Ampel, Teilepruefung wie jede Challenge).
-  function studieChallengeStarten() {
+  // virtuell (v1.1.11): erst die virtuelle Fahrt auf der Studienstrecke starten - ihr Auto ist dann das
+  // gesteuerte -, dann dieselbe Challenge wie auf der Bahn (Ampel, Teilepruefung, Runden, Fahrstil).
+  function studieChallengeStarten(virtuell) {
+    if (virtuell) {
+      if (typeof virtuellStarten !== 'function' || !virtuellStarten({ tiles: chTiles(CH_STUDIE), studie: true })) return false;
+    }
     chWahl = CH_STUDIE.id; chModus = 'rennen'; chSpiegel = false;
     challengeStarten();
+    if (!chLauf && virtuell && typeof virtuellBeenden === 'function') virtuellBeenden();
     return !!chLauf;
   }
   function challengeStartenDialog() {

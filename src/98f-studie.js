@@ -74,7 +74,8 @@
     } else if (st.schritt === 'start') {
       h += '<div class="studie-text">'
         + '<p><b>' + stEsc(t('Worum es geht')) + ':</b> ' + stEsc(t('Hängen Persönlichkeit, Reaktionszeit und die eigene Einschätzung mit dem Fahrverhalten und den Rundenzeiten in OmegaSim zusammen?')) + '</p>'
-        + '<p><b>' + stEsc(t('Was du tust')) + ':</b> ' + stEsc(t('6 Aussagen zur Persönlichkeit bewerten, eine Frage zu deinem Fahrkönnen beantworten, einen Reaktionstest mit dem Controller machen (10 Durchgänge) und danach, wenn du magst, eine Fahrverhaltens-Challenge fahren: 5 Runden auf Homington (nur Teile der Grundpackung) mit dem Fahrgefühl Sim+. Ohne Fahrt etwa 3 Minuten, mit Fahrt etwa 10.')) + '</p>'
+        + '<p><b>' + stEsc(t('Was du tust')) + ':</b> ' + stEsc(t('6 Aussagen zur Persönlichkeit bewerten, eine Frage zu deinem Fahrkönnen beantworten, einen Reaktionstest mit dem Controller machen (10 Durchgänge) und danach, wenn du magst, eine Fahrverhaltens-Challenge fahren: 5 Runden auf Homington (nur Teile der Grundpackung) mit dem Fahrgefühl Sim+ – auf der echten Bahn, virtuell in der App oder beides.')) + '</p>'
+        + '<p><b>' + stEsc(t('Wie lange')) + ':</b> ' + stEsc(t('Fragen und Reaktionstest etwa 3 Minuten. Fahrt auf der Bahn etwa 10 Minuten (Strecke aufbauen etwa 5, fünf Runden etwa 3–5). Virtuelle Fahrt etwa 5 Minuten. Insgesamt also 3 bis 18 Minuten, je nachdem, was du fährst.')) + '</p>'
         + '<p><b>' + stEsc(t('Was gespeichert wird')) + ':</b> ' + stEsc(t('Alter, Geschlecht, deine Antworten, die Reaktionszeiten, der Name des Controllers, die App-Version, die zufällige Gerätekennung dieser App und – mit Fahrt – Rundenzeiten und Fahrstil-Kennwerte (Gas, Bremse, Lenkung, Abflüge). Dein Name wird nicht abgefragt, und die Studienfahrt erscheint in keiner Bestenliste.')) + '</p>'
         + '<p><b>' + stEsc(t('Wo')) + ':</b> ' + stEsc(t('In einer Tabelle des Projekts. Öffentlich zugänglich gemacht werden die Daten nur in anonymisierter Form: ohne Gerätekennung, ohne Zeitpunkt und ohne Controller-Namen, in zufälliger Reihenfolge. Ausgewertet wird für Forschung und Lehre.')) + '</p>'
         + '<p><b>' + stEsc(t('Freiwillig')) + ':</b> ' + stEsc(t('Die Teilnahme ist freiwillig, und du musst mindestens 18 Jahre alt sein. Du kannst jederzeit abbrechen; vor dem letzten Schritt wird nichts gesendet. Mit deiner Gerätekennung kannst du später die Löschung verlangen, solange die Daten noch nicht anonymisiert veröffentlicht sind.')) + ' <code>' + stEsc(chGeraet()) + '</code></p>'
@@ -108,11 +109,24 @@
       h += '<div class="studie-rt" id="st-rt-feld" data-zustand="warte"><b id="st-rt-text">' + stEsc(t('Warte …')) + '</b>'
         + '<small id="st-rt-stand">' + st.rt.length + ' / ' + RT_DURCHGAENGE + '</small></div>';
     } else if (st.schritt === 'fahrt-info') {
+      // v1.1.11 BESTELLT: "In der Studie erlaube mir, virtuell zu fahren (selbe Strecke, selbe
+      // Rundenanzahl zusaetzlich zur physischen Bahn); erklaere vorher, wie lange das alles dauert."
       h += '<div class="studie-text"><p><b>' + stEsc(t('Fahrverhaltens-Challenge')) + '</b></p>'
-        + '<p>' + stEsc(t('Baue Homington aus der Grundpackung auf (der Plan erscheint beim Start), stelle dein Auto auf Start/Ziel und fahre 5 Runden. Fahrgefühl Sim+, trocken, keine Bestenliste. Gemessen werden Rundenzeiten, Gas, Bremse, Lenkung und Abflüge.')) + '</p>'
-        + '<p class="muted">' + stEsc(t('Ohne Bahn oder Auto kannst du auch ohne Fahrt abschließen.')) + '</p></div>'
-        + '<div class="studie-knoepfe"><button type="button" class="primary" data-st="fahren">' + stEsc(t('Challenge fahren')) + '</button>'
+        + '<p>' + stEsc(t('Auf der Bahn: Baue Homington aus der Grundpackung auf (der Plan erscheint beim Start), stelle dein Auto auf Start/Ziel und fahre 5 Runden – etwa 10 Minuten.')) + '</p>'
+        + '<p>' + stEsc(t('Virtuell: dieselbe Strecke und dieselben 5 Runden in der App, ohne Bahn und Auto – etwa 5 Minuten. Du kannst beides fahren, nacheinander.')) + '</p>'
+        + '<p class="muted">' + stEsc(t('Fahrgefühl Sim+, trocken, keine Bestenliste. Gemessen werden Rundenzeiten, Gas, Bremse, Lenkung und Abflüge. Ohne Fahrt kannst du auch gleich abschließen.')) + '</p></div>'
+        + '<div class="studie-knoepfe"><button type="button" class="primary" data-st="fahren">' + stEsc(t('Auf der Bahn fahren')) + '</button>'
+        + '<button type="button" class="primary" data-st="fahren-virtuell">' + stEsc(t('Virtuell fahren')) + '</button>'
         + '<button type="button" data-st="ohne-fahrt">' + stEsc(t('Ohne Fahrt abschließen')) + '</button></div>';
+    } else if (st.schritt === 'fahrt-mehr') {
+      const fertig = (f) => f ? (f.gueltig ? t('gefahren') : t('gefahren, nicht gewertet')) + (f.beste_ms ? ' · ' + t('beste Runde') + ' ' + (f.beste_ms / 1000).toFixed(2).replace('.', ',') + ' s' : '') : t('noch nicht');
+      h += '<div class="studie-text"><p><b>' + stEsc(t('Fahrverhaltens-Challenge')) + '</b></p>'
+        + '<p>' + stEsc(t('Auf der Bahn')) + ': ' + stEsc(fertig(st.fahrt)) + '</p>'
+        + '<p>' + stEsc(t('Virtuell')) + ': ' + stEsc(fertig(st.fahrtVirtuell)) + '</p></div>'
+        + '<div class="studie-knoepfe">'
+        + (st.fahrt ? '' : '<button type="button" data-st="fahren">' + stEsc(t('Auch auf der Bahn fahren (etwa 10 Minuten)')) + '</button>')
+        + (st.fahrtVirtuell ? '' : '<button type="button" data-st="fahren-virtuell">' + stEsc(t('Auch virtuell fahren (etwa 5 Minuten)')) + '</button>')
+        + '<button type="button" class="primary" data-st="abschliessen">' + stEsc(t('Abschließen und senden')) + '</button></div>';
     } else if (st.schritt === 'fahrt-laeuft') {
       h += '<p>' + stEsc(t('Die Studienfahrt läuft. Nach der letzten Runde geht es hier weiter.')) + '</p>'
         + '<div class="studie-knoepfe"><button type="button" data-st="ohne-fahrt">' + stEsc(t('Ohne Fahrt abschließen')) + '</button></div>';
@@ -261,19 +275,36 @@
       quelle: st.quelle, controller: String(st.controller).slice(0, 80),
       version: (($('app-version') || {}).textContent || '').slice(0, 20), sprache: typeof lang === 'string' ? lang : '' };
     if (st.fahrt) daten.fahrt = st.fahrt;
+    if (st.fahrtVirtuell) daten.fahrt_virtuell = st.fahrtVirtuell;
     return daten;
   }
   // v1.1.3: aus 72-challenges.js, wenn die Studienfahrt endet.
   function studieFahrtFertig(erg, stil) {
     if (!st || st.schritt !== 'fahrt-laeuft') return;
+    const virtuell = st.fahrtArt === 'virtuell';
+    // Virtuelle Fahrt mit Escape/✕ beendet: abgebrochen, nicht gewertet - zurueck zur Auswahl.
+    if (virtuell && typeof VF !== 'undefined' && VF.abbruch) {
+      st.schritt = st.fahrt ? 'fahrt-mehr' : 'fahrt-info'; st.fahrtArt = null;
+      studieZurueckZeigen();
+      return;
+    }
     const r = Array.isArray(erg.runden) ? erg.runden.map(Math.round) : [];
-    st.fahrt = { strecke: 'studie-homington', preset: erg.preset || 'simplus', gueltig: !!erg.gueltig,
-                 grund: erg.gueltig ? '' : String(erg.grund || '').slice(0, 60), runden_ms: r.slice(0, 12),
-                 beste_ms: r.length ? Math.min.apply(null, r) : null, gesamt_ms: erg.gueltig ? Math.round(erg.zeit) : null,
-                 stil: stil || null };
+    const fahrt = { strecke: 'studie-homington', art: virtuell ? 'virtuell' : 'bahn', preset: erg.preset || 'simplus', gueltig: !!erg.gueltig,
+                    grund: erg.gueltig ? '' : String(erg.grund || '').slice(0, 60), runden_ms: r.slice(0, 12),
+                    beste_ms: r.length ? Math.min.apply(null, r) : null, gesamt_ms: erg.gueltig ? Math.round(erg.zeit) : null,
+                    stil: stil || null };
+    if (virtuell) st.fahrtVirtuell = fahrt; else st.fahrt = fahrt;
+    st.fahrtArt = null;
+    // Die virtuelle Fahrt endet mit der Challenge (einen Takt spaeter: die Challenge raeumt noch auf).
+    if (virtuell && typeof vfAktiv === 'function' && vfAktiv()) setTimeout(() => { virtuellBeenden(); studieZurueckZeigen(); }, 0);
+    if (st.fahrt && st.fahrtVirtuell) { studieZurueckZeigen(); studieAbschliessen(); return; }
+    st.schritt = 'fahrt-mehr';
+    studieZurueckZeigen();
+  }
+  function studieZurueckZeigen() {
     showTab('options');
     if (typeof subpageZeigen === 'function') subpageZeigen('opt-studie');
-    studieAbschliessen();
+    studieZeichnen();
   }
   function studieAbschliessen() {
     const daten = studieDaten();
@@ -369,10 +400,15 @@
     } else if (a === 'abbrechen' || a === 'fertig') { st = studieNeu(); }
     else if (a === 'ueben') { st = Object.assign(studieNeu(), { nurUeben: true, schritt: 'rt-info' }); }
     else if (a === 'rt-los') { st.rt = []; st.frueh = 0; st.verpasst = 0; st.quelle = ''; st.schritt = 'rt'; }
-    else if (a === 'fahren') {
+    else if (a === 'fahren' || a === 'fahren-virtuell') {
+      const zurueck = st.schritt;
       st.schritt = 'fahrt-laeuft';
-      if (typeof studieChallengeStarten !== 'function' || !studieChallengeStarten()) st.schritt = 'fahrt-info';
-    } else if (a === 'ohne-fahrt') { st.fahrt = null; studieAbschliessen(); return; }
+      st.fahrtArt = a === 'fahren-virtuell' ? 'virtuell' : 'bahn';
+      if (typeof studieChallengeStarten !== 'function' || !studieChallengeStarten(st.fahrtArt === 'virtuell')) {
+        st.schritt = zurueck; st.fahrtArt = null;
+      }
+    } else if (a === 'ohne-fahrt') { st.fahrt = null; st.fahrtVirtuell = null; studieAbschliessen(); return; }
+    else if (a === 'abschliessen') { studieAbschliessen(); return; }
     studieZeichnen();
   }
   // v1.0.12 BESTELLT: "Studie erstmal nur zum Testen drin haben." Die Kachel erscheint nur im

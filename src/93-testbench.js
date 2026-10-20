@@ -40,6 +40,10 @@
           return Math.sqrt(d.reduce((s, v) => s + v * v, 0) / d.length);
         })(), cut: xs.gebaut ? xs.cut.gain.value : null };
     },
+    // Studie (98f-studie.js): direkt auf einen Schritt springen, ohne Fragebogen und Reaktionstest.
+    studieSpringen(schritt) { if (!st) st = studieNeu(); st.schritt = schritt; studieZeichnen(); return st.schritt; },
+    studieStand() { return st ? { schritt: st.schritt, art: st.fahrtArt || null, bahn: !!st.fahrt, virtuell: !!st.fahrtVirtuell } : null; },
+    vfStand() { return { aktiv: vfAktiv(), kamera: vfKameraId(), studie: !!VF.studie, chLauf: !!chLauf, phase: chLauf ? chLauf.phase : null }; },
     motorLesen() {
       const s = physEngine.state;
       return { rpm: Math.round(s.rpm), md: Math.round(motorDrehzahl(s)), gang: s.currentGear, kmh: +(s.speedKmh * REAL_SCALE).toFixed(0),

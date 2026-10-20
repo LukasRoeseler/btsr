@@ -285,6 +285,22 @@
         } catch (e) { /* dann eben nur fuer diese Sitzung */ }
       }
     }
+    // ---- EINMALIG (v1.1.15): Safety Car minimal naeher auf der Fahrbahn --------------------
+    // BESTELLT: "Das einzige Problem war, dass es 5 mm zu weit am Rand war ... uebernimm die Werte, nur
+    // minimal naeher auf der Fahrbahn." Wer genau den getesteten Rechts-Impuls (100 ms) stehen hat,
+    // bekommt 90 ms; jeder andere Wert bleibt, wie er ist.
+    {
+      let erledigt = false;
+      try { erledigt = localStorage.getItem('chc.migrate.sc1115.v1') === '1'; } catch (e) { /* privat */ }
+      if (!erledigt) {
+        let geaendert = false;
+        if (Number(cfg['sc-ausfahrt-ms']) === 100) { cfg['sc-ausfahrt-ms'] = 90; geaendert = true; }
+        try {
+          localStorage.setItem('chc.migrate.sc1115.v1', '1');
+          if (geaendert) localStorage.setItem(AUTO_STORE, JSON.stringify(cfg));
+        } catch (e) { /* dann eben nur fuer diese Sitzung */ }
+      }
+    }
     // ---- EINMALIG (v0.10.5): Bremston leiser, Drift-Modus entfernt -----------------------
     {
       let erledigt = false;

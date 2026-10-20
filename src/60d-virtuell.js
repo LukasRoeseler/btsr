@@ -441,10 +441,18 @@
     const dt = VF.letzt ? Math.min(0.05, (now - VF.letzt) / 1000) : 0.016;
     VF.letzt = now;
     const st = physEngine.state;
-    // Lenkung des Fahrers (gedaempft), nicht der Servobefehl: der traegt die Griffkorrekturen fuer das
-    // echte Auto, und hier rechnet das Reifenmodell den Griff selbst.
-    const lenk = typeof st.dampedSteering === 'number' ? st.dampedSteering : (physEngine.outputs ? physEngine.outputs.servoAngle || 0 : 0);
+    VF.dtBild = dt;
     const kmh = st.speedKmh || 0;
+    // v1.1.11 GEMELDET: "Virtuelles Fahren ruckelt und ist sehr traege." Bisher lenkte das Auto mit
+    // physEngine.state.dampedSteering: das rechnet die Physik nur alle 45 ms (Treppenstufen in der
+    // Gierrate = Ruckeln), mit der Servodaempfung und der Lenkbegrenzung bei Tempo des ECHTEN Autos
+    // (= traege). Jetzt direkt der Stick (steerX), voller Einschlag in 0,12 s, bei hohem Tempo etwas
+    // weniger Einschlag wie ein Spiel-Lenkfilter; den Rest erledigt das Reifenmodell.
+    const vVollL = Math.abs(kmh) * REAL_SCALE / 3.6;
+    const lenkZiel = Math.max(-1, Math.min(1, typeof steerX === 'number' ? steerX : 0)) / (1 + (vVollL / 55) * (vVollL / 55));
+    const schritt = dt / 0.12;
+    VF.lenkIst = (VF.lenkIst || 0) + Math.max(-schritt, Math.min(schritt, lenkZiel - (VF.lenkIst || 0)));
+    const lenk = VF.lenkIst;
     if (kmh < 0) {
       // Rueckwaerts (Rangieren): rein kinematisch wie bisher.
       const neu = vfSchritt(VF, kmh, lenk, dt, physEngine.config.gripScale);
@@ -500,36 +508,73 @@
   }
   function vfMalen() {
     const gl = VF.gl, cv = VF.cv;
-    const dpr = Math.min(1.5, window.devicePixelRatio || 1);
+    // Handy (Touch): hoechstens 1,25-fache Aufloesung - die Pixelzahl ist auf dem Handy der teuerste Teil.
+    const dpr = Math.min(navigator.maxTouchPoints > 0 ? 1.25 : 1.5, window.devicePixelRatio || 1);
     const w = Math.round(cv.clientWidth * dpr), h = Math.round(cv.clientHeight * dpr);
     if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
     gl.viewport(0, 0, w, h);
     gl.clearColor(0.55, 0.66, 0.78, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    const r = VF.h * Math.PI / 180, fx = Math.sin(r), fz = -Math.cos(r);
-    const auge = [VF.x - fx * 30, 13, VF.y - fz * 30];
-    VF.kam = VF.kam ? VF.kam.map((k, i) => k + (auge[i] - k) * 0.18) : auge;
-    const ziel = [VF.x + fx * 14, 1.5, VF.y + fz * 14];
-    const pv = vfMal(vfPerspektive(62 * Math.PI / 180, w / Math.max(1, h), 0.5, 3000), vfBlick(VF.kam, ziel, [0, 1, 0]));
+    const k = vfKamera(VF.dtBild || 0.016);
+    const blick = vfBlick(k.auge, k.ziel, [0, 1, 0]);
+    const pv = vfMal(vfPerspektive(k.fov * Math.PI / 180, w / Math.max(1, h), k.nah, 3000), blick);
     gl.useProgram(VF.prog);
-    gl.uniformMatrix4fv(gl.getUniformLocation(VF.prog, 'm'), false, new Float32Array(pv));
-    gl.uniform3f(gl.getUniformLocation(VF.prog, 'nebel'), 0.55, 0.66, 0.78);
+    if (!VF.loc) VF.loc = { m: gl.getUniformLocation(VF.prog, 'm'), w: gl.getUniformLocation(VF.prog, 'w'), nebel: gl.getUniformLocation(VF.prog, 'nebel'),
+                            p: gl.getAttribLocation(VF.prog, 'p'), c: gl.getAttribLocation(VF.prog, 'c') };
+    const L = VF.loc;
+    gl.uniformMatrix4fv(L.m, false, new Float32Array(pv));
+    gl.uniform3f(L.nebel, 0.55, 0.66, 0.78);
     const zeichne = (pu, welt) => {
-      gl.uniformMatrix4fv(gl.getUniformLocation(VF.prog, 'w'), false, new Float32Array(welt));
+      gl.uniformMatrix4fv(L.w, false, new Float32Array(welt));
       gl.bindBuffer(gl.ARRAY_BUFFER, pu.b);
-      const ap = gl.getAttribLocation(VF.prog, 'p'), ac = gl.getAttribLocation(VF.prog, 'c');
-      gl.enableVertexAttribArray(ap); gl.enableVertexAttribArray(ac);
-      gl.vertexAttribPointer(ap, 3, gl.FLOAT, false, 24, 0);
-      gl.vertexAttribPointer(ac, 3, gl.FLOAT, false, 24, 12);
+      gl.enableVertexAttribArray(L.p); gl.enableVertexAttribArray(L.c);
+      gl.vertexAttribPointer(L.p, 3, gl.FLOAT, false, 24, 0);
+      gl.vertexAttribPointer(L.c, 3, gl.FLOAT, false, 24, 12);
       gl.drawArrays(gl.TRIANGLES, 0, pu.n);
     };
     zeichne(VF.bahn, VF_EINS);
-    [gl.getAttribLocation(VF.prog, 'p'), gl.getAttribLocation(VF.prog, 'c')].forEach((a) => gl.disableVertexAttribArray(a));
-    if (VF.modell && VF.tprog) vfModellMalen(gl, pv, vfBlick(VF.kam, ziel, [0, 1, 0]));
+    gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+    if (VF.modell && VF.tprog) vfModellMalen(gl, pv, blick);
     else {
-      gl.enableVertexAttribArray(gl.getAttribLocation(VF.prog, 'p')); gl.enableVertexAttribArray(gl.getAttribLocation(VF.prog, 'c'));
       zeichne(VF.auto, vfLage(VF.x, VF.y, VF.h));
+      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
     }
+  }
+  // ---- Kamera (v1.1.11) --------------------------------------------------------------------
+  // BESTELLT: "Wenn ich den rechten Stick reindruecke im virtuellen Fahren, aendere die Kamera zu
+  // Motorhaube oder nahe Verfolgerkamera." R3 (bzw. die Lichthupen-Belegung) oder C schaltet weiter:
+  // Verfolger -> nah -> Motorhaube -> Verfolger. Nachgefuehrt nach der ZEIT (nicht je Bild): auf einem
+  // langsamen Handy lief die Kamera vorher bei weniger Bildern spuerbar hinterher.
+  const VF_KAMERAS = [{ id: 'verfolger', name: 'Verfolgerkamera' }, { id: 'nah', name: 'Nahe Verfolgerkamera' }, { id: 'haube', name: 'Motorhaube' }];
+  const VF_KAMERA_STORE = 'omegasim-vf-kamera';
+  function vfKameraId() {
+    if (!VF.kamera) { try { VF.kamera = localStorage.getItem(VF_KAMERA_STORE) || 'verfolger'; } catch (e) { VF.kamera = 'verfolger'; } }
+    return VF_KAMERAS.some((k) => k.id === VF.kamera) ? VF.kamera : 'verfolger';
+  }
+  function vfKameraWechseln() {
+    const i = VF_KAMERAS.findIndex((k) => k.id === vfKameraId());
+    const neu = VF_KAMERAS[(i + 1) % VF_KAMERAS.length];
+    VF.kamera = neu.id; VF.kam = null;
+    try { localStorage.setItem(VF_KAMERA_STORE, neu.id); } catch (e) { /* egal */ }
+    showHudToast(t(neu.name));
+  }
+  function vfKamera(dt) {
+    const r = VF.h * Math.PI / 180, fx = Math.sin(r), fz = -Math.cos(r);
+    const id = vfKameraId();
+    if (id === 'haube') {
+      // Auf der Motorhaube (Speed Dreams: Bonnet 0,75 m vor, 0,95 m hoch), fest am Auto.
+      const s = VF.modell ? VF_AUTO.L / VF.modell.d.laenge : 2;
+      const vor = 0.75 * s, hoch = (0.95 + (VF.modell ? 0.07 : 0.25)) * s;
+      const auge = [VF.x + fx * vor, hoch, VF.y + fz * vor];
+      VF.kam = auge;
+      return { auge, ziel: [auge[0] + fx * 30, hoch - 1.2, auge[2] + fz * 30], fov: 70, nah: 0.3 };
+    }
+    const nah = id === 'nah';
+    const hinten = nah ? 15 : 30, hoehe = nah ? 6 : 13, tau = nah ? 0.08 : 0.15;
+    const soll = [VF.x - fx * hinten, hoehe, VF.y - fz * hinten];
+    const a = 1 - Math.exp(-Math.max(0, dt) / tau);
+    VF.kam = VF.kam ? VF.kam.map((q, i) => q + (soll[i] - q) * a) : soll;
+    return { auge: VF.kam, ziel: [VF.x + fx * (nah ? 10 : 14), nah ? 2.2 : 1.5, VF.y + fz * (nah ? 10 : 14)], fov: nah ? 66 : 62, nah: 0.5 };
   }
   function vfModellMalen(gl, pv, blick) {
     const M = VF.modell, d = M.d, T = VF.tprog, u = T.u;
@@ -635,22 +680,29 @@
     if (!el) return;
     const kmh = Math.round(Math.abs(physEngine.state.speedKmh || 0) * REAL_SCALE);   // Anzeige wie im Cockpit
     const lauf = VF.rundeAb ? Date.now() - VF.rundeAb : null;
-    el.querySelector('.vf-tempo').textContent = kmh + ' km/h';
-    el.querySelector('.vf-runde').textContent = t('Runde') + ' ' + vfZeit(lauf);
-    el.querySelector('.vf-zeiten').textContent = t('Letzte') + ' ' + vfZeit(VF.letzte) + ' · ' + t('Beste') + ' ' + vfZeit(VF.beste);
-    el.querySelector('.vf-abseits').hidden = !VF.abseits;
+    // Nur bei Aenderung schreiben: jedes textContent= ist Arbeit fuer die Seite, und das hier laeuft je Bild.
+    const setz = (sel, txt) => { const e = el.querySelector(sel); if (e.textContent !== txt) e.textContent = txt; };
+    setz('.vf-tempo', kmh + ' km/h');
+    setz('.vf-runde', t('Runde') + ' ' + vfZeit(lauf === null ? null : Math.floor(lauf / 100) * 100));
+    setz('.vf-zeiten', t('Letzte') + ' ' + vfZeit(VF.letzte) + ' · ' + t('Beste') + ' ' + vfZeit(VF.beste));
+    const ab = el.querySelector('.vf-abseits');
+    if (ab.hidden === VF.abseits) ab.hidden = !VF.abseits;
   }
 
   // ---- Starten und Beenden ------------------------------------------------------------------
-  function virtuellStarten() {
-    if (VF.aktiv) return;
-    if (!physicsEnabled) { showHudToast(t('Virtuell braucht ein Fahrgefühl mit Physik (nicht RC)')); return; }
+  // opts.tiles: diese Strecke statt der des Editors (die Studie faehrt Homington), opts.studie: die
+  // Fahrt gehoert der Studie (beim Beenden nicht in die Garage). true = gestartet.
+  function virtuellStarten(opts) {
+    opts = opts || {};
+    if (VF.aktiv) return false;
+    if (!physicsEnabled) { showHudToast(t('Virtuell braucht ein Fahrgefühl mit Physik (nicht RC)')); return false; }
     // Editor-Strecke und gemerkte Rollen gehoeren dem Fahrer: die Ersatzstrecke (Balkonia) und die Rolle
     // des virtuellen Autos werden beim Beenden wieder zurueckgenommen.
     VF.tilesVorher = currentTrackTiles;
     try { VF.editorVorher = localStorage.getItem(EDITOR_STRECKE_STORE); } catch (e) { VF.editorVorher = undefined; }
-    const tiles = vfTilesWaehlen();
-    if (!tiles) { showHudToast(t('Erst eine Strecke bauen')); return; }
+    const tiles = opts.tiles && opts.tiles.length >= 3 ? opts.tiles : vfTilesWaehlen();
+    if (!tiles) { showHudToast(t('Erst eine Strecke bauen')); return false; }
+    VF.studie = !!opts.studie;
     const schicht = document.createElement('div');
     schicht.className = 'vf-schicht';
     schicht.innerHTML = '<canvas class="vf-bild"></canvas><div class="vf-hud" data-i18n-skip>'
@@ -662,10 +714,14 @@
     document.body.appendChild(schicht);
     const cv = schicht.querySelector('canvas');
     const gl = cv.getContext('webgl', { antialias: true }) || cv.getContext('experimental-webgl');
-    if (!gl) { schicht.remove(); showHudToast(t('Dieses Gerät kann kein WebGL')); return; }
+    if (!gl) { schicht.remove(); showHudToast(t('Dieses Gerät kann kein WebGL')); return false; }
     try {
       VF.prog = vfProgramm(gl);
-    } catch (e) { schicht.remove(); showHudToast('WebGL: ' + e.message); return; }
+    } catch (e) { schicht.remove(); showHudToast('WebGL: ' + e.message); return false; }
+    VF.loc = null; VF.lenkIst = 0; VF.kam = null;
+    // Die Seite unter der 3D-Schicht ruht (kein Neuzeichnen); Startaufstellung, Ampel und Meldungen
+    // kommen per CSS darueber (body.vf-an).
+    document.body.classList.add('vf-an');
     gl.enable(gl.DEPTH_TEST);
     VF.gl = gl; VF.cv = cv; VF.schicht = schicht; VF.hud = schicht.querySelector('.vf-hud');
     VF.tiles = tiles;
@@ -723,6 +779,7 @@
     VF.takt = setInterval(vfPaket, VF_TAKT_MS);
     VF.raf = requestAnimationFrame(vfBild);
     showHudToast(t('Virtuelle Fahrt: frei fahren, ✕ beendet'));
+    return true;
   }
   // ---- Optionen rechts in der Garage (v1.1.3) ---------------------------------------------
   // BESTELLT: "Wenn ich virtuell klicke, dann sollen rechts noch Optionen kommen - aktuell erstmal nur
@@ -840,7 +897,15 @@
   }
   function virtuellBeenden() {
     if (!VF.aktiv) return;
+    // Laeuft eine Challenge (z. B. die Studienfahrt) mit dem virtuellen Auto, endet sie mit: abgebrochen,
+    // nicht gewertet (VF.abbruch sagt das der Studie, 98f-studie.js).
+    if (typeof chLauf !== 'undefined' && chLauf) {
+      VF.abbruch = true;
+      try { if (kRennenLaeuft()) requestRaceStop(); else challengeAbbrechen(); } catch (e) { /* weiter */ }
+      VF.abbruch = false;
+    }
     VF.aktiv = false;
+    document.body.classList.remove('vf-an');
     cancelAnimationFrame(VF.raf);
     clearInterval(VF.takt);
     const car = VF.car;
@@ -872,6 +937,8 @@
     VF.schicht = null; VF.gl = null;
     renderGarage();
     // Zurueck in die Garage, wo die Optionen der virtuellen Fahrt stehen (dort startet die naechste).
-    if (typeof showTab === 'function') showTab('garage');
+    // Eine Studienfahrt geht zurueck in die Studie (98f-studie.js zeigt sie selbst).
+    if (!VF.studie && typeof showTab === 'function') showTab('garage');
+    VF.studie = false;
   }
   window.addEventListener('keydown', (e) => { if (VF.aktiv && e.key === 'Escape') { e.stopImmediatePropagation(); virtuellBeenden(); } }, true);

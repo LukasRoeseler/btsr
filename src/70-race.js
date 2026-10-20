@@ -4267,14 +4267,22 @@
   let pitState = 'off';        // off | limited | servicing
   let pitModus = 'minigame';   // Boxen-Minigame, siehe pitSpielStart()
   let pitSpiel = null;
-  const PIT_SPIEL_ANZAHL = 8;
-  const PIT_SPIEL_BONUS = 0.05;
+  // v1.1.11 BESTELLT: "Pit-Minigame: mach nur 5 Button-Events, nach jedem 250 ms ausblenden. Sieh zu,
+  // dass es mit der Zeit noch ungefaehr passt." Fuenf Tasten statt acht; nach jeder (gedrueckt oder
+  // abgelaufen) ist das Feld 250 ms leer. Jedes Fenster ist ein Fuenftel der Standzeit minus diese
+  // Pause, so passen alle fuenf in die Zeit. Ein Treffer bringt 8 % statt 5 %: fuenf Treffer sparen
+  // wie bisher acht zusammen 40 %.
+  const PIT_SPIEL_ANZAHL = 5;
+  const PIT_SPIEL_BONUS = 0.08;
+  const PIT_SPIEL_PAUSE = 0.25;
   // v1.0.45 BESTELLT: nach dem letzten Knopf mindestens 1 s Erholung, laenger als Strafzeit
   // bei falschen Tasten. Erholung zusaetzlich zur Bonus-Strafe (5 % je falsche Taste).
   const PIT_ERHOL_BASE = 1.0;
   const PIT_ERHOL_PRO_FEHLER = 0.3;
-  // v1.0.45 BESTELLT: die Zeit zum Druecken 0,5 s laenger. Das Fenster war T/Anzahl + 0,2 s.
-  const PIT_SPIEL_FENSTER_EXTRA = 0.2 + 0.5;
+  // v1.0.45 BESTELLT: die Zeit zum Druecken 0,5 s laenger (T/Anzahl + 0,7 s). Seit v1.1.11 statt
+  // dessen T/Anzahl minus die Pause (siehe oben), mindestens PIT_SPIEL_FENSTER_MIN.
+  const PIT_SPIEL_FENSTER_MIN = 0.7;
+  function pitSpielFenster(T) { return Math.max(PIT_SPIEL_FENSTER_MIN, T / PIT_SPIEL_ANZAHL - PIT_SPIEL_PAUSE); }
   let pitServiceStart = null;
   let pitFuelGained = 0, pitDamageRepaired = 0;
   const PIT_FUEL_PER_SEC = 22;
@@ -4614,7 +4622,7 @@
     if (folge.length) folge[folge.length - 1] = 'kreis';
     // Fenster 0,7 s laenger als ein Zehntel: erst 100 ms, dann 200 ms (v0.8.38), seit v1.0.45
     // 0,5 s mehr (BESTELLT: "Mach die Zeit, die ich zum Druecken habe nochmal 0,5 s laenger").
-    pitSpiel = { T, bonus: 0, folge, i: 0, fensterAb: 0, fensterS: T / PIT_SPIEL_ANZAHL + PIT_SPIEL_FENSTER_EXTRA,
+    pitSpiel = { T, bonus: 0, folge, i: 0, fensterAb: 0, fensterS: pitSpielFenster(T),
                  treffer: 0, fehler: 0, blitz: '', blitzBis: 0, erholBis: 0, fuel0: fuel, dmg0: damage };
     showHudToast(t('Boxen-Minigame: Quadrat und Kreis!'));
   }
@@ -4623,13 +4631,15 @@
     if (!pitSpielAktiv()) return false;
     const sp = pitSpiel;
     if (sp.i >= sp.folge.length) return true;
+    // In der Pause nach einer Taste ist nichts zu druecken (die Taste gehoert trotzdem dem Spiel).
+    if (pitStandElapsed < sp.fensterAb) return true;
     // BESTELLT: "Wenn ich die falsche Taste druecke, fuege Zeit hinzu. Wenn ich richtig
     // druecke, ziehe Zeit ab." Beides um 5 % der Grundzeit.
     if (welche === sp.folge[sp.i]) { sp.bonus += PIT_SPIEL_BONUS * sp.T; sp.treffer++; sp.blitz = 'ok'; pitSpielTon(true, sp.i); }
     else { sp.bonus -= PIT_SPIEL_BONUS * sp.T; sp.fehler++; sp.blitz = 'falsch'; pitSpielTon(false, sp.i); }
     sp.blitzBis = pitStandElapsed + 0.3;
     sp.i++;
-    sp.fensterAb = pitStandElapsed;
+    sp.fensterAb = pitStandElapsed + PIT_SPIEL_PAUSE;    // das naechste Fenster beginnt nach der Pause
     pitSpielMalen();
     return true;
   }
@@ -4659,7 +4669,7 @@
     pitStandElapsed += dt;
     if (sp.i < sp.folge.length && pitStandElapsed - sp.fensterAb >= sp.fensterS) {
       sp.i++;
-      sp.fensterAb = pitStandElapsed;
+      sp.fensterAb = pitStandElapsed + PIT_SPIEL_PAUSE;
     }
     const anteil = Math.min(1, (pitStandElapsed + sp.bonus) / sp.T);
     if (pl.refuel) {
@@ -4701,7 +4711,8 @@
     el.hidden = !an;
     if (!an) return;
     const sp = pitSpiel;
-    const sym = sp.i < sp.folge.length ? sp.folge[sp.i] : '';
+    // In der Pause (vor fensterAb) ist das Feld leer.
+    const sym = sp.i < sp.folge.length && pitStandElapsed >= sp.fensterAb ? sp.folge[sp.i] : '';
     el.dataset.symbol = sym;
     el.dataset.blitz = pitStandElapsed < sp.blitzBis ? sp.blitz : '';
     el.style.setProperty('--fenster', sym

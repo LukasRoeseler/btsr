@@ -325,12 +325,15 @@ function spurGet(p) {
 const S2_BLATT = 'Studie2';
 const S2_NARQ = 6, S2_ADM = [1, 2, 4], S2_RIV = [3, 5, 6];
 const S2_STIL = ['sekunden', 'vollgas', 'gas', 'bremse', 'bremsungen', 'bremsKurve', 'lenkUnruhe', 'abfluege', 'rundenStreu'];
+// v1.1.11: die virtuelle Fahrt (dieselbe Strecke in der App) in eigenen Spalten mit v_ davor - am ENDE
+// angehaengt, damit schon vorhandene Zeilen nicht verrutschen (die Kopfzeile wird ergaenzt).
+const S2_VIRTUELL = ['v_fahrt', 'v_fahrt_gueltig', 'v_fahrt_grund', 'v_runden_ms', 'v_beste_ms', 'v_gesamt_ms'].concat(S2_STIL.map((k) => 'v_' + k));
 const S2_KOPF = ['zeitpunkt', 'geraet', 'alter', 'geschlecht', 'narq_version', 'narq_1', 'narq_2', 'narq_3', 'narq_4', 'narq_5',
   'narq_6', 'bewunderung', 'rivalitaet', 'selbst', 'rt_ms', 'rt_median', 'fruehstarts', 'verpasst', 'quelle', 'controller',
-  'version', 'sprache', 'fahrt', 'fahrt_gueltig', 'fahrt_grund', 'preset', 'runden_ms', 'beste_ms', 'gesamt_ms'].concat(S2_STIL);
+  'version', 'sprache', 'fahrt', 'fahrt_gueltig', 'fahrt_grund', 'preset', 'runden_ms', 'beste_ms', 'gesamt_ms'].concat(S2_STIL).concat(S2_VIRTUELL);
 const S2_OEFFENTLICH = ['alter', 'geschlecht', 'narq_1', 'narq_2', 'narq_3', 'narq_4', 'narq_5', 'narq_6', 'bewunderung',
   'rivalitaet', 'selbst', 'rt_median', 'fruehstarts', 'verpasst', 'quelle', 'fahrt', 'fahrt_gueltig', 'preset', 'runden_ms',
-  'beste_ms', 'gesamt_ms'].concat(S2_STIL);
+  'beste_ms', 'gesamt_ms'].concat(S2_STIL).concat(S2_VIRTUELL.filter((k) => k !== 'v_fahrt_grund'));
 const S2_MIN_N = 5;
 
 function zahlIn(x, lo, hi) { const n = Number(x); return isFinite(n) && n >= lo && n <= hi ? n : ''; }
@@ -352,6 +355,9 @@ function studiePost(d) {
   const runden = f && Array.isArray(f.runden_ms) ? f.runden_ms.map(Number).filter((x) => x >= 500 && x <= 600000).slice(0, 12) : [];
   const grenzen = { sekunden: [0, 7200], vollgas: [0, 1], gas: [0, 1], bremse: [0, 1], bremsungen: [0, 600], bremsKurve: [0, 1],
                     lenkUnruhe: [0, 50], abfluege: [0, 60], rundenStreu: [0, 5] };
+  const v = d.fahrt_virtuell && typeof d.fahrt_virtuell === 'object' ? d.fahrt_virtuell : null;
+  const vStil = v && v.stil && typeof v.stil === 'object' ? v.stil : {};
+  const vRunden = v && Array.isArray(v.runden_ms) ? v.runden_ms.map(Number).filter((x) => x >= 500 && x <= 600000).slice(0, 12) : [];
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
@@ -364,8 +370,14 @@ function studiePost(d) {
         String(d.sprache || '').slice(0, 5),
         f ? 1 : 0, f && f.gueltig === true ? 1 : 0, f ? String(f.grund || '').slice(0, 60) : '', f ? String(f.preset || '').slice(0, 12) : '',
         JSON.stringify(runden), f ? zahlIn(f.beste_ms, 500, 600000) : '', f ? zahlIn(f.gesamt_ms, 500, 3600000) : ''])
-      .concat(S2_STIL.map((k) => (f && stil[k] !== null && stil[k] !== undefined) ? zahlIn(stil[k], grenzen[k][0], grenzen[k][1]) : ''));
-    blattMit(S2_BLATT, S2_KOPF).appendRow(zeile);
+      .concat(S2_STIL.map((k) => (f && stil[k] !== null && stil[k] !== undefined) ? zahlIn(stil[k], grenzen[k][0], grenzen[k][1]) : ''))
+      .concat([v ? 1 : 0, v && v.gueltig === true ? 1 : 0, v ? String(v.grund || '').slice(0, 60) : '', JSON.stringify(vRunden),
+        v ? zahlIn(v.beste_ms, 500, 600000) : '', v ? zahlIn(v.gesamt_ms, 500, 3600000) : ''])
+      .concat(S2_STIL.map((k) => (v && vStil[k] !== null && vStil[k] !== undefined) ? zahlIn(vStil[k], grenzen[k][0], grenzen[k][1]) : ''));
+    const blatt = blattMit(S2_BLATT, S2_KOPF);
+    // Aeltere Blaetter haben die v_-Spalten noch nicht in der Kopfzeile: ergaenzen.
+    if (blatt.getLastColumn() < S2_KOPF.length) blatt.getRange(1, 1, 1, S2_KOPF.length).setValues([S2_KOPF]);
+    blatt.appendRow(zeile);
   } finally { lock.releaseLock(); }
   return { ok: true };
 }
