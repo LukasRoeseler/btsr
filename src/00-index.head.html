@@ -4798,7 +4798,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.22</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.23</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5951,6 +5951,10 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Automatische Aufstellung: Wer seinen Ort schon &#252;ber Start/Ziel abgesichert hat, f&#228;hrt wieder direkt auf seinen Platz (wie bis 1.1.20) statt erst noch einmal &#252;ber Start/Ziel &#8211; das sparte bis zu einer ganzen Runde.</li>
+        <li>Anhalten: Rennen beenden schickt den Halt jetzt 3 s lang nach (vorher 1,5 s). Abbrechen nach &#8222;Automatische Aufstellung&#8220; h&#228;lt alle fahrenden NPCs und das Safety Car an.</li>
+        <li>NPC-Fahrmodus &#8222;Realistisch&#8220; (aus 1.1.3) wieder entfernt: Die NPCs beschleunigen wieder wie vorher und verlieren beim Anfahren nicht mehr die Orientierung. Der Lese-Schub (mehr Gas, wenn ein NPC kurz keinen Code liest) wirkt nur noch bis 0,7 s &#8211; danach schob er Autos neben der Bahn weiter.</li>
+        <li>Funkweg in der App kippt nicht mehr hin und her: Schrieb OmegaBle f&#252;r ein Auto nicht mehr, ging es nach ~4 s aufs Plugin und 2 s sp&#228;ter wieder zur&#252;ck &#8211; in rund zwei Dritteln der Zeit gingen alle Befehle an dieses Auto verloren, auch die Haltebefehle. Jetzt bleibt so ein Auto 30 s auf dem Plugin, dann wird OmegaBle kurz gepr&#252;ft; klappt es wieder nicht, verdoppelt sich die Sperre (bis 10 min). Im Funkrundlauf steht, wie viele Autos gerade fest auf dem Plugin sind.</li>
         <li>Wetter sprang st&#228;ndig zwischen Regen und trocken (gemeldet von einem Tester): Die Taste W war eine immer aktive Testtaste f&#252;rs Wetter &#8211; wer mit WASD fuhr, schaltete bei jedem Gasgeben um. Jetzt f&#228;hrt die Tastatur auch mit WASD (WIP: W Gas, S Bremse, A/D lenken); die Testtasten (Wetter jetzt Shift+W, Crash C, Tank F/R, Runde Q) gelten nur noch im Entwicklermodus. Challenges (auch die der Studie) schalten au&#223;erdem &#8222;Wetter &#228;ndert sich&#8220; immer aus.</li>
         <li>Automatische Aufstellung: Die H&#246;he der Startpl&#228;tze ist wieder wie in 1.1.19 (Reihe 1 auf dem Teil vor Start/Ziel, rechts etwas weiter vorn als links) &#8211; das hatte gestimmt. Die neue Querlage (mittig, dann Impuls hin und zur&#252;ck) bleibt.</li>
         <li>Automatische Aufstellung neu: Die Autos fahren gestaffelt los, jedes erst &#252;ber Start/Ziel (damit klar ist, wo es ist), dann mittig zu seinem Platz &#8211; die ersten beiden auf Start/Ziel, die n&#228;chsten auf das Teil davor und so weiter. Auf ihrem Teil lenken sie mit 30 % Tempo voll zur eigenen Seite und wieder zur&#252;ck (das zweite Auto erst links, dann rechts) und bleiben sofort stehen; die Mitte bleibt frei, damit sp&#228;tere Autos vorbeikommen. Regler &#8222;Einparken: Dauer/Tempo&#8220; wieder da (100 ms, 30 %).</li>
@@ -11115,12 +11119,6 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-quertempo-val">2.0</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">NPC: Fahrmodus <span class="wip-tag">WIP</span>
-          <small>Standard: Der NPC f&auml;hrt mit dem Fahrgef&uuml;hl, das du gew&auml;hlt hast, und h&auml;lt sein Zieltempo mit einem Regler, der das Pedal sehr fein dosiert. Realistisch: Beschleunigen und Bremsen wie bei Sim+, egal welches Fahrgef&uuml;hl du f&auml;hrst, und gefahren wird wie mit Triggern &ndash; deutlich zu langsam hei&szlig;t Vollgas, deutlich zu schnell hei&szlig;t bremsen, je mehr, desto st&auml;rker. Gas baut in etwa 0,15&nbsp;s auf, die Bremse in 0,1&nbsp;s. Gilt ab dem n&auml;chsten Start der NPCs.</small></div>
-        <select id="ghost-fahrmodus" data-preset-skip>
-          <option value="standard" selected>Standard</option>
-          <option value="realistisch">Realistisch</option>
-        </select></div>
       <div class="opt-row"><div class="opt-label">NPC: Brems- und Gasverhalten
           <small>Wie entschlossen ein NPC Gas gibt und bremst. NPC und Fahrer gehen durch
           dasselbe Fahrzeugmodell, bekommen ihr Gas aber aus verschiedenen Quellen:

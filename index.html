@@ -4798,7 +4798,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.22</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.23</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5951,6 +5951,10 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Automatische Aufstellung: Wer seinen Ort schon &#252;ber Start/Ziel abgesichert hat, f&#228;hrt wieder direkt auf seinen Platz (wie bis 1.1.20) statt erst noch einmal &#252;ber Start/Ziel &#8211; das sparte bis zu einer ganzen Runde.</li>
+        <li>Anhalten: Rennen beenden schickt den Halt jetzt 3 s lang nach (vorher 1,5 s). Abbrechen nach &#8222;Automatische Aufstellung&#8220; h&#228;lt alle fahrenden NPCs und das Safety Car an.</li>
+        <li>NPC-Fahrmodus &#8222;Realistisch&#8220; (aus 1.1.3) wieder entfernt: Die NPCs beschleunigen wieder wie vorher und verlieren beim Anfahren nicht mehr die Orientierung. Der Lese-Schub (mehr Gas, wenn ein NPC kurz keinen Code liest) wirkt nur noch bis 0,7 s &#8211; danach schob er Autos neben der Bahn weiter.</li>
+        <li>Funkweg in der App kippt nicht mehr hin und her: Schrieb OmegaBle f&#252;r ein Auto nicht mehr, ging es nach ~4 s aufs Plugin und 2 s sp&#228;ter wieder zur&#252;ck &#8211; in rund zwei Dritteln der Zeit gingen alle Befehle an dieses Auto verloren, auch die Haltebefehle. Jetzt bleibt so ein Auto 30 s auf dem Plugin, dann wird OmegaBle kurz gepr&#252;ft; klappt es wieder nicht, verdoppelt sich die Sperre (bis 10 min). Im Funkrundlauf steht, wie viele Autos gerade fest auf dem Plugin sind.</li>
         <li>Wetter sprang st&#228;ndig zwischen Regen und trocken (gemeldet von einem Tester): Die Taste W war eine immer aktive Testtaste f&#252;rs Wetter &#8211; wer mit WASD fuhr, schaltete bei jedem Gasgeben um. Jetzt f&#228;hrt die Tastatur auch mit WASD (WIP: W Gas, S Bremse, A/D lenken); die Testtasten (Wetter jetzt Shift+W, Crash C, Tank F/R, Runde Q) gelten nur noch im Entwicklermodus. Challenges (auch die der Studie) schalten au&#223;erdem &#8222;Wetter &#228;ndert sich&#8220; immer aus.</li>
         <li>Automatische Aufstellung: Die H&#246;he der Startpl&#228;tze ist wieder wie in 1.1.19 (Reihe 1 auf dem Teil vor Start/Ziel, rechts etwas weiter vorn als links) &#8211; das hatte gestimmt. Die neue Querlage (mittig, dann Impuls hin und zur&#252;ck) bleibt.</li>
         <li>Automatische Aufstellung neu: Die Autos fahren gestaffelt los, jedes erst &#252;ber Start/Ziel (damit klar ist, wo es ist), dann mittig zu seinem Platz &#8211; die ersten beiden auf Start/Ziel, die n&#228;chsten auf das Teil davor und so weiter. Auf ihrem Teil lenken sie mit 30 % Tempo voll zur eigenen Seite und wieder zur&#252;ck (das zweite Auto erst links, dann rechts) und bleiben sofort stehen; die Mitte bleibt frei, damit sp&#228;tere Autos vorbeikommen. Regler &#8222;Einparken: Dauer/Tempo&#8220; wieder da (100 ms, 30 %).</li>
@@ -11115,12 +11119,6 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-quertempo-val">2.0</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">NPC: Fahrmodus <span class="wip-tag">WIP</span>
-          <small>Standard: Der NPC f&auml;hrt mit dem Fahrgef&uuml;hl, das du gew&auml;hlt hast, und h&auml;lt sein Zieltempo mit einem Regler, der das Pedal sehr fein dosiert. Realistisch: Beschleunigen und Bremsen wie bei Sim+, egal welches Fahrgef&uuml;hl du f&auml;hrst, und gefahren wird wie mit Triggern &ndash; deutlich zu langsam hei&szlig;t Vollgas, deutlich zu schnell hei&szlig;t bremsen, je mehr, desto st&auml;rker. Gas baut in etwa 0,15&nbsp;s auf, die Bremse in 0,1&nbsp;s. Gilt ab dem n&auml;chsten Start der NPCs.</small></div>
-        <select id="ghost-fahrmodus" data-preset-skip>
-          <option value="standard" selected>Standard</option>
-          <option value="realistisch">Realistisch</option>
-        </select></div>
       <div class="opt-row"><div class="opt-label">NPC: Brems- und Gasverhalten
           <small>Wie entschlossen ein NPC Gas gibt und bremst. NPC und Fahrer gehen durch
           dasselbe Fahrzeugmodell, bekommen ihr Gas aber aus verschiedenen Quellen:
@@ -12766,29 +12764,45 @@
   // Befehl und danach alle 2 s, im Hintergrund. Kennt das Plugin status() nicht (APK 0.8.124-126),
   // bleibt es beim alten Verhalten: OmegaBle schreibt.
   const omegaLage = new Map();
+  // v1.1.23 GEMELDET: "Das Bluetooth wechselt die ganze Zeit hin und her, ich kann nicht mit NPCs fahren."
+  // Bis 1.1.22 kippte der Weg im Kreis: schreibt OmegaBle fuer ein Auto nicht mehr (nichts geschrieben,
+  // nur verworfen), ging es nach zwei Blicken (~4 s) aufs Plugin - und beim naechsten Blick 2 s spaeter
+  // wieder zurueck, denn ueber das Plugin verwirft OmegaBle ja nichts mehr. In ~4 von 6 s gingen alle
+  // Befehle an dieses Auto verloren, auch die Haltebefehle. Jetzt bleibt der Rueckfall stehen: das Auto
+  // faehrt OMEGA_SPERRE_MS lang ueber das Plugin, dann wird OmegaBle kurz geprueft (Blick alle 500 ms);
+  // schreibt es wieder nicht, verdoppelt sich die Sperre (hoechstens OMEGA_SPERRE_MAX_MS).
+  const OMEGA_SPERRE_MS = 30000, OMEGA_SPERRE_MAX_MS = 600000, OMEGA_PROBE_MS = 1500;
   function omegaBleBereit(z) {
     let l = omegaLage.get(z.deviceId);
-    if (!l) { l = { bereit: null, geprueft: 0, fragt: false, zaehler: null, alt: false }; omegaLage.set(z.deviceId, l); }
+    if (!l) { l = { bereit: null, geprueft: 0, fragt: false, zaehler: null, alt: false, sperreBis: 0, sperreMs: 0, probeBis: 0 }; omegaLage.set(z.deviceId, l); }
     const jetzt = performance.now();
-    if (!l.fragt && jetzt - l.geprueft > 2000) {
+    if (l.sperreBis) {
+      if (jetzt < l.sperreBis) return false;
+      // Sperre um: OmegaBle wieder versuchen und gleich genau hinsehen.
+      l.sperreBis = 0; l.probeBis = jetzt + OMEGA_PROBE_MS; l.geprueft = 0; l.zaehler = null;
+    }
+    const takt = l.probeBis > jetzt ? 500 : 2000;
+    if (!l.fragt && jetzt - l.geprueft > takt) {
       l.fragt = true;
       C.nativePromise('OmegaBle', 'status', z)
         .then((r) => {
-          // Findet es die Verbindung, verwirft aber seit der letzten Frage nur noch (nichts
-          // geschrieben, etwas verworfen): dann ebenfalls das Plugin nehmen.
+          // Schreibt es nicht mehr (mehr verworfen als geschrieben seit dem letzten Blick)? Verworfenes
+          // waehrend einer Pause fuer das Community-Plugin (Verbinden, Abo) zaehlt nicht (v1.1.18).
           const v = l.zaehler;
-          const nurVerworfen = v && r && r.geschrieben === v.geschrieben && r.verworfen > v.verworfen;
-          // v1.1.18 GEMELDET: "Mit NPCs wechselt der Weg dauernd zwischen OmegaBle und dem anderen hin
-          // und her" (dazu 2,4K wiederholt, 1,2K verworfen). Waehrend das Community-Plugin ans GATT geht
-          // (Verbinden, Abo - bei mehreren Autos und Neuverbindungen staendig), pausiert OmegaBle fuer
-          // ALLE Autos und verwirft; das wertete jedes Auto als Ausfall, ging aufs Plugin, beim naechsten
-          // Blick wieder zurueck - und zwei Schreiber auf einem Geraet machten es schlimmer. Jetzt:
-          // Verworfenes waehrend einer Pause zaehlt nicht, und erst ZWEI Ausfaelle in Folge (~4 s)
-          // schalten auf das Plugin.
+          const dG = v && r ? r.geschrieben - v.geschrieben : 0, dV = v && r ? r.verworfen - v.verworfen : 0;
           const pauseImFenster = omegaPausen > 0 || performance.now() - omegaPauseZuletzt < 2500;
-          l.ausfaelle = nurVerworfen && !pauseImFenster ? (l.ausfaelle || 0) + 1 : 0;
-          l.bereit = !!(r && r.bereit) && l.ausfaelle < 2;
+          const kaputt = !!(v && r && dV > 0 && dG < dV && !pauseImFenster);
           l.zaehler = r || null;
+          if (kaputt) {
+            l.sperreMs = l.sperreMs ? Math.min(OMEGA_SPERRE_MAX_MS, l.sperreMs * 2) : OMEGA_SPERRE_MS;
+            l.sperreBis = performance.now() + l.sperreMs;
+            l.probeBis = 0;
+            l.bereit = false;
+            l.wechsel = (l.wechsel || 0) + 1;
+            return;
+          }
+          if (l.probeBis && dG > 0) l.probeBis = 0;          // Probe bestanden
+          l.bereit = !!(r && r.bereit);
         })
         .catch(() => { l.bereit = true; l.alt = true; })
         .then(() => { l.fragt = false; l.geprueft = performance.now(); });
@@ -12846,7 +12860,8 @@
   window.OMEGA_BRUECKE.omegaInfo = () => {
     if (!omegaBleVerfuegbar()) return { weg: 'Plugin' };
     const l = [...omegaLage.values()][0];
-    return { weg: l && l.bereit ? (omegaDirektBenutzt ? 'OmegaBle direkt' : 'OmegaBle') : 'Plugin',
+    const gesperrt = [...omegaLage.values()].filter((x) => x.sperreBis > performance.now()).length;
+    return { weg: l && l.bereit ? (omegaDirektBenutzt ? 'OmegaBle direkt' : 'OmegaBle') : 'Plugin', gesperrt,
              alt: !!(l && l.alt), zaehler: l && l.zaehler,
              // v1.0.40: ob die Direktwege da sind, und warum nicht.
              direkt: !!window.OmegaDirekt, pad: !!window.OmegaPad, neuVersucht: omegaDirektVersucht,
@@ -14634,6 +14649,10 @@
     "Automatische Aufstellung neu: Die Autos fahren gestaffelt los, jedes erst über Start/Ziel (damit klar ist, wo es ist), dann mittig zu seinem Platz – die ersten beiden auf Start/Ziel, die nächsten auf das Teil davor und so weiter. Auf ihrem Teil lenken sie mit 30 % Tempo voll zur eigenen Seite und wieder zurück (das zweite Auto erst links, dann rechts) und bleiben sofort stehen; die Mitte bleibt frei, damit spätere Autos vorbeikommen. Regler „Einparken: Dauer/Tempo“ wieder da (100 ms, 30 %).": "Automatic line-up reworked: the cars start staggered, each first over start/finish (so it is clear where it is), then in the centre to its spot – the first two on start/finish, the next on the part before, and so on. On their part they steer fully to their side and back at 30 % speed (the second car left first, then right) and stop at once; the centre stays free so later cars get past. \"Parking: duration/speed\" sliders are back (100 ms, 30 %).",
     "Automatische Aufstellung: Die Höhe der Startplätze ist wieder wie in 1.1.19 (Reihe 1 auf dem Teil vor Start/Ziel, rechts etwas weiter vorn als links) – das hatte gestimmt. Die neue Querlage (mittig, dann Impuls hin und zurück) bleibt.": "Automatic line-up: the position of the grid spots along the track is back to 1.1.19 (row 1 on the part before start/finish, right a bit further ahead than left) – that was correct. The new lateral parking (centre, then pulse out and back) stays.",
     "Wetter sprang ständig zwischen Regen und trocken (gemeldet von einem Tester): Die Taste W war eine immer aktive Testtaste fürs Wetter – wer mit WASD fuhr, schaltete bei jedem Gasgeben um. Jetzt fährt die Tastatur auch mit WASD (WIP: W Gas, S Bremse, A/D lenken); die Testtasten (Wetter jetzt Shift+W, Crash C, Tank F/R, Runde Q) gelten nur noch im Entwicklermodus. Challenges (auch die der Studie) schalten außerdem „Wetter ändert sich“ immer aus.": "Weather kept flipping between rain and dry (reported by a tester): the W key was an always-on test key for the weather – anyone driving with WASD toggled it with every throttle press. The keyboard now also drives with WASD (WIP: W throttle, S brake, A/D steer); the test keys (weather now Shift+W, crash C, fuel F/R, lap Q) only work in developer mode. Challenges (including the study one) now always switch off “weather changes”.",
+    "Funkweg in der App kippt nicht mehr hin und her: Schrieb OmegaBle für ein Auto nicht mehr, ging es nach ~4 s aufs Plugin und 2 s später wieder zurück – in rund zwei Dritteln der Zeit gingen alle Befehle an dieses Auto verloren, auch die Haltebefehle. Jetzt bleibt so ein Auto 30 s auf dem Plugin, dann wird OmegaBle kurz geprüft; klappt es wieder nicht, verdoppelt sich die Sperre (bis 10 min). Im Funkrundlauf steht, wie viele Autos gerade fest auf dem Plugin sind.": "The radio path in the app no longer flips back and forth: when OmegaBle stopped writing for a car, the app switched to the plugin after ~4 s and back 2 s later – for about two thirds of the time every command to that car was lost, including stop commands. Now such a car stays on the plugin for 30 s, then OmegaBle is briefly re-checked; if it still fails, the lock doubles (up to 10 min). The radio round-trip line shows how many cars are currently held on the plugin.",
+    "NPC-Fahrmodus „Realistisch“ (aus 1.1.3) wieder entfernt: Die NPCs beschleunigen wieder wie vorher und verlieren beim Anfahren nicht mehr die Orientierung. Der Lese-Schub (mehr Gas, wenn ein NPC kurz keinen Code liest) wirkt nur noch bis 0,7 s – danach schob er Autos neben der Bahn weiter.": "NPC driving mode “Realistic” (from 1.1.3) removed again: NPCs accelerate as before and no longer lose track of where they are when pulling away. The read push (more throttle while an NPC briefly reads no code) now lasts at most 0.7 s – beyond that it kept pushing cars that had left the track.",
+    "Anhalten: Rennen beenden schickt den Halt jetzt 3 s lang nach (vorher 1,5 s). Abbrechen nach „Automatische Aufstellung“ hält alle fahrenden NPCs und das Safety Car an.": "Stopping: ending a race now repeats the stop for 3 s (was 1.5 s). Cancelling after “automatic line-up” stops all running NPCs and the safety car.",
+    "Automatische Aufstellung: Wer seinen Ort schon über Start/Ziel abgesichert hat, fährt wieder direkt auf seinen Platz (wie bis 1.1.20) statt erst noch einmal über Start/Ziel – das sparte bis zu einer ganzen Runde.": "Automatic line-up: a car whose position is already confirmed via start/finish drives straight to its spot again (as up to 1.1.20) instead of crossing start/finish first – that saved up to a full lap.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -15976,6 +15995,7 @@
     "langsam über ein Muster fahren": "drive slowly over a pattern",
     "langsam": "slow",
     "lenken links (auch A)": "steer left (also A)",
+    "{n} Auto(s) fest auf Plugin": "{n} car(s) held on the plugin",
     "lenken rechts (auch D)": "steer right (also D)",
     "Gas (auch W)": "Throttle (also W)",
     "Bremse (auch S)": "Brake (also S)",
@@ -24977,6 +24997,7 @@
       ? window.OMEGA_BRUECKE.omegaInfo() : null;
     const z = ob && ob.zaehler;
     const weg = ob ? ' · ' + t('Weg') + ' ' + ob.weg + (ob.alt ? ' (' + t('alte APK') + ')' : '')
+      + (ob.gesperrt ? ' (' + t('{n} Auto(s) fest auf Plugin').replace('{n}', ob.gesperrt) + ')' : '')
       + (z ? ' · ' + z.geschrieben + ' ' + t('geschrieben') + ', ' + z.wiederholt + ' ' + t('wiederholt') + ', ' + z.verworfen + ' ' + t('verworfen') : '') : '';
     // v0.10.4: In der App misst der Schreibwert nur JS (der Aufruf kehrt sofort zurueck) -
     // so gekennzeichnet. Dazu, was wirklich zaehlt: Brueckenzeit (APK), Takt des Herzschlags,
@@ -38176,6 +38197,14 @@
     const gs = $('race-gridscreen');
     if (gs) gs.hidden = true;
     if (typeof aufstellenStoppen === 'function') aufstellenStoppen(false);
+    // v1.1.23 GEMELDET: "Genauso, wenn ich abbreche, nachdem ich auf automatische Aufstellung gedrueckt
+    // habe - es klappt einfach gar nicht." Abbrechen haelt jetzt ALLE fahrenden NPCs und das Safety Car an,
+    // nicht nur die, die gerade noch einen Startplatz suchen.
+    if (raceState !== 'racing' && raceState !== 'finishing') {
+      garage.forEach((c) => {
+        if ((c.role === 'ghost' || c.role === 'safetycar') && c.ghost && c.ghost.running) stopGhost(c);
+      });
+    }
     raceGridWeiter = null;
     // Hing die Challenge gerade in der Ampel-Phase (Autos-in-Position war ihr Start),
     // bricht Abbrechen sie ab - sonst bliebe sie auf Stillstand warten.
@@ -52605,7 +52634,9 @@
   // vorige noch unterwegs ist (auf dem Plugin-Weg bis 300 ms) - dann kam der Halt nie an, und das Auto
   // fuhr mit seinem letzten Befehl weiter, bis man es abschaltete. Jetzt geht der Halt STOPP_NACHSENDEN_MS
   // lang im Sendetakt nach, solange das Auto nicht wieder faehrt oder gesteuert wird.
-  const STOPP_NACHSENDEN_MS = 1500;
+  // v1.1.23: 3 s statt 1,5 s - GEMELDET: "Beim Rennen beenden muessen sofort alle Autos stehen bleiben.
+  // Das tun sie jetzt wieder nicht." (Dazu kippte der Funkweg, siehe omegaBleBereit in 05-app-bruecke.js.)
+  const STOPP_NACHSENDEN_MS = 3000;
   function stoppNachsenden(car) {
     if (!car || !car.rx) return;
     car.stoppBis = Date.now() + STOPP_NACHSENDEN_MS;
@@ -52864,7 +52895,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       gestartet.push(hier);
       if (spielerNrVon(car) >= 1) {
         aufstellSpieler.set(car, { ziel, seit: ab, ab, fertig: false,
-                                   startGesehen: false });     // v1.1.21: immer erst ueber Start/Ziel
+                                   startGesehen: !!(car.ghost && car.ghost.ortSicher) });
         zahl++;
         continue;
       }
@@ -52874,7 +52905,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (car.role === 'safetycar') car.ghost.freeRun = false;
       // v1.1.21 BESTELLT: "jeweils 1x ueber Start/Ziel fahren, damit festgelegt werden kann, wo sie sind
       // (Tracking sicherstellen)". Kein Abkuerzen mehr fuer Autos, die ihren Ort schon zu kennen glauben.
-      car.ghost.startGesehen = false;
+      // v1.1.23 wieder wie 1.1.20: ist der Ort schon ueber Start/Ziel abgesichert (ortSicher), faellt die
+      // Extrarunde weg. GEMELDET: "Bei automatischer Aufstellung fahren die Autos zig Runden" - seit 1.1.21
+      // musste jedes Auto erst ueber Start/Ziel und dann noch einmal fast ganz herum bis vor Start/Ziel.
+      car.ghost.startGesehen = !!car.ghost.ortSicher;
       car.ghost.aufstellZiel = ziel;
       car.ghost.aufstellSeit = ab;
       car.ghost.aufstellAb = ab;
@@ -54337,7 +54371,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   const GHOST_FAHR_MIN = 0.37;
   // Liest ein fahrendes Auto trotzdem 0x00, bekommt es nach GHOST_LESE_SCHUB_NACH_MS kurz mehr Tempo,
   // bevor der Abgangsmelder entscheidet - ein Auto auf der Bahn liest dann wieder.
-  const GHOST_LESE_SCHUB = 0.40, GHOST_LESE_SCHUB_NACH_MS = 250;
+  const GHOST_LESE_SCHUB = 0.40, GHOST_LESE_SCHUB_NACH_MS = 250, GHOST_LESE_SCHUB_BIS_MS = 700;
   // Auf dem Dach oder neben der Bahn liefert ein Auto oft gar nichts mehr: weder Code noch
   // Kachelwechsel. Der 0x00-Melder sieht das nie. Hat es schon einmal gelesen und kommt so lange
   // nichts, obwohl es fahren soll, wird es geparkt (v1.1.3: "Autos, die auf dem Dach liegen,
@@ -54352,7 +54386,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Preis des Bodens: in langsamen Abschnitten kann der Abstandhalter nicht mehr unter
     // 0,37 bremsen (gemessen in der Kennzahlensonde) - darunter parkten sie sich aber selbst.
     let t = Math.max(target, Math.min(GHOST_FAHR_MIN, ghostCfg.speed || GHOST_FAHR_MIN));
-    if (g.offSince && now - g.offSince > GHOST_LESE_SCHUB_NACH_MS) t = Math.max(t, GHOST_LESE_SCHUB);
+    // v1.1.23: der Lese-Schub nur kurz (bis GHOST_LESE_SCHUB_BIS_MS). Liest das Auto laenger 0x00, ist es
+    // eher neben der Bahn - dort schob der Boden es mit 40 % weiter vom Weg ab.
+    const offMs = g.offSince ? now - g.offSince : 0;
+    if (offMs > GHOST_LESE_SCHUB_NACH_MS && offMs < GHOST_LESE_SCHUB_BIS_MS) t = Math.max(t, GHOST_LESE_SCHUB);
     return t;
   }
 
@@ -54406,53 +54443,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // ASYMMETRISCH, und das ist eine Aussage ueber Autos: Gas nimmt man weich, gebremst wird
   // entschlossen. Deshalb die hoehere Bremsverstaerkung und die lockerere Ratenbegrenzung
   // fuer die Bremse.
-  // ---- NPC-FAHRMODUS "REALISTISCH" (v1.1.3, WIP) ----------------------------------------
-  // BESTELLT: "KI-Beschleunigungs- und Bremsverhalten an Sim+ anpassen bzw. etwas realistischer
-  // erscheinen lassen (im NPC-Optionen-Menue Fahrmodus-Optionen 'Standard' und 'Realistisch')."
-  // Standard ist das bisherige Verhalten: der NPC faehrt das Fahrzeugmodell des Fahrers und haelt
-  // sein Zieltempo mit einem PI-Regler, der das Pedal fein dosiert. Realistisch:
-  //   - das Fahrzeugmodell (Beschleunigung, 0-100, Ausrollen, Bremse, Bremsaufbau) ist immer
-  //     das von Sim+, egal welches Fahrgefuehl der Fahrer gewaehlt hat (ghostSimPlusConfig);
-  //   - gefahren wird wie mit Triggern: deutlich zu langsam = Vollgas, deutlich zu schnell =
-  //     bremsen, je mehr zu schnell, desto staerker; dazwischen haelt der PI-Regler. Gas baut in
-  //     GHOST_REAL_GAS_AUF_S auf, die Bremse in GHOST_REAL_BREMS_AUF_S - wie ein Finger am Trigger.
-  const GHOST_REAL_VOLLGAS_AB = 0.04, GHOST_REAL_VOLLGAS_BIS = 0.01;
-  const GHOST_REAL_BREMS_AB = 0.03, GHOST_REAL_BREMS_VOLL = 0.12;
-  const GHOST_REAL_GAS_AUF_S = 0.15, GHOST_REAL_BREMS_AUF_S = 0.10, GHOST_REAL_LOS_S = 0.12;
-  function ghostFahrmodus() {
-    const el = $('ghost-fahrmodus');
-    return el && el.value === 'realistisch' ? 'realistisch' : (ghostCfg.fahrmodus === 'realistisch' ? 'realistisch' : 'standard');
-  }
-  // Die Laengswerte von Sim+, so umgerechnet wie die Regler in 50-drive.js es tun.
-  function ghostSimPlusConfig(cfg) {
-    const v = (typeof window.__presetValues === 'function' && window.__presetValues('simplus')) || null;
-    if (!v) return;
-    if (v['setting-brakepower'] !== undefined && typeof BASE_BRAKE !== 'undefined') {
-      cfg.brakeDecelBase = BASE_BRAKE.base * v['setting-brakepower'];
-      cfg.brakeDecelAero = BASE_BRAKE.aero * v['setting-brakepower'];
-    }
-    if (v['phys-accel'] !== undefined) cfg.accelerationFactor = v['phys-accel'];
-    if (v['setting-zero-to-top'] !== undefined) cfg.launchAnchorTimeS = v['setting-zero-to-top'];
-    if (v['setting-coast-drag'] !== undefined) cfg.coastDragPerS = v['setting-coast-drag'];
-    cfg.useTauBrems = v['phys-brake-tau'] !== undefined ? v['phys-brake-tau'] : 0.12;
-  }
-  function ghostSpeedControlRealistisch(g, target, v, dtG) {
-    const basis = ghostSpeedControl(g, target, v, dtG);     // haelt den I-Anteil gepflegt
-    const err = target - v;
-    if (err > GHOST_REAL_VOLLGAS_AB) g.realVoll = true;
-    else if (err < GHOST_REAL_VOLLGAS_BIS) g.realVoll = false;
-    let tSoll = basis.throttle, bSoll = basis.brake;
-    if (g.realVoll) { tSoll = 1; bSoll = 0; }
-    else if (err < -GHOST_REAL_BREMS_AB) { tSoll = 0; bSoll = Math.min(1, -err / GHOST_REAL_BREMS_VOLL); }
-    const zieh = (ist, soll, aufS) => {
-      const rate = (soll > ist ? 1 / aufS : 1 / GHOST_REAL_LOS_S) * dtG;
-      return soll > ist ? Math.min(soll, ist + rate) : Math.max(soll, ist - rate);
-    };
-    const throttle = zieh(g.realT || 0, tSoll, GHOST_REAL_GAS_AUF_S);
-    const brake = zieh(g.realB || 0, bSoll, GHOST_REAL_BREMS_AUF_S);
-    g.realT = throttle; g.realB = brake;
-    return { throttle, brake };
-  }
+  // v1.1.23: Der NPC-Fahrmodus "Realistisch" (v1.1.3: Sim+-Laengswerte, Gas wie am Trigger) ist wieder
+  // entfernt. GEMELDET: "Dabei hast du das Anfahrverhalten so gemacht, dass sie so langsam beschleunigen,
+  // dass sie nicht wissen, wo sie auf der Fahrbahn sind und voellig chaotisch von der Bahn fahren."
   function ghostSpeedControl(g, target, v, dtG) {
     const err = target - v;
     // DER I-ANTEIL IST DER ARBEITSPUNKT, der P-Anteil korrigiert darum herum.
@@ -58982,8 +58975,6 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // dann aus dem eigenen Reifen des Ghosts.
     e.config.gripScale = 1;
     e.config.aquaplaning = 0;
-    // v1.1.3: Fahrmodus "Realistisch" - die Laengswerte von Sim+ statt des Fahrer-Presets.
-    if (ghostFahrmodus() === 'realistisch') ghostSimPlusConfig(e.config);
     // Nach dem Kopieren neu kalibrieren: accelScale() haengt an topSpeedKmh, an der
     // Anfahrzeit und an den Gaengen, und die kommen jetzt vom Fahrer.
     if (typeof e.calibrateAccel === 'function') e.calibrateAccel();
@@ -60142,8 +60133,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // erreichte Tempo haengt zusaetzlich an der Physik, und ein Prueflauf mit kuenstlicher
       // Kacheluhr verfaelscht es - dann prueft man seinen Prueflauf.
       g.lastTarget = target;
-      const st2 = ghostFahrmodus() === 'realistisch'
-        ? ghostSpeedControlRealistisch(g, target, v, dtG) : ghostSpeedControl(g, target, v, dtG);
+      const st2 = ghostSpeedControl(g, target, v, dtG);
       g.lastFF = g.iTerm || 0;
       throttle = st2.throttle;
       brake = st2.brake;
@@ -88136,30 +88126,6 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (car.ghost.randHalt.radMs !== 60) f.push('Impulsdauer nicht 60 ms');
     } finally { if (msEl) msEl.value = merk[0]; if (tEl) tEl.value = merk[1]; }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'rechts bei 0,15, links bei 0 der Kachel; Impuls aus den Reglern' };
-  });
-
-  // ---- v1.1.3: NPC-Fahrmodus "Realistisch" ----
-  stAdd('NPC Fahrmodus Realistisch: Trigger-Rampe beim Gas, Bremse nach Ueberschuss, Sim+-Werte', () => {
-    const f = [];
-    if (!$('ghost-fahrmodus') || $('ghost-fahrmodus').value !== 'standard') f.push('Auswahl fehlt oder Vorgabe nicht Standard');
-    const g = { iTerm: 0 };
-    const t = [];
-    for (let i = 0; i < 6; i++) t.push(ghostSpeedControlRealistisch(g, 0.6, 0.3, 0.045).throttle);
-    if (!(t[0] > 0.2 && t[0] < 0.4)) f.push('erster Takt nicht ~0,3 (Rampe 0,15 s): ' + t[0].toFixed(2));
-    if (!(t[3] >= 0.999)) f.push('nach 4 Takten (0,18 s) nicht Vollgas: ' + t[3].toFixed(2));
-    const g2 = { iTerm: 0.5 };
-    let b = 0;
-    for (let i = 0; i < 4; i++) b = ghostSpeedControlRealistisch(g2, 0.4, 0.55, 0.045).brake;
-    if (!(b > 0.9)) f.push('0,15 zu schnell bremst nicht voll: ' + b.toFixed(2));
-    const g3 = { iTerm: 0.5 };
-    let b3 = 0;
-    for (let i = 0; i < 4; i++) b3 = ghostSpeedControlRealistisch(g3, 0.4, 0.45, 0.045).brake;
-    if (!(b3 > 0.2 && b3 < 0.6)) f.push('0,05 zu schnell bremst nicht anteilig: ' + b3.toFixed(2));
-    const cfg = {};
-    ghostSimPlusConfig(cfg);
-    const sp = window.__presetValues('simplus');
-    if (cfg.accelerationFactor !== sp['phys-accel'] || cfg.launchAnchorTimeS !== sp['setting-zero-to-top']) f.push('Sim+-Werte nicht uebernommen: ' + JSON.stringify(cfg));
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gas ' + t.slice(0, 4).map((x) => x.toFixed(2)).join(' > ') + ', Bremse voll / ' + b3.toFixed(2) };
   });
 
   stAdd('NPC erreicht sein eingestelltes Tempo', async () => {

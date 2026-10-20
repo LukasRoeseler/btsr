@@ -2565,6 +2565,7 @@
       ? window.OMEGA_BRUECKE.omegaInfo() : null;
     const z = ob && ob.zaehler;
     const weg = ob ? ' · ' + t('Weg') + ' ' + ob.weg + (ob.alt ? ' (' + t('alte APK') + ')' : '')
+      + (ob.gesperrt ? ' (' + t('{n} Auto(s) fest auf Plugin').replace('{n}', ob.gesperrt) + ')' : '')
       + (z ? ' · ' + z.geschrieben + ' ' + t('geschrieben') + ', ' + z.wiederholt + ' ' + t('wiederholt') + ', ' + z.verworfen + ' ' + t('verworfen') : '') : '';
     // v0.10.4: In der App misst der Schreibwert nur JS (der Aufruf kehrt sofort zurueck) -
     // so gekennzeichnet. Dazu, was wirklich zaehlt: Brueckenzeit (APK), Takt des Herzschlags,

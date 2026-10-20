@@ -92,29 +92,45 @@
   // Befehl und danach alle 2 s, im Hintergrund. Kennt das Plugin status() nicht (APK 0.8.124-126),
   // bleibt es beim alten Verhalten: OmegaBle schreibt.
   const omegaLage = new Map();
+  // v1.1.23 GEMELDET: "Das Bluetooth wechselt die ganze Zeit hin und her, ich kann nicht mit NPCs fahren."
+  // Bis 1.1.22 kippte der Weg im Kreis: schreibt OmegaBle fuer ein Auto nicht mehr (nichts geschrieben,
+  // nur verworfen), ging es nach zwei Blicken (~4 s) aufs Plugin - und beim naechsten Blick 2 s spaeter
+  // wieder zurueck, denn ueber das Plugin verwirft OmegaBle ja nichts mehr. In ~4 von 6 s gingen alle
+  // Befehle an dieses Auto verloren, auch die Haltebefehle. Jetzt bleibt der Rueckfall stehen: das Auto
+  // faehrt OMEGA_SPERRE_MS lang ueber das Plugin, dann wird OmegaBle kurz geprueft (Blick alle 500 ms);
+  // schreibt es wieder nicht, verdoppelt sich die Sperre (hoechstens OMEGA_SPERRE_MAX_MS).
+  const OMEGA_SPERRE_MS = 30000, OMEGA_SPERRE_MAX_MS = 600000, OMEGA_PROBE_MS = 1500;
   function omegaBleBereit(z) {
     let l = omegaLage.get(z.deviceId);
-    if (!l) { l = { bereit: null, geprueft: 0, fragt: false, zaehler: null, alt: false }; omegaLage.set(z.deviceId, l); }
+    if (!l) { l = { bereit: null, geprueft: 0, fragt: false, zaehler: null, alt: false, sperreBis: 0, sperreMs: 0, probeBis: 0 }; omegaLage.set(z.deviceId, l); }
     const jetzt = performance.now();
-    if (!l.fragt && jetzt - l.geprueft > 2000) {
+    if (l.sperreBis) {
+      if (jetzt < l.sperreBis) return false;
+      // Sperre um: OmegaBle wieder versuchen und gleich genau hinsehen.
+      l.sperreBis = 0; l.probeBis = jetzt + OMEGA_PROBE_MS; l.geprueft = 0; l.zaehler = null;
+    }
+    const takt = l.probeBis > jetzt ? 500 : 2000;
+    if (!l.fragt && jetzt - l.geprueft > takt) {
       l.fragt = true;
       C.nativePromise('OmegaBle', 'status', z)
         .then((r) => {
-          // Findet es die Verbindung, verwirft aber seit der letzten Frage nur noch (nichts
-          // geschrieben, etwas verworfen): dann ebenfalls das Plugin nehmen.
+          // Schreibt es nicht mehr (mehr verworfen als geschrieben seit dem letzten Blick)? Verworfenes
+          // waehrend einer Pause fuer das Community-Plugin (Verbinden, Abo) zaehlt nicht (v1.1.18).
           const v = l.zaehler;
-          const nurVerworfen = v && r && r.geschrieben === v.geschrieben && r.verworfen > v.verworfen;
-          // v1.1.18 GEMELDET: "Mit NPCs wechselt der Weg dauernd zwischen OmegaBle und dem anderen hin
-          // und her" (dazu 2,4K wiederholt, 1,2K verworfen). Waehrend das Community-Plugin ans GATT geht
-          // (Verbinden, Abo - bei mehreren Autos und Neuverbindungen staendig), pausiert OmegaBle fuer
-          // ALLE Autos und verwirft; das wertete jedes Auto als Ausfall, ging aufs Plugin, beim naechsten
-          // Blick wieder zurueck - und zwei Schreiber auf einem Geraet machten es schlimmer. Jetzt:
-          // Verworfenes waehrend einer Pause zaehlt nicht, und erst ZWEI Ausfaelle in Folge (~4 s)
-          // schalten auf das Plugin.
+          const dG = v && r ? r.geschrieben - v.geschrieben : 0, dV = v && r ? r.verworfen - v.verworfen : 0;
           const pauseImFenster = omegaPausen > 0 || performance.now() - omegaPauseZuletzt < 2500;
-          l.ausfaelle = nurVerworfen && !pauseImFenster ? (l.ausfaelle || 0) + 1 : 0;
-          l.bereit = !!(r && r.bereit) && l.ausfaelle < 2;
+          const kaputt = !!(v && r && dV > 0 && dG < dV && !pauseImFenster);
           l.zaehler = r || null;
+          if (kaputt) {
+            l.sperreMs = l.sperreMs ? Math.min(OMEGA_SPERRE_MAX_MS, l.sperreMs * 2) : OMEGA_SPERRE_MS;
+            l.sperreBis = performance.now() + l.sperreMs;
+            l.probeBis = 0;
+            l.bereit = false;
+            l.wechsel = (l.wechsel || 0) + 1;
+            return;
+          }
+          if (l.probeBis && dG > 0) l.probeBis = 0;          // Probe bestanden
+          l.bereit = !!(r && r.bereit);
         })
         .catch(() => { l.bereit = true; l.alt = true; })
         .then(() => { l.fragt = false; l.geprueft = performance.now(); });
@@ -172,7 +188,8 @@
   window.OMEGA_BRUECKE.omegaInfo = () => {
     if (!omegaBleVerfuegbar()) return { weg: 'Plugin' };
     const l = [...omegaLage.values()][0];
-    return { weg: l && l.bereit ? (omegaDirektBenutzt ? 'OmegaBle direkt' : 'OmegaBle') : 'Plugin',
+    const gesperrt = [...omegaLage.values()].filter((x) => x.sperreBis > performance.now()).length;
+    return { weg: l && l.bereit ? (omegaDirektBenutzt ? 'OmegaBle direkt' : 'OmegaBle') : 'Plugin', gesperrt,
              alt: !!(l && l.alt), zaehler: l && l.zaehler,
              // v1.0.40: ob die Direktwege da sind, und warum nicht.
              direkt: !!window.OmegaDirekt, pad: !!window.OmegaPad, neuVersucht: omegaDirektVersucht,

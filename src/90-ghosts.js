@@ -2455,7 +2455,9 @@
   // vorige noch unterwegs ist (auf dem Plugin-Weg bis 300 ms) - dann kam der Halt nie an, und das Auto
   // fuhr mit seinem letzten Befehl weiter, bis man es abschaltete. Jetzt geht der Halt STOPP_NACHSENDEN_MS
   // lang im Sendetakt nach, solange das Auto nicht wieder faehrt oder gesteuert wird.
-  const STOPP_NACHSENDEN_MS = 1500;
+  // v1.1.23: 3 s statt 1,5 s - GEMELDET: "Beim Rennen beenden muessen sofort alle Autos stehen bleiben.
+  // Das tun sie jetzt wieder nicht." (Dazu kippte der Funkweg, siehe omegaBleBereit in 05-app-bruecke.js.)
+  const STOPP_NACHSENDEN_MS = 3000;
   function stoppNachsenden(car) {
     if (!car || !car.rx) return;
     car.stoppBis = Date.now() + STOPP_NACHSENDEN_MS;
@@ -2714,7 +2716,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       gestartet.push(hier);
       if (spielerNrVon(car) >= 1) {
         aufstellSpieler.set(car, { ziel, seit: ab, ab, fertig: false,
-                                   startGesehen: false });     // v1.1.21: immer erst ueber Start/Ziel
+                                   startGesehen: !!(car.ghost && car.ghost.ortSicher) });
         zahl++;
         continue;
       }
@@ -2724,7 +2726,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (car.role === 'safetycar') car.ghost.freeRun = false;
       // v1.1.21 BESTELLT: "jeweils 1x ueber Start/Ziel fahren, damit festgelegt werden kann, wo sie sind
       // (Tracking sicherstellen)". Kein Abkuerzen mehr fuer Autos, die ihren Ort schon zu kennen glauben.
-      car.ghost.startGesehen = false;
+      // v1.1.23 wieder wie 1.1.20: ist der Ort schon ueber Start/Ziel abgesichert (ortSicher), faellt die
+      // Extrarunde weg. GEMELDET: "Bei automatischer Aufstellung fahren die Autos zig Runden" - seit 1.1.21
+      // musste jedes Auto erst ueber Start/Ziel und dann noch einmal fast ganz herum bis vor Start/Ziel.
+      car.ghost.startGesehen = !!car.ghost.ortSicher;
       car.ghost.aufstellZiel = ziel;
       car.ghost.aufstellSeit = ab;
       car.ghost.aufstellAb = ab;
@@ -4187,7 +4192,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   const GHOST_FAHR_MIN = 0.37;
   // Liest ein fahrendes Auto trotzdem 0x00, bekommt es nach GHOST_LESE_SCHUB_NACH_MS kurz mehr Tempo,
   // bevor der Abgangsmelder entscheidet - ein Auto auf der Bahn liest dann wieder.
-  const GHOST_LESE_SCHUB = 0.40, GHOST_LESE_SCHUB_NACH_MS = 250;
+  const GHOST_LESE_SCHUB = 0.40, GHOST_LESE_SCHUB_NACH_MS = 250, GHOST_LESE_SCHUB_BIS_MS = 700;
   // Auf dem Dach oder neben der Bahn liefert ein Auto oft gar nichts mehr: weder Code noch
   // Kachelwechsel. Der 0x00-Melder sieht das nie. Hat es schon einmal gelesen und kommt so lange
   // nichts, obwohl es fahren soll, wird es geparkt (v1.1.3: "Autos, die auf dem Dach liegen,
@@ -4202,7 +4207,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Preis des Bodens: in langsamen Abschnitten kann der Abstandhalter nicht mehr unter
     // 0,37 bremsen (gemessen in der Kennzahlensonde) - darunter parkten sie sich aber selbst.
     let t = Math.max(target, Math.min(GHOST_FAHR_MIN, ghostCfg.speed || GHOST_FAHR_MIN));
-    if (g.offSince && now - g.offSince > GHOST_LESE_SCHUB_NACH_MS) t = Math.max(t, GHOST_LESE_SCHUB);
+    // v1.1.23: der Lese-Schub nur kurz (bis GHOST_LESE_SCHUB_BIS_MS). Liest das Auto laenger 0x00, ist es
+    // eher neben der Bahn - dort schob der Boden es mit 40 % weiter vom Weg ab.
+    const offMs = g.offSince ? now - g.offSince : 0;
+    if (offMs > GHOST_LESE_SCHUB_NACH_MS && offMs < GHOST_LESE_SCHUB_BIS_MS) t = Math.max(t, GHOST_LESE_SCHUB);
     return t;
   }
 
@@ -4256,53 +4264,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // ASYMMETRISCH, und das ist eine Aussage ueber Autos: Gas nimmt man weich, gebremst wird
   // entschlossen. Deshalb die hoehere Bremsverstaerkung und die lockerere Ratenbegrenzung
   // fuer die Bremse.
-  // ---- NPC-FAHRMODUS "REALISTISCH" (v1.1.3, WIP) ----------------------------------------
-  // BESTELLT: "KI-Beschleunigungs- und Bremsverhalten an Sim+ anpassen bzw. etwas realistischer
-  // erscheinen lassen (im NPC-Optionen-Menue Fahrmodus-Optionen 'Standard' und 'Realistisch')."
-  // Standard ist das bisherige Verhalten: der NPC faehrt das Fahrzeugmodell des Fahrers und haelt
-  // sein Zieltempo mit einem PI-Regler, der das Pedal fein dosiert. Realistisch:
-  //   - das Fahrzeugmodell (Beschleunigung, 0-100, Ausrollen, Bremse, Bremsaufbau) ist immer
-  //     das von Sim+, egal welches Fahrgefuehl der Fahrer gewaehlt hat (ghostSimPlusConfig);
-  //   - gefahren wird wie mit Triggern: deutlich zu langsam = Vollgas, deutlich zu schnell =
-  //     bremsen, je mehr zu schnell, desto staerker; dazwischen haelt der PI-Regler. Gas baut in
-  //     GHOST_REAL_GAS_AUF_S auf, die Bremse in GHOST_REAL_BREMS_AUF_S - wie ein Finger am Trigger.
-  const GHOST_REAL_VOLLGAS_AB = 0.04, GHOST_REAL_VOLLGAS_BIS = 0.01;
-  const GHOST_REAL_BREMS_AB = 0.03, GHOST_REAL_BREMS_VOLL = 0.12;
-  const GHOST_REAL_GAS_AUF_S = 0.15, GHOST_REAL_BREMS_AUF_S = 0.10, GHOST_REAL_LOS_S = 0.12;
-  function ghostFahrmodus() {
-    const el = $('ghost-fahrmodus');
-    return el && el.value === 'realistisch' ? 'realistisch' : (ghostCfg.fahrmodus === 'realistisch' ? 'realistisch' : 'standard');
-  }
-  // Die Laengswerte von Sim+, so umgerechnet wie die Regler in 50-drive.js es tun.
-  function ghostSimPlusConfig(cfg) {
-    const v = (typeof window.__presetValues === 'function' && window.__presetValues('simplus')) || null;
-    if (!v) return;
-    if (v['setting-brakepower'] !== undefined && typeof BASE_BRAKE !== 'undefined') {
-      cfg.brakeDecelBase = BASE_BRAKE.base * v['setting-brakepower'];
-      cfg.brakeDecelAero = BASE_BRAKE.aero * v['setting-brakepower'];
-    }
-    if (v['phys-accel'] !== undefined) cfg.accelerationFactor = v['phys-accel'];
-    if (v['setting-zero-to-top'] !== undefined) cfg.launchAnchorTimeS = v['setting-zero-to-top'];
-    if (v['setting-coast-drag'] !== undefined) cfg.coastDragPerS = v['setting-coast-drag'];
-    cfg.useTauBrems = v['phys-brake-tau'] !== undefined ? v['phys-brake-tau'] : 0.12;
-  }
-  function ghostSpeedControlRealistisch(g, target, v, dtG) {
-    const basis = ghostSpeedControl(g, target, v, dtG);     // haelt den I-Anteil gepflegt
-    const err = target - v;
-    if (err > GHOST_REAL_VOLLGAS_AB) g.realVoll = true;
-    else if (err < GHOST_REAL_VOLLGAS_BIS) g.realVoll = false;
-    let tSoll = basis.throttle, bSoll = basis.brake;
-    if (g.realVoll) { tSoll = 1; bSoll = 0; }
-    else if (err < -GHOST_REAL_BREMS_AB) { tSoll = 0; bSoll = Math.min(1, -err / GHOST_REAL_BREMS_VOLL); }
-    const zieh = (ist, soll, aufS) => {
-      const rate = (soll > ist ? 1 / aufS : 1 / GHOST_REAL_LOS_S) * dtG;
-      return soll > ist ? Math.min(soll, ist + rate) : Math.max(soll, ist - rate);
-    };
-    const throttle = zieh(g.realT || 0, tSoll, GHOST_REAL_GAS_AUF_S);
-    const brake = zieh(g.realB || 0, bSoll, GHOST_REAL_BREMS_AUF_S);
-    g.realT = throttle; g.realB = brake;
-    return { throttle, brake };
-  }
+  // v1.1.23: Der NPC-Fahrmodus "Realistisch" (v1.1.3: Sim+-Laengswerte, Gas wie am Trigger) ist wieder
+  // entfernt. GEMELDET: "Dabei hast du das Anfahrverhalten so gemacht, dass sie so langsam beschleunigen,
+  // dass sie nicht wissen, wo sie auf der Fahrbahn sind und voellig chaotisch von der Bahn fahren."
   function ghostSpeedControl(g, target, v, dtG) {
     const err = target - v;
     // DER I-ANTEIL IST DER ARBEITSPUNKT, der P-Anteil korrigiert darum herum.
@@ -8832,8 +8796,6 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // dann aus dem eigenen Reifen des Ghosts.
     e.config.gripScale = 1;
     e.config.aquaplaning = 0;
-    // v1.1.3: Fahrmodus "Realistisch" - die Laengswerte von Sim+ statt des Fahrer-Presets.
-    if (ghostFahrmodus() === 'realistisch') ghostSimPlusConfig(e.config);
     // Nach dem Kopieren neu kalibrieren: accelScale() haengt an topSpeedKmh, an der
     // Anfahrzeit und an den Gaengen, und die kommen jetzt vom Fahrer.
     if (typeof e.calibrateAccel === 'function') e.calibrateAccel();
@@ -9992,8 +9954,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // erreichte Tempo haengt zusaetzlich an der Physik, und ein Prueflauf mit kuenstlicher
       // Kacheluhr verfaelscht es - dann prueft man seinen Prueflauf.
       g.lastTarget = target;
-      const st2 = ghostFahrmodus() === 'realistisch'
-        ? ghostSpeedControlRealistisch(g, target, v, dtG) : ghostSpeedControl(g, target, v, dtG);
+      const st2 = ghostSpeedControl(g, target, v, dtG);
       g.lastFF = g.iTerm || 0;
       throttle = st2.throttle;
       brake = st2.brake;

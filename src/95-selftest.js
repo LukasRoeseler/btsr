@@ -15035,30 +15035,6 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'rechts bei 0,15, links bei 0 der Kachel; Impuls aus den Reglern' };
   });
 
-  // ---- v1.1.3: NPC-Fahrmodus "Realistisch" ----
-  stAdd('NPC Fahrmodus Realistisch: Trigger-Rampe beim Gas, Bremse nach Ueberschuss, Sim+-Werte', () => {
-    const f = [];
-    if (!$('ghost-fahrmodus') || $('ghost-fahrmodus').value !== 'standard') f.push('Auswahl fehlt oder Vorgabe nicht Standard');
-    const g = { iTerm: 0 };
-    const t = [];
-    for (let i = 0; i < 6; i++) t.push(ghostSpeedControlRealistisch(g, 0.6, 0.3, 0.045).throttle);
-    if (!(t[0] > 0.2 && t[0] < 0.4)) f.push('erster Takt nicht ~0,3 (Rampe 0,15 s): ' + t[0].toFixed(2));
-    if (!(t[3] >= 0.999)) f.push('nach 4 Takten (0,18 s) nicht Vollgas: ' + t[3].toFixed(2));
-    const g2 = { iTerm: 0.5 };
-    let b = 0;
-    for (let i = 0; i < 4; i++) b = ghostSpeedControlRealistisch(g2, 0.4, 0.55, 0.045).brake;
-    if (!(b > 0.9)) f.push('0,15 zu schnell bremst nicht voll: ' + b.toFixed(2));
-    const g3 = { iTerm: 0.5 };
-    let b3 = 0;
-    for (let i = 0; i < 4; i++) b3 = ghostSpeedControlRealistisch(g3, 0.4, 0.45, 0.045).brake;
-    if (!(b3 > 0.2 && b3 < 0.6)) f.push('0,05 zu schnell bremst nicht anteilig: ' + b3.toFixed(2));
-    const cfg = {};
-    ghostSimPlusConfig(cfg);
-    const sp = window.__presetValues('simplus');
-    if (cfg.accelerationFactor !== sp['phys-accel'] || cfg.launchAnchorTimeS !== sp['setting-zero-to-top']) f.push('Sim+-Werte nicht uebernommen: ' + JSON.stringify(cfg));
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gas ' + t.slice(0, 4).map((x) => x.toFixed(2)).join(' > ') + ', Bremse voll / ' + b3.toFixed(2) };
-  });
-
   stAdd('NPC erreicht sein eingestelltes Tempo', async () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostDriveProbe) {
       return { skip: true, mass: 'ghostDriveProbe nicht vorhanden' };

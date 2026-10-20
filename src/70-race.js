@@ -1751,6 +1751,14 @@
     const gs = $('race-gridscreen');
     if (gs) gs.hidden = true;
     if (typeof aufstellenStoppen === 'function') aufstellenStoppen(false);
+    // v1.1.23 GEMELDET: "Genauso, wenn ich abbreche, nachdem ich auf automatische Aufstellung gedrueckt
+    // habe - es klappt einfach gar nicht." Abbrechen haelt jetzt ALLE fahrenden NPCs und das Safety Car an,
+    // nicht nur die, die gerade noch einen Startplatz suchen.
+    if (raceState !== 'racing' && raceState !== 'finishing') {
+      garage.forEach((c) => {
+        if ((c.role === 'ghost' || c.role === 'safetycar') && c.ghost && c.ghost.running) stopGhost(c);
+      });
+    }
     raceGridWeiter = null;
     // Hing die Challenge gerade in der Ampel-Phase (Autos-in-Position war ihr Start),
     // bricht Abbrechen sie ab - sonst bliebe sie auf Stillstand warten.
