@@ -4798,7 +4798,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.18</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.19</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5951,6 +5951,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Automatische Aufstellung (und R&#252;ckfahrt nach dem Rennen): Die Autos fahren bis zu ihrem Platz genau mittig und parken dann mit derselben Folge wie das Safety Car &#8211; Impuls zur eigenen Seite, Gegenschub, Impuls zur&#252;ck, Gegenschub und Ausrollen, R&#228;der am Ende leicht zur Bahn; f&#252;r linke Pl&#228;tze gespiegelt. Die Werte kommen aus Optionen > Safety Car. Das Ziehen an den Rand aus 1.1.17 ist wieder raus; die Regler &#8222;Einparken: Dauer/Tempo&#8220; entfallen, die Einlenkst&#228;rke bleibt.</li>
         <li>Automatische Aufstellung und R&#252;ckfahrt nach dem Rennen: Die Code-Pr&#252;fung vor dem Halt aus 1.1.17 ist wieder raus &#8211; bei mehreren gleichen Teilen half sie nicht, und nach dem Rennen hielten NPCs mit unpassendem Code gar nicht mehr an. Das Fahren an den Rand bleibt.</li>
         <li>Funk mit mehreren Autos (APK): Der Sendeweg wechselte mit NPCs st&#228;ndig zwischen OmegaBle und dem Plugin. W&#228;hrend das Plugin ein Auto verbindet oder abonniert, pausiert OmegaBle f&#252;r alle Autos; das galt bisher jedes Mal als Ausfall. Jetzt z&#228;hlt Verworfenes w&#228;hrend einer Pause nicht, und erst zwei Ausf&#228;lle in Folge schalten auf das Plugin um.</li>
         <li>Automatische Aufstellung: Die Autos fahren jetzt wie das Safety Car erst an den Rand (ab der zweiten H&#228;lfte der Kachel vor ihrem Platz, fast so weit wie das Safety Car) und lenken dann den Impuls &#8211; vorher kamen sie aus der Mitte und standen nicht weit genug au&#223;en. Gehalten wird nur, wenn der gerade gelesene Code zur Zielkachel passt; sonst f&#228;hrt das Auto weiter und gleicht an Start/Ziel neu ab, statt mitten auf der Strecke zu parken (passiert, wenn Funkpakete verloren gehen).</li>
@@ -9212,7 +9213,7 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="race-einpark-staerke-val">100 %</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Einparken: Dauer des Lenkimpulses<span class="wip-tag">WIP</span><small>Wie
+      <div class="opt-row" hidden><div class="opt-label">Einparken: Dauer des Lenkimpulses<span class="wip-tag">WIP</span><small>Wie
           viele Millisekunden das Auto zu seiner Seite lenkt &ndash; und danach genauso lang zur&uuml;ck.
           Vorgabe 45&nbsp;ms, das ist ein Sendetakt. Bleibt das Auto zu weit in der Mitte stehen, erh&ouml;he
           den Wert; rutscht es neben die Bahn, senke ihn.</small></div>
@@ -9222,7 +9223,7 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="race-einpark-ms-val">100 ms</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Einparken: Tempo beim Lenkimpuls<span class="wip-tag">WIP</span><small>Wie
+      <div class="opt-row" hidden><div class="opt-label">Einparken: Tempo beim Lenkimpuls<span class="wip-tag">WIP</span><small>Wie
           schnell das Auto w&auml;hrend der beiden Lenkimpulse f&auml;hrt, in Prozent der H&ouml;chstgeschwindigkeit.
           Vorgabe 30&nbsp;%. Schneller hei&szlig;t: derselbe Impuls bringt das Auto weiter zur Seite, und es
           rollt nach dem Bremsen etwas weiter.</small></div>

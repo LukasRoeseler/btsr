@@ -4798,7 +4798,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.18</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.19</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5951,6 +5951,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Automatische Aufstellung (und R&#252;ckfahrt nach dem Rennen): Die Autos fahren bis zu ihrem Platz genau mittig und parken dann mit derselben Folge wie das Safety Car &#8211; Impuls zur eigenen Seite, Gegenschub, Impuls zur&#252;ck, Gegenschub und Ausrollen, R&#228;der am Ende leicht zur Bahn; f&#252;r linke Pl&#228;tze gespiegelt. Die Werte kommen aus Optionen > Safety Car. Das Ziehen an den Rand aus 1.1.17 ist wieder raus; die Regler &#8222;Einparken: Dauer/Tempo&#8220; entfallen, die Einlenkst&#228;rke bleibt.</li>
         <li>Automatische Aufstellung und R&#252;ckfahrt nach dem Rennen: Die Code-Pr&#252;fung vor dem Halt aus 1.1.17 ist wieder raus &#8211; bei mehreren gleichen Teilen half sie nicht, und nach dem Rennen hielten NPCs mit unpassendem Code gar nicht mehr an. Das Fahren an den Rand bleibt.</li>
         <li>Funk mit mehreren Autos (APK): Der Sendeweg wechselte mit NPCs st&#228;ndig zwischen OmegaBle und dem Plugin. W&#228;hrend das Plugin ein Auto verbindet oder abonniert, pausiert OmegaBle f&#252;r alle Autos; das galt bisher jedes Mal als Ausfall. Jetzt z&#228;hlt Verworfenes w&#228;hrend einer Pause nicht, und erst zwei Ausf&#228;lle in Folge schalten auf das Plugin um.</li>
         <li>Automatische Aufstellung: Die Autos fahren jetzt wie das Safety Car erst an den Rand (ab der zweiten H&#228;lfte der Kachel vor ihrem Platz, fast so weit wie das Safety Car) und lenken dann den Impuls &#8211; vorher kamen sie aus der Mitte und standen nicht weit genug au&#223;en. Gehalten wird nur, wenn der gerade gelesene Code zur Zielkachel passt; sonst f&#228;hrt das Auto weiter und gleicht an Start/Ziel neu ab, statt mitten auf der Strecke zu parken (passiert, wenn Funkpakete verloren gehen).</li>
@@ -9212,7 +9213,7 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="race-einpark-staerke-val">100 %</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Einparken: Dauer des Lenkimpulses<span class="wip-tag">WIP</span><small>Wie
+      <div class="opt-row" hidden><div class="opt-label">Einparken: Dauer des Lenkimpulses<span class="wip-tag">WIP</span><small>Wie
           viele Millisekunden das Auto zu seiner Seite lenkt &ndash; und danach genauso lang zur&uuml;ck.
           Vorgabe 45&nbsp;ms, das ist ein Sendetakt. Bleibt das Auto zu weit in der Mitte stehen, erh&ouml;he
           den Wert; rutscht es neben die Bahn, senke ihn.</small></div>
@@ -9222,7 +9223,7 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="race-einpark-ms-val">100 ms</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Einparken: Tempo beim Lenkimpuls<span class="wip-tag">WIP</span><small>Wie
+      <div class="opt-row" hidden><div class="opt-label">Einparken: Tempo beim Lenkimpuls<span class="wip-tag">WIP</span><small>Wie
           schnell das Auto w&auml;hrend der beiden Lenkimpulse f&auml;hrt, in Prozent der H&ouml;chstgeschwindigkeit.
           Vorgabe 30&nbsp;%. Schneller hei&szlig;t: derselbe Impuls bringt das Auto weiter zur Seite, und es
           rollt nach dem Bremsen etwas weiter.</small></div>
@@ -14611,6 +14612,7 @@
     "Automatische Aufstellung: Die Autos fahren jetzt wie das Safety Car erst an den Rand (ab der zweiten Hälfte der Kachel vor ihrem Platz, fast so weit wie das Safety Car) und lenken dann den Impuls – vorher kamen sie aus der Mitte und standen nicht weit genug außen. Gehalten wird nur, wenn der gerade gelesene Code zur Zielkachel passt; sonst fährt das Auto weiter und gleicht an Start/Ziel neu ab, statt mitten auf der Strecke zu parken (passiert, wenn Funkpakete verloren gehen).": "Automatic line-up: like the safety car, the cars now first move to the edge (from the second half of the tile before their spot, almost as far as the safety car) and then do the steering pulse – before, they came from the centre and did not stand far enough out. They only stop if the code just read matches the target tile; otherwise the car keeps going and re-syncs at start/finish instead of parking in the middle of the track (happens when radio packets get lost).",
     "Funk mit mehreren Autos (APK): Der Sendeweg wechselte mit NPCs ständig zwischen OmegaBle und dem Plugin. Während das Plugin ein Auto verbindet oder abonniert, pausiert OmegaBle für alle Autos; das galt bisher jedes Mal als Ausfall. Jetzt zählt Verworfenes während einer Pause nicht, und erst zwei Ausfälle in Folge schalten auf das Plugin um.": "Radio with several cars (APK): with NPCs, the send path kept switching between OmegaBle and the plugin. While the plugin connects or subscribes a car, OmegaBle pauses for all cars; that used to count as a failure every time. Now discards during a pause do not count, and only two failures in a row switch to the plugin.",
     "Automatische Aufstellung und Rückfahrt nach dem Rennen: Die Code-Prüfung vor dem Halt aus 1.1.17 ist wieder raus – bei mehreren gleichen Teilen half sie nicht, und nach dem Rennen hielten NPCs mit unpassendem Code gar nicht mehr an. Das Fahren an den Rand bleibt.": "Automatic line-up and return after the race: the code check before stopping from 1.1.17 is removed again – with several identical pieces it did not help, and after the race NPCs with a mismatching code no longer stopped at all. Moving to the edge stays.",
+    "Automatische Aufstellung (und Rückfahrt nach dem Rennen): Die Autos fahren bis zu ihrem Platz genau mittig und parken dann mit derselben Folge wie das Safety Car – Impuls zur eigenen Seite, Gegenschub, Impuls zurück, Gegenschub und Ausrollen, Räder am Ende leicht zur Bahn; für linke Plätze gespiegelt. Die Werte kommen aus Optionen > Safety Car. Das Ziehen an den Rand aus 1.1.17 ist wieder raus; die Regler „Einparken: Dauer/Tempo“ entfallen, die Einlenkstärke bleibt.": "Automatic line-up (and return after the race): the cars drive exactly in the centre up to their spot and then park with the same sequence as the safety car – pulse to their side, counter-thrust, pulse back, counter-thrust and roll-out, wheels slightly towards the track at the end; mirrored for left spots. The values come from Options > Safety Car. Moving to the edge from 1.1.17 is removed again; the \"Parking: duration/speed\" sliders are gone, the steering strength stays.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -25332,9 +25334,9 @@
       // v1.0.37 BESTELLT: "Die Autos sollen fuer die automatische Aufstellung mittig fahren und
       // erst kurz vor ihrer Zielposition in die jeweilige Richtung einlenken und dann
       // zuruecklenken." Anfahrt also mit Querlage 0.
-      // v1.1.17: kurz vor und auf dem eigenen Platz an den Rand wie die NPCs (aufstellRandQuer).
+      // Anfahrt mittig bis zum Platz (v1.1.19, wie die NPCs).
       const aA = aufstellenSpielerZiel(meinAuto);
-      const lenk = aA && typeof aufstellRandQuer === 'function' ? aufstellRandQuer(meinAuto, aA.ziel, gridPosOf(meinAuto), aA) : 0;
+      const lenk = 0;
       // v1.0.31: gestaffelter Start der Aufstellung - bis zu seinem Zeitpunkt steht das Auto.
       if (aA && aA.ab && Date.now() < aA.ab) {
         return { grund: 'aufstellen', throttle: 0, brake: fahrerBremse > 0.05 ? fahrerBremse : 1, steer: 0, lenkt: false };
@@ -25343,17 +25345,21 @@
       // ohne Spur-Bytes (spielerOrtTick), dann stehen. radLenk geht am Fahrzeugmodell vorbei
       // direkt aufs Lenkbyte (physicsStep).
       if (aufstellenSpielerAngekommen(meinAuto)) {
-        const rad = typeof aufstellenSpielerEinlenken === 'function' ? aufstellenSpielerEinlenken(meinAuto) : 0;
-        // v1.1.3: waehrend des Impulses mit einparkTempo (30 %) fahren, danach sofort voll bremsen.
-        if (rad) {
+        // v1.1.19: die Folge des Safety Cars (aufstellenSpielerEinlenken): waehrend der Impulse mit dem
+        // Einfahrtstempo, im Gegenschub voll bremsen, danach ausrollen, am Ende Tempo 0 mit den Raedern
+        // leicht zur Bahn.
+        const fo = typeof aufstellenSpielerEinlenken === 'function' ? aufstellenSpielerEinlenken(meinAuto) : null;
+        if (fo && fo.gas === 'fahrt') {
           const vI = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
-          const gI = ghostSpeedControl(regler, typeof einparkTempo === 'function' ? einparkTempo() : 0.3, vI, 0.045);
-          return { grund: 'aufstellen', throttle: gI.throttle, brake: gI.brake, steer: 0, lenkt: false, radLenk: rad };
+          const gI = ghostSpeedControl(regler, typeof scEinfahrtTempo === 'function' ? scEinfahrtTempo() : 0.4, vI, 0.045);
+          return { grund: 'aufstellen', throttle: gI.throttle, brake: gI.brake, steer: 0, lenkt: false, radLenk: fo.lenk };
         }
+        if (fo && fo.gas === 'schub') return { grund: 'aufstellen', throttle: 0, brake: 1, steer: 0, lenkt: false, radLenk: fo.lenk };
+        if (fo && fo.gas === 'aus') return { grund: 'aufstellen', throttle: 0, brake: 0, steer: 0, lenkt: false, radLenk: fo.lenk };
         // v1.1.11 BESTELLT: nach dem Impuls DIREKT Tempo 0. Nur bremsen liess das simulierte Tempo (und
         // damit das Gasbyte) erst abklingen, und das Auto rollte weiter - das erste ueber die Ziellinie.
         st.speedKmh = 0;
-        return { grund: 'aufstellen', throttle: 0, brake: 1, steer: 0, lenkt: false, radLenk: 0 };
+        return { grund: 'aufstellen', throttle: 0, brake: 1, steer: 0, lenkt: false, radLenk: fo ? fo.lenk : 0 };
       }
       const vA = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
       const dtS = Math.max(0.01, Math.min(0.25, (Date.now() - (regler.at || Date.now())) / 1000));
@@ -52675,28 +52681,18 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     return !!halter.startGesehen;
   }
-  // ---- AN DEN RAND, WIE DAS SAFETY CAR (v1.1.17) -------------------------------------------
-  // GEMELDET: "Bei der Startaufstellung parken die Autos noch nicht weit genug am Rand, mach es fast so
-  // wie bei den Safety-Car-Werten." Das Safety Car faehrt erst an den Rand und lenkt DANN den Impuls;
-  // die Aufstellung fuhr bis zum Haltepunkt mittig. Jetzt: ab AUFSTELL_RAND_AB der Kachel vor dem
-  // eigenen Platz und auf dem Platz selbst zur eigenen Seite (AUFSTELL_RAND_QUER, knapp unter dem
-  // Safety Car mit 0,88/1,0), danach der Impuls. Vorher bleibt die Mittelgasse (an geparkten Autos
-  // vorbei). Nur mit gesehenem Start/Ziel - sonst stimmt die Kachel nicht.
-  const AUFSTELL_RAND_QUER = 0.85, AUFSTELL_RAND_AB = 0.6;
-  function aufstellRandQuer(car, ziel, platz, halter) {
-    const n = currentTrackTiles ? currentTrackTiles.length : 0;
-    if (!n || ziel === null || ziel === undefined || !halter || !aufstellStartPruefen(halter, car)) return 0;
-    const o = car && car.ghost ? ghostOrt(car) : null;
-    if (o === null || o === undefined) return 0;
-    const k = ((Math.floor(o) % n) + n) % n, ph = o - Math.floor(o);
-    const vor = ((ziel - 1) % n + n) % n;
-    if (k !== ziel && !(k === vor && ph >= AUFSTELL_RAND_AB)) return 0;
-    return (platz >= 0 && platz % 2 ? -1 : 1) * AUFSTELL_RAND_QUER;
+  // ---- DIE FOLGE DES SAFETY CARS (v1.1.19) -------------------------------------------------
+  // BESTELLT: "Mach, dass sie bis kurz vor der Parkluecke genau mittig fahren und dann einen Impuls genau
+  // wie das Safety Car fahren." Bis zum Haltepunkt Mittelgasse (Querlage 0; das Ziehen an den Rand aus
+  // v1.1.17 ist wieder raus), dann dieselbe Folge wie das Safety Car neben der Strecke, mit den Werten aus
+  // Optionen > Safety Car: Impuls zur eigenen Seite (Rechts-Impuls), Gegenschub, Impuls zurueck
+  // (Links-Impuls), Gegenschub und Ausrollen, Raeder am Ende leicht zur Bahn. Fuer linke Plaetze gespiegelt.
+  // Die Regler "Einparken: Dauer/Tempo" gelten dafuer nicht mehr; "Einlenkstaerke" skaliert den Einschlag.
+  function aufstellFolge(seite, staerke) {
+    return { radLenk: seite * SC_AUSFAHRT_LENK * staerke, radMs: scAusfahrtMs(), gegenMs: scAusfahrtLinksMs(),
+             radTempo: scEinfahrtTempo(), bremsMs: scGegenschubMs() + SC_AUSROLL_MS, endLenk: seite * scEndLenk() * staerke,
+             gegenschubMs: scGegenschubMs(), gegenschubRadMs: scGegenschubRadMs(), nominal: true };
   }
-  // v1.1.17 gab es hier eine Code-Pruefung vor dem Halt (gelesener Code = Zielkachel?). v1.1.18 wieder
-  // entfernt - GEMELDET: "mehrere Geraden hintereinander und mehrere Kurven" (die Pruefung unterscheidet
-  // dort nichts) und "wenn ich ein Rennen beende, fahren die NPCs einfach immer weiter": die Rueckfahrt
-  // nach dem Rennen haelt mit derselben Pruefung, und ein unpassender Code liess sie nie halten.
   function aufstellRest(car, ziel) {
     const n = currentTrackTiles ? currentTrackTiles.length : 0;
     const o = car && car.ghost ? ghostOrt(car) : null;
@@ -52738,17 +52734,24 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // ein Takt zurueck, danach stehen. Rueckgabe: der Radwinkel dieses Takts (ohne Spur-Bytes)
   // oder null, solange noch nicht angekommen. aufstellenSpielerOhneSpur() sagt
   // spielerOrtTick(), dass ab dem Ankommen keine Spur-Bytes mehr hinausgehen.
+  // v1.1.19: dieselbe Folge wie die NPCs (aufstellFolge), als Zeitplan fuer den Autopiloten.
+  // Rueckgabe { lenk, gas: 'fahrt' | 'schub' | 'aus' | 'halt' } oder null, solange nicht angekommen.
   function aufstellenSpielerEinlenken(car) {
     const a = aufstellSpieler.get(car);
     if (!a || !a.fertig) return null;
-    // v1.1.3: zeitbasiert wie bei den NPCs - einparkMs() zur Seite, einparkMs() zurueck, dann 0.
     const platz = gridPosOf(car);
     const seite = platz >= 0 && platz % 2 ? -1 : 1;
-    const w = EINPARK_LENK * einparkStaerke();
+    const staerke = einparkStaerke();
     if (!a.fertigAt) a.fertigAt = Date.now();
-    const seit = Date.now() - a.fertigAt;
-    const ms = einparkMs();
-    return w <= 0 ? 0 : seit < ms ? seite * w : seit < 2 * ms ? -seite * w : 0;
+    const t = Date.now() - a.fertigAt;
+    if (staerke <= 0) return { lenk: 0, gas: 'halt' };
+    const f = aufstellFolge(seite, staerke);
+    if (t < f.radMs) return { lenk: f.radLenk, gas: 'fahrt' };
+    const t1 = t - f.radMs;
+    if (t1 < f.gegenMs) return { lenk: -f.radLenk, gas: t1 < f.gegenschubRadMs ? 'schub' : 'fahrt' };
+    const t2 = t1 - f.gegenMs;
+    if (t2 < f.bremsMs) return { lenk: 0, gas: (t2 < f.gegenschubMs || (!f.gegenMs && t2 < f.gegenschubRadMs)) ? 'schub' : 'aus' };
+    return { lenk: -f.endLenk, gas: 'halt' };
   }
   function aufstellenSpielerOhneSpur(car) {
     const a = car ? aufstellSpieler.get(car) : null;
@@ -52849,16 +52852,16 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // greift sofort voll (sofort), ohne die Rampe des Boxenstopps.
     // v1.1.3: Impuls zur Seite und zurueck (einparkMs, Vorgabe 45 ms) bei einparkTempo (30 %), dann
     // sofort volle Bremse (sofort) - ohne Kontrolle nach dem Halt.
-    randHaltStarten(car, { phase: staerke > 0 ? 'rad' : 'halt', quer: 0, tempo: formationPace(), haltMs: AUFSTELL_HALT_MS, sofort: true,
-                           radLenk: staerke > 0 ? seite * EINPARK_LENK * staerke : 0, radTempo: einparkTempo(),
-                           radMs: einparkMs(), gegenMs: einparkMs(), rundTakt: true, fertig: (c) => {
+    // v1.1.19: die Folge des Safety Cars (aufstellFolge), mittig angefahren.
+    randHaltStarten(car, Object.assign({ phase: staerke > 0 ? 'rad' : 'halt', quer: 0, tempo: formationPace(), haltMs: AUFSTELL_HALT_MS,
+                           sofort: true }, staerke > 0 ? aufstellFolge(seite, staerke) : {}, { fertig: (c) => {
       log(garageLabel(c) + ': steht auf seinem Startplatz.', 'info');
       if (g.nachZiel) blinkCar(c);
       if (!aufstellenLaeuft()) {
         clearTimeout(aufstellenTimer);
         showHudToast(t('Startaufstellung steht'));
       }
-    } });
+    } }));
     return false;
   }
   const AUFSTELL_HALT_MS = 800;
@@ -60172,9 +60175,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         const pqBox = pitQuer(car);
         const pqSc = pqBox === null ? scVorbeiQuer(car) : null;     // v1.0.32
         // v1.0.37: Anfahrt zum Startplatz mittig (Querlage 0), siehe aufstellenPruefen.
-        // v1.1.17: kurz vor und auf dem eigenen Platz an den Rand (aufstellRandQuer), sonst mittig.
-        const pqAuf = (g.aufstellZiel !== undefined && g.aufstellZiel !== null)
-          ? aufstellRandQuer(car, g.aufstellZiel, g.aufstellPlatz !== undefined ? g.aufstellPlatz : gridPosOf(car), g) : null;
+        // v1.0.37: Anfahrt zum Startplatz mittig (Querlage 0); v1.1.19 wieder bis zum Platz (siehe aufstellFolge).
+        const pqAuf = (g.aufstellZiel !== undefined && g.aufstellZiel !== null) ? 0 : null;
         const pqRw = rwQuer(car, now);                                  // Rueckweg mit Lenkung: zur Innenseite
         const pq = pqRw !== null ? pqRw : pqBox !== null ? pqBox : pqSc !== null ? pqSc : pqAuf !== null ? pqAuf : ghostPaarQuer(car);
         // ====================================================================================
@@ -91287,22 +91289,24 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!rb || rb.throttle !== 0 || !(rb.brake >= 0.8)) f.push('Fahrerbremse wird ueberstimmt');
       const aA = aufstellSpieler.get(auto);
       aA.fertig = true;
-      // v1.1.3: zeitbasiert - einparkMs() zur Seite, einparkMs() zurueck, dann stehen.
+      // v1.1.19: die Folge des Safety Cars - Rechts-Impuls zur Seite, Links-Impuls zurueck, Gegenschub und
+      // Ausrollen, dann stehen mit den Raedern leicht zur Bahn (Werte aus Optionen > Safety Car).
       const reglerEP = $('race-einpark-staerke'), reglerEPMerk = reglerEP ? reglerEP.value : null; if (reglerEP) reglerEP.value = '1';
-      const msI = einparkMs();
+      const fo = aufstellFolge(1, 1);
       aA.fertigAt = Date.now() - 1;
       const ein = autopilot(0, 1);
       if (ein && !(ein.throttle > 0)) f.push('faehrt beim Impuls nicht');
-      aA.fertigAt = Date.now() - msI - 1;
+      aA.fertigAt = Date.now() - fo.radMs - 1;
       const zur = autopilot(0, 1);
-      aA.fertigAt = Date.now() - 2 * msI - 1;
+      aA.fertigAt = Date.now() - fo.radMs - fo.gegenMs - fo.bremsMs - 1;
       if (reglerEP) reglerEP.value = reglerEPMerk;
       if (!ein || !(Math.abs(ein.radLenk) > 0) || !zur || Math.sign(zur.radLenk) !== -Math.sign(ein.radLenk)) {
         f.push('kein Einlenk-Takt mit Gegenlenken: ' + (ein && ein.radLenk) + '/' + (zur && zur.radLenk));
       }
       if (!aufstellenSpielerOhneSpur(auto)) f.push('nach dem Ankommen weiter mit Spur-Bytes');
       const h = autopilot(0, 1);
-      if (h && h.radLenk !== 0) f.push('steht mit eingeschlagenen Raedern: ' + h.radLenk);
+      // Am Ende stehen die Raeder wie beim Safety Car leicht zur Bahn (Gegenrichtung zum Impuls).
+      if (h && ein && !(Math.sign(h.radLenk) === -Math.sign(ein.radLenk) && Math.abs(Math.abs(h.radLenk) - scEndLenk()) < 1e-9)) f.push('Raeder am Ende nicht wie beim Safety Car: ' + h.radLenk);
       if (!h || h.throttle !== 0 || h.brake !== 1) f.push('am Startplatz nicht gehalten');
       aufstellenStoppen(false);
       const frei = autopilot(0, 1);

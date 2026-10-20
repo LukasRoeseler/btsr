@@ -2963,9 +2963,9 @@
       // v1.0.37 BESTELLT: "Die Autos sollen fuer die automatische Aufstellung mittig fahren und
       // erst kurz vor ihrer Zielposition in die jeweilige Richtung einlenken und dann
       // zuruecklenken." Anfahrt also mit Querlage 0.
-      // v1.1.17: kurz vor und auf dem eigenen Platz an den Rand wie die NPCs (aufstellRandQuer).
+      // Anfahrt mittig bis zum Platz (v1.1.19, wie die NPCs).
       const aA = aufstellenSpielerZiel(meinAuto);
-      const lenk = aA && typeof aufstellRandQuer === 'function' ? aufstellRandQuer(meinAuto, aA.ziel, gridPosOf(meinAuto), aA) : 0;
+      const lenk = 0;
       // v1.0.31: gestaffelter Start der Aufstellung - bis zu seinem Zeitpunkt steht das Auto.
       if (aA && aA.ab && Date.now() < aA.ab) {
         return { grund: 'aufstellen', throttle: 0, brake: fahrerBremse > 0.05 ? fahrerBremse : 1, steer: 0, lenkt: false };
@@ -2974,17 +2974,21 @@
       // ohne Spur-Bytes (spielerOrtTick), dann stehen. radLenk geht am Fahrzeugmodell vorbei
       // direkt aufs Lenkbyte (physicsStep).
       if (aufstellenSpielerAngekommen(meinAuto)) {
-        const rad = typeof aufstellenSpielerEinlenken === 'function' ? aufstellenSpielerEinlenken(meinAuto) : 0;
-        // v1.1.3: waehrend des Impulses mit einparkTempo (30 %) fahren, danach sofort voll bremsen.
-        if (rad) {
+        // v1.1.19: die Folge des Safety Cars (aufstellenSpielerEinlenken): waehrend der Impulse mit dem
+        // Einfahrtstempo, im Gegenschub voll bremsen, danach ausrollen, am Ende Tempo 0 mit den Raedern
+        // leicht zur Bahn.
+        const fo = typeof aufstellenSpielerEinlenken === 'function' ? aufstellenSpielerEinlenken(meinAuto) : null;
+        if (fo && fo.gas === 'fahrt') {
           const vI = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
-          const gI = ghostSpeedControl(regler, typeof einparkTempo === 'function' ? einparkTempo() : 0.3, vI, 0.045);
-          return { grund: 'aufstellen', throttle: gI.throttle, brake: gI.brake, steer: 0, lenkt: false, radLenk: rad };
+          const gI = ghostSpeedControl(regler, typeof scEinfahrtTempo === 'function' ? scEinfahrtTempo() : 0.4, vI, 0.045);
+          return { grund: 'aufstellen', throttle: gI.throttle, brake: gI.brake, steer: 0, lenkt: false, radLenk: fo.lenk };
         }
+        if (fo && fo.gas === 'schub') return { grund: 'aufstellen', throttle: 0, brake: 1, steer: 0, lenkt: false, radLenk: fo.lenk };
+        if (fo && fo.gas === 'aus') return { grund: 'aufstellen', throttle: 0, brake: 0, steer: 0, lenkt: false, radLenk: fo.lenk };
         // v1.1.11 BESTELLT: nach dem Impuls DIREKT Tempo 0. Nur bremsen liess das simulierte Tempo (und
         // damit das Gasbyte) erst abklingen, und das Auto rollte weiter - das erste ueber die Ziellinie.
         st.speedKmh = 0;
-        return { grund: 'aufstellen', throttle: 0, brake: 1, steer: 0, lenkt: false, radLenk: 0 };
+        return { grund: 'aufstellen', throttle: 0, brake: 1, steer: 0, lenkt: false, radLenk: fo ? fo.lenk : 0 };
       }
       const vA = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
       const dtS = Math.max(0.01, Math.min(0.25, (Date.now() - (regler.at || Date.now())) / 1000));

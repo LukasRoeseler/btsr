@@ -18294,22 +18294,24 @@
       if (!rb || rb.throttle !== 0 || !(rb.brake >= 0.8)) f.push('Fahrerbremse wird ueberstimmt');
       const aA = aufstellSpieler.get(auto);
       aA.fertig = true;
-      // v1.1.3: zeitbasiert - einparkMs() zur Seite, einparkMs() zurueck, dann stehen.
+      // v1.1.19: die Folge des Safety Cars - Rechts-Impuls zur Seite, Links-Impuls zurueck, Gegenschub und
+      // Ausrollen, dann stehen mit den Raedern leicht zur Bahn (Werte aus Optionen > Safety Car).
       const reglerEP = $('race-einpark-staerke'), reglerEPMerk = reglerEP ? reglerEP.value : null; if (reglerEP) reglerEP.value = '1';
-      const msI = einparkMs();
+      const fo = aufstellFolge(1, 1);
       aA.fertigAt = Date.now() - 1;
       const ein = autopilot(0, 1);
       if (ein && !(ein.throttle > 0)) f.push('faehrt beim Impuls nicht');
-      aA.fertigAt = Date.now() - msI - 1;
+      aA.fertigAt = Date.now() - fo.radMs - 1;
       const zur = autopilot(0, 1);
-      aA.fertigAt = Date.now() - 2 * msI - 1;
+      aA.fertigAt = Date.now() - fo.radMs - fo.gegenMs - fo.bremsMs - 1;
       if (reglerEP) reglerEP.value = reglerEPMerk;
       if (!ein || !(Math.abs(ein.radLenk) > 0) || !zur || Math.sign(zur.radLenk) !== -Math.sign(ein.radLenk)) {
         f.push('kein Einlenk-Takt mit Gegenlenken: ' + (ein && ein.radLenk) + '/' + (zur && zur.radLenk));
       }
       if (!aufstellenSpielerOhneSpur(auto)) f.push('nach dem Ankommen weiter mit Spur-Bytes');
       const h = autopilot(0, 1);
-      if (h && h.radLenk !== 0) f.push('steht mit eingeschlagenen Raedern: ' + h.radLenk);
+      // Am Ende stehen die Raeder wie beim Safety Car leicht zur Bahn (Gegenrichtung zum Impuls).
+      if (h && ein && !(Math.sign(h.radLenk) === -Math.sign(ein.radLenk) && Math.abs(Math.abs(h.radLenk) - scEndLenk()) < 1e-9)) f.push('Raeder am Ende nicht wie beim Safety Car: ' + h.radLenk);
       if (!h || h.throttle !== 0 || h.brake !== 1) f.push('am Startplatz nicht gehalten');
       aufstellenStoppen(false);
       const frei = autopilot(0, 1);
