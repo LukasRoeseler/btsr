@@ -2593,7 +2593,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // bis zur Startkachel, dann haelt er sie mit der Bremse, bis gestartet oder abgebrochen
   // wird. Der Ort kommt aus derselben Ortung (car.ghost) wie bei den Ghosts.
   const aufstellSpieler = new Map();   // car -> { ziel, seit, fertig }
-  function aufstellZielKachel(platz, n) { return (((-1 - Math.floor(platz / 2)) % n) + n) % n; }
+  // v1.1.21 BESTELLT: "Die ersten beiden bis auf die Start/Ziel-Gerade fahren und dort links und rechts
+  // parken, die naechsten auf die Schiene davor, und so weiter." Reihe 1 also AUF Start/Ziel (vorher die
+  // Kachel davor), jede weitere eine Kachel dahinter.
+  function aufstellZielKachel(platz, n) {
+    const s = typeof ortStartIndices === 'function' ? (ortStartIndices(currentTrackTiles || [])[0] || 0) : 0;
+    return (((s - Math.floor(platz / 2)) % n) + n) % n;
+  }
   // v0.9.87: ERST NACH DEM STARTTEIL ANHALTEN. startGhost() legt den Ort neu an, und die
   // erste gemeldete Kachel gilt dann als Kachel 0 - der Halt "auf Kachel ziel" traf also
   // eine beliebige Kachel. Ueber das Startteil gefahren ist der Ort sicher abgeglichen.
@@ -2602,18 +2608,6 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       halter.startGesehen = true;
     }
     return !!halter.startGesehen;
-  }
-  // ---- DIE FOLGE DES SAFETY CARS (v1.1.19) -------------------------------------------------
-  // BESTELLT: "Mach, dass sie bis kurz vor der Parkluecke genau mittig fahren und dann einen Impuls genau
-  // wie das Safety Car fahren." Bis zum Haltepunkt Mittelgasse (Querlage 0; das Ziehen an den Rand aus
-  // v1.1.17 ist wieder raus), dann dieselbe Folge wie das Safety Car neben der Strecke, mit den Werten aus
-  // Optionen > Safety Car: Impuls zur eigenen Seite (Rechts-Impuls), Gegenschub, Impuls zurueck
-  // (Links-Impuls), Gegenschub und Ausrollen, Raeder am Ende leicht zur Bahn. Fuer linke Plaetze gespiegelt.
-  // Die Regler "Einparken: Dauer/Tempo" gelten dafuer nicht mehr; "Einlenkstaerke" skaliert den Einschlag.
-  function aufstellFolge(seite, staerke) {
-    return { radLenk: seite * SC_AUSFAHRT_LENK * staerke, radMs: scAusfahrtMs(), gegenMs: scAusfahrtLinksMs(),
-             radTempo: scEinfahrtTempo(), bremsMs: scGegenschubMs() + SC_AUSROLL_MS, endLenk: seite * scEndLenk() * staerke,
-             gegenschubMs: scGegenschubMs(), gegenschubRadMs: scGegenschubRadMs(), nominal: true };
   }
   function aufstellRest(car, ziel) {
     const n = currentTrackTiles ? currentTrackTiles.length : 0;
@@ -2656,24 +2650,18 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // ein Takt zurueck, danach stehen. Rueckgabe: der Radwinkel dieses Takts (ohne Spur-Bytes)
   // oder null, solange noch nicht angekommen. aufstellenSpielerOhneSpur() sagt
   // spielerOrtTick(), dass ab dem Ankommen keine Spur-Bytes mehr hinausgehen.
-  // v1.1.19: dieselbe Folge wie die NPCs (aufstellFolge), als Zeitplan fuer den Autopiloten.
-  // Rueckgabe { lenk, gas: 'fahrt' | 'schub' | 'aus' | 'halt' } oder null, solange nicht angekommen.
+  // v1.1.21: wie die NPCs - einparkMs() zur Seite, einparkMs() zurueck (mit einparkTempo), dann stehen.
+  // Rueckgabe { lenk, gas: 'fahrt' | 'halt' } oder null, solange nicht angekommen.
   function aufstellenSpielerEinlenken(car) {
     const a = aufstellSpieler.get(car);
     if (!a || !a.fertig) return null;
     const platz = gridPosOf(car);
     const seite = platz >= 0 && platz % 2 ? -1 : 1;
-    const staerke = einparkStaerke();
+    const w = EINPARK_LENK * einparkStaerke();
     if (!a.fertigAt) a.fertigAt = Date.now();
-    const t = Date.now() - a.fertigAt;
-    if (staerke <= 0) return { lenk: 0, gas: 'halt' };
-    const f = aufstellFolge(seite, staerke);
-    if (t < f.radMs) return { lenk: f.radLenk, gas: 'fahrt' };
-    const t1 = t - f.radMs;
-    if (t1 < f.gegenMs) return { lenk: -f.radLenk, gas: t1 < f.gegenschubRadMs ? 'schub' : 'fahrt' };
-    const t2 = t1 - f.gegenMs;
-    if (t2 < f.bremsMs) return { lenk: 0, gas: (t2 < f.gegenschubMs || (!f.gegenMs && t2 < f.gegenschubRadMs)) ? 'schub' : 'aus' };
-    return { lenk: -f.endLenk, gas: 'halt' };
+    const t = Date.now() - a.fertigAt, ms = einparkMs();
+    if (w <= 0 || t >= 2 * ms) return { lenk: 0, gas: 'halt' };
+    return { lenk: t < ms ? seite * w : -seite * w, gas: 'fahrt' };
   }
   function aufstellenSpielerOhneSpur(car) {
     const a = car ? aufstellSpieler.get(car) : null;
@@ -2726,7 +2714,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       gestartet.push(hier);
       if (spielerNrVon(car) >= 1) {
         aufstellSpieler.set(car, { ziel, seit: ab, ab, fertig: false,
-                                   startGesehen: !!(car.ghost && car.ghost.ortSicher) });
+                                   startGesehen: false });     // v1.1.21: immer erst ueber Start/Ziel
         zahl++;
         continue;
       }
@@ -2734,7 +2722,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       startGhost(car);
       if (!car.ghost) continue;
       if (car.role === 'safetycar') car.ghost.freeRun = false;
-      if (car.ghost.ortSicher) car.ghost.startGesehen = true;
+      // v1.1.21 BESTELLT: "jeweils 1x ueber Start/Ziel fahren, damit festgelegt werden kann, wo sie sind
+      // (Tracking sicherstellen)". Kein Abkuerzen mehr fuer Autos, die ihren Ort schon zu kennen glauben.
+      car.ghost.startGesehen = false;
       car.ghost.aufstellZiel = ziel;
       car.ghost.aufstellSeit = ab;
       car.ghost.aufstellAb = ab;
@@ -2774,9 +2764,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // greift sofort voll (sofort), ohne die Rampe des Boxenstopps.
     // v1.1.3: Impuls zur Seite und zurueck (einparkMs, Vorgabe 45 ms) bei einparkTempo (30 %), dann
     // sofort volle Bremse (sofort) - ohne Kontrolle nach dem Halt.
-    // v1.1.19: die Folge des Safety Cars (aufstellFolge), mittig angefahren.
+    // v1.1.21: mittig bis auf die Kachel, dann einparkMs() voll zur eigenen Seite und einparkMs() voll
+    // zurueck, beides mit einparkTempo() (Vorgabe 30 %), danach sofort stehen - ohne Gegenschub.
     randHaltStarten(car, Object.assign({ phase: staerke > 0 ? 'rad' : 'halt', quer: 0, tempo: formationPace(), haltMs: AUFSTELL_HALT_MS,
-                           sofort: true }, staerke > 0 ? aufstellFolge(seite, staerke) : {}, { fertig: (c) => {
+                           sofort: true, nominal: true }, staerke > 0 ? { radLenk: seite * EINPARK_LENK * staerke, radTempo: einparkTempo(),
+                           radMs: einparkMs(), gegenMs: einparkMs() } : {}, { fertig: (c) => {
       log(garageLabel(c) + ': steht auf seinem Startplatz.', 'info');
       if (g.nachZiel) blinkCar(c);
       if (!aufstellenLaeuft()) {
@@ -5003,8 +4995,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // 40 %], nur dass die Autos ca. 2 cm naeher an der Fahrbahnmitte stehen." Die Autos kommen aus der
   // Mittelgasse (das Safety Car vom Rand), mit demselben Impuls stehen sie also weiter innen. Neue
   // Speicherschluessel (v2), damit die neue Vorgabe auch auf Geraeten mit gemerktem Wert gilt.
-  const EINPARK_LENK = 1.0, EINPARK_MS = 100, EINPARK_TEMPO = 0.40, EINPARK_STORE = 'omegasim-einpark-staerke-v3';
-  const EINPARK_MS_STORE = 'omegasim-einpark-ms-v2', EINPARK_TEMPO_STORE = 'omegasim-einpark-tempo-v2';
+  // v1.1.21 BESTELLT: "mit ca. 30 % Tempo einlenken in die eine Richtung und dann in die andere und dann
+  // sofort stehen bleiben". 100 ms je Richtung (die Werte, mit denen das Safety Car am Rand stand).
+  const EINPARK_LENK = 1.0, EINPARK_MS = 100, EINPARK_TEMPO = 0.30, EINPARK_STORE = 'omegasim-einpark-staerke-v3';
+  const EINPARK_MS_STORE = 'omegasim-einpark-ms-v3', EINPARK_TEMPO_STORE = 'omegasim-einpark-tempo-v3';
   function einparkWert(id, vorgabe, lo, hi) {
     const el = $(id);
     const v = el ? parseFloat(el.value) : vorgabe;
@@ -5034,8 +5028,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Auto zu seiner Seite (Lenkimpuls) und bremst.
   // v1.1.11 GEMELDET: "Das erste Auto rollt immer ueber die Ziellinie" und BESTELLT "frueher anhalten":
   // die Haltepunkte ruecken vor (rechts 0,55 -> 0,30 der Kachel, links 0,15 -> 0); der Versatz bleibt.
-  // v1.1.15: der laengere Impuls (100 ms bei 40 %) traegt weiter - rechts nochmals frueher (0,15).
-  const AUFSTELL_BRUCH_RECHTS = 0.15, AUFSTELL_BRUCH_LINKS = 0.0;
+  // v1.1.21 BESTELLT: "sobald sie auf der relevanten Schiene sind, voll nach rechts und dann voll nach
+  // links lenken (bzw. das jeweils zweite Auto erst nach links und dann nach rechts)". Beide Seiten
+  // beginnen also an der Kachelgrenze und stehen nebeneinander; die Mitte bleibt frei.
+  const AUFSTELL_BRUCH_RECHTS = 0.0, AUFSTELL_BRUCH_LINKS = 0.0;
   function aufstellHaltBruch(platz) { return platz >= 0 && platz % 2 ? AUFSTELL_BRUCH_LINKS : AUFSTELL_BRUCH_RECHTS; }
   // Steht der Ort (Kachel + Phase) auf der Zielkachel und mindestens am Haltepunkt?
   function aufstellAmPunkt(o, ziel, platz) {
@@ -5605,7 +5601,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // zu frueh, also ist es jetzt einstellbar. Damit es auf der Kachel des Startpunkts schon
   // Kachel des Startpunkts schon neben der Strecke steht.
   // v1.1.15: Vorgaben aus dem Test am Tisch (Rechts 100 ms, minimal weniger: 90 ms - siehe unten).
-  const SC_AUSFAHRT_LENK = 1.0, SC_AUSFAHRT_MS_STD = 90, SC_AUSFAHRT_KACHEL_MAX = 5;
+  // v1.1.21: Rechts-Impuls wieder 100 ms ("mit den Werten von vorhin hat es gut geklappt").
+  const SC_AUSFAHRT_LENK = 1.0, SC_AUSFAHRT_MS_STD = 100, SC_AUSFAHRT_KACHEL_MAX = 5;
   // GEMELDET (zweiter Einsatz im selben Rennen): \"Er war zu schnell und aus der Boxengasse wieder auf
   // die Hauptbahn gerollt.\" URSACHE: der Startpunkt wurde bei JEDEM Losfahren neu gemessen und
   // ueberschrieben. Steht das Auto nach dem Halt ein Stueck hinter der Box, beginnt der naechste Einsatz
@@ -5824,7 +5821,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // kann". Jetzt eine feste Folge: die Raeder bleiben auf dem Halt-Einschlag (Regler "Safety Car:
   // Raeder am Ende"), das Auto rollt in SC_AUSPARK_ANLAUF_MS auf SC_AUSPARK_TEMPO an, nach
   // SC_AUSPARK_MS gehen die Raeder in SC_AUSPARK_GERADE_MS weich gerade, dann uebernimmt die Spur.
-  const SC_AUSPARK_MS = 600, SC_AUSPARK_GERADE_MS = 200, SC_AUSPARK_ANLAUF_MS = 200, SC_AUSPARK_TEMPO = 0.37;
+  // v1.1.21 BESTELLT: "die Geschwindigkeit beim Rausfahr- und Reinfahrmanoever geringer" - 30 % statt 37 %.
+  const SC_AUSPARK_MS = 600, SC_AUSPARK_GERADE_MS = 200, SC_AUSPARK_ANLAUF_MS = 200, SC_AUSPARK_TEMPO = 0.30;
   // v1.1.15 BESTELLT: "beim Losfahren automatisch einen Links-Rechts-Impuls (damit es, falls es doch mal
   // neben der Bahn steht, wieder drauffahren kann)". Bei JEDEM Losfahren des Safety Cars, nach der
   // Ausparkfolge (neben der Strecke) bzw. gleich (Fahrbahn): 100 ms voll links, 100 ms voll rechts.
@@ -5889,8 +5887,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
   function scEinfahrtTempo() {
     const el = $('sc-einfahrt-tempo');
-    const v = el ? parseFloat(el.value) : 40;
-    return Number.isFinite(v) ? Math.max(SC_EINFAHRT_MIN, Math.min(1, v / 100)) : 0.4;
+    const v = el ? parseFloat(el.value) : 30;
+    return Number.isFinite(v) ? Math.max(SC_EINFAHRT_MIN, Math.min(1, v / 100)) : 0.3;
   }
   function scAusfahrtLinksMs() {
     const el = $('sc-ausfahrt-links-ms');
@@ -6035,6 +6033,39 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // v1.0.33: Dauer aus dem Regler "Einparken: Lenkimpuls" (einparkMs), Einschlag voll.
   const SC_RAD_LENK = 1.0;
   const SC_FAHRBAHN_QUER = 0.88, SC_FAHRBAHN_PULS_MS = 45;
+  // ---- PARKEN AUF DER FAHRBAHN (v1.1.21) ---------------------------------------------------
+  // BESTELLT: "Das Safety-Car-Einparken aus dem Bambi-PR ist voelliger Unsinn. Lass das Feature, dass ich
+  // sagen kann, neben welchem Teil es parken soll (experimentell), Standard Start/Ziel." Dazu: "es hat an
+  // der falschen Stelle geparkt", "lass den Rueckwaertsschub komplett weg", "Geschwindigkeit beim Raus-
+  // und Reinfahren geringer", "es faehrt von der Strecke ... soll mit ca. 30 % Tempo einlenken in die eine
+  // Richtung und dann in die andere und dann sofort stehen bleiben".
+  // Also: nach Gruen erst ueber Start/Ziel (Ort abgeglichen, scOrtSicher - sonst parkte es nach einem
+  // Neustart auf einer geschaetzten Kachel), dann mittig weiter bis auf das gewaehlte Teil (Vorgabe
+  // Start/Ziel). Dort mit dem Einparktempo voll rechts (Rechts-Impuls), voll links (Links-Impuls), sofort
+  // stehen, Raeder am Ende leicht zur Bahn. Kein Gegenschub, kein Weg neben die Strecke.
+  function scParkKachel() {
+    const n = currentTrackTiles ? currentTrackTiles.length : 0;
+    const w = n ? scTeilWahl(n) : null;
+    if (w !== null) return w;
+    const s = typeof ortStartIndices === 'function' ? ortStartIndices(currentTrackTiles || []) : [];
+    return s.length ? s[0] : 0;
+  }
+  function scParkTempo() { return scEinfahrtTempo(); }
+  function scParkTick(car) {
+    const g = car.ghost;
+    if (!g || !g.scHeim || g.randHalt || g.finish) return;
+    const n = currentTrackTiles ? currentTrackTiles.length : 0;
+    if (!n || g.tileIndex === null || g.tileIndex === undefined || !scOrtSicher(car)) return;
+    const k = scParkKachel();
+    if (((g.tileIndex % n) + n) % n !== k) return;
+    g.scHeim = false;
+    randHaltStarten(car, { phase: 'rad', quer: 0, tempo: scParkTempo(), radTempo: scParkTempo(), radLenk: SC_RAD_LENK,
+                           radMs: scAusfahrtMs(), gegenMs: scAusfahrtLinksMs(), endLenk: scEndLenk(),
+                           haltMs: SC_PARK_HALT_MS, sofort: true, nominal: true, fertig: safetyCarFertig });
+    log(garageLabel(car) + ': Safety Car parkt auf Kachel ' + k + ' (rechts ' + scAusfahrtMs() + ' ms, links '
+        + scAusfahrtLinksMs() + ' ms, ' + Math.round(scParkTempo() * 100) + ' %).', 'info');
+  }
+  const SC_PARK_HALT_MS = 800;
   function safetyCarFertig(c) {
     const gelbWartet = !!(c.ghost && c.ghost.scGelbNachParken);
     // Neben der Strecke: der letzte Befehl haelt die Raeder leicht links (sonst stuende es gerade).
@@ -6150,7 +6181,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       return;
     }
     // Mit gemerktem Startpunkt neben der Strecke parkt nicht Start/Ziel, sondern safetyCarHeimTick.
-    if ((g.scHeim || g.randHalt) && !scAusfahrt(sc)) safetyCarAbstellen(sc);
+    // v1.1.21: auf der Fahrbahn ebenfalls safetyCarHeimTick (scParkTick) - hier nur noch im alten Modus.
+    if (scNebenModus() && (g.scHeim || g.randHalt) && !scAusfahrt(sc)) safetyCarAbstellen(sc);
   }
   // v1.0.37 GEMELDET: "Das Safety Car hat scheinbar gebremst, um die Autos aufholen zu lassen,
   // dann wurde es gerammt. Falls das beabsichtigt ist, bitte Safety Car nicht anhalten."
@@ -6163,6 +6195,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function safetyCarHeimTick(car) {
     const g = car.ghost;
     if (!g) return;
+    // v1.1.21: ausser im alten (nicht mehr waehlbaren) Modus "Neben der Strecke" parkt es mit scParkTick.
+    if (!scNebenModus()) { scParkTick(car); return; }
     const n = currentTrackTiles ? currentTrackTiles.length : 0;
     const abstell = scAbstellKachel(car);             // wo das Abstellen beginnt (Start/Ziel, Startpunkt oder eine Kachel davor)
     if (g.randHalt && g.randHalt.scLinie) {
@@ -9922,7 +9956,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (car.role === 'safetycar' && flagState !== 'green' && !g.randHalt) target = Math.max(target, SC_MIN_TEMPO);
       // Heimweg nach Gruen (Safety Car neben der Strecke): Hoechsttempo einstellbar (scHeimTempo, Vorgabe 100 %).
       const scVorlaufRand = g.randHalt && g.randHalt.nominal && g.randHalt.phase === 'rand' && g.randHalt.tempoAb && g.scRest > g.randHalt.tempoAb;
-      if (car.role === 'safetycar' && ((g.scHeim && !g.randHalt) || scVorlaufRand) && scNebenModus()) target = Math.max(SC_EINFAHRT_MIN, Math.min(target, scHeimTempo()));
+      if (car.role === 'safetycar' && ((g.scHeim && !g.randHalt) || scVorlaufRand)) target = Math.max(SC_EINFAHRT_MIN, Math.min(target, scHeimTempo()));
       const pz = pitZiel(car);
       if (pz !== null) {
         // Anfahrt neben der Strecke: das Einfahrtstempo ist eine OBERGRENZE, und in Kurven gilt dieselbe
@@ -10100,7 +10134,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         const pqBox = pitQuer(car);
         const pqSc = pqBox === null ? scVorbeiQuer(car) : null;     // v1.0.32
         // v1.0.37: Anfahrt zum Startplatz mittig (Querlage 0), siehe aufstellenPruefen.
-        // v1.0.37: Anfahrt zum Startplatz mittig (Querlage 0); v1.1.19 wieder bis zum Platz (siehe aufstellFolge).
+        // v1.0.37: Anfahrt zum Startplatz mittig (Querlage 0); seit v1.1.19 bis zum Platz, dann der Impuls (aufstellenPruefen).
         const pqAuf = (g.aufstellZiel !== undefined && g.aufstellZiel !== null) ? 0 : null;
         const pqRw = rwQuer(car, now);                                  // Rueckweg mit Lenkung: zur Innenseite
         const pq = pqRw !== null ? pqRw : pqBox !== null ? pqBox : pqSc !== null ? pqSc : pqAuf !== null ? pqAuf : ghostPaarQuer(car);

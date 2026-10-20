@@ -2979,17 +2979,13 @@
       // ohne Spur-Bytes (spielerOrtTick), dann stehen. radLenk geht am Fahrzeugmodell vorbei
       // direkt aufs Lenkbyte (physicsStep).
       if (aufstellenSpielerAngekommen(meinAuto)) {
-        // v1.1.19: die Folge des Safety Cars (aufstellenSpielerEinlenken): waehrend der Impulse mit dem
-        // Einfahrtstempo, im Gegenschub voll bremsen, danach ausrollen, am Ende Tempo 0 mit den Raedern
-        // leicht zur Bahn.
+        // v1.1.21: Impuls hin und zurueck mit dem Einparktempo (aufstellenSpielerEinlenken), dann Tempo 0.
         const fo = typeof aufstellenSpielerEinlenken === 'function' ? aufstellenSpielerEinlenken(meinAuto) : null;
         if (fo && fo.gas === 'fahrt') {
           const vI = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
-          const gI = ghostSpeedControl(regler, typeof scEinfahrtTempo === 'function' ? scEinfahrtTempo() : 0.4, vI, 0.045);
+          const gI = ghostSpeedControl(regler, typeof einparkTempo === 'function' ? einparkTempo() : 0.3, vI, 0.045);
           return { grund: 'aufstellen', throttle: gI.throttle, brake: gI.brake, steer: 0, lenkt: false, radLenk: fo.lenk };
         }
-        if (fo && fo.gas === 'schub') return { grund: 'aufstellen', throttle: 0, brake: 1, steer: 0, lenkt: false, radLenk: fo.lenk };
-        if (fo && fo.gas === 'aus') return { grund: 'aufstellen', throttle: 0, brake: 0, steer: 0, lenkt: false, radLenk: fo.lenk };
         // v1.1.11 BESTELLT: nach dem Impuls DIREKT Tempo 0. Nur bremsen liess das simulierte Tempo (und
         // damit das Gasbyte) erst abklingen, und das Auto rollte weiter - das erste ueber die Ziellinie.
         st.speedKmh = 0;

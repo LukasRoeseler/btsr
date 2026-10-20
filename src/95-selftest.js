@@ -15017,9 +15017,9 @@
   stAdd('Aufstellung: Mittelgasse, versetzte Haltepunkte, Impuls mit Tempo und Dauer aus den Reglern', () => {
     const f = [];
     // Haltepunkt: rechts (P1, gerade) weiter vorn als links (P2, ungerade)
-    if (!(aufstellHaltBruch(0) > aufstellHaltBruch(1))) f.push('rechts nicht vor links');
-    if (aufstellAmPunkt(4.1, 4, 0) || !aufstellAmPunkt(4.6, 4, 0)) f.push('rechter Haltepunkt falsch');
-    if (!aufstellAmPunkt(4.2, 4, 1) || aufstellAmPunkt(3.9, 4, 1)) f.push('linker Haltepunkt falsch');
+    // v1.1.21: beide Seiten beginnen an der Kachelgrenze und stehen nebeneinander.
+    if (aufstellHaltBruch(0) !== 0 || aufstellHaltBruch(1) !== 0) f.push('Haltepunkte nicht an der Kachelgrenze');
+    if (!aufstellAmPunkt(4.0, 4, 0) || !aufstellAmPunkt(4.0, 4, 1) || aufstellAmPunkt(3.95, 4, 0)) f.push('Haltepunkt falsch');
     const msEl = $('race-einpark-ms'), tEl = $('race-einpark-tempo');
     const merk = [msEl && msEl.value, tEl && tEl.value];
     try {
@@ -15031,7 +15031,7 @@
       if (Math.abs(pitZiel(car) - 0.25) > 1e-9) f.push('Impulstempo nicht 25 %: ' + pitZiel(car));
       if (car.ghost.randHalt.radMs !== 60) f.push('Impulsdauer nicht 60 ms');
     } finally { if (msEl) msEl.value = merk[0]; if (tEl) tEl.value = merk[1]; }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'rechts bei 0,55, links bei 0,15 der Kachel; Impuls aus den Reglern' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'beide an der Kachelgrenze; Impuls aus den Reglern' };
   });
 
   // ---- v1.1.3: NPC-Fahrmodus "Realistisch" ----
@@ -18274,7 +18274,8 @@
     if (segs(ohne) !== segs(editorAus)) f.push('Vorgabe zeigt die Linie');
     const n = 10;
     const ziele = [0, 1, 2, 3, 4, 5].map((k) => aufstellZielKachel(k, n));
-    if (ziele.join(',') !== '9,9,8,8,7,7') f.push('Startkacheln ' + ziele.join(','));
+    // v1.1.21: Reihe 1 AUF Start/Ziel (Kachel 0), jede weitere eine Kachel dahinter.
+    if (ziele.join(',') !== '0,0,9,9,8,8') f.push('Startkacheln ' + ziele.join(','));
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Linie nur mit mitLinie, Plaetze 1/2 vor Start/Ziel, je Reihe eine Kachel zurueck' };
   });
 
@@ -18297,21 +18298,21 @@
       // v1.1.19: die Folge des Safety Cars - Rechts-Impuls zur Seite, Links-Impuls zurueck, Gegenschub und
       // Ausrollen, dann stehen mit den Raedern leicht zur Bahn (Werte aus Optionen > Safety Car).
       const reglerEP = $('race-einpark-staerke'), reglerEPMerk = reglerEP ? reglerEP.value : null; if (reglerEP) reglerEP.value = '1';
-      const fo = aufstellFolge(1, 1);
+      // v1.1.21: einparkMs() zur Seite, einparkMs() zurueck (mit einparkTempo), dann stehen.
+      const msI = einparkMs();
       aA.fertigAt = Date.now() - 1;
       const ein = autopilot(0, 1);
       if (ein && !(ein.throttle > 0)) f.push('faehrt beim Impuls nicht');
-      aA.fertigAt = Date.now() - fo.radMs - 1;
+      aA.fertigAt = Date.now() - msI - 1;
       const zur = autopilot(0, 1);
-      aA.fertigAt = Date.now() - fo.radMs - fo.gegenMs - fo.bremsMs - 1;
+      aA.fertigAt = Date.now() - 2 * msI - 1;
       if (reglerEP) reglerEP.value = reglerEPMerk;
       if (!ein || !(Math.abs(ein.radLenk) > 0) || !zur || Math.sign(zur.radLenk) !== -Math.sign(ein.radLenk)) {
         f.push('kein Einlenk-Takt mit Gegenlenken: ' + (ein && ein.radLenk) + '/' + (zur && zur.radLenk));
       }
       if (!aufstellenSpielerOhneSpur(auto)) f.push('nach dem Ankommen weiter mit Spur-Bytes');
       const h = autopilot(0, 1);
-      // Am Ende stehen die Raeder wie beim Safety Car leicht zur Bahn (Gegenrichtung zum Impuls).
-      if (h && ein && !(Math.sign(h.radLenk) === -Math.sign(ein.radLenk) && Math.abs(Math.abs(h.radLenk) - scEndLenk()) < 1e-9)) f.push('Raeder am Ende nicht wie beim Safety Car: ' + h.radLenk);
+      if (h && h.radLenk !== 0) f.push('steht mit eingeschlagenen Raedern: ' + h.radLenk);
       if (!h || h.throttle !== 0 || h.brake !== 1) f.push('am Startplatz nicht gehalten');
       aufstellenStoppen(false);
       const frei = autopilot(0, 1);
@@ -19468,44 +19469,56 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'dicht dahinter Boden, mit Abstand voll, ueber die Linie gewickelt' };
   });
 
-  stAdd('Safety Car v1.0.28: zieht vor Start/Ziel nach rechts und haelt an der Linie', () => {
+  stAdd('Safety Car v1.1.21: parkt erst nach Start/Ziel, mittig auf seinem Teil, Impulse ohne Gegenschub', () => {
     const f = [];
-    const merk = { tiles: currentTrackTiles, garage: garage.slice() };
-    const sc = { device: { id: 'sc28' }, role: 'safetycar', tag: 'SC', rx: {}, testSenke: [], ghost: { running: true, scHeim: true, ortSicher: true, scHeimKacheln: 999, tileIndex: 1 } };
+    const merk = { tiles: currentTrackTiles, garage: garage.slice(), teil: $('sc-ausfahrt-teil') ? $('sc-ausfahrt-teil').value : null,
+                   park: $('sc-parkplatz') ? $('sc-parkplatz').value : null };
+    const sc = { device: { id: 'sc121' }, role: 'safetycar', tag: 'SC', rx: {}, testSenke: [], ghost: { running: true, scHeim: true, ortSicher: false, tileIndex: 0 } };
     try {
       currentTrackTiles = codeToTrack('SG4R4G4').tiles;
       const n = currentTrackTiles.length;
       garage.length = 0; garage.push(sc);
+      if ($('sc-parkplatz')) $('sc-parkplatz').value = 'fahrbahn';
+      if ($('sc-ausfahrt-teil')) { scTeilAuswahlFuellen(); $('sc-ausfahrt-teil').value = 'start'; }
       safetyCarHeimTick(sc);
-      if (sc.ghost.randHalt) f.push('weit vor der Linie schon am Rand');
-      sc.ghost.tileIndex = n - 1;
-      const reglerEP = $('race-einpark-staerke'), reglerEPMerk = reglerEP ? reglerEP.value : null; if (reglerEP) reglerEP.value = '1';
+      if (sc.ghost.randHalt) f.push('parkt ohne Abgleich an Start/Ziel');
+      sc.ghost.ortSicher = true; sc.ghost.tileIndex = n - 1;
       safetyCarHeimTick(sc);
-      if (reglerEP) reglerEP.value = reglerEPMerk;
+      if (sc.ghost.randHalt) f.push('parkt vor seinem Teil');
+      sc.ghost.tileIndex = 0;
+      safetyCarHeimTick(sc);
       const h = sc.ghost.randHalt;
-      if (!h || h.phase !== 'rand' || !h.scLinie) f.push('vor der Linie nicht nach rechts');
+      if (!h || h.phase !== 'rad' || h.quer !== 0) f.push('parkt nicht mittig auf Start/Ziel: ' + JSON.stringify(h && { p: h.phase, q: h.quer }));
       else {
-        // v1.1.15: auf der Fahrbahn minimal weniger weit an den Rand (SC_FAHRBAHN_QUER).
-        if (pitQuer(sc) !== SC_FAHRBAHN_QUER) f.push('nicht am Rand: ' + pitQuer(sc));
-        sc.ghost.tileIndex = 0;
-        safetyCarHeimTick(sc);
-        if (h.phase !== 'rad') f.push('an der Linie nicht eingelenkt (' + h.phase + ')');
-        // v1.0.32: andere Autos fahren an ihm links vorbei (Kachel davor, Start/Ziel, danach).
-        const npc = { device: { id: 'v1' }, role: 'ghost', ghost: { running: true, tileIndex: 0 } };
-        if (scVorbeiQuer(npc) !== SC_VORBEI_QUER || !(SC_VORBEI_QUER < 0)) f.push('auf Start/Ziel nicht links vorbei');
-        npc.ghost.tileIndex = 1;
-        if (scVorbeiQuer(npc) === null) f.push('auf der Folgeschiene nicht links');
-        npc.ghost.tileIndex = 4;
-        if (scVorbeiQuer(npc) !== null) f.push('mitten auf der Strecke links gezwungen');
-        // v1.0.35: auf dem Weg zum Startplatz nicht (die erste Reihe steht vor Start/Ziel).
-        npc.ghost.tileIndex = 0; npc.ghost.aufstellZiel = 12;
-        if (scVorbeiQuer(npc) !== null) f.push('auf dem Weg zum Startplatz links gezwungen');
+        if (h.radLenk !== SC_RAD_LENK || h.radMs !== scAusfahrtMs() || h.gegenMs !== scAusfahrtLinksMs()) f.push('Impulse nicht aus den Reglern');
+        if (h.gegenschubMs || h.gegenschubRadMs) f.push('Gegenschub noch aktiv');
+        if (Math.abs(h.radTempo - scParkTempo()) > 1e-9 || scParkTempo() > 0.3 + 1e-9) f.push('Einparktempo ' + h.radTempo);
+        if (!h.sofort) f.push('bleibt nicht sofort stehen');
       }
+      // Gewaehltes Teil: Kachel 3.
+      stopGhost(sc); sc.ghost = { running: true, scHeim: true, ortSicher: true, tileIndex: 0 };
+      if ($('sc-ausfahrt-teil')) $('sc-ausfahrt-teil').value = '3/' + n;
+      safetyCarHeimTick(sc);
+      if (sc.ghost.randHalt) f.push('parkt auf Start/Ziel trotz gewaehltem Teil 3');
+      sc.ghost.tileIndex = 3; safetyCarHeimTick(sc);
+      if (!sc.ghost.randHalt) f.push('parkt nicht auf dem gewaehlten Teil');
+      // Andere Autos fahren an ihm links vorbei (Start/Ziel, Folgeschiene), nicht mitten auf der Strecke.
+      sc.ghost = { running: true, randHalt: { scLinie: true } };
+      const npc = { device: { id: 'v1' }, role: 'ghost', ghost: { running: true, tileIndex: 0 } };
+      if (scVorbeiQuer(npc) !== SC_VORBEI_QUER || !(SC_VORBEI_QUER < 0)) f.push('auf Start/Ziel nicht links vorbei');
+      npc.ghost.tileIndex = 4;
+      if (scVorbeiQuer(npc) !== null) f.push('mitten auf der Strecke links gezwungen');
+      // "Neben der Strecke" ist nicht mehr waehlbar.
+      const opt = $('sc-parkplatz') ? [...$('sc-parkplatz').options].find((o) => o.value === 'neben') : null;
+      if (opt && !opt.hidden) f.push('"Neben der Strecke" noch waehlbar');
     } finally {
+      if (sc.ghost) { sc.ghost.randHalt = null; sc.ghost.running = false; }
       currentTrackTiles = merk.tiles;
       garage.length = 0; merk.garage.forEach((c) => garage.push(c));
+      if ($('sc-ausfahrt-teil') && merk.teil !== null) $('sc-ausfahrt-teil').value = merk.teil;
+      if ($('sc-parkplatz') && merk.park !== null) $('sc-parkplatz').value = merk.park;
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'rechts ab ' + SC_RAND_KACHELN + ' Kacheln vor der Linie, an der Linie Raeder rechts, dann halten' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'erst nach Abgleich, mittig, Rechts ' + scAusfahrtMs() + ' / Links ' + scAusfahrtLinksMs() + ' ms bei ' + Math.round(scParkTempo() * 100) + ' %, sofort stehen' };
   });
 
   stAdd('Telemetrie v1.0.28: alle Runden der Fahrt waehlbar, A und B nicht dieselbe Runde', () => {
@@ -19782,7 +19795,9 @@
       if (!sc.ghost.scErsteRunde) f.push('Einfuehrungsrunde beendet die Startrunde');
       safetyCarLinie(sc);                       // erste Ueberfahrt: nur Startphase vorbei
       if (sc.ghost.scErsteRunde || !sc.ghost.scHeim || sc.ghost.randHalt) f.push('nach der ersten Ueberfahrt nicht auf dem Heimweg');
-      safetyCarLinie(sc);                       // zweite Ueberfahrt (ohne Ort): abstellen
+      // v1.1.21: geparkt wird ueber safetyCarHeimTick, sobald der Ort an Start/Ziel abgeglichen ist.
+      sc.ghost.ortSicher = true; sc.ghost.tileIndex = 0;
+      safetyCarHeimTick(sc);
       if (!sc.ghost.randHalt) f.push('nach der ersten Runde nicht abgestellt');
       if (!(SC_MIN_TEMPO >= 0.3)) f.push('Mindesttempo ' + SC_MIN_TEMPO);
     } finally {
@@ -19985,7 +20000,7 @@
       }
       sg.value = merk.links; sgr.value = merk.gr;
       // Anfahrt: Fenster und Tempo kommen aus den Reglern; die Fahrbahn bleibt bei zwei Kacheln und Formationstempo.
-      if (+si.defaultValue !== 3 || +st.defaultValue !== 40) f.push('Vorgabe Anfahrt/Einfahrtstempo nicht 3 / 40: ' + si.defaultValue + ' / ' + st.defaultValue);
+      if (+si.defaultValue !== 3 || +st.defaultValue !== 30) f.push('Vorgabe Anfahrt/Einfahrtstempo nicht 3 / 30: ' + si.defaultValue + ' / ' + st.defaultValue);
       si.value = '4'; st.value = '60';
       sc.ghost = { running: true, scHeim: true, ortSicher: true, scHeimKacheln: 999, tileIndex: (abstell - 5 + n) % n, laps: 0 };
       safetyCarHeimTick(sc);
@@ -19997,13 +20012,11 @@
       st.value = '10';                                   // der Regler geht nicht unter die Leseschwelle
       if (scEinfahrtTempo() < SC_EINFAHRT_MIN - 1e-9) f.push('Einfahrtstempo unter der Untergrenze: ' + scEinfahrtTempo());
       si.value = merk.einK; st.value = merk.einT;
+      // v1.1.21: auf der Fahrbahn keine Anfahrt mehr - es parkt erst AUF seinem Teil (eigener Test).
       sel.value = 'fahrbahn';
-      sc.ghost = { running: true, scHeim: true, ortSicher: true, scHeimKacheln: 999, tileIndex: (0 - 3 + n) % n, laps: 0 };
+      sc.ghost = { running: true, scHeim: true, ortSicher: true, scHeimKacheln: 999, tileIndex: (0 - 2 + n) % n, laps: 0 };
       safetyCarHeimTick(sc);
-      if (sc.ghost.randHalt) f.push('Fahrbahn: Anfahrt beginnt schon drei Kacheln vorher');
-      sc.ghost.tileIndex = (0 - 2 + n) % n;
-      safetyCarHeimTick(sc);
-      if (!sc.ghost.randHalt || sc.ghost.randHalt.tempo !== formationPace()) f.push('Fahrbahn: Tempo nicht das Formationstempo');
+      if (sc.ghost.randHalt) f.push('Fahrbahn: parkt schon vor seinem Teil');
       sel.value = 'neben';
       // Viertelkacheln: -3,5 heisst Kachel Startpunkt-4 plus eine halbe; die Ausfahrt kommt, wenn die Phase die Haelfte erreicht.
       const ortMerk = ghostOrt;
@@ -20050,12 +20063,12 @@
       if (scVorbeiQuer(fremd(ziel)) !== null) f.push('links vorbei am Startpunkt, obwohl es die Bahn verlaesst');
       sc.ghost = null;
       if (scVorbeiQuer(fremd(0)) !== null) f.push('links vorbei, obwohl es neben der Strecke wartet');
-      // 7. Fahrbahn: alles wie bisher - Ueberfahrt parkt mit kurzem Impuls, links vorbei an Start/Ziel.
+      // 7. Fahrbahn (v1.1.21): parkt auf Start/Ziel mit Rechts-/Links-Impuls, ohne Gegenschub; links vorbei.
       sel.value = 'fahrbahn';
       sc.ghost = { running: true, scHeim: true, ortSicher: true, scHeimKacheln: 999, tileIndex: 0, laps: 0 };
-      safetyCarLinie(sc);
+      safetyCarHeimTick(sc);
       if (!sc.ghost.randHalt) f.push('Fahrbahn: parkt nicht mehr an Start/Ziel');
-      else if (sc.ghost.randHalt.radMs !== einparkMs() || sc.ghost.randHalt.gegenMs !== einparkMs()) f.push('Fahrbahn: anderer Lenkimpuls');
+      else if (sc.ghost.randHalt.radMs !== scAusfahrtMs() || sc.ghost.randHalt.gegenMs !== scAusfahrtLinksMs() || sc.ghost.randHalt.gegenschubMs) f.push('Fahrbahn: anderer Lenkimpuls oder Gegenschub');
       sc.ghost = { running: true, randHalt: { scLinie: true } };
       if (scVorbeiQuer(fremd(0)) !== SC_VORBEI_QUER) f.push('Fahrbahn: nicht links vorbei an Start/Ziel');
     } finally {
@@ -20100,7 +20113,7 @@
       if (!sc.ghost || !sc.ghost.running) f.push('wartet: faehrt bei Gelb nicht los');
       else if (sc.ghost.scBoxK !== undefined) f.push('wartet: zaehlt Kacheln wie neben der Strecke');
       sc.ghost = { running: true, scHeim: true, ortSicher: true, scHeimKacheln: 999, tileIndex: 0, laps: 0 };
-      safetyCarLinie(sc);
+      safetyCarHeimTick(sc);
       if (!sc.ghost.randHalt) f.push('wartet: parkt nicht an Start/Ziel');
       if (scAusfahrt(sc) || scZielKachel(sc) !== 0) f.push('wartet: Startpunkt oder Ausfahrt aktiv');
     } finally {
@@ -20140,11 +20153,7 @@
       currentTrackTiles = Array.from({ length: 6 }, () => ({ type: TILE_TYPE.STRAIGHT }));   // keine Start/Ziel-Kachel
       if (!scOrtSicher({ ghost: { ortSicher: false } })) f.push('ohne Start/Ziel-Kachel gilt der Ort nicht als sicher');
       currentTrackTiles = alt;
-      // Fahrbahn: unveraendert (bis zu 2 Kacheln vorher, ohne Abgleich).
-      sel.value = 'fahrbahn';
-      const rF = (() => { sc.ghost = { running: true, scHeim: true, scHeimKacheln: 0, tileIndex: (n - 1) % n, laps: 0 }; safetyCarHeimTick(sc); return sc.ghost.randHalt; })();
-      if (!rF) f.push('Fahrbahn: Anfahrt beginnt nicht mehr bei 1 Kachel vor Start/Ziel');
-      sel.value = 'neben';
+      // (v1.1.21: die Fahrbahn hat keine Anfahrt mehr - eigener Test "Safety Car v1.1.21".)
       // Impulszeiten: ein verspaetet bemerktes Ende verschiebt die naechste Phase nicht (nominale Zeiten).
       const jetzt = Date.now();
       const h = von(3);
@@ -20153,9 +20162,6 @@
       if (h.phase !== 'gegen') f.push('Rechts-Impuls endet nicht');
       else if (Math.abs(h.at - (jetzt - 30)) > 25) f.push('Links-Impuls beginnt nicht zum Sollzeitpunkt, sondern ' + (jetzt - h.at) + ' ms nach Ende-Soll');
       if (Math.abs(h.radEnde - (jetzt - 30)) > 25) f.push('Ende des Rechts-Impulses nicht nominal');
-      // Fahrbahn bleibt beim alten Verhalten (Takt des Bemerkens).
-      const hF = (() => { sel.value = 'fahrbahn'; sc.ghost = { running: true, scHeim: true, scHeimKacheln: 0, tileIndex: (n - 1) % n, laps: 0 }; safetyCarHeimTick(sc); return sc.ghost.randHalt; })();
-      if (hF) { hF.phase = 'rad'; hF.at = jetzt - hF.radMs - 30; randHaltTick(sc); if (hF.phase !== 'gegen' || Math.abs(hF.at - jetzt) > 25) f.push('Fahrbahn: Phasenzeit veraendert'); }
     } finally {
       currentTrackTiles = merk.tiles; trackMode = merk.tm;
       if (sel && merk.w !== null) sel.value = merk.w; if (sk && merk.k !== null) sk.value = merk.k; if (si && merk.i !== null) si.value = merk.i;
@@ -20188,10 +20194,10 @@
       info.push('Heimweg: Ziel ' + frei.toFixed(2) + ' (100 %) -> ' + begrenzt.toFixed(2) + ' (40 %)');
       if (!(frei > 0.45)) f.push('ohne Heimtempo kein normales Tempo mehr: ' + frei);
       if (begrenzt > 0.40 + 1e-9 || begrenzt < SC_MIN_TEMPO - 1e-9) f.push('Heimtempo 40 % nicht eingehalten: ' + begrenzt);
-      // Fahrbahn: das Heimtempo gilt dort nicht.
+      // v1.1.21: das Heimtempo gilt jetzt auch auf der Fahrbahn.
       sel.value = 'fahrbahn'; sh.value = '40';
       const fahrbahn = ziel(); info.push('Fahrbahn: Ziel ' + fahrbahn.toFixed(2));
-      if (!(fahrbahn > 0.45)) f.push('Heimtempo wirkt auf der Fahrbahn: ' + fahrbahn);
+      if (fahrbahn > 0.40 + 1e-9) f.push('Heimtempo wirkt nicht auf der Fahrbahn: ' + fahrbahn);
       sel.value = 'neben'; sh.value = '100';
       // Anfahrt: Einfahrtstempo ist die Obergrenze.
       g.scHeim = false;
@@ -20333,12 +20339,6 @@
       g = von(3); g.tileIndex = abstell; g.scVorLinie = true; safetyCarHeimTick(sc);
       if (!g.randHalt || g.randHalt.phase !== 'rad') f.push('an der Ausfahrtkachel nicht sofort der Rechts-Impuls: ' + (g.randHalt && g.randHalt.phase));
       stopGhost(sc);
-      // 4. Fahrbahn: unveraendert, ohne Vorlauf.
-      sel.value = 'fahrbahn'; sv.value = '2';
-      sc.ghost = { running: true, scHeim: true, scHeimKacheln: 0, tileIndex: (n - 1) % n, laps: 0 }; safetyCarHeimTick(sc);
-      const rf = sc.ghost.randHalt;
-      if (!rf) f.push('Fahrbahn: Randfahrt beginnt nicht');
-      else if (rf.tempoAb !== 0) f.push('Fahrbahn: der Vorlauf wirkt');
     } finally {
       if (sc.ghost) stopGhost(sc);
       currentTrackTiles = merk.tiles; trackMode = merk.tm; flagState = merk.fl;
@@ -20436,7 +20436,7 @@
       if (!($('race-einpark-staerke') && $('race-einpark-staerke').defaultValue === '1')) f.push('Einlenkstaerke nicht ab Werk 100 %');
       // v1.1.15: wie das Safety Car, 100 ms bei 40 %.
       if (!($('race-einpark-ms') && $('race-einpark-ms').defaultValue === '100')) f.push('Impulsdauer nicht ab Werk 100 ms');
-      if (!($('race-einpark-tempo') && $('race-einpark-tempo').defaultValue === '0.4')) f.push('Impulstempo nicht ab Werk 40 %');
+      if (!($('race-einpark-tempo') && $('race-einpark-tempo').defaultValue === '0.3')) f.push('Impulstempo nicht ab Werk 30 %');
     } finally {
       flagState = merk.fl; trackMode = merk.tm; topSpeedScale = merk.top; physEngine.state.speedKmh = merk.v;
       physEngine.state.virtualSpeed = merk.vv; physicsEnabled = merk.phys; playerCar = merk.pc; raceFormationLap = merk.form;
