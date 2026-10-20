@@ -4798,7 +4798,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.16</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.17</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5951,6 +5951,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Automatische Aufstellung: Die Autos fahren jetzt wie das Safety Car erst an den Rand (ab der zweiten H&#228;lfte der Kachel vor ihrem Platz, fast so weit wie das Safety Car) und lenken dann den Impuls &#8211; vorher kamen sie aus der Mitte und standen nicht weit genug au&#223;en. Gehalten wird nur, wenn der gerade gelesene Code zur Zielkachel passt; sonst f&#228;hrt das Auto weiter und gleicht an Start/Ziel neu ab, statt mitten auf der Strecke zu parken (passiert, wenn Funkpakete verloren gehen).</li>
         <li>Automatische Aufstellung: Lenkimpuls wie beim Safety Car (100 ms bei 40 % Tempo statt 45 ms bei 30 %); weil die Autos aus der Mittelgasse kommen, stehen sie damit weiter innen als das Safety Car. Der rechte Haltepunkt r&#252;ckt daf&#252;r noch etwas vor. Beide Regler stehen auf den neuen Werten (auch wenn vorher anders eingestellt).</li>
         <li>Streckenscan etwas schneller: gerade 23,5 % statt 21 %, Haarnadel 16,5 % statt 14 % der H&#246;chstgeschwindigkeit &#8211; in der Haarnadel war das Auto gerade an der Grenze, an der es Balken und Querlage noch liest.</li>
         <li>Safety Car: alle Einstellungen in einem eigenen Men&#252; (neue Kachel &#8222;Safety Car&#8220; in den Optionen) statt verteilt auf NPCs und Renneinstellungen. Neue Vorgaben aus dem Test: Anfahrt 3, Rechts-Impuls 90 ms (minimal n&#228;her an der Fahrbahn), Gegenschub nach rechts 100 ms, Links-Impuls 100 ms, Einpark-Teil Start/Ziel. Auf der Fahrbahn parkt es etwas weniger weit am Rand. Beim Losfahren macht es jetzt immer einen kurzen Links-Rechts-Impuls (falls es am Rand ein St&#252;ck daneben steht). Kommt Gelb, w&#228;hrend es schon einparkt, parkt es zu Ende und f&#228;hrt dann neu los &#8211; vorher fuhr es dann schr&#228;g von der Bahn.</li>
@@ -14594,6 +14595,7 @@
     "Safety Car: alle Einstellungen in einem eigenen Menü (neue Kachel „Safety Car“ in den Optionen) statt verteilt auf NPCs und Renneinstellungen. Neue Vorgaben aus dem Test: Anfahrt 3, Rechts-Impuls 90 ms (minimal näher an der Fahrbahn), Gegenschub nach rechts 100 ms, Links-Impuls 100 ms, Einpark-Teil Start/Ziel. Auf der Fahrbahn parkt es etwas weniger weit am Rand. Beim Losfahren macht es jetzt immer einen kurzen Links-Rechts-Impuls (falls es am Rand ein Stück daneben steht). Kommt Gelb, während es schon einparkt, parkt es zu Ende und fährt dann neu los – vorher fuhr es dann schräg von der Bahn.": "Safety car: all settings in their own menu (new \"Safety Car\" tile in the options) instead of spread over NPCs and race settings. New defaults from the test: approach 3, right pulse 90 ms (minimally closer to the track), counter-thrust after right 100 ms, left pulse 100 ms, parking part start/finish. On the track it parks slightly less far to the edge. When pulling away it now always makes a short left-right pulse (in case it stands a bit off at the edge). If yellow comes while it is already parking, it finishes parking and then starts again – before, it then drove off the track at an angle.",
     "Streckenscan etwas schneller: gerade 23,5 % statt 21 %, Haarnadel 16,5 % statt 14 % der Höchstgeschwindigkeit – in der Haarnadel war das Auto gerade an der Grenze, an der es Balken und Querlage noch liest.": "Track scan slightly faster: straights 23.5 % instead of 21 %, hairpin 16.5 % instead of 14 % of top speed – in the hairpin the car was right at the limit where it still reads bars and lateral position.",
     "Automatische Aufstellung: Lenkimpuls wie beim Safety Car (100 ms bei 40 % Tempo statt 45 ms bei 30 %); weil die Autos aus der Mittelgasse kommen, stehen sie damit weiter innen als das Safety Car. Der rechte Haltepunkt rückt dafür noch etwas vor. Beide Regler stehen auf den neuen Werten (auch wenn vorher anders eingestellt).": "Automatic line-up: steering pulse like the safety car (100 ms at 40 % speed instead of 45 ms at 30 %); since the cars come from the centre lane, they end up further inside than the safety car. The right halt point moves a bit forward to match. Both sliders are on the new values (even if set differently before).",
+    "Automatische Aufstellung: Die Autos fahren jetzt wie das Safety Car erst an den Rand (ab der zweiten Hälfte der Kachel vor ihrem Platz, fast so weit wie das Safety Car) und lenken dann den Impuls – vorher kamen sie aus der Mitte und standen nicht weit genug außen. Gehalten wird nur, wenn der gerade gelesene Code zur Zielkachel passt; sonst fährt das Auto weiter und gleicht an Start/Ziel neu ab, statt mitten auf der Strecke zu parken (passiert, wenn Funkpakete verloren gehen).": "Automatic line-up: like the safety car, the cars now first move to the edge (from the second half of the tile before their spot, almost as far as the safety car) and then do the steering pulse – before, they came from the centre and did not stand far enough out. They only stop if the code just read matches the target tile; otherwise the car keeps going and re-syncs at start/finish instead of parking in the middle of the track (happens when radio packets get lost).",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -25315,9 +25317,10 @@
       // v1.0.37 BESTELLT: "Die Autos sollen fuer die automatische Aufstellung mittig fahren und
       // erst kurz vor ihrer Zielposition in die jeweilige Richtung einlenken und dann
       // zuruecklenken." Anfahrt also mit Querlage 0.
-      const lenk = 0;
-      // v1.0.31: gestaffelter Start der Aufstellung - bis zu seinem Zeitpunkt steht das Auto.
+      // v1.1.17: kurz vor und auf dem eigenen Platz an den Rand wie die NPCs (aufstellRandQuer).
       const aA = aufstellenSpielerZiel(meinAuto);
+      const lenk = aA && typeof aufstellRandQuer === 'function' ? aufstellRandQuer(meinAuto, aA.ziel, gridPosOf(meinAuto), aA) : 0;
+      // v1.0.31: gestaffelter Start der Aufstellung - bis zu seinem Zeitpunkt steht das Auto.
       if (aA && aA.ab && Date.now() < aA.ab) {
         return { grund: 'aufstellen', throttle: 0, brake: fahrerBremse > 0.05 ? fahrerBremse : 1, steer: 0, lenkt: false };
       }
@@ -52657,6 +52660,38 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     return !!halter.startGesehen;
   }
+  // ---- AN DEN RAND, WIE DAS SAFETY CAR (v1.1.17) -------------------------------------------
+  // GEMELDET: "Bei der Startaufstellung parken die Autos noch nicht weit genug am Rand, mach es fast so
+  // wie bei den Safety-Car-Werten." Das Safety Car faehrt erst an den Rand und lenkt DANN den Impuls;
+  // die Aufstellung fuhr bis zum Haltepunkt mittig. Jetzt: ab AUFSTELL_RAND_AB der Kachel vor dem
+  // eigenen Platz und auf dem Platz selbst zur eigenen Seite (AUFSTELL_RAND_QUER, knapp unter dem
+  // Safety Car mit 0,88/1,0), danach der Impuls. Vorher bleibt die Mittelgasse (an geparkten Autos
+  // vorbei). Nur mit gesehenem Start/Ziel - sonst stimmt die Kachel nicht.
+  const AUFSTELL_RAND_QUER = 0.85, AUFSTELL_RAND_AB = 0.6;
+  function aufstellRandQuer(car, ziel, platz, halter) {
+    const n = currentTrackTiles ? currentTrackTiles.length : 0;
+    if (!n || ziel === null || ziel === undefined || !halter || !aufstellStartPruefen(halter, car)) return 0;
+    const o = car && car.ghost ? ghostOrt(car) : null;
+    if (o === null || o === undefined) return 0;
+    const k = ((Math.floor(o) % n) + n) % n, ph = o - Math.floor(o);
+    const vor = ((ziel - 1) % n + n) % n;
+    if (k !== ziel && !(k === vor && ph >= AUFSTELL_RAND_AB)) return 0;
+    return (platz >= 0 && platz % 2 ? -1 : 1) * AUFSTELL_RAND_QUER;
+  }
+  // GEMELDET (v1.1.17): "Sie parken mitten auf der Strecke und nicht auf den Elementen auf/vor
+  // Start/Ziel." Der Ort ist gezaehlt; fehlen Pakete (Funkaussetzer), verrutscht die Zaehlung, und das
+  // Auto hielt auf einer beliebigen Kachel. Jetzt haelt es nur, wenn der gerade GELESENE Code zur
+  // Zielkachel passt (gleiche Abbildung wie die virtuelle Fahrt, vfCode); sonst faehrt es weiter und
+  // gleicht an Start/Ziel neu ab. Ohne lesbaren Code (0x00/0xff) entscheidet die Zaehlung wie bisher.
+  function aufstellCodePasst(car, ziel) {
+    const tiles = currentTrackTiles || [];
+    const c = car ? car.tileCode : null;
+    if (!tiles[ziel] || c === null || c === undefined || c === 0x00 || c === 0xff || c === TILE_OFFTRACK) return true;
+    if (typeof vfCode !== 'function') return true;
+    const soll = vfCode(tiles[ziel].type);
+    if (typeof isStartCode === 'function' && isStartCode(soll)) return isStartCode(c);
+    return c === soll;
+  }
   function aufstellRest(car, ziel) {
     const n = currentTrackTiles ? currentTrackTiles.length : 0;
     const o = car && car.ghost ? ghostOrt(car) : null;
@@ -52686,7 +52721,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (a.fertig) return true;
     if (!aufstellStartPruefen(a, car)) return false;
     const o = car.ghost ? ghostOrt(car) : null;
-    if (aufstellAmPunkt(o, a.ziel, gridPosOf(car)) && Date.now() - a.seit > 1200) {
+    if (aufstellAmPunkt(o, a.ziel, gridPosOf(car)) && Date.now() - a.seit > 1200 && aufstellCodePasst(car, a.ziel)) {
       a.fertig = true;
       a.fertigAt = Date.now();
       log(garageLabel(car) + ': steht auf seinem Startplatz.', 'info');
@@ -52794,6 +52829,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const o = ghostOrt(car);
     const platz = g.aufstellPlatz !== undefined ? g.aufstellPlatz : gridPosOf(car);
     if (!aufstellAmPunkt(o, g.aufstellZiel, platz) || Date.now() - (g.aufstellSeit || 0) < 1200) return false;
+    if (!aufstellCodePasst(car, g.aufstellZiel)) {
+      if (!g.aufstellCodeGemeldet) { g.aufstellCodeGemeldet = true; log(garageLabel(car) + ': Aufstellung: gelesener Code passt nicht zur Zielkachel - faehrt weiter und gleicht an Start/Ziel ab.', 'info'); }
+      g.startGesehen = false;            // erst an Start/Ziel neu abgleichen
+      return false;
+    }
     const seite = platz >= 0 && platz % 2 ? -1 : 1;     // wie formationOffset
     // v1.0.37 GEMELDET: "Bei automatischer Aufstellung parkt das erste Auto nicht vor der
     // Startgeraden, sondern dahinter" und BESTELLT: "Die Autos sollen fuer die automatische
@@ -60132,7 +60172,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         const pqBox = pitQuer(car);
         const pqSc = pqBox === null ? scVorbeiQuer(car) : null;     // v1.0.32
         // v1.0.37: Anfahrt zum Startplatz mittig (Querlage 0), siehe aufstellenPruefen.
-        const pqAuf = (g.aufstellZiel !== undefined && g.aufstellZiel !== null) ? 0 : null;
+        // v1.1.17: kurz vor und auf dem eigenen Platz an den Rand (aufstellRandQuer), sonst mittig.
+        const pqAuf = (g.aufstellZiel !== undefined && g.aufstellZiel !== null)
+          ? aufstellRandQuer(car, g.aufstellZiel, g.aufstellPlatz !== undefined ? g.aufstellPlatz : gridPosOf(car), g) : null;
         const pqRw = rwQuer(car, now);                                  // Rueckweg mit Lenkung: zur Innenseite
         const pq = pqRw !== null ? pqRw : pqBox !== null ? pqBox : pqSc !== null ? pqSc : pqAuf !== null ? pqAuf : ghostPaarQuer(car);
         // ====================================================================================

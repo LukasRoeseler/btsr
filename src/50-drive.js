@@ -2963,9 +2963,10 @@
       // v1.0.37 BESTELLT: "Die Autos sollen fuer die automatische Aufstellung mittig fahren und
       // erst kurz vor ihrer Zielposition in die jeweilige Richtung einlenken und dann
       // zuruecklenken." Anfahrt also mit Querlage 0.
-      const lenk = 0;
-      // v1.0.31: gestaffelter Start der Aufstellung - bis zu seinem Zeitpunkt steht das Auto.
+      // v1.1.17: kurz vor und auf dem eigenen Platz an den Rand wie die NPCs (aufstellRandQuer).
       const aA = aufstellenSpielerZiel(meinAuto);
+      const lenk = aA && typeof aufstellRandQuer === 'function' ? aufstellRandQuer(meinAuto, aA.ziel, gridPosOf(meinAuto), aA) : 0;
+      // v1.0.31: gestaffelter Start der Aufstellung - bis zu seinem Zeitpunkt steht das Auto.
       if (aA && aA.ab && Date.now() < aA.ab) {
         return { grund: 'aufstellen', throttle: 0, brake: fahrerBremse > 0.05 ? fahrerBremse : 1, steer: 0, lenkt: false };
       }

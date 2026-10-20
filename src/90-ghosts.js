@@ -2579,6 +2579,38 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     return !!halter.startGesehen;
   }
+  // ---- AN DEN RAND, WIE DAS SAFETY CAR (v1.1.17) -------------------------------------------
+  // GEMELDET: "Bei der Startaufstellung parken die Autos noch nicht weit genug am Rand, mach es fast so
+  // wie bei den Safety-Car-Werten." Das Safety Car faehrt erst an den Rand und lenkt DANN den Impuls;
+  // die Aufstellung fuhr bis zum Haltepunkt mittig. Jetzt: ab AUFSTELL_RAND_AB der Kachel vor dem
+  // eigenen Platz und auf dem Platz selbst zur eigenen Seite (AUFSTELL_RAND_QUER, knapp unter dem
+  // Safety Car mit 0,88/1,0), danach der Impuls. Vorher bleibt die Mittelgasse (an geparkten Autos
+  // vorbei). Nur mit gesehenem Start/Ziel - sonst stimmt die Kachel nicht.
+  const AUFSTELL_RAND_QUER = 0.85, AUFSTELL_RAND_AB = 0.6;
+  function aufstellRandQuer(car, ziel, platz, halter) {
+    const n = currentTrackTiles ? currentTrackTiles.length : 0;
+    if (!n || ziel === null || ziel === undefined || !halter || !aufstellStartPruefen(halter, car)) return 0;
+    const o = car && car.ghost ? ghostOrt(car) : null;
+    if (o === null || o === undefined) return 0;
+    const k = ((Math.floor(o) % n) + n) % n, ph = o - Math.floor(o);
+    const vor = ((ziel - 1) % n + n) % n;
+    if (k !== ziel && !(k === vor && ph >= AUFSTELL_RAND_AB)) return 0;
+    return (platz >= 0 && platz % 2 ? -1 : 1) * AUFSTELL_RAND_QUER;
+  }
+  // GEMELDET (v1.1.17): "Sie parken mitten auf der Strecke und nicht auf den Elementen auf/vor
+  // Start/Ziel." Der Ort ist gezaehlt; fehlen Pakete (Funkaussetzer), verrutscht die Zaehlung, und das
+  // Auto hielt auf einer beliebigen Kachel. Jetzt haelt es nur, wenn der gerade GELESENE Code zur
+  // Zielkachel passt (gleiche Abbildung wie die virtuelle Fahrt, vfCode); sonst faehrt es weiter und
+  // gleicht an Start/Ziel neu ab. Ohne lesbaren Code (0x00/0xff) entscheidet die Zaehlung wie bisher.
+  function aufstellCodePasst(car, ziel) {
+    const tiles = currentTrackTiles || [];
+    const c = car ? car.tileCode : null;
+    if (!tiles[ziel] || c === null || c === undefined || c === 0x00 || c === 0xff || c === TILE_OFFTRACK) return true;
+    if (typeof vfCode !== 'function') return true;
+    const soll = vfCode(tiles[ziel].type);
+    if (typeof isStartCode === 'function' && isStartCode(soll)) return isStartCode(c);
+    return c === soll;
+  }
   function aufstellRest(car, ziel) {
     const n = currentTrackTiles ? currentTrackTiles.length : 0;
     const o = car && car.ghost ? ghostOrt(car) : null;
@@ -2608,7 +2640,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (a.fertig) return true;
     if (!aufstellStartPruefen(a, car)) return false;
     const o = car.ghost ? ghostOrt(car) : null;
-    if (aufstellAmPunkt(o, a.ziel, gridPosOf(car)) && Date.now() - a.seit > 1200) {
+    if (aufstellAmPunkt(o, a.ziel, gridPosOf(car)) && Date.now() - a.seit > 1200 && aufstellCodePasst(car, a.ziel)) {
       a.fertig = true;
       a.fertigAt = Date.now();
       log(garageLabel(car) + ': steht auf seinem Startplatz.', 'info');
@@ -2716,6 +2748,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const o = ghostOrt(car);
     const platz = g.aufstellPlatz !== undefined ? g.aufstellPlatz : gridPosOf(car);
     if (!aufstellAmPunkt(o, g.aufstellZiel, platz) || Date.now() - (g.aufstellSeit || 0) < 1200) return false;
+    if (!aufstellCodePasst(car, g.aufstellZiel)) {
+      if (!g.aufstellCodeGemeldet) { g.aufstellCodeGemeldet = true; log(garageLabel(car) + ': Aufstellung: gelesener Code passt nicht zur Zielkachel - faehrt weiter und gleicht an Start/Ziel ab.', 'info'); }
+      g.startGesehen = false;            // erst an Start/Ziel neu abgleichen
+      return false;
+    }
     const seite = platz >= 0 && platz % 2 ? -1 : 1;     // wie formationOffset
     // v1.0.37 GEMELDET: "Bei automatischer Aufstellung parkt das erste Auto nicht vor der
     // Startgeraden, sondern dahinter" und BESTELLT: "Die Autos sollen fuer die automatische
@@ -10054,7 +10091,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         const pqBox = pitQuer(car);
         const pqSc = pqBox === null ? scVorbeiQuer(car) : null;     // v1.0.32
         // v1.0.37: Anfahrt zum Startplatz mittig (Querlage 0), siehe aufstellenPruefen.
-        const pqAuf = (g.aufstellZiel !== undefined && g.aufstellZiel !== null) ? 0 : null;
+        // v1.1.17: kurz vor und auf dem eigenen Platz an den Rand (aufstellRandQuer), sonst mittig.
+        const pqAuf = (g.aufstellZiel !== undefined && g.aufstellZiel !== null)
+          ? aufstellRandQuer(car, g.aufstellZiel, g.aufstellPlatz !== undefined ? g.aufstellPlatz : gridPosOf(car), g) : null;
         const pqRw = rwQuer(car, now);                                  // Rueckweg mit Lenkung: zur Innenseite
         const pq = pqRw !== null ? pqRw : pqBox !== null ? pqBox : pqSc !== null ? pqSc : pqAuf !== null ? pqAuf : ghostPaarQuer(car);
         // ====================================================================================
