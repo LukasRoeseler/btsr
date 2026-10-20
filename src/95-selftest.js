@@ -21093,6 +21093,36 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'W faehrt, Wetter nur mit Shift+W im Entwicklermodus' };
   });
 
+  // v1.1.24 GEMELDET: "Mit einem NPC klappt es gut" - mit mehreren verstopfte der Funk.
+  stAdd('Funklast v1.1.24: NPCs teilen sich ein Sendebudget, Halt geht sofort', async () => {
+    const f = [];
+    const paket = [];
+    const mk = (id) => ({ role: 'ghost', alias: id, device: { id }, ghost: { running: true },
+      rx: { properties: { writeWithoutResponse: true }, writeValueWithoutResponse() { paket.push(id); return Promise.resolve(); } } });
+    const autos = [mk('A'), mk('B'), mk('C'), mk('D')];
+    const merkG = garage.slice();
+    try {
+      garage.length = 0; autos.forEach((c) => garage.push(c));
+      npcZahlCache.at = 0;
+      const ab = npcSendeAbstand();
+      if (!(ab >= 100 && ab <= 140)) f.push('Abstand bei 4 NPCs ' + ab + ' ms');
+      for (let i = 0; i < 20; i++) {           // ~0,9 s im 45-ms-Takt, Gas wechselt staendig
+        for (const c of autos) { await writeToCar(c, 0, 0.3 + i * 0.01, 0); }
+        await new Promise((r) => setTimeout(r, 45));
+      }
+      const proS = paket.length / 0.9;
+      if (proS > 45) f.push('zu viele Pakete: ' + proS.toFixed(0) + '/s');
+      const vor = paket.length;
+      await writeToCar(autos[0], 0, 0, 0);       // Halt
+      if (paket.length !== vor + 1) f.push('Halt nicht sofort gesendet');
+      npcZahlCache.at = 0; garage.length = 0; garage.push(autos[0]);
+      if (npcSendeAbstand() !== 0) f.push('ein NPC allein wird gedrosselt');
+    } finally {
+      garage.length = 0; merkG.forEach((c) => garage.push(c)); npcZahlCache.at = 0;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '4 NPCs zusammen ' + (paket.length / 0.9).toFixed(0) + ' Pakete/s, Halt sofort, einer allein ungedrosselt' };
+  });
+
   stAdd('Woerterbuch ohne doppelte Schluessel', () => {
     const imObjekt = Object.keys(I18N_EN).length;
     // Die Quelle steht im eigenen <script>. Sie zu lesen ist billiger und ehrlicher als die

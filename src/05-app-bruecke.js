@@ -119,7 +119,12 @@
           const v = l.zaehler;
           const dG = v && r ? r.geschrieben - v.geschrieben : 0, dV = v && r ? r.verworfen - v.verworfen : 0;
           const pauseImFenster = omegaPausen > 0 || performance.now() - omegaPauseZuletzt < 2500;
-          const kaputt = !!(v && r && dV > 0 && dG < dV && !pauseImFenster);
+          // v1.1.24: nur, wenn GAR NICHTS mehr geschrieben wird, und das zwei Blicke in Folge (bzw. einmal
+          // waehrend der Probe). Bei vielen Autos verwirft OmegaBle auch im Normalbetrieb, weil der Adapter
+          // belegt ist - das ist Funklast und kein toter Weg, und das Plugin waere dort nur langsamer.
+          const tot = !!(v && r && dV > 0 && dG === 0 && !pauseImFenster);
+          l.tot = tot ? (l.tot || 0) + 1 : 0;
+          const kaputt = tot && (l.tot >= 2 || l.probeBis > 0);
           l.zaehler = r || null;
           if (kaputt) {
             l.sperreMs = l.sperreMs ? Math.min(OMEGA_SPERRE_MAX_MS, l.sperreMs * 2) : OMEGA_SPERRE_MS;

@@ -1321,6 +1321,24 @@
     // sonst stuende dieses Auto (Spieler 2, Ghost) fuer immer still.
     const jetzt = performance.now();
     if (car.writeInFlight && jetzt - (car.writeSeit || 0) < FUNK_HAENGT_MS) return;
+    // v1.1.24 FUNKLAST: GEMELDET "Mit einem NPC klappt es gut" - mit mehreren nicht (Autos halten nicht,
+    // fahren chaotisch, das eigene Auto reagiert nicht). Jedes fahrende Auto schrieb alle 45 ms, mit vier
+    // NPCs und dem Fahrer ~110 Pakete/s ueber einen Bluetooth-Adapter; er war belegt, wiederholte und
+    // verwarf (1.1.16: 4K geschrieben, 2,4K wiederholt, 1,2K verworfen) - auch die Pakete des Fahrers.
+    // Jetzt teilen sich die NPCs ein festes Budget (npcSendeAbstand): ab dem zweiten NPC schreibt jeder
+    // seltener, ein unveraenderter Befehl noch seltener. Ein Wechsel auf Gas 0 (Halt) geht immer sofort.
+    // Einpark- und Haltefolgen (randHalt) und der Zieleinlauf (finish) bleiben im vollen Takt: ihre
+    // Lenkimpulse und Bremsphasen dauern nur ~100 ms.
+    if (car.ghost && car.ghost.running && car.role !== 'player' && !car.ghost.randHalt && !car.ghost.finish) {
+      const abstand = npcSendeAbstand();
+      const gleich = car.letzterBefehl && car.letzterBefehl[0] === steer && car.letzterBefehl[1] === throttle
+                     && car.letzterBefehl[2] === lightBits;
+      const halt = throttle === 0 && car.letzterBefehl && car.letzterBefehl[1] !== 0;
+      const seit = jetzt - (car.letzterBefehlAt || 0);
+      if (!halt && seit < (gleich ? Math.max(abstand, NPC_GLEICH_MS) : abstand)) return;
+    }
+    car.letzterBefehl = [steer, throttle, lightBits];
+    car.letzterBefehlAt = jetzt;
     const gen = (car.writeGen || 0) + 1;
     car.writeGen = gen;
     car.writeInFlight = true;
@@ -1348,6 +1366,17 @@
   // Spieler 2/3 hiess das: mitten im Rennen kurz ohne Gas und ohne Spur, also Abflug. Jetzt
   // setzt die Warnung nur ein Zeitfenster, und der normale Sendeweg schaltet darin die
   // Lichter im 150-ms-Takt aus. Nur ein Auto, das gerade nichts faehrt, blinkt wie bisher.
+  // Sendebudget der NPCs: zusammen etwa NPC_BUDGET_PRO_S Pakete je Sekunde, einer allein im vollen Takt.
+  const NPC_BUDGET_PRO_S = 30, NPC_GLEICH_MS = 200;
+  let npcZahlCache = { at: 0, n: 0 };
+  function npcSendeAbstand() {
+    const jetzt = performance.now();
+    if (jetzt - npcZahlCache.at > 500) {
+      npcZahlCache = { at: jetzt, n: garage.filter((c) => c.rx && c.ghost && c.ghost.running && c.role !== 'player').length };
+    }
+    const n = npcZahlCache.n;
+    return n <= 1 ? 0 : Math.max(CONTROL_SEND_INTERVAL_MS, Math.round(1000 * n / NPC_BUDGET_PRO_S)) - 5;
+  }
   const AKKU_BLINK_MS = 150, AKKU_BLINK_PHASEN = 10;
   function akkuBlinken(car) {
     if (!car) return;
@@ -2472,7 +2501,7 @@
       // Das LETZTE Haltpaket (das Safety Car haelt z. B. mit Licht aus und leicht eingeschlagenen Raedern).
       const h = car.haltPaket || { lenk: 0, licht: trackModeBit() | LIGHT_HEAD };
       writeToCar(car, h.lenk, 0, h.licht);
-    }, CONTROL_SEND_INTERVAL_MS);
+    }, CONTROL_SEND_INTERVAL_MS * 3);   // v1.1.24: alle 135 ms statt 45 ms - bei vielen NPCs verstopfte der Halt sonst selbst den Funk
   }
 
   function removeCar(car) {

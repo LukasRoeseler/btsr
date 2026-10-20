@@ -4798,7 +4798,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.23</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.24</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5951,6 +5951,8 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Funkweg (APK): 1.1.23 schaltete ein Auto schon aufs Plugin, wenn OmegaBle wegen &#220;berlast mehr verwarf als schrieb &#8211; das ist aber Last und kein toter Weg. Jetzt nur noch, wenn zwei Pr&#252;fungen in Folge gar nichts mehr geschrieben wurde.</li>
+        <li>Funklast mit mehreren NPCs (gemeldet: &#8222;Mit einem NPC klappt es gut&#8220;, mit mehreren halten Autos nicht, fahren chaotisch, das eigene Auto reagiert nicht): Jedes fahrende Auto schrieb alle 45 ms &#8211; mit vier NPCs und dir rund 110 Pakete pro Sekunde &#252;ber einen Bluetooth-Adapter, der dann belegt war, wiederholte und verwarf, auch deine Pakete. Jetzt teilen sich die NPCs zusammen etwa 30 Pakete pro Sekunde (ein NPC allein f&#228;hrt weiter im vollen Takt, bei vier schreibt jeder etwa alle 0,1 s; ein unver&#228;nderter Befehl nur alle 0,2 s). Halt (Gas auf 0) und Einparkman&#246;ver gehen weiter sofort und im vollen Takt. Der Halt nach Rennende wird alle 135 ms statt alle 45 ms nachgeschickt.</li>
         <li>Automatische Aufstellung: Wer seinen Ort schon &#252;ber Start/Ziel abgesichert hat, f&#228;hrt wieder direkt auf seinen Platz (wie bis 1.1.20) statt erst noch einmal &#252;ber Start/Ziel &#8211; das sparte bis zu einer ganzen Runde.</li>
         <li>Anhalten: Rennen beenden schickt den Halt jetzt 3 s lang nach (vorher 1,5 s). Abbrechen nach &#8222;Automatische Aufstellung&#8220; h&#228;lt alle fahrenden NPCs und das Safety Car an.</li>
         <li>NPC-Fahrmodus &#8222;Realistisch&#8220; (aus 1.1.3) wieder entfernt: Die NPCs beschleunigen wieder wie vorher und verlieren beim Anfahren nicht mehr die Orientierung. Der Lese-Schub (mehr Gas, wenn ein NPC kurz keinen Code liest) wirkt nur noch bis 0,7 s &#8211; danach schob er Autos neben der Bahn weiter.</li>

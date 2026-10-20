@@ -4798,7 +4798,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.23</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.24</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5951,6 +5951,8 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Funkweg (APK): 1.1.23 schaltete ein Auto schon aufs Plugin, wenn OmegaBle wegen &#220;berlast mehr verwarf als schrieb &#8211; das ist aber Last und kein toter Weg. Jetzt nur noch, wenn zwei Pr&#252;fungen in Folge gar nichts mehr geschrieben wurde.</li>
+        <li>Funklast mit mehreren NPCs (gemeldet: &#8222;Mit einem NPC klappt es gut&#8220;, mit mehreren halten Autos nicht, fahren chaotisch, das eigene Auto reagiert nicht): Jedes fahrende Auto schrieb alle 45 ms &#8211; mit vier NPCs und dir rund 110 Pakete pro Sekunde &#252;ber einen Bluetooth-Adapter, der dann belegt war, wiederholte und verwarf, auch deine Pakete. Jetzt teilen sich die NPCs zusammen etwa 30 Pakete pro Sekunde (ein NPC allein f&#228;hrt weiter im vollen Takt, bei vier schreibt jeder etwa alle 0,1 s; ein unver&#228;nderter Befehl nur alle 0,2 s). Halt (Gas auf 0) und Einparkman&#246;ver gehen weiter sofort und im vollen Takt. Der Halt nach Rennende wird alle 135 ms statt alle 45 ms nachgeschickt.</li>
         <li>Automatische Aufstellung: Wer seinen Ort schon &#252;ber Start/Ziel abgesichert hat, f&#228;hrt wieder direkt auf seinen Platz (wie bis 1.1.20) statt erst noch einmal &#252;ber Start/Ziel &#8211; das sparte bis zu einer ganzen Runde.</li>
         <li>Anhalten: Rennen beenden schickt den Halt jetzt 3 s lang nach (vorher 1,5 s). Abbrechen nach &#8222;Automatische Aufstellung&#8220; h&#228;lt alle fahrenden NPCs und das Safety Car an.</li>
         <li>NPC-Fahrmodus &#8222;Realistisch&#8220; (aus 1.1.3) wieder entfernt: Die NPCs beschleunigen wieder wie vorher und verlieren beim Anfahren nicht mehr die Orientierung. Der Lese-Schub (mehr Gas, wenn ein NPC kurz keinen Code liest) wirkt nur noch bis 0,7 s &#8211; danach schob er Autos neben der Bahn weiter.</li>
@@ -12791,7 +12793,12 @@
           const v = l.zaehler;
           const dG = v && r ? r.geschrieben - v.geschrieben : 0, dV = v && r ? r.verworfen - v.verworfen : 0;
           const pauseImFenster = omegaPausen > 0 || performance.now() - omegaPauseZuletzt < 2500;
-          const kaputt = !!(v && r && dV > 0 && dG < dV && !pauseImFenster);
+          // v1.1.24: nur, wenn GAR NICHTS mehr geschrieben wird, und das zwei Blicke in Folge (bzw. einmal
+          // waehrend der Probe). Bei vielen Autos verwirft OmegaBle auch im Normalbetrieb, weil der Adapter
+          // belegt ist - das ist Funklast und kein toter Weg, und das Plugin waere dort nur langsamer.
+          const tot = !!(v && r && dV > 0 && dG === 0 && !pauseImFenster);
+          l.tot = tot ? (l.tot || 0) + 1 : 0;
+          const kaputt = tot && (l.tot >= 2 || l.probeBis > 0);
           l.zaehler = r || null;
           if (kaputt) {
             l.sperreMs = l.sperreMs ? Math.min(OMEGA_SPERRE_MAX_MS, l.sperreMs * 2) : OMEGA_SPERRE_MS;
@@ -14653,6 +14660,8 @@
     "NPC-Fahrmodus „Realistisch“ (aus 1.1.3) wieder entfernt: Die NPCs beschleunigen wieder wie vorher und verlieren beim Anfahren nicht mehr die Orientierung. Der Lese-Schub (mehr Gas, wenn ein NPC kurz keinen Code liest) wirkt nur noch bis 0,7 s – danach schob er Autos neben der Bahn weiter.": "NPC driving mode “Realistic” (from 1.1.3) removed again: NPCs accelerate as before and no longer lose track of where they are when pulling away. The read push (more throttle while an NPC briefly reads no code) now lasts at most 0.7 s – beyond that it kept pushing cars that had left the track.",
     "Anhalten: Rennen beenden schickt den Halt jetzt 3 s lang nach (vorher 1,5 s). Abbrechen nach „Automatische Aufstellung“ hält alle fahrenden NPCs und das Safety Car an.": "Stopping: ending a race now repeats the stop for 3 s (was 1.5 s). Cancelling after “automatic line-up” stops all running NPCs and the safety car.",
     "Automatische Aufstellung: Wer seinen Ort schon über Start/Ziel abgesichert hat, fährt wieder direkt auf seinen Platz (wie bis 1.1.20) statt erst noch einmal über Start/Ziel – das sparte bis zu einer ganzen Runde.": "Automatic line-up: a car whose position is already confirmed via start/finish drives straight to its spot again (as up to 1.1.20) instead of crossing start/finish first – that saved up to a full lap.",
+    "Funklast mit mehreren NPCs (gemeldet: „Mit einem NPC klappt es gut“, mit mehreren halten Autos nicht, fahren chaotisch, das eigene Auto reagiert nicht): Jedes fahrende Auto schrieb alle 45 ms – mit vier NPCs und dir rund 110 Pakete pro Sekunde über einen Bluetooth-Adapter, der dann belegt war, wiederholte und verwarf, auch deine Pakete. Jetzt teilen sich die NPCs zusammen etwa 30 Pakete pro Sekunde (ein NPC allein fährt weiter im vollen Takt, bei vier schreibt jeder etwa alle 0,1 s; ein unveränderter Befehl nur alle 0,2 s). Halt (Gas auf 0) und Einparkmanöver gehen weiter sofort und im vollen Takt. Der Halt nach Rennende wird alle 135 ms statt alle 45 ms nachgeschickt.": "Radio load with several NPCs (reported: “with one NPC it works well”; with several, cars don’t stop, drive erratically and your own car doesn’t respond): every moving car wrote every 45 ms – with four NPCs and you about 110 packets per second through one Bluetooth adapter, which then was busy, retried and dropped, including your packets. NPCs now share about 30 packets per second (a single NPC still runs at full rate; with four each writes about every 0.1 s; an unchanged command only every 0.2 s). Stops (throttle to 0) and parking manoeuvres still go out immediately and at full rate. The stop after the race is repeated every 135 ms instead of every 45 ms.",
+    "Funkweg (APK): 1.1.23 schaltete ein Auto schon aufs Plugin, wenn OmegaBle wegen Überlast mehr verwarf als schrieb – das ist aber Last und kein toter Weg. Jetzt nur noch, wenn zwei Prüfungen in Folge gar nichts mehr geschrieben wurde.": "Radio path (APK): 1.1.23 already moved a car to the plugin when OmegaBle dropped more than it wrote because of load – but that is load, not a dead path. Now only when nothing at all was written in two checks in a row.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -51500,6 +51509,24 @@
     // sonst stuende dieses Auto (Spieler 2, Ghost) fuer immer still.
     const jetzt = performance.now();
     if (car.writeInFlight && jetzt - (car.writeSeit || 0) < FUNK_HAENGT_MS) return;
+    // v1.1.24 FUNKLAST: GEMELDET "Mit einem NPC klappt es gut" - mit mehreren nicht (Autos halten nicht,
+    // fahren chaotisch, das eigene Auto reagiert nicht). Jedes fahrende Auto schrieb alle 45 ms, mit vier
+    // NPCs und dem Fahrer ~110 Pakete/s ueber einen Bluetooth-Adapter; er war belegt, wiederholte und
+    // verwarf (1.1.16: 4K geschrieben, 2,4K wiederholt, 1,2K verworfen) - auch die Pakete des Fahrers.
+    // Jetzt teilen sich die NPCs ein festes Budget (npcSendeAbstand): ab dem zweiten NPC schreibt jeder
+    // seltener, ein unveraenderter Befehl noch seltener. Ein Wechsel auf Gas 0 (Halt) geht immer sofort.
+    // Einpark- und Haltefolgen (randHalt) und der Zieleinlauf (finish) bleiben im vollen Takt: ihre
+    // Lenkimpulse und Bremsphasen dauern nur ~100 ms.
+    if (car.ghost && car.ghost.running && car.role !== 'player' && !car.ghost.randHalt && !car.ghost.finish) {
+      const abstand = npcSendeAbstand();
+      const gleich = car.letzterBefehl && car.letzterBefehl[0] === steer && car.letzterBefehl[1] === throttle
+                     && car.letzterBefehl[2] === lightBits;
+      const halt = throttle === 0 && car.letzterBefehl && car.letzterBefehl[1] !== 0;
+      const seit = jetzt - (car.letzterBefehlAt || 0);
+      if (!halt && seit < (gleich ? Math.max(abstand, NPC_GLEICH_MS) : abstand)) return;
+    }
+    car.letzterBefehl = [steer, throttle, lightBits];
+    car.letzterBefehlAt = jetzt;
     const gen = (car.writeGen || 0) + 1;
     car.writeGen = gen;
     car.writeInFlight = true;
@@ -51527,6 +51554,17 @@
   // Spieler 2/3 hiess das: mitten im Rennen kurz ohne Gas und ohne Spur, also Abflug. Jetzt
   // setzt die Warnung nur ein Zeitfenster, und der normale Sendeweg schaltet darin die
   // Lichter im 150-ms-Takt aus. Nur ein Auto, das gerade nichts faehrt, blinkt wie bisher.
+  // Sendebudget der NPCs: zusammen etwa NPC_BUDGET_PRO_S Pakete je Sekunde, einer allein im vollen Takt.
+  const NPC_BUDGET_PRO_S = 30, NPC_GLEICH_MS = 200;
+  let npcZahlCache = { at: 0, n: 0 };
+  function npcSendeAbstand() {
+    const jetzt = performance.now();
+    if (jetzt - npcZahlCache.at > 500) {
+      npcZahlCache = { at: jetzt, n: garage.filter((c) => c.rx && c.ghost && c.ghost.running && c.role !== 'player').length };
+    }
+    const n = npcZahlCache.n;
+    return n <= 1 ? 0 : Math.max(CONTROL_SEND_INTERVAL_MS, Math.round(1000 * n / NPC_BUDGET_PRO_S)) - 5;
+  }
   const AKKU_BLINK_MS = 150, AKKU_BLINK_PHASEN = 10;
   function akkuBlinken(car) {
     if (!car) return;
@@ -52651,7 +52689,7 @@
       // Das LETZTE Haltpaket (das Safety Car haelt z. B. mit Licht aus und leicht eingeschlagenen Raedern).
       const h = car.haltPaket || { lenk: 0, licht: trackModeBit() | LIGHT_HEAD };
       writeToCar(car, h.lenk, 0, h.licht);
-    }, CONTROL_SEND_INTERVAL_MS);
+    }, CONTROL_SEND_INTERVAL_MS * 3);   // v1.1.24: alle 135 ms statt 45 ms - bei vielen NPCs verstopfte der Halt sonst selbst den Funk
   }
 
   function removeCar(car) {
@@ -94184,6 +94222,36 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       keys.clear();
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'W faehrt, Wetter nur mit Shift+W im Entwicklermodus' };
+  });
+
+  // v1.1.24 GEMELDET: "Mit einem NPC klappt es gut" - mit mehreren verstopfte der Funk.
+  stAdd('Funklast v1.1.24: NPCs teilen sich ein Sendebudget, Halt geht sofort', async () => {
+    const f = [];
+    const paket = [];
+    const mk = (id) => ({ role: 'ghost', alias: id, device: { id }, ghost: { running: true },
+      rx: { properties: { writeWithoutResponse: true }, writeValueWithoutResponse() { paket.push(id); return Promise.resolve(); } } });
+    const autos = [mk('A'), mk('B'), mk('C'), mk('D')];
+    const merkG = garage.slice();
+    try {
+      garage.length = 0; autos.forEach((c) => garage.push(c));
+      npcZahlCache.at = 0;
+      const ab = npcSendeAbstand();
+      if (!(ab >= 100 && ab <= 140)) f.push('Abstand bei 4 NPCs ' + ab + ' ms');
+      for (let i = 0; i < 20; i++) {           // ~0,9 s im 45-ms-Takt, Gas wechselt staendig
+        for (const c of autos) { await writeToCar(c, 0, 0.3 + i * 0.01, 0); }
+        await new Promise((r) => setTimeout(r, 45));
+      }
+      const proS = paket.length / 0.9;
+      if (proS > 45) f.push('zu viele Pakete: ' + proS.toFixed(0) + '/s');
+      const vor = paket.length;
+      await writeToCar(autos[0], 0, 0, 0);       // Halt
+      if (paket.length !== vor + 1) f.push('Halt nicht sofort gesendet');
+      npcZahlCache.at = 0; garage.length = 0; garage.push(autos[0]);
+      if (npcSendeAbstand() !== 0) f.push('ein NPC allein wird gedrosselt');
+    } finally {
+      garage.length = 0; merkG.forEach((c) => garage.push(c)); npcZahlCache.at = 0;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '4 NPCs zusammen ' + (paket.length / 0.9).toFixed(0) + ' Pakete/s, Halt sofort, einer allein ungedrosselt' };
   });
 
   stAdd('Woerterbuch ohne doppelte Schluessel', () => {
