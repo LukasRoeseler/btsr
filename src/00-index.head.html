@@ -4798,7 +4798,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.17</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.18</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5951,6 +5951,8 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Automatische Aufstellung und R&#252;ckfahrt nach dem Rennen: Die Code-Pr&#252;fung vor dem Halt aus 1.1.17 ist wieder raus &#8211; bei mehreren gleichen Teilen half sie nicht, und nach dem Rennen hielten NPCs mit unpassendem Code gar nicht mehr an. Das Fahren an den Rand bleibt.</li>
+        <li>Funk mit mehreren Autos (APK): Der Sendeweg wechselte mit NPCs st&#228;ndig zwischen OmegaBle und dem Plugin. W&#228;hrend das Plugin ein Auto verbindet oder abonniert, pausiert OmegaBle f&#252;r alle Autos; das galt bisher jedes Mal als Ausfall. Jetzt z&#228;hlt Verworfenes w&#228;hrend einer Pause nicht, und erst zwei Ausf&#228;lle in Folge schalten auf das Plugin um.</li>
         <li>Automatische Aufstellung: Die Autos fahren jetzt wie das Safety Car erst an den Rand (ab der zweiten H&#228;lfte der Kachel vor ihrem Platz, fast so weit wie das Safety Car) und lenken dann den Impuls &#8211; vorher kamen sie aus der Mitte und standen nicht weit genug au&#223;en. Gehalten wird nur, wenn der gerade gelesene Code zur Zielkachel passt; sonst f&#228;hrt das Auto weiter und gleicht an Start/Ziel neu ab, statt mitten auf der Strecke zu parken (passiert, wenn Funkpakete verloren gehen).</li>
         <li>Automatische Aufstellung: Lenkimpuls wie beim Safety Car (100 ms bei 40 % Tempo statt 45 ms bei 30 %); weil die Autos aus der Mittelgasse kommen, stehen sie damit weiter innen als das Safety Car. Der rechte Haltepunkt r&#252;ckt daf&#252;r noch etwas vor. Beide Regler stehen auf den neuen Werten (auch wenn vorher anders eingestellt).</li>
         <li>Streckenscan etwas schneller: gerade 23,5 % statt 21 %, Haarnadel 16,5 % statt 14 % der H&#246;chstgeschwindigkeit &#8211; in der Haarnadel war das Auto gerade an der Grenze, an der es Balken und Querlage noch liest.</li>

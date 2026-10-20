@@ -104,7 +104,16 @@
           // geschrieben, etwas verworfen): dann ebenfalls das Plugin nehmen.
           const v = l.zaehler;
           const nurVerworfen = v && r && r.geschrieben === v.geschrieben && r.verworfen > v.verworfen;
-          l.bereit = !!(r && r.bereit) && !nurVerworfen;
+          // v1.1.18 GEMELDET: "Mit NPCs wechselt der Weg dauernd zwischen OmegaBle und dem anderen hin
+          // und her" (dazu 2,4K wiederholt, 1,2K verworfen). Waehrend das Community-Plugin ans GATT geht
+          // (Verbinden, Abo - bei mehreren Autos und Neuverbindungen staendig), pausiert OmegaBle fuer
+          // ALLE Autos und verwirft; das wertete jedes Auto als Ausfall, ging aufs Plugin, beim naechsten
+          // Blick wieder zurueck - und zwei Schreiber auf einem Geraet machten es schlimmer. Jetzt:
+          // Verworfenes waehrend einer Pause zaehlt nicht, und erst ZWEI Ausfaelle in Folge (~4 s)
+          // schalten auf das Plugin.
+          const pauseImFenster = omegaPausen > 0 || performance.now() - omegaPauseZuletzt < 2500;
+          l.ausfaelle = nurVerworfen && !pauseImFenster ? (l.ausfaelle || 0) + 1 : 0;
+          l.bereit = !!(r && r.bereit) && l.ausfaelle < 2;
           l.zaehler = r || null;
         })
         .catch(() => { l.bereit = true; l.alt = true; })
@@ -149,11 +158,13 @@
   // Waehrend das Community-Plugin selbst ans GATT geht (Abo, Lesen, Schreiben mit Antwort),
   // schreibt OmegaBle nicht: Android erlaubt nur EINEN GATT-Vorgang zugleich. Gezaehlt, weil
   // mehrere Vorgaenge ueberlappen koennen; das Plugin hebt die Pause nach 1,5 s selbst auf.
-  let omegaPausen = 0;
+  let omegaPausen = 0, omegaPauseZuletzt = 0;
   async function mitOmegaPause(fn) {
     if (!omegaBleVerfuegbar()) return fn();
+    omegaPauseZuletzt = performance.now();
     if (omegaPausen++ === 0) await C.nativePromise('OmegaBle', 'pause', { an: true }).catch(() => {});
     try { return await fn(); } finally {
+      omegaPauseZuletzt = performance.now();
       if (--omegaPausen === 0) C.nativePromise('OmegaBle', 'pause', { an: false }).catch(() => {});
     }
   }

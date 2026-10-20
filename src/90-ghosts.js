@@ -2597,20 +2597,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (k !== ziel && !(k === vor && ph >= AUFSTELL_RAND_AB)) return 0;
     return (platz >= 0 && platz % 2 ? -1 : 1) * AUFSTELL_RAND_QUER;
   }
-  // GEMELDET (v1.1.17): "Sie parken mitten auf der Strecke und nicht auf den Elementen auf/vor
-  // Start/Ziel." Der Ort ist gezaehlt; fehlen Pakete (Funkaussetzer), verrutscht die Zaehlung, und das
-  // Auto hielt auf einer beliebigen Kachel. Jetzt haelt es nur, wenn der gerade GELESENE Code zur
-  // Zielkachel passt (gleiche Abbildung wie die virtuelle Fahrt, vfCode); sonst faehrt es weiter und
-  // gleicht an Start/Ziel neu ab. Ohne lesbaren Code (0x00/0xff) entscheidet die Zaehlung wie bisher.
-  function aufstellCodePasst(car, ziel) {
-    const tiles = currentTrackTiles || [];
-    const c = car ? car.tileCode : null;
-    if (!tiles[ziel] || c === null || c === undefined || c === 0x00 || c === 0xff || c === TILE_OFFTRACK) return true;
-    if (typeof vfCode !== 'function') return true;
-    const soll = vfCode(tiles[ziel].type);
-    if (typeof isStartCode === 'function' && isStartCode(soll)) return isStartCode(c);
-    return c === soll;
-  }
+  // v1.1.17 gab es hier eine Code-Pruefung vor dem Halt (gelesener Code = Zielkachel?). v1.1.18 wieder
+  // entfernt - GEMELDET: "mehrere Geraden hintereinander und mehrere Kurven" (die Pruefung unterscheidet
+  // dort nichts) und "wenn ich ein Rennen beende, fahren die NPCs einfach immer weiter": die Rueckfahrt
+  // nach dem Rennen haelt mit derselben Pruefung, und ein unpassender Code liess sie nie halten.
   function aufstellRest(car, ziel) {
     const n = currentTrackTiles ? currentTrackTiles.length : 0;
     const o = car && car.ghost ? ghostOrt(car) : null;
@@ -2640,7 +2630,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (a.fertig) return true;
     if (!aufstellStartPruefen(a, car)) return false;
     const o = car.ghost ? ghostOrt(car) : null;
-    if (aufstellAmPunkt(o, a.ziel, gridPosOf(car)) && Date.now() - a.seit > 1200 && aufstellCodePasst(car, a.ziel)) {
+    if (aufstellAmPunkt(o, a.ziel, gridPosOf(car)) && Date.now() - a.seit > 1200) {
       a.fertig = true;
       a.fertigAt = Date.now();
       log(garageLabel(car) + ': steht auf seinem Startplatz.', 'info');
@@ -2748,11 +2738,6 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const o = ghostOrt(car);
     const platz = g.aufstellPlatz !== undefined ? g.aufstellPlatz : gridPosOf(car);
     if (!aufstellAmPunkt(o, g.aufstellZiel, platz) || Date.now() - (g.aufstellSeit || 0) < 1200) return false;
-    if (!aufstellCodePasst(car, g.aufstellZiel)) {
-      if (!g.aufstellCodeGemeldet) { g.aufstellCodeGemeldet = true; log(garageLabel(car) + ': Aufstellung: gelesener Code passt nicht zur Zielkachel - faehrt weiter und gleicht an Start/Ziel ab.', 'info'); }
-      g.startGesehen = false;            // erst an Start/Ziel neu abgleichen
-      return false;
-    }
     const seite = platz >= 0 && platz % 2 ? -1 : 1;     // wie formationOffset
     // v1.0.37 GEMELDET: "Bei automatischer Aufstellung parkt das erste Auto nicht vor der
     // Startgeraden, sondern dahinter" und BESTELLT: "Die Autos sollen fuer die automatische
