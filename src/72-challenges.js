@@ -1193,7 +1193,7 @@
   function chMerken() {
     return {
       regler: presetRead(), modus: $('race-mode').value, limit: raceLimit,
-      wx: $('race-wx-start').value, pit: $('race-pit-required').value,
+      wx: $('race-wx-start').value, wxWechsel: $('race-wx-change').checked, pit: $('race-pit-required').value,
       tank: $('race-fuel-start').value, fliegend: $('race-flying').checked,
       pitModus: $('pit-modus') ? $('pit-modus').value : null,
       tiles: currentTrackTiles, rot: trackRotationDeg,
@@ -1212,7 +1212,9 @@
     // Start bleibt trocken; die Wechsel kommen aus dem Plan. "Wetter aendert sich" wird
     // ausgeschaltet, sonst wuerde der Zufallswechsel dazwischenfunken.
     chWetterPlan = def.wx ? def.wx.map((e) => ({ abMs: e.min * 60000, wetter: e.wetter })) : null;
-    if (def.wx) chSetzen('race-wx-change', false);
+    // v1.1.22: immer aus, nicht nur bei einem Plan - eine Challenge (auch die der Studie) ist trocken,
+    // und ein eingeschalteter Zufallswechsel aus dem freien Fahren liess es mitten darin regnen.
+    chSetzen('race-wx-change', false);
     const pit = chPitZahl(def, modus);
     chSetzen('race-pit-required', String(pit));
     if (pit > 0) {
@@ -1237,6 +1239,7 @@
     raceLimit = m.limit;
     $('race-limit').value = m.limit;
     chSetzen('race-wx-start', m.wx);
+    if (typeof m.wxWechsel === 'boolean') chSetzen('race-wx-change', m.wxWechsel);
     chSetzen('race-pit-required', m.pit);
     chSetzen('race-fuel-start', m.tank);
     chSetzen('race-flying', m.fliegend);

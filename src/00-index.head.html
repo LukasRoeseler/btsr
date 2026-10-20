@@ -4798,7 +4798,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.21</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.22</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5951,6 +5951,8 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Wetter sprang st&#228;ndig zwischen Regen und trocken (gemeldet von einem Tester): Die Taste W war eine immer aktive Testtaste f&#252;rs Wetter &#8211; wer mit WASD fuhr, schaltete bei jedem Gasgeben um. Jetzt f&#228;hrt die Tastatur auch mit WASD (WIP: W Gas, S Bremse, A/D lenken); die Testtasten (Wetter jetzt Shift+W, Crash C, Tank F/R, Runde Q) gelten nur noch im Entwicklermodus. Challenges (auch die der Studie) schalten au&#223;erdem &#8222;Wetter &#228;ndert sich&#8220; immer aus.</li>
+        <li>Automatische Aufstellung: Die H&#246;he der Startpl&#228;tze ist wieder wie in 1.1.19 (Reihe 1 auf dem Teil vor Start/Ziel, rechts etwas weiter vorn als links) &#8211; das hatte gestimmt. Die neue Querlage (mittig, dann Impuls hin und zur&#252;ck) bleibt.</li>
         <li>Automatische Aufstellung neu: Die Autos fahren gestaffelt los, jedes erst &#252;ber Start/Ziel (damit klar ist, wo es ist), dann mittig zu seinem Platz &#8211; die ersten beiden auf Start/Ziel, die n&#228;chsten auf das Teil davor und so weiter. Auf ihrem Teil lenken sie mit 30 % Tempo voll zur eigenen Seite und wieder zur&#252;ck (das zweite Auto erst links, dann rechts) und bleiben sofort stehen; die Mitte bleibt frei, damit sp&#228;tere Autos vorbeikommen. Regler &#8222;Einparken: Dauer/Tempo&#8220; wieder da (100 ms, 30 %).</li>
         <li>Safety Car parkt neu: Nach Gr&#252;n f&#228;hrt es erst &#252;ber Start/Ziel (damit es wei&#223;, wo es ist), dann mittig bis auf sein Einpark-Teil (experimentell, Vorgabe Start/Ziel) und parkt dort mit 30 % Tempo: voll rechts, voll links, sofort stehen &#8211; auf der Fahrbahn am Rand, ohne R&#252;ckw&#228;rtsschub. Beim Losfahren 30 % statt 37 %. &#8222;Neben der Strecke von Hand&#8220; und seine Regler (Anfahrt, Rand-Vorlauf, Ausfahrt-Zeitpunkt, Gegenschub) sind nicht mehr w&#228;hlbar. Vorher parkte es nach einem Neustart oft an der falschen Stelle.</li>
         <li>Fahrerauto: Eine liegengebliebene automatische Aufstellung (z. B. Rennen mit R1 statt &#252;ber den Startschirm gestartet) konnte mitten im Rennen den Autopiloten anwerfen &#8211; das Auto fuhr selbst los und lenkte die Einparkimpulse. Jedes Rennen beendet jetzt eine laufende Aufstellung, und w&#228;hrend eines Rennens greift sie nie.</li>
@@ -11517,10 +11519,10 @@
 
     <div class="opt-head" style="margin-top:16px">Tastatur, Fahren</div>
     <div class="help-grid">
-      <kbd>&uarr;</kbd><span>Gas</span>
-      <kbd>&darr;</kbd><span>Bremse</span>
-      <kbd>&larr;</kbd> <span>lenken links</span>
-      <kbd>&rarr;</kbd><span>lenken rechts</span>
+      <kbd>&uarr;</kbd><span>Gas (auch W)</span>
+      <kbd>&darr;</kbd><span>Bremse (auch S)</span>
+      <kbd>&larr;</kbd> <span>lenken links (auch A)</span>
+      <kbd>&rarr;</kbd><span>lenken rechts (auch D)</span>
       <kbd>Leertaste</kbd><span>Not-Halt, alle Eingaben los, Momentum auf null</span>
       <kbd>I</kbd><span>hochschalten, und aus dem Rückwärtsgang wieder heraus</span>
       <kbd>K</kbd><span>runterschalten. In Automatik: unter 10 km/h Rückwärtsgang, von Hand aus dem 1. Gang in N und aus N in R</span>
@@ -11529,7 +11531,8 @@
 
     <div class="opt-head">Tastatur: Test und Fehlersuche am PC</div>
     <div class="help-grid">
-      <kbd>W</kbd><span>Wetter umschalten (Regen / trocken)</span>
+      <kbd>Shift</kbd><span>+ W, C, F, R, Q gelten nur im Entwicklermodus</span>
+      <kbd>W</kbd><span>mit Shift: Wetter umschalten (Regen / trocken)</span>
       <kbd>P</kbd><span>Boxenstopp an, erneut dr&uuml;cken bricht ab. Bei der Ausl&ouml;sung &bdquo;doppelter Ausdruck&ldquo; l&ouml;st die Taste nicht aus &ndash; dort z&auml;hlt nur das zweimalige &Uuml;berfahren.</span>
       <kbd>C</kbd><span>Crash ausl&ouml;sen: Schaden, Ger&auml;usch und Rumble wie im Betrieb</span>
       <kbd>F</kbd><span>Tank auf 5&nbsp;% setzen, um den Notlauf zu pr&uuml;fen</span>

@@ -4798,7 +4798,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.21</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.22</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5951,6 +5951,8 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Wetter sprang st&#228;ndig zwischen Regen und trocken (gemeldet von einem Tester): Die Taste W war eine immer aktive Testtaste f&#252;rs Wetter &#8211; wer mit WASD fuhr, schaltete bei jedem Gasgeben um. Jetzt f&#228;hrt die Tastatur auch mit WASD (WIP: W Gas, S Bremse, A/D lenken); die Testtasten (Wetter jetzt Shift+W, Crash C, Tank F/R, Runde Q) gelten nur noch im Entwicklermodus. Challenges (auch die der Studie) schalten au&#223;erdem &#8222;Wetter &#228;ndert sich&#8220; immer aus.</li>
+        <li>Automatische Aufstellung: Die H&#246;he der Startpl&#228;tze ist wieder wie in 1.1.19 (Reihe 1 auf dem Teil vor Start/Ziel, rechts etwas weiter vorn als links) &#8211; das hatte gestimmt. Die neue Querlage (mittig, dann Impuls hin und zur&#252;ck) bleibt.</li>
         <li>Automatische Aufstellung neu: Die Autos fahren gestaffelt los, jedes erst &#252;ber Start/Ziel (damit klar ist, wo es ist), dann mittig zu seinem Platz &#8211; die ersten beiden auf Start/Ziel, die n&#228;chsten auf das Teil davor und so weiter. Auf ihrem Teil lenken sie mit 30 % Tempo voll zur eigenen Seite und wieder zur&#252;ck (das zweite Auto erst links, dann rechts) und bleiben sofort stehen; die Mitte bleibt frei, damit sp&#228;tere Autos vorbeikommen. Regler &#8222;Einparken: Dauer/Tempo&#8220; wieder da (100 ms, 30 %).</li>
         <li>Safety Car parkt neu: Nach Gr&#252;n f&#228;hrt es erst &#252;ber Start/Ziel (damit es wei&#223;, wo es ist), dann mittig bis auf sein Einpark-Teil (experimentell, Vorgabe Start/Ziel) und parkt dort mit 30 % Tempo: voll rechts, voll links, sofort stehen &#8211; auf der Fahrbahn am Rand, ohne R&#252;ckw&#228;rtsschub. Beim Losfahren 30 % statt 37 %. &#8222;Neben der Strecke von Hand&#8220; und seine Regler (Anfahrt, Rand-Vorlauf, Ausfahrt-Zeitpunkt, Gegenschub) sind nicht mehr w&#228;hlbar. Vorher parkte es nach einem Neustart oft an der falschen Stelle.</li>
         <li>Fahrerauto: Eine liegengebliebene automatische Aufstellung (z. B. Rennen mit R1 statt &#252;ber den Startschirm gestartet) konnte mitten im Rennen den Autopiloten anwerfen &#8211; das Auto fuhr selbst los und lenkte die Einparkimpulse. Jedes Rennen beendet jetzt eine laufende Aufstellung, und w&#228;hrend eines Rennens greift sie nie.</li>
@@ -11517,10 +11519,10 @@
 
     <div class="opt-head" style="margin-top:16px">Tastatur, Fahren</div>
     <div class="help-grid">
-      <kbd>&uarr;</kbd><span>Gas</span>
-      <kbd>&darr;</kbd><span>Bremse</span>
-      <kbd>&larr;</kbd> <span>lenken links</span>
-      <kbd>&rarr;</kbd><span>lenken rechts</span>
+      <kbd>&uarr;</kbd><span>Gas (auch W)</span>
+      <kbd>&darr;</kbd><span>Bremse (auch S)</span>
+      <kbd>&larr;</kbd> <span>lenken links (auch A)</span>
+      <kbd>&rarr;</kbd><span>lenken rechts (auch D)</span>
       <kbd>Leertaste</kbd><span>Not-Halt, alle Eingaben los, Momentum auf null</span>
       <kbd>I</kbd><span>hochschalten, und aus dem Rückwärtsgang wieder heraus</span>
       <kbd>K</kbd><span>runterschalten. In Automatik: unter 10 km/h Rückwärtsgang, von Hand aus dem 1. Gang in N und aus N in R</span>
@@ -11529,7 +11531,8 @@
 
     <div class="opt-head">Tastatur: Test und Fehlersuche am PC</div>
     <div class="help-grid">
-      <kbd>W</kbd><span>Wetter umschalten (Regen / trocken)</span>
+      <kbd>Shift</kbd><span>+ W, C, F, R, Q gelten nur im Entwicklermodus</span>
+      <kbd>W</kbd><span>mit Shift: Wetter umschalten (Regen / trocken)</span>
       <kbd>P</kbd><span>Boxenstopp an, erneut dr&uuml;cken bricht ab. Bei der Ausl&ouml;sung &bdquo;doppelter Ausdruck&ldquo; l&ouml;st die Taste nicht aus &ndash; dort z&auml;hlt nur das zweimalige &Uuml;berfahren.</span>
       <kbd>C</kbd><span>Crash ausl&ouml;sen: Schaden, Ger&auml;usch und Rumble wie im Betrieb</span>
       <kbd>F</kbd><span>Tank auf 5&nbsp;% setzen, um den Notlauf zu pr&uuml;fen</span>
@@ -14629,6 +14632,8 @@
     "Fahrerauto: Eine liegengebliebene automatische Aufstellung (z. B. Rennen mit R1 statt über den Startschirm gestartet) konnte mitten im Rennen den Autopiloten anwerfen – das Auto fuhr selbst los und lenkte die Einparkimpulse. Jedes Rennen beendet jetzt eine laufende Aufstellung, und während eines Rennens greift sie nie.": "Player car: a left-over automatic line-up (e.g. race started with R1 instead of the grid screen) could start the autopilot mid-race – the car drove off by itself and steered the parking pulses. Every race now ends a running line-up, and it never applies during a race.",
     "Safety Car parkt neu: Nach Grün fährt es erst über Start/Ziel (damit es weiß, wo es ist), dann mittig bis auf sein Einpark-Teil (experimentell, Vorgabe Start/Ziel) und parkt dort mit 30 % Tempo: voll rechts, voll links, sofort stehen – auf der Fahrbahn am Rand, ohne Rückwärtsschub. Beim Losfahren 30 % statt 37 %. „Neben der Strecke von Hand“ und seine Regler (Anfahrt, Rand-Vorlauf, Ausfahrt-Zeitpunkt, Gegenschub) sind nicht mehr wählbar. Vorher parkte es nach einem Neustart oft an der falschen Stelle.": "Safety car parks anew: after green it first drives over start/finish (so it knows where it is), then in the centre to its parking part (experimental, default start/finish) and parks there at 30 % speed: full right, full left, stop at once – at the edge of the track, without reverse thrust. Pulling away at 30 % instead of 37 %. \"Off the track by hand\" and its sliders (approach, edge lead, exit point, counter-thrust) can no longer be chosen. Before, it often parked in the wrong place after a restart.",
     "Automatische Aufstellung neu: Die Autos fahren gestaffelt los, jedes erst über Start/Ziel (damit klar ist, wo es ist), dann mittig zu seinem Platz – die ersten beiden auf Start/Ziel, die nächsten auf das Teil davor und so weiter. Auf ihrem Teil lenken sie mit 30 % Tempo voll zur eigenen Seite und wieder zurück (das zweite Auto erst links, dann rechts) und bleiben sofort stehen; die Mitte bleibt frei, damit spätere Autos vorbeikommen. Regler „Einparken: Dauer/Tempo“ wieder da (100 ms, 30 %).": "Automatic line-up reworked: the cars start staggered, each first over start/finish (so it is clear where it is), then in the centre to its spot – the first two on start/finish, the next on the part before, and so on. On their part they steer fully to their side and back at 30 % speed (the second car left first, then right) and stop at once; the centre stays free so later cars get past. \"Parking: duration/speed\" sliders are back (100 ms, 30 %).",
+    "Automatische Aufstellung: Die Höhe der Startplätze ist wieder wie in 1.1.19 (Reihe 1 auf dem Teil vor Start/Ziel, rechts etwas weiter vorn als links) – das hatte gestimmt. Die neue Querlage (mittig, dann Impuls hin und zurück) bleibt.": "Automatic line-up: the position of the grid spots along the track is back to 1.1.19 (row 1 on the part before start/finish, right a bit further ahead than left) – that was correct. The new lateral parking (centre, then pulse out and back) stays.",
+    "Wetter sprang ständig zwischen Regen und trocken (gemeldet von einem Tester): Die Taste W war eine immer aktive Testtaste fürs Wetter – wer mit WASD fuhr, schaltete bei jedem Gasgeben um. Jetzt fährt die Tastatur auch mit WASD (WIP: W Gas, S Bremse, A/D lenken); die Testtasten (Wetter jetzt Shift+W, Crash C, Tank F/R, Runde Q) gelten nur noch im Entwicklermodus. Challenges (auch die der Studie) schalten außerdem „Wetter ändert sich“ immer aus.": "Weather kept flipping between rain and dry (reported by a tester): the W key was an always-on test key for the weather – anyone driving with WASD toggled it with every throttle press. The keyboard now also drives with WASD (WIP: W throttle, S brake, A/D steer); the test keys (weather now Shift+W, crash C, fuel F/R, lap Q) only work in developer mode. Challenges (including the study one) now always switch off “weather changes”.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -15867,7 +15872,8 @@
     "Welchen Code es auslöst, ist nicht vorhergesagt, und das kann niemand, solange die Kodierregel unbekannt ist. Überfahren, unten mit der Muster-Sonde ablesen, im Feld Auslöse-Code eintragen.": "Which code it triggers is not predicted, and nobody can predict it while the encoding rule is unknown. Drive over it, read it off below with the pattern probe, enter it in the trigger-code field.",
     "Welchen Code meldet dieses Teil?": "Which code does this part report?",
     "Wenn hier nur": "If all you see here is",
-    "Wetter umschalten (Regen / trocken)": "Toggle the weather (rain / dry)",
+    "mit Shift: Wetter umschalten (Regen / trocken)": "with Shift: toggle the weather (rain / dry)",
+    "+ W, C, F, R, Q gelten nur im Entwicklermodus": "+ W, C, F, R, Q only work in developer mode",
     "Wetter umschalten": "Toggle the weather",
     "Wetter zu Beginn": "Weather at the start",
     "Wetter ändert sich": "Weather changes",
@@ -15969,8 +15975,10 @@
     "lang (2 Byte Präfix + 17 Datenbytes + 1 Prüfsumme), gesendet alle ~45ms. Byte-Offset 6 = Gas/Bremse (": "long (2 prefix bytes + 17 data bytes + 1 checksum), sent every ~45 ms. Byte offset 6 = throttle/brake (",
     "langsam über ein Muster fahren": "drive slowly over a pattern",
     "langsam": "slow",
-    "lenken links": "steer left",
-    "lenken rechts": "steer right",
+    "lenken links (auch A)": "steer left (also A)",
+    "lenken rechts (auch D)": "steer right (also D)",
+    "Gas (auch W)": "Throttle (also W)",
+    "Bremse (auch S)": "Brake (also S)",
     "links blau-weiß": "left blue-and-white",
     "links": "left",
     "links, sie hat sehr wohl eigene Codes, und sie fügen sich in das Muster der anderen:": "left, it does have codes of its own, and they fit the pattern of the others:",
@@ -19364,7 +19372,11 @@
       physEngine.triggerShift(k === 'i' ? 1 : -1);
     }
     if (k === 'l' && !e.repeat) triggerHeadlightFlash();
-    if (k === 'w' && !e.repeat) setWeather(weather === 'rain' ? 'dry' : 'rain');
+    // v1.1.22: W ist jetzt Gas (WASD). GEMELDET von einem Tester: "es ist sehr oft zwischen Regen /
+    // kein Regen gewechselt" - W schaltete bei jedem Druck das Wetter um, auch in der virtuellen
+    // Fahrt. Die Testtasten (Wetter jetzt Shift+W, C, F, R, Q) gelten nur noch im Entwicklermodus.
+    const testTaste = typeof konsoleDev === 'function' && konsoleDev() && !(typeof vfAktiv === 'function' && vfAktiv());
+    if (testTaste && k === 'w' && e.shiftKey && !e.repeat) setWeather(weather === 'rain' ? 'dry' : 'rain');
     // Tastatur-Gegenstueck zu Dreieck ausserhalb des Cockpits (90-ghosts.js): oeffnet die
     // Erklaerung der fokussierten Menuezeile. Noetig, seit der Info-Knopf (B2) keinen
     // eigenen Navigationsschritt mehr hat - "alles, was das Pad kann, muss auch von der
@@ -19376,10 +19388,10 @@
     // Test keys. Everything the pad can do should be reachable from a keyboard, otherwise
     // half the app can only be exercised with a controller plugged in.
     if (k === 'p' && !e.repeat) requestPitStop();
-    if (k === 'c' && !e.repeat) { registerCrash(); showHudToast('Testcrash'); }
-    if (k === 'f' && !e.repeat) { fuel = 5; updateDamageFuelUI(); showHudToast(`Tank ${fuelLiters(5)} l`); }
+    if (testTaste && k === 'c' && !e.repeat) { registerCrash(); showHudToast('Testcrash'); }
+    if (testTaste && k === 'f' && !e.repeat) { fuel = 5; updateDamageFuelUI(); showHudToast(`Tank ${fuelLiters(5)} l`); }
     // Die Taste nimmt Auto 2 mit, sonst setzt sie nur das halbe Feld zurueck.
-    if (k === 'r' && !e.repeat) { fuel = 100; damage = 0;
+    if (testTaste && k === 'r' && !e.repeat) { fuel = 100; damage = 0;
                                   schadenZweiZuruecksetzen();
                                   tankZweiFuellen(100);
                                   updateDamageFuelUI();
@@ -19402,7 +19414,7 @@
       else flagHoldPress();
     }
     // Q ist in den Menues L1 (51-konsole.js); die Test-Runde gibt es nur noch im Cockpit.
-    if (k === 'q' && !e.repeat && !konsoleMenue()) debugCountLap(e.shiftKey);
+    if (testTaste && k === 'q' && !e.repeat && !konsoleMenue()) debugCountLap(e.shiftKey);
     if (k === 'm' && !e.repeat) {
       // Next unused section, so one key walks the whole protocol in order.
       const label = REC_SECTIONS[rec.next] || ('Markierung ' + (rec.next + 1));
@@ -19451,10 +19463,12 @@
       raceScreenPad(dir);
       return;
     }
-    keys.add(e.key);
+    keys.add(tasteName(e));
   });
+  // Buchstaben klein, damit Shift zwischen Druecken und Loslassen keine Taste haengen laesst.
+  function tasteName(e) { const n = e.key || ''; return n.length === 1 ? n.toLowerCase() : n; }
   window.addEventListener('keyup', (e) => {
-    keys.delete(e.key);
+    keys.delete(tasteName(e));
     // Loslassen der Halten-Geste. Zu frueh losgelassen heisst ausdruecklich: nichts
     // passiert - ein halber Druck darf keine halbe Wirkung haben.
     const kUp = (e.key || '').toLowerCase();
@@ -19476,16 +19490,19 @@
     // duerfen sie nicht GLEICHZEITIG das Auto steuern - auch nicht aus einer Taste, die
     // noch aus der Zeit VOR dem Wechsel auf den Optionen-Tab in `keys` haengt (z.B. ein
     // Klick mit der Maus auf den Tab waehrend eine Pfeiltaste physisch gehalten wird).
+    // v1.1.22: WASD wie die Pfeiltasten (W Gas, S Bremse, A/D lenken).
+    const links = keys.has('ArrowLeft') || keys.has('a'), rechts = keys.has('ArrowRight') || keys.has('d');
+    const gas = keys.has('ArrowUp') || keys.has('w'), bremse = keys.has('ArrowDown') || keys.has('s');
     if (!menuNavActive()) {
-      if (keys.has('ArrowLeft')) sx -= 1;
-      if (keys.has('ArrowRight')) sx += 1;
-      if (keys.has('ArrowUp')) ty += 1;
-      if (keys.has('ArrowDown')) ty -= 1;
+      if (links) sx -= 1;
+      if (rechts) sx += 1;
+      if (gas) ty += 1;
+      if (bremse) ty -= 1;
     }
     if (keys.has(' ')) { sx = 0; ty = 0; }
     let gbUeber = null;
     if (typeof gasBremseRueckwaertsPruefen === 'function' && !menuNavActive()) {
-      gbUeber = gasBremseRueckwaertsPruefen(keys.has('ArrowUp') ? 1 : 0, keys.has('ArrowDown') ? 1 : 0, null, 'tast');
+      gbUeber = gasBremseRueckwaertsPruefen(gas ? 1 : 0, bremse ? 1 : 0, null, 'tast');
     }
     applySteerInput(SRC.KEY, sx);
     applyThrottleInput(SRC.KEY, (gbUeber !== null && !keys.has(' ')) ? gbUeber : ty);
@@ -45410,7 +45427,7 @@
   function chMerken() {
     return {
       regler: presetRead(), modus: $('race-mode').value, limit: raceLimit,
-      wx: $('race-wx-start').value, pit: $('race-pit-required').value,
+      wx: $('race-wx-start').value, wxWechsel: $('race-wx-change').checked, pit: $('race-pit-required').value,
       tank: $('race-fuel-start').value, fliegend: $('race-flying').checked,
       pitModus: $('pit-modus') ? $('pit-modus').value : null,
       tiles: currentTrackTiles, rot: trackRotationDeg,
@@ -45429,7 +45446,9 @@
     // Start bleibt trocken; die Wechsel kommen aus dem Plan. "Wetter aendert sich" wird
     // ausgeschaltet, sonst wuerde der Zufallswechsel dazwischenfunken.
     chWetterPlan = def.wx ? def.wx.map((e) => ({ abMs: e.min * 60000, wetter: e.wetter })) : null;
-    if (def.wx) chSetzen('race-wx-change', false);
+    // v1.1.22: immer aus, nicht nur bei einem Plan - eine Challenge (auch die der Studie) ist trocken,
+    // und ein eingeschalteter Zufallswechsel aus dem freien Fahren liess es mitten darin regnen.
+    chSetzen('race-wx-change', false);
     const pit = chPitZahl(def, modus);
     chSetzen('race-pit-required', String(pit));
     if (pit > 0) {
@@ -45454,6 +45473,7 @@
     raceLimit = m.limit;
     $('race-limit').value = m.limit;
     chSetzen('race-wx-start', m.wx);
+    if (typeof m.wxWechsel === 'boolean') chSetzen('race-wx-change', m.wxWechsel);
     chSetzen('race-pit-required', m.pit);
     chSetzen('race-fuel-start', m.tank);
     chSetzen('race-flying', m.fliegend);
@@ -52723,12 +52743,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // bis zur Startkachel, dann haelt er sie mit der Bremse, bis gestartet oder abgebrochen
   // wird. Der Ort kommt aus derselben Ortung (car.ghost) wie bei den Ghosts.
   const aufstellSpieler = new Map();   // car -> { ziel, seit, fertig }
-  // v1.1.21 BESTELLT: "Die ersten beiden bis auf die Start/Ziel-Gerade fahren und dort links und rechts
-  // parken, die naechsten auf die Schiene davor, und so weiter." Reihe 1 also AUF Start/Ziel (vorher die
-  // Kachel davor), jede weitere eine Kachel dahinter.
+  // Reihe 1 auf der Kachel vor Start/Ziel, jede weitere eine Kachel dahinter. v1.1.21 stand Reihe 1 kurz
+  // AUF Start/Ziel; v1.1.22 zurueck - GEMELDET: "Bei 1.1.19 ging es gut, dass die Autos nach dem Zieleinlauf
+  // auf der korrekten Hoehe geparkt haben, nur die Querlage war falsch."
   function aufstellZielKachel(platz, n) {
     const s = typeof ortStartIndices === 'function' ? (ortStartIndices(currentTrackTiles || [])[0] || 0) : 0;
-    return (((s - Math.floor(platz / 2)) % n) + n) % n;
+    return (((s - 1 - Math.floor(platz / 2)) % n) + n) % n;
   }
   // v0.9.87: ERST NACH DEM STARTTEIL ANHALTEN. startGhost() legt den Ort neu an, und die
   // erste gemeldete Kachel gilt dann als Kachel 0 - der Halt "auf Kachel ziel" traf also
@@ -55158,10 +55178,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Auto zu seiner Seite (Lenkimpuls) und bremst.
   // v1.1.11 GEMELDET: "Das erste Auto rollt immer ueber die Ziellinie" und BESTELLT "frueher anhalten":
   // die Haltepunkte ruecken vor (rechts 0,55 -> 0,30 der Kachel, links 0,15 -> 0); der Versatz bleibt.
-  // v1.1.21 BESTELLT: "sobald sie auf der relevanten Schiene sind, voll nach rechts und dann voll nach
-  // links lenken (bzw. das jeweils zweite Auto erst nach links und dann nach rechts)". Beide Seiten
-  // beginnen also an der Kachelgrenze und stehen nebeneinander; die Mitte bleibt frei.
-  const AUFSTELL_BRUCH_RECHTS = 0.0, AUFSTELL_BRUCH_LINKS = 0.0;
+  // Wo auf der Kachel der Impuls beginnt: rechts bei 0,15, links an der Kachelgrenze - die Hoehe aus
+  // v1.1.19, die gestimmt hat (v1.1.21 kurz beide bei 0).
+  const AUFSTELL_BRUCH_RECHTS = 0.15, AUFSTELL_BRUCH_LINKS = 0.0;
   function aufstellHaltBruch(platz) { return platz >= 0 && platz % 2 ? AUFSTELL_BRUCH_LINKS : AUFSTELL_BRUCH_RECHTS; }
   // Steht der Ort (Kachel + Phase) auf der Zielkachel und mindestens am Haltepunkt?
   function aufstellAmPunkt(o, ziel, platz) {
@@ -88101,9 +88120,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   stAdd('Aufstellung: Mittelgasse, versetzte Haltepunkte, Impuls mit Tempo und Dauer aus den Reglern', () => {
     const f = [];
     // Haltepunkt: rechts (P1, gerade) weiter vorn als links (P2, ungerade)
-    // v1.1.21: beide Seiten beginnen an der Kachelgrenze und stehen nebeneinander.
-    if (aufstellHaltBruch(0) !== 0 || aufstellHaltBruch(1) !== 0) f.push('Haltepunkte nicht an der Kachelgrenze');
-    if (!aufstellAmPunkt(4.0, 4, 0) || !aufstellAmPunkt(4.0, 4, 1) || aufstellAmPunkt(3.95, 4, 0)) f.push('Haltepunkt falsch');
+    // Hoehe wie v1.1.19: rechts bei 0,15, links an der Kachelgrenze.
+    if (!(aufstellHaltBruch(0) > aufstellHaltBruch(1))) f.push('rechts nicht vor links');
+    if (aufstellAmPunkt(4.1, 4, 0) || !aufstellAmPunkt(4.2, 4, 0)) f.push('rechter Haltepunkt falsch');
+    if (!aufstellAmPunkt(4.0, 4, 1) || aufstellAmPunkt(3.95, 4, 1)) f.push('linker Haltepunkt falsch');
     const msEl = $('race-einpark-ms'), tEl = $('race-einpark-tempo');
     const merk = [msEl && msEl.value, tEl && tEl.value];
     try {
@@ -88115,7 +88135,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (Math.abs(pitZiel(car) - 0.25) > 1e-9) f.push('Impulstempo nicht 25 %: ' + pitZiel(car));
       if (car.ghost.randHalt.radMs !== 60) f.push('Impulsdauer nicht 60 ms');
     } finally { if (msEl) msEl.value = merk[0]; if (tEl) tEl.value = merk[1]; }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'beide an der Kachelgrenze; Impuls aus den Reglern' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'rechts bei 0,15, links bei 0 der Kachel; Impuls aus den Reglern' };
   });
 
   // ---- v1.1.3: NPC-Fahrmodus "Realistisch" ----
@@ -91358,8 +91378,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (segs(ohne) !== segs(editorAus)) f.push('Vorgabe zeigt die Linie');
     const n = 10;
     const ziele = [0, 1, 2, 3, 4, 5].map((k) => aufstellZielKachel(k, n));
-    // v1.1.21: Reihe 1 AUF Start/Ziel (Kachel 0), jede weitere eine Kachel dahinter.
-    if (ziele.join(',') !== '0,0,9,9,8,8') f.push('Startkacheln ' + ziele.join(','));
+    // Reihe 1 auf der Kachel vor Start/Ziel, jede weitere eine Kachel dahinter (Hoehe wie v1.1.19).
+    if (ziele.join(',') !== '9,9,8,8,7,7') f.push('Startkacheln ' + ziele.join(','));
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Linie nur mit mitLinie, Plaetze 1/2 vor Start/Ziel, je Reihe eine Kachel zurueck' };
   });
 
@@ -94164,6 +94184,40 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       mp.an = merk.an; mp.id = merk.id; mpLetzterStand = merk.stand; mp.frageUmgehen = merk.um;
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'allein oder mit Abgemeldeten keine Frage, mit Mitspieler schon' };
+  });
+
+  // v1.1.22 GEMELDET: "es ist sehr oft zwischen Regen / kein Regen gewechselt" - W war eine immer
+  // aktive Testtaste fuers Wetter. Jetzt Gas (WASD); die Testtasten nur im Entwicklermodus.
+  stAdd('Tastatur v1.1.22: W ist Gas und schaltet das Wetter nicht um', () => {
+    const f = [];
+    const cb = $('setting-dev');
+    const merk = { dev: cb ? cb.checked : false, wetter: weather, schaden: damage };
+    const druck = (key, extra) => window.dispatchEvent(new KeyboardEvent('keydown', Object.assign({ key, bubbles: true }, extra || {})));
+    const los = (key) => window.dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true }));
+    try {
+      if (cb) cb.checked = false;
+      if (konsoleDev()) return { ok: true, mass: 'uebersprungen: ?dev in der Adresse' };
+      druck('w');
+      if (weather !== merk.wetter) f.push('W schaltet das Wetter um');
+      if (!keys.has('w')) f.push('W nicht als Fahrtaste gemerkt');
+      los('W');
+      if (keys.has('w')) f.push('W haengt nach Loslassen mit Shift');
+      druck('c');
+      if (damage !== merk.schaden) f.push('C loest ohne Entwicklermodus einen Crash aus');
+      los('c');
+      if (cb) {
+        cb.checked = true;
+        druck('W', { shiftKey: true });
+        if (weather === merk.wetter) f.push('Shift+W im Entwicklermodus schaltet nicht um');
+        los('W');
+      }
+    } finally {
+      if (cb) cb.checked = merk.dev;
+      if (weather !== merk.wetter) setWeather(merk.wetter);
+      damage = merk.schaden;
+      keys.clear();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'W faehrt, Wetter nur mit Shift+W im Entwicklermodus' };
   });
 
   stAdd('Woerterbuch ohne doppelte Schluessel', () => {

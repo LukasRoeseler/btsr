@@ -2593,12 +2593,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // bis zur Startkachel, dann haelt er sie mit der Bremse, bis gestartet oder abgebrochen
   // wird. Der Ort kommt aus derselben Ortung (car.ghost) wie bei den Ghosts.
   const aufstellSpieler = new Map();   // car -> { ziel, seit, fertig }
-  // v1.1.21 BESTELLT: "Die ersten beiden bis auf die Start/Ziel-Gerade fahren und dort links und rechts
-  // parken, die naechsten auf die Schiene davor, und so weiter." Reihe 1 also AUF Start/Ziel (vorher die
-  // Kachel davor), jede weitere eine Kachel dahinter.
+  // Reihe 1 auf der Kachel vor Start/Ziel, jede weitere eine Kachel dahinter. v1.1.21 stand Reihe 1 kurz
+  // AUF Start/Ziel; v1.1.22 zurueck - GEMELDET: "Bei 1.1.19 ging es gut, dass die Autos nach dem Zieleinlauf
+  // auf der korrekten Hoehe geparkt haben, nur die Querlage war falsch."
   function aufstellZielKachel(platz, n) {
     const s = typeof ortStartIndices === 'function' ? (ortStartIndices(currentTrackTiles || [])[0] || 0) : 0;
-    return (((s - Math.floor(platz / 2)) % n) + n) % n;
+    return (((s - 1 - Math.floor(platz / 2)) % n) + n) % n;
   }
   // v0.9.87: ERST NACH DEM STARTTEIL ANHALTEN. startGhost() legt den Ort neu an, und die
   // erste gemeldete Kachel gilt dann als Kachel 0 - der Halt "auf Kachel ziel" traf also
@@ -5028,10 +5028,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Auto zu seiner Seite (Lenkimpuls) und bremst.
   // v1.1.11 GEMELDET: "Das erste Auto rollt immer ueber die Ziellinie" und BESTELLT "frueher anhalten":
   // die Haltepunkte ruecken vor (rechts 0,55 -> 0,30 der Kachel, links 0,15 -> 0); der Versatz bleibt.
-  // v1.1.21 BESTELLT: "sobald sie auf der relevanten Schiene sind, voll nach rechts und dann voll nach
-  // links lenken (bzw. das jeweils zweite Auto erst nach links und dann nach rechts)". Beide Seiten
-  // beginnen also an der Kachelgrenze und stehen nebeneinander; die Mitte bleibt frei.
-  const AUFSTELL_BRUCH_RECHTS = 0.0, AUFSTELL_BRUCH_LINKS = 0.0;
+  // Wo auf der Kachel der Impuls beginnt: rechts bei 0,15, links an der Kachelgrenze - die Hoehe aus
+  // v1.1.19, die gestimmt hat (v1.1.21 kurz beide bei 0).
+  const AUFSTELL_BRUCH_RECHTS = 0.15, AUFSTELL_BRUCH_LINKS = 0.0;
   function aufstellHaltBruch(platz) { return platz >= 0 && platz % 2 ? AUFSTELL_BRUCH_LINKS : AUFSTELL_BRUCH_RECHTS; }
   // Steht der Ort (Kachel + Phase) auf der Zielkachel und mindestens am Haltepunkt?
   function aufstellAmPunkt(o, ziel, platz) {

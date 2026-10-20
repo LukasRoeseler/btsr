@@ -15017,9 +15017,10 @@
   stAdd('Aufstellung: Mittelgasse, versetzte Haltepunkte, Impuls mit Tempo und Dauer aus den Reglern', () => {
     const f = [];
     // Haltepunkt: rechts (P1, gerade) weiter vorn als links (P2, ungerade)
-    // v1.1.21: beide Seiten beginnen an der Kachelgrenze und stehen nebeneinander.
-    if (aufstellHaltBruch(0) !== 0 || aufstellHaltBruch(1) !== 0) f.push('Haltepunkte nicht an der Kachelgrenze');
-    if (!aufstellAmPunkt(4.0, 4, 0) || !aufstellAmPunkt(4.0, 4, 1) || aufstellAmPunkt(3.95, 4, 0)) f.push('Haltepunkt falsch');
+    // Hoehe wie v1.1.19: rechts bei 0,15, links an der Kachelgrenze.
+    if (!(aufstellHaltBruch(0) > aufstellHaltBruch(1))) f.push('rechts nicht vor links');
+    if (aufstellAmPunkt(4.1, 4, 0) || !aufstellAmPunkt(4.2, 4, 0)) f.push('rechter Haltepunkt falsch');
+    if (!aufstellAmPunkt(4.0, 4, 1) || aufstellAmPunkt(3.95, 4, 1)) f.push('linker Haltepunkt falsch');
     const msEl = $('race-einpark-ms'), tEl = $('race-einpark-tempo');
     const merk = [msEl && msEl.value, tEl && tEl.value];
     try {
@@ -15031,7 +15032,7 @@
       if (Math.abs(pitZiel(car) - 0.25) > 1e-9) f.push('Impulstempo nicht 25 %: ' + pitZiel(car));
       if (car.ghost.randHalt.radMs !== 60) f.push('Impulsdauer nicht 60 ms');
     } finally { if (msEl) msEl.value = merk[0]; if (tEl) tEl.value = merk[1]; }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'beide an der Kachelgrenze; Impuls aus den Reglern' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'rechts bei 0,15, links bei 0 der Kachel; Impuls aus den Reglern' };
   });
 
   // ---- v1.1.3: NPC-Fahrmodus "Realistisch" ----
@@ -18274,8 +18275,8 @@
     if (segs(ohne) !== segs(editorAus)) f.push('Vorgabe zeigt die Linie');
     const n = 10;
     const ziele = [0, 1, 2, 3, 4, 5].map((k) => aufstellZielKachel(k, n));
-    // v1.1.21: Reihe 1 AUF Start/Ziel (Kachel 0), jede weitere eine Kachel dahinter.
-    if (ziele.join(',') !== '0,0,9,9,8,8') f.push('Startkacheln ' + ziele.join(','));
+    // Reihe 1 auf der Kachel vor Start/Ziel, jede weitere eine Kachel dahinter (Hoehe wie v1.1.19).
+    if (ziele.join(',') !== '9,9,8,8,7,7') f.push('Startkacheln ' + ziele.join(','));
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Linie nur mit mitLinie, Plaetze 1/2 vor Start/Ziel, je Reihe eine Kachel zurueck' };
   });
 
@@ -21080,6 +21081,40 @@
       mp.an = merk.an; mp.id = merk.id; mpLetzterStand = merk.stand; mp.frageUmgehen = merk.um;
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'allein oder mit Abgemeldeten keine Frage, mit Mitspieler schon' };
+  });
+
+  // v1.1.22 GEMELDET: "es ist sehr oft zwischen Regen / kein Regen gewechselt" - W war eine immer
+  // aktive Testtaste fuers Wetter. Jetzt Gas (WASD); die Testtasten nur im Entwicklermodus.
+  stAdd('Tastatur v1.1.22: W ist Gas und schaltet das Wetter nicht um', () => {
+    const f = [];
+    const cb = $('setting-dev');
+    const merk = { dev: cb ? cb.checked : false, wetter: weather, schaden: damage };
+    const druck = (key, extra) => window.dispatchEvent(new KeyboardEvent('keydown', Object.assign({ key, bubbles: true }, extra || {})));
+    const los = (key) => window.dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true }));
+    try {
+      if (cb) cb.checked = false;
+      if (konsoleDev()) return { ok: true, mass: 'uebersprungen: ?dev in der Adresse' };
+      druck('w');
+      if (weather !== merk.wetter) f.push('W schaltet das Wetter um');
+      if (!keys.has('w')) f.push('W nicht als Fahrtaste gemerkt');
+      los('W');
+      if (keys.has('w')) f.push('W haengt nach Loslassen mit Shift');
+      druck('c');
+      if (damage !== merk.schaden) f.push('C loest ohne Entwicklermodus einen Crash aus');
+      los('c');
+      if (cb) {
+        cb.checked = true;
+        druck('W', { shiftKey: true });
+        if (weather === merk.wetter) f.push('Shift+W im Entwicklermodus schaltet nicht um');
+        los('W');
+      }
+    } finally {
+      if (cb) cb.checked = merk.dev;
+      if (weather !== merk.wetter) setWeather(merk.wetter);
+      damage = merk.schaden;
+      keys.clear();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'W faehrt, Wetter nur mit Shift+W im Entwicklermodus' };
   });
 
   stAdd('Woerterbuch ohne doppelte Schluessel', () => {
