@@ -2726,7 +2726,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // sofort volle Bremse (sofort) - ohne Kontrolle nach dem Halt.
     randHaltStarten(car, { phase: staerke > 0 ? 'rad' : 'halt', quer: 0, tempo: formationPace(), haltMs: AUFSTELL_HALT_MS, sofort: true,
                            radLenk: staerke > 0 ? seite * EINPARK_LENK * staerke : 0, radTempo: einparkTempo(),
-                           radMs: einparkMs(), gegenMs: einparkMs(), fertig: (c) => {
+                           radMs: einparkMs(), gegenMs: einparkMs(), rundTakt: true, fertig: (c) => {
       log(garageLabel(c) + ': steht auf seinem Startplatz.', 'info');
       if (g.nachZiel) blinkCar(c);
       if (!aufstellenLaeuft()) {
@@ -2737,6 +2737,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return false;
   }
   const AUFSTELL_HALT_MS = 800;
+  const RANDHALT_HALBTAKT_MS = 22;
   const AUFSTELL_STAFFEL_MS = 500, AUFSTELL_STAFFEL_NAH = 2;
   const AUFSTELL_ORT_FRISCH_MS = 3000;
   // v1.0.28 GEMELDET: "In der automatischen Aufstellung fahren die Autos zum Teil so langsam,
@@ -4977,7 +4978,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // weiter vorn, links weiter hinten - wie auf einem echten Startplan. Bis dahin fahren alle genau
   // mittig (Mittelgasse), auch an schon geparkten Autos vorbei; erst am eigenen Punkt lenkt das
   // Auto zu seiner Seite (Lenkimpuls) und bremst.
-  const AUFSTELL_BRUCH_RECHTS = 0.55, AUFSTELL_BRUCH_LINKS = 0.15;
+  // v1.1.11 GEMELDET: "Das erste Auto rollt immer ueber die Ziellinie" und BESTELLT "frueher anhalten":
+  // die Haltepunkte ruecken vor (rechts 0,55 -> 0,30 der Kachel, links 0,15 -> 0); der Versatz bleibt.
+  const AUFSTELL_BRUCH_RECHTS = 0.30, AUFSTELL_BRUCH_LINKS = 0.0;
   function aufstellHaltBruch(platz) { return platz >= 0 && platz % 2 ? AUFSTELL_BRUCH_LINKS : AUFSTELL_BRUCH_RECHTS; }
   // Steht der Ort (Kachel + Phase) auf der Zielkachel und mindestens am Haltepunkt?
   function aufstellAmPunkt(o, ziel, platz) {
@@ -4995,7 +4998,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                    radTempo: opt.radTempo || 0,
                    bremsMs: opt.bremsMs || 0, endLenk: opt.endLenk || 0, gegenschubMs: opt.gegenschubMs || 0,
                    gegenschubRadMs: opt.gegenschubRadMs || 0, radEnde: 0, nominal: !!opt.nominal,
-                   tempoAb: opt.tempoAb || 0,
+                   tempoAb: opt.tempoAb || 0, rundTakt: !!opt.rundTakt,
                    sofort: !!opt.sofort };
   }
   // Nach der Randfahrt: mit radLenk erst noch mit eingeschlagenen Raedern an den Rand ('rad'),
@@ -5044,8 +5047,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       h.at = h.nominal ? Math.max(h.at + dauer, now - RANDHALT_NACHHOL_MS) : now;
       h.phase = phase;
     };
+    // v1.1.11 BESTELLT: "nach dem Ende des Lenkimpulses direkt die Geschwindigkeit auf 0". Der Takt
+    // (~45 ms) bemerkte das Ende bisher erst im naechsten Takt danach - bis zu 45 ms mehr Fahrt bei
+    // 30 % Tempo. Mit rundTakt (Aufstellung) endet eine Phase im Takt, der ihrem Ende am naechsten
+    // liegt, und die Bremse greift im selben Takt voll (pitBremse, 'halt' mit sofort).
+    const vorbei = (dauer) => now - h.at >= dauer - (h.rundTakt ? RANDHALT_HALBTAKT_MS : 0);
     if (h.phase === 'rad') {
-      if (now - h.at >= h.radMs) {
+      if (vorbei(h.radMs)) {
         const ziel = h.gegenMs ? 'gegen' : (h.bremsMs ? 'brems' : 'halt');
         naechste(h.radMs, ziel);
         h.radEnde = h.at;
@@ -5053,7 +5061,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       return true;
     }
     if (h.phase === 'gegen') {
-      if (now - h.at >= h.gegenMs) naechste(h.gegenMs, h.bremsMs ? 'brems' : 'halt');
+      if (vorbei(h.gegenMs)) naechste(h.gegenMs, h.bremsMs ? 'brems' : 'halt');
       return true;
     }
     if (h.phase === 'brems') {

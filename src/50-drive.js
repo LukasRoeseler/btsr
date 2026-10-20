@@ -2970,6 +2970,9 @@
           const gI = ghostSpeedControl(regler, typeof einparkTempo === 'function' ? einparkTempo() : 0.3, vI, 0.045);
           return { grund: 'aufstellen', throttle: gI.throttle, brake: gI.brake, steer: 0, lenkt: false, radLenk: rad };
         }
+        // v1.1.11 BESTELLT: nach dem Impuls DIREKT Tempo 0. Nur bremsen liess das simulierte Tempo (und
+        // damit das Gasbyte) erst abklingen, und das Auto rollte weiter - das erste ueber die Ziellinie.
+        st.speedKmh = 0;
         return { grund: 'aufstellen', throttle: 0, brake: 1, steer: 0, lenkt: false, radLenk: 0 };
       }
       const vA = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
