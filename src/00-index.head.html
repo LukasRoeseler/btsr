@@ -4823,7 +4823,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.29</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.30</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5976,6 +5976,8 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Garage: Nach einem Tipp bleibt die Liste auf ihrer H&#246;he stehen, statt nach oben zu springen.</li>
+        <li>Einparken nach deinen Aufnahmen (WIP, Vorgabe): Die automatische Aufstellung (rechts und links je eine Aufnahme) und das Safety Car (Einparken auf dem Randstreifen, Ausparken) fahren jetzt deine von Hand aufgenommenen Folgen. Fl&#252;ssig aus der Fahrt: auf dem Platz gleitet das Tempo in 0,3 s auf das der Aufnahme, kein Anhalten davor; das Anfahren aus dem Stand aus den Aufnahmen ist weggelassen. Das Safety Car f&#228;hrt nach dem Ausparken ohne Halt normal weiter. Umschalten auf den bisherigen Lenkimpuls: Renneinstellungen &#8222;Einparken in der Aufstellung&#8220; bzw. Safety-Car-Men&#252; &#8222;Ein- und Ausparken&#8220;.</li>
         <li>Fahrten-Aufnahme: Die Wiedergabe sendet jetzt genau das Aufgenommene. Vorher lief es ein zweites Mal durch Fahrgef&#252;hl und Physik, und vom Gas blieb so wenig, dass das Auto nur lenkte. Neu: &#8222;Teilen / Kopieren&#8220; &#246;ffnet das Teilen-Men&#252; des Handys oder kopiert die Aufnahme in die Zwischenablage (Aufnahmen liegen in der App, nicht als Datei).</li>
         <li>Gewinnerschirm: Auf dem Podest steht &#252;ber jedem Namen das Autobild (Foto oder Farbe), der Sieger etwas gr&#246;&#223;er.</li>
         <li>Aufstellungsschirm vor dem Rennstart: Beim Umsortieren gleiten die Autos an ihren neuen Platz, das bewegte Auto leuchtet kurz auf. Autobilder und Pfeiltasten sind gr&#246;&#223;er, und ein Tipp auf ein Auto l&#228;sst seine Lichter blinken.</li>
@@ -9245,6 +9247,14 @@
       <div class="opt-row"><div class="opt-label">Gelbe Flagge deaktivieren<small>An: Der Knopf
           &bdquo;Gelbe Flagge&ldquo; und das Halten der Boxentaste rufen kein Gelb mehr aus.</small></div>
         <label class="tgl"><input type="checkbox" id="race-gelb-aus"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Einparken in der Aufstellung<span class="wip-tag">WIP</span><small>Aufnahme (Vorgabe):
+          Das Auto f&auml;hrt die von Hand aufgenommene Folge &ndash; auf dem Startplatz gleitet es in 0,3&nbsp;s auf das
+          Tempo der Aufnahme, lenkt zur eigenen Seite und zur&uuml;ck und rollt aus, ohne vorher anzuhalten. Rechts und
+          links sind je eine eigene Aufnahme. Lenkimpuls: die bisherige Folge mit den Reglern darunter.</small></div>
+        <select id="race-einpark-art" data-preset-skip>
+          <option value="aufnahme" selected>Aufnahme</option>
+          <option value="impuls">Lenkimpuls</option>
+        </select></div>
       <div class="opt-row"><div class="opt-label">Einparken: Einlenkst&auml;rke<span class="wip-tag">WIP</span><small>Bei der
           automatischen Aufstellung (vor und nach dem Rennen) fahren alle Autos genau mittig, auch an
           schon geparkten vorbei. Am eigenen Haltepunkt &ndash; rechts weiter vorn in der Kachel, links
@@ -11418,6 +11428,14 @@
           <option value="fahrbahn" selected>Fahrbahn</option>
           <option value="neben" hidden>Neben der Strecke von Hand</option>
           <option value="wartet">Fahrbahn, wartet bis Gelb</option>
+        </select></div>
+      <div class="opt-row"><div class="opt-label">Safety Car: Ein- und Ausparken <span class="wip-tag">WIP</span>
+          <small>Aufnahme (Vorgabe): Das Safety Car parkt mit der von Hand aufgenommenen Folge auf dem Randstreifen
+          ein (fl&uuml;ssig aus der Fahrt, ohne vorher anzuhalten) und f&auml;hrt mit der aufgenommenen Ausparkfolge wieder
+          los, danach geht es ohne Halt ins normale Fahren &uuml;ber. Lenkimpuls: die bisherige Folge mit den Reglern.</small></div>
+        <select id="sc-park-art">
+          <option value="aufnahme" selected>Aufnahme</option>
+          <option value="impuls">Lenkimpuls</option>
         </select></div>
       <div class="opt-row"><div class="opt-label">Safety Car: Einpark-Teil <span class="wip-tag">experimentell</span>
           <small>Das Streckenteil, auf dem das Safety Car rechts am Rand parkt. Vorgabe Start/Ziel. Es f&auml;hrt dorthin erst, wenn es seit dem Losfahren &uuml;ber Start/Ziel gefahren ist &ndash; sonst stimmt die Z&auml;hlung der Teile nicht. Die Wahl einer bestimmten Nummer gilt nur f&uuml;r die gerade geladene Strecke.</small></div>

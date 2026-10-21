@@ -1898,6 +1898,13 @@
     // Autos untereinander, darunter die Aktionen; rechts die Einstellungen des gewaehlten
     // Autos. Jede Zeile ist eine Optionszeile: Steuerkreuz hoch/runter waehlt, links/rechts
     // aendert (bei einem Auto: seine Rolle, nur freie Rollen), X springt nach rechts.
+    // v1.1.30 BESTELLT: "Wenn ich in den Garagenmenues auf etwas klicke, muss ich danach immer wieder von
+    // neuem scrollen. Schalte das ab, sodass ich auf der Hoehe bleibe." Beide Spalten werden hier neu
+    // gebaut und begannen dann oben. Jetzt: die Hoehe beider Spalten und aller scrollenden Vorfahren merken
+    // und danach wiederherstellen (bei kuerzerem Inhalt so weit unten wie moeglich).
+    const altL = list.querySelector('.gar-a-links'), altR = list.querySelector('.gar-a-rechts');
+    const scrollMerk = { l: altL ? altL.scrollTop : 0, r: altR ? altR.scrollTop : 0, vorfahren: [] };
+    for (let p = list.parentElement; p; p = p.parentElement) if (p.scrollTop) scrollMerk.vorfahren.push([p, p.scrollTop]);
     list.innerHTML = '';
     list.classList.remove('gar-karten');
     list.classList.add('gar-a');
@@ -2041,6 +2048,9 @@
     }
     list.appendChild(links);
     list.appendChild(rechts);
+    links.scrollTop = scrollMerk.l;
+    rechts.scrollTop = scrollMerk.r;
+    for (const [p, y] of scrollMerk.vorfahren) p.scrollTop = y;
     refreshGarageGo();
     garAktionenAbgleichen();
   }
@@ -2708,6 +2718,18 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const w = EINPARK_LENK * einparkStaerke();
     if (!a.fertigAt) a.fertigAt = Date.now();
     const t = Date.now() - a.fertigAt, ms = einparkMs();
+    // v1.1.30: die Aufnahme (wie bei den NPCs), mit Angleichen vom aktuellen Gas.
+    const staerke = einparkStaerke();
+    if (staerke > 0 && aufstellArt() === 'aufnahme') {
+      const sk = seite > 0 ? MANOEVER.rechts : MANOEVER.links;
+      if (a.vonDrive === undefined) {
+        a.vonDrive = typeof physOutThrottle === 'number' && physOutThrottle > 0 ? Math.min(0.8, physOutThrottle) : sk[0][2];
+      }
+      const h = { at: 0, anpassMs: MANOEVER_ANPASS_MS, vonDrive: a.vonDrive, skript: sk, lenkFaktor: staerke };
+      if (t >= MANOEVER_ANPASS_MS + manoeverDauer(sk)) return { lenk: 0, gas: 'halt' };
+      const s = skriptSchritt(h, t);
+      return { lenk: s.lenk, gas: 'skript', drive: s.drive };
+    }
     if (w <= 0 || t >= 2 * ms) return { lenk: 0, gas: 'halt' };
     return { lenk: t < ms ? seite * w : -seite * w, gas: 'fahrt' };
   }
@@ -2810,6 +2832,17 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // zur Seite (EINPARK_MS, Staerke aus dem Regler), ein Takt zurueck, dann bremsen - alles
     // ohne Spur-Bytes, damit die Spurfuehrung das Auto nicht wieder zur Mitte zieht.
     const staerke = einparkStaerke();
+    if (staerke > 0 && aufstellArt() === 'aufnahme') {
+      const sk = seite > 0 ? MANOEVER.rechts : MANOEVER.links;
+      randHaltStarten(car, { phase: 'skript', quer: 0, skript: sk, anpassMs: MANOEVER_ANPASS_MS,
+                             vonDrive: letztesGas(car, sk[0][2]), lenkFaktor: staerke, haltMs: AUFSTELL_HALT_MS, sofort: true,
+                             fertig: (c) => {
+        log(garageLabel(c) + ': steht auf seinem Startplatz (Aufnahme ' + (seite > 0 ? 'rechts' : 'links') + ').', 'info');
+        if (g.nachZiel) blinkCar(c);
+        if (!aufstellenLaeuft()) { clearTimeout(aufstellenTimer); showHudToast(t('Startaufstellung steht')); }
+      } });
+      return false;
+    }
     // v1.0.39 BESTELLT: "10 ms in die eine Richtung lenken, dann 10 ms in die andere, dann sofort
     // halten. Bis dahin genau mittig fahren." Ohne Einlenken (Vorgabe 0) gleich halten; die Bremse
     // greift sofort voll (sofort), ohne die Rampe des Boxenstopps.
@@ -4767,6 +4800,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function pitZiel(car) {
     const rh = car.ghost && car.ghost.randHalt;
     if (rh) {
+      if (rh.phase === 'skript') return null;      // v1.1.30: das Gas kommt aus der Aufnahme
       // Rand-Vorlauf: vor der eigentlichen Anfahrt gilt kein Randhalt-Tempo, nur die Querlage laeuft.
       if (rh.phase === 'rand' && rh.tempoAb && car.ghost.scRest > rh.tempoAb) return null;
       return rh.phase === 'rand' ? rh.tempo
@@ -5047,6 +5081,48 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (o === null || o === undefined || Math.floor(o) !== ziel) return false;
     return (o - Math.floor(o)) >= aufstellHaltBruch(platz) - 1e-9;
   }
+  // ---- AUFGENOMMENE MANOEVER (v1.1.30, WIP) ------------------------------------------------
+  // BESTELLT: "Anbei sind die Aufnahmen fuer Aufstellung (rechts und links) und Safety Car auf dem
+  // Randstreifen parken. Baue sie ein und mach es die Standardoption. Die Autos sollen nicht anhalten und
+  // dann losfahren, sondern es soll ein fliessender Uebergang sein." Gefahren am 2026-10-21 von Hand im
+  // Pacejka-Modus, im Ausdruck-Modus (Lenkwert = Radwinkel), mittig. Je Punkt [ms, Lenkung, Gas]: der Teil
+  // jeder Aufnahme ab dem letzten geraden Takt vor dem Einlenken; das Anfahren aus dem Stand davor ist
+  // weggelassen. Das Gas ist mit 1,8 multipliziert - dem Faktor "Hoechstgeschwindigkeit" von Pacejka, mit
+  // dem sendControlValue() es damals ans Auto gab; NPCs senden ohne diesen Faktor. Safety Car: die Aufnahme
+  // war Einparken, Stehen, Zurueckstellen, Ausparken - getrennt in scEin (bis zum Stillstand) und scAus
+  // (vom Stand bis die Raeder wieder gerade stehen, danach faehrt es normal weiter).
+  const MANOEVER = {
+    rechts: [[0,0,0.143],[48,0.159,0.141],[94,0.986,0.139],[140,0.992,0.138],[180,0.995,0.137],[227,0.997,0.135],[273,0.999,0.134],[318,0.999,0.132],[360,1,0.131],[409,1,0.129],[450,1,0.128],[497,1,0.127],[539,1,0.125],[593,1,0.124],[630,1,0.123],[677,0,0.121],[724,-1,0.12],[768,-1,0.118],[810,-1,0.117],[857,-1,0.116],[901,-1,0.115],[948,-1,0.113],[990,-1,0.112],[1042,-1,0.111],[1080,-1,0.11],[1128,-1,0.108],[1174,-1,0.107],[1218,-1,0.106],[1260,-1,0.105],[1309,-1,0.103],[1350,-1,0.102],[1398,0,0.101],[1443,0,0.093],[1490,0,0.083],[1530,0,0.074],[1578,0,0.063],[1624,0,0]],
+    links: [[0,0,0.145],[40,-0.511,0.146],[92,-0.908,0.146],[131,-0.929,0.145],[178,-0.956,0.143],[222,-0.974,0.142],[271,-0.986,0.14],[311,-0.991,0.139],[361,-0.995,0.137],[401,-0.997,0.136],[448,-0.998,0.134],[491,-0.999,0.133],[539,-1,0.132],[581,-1,0.13],[628,-0.505,0.129],[673,0.805,0.127],[723,1,0.126],[761,1,0.125],[808,1,0.123],[850,1,0.122],[899,1,0.121],[941,1,0.119],[990,1,0.118],[1031,1,0.117],[1079,1,0.115],[1123,1,0.114],[1169,1,0.113],[1211,1,0.111],[1258,0.044,0.11],[1301,0,0.106],[1348,0,0.097],[1391,0,0.088],[1439,0,0.077],[1481,0,0.068],[1529,0,0]],
+    scEin: [[0,0,0.233],[41,0.864,0.231],[92,0.922,0.228],[132,0.95,0.226],[180,0.973,0.224],[222,0.984,0.222],[272,0.991,0.22],[312,0.995,0.218],[359,0.997,0.215],[403,0.509,0.213],[450,0,0.211],[491,0,0.209],[540,-1,0.207],[582,-1,0.205],[630,-1,0.203],[672,-1,0.201],[726,-0.69,0.199],[761,0,0.197],[810,0,0.195],[852,0,0.193],[900,0,0.191],[941,0,0.189],[990,0,0.187],[1032,-0.134,0.186],[1080,-1,0.184],[1122,-1,0.182],[1172,-1,0.173],[1212,0,0.164],[1259,0,0.154],[1304,0,0.144],[1350,0,0.134],[1392,0,0.124],[1439,0,0.113],[1482,0,0.103],[1529,0,0.092],[1572,0,0.082],[1622,0,0.071],[1661,0,0.061],[1710,0,0]],
+    scAus: [[0,0,0],[50,-1,0],[269,-1,0.005],[319,-1,0.017],[359,-0.999,0.025],[407,-0.998,0.029],[454,-0.997,0.031],[501,-0.994,0.033],[540,-0.992,0.039],[588,-0.989,0.039],[629,-0.986,0.04],[678,-0.982,0.039],[720,-0.979,0.037],[769,-0.975,0.038],[810,-0.972,0.041],[858,-0.966,0.061],[903,-0.958,0.074],[954,-0.945,0.09],[1038,-0.919,0.09],[1080,-0.906,0.09],[1128,-0.892,0.077],[1170,-0.883,0.073],[1221,-0.874,0.07],[1260,-0.871,0.073],[1307,-0.871,0.076],[1350,-0.869,0.08],[1399,-0.869,0.084],[1439,-0.868,0.087],[1488,-0.868,0.09],[1538,0.236,0.092],[1577,0.88,0.093],[1619,0.888,0.094],[1668,0.898,0.095],[1710,0.906,0.096],[1758,0.913,0.098],[1800,0.918,0.099],[1852,0.923,0.101],[1889,0.925,0.103],[1939,0.928,0.105],[1982,0.93,0.106],[2027,0.932,0.108],[2071,0.933,0.11],[2118,0.598,0.113],[2160,0.104,0.115],[2208,0,0.117]],
+  };
+  // So lange gleitet das Tempo vom normalen Fahren auf das Tempo der Aufnahme, geradeaus - statt anzuhalten.
+  const MANOEVER_ANPASS_MS = 300;
+  function manoeverDauer(m) { return m[m.length - 1][0]; }
+  function manoeverWert(m, ms) {
+    let w = m[0];
+    for (const p of m) { if (p[0] <= ms) w = p; else break; }
+    return w;
+  }
+  // Der Schritt einer laufenden Folge (randHalt-Phase 'skript'): erst angleichen, dann die Aufnahme.
+  function skriptSchritt(h, now) {
+    const e = now - h.at;
+    if (e < h.anpassMs) {
+      const a = Math.max(0, e / h.anpassMs);
+      return { lenk: 0, drive: h.vonDrive + (h.skript[0][2] - h.vonDrive) * a };
+    }
+    const w = manoeverWert(h.skript, e - h.anpassMs);
+    return { lenk: w[1] * (h.lenkFaktor === undefined ? 1 : h.lenkFaktor), drive: w[2] };
+  }
+  function aufstellArt() { const el = $('race-einpark-art'); return el && el.value === 'impuls' ? 'impuls' : 'aufnahme'; }
+  function scParkArt() { const el = $('sc-park-art'); return el && el.value === 'impuls' ? 'impuls' : 'aufnahme'; }
+  // Das zuletzt gesendete Gas eines NPCs - der Startwert fuer das Angleichen.
+  function letztesGas(car, sonst) {
+    const v = car && car.letzterBefehl ? car.letzterBefehl[1] : null;
+    return typeof v === 'number' && v >= 0 ? Math.min(0.8, v) : sonst;
+  }
+
   function randHaltStarten(car, opt) {
     const g = car.ghost;
     if (!g) return;
@@ -5059,7 +5135,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                    bremsMs: opt.bremsMs || 0, endLenk: opt.endLenk || 0, gegenschubMs: opt.gegenschubMs || 0,
                    gegenschubRadMs: opt.gegenschubRadMs || 0, radEnde: 0, nominal: !!opt.nominal,
                    tempoAb: opt.tempoAb || 0, rundTakt: !!opt.rundTakt,
-                   sofort: !!opt.sofort };
+                   sofort: !!opt.sofort,
+                   skript: opt.skript || null, anpassMs: opt.anpassMs || 0, vonDrive: opt.vonDrive || 0,
+                   lenkFaktor: opt.lenkFaktor, weiter: !!opt.weiter };
   }
   // Nach der Randfahrt: mit radLenk erst noch mit eingeschlagenen Raedern an den Rand ('rad'),
   // sonst gleich halten.
@@ -5072,6 +5150,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // gehalten wird mit geraden Raedern.
   function randHaltRadLenk(car) {
     const h = car.ghost && car.ghost.randHalt;
+    // v1.1.30: eine aufgenommene Folge lenkt selbst; im anschliessenden Halt stehen die Raeder gerade.
+    if (h && h.skript) return h.phase === 'skript' ? skriptSchritt(h, Date.now()).lenk : 0;
     if (!h || !h.radLenk) return null;
     if (h.phase === 'rad') return h.radLenk;
     if (h.phase === 'gegen') return -h.radLenk;
@@ -5112,6 +5192,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // 30 % Tempo. Mit rundTakt (Aufstellung) endet eine Phase im Takt, der ihrem Ende am naechsten
     // liegt, und die Bremse greift im selben Takt voll (pitBremse, 'halt' mit sofort).
     const vorbei = (dauer) => now - h.at >= dauer - (h.rundTakt ? RANDHALT_HALBTAKT_MS : 0);
+    if (h.phase === 'skript') {
+      const dauer = h.anpassMs + manoeverDauer(h.skript);
+      if (now - h.at >= dauer) {
+        // Ausparken (weiter): ohne Halt in das normale Fahren uebergehen.
+        if (h.weiter) { g.randHalt = null; if (h.fertig) h.fertig(car); }
+        else naechste(dauer, 'halt');
+      }
+      return true;
+    }
     if (h.phase === 'rad') {
       if (vorbei(h.radMs)) {
         const ziel = h.gegenMs ? 'gegen' : (h.bremsMs ? 'brems' : 'halt');
@@ -5988,8 +6077,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     startGhost(sc);
     if (sc.ghost) { sc.ghost.freeRun = true; sc.ghost.scHeim = false; sc.ghost.scNeustarts = 0; }
-    // v1.1.3: neben der Strecke beginnt es mit der festen Ausparkfolge (scAusparkSchritt).
-    if (sc.ghost) sc.ghost.scAuspark = { at: 0, lenk: scNebenModus() ? scEndLenk() : 0 };
+    // v1.1.30: stand es geparkt am Rand, faehrt es mit der aufgenommenen Ausparkfolge los und geht danach
+    // fliessend ins normale Fahren ueber. Sonst wie bisher (v1.1.3/v1.1.15: feste Folge bzw. Links-Rechts-Impuls).
+    if (sc.ghost && sc.scGeparkt && scParkArt() === 'aufnahme' && !scNebenModus()) {
+      randHaltStarten(sc, { phase: 'skript', quer: 0, skript: MANOEVER.scAus, anpassMs: 0, vonDrive: 0, weiter: true });
+      log(garageLabel(sc) + ': Safety Car parkt aus (Aufnahme).', 'info');
+    } else if (sc.ghost) sc.ghost.scAuspark = { at: 0, lenk: scNebenModus() ? scEndLenk() : 0 };
+    sc.scGeparkt = false;
     // Neben der Strecke: ab jetzt die Kacheln zaehlen, bis Start/Ziel gelesen wird (siehe ortAbgleich).
     if (sc.ghost && scNebenModus()) {
       sc.ghost.scBoxK = -1;
@@ -6068,6 +6162,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const k = scParkKachel();
     if (((g.tileIndex % n) + n) % n !== k) return;
     g.scHeim = false;
+    if (scParkArt() === 'aufnahme') {
+      randHaltStarten(car, { phase: 'skript', quer: 0, skript: MANOEVER.scEin, anpassMs: MANOEVER_ANPASS_MS,
+                             vonDrive: letztesGas(car, MANOEVER.scEin[0][2]), haltMs: SC_PARK_HALT_MS, sofort: true,
+                             fertig: safetyCarFertig });
+      log(garageLabel(car) + ': Safety Car parkt auf Kachel ' + k + ' (Aufnahme).', 'info');
+      return;
+    }
     randHaltStarten(car, { phase: 'rad', quer: 0, tempo: scParkTempo(), radTempo: scParkTempo(), radLenk: SC_RAD_LENK,
                            radMs: scAusfahrtMs(), gegenMs: scAusfahrtLinksMs(), endLenk: scEndLenk(),
                            haltMs: SC_PARK_HALT_MS, sofort: true, nominal: true, fertig: safetyCarFertig });
@@ -6077,6 +6178,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   const SC_PARK_HALT_MS = 800;
   function safetyCarFertig(c) {
     const gelbWartet = !!(c.ghost && c.ghost.scGelbNachParken);
+    c.scGeparkt = true;          // v1.1.30: beim naechsten Losfahren die aufgenommene Ausparkfolge
     // Neben der Strecke: der letzte Befehl haelt die Raeder leicht links (sonst stuende es gerade).
     safetyCarLichtAus(c, scAusfahrt(c) ? -scEndLenk() : 0);
     if (gelbWartet) {
@@ -10456,6 +10558,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // v1.0.29: zum Abstellen (Safety Car) zuletzt mit eingeschlagenen Raedern, ohne Spur-Bytes.
     let radLenk = randHaltRadLenk(car);
     let driveOut = drive;
+    // v1.1.30: eine aufgenommene Folge gibt auch das Gas vor. Das Fahrzeugmodell laeuft mit, damit es nach
+    // dem Ausparken ohne Sprung weitergeht.
+    if (g.randHalt && g.randHalt.phase === 'skript') {
+      const sk = skriptSchritt(g.randHalt, now);
+      driveOut = sk.drive;
+      e.state.speedKmh = sk.drive * e.config.topSpeedKmh;
+      e.state.virtualSpeed = sk.drive;
+    }
     // v1.1.3: neben der Strecke weich (randHaltLenkGlatt), und die feste Ausparkfolge.
     if (radLenk !== null && g.randHalt && g.randHalt.nominal) radLenk = randHaltLenkGlatt(g.randHalt, radLenk, now);
     if (radLenk === null && armed) {

@@ -2982,6 +2982,10 @@
       if (aufstellenSpielerAngekommen(meinAuto)) {
         // v1.1.21: Impuls hin und zurueck mit dem Einparktempo (aufstellenSpielerEinlenken), dann Tempo 0.
         const fo = typeof aufstellenSpielerEinlenken === 'function' ? aufstellenSpielerEinlenken(meinAuto) : null;
+        // v1.1.30: die aufgenommene Folge - Lenkung und Gas direkt aufs Byte, am Modell vorbei.
+        if (fo && fo.gas === 'skript') {
+          return { grund: 'aufstellen', throttle: 0, brake: 0, steer: 0, lenkt: false, radLenk: fo.lenk, radGas: fo.drive };
+        }
         if (fo && fo.gas === 'fahrt') {
           const vI = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
           const gI = ghostSpeedControl(regler, typeof einparkTempo === 'function' ? einparkTempo() : 0.3, vI, 0.045);
@@ -3372,6 +3376,12 @@
     physOutThrottle = out.motorPWM;
     // v1.0.37: Einlenk-Takt beim Einparken direkt aufs Lenkbyte (am Modell vorbei).
     if (ap && typeof ap.radLenk === 'number') physOutSteer = ap.radLenk;
+    // v1.1.30: das Gas der aufgenommenen Einparkfolge, das Modelltempo laeuft mit.
+    if (ap && typeof ap.radGas === 'number') {
+      physOutThrottle = ap.radGas;
+      physEngine.state.speedKmh = ap.radGas * physEngine.config.topSpeedKmh;
+      physEngine.state.virtualSpeed = ap.radGas;
+    }
   }
 
   // ====================================================================================

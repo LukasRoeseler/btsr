@@ -21158,6 +21158,51 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Lenkung 0,25 und Gas 0,6 gehen unveraendert hinaus, danach nichts mehr' };
   });
 
+  // v1.1.30: Diese Tests pruefen die Lenkimpuls-Folge, die es als Wahl weiter gibt; ab Werk faehrt jetzt die
+  // Aufnahme. Fuer ihre Dauer also beide Wahlfelder auf "Lenkimpuls".
+  function stMitImpuls(anfang) {
+    const tst = ST_TESTS.find((x) => x.name.indexOf(anfang) === 0);
+    if (!tst) return;
+    const fn = tst.fn;
+    tst.fn = async () => {
+      const a = $('race-einpark-art'), b = $('sc-park-art');
+      const ma = a ? a.value : null, mb = b ? b.value : null;
+      if (a) a.value = 'impuls';
+      if (b) b.value = 'impuls';
+      try { return await fn(); } finally { if (a) a.value = ma; if (b) b.value = mb; }
+    };
+  }
+  ['Aufstellung: Fahrerauto rollt zum Startplatz', 'Safety Car v1.1.21:', 'Safety Car neben der Strecke:'].forEach(stMitImpuls);
+
+  // v1.1.30 BESTELLT: die Aufnahmen einbauen, als Vorgabe, mit fliessendem Uebergang statt Anhalten.
+  stAdd('Einparken v1.1.30: Aufnahme gleitet aus der Fahrt in die Folge, Ausparken geht ohne Halt weiter', () => {
+    const f = [];
+    if (aufstellArt() !== 'aufnahme' || scParkArt() !== 'aufnahme') f.push('Aufnahme ist nicht die Vorgabe');
+    const car = { ghost: {} };
+    randHaltStarten(car, { phase: 'skript', quer: 0, skript: MANOEVER.rechts, anpassMs: MANOEVER_ANPASS_MS, vonDrive: 0.4, sofort: true, haltMs: 800 });
+    const h = car.ghost.randHalt;
+    const bei = (ms) => skriptSchritt(h, h.at + ms);
+    const s0 = bei(0), s1 = bei(150), s2 = bei(MANOEVER_ANPASS_MS + 100), s3 = bei(MANOEVER_ANPASS_MS + 900);
+    if (s0.lenk !== 0 || Math.abs(s0.drive - 0.4) > 1e-9) f.push('Start nicht mit dem Fahrtempo: ' + JSON.stringify(s0));
+    if (!(s1.drive < 0.4 && s1.drive > MANOEVER.rechts[0][2]) || s1.lenk !== 0) f.push('kein Gleiten: ' + JSON.stringify(s1));
+    if (!(s2.lenk > 0.9)) f.push('rechts lenkt nicht nach rechts: ' + JSON.stringify(s2));
+    if (!(s3.lenk < -0.9)) f.push('kein Gegenlenken: ' + JSON.stringify(s3));
+    if (Math.min(s0.drive, s1.drive, s2.drive, s3.drive) <= 0) f.push('haelt vor dem Ende an');
+    if (MANOEVER.links[3][1] >= 0) f.push('links lenkt nicht zuerst nach links');
+    h.at = Date.now() - (MANOEVER_ANPASS_MS + manoeverDauer(MANOEVER.rechts) + 5);
+    randHaltTick(car);
+    if (!car.ghost.randHalt || car.ghost.randHalt.phase !== 'halt') f.push('nach der Folge kein Halt');
+    const sc = { ghost: {} };
+    let fertig = 0;
+    randHaltStarten(sc, { phase: 'skript', quer: 0, skript: MANOEVER.scAus, anpassMs: 0, vonDrive: 0, weiter: true, fertig: () => { fertig++; } });
+    sc.ghost.randHalt.at = Date.now() - (manoeverDauer(MANOEVER.scAus) + 5);
+    randHaltTick(sc);
+    if (sc.ghost.randHalt || fertig !== 1) f.push('Ausparken endet nicht im Weiterfahren');
+    const ende = MANOEVER.scAus[MANOEVER.scAus.length - 1];
+    if (!(ende[2] > 0.05) || ende[1] !== 0) f.push('Ausparken endet nicht gerade in Fahrt: ' + JSON.stringify(ende));
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'gleitet von 0,40 auf ' + MANOEVER.rechts[0][2] + ', rechts ' + s2.lenk.toFixed(2) + ', zurueck ' + s3.lenk.toFixed(2) + ', dann Halt; Ausparken endet mit ' + ende[2] + ' Gas' };
+  });
+
   stAdd('Woerterbuch ohne doppelte Schluessel', () => {
     const imObjekt = Object.keys(I18N_EN).length;
     // Die Quelle steht im eigenen <script>. Sie zu lesen ist billiger und ehrlicher als die
