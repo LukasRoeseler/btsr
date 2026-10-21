@@ -1815,20 +1815,12 @@
          + ' · Box ' + versatz + '</b></div>';
   }
 
-  const garBlinkZuletzt = new WeakMap();
   let garFokusZeile = null;
-  function garageBlinkSanft(car) {
-    if (!car || !car.device) return;
-    const jetzt = performance.now();
-    if (jetzt - (garBlinkZuletzt.get(car) || 0) < 1500) return;
-    garBlinkZuletzt.set(car, jetzt);
-    blinkCar(car);
-  }
   function garageFokusZeile(el) {
     const r = el && el.closest ? el.closest('.gar-row') : null;
     if (r === garFokusZeile) return;
     garFokusZeile = r;
-    if (r && r._car) garageBlinkSanft(r._car);
+    // v1.1.40: kein Blinken mehr beim Anwaehlen - dafuer der Knopf "Blinken" rechts unter der Rolle.
   }
 
   // Farbwahl unter einem Klecks (vorher direkt in renderGarage).
@@ -1992,7 +1984,10 @@
             : ''}
         </div>`;
       row._car = car;
-      row.onmouseenter = () => garageBlinkSanft(car);
+      // v1.1.40 GEMELDET: "Garagenmenue links: Ich glaube der Fehler kommt durch den Blink-Klicker. Mach
+      // stattdessen einen Button auf der rechten Seite 'Blinken', oben unter Rolle." Auf Touch loeste das
+      // Antippen ein mouseenter aus, das Blinken baute die Garage alle 150 ms neu (Etikett "blinkt") -
+      // mitten im Scrollen der linken Spalte. Kein Blinken mehr beim Beruehren oder Anwaehlen.
       // Ein Tipp auf die Zeile waehlt das Auto fuer die rechte Seite.
       row.onclick = (e) => {
         if (e.target.closest('button, input, select')) return;
@@ -2042,6 +2037,15 @@
       kopf.textContent = car.alias || car.tag || garageLabel(car);
       rechts.appendChild(kopf);
       rechts.appendChild(garRollenZeile(car));
+      const zb = document.createElement('div');
+      zb.className = 'opt-row opt-breit gar-a-aktion gar-a-blinken';
+      const bb = document.createElement('button');
+      bb.type = 'button';
+      bb.dataset.act = 'blinken';
+      bb.textContent = t('Blinken');
+      bb.onclick = () => blinkCar(car);
+      zb.appendChild(bb);
+      rechts.appendChild(zb);
       // Name
       const zn = document.createElement('div');
       zn.className = 'opt-row gk-zeile gar-a-name';
@@ -2077,7 +2081,7 @@
       if (weg) weg.onclick = (e) => { e.stopPropagation(); autoFotoSetzen(car, ''); };
       rechts.appendChild(zf);
       // Blinken und Trennen
-      [['blinken', t('Blinken'), () => blinkCar(car)], ['drop', t('Trennen'), () => disconnectCar(car)]].forEach(([act, txt, fn]) => {
+      [['drop', t('Trennen'), () => disconnectCar(car)]].forEach(([act, txt, fn]) => {
         const z = document.createElement('div');
         z.className = 'opt-row opt-breit gar-a-aktion';
         const b = document.createElement('button');
@@ -2684,6 +2688,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   //
   // Als Konstante, weil sie jetzt an ZWEI Stellen gilt: beim Regler (dessen min im Markup
   // steht) und beim Formationstempo. Dort fehlte sie, und das war der Fehler.
+  // v1.1.40 NACHGEPRUEFT (CARRERA_HYBRID.md, "Tempo-Grenzen"): 0,35 ist NICHT gemessen, sondern die alte
+  // Untergrenze des Reglers ghost-speed. Einheit ist das Gasbyte: 0,35 = Delta 44 von 127 (0,52 m/s). Der
+  // Scan liest in der Haarnadel mit Delta 21 - die echte Lesegrenze liegt tiefer. Eine Betriebsgrenze.
   const GHOST_READ_MIN = 0.35;
   // Das Tempo der Einfuehrungsrunde. NICHT einfach das Boxentempo: 80 km/h sind 0,271 von
   // 295, also unter der Leseschwelle. Ein Feld, das dort rollt, liest nichts mehr, parkt sich
@@ -5198,7 +5205,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const tiles = currentTrackTiles || [];
     const n = tiles.length;
     if (!n || ziel === null || ziel === undefined) return false;
-    return [0, 1].some((k) => { const t = tiles[(ziel + k) % n]; return tileTightness(t && t.type) > 0; });
+    // v1.1.40: nur noch der Platz selbst. Mit dem Teil danach fiel auf einer Strecke mit Kurve hinter dem
+    // Platz fast jeder Platz auf den kurzen Impuls - die Autos blieben mittig stehen (gemeldet zu 1.1.39).
+    const t = tiles[ziel % n];
+    return tileTightness(t && t.type) > 0;
   }
   // Steht der Ort (Kachel + Phase) auf der Zielkachel und mindestens am Haltepunkt?
   function aufstellAmPunkt(o, ziel, platz) {
@@ -5258,29 +5268,25 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const w = manoeverWert(h.skript, e - h.anpassMs);
     return { lenk: w[1] * (h.lenkFaktor === undefined ? 1 : h.lenkFaktor), drive: w[2] };
   }
-  // v1.1.39 BESTELLT: "Kalibriere das ein ganz kleines bisschen, sodass die Autos eher aussen parken
-  // und den Mittelstreifen frei halten." Die Aufnahme lenkt schon voll (+-1); weiter aussen heisst also
-  // LAENGER aussen: der letzte Takt mit voller Lenkung nach aussen wird um AUFSTELL_AUSSEN_MS verlaengert,
-  // alles danach (Zuruecklenken, Ausrollen) rueckt mit. Ein Aufnahmetakt (~45 ms) - etwa ein Achtel mehr
-  // Querweg, und das Zuruecklenken bleibt gleich lang, das Auto steht also wieder gerade.
-  const AUFSTELL_AUSSEN_MS = 45;
+  // v1.1.40 GEMELDET zu 1.1.39: "Die Autos lenken ueberhaupt nicht an den Rand und bleiben einfach mittig
+  // stehen. Du solltest doch die Aufnahme dafuer nehmen. Das Verhalten sollte mittig zwischen dem Parkmodus
+  // des Safetycars und meiner Aufnahme mit links und rechts einparken sein." Die Folge ist jetzt Takt fuer
+  // Takt der Mittelwert beider Aufnahmen auf derselben Zeitachse - Lenkung UND Gas: die Aufstell-Aufnahme
+  // (rechts/links, Gas ~0,14) und das Einparken des Safety Cars (scEin, rechts, Gas ~0,23; fuer links
+  // gespiegelt). Damit faehrt das Auto kraeftiger an den Rand als mit der Aufstell-Aufnahme allein und
+  // weniger weit als das Safety Car. (Ersetzt die 45 ms "weiter aussen" aus v1.1.39.)
   const aufstellSkriptCache = {};
   function aufstellSkript(seite) {
     const key = seite > 0 ? 'rechts' : 'links';
     if (aufstellSkriptCache[key]) return aufstellSkriptCache[key];
-    const sk = MANOEVER[key];
-    const aussen = seite > 0 ? 1 : -1;
-    let letzter = -1;
-    for (let i = 0; i < sk.length; i++) {
-      if (sk[i][1] * aussen >= 0.9) letzter = i;
-      else if (letzter >= 0 && sk[i][1] * aussen < 0) break;
-    }
-    if (letzter < 0) return (aufstellSkriptCache[key] = sk);
-    const neu = sk.slice(0, letzter + 1).map((x) => x.slice());
-    const l = sk[letzter];
-    neu.push([l[0] + AUFSTELL_AUSSEN_MS, l[1], l[2]]);
-    for (let i = letzter + 1; i < sk.length; i++) neu.push([sk[i][0] + AUFSTELL_AUSSEN_MS, sk[i][1], sk[i][2]]);
-    return (aufstellSkriptCache[key] = neu);
+    const a = MANOEVER[key];
+    const sc = MANOEVER.scEin.map(([ms, l, g]) => [ms, seite > 0 ? l : -l, g]);
+    const zeiten = [...new Set(a.map((x) => x[0]).concat(sc.map((x) => x[0])))].sort((x, y) => x - y);
+    const mix = zeiten.map((ms) => {
+      const p = manoeverWert(a, ms), q = manoeverWert(sc, ms);
+      return [ms, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2];
+    });
+    return (aufstellSkriptCache[key] = mix);
   }
   function aufstellArt() { const el = $('race-einpark-art'); return el && el.value === 'impuls' ? 'impuls' : 'aufnahme'; }
   function scParkArt() { const el = $('sc-park-art'); return el && el.value === 'impuls' ? 'impuls' : 'aufnahme'; }

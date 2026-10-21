@@ -2542,6 +2542,12 @@
       : raceMode === 'derby'
         ? 'Health ' + Math.round(derbyHealth) + '% · Kills ' + derbyKills + ' · ' + t('Gegner') + ' ' + derbyGeisterZaehlen()
         : raceLapTarget(laps.length);
+    const posEl = $('race-pos');
+    if (posEl) {
+      const p = raceCockpitPosition();
+      posEl.hidden = !p;
+      if (p) posEl.textContent = 'P' + p.pos + '/' + p.von;
+    }
     $('race-lap-list').innerHTML = laps.slice().reverse().slice(0, 10).map(l =>
       `<li><span>${l.lap}</span><span${l.ms === best ? ' class="gt3-ok"' : ''}>${formatLapTime(l.ms)}</span></li>`
     ).join('');
@@ -2587,6 +2593,26 @@
     el.textContent = (s ? Math.round(s.mittel) + ' / ' + Math.round(s.p95) + ' ms' + nurJs + (s.haenger ? ' · ' + s.haenger + '× hing' : '')
       : t('noch keine Befehle')) + weg + fehlt + ersetzt + br + takt + pad + ton + (wv ? ' · WebView ' + wv : '');
   }, 1000);
+  // ---- DIE EIGENE POSITION IM COCKPIT (v1.1.40) ---------------------------------------
+  // BESTELLT: "Im Haupt-Cockpit-Screen oben links neben der Runde auch meine Position (bezogen auf das
+  // Rennen, also bei Rundenrennen und Endurance nach Runde, bei Quali nach Zeit, bei den anderen Modi
+  // nicht)." Rundenrennen und Endurance: dieselbe Reihenfolge wie die Rennuebersicht (ovDaten: Runden,
+  // dann Gesamtzeit, dann Ort), damit Cockpit, Uebersicht und Ergebnis denselben Platz nennen.
+  // Qualifying: die beste Runde, ohne Runde hinten (dort nach dem Ort). Gezaehlt wird Auto 1.
+  function raceCockpitPosition() {
+    if (raceState !== 'racing' && raceState !== 'finished') return null;
+    if (raceMode !== 'laps' && raceMode !== 'endurance' && raceMode !== 'qualifying') return null;
+    let reihe;
+    if (raceMode === 'qualifying') {
+      const ortVon = (c) => (typeof c.ort === 'number' ? c.ort : -Infinity);
+      reihe = raceAllCars().map((c) => ({ rolle: c.role, beste: c.laps.length ? Math.min.apply(null, c.laps.map((l) => l.ms)) : Infinity, ort: ortVon(c) }))
+        .sort((a, b) => (a.beste - b.beste) || (b.ort - a.ort));
+    } else {
+      reihe = typeof ovDaten === 'function' ? ovDaten() : [];
+    }
+    const i = reihe.findIndex((x) => x.rolle === 'player');
+    return i < 0 || reihe.length < 1 ? null : { pos: i + 1, von: reihe.length };
+  }
   // COCKPIT GEDROSSELT (v0.8.41): hoechstens alle COCKPIT_MAL_MS, nach dem Senden.
   const COCKPIT_MAL_MS = 90;
   let cockpitMalFaellig = false, cockpitGemaltAt = 0;

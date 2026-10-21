@@ -21701,7 +21701,8 @@
     try {
       currentTrackTiles = codeToTrack('SG3RG2').tiles;    // 0 Start, 1-3 Gerade, 4 Kurve, 5-6 Gerade
       if (aufstellKurveAmPlatz(1)) f.push('Gerade als Kurve');
-      if (!aufstellKurveAmPlatz(3)) f.push('Kurve dahinter nicht erkannt');
+      // v1.1.40: nur der Platz selbst zaehlt, nicht mehr das Teil danach.
+      if (aufstellKurveAmPlatz(3)) f.push('Kurve dahinter zaehlt noch');
       if (!aufstellKurveAmPlatz(4)) f.push('Kurve am Platz nicht erkannt');
     } finally { currentTrackTiles = merkT; }
     // Aufstelltempo haengt nicht am Renntempo.
@@ -21876,14 +21877,79 @@
     // Safety Car: Abstandhalter in der Aufstellung, Mindesttempo und Heimweg greifen dort nicht.
     if (src.indexOf("car.role === 'safetycar' ? gelbAbstandFaktor(car)") < 0) f.push('Safety Car ohne Abstand in der Aufstellung');
     if (src.indexOf('!scAufstellung) target = Math.max(target, SC_MIN_TEMPO)') < 0 || src.indexOf("!scAufstellung && ((g.scHeim") < 0) f.push('Safety-Car-Tempi greifen in der Aufstellung');
-    // Weiter aussen: ein Takt laenger volle Lenkung nach aussen, Zuruecklenken gleich lang.
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gelb ohne Staffel, Autopilot mit Boden/Haarnadelgrenze, Plaetze vor der Haarnadel, SC mit Abstand' };
+  });
+
+  // v1.1.40 GEMELDET: in der Aufstellung lenkten die Autos nicht an den Rand. BESTELLT: "mittig zwischen
+  // dem Parkmodus des Safetycars und meiner Aufnahme mit links und rechts einparken". Garage: Blinken als
+  // Knopf rechts unter der Rolle statt beim Antippen links.
+  stAdd('Einparken und Garage v1.1.40: Mittel aus Safety-Car- und Aufstell-Aufnahme, Blinken als Knopf', () => {
+    const f = [];
     for (const [seite, key] of [[1, 'rechts'], [-1, 'links']]) {
       const a = MANOEVER[key], b = aufstellSkript(seite);
-      const aussen = (sk) => sk.reduce((sum, x, i) => (i && x[1] * seite > 0 ? sum + (x[0] - sk[i - 1][0]) : sum), 0);
-      const zurueck = (sk) => sk.reduce((sum, x, i) => (i && x[1] * seite < 0 ? sum + (x[0] - sk[i - 1][0]) : sum), 0);
-      if (Math.abs(aussen(b) - aussen(a) - AUFSTELL_AUSSEN_MS) > 1e-9) f.push(key + ': aussen ' + (aussen(b) - aussen(a)) + ' ms laenger');
-      if (Math.abs(zurueck(b) - zurueck(a)) > 1e-9) f.push(key + ': Zuruecklenken veraendert');
-      if (b[b.length - 1][2] !== 0 || b[b.length - 1][0] !== a[a.length - 1][0] + AUFSTELL_AUSSEN_MS) f.push(key + ': Ende verschoben');
+      const sc = MANOEVER.scEin;
+      for (const ms of [0, 200, 600, 900, 1200, 1650]) {
+        const w = manoeverWert(b, ms), p = manoeverWert(a, ms), q = manoeverWert(sc, ms);
+        if (Math.abs(w[1] - (p[1] + seite * q[1]) / 2) > 1e-9 || Math.abs(w[2] - (p[2] + q[2]) / 2) > 1e-9) {
+          f.push(key + ' bei ' + ms + ' ms nicht der Mittelwert'); break;
+        }
+      }
+      const ende = Math.max(a[a.length - 1][0], sc[sc.length - 1][0]);
+      if (b[b.length - 1][0] !== ende || b[b.length - 1][2] !== 0) f.push(key + ': Ende nicht beim Stillstand');
+      // Nach aussen gelenkt wird wirklich (mehr Weg nach aussen als null).
+      const aussen = b.reduce((sum, x, i) => (i ? sum + Math.max(0, b[i - 1][1] * seite) * (x[0] - b[i - 1][0]) : sum), 0);
+      if (!(aussen > 200)) f.push(key + ': kaum nach aussen gelenkt (' + Math.round(aussen) + ')');
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gelb ohne Staffel, Autopilot mit Boden/Haarnadelgrenze, Plaetze vor der Haarnadel, SC mit Abstand, 45 ms weiter aussen' };
+    // Garage: Blinken rechts direkt unter der Rolle, kein Blinken beim Beruehren der Zeile.
+    const att = { role: 'ghost', device: { id: 'probe-blink' }, alias: '', colorId: 'rot', sim: false, testSenke: [] };
+    const merkAuf = typeof garAufAuto !== 'undefined' ? garAufAuto : null;
+    garage.push(att);
+    try {
+      garAufAuto = att; renderGarage();
+      const R = $('gar-list').querySelector('.gar-a-rechts');
+      const zeilen = R ? [...R.children].filter((el) => el.classList.contains('opt-row')) : [];
+      if (!zeilen[0] || !zeilen[0].classList.contains('gar-a-rolle')) f.push('erste Zeile rechts nicht die Rolle');
+      if (!zeilen[1] || !zeilen[1].querySelector('[data-act="blinken"]')) f.push('Blinken nicht direkt unter der Rolle');
+      if (R && R.querySelectorAll('[data-act="blinken"]').length !== 1) f.push('Blinken nicht genau einmal');
+      const links = [...$('gar-list').querySelectorAll('.gar-a-zeile')].find((z) => z._car === att);
+      if (!links || links.onmouseenter) f.push('linke Zeile blinkt beim Beruehren');
+    } finally {
+      garage.splice(garage.indexOf(att), 1);
+      garAufAuto = merkAuf;
+      renderGarage();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Einparkfolge = Mittel beider Aufnahmen, lenkt an den Rand; Blinken unter der Rolle' };
+  });
+
+  // v1.1.40 BESTELLT: die eigene Position oben links neben der Runde - Rundenrennen und Endurance nach
+  // Runden, Qualifying nach Zeit, sonst nicht.
+  stAdd('Cockpit v1.1.40: Position neben der Runde, nach Runden oder Bestzeit, nur in Rennmodi', () => {
+    const f = [];
+    const merk = { rs: raceState, rm: raceMode, alle: raceAllCars };
+    try {
+      raceAllCars = () => [
+        { role: 'ghost', name: 'A', laps: [{ ms: 1000 }, { ms: 1000 }], ort: 20 },
+        { role: 'player', name: 'Ich', laps: [{ ms: 900 }], ort: 15 },
+        { role: 'ghost', name: 'B', laps: [], ort: 3 },
+      ];
+      raceState = 'racing';
+      raceMode = 'laps';
+      let p = raceCockpitPosition();
+      if (!p || p.pos !== 2 || p.von !== 3) f.push('Rundenrennen: ' + JSON.stringify(p) + ' statt P2/3');
+      raceMode = 'endurance';
+      p = raceCockpitPosition();
+      if (!p || p.pos !== 2) f.push('Endurance: ' + JSON.stringify(p));
+      raceMode = 'qualifying';
+      p = raceCockpitPosition();
+      if (!p || p.pos !== 1 || p.von !== 3) f.push('Qualifying (Bestzeit): ' + JSON.stringify(p) + ' statt P1/3');
+      for (const m of ['practice', 'bestzeit', 'knockout', 'derby']) {
+        raceMode = m;
+        if (raceCockpitPosition()) f.push(m + ' zeigt eine Position');
+      }
+      raceMode = 'laps'; raceState = 'idle';
+      if (raceCockpitPosition()) f.push('ohne Rennen eine Position');
+      const el = $('race-pos');
+      if (!el || !el.closest('.gt3-box') || !el.closest('.gt3-box').querySelector('#race-lap-count')) f.push('Anzeige nicht neben der Runde');
+    } finally { raceState = merk.rs; raceMode = merk.rm; raceAllCars = merk.alle; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'P2/3 nach Runden, P1/3 nach Bestzeit, sonst nichts' };
   });

@@ -2776,6 +2776,9 @@
      damit ich sie im Augenwinkel gut erkenne." ---- */
   #race-lap-count { font-size: clamp(26px, 5.2vw, 54px); line-height: 1.05; }
   .gt3-left > .gt3-box:first-child > .gt3-lbl { font-size: clamp(9px, 1.4vw, 12px); }
+  /* v1.1.40: die eigene Position neben "Runde" (raceCockpitPosition, 50-drive.js). */
+  .gt3-pos { margin-left: .6em; font-family: var(--gt3-font); font-weight: 700; letter-spacing: .02em;
+             font-size: clamp(13px, 2.2vw, 22px); color: var(--gt3-ink, inherit); text-shadow: var(--gt3-glow); vertical-align: -.12em; }
   .gt3-left .gt3-act { min-height: 34px; padding: clamp(3px, .5vw, 5px) 2px;
     font-size: clamp(9px, 1.4vw, 12.5px); }
   .gt3-left .gt3-half .gt3-act svg { width: clamp(13px, 2.6vw, 17px); height: clamp(13px, 2.6vw, 17px); }
@@ -4823,7 +4826,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.39</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.40</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4975,7 +4978,7 @@
       </div>
 
       <div class="gt3-left">
-        <div class="gt3-box"><div class="gt3-lbl">Runde</div>
+        <div class="gt3-box"><div class="gt3-lbl">Runde<span class="gt3-pos" id="race-pos" data-i18n-skip hidden></span></div>
           <div class="gt3-val" id="race-lap-count">0</div></div>
         <!-- BESTELLT: "Boxenstopp und Gelbe Flagge Knoepfe nebeneinander und so gross wie
              Bahn und Fahrmodus (Pro) und dafuer Rundenzahl und Zeit vergroessern." Dieselbe
@@ -5976,6 +5979,10 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Cockpit (WIP): Oben links neben der Runde steht jetzt deine Position, z. B. P2/5 &#8211; bei Rundenrennen und Endurance nach Runden und Gesamtzeit (wie die Renn&#252;bersicht), im Qualifying nach Bestzeit, in den anderen Modi nicht.</li>
+        <li>Automatische Aufstellung: Die Autos parken wieder mit Aufnahme am Rand. Die Einparkfolge ist jetzt Takt f&#252;r Takt der Mittelwert aus deiner Aufnahme links/rechts und dem Einparken des Safety Cars (Lenkung und Gas) &#8211; kr&#228;ftiger an den Rand als bisher, weniger weit als das Safety Car. Der kurze Lenkimpuls statt der Aufnahme gilt nur noch, wenn der Platz selbst auf einer Kurve liegt (vorher auch bei einer Kurve dahinter &#8211; dann blieben die Autos mittig stehen).</li>
+        <li>Garage: Blinken ist jetzt ein Knopf rechts direkt unter der Rolle. Das Antippen oder Anw&#228;hlen eines Autos links blinkt nicht mehr &#8211; das Blinken baute die Garage alle 150 ms neu und lie&#223; die linke Spalte springen.</li>
+        <li>Tempo-Grenzen dokumentiert (CARRERA_HYBRID.md): Alle Tempozahlen im Code sind Anteile des Gasbytes (0xDF + Anteil &#215; 127), f&#252;r NPCs und den Autopiloten gleich. Die Tabelle nennt jede Grenze in Gasschritten und m/s (Scan Haarnadel &#916; 21, Leseschwelle &#916; 44, Mindesttempo &#916; 47, Gelb &#916; 51). Die &#8222;Leseschwelle&#8220; 0,35 ist keine Messung, sondern eine vorsichtige Betriebsgrenze &#8211; der Scan liest auch mit &#916; 21.</li>
         <li>Gummiband neu (WIP, Time Attack): Hat ein NPC viel Vorsprung (ein Viertel Runde, mindestens zwei Teile), wird er an jeder Start/Ziel-Durchfahrt langsamer, bis du ihn &#252;berholt hast; danach Runde f&#252;r Runde schneller, bis er wieder vorn ist. Neuer Regler &#8222;Gummiband: Schritt je Runde&#8220; (2&#8211;10 %, Standard 4 %). Das Tempo bleibt zwischen 60 und 140 % seines Garagentempos, in Kurven h&#246;chstens 110 %, vor und in der Haarnadel nie &#252;ber dem Garagentempo; Mindesttempo und Haarnadel-Obergrenze gelten weiter. Der Vorsprung wird &#252;ber Runden mitgez&#228;hlt, ohne den Rundenz&#228;hler deines Autos.</li>
         <li>Automatische Aufstellung: Kein Startplatz mehr in der Haarnadel oder Engstelle &#8211; f&#228;llt einer dorthin, r&#252;cken er und alle dahinter um ganze Teile zur&#252;ck (andere Kurven bleiben erlaubt). Das Safety Car h&#228;lt beim Aufstellen Abstand wie unter Gelb und f&#228;hrt im selben Tempo wie alle (sein Mindest- und Heimweg-Tempo greifen dort nicht mehr). Einparken links/rechts: die Aufnahme lenkt 45 ms l&#228;nger nach au&#223;en, die Autos stehen etwas weiter am Rand und halten die Mitte frei.</li>
         <li>Gelbe Flagge: alle gleich schnell. Die Feld-Staffel schob hintere NPCs auch unter Gelb um bis zu 10 % an &#8211; unter Gelb ist sie jetzt aus. Dein Autopilot f&#228;hrt unter Gelb mit demselben Mindesttempo und derselben Haarnadel-Obergrenze wie die NPCs (vorher war er in Kurven langsamer als sie). Das NPC-Tempo aus der Garage spielt unter Gelb keine Rolle.</li>
