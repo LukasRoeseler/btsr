@@ -4823,7 +4823,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.30</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.35</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5976,6 +5976,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Rennstand- und Ergebnisansage (WIP): Neue Kachel Optionen &#8594; Ansagen mit allen Ansagen, die bisher unter Ton standen. Das Rennergebnis wird nach der Zielflagge angesagt (Standard an), der Zwischenstand alle paar Runden ist Standard aus. Mit &#8222;Autonamen ansagen&#8220; (Standard an) hei&#223;t es &#8222;Es f&#252;hrt Max Mustermann&#8220; statt &#8222;der rote &#8230;&#8220;; Autos ohne Namen hei&#223;en weiter nach Farbe und Marke. In der Garage gibt es dazu Marke/Modell je Auto.</li>
         <li>Garage: Nach einem Tipp bleibt die Liste auf ihrer H&#246;he stehen, statt nach oben zu springen.</li>
         <li>Einparken nach deinen Aufnahmen (WIP, Vorgabe): Die automatische Aufstellung (rechts und links je eine Aufnahme) und das Safety Car (Einparken auf dem Randstreifen, Ausparken) fahren jetzt deine von Hand aufgenommenen Folgen. Fl&#252;ssig aus der Fahrt: auf dem Platz gleitet das Tempo in 0,3 s auf das der Aufnahme, kein Anhalten davor; das Anfahren aus dem Stand aus den Aufnahmen ist weggelassen. Das Safety Car f&#228;hrt nach dem Ausparken ohne Halt normal weiter. Umschalten auf den bisherigen Lenkimpuls: Renneinstellungen &#8222;Einparken in der Aufstellung&#8220; bzw. Safety-Car-Men&#252; &#8222;Ein- und Ausparken&#8220;.</li>
         <li>Fahrten-Aufnahme: Die Wiedergabe sendet jetzt genau das Aufgenommene. Vorher lief es ein zweites Mal durch Fahrgef&#252;hl und Physik, und vom Gas blieb so wenig, dass das Auto nur lenkte. Neu: &#8222;Teilen / Kopieren&#8220; &#246;ffnet das Teilen-Men&#252; des Handys oder kopiert die Aufnahme in die Zwischenablage (Aufnahmen liegen in der App, nicht als Datei).</li>
@@ -9493,6 +9494,12 @@
           <b>Ton</b>
           <span>Motorsound, Ambience, Lautst&auml;rken &ndash; und die Motorwerkstatt.</span>
         </button>
+        <button class="misc-tile subpage-open" data-sub="opt-ansagen">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10h32v20H22l-8 7v-7H8z"/><path d="M15 18h18M15 23h11" stroke="var(--bad)"/></svg>
+          <b>Ansagen</b>
+          <span>Rundenzeiten, Rennstand, Ergebnis und Warnungen zu Schaden, Tank, Reifen, Regen und Akku.</span>
+        </button>
         <button class="misc-tile subpage-open" data-sub="opt-ghosts">
           <!-- SYMMETRISCH NEU GEZEICHNET. Der alte Pfad war an drei Stellen schief, und
                eine davon war ein Fehler und keine Geschmacksfrage:
@@ -10534,65 +10541,6 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-knall-volume-val">100%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Rundenzeiten ansagen
-          <small>Nach jeder Runde die Zeit, und bei einer eigenen Bestzeit ein Wort dazu.
-          Gesprochen von der eingebauten Stimme des Browsers &ndash; kein Dienst, kein Netz,
-          nichts verl&auml;sst das Ger&auml;t. Absichtlich kurz gehalten, damit die Ansage
-          vor der n&auml;chsten Kurve fertig ist. Kommt eine zweite Runde herein, w&auml;hrend
-          noch geredet wird, bricht die alte Ansage ab: die Zeit der Gegenwart ist
-          wichtiger. Ob es &uuml;berhaupt spricht, h&auml;ngt an den Stimmen des Systems
-          &ndash; unter Windows sind sie lokal vorhanden, auf Android k&ouml;nnen sie fehlen.
-          Fehlt eine, steht das einmal im Protokoll und nicht bei jeder Runde.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-announce" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Rennstand ansagen
-          <small>Die ersten drei Fahrzeuge des lokalen Rennfelds, mit Runde, Wagenfarbe und Marke / Modell.
-          Nach jeder eingestellten Zahl vollendeter Runden des f&uuml;hrenden Fahrzeugs.
-          Die Ansage wartet auf die ersten drei Durchfahrten derselben Messrunde.
-          Sekundenr&uuml;ckst&auml;nde stammen aus diesen Durchfahrtszeiten, nicht aus Live-Abst&auml;nden.
-          Nur Rundenrennen und Endurance. Vorproduzierte Clips, auch in der Android-App.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-announce-stand" data-preset-skip><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Rennstand alle X Runden
-          <small>1 bis 20, Standard 5. Zum Beispiel nach Runde 5, 10 und 15.</small></div>
-        <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="setting-announce-stand-interval" value="5" min="1" max="20" step="1" style="width:84px" data-preset-skip><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
-      <div class="opt-row"><div class="opt-label">Rennstand maximale Wartezeit
-          <small>5 bis 30 Sekunden, Standard 30. Ab der ersten Durchfahrt der Messrunde. Sobald die Top 3 durch sind, wird früher angesagt. Sonst nur die bereits gemessenen Fahrzeuge.</small></div>
-        <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="setting-announce-stand-wait" value="30" min="5" max="30" step="1" style="width:84px" data-preset-skip><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
-      <div class="opt-row"><div class="opt-label">Rennstand-Sprechgeschwindigkeit
-          <small>100 bis 175 %. Gilt ab der nächsten Ansage. Höheres Tempo erhöht auch die Tonhöhe.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-announce-stand-speed" min="1" max="1.75" step="0.05" value="1" data-preset-skip>
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-announce-stand-speed-val">100%</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Rennstand-Lautstärke
-          <small>Nur die Rennstand-Ansagen. Bis 200 % mit Boost; 0 % stumm. Regen, Motoren und Warnungen bleiben unverändert.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-announce-stand-volume" min="0" max="2" step="0.05" value="1" data-preset-skip>
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-announce-stand-volume-val">100%</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Rennstand-Stadionhall
-          <small>Nur Rennstand und Ergebnis. 0 % ist trocken; dezenter Hall ab 20 %.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-announce-stand-reverb" min="0" max="1" step="0.05" value="0" data-preset-skip>
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-announce-stand-reverb-val">0%</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Schaden ansagen<small>Einmal, wenn der Schadensbalken auf 10&nbsp;% gefallen ist. Erst nach einer Reparatur wieder scharf.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-announce-damage" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Tank ansagen<small>Einmal, wenn noch 10&nbsp;% im Tank sind. Erst nach dem Tanken wieder scharf.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-announce-fuel" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Reifen ansagen<small>Einmal, wenn der schlechteste der vier Reifen nur noch 10&nbsp;% hat. Der schlechteste z&auml;hlt: ein Auto mit drei guten Reifen und einem abgefahrenen f&auml;hrt nicht drei Viertel gut.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-announce-tyre" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Regen ansagen<small>Wenn es anf&auml;ngt zu regnen und wenn es aufh&ouml;rt. Beim Laden wird nichts gesagt, erst beim Wechsel.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-announce-rain" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Boxenstopp ansagen<small>Wenn der Stopp &uuml;ber den doppelten Start-Ausdruck ausgel&ouml;st wird: &bdquo;Boxenstopp eingeleitet&ldquo;. Nicht beim Knopf.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-announce-pit" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Akku ansagen<small>Einmal, wenn der Akku unter 25&nbsp;% f&auml;llt. Erst nach dem Laden wieder scharf.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-announce-battery"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Regen<small>Select oder W. Reifen kommen beim Boxenstopp passend.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-rain"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Strecken-Ambience<small>Vorbeifahrten, Regen, Donner.</small></div>
@@ -10896,6 +10844,76 @@
         <button id="mw-export">Aktuelle Werte hineinschreiben</button>
       </div>
     </div>
+    </div>
+    <div class="card subpage" id="sub-opt-ansagen">
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
+      <h2>Ansagen</h2>
+<div class="opt-head">Ansagen</div>
+      <div class="opt-row"><div class="opt-label">Rundenzeiten ansagen
+          <small>Nach jeder Runde die Zeit, und bei einer eigenen Bestzeit ein Wort dazu.
+          Gesprochen von der eingebauten Stimme des Browsers &ndash; kein Dienst, kein Netz,
+          nichts verl&auml;sst das Ger&auml;t. Absichtlich kurz gehalten, damit die Ansage
+          vor der n&auml;chsten Kurve fertig ist. Kommt eine zweite Runde herein, w&auml;hrend
+          noch geredet wird, bricht die alte Ansage ab: die Zeit der Gegenwart ist
+          wichtiger. Ob es &uuml;berhaupt spricht, h&auml;ngt an den Stimmen des Systems
+          &ndash; unter Windows sind sie lokal vorhanden, auf Android k&ouml;nnen sie fehlen.
+          Fehlt eine, steht das einmal im Protokoll und nicht bei jeder Runde.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Rennstand alle paar Runden ansagen <span class="wip-tag">WIP</span>
+          <small>Die ersten drei Fahrzeuge des lokalen Rennfelds, mit Runde, Wagenfarbe und Marke / Modell.
+          Nach jeder eingestellten Zahl vollendeter Runden des f&uuml;hrenden Fahrzeugs.
+          Die Ansage wartet auf die ersten drei Durchfahrten derselben Messrunde.
+          Sekundenr&uuml;ckst&auml;nde stammen aus diesen Durchfahrtszeiten, nicht aus Live-Abst&auml;nden.
+          Nur Rundenrennen und Endurance. Vorproduzierte Clips, auch in der Android-App.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-stand" data-preset-skip><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Rennstand alle X Runden
+          <small>1 bis 20, Standard 5. Zum Beispiel nach Runde 5, 10 und 15.</small></div>
+        <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="setting-announce-stand-interval" value="5" min="1" max="20" step="1" style="width:84px" data-preset-skip><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
+      <div class="opt-row"><div class="opt-label">Rennstand maximale Wartezeit
+          <small>5 bis 30 Sekunden, Standard 30. Ab der ersten Durchfahrt der Messrunde. Sobald die Top 3 durch sind, wird früher angesagt. Sonst nur die bereits gemessenen Fahrzeuge.</small></div>
+        <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="setting-announce-stand-wait" value="30" min="5" max="30" step="1" style="width:84px" data-preset-skip><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
+      <div class="opt-row"><div class="opt-label">Rennergebnis ansagen <span class="wip-tag">WIP</span>
+          <small>Einmal nach der Zielflagge: der Sieger und die n&auml;chsten zwei mit R&uuml;ckstand. Nur Rundenrennen und Endurance. Standard an.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-result" checked data-preset-skip><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Autonamen ansagen <span class="wip-tag">WIP</span>
+          <small>An: Rennstand und Ergebnis nennen den Namen aus der Garage, etwa &bdquo;Es f&uuml;hrt Max Mustermann&ldquo;. Autos ohne eigenen Namen hei&szlig;en weiter nach Farbe und Marke. Aus: immer Farbe und Marke, zum Beispiel &bdquo;der rote Ford Mustang&ldquo;. Namen spricht die Stimme des Ger&auml;ts, nicht die Aufnahmen; der Hall und Lautst&auml;rken &uuml;ber 100&nbsp;% wirken dann nicht. Hat das Ger&auml;t keine Stimme (Android-App), kommen Farbe und Marke. Standard an.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-stand-name" checked data-preset-skip><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Rennstand-Sprechgeschwindigkeit
+          <small>100 bis 175 %. Gilt ab der nächsten Ansage. Höheres Tempo erhöht auch die Tonhöhe.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-announce-stand-speed" min="1" max="1.75" step="0.05" value="1" data-preset-skip>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-announce-stand-speed-val">100%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Rennstand-Lautstärke
+          <small>Nur die Rennstand-Ansagen. Bis 200 % mit Boost; 0 % stumm. Regen, Motoren und Warnungen bleiben unverändert.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-announce-stand-volume" min="0" max="2" step="0.05" value="1" data-preset-skip>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-announce-stand-volume-val">100%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Rennstand-Stadionhall
+          <small>Nur Rennstand und Ergebnis. 0 % ist trocken; dezenter Hall ab 20 %.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-announce-stand-reverb" min="0" max="1" step="0.05" value="0" data-preset-skip>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-announce-stand-reverb-val">0%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Schaden ansagen<small>Einmal, wenn der Schadensbalken auf 10&nbsp;% gefallen ist. Erst nach einer Reparatur wieder scharf.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-damage" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Tank ansagen<small>Einmal, wenn noch 10&nbsp;% im Tank sind. Erst nach dem Tanken wieder scharf.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-fuel" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Reifen ansagen<small>Einmal, wenn der schlechteste der vier Reifen nur noch 10&nbsp;% hat. Der schlechteste z&auml;hlt: ein Auto mit drei guten Reifen und einem abgefahrenen f&auml;hrt nicht drei Viertel gut.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-tyre" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Regen ansagen<small>Wenn es anf&auml;ngt zu regnen und wenn es aufh&ouml;rt. Beim Laden wird nichts gesagt, erst beim Wechsel.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-rain" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Boxenstopp ansagen<small>Wenn der Stopp &uuml;ber den doppelten Start-Ausdruck ausgel&ouml;st wird: &bdquo;Boxenstopp eingeleitet&ldquo;. Nicht beim Knopf.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-pit" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Akku ansagen<small>Einmal, wenn der Akku unter 25&nbsp;% f&auml;llt. Erst nach dem Laden wieder scharf.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-battery"><span></span></label></div>
     </div>
     <div class="card subpage" id="sub-opt-ghosts">
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>

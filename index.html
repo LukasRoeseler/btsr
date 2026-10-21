@@ -4823,7 +4823,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.30</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.35</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5976,6 +5976,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Rennstand- und Ergebnisansage (WIP): Neue Kachel Optionen &#8594; Ansagen mit allen Ansagen, die bisher unter Ton standen. Das Rennergebnis wird nach der Zielflagge angesagt (Standard an), der Zwischenstand alle paar Runden ist Standard aus. Mit &#8222;Autonamen ansagen&#8220; (Standard an) hei&#223;t es &#8222;Es f&#252;hrt Max Mustermann&#8220; statt &#8222;der rote &#8230;&#8220;; Autos ohne Namen hei&#223;en weiter nach Farbe und Marke. In der Garage gibt es dazu Marke/Modell je Auto.</li>
         <li>Garage: Nach einem Tipp bleibt die Liste auf ihrer H&#246;he stehen, statt nach oben zu springen.</li>
         <li>Einparken nach deinen Aufnahmen (WIP, Vorgabe): Die automatische Aufstellung (rechts und links je eine Aufnahme) und das Safety Car (Einparken auf dem Randstreifen, Ausparken) fahren jetzt deine von Hand aufgenommenen Folgen. Fl&#252;ssig aus der Fahrt: auf dem Platz gleitet das Tempo in 0,3 s auf das der Aufnahme, kein Anhalten davor; das Anfahren aus dem Stand aus den Aufnahmen ist weggelassen. Das Safety Car f&#228;hrt nach dem Ausparken ohne Halt normal weiter. Umschalten auf den bisherigen Lenkimpuls: Renneinstellungen &#8222;Einparken in der Aufstellung&#8220; bzw. Safety-Car-Men&#252; &#8222;Ein- und Ausparken&#8220;.</li>
         <li>Fahrten-Aufnahme: Die Wiedergabe sendet jetzt genau das Aufgenommene. Vorher lief es ein zweites Mal durch Fahrgef&#252;hl und Physik, und vom Gas blieb so wenig, dass das Auto nur lenkte. Neu: &#8222;Teilen / Kopieren&#8220; &#246;ffnet das Teilen-Men&#252; des Handys oder kopiert die Aufnahme in die Zwischenablage (Aufnahmen liegen in der App, nicht als Datei).</li>
@@ -9493,6 +9494,12 @@
           <b>Ton</b>
           <span>Motorsound, Ambience, Lautst&auml;rken &ndash; und die Motorwerkstatt.</span>
         </button>
+        <button class="misc-tile subpage-open" data-sub="opt-ansagen">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10h32v20H22l-8 7v-7H8z"/><path d="M15 18h18M15 23h11" stroke="var(--bad)"/></svg>
+          <b>Ansagen</b>
+          <span>Rundenzeiten, Rennstand, Ergebnis und Warnungen zu Schaden, Tank, Reifen, Regen und Akku.</span>
+        </button>
         <button class="misc-tile subpage-open" data-sub="opt-ghosts">
           <!-- SYMMETRISCH NEU GEZEICHNET. Der alte Pfad war an drei Stellen schief, und
                eine davon war ein Fehler und keine Geschmacksfrage:
@@ -10534,65 +10541,6 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-knall-volume-val">100%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Rundenzeiten ansagen
-          <small>Nach jeder Runde die Zeit, und bei einer eigenen Bestzeit ein Wort dazu.
-          Gesprochen von der eingebauten Stimme des Browsers &ndash; kein Dienst, kein Netz,
-          nichts verl&auml;sst das Ger&auml;t. Absichtlich kurz gehalten, damit die Ansage
-          vor der n&auml;chsten Kurve fertig ist. Kommt eine zweite Runde herein, w&auml;hrend
-          noch geredet wird, bricht die alte Ansage ab: die Zeit der Gegenwart ist
-          wichtiger. Ob es &uuml;berhaupt spricht, h&auml;ngt an den Stimmen des Systems
-          &ndash; unter Windows sind sie lokal vorhanden, auf Android k&ouml;nnen sie fehlen.
-          Fehlt eine, steht das einmal im Protokoll und nicht bei jeder Runde.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-announce" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Rennstand ansagen
-          <small>Die ersten drei Fahrzeuge des lokalen Rennfelds, mit Runde, Wagenfarbe und Marke / Modell.
-          Nach jeder eingestellten Zahl vollendeter Runden des f&uuml;hrenden Fahrzeugs.
-          Die Ansage wartet auf die ersten drei Durchfahrten derselben Messrunde.
-          Sekundenr&uuml;ckst&auml;nde stammen aus diesen Durchfahrtszeiten, nicht aus Live-Abst&auml;nden.
-          Nur Rundenrennen und Endurance. Vorproduzierte Clips, auch in der Android-App.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-announce-stand" data-preset-skip><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Rennstand alle X Runden
-          <small>1 bis 20, Standard 5. Zum Beispiel nach Runde 5, 10 und 15.</small></div>
-        <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="setting-announce-stand-interval" value="5" min="1" max="20" step="1" style="width:84px" data-preset-skip><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
-      <div class="opt-row"><div class="opt-label">Rennstand maximale Wartezeit
-          <small>5 bis 30 Sekunden, Standard 30. Ab der ersten Durchfahrt der Messrunde. Sobald die Top 3 durch sind, wird früher angesagt. Sonst nur die bereits gemessenen Fahrzeuge.</small></div>
-        <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="setting-announce-stand-wait" value="30" min="5" max="30" step="1" style="width:84px" data-preset-skip><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
-      <div class="opt-row"><div class="opt-label">Rennstand-Sprechgeschwindigkeit
-          <small>100 bis 175 %. Gilt ab der nächsten Ansage. Höheres Tempo erhöht auch die Tonhöhe.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-announce-stand-speed" min="1" max="1.75" step="0.05" value="1" data-preset-skip>
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-announce-stand-speed-val">100%</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Rennstand-Lautstärke
-          <small>Nur die Rennstand-Ansagen. Bis 200 % mit Boost; 0 % stumm. Regen, Motoren und Warnungen bleiben unverändert.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-announce-stand-volume" min="0" max="2" step="0.05" value="1" data-preset-skip>
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-announce-stand-volume-val">100%</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Rennstand-Stadionhall
-          <small>Nur Rennstand und Ergebnis. 0 % ist trocken; dezenter Hall ab 20 %.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-announce-stand-reverb" min="0" max="1" step="0.05" value="0" data-preset-skip>
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-announce-stand-reverb-val">0%</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Schaden ansagen<small>Einmal, wenn der Schadensbalken auf 10&nbsp;% gefallen ist. Erst nach einer Reparatur wieder scharf.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-announce-damage" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Tank ansagen<small>Einmal, wenn noch 10&nbsp;% im Tank sind. Erst nach dem Tanken wieder scharf.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-announce-fuel" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Reifen ansagen<small>Einmal, wenn der schlechteste der vier Reifen nur noch 10&nbsp;% hat. Der schlechteste z&auml;hlt: ein Auto mit drei guten Reifen und einem abgefahrenen f&auml;hrt nicht drei Viertel gut.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-announce-tyre" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Regen ansagen<small>Wenn es anf&auml;ngt zu regnen und wenn es aufh&ouml;rt. Beim Laden wird nichts gesagt, erst beim Wechsel.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-announce-rain" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Boxenstopp ansagen<small>Wenn der Stopp &uuml;ber den doppelten Start-Ausdruck ausgel&ouml;st wird: &bdquo;Boxenstopp eingeleitet&ldquo;. Nicht beim Knopf.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-announce-pit" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Akku ansagen<small>Einmal, wenn der Akku unter 25&nbsp;% f&auml;llt. Erst nach dem Laden wieder scharf.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-announce-battery"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Regen<small>Select oder W. Reifen kommen beim Boxenstopp passend.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-rain"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Strecken-Ambience<small>Vorbeifahrten, Regen, Donner.</small></div>
@@ -10896,6 +10844,76 @@
         <button id="mw-export">Aktuelle Werte hineinschreiben</button>
       </div>
     </div>
+    </div>
+    <div class="card subpage" id="sub-opt-ansagen">
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
+      <h2>Ansagen</h2>
+<div class="opt-head">Ansagen</div>
+      <div class="opt-row"><div class="opt-label">Rundenzeiten ansagen
+          <small>Nach jeder Runde die Zeit, und bei einer eigenen Bestzeit ein Wort dazu.
+          Gesprochen von der eingebauten Stimme des Browsers &ndash; kein Dienst, kein Netz,
+          nichts verl&auml;sst das Ger&auml;t. Absichtlich kurz gehalten, damit die Ansage
+          vor der n&auml;chsten Kurve fertig ist. Kommt eine zweite Runde herein, w&auml;hrend
+          noch geredet wird, bricht die alte Ansage ab: die Zeit der Gegenwart ist
+          wichtiger. Ob es &uuml;berhaupt spricht, h&auml;ngt an den Stimmen des Systems
+          &ndash; unter Windows sind sie lokal vorhanden, auf Android k&ouml;nnen sie fehlen.
+          Fehlt eine, steht das einmal im Protokoll und nicht bei jeder Runde.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Rennstand alle paar Runden ansagen <span class="wip-tag">WIP</span>
+          <small>Die ersten drei Fahrzeuge des lokalen Rennfelds, mit Runde, Wagenfarbe und Marke / Modell.
+          Nach jeder eingestellten Zahl vollendeter Runden des f&uuml;hrenden Fahrzeugs.
+          Die Ansage wartet auf die ersten drei Durchfahrten derselben Messrunde.
+          Sekundenr&uuml;ckst&auml;nde stammen aus diesen Durchfahrtszeiten, nicht aus Live-Abst&auml;nden.
+          Nur Rundenrennen und Endurance. Vorproduzierte Clips, auch in der Android-App.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-stand" data-preset-skip><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Rennstand alle X Runden
+          <small>1 bis 20, Standard 5. Zum Beispiel nach Runde 5, 10 und 15.</small></div>
+        <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="setting-announce-stand-interval" value="5" min="1" max="20" step="1" style="width:84px" data-preset-skip><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
+      <div class="opt-row"><div class="opt-label">Rennstand maximale Wartezeit
+          <small>5 bis 30 Sekunden, Standard 30. Ab der ersten Durchfahrt der Messrunde. Sobald die Top 3 durch sind, wird früher angesagt. Sonst nur die bereits gemessenen Fahrzeuge.</small></div>
+        <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="setting-announce-stand-wait" value="30" min="5" max="30" step="1" style="width:84px" data-preset-skip><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
+      <div class="opt-row"><div class="opt-label">Rennergebnis ansagen <span class="wip-tag">WIP</span>
+          <small>Einmal nach der Zielflagge: der Sieger und die n&auml;chsten zwei mit R&uuml;ckstand. Nur Rundenrennen und Endurance. Standard an.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-result" checked data-preset-skip><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Autonamen ansagen <span class="wip-tag">WIP</span>
+          <small>An: Rennstand und Ergebnis nennen den Namen aus der Garage, etwa &bdquo;Es f&uuml;hrt Max Mustermann&ldquo;. Autos ohne eigenen Namen hei&szlig;en weiter nach Farbe und Marke. Aus: immer Farbe und Marke, zum Beispiel &bdquo;der rote Ford Mustang&ldquo;. Namen spricht die Stimme des Ger&auml;ts, nicht die Aufnahmen; der Hall und Lautst&auml;rken &uuml;ber 100&nbsp;% wirken dann nicht. Hat das Ger&auml;t keine Stimme (Android-App), kommen Farbe und Marke. Standard an.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-stand-name" checked data-preset-skip><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Rennstand-Sprechgeschwindigkeit
+          <small>100 bis 175 %. Gilt ab der nächsten Ansage. Höheres Tempo erhöht auch die Tonhöhe.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-announce-stand-speed" min="1" max="1.75" step="0.05" value="1" data-preset-skip>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-announce-stand-speed-val">100%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Rennstand-Lautstärke
+          <small>Nur die Rennstand-Ansagen. Bis 200 % mit Boost; 0 % stumm. Regen, Motoren und Warnungen bleiben unverändert.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-announce-stand-volume" min="0" max="2" step="0.05" value="1" data-preset-skip>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-announce-stand-volume-val">100%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Rennstand-Stadionhall
+          <small>Nur Rennstand und Ergebnis. 0 % ist trocken; dezenter Hall ab 20 %.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-announce-stand-reverb" min="0" max="1" step="0.05" value="0" data-preset-skip>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-announce-stand-reverb-val">0%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Schaden ansagen<small>Einmal, wenn der Schadensbalken auf 10&nbsp;% gefallen ist. Erst nach einer Reparatur wieder scharf.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-damage" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Tank ansagen<small>Einmal, wenn noch 10&nbsp;% im Tank sind. Erst nach dem Tanken wieder scharf.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-fuel" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Reifen ansagen<small>Einmal, wenn der schlechteste der vier Reifen nur noch 10&nbsp;% hat. Der schlechteste z&auml;hlt: ein Auto mit drei guten Reifen und einem abgefahrenen f&auml;hrt nicht drei Viertel gut.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-tyre" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Regen ansagen<small>Wenn es anf&auml;ngt zu regnen und wenn es aufh&ouml;rt. Beim Laden wird nichts gesagt, erst beim Wechsel.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-rain" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Boxenstopp ansagen<small>Wenn der Stopp &uuml;ber den doppelten Start-Ausdruck ausgel&ouml;st wird: &bdquo;Boxenstopp eingeleitet&ldquo;. Nicht beim Knopf.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-pit" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Akku ansagen<small>Einmal, wenn der Akku unter 25&nbsp;% f&auml;llt. Erst nach dem Laden wieder scharf.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-battery"><span></span></label></div>
     </div>
     <div class="card subpage" id="sub-opt-ghosts">
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
@@ -14756,6 +14774,7 @@
     "Fahrten-Aufnahme: Die Wiedergabe sendet jetzt genau das Aufgenommene. Vorher lief es ein zweites Mal durch Fahrgefühl und Physik, und vom Gas blieb so wenig, dass das Auto nur lenkte. Neu: „Teilen / Kopieren“ öffnet das Teilen-Menü des Handys oder kopiert die Aufnahme in die Zwischenablage (Aufnahmen liegen in der App, nicht als Datei).": "Drive recording: playback now sends exactly what was recorded. Before, it went through driving feel and physics a second time, and so little throttle was left that the car only steered. New: “Share / copy” opens the phone’s share menu or copies the recording to the clipboard (recordings live inside the app, not as a file).",
     "Einparken nach deinen Aufnahmen (WIP, Vorgabe): Die automatische Aufstellung (rechts und links je eine Aufnahme) und das Safety Car (Einparken auf dem Randstreifen, Ausparken) fahren jetzt deine von Hand aufgenommenen Folgen. Flüssig aus der Fahrt: auf dem Platz gleitet das Tempo in 0,3 s auf das der Aufnahme, kein Anhalten davor; das Anfahren aus dem Stand aus den Aufnahmen ist weggelassen. Das Safety Car fährt nach dem Ausparken ohne Halt normal weiter. Umschalten auf den bisherigen Lenkimpuls: Renneinstellungen „Einparken in der Aufstellung“ bzw. Safety-Car-Menü „Ein- und Ausparken“.": "Parking from your recordings (WIP, default): the automatic line-up (one recording each for right and left) and the safety car (parking on the edge strip, leaving) now drive your hand-recorded sequences. Smoothly from driving: on the spot the speed glides to the recording’s within 0.3 s, no stop before; the standing start in the recordings is left out. After leaving, the safety car carries on driving without a stop. Switch back to the old steering pulse: race settings “Parking in the line-up” or the safety car menu “Parking and leaving”.",
     "Garage: Nach einem Tipp bleibt die Liste auf ihrer Höhe stehen, statt nach oben zu springen.": "Garage: after a tap the list stays where it was instead of jumping to the top.",
+    "Rennstand- und Ergebnisansage (WIP): Neue Kachel Optionen → Ansagen mit allen Ansagen, die bisher unter Ton standen. Das Rennergebnis wird nach der Zielflagge angesagt (Standard an), der Zwischenstand alle paar Runden ist Standard aus. Mit „Autonamen ansagen“ (Standard an) heißt es „Es führt Max Mustermann“ statt „der rote …“; Autos ohne Namen heißen weiter nach Farbe und Marke. In der Garage gibt es dazu Marke/Modell je Auto.": "Race standings and result announcements (WIP): new tile Options → Announcements with every announcement that used to sit under Sound. The race result is announced after the chequered flag (on by default); standings every few laps are off by default. With “Announce car names” (on by default) it says “Currently leading is Max Mustermann” instead of “the red …”; cars without a name are still called by colour and make. The garage gains make/model per car.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -16449,6 +16468,13 @@
     "Rennstand maximale Wartezeit": "Race standings maximum wait",
     "5 bis 30 Sekunden, Standard 30. Ab der ersten Durchfahrt der Messrunde. Sobald die Top 3 durch sind, wird früher angesagt. Sonst nur die bereits gemessenen Fahrzeuge.": "5 to 30 seconds, default 30. From the first crossing of the measured lap. Announces earlier once the top 3 have crossed. Otherwise only vehicles already measured.",
     "Rennstand ansagen": "Announce race standings",
+    "Ansagen": "Announcements",
+    "Rundenzeiten, Rennstand, Ergebnis und Warnungen zu Schaden, Tank, Reifen, Regen und Akku.": "Lap times, race standings, result and warnings for damage, fuel, tyres, rain and battery.",
+    "Rennstand alle paar Runden ansagen": "Announce race standings every few laps",
+    "Rennergebnis ansagen": "Announce race result",
+    "Einmal nach der Zielflagge: der Sieger und die nächsten zwei mit Rückstand. Nur Rundenrennen und Endurance. Standard an.": "Once after the chequered flag: the winner and the next two with their gaps. Lap races and Endurance only. On by default.",
+    "Autonamen ansagen": "Announce car names",
+    "An: Rennstand und Ergebnis nennen den Namen aus der Garage, etwa „Es führt Max Mustermann“. Autos ohne eigenen Namen heißen weiter nach Farbe und Marke. Aus: immer Farbe und Marke, zum Beispiel „der rote Ford Mustang“. Namen spricht die Stimme des Geräts, nicht die Aufnahmen; der Hall und Lautstärken über 100 % wirken dann nicht. Hat das Gerät keine Stimme (Android-App), kommen Farbe und Marke. Standard an.": "On: standings and result use the name from the garage, e.g. “Currently leading is Max Mustermann”. Cars without a name of their own are still called by colour and make. Off: always colour and make, for example “the red Ford Mustang”. Names are spoken by the device voice, not the recordings; reverb and volumes above 100% do not apply then. If the device has no voice (Android app), colour and make are used. On by default.",
     "Die ersten drei Fahrzeuge des lokalen Rennfelds, mit Runde, Wagenfarbe und Marke / Modell. Nach jeder eingestellten Zahl vollendeter Runden des führenden Fahrzeugs. Die Ansage wartet auf die ersten drei Durchfahrten derselben Messrunde. Sekundenrückstände stammen aus diesen Durchfahrtszeiten, nicht aus Live-Abständen. Nur Rundenrennen und Endurance. Vorproduzierte Clips, auch in der Android-App.": "The first three cars in the local race field, with lap, colour and make / model. After every selected number of laps completed by the leading car. The announcement waits for the first three crossings of the same measured lap. Gaps in seconds use these crossing times, not live distances. Lap races and Endurance only. Pre-rendered clips also work in the Android app.",
     "Rennstand alle X Runden": "Race standings every X laps",
     "1 bis 20, Standard 5. Zum Beispiel nach Runde 5, 10 und 15.": "1 to 20, default 5. For example after lap 5, 10 and 15.",
@@ -37509,7 +37535,7 @@
     // ueber einen GHOST ausloesen, und ein Rundenrennen ohne (oder mit zu langsamen) Ghosts
     // endete nie.
     const out = garage.filter(c => c.role !== 'safetycar' && c.role !== 'reinig').map(c => ({ name: garageLabel(c), role: c.role, id: String(c.device && c.device.id),
-                                   farbe: carColor(c).hex, farbeId: carColor(c).id, kennung: c.tag, modellId: carModellWert(c.modellId),
+                                   farbe: carColor(c).hex, farbeId: carColor(c).id, kennung: c.tag, modellId: carModellWert(c.modellId), alias: c.alias || '',
                                    // Der Ort auf der Schiene. Auto 2 geht ueber
                                    // ghostOrtGes(): es hat seit v0.6.46 einen eigenen
                                    // Ortungssatz, und der ist genau der, aus dem ein Ghost
@@ -50458,6 +50484,10 @@
   const rennstandMesspunkte = new Map();
   let rennstandMessGeneration = 0, rennstandMessTimer = null;
   let rennstandWarteSekunden = 30;
+  // v1.1.35 BESTELLT: Ergebnisansage eigener Schalter (Standard an), Zwischenstand bleibt
+  // Standard aus. Und: "Max Mustermann" statt "der rote Max Mustermann" - Autonamen ueber
+  // die Stimme des Geraets, Standard an.
+  let rennstandErgebnisAn = true, rennstandNamen = true, rennstandSprache = null;
 
   function rennstandWarteWert(wert) {
     if (wert === null || String(wert).trim() === '') return 30;
@@ -50478,6 +50508,10 @@
     for (const q of rennstandQuellen) { try { q.stop(); } catch (e) {} }
     rennstandQuellen = [];
     rennstandBis = 0;
+    if (rennstandSprache) {
+      rennstandSprache = null;
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+    }
     if (rennstandBus) {
       try { rennstandBus.disconnect(); } catch (e) {}
       rennstandBus = null;
@@ -50496,6 +50530,7 @@
   }
 
   function rennstandBeschaeftigt() {
+    if (rennstandSprache) return true;
     return rennstandBis > 0 && audioCtx && audioCtx.currentTime < rennstandBis;
   }
 
@@ -50507,7 +50542,7 @@
       const laps = Array.isArray(c.laps) ? c.laps : [];
       const valid = laps.every((l) => l && Number.isFinite(l.ms) && l.ms >= 0);
       return { id: c.id || ('local:' + i), role: c.role, farbe: c.farbe, farbeId: c.farbeId, modellId: carModellWert(c.modellId),
-               laps, rate: Number.isFinite(c.rate) && c.rate > 0 ? c.rate : null,
+               alias: c.alias || '', laps, rate: Number.isFinite(c.rate) && c.rate > 0 ? c.rate : null,
                runden: laps.length,
                summe: valid ? laps.reduce((a, l) => a + l.ms, 0) : null,
                ort: Number.isFinite(c.ort) ? c.ort : -1 };
@@ -50566,7 +50601,7 @@
     // Nur bereits erfolgte Durchfahrten dieser Messrunde aufnehmen.
     const rows = cars.map((c, i) => ({
       id: c.id || ('local:' + i), role: c.role, farbe: c.farbe,
-      farbeId: c.farbeId, modellId: carModellWert(c.modellId),
+      farbeId: c.farbeId, modellId: carModellWert(c.modellId), alias: c.alias || '',
       crossedAt: rennstandDurchfahrt(c, n), runden: n,
     })).filter((c) => c.crossedAt !== null && c.crossedAt <= bis);
     rows.sort((a, b) => a.crossedAt - b.crossedAt || String(a.id).localeCompare(String(b.id)));
@@ -50695,8 +50730,110 @@
     return folge;
   }
 
+  // ---- Autonamen ueber die Stimme des Geraets (v1.1.35) ----------------------------
+  // Ein frei vergebener Name ("Max Mustermann") laesst sich nicht vorproduzieren. Dann
+  // spricht die Stimme des Browsers den GANZEN Satz - Aufnahme und Systemstimme mitten im
+  // Satz zu wechseln klingt nach zwei Sprechern. Ohne einen einzigen Namen unter den drei
+  // bleiben die Aufnahmen; ohne Systemstimme (Android-App) auch.
+  function rennstandNameVon(x) { return String((x && x.alias) || '').trim(); }
+  function rennstandStimmeNoetig(rows) {
+    return rennstandNamen && ('speechSynthesis' in window)
+      && rows.slice(0, 3).some((x) => rennstandNameVon(x));
+  }
+  const RENNSTAND_FARBWORT = {
+    de: { weiss: 'der weiße', schwarz: 'der schwarze', rot: 'der rote', blau: 'der blaue',
+          gruen: 'der grüne', gelb: 'der gelbe', lila: 'der lilafarbene', orange: 'der orangene',
+          mehrfarbig: 'der mehrfarbige' },
+    en: { weiss: 'the white', schwarz: 'the black', rot: 'the red', blau: 'the blue',
+          gruen: 'the green', gelb: 'the yellow', lila: 'the purple', orange: 'the orange',
+          mehrfarbig: 'the multicoloured' },
+  };
+  // Gesprochen, nicht geschrieben: "911" liest die deutsche Stimme sonst "neunhundertelf".
+  const RENNSTAND_MODELLWORT = {
+    de: { '': 'Wagen', bmw: 'BMW', porsche911: 'Porsche Neun Elf', fordmustang: 'Ford Mustang',
+          ferrari: 'Ferrari', audi: 'Audi', mclaren: 'McLaren', mercedes: 'Mercedes',
+          redbull: 'Red Bull', vwkaefer: 'VW Käfer' },
+    en: { '': 'car', bmw: 'BMW', porsche911: 'Porsche nine eleven', fordmustang: 'Ford Mustang',
+          ferrari: 'Ferrari', audi: 'Audi', mclaren: 'McLaren', mercedes: 'Mercedes',
+          redbull: 'Red Bull', vwkaefer: 'Volkswagen Beetle' },
+  };
+  // Derselbe Satzbau wie rennstandClipFolge(), nur als Text. Mit Name: nur der Name, ohne
+  // Farbe und ohne "von Spieler eins" - der Name sagt schon, wer es ist.
+  function rennstandText(rows, runde, ergebnis, spr) {
+    const de = spr === 'de', L = de ? 'de' : 'en';
+    const wagen = (x) => {
+      const name = rennstandNameVon(x);
+      if (name && rennstandNamen) return name;
+      const farbe = CAR_COLORS.find((c) => c.id === x.farbeId)
+        || CAR_COLORS.find((c) => String(c.hex).toLowerCase() === String(x.farbe || '').toLowerCase());
+      const fw = (farbe && RENNSTAND_FARBWORT[L][farbe.id]) || (de ? 'der' : 'the');
+      const nr = rennstandSpielerNr(x.role);
+      return fw + ' ' + RENNSTAND_MODELLWORT[L][carModellWert(x.modellId)]
+        + (nr ? (de ? ' von Spieler ' : ' driven by player ') + nr : '');
+    };
+    // z in Zehntelsekunden, wie in rennstandClipFolge().
+    const sek = (z) => {
+      if (z === 10) return de ? 'einer Sekunde' : 'one second';
+      const t = z % 10 ? (z / 10).toFixed(1) : String(z / 10);
+      return (de ? t.replace('.', ',') : t) + (de ? ' Sekunden' : ' seconds');
+    };
+    const rueck = (x) => {
+      if (x.rundenZurueck > 0) {
+        return x.rundenZurueck === 1 ? (de ? 'einer Runde Rückstand' : 'one lap behind')
+          : x.rundenZurueck + (de ? ' Runden Rückstand' : ' laps behind');
+      }
+      if (!Number.isFinite(x.msZurueck)) return de ? 'unbekanntem Rückstand' : 'an unknown gap';
+      const z = Math.max(0, Math.round(x.msZurueck / 100));
+      if (z === 0) return de ? 'gleichem Wertungsstand' : 'equal race time';
+      const min = Math.floor(z / 600), rest = z % 600;
+      const minText = min === 1 ? (de ? 'einer Minute' : 'one minute')
+        : min + (de ? ' Minuten' : ' minutes');
+      const teil = !min ? sek(rest) : rest ? minText + (de ? ' und ' : ' and ') + sek(rest) : minText;
+      return teil + (de ? ' Rückstand' : ' behind');
+    };
+    const saetze = [];
+    if (!ergebnis) saetze.push((de ? 'Nach Runde ' : 'After lap ') + runde + '.');
+    for (const x of rows.slice(0, 3)) {
+      if (x.platz === 1) {
+        saetze.push((ergebnis ? (de ? 'Gewonnen hat ' : 'The winner is ')
+          : (de ? 'Es führt aktuell ' : 'Currently leading is ')) + wagen(x) + '.');
+      } else {
+        saetze.push((x.platz === 2 ? (de ? 'Dahinter mit ' : 'Next, with ')
+          : (de ? 'Auf Platz drei mit ' : 'In third place, with '))
+          + rueck(x) + (de ? ' ' : ', ') + wagen(x) + '.');
+      }
+    }
+    return saetze.join(' ');
+  }
+  function rennstandSprechen(rows, runde, ergebnis) {
+    try {
+      const text = rennstandText(rows, runde, ergebnis, lang);
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = lang === 'de' ? 'de-DE' : 'en-US';
+      u.rate = rennstandTempoWert(rennstandTempo);
+      u.volume = Math.min(1, rennstandLautstaerke);
+      const fertig = () => {
+        if (rennstandSprache !== u) return;
+        rennstandSprache = null; lapAnsageBeendet();
+      };
+      u.onend = fertig; u.onerror = fertig;
+      // Manche Stimmen melden kein Ende: nach grob geschaetzter Sprechdauer freigeben.
+      setTimeout(fertig, 3000 + text.length * 110 / u.rate);
+      window.speechSynthesis.cancel();
+      rennstandSprache = u;
+      window.speechSynthesis.speak(u);
+      rennstandSatzRunde = ergebnis ? null : runde;
+      announceCalls++;
+      return true;
+    } catch (err) {
+      rennstandSprache = null;
+      log('Rennstand-Sprachausgabe fehlgeschlagen: ' + err.message, 'info');
+      return false;
+    }
+  }
+
   async function rennstandClipsLaden(spr) {
-    if (!audioCtx || !rennstandAn) return null;
+    if (!audioCtx || !(rennstandAn || rennstandErgebnisAn)) return null;
     const quelle = spr === 'de' ? 'de' : 'en'; // Spanisch wie vorhandene Clips: Englisch.
     if (rennstandBuffers[quelle]) return rennstandBuffers[quelle];
     if (rennstandLaden[quelle]) return rennstandLaden[quelle];
@@ -50732,17 +50869,20 @@
     const token = rennstandGeneration, spr = lang;
     if (rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
         || performance.now() < lapAnsageRuheBis) return false;
-    const satz = await rennstandClipsLaden(spr);
-    if (token !== rennstandGeneration || spr !== lang || !rennstandAn || !soundEnabled
+    const perStimme = rennstandStimmeNoetig(rows);
+    const satz = perStimme ? null : await rennstandClipsLaden(spr);
+    if (token !== rennstandGeneration || spr !== lang
+        || !(ergebnis ? rennstandErgebnisAn : rennstandAn) || !soundEnabled
         || rennstandLautstaerke <= 0 || !['laps', 'endurance'].includes(raceMode)
         || !audioCtx || !(ergebnis ? raceState === 'finished'
-          : ['racing', 'finishing'].includes(raceState)) || !satz) return false;
+          : ['racing', 'finishing'].includes(raceState)) || (!perStimme && !satz)) return false;
     // Auch nach dem asynchronen Laden erneut pruefen. Keine Rundenzeit abbrechen.
     if (rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
         || performance.now() < lapAnsageRuheBis) return false;
     // Den eingefrorenen Messstand der benannten Runde sprechen, nicht die
     // inzwischen aktuelle Rundenzahl oder Ortung nach dem asynchronen Clip-Laden.
     if (!rows.length || (messung && !rennstandMessstandGueltig(messung))) return false;
+    if (perStimme) return rennstandSprechen(rows, runde, ergebnis);
     const folge = rennstandClipFolge(rows, runde, ergebnis);
     const fehlendeClips = [...new Set(folge.filter((x) => !satz[x.key]).map((x) => x.key))];
     if (fehlendeClips.length) {
@@ -50774,7 +50914,7 @@
 
 
   function rennstandErgebnisErlaubt() {
-    return rennstandAn && soundEnabled && rennstandLautstaerke > 0
+    return rennstandErgebnisAn && soundEnabled && rennstandLautstaerke > 0
       && raceState === 'finished' && ['laps', 'endurance'].includes(raceMode);
   }
 
@@ -50939,6 +51079,22 @@
       rennstandAbbrechen();
     });
     numSteuer('setting-announce-stand-interval');
+  }
+
+  const rennstandErgebnisSchalter = $('setting-announce-result');
+  if (rennstandErgebnisSchalter) {
+    rennstandErgebnisAn = rennstandErgebnisSchalter.checked;
+    rennstandErgebnisSchalter.addEventListener('change', () => {
+      rennstandErgebnisAn = rennstandErgebnisSchalter.checked;
+      if (rennstandErgebnisAn) rennstandClipsLaden(lang);
+    });
+  }
+  const rennstandNamenSchalter = $('setting-announce-stand-name');
+  if (rennstandNamenSchalter) {
+    rennstandNamen = rennstandNamenSchalter.checked;
+    rennstandNamenSchalter.addEventListener('change', () => {
+      rennstandNamen = rennstandNamenSchalter.checked;
+    });
   }
 
   // Selbstsicherung speichert den Parameter; laufende Messpunkte bleiben erhalten.
@@ -95683,7 +95839,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (x.rundenZurueck !== 0 || Math.abs(x.msZurueck - 300) > 0.001) throw new Error(JSON.stringify(x));
     const keys = rennstandClipFolge(rennstandWerten(cars, true, 20), 2).map((x) => x.key);
     if (keys.includes('e:eine_runde') || !keys.includes('n:komma')) throw new Error(keys.join(','));
-    return '0,3 Sekunden trotz kurzfristig unterschiedlicher Rundenzahl';
+    return { ok: true, mass: '0,3 Sekunden trotz kurzfristig unterschiedlicher Rundenzahl' };
   });
   stAdd('Rennstand: echte Ueberrundung und Ergebnis bleiben getrennt', () => {
     const cars = [
@@ -95696,11 +95852,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     delete cars[0].ort; delete cars[1].ort;
     const fallback = rennstandWerten(cars, true, 20)[1];
     if (fallback.rundenZurueck !== 0 || fallback.msZurueck !== 0) throw new Error('Falscher Rueckfall');
-    return 'Echte Ueberrundung, finale Rundendifferenz und gemeinsame Messrunde';
+    return { ok: true, mass: 'Echte Ueberrundung, finale Rundendifferenz und gemeinsame Messrunde' };
   });
   stAdd('Rennstand: Hallregler begrenzt', () => {
     if (JSON.stringify([-1, 0, 0.3, 2, undefined].map(rennstandHallWert)) !== '[0,0,0.3,1,0]') throw new Error('Hallgrenzen');
-    return '0–100 %, trocken als Standard';
+    return { ok: true, mass: '0–100 %, trocken als Standard' };
   });
 
 
@@ -95760,7 +95916,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       rennstandWarteWert(null), rennstandWarteWert(0), rennstandWarteWert(50),
       rennstandWarteWert(12.6), rennstandWarteWert('10')];
     if (JSON.stringify(got) !== '[30,30,30,5,30,13,10]') throw new Error(JSON.stringify(got));
-    return 'Standard 30 s, Bereich 5–30 s, ganze Sekunden';
+    return { ok: true, mass: 'Standard 30 s, Bereich 5–30 s, ganze Sekunden' };
   });
   stAdd('Rennstand: eingestellte Wartegrenze und fruehe Freigabe', () => {
     const cars = [
@@ -95780,7 +95936,47 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     cars[2].laps = [{ms:1600,crossedAt:1600}];
     const r = rennstandMessungAktualisieren(cars,1,punkte,gemeldet,1600,30);
     if (r.length !== 1 || r[0].timeout || r[0].rows[1].msZurueck !== 300) throw new Error('Top3 Freigabe');
-    return '5/12/30 s exakt, Top 3 ohne unnoetiges Warten';
+    return { ok: true, mass: '5/12/30 s exakt, Top 3 ohne unnoetiges Warten' };
+  });
+
+  // v1.1.35 BESTELLT: eigene Kachel "Ansagen", Zwischenstand Standard aus, Ergebnis
+  // Standard an, und Autonamen ("Es fuehrt Max Mustermann") statt Farbe + Name.
+  stAdd('Ansagen v1.1.35: eigene Seite, Vorgaben, Autonamen statt Farbe', () => {
+    const seite = $('sub-opt-ansagen'), ton = $('sub-opt-sound');
+    if (!seite || !ton) return { ok: false, mass: 'Seite fehlt' };
+    const ids = ['setting-announce', 'setting-announce-stand', 'setting-announce-result',
+      'setting-announce-stand-name', 'setting-announce-damage', 'setting-announce-fuel',
+      'setting-announce-tyre', 'setting-announce-rain', 'setting-announce-pit',
+      'setting-announce-battery'];
+    const falsch = ids.filter((id) => !$(id) || !seite.contains($(id)));
+    if (falsch.length) return { ok: false, mass: 'nicht auf der Ansagen-Seite: ' + falsch.join(', ') };
+    if (ton.querySelector('[id^="setting-announce"]')) return { ok: false, mass: 'Ansage noch unter Ton' };
+    if (!document.querySelector('button.misc-tile[data-sub="opt-ansagen"]')) return { ok: false, mass: 'Kachel fehlt' };
+    if ($('setting-announce-stand').defaultChecked || !$('setting-announce-result').defaultChecked
+        || !$('setting-announce-stand-name').defaultChecked) {
+      return { ok: false, mass: 'Vorgaben: Zwischenstand aus, Ergebnis an, Namen an' };
+    }
+    const rows = [
+      { platz: 1, role: 'ghost', farbeId: 'rot', modellId: 'fordmustang', alias: 'Max Mustermann', rundenZurueck: 0, msZurueck: 0 },
+      { platz: 2, role: 'player', farbeId: 'gelb', modellId: 'porsche911', alias: '', rundenZurueck: 0, msZurueck: 1400 },
+    ];
+    const merk = rennstandNamen;
+    try {
+      rennstandNamen = true;
+      const mit = rennstandText(rows, 5, false, 'de');
+      if (mit.indexOf('Es führt aktuell Max Mustermann.') < 0 || /rote/.test(mit)
+          || mit.indexOf('der gelbe Porsche Neun Elf von Spieler 1') < 0
+          || mit.indexOf('1,4 Sekunden Rückstand') < 0) return { ok: false, mass: mit };
+      const sieg = rennstandText(rows, 5, true, 'en');
+      if (sieg.indexOf('The winner is Max Mustermann.') < 0) return { ok: false, mass: sieg };
+      rennstandNamen = false;
+      const ohne = rennstandText(rows, 5, false, 'de');
+      if (ohne.indexOf('der rote Ford Mustang') < 0 || /Mustermann/.test(ohne)) return { ok: false, mass: ohne };
+      if (rennstandStimmeNoetig(rows)) return { ok: false, mass: 'Namen aus, trotzdem Systemstimme' };
+      rennstandNamen = true;
+      if (rennstandStimmeNoetig([rows[1]])) return { ok: false, mass: 'ohne Namen trotzdem Systemstimme' };
+      return { ok: true, mass: mit };
+    } finally { rennstandNamen = merk; }
   });
   // ============================== HOME ==============================
   // Der Schirm beim Laden, erreichbar ueber das Logo. Die Zahl der Einstellungen wird
@@ -99225,6 +99421,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     { id: 'general', root: 'sub-opt-general', titel: 'Allgemein' },
     { id: 'feel', root: 'sub-opt-feel', titel: 'Fahrgefühl', werks: true },
     { id: 'sound', root: 'sub-opt-sound', titel: 'Ton' },
+    { id: 'ansagen', root: 'sub-opt-ansagen', titel: 'Ansagen' },
     { id: 'ghosts', root: 'sub-opt-ghosts', titel: 'NPCs' },
     { id: 'safetycar', root: 'sub-opt-safetycar', titel: 'Safety Car' },
     { id: 'pad', root: 'sub-opt-pad', titel: 'Controller', pad: true },

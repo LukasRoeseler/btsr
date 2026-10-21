@@ -15,6 +15,10 @@
   const rennstandMesspunkte = new Map();
   let rennstandMessGeneration = 0, rennstandMessTimer = null;
   let rennstandWarteSekunden = 30;
+  // v1.1.35 BESTELLT: Ergebnisansage eigener Schalter (Standard an), Zwischenstand bleibt
+  // Standard aus. Und: "Max Mustermann" statt "der rote Max Mustermann" - Autonamen ueber
+  // die Stimme des Geraets, Standard an.
+  let rennstandErgebnisAn = true, rennstandNamen = true, rennstandSprache = null;
 
   function rennstandWarteWert(wert) {
     if (wert === null || String(wert).trim() === '') return 30;
@@ -35,6 +39,10 @@
     for (const q of rennstandQuellen) { try { q.stop(); } catch (e) {} }
     rennstandQuellen = [];
     rennstandBis = 0;
+    if (rennstandSprache) {
+      rennstandSprache = null;
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+    }
     if (rennstandBus) {
       try { rennstandBus.disconnect(); } catch (e) {}
       rennstandBus = null;
@@ -53,6 +61,7 @@
   }
 
   function rennstandBeschaeftigt() {
+    if (rennstandSprache) return true;
     return rennstandBis > 0 && audioCtx && audioCtx.currentTime < rennstandBis;
   }
 
@@ -64,7 +73,7 @@
       const laps = Array.isArray(c.laps) ? c.laps : [];
       const valid = laps.every((l) => l && Number.isFinite(l.ms) && l.ms >= 0);
       return { id: c.id || ('local:' + i), role: c.role, farbe: c.farbe, farbeId: c.farbeId, modellId: carModellWert(c.modellId),
-               laps, rate: Number.isFinite(c.rate) && c.rate > 0 ? c.rate : null,
+               alias: c.alias || '', laps, rate: Number.isFinite(c.rate) && c.rate > 0 ? c.rate : null,
                runden: laps.length,
                summe: valid ? laps.reduce((a, l) => a + l.ms, 0) : null,
                ort: Number.isFinite(c.ort) ? c.ort : -1 };
@@ -123,7 +132,7 @@
     // Nur bereits erfolgte Durchfahrten dieser Messrunde aufnehmen.
     const rows = cars.map((c, i) => ({
       id: c.id || ('local:' + i), role: c.role, farbe: c.farbe,
-      farbeId: c.farbeId, modellId: carModellWert(c.modellId),
+      farbeId: c.farbeId, modellId: carModellWert(c.modellId), alias: c.alias || '',
       crossedAt: rennstandDurchfahrt(c, n), runden: n,
     })).filter((c) => c.crossedAt !== null && c.crossedAt <= bis);
     rows.sort((a, b) => a.crossedAt - b.crossedAt || String(a.id).localeCompare(String(b.id)));
@@ -252,8 +261,110 @@
     return folge;
   }
 
+  // ---- Autonamen ueber die Stimme des Geraets (v1.1.35) ----------------------------
+  // Ein frei vergebener Name ("Max Mustermann") laesst sich nicht vorproduzieren. Dann
+  // spricht die Stimme des Browsers den GANZEN Satz - Aufnahme und Systemstimme mitten im
+  // Satz zu wechseln klingt nach zwei Sprechern. Ohne einen einzigen Namen unter den drei
+  // bleiben die Aufnahmen; ohne Systemstimme (Android-App) auch.
+  function rennstandNameVon(x) { return String((x && x.alias) || '').trim(); }
+  function rennstandStimmeNoetig(rows) {
+    return rennstandNamen && ('speechSynthesis' in window)
+      && rows.slice(0, 3).some((x) => rennstandNameVon(x));
+  }
+  const RENNSTAND_FARBWORT = {
+    de: { weiss: 'der weiße', schwarz: 'der schwarze', rot: 'der rote', blau: 'der blaue',
+          gruen: 'der grüne', gelb: 'der gelbe', lila: 'der lilafarbene', orange: 'der orangene',
+          mehrfarbig: 'der mehrfarbige' },
+    en: { weiss: 'the white', schwarz: 'the black', rot: 'the red', blau: 'the blue',
+          gruen: 'the green', gelb: 'the yellow', lila: 'the purple', orange: 'the orange',
+          mehrfarbig: 'the multicoloured' },
+  };
+  // Gesprochen, nicht geschrieben: "911" liest die deutsche Stimme sonst "neunhundertelf".
+  const RENNSTAND_MODELLWORT = {
+    de: { '': 'Wagen', bmw: 'BMW', porsche911: 'Porsche Neun Elf', fordmustang: 'Ford Mustang',
+          ferrari: 'Ferrari', audi: 'Audi', mclaren: 'McLaren', mercedes: 'Mercedes',
+          redbull: 'Red Bull', vwkaefer: 'VW Käfer' },
+    en: { '': 'car', bmw: 'BMW', porsche911: 'Porsche nine eleven', fordmustang: 'Ford Mustang',
+          ferrari: 'Ferrari', audi: 'Audi', mclaren: 'McLaren', mercedes: 'Mercedes',
+          redbull: 'Red Bull', vwkaefer: 'Volkswagen Beetle' },
+  };
+  // Derselbe Satzbau wie rennstandClipFolge(), nur als Text. Mit Name: nur der Name, ohne
+  // Farbe und ohne "von Spieler eins" - der Name sagt schon, wer es ist.
+  function rennstandText(rows, runde, ergebnis, spr) {
+    const de = spr === 'de', L = de ? 'de' : 'en';
+    const wagen = (x) => {
+      const name = rennstandNameVon(x);
+      if (name && rennstandNamen) return name;
+      const farbe = CAR_COLORS.find((c) => c.id === x.farbeId)
+        || CAR_COLORS.find((c) => String(c.hex).toLowerCase() === String(x.farbe || '').toLowerCase());
+      const fw = (farbe && RENNSTAND_FARBWORT[L][farbe.id]) || (de ? 'der' : 'the');
+      const nr = rennstandSpielerNr(x.role);
+      return fw + ' ' + RENNSTAND_MODELLWORT[L][carModellWert(x.modellId)]
+        + (nr ? (de ? ' von Spieler ' : ' driven by player ') + nr : '');
+    };
+    // z in Zehntelsekunden, wie in rennstandClipFolge().
+    const sek = (z) => {
+      if (z === 10) return de ? 'einer Sekunde' : 'one second';
+      const t = z % 10 ? (z / 10).toFixed(1) : String(z / 10);
+      return (de ? t.replace('.', ',') : t) + (de ? ' Sekunden' : ' seconds');
+    };
+    const rueck = (x) => {
+      if (x.rundenZurueck > 0) {
+        return x.rundenZurueck === 1 ? (de ? 'einer Runde Rückstand' : 'one lap behind')
+          : x.rundenZurueck + (de ? ' Runden Rückstand' : ' laps behind');
+      }
+      if (!Number.isFinite(x.msZurueck)) return de ? 'unbekanntem Rückstand' : 'an unknown gap';
+      const z = Math.max(0, Math.round(x.msZurueck / 100));
+      if (z === 0) return de ? 'gleichem Wertungsstand' : 'equal race time';
+      const min = Math.floor(z / 600), rest = z % 600;
+      const minText = min === 1 ? (de ? 'einer Minute' : 'one minute')
+        : min + (de ? ' Minuten' : ' minutes');
+      const teil = !min ? sek(rest) : rest ? minText + (de ? ' und ' : ' and ') + sek(rest) : minText;
+      return teil + (de ? ' Rückstand' : ' behind');
+    };
+    const saetze = [];
+    if (!ergebnis) saetze.push((de ? 'Nach Runde ' : 'After lap ') + runde + '.');
+    for (const x of rows.slice(0, 3)) {
+      if (x.platz === 1) {
+        saetze.push((ergebnis ? (de ? 'Gewonnen hat ' : 'The winner is ')
+          : (de ? 'Es führt aktuell ' : 'Currently leading is ')) + wagen(x) + '.');
+      } else {
+        saetze.push((x.platz === 2 ? (de ? 'Dahinter mit ' : 'Next, with ')
+          : (de ? 'Auf Platz drei mit ' : 'In third place, with '))
+          + rueck(x) + (de ? ' ' : ', ') + wagen(x) + '.');
+      }
+    }
+    return saetze.join(' ');
+  }
+  function rennstandSprechen(rows, runde, ergebnis) {
+    try {
+      const text = rennstandText(rows, runde, ergebnis, lang);
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = lang === 'de' ? 'de-DE' : 'en-US';
+      u.rate = rennstandTempoWert(rennstandTempo);
+      u.volume = Math.min(1, rennstandLautstaerke);
+      const fertig = () => {
+        if (rennstandSprache !== u) return;
+        rennstandSprache = null; lapAnsageBeendet();
+      };
+      u.onend = fertig; u.onerror = fertig;
+      // Manche Stimmen melden kein Ende: nach grob geschaetzter Sprechdauer freigeben.
+      setTimeout(fertig, 3000 + text.length * 110 / u.rate);
+      window.speechSynthesis.cancel();
+      rennstandSprache = u;
+      window.speechSynthesis.speak(u);
+      rennstandSatzRunde = ergebnis ? null : runde;
+      announceCalls++;
+      return true;
+    } catch (err) {
+      rennstandSprache = null;
+      log('Rennstand-Sprachausgabe fehlgeschlagen: ' + err.message, 'info');
+      return false;
+    }
+  }
+
   async function rennstandClipsLaden(spr) {
-    if (!audioCtx || !rennstandAn) return null;
+    if (!audioCtx || !(rennstandAn || rennstandErgebnisAn)) return null;
     const quelle = spr === 'de' ? 'de' : 'en'; // Spanisch wie vorhandene Clips: Englisch.
     if (rennstandBuffers[quelle]) return rennstandBuffers[quelle];
     if (rennstandLaden[quelle]) return rennstandLaden[quelle];
@@ -289,17 +400,20 @@
     const token = rennstandGeneration, spr = lang;
     if (rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
         || performance.now() < lapAnsageRuheBis) return false;
-    const satz = await rennstandClipsLaden(spr);
-    if (token !== rennstandGeneration || spr !== lang || !rennstandAn || !soundEnabled
+    const perStimme = rennstandStimmeNoetig(rows);
+    const satz = perStimme ? null : await rennstandClipsLaden(spr);
+    if (token !== rennstandGeneration || spr !== lang
+        || !(ergebnis ? rennstandErgebnisAn : rennstandAn) || !soundEnabled
         || rennstandLautstaerke <= 0 || !['laps', 'endurance'].includes(raceMode)
         || !audioCtx || !(ergebnis ? raceState === 'finished'
-          : ['racing', 'finishing'].includes(raceState)) || !satz) return false;
+          : ['racing', 'finishing'].includes(raceState)) || (!perStimme && !satz)) return false;
     // Auch nach dem asynchronen Laden erneut pruefen. Keine Rundenzeit abbrechen.
     if (rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
         || performance.now() < lapAnsageRuheBis) return false;
     // Den eingefrorenen Messstand der benannten Runde sprechen, nicht die
     // inzwischen aktuelle Rundenzahl oder Ortung nach dem asynchronen Clip-Laden.
     if (!rows.length || (messung && !rennstandMessstandGueltig(messung))) return false;
+    if (perStimme) return rennstandSprechen(rows, runde, ergebnis);
     const folge = rennstandClipFolge(rows, runde, ergebnis);
     const fehlendeClips = [...new Set(folge.filter((x) => !satz[x.key]).map((x) => x.key))];
     if (fehlendeClips.length) {
@@ -331,7 +445,7 @@
 
 
   function rennstandErgebnisErlaubt() {
-    return rennstandAn && soundEnabled && rennstandLautstaerke > 0
+    return rennstandErgebnisAn && soundEnabled && rennstandLautstaerke > 0
       && raceState === 'finished' && ['laps', 'endurance'].includes(raceMode);
   }
 
@@ -496,6 +610,22 @@
       rennstandAbbrechen();
     });
     numSteuer('setting-announce-stand-interval');
+  }
+
+  const rennstandErgebnisSchalter = $('setting-announce-result');
+  if (rennstandErgebnisSchalter) {
+    rennstandErgebnisAn = rennstandErgebnisSchalter.checked;
+    rennstandErgebnisSchalter.addEventListener('change', () => {
+      rennstandErgebnisAn = rennstandErgebnisSchalter.checked;
+      if (rennstandErgebnisAn) rennstandClipsLaden(lang);
+    });
+  }
+  const rennstandNamenSchalter = $('setting-announce-stand-name');
+  if (rennstandNamenSchalter) {
+    rennstandNamen = rennstandNamenSchalter.checked;
+    rennstandNamenSchalter.addEventListener('change', () => {
+      rennstandNamen = rennstandNamenSchalter.checked;
+    });
   }
 
   // Selbstsicherung speichert den Parameter; laufende Messpunkte bleiben erhalten.

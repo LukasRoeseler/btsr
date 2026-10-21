@@ -21514,7 +21514,7 @@
     if (x.rundenZurueck !== 0 || Math.abs(x.msZurueck - 300) > 0.001) throw new Error(JSON.stringify(x));
     const keys = rennstandClipFolge(rennstandWerten(cars, true, 20), 2).map((x) => x.key);
     if (keys.includes('e:eine_runde') || !keys.includes('n:komma')) throw new Error(keys.join(','));
-    return '0,3 Sekunden trotz kurzfristig unterschiedlicher Rundenzahl';
+    return { ok: true, mass: '0,3 Sekunden trotz kurzfristig unterschiedlicher Rundenzahl' };
   });
   stAdd('Rennstand: echte Ueberrundung und Ergebnis bleiben getrennt', () => {
     const cars = [
@@ -21527,11 +21527,11 @@
     delete cars[0].ort; delete cars[1].ort;
     const fallback = rennstandWerten(cars, true, 20)[1];
     if (fallback.rundenZurueck !== 0 || fallback.msZurueck !== 0) throw new Error('Falscher Rueckfall');
-    return 'Echte Ueberrundung, finale Rundendifferenz und gemeinsame Messrunde';
+    return { ok: true, mass: 'Echte Ueberrundung, finale Rundendifferenz und gemeinsame Messrunde' };
   });
   stAdd('Rennstand: Hallregler begrenzt', () => {
     if (JSON.stringify([-1, 0, 0.3, 2, undefined].map(rennstandHallWert)) !== '[0,0,0.3,1,0]') throw new Error('Hallgrenzen');
-    return '0–100 %, trocken als Standard';
+    return { ok: true, mass: '0–100 %, trocken als Standard' };
   });
 
 
@@ -21591,7 +21591,7 @@
       rennstandWarteWert(null), rennstandWarteWert(0), rennstandWarteWert(50),
       rennstandWarteWert(12.6), rennstandWarteWert('10')];
     if (JSON.stringify(got) !== '[30,30,30,5,30,13,10]') throw new Error(JSON.stringify(got));
-    return 'Standard 30 s, Bereich 5–30 s, ganze Sekunden';
+    return { ok: true, mass: 'Standard 30 s, Bereich 5–30 s, ganze Sekunden' };
   });
   stAdd('Rennstand: eingestellte Wartegrenze und fruehe Freigabe', () => {
     const cars = [
@@ -21611,5 +21611,45 @@
     cars[2].laps = [{ms:1600,crossedAt:1600}];
     const r = rennstandMessungAktualisieren(cars,1,punkte,gemeldet,1600,30);
     if (r.length !== 1 || r[0].timeout || r[0].rows[1].msZurueck !== 300) throw new Error('Top3 Freigabe');
-    return '5/12/30 s exakt, Top 3 ohne unnoetiges Warten';
+    return { ok: true, mass: '5/12/30 s exakt, Top 3 ohne unnoetiges Warten' };
+  });
+
+  // v1.1.35 BESTELLT: eigene Kachel "Ansagen", Zwischenstand Standard aus, Ergebnis
+  // Standard an, und Autonamen ("Es fuehrt Max Mustermann") statt Farbe + Name.
+  stAdd('Ansagen v1.1.35: eigene Seite, Vorgaben, Autonamen statt Farbe', () => {
+    const seite = $('sub-opt-ansagen'), ton = $('sub-opt-sound');
+    if (!seite || !ton) return { ok: false, mass: 'Seite fehlt' };
+    const ids = ['setting-announce', 'setting-announce-stand', 'setting-announce-result',
+      'setting-announce-stand-name', 'setting-announce-damage', 'setting-announce-fuel',
+      'setting-announce-tyre', 'setting-announce-rain', 'setting-announce-pit',
+      'setting-announce-battery'];
+    const falsch = ids.filter((id) => !$(id) || !seite.contains($(id)));
+    if (falsch.length) return { ok: false, mass: 'nicht auf der Ansagen-Seite: ' + falsch.join(', ') };
+    if (ton.querySelector('[id^="setting-announce"]')) return { ok: false, mass: 'Ansage noch unter Ton' };
+    if (!document.querySelector('button.misc-tile[data-sub="opt-ansagen"]')) return { ok: false, mass: 'Kachel fehlt' };
+    if ($('setting-announce-stand').defaultChecked || !$('setting-announce-result').defaultChecked
+        || !$('setting-announce-stand-name').defaultChecked) {
+      return { ok: false, mass: 'Vorgaben: Zwischenstand aus, Ergebnis an, Namen an' };
+    }
+    const rows = [
+      { platz: 1, role: 'ghost', farbeId: 'rot', modellId: 'fordmustang', alias: 'Max Mustermann', rundenZurueck: 0, msZurueck: 0 },
+      { platz: 2, role: 'player', farbeId: 'gelb', modellId: 'porsche911', alias: '', rundenZurueck: 0, msZurueck: 1400 },
+    ];
+    const merk = rennstandNamen;
+    try {
+      rennstandNamen = true;
+      const mit = rennstandText(rows, 5, false, 'de');
+      if (mit.indexOf('Es führt aktuell Max Mustermann.') < 0 || /rote/.test(mit)
+          || mit.indexOf('der gelbe Porsche Neun Elf von Spieler 1') < 0
+          || mit.indexOf('1,4 Sekunden Rückstand') < 0) return { ok: false, mass: mit };
+      const sieg = rennstandText(rows, 5, true, 'en');
+      if (sieg.indexOf('The winner is Max Mustermann.') < 0) return { ok: false, mass: sieg };
+      rennstandNamen = false;
+      const ohne = rennstandText(rows, 5, false, 'de');
+      if (ohne.indexOf('der rote Ford Mustang') < 0 || /Mustermann/.test(ohne)) return { ok: false, mass: ohne };
+      if (rennstandStimmeNoetig(rows)) return { ok: false, mass: 'Namen aus, trotzdem Systemstimme' };
+      rennstandNamen = true;
+      if (rennstandStimmeNoetig([rows[1]])) return { ok: false, mass: 'ohne Namen trotzdem Systemstimme' };
+      return { ok: true, mass: mit };
+    } finally { rennstandNamen = merk; }
   });
