@@ -21135,6 +21135,29 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : '4 NPCs zusammen ' + (paket.length / 0.9).toFixed(0) + ' Pakete/s, Halt sofort, einer allein ungedrosselt' };
   });
 
+  // v1.1.26 GEMELDET: "Wenn ich sie abspiele, gibt das Auto kein Gas, sondern lenkt nur."
+  stAdd('Fahrten-Aufnahme v1.1.26: Wiedergabe sendet das Aufgenommene unveraendert', async () => {
+    const f = [];
+    const merk = { macro: macro.slice(), loop: $('chk-loop') ? $('chk-loop').checked : false };
+    try {
+      if ($('chk-loop')) $('chk-loop').checked = false;
+      macro.length = 0;
+      macro.push({ t: 0, steer: 0.25, throttle: 0.6 }, { t: 400, steer: -0.5, throttle: 0.3 });
+      playing = true;
+      runPlayback();
+      await new Promise((r) => setTimeout(r, 120));
+      const w = macroWiedergabeWert();
+      if (!w || w.steer !== 0.25 || w.throttle !== 0.6) f.push('Wert waehrend der Wiedergabe ' + JSON.stringify(w));
+      stopPlayback();
+      if (macroWiedergabeWert() !== null) f.push('nach dem Stopp noch ein Wert');
+    } finally {
+      if (playing) stopPlayback();
+      macro.length = 0; merk.macro.forEach((x) => macro.push(x));
+      if ($('chk-loop')) $('chk-loop').checked = merk.loop;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Lenkung 0,25 und Gas 0,6 gehen unveraendert hinaus, danach nichts mehr' };
+  });
+
   stAdd('Woerterbuch ohne doppelte Schluessel', () => {
     const imObjekt = Object.keys(I18N_EN).length;
     // Die Quelle steht im eigenen <script>. Sie zu lesen ist billiger und ehrlicher als die

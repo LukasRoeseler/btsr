@@ -3778,14 +3778,21 @@
     runPlayback();
   };
 
+  // v1.1.26 GEMELDET: "Wenn ich sie abspiele, gibt das Auto kein Gas, sondern lenkt nur." Aufgenommen wird
+  // in sendControlValue(), also was NACH Fahrgefuehl und Physik ans Auto ging. Die Wiedergabe gab das aber als
+  // Stick und Pedal wieder hinein - es lief ein zweites Mal durch Physik/RC-Kennlinie, und vom Gas blieb so
+  // wenig, dass das Auto nicht anfuhr. Jetzt sendet der Herzschlag (20-protocol.js) den aufgenommenen Wert
+  // unveraendert (macroWiedergabeWert), genau wie aufgenommen.
+  let macroWert = null;
+  function macroWiedergabeWert() { return playing ? macroWert : null; }
   function runPlayback() {
     playTimers.forEach(clearTimeout);
     playTimers = [];
     const startedAt = Date.now();
+    macroWert = { steer: 0, throttle: 0 };
     macro.forEach((step, i) => {
       const timer = setTimeout(() => {
-        applySteerInput(SRC.MACRO, step.steer);
-        applyThrottleInput(SRC.MACRO, step.throttle);
+        macroWert = { steer: step.steer, throttle: step.throttle };
         playLog(`Schritt ${i + 1}/${macro.length}  t=${step.t}ms  steer=${step.steer.toFixed(2)}  throttle=${step.throttle.toFixed(2)}`);
         if (i === macro.length - 1) {
           if ($('chk-loop').checked && playing) {
@@ -3803,6 +3810,8 @@
     playTimers.forEach(clearTimeout);
     playTimers = [];
     playing = false; // must be cleared BEFORE releasing, or playbackLocked blocks it
+    macroWert = null;
+    if (typeof physEngine !== 'undefined' && physEngine && typeof physEngine.reset === 'function') physEngine.reset();
     $('btn-play').disabled = macro.length === 0;
     $('btn-stop-play').disabled = true;
     releaseInput(SRC.MACRO);
@@ -3846,6 +3855,29 @@
     saveMacroStore(store);
     refreshMacroList();
     log(`Aufnahme "${name}" gelöscht.`, 'info');
+  };
+
+  // v1.1.26: Teilen oder in die Zwischenablage - in der APK laedt "Export" keine Datei herunter.
+  if ($('btn-share-macro')) $('btn-share-macro').onclick = async () => {
+    if (macro.length === 0) { alert(t('Keine Aufnahme vorhanden. Erst eine gespeicherte Fahrt laden.')); return; }
+    const name = ($('macro-name').value.trim() || ($('macro-list') && $('macro-list').value) || 'aufnahme').replace(/[^\w.-]+/g, '_');
+    const text = JSON.stringify({ name, fahrgefuehl: ($('phys-mode') || {}).value || '', schritte: macro });
+    try {
+      const datei = typeof File === 'function' ? new File([text], name + '.json', { type: 'application/json' }) : null;
+      if (datei && navigator.canShare && navigator.canShare({ files: [datei] })) {
+        await navigator.share({ files: [datei], title: name });
+        return;
+      }
+    } catch (e) { if (e && e.name === 'AbortError') return; }
+    try {
+      await navigator.clipboard.writeText(text);
+      showHudToast(t('Aufnahme kopiert - zum Beispiel in eine Mail einfügen'));
+      log('Aufnahme "' + name + '" in die Zwischenablage kopiert (' + text.length + ' Zeichen).', 'info');
+    } catch (e) {
+      const feld = $('macro-teilen-text');
+      if (feld) { feld.hidden = false; feld.value = text; feld.select(); }
+      showHudToast(t('Kopieren nicht erlaubt - Text unten markiert, bitte selbst kopieren'));
+    }
   };
 
   $('btn-export-macro').onclick = () => {

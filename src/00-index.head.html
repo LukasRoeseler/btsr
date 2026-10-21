@@ -4823,7 +4823,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.25</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.29</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5976,6 +5976,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Fahrten-Aufnahme: Die Wiedergabe sendet jetzt genau das Aufgenommene. Vorher lief es ein zweites Mal durch Fahrgef&#252;hl und Physik, und vom Gas blieb so wenig, dass das Auto nur lenkte. Neu: &#8222;Teilen / Kopieren&#8220; &#246;ffnet das Teilen-Men&#252; des Handys oder kopiert die Aufnahme in die Zwischenablage (Aufnahmen liegen in der App, nicht als Datei).</li>
         <li>Gewinnerschirm: Auf dem Podest steht &#252;ber jedem Namen das Autobild (Foto oder Farbe), der Sieger etwas gr&#246;&#223;er.</li>
         <li>Aufstellungsschirm vor dem Rennstart: Beim Umsortieren gleiten die Autos an ihren neuen Platz, das bewegte Auto leuchtet kurz auf. Autobilder und Pfeiltasten sind gr&#246;&#223;er, und ein Tipp auf ein Auto l&#228;sst seine Lichter blinken.</li>
         <li>Garage: Links steht je Auto nur noch die Rolle als Etikett; eingestellt wird sie rechts in der ersten Zeile (&#8222;Rolle&#8220;, mit Pfeilen bzw. Steuerkreuz links/rechts).</li>
@@ -6384,10 +6385,12 @@
         <button id="btn-load-macro">Laden</button>
         <button id="btn-delete-macro">Löschen</button>
         <button id="btn-export-macro">Export (JSON)</button>
+        <button id="btn-share-macro">Teilen / Kopieren</button>
         <input type="file" id="macro-import" accept="application/json" style="display:none">
         <button id="btn-import-macro">Import (JSON)</button>
       </div>
-      <p class="muted" style="margin-top:8px">Aufnahmen werden lokal im Browser gespeichert (localStorage).</p>
+      <textarea id="macro-teilen-text" hidden readonly rows="4" style="width:100%; margin-top:8px"></textarea>
+      <p class="muted" style="margin-top:8px">Aufnahmen werden in der App auf diesem Ger&auml;t gespeichert (nicht als Datei). Zum Verschicken: Fahrt laden, dann &bdquo;Teilen / Kopieren&ldquo; &ndash; das &ouml;ffnet das Teilen-Men&uuml; oder kopiert die Aufnahme in die Zwischenablage.</p>
     </div>
 
     <div class="card">
