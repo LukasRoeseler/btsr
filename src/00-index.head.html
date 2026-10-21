@@ -4826,7 +4826,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.40</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.41</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5979,6 +5979,10 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Automatische Aufstellung: Jedes Auto parkt jetzt mit genau der Einparkfolge des Safety Cars &#8211; gleiche Zeiten und Lenkwerte, f&#252;r die linke Spalte gespiegelt, mit weniger Gas (neuer Regler, Standard 75 %), damit es weiter innen steht. Immer diese Folge, auch auf Kurventeilen; in der Haarnadel parkt weiterhin niemand. Das Log nennt f&#252;r jedes Auto Seite und Gas.</li>
+        <li>Reinigungsfahrzeug: Nach der ersten Start/Ziel-&#220;berfahrt f&#228;hrt es je eine volle Runde mittig, links (Querlage 90 %) und rechts (90 %) und h&#228;lt dann an. Die Querlage kommt allein aus dieser Vorgabe, ohne Ideallinie; die Runden werden &#252;ber den gefahrenen Weg gez&#228;hlt.</li>
+        <li>Gleich schnell: Das Safety Car f&#228;hrt unter Gelb dasselbe Tempo wie das Feld (Gerade, Kurve und Haarnadel mit denselben Grenzen) &#8211; vorher &#252;berall gleich, also auf der Geraden langsamer und in der Haarnadel schneller. In der Einf&#252;hrungsrunde f&#228;hrt dein Autopilot in Kurven so schnell wie die NPCs (vorher deutlich langsamer), und die Feld-Staffel ist dort aus.</li>
+        <li>Spieler 2 und 3 sind nicht mehr als experimentell gekennzeichnet (Garage und Optionen).</li>
         <li>Cockpit (WIP): Oben links neben der Runde steht jetzt deine Position, z. B. P2/5 &#8211; bei Rundenrennen und Endurance nach Runden und Gesamtzeit (wie die Renn&#252;bersicht), im Qualifying nach Bestzeit, in den anderen Modi nicht.</li>
         <li>Automatische Aufstellung: Die Autos parken wieder mit Aufnahme am Rand. Die Einparkfolge ist jetzt Takt f&#252;r Takt der Mittelwert aus deiner Aufnahme links/rechts und dem Einparken des Safety Cars (Lenkung und Gas) &#8211; kr&#228;ftiger an den Rand als bisher, weniger weit als das Safety Car. Der kurze Lenkimpuls statt der Aufnahme gilt nur noch, wenn der Platz selbst auf einer Kurve liegt (vorher auch bei einer Kurve dahinter &#8211; dann blieben die Autos mittig stehen).</li>
         <li>Garage: Blinken ist jetzt ein Knopf rechts direkt unter der Rolle. Das Antippen oder Anw&#228;hlen eines Autos links blinkt nicht mehr &#8211; das Blinken baute die Garage alle 150 ms neu und lie&#223; die linke Spalte springen.</li>
@@ -9263,13 +9267,24 @@
           &bdquo;Gelbe Flagge&ldquo; und das Halten der Boxentaste rufen kein Gelb mehr aus.</small></div>
         <label class="tgl"><input type="checkbox" id="race-gelb-aus"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Einparken in der Aufstellung<span class="wip-tag">WIP</span><small>Aufnahme (Vorgabe):
-          Das Auto f&auml;hrt die von Hand aufgenommene Folge &ndash; auf dem Startplatz gleitet es in 0,3&nbsp;s auf das
-          Tempo der Aufnahme, lenkt zur eigenen Seite und zur&uuml;ck und rollt aus, ohne vorher anzuhalten. Rechts und
-          links sind je eine eigene Aufnahme. Lenkimpuls: die bisherige Folge mit den Reglern darunter.</small></div>
+          Das Auto f&auml;hrt genau die Einparkfolge des Safety Cars &ndash; auf dem Startplatz gleitet es in 0,3&nbsp;s auf
+          ihr Tempo, lenkt zur eigenen Seite und zur&uuml;ck und rollt aus, ohne vorher anzuhalten. Lenkung und Zeiten
+          sind die des Safety Cars, f&uuml;r die linke Spalte gespiegelt; das Gas ist kleiner (Regler darunter), damit
+          die Autos weiter innen stehen. Lenkimpuls: die alte Folge mit den Reglern weiter unten.</small></div>
         <select id="race-einpark-art" data-preset-skip>
           <option value="aufnahme" selected>Aufnahme</option>
           <option value="impuls">Lenkimpuls</option>
         </select></div>
+      <div class="opt-row"><div class="opt-label">Einparken: Gas der Safety-Car-Folge<span class="wip-tag">WIP</span><small>Wie viel
+          vom Gas der Safety-Car-Einparkfolge die Autos in der Aufstellung bekommen. Weniger Gas: sie rollen weniger weit
+          zur Seite und stehen weiter innen; mehr: weiter am Rand. Lenkung und Zeiten bleiben genau die der Aufnahme.
+          Standard 75&nbsp;%.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="race-einpark-sc-gas" min="0.4" max="1" step="0.05" value="0.75" data-preset-skip>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="race-einpark-sc-gas-val">75 %</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Einparken: Einlenkst&auml;rke<span class="wip-tag">WIP</span><small>Bei der
           automatischen Aufstellung (vor und nach dem Rennen) fahren alle Autos genau mittig, auch an
           schon geparkten vorbei. Am eigenen Haltepunkt &ndash; rechts weiter vorn in der Kachel, links
@@ -11955,8 +11970,7 @@
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Mehrspieler</h2>
       <div class="opt-head">Der Modus</div>
-      <div class="opt-row"><div class="opt-label">Mehrspieler-Modus (2&ndash;3 Spieler)<span
-          class="wip-tag">WIP</span><small>Zwei oder drei Autos, je ein Controller, ein
+      <div class="opt-row"><div class="opt-label">Mehrspieler-Modus (2&ndash;3 Spieler)<small>Zwei oder drei Autos, je ein Controller, ein
           Rennen auf derselben Strecke. In der Garage gibt es die Rollen &bdquo;Spieler&nbsp;2&ldquo;
           und &bdquo;Spieler&nbsp;3&ldquo; (die Wahl schaltet den Modus ein). Das erste Pad
           f&auml;hrt Auto&nbsp;1, das zweite Auto&nbsp;2, das dritte Auto&nbsp;3. Im Cockpit

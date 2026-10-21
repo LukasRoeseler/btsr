@@ -4826,7 +4826,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.40</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.41</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5979,6 +5979,10 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Automatische Aufstellung: Jedes Auto parkt jetzt mit genau der Einparkfolge des Safety Cars &#8211; gleiche Zeiten und Lenkwerte, f&#252;r die linke Spalte gespiegelt, mit weniger Gas (neuer Regler, Standard 75 %), damit es weiter innen steht. Immer diese Folge, auch auf Kurventeilen; in der Haarnadel parkt weiterhin niemand. Das Log nennt f&#252;r jedes Auto Seite und Gas.</li>
+        <li>Reinigungsfahrzeug: Nach der ersten Start/Ziel-&#220;berfahrt f&#228;hrt es je eine volle Runde mittig, links (Querlage 90 %) und rechts (90 %) und h&#228;lt dann an. Die Querlage kommt allein aus dieser Vorgabe, ohne Ideallinie; die Runden werden &#252;ber den gefahrenen Weg gez&#228;hlt.</li>
+        <li>Gleich schnell: Das Safety Car f&#228;hrt unter Gelb dasselbe Tempo wie das Feld (Gerade, Kurve und Haarnadel mit denselben Grenzen) &#8211; vorher &#252;berall gleich, also auf der Geraden langsamer und in der Haarnadel schneller. In der Einf&#252;hrungsrunde f&#228;hrt dein Autopilot in Kurven so schnell wie die NPCs (vorher deutlich langsamer), und die Feld-Staffel ist dort aus.</li>
+        <li>Spieler 2 und 3 sind nicht mehr als experimentell gekennzeichnet (Garage und Optionen).</li>
         <li>Cockpit (WIP): Oben links neben der Runde steht jetzt deine Position, z. B. P2/5 &#8211; bei Rundenrennen und Endurance nach Runden und Gesamtzeit (wie die Renn&#252;bersicht), im Qualifying nach Bestzeit, in den anderen Modi nicht.</li>
         <li>Automatische Aufstellung: Die Autos parken wieder mit Aufnahme am Rand. Die Einparkfolge ist jetzt Takt f&#252;r Takt der Mittelwert aus deiner Aufnahme links/rechts und dem Einparken des Safety Cars (Lenkung und Gas) &#8211; kr&#228;ftiger an den Rand als bisher, weniger weit als das Safety Car. Der kurze Lenkimpuls statt der Aufnahme gilt nur noch, wenn der Platz selbst auf einer Kurve liegt (vorher auch bei einer Kurve dahinter &#8211; dann blieben die Autos mittig stehen).</li>
         <li>Garage: Blinken ist jetzt ein Knopf rechts direkt unter der Rolle. Das Antippen oder Anw&#228;hlen eines Autos links blinkt nicht mehr &#8211; das Blinken baute die Garage alle 150 ms neu und lie&#223; die linke Spalte springen.</li>
@@ -9263,13 +9267,24 @@
           &bdquo;Gelbe Flagge&ldquo; und das Halten der Boxentaste rufen kein Gelb mehr aus.</small></div>
         <label class="tgl"><input type="checkbox" id="race-gelb-aus"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Einparken in der Aufstellung<span class="wip-tag">WIP</span><small>Aufnahme (Vorgabe):
-          Das Auto f&auml;hrt die von Hand aufgenommene Folge &ndash; auf dem Startplatz gleitet es in 0,3&nbsp;s auf das
-          Tempo der Aufnahme, lenkt zur eigenen Seite und zur&uuml;ck und rollt aus, ohne vorher anzuhalten. Rechts und
-          links sind je eine eigene Aufnahme. Lenkimpuls: die bisherige Folge mit den Reglern darunter.</small></div>
+          Das Auto f&auml;hrt genau die Einparkfolge des Safety Cars &ndash; auf dem Startplatz gleitet es in 0,3&nbsp;s auf
+          ihr Tempo, lenkt zur eigenen Seite und zur&uuml;ck und rollt aus, ohne vorher anzuhalten. Lenkung und Zeiten
+          sind die des Safety Cars, f&uuml;r die linke Spalte gespiegelt; das Gas ist kleiner (Regler darunter), damit
+          die Autos weiter innen stehen. Lenkimpuls: die alte Folge mit den Reglern weiter unten.</small></div>
         <select id="race-einpark-art" data-preset-skip>
           <option value="aufnahme" selected>Aufnahme</option>
           <option value="impuls">Lenkimpuls</option>
         </select></div>
+      <div class="opt-row"><div class="opt-label">Einparken: Gas der Safety-Car-Folge<span class="wip-tag">WIP</span><small>Wie viel
+          vom Gas der Safety-Car-Einparkfolge die Autos in der Aufstellung bekommen. Weniger Gas: sie rollen weniger weit
+          zur Seite und stehen weiter innen; mehr: weiter am Rand. Lenkung und Zeiten bleiben genau die der Aufnahme.
+          Standard 75&nbsp;%.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="race-einpark-sc-gas" min="0.4" max="1" step="0.05" value="0.75" data-preset-skip>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="race-einpark-sc-gas-val">75 %</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Einparken: Einlenkst&auml;rke<span class="wip-tag">WIP</span><small>Bei der
           automatischen Aufstellung (vor und nach dem Rennen) fahren alle Autos genau mittig, auch an
           schon geparkten vorbei. Am eigenen Haltepunkt &ndash; rechts weiter vorn in der Kachel, links
@@ -11955,8 +11970,7 @@
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Mehrspieler</h2>
       <div class="opt-head">Der Modus</div>
-      <div class="opt-row"><div class="opt-label">Mehrspieler-Modus (2&ndash;3 Spieler)<span
-          class="wip-tag">WIP</span><small>Zwei oder drei Autos, je ein Controller, ein
+      <div class="opt-row"><div class="opt-label">Mehrspieler-Modus (2&ndash;3 Spieler)<small>Zwei oder drei Autos, je ein Controller, ein
           Rennen auf derselben Strecke. In der Garage gibt es die Rollen &bdquo;Spieler&nbsp;2&ldquo;
           und &bdquo;Spieler&nbsp;3&ldquo; (die Wahl schaltet den Modus ein). Das erste Pad
           f&auml;hrt Auto&nbsp;1, das zweite Auto&nbsp;2, das dritte Auto&nbsp;3. Im Cockpit
@@ -14821,6 +14835,10 @@
     "Garage: Blinken ist jetzt ein Knopf rechts direkt unter der Rolle. Das Antippen oder Anwählen eines Autos links blinkt nicht mehr – das Blinken baute die Garage alle 150 ms neu und ließ die linke Spalte springen.": "Garage: blinking is now a button on the right directly below the role. Tapping or selecting a car on the left no longer blinks – the blinking rebuilt the garage every 150 ms and made the left column jump.",
     "Automatische Aufstellung: Die Autos parken wieder mit Aufnahme am Rand. Die Einparkfolge ist jetzt Takt für Takt der Mittelwert aus deiner Aufnahme links/rechts und dem Einparken des Safety Cars (Lenkung und Gas) – kräftiger an den Rand als bisher, weniger weit als das Safety Car. Der kurze Lenkimpuls statt der Aufnahme gilt nur noch, wenn der Platz selbst auf einer Kurve liegt (vorher auch bei einer Kurve dahinter – dann blieben die Autos mittig stehen).": "Automatic line-up: the cars park at the edge with the recording again. The parking sequence is now, step by step, the average of your left/right recording and the safety car's parking (steering and throttle) – further to the edge than before, less far than the safety car. The short steering impulse instead of the recording now only applies when the slot itself is on a corner (before also with a corner behind it – then the cars stayed in the middle).",
     "Cockpit (WIP): Oben links neben der Runde steht jetzt deine Position, z. B. P2/5 – bei Rundenrennen und Endurance nach Runden und Gesamtzeit (wie die Rennübersicht), im Qualifying nach Bestzeit, in den anderen Modi nicht.": "Cockpit (WIP): top left next to the lap your position is now shown, e.g. P2/5 – in lap races and endurance by laps and total time (like the race overview), in qualifying by best lap, not in the other modes.",
+    "Spieler 2 und 3 sind nicht mehr als experimentell gekennzeichnet (Garage und Optionen).": "Players 2 and 3 are no longer marked as experimental (garage and options).",
+    "Gleich schnell: Das Safety Car fährt unter Gelb dasselbe Tempo wie das Feld (Gerade, Kurve und Haarnadel mit denselben Grenzen) – vorher überall gleich, also auf der Geraden langsamer und in der Haarnadel schneller. In der Einführungsrunde fährt dein Autopilot in Kurven so schnell wie die NPCs (vorher deutlich langsamer), und die Feld-Staffel ist dort aus.": "Equally fast: under yellow the safety car drives at the same speed as the field (straight, corner and hairpin with the same limits) – before, it drove the same speed everywhere, so slower on straights and faster in the hairpin. In the formation lap your autopilot takes corners as fast as the NPCs (before clearly slower), and the field staggering is off there.",
+    "Reinigungsfahrzeug: Nach der ersten Start/Ziel-Überfahrt fährt es je eine volle Runde mittig, links (Querlage 90 %) und rechts (90 %) und hält dann an. Die Querlage kommt allein aus dieser Vorgabe, ohne Ideallinie; die Runden werden über den gefahrenen Weg gezählt.": "Cleaning car: after the first start/finish crossing it drives one full lap each in the middle, left (90% lateral position) and right (90%), then stops. The lateral position comes only from this plan, without the racing line; laps are counted by distance driven.",
+    "Automatische Aufstellung: Jedes Auto parkt jetzt mit genau der Einparkfolge des Safety Cars – gleiche Zeiten und Lenkwerte, für die linke Spalte gespiegelt, mit weniger Gas (neuer Regler, Standard 75 %), damit es weiter innen steht. Immer diese Folge, auch auf Kurventeilen; in der Haarnadel parkt weiterhin niemand. Das Log nennt für jedes Auto Seite und Gas.": "Automatic line-up: every car now parks with exactly the safety car's parking sequence – same timing and steering values, mirrored for the left column, with less throttle (new slider, default 75%) so it stands further in. Always this sequence, also on corner pieces; still no one parks in the hairpin. The log names side and throttle for every car.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -16170,6 +16188,9 @@
     "{n} Auto(s) fest auf Plugin": "{n} car(s) held on the plugin",
     "Rolle": "Role",
     "Einparken in der Aufstellung": "Parking in the line-up",
+    "Wie viel vom Gas der Safety-Car-Einparkfolge die Autos in der Aufstellung bekommen. Weniger Gas: sie rollen weniger weit zur Seite und stehen weiter innen; mehr: weiter am Rand. Lenkung und Zeiten bleiben genau die der Aufnahme. Standard 75 %.": "How much of the safety car parking sequence's throttle the cars get in the line-up. Less throttle: they roll less far to the side and stand further in; more: further at the edge. Steering and timing stay exactly those of the recording. Default 75%.",
+    "Einparken: Gas der Safety-Car-Folge": "Parking: throttle of the safety car sequence",
+    "Aufnahme (Vorgabe): Das Auto fährt genau die Einparkfolge des Safety Cars – auf dem Startplatz gleitet es in 0,3 s auf ihr Tempo, lenkt zur eigenen Seite und zurück und rollt aus, ohne vorher anzuhalten. Lenkung und Zeiten sind die des Safety Cars, für die linke Spalte gespiegelt; das Gas ist kleiner (Regler darunter), damit die Autos weiter innen stehen. Lenkimpuls: die alte Folge mit den Reglern weiter unten.": "Recording (default): the car drives exactly the safety car's parking sequence – on its grid slot it glides to its speed in 0.3 s, steers to its own side and back and rolls out without stopping first. Steering and timing are the safety car's, mirrored for the left column; the throttle is lower (slider below) so the cars stand further in. Steering impulse: the old sequence with the sliders further down.",
     "Aufnahme (Vorgabe): Das Auto fährt die von Hand aufgenommene Folge – auf dem Startplatz gleitet es in 0,3 s auf das Tempo der Aufnahme, lenkt zur eigenen Seite und zurück und rollt aus, ohne vorher anzuhalten. Rechts und links sind je eine eigene Aufnahme. Lenkimpuls: die bisherige Folge mit den Reglern darunter.": "Recording (default): the car drives the hand-recorded sequence – on its grid spot it glides to the recording's speed within 0.3 s, steers to its side and back and rolls out, without stopping first. Right and left each have their own recording. Steering pulse: the previous sequence with the sliders below.",
     "Lenkimpuls": "Steering pulse",
     "Safety Car: Ein- und Ausparken": "Safety car: parking and leaving",
@@ -25711,9 +25732,13 @@
     // v0.9.87: auch die Einfuehrungsrunde mit der Kurvendrosselung der Ghosts - "wie bei
     // gelber Flagge" (BESTELLT fuer den fliegenden Start).
     // v1.0.12: unter Gelb mit Safety Car erst ~45 % zum Aufschliessen (gelbZielFuer).
-    const zielBasis = (grund === 'formation' ? formationPace()
-      : (typeof gelbZielFuer === 'function' ? gelbZielFuer(meinAuto) : Math.max(yellowFactor(), GHOST_READ_MIN)))
-      * autopilotKurvenFaktor(meinAuto)
+    // v1.1.41 BESTELLT ("auf gleich schnell bringen"): in der Einfuehrungsrunde dieselbe Formel wie die NPCs -
+    // Kurventempo aus dem Grundtempo (ghostCfg.speed x Kurvenabzug), gedeckelt auf das Formationstempo. Vorher
+    // Formationstempo x Kurvenabzug: Kurve 0,28 und Haarnadel 0,21 statt 0,35 und 0,33 wie die NPCs.
+    const zielBasis = (grund === 'formation'
+      ? Math.min(formationPace(), (typeof ghostCfg !== 'undefined' && ghostCfg.speed ? ghostCfg.speed : 0.55) * autopilotKurvenFaktor(meinAuto))
+      : (typeof gelbZielFuer === 'function' ? gelbZielFuer(meinAuto) : Math.max(yellowFactor(), GHOST_READ_MIN))
+        * autopilotKurvenFaktor(meinAuto))
       // v1.0.28: unter Gelb Abstand zum Vordermann, wie die NPCs (gelbAbstandFaktor).
       * (grund === 'yellow' && typeof gelbAbstandFaktor === 'function' ? gelbAbstandFaktor(meinAuto) : 1);
     // Nie schneller als das Safety Car, wenn dicht dahinter - harte Grenze, siehe scFolgeDeckel (90-ghosts.js).
@@ -53277,8 +53302,7 @@
         <div class="gk-text"><b data-i18n-skip>${esc(name)}</b>
           <span class="gar-id" data-i18n-skip>${esc(car.tag || '')} &middot; ${esc(String(car.device.id).slice(0, 10))}${car.blinking ? ' &middot; ' + t('blinkt') : ''}${garAkkuText(car)}</span></div>
         <div class="gk-rolle gk-rolle-nur" data-rollen="${GAR_ROLLEN.map((r) => r.id).join(',')}" data-rolle="${rolle.id}">
-          <b>${t(rolle.name)}</b>${zusatzPlatzVonRolle(rolle.id) ? '<span class="wip-tag">experimentell</span>'
-            : ''}
+          <b>${t(rolle.name)}</b>
         </div>`;
       row._car = car;
       // v1.1.40 GEMELDET: "Garagenmenue links: Ich glaube der Fehler kommt durch den Blink-Klicker. Mach
@@ -53428,7 +53452,7 @@
     z.innerHTML = `<span class="gk-l">${t('Rolle')}</span>
       <span class="gk-w gk-rolle" data-rollen="${GAR_ROLLEN.map((r) => r.id).join(',')}" data-rolle="${rolle.id}">
         <button type="button" data-act="rolle" data-d="-1" aria-label="Rolle zurück">&#9664;</button>
-        <b>${t(rolle.name)}</b>${zusatzPlatzVonRolle(rolle.id) ? '<span class="wip-tag">experimentell</span>' : ''}
+        <b>${t(rolle.name)}</b>
         <button type="button" data-act="rolle" data-d="1" aria-label="Rolle vor">&#9654;</button>
       </span>
       <select class="gk-rolle-wahl" hidden data-preset-skip data-blaettern="1" aria-label="Rolle">${frei.map((r) =>
@@ -54112,13 +54136,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!a.fertigAt) a.fertigAt = Date.now();
     const t = Date.now() - a.fertigAt, ms = einparkMs();
     // v1.1.30: die Aufnahme (wie bei den NPCs), mit Angleichen vom aktuellen Gas.
-    const staerke = einparkStaerke();
-    if (staerke > 0 && aufstellArt() === 'aufnahme' && !aufstellKurveAmPlatz(a.ziel)) {
+    if (aufstellArt() === 'aufnahme') {
       const sk = aufstellSkript(seite);
       if (a.vonDrive === undefined) {
         a.vonDrive = typeof physOutThrottle === 'number' && physOutThrottle > 0 ? Math.min(0.8, physOutThrottle) : sk[0][2];
+        log(garageLabel(car) + ': parkt mit der Safety-Car-Folge ' + (seite > 0 ? 'rechts' : 'links (gespiegelt)') + ', Gas ' + Math.round(aufstellScGas() * 100) + ' %.', 'info');
       }
-      const h = { at: 0, anpassMs: MANOEVER_ANPASS_MS, vonDrive: a.vonDrive, skript: sk, lenkFaktor: staerke };
+      const h = { at: 0, anpassMs: MANOEVER_ANPASS_MS, vonDrive: a.vonDrive, skript: sk };
       if (t >= MANOEVER_ANPASS_MS + manoeverDauer(sk)) return { lenk: 0, gas: 'halt' };
       const s = skriptSchritt(h, t);
       return { lenk: s.lenk, gas: 'skript', drive: s.drive };
@@ -54225,12 +54249,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // zur Seite (EINPARK_MS, Staerke aus dem Regler), ein Takt zurueck, dann bremsen - alles
     // ohne Spur-Bytes, damit die Spurfuehrung das Auto nicht wieder zur Mitte zieht.
     const staerke = einparkStaerke();
-    if (staerke > 0 && aufstellArt() === 'aufnahme' && !aufstellKurveAmPlatz(g.aufstellZiel)) {
+    if (aufstellArt() === 'aufnahme') {
       const sk = aufstellSkript(seite);
+      log(garageLabel(car) + ': parkt auf Teil ' + g.aufstellZiel + ' mit der Safety-Car-Folge ' + (seite > 0 ? 'rechts' : 'links (gespiegelt)')
+          + ', Gas ' + Math.round(aufstellScGas() * 100) + ' %.', 'info');
       randHaltStarten(car, { phase: 'skript', quer: 0, skript: sk, anpassMs: MANOEVER_ANPASS_MS,
-                             vonDrive: letztesGas(car, sk[0][2]), lenkFaktor: staerke, haltMs: AUFSTELL_HALT_MS, sofort: true,
+                             vonDrive: letztesGas(car, sk[0][2]), haltMs: AUFSTELL_HALT_MS, sofort: true,
                              fertig: (c) => {
-        log(garageLabel(c) + ': steht auf seinem Startplatz (Aufnahme ' + (seite > 0 ? 'rechts' : 'links') + ').', 'info');
+        log(garageLabel(c) + ': steht auf seinem Startplatz (Safety-Car-Folge ' + (seite > 0 ? 'rechts' : 'links') + ').', 'info');
         if (g.nachZiel) blinkCar(c);
         if (!aufstellenLaeuft()) { clearTimeout(aufstellenTimer); showHudToast(t('Startaufstellung steht')); }
       } });
@@ -56494,19 +56520,6 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const r = ((b % 1) + 1) % 1;
     return r > 1 - 1e-9 ? 0 : r;
   }
-  // v1.1.38 GEMELDET: "Pass bei Kurven auf: Wenn du da stumpf die Aufnahme abspielst, lenken sie von der
-  // Bahn herunter." Die Aufnahme lenkt ohne Spur-Bytes, also mit dem Radwinkel - in einer Kurve faehrt
-  // das Auto mit geraden Raedern geradeaus hinaus. Liegt der Platz oder das Teil danach (die Aufnahme
-  // rollt gut eine halbe Kachel) in einer Kurve, parkt das Auto mit dem kurzen Lenkimpuls.
-  function aufstellKurveAmPlatz(ziel) {
-    const tiles = currentTrackTiles || [];
-    const n = tiles.length;
-    if (!n || ziel === null || ziel === undefined) return false;
-    // v1.1.40: nur noch der Platz selbst. Mit dem Teil danach fiel auf einer Strecke mit Kurve hinter dem
-    // Platz fast jeder Platz auf den kurzen Impuls - die Autos blieben mittig stehen (gemeldet zu 1.1.39).
-    const t = tiles[ziel % n];
-    return tileTightness(t && t.type) > 0;
-  }
   // Steht der Ort (Kachel + Phase) auf der Zielkachel und mindestens am Haltepunkt?
   function aufstellAmPunkt(o, ziel, platz) {
     if (o === null || o === undefined || Math.floor(o) !== ziel) return false;
@@ -56565,25 +56578,28 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const w = manoeverWert(h.skript, e - h.anpassMs);
     return { lenk: w[1] * (h.lenkFaktor === undefined ? 1 : h.lenkFaktor), drive: w[2] };
   }
-  // v1.1.40 GEMELDET zu 1.1.39: "Die Autos lenken ueberhaupt nicht an den Rand und bleiben einfach mittig
-  // stehen. Du solltest doch die Aufnahme dafuer nehmen. Das Verhalten sollte mittig zwischen dem Parkmodus
-  // des Safetycars und meiner Aufnahme mit links und rechts einparken sein." Die Folge ist jetzt Takt fuer
-  // Takt der Mittelwert beider Aufnahmen auf derselben Zeitachse - Lenkung UND Gas: die Aufstell-Aufnahme
-  // (rechts/links, Gas ~0,14) und das Einparken des Safety Cars (scEin, rechts, Gas ~0,23; fuer links
-  // gespiegelt). Damit faehrt das Auto kraeftiger an den Rand als mit der Aufstell-Aufnahme allein und
-  // weniger weit als das Safety Car. (Ersetzt die 45 ms "weiter aussen" aus v1.1.39.)
-  const aufstellSkriptCache = {};
+  // v1.1.41 GEMELDET zu 1.1.40: "Automatische Aufstellung klappt noch immer nicht. Die Autos bleiben einfach
+  // alle in der Mitte stehen und rammen sich gegenseitig." BESTELLT: "Spiel exakt das Makro vom Safetycar ab,
+  // aber mit geringerer Geschwindigkeit, und fuer die, die in der linken Spalte parken, mit gespiegelten
+  // Lenkwerten. Durch die geringere Geschwindigkeit sollten sie weiter innen stehen." Also scEin Takt fuer
+  // Takt: Zeiten und Lenkung unveraendert (links mit umgekehrtem Vorzeichen), das Gas mal aufstellScGas()
+  // (Regler, Vorgabe 75 %). Immer diese Folge, auch auf Kurventeilen (die Haarnadel ist als Platz ohnehin
+  // ausgeschlossen, aufstellZielOrt) - vorher fiel jeder Platz mit Kurve auf den kurzen Lenkimpuls zurueck.
+  const AUFSTELL_SC_GAS = 0.75, AUFSTELL_SC_GAS_STORE = 'omegasim-aufstell-sc-gas';
+  function aufstellScGas() { return einparkWert('race-einpark-sc-gas', AUFSTELL_SC_GAS, 0.4, 1); }
   function aufstellSkript(seite) {
-    const key = seite > 0 ? 'rechts' : 'links';
-    if (aufstellSkriptCache[key]) return aufstellSkriptCache[key];
-    const a = MANOEVER[key];
-    const sc = MANOEVER.scEin.map(([ms, l, g]) => [ms, seite > 0 ? l : -l, g]);
-    const zeiten = [...new Set(a.map((x) => x[0]).concat(sc.map((x) => x[0])))].sort((x, y) => x - y);
-    const mix = zeiten.map((ms) => {
-      const p = manoeverWert(a, ms), q = manoeverWert(sc, ms);
-      return [ms, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2];
+    const f = aufstellScGas(), s = seite > 0 ? 1 : -1;
+    return MANOEVER.scEin.map(([ms, lenk, gas]) => [ms, s * lenk, gas * f]);
+  }
+  if ($('race-einpark-sc-gas')) {
+    const el = $('race-einpark-sc-gas');
+    const zeigen = () => { if ($('race-einpark-sc-gas-val')) $('race-einpark-sc-gas-val').textContent = Math.round(aufstellScGas() * 100) + ' %'; };
+    try { const w = localStorage.getItem(AUFSTELL_SC_GAS_STORE); if (w !== null && w !== '') el.value = w; } catch (e) { /* privat */ }
+    el.addEventListener('input', () => {
+      zeigen();
+      try { localStorage.setItem(AUFSTELL_SC_GAS_STORE, el.value); } catch (e) { /* privat */ }
     });
-    return (aufstellSkriptCache[key] = mix);
+    zeigen();
   }
   function aufstellArt() { const el = $('race-einpark-art'); return el && el.value === 'impuls' ? 'impuls' : 'aufnahme'; }
   function scParkArt() { const el = $('sc-park-art'); return el && el.value === 'impuls' ? 'impuls' : 'aufnahme'; }
@@ -57677,31 +57693,48 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!car.ghost) return;
     car.ghost.freeRun = true;
     car.ghost.reinigPhase = 'anfahrt';
-    car.ghost.reinigLap = car.ghost.laps || 0;
+    car.ghost.reinigAb = null;
     showHudToast(t('Reinigungsfahrzeug startet'));
     log(garageLabel(car) + ': Reinigungsfahrzeug faehrt los.', 'info');
   }
   // Der Zustand der Reinigung. Steht die Phase fest, gilt nur noch sie.
+  // v1.1.41 GEMELDET: "Reinigungsfahrzeug klappt nicht wie es soll: Es soll, nachdem es das erste Mal ueber
+  // Start/Ziel gefahren ist, erst eine volle Runde mittig fahren, dann eine volle Runde links (nicht 100 %
+  // Querlage, aber so 90 %) und dann eine Runde rechts. Dann anhalten. Aktuell faehrt es eher mittig/
+  // Ideallinie - das soll hier aber absichtlich ignoriert werden." Zwei Ursachen: die Seite war nur der
+  // kleine Spur-Zusatz UEBER der Ideallinie (g.bias), und die Runde hing am Rundenzaehler, der kurz nach
+  // der Linie umspringen und die mittige Runde verschlucken konnte. Jetzt gibt reinigQuer() die Querlage
+  // allein vor (ghostTick, ohne Linie, Spur oder Wuerze), und jede Runde ist n Teile WEG ab Phasenbeginn.
+  const REINIG_QUER = 0.9;
+  function reinigQuer(car) {
+    const p = car && car.ghost ? car.ghost.reinigPhase : null;
+    return p === 'links' ? -REINIG_QUER : p === 'rechts' ? REINIG_QUER : 0;
+  }
   function reinigTick(car) {
     const g = car.ghost;
     if (!g || car.role !== 'reinig') return;
     const phase = g.reinigPhase || 'anfahrt';
     if (phase === 'fertig') return;
-    // Die Lane je Phase: mittig 0, links -1, rechts +1.
-    g.bias = phase === 'links' ? -1 : phase === 'rechts' ? 1 : 0;
+    g.bias = 0;
     const n = currentTrackTiles ? currentTrackTiles.length : 0;
     if (!n || g.tileIndex === null || g.tileIndex === undefined) return;
+    const ort = ghostOrtGes(car);
     if (phase === 'anfahrt') {
       // Erst bis Start/Ziel (Kachel 0), dann beginnt die Reinigung.
-      if (g.tileIndex === 0) { g.reinigPhase = 'mitte'; g.reinigLap = g.laps || 0; }
-    } else {
-      // Je eine Runde in dieser Lane, dann die naechste.
-      if ((g.laps || 0) - (g.reinigLap || 0) >= 1) {
-        g.reinigLap = g.laps || 0;
+      if (g.tileIndex === 0 && ort !== null) { g.reinigPhase = 'mitte'; g.reinigAb = ort; logReinig(car); }
+    } else if (ort !== null) {
+      if (g.reinigAb === undefined || g.reinigAb === null) g.reinigAb = ort;
+      // Je eine volle Runde (n Teile Weg) in dieser Querlage, dann die naechste.
+      if (ort - g.reinigAb >= n) {
+        g.reinigAb = ort;
         g.reinigPhase = phase === 'mitte' ? 'links' : phase === 'links' ? 'rechts' : 'fertig';
         if (g.reinigPhase === 'fertig') reinigFertig(car);
+        else logReinig(car);
       }
     }
+  }
+  function logReinig(car) {
+    log(garageLabel(car) + ': Reinigung, Runde ' + car.ghost.reinigPhase + ' (Querlage ' + reinigQuer(car).toFixed(1) + ').', 'info');
   }
   function reinigFertig(car) {
     stopGhost(car);
@@ -57930,8 +57963,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Gelb-Tempos und haelt selbst Abstand (gelbAbstandFaktor gilt jetzt auch fuer es). Wer vor
   // ihm liegt, faehrt davon (mit ~45 % zum Aufschliessen), kommt von hinten wieder heran und
   // reiht sich dahinter ein - ueberholt wird das Safety Car nie.
-  const SC_TEMPO_ANTEIL = 0.85;
+  const SC_TEMPO_ANTEIL = 1;
   function gelbZielFuer(car) {
+    // v1.1.41 BESTELLT ("auf gleich schnell bringen"): das Safety Car faehrt das Gelb-Tempo des Feldes. Mit
+    // dem Anteil 0,85 (0,342) lag es unter seinem Mindesttempo 0,37 und fuhr ueberall 0,37 - auf der Geraden
+    // langsamer als das Feld (0,4025), in der Haarnadel schneller (0,35). SC_TEMPO_ANTEIL ist damit 1.
     if (car && car.role === 'safetycar') return gelbGrenze() * SC_TEMPO_ANTEIL;
     if (car && scAufschliessenAn() && safetyCarFaehrt() && !nahAmSafetyCar(car)) {
       return Math.max(SC_AUFSCHLUSS, gelbGrenze());
@@ -58007,8 +58043,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // ---- NIE SCHNELLER ALS DAS SAFETY CAR, WENN DICHT DAHINTER ---------------------------------
   // GEMELDET: \"Bei mehreren Runden Safety Car faehrt das Spielerauto das Safety Car auf und schiebt es
   // an. Es muss sichergestellt sein, dass die Spielerautos nicht schneller sind als das Safety Car,
-  // wenn sie bereits dahinter sind.\" Das Safety Car faehrt SC_TEMPO_ANTEIL (85 %) des Gelb-Tempos, alle
-  // anderen 100 % - im freien Lauf also rund 18 % schneller. Die einzige Kopplung war
+  // wenn sie bereits dahinter sind.\" Das Safety Car fuhr damals SC_TEMPO_ANTEIL (85 %) des Gelb-Tempos, alle
+  // anderen 100 % - im freien Lauf also rund 18 % schneller (seit v1.1.41 gleich schnell, Anteil 1). Die einzige Kopplung war
   // gelbAbstandFaktor(): ein Faktor aus GEMESSENEN Positionen (Kachelindex + geschaetzte Phase), der
   // erst ab 1,5 Kacheln greift und im Boden nur auf 70 % geht. Das ist ein Wunsch, keine Garantie:
   // Regler, Funk und Motor brauchen Weg, und das Safety Car verzoegert vor Kurven frueher.
@@ -61480,7 +61516,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // v1.1.39 GEMELDET: "Bei gelber Flagge fahren manche NPCs schneller als mein Auto, dabei sollten
       // alle gleich schnell fahren." Die Staffel schob den Letzten auch unter Gelb um bis zu 10 % an -
       // unter Gelb gibt es keinen Ersten und Letzten, nur das Gelb-Tempo.
-      const staffel = underYellow ? 1 : ghostFeldStaffel(car);
+      // v1.1.41: auch in der Einfuehrungsrunde - dort rollen alle im selben Tempo (bestellt: gleich schnell).
+      const staffel = (underYellow || raceFormationLap) ? 1 : ghostFeldStaffel(car);
       // v1.1.37: auch die Staffel schiebt vor und in der Haarnadel nicht mehr an (bremsen darf sie).
       target *= (spice.haeltAbstand || vorHaarnadel) ? Math.min(1, staffel) : staffel;
 
@@ -61583,7 +61620,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       target = ghostFahrBoden(car, target, now);
       // v1.0.37: das Safety Car bleibt unter Gelb nie stehen (SC_MIN_TEMPO).
       const scAufstellung = car.role === 'safetycar' && g.aufstellZiel !== undefined && g.aufstellZiel !== null;
-      if (car.role === 'safetycar' && flagState !== 'green' && !g.randHalt && !scAufstellung) target = Math.max(target, SC_MIN_TEMPO);
+      // v1.1.41: unter Gelb dieselben Grenzen wie das Feld - Mindesttempo 0,37 und Haarnadel-Obergrenze 0,35
+      // (autopilotGelbGrenzen; vorher hob SC_MIN_TEMPO es auch in der Haarnadel auf 0,37).
+      if (car.role === 'safetycar' && flagState !== 'green' && !g.randHalt && !scAufstellung) target = autopilotGelbGrenzen(car, target);
       // Heimweg nach Gruen (Safety Car neben der Strecke): Hoechsttempo einstellbar (scHeimTempo, Vorgabe 100 %).
       const scVorlaufRand = g.randHalt && g.randHalt.nominal && g.randHalt.phase === 'rand' && g.randHalt.tempoAb && g.scRest > g.randHalt.tempoAb;
       if (car.role === 'safetycar' && !scAufstellung && ((g.scHeim && !g.randHalt) || scVorlaufRand)) target = Math.max(SC_EINFAHRT_MIN, Math.min(target, scHeimTempo()));
@@ -61829,7 +61868,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         // die Summe hier addierte Spur/Ueberhol-Bias/Verbremser-Fehler trotzdem noch
         // OBENDRAUF und zog das Auto von seinem Randwert wieder Richtung Mitte. Jetzt
         // haelt ein Boxenstopp (pq !== null) exakt den Randwert, ohne Zusatz.
-        const querRohSumme = pq !== null ? quer : (quer
+        const querRohSumme = car.role === 'reinig' ? reinigQuer(car) : pq !== null ? quer : (quer
               + g.bias * ghostCfg.lateral * 0.25
               + (paar !== null ? 0 : ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER * spurGewicht)
               // Der Querausschlag eines Verbremsers, additiv - siehe SPICE_FEHLER_QUER.
@@ -93838,8 +93877,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         if (cb) cb.checked = true;
         if (Math.abs(gelbZielFuer(weit) - Math.max(0.45, gelbGrenze())) > 1e-9) f.push('weit weg nicht ~45 %: ' + gelbZielFuer(weit));
         if (Math.abs(gelbZielFuer(nah) - gelbGrenze()) > 1e-9) f.push('nah dran nicht 35 %: ' + gelbZielFuer(nah));
-        // v1.0.30: das Safety Car faehrt langsamer als das Feld, damit sich alle dahinter aufreihen.
-        if (!(gelbZielFuer(sc) < gelbGrenze() - 1e-9)) f.push('Safety Car nicht langsamer als das Feld: ' + gelbZielFuer(sc));
+        // v1.1.41 BESTELLT: gleich schnell - das Safety Car faehrt das Gelb-Tempo des Feldes (vorher 85 %).
+        if (Math.abs(gelbZielFuer(sc) - gelbGrenze()) > 1e-9) f.push('Safety Car nicht so schnell wie das Feld: ' + gelbZielFuer(sc));
         startGhost = () => {};
         flagState = 'green';
         setFlag('yellow');
@@ -96389,15 +96428,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const brueche = [0, 1, 2, 3].map((k) => +aufstellHaltBruch(k).toFixed(2));
     if (brueche.join(',') !== '0.15,0,0.65,0.5') f.push('Anteile ' + brueche.join(','));
     if (!aufstellAmPunkt(8.66, 8, 2) || aufstellAmPunkt(8.6, 8, 2)) f.push('Haltepunkt Reihe 2 falsch');
-    // Kurve am Platz oder direkt danach: keine Aufnahme.
-    const merkT = currentTrackTiles;
-    try {
-      currentTrackTiles = codeToTrack('SG3RG2').tiles;    // 0 Start, 1-3 Gerade, 4 Kurve, 5-6 Gerade
-      if (aufstellKurveAmPlatz(1)) f.push('Gerade als Kurve');
-      // v1.1.40: nur der Platz selbst zaehlt, nicht mehr das Teil danach.
-      if (aufstellKurveAmPlatz(3)) f.push('Kurve dahinter zaehlt noch');
-      if (!aufstellKurveAmPlatz(4)) f.push('Kurve am Platz nicht erkannt');
-    } finally { currentTrackTiles = merkT; }
+    // v1.1.41: keine Kurven-Ausnahme mehr - immer die Safety-Car-Folge (Test "Aufstellung v1.1.41").
     // Aufstelltempo haengt nicht am Renntempo.
     const src = String(ghostTick);
     if (src.indexOf('Math.min(target, aufstellTempo(car))') >= 0 || src.indexOf('aufstellTempo(car) * abstand') < 0) {
@@ -96534,7 +96565,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const f = [];
     const src = String(ghostTick);
     // Gelb: keine Staffel; dein Autopilot mit demselben Boden und derselben Haarnadel-Obergrenze.
-    if (src.indexOf('underYellow ? 1 : ghostFeldStaffel(car)') < 0) f.push('Staffel wirkt unter Gelb');
+    if (src.indexOf('(underYellow || raceFormationLap) ? 1 : ghostFeldStaffel(car)') < 0) f.push('Staffel wirkt unter Gelb');
     const merkT = currentTrackTiles, merkH = ghostCfg.haarnadelMax;
     try {
       ghostCfg.haarnadelMax = 0.35;
@@ -96569,30 +96600,16 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     } finally { currentTrackTiles = merkT; ghostCfg.haarnadelMax = merkH; }
     // Safety Car: Abstandhalter in der Aufstellung, Mindesttempo und Heimweg greifen dort nicht.
     if (src.indexOf("car.role === 'safetycar' ? gelbAbstandFaktor(car)") < 0) f.push('Safety Car ohne Abstand in der Aufstellung');
-    if (src.indexOf('!scAufstellung) target = Math.max(target, SC_MIN_TEMPO)') < 0 || src.indexOf("!scAufstellung && ((g.scHeim") < 0) f.push('Safety-Car-Tempi greifen in der Aufstellung');
+    if (src.indexOf('!scAufstellung) target = autopilotGelbGrenzen(car, target)') < 0 || src.indexOf("!scAufstellung && ((g.scHeim") < 0) f.push('Safety-Car-Tempi greifen in der Aufstellung');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gelb ohne Staffel, Autopilot mit Boden/Haarnadelgrenze, Plaetze vor der Haarnadel, SC mit Abstand' };
   });
 
   // v1.1.40 GEMELDET: in der Aufstellung lenkten die Autos nicht an den Rand. BESTELLT: "mittig zwischen
   // dem Parkmodus des Safetycars und meiner Aufnahme mit links und rechts einparken". Garage: Blinken als
   // Knopf rechts unter der Rolle statt beim Antippen links.
-  stAdd('Einparken und Garage v1.1.40: Mittel aus Safety-Car- und Aufstell-Aufnahme, Blinken als Knopf', () => {
+  stAdd('Garage v1.1.40: Blinken als Knopf unter der Rolle', () => {
     const f = [];
-    for (const [seite, key] of [[1, 'rechts'], [-1, 'links']]) {
-      const a = MANOEVER[key], b = aufstellSkript(seite);
-      const sc = MANOEVER.scEin;
-      for (const ms of [0, 200, 600, 900, 1200, 1650]) {
-        const w = manoeverWert(b, ms), p = manoeverWert(a, ms), q = manoeverWert(sc, ms);
-        if (Math.abs(w[1] - (p[1] + seite * q[1]) / 2) > 1e-9 || Math.abs(w[2] - (p[2] + q[2]) / 2) > 1e-9) {
-          f.push(key + ' bei ' + ms + ' ms nicht der Mittelwert'); break;
-        }
-      }
-      const ende = Math.max(a[a.length - 1][0], sc[sc.length - 1][0]);
-      if (b[b.length - 1][0] !== ende || b[b.length - 1][2] !== 0) f.push(key + ': Ende nicht beim Stillstand');
-      // Nach aussen gelenkt wird wirklich (mehr Weg nach aussen als null).
-      const aussen = b.reduce((sum, x, i) => (i ? sum + Math.max(0, b[i - 1][1] * seite) * (x[0] - b[i - 1][0]) : sum), 0);
-      if (!(aussen > 200)) f.push(key + ': kaum nach aussen gelenkt (' + Math.round(aussen) + ')');
-    }
+    // v1.1.41: die Einparkfolge ist jetzt die Safety-Car-Folge mit weniger Gas (Test "Aufstellung v1.1.41").
     // Garage: Blinken rechts direkt unter der Rolle, kein Blinken beim Beruehren der Zeile.
     const att = { role: 'ghost', device: { id: 'probe-blink' }, alias: '', colorId: 'rot', sim: false, testSenke: [] };
     const merkAuf = typeof garAufAuto !== 'undefined' ? garAufAuto : null;
@@ -96611,7 +96628,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       garAufAuto = merkAuf;
       renderGarage();
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Einparkfolge = Mittel beider Aufnahmen, lenkt an den Rand; Blinken unter der Rolle' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Blinken unter der Rolle' };
   });
 
   // v1.1.40 BESTELLT: die eigene Position oben links neben der Runde - Rundenrennen und Endurance nach
@@ -96645,6 +96662,89 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!el || !el.closest('.gt3-box') || !el.closest('.gt3-box').querySelector('#race-lap-count')) f.push('Anzeige nicht neben der Runde');
     } finally { raceState = merk.rs; raceMode = merk.rm; raceAllCars = merk.alle; }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'P2/3 nach Runden, P1/3 nach Bestzeit, sonst nichts' };
+  });
+
+  // v1.1.41 BESTELLT: "Spiel exakt das Makro vom Safetycar ab, aber mit geringerer Geschwindigkeit und fuer die,
+  // die in der linken Spalte parken, mit gespiegelten Lenkwerten. Bleib dabei, dass Autos nicht in der
+  // Haarnadel parken."
+  stAdd('Aufstellung v1.1.41: Safety-Car-Folge mit weniger Gas, links gespiegelt, immer, nie in der Haarnadel', () => {
+    const f = [];
+    const el = $('race-einpark-sc-gas'), merkV = el ? el.value : null;
+    const merkT = currentTrackTiles;
+    try {
+      if (!el || Math.abs(parseFloat(el.defaultValue) - 0.75) > 1e-9) f.push('Regler fehlt oder Vorgabe nicht 75 %');
+      if (el) el.value = '0.75';
+      const sc = MANOEVER.scEin;
+      for (const seite of [1, -1]) {
+        const sk = aufstellSkript(seite);
+        if (sk.length !== sc.length) { f.push('Laenge ' + sk.length); continue; }
+        for (let i = 0; i < sc.length; i++) {
+          if (sk[i][0] !== sc[i][0] || sk[i][1] !== seite * sc[i][1] || Math.abs(sk[i][2] - sc[i][2] * 0.75) > 1e-12) {
+            f.push((seite > 0 ? 'rechts' : 'links') + ' Takt ' + i + ' weicht ab'); break;
+          }
+        }
+      }
+      if (el) el.value = '0.5';
+      if (Math.abs(aufstellSkript(1)[1][2] - sc[1][2] * 0.5) > 1e-12) f.push('Regler wirkt nicht');
+      if (el) el.value = '0.75';
+      // Immer die Folge: keine Kurven-Ausnahme mehr im Code.
+      const src = String(aufstellenPruefen) + String(aufstellenSpielerEinlenken);
+      if (src.indexOf('aufstellKurveAmPlatz') >= 0 || src.indexOf('lenkFaktor: staerke') >= 0) f.push('Kurven-Ausnahme oder Einlenkstaerke greift noch');
+      // Nie in der Haarnadel.
+      currentTrackTiles = codeToTrack('SG2H2G4').tiles;
+      const n = currentTrackTiles.length;
+      for (let k = 0; k < 6; k++) {
+        const t = currentTrackTiles[aufstellZielKachel(k, n)];
+        if (tileTightness(t && t.type) >= 2) f.push('Platz ' + (k + 1) + ' in der Haarnadel');
+      }
+    } finally { if (el) el.value = merkV; currentTrackTiles = merkT; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'scEin Takt fuer Takt, Gas x 0,75, links gespiegelt, kein Platz in der Haarnadel' };
+  });
+
+  // v1.1.41 BESTELLT: Reinigungsfahrzeug nach der ersten Ueberfahrt je eine volle Runde mittig, links (~90 %),
+  // rechts, dann anhalten - ohne Ideallinie. Und: Safety Car und Einfuehrungsrunde gleich schnell wie das Feld.
+  stAdd('Reinigung und gleiches Tempo v1.1.41: Runden mittig/links/rechts ohne Linie, SC und Formation wie das Feld', () => {
+    const f = [];
+    const merk = { tiles: currentTrackTiles, ort: ghostOrtGes, stop: stopGhost };
+    try {
+      currentTrackTiles = codeToTrack('SG3RG2').tiles;
+      const n = currentTrackTiles.length;
+      let gestoppt = 0;
+      stopGhost = () => { gestoppt++; };
+      ghostOrtGes = (c) => (c && c._ort !== undefined ? c._ort : null);
+      const car = { role: 'reinig', device: { id: 'rein' }, tag: 'R1', _ort: n - 1,
+                    ghost: { running: true, tileIndex: n - 1, laps: 0, reinigPhase: 'anfahrt', reinigAb: null } };
+      const fahre = (bis) => {
+        for (let o = car._ort; o <= bis + 1e-9; o += 0.25) {
+          car._ort = o; car.ghost.tileIndex = Math.floor(o) % n;
+          reinigTick(car);
+        }
+      };
+      fahre(n);                    // ueber Start/Ziel
+      if (car.ghost.reinigPhase !== 'mitte' || reinigQuer(car) !== 0) f.push('nach Start/Ziel nicht mittig: ' + car.ghost.reinigPhase);
+      // Rundenzaehler springt kurz nach der Linie - darf die mittige Runde nicht verkuerzen.
+      car.ghost.laps = 1;
+      fahre(n + 3);
+      if (car.ghost.reinigPhase !== 'mitte') f.push('mittige Runde nach 3 Teilen beendet');
+      fahre(2 * n);
+      if (car.ghost.reinigPhase !== 'links' || Math.abs(reinigQuer(car) + 0.9) > 1e-9) f.push('zweite Runde nicht links 90 %: ' + car.ghost.reinigPhase + ' ' + reinigQuer(car));
+      fahre(3 * n);
+      if (car.ghost.reinigPhase !== 'rechts' || Math.abs(reinigQuer(car) - 0.9) > 1e-9) f.push('dritte Runde nicht rechts 90 %');
+      if (gestoppt) f.push('vor dem Ende angehalten');
+      fahre(4 * n);
+      if (car.ghost.reinigPhase !== 'fertig' || gestoppt !== 1) f.push('nach drei Runden nicht angehalten');
+      // Die Querlage kommt allein aus der Phase - keine Linie, keine Spur.
+      if (String(ghostTick).indexOf("car.role === 'reinig' ? reinigQuer(car)") < 0) f.push('Querlage nicht allein aus der Phase');
+    } finally { currentTrackTiles = merk.tiles; ghostOrtGes = merk.ort; stopGhost = merk.stop; }
+    // Safety Car unter Gelb: Ziel wie das Feld, dieselben Grenzen.
+    const sc = { role: 'safetycar' }, npc = { role: 'ghost' };
+    if (Math.abs(gelbZielFuer(sc) - gelbGrenze()) > 1e-9) f.push('Safety Car faehrt nicht das Gelb-Tempo des Feldes: ' + gelbZielFuer(sc));
+    if (String(ghostTick).indexOf("!scAufstellung) target = autopilotGelbGrenzen(car, target)") < 0) f.push('Safety Car ohne die Grenzen des Feldes');
+    // Einfuehrungsrunde: Autopilot mit derselben Kurvenformel, keine Staffel.
+    const ap = String(autopilot);
+    if (ap.indexOf('Math.min(formationPace(), (typeof ghostCfg') < 0) f.push('Autopilot: Formation nicht wie die NPCs');
+    if (String(ghostTick).indexOf('(underYellow || raceFormationLap) ? 1 : ghostFeldStaffel(car)') < 0) f.push('Staffel in der Einfuehrungsrunde');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'mittig, links -0,9, rechts +0,9 je n Teile, dann Halt; SC = Feld; Formation = NPC-Formel' };
   });
   // ============================== HOME ==============================
   // Der Schirm beim Laden, erreichbar ueber das Logo. Die Zahl der Einstellungen wird

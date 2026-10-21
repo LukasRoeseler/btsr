@@ -341,13 +341,11 @@ die früher dem Tempo zugeschrieben wurden, hängen wahrscheinlich auch an Querl
 **0,35 ist damit eine vorsichtige Betriebsgrenze, keine Messgröße.** Wer sie senken will, muss
 messen: die 0x00-Rate in Byte 12 gegen das gesendete Δ mitschreiben, je Teiletyp.
 
-**Bekannte Ungleichheiten (offen):**
-
-- Das Safety Car fährt unter Gelb überall 0,37 (Δ 47): `SC_TEMPO_ANTEIL` (0,85 × 0,4025 = 0,342)
-  liegt unter `SC_MIN_TEMPO` und wirkt daher nicht. Auf der Geraden ist es langsamer als das Feld
-  (0,4025), in der Haarnadel schneller (0,37 gegen 0,35).
-- Einführungsrunde: dein Autopilot fährt Formationstempo × Kurvenabzug (Kurve 0,28, Haarnadel 0,21),
-  die NPCs min(Kurventempo, 0,35) (Kurve 0,35, Haarnadel 0,33) – in Kurven sind sie schneller.
+**Gleich schnell (behoben in v1.1.41):** Das Safety Car fährt unter Gelb jetzt dasselbe wie das Feld
+(Gerade Δ 51, Kurve Δ 47, Haarnadel Δ 44) – vorher überall Δ 47, weil sein Anteil 0,85 × 0,4025 = 0,342
+unter seinem Mindesttempo lag. In der Einführungsrunde fährt dein Autopilot dieselbe Formel wie die NPCs
+(min(Formationstempo, Grundtempo × Kurvenabzug): Gerade und Kurve Δ 44, Haarnadel Δ 42), und die
+Feld-Staffel ist dort aus.
 
 ### Der Steuerweg: wo die Eingabeverzögerung wirklich sitzt
 

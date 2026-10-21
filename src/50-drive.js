@@ -3065,9 +3065,13 @@
     // v0.9.87: auch die Einfuehrungsrunde mit der Kurvendrosselung der Ghosts - "wie bei
     // gelber Flagge" (BESTELLT fuer den fliegenden Start).
     // v1.0.12: unter Gelb mit Safety Car erst ~45 % zum Aufschliessen (gelbZielFuer).
-    const zielBasis = (grund === 'formation' ? formationPace()
-      : (typeof gelbZielFuer === 'function' ? gelbZielFuer(meinAuto) : Math.max(yellowFactor(), GHOST_READ_MIN)))
-      * autopilotKurvenFaktor(meinAuto)
+    // v1.1.41 BESTELLT ("auf gleich schnell bringen"): in der Einfuehrungsrunde dieselbe Formel wie die NPCs -
+    // Kurventempo aus dem Grundtempo (ghostCfg.speed x Kurvenabzug), gedeckelt auf das Formationstempo. Vorher
+    // Formationstempo x Kurvenabzug: Kurve 0,28 und Haarnadel 0,21 statt 0,35 und 0,33 wie die NPCs.
+    const zielBasis = (grund === 'formation'
+      ? Math.min(formationPace(), (typeof ghostCfg !== 'undefined' && ghostCfg.speed ? ghostCfg.speed : 0.55) * autopilotKurvenFaktor(meinAuto))
+      : (typeof gelbZielFuer === 'function' ? gelbZielFuer(meinAuto) : Math.max(yellowFactor(), GHOST_READ_MIN))
+        * autopilotKurvenFaktor(meinAuto))
       // v1.0.28: unter Gelb Abstand zum Vordermann, wie die NPCs (gelbAbstandFaktor).
       * (grund === 'yellow' && typeof gelbAbstandFaktor === 'function' ? gelbAbstandFaktor(meinAuto) : 1);
     // Nie schneller als das Safety Car, wenn dicht dahinter - harte Grenze, siehe scFolgeDeckel (90-ghosts.js).

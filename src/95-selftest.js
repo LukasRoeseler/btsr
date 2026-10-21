@@ -19145,8 +19145,8 @@
         if (cb) cb.checked = true;
         if (Math.abs(gelbZielFuer(weit) - Math.max(0.45, gelbGrenze())) > 1e-9) f.push('weit weg nicht ~45 %: ' + gelbZielFuer(weit));
         if (Math.abs(gelbZielFuer(nah) - gelbGrenze()) > 1e-9) f.push('nah dran nicht 35 %: ' + gelbZielFuer(nah));
-        // v1.0.30: das Safety Car faehrt langsamer als das Feld, damit sich alle dahinter aufreihen.
-        if (!(gelbZielFuer(sc) < gelbGrenze() - 1e-9)) f.push('Safety Car nicht langsamer als das Feld: ' + gelbZielFuer(sc));
+        // v1.1.41 BESTELLT: gleich schnell - das Safety Car faehrt das Gelb-Tempo des Feldes (vorher 85 %).
+        if (Math.abs(gelbZielFuer(sc) - gelbGrenze()) > 1e-9) f.push('Safety Car nicht so schnell wie das Feld: ' + gelbZielFuer(sc));
         startGhost = () => {};
         flagState = 'green';
         setFlag('yellow');
@@ -21696,15 +21696,7 @@
     const brueche = [0, 1, 2, 3].map((k) => +aufstellHaltBruch(k).toFixed(2));
     if (brueche.join(',') !== '0.15,0,0.65,0.5') f.push('Anteile ' + brueche.join(','));
     if (!aufstellAmPunkt(8.66, 8, 2) || aufstellAmPunkt(8.6, 8, 2)) f.push('Haltepunkt Reihe 2 falsch');
-    // Kurve am Platz oder direkt danach: keine Aufnahme.
-    const merkT = currentTrackTiles;
-    try {
-      currentTrackTiles = codeToTrack('SG3RG2').tiles;    // 0 Start, 1-3 Gerade, 4 Kurve, 5-6 Gerade
-      if (aufstellKurveAmPlatz(1)) f.push('Gerade als Kurve');
-      // v1.1.40: nur der Platz selbst zaehlt, nicht mehr das Teil danach.
-      if (aufstellKurveAmPlatz(3)) f.push('Kurve dahinter zaehlt noch');
-      if (!aufstellKurveAmPlatz(4)) f.push('Kurve am Platz nicht erkannt');
-    } finally { currentTrackTiles = merkT; }
+    // v1.1.41: keine Kurven-Ausnahme mehr - immer die Safety-Car-Folge (Test "Aufstellung v1.1.41").
     // Aufstelltempo haengt nicht am Renntempo.
     const src = String(ghostTick);
     if (src.indexOf('Math.min(target, aufstellTempo(car))') >= 0 || src.indexOf('aufstellTempo(car) * abstand') < 0) {
@@ -21841,7 +21833,7 @@
     const f = [];
     const src = String(ghostTick);
     // Gelb: keine Staffel; dein Autopilot mit demselben Boden und derselben Haarnadel-Obergrenze.
-    if (src.indexOf('underYellow ? 1 : ghostFeldStaffel(car)') < 0) f.push('Staffel wirkt unter Gelb');
+    if (src.indexOf('(underYellow || raceFormationLap) ? 1 : ghostFeldStaffel(car)') < 0) f.push('Staffel wirkt unter Gelb');
     const merkT = currentTrackTiles, merkH = ghostCfg.haarnadelMax;
     try {
       ghostCfg.haarnadelMax = 0.35;
@@ -21876,30 +21868,16 @@
     } finally { currentTrackTiles = merkT; ghostCfg.haarnadelMax = merkH; }
     // Safety Car: Abstandhalter in der Aufstellung, Mindesttempo und Heimweg greifen dort nicht.
     if (src.indexOf("car.role === 'safetycar' ? gelbAbstandFaktor(car)") < 0) f.push('Safety Car ohne Abstand in der Aufstellung');
-    if (src.indexOf('!scAufstellung) target = Math.max(target, SC_MIN_TEMPO)') < 0 || src.indexOf("!scAufstellung && ((g.scHeim") < 0) f.push('Safety-Car-Tempi greifen in der Aufstellung');
+    if (src.indexOf('!scAufstellung) target = autopilotGelbGrenzen(car, target)') < 0 || src.indexOf("!scAufstellung && ((g.scHeim") < 0) f.push('Safety-Car-Tempi greifen in der Aufstellung');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gelb ohne Staffel, Autopilot mit Boden/Haarnadelgrenze, Plaetze vor der Haarnadel, SC mit Abstand' };
   });
 
   // v1.1.40 GEMELDET: in der Aufstellung lenkten die Autos nicht an den Rand. BESTELLT: "mittig zwischen
   // dem Parkmodus des Safetycars und meiner Aufnahme mit links und rechts einparken". Garage: Blinken als
   // Knopf rechts unter der Rolle statt beim Antippen links.
-  stAdd('Einparken und Garage v1.1.40: Mittel aus Safety-Car- und Aufstell-Aufnahme, Blinken als Knopf', () => {
+  stAdd('Garage v1.1.40: Blinken als Knopf unter der Rolle', () => {
     const f = [];
-    for (const [seite, key] of [[1, 'rechts'], [-1, 'links']]) {
-      const a = MANOEVER[key], b = aufstellSkript(seite);
-      const sc = MANOEVER.scEin;
-      for (const ms of [0, 200, 600, 900, 1200, 1650]) {
-        const w = manoeverWert(b, ms), p = manoeverWert(a, ms), q = manoeverWert(sc, ms);
-        if (Math.abs(w[1] - (p[1] + seite * q[1]) / 2) > 1e-9 || Math.abs(w[2] - (p[2] + q[2]) / 2) > 1e-9) {
-          f.push(key + ' bei ' + ms + ' ms nicht der Mittelwert'); break;
-        }
-      }
-      const ende = Math.max(a[a.length - 1][0], sc[sc.length - 1][0]);
-      if (b[b.length - 1][0] !== ende || b[b.length - 1][2] !== 0) f.push(key + ': Ende nicht beim Stillstand');
-      // Nach aussen gelenkt wird wirklich (mehr Weg nach aussen als null).
-      const aussen = b.reduce((sum, x, i) => (i ? sum + Math.max(0, b[i - 1][1] * seite) * (x[0] - b[i - 1][0]) : sum), 0);
-      if (!(aussen > 200)) f.push(key + ': kaum nach aussen gelenkt (' + Math.round(aussen) + ')');
-    }
+    // v1.1.41: die Einparkfolge ist jetzt die Safety-Car-Folge mit weniger Gas (Test "Aufstellung v1.1.41").
     // Garage: Blinken rechts direkt unter der Rolle, kein Blinken beim Beruehren der Zeile.
     const att = { role: 'ghost', device: { id: 'probe-blink' }, alias: '', colorId: 'rot', sim: false, testSenke: [] };
     const merkAuf = typeof garAufAuto !== 'undefined' ? garAufAuto : null;
@@ -21918,7 +21896,7 @@
       garAufAuto = merkAuf;
       renderGarage();
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Einparkfolge = Mittel beider Aufnahmen, lenkt an den Rand; Blinken unter der Rolle' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Blinken unter der Rolle' };
   });
 
   // v1.1.40 BESTELLT: die eigene Position oben links neben der Runde - Rundenrennen und Endurance nach
@@ -21952,4 +21930,87 @@
       if (!el || !el.closest('.gt3-box') || !el.closest('.gt3-box').querySelector('#race-lap-count')) f.push('Anzeige nicht neben der Runde');
     } finally { raceState = merk.rs; raceMode = merk.rm; raceAllCars = merk.alle; }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'P2/3 nach Runden, P1/3 nach Bestzeit, sonst nichts' };
+  });
+
+  // v1.1.41 BESTELLT: "Spiel exakt das Makro vom Safetycar ab, aber mit geringerer Geschwindigkeit und fuer die,
+  // die in der linken Spalte parken, mit gespiegelten Lenkwerten. Bleib dabei, dass Autos nicht in der
+  // Haarnadel parken."
+  stAdd('Aufstellung v1.1.41: Safety-Car-Folge mit weniger Gas, links gespiegelt, immer, nie in der Haarnadel', () => {
+    const f = [];
+    const el = $('race-einpark-sc-gas'), merkV = el ? el.value : null;
+    const merkT = currentTrackTiles;
+    try {
+      if (!el || Math.abs(parseFloat(el.defaultValue) - 0.75) > 1e-9) f.push('Regler fehlt oder Vorgabe nicht 75 %');
+      if (el) el.value = '0.75';
+      const sc = MANOEVER.scEin;
+      for (const seite of [1, -1]) {
+        const sk = aufstellSkript(seite);
+        if (sk.length !== sc.length) { f.push('Laenge ' + sk.length); continue; }
+        for (let i = 0; i < sc.length; i++) {
+          if (sk[i][0] !== sc[i][0] || sk[i][1] !== seite * sc[i][1] || Math.abs(sk[i][2] - sc[i][2] * 0.75) > 1e-12) {
+            f.push((seite > 0 ? 'rechts' : 'links') + ' Takt ' + i + ' weicht ab'); break;
+          }
+        }
+      }
+      if (el) el.value = '0.5';
+      if (Math.abs(aufstellSkript(1)[1][2] - sc[1][2] * 0.5) > 1e-12) f.push('Regler wirkt nicht');
+      if (el) el.value = '0.75';
+      // Immer die Folge: keine Kurven-Ausnahme mehr im Code.
+      const src = String(aufstellenPruefen) + String(aufstellenSpielerEinlenken);
+      if (src.indexOf('aufstellKurveAmPlatz') >= 0 || src.indexOf('lenkFaktor: staerke') >= 0) f.push('Kurven-Ausnahme oder Einlenkstaerke greift noch');
+      // Nie in der Haarnadel.
+      currentTrackTiles = codeToTrack('SG2H2G4').tiles;
+      const n = currentTrackTiles.length;
+      for (let k = 0; k < 6; k++) {
+        const t = currentTrackTiles[aufstellZielKachel(k, n)];
+        if (tileTightness(t && t.type) >= 2) f.push('Platz ' + (k + 1) + ' in der Haarnadel');
+      }
+    } finally { if (el) el.value = merkV; currentTrackTiles = merkT; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'scEin Takt fuer Takt, Gas x 0,75, links gespiegelt, kein Platz in der Haarnadel' };
+  });
+
+  // v1.1.41 BESTELLT: Reinigungsfahrzeug nach der ersten Ueberfahrt je eine volle Runde mittig, links (~90 %),
+  // rechts, dann anhalten - ohne Ideallinie. Und: Safety Car und Einfuehrungsrunde gleich schnell wie das Feld.
+  stAdd('Reinigung und gleiches Tempo v1.1.41: Runden mittig/links/rechts ohne Linie, SC und Formation wie das Feld', () => {
+    const f = [];
+    const merk = { tiles: currentTrackTiles, ort: ghostOrtGes, stop: stopGhost };
+    try {
+      currentTrackTiles = codeToTrack('SG3RG2').tiles;
+      const n = currentTrackTiles.length;
+      let gestoppt = 0;
+      stopGhost = () => { gestoppt++; };
+      ghostOrtGes = (c) => (c && c._ort !== undefined ? c._ort : null);
+      const car = { role: 'reinig', device: { id: 'rein' }, tag: 'R1', _ort: n - 1,
+                    ghost: { running: true, tileIndex: n - 1, laps: 0, reinigPhase: 'anfahrt', reinigAb: null } };
+      const fahre = (bis) => {
+        for (let o = car._ort; o <= bis + 1e-9; o += 0.25) {
+          car._ort = o; car.ghost.tileIndex = Math.floor(o) % n;
+          reinigTick(car);
+        }
+      };
+      fahre(n);                    // ueber Start/Ziel
+      if (car.ghost.reinigPhase !== 'mitte' || reinigQuer(car) !== 0) f.push('nach Start/Ziel nicht mittig: ' + car.ghost.reinigPhase);
+      // Rundenzaehler springt kurz nach der Linie - darf die mittige Runde nicht verkuerzen.
+      car.ghost.laps = 1;
+      fahre(n + 3);
+      if (car.ghost.reinigPhase !== 'mitte') f.push('mittige Runde nach 3 Teilen beendet');
+      fahre(2 * n);
+      if (car.ghost.reinigPhase !== 'links' || Math.abs(reinigQuer(car) + 0.9) > 1e-9) f.push('zweite Runde nicht links 90 %: ' + car.ghost.reinigPhase + ' ' + reinigQuer(car));
+      fahre(3 * n);
+      if (car.ghost.reinigPhase !== 'rechts' || Math.abs(reinigQuer(car) - 0.9) > 1e-9) f.push('dritte Runde nicht rechts 90 %');
+      if (gestoppt) f.push('vor dem Ende angehalten');
+      fahre(4 * n);
+      if (car.ghost.reinigPhase !== 'fertig' || gestoppt !== 1) f.push('nach drei Runden nicht angehalten');
+      // Die Querlage kommt allein aus der Phase - keine Linie, keine Spur.
+      if (String(ghostTick).indexOf("car.role === 'reinig' ? reinigQuer(car)") < 0) f.push('Querlage nicht allein aus der Phase');
+    } finally { currentTrackTiles = merk.tiles; ghostOrtGes = merk.ort; stopGhost = merk.stop; }
+    // Safety Car unter Gelb: Ziel wie das Feld, dieselben Grenzen.
+    const sc = { role: 'safetycar' }, npc = { role: 'ghost' };
+    if (Math.abs(gelbZielFuer(sc) - gelbGrenze()) > 1e-9) f.push('Safety Car faehrt nicht das Gelb-Tempo des Feldes: ' + gelbZielFuer(sc));
+    if (String(ghostTick).indexOf("!scAufstellung) target = autopilotGelbGrenzen(car, target)") < 0) f.push('Safety Car ohne die Grenzen des Feldes');
+    // Einfuehrungsrunde: Autopilot mit derselben Kurvenformel, keine Staffel.
+    const ap = String(autopilot);
+    if (ap.indexOf('Math.min(formationPace(), (typeof ghostCfg') < 0) f.push('Autopilot: Formation nicht wie die NPCs');
+    if (String(ghostTick).indexOf('(underYellow || raceFormationLap) ? 1 : ghostFeldStaffel(car)') < 0) f.push('Staffel in der Einfuehrungsrunde');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'mittig, links -0,9, rechts +0,9 je n Teile, dann Halt; SC = Feld; Formation = NPC-Formel' };
   });
