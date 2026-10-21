@@ -21615,41 +21615,46 @@
   });
 
   // v1.1.35 BESTELLT: eigene Kachel "Ansagen", Zwischenstand Standard aus, Ergebnis
-  // Standard an, und Autonamen ("Es fuehrt Max Mustermann") statt Farbe + Name.
-  stAdd('Ansagen v1.1.35: eigene Seite, Vorgaben, Autonamen statt Farbe', () => {
+  // Standard an. v1.1.36: Garagennamen sind Autobezeichnungen ("der rote Porsche") ODER
+  // Fahrernamen ("Max Mustermann", ohne Farbe) - Auswahl, Standard Autobezeichnung.
+  stAdd('Ansagen v1.1.36: eigene Seite, Vorgaben, Autobezeichnung oder Fahrername', () => {
     const seite = $('sub-opt-ansagen'), ton = $('sub-opt-sound');
     if (!seite || !ton) return { ok: false, mass: 'Seite fehlt' };
     const ids = ['setting-announce', 'setting-announce-stand', 'setting-announce-result',
-      'setting-announce-stand-name', 'setting-announce-damage', 'setting-announce-fuel',
+      'setting-announce-stand-namensart', 'setting-announce-damage', 'setting-announce-fuel',
       'setting-announce-tyre', 'setting-announce-rain', 'setting-announce-pit',
       'setting-announce-battery'];
     const falsch = ids.filter((id) => !$(id) || !seite.contains($(id)));
     if (falsch.length) return { ok: false, mass: 'nicht auf der Ansagen-Seite: ' + falsch.join(', ') };
     if (ton.querySelector('[id^="setting-announce"]')) return { ok: false, mass: 'Ansage noch unter Ton' };
     if (!document.querySelector('button.misc-tile[data-sub="opt-ansagen"]')) return { ok: false, mass: 'Kachel fehlt' };
+    const wahl = $('setting-announce-stand-namensart');
+    const vorgabe = [...wahl.options].find((o) => o.defaultSelected);
     if ($('setting-announce-stand').defaultChecked || !$('setting-announce-result').defaultChecked
-        || !$('setting-announce-stand-name').defaultChecked) {
-      return { ok: false, mass: 'Vorgaben: Zwischenstand aus, Ergebnis an, Namen an' };
+        || !vorgabe || vorgabe.value !== 'auto') {
+      return { ok: false, mass: 'Vorgaben: Zwischenstand aus, Ergebnis an, Autobezeichnungen' };
     }
     const rows = [
-      { platz: 1, role: 'ghost', farbeId: 'rot', modellId: 'fordmustang', alias: 'Max Mustermann', rundenZurueck: 0, msZurueck: 0 },
-      { platz: 2, role: 'player', farbeId: 'gelb', modellId: 'porsche911', alias: '', rundenZurueck: 0, msZurueck: 1400 },
+      { platz: 1, role: 'ghost', farbeId: 'rot', modellId: 'porsche911', alias: 'Porsche', rundenZurueck: 0, msZurueck: 0 },
+      { platz: 2, role: 'player', farbeId: 'gelb', modellId: 'fordmustang', alias: '', rundenZurueck: 0, msZurueck: 1400 },
+      { platz: 3, role: 'ghost', farbeId: 'blau', modellId: '', alias: 'Max Mustermann', rundenZurueck: 1, msZurueck: null },
     ];
-    const merk = rennstandNamen;
+    const merk = rennstandNamensart;
     try {
-      rennstandNamen = true;
-      const mit = rennstandText(rows, 5, false, 'de');
-      if (mit.indexOf('Es führt aktuell Max Mustermann.') < 0 || /rote/.test(mit)
-          || mit.indexOf('der gelbe Porsche Neun Elf von Spieler 1') < 0
-          || mit.indexOf('1,4 Sekunden Rückstand') < 0) return { ok: false, mass: mit };
-      const sieg = rennstandText(rows, 5, true, 'en');
-      if (sieg.indexOf('The winner is Max Mustermann.') < 0) return { ok: false, mass: sieg };
-      rennstandNamen = false;
-      const ohne = rennstandText(rows, 5, false, 'de');
-      if (ohne.indexOf('der rote Ford Mustang') < 0 || /Mustermann/.test(ohne)) return { ok: false, mass: ohne };
-      if (rennstandStimmeNoetig(rows)) return { ok: false, mass: 'Namen aus, trotzdem Systemstimme' };
-      rennstandNamen = true;
+      rennstandNamensart = 'auto';
+      const auto = rennstandText(rows, 5, true, 'de');
+      if (auto.indexOf('Gewonnen hat der rote Porsche.') < 0
+          || auto.indexOf('der gelbe Ford Mustang von Spieler 1') < 0
+          || auto.indexOf('der blaue Max Mustermann') < 0
+          || auto.indexOf('1,4 Sekunden Rückstand') < 0) return { ok: false, mass: auto };
+      rennstandNamensart = 'fahrer';
+      const fahrer = rennstandText(rows, 5, false, 'de');
+      if (fahrer.indexOf('Es führt aktuell Porsche.') < 0 || /blaue|rote/.test(fahrer)
+          || fahrer.indexOf('einer Runde Rückstand Max Mustermann.') < 0
+          || fahrer.indexOf('der gelbe Ford Mustang') < 0) return { ok: false, mass: fahrer };
+      const en = rennstandText(rows, 5, true, 'en');
+      if (en.indexOf('The winner is Porsche.') < 0) return { ok: false, mass: en };
       if (rennstandStimmeNoetig([rows[1]])) return { ok: false, mass: 'ohne Namen trotzdem Systemstimme' };
-      return { ok: true, mass: mit };
-    } finally { rennstandNamen = merk; }
+      return { ok: true, mass: auto + ' | ' + fahrer };
+    } finally { rennstandNamensart = merk; }
   });

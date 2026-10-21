@@ -4823,7 +4823,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.35</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.36</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5976,6 +5976,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Ansagen: Statt &#8222;Autonamen ansagen&#8220; w&#228;hlst du jetzt, was die Namen in der Garage sind (WIP). Autobezeichnungen (Standard): &#8222;Gewonnen hat der rote Porsche&#8220;. Fahrernamen: &#8222;Gewonnen hat Max Mustermann&#8220;, ohne Farbe.</li>
         <li>Rennstand- und Ergebnisansage (WIP): Neue Kachel Optionen &#8594; Ansagen mit allen Ansagen, die bisher unter Ton standen. Das Rennergebnis wird nach der Zielflagge angesagt (Standard an), der Zwischenstand alle paar Runden ist Standard aus. Mit &#8222;Autonamen ansagen&#8220; (Standard an) hei&#223;t es &#8222;Es f&#252;hrt Max Mustermann&#8220; statt &#8222;der rote &#8230;&#8220;; Autos ohne Namen hei&#223;en weiter nach Farbe und Marke. In der Garage gibt es dazu Marke/Modell je Auto.</li>
         <li>Garage: Nach einem Tipp bleibt die Liste auf ihrer H&#246;he stehen, statt nach oben zu springen.</li>
         <li>Einparken nach deinen Aufnahmen (WIP, Vorgabe): Die automatische Aufstellung (rechts und links je eine Aufnahme) und das Safety Car (Einparken auf dem Randstreifen, Ausparken) fahren jetzt deine von Hand aufgenommenen Folgen. Fl&#252;ssig aus der Fahrt: auf dem Platz gleitet das Tempo in 0,3 s auf das der Aufnahme, kein Anhalten davor; das Anfahren aus dem Stand aus den Aufnahmen ist weggelassen. Das Safety Car f&#228;hrt nach dem Ausparken ohne Halt normal weiter. Umschalten auf den bisherigen Lenkimpuls: Renneinstellungen &#8222;Einparken in der Aufstellung&#8220; bzw. Safety-Car-Men&#252; &#8222;Ein- und Ausparken&#8220;.</li>
@@ -10875,9 +10876,9 @@
       <div class="opt-row"><div class="opt-label">Rennergebnis ansagen <span class="wip-tag">WIP</span>
           <small>Einmal nach der Zielflagge: der Sieger und die n&auml;chsten zwei mit R&uuml;ckstand. Nur Rundenrennen und Endurance. Standard an.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-result" checked data-preset-skip><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Autonamen ansagen <span class="wip-tag">WIP</span>
-          <small>An: Rennstand und Ergebnis nennen den Namen aus der Garage, etwa &bdquo;Es f&uuml;hrt Max Mustermann&ldquo;. Autos ohne eigenen Namen hei&szlig;en weiter nach Farbe und Marke. Aus: immer Farbe und Marke, zum Beispiel &bdquo;der rote Ford Mustang&ldquo;. Namen spricht die Stimme des Ger&auml;ts, nicht die Aufnahmen; der Hall und Lautst&auml;rken &uuml;ber 100&nbsp;% wirken dann nicht. Hat das Ger&auml;t keine Stimme (Android-App), kommen Farbe und Marke. Standard an.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-announce-stand-name" checked data-preset-skip><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Namen in der Garage sind <span class="wip-tag">WIP</span>
+          <small>Wie Rennstand und Ergebnis ein Auto mit eigenem Namen nennen. Autobezeichnungen: der Name steht statt der Marke hinter der Farbe, aus &bdquo;Porsche&ldquo; wird &bdquo;Gewonnen hat der rote Porsche&ldquo;. Fahrernamen: nur der Name, ohne Farbe, &bdquo;Gewonnen hat Max Mustermann&ldquo;. Autos ohne eigenen Namen hei&szlig;en immer nach Farbe und Marke. Eigene Namen spricht die Stimme des Ger&auml;ts, nicht die Aufnahmen; der Hall und Lautst&auml;rken &uuml;ber 100&nbsp;% wirken dann nicht. Hat das Ger&auml;t keine Stimme (Android-App), kommen Farbe und Marke. Standard: Autobezeichnungen.</small></div>
+        <select id="setting-announce-stand-namensart" data-preset-skip><option value="auto" selected>Autobezeichnungen</option><option value="fahrer">Fahrernamen</option></select></div>
       <div class="opt-row"><div class="opt-label">Rennstand-Sprechgeschwindigkeit
           <small>100 bis 175 %. Gilt ab der nächsten Ansage. Höheres Tempo erhöht auch die Tonhöhe.</small></div>
         <div class="opt-slider">

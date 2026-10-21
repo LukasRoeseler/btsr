@@ -4823,7 +4823,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.35</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.36</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5976,6 +5976,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Ansagen: Statt &#8222;Autonamen ansagen&#8220; w&#228;hlst du jetzt, was die Namen in der Garage sind (WIP). Autobezeichnungen (Standard): &#8222;Gewonnen hat der rote Porsche&#8220;. Fahrernamen: &#8222;Gewonnen hat Max Mustermann&#8220;, ohne Farbe.</li>
         <li>Rennstand- und Ergebnisansage (WIP): Neue Kachel Optionen &#8594; Ansagen mit allen Ansagen, die bisher unter Ton standen. Das Rennergebnis wird nach der Zielflagge angesagt (Standard an), der Zwischenstand alle paar Runden ist Standard aus. Mit &#8222;Autonamen ansagen&#8220; (Standard an) hei&#223;t es &#8222;Es f&#252;hrt Max Mustermann&#8220; statt &#8222;der rote &#8230;&#8220;; Autos ohne Namen hei&#223;en weiter nach Farbe und Marke. In der Garage gibt es dazu Marke/Modell je Auto.</li>
         <li>Garage: Nach einem Tipp bleibt die Liste auf ihrer H&#246;he stehen, statt nach oben zu springen.</li>
         <li>Einparken nach deinen Aufnahmen (WIP, Vorgabe): Die automatische Aufstellung (rechts und links je eine Aufnahme) und das Safety Car (Einparken auf dem Randstreifen, Ausparken) fahren jetzt deine von Hand aufgenommenen Folgen. Fl&#252;ssig aus der Fahrt: auf dem Platz gleitet das Tempo in 0,3 s auf das der Aufnahme, kein Anhalten davor; das Anfahren aus dem Stand aus den Aufnahmen ist weggelassen. Das Safety Car f&#228;hrt nach dem Ausparken ohne Halt normal weiter. Umschalten auf den bisherigen Lenkimpuls: Renneinstellungen &#8222;Einparken in der Aufstellung&#8220; bzw. Safety-Car-Men&#252; &#8222;Ein- und Ausparken&#8220;.</li>
@@ -10875,9 +10876,9 @@
       <div class="opt-row"><div class="opt-label">Rennergebnis ansagen <span class="wip-tag">WIP</span>
           <small>Einmal nach der Zielflagge: der Sieger und die n&auml;chsten zwei mit R&uuml;ckstand. Nur Rundenrennen und Endurance. Standard an.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-result" checked data-preset-skip><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Autonamen ansagen <span class="wip-tag">WIP</span>
-          <small>An: Rennstand und Ergebnis nennen den Namen aus der Garage, etwa &bdquo;Es f&uuml;hrt Max Mustermann&ldquo;. Autos ohne eigenen Namen hei&szlig;en weiter nach Farbe und Marke. Aus: immer Farbe und Marke, zum Beispiel &bdquo;der rote Ford Mustang&ldquo;. Namen spricht die Stimme des Ger&auml;ts, nicht die Aufnahmen; der Hall und Lautst&auml;rken &uuml;ber 100&nbsp;% wirken dann nicht. Hat das Ger&auml;t keine Stimme (Android-App), kommen Farbe und Marke. Standard an.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-announce-stand-name" checked data-preset-skip><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Namen in der Garage sind <span class="wip-tag">WIP</span>
+          <small>Wie Rennstand und Ergebnis ein Auto mit eigenem Namen nennen. Autobezeichnungen: der Name steht statt der Marke hinter der Farbe, aus &bdquo;Porsche&ldquo; wird &bdquo;Gewonnen hat der rote Porsche&ldquo;. Fahrernamen: nur der Name, ohne Farbe, &bdquo;Gewonnen hat Max Mustermann&ldquo;. Autos ohne eigenen Namen hei&szlig;en immer nach Farbe und Marke. Eigene Namen spricht die Stimme des Ger&auml;ts, nicht die Aufnahmen; der Hall und Lautst&auml;rken &uuml;ber 100&nbsp;% wirken dann nicht. Hat das Ger&auml;t keine Stimme (Android-App), kommen Farbe und Marke. Standard: Autobezeichnungen.</small></div>
+        <select id="setting-announce-stand-namensart" data-preset-skip><option value="auto" selected>Autobezeichnungen</option><option value="fahrer">Fahrernamen</option></select></div>
       <div class="opt-row"><div class="opt-label">Rennstand-Sprechgeschwindigkeit
           <small>100 bis 175 %. Gilt ab der nächsten Ansage. Höheres Tempo erhöht auch die Tonhöhe.</small></div>
         <div class="opt-slider">
@@ -14775,6 +14776,7 @@
     "Einparken nach deinen Aufnahmen (WIP, Vorgabe): Die automatische Aufstellung (rechts und links je eine Aufnahme) und das Safety Car (Einparken auf dem Randstreifen, Ausparken) fahren jetzt deine von Hand aufgenommenen Folgen. Flüssig aus der Fahrt: auf dem Platz gleitet das Tempo in 0,3 s auf das der Aufnahme, kein Anhalten davor; das Anfahren aus dem Stand aus den Aufnahmen ist weggelassen. Das Safety Car fährt nach dem Ausparken ohne Halt normal weiter. Umschalten auf den bisherigen Lenkimpuls: Renneinstellungen „Einparken in der Aufstellung“ bzw. Safety-Car-Menü „Ein- und Ausparken“.": "Parking from your recordings (WIP, default): the automatic line-up (one recording each for right and left) and the safety car (parking on the edge strip, leaving) now drive your hand-recorded sequences. Smoothly from driving: on the spot the speed glides to the recording’s within 0.3 s, no stop before; the standing start in the recordings is left out. After leaving, the safety car carries on driving without a stop. Switch back to the old steering pulse: race settings “Parking in the line-up” or the safety car menu “Parking and leaving”.",
     "Garage: Nach einem Tipp bleibt die Liste auf ihrer Höhe stehen, statt nach oben zu springen.": "Garage: after a tap the list stays where it was instead of jumping to the top.",
     "Rennstand- und Ergebnisansage (WIP): Neue Kachel Optionen → Ansagen mit allen Ansagen, die bisher unter Ton standen. Das Rennergebnis wird nach der Zielflagge angesagt (Standard an), der Zwischenstand alle paar Runden ist Standard aus. Mit „Autonamen ansagen“ (Standard an) heißt es „Es führt Max Mustermann“ statt „der rote …“; Autos ohne Namen heißen weiter nach Farbe und Marke. In der Garage gibt es dazu Marke/Modell je Auto.": "Race standings and result announcements (WIP): new tile Options → Announcements with every announcement that used to sit under Sound. The race result is announced after the chequered flag (on by default); standings every few laps are off by default. With “Announce car names” (on by default) it says “Currently leading is Max Mustermann” instead of “the red …”; cars without a name are still called by colour and make. The garage gains make/model per car.",
+    "Ansagen: Statt „Autonamen ansagen“ wählst du jetzt, was die Namen in der Garage sind (WIP). Autobezeichnungen (Standard): „Gewonnen hat der rote Porsche“. Fahrernamen: „Gewonnen hat Max Mustermann“, ohne Farbe.": "Announcements: instead of “Announce car names” you now choose what the names in the garage are (WIP). Car names (default): “The winner is the red Porsche”. Driver names: “The winner is Max Mustermann”, without the colour.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -16473,8 +16475,10 @@
     "Rennstand alle paar Runden ansagen": "Announce race standings every few laps",
     "Rennergebnis ansagen": "Announce race result",
     "Einmal nach der Zielflagge: der Sieger und die nächsten zwei mit Rückstand. Nur Rundenrennen und Endurance. Standard an.": "Once after the chequered flag: the winner and the next two with their gaps. Lap races and Endurance only. On by default.",
-    "Autonamen ansagen": "Announce car names",
-    "An: Rennstand und Ergebnis nennen den Namen aus der Garage, etwa „Es führt Max Mustermann“. Autos ohne eigenen Namen heißen weiter nach Farbe und Marke. Aus: immer Farbe und Marke, zum Beispiel „der rote Ford Mustang“. Namen spricht die Stimme des Geräts, nicht die Aufnahmen; der Hall und Lautstärken über 100 % wirken dann nicht. Hat das Gerät keine Stimme (Android-App), kommen Farbe und Marke. Standard an.": "On: standings and result use the name from the garage, e.g. “Currently leading is Max Mustermann”. Cars without a name of their own are still called by colour and make. Off: always colour and make, for example “the red Ford Mustang”. Names are spoken by the device voice, not the recordings; reverb and volumes above 100% do not apply then. If the device has no voice (Android app), colour and make are used. On by default.",
+    "Namen in der Garage sind": "Names in the garage are",
+    "Autobezeichnungen": "Car names",
+    "Fahrernamen": "Driver names",
+    "Wie Rennstand und Ergebnis ein Auto mit eigenem Namen nennen. Autobezeichnungen: der Name steht statt der Marke hinter der Farbe, aus „Porsche“ wird „Gewonnen hat der rote Porsche“. Fahrernamen: nur der Name, ohne Farbe, „Gewonnen hat Max Mustermann“. Autos ohne eigenen Namen heißen immer nach Farbe und Marke. Eigene Namen spricht die Stimme des Geräts, nicht die Aufnahmen; der Hall und Lautstärken über 100 % wirken dann nicht. Hat das Gerät keine Stimme (Android-App), kommen Farbe und Marke. Standard: Autobezeichnungen.": "How standings and result refer to a car with a name of its own. Car names: the name replaces the make after the colour, “Porsche” becomes “The winner is the red Porsche”. Driver names: just the name, no colour, “The winner is Max Mustermann”. Cars without a name of their own are always called by colour and make. Own names are spoken by the device voice, not the recordings; reverb and volumes above 100% do not apply then. If the device has no voice (Android app), colour and make are used. Default: car names.",
     "Die ersten drei Fahrzeuge des lokalen Rennfelds, mit Runde, Wagenfarbe und Marke / Modell. Nach jeder eingestellten Zahl vollendeter Runden des führenden Fahrzeugs. Die Ansage wartet auf die ersten drei Durchfahrten derselben Messrunde. Sekundenrückstände stammen aus diesen Durchfahrtszeiten, nicht aus Live-Abständen. Nur Rundenrennen und Endurance. Vorproduzierte Clips, auch in der Android-App.": "The first three cars in the local race field, with lap, colour and make / model. After every selected number of laps completed by the leading car. The announcement waits for the first three crossings of the same measured lap. Gaps in seconds use these crossing times, not live distances. Lap races and Endurance only. Pre-rendered clips also work in the Android app.",
     "Rennstand alle X Runden": "Race standings every X laps",
     "1 bis 20, Standard 5. Zum Beispiel nach Runde 5, 10 und 15.": "1 to 20, default 5. For example after lap 5, 10 and 15.",
@@ -50485,9 +50489,10 @@
   let rennstandMessGeneration = 0, rennstandMessTimer = null;
   let rennstandWarteSekunden = 30;
   // v1.1.35 BESTELLT: Ergebnisansage eigener Schalter (Standard an), Zwischenstand bleibt
-  // Standard aus. Und: "Max Mustermann" statt "der rote Max Mustermann" - Autonamen ueber
-  // die Stimme des Geraets, Standard an.
-  let rennstandErgebnisAn = true, rennstandNamen = true, rennstandSprache = null;
+  // Standard aus. v1.1.36 BESTELLT: der Name aus der Garage ist entweder eine
+  // AUTOBEZEICHNUNG ("Porsche" -> "der rote Porsche") oder ein FAHRERNAME
+  // ("Max Mustermann" -> "Max Mustermann", ohne Farbe). Standard: Autobezeichnung.
+  let rennstandErgebnisAn = true, rennstandNamensart = 'auto', rennstandSprache = null;
 
   function rennstandWarteWert(wert) {
     if (wert === null || String(wert).trim() === '') return 30;
@@ -50737,7 +50742,7 @@
   // bleiben die Aufnahmen; ohne Systemstimme (Android-App) auch.
   function rennstandNameVon(x) { return String((x && x.alias) || '').trim(); }
   function rennstandStimmeNoetig(rows) {
-    return rennstandNamen && ('speechSynthesis' in window)
+    return ('speechSynthesis' in window)
       && rows.slice(0, 3).some((x) => rennstandNameVon(x));
   }
   const RENNSTAND_FARBWORT = {
@@ -50757,18 +50762,19 @@
           ferrari: 'Ferrari', audi: 'Audi', mclaren: 'McLaren', mercedes: 'Mercedes',
           redbull: 'Red Bull', vwkaefer: 'Volkswagen Beetle' },
   };
-  // Derselbe Satzbau wie rennstandClipFolge(), nur als Text. Mit Name: nur der Name, ohne
-  // Farbe und ohne "von Spieler eins" - der Name sagt schon, wer es ist.
+  // Derselbe Satzbau wie rennstandClipFolge(), nur als Text. Fahrername: nur der Name, ohne
+  // Farbe und ohne "von Spieler eins" - der Name sagt schon, wer es ist. Autobezeichnung:
+  // der Name steht an der Stelle der Marke ("der rote Porsche s42").
   function rennstandText(rows, runde, ergebnis, spr) {
     const de = spr === 'de', L = de ? 'de' : 'en';
     const wagen = (x) => {
       const name = rennstandNameVon(x);
-      if (name && rennstandNamen) return name;
+      if (name && rennstandNamensart === 'fahrer') return name;
       const farbe = CAR_COLORS.find((c) => c.id === x.farbeId)
         || CAR_COLORS.find((c) => String(c.hex).toLowerCase() === String(x.farbe || '').toLowerCase());
       const fw = (farbe && RENNSTAND_FARBWORT[L][farbe.id]) || (de ? 'der' : 'the');
       const nr = rennstandSpielerNr(x.role);
-      return fw + ' ' + RENNSTAND_MODELLWORT[L][carModellWert(x.modellId)]
+      return fw + ' ' + (name || RENNSTAND_MODELLWORT[L][carModellWert(x.modellId)])
         + (nr ? (de ? ' von Spieler ' : ' driven by player ') + nr : '');
     };
     // z in Zehntelsekunden, wie in rennstandClipFolge().
@@ -51089,12 +51095,11 @@
       if (rennstandErgebnisAn) rennstandClipsLaden(lang);
     });
   }
-  const rennstandNamenSchalter = $('setting-announce-stand-name');
-  if (rennstandNamenSchalter) {
-    rennstandNamen = rennstandNamenSchalter.checked;
-    rennstandNamenSchalter.addEventListener('change', () => {
-      rennstandNamen = rennstandNamenSchalter.checked;
-    });
+  const rennstandNamensWahl = $('setting-announce-stand-namensart');
+  if (rennstandNamensWahl) {
+    const lesen = () => { rennstandNamensart = rennstandNamensWahl.value === 'fahrer' ? 'fahrer' : 'auto'; };
+    rennstandNamensWahl.addEventListener('change', lesen);
+    lesen();
   }
 
   // Selbstsicherung speichert den Parameter; laufende Messpunkte bleiben erhalten.
@@ -95940,43 +95945,48 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   });
 
   // v1.1.35 BESTELLT: eigene Kachel "Ansagen", Zwischenstand Standard aus, Ergebnis
-  // Standard an, und Autonamen ("Es fuehrt Max Mustermann") statt Farbe + Name.
-  stAdd('Ansagen v1.1.35: eigene Seite, Vorgaben, Autonamen statt Farbe', () => {
+  // Standard an. v1.1.36: Garagennamen sind Autobezeichnungen ("der rote Porsche") ODER
+  // Fahrernamen ("Max Mustermann", ohne Farbe) - Auswahl, Standard Autobezeichnung.
+  stAdd('Ansagen v1.1.36: eigene Seite, Vorgaben, Autobezeichnung oder Fahrername', () => {
     const seite = $('sub-opt-ansagen'), ton = $('sub-opt-sound');
     if (!seite || !ton) return { ok: false, mass: 'Seite fehlt' };
     const ids = ['setting-announce', 'setting-announce-stand', 'setting-announce-result',
-      'setting-announce-stand-name', 'setting-announce-damage', 'setting-announce-fuel',
+      'setting-announce-stand-namensart', 'setting-announce-damage', 'setting-announce-fuel',
       'setting-announce-tyre', 'setting-announce-rain', 'setting-announce-pit',
       'setting-announce-battery'];
     const falsch = ids.filter((id) => !$(id) || !seite.contains($(id)));
     if (falsch.length) return { ok: false, mass: 'nicht auf der Ansagen-Seite: ' + falsch.join(', ') };
     if (ton.querySelector('[id^="setting-announce"]')) return { ok: false, mass: 'Ansage noch unter Ton' };
     if (!document.querySelector('button.misc-tile[data-sub="opt-ansagen"]')) return { ok: false, mass: 'Kachel fehlt' };
+    const wahl = $('setting-announce-stand-namensart');
+    const vorgabe = [...wahl.options].find((o) => o.defaultSelected);
     if ($('setting-announce-stand').defaultChecked || !$('setting-announce-result').defaultChecked
-        || !$('setting-announce-stand-name').defaultChecked) {
-      return { ok: false, mass: 'Vorgaben: Zwischenstand aus, Ergebnis an, Namen an' };
+        || !vorgabe || vorgabe.value !== 'auto') {
+      return { ok: false, mass: 'Vorgaben: Zwischenstand aus, Ergebnis an, Autobezeichnungen' };
     }
     const rows = [
-      { platz: 1, role: 'ghost', farbeId: 'rot', modellId: 'fordmustang', alias: 'Max Mustermann', rundenZurueck: 0, msZurueck: 0 },
-      { platz: 2, role: 'player', farbeId: 'gelb', modellId: 'porsche911', alias: '', rundenZurueck: 0, msZurueck: 1400 },
+      { platz: 1, role: 'ghost', farbeId: 'rot', modellId: 'porsche911', alias: 'Porsche', rundenZurueck: 0, msZurueck: 0 },
+      { platz: 2, role: 'player', farbeId: 'gelb', modellId: 'fordmustang', alias: '', rundenZurueck: 0, msZurueck: 1400 },
+      { platz: 3, role: 'ghost', farbeId: 'blau', modellId: '', alias: 'Max Mustermann', rundenZurueck: 1, msZurueck: null },
     ];
-    const merk = rennstandNamen;
+    const merk = rennstandNamensart;
     try {
-      rennstandNamen = true;
-      const mit = rennstandText(rows, 5, false, 'de');
-      if (mit.indexOf('Es führt aktuell Max Mustermann.') < 0 || /rote/.test(mit)
-          || mit.indexOf('der gelbe Porsche Neun Elf von Spieler 1') < 0
-          || mit.indexOf('1,4 Sekunden Rückstand') < 0) return { ok: false, mass: mit };
-      const sieg = rennstandText(rows, 5, true, 'en');
-      if (sieg.indexOf('The winner is Max Mustermann.') < 0) return { ok: false, mass: sieg };
-      rennstandNamen = false;
-      const ohne = rennstandText(rows, 5, false, 'de');
-      if (ohne.indexOf('der rote Ford Mustang') < 0 || /Mustermann/.test(ohne)) return { ok: false, mass: ohne };
-      if (rennstandStimmeNoetig(rows)) return { ok: false, mass: 'Namen aus, trotzdem Systemstimme' };
-      rennstandNamen = true;
+      rennstandNamensart = 'auto';
+      const auto = rennstandText(rows, 5, true, 'de');
+      if (auto.indexOf('Gewonnen hat der rote Porsche.') < 0
+          || auto.indexOf('der gelbe Ford Mustang von Spieler 1') < 0
+          || auto.indexOf('der blaue Max Mustermann') < 0
+          || auto.indexOf('1,4 Sekunden Rückstand') < 0) return { ok: false, mass: auto };
+      rennstandNamensart = 'fahrer';
+      const fahrer = rennstandText(rows, 5, false, 'de');
+      if (fahrer.indexOf('Es führt aktuell Porsche.') < 0 || /blaue|rote/.test(fahrer)
+          || fahrer.indexOf('einer Runde Rückstand Max Mustermann.') < 0
+          || fahrer.indexOf('der gelbe Ford Mustang') < 0) return { ok: false, mass: fahrer };
+      const en = rennstandText(rows, 5, true, 'en');
+      if (en.indexOf('The winner is Porsche.') < 0) return { ok: false, mass: en };
       if (rennstandStimmeNoetig([rows[1]])) return { ok: false, mass: 'ohne Namen trotzdem Systemstimme' };
-      return { ok: true, mass: mit };
-    } finally { rennstandNamen = merk; }
+      return { ok: true, mass: auto + ' | ' + fahrer };
+    } finally { rennstandNamensart = merk; }
   });
   // ============================== HOME ==============================
   // Der Schirm beim Laden, erreichbar ueber das Logo. Die Zahl der Einstellungen wird

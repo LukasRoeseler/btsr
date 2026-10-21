@@ -16,9 +16,10 @@
   let rennstandMessGeneration = 0, rennstandMessTimer = null;
   let rennstandWarteSekunden = 30;
   // v1.1.35 BESTELLT: Ergebnisansage eigener Schalter (Standard an), Zwischenstand bleibt
-  // Standard aus. Und: "Max Mustermann" statt "der rote Max Mustermann" - Autonamen ueber
-  // die Stimme des Geraets, Standard an.
-  let rennstandErgebnisAn = true, rennstandNamen = true, rennstandSprache = null;
+  // Standard aus. v1.1.36 BESTELLT: der Name aus der Garage ist entweder eine
+  // AUTOBEZEICHNUNG ("Porsche" -> "der rote Porsche") oder ein FAHRERNAME
+  // ("Max Mustermann" -> "Max Mustermann", ohne Farbe). Standard: Autobezeichnung.
+  let rennstandErgebnisAn = true, rennstandNamensart = 'auto', rennstandSprache = null;
 
   function rennstandWarteWert(wert) {
     if (wert === null || String(wert).trim() === '') return 30;
@@ -268,7 +269,7 @@
   // bleiben die Aufnahmen; ohne Systemstimme (Android-App) auch.
   function rennstandNameVon(x) { return String((x && x.alias) || '').trim(); }
   function rennstandStimmeNoetig(rows) {
-    return rennstandNamen && ('speechSynthesis' in window)
+    return ('speechSynthesis' in window)
       && rows.slice(0, 3).some((x) => rennstandNameVon(x));
   }
   const RENNSTAND_FARBWORT = {
@@ -288,18 +289,19 @@
           ferrari: 'Ferrari', audi: 'Audi', mclaren: 'McLaren', mercedes: 'Mercedes',
           redbull: 'Red Bull', vwkaefer: 'Volkswagen Beetle' },
   };
-  // Derselbe Satzbau wie rennstandClipFolge(), nur als Text. Mit Name: nur der Name, ohne
-  // Farbe und ohne "von Spieler eins" - der Name sagt schon, wer es ist.
+  // Derselbe Satzbau wie rennstandClipFolge(), nur als Text. Fahrername: nur der Name, ohne
+  // Farbe und ohne "von Spieler eins" - der Name sagt schon, wer es ist. Autobezeichnung:
+  // der Name steht an der Stelle der Marke ("der rote Porsche s42").
   function rennstandText(rows, runde, ergebnis, spr) {
     const de = spr === 'de', L = de ? 'de' : 'en';
     const wagen = (x) => {
       const name = rennstandNameVon(x);
-      if (name && rennstandNamen) return name;
+      if (name && rennstandNamensart === 'fahrer') return name;
       const farbe = CAR_COLORS.find((c) => c.id === x.farbeId)
         || CAR_COLORS.find((c) => String(c.hex).toLowerCase() === String(x.farbe || '').toLowerCase());
       const fw = (farbe && RENNSTAND_FARBWORT[L][farbe.id]) || (de ? 'der' : 'the');
       const nr = rennstandSpielerNr(x.role);
-      return fw + ' ' + RENNSTAND_MODELLWORT[L][carModellWert(x.modellId)]
+      return fw + ' ' + (name || RENNSTAND_MODELLWORT[L][carModellWert(x.modellId)])
         + (nr ? (de ? ' von Spieler ' : ' driven by player ') + nr : '');
     };
     // z in Zehntelsekunden, wie in rennstandClipFolge().
@@ -620,12 +622,11 @@
       if (rennstandErgebnisAn) rennstandClipsLaden(lang);
     });
   }
-  const rennstandNamenSchalter = $('setting-announce-stand-name');
-  if (rennstandNamenSchalter) {
-    rennstandNamen = rennstandNamenSchalter.checked;
-    rennstandNamenSchalter.addEventListener('change', () => {
-      rennstandNamen = rennstandNamenSchalter.checked;
-    });
+  const rennstandNamensWahl = $('setting-announce-stand-namensart');
+  if (rennstandNamensWahl) {
+    const lesen = () => { rennstandNamensart = rennstandNamensWahl.value === 'fahrer' ? 'fahrer' : 'auto'; };
+    rennstandNamensWahl.addEventListener('change', lesen);
+    lesen();
   }
 
   // Selbstsicherung speichert den Parameter; laufende Messpunkte bleiben erhalten.
