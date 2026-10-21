@@ -2694,9 +2694,20 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Reihe 1 auf der Kachel vor Start/Ziel, jede weitere eine Kachel dahinter. v1.1.21 stand Reihe 1 kurz
   // AUF Start/Ziel; v1.1.22 zurueck - GEMELDET: "Bei 1.1.19 ging es gut, dass die Autos nach dem Zieleinlauf
   // auf der korrekten Hoehe geparkt haben, nur die Querlage war falsch."
-  function aufstellZielKachel(platz, n) {
+  // v1.1.38 GEMELDET: "Fuer die ersten beiden Autos klappt das gut. Die anderen halten aber zu frueh an.
+  // Mach es so, dass sie naeher hintereinander halten (4 Autos pro Schiene, also 2 links 2 rechts)."
+  // Bis dahin stand jede Reihe eine ganze Kachel hinter der vorigen. Jetzt AUFSTELL_REIHE_KACHEL (eine
+  // halbe Kachel): Reihe 1 wie bisher (rechts bei 0,15 der Kachel vor Start/Ziel, links an ihrem
+  // Anfang), jede weitere Reihe eine halbe Kachel dahinter - zwei Reihen, vier Autos je Teil. Der Ort ist
+  // eine Kommazahl (Kachel + Anteil), aufstellZielKachel() ihr ganzer Teil, aufstellHaltBruch() der Rest.
+  const AUFSTELL_REIHE_KACHEL = 0.5;
+  function aufstellZielOrt(platz, n) {
     const s = typeof ortStartIndices === 'function' ? (ortStartIndices(currentTrackTiles || [])[0] || 0) : 0;
-    return (((s - 1 - Math.floor(platz / 2)) % n) + n) % n;
+    const pos = s - 1 + aufstellSeitenBruch(platz) - Math.floor(Math.max(0, platz) / 2) * AUFSTELL_REIHE_KACHEL;
+    return ((pos % n) + n) % n;
+  }
+  function aufstellZielKachel(platz, n) {
+    return Math.floor(aufstellZielOrt(platz, n) + 1e-9) % n;
   }
   // v0.9.87: ERST NACH DEM STARTTEIL ANHALTEN. startGhost() legt den Ort neu an, und die
   // erste gemeldete Kachel gilt dann als Kachel 0 - der Halt "auf Kachel ziel" traf also
@@ -2760,7 +2771,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const t = Date.now() - a.fertigAt, ms = einparkMs();
     // v1.1.30: die Aufnahme (wie bei den NPCs), mit Angleichen vom aktuellen Gas.
     const staerke = einparkStaerke();
-    if (staerke > 0 && aufstellArt() === 'aufnahme') {
+    if (staerke > 0 && aufstellArt() === 'aufnahme' && !aufstellKurveAmPlatz(a.ziel)) {
       const sk = seite > 0 ? MANOEVER.rechts : MANOEVER.links;
       if (a.vonDrive === undefined) {
         a.vonDrive = typeof physOutThrottle === 'number' && physOutThrottle > 0 ? Math.min(0.8, physOutThrottle) : sk[0][2];
@@ -2872,7 +2883,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // zur Seite (EINPARK_MS, Staerke aus dem Regler), ein Takt zurueck, dann bremsen - alles
     // ohne Spur-Bytes, damit die Spurfuehrung das Auto nicht wieder zur Mitte zieht.
     const staerke = einparkStaerke();
-    if (staerke > 0 && aufstellArt() === 'aufnahme') {
+    if (staerke > 0 && aufstellArt() === 'aufnahme' && !aufstellKurveAmPlatz(g.aufstellZiel)) {
       const sk = seite > 0 ? MANOEVER.rechts : MANOEVER.links;
       randHaltStarten(car, { phase: 'skript', quer: 0, skript: sk, anpassMs: MANOEVER_ANPASS_MS,
                              vonDrive: letztesGas(car, sk[0][2]), lenkFaktor: staerke, haltMs: AUFSTELL_HALT_MS, sofort: true,
@@ -5134,7 +5145,23 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Wo auf der Kachel der Impuls beginnt: rechts bei 0,15, links an der Kachelgrenze - die Hoehe aus
   // v1.1.19, die gestimmt hat (v1.1.21 kurz beide bei 0).
   const AUFSTELL_BRUCH_RECHTS = 0.15, AUFSTELL_BRUCH_LINKS = 0.0;
-  function aufstellHaltBruch(platz) { return platz >= 0 && platz % 2 ? AUFSTELL_BRUCH_LINKS : AUFSTELL_BRUCH_RECHTS; }
+  function aufstellSeitenBruch(platz) { return platz >= 0 && platz % 2 ? AUFSTELL_BRUCH_LINKS : AUFSTELL_BRUCH_RECHTS; }
+  // Der Anteil der Kachel, ab dem dieser Platz einparkt - mit dem Reihenversatz (siehe aufstellZielOrt).
+  function aufstellHaltBruch(platz) {
+    const b = aufstellSeitenBruch(platz) - Math.floor(Math.max(0, platz) / 2) * AUFSTELL_REIHE_KACHEL;
+    const r = ((b % 1) + 1) % 1;
+    return r > 1 - 1e-9 ? 0 : r;
+  }
+  // v1.1.38 GEMELDET: "Pass bei Kurven auf: Wenn du da stumpf die Aufnahme abspielst, lenken sie von der
+  // Bahn herunter." Die Aufnahme lenkt ohne Spur-Bytes, also mit dem Radwinkel - in einer Kurve faehrt
+  // das Auto mit geraden Raedern geradeaus hinaus. Liegt der Platz oder das Teil danach (die Aufnahme
+  // rollt gut eine halbe Kachel) in einer Kurve, parkt das Auto mit dem kurzen Lenkimpuls.
+  function aufstellKurveAmPlatz(ziel) {
+    const tiles = currentTrackTiles || [];
+    const n = tiles.length;
+    if (!n || ziel === null || ziel === undefined) return false;
+    return [0, 1].some((k) => { const t = tiles[(ziel + k) % n]; return tileTightness(t && t.type) > 0; });
+  }
   // Steht der Ort (Kachel + Phase) auf der Zielkachel und mindestens am Haltepunkt?
   function aufstellAmPunkt(o, ziel, platz) {
     if (o === null || o === undefined || Math.floor(o) !== ziel) return false;
@@ -5156,6 +5183,25 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     scEin: [[0,0,0.233],[41,0.864,0.231],[92,0.922,0.228],[132,0.95,0.226],[180,0.973,0.224],[222,0.984,0.222],[272,0.991,0.22],[312,0.995,0.218],[359,0.997,0.215],[403,0.509,0.213],[450,0,0.211],[491,0,0.209],[540,-1,0.207],[582,-1,0.205],[630,-1,0.203],[672,-1,0.201],[726,-0.69,0.199],[761,0,0.197],[810,0,0.195],[852,0,0.193],[900,0,0.191],[941,0,0.189],[990,0,0.187],[1032,-0.134,0.186],[1080,-1,0.184],[1122,-1,0.182],[1172,-1,0.173],[1212,0,0.164],[1259,0,0.154],[1304,0,0.144],[1350,0,0.134],[1392,0,0.124],[1439,0,0.113],[1482,0,0.103],[1529,0,0.092],[1572,0,0.082],[1622,0,0.071],[1661,0,0.061],[1710,0,0]],
     scAus: [[0,0,0],[50,-1,0],[269,-1,0.005],[319,-1,0.017],[359,-0.999,0.025],[407,-0.998,0.029],[454,-0.997,0.031],[501,-0.994,0.033],[540,-0.992,0.039],[588,-0.989,0.039],[629,-0.986,0.04],[678,-0.982,0.039],[720,-0.979,0.037],[769,-0.975,0.038],[810,-0.972,0.041],[858,-0.966,0.061],[903,-0.958,0.074],[954,-0.945,0.09],[1038,-0.919,0.09],[1080,-0.906,0.09],[1128,-0.892,0.077],[1170,-0.883,0.073],[1221,-0.874,0.07],[1260,-0.871,0.073],[1307,-0.871,0.076],[1350,-0.869,0.08],[1399,-0.869,0.084],[1439,-0.868,0.087],[1488,-0.868,0.09],[1538,0.236,0.092],[1577,0.88,0.093],[1619,0.888,0.094],[1668,0.898,0.095],[1710,0.906,0.096],[1758,0.913,0.098],[1800,0.918,0.099],[1852,0.923,0.101],[1889,0.925,0.103],[1939,0.928,0.105],[1982,0.93,0.106],[2027,0.932,0.108],[2071,0.933,0.11],[2118,0.598,0.113],[2160,0.104,0.115],[2208,0,0.117]],
   };
+  // v1.1.38 GEMELDET: "Safetycar ausparken klappt nicht gut: es lenkt am Anfang, faehrt aber zu spaet los
+  // ... nach der Rechtslenkung direkt von der Bahn. Schau, dass die Werte wirklich so ankommen, wie sie
+  // aufgenommen wurden." Sie kommen an (Selbsttest "Ausparken v1.1.38": jeder gesendete Takt = Aufnahme
+  // x Faktor). Die Aufnahme beginnt aber mit sehr wenig Gas (0,005 bis 0,04 in der ersten halben Sekunde),
+  // gefahren im Ausdruck-Modus mit einem anderen Auto; im Rennen faehrt das Safety Car auf der Bahn, und
+  // dort kommt es damit spaeter in Fahrt. Darum ein Faktor auf das Gas der Ausparkfolge (Regler im
+  // Safety-Car-Menue, Vorgabe 1,5); die Lenkung und die Zeiten bleiben genau die der Aufnahme.
+  const SC_AUS_GAS_VORGABE = 1.5;
+  function scAusGas() { return einparkWert('sc-aus-gas', SC_AUS_GAS_VORGABE, 1, 3); }
+  if ($('sc-aus-gas')) {
+    const el = $('sc-aus-gas');
+    const zeigen = () => { if ($('sc-aus-gas-val')) $('sc-aus-gas-val').textContent = scAusGas().toFixed(1).replace('.', lang === 'de' ? ',' : '.') + '\u00d7'; };
+    el.addEventListener('input', zeigen);
+    zeigen();
+  }
+  function scAusSkript() {
+    const f = scAusGas();
+    return MANOEVER.scAus.map(([ms, lenk, gas]) => [ms, lenk, Math.min(1, gas * f)]);
+  }
   // So lange gleitet das Tempo vom normalen Fahren auf das Tempo der Aufnahme, geradeaus - statt anzuhalten.
   const MANOEVER_ANPASS_MS = 300;
   function manoeverDauer(m) { return m[m.length - 1][0]; }
@@ -6139,8 +6185,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // v1.1.30: stand es geparkt am Rand, faehrt es mit der aufgenommenen Ausparkfolge los und geht danach
     // fliessend ins normale Fahren ueber. Sonst wie bisher (v1.1.3/v1.1.15: feste Folge bzw. Links-Rechts-Impuls).
     if (sc.ghost && sc.scGeparkt && scParkArt() === 'aufnahme' && !scNebenModus()) {
-      randHaltStarten(sc, { phase: 'skript', quer: 0, skript: MANOEVER.scAus, anpassMs: 0, vonDrive: 0, weiter: true });
-      log(garageLabel(sc) + ': Safety Car parkt aus (Aufnahme).', 'info');
+      randHaltStarten(sc, { phase: 'skript', quer: 0, skript: scAusSkript(), anpassMs: 0, vonDrive: 0, weiter: true });
+      log(garageLabel(sc) + ': Safety Car parkt aus (Aufnahme, Gas x ' + scAusGas().toFixed(2) + ').', 'info');
     } else if (sc.ghost) sc.ghost.scAuspark = { at: 0, lenk: scNebenModus() ? scEndLenk() : 0 };
     sc.scGeparkt = false;
     // Neben der Strecke: ab jetzt die Kacheln zaehlen, bis Start/Ziel gelesen wird (siehe ortAbgleich).
@@ -6333,7 +6379,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (sc.ghost && sc.ghost.running) return false;
     startGhost(sc);
     if (!sc.ghost) return false;
-    sc.ghost.freeRun = true; sc.ghost.scHeim = false; sc.ghost.scErsteRunde = true;
+    sc.ghost.freeRun = true; sc.ghost.scHeim = false; sc.ghost.scErsteRunde = true; sc.ghost.scStartKacheln = 0;
     log(garageLabel(sc) + ': Safety Car faehrt die erste Runde hinter dem Feld mit.', 'info');
     return true;
   }
@@ -6345,9 +6391,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Fliegender Start: die Ueberfahrten der Einfuehrungsrunde zaehlen nicht - die erste Runde
       // ist die erste RENNrunde.
       if (raceFormationLap) return;
+      // v1.1.38 GEMELDET: "Es sollte die erste Runde hinter dem Feld hinterher fahren und erst dann
+      // einparken." Es startet vom letzten Platz der Aufstellung, und die steht VOR der Linie: die erste
+      // Ueberfahrt kam gleich nach dem Start, und es parkte schon in Runde eins. Jetzt zaehlt erst eine
+      // Ueberfahrt nach mindestens einer halben Runde.
+      const nk = currentTrackTiles ? currentTrackTiles.length : 0;
+      if ((g.scStartKacheln || 0) < Math.max(2, nk / 2)) return;
       g.scErsteRunde = false;
       g.scHeim = true;
-      log(garageLabel(sc) + ': Safety Car ueber Start/Ziel, parkt nach dieser Runde.', 'info');
+      log(garageLabel(sc) + ': Safety Car hat seine Startrunde gefahren, parkt jetzt.', 'info');
       return;
     }
     // Mit gemerktem Startpunkt neben der Strecke parkt nicht Start/Ziel, sondern safetyCarHeimTick.
@@ -9501,6 +9553,16 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Safety Car von neben der Strecke: die Kacheln seit dem Losfahren mitzaehlen (-1 = noch keine).
       if (g.scBoxK !== undefined && g.scBoxK !== null) g.scBoxK++;
       if (g.scHeim) g.scHeimKacheln = (g.scHeimKacheln || 0) + 1;     // Heimweg: Kacheln seit Gruen
+      // v1.1.38: die Startrunde des Safety Cars zaehlt Kacheln (siehe safetyCarLinie). Rueckfall, falls
+      // keine Ueberfahrt gemeldet wird: nach einer Runde und zwei Kacheln geht es auch so heim.
+      if (car.role === 'safetycar' && g.scErsteRunde && !raceFormationLap) {
+        g.scStartKacheln = (g.scStartKacheln || 0) + 1;
+        const nk = currentTrackTiles ? currentTrackTiles.length : 0;
+        if (nk && g.scStartKacheln >= nk + 2) {
+          g.scErsteRunde = false; g.scHeim = true;
+          log(garageLabel(car) + ': Safety Car hat seine Startrunde gefahren, parkt jetzt.', 'info');
+        }
+      }
       let lmRundeVoll = false;
       if (currentTrackTiles.length) {
         g.tileIndex %= currentTrackTiles.length;
@@ -10063,7 +10125,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
           return;
         }
         // v1.0.31: bis zu seinem Zeitpunkt wartet das Auto (aufstellAb, gestaffelt je 1 s).
-        target = g.aufstellAb && now < g.aufstellAb ? 0 : Math.min(target, aufstellTempo(car));
+        // v1.1.38 GEMELDET: "Automatische Aufstellung nach dem Rennen bei Schwierigkeit langsam (45 %)
+        // klappt auch in den ersten beiden Reihen nicht. Das Grund-Tempo sollte sich hier nicht auf das
+        // Aufstellen auswirken." Bis dahin galt min(Renntempo, Aufstelltempo): sobald Stufe, Staffel,
+        // Reifen oder Abstandhalten das Renntempo unter das Aufstelltempo drueckten, rollte ein langsamer
+        // NPC langsamer an seinen Platz - und die Aufnahme setzte bei anderem Tempo ein. Jetzt allein das
+        // Aufstelltempo; nur das Abstandhalten zum Vordermann darf es senken (sonst Auffahren in der Schlange).
+        const abstand = spice.haeltAbstand ? Math.min(1, spice.factor) : 1;
+        target = g.aufstellAb && now < g.aufstellAb ? 0 : aufstellTempo(car) * abstand;
         aufstellenPruefen(car);
       }
       // ---- STARTREAKTION UND VORSICHT IN DER ERSTEN KURVE ---------------------------

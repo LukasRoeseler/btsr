@@ -4823,7 +4823,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.37</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.38</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5976,6 +5976,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Aufstellung: Jede Reihe steht jetzt eine halbe Kachel hinter der vorigen, vier Autos je Teil (zwei links, zwei rechts). Liegt ein Platz in einer Kurve oder direkt davor, parkt das Auto mit dem kurzen Lenkimpuls statt mit der Aufnahme. Das Tempo der Aufstellung h&#228;ngt nicht mehr an Schwierigkeit oder Grundtempo. Safety Car: f&#228;hrt die erste Runde ganz hinter dem Feld mit und parkt erst danach; neuer Regler &#8222;Gas beim Ausparken&#8220; (WIP, Standard 1,5 &#215; der Aufnahme).</li>
         <li>NPCs in der Haarnadel: Das H&#246;chsttempo dort gilt jetzt zuletzt. Bisher hoben die Feld-Staffel (bis +10 %) und das Mindesttempo (37 %) jede Haarnadel &#252;ber die Grenze. Neuer Regler NPC &#8594; &#8222;H&#246;chsttempo in der Haarnadel&#8220; (WIP, Standard 35 %, gilt auch auf den zwei Teilen davor). Ab vier Teilen vor der Haarnadel gibt es keinen &#220;berholschub mehr.</li>
         <li>Ansagen: Statt &#8222;Autonamen ansagen&#8220; w&#228;hlst du jetzt, was die Namen in der Garage sind (WIP). Autobezeichnungen (Standard): &#8222;Gewonnen hat der rote Porsche&#8220;. Fahrernamen: &#8222;Gewonnen hat Max Mustermann&#8220;, ohne Farbe.</li>
         <li>Rennstand- und Ergebnisansage (WIP): Neue Kachel Optionen &#8594; Ansagen mit allen Ansagen, die bisher unter Ton standen. Das Rennergebnis wird nach der Zielflagge angesagt (Standard an), der Zwischenstand alle paar Runden ist Standard aus. Mit &#8222;Autonamen ansagen&#8220; (Standard an) hei&#223;t es &#8222;Es f&#252;hrt Max Mustermann&#8220; statt &#8222;der rote &#8230;&#8220;; Autos ohne Namen hei&#223;en weiter nach Farbe und Marke. In der Garage gibt es dazu Marke/Modell je Auto.</li>
@@ -11501,6 +11502,13 @@
           <option value="aufnahme" selected>Aufnahme</option>
           <option value="impuls">Lenkimpuls</option>
         </select></div>
+      <div class="opt-row"><div class="opt-label">Gas beim Ausparken <span class="wip-tag">WIP</span><small>Mal so viel Gas wie in der Aufnahme, wenn das Safety Car vom Rand losf&auml;hrt. Lenkung und Zeiten bleiben die der Aufnahme. Die Aufnahme beginnt mit sehr wenig Gas; f&auml;hrt das Safety Car zu sp&auml;t los und dann nach der Rechtslenkung von der Bahn, hier erh&ouml;hen. Standard 1,5.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="sc-aus-gas" min="1" max="3" step="0.1" value="1.5">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="sc-aus-gas-val">1,5&times;</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Safety Car: Einpark-Teil <span class="wip-tag">experimentell</span>
           <small>Das Streckenteil, auf dem das Safety Car rechts am Rand parkt. Vorgabe Start/Ziel. Es f&auml;hrt dorthin erst, wenn es seit dem Losfahren &uuml;ber Start/Ziel gefahren ist &ndash; sonst stimmt die Z&auml;hlung der Teile nicht. Die Wahl einer bestimmten Nummer gilt nur f&uuml;r die gerade geladene Strecke.</small></div>
         <select id="sc-ausfahrt-teil" data-preset-skip><option value="">automatisch (gemessen)</option></select></div>

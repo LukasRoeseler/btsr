@@ -18257,9 +18257,10 @@
     if (segs(ohne) !== segs(editorAus)) f.push('Vorgabe zeigt die Linie');
     const n = 10;
     const ziele = [0, 1, 2, 3, 4, 5].map((k) => aufstellZielKachel(k, n));
-    // Reihe 1 auf der Kachel vor Start/Ziel, jede weitere eine Kachel dahinter (Hoehe wie v1.1.19).
-    if (ziele.join(',') !== '9,9,8,8,7,7') f.push('Startkacheln ' + ziele.join(','));
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Linie nur mit mitLinie, Plaetze 1/2 vor Start/Ziel, je Reihe eine Kachel zurueck' };
+    // Reihe 1 auf der Kachel vor Start/Ziel; v1.1.38 jede weitere Reihe eine HALBE Kachel dahinter
+    // (vier Autos je Teil): Reihe 2 bei 8,65/8,5, Reihe 3 bei 8,15/8,0.
+    if (ziele.join(',') !== '9,9,8,8,8,8') f.push('Startkacheln ' + ziele.join(','));
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Linie nur mit mitLinie, Plaetze 1/2 vor Start/Ziel, je Reihe eine halbe Kachel zurueck' };
   });
 
   stAdd('Aufstellung: Fahrerauto rollt zum Startplatz und wird dort gehalten', () => {
@@ -19776,8 +19777,12 @@
       const formMerk = raceFormationLap;
       raceFormationLap = true; safetyCarLinie(sc); raceFormationLap = formMerk;
       if (!sc.ghost.scErsteRunde) f.push('Einfuehrungsrunde beendet die Startrunde');
-      safetyCarLinie(sc);                       // erste Ueberfahrt: nur Startphase vorbei
-      if (sc.ghost.scErsteRunde || !sc.ghost.scHeim || sc.ghost.randHalt) f.push('nach der ersten Ueberfahrt nicht auf dem Heimweg');
+      // v1.1.38: die Ueberfahrt gleich nach dem Start (Startplatz vor der Linie) zaehlt nicht.
+      safetyCarLinie(sc);
+      if (!sc.ghost.scErsteRunde || sc.ghost.scHeim) f.push('Ueberfahrt gleich nach dem Start beendet die Startrunde');
+      sc.ghost.scStartKacheln = currentTrackTiles.length;
+      safetyCarLinie(sc);                       // Ueberfahrt nach einer Runde: jetzt heim
+      if (sc.ghost.scErsteRunde || !sc.ghost.scHeim || sc.ghost.randHalt) f.push('nach einer Runde nicht auf dem Heimweg');
       // v1.1.21: geparkt wird ueber safetyCarHeimTick, sobald der Ort an Start/Ziel abgeglichen ist.
       sc.ghost.ortSicher = true; sc.ghost.tileIndex = 0;
       safetyCarHeimTick(sc);
@@ -21685,4 +21690,49 @@
       if (!el || Math.abs(parseFloat(el.defaultValue) - 0.35) > 1e-9) f.push('Regler fehlt oder Vorgabe nicht 35 %');
     } finally { ghostCfg.haarnadelMax = merk; }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Haarnadel hoechstens 35 %, Boden 37 % und Schub darunter; Kurve und Gerade frei' };
+  });
+
+  // v1.1.38 GEMELDET: Aufstellung - die hinteren Reihen hielten zu frueh, in Kurven lenkte die Aufnahme
+  // von der Bahn, und mit Stufe "einfach" passte es nicht. Safety Car: Ausparken kam zu spaet in Fahrt.
+  stAdd('Aufstellung und Ausparken v1.1.38: vier Autos je Teil, Kurve ohne Aufnahme, Gas kommt an', () => {
+    const f = [];
+    const n = 10;
+    // Halbe Kachel je Reihe: Haltepunkte rechts/links 9,15 / 9,0 | 8,65 / 8,5 | 8,15 / 8,0.
+    const orte = [0, 1, 2, 3, 4, 5].map((k) => +aufstellZielOrt(k, n).toFixed(2));
+    if (orte.join(',') !== '9.15,9,8.65,8.5,8.15,8') f.push('Haltepunkte ' + orte.join(','));
+    const brueche = [0, 1, 2, 3].map((k) => +aufstellHaltBruch(k).toFixed(2));
+    if (brueche.join(',') !== '0.15,0,0.65,0.5') f.push('Anteile ' + brueche.join(','));
+    if (!aufstellAmPunkt(8.66, 8, 2) || aufstellAmPunkt(8.6, 8, 2)) f.push('Haltepunkt Reihe 2 falsch');
+    // Kurve am Platz oder direkt danach: keine Aufnahme.
+    const merkT = currentTrackTiles;
+    try {
+      currentTrackTiles = codeToTrack('SG3RG2').tiles;    // 0 Start, 1-3 Gerade, 4 Kurve, 5-6 Gerade
+      if (aufstellKurveAmPlatz(1)) f.push('Gerade als Kurve');
+      if (!aufstellKurveAmPlatz(3)) f.push('Kurve dahinter nicht erkannt');
+      if (!aufstellKurveAmPlatz(4)) f.push('Kurve am Platz nicht erkannt');
+    } finally { currentTrackTiles = merkT; }
+    // Aufstelltempo haengt nicht am Renntempo.
+    const src = String(ghostTick);
+    if (src.indexOf('Math.min(target, aufstellTempo(car))') >= 0 || src.indexOf('aufstellTempo(car) * abstand') < 0) {
+      f.push('Aufstelltempo haengt noch am Renntempo');
+    }
+    // Ausparken: jeder Takt = Aufnahme x Faktor, Lenkung und Zeiten unveraendert.
+    const el = $('sc-aus-gas'), merkV = el ? el.value : null;
+    try {
+      if (el) el.value = '1.5';
+      const sk = scAusSkript();
+      if (sk.length !== MANOEVER.scAus.length) f.push('Laenge der Folge');
+      for (let i = 0; i < sk.length; i++) {
+        const a = MANOEVER.scAus[i], b = sk[i];
+        if (a[0] !== b[0] || a[1] !== b[1] || Math.abs(b[2] - Math.min(1, a[2] * 1.5)) > 1e-12) { f.push('Takt ' + i + ' weicht ab'); break; }
+      }
+      // ...und genau das sendet die Folge: skriptSchritt an jedem Aufnahmezeitpunkt.
+      const h = { at: 0, anpassMs: 0, vonDrive: 0, skript: sk, lenkFaktor: undefined };
+      for (const [ms, lenk, gas] of sk) {
+        const w = skriptSchritt(h, ms);
+        if (w.lenk !== lenk || w.drive !== gas) { f.push('gesendet bei ' + ms + ' ms: ' + w.lenk + '/' + w.drive); break; }
+      }
+      if (!el || Math.abs(parseFloat(el.defaultValue) - 1.5) > 1e-9) f.push('Regler fehlt oder Vorgabe nicht 1,5');
+    } finally { if (el) el.value = merkV; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Reihen je halbe Kachel, Kurve mit Lenkimpuls, Aufstelltempo fest, Ausparkgas = Aufnahme x 1,5' };
   });
