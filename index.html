@@ -4823,7 +4823,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.36</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.37</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5976,6 +5976,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>NPCs in der Haarnadel: Das H&#246;chsttempo dort gilt jetzt zuletzt. Bisher hoben die Feld-Staffel (bis +10 %) und das Mindesttempo (37 %) jede Haarnadel &#252;ber die Grenze. Neuer Regler NPC &#8594; &#8222;H&#246;chsttempo in der Haarnadel&#8220; (WIP, Standard 35 %, gilt auch auf den zwei Teilen davor). Ab vier Teilen vor der Haarnadel gibt es keinen &#220;berholschub mehr.</li>
         <li>Ansagen: Statt &#8222;Autonamen ansagen&#8220; w&#228;hlst du jetzt, was die Namen in der Garage sind (WIP). Autobezeichnungen (Standard): &#8222;Gewonnen hat der rote Porsche&#8220;. Fahrernamen: &#8222;Gewonnen hat Max Mustermann&#8220;, ohne Farbe.</li>
         <li>Rennstand- und Ergebnisansage (WIP): Neue Kachel Optionen &#8594; Ansagen mit allen Ansagen, die bisher unter Ton standen. Das Rennergebnis wird nach der Zielflagge angesagt (Standard an), der Zwischenstand alle paar Runden ist Standard aus. Mit &#8222;Autonamen ansagen&#8220; (Standard an) hei&#223;t es &#8222;Es f&#252;hrt Max Mustermann&#8220; statt &#8222;der rote &#8230;&#8220;; Autos ohne Namen hei&#223;en weiter nach Farbe und Marke. In der Garage gibt es dazu Marke/Modell je Auto.</li>
         <li>Garage: Nach einem Tipp bleibt die Liste auf ihrer H&#246;he stehen, statt nach oben zu springen.</li>
@@ -11004,6 +11005,13 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-curve-val">20%</span>
         </div></div>
+      <div class="opt-row"><div class="opt-label">NPC: H&ouml;chsttempo in der Haarnadel <span class="wip-tag">WIP</span><small>Das h&ouml;chste Tempo eines NPCs in der Haarnadel, in der Engstelle und auf den zwei Teilen davor, in Prozent der H&ouml;chstgeschwindigkeit. Es gilt zuletzt: &Uuml;berholschub, Feld-Staffel und Mindesttempo k&ouml;nnen es nicht &uuml;berschreiten. Ab vier Teilen vor der Haarnadel gibt es au&szlig;erdem keinen &Uuml;berholschub mehr. Unter 35&nbsp;% liest ein Auto den Ausdruck nicht mehr sicher; auf der Bahn geht weniger. Standard 35&nbsp;%.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-haarnadel-max" min="0.2" max="0.5" step="0.01" value="0.35">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-haarnadel-max-val">35%</span>
+        </div></div>
       <!-- DIE RENNWUERZE, IN EINZELNE SCHALTER ZERLEGT. Vorher ein Regler fuer sechs
            Bausteine: wer ihn aufdrehte, bekam alle sechs und wusste danach nicht, welcher
            davon das Gesehene erklaert. Das Gummiband ist nicht mehr dabei - es ist
@@ -14777,6 +14785,7 @@
     "Garage: Nach einem Tipp bleibt die Liste auf ihrer Höhe stehen, statt nach oben zu springen.": "Garage: after a tap the list stays where it was instead of jumping to the top.",
     "Rennstand- und Ergebnisansage (WIP): Neue Kachel Optionen → Ansagen mit allen Ansagen, die bisher unter Ton standen. Das Rennergebnis wird nach der Zielflagge angesagt (Standard an), der Zwischenstand alle paar Runden ist Standard aus. Mit „Autonamen ansagen“ (Standard an) heißt es „Es führt Max Mustermann“ statt „der rote …“; Autos ohne Namen heißen weiter nach Farbe und Marke. In der Garage gibt es dazu Marke/Modell je Auto.": "Race standings and result announcements (WIP): new tile Options → Announcements with every announcement that used to sit under Sound. The race result is announced after the chequered flag (on by default); standings every few laps are off by default. With “Announce car names” (on by default) it says “Currently leading is Max Mustermann” instead of “the red …”; cars without a name are still called by colour and make. The garage gains make/model per car.",
     "Ansagen: Statt „Autonamen ansagen“ wählst du jetzt, was die Namen in der Garage sind (WIP). Autobezeichnungen (Standard): „Gewonnen hat der rote Porsche“. Fahrernamen: „Gewonnen hat Max Mustermann“, ohne Farbe.": "Announcements: instead of “Announce car names” you now choose what the names in the garage are (WIP). Car names (default): “The winner is the red Porsche”. Driver names: “The winner is Max Mustermann”, without the colour.",
+    "NPCs in der Haarnadel: Das Höchsttempo dort gilt jetzt zuletzt. Bisher hoben die Feld-Staffel (bis +10 %) und das Mindesttempo (37 %) jede Haarnadel über die Grenze. Neuer Regler NPC → „Höchsttempo in der Haarnadel“ (WIP, Standard 35 %, gilt auch auf den zwei Teilen davor). Ab vier Teilen vor der Haarnadel gibt es keinen Überholschub mehr.": "NPCs in the hairpin: the top speed there now applies last. Until now the field staggering (up to +10%) and the minimum speed (37%) lifted every hairpin above the limit. New slider NPC → “Top speed in the hairpin” (WIP, default 35%, also applies on the two pieces before it). From four pieces before the hairpin there is no overtaking boost any more.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -16473,6 +16482,8 @@
     "Ansagen": "Announcements",
     "Rundenzeiten, Rennstand, Ergebnis und Warnungen zu Schaden, Tank, Reifen, Regen und Akku.": "Lap times, race standings, result and warnings for damage, fuel, tyres, rain and battery.",
     "Rennstand alle paar Runden ansagen": "Announce race standings every few laps",
+    "NPC: Höchsttempo in der Haarnadel": "NPC: top speed in the hairpin",
+    "Das höchste Tempo eines NPCs in der Haarnadel, in der Engstelle und auf den zwei Teilen davor, in Prozent der Höchstgeschwindigkeit. Es gilt zuletzt: Überholschub, Feld-Staffel und Mindesttempo können es nicht überschreiten. Ab vier Teilen vor der Haarnadel gibt es außerdem keinen Überholschub mehr. Unter 35 % liest ein Auto den Ausdruck nicht mehr sicher; auf der Bahn geht weniger. Standard 35 %.": "The highest speed of an NPC in the hairpin, in the chicane and on the two pieces before them, as a percentage of top speed. It applies last: overtaking boost, field staggering and minimum speed cannot exceed it. From four pieces before the hairpin there is also no overtaking boost. Below 35% a car no longer reads the printout reliably; on the track it can go lower. Default 35%.",
     "Rennergebnis ansagen": "Announce race result",
     "Einmal nach der Zielflagge: der Sieger und die nächsten zwei mit Rückstand. Nur Rundenrennen und Endurance. Standard an.": "Once after the chequered flag: the winner and the next two with their gaps. Lap races and Endurance only. On by default.",
     "Namen in der Garage sind": "Names in the garage are",
@@ -49655,6 +49666,10 @@
     ghostCfg.curveSlow = parseFloat(e.target.value);
     $('ghost-curve-val').textContent = Math.round(ghostCfg.curveSlow * 100) + '%';
   });
+  if ($('ghost-haarnadel-max')) $('ghost-haarnadel-max').addEventListener('input', (e) => {
+    ghostCfg.haarnadelMax = parseFloat(e.target.value);
+    $('ghost-haarnadel-max-val').textContent = Math.round(ghostCfg.haarnadelMax * 100) + '%';
+  });
   // BESTELLT: Feld auffächern + Überholmanöver je Runde (experimentell).
   $('ghost-feld').addEventListener('input', (e) => {
     ghostCfg.feldAbstand = parseFloat(e.target.value);
@@ -54285,6 +54300,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Prozent - "in der Haarnadelkurve muss die Drosselung staerker sein" ist die
     // Kachelregel, nicht ein zweiter Regler.
     curveSlow: 0.20,
+    // v1.1.37: Hoechsttempo in Haarnadel und Engstelle, das LETZTE Wort (ghostHaarnadelDeckel).
+    haarnadelMax: 0.35,
     paare: true,        // v1.0.31: Paare links/rechts, Reihe dahinter (ghostPaare); Schalter fuer die Messsonde    // how much of that is given up in a curve
     // 0.5 statt 0. Die Naeherungslogik in ghostAssignBias gab es laengst - gleiche Runde
     // und Kachelindex hoechstens eins auseinander ergibt gegenlaeufige Versaetze - aber sie
@@ -55520,6 +55537,23 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // nichts, obwohl es fahren soll, wird es geparkt (v1.1.3: "Autos, die auf dem Dach liegen,
   // fahren sonst ewig weiter").
   const GHOST_STUMM_MS = 3000;
+  // ---- HOECHSTTEMPO IN DER HAARNADEL (v1.1.37) --------------------------------------------
+  // GEMELDET: "Die NPCs fliegen mir in der Haarnadel alle paar Runden raus. Wir hatten das Thema
+  // schon mal, dass dort eine Obergrenze existiert. Obergrenze in Haarnadel, Untergrenze global,
+  // und dazwischen je nach Schwierigkeit und Ideallinie." Die alte Grenze war das Kurvenziel
+  // (Grundtempo x (1 - 2 x Kurvendrosselung) = 0,55 x 0,6 = 0,33) - danach kamen aber noch die
+  // Feld-Staffel (bis x 1,1) und der Boden GHOST_FAHR_MIN (0,37), und der Boden hob JEDE Haarnadel
+  // auf 0,37. Jetzt steht die Obergrenze nach allem anderen: in der Haarnadel und auf den zwei
+  // Kacheln davor (dieselbe Reichweite wie der Kurvenabzug) gilt hoechstens haarnadelMax, auch
+  // ueber dem Boden. Unter 0,35 liest ein Auto den AUSDRUCK nicht mehr sicher (GHOST_READ_MIN); auf
+  // der Bahn geht weniger, darum ein Regler. Nur NPCs: Box, Randhalt und Aufstellung haben eigene,
+  // niedrigere Tempi, das Safety Car seins.
+  function ghostHaarnadelDeckel(car, target, tight) {
+    const g = car && car.ghost;
+    if (!g || car.role !== 'ghost' || !(tight >= 2) || g.randHalt || g.pit) return target;
+    const max = Number.isFinite(ghostCfg.haarnadelMax) ? ghostCfg.haarnadelMax : 0.35;
+    return Math.min(target, max);
+  }
   function ghostFahrBoden(car, target, now) {
     const g = car.ghost;
     if (!g || car.role !== 'ghost' || !(target > 0.05) || ghostCfg.fahrBoden === false) return target;
@@ -61124,7 +61158,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // v1.0.38: das Safety Car setzt nie zum Ueberholen an (BESTELLT: "damit es niemanden ueberholt").
       const spice = (underYellow || car.role === 'safetycar') ? { factor: 1, attack: 0 }
                                  : ghostSpice(car, ahead, haarnadelNah);
-      target *= spice.factor;
+      // v1.1.37 BESTELLT: "Fuer Ueberholmanoever wird die Geschwindigkeit hochgesetzt, was OK
+      // ist, allerdings sollte das nicht fuer die Haarnadelkurve gelten." Ab vier Kacheln vor der
+      // Haarnadel (dieselbe Sicht wie die Ueberholsperre) und auf ihr darf die Wuerze nur bremsen.
+      const vorHaarnadel = haarnadelNah || here >= 2;
+      target *= vorHaarnadel ? Math.min(1, spice.factor) : spice.factor;
       // v1.0.31: hinter einem fremden Paar und vor der Haarnadel hintereinander (ghostReiheFaktor).
       if (!underYellow) target *= ghostReiheFaktor(car);
       // Was gilt: die Kachel unter dem Auto, oder die naechste enge in Reichweite. Die
@@ -61217,7 +61255,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // auf 1 gedeckelt, solange der Abstandshalter greift: bremsen darf sie weiter (der
       // Fuehrende soll warten), nur schieben nicht.
       const staffel = ghostFeldStaffel(car);
-      target *= spice.haeltAbstand ? Math.min(1, staffel) : staffel;
+      // v1.1.37: auch die Staffel schiebt vor und in der Haarnadel nicht mehr an (bremsen darf sie).
+      target *= (spice.haeltAbstand || vorHaarnadel) ? Math.min(1, staffel) : staffel;
 
       // ---- Regen und die aufgezogenen Reifen kosten Tempo -----------------------------
       //
@@ -61309,6 +61348,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Heimweg nach Gruen (Safety Car neben der Strecke): Hoechsttempo einstellbar (scHeimTempo, Vorgabe 100 %).
       const scVorlaufRand = g.randHalt && g.randHalt.nominal && g.randHalt.phase === 'rand' && g.randHalt.tempoAb && g.scRest > g.randHalt.tempoAb;
       if (car.role === 'safetycar' && ((g.scHeim && !g.randHalt) || scVorlaufRand)) target = Math.max(SC_EINFAHRT_MIN, Math.min(target, scHeimTempo()));
+      target = ghostHaarnadelDeckel(car, target, Math.max(tight, here));
       const pz = pitZiel(car);
       if (pz !== null) {
         // Anfahrt neben der Strecke: das Einfahrtstempo ist eine OBERGRENZE, und in Kurven gilt dieselbe
@@ -63580,7 +63620,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
           a.zaehler = (a.zaehler + 1) & 0xff;
           a.car.tileCount = a.zaehler;
           a.car.tileAt = st.uhr;
-          a.car.tileCode = st.tiles[ort.kachel].type;
+          // v1.1.37: Start/Ziel so, wie das Auto es LIEST. Der Kacheltyp START ist 0x0a, und auf der
+          // Schiene meldet das Auto dort 0x01 - 0x0a heisst dort Engstelle (codeZuTyp), und die
+          // Haarnadel-Obergrenze griff in der Simulation auf jedem Start/Ziel.
+          const typ = st.tiles[ort.kachel].type;
+          a.car.tileCode = typ === TILE_TYPE.START && trackMode === 'on' ? START_CODE_RAIL : typ;
         }
       }
     } finally {
@@ -95987,6 +96031,34 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (rennstandStimmeNoetig([rows[1]])) return { ok: false, mass: 'ohne Namen trotzdem Systemstimme' };
       return { ok: true, mass: auto + ' | ' + fahrer };
     } finally { rennstandNamensart = merk; }
+  });
+
+  // v1.1.37 GEMELDET: NPCs fliegen alle paar Runden aus der Haarnadel. Die Obergrenze dort muss das
+  // letzte Wort haben - ueber Staffel, Ueberholschub und Mindesttempo.
+  stAdd('Haarnadel v1.1.37: Obergrenze gilt zuletzt, auch ueber Boden und Schub', () => {
+    const f = [], merk = ghostCfg.haarnadelMax;
+    try {
+      ghostCfg.haarnadelMax = 0.35;
+      const npc = { role: 'ghost', ghost: {} };
+      if (ghostHaarnadelDeckel(npc, 0.45, 2) !== 0.35) f.push('Schub ueber der Grenze');
+      if (ghostHaarnadelDeckel(npc, 0.37, 2) !== 0.35) f.push('Boden ueber der Grenze');
+      if (ghostHaarnadelDeckel(npc, 0.30, 2) !== 0.30) f.push('langsamer wurde angehoben');
+      if (ghostHaarnadelDeckel(npc, 0.65, 1) !== 0.65) f.push('60-Grad-Kurve gedeckelt');
+      if (ghostHaarnadelDeckel(npc, 0.65, 0) !== 0.65) f.push('Gerade gedeckelt');
+      if (ghostHaarnadelDeckel({ role: 'safetycar', ghost: {} }, 0.45, 2) !== 0.45) f.push('Safety Car gedeckelt');
+      if (ghostHaarnadelDeckel({ role: 'ghost', ghost: { pit: true } }, 0.2, 2) !== 0.2) f.push('Box gedeckelt');
+      ghostCfg.haarnadelMax = 0.28;
+      if (ghostHaarnadelDeckel(npc, 0.37, 2) !== 0.28) f.push('Regler wirkt nicht');
+      // Reihenfolge in ghostTick: Deckel NACH Boden, Staffel und Wuerze.
+      const src = String(ghostTick);
+      const iDeckel = src.indexOf('ghostHaarnadelDeckel('), iBoden = src.indexOf('ghostFahrBoden(car, target, now)');
+      const iStaffel = src.indexOf('Math.min(1, staffel)');
+      if (iDeckel < 0 || iDeckel < iBoden || iDeckel < iStaffel) f.push('Deckel nicht zuletzt');
+      if (src.indexOf('vorHaarnadel ? Math.min(1, spice.factor)') < 0) f.push('Ueberholschub vor der Haarnadel');
+      const el = $('ghost-haarnadel-max');
+      if (!el || Math.abs(parseFloat(el.defaultValue) - 0.35) > 1e-9) f.push('Regler fehlt oder Vorgabe nicht 35 %');
+    } finally { ghostCfg.haarnadelMax = merk; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Haarnadel hoechstens 35 %, Boden 37 % und Schub darunter; Kurve und Gerade frei' };
   });
   // ============================== HOME ==============================
   // Der Schirm beim Laden, erreichbar ueber das Logo. Die Zahl der Einstellungen wird

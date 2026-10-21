@@ -3082,6 +3082,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Prozent - "in der Haarnadelkurve muss die Drosselung staerker sein" ist die
     // Kachelregel, nicht ein zweiter Regler.
     curveSlow: 0.20,
+    // v1.1.37: Hoechsttempo in Haarnadel und Engstelle, das LETZTE Wort (ghostHaarnadelDeckel).
+    haarnadelMax: 0.35,
     paare: true,        // v1.0.31: Paare links/rechts, Reihe dahinter (ghostPaare); Schalter fuer die Messsonde    // how much of that is given up in a curve
     // 0.5 statt 0. Die Naeherungslogik in ghostAssignBias gab es laengst - gleiche Runde
     // und Kachelindex hoechstens eins auseinander ergibt gegenlaeufige Versaetze - aber sie
@@ -4317,6 +4319,23 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // nichts, obwohl es fahren soll, wird es geparkt (v1.1.3: "Autos, die auf dem Dach liegen,
   // fahren sonst ewig weiter").
   const GHOST_STUMM_MS = 3000;
+  // ---- HOECHSTTEMPO IN DER HAARNADEL (v1.1.37) --------------------------------------------
+  // GEMELDET: "Die NPCs fliegen mir in der Haarnadel alle paar Runden raus. Wir hatten das Thema
+  // schon mal, dass dort eine Obergrenze existiert. Obergrenze in Haarnadel, Untergrenze global,
+  // und dazwischen je nach Schwierigkeit und Ideallinie." Die alte Grenze war das Kurvenziel
+  // (Grundtempo x (1 - 2 x Kurvendrosselung) = 0,55 x 0,6 = 0,33) - danach kamen aber noch die
+  // Feld-Staffel (bis x 1,1) und der Boden GHOST_FAHR_MIN (0,37), und der Boden hob JEDE Haarnadel
+  // auf 0,37. Jetzt steht die Obergrenze nach allem anderen: in der Haarnadel und auf den zwei
+  // Kacheln davor (dieselbe Reichweite wie der Kurvenabzug) gilt hoechstens haarnadelMax, auch
+  // ueber dem Boden. Unter 0,35 liest ein Auto den AUSDRUCK nicht mehr sicher (GHOST_READ_MIN); auf
+  // der Bahn geht weniger, darum ein Regler. Nur NPCs: Box, Randhalt und Aufstellung haben eigene,
+  // niedrigere Tempi, das Safety Car seins.
+  function ghostHaarnadelDeckel(car, target, tight) {
+    const g = car && car.ghost;
+    if (!g || car.role !== 'ghost' || !(tight >= 2) || g.randHalt || g.pit) return target;
+    const max = Number.isFinite(ghostCfg.haarnadelMax) ? ghostCfg.haarnadelMax : 0.35;
+    return Math.min(target, max);
+  }
   function ghostFahrBoden(car, target, now) {
     const g = car.ghost;
     if (!g || car.role !== 'ghost' || !(target > 0.05) || ghostCfg.fahrBoden === false) return target;
@@ -9921,7 +9940,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // v1.0.38: das Safety Car setzt nie zum Ueberholen an (BESTELLT: "damit es niemanden ueberholt").
       const spice = (underYellow || car.role === 'safetycar') ? { factor: 1, attack: 0 }
                                  : ghostSpice(car, ahead, haarnadelNah);
-      target *= spice.factor;
+      // v1.1.37 BESTELLT: "Fuer Ueberholmanoever wird die Geschwindigkeit hochgesetzt, was OK
+      // ist, allerdings sollte das nicht fuer die Haarnadelkurve gelten." Ab vier Kacheln vor der
+      // Haarnadel (dieselbe Sicht wie die Ueberholsperre) und auf ihr darf die Wuerze nur bremsen.
+      const vorHaarnadel = haarnadelNah || here >= 2;
+      target *= vorHaarnadel ? Math.min(1, spice.factor) : spice.factor;
       // v1.0.31: hinter einem fremden Paar und vor der Haarnadel hintereinander (ghostReiheFaktor).
       if (!underYellow) target *= ghostReiheFaktor(car);
       // Was gilt: die Kachel unter dem Auto, oder die naechste enge in Reichweite. Die
@@ -10014,7 +10037,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // auf 1 gedeckelt, solange der Abstandshalter greift: bremsen darf sie weiter (der
       // Fuehrende soll warten), nur schieben nicht.
       const staffel = ghostFeldStaffel(car);
-      target *= spice.haeltAbstand ? Math.min(1, staffel) : staffel;
+      // v1.1.37: auch die Staffel schiebt vor und in der Haarnadel nicht mehr an (bremsen darf sie).
+      target *= (spice.haeltAbstand || vorHaarnadel) ? Math.min(1, staffel) : staffel;
 
       // ---- Regen und die aufgezogenen Reifen kosten Tempo -----------------------------
       //
@@ -10106,6 +10130,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Heimweg nach Gruen (Safety Car neben der Strecke): Hoechsttempo einstellbar (scHeimTempo, Vorgabe 100 %).
       const scVorlaufRand = g.randHalt && g.randHalt.nominal && g.randHalt.phase === 'rand' && g.randHalt.tempoAb && g.scRest > g.randHalt.tempoAb;
       if (car.role === 'safetycar' && ((g.scHeim && !g.randHalt) || scVorlaufRand)) target = Math.max(SC_EINFAHRT_MIN, Math.min(target, scHeimTempo()));
+      target = ghostHaarnadelDeckel(car, target, Math.max(tight, here));
       const pz = pitZiel(car);
       if (pz !== null) {
         // Anfahrt neben der Strecke: das Einfahrtstempo ist eine OBERGRENZE, und in Kurven gilt dieselbe

@@ -1982,6 +1982,10 @@
     ghostCfg.curveSlow = parseFloat(e.target.value);
     $('ghost-curve-val').textContent = Math.round(ghostCfg.curveSlow * 100) + '%';
   });
+  if ($('ghost-haarnadel-max')) $('ghost-haarnadel-max').addEventListener('input', (e) => {
+    ghostCfg.haarnadelMax = parseFloat(e.target.value);
+    $('ghost-haarnadel-max-val').textContent = Math.round(ghostCfg.haarnadelMax * 100) + '%';
+  });
   // BESTELLT: Feld auffächern + Überholmanöver je Runde (experimentell).
   $('ghost-feld').addEventListener('input', (e) => {
     ghostCfg.feldAbstand = parseFloat(e.target.value);

@@ -21658,3 +21658,31 @@
       return { ok: true, mass: auto + ' | ' + fahrer };
     } finally { rennstandNamensart = merk; }
   });
+
+  // v1.1.37 GEMELDET: NPCs fliegen alle paar Runden aus der Haarnadel. Die Obergrenze dort muss das
+  // letzte Wort haben - ueber Staffel, Ueberholschub und Mindesttempo.
+  stAdd('Haarnadel v1.1.37: Obergrenze gilt zuletzt, auch ueber Boden und Schub', () => {
+    const f = [], merk = ghostCfg.haarnadelMax;
+    try {
+      ghostCfg.haarnadelMax = 0.35;
+      const npc = { role: 'ghost', ghost: {} };
+      if (ghostHaarnadelDeckel(npc, 0.45, 2) !== 0.35) f.push('Schub ueber der Grenze');
+      if (ghostHaarnadelDeckel(npc, 0.37, 2) !== 0.35) f.push('Boden ueber der Grenze');
+      if (ghostHaarnadelDeckel(npc, 0.30, 2) !== 0.30) f.push('langsamer wurde angehoben');
+      if (ghostHaarnadelDeckel(npc, 0.65, 1) !== 0.65) f.push('60-Grad-Kurve gedeckelt');
+      if (ghostHaarnadelDeckel(npc, 0.65, 0) !== 0.65) f.push('Gerade gedeckelt');
+      if (ghostHaarnadelDeckel({ role: 'safetycar', ghost: {} }, 0.45, 2) !== 0.45) f.push('Safety Car gedeckelt');
+      if (ghostHaarnadelDeckel({ role: 'ghost', ghost: { pit: true } }, 0.2, 2) !== 0.2) f.push('Box gedeckelt');
+      ghostCfg.haarnadelMax = 0.28;
+      if (ghostHaarnadelDeckel(npc, 0.37, 2) !== 0.28) f.push('Regler wirkt nicht');
+      // Reihenfolge in ghostTick: Deckel NACH Boden, Staffel und Wuerze.
+      const src = String(ghostTick);
+      const iDeckel = src.indexOf('ghostHaarnadelDeckel('), iBoden = src.indexOf('ghostFahrBoden(car, target, now)');
+      const iStaffel = src.indexOf('Math.min(1, staffel)');
+      if (iDeckel < 0 || iDeckel < iBoden || iDeckel < iStaffel) f.push('Deckel nicht zuletzt');
+      if (src.indexOf('vorHaarnadel ? Math.min(1, spice.factor)') < 0) f.push('Ueberholschub vor der Haarnadel');
+      const el = $('ghost-haarnadel-max');
+      if (!el || Math.abs(parseFloat(el.defaultValue) - 0.35) > 1e-9) f.push('Regler fehlt oder Vorgabe nicht 35 %');
+    } finally { ghostCfg.haarnadelMax = merk; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Haarnadel hoechstens 35 %, Boden 37 % und Schub darunter; Kurve und Gerade frei' };
+  });
