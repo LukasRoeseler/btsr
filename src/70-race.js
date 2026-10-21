@@ -748,7 +748,7 @@
     if (raceState === 'finished' && car.ghost && car.ghost.auslauf) {
       car.ghost.auslauf = false;
       if (r.lapStart !== null) {
-        r.laps.push({ lap: r.laps.length + 1, ms: now - r.lapStart, off: r.offLap || 0 });
+        r.laps.push({ lap: r.laps.length + 1, ms: now - r.lapStart, off: r.offLap || 0, crossedAt: now });
       }
       r.lapStart = null;
       finishGhost(car);
@@ -792,7 +792,7 @@
     if (r.lapStart !== null) {
       const nrSp = spielerNrVon(car);
       const ms = now - r.lapStart + (nrSp >= 2 ? fruehstartZuschlag(nrSp, r.laps.length) : 0), offs = r.offLap || 0;
-      r.laps.push({ lap: r.laps.length + 1, ms, off: offs });
+      r.laps.push({ lap: r.laps.length + 1, ms, off: offs, crossedAt: now });
       // v0.10.6: Bestzeit-Modus - auch Spieler 2/3 sammeln Zeiten und Medaillen.
       if (raceMode === 'bestzeit' && spielerNrVon(car) >= 2 && ms >= rundeMinMs()) {
         bestzeitMeldung(bestzeitRunde(ms, car), ms, spielerNrVon(car));
@@ -805,6 +805,9 @@
         // wie Spieler 1, nur mit dem hoeheren Ton.
         speakLap(ms, istBest2);
       }
+      // Jedes NPC-/Zusatzspieler-Rundenereignis prueft die Fuehrungsrunde.
+      // Spieler 1 erst im akzeptierten Dashboard-Zaehler (kein Doppeltrigger).
+      if (car !== playerCar && car.role !== 'player') rennstandRunde();
       // Genau hier liegen Rundenzeit und Abgangszahl zusammen vor, und beides braucht die
       // Annahmeregel des Lernens: schneller UND heil. Eine Runde ist eine Auswertung.
       learnSettle(car, ms, offs);
@@ -885,7 +888,7 @@
     // ueber einen GHOST ausloesen, und ein Rundenrennen ohne (oder mit zu langsamen) Ghosts
     // endete nie.
     const out = garage.filter(c => c.role !== 'safetycar' && c.role !== 'reinig').map(c => ({ name: garageLabel(c), role: c.role, id: String(c.device && c.device.id),
-                                   farbe: carColor(c).hex, kennung: c.tag,
+                                   farbe: carColor(c).hex, farbeId: carColor(c).id, kennung: c.tag, modellId: carModellWert(c.modellId),
                                    // Der Ort auf der Schiene. Auto 2 geht ueber
                                    // ghostOrtGes(): es hat seit v0.6.46 einen eigenen
                                    // Ortungssatz, und der ist genau der, aus dem ein Ghost
@@ -2083,6 +2086,7 @@
     garage.forEach(c => { c.race = { laps: [], lapStart: null, pending: null, seen: 0,
                                      lastActed: 0, lastCount: null }; });
     raceLapTimes = [];
+    rennstandReset();
     // ---- UND DIE COCKPIT-RUNDEN AUCH, und das ist ein gemeldeter Fehler ------------
     //
     // dashLapTimes wurde beim Rennstart NIE zurueckgesetzt. Es ist die Liste der
@@ -2311,6 +2315,8 @@
   // `auslaufen` = die Ghosts duerfen ihre angefangene Runde zu Ende fahren. Vorgabe ja;
   // requestRaceStop() uebergibt ausdruecklich false.
   function finishRace(auslaufen) {
+    if (raceState === 'finished') return; // Ergebnisansage nur einmal planen.
+    rennstandAbbrechen();
     raceState = 'finished';
     // v1.1.3 GEMELDET: "Rennende sollte auch die gelbe Flagge beenden". Nicht ueber
     // setFlag('green') - das zeigt "GRUEN" und schickt das Safety Car heim; es steht hier
@@ -2405,7 +2411,8 @@
     // DER RUNDENZAEHLER, aber nur bei einer echten Zielflagge. Wer von Hand abbricht,
     // bekommt keine Fanfare - dieselbe Ueberlegung, mit der die Ghosts dann auch nicht
     // auslaufen: ein Abbruch ist kein Zieleinlauf.
-    if (willAuslaufen) playRaceEndFanfare();
+    const ergebnisFanfare = willAuslaufen ? playRaceEndFanfare() : null;
+    if (willAuslaufen) rennstandRennende(ergebnisFanfare);
     $('race-start-btn').disabled = false;
     $('race-lap-current-row').style.display = 'none';
     $('race-results').style.display = '';
@@ -3270,6 +3277,7 @@
       // Datei - dieselbe Vorsicht wie an der Stelle, die eine gefahrene Runde meldet.
       if (typeof mpRundeGefahren === 'function') mpRundeGefahren();
     }
+    if (weg) rennstandAbbrechen(); // Ein zurueckgenommener Rundenschluss ist kein Zwischenstand.
     if (weg) $('race-status').textContent = t('Rennen läuft, Runde') + ' ' + raceLapTimes.length;
     log('Runde zurueckgenommen' + (weg ? ' (' + formatLapTime(weg.ms) + ')' : '') + ': '
         + warum, 'info');
@@ -3505,7 +3513,7 @@
       const plausibel = raceLapTimes.filter(l => l.ms >= minMs);
       const besteBisher = plausibel.length
         ? Math.min.apply(null, plausibel.map(l => l.ms)) : Infinity;
-      raceLapTimes.push({ lap: raceLapTimes.length + 1, ms: rundeMs });
+      raceLapTimes.push({ lap: raceLapTimes.length + 1, ms: rundeMs, crossedAt: now });
       // Challenge: Runde gegen die Strecke pruefen. Liefert true, wenn die Runde NICHT zaehlt
       // (Strecke nicht erkannt oder zu schnell) - dann tiefer Ton statt des hellen Rundenklangs.
       const challengeUngueltig = typeof challengeRundeFertig === 'function'
@@ -3528,6 +3536,7 @@
       if (raceMode === 'bestzeit' && !challengeUngueltig && rundeMs >= minMs) {
         bestzeitMeldung(bestzeitRunde(rundeMs, playerCar), rundeMs, 1);
       }
+      rennstandRunde();
       // v0.9.41 GEMELDET: "Das Multiplayer Renn-Ende wird nicht getriggert ... 5-Runden-Rennen."
       // Die Zielrunde schaltete nur auf 'finishing' (raceClockTick), beendet wurde erst bei der
       // NAECHSTEN Ueberfahrt - ein 5-Runden-Rennen ging also ueber 6 Runden. Wer die Zielzahl
@@ -4475,7 +4484,7 @@
       setPitState('limited');
       // Nur HIER abbrechen: eine noch laufende Rundenansage der ersten Ueberfahrt soll der
       // Boxen-Ansage nicht im Weg stehen.
-      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); lapAnsageBeendet(); }
       ansage('pit', t('Boxenstopp eingeleitet'));
       playTone(880, 0.12, 'square', 0.16);
       setTimeout(() => playTone(880, 0.12, 'square', 0.16), 180);

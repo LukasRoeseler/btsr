@@ -38,6 +38,7 @@
       loadEngineSamples(); // needs the AudioContext, so it can only start from here
       loadFxSamples();
       loadVoiceSamples();
+      rennstandClipsLaden(lang);
       if (!('speechSynthesis' in window)) zahlenClipsLaden(lang);
       loadAmbience();
     }
@@ -55,10 +56,12 @@
       loadEngineSamples();
       loadFxSamples();
       loadVoiceSamples();
+      rennstandClipsLaden(lang);
       if (!('speechSynthesis' in window)) zahlenClipsLaden(lang);
       loadAmbience();
       refreshAmbienceGains();
     } else if (engineGain) {
+      rennstandAbbrechen();
       refreshAmbienceGains();
       engineGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
       if (sampleEngine.master) sampleEngine.master.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
@@ -464,6 +467,7 @@
     return folge;
   }
   function lapClipsSpielen(ms, istBest) {
+    if (!rennstandVorRundenzeit()) return false;
     const satz = zahlenBuffers[lang];
     if (!satz) { zahlenClipsLaden(lang); return false; }
     if (!audioCtx || !soundEnabled) return false;
@@ -479,6 +483,11 @@
       const g = audioCtx.createGain();
       g.gain.value = 1.0;
       src.connect(g).connect(audioCtx.destination);
+      src.onended = () => {
+        const warAktiv = zahlenQuellen.includes(src);
+        zahlenQuellen = zahlenQuellen.filter((q) => q !== src);
+        if (warAktiv && !zahlenQuellen.length) lapAnsageBeendet();
+      };
       src.start(t0);
       zahlenQuellen.push(src);
       t0 += satz[k].duration + (k === 'komma' ? 0.02 : 0.06);
@@ -627,6 +636,19 @@
   // einer Rennstrecke braucht eine Zeit keine Einheit - und rate 1,15.
   let announceOn = true;
   let announceCalls = 0, announceCancels = 0, announceFailLogged = false;
+  let lapAnsageAktuell = null, lapAnsageRuheBis = 0;
+  const LAP_ANSAGE_ABSTAND_MS = 300;
+
+  function lapAnsageBeendet(u) {
+    if (u && lapAnsageAktuell !== u) return;
+    lapAnsageAktuell = null;
+    lapAnsageRuheBis = performance.now() + LAP_ANSAGE_ABSTAND_MS;
+  }
+  function lapAnsageBeschaeftigt() {
+    const synth = 'speechSynthesis' in window ? window.speechSynthesis : null;
+    return !!(lapAnsageAktuell || zahlenQuellen.length
+      || (synth && (synth.speaking || synth.pending)));
+  }
 
   function lapSpeechText(ms, istBest) {
     const s = ms / 1000;
@@ -690,6 +712,14 @@
   // die Aufnahme selbst fehlt (Datei nicht geladen, Sprache ohne Aufnahme).
   function ansage(art, text, klangSchluessel) {
     if (!ansageAn[art]) return false;
+    // Waehrend einer Rennstand-/Ergebnisansage entfaellt diese Spielerzeit.
+    if (art === 'lap' && !rennstandVorRundenzeit()) return false;
+    if (art !== 'lap') {
+      rennstandAbbrechen();
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      for (const q of zahlenQuellen) { try { q.stop(); } catch (e) {} }
+      zahlenQuellen = []; lapAnsageBeendet();
+    }
     if (art !== 'lap' && playAnsageClip(klangSchluessel || art)) return true;
     if (!('speechSynthesis' in window)) return false;
     try {
@@ -697,13 +727,17 @@
       // stapeln - sonst laeuft die Stimme der Gegenwart nach und meldet den Tank, waehrend
       // man schon in der naechsten Runde ist.
       window.speechSynthesis.cancel();
+      lapAnsageBeendet();
       announceCancels++;
       const u = new SpeechSynthesisUtterance(text);
+      if (art === 'lap') lapAnsageAktuell = u;
+      u.onend = () => { if (art === 'lap') lapAnsageBeendet(u); };
       u.lang = lang === 'de' ? 'de-DE' : 'en-US';
       // Funk spricht schneller und flacher. Beides ist an der Stimme einstellbar, und mehr
       // gibt die Schnittstelle nicht her.
       u.rate = 1.15;
       u.onerror = (ev) => {
+        if (art === 'lap') lapAnsageBeendet(u);
         if (announceFailLogged) return;
         announceFailLogged = true;
         log('Ansage: keine Stimme verfuegbar (' + (ev && ev.error ? ev.error : '?')
@@ -713,6 +747,7 @@
       announceCalls++;
       return true;
     } catch (e) {
+      lapAnsageBeendet();
       if (!announceFailLogged) {
         announceFailLogged = true;
         log('Ansage nicht moeglich: ' + e.message, 'info');
@@ -822,6 +857,7 @@
   }
 
   function speakLap(ms, istBest) {
+    if (!ansageAn.lap || !rennstandVorRundenzeit()) return;
     // Ohne Sprachausgabe (App-WebView): die Zahlen-Clips.
     if (!('speechSynthesis' in window)) {
       if (ansageAn.lap) lapClipsSpielen(ms, istBest);
@@ -849,10 +885,12 @@
       ansageAn[art] = e.target.checked;
       if (art === 'lap') announceOn = e.target.checked;
       // Beim Ausschalten sofort still sein und nicht den Satz noch beenden.
-      if (!e.target.checked && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+      if (!e.target.checked && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel(); lapAnsageBeendet();
+      }
       if (!e.target.checked && art === 'lap') {
         for (const q of zahlenQuellen) { try { q.stop(); } catch (e2) {} }
-        zahlenQuellen = [];
+        zahlenQuellen = []; lapAnsageBeendet();
       }
     });
   });

@@ -10544,6 +10544,43 @@
           &ndash; unter Windows sind sie lokal vorhanden, auf Android k&ouml;nnen sie fehlen.
           Fehlt eine, steht das einmal im Protokoll und nicht bei jeder Runde.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Rennstand ansagen
+          <small>Die ersten drei Fahrzeuge des lokalen Rennfelds, mit Runde, Wagenfarbe und Marke / Modell.
+          Nach jeder eingestellten Zahl vollendeter Runden des f&uuml;hrenden Fahrzeugs.
+          Die Ansage wartet auf die ersten drei Durchfahrten derselben Messrunde.
+          Sekundenr&uuml;ckst&auml;nde stammen aus diesen Durchfahrtszeiten, nicht aus Live-Abst&auml;nden.
+          Nur Rundenrennen und Endurance. Vorproduzierte Clips, auch in der Android-App.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-stand" data-preset-skip><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Rennstand alle X Runden
+          <small>1 bis 20, Standard 5. Zum Beispiel nach Runde 5, 10 und 15.</small></div>
+        <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="setting-announce-stand-interval" value="5" min="1" max="20" step="1" style="width:84px" data-preset-skip><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
+      <div class="opt-row"><div class="opt-label">Rennstand maximale Wartezeit
+          <small>5 bis 30 Sekunden, Standard 30. Ab der ersten Durchfahrt der Messrunde. Sobald die Top 3 durch sind, wird früher angesagt. Sonst nur die bereits gemessenen Fahrzeuge.</small></div>
+        <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="setting-announce-stand-wait" value="30" min="5" max="30" step="1" style="width:84px" data-preset-skip><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
+      <div class="opt-row"><div class="opt-label">Rennstand-Sprechgeschwindigkeit
+          <small>100 bis 175 %. Gilt ab der nächsten Ansage. Höheres Tempo erhöht auch die Tonhöhe.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-announce-stand-speed" min="1" max="1.75" step="0.05" value="1" data-preset-skip>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-announce-stand-speed-val">100%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Rennstand-Lautstärke
+          <small>Nur die Rennstand-Ansagen. Bis 200 % mit Boost; 0 % stumm. Regen, Motoren und Warnungen bleiben unverändert.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-announce-stand-volume" min="0" max="2" step="0.05" value="1" data-preset-skip>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-announce-stand-volume-val">100%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Rennstand-Stadionhall
+          <small>Nur Rennstand und Ergebnis. 0 % ist trocken; dezenter Hall ab 20 %.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-announce-stand-reverb" min="0" max="1" step="0.05" value="0" data-preset-skip>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-announce-stand-reverb-val">0%</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Schaden ansagen<small>Einmal, wenn der Schadensbalken auf 10&nbsp;% gefallen ist. Erst nach einer Reparatur wieder scharf.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-damage" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Tank ansagen<small>Einmal, wenn noch 10&nbsp;% im Tank sind. Erst nach dem Tanken wieder scharf.</small></div>

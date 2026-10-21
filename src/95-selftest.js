@@ -21253,6 +21253,193 @@
   });
 
   // ---- Ausfuehren und anzeigen ----
+  // ---- Rennstand-Ansage: reine Logik, keine echten Autos oder Audioausgabe ----
+
+  stAdd('Rennstand: Ergebnis beginnt mit Sieger, keine Live-Runde', () => {
+    const rows = [
+      { platz: 1, role: 'player', farbeId: 'rot', modellId: 'ferrari', rundenZurueck: 0, msZurueck: 0 },
+      { platz: 2, role: 'ghost', farbeId: 'gelb', modellId: 'porsche911', rundenZurueck: 0, msZurueck: 5000 },
+      { platz: 3, role: 'player3', farbeId: 'keine', modellId: 'bmw', rundenZurueck: 1, msZurueck: null },
+      { platz: 4, role: 'ghost', farbeId: 'blau', modellId: 'audi', rundenZurueck: 1, msZurueck: null },
+    ];
+    const keys = rennstandClipFolge(rows, 3, true).map((x) => x.key);
+    const soll = ['e:gewonnen', 'e:farbe_rot', 'e:modell_ferrari', 'e:spieler1',
+      'e:zweiter', 'n:5', 'e:sekunden', 'e:farbe_gelb', 'e:modell_porsche911',
+      'e:dritter', 'e:eine_runde', 'e:farbe_unbekannt', 'e:modell_bmw', 'e:spieler3'];
+    return { ok: JSON.stringify(keys) === JSON.stringify(soll), mass: keys.join(', ') };
+  });
+  stAdd('Rennstand: Ergebnis benutzt Tabellenwertung, keine leeren Teilnehmer', () => {
+    const echt = raceAllCars;
+    try {
+      raceAllCars = () => [
+        { id: 'a', role: 'ghost', ort: 1, laps: [{ ms: 1000 }] },
+        { id: 'b', role: 'player3', ort: 99, laps: [{ ms: 1000 }] },
+        { id: 'c', role: 'ghost', laps: [{ ms: 2500 }] },
+        { id: 'leer', role: 'ghost', laps: [] },
+      ];
+      const rows = rennstandErgebnisDaten();
+      return { ok: rows.map((x) => x.id).join(',') === 'a,b,c'
+        && rows[2].msZurueck === 1500, mass: 'Tabellen-Tie-Break und 1,5 s Rueckstand' };
+    } finally { raceAllCars = echt; }
+  });
+  stAdd('Rennstand: laufender Satz sperrt nur gesprochene Spielerzeit', () => {
+    const alt = rennstandBis, echt = rennstandBeschaeftigt;
+    let abbruch = 0; const abbrechen = rennstandAbbrechen;
+    try {
+      rennstandAbbrechen = () => { abbruch++; };
+      rennstandBeschaeftigt = () => true;
+      const gesperrt = rennstandVorRundenzeit() === false;
+      rennstandBeschaeftigt = () => false;
+      return { ok: gesperrt && rennstandVorRundenzeit() === true && abbruch === 0,
+        mass: 'Kein Abbruch und kein Nachholen durch Spielerzeiten' };
+    } finally {
+      rennstandBeschaeftigt = echt; rennstandAbbrechen = abbrechen; rennstandBis = alt;
+    }
+  });
+  stAdd('Rennstand: Ergebnis wartet nur echte NPC-Auslaufrunden', () => {
+    const alt = garage.slice(), bis = ghostAuslaufBis;
+    try {
+      garage.splice(0, garage.length, { role: 'ghost', ghost: { auslauf: true } });
+      ghostAuslaufBis = 2000;
+      const wartet = rennstandErgebnisNochAuslauf(1000);
+      const timeout = !rennstandErgebnisNochAuslauf(2000);
+      garage[0].ghost = { auslauf: false, nachZiel: true, running: true };
+      return { ok: wartet && timeout && !rennstandErgebnisNochAuslauf(1000),
+        mass: 'Ziellinie oder Auslauf-Limit; Rueckfahrt blockiert nicht' };
+    } finally { garage.splice(0, garage.length, ...alt); ghostAuslaufBis = bis; }
+  });
+
+  stAdd('Rennstand: Intervall 1 bis 20 und Standard 5', () => {
+    const got = [rennstandIntervallWert(undefined), rennstandIntervallWert(-1),
+      rennstandIntervallWert(99), rennstandIntervallWert(4.6)];
+    if (JSON.stringify(got) !== '[5,1,20,5]') throw new Error(JSON.stringify(got));
+    return { ok: true, mass: 'Standard, Grenzen und Rundung stimmen' };
+  });
+  stAdd('Rennstand: nur vollendete Meilensteine, keine Doppelansage', () => {
+    const seen = new Set(), out = [];
+    for (const n of [0, 1, 2, 3, 3, 2, 3, 4, 5, 6, 6]) {
+      if (rennstandMeilenstein(n, 3, seen)) out.push(n);
+    }
+    if (JSON.stringify(out) !== '[3,6]') throw new Error(JSON.stringify(out));
+    return { ok: true, mass: 'Runde 3 und 6 genau einmal, auch nach Ruecknahme' };
+  });
+  stAdd('Rennstand: Rangfolge und Zeit- oder Rundenrueckstand', () => {
+    const car = (id, ms) => ({ id, role: 'ghost', laps: ms.map((x) => ({ ms: x })) });
+    const rows = rennstandWerten([car('C', [11000, 12000]),
+      car('B', [10300, 11500, 10900]), car('A', [10000, 11000, 10500])]);
+    if (rows.map((x) => x.id).join('') !== 'ABC') throw new Error('Falsche Rangfolge');
+    if (rows[1].msZurueck !== 1200 || rows[2].rundenZurueck !== 1
+        || rows[2].msZurueck !== null) throw new Error('Falsche Rueckstaende');
+    return { ok: true, mass: 'Mehr Runden zuerst; 1,2 s oder eine vollendete Runde weniger' };
+  });
+  stAdd('Rennstand: immer das fuehrende Fahrzeug zaehlt', () => {
+    const rows = [{ role: 'ghost', runden: 7 }, { role: 'player', runden: 5 }];
+    const p2 = [{ role: 'player2', runden: 9 }, { role: 'player', runden: 8 }];
+    if (rennstandBezugsrunde(rows) !== 7 || rennstandBezugsrunde(p2) !== 9
+        || rennstandBezugsrunde([]) !== 0) throw new Error('Falscher Bezugszaehler');
+    return { ok: true, mass: 'NPC und Spieler 2 loesen ohne Spieler-1-Ueberfahrt aus' };
+  });
+  stAdd('Rennstand: Runde zuerst, Farbe und Modell, Top 3', () => {
+    const hex = (id) => CAR_COLORS.find((c) => c.id === id).hex;
+    const rows = [
+      { platz: 1, farbe: hex('blau'), modellId: 'bmw', rundenZurueck: 0, msZurueck: 0 },
+      { platz: 2, farbe: hex('gelb'), modellId: 'porsche911', rundenZurueck: 0, msZurueck: 5000 },
+      { platz: 3, farbe: hex('rot'), modellId: 'ferrari', rundenZurueck: 1, msZurueck: null },
+      { platz: 4, farbe: hex('gruen'), modellId: 'audi', rundenZurueck: 2, msZurueck: null },
+    ];
+    const keys = rennstandClipFolge(rows, 3).map((x) => x.key);
+    const soll = ['e:runde', 'n:3', 'e:fuehrt_start', 'e:farbe_blau', 'e:modell_bmw',
+      'e:zweiter', 'n:5', 'e:sekunden', 'e:farbe_gelb', 'e:modell_porsche911',
+      'e:dritter', 'e:eine_runde', 'e:farbe_rot', 'e:modell_ferrari'];
+    return { ok: JSON.stringify(keys) === JSON.stringify(soll), mass: keys.join(', ') };
+  });
+  stAdd('Rennstand: Sekunden, Minuten und unbekannte Fahrzeuge', () => {
+    const keys = (ms, laps = 0) => rennstandClipFolge([
+      { platz: 2, modellId: 'ungueltig', farbe: null, rundenZurueck: laps, msZurueck: ms },
+    ], 60).map((x) => x.key).join(',');
+    const ok = keys(1000).includes('e:eine_sekunde')
+      && keys(1250).includes('n:1,n:komma,n:3,e:sekunden')
+      && keys(65000).includes('e:eine_minute,e:und,n:5,e:sekunden')
+      && keys(null).includes('e:unbekannt') && keys(0).includes('e:gleich')
+      && keys(null, 2).includes('n:2,e:runden')
+      && keys(5000).endsWith('e:farbe_unbekannt,e:modell_auto')
+      && rennstandZahlFolge(123).join(',') === 'n:1,n:2,n:3'
+      && rennstandZahlFolge(NaN).length === 0;
+    return { ok, mass: 'Singular, Dezimal, Minuten, Gleichstand, Fallback und grosse Zahlen' };
+  });
+  stAdd('Rennstand: Tempo und eigene Lautstaerke begrenzt', () => {
+    const got = [rennstandTempoWert(undefined), rennstandTempoWert(0),
+      rennstandTempoWert(2), rennstandLautWert(-1), rennstandLautWert(3),
+      rennstandLautWert(0.35)];
+    return { ok: JSON.stringify(got) === '[1,1,1.75,0,2,0.35]',
+      mass: 'Tempo 100–175 %, Lautstaerke 0–200 % mit Boost' };
+  });
+  stAdd('Rennstand: Modell-only-Profil speichern und wieder laden', () => {
+    const alt = localStorage.getItem(CAR_STORE);
+    try {
+      const car = { device: { id: '__rennstand_modell_test__', name: 'ModellTest' },
+        colorId: 'blau', alias: '', farbeGewaehlt: false, modellId: 'bmw' };
+      carRemember(car);
+      if (carStore()[car.device.id].modellId !== 'bmw') throw new Error('Nicht gespeichert');
+      const neu = { device: car.device }; carAssign(neu);
+      if (neu.modellId !== 'bmw') throw new Error('Nicht geladen');
+      car.modellId = ''; carRemember(car);
+      return { ok: !carStore()[car.device.id] && carModellWert('unbekannt') === '',
+        mass: 'Modell alleine bleibt erhalten; leerer Wert wird bereinigt' };
+    } finally {
+      if (alt === null) localStorage.removeItem(CAR_STORE);
+      else localStorage.setItem(CAR_STORE, alt);
+      carStoreListeZeichnen();
+      if (typeof lageZeichnen === 'function') lageZeichnen();
+    }
+  });
+
+
+  stAdd('Rennstand: Sonderfarben und Spieler 1 bis 3', () => {
+    const keys = (id, role) => rennstandClipFolge([{ platz: 1, farbeId: id,
+      farbe: '#f08a24', role, modellId: 'fordmustang', rundenZurueck: 0, msZurueck: 0 }], 3)
+      .map((x) => x.key).join(',');
+    const soll = 'e:runde,n:3,e:fuehrt_start,e:farbe_unbekannt,e:modell_fordmustang,e:spieler1';
+    const ok = keys('keine', 'player') === soll
+      && keys('mehrfarbig', 'player2').endsWith('e:farbe_mehrfarbig,e:modell_fordmustang,e:spieler2')
+      && keys('orange', 'player3').endsWith('e:farbe_orange,e:modell_fordmustang,e:spieler3')
+      && !keys('gelb', 'ghost').includes('e:spieler')
+      && !keys('gelb', 'challenger').includes('e:spieler')
+      && !keys('keine', 'none').includes('e:spieler')
+      && rennstandClipFolge([{ platz: 2, farbeId: 'gelb', role: 'player2',
+          modellId: 'porsche911', rundenZurueck: 0, msZurueck: 5000 }], 3)
+        .map((x) => x.key).join(',')
+        === 'e:runde,n:3,e:zweiter,n:5,e:sekunden,e:farbe_gelb,e:modell_porsche911,e:spieler2';
+    return { ok, mass: 'Keine Farbe bei keine; Sonderfarbe; Spielerrolle statt Platz; NPC ohne Zusatz' };
+  });
+  stAdd('Rennstand: Sonderfarben speichern, doppelt laden, nicht automatisch vergeben', () => {
+    const alt = localStorage.getItem(CAR_STORE), vorhanden = garage.slice();
+    try {
+      garage.splice(0, garage.length);
+      let ok = CAR_AUTO_COLORS.length === 8 && new Set(CAR_COLORS.map((c) => c.hex)).size === 10;
+      for (const id of ['keine', 'mehrfarbig']) {
+        garage.splice(0, garage.length);
+        const car = { device: { id: '__rennstand_farbe_' + id + '__', name: 'FarbTest' },
+          colorId: id, alias: '', farbeGewaehlt: true, modellId: 'bmw' };
+        carRemember(car);
+        garage.push({ device: { id: '__rennstand_belegt__' }, colorId: id });
+        const neu = { device: car.device }; carAssign(neu);
+        ok = ok && neu.colorId === id && neu.modellId === 'bmw' && neu.farbeGewaehlt;
+      }
+      garage.splice(0, garage.length);
+      CAR_AUTO_COLORS.forEach((c, i) => garage.push({ device: { id: '__rennstand_acht_' + i }, colorId: c.id }));
+      const neu = { device: { id: '__rennstand_neu__' } }; carAssign(neu);
+      ok = ok && CAR_AUTO_COLORS.some((c) => c.id === neu.colorId);
+      return { ok, mass: 'Beide Sonderfarben mehrfach und dauerhaft; Automatik bleibt bei acht Grundfarben' };
+    } finally {
+      garage.splice(0, garage.length, ...vorhanden);
+      carRetag();
+      if (alt === null) localStorage.removeItem(CAR_STORE); else localStorage.setItem(CAR_STORE, alt);
+      carStoreListeZeichnen();
+      if (typeof lageZeichnen === 'function') lageZeichnen();
+    }
+  });
+
   async function runSelfTest() {
     const rows = $('st-rows');
     $('st-run').disabled = true;
@@ -21317,3 +21504,112 @@
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
 
+
+  stAdd('Rennstand: Start/Ziel ist keine Ueberrundung', () => {
+    const cars = [
+      { id: 'a', laps: [{ms: 10000}, {ms: 10000}], ort: 40, rate: 2 },
+      { id: 'b', laps: [{ms: 10300}], ort: 39.4, rate: 2 },
+    ];
+    const x = rennstandWerten(cars, true, 20)[1];
+    if (x.rundenZurueck !== 0 || Math.abs(x.msZurueck - 300) > 0.001) throw new Error(JSON.stringify(x));
+    const keys = rennstandClipFolge(rennstandWerten(cars, true, 20), 2).map((x) => x.key);
+    if (keys.includes('e:eine_runde') || !keys.includes('n:komma')) throw new Error(keys.join(','));
+    return '0,3 Sekunden trotz kurzfristig unterschiedlicher Rundenzahl';
+  });
+  stAdd('Rennstand: echte Ueberrundung und Ergebnis bleiben getrennt', () => {
+    const cars = [
+      { id: 'a', laps: [{ms: 10000}, {ms: 10000}], ort: 40, rate: 2 },
+      { id: 'b', laps: [{ms: 10000}], ort: 19, rate: 2 },
+    ];
+    if (rennstandWerten(cars, true, 20)[1].rundenZurueck !== 1) throw new Error('Ueberrundung fehlt');
+    cars[1].ort = 39.4;
+    if (rennstandWerten(cars)[1].rundenZurueck !== 1) throw new Error('Ergebniswertung geaendert');
+    delete cars[0].ort; delete cars[1].ort;
+    const fallback = rennstandWerten(cars, true, 20)[1];
+    if (fallback.rundenZurueck !== 0 || fallback.msZurueck !== 0) throw new Error('Falscher Rueckfall');
+    return 'Echte Ueberrundung, finale Rundendifferenz und gemeinsame Messrunde';
+  });
+  stAdd('Rennstand: Hallregler begrenzt', () => {
+    if (JSON.stringify([-1, 0, 0.3, 2, undefined].map(rennstandHallWert)) !== '[0,0,0.3,1,0]') throw new Error('Hallgrenzen');
+    return '0–100 %, trocken als Standard';
+  });
+
+
+  stAdd('Rennstand: auf dritte Durchfahrt derselben Runde warten', () => {
+    const lap = (t) => ({ ms: 99999, crossedAt: t });
+    const cars = ['a','b','c','d'].map((id) => ({ id, laps: [1,2,3,4].map((n) => lap(n * 10000)) }));
+    const punkte = new Map(), seen = new Set();
+    cars[0].laps.push(lap(50000));
+    if (rennstandMessungAktualisieren(cars, 5, punkte, seen, 50000).length || !punkte.has(5)) throw new Error('Nicht vorgemerkt');
+    cars[1].laps.push(lap(50300));
+    if (rennstandMessungAktualisieren(cars, 5, punkte, seen, 50300).length) throw new Error('Zu frueh');
+    cars[2].laps.push(lap(51200));
+    const m = rennstandMessungAktualisieren(cars, 5, punkte, seen, 51200)[0];
+    if (!m || m.rows.length !== 3 || m.rows[1].msZurueck !== 300 || m.rows[2].msZurueck !== 1200
+        || m.rows.some((x) => x.rundenZurueck)) throw new Error('Falsche Messwerte');
+    if (rennstandMessungAktualisieren(cars, 5, punkte, seen, 52000).length) throw new Error('Doppelt');
+    return { ok: true, mass: '0,3 / 1,2 Sekunden; Platz 4 blockiert nicht, kein n+1 erforderlich' };
+  });
+  stAdd('Rennstand: kleines Feld und 30 Sekunden Wartegrenze', () => {
+    const cars = [{ id: 'a', laps: [{ crossedAt: 1000 }] }, { id: 'b', laps: [] }];
+    const punkte = new Map(), seen = new Set();
+    if (rennstandMessungAktualisieren(cars, 1, punkte, seen, 1000).length) throw new Error('Zweites Auto nicht abgewartet');
+    if (rennstandMessungAktualisieren(cars, 1, punkte, seen, 30999).length) throw new Error('Timeout zu frueh');
+    const m = rennstandMessungAktualisieren(cars, 1, punkte, seen, 31000)[0];
+    if (!m || !m.timeout || m.rows.length !== 1 || m.rows[0].rundenZurueck) throw new Error('Erfundener Abstand');
+    const single = rennstandMessungAktualisieren([cars[0]], 1, new Map(), new Set(), 1000)[0];
+    if (!single || single.timeout) throw new Error('Einzelwagen blockiert');
+    return { ok: true, mass: 'Nur tatsaechliche Messwerte nach Timeout; Einzelwagen sofort' };
+  });
+  stAdd('Rennstand: Zeitstempel unabhaengig von Strafen und weiterer Runde', () => {
+    const cars = [{ id: 'b', laps: [{ crossedAt: 10300, ms: 20000 }] },
+      { id: 'a', laps: [{ crossedAt: 10000, ms: 99000 }, { crossedAt: 20000, ms: 10000 }] }];
+    // Messrunde wie im echten Ablauf beim ersten Zieldurchgang vormerken.
+    const punkte = new Map([[1, { n: 1, start: 10000 }]]);
+    const m = rennstandMessungAktualisieren(cars, 1, punkte, new Set(), 20000)[0];
+    if (!m || m.rows[0].id !== 'a' || m.rows[1].msZurueck !== 300) throw new Error('Andere Runde/Strafen verglichen');
+    return { ok: true, mass: 'Durchfahrt derselben Runde statt Ortung oder Rundenzeit-Summe' };
+  });
+  stAdd('Rennstand: Messstand gegen Ruecknahme validieren', () => {
+    const echt = rennstandRohdaten;
+    const cars = [{ id: 'a', laps: [{ crossedAt: 10000 }] }, { id: 'b', laps: [{ crossedAt: 10300 }] }];
+    const m = { n: 1, rows: rennstandMessstand(cars, 1, 10300) };
+    try {
+      rennstandRohdaten = () => cars;
+      if (!rennstandMessstandGueltig(m)) throw new Error('Gueltige Messung verworfen');
+      cars[0].laps.push({ crossedAt: 20000 });
+      cars.push({ id: 'c', laps: [{ crossedAt: 11000 }] });
+      if (!rennstandMessstandGueltig(m)) throw new Error('Spaete Daten aendern eingefrorenen Stand');
+      cars[1].laps.pop();
+      if (rennstandMessstandGueltig(m)) throw new Error('Ruecknahme ignoriert');
+      return { ok: true, mass: 'Eingefrorene Teilnehmer werden vor Wiedergabe erneut geprueft' };
+    } finally { rennstandRohdaten = echt; }
+  });
+
+  stAdd('Rennstand: Warteparameter 5 bis 30 Sekunden', () => {
+    const got = [rennstandWarteWert(undefined), rennstandWarteWert(''),
+      rennstandWarteWert(null), rennstandWarteWert(0), rennstandWarteWert(50),
+      rennstandWarteWert(12.6), rennstandWarteWert('10')];
+    if (JSON.stringify(got) !== '[30,30,30,5,30,13,10]') throw new Error(JSON.stringify(got));
+    return 'Standard 30 s, Bereich 5–30 s, ganze Sekunden';
+  });
+  stAdd('Rennstand: eingestellte Wartegrenze und fruehe Freigabe', () => {
+    const cars = [
+      { id: 'a', laps: [{ms:1000,crossedAt:1000}] },
+      { id: 'b', laps: [] }, { id: 'c', laps: [] }
+    ];
+    for (const sek of [5, 12, 30]) {
+      const punkte = new Map(), gemeldet = new Set();
+      if (rennstandMessungAktualisieren(cars,1,punkte,gemeldet,1000,sek).length) throw new Error('Zu frueh');
+      if (rennstandMessungAktualisieren(cars,1,punkte,gemeldet,1000+sek*1000-1,sek).length) throw new Error('Vor Grenze');
+      const r = rennstandMessungAktualisieren(cars,1,punkte,gemeldet,1000+sek*1000,sek);
+      if (r.length !== 1 || !r[0].timeout || r[0].rows.length !== 1) throw new Error('Grenze '+sek);
+    }
+    const punkte = new Map(), gemeldet = new Set();
+    rennstandMessungAktualisieren(cars,1,punkte,gemeldet,1000,30);
+    cars[1].laps = [{ms:1300,crossedAt:1300}];
+    cars[2].laps = [{ms:1600,crossedAt:1600}];
+    const r = rennstandMessungAktualisieren(cars,1,punkte,gemeldet,1600,30);
+    if (r.length !== 1 || r[0].timeout || r[0].rows[1].msZurueck !== 300) throw new Error('Top3 Freigabe');
+    return '5/12/30 s exakt, Top 3 ohne unnoetiges Warten';
+  });
