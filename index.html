@@ -10544,6 +10544,43 @@
           &ndash; unter Windows sind sie lokal vorhanden, auf Android k&ouml;nnen sie fehlen.
           Fehlt eine, steht das einmal im Protokoll und nicht bei jeder Runde.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Rennstand ansagen
+          <small>Die ersten drei Fahrzeuge des lokalen Rennfelds, mit Runde, Wagenfarbe und Marke / Modell.
+          Nach jeder eingestellten Zahl vollendeter Runden des f&uuml;hrenden Fahrzeugs.
+          Die Ansage wartet auf die ersten drei Durchfahrten derselben Messrunde.
+          Sekundenr&uuml;ckst&auml;nde stammen aus diesen Durchfahrtszeiten, nicht aus Live-Abst&auml;nden.
+          Nur Rundenrennen und Endurance. Vorproduzierte Clips, auch in der Android-App.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-stand" data-preset-skip><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Rennstand alle X Runden
+          <small>1 bis 20, Standard 5. Zum Beispiel nach Runde 5, 10 und 15.</small></div>
+        <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="setting-announce-stand-interval" value="5" min="1" max="20" step="1" style="width:84px" data-preset-skip><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
+      <div class="opt-row"><div class="opt-label">Rennstand maximale Wartezeit
+          <small>5 bis 30 Sekunden, Standard 30. Ab der ersten Durchfahrt der Messrunde. Sobald die Top 3 durch sind, wird früher angesagt. Sonst nur die bereits gemessenen Fahrzeuge.</small></div>
+        <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="setting-announce-stand-wait" value="30" min="5" max="30" step="1" style="width:84px" data-preset-skip><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
+      <div class="opt-row"><div class="opt-label">Rennstand-Sprechgeschwindigkeit
+          <small>100 bis 175 %. Gilt ab der nächsten Ansage. Höheres Tempo erhöht auch die Tonhöhe.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-announce-stand-speed" min="1" max="1.75" step="0.05" value="1" data-preset-skip>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-announce-stand-speed-val">100%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Rennstand-Lautstärke
+          <small>Nur die Rennstand-Ansagen. Bis 200 % mit Boost; 0 % stumm. Regen, Motoren und Warnungen bleiben unverändert.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-announce-stand-volume" min="0" max="2" step="0.05" value="1" data-preset-skip>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-announce-stand-volume-val">100%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Rennstand-Stadionhall
+          <small>Nur Rennstand und Ergebnis. 0 % ist trocken; dezenter Hall ab 20 %.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-announce-stand-reverb" min="0" max="1" step="0.05" value="0" data-preset-skip>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-announce-stand-reverb-val">0%</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Schaden ansagen<small>Einmal, wenn der Schadensbalken auf 10&nbsp;% gefallen ist. Erst nach einer Reparatur wieder scharf.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-damage" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Tank ansagen<small>Einmal, wenn noch 10&nbsp;% im Tank sind. Erst nach dem Tanken wieder scharf.</small></div>
@@ -16054,6 +16091,7 @@
     "keine Autos verbunden": "no cars connected",
     "keine Variante aktiv (normales Paket)": "no variant active (normal packet)",
     "keine": "none",
+    "mehrfarbig": "multicoloured",
     "keinen einzigen": "not a single one",
     "km/h echt": "km/h actual",
     "kontinuierlich alle": "continuously every",
@@ -16400,6 +16438,20 @@
     "Daten des Getriebes": "Gearbox data",
     "Bis zu welchem Tempo jeder Gang reicht. Gerechnet aus den Übersetzungen und der Höchstgeschwindigkeit, nicht eingetippt.": "How fast each gear reaches. Calculated from the ratios and the top speed, not typed in.",
     "Rundenzeiten ansagen": "Announce lap times",
+    "Marke / Modell": "Make / model",
+    "Nicht zugeordnet": "Not assigned",
+    "Rennstand-Sprechgeschwindigkeit": "Race standings speech speed",
+    "100 bis 175 %. Gilt ab der nächsten Ansage. Höheres Tempo erhöht auch die Tonhöhe.": "100 to 175%. Applies from the next announcement. Higher speed also raises the pitch.",
+    "Rennstand-Lautstärke": "Race standings volume",
+    "Nur die Rennstand-Ansagen. Bis 200 % mit Boost; 0 % stumm. Regen, Motoren und Warnungen bleiben unverändert.": "Race standings announcements only. Up to 200% with boost; 0% mutes them. Rain, engines and warnings remain unchanged.",
+    "Rennstand-Stadionhall": "Race standings stadium reverb",
+    "Nur Rennstand und Ergebnis. 0 % ist trocken; dezenter Hall ab 20 %.": "Standings and results only. 0% is dry; subtle reverb from 20%.",
+    "Rennstand maximale Wartezeit": "Race standings maximum wait",
+    "5 bis 30 Sekunden, Standard 30. Ab der ersten Durchfahrt der Messrunde. Sobald die Top 3 durch sind, wird früher angesagt. Sonst nur die bereits gemessenen Fahrzeuge.": "5 to 30 seconds, default 30. From the first crossing of the measured lap. Announces earlier once the top 3 have crossed. Otherwise only vehicles already measured.",
+    "Rennstand ansagen": "Announce race standings",
+    "Die ersten drei Fahrzeuge des lokalen Rennfelds, mit Runde, Wagenfarbe und Marke / Modell. Nach jeder eingestellten Zahl vollendeter Runden des führenden Fahrzeugs. Die Ansage wartet auf die ersten drei Durchfahrten derselben Messrunde. Sekundenrückstände stammen aus diesen Durchfahrtszeiten, nicht aus Live-Abständen. Nur Rundenrennen und Endurance. Vorproduzierte Clips, auch in der Android-App.": "The first three cars in the local race field, with lap, colour and make / model. After every selected number of laps completed by the leading car. The announcement waits for the first three crossings of the same measured lap. Gaps in seconds use these crossing times, not live distances. Lap races and Endurance only. Pre-rendered clips also work in the Android app.",
+    "Rennstand alle X Runden": "Race standings every X laps",
+    "1 bis 20, Standard 5. Zum Beispiel nach Runde 5, 10 und 15.": "1 to 20, default 5. For example after lap 5, 10 and 15.",
     "Nach jeder Runde die Zeit, und bei einer eigenen Bestzeit ein Wort dazu. Gesprochen von der eingebauten Stimme des Browsers – kein Dienst, kein Netz, nichts verlässt das Gerät. Absichtlich kurz gehalten, damit die Ansage vor der nächsten Kurve fertig ist. Kommt eine zweite Runde herein, während noch geredet wird, bricht die alte Ansage ab: die Zeit der Gegenwart ist wichtiger. Ob es überhaupt spricht, hängt an den Stimmen des Systems – unter Windows sind sie lokal vorhanden, auf Android können sie fehlen. Fehlt eine, steht das einmal im Protokoll und nicht bei jeder Runde.": "The time after every lap, and a word with it on a personal best. Spoken by the browser’s built-in voice – no service, no network, nothing leaves the device. Deliberately kept short so the announcement is finished before the next corner. If a second lap comes in while it is still talking, the old announcement is cut off: the time of the present matters more. Whether it speaks at all depends on the voices of the system – under Windows they are installed locally, on Android they can be missing. If one is missing, that goes into the log once and not on every lap.",
     "Alle sind aus Zylinderzahl, Kurbelwelle, Bankaufteilung und Zündfolge gerechnet – keine Aufnahme. Bei den aufgeladenen Originalen fehlt der Lader. Die sechs mit WIP sind noch nicht nach Gehör geprüft; beim Maserati kommt dazu, dass dieses Modell den Bankwinkel gar nicht darstellt, weshalb er sich vom Ferrari-V12 nur in Drehzahl und Rohrlänge unterscheidet. Der Boxer-Rumpel des Subaru kommt aus ungleich langen Krümmerrohren; das Modell trägt feste Zeitversätze je Zylinder und damit die richtige Art von Unregelmäßigkeit, aber ihr genaues Muster ist gewählt und nicht aus Rohrlängen gerechnet.": "All of them are computed from cylinder count, crankshaft, bank split and firing order – none is a recording. The forced-induction originals are missing their turbo. The six marked WIP have not been judged by ear; with the Maserati there is the added point that this model cannot represent bank angle at all, so it differs from the Ferrari V12 only in revs and pipe length. The Subaru boxer rumble comes from unequal-length headers; the model carries fixed per-cylinder timing offsets and therefore the right KIND of irregularity, but their exact pattern is chosen, not computed from pipe lengths.",
     "Trapez-Muster, randlos, ohne Strichcode": "Trapezoid pattern, borderless, no barcode",
@@ -37317,7 +37369,7 @@
     if (raceState === 'finished' && car.ghost && car.ghost.auslauf) {
       car.ghost.auslauf = false;
       if (r.lapStart !== null) {
-        r.laps.push({ lap: r.laps.length + 1, ms: now - r.lapStart, off: r.offLap || 0 });
+        r.laps.push({ lap: r.laps.length + 1, ms: now - r.lapStart, off: r.offLap || 0, crossedAt: now });
       }
       r.lapStart = null;
       finishGhost(car);
@@ -37361,7 +37413,7 @@
     if (r.lapStart !== null) {
       const nrSp = spielerNrVon(car);
       const ms = now - r.lapStart + (nrSp >= 2 ? fruehstartZuschlag(nrSp, r.laps.length) : 0), offs = r.offLap || 0;
-      r.laps.push({ lap: r.laps.length + 1, ms, off: offs });
+      r.laps.push({ lap: r.laps.length + 1, ms, off: offs, crossedAt: now });
       // v0.10.6: Bestzeit-Modus - auch Spieler 2/3 sammeln Zeiten und Medaillen.
       if (raceMode === 'bestzeit' && spielerNrVon(car) >= 2 && ms >= rundeMinMs()) {
         bestzeitMeldung(bestzeitRunde(ms, car), ms, spielerNrVon(car));
@@ -37374,6 +37426,9 @@
         // wie Spieler 1, nur mit dem hoeheren Ton.
         speakLap(ms, istBest2);
       }
+      // Jedes NPC-/Zusatzspieler-Rundenereignis prueft die Fuehrungsrunde.
+      // Spieler 1 erst im akzeptierten Dashboard-Zaehler (kein Doppeltrigger).
+      if (car !== playerCar && car.role !== 'player') rennstandRunde();
       // Genau hier liegen Rundenzeit und Abgangszahl zusammen vor, und beides braucht die
       // Annahmeregel des Lernens: schneller UND heil. Eine Runde ist eine Auswertung.
       learnSettle(car, ms, offs);
@@ -37454,7 +37509,7 @@
     // ueber einen GHOST ausloesen, und ein Rundenrennen ohne (oder mit zu langsamen) Ghosts
     // endete nie.
     const out = garage.filter(c => c.role !== 'safetycar' && c.role !== 'reinig').map(c => ({ name: garageLabel(c), role: c.role, id: String(c.device && c.device.id),
-                                   farbe: carColor(c).hex, kennung: c.tag,
+                                   farbe: carColor(c).hex, farbeId: carColor(c).id, kennung: c.tag, modellId: carModellWert(c.modellId),
                                    // Der Ort auf der Schiene. Auto 2 geht ueber
                                    // ghostOrtGes(): es hat seit v0.6.46 einen eigenen
                                    // Ortungssatz, und der ist genau der, aus dem ein Ghost
@@ -38652,6 +38707,7 @@
     garage.forEach(c => { c.race = { laps: [], lapStart: null, pending: null, seen: 0,
                                      lastActed: 0, lastCount: null }; });
     raceLapTimes = [];
+    rennstandReset();
     // ---- UND DIE COCKPIT-RUNDEN AUCH, und das ist ein gemeldeter Fehler ------------
     //
     // dashLapTimes wurde beim Rennstart NIE zurueckgesetzt. Es ist die Liste der
@@ -38880,6 +38936,8 @@
   // `auslaufen` = die Ghosts duerfen ihre angefangene Runde zu Ende fahren. Vorgabe ja;
   // requestRaceStop() uebergibt ausdruecklich false.
   function finishRace(auslaufen) {
+    if (raceState === 'finished') return; // Ergebnisansage nur einmal planen.
+    rennstandAbbrechen();
     raceState = 'finished';
     // v1.1.3 GEMELDET: "Rennende sollte auch die gelbe Flagge beenden". Nicht ueber
     // setFlag('green') - das zeigt "GRUEN" und schickt das Safety Car heim; es steht hier
@@ -38974,7 +39032,8 @@
     // DER RUNDENZAEHLER, aber nur bei einer echten Zielflagge. Wer von Hand abbricht,
     // bekommt keine Fanfare - dieselbe Ueberlegung, mit der die Ghosts dann auch nicht
     // auslaufen: ein Abbruch ist kein Zieleinlauf.
-    if (willAuslaufen) playRaceEndFanfare();
+    const ergebnisFanfare = willAuslaufen ? playRaceEndFanfare() : null;
+    if (willAuslaufen) rennstandRennende(ergebnisFanfare);
     $('race-start-btn').disabled = false;
     $('race-lap-current-row').style.display = 'none';
     $('race-results').style.display = '';
@@ -39839,6 +39898,7 @@
       // Datei - dieselbe Vorsicht wie an der Stelle, die eine gefahrene Runde meldet.
       if (typeof mpRundeGefahren === 'function') mpRundeGefahren();
     }
+    if (weg) rennstandAbbrechen(); // Ein zurueckgenommener Rundenschluss ist kein Zwischenstand.
     if (weg) $('race-status').textContent = t('Rennen läuft, Runde') + ' ' + raceLapTimes.length;
     log('Runde zurueckgenommen' + (weg ? ' (' + formatLapTime(weg.ms) + ')' : '') + ': '
         + warum, 'info');
@@ -40074,7 +40134,7 @@
       const plausibel = raceLapTimes.filter(l => l.ms >= minMs);
       const besteBisher = plausibel.length
         ? Math.min.apply(null, plausibel.map(l => l.ms)) : Infinity;
-      raceLapTimes.push({ lap: raceLapTimes.length + 1, ms: rundeMs });
+      raceLapTimes.push({ lap: raceLapTimes.length + 1, ms: rundeMs, crossedAt: now });
       // Challenge: Runde gegen die Strecke pruefen. Liefert true, wenn die Runde NICHT zaehlt
       // (Strecke nicht erkannt oder zu schnell) - dann tiefer Ton statt des hellen Rundenklangs.
       const challengeUngueltig = typeof challengeRundeFertig === 'function'
@@ -40097,6 +40157,7 @@
       if (raceMode === 'bestzeit' && !challengeUngueltig && rundeMs >= minMs) {
         bestzeitMeldung(bestzeitRunde(rundeMs, playerCar), rundeMs, 1);
       }
+      rennstandRunde();
       // v0.9.41 GEMELDET: "Das Multiplayer Renn-Ende wird nicht getriggert ... 5-Runden-Rennen."
       // Die Zielrunde schaltete nur auf 'finishing' (raceClockTick), beendet wurde erst bei der
       // NAECHSTEN Ueberfahrt - ein 5-Runden-Rennen ging also ueber 6 Runden. Wer die Zielzahl
@@ -41044,7 +41105,7 @@
       setPitState('limited');
       // Nur HIER abbrechen: eine noch laufende Rundenansage der ersten Ueberfahrt soll der
       // Boxen-Ansage nicht im Weg stehen.
-      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); lapAnsageBeendet(); }
       ansage('pit', t('Boxenstopp eingeleitet'));
       playTone(880, 0.12, 'square', 0.16);
       setTimeout(() => playTone(880, 0.12, 'square', 0.16), 180);
@@ -47620,6 +47681,7 @@
       loadEngineSamples(); // needs the AudioContext, so it can only start from here
       loadFxSamples();
       loadVoiceSamples();
+      rennstandClipsLaden(lang);
       if (!('speechSynthesis' in window)) zahlenClipsLaden(lang);
       loadAmbience();
     }
@@ -47637,10 +47699,12 @@
       loadEngineSamples();
       loadFxSamples();
       loadVoiceSamples();
+      rennstandClipsLaden(lang);
       if (!('speechSynthesis' in window)) zahlenClipsLaden(lang);
       loadAmbience();
       refreshAmbienceGains();
     } else if (engineGain) {
+      rennstandAbbrechen();
       refreshAmbienceGains();
       engineGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
       if (sampleEngine.master) sampleEngine.master.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
@@ -48046,6 +48110,7 @@
     return folge;
   }
   function lapClipsSpielen(ms, istBest) {
+    if (!rennstandVorRundenzeit()) return false;
     const satz = zahlenBuffers[lang];
     if (!satz) { zahlenClipsLaden(lang); return false; }
     if (!audioCtx || !soundEnabled) return false;
@@ -48061,6 +48126,11 @@
       const g = audioCtx.createGain();
       g.gain.value = 1.0;
       src.connect(g).connect(audioCtx.destination);
+      src.onended = () => {
+        const warAktiv = zahlenQuellen.includes(src);
+        zahlenQuellen = zahlenQuellen.filter((q) => q !== src);
+        if (warAktiv && !zahlenQuellen.length) lapAnsageBeendet();
+      };
       src.start(t0);
       zahlenQuellen.push(src);
       t0 += satz[k].duration + (k === 'komma' ? 0.02 : 0.06);
@@ -48209,6 +48279,19 @@
   // einer Rennstrecke braucht eine Zeit keine Einheit - und rate 1,15.
   let announceOn = true;
   let announceCalls = 0, announceCancels = 0, announceFailLogged = false;
+  let lapAnsageAktuell = null, lapAnsageRuheBis = 0;
+  const LAP_ANSAGE_ABSTAND_MS = 300;
+
+  function lapAnsageBeendet(u) {
+    if (u && lapAnsageAktuell !== u) return;
+    lapAnsageAktuell = null;
+    lapAnsageRuheBis = performance.now() + LAP_ANSAGE_ABSTAND_MS;
+  }
+  function lapAnsageBeschaeftigt() {
+    const synth = 'speechSynthesis' in window ? window.speechSynthesis : null;
+    return !!(lapAnsageAktuell || zahlenQuellen.length
+      || (synth && (synth.speaking || synth.pending)));
+  }
 
   function lapSpeechText(ms, istBest) {
     const s = ms / 1000;
@@ -48272,6 +48355,14 @@
   // die Aufnahme selbst fehlt (Datei nicht geladen, Sprache ohne Aufnahme).
   function ansage(art, text, klangSchluessel) {
     if (!ansageAn[art]) return false;
+    // Waehrend einer Rennstand-/Ergebnisansage entfaellt diese Spielerzeit.
+    if (art === 'lap' && !rennstandVorRundenzeit()) return false;
+    if (art !== 'lap') {
+      rennstandAbbrechen();
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      for (const q of zahlenQuellen) { try { q.stop(); } catch (e) {} }
+      zahlenQuellen = []; lapAnsageBeendet();
+    }
     if (art !== 'lap' && playAnsageClip(klangSchluessel || art)) return true;
     if (!('speechSynthesis' in window)) return false;
     try {
@@ -48279,13 +48370,17 @@
       // stapeln - sonst laeuft die Stimme der Gegenwart nach und meldet den Tank, waehrend
       // man schon in der naechsten Runde ist.
       window.speechSynthesis.cancel();
+      lapAnsageBeendet();
       announceCancels++;
       const u = new SpeechSynthesisUtterance(text);
+      if (art === 'lap') lapAnsageAktuell = u;
+      u.onend = () => { if (art === 'lap') lapAnsageBeendet(u); };
       u.lang = lang === 'de' ? 'de-DE' : 'en-US';
       // Funk spricht schneller und flacher. Beides ist an der Stimme einstellbar, und mehr
       // gibt die Schnittstelle nicht her.
       u.rate = 1.15;
       u.onerror = (ev) => {
+        if (art === 'lap') lapAnsageBeendet(u);
         if (announceFailLogged) return;
         announceFailLogged = true;
         log('Ansage: keine Stimme verfuegbar (' + (ev && ev.error ? ev.error : '?')
@@ -48295,6 +48390,7 @@
       announceCalls++;
       return true;
     } catch (e) {
+      lapAnsageBeendet();
       if (!announceFailLogged) {
         announceFailLogged = true;
         log('Ansage nicht moeglich: ' + e.message, 'info');
@@ -48404,6 +48500,7 @@
   }
 
   function speakLap(ms, istBest) {
+    if (!ansageAn.lap || !rennstandVorRundenzeit()) return;
     // Ohne Sprachausgabe (App-WebView): die Zahlen-Clips.
     if (!('speechSynthesis' in window)) {
       if (ansageAn.lap) lapClipsSpielen(ms, istBest);
@@ -48431,10 +48528,12 @@
       ansageAn[art] = e.target.checked;
       if (art === 'lap') announceOn = e.target.checked;
       // Beim Ausschalten sofort still sein und nicht den Satz noch beenden.
-      if (!e.target.checked && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+      if (!e.target.checked && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel(); lapAnsageBeendet();
+      }
       if (!e.target.checked && art === 'lap') {
         for (const q of zahlenQuellen) { try { q.stop(); } catch (e2) {} }
-        zahlenQuellen = [];
+        zahlenQuellen = []; lapAnsageBeendet();
       }
     });
   });
@@ -50343,6 +50442,605 @@
   }
   dsLageZeigen();
   // =========================================================================
+  // Rennstand aus lokalen Rennwertungsdaten und vorproduzierten Piper-Clips.
+  // Keine Namen-TTS, kein Onlinedienst und keine native Android-Erweiterung.
+  // =========================================================================
+  let rennstandAn = false, rennstandIntervall = 5;
+  let rennstandTempo = 1, rennstandLautstaerke = 1, rennstandBus = null;
+  let rennstandHall = 0, rennstandHallWet = null, rennstandHallDry = null;
+  let rennstandHallNodes = [];
+  const RENNSTAND_HALL_DAUER = 1.2;
+  let rennstandKompressor = null, rennstandWartend = null, rennstandSatzRunde = null;
+  let rennstandErgebnisGeplant = false, rennstandErgebnisGesprochen = false;
+  let rennstandGeneration = 0, rennstandTimer = null, rennstandBis = 0;
+  let rennstandQuellen = [], rennstandGemeldet = new Set();
+  const rennstandBuffers = {}, rennstandLaden = {};
+  const rennstandMesspunkte = new Map();
+  let rennstandMessGeneration = 0, rennstandMessTimer = null;
+  let rennstandWarteSekunden = 30;
+
+  function rennstandWarteWert(wert) {
+    if (wert === null || String(wert).trim() === '') return 30;
+    const n = Number(wert);
+    return Number.isFinite(n) ? Math.max(5, Math.min(30, Math.round(n))) : 30;
+  }
+
+  function rennstandIntervallWert(wert) {
+    const n = Number(wert);
+    return Number.isFinite(n) ? Math.max(1, Math.min(20, Math.round(n))) : 5;
+  }
+
+  function rennstandAbbrechen() {
+    rennstandGeneration++;
+    if (rennstandTimer !== null) clearTimeout(rennstandTimer);
+    rennstandTimer = null;
+    rennstandWartend = null; rennstandSatzRunde = null;
+    for (const q of rennstandQuellen) { try { q.stop(); } catch (e) {} }
+    rennstandQuellen = [];
+    rennstandBis = 0;
+    if (rennstandBus) {
+      try { rennstandBus.disconnect(); } catch (e) {}
+      rennstandBus = null;
+      for (const node of rennstandHallNodes) { try { node.disconnect(); } catch (e) {} }
+      rennstandHallNodes = []; rennstandHallWet = null; rennstandHallDry = null;
+    }
+  }
+
+  function rennstandReset() {
+    rennstandAbbrechen();
+    rennstandGemeldet.clear();
+    rennstandMesspunkte.clear(); rennstandMessGeneration++;
+    if (rennstandMessTimer !== null) clearTimeout(rennstandMessTimer);
+    rennstandMessTimer = null;
+    rennstandErgebnisGeplant = false; rennstandErgebnisGesprochen = false;
+  }
+
+  function rennstandBeschaeftigt() {
+    return rennstandBis > 0 && audioCtx && audioCtx.currentTime < rennstandBis;
+  }
+
+  // Rangfolge wie bisher nach vollendeten Runden und Wertungszeit.
+  // Live-Luecken getrennt aus monotoner Ortung und gemessenem Tempo.
+  // Finale Wertung behaelt ihre tatsaechlichen Runden-/Zeitdifferenzen.
+  function rennstandWerten(cars, live = false, streckenKacheln = 0) {
+    const rows = cars.map((c, i) => {
+      const laps = Array.isArray(c.laps) ? c.laps : [];
+      const valid = laps.every((l) => l && Number.isFinite(l.ms) && l.ms >= 0);
+      return { id: c.id || ('local:' + i), role: c.role, farbe: c.farbe, farbeId: c.farbeId, modellId: carModellWert(c.modellId),
+               laps, rate: Number.isFinite(c.rate) && c.rate > 0 ? c.rate : null,
+               runden: laps.length,
+               summe: valid ? laps.reduce((a, l) => a + l.ms, 0) : null,
+               ort: Number.isFinite(c.ort) ? c.ort : -1 };
+    });
+    rows.sort((a, b) => (b.runden - a.runden)
+      || ((a.summe === null ? Infinity : a.summe) - (b.summe === null ? Infinity : b.summe))
+      || (b.ort - a.ort) || String(a.id).localeCompare(String(b.id)));
+    const leader = rows[0];
+    return rows.map((x, i) => {
+      let rundenZurueck = leader ? leader.runden - x.runden : 0;
+      let msZurueck = leader && x.runden === leader.runden
+        && x.summe !== null && leader.summe !== null ? Math.max(0, x.summe - leader.summe) : null;
+      if (live && leader && i > 0) {
+        const dist = leader.ort - x.ort;
+        // Monotone Ortung und gemessenes Kacheltempo, wie ghostAbstandSek.
+        // Ein Zaehlerunterschied an Start/Ziel ist KEINE Ueberrundung.
+        if (streckenKacheln > 0 && leader.ort >= 0 && x.ort >= 0 && dist >= 0) {
+          rundenZurueck = Math.floor(dist / streckenKacheln);
+          msZurueck = leader.rate && x.rate
+            ? dist / ((leader.rate + x.rate) / 2) * 1000 : null;
+        } else {
+          // Ohne Ortung nur dieselbe abgeschlossene Runde vergleichen.
+          // Keine Ueberrundung aus dem kurzzeitig unterschiedlichen Zaehler erfinden.
+          rundenZurueck = 0;
+          const n = Math.min(leader.runden, x.runden);
+          const sum = (z) => z.laps.slice(0, n).reduce((a, l) => a + l.ms, 0);
+          msZurueck = n > 0 && leader.summe !== null && x.summe !== null
+            ? Math.max(0, sum(x) - sum(leader)) : null;
+        }
+      }
+      return Object.assign({}, x, { platz: i + 1, rundenZurueck, msZurueck });
+    });
+  }
+
+  function rennstandRohdaten() {
+    const cars = raceAllCars().filter((c) => c.role !== 'safetycar' && c.role !== 'reinig');
+    // Spieler 1: nur akzeptierte Rennrunden, nicht der Garagen-Fallback.
+    for (const c of cars) if (c.role === 'player') c.laps = raceLapTimes;
+    return cars;
+  }
+
+  function rennstandDaten() {
+    // Keine Positions-/Temposchaetzung mehr fuer die Ansage.
+    return rennstandWerten(rennstandRohdaten());
+  }
+
+  // Zeitstempel der n-ten akzeptierten Durchfahrt auf derselben Date.now()-Uhr.
+  // Keine Summe von Rundenzeiten: Anlauf und Strafzeiten verschieben sonst den Abstand.
+  function rennstandDurchfahrt(car, n) {
+    const lap = Array.isArray(car.laps) ? car.laps[n - 1] : null;
+    return lap && Number.isFinite(lap.crossedAt) ? lap.crossedAt : null;
+  }
+
+  function rennstandMessstand(cars, n, bis) {
+    // Alle mit derselben vollendeten Messrunde; danach gefahrene Runden sind irrelevant.
+    // Nur bereits erfolgte Durchfahrten dieser Messrunde aufnehmen.
+    const rows = cars.map((c, i) => ({
+      id: c.id || ('local:' + i), role: c.role, farbe: c.farbe,
+      farbeId: c.farbeId, modellId: carModellWert(c.modellId),
+      crossedAt: rennstandDurchfahrt(c, n), runden: n,
+    })).filter((c) => c.crossedAt !== null && c.crossedAt <= bis);
+    rows.sort((a, b) => a.crossedAt - b.crossedAt || String(a.id).localeCompare(String(b.id)));
+    const leader = rows[0];
+    return rows.map((c, i) => Object.assign({}, c, {
+      platz: i + 1, rundenZurueck: 0, msZurueck: c.crossedAt - leader.crossedAt,
+    }));
+  }
+
+  function rennstandMessstandGueltig(messung) {
+    const cars = rennstandRohdaten();
+    // Pruefe nur die eingefrorenen Teilnehmer. Spaetere Durchfahrten anderer
+    // Autos aendern den bereits gemessenen Top-3-Zwischenstand nicht.
+    return messung.rows.every((row) => {
+      const c = cars.find((c, i) => (c.id || ('local:' + i)) === row.id);
+      return c && rennstandDurchfahrt(c, messung.n) === row.crossedAt;
+    });
+  }
+
+  // Messrunde n vormerken, sobald das erste Fahrzeug sie beendet hat.
+  // Freigabe, sobald drei (oder alle bei kleinerem Feld) dieselbe Runde beendet
+  // haben. Die fruehesten Durchfahrten bestimmen die Top 3 dieser Messrunde.
+  // Nach eingestellten 5–30 s nur vorhandene Messungen sprechen, nie einen Rundenabstand erfinden.
+  function rennstandMessungAktualisieren(cars, intervall, messpunkte, gemeldet, jetzt = Date.now(), warteSekunden = rennstandWarteSekunden) {
+    for (const [n] of messpunkte) {
+      if (!cars.some((c) => rennstandDurchfahrt(c, n) !== null)) messpunkte.delete(n);
+    }
+    const max = cars.reduce((n, c) => Math.max(n, (c.laps || []).length), 0);
+    if (max > 0 && max % intervall === 0 && !messpunkte.has(max) && !gemeldet.has(max)) {
+      const zeiten = cars.map((c) => rennstandDurchfahrt(c, max)).filter((t) => t !== null);
+      if (zeiten.length) messpunkte.set(max, { n: max, start: Math.min(...zeiten) });
+    }
+    const fertig = [], ziel = Math.min(3, cars.length);
+    for (const [n, punkt] of messpunkte) {
+      const rows = rennstandMessstand(cars, n, jetzt);
+      const timeout = jetzt - punkt.start >= rennstandWarteWert(warteSekunden) * 1000;
+      if (!rows.length || (rows.length < ziel && !timeout)) continue;
+      messpunkte.delete(n); gemeldet.add(n);
+      fertig.push({ n, bis: jetzt, rows: rows.slice(0, 3), timeout: rows.length < ziel });
+    }
+    return fertig.sort((a, b) => a.n - b.n);
+  }
+
+  function rennstandBezugsrunde(rows) {
+    // rows kommt aus rennstandWerten(): das fuehrende Auto steht immer zuerst.
+    // Unabhaengig davon, ob NPC, Spieler 1, 2 oder 3 fuehrt.
+    return rows.length ? rows[0].runden : 0;
+  }
+
+  function rennstandMeilenstein(n, intervall, gemeldet) {
+    if (!Number.isInteger(n) || n <= 0 || n % intervall !== 0 || gemeldet.has(n)) return false;
+    gemeldet.add(n);
+    return true;
+  }
+
+  // Alle vorhandenen Zahlen 0..60 sprechen normal. Groessere ganze Zahlen werden
+  // ziffernweise gelesen, nicht still auf 60 gekappt und nicht falsch zusammengesetzt.
+  function rennstandZahlFolge(n) {
+    if (!Number.isFinite(n)) return [];
+    n = Math.max(0, Math.round(n));
+    return n <= 60 ? ['n:' + n] : String(n).split('').map((z) => 'n:' + z);
+  }
+
+  function rennstandFarbe(hex) {
+    const c = CAR_COLORS.find((x) => String(x.hex).toLowerCase() === String(hex || '').toLowerCase());
+    return c ? 'r:farbe_' + c.id : null;
+  }
+
+  function rennstandSpielerNr(role) {
+    return role === 'player' ? 1 : role === 'player2' ? 2 : role === 'player3' ? 3 : 0;
+  }
+
+  function rennstandClipFolge(rows, runde, ergebnis = false) {
+    const folge = [];
+    const add = (key, pause = 0.055) => folge.push({ key, pause });
+    const zahl = (n) => rennstandZahlFolge(n).forEach((key) => add(key));
+    const ende = () => {
+      if (folge.length) folge[folge.length - 1].pause = 0.32;
+    };
+    const wagen = (x) => {
+      // Explizite ID hat Vorrang; Hex-Rueckfall fuer alte Daten und bestehende Tests.
+      const farbe = CAR_COLORS.find((c) => c.id === x.farbeId)
+        || CAR_COLORS.find((c) =>
+          String(c.hex).toLowerCase() === String(x.farbe || '').toLowerCase());
+      // Bei 'keine' nur den Artikel sprechen: 'der BMW', kein Farbwort.
+      add('e:farbe_' + (farbe && farbe.id !== 'keine' ? farbe.id : 'unbekannt'));
+      add('e:modell_' + (carModellWert(x.modellId) || 'auto'));
+      // Garage-Rollen, nicht Ranglistenplatz: NPCs erhalten keinen Spielerzusatz.
+      const nr = rennstandSpielerNr(x.role);
+      if (nr) add('e:spieler' + nr);
+    };
+    const sekunden = (z) => {
+      if (z === 10) { add('e:eine_sekunde'); return; }
+      zahl(Math.floor(z / 10));
+      if (z % 10) { add('n:komma', 0.02); zahl(z % 10); }
+      add('e:sekunden');
+    };
+    const rueckstand = (x) => {
+      if (x.rundenZurueck > 0) {
+        if (x.rundenZurueck === 1) add('e:eine_runde');
+        else { zahl(x.rundenZurueck); add('e:runden'); }
+        return;
+      }
+      if (!Number.isFinite(x.msZurueck)) { add('e:unbekannt'); return; }
+      const z = Math.max(0, Math.round(x.msZurueck / 100));
+      if (z === 0) { add('e:gleich'); return; }
+      const minuten = Math.floor(z / 600), rest = z % 600;
+      if (!minuten) { sekunden(rest); return; }
+      if (minuten === 1) add('e:eine_minute');
+      else { zahl(minuten); add('e:minuten'); }
+      if (rest) { add('e:und'); sekunden(rest); }
+      else add('e:rueckstand');
+    };
+    // Rundennummer wie bisher: vollendete Bezugsrunden.
+    // Messrunde = vollendete Bezugsrunde. Den bereits vorhandenen Rundenclip
+    // verwenden: fuer 'zwischenstand' wurden keine neuen Aufnahmen ausgeliefert.
+    if (!ergebnis) { add('e:runde'); zahl(runde); ende(); }
+    for (const x of rows.slice(0, 3)) {
+      if (x.platz === 1) { add(ergebnis ? 'e:gewonnen' : 'e:fuehrt_start'); wagen(x); }
+      else {
+        add(x.platz === 2 ? 'e:zweiter' : 'e:dritter');
+        rueckstand(x); wagen(x);
+      }
+      ende();
+    }
+    return folge;
+  }
+
+  async function rennstandClipsLaden(spr) {
+    if (!audioCtx || !rennstandAn) return null;
+    const quelle = spr === 'de' ? 'de' : 'en'; // Spanisch wie vorhandene Clips: Englisch.
+    if (rennstandBuffers[quelle]) return rennstandBuffers[quelle];
+    if (rennstandLaden[quelle]) return rennstandLaden[quelle];
+    rennstandLaden[quelle] = (async () => {
+      try {
+        const satz = {};
+        for (const [path, prefix] of [['audio/zahlen.json', 'n:'], ['audio/rennstand-erweitert.json', 'e:']]) {
+          const res = await fetch(path);
+          if (!res.ok) throw new Error(path + ' HTTP ' + res.status);
+          const manifest = await res.json();
+          const entries = Object.entries(manifest[quelle] || {});
+          if (!entries.length) throw new Error('Sprache fehlt in ' + path);
+          // Kleine Pakete begrenzen parallele Decodes auf Mobilgeraeten.
+          for (let i = 0; i < entries.length; i += 4) {
+            await Promise.all(entries.slice(i, i + 4).map(async ([key, file]) => {
+              const response = await fetch('audio/' + file);
+              if (!response.ok) throw new Error(file + ' HTTP ' + response.status);
+              satz[prefix + key] = await audioCtx.decodeAudioData(await response.arrayBuffer());
+            }));
+          }
+        }
+        rennstandBuffers[quelle] = satz;
+        return satz;
+      } catch (err) {
+        log('Rennstand-Aufnahmen nicht ladbar (' + err.message + '). Keine unvollstaendige Ansage.', 'info');
+        return null;
+      } finally { delete rennstandLaden[quelle]; }
+    })();
+    return rennstandLaden[quelle];
+  }
+
+  async function rennstandSpielen(rows, runde, ergebnis = false, messung = null) {
+    const token = rennstandGeneration, spr = lang;
+    if (rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
+        || performance.now() < lapAnsageRuheBis) return false;
+    const satz = await rennstandClipsLaden(spr);
+    if (token !== rennstandGeneration || spr !== lang || !rennstandAn || !soundEnabled
+        || rennstandLautstaerke <= 0 || !['laps', 'endurance'].includes(raceMode)
+        || !audioCtx || !(ergebnis ? raceState === 'finished'
+          : ['racing', 'finishing'].includes(raceState)) || !satz) return false;
+    // Auch nach dem asynchronen Laden erneut pruefen. Keine Rundenzeit abbrechen.
+    if (rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
+        || performance.now() < lapAnsageRuheBis) return false;
+    // Den eingefrorenen Messstand der benannten Runde sprechen, nicht die
+    // inzwischen aktuelle Rundenzahl oder Ortung nach dem asynchronen Clip-Laden.
+    if (!rows.length || (messung && !rennstandMessstandGueltig(messung))) return false;
+    const folge = rennstandClipFolge(rows, runde, ergebnis);
+    const fehlendeClips = [...new Set(folge.filter((x) => !satz[x.key]).map((x) => x.key))];
+    if (fehlendeClips.length) {
+      log('Rennstand: benoetigte Clips fehlen (' + fehlendeClips.join(', ')
+        + '), Ansage ausgelassen.', 'info');
+      return false;
+    }
+    const sprechtempo = rennstandTempoWert(rennstandTempo);
+    let t0 = audioCtx.currentTime + 0.03;
+    try {
+      for (const x of folge) {
+        const src = audioCtx.createBufferSource();
+        src.buffer = satz[x.key];
+        src.playbackRate.value = sprechtempo;
+        src.connect(rennstandGain());
+        src.onended = () => { rennstandQuellen = rennstandQuellen.filter((q) => q !== src); };
+        src.start(t0); rennstandQuellen.push(src);
+        t0 += (src.buffer.duration + x.pause) / sprechtempo;
+      }
+      rennstandBis = t0 + (rennstandHall > 0 ? RENNSTAND_HALL_DAUER : 0); rennstandSatzRunde = ergebnis ? null : runde;
+      announceCalls++;
+      return true;
+    } catch (err) {
+      rennstandAbbrechen();
+      log('Rennstand-Wiedergabe fehlgeschlagen: ' + err.message, 'info');
+      return false;
+    }
+  }
+
+
+  function rennstandErgebnisErlaubt() {
+    return rennstandAn && soundEnabled && rennstandLautstaerke > 0
+      && raceState === 'finished' && ['laps', 'endurance'].includes(raceMode);
+  }
+
+  function rennstandErgebnisDaten() {
+    // Gleiche Fahrzeuge und gleiche Sortierung wie renderRaceResults(), nicht
+    // die zeitweise abweichenden Ortungsdaten der Live-Anzeige.
+    const cars = raceAllCars().filter((c) => c.role !== 'safetycar'
+      && c.role !== 'reinig' && c.laps.length);
+    const rows = rennstandWerten(cars);
+    rows.sort((a, b) => (b.runden - a.runden)
+      || ((a.summe === null ? Infinity : a.summe) - (b.summe === null ? Infinity : b.summe))
+      || (cars.findIndex((c) => c.id === a.id) - cars.findIndex((c) => c.id === b.id)));
+    const leader = rows[0];
+    return rows.map((x, i) => Object.assign({}, x, {
+      platz: i + 1, rundenZurueck: leader.runden - x.runden,
+      msZurueck: x.runden === leader.runden && x.summe !== null && leader.summe !== null
+        ? Math.max(0, x.summe - leader.summe) : null,
+    }));
+  }
+
+  function rennstandErgebnisNochAuslauf(jetzt) {
+    // Rueckfahrt zum Startplatz ist kein Wertungslauf mehr. Nur echte
+    // NPC-Auslaufrunden abwarten, hoechstens bis zum vorhandenen Auslauf-Limit.
+    return ghostAuslaufBis > jetzt
+      && garage.some((c) => c.role === 'ghost' && c.ghost && c.ghost.auslauf);
+  }
+
+  function rennstandRennende(fanfare) {
+    if (rennstandErgebnisGeplant || rennstandErgebnisGesprochen
+        || !rennstandErgebnisErlaubt()) return false;
+    rennstandErgebnisGeplant = true;
+    const token = rennstandGeneration;
+    const fanfareDauer = fanfare && Number.isFinite(fanfare.dauer) ? fanfare.dauer : 0;
+    const fanfareBis = audioCtx ? audioCtx.currentTime + fanfareDauer + 0.35 : 0;
+    const pruefen = async () => {
+      if (token !== rennstandGeneration) return;
+      rennstandTimer = null;
+      if (!rennstandErgebnisErlaubt()) return;
+      if (rennstandErgebnisNochAuslauf(Date.now()) || rennstandBeschaeftigt()
+          || lapAnsageBeschaeftigt() || performance.now() < lapAnsageRuheBis
+          || (audioCtx && audioCtx.currentTime < fanfareBis)) {
+        rennstandTimer = setTimeout(pruefen, 100);
+        return;
+      }
+      const rows = rennstandErgebnisDaten();
+      if (!rows.length) return;
+      const ok = await rennstandSpielen(rows, rennstandBezugsrunde(rows), true);
+      if (token !== rennstandGeneration) return;
+      if (ok) rennstandErgebnisGesprochen = true;
+      else if (rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
+          || performance.now() < lapAnsageRuheBis) {
+        rennstandTimer = setTimeout(pruefen, 100);
+      }
+    };
+    rennstandTimer = setTimeout(pruefen, 100);
+    return true;
+  }
+
+  function rennstandErlaubt() {
+    return rennstandAn && soundEnabled && rennstandLautstaerke > 0 && !raceFormationLap
+      && ['racing', 'finishing'].includes(raceState)
+      && ['laps', 'endurance'].includes(raceMode);
+  }
+
+  // Keine starre 800-ms-Sprechsperre: Browser-TTS und Zahlenclips werden bis zu
+  // ihrem echten Ende beobachtet. Danach 300 ms Abstand, ohne Rundenzeiten zu kuerzen.
+  function rennstandWarten(messung, delay) {
+    const n = messung.n, rows = messung.rows;
+    rennstandWartend = n;
+    const token = rennstandGeneration;
+    const pruefen = async () => {
+      if (token !== rennstandGeneration) return;
+      rennstandTimer = null;
+      if (!rennstandErlaubt()) { rennstandWartend = null; return; }
+      if (rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
+          || performance.now() < lapAnsageRuheBis) {
+        rennstandTimer = setTimeout(pruefen, 100);
+        return;
+      }
+      if (!rennstandMessstandGueltig(messung)) {
+        rennstandGemeldet.delete(n); rennstandMesspunkte.set(n, { n, start: Date.now() });
+        rennstandWartend = null; return;
+      }
+      const ok = await rennstandSpielen(rows, n, false, messung);
+      if (token !== rennstandGeneration) return;
+      if (!ok && !rennstandMessstandGueltig(messung)) {
+        rennstandGemeldet.delete(n); rennstandMesspunkte.set(n, { n, start: Date.now() });
+        rennstandWartend = null;
+      } else if (!ok && (rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
+          || performance.now() < lapAnsageRuheBis)) {
+        rennstandTimer = setTimeout(pruefen, 100);
+      } else rennstandWartend = null;
+    };
+    rennstandTimer = setTimeout(pruefen, Math.max(0, delay));
+  }
+
+  // Laufende Zwischenstands-/Ergebnisansagen werden nicht fuer eine neue
+  // Spielerzeit unterbrochen. Diese Sprachansage entfaellt, ohne Nachholwarteschlange.
+  // Rundenwertung, Anzeige, Bestzeit und Rundenton bleiben unveraendert.
+  function rennstandVorRundenzeit() {
+    return !rennstandBeschaeftigt();
+  }
+
+  function rennstandMessungPruefen() {
+    if (rennstandMessTimer !== null) clearTimeout(rennstandMessTimer);
+    rennstandMessTimer = null;
+    if (!rennstandErlaubt()) return false;
+    const cars = rennstandRohdaten();
+    const fertig = rennstandMessungAktualisieren(cars, rennstandIntervall,
+      rennstandMesspunkte, rennstandGemeldet);
+    if (rennstandMesspunkte.size) {
+      const token = rennstandMessGeneration;
+      rennstandMessTimer = setTimeout(() => {
+        if (token === rennstandMessGeneration) rennstandMessungPruefen();
+      }, 100);
+    }
+    if (!fertig.length) return false;
+    const messung = fertig[fertig.length - 1];
+    if (messung.timeout) log('Rennstand nach Runde ' + messung.n
+      + ': Wartegrenze erreicht; nur ' + messung.rows.length
+      + ' gemessene Fahrzeuge angesagt, keine erfundene Ueberrundung.', 'info');
+    if (rennstandTimer !== null) clearTimeout(rennstandTimer);
+    if (!rennstandBeschaeftigt()) rennstandAbbrechen();
+    else rennstandGeneration++;
+    rennstandWarten(messung, 100);
+    return true;
+  }
+
+  function rennstandRunde() {
+    if (!rennstandErlaubt()) return false;
+    // Boxen-Doppeltrigger erst nach der moeglichen Rundenruecknahme auswerten.
+    const token = rennstandMessGeneration;
+    if (pitLaneEnabled && pitTrigger === 'double' && pitDoubleRunden === 0) {
+      setTimeout(() => {
+        if (token === rennstandMessGeneration) rennstandMessungPruefen();
+      }, PIT_DOUBLE_WINDOW_MS + 50);
+      return true;
+    }
+    return rennstandMessungPruefen();
+  }
+
+  // Die vorhandene Selbstsicherung (98b-sicherung.js) speichert beide Controls.
+  // Kein zweiter localStorage-Wert, der beim Start die Selbstsicherung ueberschreibt.
+  // data-preset-skip haelt die Fahrzeug-Abstimmungen unabhaengig.
+  const rennstandSchalter = $('setting-announce-stand');
+  const rennstandRegler = $('setting-announce-stand-interval');
+  if (rennstandSchalter) {
+    rennstandSchalter.checked = rennstandAn;
+    rennstandSchalter.addEventListener('change', () => {
+      rennstandAn = rennstandSchalter.checked;
+      rennstandMesspunkte.clear(); rennstandMessGeneration++;
+      rennstandAbbrechen();
+      if (rennstandAn) rennstandClipsLaden(lang);
+    });
+  }
+  if (rennstandRegler) {
+    rennstandRegler.value = String(rennstandIntervall);
+    rennstandRegler.addEventListener('change', () => {
+      rennstandIntervall = rennstandIntervallWert(rennstandRegler.value);
+      rennstandMesspunkte.clear(); rennstandMessGeneration++;
+      rennstandRegler.value = String(rennstandIntervall);
+      rennstandAbbrechen();
+    });
+    numSteuer('setting-announce-stand-interval');
+  }
+
+  // Selbstsicherung speichert den Parameter; laufende Messpunkte bleiben erhalten.
+  const rennstandWarteRegler = $('setting-announce-stand-wait');
+  if (rennstandWarteRegler) {
+    const lesen = () => {
+      rennstandWarteSekunden = rennstandWarteWert(rennstandWarteRegler.value);
+      rennstandWarteRegler.value = String(rennstandWarteSekunden);
+    };
+    rennstandWarteRegler.addEventListener('change', lesen);
+    lesen();
+    numSteuer('setting-announce-stand-wait');
+  }
+
+  i18nOnLangChange(() => {
+    rennstandAbbrechen();
+    if (rennstandAn) rennstandClipsLaden(lang);
+  });
+
+  function rennstandTempoWert(v) {
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.max(1, Math.min(1.75, n)) : 1;
+  }
+  function rennstandLautWert(v) {
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.max(0, Math.min(2, n)) : 1;
+  }
+  function rennstandHallWert(v) {
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 0;
+  }
+  function rennstandHallAnwenden() {
+    if (!rennstandHallWet) return;
+    rennstandHallDry.gain.setTargetAtTime(1 - 0.2 * rennstandHall, audioCtx.currentTime, 0.02);
+    rennstandHallWet.gain.setTargetAtTime(rennstandHall * 0.7, audioCtx.currentTime, 0.02);
+  }
+  function rennstandGain() {
+    if (!rennstandBus || rennstandBus.context !== audioCtx) {
+      if (rennstandBus) { try { rennstandBus.disconnect(); } catch (e) {} }
+      rennstandBus = audioCtx.createGain();
+      if (rennstandKompressor) { try { rennstandKompressor.disconnect(); } catch (e) {} }
+      // Nur der Rennstand erhaelt den Boost und eine Begrenzung lauter Spitzen.
+      rennstandKompressor = audioCtx.createDynamicsCompressor();
+      rennstandKompressor.threshold.value = -3;
+      rennstandKompressor.knee.value = 3;
+      rennstandKompressor.ratio.value = 20;
+      rennstandKompressor.attack.value = 0.003;
+      rennstandKompressor.release.value = 0.08;
+      for (const node of rennstandHallNodes) { try { node.disconnect(); } catch (e) {} }
+      rennstandHallDry = audioCtx.createGain();
+      rennstandHallWet = audioCtx.createGain();
+      const hall = audioCtx.createConvolver();
+      hall.normalize = false;
+      const impulse = audioCtx.createBuffer(2, Math.ceil(audioCtx.sampleRate * RENNSTAND_HALL_DAUER), audioCtx.sampleRate);
+      // Festes diffuses Stereo-Nachhallmuster, keine externe Audiodatei.
+      let seed = 314159;
+      for (let ch = 0; ch < 2; ch++) {
+        const data = impulse.getChannelData(ch);
+        for (let i = 0; i < data.length; i++) {
+          seed = (1664525 * seed + 1013904223) >>> 0;
+          const t = i / audioCtx.sampleRate;
+          data[i] = t < 0.035 ? 0 : (seed / 4294967296 * 2 - 1)
+            * Math.exp(-6 * t / RENNSTAND_HALL_DAUER) * 0.06;
+        }
+      }
+      hall.buffer = impulse;
+      rennstandBus.connect(rennstandHallDry).connect(rennstandKompressor);
+      rennstandBus.connect(hall).connect(rennstandHallWet).connect(rennstandKompressor);
+      rennstandKompressor.connect(audioCtx.destination);
+      rennstandHallNodes = [hall, rennstandHallDry, rennstandHallWet];
+      rennstandHallAnwenden();
+    }
+    rennstandBus.gain.value = rennstandLautstaerke;
+    return rennstandBus;
+  }
+  // Selbstsicherung speichert diese Controls; getrennt von Fahrzeug-Presets.
+  [
+    ['setting-announce-stand-reverb', rennstandHallWert, (v) => {
+      rennstandHall = v; rennstandHallAnwenden();
+    }],
+    ['setting-announce-stand-speed', rennstandTempoWert, (v) => {
+      // Tempo pro Ansage festhalten, damit die Clip-Startzeiten zusammenpassen.
+      rennstandTempo = v;
+    }],
+    ['setting-announce-stand-volume', rennstandLautWert, (v) => {
+      rennstandLautstaerke = v;
+      if (rennstandBus) rennstandBus.gain.setTargetAtTime(v, audioCtx.currentTime, 0.015);
+      if (v === 0) rennstandAbbrechen();
+    }],
+  ].forEach(([id, normalisieren, setzen]) => {
+    const el = $(id), anzeige = $(id + '-val');
+    if (!el) return;
+    const lesen = () => {
+      const v = normalisieren(el.value);
+      el.value = String(v); setzen(v);
+      if (anzeige) anzeige.textContent = Math.round(v * 100) + '%';
+    };
+    el.addEventListener('input', lesen);
+    el.addEventListener('change', lesen);
+    lesen();
+  });
+  // =========================================================================
   // Autonome Gegner, und alles was an ihnen haengt
   // =========================================================================
   // Gamepad-Belegung, die Messung der Querablage, die Ruettelerkennung, die gelbe
@@ -51282,7 +51980,11 @@
     { id: 'gelb',    name: 'Gelb',       hex: '#e8c72a', ink: '#14161c' },
     { id: 'lila',    name: 'Lila',       hex: '#9b5de5', ink: '#ffffff' },
     { id: 'orange',  name: 'Orange',     hex: '#f08a24', ink: '#14161c' },
+    // Sonderoptionen nur bewusst waehlen; keine automatische Vergabe.
+    { id: 'keine', name: 'keine', hex: '#7a7a7a', ink: '#ffffff', auto: false },
+    { id: 'mehrfarbig', name: 'mehrfarbig', hex: '#b0b0b0', ink: '#14161c', auto: false },
   ];
+  const CAR_AUTO_COLORS = CAR_COLORS.filter((c) => c.auto !== false);
   // Ausgeschrieben, nicht als Zeichen: "Alpha" liest sich in einer Ergebnisliste, ein
   // einzelnes Alpha sieht dort nach einem Tippfehler aus. Das Zeichen steht im Farbklecks,
   // wo der Platz fuer ein Wort fehlt. Zwoelf, weil acht Farben plus Doppelbelegung.
@@ -51294,6 +51996,33 @@
     { wort: 'Iota', zeichen: '\u03b9' }, { wort: 'Kappa', zeichen: '\u03ba' },
     { wort: 'Lambda', zeichen: '\u03bb' }, { wort: 'My', zeichen: '\u03bc' },
   ];
+
+  // Fahrzeugidentitaet, unabhaengig von Alias, Motorsound und Physik.
+  const CAR_MODELLE = [
+    { id: '', name: 'Nicht zugeordnet' },
+    { id: 'bmw', name: 'BMW' },
+    { id: 'porsche911', name: 'Porsche 911' },
+    { id: 'fordmustang', name: 'Ford Mustang' },
+    { id: 'ferrari', name: 'Ferrari' },
+    { id: 'audi', name: 'Audi' },
+    { id: 'mclaren', name: 'McLaren' },
+    { id: 'mercedes', name: 'Mercedes' },
+    { id: 'redbull', name: 'Red Bull' },
+    { id: 'vwkaefer', name: 'VW Käfer' },
+  ];
+  function carModellWert(id) {
+    return CAR_MODELLE.some((m) => m.id === id) ? id : '';
+  }
+  function carModellName(id) {
+    return CAR_MODELLE.find((m) => m.id === carModellWert(id)).name;
+  }
+  function garageModellWechsel(car, dir) {
+    const i = CAR_MODELLE.findIndex((m) => m.id === carModellWert(car.modellId));
+    car.modellId = CAR_MODELLE[(i + dir + CAR_MODELLE.length) % CAR_MODELLE.length].id;
+    carRemember(car);
+    renderGarage();
+    renderRaceGrid();
+  }
   const CAR_STORE = 'chc.cars.v1';
 
   function carStore() {
@@ -51310,7 +52039,7 @@
   // Verbindungsreihenfolge und ist deshalb keine Eigenschaft des Autos - gemerkt wird sie
   // nur, wenn sie von Hand gewaehlt wurde (car.farbeGewaehlt). Ohne beides wird ein
   // vorhandener Eintrag geloescht statt ein leerer angelegt.
-  function carProfilGeaendert(e) { return !!(e && (e.alias || e.farbe)); }
+  function carProfilGeaendert(e) { return !!(e && (e.alias || e.farbe || carModellWert(e.modellId))); }
   // ROLLE UND GHOST-TEMPO JE AUTO (v0.9.6). GEMELDET (Familie): Einstellungen muessten am
   // naechsten Tag neu gesetzt werden. Rolle und eigenes Ghost-Tempo lagen nur im Speicher der
   // Sitzung. Eigene Ablage, damit carProfilGeaendert (Name/Farbe) unberuehrt bleibt.
@@ -51337,7 +52066,7 @@
   }
   function carRemember(car) {
     const all = carStore();
-    const e = { color: car.colorId, alias: car.alias || '', farbe: !!car.farbeGewaehlt,
+    const e = { modellId: carModellWert(car.modellId), color: car.colorId, alias: car.alias || '', farbe: !!car.farbeGewaehlt,
                 name: car.device.name || '' };
     if (carProfilGeaendert(e)) all[String(car.device.id)] = e;
     else delete all[String(car.device.id)];
@@ -51384,10 +52113,13 @@
     const all = carStore();
     const e = all[id];
     if (!e || !car) return;
-    const belegt = garage.find(c => c !== car && c.colorId === e.color);
-    if (belegt) belegt.colorId = car.colorId;          // tauschen statt doppelt vergeben
-    car.colorId = e.color;
+    const farbe = CAR_COLORS.find((c) => c.id === e.color) || CAR_AUTO_COLORS[0];
+    const belegt = farbe.auto !== false
+      ? garage.find(c => c !== car && c.colorId === farbe.id) : null;
+    if (belegt) belegt.colorId = car.colorId;          // normale Farben wie bisher tauschen
+    car.colorId = farbe.id;                           // Sonderoptionen duerfen mehrfach vorkommen
     car.alias = e.alias || '';
+    car.modellId = carModellWert(e.modellId);
     car.farbeGewaehlt = !!e.farbe;
     delete all[id];
     all[String(car.device.id)] = Object.assign({}, e, { name: car.device.name || e.name || '' });
@@ -51414,7 +52146,8 @@
     host.innerHTML = ids.map((id) => {
       const e = roh[id] || {};
       const f = CAR_COLORS.find((c) => c.id === e.color) || CAR_COLORS[0];
-      const wie = (e.alias ? e.alias : f.name).replace(/</g, '&lt;');
+      const wie = ((e.alias ? e.alias : f.name)
+        + (carModellWert(e.modellId) ? ' · ' + carModellName(e.modellId) : '')).replace(/</g, '&lt;');
       return '<span class="car-store-zeile" data-id="' + encodeURIComponent(id) + '">'
            + '<span class="car-store-farbe" style="background:' + f.hex + '"></span>'
            + wie
@@ -51492,11 +52225,12 @@
     merk = merk || {};
     car.farbeGewaehlt = !!merk.farbe;
     const belegt = new Set(garage.filter(c => c !== car).map(c => c.colorId));
-    car.colorId = (merk.color && CAR_COLORS.some(c => c.id === merk.color)
-                   && !belegt.has(merk.color))
-      ? merk.color
-      : (CAR_COLORS.find(c => !belegt.has(c.id)) || CAR_COLORS[0]).id;
+    const farbe = CAR_COLORS.find((c) => c.id === merk.color);
+    car.colorId = farbe && (farbe.auto === false || !belegt.has(farbe.id))
+      ? farbe.id
+      : (CAR_AUTO_COLORS.find(c => !belegt.has(c.id)) || CAR_AUTO_COLORS[0]).id;
     car.alias = merk.alias || '';
+    car.modellId = carModellWert(merk.modellId);
     carRetag();
   }
 
@@ -51946,6 +52680,8 @@
     const fi = CAR_COLORS.findIndex((c) => c.id === f.id);
     const farbe = (d) => garageFarbeSetzen(car, CAR_COLORS[(fi + d + CAR_COLORS.length) % CAR_COLORS.length].id);
     box.appendChild(garWertZeile('Farbe ' + garageLabel(car), f.name, () => farbe(-1), () => farbe(1)));
+    box.appendChild(garWertZeile('Marke / Modell', t(carModellName(car.modellId)),
+      () => garageModellWechsel(car, -1), () => garageModellWechsel(car, 1)));
     if (car.role === 'ghost') {
       const st = GHOST_TEMPO_STUFEN;
       let stufe = (car.ghostStufe === undefined || car.ghostStufe === null)
@@ -52145,10 +52881,12 @@
     pal.className = 'car-pal on';
     for (const fb of CAR_COLORS) {
       const b = document.createElement('button');
-      b.style.background = fb.hex;
+      b.style.background = fb.id === 'mehrfarbig'
+        ? 'linear-gradient(135deg,#e23b3b,#e8c72a,#35b45a,#3b7fe2)' : fb.hex;
+      if (fb.id === 'keine') { b.textContent = '∅'; b.style.color = fb.ink; }
       b.className = fb.id === car.colorId ? 'on' : '';
-      const wer = garage.find(c => c !== car && c.colorId === fb.id);
-      b.title = fb.name + (wer ? ' (schon ' + garageLabel(wer) + ')' : '');
+      const wer = fb.auto === false ? null : garage.find(c => c !== car && c.colorId === fb.id);
+      b.title = t(fb.name) + (wer ? ' (schon ' + garageLabel(wer) + ')' : '');
       b.setAttribute('aria-label', b.title);
       b.onclick = (ev) => { ev.stopPropagation(); garageFarbeSetzen(car, fb.id); pal.remove(); };
       pal.appendChild(b);
@@ -94684,6 +95422,193 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   });
 
   // ---- Ausfuehren und anzeigen ----
+  // ---- Rennstand-Ansage: reine Logik, keine echten Autos oder Audioausgabe ----
+
+  stAdd('Rennstand: Ergebnis beginnt mit Sieger, keine Live-Runde', () => {
+    const rows = [
+      { platz: 1, role: 'player', farbeId: 'rot', modellId: 'ferrari', rundenZurueck: 0, msZurueck: 0 },
+      { platz: 2, role: 'ghost', farbeId: 'gelb', modellId: 'porsche911', rundenZurueck: 0, msZurueck: 5000 },
+      { platz: 3, role: 'player3', farbeId: 'keine', modellId: 'bmw', rundenZurueck: 1, msZurueck: null },
+      { platz: 4, role: 'ghost', farbeId: 'blau', modellId: 'audi', rundenZurueck: 1, msZurueck: null },
+    ];
+    const keys = rennstandClipFolge(rows, 3, true).map((x) => x.key);
+    const soll = ['e:gewonnen', 'e:farbe_rot', 'e:modell_ferrari', 'e:spieler1',
+      'e:zweiter', 'n:5', 'e:sekunden', 'e:farbe_gelb', 'e:modell_porsche911',
+      'e:dritter', 'e:eine_runde', 'e:farbe_unbekannt', 'e:modell_bmw', 'e:spieler3'];
+    return { ok: JSON.stringify(keys) === JSON.stringify(soll), mass: keys.join(', ') };
+  });
+  stAdd('Rennstand: Ergebnis benutzt Tabellenwertung, keine leeren Teilnehmer', () => {
+    const echt = raceAllCars;
+    try {
+      raceAllCars = () => [
+        { id: 'a', role: 'ghost', ort: 1, laps: [{ ms: 1000 }] },
+        { id: 'b', role: 'player3', ort: 99, laps: [{ ms: 1000 }] },
+        { id: 'c', role: 'ghost', laps: [{ ms: 2500 }] },
+        { id: 'leer', role: 'ghost', laps: [] },
+      ];
+      const rows = rennstandErgebnisDaten();
+      return { ok: rows.map((x) => x.id).join(',') === 'a,b,c'
+        && rows[2].msZurueck === 1500, mass: 'Tabellen-Tie-Break und 1,5 s Rueckstand' };
+    } finally { raceAllCars = echt; }
+  });
+  stAdd('Rennstand: laufender Satz sperrt nur gesprochene Spielerzeit', () => {
+    const alt = rennstandBis, echt = rennstandBeschaeftigt;
+    let abbruch = 0; const abbrechen = rennstandAbbrechen;
+    try {
+      rennstandAbbrechen = () => { abbruch++; };
+      rennstandBeschaeftigt = () => true;
+      const gesperrt = rennstandVorRundenzeit() === false;
+      rennstandBeschaeftigt = () => false;
+      return { ok: gesperrt && rennstandVorRundenzeit() === true && abbruch === 0,
+        mass: 'Kein Abbruch und kein Nachholen durch Spielerzeiten' };
+    } finally {
+      rennstandBeschaeftigt = echt; rennstandAbbrechen = abbrechen; rennstandBis = alt;
+    }
+  });
+  stAdd('Rennstand: Ergebnis wartet nur echte NPC-Auslaufrunden', () => {
+    const alt = garage.slice(), bis = ghostAuslaufBis;
+    try {
+      garage.splice(0, garage.length, { role: 'ghost', ghost: { auslauf: true } });
+      ghostAuslaufBis = 2000;
+      const wartet = rennstandErgebnisNochAuslauf(1000);
+      const timeout = !rennstandErgebnisNochAuslauf(2000);
+      garage[0].ghost = { auslauf: false, nachZiel: true, running: true };
+      return { ok: wartet && timeout && !rennstandErgebnisNochAuslauf(1000),
+        mass: 'Ziellinie oder Auslauf-Limit; Rueckfahrt blockiert nicht' };
+    } finally { garage.splice(0, garage.length, ...alt); ghostAuslaufBis = bis; }
+  });
+
+  stAdd('Rennstand: Intervall 1 bis 20 und Standard 5', () => {
+    const got = [rennstandIntervallWert(undefined), rennstandIntervallWert(-1),
+      rennstandIntervallWert(99), rennstandIntervallWert(4.6)];
+    if (JSON.stringify(got) !== '[5,1,20,5]') throw new Error(JSON.stringify(got));
+    return { ok: true, mass: 'Standard, Grenzen und Rundung stimmen' };
+  });
+  stAdd('Rennstand: nur vollendete Meilensteine, keine Doppelansage', () => {
+    const seen = new Set(), out = [];
+    for (const n of [0, 1, 2, 3, 3, 2, 3, 4, 5, 6, 6]) {
+      if (rennstandMeilenstein(n, 3, seen)) out.push(n);
+    }
+    if (JSON.stringify(out) !== '[3,6]') throw new Error(JSON.stringify(out));
+    return { ok: true, mass: 'Runde 3 und 6 genau einmal, auch nach Ruecknahme' };
+  });
+  stAdd('Rennstand: Rangfolge und Zeit- oder Rundenrueckstand', () => {
+    const car = (id, ms) => ({ id, role: 'ghost', laps: ms.map((x) => ({ ms: x })) });
+    const rows = rennstandWerten([car('C', [11000, 12000]),
+      car('B', [10300, 11500, 10900]), car('A', [10000, 11000, 10500])]);
+    if (rows.map((x) => x.id).join('') !== 'ABC') throw new Error('Falsche Rangfolge');
+    if (rows[1].msZurueck !== 1200 || rows[2].rundenZurueck !== 1
+        || rows[2].msZurueck !== null) throw new Error('Falsche Rueckstaende');
+    return { ok: true, mass: 'Mehr Runden zuerst; 1,2 s oder eine vollendete Runde weniger' };
+  });
+  stAdd('Rennstand: immer das fuehrende Fahrzeug zaehlt', () => {
+    const rows = [{ role: 'ghost', runden: 7 }, { role: 'player', runden: 5 }];
+    const p2 = [{ role: 'player2', runden: 9 }, { role: 'player', runden: 8 }];
+    if (rennstandBezugsrunde(rows) !== 7 || rennstandBezugsrunde(p2) !== 9
+        || rennstandBezugsrunde([]) !== 0) throw new Error('Falscher Bezugszaehler');
+    return { ok: true, mass: 'NPC und Spieler 2 loesen ohne Spieler-1-Ueberfahrt aus' };
+  });
+  stAdd('Rennstand: Runde zuerst, Farbe und Modell, Top 3', () => {
+    const hex = (id) => CAR_COLORS.find((c) => c.id === id).hex;
+    const rows = [
+      { platz: 1, farbe: hex('blau'), modellId: 'bmw', rundenZurueck: 0, msZurueck: 0 },
+      { platz: 2, farbe: hex('gelb'), modellId: 'porsche911', rundenZurueck: 0, msZurueck: 5000 },
+      { platz: 3, farbe: hex('rot'), modellId: 'ferrari', rundenZurueck: 1, msZurueck: null },
+      { platz: 4, farbe: hex('gruen'), modellId: 'audi', rundenZurueck: 2, msZurueck: null },
+    ];
+    const keys = rennstandClipFolge(rows, 3).map((x) => x.key);
+    const soll = ['e:runde', 'n:3', 'e:fuehrt_start', 'e:farbe_blau', 'e:modell_bmw',
+      'e:zweiter', 'n:5', 'e:sekunden', 'e:farbe_gelb', 'e:modell_porsche911',
+      'e:dritter', 'e:eine_runde', 'e:farbe_rot', 'e:modell_ferrari'];
+    return { ok: JSON.stringify(keys) === JSON.stringify(soll), mass: keys.join(', ') };
+  });
+  stAdd('Rennstand: Sekunden, Minuten und unbekannte Fahrzeuge', () => {
+    const keys = (ms, laps = 0) => rennstandClipFolge([
+      { platz: 2, modellId: 'ungueltig', farbe: null, rundenZurueck: laps, msZurueck: ms },
+    ], 60).map((x) => x.key).join(',');
+    const ok = keys(1000).includes('e:eine_sekunde')
+      && keys(1250).includes('n:1,n:komma,n:3,e:sekunden')
+      && keys(65000).includes('e:eine_minute,e:und,n:5,e:sekunden')
+      && keys(null).includes('e:unbekannt') && keys(0).includes('e:gleich')
+      && keys(null, 2).includes('n:2,e:runden')
+      && keys(5000).endsWith('e:farbe_unbekannt,e:modell_auto')
+      && rennstandZahlFolge(123).join(',') === 'n:1,n:2,n:3'
+      && rennstandZahlFolge(NaN).length === 0;
+    return { ok, mass: 'Singular, Dezimal, Minuten, Gleichstand, Fallback und grosse Zahlen' };
+  });
+  stAdd('Rennstand: Tempo und eigene Lautstaerke begrenzt', () => {
+    const got = [rennstandTempoWert(undefined), rennstandTempoWert(0),
+      rennstandTempoWert(2), rennstandLautWert(-1), rennstandLautWert(3),
+      rennstandLautWert(0.35)];
+    return { ok: JSON.stringify(got) === '[1,1,1.75,0,2,0.35]',
+      mass: 'Tempo 100–175 %, Lautstaerke 0–200 % mit Boost' };
+  });
+  stAdd('Rennstand: Modell-only-Profil speichern und wieder laden', () => {
+    const alt = localStorage.getItem(CAR_STORE);
+    try {
+      const car = { device: { id: '__rennstand_modell_test__', name: 'ModellTest' },
+        colorId: 'blau', alias: '', farbeGewaehlt: false, modellId: 'bmw' };
+      carRemember(car);
+      if (carStore()[car.device.id].modellId !== 'bmw') throw new Error('Nicht gespeichert');
+      const neu = { device: car.device }; carAssign(neu);
+      if (neu.modellId !== 'bmw') throw new Error('Nicht geladen');
+      car.modellId = ''; carRemember(car);
+      return { ok: !carStore()[car.device.id] && carModellWert('unbekannt') === '',
+        mass: 'Modell alleine bleibt erhalten; leerer Wert wird bereinigt' };
+    } finally {
+      if (alt === null) localStorage.removeItem(CAR_STORE);
+      else localStorage.setItem(CAR_STORE, alt);
+      carStoreListeZeichnen();
+      if (typeof lageZeichnen === 'function') lageZeichnen();
+    }
+  });
+
+
+  stAdd('Rennstand: Sonderfarben und Spieler 1 bis 3', () => {
+    const keys = (id, role) => rennstandClipFolge([{ platz: 1, farbeId: id,
+      farbe: '#f08a24', role, modellId: 'fordmustang', rundenZurueck: 0, msZurueck: 0 }], 3)
+      .map((x) => x.key).join(',');
+    const soll = 'e:runde,n:3,e:fuehrt_start,e:farbe_unbekannt,e:modell_fordmustang,e:spieler1';
+    const ok = keys('keine', 'player') === soll
+      && keys('mehrfarbig', 'player2').endsWith('e:farbe_mehrfarbig,e:modell_fordmustang,e:spieler2')
+      && keys('orange', 'player3').endsWith('e:farbe_orange,e:modell_fordmustang,e:spieler3')
+      && !keys('gelb', 'ghost').includes('e:spieler')
+      && !keys('gelb', 'challenger').includes('e:spieler')
+      && !keys('keine', 'none').includes('e:spieler')
+      && rennstandClipFolge([{ platz: 2, farbeId: 'gelb', role: 'player2',
+          modellId: 'porsche911', rundenZurueck: 0, msZurueck: 5000 }], 3)
+        .map((x) => x.key).join(',')
+        === 'e:runde,n:3,e:zweiter,n:5,e:sekunden,e:farbe_gelb,e:modell_porsche911,e:spieler2';
+    return { ok, mass: 'Keine Farbe bei keine; Sonderfarbe; Spielerrolle statt Platz; NPC ohne Zusatz' };
+  });
+  stAdd('Rennstand: Sonderfarben speichern, doppelt laden, nicht automatisch vergeben', () => {
+    const alt = localStorage.getItem(CAR_STORE), vorhanden = garage.slice();
+    try {
+      garage.splice(0, garage.length);
+      let ok = CAR_AUTO_COLORS.length === 8 && new Set(CAR_COLORS.map((c) => c.hex)).size === 10;
+      for (const id of ['keine', 'mehrfarbig']) {
+        garage.splice(0, garage.length);
+        const car = { device: { id: '__rennstand_farbe_' + id + '__', name: 'FarbTest' },
+          colorId: id, alias: '', farbeGewaehlt: true, modellId: 'bmw' };
+        carRemember(car);
+        garage.push({ device: { id: '__rennstand_belegt__' }, colorId: id });
+        const neu = { device: car.device }; carAssign(neu);
+        ok = ok && neu.colorId === id && neu.modellId === 'bmw' && neu.farbeGewaehlt;
+      }
+      garage.splice(0, garage.length);
+      CAR_AUTO_COLORS.forEach((c, i) => garage.push({ device: { id: '__rennstand_acht_' + i }, colorId: c.id }));
+      const neu = { device: { id: '__rennstand_neu__' } }; carAssign(neu);
+      ok = ok && CAR_AUTO_COLORS.some((c) => c.id === neu.colorId);
+      return { ok, mass: 'Beide Sonderfarben mehrfach und dauerhaft; Automatik bleibt bei acht Grundfarben' };
+    } finally {
+      garage.splice(0, garage.length, ...vorhanden);
+      carRetag();
+      if (alt === null) localStorage.removeItem(CAR_STORE); else localStorage.setItem(CAR_STORE, alt);
+      carStoreListeZeichnen();
+      if (typeof lageZeichnen === 'function') lageZeichnen();
+    }
+  });
+
   async function runSelfTest() {
     const rows = $('st-rows');
     $('st-run').disabled = true;
@@ -94748,6 +95673,115 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
 
+
+  stAdd('Rennstand: Start/Ziel ist keine Ueberrundung', () => {
+    const cars = [
+      { id: 'a', laps: [{ms: 10000}, {ms: 10000}], ort: 40, rate: 2 },
+      { id: 'b', laps: [{ms: 10300}], ort: 39.4, rate: 2 },
+    ];
+    const x = rennstandWerten(cars, true, 20)[1];
+    if (x.rundenZurueck !== 0 || Math.abs(x.msZurueck - 300) > 0.001) throw new Error(JSON.stringify(x));
+    const keys = rennstandClipFolge(rennstandWerten(cars, true, 20), 2).map((x) => x.key);
+    if (keys.includes('e:eine_runde') || !keys.includes('n:komma')) throw new Error(keys.join(','));
+    return '0,3 Sekunden trotz kurzfristig unterschiedlicher Rundenzahl';
+  });
+  stAdd('Rennstand: echte Ueberrundung und Ergebnis bleiben getrennt', () => {
+    const cars = [
+      { id: 'a', laps: [{ms: 10000}, {ms: 10000}], ort: 40, rate: 2 },
+      { id: 'b', laps: [{ms: 10000}], ort: 19, rate: 2 },
+    ];
+    if (rennstandWerten(cars, true, 20)[1].rundenZurueck !== 1) throw new Error('Ueberrundung fehlt');
+    cars[1].ort = 39.4;
+    if (rennstandWerten(cars)[1].rundenZurueck !== 1) throw new Error('Ergebniswertung geaendert');
+    delete cars[0].ort; delete cars[1].ort;
+    const fallback = rennstandWerten(cars, true, 20)[1];
+    if (fallback.rundenZurueck !== 0 || fallback.msZurueck !== 0) throw new Error('Falscher Rueckfall');
+    return 'Echte Ueberrundung, finale Rundendifferenz und gemeinsame Messrunde';
+  });
+  stAdd('Rennstand: Hallregler begrenzt', () => {
+    if (JSON.stringify([-1, 0, 0.3, 2, undefined].map(rennstandHallWert)) !== '[0,0,0.3,1,0]') throw new Error('Hallgrenzen');
+    return '0–100 %, trocken als Standard';
+  });
+
+
+  stAdd('Rennstand: auf dritte Durchfahrt derselben Runde warten', () => {
+    const lap = (t) => ({ ms: 99999, crossedAt: t });
+    const cars = ['a','b','c','d'].map((id) => ({ id, laps: [1,2,3,4].map((n) => lap(n * 10000)) }));
+    const punkte = new Map(), seen = new Set();
+    cars[0].laps.push(lap(50000));
+    if (rennstandMessungAktualisieren(cars, 5, punkte, seen, 50000).length || !punkte.has(5)) throw new Error('Nicht vorgemerkt');
+    cars[1].laps.push(lap(50300));
+    if (rennstandMessungAktualisieren(cars, 5, punkte, seen, 50300).length) throw new Error('Zu frueh');
+    cars[2].laps.push(lap(51200));
+    const m = rennstandMessungAktualisieren(cars, 5, punkte, seen, 51200)[0];
+    if (!m || m.rows.length !== 3 || m.rows[1].msZurueck !== 300 || m.rows[2].msZurueck !== 1200
+        || m.rows.some((x) => x.rundenZurueck)) throw new Error('Falsche Messwerte');
+    if (rennstandMessungAktualisieren(cars, 5, punkte, seen, 52000).length) throw new Error('Doppelt');
+    return { ok: true, mass: '0,3 / 1,2 Sekunden; Platz 4 blockiert nicht, kein n+1 erforderlich' };
+  });
+  stAdd('Rennstand: kleines Feld und 30 Sekunden Wartegrenze', () => {
+    const cars = [{ id: 'a', laps: [{ crossedAt: 1000 }] }, { id: 'b', laps: [] }];
+    const punkte = new Map(), seen = new Set();
+    if (rennstandMessungAktualisieren(cars, 1, punkte, seen, 1000).length) throw new Error('Zweites Auto nicht abgewartet');
+    if (rennstandMessungAktualisieren(cars, 1, punkte, seen, 30999).length) throw new Error('Timeout zu frueh');
+    const m = rennstandMessungAktualisieren(cars, 1, punkte, seen, 31000)[0];
+    if (!m || !m.timeout || m.rows.length !== 1 || m.rows[0].rundenZurueck) throw new Error('Erfundener Abstand');
+    const single = rennstandMessungAktualisieren([cars[0]], 1, new Map(), new Set(), 1000)[0];
+    if (!single || single.timeout) throw new Error('Einzelwagen blockiert');
+    return { ok: true, mass: 'Nur tatsaechliche Messwerte nach Timeout; Einzelwagen sofort' };
+  });
+  stAdd('Rennstand: Zeitstempel unabhaengig von Strafen und weiterer Runde', () => {
+    const cars = [{ id: 'b', laps: [{ crossedAt: 10300, ms: 20000 }] },
+      { id: 'a', laps: [{ crossedAt: 10000, ms: 99000 }, { crossedAt: 20000, ms: 10000 }] }];
+    // Messrunde wie im echten Ablauf beim ersten Zieldurchgang vormerken.
+    const punkte = new Map([[1, { n: 1, start: 10000 }]]);
+    const m = rennstandMessungAktualisieren(cars, 1, punkte, new Set(), 20000)[0];
+    if (!m || m.rows[0].id !== 'a' || m.rows[1].msZurueck !== 300) throw new Error('Andere Runde/Strafen verglichen');
+    return { ok: true, mass: 'Durchfahrt derselben Runde statt Ortung oder Rundenzeit-Summe' };
+  });
+  stAdd('Rennstand: Messstand gegen Ruecknahme validieren', () => {
+    const echt = rennstandRohdaten;
+    const cars = [{ id: 'a', laps: [{ crossedAt: 10000 }] }, { id: 'b', laps: [{ crossedAt: 10300 }] }];
+    const m = { n: 1, rows: rennstandMessstand(cars, 1, 10300) };
+    try {
+      rennstandRohdaten = () => cars;
+      if (!rennstandMessstandGueltig(m)) throw new Error('Gueltige Messung verworfen');
+      cars[0].laps.push({ crossedAt: 20000 });
+      cars.push({ id: 'c', laps: [{ crossedAt: 11000 }] });
+      if (!rennstandMessstandGueltig(m)) throw new Error('Spaete Daten aendern eingefrorenen Stand');
+      cars[1].laps.pop();
+      if (rennstandMessstandGueltig(m)) throw new Error('Ruecknahme ignoriert');
+      return { ok: true, mass: 'Eingefrorene Teilnehmer werden vor Wiedergabe erneut geprueft' };
+    } finally { rennstandRohdaten = echt; }
+  });
+
+  stAdd('Rennstand: Warteparameter 5 bis 30 Sekunden', () => {
+    const got = [rennstandWarteWert(undefined), rennstandWarteWert(''),
+      rennstandWarteWert(null), rennstandWarteWert(0), rennstandWarteWert(50),
+      rennstandWarteWert(12.6), rennstandWarteWert('10')];
+    if (JSON.stringify(got) !== '[30,30,30,5,30,13,10]') throw new Error(JSON.stringify(got));
+    return 'Standard 30 s, Bereich 5–30 s, ganze Sekunden';
+  });
+  stAdd('Rennstand: eingestellte Wartegrenze und fruehe Freigabe', () => {
+    const cars = [
+      { id: 'a', laps: [{ms:1000,crossedAt:1000}] },
+      { id: 'b', laps: [] }, { id: 'c', laps: [] }
+    ];
+    for (const sek of [5, 12, 30]) {
+      const punkte = new Map(), gemeldet = new Set();
+      if (rennstandMessungAktualisieren(cars,1,punkte,gemeldet,1000,sek).length) throw new Error('Zu frueh');
+      if (rennstandMessungAktualisieren(cars,1,punkte,gemeldet,1000+sek*1000-1,sek).length) throw new Error('Vor Grenze');
+      const r = rennstandMessungAktualisieren(cars,1,punkte,gemeldet,1000+sek*1000,sek);
+      if (r.length !== 1 || !r[0].timeout || r[0].rows.length !== 1) throw new Error('Grenze '+sek);
+    }
+    const punkte = new Map(), gemeldet = new Set();
+    rennstandMessungAktualisieren(cars,1,punkte,gemeldet,1000,30);
+    cars[1].laps = [{ms:1300,crossedAt:1300}];
+    cars[2].laps = [{ms:1600,crossedAt:1600}];
+    const r = rennstandMessungAktualisieren(cars,1,punkte,gemeldet,1600,30);
+    if (r.length !== 1 || r[0].timeout || r[0].rows[1].msZurueck !== 300) throw new Error('Top3 Freigabe');
+    return '5/12/30 s exakt, Top 3 ohne unnoetiges Warten';
+  });
   // ============================== HOME ==============================
   // Der Schirm beim Laden, erreichbar ueber das Logo. Die Zahl der Einstellungen wird
   // zur Laufzeit gezaehlt, damit sie nicht veraltet.
@@ -98657,7 +99691,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (c) return c.hex;
     } catch (e) { /* ohne Ablage */ }
     if (a.farbe) return a.farbe;
-    return CAR_COLORS[i % CAR_COLORS.length].hex;
+    return CAR_AUTO_COLORS[i % CAR_AUTO_COLORS.length].hex;
   }
   function statFoto(id) {
     try { return id ? localStorage.getItem('omegasim-autofoto:' + id) : null; } catch (e) { return null; }

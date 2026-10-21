@@ -487,3 +487,20 @@ erzeugt mit `tools/voice_zahlen.py`, danach band-begrenzt wie die anderen Ansage
 
 Beide Stimmmodelle stammen von https://huggingface.co/rhasspy/piper-voices und sind nicht
 im Repository, nur die erzeugten Clips.
+
+## Rennstand-Ansage
+
+78 vorproduzierte Clips (`rennstand_ext_*.ogg`, 39 pro Sprache DE/EN).
+Erzeugung: `tools/voice_rennstand_erweitert.py`; Manifest:
+`audio/rennstand-erweitert.json`. Zahlenclips aus `audio/zahlen.json`
+werden wiederverwendet. Keine Stimmmodelle oder Roh-WAVs im PR.
+
+Stimmen und Funkfilter wie bei der Rundenzeit-Ansage: Piper,
+`de_DE-thorsten-medium` und `en_US-ljspeech-medium`. Die vorstehenden
+Herkunfts- und Lizenzhinweise zu Piper, Thorsten/lessac und LJ Speech gelten
+auch fuer diese erzeugten Aufnahmen. Modelle:
+https://huggingface.co/rhasspy/piper-voices
+
+Der deutsche Rundenanfang wird mit „Nach Runde.“ erzeugt. Fahrzeugmodelle
+umfassen auch VW Kaefer. Herstellerbezeichnungen dienen nur der vom Benutzer
+gewaehlten Fahrzeugkennung; keine Beteiligung oder Unterstuetzung der Hersteller.

@@ -938,7 +938,11 @@
     { id: 'gelb',    name: 'Gelb',       hex: '#e8c72a', ink: '#14161c' },
     { id: 'lila',    name: 'Lila',       hex: '#9b5de5', ink: '#ffffff' },
     { id: 'orange',  name: 'Orange',     hex: '#f08a24', ink: '#14161c' },
+    // Sonderoptionen nur bewusst waehlen; keine automatische Vergabe.
+    { id: 'keine', name: 'keine', hex: '#7a7a7a', ink: '#ffffff', auto: false },
+    { id: 'mehrfarbig', name: 'mehrfarbig', hex: '#b0b0b0', ink: '#14161c', auto: false },
   ];
+  const CAR_AUTO_COLORS = CAR_COLORS.filter((c) => c.auto !== false);
   // Ausgeschrieben, nicht als Zeichen: "Alpha" liest sich in einer Ergebnisliste, ein
   // einzelnes Alpha sieht dort nach einem Tippfehler aus. Das Zeichen steht im Farbklecks,
   // wo der Platz fuer ein Wort fehlt. Zwoelf, weil acht Farben plus Doppelbelegung.
@@ -950,6 +954,33 @@
     { wort: 'Iota', zeichen: '\u03b9' }, { wort: 'Kappa', zeichen: '\u03ba' },
     { wort: 'Lambda', zeichen: '\u03bb' }, { wort: 'My', zeichen: '\u03bc' },
   ];
+
+  // Fahrzeugidentitaet, unabhaengig von Alias, Motorsound und Physik.
+  const CAR_MODELLE = [
+    { id: '', name: 'Nicht zugeordnet' },
+    { id: 'bmw', name: 'BMW' },
+    { id: 'porsche911', name: 'Porsche 911' },
+    { id: 'fordmustang', name: 'Ford Mustang' },
+    { id: 'ferrari', name: 'Ferrari' },
+    { id: 'audi', name: 'Audi' },
+    { id: 'mclaren', name: 'McLaren' },
+    { id: 'mercedes', name: 'Mercedes' },
+    { id: 'redbull', name: 'Red Bull' },
+    { id: 'vwkaefer', name: 'VW Käfer' },
+  ];
+  function carModellWert(id) {
+    return CAR_MODELLE.some((m) => m.id === id) ? id : '';
+  }
+  function carModellName(id) {
+    return CAR_MODELLE.find((m) => m.id === carModellWert(id)).name;
+  }
+  function garageModellWechsel(car, dir) {
+    const i = CAR_MODELLE.findIndex((m) => m.id === carModellWert(car.modellId));
+    car.modellId = CAR_MODELLE[(i + dir + CAR_MODELLE.length) % CAR_MODELLE.length].id;
+    carRemember(car);
+    renderGarage();
+    renderRaceGrid();
+  }
   const CAR_STORE = 'chc.cars.v1';
 
   function carStore() {
@@ -966,7 +997,7 @@
   // Verbindungsreihenfolge und ist deshalb keine Eigenschaft des Autos - gemerkt wird sie
   // nur, wenn sie von Hand gewaehlt wurde (car.farbeGewaehlt). Ohne beides wird ein
   // vorhandener Eintrag geloescht statt ein leerer angelegt.
-  function carProfilGeaendert(e) { return !!(e && (e.alias || e.farbe)); }
+  function carProfilGeaendert(e) { return !!(e && (e.alias || e.farbe || carModellWert(e.modellId))); }
   // ROLLE UND GHOST-TEMPO JE AUTO (v0.9.6). GEMELDET (Familie): Einstellungen muessten am
   // naechsten Tag neu gesetzt werden. Rolle und eigenes Ghost-Tempo lagen nur im Speicher der
   // Sitzung. Eigene Ablage, damit carProfilGeaendert (Name/Farbe) unberuehrt bleibt.
@@ -993,7 +1024,7 @@
   }
   function carRemember(car) {
     const all = carStore();
-    const e = { color: car.colorId, alias: car.alias || '', farbe: !!car.farbeGewaehlt,
+    const e = { modellId: carModellWert(car.modellId), color: car.colorId, alias: car.alias || '', farbe: !!car.farbeGewaehlt,
                 name: car.device.name || '' };
     if (carProfilGeaendert(e)) all[String(car.device.id)] = e;
     else delete all[String(car.device.id)];
@@ -1040,10 +1071,13 @@
     const all = carStore();
     const e = all[id];
     if (!e || !car) return;
-    const belegt = garage.find(c => c !== car && c.colorId === e.color);
-    if (belegt) belegt.colorId = car.colorId;          // tauschen statt doppelt vergeben
-    car.colorId = e.color;
+    const farbe = CAR_COLORS.find((c) => c.id === e.color) || CAR_AUTO_COLORS[0];
+    const belegt = farbe.auto !== false
+      ? garage.find(c => c !== car && c.colorId === farbe.id) : null;
+    if (belegt) belegt.colorId = car.colorId;          // normale Farben wie bisher tauschen
+    car.colorId = farbe.id;                           // Sonderoptionen duerfen mehrfach vorkommen
     car.alias = e.alias || '';
+    car.modellId = carModellWert(e.modellId);
     car.farbeGewaehlt = !!e.farbe;
     delete all[id];
     all[String(car.device.id)] = Object.assign({}, e, { name: car.device.name || e.name || '' });
@@ -1070,7 +1104,8 @@
     host.innerHTML = ids.map((id) => {
       const e = roh[id] || {};
       const f = CAR_COLORS.find((c) => c.id === e.color) || CAR_COLORS[0];
-      const wie = (e.alias ? e.alias : f.name).replace(/</g, '&lt;');
+      const wie = ((e.alias ? e.alias : f.name)
+        + (carModellWert(e.modellId) ? ' · ' + carModellName(e.modellId) : '')).replace(/</g, '&lt;');
       return '<span class="car-store-zeile" data-id="' + encodeURIComponent(id) + '">'
            + '<span class="car-store-farbe" style="background:' + f.hex + '"></span>'
            + wie
@@ -1148,11 +1183,12 @@
     merk = merk || {};
     car.farbeGewaehlt = !!merk.farbe;
     const belegt = new Set(garage.filter(c => c !== car).map(c => c.colorId));
-    car.colorId = (merk.color && CAR_COLORS.some(c => c.id === merk.color)
-                   && !belegt.has(merk.color))
-      ? merk.color
-      : (CAR_COLORS.find(c => !belegt.has(c.id)) || CAR_COLORS[0]).id;
+    const farbe = CAR_COLORS.find((c) => c.id === merk.color);
+    car.colorId = farbe && (farbe.auto === false || !belegt.has(farbe.id))
+      ? farbe.id
+      : (CAR_AUTO_COLORS.find(c => !belegt.has(c.id)) || CAR_AUTO_COLORS[0]).id;
     car.alias = merk.alias || '';
+    car.modellId = carModellWert(merk.modellId);
     carRetag();
   }
 
@@ -1602,6 +1638,8 @@
     const fi = CAR_COLORS.findIndex((c) => c.id === f.id);
     const farbe = (d) => garageFarbeSetzen(car, CAR_COLORS[(fi + d + CAR_COLORS.length) % CAR_COLORS.length].id);
     box.appendChild(garWertZeile('Farbe ' + garageLabel(car), f.name, () => farbe(-1), () => farbe(1)));
+    box.appendChild(garWertZeile('Marke / Modell', t(carModellName(car.modellId)),
+      () => garageModellWechsel(car, -1), () => garageModellWechsel(car, 1)));
     if (car.role === 'ghost') {
       const st = GHOST_TEMPO_STUFEN;
       let stufe = (car.ghostStufe === undefined || car.ghostStufe === null)
@@ -1801,10 +1839,12 @@
     pal.className = 'car-pal on';
     for (const fb of CAR_COLORS) {
       const b = document.createElement('button');
-      b.style.background = fb.hex;
+      b.style.background = fb.id === 'mehrfarbig'
+        ? 'linear-gradient(135deg,#e23b3b,#e8c72a,#35b45a,#3b7fe2)' : fb.hex;
+      if (fb.id === 'keine') { b.textContent = '∅'; b.style.color = fb.ink; }
       b.className = fb.id === car.colorId ? 'on' : '';
-      const wer = garage.find(c => c !== car && c.colorId === fb.id);
-      b.title = fb.name + (wer ? ' (schon ' + garageLabel(wer) + ')' : '');
+      const wer = fb.auto === false ? null : garage.find(c => c !== car && c.colorId === fb.id);
+      b.title = t(fb.name) + (wer ? ' (schon ' + garageLabel(wer) + ')' : '');
       b.setAttribute('aria-label', b.title);
       b.onclick = (ev) => { ev.stopPropagation(); garageFarbeSetzen(car, fb.id); pal.remove(); };
       pal.appendChild(b);
