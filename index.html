@@ -4823,7 +4823,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.38</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.39</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5976,6 +5976,10 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Gummiband neu (WIP, Time Attack): Hat ein NPC viel Vorsprung (ein Viertel Runde, mindestens zwei Teile), wird er an jeder Start/Ziel-Durchfahrt langsamer, bis du ihn &#252;berholt hast; danach Runde f&#252;r Runde schneller, bis er wieder vorn ist. Neuer Regler &#8222;Gummiband: Schritt je Runde&#8220; (2&#8211;10 %, Standard 4 %). Das Tempo bleibt zwischen 60 und 140 % seines Garagentempos, in Kurven h&#246;chstens 110 %, vor und in der Haarnadel nie &#252;ber dem Garagentempo; Mindesttempo und Haarnadel-Obergrenze gelten weiter. Der Vorsprung wird &#252;ber Runden mitgez&#228;hlt, ohne den Rundenz&#228;hler deines Autos.</li>
+        <li>Automatische Aufstellung: Kein Startplatz mehr in der Haarnadel oder Engstelle &#8211; f&#228;llt einer dorthin, r&#252;cken er und alle dahinter um ganze Teile zur&#252;ck (andere Kurven bleiben erlaubt). Das Safety Car h&#228;lt beim Aufstellen Abstand wie unter Gelb und f&#228;hrt im selben Tempo wie alle (sein Mindest- und Heimweg-Tempo greifen dort nicht mehr). Einparken links/rechts: die Aufnahme lenkt 45 ms l&#228;nger nach au&#223;en, die Autos stehen etwas weiter am Rand und halten die Mitte frei.</li>
+        <li>Gelbe Flagge: alle gleich schnell. Die Feld-Staffel schob hintere NPCs auch unter Gelb um bis zu 10 % an &#8211; unter Gelb ist sie jetzt aus. Dein Autopilot f&#228;hrt unter Gelb mit demselben Mindesttempo und derselben Haarnadel-Obergrenze wie die NPCs (vorher war er in Kurven langsamer als sie). Das NPC-Tempo aus der Garage spielt unter Gelb keine Rolle.</li>
+        <li>Verbindungston ohne Piepen: Der Anlassklang beim Verbinden beginnt jetzt dort, wo der Motor anspringt &#8211; das hohe Anlasser-Surren der ersten Sekunde f&#228;llt weg. Garage: Die linke Spalte bleibt beim Umstellen rechts auf ihrer H&#246;he (die Position wird beim Scrollen mitgeschrieben und nach dem Neuaufbau zweimal gesetzt).</li>
         <li>Aufstellung: Jede Reihe steht jetzt eine halbe Kachel hinter der vorigen, vier Autos je Teil (zwei links, zwei rechts). Liegt ein Platz in einer Kurve oder direkt davor, parkt das Auto mit dem kurzen Lenkimpuls statt mit der Aufnahme. Das Tempo der Aufstellung h&#228;ngt nicht mehr an Schwierigkeit oder Grundtempo. Safety Car: f&#228;hrt die erste Runde ganz hinter dem Feld mit und parkt erst danach; neuer Regler &#8222;Gas beim Ausparken&#8220; (WIP, Standard 1,5 &#215; der Aufnahme).</li>
         <li>NPCs in der Haarnadel: Das H&#246;chsttempo dort gilt jetzt zuletzt. Bisher hoben die Feld-Staffel (bis +10 %) und das Mindesttempo (37 %) jede Haarnadel &#252;ber die Grenze. Neuer Regler NPC &#8594; &#8222;H&#246;chsttempo in der Haarnadel&#8220; (WIP, Standard 35 %, gilt auch auf den zwei Teilen davor). Ab vier Teilen vor der Haarnadel gibt es keinen &#220;berholschub mehr.</li>
         <li>Ansagen: Statt &#8222;Autonamen ansagen&#8220; w&#228;hlst du jetzt, was die Namen in der Garage sind (WIP). Autobezeichnungen (Standard): &#8222;Gewonnen hat der rote Porsche&#8220;. Fahrernamen: &#8222;Gewonnen hat Max Mustermann&#8220;, ohne Farbe.</li>
@@ -9295,14 +9299,21 @@
           Time Attack auf der Bahn fahren alle NPCs als Challenger gegen dich. Gegen meine Bestzeit:
           sie fahren deine beste aufgezeichnete Runde dieser Strecke nach, jeder ab seinem Startplatz.
           Gegen den Rekord: die Runde der Online-Bestzeit der Challenge oder Community-Strecke.
-          Gummiband: sie halten sich ungef&auml;hr auf deiner H&ouml;he &ndash; vorn langsamer, hinten
-          schneller, mehrere NPCs je eine Kachel versetzt. Fehlt die Runde, fahren sie Gummiband. Auf
-          der Karte zeigt ein wei&szlig;er Punkt, wo die Runde gerade ist.</small></div>
+          Gummiband: hat ein NPC viel Vorsprung, wird er Runde f&uuml;r Runde langsamer, bis du ihn
+          &uuml;berholt hast, danach Runde f&uuml;r Runde schneller, bis er wieder vorn ist. Fehlt die
+          Runde, fahren sie Gummiband. Auf der Karte zeigt ein wei&szlig;er Punkt, wo die Runde gerade ist.</small></div>
         <select id="race-challenger">
           <option value="beste" selected>Gegen meine Bestzeit</option>
           <option value="rekord">Gegen den Rekord</option>
           <option value="gummiband">Gummiband</option>
         </select></div>
+      <div class="opt-row"><div class="opt-label">Gummiband: Schritt je Runde <span class="wip-tag">WIP</span><small>Um so viel &auml;ndert ein NPC im Gummiband sein Tempo an jeder Start/Ziel-Durchfahrt: langsamer, solange er vorn liegt (ab einem Viertel Runde Vorsprung, mindestens zwei Teile, bis du ihn &uuml;berholt hast), schneller, solange er hinter dir liegt. Sein Garagentempo ist 100&nbsp;%; das Gummiband bleibt zwischen 60 und 140&nbsp;% davon. In Kurven h&ouml;chstens 110&nbsp;%, vor und in der Haarnadel nie schneller als sein Garagentempo, und Mindesttempo und H&ouml;chsttempo in der Haarnadel gelten weiter. Standard 4&nbsp;%.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="race-gummiband-schritt" min="0.02" max="0.1" step="0.01" value="0.04" data-preset-skip>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="race-gummiband-schritt-val">4 %</span>
+        </div></div>
 
       <div id="race-grid-wrap" style="display:none; margin-top:12px">
         <label class="small">Startaufstellung, ziehen oder mit den Pfeilen sortieren</label>
@@ -13446,7 +13457,7 @@
       // match fx.json's real car keys (p992gt3r, not the old 'porsche') - see
       // tools/engine_fx.py, wo die Datei jetzt fuer alle Autos statt nur drei alte
       // Namen erzeugt wird.
-      playFx(fxBuffers.start[$('sound-profile').value] || fxBuffers.start.p992gt3r, 0.85);
+      playStartFx();
       log('GATT-Server verbunden.', 'info');
       await exploreServices();
     } catch (err) {
@@ -14795,6 +14806,10 @@
     "Ansagen: Statt „Autonamen ansagen“ wählst du jetzt, was die Namen in der Garage sind (WIP). Autobezeichnungen (Standard): „Gewonnen hat der rote Porsche“. Fahrernamen: „Gewonnen hat Max Mustermann“, ohne Farbe.": "Announcements: instead of “Announce car names” you now choose what the names in the garage are (WIP). Car names (default): “The winner is the red Porsche”. Driver names: “The winner is Max Mustermann”, without the colour.",
     "NPCs in der Haarnadel: Das Höchsttempo dort gilt jetzt zuletzt. Bisher hoben die Feld-Staffel (bis +10 %) und das Mindesttempo (37 %) jede Haarnadel über die Grenze. Neuer Regler NPC → „Höchsttempo in der Haarnadel“ (WIP, Standard 35 %, gilt auch auf den zwei Teilen davor). Ab vier Teilen vor der Haarnadel gibt es keinen Überholschub mehr.": "NPCs in the hairpin: the top speed there now applies last. Until now the field staggering (up to +10%) and the minimum speed (37%) lifted every hairpin above the limit. New slider NPC → “Top speed in the hairpin” (WIP, default 35%, also applies on the two pieces before it). From four pieces before the hairpin there is no overtaking boost any more.",
     "Aufstellung: Jede Reihe steht jetzt eine halbe Kachel hinter der vorigen, vier Autos je Teil (zwei links, zwei rechts). Liegt ein Platz in einer Kurve oder direkt davor, parkt das Auto mit dem kurzen Lenkimpuls statt mit der Aufnahme. Das Tempo der Aufstellung hängt nicht mehr an Schwierigkeit oder Grundtempo. Safety Car: fährt die erste Runde ganz hinter dem Feld mit und parkt erst danach; neuer Regler „Gas beim Ausparken“ (WIP, Standard 1,5 × der Aufnahme).": "Line-up: each row now stands half a piece behind the one in front, four cars per piece (two left, two right). If a spot lies in a curve or right before one, the car parks with the short steering pulse instead of the recording. Line-up speed no longer depends on difficulty or base speed. Safety car: drives the whole first lap behind the field and only parks afterwards; new slider “Throttle when pulling out” (WIP, default 1.5 × the recording).",
+    "Verbindungston ohne Piepen: Der Anlassklang beim Verbinden beginnt jetzt dort, wo der Motor anspringt – das hohe Anlasser-Surren der ersten Sekunde fällt weg. Garage: Die linke Spalte bleibt beim Umstellen rechts auf ihrer Höhe (die Position wird beim Scrollen mitgeschrieben und nach dem Neuaufbau zweimal gesetzt).": "Connection sound without the beep: the starter sound on connecting now begins where the engine catches – the high starter whine of the first second is gone. Garage: the left column keeps its position when you change something on the right (the position is recorded while scrolling and set twice after the rebuild).",
+    "Gelbe Flagge: alle gleich schnell. Die Feld-Staffel schob hintere NPCs auch unter Gelb um bis zu 10 % an – unter Gelb ist sie jetzt aus. Dein Autopilot fährt unter Gelb mit demselben Mindesttempo und derselben Haarnadel-Obergrenze wie die NPCs (vorher war er in Kurven langsamer als sie). Das NPC-Tempo aus der Garage spielt unter Gelb keine Rolle.": "Yellow flag: everyone equally fast. The field staggering pushed rear NPCs up to 10% faster even under yellow – it is now off under yellow. Your autopilot drives under yellow with the same minimum speed and the same hairpin top speed as the NPCs (before, it was slower than them in corners). The NPC speed from the garage plays no role under yellow.",
+    "Automatische Aufstellung: Kein Startplatz mehr in der Haarnadel oder Engstelle – fällt einer dorthin, rücken er und alle dahinter um ganze Teile zurück (andere Kurven bleiben erlaubt). Das Safety Car hält beim Aufstellen Abstand wie unter Gelb und fährt im selben Tempo wie alle (sein Mindest- und Heimweg-Tempo greifen dort nicht mehr). Einparken links/rechts: die Aufnahme lenkt 45 ms länger nach außen, die Autos stehen etwas weiter am Rand und halten die Mitte frei.": "Automatic line-up: no grid slot in the hairpin or chicane any more – if one lands there, it and all slots behind it move back by whole pieces (other corners stay allowed). The safety car keeps its distance during line-up as under yellow and drives at the same speed as everyone (its minimum and return speeds no longer apply there). Parking left/right: the recording steers outwards 45 ms longer, so the cars stand a little further at the edge and keep the middle clear.",
+    "Gummiband neu (WIP, Time Attack): Hat ein NPC viel Vorsprung (ein Viertel Runde, mindestens zwei Teile), wird er an jeder Start/Ziel-Durchfahrt langsamer, bis du ihn überholt hast; danach Runde für Runde schneller, bis er wieder vorn ist. Neuer Regler „Gummiband: Schritt je Runde“ (2–10 %, Standard 4 %). Das Tempo bleibt zwischen 60 und 140 % seines Garagentempos, in Kurven höchstens 110 %, vor und in der Haarnadel nie über dem Garagentempo; Mindesttempo und Haarnadel-Obergrenze gelten weiter. Der Vorsprung wird über Runden mitgezählt, ohne den Rundenzähler deines Autos.": "New rubber band (WIP, Time Attack): if an NPC has a big lead (a quarter lap, at least two pieces), it gets slower at every start/finish crossing until you have overtaken it; then faster lap by lap until it is ahead again. New slider “Rubber band: step per lap” (2–10%, default 4%). The speed stays between 60 and 140% of its garage speed, in corners at most 110%, before and in the hairpin never above its garage speed; minimum speed and hairpin top speed still apply. The lead is counted across laps without your car's lap counter.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -15500,6 +15515,9 @@
     "NPC: seitlicher Versatz": "NPC: lateral offset",
     "Allgemein": "General",
     "Gummiband": "Rubber band",
+    "In Time Attack auf der Bahn fahren alle NPCs als Challenger gegen dich. Gegen meine Bestzeit: sie fahren deine beste aufgezeichnete Runde dieser Strecke nach, jeder ab seinem Startplatz. Gegen den Rekord: die Runde der Online-Bestzeit der Challenge oder Community-Strecke. Gummiband: hat ein NPC viel Vorsprung, wird er Runde für Runde langsamer, bis du ihn überholt hast, danach Runde für Runde schneller, bis er wieder vorn ist. Fehlt die Runde, fahren sie Gummiband. Auf der Karte zeigt ein weißer Punkt, wo die Runde gerade ist.": "In Time Attack on the track all NPCs drive as challengers against you. Against my best time: they drive your best recorded lap of this track, each from its own grid slot. Against the record: the lap of the online best time of the challenge or community track. Rubber band: an NPC with a big lead gets slower lap by lap until you have overtaken it, then faster lap by lap until it is ahead again. Without a lap they drive rubber band. On the map a white dot shows where the lap currently is.",
+    "Gummiband: Schritt je Runde": "Rubber band: step per lap",
+    "Um so viel ändert ein NPC im Gummiband sein Tempo an jeder Start/Ziel-Durchfahrt: langsamer, solange er vorn liegt (ab einem Viertel Runde Vorsprung, mindestens zwei Teile, bis du ihn überholt hast), schneller, solange er hinter dir liegt. Sein Garagentempo ist 100 %; das Gummiband bleibt zwischen 60 und 140 % davon. In Kurven höchstens 110 %, vor und in der Haarnadel nie schneller als sein Garagentempo, und Mindesttempo und Höchsttempo in der Haarnadel gelten weiter. Standard 4 %.": "How much an NPC in rubber band changes its speed at every start/finish crossing: slower while it is ahead (from a quarter lap lead, at least two pieces, until you have overtaken it), faster while it is behind you. Its garage speed is 100%; the rubber band stays between 60 and 140% of it. In corners at most 110%, before and in the hairpin never faster than its garage speed, and minimum speed and hairpin top speed still apply. Default 4%.",
     "Haarnadel L": "Hairpin L",
     "Haarnadel R": "Hairpin R",
     "30° L": "30° L",
@@ -25662,8 +25680,10 @@
       // v1.0.28: unter Gelb Abstand zum Vordermann, wie die NPCs (gelbAbstandFaktor).
       * (grund === 'yellow' && typeof gelbAbstandFaktor === 'function' ? gelbAbstandFaktor(meinAuto) : 1);
     // Nie schneller als das Safety Car, wenn dicht dahinter - harte Grenze, siehe scFolgeDeckel (90-ghosts.js).
-    const ziel = (grund === 'yellow' && typeof scFolgeDeckel === 'function')
+    const zielSc = (grund === 'yellow' && typeof scFolgeDeckel === 'function')
       ? Math.min(zielBasis, scFolgeDeckel(meinAuto)) : zielBasis;
+    // v1.1.39: unter Gelb Mindesttempo und Haarnadel-Obergrenze wie die NPCs (autopilotGelbGrenzen).
+    const ziel = grund === 'yellow' && typeof autopilotGelbGrenzen === 'function' ? autopilotGelbGrenzen(meinAuto, zielSc) : zielSc;
     const v = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
     const dtA = Math.max(0.01, Math.min(0.25,
       (Date.now() - (regler.at || Date.now())) / 1000));
@@ -48205,7 +48225,7 @@
 
   // `seite` ist -1..1 und optional. Sie dient EINEM Zweck: einen Einmalklang dem Auto
   // zuzuordnen, das ihn erzeugt hat. Ohne Angabe bleibt er mittig, also genau wie bisher.
-  function playFx(buffer, gainVal, seite) {
+  function playFx(buffer, gainVal, seite, ab) {
     if (!buffer || !audioCtx || !soundEnabled) return false;
     const src = audioCtx.createBufferSource();
     src.buffer = buffer;
@@ -48222,8 +48242,19 @@
     } else {
       src.connect(g).connect(audioCtx.destination);
     }
-    src.start();
+    // `ab` (Sekunden, optional): erst ab dieser Stelle im Puffer spielen.
+    src.start(0, ab > 0 && ab < buffer.duration ? ab : 0);
     return true;
+  }
+
+  // v1.1.39 GEMELDET: "Es kommt immer erst ein Piepen. Mach das weg." Jeder Anlassklang in
+  // audio/fx.json beginnt mit 0,95 s Anlasser - bei den meisten Autos ein 1150-Hz-Surren aus
+  // tools/engine_fx.py (bei Mustang und Blazer die echte Aufnahme, die genauso piepsig klingt).
+  // Wir springen an die Stelle, an der der Motor anspringt (crank_end dort), statt alle
+  // Dateien neu zu erzeugen.
+  const START_FX_AB = 0.95;
+  function playStartFx() {
+    return playFx(fxBuffers.start[$('sound-profile').value] || fxBuffers.start.p992gt3r, 0.85, 0, START_FX_AB);
   }
 
   // Fuel warning, built like a modern seatbelt reminder rather than like a falling chime.
@@ -53116,6 +53147,15 @@
     });
   }
 
+  // v1.1.39 GEMELDET: "In der Garage ist links mit dem Scrollen noch etwas komisch. Es huepft hoch,
+  // wenn ich rechts beim Auto etwas umstelle." Am Rechner hielt die Wiederherstellung von v1.1.30;
+  // auf dem Telefon las renderGarage() die Hoehe offenbar schon falsch (0) ab. Darum schreibt jede
+  // Spalte ihre Hoehe beim Scrollen selbst mit, und renderGarage() setzt sie aus diesem Merker -
+  // sofort und nach dem naechsten Bild noch einmal (spaetes Layout im WebView).
+  const garScrollStand = { l: 0, r: 0 };
+  function garScrollMitschreiben(el, seite) {
+    el.addEventListener('scroll', () => { if (el.isConnected) garScrollStand[seite] = el.scrollTop; }, { passive: true });
+  }
   function renderGarage() {
     const list = $('gar-list');
     if (!list) return;
@@ -53171,8 +53211,7 @@
     // neuem scrollen. Schalte das ab, sodass ich auf der Hoehe bleibe." Beide Spalten werden hier neu
     // gebaut und begannen dann oben. Jetzt: die Hoehe beider Spalten und aller scrollenden Vorfahren merken
     // und danach wiederherstellen (bei kuerzerem Inhalt so weit unten wie moeglich).
-    const altL = list.querySelector('.gar-a-links'), altR = list.querySelector('.gar-a-rechts');
-    const scrollMerk = { l: altL ? altL.scrollTop : 0, r: altR ? altR.scrollTop : 0, vorfahren: [] };
+    const scrollMerk = { l: garScrollStand.l, r: garScrollStand.r, vorfahren: [] };
     for (let p = list.parentElement; p; p = p.parentElement) if (p.scrollTop) scrollMerk.vorfahren.push([p, p.scrollTop]);
     list.innerHTML = '';
     list.classList.remove('gar-karten');
@@ -53317,11 +53356,23 @@
     }
     list.appendChild(links);
     list.appendChild(rechts);
-    links.scrollTop = scrollMerk.l;
-    rechts.scrollTop = scrollMerk.r;
-    for (const [p, y] of scrollMerk.vorfahren) p.scrollTop = y;
     refreshGarageGo();
     garAktionenAbgleichen();
+    const setzen = () => {
+      if (!links.isConnected) return;
+      links.scrollTop = scrollMerk.l;
+      rechts.scrollTop = scrollMerk.r;
+      for (const [p, y] of scrollMerk.vorfahren) p.scrollTop = y;
+    };
+    setzen();
+    // Mitschreiben erst NACH dem Setzen: das Leeren oben hat die Spalten kurz auf 0 gestellt.
+    garScrollMitschreiben(links, 'l');
+    garScrollMitschreiben(rechts, 'r');
+    // Nach dem naechsten Bild noch einmal, falls das WebView das Layout spaeter fertig hat -
+    // aber nur, solange niemand dazwischen gescrollt hat (Finger oder menuNavRender).
+    requestAnimationFrame(() => {
+      if (garScrollStand.l === scrollMerk.l && garScrollStand.r === scrollMerk.r) setzen();
+    });
   }
 
   // Die Rolle des gewaehlten Autos, als erste Zeile rechts: Pfeile wie bisher (nur FREIE Rollen, v0.9.6),
@@ -53600,7 +53651,7 @@
       else if (!playerCar) setCarRole(car, 'player');
       else setCarRole(car, 'ghost');
       log(`${garageLabel(car)} verbunden (${garage.length} insgesamt)` + (opt && opt.auto ? ' - automatisch beim Start.' : '.'), 'info');
-      playFx(fxBuffers.start[$('sound-profile').value] || fxBuffers.start.p992gt3r, 0.85);
+      playStartFx();
     }
   }
 
@@ -53930,10 +53981,28 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Anfang), jede weitere Reihe eine halbe Kachel dahinter - zwei Reihen, vier Autos je Teil. Der Ort ist
   // eine Kommazahl (Kachel + Anteil), aufstellZielKachel() ihr ganzer Teil, aufstellHaltBruch() der Rest.
   const AUFSTELL_REIHE_KACHEL = 0.5;
+  // v1.1.39 BESTELLT: "Mach, dass die Autos zur automatischen Aufstellung zumindest nicht in der
+  // Haarnadelkurve halten (andere Kurven erstmal erlauben)." GEMELDET dazu: wer in der Haarnadel steht
+  // und losfaehrt, fliegt ab - er merkt nicht schnell genug, dass er in der Kurve steht. Faellt ein
+  // Platz auf eine Haarnadel oder Engstelle (tileTightness 2), ruecken er und alle Plaetze dahinter um
+  // ganze Teile zurueck, bis er davor liegt. Ganze Teile, damit der Haltepunkt im Teil (aufstellHaltBruch)
+  // derselbe bleibt; die Reihenfolge bleibt, weil der Versatz sich von Platz zu Platz vererbt.
   function aufstellZielOrt(platz, n) {
     const s = typeof ortStartIndices === 'function' ? (ortStartIndices(currentTrackTiles || [])[0] || 0) : 0;
-    const pos = s - 1 + aufstellSeitenBruch(platz) - Math.floor(Math.max(0, platz) / 2) * AUFSTELL_REIHE_KACHEL;
-    return ((pos % n) + n) % n;
+    const roh = (k) => s - 1 + aufstellSeitenBruch(k) - Math.floor(Math.max(0, k) / 2) * AUFSTELL_REIHE_KACHEL;
+    const wickeln = (x) => ((x % n) + n) % n;
+    const tiles = currentTrackTiles || [];
+    const haarnadel = (x) => {
+      if (tiles.length !== n) return false;
+      const t = tiles[Math.floor(wickeln(x) + 1e-9) % n];
+      return tileTightness(t && t.type) >= 2;
+    };
+    let versatz = 0, pos = roh(platz);
+    for (let k = 0; k <= Math.max(0, platz); k++) {
+      pos = roh(k) - versatz;
+      for (let i = 0; i < n && haarnadel(pos); i++) { versatz += 1; pos -= 1; }
+    }
+    return wickeln(pos);
   }
   function aufstellZielKachel(platz, n) {
     return Math.floor(aufstellZielOrt(platz, n) + 1e-9) % n;
@@ -54001,7 +54070,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // v1.1.30: die Aufnahme (wie bei den NPCs), mit Angleichen vom aktuellen Gas.
     const staerke = einparkStaerke();
     if (staerke > 0 && aufstellArt() === 'aufnahme' && !aufstellKurveAmPlatz(a.ziel)) {
-      const sk = seite > 0 ? MANOEVER.rechts : MANOEVER.links;
+      const sk = aufstellSkript(seite);
       if (a.vonDrive === undefined) {
         a.vonDrive = typeof physOutThrottle === 'number' && physOutThrottle > 0 ? Math.min(0.8, physOutThrottle) : sk[0][2];
       }
@@ -54113,7 +54182,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // ohne Spur-Bytes, damit die Spurfuehrung das Auto nicht wieder zur Mitte zieht.
     const staerke = einparkStaerke();
     if (staerke > 0 && aufstellArt() === 'aufnahme' && !aufstellKurveAmPlatz(g.aufstellZiel)) {
-      const sk = seite > 0 ? MANOEVER.rechts : MANOEVER.links;
+      const sk = aufstellSkript(seite);
       randHaltStarten(car, { phase: 'skript', quer: 0, skript: sk, anpassMs: MANOEVER_ANPASS_MS,
                              vonDrive: letztesGas(car, sk[0][2]), lenkFaktor: staerke, haltMs: AUFSTELL_HALT_MS, sofort: true,
                              fertig: (c) => {
@@ -56449,6 +56518,30 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const w = manoeverWert(h.skript, e - h.anpassMs);
     return { lenk: w[1] * (h.lenkFaktor === undefined ? 1 : h.lenkFaktor), drive: w[2] };
   }
+  // v1.1.39 BESTELLT: "Kalibriere das ein ganz kleines bisschen, sodass die Autos eher aussen parken
+  // und den Mittelstreifen frei halten." Die Aufnahme lenkt schon voll (+-1); weiter aussen heisst also
+  // LAENGER aussen: der letzte Takt mit voller Lenkung nach aussen wird um AUFSTELL_AUSSEN_MS verlaengert,
+  // alles danach (Zuruecklenken, Ausrollen) rueckt mit. Ein Aufnahmetakt (~45 ms) - etwa ein Achtel mehr
+  // Querweg, und das Zuruecklenken bleibt gleich lang, das Auto steht also wieder gerade.
+  const AUFSTELL_AUSSEN_MS = 45;
+  const aufstellSkriptCache = {};
+  function aufstellSkript(seite) {
+    const key = seite > 0 ? 'rechts' : 'links';
+    if (aufstellSkriptCache[key]) return aufstellSkriptCache[key];
+    const sk = MANOEVER[key];
+    const aussen = seite > 0 ? 1 : -1;
+    let letzter = -1;
+    for (let i = 0; i < sk.length; i++) {
+      if (sk[i][1] * aussen >= 0.9) letzter = i;
+      else if (letzter >= 0 && sk[i][1] * aussen < 0) break;
+    }
+    if (letzter < 0) return (aufstellSkriptCache[key] = sk);
+    const neu = sk.slice(0, letzter + 1).map((x) => x.slice());
+    const l = sk[letzter];
+    neu.push([l[0] + AUFSTELL_AUSSEN_MS, l[1], l[2]]);
+    for (let i = letzter + 1; i < sk.length; i++) neu.push([sk[i][0] + AUFSTELL_AUSSEN_MS, sk[i][1], sk[i][2]]);
+    return (aufstellSkriptCache[key] = neu);
+  }
   function aufstellArt() { const el = $('race-einpark-art'); return el && el.value === 'impuls' ? 'impuls' : 'aufnahme'; }
   function scParkArt() { const el = $('sc-park-art'); return el && el.value === 'impuls' ? 'impuls' : 'aufnahme'; }
   // Das zuletzt gesendete Gas eines NPCs - der Startwert fuer das Angleichen.
@@ -57811,8 +57904,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Aufschliessen kam es ungebremst in die Haarnadel und wurde erst auf ihr langsamer. Jetzt
   // derselbe Vorausblick wie bei den Ghosts (ghostTick): vor einer Haarnadel zwei Kacheln,
   // vor einer normalen Kurve eine - aber nur, wenn der Ort zur gemeldeten Schiene passt.
-  function autopilotKurvenFaktor(car) {
-    if (!car || car.tileCode === undefined || car.tileCode === null) return 1;
+  function autopilotEnge(car) {
+    if (!car || car.tileCode === undefined || car.tileCode === null) return 0;
     const here = ghostTileInfo(car.tileCode).curve;
     let tight = here;
     if (car.ghost && ortStimmt(car) !== false) {
@@ -57820,7 +57913,21 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const reach = ahead.tight >= 2 ? 2 : 1;
       tight = Math.max(here, ahead.dist <= reach ? ahead.tight : 0);
     }
+    return tight;
+  }
+  function autopilotKurvenFaktor(car) {
+    const tight = autopilotEnge(car);
     return tight > 0 ? 1 - Math.min(0.85, ghostCfg.curveSlow * tight) : 1;
+  }
+  // v1.1.39 GEMELDET: "Bei gelber Flagge fahren manche NPCs schneller als mein Auto, dabei sollten alle
+  // gleich schnell fahren." Die NPCs bekommen nach allen Abzuegen das Mindesttempo (ghostFahrBoden,
+  // 0,37 - darunter lesen sie die Bahn nicht und parkten sich unter Gelb in Kurven selbst) und in der
+  // Haarnadel die Obergrenze (ghostHaarnadelDeckel). Der Autopilot deines Autos hatte beides nicht und
+  // fuhr in Kurven Gelb-Tempo x Kurvenabzug, also 0,21 statt 0,37. Jetzt dieselben zwei Zeilen fuer ihn.
+  function autopilotGelbGrenzen(car, ziel) {
+    let z = Math.max(ziel, Math.min(GHOST_FAHR_MIN, ghostCfg.speed || GHOST_FAHR_MIN));
+    if (autopilotEnge(car) >= 2) z = Math.min(z, Number.isFinite(ghostCfg.haarnadelMax) ? ghostCfg.haarnadelMax : 0.35);
+    return z;
   }
   // ---- ABSTAND UNTER GELB (v1.0.28) ---------------------------------------------------
   // GEMELDET: "Bei gelber Flagge ist mein Auto langsamer als der NPC, und der NPC schiebt mich
@@ -61327,7 +61434,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Wer Abstand haelt, darf nicht gleichzeitig aufholen muessen. Die Staffel wird deshalb
       // auf 1 gedeckelt, solange der Abstandshalter greift: bremsen darf sie weiter (der
       // Fuehrende soll warten), nur schieben nicht.
-      const staffel = ghostFeldStaffel(car);
+      // v1.1.39 GEMELDET: "Bei gelber Flagge fahren manche NPCs schneller als mein Auto, dabei sollten
+      // alle gleich schnell fahren." Die Staffel schob den Letzten auch unter Gelb um bis zu 10 % an -
+      // unter Gelb gibt es keinen Ersten und Letzten, nur das Gelb-Tempo.
+      const staffel = underYellow ? 1 : ghostFeldStaffel(car);
       // v1.1.37: auch die Staffel schiebt vor und in der Haarnadel nicht mehr an (bremsen darf sie).
       target *= (spice.haeltAbstand || vorHaarnadel) ? Math.min(1, staffel) : staffel;
 
@@ -61360,7 +61470,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         // Reifen oder Abstandhalten das Renntempo unter das Aufstelltempo drueckten, rollte ein langsamer
         // NPC langsamer an seinen Platz - und die Aufnahme setzte bei anderem Tempo ein. Jetzt allein das
         // Aufstelltempo; nur das Abstandhalten zum Vordermann darf es senken (sonst Auffahren in der Schlange).
-        const abstand = spice.haeltAbstand ? Math.min(1, spice.factor) : 1;
+        // v1.1.39 GEMELDET: "Ausserdem prescht das Safety Car vor und rammt alle weg - die Autos sollten
+        // unbedingt alle gleich schnell fahren." Seine Wuerze ist fest 1 (es ueberholt nie), also hielt es
+        // auch keinen Abstand. Jetzt der Abstandhalter von Gelb (gelbAbstandFaktor) - und unten greifen
+        // waehrend der Aufstellung weder sein Mindesttempo noch sein Heimweg-Tempo.
+        const abstand = car.role === 'safetycar' ? gelbAbstandFaktor(car)
+          : (spice.haeltAbstand ? Math.min(1, spice.factor) : 1);
         target = g.aufstellAb && now < g.aufstellAb ? 0 : aufstellTempo(car) * abstand;
         aufstellenPruefen(car);
       }
@@ -61424,10 +61539,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (g.challenger && typeof challengerZiel === 'function') target = challengerZiel(car, target, spice);
       target = ghostFahrBoden(car, target, now);
       // v1.0.37: das Safety Car bleibt unter Gelb nie stehen (SC_MIN_TEMPO).
-      if (car.role === 'safetycar' && flagState !== 'green' && !g.randHalt) target = Math.max(target, SC_MIN_TEMPO);
+      const scAufstellung = car.role === 'safetycar' && g.aufstellZiel !== undefined && g.aufstellZiel !== null;
+      if (car.role === 'safetycar' && flagState !== 'green' && !g.randHalt && !scAufstellung) target = Math.max(target, SC_MIN_TEMPO);
       // Heimweg nach Gruen (Safety Car neben der Strecke): Hoechsttempo einstellbar (scHeimTempo, Vorgabe 100 %).
       const scVorlaufRand = g.randHalt && g.randHalt.nominal && g.randHalt.phase === 'rand' && g.randHalt.tempoAb && g.scRest > g.randHalt.tempoAb;
-      if (car.role === 'safetycar' && ((g.scHeim && !g.randHalt) || scVorlaufRand)) target = Math.max(SC_EINFAHRT_MIN, Math.min(target, scHeimTempo()));
+      if (car.role === 'safetycar' && !scAufstellung && ((g.scHeim && !g.randHalt) || scVorlaufRand)) target = Math.max(SC_EINFAHRT_MIN, Math.min(target, scHeimTempo()));
       target = ghostHaarnadelDeckel(car, target, Math.max(tight, here));
       const pz = pitZiel(car);
       if (pz !== null) {
@@ -64279,7 +64395,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Bremsprofil, Leseschwelle. Hier steht nur, wie schnell er sein SOLL:
   //   Spur (Bestzeit/Rekord): Sollort zur Rennzeit aus den Zwischenzeiten der Runde
   //     (70b-telemetrie.js), Runde fuer Runde wiederholt; Abweichung in Kacheln -> Tempofaktor.
-  //   Gummiband: dein Ort statt des Sollorts.
+  //   Gummiband (v1.1.39): eine Tempostufe je NPC, die sich Runde fuer Runde aendert (unten).
   // Der Faktor wirkt auf das Zieltempo, das ghostTick ohnehin rechnet (mit Kurvenabzug), und ist
   // in Kurven enger gedeckelt - so holt er auf der Geraden auf und fliegt nicht aus der Haarnadel.
 
@@ -64361,7 +64477,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!c.ghost) return;
       const versatz = challengerVersatz(n++);
       c.ghost.challenger = sp ? { art: sp.art, teile: sp.teile, ms: sp.ms, ortStart: null, soll: null, versatz }
-                              : { art: 'gummiband', soll: null, versatz };
+                              : challengerBandNeu(versatz);
     });
     const text = (sp ? t('Challenger fährt') + ' ' + sp.name + ' (' + formatLapTime(sp.ms) + ')'
       : (modus === 'gummiband' ? t('Challenger fährt Gummiband') : t('Keine Runde für den Challenger – er fährt Gummiband')))
@@ -64376,25 +64492,18 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // ihm (spice.haeltAbstand - auch zu dir), darf der Aufholfaktor das nicht aufheben.
   function challengerZiel(car, basis, spice) {
     const g = car.ghost, ch = g && g.challenger;
-    if (!ch || flagState !== 'green' || raceFormationLap || raceState !== 'racing'
+    if (!ch) return basis;
+    // Das Gummiband verfolgt den Vorsprung auch unter Gelb und in der Box: er wird aus kleinen
+    // Schritten aufsummiert, und eine Pause wuerde ihn verlieren.
+    if (ch.art === 'gummiband' && raceState === 'racing') challengerBandTakt(car, ch);
+    if (flagState !== 'green' || raceFormationLap || raceState !== 'racing'
         || (g.aufstellZiel !== undefined && g.aufstellZiel !== null) || g.pit) return basis;
     const ist = ghostOrtGes(car);
     if (ist === null) return basis;
     let soll = null;
     if (ch.art === 'gummiband') {
-      // v1.0.25 GEMELDET: "Gummiband reagiert nicht auf meine Zeiten - ob ich langsamer oder
-      // schneller fahre, er haelt seine Geschwindigkeit." Hier stand ghostOrtGes(playerCar):
-      // die Ortung des Fahrerautos zaehlt keine Runden (spielerOrtTick wickelt nur den Index),
-      // die des Challengers schon. Nach seiner ersten Runde lag er also rechnerisch eine ganze
-      // Runde vorn, und der Faktor stand fest am unteren Anschlag. Jetzt der Abstand auf der
-      // Runde, gewickelt auf -n/2 .. n/2: fuer ein Gummiband zaehlt nur, wer gerade vorn liegt.
-      // BESTELLT dazu: "auch wenn mein Auto mal versehentlich eine Runde nicht zaehlt (z. B. weil ich
-      // bei Start/Ziel von der Bahn komme)" - genau deshalb ohne Rundenzaehler: nur der Ort auf der
-      // Runde zaehlt, und den gleicht ortAbgleich() bei jeder Start/Ziel-Lesung neu ab.
-      const p = typeof playerCar !== 'undefined' && playerCar && playerCar.ghost ? ghostOrt(playerCar) : null;
-      const n = currentTrackTiles ? currentTrackTiles.length : 0;
-      if (p === null || !n) return basis;
-      soll = ist + challengerRundenAbstand(p + (ch.versatz || 0), ist, n);
+      ch.soll = null;
+      return challengerDeckeln(car, basis, ch.stufe || 1, !!(spice && spice.haeltAbstand));
     } else {
       if (raceStartedAt === null || raceStartedAt === undefined) return basis;
       const tMs = Date.now() - raceStartedAt;
@@ -64416,14 +64525,101 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
   // Abweichung in Kacheln (positiv = er liegt hinten) -> Zieltempo.
   function challengerFaktorAnwenden(car, basis, abw, haeltAbstand) {
+    return challengerDeckeln(car, basis, 1 + CHALLENGER_K * abw, haeltAbstand);
+  }
+  // Ein Tempofaktor auf das NPC-Zieltempo, je Teil gedeckelt: Haarnadel (darauf oder in den
+  // naechsten zwei Teilen) 1,0, Kurve 1,1, Gerade 1,6. Danach in ghostTick noch Mindesttempo und
+  // Haarnadel-Obergrenze.
+  function challengerDeckeln(car, basis, faktor, haeltAbstand) {
     const hier = ghostTileInfo(car.tileCode).curve;
     const voraus = ghostAheadTightest(car, 2);
     const haarnadel = hier >= 2 || voraus.tight >= 2;
     const kurve = hier > 0 || (voraus.tight > 0 && voraus.dist <= 1);
     let max = haarnadel ? CHALLENGER_MAX_HAARNADEL : kurve ? CHALLENGER_MAX_KURVE : CHALLENGER_MAX;
     if (haeltAbstand) max = Math.min(max, 1);
-    const f = Math.max(CHALLENGER_MIN, Math.min(max, 1 + CHALLENGER_K * abw));
+    const f = Math.max(CHALLENGER_MIN, Math.min(max, faktor));
     return Math.max(Math.min(basis, GHOST_READ_MIN), Math.min(1, basis * f));
+  }
+
+  // ---- GUMMIBAND IN STUFEN (v1.1.39, WIP) ------------------------------------------------
+  // BESTELLT: "Lass das Auto (bzw. die Autos), wenn es viel Vorsprung hat, schrittweise langsamer
+  // werden (z. B. 2-4 % pro Runde), und zwar so lange, bis es ueberholt wurde, also hinter dem
+  // Spieler-Auto liegt. Dann soll es die Geschwindigkeit (so wie die Schwierigkeit im Garagen-
+  // Einstellungsmenue) wieder hochschrauben, bis es an vorderer Stelle ist. Beruecksichtige Minimal-
+  // und Maximalgeschwindigkeit und die verschiedenen Teile (vor allem Haarnadel)."
+  // Vorher zog das Gummiband jeden Takt zu deinem Ort (Abweichung x 0,45), der NPC klebte also
+  // neben dir. Jetzt hat jeder NPC eine Tempostufe (1 = sein Garagentempo), die sich nur an SEINER
+  // Start/Ziel-Linie aendert:
+  //   runter - ab challengerBandVorsprungMin Vorsprung: je Runde ein Schritt, bis er hinter dir liegt;
+  //   hoch   - solange er hinter dir liegt: je Runde ein Schritt, bis er wieder vorn ist;
+  //   halten - vorn mit kleinem Vorsprung: die Stufe bleibt, bis er wegzieht.
+  // SCHRITTWEITE, Vorgabe 4 %: ein NPC, der 5 % schneller ist als du, gewinnt je Runde 5 % einer
+  // Runde. Mit 2 % je Runde verliert er erst ab der dritten Runde Boden - ein Zwei-Minuten-Rennen
+  // hat oft nur zehn. Mit 4 % ab der zweiten, eingeholt nach vier, fuenf Runden. Mehr wirkt
+  // ruckartig; darum ein Regler von 2 bis 10 %.
+  // VORSPRUNG UEBER RUNDEN, ohne den Rundenzaehler deines Autos (der kann eine Runde verlieren,
+  // v1.0.25): der gewickelte Abstand auf der Runde aendert sich je Takt nur um Bruchteile einer
+  // Kachel, also wird er Takt fuer Takt aufsummiert. So weiss der NPC auch mit einer halben Runde
+  // Vorsprung noch, dass er vorn liegt (gewickelt saehe das wie "hinten" aus).
+  // GRENZEN: Stufe in [CHALLENGER_BAND_MIN, CHALLENGER_BAND_MAX]; challengerDeckeln haelt sie in
+  // Kurven und vor/in der Haarnadel; danach gelten in ghostTick Mindesttempo und Haarnadel-Obergrenze.
+  var CHALLENGER_BAND_SCHRITT = 0.04, CHALLENGER_BAND_MIN = 0.6, CHALLENGER_BAND_MAX = 1.4;
+  function challengerBandNeu(versatz) {
+    return { art: 'gummiband', soll: null, versatz, stufe: 1, lage: 'halten', vorsprung: null, letztD: null, runde: null };
+  }
+  function challengerBandSchritt() {
+    const el = $('race-gummiband-schritt');
+    const v = el ? parseFloat(el.value) : NaN;
+    return Number.isFinite(v) ? Math.max(0.01, Math.min(0.2, v)) : CHALLENGER_BAND_SCHRITT;
+  }
+  // "Viel Vorsprung": ein Viertel der Runde, mindestens zwei Kacheln.
+  function challengerBandVorsprungMin(n) { return Math.max(2, n * 0.25); }
+  // Ein Takt: Vorsprung fortschreiben (d = gewickelter Abstand, positiv = NPC vor dir), Lage
+  // umstellen, und an seiner Linie die Stufe aendern.
+  function challengerBandTakt(car, ch) {
+    const n = currentTrackTiles ? currentTrackTiles.length : 0;
+    const ist = ghostOrtGes(car);
+    const p = typeof playerCar !== 'undefined' && playerCar && playerCar.ghost ? ghostOrt(playerCar) : null;
+    if (!n || ist === null || p === null) return;
+    challengerBandVerfolgen(ch, challengerRundenAbstand(ist, p, n), n);
+    const runde = Math.floor(ist / n);
+    if (ch.runde === null || ch.runde === undefined) ch.runde = runde;
+    else if (runde > ch.runde) {
+      ch.runde = runde;
+      const vor = ch.stufe;
+      challengerBandRunde(ch);
+      if (ch.stufe !== vor) {
+        log(garageLabel(car) + ' Gummiband: Tempo ' + Math.round(ch.stufe * 100) + ' % (' + ch.lage
+          + ', Vorsprung ' + ch.vorsprung.toFixed(1) + ' Kacheln)', 'info');
+      }
+    }
+  }
+  function challengerBandVerfolgen(ch, d, n) {
+    if (ch.vorsprung === null || ch.vorsprung === undefined) ch.vorsprung = d;
+    else ch.vorsprung += challengerRundenAbstand(d, ch.letztD, n);
+    ch.letztD = d;
+    const v = ch.vorsprung;
+    if (v < 0) ch.lage = 'hoch';
+    else if (ch.lage === 'hoch') ch.lage = 'halten';
+    if (ch.lage === 'halten' && v >= challengerBandVorsprungMin(n)) ch.lage = 'runter';
+    return v;
+  }
+  function challengerBandRunde(ch) {
+    const s = challengerBandSchritt();
+    const st = ch.stufe || 1;
+    if (ch.lage === 'runter') ch.stufe = Math.max(CHALLENGER_BAND_MIN, st - s);
+    else if (ch.lage === 'hoch') ch.stufe = Math.min(CHALLENGER_BAND_MAX, st + s);
+    return ch.stufe;
+  }
+  if ($('race-gummiband-schritt')) {
+    const el = $('race-gummiband-schritt');
+    const zeigen = () => { if ($('race-gummiband-schritt-val')) $('race-gummiband-schritt-val').textContent = Math.round(challengerBandSchritt() * 100) + ' %'; };
+    try { const w = localStorage.getItem('omegasim-gummiband-schritt'); if (w !== null && w !== '') el.value = w; } catch (e) { /* privat */ }
+    el.addEventListener('input', () => {
+      zeigen();
+      try { localStorage.setItem('omegasim-gummiband-schritt', el.value); } catch (e) { /* privat */ }
+    });
+    zeigen();
   }
   // Fuer die Karte: wo die Spur gerade ist (nur bei Bestzeit/Rekord).
   function challengerSollMarke() {
@@ -95015,28 +95211,21 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (vorn < GHOST_READ_MIN - 1e-9) f.push('unter der Leseschwelle: ' + vorn);
       const m = challengerSollMarke();
       if (!m || m.index !== 3) f.push('Soll-Punkt nicht auf Kachel 3');
-      // Gummiband: dein Ort statt der Spur.
-      ch.ghost.challenger = { art: 'gummiband', soll: null };
-      ghostOrt = (c) => (c && c._ort !== undefined ? c._ort : null);
+      // v1.1.39: das Gummiband ist eine Tempostufe, die sich je Runde aendert (eigener Test
+      // "Gummiband v1.1.39"). Hier nur: die Stufe wirkt, Gelb und die Deckel gelten weiter.
+      ch.ghost.challenger = challengerBandNeu(0);
+      ghostOrt = (c) => (c && c._ort !== undefined ? ((c._ort % n) + n) % n : null);
       playerCar = { ghost: { nurOrt: true }, _ort: 8 };
       ch._ort = 6;
-      if (!(challengerZiel(ch, basis) > basis)) f.push('Gummiband: hinter dir nicht schneller');
-      ch._ort = 10;
-      if (!(challengerZiel(ch, basis) < basis)) f.push('Gummiband: vor dir nicht langsamer');
-      // v1.0.25: die Ortung des Fahrerautos zaehlt keine Runden. Eine Runde spaeter (der
-      // Challenger hat laps + 1) muss das Gummiband weiter auf den Abstand AUF DER RUNDE hoeren.
-      ghostOrt = (c) => (c && c._ort !== undefined ? ((c._ort % n) + n) % n : null);
-      ch._ort = 6 + n; playerCar._ort = 8;
-      if (!(challengerZiel(ch, basis) > basis)) f.push('Gummiband nach einer Runde: hinter dir nicht schneller');
-      ch._ort = 10 + n;
-      if (!(challengerZiel(ch, basis) < basis)) f.push('Gummiband nach einer Runde: vor dir nicht langsamer');
+      if (challengerZiel(ch, basis) !== basis) f.push('Gummiband: Stufe 1 aendert das Tempo');
+      ch.ghost.challenger.stufe = 0.8;
+      if (!(challengerZiel(ch, basis) < basis)) f.push('Gummiband: Stufe 0,8 nicht langsamer');
       if (challengerSollMarke()) f.push('Gummiband zeigt einen Soll-Punkt');
       // Unter Gelb gilt die Gelb-Regel, nicht der Challenger.
       flagState = 'yellow';
       if (challengerZiel(ch, basis) !== basis) f.push('unter Gelb uebersteuert');
-      // In der Kurve enger gedeckelt.
-      // Ab hier liegt der Challenger zwei Kacheln hinter dir (Gummiband wickelt auf die Runde).
-      flagState = 'green'; ch._ort = 0; playerCar._ort = 2; ch.tileCode = TILE_TYPE.HAIRPIN;
+      // In der Haarnadel nie schneller als ein NPC, auch mit hoher Stufe.
+      flagState = 'green'; ch.ghost.challenger.stufe = 1.3; ch.tileCode = TILE_TYPE.HAIRPIN;
       if (challengerZiel(ch, basis) > basis + 1e-9) f.push('in der Haarnadel schneller als ein NPC');
       // NPCs fahren die Haarnadel mit 33 % - die Untergrenze darf ihn nicht darueber heben.
       if (challengerZiel(ch, 0.33) > 0.33 + 1e-9) f.push('Haarnadel: Untergrenze hebt ueber 33 %: ' + challengerZiel(ch, 0.33));
@@ -96189,6 +96378,164 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!el || Math.abs(parseFloat(el.defaultValue) - 1.5) > 1e-9) f.push('Regler fehlt oder Vorgabe nicht 1,5');
     } finally { if (el) el.value = merkV; }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Reihen je halbe Kachel, Kurve mit Lenkimpuls, Aufstelltempo fest, Ausparkgas = Aufnahme x 1,5' };
+  });
+
+  // v1.1.39 BESTELLT: Gummiband - mit viel Vorsprung Runde fuer Runde langsamer, bis er ueberholt
+  // ist; dann Runde fuer Runde schneller, bis er wieder vorn ist. Grenzen und Teile beachten.
+  stAdd('Gummiband v1.1.39: Stufe je Runde runter bis ueberholt, hoch bis vorn, Grenzen und Haarnadel', () => {
+    const f = [];
+    const n = 10;
+    const el = $('race-gummiband-schritt'), merkV = el ? el.value : null;
+    const merk = { tiles: currentTrackTiles, ort: ghostOrtGes, ort1: ghostOrt, pc: playerCar, rs: raceState, fl: flagState };
+    try {
+      if (el) el.value = '0.04';
+      if (!el || Math.abs(parseFloat(el.defaultValue) - 0.04) > 1e-9) f.push('Regler fehlt oder Vorgabe nicht 4 %');
+      // Vorsprung ueber eine halbe Runde hinaus: gewickelt sprang er von +4,9 auf -4,8.
+      let ch = challengerBandNeu(0);
+      for (const d of [0.5, 1, 2, 3, 4, 4.9, -4.8, -4]) challengerBandVerfolgen(ch, d, n);
+      if (Math.abs(ch.vorsprung - 6) > 1e-9) f.push('Vorsprung ' + ch.vorsprung + ' statt 6');
+      if (ch.lage !== 'runter') f.push('viel Vorsprung, aber Lage ' + ch.lage);
+      challengerBandRunde(ch); challengerBandRunde(ch);
+      if (Math.abs(ch.stufe - 0.92) > 1e-9) f.push('zwei Runden runter: ' + ch.stufe);
+      // Noch vorn, aber knapp: weiter runter, bis er ueberholt ist.
+      ch.vorsprung = 0.3; ch.letztD = 0.3;
+      challengerBandVerfolgen(ch, 0.3, n);
+      if (ch.lage !== 'runter') f.push('knapp vorn hoert schon auf: ' + ch.lage);
+      challengerBandVerfolgen(ch, -0.2, n);
+      if (ch.lage !== 'hoch') f.push('ueberholt, aber Lage ' + ch.lage);
+      challengerBandRunde(ch);
+      if (Math.abs(ch.stufe - 0.96) > 1e-9) f.push('hinten nicht schneller: ' + ch.stufe);
+      // Wieder vorn: Stufe halten, bis er wegzieht.
+      challengerBandVerfolgen(ch, 0.4, n);
+      if (ch.lage !== 'halten') f.push('wieder vorn, aber Lage ' + ch.lage);
+      challengerBandRunde(ch);
+      if (Math.abs(ch.stufe - 0.96) > 1e-9) f.push('vorn knapp: Stufe aendert sich ' + ch.stufe);
+      challengerBandVerfolgen(ch, 2.6, n);
+      if (ch.lage !== 'runter') f.push('wieder weggezogen, aber Lage ' + ch.lage);
+      // Grenzen.
+      for (let i = 0; i < 30; i++) challengerBandRunde(ch);
+      if (Math.abs(ch.stufe - 0.6) > 1e-9) f.push('Untergrenze ' + ch.stufe);
+      ch.lage = 'hoch';
+      for (let i = 0; i < 40; i++) challengerBandRunde(ch);
+      if (Math.abs(ch.stufe - 1.4) > 1e-9) f.push('Obergrenze ' + ch.stufe);
+      // Regler: 8 % je Runde.
+      if (el) el.value = '0.08';
+      ch = challengerBandNeu(0); ch.lage = 'runter';
+      challengerBandRunde(ch);
+      if (Math.abs(ch.stufe - 0.92) > 1e-9) f.push('Regler 8 % wirkt nicht: ' + ch.stufe);
+      if (el) el.value = '0.04';
+      // Ein Schritt je Runde, an SEINER Linie (Rundenzaehler des NPCs, nicht deiner).
+      currentTrackTiles = codeToTrack('SG2H2G2J2').tiles;
+      const m = currentTrackTiles.length;
+      const npc = { device: { id: 'band' }, role: 'ghost', tag: 'B1', tileCode: TILE_TYPE.STRAIGHT, _ort: 2,
+                    ghost: { running: true, tileIndex: 2, laps: 0, challenger: challengerBandNeu(0) } };
+      ghostOrtGes = (c) => (c && c._ort !== undefined ? c._ort : null);
+      ghostOrt = (c) => (c && c._ort !== undefined ? ((c._ort % m) + m) % m : null);
+      playerCar = { ghost: { nurOrt: true }, _ort: 1 };
+      raceState = 'racing'; flagState = 'green';
+      const b = npc.ghost.challenger;
+      // Er zieht weg (du stehst bei 1): nach einer Runde und drei Kacheln liegt er weit vorn.
+      for (let o = 2; o <= m + 3; o += 0.25) { npc._ort = o; challengerBandTakt(npc, b); }
+      if (b.lage !== 'runter') f.push('Takt: weit vorn, aber Lage ' + b.lage + ' (Vorsprung ' + b.vorsprung + ')');
+      if (Math.abs(b.stufe - 0.96) > 1e-9) f.push('Takt: nach einer Linie Stufe ' + b.stufe + ' statt 0,96');
+      for (let o = m + 3; o <= m + 5; o += 0.25) { npc._ort = o; challengerBandTakt(npc, b); }
+      if (Math.abs(b.stufe - 0.96) > 1e-9) f.push('Takt: ohne Linie geaendert');
+      // Tempo je Teil: hoch gestuft nie schneller als ein NPC in der Haarnadel, gedeckelt in Kurven.
+      npc.ghost.tileIndex = 0;   // Start, dann zwei Geraden: keine Kurve in Sicht
+      if (challengerDeckeln(npc, 0.55, 1.3, false) !== Math.min(1, 0.55 * 1.3)) f.push('Gerade: Stufe 1,3 nicht frei');
+      npc.tileCode = TILE_TYPE.HAIRPIN;
+      if (challengerDeckeln(npc, 0.33, 1.3, false) > 0.33 + 1e-9) f.push('Haarnadel: schneller als ein NPC');
+      if (challengerDeckeln(npc, 0.33, 0.6, false) < Math.min(0.33, GHOST_READ_MIN) - 1e-9) f.push('Haarnadel: unter der Leseschwelle');
+      // Reihenfolge in ghostTick: Challenger vor Mindesttempo, Haarnadel-Obergrenze zuletzt.
+      const src = String(ghostTick);
+      const iC = src.indexOf('challengerZiel(car, target, spice)'), iB = src.indexOf('ghostFahrBoden(car, target, now)');
+      const iD = src.indexOf('ghostHaarnadelDeckel(');
+      if (!(iC >= 0 && iC < iB && iB < iD)) f.push('Reihenfolge Challenger/Boden/Haarnadel');
+    } finally {
+      if (el) el.value = merkV;
+      currentTrackTiles = merk.tiles; ghostOrtGes = merk.ort; ghostOrt = merk.ort1; playerCar = merk.pc;
+      raceState = merk.rs; flagState = merk.fl;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'vorn 4 %/Runde runter bis ueberholt, hinten hoch bis vorn, 60-140 %, Haarnadel <= NPC, Boden und Deckel danach' };
+  });
+
+  // v1.1.39 GEMELDET: "Beim Verbindungston kommt immer erst ein Piepen" und "in der Garage huepft links
+  // die Spalte hoch, wenn ich rechts beim Auto etwas umstelle".
+  stAdd('Verbindungston und Garage v1.1.39: ohne Anlasser-Piepen, linke Spalte bleibt stehen', () => {
+    const f = [];
+    if (!(Math.abs(START_FX_AB - 0.95) < 1e-9)) f.push('Anlassklang beginnt nicht bei 0,95 s');
+    if (String(playStartFx).indexOf('START_FX_AB') < 0 || String(playFx).indexOf('src.start(0,') < 0) f.push('Verbindung spielt den Anlassklang von vorn');
+    // Garage: Hoehe kommt aus dem Merker, nicht aus dem gerade neu gebauten Element.
+    const att = { role: 'ghost', device: { id: 'probe-scroll' }, alias: '', colorId: 'rot', sim: false, testSenke: [] };
+    const merkL = garScrollStand.l, merkR = garScrollStand.r;
+    garage.push(att);
+    try {
+      garScrollStand.l = 37; garScrollStand.r = 0;
+      renderGarage();
+      if (garScrollStand.l !== 37) f.push('Merker nach dem Neuaufbau ' + garScrollStand.l);
+      const L = $('gar-list').querySelector('.gar-a-links');
+      if (L && L.scrollHeight - L.clientHeight >= 37 && L.scrollTop !== 37) f.push('linke Spalte bei ' + L.scrollTop + ' statt 37');
+    } finally {
+      garage.splice(garage.indexOf(att), 1);
+      garScrollStand.l = merkL; garScrollStand.r = merkR;
+      renderGarage();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Anlassklang ab 0,95 s, Garagenhoehe aus dem Merker' };
+  });
+
+  // v1.1.39 GEMELDET zu 1.1.38: unter Gelb fuhren manche NPCs schneller als das eigene Auto; in der
+  // Aufstellung hielten Autos in der Haarnadel und flogen beim Losfahren ab, das Safety Car preschte vor.
+  // BESTELLT: etwas weiter aussen parken.
+  stAdd('Gelb und Aufstellung v1.1.39: gleiches Tempo, kein Platz in der Haarnadel, Safety Car haelt Abstand', () => {
+    const f = [];
+    const src = String(ghostTick);
+    // Gelb: keine Staffel; dein Autopilot mit demselben Boden und derselben Haarnadel-Obergrenze.
+    if (src.indexOf('underYellow ? 1 : ghostFeldStaffel(car)') < 0) f.push('Staffel wirkt unter Gelb');
+    const merkT = currentTrackTiles, merkH = ghostCfg.haarnadelMax;
+    try {
+      ghostCfg.haarnadelMax = 0.35;
+      const gerade = { tileCode: TILE_TYPE.STRAIGHT };
+      const boden = Math.min(GHOST_FAHR_MIN, ghostCfg.speed || GHOST_FAHR_MIN);
+      if (Math.abs(autopilotGelbGrenzen(gerade, 0.21) - boden) > 1e-9) f.push('Autopilot ohne Boden: ' + autopilotGelbGrenzen(gerade, 0.21));
+      if (autopilotGelbGrenzen(gerade, 0.45) !== 0.45) f.push('Autopilot: Aufschliessen gedeckelt');
+      const haar = { tileCode: TILE_TYPE.HAIRPIN };
+      if (autopilotGelbGrenzen(haar, 0.21) > 0.35 + 1e-9) f.push('Autopilot: Haarnadel ueber der Obergrenze');
+      if (String(autopilot).indexOf('autopilotGelbGrenzen(meinAuto') < 0) f.push('Autopilot ruft die Gelb-Grenzen nicht');
+      // Aufstellung: kein Platz auf einer Haarnadel; Reihenfolge und Haltepunkt bleiben.
+      currentTrackTiles = codeToTrack('SG2H2G4').tiles;
+      const n = currentTrackTiles.length;
+      const haarnadelIdx = currentTrackTiles.map((t, i) => (tileTightness(t && t.type) >= 2 ? i : -1)).filter((i) => i >= 0);
+      if (!haarnadelIdx.length) f.push('Probestrecke ohne Haarnadel');
+      const st = ortStartIndices(currentTrackTiles)[0] || 0;
+      let vorher = -1;
+      for (let k = 0; k < 6; k++) {
+        const o = aufstellZielOrt(k, n);
+        const kachel = aufstellZielKachel(k, n);
+        if (haarnadelIdx.indexOf(kachel) >= 0) f.push('Platz ' + (k + 1) + ' in der Haarnadel (Teil ' + kachel + ')');
+        if (Math.abs((o - Math.floor(o + 1e-9)) - aufstellHaltBruch(k)) > 1e-6) f.push('Platz ' + (k + 1) + ': Haltepunkt verschoben');
+        const hinter = ((st - o) % n + n) % n;
+        if (hinter < vorher - 1e-9) f.push('Platz ' + (k + 1) + ' vor Platz ' + k);
+        vorher = hinter;
+      }
+      // Strecke ohne Haarnadel am Start: wie bisher.
+      currentTrackTiles = codeToTrack('SG3RG2').tiles;
+      const m = currentTrackTiles.length;
+      const alt = [0, 1, 2, 3].map((k) => +aufstellZielOrt(k, m).toFixed(2)).join(',');
+      if (alt !== [m - 0.85, m - 1, m - 1.35, m - 1.5].map((x) => +x.toFixed(2)).join(',')) f.push('ohne Haarnadel veraendert: ' + alt);
+    } finally { currentTrackTiles = merkT; ghostCfg.haarnadelMax = merkH; }
+    // Safety Car: Abstandhalter in der Aufstellung, Mindesttempo und Heimweg greifen dort nicht.
+    if (src.indexOf("car.role === 'safetycar' ? gelbAbstandFaktor(car)") < 0) f.push('Safety Car ohne Abstand in der Aufstellung');
+    if (src.indexOf('!scAufstellung) target = Math.max(target, SC_MIN_TEMPO)') < 0 || src.indexOf("!scAufstellung && ((g.scHeim") < 0) f.push('Safety-Car-Tempi greifen in der Aufstellung');
+    // Weiter aussen: ein Takt laenger volle Lenkung nach aussen, Zuruecklenken gleich lang.
+    for (const [seite, key] of [[1, 'rechts'], [-1, 'links']]) {
+      const a = MANOEVER[key], b = aufstellSkript(seite);
+      const aussen = (sk) => sk.reduce((sum, x, i) => (i && x[1] * seite > 0 ? sum + (x[0] - sk[i - 1][0]) : sum), 0);
+      const zurueck = (sk) => sk.reduce((sum, x, i) => (i && x[1] * seite < 0 ? sum + (x[0] - sk[i - 1][0]) : sum), 0);
+      if (Math.abs(aussen(b) - aussen(a) - AUFSTELL_AUSSEN_MS) > 1e-9) f.push(key + ': aussen ' + (aussen(b) - aussen(a)) + ' ms laenger');
+      if (Math.abs(zurueck(b) - zurueck(a)) > 1e-9) f.push(key + ': Zuruecklenken veraendert');
+      if (b[b.length - 1][2] !== 0 || b[b.length - 1][0] !== a[a.length - 1][0] + AUFSTELL_AUSSEN_MS) f.push(key + ': Ende verschoben');
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gelb ohne Staffel, Autopilot mit Boden/Haarnadelgrenze, Plaetze vor der Haarnadel, SC mit Abstand, 45 ms weiter aussen' };
   });
   // ============================== HOME ==============================
   // Der Schirm beim Laden, erreichbar ueber das Logo. Die Zahl der Einstellungen wird

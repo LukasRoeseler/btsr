@@ -1887,6 +1887,15 @@
     });
   }
 
+  // v1.1.39 GEMELDET: "In der Garage ist links mit dem Scrollen noch etwas komisch. Es huepft hoch,
+  // wenn ich rechts beim Auto etwas umstelle." Am Rechner hielt die Wiederherstellung von v1.1.30;
+  // auf dem Telefon las renderGarage() die Hoehe offenbar schon falsch (0) ab. Darum schreibt jede
+  // Spalte ihre Hoehe beim Scrollen selbst mit, und renderGarage() setzt sie aus diesem Merker -
+  // sofort und nach dem naechsten Bild noch einmal (spaetes Layout im WebView).
+  const garScrollStand = { l: 0, r: 0 };
+  function garScrollMitschreiben(el, seite) {
+    el.addEventListener('scroll', () => { if (el.isConnected) garScrollStand[seite] = el.scrollTop; }, { passive: true });
+  }
   function renderGarage() {
     const list = $('gar-list');
     if (!list) return;
@@ -1942,8 +1951,7 @@
     // neuem scrollen. Schalte das ab, sodass ich auf der Hoehe bleibe." Beide Spalten werden hier neu
     // gebaut und begannen dann oben. Jetzt: die Hoehe beider Spalten und aller scrollenden Vorfahren merken
     // und danach wiederherstellen (bei kuerzerem Inhalt so weit unten wie moeglich).
-    const altL = list.querySelector('.gar-a-links'), altR = list.querySelector('.gar-a-rechts');
-    const scrollMerk = { l: altL ? altL.scrollTop : 0, r: altR ? altR.scrollTop : 0, vorfahren: [] };
+    const scrollMerk = { l: garScrollStand.l, r: garScrollStand.r, vorfahren: [] };
     for (let p = list.parentElement; p; p = p.parentElement) if (p.scrollTop) scrollMerk.vorfahren.push([p, p.scrollTop]);
     list.innerHTML = '';
     list.classList.remove('gar-karten');
@@ -2088,11 +2096,23 @@
     }
     list.appendChild(links);
     list.appendChild(rechts);
-    links.scrollTop = scrollMerk.l;
-    rechts.scrollTop = scrollMerk.r;
-    for (const [p, y] of scrollMerk.vorfahren) p.scrollTop = y;
     refreshGarageGo();
     garAktionenAbgleichen();
+    const setzen = () => {
+      if (!links.isConnected) return;
+      links.scrollTop = scrollMerk.l;
+      rechts.scrollTop = scrollMerk.r;
+      for (const [p, y] of scrollMerk.vorfahren) p.scrollTop = y;
+    };
+    setzen();
+    // Mitschreiben erst NACH dem Setzen: das Leeren oben hat die Spalten kurz auf 0 gestellt.
+    garScrollMitschreiben(links, 'l');
+    garScrollMitschreiben(rechts, 'r');
+    // Nach dem naechsten Bild noch einmal, falls das WebView das Layout spaeter fertig hat -
+    // aber nur, solange niemand dazwischen gescrollt hat (Finger oder menuNavRender).
+    requestAnimationFrame(() => {
+      if (garScrollStand.l === scrollMerk.l && garScrollStand.r === scrollMerk.r) setzen();
+    });
   }
 
   // Die Rolle des gewaehlten Autos, als erste Zeile rechts: Pfeile wie bisher (nur FREIE Rollen, v0.9.6),
@@ -2371,7 +2391,7 @@
       else if (!playerCar) setCarRole(car, 'player');
       else setCarRole(car, 'ghost');
       log(`${garageLabel(car)} verbunden (${garage.length} insgesamt)` + (opt && opt.auto ? ' - automatisch beim Start.' : '.'), 'info');
-      playFx(fxBuffers.start[$('sound-profile').value] || fxBuffers.start.p992gt3r, 0.85);
+      playStartFx();
     }
   }
 
@@ -2701,10 +2721,28 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Anfang), jede weitere Reihe eine halbe Kachel dahinter - zwei Reihen, vier Autos je Teil. Der Ort ist
   // eine Kommazahl (Kachel + Anteil), aufstellZielKachel() ihr ganzer Teil, aufstellHaltBruch() der Rest.
   const AUFSTELL_REIHE_KACHEL = 0.5;
+  // v1.1.39 BESTELLT: "Mach, dass die Autos zur automatischen Aufstellung zumindest nicht in der
+  // Haarnadelkurve halten (andere Kurven erstmal erlauben)." GEMELDET dazu: wer in der Haarnadel steht
+  // und losfaehrt, fliegt ab - er merkt nicht schnell genug, dass er in der Kurve steht. Faellt ein
+  // Platz auf eine Haarnadel oder Engstelle (tileTightness 2), ruecken er und alle Plaetze dahinter um
+  // ganze Teile zurueck, bis er davor liegt. Ganze Teile, damit der Haltepunkt im Teil (aufstellHaltBruch)
+  // derselbe bleibt; die Reihenfolge bleibt, weil der Versatz sich von Platz zu Platz vererbt.
   function aufstellZielOrt(platz, n) {
     const s = typeof ortStartIndices === 'function' ? (ortStartIndices(currentTrackTiles || [])[0] || 0) : 0;
-    const pos = s - 1 + aufstellSeitenBruch(platz) - Math.floor(Math.max(0, platz) / 2) * AUFSTELL_REIHE_KACHEL;
-    return ((pos % n) + n) % n;
+    const roh = (k) => s - 1 + aufstellSeitenBruch(k) - Math.floor(Math.max(0, k) / 2) * AUFSTELL_REIHE_KACHEL;
+    const wickeln = (x) => ((x % n) + n) % n;
+    const tiles = currentTrackTiles || [];
+    const haarnadel = (x) => {
+      if (tiles.length !== n) return false;
+      const t = tiles[Math.floor(wickeln(x) + 1e-9) % n];
+      return tileTightness(t && t.type) >= 2;
+    };
+    let versatz = 0, pos = roh(platz);
+    for (let k = 0; k <= Math.max(0, platz); k++) {
+      pos = roh(k) - versatz;
+      for (let i = 0; i < n && haarnadel(pos); i++) { versatz += 1; pos -= 1; }
+    }
+    return wickeln(pos);
   }
   function aufstellZielKachel(platz, n) {
     return Math.floor(aufstellZielOrt(platz, n) + 1e-9) % n;
@@ -2772,7 +2810,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // v1.1.30: die Aufnahme (wie bei den NPCs), mit Angleichen vom aktuellen Gas.
     const staerke = einparkStaerke();
     if (staerke > 0 && aufstellArt() === 'aufnahme' && !aufstellKurveAmPlatz(a.ziel)) {
-      const sk = seite > 0 ? MANOEVER.rechts : MANOEVER.links;
+      const sk = aufstellSkript(seite);
       if (a.vonDrive === undefined) {
         a.vonDrive = typeof physOutThrottle === 'number' && physOutThrottle > 0 ? Math.min(0.8, physOutThrottle) : sk[0][2];
       }
@@ -2884,7 +2922,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // ohne Spur-Bytes, damit die Spurfuehrung das Auto nicht wieder zur Mitte zieht.
     const staerke = einparkStaerke();
     if (staerke > 0 && aufstellArt() === 'aufnahme' && !aufstellKurveAmPlatz(g.aufstellZiel)) {
-      const sk = seite > 0 ? MANOEVER.rechts : MANOEVER.links;
+      const sk = aufstellSkript(seite);
       randHaltStarten(car, { phase: 'skript', quer: 0, skript: sk, anpassMs: MANOEVER_ANPASS_MS,
                              vonDrive: letztesGas(car, sk[0][2]), lenkFaktor: staerke, haltMs: AUFSTELL_HALT_MS, sofort: true,
                              fertig: (c) => {
@@ -5220,6 +5258,30 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const w = manoeverWert(h.skript, e - h.anpassMs);
     return { lenk: w[1] * (h.lenkFaktor === undefined ? 1 : h.lenkFaktor), drive: w[2] };
   }
+  // v1.1.39 BESTELLT: "Kalibriere das ein ganz kleines bisschen, sodass die Autos eher aussen parken
+  // und den Mittelstreifen frei halten." Die Aufnahme lenkt schon voll (+-1); weiter aussen heisst also
+  // LAENGER aussen: der letzte Takt mit voller Lenkung nach aussen wird um AUFSTELL_AUSSEN_MS verlaengert,
+  // alles danach (Zuruecklenken, Ausrollen) rueckt mit. Ein Aufnahmetakt (~45 ms) - etwa ein Achtel mehr
+  // Querweg, und das Zuruecklenken bleibt gleich lang, das Auto steht also wieder gerade.
+  const AUFSTELL_AUSSEN_MS = 45;
+  const aufstellSkriptCache = {};
+  function aufstellSkript(seite) {
+    const key = seite > 0 ? 'rechts' : 'links';
+    if (aufstellSkriptCache[key]) return aufstellSkriptCache[key];
+    const sk = MANOEVER[key];
+    const aussen = seite > 0 ? 1 : -1;
+    let letzter = -1;
+    for (let i = 0; i < sk.length; i++) {
+      if (sk[i][1] * aussen >= 0.9) letzter = i;
+      else if (letzter >= 0 && sk[i][1] * aussen < 0) break;
+    }
+    if (letzter < 0) return (aufstellSkriptCache[key] = sk);
+    const neu = sk.slice(0, letzter + 1).map((x) => x.slice());
+    const l = sk[letzter];
+    neu.push([l[0] + AUFSTELL_AUSSEN_MS, l[1], l[2]]);
+    for (let i = letzter + 1; i < sk.length; i++) neu.push([sk[i][0] + AUFSTELL_AUSSEN_MS, sk[i][1], sk[i][2]]);
+    return (aufstellSkriptCache[key] = neu);
+  }
   function aufstellArt() { const el = $('race-einpark-art'); return el && el.value === 'impuls' ? 'impuls' : 'aufnahme'; }
   function scParkArt() { const el = $('sc-park-art'); return el && el.value === 'impuls' ? 'impuls' : 'aufnahme'; }
   // Das zuletzt gesendete Gas eines NPCs - der Startwert fuer das Angleichen.
@@ -6582,8 +6644,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Aufschliessen kam es ungebremst in die Haarnadel und wurde erst auf ihr langsamer. Jetzt
   // derselbe Vorausblick wie bei den Ghosts (ghostTick): vor einer Haarnadel zwei Kacheln,
   // vor einer normalen Kurve eine - aber nur, wenn der Ort zur gemeldeten Schiene passt.
-  function autopilotKurvenFaktor(car) {
-    if (!car || car.tileCode === undefined || car.tileCode === null) return 1;
+  function autopilotEnge(car) {
+    if (!car || car.tileCode === undefined || car.tileCode === null) return 0;
     const here = ghostTileInfo(car.tileCode).curve;
     let tight = here;
     if (car.ghost && ortStimmt(car) !== false) {
@@ -6591,7 +6653,21 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const reach = ahead.tight >= 2 ? 2 : 1;
       tight = Math.max(here, ahead.dist <= reach ? ahead.tight : 0);
     }
+    return tight;
+  }
+  function autopilotKurvenFaktor(car) {
+    const tight = autopilotEnge(car);
     return tight > 0 ? 1 - Math.min(0.85, ghostCfg.curveSlow * tight) : 1;
+  }
+  // v1.1.39 GEMELDET: "Bei gelber Flagge fahren manche NPCs schneller als mein Auto, dabei sollten alle
+  // gleich schnell fahren." Die NPCs bekommen nach allen Abzuegen das Mindesttempo (ghostFahrBoden,
+  // 0,37 - darunter lesen sie die Bahn nicht und parkten sich unter Gelb in Kurven selbst) und in der
+  // Haarnadel die Obergrenze (ghostHaarnadelDeckel). Der Autopilot deines Autos hatte beides nicht und
+  // fuhr in Kurven Gelb-Tempo x Kurvenabzug, also 0,21 statt 0,37. Jetzt dieselben zwei Zeilen fuer ihn.
+  function autopilotGelbGrenzen(car, ziel) {
+    let z = Math.max(ziel, Math.min(GHOST_FAHR_MIN, ghostCfg.speed || GHOST_FAHR_MIN));
+    if (autopilotEnge(car) >= 2) z = Math.min(z, Number.isFinite(ghostCfg.haarnadelMax) ? ghostCfg.haarnadelMax : 0.35);
+    return z;
   }
   // ---- ABSTAND UNTER GELB (v1.0.28) ---------------------------------------------------
   // GEMELDET: "Bei gelber Flagge ist mein Auto langsamer als der NPC, und der NPC schiebt mich
@@ -10098,7 +10174,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Wer Abstand haelt, darf nicht gleichzeitig aufholen muessen. Die Staffel wird deshalb
       // auf 1 gedeckelt, solange der Abstandshalter greift: bremsen darf sie weiter (der
       // Fuehrende soll warten), nur schieben nicht.
-      const staffel = ghostFeldStaffel(car);
+      // v1.1.39 GEMELDET: "Bei gelber Flagge fahren manche NPCs schneller als mein Auto, dabei sollten
+      // alle gleich schnell fahren." Die Staffel schob den Letzten auch unter Gelb um bis zu 10 % an -
+      // unter Gelb gibt es keinen Ersten und Letzten, nur das Gelb-Tempo.
+      const staffel = underYellow ? 1 : ghostFeldStaffel(car);
       // v1.1.37: auch die Staffel schiebt vor und in der Haarnadel nicht mehr an (bremsen darf sie).
       target *= (spice.haeltAbstand || vorHaarnadel) ? Math.min(1, staffel) : staffel;
 
@@ -10131,7 +10210,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         // Reifen oder Abstandhalten das Renntempo unter das Aufstelltempo drueckten, rollte ein langsamer
         // NPC langsamer an seinen Platz - und die Aufnahme setzte bei anderem Tempo ein. Jetzt allein das
         // Aufstelltempo; nur das Abstandhalten zum Vordermann darf es senken (sonst Auffahren in der Schlange).
-        const abstand = spice.haeltAbstand ? Math.min(1, spice.factor) : 1;
+        // v1.1.39 GEMELDET: "Ausserdem prescht das Safety Car vor und rammt alle weg - die Autos sollten
+        // unbedingt alle gleich schnell fahren." Seine Wuerze ist fest 1 (es ueberholt nie), also hielt es
+        // auch keinen Abstand. Jetzt der Abstandhalter von Gelb (gelbAbstandFaktor) - und unten greifen
+        // waehrend der Aufstellung weder sein Mindesttempo noch sein Heimweg-Tempo.
+        const abstand = car.role === 'safetycar' ? gelbAbstandFaktor(car)
+          : (spice.haeltAbstand ? Math.min(1, spice.factor) : 1);
         target = g.aufstellAb && now < g.aufstellAb ? 0 : aufstellTempo(car) * abstand;
         aufstellenPruefen(car);
       }
@@ -10195,10 +10279,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (g.challenger && typeof challengerZiel === 'function') target = challengerZiel(car, target, spice);
       target = ghostFahrBoden(car, target, now);
       // v1.0.37: das Safety Car bleibt unter Gelb nie stehen (SC_MIN_TEMPO).
-      if (car.role === 'safetycar' && flagState !== 'green' && !g.randHalt) target = Math.max(target, SC_MIN_TEMPO);
+      const scAufstellung = car.role === 'safetycar' && g.aufstellZiel !== undefined && g.aufstellZiel !== null;
+      if (car.role === 'safetycar' && flagState !== 'green' && !g.randHalt && !scAufstellung) target = Math.max(target, SC_MIN_TEMPO);
       // Heimweg nach Gruen (Safety Car neben der Strecke): Hoechsttempo einstellbar (scHeimTempo, Vorgabe 100 %).
       const scVorlaufRand = g.randHalt && g.randHalt.nominal && g.randHalt.phase === 'rand' && g.randHalt.tempoAb && g.scRest > g.randHalt.tempoAb;
-      if (car.role === 'safetycar' && ((g.scHeim && !g.randHalt) || scVorlaufRand)) target = Math.max(SC_EINFAHRT_MIN, Math.min(target, scHeimTempo()));
+      if (car.role === 'safetycar' && !scAufstellung && ((g.scHeim && !g.randHalt) || scVorlaufRand)) target = Math.max(SC_EINFAHRT_MIN, Math.min(target, scHeimTempo()));
       target = ghostHaarnadelDeckel(car, target, Math.max(tight, here));
       const pz = pitZiel(car);
       if (pz !== null) {

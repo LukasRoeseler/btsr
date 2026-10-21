@@ -20561,28 +20561,21 @@
       if (vorn < GHOST_READ_MIN - 1e-9) f.push('unter der Leseschwelle: ' + vorn);
       const m = challengerSollMarke();
       if (!m || m.index !== 3) f.push('Soll-Punkt nicht auf Kachel 3');
-      // Gummiband: dein Ort statt der Spur.
-      ch.ghost.challenger = { art: 'gummiband', soll: null };
-      ghostOrt = (c) => (c && c._ort !== undefined ? c._ort : null);
+      // v1.1.39: das Gummiband ist eine Tempostufe, die sich je Runde aendert (eigener Test
+      // "Gummiband v1.1.39"). Hier nur: die Stufe wirkt, Gelb und die Deckel gelten weiter.
+      ch.ghost.challenger = challengerBandNeu(0);
+      ghostOrt = (c) => (c && c._ort !== undefined ? ((c._ort % n) + n) % n : null);
       playerCar = { ghost: { nurOrt: true }, _ort: 8 };
       ch._ort = 6;
-      if (!(challengerZiel(ch, basis) > basis)) f.push('Gummiband: hinter dir nicht schneller');
-      ch._ort = 10;
-      if (!(challengerZiel(ch, basis) < basis)) f.push('Gummiband: vor dir nicht langsamer');
-      // v1.0.25: die Ortung des Fahrerautos zaehlt keine Runden. Eine Runde spaeter (der
-      // Challenger hat laps + 1) muss das Gummiband weiter auf den Abstand AUF DER RUNDE hoeren.
-      ghostOrt = (c) => (c && c._ort !== undefined ? ((c._ort % n) + n) % n : null);
-      ch._ort = 6 + n; playerCar._ort = 8;
-      if (!(challengerZiel(ch, basis) > basis)) f.push('Gummiband nach einer Runde: hinter dir nicht schneller');
-      ch._ort = 10 + n;
-      if (!(challengerZiel(ch, basis) < basis)) f.push('Gummiband nach einer Runde: vor dir nicht langsamer');
+      if (challengerZiel(ch, basis) !== basis) f.push('Gummiband: Stufe 1 aendert das Tempo');
+      ch.ghost.challenger.stufe = 0.8;
+      if (!(challengerZiel(ch, basis) < basis)) f.push('Gummiband: Stufe 0,8 nicht langsamer');
       if (challengerSollMarke()) f.push('Gummiband zeigt einen Soll-Punkt');
       // Unter Gelb gilt die Gelb-Regel, nicht der Challenger.
       flagState = 'yellow';
       if (challengerZiel(ch, basis) !== basis) f.push('unter Gelb uebersteuert');
-      // In der Kurve enger gedeckelt.
-      // Ab hier liegt der Challenger zwei Kacheln hinter dir (Gummiband wickelt auf die Runde).
-      flagState = 'green'; ch._ort = 0; playerCar._ort = 2; ch.tileCode = TILE_TYPE.HAIRPIN;
+      // In der Haarnadel nie schneller als ein NPC, auch mit hoher Stufe.
+      flagState = 'green'; ch.ghost.challenger.stufe = 1.3; ch.tileCode = TILE_TYPE.HAIRPIN;
       if (challengerZiel(ch, basis) > basis + 1e-9) f.push('in der Haarnadel schneller als ein NPC');
       // NPCs fahren die Haarnadel mit 33 % - die Untergrenze darf ihn nicht darueber heben.
       if (challengerZiel(ch, 0.33) > 0.33 + 1e-9) f.push('Haarnadel: Untergrenze hebt ueber 33 %: ' + challengerZiel(ch, 0.33));
@@ -21735,4 +21728,162 @@
       if (!el || Math.abs(parseFloat(el.defaultValue) - 1.5) > 1e-9) f.push('Regler fehlt oder Vorgabe nicht 1,5');
     } finally { if (el) el.value = merkV; }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Reihen je halbe Kachel, Kurve mit Lenkimpuls, Aufstelltempo fest, Ausparkgas = Aufnahme x 1,5' };
+  });
+
+  // v1.1.39 BESTELLT: Gummiband - mit viel Vorsprung Runde fuer Runde langsamer, bis er ueberholt
+  // ist; dann Runde fuer Runde schneller, bis er wieder vorn ist. Grenzen und Teile beachten.
+  stAdd('Gummiband v1.1.39: Stufe je Runde runter bis ueberholt, hoch bis vorn, Grenzen und Haarnadel', () => {
+    const f = [];
+    const n = 10;
+    const el = $('race-gummiband-schritt'), merkV = el ? el.value : null;
+    const merk = { tiles: currentTrackTiles, ort: ghostOrtGes, ort1: ghostOrt, pc: playerCar, rs: raceState, fl: flagState };
+    try {
+      if (el) el.value = '0.04';
+      if (!el || Math.abs(parseFloat(el.defaultValue) - 0.04) > 1e-9) f.push('Regler fehlt oder Vorgabe nicht 4 %');
+      // Vorsprung ueber eine halbe Runde hinaus: gewickelt sprang er von +4,9 auf -4,8.
+      let ch = challengerBandNeu(0);
+      for (const d of [0.5, 1, 2, 3, 4, 4.9, -4.8, -4]) challengerBandVerfolgen(ch, d, n);
+      if (Math.abs(ch.vorsprung - 6) > 1e-9) f.push('Vorsprung ' + ch.vorsprung + ' statt 6');
+      if (ch.lage !== 'runter') f.push('viel Vorsprung, aber Lage ' + ch.lage);
+      challengerBandRunde(ch); challengerBandRunde(ch);
+      if (Math.abs(ch.stufe - 0.92) > 1e-9) f.push('zwei Runden runter: ' + ch.stufe);
+      // Noch vorn, aber knapp: weiter runter, bis er ueberholt ist.
+      ch.vorsprung = 0.3; ch.letztD = 0.3;
+      challengerBandVerfolgen(ch, 0.3, n);
+      if (ch.lage !== 'runter') f.push('knapp vorn hoert schon auf: ' + ch.lage);
+      challengerBandVerfolgen(ch, -0.2, n);
+      if (ch.lage !== 'hoch') f.push('ueberholt, aber Lage ' + ch.lage);
+      challengerBandRunde(ch);
+      if (Math.abs(ch.stufe - 0.96) > 1e-9) f.push('hinten nicht schneller: ' + ch.stufe);
+      // Wieder vorn: Stufe halten, bis er wegzieht.
+      challengerBandVerfolgen(ch, 0.4, n);
+      if (ch.lage !== 'halten') f.push('wieder vorn, aber Lage ' + ch.lage);
+      challengerBandRunde(ch);
+      if (Math.abs(ch.stufe - 0.96) > 1e-9) f.push('vorn knapp: Stufe aendert sich ' + ch.stufe);
+      challengerBandVerfolgen(ch, 2.6, n);
+      if (ch.lage !== 'runter') f.push('wieder weggezogen, aber Lage ' + ch.lage);
+      // Grenzen.
+      for (let i = 0; i < 30; i++) challengerBandRunde(ch);
+      if (Math.abs(ch.stufe - 0.6) > 1e-9) f.push('Untergrenze ' + ch.stufe);
+      ch.lage = 'hoch';
+      for (let i = 0; i < 40; i++) challengerBandRunde(ch);
+      if (Math.abs(ch.stufe - 1.4) > 1e-9) f.push('Obergrenze ' + ch.stufe);
+      // Regler: 8 % je Runde.
+      if (el) el.value = '0.08';
+      ch = challengerBandNeu(0); ch.lage = 'runter';
+      challengerBandRunde(ch);
+      if (Math.abs(ch.stufe - 0.92) > 1e-9) f.push('Regler 8 % wirkt nicht: ' + ch.stufe);
+      if (el) el.value = '0.04';
+      // Ein Schritt je Runde, an SEINER Linie (Rundenzaehler des NPCs, nicht deiner).
+      currentTrackTiles = codeToTrack('SG2H2G2J2').tiles;
+      const m = currentTrackTiles.length;
+      const npc = { device: { id: 'band' }, role: 'ghost', tag: 'B1', tileCode: TILE_TYPE.STRAIGHT, _ort: 2,
+                    ghost: { running: true, tileIndex: 2, laps: 0, challenger: challengerBandNeu(0) } };
+      ghostOrtGes = (c) => (c && c._ort !== undefined ? c._ort : null);
+      ghostOrt = (c) => (c && c._ort !== undefined ? ((c._ort % m) + m) % m : null);
+      playerCar = { ghost: { nurOrt: true }, _ort: 1 };
+      raceState = 'racing'; flagState = 'green';
+      const b = npc.ghost.challenger;
+      // Er zieht weg (du stehst bei 1): nach einer Runde und drei Kacheln liegt er weit vorn.
+      for (let o = 2; o <= m + 3; o += 0.25) { npc._ort = o; challengerBandTakt(npc, b); }
+      if (b.lage !== 'runter') f.push('Takt: weit vorn, aber Lage ' + b.lage + ' (Vorsprung ' + b.vorsprung + ')');
+      if (Math.abs(b.stufe - 0.96) > 1e-9) f.push('Takt: nach einer Linie Stufe ' + b.stufe + ' statt 0,96');
+      for (let o = m + 3; o <= m + 5; o += 0.25) { npc._ort = o; challengerBandTakt(npc, b); }
+      if (Math.abs(b.stufe - 0.96) > 1e-9) f.push('Takt: ohne Linie geaendert');
+      // Tempo je Teil: hoch gestuft nie schneller als ein NPC in der Haarnadel, gedeckelt in Kurven.
+      npc.ghost.tileIndex = 0;   // Start, dann zwei Geraden: keine Kurve in Sicht
+      if (challengerDeckeln(npc, 0.55, 1.3, false) !== Math.min(1, 0.55 * 1.3)) f.push('Gerade: Stufe 1,3 nicht frei');
+      npc.tileCode = TILE_TYPE.HAIRPIN;
+      if (challengerDeckeln(npc, 0.33, 1.3, false) > 0.33 + 1e-9) f.push('Haarnadel: schneller als ein NPC');
+      if (challengerDeckeln(npc, 0.33, 0.6, false) < Math.min(0.33, GHOST_READ_MIN) - 1e-9) f.push('Haarnadel: unter der Leseschwelle');
+      // Reihenfolge in ghostTick: Challenger vor Mindesttempo, Haarnadel-Obergrenze zuletzt.
+      const src = String(ghostTick);
+      const iC = src.indexOf('challengerZiel(car, target, spice)'), iB = src.indexOf('ghostFahrBoden(car, target, now)');
+      const iD = src.indexOf('ghostHaarnadelDeckel(');
+      if (!(iC >= 0 && iC < iB && iB < iD)) f.push('Reihenfolge Challenger/Boden/Haarnadel');
+    } finally {
+      if (el) el.value = merkV;
+      currentTrackTiles = merk.tiles; ghostOrtGes = merk.ort; ghostOrt = merk.ort1; playerCar = merk.pc;
+      raceState = merk.rs; flagState = merk.fl;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'vorn 4 %/Runde runter bis ueberholt, hinten hoch bis vorn, 60-140 %, Haarnadel <= NPC, Boden und Deckel danach' };
+  });
+
+  // v1.1.39 GEMELDET: "Beim Verbindungston kommt immer erst ein Piepen" und "in der Garage huepft links
+  // die Spalte hoch, wenn ich rechts beim Auto etwas umstelle".
+  stAdd('Verbindungston und Garage v1.1.39: ohne Anlasser-Piepen, linke Spalte bleibt stehen', () => {
+    const f = [];
+    if (!(Math.abs(START_FX_AB - 0.95) < 1e-9)) f.push('Anlassklang beginnt nicht bei 0,95 s');
+    if (String(playStartFx).indexOf('START_FX_AB') < 0 || String(playFx).indexOf('src.start(0,') < 0) f.push('Verbindung spielt den Anlassklang von vorn');
+    // Garage: Hoehe kommt aus dem Merker, nicht aus dem gerade neu gebauten Element.
+    const att = { role: 'ghost', device: { id: 'probe-scroll' }, alias: '', colorId: 'rot', sim: false, testSenke: [] };
+    const merkL = garScrollStand.l, merkR = garScrollStand.r;
+    garage.push(att);
+    try {
+      garScrollStand.l = 37; garScrollStand.r = 0;
+      renderGarage();
+      if (garScrollStand.l !== 37) f.push('Merker nach dem Neuaufbau ' + garScrollStand.l);
+      const L = $('gar-list').querySelector('.gar-a-links');
+      if (L && L.scrollHeight - L.clientHeight >= 37 && L.scrollTop !== 37) f.push('linke Spalte bei ' + L.scrollTop + ' statt 37');
+    } finally {
+      garage.splice(garage.indexOf(att), 1);
+      garScrollStand.l = merkL; garScrollStand.r = merkR;
+      renderGarage();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Anlassklang ab 0,95 s, Garagenhoehe aus dem Merker' };
+  });
+
+  // v1.1.39 GEMELDET zu 1.1.38: unter Gelb fuhren manche NPCs schneller als das eigene Auto; in der
+  // Aufstellung hielten Autos in der Haarnadel und flogen beim Losfahren ab, das Safety Car preschte vor.
+  // BESTELLT: etwas weiter aussen parken.
+  stAdd('Gelb und Aufstellung v1.1.39: gleiches Tempo, kein Platz in der Haarnadel, Safety Car haelt Abstand', () => {
+    const f = [];
+    const src = String(ghostTick);
+    // Gelb: keine Staffel; dein Autopilot mit demselben Boden und derselben Haarnadel-Obergrenze.
+    if (src.indexOf('underYellow ? 1 : ghostFeldStaffel(car)') < 0) f.push('Staffel wirkt unter Gelb');
+    const merkT = currentTrackTiles, merkH = ghostCfg.haarnadelMax;
+    try {
+      ghostCfg.haarnadelMax = 0.35;
+      const gerade = { tileCode: TILE_TYPE.STRAIGHT };
+      const boden = Math.min(GHOST_FAHR_MIN, ghostCfg.speed || GHOST_FAHR_MIN);
+      if (Math.abs(autopilotGelbGrenzen(gerade, 0.21) - boden) > 1e-9) f.push('Autopilot ohne Boden: ' + autopilotGelbGrenzen(gerade, 0.21));
+      if (autopilotGelbGrenzen(gerade, 0.45) !== 0.45) f.push('Autopilot: Aufschliessen gedeckelt');
+      const haar = { tileCode: TILE_TYPE.HAIRPIN };
+      if (autopilotGelbGrenzen(haar, 0.21) > 0.35 + 1e-9) f.push('Autopilot: Haarnadel ueber der Obergrenze');
+      if (String(autopilot).indexOf('autopilotGelbGrenzen(meinAuto') < 0) f.push('Autopilot ruft die Gelb-Grenzen nicht');
+      // Aufstellung: kein Platz auf einer Haarnadel; Reihenfolge und Haltepunkt bleiben.
+      currentTrackTiles = codeToTrack('SG2H2G4').tiles;
+      const n = currentTrackTiles.length;
+      const haarnadelIdx = currentTrackTiles.map((t, i) => (tileTightness(t && t.type) >= 2 ? i : -1)).filter((i) => i >= 0);
+      if (!haarnadelIdx.length) f.push('Probestrecke ohne Haarnadel');
+      const st = ortStartIndices(currentTrackTiles)[0] || 0;
+      let vorher = -1;
+      for (let k = 0; k < 6; k++) {
+        const o = aufstellZielOrt(k, n);
+        const kachel = aufstellZielKachel(k, n);
+        if (haarnadelIdx.indexOf(kachel) >= 0) f.push('Platz ' + (k + 1) + ' in der Haarnadel (Teil ' + kachel + ')');
+        if (Math.abs((o - Math.floor(o + 1e-9)) - aufstellHaltBruch(k)) > 1e-6) f.push('Platz ' + (k + 1) + ': Haltepunkt verschoben');
+        const hinter = ((st - o) % n + n) % n;
+        if (hinter < vorher - 1e-9) f.push('Platz ' + (k + 1) + ' vor Platz ' + k);
+        vorher = hinter;
+      }
+      // Strecke ohne Haarnadel am Start: wie bisher.
+      currentTrackTiles = codeToTrack('SG3RG2').tiles;
+      const m = currentTrackTiles.length;
+      const alt = [0, 1, 2, 3].map((k) => +aufstellZielOrt(k, m).toFixed(2)).join(',');
+      if (alt !== [m - 0.85, m - 1, m - 1.35, m - 1.5].map((x) => +x.toFixed(2)).join(',')) f.push('ohne Haarnadel veraendert: ' + alt);
+    } finally { currentTrackTiles = merkT; ghostCfg.haarnadelMax = merkH; }
+    // Safety Car: Abstandhalter in der Aufstellung, Mindesttempo und Heimweg greifen dort nicht.
+    if (src.indexOf("car.role === 'safetycar' ? gelbAbstandFaktor(car)") < 0) f.push('Safety Car ohne Abstand in der Aufstellung');
+    if (src.indexOf('!scAufstellung) target = Math.max(target, SC_MIN_TEMPO)') < 0 || src.indexOf("!scAufstellung && ((g.scHeim") < 0) f.push('Safety-Car-Tempi greifen in der Aufstellung');
+    // Weiter aussen: ein Takt laenger volle Lenkung nach aussen, Zuruecklenken gleich lang.
+    for (const [seite, key] of [[1, 'rechts'], [-1, 'links']]) {
+      const a = MANOEVER[key], b = aufstellSkript(seite);
+      const aussen = (sk) => sk.reduce((sum, x, i) => (i && x[1] * seite > 0 ? sum + (x[0] - sk[i - 1][0]) : sum), 0);
+      const zurueck = (sk) => sk.reduce((sum, x, i) => (i && x[1] * seite < 0 ? sum + (x[0] - sk[i - 1][0]) : sum), 0);
+      if (Math.abs(aussen(b) - aussen(a) - AUFSTELL_AUSSEN_MS) > 1e-9) f.push(key + ': aussen ' + (aussen(b) - aussen(a)) + ' ms laenger');
+      if (Math.abs(zurueck(b) - zurueck(a)) > 1e-9) f.push(key + ': Zuruecklenken veraendert');
+      if (b[b.length - 1][2] !== 0 || b[b.length - 1][0] !== a[a.length - 1][0] + AUFSTELL_AUSSEN_MS) f.push(key + ': Ende verschoben');
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gelb ohne Staffel, Autopilot mit Boden/Haarnadelgrenze, Plaetze vor der Haarnadel, SC mit Abstand, 45 ms weiter aussen' };
   });

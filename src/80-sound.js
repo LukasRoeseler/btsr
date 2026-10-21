@@ -510,7 +510,7 @@
 
   // `seite` ist -1..1 und optional. Sie dient EINEM Zweck: einen Einmalklang dem Auto
   // zuzuordnen, das ihn erzeugt hat. Ohne Angabe bleibt er mittig, also genau wie bisher.
-  function playFx(buffer, gainVal, seite) {
+  function playFx(buffer, gainVal, seite, ab) {
     if (!buffer || !audioCtx || !soundEnabled) return false;
     const src = audioCtx.createBufferSource();
     src.buffer = buffer;
@@ -527,8 +527,19 @@
     } else {
       src.connect(g).connect(audioCtx.destination);
     }
-    src.start();
+    // `ab` (Sekunden, optional): erst ab dieser Stelle im Puffer spielen.
+    src.start(0, ab > 0 && ab < buffer.duration ? ab : 0);
     return true;
+  }
+
+  // v1.1.39 GEMELDET: "Es kommt immer erst ein Piepen. Mach das weg." Jeder Anlassklang in
+  // audio/fx.json beginnt mit 0,95 s Anlasser - bei den meisten Autos ein 1150-Hz-Surren aus
+  // tools/engine_fx.py (bei Mustang und Blazer die echte Aufnahme, die genauso piepsig klingt).
+  // Wir springen an die Stelle, an der der Motor anspringt (crank_end dort), statt alle
+  // Dateien neu zu erzeugen.
+  const START_FX_AB = 0.95;
+  function playStartFx() {
+    return playFx(fxBuffers.start[$('sound-profile').value] || fxBuffers.start.p992gt3r, 0.85, 0, START_FX_AB);
   }
 
   // Fuel warning, built like a modern seatbelt reminder rather than like a falling chime.

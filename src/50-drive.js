@@ -3045,8 +3045,10 @@
       // v1.0.28: unter Gelb Abstand zum Vordermann, wie die NPCs (gelbAbstandFaktor).
       * (grund === 'yellow' && typeof gelbAbstandFaktor === 'function' ? gelbAbstandFaktor(meinAuto) : 1);
     // Nie schneller als das Safety Car, wenn dicht dahinter - harte Grenze, siehe scFolgeDeckel (90-ghosts.js).
-    const ziel = (grund === 'yellow' && typeof scFolgeDeckel === 'function')
+    const zielSc = (grund === 'yellow' && typeof scFolgeDeckel === 'function')
       ? Math.min(zielBasis, scFolgeDeckel(meinAuto)) : zielBasis;
+    // v1.1.39: unter Gelb Mindesttempo und Haarnadel-Obergrenze wie die NPCs (autopilotGelbGrenzen).
+    const ziel = grund === 'yellow' && typeof autopilotGelbGrenzen === 'function' ? autopilotGelbGrenzen(meinAuto, zielSc) : zielSc;
     const v = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
     const dtA = Math.max(0.01, Math.min(0.25,
       (Date.now() - (regler.at || Date.now())) / 1000));

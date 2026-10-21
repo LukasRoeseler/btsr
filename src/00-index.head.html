@@ -4823,7 +4823,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.38</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.39</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5976,6 +5976,10 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Gummiband neu (WIP, Time Attack): Hat ein NPC viel Vorsprung (ein Viertel Runde, mindestens zwei Teile), wird er an jeder Start/Ziel-Durchfahrt langsamer, bis du ihn &#252;berholt hast; danach Runde f&#252;r Runde schneller, bis er wieder vorn ist. Neuer Regler &#8222;Gummiband: Schritt je Runde&#8220; (2&#8211;10 %, Standard 4 %). Das Tempo bleibt zwischen 60 und 140 % seines Garagentempos, in Kurven h&#246;chstens 110 %, vor und in der Haarnadel nie &#252;ber dem Garagentempo; Mindesttempo und Haarnadel-Obergrenze gelten weiter. Der Vorsprung wird &#252;ber Runden mitgez&#228;hlt, ohne den Rundenz&#228;hler deines Autos.</li>
+        <li>Automatische Aufstellung: Kein Startplatz mehr in der Haarnadel oder Engstelle &#8211; f&#228;llt einer dorthin, r&#252;cken er und alle dahinter um ganze Teile zur&#252;ck (andere Kurven bleiben erlaubt). Das Safety Car h&#228;lt beim Aufstellen Abstand wie unter Gelb und f&#228;hrt im selben Tempo wie alle (sein Mindest- und Heimweg-Tempo greifen dort nicht mehr). Einparken links/rechts: die Aufnahme lenkt 45 ms l&#228;nger nach au&#223;en, die Autos stehen etwas weiter am Rand und halten die Mitte frei.</li>
+        <li>Gelbe Flagge: alle gleich schnell. Die Feld-Staffel schob hintere NPCs auch unter Gelb um bis zu 10 % an &#8211; unter Gelb ist sie jetzt aus. Dein Autopilot f&#228;hrt unter Gelb mit demselben Mindesttempo und derselben Haarnadel-Obergrenze wie die NPCs (vorher war er in Kurven langsamer als sie). Das NPC-Tempo aus der Garage spielt unter Gelb keine Rolle.</li>
+        <li>Verbindungston ohne Piepen: Der Anlassklang beim Verbinden beginnt jetzt dort, wo der Motor anspringt &#8211; das hohe Anlasser-Surren der ersten Sekunde f&#228;llt weg. Garage: Die linke Spalte bleibt beim Umstellen rechts auf ihrer H&#246;he (die Position wird beim Scrollen mitgeschrieben und nach dem Neuaufbau zweimal gesetzt).</li>
         <li>Aufstellung: Jede Reihe steht jetzt eine halbe Kachel hinter der vorigen, vier Autos je Teil (zwei links, zwei rechts). Liegt ein Platz in einer Kurve oder direkt davor, parkt das Auto mit dem kurzen Lenkimpuls statt mit der Aufnahme. Das Tempo der Aufstellung h&#228;ngt nicht mehr an Schwierigkeit oder Grundtempo. Safety Car: f&#228;hrt die erste Runde ganz hinter dem Feld mit und parkt erst danach; neuer Regler &#8222;Gas beim Ausparken&#8220; (WIP, Standard 1,5 &#215; der Aufnahme).</li>
         <li>NPCs in der Haarnadel: Das H&#246;chsttempo dort gilt jetzt zuletzt. Bisher hoben die Feld-Staffel (bis +10 %) und das Mindesttempo (37 %) jede Haarnadel &#252;ber die Grenze. Neuer Regler NPC &#8594; &#8222;H&#246;chsttempo in der Haarnadel&#8220; (WIP, Standard 35 %, gilt auch auf den zwei Teilen davor). Ab vier Teilen vor der Haarnadel gibt es keinen &#220;berholschub mehr.</li>
         <li>Ansagen: Statt &#8222;Autonamen ansagen&#8220; w&#228;hlst du jetzt, was die Namen in der Garage sind (WIP). Autobezeichnungen (Standard): &#8222;Gewonnen hat der rote Porsche&#8220;. Fahrernamen: &#8222;Gewonnen hat Max Mustermann&#8220;, ohne Farbe.</li>
@@ -9295,14 +9299,21 @@
           Time Attack auf der Bahn fahren alle NPCs als Challenger gegen dich. Gegen meine Bestzeit:
           sie fahren deine beste aufgezeichnete Runde dieser Strecke nach, jeder ab seinem Startplatz.
           Gegen den Rekord: die Runde der Online-Bestzeit der Challenge oder Community-Strecke.
-          Gummiband: sie halten sich ungef&auml;hr auf deiner H&ouml;he &ndash; vorn langsamer, hinten
-          schneller, mehrere NPCs je eine Kachel versetzt. Fehlt die Runde, fahren sie Gummiband. Auf
-          der Karte zeigt ein wei&szlig;er Punkt, wo die Runde gerade ist.</small></div>
+          Gummiband: hat ein NPC viel Vorsprung, wird er Runde f&uuml;r Runde langsamer, bis du ihn
+          &uuml;berholt hast, danach Runde f&uuml;r Runde schneller, bis er wieder vorn ist. Fehlt die
+          Runde, fahren sie Gummiband. Auf der Karte zeigt ein wei&szlig;er Punkt, wo die Runde gerade ist.</small></div>
         <select id="race-challenger">
           <option value="beste" selected>Gegen meine Bestzeit</option>
           <option value="rekord">Gegen den Rekord</option>
           <option value="gummiband">Gummiband</option>
         </select></div>
+      <div class="opt-row"><div class="opt-label">Gummiband: Schritt je Runde <span class="wip-tag">WIP</span><small>Um so viel &auml;ndert ein NPC im Gummiband sein Tempo an jeder Start/Ziel-Durchfahrt: langsamer, solange er vorn liegt (ab einem Viertel Runde Vorsprung, mindestens zwei Teile, bis du ihn &uuml;berholt hast), schneller, solange er hinter dir liegt. Sein Garagentempo ist 100&nbsp;%; das Gummiband bleibt zwischen 60 und 140&nbsp;% davon. In Kurven h&ouml;chstens 110&nbsp;%, vor und in der Haarnadel nie schneller als sein Garagentempo, und Mindesttempo und H&ouml;chsttempo in der Haarnadel gelten weiter. Standard 4&nbsp;%.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="race-gummiband-schritt" min="0.02" max="0.1" step="0.01" value="0.04" data-preset-skip>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="race-gummiband-schritt-val">4 %</span>
+        </div></div>
 
       <div id="race-grid-wrap" style="display:none; margin-top:12px">
         <label class="small">Startaufstellung, ziehen oder mit den Pfeilen sortieren</label>
