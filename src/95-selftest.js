@@ -15149,7 +15149,7 @@
     ['karosserie', 'scheinwerfer', 'ruecklicht', 'glas', 'rad'].forEach((r) => { if (!m.teile.some((t) => t.rolle === r)) f.push('keine Rolle ' + r); });
     if (!(m.lichter.brems.length >= 2 && m.lichter.front.length >= 2)) f.push('Lichter fehlen');
     const texs = [...new Set(m.teile.map((t) => t.tex))];
-    for (const x of texs) { const r = await fetch(VF_MODELL_PFAD + x, { method: 'HEAD' }).catch(() => null); if (!r || !r.ok) f.push('Textur fehlt: ' + x); }
+    for (const x of texs) { const r = await fetch(vfModellPfad() + x, { method: 'HEAD' }).catch(() => null); if (!r || !r.ok) f.push('Textur fehlt: ' + x); }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : m.name + ': ' + m.teile.length + ' Teile, ' + (daten.indizes.length / 3) + ' Dreiecke, ' + texs.length + ' Texturen' };
   });
 

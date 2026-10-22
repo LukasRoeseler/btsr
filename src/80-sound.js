@@ -142,6 +142,11 @@
     'sd_toro',
     // v1.1.9 BESTELLT: der Vulture V5R aus Speed Dreams (virtuelle Fahrt), sein eigener V8 (GPL-2+).
     'sd_v5r',
+    // v1.1.45 BESTELLT: die Lynx 220 (Jaguar XJ220), ihr eigener V6-Turbo (Free Art).
+    'sd_lynx',
+    // v1.1.45 BESTELLT: Ford GT40 Mk1 (FMC GT4, V8) und Porsche 911 GT3 (Boxer 96, Boxer-6).
+    'sd_fmc',
+    'sd_boxer',
     // ---- ZWEI AUFNAHMEN DES NUTZERS, aus photos/newaudio --------------------------
     // BESTELLT: eigene Aufnahmen; Drehzahlen aus der Video-Anzeige (siehe loops.json).
     // DIESELBE REIHENFOLGE wie im Menue (am Ende der Liste).
@@ -172,8 +177,8 @@
                          // Siehe motorDrehzahl() - es ist die Skala, auf der Anzeige und
                          // Ton gemeinsam laufen.
                          band: {},
-                         nodes: null, over: null, car: null,
-                         master: null, ready: false, loading: false };
+                          nodes: null, over: null, car: null,
+                          master: null, ready: false, loading: false };
 
   // ====================================================================================
   // DIE DREHZAHL DES GEWAEHLTEN MOTORS
@@ -258,8 +263,12 @@
       // schon nach IHM, nicht erst nach allen 27 - der Rest laedt im selben Durchlauf
       // weiter, nur eben im Hintergrund, waehrend das gewaehlte Auto schon spielt.
       const vorrang = $('sound-profile') ? $('sound-profile').value : null;
-      const reihenfolge = vorrang && manifest[vorrang]
-        ? [vorrang, ...Object.keys(manifest).filter(c => c !== vorrang)]
+      // Auch den Motor der virtuellen Fahrt frueh laden: sonst spielt dort der Ersatzton,
+      // bis der (zuletzt eingetragene) Vulture V5.R / Lynx 220 endlich an der Reihe ist.
+      const vfMotor = (typeof vfMotorZiel === 'function') ? vfMotorZiel() : null;
+      const prio = [vorrang, vfMotor, 'sd_v5r', 'sd_lynx', 'sd_fmc', 'sd_boxer'].filter((c, i, a) => c && manifest[c] && a.indexOf(c) === i);
+      const reihenfolge = prio.length
+        ? [...prio, ...Object.keys(manifest).filter((c) => !prio.includes(c))]
         : Object.keys(manifest);
       for (const car of reihenfolge) {
         sampleEngine.buffers[car] = {};

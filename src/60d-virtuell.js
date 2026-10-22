@@ -69,8 +69,8 @@
       'attribute vec3 p; attribute vec3 c; uniform mat4 m; uniform mat4 w; varying vec3 vc; varying float vd;'
       + 'void main(){ vec4 q = w * vec4(p, 1.0); gl_Position = m * q; vc = c; vd = gl_Position.w; }'));
     gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
-      'precision mediump float; varying vec3 vc; varying float vd; uniform vec3 nebel;'
-      + 'void main(){ float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(vc, nebel, f), 1.0); }'));
+      'precision mediump float; varying vec3 vc; varying float vd; uniform vec3 nebel; uniform float alf;'
+      + 'void main(){ float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(vc, nebel, f), alf); }'));
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     return p;
@@ -80,6 +80,26 @@
     gl.bindBuffer(gl.ARRAY_BUFFER, b);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(daten), gl.STATIC_DRAW);
     return { b, n: daten.length / 6 };
+  }
+  // Himmel: ein Vollbild-Quad in NDC mit Farbverlauf (oben tiefblau, am Horizont hell). Ersetzt die
+  // bisher flache Clear-Farbe und passt zum Nebel, damit die Strecke am Horizont ins Licht uebergeht.
+  function vfProgrammHimmel(gl) {
+    const p = gl.createProgram();
+    gl.attachShader(p, vfShader(gl, gl.VERTEX_SHADER,
+      'attribute vec3 p; attribute vec3 c; varying vec3 vc;'
+      + 'void main(){ gl_Position = vec4(p, 1.0); vc = c; }'));
+    gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
+      'precision mediump float; varying vec3 vc; void main(){ gl_FragColor = vec4(vc, 1.0); }'));
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    return { p, ap: gl.getAttribLocation(p, 'p'), ac: gl.getAttribLocation(p, 'c') };
+  }
+  function vfHimmel(gl) {
+    const oben = [0.18, 0.36, 0.66], unten = [0.66, 0.78, 0.90];
+    const a = [-1, 1, 0, oben[0], oben[1], oben[2], 1, 1, 0, oben[0], oben[1], oben[2],
+               1, -1, 0, unten[0], unten[1], unten[2], -1, 1, 0, oben[0], oben[1], oben[2],
+               1, -1, 0, unten[0], unten[1], unten[2], -1, -1, 0, unten[0], unten[1], unten[2]];
+    return vfPuffer(gl, a);
   }
   function vfHex(hex) {
     const h = String(hex || '#888888').replace('#', '');
@@ -188,7 +208,7 @@
   // bremsen dreht das Auto ein), Uebersteuern unter Vollgas am Ausgang, Gegenlenken faengt es.
   // Unter 3 m/s rein kinematisch (kein Rutschen im Stand).
   const VF_GT3 = { m: 1300, Iz: 2300, a: 1.20, b: 1.50, h: 0.38, muV: 1.60, muH: 2.05, BV: 9.0, BH: 11.0, C: 1.35,
-                   lenkGrad: 16, bremsVorn: 0.75, antriebMax: 7.0, tc: 0.60, abs: 0.80, lastEmpf: 0.15 };
+                   lenkGrad: 16, bremsVorn: 0.75, antriebMax: 7.0, tc: 0.60, abs: 0.80, lastEmpf: 0.15, yawDamp: 1.5 };
   // z: { vy (m/s, rechts +), r (rad/s, rechts +) }, vx (m/s), ax (m/s^2 Laengsbeschleunigung, aus der
   // Laengs-G der App), antrieb (0..1 Gasanteil), lenk (-1..1), mu (Griff-Faktor).
   // P: Fahrprofil (VF_GT3 oder vfPhysikAus() eines Autos). kV/kH: Abtrieb je Achse in N je (m/s)^2.
@@ -224,7 +244,7 @@
       const fyV = -dV * Math.sin(P.C * Math.atan(P.BV * aV));
       const fyH = -dH * Math.sin(P.C * Math.atan(P.BH * aH));
       z.vy += h * ((fyV * Math.cos(delta) + fyH) / P.m - vx * z.r);
-      z.r += h * ((P.a * fyV * Math.cos(delta) - P.b * fyH) / P.Iz);
+      z.r += h * ((P.a * fyV * Math.cos(delta) - P.b * fyH) / P.Iz - (P.yawDamp || 0) * z.r);
       z.aV = aV; z.aH = aH;
     }
     z.vy = Math.max(-vx, Math.min(vx, z.vy));
@@ -237,15 +257,24 @@
   // Stossdaempfer." Der Vulture V5R (ls1-vulture-v5r, GPL-2+), umgewandelt mit tools/sd_auto.py nach
   // img/autos/v5r/: Modell ohne Innenraum, Rad, Lichtorte und die Fahrzeugdaten aus der .xml. Laengen in
   // Metern, im Auto +x links, +y oben, +z vorn; gezeichnet mal VF_AUTO.L / Laenge (so lang wie der Kasten).
-  const VF_MODELL_PFAD = 'img/autos/v5r/';
   const VF_AUTO_STORE = 'omegasim-vf-auto';
+  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/' };
+  function vfModellPfad() { return VF_MODELL_PFADE[vfAutoWahl()] || 'img/autos/v5r/'; }
   const VF_FEDER_STORE = 'omegasim-vf-feder';
   const VF_FEDER_WERTE = [1, 2, 3, 5, 8];
-  function vfAutoWahl() { try { return localStorage.getItem(VF_AUTO_STORE) === 'kasten' ? 'kasten' : 'v5r'; } catch (e) { return 'v5r'; } }
+  function vfAutoWahl() {
+    try { const v = localStorage.getItem(VF_AUTO_STORE); return (v === 'v5r' || v === 'lynx220' || v === 'fmcgt4' || v === 'boxer96' || v === 'kasten') ? v : 'v5r'; } catch (e) { return 'v5r'; }
+  }
+  // Schaltung (Automatik/Manuell) fuer die virtuelle Fahrt. Manuell schaltet der Fahrer mit I/K.
+  const VF_SCHALTUNG_STORE = 'omegasim-vf-schaltung';
+  function vfSchaltungAuto() { try { return localStorage.getItem(VF_SCHALTUNG_STORE) !== 'manuell'; } catch (e) { return true; } }
+  // Geist: eine Kopie des Autos, die nach der ersten Runde die aufgezeichnete Linie abfaehrt.
+  const VF_GEIST_STORE = 'omegasim-vf-geist';
+  function vfGeistAn() { try { return localStorage.getItem(VF_GEIST_STORE) !== 'aus'; } catch (e) { return true; } }
   // Die echte Neigung eines GT1 ist klein (0,5 Grad Rollen bei 1,5 g) und bei Modellgroesse unsichtbar.
   // Der Faktor vergroessert nur den AUSSCHLAG; Federraten, Daempfer und Zeitverhalten bleiben die echten.
   function vfFederSicht() {
-    try { const v = +localStorage.getItem(VF_FEDER_STORE); return VF_FEDER_WERTE.indexOf(v) >= 0 ? v : 5; } catch (e) { return 5; }
+    try { const v = +localStorage.getItem(VF_FEDER_STORE); return VF_FEDER_WERTE.indexOf(v) >= 0 ? v : 1; } catch (e) { return 1; }
   }
   // Fahrprofil fuer vfDynamik aus den Daten der .xml. Die Reibwerte von Speed Dreams sind ohne den dortigen
   // Reifentemperatur-Zuschlag gerechnet: mal 1,3 vorn, hinten wie beim GT3 abgestimmt 28 % mehr (breitere
@@ -331,19 +360,39 @@
     ['m', 'w', 'nm', 'tx', 'tint', 'emis', 'alpha', 'am', 'licht', 'nebel'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
     return { p, u, ap: gl.getAttribLocation(p, 'p'), an: gl.getAttribLocation(p, 'n'), auv: gl.getAttribLocation(p, 'uv') };
   }
-  // Daten einmal je Sitzung holen (fetch: ueber file:// nicht ladbar, dann bleibt der Kasten).
-  let vfModellLaden = null;
-  function vfModellDaten() {
-    if (!vfModellLaden) {
-      vfModellLaden = Promise.all([
-        fetch(VF_MODELL_PFAD + 'auto.json').then((r) => { if (!r.ok) throw new Error('auto.json ' + r.status); return r.json(); }),
-        fetch(VF_MODELL_PFAD + 'auto.bin').then((r) => { if (!r.ok) throw new Error('auto.bin ' + r.status); return r.arrayBuffer(); }),
+  // Daten einmal je Sitzung und Auto holen (fetch: ueber file:// nicht ladbar, dann bleibt der Kasten).
+  let vfModellLaden = {};
+  function vfModellDaten(pfad) {
+    pfad = pfad || vfModellPfad();
+    if (!vfModellLaden[pfad]) {
+      vfModellLaden[pfad] = Promise.all([
+        fetch(pfad + 'auto.json').then((r) => { if (!r.ok) throw new Error('auto.json ' + r.status); return r.json(); }),
+        fetch(pfad + 'auto.bin').then((r) => { if (!r.ok) throw new Error('auto.bin ' + r.status); return r.arrayBuffer(); }),
       ]).then(([meta, bin]) => {
         if (bin.byteLength < meta.indexAb + meta.indizes * 2) throw new Error('auto.bin zu kurz');
         return { meta, ecken: new Float32Array(bin, 0, meta.ecken * 8), indizes: new Uint16Array(bin, meta.indexAb, meta.indizes) };
-      }).catch((e) => { vfModellLaden = null; throw e; });
+      }).catch((e) => { vfModellLaden[pfad] = null; throw e; });
     }
-    return vfModellLaden;
+    return vfModellLaden[pfad];
+  }
+  // Gemeinsamer Rad-Modell-Fallback: die echten Rad-Teile der Vulture V5.R (mit Texturen),
+  // damit auch Modelle ohne eigene Rad-Geometrie die gleichen Raeder zeigen.
+  let vfRadModell = null;
+  function vfRadModellBauen(gl) {
+    if (vfRadModell) return vfRadModell;
+    vfRadModell = vfModellDaten('img/autos/v5r/').then((daten) => {
+      const teile = daten.meta.teile.filter((t) => t.gruppe === 'rad');
+      const vbo = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+      gl.bufferData(gl.ARRAY_BUFFER, daten.ecken, gl.STATIC_DRAW);
+      const ibo = gl.createBuffer();
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, daten.indizes, gl.STATIC_DRAW);
+      const tex = {};
+      teile.forEach((t) => { if (!tex[t.tex]) tex[t.tex] = vfTextur(gl, 'img/autos/v5r/' + t.tex); });
+      return { vbo, ibo, teile, tex };
+    });
+    return vfRadModell;
   }
   function vfTextur(gl, url, rgba) {
     const tx = gl.createTexture();
@@ -390,8 +439,8 @@
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, daten.indizes, gl.STATIC_DRAW);
     const tex = {};
-    daten.meta.teile.forEach((t) => { if (!tex[t.tex]) tex[t.tex] = vfTextur(gl, VF_MODELL_PFAD + t.tex); });
-    const schatten = daten.meta.schatten ? vfTextur(gl, VF_MODELL_PFAD + daten.meta.schatten, [0, 0, 0, 0]) : null;
+    daten.meta.teile.forEach((t) => { if (!tex[t.tex]) tex[t.tex] = vfTextur(gl, vfModellPfad() + t.tex); });
+    const schatten = daten.meta.schatten ? vfTextur(gl, vfModellPfad() + daten.meta.schatten, [0, 0, 0, 0]) : null;
     // Eine kleine Flaeche fuer Schatten, Lichtkegel und Leuchten (wird je Bild neu beschrieben).
     const quad = gl.createBuffer();
     return { meta: daten.meta, d: daten.meta.physik, vbo, ibo, tex, schatten, glanz: vfGlanzTextur(gl), quad };
@@ -423,6 +472,11 @@
         if (VF.rundeAb) {
           VF.letzte = jetzt - VF.rundeAb;
           if (VF.beste === null || VF.letzte < VF.beste) VF.beste = VF.letzte;
+          // Nach der ersten Runde beginnt der Geist, die aufgezeichnete Linie abzufahren.
+          if (VF.geist && !VF.geist.aktiv) { VF.geist.aktiv = true; VF.geist.zeit = 0; VF.geist.i = 0; }
+          // Rundenrennen: nach der Ziel-Lap ist Schluss.
+          VF.runden = (VF.runden || 0) + 1;
+          if (VF.modus === 'laps' && VF.runden >= VF.limit) vfRennenEnde();
         }
         VF.rundeAb = jetzt;
       }
@@ -442,6 +496,11 @@
     VF.letzt = now;
     const st = physEngine.state;
     VF.dtBild = dt;
+    // Zeitmodi (Endurance, Qualifying): laufen gegen die Rennzeit.
+    if (VF.modus && VF.modus !== 'laps' && VF.modus !== 'practice' && VF.limit) {
+      VF.modusZeit += dt;
+      if (VF.modusZeit >= VF.limit * 60) vfRennenEnde();
+    }
     const kmh = st.speedKmh || 0;
     // v1.1.11 GEMELDET: "Virtuelles Fahren ruckelt und ist sehr traege." Bisher lenkte das Auto mit
     // physEngine.state.dampedSteering: das rechnet die Physik nur alle 45 ms (Treppenstufen in der
@@ -450,7 +509,7 @@
     // weniger Einschlag wie ein Spiel-Lenkfilter; den Rest erledigt das Reifenmodell.
     const vVollL = Math.abs(kmh) * REAL_SCALE / 3.6;
     const lenkZiel = Math.max(-1, Math.min(1, typeof steerX === 'number' ? steerX : 0)) / (1 + (vVollL / 55) * (vVollL / 55));
-    const schritt = dt / 0.12;
+    const schritt = dt / 0.09;
     VF.lenkIst = (VF.lenkIst || 0) + Math.max(-schritt, Math.min(schritt, lenkZiel - (VF.lenkIst || 0)));
     const lenk = VF.lenkIst;
     if (kmh < 0) {
@@ -475,6 +534,27 @@
       const rich = VF.h * Math.PI / 180 + beta;
       VF.x += Math.sin(rich) * vE * dt;
       VF.y -= Math.cos(rich) * vE * dt;
+    }
+    // Geist: die erste Runde wird aufgezeichnet, danach faehrt eine Kopie diese Linie ab.
+    if (VF.geist) {
+      const g = VF.geist;
+      if (!g.aktiv) {
+        g.aufzeichnung.push([VF.x, VF.y, VF.h, g.t]);
+        g.t += dt;
+      } else if (g.an && g.aufzeichnung.length > 1) {
+        g.zeit += dt;
+        const a = g.aufzeichnung;
+        const total = a[a.length - 1][3];
+        const t = total > 0 ? (g.zeit % total) : 0;
+        while (g.i < a.length - 2 && a[g.i + 1][3] <= t) g.i++;
+        while (g.i > 0 && a[g.i][3] > t) g.i--;
+        const p0 = a[g.i], p1 = a[g.i + 1];
+        const d = (p1[3] - p0[3]) || 1;
+        const f = Math.max(0, Math.min(1, (t - p0[3]) / d));
+        g.x = p0[0] + (p1[0] - p0[0]) * f;
+        g.y = p0[1] + (p1[1] - p0[1]) * f;
+        g.h = p0[2] + (p1[2] - p0[2]) * f;
+      }
     }
     // Raeder drehen mit dem Weg, Federung folgt Laengs- und Querbeschleunigung (neben der Bahn ruettelt es).
     const wegE = kmh / 3.6 * 100 * TRACK_UNITS_PER_CM * dt;
@@ -506,6 +586,13 @@
     VF.feder = null;
     showHudToast(t('Zurück auf die Bahn gesetzt'));
   }
+  function vfRennenEnde() {
+    if (VF.rennenEnde) return;
+    VF.rennenEnde = true;
+    const was = VF.modus === 'laps' ? (Math.min(VF.runden, VF.limit) + ' ' + t('Runden')) : (VF.limit + ' min');
+    showHudToast(t('Rennen beendet') + ': ' + was);
+    setTimeout(() => { if (VF.aktiv) virtuellBeenden(); }, 1600);
+  }
   function vfMalen() {
     const gl = VF.gl, cv = VF.cv;
     // Handy (Touch): hoechstens 1,25-fache Aufloesung - die Pixelzahl ist auf dem Handy der teuerste Teil.
@@ -513,17 +600,29 @@
     const w = Math.round(cv.clientWidth * dpr), h = Math.round(cv.clientHeight * dpr);
     if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
     gl.viewport(0, 0, w, h);
-    gl.clearColor(0.55, 0.66, 0.78, 1);
+    gl.clearColor(0.66, 0.78, 0.90, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    // Himmel als Vollbild-Farbverlauf, ganz hinten (Tiefentest aus).
+    if (!VF.himmelProg) { VF.himmelProg = vfProgrammHimmel(gl); VF.himmel = vfHimmel(gl); }
+    gl.disable(gl.DEPTH_TEST);
+    gl.useProgram(VF.himmelProg.p);
+    gl.bindBuffer(gl.ARRAY_BUFFER, VF.himmel.b);
+    gl.enableVertexAttribArray(VF.himmelProg.ap); gl.enableVertexAttribArray(VF.himmelProg.ac);
+    gl.vertexAttribPointer(VF.himmelProg.ap, 3, gl.FLOAT, false, 24, 0);
+    gl.vertexAttribPointer(VF.himmelProg.ac, 3, gl.FLOAT, false, 24, 12);
+    gl.drawArrays(gl.TRIANGLES, 0, VF.himmel.n);
+    gl.disableVertexAttribArray(VF.himmelProg.ap); gl.disableVertexAttribArray(VF.himmelProg.ac);
+    gl.enable(gl.DEPTH_TEST);
     const k = vfKamera(VF.dtBild || 0.016);
-    const blick = vfBlick(k.auge, k.ziel, [0, 1, 0]);
+    const blick = vfBlick(k.auge, k.ziel, k.oben || [0, 1, 0]);
     const pv = vfMal(vfPerspektive(k.fov * Math.PI / 180, w / Math.max(1, h), k.nah, 3000), blick);
     gl.useProgram(VF.prog);
-    if (!VF.loc) VF.loc = { m: gl.getUniformLocation(VF.prog, 'm'), w: gl.getUniformLocation(VF.prog, 'w'), nebel: gl.getUniformLocation(VF.prog, 'nebel'),
+    if (!VF.loc) VF.loc = { m: gl.getUniformLocation(VF.prog, 'm'), w: gl.getUniformLocation(VF.prog, 'w'), nebel: gl.getUniformLocation(VF.prog, 'nebel'), alf: gl.getUniformLocation(VF.prog, 'alf'),
                             p: gl.getAttribLocation(VF.prog, 'p'), c: gl.getAttribLocation(VF.prog, 'c') };
     const L = VF.loc;
     gl.uniformMatrix4fv(L.m, false, new Float32Array(pv));
-    gl.uniform3f(L.nebel, 0.55, 0.66, 0.78);
+    gl.uniform3f(L.nebel, 0.66, 0.78, 0.90);
+    gl.uniform1f(L.alf, 1.0);
     const zeichne = (pu, welt) => {
       gl.uniformMatrix4fv(L.w, false, new Float32Array(welt));
       gl.bindBuffer(gl.ARRAY_BUFFER, pu.b);
@@ -534,6 +633,15 @@
     };
     zeichne(VF.bahn, VF_EINS);
     gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+    if (VF.geist && VF.geist.aktiv) {
+      if (!VF.geistAuto) VF.geistAuto = vfAutoBauen(gl, [0.45, 0.75, 1.0]);
+      gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      gl.uniform1f(L.alf, 0.45);
+      zeichne(VF.geistAuto, vfLage(VF.geist.x, VF.geist.y, VF.geist.h));
+      gl.uniform1f(L.alf, 1.0);
+      gl.disable(gl.BLEND);
+      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+    }
     if (VF.modell && VF.tprog) vfModellMalen(gl, pv, blick);
     else {
       zeichne(VF.auto, vfLage(VF.x, VF.y, VF.h));
@@ -545,7 +653,8 @@
   // Motorhaube oder nahe Verfolgerkamera." R3 (bzw. die Lichthupen-Belegung) oder C schaltet weiter:
   // Verfolger -> nah -> Motorhaube -> Verfolger. Nachgefuehrt nach der ZEIT (nicht je Bild): auf einem
   // langsamen Handy lief die Kamera vorher bei weniger Bildern spuerbar hinterher.
-  const VF_KAMERAS = [{ id: 'verfolger', name: 'Verfolgerkamera' }, { id: 'nah', name: 'Nahe Verfolgerkamera' }, { id: 'haube', name: 'Motorhaube' }];
+  const VF_KAMERAS = [{ id: 'verfolger', name: 'Verfolgerkamera' }, { id: 'nah', name: 'Nahe Verfolgerkamera' }, { id: 'haube', name: 'Motorhaube' },
+                      { id: 'oben', name: 'Von oben (Start/Ziel)' }, { id: 'statisch', name: 'Statisch (Start/Ziel)' }];
   const VF_KAMERA_STORE = 'omegasim-vf-kamera';
   function vfKameraId() {
     if (!VF.kamera) { try { VF.kamera = localStorage.getItem(VF_KAMERA_STORE) || 'verfolger'; } catch (e) { VF.kamera = 'verfolger'; } }
@@ -569,6 +678,22 @@
       VF.kam = auge;
       return { auge, ziel: [auge[0] + fx * 30, hoch - 1.2, auge[2] + fz * 30], fov: 70, nah: 0.3 };
     }
+    if (id === 'oben') {
+      // Von oben, parallel zur Start/Ziel-Geraden: die Kamera schwebt mit dem Auto mit (x/y) und
+      // dreht sich NICHT mit - das "Oben" der Ansicht zeigt immer entlang der Geraden.
+      const oben = [Math.sin(VF.startH * Math.PI / 180), 0, -Math.cos(VF.startH * Math.PI / 180)];
+      const auge = [VF.x, 85, VF.y];
+      VF.kam = null;
+      return { auge, ziel: [VF.x, 0, VF.y], oben, fov: 62, nah: 0.5 };
+    }
+    if (id === 'statisch') {
+      // Wie ein Zuschauer neben der Strecke: sitzt seitlich links neben dem Auto, etwas in der
+      // Luft, und schaut immer aufs Auto (verfolgt es mit dem Blick, statt mitzufahren).
+      const lx = -fz, lz = fx;               // senkrecht zur Fahrtrichtung ("links")
+      const auge = [VF.x + lx * 9, 4.5, VF.y + lz * 9];
+      VF.kam = null;
+      return { auge, ziel: [VF.x, 1.2, VF.y], fov: 62, nah: 0.3 };
+    }
     const nah = id === 'nah';
     const hinten = nah ? 15 : 30, hoehe = nah ? 6 : 13, tau = nah ? 0.08 : 0.15;
     const soll = [VF.x - fx * hinten, hoehe, VF.y - fz * hinten];
@@ -589,7 +714,7 @@
     const bremst = !!(physEngine.outputs && physEngine.outputs.lights && physEngine.outputs.lights.brake);
     gl.useProgram(T.p);
     gl.uniformMatrix4fv(u.m, false, new Float32Array(pv));
-    gl.uniform3f(u.nebel, 0.55, 0.66, 0.78);
+    gl.uniform3f(u.nebel, 0.66, 0.78, 0.90);
     gl.uniform1i(u.tx, 0);
     gl.activeTexture(gl.TEXTURE0);
     [T.ap, T.an, T.auv].forEach((a) => gl.enableVertexAttribArray(a));
@@ -644,6 +769,22 @@
       const w = vfKette(lage, vfT(seite * r.spur / 2, r.radius, z), vfRy(ax === 'vorn' ? -(VF.lenkWinkel || 0) : 0), vfRx(VF.raddreh || 0),
         vfS(seite * r.breite, 2 * r.radius, 2 * r.radius));
       radTeile.forEach((t) => { setze(w, [1, 1, 1], 0, 1, 0, 1); teil(t); });
+      if (!radTeile.length) {
+        // Fallback: die echten Rad-Teile der Vulture V5.R (mit Reifen-/Felgen-Textur).
+        const radM = VF.radModell;
+        if (radM && radM.teile.length) {
+          setze(w, [1, 1, 1], 0, 1, 0, 1);
+          radM.teile.forEach((t) => {
+            gl.bindBuffer(gl.ARRAY_BUFFER, radM.vbo);
+            gl.vertexAttribPointer(T.ap, 3, gl.FLOAT, false, 32, t.ecke0 * 32);
+            gl.vertexAttribPointer(T.an, 3, gl.FLOAT, false, 32, t.ecke0 * 32 + 12);
+            gl.vertexAttribPointer(T.auv, 2, gl.FLOAT, false, 32, t.ecke0 * 32 + 24);
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, radM.ibo);
+            gl.bindTexture(gl.TEXTURE_2D, radM.tex[t.tex]);
+            gl.drawElements(gl.TRIANGLES, t.indizes, gl.UNSIGNED_SHORT, t.index0 * 2);
+          });
+        }
+      }
     });
     // 4. Scheiben und Scheinwerferglas (durchscheinend, getoent)
     gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
@@ -667,10 +808,13 @@
         .map((p) => ort(lage, p).concat(p.slice(3)));
       setze(VF_EINS, [1, 0.95, 0.82], 0, 0.30, 1, 0);
       flaeche([kegel[0], kegel[1], kegel[2], kegel[0], kegel[2], kegel[3]], M.glanz);
-      (M.meta.lichter.front || []).forEach((l) => punkt(l, l[3] * 2.6, [1, 0.96, 0.85], 0.95));
-      (M.meta.lichter.rueck || []).forEach((l) => punkt(l, l[3] * 1.6, [1, 0.1, 0.06], 0.45));
+      (M.meta.lichter.front && M.meta.lichter.front.length ? M.meta.lichter.front : [[d.breite * 0.35, d.hoehe * 0.5, d.laenge / 2 - 0.15, 0.2], [-d.breite * 0.35, d.hoehe * 0.5, d.laenge / 2 - 0.15, 0.2]])
+        .forEach((l) => punkt(l, l[3] * 2.6, [1, 0.96, 0.85], 0.95));
+      (M.meta.lichter.rueck && M.meta.lichter.rueck.length ? M.meta.lichter.rueck : [[d.breite * 0.35, d.hoehe * 0.5, -d.laenge / 2 + 0.15, 0.15], [-d.breite * 0.35, d.hoehe * 0.5, -d.laenge / 2 + 0.15, 0.15]])
+        .forEach((l) => punkt(l, l[3] * 1.6, [1, 0.1, 0.06], 0.45));
     }
-    if (bremst) (M.meta.lichter.brems || []).forEach((l) => punkt(l, l[3] * 2.4, [1, 0.08, 0.04], 0.95));
+    if (bremst) (M.meta.lichter.brems && M.meta.lichter.brems.length ? M.meta.lichter.brems : [[d.breite * 0.35, d.hoehe * 0.5, -d.laenge / 2 + 0.15, 0.2], [-d.breite * 0.35, d.hoehe * 0.5, -d.laenge / 2 + 0.15, 0.2]])
+      .forEach((l) => punkt(l, l[3] * 2.4, [1, 0.08, 0.04], 0.95));
     gl.depthMask(true); gl.disable(gl.BLEND);
     [T.ap, T.an, T.auv].forEach((a) => gl.disableVertexAttribArray(a));
   }
@@ -678,15 +822,39 @@
   function vfHud() {
     const el = VF.hud;
     if (!el) return;
-    const kmh = Math.round(Math.abs(physEngine.state.speedKmh || 0) * REAL_SCALE);   // Anzeige wie im Cockpit
+    const st = physEngine.state;
+    const kmh = Math.round(Math.abs(st.speedKmh || 0) * TACHO_SCALE);   // wie im Cockpit (race-speed)
     const lauf = VF.rundeAb ? Date.now() - VF.rundeAb : null;
     // Nur bei Aenderung schreiben: jedes textContent= ist Arbeit fuer die Seite, und das hier laeuft je Bild.
     const setz = (sel, txt) => { const e = el.querySelector(sel); if (e.textContent !== txt) e.textContent = txt; };
     setz('.vf-tempo', kmh + ' km/h');
     setz('.vf-runde', t('Runde') + ' ' + vfZeit(lauf === null ? null : Math.floor(lauf / 100) * 100));
     setz('.vf-zeiten', t('Letzte') + ' ' + vfZeit(VF.letzte) + ' · ' + t('Beste') + ' ' + vfZeit(VF.beste));
+    let modusTxt = '';
+    if (VF.modus && RACE_MODES[VF.modus]) {
+      if (VF.modus === 'practice') modusTxt = t('Training');
+      else {
+        modusTxt = RACE_MODES[VF.modus].label;
+        if (VF.modus === 'laps') modusTxt += ' · ' + Math.min(VF.runden, VF.limit) + '/' + VF.limit;
+        else modusTxt += ' · ' + vfZeit(Math.floor(VF.modusZeit * 1000 / 100) * 100);
+      }
+    }
+    setz('.vf-modus', modusTxt);
     const ab = el.querySelector('.vf-abseits');
     if (ab.hidden === VF.abseits) ab.hidden = !VF.abseits;
+    // ACC-Cluster unten: Tempo, Gang, Drehzahl, Reifen, Tank - dieselben Werte wie das Cockpit.
+    const acc = document.querySelector('.vf-acc');
+    if (!acc) return;
+    const setzA = (sel, txt) => { const e = acc.querySelector(sel); if (e.textContent !== txt) e.textContent = txt; };
+    setzA('.vf-tempo', kmh + ' km/h');
+    setzA('.vf-rpm', Math.round(motorDrehzahl(st)) + ' 1/min');
+    const g = st.currentGear;
+    setzA('.vf-gang', g > 0 ? String(g) : (g < 0 ? 'R' : 'N'));
+    const t4 = st.tyreTemp4 || [st.tyreTempC];
+    setzA('.vf-reifen', t4.map((t) => Math.round(t) + '°').join(' / '));
+    setzA('.vf-tank', fuelLiters(typeof fuel !== 'undefined' ? fuel : 100) + ' l');
+    const stab = acc.querySelector('.vf-dreh-stab');
+    if (stab) stab.style.setProperty('--f', String(Math.max(0, Math.min(1, st.rpmFrac || 0))));
   }
 
   // ---- Starten und Beenden ------------------------------------------------------------------
@@ -707,7 +875,13 @@
     schicht.className = 'vf-schicht';
     schicht.innerHTML = '<canvas class="vf-bild"></canvas><div class="vf-hud" data-i18n-skip>'
       + '<b class="vf-tempo"></b><span class="vf-runde"></span><span class="vf-zeiten"></span>'
-      + '<span class="vf-abseits" hidden>' + t('Neben der Bahn') + '</span></div>'
+      + '<span class="vf-abseits" hidden>' + t('Neben der Bahn') + '</span><span class="vf-modus"></span></div>'
+      + '<div class="vf-acc" data-i18n-skip><b class="vf-tempo"></b>'
+      + '<div class="vf-acc-zeile"><span class="vf-lbl">' + t('Gang') + '</span><span class="vf-gang"></span>'
+      + '<span class="vf-lbl">' + t('Drehzahl') + '</span><span class="vf-rpm"></span></div>'
+      + '<div class="vf-acc-dreh"><i class="vf-dreh-stab"></i></div>'
+      + '<div class="vf-acc-zeile"><span class="vf-lbl">' + t('Reifen') + '</span><span class="vf-reifen"></span>'
+      + '<span class="vf-lbl">' + t('Tank') + '</span><span class="vf-tank"></span></div></div>'
       + '<div class="vf-knoepfe"><button type="button" data-vf="licht">' + t('Licht') + '</button><button type="button" data-vf="reset">' + t('Zurücksetzen') + '</button>'
       + '<button type="button" data-vf="zu" aria-label="' + t('Beenden') + '">&#10005;</button></div>'
       + '<span class="vf-wip">' + t('Virtuell') + ' <span class="wip-tag">WIP</span></span>';
@@ -718,7 +892,7 @@
     try {
       VF.prog = vfProgramm(gl);
     } catch (e) { schicht.remove(); showHudToast('WebGL: ' + e.message); return false; }
-    VF.loc = null; VF.lenkIst = 0; VF.kam = null;
+    VF.loc = null; VF.lenkIst = 0; VF.kam = null; VF.himmelProg = null; VF.himmel = null;
     // Die Seite unter der 3D-Schicht ruht (kein Neuzeichnen); Startaufstellung, Ampel und Meldungen
     // kommen per CSS darueber (body.vf-an).
     document.body.classList.add('vf-an');
@@ -733,6 +907,9 @@
     VF.vorherRolle = playerCar ? playerCar.role : null;
     VF.trackModeVorher = trackMode;
     trackMode = 'on';
+    // Schaltung fuer die virtuelle Fahrt anwenden (beim Beenden kommt die vorherige wieder).
+    VF.autoShiftVorher = physEngine.config.autoShift;
+    physEngine.config.autoShift = vfSchaltungAuto();
     const rx = { properties: { writeWithoutResponse: true }, writeValueWithoutResponse: async () => {}, writeValueWithResponse: async () => {} };
     const car = { device: { id: 'virtuell', name: 'Virtuell' }, server: null, rx, tx: null, role: 'none', writeInFlight: false,
                   blinking: false, tileCode: 0xff, tileCount: null, lastCodeAt: 0, yaw: 0, ghost: null, timer: null,
@@ -743,10 +920,13 @@
     setCarRole(car, 'player');
     VF.car = car;
     VF.auto = vfAutoBauen(gl, vfHex(carColor(car).hex));
+    VF.geistAuto = vfAutoBauen(gl, [0.45, 0.75, 1.0]);
+    VF.geist = { an: vfGeistAn(), aufzeichnung: [], aktiv: false, zeit: 0, t: 0, i: 0, x: 0, y: 0, h: 0 };
     VF.modell = null; VF.P = null; VF.feder = null; VF.raddreh = 0;
-    if (vfAutoWahl() === 'v5r') {
+    if (vfAutoWahl() !== 'kasten') {
       try { VF.tprog = vfProgrammTex(gl); } catch (e) { VF.tprog = null; }
       if (VF.tprog) {
+        vfRadModellBauen(gl).then((rad) => { if (VF.aktiv && VF.gl === gl) VF.radModell = rad; });
         vfModellDaten().then((daten) => {
           if (!VF.aktiv || VF.gl !== gl) return;
           VF.modell = vfModellBauen(gl, daten);
@@ -758,7 +938,8 @@
     const s = Math.max(0, VF.pts.findIndex((p) => p.tile >= 0 && tiles[p.tile] && tiles[p.tile].type === TILE_TYPE.START));
     const start = ((s - Math.round(TRACK_SAMPLES_PER_TILE / 2)) % VF.pts.length + VF.pts.length) % VF.pts.length;
     Object.assign(VF, { x: VF.pts[start].x, y: VF.pts[start].y, h: VF.pts[start].heading, idx: start, zaehler: 0, kachel: -2,
-                        abseits: false, letzt: 0, kam: null, rundeAb: 0, letzte: null, beste: null, aktiv: true });
+                        abseits: false, letzt: 0, kam: null, rundeAb: 0, letzte: null, beste: null, aktiv: true,
+                        startX: VF.pts[start].x, startY: VF.pts[start].y, startH: VF.pts[start].heading });
     physEngine.state.speedKmh = 0;
     schicht.addEventListener('click', (e) => {
       const b = e.target.closest('[data-vf]');
@@ -774,6 +955,17 @@
       }
     });
     VF.dyn = { vy: 0, r: 0 };
+    // Rennmodus: Rundenrennen, Endurance, Qualifying und Training werden uebernommen; andere
+    // Modi gibt es im virtuellen Fahren nicht - Hinweis und Training als Rueckfall.
+    VF.modus = raceMode;
+    if (VF.modus !== 'laps' && VF.modus !== 'endurance' && VF.modus !== 'qualifying' && VF.modus !== 'practice') {
+      showHudToast(t('Rennmodus im virtuellen Fahren nicht verfügbar') + ' – ' + t('Training'));
+      VF.modus = 'practice';
+    }
+    VF.limit = VF.modus === 'laps' ? Math.max(1, raceLimit) : (VF.modus === 'practice' ? 0 : Math.max(1, raceLimit));
+    VF.runden = 0;
+    VF.modusZeit = 0;
+    VF.rennenEnde = false;
     vfMotorsound();
     if (typeof showTab === 'function') showTab('race');
     VF.takt = setInterval(vfPaket, VF_TAKT_MS);
@@ -788,8 +980,14 @@
   // der Ton gerade tut - GEMELDET war zweimal "Motorsound funktioniert nicht", und ohne Anzeige ist
   // nicht zu sehen, ob die Aufnahme fehlt, noch laedt oder der Ersatzton spielt.
   const VF_MOTOR_STORE = 'omegasim-vf-motor';
-  function vfMotorGewaehlt() { try { return localStorage.getItem(VF_MOTOR_STORE) || ''; } catch (e) { return ''; } }
-  function vfMotorZiel() { return vfMotorGewaehlt() || ($('sound-profile') ? $('sound-profile').value : ''); }
+  // "Wie in Optionen" wird als Sentinel gespeichert, damit es sich vom Standard (Vulture V5.R) unterscheidet.
+  const VF_MOTOR_GLOBAL = '~global';
+  // Standard ist der Vulture V5.R (wie das Auto); "Wie in Optionen" folgt dem globalen Ton (sentinel).
+  function vfMotorGewaehlt() {
+    const def = ({ v5r: 'sd_v5r', lynx220: 'sd_lynx', fmcgt4: 'sd_fmc', boxer96: 'sd_boxer' })[vfAutoWahl()] || 'sd_v5r';
+    try { const v = localStorage.getItem(VF_MOTOR_STORE); return v === null ? def : v; } catch (e) { return def; }
+  }
+  function vfMotorZiel() { const g = vfMotorGewaehlt(); if (g && g !== VF_MOTOR_GLOBAL) return g; return $('sound-profile') ? $('sound-profile').value : ''; }
   // Wirklich geladen: buffers[k] steht schon als {} da, waehrend die Schleifen noch laden.
   function vfTonGeladen(k) { return !!(k && sampleEngine.buffers[k] && powerBands(k).length); }
   // Aus einem Klick heraus: Tonausgabe anwerfen und die Aufnahmen holen (auch ein zweites Mal, wenn
@@ -825,19 +1023,35 @@
     const j = Math.max(0, werte.findIndex((w) => w.v === vfMotorGewaehlt()));
     const wahl = (d) => {
       const n = werte[(j + d + werte.length) % werte.length].v;
-      try { if (n) localStorage.setItem(VF_MOTOR_STORE, n); else localStorage.removeItem(VF_MOTOR_STORE); } catch (e) { /* egal */ }
+      try { localStorage.setItem(VF_MOTOR_STORE, n || VF_MOTOR_GLOBAL); } catch (e) { /* egal */ }
       renderGarage();
     };
     rechts.appendChild(garWertZeile(t('Motorsound'), werte[j].name, () => wahl(-1), () => wahl(1)));
     // v1.1.9: welches Auto, und wie deutlich die Federung sichtbar neigt.
-    const autos = [{ v: 'v5r', name: 'Vulture V5.R (Speed Dreams)' }, { v: 'kasten', name: t('Einfaches Modell') }];
+    const autos = [{ v: 'v5r', name: 'Vulture V5.R (Speed Dreams)' }, { v: 'lynx220', name: 'Lynx 220 (Jaguar XJ220, Speed Dreams)' },
+                   { v: 'fmcgt4', name: 'FMC GT4 (Ford GT40 Mk1, Speed Dreams)' }, { v: 'boxer96', name: 'Boxer 96 (Porsche 911 GT3, Speed Dreams)' },
+                   { v: 'kasten', name: t('Einfaches Modell') }];
     const ja = Math.max(0, autos.findIndex((a) => a.v === vfAutoWahl()));
     const autoWahl = (dd) => {
       try { localStorage.setItem(VF_AUTO_STORE, autos[(ja + dd + autos.length) % autos.length].v); } catch (e) { /* egal */ }
       renderGarage();
     };
     rechts.appendChild(garWertZeile(t('Auto'), autos[ja].name, () => autoWahl(-1), () => autoWahl(1)));
-    if (autos[ja].v === 'v5r') {
+    // Schaltung: Automatik oder Manuell (schalten dann mit I/K).
+    const autoSch = vfSchaltungAuto();
+    const schaltWahl = () => {
+      try { localStorage.setItem(VF_SCHALTUNG_STORE, autoSch ? 'manuell' : 'auto'); } catch (e) { /* egal */ }
+      renderGarage();
+    };
+    rechts.appendChild(garWertZeile(t('Schaltung'), autoSch ? t('Automatik') : t('Manuell'), schaltWahl, schaltWahl));
+    // Geist: eine Kopie faehrt nach der ersten Runde die aufgezeichnete Linie ab (Standard an).
+    const geistAn = vfGeistAn();
+    const geistWahl = () => {
+      try { localStorage.setItem(VF_GEIST_STORE, geistAn ? 'aus' : 'an'); } catch (e) { /* egal */ }
+      renderGarage();
+    };
+    rechts.appendChild(garWertZeile(t('Geist folgt meiner Linie'), geistAn ? t('An') : t('Aus'), geistWahl, geistWahl));
+    if (autos[ja].v !== 'kasten') {
       const jf = VF_FEDER_WERTE.indexOf(vfFederSicht());
       const federWahl = (dd) => {
         try { localStorage.setItem(VF_FEDER_STORE, String(VF_FEDER_WERTE[Math.max(0, Math.min(VF_FEDER_WERTE.length - 1, jf + dd))])); } catch (e) { /* egal */ }
@@ -933,6 +1147,8 @@
     VF.motorVonUns = false; VF.motorVorher = null;
     if (VF.vorherSpieler && garage.indexOf(VF.vorherSpieler) >= 0 && VF.vorherRolle) setCarRole(VF.vorherSpieler, VF.vorherRolle);
     trackMode = VF.trackModeVorher || trackMode;
+    if (VF.autoShiftVorher !== undefined) physEngine.config.autoShift = VF.autoShiftVorher;
+    VF.autoShiftVorher = undefined;
     if (VF.schicht) VF.schicht.remove();
     VF.schicht = null; VF.gl = null;
     renderGarage();

@@ -3671,6 +3671,17 @@
     font-family: "Bahnschrift SemiCondensed", "Roboto Condensed", system-ui, sans-serif; font-size: clamp(12px, 1.8vw, 16px); }
   .vf-hud b { font-size: 1.6em; line-height: 1; }
   .vf-abseits { color: #ffb02e; font-weight: 700; }
+  .vf-modus { color: #8fd3ff; font-weight: 700; }
+  .vf-acc { position: absolute; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+    display: grid; gap: 6px; background: rgba(5,7,12,.62); color: #f3f4f6; padding: 10px 16px; border-radius: 10px;
+    font-variant-numeric: tabular-nums; font-family: "Bahnschrift SemiCondensed", "Roboto Condensed", system-ui, sans-serif; }
+  .vf-acc .vf-tempo { font-size: clamp(30px, 6vw, 56px); line-height: 1; font-weight: 700; color: #fff; }
+  .vf-acc-zeile { display: flex; gap: 10px; align-items: baseline; justify-content: space-between; }
+  .vf-lbl { color: #9aa3b2; font-size: 0.8em; text-transform: uppercase; letter-spacing: .06em; }
+  .vf-gang { font-size: 1.3em; font-weight: 700; color: #8fd3ff; }
+  .vf-rpm, .vf-reifen, .vf-tank { font-weight: 700; }
+  .vf-acc-dreh { height: 8px; background: #20303c; border-radius: 4px; overflow: hidden; }
+  .vf-dreh-stab { display: block; height: 100%; width: calc(var(--f, 0) * 100%); background: linear-gradient(90deg, #2ee06a, #ffb02e 60%, #ff5252); transition: width .08s linear; }
   .vf-knoepfe { position: absolute; right: max(10px, env(safe-area-inset-right)); top: max(8px, env(safe-area-inset-top)); display: flex; gap: 6px; }
   .vf-knoepfe button { background: rgba(5,7,12,.62); color: #fff; border: 1px solid rgba(255,255,255,.35); padding: 6px 12px; min-height: 2.2em; }
   .vf-wip { position: absolute; left: 10px; bottom: 8px; color: #0b0c10; font-weight: 700; font-size: 12px; }
@@ -4826,7 +4837,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.44</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.45</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -8148,6 +8159,23 @@
         <div class="snd-row"><audio controls preload="none" src="audio/sd_v5r_mid.ogg"></audio><div><b>Speed Dreams: Vulture V5.R (7,0 l V8), Mittelband (4188/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/ls1-vulture-v5r/v5r-v8.wav): Speed-Dreams-Team, GPL-2.0 oder sp&auml;ter, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/sd_v5r_high.ogg"></audio><div><b>Speed Dreams: Vulture V5.R (7,0 l V8), oberes Band (6750/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/ls1-vulture-v5r/v5r-v8.wav): Speed-Dreams-Team, GPL-2.0 oder sp&auml;ter, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/sd_v5r_over.ogg"></audio><div><b>Speed Dreams: Vulture V5.R (7,0 l V8), Schub (2598/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/ls1-vulture-v5r/v5r-v8.wav): Speed-Dreams-Team, GPL-2.0 oder sp&auml;ter, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_lynx_idle.ogg"></audio><div><b>Speed Dreams: Lynx 220 (Jaguar XJ220, 3,5 l V6 Turbo), Leerlauf (1000/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-lynx-220/sc-lynx-220.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_lynx_low.ogg"></audio><div><b>Speed Dreams: Lynx 220 (Jaguar XJ220, 3,5 l V6 Turbo), Zwischenband (1638/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-lynx-220/sc-lynx-220.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_lynx_low2.ogg"></audio><div><b>Speed Dreams: Lynx 220 (Jaguar XJ220, 3,5 l V6 Turbo), zweites Zwischenband (2683/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-lynx-220/sc-lynx-220.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_lynx_mid.ogg"></audio><div><b>Speed Dreams: Lynx 220 (Jaguar XJ220, 3,5 l V6 Turbo), Mittelband (4395/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-lynx-220/sc-lynx-220.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_lynx_high.ogg"></audio><div><b>Speed Dreams: Lynx 220 (Jaguar XJ220, 3,5 l V6 Turbo), oberes Band (7200/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-lynx-220/sc-lynx-220.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_lynx_over.ogg"></audio><div><b>Speed Dreams: Lynx 220 (Jaguar XJ220, 3,5 l V6 Turbo), Schub (2683/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-lynx-220/sc-lynx-220.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_fmc_idle.ogg"></audio><div><b>Speed Dreams: FMC GT4 (Ford GT40 Mk1, 4,7 l V8), Leerlauf (1000/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-fmc-gt4/sc-fmc-gt4.wav): Speed-Dreams-Team, GPL-2.0-or-later, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_fmc_low.ogg"></audio><div><b>Speed Dreams: FMC GT4 (Ford GT40 Mk1, 4,7 l V8), Zwischenband (1627/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-fmc-gt4/sc-fmc-gt4.wav): Speed-Dreams-Team, GPL-2.0-or-later, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_fmc_low2.ogg"></audio><div><b>Speed Dreams: FMC GT4 (Ford GT40 Mk1, 4,7 l V8), zweites Zwischenband (2646/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-fmc-gt4/sc-fmc-gt4.wav): Speed-Dreams-Team, GPL-2.0-or-later, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_fmc_mid.ogg"></audio><div><b>Speed Dreams: FMC GT4 (Ford GT40 Mk1, 4,7 l V8), Mittelband (4304/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-fmc-gt4/sc-fmc-gt4.wav): Speed-Dreams-Team, GPL-2.0-or-later, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_fmc_high.ogg"></audio><div><b>Speed Dreams: FMC GT4 (Ford GT40 Mk1, 4,7 l V8), oberes Band (7000/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-fmc-gt4/sc-fmc-gt4.wav): Speed-Dreams-Team, GPL-2.0-or-later, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_fmc_over.ogg"></audio><div><b>Speed Dreams: FMC GT4 (Ford GT40 Mk1, 4,7 l V8), Schub (2646/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-fmc-gt4/sc-fmc-gt4.wav): Speed-Dreams-Team, GPL-2.0-or-later, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_boxer_idle.ogg"></audio><div><b>Speed Dreams: Boxer 96 (Porsche 911 GT3, 3,6 l Boxer-6), Leerlauf (2000/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-boxer-96/sc-boxer-96.wav): Speed-Dreams-Team, GPL-2.0-or-later, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_boxer_low.ogg"></audio><div><b>Speed Dreams: Boxer 96 (Porsche 911 GT3, 3,6 l Boxer-6), Zwischenband (3240/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-boxer-96/sc-boxer-96.wav): Speed-Dreams-Team, GPL-2.0-or-later, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_boxer_mid.ogg"></audio><div><b>Speed Dreams: Boxer 96 (Porsche 911 GT3, 3,6 l Boxer-6), Mittelband (5248/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-boxer-96/sc-boxer-96.wav): Speed-Dreams-Team, GPL-2.0-or-later, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_boxer_high.ogg"></audio><div><b>Speed Dreams: Boxer 96 (Porsche 911 GT3, 3,6 l Boxer-6), oberes Band (8500/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-boxer-96/sc-boxer-96.wav): Speed-Dreams-Team, GPL-2.0-or-later, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_boxer_over.ogg"></audio><div><b>Speed Dreams: Boxer 96 (Porsche 911 GT3, 3,6 l Boxer-6), Schub (5248/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-boxer-96/sc-boxer-96.wav): Speed-Dreams-Team, GPL-2.0-or-later, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/amg_gt3_idle.ogg"></audio><div><b>AMG GT3 (V8, Cross-Plane), Leerlauf (2000/min)</b><br><span class="muted" style="font-size:11px">Aufnahme des Nutzers (photos/newaudio/amg_gt3.mp4), Drehzahl aus der Video-Anzeige</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/amg_gt3_low.ogg"></audio><div><b>AMG GT3 (V8, Cross-Plane), Zwischenband (3700/min)</b><br><span class="muted" style="font-size:11px">Aufnahme des Nutzers (photos/newaudio/amg_gt3.mp4), Drehzahl aus der Video-Anzeige</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/amg_gt3_mid.ogg"></audio><div><b>AMG GT3 (V8, Cross-Plane), Mittelband (5700/min)</b><br><span class="muted" style="font-size:11px">Aufnahme des Nutzers (photos/newaudio/amg_gt3.mp4), Drehzahl aus der Video-Anzeige</span></div></div>
@@ -10638,6 +10666,9 @@
           <option value="sd_v12weich">Ferrari 599 GTB Fiorano: 6,0 l V12</option>
           <option value="sd_toro">Lamborghini Murci&eacute;lago R-GT (Toro R-GT): 6,0 l V12</option>
           <option value="sd_v5r">Vulture V5.R (Speed Dreams): 7,0 l V8</option>
+<option value="sd_lynx">Lynx 220 / Jaguar XJ220 (Speed Dreams): 3,5 l V6 Turbo</option>
+<option value="sd_fmc">FMC GT4 / Ford GT40 Mk1 (Speed Dreams): 4,7 l V8</option>
+<option value="sd_boxer">Boxer 96 / Porsche 911 GT3 (Speed Dreams): 3,6 l Boxer-6</option>
           </optgroup>
           <!-- BESTELLT: eigene Aufnahmen des Nutzers aus photos/newaudio; Drehzahlen aus der
                Video-Anzeige. tools/sd_engines.py-Verfahren, audio/loops.json. -->
