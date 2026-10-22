@@ -21253,6 +21253,34 @@
   // ---- Ausfuehren und anzeigen ----
   // ---- Rennstand-Ansage: reine Logik, keine echten Autos oder Audioausgabe ----
 
+  stAdd('Rennstand: Browser-Ansage spricht Rundenzahlen als Grundzahl', () => {
+    const faelle = [[3, 'Nach Runde drei.'], [6, 'Nach Runde sechs.'],
+      [9, 'Nach Runde neun.'], [21, 'Nach Runde einundzwanzig.'],
+      [60, 'Nach Runde sechzig.'], [61, 'Nach Runde sechs eins.']];
+    const stimmen = faelle.every(([n, soll]) => rennstandText([], n, false, 'de') === soll);
+    const englisch = rennstandText([], 3, false, 'en') === 'After lap 3.';
+    return { ok: stimmen && englisch,
+      mass: faelle.map(([n]) => rennstandText([], n, false, 'de')).join(' | ') };
+  });
+
+  stAdd('Rennstand: Stimmenauswahl erzwingt Clips oder Browser-TTS', () => {
+    const alterModus = rennstandStimmenModus;
+    try {
+      const ohneNamen = [{ alias: '' }, { alias: '' }, { alias: '' }];
+      const mitNamen = [{ alias: 'Luuke' }, { alias: '' }, { alias: '' }];
+      const systemVerfuegbar = rennstandWebSpeechVerfuegbar();
+      rennstandStimmenModus = 'clips';
+      const clipsBleibenClips = !rennstandStimmeNoetig(mitNamen);
+      rennstandStimmenModus = 'browser';
+      const browserErzwingbar = rennstandStimmeNoetig(ohneNamen) === systemVerfuegbar;
+      rennstandStimmenModus = 'auto';
+      const autoBleibtClip = !rennstandStimmeNoetig(ohneNamen);
+      const autoWechseltBeiNamen = rennstandStimmeNoetig(mitNamen) === systemVerfuegbar;
+      return { ok: clipsBleibenClips && browserErzwingbar && autoBleibtClip && autoWechseltBeiNamen,
+        mass: JSON.stringify({ systemVerfuegbar, clipsBleibenClips, browserErzwingbar, autoBleibtClip, autoWechseltBeiNamen }) };
+    } finally { rennstandStimmenModus = alterModus; }
+  });
+
   stAdd('Rennstand: Ergebnis beginnt mit Sieger, keine Live-Runde', () => {
     const rows = [
       { platz: 1, role: 'player', farbeId: 'rot', modellId: 'ferrari', rundenZurueck: 0, msZurueck: 0 },
@@ -21364,6 +21392,36 @@
       && rennstandZahlFolge(123).join(',') === 'n:1,n:2,n:3'
       && rennstandZahlFolge(NaN).length === 0;
     return { ok, mass: 'Singular, Dezimal, Minuten, Gleichstand, Fallback und grosse Zahlen' };
+  });
+  stAdd('Rennstand: Stimmhoehe-Regler und dauerhafte Einstellungsaufnahme', () => {
+    const el = $('setting-announce-stand-pitch');
+    const aufgenommen = typeof sicherungRegler === 'function' && sicherungRegler().includes(el);
+    const ok = !!el && el.type === 'range'
+      && Number(el.min) === -6 && Number(el.max) === 6 && Number(el.step) === 1
+      && el.getAttribute('value') === '0'
+      && Number.isInteger(Number(el.value)) && Number(el.value) >= -6 && Number(el.value) <= 6
+      && rennstandTonhoeheWert(-99) === -6 && rennstandTonhoeheWert(99) === 6
+      && rennstandTonhoeheWert('ungueltig') === 0
+      && Math.abs(rennstandPitchRatio(-6) - Math.SQRT1_2) < 1e-10
+      && rennstandPitchRatio(0) === 1
+      && Math.abs(rennstandPitchRatio(6) - Math.sqrt(2)) < 1e-10
+      && !!$('setting-announce-stand-test')
+      && !!el.closest('#tab-options .opt-row') && aufgenommen;
+    return { ok, mass: 'Bereich −6…+6 HT, Pitch-Ratio korrekt und Vorschauknopf vorhanden' };
+  });
+  stAdd('Rennstand: Pitch-FFT Roundtrip', () => {
+    const original = [0.25, -0.5, 0.75, 1, -1, 0.125, 0.4, -0.2];
+    const real = Float64Array.from(original), imag = new Float64Array(original.length);
+    rennstandFFT(real, imag);
+    rennstandFFT(real, imag, true);
+    const error = Math.max(...original.map((x, i) => Math.abs(real[i] - x)));
+    return { ok: error < 1e-10 && imag.every((x) => Math.abs(x) < 1e-10), mass: 'FFT und inverse FFT stimmen ueberein' };
+  });
+  stAdd('Rennstand: Testansage verwendet lokale Rennstand-Clips', () => {
+    const keys = rennstandTestClipFolge().map((x) => x.key).join(',');
+    const ok = keys === 'e:runde,n:5,e:fuehrt_start,e:farbe_rot,e:modell_porsche911'
+      && $('setting-announce-stand-test-status')?.getAttribute('aria-live') === 'polite';
+    return { ok, mass: 'lokale deutsche Clips fuer Runde 5 und roten Porsche' };
   });
   stAdd('Rennstand: Tempo und eigene Lautstaerke begrenzt', () => {
     const got = [rennstandTempoWert(undefined), rennstandTempoWert(0),
