@@ -4826,7 +4826,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.41</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.44</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5938,7 +5938,7 @@
       <p class="muted">Einige Bilder im Men&uuml; (Titel, Rennen, Start, Strecke, Optionen, Info, Challenges und Box) wurden mit KI generiert (Gemini Flash). Markenlogos darin sind entfernt. Die &uuml;brigen Bilder sind eigene Fotos.</p>
 
       <h3 style="font-size:14px; margin:18px 0 6px 0">Woher die Kl&auml;nge kommen</h3>
-      <p class="muted">Der allergr&ouml;&szlig;te Teil der Kl&auml;nge ist gerechnet und nicht aufgenommen: alle f&uuml;nfundzwanzig Motoren mit ihren 132 Schleifen, dazu Bremsen- und Reifenquietschen, die Crash-Varianten, Schlagschrauber, Tankger&auml;usch, Karosseriereparatur und der Motorstart. Dort wird nichts abgespielt, sondern aus Zylinderzahl, Z&uuml;ndfolge und Kr&uuml;mmerl&auml;nge erzeugt.</p>
+      <p class="muted">Der allergr&ouml;&szlig;te Teil der Kl&auml;nge ist gerechnet und nicht aufgenommen: alle f&uuml;nfundzwanzig Motoren mit ihren 132 Schleifen, dazu Bremsen- und Reifenquietschen, die Crash-Varianten, Tankger&auml;usch, Karosseriereparatur und der Motorstart. Dort wird nichts abgespielt, sondern aus Zylinderzahl, Z&uuml;ndfolge und Kr&uuml;mmerl&auml;nge erzeugt.</p>
       <p class="muted">Die folgenden Kl&auml;nge sind die Ausnahme: sie stammen aus echten Aufnahmen. Alle von Pixabay und unter der Pixabay-Lizenz. Die unbearbeiteten Quelldateien sind nicht Teil dieses Projekts.</p>
       <ul class="dank-liste">
         <li><span class="muted">Hupen f&uuml;r die Lichthupe &ndash; sechs Aufnahmen, in dieser Reihenfolge Autohupe, Schiffshupe, Esel, Ziege und zwei Furzt&ouml;ne. Der letzte stammt von freesound&nbsp;community &uuml;ber Pixabay.</span>
@@ -5947,6 +5947,8 @@
           <span class="dank-quelle" data-i18n-skip>pwlpl-heavy-thunderstorm-sound-effect-473418</span></li>
         <li><span class="muted">Strecken-Ambience, also der Teppich und die Vorbeifahrten.</span>
           <span class="dank-quelle" data-i18n-skip>fjc_media-sounds-of-nuerburgring-engines-of-classic-race-cars-234929</span></li>
+        <li><span class="muted">Der Schlagschrauber beim Boxenstopp (je Radpaar, geschnitten und gemischt).</span>
+          <span class="dank-quelle" data-i18n-skip>Sound Effect by <a href="https://pixabay.com/de/users/soundeffectsparty-54949351/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=502995" target="_blank" rel="noopener noreferrer">Jun Su</a> from <a href="https://pixabay.com//?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=502995" target="_blank" rel="noopener noreferrer">Pixabay</a> &middot; soundeffectsparty-pneumatic-impact-wrench-loosening-bolts-502995</span></li>
         <li><span class="muted">Der Motorklang der Corvette C6.</span>
           <span class="dank-quelle" data-i18n-skip>astonmartinvantagev12-chevrolet-corvette-c6-sound-effect-360531</span></li>
       </ul>
@@ -5979,6 +5981,10 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Boxenstopp: Tanken &#8222;nein&#8220; gilt jetzt. Das Boxen-Minigame (Standard) baute seinen eigenen Plan und tankte immer voll; au&#223;erdem kam eine &#196;nderung in der Boxengasse nicht im Plan an. Reifen: erst beide hinteren, dann beide vorderen R&#228;der; solange gewechselt wird, l&#228;sst sich der Stopp nicht abbrechen. Neuer Schlagschrauber je Radpaar aus einer Aufnahme (Sound Effect by Jun Su from Pixabay, Pixabay-Inhaltslizenz; Quelle in audio/CREDITS.md).</li>
+        <li>Reifen: Der Mischungsunterschied ist gr&#246;&#223;er &#8211; Standard 150 % statt 100 % (weich +30 % Grip, hart &#8722;22 %), Regler unter Fahrgef&#252;hl bis 300 %. Neue Renneinstellung &#8222;Weiche Reifen verboten&#8220; (Standard aus).</li>
+        <li>Vibration: eigene Kachel im Optionsmen&#252; mit einem Schalter je Ausl&#246;ser &#8211; Schalten, ABS, Aufprall, &#220;bersteuern, Untersteuern, neu Reifenquietschen (leicht, mit der Lautst&#228;rke des Quietschens), neben der Bahn, Boxenstopp, Meldungen, Trigger. Behoben: Im Pacejka-Modus brummte das Pad bei jedem Gasgeben dauerhaft (die Lenkentlastung unter Gas galt als Untersteuern); jetzt nur, wenn die Front wirklich schiebt.</li>
+        <li>NPC-Stufe MAX (WIP): In der Garage gibt es nach &#8222;schnell&#8220; die Stufe MAX. Solche NPCs fahren auf Geraden, in Radius-1-Kurven (60&#176; und kleine 30&#176;) und in Radius-2-Kurven (weite 30&#176;) mit eigenen Tempi aus dem NPC-Men&#252; (Standard 100 %, 52 %, 80 %) und bremsen eine Schiene vor der Kurve oder erst am Kurventeil (Auswahl). Haarnadel, Engstelle, Mindesttempo, Gelb und Einf&#252;hrungsrunde gelten wie f&#252;r alle.</li>
         <li>Automatische Aufstellung: Jedes Auto parkt jetzt mit genau der Einparkfolge des Safety Cars &#8211; gleiche Zeiten und Lenkwerte, f&#252;r die linke Spalte gespiegelt, mit weniger Gas (neuer Regler, Standard 75 %), damit es weiter innen steht. Immer diese Folge, auch auf Kurventeilen; in der Haarnadel parkt weiterhin niemand. Das Log nennt f&#252;r jedes Auto Seite und Gas.</li>
         <li>Reinigungsfahrzeug: Nach der ersten Start/Ziel-&#220;berfahrt f&#228;hrt es je eine volle Runde mittig, links (Querlage 90 %) und rechts (90 %) und h&#228;lt dann an. Die Querlage kommt allein aus dieser Vorgabe, ohne Ideallinie; die Runden werden &#252;ber den gefahrenen Weg gez&#228;hlt.</li>
         <li>Gleich schnell: Das Safety Car f&#228;hrt unter Gelb dasselbe Tempo wie das Feld (Gerade, Kurve und Haarnadel mit denselben Grenzen) &#8211; vorher &#252;berall gleich, also auf der Geraden langsamer und in der Haarnadel schneller. In der Einf&#252;hrungsrunde f&#228;hrt dein Autopilot in Kurven so schnell wie die NPCs (vorher deutlich langsamer), und die Feld-Staffel ist dort aus.</li>
@@ -7886,7 +7892,8 @@
         <div class="snd-row"><audio controls preload="none" src="audio/sd_crash_2.ogg"></audio><div><b>Crash, Aufnahme 3</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (CC0), ersetzt die gerechneten Varianten, wenn geladen (WIP)</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/sd_crash_3.ogg"></audio><div><b>Crash, Aufnahme 4</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (CC0), ersetzt die gerechneten Varianten, wenn geladen (WIP)</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/sd_backfire_0.ogg"></audio><div><b>Auspuffknall</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4, Free Art License 1.3; bei den Schubknallern statt des Rauschsto&szlig;es, leicht verstimmt (WIP)</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/pit_wrench.ogg"></audio><div><b>Schlagschrauber</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, gleichm&auml;&szlig;iger Hammerzug um 26&nbsp;Hz</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/pit_wrench_paar.ogg"></audio><div><b>Schlagschrauber je Radpaar</b><br><span class="muted" style="font-size:11px">Aufnahme: Sound Effect by <a href="https://pixabay.com/de/users/soundeffectsparty-54949351/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=502995" target="_blank" rel="noopener noreferrer">Jun Su</a> from <a href="https://pixabay.com//?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=502995" target="_blank" rel="noopener noreferrer">Pixabay</a> (Pixabay-Inhaltslizenz), geschnitten und gemischt: zwei Muttern l&ouml;sen, zwei anziehen</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/pit_wrench.ogg"></audio><div><b>Schlagschrauber (R&uuml;ckfall)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, gleichm&auml;&szlig;iger Hammerzug um 26&nbsp;Hz</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/pit_fuel.ogg"></audio><div><b>Tanken</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, Schleife</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/pit_repair.ogg"></audio><div><b>Karosseriereparatur</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, Abklingzeit 1,9&nbsp;ms im Median, also D&auml;mpfer statt Note</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/porsche_start.ogg"></audio><div><b>Motorstart: Porsche</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
@@ -9266,6 +9273,11 @@
       <div class="opt-row"><div class="opt-label">Gelbe Flagge deaktivieren<small>An: Der Knopf
           &bdquo;Gelbe Flagge&ldquo; und das Halten der Boxentaste rufen kein Gelb mehr aus.</small></div>
         <label class="tgl"><input type="checkbox" id="race-gelb-aus"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Weiche Reifen verboten<span class="wip-tag">WIP</span><small>An: In diesem
+          Rennen gibt es keine weichen Reifen. Die Reifenwahl im Boxenschirm &uuml;berspringt &bdquo;weich&ldquo;, und wer
+          beim Start weiche Reifen drauf hat, bekommt mittlere &ndash; auch Spieler&nbsp;2 und 3. Aus (Standard): alle
+          Mischungen erlaubt.</small></div>
+        <label class="tgl"><input type="checkbox" id="race-weich-verboten"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Einparken in der Aufstellung<span class="wip-tag">WIP</span><small>Aufnahme (Vorgabe):
           Das Auto f&auml;hrt genau die Einparkfolge des Safety Cars &ndash; auf dem Startplatz gleitet es in 0,3&nbsp;s auf
           ihr Tempo, lenkt zur eigenen Seite und zur&uuml;ck und rollt aus, ohne vorher anzuhalten. Lenkung und Zeiten
@@ -9535,6 +9547,12 @@
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10h32v20H22l-8 7v-7H8z"/><path d="M15 18h18M15 23h11" stroke="var(--bad)"/></svg>
           <b>Ansagen</b>
           <span>Rundenzeiten, Rennstand, Ergebnis und Warnungen zu Schaden, Tank, Reifen, Regen und Akku.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="opt-vibration">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18h20a7 7 0 0 1 7 7v3a5 5 0 0 1-9 3l-2-3H18l-2 3a5 5 0 0 1-9-3v-3a7 7 0 0 1 7-7z"/><path d="M4 12l3 3M44 12l-3 3M24 8v4" stroke="var(--bad)"/></svg>
+          <b>Vibration</b>
+          <span>Wann der Controller r&uuml;ttelt: Schalten, ABS, Quietschen, Unter- und &Uuml;bersteuern, Aufprall, Box.</span>
         </button>
         <button class="misc-tile subpage-open" data-sub="opt-ghosts">
           <!-- SYMMETRISCH NEU GEZEICHNET. Der alte Pfad war an drei Stellen schief, und
@@ -9826,81 +9844,6 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-offtrack-delay-val">1.0 s</span>
         </div></div>
-<div class="opt-head">Controller-Vibration <span class="wip-tag">WIP</span></div>
-      <div class="opt-row"><div class="opt-label">Vibration &uuml;berhaupt
-          <small>Der Hauptschalter. Steht er aus, brummt nichts, egal was darunter
-          angekreuzt ist. Seit v0.5.18 ist er standardm&auml;&szlig;ig an. Vorher stand er
-          aus, und damit kamen auch die Vorgaben darunter nie zum Tragen &ndash; gemeldet
-          wurde das als &bdquo;Vibration geht nicht&ldquo;. Wer keinen R&uuml;ttler hat,
-          merkt von einem angeschalteten Hauptschalter nichts. Das Handy vibriert nicht mit,
-          das Protokoll kennt daf&uuml;r nichts.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-vibration" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">R&uuml;tteln testen
-          <small>L&ouml;st einen Sto&szlig; aus und schreibt daneben, was dabei vorgefunden
-          wurde: wieviele Controller das System meldet, welche davon einen R&uuml;ttler
-          haben, welche Zuordnung sie tragen und ob der Sto&szlig; angenommen oder abgelehnt
-          wurde. Aus &bdquo;geht nicht&ldquo; wird damit eine Messung.</small></div>
-        <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end">
-          <button type="button" id="vib-test">Testen</button>
-          <span class="muted" id="vib-test-out" data-i18n-skip
-                style="font-size:11px; text-align:right; max-width:34ch"></span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Gangwechsel
-          <small>Kurz und leicht bei jedem Schalten, beim Leerlauf und beim
-          R&uuml;ckw&auml;rtsgang. Sechs Gangwechsel in drei Sekunden mit einem langen
-          Muster w&auml;ren ein Presslufthammer in der Hand, deshalb 40&nbsp;ms.</small></div>
-        <label class="tgl"><input type="checkbox" id="vib-schalt" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">ABS
-          <small>Ein Puls alle 140&nbsp;ms, solange das ABS regelt &ndash; das ist die
-          R&uuml;ckmeldung, an der man merkt, dass die Bremse an der Grenze
-          arbeitet.</small></div>
-        <label class="tgl"><input type="checkbox" id="vib-abs" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Aufprall
-          <small>Der st&auml;rkste Sto&szlig;, und er h&auml;ngt seit v0.5.15 an der WUCHT:
-          gerechnet wird mit dem Tempo im Moment des Einschlags. Ein Einschlag bei
-          H&ouml;chstgeschwindigkeit soll sich nicht anf&uuml;hlen wie ein Anstupsen in der
-          Boxengasse. Auch der schw&auml;chste Aufprall brummt jetzt kr&auml;ftiger als
-          bisher.</small></div>
-        <label class="tgl"><input type="checkbox" id="vib-crash" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Neben der Bahn
-          <small>Ein schwaches Dauerbrummen, solange das Auto neben der Bahn meldet
-          &ndash; nach Schotter, nicht nach Aufprall. Standard aus: es ist ein ZUSTAND und
-          kein Ereignis, und nach f&uuml;nf Sekunden nervt es. Unabh&auml;ngig von der
-          Drosselung unter Allgemein.</small></div>
-        <label class="tgl"><input type="checkbox" id="vib-abseits"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Boxenstopp
-          <small>Einfahrt, Beginn der Arbeit, fertig, und ein leiser Puls, solange man in
-          der Gasse rollt.</small></div>
-        <label class="tgl"><input type="checkbox" id="vib-box" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Unter- und &Uuml;bersteuern
-          <small>Nur im Modus Pacejka. Leises Brummen, solange die Front schiebt; ein
-          kr&auml;ftiger Sto&szlig;, wenn das Heck kommt.</small></div>
-        <label class="tgl"><input type="checkbox" id="vib-rutschen" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Meldungen
-          <small>Wetterwechsel und leerer Tank. Standard aus: das sind Nachrichten und
-          keine Kr&auml;fte am Auto &ndash; wer sie will, bekommt sie hier.</small></div>
-        <label class="tgl"><input type="checkbox" id="vib-meldung"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Trigger-Vibration
-          <span class="wip-tag">experimentell</span>
-          <small>Zus&auml;tzlich zu den Griffmotoren: regelt das ABS, brummt der linke
-          Trigger &ndash; das ist die Bremse. Beim Schalten der rechte. Standard an. Warum
-          experimentell: die adaptiven Trigger eines DualSense sind &uuml;ber die
-          Gamepad-Schnittstelle gar nicht erreichbar, und die Effektart
-          &bdquo;trigger-rumble&ldquo; stellt Chrome vor allem f&uuml;r Xbox-Controller
-          bereit. Die Zeile darunter liest aus, was dein Controller wirklich annimmt. Kann
-          er es nicht, passiert nichts, und zwar ausdr&uuml;cklich ohne ersatzweises Brummen
-          in den Griffen &ndash; das w&uuml;rde vort&auml;uschen, die Trigger h&auml;tten
-          reagiert.</small></div>
-        <label class="tgl"><input type="checkbox" id="vib-trigger" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Was dein Controller kann
-          <small>Ausgelesen, nicht angenommen. Leer, solange kein Controller gemeldet
-          ist &ndash; einmal eine Taste dr&uuml;cken.</small></div>
-        <span class="muted" id="vib-trigger-lage" data-i18n-skip
-              style="font-size:11px; text-align:right; max-width:34ch"></span></div>
-      <div class="opt-row"><div class="opt-label">DualSense: Trigger bei ABS <span class="wip-tag">WIP</span>
-          <small>Regelt das ABS, vibriert der linke Trigger eines DualSense &ndash; wenn die Bremse auf dem linken Trigger liegt und &bdquo;ABS&ldquo; oben an ist. Die adaptiven Trigger erreicht nur WebHID: Chrome oder Edge am Rechner, per USB oder Bluetooth, nach einmaligem Verbinden &uuml;ber diesen Knopf. In der Android-App geht das nicht.</small></div>
-        <button type="button" id="ds-verbinden">Verbinden</button>
-        <span class="muted" id="ds-lage" data-i18n-skip style="font-size:11px; text-align:right; max-width:34ch"></span></div>
 <div class="opt-head">Akku <span class="wip-tag">WIP</span></div>
       <div class="opt-row"><div class="opt-label">Leistung über Akkulaufzeit konstant halten<small>Drosselt bei vollem Akku. Der Akkuwert ist eine unkalibrierte Schätzung.</small></div><label class="tgl"><input type="checkbox" id="setting-battery-comp"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Referenz-Akkustand</div>
@@ -10240,14 +10183,15 @@
           <small>Wie stark sich weich, mittel, hart und Regen unterscheiden. Der Regler bewegt
           alle Werte zugleich &ndash; Grip und Verschlei&szlig; &ndash; und zwar als
           Abstand zum Mittelreifen. Bei 0 rechnen alle drei Slicks wie mittel, bei 100 Prozent
-          gilt die Tabelle, dar&uuml;ber ist der Unterschied gr&ouml;&szlig;er als im
-          Rennsport. Steht die Reifensimulation dar&uuml;ber auf aus, fahren ohnehin alle den
-          Mittelreifen, egal was hier steht.</small></div>
+          gilt die Tabelle (weich +20&nbsp;% Grip und 2,2-facher Verschlei&szlig;, hart &minus;15&nbsp;% und halber),
+          dar&uuml;ber ist der Unterschied gr&ouml;&szlig;er. Standard seit v1.1.42: 150&nbsp;%
+          (weich +30&nbsp;%, hart &minus;22&nbsp;%), bis 300&nbsp;%. Steht die Reifensimulation dar&uuml;ber auf aus,
+          fahren ohnehin alle den Mittelreifen, egal was hier steht.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-tyre-mix" min="0" max="2" step="0.05" value="1">
+          <input type="range" id="setting-tyre-mix" min="0" max="3" step="0.05" value="1.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-tyre-mix-val">100%</span>
+          <span class="opt-val" id="setting-tyre-mix-val">150%</span>
         </div></div>
       
 
@@ -10881,6 +10825,98 @@
       </div>
     </div>
     </div>
+    <div class="card subpage" id="sub-opt-vibration">
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
+      <h2>Vibration</h2>
+      <p class="muted" style="font-size:12px">v1.1.42 BESTELLT: jede Vibration soll etwas &uuml;ber das Renngeschehen sagen.
+        Darum ein Schalter je Ausl&ouml;ser &ndash; leicht hei&szlig;t Hinweis (Quietschen, Untersteuern, Box), stark hei&szlig;t
+        Ereignis (Aufprall, Heck kommt).</p>
+<div class="opt-head">Controller-Vibration</div>
+      <div class="opt-row"><div class="opt-label">Vibration &uuml;berhaupt
+          <small>Der Hauptschalter. Steht er aus, brummt nichts, egal was darunter
+          angekreuzt ist. Seit v0.5.18 ist er standardm&auml;&szlig;ig an. Vorher stand er
+          aus, und damit kamen auch die Vorgaben darunter nie zum Tragen &ndash; gemeldet
+          wurde das als &bdquo;Vibration geht nicht&ldquo;. Wer keinen R&uuml;ttler hat,
+          merkt von einem angeschalteten Hauptschalter nichts. Das Handy vibriert nicht mit,
+          das Protokoll kennt daf&uuml;r nichts.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-vibration" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">R&uuml;tteln testen
+          <small>L&ouml;st einen Sto&szlig; aus und schreibt daneben, was dabei vorgefunden
+          wurde: wieviele Controller das System meldet, welche davon einen R&uuml;ttler
+          haben, welche Zuordnung sie tragen und ob der Sto&szlig; angenommen oder abgelehnt
+          wurde. Aus &bdquo;geht nicht&ldquo; wird damit eine Messung.</small></div>
+        <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end">
+          <button type="button" id="vib-test">Testen</button>
+          <span class="muted" id="vib-test-out" data-i18n-skip
+                style="font-size:11px; text-align:right; max-width:34ch"></span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Gangwechsel
+          <small>Kurz und leicht bei jedem Schalten, beim Leerlauf und beim
+          R&uuml;ckw&auml;rtsgang. Sechs Gangwechsel in drei Sekunden mit einem langen
+          Muster w&auml;ren ein Presslufthammer in der Hand, deshalb 40&nbsp;ms.</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-schalt" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">ABS
+          <small>Ein Puls alle 140&nbsp;ms, solange das ABS regelt &ndash; das ist die
+          R&uuml;ckmeldung, an der man merkt, dass die Bremse an der Grenze
+          arbeitet.</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-abs" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Aufprall
+          <small>Der st&auml;rkste Sto&szlig;, und er h&auml;ngt seit v0.5.15 an der WUCHT:
+          gerechnet wird mit dem Tempo im Moment des Einschlags. Ein Einschlag bei
+          H&ouml;chstgeschwindigkeit soll sich nicht anf&uuml;hlen wie ein Anstupsen in der
+          Boxengasse. Auch der schw&auml;chste Aufprall brummt jetzt kr&auml;ftiger als
+          bisher.</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-crash" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Neben der Bahn
+          <small>Ein schwaches Dauerbrummen, solange das Auto neben der Bahn meldet
+          &ndash; nach Schotter, nicht nach Aufprall. Standard aus: es ist ein ZUSTAND und
+          kein Ereignis, und nach f&uuml;nf Sekunden nervt es. Unabh&auml;ngig von der
+          Drosselung unter Allgemein.</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-abseits"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Boxenstopp
+          <small>Einfahrt, Beginn der Arbeit, fertig, und ein leiser Puls, solange man in
+          der Gasse rollt.</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-box" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">&Uuml;bersteuern (Heck kommt)
+          <small>Nur im Modus Pacejka. Ein kr&auml;ftiger Sto&szlig;, wenn das Heck ausbricht &ndash; je weiter, desto
+          st&auml;rker; kam es unter Gas, ein kurzer zweiter Sto&szlig; hinterher. Sagt dir: gegenlenken oder vom Gas.</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-rutschen" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Untersteuern (Front schiebt)
+          <small>Nur im Modus Pacejka. Leises Brummen im schwachen Motor, solange die Vorderr&auml;der wirklich
+          &uuml;ber der Haftgrenze sind &ndash; zu schnell in die Kurve, das Auto schiebt geradeaus. Seit v1.1.42 nicht
+          mehr bei blo&szlig;em Gasgeben (die Lenkentlastung unter Gas l&ouml;ste es vorher dauernd aus).</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-untersteuern" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Reifenquietschen
+          <small>Ein leichtes Brummen, solange die Reifen quietschen, mit der Lautst&auml;rke des Quietschens:
+          du bist an der Haftgrenze, aber noch nicht dar&uuml;ber. Kommt vor dem Untersteuern und dem
+          &Uuml;bersteuern &ndash; die Warnung davor.</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-quietschen" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Meldungen
+          <small>Wetterwechsel und leerer Tank. Standard aus: das sind Nachrichten und
+          keine Kr&auml;fte am Auto &ndash; wer sie will, bekommt sie hier.</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-meldung"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Trigger-Vibration
+          <span class="wip-tag">experimentell</span>
+          <small>Zus&auml;tzlich zu den Griffmotoren: regelt das ABS, brummt der linke
+          Trigger &ndash; das ist die Bremse. Beim Schalten der rechte. Standard an. Warum
+          experimentell: die adaptiven Trigger eines DualSense sind &uuml;ber die
+          Gamepad-Schnittstelle gar nicht erreichbar, und die Effektart
+          &bdquo;trigger-rumble&ldquo; stellt Chrome vor allem f&uuml;r Xbox-Controller
+          bereit. Die Zeile darunter liest aus, was dein Controller wirklich annimmt. Kann
+          er es nicht, passiert nichts, und zwar ausdr&uuml;cklich ohne ersatzweises Brummen
+          in den Griffen &ndash; das w&uuml;rde vort&auml;uschen, die Trigger h&auml;tten
+          reagiert.</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-trigger" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Was dein Controller kann
+          <small>Ausgelesen, nicht angenommen. Leer, solange kein Controller gemeldet
+          ist &ndash; einmal eine Taste dr&uuml;cken.</small></div>
+        <span class="muted" id="vib-trigger-lage" data-i18n-skip
+              style="font-size:11px; text-align:right; max-width:34ch"></span></div>
+      <div class="opt-row"><div class="opt-label">DualSense: Trigger bei ABS <span class="wip-tag">WIP</span>
+          <small>Regelt das ABS, vibriert der linke Trigger eines DualSense &ndash; wenn die Bremse auf dem linken Trigger liegt und &bdquo;ABS&ldquo; oben an ist. Die adaptiven Trigger erreicht nur WebHID: Chrome oder Edge am Rechner, per USB oder Bluetooth, nach einmaligem Verbinden &uuml;ber diesen Knopf. In der Android-App geht das nicht.</small></div>
+        <button type="button" id="ds-verbinden">Verbinden</button>
+        <span class="muted" id="ds-lage" data-i18n-skip style="font-size:11px; text-align:right; max-width:34ch"></span></div>
+    </div>
     <div class="card subpage" id="sub-opt-ansagen">
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Ansagen</h2>
@@ -11046,6 +11082,33 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-haarnadel-max-val">35%</span>
         </div></div>
+<div class="opt-head">Stufe MAX <span class="wip-tag">WIP</span></div>
+      <div class="opt-row"><div class="opt-label">MAX: Tempo auf der Geraden <span class="wip-tag">WIP</span><small>F&uuml;r NPCs mit der Garagenstufe &bdquo;MAX&ldquo;: das Tempo auf Geraden, als Anteil des Gasbytes. 100&nbsp;% ist Vollgas. Standard 100&nbsp;%.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-max-gerade" min="0.4" max="1" step="0.01" value="1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-max-gerade-val">100%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">MAX: Tempo in Radius-1-Kurven <span class="wip-tag">WIP</span><small>Die 60-Grad-Kurve und die kleine 30-Grad-Kurve (gleicher Radius). Standard 52&nbsp;% &ndash; so schnell wie ein NPC der Stufe 65&nbsp;% mit 20&nbsp;% Kurvenabzug.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-max-r1" min="0.3" max="1" step="0.01" value="0.52">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-max-r1-val">52%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">MAX: Tempo in Radius-2-Kurven <span class="wip-tag">WIP</span><small>Die weite 30-Grad-Kurve (dreifacher Radius). Standard 80&nbsp;%. Haarnadel und Engstelle fahren MAX-NPCs nach den normalen Regeln: H&ouml;chsttempo in der Haarnadel und Mindesttempo gelten weiter.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-max-r2" min="0.3" max="1" step="0.01" value="0.8">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-max-r2-val">80%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">MAX: Bremspunkt <span class="wip-tag">WIP</span><small>Wo ein MAX-NPC vom Geradentempo auf das Kurventempo geht: eine Schiene vor der Kurve (Standard) oder erst am Beginn des Kurventeils. Vor der Haarnadel bremsen alle NPCs wie bisher zwei Teile vorher.</small></div>
+        <select id="ghost-max-bremspunkt">
+          <option value="schiene" selected>Eine Schiene vor der Kurve</option>
+          <option value="teil">Beginn des Kurventeils</option>
+        </select></div>
       <!-- DIE RENNWUERZE, IN EINZELNE SCHALTER ZERLEGT. Vorher ein Regler fuer sechs
            Bausteine: wer ihn aufdrehte, bekam alle sechs und wusste danach nicht, welcher
            davon das Gesehene erklaert. Das Gummiband ist nicht mehr dabei - es ist
@@ -14839,6 +14902,37 @@
     "Gleich schnell: Das Safety Car fährt unter Gelb dasselbe Tempo wie das Feld (Gerade, Kurve und Haarnadel mit denselben Grenzen) – vorher überall gleich, also auf der Geraden langsamer und in der Haarnadel schneller. In der Einführungsrunde fährt dein Autopilot in Kurven so schnell wie die NPCs (vorher deutlich langsamer), und die Feld-Staffel ist dort aus.": "Equally fast: under yellow the safety car drives at the same speed as the field (straight, corner and hairpin with the same limits) – before, it drove the same speed everywhere, so slower on straights and faster in the hairpin. In the formation lap your autopilot takes corners as fast as the NPCs (before clearly slower), and the field staggering is off there.",
     "Reinigungsfahrzeug: Nach der ersten Start/Ziel-Überfahrt fährt es je eine volle Runde mittig, links (Querlage 90 %) und rechts (90 %) und hält dann an. Die Querlage kommt allein aus dieser Vorgabe, ohne Ideallinie; die Runden werden über den gefahrenen Weg gezählt.": "Cleaning car: after the first start/finish crossing it drives one full lap each in the middle, left (90% lateral position) and right (90%), then stops. The lateral position comes only from this plan, without the racing line; laps are counted by distance driven.",
     "Automatische Aufstellung: Jedes Auto parkt jetzt mit genau der Einparkfolge des Safety Cars – gleiche Zeiten und Lenkwerte, für die linke Spalte gespiegelt, mit weniger Gas (neuer Regler, Standard 75 %), damit es weiter innen steht. Immer diese Folge, auch auf Kurventeilen; in der Haarnadel parkt weiterhin niemand. Das Log nennt für jedes Auto Seite und Gas.": "Automatic line-up: every car now parks with exactly the safety car's parking sequence – same timing and steering values, mirrored for the left column, with less throttle (new slider, default 75%) so it stands further in. Always this sequence, also on corner pieces; still no one parks in the hairpin. The log names side and throttle for every car.",
+    "Der allergrößte Teil der Klänge ist gerechnet und nicht aufgenommen: alle fünfundzwanzig Motoren mit ihren 132 Schleifen, dazu Bremsen- und Reifenquietschen, die Crash-Varianten, Tankgeräusch, Karosseriereparatur und der Motorstart. Dort wird nichts abgespielt, sondern aus Zylinderzahl, Zündfolge und Krümmerlänge erzeugt.": "By far most of the sounds are computed, not recorded: all twenty-five engines with their 132 loops, plus brake and tyre squeal, the crash variants, the refuelling sound, the bodywork repair and the engine start. Nothing is played back there; it is generated from cylinder count, firing order and header length.",
+    "Der Schlagschrauber beim Boxenstopp (je Radpaar, geschnitten und gemischt).": "The impact wrench at the pit stop (per wheel pair, cut and mixed).",
+    "Aufnahme: Sound Effect by Jun Su from Pixabay (Pixabay-Inhaltslizenz), geschnitten und gemischt: zwei Muttern lösen, zwei anziehen": "Recording: Sound Effect by Jun Su from Pixabay (Pixabay Content License), cut and mixed: two nuts loosened, two tightened",
+    "Schlagschrauber (Rückfall)": "Impact wrench (fallback)",
+    "Schlagschrauber je Radpaar": "Impact wrench per wheel pair",
+    "Reifenwechsel läuft": "Tyre change in progress",
+    "Beginn des Kurventeils": "Start of the corner piece",
+    "Eine Schiene vor der Kurve": "One piece before the corner",
+    "Wo ein MAX-NPC vom Geradentempo auf das Kurventempo geht: eine Schiene vor der Kurve (Standard) oder erst am Beginn des Kurventeils. Vor der Haarnadel bremsen alle NPCs wie bisher zwei Teile vorher.": "Where a MAX NPC drops from straight speed to corner speed: one piece before the corner (default) or only at the start of the corner piece. Before the hairpin all NPCs brake two pieces early as before.",
+    "MAX: Bremspunkt": "MAX: braking point",
+    "Die weite 30-Grad-Kurve (dreifacher Radius). Standard 80 %. Haarnadel und Engstelle fahren MAX-NPCs nach den normalen Regeln: Höchsttempo in der Haarnadel und Mindesttempo gelten weiter.": "The wide 30-degree corner (triple radius). Default 80%. MAX NPCs take the hairpin and chicane by the normal rules: hairpin top speed and minimum speed still apply.",
+    "MAX: Tempo in Radius-2-Kurven": "MAX: speed in radius-2 corners",
+    "Die 60-Grad-Kurve und die kleine 30-Grad-Kurve (gleicher Radius). Standard 52 % – so schnell wie ein NPC der Stufe 65 % mit 20 % Kurvenabzug.": "The 60-degree corner and the small 30-degree corner (same radius). Default 52% – as fast as an NPC on level 65% with 20% corner reduction.",
+    "MAX: Tempo in Radius-1-Kurven": "MAX: speed in radius-1 corners",
+    "Für NPCs mit der Garagenstufe „MAX“: das Tempo auf Geraden, als Anteil des Gasbytes. 100 % ist Vollgas. Standard 100 %.": "For NPCs with the garage level \"MAX\": the speed on straights, as a fraction of the throttle byte. 100% is full throttle. Default 100%.",
+    "MAX: Tempo auf der Geraden": "MAX: speed on straights",
+    "Stufe MAX": "Level MAX",
+    "Wann der Controller rüttelt: Schalten, ABS, Quietschen, Unter- und Übersteuern, Aufprall, Box.": "When the controller rumbles: shifting, ABS, squeal, under- and oversteer, impact, pit.",
+    "v1.1.42 BESTELLT: jede Vibration soll etwas über das Renngeschehen sagen. Darum ein Schalter je Auslöser – leicht heißt Hinweis (Quietschen, Untersteuern, Box), stark heißt Ereignis (Aufprall, Heck kommt).": "v1.1.42, as ordered: every vibration should tell you something about the race. Hence one switch per trigger – light means a hint (squeal, understeer, pit), strong means an event (impact, rear steps out).",
+    "Nur im Modus Pacejka. Leises Brummen im schwachen Motor, solange die Vorderräder wirklich über der Haftgrenze sind – zu schnell in die Kurve, das Auto schiebt geradeaus. Seit v1.1.42 nicht mehr bei bloßem Gasgeben (die Lenkentlastung unter Gas löste es vorher dauernd aus).": "Pacejka mode only. A soft hum in the weak motor while the front wheels are really beyond the grip limit – too fast into the corner, the car pushes straight on. Since v1.1.42 no longer from merely accelerating (the steering relief under throttle triggered it constantly before).",
+    "Untersteuern (Front schiebt)": "Understeer (front pushes)",
+    "Nur im Modus Pacejka. Ein kräftiger Stoß, wenn das Heck ausbricht – je weiter, desto stärker; kam es unter Gas, ein kurzer zweiter Stoß hinterher. Sagt dir: gegenlenken oder vom Gas.": "Pacejka mode only. A strong jolt when the rear steps out – the further, the stronger; if it came under throttle, a short second jolt follows. Tells you: countersteer or lift.",
+    "Übersteuern (Heck kommt)": "Oversteer (rear steps out)",
+    "Wie stark sich weich, mittel, hart und Regen unterscheiden. Der Regler bewegt alle Werte zugleich – Grip und Verschleiß – und zwar als Abstand zum Mittelreifen. Bei 0 rechnen alle drei Slicks wie mittel, bei 100 Prozent gilt die Tabelle (weich +20 % Grip und 2,2-facher Verschleiß, hart −15 % und halber), darüber ist der Unterschied größer. Standard seit v1.1.42: 150 % (weich +30 %, hart −22 %), bis 300 %. Steht die Reifensimulation darüber auf aus, fahren ohnehin alle den Mittelreifen, egal was hier steht.": "How much soft, medium, hard and rain differ. The slider moves all values at once – grip and wear – as the distance from the medium tyre. At 0 all three slicks behave like medium, at 100 percent the table applies (soft +20% grip and 2.2× wear, hard −15% and half), above that the difference is larger. Default since v1.1.42: 150% (soft +30%, hard −22%), up to 300%. If tyre simulation above is off, everyone runs the medium tyre anyway, whatever is set here.",
+    "An: In diesem Rennen gibt es keine weichen Reifen. Die Reifenwahl im Boxenschirm überspringt „weich“, und wer beim Start weiche Reifen drauf hat, bekommt mittlere – auch Spieler 2 und 3. Aus (Standard): alle Mischungen erlaubt.": "On: there are no soft tyres in this race. The tyre choice on the pit screen skips \"soft\", and anyone on soft tyres at the start gets mediums – players 2 and 3 too. Off (default): all compounds allowed.",
+    "Weiche Reifen verboten": "Soft tyres banned",
+    "NPC-Stufe MAX (WIP): In der Garage gibt es nach „schnell“ die Stufe MAX. Solche NPCs fahren auf Geraden, in Radius-1-Kurven (60° und kleine 30°) und in Radius-2-Kurven (weite 30°) mit eigenen Tempi aus dem NPC-Menü (Standard 100 %, 52 %, 80 %) und bremsen eine Schiene vor der Kurve oder erst am Kurventeil (Auswahl). Haarnadel, Engstelle, Mindesttempo, Gelb und Einführungsrunde gelten wie für alle.": "NPC level MAX (WIP): in the garage there is a level MAX after “fast”. Such NPCs drive straights, radius-1 corners (60° and small 30°) and radius-2 corners (wide 30°) at their own speeds from the NPC menu (default 100%, 52%, 80%) and brake one piece before the corner or only at the corner piece (choice). Hairpin, chicane, minimum speed, yellow and formation lap apply as for everyone.",
+    "Vibration: eigene Kachel im Optionsmenü mit einem Schalter je Auslöser – Schalten, ABS, Aufprall, Übersteuern, Untersteuern, neu Reifenquietschen (leicht, mit der Lautstärke des Quietschens), neben der Bahn, Boxenstopp, Meldungen, Trigger. Behoben: Im Pacejka-Modus brummte das Pad bei jedem Gasgeben dauerhaft (die Lenkentlastung unter Gas galt als Untersteuern); jetzt nur, wenn die Front wirklich schiebt.": "Vibration: its own tile in the options menu with one switch per trigger – shifting, ABS, impact, oversteer, understeer, new tyre squeal (light, with the loudness of the squeal), off track, pit stop, messages, triggers. Fixed: in Pacejka mode the pad hummed constantly whenever you accelerated (the steering relief under throttle counted as understeer); now only when the front really pushes.",
+    "Reifen: Der Mischungsunterschied ist größer – Standard 150 % statt 100 % (weich +30 % Grip, hart −22 %), Regler unter Fahrgefühl bis 300 %. Neue Renneinstellung „Weiche Reifen verboten“ (Standard aus).": "Tyres: the compound difference is larger – default 150% instead of 100% (soft +30% grip, hard −22%), slider under Driving feel up to 300%. New race setting “Soft tyres banned” (default off).",
+    "Boxenstopp: Tanken „nein“ gilt jetzt. Das Boxen-Minigame (Standard) baute seinen eigenen Plan und tankte immer voll; außerdem kam eine Änderung in der Boxengasse nicht im Plan an. Reifen: erst beide hinteren, dann beide vorderen Räder; solange gewechselt wird, lässt sich der Stopp nicht abbrechen. Neuer Schlagschrauber je Radpaar aus einer Aufnahme (Sound Effect by Jun Su from Pixabay, Pixabay-Inhaltslizenz; Quelle in audio/CREDITS.md).": "Pit stop: refuelling “no” now applies. The pit minigame (default) built its own plan and always filled up; also a change made in the pit lane did not reach the plan. Tyres: first both rear wheels, then both front ones; while they are being changed the stop cannot be aborted. New impact wrench per wheel pair from a recording (Sound Effect by Jun Su from Pixabay, Pixabay Content License; source in audio/CREDITS.md).",
+    "Ein leichtes Brummen, solange die Reifen quietschen, mit der Lautstärke des Quietschens: du bist an der Haftgrenze, aber noch nicht darüber. Kommt vor dem Untersteuern und dem Übersteuern – die Warnung davor.": "A light hum while the tyres squeal, with the loudness of the squeal: you are at the grip limit, but not beyond it yet. Comes before understeer and oversteer – the warning ahead of them.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -22368,8 +22462,10 @@
   // "Neben der Bahn" und "Meldungen" sind die zwei, die nicht auf ein Ereignis am Auto
   // zeigen, sondern auf einen Zustand bzw. eine Nachricht - ein Dauerbrummen im Gelaende
   // ist Geschmackssache, und ein Wetterwechsel ist keine Kraft.
+  // v1.1.42: 'rutschen' ist nur noch das Uebersteuern; dazu 'untersteuern' und 'quietschen' (Kachel Vibration).
   const RUMBLE_ARTEN = { schalt: true, abs: true, crash: true,
-                         abseits: false, box: true, meldung: false, rutschen: true };
+                         abseits: false, box: true, meldung: false, rutschen: true,
+                         untersteuern: true, quietschen: true };
 
   // ---- Trigger-Vibration, und WELCHER Trigger zu welcher Art gehoert -----------------
   //
@@ -23341,8 +23437,12 @@
       if (ok && st.pacLeistung) setTimeout(() => padRumble(0.2, 0.9, 60, 'rutschen', wer), 90);
       return ok;
     }
+    // v1.1.42 GEMELDET: "Mein Gamepad rumbled dauerhaft beim Gas geben." pacUnter enthaelt auch die
+    // Lenkentlastung unter Gas (pacGasFaktor) - ohne jede Kurve stand der Zustand bei Gas auf 'unter'. Gebrummt
+    // wird jetzt nur, wenn die Front wirklich ueber der Haftgrenze ist (pacNutzV > 1), eigene Art 'untersteuern'.
+    if (!(st.pacNutzV > 1)) return false;
     const k = Math.min(1, (1 - st.pacUnter) * 4);
-    return padRumble(0, 0.18 + 0.4 * k, 260, 'rutschen', wer);
+    return padRumble(0, 0.18 + 0.4 * k, 260, 'untersteuern', wer);
   }
 
   if ($('setting-countersteer')) {
@@ -23462,7 +23562,8 @@
   // Schalter ergeben, und mit sechs Kaestchen waeren es sechs.
   const VIB_KAESTCHEN = { 'vib-schalt': 'schalt', 'vib-abs': 'abs', 'vib-crash': 'crash',
                           'vib-abseits': 'abseits', 'vib-box': 'box',
-                          'vib-meldung': 'meldung', 'vib-rutschen': 'rutschen' };
+                          'vib-meldung': 'meldung', 'vib-rutschen': 'rutschen',
+                          'vib-untersteuern': 'untersteuern', 'vib-quietschen': 'quietschen' };
   Object.keys(VIB_KAESTCHEN).forEach((id) => {
     const el = $(id);
     if (!el) return;
@@ -25072,11 +25173,11 @@
       // Welches Rad gerade abgebaut ist. Beim Boxenstopp laeuft der Schrauberton ueber die
       // ganze Wechseldauer und man hoert darin vier Ansaetze - also zeigt die Anzeige vier
       // Ausfaelle, einen je Rad. Ohne das sieht man vier Toene und keine Bewegung.
-      const abIdx = typeof pitWheelOff === 'function' ? pitWheelOff() : -1;
+      const abListe = typeof pitWheelsOff === 'function' ? pitWheelsOff() : [];
       for (let i = 0; i < 4; i++) {
         const el = $(REIFEN[i]);
         if (el && el.firstChild) {
-          const ab = i === abIdx;
+          const ab = abListe.includes(i);
           el.classList.toggle('t4-ab', ab);
           const w = aus ? 0 : (st.tyreWear4 ? st.tyreWear4[i] : st.tyreWear);
           // Abgebaut heisst leer: es ist kein Reifen da, dessen Profil man zeigen koennte.
@@ -38780,6 +38881,7 @@
     // v1.1.20: auch nie mit einer noch laufenden Aufstellung (gestartet ohne den Startschirm, z. B. R1):
     // deren Autopilot haette das Fahrerauto mitten im Rennen zu seinem Startplatz gesteuert.
     if (typeof aufstellenStoppen === 'function') aufstellenStoppen(false);
+    weichVerbotAnwenden();
     // EINSCHALTRAMPE: der Schirm zieht in 300 ms von schwarz auf Wert hoch, wie ein TFT beim
     // Einschalten. Hier und nicht in raceGreen(), weil der Schirm mit dem Knopfdruck
     // "angeht" und nicht erst bei Gruen - im Countdown will man ihn schon lesen.
@@ -40789,7 +40891,8 @@
   // Wie stark sich die Mischungen unterscheiden. 0 = alle rechnen wie mittel, 1 = die
   // Tabelle, 2 = doppelt. EINE Interpolation gegen mittel bewegt alle Werte zugleich -
   // deshalb ist "alle gleich" hier eine Zeile und kein Sonderfall.
-  let tyreMixStaerke = 1;
+  // v1.1.42 BESTELLT: "Mach den Reifenmischungsunterschied groesser" - Vorgabe 1,5 (Regler bis 3).
+  let tyreMixStaerke = 1.5;
 
   function mischungStaerke() {
     // OHNE REIFENSIMULATION FAHREN ALLE DEN MITTEL-REIFEN, wie bestellt. Das steht hier und
@@ -40801,7 +40904,8 @@
 
   function mischungWert(m, feld) {
     const e = TYRE_MIX[m] || TYRE_MIX.mittel;
-    return 1 + (e[feld] - 1) * mischungStaerke();
+    // v1.1.42: Regler bis 3 - harte Reifen kaemen dort auf negativen Verschleiss (1 - 0,5 x 3). Boden 0,1.
+    return Math.max(0.1, 1 + (e[feld] - 1) * mischungStaerke());
   }
 
   function mischungFarbe(m) { return (TYRE_MIX[m] || TYRE_MIX.mittel).farbe; }
@@ -40976,9 +41080,32 @@
     };
   }
 
+  // ---- WEICHE REIFEN VERBOTEN (v1.1.42, Renneinstellung) ------------------------------
+  // BESTELLT: "Fuehre eine neue Option in den Renneinstellungen ein: 'weiche Reifen verboten', standardmaessig
+  // aus." An: die Reifenwahl ueberspringt weich, und wer weich drauf hat oder gewaehlt hat, faehrt mittel -
+  // beim Rennstart und bei jedem Wechsel. NPCs fahren ohnehin nur trocken/Regen.
+  function weichVerboten() { const el = $('race-weich-verboten'); return !!(el && el.checked); }
+  function mischungErlaubt(m) { return weichVerboten() && m === 'weich' ? 'mittel' : m; }
+  function mischungNaechste(jetzt) {
+    const folge = MISCHUNG_FOLGE.filter((m) => m !== 'weich' || !weichVerboten());
+    const i = folge.indexOf(mischungErlaubt(jetzt));
+    return folge[(i + 1) % folge.length];
+  }
+  // Beim Rennstart: weich runter, wenn verboten (Auto 1 und die Zusatzspieler).
+  function weichVerbotAnwenden() {
+    if (!weichVerboten()) return;
+    if (tyres === 'weich') { tyres = 'mittel'; applySurface(); log('Weiche Reifen verboten: mittel montiert.', 'info'); }
+    if (mischungWunsch === 'weich') mischungWunsch = 'mittel';
+    if (typeof zusatzPlaetze === 'function') {
+      for (const z of zusatzPlaetze()) {
+        if (z.mischungWunsch === 'weich') z.mischungWunsch = 'mittel';
+        if (z.reifen === 'weich' && z.motor) { z.reifen = 'mittel'; mischungAnwenden(z.motor, z.reifen, wxRainLevel() * wxRainLevel()); }
+      }
+    }
+  }
+
   function pitMischungWeiter() {
-    const i = MISCHUNG_FOLGE.indexOf(pitMischungWahl());
-    mischungWunsch = MISCHUNG_FOLGE[(i + 1) % MISCHUNG_FOLGE.length];
+    mischungWunsch = mischungNaechste(pitMischungWahl());
     showHudToast(t('Reifenwahl') + ': ' + mischungName(mischungWunsch));
     return mischungWunsch;
   }
@@ -40987,8 +41114,7 @@
   function pitMischungWahlVon(z) { return z.mischungWunsch || z.reifen; }
   function pitMischungWahl2() { return pitMischungWahlVon(zusatzPlatz(2)); }
   function pitMischungWeiterVon(z) {
-    const i = MISCHUNG_FOLGE.indexOf(pitMischungWahlVon(z));
-    z.mischungWunsch = MISCHUNG_FOLGE[(i + 1) % MISCHUNG_FOLGE.length];
+    z.mischungWunsch = mischungNaechste(pitMischungWahlVon(z));
     showHudToast('P' + z.nr + ' ' + t('Reifenwahl') + ': ' + mischungName(z.mischungWunsch));
     return z.mischungWunsch;
   }
@@ -41009,7 +41135,7 @@
   function pitKachelStand2() { return pitKachelStandVon(zusatzPlatz(2)); }
 
   function fitTyresForWeather() {
-    const want = pitMischungWahl();
+    const want = mischungErlaubt(pitMischungWahl());
     if (tyres === want) return false;
     tyres = want;
     applySurface();
@@ -41419,10 +41545,15 @@
     return Math.max(PIT_EMPTY_STOP_S, t) + rammStrafeOffen(playerCar);
   }
   function pitSpielStart() {
+    // v1.1.42 GEMELDET: "Es wird immer voll getankt, auch wenn ich ueber den Knopf eingestellt habe, dass
+    // nicht getankt werden soll." Hier stand ein eigener Plan (Tanken voll, Reifen ja, immer) - das
+    // Minigame ist der Standard-Boxenmodus, also galt die Wahl im Boxenschirm praktisch nie. Jetzt der
+    // Plan aus der Boxengasse (bzw. makePitPlan aus der Vorwahl), nur auf das Moegliche beschraenkt.
+    const basis = pitPlan || makePitPlan();
     pitPlan = {
-      refuel: (pitJobAvailable('refuel') && fuel < 99.5) ? 100 : 0,
-      tyres: pitJobAvailable('tyres'),
-      repair: pitJobAvailable('repair') && damage > 0.05,
+      refuel: pitJobAvailable('refuel') && fuel < 99.5 ? tankZielNorm(basis.refuel) : 0,
+      tyres: pitJobAvailable('tyres') && !!basis.tyres,
+      repair: pitJobAvailable('repair') && !!basis.repair && damage > 0.05,
     };
     const T = pitSpielDauer(pitPlan);
     const folge = [];
@@ -41898,7 +42029,7 @@
         const strafe = rammStrafeOffen(z.car);
         showHudToast('P' + z.nr + ': ' + (strafe > 0 ? t('STRAFE') + ' ' + strafe + ' s' : 'SERVICE LAEUFT'));
         // Reifen wie bei Auto 1: die gewaehlte Mischung, frisch und ungebraucht.
-        const neu = pitMischungWahlVon(z);
+        const neu = mischungErlaubt(pitMischungWahlVon(z));
         if (neu !== z.reifen) {
           z.reifen = neu;
           mischungAnwenden(z.motor, z.reifen, wxRainLevel() * wxRainLevel());
@@ -43014,9 +43145,44 @@
     repair: { buf: () => fxBuffers.pitRepair, gain: 0.45 },
   };
 
+  // ---- DER SCHRAUBER JE RADPAAR (v1.1.42) -----------------------------------------------
+  // BESTELLT: "Boxenstopp-Sound: bastle einen besseren Ton aus diesem Pneumatic-Wrench-Ton" (Pixabay,
+  // Jun Su; Quelle und Lizenz in audio/CREDITS.md) und "erst beide hinteren, dann beide vorderen Raeder".
+  // Statt einer Schleife ueber den ganzen Wechsel spielt jedes Radpaar EINMAL die 2-s-Folge (zwei Muttern
+  // loesen, Pause, zwei anziehen): das erste zu Beginn, das zweite zur Haelfte des Wechsels - genau dort,
+  // wo pitWheelsOff() vom hinteren auf das vordere Paar wechselt. Rueckgabe: ein Objekt mit stop(), wie
+  // eine Quelle, damit setPitLoop(…, false) es wie jede Schleife beendet.
+  function schrauberPaare(dauerS, pan) {
+    const buf = fxBuffers.pitPaar;
+    if (!buf || !audioCtx || !soundEnabled) return null;
+    const g = audioCtx.createGain();
+    g.gain.value = PIT_LOOP_SPEC.wrench.gain;
+    let ziel = audioCtx.destination;
+    if (pan && audioCtx.createStereoPanner) {
+      const p = audioCtx.createStereoPanner();
+      p.pan.value = pan;
+      p.connect(audioCtx.destination);
+      ziel = p;
+    }
+    g.connect(ziel);
+    const jetzt = audioCtx.currentTime;
+    const quellen = [0, Math.max(buf.duration * 0.9, (dauerS || PIT_TYRE_CHANGE_S) / PIT_RAD_PAARE.length)].map((ab) => {
+      const s = audioCtx.createBufferSource();
+      s.buffer = buf;
+      s.connect(g);
+      s.start(jetzt + ab);
+      return s;
+    });
+    return { stop() { quellen.forEach((s) => { try { s.stop(); } catch (e) { /* schon aus */ } }); } };
+  }
   function setPitLoop(which, on) {
     const spec = PIT_LOOP_SPEC[which];
     if (!spec) return;
+    if (on && which === 'wrench' && fxBuffers.pitPaar) {
+      if (pitLoops.wrench) return;
+      pitLoops.wrench = schrauberPaare(pitTyreTarget || PIT_TYRE_CHANGE_S, 0);
+      return;
+    }
     if (on) {
       if (pitLoops[which] || !audioCtx || !soundEnabled) return;
       const buf = spec.buf();
@@ -43044,6 +43210,11 @@
     const spec = PIT_LOOP_SPEC[which];
     if (!spec) return;
     const l = pitLoopsZ[nr] || (pitLoopsZ[nr] = {});
+    if (on && which === 'wrench' && fxBuffers.pitPaar) {
+      if (l.wrench) return;
+      l.wrench = schrauberPaare(PIT_TYRE_CHANGE_S, typeof spielerPan === 'function' ? spielerPan(nr) : 0);
+      return;
+    }
     if (on) {
       if (l[which] || !audioCtx || !soundEnabled) return;
       const buf = spec.buf();
@@ -43088,32 +43259,32 @@
   // Wheels off means the car cannot move, whatever the driver asks for. Once they are back
   // on, the throttle is free again - and using it is how you leave, which is exactly what
   // "sobald das fertig ist bedeutet Gas geben auch Ende" describes.
-  // Die Reihenfolge, in der die vier Raeder gewechselt werden: Boxenmauerseite zuerst,
-  // weil dort die Crew steht und den Wagen von dort umlaeuft. Indizes wie ueberall im
-  // Modell: 0 vorne links, 1 vorne rechts, 2 hinten links, 3 hinten rechts.
-  //
-  // EINE Liste, weil eine zweite die Gelegenheit waere, dass Anzeige und Ton in
-  // verschiedener Ordnung laufen.
-  const PIT_RAD_FOLGE = [1, 3, 2, 0];
-  // Wie lange ein Rad innerhalb seines Fensters ABGEBAUT ist. Zwei Drittel: dann sieht man
-  // vier deutliche Ausfaelle. Bei 1,0 waere immer genau ein Rad weg und der Wechsel saehe
-  // wie ein einziger langer Vorgang aus, obwohl vier Toene zu hoeren sind.
+  // Die Reihenfolge, in der die Raeder gewechselt werden. Indizes wie ueberall im Modell: 0 vorne links,
+  // 1 vorne rechts, 2 hinten links, 3 hinten rechts.
+  // v1.1.42 BESTELLT: "Mach, dass die Reifen nicht mehr einer nach dem anderen gewechselt werden, sondern
+  // erst beide hinteren, dann beide vorderen." Zwei Fenster statt vier; in jedem sind beide Raeder des
+  // Paares gleichzeitig ab (zwei Mechaniker). EINE Liste fuer Anzeige und Ton.
+  const PIT_RAD_PAARE = [[2, 3], [0, 1]];
+  // Wie lange ein Paar innerhalb seines Fensters ABGEBAUT ist. Zwei Drittel: dann sieht man zwei deutliche
+  // Ausfaelle, und das letzte Drittel ist das Anziehen der neuen Raeder.
   const PIT_RAD_AB_ANTEIL = 0.66;
 
-  // Der Index des Rades, das GERADE abgebaut ist, oder -1. Wird vom Cockpit-Takt in
-  // 50-drive.js gelesen; eine Funktionsdeklaration ist ueber den ganzen Bereich hochgezogen,
-  // also ist der Aufruf von dort gefahrlos - anders als bei einem let, das vor seiner Zeile
-  // in der Totzone liegt. Diese Falle hat in dieser Werkstatt schon siebenmal zugeschlagen.
-  function pitWheelOff() {
-    if (pitState !== 'servicing' || !pitPlan || !pitPlan.tyres) return -1;
-    if (!pitDone || pitDone.tyres) return -1;
-    if (!(pitTyreTarget > 0)) return -1;
+  // Die Indizes der Raeder, die GERADE abgebaut sind (leer, wenn keines). Gelesen vom Cockpit-Takt
+  // (50-drive.js) und vom Boxenschirm; als Funktionsdeklaration ueber den ganzen Bereich hochgezogen.
+  function pitWheelsOff() {
+    if (pitState !== 'servicing' || !pitPlan || !pitPlan.tyres) return [];
+    if (!pitDone || pitDone.tyres) return [];
+    if (!(pitTyreTarget > 0)) return [];
     const anteil = Math.max(0, Math.min(0.999, pitTyreElapsed / pitTyreTarget));
-    const fenster = anteil * 4;
+    const fenster = anteil * PIT_RAD_PAARE.length;
     const nr = Math.floor(fenster);
-    // Im letzten Drittel des Fensters ist das neue Rad schon dran.
-    if (fenster - nr > PIT_RAD_AB_ANTEIL) return -1;
-    return PIT_RAD_FOLGE[nr];
+    if (fenster - nr > PIT_RAD_AB_ANTEIL) return [];
+    return PIT_RAD_PAARE[nr].slice();
+  }
+  // Das zuerst abgebaute Rad oder -1 (fuer aeltere Leser).
+  function pitWheelOff() {
+    const ab = pitWheelsOff();
+    return ab.length ? ab[0] : -1;
   }
 
   function refreshPitThrottleLock() {
@@ -43239,6 +43410,9 @@
       showHudToast(t(which === 'tyres' ? 'Reifen wechseln' : 'Reparieren')
                    + ': ' + t(!jetzt ? 'ja' : 'nein'));
     }
+    // v1.1.42: in der Boxengasse steht der Plan schon (beim Einfahren aus der Vorwahl gebaut) - er muss
+    // die neue Wahl mitnehmen, sonst galt beim Halt der alte Plan ("tankt immer voll").
+    if (pitState === 'limited' && pitPlan) pitPlan = makePitPlan();
     // Der Boxenschirm zeigt dieselbe Vorwahl; wer sie vom Kreuz aus aendert, soll sie dort
     // nicht veraltet vorfinden.
     pitScreenRender();
@@ -43303,11 +43477,11 @@
   function pitScreenBilder() {
     const st = physEngine.state;
     const aus = !(physEngine.config.tyreEffect > 0);
-    const abIdx = typeof pitWheelOff === 'function' ? pitWheelOff() : -1;
+    const abListe = typeof pitWheelsOff === 'function' ? pitWheelsOff() : [];
     for (let i = 0; i < 4; i++) {
       const el = $(PIT_T4[i]);
       if (!el || !el.firstChild) continue;
-      const ab = i === abIdx;
+      const ab = abListe.includes(i);
       el.classList.toggle('t4-ab', ab);
       const w = aus ? 0 : (st.tyreWear4 ? st.tyreWear4[i] : st.tyreWear);
       const rest = ab ? 0 : Math.max(0, Math.min(100, 100 - w * 100));
@@ -44049,8 +44223,16 @@
   // Die EINE Stelle, die den Boxenstopp-Plan aendert. Finger und Steuerkreuz gehen beide
   // hier durch; vorher hatte nur das Steuerkreuz Zugriff, konnte auch nur Tank und Reifen,
   // und die Reparatur war ueberhaupt nicht abwaehlbar.
+  function pitReifenwechselLaeuft() {
+    return pitState === 'servicing' && !!pitPlan && !!pitPlan.tyres && !!pitDone && !pitDone.tyres;
+  }
   function pitToggle(which, force) {
     if (pitState === 'off' || !pitPlan) return false;
+    // v1.1.42: ein laufender Reifenwechsel laesst sich auch nicht abwaehlen (siehe requestPitStop).
+    if (which === 'tyres' && pitReifenwechselLaeuft()) {
+      showHudToast(t('Reifenwechsel läuft'));
+      return true;
+    }
     if (!pitJobAvailable(which)) {
       showHudToast(which === 'refuel' ? 'Tanksimulation ist aus'
                    : which === 'tyres' ? 'Reifensimulation ist aus' : 'Schadensmodell ist aus');
@@ -44142,6 +44324,12 @@
         return;
       }
       setPitState('limited');
+      return;
+    }
+    // v1.1.42 BESTELLT: "Mach, dass ich den Boxenstopp nicht abbrechen kann, wenn Reifen gewechselt
+    // werden." Solange die Raeder ab sind, ist der Knopf ohne Wirkung - erst danach bricht er wieder ab.
+    if (pitReifenwechselLaeuft()) {
+      showHudToast(t('Reifenwechsel läuft'));
       return;
     }
     // Abort. Whatever the crew had started is discarded: no fuel, no repair, and stopping
@@ -48139,6 +48327,9 @@
       // aelteres audio/ hat den Eintrag nicht.
       if (fx.offroad) fxBuffers.offroad = await grab(fx.offroad.file);
       fxBuffers.pit = await grab(fx.pit.file);
+      // v1.1.42: der Schrauber je Radpaar (Pixabay-Aufnahme, tools/pit_wrench_pixabay.py). Duldsam: fehlt er,
+      // laeuft die alte, gerechnete Schleife.
+      if (fx.pit_paar) fxBuffers.pitPaar = await grab(fx.pit_paar.file);
       // Both are loops: they run for as long as their job does. Missing files are tolerated
       // (grab returns null) and the sound is simply absent rather than the load failing.
       if (fx.pit_fuel) fxBuffers.pitFuel = await grab(fx.pit_fuel.file);
@@ -48759,7 +48950,19 @@
   // schnelle Kurve nicht. Ein Selbsttest haelt fest, dass die Schwelle ERREICHBAR bleibt -
   // das Fehlen genau dieser Pruefung war der eigentliche Fehler.
   const TYRE_SQUEAL_START = 0.6;
+  // v1.1.42 BESTELLT: "leichtes Rumbling beim Reifenquietschen". Dieselbe Menge wie der Ton, aber auch ohne
+  // Ton (Vibrationsart 'quietschen', Kachel Vibration): leicht und im schwachen Motor, alle 250 ms erneuert.
+  let quietschRuettelnAt = 0;
+  function quietschRuetteln(nutzung) {
+    const menge = Math.max(0, Math.min(1, (Math.max(0, Math.min(1.2, nutzung)) - TYRE_SQUEAL_START) / (1 - TYRE_SQUEAL_START)));
+    if (menge <= 0.05 || typeof padRumble !== 'function') return false;
+    const jetzt = performance.now();
+    if (jetzt - quietschRuettelnAt < 250) return false;
+    quietschRuettelnAt = jetzt;
+    return padRumble(0, 0.12 + 0.28 * menge, 280, 'quietschen', 1);
+  }
   function setTyreSqueal(nutzung) {
+    quietschRuetteln(nutzung);
     if (!fxBuffers.tyre || !audioCtx || !soundEnabled) return;
     // Unterhalb der Schwelle auf null abbilden, statt die Schwelle im Nenner zu vergessen:
     // sonst faengt es bei 0 an und ist bei 0,85 schon laut.
@@ -52952,7 +53155,11 @@
     { label: 'einfach', speed: 0.45 },
     { label: 'mittel',  speed: 0.55 },
     { label: 'schnell', speed: 0.65 },
+    // v1.1.42 (WIP): MAX - eigenes Tempoprofil aus den Reglern im NPC-Menue (ghostMaxTempo). speed ist nur
+    // die Anzeige (Geradentempo); die Migration alter Werte (ghostStufeAusSpeed) ueberspringt die Stufe.
+    { label: 'MAX', speed: 1.0, max: true },
   ];
+  const GHOST_STUFE_MAX = 3;
   function garageAufZeile(car) {
     const box = document.createElement('div');
     box.className = 'gk-aufzeile';
@@ -52986,7 +53193,11 @@
       };
       const stufeS = st[stufe];
       const anzeige = t(stufeS.label) + ' \u00b7 ' + Math.round(stufeS.speed * 100) + ' %';
-      box.appendChild(garWertZeile('NPC-Tempo', anzeige, () => tempo(-1), () => tempo(1), rst));
+      // v1.1.42: MAX zeigt sein Geradentempo aus dem NPC-Menue und traegt das WIP-Zeichen.
+      const tz = garWertZeile('NPC-Tempo', stufeS.max ? 'MAX ' + Math.round((ghostCfg.maxGerade || 1) * 100) + ' %' : anzeige,
+                              () => tempo(-1), () => tempo(1), rst);
+      if (stufeS.max) tz.querySelector('b').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
+      box.appendChild(tz);
       // v0.9.64: Ghost-Sound je Auto (der Schalter in Optionen -> Ton bleibt der Hauptschalter;
       // hier ist es das einzelne Auto). Ein Klick toggelt an/aus, wie links/rechts in der Zeile.
       // v0.9.87: Die Zeile zeigt, was zu HOEREN ist - Hauptschalter UND Auto. Vorher stand
@@ -54463,6 +54674,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     curveSlow: 0.20,
     // v1.1.37: Hoechsttempo in Haarnadel und Engstelle, das LETZTE Wort (ghostHaarnadelDeckel).
     haarnadelMax: 0.35,
+    // v1.1.42 (WIP): Stufe MAX (ghostMaxTempo) - Gerade, Radius-1-Kurve (60 Grad und kleine 30 Grad),
+    // Radius-2-Kurve (weite 30 Grad), Bremspunkt 'schiene' (ein Teil vorher) oder 'teil' (am Kurvenbeginn).
+    maxGerade: 1.0, maxR1: 0.52, maxR2: 0.8, maxBremspunkt: 'schiene',
     paare: true,        // v1.0.31: Paare links/rechts, Reihe dahinter (ghostPaare); Schalter fuer die Messsonde    // how much of that is given up in a curve
     // 0.5 statt 0. Die Naeherungslogik in ghostAssignBias gab es laengst - gleiche Runde
     // und Kachelindex hoechstens eins auseinander ergibt gegenlaeufige Versaetze - aber sie
@@ -58521,7 +58735,67 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // In Kurven und Haarnadeln gilt immer das Mittel-Tempo (0,55), damit alle Stufen in der
   // Kurve gleich schnell sind und die Kurvendrosselung dieselbe bleibt. Zurueckkommt ein
   // Faktor auf der Geraden (0,45/0,55/0,65) und sonst das Mittel-Tempo.
+  // ---- NPC-STUFE MAX (v1.1.42, WIP) --------------------------------------------------------
+  // BESTELLT: "Fuehre fuer NPCs eine vierte Schwierigkeitsstufe ein, bei der sie weiterhin alle Regeln
+  // befolgen zur Minimalgeschwindigkeit global und Maximalgeschwindigkeit in der Haarnadel, aber auf den
+  // Geraden und in den anderen Kurven so schnell wie moeglich fahren. Name 'MAX' mit WIP-Label. Bestimme
+  // eine Maximalgeschwindigkeit in Radius-1- und Radius-2-Kurven sowie auf Geraden und gib mir dafuer
+  // Slider im NPC-Menue. Dazu den Bremspunkt (Beginn des Kurventeils, eine Schiene vor der Kurve).
+  // Vorschlag: Radius 1 so schnell wie NPCs auf Stufe 65 %, Bremspunkt eine Schiene vor der Kurve, auf der
+  // Geraden Full Speed."
+  // Startwerte: Gerade 1,0 (Vollgas); Radius 1 = 0,52 = Stufe 65 % mit dem Kurvenabzug 20 % (0,65 x 0,8);
+  // Radius 2 = 0,8 (dreifacher Radius: gleiche Querkraft erst beim 1,7-fachen Tempo - 0,8 ist vorsichtig);
+  // Bremspunkt eine Schiene vorher. Haarnadel und Engstelle (und die zwei Teile davor) laufen ueber die
+  // normale NPC-Logik: Kurvenabzug, Obergrenze haarnadelMax, Mindesttempo. Unter Gelb und in der
+  // Einfuehrungsrunde fahren MAX-NPCs wie alle anderen.
+  // Die Regler im NPC-Menue. AUS DEM MARKUP lesen und dann auf input hoeren. Hier und nicht in 80-sound.js:
+  // dort ist ghostCfg beim Laden noch nicht angelegt (Totzone), und der Fehler brach das Laden ab.
+  [['ghost-max-gerade', 'maxGerade'], ['ghost-max-r1', 'maxR1'], ['ghost-max-r2', 'maxR2']].forEach(([id, feld]) => {
+    const el = $(id);
+    if (!el) return;
+    const an = () => {
+      ghostCfg[feld] = parseFloat(el.value);
+      if ($(id + '-val')) $(id + '-val').textContent = Math.round(ghostCfg[feld] * 100) + '%';
+    };
+    el.addEventListener('input', an);
+    an();
+  });
+  if ($('ghost-max-bremspunkt')) {
+    const el = $('ghost-max-bremspunkt');
+    const an = () => { ghostCfg.maxBremspunkt = el.value === 'teil' ? 'teil' : 'schiene'; };
+    el.addEventListener('change', an);
+    an();
+  }
+  function ghostIstMax(car) { return !!car && car.ghostStufe === GHOST_STUFE_MAX; }
+  function ghostMaxArt(typ) {
+    if (typ === undefined || typ === null) return 'gerade';
+    if (tileTightness(typ) >= 2) return 'haarnadel';
+    if (tileTightness(typ) >= 1) return 'r1';
+    if (typ === TILE_TYPE.WEIT_LEFT || typ === TILE_TYPE.WEIT_RIGHT) return 'r2';
+    return 'gerade';
+  }
+  function ghostMaxWert(art) {
+    const c = ghostCfg;
+    if (art === 'haarnadel') return Number.isFinite(c.haarnadelMax) ? c.haarnadelMax : 0.35;
+    if (art === 'r1') return c.maxR1;
+    if (art === 'r2') return c.maxR2;
+    return c.maxGerade;
+  }
+  function ghostMaxTempo(car) {
+    const g = car && car.ghost;
+    const tiles = currentTrackTiles || [];
+    const n = tiles.length;
+    const ortOk = !!(g && n && g.tileIndex !== null && g.tileIndex !== undefined && ortStimmt(car) !== false);
+    // Das Teil unter dem Auto: aus dem Layout, wenn der Ort stimmt, sonst aus der gemeldeten Schiene.
+    const hierTyp = ortOk ? tiles[g.tileIndex % n].type : (typeof codeZuTyp === 'function' ? codeZuTyp(car.tileCode) : null);
+    let v = ghostMaxWert(ghostMaxArt(hierTyp));
+    if (ghostCfg.maxBremspunkt !== 'teil' && ortOk) {
+      v = Math.min(v, ghostMaxWert(ghostMaxArt(tiles[(g.tileIndex + 1) % n].type)));
+    }
+    return Math.max(0.05, Math.min(1, v));
+  }
   function ghostStufeFaktor(car) {
+    if (ghostIstMax(car)) return ghostMaxTempo(car);
     const stufe = car.ghostStufe === undefined || car.ghostStufe === null
       ? 1 : car.ghostStufe;
     const s = GHOST_TEMPO_STUFEN[stufe];
@@ -58539,6 +58813,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (speed === undefined || speed === null) return 1;
     let bester = 1, besterD = Infinity;
     for (let i = 0; i < GHOST_TEMPO_STUFEN.length; i++) {
+      if (GHOST_TEMPO_STUFEN[i].max) continue;
       const d = Math.abs(GHOST_TEMPO_STUFEN[i].speed - speed);
       if (d < besterD) { besterD = d; bester = i; }
     }
@@ -61478,14 +61753,17 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Ghost nicht zum Stehen bringt. Mit dem Standardregler von 20 Prozent sind das
       // 20 Prozent in der Kurve und 40 in der Haarnadel oder Engstelle.
       const abzugKachel = tight > 0 ? Math.min(0.85, curveSlowIch * tight) : 0;
-      target *= 1 - Math.max(abzugProfil, abzugKachel);
+      // v1.1.42: MAX faehrt ausserhalb der Haarnadel sein eigenes Profil (ghostMaxTempo) - kein Abzug, kein
+      // Deckel auf das Mittel-Tempo. Unter Gelb und in der Einfuehrungsrunde wie alle.
+      const maxProfil = ghostIstMax(car) && tight < 2 && !underYellow && !raceFormationLap;
+      if (!maxProfil) target *= 1 - Math.max(abzugProfil, abzugKachel);
       // v0.9.64: In der Kurve gilt das Mittel-Tempo, nicht das Stufen-Tempo. Der Kachelabzug
       // wirkt bisher auf das GERADENTempo (schnell = 0,65 -> 0,52 vor der Kurve), und der
       // Ghost kommt damit heisser in die Kurve als das Mittel-Tempo (0,44) - er kann sie
       // verlassen. Der Boden nimmt das Kurvenziel (Mittel-Tempo * Abzug) als Obergrenze,
       // damit alle Stufen gleich schnell in die Kurve gehen. Nur wenn ueberhaupt ein Abzug
       // greift - auf einer reinen Geraden bleibt das Stufen-Tempo.
-      if (Math.max(abzugProfil, abzugKachel) > 0) {
+      if (!maxProfil && Math.max(abzugProfil, abzugKachel) > 0) {
         target = Math.min(target, (ghostCfg.speed || 0.55) * (1 - Math.max(abzugProfil, abzugKachel)));
       }
       // BESTELLT: "wenn sie nah beieinander fahren ... 5% langsamer fahren in den kurven."
@@ -67956,14 +68234,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         for (let t = 0; t < pitTyreTarget - 1e-9; t += schritt) {
           pitTyreElapsed = t;
           refreshPitThrottleLock();
-          reihe.push({ t: +t.toFixed(3), rad: pitWheelOff(), gas: pitThrottleLock });
+          reihe.push({ t: +t.toFixed(3), rad: pitWheelsOff().join('+') || '-', gas: pitThrottleLock });
         }
         // Und der Zustand NACH dem Wechsel: alle vier muessen wieder dran sein und das Gas
         // muss frei sein.
         pitDone.tyres = true;
         pitTyreElapsed = pitTyreTarget;
         refreshPitThrottleLock();
-        const danach = { rad: pitWheelOff(), gas: pitThrottleLock };
+        const danach = { rad: pitWheelsOff().join('+') || '-', gas: pitThrottleLock };
         return { reihe, danach, dauer: pitTyreTarget };
       } finally {
         pitState = merk.st; pitPlan = merk.plan; pitDone = merk.done;
@@ -75936,32 +76214,37 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // losfahren. Die Sperre stand schon da, aber eine Sperre, auf die man sich verlaesst, ohne
   // sie zu messen, ist keine - und sie haengt an drei Bedingungen zugleich (Zustand, Plan,
   // Fertigmeldung), von denen jede einzeln kippen kann.
-  stAdd('Radwechsel: vier Raeder der Reihe nach, Gas gesperrt', () => {
+  // v1.1.42 BESTELLT: erst beide hinteren, dann beide vorderen Raeder; waehrenddessen kein Abbruch.
+  stAdd('Radwechsel: erst beide hinteren, dann beide vorderen Raeder, Gas gesperrt, kein Abbruch', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.pitWheelTimeline) {
       return { skip: true, mass: 'pitWheelTimeline nicht vorhanden' };
     }
     const r = OMEGA_TEST.pitWheelTimeline({ dauer: 4.0, schritt: 0.05 });
     if (!r) return { skip: true, mass: 'pitWheelOff nicht vorhanden' };
-    // Die Abschnitte zusammenfassen: aus 80 Abtastungen werden die Wechselpunkte.
     const ab = [];
     for (const p of r.reihe) {
       const l = ab[ab.length - 1];
       if (!l || l.rad !== p.rad) ab.push({ rad: p.rad, von: p.t, bis: p.t });
       else l.bis = p.t;
     }
-    const folge = ab.filter(a => a.rad >= 0).map(a => a.rad);
-    const ok =
-      // Genau vier Ausfaelle, und jedes Rad genau einmal.
-      folge.length === 4 && new Set(folge).size === 4
-      // Kein Rad fehlt vor dem ersten oder nach dem letzten Ton.
-      && r.danach.rad === -1
-      // Und das Entscheidende: solange gewechselt wird, ist das Gas gesperrt, danach frei.
-      && r.reihe.every(p => p.gas === true)
-      && r.danach.gas === false;
-    const N = ['VL', 'VR', 'HL', 'HR'];
-    return { ok, mass: folge.map(i => N[i]).join(' \u2192 ')
-      + ' | Gas gesperrt ' + (r.reihe.every(p => p.gas) ? 'durchgehend' : 'LUECKE')
-      + ', danach ' + (r.danach.gas ? 'NOCH GESPERRT' : 'frei') };
+    const folge = ab.filter(a => a.rad !== '-').map(a => a.rad);
+    const f = [];
+    if (folge.join(',') !== '2+3,0+1') f.push('Folge ' + folge.join(' -> '));
+    if (r.danach.rad !== '-') f.push('nach dem Wechsel noch ein Rad ab');
+    if (!r.reihe.every(p => p.gas === true) || r.danach.gas !== false) f.push('Gas nicht durchgehend gesperrt oder danach nicht frei');
+    // Kein Abbruch, solange gewechselt wird.
+    const merk = { st: pitState, plan: pitPlan, done: pitDone };
+    try {
+      pitState = 'servicing';
+      pitPlan = { tyres: true, refuel: 0, repair: false };
+      pitDone = { tyres: false, refuel: true, repair: true };
+      if (!pitReifenwechselLaeuft()) f.push('Wechsel nicht erkannt');
+      requestPitStop();
+      if (pitState !== 'servicing') f.push('Knopf bricht den Wechsel ab');
+      pitToggle('tyres');
+      if (!pitPlan.tyres) f.push('Reifen waehrend des Wechsels abwaehlbar');
+    } finally { pitState = merk.st; pitPlan = merk.plan; pitDone = merk.done; refreshPitThrottleLock(); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'HL+HR -> VL+VR, Gas gesperrt, Knopf bricht nicht ab' };
   });
 
   // ---- Uebersetzung: kein Deutsch im englischen Modus ----
@@ -80059,16 +80342,137 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       : 'alle Erklaerungen hinter dem Info-Knopf' };
   });
 
+  // v1.1.42 GEMELDET: "Mein Gamepad rumbled dauerhaft beim Gas geben." BESTELLT: eigene Kachel "Vibration",
+  // fein schaltbar, jede Vibration mit einer Aussage (leicht beim Reifenquietschen, stark beim Crash).
+  // v1.1.42 GEMELDET: "Es wird immer voll getankt, auch wenn ich ueber den Knopf eingestellt habe, dass nicht
+  // getankt werden soll." BESTELLT: groesserer Mischungsunterschied (Regler), "weiche Reifen verboten" (aus).
+  stAdd('Boxenstopp und Reifen v1.1.42: Tankvorwahl gilt (auch im Minigame), weich verboten, Mischung 150 %', () => {
+    const f = [];
+    const merk = { st: pitState, plan: pitPlan, vw: Object.assign({}, pitVorwahl), fuel, spiel: pitSpiel,
+                   tyres, wunsch: mischungWunsch };
+    const el = $('race-weich-verboten'), merkW = el ? el.checked : false;
+    try {
+      // Vorwahl "nein" in der Boxengasse: der schon gebaute Plan muss sie uebernehmen ...
+      pitState = 'limited';
+      pitVorwahl.refuel = null;
+      fuel = 40;
+      pitPlan = makePitPlan();
+      if (!(pitPlan.refuel > 0)) f.push('Ausgang: Plan tankt nicht');
+      let z = 0;
+      while (pitVorwahlIst('refuel') !== 0 && z++ < 5) pitVorwahlSchalten('refuel');
+      if (pitPlan.refuel !== 0) f.push('Plan in der Boxengasse tankt weiter: ' + pitPlan.refuel);
+      // ... und das Minigame darf ihn nicht wieder auf voll setzen.
+      pitSpielStart();
+      if (pitPlan.refuel !== 0) f.push('Minigame setzt Tanken wieder auf ' + pitPlan.refuel);
+      pitVorwahl.refuel = 50; pitPlan = makePitPlan(); pitSpielStart();
+      if (typeof fuelSimOn === 'function' && fuelSimOn() && pitPlan.refuel !== 50) f.push('Minigame: halb wird ' + pitPlan.refuel);
+      // Weiche Reifen verboten.
+      if (!el) f.push('Schalter race-weich-verboten fehlt');
+      else {
+        if (el.defaultChecked) f.push('weich verboten ist ab Werk an');
+        el.checked = true;
+        const folge = [];
+        let m = 'hart';
+        for (let i = 0; i < 4; i++) { m = mischungNaechste(m); folge.push(m); }
+        if (folge.includes('weich')) f.push('Reifenwahl bietet weich: ' + folge.join(','));
+        tyres = 'weich'; mischungWunsch = 'weich';
+        weichVerbotAnwenden();
+        if (tyres !== 'mittel' || mischungWunsch !== 'mittel') f.push('weich bleibt drauf: ' + tyres + '/' + mischungWunsch);
+        el.checked = false;
+        if (mischungNaechste('hart') !== 'regen' || mischungNaechste('regen') !== 'weich') f.push('ohne Verbot fehlt weich in der Folge');
+      }
+      // Mischungsunterschied: Vorgabe 150 %, Regler bis 300 %, harte Reifen nie negativ.
+      const r = $('setting-tyre-mix');
+      if (!r || Math.abs(parseFloat(r.defaultValue) - 1.5) > 1e-9 || parseFloat(r.max) < 3) f.push('Regler nicht 150 % / bis 300 %');
+      const merkS = tyreMixStaerke;
+      try {
+        tyreMixStaerke = 3;
+        if (!(mischungWert('hart', 'verschleiss') > 0)) f.push('harter Reifen bei 300 % ohne Verschleiss oder negativ');
+        tyreMixStaerke = 1.5;
+        if (Math.abs(mischungWert('weich', 'griff') - 1.3) > 1e-9) f.push('weich bei 150 % nicht +30 %');
+      } finally { tyreMixStaerke = merkS; }
+    } finally {
+      pitState = merk.st; pitPlan = merk.plan; pitVorwahl = merk.vw; fuel = merk.fuel; pitSpiel = merk.spiel;
+      tyres = merk.tyres; mischungWunsch = merk.wunsch;
+      if (el) el.checked = merkW;
+      if (typeof applySurface === 'function') applySurface();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Vorwahl nein bleibt nein (Gasse und Minigame), weich verboten wirkt, Mischung 150 %' };
+  });
+
+  // v1.1.42 BESTELLT: NPC-Stufe MAX (WIP) - Gerade, Radius 1, Radius 2 und Bremspunkt aus dem NPC-Menue;
+  // Haarnadel und Mindesttempo wie immer.
+  stAdd('NPC MAX v1.1.42: Profil aus den Reglern, Bremspunkt, Haarnadel nach den normalen Regeln', () => {
+    const f = [];
+    const merkT = currentTrackTiles, merkC = Object.assign({}, ghostCfg);
+    try {
+      if (!GHOST_TEMPO_STUFEN[GHOST_STUFE_MAX] || !GHOST_TEMPO_STUFEN[GHOST_STUFE_MAX].max) f.push('Stufe MAX fehlt');
+      for (const [id, wert] of [['ghost-max-gerade', 1], ['ghost-max-r1', 0.52], ['ghost-max-r2', 0.8]]) {
+        const el = $(id);
+        if (!el || Math.abs(parseFloat(el.defaultValue) - wert) > 1e-9) f.push(id + ' fehlt oder Vorgabe nicht ' + wert);
+      }
+      if (!$('ghost-max-bremspunkt') || $('ghost-max-bremspunkt').value !== 'schiene') f.push('Bremspunkt-Vorgabe nicht eine Schiene vorher');
+      Object.assign(ghostCfg, { maxGerade: 1, maxR1: 0.52, maxR2: 0.8, maxBremspunkt: 'schiene', haarnadelMax: 0.35 });
+      // S G G R W G : 0 Start, 1-2 Gerade, 3 Radius-1-Kurve, 4 weite Kurve (Radius 2), 5 Gerade
+      currentTrackTiles = [TILE_TYPE.START, TILE_TYPE.STRAIGHT, TILE_TYPE.STRAIGHT, TILE_TYPE.CURVE_RIGHT,
+                           TILE_TYPE.WEIT_RIGHT, TILE_TYPE.STRAIGHT].map((type) => ({ type }));
+      const auto = (i) => ({ role: 'ghost', ghostStufe: GHOST_STUFE_MAX, tileCode: null, ghost: { tileIndex: i } });
+      const merkOrt = ortStimmt;
+      ortStimmt = () => true;
+      try {
+        const v = [0, 1, 2, 3, 4, 5].map((i) => +ghostMaxTempo(auto(i)).toFixed(2));
+        // Schiene vorher: Teil 2 schon 0,52 (Kurve folgt), Teil 3 0,52 (weite Kurve folgt: min), Teil 4 0,8.
+        if (v.join(',') !== '1,1,0.52,0.52,0.8,1') f.push('Profil (Schiene vorher) ' + v.join(','));
+        ghostCfg.maxBremspunkt = 'teil';
+        const w = [0, 1, 2, 3, 4, 5].map((i) => +ghostMaxTempo(auto(i)).toFixed(2));
+        if (w.join(',') !== '1,1,1,0.52,0.8,1') f.push('Profil (am Kurventeil) ' + w.join(','));
+        if (ghostStufeFaktor(auto(1)) !== 1) f.push('ghostStufeFaktor nimmt das MAX-Profil nicht');
+        if (ghostStufeFaktor({ role: 'ghost', ghostStufe: 2, tileCode: TILE_TYPE.STRAIGHT, ghost: {} }) === 1) f.push('Stufe schnell faehrt MAX');
+      } finally { ortStimmt = merkOrt; }
+      // Haarnadel: weiter Abzug, Deckel und Boden; Gelb/Formation wie alle.
+      const src = String(ghostTick);
+      if (src.indexOf('ghostIstMax(car) && tight < 2 && !underYellow && !raceFormationLap') < 0) f.push('MAX umgeht Haarnadel, Gelb oder Formation');
+      if (ghostStufeAusSpeed(0.95) === GHOST_STUFE_MAX) f.push('alte Werte wandern in MAX');
+    } finally { currentTrackTiles = merkT; Object.assign(ghostCfg, merkC); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gerade 100, R1 52, R2 80, Bremspunkt Schiene/Teil, Haarnadel normal' };
+  });
+
+  stAdd('Vibration v1.1.42: eigene Kachel, Quietschen leicht, kein Dauerbrummen vom Gas', () => {
+    const f = [];
+    const seite = $('sub-opt-vibration');
+    if (!seite) return { ok: false, mass: 'Seite sub-opt-vibration fehlt' };
+    for (const id of ['setting-vibration', 'vib-test', 'vib-schalt', 'vib-abs', 'vib-crash', 'vib-abseits', 'vib-box',
+                      'vib-rutschen', 'vib-untersteuern', 'vib-quietschen', 'vib-meldung', 'vib-trigger']) {
+      const el = $(id);
+      if (!el || !seite.contains(el)) f.push(id + ' nicht in der Kachel');
+    }
+    if ($('sub-opt-general') && $('sub-opt-general').querySelector('[id^="vib-"]')) f.push('noch Vibration unter Allgemein');
+    if (!document.querySelector('.misc-tile[data-sub="opt-vibration"]')) f.push('keine Kachel im Optionsmenue');
+    const merk = { on: rumbleOn, q: RUMBLE_ARTEN.quietschen, at: quietschRuettelnAt };
+    try {
+      rumbleOn = true; RUMBLE_ARTEN.quietschen = true;
+      quietschRuettelnAt = 0;
+      if (!quietschRuetteln(0.95)) f.push('Quietschen ruettelt nicht');
+      quietschRuettelnAt = 0;
+      if (quietschRuetteln(0.5)) f.push('ruettelt unter der Quietschschwelle');
+      RUMBLE_ARTEN.quietschen = false; quietschRuettelnAt = 0;
+      if (quietschRuetteln(0.95)) f.push('Schalter Quietschen wirkt nicht');
+    } finally { rumbleOn = merk.on; RUMBLE_ARTEN.quietschen = merk.q; quietschRuettelnAt = merk.at; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '12 Schalter in der Kachel, Quietschen ab der Schwelle, schaltbar' };
+  });
+
   stAdd('Pacejka: Unter- und Uebersteuern vibrieren, eigener Schalter', () => {
     const merkOn = rumbleOn, merkArt = RUMBLE_ARTEN.rutschen;
     const schlecht = [];
-    const motor = (z, pac) => ({ config: { pacejka: pac, pacejkaUeberMax: 0.35 },
-                                 state: { pacZustand: z, pacUeber: 0.2, pacUnter: 0.8 } });
+    // v1.1.42: Untersteuern brummt nur ueber der Haftgrenze der Front (pacNutzV > 1), eigene Art.
+    const motor = (z, pac, nutzV) => ({ config: { pacejka: pac, pacejkaUeberMax: 0.35 },
+                                 state: { pacZustand: z, pacUeber: 0.2, pacUnter: 0.8, pacNutzV: nutzV === undefined ? 1.2 : nutzV } });
     const ruf = (m) => { pacRumbleZuletzt[2] = 0; return pacejkaRueckmeldung(m, 2); };
     try {
       rumbleOn = true; RUMBLE_ARTEN.rutschen = true;
       if (!ruf(motor('ueber', true))) schlecht.push('Uebersteuern still');
       if (!ruf(motor('unter', true))) schlecht.push('Untersteuern still');
+      if (ruf(motor('unter', true, 0.8))) schlecht.push('Untersteuern brummt nur vom Gas (Lenkentlastung)');
       if (ruf(motor('', true))) schlecht.push('brummt ohne Zustand');
       if (ruf(motor('ueber', false))) schlecht.push('brummt ausserhalb von Pacejka');
       RUMBLE_ARTEN.rutschen = false;
@@ -85628,6 +86032,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (physEngine.state.currentGear !== merk.gang || physEngine.state.driveMode !== merk.mode) {
         f.push('Quadrat hat geschaltet (' + physEngine.state.driveMode + ' ' + physEngine.state.currentGear + ')');
       }
+      // v1.1.42: waehrend des Reifenwechsels bricht der Knopf nicht ab (eigener Test "Radwechsel") - also
+      // erst nach dem Wechsel pruefen, dass er das Spiel beendet.
+      if (pitDone) { pitDone.tyres = true; refreshPitThrottleLock(); }
       requestPitStop();
       if (pitState !== 'off') f.push('Kreuz/Abbruch laesst den Stopp stehen');
       if (pitSpielAktiv()) f.push('Spiel laeuft nach dem Abbruch weiter');
@@ -85799,10 +86206,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Karte mit Farbbild, Rolle mit Pfeil, Foto, Aufklappzeile, NPC-Knopf auf Starten' };
   });
 
-  stAdd('Garage: NPC-Tempo als drei Stufen (einfach/mittel/schnell), Blaettern setzt sie', () => {
+  // v1.1.42: vier Stufen - nach schnell kommt MAX (WIP).
+  stAdd('Garage: NPC-Tempo als Stufen (einfach/mittel/schnell/MAX), Blaettern setzt sie', () => {
     const att = { role: 'ghost', device: { id: 'probe-tempo' }, alias: '', colorId: 'rot', sim: false, testSenke: [] };
     const f = [];
-    if (typeof GHOST_TEMPO_STUFEN !== 'object' || GHOST_TEMPO_STUFEN.length !== 3) return { ok: false, mass: 'GHOST_TEMPO_STUFEN fehlt' };
+    if (typeof GHOST_TEMPO_STUFEN !== 'object' || GHOST_TEMPO_STUFEN.length !== 4) return { ok: false, mass: 'GHOST_TEMPO_STUFEN fehlt' };
     if (GHOST_TEMPO_STUFEN[0].speed !== 0.45 || GHOST_TEMPO_STUFEN[1].speed !== 0.55 || GHOST_TEMPO_STUFEN[2].speed !== 0.65) {
       f.push('Stufen-Werte falsch');
     }
@@ -85825,7 +86233,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!/schnell/.test(wert())) f.push('zeigt nicht schnell: ' + wert());
       if (!/65/.test(wert())) f.push('schnell zeigt nicht 65 %: ' + wert());
       klick(1);
-      if (att.ghostStufe !== 0) f.push('Nochmal rechts setzt nicht einfach (' + att.ghostStufe + ')');
+      if (att.ghostStufe !== 3) f.push('Nochmal rechts setzt nicht MAX (' + att.ghostStufe + ')');
+      if (!/MAX/.test(wert()) || !finde().querySelector('b .wip-tag')) f.push('MAX zeigt nicht MAX mit WIP: ' + wert());
+      klick(1);
+      if (att.ghostStufe !== 0) f.push('Nach MAX setzt rechts nicht einfach (' + att.ghostStufe + ')');
       klick(1);
       if (att.ghostStufe !== 1) f.push('Mittel setzt nicht auf Stufe 1 (' + att.ghostStufe + ')');
       if (!/mittel/.test(wert())) f.push('Mittel zeigt nicht: ' + wert());
@@ -85842,7 +86253,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       try { if (merkRollen === null) localStorage.removeItem('chc.rollen.v1'); else localStorage.setItem('chc.rollen.v1', merkRollen); } catch (e) { /* egal */ }
       renderGarage();
     }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'einfach/mittel/schnell blatteln, Reset zu Mittel' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'einfach/mittel/schnell/MAX blaettern, Reset zu Mittel' };
   });
 
   stAdd('Steuerung: läuft auf dem Cockpit, zeigt gedrückte Tasten, fährt dabei nicht', () => {
@@ -100190,6 +100601,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     { id: 'feel', root: 'sub-opt-feel', titel: 'Fahrgefühl', werks: true },
     { id: 'sound', root: 'sub-opt-sound', titel: 'Ton' },
     { id: 'ansagen', root: 'sub-opt-ansagen', titel: 'Ansagen' },
+    { id: 'vibration', root: 'sub-opt-vibration', titel: 'Vibration' },
     { id: 'ghosts', root: 'sub-opt-ghosts', titel: 'NPCs' },
     { id: 'safetycar', root: 'sub-opt-safetycar', titel: 'Safety Car' },
     { id: 'pad', root: 'sub-opt-pad', titel: 'Controller', pad: true },

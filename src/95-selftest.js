@@ -1204,32 +1204,37 @@
   // losfahren. Die Sperre stand schon da, aber eine Sperre, auf die man sich verlaesst, ohne
   // sie zu messen, ist keine - und sie haengt an drei Bedingungen zugleich (Zustand, Plan,
   // Fertigmeldung), von denen jede einzeln kippen kann.
-  stAdd('Radwechsel: vier Raeder der Reihe nach, Gas gesperrt', () => {
+  // v1.1.42 BESTELLT: erst beide hinteren, dann beide vorderen Raeder; waehrenddessen kein Abbruch.
+  stAdd('Radwechsel: erst beide hinteren, dann beide vorderen Raeder, Gas gesperrt, kein Abbruch', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.pitWheelTimeline) {
       return { skip: true, mass: 'pitWheelTimeline nicht vorhanden' };
     }
     const r = OMEGA_TEST.pitWheelTimeline({ dauer: 4.0, schritt: 0.05 });
     if (!r) return { skip: true, mass: 'pitWheelOff nicht vorhanden' };
-    // Die Abschnitte zusammenfassen: aus 80 Abtastungen werden die Wechselpunkte.
     const ab = [];
     for (const p of r.reihe) {
       const l = ab[ab.length - 1];
       if (!l || l.rad !== p.rad) ab.push({ rad: p.rad, von: p.t, bis: p.t });
       else l.bis = p.t;
     }
-    const folge = ab.filter(a => a.rad >= 0).map(a => a.rad);
-    const ok =
-      // Genau vier Ausfaelle, und jedes Rad genau einmal.
-      folge.length === 4 && new Set(folge).size === 4
-      // Kein Rad fehlt vor dem ersten oder nach dem letzten Ton.
-      && r.danach.rad === -1
-      // Und das Entscheidende: solange gewechselt wird, ist das Gas gesperrt, danach frei.
-      && r.reihe.every(p => p.gas === true)
-      && r.danach.gas === false;
-    const N = ['VL', 'VR', 'HL', 'HR'];
-    return { ok, mass: folge.map(i => N[i]).join(' \u2192 ')
-      + ' | Gas gesperrt ' + (r.reihe.every(p => p.gas) ? 'durchgehend' : 'LUECKE')
-      + ', danach ' + (r.danach.gas ? 'NOCH GESPERRT' : 'frei') };
+    const folge = ab.filter(a => a.rad !== '-').map(a => a.rad);
+    const f = [];
+    if (folge.join(',') !== '2+3,0+1') f.push('Folge ' + folge.join(' -> '));
+    if (r.danach.rad !== '-') f.push('nach dem Wechsel noch ein Rad ab');
+    if (!r.reihe.every(p => p.gas === true) || r.danach.gas !== false) f.push('Gas nicht durchgehend gesperrt oder danach nicht frei');
+    // Kein Abbruch, solange gewechselt wird.
+    const merk = { st: pitState, plan: pitPlan, done: pitDone };
+    try {
+      pitState = 'servicing';
+      pitPlan = { tyres: true, refuel: 0, repair: false };
+      pitDone = { tyres: false, refuel: true, repair: true };
+      if (!pitReifenwechselLaeuft()) f.push('Wechsel nicht erkannt');
+      requestPitStop();
+      if (pitState !== 'servicing') f.push('Knopf bricht den Wechsel ab');
+      pitToggle('tyres');
+      if (!pitPlan.tyres) f.push('Reifen waehrend des Wechsels abwaehlbar');
+    } finally { pitState = merk.st; pitPlan = merk.plan; pitDone = merk.done; refreshPitThrottleLock(); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'HL+HR -> VL+VR, Gas gesperrt, Knopf bricht nicht ab' };
   });
 
   // ---- Uebersetzung: kein Deutsch im englischen Modus ----
@@ -5327,16 +5332,137 @@
       : 'alle Erklaerungen hinter dem Info-Knopf' };
   });
 
+  // v1.1.42 GEMELDET: "Mein Gamepad rumbled dauerhaft beim Gas geben." BESTELLT: eigene Kachel "Vibration",
+  // fein schaltbar, jede Vibration mit einer Aussage (leicht beim Reifenquietschen, stark beim Crash).
+  // v1.1.42 GEMELDET: "Es wird immer voll getankt, auch wenn ich ueber den Knopf eingestellt habe, dass nicht
+  // getankt werden soll." BESTELLT: groesserer Mischungsunterschied (Regler), "weiche Reifen verboten" (aus).
+  stAdd('Boxenstopp und Reifen v1.1.42: Tankvorwahl gilt (auch im Minigame), weich verboten, Mischung 150 %', () => {
+    const f = [];
+    const merk = { st: pitState, plan: pitPlan, vw: Object.assign({}, pitVorwahl), fuel, spiel: pitSpiel,
+                   tyres, wunsch: mischungWunsch };
+    const el = $('race-weich-verboten'), merkW = el ? el.checked : false;
+    try {
+      // Vorwahl "nein" in der Boxengasse: der schon gebaute Plan muss sie uebernehmen ...
+      pitState = 'limited';
+      pitVorwahl.refuel = null;
+      fuel = 40;
+      pitPlan = makePitPlan();
+      if (!(pitPlan.refuel > 0)) f.push('Ausgang: Plan tankt nicht');
+      let z = 0;
+      while (pitVorwahlIst('refuel') !== 0 && z++ < 5) pitVorwahlSchalten('refuel');
+      if (pitPlan.refuel !== 0) f.push('Plan in der Boxengasse tankt weiter: ' + pitPlan.refuel);
+      // ... und das Minigame darf ihn nicht wieder auf voll setzen.
+      pitSpielStart();
+      if (pitPlan.refuel !== 0) f.push('Minigame setzt Tanken wieder auf ' + pitPlan.refuel);
+      pitVorwahl.refuel = 50; pitPlan = makePitPlan(); pitSpielStart();
+      if (typeof fuelSimOn === 'function' && fuelSimOn() && pitPlan.refuel !== 50) f.push('Minigame: halb wird ' + pitPlan.refuel);
+      // Weiche Reifen verboten.
+      if (!el) f.push('Schalter race-weich-verboten fehlt');
+      else {
+        if (el.defaultChecked) f.push('weich verboten ist ab Werk an');
+        el.checked = true;
+        const folge = [];
+        let m = 'hart';
+        for (let i = 0; i < 4; i++) { m = mischungNaechste(m); folge.push(m); }
+        if (folge.includes('weich')) f.push('Reifenwahl bietet weich: ' + folge.join(','));
+        tyres = 'weich'; mischungWunsch = 'weich';
+        weichVerbotAnwenden();
+        if (tyres !== 'mittel' || mischungWunsch !== 'mittel') f.push('weich bleibt drauf: ' + tyres + '/' + mischungWunsch);
+        el.checked = false;
+        if (mischungNaechste('hart') !== 'regen' || mischungNaechste('regen') !== 'weich') f.push('ohne Verbot fehlt weich in der Folge');
+      }
+      // Mischungsunterschied: Vorgabe 150 %, Regler bis 300 %, harte Reifen nie negativ.
+      const r = $('setting-tyre-mix');
+      if (!r || Math.abs(parseFloat(r.defaultValue) - 1.5) > 1e-9 || parseFloat(r.max) < 3) f.push('Regler nicht 150 % / bis 300 %');
+      const merkS = tyreMixStaerke;
+      try {
+        tyreMixStaerke = 3;
+        if (!(mischungWert('hart', 'verschleiss') > 0)) f.push('harter Reifen bei 300 % ohne Verschleiss oder negativ');
+        tyreMixStaerke = 1.5;
+        if (Math.abs(mischungWert('weich', 'griff') - 1.3) > 1e-9) f.push('weich bei 150 % nicht +30 %');
+      } finally { tyreMixStaerke = merkS; }
+    } finally {
+      pitState = merk.st; pitPlan = merk.plan; pitVorwahl = merk.vw; fuel = merk.fuel; pitSpiel = merk.spiel;
+      tyres = merk.tyres; mischungWunsch = merk.wunsch;
+      if (el) el.checked = merkW;
+      if (typeof applySurface === 'function') applySurface();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Vorwahl nein bleibt nein (Gasse und Minigame), weich verboten wirkt, Mischung 150 %' };
+  });
+
+  // v1.1.42 BESTELLT: NPC-Stufe MAX (WIP) - Gerade, Radius 1, Radius 2 und Bremspunkt aus dem NPC-Menue;
+  // Haarnadel und Mindesttempo wie immer.
+  stAdd('NPC MAX v1.1.42: Profil aus den Reglern, Bremspunkt, Haarnadel nach den normalen Regeln', () => {
+    const f = [];
+    const merkT = currentTrackTiles, merkC = Object.assign({}, ghostCfg);
+    try {
+      if (!GHOST_TEMPO_STUFEN[GHOST_STUFE_MAX] || !GHOST_TEMPO_STUFEN[GHOST_STUFE_MAX].max) f.push('Stufe MAX fehlt');
+      for (const [id, wert] of [['ghost-max-gerade', 1], ['ghost-max-r1', 0.52], ['ghost-max-r2', 0.8]]) {
+        const el = $(id);
+        if (!el || Math.abs(parseFloat(el.defaultValue) - wert) > 1e-9) f.push(id + ' fehlt oder Vorgabe nicht ' + wert);
+      }
+      if (!$('ghost-max-bremspunkt') || $('ghost-max-bremspunkt').value !== 'schiene') f.push('Bremspunkt-Vorgabe nicht eine Schiene vorher');
+      Object.assign(ghostCfg, { maxGerade: 1, maxR1: 0.52, maxR2: 0.8, maxBremspunkt: 'schiene', haarnadelMax: 0.35 });
+      // S G G R W G : 0 Start, 1-2 Gerade, 3 Radius-1-Kurve, 4 weite Kurve (Radius 2), 5 Gerade
+      currentTrackTiles = [TILE_TYPE.START, TILE_TYPE.STRAIGHT, TILE_TYPE.STRAIGHT, TILE_TYPE.CURVE_RIGHT,
+                           TILE_TYPE.WEIT_RIGHT, TILE_TYPE.STRAIGHT].map((type) => ({ type }));
+      const auto = (i) => ({ role: 'ghost', ghostStufe: GHOST_STUFE_MAX, tileCode: null, ghost: { tileIndex: i } });
+      const merkOrt = ortStimmt;
+      ortStimmt = () => true;
+      try {
+        const v = [0, 1, 2, 3, 4, 5].map((i) => +ghostMaxTempo(auto(i)).toFixed(2));
+        // Schiene vorher: Teil 2 schon 0,52 (Kurve folgt), Teil 3 0,52 (weite Kurve folgt: min), Teil 4 0,8.
+        if (v.join(',') !== '1,1,0.52,0.52,0.8,1') f.push('Profil (Schiene vorher) ' + v.join(','));
+        ghostCfg.maxBremspunkt = 'teil';
+        const w = [0, 1, 2, 3, 4, 5].map((i) => +ghostMaxTempo(auto(i)).toFixed(2));
+        if (w.join(',') !== '1,1,1,0.52,0.8,1') f.push('Profil (am Kurventeil) ' + w.join(','));
+        if (ghostStufeFaktor(auto(1)) !== 1) f.push('ghostStufeFaktor nimmt das MAX-Profil nicht');
+        if (ghostStufeFaktor({ role: 'ghost', ghostStufe: 2, tileCode: TILE_TYPE.STRAIGHT, ghost: {} }) === 1) f.push('Stufe schnell faehrt MAX');
+      } finally { ortStimmt = merkOrt; }
+      // Haarnadel: weiter Abzug, Deckel und Boden; Gelb/Formation wie alle.
+      const src = String(ghostTick);
+      if (src.indexOf('ghostIstMax(car) && tight < 2 && !underYellow && !raceFormationLap') < 0) f.push('MAX umgeht Haarnadel, Gelb oder Formation');
+      if (ghostStufeAusSpeed(0.95) === GHOST_STUFE_MAX) f.push('alte Werte wandern in MAX');
+    } finally { currentTrackTiles = merkT; Object.assign(ghostCfg, merkC); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gerade 100, R1 52, R2 80, Bremspunkt Schiene/Teil, Haarnadel normal' };
+  });
+
+  stAdd('Vibration v1.1.42: eigene Kachel, Quietschen leicht, kein Dauerbrummen vom Gas', () => {
+    const f = [];
+    const seite = $('sub-opt-vibration');
+    if (!seite) return { ok: false, mass: 'Seite sub-opt-vibration fehlt' };
+    for (const id of ['setting-vibration', 'vib-test', 'vib-schalt', 'vib-abs', 'vib-crash', 'vib-abseits', 'vib-box',
+                      'vib-rutschen', 'vib-untersteuern', 'vib-quietschen', 'vib-meldung', 'vib-trigger']) {
+      const el = $(id);
+      if (!el || !seite.contains(el)) f.push(id + ' nicht in der Kachel');
+    }
+    if ($('sub-opt-general') && $('sub-opt-general').querySelector('[id^="vib-"]')) f.push('noch Vibration unter Allgemein');
+    if (!document.querySelector('.misc-tile[data-sub="opt-vibration"]')) f.push('keine Kachel im Optionsmenue');
+    const merk = { on: rumbleOn, q: RUMBLE_ARTEN.quietschen, at: quietschRuettelnAt };
+    try {
+      rumbleOn = true; RUMBLE_ARTEN.quietschen = true;
+      quietschRuettelnAt = 0;
+      if (!quietschRuetteln(0.95)) f.push('Quietschen ruettelt nicht');
+      quietschRuettelnAt = 0;
+      if (quietschRuetteln(0.5)) f.push('ruettelt unter der Quietschschwelle');
+      RUMBLE_ARTEN.quietschen = false; quietschRuettelnAt = 0;
+      if (quietschRuetteln(0.95)) f.push('Schalter Quietschen wirkt nicht');
+    } finally { rumbleOn = merk.on; RUMBLE_ARTEN.quietschen = merk.q; quietschRuettelnAt = merk.at; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '12 Schalter in der Kachel, Quietschen ab der Schwelle, schaltbar' };
+  });
+
   stAdd('Pacejka: Unter- und Uebersteuern vibrieren, eigener Schalter', () => {
     const merkOn = rumbleOn, merkArt = RUMBLE_ARTEN.rutschen;
     const schlecht = [];
-    const motor = (z, pac) => ({ config: { pacejka: pac, pacejkaUeberMax: 0.35 },
-                                 state: { pacZustand: z, pacUeber: 0.2, pacUnter: 0.8 } });
+    // v1.1.42: Untersteuern brummt nur ueber der Haftgrenze der Front (pacNutzV > 1), eigene Art.
+    const motor = (z, pac, nutzV) => ({ config: { pacejka: pac, pacejkaUeberMax: 0.35 },
+                                 state: { pacZustand: z, pacUeber: 0.2, pacUnter: 0.8, pacNutzV: nutzV === undefined ? 1.2 : nutzV } });
     const ruf = (m) => { pacRumbleZuletzt[2] = 0; return pacejkaRueckmeldung(m, 2); };
     try {
       rumbleOn = true; RUMBLE_ARTEN.rutschen = true;
       if (!ruf(motor('ueber', true))) schlecht.push('Uebersteuern still');
       if (!ruf(motor('unter', true))) schlecht.push('Untersteuern still');
+      if (ruf(motor('unter', true, 0.8))) schlecht.push('Untersteuern brummt nur vom Gas (Lenkentlastung)');
       if (ruf(motor('', true))) schlecht.push('brummt ohne Zustand');
       if (ruf(motor('ueber', false))) schlecht.push('brummt ausserhalb von Pacejka');
       RUMBLE_ARTEN.rutschen = false;
@@ -10896,6 +11022,9 @@
       if (physEngine.state.currentGear !== merk.gang || physEngine.state.driveMode !== merk.mode) {
         f.push('Quadrat hat geschaltet (' + physEngine.state.driveMode + ' ' + physEngine.state.currentGear + ')');
       }
+      // v1.1.42: waehrend des Reifenwechsels bricht der Knopf nicht ab (eigener Test "Radwechsel") - also
+      // erst nach dem Wechsel pruefen, dass er das Spiel beendet.
+      if (pitDone) { pitDone.tyres = true; refreshPitThrottleLock(); }
       requestPitStop();
       if (pitState !== 'off') f.push('Kreuz/Abbruch laesst den Stopp stehen');
       if (pitSpielAktiv()) f.push('Spiel laeuft nach dem Abbruch weiter');
@@ -11067,10 +11196,11 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Karte mit Farbbild, Rolle mit Pfeil, Foto, Aufklappzeile, NPC-Knopf auf Starten' };
   });
 
-  stAdd('Garage: NPC-Tempo als drei Stufen (einfach/mittel/schnell), Blaettern setzt sie', () => {
+  // v1.1.42: vier Stufen - nach schnell kommt MAX (WIP).
+  stAdd('Garage: NPC-Tempo als Stufen (einfach/mittel/schnell/MAX), Blaettern setzt sie', () => {
     const att = { role: 'ghost', device: { id: 'probe-tempo' }, alias: '', colorId: 'rot', sim: false, testSenke: [] };
     const f = [];
-    if (typeof GHOST_TEMPO_STUFEN !== 'object' || GHOST_TEMPO_STUFEN.length !== 3) return { ok: false, mass: 'GHOST_TEMPO_STUFEN fehlt' };
+    if (typeof GHOST_TEMPO_STUFEN !== 'object' || GHOST_TEMPO_STUFEN.length !== 4) return { ok: false, mass: 'GHOST_TEMPO_STUFEN fehlt' };
     if (GHOST_TEMPO_STUFEN[0].speed !== 0.45 || GHOST_TEMPO_STUFEN[1].speed !== 0.55 || GHOST_TEMPO_STUFEN[2].speed !== 0.65) {
       f.push('Stufen-Werte falsch');
     }
@@ -11093,7 +11223,10 @@
       if (!/schnell/.test(wert())) f.push('zeigt nicht schnell: ' + wert());
       if (!/65/.test(wert())) f.push('schnell zeigt nicht 65 %: ' + wert());
       klick(1);
-      if (att.ghostStufe !== 0) f.push('Nochmal rechts setzt nicht einfach (' + att.ghostStufe + ')');
+      if (att.ghostStufe !== 3) f.push('Nochmal rechts setzt nicht MAX (' + att.ghostStufe + ')');
+      if (!/MAX/.test(wert()) || !finde().querySelector('b .wip-tag')) f.push('MAX zeigt nicht MAX mit WIP: ' + wert());
+      klick(1);
+      if (att.ghostStufe !== 0) f.push('Nach MAX setzt rechts nicht einfach (' + att.ghostStufe + ')');
       klick(1);
       if (att.ghostStufe !== 1) f.push('Mittel setzt nicht auf Stufe 1 (' + att.ghostStufe + ')');
       if (!/mittel/.test(wert())) f.push('Mittel zeigt nicht: ' + wert());
@@ -11110,7 +11243,7 @@
       try { if (merkRollen === null) localStorage.removeItem('chc.rollen.v1'); else localStorage.setItem('chc.rollen.v1', merkRollen); } catch (e) { /* egal */ }
       renderGarage();
     }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'einfach/mittel/schnell blatteln, Reset zu Mittel' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'einfach/mittel/schnell/MAX blaettern, Reset zu Mittel' };
   });
 
   stAdd('Steuerung: läuft auf dem Cockpit, zeigt gedrückte Tasten, fährt dabei nicht', () => {

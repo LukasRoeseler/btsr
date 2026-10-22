@@ -674,8 +674,12 @@
       if (ok && st.pacLeistung) setTimeout(() => padRumble(0.2, 0.9, 60, 'rutschen', wer), 90);
       return ok;
     }
+    // v1.1.42 GEMELDET: "Mein Gamepad rumbled dauerhaft beim Gas geben." pacUnter enthaelt auch die
+    // Lenkentlastung unter Gas (pacGasFaktor) - ohne jede Kurve stand der Zustand bei Gas auf 'unter'. Gebrummt
+    // wird jetzt nur, wenn die Front wirklich ueber der Haftgrenze ist (pacNutzV > 1), eigene Art 'untersteuern'.
+    if (!(st.pacNutzV > 1)) return false;
     const k = Math.min(1, (1 - st.pacUnter) * 4);
-    return padRumble(0, 0.18 + 0.4 * k, 260, 'rutschen', wer);
+    return padRumble(0, 0.18 + 0.4 * k, 260, 'untersteuern', wer);
   }
 
   if ($('setting-countersteer')) {
@@ -795,7 +799,8 @@
   // Schalter ergeben, und mit sechs Kaestchen waeren es sechs.
   const VIB_KAESTCHEN = { 'vib-schalt': 'schalt', 'vib-abs': 'abs', 'vib-crash': 'crash',
                           'vib-abseits': 'abseits', 'vib-box': 'box',
-                          'vib-meldung': 'meldung', 'vib-rutschen': 'rutschen' };
+                          'vib-meldung': 'meldung', 'vib-rutschen': 'rutschen',
+                          'vib-untersteuern': 'untersteuern', 'vib-quietschen': 'quietschen' };
   Object.keys(VIB_KAESTCHEN).forEach((id) => {
     const el = $(id);
     if (!el) return;
@@ -2405,11 +2410,11 @@
       // Welches Rad gerade abgebaut ist. Beim Boxenstopp laeuft der Schrauberton ueber die
       // ganze Wechseldauer und man hoert darin vier Ansaetze - also zeigt die Anzeige vier
       // Ausfaelle, einen je Rad. Ohne das sieht man vier Toene und keine Bewegung.
-      const abIdx = typeof pitWheelOff === 'function' ? pitWheelOff() : -1;
+      const abListe = typeof pitWheelsOff === 'function' ? pitWheelsOff() : [];
       for (let i = 0; i < 4; i++) {
         const el = $(REIFEN[i]);
         if (el && el.firstChild) {
-          const ab = i === abIdx;
+          const ab = abListe.includes(i);
           el.classList.toggle('t4-ab', ab);
           const w = aus ? 0 : (st.tyreWear4 ? st.tyreWear4[i] : st.tyreWear);
           // Abgebaut heisst leer: es ist kein Reifen da, dessen Profil man zeigen koennte.

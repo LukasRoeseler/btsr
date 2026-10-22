@@ -2793,14 +2793,14 @@
         for (let t = 0; t < pitTyreTarget - 1e-9; t += schritt) {
           pitTyreElapsed = t;
           refreshPitThrottleLock();
-          reihe.push({ t: +t.toFixed(3), rad: pitWheelOff(), gas: pitThrottleLock });
+          reihe.push({ t: +t.toFixed(3), rad: pitWheelsOff().join('+') || '-', gas: pitThrottleLock });
         }
         // Und der Zustand NACH dem Wechsel: alle vier muessen wieder dran sein und das Gas
         // muss frei sein.
         pitDone.tyres = true;
         pitTyreElapsed = pitTyreTarget;
         refreshPitThrottleLock();
-        const danach = { rad: pitWheelOff(), gas: pitThrottleLock };
+        const danach = { rad: pitWheelsOff().join('+') || '-', gas: pitThrottleLock };
         return { reihe, danach, dauer: pitTyreTarget };
       } finally {
         pitState = merk.st; pitPlan = merk.plan; pitDone = merk.done;

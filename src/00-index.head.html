@@ -4826,7 +4826,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.41</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.44</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5938,7 +5938,7 @@
       <p class="muted">Einige Bilder im Men&uuml; (Titel, Rennen, Start, Strecke, Optionen, Info, Challenges und Box) wurden mit KI generiert (Gemini Flash). Markenlogos darin sind entfernt. Die &uuml;brigen Bilder sind eigene Fotos.</p>
 
       <h3 style="font-size:14px; margin:18px 0 6px 0">Woher die Kl&auml;nge kommen</h3>
-      <p class="muted">Der allergr&ouml;&szlig;te Teil der Kl&auml;nge ist gerechnet und nicht aufgenommen: alle f&uuml;nfundzwanzig Motoren mit ihren 132 Schleifen, dazu Bremsen- und Reifenquietschen, die Crash-Varianten, Schlagschrauber, Tankger&auml;usch, Karosseriereparatur und der Motorstart. Dort wird nichts abgespielt, sondern aus Zylinderzahl, Z&uuml;ndfolge und Kr&uuml;mmerl&auml;nge erzeugt.</p>
+      <p class="muted">Der allergr&ouml;&szlig;te Teil der Kl&auml;nge ist gerechnet und nicht aufgenommen: alle f&uuml;nfundzwanzig Motoren mit ihren 132 Schleifen, dazu Bremsen- und Reifenquietschen, die Crash-Varianten, Tankger&auml;usch, Karosseriereparatur und der Motorstart. Dort wird nichts abgespielt, sondern aus Zylinderzahl, Z&uuml;ndfolge und Kr&uuml;mmerl&auml;nge erzeugt.</p>
       <p class="muted">Die folgenden Kl&auml;nge sind die Ausnahme: sie stammen aus echten Aufnahmen. Alle von Pixabay und unter der Pixabay-Lizenz. Die unbearbeiteten Quelldateien sind nicht Teil dieses Projekts.</p>
       <ul class="dank-liste">
         <li><span class="muted">Hupen f&uuml;r die Lichthupe &ndash; sechs Aufnahmen, in dieser Reihenfolge Autohupe, Schiffshupe, Esel, Ziege und zwei Furzt&ouml;ne. Der letzte stammt von freesound&nbsp;community &uuml;ber Pixabay.</span>
@@ -5947,6 +5947,8 @@
           <span class="dank-quelle" data-i18n-skip>pwlpl-heavy-thunderstorm-sound-effect-473418</span></li>
         <li><span class="muted">Strecken-Ambience, also der Teppich und die Vorbeifahrten.</span>
           <span class="dank-quelle" data-i18n-skip>fjc_media-sounds-of-nuerburgring-engines-of-classic-race-cars-234929</span></li>
+        <li><span class="muted">Der Schlagschrauber beim Boxenstopp (je Radpaar, geschnitten und gemischt).</span>
+          <span class="dank-quelle" data-i18n-skip>Sound Effect by <a href="https://pixabay.com/de/users/soundeffectsparty-54949351/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=502995" target="_blank" rel="noopener noreferrer">Jun Su</a> from <a href="https://pixabay.com//?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=502995" target="_blank" rel="noopener noreferrer">Pixabay</a> &middot; soundeffectsparty-pneumatic-impact-wrench-loosening-bolts-502995</span></li>
         <li><span class="muted">Der Motorklang der Corvette C6.</span>
           <span class="dank-quelle" data-i18n-skip>astonmartinvantagev12-chevrolet-corvette-c6-sound-effect-360531</span></li>
       </ul>
@@ -5979,6 +5981,10 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
+        <li>Boxenstopp: Tanken &#8222;nein&#8220; gilt jetzt. Das Boxen-Minigame (Standard) baute seinen eigenen Plan und tankte immer voll; au&#223;erdem kam eine &#196;nderung in der Boxengasse nicht im Plan an. Reifen: erst beide hinteren, dann beide vorderen R&#228;der; solange gewechselt wird, l&#228;sst sich der Stopp nicht abbrechen. Neuer Schlagschrauber je Radpaar aus einer Aufnahme (Sound Effect by Jun Su from Pixabay, Pixabay-Inhaltslizenz; Quelle in audio/CREDITS.md).</li>
+        <li>Reifen: Der Mischungsunterschied ist gr&#246;&#223;er &#8211; Standard 150 % statt 100 % (weich +30 % Grip, hart &#8722;22 %), Regler unter Fahrgef&#252;hl bis 300 %. Neue Renneinstellung &#8222;Weiche Reifen verboten&#8220; (Standard aus).</li>
+        <li>Vibration: eigene Kachel im Optionsmen&#252; mit einem Schalter je Ausl&#246;ser &#8211; Schalten, ABS, Aufprall, &#220;bersteuern, Untersteuern, neu Reifenquietschen (leicht, mit der Lautst&#228;rke des Quietschens), neben der Bahn, Boxenstopp, Meldungen, Trigger. Behoben: Im Pacejka-Modus brummte das Pad bei jedem Gasgeben dauerhaft (die Lenkentlastung unter Gas galt als Untersteuern); jetzt nur, wenn die Front wirklich schiebt.</li>
+        <li>NPC-Stufe MAX (WIP): In der Garage gibt es nach &#8222;schnell&#8220; die Stufe MAX. Solche NPCs fahren auf Geraden, in Radius-1-Kurven (60&#176; und kleine 30&#176;) und in Radius-2-Kurven (weite 30&#176;) mit eigenen Tempi aus dem NPC-Men&#252; (Standard 100 %, 52 %, 80 %) und bremsen eine Schiene vor der Kurve oder erst am Kurventeil (Auswahl). Haarnadel, Engstelle, Mindesttempo, Gelb und Einf&#252;hrungsrunde gelten wie f&#252;r alle.</li>
         <li>Automatische Aufstellung: Jedes Auto parkt jetzt mit genau der Einparkfolge des Safety Cars &#8211; gleiche Zeiten und Lenkwerte, f&#252;r die linke Spalte gespiegelt, mit weniger Gas (neuer Regler, Standard 75 %), damit es weiter innen steht. Immer diese Folge, auch auf Kurventeilen; in der Haarnadel parkt weiterhin niemand. Das Log nennt f&#252;r jedes Auto Seite und Gas.</li>
         <li>Reinigungsfahrzeug: Nach der ersten Start/Ziel-&#220;berfahrt f&#228;hrt es je eine volle Runde mittig, links (Querlage 90 %) und rechts (90 %) und h&#228;lt dann an. Die Querlage kommt allein aus dieser Vorgabe, ohne Ideallinie; die Runden werden &#252;ber den gefahrenen Weg gez&#228;hlt.</li>
         <li>Gleich schnell: Das Safety Car f&#228;hrt unter Gelb dasselbe Tempo wie das Feld (Gerade, Kurve und Haarnadel mit denselben Grenzen) &#8211; vorher &#252;berall gleich, also auf der Geraden langsamer und in der Haarnadel schneller. In der Einf&#252;hrungsrunde f&#228;hrt dein Autopilot in Kurven so schnell wie die NPCs (vorher deutlich langsamer), und die Feld-Staffel ist dort aus.</li>
@@ -7886,7 +7892,8 @@
         <div class="snd-row"><audio controls preload="none" src="audio/sd_crash_2.ogg"></audio><div><b>Crash, Aufnahme 3</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (CC0), ersetzt die gerechneten Varianten, wenn geladen (WIP)</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/sd_crash_3.ogg"></audio><div><b>Crash, Aufnahme 4</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (CC0), ersetzt die gerechneten Varianten, wenn geladen (WIP)</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/sd_backfire_0.ogg"></audio><div><b>Auspuffknall</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4, Free Art License 1.3; bei den Schubknallern statt des Rauschsto&szlig;es, leicht verstimmt (WIP)</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/pit_wrench.ogg"></audio><div><b>Schlagschrauber</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, gleichm&auml;&szlig;iger Hammerzug um 26&nbsp;Hz</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/pit_wrench_paar.ogg"></audio><div><b>Schlagschrauber je Radpaar</b><br><span class="muted" style="font-size:11px">Aufnahme: Sound Effect by <a href="https://pixabay.com/de/users/soundeffectsparty-54949351/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=502995" target="_blank" rel="noopener noreferrer">Jun Su</a> from <a href="https://pixabay.com//?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=502995" target="_blank" rel="noopener noreferrer">Pixabay</a> (Pixabay-Inhaltslizenz), geschnitten und gemischt: zwei Muttern l&ouml;sen, zwei anziehen</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/pit_wrench.ogg"></audio><div><b>Schlagschrauber (R&uuml;ckfall)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, gleichm&auml;&szlig;iger Hammerzug um 26&nbsp;Hz</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/pit_fuel.ogg"></audio><div><b>Tanken</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, Schleife</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/pit_repair.ogg"></audio><div><b>Karosseriereparatur</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, Abklingzeit 1,9&nbsp;ms im Median, also D&auml;mpfer statt Note</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/porsche_start.ogg"></audio><div><b>Motorstart: Porsche</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
@@ -9266,6 +9273,11 @@
       <div class="opt-row"><div class="opt-label">Gelbe Flagge deaktivieren<small>An: Der Knopf
           &bdquo;Gelbe Flagge&ldquo; und das Halten der Boxentaste rufen kein Gelb mehr aus.</small></div>
         <label class="tgl"><input type="checkbox" id="race-gelb-aus"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Weiche Reifen verboten<span class="wip-tag">WIP</span><small>An: In diesem
+          Rennen gibt es keine weichen Reifen. Die Reifenwahl im Boxenschirm &uuml;berspringt &bdquo;weich&ldquo;, und wer
+          beim Start weiche Reifen drauf hat, bekommt mittlere &ndash; auch Spieler&nbsp;2 und 3. Aus (Standard): alle
+          Mischungen erlaubt.</small></div>
+        <label class="tgl"><input type="checkbox" id="race-weich-verboten"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Einparken in der Aufstellung<span class="wip-tag">WIP</span><small>Aufnahme (Vorgabe):
           Das Auto f&auml;hrt genau die Einparkfolge des Safety Cars &ndash; auf dem Startplatz gleitet es in 0,3&nbsp;s auf
           ihr Tempo, lenkt zur eigenen Seite und zur&uuml;ck und rollt aus, ohne vorher anzuhalten. Lenkung und Zeiten
@@ -9535,6 +9547,12 @@
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10h32v20H22l-8 7v-7H8z"/><path d="M15 18h18M15 23h11" stroke="var(--bad)"/></svg>
           <b>Ansagen</b>
           <span>Rundenzeiten, Rennstand, Ergebnis und Warnungen zu Schaden, Tank, Reifen, Regen und Akku.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="opt-vibration">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18h20a7 7 0 0 1 7 7v3a5 5 0 0 1-9 3l-2-3H18l-2 3a5 5 0 0 1-9-3v-3a7 7 0 0 1 7-7z"/><path d="M4 12l3 3M44 12l-3 3M24 8v4" stroke="var(--bad)"/></svg>
+          <b>Vibration</b>
+          <span>Wann der Controller r&uuml;ttelt: Schalten, ABS, Quietschen, Unter- und &Uuml;bersteuern, Aufprall, Box.</span>
         </button>
         <button class="misc-tile subpage-open" data-sub="opt-ghosts">
           <!-- SYMMETRISCH NEU GEZEICHNET. Der alte Pfad war an drei Stellen schief, und
@@ -9826,81 +9844,6 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-offtrack-delay-val">1.0 s</span>
         </div></div>
-<div class="opt-head">Controller-Vibration <span class="wip-tag">WIP</span></div>
-      <div class="opt-row"><div class="opt-label">Vibration &uuml;berhaupt
-          <small>Der Hauptschalter. Steht er aus, brummt nichts, egal was darunter
-          angekreuzt ist. Seit v0.5.18 ist er standardm&auml;&szlig;ig an. Vorher stand er
-          aus, und damit kamen auch die Vorgaben darunter nie zum Tragen &ndash; gemeldet
-          wurde das als &bdquo;Vibration geht nicht&ldquo;. Wer keinen R&uuml;ttler hat,
-          merkt von einem angeschalteten Hauptschalter nichts. Das Handy vibriert nicht mit,
-          das Protokoll kennt daf&uuml;r nichts.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-vibration" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">R&uuml;tteln testen
-          <small>L&ouml;st einen Sto&szlig; aus und schreibt daneben, was dabei vorgefunden
-          wurde: wieviele Controller das System meldet, welche davon einen R&uuml;ttler
-          haben, welche Zuordnung sie tragen und ob der Sto&szlig; angenommen oder abgelehnt
-          wurde. Aus &bdquo;geht nicht&ldquo; wird damit eine Messung.</small></div>
-        <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end">
-          <button type="button" id="vib-test">Testen</button>
-          <span class="muted" id="vib-test-out" data-i18n-skip
-                style="font-size:11px; text-align:right; max-width:34ch"></span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Gangwechsel
-          <small>Kurz und leicht bei jedem Schalten, beim Leerlauf und beim
-          R&uuml;ckw&auml;rtsgang. Sechs Gangwechsel in drei Sekunden mit einem langen
-          Muster w&auml;ren ein Presslufthammer in der Hand, deshalb 40&nbsp;ms.</small></div>
-        <label class="tgl"><input type="checkbox" id="vib-schalt" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">ABS
-          <small>Ein Puls alle 140&nbsp;ms, solange das ABS regelt &ndash; das ist die
-          R&uuml;ckmeldung, an der man merkt, dass die Bremse an der Grenze
-          arbeitet.</small></div>
-        <label class="tgl"><input type="checkbox" id="vib-abs" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Aufprall
-          <small>Der st&auml;rkste Sto&szlig;, und er h&auml;ngt seit v0.5.15 an der WUCHT:
-          gerechnet wird mit dem Tempo im Moment des Einschlags. Ein Einschlag bei
-          H&ouml;chstgeschwindigkeit soll sich nicht anf&uuml;hlen wie ein Anstupsen in der
-          Boxengasse. Auch der schw&auml;chste Aufprall brummt jetzt kr&auml;ftiger als
-          bisher.</small></div>
-        <label class="tgl"><input type="checkbox" id="vib-crash" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Neben der Bahn
-          <small>Ein schwaches Dauerbrummen, solange das Auto neben der Bahn meldet
-          &ndash; nach Schotter, nicht nach Aufprall. Standard aus: es ist ein ZUSTAND und
-          kein Ereignis, und nach f&uuml;nf Sekunden nervt es. Unabh&auml;ngig von der
-          Drosselung unter Allgemein.</small></div>
-        <label class="tgl"><input type="checkbox" id="vib-abseits"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Boxenstopp
-          <small>Einfahrt, Beginn der Arbeit, fertig, und ein leiser Puls, solange man in
-          der Gasse rollt.</small></div>
-        <label class="tgl"><input type="checkbox" id="vib-box" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Unter- und &Uuml;bersteuern
-          <small>Nur im Modus Pacejka. Leises Brummen, solange die Front schiebt; ein
-          kr&auml;ftiger Sto&szlig;, wenn das Heck kommt.</small></div>
-        <label class="tgl"><input type="checkbox" id="vib-rutschen" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Meldungen
-          <small>Wetterwechsel und leerer Tank. Standard aus: das sind Nachrichten und
-          keine Kr&auml;fte am Auto &ndash; wer sie will, bekommt sie hier.</small></div>
-        <label class="tgl"><input type="checkbox" id="vib-meldung"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Trigger-Vibration
-          <span class="wip-tag">experimentell</span>
-          <small>Zus&auml;tzlich zu den Griffmotoren: regelt das ABS, brummt der linke
-          Trigger &ndash; das ist die Bremse. Beim Schalten der rechte. Standard an. Warum
-          experimentell: die adaptiven Trigger eines DualSense sind &uuml;ber die
-          Gamepad-Schnittstelle gar nicht erreichbar, und die Effektart
-          &bdquo;trigger-rumble&ldquo; stellt Chrome vor allem f&uuml;r Xbox-Controller
-          bereit. Die Zeile darunter liest aus, was dein Controller wirklich annimmt. Kann
-          er es nicht, passiert nichts, und zwar ausdr&uuml;cklich ohne ersatzweises Brummen
-          in den Griffen &ndash; das w&uuml;rde vort&auml;uschen, die Trigger h&auml;tten
-          reagiert.</small></div>
-        <label class="tgl"><input type="checkbox" id="vib-trigger" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Was dein Controller kann
-          <small>Ausgelesen, nicht angenommen. Leer, solange kein Controller gemeldet
-          ist &ndash; einmal eine Taste dr&uuml;cken.</small></div>
-        <span class="muted" id="vib-trigger-lage" data-i18n-skip
-              style="font-size:11px; text-align:right; max-width:34ch"></span></div>
-      <div class="opt-row"><div class="opt-label">DualSense: Trigger bei ABS <span class="wip-tag">WIP</span>
-          <small>Regelt das ABS, vibriert der linke Trigger eines DualSense &ndash; wenn die Bremse auf dem linken Trigger liegt und &bdquo;ABS&ldquo; oben an ist. Die adaptiven Trigger erreicht nur WebHID: Chrome oder Edge am Rechner, per USB oder Bluetooth, nach einmaligem Verbinden &uuml;ber diesen Knopf. In der Android-App geht das nicht.</small></div>
-        <button type="button" id="ds-verbinden">Verbinden</button>
-        <span class="muted" id="ds-lage" data-i18n-skip style="font-size:11px; text-align:right; max-width:34ch"></span></div>
 <div class="opt-head">Akku <span class="wip-tag">WIP</span></div>
       <div class="opt-row"><div class="opt-label">Leistung über Akkulaufzeit konstant halten<small>Drosselt bei vollem Akku. Der Akkuwert ist eine unkalibrierte Schätzung.</small></div><label class="tgl"><input type="checkbox" id="setting-battery-comp"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Referenz-Akkustand</div>
@@ -10240,14 +10183,15 @@
           <small>Wie stark sich weich, mittel, hart und Regen unterscheiden. Der Regler bewegt
           alle Werte zugleich &ndash; Grip und Verschlei&szlig; &ndash; und zwar als
           Abstand zum Mittelreifen. Bei 0 rechnen alle drei Slicks wie mittel, bei 100 Prozent
-          gilt die Tabelle, dar&uuml;ber ist der Unterschied gr&ouml;&szlig;er als im
-          Rennsport. Steht die Reifensimulation dar&uuml;ber auf aus, fahren ohnehin alle den
-          Mittelreifen, egal was hier steht.</small></div>
+          gilt die Tabelle (weich +20&nbsp;% Grip und 2,2-facher Verschlei&szlig;, hart &minus;15&nbsp;% und halber),
+          dar&uuml;ber ist der Unterschied gr&ouml;&szlig;er. Standard seit v1.1.42: 150&nbsp;%
+          (weich +30&nbsp;%, hart &minus;22&nbsp;%), bis 300&nbsp;%. Steht die Reifensimulation dar&uuml;ber auf aus,
+          fahren ohnehin alle den Mittelreifen, egal was hier steht.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-tyre-mix" min="0" max="2" step="0.05" value="1">
+          <input type="range" id="setting-tyre-mix" min="0" max="3" step="0.05" value="1.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-tyre-mix-val">100%</span>
+          <span class="opt-val" id="setting-tyre-mix-val">150%</span>
         </div></div>
       
 
@@ -10881,6 +10825,98 @@
       </div>
     </div>
     </div>
+    <div class="card subpage" id="sub-opt-vibration">
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
+      <h2>Vibration</h2>
+      <p class="muted" style="font-size:12px">v1.1.42 BESTELLT: jede Vibration soll etwas &uuml;ber das Renngeschehen sagen.
+        Darum ein Schalter je Ausl&ouml;ser &ndash; leicht hei&szlig;t Hinweis (Quietschen, Untersteuern, Box), stark hei&szlig;t
+        Ereignis (Aufprall, Heck kommt).</p>
+<div class="opt-head">Controller-Vibration</div>
+      <div class="opt-row"><div class="opt-label">Vibration &uuml;berhaupt
+          <small>Der Hauptschalter. Steht er aus, brummt nichts, egal was darunter
+          angekreuzt ist. Seit v0.5.18 ist er standardm&auml;&szlig;ig an. Vorher stand er
+          aus, und damit kamen auch die Vorgaben darunter nie zum Tragen &ndash; gemeldet
+          wurde das als &bdquo;Vibration geht nicht&ldquo;. Wer keinen R&uuml;ttler hat,
+          merkt von einem angeschalteten Hauptschalter nichts. Das Handy vibriert nicht mit,
+          das Protokoll kennt daf&uuml;r nichts.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-vibration" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">R&uuml;tteln testen
+          <small>L&ouml;st einen Sto&szlig; aus und schreibt daneben, was dabei vorgefunden
+          wurde: wieviele Controller das System meldet, welche davon einen R&uuml;ttler
+          haben, welche Zuordnung sie tragen und ob der Sto&szlig; angenommen oder abgelehnt
+          wurde. Aus &bdquo;geht nicht&ldquo; wird damit eine Messung.</small></div>
+        <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end">
+          <button type="button" id="vib-test">Testen</button>
+          <span class="muted" id="vib-test-out" data-i18n-skip
+                style="font-size:11px; text-align:right; max-width:34ch"></span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Gangwechsel
+          <small>Kurz und leicht bei jedem Schalten, beim Leerlauf und beim
+          R&uuml;ckw&auml;rtsgang. Sechs Gangwechsel in drei Sekunden mit einem langen
+          Muster w&auml;ren ein Presslufthammer in der Hand, deshalb 40&nbsp;ms.</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-schalt" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">ABS
+          <small>Ein Puls alle 140&nbsp;ms, solange das ABS regelt &ndash; das ist die
+          R&uuml;ckmeldung, an der man merkt, dass die Bremse an der Grenze
+          arbeitet.</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-abs" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Aufprall
+          <small>Der st&auml;rkste Sto&szlig;, und er h&auml;ngt seit v0.5.15 an der WUCHT:
+          gerechnet wird mit dem Tempo im Moment des Einschlags. Ein Einschlag bei
+          H&ouml;chstgeschwindigkeit soll sich nicht anf&uuml;hlen wie ein Anstupsen in der
+          Boxengasse. Auch der schw&auml;chste Aufprall brummt jetzt kr&auml;ftiger als
+          bisher.</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-crash" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Neben der Bahn
+          <small>Ein schwaches Dauerbrummen, solange das Auto neben der Bahn meldet
+          &ndash; nach Schotter, nicht nach Aufprall. Standard aus: es ist ein ZUSTAND und
+          kein Ereignis, und nach f&uuml;nf Sekunden nervt es. Unabh&auml;ngig von der
+          Drosselung unter Allgemein.</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-abseits"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Boxenstopp
+          <small>Einfahrt, Beginn der Arbeit, fertig, und ein leiser Puls, solange man in
+          der Gasse rollt.</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-box" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">&Uuml;bersteuern (Heck kommt)
+          <small>Nur im Modus Pacejka. Ein kr&auml;ftiger Sto&szlig;, wenn das Heck ausbricht &ndash; je weiter, desto
+          st&auml;rker; kam es unter Gas, ein kurzer zweiter Sto&szlig; hinterher. Sagt dir: gegenlenken oder vom Gas.</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-rutschen" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Untersteuern (Front schiebt)
+          <small>Nur im Modus Pacejka. Leises Brummen im schwachen Motor, solange die Vorderr&auml;der wirklich
+          &uuml;ber der Haftgrenze sind &ndash; zu schnell in die Kurve, das Auto schiebt geradeaus. Seit v1.1.42 nicht
+          mehr bei blo&szlig;em Gasgeben (die Lenkentlastung unter Gas l&ouml;ste es vorher dauernd aus).</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-untersteuern" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Reifenquietschen
+          <small>Ein leichtes Brummen, solange die Reifen quietschen, mit der Lautst&auml;rke des Quietschens:
+          du bist an der Haftgrenze, aber noch nicht dar&uuml;ber. Kommt vor dem Untersteuern und dem
+          &Uuml;bersteuern &ndash; die Warnung davor.</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-quietschen" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Meldungen
+          <small>Wetterwechsel und leerer Tank. Standard aus: das sind Nachrichten und
+          keine Kr&auml;fte am Auto &ndash; wer sie will, bekommt sie hier.</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-meldung"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Trigger-Vibration
+          <span class="wip-tag">experimentell</span>
+          <small>Zus&auml;tzlich zu den Griffmotoren: regelt das ABS, brummt der linke
+          Trigger &ndash; das ist die Bremse. Beim Schalten der rechte. Standard an. Warum
+          experimentell: die adaptiven Trigger eines DualSense sind &uuml;ber die
+          Gamepad-Schnittstelle gar nicht erreichbar, und die Effektart
+          &bdquo;trigger-rumble&ldquo; stellt Chrome vor allem f&uuml;r Xbox-Controller
+          bereit. Die Zeile darunter liest aus, was dein Controller wirklich annimmt. Kann
+          er es nicht, passiert nichts, und zwar ausdr&uuml;cklich ohne ersatzweises Brummen
+          in den Griffen &ndash; das w&uuml;rde vort&auml;uschen, die Trigger h&auml;tten
+          reagiert.</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-trigger" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Was dein Controller kann
+          <small>Ausgelesen, nicht angenommen. Leer, solange kein Controller gemeldet
+          ist &ndash; einmal eine Taste dr&uuml;cken.</small></div>
+        <span class="muted" id="vib-trigger-lage" data-i18n-skip
+              style="font-size:11px; text-align:right; max-width:34ch"></span></div>
+      <div class="opt-row"><div class="opt-label">DualSense: Trigger bei ABS <span class="wip-tag">WIP</span>
+          <small>Regelt das ABS, vibriert der linke Trigger eines DualSense &ndash; wenn die Bremse auf dem linken Trigger liegt und &bdquo;ABS&ldquo; oben an ist. Die adaptiven Trigger erreicht nur WebHID: Chrome oder Edge am Rechner, per USB oder Bluetooth, nach einmaligem Verbinden &uuml;ber diesen Knopf. In der Android-App geht das nicht.</small></div>
+        <button type="button" id="ds-verbinden">Verbinden</button>
+        <span class="muted" id="ds-lage" data-i18n-skip style="font-size:11px; text-align:right; max-width:34ch"></span></div>
+    </div>
     <div class="card subpage" id="sub-opt-ansagen">
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Ansagen</h2>
@@ -11046,6 +11082,33 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-haarnadel-max-val">35%</span>
         </div></div>
+<div class="opt-head">Stufe MAX <span class="wip-tag">WIP</span></div>
+      <div class="opt-row"><div class="opt-label">MAX: Tempo auf der Geraden <span class="wip-tag">WIP</span><small>F&uuml;r NPCs mit der Garagenstufe &bdquo;MAX&ldquo;: das Tempo auf Geraden, als Anteil des Gasbytes. 100&nbsp;% ist Vollgas. Standard 100&nbsp;%.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-max-gerade" min="0.4" max="1" step="0.01" value="1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-max-gerade-val">100%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">MAX: Tempo in Radius-1-Kurven <span class="wip-tag">WIP</span><small>Die 60-Grad-Kurve und die kleine 30-Grad-Kurve (gleicher Radius). Standard 52&nbsp;% &ndash; so schnell wie ein NPC der Stufe 65&nbsp;% mit 20&nbsp;% Kurvenabzug.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-max-r1" min="0.3" max="1" step="0.01" value="0.52">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-max-r1-val">52%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">MAX: Tempo in Radius-2-Kurven <span class="wip-tag">WIP</span><small>Die weite 30-Grad-Kurve (dreifacher Radius). Standard 80&nbsp;%. Haarnadel und Engstelle fahren MAX-NPCs nach den normalen Regeln: H&ouml;chsttempo in der Haarnadel und Mindesttempo gelten weiter.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-max-r2" min="0.3" max="1" step="0.01" value="0.8">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-max-r2-val">80%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">MAX: Bremspunkt <span class="wip-tag">WIP</span><small>Wo ein MAX-NPC vom Geradentempo auf das Kurventempo geht: eine Schiene vor der Kurve (Standard) oder erst am Beginn des Kurventeils. Vor der Haarnadel bremsen alle NPCs wie bisher zwei Teile vorher.</small></div>
+        <select id="ghost-max-bremspunkt">
+          <option value="schiene" selected>Eine Schiene vor der Kurve</option>
+          <option value="teil">Beginn des Kurventeils</option>
+        </select></div>
       <!-- DIE RENNWUERZE, IN EINZELNE SCHALTER ZERLEGT. Vorher ein Regler fuer sechs
            Bausteine: wer ihn aufdrehte, bekam alle sechs und wusste danach nicht, welcher
            davon das Gesehene erklaert. Das Gummiband ist nicht mehr dabei - es ist

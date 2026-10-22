@@ -2025,6 +2025,7 @@
     // v1.1.20: auch nie mit einer noch laufenden Aufstellung (gestartet ohne den Startschirm, z. B. R1):
     // deren Autopilot haette das Fahrerauto mitten im Rennen zu seinem Startplatz gesteuert.
     if (typeof aufstellenStoppen === 'function') aufstellenStoppen(false);
+    weichVerbotAnwenden();
     // EINSCHALTRAMPE: der Schirm zieht in 300 ms von schwarz auf Wert hoch, wie ein TFT beim
     // Einschalten. Hier und nicht in raceGreen(), weil der Schirm mit dem Knopfdruck
     // "angeht" und nicht erst bei Gruen - im Countdown will man ihn schon lesen.
@@ -4034,7 +4035,8 @@
   // Wie stark sich die Mischungen unterscheiden. 0 = alle rechnen wie mittel, 1 = die
   // Tabelle, 2 = doppelt. EINE Interpolation gegen mittel bewegt alle Werte zugleich -
   // deshalb ist "alle gleich" hier eine Zeile und kein Sonderfall.
-  let tyreMixStaerke = 1;
+  // v1.1.42 BESTELLT: "Mach den Reifenmischungsunterschied groesser" - Vorgabe 1,5 (Regler bis 3).
+  let tyreMixStaerke = 1.5;
 
   function mischungStaerke() {
     // OHNE REIFENSIMULATION FAHREN ALLE DEN MITTEL-REIFEN, wie bestellt. Das steht hier und
@@ -4046,7 +4048,8 @@
 
   function mischungWert(m, feld) {
     const e = TYRE_MIX[m] || TYRE_MIX.mittel;
-    return 1 + (e[feld] - 1) * mischungStaerke();
+    // v1.1.42: Regler bis 3 - harte Reifen kaemen dort auf negativen Verschleiss (1 - 0,5 x 3). Boden 0,1.
+    return Math.max(0.1, 1 + (e[feld] - 1) * mischungStaerke());
   }
 
   function mischungFarbe(m) { return (TYRE_MIX[m] || TYRE_MIX.mittel).farbe; }
@@ -4221,9 +4224,32 @@
     };
   }
 
+  // ---- WEICHE REIFEN VERBOTEN (v1.1.42, Renneinstellung) ------------------------------
+  // BESTELLT: "Fuehre eine neue Option in den Renneinstellungen ein: 'weiche Reifen verboten', standardmaessig
+  // aus." An: die Reifenwahl ueberspringt weich, und wer weich drauf hat oder gewaehlt hat, faehrt mittel -
+  // beim Rennstart und bei jedem Wechsel. NPCs fahren ohnehin nur trocken/Regen.
+  function weichVerboten() { const el = $('race-weich-verboten'); return !!(el && el.checked); }
+  function mischungErlaubt(m) { return weichVerboten() && m === 'weich' ? 'mittel' : m; }
+  function mischungNaechste(jetzt) {
+    const folge = MISCHUNG_FOLGE.filter((m) => m !== 'weich' || !weichVerboten());
+    const i = folge.indexOf(mischungErlaubt(jetzt));
+    return folge[(i + 1) % folge.length];
+  }
+  // Beim Rennstart: weich runter, wenn verboten (Auto 1 und die Zusatzspieler).
+  function weichVerbotAnwenden() {
+    if (!weichVerboten()) return;
+    if (tyres === 'weich') { tyres = 'mittel'; applySurface(); log('Weiche Reifen verboten: mittel montiert.', 'info'); }
+    if (mischungWunsch === 'weich') mischungWunsch = 'mittel';
+    if (typeof zusatzPlaetze === 'function') {
+      for (const z of zusatzPlaetze()) {
+        if (z.mischungWunsch === 'weich') z.mischungWunsch = 'mittel';
+        if (z.reifen === 'weich' && z.motor) { z.reifen = 'mittel'; mischungAnwenden(z.motor, z.reifen, wxRainLevel() * wxRainLevel()); }
+      }
+    }
+  }
+
   function pitMischungWeiter() {
-    const i = MISCHUNG_FOLGE.indexOf(pitMischungWahl());
-    mischungWunsch = MISCHUNG_FOLGE[(i + 1) % MISCHUNG_FOLGE.length];
+    mischungWunsch = mischungNaechste(pitMischungWahl());
     showHudToast(t('Reifenwahl') + ': ' + mischungName(mischungWunsch));
     return mischungWunsch;
   }
@@ -4232,8 +4258,7 @@
   function pitMischungWahlVon(z) { return z.mischungWunsch || z.reifen; }
   function pitMischungWahl2() { return pitMischungWahlVon(zusatzPlatz(2)); }
   function pitMischungWeiterVon(z) {
-    const i = MISCHUNG_FOLGE.indexOf(pitMischungWahlVon(z));
-    z.mischungWunsch = MISCHUNG_FOLGE[(i + 1) % MISCHUNG_FOLGE.length];
+    z.mischungWunsch = mischungNaechste(pitMischungWahlVon(z));
     showHudToast('P' + z.nr + ' ' + t('Reifenwahl') + ': ' + mischungName(z.mischungWunsch));
     return z.mischungWunsch;
   }
@@ -4254,7 +4279,7 @@
   function pitKachelStand2() { return pitKachelStandVon(zusatzPlatz(2)); }
 
   function fitTyresForWeather() {
-    const want = pitMischungWahl();
+    const want = mischungErlaubt(pitMischungWahl());
     if (tyres === want) return false;
     tyres = want;
     applySurface();
@@ -4664,10 +4689,15 @@
     return Math.max(PIT_EMPTY_STOP_S, t) + rammStrafeOffen(playerCar);
   }
   function pitSpielStart() {
+    // v1.1.42 GEMELDET: "Es wird immer voll getankt, auch wenn ich ueber den Knopf eingestellt habe, dass
+    // nicht getankt werden soll." Hier stand ein eigener Plan (Tanken voll, Reifen ja, immer) - das
+    // Minigame ist der Standard-Boxenmodus, also galt die Wahl im Boxenschirm praktisch nie. Jetzt der
+    // Plan aus der Boxengasse (bzw. makePitPlan aus der Vorwahl), nur auf das Moegliche beschraenkt.
+    const basis = pitPlan || makePitPlan();
     pitPlan = {
-      refuel: (pitJobAvailable('refuel') && fuel < 99.5) ? 100 : 0,
-      tyres: pitJobAvailable('tyres'),
-      repair: pitJobAvailable('repair') && damage > 0.05,
+      refuel: pitJobAvailable('refuel') && fuel < 99.5 ? tankZielNorm(basis.refuel) : 0,
+      tyres: pitJobAvailable('tyres') && !!basis.tyres,
+      repair: pitJobAvailable('repair') && !!basis.repair && damage > 0.05,
     };
     const T = pitSpielDauer(pitPlan);
     const folge = [];
@@ -5143,7 +5173,7 @@
         const strafe = rammStrafeOffen(z.car);
         showHudToast('P' + z.nr + ': ' + (strafe > 0 ? t('STRAFE') + ' ' + strafe + ' s' : 'SERVICE LAEUFT'));
         // Reifen wie bei Auto 1: die gewaehlte Mischung, frisch und ungebraucht.
-        const neu = pitMischungWahlVon(z);
+        const neu = mischungErlaubt(pitMischungWahlVon(z));
         if (neu !== z.reifen) {
           z.reifen = neu;
           mischungAnwenden(z.motor, z.reifen, wxRainLevel() * wxRainLevel());
@@ -6259,9 +6289,44 @@
     repair: { buf: () => fxBuffers.pitRepair, gain: 0.45 },
   };
 
+  // ---- DER SCHRAUBER JE RADPAAR (v1.1.42) -----------------------------------------------
+  // BESTELLT: "Boxenstopp-Sound: bastle einen besseren Ton aus diesem Pneumatic-Wrench-Ton" (Pixabay,
+  // Jun Su; Quelle und Lizenz in audio/CREDITS.md) und "erst beide hinteren, dann beide vorderen Raeder".
+  // Statt einer Schleife ueber den ganzen Wechsel spielt jedes Radpaar EINMAL die 2-s-Folge (zwei Muttern
+  // loesen, Pause, zwei anziehen): das erste zu Beginn, das zweite zur Haelfte des Wechsels - genau dort,
+  // wo pitWheelsOff() vom hinteren auf das vordere Paar wechselt. Rueckgabe: ein Objekt mit stop(), wie
+  // eine Quelle, damit setPitLoop(…, false) es wie jede Schleife beendet.
+  function schrauberPaare(dauerS, pan) {
+    const buf = fxBuffers.pitPaar;
+    if (!buf || !audioCtx || !soundEnabled) return null;
+    const g = audioCtx.createGain();
+    g.gain.value = PIT_LOOP_SPEC.wrench.gain;
+    let ziel = audioCtx.destination;
+    if (pan && audioCtx.createStereoPanner) {
+      const p = audioCtx.createStereoPanner();
+      p.pan.value = pan;
+      p.connect(audioCtx.destination);
+      ziel = p;
+    }
+    g.connect(ziel);
+    const jetzt = audioCtx.currentTime;
+    const quellen = [0, Math.max(buf.duration * 0.9, (dauerS || PIT_TYRE_CHANGE_S) / PIT_RAD_PAARE.length)].map((ab) => {
+      const s = audioCtx.createBufferSource();
+      s.buffer = buf;
+      s.connect(g);
+      s.start(jetzt + ab);
+      return s;
+    });
+    return { stop() { quellen.forEach((s) => { try { s.stop(); } catch (e) { /* schon aus */ } }); } };
+  }
   function setPitLoop(which, on) {
     const spec = PIT_LOOP_SPEC[which];
     if (!spec) return;
+    if (on && which === 'wrench' && fxBuffers.pitPaar) {
+      if (pitLoops.wrench) return;
+      pitLoops.wrench = schrauberPaare(pitTyreTarget || PIT_TYRE_CHANGE_S, 0);
+      return;
+    }
     if (on) {
       if (pitLoops[which] || !audioCtx || !soundEnabled) return;
       const buf = spec.buf();
@@ -6289,6 +6354,11 @@
     const spec = PIT_LOOP_SPEC[which];
     if (!spec) return;
     const l = pitLoopsZ[nr] || (pitLoopsZ[nr] = {});
+    if (on && which === 'wrench' && fxBuffers.pitPaar) {
+      if (l.wrench) return;
+      l.wrench = schrauberPaare(PIT_TYRE_CHANGE_S, typeof spielerPan === 'function' ? spielerPan(nr) : 0);
+      return;
+    }
     if (on) {
       if (l[which] || !audioCtx || !soundEnabled) return;
       const buf = spec.buf();
@@ -6333,32 +6403,32 @@
   // Wheels off means the car cannot move, whatever the driver asks for. Once they are back
   // on, the throttle is free again - and using it is how you leave, which is exactly what
   // "sobald das fertig ist bedeutet Gas geben auch Ende" describes.
-  // Die Reihenfolge, in der die vier Raeder gewechselt werden: Boxenmauerseite zuerst,
-  // weil dort die Crew steht und den Wagen von dort umlaeuft. Indizes wie ueberall im
-  // Modell: 0 vorne links, 1 vorne rechts, 2 hinten links, 3 hinten rechts.
-  //
-  // EINE Liste, weil eine zweite die Gelegenheit waere, dass Anzeige und Ton in
-  // verschiedener Ordnung laufen.
-  const PIT_RAD_FOLGE = [1, 3, 2, 0];
-  // Wie lange ein Rad innerhalb seines Fensters ABGEBAUT ist. Zwei Drittel: dann sieht man
-  // vier deutliche Ausfaelle. Bei 1,0 waere immer genau ein Rad weg und der Wechsel saehe
-  // wie ein einziger langer Vorgang aus, obwohl vier Toene zu hoeren sind.
+  // Die Reihenfolge, in der die Raeder gewechselt werden. Indizes wie ueberall im Modell: 0 vorne links,
+  // 1 vorne rechts, 2 hinten links, 3 hinten rechts.
+  // v1.1.42 BESTELLT: "Mach, dass die Reifen nicht mehr einer nach dem anderen gewechselt werden, sondern
+  // erst beide hinteren, dann beide vorderen." Zwei Fenster statt vier; in jedem sind beide Raeder des
+  // Paares gleichzeitig ab (zwei Mechaniker). EINE Liste fuer Anzeige und Ton.
+  const PIT_RAD_PAARE = [[2, 3], [0, 1]];
+  // Wie lange ein Paar innerhalb seines Fensters ABGEBAUT ist. Zwei Drittel: dann sieht man zwei deutliche
+  // Ausfaelle, und das letzte Drittel ist das Anziehen der neuen Raeder.
   const PIT_RAD_AB_ANTEIL = 0.66;
 
-  // Der Index des Rades, das GERADE abgebaut ist, oder -1. Wird vom Cockpit-Takt in
-  // 50-drive.js gelesen; eine Funktionsdeklaration ist ueber den ganzen Bereich hochgezogen,
-  // also ist der Aufruf von dort gefahrlos - anders als bei einem let, das vor seiner Zeile
-  // in der Totzone liegt. Diese Falle hat in dieser Werkstatt schon siebenmal zugeschlagen.
-  function pitWheelOff() {
-    if (pitState !== 'servicing' || !pitPlan || !pitPlan.tyres) return -1;
-    if (!pitDone || pitDone.tyres) return -1;
-    if (!(pitTyreTarget > 0)) return -1;
+  // Die Indizes der Raeder, die GERADE abgebaut sind (leer, wenn keines). Gelesen vom Cockpit-Takt
+  // (50-drive.js) und vom Boxenschirm; als Funktionsdeklaration ueber den ganzen Bereich hochgezogen.
+  function pitWheelsOff() {
+    if (pitState !== 'servicing' || !pitPlan || !pitPlan.tyres) return [];
+    if (!pitDone || pitDone.tyres) return [];
+    if (!(pitTyreTarget > 0)) return [];
     const anteil = Math.max(0, Math.min(0.999, pitTyreElapsed / pitTyreTarget));
-    const fenster = anteil * 4;
+    const fenster = anteil * PIT_RAD_PAARE.length;
     const nr = Math.floor(fenster);
-    // Im letzten Drittel des Fensters ist das neue Rad schon dran.
-    if (fenster - nr > PIT_RAD_AB_ANTEIL) return -1;
-    return PIT_RAD_FOLGE[nr];
+    if (fenster - nr > PIT_RAD_AB_ANTEIL) return [];
+    return PIT_RAD_PAARE[nr].slice();
+  }
+  // Das zuerst abgebaute Rad oder -1 (fuer aeltere Leser).
+  function pitWheelOff() {
+    const ab = pitWheelsOff();
+    return ab.length ? ab[0] : -1;
   }
 
   function refreshPitThrottleLock() {
@@ -6484,6 +6554,9 @@
       showHudToast(t(which === 'tyres' ? 'Reifen wechseln' : 'Reparieren')
                    + ': ' + t(!jetzt ? 'ja' : 'nein'));
     }
+    // v1.1.42: in der Boxengasse steht der Plan schon (beim Einfahren aus der Vorwahl gebaut) - er muss
+    // die neue Wahl mitnehmen, sonst galt beim Halt der alte Plan ("tankt immer voll").
+    if (pitState === 'limited' && pitPlan) pitPlan = makePitPlan();
     // Der Boxenschirm zeigt dieselbe Vorwahl; wer sie vom Kreuz aus aendert, soll sie dort
     // nicht veraltet vorfinden.
     pitScreenRender();
@@ -6548,11 +6621,11 @@
   function pitScreenBilder() {
     const st = physEngine.state;
     const aus = !(physEngine.config.tyreEffect > 0);
-    const abIdx = typeof pitWheelOff === 'function' ? pitWheelOff() : -1;
+    const abListe = typeof pitWheelsOff === 'function' ? pitWheelsOff() : [];
     for (let i = 0; i < 4; i++) {
       const el = $(PIT_T4[i]);
       if (!el || !el.firstChild) continue;
-      const ab = i === abIdx;
+      const ab = abListe.includes(i);
       el.classList.toggle('t4-ab', ab);
       const w = aus ? 0 : (st.tyreWear4 ? st.tyreWear4[i] : st.tyreWear);
       const rest = ab ? 0 : Math.max(0, Math.min(100, 100 - w * 100));
@@ -7294,8 +7367,16 @@
   // Die EINE Stelle, die den Boxenstopp-Plan aendert. Finger und Steuerkreuz gehen beide
   // hier durch; vorher hatte nur das Steuerkreuz Zugriff, konnte auch nur Tank und Reifen,
   // und die Reparatur war ueberhaupt nicht abwaehlbar.
+  function pitReifenwechselLaeuft() {
+    return pitState === 'servicing' && !!pitPlan && !!pitPlan.tyres && !!pitDone && !pitDone.tyres;
+  }
   function pitToggle(which, force) {
     if (pitState === 'off' || !pitPlan) return false;
+    // v1.1.42: ein laufender Reifenwechsel laesst sich auch nicht abwaehlen (siehe requestPitStop).
+    if (which === 'tyres' && pitReifenwechselLaeuft()) {
+      showHudToast(t('Reifenwechsel läuft'));
+      return true;
+    }
     if (!pitJobAvailable(which)) {
       showHudToast(which === 'refuel' ? 'Tanksimulation ist aus'
                    : which === 'tyres' ? 'Reifensimulation ist aus' : 'Schadensmodell ist aus');
@@ -7387,6 +7468,12 @@
         return;
       }
       setPitState('limited');
+      return;
+    }
+    // v1.1.42 BESTELLT: "Mach, dass ich den Boxenstopp nicht abbrechen kann, wenn Reifen gewechselt
+    // werden." Solange die Raeder ab sind, ist der Knopf ohne Wirkung - erst danach bricht er wieder ab.
+    if (pitReifenwechselLaeuft()) {
+      showHudToast(t('Reifenwechsel läuft'));
       return;
     }
     // Abort. Whatever the crew had started is discarded: no fuel, no repair, and stopping

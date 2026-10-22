@@ -1630,7 +1630,11 @@
     { label: 'einfach', speed: 0.45 },
     { label: 'mittel',  speed: 0.55 },
     { label: 'schnell', speed: 0.65 },
+    // v1.1.42 (WIP): MAX - eigenes Tempoprofil aus den Reglern im NPC-Menue (ghostMaxTempo). speed ist nur
+    // die Anzeige (Geradentempo); die Migration alter Werte (ghostStufeAusSpeed) ueberspringt die Stufe.
+    { label: 'MAX', speed: 1.0, max: true },
   ];
+  const GHOST_STUFE_MAX = 3;
   function garageAufZeile(car) {
     const box = document.createElement('div');
     box.className = 'gk-aufzeile';
@@ -1664,7 +1668,11 @@
       };
       const stufeS = st[stufe];
       const anzeige = t(stufeS.label) + ' \u00b7 ' + Math.round(stufeS.speed * 100) + ' %';
-      box.appendChild(garWertZeile('NPC-Tempo', anzeige, () => tempo(-1), () => tempo(1), rst));
+      // v1.1.42: MAX zeigt sein Geradentempo aus dem NPC-Menue und traegt das WIP-Zeichen.
+      const tz = garWertZeile('NPC-Tempo', stufeS.max ? 'MAX ' + Math.round((ghostCfg.maxGerade || 1) * 100) + ' %' : anzeige,
+                              () => tempo(-1), () => tempo(1), rst);
+      if (stufeS.max) tz.querySelector('b').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
+      box.appendChild(tz);
       // v0.9.64: Ghost-Sound je Auto (der Schalter in Optionen -> Ton bleibt der Hauptschalter;
       // hier ist es das einzelne Auto). Ein Klick toggelt an/aus, wie links/rechts in der Zeile.
       // v0.9.87: Die Zeile zeigt, was zu HOEREN ist - Hauptschalter UND Auto. Vorher stand
@@ -3141,6 +3149,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     curveSlow: 0.20,
     // v1.1.37: Hoechsttempo in Haarnadel und Engstelle, das LETZTE Wort (ghostHaarnadelDeckel).
     haarnadelMax: 0.35,
+    // v1.1.42 (WIP): Stufe MAX (ghostMaxTempo) - Gerade, Radius-1-Kurve (60 Grad und kleine 30 Grad),
+    // Radius-2-Kurve (weite 30 Grad), Bremspunkt 'schiene' (ein Teil vorher) oder 'teil' (am Kurvenbeginn).
+    maxGerade: 1.0, maxR1: 0.52, maxR2: 0.8, maxBremspunkt: 'schiene',
     paare: true,        // v1.0.31: Paare links/rechts, Reihe dahinter (ghostPaare); Schalter fuer die Messsonde    // how much of that is given up in a curve
     // 0.5 statt 0. Die Naeherungslogik in ghostAssignBias gab es laengst - gleiche Runde
     // und Kachelindex hoechstens eins auseinander ergibt gegenlaeufige Versaetze - aber sie
@@ -7199,7 +7210,67 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // In Kurven und Haarnadeln gilt immer das Mittel-Tempo (0,55), damit alle Stufen in der
   // Kurve gleich schnell sind und die Kurvendrosselung dieselbe bleibt. Zurueckkommt ein
   // Faktor auf der Geraden (0,45/0,55/0,65) und sonst das Mittel-Tempo.
+  // ---- NPC-STUFE MAX (v1.1.42, WIP) --------------------------------------------------------
+  // BESTELLT: "Fuehre fuer NPCs eine vierte Schwierigkeitsstufe ein, bei der sie weiterhin alle Regeln
+  // befolgen zur Minimalgeschwindigkeit global und Maximalgeschwindigkeit in der Haarnadel, aber auf den
+  // Geraden und in den anderen Kurven so schnell wie moeglich fahren. Name 'MAX' mit WIP-Label. Bestimme
+  // eine Maximalgeschwindigkeit in Radius-1- und Radius-2-Kurven sowie auf Geraden und gib mir dafuer
+  // Slider im NPC-Menue. Dazu den Bremspunkt (Beginn des Kurventeils, eine Schiene vor der Kurve).
+  // Vorschlag: Radius 1 so schnell wie NPCs auf Stufe 65 %, Bremspunkt eine Schiene vor der Kurve, auf der
+  // Geraden Full Speed."
+  // Startwerte: Gerade 1,0 (Vollgas); Radius 1 = 0,52 = Stufe 65 % mit dem Kurvenabzug 20 % (0,65 x 0,8);
+  // Radius 2 = 0,8 (dreifacher Radius: gleiche Querkraft erst beim 1,7-fachen Tempo - 0,8 ist vorsichtig);
+  // Bremspunkt eine Schiene vorher. Haarnadel und Engstelle (und die zwei Teile davor) laufen ueber die
+  // normale NPC-Logik: Kurvenabzug, Obergrenze haarnadelMax, Mindesttempo. Unter Gelb und in der
+  // Einfuehrungsrunde fahren MAX-NPCs wie alle anderen.
+  // Die Regler im NPC-Menue. AUS DEM MARKUP lesen und dann auf input hoeren. Hier und nicht in 80-sound.js:
+  // dort ist ghostCfg beim Laden noch nicht angelegt (Totzone), und der Fehler brach das Laden ab.
+  [['ghost-max-gerade', 'maxGerade'], ['ghost-max-r1', 'maxR1'], ['ghost-max-r2', 'maxR2']].forEach(([id, feld]) => {
+    const el = $(id);
+    if (!el) return;
+    const an = () => {
+      ghostCfg[feld] = parseFloat(el.value);
+      if ($(id + '-val')) $(id + '-val').textContent = Math.round(ghostCfg[feld] * 100) + '%';
+    };
+    el.addEventListener('input', an);
+    an();
+  });
+  if ($('ghost-max-bremspunkt')) {
+    const el = $('ghost-max-bremspunkt');
+    const an = () => { ghostCfg.maxBremspunkt = el.value === 'teil' ? 'teil' : 'schiene'; };
+    el.addEventListener('change', an);
+    an();
+  }
+  function ghostIstMax(car) { return !!car && car.ghostStufe === GHOST_STUFE_MAX; }
+  function ghostMaxArt(typ) {
+    if (typ === undefined || typ === null) return 'gerade';
+    if (tileTightness(typ) >= 2) return 'haarnadel';
+    if (tileTightness(typ) >= 1) return 'r1';
+    if (typ === TILE_TYPE.WEIT_LEFT || typ === TILE_TYPE.WEIT_RIGHT) return 'r2';
+    return 'gerade';
+  }
+  function ghostMaxWert(art) {
+    const c = ghostCfg;
+    if (art === 'haarnadel') return Number.isFinite(c.haarnadelMax) ? c.haarnadelMax : 0.35;
+    if (art === 'r1') return c.maxR1;
+    if (art === 'r2') return c.maxR2;
+    return c.maxGerade;
+  }
+  function ghostMaxTempo(car) {
+    const g = car && car.ghost;
+    const tiles = currentTrackTiles || [];
+    const n = tiles.length;
+    const ortOk = !!(g && n && g.tileIndex !== null && g.tileIndex !== undefined && ortStimmt(car) !== false);
+    // Das Teil unter dem Auto: aus dem Layout, wenn der Ort stimmt, sonst aus der gemeldeten Schiene.
+    const hierTyp = ortOk ? tiles[g.tileIndex % n].type : (typeof codeZuTyp === 'function' ? codeZuTyp(car.tileCode) : null);
+    let v = ghostMaxWert(ghostMaxArt(hierTyp));
+    if (ghostCfg.maxBremspunkt !== 'teil' && ortOk) {
+      v = Math.min(v, ghostMaxWert(ghostMaxArt(tiles[(g.tileIndex + 1) % n].type)));
+    }
+    return Math.max(0.05, Math.min(1, v));
+  }
   function ghostStufeFaktor(car) {
+    if (ghostIstMax(car)) return ghostMaxTempo(car);
     const stufe = car.ghostStufe === undefined || car.ghostStufe === null
       ? 1 : car.ghostStufe;
     const s = GHOST_TEMPO_STUFEN[stufe];
@@ -7217,6 +7288,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (speed === undefined || speed === null) return 1;
     let bester = 1, besterD = Infinity;
     for (let i = 0; i < GHOST_TEMPO_STUFEN.length; i++) {
+      if (GHOST_TEMPO_STUFEN[i].max) continue;
       const d = Math.abs(GHOST_TEMPO_STUFEN[i].speed - speed);
       if (d < besterD) { besterD = d; bester = i; }
     }
@@ -10156,14 +10228,17 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Ghost nicht zum Stehen bringt. Mit dem Standardregler von 20 Prozent sind das
       // 20 Prozent in der Kurve und 40 in der Haarnadel oder Engstelle.
       const abzugKachel = tight > 0 ? Math.min(0.85, curveSlowIch * tight) : 0;
-      target *= 1 - Math.max(abzugProfil, abzugKachel);
+      // v1.1.42: MAX faehrt ausserhalb der Haarnadel sein eigenes Profil (ghostMaxTempo) - kein Abzug, kein
+      // Deckel auf das Mittel-Tempo. Unter Gelb und in der Einfuehrungsrunde wie alle.
+      const maxProfil = ghostIstMax(car) && tight < 2 && !underYellow && !raceFormationLap;
+      if (!maxProfil) target *= 1 - Math.max(abzugProfil, abzugKachel);
       // v0.9.64: In der Kurve gilt das Mittel-Tempo, nicht das Stufen-Tempo. Der Kachelabzug
       // wirkt bisher auf das GERADENTempo (schnell = 0,65 -> 0,52 vor der Kurve), und der
       // Ghost kommt damit heisser in die Kurve als das Mittel-Tempo (0,44) - er kann sie
       // verlassen. Der Boden nimmt das Kurvenziel (Mittel-Tempo * Abzug) als Obergrenze,
       // damit alle Stufen gleich schnell in die Kurve gehen. Nur wenn ueberhaupt ein Abzug
       // greift - auf einer reinen Geraden bleibt das Stufen-Tempo.
-      if (Math.max(abzugProfil, abzugKachel) > 0) {
+      if (!maxProfil && Math.max(abzugProfil, abzugKachel) > 0) {
         target = Math.min(target, (ghostCfg.speed || 0.55) * (1 - Math.max(abzugProfil, abzugKachel)));
       }
       // BESTELLT: "wenn sie nah beieinander fahren ... 5% langsamer fahren in den kurven."

@@ -362,6 +362,9 @@
       // aelteres audio/ hat den Eintrag nicht.
       if (fx.offroad) fxBuffers.offroad = await grab(fx.offroad.file);
       fxBuffers.pit = await grab(fx.pit.file);
+      // v1.1.42: der Schrauber je Radpaar (Pixabay-Aufnahme, tools/pit_wrench_pixabay.py). Duldsam: fehlt er,
+      // laeuft die alte, gerechnete Schleife.
+      if (fx.pit_paar) fxBuffers.pitPaar = await grab(fx.pit_paar.file);
       // Both are loops: they run for as long as their job does. Missing files are tolerated
       // (grab returns null) and the sound is simply absent rather than the load failing.
       if (fx.pit_fuel) fxBuffers.pitFuel = await grab(fx.pit_fuel.file);
@@ -982,7 +985,19 @@
   // schnelle Kurve nicht. Ein Selbsttest haelt fest, dass die Schwelle ERREICHBAR bleibt -
   // das Fehlen genau dieser Pruefung war der eigentliche Fehler.
   const TYRE_SQUEAL_START = 0.6;
+  // v1.1.42 BESTELLT: "leichtes Rumbling beim Reifenquietschen". Dieselbe Menge wie der Ton, aber auch ohne
+  // Ton (Vibrationsart 'quietschen', Kachel Vibration): leicht und im schwachen Motor, alle 250 ms erneuert.
+  let quietschRuettelnAt = 0;
+  function quietschRuetteln(nutzung) {
+    const menge = Math.max(0, Math.min(1, (Math.max(0, Math.min(1.2, nutzung)) - TYRE_SQUEAL_START) / (1 - TYRE_SQUEAL_START)));
+    if (menge <= 0.05 || typeof padRumble !== 'function') return false;
+    const jetzt = performance.now();
+    if (jetzt - quietschRuettelnAt < 250) return false;
+    quietschRuettelnAt = jetzt;
+    return padRumble(0, 0.12 + 0.28 * menge, 280, 'quietschen', 1);
+  }
   function setTyreSqueal(nutzung) {
+    quietschRuetteln(nutzung);
     if (!fxBuffers.tyre || !audioCtx || !soundEnabled) return;
     // Unterhalb der Schwelle auf null abbilden, statt die Schwelle im Nenner zu vergessen:
     // sonst faengt es bei 0 an und ist bei 0,85 schon laut.
