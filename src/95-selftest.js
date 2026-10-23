@@ -15212,6 +15212,32 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'NPC faehrt vorwaerts, Kurve drosselt (Kurve ' + dMaxKurve.toFixed(1) + ' Grad)' };
   });
 
+  stAdd('Virtuell: Handling-Modus - GT3 bleibt, Schnell hat mehr Grip, Einschlag und Tempo', () => {
+    const f = [];
+    const merk = localStorage.getItem(VF_HANDLING_STORE);
+    const lauf = (P, v, l, sek) => { const z = { vy: 0, r: 0 }; for (let i = 0; i < sek * 60; i++) vfDynamik(z, v, 0, 0, l, 1 / 60, 1, P); return z; };
+    try {
+      // GT3 (Standard): kein Tempo-Faktor, das Profil bleibt dasselbe Objekt.
+      localStorage.setItem(VF_HANDLING_STORE, 'gt3');
+      if (vfHandling() !== 'gt3') f.push('GT3 nicht uebernommen');
+      if (vfTempoFaktor() !== 1.0) f.push('GT3: Tempo nicht 1.0');
+      if (vfHandlingProfil(VF_GT3) !== VF_GT3) f.push('GT3: Profil wird veraendert');
+      // Schnell: mehr Grip, mehr Einschlag, Tempo-Faktor und eine engere Kurve.
+      localStorage.setItem(VF_HANDLING_STORE, 'schnell');
+      if (vfHandling() !== 'schnell') f.push('schnell nicht uebernommen');
+      if (!(vfTempoFaktor() > 1.0)) f.push('Schnell: kein Tempo-Faktor');
+      const schnell = vfHandlingProfil(VF_GT3);
+      if (!(schnell.muH > VF_GT3.muH && schnell.muV > VF_GT3.muV)) f.push('Schnell: kein Grip-Gewinn');
+      if (!(schnell.lenkGrad > VF_GT3.lenkGrad)) f.push('Schnell: kein Einschlag-Gewinn');
+      const zGT3 = lauf(VF_GT3, 30, 0.5, 2), zSchnell = lauf(schnell, 30, 0.5, 2);
+      if (!(Math.abs(zSchnell.r) > Math.abs(zGT3.r))) f.push('Schnell dreht nicht enger: ' + zSchnell.r + ' / ' + zGT3.r);
+      // Ungueltiger Wert faellt auf GT3 zurueck.
+      localStorage.setItem(VF_HANDLING_STORE, 'gibtsnicht');
+      if (vfHandling() !== 'gt3') f.push('ungueltiger Modus faellt nicht auf GT3 zurueck');
+    } finally { if (merk === null) localStorage.removeItem(VF_HANDLING_STORE); else localStorage.setItem(VF_HANDLING_STORE, merk); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'GT3 unveraendert, Schnell +Grip/+Einschlag/+Tempo' };
+  });
+
   stAdd('Aufstellung: Mittelgasse, versetzte Haltepunkte, Impuls mit Tempo und Dauer aus den Reglern', () => {
     const f = [];
     // Haltepunkt: rechts (P1, gerade) weiter vorn als links (P2, ungerade)

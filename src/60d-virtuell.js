@@ -29,7 +29,7 @@
                gl: null, prog: null, bahn: null, auto: null, pts: null, nrm: null, tiles: null, zu: false,
                x: 0, y: 0, h: 0, idx: 0, zaehler: 0, kachel: -2, abseits: false, abseitsSeit: 0, raf: 0, takt: 0,
                letzt: 0, kam: null, rundeAb: 0, letzte: null, beste: null, trackModeVorher: null,
-               npcs: null, npcBogen: null, npcRunde: 0 };
+               npcs: null, npcBogen: null, npcRunde: 0, tempoFaktor: 1 };
 
   // v1.1.3 GEMELDET: "Ich kann das virtuelle Auto mit Pfeiltasten nicht steuern." Die Menuefuehrung
   // (50b-menu-nav.js) nahm die Pfeiltasten, sobald auf der Seite bedienbare Zeilen lagen, und das Pad
@@ -288,6 +288,17 @@
   function vfNpcAnzahl() {
     try { const v = +localStorage.getItem(VF_NPC_STORE); return (v >= 0 && v <= 3) ? v : 3; } catch (e) { return 3; }
   }
+  // Handling-Modus (v1.1.52): das Fahrmodell wie in ACC, und eine zweite, insgesamt schnellere
+  // Abstimmung. "GT3" bleibt das praezise Modell aus den Autodaten; "Schnell" gibt mehr Grip
+  // (muV/muH), mehr Einschlag (lenkGrad), eine schnellere Gierantwort (weniger Daempfung) und ein
+  // hoeheres Tempo (Weg und Tacho, Faktor vfTempoFaktor).
+  const VF_HANDLING_STORE = 'omegasim-vf-handling';
+  const VF_HANDLING_MODI = [{ id: 'gt3', name: 'GT3' }, { id: 'schnell', name: 'Schnell' }];
+  function vfHandling() {
+    try { const v = localStorage.getItem(VF_HANDLING_STORE); return VF_HANDLING_MODI.some((m) => m.id === v) ? v : 'gt3'; } catch (e) { return 'gt3'; }
+  }
+  function vfHandlingName(id) { const m = VF_HANDLING_MODI.find((x) => x.id === id); return m ? t(m.name) : t('GT3'); }
+  function vfTempoFaktor() { return vfHandling() === 'schnell' ? 1.15 : 1.0; }
   // Bogenlaengen der Mittellinie (geschlossene Schleife): bogen[i] = Laenge bis Punkt i, bogen[n] = Runde.
   function vfNpcBogen(pts) {
     const bogen = [0];
@@ -362,7 +373,7 @@
       vfModellDaten(VF_MODELL_PFADE[auto]).then((daten) => {
         if (!VF.aktiv || VF.gl !== gl) return;
         npc.modell = vfModellBauen(gl, daten, VF_MODELL_PFADE[auto]);
-        npc.P = vfPhysikAus(daten.meta.physik);
+        npc.P = vfHandlingProfil(vfPhysikAus(daten.meta.physik));
       }).catch(() => { /* NPC ohne Modell bleibt unsichtbar */ });
     }
   }
@@ -375,6 +386,17 @@
       m: d.masse, Iz: d.masse * (d.laenge * d.laenge + d.breite * d.breite) / 12 * (d.massenVerteilung || 0.85),
       a: d.a, b: d.b, h: d.schwerpunktHoehe, muV: mu, muH: mu * 1.28, lenkGrad: d.lenkGrad, bremsVorn: d.bremsVorn,
       kV: 0.5 * 1.23 * ((d.auftriebVorn || 0) + (d.fluegelVorn || 0)), kH: 0.5 * 1.23 * ((d.auftriebHinten || 0) + (d.fluegelHinten || 0)) });
+  }
+  // Die schnellere Abstimmung auf ein Fahrprofil anwenden: mehr Grip, mehr Einschlag und eine
+  // schnellere Gierantwort. Bei "GT3" bleibt das Profil unveraendert (P zurueck).
+  function vfHandlingProfil(P) {
+    if (!P || vfHandling() !== 'schnell') return P;
+    return Object.assign({}, P, {
+      muV: P.muV * 1.35,
+      muH: P.muH * 1.35,
+      lenkGrad: Math.min(45, P.lenkGrad * 1.5),
+      yawDamp: (P.yawDamp || 1.5) * 0.6,
+    });
   }
   // ---- Federung: vier Ecken mit Feder, Daempfer (Druck/Zug) und Stabilisator --------------------
   // Zustand f: z (Einfedern, m, + = tiefer), th (Nicken, rad, + = Nase runter), ph (Rollen, rad, + = rechts
@@ -592,7 +614,7 @@
       VF.modusZeit += dt;
       if (VF.modusZeit >= VF.limit * 60) vfRennenEnde();
     }
-    const kmh = st.speedKmh || 0;
+    const kmh = (st.speedKmh || 0) * (VF.tempoFaktor || 1);
     // v1.1.11 GEMELDET: "Virtuelles Fahren ruckelt und ist sehr traege." Bisher lenkte das Auto mit
     // physEngine.state.dampedSteering: das rechnet die Physik nur alle 45 ms (Treppenstufen in der
     // Gierrate = Ruckeln), mit der Servodaempfung und der Lenkbegrenzung bei Tempo des ECHTEN Autos
@@ -874,16 +896,23 @@
     });
     // 3. Raeder: Mitte auf Reifenradius, vorn eingeschlagen, alle drehen; rechts gespiegelt (Muttern aussen)
     const radTeile = M.meta.teile.filter((t) => t.gruppe === 'rad');
+    const halbW = d.breite / 2;
     [[1, 'vorn', d.vorderachse], [-1, 'vorn', d.vorderachse], [1, 'hinten', d.hinterachse], [-1, 'hinten', d.hinterachse]].forEach(([seite, ax, z]) => {
       const r = d.reifen[ax];
-      const w = vfKette(lage, vfT(seite * r.spur / 2, r.radius, z), vfRy(ax === 'vorn' ? -(lenkWinkel || 0) : 0), vfRx(raddreh || 0),
+      const dreh = vfRy(ax === 'vorn' ? -(lenkWinkel || 0) : 0);
+      const w = vfKette(lage, vfT(seite * r.spur / 2, r.radius, z), dreh, vfRx(raddreh || 0),
         vfS(seite * r.breite, 2 * r.radius, 2 * r.radius));
       radTeile.forEach((t) => { setze(w, [1, 1, 1], 0, 1, 0, 1); teil(t); });
       if (!radTeile.length) {
         // Fallback: die echten Rad-Teile der Vulture V5.R (mit Reifen-/Felgen-Textur).
         const radM = radModell;
         if (radM && radM.teile.length) {
-          setze(w, [1, 1, 1], 0, 1, 0, 1);
+          // Das Rad so weit nach aussen, dass es neben der Karosserie sichtbar bleibt (manche Modelle
+          // haben eine schmalere Spur und wuerden das Rad sonst verstecken).
+          const xW = seite * Math.max(r.spur / 2, halbW + 0.03 - 0.5 * r.breite);
+          const wF = vfKette(lage, vfT(xW, r.radius, z), dreh, vfRx(raddreh || 0),
+            vfS(seite * r.breite, 2 * r.radius, 2 * r.radius));
+          setze(wF, [1, 1, 1], 0, 1, 0, 1);
           radM.teile.forEach((t) => {
             gl.bindBuffer(gl.ARRAY_BUFFER, radM.vbo);
             gl.vertexAttribPointer(T.ap, 3, gl.FLOAT, false, 32, t.ecke0 * 32);
@@ -933,7 +962,7 @@
     const el = VF.hud;
     if (!el) return;
     const st = physEngine.state;
-    const kmh = Math.round(Math.abs(st.speedKmh || 0) * TACHO_SCALE);   // wie im Cockpit (race-speed)
+    const kmh = Math.round(Math.abs(st.speedKmh || 0) * TACHO_SCALE * (VF.tempoFaktor || 1));   // wie im Cockpit (race-speed)
     const lauf = VF.rundeAb ? Date.now() - VF.rundeAb : null;
     // Nur bei Aenderung schreiben: jedes textContent= ist Arbeit fuer die Seite, und das hier laeuft je Bild.
     const setz = (sel, txt) => { const e = el.querySelector(sel); if (e.textContent !== txt) e.textContent = txt; };
@@ -1032,7 +1061,8 @@
     VF.auto = vfAutoBauen(gl, vfHex(carColor(car).hex));
     VF.geistAuto = vfAutoBauen(gl, [0.45, 0.75, 1.0]);
     VF.geist = { an: vfGeistAn(), aufzeichnung: [], aktiv: false, zeit: 0, t: 0, i: 0, x: 0, y: 0, h: 0 };
-    VF.modell = null; VF.P = null; VF.feder = null; VF.raddreh = 0;
+    VF.modell = null; VF.P = vfHandlingProfil(VF_GT3); VF.feder = null; VF.raddreh = 0;
+    VF.tempoFaktor = vfTempoFaktor();
     try { VF.tprog = vfProgrammTex(gl); } catch (e) { VF.tprog = null; }
     if (VF.tprog) {
       vfRadModellBauen(gl).then((rad) => { if (VF.aktiv && VF.gl === gl) VF.radModell = rad; });
@@ -1040,7 +1070,7 @@
         vfModellDaten().then((daten) => {
           if (!VF.aktiv || VF.gl !== gl) return;
           VF.modell = vfModellBauen(gl, daten);
-          VF.P = vfPhysikAus(daten.meta.physik);
+          VF.P = vfHandlingProfil(vfPhysikAus(daten.meta.physik));
         }).catch(() => showHudToast(t('Auto-Modell nicht ladbar – es fährt der Kasten')));
       }
     }
@@ -1155,6 +1185,14 @@
       renderGarage();
     };
     rechts.appendChild(garWertZeile(t('Schaltung'), autoSch ? t('Automatik') : t('Manuell'), schaltWahl, schaltWahl));
+    // Handling: GT3 (praezise wie in ACC) oder Schnell (mehr Grip, mehr Einschlag, hoeheres Tempo).
+    const hId = vfHandling();
+    const hWahl = (dd) => {
+      const i = Math.max(0, VF_HANDLING_MODI.findIndex((m) => m.id === hId));
+      try { localStorage.setItem(VF_HANDLING_STORE, VF_HANDLING_MODI[(i + dd + VF_HANDLING_MODI.length) % VF_HANDLING_MODI.length].id); } catch (e) { /* egal */ }
+      renderGarage();
+    };
+    rechts.appendChild(garWertZeile(t('Handling'), vfHandlingName(hId), () => hWahl(-1), () => hWahl(1)));
     // Geist: eine Kopie faehrt nach der ersten Runde die aufgezeichnete Linie ab (Standard an).
     const geistAn = vfGeistAn();
     const geistWahl = () => {
