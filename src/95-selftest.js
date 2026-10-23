@@ -15153,6 +15153,65 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : m.name + ': ' + m.teile.length + ' Teile, ' + (daten.indizes.length / 3) + ' Dreiecke, ' + texs.length + ' Texturen' };
   });
 
+  stAdd('Virtuell: NPCs folgen der Mittellinie und drosseln in der Kurve', () => {
+    const f = [];
+    // Anzahl: nur 0-3, sonst Standard 3.
+    const merk = localStorage.getItem(VF_NPC_STORE);
+    try {
+      localStorage.setItem(VF_NPC_STORE, '5');
+      if (vfNpcAnzahl() !== 3) f.push('Anzahl ueber 3 faellt nicht auf 3 zurueck');
+      localStorage.setItem(VF_NPC_STORE, '-1');
+      if (vfNpcAnzahl() !== 3) f.push('Anzahl unter 0 faellt nicht auf 3 zurueck');
+      localStorage.setItem(VF_NPC_STORE, '2');
+      if (vfNpcAnzahl() !== 2) f.push('Anzahl 2 nicht uebernommen');
+    } finally { if (merk === null) localStorage.removeItem(VF_NPC_STORE); else localStorage.setItem(VF_NPC_STORE, merk); }
+    // Ein NPC auf einer Teststrecke: er faehrt vorwaerts, und in der Kurve bremst er ab.
+    const tiles = codeToTrack('SG4R4G4').tiles, pts = trackCenterline(tiles), nrm = trackNormals(pts);
+    const bogen = vfNpcBogen(pts);
+    const mk = (idx, kmh) => ({ idx, s: bogen.bogen[idx], kmh, offset: 0, faktor: 1, x: 0, y: 0, h: 0, raddreh: 0, lenkWinkel: 0, ay: 0, ax: 0, vorherH: undefined, P: null });
+    const npc = mk(10, 0);
+    vfNpcSteuern(npc, 0, pts, nrm, bogen.bogen, bogen.runde);
+    const x0 = npc.x, y0 = npc.y;
+    for (let i = 0; i < 120; i++) vfNpcSteuern(npc, 1 / 60, pts, nrm, bogen.bogen, bogen.runde);
+    const weg = Math.hypot(npc.x - x0, npc.y - y0);
+    if (!(weg > 5)) f.push('NPC bewegt sich nicht: ' + weg.toFixed(1));
+    if (!(npc.kmh > 0.5)) f.push('NPC beschleunigt nicht: ' + npc.kmh);
+    // Die schaerfste Stelle suchen und dort mit hohem Tempo antesten: er bremst.
+    let kurveIdx = 0, dMaxKurve = 0;
+    for (let i = 0; i < pts.length; i++) {
+      let dM = 0, vorher = pts[i].heading;
+      for (let k = 1; k <= 18; k++) {
+        const j = (i + k) % pts.length;
+        let dh = pts[j].heading - vorher; dh = ((dh + 540) % 360) - 180;
+        if (Math.abs(dh) > Math.abs(dM)) dM = dh;
+        vorher = pts[j].heading;
+      }
+      if (Math.abs(dM) > dMaxKurve) { dMaxKurve = Math.abs(dM); kurveIdx = i; }
+    }
+    if (dMaxKurve < 1.2) f.push('Teststrecke hat keine Kurve');
+    else {
+      const c = mk(kurveIdx, 3.0);
+      vfNpcSteuern(c, 0.5, pts, nrm, bogen.bogen, bogen.runde);
+      if (!(c.kmh < 3.0)) f.push('Kurve: NPC bremst nicht: ' + c.kmh.toFixed(2) + ' (Kurve ' + dMaxKurve.toFixed(1) + ' Grad)');
+      // Auf der Geraden mit gleichem Tempo haelt er das Ziel (kein Abbremsen unter 2).
+      let geradeIdx = 0, dMin = Infinity;
+      for (let i = 0; i < pts.length; i++) {
+        let dM = 0, vorher = pts[i].heading;
+        for (let k = 1; k <= 18; k++) {
+          const j = (i + k) % pts.length;
+          let dh = pts[j].heading - vorher; dh = ((dh + 540) % 360) - 180;
+          if (Math.abs(dh) > Math.abs(dM)) dM = dh;
+          vorher = pts[j].heading;
+        }
+        if (Math.abs(dM) < dMin) { dMin = Math.abs(dM); geradeIdx = i; }
+      }
+      const g2 = mk(geradeIdx, 3.0);
+      vfNpcSteuern(g2, 0.5, pts, nrm, bogen.bogen, bogen.runde);
+      if (!(g2.kmh >= 2.5)) f.push('Gerade: NPC bricht zu stark ab: ' + g2.kmh.toFixed(2));
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'NPC faehrt vorwaerts, Kurve drosselt (Kurve ' + dMaxKurve.toFixed(1) + ' Grad)' };
+  });
+
   stAdd('Aufstellung: Mittelgasse, versetzte Haltepunkte, Impuls mit Tempo und Dauer aus den Reglern', () => {
     const f = [];
     // Haltepunkt: rechts (P1, gerade) weiter vorn als links (P2, ungerade)

@@ -4837,7 +4837,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.45</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.51</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -14526,6 +14526,7 @@
     "Rennmodus im virtuellen Fahren nicht verfügbar": "Race mode not available in virtual driving",
     "Rennen beendet": "Race finished",
     "Geist folgt meiner Linie": "Spirit follows my line",
+    "NPCs": "NPCs",
     "Rückwärtsgang: Ausrollen": "Reverse gear: roll-out",
     "Wie lange das Auto nach dem Loslassen beider Pedale noch rückwärts ausrollt, bevor es wieder in den 1. Gang schaltet, in Millisekunden (grob: bis es steht). Das Modelltempo läuft dabei weich auf null, das Auto bleibt also nicht abrupt stehen. 0 = sofort stehen bleiben und nach vorn schalten. Drückst du in dieser Zeit wieder beide Pedale, fährst du weiter rückwärts. Gilt nur bei „Gas und Bremse zusammen“.": "How long the car keeps rolling backwards after you release both pedals before it shifts back into 1st gear, in milliseconds (roughly: until it stops). The model speed runs smoothly down to zero, so the car does not stop abruptly. 0 = stop at once and shift forward. If you press both pedals again during this time, you keep driving backwards. Only applies to “Throttle and brake together”.",
     "Rückwärtsgang: rollt aus": "reverse: rolling out",
@@ -16701,6 +16702,11 @@
     "Systemstandardstimme": "System default voice",
     "Beispielansage testen": "Test sample announcement",
     "Spielt die ausgewählte Stimme mit Tempo und Stimmhöhe. Vorproduzierte Clips nutzen auch Hall; die Browserstimme nutzt den gewählten Geräteton, aber keinen Hall oder Lautstärke-Boost.": "Plays the selected voice with speed and pitch. Pre-produced clips also use reverb; the browser voice uses the selected device tone but no reverb or volume boost.",
+    "Keine Browserstimme verfügbar.": "No browser voice available.",
+    "Stimmen werden vom Browser geladen. Falls die Liste leer bleibt, wird die Systemstandardstimme verwendet.": "Voices are loaded by the browser. If the list stays empty, the system default voice is used.",
+    "Diese Plattform bietet keine Browserstimme; es werden vorproduzierte Clips verwendet.": "This platform offers no browser voice; pre-produced clips are used.",
+    "Browserstimme für alle Rennstand-Ansagen. Tempo und Pitch gelten; Hall und Lautstärke-Boost nur bei Clips.": "Browser voice for all race standings announcements. Speed and pitch apply; reverb and volume boost only with clips.",
+    "Immer die vorproduzierten Clips verwenden. Eigene Garagennamen werden dabei nicht gesprochen.": "Always use the pre-produced clips. Own garage names are not spoken then.",
     "Rennstand-Lautstärke": "Race standings volume",
     "Nur die Rennstand-Ansagen. Bis 200 % mit Boost; 0 % stumm. Regen, Motoren und Warnungen bleiben unverändert.": "Race standings announcements only. Up to 200% with boost; 0% mutes them. Rain, engines and warnings remain unchanged.",
     "Rennstand-Stadionhall": "Race standings stadium reverb",
@@ -17585,6 +17591,7 @@
     "Rennmodus im virtuellen Fahren nicht verfügbar": "Modo de carrera no disponible en la conducción virtual",
     "Rennen beendet": "Carrera terminada",
     "Geist folgt meiner Linie": "Espíritu sigue mi línea",
+    "NPCs": "NPCs",
     "Automatischer Kalibrierungslauf": "Recorrido de calibración automático",
     "Autonome Gegner": "Rivales autónomos",
     "Autonome Gegner, fein einstellbar": "Rivales autónomos, ajustables con precisión",
@@ -35741,7 +35748,8 @@
   const VF = { aktiv: false, car: null, vorherRolle: null, vorherSpieler: null, schicht: null, cv: null, hud: null,
                gl: null, prog: null, bahn: null, auto: null, pts: null, nrm: null, tiles: null, zu: false,
                x: 0, y: 0, h: 0, idx: 0, zaehler: 0, kachel: -2, abseits: false, abseitsSeit: 0, raf: 0, takt: 0,
-               letzt: 0, kam: null, rundeAb: 0, letzte: null, beste: null, trackModeVorher: null };
+               letzt: 0, kam: null, rundeAb: 0, letzte: null, beste: null, trackModeVorher: null,
+               npcs: null, npcBogen: null, npcRunde: 0 };
 
   // v1.1.3 GEMELDET: "Ich kann das virtuelle Auto mit Pfeiltasten nicht steuern." Die Menuefuehrung
   // (50b-menu-nav.js) nahm die Pfeiltasten, sobald auf der Seite bedienbare Zeilen lagen, und das Pad
@@ -35972,7 +35980,7 @@
   // Metern, im Auto +x links, +y oben, +z vorn; gezeichnet mal VF_AUTO.L / Laenge (so lang wie der Kasten).
   const VF_AUTO_STORE = 'omegasim-vf-auto';
   const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/' };
-  function vfModellPfad() { return VF_MODELL_PFADE[vfAutoWahl()] || 'img/autos/v5r/'; }
+  function vfModellPfad(auto) { return VF_MODELL_PFADE[auto || vfAutoWahl()] || 'img/autos/v5r/'; }
   const VF_FEDER_STORE = 'omegasim-vf-feder';
   const VF_FEDER_WERTE = [1, 2, 3, 5, 8];
   function vfAutoWahl() {
@@ -35988,6 +35996,95 @@
   // Der Faktor vergroessert nur den AUSSCHLAG; Federraten, Daempfer und Zeitverhalten bleiben die echten.
   function vfFederSicht() {
     try { const v = +localStorage.getItem(VF_FEDER_STORE); return VF_FEDER_WERTE.indexOf(v) >= 0 ? v : 1; } catch (e) { return 1; }
+  }
+  // NPCs im virtuellen Fahren (v1.1.46): wie viele andere Autos mitfahren (0-3), und ihre Skins werden
+  // zufaellig ohne Zuruecklegen aus den echten Modellen gezogen - nie der weisse Kasten. Sie folgen der
+  // Mittellinie mit leichtem Querversatz und drosseln ihr Tempo nach der Kurvigkeit voraus.
+  const VF_NPC_STORE = 'omegasim-vf-npc';
+  const VF_NPC_POOL = ['v5r', 'fmcgt4', 'boxer96', 'lynx220'];
+  const VF_NPC_BASE = 3.2;    // Zieltempo auf der Geraden (Modell-km/h; Anzeige mal TACHO_SCALE)
+  const VF_NPC_ACC = 2.5;     // Beschleunigung auf das Zieltempo (Modell-km/h je Sekunde)
+  const VF_NPC_BREMS = 6.0;   // Abbremsen auf das Zieltempo (Modell-km/h je Sekunde)
+  function vfNpcAnzahl() {
+    try { const v = +localStorage.getItem(VF_NPC_STORE); return (v >= 0 && v <= 3) ? v : 3; } catch (e) { return 3; }
+  }
+  // Bogenlaengen der Mittellinie (geschlossene Schleife): bogen[i] = Laenge bis Punkt i, bogen[n] = Runde.
+  function vfNpcBogen(pts) {
+    const bogen = [0];
+    for (let i = 1; i <= pts.length; i++) {
+      const a = pts[i - 1], b = pts[i % pts.length];
+      bogen[i] = bogen[i - 1] + Math.hypot(b.x - a.x, b.y - a.y);
+    }
+    return { bogen, runde: bogen[pts.length] };
+  }
+  // Ein NPC-Schritt (rein, fuer den Selbsttest): Tempo nach der Kurvigkeit voraus, dann auf der
+  // Mittellinie weiter. Liefert die neue Lage und die Zielgroessen zum Zeichnen.
+  function vfNpcSteuern(npc, dt, pts, nrm, bogen, runde) {
+    const n = pts.length;
+    const i = npc.idx;
+    let dMax = 0, vorher = pts[i].heading;
+    const W = 18;
+    for (let k = 1; k <= W; k++) {
+      const j = (i + k) % n;
+      let dh = pts[j].heading - vorher;
+      dh = ((dh + 540) % 360) - 180;
+      if (Math.abs(dh) > Math.abs(dMax)) dMax = dh;
+      vorher = pts[j].heading;
+    }
+    const kappa = Math.abs(dMax) / 2.86;
+    const ziel = VF_NPC_BASE * Math.max(0.3, 1 - kappa / 4.5 * 0.7) * npc.faktor;
+    if (npc.kmh < ziel) npc.kmh = Math.min(ziel, npc.kmh + VF_NPC_ACC * dt);
+    else npc.kmh = Math.max(ziel, npc.kmh - VF_NPC_BREMS * dt);
+    const vE = npc.kmh / 3.6 * 100 * TRACK_UNITS_PER_CM;
+    npc.s = (((npc.s + vE * dt) % runde) + runde) % runde;
+    let j = npc.idx;
+    while (j < n - 1 && bogen[j + 1] <= npc.s) j++;
+    while (j > 0 && bogen[j] > npc.s) j--;
+    npc.idx = j;
+    const p = pts[j], q = pts[(j + 1) % n], nr = nrm[j];
+    npc.x = p.x + nr.x * npc.offset;
+    npc.y = p.y + nr.y * npc.offset;
+    npc.h = Math.atan2(q.x - p.x, -(q.y - p.y)) * 180 / Math.PI;
+    npc.raddreh = ((npc.raddreh || 0) + vE / (VF_AUTO.L / 4.64 * 0.335)) % (Math.PI * 2);
+    let dH = npc.h - (npc.vorherH === undefined ? npc.h : npc.vorherH);
+    dH = ((dH + 540) % 360) - 180;
+    npc.vorherH = npc.h;
+    const yaw = dt > 0 ? dH * Math.PI / 180 / dt : 0;
+    const vReal = npc.kmh * REAL_SCALE / 3.6;
+    npc.ay = vReal * yaw;
+    npc.ax = 0;
+    const dSeg = Math.max(-1, Math.min(1, dMax / 8));
+    npc.lenkWinkel = dSeg * (npc.P ? npc.P.lenkGrad : 21) * Math.PI / 180;
+    return npc;
+  }
+  // NPCs anlegen: Anzahl aus der Garage, Skins zufaellig ohne Zuruecklegen aus den echten Modellen.
+  function vfNpcStarten(gl, start) {
+    const nAnzahl = vfNpcAnzahl();
+    VF.npcs = [];
+    if (nAnzahl <= 0 || !VF.tprog) return;
+    const pool = VF_NPC_POOL.slice();
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+    const bogen = vfNpcBogen(VF.pts);
+    VF.npcBogen = bogen.bogen; VF.npcRunde = bogen.runde;
+    const n = VF.pts.length;
+    for (let k = 0; k < nAnzahl; k++) {
+      const auto = pool[k];
+      const startIdx = (start + Math.floor(n * (k + 1) / (nAnzahl + 1))) % n;
+      const npc = {
+        auto, modell: null, P: null, idx: startIdx, s: bogen.bogen[startIdx], kmh: 0,
+        offset: [3.0, -3.0, 0.0][k] || 0,
+        faktor: 0.97 + 0.03 * k,
+        x: 0, y: 0, h: 0, raddreh: 0, lenkWinkel: 0, ay: 0, ax: 0, vorherH: undefined,
+        feder: { z: 0, vz: 0, th: 0, vth: 0, ph: 0, vph: 0 },
+      };
+      vfNpcSteuern(npc, 0, VF.pts, VF.nrm, VF.npcBogen, VF.npcRunde);
+      VF.npcs.push(npc);
+      vfModellDaten(VF_MODELL_PFADE[auto]).then((daten) => {
+        if (!VF.aktiv || VF.gl !== gl) return;
+        npc.modell = vfModellBauen(gl, daten, VF_MODELL_PFADE[auto]);
+        npc.P = vfPhysikAus(daten.meta.physik);
+      }).catch(() => { /* NPC ohne Modell bleibt unsichtbar */ });
+    }
   }
   // Fahrprofil fuer vfDynamik aus den Daten der .xml. Die Reibwerte von Speed Dreams sind ohne den dortigen
   // Reifentemperatur-Zuschlag gerechnet: mal 1,3 vorn, hinten wie beim GT3 abgestimmt 28 % mehr (breitere
@@ -36144,7 +36241,8 @@
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     return tx;
   }
-  function vfModellBauen(gl, daten) {
+  function vfModellBauen(gl, daten, pfad) {
+    pfad = pfad || vfModellPfad();
     const vbo = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
     gl.bufferData(gl.ARRAY_BUFFER, daten.ecken, gl.STATIC_DRAW);
@@ -36152,8 +36250,8 @@
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, daten.indizes, gl.STATIC_DRAW);
     const tex = {};
-    daten.meta.teile.forEach((t) => { if (!tex[t.tex]) tex[t.tex] = vfTextur(gl, vfModellPfad() + t.tex); });
-    const schatten = daten.meta.schatten ? vfTextur(gl, vfModellPfad() + daten.meta.schatten, [0, 0, 0, 0]) : null;
+    daten.meta.teile.forEach((t) => { if (!tex[t.tex]) tex[t.tex] = vfTextur(gl, pfad + t.tex); });
+    const schatten = daten.meta.schatten ? vfTextur(gl, pfad + daten.meta.schatten, [0, 0, 0, 0]) : null;
     // Eine kleine Flaeche fuer Schatten, Lichtkegel und Leuchten (wird je Bild neu beschrieben).
     const quad = gl.createBuffer();
     return { meta: daten.meta, d: daten.meta.physik, vbo, ibo, tex, schatten, glanz: vfGlanzTextur(gl), quad };
@@ -36287,6 +36385,13 @@
       st.speedKmh *= Math.exp(-VF_ABSEITS_BREMSE * dt);
       if (Date.now() - VF.abseitsSeit > VF_ABSEITS_ZURUECK_MS) vfZuruecksetzen();
     }
+    // NPCs: folgen der Mittellinie und drosseln in Kurven.
+    if (VF.npcs && VF.npcBogen) {
+      for (const npc of VF.npcs) {
+        vfNpcSteuern(npc, dt, VF.pts, VF.nrm, VF.npcBogen, VF.npcRunde);
+        if (npc.modell && npc.modell.d && npc.modell.d.reifen) vfFederung(npc.feder, npc.ax || 0, npc.ay || 0, dt, npc.modell.d, 0);
+      }
+    }
     vfMalen();
     vfHud();
   }
@@ -36360,6 +36465,13 @@
       zeichne(VF.auto, vfLage(VF.x, VF.y, VF.h));
       gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
     }
+    // NPCs: ihre eigenen Modelle an ihren Stellen.
+    if (VF.npcs && VF.tprog) {
+      for (const npc of VF.npcs) {
+        if (!npc.modell) continue;
+        vfModellZeichnen(gl, pv, blick, npc.modell, VF.tprog, npc.x, npc.y, npc.h, npc.feder, npc.lenkWinkel, npc.raddreh, VF.radModell, true, false, 1);
+      }
+    }
   }
   // ---- Kamera (v1.1.11) --------------------------------------------------------------------
   // BESTELLT: "Wenn ich den rechten Stick reindruecke im virtuellen Fahren, aendere die Kamera zu
@@ -36415,16 +36527,21 @@
     return { auge: VF.kam, ziel: [VF.x + fx * (nah ? 10 : 14), nah ? 2.2 : 1.5, VF.y + fz * (nah ? 10 : 14)], fov: nah ? 66 : 62, nah: 0.5 };
   }
   function vfModellMalen(gl, pv, blick) {
-    const M = VF.modell, d = M.d, T = VF.tprog, u = T.u;
+    vfModellZeichnen(gl, pv, blick, VF.modell, VF.tprog, VF.x, VF.y, VF.h, VF.feder, VF.lenkWinkel, VF.raddreh, VF.radModell,
+      (typeof headlightsOn === 'undefined' ? true : !!headlightsOn),
+      !!(physEngine.outputs && physEngine.outputs.lights && physEngine.outputs.lights.brake), vfFederSicht());
+  }
+  // Ein Modell an einer Stelle zeichnen. Wird fuer das Spielerauto und fuer jeden NPC benutzt:
+  // M ist das gebaute Modell (vfModellBauen), T das Texturprogramm, fe der Federungszustand.
+  function vfModellZeichnen(gl, pv, blick, M, T, x, y, h, fe, lenkWinkel, raddreh, radModell, licht, bremst, fs) {
+    const d = M.d, u = T.u;
     const s = VF_AUTO.L / d.laenge;
-    const lage = vfMal(vfLage(VF.x, VF.y, VF.h), vfS(s, s, s));
-    const g = vfFederSicht(), fe = VF.feder || { z: 0, th: 0, ph: 0 };
+    const lage = vfMal(vfLage(x, y, h), vfS(s, s, s));
+    const g = fs || 1, fez = fe || { z: 0, th: 0, ph: 0 };
     const zSp = d.vorderachse - d.a, boden = (d.reifen.vorn.bodenfreiheit + d.reifen.hinten.bodenfreiheit) / 2;
     // Aufbau: um den Schwerpunkt genickt und gerollt, eingefedert nach unten.
-    const aufbau = vfKette(lage, vfT(0, boden - fe.z * g, zSp), vfT(0, d.schwerpunktHoehe, 0), vfRx(fe.th * g), vfRz(fe.ph * g),
+    const aufbau = vfKette(lage, vfT(0, boden - fez.z * g, zSp), vfT(0, d.schwerpunktHoehe, 0), vfRx(fez.th * g), vfRz(fez.ph * g),
       vfT(0, -d.schwerpunktHoehe, -zSp));
-    const licht = typeof headlightsOn === 'undefined' ? true : !!headlightsOn;
-    const bremst = !!(physEngine.outputs && physEngine.outputs.lights && physEngine.outputs.lights.brake);
     gl.useProgram(T.p);
     gl.uniformMatrix4fv(u.m, false, new Float32Array(pv));
     gl.uniform3f(u.nebel, 0.66, 0.78, 0.90);
@@ -36479,12 +36596,12 @@
     const radTeile = M.meta.teile.filter((t) => t.gruppe === 'rad');
     [[1, 'vorn', d.vorderachse], [-1, 'vorn', d.vorderachse], [1, 'hinten', d.hinterachse], [-1, 'hinten', d.hinterachse]].forEach(([seite, ax, z]) => {
       const r = d.reifen[ax];
-      const w = vfKette(lage, vfT(seite * r.spur / 2, r.radius, z), vfRy(ax === 'vorn' ? -(VF.lenkWinkel || 0) : 0), vfRx(VF.raddreh || 0),
+      const w = vfKette(lage, vfT(seite * r.spur / 2, r.radius, z), vfRy(ax === 'vorn' ? -(lenkWinkel || 0) : 0), vfRx(raddreh || 0),
         vfS(seite * r.breite, 2 * r.radius, 2 * r.radius));
       radTeile.forEach((t) => { setze(w, [1, 1, 1], 0, 1, 0, 1); teil(t); });
       if (!radTeile.length) {
         // Fallback: die echten Rad-Teile der Vulture V5.R (mit Reifen-/Felgen-Textur).
-        const radM = VF.radModell;
+        const radM = radModell;
         if (radM && radM.teile.length) {
           setze(w, [1, 1, 1], 0, 1, 0, 1);
           radM.teile.forEach((t) => {
@@ -36636,10 +36753,10 @@
     VF.geistAuto = vfAutoBauen(gl, [0.45, 0.75, 1.0]);
     VF.geist = { an: vfGeistAn(), aufzeichnung: [], aktiv: false, zeit: 0, t: 0, i: 0, x: 0, y: 0, h: 0 };
     VF.modell = null; VF.P = null; VF.feder = null; VF.raddreh = 0;
-    if (vfAutoWahl() !== 'kasten') {
-      try { VF.tprog = vfProgrammTex(gl); } catch (e) { VF.tprog = null; }
-      if (VF.tprog) {
-        vfRadModellBauen(gl).then((rad) => { if (VF.aktiv && VF.gl === gl) VF.radModell = rad; });
+    try { VF.tprog = vfProgrammTex(gl); } catch (e) { VF.tprog = null; }
+    if (VF.tprog) {
+      vfRadModellBauen(gl).then((rad) => { if (VF.aktiv && VF.gl === gl) VF.radModell = rad; });
+      if (vfAutoWahl() !== 'kasten') {
         vfModellDaten().then((daten) => {
           if (!VF.aktiv || VF.gl !== gl) return;
           VF.modell = vfModellBauen(gl, daten);
@@ -36653,6 +36770,7 @@
     Object.assign(VF, { x: VF.pts[start].x, y: VF.pts[start].y, h: VF.pts[start].heading, idx: start, zaehler: 0, kachel: -2,
                         abseits: false, letzt: 0, kam: null, rundeAb: 0, letzte: null, beste: null, aktiv: true,
                         startX: VF.pts[start].x, startY: VF.pts[start].y, startH: VF.pts[start].heading });
+    vfNpcStarten(gl, start);
     physEngine.state.speedKmh = 0;
     schicht.addEventListener('click', (e) => {
       const b = e.target.closest('[data-vf]');
@@ -36764,6 +36882,13 @@
       renderGarage();
     };
     rechts.appendChild(garWertZeile(t('Geist folgt meiner Linie'), geistAn ? t('An') : t('Aus'), geistWahl, geistWahl));
+    // NPCs: wie viele andere Autos mitfahren (0-3), zufaellige Skins aus den echten Modellen.
+    const nNpc = vfNpcAnzahl();
+    const npcWahl = (dd) => {
+      try { localStorage.setItem(VF_NPC_STORE, String(Math.max(0, Math.min(3, nNpc + dd)))); } catch (e) { /* egal */ }
+      renderGarage();
+    };
+    rechts.appendChild(garWertZeile(t('NPCs'), nNpc === 0 ? t('Aus') : String(nNpc), () => npcWahl(-1), () => npcWahl(1)));
     if (autos[ja].v !== 'kasten') {
       const jf = VF_FEDER_WERTE.indexOf(vfFederSicht());
       const federWahl = (dd) => {
@@ -36832,6 +36957,7 @@
       VF.abbruch = false;
     }
     VF.aktiv = false;
+    VF.npcs = null; VF.npcBogen = null; VF.npcRunde = 0;
     document.body.classList.remove('vf-an');
     cancelAnimationFrame(VF.raf);
     clearInterval(VF.takt);
@@ -51951,10 +52077,10 @@
       rennstandStimmenModus = modus;
       rennstandStimmenModusWahl.value = modus;
       const hinweis = $('setting-announce-stand-voice-help');
-      if (hinweis) hinweis.textContent = !rennstandWebSpeechVerfuegbar()
+      if (hinweis)       hinweis.textContent = !rennstandWebSpeechVerfuegbar()
         ? 'Diese Plattform bietet keine Browserstimme; es werden vorproduzierte Clips verwendet.'
         : modus === 'browser'
-          ? 'Browserstimme fuer alle Rennstand-Ansagen. Tempo und Pitch gelten; Hall und Lautstaerke-Boost nur bei Clips.'
+          ? 'Browserstimme für alle Rennstand-Ansagen. Tempo und Pitch gelten; Hall und Lautstärke-Boost nur bei Clips.'
           : modus === 'clips'
             ? 'Immer die vorproduzierten Clips verwenden. Eigene Garagennamen werden dabei nicht gesprochen.'
             : 'Automatisch: bei eigenen Garagennamen Browserstimme, sonst vorproduzierte Clips.';
@@ -51996,9 +52122,9 @@
     select.disabled = !rennstandWebSpeechVerfuegbar() || stimmen.length === 0;
     const hinweis = $('setting-announce-stand-browser-voice-help');
     if (hinweis) hinweis.textContent = !rennstandWebSpeechVerfuegbar()
-      ? 'Keine Browserstimme verfuegbar.'
+      ? 'Keine Browserstimme verfügbar.'
       : stimmen.length
-        ? 'Die Liste kommt vom Browser/Geraet; Stimmen koennen je nach Plattform variieren.'
+        ? 'Die Liste kommt vom Browser/Gerät; Stimmen können je nach Plattform variieren.'
         : 'Stimmen werden vom Browser geladen. Falls die Liste leer bleibt, wird die Systemstandardstimme verwendet.';
   }
   if (rennstandBrowserStimmenWahl) {
@@ -90897,6 +91023,65 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const texs = [...new Set(m.teile.map((t) => t.tex))];
     for (const x of texs) { const r = await fetch(vfModellPfad() + x, { method: 'HEAD' }).catch(() => null); if (!r || !r.ok) f.push('Textur fehlt: ' + x); }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : m.name + ': ' + m.teile.length + ' Teile, ' + (daten.indizes.length / 3) + ' Dreiecke, ' + texs.length + ' Texturen' };
+  });
+
+  stAdd('Virtuell: NPCs folgen der Mittellinie und drosseln in der Kurve', () => {
+    const f = [];
+    // Anzahl: nur 0-3, sonst Standard 3.
+    const merk = localStorage.getItem(VF_NPC_STORE);
+    try {
+      localStorage.setItem(VF_NPC_STORE, '5');
+      if (vfNpcAnzahl() !== 3) f.push('Anzahl ueber 3 faellt nicht auf 3 zurueck');
+      localStorage.setItem(VF_NPC_STORE, '-1');
+      if (vfNpcAnzahl() !== 3) f.push('Anzahl unter 0 faellt nicht auf 3 zurueck');
+      localStorage.setItem(VF_NPC_STORE, '2');
+      if (vfNpcAnzahl() !== 2) f.push('Anzahl 2 nicht uebernommen');
+    } finally { if (merk === null) localStorage.removeItem(VF_NPC_STORE); else localStorage.setItem(VF_NPC_STORE, merk); }
+    // Ein NPC auf einer Teststrecke: er faehrt vorwaerts, und in der Kurve bremst er ab.
+    const tiles = codeToTrack('SG4R4G4').tiles, pts = trackCenterline(tiles), nrm = trackNormals(pts);
+    const bogen = vfNpcBogen(pts);
+    const mk = (idx, kmh) => ({ idx, s: bogen.bogen[idx], kmh, offset: 0, faktor: 1, x: 0, y: 0, h: 0, raddreh: 0, lenkWinkel: 0, ay: 0, ax: 0, vorherH: undefined, P: null });
+    const npc = mk(10, 0);
+    vfNpcSteuern(npc, 0, pts, nrm, bogen.bogen, bogen.runde);
+    const x0 = npc.x, y0 = npc.y;
+    for (let i = 0; i < 120; i++) vfNpcSteuern(npc, 1 / 60, pts, nrm, bogen.bogen, bogen.runde);
+    const weg = Math.hypot(npc.x - x0, npc.y - y0);
+    if (!(weg > 5)) f.push('NPC bewegt sich nicht: ' + weg.toFixed(1));
+    if (!(npc.kmh > 0.5)) f.push('NPC beschleunigt nicht: ' + npc.kmh);
+    // Die schaerfste Stelle suchen und dort mit hohem Tempo antesten: er bremst.
+    let kurveIdx = 0, dMaxKurve = 0;
+    for (let i = 0; i < pts.length; i++) {
+      let dM = 0, vorher = pts[i].heading;
+      for (let k = 1; k <= 18; k++) {
+        const j = (i + k) % pts.length;
+        let dh = pts[j].heading - vorher; dh = ((dh + 540) % 360) - 180;
+        if (Math.abs(dh) > Math.abs(dM)) dM = dh;
+        vorher = pts[j].heading;
+      }
+      if (Math.abs(dM) > dMaxKurve) { dMaxKurve = Math.abs(dM); kurveIdx = i; }
+    }
+    if (dMaxKurve < 1.2) f.push('Teststrecke hat keine Kurve');
+    else {
+      const c = mk(kurveIdx, 3.0);
+      vfNpcSteuern(c, 0.5, pts, nrm, bogen.bogen, bogen.runde);
+      if (!(c.kmh < 3.0)) f.push('Kurve: NPC bremst nicht: ' + c.kmh.toFixed(2) + ' (Kurve ' + dMaxKurve.toFixed(1) + ' Grad)');
+      // Auf der Geraden mit gleichem Tempo haelt er das Ziel (kein Abbremsen unter 2).
+      let geradeIdx = 0, dMin = Infinity;
+      for (let i = 0; i < pts.length; i++) {
+        let dM = 0, vorher = pts[i].heading;
+        for (let k = 1; k <= 18; k++) {
+          const j = (i + k) % pts.length;
+          let dh = pts[j].heading - vorher; dh = ((dh + 540) % 360) - 180;
+          if (Math.abs(dh) > Math.abs(dM)) dM = dh;
+          vorher = pts[j].heading;
+        }
+        if (Math.abs(dM) < dMin) { dMin = Math.abs(dM); geradeIdx = i; }
+      }
+      const g2 = mk(geradeIdx, 3.0);
+      vfNpcSteuern(g2, 0.5, pts, nrm, bogen.bogen, bogen.runde);
+      if (!(g2.kmh >= 2.5)) f.push('Gerade: NPC bricht zu stark ab: ' + g2.kmh.toFixed(2));
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'NPC faehrt vorwaerts, Kurve drosselt (Kurve ' + dMaxKurve.toFixed(1) + ' Grad)' };
   });
 
   stAdd('Aufstellung: Mittelgasse, versetzte Haltepunkte, Impuls mit Tempo und Dauer aus den Reglern', () => {
