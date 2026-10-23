@@ -185,7 +185,7 @@
   function raceLapTarget(gefahren) {
     if (raceMode === 'laps') return gefahren + ' / ' + raceLimit;
     if (RACE_MODES[raceMode].timed && raceStartedAt !== null) {
-      const restMs = Math.max(0, raceLimit * 60000 - (Date.now() - raceStartedAt));
+      const restMs = Math.max(0, raceLimit * 60000 - (rennZeitJetzt() - raceStartedAt));
       const s = Math.floor(restMs / 1000);
       return gefahren + ' \u00b7 ' + Math.floor(s / 60) + ':'
              + String(s % 60).padStart(2, '0');
@@ -197,13 +197,13 @@
     if (raceState !== 'racing') return false;
     // Training: mit Zeitlimit (> 0) endet es nach der Zeit, mit 0 nur von Hand.
     if (raceMode === 'practice' || raceMode === 'bestzeit') {
-      return raceLimit > 0 && raceStartedAt !== null && (Date.now() - raceStartedAt) >= raceLimit * 60000;
+      return raceLimit > 0 && raceStartedAt !== null && (rennZeitJetzt() - raceStartedAt) >= raceLimit * 60000;
     }
     if (!RACE_MODES[raceMode].timed) return false;
     if (raceMode === 'laps') {
       return raceAllCars().some(c => c.laps.length >= raceLimit);
     }
-    return raceStartedAt !== null && (Date.now() - raceStartedAt) >= raceLimit * 60000;
+    return raceStartedAt !== null && (rennZeitJetzt() - raceStartedAt) >= raceLimit * 60000;
   }
 
   // ---- Knockout-Wertung (experimentell) ----
@@ -227,7 +227,7 @@
     knockoutGeister = knockoutGeisterZaehlen();
     if (typeof playTone === 'function') {   // positiver Ton
       playTone(880, 0.06, 'sine', 0.2);
-      setTimeout(() => playTone(1320, 0.09, 'sine', 0.2), 45);
+      rennZeitTimeout(() => playTone(1320, 0.09, 'sine', 0.2), 45);
     }
     showHudToast(t('Geist raus · noch {n} Geister').replace('{n}', knockoutGeister));
     knockoutPruefen();
@@ -250,7 +250,7 @@
   function playLebenWeg() {
     if (typeof playTone !== 'function') return;
     playTone(392, 0.16, 'sine', 0.24);
-    setTimeout(() => playTone(311, 0.26, 'sine', 0.24), 170);
+    rennZeitTimeout(() => playTone(311, 0.26, 'sine', 0.24), 170);
   }
   // Game over: vier absteigende Halbtoene, der letzte lang - das bekannte "wah wah wah
   // waaah". Rechteck, damit es auch aus dem Handylautsprecher kommt (alles ueber 250 Hz).
@@ -258,7 +258,7 @@
                            { hz: 294, ab: 0.52, dauer: 0.22 }, { hz: 277, ab: 0.78, dauer: 0.8 }];
   function playGameOver() {
     if (typeof playTone !== 'function') return;
-    for (const n of GAME_OVER_NOTEN) setTimeout(() => playTone(n.hz, n.dauer, 'square', 0.15), n.ab * 1000);
+    for (const n of GAME_OVER_NOTEN) rennZeitTimeout(() => playTone(n.hz, n.dauer, 'square', 0.15), n.ab * 1000);
   }
   // Ende: alle Geister raus -> Sieg; alle Menschen raus -> Niederlage.
   // Die Entscheidung allein, ohne Folgen (v0.9.16, fuer den Selbsttest): null = weiter.
@@ -320,7 +320,7 @@
     const kills = zs ? zs.derbyKills : derbyKills;
     if (typeof playTone === 'function') {   // positiver Ton fuer den Abschuss
       playTone(880, 0.06, 'sine', 0.2);
-      setTimeout(() => playTone(1320, 0.09, 'sine', 0.2), 45);
+      rennZeitTimeout(() => playTone(1320, 0.09, 'sine', 0.2), 45);
     }
     // Die Kills dessen, der getroffen hat (v0.9.16; vorher immer die von Spieler 1).
     showHudToast(t('Geist aus') + ' · ' + t('Spieler {n}').replace('{n}', zs ? schuetze : 1) + ' · Kills ' + kills);
@@ -390,7 +390,7 @@
     derbySieger = sieger; derbyLaeuft = false;
     if (sieger === 'p1') { if (typeof playRaceEndFanfare === 'function') playRaceEndFanfare(); showHudToast(t('Derby: Spieler 1 gewinnt!')); }
     else if (/^p[2-9]$/.test(sieger)) { if (typeof playRaceEndFanfare === 'function') playRaceEndFanfare(); showHudToast(t('Derby: Spieler {n} gewinnt!').replace('{n}', sieger.slice(1))); }
-    else { if (typeof playTone === 'function') { playTone(200, 0.12, 'square', 0.16); setTimeout(() => playTone(140, 0.16, 'square', 0.14), 70); setTimeout(() => playTone(110, 0.2, 'square', 0.12), 160); } showHudToast(t('Derby: Geist gewinnt.')); }
+    else { if (typeof playTone === 'function') { playTone(200, 0.12, 'square', 0.16); rennZeitTimeout(() => playTone(140, 0.16, 'square', 0.14), 70); rennZeitTimeout(() => playTone(110, 0.2, 'square', 0.12), 160); } showHudToast(t('Derby: Geist gewinnt.')); }
     if (typeof finishRace === 'function') finishRace(false);
   }
   // ---- DERBY-COCKPIT (v0.8.126) ----
@@ -450,7 +450,7 @@
       const dist = Math.abs(ghostOrtGes(c) - ort);
       // EIN Treffer je Annaeherung (v0.9.16): vorher zog jeder 45-ms-Takt 20 % ab, ein naher
       // Ghost war nach fuenf Takten (0,2 s) raus. Jetzt hoechstens ein Treffer je Sekunde.
-      const jetzt = Date.now();
+      const jetzt = rennZeitJetzt();
       if (dist < DERBY_RAM_TILES && tempo > DERBY_RAM_KMH && jetzt - (c.ghost.derbyTrefferAt || 0) > DERBY_TREFFER_MS) {
         c.ghost.derbyTrefferAt = jetzt;
         derbySchaden(c, 20, 1);
@@ -520,6 +520,7 @@
   function fruehstartBeginnen() {
     fruehstartReset();
     fruehstartTimer = setInterval(() => {
+      if (rennPauseAktiv()) return;
       if (raceState !== 'countdown') return;
       FRUEH_SPIELER.forEach((w) => {
         if (w >= 2 && !(zweiSpieler && zusatzPlatz(w) && zusatzPlatz(w).car)) return;
@@ -539,7 +540,7 @@
   function fruehstartStrafeAktiv(w) {
     const f = fruehstart[w];
     if (!f || fruehstartZeitAn()) return false;     // Zeitstrafe statt Ausbremsen
-    const jetzt = Date.now();
+    const jetzt = rennZeitJetzt();
     if (f.warten && (raceState === 'racing' || raceState === 'finishing') && fruehstartTempo(w) > FRUEHSTART_KMH) {
       f.warten = false;
       f.bis = jetzt + FRUEHSTART_STRAFE_MS;
@@ -550,6 +551,7 @@
   function fruehstartGab(w) { const f = fruehstart[w || 1]; return !!(f && f.frueh); }
 
   function raceClockTick() {
+    if (rennPauseAktiv()) return;
     if (raceState !== 'racing') return;
     if (raceAwaitingMove) {
       if (!raceMoveErkannt()) {
@@ -558,8 +560,8 @@
         return;
       }
       raceAwaitingMove = false;
-      raceLapStart = Date.now();
-      raceStartedAt = Date.now();
+      raceLapStart = rennZeitJetzt();
+      raceStartedAt = rennZeitJetzt();
       // Die Kachel, auf der das Auto beim Start steht: eine Ziellinie darauf ist keine Runde.
       dashLapZaehler = dashLastTileCounter;
       raceAnlaufZaehler = trackMode === 'on' ? dashLastTileCounter : null;
@@ -571,13 +573,13 @@
     const el = $('race-clock');
     if (el) {
       if (!RACE_MODES[raceMode].timed) {
-        const up = Date.now() - raceStartedAt;
+        const up = rennZeitJetzt() - raceStartedAt;
         el.textContent = formatLapTime(up) + ' gefahren';
       } else if (raceMode === 'laps') {
         const best = Math.max(0, ...raceAllCars().map(c => c.laps.length));
         el.textContent = `Runde ${best} / ${raceLimit}`;   // best = vollendete Runden
       } else {
-        const left = Math.max(0, raceLimit * 60000 - (Date.now() - raceStartedAt));
+        const left = Math.max(0, raceLimit * 60000 - (rennZeitJetzt() - raceStartedAt));
         el.textContent = formatLapTime(left) + ' übrig';
       }
     }
@@ -649,14 +651,14 @@
     raceFormationLap = false;
     limitFormation = 1; applySpeedLimit();
     updateFlagUi();
-    raceLapStart = Date.now();
-    garage.forEach(c => { if (c.race) c.race.lapStart = Date.now(); });
+    raceLapStart = rennZeitJetzt();
+    garage.forEach(c => { if (c.race) c.race.lapStart = rennZeitJetzt(); });
     setRaceLights('go');
     playTone(1046, 0.30, 'square', 0.22);
     showHudToast(t('Frei, volle Fahrt!'));
     log('Einführungsrunde beendet, Rennen freigegeben.', 'info');
     $('race-status').textContent = t('{m} läuft').replace('{m}', t(RACE_MODES[raceMode].label));
-    setTimeout(() => setRaceLights(0), 900);
+    rennZeitTimeout(() => setRaceLights(0), 900);
   }
 
   // ---- Die Start/Ziel-Sperre des AUTOS: Byte 15, Bit 3 im Meldekanal ------------------
@@ -680,10 +682,11 @@
   }
 
   function carRaceNotify(car, b) {
+    if (rennPauseAktiv()) return;
     if (!car.race) car.race = { laps: [], lapStart: null, pending: null, seen: 0,
                                 lastActed: 0, lastCount: null };
     const r = car.race;
-    const now = Date.now();
+    const now = rennZeitJetzt();
     // Die Kachel, auf der das Auto stand, als diese Wertung begann (tileCount wird erst
     // NACH diesem Aufruf auf das neue Paket gesetzt).
     if (r.lapZaehler === undefined) r.lapZaehler = car.tileCount === undefined ? null : car.tileCount;
@@ -733,6 +736,7 @@
   // Derselbe Grund wie bei playerLapCrossed(): eine Stelle, die eine Runde zaehlt, und die
   // Testtaste nimmt sie mit.
   function carLapCrossed(car) {
+    if (rennPauseAktiv()) return;
     // v0.10.7: das Safety Car faehrt keine Runden - es wartet nur auf Start/Ziel nach Gruen.
     if (car.role === 'safetycar') {
       if (car.ghost && typeof safetyCarLinie === 'function') safetyCarLinie(car);
@@ -740,7 +744,7 @@
     }
     if (!car.race) car.race = { laps: [], lapStart: null, pending: null, seen: 0,
                                 lastActed: 0, lastCount: null };
-    const r = car.race, now = Date.now();
+    const r = car.race, now = rennZeitJetzt();
     // DIE AUSLAUFRUNDE endet hier, und nur hier: dieses Auto hat Start/Ziel ueberfahren,
     // also gilt die Zielflagge fuer es. Die Runde wird noch GEWERTET - sie ist gefahren
     // worden, und eine gefahrene Runde zu verschweigen waere die zweite Unwahrheit nach der
@@ -1318,7 +1322,7 @@
       // In einem Zeitrennen faellt der erste Schauer sicher hinein: spaetestens bei der
       // Haelfte der Renndauer.
       if (RACE_MODES[raceMode].timed && raceMode !== 'laps') {
-        wxWechselAt = Math.min(wxWechselAt, Date.now() + raceLimit * 60000 * 0.5);
+        wxWechselAt = Math.min(wxWechselAt, rennZeitJetzt() + raceLimit * 60000 * 0.5);
       }
       return;
     }
@@ -1326,7 +1330,7 @@
     const total = RACE_MODES[raceMode].timed && raceMode !== 'laps'
       ? raceLimit * 60000
       : 5 * 60000;   // practice / lap races: assume a five-minute window
-    raceWxSwitchAt = Date.now() + total * (0.35 + Math.random() * 0.3);
+    raceWxSwitchAt = rennZeitJetzt() + total * (0.35 + Math.random() * 0.3);
   }
 
   // ---- WECHSELHAFT ------------------------------------------------------------------
@@ -1358,16 +1362,17 @@
   function wxWechselPlanen(nass) {
     const min = nass ? WX_REGEN_MIN_MS : WX_TROCKEN_MIN_MS;
     const max = nass ? WX_REGEN_MAX_MS : WX_TROCKEN_MAX_MS;
-    wxWechselAt = Date.now() + min + Math.random() * (max - min);
+    wxWechselAt = rennZeitJetzt() + min + Math.random() * (max - min);
   }
 
   // Ein eigener Takt, unabhaengig vom Rennen. Der Aufruf aus raceClockTick() bleibt, er
   // schadet nicht: nach dem ersten Umschalten liegt wxWechselAt in der Zukunft.
   setInterval(() => { wxWechselTick(); }, 1000);
   function wxWechselTick() {
+    if (rennPauseAktiv()) return;
     if (mpWetter) { mpWetterTick(); return; }
     if (raceWxStart !== 'wechsel' || wxWechselAt === null) return;
-    if (Date.now() < wxWechselAt) return;
+    if (rennZeitJetzt() < wxWechselAt) return;
     const warNass = weather === 'rain';
     setWeather(warNass ? 'dry' : 'rain');
     showHudToast(warNass ? t('Es trocknet ab') : t('Es fängt an zu regnen'));
@@ -1406,7 +1411,7 @@
   }
   function mpWetterTick() {
     if (!mpWetter || (raceState !== 'racing' && raceState !== 'finishing')) return;
-    const jetzt = Date.now();
+    const jetzt = rennZeitJetzt();
     while (mpWetter.i < mpWetter.liste.length && mpWetter.gruen + mpWetter.liste[mpWetter.i].abMs <= jetzt) {
       const e = mpWetter.liste[mpWetter.i++];
       if (e.wetter !== weather) {
@@ -1418,7 +1423,7 @@
 
   function maybeSwitchRaceWeather() {
     if (mpWetter) { mpWetterTick(); return; }
-    if (raceWxSwitchAt === null || Date.now() < raceWxSwitchAt) return;
+    if (raceWxSwitchAt === null || rennZeitJetzt() < raceWxSwitchAt) return;
     raceWxSwitchAt = null;   // once per race
     const next = weather === 'rain' ? 'dry' : 'rain';
     setWeather(next);
@@ -2013,9 +2018,10 @@
       knoepfe.push([t('Telemetrie ansehen'), () => teleSeiteOeffnen()]);
     }
     knoepfe.push([t('Schließen'), null]);
-    setTimeout(() => konsoleFrage(t('Time Attack beendet'), text, knoepfe, true), 900);
+    rennZeitTimeout(() => konsoleFrage(t('Time Attack beendet'), text, knoepfe, true), 900);
   }
   function startRaceCountdown(gruenZiel, mpPlan) {
+    if (rennPauseAktiv()) return;
     if (raceState !== 'idle' && raceState !== 'finished') return; // ignore while armed/racing
     if (!knockoutBereit(true)) return;
     if (!bestzeitBereit(true)) return;
@@ -2038,7 +2044,7 @@
         schirm.classList.remove('gt3-warm');
         void schirm.offsetWidth;
         schirm.classList.add('gt3-warm');
-        setTimeout(() => schirm.classList.remove('gt3-warm'), 320);
+        rennZeitTimeout(() => schirm.classList.remove('gt3-warm'), 320);
       }
     }
     // Starting conditions, applied before the lights: weather first, because the tyre
@@ -2051,7 +2057,7 @@
     // hier direkt danach steht es, weil beides zur selben "was fuer ein Rennen wird das"-
     // Ansage am Start gehoert.
     wxWindWuerfeln();
-    const gruenBei = typeof gruenZiel === 'number' && gruenZiel > Date.now() + 200 ? gruenZiel : null;
+    const gruenBei = typeof gruenZiel === 'number' && gruenZiel > rennZeitJetzt() + 200 ? gruenZiel : null;
     // Mehrspieler: Wind und Wetterplan fuer alle gleich (v0.8.42).
     mpWetter = null;
     if (mpPlan && gruenBei) {
@@ -2125,7 +2131,7 @@
     // Intervall alle 400 ms nachgezogen, und in diesem Fenster stand dort noch "Rennen
     // starten", waehrend das Rennen schon lief - ein Druck darauf hat es dann gestoppt. Ein
     // Knopf, der luegt, was er tun wird, ist schlimmer als einer, der langsam ist.
-    setTimeout(updateRaceActButtons, 0);
+    rennZeitTimeout(updateRaceActButtons, 0);
     // Die Seiten des Zieleinlaufs beginnen bei jedem Rennen von vorn - sonst haengt die
     // Seite eines Autos an der Zahl der Rennen davor, und dieselbe Aufstellung endete beim
     // zweiten Mal anders als beim ersten.
@@ -2145,14 +2151,14 @@
                       : (1000 + Math.random() * 2000);
     // Lokal: Gruen so setzen, dass die 1. Lampe 600 ms nach dem Start erscheint
     // (1. Lampe = gruen - verzog - 4000).
-    const plan = ampelZeitplan(gruenBei || Date.now() + 4600 + ampelVerzog, ampelVerzog);
-    clearTimeout(raceCountdownTimer);
+    const plan = ampelZeitplan(gruenBei || rennZeitJetzt() + 4600 + ampelVerzog, ampelVerzog);
+    rennZeitTimeoutStop(raceCountdownTimer);
     const schritt = (k) => {
       if (raceState !== 'countdown') return;
       ampelK = k;
       const [bei, stufe] = plan[k];
-      const warte = bei - Date.now();
-      if (warte > 4) { raceCountdownTimer = setTimeout(() => schritt(k), warte); return; }
+      const warte = bei - rennZeitJetzt();
+      if (warte > 4) { raceCountdownTimer = rennZeitTimeout(() => schritt(k), warte); return; }
       // Kommt der Plan spaet an, werden verpasste Lichter uebersprungen - nur Gruen zaehlt.
       if (stufe > 0 && warte < -400 && k + 1 < plan.length) { schritt(k + 1); return; }
       if (stufe > 0) {
@@ -2164,7 +2170,7 @@
       setRaceLights('go');
       ampelTon(880, 0.35, 'square', 0.22);
       raceGreen();
-      setTimeout(() => setRaceLights(0), 900);
+      rennZeitTimeout(() => setRaceLights(0), 900);
     };
     ampelPlan = plan; ampelSchritt = schritt;
     schritt(0);
@@ -2174,9 +2180,9 @@
   let ampelPlan = null, ampelSchritt = null, ampelK = 0;
   function ampelVerschieben(delta) {
     if (!ampelPlan || !ampelSchritt || raceState !== 'countdown' || ampelK > 0) return false;
-    if (ampelPlan[0][0] + delta < Date.now() + 300) return false;
+    if (ampelPlan[0][0] + delta < rennZeitJetzt() + 300) return false;
     for (const p of ampelPlan) p[0] += delta;
-    clearTimeout(raceCountdownTimer);
+    rennZeitTimeoutStop(raceCountdownTimer);
     ampelSchritt(ampelK);
     return true;
   }
@@ -2187,7 +2193,7 @@
     // A flying start goes to the formation lap first: the cars roll at pit-lane speed
     // and no laps count until the field crosses the line.
     raceFormationLap = raceFlying;
-    raceGreenAt = raceFlying ? null : Date.now();
+    raceGreenAt = raceFlying ? null : rennZeitJetzt();
     fruehstartGruen();
     rammReset();
     // FRISCH ZAEHLEN. Ohne das traegt ein zweites Rennen die Ueberfahrten des ersten mit
@@ -2248,7 +2254,7 @@
     // stehenden Start gehoert zur Zeit, sonst waere ein Zoegern gratis.
     if (imChallenge) {
       raceAwaitingMove = false;
-      raceLapStart = Date.now();
+      raceLapStart = rennZeitJetzt();
       raceStartedAt = raceLapStart;
       dashLapZaehler = dashLastTileCounter;
     }
@@ -2268,7 +2274,7 @@
   // counting a partial lap would poison the fastest-lap column.
   function requestRaceStop() {
     if (raceState !== 'racing' && raceState !== 'countdown' && raceState !== 'finishing') return;
-    if (raceCountdownTimer) { clearInterval(raceCountdownTimer); raceCountdownTimer = null; }
+    if (raceCountdownTimer) { rennZeitTimeoutStop(raceCountdownTimer); raceCountdownTimer = null; }
     setRaceLights(0);
     // KEIN AUSLAUFEN bei einem Abbruch von Hand. Wer abbricht, will, dass es aufhoert -
     // eine Extrarunde saehe aus, als haette der Knopf nichts getan. Dieselbe Ueberlegung,
@@ -2316,6 +2322,7 @@
   // `auslaufen` = die Ghosts duerfen ihre angefangene Runde zu Ende fahren. Vorgabe ja;
   // requestRaceStop() uebergibt ausdruecklich false.
   function finishRace(auslaufen) {
+    rennPauseBeenden();
     if (raceState === 'finished') return; // Ergebnisansage nur einmal planen.
     rennstandAbbrechen();
     raceState = 'finished';
@@ -2337,9 +2344,9 @@
     if (typeof derbyCockpitMalen === 'function') derbyCockpitMalen();
     mpWetter = null;
     // Die laufende Runde festhalten und die Uhr anhalten. Ohne das Nullsetzen von
-    // raceLapStart rechnet die Anzeige weiter gegen Date.now() und die Runde waechst nach
+    // raceLapStart rechnet die Anzeige weiter gegen rennZeitJetzt() und die Runde waechst nach
     // dem Ende einfach weiter.
-    const now = Date.now();
+    const now = rennZeitJetzt();
     racePartialMs = raceLapStart !== null ? now - raceLapStart
                   : (dashLapStart !== null ? now - dashLapStart : null);
     raceLapStart = null;
@@ -2470,7 +2477,8 @@
   // laeuft; ein geparktes, umgekipptes oder neben der Bahn stehendes Auto steht sofort.
   // Der Takt prueft das jede Sekunde weiter, bis kein NPC mehr unterwegs ist.
   function nachZielTick(jetzt) {
-    const now = jetzt || Date.now();
+    if (rennPauseAktiv()) return;
+    const now = jetzt || rennZeitJetzt();
     if (!nachZielBis || now < nachZielBis) return 0;
     let n = 0, gestoppt = 0, unterwegs = 0;
     ghostAuslaufBis = 0;
@@ -2818,6 +2826,7 @@
   }
 
   function updateRaceActButtons() {
+    rennPauseMalen();
     const a = $('race-act-start');
     if (a) {
       const live = raceState === 'racing' || raceState === 'countdown' || raceState === 'finishing';
@@ -2925,7 +2934,7 @@
   let tileTimeline = [];      // [{ code, pakete, von, bis, counter }], neueste zuletzt
 
   function tileTimelineTick(code, counter) {
-    const jetzt = Date.now();
+    const jetzt = rennZeitJetzt();
     const letzte = tileTimeline[tileTimeline.length - 1];
     if (letzte && letzte.code === code) {
       letzte.pakete++;
@@ -2947,7 +2956,7 @@
     // Verschwendung, und die Zeitleiste soll das Fahren nicht stoeren.
     if (tileTlDirty) return;
     tileTlDirty = true;
-    setTimeout(() => {
+    rennZeitTimeout(() => {
       tileTlDirty = false;
       const host = $('tile-timeline');
       if (!host) return;
@@ -2987,6 +2996,13 @@
 
 
   function handleDashboardBytes(bytes) {
+    if (rennPauseAktiv()) {
+      dashBattery = akkuGlaetten(dashAkkuHalter, bytes[10], rennZeitJetzt());
+      dashLastTileCounter = bytes[11];
+      dashOnMarker = (bytes[15] & 0x08) !== 0;
+      dashMarkerPrev = dashOnMarker;
+      return;
+    }
     recNotify(bytes);
     if (probeOverride && bytes[12] !== 0xff) {
       probeStats.codes++;
@@ -2994,7 +3010,7 @@
     }
     // dashBattery wird weiter gebraucht: die Akkukachel im Cockpit liest ihn. Die Zeile
     // darunter schrieb in #dash-battery, ein Element der entfernten alten Karte.
-    dashBattery = akkuGlaetten(dashAkkuHalter, bytes[10], Date.now());
+    dashBattery = akkuGlaetten(dashAkkuHalter, bytes[10], rennZeitJetzt());
 
     // Byte 15 was read as "off track". The 2026-08-19 snoop logs disprove that: on a PRINTED
     // sheet it rises in the same packet as the start pattern. On the RAIL (logs 16.-21.08.)
@@ -3022,7 +3038,7 @@
     // Wer zuerst kommt, zaehlt; der andere ist fuer TILE_REPEAT_BLOCK_MS still.
     if (trackMode === 'off' && dashOnMarker && !markerVorher) {
       const code = bytes[12];
-      const jetzt = Date.now();
+      const jetzt = rennZeitJetzt();
       const frei = !(dashLastActedCode === code
                      && jetzt - dashLastActedAt < TILE_REPEAT_BLOCK_MS);
       if (frei && isStartCode(code)) {
@@ -3077,7 +3093,7 @@
       dashLapZaehler = null;
     }
     if (trackMode !== 'off' && dashOnMarker && !markerVorher) {
-      const jetzt = Date.now(), zaehler = bytes[11];
+      const jetzt = rennZeitJetzt(), zaehler = bytes[11];
       if (!dashZielGesehen) {
         dashZielGesehen = true;
         log('Ziellinie: das Auto meldet sie selbst (Byte 15) - ab jetzt wird dort gemessen.', 'info');
@@ -3203,7 +3219,7 @@
     // INNERHALB der Kachel, und die braucht der Windschatten: ein Abstand in ganzen Kacheln
     // ist bei 43 cm Kachellaenge zu grob, um "dicht dahinter" von "eine Laenge dahinter" zu
     // unterscheiden.
-    const jetztT = Date.now();
+    const jetztT = rennZeitJetzt();
     if (dashTileAt) {
       const ms = jetztT - dashTileAt;
       if (ms > 60 && ms < 20000) dashTileMs = dashTileMs ? dashTileMs * 0.7 + ms * 0.3 : ms;
@@ -3216,7 +3232,7 @@
 
     // Guard 2 applies only to the two codes that trigger something irreversible; the
     // ordinary straight and curve codes may repeat as often as the track says.
-    const nowCode = Date.now();
+    const nowCode = rennZeitJetzt();
     const repeatBlocked = (isStartCode(type) || type === pitMarkerCode)
       && dashLastActedCode === type
       && nowCode - dashLastActedAt < TILE_REPEAT_BLOCK_MS;
@@ -3440,7 +3456,8 @@
     });
   }
   function playerLapCrossed() {
-    const now = Date.now();
+    if (rennPauseAktiv()) return;
+    const now = rennZeitJetzt();
     // v0.9.43: Wartet die Rennuhr noch auf die erste Bewegung, BEWEIST eine Ueberfahrt die
     // Bewegung - die Uhr startet hier, und diese Ueberfahrt ist der Anfang der ersten Runde.
     if ((raceState === 'racing' || raceState === 'finishing') && raceAwaitingMove && !raceFormationLap) {
@@ -3607,7 +3624,7 @@
     if (!dashTileAt || !dashTileMs) return 0;
     const f = (typeof ghostTileLenFactor === 'function' && dashMinimapIndex !== null)
       ? ghostTileLenFactor(dashMinimapIndex) : 1;
-    return Math.max(0, Math.min(1, (Date.now() - dashTileAt) / (dashTileMs * f)));
+    return Math.max(0, Math.min(1, (rennZeitJetzt() - dashTileAt) / (dashTileMs * f)));
   }
 
   // Der Ort des eigenen Autos, in derselben Einheit wie ghostOrtGes(): monoton, ueber
@@ -3647,7 +3664,7 @@
 
   setInterval(() => {
     if ((raceState === 'racing' || raceState === 'finishing') && raceLapStart !== null) {
-      $('race-lap-current').textContent = formatLapTime(Date.now() - raceLapStart);
+      $('race-lap-current').textContent = formatLapTime(rennZeitJetzt() - raceLapStart);
     }
   }, 200);
 
@@ -3872,7 +3889,7 @@
       g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke();
     }
 
-    const t = Date.now() / 1000;
+    const t = rennZeitJetzt() / 1000;
     const mx = W / 2, my = H / 2;
 
     // GRUNDFAERBUNG, getragen von der Regenstaerke. Sie ist der Teil, der "es regnet HIER"
@@ -3942,7 +3959,8 @@
   // Eigener Zeitgeber und nicht im Fahrtakt: das Wetter zieht auch, wenn niemand faehrt -
   // im Menue, in der Garage, beim Zuschauen. 80 ms sind fuer ziehende Wolken reichlich.
   function wxTick() {
-    const now = Date.now();
+    if (rennPauseAktiv()) return;
+    const now = rennZeitJetzt();
     const dt = wxTickAt ? Math.min(0.5, (now - wxTickAt) / 1000) : 0;
     wxTickAt = now;
     if (wxFront !== wxFrontTo) {
@@ -4165,7 +4183,7 @@
       playAmbienceOneShot(ambience.thunder[0], 0.7, true);
     } else if (weather === 'dry') {
       playTone(520, 0.10, 'sine', 0.14);
-      setTimeout(() => playTone(780, 0.16, 'sine', 0.14), 110);
+      rennZeitTimeout(() => playTone(780, 0.16, 'sine', 0.14), 110);
     }
 
     const need = (weather === 'rain' && tyres === 'slick') || (weather === 'dry' && tyres === 'wet');
@@ -4376,7 +4394,7 @@
   function setPitState(next) {
     if (next !== 'servicing') {
       pitSpiel = null;
-      if (typeof pitSpielMalen === 'function') setTimeout(pitSpielMalen, 0);
+      if (typeof pitSpielMalen === 'function') rennZeitTimeout(pitSpielMalen, 0);
     }
     if (pitState === next) return;
     pitState = next;
@@ -4407,9 +4425,9 @@
     // Doppelausdruck-Modus - das Fenster PIT_DOUBLE_LIMIT_MS laeuft ab. Das prueft
     // pitLaneTick selbst, und dort ist die Frist Teil der Bedienung und kein
     // Sicherheitsnetz.
-    if (pitLimiterTimer) { clearTimeout(pitLimiterTimer); pitLimiterTimer = null; }
+    if (pitLimiterTimer) { rennZeitTimeoutStop(pitLimiterTimer); pitLimiterTimer = null; }
     if (next === 'servicing') {
-      pitServiceStart = Date.now();
+      pitServiceStart = rennZeitJetzt();
       pitFuelGained = 0; pitDamageRepaired = 0;
       pitDone = { refuel: false, tyres: false, repair: false };
       pitTyreElapsed = 0; pitEmptyElapsed = 0; pitStandElapsed = 0; pitReady = false;
@@ -4450,7 +4468,7 @@
       pitPlan = null; pitDone = null; pitReady = false;
       if (pitServiceStart !== null) {
         playTone(440, 0.12, 'sine', 0.18);
-        setTimeout(() => playTone(660, 0.22, 'sine', 0.18), 120); // rising: throttle released
+        rennZeitTimeout(() => playTone(660, 0.22, 'sine', 0.18), 120); // rising: throttle released
         padRumble(0.25, 0.15, 120, 'box');
       }
       // A mandatory stop counts after PIT_MANDATORY_STAND_S of standing time. Requiring the
@@ -4470,7 +4488,7 @@
             + `${PIT_MANDATORY_STAND_S.toFixed(0)} s), zählt nicht als Pflichtstopp.`, 'err');
       }
       if (pitServiceStart !== null) {
-        log(`Boxenstopp beendet nach ${((Date.now() - pitServiceStart) / 1000).toFixed(1)}s: ` +
+        log(`Boxenstopp beendet nach ${((rennZeitJetzt() - pitServiceStart) / 1000).toFixed(1)}s: ` +
             `+${fuelLiters(pitFuelGained)} l Sprit, -${Math.round(pitDamageRepaired)}% Schaden.`, 'info');
       }
       pitServiceStart = null;
@@ -4512,7 +4530,7 @@
       if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); lapAnsageBeendet(); }
       ansage('pit', t('Boxenstopp eingeleitet'));
       playTone(880, 0.12, 'square', 0.16);
-      setTimeout(() => playTone(880, 0.12, 'square', 0.16), 180);
+      rennZeitTimeout(() => playTone(880, 0.12, 'square', 0.16), 180);
       showHudToast('BOXENGASSE AKTIV, ' + PIT_DOUBLE_KMH + ' KM/H');
       log('Boxengasse per doppeltem Ausdruck: zweiter Kontakt nach ' + seit
           + ' ms, Tempolimit ' + PIT_DOUBLE_KMH + ' km/h fuer '
@@ -4526,7 +4544,7 @@
   function onPitMarkerCrossed() {
     if (!pitLaneEnabled || pitState !== 'off') return;
     // Just aborted: do not drag the car straight back in while it is still on the marker.
-    if (Date.now() < pitRearmBlockedUntil) return;
+    if (rennZeitJetzt() < pitRearmBlockedUntil) return;
     setPitState('limited');
     showHudToast('Boxengasse, Tempolimit');
   }
@@ -4535,7 +4553,8 @@
   // often the car happens to send notifications.
   let pitLastTick = null;
   function pitLaneTick() {
-    const now = Date.now();
+    if (rennPauseAktiv()) return;
+    const now = rennZeitJetzt();
     const dt = pitLastTick ? Math.min(0.5, (now - pitLastTick) / 1000) : 0;
     pitLastTick = now;
 
@@ -4738,16 +4757,16 @@
       const letzter = i === PIT_SPIEL_ANZAHL - 1;
       if (letzter) {
         playTone(1560, 0.08, 'sine', 0.2);
-        setTimeout(() => playTone(1960, 0.10, 'sine', 0.2), 60);
-        setTimeout(() => playTone(2400, 0.14, 'sine', 0.2), 120);
+        rennZeitTimeout(() => playTone(1960, 0.10, 'sine', 0.2), 60);
+        rennZeitTimeout(() => playTone(2400, 0.14, 'sine', 0.2), 120);
       } else {
         const f = 660 + i * 55;
         playTone(f, 0.06, 'sine', 0.2);
-        setTimeout(() => playTone(f * 1.5, 0.08, 'sine', 0.2), 45);
+        rennZeitTimeout(() => playTone(f * 1.5, 0.08, 'sine', 0.2), 45);
       }
     } else {
       playTone(200, 0.12, 'square', 0.16);
-      setTimeout(() => playTone(140, 0.14, 'square', 0.14), 70);
+      rennZeitTimeout(() => playTone(140, 0.14, 'square', 0.14), 70);
     }
   }
   function pitSpielTick(dt) {
@@ -4925,9 +4944,9 @@
     if (pitState === 'servicing' && pitReady) {
       // Erst beim Umschlag den Zeitpunkt setzen, nicht bei jedem Durchlauf: sonst wuerde
       // das GO stehen bleiben, solange das Auto in der Box wartet.
-      if (!pitGoUntil) pitGoUntil = Date.now() + 1000;
+      if (!pitGoUntil) pitGoUntil = rennZeitJetzt() + 1000;
     }
-    if (pitGoUntil && Date.now() < pitGoUntil) {
+    if (pitGoUntil && rennZeitJetzt() < pitGoUntil) {
       el.className = 'gt3-board on go';
       el.textContent = 'GO';
       return;
@@ -5156,7 +5175,7 @@
   // verlaessliches dt, und dieselbe Begruendung steht bei fuelTankTick().
   function boxTickVon(z) {
     if (z.box.lage === 'aus') { z.box.letzterTick = null; return; }
-    const now = Date.now();
+    const now = rennZeitJetzt();
     const dt = z.box.letzterTick !== null
       ? Math.max(0, Math.min(0.5, (now - z.box.letzterTick) / 1000)) : 0;
     z.box.letzterTick = now;
@@ -5183,7 +5202,7 @@
         resetTyres(z.motor);
         // Toene wie bei Auto 1: Schrauber kurz, Tanken und Reparatur, solange sie laufen.
         setPitLoopFuer(z.nr, 'wrench', true);
-        setTimeout(() => setPitLoopFuer(z.nr, 'wrench', false), PIT_TYRE_CHANGE_S * 1000);
+        rennZeitTimeout(() => setPitLoopFuer(z.nr, 'wrench', false), PIT_TYRE_CHANGE_S * 1000);
         if (z.tank.stand < z.tankZiel - 0.05) setPitLoopFuer(z.nr, 'fuel', true);
         if (schadenVon(z.nr) > 0.05) setPitLoopFuer(z.nr, 'repair', true);
       }
@@ -5416,7 +5435,7 @@
     const d1 = v1 - L.avg1, d3 = v3 - L.avg3;
     L.avg1 += (v1 - L.avg1) * CRASH_ROLLING_ALPHA;
     L.avg3 += (v3 - L.avg3) * CRASH_ROLLING_ALPHA;
-    const now = Date.now();
+    const now = rennZeitJetzt();
 
     // ---- Ein Auto neben der Bahn wird AUFGEHOBEN, und das ist kein Crash ---------------
     //
@@ -5602,7 +5621,7 @@
   const FLASH_MS = FLASH_PULSES * FLASH_PERIOD_MS - FLASH_OFF_MS;
 
   function resolveLights(baseHead, baseBrake) {
-    const now = Date.now();
+    const now = rennZeitJetzt();
     let head = baseHead, brake = baseBrake;
     if (now < lightFx.flashUntil) {
       // Verstrichene Zeit seit dem Ausloesen, nicht die restliche: die Phase muss vorwaerts
@@ -5667,8 +5686,8 @@
   }
 
   function triggerHeadlightFlash() {
-    if (Date.now() < lightFx.flashUntil) return;   // already flashing; ignore a double tap
-    lightFx.flashUntil = Date.now() + FLASH_MS;
+    if (rennZeitJetzt() < lightFx.flashUntil) return;   // already flashing; ignore a double tap
+    lightFx.flashUntil = rennZeitJetzt() + FLASH_MS;
     showHudToast('Lichthupe');
     playFlashSound();
   }
@@ -5676,8 +5695,8 @@
   // Akku-Warnblinken fuer das Fahrerauto: zehn Umschaltphasen, ohne Gas oder Lenkung zu
   // beruehren. Andere Autos nutzen blinkCar() aus 90-ghosts.js.
   function lichtBatterieBlink() {
-    if (Date.now() < lightFx.batteryUntil) return;
-    lightFx.batteryUntil = Date.now() + BATT_BLINK_MS;
+    if (rennZeitJetzt() < lightFx.batteryUntil) return;
+    lightFx.batteryUntil = rennZeitJetzt() + BATT_BLINK_MS;
   }
 
   // ---- DIESELBE LICHTHUPE FUER AUTO 2 -----------------------------------------------
@@ -5690,8 +5709,8 @@
   // keine Lichthupe mehr, sondern ein Zufall.
   let flash2Until = 0;
   function flashVon(z) {
-    if (Date.now() < z.flashBis) return;
-    z.flashBis = Date.now() + FLASH_MS;
+    if (rennZeitJetzt() < z.flashBis) return;
+    z.flashBis = rennZeitJetzt() + FLASH_MS;
     showHudToast('P' + z.nr + ': Lichthupe');
     playFlashSound();
   }
@@ -5702,7 +5721,7 @@
   // FLASH_ON_MS sind gemeinsame Konstanten), aber OHNE Schaden-, Tank- oder Regenlicht -
   // die haengen an Zaehlern, die es fuer Auto 2 in dieser schmalen Fassung nicht gibt.
   function headlichtVon(z, baseHead) {
-    const now = Date.now();
+    const now = rennZeitJetzt();
     if (now >= z.flashBis) return baseHead;
     const elapsed = FLASH_MS - (z.flashBis - now);
     const on = (elapsed % FLASH_PERIOD_MS) < FLASH_ON_MS;
@@ -5820,7 +5839,7 @@
   }
 
   function realSpeedTick(counter, type) {
-    const now = Date.now();
+    const now = rennZeitJetzt();
     if (realTileCount === null) {
       realTileCount = counter; realTileTime = now; realTileType = type;
       return;
@@ -5898,7 +5917,7 @@
   }
 
   function trackTimeTick(onTrack) {
-    const now = Date.now();
+    const now = rennZeitJetzt();
     if (trackTimeLast !== null) {
       // Capped like the fuel tick: a tab that was in the background for a minute must not
       // book that minute as driving.
@@ -5959,8 +5978,9 @@
   // eigenen Schirm), und die Boxen-Ausnahme `pitState !== 'servicing'` gilt nur fuer
   // Auto 1, weil nur Auto 1 in die Box fahren kann.
   function fuelTankTick(throttle, wer) {
+    if (rennPauseAktiv()) return;
     if (wer >= 2) return tankTickVon(zusatzPlatz(wer), throttle);
-    const now = Date.now();
+    const now = rennZeitJetzt();
     if (fuelLastTickTime !== null && pitState !== 'servicing') {
       // ---- NIE NEGATIV, und das ist keine Vorsicht, sondern ein gefundener Fehler ----
       //
@@ -5968,7 +5988,7 @@
       // zu einer Addition. Gefunden hat es ein Prueflauf, der die Uhr faelscht und dabei
       // ZURUECK stellte - der Tank ging von 1,5 auf 5,5 Prozent.
       //
-      // Im Betrieb laeuft Date.now() monoton, der Fall kam also nie vor. "Kam nie vor" ist
+      // Im Betrieb laeuft rennZeitJetzt() monoton, der Fall kam also nie vor. "Kam nie vor" ist
       // aber kein Schutz, sondern Glueck: eine Zeitumstellung des Systems, eine
       // Zeitsynchronisierung im Hintergrund oder der naechste Prueflauf genuegen. Und ein
       // Tank, der voller wird, ist ein Fehler, den man niemandem erklaeren kann.
@@ -6001,7 +6021,8 @@
   }
 
   function tankTickVon(z, throttle) {
-    const now = Date.now();
+    if (rennPauseAktiv()) return;
+    const now = rennZeitJetzt();
     if (z.tank.letzterTick !== null) {
       const dt = Math.max(0, Math.min(0.5, (now - z.tank.letzterTick) / 1000));
       const vorher = z.tank.stand;
@@ -6394,7 +6415,7 @@
   let pitRumbleAt = 0;
   function pitRumbleWhileWorking(anyRunning) {
     if (!anyRunning) return;
-    const now = Date.now();
+    const now = rennZeitJetzt();
     if (now - pitRumbleAt < 180) return;
     pitRumbleAt = now;
     padRumble(0.16, 0.10, 200, 'box');
@@ -6667,7 +6688,7 @@
       // Die Standzeit gehoert hier hin und nicht in den Kopf: sie IST der Messwert dieser
       // Zeile, so wie Prozent der Messwert der anderen ist.
       const zahl = (pitState === 'servicing' && pitServiceStart)
-        ? ((Date.now() - pitServiceStart) / 1000).toFixed(1) + ' s' : '';
+        ? ((rennZeitJetzt() - pitServiceStart) / 1000).toFixed(1) + ' s' : '';
       return { zahl, wort };
     }
     if (z.art === 'wahl') {
@@ -7327,15 +7348,15 @@
 
   // Three distinguishable confirmations, so the ear alone tells you which job finished.
   function pitChimeFuel()   { playTone(520, 0.10, 'sine', 0.16);
-                              setTimeout(() => playTone(780, 0.16, 'sine', 0.16), 90); }
+                              rennZeitTimeout(() => playTone(780, 0.16, 'sine', 0.16), 90); }
   function pitChimeTyres()  { playTone(300, 0.12, 'triangle', 0.16);
-                              setTimeout(() => playTone(300, 0.16, 'triangle', 0.14), 130); }
+                              rennZeitTimeout(() => playTone(300, 0.16, 'triangle', 0.14), 130); }
   function pitChimeRepair() { playTone(660, 0.10, 'sine', 0.15);
-                              setTimeout(() => playTone(880, 0.10, 'sine', 0.15), 80);
-                              setTimeout(() => playTone(1170, 0.18, 'sine', 0.15), 160); }
+                              rennZeitTimeout(() => playTone(880, 0.10, 'sine', 0.15), 80);
+                              rennZeitTimeout(() => playTone(1170, 0.18, 'sine', 0.15), 160); }
   // Deliberately the loudest and most distinct of the four: this is the one that means GO.
   function pitChimeReady()  { playTone(880, 0.13, 'square', 0.20);
-                              setTimeout(() => playTone(1320, 0.26, 'square', 0.20), 120); }
+                              rennZeitTimeout(() => playTone(1320, 0.26, 'square', 0.20), 120); }
 
   function describePitPlan(p) {
     if (pitPlanEmpty(p)) return `nur ${PIT_EMPTY_STOP_S.toFixed(0)} s Standzeit`;
@@ -7456,7 +7477,7 @@
       showHudToast('Derby: kein Boxenstopp');
       return;
     }
-    const now = Date.now();
+    const now = rennZeitJetzt();
     pitLastPress = now;
 
     if (pitState === 'off') {

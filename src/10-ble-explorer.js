@@ -373,6 +373,17 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "Pause / Fortsetzen": "Pause / Resume",
+    "Pause": "Pause",
+    "Fortsetzen": "Resume",
+    "Pausiert": "Paused",
+    "Wiederanlauf": "Resuming",
+    "Wiederanlauf stoppen": "Stop resuming",
+    "Weiter über Rennampel": "Resume via start lights",
+    "Alle Autos bleiben bis zur grünen Ampel gesperrt.": "All cars remain stopped until the lights turn green.",
+    "Fahr-Ausgabe und Rennabläufe sind angehalten. Nach der Ampel Gas und Bremse zunächst loslassen.": "Driving output and race progress are paused. Release throttle and brake after the start lights.",
+    "Pause nur im lokalen Betrieb verfügbar": "Pause is only available in local mode",
+    "Aktuell kein pausierbarer Fahrbetrieb": "There is currently no driving session to pause",
     "RC (WIP)": "RC (WIP)",
     "Alle: RC (WIP)": "All: RC (WIP)",
     "Arcade, nur viel extremer: wie ein Fernsteuerungsauto": "Arcade, only much more extreme: like a remote-control car",
@@ -3752,6 +3763,17 @@
   // nachzieht. Bewusst KEINE Ansagen (Rundenzeit, Tank, Schaden): dafuer gibt es noch keine
   // spanischen Aufnahmen, und die Sprachausgabe nutzt die englische als Platzhalter.
   const I18N_ES = {
+    "Pause / Fortsetzen": "Pausa / Continuar",
+    "Pause": "Pausa",
+    "Fortsetzen": "Continuar",
+    "Pausiert": "En pausa",
+    "Wiederanlauf": "Reanudando",
+    "Wiederanlauf stoppen": "Detener reanudación",
+    "Weiter über Rennampel": "Continuar con el semáforo",
+    "Alle Autos bleiben bis zur grünen Ampel gesperrt.": "Todos los coches siguen detenidos hasta que el semáforo se ponga verde.",
+    "Fahr-Ausgabe und Rennabläufe sind angehalten. Nach der Ampel Gas und Bremse zunächst loslassen.": "La conducción y la carrera están en pausa. Suelta el acelerador y el freno después del semáforo.",
+    "Pause nur im lokalen Betrieb verfügbar": "La pausa solo está disponible en modo local",
+    "Aktuell kein pausierbarer Fahrbetrieb": "No hay ninguna sesión de conducción que pausar",
     "RC (WIP)": "RC (WIP)",
     "Alle: RC (WIP)": "Todos: RC (WIP)",
     "Arcade, nur viel extremer: wie ein Fernsteuerungsauto": "Arcade, pero mucho más extremo: como un coche teledirigido",

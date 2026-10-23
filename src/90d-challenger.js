@@ -122,7 +122,7 @@
       return challengerDeckeln(car, basis, ch.stufe || 1, !!(spice && spice.haeltAbstand));
     } else {
       if (raceStartedAt === null || raceStartedAt === undefined) return basis;
-      const tMs = Date.now() - raceStartedAt;
+      const tMs = rennZeitJetzt() - raceStartedAt;
       if (tMs < 0) return basis;
       if (ch.ortStart === null) ch.ortStart = ist;
       const n = ch.teile.length;

@@ -108,7 +108,7 @@ def check_dict(quelle):
         return []
     ende = len(zeilen)
     for n in range(start + 1, len(zeilen)):
-        if zeilen[n] == '  };':
+        if zeilen[n].strip() == '};':
             ende = n
             break
 
@@ -158,6 +158,7 @@ def check_ids(html):
         zugriff |= set(re.findall(muster, html))
     # Dynamisch erzeugte ids beruecksichtigen: alles, was das Skript als id= ausgibt.
     doc_set |= set(re.findall(r"id=.([A-Za-z0-9_-]+).", html))
+    doc_set |= set(re.findall(r"\.id\s*=\s*[\"']([A-Za-z0-9_-]+)[\"']", html))
 
     # NUR diese Richtung. Die umgekehrte - "id im Dokument, das sonst nirgends vorkommt"
     # - meldete 50 Stellen, und fast alle waren falsch: mw-clatter-val, sub-print und

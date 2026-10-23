@@ -19,6 +19,7 @@
   // Boxenstopp on Y and collide with the headlight button that now lives there.
   const GAMEPAD_BINDINGS_KEY = 'carrera-hybrid-gamepad-bindings-v2';
   const DEFAULT_BINDINGS = {
+    pause: { type: 'none', index: -1, label: 'nicht belegt' },
     throttle: { type: 'button', index: 7, label: 'Rechter Trigger (R2 / RT)' },
     brake: { type: 'button', index: 6, label: 'Linker Trigger (L2 / LT)' },
     steering: { type: 'axis', index: 0, invert: false, label: 'Linker Stick (X-Achse)' },
@@ -108,6 +109,7 @@
     resetcar: { type: 'none', index: -1, label: 'nicht belegt' },
   };
   const BIND_ACTION_LABELS = {
+    pause: 'Pause / Fortsetzen',
     throttle: 'Gas', brake: 'Bremse', steering: 'Lenkung',
     downshift: 'Runterschalten', upshift: 'Hochschalten',
     headlights: 'Licht an/aus', lightflash: 'Lichthupe', pitstop: 'Menü (Cockpit ↔ Fahren)',
@@ -665,6 +667,8 @@
       }
     }
     if (!bester) return;
+    // Pause ist eine Taste, keine potenziell rauschende Lenkachse.
+    if (action === 'pause' && bester.art !== 'button') return;
     const vorher = ziel[action] ? { ...ziel[action] } : null;
     if (bester.art === 'axis') {
       // Die Richtung: hat sich die Achse nach unten bewegt, ist sie invertiert. Gemessen
@@ -687,6 +691,7 @@
       log(`Zuordnung gesetzt (Spieler ${bindEditSpieler}): ${BIND_ACTION_LABELS[action]} `
           + `-> Knopf ${bester.i}`, 'info');
     }
+    if (action === 'pause') rennPause.padSperre[bindEditSpieler] = true;
     bindingKollisionTauschen(ziel, action, vorher);
     activeSaveBindings();
     listeningFor = null;
@@ -1305,18 +1310,19 @@
     lat.step++;
     lat.steer = Math.min(1, lat.steer + parseFloat($('lat-inc').value));
     lat.tiles = 0;
-    lat.stepAt = Date.now();
+    lat.stepAt = rennZeitJetzt();
     latRender();
     if (lat.steer >= 1) latStop('voller Lenkausschlag erreicht, ohne dass es kippte');
   }
 
   function latTick() {
+    if (rennPauseAktiv()) return;
     if (!lat.on || !lat.car) return;
     // Aus der Garage entfernt oder getrennt - dann ist die Messung ungueltig, nicht
     // stillschweigend zu Ende.
     if (!garage.includes(lat.car) || !lat.car.rx) { latStop('Auto nicht mehr verbunden'); return; }
     const hold = parseInt($('lat-hold').value, 10);
-    if (Date.now() - lat.stepAt >= hold) { latCommit(true); return; }
+    if (rennZeitJetzt() - lat.stepAt >= hold) { latCommit(true); return; }
     writeToCar(lat.car, lat.steer * lat.dir, parseFloat($('lat-throttle').value),
                trackModeBit() | LIGHT_HEAD);
   }
@@ -1330,6 +1336,13 @@
   }
 
   async function writeToCar(car, steer, throttle, lightBits, modeBytes) {
+    if (rennPauseAktiv()) {
+      steer = 0; throttle = 0; lightBits = (lightBits || 0) | LIGHT_BRAKE;
+      if (car.rx && !car.testSenke) {
+        await funkSchreiben(car.rx, buildCommandPacket(0, 0, lightBits), null);
+        return;
+      }
+    }
     // EINE SENKE FUER DEN PRUEFLAUF. Ohne sie ist nicht pruefbar, WAS hinausgeht - nur, was
     // eine Funktion sich vorgenommen hat. Genau dort lag der Fehler beim Zieleinlauf: die
     // Seite war zugeteilt und landete im Gas-Platz. Ein Prueflauf, der die Zuteilung liest,
@@ -1386,8 +1399,7 @@
                                      typeof lichtSchadenVon === 'function'
                                        ? lichtSchadenVon(car) : undefined);
       recWrite(pkt, garageLabel(car));
-      if (car.rx.properties.writeWithoutResponse) await car.rx.writeValueWithoutResponse(pkt);
-      else await car.rx.writeValueWithResponse(pkt);
+      await funkSchreiben(car.rx, pkt, null);
     } catch (err) {
       // A disconnect mid-drive is normal; do not spam the log from a 22 Hz loop.
       car.writeErrors = (car.writeErrors || 0) + 1;
@@ -1418,7 +1430,7 @@
     if (!car) return;
     const faehrt = (car.role === 'ghost' && car.ghost && car.ghost.running)
       || (typeof spielerNrVon === 'function' && spielerNrVon(car) >= 2);
-    if (faehrt) car.akkuBlinkBis = Date.now() + AKKU_BLINK_MS * AKKU_BLINK_PHASEN;
+    if (faehrt) car.akkuBlinkBis = rennZeitJetzt() + AKKU_BLINK_MS * AKKU_BLINK_PHASEN;
     else blinkCar(car);
   }
   function akkuBlinkAus(car, now) {
@@ -2460,6 +2472,14 @@
   function onCarNotify(car, e) {
     const b = notifyBytes(e.target.value);
     if (b.length < 16) return;
+    if (rennPauseAktiv()) {
+      car.tileCode = b[12]; car.tileCount = b[11];
+      car.lastCodeAt = rennZeitJetzt();
+      car.battery = akkuGlaetten(car, b[10], rennZeitJetzt());
+      if (car.race) zielSperreFlanke(car.race, b);
+      if (car === playerCar) handleDashboardBytes(b);
+      return;
+    }
     recNotify(b, garageLabel(car));
     // Lap timing for EVERY connected car, whatever its role: the start/finish code arrives
     // on its own notify stream, so there is no reason to only count the player's laps.
@@ -2488,14 +2508,14 @@
     // 0x00 is a valid REPORT but not a valid READING, so it must not refresh the
     // last-seen-code timestamp — otherwise a car sitting beside the track looks alive.
     if (code !== 0xff && code !== TILE_OFFTRACK) {
-      car.lastCodeAt = Date.now();
+      car.lastCodeAt = rennZeitJetzt();
       // v0.9.64: der letzte GUELTIGE Code. Der Abgangsmelder braucht ihn als Gegenprobe:
       // war der zuletzt gelesene Code eine Kurve/Haarnadel, liest der Ghost dort 0x00, weil
       // er (unter der Leseschwelle) langsam ist - nicht, weil er neben der Bahn liegt.
       car.lastCode = code;
     }
     if (code !== car.tileCode) { car.tileCode = code; }
-    if (car.tileCount !== b[11]) { car.tileCount = b[11]; car.tileAt = Date.now(); }
+    if (car.tileCount !== b[11]) { car.tileCount = b[11]; car.tileAt = rennZeitJetzt(); }
     // ---- DAS ABSEITS VON AUTO 2, aus SEINEN Bytes --------------------------------
     //
     // Fuer Auto 1 macht das handleDashboardBytes() in 70-race.js - und das laeuft nur fuer
@@ -2542,7 +2562,7 @@
     car.yaw = b[3] > 127 ? b[3] - 256 : b[3];
     // v0.9.87: geglaettet (Maximum der letzten 5 s) - unter Gas sackt die Spannung ab, und
     // der Rohwert sprang dann um bis zu zehn Prozent.
-    car.battery = akkuGlaetten(car, b[10], Date.now());
+    car.battery = akkuGlaetten(car, b[10], rennZeitJetzt());
   }
 
   function stopGhost(car) {
@@ -2587,11 +2607,11 @@
   const STOPP_NACHSENDEN_MS = 3000;
   function stoppNachsenden(car) {
     if (!car || !car.rx) return;
-    car.stoppBis = Date.now() + STOPP_NACHSENDEN_MS;
+    car.stoppBis = rennZeitJetzt() + STOPP_NACHSENDEN_MS;
     if (car.stoppTakt) return;
     car.stoppTakt = setInterval(() => {
       const gesteuert = car === playerCar || (typeof spielerNrVon === 'function' && spielerNrVon(car) >= 2);
-      if (Date.now() > car.stoppBis || !car.rx || garage.indexOf(car) < 0 || gesteuert
+      if (rennZeitJetzt() > car.stoppBis || !car.rx || garage.indexOf(car) < 0 || gesteuert
           || (car.ghost && car.ghost.running)) {
         clearInterval(car.stoppTakt); car.stoppTakt = null;
         return;
@@ -2799,11 +2819,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (a.fertig) return true;
     if (!aufstellStartPruefen(a, car)) return false;
     const o = car.ghost ? ghostOrt(car) : null;
-    if (aufstellAmPunkt(o, a.ziel, gridPosOf(car)) && Date.now() - a.seit > 1200) {
+    if (aufstellAmPunkt(o, a.ziel, gridPosOf(car)) && rennZeitJetzt() - a.seit > 1200) {
       a.fertig = true;
-      a.fertigAt = Date.now();
+      a.fertigAt = rennZeitJetzt();
       log(garageLabel(car) + ': steht auf seinem Startplatz.', 'info');
-      if (!aufstellenLaeuft()) { clearTimeout(aufstellenTimer); showHudToast(t('Startaufstellung steht')); }
+      if (!aufstellenLaeuft()) { rennZeitTimeoutStop(aufstellenTimer); showHudToast(t('Startaufstellung steht')); }
     }
     return a.fertig;
   }
@@ -2819,8 +2839,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const platz = gridPosOf(car);
     const seite = platz >= 0 && platz % 2 ? -1 : 1;
     const w = EINPARK_LENK * einparkStaerke();
-    if (!a.fertigAt) a.fertigAt = Date.now();
-    const t = Date.now() - a.fertigAt, ms = einparkMs();
+    if (!a.fertigAt) a.fertigAt = rennZeitJetzt();
+    const t = rennZeitJetzt() - a.fertigAt, ms = einparkMs();
     // v1.1.30: die Aufnahme (wie bei den NPCs), mit Angleichen vom aktuellen Gas.
     if (aufstellArt() === 'aufnahme') {
       const sk = aufstellSkript(seite);
@@ -2869,7 +2889,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const ziel = aufstellZielKachel(platz, n);
       // "Steht schon" nur mit FRISCHER Ortung: ein angehaltener NPC behaelt seinen letzten Ort,
       // auch wenn er seitdem von Hand woandershin gestellt wurde.
-      const frisch = !!(car.ghost && car.lastCodeAt && Date.now() - car.lastCodeAt < AUFSTELL_ORT_FRISCH_MS
+      const frisch = !!(car.ghost && car.lastCodeAt && rennZeitJetzt() - car.lastCodeAt < AUFSTELL_ORT_FRISCH_MS
                         && car.ghost.ortAngewandt);
       const o = car.ghost && frisch ? ghostOrt(car) : null;
       if (o !== null && Math.floor(o) === ziel) {
@@ -2883,7 +2903,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const hier = car.ghost ? ghostOrt(car) : null;
       const nah = hier === null ? gestartet.length
         : gestartet.filter((o) => o === null || Math.min(((hier - o) % n2 + n2) % n2, ((o - hier) % n2 + n2) % n2) <= AUFSTELL_STAFFEL_NAH).length;
-      const ab = Date.now() + nah * AUFSTELL_STAFFEL_MS;
+      const ab = rennZeitJetzt() + nah * AUFSTELL_STAFFEL_MS;
       gestartet.push(hier);
       if (spielerNrVon(car) >= 1) {
         aufstellSpieler.set(car, { ziel, seit: ab, ab, fertig: false,
@@ -2908,8 +2928,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       car.ghost.gnadeBis = ab + GHOST_START_GNADE_MS;
       zahl++;
     }
-    clearTimeout(aufstellenTimer);
-    if (zahl) aufstellenTimer = setTimeout(() => aufstellenStoppen(true), AUFSTELLEN_MAX_MS + zahl * AUFSTELL_STAFFEL_MS);
+    rennZeitTimeoutStop(aufstellenTimer);
+    if (zahl) aufstellenTimer = rennZeitTimeout(() => aufstellenStoppen(true), AUFSTELLEN_MAX_MS + zahl * AUFSTELL_STAFFEL_MS);
     log('Automatische Aufstellung: Staffel ' + AUFSTELL_STAFFEL_MS + ' ms nur bei Autos in '
         + AUFSTELL_STAFFEL_NAH + ' Kacheln Naehe; bekannter Ort spart die Runde ueber Start/Ziel.', 'info');
     showHudToast(zahl ? t('Autos fahren in die Startaufstellung') : t('Alle Autos stehen schon'));
@@ -2924,7 +2944,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!aufstellStartPruefen(g, car)) return false;
     const o = ghostOrt(car);
     const platz = g.aufstellPlatz !== undefined ? g.aufstellPlatz : gridPosOf(car);
-    if (!aufstellAmPunkt(o, g.aufstellZiel, platz) || Date.now() - (g.aufstellSeit || 0) < 1200) return false;
+    if (!aufstellAmPunkt(o, g.aufstellZiel, platz) || rennZeitJetzt() - (g.aufstellSeit || 0) < 1200) return false;
     const seite = platz >= 0 && platz % 2 ? -1 : 1;     // wie formationOffset
     // v1.0.37 GEMELDET: "Bei automatischer Aufstellung parkt das erste Auto nicht vor der
     // Startgeraden, sondern dahinter" und BESTELLT: "Die Autos sollen fuer die automatische
@@ -2944,7 +2964,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                              fertig: (c) => {
         log(garageLabel(c) + ': steht auf seinem Startplatz (Safety-Car-Folge ' + (seite > 0 ? 'rechts' : 'links') + ').', 'info');
         if (g.nachZiel) blinkCar(c);
-        if (!aufstellenLaeuft()) { clearTimeout(aufstellenTimer); showHudToast(t('Startaufstellung steht')); }
+        if (!aufstellenLaeuft()) { rennZeitTimeoutStop(aufstellenTimer); showHudToast(t('Startaufstellung steht')); }
       } });
       return false;
     }
@@ -2961,7 +2981,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       log(garageLabel(c) + ': steht auf seinem Startplatz.', 'info');
       if (g.nachZiel) blinkCar(c);
       if (!aufstellenLaeuft()) {
-        clearTimeout(aufstellenTimer);
+        rennZeitTimeoutStop(aufstellenTimer);
         showHudToast(t('Startaufstellung steht'));
       }
     } }));
@@ -2996,7 +3016,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return formationPace() * f;
   }
   function aufstellenStoppen(zeitUm) {
-    clearTimeout(aufstellenTimer);
+    rennZeitTimeoutStop(aufstellenTimer);
     aufstellSpieler.clear();
     for (const c of garage) {
       if (c.ghost && c.ghost.aufstellZiel !== null && c.ghost.aufstellZiel !== undefined) stopGhost(c);
@@ -3061,7 +3081,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const c = car || garage.find(x => x.role === 'player');
     const nr = c ? spielerNrVon(c) : 0;
     const halter = nr >= 2 ? (formationFahrerJe[nr] || formationFahrerZwei) : formationFahrer;
-    return formationOffset(halter, gridPosOf(c), Date.now(), breite);
+    return formationOffset(halter, gridPosOf(c), rennZeitJetzt(), breite);
   }
   const GHOST_OFFTRACK_MS = 1500;   // measured: tiles last 0.4-2.7 s with no 0xff between
   // Wie lange 0x00 stehen muss, bevor der Ghost anhaelt. Vorher hielt ein EINZIGES 0x00-Paket
@@ -3800,7 +3820,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Testfolge SGHGH waren das 0.39 quer ueber die Bahn, gegen 0.12 auf einer Strecke ohne
     // Haarnadel. Die relative Laenge kommt aus der Abtastdichte der Mittellinie, die
     // trackCenterline() ohnehin nach Drehwinkel vergibt.
-    return Math.max(0, Math.min(1, (Date.now() - car.tileAt) / ghostTileDauer(g)));
+    return Math.max(0, Math.min(1, (rennZeitJetzt() - car.tileAt) / ghostTileDauer(g)));
   }
 
   // ====================================================================================
@@ -4214,7 +4234,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Also verworfen und neu zugehoert. Das kostet die Lernphase von 1,2 Sekunden, und die
     // ist gut angelegt: ohne frischen Ruhewert waere die Schwelle eine Zahl aus einer
     // anderen Situation.
-    const jetztSh = Date.now();
+    const jetztSh = rennZeitJetzt();
     if (sh.lastAt && jetztSh - sh.lastAt > SHAKE_LUECKE_MS) {
       sh.win = []; sh.sum = 0; sh.p1 = null; sh.p3 = null;
       sh.parkedAt = 0; sh.base = null;
@@ -4231,7 +4251,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (sh.win.length < SHAKE_WIN) return;
 
     if (!car.parked) { sh.quiet = []; sh.base = null; sh.parkedAt = 0; return; }
-    if (!sh.parkedAt) sh.parkedAt = Date.now();
+    if (!sh.parkedAt) sh.parkedAt = rennZeitJetzt();
 
     // ---- DER RUHEWERT IST DAS MINIMUM, NICHT DER MEDIAN DER ERSTEN 1,2 SEKUNDEN ----
     //
@@ -4259,7 +4279,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Groesse: gesucht war immer "was meldet dieses Auto, wenn es still liegt", und das
     // ist ein Minimum und kein Mittelwert.
     sh.base = sh.base === null ? sh.sum : Math.min(sh.base, sh.sum);
-    if (Date.now() - sh.parkedAt < SHAKE_SETTLE_MS) return;
+    if (rennZeitJetzt() - sh.parkedAt < SHAKE_SETTLE_MS) return;
 
     // ---- UND EIN DECKEL, damit "immer" auch immer heisst -------------------------
     //
@@ -4336,7 +4356,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // sie werden nur beim Parken gelesen und in ghostTick nur mitgeschrieben.
     if (car.ghost) {
       const g = car.ghost;
-      const seit = g.tileStart ? Math.round(Date.now() - g.tileStart) : null;
+      const seit = g.tileStart ? Math.round(rennZeitJetzt() - g.tileStart) : null;
       log('  Diagnose ' + garageLabel(car) + ': Zieltempo '
           + (g.lastTarget === undefined ? '?' : g.lastTarget.toFixed(3))
           + ' (Leseschwelle ' + GHOST_READ_MIN + '), erreicht '
@@ -4915,7 +4935,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const amPlatz = car.ghost.tileIndex === pitKachelFuer(p.platz);
     if (!amPlatz && pitVorbeiNoetig(car)) return PIT_VORBEI;
     if (p.phase === 'raus') {
-      const f = Math.max(0, 1 - (Date.now() - p.at) / PIT_RAUS_MS);
+      const f = Math.max(0, 1 - (rennZeitJetzt() - p.at) / PIT_RAUS_MS);
       return PIT_RAND * f;
     }
     return PIT_RAND;
@@ -4956,7 +4976,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const rh = car.ghost && car.ghost.randHalt;
     // 'brems' (Safety Car, Bremsimpuls nach dem Links-Impuls): sofort voll; danach haelt 'halt' die volle Bremse.
     if (rh) return rh.phase === 'brems' ? 1
-                 : rh.phase === 'halt' ? ((rh.sofort || rh.bremsMs) ? 1 : Math.max(0, Math.min(1, (Date.now() - rh.at) / PIT_BREMS_RAMPE_MS))) : null;
+                 : rh.phase === 'halt' ? ((rh.sofort || rh.bremsMs) ? 1 : Math.max(0, Math.min(1, (rennZeitJetzt() - rh.at) / PIT_BREMS_RAMPE_MS))) : null;
     const p = car.ghost && car.ghost.pit;
     if (!p) return null;
     // In der Randphase wird NICHT gebremst - dort wird gefahren.
@@ -4968,7 +4988,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // schraeg." Ein Schlag auf volle Bremse blockiert, und ein blockiertes Auto dreht sich
     // um seine Hochachse, statt gerade stehen zu bleiben. Ueber PIT_BREMS_RAMPE_MS
     // hochgefahren bleibt es "abrupt" (ein Drittel der Haltephase) und trotzdem gerade.
-    const seit = Date.now() - (p.at || 0);
+    const seit = rennZeitJetzt() - (p.at || 0);
     return Math.max(0, Math.min(1, seit / PIT_BREMS_RAMPE_MS));
   }
 
@@ -5072,7 +5092,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Mitte, und dann ist links so gut wie rechts - dieselbe Wahl wie in der Boxengasse.
     const q = ghostQuerLage(steher);
     const seite = (q === null || q >= 0) ? -1 : 1;
-    const now = Date.now();
+    const now = rennZeitJetzt();
     for (const c of garage) {
       if (c === steher || !c.ghost || c.role !== 'ghost' || c.parked) continue;
       const meins = ghostOrt(c);
@@ -5086,7 +5106,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
 
   function pitAusweichenSetzen(pitCar) {
-    const now = Date.now();
+    const now = rennZeitJetzt();
     for (const c of garage) {
       if (c === pitCar || !c.ghost || c.role !== 'ghost') continue;
       if (!pitSperreRechts(c)) continue;
@@ -5301,7 +5321,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function randHaltStarten(car, opt) {
     const g = car.ghost;
     if (!g) return;
-    g.randHalt = { phase: opt.phase || 'rand', at: Date.now(), quer: opt.quer,
+    g.randHalt = { phase: opt.phase || 'rand', at: rennZeitJetzt(), quer: opt.quer,
                    tempo: opt.tempo === undefined ? formationPace() : opt.tempo,
                    randMs: opt.randMs || 0, haltMs: opt.haltMs || PIT_BREMS_MS, fertig: opt.fertig || null,
                    nachRandMs: opt.nachRandMs || 0, randErreicht: 0,
@@ -5326,7 +5346,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function randHaltRadLenk(car) {
     const h = car.ghost && car.ghost.randHalt;
     // v1.1.30: eine aufgenommene Folge lenkt selbst; im anschliessenden Halt stehen die Raeder gerade.
-    if (h && h.skript) return h.phase === 'skript' ? skriptSchritt(h, Date.now()).lenk : 0;
+    if (h && h.skript) return h.phase === 'skript' ? skriptSchritt(h, rennZeitJetzt()).lenk : 0;
     if (!h || !h.radLenk) return null;
     if (h.phase === 'rad') return h.radLenk;
     if (h.phase === 'gegen') return -h.radLenk;
@@ -5338,7 +5358,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function randHaltTick(car) {
     const g = car.ghost, h = g && g.randHalt;
     if (!h) return false;
-    const now = Date.now();
+    const now = rennZeitJetzt();
     g.gnadeBis = now + PIT_GNADE_MS;             // langsam am Rand ist kein Abflug
     if (h.phase === 'rand') {
       const seit = now - h.at;
@@ -5404,7 +5424,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function pitTick(car) {
     const g = car.ghost, p = g && g.pit;
     if (!p) return false;
-    const now = Date.now();
+    const now = rennZeitJetzt();
     // DIE GNADE, JEDEN TAKT NEU. Ohne diese Zeile parkt sich der Ghost nach vier Sekunden
     // selbst - siehe den Befund oben. Sie steht als ERSTES, damit kein Ausstieg darunter sie
     // ueberspringen kann.
@@ -5549,10 +5569,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       g.aufstellZiel = aufstellZielKachel(pl, nStr);
       g.aufstellPlatz = pl;
       g.gridPos = pl;                       // Seite der Querlage (formationOffset)
-      g.aufstellSeit = Date.now();
+      g.aufstellSeit = rennZeitJetzt();
       g.aufstellAb = 0;
       g.startGesehen = true;                // steht gerade auf Start/Ziel
-      g.aufstellBis = Date.now() + AUFSTELLEN_MAX_MS;
+      g.aufstellBis = rennZeitJetzt() + AUFSTELLEN_MAX_MS;
       g.nachZiel = true;
       log(garageLabel(car) + ': faehrt zurueck auf Startplatz ' + (pl + 1) + '.', 'info');
       return;
@@ -5573,7 +5593,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // v0.9.87: nach EINLAUFREIHENFOLGE, nicht nach Startseite - zwei Autos, die direkt
     // nacheinander ankamen, konnten sonst dieselbe Seite haben und aufeinander auffahren.
     const seite = platz >= 0 ? (platz % 2 ? -1 : 1) : (g.seite || 1);
-    g.finish = { phase: 'roll', at: Date.now(),
+    g.finish = { phase: 'roll', at: rennZeitJetzt(),
                  seite,
                  kacheln,
                  // Der Zaehlerstand beim Einlauf. Byte 11 laeuft ueber, deshalb wird die
@@ -5590,7 +5610,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // direkt, nicht durch die Physik: ein Parkmanoever ueber zwei Sekunden braucht kein
   // Fahrzeugmodell, und der Tempo-Regler wuerde bei Ziel 0 nur dagegenarbeiten.
   function ghostFinishTick(car) {
-    const g = car.ghost, f = g.finish, now = Date.now();
+    const g = car.ghost, f = g.finish, now = rennZeitJetzt();
     // ---- VERAENDERLICH, UND ZWAR NOTWENDIG ---------------------------------------
     //
     // Hier stand `const seit`. Seit die Rollphase in dieselben Takt in die Bremsphase
@@ -5675,7 +5695,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (car.ghost) {
       car.ghost.cutOut = false; car.ghost.offSince = 0;
       car.ghost.recoverUntil = 0; car.ghost.recoverStuckSince = 0;
-      car.ghost.unparkAt = Date.now();
+      car.ghost.unparkAt = rennZeitJetzt();
       // ---- DIE GNADE GILT AUCH HIER, und das war die gemeldete Luecke ------------------
       //
       // Sie wurde bisher NUR beim Start eines Ghosts erteilt. Wer ein abgeflogenes Auto
@@ -5692,7 +5712,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       //
       // DIESELBE Zahl wie beim Start, weil es dieselbe Lage ist: das Auto ist gerade von
       // Hand hingestellt worden.
-      car.ghost.gnadeBis = Date.now() + GHOST_START_GNADE_MS;
+      car.ghost.gnadeBis = rennZeitJetzt() + GHOST_START_GNADE_MS;
       // Den I-Anteil loeschen. Er ist waehrend des Stillstands nicht gewachsen (geparkt wird
       // ghostSpeedControl nicht gerufen), aber der Wert VOR dem Abflug steht noch da - und
       // der gehoert zu einem Tempo, das dieses Auto gerade nicht hat. Mit ihm wuerde die
@@ -5730,7 +5750,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const b = $('race-act-flag');
     if (!b) return;
     if (flagHoldStart === null) { b.style.removeProperty('--hold'); return; }
-    const p = Math.min(1, (Date.now() - flagHoldStart) / FLAG_HOLD_MS);
+    const p = Math.min(1, (rennZeitJetzt() - flagHoldStart) / FLAG_HOLD_MS);
     b.style.setProperty('--hold', (p * 100).toFixed(1) + '%');
     if (p >= 1) flagHoldRelease(true);
   }
@@ -5738,7 +5758,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function flagHoldPress() {
     if (flagHoldStart !== null) return;          // schon am Halten
     if (flagState === 'restart') return;         // die Ampel laeuft, nichts umschalten
-    flagHoldStart = Date.now();
+    flagHoldStart = rennZeitJetzt();
     flagHoldPaint();
     flagHoldTimer = setInterval(flagHoldPaint, FLAG_HOLD_TICK_MS);
   }
@@ -5807,15 +5827,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // mode aktivieren (statt OPTIONS)". Getippt heisst: vor Ablauf der Haltesekunde
       // losgelassen - gemessen an der eigenen Uhr des Drucks, weil flagHoldPress() waehrend
       // der Neustart-Ampel gar nicht erst zu laden beginnt.
-      if (flagNow && !prevYellowFlag) { padFlagFired = false; padKreuzSeit = Date.now(); flagHoldPress(); }
+      if (flagNow && !prevYellowFlag) { padFlagFired = false; padKreuzSeit = rennZeitJetzt(); flagHoldPress(); }
       if (flagNow && !padFlagFired && flagHoldStart !== null
-          && Date.now() - flagHoldStart >= FLAG_HOLD_MS) {
+          && rennZeitJetzt() - flagHoldStart >= FLAG_HOLD_MS) {
         padFlagFired = true;
         flagHoldRelease(true);
       }
       if (!flagNow && prevYellowFlag) {
         flagHoldRelease(false);
-        if (!padFlagFired && padKreuzSeit !== null && Date.now() - padKreuzSeit < FLAG_HOLD_MS) requestPitStop();
+        if (!padFlagFired && padKreuzSeit !== null && rennZeitJetzt() - padKreuzSeit < FLAG_HOLD_MS) requestPitStop();
         padKreuzSeit = null;
       }
     }
@@ -6058,7 +6078,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function scGegenschubDrive(car, drive0) {
     const h = car && car.ghost && car.ghost.randHalt;
     if (!h) return drive0;
-    const jetzt = Date.now();
+    const jetzt = rennZeitJetzt();
     // Nach dem Rechts-Impuls (erster Gegenschub).
     if (h.gegenschubRadMs && h.radEnde && h.phase !== 'rand' && h.phase !== 'rad'
         && (jetzt - h.radEnde) < h.gegenschubRadMs) return scGegenschubWert(jetzt - h.radEnde);
@@ -6358,7 +6378,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     safetyCarLichtAus(c, scAusfahrt(c) ? -scEndLenk() : 0);
     if (gelbWartet) {
       // Gelb kam waehrend des Einparkens (safetyCarRaus): jetzt, wo es steht, neu losfahren.
-      setTimeout(() => { if (flagState === 'yellow' && safetyCar() === c) safetyCarRaus(); }, 300);
+      rennZeitTimeout(() => { if (flagState === 'yellow' && safetyCar() === c) safetyCarRaus(); }, 300);
     }
     log(garageLabel(c) + (scAusfahrt(c) ? ': Safety Car steht neben der Strecke, Licht aus.'
                                          : ': Safety Car steht rechts am Rand, Licht aus.'), 'info');
@@ -6436,7 +6456,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!g || g.finish) return;
     if (g.randHalt) {
       if (g.randHalt.scLinie && g.randHalt.phase === 'rand') {
-        randHaltWeiter(g.randHalt, Date.now());
+        randHaltWeiter(g.randHalt, rennZeitJetzt());
         log(garageLabel(sc) + (scAusfahrt(sc)
           ? ': Safety Car lenkt auf Kachel ' + g.tileIndex + ' von der Bahn (Startpunkt ' + scZielKachel(sc)
             + ', Verschiebung ' + scAusfahrtKachel() + ', Rechts ' + scAusfahrtMs() + ' ms, Links ' + scAusfahrtLinksMs() + ' ms, Gegenschub nach Rechts ' + scGegenschubRadMs() + ' ms, nach Links ' + scGegenschubMs() + ' ms, Raeder am Ende ' + Math.round(scEndLenk() * 100) + ' %).'
@@ -6839,19 +6859,19 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     updateFlagUi();
     const verzog = 1000 + Math.random() * 2000;
     for (let i = 1; i <= 5; i++) {
-      setTimeout(() => {
+      rennZeitTimeout(() => {
         if (flagState !== 'restart') return;
         setRaceLights(i);
         ampelTon(440 + (i - 1) * 60, 0.18, 'square', 0.18);
       }, 600 + (i - 1) * 1000);
     }
     // Nach der 5. Lampe (600 + 4*1000 = 4600 ms) die zufaellige Pause, dann alle aus.
-    setTimeout(() => {
+    rennZeitTimeout(() => {
       if (flagState !== 'restart') return;
       setRaceLights('go');
       ampelTon(880, 0.35, 'square', 0.22);
       setFlag('green');
-      setTimeout(() => setRaceLights(0), 900);
+      rennZeitTimeout(() => setRaceLights(0), 900);
     }, 4600 + verzog);
   }
 
@@ -7038,13 +7058,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // ---- EIN MERKER UND KEINE UHRFRAGE ----------------------------------------------
   //
   // DER FEHLER, DEN DAS BEHEBT, war gemessen und nicht offensichtlich: die erste Fassung
-  // rechnete hier `hupeDunkel(Date.now() - g.ansageSeit)`. In der Rennsimulation ist
+  // rechnete hier `hupeDunkel(rennZeitJetzt() - g.ansageSeit)`. In der Rennsimulation ist
   // Date.now aber GEFAELSCHT - simSchritt() setzt es auf seine eigene Uhr und stellt es im
   // finally zurueck (90b-sim.js). ghostTick() laeuft innerhalb dieses Fensters, simZeichnen()
   // und simZustand() laufen ausserhalb.
   //
   // Eine Funktion, die die Uhr selbst fragt, gibt also je nach Aufrufer eine andere Antwort:
-  // g.ansageSeit stammt von der gefaelschten Uhr, Date.now() beim Zeichnen von der echten,
+  // g.ansageSeit stammt von der gefaelschten Uhr, rennZeitJetzt() beim Zeichnen von der echten,
   // und die Differenz ist Unsinn. Gemessen: 650 Takte in der Ansage und NULL dunkle - auf
   // der Karte haette es nie geblitzt.
   //
@@ -7695,6 +7715,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return true;
   }
   function scanFahrTick() {
+    if (rennPauseAktiv()) return;
     const car = scanFahrAuto;
     if (!car || typeof garageScan === 'undefined' || !garageScan.aktiv || garageScan.car !== car) { scanFahrStopp(); return; }
     const neben = car.tileCode === TILE_OFFTRACK;
@@ -7777,7 +7798,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     const g = spielerOrt(c);
     if (!g || !currentTrackTiles || currentTrackTiles.length < 3) return;
-    const now = Date.now();
+    const now = rennZeitJetzt();
     // Kachelwechsel: DIESELBE Buchfuehrung wie in ghostTick, nur ohne Antrieb. Sie steht
     // hier ein zweites Mal und nicht als gemeinsame Funktion, weil der Ghost-Zweig noch
     // Lernbilanz, Rundenuhr und Abgangsmelder daran haengt - eine Funktion, die beides
@@ -8007,7 +8028,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Kacheldauer.
   function ghostClosing(car, gap) {
     const g = car.ghost;
-    const now = Date.now();
+    const now = rennZeitJetzt();
     if (gap === null) { g.gapLast = undefined; g.naehern = 0; return 0; }
     let roh = 0;
     if (g.gapLast !== undefined && g.gapAt) {
@@ -8067,7 +8088,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const g = car.ghost;
     if (!g || g.tileIndex === null || g.tileIndex === undefined) return;
     if (!g.kachelZeit) g.kachelZeit = [];
-    g.kachelZeit[g.tileIndex] = Date.now();
+    g.kachelZeit[g.tileIndex] = rennZeitJetzt();
   }
 
   // Die Zeitluecke zum Vorausfahrenden, in Sekunden. null heisst "nicht messbar" - und das
@@ -8094,7 +8115,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
 
   // Tagesform fortschreiben. Begrenzter Zufallslauf: er haelt an, laeuft aber nicht weg.
   function ghostFormTick(car) {
-    const g = car.ghost, now = Date.now();
+    const g = car.ghost, now = rennZeitJetzt();
     if (!g.formAt) { g.formAt = now; g.form = 0; return; }
     if (now - g.formAt < SPICE_FORM_MS) return;
     g.formAt = now;
@@ -8112,7 +8133,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // laengere Reichweite von SPICE_PASS_KEIN_HAARNADEL_VORAUS braucht (ghostTick(), siehe
   // dort), gibt sie ausdruecklich mit.
   function ghostSpice(car, aheadTight, haarnadelNah) {
-    const g = car.ghost, now = Date.now();
+    const g = car.ghost, now = rennZeitJetzt();
     if (!wuerzeAn()) { g.attackUntil = 0; return { factor: 1, attack: 0 }; }
 
     ghostFormTick(car);
@@ -9237,7 +9258,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const altG = car.ghost;
     const tilesJ = currentTrackTiles || [];
     const altOrt = (altG && !altG.nurOrt && altG.ortSicher && altG.tileIndex !== null && altG.tileIndex !== undefined
-      && car.lastCodeAt && Date.now() - car.lastCodeAt < AUFSTELL_ORT_FRISCH_MS
+      && car.lastCodeAt && rennZeitJetzt() - car.lastCodeAt < AUFSTELL_ORT_FRISCH_MS
       && tilesJ[altG.tileIndex] && ortPasst(tilesJ[altG.tileIndex].type, car.tileCode)) ? altG.tileIndex : null;
     car.ghost = { engine: e, tileIndex: null, lastCount: car.tileCount,
                   lastTick: 0, bias: 0, laps: 0, cutOut: false, freeRun: false,
@@ -9305,7 +9326,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                   // Startgnade: siehe GHOST_START_GNADE_MS. Ohne sie kommt ein geparktes
                   // Auto nie wieder hoch, weil es zum Lesen fahren muesste und zum Fahren
                   // gelesen haben muesste.
-                  gnadeBis: Date.now() + GHOST_START_GNADE_MS,
+                  gnadeBis: rennZeitJetzt() + GHOST_START_GNADE_MS,
                   // Startlenkung gerade: siehe GHOST_START_LENK_MS. startLenkBis ist der
                   // Zeitpunkt, bis zu dem die Lenkung nach dem Anfahren gerade gehalten
                   // wird; armedVorher merkt sich die Flanke, damit die Frist GENAU beim
@@ -9410,6 +9431,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // controlHeartbeat() in 20-protocol.js NACH spielerZweiSenden(). Das Schreiben selbst
   // bleibt beim "verwerfen, wenn noch einer laeuft" in writeToCar().
   function ghostHerzschlag() {
+    if (rennPauseAktiv()) return;
     for (const car of garage) {
       if (car.imTakt && car.ghost && car.ghost.running) ghostTick(car);
     }
@@ -9567,7 +9589,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     lmState.warOff[kennung] = offJetzt;
 
     if (rundeVoll) {
-      const now = Date.now();
+      const now = rennZeitJetzt();
       if (d.letzteRunde !== null) d.runden.push(now - d.letzteRunde);
       d.letzteRunde = now;
       lmRender();
@@ -9647,9 +9669,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   if ($('lm-csv')) $('lm-csv').addEventListener('click', lmCsv);
 
   function ghostTick(car) {
+    if (rennPauseAktiv()) return;
     const g = car.ghost;
     if (!g) return;
-    const now = Date.now();
+    const now = rennZeitJetzt();
     const dt = g.lastTick ? Math.min(0.25, (now - g.lastTick) / 1000)
                           : CONTROL_SEND_INTERVAL_MS / 1000;
     g.lastTick = now;
@@ -10850,11 +10873,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // dem Tisch sofort, welches gemeint ist.
     if (car.role === 'safetycar' && !car.parked) {
       // BESTELLT: "Safetycar-Lichter blinken bei gelber Flagge alle 750 ms fuer 250 ms auf."
-      const on = flagState !== 'green' && (Date.now() % SC_BLINK_MS) < SC_BLINK_AN_MS;
+      const on = flagState !== 'green' && (rennZeitJetzt() % SC_BLINK_MS) < SC_BLINK_AN_MS;
       lights = trackModeBit() | (on ? LIGHT_HEAD : 0);
     } else if (flagState !== 'green' || car.parked) {
       const period = car.parked ? 260 : 520;
-      const on = Math.floor(Date.now() / period) % 2 === 0;
+      const on = Math.floor(rennZeitJetzt() / period) % 2 === 0;
       lights = trackModeBit() | (on ? LIGHT_HEAD : 0) | (on ? 0 : LIGHT_BRAKE);
     }
     // DER PRUEFSTAND SENDET AM SERVOWEG VORBEI, und das ist der Unterschied zwischen einer
@@ -11255,6 +11278,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Simulation laeuft, ist das die Doppelspur, die es nicht geben soll: die Simulation ruft
   // explizit mit ihrem eigenen dt, also reicht das.
   function ghostAssignBias(dtSek) {
+    if (rennPauseAktiv()) return;
     if (dtSek === undefined && typeof simAn === 'function' && simAn()) return;
     const schritt = GHOST_BIAS_STEP
       * ((dtSek === undefined ? GHOST_BIAS_MS / 1000 : Math.max(0, dtSek)) / (GHOST_BIAS_MS / 1000));
@@ -11281,7 +11305,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Jetzt: zusammenhaengende Gruppen (wer nah an wem ist), und in jeder Gruppe die Seiten
     // nach der aktuellen QUERLAGE verteilt. Wer gerade weiter links faehrt, bleibt links -
     // so kreuzt niemand den anderen. Die Startseite entscheidet nur, wenn zwei gleich liegen.
-    const fresh = raceStartedAt && (Date.now() - raceStartedAt) < GHOST_GRID_MS;
+    const fresh = raceStartedAt && (rennZeitJetzt() - raceStartedAt) < GHOST_GRID_MS;
     const gruppen = fresh ? [feld] : ghostNahGruppen(feld);
     for (const gruppe of gruppen) {
       if (gruppe.length < 2) continue;
@@ -11376,7 +11400,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
   // Wer faehrt gerade mit wem als Paar? Map Auto -> { mit, seite }. Je 100 ms neu.
   function ghostPaare() {
-    const now = Date.now();
+    const now = rennZeitJetzt();
     if (paarCache.at >= 0 && now - paarCache.at < 100 && now >= paarCache.at) return paarCache.map;
     const map = new Map();
     paarCache = { at: now, map };
@@ -11420,7 +11444,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Die Querlage eines NPC im Paar, oder null (kein Paar, Gelb, Attacke, Ausweichen).
   function ghostPaarQuer(car) {
     const g = car && car.ghost;
-    if (!ghostCfg.paare || !g || g.nurOrt || flagState !== 'green' || g.attackUntil || (g.yieldUntil && Date.now() < g.yieldUntil)) return null;
+    if (!ghostCfg.paare || !g || g.nurOrt || flagState !== 'green' || g.attackUntil || (g.yieldUntil && rennZeitJetzt() < g.yieldUntil)) return null;
     const p = ghostPaare().get(car);
     if (!p) return null;
     const dir = ghostTurnOf(car.tileCode);
@@ -11789,14 +11813,20 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Abzweigung wuerde Spieler 2 hier weiterfahren, waehrend seine eigene Zuordnung
     // wartet - und ein Tritt aufs Gas waere die naechste "Zuordnung".
     if (listeningFor && bindEditSpieler === z.nr) {
+      z.steer = 0; z.throttle = 0;
       tryCaptureBinding(pad);
       return;
     }
     // z.bindings: Spieler 2s EIGENE Belegung (siehe die Begruendung bei GAMEPAD_BINDINGS_KEY2
     // weiter oben) - vorher las diese Funktion `bindings`, also Spieler 1s Tabelle mit.
-    const gas = applyDeadzone(Math.max(0, readBindingValue(pad, z.bindings.throttle)), TRIGGER_DEADZONE);
-    const bremse = applyDeadzone(Math.max(0, readBindingValue(pad, z.bindings.brake)), TRIGGER_DEADZONE);
+    if (rennPauseTaste(pad, z.bindings, z.nr)) {
+      z.steer = 0; z.throttle = 0; return;
+    }
+    let gas = applyDeadzone(Math.max(0, readBindingValue(pad, z.bindings.throttle)), TRIGGER_DEADZONE);
+    let bremse = applyDeadzone(Math.max(0, readBindingValue(pad, z.bindings.brake)), TRIGGER_DEADZONE);
+    [gas, bremse] = rennPauseFilterGas(z.nr, gas, bremse);
     z.steer = applyDeadzone(readBindingValue(pad, z.bindings.steering));
+    if (!rennPauseLenkung("p" + z.nr, z.steer)) z.steer = 0;
     // Gas und Bremse getrennt pruefen, BEVOR sie zu einer Zahl werden (siehe 50-drive.js).
     const gbUeber = (typeof gasBremseRueckwaertsPruefen === 'function') ? gasBremseRueckwaertsPruefen(gas, bremse, z) : null;
     z.throttle = gbUeber !== null ? gbUeber : gas - bremse;
@@ -11920,6 +11950,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     padConnected = true;
     padLastPollTime = performance.now();
+    if (!(listeningFor && bindEditSpieler < 2) && rennPauseTaste(pad, bindings, 1)) {
+      releaseInput(SRC.PAD); return;
+    }
     // Startaufstellung offen: das Steuerkreuz waehlt den Knopf (X bestaetigt, flagTasteTick).
     if (typeof raceGridOffen === 'function' && raceGridOffen()) {
       const r = (padDpad(pad, 'left') || padDpad(pad, 'up')) ? -1
@@ -11950,11 +11983,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Spieler 2s Tabelle bearbeitet wird (bindEditSpieler === 2), soll Spieler 1
     // weiterfahren koennen, statt fuer eine fremde Zuordnung stillzustehen.
     if (listeningFor && bindEditSpieler < 2) {
+      releaseInput(SRC.PAD);
       tryCaptureBinding(pad);
     } else {
-      const throttleRaw = applyDeadzone(Math.max(0, readBindingValue(pad, bindings.throttle)), TRIGGER_DEADZONE);
-      const brakeRaw = applyDeadzone(Math.max(0, readBindingValue(pad, bindings.brake)), TRIGGER_DEADZONE);
+      let throttleRaw = applyDeadzone(Math.max(0, readBindingValue(pad, bindings.throttle)), TRIGGER_DEADZONE);
+      let brakeRaw = applyDeadzone(Math.max(0, readBindingValue(pad, bindings.brake)), TRIGGER_DEADZONE);
       const steerRaw = applyDeadzone(readBindingValue(pad, bindings.steering));
+      [throttleRaw, brakeRaw] = rennPauseFilterGas(1, throttleRaw, brakeRaw);
 
       // v0.9.26 (Plan Schritt 2): die Live-Texte nur bei ANDERUNG schreiben - dieser Weg
       // laeuft jeden Frame und zusaetzlich im Sendetakt, und jedes textContent= ist Arbeit
