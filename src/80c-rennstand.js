@@ -837,10 +837,10 @@
       rennstandStimmenModus = modus;
       rennstandStimmenModusWahl.value = modus;
       const hinweis = $('setting-announce-stand-voice-help');
-      if (hinweis) hinweis.textContent = !rennstandWebSpeechVerfuegbar()
+      if (hinweis)       hinweis.textContent = !rennstandWebSpeechVerfuegbar()
         ? 'Diese Plattform bietet keine Browserstimme; es werden vorproduzierte Clips verwendet.'
         : modus === 'browser'
-          ? 'Browserstimme fuer alle Rennstand-Ansagen. Tempo und Pitch gelten; Hall und Lautstaerke-Boost nur bei Clips.'
+          ? 'Browserstimme für alle Rennstand-Ansagen. Tempo und Pitch gelten; Hall und Lautstärke-Boost nur bei Clips.'
           : modus === 'clips'
             ? 'Immer die vorproduzierten Clips verwenden. Eigene Garagennamen werden dabei nicht gesprochen.'
             : 'Automatisch: bei eigenen Garagennamen Browserstimme, sonst vorproduzierte Clips.';
@@ -882,9 +882,9 @@
     select.disabled = !rennstandWebSpeechVerfuegbar() || stimmen.length === 0;
     const hinweis = $('setting-announce-stand-browser-voice-help');
     if (hinweis) hinweis.textContent = !rennstandWebSpeechVerfuegbar()
-      ? 'Keine Browserstimme verfuegbar.'
+      ? 'Keine Browserstimme verfügbar.'
       : stimmen.length
-        ? 'Die Liste kommt vom Browser/Geraet; Stimmen koennen je nach Plattform variieren.'
+        ? 'Die Liste kommt vom Browser/Gerät; Stimmen können je nach Plattform variieren.'
         : 'Stimmen werden vom Browser geladen. Falls die Liste leer bleibt, wird die Systemstandardstimme verwendet.';
   }
   if (rennstandBrowserStimmenWahl) {
