@@ -3685,22 +3685,27 @@
   .vf-knoepfe { position: absolute; right: max(10px, env(safe-area-inset-right)); top: max(8px, env(safe-area-inset-top)); display: flex; gap: 6px; }
   .vf-knoepfe button { background: rgba(5,7,12,.62); color: #fff; border: 1px solid rgba(255,255,255,.35); padding: 6px 12px; min-height: 2.2em; }
   .vf-wip { position: absolute; left: 10px; bottom: 8px; color: #0b0c10; font-weight: 700; font-size: 12px; }
-  /* v1.1.52: Auf dem Handy ist das HUD zu gross und verdeckt das Auto. Alles kompakter, damit die
-     Kamera das Auto zeigt: kleinere Schrift, weniger Abstand, und die ACC-Leiste unten schmaler. */
+  /* v1.1.54: Auf dem Handy war das HUD zu gross und verdeckte das Auto. Das HUD wird flach und in
+     zwei Ecken unten aufgeteilt: links die Fahrwerte (Tempo/Gang/Drehzahl/Reifen/Tank), rechts die
+     Renn-Infos (Runde/Zeiten/Modus). Die Mitte bleibt fuer das Auto frei. */
   @media (max-width: 640px) {
-    .vf-hud { font-size: 10px; padding: 4px 7px; gap: 1px; left: max(6px, env(safe-area-inset-left)); top: max(6px, env(safe-area-inset-top)); }
-    .vf-hud b { font-size: 1.3em; }
-    .vf-acc { left: max(6px, env(safe-area-inset-left)); bottom: max(8px, env(safe-area-inset-bottom)); transform: none;
-      padding: 5px 8px; gap: 2px; }
-    .vf-acc .vf-tempo { font-size: clamp(20px, 4vw, 28px); }
-    .vf-acc-zeile { gap: 5px; }
-    .vf-lbl { font-size: 0.68em; }
-    .vf-gang { font-size: 1.1em; }
-    .vf-rpm, .vf-reifen, .vf-tank { font-size: 0.9em; }
-    .vf-acc-dreh { height: 5px; }
-    .vf-knoepfe { right: max(6px, env(safe-area-inset-right)); top: max(6px, env(safe-area-inset-top)); gap: 4px; }
-    .vf-knoepfe button { padding: 4px 8px; min-height: 1.8em; font-size: 11px; }
-    .vf-wip { left: auto; right: max(6px, env(safe-area-inset-right)); bottom: max(8px, env(safe-area-inset-bottom)); font-size: 10px; }
+    /* Renn-Infos unten rechts, flach und rechtsbuendig; das grosse Tempo steht im ACC-Cluster links. */
+    .vf-hud { left: auto; right: max(5px, env(safe-area-inset-right)); bottom: max(5px, env(safe-area-inset-bottom)); top: auto;
+      font-size: 8px; padding: 2px 5px; gap: 0; max-width: 46vw; justify-items: end; line-height: 1.1; }
+    .vf-hud b { font-size: 1.1em; }
+    .vf-hud .vf-tempo { display: none; }
+    /* Fahrwerte unten links, flach. */
+    .vf-acc { left: max(5px, env(safe-area-inset-left)); bottom: max(5px, env(safe-area-inset-bottom)); transform: none;
+      padding: 2px 5px; gap: 0; max-width: 46vw; line-height: 1.1; }
+    .vf-acc .vf-tempo { font-size: clamp(14px, 3vw, 20px); }
+    .vf-acc-zeile { gap: 4px; }
+    .vf-lbl { font-size: 0.55em; }
+    .vf-gang { font-size: 0.95em; }
+    .vf-rpm, .vf-reifen, .vf-tank { font-size: 0.76em; }
+    .vf-acc-dreh { height: 3px; }
+    .vf-knoepfe { right: max(5px, env(safe-area-inset-right)); top: max(5px, env(safe-area-inset-top)); gap: 4px; }
+    .vf-knoepfe button { padding: 3px 7px; min-height: 1.5em; font-size: 10px; }
+    .vf-wip { left: max(5px, env(safe-area-inset-left)); right: auto; bottom: auto; top: max(5px, env(safe-area-inset-top)); font-size: 10px; }
   }
   /* v1.1.3: Autobild und Versatz - rechts stehende Autos (P1, P3 ...) nach rechts, links stehende
      nach links geschoben, wie auf einem Startplan. */
@@ -4854,7 +4859,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.52</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.54</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>

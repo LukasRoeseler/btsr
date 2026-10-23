@@ -909,7 +909,7 @@
         if (radM && radM.teile.length) {
           // Das Rad so weit nach aussen, dass es neben der Karosserie sichtbar bleibt (manche Modelle
           // haben eine schmalere Spur und wuerden das Rad sonst verstecken).
-          const xW = seite * Math.max(r.spur / 2, halbW + 0.03 - 0.5 * r.breite);
+          const xW = seite * Math.max(r.spur / 2, halbW + 0.12 - 0.5 * r.breite);
           const wF = vfKette(lage, vfT(xW, r.radius, z), dreh, vfRx(raddreh || 0),
             vfS(seite * r.breite, 2 * r.radius, 2 * r.radius));
           setze(wF, [1, 1, 1], 0, 1, 0, 1);
