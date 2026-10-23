@@ -3685,18 +3685,19 @@
   .vf-knoepfe { position: absolute; right: max(10px, env(safe-area-inset-right)); top: max(8px, env(safe-area-inset-top)); display: flex; gap: 6px; }
   .vf-knoepfe button { background: rgba(5,7,12,.62); color: #fff; border: 1px solid rgba(255,255,255,.35); padding: 6px 12px; min-height: 2.2em; }
   .vf-wip { position: absolute; left: 10px; bottom: 8px; color: #0b0c10; font-weight: 700; font-size: 12px; }
-  /* v1.1.54: Auf dem Handy war das HUD zu gross und verdeckte das Auto. Das HUD wird flach und in
+  /* v1.1.55: Auf dem Handy war das HUD zu gross und verdeckte das Auto. Das HUD wird flach und in
      zwei Ecken unten aufgeteilt: links die Fahrwerte (Tempo/Gang/Drehzahl/Reifen/Tank), rechts die
-     Renn-Infos (Runde/Zeiten/Modus). Die Mitte bleibt fuer das Auto frei. */
-  @media (max-width: 640px) {
+     Renn-Infos (Runde/Zeiten/Modus). Die Mitte bleibt fuer das Auto frei. Gilt fuer alle Mobil- und
+     Touch-Geraete (auch quer gehalten und Tablets), daher max-width 1000px plus (pointer: coarse). */
+  @media (max-width: 1000px), (pointer: coarse) {
     /* Renn-Infos unten rechts, flach und rechtsbuendig; das grosse Tempo steht im ACC-Cluster links. */
     .vf-hud { left: auto; right: max(5px, env(safe-area-inset-right)); bottom: max(5px, env(safe-area-inset-bottom)); top: auto;
-      font-size: 8px; padding: 2px 5px; gap: 0; max-width: 46vw; justify-items: end; line-height: 1.1; }
+      font-size: 8px; padding: 2px 5px; gap: 0; max-width: min(44vw, 320px); justify-items: end; line-height: 1.1; }
     .vf-hud b { font-size: 1.1em; }
     .vf-hud .vf-tempo { display: none; }
     /* Fahrwerte unten links, flach. */
     .vf-acc { left: max(5px, env(safe-area-inset-left)); bottom: max(5px, env(safe-area-inset-bottom)); transform: none;
-      padding: 2px 5px; gap: 0; max-width: 46vw; line-height: 1.1; }
+      padding: 2px 5px; gap: 0; max-width: min(44vw, 320px); line-height: 1.1; }
     .vf-acc .vf-tempo { font-size: clamp(14px, 3vw, 20px); }
     .vf-acc-zeile { gap: 4px; }
     .vf-lbl { font-size: 0.55em; }
@@ -4859,7 +4860,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.54</span></span>
+        <span class="foot-ver">v<span id="app-version">1.1.55</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
