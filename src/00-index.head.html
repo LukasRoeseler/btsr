@@ -4712,6 +4712,18 @@
     #ampel-overlay { transition: none; }
   }
 </style>
+<style>
+  .stat-clean { margin-top:20px; border:1px solid var(--line,#454b57); border-radius:8px; padding:12px; }
+  .stat-clean summary { cursor:pointer; font-weight:700; }
+  .stat-clean label { display:block; margin:16px 0 6px; font-weight:600; }
+  .stat-clean select { display:block; width:100%; min-width:0; box-sizing:border-box; }
+  .stat-clean code { overflow-wrap:anywhere; white-space:normal; }
+  .stat-clean-actions { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
+  .stat-clean-preview { white-space:pre-line; overflow-wrap:anywhere; margin:8px 0; }
+  .stat-clean-note { font-size:14px; line-height:1.55; }
+  .stat-clean button { min-height:40px; margin-top:6px; }
+  .stat-clean .stat-clean-danger { border-color:var(--bad,#df4f4f); }
+</style>
 </head>
 <body>
 
@@ -12101,6 +12113,7 @@
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Statistiken</h2>
       <div id="stat-inhalt"></div>
+      <div id="stat-bereinigen" data-i18n-skip></div>
     </div>
     <!-- STUDIE (98f-studie.js): Einwilligung, NARQ, Selbsteinschaetzung, Reaktionstest. Der Inhalt
          entsteht im Code und wird dort mit t() uebersetzt. -->
