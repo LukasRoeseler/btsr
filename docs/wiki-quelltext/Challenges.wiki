@@ -1,0 +1,97 @@
+{{Stand|app=1.2.5|appdatum=26.10.2026}}
+[[Datei:OmegaSim-Challenges.png|mini|Die Challenges-Seite in OmegaSim 1.2.5]]
+Die '''Challenges''' (experimentell) sind feste Zeitfahraufgaben in [[OmegaSim]]: vorgegebene Strecken, die mit echten [[Carrera HYBRID]]-Teilen nachgebaut und unter gleichen Bedingungen gefahren werden. Die Zeiten landen in einer lokalen und auf Wunsch in einer gemeinsamen Online-Bestenliste.
+
+Challenges haben einen eigenen Reiter '''CHALLENGES''' neben FAHREN, MEHRSPIELER und OPTIONEN. Neben den fest vorgegebenen Strecken gibt es die '''Community-Bestzeiten''', in denen Spieler eigene Strecken einreichen.
+
+== Arten von Challenges ==
+=== Wöchentliche Challenges ===
+Es gibt vier Kategorien mit je 20 Strecken. Jeden Mittwoch um 0:00 Uhr deutscher Zeit wechselt jede Kategorie zur nächsten Strecke; nach 20 Wochen beginnt die Reihe von vorn. Die Bestenliste einer Strecke bleibt erhalten und gilt wieder, wenn sie zurückkehrt.
+{| class="wikitable"
+! Kategorie !! Inhalt !! benötigte Teile
+|-
+| A || kurze Kurse || Grundpackung
+|-
+| B || lange Kurse || Grundpackung
+|-
+| C || Kurse mit beiden Haarnadeln || Grundpackung und Haarnadel-Set
+|-
+| D || schnelle Kurse mit weiten 30-Grad-Bögen || Grundpackung und 30°-Außenkurven-Set
+|}
+Alle Strecken sind geschlossen, kreuzungsfrei und passen auf höchstens 2,6 × 2,6 m. Jede Strecke lässt sich auch gespiegelt fahren; die Wertung gilt dann für die gespiegelte Runde.
+
+=== Dauerrennen ===
+Drei feste Strecken rotieren nicht: Homington (Grundpackung, 20 Runden), Circuit Du Sol (Grundpackung und Haarnadel-Set, 20 Runden) und '''Balkonia 50 Kilometers''' über 100 Runden mit zwei Grundpackungen und Haarnadel-Set, einem Pflichtboxenstopp und einem festen Regenfenster von Minute 2 bis 4.
+
+=== Studie ===
+Die Studie OmegaLab enthält eine eigene Fahrverhaltens-Challenge: 5 Runden auf Homington mit dem Fahrgefühl Sim+. Sie hat keine Bestenliste und keine Medaillen.
+
+== Modi und Wertung ==
+Jede Strecke hat zwei Modi:
+* '''Beste Runde''': beliebig viele Runden, die schnellste gültige zählt.
+* '''Rennen''': eine feste Rundenzahl (je nach Kategorie 8 bis 12 Runden), es zählt die Gesamtzeit. Bis zu drei Runden mehr dürfen gefahren werden, um ungültige Runden auszugleichen. In Kategorie D ist im Modus Rennen ein Boxenstopp Pflicht.
+
+Für jede gültige Zeit gibt es eine Medaille: Bronze für das Absolvieren, Silber und Gold für schnelle Zeiten. Die Schwellen werden je Strecke aus der Streckengeometrie berechnet und sind an gemessenen Referenzzeiten kalibriert; die Detailseite einer Strecke nennt sie. Die Bestenliste zeigt außerdem Abstände, ein Histogramm, den eigenen Rang („schneller als X % der Spieler“) und die '''beste 3er-Serie''', den Durchschnitt der drei schnellsten aufeinanderfolgenden Runden.
+
+=== Gegen Schummeln ===
+* Jede Runde wird gegen die Strecke geprüft: mindestens 90 % der Teile müssen erkannt werden. Deshalb läuft jede Challenge in der Stellung „Auf der Bahn“.
+* Eine Runde muss eine plausible Mindestzeit haben (Streckenlänge bei höchstens 2,5 m/s).
+* Während des Laufs sind die Einstellungen gesperrt. Wer sie trotzdem ändert, bekommt keine Wertung.
+
+== Ablauf ==
+# Strecke im Reiter CHALLENGES wählen, Modus festlegen, die Strecke nachbauen.
+# '''Challenge starten''' drücken. Die App fragt den Namen für die Bestenliste ab und setzt die Bedingungen: Fahrgefühl Pro, trocken ohne Wetterwechsel, voller Tank, stehender Start, Pflichtstopps je nach Strecke.
+# Das Auto auf Start/Ziel stellen und anhalten. Nach einer Sekunde Stillstand kommt die [[Startampel]].
+# Fahren. Ein Frühstart bricht die Challenge nicht ab, sondern wird bestraft.
+# Nach dem Ende kommen alle vorherigen Einstellungen zurück: Regler, Renntyp, Rundenzahl, Wetter, Pflichtstopps, Tank, fliegender Start und Strecke.
+Ohne verbundenes Auto ist nur ein Probelauf möglich, der nicht gewertet wird.
+
+== Erlaubte Fahrgefühle ==
+Wöchentliche Challenges und Dauerrennen werden immer mit dem Fahrgefühl '''Pro''' gefahren (siehe [[Fahrverhalten]]). Für Community-Strecken wählt die einreichende Person eines von sechs Fahrgefühlen, mit dem dann alle die Strecke fahren:
+{| class="wikitable"
+! Fahrgefühl !! Community-Strecken
+|-
+| Arcade || ja
+|-
+| Pro || ja (auch Rückfallwert)
+|-
+| GT3 || ja
+|-
+| F1 || ja
+|-
+| Realismus GT3 || ja
+|-
+| Pacejka || ja, seit Version 1.2.4
+|-
+| Sim+, Omega, RC || nein
+|}
+Challenges fahren mit dem Steuerungsmodus Physik. Seit Version 1.2.4 bleibt eine Pacejka-Abstimmung dabei im Modus Pacejka, statt auf Physik zurückgesetzt zu werden. Wer eine eigene Online-Bestenliste betreibt, muss für Pacejka-Strecken das Apps Script neu bereitstellen.
+
+== Community-Bestzeiten ==
+Unter '''CHALLENGES → Community-Bestzeiten''' (experimentell) lässt sich die aktuell im Editor liegende Strecke mit '''Eigene Strecke einreichen''' veröffentlichen. Dazu gehören ein Name und das Fahrgefühl. Jede Strecke bekommt eine vierstellige Nummer. Ist dieselbe Strecke, auch gespiegelt, schon vorhanden, werden beide zusammengeführt. Mit '''Zeit fahren''' wird eine Community-Strecke im Modus Beste Runde gefahren. Die Liste ist nach der neuesten Zeit und nach der Zahl verschiedener Spieler sortiert. Ohne Online-Verbindung bleiben eingereichte Strecken auf dem Gerät und werden später nachgereicht.
+
+== Ergebnisse teilen ==
+Gewertete Zeiten werden lokal gespeichert und, wenn '''Zeiten hochladen''' eingeschaltet ist, an die gemeinsame OmegaSim-Bestenliste geschickt. Die Einstellungen liegen unter '''CHALLENGES → Online'''.
+
+Übertragen werden Strecke, Modus, Fahrgefühl, Zeit, Rundenzeiten, Autoname, der selbst gewählte Name (höchstens 16 Zeichen, leer ist erlaubt), eine zufällige Gerätekennung und die App-Version, dazu seit Version 1.0 die Spur der schnellsten Runde für Telemetrie und Challenger. Eine E-Mail-Adresse oder ein Konto gibt es nicht.
+
+* Zeiten kommen zuerst in eine Warteschlange und verlassen sie erst, wenn die Bestenliste sie bestätigt oder mit Grund ablehnt. Schlägt ein Upload fehl, meldet die App Strecke und Grund.
+* Während Countdown und Rennen findet kein Netzverkehr der Bestenliste statt, damit das Steuern nicht verzögert wird.
+* Je Gerät wird höchstens ein Eintrag alle 15 Sekunden angenommen.
+* Die angezeigten Listen kommen aus einem regelmäßig erneuerten Schnappschuss im Repository und aus dem Zwischenspeicher; die eigenen Zeiten erscheinen sofort.
+
+Die Bestenliste ist ein Google Sheet mit einer Apps-Script-Web-App. Wer eine eigene Liste betreiben möchte, trägt unter „Adresse der Web-App“ die Adresse seiner eigenen Bereitstellung ein; die Anleitung steht in der Datei tools/challenges-apps-script.gs im Repository. Ein leeres Feld bedeutet: nur lokal.
+
+== Siehe auch ==
+* [[Rennarten]]
+* [[Fahrverhalten]]
+* [[Strecken- und Raum-Editor]]
+* [[Strecke]]
+* [[Mitmachen]]
+
+== Weblinks ==
+* [https://github.com/Luuke42/omegasim OmegaSim auf GitHub (Luuke42)]
+* [https://luuke42.github.io/omegasim/ OmegaSim im Browser spielen]
+
+[[Kategorie:OmegaSim]]
+[[Kategorie:Spielfunktionen]]
