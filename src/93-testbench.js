@@ -5277,7 +5277,7 @@
         const m = /translate\(([-\d.]+) ([-\d.]+)\)\s*rotate\(([-\d.]+)\)/
           .exec(g.getAttribute('transform') || '');
         if (!m) return null;
-        const body = g.querySelector('rect');
+        const body = g.querySelector('.auto-koerper') || g.querySelector('rect');
         return { x: +m[1], y: +m[2], winkel: +m[3],
                  fill: body ? body.getAttribute('fill') : null };
       }).filter(Boolean);
@@ -8216,7 +8216,7 @@
         .map(g => {
           const m = /translate\(([-\d.]+) ([-\d.]+)\)\s*rotate\(([-\d.]+)\)/
             .exec(g.getAttribute('transform') || '');
-          const body = g.querySelector('rect');
+          const body = g.querySelector('.auto-koerper') || g.querySelector('rect');
           return { x: m ? +m[1] : null, y: m ? +m[2] : null, winkel: m ? +m[3] : null,
                    fill: body ? body.getAttribute('fill') : null };
         });

@@ -5431,6 +5431,33 @@
   // Menue, Kartenpunkte springen, Aufstellung ab Reihe 2, Regenflackern; dazu Kleinigkeiten.
   // v1.2.4 BESTELLT: Renntypen je Sensormodus, Fahrgefuehl je Spieler, Pacejka in Community-Challenges, Minigame-
   // Rueckmeldung, mechanische Boxensignale, NPC-Box wie Safety Car, Safety-Car-Parken auf kurzen Geraden.
+  // v1.2.9 BESTELLT: Silhouetten (Draufsicht) fuer Porsche, Ford, BMW, Ferrari und den
+  // Formelwagen, in der Farbe aus dem Menue.
+  stAdd('Karte v1.2.9: Silhouetten je Modell in der Menuefarbe', () => {
+    const f = [];
+    for (const m of ['porsche911', 'fordmustang', 'bmw', 'ferrari', 'redbull']) {
+      const h = autoFormInnen(m, '#123456');
+      if (!/class="auto-koerper"[^>]*fill="#123456"/.test(h)) f.push(m + ': Karosserie nicht in der Autofarbe');
+      if (!autoFormSkala(m)) f.push(m + ': ohne Massstab');
+    }
+    if (autoFormSkala('audi') || autoFormInnen('audi', '#123456').indexOf('<rect class="auto-koerper"') !== 0) f.push('Modell ohne Form nicht mehr Rechteck');
+    // In eine echte Karte setzen: Gruppe mit translate/rotate/scale, Farbe folgt dem Menue.
+    const r = renderTrackPreview(codeToTrack('SG3R2G3R2').tiles, null, { detailed: true, cars: [] });
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    karteAutosSetzen(svg, r.geo, [{ index: 1, phase: 0.5, farbe: '#ff0000', modell: 'bmw', kuerzel: 'A' }]);
+    const g = svg.querySelector('g.karte-autos > g');
+    const k = () => g && g.querySelector('.auto-koerper');
+    if (!g || !/translate\([-\d.]+ [-\d.]+\) rotate\([-\d.]+\) scale\(/.test(g.getAttribute('transform') || '')) f.push('Gruppe ohne Massstab');
+    if (!k() || k().getAttribute('fill') !== '#ff0000') f.push('Farbe nicht gesetzt');
+    karteAutosSetzen(svg, r.geo, [{ index: 1, phase: 0.5, farbe: '#00ff00', modell: 'bmw', kuerzel: 'A' }]);
+    if (!k() || k().getAttribute('fill') !== '#00ff00') f.push('Farbwechsel kommt nicht an');
+    const html = renderTrackPreview(codeToTrack('SG3R2G3R2').tiles, null,
+      { detailed: true, cars: [{ index: 2, phase: 0.5, farbe: '#0000ff', modell: 'ferrari' }] }).html;
+    if (html.indexOf('fill="#0000ff" stroke="#fff"') < 0 || html.indexOf('class="auto-koerper"') < 0) f.push('Vorschau zeichnet keine Silhouette');
+    if (String(trackCarMarks).indexOf('modell: carModellWert(c.modellId)') < 0) f.push('Kartenpunkte ohne Modell');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '5 Silhouetten in Menuefarbe, andere Modelle Rechteck, Farbwechsel kommt an' };
+  });
+
   // v1.2.5: MAX schneller auf Geraden, Scan schneller (ausser Haarnadel), Schaltklang und NPC-Klang.
   stAdd('NPC und Klang v1.2.5: MAX-Motor, Scan-Tempo je Teil, Schaltklang haelt die Mischung, NPC schaltet hoerbar', () => {
     const f = [];
