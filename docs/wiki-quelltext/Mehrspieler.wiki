@@ -1,0 +1,81 @@
+{{Stand|app=1.2.5|appdatum=26.10.2026}}
+[[Datei:OmegaSim-Mehrspieler.png|mini|Der Reiter WLAN Mehrspieler in OmegaSim 1.2.5]]
+'''Mehrspieler''' bezeichnet in [[OmegaSim]] zwei getrennte Funktionen, mit denen mehrere Personen gegeneinander fahren: den '''Mehrspieler-Modus an einem Gerät''', bei dem bis zu drei Spieler mit je einem Controller und einem eigenen [[Carrera HYBRID]]-Auto an einem Telefon oder PC fahren, und den '''WLAN-Mehrspieler''' (experimentell), bei dem mehrere Geräte mit je einem Auto über ein gemeinsames Netz eine Rangliste teilen. Beide lassen sich mit NPCs kombinieren (siehe [[NPC-Fahrverhalten]]).
+
+== Mehrere Spieler an einem Gerät ==
+=== Einschalten ===
+Ein Gerät verbindet sich mit allen Autos und bedient sie aus einem gemeinsamen 45-ms-Sendetakt. Getrennte Sendewege waren in früheren Fassungen die Ursache für Stottern mit echtem Controller.
+
+# Alle Autos verbinden und an jedem Controller einmal einen Knopf drücken; der Browser meldet ein Pad erst nach der ersten Eingabe.
+# Unter '''FAHREN → Autos → Garage''' einem zweiten Auto die Rolle '''Spieler 2''' und gegebenenfalls einem dritten die Rolle '''Spieler 3''' geben. Die Wahl schaltet den Modus automatisch ein.
+# Alternativ: '''Optionen → Mehrspieler → Mehrspieler-Modus (2–3 Spieler)'''. Dort steht auch, welche Controller und Autos erkannt sind.
+
+=== Controller-Zuordnung ===
+Das erste Pad fährt Auto&nbsp;1, das zweite Auto&nbsp;2, das dritte Auto&nbsp;3. Die Reihenfolge vergibt der Browser; der frühere Schalter „Controller tauschen“ ist entfernt. Jeder Spieler hat eine eigene Tastenbelegung: Unter '''Optionen → Controller''' wählen die Knöpfe '''Spieler 1/2/3''' oben, wessen Belegung bearbeitet wird. Die Knöpfe erscheinen nur im Mehrspieler-Modus.
+
+Seit Version 1.2.3 ist eine Änderung der Belegung zunächst ein Entwurf. Sie wird erst mit '''Übernehmen''' gespeichert (am Pad: Options eine Sekunde halten), '''Abbrechen''' verwirft sie. Solange reagiert der Controller auf nichts anderes, und danach erst wieder, wenn alle Tasten losgelassen sind. Vorher konnte eine gehaltene Taste nach dem Zuweisen versehentlich Zurück, einen Reiterwechsel oder das Cockpit auslösen.
+
+=== Fahrgefühl je Spieler ===
+Seit Version 1.2.4 können Spieler&nbsp;2 und&nbsp;3 in der Garage unter '''Fahrgefühl''' eine eigene Abstimmung wählen (Arcade, Sim+ oder Pacejka) oder „wie Spieler 1“. So kann etwa Spieler&nbsp;1 mit Pacejka und Spieler&nbsp;2 mit Arcade fahren. Ihre Reifenmischung wird seitdem nicht mehr von Spieler&nbsp;1 überschrieben. Ohne eigene Wahl übernehmen sie die Abstimmung von Spieler&nbsp;1. Weitere globale Einstellungen wie Tankverbrauch, Schaden, Reifenverschleiß, Wetter und Höchstgeschwindigkeit gelten für alle Autos gleich. Auch die Selbstlenkung lässt sich je gesteuertem Auto in der Garage einstellen.
+
+=== Cockpit ===
+OmegaSim teilt den Bildschirm nicht auf. Der Hauptschirm des Cockpits bleibt Auto&nbsp;1 vorbehalten. Hinzu kommt der Vergleichsschirm '''Beide''', zu erreichen über den Pfeil oben links oder das Steuerkreuz. Er zeigt Tempo, Gang, Tank, Zustand, Reifen und Akku aller Autos nebeneinander, mit Spieler&nbsp;3 in drei Spalten, dazu je Auto einen Boxenknopf, die Wahl von Reifen und Tankmenge und einen eigenen Motor-Knopf. Die Spieler haben die Farben Grün (1), Orange (2) und Blau (3).
+
+=== Was Auto 2 und 3 haben ===
+{| class="wikitable"
+! Vorhanden !! Nicht vorhanden oder eingeschränkt
+|-
+| eigene Fahrphysik mit Gängen, Drehzahl und Temperaturen || die drei Rundenzeiten im Cockpit (sie gehören Auto&nbsp;1; die Zeiten von Auto&nbsp;2 und&nbsp;3 stehen in der Rundenübersicht)
+|-
+| eigene Ortung: NPCs weichen aus, Punkt auf der Karte, Fahrhilfe || Makro-Aufnahme (zeichnet nur Auto&nbsp;1 auf)
+|-
+| eigener Schaden, Tank und Notlauf || Doppler-Effekt im Ton
+|-
+| eigene Motorstimme auf eigener Stereoseite || Boxenstopp nur per Knopf, nicht über die Boxengasse der Strecke
+|-
+| Rundenzählung, Rangliste, Ergebnis und CSV || Boxen-Minispiel (nur ohne zweiten Spieler)
+|-
+| gelbe Flagge, Einführungsrunde, Frühstart- und Pflichtstopp-Strafen ||
+|}
+
+== WLAN-Mehrspieler (experimentell) ==
+Beim WLAN-Mehrspieler hat jedes Telefon sein eigenes Auto, rechnet seine eigene Physik und hält seine eigene Bluetooth-Verbindung. Über das Netz gehen nur Rundenzahl, Rundenzeiten und Abgänge, für Zuschauer zusätzlich die Positionen auf der Karte. Reißt das WLAN ab, fährt jeder weiter; nur die Rangliste steht still. Gezählt werden gemessene Runden: Die erste Überfahrt startet die Uhr, erst die zweite ergibt eine Zeit. Die App weist selbst darauf hin, dass der WLAN-Mehrspieler noch in der Entwicklung ist und nicht fehlerfrei funktioniert.
+
+Einer der Teilnehmer ist '''Host''' und führt die Rangliste. Dafür gibt es zwei Wege, beide im Reiter '''WLAN Mehrspieler'''.
+
+=== Host über die Android-App ===
+In der Android-App wird ein Telefon mit '''Dieses Telefon ist Host''' zum Host, ganz ohne PC. Die anderen Telefone finden es mit '''Host im WLAN suchen''' oder tragen seine Adresse ein. Im Browser ist dieser Weg nicht möglich. Wer im Browser mitspielen will, braucht für die Autoverbindung die App, weil Web Bluetooth eine sichere Verbindung (secure context) verlangt, die das APK eingebaut hat.
+
+=== Host über einen PC mit Python ===
+# Auf dem PC die Datei '''Mehrspieler-Host starten.bat''' doppelklicken. Alternativ im Projektordner <code>python tools/omegasim_host.py --port 8080</code> ausführen.
+# Die angezeigte Adresse (Form <code><nowiki>http://192.168.1.50:8080</nowiki></code>) auf den Telefonen eintragen. Alle Geräte müssen im selben WLAN sein.
+# Die Übersicht für einen Fernseher liegt beim Host unter <code>/mp-overview.html</code>.
+
+Zwei Hürden liegen nicht an der App: Eine im Browser über eine verschlüsselte Adresse geladene App darf keine unverschlüsselte Adresse im WLAN erreichen; sie muss dann vom Host selbst geladen werden. Und unter einer Adresse wie <code><nowiki>http://192.168.1.50:8080</nowiki></code> verweigert der Browser Web Bluetooth. Abhilfe ist je Telefon ein Eintrag in Chrome unter <code>chrome://flags/#unsafely-treat-insecure-origin-as-secure</code>; die Android-App braucht das nicht.
+
+=== Beitreten und Rennen ===
+* '''Host-Adresse''' und '''Mein Name''' eintragen, dann '''Mitmachen'''. Name und Kennung bleiben auch nach einem Neuladen erhalten.
+* '''Als Info-Screen''' (experimentell): ein Gerät ohne eigenes Auto zeigt Strecke, alle Autos und die Rangliste. Ein Tablet oder Fernseher kann dafür auch die Host-Adresse mit <code>/?info</code> im Browser öffnen.
+* '''Rennen für alle starten''' (experimentell): Auf allen Telefonen erscheint ein Bereitschaftsschirm. Erst wenn alle '''Bereit''' gedrückt haben, kann der Initiator starten. Dann übernehmen alle Renntyp, Länge und einen gemeinsamen Wetterplan, und die Ampel läuft überall gleichzeitig.
+* '''Rennen für alle beenden''' (experimentell) beendet das Rennen auf allen Geräten.
+* '''Renneinstellungen erzwingen''' (Standard an) setzt Tempo, Handling, Beschleunigung, Schaden und Reifenverschleiß für alle gleich; Controller, Tasten, Empfindlichkeit, Vibration und Ton bleiben unberührt.
+* '''Verlassen''' meldet das Gerät ab.
+
+In der Meisterschaft leitet im WLAN-Mehrspieler das planende Telefon: Jedes Event startet für alle. Frühstart- und Pflichtstopp-Strafen werden an den Host gemeldet; dafür sind eine neue APK beziehungsweise ein neuer Host nötig.
+
+== Technik ==
+Die Spielerplätze 2 und 3 laufen über denselben Code in <code>src/49-spieler.js</code>; die Obergrenze ist dort auf drei Spieler gesetzt. Der WLAN-Host bietet eine kleine HTTP-Schnittstelle (Stand abfragen, eigenen Stand melden, Renninfo, Zurücksetzen). Der Python-Host und der Host in der Android-App sprechen dieselbe Schnittstelle. Die App ist eine Capacitor-Hülle um dieselbe <code>index.html</code>; eine Brücke bildet Web Bluetooth nach, weil der Android-WebView es nicht anbietet. Einzelheiten stehen in <code>docs/plan-p2p-apk.md</code>.
+
+== Siehe auch ==
+* [[Rennarten]]
+* [[NPC-Fahrverhalten]]
+* [[OmegaBle]]
+* [[Boxenstopp]]
+
+== Weblinks ==
+* [https://github.com/Luuke42/omegasim OmegaSim auf GitHub (Luuke42)]
+* [https://luuke42.github.io/omegasim/ OmegaSim im Browser spielen]
+
+[[Kategorie:OmegaSim]]
+[[Kategorie:Spielfunktionen]]
+[[Kategorie:Software]]

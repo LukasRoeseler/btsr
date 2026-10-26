@@ -1,0 +1,100 @@
+{{Stand|app=1.2.5|appdatum=26.10.2026}}
+[[Datei:OmegaSim-Rennen.png|mini|Das Cockpit während eines Rennens in OmegaSim 1.2.5]]
+Die '''Rennarten''' (in der App „Renntyp“) von [[OmegaSim]] legen fest, wie eine Sitzung gewertet wird und wann sie endet. Zur Auswahl stehen sieben Renntypen vom zeitlich offenen Training bis zum Demolition Derby; mehrere Rennen lassen sich zu einer Meisterschaft verbinden.
+
+Gewählt wird der Renntyp in '''FAHREN''' über die Kachel Renntyp oder unter '''Optionen → Renneinstellungen → Renntyp'''. Die Rennfunktion als Ganzes ist in der App als WIP gekennzeichnet. Eine Runde zählt, sobald das Auto das Start/Ziel-Muster überfährt; einen eigenen Sensor dafür gibt es nicht.
+
+== Renntypen ==
+{| class="wikitable"
+! Renntyp !! Grenze !! Wertung !! Hinweise
+|-
+| Training || Minuten, 0 = ohne Ende || keine Platzierung || ohne Startampel und ohne Startaufstellung
+|-
+| Time Attack (experimentell) || Minuten, 0 = ohne Ende || Bestzeit, Medaillen nach der Gold-Formel || nur gesteuerte Autos; nicht im Ausdruck-Modus
+|-
+| Qualifying || Minuten || schnellste Einzelrunde ||
+|-
+| Runden || Runden || wer die Rundenzahl zuerst erreicht ||
+|-
+| Endurance || Minuten || meiste Runden in der Zeit ||
+|-
+| NPC Knockout (experimentell) || 3 Leben || alle NPCs von der Bahn: Sieg || braucht mindestens einen NPC, schaltet „Auf der Bahn“ ein
+|-
+| Demolition Derby (experimentell) || Kills || meiste Abschüsse || nicht auf der Bahn, kein Boxenstopp
+|}
+
+=== Time Attack ===
+Time Attack (experimentell) speichert die Bestzeit je Strecke und vergibt Medaillen nach derselben Gold-Formel wie die [[Challenges]]. Verbundene NPCs fahren nicht mit. Auf der Bahn fahren sie seit Version 1.0 stattdessen als „Challenger“ (in Arbeit): gegen die eigene Bestzeit, gegen die Rekordrunde der Online-Bestenliste oder mit Gummiband, einstellbar unter '''Optionen → Renneinstellungen → Time Attack: NPCs als Challenger'''.
+
+=== NPC Knockout ===
+Menschliche Fahrer haben drei Leben; jedes Abkommen von der Bahn kostet eines. Ein NPC scheidet aus, sobald er die Bahn verlässt. Sind alle NPCs ausgeschieden, gewinnen die Menschen; sind alle Menschen raus, gewinnen die NPCs.
+
+=== Demolition Derby ===
+Jedes Auto hat eine Health von 100 %. Ein frontaler Aufprall kostet 10 %, seitlich gerammt zu werden 20 %. Bei 0 % bleibt das Auto stehen, nur die Lichter flackern. Gewonnen hat, wer die meisten Abschüsse hat; die Grenze ist das Kill-Ziel. Einen [[Boxenstopp]] gibt es im Derby nicht.
+
+== Einschränkungen je Sensormodus ==
+Seit Version 1.2.4 richten sich die wählbaren Renntypen nach der Stellung '''Auf der Bahn''' (Lesen der Kunststoffschiene) oder '''Ausdruck''' (gedruckte Muster), siehe [[Strecke]]. Ein nicht erlaubter Typ verschwindet aus Kacheln und Liste; war er gewählt, fällt die Wahl auf Training zurück.
+{| class="wikitable"
+! Funktion !! Auf der Bahn !! Ausdruck
+|-
+| Demolition Derby || nein || ja
+|-
+| Time Attack || ja || nein
+|-
+| NPC Knockout || ja || schaltet auf „Auf der Bahn“ um
+|-
+| Fliegender Start || ja || nein
+|-
+| Automatisch aufstellen || ja || nein
+|-
+| NPCs und Safety Car || ja || fahren nicht
+|}
+Stehen im Ausdruck-Modus NPCs oder ein Safety Car in der Garage, warnen Rennstart und Meisterschafts-Event mit dem Hinweis „Ausdruck-Modus: NPCs und Safety Car fahren hier nicht“ und der Anzahl der betroffenen Autos.
+
+== Ablauf eines Rennens ==
+=== Start ===
+# '''Rennen starten''' über die gleichnamige Kachel in FAHREN oder den Knopf im Cockpit. Am Controller ist dafür ab Werk keine Taste belegt; sie lässt sich unter '''Optionen → Controller''' zuweisen.
+# Beim Start werden alle Spielerautos zurückgesetzt: Tank auf die eingestellte Startmenge, kein Schaden, kalte Reifen (außer mit Reifenwärmer).
+# Außer im Training erscheint der Schirm '''Bringe die Autos in Position''' mit der Startaufstellung (siehe unten) und den Knöpfen Abbrechen, Automatisch aufstellen und Start. Das Steuerkreuz wählt, X bestätigt; vorausgewählt ist Start.
+# Es folgt die [[Startampel]]: fünf rote Lampen im Sekundentakt, nach einer zufälligen Pause von ein bis drei Sekunden gehen alle aus. Das ist der Start. Unter '''Optionen → Allgemein → Startampel''' lässt sie sich als Bild und Ton, nur Ton oder nur Bild zeigen.
+# Runde 1 beginnt mit der ersten Überfahrt von Start/Ziel.
+
+'''Frühstart''': Wer vor dem Erlöschen der Ampel losfährt, bekommt ab Werk 5 Sekunden auf seine erste Runde, auch Spieler 2 und 3 und im WLAN-Mehrspieler. Ist der Schalter „Frühstart: +5 s auf die erste Runde“ aus, wird das Auto nach dem Start stattdessen 2 Sekunden lang ausgebremst.
+
+'''Fliegender Start''' (experimentell): Statt der stehenden Ampel fährt das Feld eine Einführungsrunde mit Boxengassen-Tempo. Das eigene Auto fährt sie im Autopiloten, die Bremse bleibt verfügbar. Das Rennen ist frei, wenn das erste Auto Start/Ziel zum zweiten Mal überfährt. Nur in der Stellung „Auf der Bahn“.
+
+=== Startaufstellung ===
+Die Reihenfolge der Startplätze wird im Startschirm durch Ziehen oder mit den Pfeilen sortiert; das eigene Auto steht mit in der Liste. Aufstellen muss man die Autos grundsätzlich von Hand.
+
+'''Automatisch aufstellen''' (experimentell) lässt NPCs und Safety Car selbst auf ihre Startplätze fahren und dort einparken. Seit Version 1.2 erscheint der Knopf nur noch in der Stellung „Auf der Bahn“, weil die Aufstellung die gelesene Bahn braucht; im Training gibt es ihn nicht. Wie die Autos einparken, regeln die Einträge „Einparken …“ (in Arbeit) in den Renneinstellungen.
+
+=== Weitere Renneinstellungen ===
+Unter '''Optionen → Renneinstellungen''' liegen außerdem Sektoren (experimentell), „Gelbe Flagge deaktivieren“, „Weiche Reifen verboten“, Pflichtboxenstopps mit Strafe je verpasstem Stopp, Strafen für Rammer (experimentell), Startwetter und Tank beim Start. Gelbe Flagge und Safety Car sind auf der Seite [[Safety Car und Reinigungswagen]] beschrieben.
+
+== Meisterschaft ==
+Die '''Meisterschaft''' (experimentell) verbindet bis zu zehn Rennen (Events) zu einer Wertung. Sie wird über die Kachel '''Meisterschaft''' unten links in FAHREN geplant.
+
+Jede Zeile des Planers ist ein Event mit:
+* '''Strecke''': die aktuell im Editor, eine gespeicherte Strecke oder freies Fahren
+* '''Format''': Training, Qualifying, Runden oder Endurance; Punkte gibt es nur für Runden und Endurance
+* '''Umfang''' in Minuten oder Runden, '''Wetter''' (sonnig, Regen, wechselhaft), '''Start''' stehend oder fliegend
+* '''Startaufstellung''': automatisch, nach Punkten (Führender hinten oder vorn), nach letztem Qualifying, wie letztes Ergebnis oder Zufall
+* '''Pflichtstopps''': bis zu drei
+
+Darunter gelten für die ganze Meisterschaft das Fahrgefühl („Wie in der Garage“, „Alle wie Spieler 1“ oder ein festes Preset für alle gesteuerten Autos), die Aufstellung des ersten Events, das Punkteschema (F1 25-18-15-12-10, Klassisch 10-6-4-3-2 oder linear), ein Zusatzpunkt für die schnellste Runde und die Teilnehmer (alle verbundenen Autos oder nur Spieler). Ab Werk besteht der Plan aus einem Qualifying über 5 Minuten und einem Rennen über 15 Runden.
+
+Nach jedem Event zeigt die App den Zwischenstand mit der nächsten Startaufstellung. Eine Meisterschaft kann pausiert und später fortgesetzt werden. Im [[Mehrspieler]] leitet das Telefon, das die Meisterschaft plant: Es startet jedes Event für alle und wertet.
+
+== Siehe auch ==
+* [[Startampel]]
+* [[Boxenstopp]]
+* [[Safety Car und Reinigungswagen]]
+* [[Challenges]]
+* [[Mehrspieler]]
+
+== Weblinks ==
+* [https://github.com/Luuke42/omegasim OmegaSim auf GitHub (Luuke42)]
+* [https://luuke42.github.io/omegasim/ OmegaSim im Browser spielen]
+
+[[Kategorie:OmegaSim]]
+[[Kategorie:Spielfunktionen]]

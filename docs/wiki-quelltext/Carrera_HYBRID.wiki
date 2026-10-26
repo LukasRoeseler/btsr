@@ -1,0 +1,119 @@
+{{Stand|app=1.2.5|appdatum=26.10.2026}}
+'''Carrera HYBRID''' ist ein Spielsystem des Herstellers Carrera, bei dem kleine, per Bluetooth gesteuerte Rennautos frei auf lose ausgelegten Streckenteilen fahren. Anders als bei einer klassischen Carrera-Bahn gibt es keine Führungsrille: Ein Sensor an der Unterseite des Autos liest eine Markierung auf den Streckenteilen, und das Auto erkennt so, auf welchem Teil es gerade fährt.
+
+Gesteuert wird ein HYBRID-Auto normalerweise mit der [[Original-App|Hersteller-App]] auf dem Smartphone, optional mit einem Controller, in den das Handy eingeklemmt wird. [[OmegaSim]] ist eine davon unabhängige, offene App, die dieselbe Bluetooth-Schnittstelle benutzt. Dieser Artikel beschreibt das Auto so, wie es in der Dokumentation von OmegaSim (<code>CARRERA_HYBRID.md</code> und Reiter '''Doku''' in den Entwicklertools) festgehalten ist.
+
+[[Datei:OmegaSim-Garage.png|mini|Die Garage in OmegaSim 1.2.5: hier werden HYBRID-Autos verbunden und benannt.]]
+
+== Aufbau ==
+Ein HYBRID-Auto enthält nach dem bekannten Stand folgende Hauptteile:
+
+{| class="wikitable"
+! Bauteil !! Aufgabe !! Gesichert?
+|-
+| Motor || treibt die Hinterräder an || ja
+|-
+| Lenkservo || dreht die Vorderräder || ja
+|-
+| Akku || wiederaufladbar, im Fahrzeug || ja
+|-
+| Bluetooth-Chip || hält die Funkverbindung zum Handy || Typ vermutet: Nordic nRF52
+|-
+| Streckensensor || liest die Markierung der Streckenteile || Bauart (Kamera oder Infrarot) noch nicht gesichert
+|-
+| Lichter || Scheinwerfer, Rück- und Bremslicht || siehe [[#Licht|Licht]]
+|}
+
+Die eigentliche Fahrdynamik, also wie das Auto auf Gas und Lenkung reagiert, rechnet das Auto selbst in seiner [[Firmware]]. Eine App schickt nur Zielwerte für Gas und Lenkung.
+
+== Streckensensor ==
+Der Sensor an der Unterseite liest einen Strichcode aus breiten und schmalen Balken, der quer über die ganze Fahrbahn läuft. Das Auto meldet das erkannte Teil als Zahl an die App (siehe [[Strecke#Streckencodes|Streckencodes]]). Weil der Code über die ganze Breite gleich ist, sagt er nichts darüber, wo auf der Fahrbahn das Auto fährt.
+
+Der Sensor kennt zwei '''Lesearten''', die die App mit jedem Steuerbefehl vorgibt:
+* '''Auf der Bahn''': Das Auto liest die Kunststoff-Streckenteile und hält sich selbst auf der Bahn.
+* '''Ausdruck''' (in OmegaSim auch „Frei“): Das Auto liest gedruckte Muster auf Papier, hält sich aber nicht selbst auf der Bahn.
+
+Beides zugleich ist nicht möglich. Einzelheiten stehen im Artikel [[Strecke]].
+
+Gemessen ist außerdem: Nach einem erkannten Muster bleibt der Leser etwa eine Sekunde stumm, und ein einzelnes Codewort von rund 54 mm Länge in Fahrtrichtung genügt für eine Erkennung.
+
+== Akku ==
+Das Auto meldet seinen Akkustand laufend als Rohwert. Eine kalibrierte Prozentskala gibt es nicht. OmegaSim rechnet seit Fassung 0.9.87 mit dem Bereich 138 (leer) bis 155 (voll) und glättet über fünf Sekunden; die Garage zeigt je Auto den kleinsten bisher gemeldeten Rohwert, damit die Untergrenze später nachgemessen werden kann. Eine Protokollbeschreibung von seVen nennt 131 bis 155, eine ältere OmegaSim-Fassung rechnete mit 111. Alle drei Werte sind Schätzungen.
+
+Unter '''Optionen → Allgemein''' gibt es den Schalter ''Leistung über Akkulaufzeit konstant halten'' (in Arbeit), der bei vollem Akku drosselt.
+
+Nach Nutzermeldungen lässt sich ein Auto, das sich fälschlich für verbunden hält, am Ladegerät ausschalten. Wie das vermieden wird, beschreibt [[OmegaBle]].
+
+== Licht ==
+Das Licht wird über einzelne Bits im Steuerbefehl geschaltet:
+
+{| class="wikitable"
+! Bit !! Wirkung !! Stand
+|-
+| Bit 1 || Scheinwerfer; das Rücklicht schaltet die Firmware mit dem Scheinwerfer || belegt
+|-
+| Bit 0 || Bremslicht || belegt (seit 19.08.2026)
+|-
+| Bit 2 || Scheinwerfer blinkt statt dauerhaft zu leuchten || am Auto erprobt
+|-
+| Bits 3, 4, 6 || kein sichtbarer Unterschied || am Auto erprobt
+|}
+
+Zwei Helligkeitsstufen (Abblend- und Fernlicht) gibt das Protokoll nach diesen Versuchen nicht her. OmegaSim nutzt das Licht unter anderem für Lichthupe, Schadens- und Tankwarnungen. Nach erfolgreichem Verbinden leuchtet das Auto hell.
+
+== Bluetooth ==
+Auto und Handy sprechen über '''Bluetooth Low Energy'''. Das Auto meldet sich mit einem Namen, der mit <code>HYBRID-</code> beginnt. Gesteuert wird über den '''Nordic UART Service''', eine Art serielle Leitung über Bluetooth:
+* Die App schickt etwa alle 45 ms einen Befehl von 20 Byte mit Gas, Lenkung, Licht und Leseart. Das Auto erwartet diesen ständigen Strom; bleibt er aus, hält es vermutlich an.
+* Das Auto meldet laufend ein Statuspaket mit unter anderem Akkustand, erkanntem Streckencode, einem Zähler der überfahrenen Teile und Rohwerten, die vermutlich von einem Bewegungssensor stammen.
+
+Daneben bietet das Auto einen Dienst für Firmware-Updates nach dem Nordic-Verfahren (siehe [[Firmware]]).
+
+Im Browser verbindet OmegaSim über Web Bluetooth (Chrome oder Edge), in der Android-App über eine eigene Brücke mit dem Plugin [[OmegaBle]].
+
+== Modelle ==
+Die OmegaSim-Dokumentation belegt keine vollständige Liste der Fahrzeuge, die Carrera als HYBRID anbietet. Belegt ist nur: Die Protokollbeschreibung von seVen nennt für ein Befehlsbyte die Herstellerwerte '''Porsche''', '''BMW''' und '''Ford'''. OmegaSim sendet dort einen festen Wert und nutzt diese Unterscheidung nicht.
+
+In der Garage von OmegaSim lässt sich jedem Auto unter '''Marke / Modell''' eine Bezeichnung zuordnen. Sie dient der Erkennung und den [[Rennarten|Rennansagen]] („Gewonnen hat der rote Porsche“) und ändert weder Fahrphysik noch Motorklang. In OmegaSim auswählbar sind:
+
+{| class="wikitable"
+! Auswahl in OmegaSim !! Hinweis
+|-
+| Nicht zugeordnet || Vorgabe
+|-
+| Porsche 911 || Hersteller in der Protokollbeschreibung genannt
+|-
+| BMW || Hersteller in der Protokollbeschreibung genannt
+|-
+| Ford Mustang || Hersteller Ford in der Protokollbeschreibung genannt
+|-
+| Ferrari, Audi, McLaren, Mercedes, Red Bull, VW Käfer || in OmegaSim auswählbar
+|}
+
+Motorklang und Fahrwerk wählt man in OmegaSim getrennt davon (siehe [[Fahrverhalten]]).
+
+== Kennzahlen ==
+Aus Messungen und Mitschnitten bekannt:
+* '''Tempo:''' 0,0119 m/s je Gasschritt, proportional (Mitschnitte vom 16. bis 21.08.2026). Der Gaswert liegt um die Neutralstellung <code>0xDF</code>.
+* '''Lenkung:''' ein vorzeichenbehaftetes Byte, ±127. OmegaSim rechnet mit einem Lenkbereich bis 45 Grad. Ein Wert über dem Maximum würde als Einschlag in die Gegenrichtung ankommen.
+* '''Rückwärts:''' OmegaSim begrenzt den Rückwärtsbereich auf die Hälfte, weil voller Rückwärtswert am Auto vorwärts fuhr. Nach seVen liegt die Grenze bei Byte <code>0x80</code>; das ist am Auto noch nicht nachgefahren.
+* '''Fahrbahn:''' 25 cm breit; ein Auto belegt nach OmegaSims Rechnung etwa 3,8 cm davon. Eine Gerade ist rund 43 cm lang.
+
+== Was noch nicht gesichert ist ==
+* Bauart des Streckensensors (Kamera oder Infrarot)
+* Bedeutung aller Bytes im Protokoll, darunter ein mögliches gemessenes Tempo in der Statusmeldung
+* Skala des Akkuwerts
+* wie das Auto aus dem Strichcode die gemeldete Zahl bildet
+
+== Siehe auch ==
+* [[Strecke]]
+* [[Firmware]]
+* [[Original-App]]
+* [[OmegaBle]]
+* [[Keine Reaktion des Fahrzeugs]]
+
+== Weblinks ==
+* [https://github.com/Luuke42/omegasim OmegaSim auf GitHub (Luuke42)]
+* [https://luuke42.github.io/omegasim/ OmegaSim im Browser spielen]
+
+[[Kategorie:OmegaSim]]
+[[Kategorie:Hardware]]

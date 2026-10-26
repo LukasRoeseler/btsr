@@ -1,0 +1,127 @@
+{{Stand|app=1.2.5|appdatum=26.10.2026}}
+[[Datei:OmegaSim-Strecke.png|mini|Der Streckeneditor in OmegaSim 1.2.5]]
+Der '''Strecken- und Raum-Editor''' umfasst die Werkzeuge im Reiter '''Strecke''' von [[OmegaSim]], mit denen sich eine [[Carrera HYBRID]]-Bahn aus einzelnen Teilen nachbauen, als kurzer Code weitergeben und in einen Raum einpassen lässt. Die gebaute Strecke ist das Streckenlayout der App: Ideallinie, Kurvendrosselung der NPCs, die Karte im Cockpit, die Startaufstellung und das Safety Car greifen darauf zurück.
+
+== Übersicht ==
+Der Reiter '''Strecke''' ist in sechs Unterseiten gegliedert. Aus dem FAHREN-Menü sind dieselben Seiten über die Streckenkachel erreichbar; im Bahn-Modus zeigt sie '''Scan''', '''Editor''', '''Laden''' und '''Raum''', im Ausdruck-Modus stattdessen '''Druckvorlagen''' und '''Foto'''.
+
+{| class="wikitable"
+! Unterseite !! Zweck
+|-
+| '''Editor''' || Strecke aus Teilen bauen, ändern, drehen, als Code weitergeben
+|-
+| '''Streckenscan''' || Das Auto fährt eine Runde und liest die Teile ein
+|-
+| '''Strecke laden''' (Meine Strecken) || Gespeicherte Strecken laden oder löschen
+|-
+| '''Meine Teile''' || Eigener Teilebestand; der Editor zeigt, was fehlt oder übrig ist
+|-
+| '''Raum''' (experimentell) || Größe und Form des Platzes, Möbel, gespeicherte Räume
+|-
+| '''Druckvorlagen''' || Muster zum Ausdrucken für den Ausdruck-Modus
+|}
+
+== Streckenteile ==
+Der Editor kennt alle Teile, die die App unterscheidet. Jedes Teil hat im Streckencode einen Buchstaben:
+
+{| class="wikitable"
+! Teil !! Buchstabe
+|-
+| Start/Ziel || S
+|-
+| Gerade || G
+|-
+| Kurve rechts / links || R / L
+|-
+| Haarnadel / Haarnadel links || H / J
+|-
+| Weite 30-Grad-Kurve rechts / links || W / Q
+|-
+| Kleine 30-Grad-Kurve rechts / links || K / M
+|-
+| Engstelle || E
+|-
+| Boxengasse || B
+|}
+
+Die Fahrbahn ist im Editor schwarz, weiße Striche trennen die Teile. Die Randsteine sind in Fahrtrichtung links blau-weiß und rechts rot-weiß; die Boxengasse liegt deshalb rechts. Die App weist darauf hin, dass die gemeldeten Codes noch nicht für alle Teile stimmen; als Beispiel nennt sie die Schikane, die beim Scan nicht richtig erkannt wird.
+
+== Editor bedienen ==
+Der Editor startet über '''Strecke → Editor → Editor starten''' im Vollbild und lässt sich mit Controller, Tastatur, Maus oder Finger bedienen. Ein Tutorial erklärt die Grundschritte; es ist auch unter '''Optionen → Tutorials → Streckeneditor''' erreichbar.
+
+Die Leiste oben enthält:
+* '''Speichern''' (oben links): fragt nach einem Namen; bleibt das Feld leer, schlägt die App einen vor.
+* '''Bild''': speichert ein PNG mit Strecke, Name, Streckencode, Länge, Platzbedarf, Teilezahl und Link. Ideallinie und Raum erscheinen, wenn ihre Schalter an sind.
+* Schalter '''Linie''', '''Tasten''' und '''Raum''': blenden Ideallinie, Tastenkürzel und Raum ein oder aus.
+* '''Zurück''' (rückgängig), '''Entfernen''', '''45° L''', '''45° R''', '''Leeren''', '''Zufall''', '''Hilfe''' und '''Vollbild/Schließen'''.
+
+Neue Teile werden hinter dem gewählten Teil eingefügt; wer nichts wählt, baut hinten an. Start/Ziel lässt sich nicht entfernen. Weitere Start/Ziel-Teile sind erlaubt und gelten als Sektorgrenzen. Schließt sich die Runde, ertönt ein eigener Klang. Die Anzeige nennt die Länge in Metern und umgerechnet im Maßstab 1:50. Gezoomt wird mit + und −, 0 setzt zurück; die Strecke lässt sich mit Finger, Maus oder rechtem Stick verschieben.
+
+Die farbige Linie ist die berechnete Ideallinie: grün, wo am Gas gefahren wird, rot, wo gebremst wird. Sie ist eine Rechnung, keine Messung, weil kein Byte des Autos seine Querlage meldet. Nach jeder Änderung wird sie im Hintergrund neu berechnet („Ideallinie wird berechnet …“).
+
+== Streckencode ==
+Unter der Karte steht der '''Streckencode''' mit dem Knopf '''Kopieren'''; darunter ein Feld, in das ein Code von einem anderen Gerät eingefügt und mit '''Übernehmen''' geladen wird. Der Code reiht die Buchstaben der Teile aneinander, eine Zahl dahinter gibt an, wie oft das Teil hintereinander folgt. Eine Drehung wird mit @ und dem Winkel angehängt. So steht <code>SG3R2</code> für Start/Ziel, drei Geraden und zwei Rechtskurven. Der Code ist bewusst lesbar gehalten, damit er sich von Hand prüfen und abtippen lässt.
+
+== Meine Teile ==
+Unter '''Strecke → Meine Teile''' wird eingetragen, wie viele Teile jeder Sorte vorhanden sind; ein leeres Feld bedeutet „nicht gezählt“. Knöpfe fügen ganze Pakete hinzu:
+
+{| class="wikitable"
+! Knopf !! Inhalt
+|-
+| + Grundpackung || 8 Rechtskurven, 2 Linkskurven, 4 Geraden, 1 Start/Ziel
+|-
+| + Linkskurven-Set || 8 Linkskurven, 2 Rechtskurven, 4 Geraden
+|-
+| + Haarnadel-Set || je eine Haarnadel links und rechts
+|-
+| + 30°-Außenkurven-Set || je 2 weite 30-Grad-Kurven links und rechts
+|-
+| + Engstelle || 1 Engstelle
+|}
+
+'''Alles auf 0''' setzt den Bestand zurück. Der Editor zeigt danach an, welche Teile übrig sind oder fehlen. Der Bestand wird im Browser gespeichert.
+
+== Zufallsstrecke ==
+Der Knopf '''Zufall''' baut eine Strecke aus dem eingetragenen Bestand. Ist kein Bestand eingetragen, erscheint der Hinweis „Erst die Streckenteile eingeben“ mit einem Sprung zu '''Meine Teile'''. Eine Kandidatin wird nur angenommen, wenn sie sich sauber schließt, sich nicht selbst kreuzt und kein Punkt näher als 30&nbsp;cm an einem nicht benachbarten Abschnitt liegt. Sehr kurze, symmetrische Ovale werden verworfen. Die Strecken dürfen asymmetrisch sein, eine einzelne Haarnadel wird mitverwendet.
+
+Ist ein Raum eingetragen und im Editor eingeblendet, muss die Zufallsstrecke hineinpassen. Geprüft werden alle acht Lagen in 45-Grad-Schritten, mit voller Bahnbreite plus 2&nbsp;cm Abstand und um Möbel herum. Ein ausgeblendeter Raum zählt für die Zufallsstrecke nicht.
+
+== Raum-Editor ==
+[[Datei:OmegaSim-Raum-Editor.png|mini|Der Raumgestalter mit Boden und Möbeln]]
+Der Raum-Editor (experimentell) liegt unter '''Strecke → Raum'''. Dort werden '''Breite''' und '''Tiefe''' des Platzes in Metern eingetragen; 0 heißt „keine Grenze“ in dieser Richtung.
+
+'''Raumgestalter starten''' öffnet ein Raster aus 10-cm-Feldern, die als Boden oder Möbel markiert werden. Werkzeuge sind ein Pinsel (10, 30 oder 60&nbsp;cm) und ein Rechteck; dazu gibt es Vorlagen (Rechteck, L, U, Oval), Rückgängig und „Strecke einpassen“. Am Controller bewegt Stick oder Steuerkreuz den Zeiger, ✕ malt, □ wechselt zwischen Möbel und Boden, △ zwischen Pinsel und Rechteck, L1/R1 ändern die Größe, ○ beendet. Räume lassen sich mit Namen speichern, laden und löschen. Ein eigenes Tutorial steht unter '''Optionen → Tutorials → Raumgestalter'''.
+
+== Streckenscan ==
+Im Bahn-Modus kann das Auto die Strecke selbst einlesen: Unter '''Strecke → Streckenscan''' fährt es mit gemäßigtem Tempo über die Bahn und hält an, sobald ein geschlossener Rundkurs gemessen ist. Die Strecke steht danach im Editor. Seit Version 1.2.5 fährt der Scan auf Geraden und in Kurven schneller, in der Haarnadel unverändert. Mehr zum Lesen der Teile steht unter [[Strecke]].
+
+== Druckvorlagen für den Ausdruck-Modus ==
+Im Ausdruck-Modus fährt das Auto ohne Schienen über gedruckte Muster. Die Seite '''Druckvorlagen''' bietet SVG-Dateien an. Gedruckt werden muss mit 100&nbsp;% beziehungsweise „Tatsächliche Größe“, nicht „an Seite anpassen“; sonst stimmen die Balkenabstände nicht und der Sensor liest nichts. Jedes Blatt trägt ein 100-mm-Kontrollmaß zum Nachmessen.
+
+* '''Start/Ziel''' (A4 quer): zählt Runden und löst die Rundenzeit aus.
+* '''Schneidebogen''': vier Start/Ziel-Marken je A4-Blatt mit Schnittlinien.
+* '''Bahn zum Auslegen''' (experimentell): Gerade und 30-Grad-Kurve auf je zwei Blättern. Sie tragen das Muster von Start/Ziel und melden deshalb überall Start/Ziel; sie sind Versuchsblätter.
+* '''Trapez-Muster''' (experimentell): rein optische Muster ohne Strichcode.
+
+Eine Boxengassen-Vorlage ist derzeit nicht enthalten. Ausdruck und Schiene haben verschiedene Codetabellen: Dieselbe Zahl bedeutet je Modus etwas anderes. Im Ausdruck-Modus kann zudem ein Foto der ausgelegten Strecke hochgeladen werden, das im Cockpit statt des Editor-Layouts erscheint.
+
+== Karte im Cockpit ==
+Das Layout aus dem Editor oder Scan erscheint als Streckenkarte in der Rennübersicht des Cockpits, in der Startaufstellung, auf der FAHREN-Kachel und auf dem Info-Screen des [[Mehrspieler]]s. Seit Version 1.2 misst der eigene Punkt auf der Karte seine Kachelzeiten, statt mit festen 800&nbsp;ms zu rechnen, und springt nicht mehr zurück, solange ein neuer Zählerstand noch nicht verarbeitet ist.
+
+== Technik ==
+Editor, Streckencode und Zufallsstrecke stehen in <code>src/60-track.js</code>, der Raumgestalter in <code>src/60b-raum.js</code>, das Streckenbild in <code>src/60c-streckenbild.js</code>. Der Code ist eine Lauflängenkodierung der Teiltypen. Die Zufallsstrecke setzt sich aus Start, einem Kurvenblock, Geraden, einem zweiten Kurvenblock und Geraden zusammen; der zweite Block wird so gesucht, dass die Runde schließt. Teilebestand, Raum und Editorstrecke liegen im Speicher des Browsers.
+
+== Siehe auch ==
+* [[Strecke]]
+* [[NPC-Fahrverhalten]]
+* [[Safety Car und Reinigungswagen]]
+* [[Virtuelles Fahren]]
+* [[Challenges]]
+
+== Weblinks ==
+* [https://github.com/Luuke42/omegasim OmegaSim auf GitHub (Luuke42)]
+* [https://luuke42.github.io/omegasim/ OmegaSim im Browser spielen]
+
+[[Kategorie:OmegaSim]]
+[[Kategorie:Spielfunktionen]]
+[[Kategorie:Software]]

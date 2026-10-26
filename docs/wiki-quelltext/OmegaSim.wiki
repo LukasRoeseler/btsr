@@ -1,0 +1,117 @@
+{{Stand|app=1.2.5|appdatum=26.10.2026}}
+'''OmegaSim''' ist eine freie, quelloffene App zur Steuerung von [[Carrera HYBRID]]-Autos per Bluetooth. Sie läuft im Browser und als Android-App und ergänzt die Autos um ein eigenes Fahrmodell, simulierte Motorgeräusche, computergesteuerte Gegner, Rennarten und Mehrspieler.
+
+OmegaSim ist unabhängig von Carrera und gehört zu keinem Hersteller. Es nutzt dieselbe Bluetooth-Schnittstelle wie die [[Original-App]], deren Protokoll für das Projekt aus Mitschnitten rekonstruiert wurde. Der Titelbildschirm nennt als Leitsatz „Vollständige Gestaltungsfreiheit für deine Carrera Hybrid Bahn“.
+
+[[Datei:OmegaSim-Startseite.png|mini|Titelbildschirm von OmegaSim 1.2.5]]
+
+== Überblick ==
+{| class="wikitable"
+! Autor
+| Luuke (GitHub: Luuke42)
+|-
+! Lizenz
+| MIT; mitgelieferte Tonaufnahmen und Druckmuster haben eigene Bedingungen
+|-
+! Plattformen
+| Browser (Chrome, Edge) am PC und unter Android; Android-App (APK)
+|-
+! Sprachen
+| Deutsch, Englisch, Spanisch
+|-
+! Aktuelle Version
+| 1.2.5 vom 26.10.2026
+|-
+! Quellcode
+| [https://github.com/Luuke42/omegasim github.com/Luuke42/omegasim]
+|}
+
+Die Lizenzseite in der App beschreibt OmegaSim als Freizeitprojekt ohne Garantie und weist darauf hin, dass ein künftiges Firmware-Update der Autos es unbrauchbar machen kann. Rückmeldungen nimmt der Autor im Thema „Omega Sim“ im Discord „Carrera Hybrid Players“ entgegen. Die Seite zählt Aufrufe mit GoatCounter, ohne Cookies; Einstellungen, Zeiten und Strecken bleiben im Browser.
+
+== Plattformen ==
+=== Browser ===
+OmegaSim braucht einen Browser mit '''Web Bluetooth''', also Chrome oder Edge am PC oder unter Android. Safari und Firefox bieten Web Bluetooth nicht an; auf iPhone und iPad lassen sich deshalb nur Streckenbau und Doku nutzen. In Chrome lässt sich OmegaSim als App installieren ('''Als App installieren'''); es startet dann auch ohne Netz. Im Browser verlangt Bluetooth für jedes Auto einen eigenen Klick.
+
+=== Android-App ===
+Die Android-App ist dieselbe Oberfläche als APK. Sie bringt eine eigene Bluetooth-Brücke mit, weil der Android-WebView kein Web Bluetooth hat, dazu das Schreib-Plugin [[OmegaBle]] für kurze Latenz, einen eingebauten Host für den [[Mehrspieler|WLAN-Mehrspieler]], das automatische Verbinden bekannter Autos und eine Sicherungsdatei in ''Dokumente/OmegaSim''. Neue Fassungen der Oberfläche lädt die App selbst nach; eine neue APK ist nur bei Änderungen an der Android-Schicht nötig. Die Browser-Titelseite verlinkt die neueste APK.
+
+== Bedienung ==
+Nach dem Titelbildschirm (Knöpfe '''Tutorial''', '''Steuerung''', '''Starten''') liegen oben die Reiter. Mit dem Gamepad wechseln L1/R1 die Reiter, das Steuerkreuz wählt, Kreuz bestätigt und Kreis geht zurück.
+
+{| class="wikitable"
+! Reiter !! Inhalt
+|-
+| '''Fahren''' || Kacheln '''Autos''' (Verbinden, Garage), '''Strecke''' (Leseart, Scan, Editor, Laden, Raum, Druckvorlagen), '''Rennoptionen''', '''Meisterschaft''' und '''Rennen starten'''
+|-
+| '''Challenges''' || feste Strecken und Wochenstrecken mit Online-Bestenliste
+|-
+| '''WLAN Mehrspieler''' || gemeinsame Rennen mehrerer Geräte, Host am PC oder in der Android-App
+|-
+| '''Optionen''' || Allgemein, Fahrgefühl, Renneinstellungen, Ton, Ansagen, Vibration, NPCs, Safety Car, Controller, System, Daten sichern, Mehrspieler, Statistiken, Telemetrie (in Arbeit), Studie (in Arbeit), Tutorials sowie Info-Seiten wie Patchnotes
+|-
+| '''Entwickler''' || nur sichtbar mit '''Optionen → System → Entwicklertools zeigen''': Doku, Programmierschule, BLE-Werkbank, Selbsttest, Code-Sonde, Zahlensysteme, Aufnahme-Modus
+|}
+
+Gefahren wird im '''Cockpit''' mit Drehzahl, Gang, Rundenzeiten und Zustand des Autos. Die '''Garage''' verwaltet die verbundenen Autos: Name, Farbe, Marke/Modell, Rolle (Spieler, NPC, Safety Car, Reinigungsfahrzeug) und Fahrgefühl je Spieler.
+
+== Versionsschema ==
+Die Versionsnummer steht unten auf dem Titelbildschirm und wird bei jedem Push von <code>tools/bump_version.py</code> aus der Git-Historie berechnet:
+* Seit dem 12.10.2026 lautet sie '''1.<Woche>.<Push>'''. ''Woche'' zählt die Kalenderwochen seit Version 1.0 (Wochenbeginn Montag), ''Push'' die Commits seit Montag der laufenden Woche.
+* Davor galt '''0.<Woche>.<Push>''' mit Wochen seit Projektbeginn (Woche 0 ab 03.08.2026).
+
+1.2.5 ist also der fünfte Push in der Woche ab Montag, 26.10.2026. Die Patchnotes unter '''Optionen''' haben je Wochennummer einen Abschnitt.
+
+== Geschichte ==
+Grobe Meilensteine nach den Patchnotes:
+* '''August 2026:''' Mitschnitte des Funkverkehrs der Original-App; Entschlüsselung von Protokoll, Streckencodes und den beiden [[Strecke|Lesearten]].
+* '''0.7:''' Garage zur Autoverwaltung, Zwei-Spieler-Modus, Menüs komplett mit Gamepad bedienbar, Druckmuster zum Auslegen.
+* '''0.8:''' Menü im Konsolenstil mit Reitern; erste Android-App (experimentell) mit Bluetooth-Brücke, Host ohne PC und Updates ohne Neuinstallation; Challenges mit Online-Bestenliste und Wochenstrecken.
+* '''0.9:''' direkter Schreibweg in der App ([[OmegaBle]]), Fahrgefühl Sim+, Drei-Spieler-Modus.
+* '''1.0''' (ab 12.10.2026): neues Versionsschema; Ghosts heißen NPCs; Meisterschaft als achter Modus; Safety Car und Meisterschaft gelten nicht mehr als experimentell; Fahrgefühl Omega; der Modus „Bestzeit“ heißt Time Attack.
+* '''1.1''' (ab 19.10.2026): [[Virtuelles Fahren]] (in Arbeit), Studie (heute OmegaLab, in Arbeit), NPC-Stufe MAX, Funklast mit mehreren NPCs verringert.
+* '''1.2''' (ab 26.10.2026): sauberes Trennen von Bluetooth-Verbindungen (1.2.3), Rennarten je Leseart (1.2.4), schnellerer Streckenscan (1.2.5).
+
+== Funktionen ==
+Detailartikel in diesem Wiki:
+
+{| class="wikitable"
+! Bereich !! Artikel
+|-
+| Auto und Bahn || [[Carrera HYBRID]] · [[Strecke]] · [[Firmware]] · [[Original-App]]
+|-
+| Fahren || [[Fahrverhalten]] · [[Verschleiß]] · [[Virtuelles Fahren]]
+|-
+| Rennen || [[Rennarten]] · [[Boxenstopp]] · [[Challenges]] · [[Startampel]]
+|-
+| Gegner || [[NPC-Fahrverhalten]] · [[Safety Car und Reinigungswagen]]
+|-
+| Strecke bauen || [[Strecken- und Raum-Editor]]
+|-
+| Zusammen fahren || [[Mehrspieler]]
+|-
+| Technik || [[OmegaBle]]
+|-
+| Zubehör || [[CH ControlBox]] · [[Startampel]]
+|-
+| Hilfe || [[Keine Reaktion des Fahrzeugs]]
+|-
+| Beitragen || [[Mitmachen]] · [[Anleitung für KIs]]
+|}
+
+== Technik ==
+OmegaSim ist eine einzelne HTML-Datei. Die Quellen liegen in <code>src/</code> (Markup in <code>00-index.head.html</code>, Logik in nummerierten JavaScript-Dateien) und werden mit <code>tools/build.py</code> zusammengesetzt. Ein Service Worker hält die Oberfläche für den Start ohne Netz bereit. Die Befehle an die gesteuerten Autos laufen über einen festen Sendetakt von 45 ms; neue Funktionen senden nicht selbst, sondern setzen einen Zustand, den der Takt beim nächsten Paket mitnimmt. Ein umfangreicher Selbsttest in den Entwicklertools prüft Physik, Protokoll und Oberfläche. Die Android-App ist mit Capacitor gebaut und hat die Kennung <code>de.lroeseler.omegasim</code>.
+
+In älteren Dateien des Repositorys erscheint noch der frühere Name „CH Control“.
+
+== Siehe auch ==
+* [[Carrera HYBRID]]
+* [[Original-App]]
+* [[OmegaBle]]
+* [[Mitmachen]]
+
+== Weblinks ==
+* [https://github.com/Luuke42/omegasim OmegaSim auf GitHub (Luuke42)]
+* [https://luuke42.github.io/omegasim/ OmegaSim im Browser spielen]
+
+[[Kategorie:OmegaSim]]
+[[Kategorie:Software]]

@@ -1,0 +1,124 @@
+{{Stand|app=1.2.5|appdatum=26.10.2026}}
+Die '''Strecke''' eines [[Carrera HYBRID]]-Autos besteht aus lose ausgelegten Streckenteilen, die jeweils einen für den Sensor lesbaren Strichcode tragen, oder aus gedruckten Mustern auf Papier. Das Auto meldet beim Überfahren, welches Teil es erkannt hat; daraus zählen Apps Runden, bauen eine Streckenkarte und steuern Gegner.
+
+Der Sensor arbeitet in zwei '''Lesearten''' mit je eigener Codetabelle: '''Auf der Bahn''' für die Kunststoffteile und '''Ausdruck''' für gedruckte Muster. Welche Leseart eingestellt ist, entscheidet in [[OmegaSim]] darüber, welche Funktionen zur Verfügung stehen.
+
+[[Datei:OmegaSim-Strecke.png|mini|Der Bereich Strecke in OmegaSim 1.2.5]]
+
+== Streckencodes ==
+Jedes Teil trägt einen Strichcode aus breiten und schmalen Balken und Lücken, quer über die ganze Fahrbahnbreite. Das Auto meldet den gelesenen Code als Zahl. Dieselbe Zahl bedeutet je nach Leseart etwas anderes; wer Codes vergleicht, muss deshalb immer die Leseart dazusagen.
+
+=== Auf der Bahn ===
+{| class="wikitable"
+! Code !! Teil !! Beleg
+|-
+| <code>0x01</code> || Start/Ziel || Protokollbeschreibung von seVen, für den Bahn-Modus bestätigt
+|-
+| <code>0x02</code> || Gerade || Mitschnitte
+|-
+| <code>0x03</code> / <code>0x04</code> || 60-Grad-Kurve links / rechts || Mitschnitte (21.08.2026)
+|-
+| <code>0x05</code> / <code>0x06</code> || Haarnadel links / rechts || am Auto gemessen (24.08.2026)
+|-
+| <code>0x07</code> || Boxengasse bzw. lange Gerade || nur nach seVen
+|-
+| <code>0x08</code> / <code>0x09</code> || weite 30-Grad-Kurve links / rechts || nur nach seVen
+|-
+| <code>0x0a</code> || Engstelle || nur nach seVen
+|-
+| <code>0x0b</code> / <code>0x0c</code> || kleine 30-Grad-Kurve links / rechts || nur nach seVen
+|-
+| <code>0x00</code> || abseits der Bahn || Mitschnitte
+|-
+| <code>0xff</code> || noch nie ein Muster gesehen || Mitschnitte
+|}
+Zwei kleine 30-Grad-Kurven ergeben zusammen eine 60-Grad-Kurve. Die Fahrbahn ist 25 cm breit, eine Gerade rund 43 cm lang.
+
+=== Ausdruck ===
+Im Ausdruck-Modus ist nur der Code für '''Start/Ziel''' bekannt. Das Original-Druckblatt von Carrera meldet <code>0x0a</code> (gemessen am 25.08.2026), die Druckvorlagen von OmegaSim melden <code>0x01</code>. OmegaSim zählt im Ausdruck-Modus deshalb beide als Ziellinie, auf der Bahn dagegen nur <code>0x01</code>, weil <code>0x0a</code> dort die Engstelle ist und sonst bei jeder Überfahrt eine zusätzliche Runde gezählt würde.
+
+== Die zwei Lesearten ==
+{| class="wikitable"
+! !! Auf der Bahn !! Ausdruck (in FAHREN: „Frei“)
+|-
+! Was gelesen wird
+| Kunststoff-Streckenteile || gedruckte Muster auf Papier
+|-
+! Auto hält sich selbst auf der Bahn
+| ja || nein
+|-
+! Rundenzählung
+| Start/Ziel-Teil und Teilezähler || Start/Ziel-Ausdruck
+|-
+! Streckenscan, Editor, Laden, Raum
+| ja || nein
+|-
+! Druckvorlagen, Streckenfoto
+| nein || ja
+|-
+! [[NPC-Fahrverhalten|NPCs]], [[Safety Car und Reinigungswagen|Safety Car, Reinigungsfahrzeug]]
+| ja || nein
+|-
+! Automatische Aufstellung, Autopilot unter Gelb
+| ja || nein
+|-
+! Drosselung neben der Bahn
+| ja || wirkungslos
+|-
+! Nicht wählbare [[Rennarten|Rennart]] (seit 1.2.4)
+| Demolition Derby || Time Attack
+|}
+
+=== Umschalten ===
+Die Leseart lässt sich an mehreren Stellen umstellen; alle wirken auf dieselbe Einstellung:
+* '''Optionen → Allgemein → Auf der Bahn''' (Schalter, ab Werk an)
+* '''Fahren''', Kachel '''Strecke''': ein Tipp auf den Titel wechselt zwischen „Auf der Bahn“ und „Frei“
+* im Cockpit der Knopf mit der Aufschrift '''Bahn''' bzw. '''Ausdruck''' (im Ausdruck-Modus hervorgehoben)
+* am Controller '''L1 / LB'''
+
+=== Was beim Wechsel passiert ===
+Seit Version 1.2.4 folgen die Rennarten der Leseart: Eine nicht erlaubte Rennart verschwindet aus Kacheln, Liste und dem Durchschalten auf FAHREN. War sie gewählt, springt die Wahl auf '''Training''', und eine Meldung nennt den Grund. Wechselt man in den Ausdruck-Modus, werden Autos mit der Rolle Safety Car oder Reinigungsfahrzeug auf „Aus“ gestellt. Stehen im Ausdruck-Modus NPCs oder ein Safety Car in der Garage, warnen Rennstart und [[Rennarten|Meisterschaft]], dass sie dort nicht fahren.
+
+== Streckenscan ==
+Mit dem '''Streckenscan''' lernt OmegaSim eine aufgebaute Bahn, ohne dass sie im Editor nachgebaut werden muss. Er setzt die Leseart „Auf der Bahn“ voraus.
+
+# Auto in der Garage verbinden.
+# '''Fahren → Strecke → Scan''' (oder '''Strecke → Streckenscan''') öffnen und '''Streckenscan''' drücken.
+# Das Auto fährt selbstständig über die Bahn und meldet jedes neu erkannte Teil.
+# Sobald ein geschlossener Rundkurs gemessen ist, hält es an. Die Strecke steht danach im [[Strecken- und Raum-Editor|Editor]].
+
+Ist kein Spieler 1 verbunden, fährt das erste verbundene Auto den Scan. Seit 1.2.5 fährt der Scan auf Geraden schneller (80 % statt 67 % des Formationstempos); in Kurven bleibt es bei 67 %, in der Haarnadel bei 47 %. Anlass für die Erhöhung waren Fehllesungen bei zu langsamer Fahrt.
+
+Wer selbst fährt, kann im Editor mit '''Live-Scan starten''' mitlesen lassen.
+
+== Druckvorlagen ==
+Für den Ausdruck-Modus stellt OmegaSim unter '''Strecke → Druckvorlagen''' Muster bereit:
+* '''Start/Ziel''', A4 quer, direkt aus der Original-Druckvorlage erzeugt; zählt Runden.
+* '''Schneidebogen''' mit vier kürzeren Start/Ziel-Marken auf einem Blatt.
+* '''Bahn zum Auslegen''' (experimentell): Gerade und 30-Grad-Kurve als Blätter. Sie tragen das Start/Ziel-Wort, weil die Wörter für Gerade und Kurve nicht entziffert sind.
+
+Beim Drucken gilt: Skalierung 100 % bzw. „Tatsächliche Größe“, nie „an Seite anpassen“. Jedes Blatt trägt ein 100-mm-Kontrollmaß zum Nachmessen und einen Pfeil für die Fahrtrichtung; rückwärts gelesen ergibt der Strichcode eine andere Folge.
+
+== Technik ==
+Die Leseart steckt in Byte 14 des Steuerbefehls: Bit 5 (<code>0x20</code>) ist „Auf der Bahn“, Bit 7 (<code>0x80</code>) ist „Ausdruck“. Die beiden schließen sich aus. In einer Messung innerhalb einer Fahrt brachten 87 % der Meldungen mit Bit 5 einen Teilewechsel, ohne dieses Bit 7 %.
+
+Diese Unterscheidung war lange unbekannt. Frühe Fassungen von OmegaSim setzten Bit 7 fest, weil es in einem Mitschnitt der Original-App immer gesetzt war; dieser Mitschnitt war im Modus „Ohne Bahn“ entstanden. Zwölf Aufzeichnungen lang meldete das Auto auf der echten Bahn deshalb keinen einzigen Code. Erst am 26.08.2026 wurde mit der Original-App gemessen, dass ein Ausdruck nur in der Stellung „Ohne Bahn“ erkannt wird.
+
+Auch die Zuordnung der beiden Start/Ziel-Codes stand bis Fassung 0.6.14 vertauscht in der Dokumentation. Erst die Bestätigung von seVen, dass seine Tabelle für den Bahn-Modus gilt, klärte, dass <code>0x01</code> der Schienencode ist.
+
+Noch offen ist, welche Balkenfolgen Gerade und Kurve tragen. Ein Versuch, sie aus Infrarot-Videobildern zu lesen, ist am 31.08.2026 gescheitert; nötig wäre ein Flachbett-Scan eines echten Teils.
+
+== Siehe auch ==
+* [[Carrera HYBRID]]
+* [[Strecken- und Raum-Editor]]
+* [[Rennarten]]
+* [[NPC-Fahrverhalten]]
+* [[Firmware]]
+
+== Weblinks ==
+* [https://github.com/Luuke42/omegasim OmegaSim auf GitHub (Luuke42)]
+* [https://luuke42.github.io/omegasim/ OmegaSim im Browser spielen]
+
+[[Kategorie:OmegaSim]]
+[[Kategorie:Hardware]]
+[[Kategorie:Spielfunktionen]]

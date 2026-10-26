@@ -1,0 +1,79 @@
+{{Stand|app=1.2.5|appdatum=26.10.2026}}
+'''OmegaBle''' ist ein natives Bluetooth-Plugin der Android-App von [[OmegaSim]]. Es schreibt die Steuerbefehle an die [[Carrera HYBRID]]-Autos auf einem eigenen Faden direkt an die Bluetooth-Schnittstelle von Android und räumt Verbindungen auf, die sonst hängen bleiben.
+
+Im Browser gibt es OmegaBle nicht: Chrome und Edge sprechen über Web Bluetooth direkt mit dem Auto. In der Android-App fehlt Web Bluetooth; dort baut eine Brücke in der Oberfläche (<code>src/05-app-bruecke.js</code>) die benötigten Teile von Web Bluetooth auf dem Community-Plugin ''@capacitor-community/bluetooth-le'' nach. Verbinden, Abonnieren und Lesen laufen über dieses Plugin, das schnelle Schreiben der Steuerbefehle über OmegaBle (<code>OmegaBlePlugin.java</code>).
+
+== Zweck ==
+OmegaSim schickt jedem gesteuerten Auto etwa alle 45 ms einen Befehl mit Gas und Lenkung. Über das Community-Plugin hing jeder dieser Befehle an einem Rundlauf von der Seite über den Android-Hauptfaden zum Bluetooth und zurück, bevor der nächste gehen konnte. Gemeldet wurde eine spürbare Verzögerung in der App, besonders auf schwächeren Handys.
+
+OmegaBle vermeidet diesen Rundlauf:
+* '''Ohne Antwort:''' Der Befehl wird als „Schreiben ohne Antwort“ abgesetzt; die Seite wartet nicht auf eine Bestätigung.
+* '''Eigener Schreibfaden:''' Der Bluetooth-Schreibvorgang läuft auf einem eigenen Faden, nicht auf dem Android-Hauptfaden, über den auch alle Meldungen der Autos zurückkommen.
+* '''Direktweg:''' Seit Fassung 0.10.4 ruft die Seite OmegaBle über eine direkte Schnittstelle auf (''OmegaDirekt''), ohne den Umweg über den Hauptfaden. Gleichzeitig wird das Gamepad direkt aus der App gelesen (''Pad direkt'').
+* '''Neuester gewinnt:''' Je Auto gibt es genau einen Warteplatz. Kommt ein neuer Befehl, bevor der alte geschrieben ist, ersetzt er ihn. Eine Warteschlange würde alte Stickstellungen nachliefern, und ein verspäteter Lenkbefehl ist schlechter als keiner.
+
+Ein abgelehnter Schreibvorgang wird höchstens dreimal im Abstand von 3 ms wiederholt und aufgegeben, sobald ein neuerer Befehl wartet. Während das Community-Plugin selbst einen Bluetooth-Vorgang ausführt (Verbinden, Abonnieren, Lesen), pausiert OmegaBle, weil Android nur einen solchen Vorgang zugleich zulässt.
+
+=== Rückfall auf das Plugin ===
+OmegaSim prüft alle 2 s, ob OmegaBle für ein Auto wirklich schreibt. Wird zweimal hintereinander gar nichts mehr geschrieben, nur verworfen, und lag keine Pause dazwischen, fährt dieses Auto 30 s lang über das langsamere Community-Plugin. Danach wird OmegaBle kurz erneut geprüft; scheitert es wieder, verdoppelt sich die Sperre bis höchstens 10 Minuten. Viel Verworfenes bei vielen Autos gilt dagegen als Funklast und nicht als Ausfall. Ein neuer Verbindungsaufbau hebt die Sperre auf.
+
+== Verbinden und Trennen ==
+Seit Version 1.2.3 räumt die App Verbindungen hart auf. Anlass war die Meldung, dass ein Auto hell leuchtete wie nach erfolgreichem Verbinden, die App aber nicht verbunden war und das Auto erst am Ladegerät ausgeschaltet werden musste. Ursache waren Verbindungen, die das Community-Plugin nach einem Fehler stehen ließ.
+
+* '''Ein Aufbau je Auto:''' Zwei gleichzeitige Verbindungsversuche zum selben Auto (etwa automatisches Verbinden und ein Klick) gibt es nicht mehr.
+* '''Zeitgrenze:''' Ein Verbindungsaufbau darf höchstens 20 s dauern. Scheitert oder hängt er nach dem Koppeln, wird die Verbindung getrennt und von OmegaBle geschlossen.
+* '''Trennen immer nativ:''' Auch wenn die Seite ein Auto schon für getrennt hält, trennt die App die Verbindung im System und schließt sie.
+* '''Beim Start:''' Ist die Garage leer, schließt OmegaBle beim Öffnen der App alle Verbindungen, die vom letzten Laden der Seite übrig sind (Funktion ''alleSchliessen''). Das Protokoll meldet dann „Beim Start … alte Verbindung(en) geschlossen“. Danach verbindet die App bekannte Autos, sofern '''Optionen → System → Bekannte Autos beim Start verbinden''' an ist (Vorgabe).
+* '''„Alle trennen“''' in der '''Garage''' trennt alle Autos der Garage und danach auch verwaiste Verbindungen: Autos, deren Name mit ''HYBRID'' beginnt, die das System als verbunden meldet, die aber in keiner Garage stehen. Bleibt eines davon verbunden, verbindet die App kurz neu und trennt sauber. Eine Meldung nennt die Zahl der „hängenden Verbindungen“.
+* '''Beim Verlassen''' der Seite, etwa beim Neuladen nach einem Update, werden alle Autos getrennt.
+
+Nach dem Verbinden fordert die App das schnelle Verbindungsintervall von Android an, nach 5 s noch einmal und erneut, wenn ein Auto dauerhaft langsamer als alle 75 ms meldet (höchstens alle 20 s). Während ein Auto neu verbindet, schreiben NPCs nicht.
+
+Das Schließen einzelner und aller Verbindungen steckt in der Android-Schicht; laut Patchnotes braucht es deshalb eine neue APK. Die übrige Brücke kommt mit jedem Update der Oberfläche, ohne Neuinstallation.
+
+== Diagnose ==
+Unter '''Optionen → System → Funk-Rundlauf''' zeigt die App in einer Messzeile, wie der Funk gerade läuft:
+
+{| class="wikitable"
+! Angabe !! Bedeutung
+|-
+| ms-Werte vorn || Zeit eines Steuerbefehls, Mittel und 95 %; in der App mit „nur JS“ gekennzeichnet, weil der Aufruf sofort zurückkehrt
+|-
+| '''Weg''' || ''OmegaBle direkt'', ''OmegaBle'' oder ''Plugin''; „(alte APK)“, wenn die installierte APK zu alt ist
+|-
+| '''… Auto(s) fest auf Plugin''' || wie viele Autos gerade für OmegaBle gesperrt sind (siehe [[#Rückfall auf das Plugin|Rückfall]])
+|-
+| geschrieben, wiederholt, verworfen, ersetzt || Zähler von OmegaBle für das Auto
+|-
+| '''Takt''' || Abstand der Sendetakte (Mittel, 95 %, Maximum)
+|-
+| '''Brücke''' || Zeit von der Seite bis zum Eintreffen in OmegaBle
+|-
+| '''Pad direkt''' || ob das Gamepad direkt gelesen wird
+|-
+| '''Direktweg fehlt''' || die direkte Schnittstelle ist nicht angekommen, gegebenenfalls mit Grund
+|}
+
+Fehlt der Direktweg beim Start, meldet OmegaBle ihn einmal je Sitzung neu an und lädt die Seite einmal neu. Auf älteren Handys hilft laut Hilfetext oft eine Aktualisierung von „Android System WebView“ im Play Store.
+
+== Fehlersuche ==
+Reagiert ein Auto nicht oder lässt sich nicht koppeln, hilft der Artikel [[Keine Reaktion des Fahrzeugs]]. Ein erster Schritt in der Android-App ist '''Garage → Alle trennen''', weil damit auch verwaiste Verbindungen geschlossen werden. Treten Probleme nur mit mehreren NPCs auf und mit einem nicht, kann Funklast auf dem gemeinsamen Bluetooth-Adapter die Ursache sein; die Zähler im Funk-Rundlauf helfen bei der Einordnung.
+
+== Technik ==
+OmegaBle ist ein Capacitor-Plugin der App <code>de.lroeseler.omegasim</code>. Die Verbindung selbst leiht es sich vom Community-Plugin, dessen Verbindungsobjekt es per Reflexion ausliest. Ab Android 13 nutzt es die neuere Schreibmethode von Android, auf älteren Versionen die klassische über das Merkmal-Objekt. Nach drei Fehlschlägen in Folge sucht es das Verbindungsobjekt neu, weil das Auto dann vermutlich neu verbunden wurde.
+
+Geschichte: Eine erste Fassung kam mit 0.8.124. In 0.9.2 wurde OmegaBle neu gebaut, unter anderem wegen einer Wiederholschleife ohne Pause und weil die Seite jeden Befehl für geschrieben hielt. 0.10.4 brachte den Direktweg, 1.0.40 das Neuanmelden bei fehlendem Direktweg, die Fassungen 1.1 den stabilen Rückfall und 1.2.3 das harte Schließen von Verbindungen.
+
+== Siehe auch ==
+* [[Keine Reaktion des Fahrzeugs]]
+* [[OmegaSim]]
+* [[Mehrspieler]]
+* [[Carrera HYBRID]]
+* [[NPC-Fahrverhalten]]
+
+== Weblinks ==
+* [https://github.com/Luuke42/omegasim OmegaSim auf GitHub (Luuke42)]
+* [https://luuke42.github.io/omegasim/ OmegaSim im Browser spielen]
+
+[[Kategorie:OmegaSim]]
+[[Kategorie:Software]]

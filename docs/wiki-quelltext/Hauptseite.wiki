@@ -1,0 +1,77 @@
+__NOTOC__
+{{Stand|app=1.2.5|appdatum=26.10.2026}}
+<div style="border:1px solid #a2a9b1; background-color:var(--background-color-neutral-subtle, #f8f9fa); color:inherit; padding:14px 18px; margin-bottom:14px;">
+<div style="font-size:150%; font-weight:bold; margin-bottom:4px;">Willkommen bei {{SITENAME}}</div>
+Dieses Wiki sammelt Wissen und Hilfe rund um '''[[OmegaSim]]''', eine freie App, mit der man '''[[Carrera HYBRID]]'''-Autos per Bluetooth steuert: mit eigenem [[Fahrverhalten|Fahrgefühl]], [[Rennarten|Rennen]], [[NPC-Fahrverhalten|NPC-Gegnern]], [[Safety Car und Reinigungswagen|Safety Car]], [[Boxenstopp|Boxenstopps]] und [[Mehrspieler|Mehrspieler]]. Derzeit gibt es hier '''{{NUMBEROFARTICLES}}''' Artikel.
+
+<div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;">
+<div style="flex:1 1 220px; border:1px solid #36c; padding:8px 12px;">'''▶ [https://luuke42.github.io/omegasim/ Jetzt im Browser spielen]'''<br /><small>Chrome oder Edge mit Web Bluetooth, am PC oder Android-Handy</small></div>
+<div style="flex:1 1 220px; border:1px solid #36c; padding:8px 12px;">'''⬇ [https://github.com/Luuke42/omegasim/releases Android-App (APK)]'''<br /><small>nötig für WLAN-Mehrspieler und den schnellsten Funkweg</small></div>
+<div style="flex:1 1 220px; border:1px solid #36c; padding:8px 12px;">'''⌨ [https://github.com/Luuke42/omegasim Quellcode auf GitHub (Luuke42/omegasim)]'''<br /><small>MIT-Lizenz, Fehler melden über „Issues“</small></div>
+</div>
+</div>
+
+<div style="display:flex; flex-wrap:wrap; gap:14px;">
+<div style="flex:1 1 320px; min-width:0;">
+== Erste Schritte ==
+# [[OmegaSim]] im Browser öffnen oder die Android-App installieren.
+# Auto einschalten und in der '''Garage''' mit '''+ Auto verbinden''' koppeln.
+# Unter '''Optionen → Fahrgefühl''' eine Voreinstellung wählen, für den Anfang '''Arcade'''.
+# Im '''Cockpit''' losfahren oder unter '''Rennen''' eine [[Rennarten|Rennart]] starten.
+# Hängt das Auto: [[Keine Reaktion des Fahrzeugs]].
+
+[[Datei:OmegaSim-Garage.png|mini|ohne|360px|Die Garage, hier werden Autos verbunden.]]
+
+== Hardware ==
+* [[Carrera HYBRID]] – das Auto: Aufbau, Sensor, Akku, Bluetooth
+* [[Strecke]] – Bahnteile, Ausdruck-Strecke und Streckenscan
+
+== Software ==
+* [[Firmware]] – was über die Software im Auto bekannt ist
+* [[Original-App]] – die Hersteller-App und was OmegaSim anders macht
+* [[OmegaSim]] – Überblick über die App
+* [[OmegaBle]] – das Bluetooth-Plugin der Android-App
+</div>
+<div style="flex:1 1 320px; min-width:0;">
+== OmegaSim im Detail ==
+{| class="wikitable" style="width:100%;"
+|-
+! Fahren
+| [[Fahrverhalten]] · [[Verschleiß]] · [[Virtuelles Fahren]]
+|-
+! Rennen
+| [[Rennarten]] · [[Boxenstopp]] · [[Challenges]]
+|-
+! Gegner
+| [[NPC-Fahrverhalten]] · [[Safety Car und Reinigungswagen]]
+|-
+! Strecke
+| [[Strecken- und Raum-Editor]]
+|-
+! Zusammen
+| [[Mehrspieler]] (WLAN und mehrere Spieler an einem Gerät)
+|}
+
+== Zubehör ==
+* [[CH ControlBox]] – RC-Funke als Bluetooth-Gamepad für OmegaSim
+* [[Startampel]] – echte Startampel am Tisch (Raspberry Pi / Pico)
+
+== Fehlerbehebung ==
+* [[Keine Reaktion des Fahrzeugs]] – Auto steht mit Licht und eingeschlagenen Rädern und lässt sich nicht koppeln
+
+== Mitmachen ==
+* [[Mitmachen]] – Artikel schreiben und verbessern, mit und ohne KI
+* [[Anleitung für KIs]] – Arbeitsweise für KI-Assistenten, die am Wiki oder an OmegaSim arbeiten
+* [[Spezial:Alle Seiten|Alle Seiten]] · [[Spezial:Kategorien|Kategorien]] · [[Spezial:Gewünschte Seiten|Gewünschte Seiten]]
+</div>
+</div>
+
+== Zuletzt bearbeitet ==
+<templatestyles src="Hauptseite/styles.css" />
+Ganz oben steht die zuletzt bearbeitete Seite.
+<div class="hauptseite-rc">
+{{Special:RecentChanges|namespace=0|limit=5|days=90|hidebots=1|enhanced=0}}
+</div>
+<small>Alle Änderungen: [[Spezial:Letzte Änderungen|Letzte Änderungen]] · Neue Artikel: [[Spezial:Neue Seiten|Neue Seiten]]</small>
+
+[[Kategorie:OmegaSim]]

@@ -1,0 +1,107 @@
+{{Stand|app=1.2.5|appdatum=26.10.2026}}
+[[Datei:OmegaSim-Fahrgefuehl.png|mini|Die Einstellungsseite Fahrgefühl in OmegaSim 1.2.5]]
+Das '''Fahrverhalten''' von [[OmegaSim]] ist die Art, wie die App die Eingaben am Controller in die beiden Steuerwerte Gas und Lenkung übersetzt, die an das Fahrzeug gesendet werden. Es wird über fertige Abstimmungen, die sogenannten Fahrgefühle (Voreinstellungen), sowie über einzelne Regler eingestellt.
+
+Die Fahrdynamik selbst entsteht in der Firmware des [[Carrera HYBRID]]-Autos. OmegaSim rechnet daneben ein eigenes Fahrzeugmodell, das nur die gesendeten Bytes formt: Was das Modell berechnet, wirkt am echten Auto ausschließlich über den Gas- und den Lenkwert.
+
+== Fahrgefühle (Voreinstellungen) ==
+Ein Fahrgefühl setzt mit einem Klick einen ganzen Satz von Reglern: Getriebeart, Beschleunigung, Bremse, Lenkung, Reifen- und Tankmodell sowie Crash-Verhalten. Renndauer, Wetter, Strecke, Fahrzeuglayout und Getriebeart gehören ausdrücklich nicht dazu.
+
+=== Wo das Fahrgefühl gewählt wird ===
+* '''Optionen → Fahrgefühl → Voreinstellungen''': alle neun Fahrgefühle. Darunter steht die Beschreibung des aktiven Satzes. Weicht ein Regler von allen Sätzen ab, erscheint „Eigene Abstimmung“.
+* '''Garage''': bei jedem gesteuerten Auto die Zeile „Fahrgefühl“ mit Arcade, Sim+ und Pacejka.
+* '''Cockpit''': der Knopf für die Abstimmung schaltet zwischen Arcade, Sim+ und Pacejka weiter. Während einer [[Challenges|Challenge]] ist er gesperrt.
+
+Eigene Abstimmungen lassen sich unter '''Optionen → Fahrgefühl''' als JSON-Text kopieren und weitergeben oder unter einem Namen auf dem Gerät ablegen.
+
+=== Übersicht ===
+{| class="wikitable"
+! Fahrgefühl !! Steuerungsmodus !! Getriebe !! 0 → 100 km/h !! Bremswirkung !! Lenkkalibrierung !! Reifenmodell !! Tankverbrauch
+|-
+| Arcade || Physik || Automatik || 1,6 s || 4,0 || 300 % || aus || aus
+|-
+| Sim+ || Physik || Automatik || 2,3 s || 2,2 || 250 % || 100 % || 1,0
+|-
+| Pacejka || Pacejka || Automatik || 2,6 s || 1,4 || 250 % || 100 % || 1,0
+|-
+| Pro || Physik || Automatik || 2,6 s || 1,4 || 250 % || 100 % || 1,0
+|-
+| GT3 || Physik || von Hand || 2,9 s || 1,15 || 200 % || 90 % || 1,3
+|-
+| F1 || Physik || von Hand || 2,5 s || 1,45 || 200 % || 120 % || 2,7
+|-
+| Realismus GT3 || Physik || von Hand || 3,2 s || 0,85 || 160 % || 200 % || 3,0
+|-
+| Omega || Physik || Automatik || 2,6 s || 1,4 || 250 % || 100 % || 1,0
+|-
+| RC (in Arbeit) || RC || ohne Gänge || 1,5 s || 2,5 || 300 % || aus || aus
+|}
+Die Werte stammen aus den Voreinstellungen der App (Tankverbrauch in Prozent je Sekunde bei Vollgas).
+
+* '''Arcade''' ist die nachsichtigste Abstimmung: kürzester Bremsweg, Reifenwärmer an, Crashs bremsen, verursachen aber keinen Schaden. Bremsen und Gasgeben schwächen die Lenkung hier nicht.
+* '''Sim+''' entspricht Pro mit direkterer Lenkung, mehr Beschleunigung und deutlich kräftigerer Bremse.
+* '''Pacejka''' ist die Pro-Abstimmung mit dem experimentellen Pacejka-Lenkmodell (siehe unten).
+* '''Pro''' ist die Grundabstimmung der Simulation; [[Challenges]] werden mit Pro gefahren.
+* '''GT3''', '''F1''' und '''Realismus GT3''' schalten von Hand und haben Bremsfading und Windschatten an. Realismus GT3 ist die härteste Stufe und gegen gemessene Werte kalibriert.
+* '''Omega''' ist die Pro-Abstimmung, wie sie in Version 0.9 war, und wird nicht mehr verändert.
+* '''RC''' (in Arbeit) gibt die Stickstellung direkt an das Auto weiter wie bei einer Fernsteuerung: ohne Gänge, Gas weg läuft in zwei Sekunden aus, die Bremse greift sofort, ein zweiter Bremsdruck im Stand fährt rückwärts.
+
+Ein früherer Drift-Modus wurde entfernt; seine Stellung „Aus“ heißt seitdem RC.
+
+== Fahrgefühl je Spieler ==
+Seit Version 1.2.4 können Spieler 2 und 3 in der '''Garage''' ein eigenes Fahrgefühl wählen, etwa Spieler 1 Pacejka und Spieler 2 Arcade. Zur Auswahl stehen „wie Spieler 1“ (Vorgabe), Arcade, Sim+ und Pacejka. Spieler 1 stellt weiterhin die Regler ein, die für alle Spieler ohne eigenes Fahrgefühl gelten. Die Reifenmischung von Spieler 2 und 3 wird dabei nicht mehr von Spieler 1 überschrieben. In der Meisterschaft lässt sich das Fahrgefühl zusätzlich für alle Teilnehmer festlegen (siehe [[Rennarten]]).
+
+== Getriebe und Rückwärtsgang ==
+=== Getriebearten ===
+Unter '''Optionen → Fahrgefühl → Fahrzeug → Getriebe''' wird gewählt, welches Getriebe das simulierte Auto hat. Die Voreinstellungen ändern das Getriebe nicht.
+{| class="wikitable"
+! Getriebe !! Gänge !! Schaltzeit
+|-
+| GT3, sequenziell (Vorgabe) || 6 || 120 ms
+|-
+| Formel 1 || 8 || 40 ms
+|-
+| Ferrari 412P, Transaxle || 5 || 350 ms
+|}
+Die Höchstdrehzahl bleibt bei allen gleich, weil sie zum Motor gehört. Daneben gibt es das '''Layout''' (neutral, GT3 mit Front-, Mittel- oder Heckmotor, Formel-1-Monoposto), das Achslast, Radstand und Trägheit verändert.
+
+=== Automatik und Handschaltung ===
+Der Schalter '''Automatikgetriebe''' unter „Getriebe & Fahrleistung“ legt fest, ob von Hand geschaltet wird (ab Werk Quadrat herunter, Kreis hoch). Mit Automatik legt Quadrat unter 10 km/h den Rückwärtsgang ein, Kreis holt ihn heraus. Ohne Automatik liegt unter dem 1. Gang der Leerlauf und darunter im Stand der Rückwärtsgang.
+
+=== Rückwärtsgang: Gas und Bremse zusammen ===
+Der Schalter '''Rückwärtsgang: Gas und Bremse zusammen''' (experimentell, ab Werk aus) bildet das Verhalten des Original-Controllers nach: Sind im Stand Gas und Bremse zugleich gedrückt, fährt das Auto rückwärts, solange beide gedrückt bleiben. Lässt man beide los, rollt es aus und schaltet wieder in den 1. Gang. Die Funktion gilt nur mit Automatik, nicht im Fahrgefühl RC und nicht im Autopiloten. Vier Regler stellen Druckschwelle (Vorgabe 50 %), Haltezeit (100 ms), Geschwindigkeitsgrenze (10 km/h) und Ausrollzeit (600 ms) ein. Der Regler '''Tempo rückwärts''' begrenzt das Rückwärtstempo (Vorgabe 50 %).
+
+== Lenkung ==
+Der volle Lenkeinschlag des Autos beträgt mechanisch 45 Grad. Kein Regler kann darüber hinaus lenken: Der Lenkwert wird in einem vorzeichenbehafteten Byte übertragen, und ein Wert über dem Maximum käme als Einschlag in die Gegenrichtung an.
+
+Die '''Lenkwinkel-Kalibrierung''' hilft auf engen Strecken. Beim Anbremsen einer Kurve kürzt der Reibkreis („Bremsen nimmt Lenkung“) den Einschlag; die Kalibrierung holt ihn zurück. Gemessen bei 60 km/h unter Vollbremsung erreicht das Auto mit 100 % nur 35 Grad, ab 150 % die vollen 45 Grad. Höhere Werte verschieben nur, ab welchem Stickweg der Anschlag erreicht ist, und kosten Feingefühl.
+
+Weitere Regler unter '''Optionen → Fahrgefühl → Lenkung & Feinabstimmung''': Lenkansprechen, Lenkkennlinie, „Voller Einschlag bei“, Lenkkraft unter Gas, Lenkdämpfung, Bremsaufbau, Bremsbalance sowie Gas- und Bremskennlinie.
+
+=== Fahrhilfe ===
+Unter '''Optionen → Fahrgefühl → Fahrhilfe''' (experimentell) kann das Auto selbst die Spur halten („Querlage“) oder ganz selbst lenken („voll“). Beides braucht eine eingescannte [[Strecke]] und die Stellung „Auf der Bahn“. In der Garage lässt sich die Fahrhilfe je Auto einstellen.
+
+== Technik ==
+=== Physik-Modell ===
+Das Modell verteilt aus Gas, Bremse und Lenkung die Last auf vier Räder und rechnet daraus Reifentemperaturen, Verschleiß und Bremsscheiben (siehe [[Verschleiß]]). Am deutlichsten spürbar ist der Reibkreis: Was die Bremse an der Vorderachse verbraucht, fehlt der Lenkung. Bei Pro, Sim+, Pacejka, GT3, F1 und Realismus GT3 hängt dieser Effekt an der simulierten Gewichtsverlagerung, sodass Trail-Braking möglich ist. Die Bremskraft baut mit 0,12 s Zeitkonstante auf, bei Omega mit 0,45 s.
+
+=== Einspurmodell ===
+Ein Einspurmodell rechnet Gierrate, Schwimmwinkel und Eigenlenkverhalten. Es dient als Instrument für die Anzeige im Cockpit und stellt die Lenkung nicht.
+
+=== Pacejka ===
+Im Modus Pacejka bekommen die Reifen zusätzlich eine Haftgrenze nach der Magic Formula (Vorgabe 70 % der Querausnutzung). Unterhalb der Grenze fährt es sich wie im Modus Physik. Schiebt die Vorderachse über die Grenze, kommt weniger Einschlag an (Untersteuern). Das Übersteuern, bei dem die App von sich aus weiter einlenkt, hat einen eigenen Schalter '''Optionen → Allgemein → Übersteuern (Pacejka)''' und ist ab Werk aus. Beides wird mit Vibration und Reifenquietschen gemeldet. Die Haftung des echten Modellautos ändert sich dadurch nicht, nur der gesendete Befehl.
+
+== Siehe auch ==
+* [[Verschleiß]]
+* [[Rennarten]]
+* [[Mehrspieler]]
+* [[Virtuelles Fahren]]
+* [[Keine Reaktion des Fahrzeugs]]
+
+== Weblinks ==
+* [https://github.com/Luuke42/omegasim OmegaSim auf GitHub (Luuke42)]
+* [https://luuke42.github.io/omegasim/ OmegaSim im Browser spielen]
+
+[[Kategorie:OmegaSim]]
+[[Kategorie:Spielfunktionen]]
+[[Kategorie:Software]]

@@ -1,0 +1,95 @@
+{{Stand|app=1.2.5|appdatum=26.10.2026}}
+Die '''Original-App''' ist die Smartphone-App des Herstellers Carrera, mit der [[Carrera HYBRID]]-Autos per Bluetooth gesteuert werden. Zum System gehört optional ein Controller, in den das Handy eingeklemmt wird und der echte Tasten statt Bildschirmtasten bietet.
+
+[[OmegaSim]] ist keine Erweiterung der Original-App, sondern ein unabhängiges Projekt, das dieselbe Bluetooth-Schnittstelle benutzt. Das Protokoll, das OmegaSim spricht, wurde zu großen Teilen aus Mitschnitten des Funkverkehrs der Original-App rekonstruiert. Dieser Artikel fasst zusammen, was die OmegaSim-Dokumentation über die Original-App belegt. Bedienung, Menüs und Versionsstände der Original-App sind dort nicht beschrieben und fehlen deshalb auch hier.
+
+== Mitschnitte ==
+Grundlage sind Aufzeichnungen des Bluetooth-Verkehrs („HCI-Snoop“) zwischen Original-App und Auto aus dem August 2026. Wichtig sind vor allem zwei:
+* '''20.08.2026''': eine handgefahrene Sitzung im '''Leitplanken-Modus''' der Original-App, 67 s Verkehr zum Auto.
+* '''21.08.2026''': ein Rennen auf einer Strecke aus 11 Teilen mit drei Autos, einem gesteuerten und zwei von der App selbst gefahrenen Gegnern, über 16 Runden.
+
+Am 26.08.2026 wurde mit der Original-App zusätzlich gemessen, dass ein gedrucktes Muster nur in ihrer Stellung „Ohne Bahn“ erkannt wird, in der Stellung „Auf der Bahn“ nicht (siehe [[Strecke]]).
+
+== Was die Original-App sendet ==
+Die Original-App schreibt etwa alle 45 ms einen Befehl von 20 Byte auf den Nordic-UART-Kanal des Autos. Aus den Mitschnitten belegt:
+
+{| class="wikitable"
+! Byte !! Wert in der Original-App !! Bedeutung
+|-
+| 0 || <code>0xAF</code> || Rahmenkennung
+|-
+| 6 || <code>0xDF</code> ± Gas || Gas um die Neutralstellung
+|-
+| 7 || Lenkwert, −127 bis +127 || Lenkung
+|-
+| 8 || <code>0x80</code> || konstant
+|-
+| 10 || <code>0x60</code> beim gesteuerten Auto, <code>0x20</code> bei selbst gefahrenen Gegnern, <code>0x30</code> im Leitplanken-Modus || Betriebsart; genaue Bedeutung offen
+|-
+| 14 || z. B. <code>0x80</code>, <code>0x82</code>, <code>0x83</code> (Licht aus, an, Bremse) || Licht und Leseart
+|-
+| 15 || <code>0x04</code> beim gesteuerten Auto, <code>0x0c</code>/<code>0x0e</code> bei Gegnern || Betriebsart
+|-
+| 16–18 || im Leitplanken-Modus die Typen der nächsten drei Streckenteile || Vorausblick
+|-
+| 19 || Prüfsumme || CRC-8
+|}
+
+Die Werte <code>0x80</code>, <code>0x82</code> und <code>0x83</code> in Byte 14 stammen aus einer Sitzung im Modus „Ohne Bahn“; das gesetzte Bit 7 ist dort die Leseart und kein Teil des Lichts. Diese Verwechslung kostete OmegaSim zwölf Aufzeichnungen ohne eine einzige Streckenlesung.
+
+== Gegner der Original-App ==
+Im Rennen vom 21.08.2026 war die App bei den zwei Gegnern selbst der Fahrer. Ihre Schreibpakete zeigen deshalb den Regler der Original-App:
+* Die Lenkung nahm 119 bis 126 verschiedene Werte an, Vollausschlag nur in 2,7 bis 3,6 % der Befehle. Der mittlere Lenkbetrag lag bei 32 bzw. 47 von 127.
+* Bei einem Gegner erklären Streckenteil und Position innerhalb des Teils 85 % der Lenkung, beim anderen 55 %. Die App fährt ihre Gegner also weitgehend vorgesteuert aus der Streckenposition, nicht aus einer Rückmeldung zur Querlage.
+* Beide Gegner fuhren nach der Anfangsphase stabile Runden von 7,07 bis 7,31 s, im Median 0,03 s auseinander.
+
+Handgefahren sah es anders aus: In diesen Aufnahmen waren 196 von 235 Lenkbefehlen genau ±127, die Lenkung lief also fast nur zwischen den beiden Endwerten.
+
+== Leitplanken-Modus ==
+Im Mitschnitt vom 20.08.2026 setzte die Original-App ab einem bestimmten Paket Bit 5 in Byte 14 und füllte im selben Paket erstmals die Bytes 16 bis 18. Beides kam in keinem anderen Mitschnitt vor. Bytes 16 bis 18 enthalten die Typen der nächsten drei Teile als Fenster über die zuvor erfasste Strecke, das bei jedem Teilewechsel weiterrückt. Die Querregelung geschieht im Auto. Das gleiche Bit 5 ist die Leseart „Auf der Bahn“, die OmegaSim ab Werk sendet.
+
+== Weitere Angaben ==
+* '''Streckenkarten:''' Die Original-App kennt Streckenkarten; die Boxengassenbreite im Editor von OmegaSim (9,5 % der Fahrbahn) ist daraus ausgemessen. Der OmegaSim-Editor enthält nach eigener Angabe alle Teiletypen der Original-App.
+* '''Rückwärtsgang:''' Am Original-Controller fährt das Auto rückwärts, wenn im Stand Gas und Bremse zugleich gedrückt sind. OmegaSim bietet das als experimentelle Option (siehe [[Fahrverhalten]]).
+* '''Mehrspieler:''' Laut Hersteller können mehrere Spieler gleichzeitig fahren, jedes Handy mit seinem eigenen Auto. Dass die Handys dafür untereinander WLAN nutzen, ist vermutet, nicht belegt.
+* '''Firmware-Updates''' spielt der Hersteller über seine App auf (siehe [[Firmware]]).
+* '''Latenz:''' Ein Nutzer meldete, auch die Original-App habe eine kleine merkbare Verzögerung. Gemessen ist das nicht.
+
+== Abgrenzung zu OmegaSim ==
+{| class="wikitable"
+! !! Original-App !! OmegaSim
+|-
+! Herkunft
+| Hersteller || unabhängiges Freizeitprojekt, MIT-Lizenz
+|-
+! Plattform
+| Smartphone-App || Browser (Chrome, Edge) und Android-App
+|-
+! Fahrmodell
+| nicht offengelegt || eigenes Modell, das Gas- und Lenkwert formt (Gänge, Reifen, Gewichtsverlagerung)
+|-
+! Mehrere Spieler
+| je Spieler ein Handy || bis zu drei Spieler an einem Gerät oder [[Mehrspieler|WLAN-Mehrspieler]]
+|-
+! Gegner
+| selbst gefahrene Gegner (siehe oben) || [[NPC-Fahrverhalten|NPCs]], [[Safety Car und Reinigungswagen|Safety Car]]
+|-
+! Firmware-Updates
+| ja || nein
+|}
+
+OmegaSim übernimmt aus den Mitschnitten die festen Bytewerte und den Vorausblick; seine Gegner steuern ebenfalls ohne Rückmeldung zur Querlage. Gemessen liegt die Lenkung der OmegaSim-NPCs in der Vorgabe (Mittel 36 von 127) nahe am ruhigeren der beiden Original-Gegner.
+
+== Siehe auch ==
+* [[Carrera HYBRID]]
+* [[Firmware]]
+* [[OmegaSim]]
+* [[NPC-Fahrverhalten]]
+* [[Strecke]]
+
+== Weblinks ==
+* [https://github.com/Luuke42/omegasim OmegaSim auf GitHub (Luuke42)]
+* [https://luuke42.github.io/omegasim/ OmegaSim im Browser spielen]
+
+[[Kategorie:OmegaSim]]
+[[Kategorie:Software]]

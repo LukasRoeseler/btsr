@@ -1,0 +1,82 @@
+{{Stand|app=1.2.5|appdatum=26.10.2026}}
+'''Virtuelles Fahren''' (in der App „Virtuell fahren“, in Arbeit) ist ein Modus von [[OmegaSim]], in dem ein simuliertes Auto ohne Bluetooth-Verbindung in einer 3D-Ansicht über die Strecke aus dem Editor fährt. Er erlaubt Fahren, Rundenzeiten und kurze Rennen ohne Bahn und ohne [[Carrera HYBRID]]-Auto, etwa zum Ausprobieren der App oder zum Üben einer Strecke.
+
+== Funktionsweise ==
+Das virtuelle Auto ist für die App ein Garagenauto ohne Funk. Es meldet alle 45&nbsp;ms dieselben Pakete wie ein echtes Auto, darunter Teilezähler, Teilecode und „neben der Bahn“. Dadurch laufen Rundenzeit, Sektoren, Rennen, Telemetrie und Motorsound ohne eine zweite Zeitnahme. Befehle an das Auto gehen an einen Platzhalter, der nichts tut.
+
+Gefahren wird mit einem Fahrmodell nach dem Vorbild eines GT3-Wagens in Assetto Corsa Competizione: Reifenmodell nach Pacejka, Gewichtsverlagerung und Reibkreis mit ABS und Traktionskontrolle. Am Limit untersteuert das Auto leicht, Anbremsen dreht es ein, Vollgas in engen Kurven lässt das Heck kommen. Das Standardauto ist der Vulture V5.R aus dem Rennspiel Speed Dreams, mit 3D-Modell, Scheinwerfern, Brems- und Rücklichtern und einer Federung, die beim Bremsen, Beschleunigen und in Kurven sichtbar neigt.
+
+== Starten und beenden ==
+# Unter '''FAHREN → Autos → Garage''' ganz unten auf '''Virtuell fahren''' tippen. Rechts erscheinen die Optionen der virtuellen Fahrt.
+# Optionen nach Wunsch einstellen (siehe Tabelle).
+# '''Losfahren''' drücken. Das Auto startet eine halbe Kachel vor Start/Ziel.
+# Beenden mit dem Knopf '''✕''' auf dem Bildschirm, mit '''Escape''' oder mit '''Options''' am Controller. Danach geht es zurück in die Garage.
+
+{| class="wikitable"
+! Option !! Auswahl !! Standard
+|-
+| Motorsound || „Wie in Optionen“ oder ein Motor aus der Liste unter Optionen → Ton || Motor des gewählten Autos (Vulture V5.R)
+|-
+| Auto || Vulture V5.R, Lynx 220, FMC GT4, Boxer 96, Einfaches Modell || Vulture V5.R
+|-
+| Schaltung || Automatik, Manuell (schalten mit I und K) || Automatik
+|-
+| Handling || GT3, Schnell (mehr Griff, mehr Einschlag, etwa 15&nbsp;% mehr Tempo) || GT3
+|-
+| Geist folgt meiner Linie || an, aus || an
+|-
+| NPCs || aus, 1–3 || 3
+|-
+| Neigung sichtbar || 1×, 2×, 3×, 5×, 8× || 1×
+|}
+
+Unter den Optionen zeigt eine Zeile, ob die Motoraufnahme spielt, noch lädt oder fehlt. Der '''Geist''' ist eine Kopie des eigenen Autos, die ab der zweiten Runde die aufgezeichnete Linie abfährt. Die Einstellung '''Neigung sichtbar''' vergrößert nur den Ausschlag der Federung in der Darstellung, nicht das Fahrverhalten.
+
+== Steuerung ==
+Gesteuert wird mit Pfeiltasten, Tastatur oder Gamepad, auch in der Android-App. Die Lenkung geht direkt vom Stick an das Auto (voller Einschlag in 0,12&nbsp;s), ohne die Servodämpfung eines echten Autos.
+
+{| class="wikitable"
+! Aktion !! Bedienung
+|-
+| Kamera wechseln (Verfolger, naher Verfolger, Motorhaube) || R3 (rechten Stick drücken) oder C
+|-
+| Licht an/aus || Knopf '''Licht''' oder Dreieck
+|-
+| Auf die Bahn zurücksetzen || Knopf '''Zurücksetzen'''
+|-
+| Fahrt beenden || Bildschirmknopf ✕, Escape oder Options
+|}
+
+Neben der Bahn bremst der Untergrund das Auto ab; steht es länger als 2,5&nbsp;s daneben, wird es automatisch zurückgesetzt.
+
+== Strecke und Rennmodi ==
+Gefahren wird die Strecke aus dem [[Strecken- und Raum-Editor]], sofern sie mindestens drei Teile hat. Fehlt eine solche Strecke, fährt das Auto auf der Challenge-Strecke Balkonia; die Editor-Strecke wird nach dem Beenden wiederhergestellt.
+
+Übernommen werden die Renntypen '''Training''', '''Runden''', '''Endurance''' und '''Qualifying''' aus den Renneinstellungen. Bei anderen Renntypen weist die App darauf hin und fährt Training. Ist die eingestellte Runden- oder Zeitgrenze erreicht, meldet die App das Rennende und beendet die Fahrt kurz darauf. Startaufstellung, Ampel und Meldungen sind auch während der virtuellen Fahrt sichtbar.
+
+In der Studie OmegaLab lässt sich die Fahrverhaltens-Challenge ebenfalls virtuell fahren: dieselbe Strecke und dieselben fünf Runden ohne Bahn und Auto.
+
+== Einschränkungen ==
+* Der Modus ist als in Arbeit gekennzeichnet.
+* Er braucht ein Fahrgefühl mit Physik; mit RC startet er nicht („Virtuell braucht ein Fahrgefühl mit Physik (nicht RC)“).
+* Das Gerät muss WebGL beherrschen.
+* Die virtuellen NPCs folgen der Mittellinie mit leichtem Querversatz und werden vor Kurven langsamer. Sie nutzen nicht die Steuerung der echten NPCs (siehe [[NPC-Fahrverhalten]]).
+* Wird OmegaSim direkt als Datei geöffnet (<code>file://</code>), lassen sich die Motoraufnahmen nicht laden, und es spielt ein Ersatzton. Abhilfe ist der Start über „Start OmegaSim.bat“.
+* Während der virtuellen Fahrt gibt ein verbundenes echtes Fahrerauto seine Rolle ab und bekommt sie beim Beenden zurück. Laut der Seite [[CH ControlBox]] konnte ein echtes Auto nach einer virtuellen Fahrt früher hängen bleiben. Im Code und in den Patchnotes bis 1.2.5 ist dazu keine ausdrückliche Korrektur verzeichnet; das gilt daher weiter als bekannte Einschränkung. Reagiert das Auto danach nicht, hilft die Seite [[Keine Reaktion des Fahrzeugs]].
+
+== Technik ==
+Der Modus steht in <code>src/60d-virtuell.js</code>. Die 3D-Darstellung ist ein eigener kleiner WebGL-Renderer ohne Bibliothek; Fahrbahn, Randsteine und Teilegrenzen entstehen aus der Mittellinie des Editors. Die Automodelle stammen aus Speed Dreams (Lizenz GPL-2+) und wurden mit einem eigenen Skript umgewandelt. Für die Dauer der Fahrt schaltet die App in den Bahn-Modus und stellt danach Modus, Schaltung, Rollen und Motorsound wieder her.
+
+== Siehe auch ==
+* [[Fahrverhalten]]
+* [[Strecken- und Raum-Editor]]
+* [[CH ControlBox]]
+* [[Keine Reaktion des Fahrzeugs]]
+
+== Weblinks ==
+* [https://github.com/Luuke42/omegasim OmegaSim auf GitHub (Luuke42)]
+* [https://luuke42.github.io/omegasim/ OmegaSim im Browser spielen]
+
+[[Kategorie:OmegaSim]]
+[[Kategorie:Spielfunktionen]]
+[[Kategorie:Software]]

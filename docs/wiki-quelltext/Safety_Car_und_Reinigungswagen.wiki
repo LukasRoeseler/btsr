@@ -1,0 +1,91 @@
+{{Stand|app=1.2.5|appdatum=26.10.2026}}
+[[Datei:OmegaSim-Safety-Car.png|mini|Ein Auto mit der Rolle Safety Car in OmegaSim 1.2.5]]
+Das '''Safety Car''' ist in [[OmegaSim]] eine Garagenrolle, mit der ein echtes [[Carrera HYBRID]]-Auto selbstständig als Sicherheitsfahrzeug fährt: Es wartet am Rand der Bahn, fährt bei gelber Flagge los, das Feld schließt dahinter auf, und nach Grün kehrt es auf seinen Parkplatz zurück. Der '''Reinigungswagen''' (in der App „Reinigungsfahrzeug“, in Arbeit) ist eine verwandte Rolle, die die Bahn in drei Runden über ihre ganze Breite abfährt. Beide Rollen steuern ein Auto wie einen NPC (siehe [[NPC-Fahrverhalten]]).
+
+== Voraussetzungen ==
+* Beide Rollen gibt es nur beim Fahren '''auf der Bahn'''. Im Ausdruck-Modus sind sie nicht wählbar; beim Wechsel dorthin werden sie auf „Aus“ gestellt. Rennstart und Meisterschaft warnen, wenn im Ausdruck-Modus noch ein Safety Car in der Garage steht.
+* Jede der beiden Rollen kann in der Garage nur ein Auto haben.
+* Für Parkplatz und Teilezählung braucht die App ein Streckenlayout, gebaut im [[Strecken- und Raum-Editor]] oder eingescannt.
+* Das Safety Car zählt keine Runden und steht nicht im Ergebnis.
+
+== Rolle einrichten ==
+# Unter '''FAHREN → Autos → Garage''' das Auto wählen.
+# In der ersten Zeile rechts die '''Rolle''' mit den Pfeilen auf '''Safety Car''' (bzw. '''Reinigungsfahrzeug''') stellen.
+# Die Einstellungen stehen unter '''Optionen → Safety Car'''. Eine Führung gibt es unter '''Optionen → Tutorials → Safety Car'''.
+
+== Ablauf im Rennen ==
+=== Start und erste Runde ===
+Das Safety Car startet vom letzten Startplatz, auch bei der automatischen Aufstellung. In der Stellung '''Fahrbahn''' (Standard) fährt es die erste Runde hinter dem Feld mit, höchstens im Formationstempo, hält Abstand und setzt nie zum Überholen an; danach parkt es. Beim fliegenden Start zählt die Einführungsrunde nicht mit: Es parkt erst nach der ersten Rennrunde. In der Stellung '''Fahrbahn, wartet bis Gelb''' fährt es beim Start nicht mit.
+
+=== Gelbphase ===
+Die gelbe Flagge wird im Cockpit mit dem Knopf '''Gelbe Flagge''' (ein Tipp) oder am Controller durch Halten der Boxentaste für eine Sekunde ausgerufen; erneutes Halten startet die Ampel und gibt das Rennen wieder frei. Der Schalter '''Gelbe Flagge deaktivieren''' in den Renneinstellungen schaltet beides ab.
+
+Unter Gelb fährt das Safety Car los, und niemand überholt. Mit '''Safety Car: erst aufschließen''' (Standard an) fahren alle Autos mit etwa 45&nbsp;% heran und ab zwei Kacheln Abstand mit 35&nbsp;% weiter, in Kurven und Haarnadeln gedrosselt; ohne diese Option sofort mit 35&nbsp;%. Das eigene Auto übernimmt dabei der Autopilot, der auf der Bahn auch selbst lenkt und mit demselben Tempo fährt wie die NPCs. Seit Version 1.1 fährt auch das Safety Car unter Gelb mit denselben Tempogrenzen wie das Feld. Am Ende der Phase bleibt das eigene Auto beim Autopiloten, bis der Ton-Countdown abgelaufen ist, und übernimmt dann sein aktuelles Tempo.
+
+=== Rückkehr und Parken ===
+Nach Grün fährt das Safety Car mit dem '''Heimtempo''' zu seinem Einpark-Teil und parkt dort am rechten Rand; geparkt ist sein Licht aus. Kommt Gelb, während es noch einparkt, parkt es zu Ende und fährt dann los. Beim Losfahren macht es immer einen kurzen Links-Rechts-Impuls, damit es zurück auf die Bahn kommt. Wird es angefahren und bleibt stehen, startet es nach 1,5&nbsp;s selbst neu, höchstens viermal je Gelbphase.
+
+== Parkplatz und Einparkfolge ==
+Das '''Einpark-Teil''' ist ohne eigene Wahl das erste Start/Ziel-Teil. Eine bestimmte Teilnummer gilt nur für die gerade geladene Strecke. Das Safety Car fährt erst dorthin, wenn es seit dem Losfahren über Start/Ziel gefahren ist, weil die Zählung der Teile sonst nicht stimmt.
+
+Eingeparkt wird auf zwei Arten:
+* '''Aufnahme''' (Standard, in Arbeit): eine von Hand aufgenommene Einparkfolge, flüssig aus der Fahrt ohne vorheriges Anhalten; ausgeparkt wird mit der aufgenommenen Ausparkfolge, danach geht es ohne Halt ins normale Fahren über.
+* '''Lenkimpuls''': ein Rechts-Impuls und ein Links-Impuls mit voll eingeschlagenen Rädern bei Einparktempo, eingestellt über die Regler.
+
+=== Parken auf kurzen Geraden (seit 1.2.4) ===
+Früher klappte das Einparken nur, wenn hinter dem Parkteil noch zwei Geraden folgten. Seit Version 1.2.4 fährt das Safety Car ab zwei Teilen vor dem Parkteil mittig. Reicht die Gerade ab dem Parkteil nicht für den Rollweg der Einparkfolge, wird deren Gas gestaucht, höchstens auf die Hälfte, damit das Auto auf der Geraden steht statt in die Kurve zu rollen.
+
+=== Vorbeifahren am geparkten Safety Car ===
+Andere Autos fahren am gewählten Parkteil links vorbei, von einem Teil davor bis zwei Teile dahinter; vor Version 1.2.4 galt das fest um Start/Ziel. Autos, die gerade zu ihrem Startplatz fahren, werden nicht vorbeigeschickt, weil die erste Startreihe direkt vor Start/Ziel steht. Ist der NPC-Boxenstopp eingeschaltet und steht ein Safety Car in der Garage, liegt die NPC-Box auf dem ersten Stück mit zwei Geraden mindestens drei Teile hinter dessen Parkplatz.
+
+Die automatische Startaufstellung nutzt dieselbe Einparkfolge, für die linke Spalte gespiegelt und mit weniger Gas (Renneinstellung '''Einparken: Gas der Safety-Car-Folge''', Standard 70&nbsp;%).
+
+== Einstellungen ==
+Alle Werte stehen unter '''Optionen → Safety Car'''.
+
+{| class="wikitable"
+! Einstellung !! Bereich !! Standard
+|-
+| Safety Car: erst aufschließen || an/aus || an
+|-
+| Wo parkt das Safety Car? (experimentell) || Fahrbahn; Fahrbahn, wartet bis Gelb || Fahrbahn
+|-
+| Safety Car: Ein- und Ausparken (WIP) || Aufnahme; Lenkimpuls || Aufnahme
+|-
+| Gas beim Ausparken (WIP) || 1–3× der Aufnahme || 1,5×
+|-
+| Safety Car: Einpark-Teil (experimentell) || automatisch oder Teilnummer || automatisch (gemessen)
+|-
+| Safety Car: Heimtempo || 30–100&nbsp;% || 50&nbsp;%
+|-
+| Safety Car: Einparktempo || 30–100&nbsp;% || 30&nbsp;%
+|-
+| Safety Car: Rechts-Impuls || 0–2000&nbsp;ms || 100&nbsp;ms
+|-
+| Safety Car: Links-Impuls || 0–2000&nbsp;ms || 100&nbsp;ms
+|-
+| Safety Car: Räder am Ende || 0–100&nbsp;% || 20&nbsp;%
+|}
+
+Unter 30&nbsp;% liest das Auto die Bahn nicht mehr zuverlässig; deshalb geht der Regler für das Einparktempo nicht tiefer. Fährt das Safety Car beim Ausparken zu spät los und danach von der Bahn, hilft mehr '''Gas beim Ausparken'''. Die frühere Stellung „Neben der Strecke von Hand“ mit ihren Reglern ist nicht mehr wählbar.
+
+== Reinigungswagen ==
+Der Reinigungswagen (in Arbeit) ist eine eigene Rolle in der Garage. Ist sie vergeben, erscheint im FAHREN-Menü auf der Autos- und auf der Streckenkachel der Knopf '''Reinigungsfahrzeug starten'''.
+
+Nach dem Start fährt das Auto zuerst bis Start/Ziel. Danach fährt es je eine volle Runde mittig, links (Querlage 90&nbsp;%) und rechts (90&nbsp;%) und hält dann an; die App meldet „Bahn gereinigt“. Die Querlage kommt dabei allein aus dieser Vorgabe, ohne Ideallinie; die Runden werden über den gefahrenen Weg gezählt, nicht über den Rundenzähler. Der Reinigungswagen nimmt nicht an Rennen teil und erscheint in keiner Wertung. Die App steuert nur die Fahrt; eine Reinigungsvorrichtung am Auto ist nicht Teil von OmegaSim.
+
+== Technik ==
+Safety Car und Reinigungswagen sind in <code>src/90-ghosts.js</code> umgesetzt und fahren über die NPC-Steuerung mit eigener Rolle. Für das Stauchen der Einparkfolge schätzt die App den Rollweg aus Gas und Zeit (rund 1,51&nbsp;m/s bei Vollgas, ein gerades Teil 0,43&nbsp;m) und rechnet mit einem aus Beobachtung gewonnenen Korrekturfaktor von 1,7. Der Querversatz der vorbeifahrenden Autos ist ein fester Wert nach links. Weil kein Byte des Autos seine Querlage meldet, sind Randlage und Parkposition Befehle und keine Messungen.
+
+== Siehe auch ==
+* [[NPC-Fahrverhalten]]
+* [[Rennarten]]
+* [[Boxenstopp]]
+* [[Strecken- und Raum-Editor]]
+
+== Weblinks ==
+* [https://github.com/Luuke42/omegasim OmegaSim auf GitHub (Luuke42)]
+* [https://luuke42.github.io/omegasim/ OmegaSim im Browser spielen]
+
+[[Kategorie:OmegaSim]]
+[[Kategorie:Spielfunktionen]]

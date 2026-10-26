@@ -1,0 +1,84 @@
+{{Stand|app=1.2.5|appdatum=26.10.2026}}
+[[Datei:OmegaSim-Rennen.png|mini|Das Cockpit in OmegaSim 1.2.5 mit Reifen-, Tank- und Schadensanzeige]]
+Der '''Verschleiß''' in [[OmegaSim]] umfasst die simulierten Zustände eines Fahrzeugs, die sich während der Fahrt verändern: Reifenabnutzung und -temperatur, Tankfüllung, Schaden durch Crashs und die Bremstemperatur. Hinzu kommt das Wetter, das die Haftung der Reifen beeinflusst.
+
+Das echte [[Carrera HYBRID]]-Auto nutzt sich dabei nicht ab. Alle Werte entstehen im Modell der App und wirken über den gesendeten Gas- und Lenkwert: Abgefahrene oder kalte Reifen senken Lenk- und Bremswirkung, ein leerer Tank oder Schaden drosselt das Gas. Behoben wird der Verschleiß beim [[Boxenstopp]].
+
+== Reifen ==
+=== Mischungen ===
+Es gibt vier Reifenmischungen. Die Farben folgen der Formel 1: rot weich, gelb mittel, weiß hart, blau Regen.
+{| class="wikitable"
+! Mischung !! Grip trocken !! Grip nass !! Verschleißfaktor !! effektiv bei 150 %
+|-
+| weich || 120 % || 45 % || 2,6 || Grip +30 %, Verschleiß 3,4-fach
+|-
+| mittel || 100 % || 45 % || 1,0 || unverändert
+|-
+| hart || 85 % || 45 % || 0,4 || Grip −22 %, Verschleiß 0,1-fach
+|-
+| Regen || 88 % || 80 % || 1,0 || –
+|}
+Die Tabelle zeigt die Grundwerte. Seit Version 1.2 nutzen sich weiche Reifen stärker ab (Faktor 2,6 statt 2,2) und harte schwächer (0,4 statt 0,5). Der Regler '''Mischungsunterschied''' (in Arbeit) unter '''Optionen → Fahrgefühl → Masse & Reifen''' skaliert den Abstand aller Mischungen zum Mittelreifen; Vorgabe ist 150 %, möglich sind 0 bis 300 %. Bei 0 % rechnen alle Slicks wie der Mittelreifen. Nur Slicks können aufschwimmen, Regenreifen nicht.
+
+Die Mischung für den nächsten Boxenstopp wird im Cockpit mit L1/LB durchgeschaltet. Vorgabe ist die aktuell montierte Mischung; passt sie nicht zum Wetter, zeigt die Boxenkachel eine Warnung. Die Renneinstellung „Weiche Reifen verboten“ ist auf der Seite [[Boxenstopp]] beschrieben.
+
+=== Temperatur und Abnutzung ===
+Der Regler '''Reifen: Temperatur & Verschleiß''' schaltet das Reifenmodell (0 = aus, 100 % = volles Modell, bis 200 % schnellere Raten). Ist er aus, fahren alle Autos unabhängig von der Wahl den Mittelreifen. Reifen starten kalt (20 °C) und erreichen ihr Griff-Fenster bei 85 °C; über 103 °C überhitzen sie. Kalte, überhitzte und abgefahrene Reifen haben weniger Grip.
+
+Weitere Regler im selben Abschnitt:
+* '''Reifenwärmer''': Start und Reifenwechsel auf Betriebstemperatur statt kalt.
+* '''Jedes Rad einzeln''': vier Räder mit eigener Last, Temperatur und Abnutzung. Eine Strecke mit vielen Rechtskurven nutzt die linken Reifen stärker ab, und das Auto zieht leicht zur abgenutzten Seite. Der mittlere Verschleiß bleibt gleich.
+* '''Reifendruck''': 1,8 bar ist neutral. Weniger Druck erwärmt schneller und nutzt stärker ab, mehr Druck umgekehrt; jede Abweichung kostet etwas Spitzengrip.
+
+== Tank ==
+Der Tank fasst im Modell 110 Liter. Der Verbrauch wird unter '''Optionen → Allgemein → Tank & Schaden → Tankverbrauch''' in Prozent je Sekunde bei Vollgas eingestellt (Vorgabe 1,0; 0 schaltet den Verbrauch ab). Der Regler '''Tankgewicht''' im Fahrgefühl bestimmt, wie stark ein voller Tank das Auto träger macht. Die Startmenge legt die Renneinstellung '''Tank beim Start''' fest.
+
+Bei 20 % Füllung ertönt ein Warnton, bei 10 % zwei. Ist der Tank leer, wird das Gas innerhalb von etwa zwei Sekunden auf 15 % gedrosselt; das Auto bleibt langsam fahrbar. Nach dem Tanken steht die volle Leistung sofort wieder zur Verfügung.
+
+== Schaden ==
+OmegaSim erkennt Stöße aus den Bewegungsbytes des Autos. Die zugehörigen Schalter liegen unter '''Optionen → Allgemein → Tank & Schaden''':
+{| class="wikitable"
+! Einstellung !! Wirkung !! Vorgabe
+|-
+| Crash-Erkennung || ohne sie kein Crash, kein Schaden, kein Bremsen || an
+|-
+| Schaden bei Crash || jeder Crash kostet Zustand || an (Arcade: aus)
+|-
+| Bremsen bei Crash || ein Crash nimmt den Großteil des Tempos || an
+|-
+| Nur der Rammer bremst (experimentell) || nur wer vorne einschlägt, wird gebremst || an
+|-
+| Kein Schaden im Stand || ein stehendes Auto kann aufgehoben werden, ohne Schaden zu nehmen || an
+|-
+| Crashs, bis Fahrzeug ruckelt || Anzahl Crashs bis 100 % Schaden (1 bis 50) || 5
+|-
+| Crash-Schwelle || Empfindlichkeit der Erkennung || 40
+|}
+Mit steigendem Schaden sinkt die Leistung um bis zu 30 %, bei 100 % wird sie zusätzlich halbiert. Das Auto bleibt dabei fahrbar. Ab 50 % Schaden fallen je nach Aufprallrichtung Scheinwerfer oder Rückleuchten aus. Die Reparatur in der Box verläuft nicht linear: das erste Viertel ist schnell behoben, das letzte dauert am längsten. Die Gesamtdauer stellt der Regler '''Vollständige Reparatur dauert''' ein.
+
+Im Demolition Derby gilt statt des Schadens eine eigene Health-Anzeige (siehe [[Rennarten]]).
+
+== Bremsen ==
+Unter '''Optionen → Fahrgefühl → Bremsen''' lässt sich die Bremstemperatur simulieren. Ab etwa 520 °C sinkt die Bremswirkung, bei 780 °C um höchstens 35 %. Eine einzelne Vollbremsung reicht dafür nicht, erst mehrere Bremszonen hintereinander. Ein Boxenstopp kühlt die Scheiben nicht.
+
+== Wetter ==
+Das Wetter zu Beginn wird in '''Optionen → Renneinstellungen → Wetter zu Beginn''' gewählt oder im Cockpit durch Tippen auf das Wettersymbol:
+* '''Trocken'''
+* '''Regen'''
+* '''Wechselhaft''': beginnt trocken; danach wechseln Trockenphasen von 60 bis 180 Sekunden mit Schauern von 30 bis 90 Sekunden.
+Der Schalter '''Wetter ändert sich''' löst einen einzelnen Wechsel zu einem zufälligen Zeitpunkt aus. Seit Version 1.2 beginnt jede Sitzung trocken und ohne Wetterwechsel; beide Einstellungen werden nicht mehr aus der Sicherung übernommen.
+
+Regen wirkt nicht schlagartig: Die Haftung geht mit dem Quadrat der Regenstärke zurück, sodass anfangs noch fast trocken gefahren wird, während Regen schon zu sehen und zu hören ist. Slicks fallen im Regen auf 45 % Grip, Regenreifen halten 80 %. [[Challenges]] fahren immer trocken, außer eine Strecke bringt ein festes Regenfenster mit. Im [[Mehrspieler]] folgen alle Telefone demselben Wetterplan.
+
+== Siehe auch ==
+* [[Boxenstopp]]
+* [[Fahrverhalten]]
+* [[Rennarten]]
+* [[Mehrspieler]]
+
+== Weblinks ==
+* [https://github.com/Luuke42/omegasim OmegaSim auf GitHub (Luuke42)]
+* [https://luuke42.github.io/omegasim/ OmegaSim im Browser spielen]
+
+[[Kategorie:OmegaSim]]
+[[Kategorie:Spielfunktionen]]

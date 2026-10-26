@@ -1,0 +1,93 @@
+{{Stand|app=1.2.5|appdatum=26.10.2026}}
+[[Datei:OmegaSim-NPC.png|mini|NPC-Einstellungen in der Garage von OmegaSim 1.2.5]]
+Das '''NPC-Fahrverhalten''' beschreibt, wie [[OmegaSim]] echte [[Carrera HYBRID]]-Autos ohne Fahrer selbstständig über die Bahn steuert. Solche Autos heißen in der App NPCs; im Code und in älteren Fassungen hießen sie „Ghosts“. Jeder NPC ist ein per Bluetooth verbundenes Auto mit der Garagenrolle '''NPC'''. Die App berechnet für ihn Gas und Lenkung aus Streckenlayout, Ideallinie und den anderen Autos und sendet sie im selben Takt wie für das Fahrerauto.
+
+== Voraussetzungen ==
+* Kurvendrosselung, Ideallinie und Linienmodell wirken nur, wenn ein Streckenlayout mit mindestens drei Teilen vorliegt: gebaut im [[Strecken- und Raum-Editor]], eingescannt oder beim Fahren gelernt (Schalter '''Strecke beim Fahren lernen''').
+* Unter etwa 35&nbsp;% Tempo liest ein Auto die Bahn nicht mehr zuverlässig. Deshalb beginnt der Regler '''NPC-Tempo''' bei 35&nbsp;%.
+* Die meisten Einstellungen stehen unter '''Optionen → NPCs''', die Stufe je Auto in der Garage.
+
+== Tempostufen ==
+In der Garage (FAHREN → Autos → Garage) wird für jeden NPC eine Stufe gewählt; der Knopf ↻ stellt „mittel“ wieder her.
+
+{| class="wikitable"
+! Stufe !! Geradentempo !! Bemerkung
+|-
+| einfach || 45&nbsp;% ||
+|-
+| mittel || 55&nbsp;% || Standard
+|-
+| schnell || 65&nbsp;% ||
+|-
+| MAX (in Arbeit) || eigenes Profil || siehe unten
+|}
+
+Die Stufen einfach bis schnell ändern nur das Tempo auf der Geraden; in Kurven gilt immer das Mittel-Tempo. Sie sind relativ zum Regler '''NPC-Tempo''' (Standard 55&nbsp;%, brauchbar zwischen 40 und 60&nbsp;%).
+
+=== Stufe MAX (in Arbeit) ===
+MAX-NPCs fahren mit eigenen Tempi aus '''Optionen → NPCs → Stufe MAX''':
+
+{| class="wikitable"
+! Regler !! Standard
+|-
+| MAX: Tempo auf der Geraden || 100&nbsp;%
+|-
+| MAX: Tempo in Radius-1-Kurven (60-Grad- und kleine 30-Grad-Kurve) || 52&nbsp;%
+|-
+| MAX: Tempo in Radius-2-Kurven (weite 30-Grad-Kurve) || 80&nbsp;%
+|-
+| MAX: Beschleunigung || 2× (Bereich 1–4×)
+|-
+| MAX: Bremspunkt || eine Schiene vor der Kurve
+|}
+
+Seit Version 1.2.5 hat MAX ein eigenes Motormodell mit doppelter Beschleunigung und ohne Schaltpause; vorher kam ein MAX-NPC auf kurzen Geraden kaum über sein Kurventempo. Auf Geraden bremsen ihn außerdem Feld-Staffel, Lernfaktor und Tempo-Streuung nicht mehr. Haarnadel und Engstelle, Mindesttempo, gelbe Flagge und Einführungsrunde gelten für MAX wie für alle.
+
+== Kurven, Haarnadel und Bremspunkt ==
+'''NPC: Kurvendrosselung''' (Standard 20&nbsp;%) gibt an, wie viel Tempo in Kurven abgegeben wird; Haarnadel und Engstelle bekommen das Doppelte. '''NPC: Höchsttempo in der Haarnadel''' (in Arbeit, Standard 35&nbsp;%) begrenzt das Tempo in Haarnadel, Engstelle und auf den zwei Teilen davor und gilt zuletzt: Überholschub, Feld-Staffel und Mindesttempo können es nicht überschreiten. Vor der Haarnadel bremsen alle NPCs zwei Teile vorher; ab vier Teilen davor gibt es keinen Überholschub mehr. Für MAX-NPCs ist der Bremspunkt vor anderen Kurven wählbar: eine Schiene vor der Kurve oder erst am Beginn des Kurventeils.
+
+== Ideallinie und Linienmodell ==
+Der Regler '''NPC: Ideallinie''' steuert, wie stark ein NPC außen anstellt, innen scheitelt und außen herausfährt. Über 100&nbsp;% wirkt die Linie auch auf der Geraden voll. Messungen in der Technik-Dokumentation zeigen, dass 100&nbsp;% die beste Linienform ergibt; höhere Werte erhöhen vor allem die Querlage, während die Linie im Scheitel am Lenkanschlag abgeschnitten wird.
+
+Unter '''NPC: Linienmodell''' stehen neun Modelle zur Wahl: Krümmung, Rundenzeit, Late Apex, 3-stufig, Fahrbahnmitte, Innen (gemittelt), Außen-Innen, Luuke-Linie und '''SIMULATOR''' (in Arbeit, Standard). SIMULATOR fährt bis zu 200 Linien je drei Runden mit derselben Fahrphysik wie das Fahrerauto und behält die schnellste; bis die Suche fertig ist, gilt die Luuke-Linie. Weitere Regler betreffen das Öffnen von Kurven, die Querträgheit, das Brems- und Gasverhalten, eigene Spuren je NPC und den seitlichen Versatz nebeneinander fahrender Autos.
+
+== Überholmodell ==
+Ein Überholmanöver läuft in vier Phasen ab:
+# '''Ansage''': zwei Lichthupen-Impulse (570&nbsp;ms), noch ohne Seitenbewegung.
+# '''Raus''': der Angreifer geht zur Seite (400&nbsp;ms).
+# '''Vorbei''': volle Seite mit zusätzlichem Schub, bis er 0,45 Kacheln vorn liegt.
+# '''Rein''': Einordnen in 700&nbsp;ms.
+
+Ausgelöst wird es, wenn ein Verfolger 1,3 Kacheln oder näher hinter einem anderen fährt; nach 0,9&nbsp;s würfelt er regelmäßig, ob er ansetzt. Gewählt wird die Seite, auf der der andere nicht fährt; der Vorausfahrende weicht zur anderen Seite aus. Klappt das Manöver in 5&nbsp;s nicht, bricht es ab, und für 6&nbsp;s folgt kein neuer Versuch. Nicht angesetzt wird in eine Haarnadel oder Engstelle hinein und unter gelber Flagge. Die Abstandsregel rechnet mit einer Zeitlücke von 1,2&nbsp;s statt mit Kacheln. Diese Werte stammen aus der Rennsimulation der App und nicht aus Messungen am echten Auto.
+
+Einstellbar sind '''NPC: Rennhärte''' (50&nbsp;% ist die gemessene Abstimmung), '''NPC: Überholmanöver je Runde''' (Standard 0,1 je vier Autos) und '''NPC: Feld auffächern'''. Unter '''Rennwürze''' lassen sich einzelne Zutaten zuschalten: Überholmanöver und Abstand halten (beide Standard an) sowie Tagesform, Fahrfehler, Windschatten, Verteidigen, Blaue Flagge, Fahrercharakter und Startreaktion (Standard aus).
+
+== Feld-Staffel, Streuung und Lernfaktor ==
+* '''NPC: Feld zusammenhalten''' (Standard an) bildet die Feld-Staffel: Der Erste fährt langsamer, der Letzte um denselben Betrag schneller, die Feldmitte bleibt gleich. Die '''Stärke der Staffel''' beträgt standardmäßig 10&nbsp;%. Sie wirkt ab zwei NPCs und ist unter Gelb und in der Einführungsrunde aus.
+* '''NPC: Tempo-Streuung''' (experimentell, 0–10&nbsp;%, Standard 0&nbsp;%) gibt jedem Auto je Rennen ein eigenes Grundtempo auf der Geraden.
+* '''NPC: lernt von Runde zu Runde''' (Standard aus) probiert je Runde eine kleine Änderung an Tempo und Linie und behält sie nur, wenn die Runde schneller und ohne Abgang war. Der daraus gelernte Tempofaktor ist der Lernfaktor.
+
+== NPC-Boxenstopp (in Arbeit) ==
+Mit '''NPC: Boxenstopp''' (Standard aus) fahren NPCs zwischendurch an die Box. Die Fälligkeit wird je NPC aus einem Rundenband gezogen ('''frühestens nach''' 5, '''spätestens nach''' 9 Runden), die Standzeit beträgt standardmäßig 5&nbsp;s. Ein eigener Schalter regelt Stopps außerhalb von Rennen. Seit Version 1.2.4 parkt ein NPC mit der Einparkfolge des Safety Cars ein, im Stand läuft das Geräusch einer Ratsche, und er parkt mit der Ausparkfolge wieder aus; es steht immer nur ein Auto in der Box. Die Box liegt auf Start/Ziel oder, wenn ein Safety Car in der Garage steht, hinter dessen Parkplatz (siehe [[Safety Car und Reinigungswagen]]). Bei einsetzendem Regen wechseln NPCs auf Regenreifen. Reifenverschleiß haben NPCs nicht.
+
+== NPC-Motorklang (in Arbeit) ==
+Der Ton der NPCs wird unter '''Optionen → Ton → NPC-Motorsound''' eingeschaltet (Standard aus); je NPC lassen sich Ton und Motor in der Garage wählen. Seit Version 1.2.5 schalten NPCs früher zurück (ab 5200/min), sodass ihre Gänge hörbar sind, und knallen auch beim Anbremsen aus dem Auspuff, etwas lauter als zuvor. Der Schalter '''NPC-Motorklang: alt''' (Standard aus) stellt die früheren, leiseren Knaller nur beim Gaswegnehmen wieder her.
+
+== Startaufstellung mit NPCs ==
+Die Startaufstellung wird unter '''Optionen → Renneinstellungen''' durch Ziehen oder mit den Pfeilen sortiert; das eigene Auto steht mit in der Liste. Mit '''NPC: Start je Startreihe versetzt''' (Standard an) fährt jede weitere Zweierreihe 250&nbsp;ms später los. '''Automatisch aufstellen''' (nur auf der Bahn) lässt die NPCs selbst auf ihre Plätze fahren: Jede Reihe steht eine halbe Kachel hinter der vorigen, vier Autos je Teil, kein Platz in Haarnadel oder Engstelle. Nach dem Rennen (in Arbeit) fahren die NPCs eine Runde zurück in die Startaufstellung. Verlässt ein NPC die Bahn, hält er an; der Schalter '''NPC: Rückweg nach einem Abgang''' lässt ihn zuvor bis zu 3&nbsp;s versuchen, zurückzufinden.
+
+== Technik ==
+Die Steuerung steht in <code>src/90-ghosts.js</code>. Das Motormodell eines NPCs ist eine Kopie der Abstimmung von Spieler&nbsp;1; alle Tempozahlen sind Anteile des Gasbytes. Damit der Bluetooth-Funk nicht überlastet, teilen sich mehrere NPCs eine begrenzte Paketrate. Unter '''Optionen → NPCs → Rennen simulieren''' lässt sich ein Rennen mit 2 bis 6 NPCs ohne echte Autos ablaufen: Ein Fahrzeugmodell bekommt das Gas statt der Funkbefehle. Die Ergebnisse beschreiben das Modell, nicht das Verhalten auf dem Teppich.
+
+== Siehe auch ==
+* [[Safety Car und Reinigungswagen]]
+* [[Rennarten]]
+* [[Fahrverhalten]]
+* [[Strecken- und Raum-Editor]]
+
+== Weblinks ==
+* [https://github.com/Luuke42/omegasim OmegaSim auf GitHub (Luuke42)]
+* [https://luuke42.github.io/omegasim/ OmegaSim im Browser spielen]
+
+[[Kategorie:OmegaSim]]
+[[Kategorie:Spielfunktionen]]

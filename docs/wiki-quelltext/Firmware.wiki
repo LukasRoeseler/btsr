@@ -1,0 +1,89 @@
+{{Stand|app=1.2.5|appdatum=26.10.2026}}
+Die '''Firmware''' eines [[Carrera HYBRID]]-Autos ist die Software, die im Auto selbst läuft. Sie setzt die per Bluetooth empfangenen Zielwerte für Gas und Lenkung in Motor- und Servobewegungen um, liest den Streckensensor aus und meldet den Zustand des Autos an die App.
+
+Die Firmware stammt vom Hersteller und ist nicht offengelegt. Was hier steht, ist aus Mitschnitten des Funkverkehrs der [[Original-App]], aus Versuchen mit [[OmegaSim]] und aus einem Abgleich mit der Protokollbeschreibung von seVen erschlossen.
+
+== Versionsstand ==
+'''OmegaSim liest keine Firmware-Version aus.''' Es gibt im Programm weder eine Abfrage noch eine Anzeige dafür, und die Wiki-Vorlage „Stand“ führt die Firmware deshalb als „nicht bekannt“.
+
+Bekannt ist nur der Bezugszeitraum: OmegaSim nennt als Voraussetzung unter '''Optionen → Was du brauchst''' „ein Carrera-Hybrid-Auto mit Firmware Stand August 2026“, also den Stand, mit dem die Mitschnitte und Messungen entstanden sind. Die Lizenzseite weist darauf hin, dass OmegaSim nach einem künftigen Firmware-Update möglicherweise nicht mehr funktioniert. Die interne Dokumentation hält außerdem fest, dass sich die Firmware während der Untersuchung schon einmal geändert hat, mit unbekannter Auswirkung; Messungen zu Strichcodes tragen deshalb ein Datum.
+
+== Fahrphysik im Auto ==
+Die eigentliche Fahrdynamik entsteht in der Firmware. Eine App schickt nur, was der Fahrer will: einen Gaswert um die Neutralstellung <code>0xDF</code> und einen Lenkwert von −127 bis +127. Wie stark das Auto beschleunigt, einlenkt oder Grip findet, entscheidet das Auto.
+
+Nach der Dokumentation von OmegaSim ist das Auto bei einem Vollgas-Befehl fast sofort auf Höchsttempo. OmegaSim rampt den Wert deshalb selbst über die Zeit hoch und rechnet ein eigenes Fahrmodell nur, um die zwei gesendeten Bytes zu formen (siehe [[Fahrverhalten]]). Ein Ersatz für die Firmware ist dieses Modell nicht.
+
+== Bekanntes Verhalten ==
+Folgendes Verhalten der Firmware ist durch Messungen belegt:
+
+{| class="wikitable"
+! Verhalten !! Beleg
+|-
+| Zwei Lesearten des Sensors (Bahn und Ausdruck) mit je eigener Codetabelle, gewählt über Byte 14 des Befehls || Messungen 24.–26.08.2026, siehe [[Strecke]]
+|-
+| In der Leseart „Auf der Bahn“ hält sich das Auto selbst auf der Bahn; im Ausdruck-Modus nicht || Messung vom 26.08.2026 und Fahrversuche; wie genau der Lenkwert dabei gedeutet wird, ist nicht gemessen
+|-
+| Die Leseart „Auf der Bahn“ liest die Schiene auch bei vollem Lenkanschlag || 67&nbsp;830 Meldungen mit Code, nur vier Abrisse ohne Zusammenhang zum Lenkwert
+|-
+| Nach einem erkannten Muster bleibt der Leser etwa eine Sekunde stumm || Messung am Start/Ziel-Blatt
+|-
+| An der Ziellinie setzt das Auto in der Statusmeldung ein Bit und hält es per Zeitglied rund eine Sekunde || Mitschnitt vom 21.08.2026, 16 Runden
+|-
+| Das Rücklicht schaltet die Firmware gemeinsam mit dem Scheinwerfer; ein Bit lässt den Scheinwerfer blinken || Versuche am Auto
+|-
+| Das Auto erwartet einen ständigen Befehlsstrom (OmegaSim: alle 45 ms) || Mitschnitte; ein sicherer Halt bei Ausbleiben ist vermutet, nicht gemessen
+|}
+
+Im Leitplanken-Modus der Original-App schickt die App dem Auto zusätzlich die Typen der nächsten drei Streckenteile. Die Querregelung findet demnach im Auto statt: Das Protokoll enthält keine Rückmeldung zur Querlage.
+
+== Updates über Bluetooth ==
+Das Auto unterstützt Firmware-Updates über Bluetooth („Over-the-Air-Update“, OTA). Es bietet dafür den Dienst '''Nordic Secure DFU''' an, ein Standardverfahren von Nordic Semiconductor. Der Hersteller kann über seine App so neue Firmware aufspielen.
+
+OmegaSim spielt keine Firmware auf. Der '''BLE-Explorer''' in den Entwicklertools zeigt den DFU-Dienst an, markiert ihn als gefährlich und fragt vor jedem Schreibzugriff nach, weil ein falscher Schreibbefehl das Auto in den Update-Modus versetzen oder die Firmware beschädigen kann.
+
+== Abgleich mit seVen ==
+seVen hat eine byteweise Beschreibung des HYBRID-Protokolls geteilt. In den tragenden Teilen stimmt sie mit den eigenen Messungen überein: Rahmenlänge, Rahmenkennung <code>0xAF</code>, Gasbyte um <code>0xDF</code>, Lenkbyte, Teilezähler und Streckencode. Die Abweichungen:
+
+{| class="wikitable"
+! Punkt !! seVen !! OmegaSim !! Stand
+|-
+| Rückwärtsbereich || <code>0x80</code> bis <code>0xDE</code> rückwärts || auf halben Rückwärtsweg begrenzt, weil voller Rückwärtswert vorwärts fuhr || erklärt die Beobachtung, am Auto noch nicht nachgefahren
+|-
+| Byte 8, 10, 12 des Befehls || Fahrstil (Arcade, Realistisch), Fahrassistent, Hersteller (Porsche, BMW, Ford) || feste Werte aus Mitschnitten der Original-App || vermutlich weitere gültige Werte oder andere Firmware-Fassung; nicht erprobt
+|-
+| Byte 14 der Meldung || gemessenes Tempo || nicht gelesen; Tempo in OmegaSim gerechnet || offen
+|-
+| Streckencodes || sechs weitere Codes für Boxengasse, Engstelle und 30-Grad-Kurven || übernommen || siehe [[Strecke]]
+|-
+| Akkuskala || 131 bis 155 || 138 bis 155 || beide geschätzt
+|-
+| Prüfsumme || XOR über Byte 0 bis 18 || CRC-8, Polynom <code>0x31</code>, Startwert <code>0xFF</code> || CRC-8 reproduziert drei aufgezeichnete Prüfsummen exakt
+|-
+| Bytes 16–18 || letzte Positionsdaten werden ans Auto zurückgespiegelt || Nullen, nur im Leitplanken-Modus Vorausblick || ob das Auto sie braucht, ist offen
+|}
+
+Umgekehrt fehlte in seVens Beschreibung, dass der Sensor zwei Codetabellen hat; auf Rückfrage bestätigte er, dass seine Tabelle für den Bahn-Modus gilt.
+
+== Was offen ist ==
+* der Firmware-Versionsstand der eigenen Autos (wird nicht ausgelesen)
+* ob die Bytes für Fahrstil, Fahrassistent und Hersteller das Fahrverhalten im Auto ändern
+* ob die Statusmeldung ein gemessenes Tempo enthält
+* die genaue Grenze des Rückwärtsbereichs
+* wie die Firmware aus einem Strichcode die gemeldete Zahl bildet
+* was das Auto bei ausbleibenden Befehlen genau tut
+* ob ein künftiges Update das Protokoll ändert
+
+== Siehe auch ==
+* [[Carrera HYBRID]]
+* [[Original-App]]
+* [[Strecke]]
+* [[OmegaBle]]
+* [[Fahrverhalten]]
+
+== Weblinks ==
+* [https://github.com/Luuke42/omegasim OmegaSim auf GitHub (Luuke42)]
+* [https://luuke42.github.io/omegasim/ OmegaSim im Browser spielen]
+
+[[Kategorie:OmegaSim]]
+[[Kategorie:Hardware]]
+[[Kategorie:Software]]

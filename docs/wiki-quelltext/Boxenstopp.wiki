@@ -1,0 +1,78 @@
+{{Stand|app=1.2.5|appdatum=26.10.2026}}
+[[Datei:OmegaSim-Boxen.png|mini|Der Boxenschirm im Cockpit von OmegaSim 1.2.5]]
+Der '''Boxenstopp''' ist die Funktion von [[OmegaSim]], mit der ein Fahrzeug während einer Sitzung getankt, mit neuen Reifen versehen und repariert wird. Er setzt die simulierten Zustände aus dem Kapitel [[Verschleiß]] zurück und kostet dafür Standzeit.
+
+Eine echte Boxengasse braucht es nicht: In der Vorgabe wird ein angeforderter Stopp dadurch bedient, dass das Auto an beliebiger Stelle anhält. Neben dem Standardablauf gibt es ein Boxen-Minigame, das ab Werk eingestellt ist.
+
+== Boxenstopp anfordern ==
+Ein Stopp wird über den Knopf '''Boxenstopp''' im Cockpit oder die Boxenstopp-Taste des Controllers angefordert (ab Werk Options bzw. Start). Danach gilt das Tempolimit der Boxengasse, auf dem Tacho 80 km/h. Das Limit bleibt aktiv, bis das Auto anhält (dann beginnt der Service) oder der Stopp mit einem weiteren Druck abgebrochen wird.
+
+Während der Anfahrt wird geplant, was in der Box passiert:
+* '''Reifen''': L1/LB schaltet die Mischung für den nächsten Stopp durch (weich, mittel, hart, Regen). Vorgabe ist die montierte Mischung.
+* '''Tanken''': R1/RB schaltet zwischen nein, 55 l (halb) und voll.
+* '''Reparatur''': ein beschädigtes Auto wird repariert.
+Angeboten wird nur, was simuliert wird: Tanken nur mit Tankverbrauch, Reifenwechsel nur mit Reifenmodell. Ist nichts zu tun, steht das Auto 5 Sekunden.
+
+=== Wo ist die Boxengasse? ===
+Unter '''Optionen → Allgemein → Tank & Schaden''' legt „Wo ist die Boxengasse?“ den Ort fest:
+{| class="wikitable"
+! Einstellung !! Ablauf
+|-
+| Überall halten (Vorgabe) || Der Stopp beginnt, sobald das Auto steht, egal wo.
+|-
+| Neben der Strecke || Von Hand angefordert, der Service beginnt erst, wenn das Auto neben der Bahn steht. Nur auf der Schiene sinnvoll.
+|-
+| Doppelter Start-Ausdruck (experimentell) || Zwei Ausdrucke im Abstand von 50 cm. Ein zweiter Kontakt im Zeitfenster gilt als Boxeneinfahrt, danach 4 s Tempolimit von 60 km/h. Der Knopf löst hier keinen Stopp aus.
+|}
+Mit „Boxengasse aktiv“ lässt sich die Funktion ganz abschalten.
+
+== Ablauf ==
+=== Standard ===
+Im Modus '''Standard''' laufen Tanken, Reifenwechsel und Reparatur gleichzeitig:
+* Tanken bis zur gewählten Menge; abgepumpt wird nicht.
+* Reifen: erst beide hinteren, dann beide vorderen Räder, jedes Paar von zwei Mechanikern zugleich. Ein Wechsel dauert im Mittel 4 Sekunden mit leichter Streuung. Solange die Räder ab sind, kann der Stopp nicht abgebrochen werden.
+* Reparatur: nicht linear, das erste Viertel des Schadens ist schnell behoben, das letzte dauert am längsten. Die Gesamtdauer stellt der Regler „Vollständige Reparatur dauert“ ein.
+Neue Reifen kommen kalt aus der Box, außer der Reifenwärmer ist an. Wer losfährt, beendet den Stopp; was bis dahin erledigt ist, bleibt erledigt. Eine offene Rammstrafe wird zusätzlich im Stand abgesessen.
+
+=== Boxen-Minigame ===
+Der '''Boxenstopp-Modus''' unter '''Optionen → Allgemein''' steht ab Werk auf '''Minigame''' (experimentell). Dabei wird alles erledigt, was geplant und möglich ist, und bis alles fertig ist, lassen sich Gas und Bremse nicht nutzen. Die Grunddauer ist die längste der Einzelarbeiten.
+
+In der Mitte erscheinen nacheinander fünf Tasten, jeweils Quadrat oder Kreis (Tastatur: K und I). Die letzte ist immer Kreis, damit ein nachfolgendes Quadrat nicht versehentlich den Rückwärtsgang einlegt. Jeder richtige Druck kürzt den Stopp um 8 % der Grunddauer, jeder falsche verlängert ihn um denselben Betrag; wer nichts drückt, wartet die volle Zeit. Nach der letzten Taste folgt mindestens eine Sekunde Pause, je Fehler 0,3 Sekunden mehr. Abgebrochen wird durch Tippen auf das Kreuz.
+
+Seit Version 1.2.4 erscheint der grüne Haken nur nach einem richtigen Druck, ein rotes Kreuz nach einem falschen und nach Ablauf der Zeit gar nichts. Unter dem Feld stehen der aktuelle und die drei nächsten Knöpfe in einer Reihe, die animiert weiterrutscht.
+
+Das Minigame gibt es nur, solange kein zweiter oder dritter Spieler fährt. Im [[Mehrspieler]] auf einem Gerät fährt jeder Spieler seine eigenen Stopps ohne Minigame.
+
+== Signaltöne ==
+Während der Arbeit laufen Geräusche für Schlagschrauber, Tanken und Reparatur; jede Arbeit meldet ihr Ende mit einem eigenen Signal. Seit Version 1.2.4 sind diese Signale für fertig getankt, Reifen gewechselt, repariert und „los“ mechanisch: kurze Ausschnitte aus Ratsche und Schlagschrauber. Die früheren elektronischen Töne lassen sich mit dem Schalter '''Optionen → Ton → Alte Boxen-Signaltöne''' (ab Werk aus) zurückholen.
+
+=== Herkunft der Klänge ===
+Laut audio/CREDITS.md im Repository stammt der Schlagschrauber je Radpaar (pit_wrench_paar.ogg) aus einer Pixabay-Aufnahme: „Sound Effect by Jun Su from Pixabay“, verwendet unter der Pixabay-Inhaltslizenz und bearbeitet mit tools/pit_wrench_pixabay.py. Die Lizenz erlaubt Nutzung und Bearbeitung ohne Namensnennung, verbietet aber die Weitergabe als Einzeldatei; das Original liegt deshalb nicht im Repository. Die Schleifen für Tanken und Reparatur sowie der ältere Schlagschrauber, der als Rückfall dient, sind synthetisch erzeugt.
+
+== Regeln im Rennen ==
+=== Pflichtstopps ===
+Unter '''Optionen → Renneinstellungen → Pflichtboxenstopps''' lassen sich bis zu drei Pflichtstopps vorschreiben. Ein Stopp zählt, wenn das Auto während des Rennens mindestens 3 Sekunden in der Box gestanden hat; ob alle Arbeiten fertig sind, spielt dafür keine Rolle. Für jeden verpassten Pflichtstopp gibt es eine Zeitstrafe (Vorgabe 10 Sekunden). Pflichtstopps gelten für alle von Spielern gesteuerten Autos. In der Meisterschaft werden sie je Event festgelegt (siehe [[Rennarten]]).
+
+=== Weiche Reifen verboten ===
+Die Renneinstellung '''Weiche Reifen verboten''' (in Arbeit, ab Werk aus) nimmt die weiche Mischung aus dem Rennen. Die Reifenwahl im Boxenschirm überspringt sie, und wer beim Start weiche Reifen montiert hat, bekommt mittlere, auch Spieler 2 und 3.
+
+=== Ausnahmen ===
+Im Demolition Derby gibt es keinen Boxenstopp. In [[Challenges]] mit Pflichtstopp wird das Minigame mit „Überall halten“ erzwungen.
+
+== NPC-Boxenstopp ==
+Auch NPCs können an die Box fahren. Der Schalter '''NPC: Boxenstopp''' unter '''Optionen → NPCs''' ist experimentell und ab Werk aus. Länge des Stopps (Vorgabe 5 s) und das Rundenband, aus dem jeder NPC seine nächste Fälligkeit zieht (5 bis 9 Runden), sind einstellbar; „NPC: Boxenstopp im freien Fahren“ gilt außerhalb von Rennen. NPCs haben keinen Reifen- und Tankverschleiß, kommen aber bei Regenbeginn und -ende zum Reifenwechsel.
+
+Seit Version 1.2.4 parkt ein NPC für den Stopp wie das Safety Car (in Arbeit): Er fährt mit dessen Einparkfolge an den Rand, im Stand läuft die Ratsche, danach fährt er mit der Ausparkfolge los. Es steht immer nur ein Auto in der Box. Steht ein Safety Car in der Garage, liegt die NPC-Box auf dem ersten Stück mit zwei Geraden ab drei Teilen hinter dessen Parkplatz. Näheres auf den Seiten [[Safety Car und Reinigungswagen]] und [[NPC-Fahrverhalten]].
+
+== Siehe auch ==
+* [[Verschleiß]]
+* [[Rennarten]]
+* [[Safety Car und Reinigungswagen]]
+* [[NPC-Fahrverhalten]]
+
+== Weblinks ==
+* [https://github.com/Luuke42/omegasim OmegaSim auf GitHub (Luuke42)]
+* [https://luuke42.github.io/omegasim/ OmegaSim im Browser spielen]
+
+[[Kategorie:OmegaSim]]
+[[Kategorie:Spielfunktionen]]
