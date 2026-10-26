@@ -347,8 +347,68 @@
   // Welche Belegung die Tabelle/Grafik/Erfassung gerade bearbeitet. 1 ist die Vorgabe, weil
   // die Kachel ohne Zwei-Spieler-Modus gar keine Wahl anzeigt (siehe bindPlayerRowZeichnen).
   let bindEditSpieler = 1;
-  function activeBindings() { return bindingsVon(bindEditSpieler); }
-  function activeSaveBindings() { return saveBindingsVon(bindEditSpieler); }
+  // ---- ABGLEICH-SITZUNG (v1.1.45) ---------------------------------------------------------
+  // GEMELDET: "Waehrend des Abgleichs eines Controllers wird bei manchen Tasten-Eingaben das Abgleich-Menue
+  // verlassen. Mach es so, dass erst nachdem ein Uebernehmen-Button bestaetigt wurde, auf die dahinterliegenden
+  // Funktionen reagiert wird." Ursache: nach einer Erfassung galt die noch gehaltene Taste im naechsten Takt als
+  // neuer Druck ihrer (neuen oder alten) Aktion - Kreis = Zurueck, L1/R1 = Reiter, Options = Cockpit ...
+  // Jetzt: der erste Klick auf "Neu zuweisen", "x" oder "Standard" beginnt eine Sitzung. Alle Aenderungen gehen in
+  // einen ENTWURF; solange sie laeuft, loesen die Pads nichts anderes aus (bindPadSitzung). Gespeichert wird erst
+  // mit "Uebernehmen" (Knopf, oder Options 1 s halten), "Abbrechen" verwirft. Danach bleiben die Pads gesperrt, bis
+  // alle Tasten losgelassen sind - sonst feuerte die gehaltene Options-Taste gleich wieder.
+  let bindSitzung = null;          // { spieler, entwurf, optionsSeit }
+  let bindSperreBisLos = false;
+  const BIND_OPTIONS_HALTEN_MS = 1000;
+  function activeBindings() {
+    return bindSitzung && bindSitzung.spieler === bindEditSpieler ? bindSitzung.entwurf : bindingsVon(bindEditSpieler);
+  }
+  function activeSaveBindings() {
+    if (bindSitzung) return;     // der Entwurf wird erst mit "Uebernehmen" gespeichert
+    return saveBindingsVon(bindEditSpieler);
+  }
+  function bindSitzungStarten() {
+    if (bindSitzung) return;
+    bindSitzung = { spieler: bindEditSpieler, entwurf: JSON.parse(JSON.stringify(bindingsVon(bindEditSpieler))), optionsSeit: 0 };
+  }
+  function bindSitzungEnde(uebernehmen) {
+    const s = bindSitzung;
+    if (!s) return;
+    if (uebernehmen) {
+      const live = bindingsVon(s.spieler);
+      for (const k of Object.keys(live)) if (!(k in s.entwurf)) delete live[k];
+      Object.assign(live, s.entwurf);
+      saveBindingsVon(s.spieler);
+      log('Tastenbelegung (Spieler ' + s.spieler + ') uebernommen.', 'info');
+      if (typeof showHudToast === 'function') showHudToast(t('Belegung übernommen'));
+    } else {
+      log('Tastenbelegung (Spieler ' + s.spieler + '): Aenderungen verworfen.', 'info');
+    }
+    bindSitzung = null;
+    listeningFor = null;
+    bindRuhe = null;
+    bindSperreBisLos = true;
+    renderBindTable();
+  }
+  // Alle Knoepfe losgelassen? (Achsen zaehlen nicht: eine RC-Fernbedienung ruht bei -1.)
+  function padAllesLos(pad) {
+    return !pad || Array.prototype.every.call(pad.buttons || [], (b) => !b.pressed && !((b.value || 0) > 0.3));
+  }
+  // Der Takt eines Pads waehrend einer Sitzung: nur erfassen und auf "Options halten" achten. true = der Takt
+  // gehoert der Sitzung (oder der Sperre danach), sonst nichts tun.
+  function bindPadSitzung(pad, nr) {
+    if (!bindSitzung) return bindSperreBisLos;
+    if (listeningFor && bindSitzung.spieler === nr) {
+      tryCaptureBinding(pad);
+      return true;
+    }
+    const opt = pad.buttons && pad.buttons[9] && (pad.buttons[9].pressed || (pad.buttons[9].value || 0) > 0.5);
+    const jetzt = performance.now();
+    if (opt) {
+      if (!bindSitzung.optionsSeit) bindSitzung.optionsSeit = jetzt;
+      else if (jetzt - bindSitzung.optionsSeit >= BIND_OPTIONS_HALTEN_MS) bindSitzungEnde(true);
+    } else if (bindSitzung) bindSitzung.optionsSeit = 0;
+    return true;
+  }
   if (bindings.__migrated) {
     delete bindings.__migrated;
     saveBindings();
@@ -526,6 +586,10 @@
     const ab = activeBindings();
     const body = $('bind-table-body');
     body.innerHTML = '';
+    // Sitzung sichtbar machen: Uebernehmen/Abbrechen nur waehrend einer Sitzung.
+    if ($('bind-uebernehmen')) $('bind-uebernehmen').hidden = !bindSitzung;
+    if ($('bind-abbrechen')) $('bind-abbrechen').hidden = !bindSitzung;
+    if ($('bind-sitzung-hinweis')) $('bind-sitzung-hinweis').hidden = !bindSitzung;
     Object.keys(BIND_ACTION_LABELS).forEach(action => {
       const tr = document.createElement('tr');
       const listening = listeningFor === action;
@@ -552,6 +616,7 @@
     body.querySelectorAll('button[data-loeschen]').forEach(btn => {
       btn.onclick = () => {
         const action = btn.dataset.loeschen;
+        bindSitzungStarten();
         activeBindings()[action] = null;
         activeSaveBindings();
         renderBindTable();
@@ -561,6 +626,7 @@
     });
     body.querySelectorAll('button[data-action]').forEach(btn => {
       btn.onclick = () => {
+        bindSitzungStarten();
         listeningFor = btn.dataset.action;
         // Die Ruhelage wird beim naechsten Takt frisch genommen, nicht jetzt: jetzt haelt
         // die Hand noch die Maus, und der Knueppel steht vielleicht noch nicht in Ruhe.
@@ -574,6 +640,8 @@
       btn.addEventListener('click', () => {
         const ziel = Number(btn.dataset.spieler);
         if (ziel === bindEditSpieler) return;
+        // v1.1.45: mitten in einer Sitzung nicht umschalten - der Entwurf gehoert zu diesem Spieler.
+        if (bindSitzung) { if (typeof showHudToast === 'function') showHudToast(t('Erst übernehmen oder abbrechen')); return; }
         // Ein Wechsel mitten in der Erfassung wuerde die Eingabe des naechsten
         // Knopfdrucks der FALSCHEN Belegung zuschreiben - deshalb abbrechen statt
         // umzuschalten.
@@ -591,11 +659,15 @@
   // Fehlerklasse wie eine tote Element-id.
 
   $('bind-reset').onclick = () => {
-    if (bindEditSpieler >= 2) { zusatzPlatz(bindEditSpieler).bindings = { ...DEFAULT_BINDINGS2 }; saveBindingsVon(bindEditSpieler); }
-    else { bindings = { ...DEFAULT_BINDINGS }; saveBindings(); }
+    // v1.1.45: auch das Zuruecksetzen ist ein Entwurf, bis "Uebernehmen".
+    bindSitzungStarten();
+    bindSitzung.entwurf = JSON.parse(JSON.stringify(bindEditSpieler >= 2 ? DEFAULT_BINDINGS2 : DEFAULT_BINDINGS));
     renderBindTable();
     log('Tastenbelegung (Spieler ' + bindEditSpieler + ') auf Standard zurückgesetzt.', 'info');
   };
+
+  if ($('bind-uebernehmen')) $('bind-uebernehmen').onclick = () => bindSitzungEnde(true);
+  if ($('bind-abbrechen')) $('bind-abbrechen').onclick = () => bindSitzungEnde(false);
 
   const AXIS_CAPTURE_THRESHOLD = 0.6;
   const BUTTON_CAPTURE_THRESHOLD = 0.5;
@@ -644,7 +716,9 @@
     if (!listeningFor) return;
     const action = listeningFor;
     const ziel = activeBindings();
-    if (!bindRuhe) { bindRuheNehmen(pad); return; }
+    // v1.1.45: die Ruhelage erst nehmen, wenn alle Knoepfe losgelassen sind. Wer "Neu zuweisen" mit X am Pad
+    // ausloest, haelt X noch - die Ruhelage hiess dann "X gedrueckt", und das Loslassen wurde als X erfasst.
+    if (!bindRuhe) { if (!padAllesLos(pad)) return; bindRuheNehmen(pad); return; }
     let bester = null;
     for (let i = 0; i < pad.axes.length; i++) {
       const ruhe = bindRuhe.achsen[i] === undefined ? 0 : bindRuhe.achsen[i];
@@ -1339,6 +1413,10 @@
       return;
     }
     if (!car.rx) return;
+    // v1.1.45: waehrend das Auto neu verbunden wird, nicht schreiben. Die Schreibversuche ins Leere liessen die
+    // Bruecke den schnellen Weg (OmegaBle) fuer bis zu 10 Minuten sperren - die gemeldete Verzoegerung nach
+    // einem Neuverbinden. Das Fahrerauto prueft das schon in funkSchreiben.
+    if (car.rx.verbindungWeg) return;
     // Das FAHRERAUTO geht durch dasselbe Schloss wie der Sendetakt (20-protocol.js): Blinken,
     // Stopp und Latenzprobe schrieben sonst neben dem Takt her ans selbe Merkmal - genau die
     // Ueberlappung, bei der das Plugin der App eine Antwort verliert (v0.8.41).
@@ -2304,10 +2382,30 @@
     tx.addEventListener('characteristicvaluechanged', car.notifyHandler);
     return car;
   }
+  // v1.1.45 GEMELDET: Auto leuchtet hell ("verbunden"), die App ist es aber nicht; nur das Ladegeraet hilft.
+  // Ein Verbindungsaufbau, der nach gatt.connect() scheitert (Dienst, Merkmal, Abo) oder haengt, liess die
+  // Verbindung stehen. Jetzt: hoechstens 20 s, und bei JEDEM Fehler wird getrennt (die Bruecke schliesst dabei
+  // auch den nativen Griff, 05-app-bruecke.js).
+  const VERBINDE_FRIST_MS = 20000;
+  async function verbindeGattSicher(car) {
+    let uhr = null;
+    try {
+      return await Promise.race([
+        verbindeGatt(car),
+        new Promise((_, nein) => { uhr = setTimeout(() => nein(new Error('Zeitueberschreitung beim Verbinden')), VERBINDE_FRIST_MS); }),
+      ]);
+    } catch (e) {
+      try { car.device.gatt.disconnect(); } catch (e2) { /* schon weg */ }
+      throw e;
+    } finally { clearTimeout(uhr); }
+  }
   function reconnectCar(car) {
     if (car.trennend || car.reconnectLaeuft) return;
     if ((car.reconnectVersuche || 0) >= VERBINDE_NEU_MAX) {
       log(`${garageLabel(car)}: Neu verbinden nach ${VERBINDE_NEU_MAX} Versuchen fehlgeschlagen.`, 'err');
+      // v1.1.45: auch beim Aufgeben trennen - sonst blieb eine halbe Verbindung stehen.
+      car.trennend = true;
+      try { car.device.gatt.disconnect(); } catch (e) { /* schon weg */ }
       removeCar(car);
       return;
     }
@@ -2319,7 +2417,7 @@
     setTimeout(async () => {
       if (car.trennend) { car.reconnectLaeuft = false; return; }
       try {
-        await verbindeGatt(car);
+        await verbindeGattSicher(car);
         car.reconnectVersuche = 0;
         log(`${garageLabel(car)} wieder verbunden.`, 'info');
       } catch (e) {
@@ -2355,8 +2453,16 @@
     }
   }
   // v1.1.3: der Teil nach der Auswahl, auch fuer das automatische Verbinden beim Start.
+  // v1.1.45: Kennungen, die gerade verbunden werden - das automatische Verbinden beim Start und ein Klick auf
+  // "Auto verbinden" griffen sonst gleichzeitig zum selben Auto (zwei ueberlappende Aufbauten).
+  const garVerbindetGerade = new Set();
   async function garageGeraetAufnehmen(dev, opt) {
-    {
+    if (garVerbindetGerade.has(String(dev.id))) {
+      if (!(opt && opt.auto)) log('Dieses Auto wird gerade verbunden.', 'info');
+      return;
+    }
+    garVerbindetGerade.add(String(dev.id));
+    try {
       if (garage.some(c => c.device.id === dev.id)) {
         if (!(opt && opt.auto)) log('Dieses Auto ist bereits verbunden.', 'info');
         return;
@@ -2370,15 +2476,16 @@
         // Auto-Reconnect (v1.0.73): siehe reconnectCar.
         trennend: false, reconnectLaeuft: false, reconnectVersuche: 0,
       };
-      await verbindeGatt(car);
-      dev.addEventListener('gattserverdisconnected', () => {
+      await verbindeGattSicher(car);
+      car.trennHandler = () => {
         if (car.trennend) return;
         // v1.1.3: bis zum Neuverbinden nicht mehr schreiben (siehe funkSchreiben) - vorher
         // ~22 Fehlversuche je Sekunde, jeder mit einer Logzeile.
         if (car.rx) car.rx.verbindungWeg = true;
         log(`${garageLabel(car)} getrennt - verbinde neu.`, 'warn');
         reconnectCar(car);
-      });
+      };
+      dev.addEventListener('gattserverdisconnected', car.trennHandler);
       garage.push(car);
       carAssign(car);
       // First car connected takes the wheel, as requested. BESTELLT: "1. Verbundene auto =
@@ -2403,6 +2510,8 @@
       else setCarRole(car, 'ghost');
       log(`${garageLabel(car)} verbunden (${garage.length} insgesamt)` + (opt && opt.auto ? ' - automatisch beim Start.' : '.'), 'info');
       playStartFx();
+    } finally {
+      garVerbindetGerade.delete(String(dev.id));
     }
   }
 
@@ -2445,7 +2554,29 @@
     if (n) showHudToast(t('{n} Auto(s) automatisch verbunden').replace('{n}', n));
     return n;
   }
-  setTimeout(() => { autoVerbindenStart().catch(() => {}); }, 1500);
+  // v1.1.45: vor dem automatischen Verbinden alle Verbindungen schliessen, die das Plugin vom letzten Laden der
+  // Seite noch haelt (Neuladen nach Update, Sicherung, Direktweg). Sonst hielten sich diese Autos fuer verbunden
+  // ("helles Licht"), warben nicht mehr - und waren nur ueber das Ladegeraet zurueckzuholen.
+  setTimeout(async () => {
+    try {
+      const b = window.OMEGA_BRUECKE;
+      if (b && typeof b.alleSchliessen === 'function' && !garage.length) {
+        const r = await b.alleSchliessen();
+        if (r && r.anzahl) {
+          log('Beim Start ' + r.anzahl + ' alte Verbindung(en) geschlossen.', 'info');
+          await new Promise((ok) => setTimeout(ok, 1500));   // das Auto wirbt erst wieder, wenn es die Trennung bemerkt
+        }
+      }
+    } catch (e) { /* aeltere APK ohne die Methode */ }
+    autoVerbindenStart().catch(() => {});
+  }, 1500);
+  // Beim Verlassen der Seite (Neuladen, Update) alle Autos trennen, statt die Verbindungen haengen zu lassen.
+  window.addEventListener('pagehide', () => {
+    for (const c of garage) {
+      c.trennend = true;
+      try { c.device.gatt.disconnect(); } catch (e) { /* schon weg */ }
+    }
+  });
 
   // Per-car telemetry. Byte 12 is the tile code, byte 11 the tile counter, byte 3 a
   // rotation signal. lastCodeAt is what the ghost's off-track cut-out is built on.
@@ -2457,9 +2588,30 @@
     return new Uint8Array(v.buffer, v.byteOffset, v.byteLength);
   }
 
+  // ---- MELDETAKT UEBERWACHEN (v1.1.45) -----------------------------------------------------
+  // GEMELDET: mit 3 NPCs und Safety Car wieder Verzoegerung, nach Neuverbinden und einer Runde war es gut.
+  // Android geht nach einiger Zeit oft vom schnellen Verbindungsintervall zurueck, und angefordert wurde es nur
+  // beim Verbinden (und 5 s danach). Ein Auto meldet sich normal etwa alle 45 ms; liegt der geglaettete Abstand
+  // laenger als MELDE_LANGSAM_MS darueber, wird die hohe Prioritaet erneut angefordert - hoechstens alle 20 s.
+  const MELDE_LANGSAM_MS = 75, MELDE_PRIO_PAUSE_MS = 20000;
+  function meldetaktBeobachten(car, jetzt) {
+    if (car.meldungAt) {
+      const d = Math.min(1000, jetzt - car.meldungAt);
+      car.meldeAbstand = car.meldeAbstand === undefined ? d : car.meldeAbstand + (d - car.meldeAbstand) * 0.05;
+      const b = window.OMEGA_BRUECKE;
+      if (car.meldeAbstand > MELDE_LANGSAM_MS && jetzt - (car.prioAt || 0) > MELDE_PRIO_PAUSE_MS
+          && b && typeof b.prioritaetHoch === 'function') {
+        car.prioAt = jetzt;
+        b.prioritaetHoch(car.device.id);
+        log(garageLabel(car) + ': Meldungen nur alle ' + Math.round(car.meldeAbstand) + ' ms - schnelles Verbindungsintervall neu angefordert.', 'info');
+      }
+    }
+    car.meldungAt = jetzt;
+  }
   function onCarNotify(car, e) {
     const b = notifyBytes(e.target.value);
     if (b.length < 16) return;
+    meldetaktBeobachten(car, performance.now());
     recNotify(b, garageLabel(car));
     // Lap timing for EVERY connected car, whatever its role: the start/finish code arrives
     // on its own notify stream, so there is no reason to only count the player's laps.
@@ -2614,18 +2766,33 @@
         if (z.nr >= 3 && typeof stimmeStoppenVon === 'function') stimmeStoppenVon(z);
       }
     }
+    // v1.1.45: der Trennmelder des Geraets gehoert zu diesem Auto - abmelden, sonst laeuft er beim naechsten
+    // Verbinden desselben Geraets doppelt.
+    if (car.trennHandler) { try { car.device.removeEventListener('gattserverdisconnected', car.trennHandler); } catch (e) { /* egal */ } }
     renderGarage();
   }
 
   async function disconnectCar(car) {
     stopGhost(car);
     car.trennend = true;
-    try { if (car.device.gatt.connected) car.device.gatt.disconnect(); } catch (e) { /* gone */ }
+    // v1.1.45: immer trennen, auch wenn das Geraet sich fuer getrennt haelt (siehe 05-app-bruecke.js).
+    try { car.device.gatt.disconnect(); } catch (e) { /* gone */ }
     removeCar(car);
   }
 
   $('gar-connect').onclick = () => garageConnect();
-  $('gar-disconnect-all').onclick = () => { [...garage].forEach(disconnectCar); };
+  // v1.1.45: "Alle trennen" raeumt in der App auch haengende Verbindungen auf - Autos, die das System als
+  // verbunden meldet, die aber in keiner Garage stehen (helles Licht ohne Verbindung).
+  $('gar-disconnect-all').onclick = async () => {
+    [...garage].forEach(disconnectCar);
+    const b = window.OMEGA_BRUECKE;
+    if (b && typeof b.verwaisteTrennen === 'function') {
+      try {
+        const n = await b.verwaisteTrennen([]);
+        if (n) { showHudToast(t('{n} haengende Verbindung(en) getrennt').replace('{n}', n)); log(n + ' haengende Verbindung(en) getrennt.', 'info'); }
+      } catch (e) { /* aeltere APK */ }
+    }
+  };
   renderGarage();
 
 
@@ -3975,6 +4142,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function ghostOrt(car) {
     const g = car && car.ghost;
     if (!g || g.tileIndex === null || g.tileIndex === undefined) return null;
+    // v1.1.45: der neue Zaehlerstand ist schon da (car.tileAt neu gesetzt), der Index zieht aber erst im
+    // naechsten Takt nach. Bis dahin lag die Phase bei ~0 auf der ALTEN Kachel - der Punkt sprang eine Kachel
+    // zurueck und gleich wieder vor. Jetzt bleibt er so lange am Ende der alten Kachel stehen.
+    if (car.tileCount !== null && car.tileCount !== undefined && g.lastCount !== null
+        && g.lastCount !== undefined && car.tileCount !== g.lastCount && !g.recoverUntil) {
+      return g.tileIndex + 1 - ORT_RAND;
+    }
     return g.tileIndex + Math.min(ghostTilePhase(car), 1 - ORT_RAND);
   }
 
@@ -5210,9 +5384,17 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return r > 1 - 1e-9 ? 0 : r;
   }
   // Steht der Ort (Kachel + Phase) auf der Zielkachel und mindestens am Haltepunkt?
+  // v1.1.45 GEMELDET: "Startaufstellung: Autos 1 und 2 gehen ganz gut, alle anderen nicht." Reihe 1 haelt an der
+  // Kachelkante (Anteil 0,0/0,15) - die ist durch den Zaehlersprung exakt bekannt. Ab Reihe 2 liegt der Haltepunkt
+  // mitten in der Kachel (0,5/0,65), und dort ist der Ort eine Schaetzung: erreichte sie den Anteil nicht, bevor der
+  // Zaehler weitersprang, fuhr das Auto vorbei und eine weitere Runde. Jetzt gilt auch: der Platz ist schon
+  // ueberfahren, aber hoechstens eine halbe Kachel - dann sofort parken, statt eine Runde zu drehen.
   function aufstellAmPunkt(o, ziel, platz) {
-    if (o === null || o === undefined || Math.floor(o) !== ziel) return false;
-    return (o - Math.floor(o)) >= aufstellHaltBruch(platz) - 1e-9;
+    if (o === null || o === undefined) return false;
+    const n = currentTrackTiles ? currentTrackTiles.length : 0;
+    const k = Math.floor(o);
+    if (k === ziel) return (o - k) >= aufstellHaltBruch(platz) - 1e-9;
+    return n > 0 && k === (ziel + 1) % n && (o - k) < 0.5;
   }
   // ---- AUFGENOMMENE MANOEVER (v1.1.30, WIP) ------------------------------------------------
   // BESTELLT: "Anbei sind die Aufnahmen fuer Aufstellung (rechts und links) und Safety Car auf dem
@@ -5274,7 +5456,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Takt: Zeiten und Lenkung unveraendert (links mit umgekehrtem Vorzeichen), das Gas mal aufstellScGas()
   // (Regler, Vorgabe 75 %). Immer diese Folge, auch auf Kurventeilen (die Haarnadel ist als Platz ohnehin
   // ausgeschlossen, aufstellZielOrt) - vorher fiel jeder Platz mit Kurve auf den kurzen Lenkimpuls zurueck.
-  const AUFSTELL_SC_GAS = 0.75, AUFSTELL_SC_GAS_STORE = 'omegasim-aufstell-sc-gas';
+  // v1.1.45 GEMELDET: "Autos 1 und 2 sind minimal zu weit aussen" - Vorgabe 70 % statt 75 %.
+  const AUFSTELL_SC_GAS = 0.70, AUFSTELL_SC_GAS_STORE = 'omegasim-aufstell-sc-gas-v2';
+  const AUFSTELL_BODEN = 0.28;
   function aufstellScGas() { return einparkWert('race-einpark-sc-gas', AUFSTELL_SC_GAS, 0.4, 1); }
   function aufstellSkript(seite) {
     const f = aufstellScGas(), s = seite > 0 ? 1 : -1;
@@ -7784,13 +7968,24 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // bedient, haette fuer den halben Aufrufer immer die falschen Argumente.
     if (c.tileCount !== null && c.tileCount !== undefined
         && c.tileCount !== g.lastCount) {
+      // v1.1.45 GEMELDET: "Die Position auf der Strecke sieht zum Teil verbuggt aus." Zwei Ursachen beim eigenen
+      // Auto: (1) seine Ortung mass keine Kachelzeiten - die Phase lief mit festen 800 ms je Kachel, blieb bei
+      // schneller Fahrt am Kachelende stehen und sprang; jetzt dieselbe Messung je Typ wie bei den NPCs.
+      // (2) Unter Funklast gehen Meldungen verloren, und der Zaehler sprang um 2 - gezaehlt wurde trotzdem nur 1.
+      // Jetzt der wirkliche Abstand (Byte 11 laeuft ueber, also & 0xff), hoechstens 3.
+      const schritte = g.lastCount === null || g.lastCount === undefined
+        ? 1 : Math.max(1, Math.min(3, (c.tileCount - g.lastCount) & 0xff));
       if (g.tileStart) {
         g.tileRing.push(now - g.tileStart);
         if (g.tileRing.length > GHOST_ZAEHLER_FENSTER) g.tileRing.shift();
+        if (schritte === 1) {
+          const verlassen = currentTrackTiles[g.tileIndex] ? currentTrackTiles[g.tileIndex].type : null;
+          ghostNoteTileTime(c, now - g.tileStart, verlassen);
+        }
       }
       g.tileStart = now;
       g.lastCount = c.tileCount;
-      g.tileIndex = g.tileIndex === null ? 0 : (g.tileIndex + 1) % currentTrackTiles.length;
+      g.tileIndex = g.tileIndex === null ? 0 : (g.tileIndex + schritte) % currentTrackTiles.length;
       g.tilesTotal = (g.tilesTotal || 0) + 1;
       // Und die Ausrichtung ueber den gemeldeten Code. Sie braucht einen Startwert, den die
       // Zeile darueber liefert - ortAbgleich() VERFEINERT den Index, es setzt ihn nicht.
@@ -10309,7 +10504,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         // waehrend der Aufstellung weder sein Mindesttempo noch sein Heimweg-Tempo.
         const abstand = car.role === 'safetycar' ? gelbAbstandFaktor(car)
           : (spice.haeltAbstand ? Math.min(1, spice.factor) : 1);
-        target = g.aufstellAb && now < g.aufstellAb ? 0 : aufstellTempo(car) * abstand;
+        // v1.1.45: ein Boden in der Schlange - hinter einem einparkenden Auto fiel das Tempo sonst unter die
+        // Lesegrenze, das Auto meldete 0x00 und wurde als "Bahn verlassen" abgestellt.
+        target = g.aufstellAb && now < g.aufstellAb ? 0
+          : Math.max(aufstellTempo(car) * abstand, Math.min(aufstellTempo(car), AUFSTELL_BODEN));
         aufstellenPruefen(car);
       }
       // ---- STARTREAKTION UND VORSICHT IN DER ERSTEN KURVE ---------------------------
@@ -11788,6 +11986,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // wie pollGamepad() es fuer Spieler 1 tut, nur auf dem jeweils anderen Pad. Ohne diese
     // Abzweigung wuerde Spieler 2 hier weiterfahren, waehrend seine eigene Zuordnung
     // wartet - und ein Tritt aufs Gas waere die naechste "Zuordnung".
+    // v1.1.45: waehrend einer Abgleich-Sitzung (und bis alles losgelassen ist) tut dieses Pad nichts anderes.
+    if (bindSitzung || bindSperreBisLos) {
+      bindPadSitzung(pad, z.nr);
+      z.steer = 0; z.throttle = 0;
+      return;
+    }
     if (listeningFor && bindEditSpieler === z.nr) {
       tryCaptureBinding(pad);
       return;
@@ -11897,6 +12101,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const spieler = padsFuerSpieler();
     if (spieler.p1) spieler.p1 = padNativ(spieler.p1);
     padBelegungAbgleichen(spieler);
+    // v1.1.45: nach einer Abgleich-Sitzung erst wieder reagieren, wenn an KEINEM Pad noch eine Taste gehalten wird.
+    if (bindSperreBisLos && !bindSitzung) {
+      const alle = [spieler.p1].concat(zusatzPlaetze().map((z) => spieler['p' + z.nr])).filter(Boolean);
+      if (alle.every(padAllesLos)) bindSperreBisLos = false;
+    }
     // Spieler 2 zuerst, und ohne Bedingung auf `pad`: sein Eingang muss auch dann auf null
     // gehen, wenn Spieler 1 gar kein Pad hat (der Rumpf darunter kehrt dann frueh zurueck).
     for (const z of zusatzPlaetze()) {
@@ -11920,6 +12129,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     padConnected = true;
     padLastPollTime = performance.now();
+    // v1.1.45: Abgleich-Sitzung - das Pad erfasst nur, sonst nichts (siehe bindPadSitzung).
+    if ((bindSitzung || bindSperreBisLos) && bindPadSitzung(pad, 1)) {
+      releaseInput(SRC.PAD);
+      return;
+    }
     // Startaufstellung offen: das Steuerkreuz waehlt den Knopf (X bestaetigt, flagTasteTick).
     if (typeof raceGridOffen === 'function' && raceGridOffen()) {
       const r = (padDpad(pad, 'left') || padDpad(pad, 'up')) ? -1

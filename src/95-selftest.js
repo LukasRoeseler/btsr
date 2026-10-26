@@ -5427,6 +5427,97 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gerade 100, R1 52, R2 80, Bremspunkt Schiene/Teil, Haarnadel normal' };
   });
 
+  // v1.1.45 GEMELDET: helles Licht ohne Verbindung (Kopplung), Latenz nach Neuverbinden, Abgleich verlaesst das
+  // Menue, Kartenpunkte springen, Aufstellung ab Reihe 2, Regenflackern; dazu Kleinigkeiten.
+  stAdd('Kopplung, Abgleich und Karte v1.1.45: Trennen bei Fehler, Entwurf bis Uebernehmen, Punkt springt nicht', async () => {
+    const f = [];
+    // Kopplung: ein Aufbau, der nach connect scheitert, trennt; ein zweiter gleichzeitiger wird abgewiesen.
+    let getrennt = 0;
+    const dev = { id: 'probe-kopplung', addEventListener() {}, removeEventListener() {},
+      gatt: { connected: false, disconnect() { getrennt++; },
+              connect: async () => ({ getPrimaryService: async () => { throw new Error('Dienst fehlt'); } }) } };
+    const car = { device: dev, rx: null, tx: null };
+    try { await verbindeGattSicher(car); f.push('Fehler kam nicht an'); } catch (e) { /* erwartet */ }
+    if (getrennt !== 1) f.push('nach gescheitertem Aufbau ' + getrennt + 'x getrennt statt 1x');
+    garVerbindetGerade.add('probe-kopplung');
+    const vorher = garage.length;
+    try { await garageGeraetAufnehmen(dev, { auto: true }); } finally { garVerbindetGerade.delete('probe-kopplung'); }
+    if (garage.length !== vorher) f.push('doppelter Aufbau nicht abgewiesen');
+    // Latenz: waehrend des Neuverbindens schreibt ein NPC nicht.
+    let geschrieben = 0;
+    const npc = { role: 'ghost', device: { id: 'probe-funk' }, rx: { verbindungWeg: true, properties: { writeWithoutResponse: true },
+                  writeValueWithoutResponse: async () => { geschrieben++; } } };
+    await writeToCar(npc, 0, 0.3, 0);
+    if (geschrieben) f.push('schreibt waehrend des Neuverbindens');
+    // Abgleich: Entwurf statt Speichern, Pads gesperrt, Ruhelage erst bei losgelassenen Tasten.
+    const merk = { b: JSON.stringify(bindings), sp: bindEditSpieler, sperre: bindSperreBisLos };
+    try {
+      bindEditSpieler = 1;
+      const knopf = $('bind-table-body') && $('bind-table-body').querySelector('button[data-action="downshift"]');
+      if (!knopf) f.push('kein Knopf Neu zuweisen');
+      else knopf.click();
+      if (!bindSitzung || listeningFor !== 'downshift') f.push('Sitzung beginnt nicht');
+      if (!$('bind-uebernehmen') || $('bind-uebernehmen').hidden) f.push('Uebernehmen nicht sichtbar');
+      const pad = (gedrueckt) => ({ axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: gedrueckt.includes(i), value: gedrueckt.includes(i) ? 1 : 0 })) });
+      tryCaptureBinding(pad([0]));               // X noch gehalten -> keine Ruhelage
+      if (bindRuhe) f.push('Ruhelage mit gehaltener Taste genommen');
+      tryCaptureBinding(pad([]));                // losgelassen -> Ruhelage
+      tryCaptureBinding(pad([3]));               // Dreieck
+      if (!bindSitzung || bindSitzung.entwurf.downshift.index !== 3) f.push('Entwurf nicht gesetzt');
+      if (bindings.downshift.index === 3) f.push('Live-Belegung schon geaendert');
+      if (bindPadSitzung(pad([1]), 1) !== true) f.push('Pad waehrend der Sitzung nicht gesperrt');
+      bindSitzung.optionsSeit = performance.now() - 2000;
+      bindPadSitzung(pad([9]), 1);              // Options gehalten -> Uebernehmen
+      if (bindSitzung) f.push('Options halten uebernimmt nicht');
+      if (bindings.downshift.index !== 3) f.push('Uebernehmen schreibt nicht');
+      if (!bindSperreBisLos) f.push('keine Sperre bis alles losgelassen');
+    } finally {
+      const alt = JSON.parse(merk.b);
+      for (const k of Object.keys(bindings)) delete bindings[k];
+      Object.assign(bindings, alt); saveBindings();
+      bindSitzung = null; listeningFor = null; bindRuhe = null; bindSperreBisLos = merk.sperre; bindEditSpieler = merk.sp;
+      renderBindTable();
+    }
+    // Karte: steht der neue Zaehlerstand schon da, bleibt der Punkt am Ende der alten Kachel.
+    const kc = { tileCount: 8, ghost: { tileIndex: 3, lastCount: 7, tileStart: Date.now() } };
+    const o = ghostOrt(kc);
+    if (!(o > 3.9 && o < 4)) f.push('Punkt springt zurueck: ' + o);
+    // Aufstellung: knapp ueberfahrener Platz gilt.
+    const merkT = currentTrackTiles;
+    try {
+      currentTrackTiles = codeToTrack('SG3RG2').tiles;
+      if (!aufstellAmPunkt(5.2, 4, 2)) f.push('ueberfahrener Platz (0,2 Teile) nicht angenommen');
+      if (aufstellAmPunkt(5.7, 4, 2)) f.push('weit ueberfahrener Platz angenommen');
+    } finally { currentTrackTiles = merkT; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'trennt bei Fehler, kein Doppelaufbau, NPC still beim Neuverbinden, Entwurf bis Uebernehmen, Punkt haelt, Platz knapp ueberfahren gilt' };
+  });
+
+  stAdd('Regen und Kleinigkeiten v1.1.45: kein Filter-Blitz, Regen ohne Sprung, Ausdruck ohne Aufstellen, OmegaLab', () => {
+    const f = [];
+    const css = [...document.querySelectorAll('style')].map((x) => x.textContent).join('\n');
+    if (/#race-dash\.race-flash\s*\{\s*filter/.test(css)) f.push('Blitz noch als SVG-Filter');
+    if (!$('setting-blitz')) f.push('Schalter Blitz fehlt');
+    if (css.indexOf('translate3d(0, 276px, 0)') < 0 || css.indexOf('translate3d(0, 372px, 0)') < 0) f.push('Regen-Laufweiten nicht angepasst');
+    // Aufstellen-Knopf im Ausdruck-Modus aus.
+    const merkTm = trackMode, merkRm = raceMode;
+    try {
+      trackMode = 'off'; raceMode = 'laps';
+      raceGridAnzeigen(() => {});
+      if ($('grid-auto') && !$('grid-auto').hidden) f.push('Aufstellen im Ausdruck-Modus sichtbar');
+      trackMode = 'on';
+      raceGridAnzeigen(() => {});
+      if ($('grid-auto') && $('grid-auto').hidden) f.push('Aufstellen auf der Bahn verborgen');
+    } finally {
+      trackMode = merkTm; raceMode = merkRm;
+      if ($('race-gridscreen')) $('race-gridscreen').hidden = true;
+    }
+    if (!/OmegaLab/.test(document.querySelector('.misc-tile[data-sub="opt-studie"] b') ? document.querySelector('.misc-tile[data-sub="opt-studie"] b').textContent : '')) f.push('Kachel heisst nicht OmegaLab');
+    const ids = sicherungRegler().map((el) => el.id);
+    if (ids.includes('race-wx-start') || ids.includes('race-wx-change')) f.push('Startwetter kommt aus der Sicherung');
+    if (TYRE_MIX.weich.verschleiss !== 2.6 || TYRE_MIX.hart.verschleiss !== 0.4) f.push('Verschleisstabelle nicht angepasst');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Blitz als Schicht, Regen nahtlos, Aufstellen nur auf der Bahn, OmegaLab, trocken beim Start, Verschleiss 2,6/0,4' };
+  });
+
   stAdd('Vibration v1.1.42: eigene Kachel, Quietschen leicht, kein Dauerbrummen vom Gas', () => {
     const f = [];
     const seite = $('sub-opt-vibration');
@@ -22216,7 +22307,7 @@
     const el = $('race-einpark-sc-gas'), merkV = el ? el.value : null;
     const merkT = currentTrackTiles;
     try {
-      if (!el || Math.abs(parseFloat(el.defaultValue) - 0.75) > 1e-9) f.push('Regler fehlt oder Vorgabe nicht 75 %');
+      if (!el || Math.abs(parseFloat(el.defaultValue) - 0.7) > 1e-9) f.push('Regler fehlt oder Vorgabe nicht 70 %');  // v1.1.45: 70 %
       if (el) el.value = '0.75';
       const sc = MANOEVER.scEin;
       for (const seite of [1, -1]) {

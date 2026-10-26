@@ -3591,14 +3591,16 @@
     background-image:
       radial-gradient(0.9px 7px at 50% 30%, rgba(205,226,255,.80), rgba(205,226,255,0)),
       radial-gradient(0.8px 6px at 50% 70%, rgba(205,226,255,.55), rgba(205,226,255,0));
-    background-size: 24px 46px, 37px 71px;
+    /* v1.1.45 GEMELDET: "Bildschirmflackern beim Regen". Die Laufweite (276 px) muss ein Vielfaches BEIDER
+       Kachelhoehen sein, sonst springt das Muster bei jedem Neustart der Schleife (vorher 284 px gegen 46/71 px). */
+    background-size: 24px 46px, 37px 69px;
     background-position: 0 0, 11px 23px;
     animation: race-rain-a .46s linear infinite; }
   .race-rain > i:nth-child(2) {
     background-image:
       radial-gradient(0.8px 9px at 50% 40%, rgba(190,214,250,.55), rgba(190,214,250,0)),
       radial-gradient(0.7px 7px at 50% 80%, rgba(190,214,250,.38), rgba(190,214,250,0));
-    background-size: 31px 62px, 47px 95px;
+    background-size: 31px 62px, 47px 93px;   /* 372 px = 6 x 62 = 4 x 93 */
     background-position: 7px 0, 25px 31px;
     animation: race-rain-b .72s linear infinite; }
   .race-rain > i:nth-child(3) {
@@ -3616,10 +3618,10 @@
      different wobble sizes and directions so they never move in lockstep. */
   @keyframes race-rain-a { from  { transform: rotate(13deg) translate3d(0, 0, 0); }
                            45%   { transform: rotate(14.6deg) translate3d(0, 128px, 0); }
-                           to    { transform: rotate(13deg) translate3d(0, 284px, 0); } }
+                           to    { transform: rotate(13deg) translate3d(0, 276px, 0); } }
   @keyframes race-rain-b { from  { transform: rotate(11deg) translate3d(0, 0, 0); }
                            55%   { transform: rotate(9.2deg) translate3d(0, 209px, 0); }
-                           to    { transform: rotate(11deg) translate3d(0, 380px, 0); } }
+                           to    { transform: rotate(11deg) translate3d(0, 372px, 0); } }
   @keyframes race-rain-c { from  { transform: rotate(9deg)  translate3d(0, 0, 0); }
                            40%   { transform: rotate(10.8deg) translate3d(0, 211px, 0); }
                            to    { transform: rotate(9deg)  translate3d(0, 528px, 0); } }
@@ -3631,7 +3633,12 @@
   /* Lightning. NOT a white overlay and NOT brightness(): brightness is a multiplication and
      blows the highlights out. feComponentTransfer with type="gamma" lifts the midtones and
      leaves black black, which is what brief outside light actually looks like. */
-  #race-dash.race-flash { filter: url(#race-gamma); }
+  /* v1.1.45: KEIN Filter mehr auf dem ganzen Cockpit. Ein SVG-Filter auf #race-dash zwang die WebView, alles neu
+     zu zeichnen (auf Android in Software) - schwarze oder leere Bilder, gemeldet als Flackern bei Regen. Jetzt
+     eine helle Schicht darueber, deren Deckkraft kurz hochgeht ('screen' laesst Schwarz schwarz). */
+  #race-dash::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 4;
+    background: rgba(205,220,255,.22); mix-blend-mode: screen; opacity: 0; transition: opacity 40ms linear; }
+  #race-dash.race-flash::after { opacity: 1; }
   /* ---- Garage ---- */
   .gar-row { display: grid; gap: 10px 10px; align-items: center;
     grid-template-columns: minmax(0,1fr) auto auto;
@@ -4860,7 +4867,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.1.55</span></span>
+        <span class="foot-ver">v<span id="app-version">1.2.3</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6013,6 +6020,14 @@
     <div class="card subpage" id="sub-patchnotes">
       <button class="misc-back goto-tab" data-tab="options">&larr; Optionen</button>
       <h2>Patchnotes</h2>
+      <p class="muted"><b><span data-i18n-skip>1.2</span></b></p>
+      <ul class="muted" id="patchnotes-12" style="padding-left:20px; line-height:1.7">
+        <li>Bluetooth: Kein helles &#8222;verbunden&#8220;-Licht mehr ohne Verbindung. Ein Verbindungsaufbau, der nach dem Koppeln scheitert oder h&#228;ngt (h&#246;chstens 20 s), trennt jetzt sauber; zwei gleichzeitige Aufbauten zum selben Auto (automatisches Verbinden und Klick) gibt es nicht mehr; beim App-Start werden alte Verbindungen geschlossen; &#8222;Alle trennen&#8220; trennt in der App auch h&#228;ngende Verbindungen. Latenz: W&#228;hrend ein Auto neu verbindet, schreiben NPCs nicht mehr (das sperrte den schnellen Weg bis zu 10 Minuten), und meldet ein Auto dauerhaft langsamer, wird das schnelle Verbindungsintervall neu angefordert. Teile davon brauchen die neue APK.</li>
+        <li>Controller-Abgleich: &#196;nderungen sind jetzt ein Entwurf und werden erst mit &#8222;&#220;bernehmen&#8220; gespeichert (am Pad: Options 1 s halten), &#8222;Abbrechen&#8220; verwirft sie. Solange reagiert der Controller auf nichts anderes, und danach erst wieder, wenn alle Tasten losgelassen sind &#8211; vorher l&#246;ste eine gehaltene Taste nach der Erfassung Zur&#252;ck, Reiterwechsel oder Cockpit aus. Die Ruhelage wird erst bei losgelassenen Tasten genommen (X erfasste sich sonst selbst).</li>
+        <li>Karte und Aufstellung: Der eigene Punkt misst jetzt seine Kachelzeiten (vorher feste 800 ms, er blieb am Kachelende stehen und sprang), z&#228;hlt verlorene Meldungen mit und springt nicht mehr eine Kachel zur&#252;ck, solange der neue Z&#228;hlerstand noch nicht verarbeitet ist. Automatische Aufstellung: Ab Reihe 2 gilt ein knapp (bis eine halbe Kachel) &#252;berfahrener Platz &#8211; vorher drehten diese Autos eine weitere Runde. In der Schlange f&#228;llt kein Auto mehr unter die Lesegrenze. Gas der Safety-Car-Folge Standard 70 % statt 75 % (Reihe 1 stand etwas zu weit au&#223;en).</li>
+        <li>Regen: Das Flackern ist behoben. Der Blitz war ein Filter auf dem ganzen Cockpit, den das Handy jedes Mal neu zeichnete &#8211; jetzt eine helle Schicht dar&#252;ber (neuer Schalter &#8222;Blitz bei Gewitter&#8220;). Die Regenebenen springen nicht mehr beim Neustart ihrer Schleife, und die Regenst&#228;rke wird nur noch bei sp&#252;rbarer &#196;nderung gesetzt.</li>
+        <li>Kleinigkeiten: &#8222;Automatisch aufstellen&#8220; erscheint nur noch auf der Bahn. Die Studie hei&#223;t jetzt OmegaLab. Jede Sitzung beginnt trocken und ohne Wetterwechsel (Startwetter und &#8222;Wetter &#228;ndert sich&#8220; kommen nicht mehr aus der Sicherung). Reifenverschlei&#223;: weich st&#228;rker (2,6 statt 2,2), hart schw&#228;cher (0,4 statt 0,5).</li>
+      </ul>
       <p class="muted"><b><span data-i18n-skip>1.1</span></b></p>
       <ul class="muted" id="patchnotes-11" style="padding-left:20px; line-height:1.7">
         <li>Boxenstopp: Tanken &#8222;nein&#8220; gilt jetzt. Das Boxen-Minigame (Standard) baute seinen eigenen Plan und tankte immer voll; au&#223;erdem kam eine &#196;nderung in der Boxengasse nicht im Plan an. Reifen: erst beide hinteren, dann beide vorderen R&#228;der; solange gewechselt wird, l&#228;sst sich der Stopp nicht abbrechen. Neuer Schlagschrauber je Radpaar aus einer Aufnahme (Sound Effect by Jun Su from Pixabay, Pixabay-Inhaltslizenz; Quelle in audio/CREDITS.md).</li>
@@ -9341,12 +9356,12 @@
       <div class="opt-row"><div class="opt-label">Einparken: Gas der Safety-Car-Folge<span class="wip-tag">WIP</span><small>Wie viel
           vom Gas der Safety-Car-Einparkfolge die Autos in der Aufstellung bekommen. Weniger Gas: sie rollen weniger weit
           zur Seite und stehen weiter innen; mehr: weiter am Rand. Lenkung und Zeiten bleiben genau die der Aufnahme.
-          Standard 75&nbsp;%.</small></div>
+          Standard 70&nbsp;%.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="race-einpark-sc-gas" min="0.4" max="1" step="0.05" value="0.75" data-preset-skip>
+          <input type="range" id="race-einpark-sc-gas" min="0.4" max="1" step="0.05" value="0.7" data-preset-skip>
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="race-einpark-sc-gas-val">75 %</span>
+          <span class="opt-val" id="race-einpark-sc-gas-val">70 %</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Einparken: Einlenkst&auml;rke<span class="wip-tag">WIP</span><small>Bei der
           automatischen Aufstellung (vor und nach dem Rennen) fahren alle Autos genau mittig, auch an
@@ -9675,7 +9690,7 @@
         <button class="misc-tile subpage-open" data-sub="opt-studie" id="opt-studie-kachel" hidden>
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6h12M20 6v12L9 38a3 3 0 0 0 3 4h24a3 3 0 0 0 3-4L28 18V6"/><path d="M14 30h20" stroke="var(--bad)"/></svg>
-          <b>Studie <span class="wip-tag">WIP</span></b>
+          <b>OmegaLab <span class="wip-tag">WIP</span></b>
           <span>Persönlichkeit, Reaktionszeit und Fahrverhalten. Freiwillig, ab 18, Daten anonymisiert öffentlich.</span>
         </button>
         <button class="misc-tile subpage-open" data-sub="opt-tutorials">
@@ -10574,6 +10589,8 @@
         </div></div>
       <div class="opt-row"><div class="opt-label">Regen<small>Select oder W. Reifen kommen beim Boxenstopp passend.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-rain"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Blitz bei Gewitter<small>Bei Regen blitzt das Cockpit alle 20 bis 30&nbsp;s kurz auf. Aus: nur der Donner.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-blitz" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Strecken-Ambience<small>Vorbeifahrten, Regen, Donner.</small></div>
         <label class="tgl"><input type="checkbox" id="amb-enable" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Streckenlautstärke<small>Absichtlich leise, damit der Motor vorne bleibt.</small></div>
@@ -11799,6 +11816,9 @@
       </table>
       <div class="row" style="margin-top:12px">
         <button id="bind-reset">Auf Standard zurücksetzen</button>
+        <button id="bind-uebernehmen" class="primary" hidden>Übernehmen</button>
+        <button id="bind-abbrechen" hidden>Abbrechen</button>
+        <span class="muted" id="bind-sitzung-hinweis" hidden>Änderungen noch nicht gespeichert. Solange reagiert der Controller auf nichts anderes &ndash; Übernehmen auch mit Options 1&nbsp;s halten.</span>
       </div>
       <div class="row" style="margin-top:12px">
         <span class="muted">Gas: <b id="pad-live-throttle">0.00</b></span>
@@ -12106,7 +12126,7 @@
          entsteht im Code und wird dort mit t() uebersetzt. -->
     <div class="card subpage" id="sub-opt-studie">
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
-      <h2>Studie <span class="wip-tag">experimentell</span></h2>
+      <h2>OmegaLab <span class="wip-tag">experimentell</span></h2>
       <div id="studie-inhalt" data-i18n-skip></div>
     </div>
 

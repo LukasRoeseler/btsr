@@ -1748,7 +1748,9 @@
       try { challengerVorbereiten(); } catch (e) { /* ohne Netz */ }
     }
     // v0.9.31: im freien Training gibt es keine Startaufstellung - also auch keinen Knopf.
-    if ($('grid-auto')) $('grid-auto').hidden = raceMode === 'practice';
+    // v1.1.45 BESTELLT: "Automatisch-aufstellen-Button nicht anzeigen, wenn ich mit Ausdruck fahre" - die Aufstellung
+    // braucht die gelesene Bahn.
+    if ($('grid-auto')) $('grid-auto').hidden = raceMode === 'practice' || trackMode !== 'on';
     gs.hidden = false;
     gridFokusIdx = -1;
     raceGridFokus(0);
@@ -4021,11 +4023,13 @@
   // keine Vorliebe.
   const TYRE_MIX = {
     // v0.10.5 BESTELLT: "Unterschied zwischen Reifenmischungen staerker machen."
-    weich:  { griff: 1.20, nass: 0.45, verschleiss: 2.2, aqua: true,
+    // v1.1.42 BESTELLT: "Reifenverschleiss bei weichen Reifen staerker machen und bei harten schwaecher" - weich
+    // 2,2 -> 2,6, hart 0,5 -> 0,4 (bei Mischungsunterschied 150 %: effektiv 3,4 bzw. 0,1).
+    weich:  { griff: 1.20, nass: 0.45, verschleiss: 2.6, aqua: true,
               farbe: '#e5261e', name: 'weich' },
     mittel: { griff: 1.00, nass: 0.45, verschleiss: 1.0, aqua: true,
               farbe: '#f7d117', name: 'mittel' },
-    hart:   { griff: 0.85, nass: 0.45, verschleiss: 0.5, aqua: true,
+    hart:   { griff: 0.85, nass: 0.45, verschleiss: 0.4, aqua: true,
               farbe: '#f2f4f8', name: 'hart' },
     regen:  { griff: 0.88, nass: 0.80, verschleiss: 1.0, aqua: false,
               farbe: '#2f6fd0', name: 'Regen' },

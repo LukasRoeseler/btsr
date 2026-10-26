@@ -1177,9 +1177,16 @@
   // The visual side of the weather. Tied to the WEATHER, not to the volume: muting the
   // ambience must not also stop the rain from being visible, or a silent storm becomes an
   // invisible one.
+  // v1.1.45: nur bei spuerbarer Aenderung schreiben (jede Aenderung von --rain-lvl am <html> rechnet die ganze Seite
+  // neu - vorher alle 80 ms), und die Nass-Klasse mit Hysterese, damit sie an der Schwelle nicht flattert.
+  let regenSichtbarWert = -1;
   function setRainVisuals(lvl) {
     const v = typeof lvl === 'number' ? lvl : (lvl ? 1 : 0);
-    document.body.classList.toggle('race-wet', v > 0.02);
+    const nass = document.body.classList.contains('race-wet');
+    if (!nass && v > 0.03) document.body.classList.add('race-wet');
+    else if (nass && v < 0.01) document.body.classList.remove('race-wet');
+    if (Math.abs(v - regenSichtbarWert) < 0.02 && !(v === 0 && regenSichtbarWert !== 0) && !(v === 1 && regenSichtbarWert !== 1)) return;
+    regenSichtbarWert = v;
     // Die Staerke geht als CSS-Variable hinaus, und das Stylesheet entscheidet, was daraus
     // wird: erst wenige Tropfen, dann viele. Die Alternative waere, hier Tropfen zu zaehlen
     // und einzeln zu erzeugen - dann stuende die Gestaltung im Programm.
@@ -1191,6 +1198,7 @@
   function triggerLightning() {
     const dash = $('race-dash');
     if (!dash) return;
+    if ($('setting-blitz') && !$('setting-blitz').checked) return;
     const flash = (ms) => {
       dash.classList.add('race-flash');
       setTimeout(() => dash.classList.remove('race-flash'), ms);
