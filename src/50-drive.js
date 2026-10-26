@@ -71,6 +71,8 @@
       // selbst haelt. Sie wird angeschrieben, damit man nicht versehentlich darin faehrt.
       b.classList.toggle('warn', !rail);
     }
+    // v1.2.4: die Renntypen folgen dem Sensormodus (70-race.js, zur Laufzeit da).
+    if (typeof renntypenFiltern === 'function') { try { renntypenFiltern(); } catch (e) { /* beim Laden */ } }
     return rail;
   }
 
@@ -3446,7 +3448,8 @@
   // Tempo, eigene Reifen- und Bremsentemperatur - alles, was den Wagen fahren laesst.
   function physicsStepVon(z) {
     z.apTakt = false;
-    if (!physicsEnabled) {
+    // v1.2.4: eigener Modus je Spieler (spielerPhysikAn, 49-spieler.js).
+    if (!spielerPhysikAn(z)) {
       if (!autopilotGreiftFuer(z.nr)) { z.lastTime = null; return; }
       z.apTakt = true;
       if (z.lastTime === null) apEinstieg(z.motor, Math.max(0, z.throttle || 0));
@@ -3548,10 +3551,14 @@
   // dieselben Objekte. Sonst schriebe ein Schaltvorgang von Spieler 2 in die Gaenge von
   // Spieler 1 (genau diese Falle steht bei den Ghosts schon einmal beschrieben).
   function physEngine2Abgleichen() {
+    // v1.2.4: waehrend ein Preset fuer einen Zusatzspieler durchgerechnet wird (presetSchnappschuss), stehen
+    // die Regler kurz auf einem fremden Stand - nicht abgleichen.
+    if (typeof window.__presetSchnappLaeuft === 'function' && window.__presetSchnappLaeuft()) return;
     Object.assign(physEngine2.config, physEngine.config);
     if (Array.isArray(physEngine.config.gears)) {
       physEngine2.config.gears = physEngine.config.gears.map(g => Object.assign({}, g));
     }
+    spielerGefuehlUeberlagern(2, physEngine2);
     // Und die weiteren Plaetze (v0.9.17): dieselbe Abstimmung fuer alle.
     for (let n = 3; n <= SPIELER_MAX; n++) zusatzMotorAbgleichen(zusatzPlatz(n).motor);
   }
@@ -3579,12 +3586,21 @@
   // WAS NICHT UEBER config LAEUFT, steht weiter unten in spielerZweiSenden(): die
   // Hoechstgeschwindigkeit und die Batteriekompensation sitzen im Sendeweg von Auto 1, den
   // Auto 2 gar nicht nimmt.
+  let abgleichUhr = null;
   for (const art of ['input', 'change']) {
     document.addEventListener(art, (e) => {
       if (!zweiSpieler) return;
+      if (typeof window.__presetSchnappLaeuft === 'function' && window.__presetSchnappLaeuft()) return;
       const el = e.target;
       if (!el || !el.closest || !el.closest('#tab-options, #tab-race')) return;
-      physEngine2Abgleichen();
+      // v1.2.4: hat ein Zusatzspieler ein eigenes Preset, ist dessen Abstimmung nach einer Aenderung neu zu rechnen -
+      // gesammelt nach 250 ms, damit ein gezogener Schieber nicht bei jedem Schritt alle Regler zweimal setzt.
+      const eigen = typeof window.__spielerPreset === 'function'
+        && [2, 3].some((n) => window.__spielerPreset(n));
+      if (!eigen) { physEngine2Abgleichen(); return; }
+      if (typeof window.__presetSchnappLeeren === 'function') window.__presetSchnappLeeren();
+      clearTimeout(abgleichUhr);
+      abgleichUhr = setTimeout(physEngine2Abgleichen, 250);
     }, true);
   }
 

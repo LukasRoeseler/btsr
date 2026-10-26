@@ -2866,8 +2866,24 @@
   .ps-sym { width: 58%; height: 58%; fill: none; stroke-width: 2.4; display: none; }
   .ps-quad { stroke: #ff8ad8; } .ps-kreis { stroke: #ff6b7a; }
   .pit-spiel[data-symbol="quad"] .ps-quad, .pit-spiel[data-symbol="kreis"] .ps-kreis { display: block; }
-  .ps-fertig { display: none; font-size: 40px; color: var(--good); }
-  .pit-spiel[data-symbol=""] .ps-fertig { display: block; }
+  /* v1.2.4 GEMELDET: "Der gruene Haken ist komisch, weil er auch kommt, wenn ich nichts druecke oder was Falsches."
+     Er stand in JEDER Pause. Jetzt: Haken nur nach einem richtigen Druck, Kreuz nach einem falschen, nichts nach
+     Zeitablauf. */
+  .ps-fertig, .ps-falsch { display: none; font-size: 40px; }
+  .ps-fertig { color: var(--good); } .ps-falsch { color: var(--bad); }
+  .pit-spiel[data-symbol=""][data-blitz="ok"] .ps-fertig { display: block; }
+  .pit-spiel[data-symbol=""][data-blitz="falsch"] .ps-falsch { display: block; }
+  /* Die Reihe: der aktuelle und die drei naechsten Knoepfe. Beim Weiterschalten rutscht sie um einen Platz nach
+     links (data-schieben setzt sie einen Platz nach rechts, dann gleitet sie zurueck). */
+  .ps-reihe { display: flex; gap: 8px; height: 30px; overflow: hidden; width: calc(4 * 30px + 3 * 8px); }
+  .ps-reihe-innen { display: flex; gap: 8px; transition: transform .22s ease-out; }
+  .pit-spiel[data-schieben="1"] .ps-reihe-innen { transform: translateX(38px); transition: none; }
+  .ps-slot { width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 4px;
+    border: 1px solid rgba(255,255,255,.25); opacity: .55; }
+  .ps-slot:first-child { opacity: 1; border-color: var(--k-blau); box-shadow: 0 0 0 2px var(--k-blau); }
+  .ps-slot svg { width: 20px; height: 20px; fill: none; stroke-width: 2.4; display: none; }
+  .ps-slot[data-s="quad"] .ps-quad, .ps-slot[data-s="kreis"] .ps-kreis { display: block; }
+  .ps-slot[data-s=""] { border-color: transparent; box-shadow: none; }
   .pit-spiel[data-blitz="ok"] .ps-karte { border-color: var(--good); box-shadow: 0 0 0 3px var(--good), 0 10px 40px rgba(0,0,0,.7); }
   .pit-spiel[data-blitz="falsch"] .ps-karte { border-color: var(--bad); box-shadow: 0 0 0 3px var(--bad), 0 10px 40px rgba(0,0,0,.7); }
   .ps-fuss { display: flex; gap: 14px; align-items: center; font-size: 12px; }
@@ -4867,7 +4883,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.2.3</span></span>
+        <span class="foot-ver">v<span id="app-version">1.2.4</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5289,7 +5305,14 @@
             <svg class="ps-sym ps-quad" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg>
             <svg class="ps-sym ps-kreis" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/></svg>
             <span class="ps-fertig" data-i18n-skip>&#10003;</span>
+            <span class="ps-falsch" data-i18n-skip>&#10007;</span>
           </div>
+          <div class="ps-reihe" aria-hidden="true"><div class="ps-reihe-innen">
+            <span class="ps-slot" data-s=""><svg class="ps-quad" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg><svg class="ps-kreis" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/></svg></span>
+            <span class="ps-slot" data-s=""><svg class="ps-quad" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg><svg class="ps-kreis" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/></svg></span>
+            <span class="ps-slot" data-s=""><svg class="ps-quad" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg><svg class="ps-kreis" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/></svg></span>
+            <span class="ps-slot" data-s=""><svg class="ps-quad" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg><svg class="ps-kreis" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/></svg></span>
+          </div></div>
           <div class="ps-fuss"><button type="button" id="pit-spiel-quad" aria-label="Quadrat">&#9633;</button>
             <span id="pit-spiel-treffer" data-i18n-skip></span>
             <button type="button" id="pit-spiel-kreis" aria-label="Kreis">&#9675;</button></div>
@@ -6022,6 +6045,10 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.2</span></b></p>
       <ul class="muted" id="patchnotes-12" style="padding-left:20px; line-height:1.7">
+        <li>Spieler und Renntypen: Spieler 2 und 3 k&#246;nnen in der Garage ein eigenes Fahrgef&#252;hl w&#228;hlen (z. B. Spieler 1 Pacejka, Spieler 2 Arcade) oder &#8222;wie Spieler 1&#8220;; ihre Reifenmischung wird nicht mehr von Spieler 1 &#252;berschrieben. Renntypen folgen dem Sensormodus: auf der Bahn kein Demolition Derby, im Ausdruck kein Time Attack (auch beim Durchschalten auf FAHREN); Rennstart und Meisterschaft warnen, wenn im Ausdruck-Modus NPCs oder ein Safety Car in der Garage stehen. Community-Challenges gibt es jetzt auch mit Pacejka (Apps Script neu bereitstellen).</li>
+        <li>Boxen: Im Minigame kommt der gr&#252;ne Haken nur noch nach einem richtigen Druck, ein rotes Kreuz nach einem falschen, nichts nach Zeitablauf; darunter stehen der aktuelle und die drei n&#228;chsten Kn&#246;pfe in einer Reihe, die animiert weiterrutscht. Die Signalt&#246;ne der Boxengasse (Bling, Blip, D&#252;&#252;t) sind jetzt mechanisch &#8211; kurze Ausschnitte aus Ratsche und Schlagschrauber; die alten T&#246;ne gibt es mit dem Schalter &#8222;Alte Boxen-Signalt&#246;ne&#8220;.</li>
+        <li>NPC-Boxenstopp wie das Safety Car (WIP): einparken mit der Einparkfolge des Safety Cars, im Stand l&#228;uft die Ratsche, ausparken mit der Ausparkfolge. Weiterhin immer nur ein Auto. Steht ein Safety Car in der Garage, liegt die NPC-Box auf dem ersten St&#252;ck mit zwei Geraden ab drei Teilen hinter dessen Parkplatz.</li>
+        <li>Safety Car parkt auch auf kurzen Geraden: Ab zwei Teilen vor dem Parkteil f&#228;hrt es mittig; reicht die Gerade ab dem Parkteil nicht f&#252;r den Rollweg der Einparkfolge, wird ihr Gas gestaucht (h&#246;chstens auf die H&#228;lfte), damit es auf der Geraden steht statt in die Kurve zu rollen. Andere Autos fahren um das gew&#228;hlte Parkteil links vorbei (vorher fest um Start/Ziel).</li>
         <li>Bluetooth: Kein helles &#8222;verbunden&#8220;-Licht mehr ohne Verbindung. Ein Verbindungsaufbau, der nach dem Koppeln scheitert oder h&#228;ngt (h&#246;chstens 20 s), trennt jetzt sauber; zwei gleichzeitige Aufbauten zum selben Auto (automatisches Verbinden und Klick) gibt es nicht mehr; beim App-Start werden alte Verbindungen geschlossen; &#8222;Alle trennen&#8220; trennt in der App auch h&#228;ngende Verbindungen. Latenz: W&#228;hrend ein Auto neu verbindet, schreiben NPCs nicht mehr (das sperrte den schnellen Weg bis zu 10 Minuten), und meldet ein Auto dauerhaft langsamer, wird das schnelle Verbindungsintervall neu angefordert. Teile davon brauchen die neue APK.</li>
         <li>Controller-Abgleich: &#196;nderungen sind jetzt ein Entwurf und werden erst mit &#8222;&#220;bernehmen&#8220; gespeichert (am Pad: Options 1 s halten), &#8222;Abbrechen&#8220; verwirft sie. Solange reagiert der Controller auf nichts anderes, und danach erst wieder, wenn alle Tasten losgelassen sind &#8211; vorher l&#246;ste eine gehaltene Taste nach der Erfassung Zur&#252;ck, Reiterwechsel oder Cockpit aus. Die Ruhelage wird erst bei losgelassenen Tasten genommen (X erfasste sich sonst selbst).</li>
         <li>Karte und Aufstellung: Der eigene Punkt misst jetzt seine Kachelzeiten (vorher feste 800 ms, er blieb am Kachelende stehen und sprang), z&#228;hlt verlorene Meldungen mit und springt nicht mehr eine Kachel zur&#252;ck, solange der neue Z&#228;hlerstand noch nicht verarbeitet ist. Automatische Aufstellung: Ab Reihe 2 gilt ein knapp (bis eine halbe Kachel) &#252;berfahrener Platz &#8211; vorher drehten diese Autos eine weitere Runde. In der Schlange f&#228;llt kein Auto mehr unter die Lesegrenze. Gas der Safety-Car-Folge Standard 70 % statt 75 % (Reihe 1 stand etwas zu weit au&#223;en).</li>
@@ -10589,6 +10616,10 @@
         </div></div>
       <div class="opt-row"><div class="opt-label">Regen<small>Select oder W. Reifen kommen beim Boxenstopp passend.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-rain"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Alte Boxen-Signaltöne<small>Aus (Standard): In der Boxengasse klingen
+          fertig getankt, Reifen gewechselt, repariert und &bdquo;los&ldquo; mechanisch &ndash; kurze Ausschnitte aus Ratsche
+          und Schlagschrauber. An: die früheren Signaltöne (Bling, Blip, Düüt).</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-pit-alt-toene"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Blitz bei Gewitter<small>Bei Regen blitzt das Cockpit alle 20 bis 30&nbsp;s kurz auf. Aus: nur der Donner.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-blitz" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Strecken-Ambience<small>Vorbeifahrten, Regen, Donner.</small></div>

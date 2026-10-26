@@ -535,6 +535,54 @@
     ? { label: PRESETS[k].label, kurz: PRESETS[k].kurz, text: PRESETS[k].text } : null);
   window.__presetLabel = (k) => (PRESETS[k] || {}).label || k;
 
+  // ---- FAHRGEFUEHL JE SPIELER (v1.2.4) -----------------------------------------------------
+  // BESTELLT: "Ich moechte fuer verschiedene Spieler verschiedene Schwierigkeitsstufen zulassen (z. B. Spieler 1
+  // Pacejka, Spieler 2 Arcade). Aktuell schaltet ein Knopf auch den anderen um." Die Regler unter Optionen gelten
+  // fuer Spieler 1; Spieler 2 und 3 uebernahmen sie (physEngine2Abgleichen). Jetzt kann jeder Zusatzspieler ein
+  // EIGENES Preset haben. Seine Abstimmung entsteht, indem das Preset kurz auf die Regler gelegt, die entstandene
+  // Konfiguration abgeschrieben und Spieler 1s Stand sofort zurueckgelegt wird (presetSchnappschuss) - so rechnet
+  // jedes Preset durch dieselben Handler wie sonst, ohne eine zweite Umrechnung von Regler auf Physikwert.
+  const SPIELER_PRESET_STORE = 'omegasim-preset-spieler-';
+  const presetSchnappCache = {};
+  let presetSchnappLaeuft = false;
+  function presetSchnappschuss(key) {
+    if (presetSchnappCache[key]) return presetSchnappCache[key];
+    const p = PRESETS[key];
+    if (!p || presetSchnappLaeuft) return null;
+    const vorher = presetRead();
+    const merkZuletzt = presetZuletzt;
+    presetSchnappLaeuft = true;
+    try {
+      for (const [id, val] of Object.entries(p.v)) presetSet(id, val);
+      setzeBrakeStealLast();
+      const snap = { config: JSON.parse(JSON.stringify(physEngine.config)),
+                     modus: $('phys-mode') ? $('phys-mode').value : 'physik' };
+      presetSchnappCache[key] = snap;
+      return snap;
+    } finally {
+      for (const [id, val] of Object.entries(vorher)) presetSet(id, val);
+      setzeBrakeStealLast();
+      presetZuletzt = merkZuletzt;
+      presetSchnappLaeuft = false;
+    }
+  }
+  function spielerPreset(nr) {
+    try { const k = localStorage.getItem(SPIELER_PRESET_STORE + nr); return k && PRESETS[k] ? k : null; }
+    catch (e) { return null; }
+  }
+  function spielerPresetSetzen(nr, key) {
+    try {
+      if (key && PRESETS[key]) localStorage.setItem(SPIELER_PRESET_STORE + nr, key);
+      else localStorage.removeItem(SPIELER_PRESET_STORE + nr);
+    } catch (e) { /* privat */ }
+    if (typeof physEngine2Abgleichen === 'function') physEngine2Abgleichen();
+  }
+  window.__presetSchnappschuss = presetSchnappschuss;
+  window.__presetSchnappLaeuft = () => presetSchnappLaeuft;
+  window.__presetSchnappLeeren = () => { for (const k of Object.keys(presetSchnappCache)) delete presetSchnappCache[k]; };
+  window.__spielerPreset = spielerPreset;
+  window.__spielerPresetSetzen = spielerPresetSetzen;
+
   // Der Erklaertext der EINGESTELLTEN Variante, aus demselben Objekt. Bis v0.5 standen alle
   // fuenf untereinander; das war eine Wand aus Text, in der man den eigenen Zustand nicht
   // fand.

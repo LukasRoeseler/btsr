@@ -2028,6 +2028,10 @@
     // deren Autopilot haette das Fahrerauto mitten im Rennen zu seinem Startplatz gesteuert.
     if (typeof aufstellenStoppen === 'function') aufstellenStoppen(false);
     weichVerbotAnwenden();
+    {
+      const w = ausdruckNpcWarnung();
+      if (w) { showHudToast(w); log(w, 'warn'); }
+    }
     // EINSCHALTRAMPE: der Schirm zieht in 300 ms von schwarz auf Wert hoch, wie ein TFT beim
     // Einschalten. Hier und nicht in raceGreen(), weil der Schirm mit dem Knopfdruck
     // "angeht" und nicht erst bei Gruen - im Countdown will man ihn schon lesen.
@@ -2532,6 +2536,35 @@
   // Kacheln und Wetterknoepfe schreiben in das versteckte Auswahlfeld und loesen change
   // aus. Damit gibt es weiter genau EINE Stelle, die auf eine Aenderung reagiert, und die
   // Voreinstellungen koennen den Modus setzen, ohne die Kacheln zu kennen.
+  // ---- RENNTYPEN JE SENSORMODUS (v1.2.4) ---------------------------------------------------
+  // BESTELLT: "Mach die auswaehlbaren Renntypen abhaengig vom Sensor-Modus. Also wenn ich auf der Bahn fahre, dann
+  // kein Demolition Derby, und wenn ich frei fahre, kein Time Attack." Ein verbotener Typ verschwindet aus Kacheln,
+  // Liste und dem Durchschalten auf FAHREN; war er gewaehlt, faellt die Wahl auf Training zurueck.
+  function renntypErlaubt(modus) {
+    return trackMode === 'on' ? modus !== 'derby' : modus !== 'bestzeit';
+  }
+  function renntypenFiltern() {
+    const s = $('race-mode');
+    if (!s) return;
+    for (const o of s.options) { o.disabled = !renntypErlaubt(o.value); o.hidden = o.disabled; }
+    for (const b of document.querySelectorAll('#race-mode-tiles .mode-tile')) b.hidden = !renntypErlaubt(b.dataset.mode);
+    if (!renntypErlaubt(s.value)) {
+      const alt = RACE_MODES[s.value] ? RACE_MODES[s.value].label : s.value;
+      s.value = 'practice';
+      s.dispatchEvent(new Event('change', { bubbles: true }));
+      if (typeof showHudToast === 'function') {
+        showHudToast(t(alt) + ' ' + (trackMode === 'on' ? t('gibt es auf der Bahn nicht') : t('gibt es im Ausdruck-Modus nicht')) + ' – ' + t('Training'));
+      }
+    }
+    syncRaceModeTiles();
+  }
+  // Im Ausdruck-Modus koennen NPCs und Safety Car nicht fahren (sie brauchen die gelesene Bahn). Eine Warnung, wenn
+  // trotzdem welche in der Garage stehen - beim Rennstart und beim Meisterschafts-Event.
+  function ausdruckNpcWarnung() {
+    if (trackMode === 'on' || typeof garage === 'undefined') return '';
+    const n = garage.filter((c) => c.device && (c.role === 'ghost' || c.role === 'safetycar')).length;
+    return n ? t('Ausdruck-Modus: NPCs und Safety Car fahren hier nicht') + ' (' + n + ')' : '';
+  }
   function syncRaceModeTiles() {
     const v = $('race-mode').value;
     for (const b of document.querySelectorAll('#race-mode-tiles .mode-tile')) {
@@ -2563,6 +2596,8 @@
   syncRaceWxPick();
 
   $('race-mode').addEventListener('change', (e) => {
+    // v1.2.4: ein im Sensormodus verbotener Typ (z. B. aus der Sicherung) faellt auf Training zurueck.
+    if (!renntypErlaubt(e.target.value)) { renntypenFiltern(); return; }
     raceMode = e.target.value;
     // Sensible default per mode rather than carrying a minute count over into a lap count.
     // DERBY (v0.8.126): das Limit ist das KILLS-ZIEL, Voreinstellung 1.
@@ -2573,6 +2608,8 @@
     if (raceMode === 'knockout') knockoutBereit(true);
     if (raceMode === 'bestzeit') bestzeitBereit(true);
   });
+  // v1.2.4: beim Laden einmal nach dem Sensormodus filtern (applyScanMode lief schon, bevor es diese Datei gab).
+  renntypenFiltern();
   $('race-limit').addEventListener('input', (e) => {
     const v = parseInt(e.target.value, 10);
     if (Number.isFinite(v) && (v >= 1 || (v === 0 && (raceMode === 'practice' || raceMode === 'bestzeit')))) raceLimit = v;
@@ -4453,8 +4490,10 @@
       const stoodLongEnough = pitStandElapsed >= PIT_MANDATORY_STAND_S;
       pitPlan = null; pitDone = null; pitReady = false;
       if (pitServiceStart !== null) {
-        playTone(440, 0.12, 'sine', 0.18);
-        setTimeout(() => playTone(660, 0.22, 'sine', 0.18), 120); // rising: throttle released
+        if (!pitSignalMechanisch('raus')) {
+          playTone(440, 0.12, 'sine', 0.18);
+          setTimeout(() => playTone(660, 0.22, 'sine', 0.18), 120); // rising: throttle released
+        }
         padRumble(0.25, 0.15, 120, 'box');
       }
       // A mandatory stop counts after PIT_MANDATORY_STAND_S of standing time. Requiring the
@@ -4515,8 +4554,10 @@
       // Boxen-Ansage nicht im Weg stehen.
       if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); lapAnsageBeendet(); }
       ansage('pit', t('Boxenstopp eingeleitet'));
-      playTone(880, 0.12, 'square', 0.16);
-      setTimeout(() => playTone(880, 0.12, 'square', 0.16), 180);
+      if (!pitSignalMechanisch('gasse')) {
+        playTone(880, 0.12, 'square', 0.16);
+        setTimeout(() => playTone(880, 0.12, 'square', 0.16), 180);
+      }
       showHudToast('BOXENGASSE AKTIV, ' + PIT_DOUBLE_KMH + ' KM/H');
       log('Boxengasse per doppeltem Ausdruck: zweiter Kontakt nach ' + seit
           + ' ms, Tempolimit ' + PIT_DOUBLE_KMH + ' km/h fuer '
@@ -4760,6 +4801,7 @@
     if (sp.i < sp.folge.length && pitStandElapsed - sp.fensterAb >= sp.fensterS) {
       sp.i++;
       sp.fensterAb = pitStandElapsed + PIT_SPIEL_PAUSE;
+      sp.blitz = ''; sp.blitzBis = 0;   // v1.2.4: Zeit abgelaufen - weder Haken noch Kreuz
     }
     const anteil = Math.min(1, (pitStandElapsed + sp.bonus) / sp.T);
     if (pl.refuel) {
@@ -4804,7 +4846,19 @@
     // In der Pause (vor fensterAb) ist das Feld leer.
     const sym = sp.i < sp.folge.length && pitStandElapsed >= sp.fensterAb ? sp.folge[sp.i] : '';
     el.dataset.symbol = sym;
+    // v1.2.4: Zeitablauf setzt blitz zurueck (pitSpielTick), damit dort kein Haken erscheint.
     el.dataset.blitz = pitStandElapsed < sp.blitzBis ? sp.blitz : '';
+    // Die Reihe der naechsten vier Knoepfe (vergangene verschwinden), animiert beim Weiterschalten.
+    const slots = el.querySelectorAll('.ps-slot');
+    slots.forEach((s, k) => { s.dataset.s = sp.folge[sp.i + k] || ''; });
+    if (el.dataset.i !== String(sp.i)) {
+      if (el.dataset.i !== undefined && el.dataset.i !== '') {
+        el.dataset.schieben = '1';
+        void el.offsetWidth;          // Stand ohne Uebergang festhalten, dann zuruecklaufen lassen
+        el.dataset.schieben = '';
+      }
+      el.dataset.i = String(sp.i);
+    }
     el.style.setProperty('--fenster', sym
       ? String(Math.max(0, 1 - (pitStandElapsed - sp.fensterAb) / sp.fensterS)) : '0');
     $('pit-spiel-zaehler').textContent = Math.min(sp.i + 1, PIT_SPIEL_ANZAHL) + '/' + PIT_SPIEL_ANZAHL;
@@ -6354,7 +6408,8 @@
   // Dieselben Schleifen wie bei Auto 1, je Spielerplatz eigene Quellen und auf SEINER
   // Stereoseite (spielerPan) - zwei Stopps gleichzeitig sollen sich nicht abschalten.
   const pitLoopsZ = {};
-  function setPitLoopFuer(nr, which, on) {
+  // nr: Spielerplatz (2, 3) oder ein eigener Schluessel (v1.2.4: 'npc:<id>' fuer NPC-Boxenstopps); pan optional.
+  function setPitLoopFuer(nr, which, on, pan) {
     const spec = PIT_LOOP_SPEC[which];
     if (!spec) return;
     const l = pitLoopsZ[nr] || (pitLoopsZ[nr] = {});
@@ -6372,9 +6427,9 @@
       const g = audioCtx.createGain();
       g.gain.value = spec.gain;
       let ziel = audioCtx.destination;
-      if (audioCtx.createStereoPanner && typeof spielerPan === 'function') {
+      if (audioCtx.createStereoPanner && (pan !== undefined || typeof spielerPan === 'function')) {
         const p = audioCtx.createStereoPanner();
-        p.pan.value = spielerPan(nr);
+        p.pan.value = pan !== undefined ? pan : spielerPan(nr);
         p.connect(audioCtx.destination);
         ziel = p;
       }
@@ -7330,15 +7385,50 @@
   }, 120);
 
   // Three distinguishable confirmations, so the ear alone tells you which job finished.
-  function pitChimeFuel()   { playTone(520, 0.10, 'sine', 0.16);
+  // ---- MECHANISCHE SIGNALE IN DER BOXENGASSE (v1.2.4) -------------------------------------
+  // BESTELLT: "Boxengasse-Sounds: koennen wir das Bling, Blip und Duueet standardmaessig ausschalten oder durch einen
+  // mechanischen Ton ersetzen?" Statt Sinus- und Rechtecktoenen kurze Ausschnitte aus den Aufnahmen, die in der Box
+  // ohnehin laufen: die Ratsche (pit_repair.ogg) und der Schlagschrauber (pit_wrench_paar.ogg). Die alten Toene gibt
+  // es weiter mit dem Schalter "Alte Boxen-Signaltoene" (Optionen > Ton, Standard aus).
+  function pitAlteSignale() { const el = $('setting-pit-alt-toene'); return !!(el && el.checked); }
+  function pitEinzelklang(buf, ab, dauer, gain) {
+    if (!buf || !audioCtx || !soundEnabled) return false;
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    const g = audioCtx.createGain();
+    g.gain.value = gain;
+    src.connect(g).connect(audioCtx.destination);
+    src.start(0, Math.min(ab, Math.max(0, buf.duration - 0.05)), dauer);
+    return true;
+  }
+  // true = mechanisch gespielt (dann kein alter Ton). Faellt eine Aufnahme aus, kommt der alte Ton.
+  function pitSignalMechanisch(art) {
+    if (pitAlteSignale()) return false;
+    const ratsche = fxBuffers.pitRepair, schrauber = fxBuffers.pitPaar;
+    if (art === 'tank') return pitEinzelklang(ratsche, 0, 0.16, 0.5);
+    if (art === 'reifen') return pitEinzelklang(schrauber, 1.30, 0.32, 0.5);
+    if (art === 'reparatur') return pitEinzelklang(ratsche, 0, 0.34, 0.5);
+    if (art === 'fertig') {
+      const a = pitEinzelklang(schrauber, 0.02, 0.36, 0.6);
+      setTimeout(() => pitEinzelklang(ratsche, 0, 0.16, 0.55), 380);
+      return a;
+    }
+    if (art === 'raus' || art === 'gasse') return pitEinzelklang(ratsche, 0, 0.2, 0.45);
+    return false;
+  }
+  function pitChimeFuel()   { if (pitSignalMechanisch('tank')) return;
+                              playTone(520, 0.10, 'sine', 0.16);
                               setTimeout(() => playTone(780, 0.16, 'sine', 0.16), 90); }
-  function pitChimeTyres()  { playTone(300, 0.12, 'triangle', 0.16);
+  function pitChimeTyres()  { if (pitSignalMechanisch('reifen')) return;
+                              playTone(300, 0.12, 'triangle', 0.16);
                               setTimeout(() => playTone(300, 0.16, 'triangle', 0.14), 130); }
-  function pitChimeRepair() { playTone(660, 0.10, 'sine', 0.15);
+  function pitChimeRepair() { if (pitSignalMechanisch('reparatur')) return;
+                              playTone(660, 0.10, 'sine', 0.15);
                               setTimeout(() => playTone(880, 0.10, 'sine', 0.15), 80);
                               setTimeout(() => playTone(1170, 0.18, 'sine', 0.15), 160); }
   // Deliberately the loudest and most distinct of the four: this is the one that means GO.
-  function pitChimeReady()  { playTone(880, 0.13, 'square', 0.20);
+  function pitChimeReady()  { if (pitSignalMechanisch('fertig')) return;
+                              playTone(880, 0.13, 'square', 0.20);
                               setTimeout(() => playTone(1320, 0.26, 'square', 0.20), 120); }
 
   function describePitPlan(p) {

@@ -1791,7 +1791,21 @@
       // v0.10.5 BESTELLT: "Lass mich in der Garage bei gesteuerten Autos das Fahrgefuehl ueber
       // Preset einstellen." Dieselben vier wie im FAHREN-Menue. Die Abstimmung gilt fuer alle
       // gesteuerten Autos zugleich (Spieler 2/3 uebernehmen die von Spieler 1).
-      if (/^player/.test(car.role) && window.__presetKeysFahren && window.__applyPreset) {
+      // v1.2.4 BESTELLT: "verschiedene Schwierigkeitsstufen je Spieler (z. B. Spieler 1 Pacejka, Spieler 2 Arcade)."
+      // Spieler 1 stellt wie bisher die Regler (und damit alle ohne eigenes Preset); Spieler 2 und 3 waehlen ein
+      // EIGENES Preset oder "wie Spieler 1".
+      const nrZ = zusatzPlatzVonRolle(car.role) ? Number(String(car.role).replace('player', '')) : 1;
+      if (nrZ >= 2 && window.__presetKeysFahren && window.__spielerPresetSetzen) {
+        const keys = [null].concat(window.__presetKeysFahren());
+        const aktiv = window.__spielerPreset(nrZ);
+        const i = Math.max(0, keys.indexOf(aktiv));
+        const wahl = (d) => {
+          window.__spielerPresetSetzen(nrZ, keys[(i + d + keys.length) % keys.length]);
+          renderGarage();
+        };
+        box.appendChild(garWertZeile('Fahrgefühl', aktiv ? window.__presetLabel(aktiv) : t('wie Spieler 1'),
+                                     () => wahl(-1), () => wahl(1)));
+      } else if (/^player/.test(car.role) && window.__presetKeysFahren && window.__applyPreset) {
         const keys = window.__presetKeysFahren();
         const aktiv = window.__presetActive ? window.__presetActive() : null;
         const i = keys.indexOf(aktiv);
@@ -2698,6 +2712,7 @@
   }
 
   function stopGhost(car) {
+    npcBoxKlang(car, false);                            // v1.2.4: die Ratsche der Box mit anhalten
     if (car.ghost) car.ghost.aufstellZiel = null;      // v0.9.22: Aufstellung endet mit
     // v0.9.61 (D8): die Motorstimme des Ghosts mit anhalten.
     if (car.ghost && typeof ghostStimmeStoppen === 'function') ghostStimmeStoppen(car);
@@ -5021,9 +5036,24 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
 
   // Die Boxenkachel von Platz 0: die Start/Ziel-Kachel des Layouts. NICHT 0 annehmen -
   // ortStartIndex() sucht sie, und auf einem gescannten Layout kann sie irgendwo liegen.
+  // v1.2.4 BESTELLT: "NPC-Boxenstopp so wie Safety Car, aber an anderer Stelle, wenn beides an ist." Ohne Safety Car
+  // bleibt die Box an Start/Ziel. Steht ein Safety Car in der Garage, parkt es dort (scParkKachel) und braucht danach
+  // rund zwei Teile Rollweg - dann liegt die NPC-Box auf dem ersten Stueck mit zwei Geraden ab drei Teilen dahinter.
   function pitKachel() {
     if (!currentTrackTiles || currentTrackTiles.length < 3) return -1;
-    return ortStartIndex(currentTrackTiles);
+    const s = ortStartIndex(currentTrackTiles);
+    const sc = typeof garage !== 'undefined' && garage.some((c) => c.role === 'safetycar' && c.device);
+    if (!sc) return s;
+    return npcBoxNeben(scParkKachel());
+  }
+  function npcBoxNeben(k) {
+    const tiles = currentTrackTiles, n = tiles.length;
+    const gerade = (i) => { const t = tiles[((i % n) + n) % n]; return !!t && (t.type === TILE_TYPE.STRAIGHT || t.type === TILE_TYPE.START); };
+    for (let d = 3; d < n; d++) {
+      const i = (k + d) % n;
+      if (gerade(i) && gerade(i + 1)) return i;
+    }
+    return (k + 3) % n;
   }
 
   // Und die Kachel eines beliebigen Platzes. Platz 1 liegt eine Kachel SPAETER, also in
@@ -5074,6 +5104,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // v1.0.25: der Randhalt (Safety Car, Aufstellung) haelt dieselbe Querlage wie ein Stopp.
     const rh = car.ghost && car.ghost.randHalt;
     if (rh) return rh.quer;
+    // v1.2.4: das Safety Car faehrt vor seinem Parkteil mittig (scVorParkMittig).
+    if (scVorParkMittig(car)) return 0;
     const p = car.ghost && car.ghost.pit;
     if (!p) return null;
     // ---- DIE GASSE HINUNTER, DANN HEREIN ------------------------------------------
@@ -5496,7 +5528,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                    tempoAb: opt.tempoAb || 0, rundTakt: !!opt.rundTakt,
                    sofort: !!opt.sofort,
                    skript: opt.skript || null, anpassMs: opt.anpassMs || 0, vonDrive: opt.vonDrive || 0,
-                   lenkFaktor: opt.lenkFaktor, weiter: !!opt.weiter };
+                   lenkFaktor: opt.lenkFaktor, weiter: !!opt.weiter,
+                   // v1.2.4: am Ende NICHT abstellen, nur fertig() rufen (NPC-Boxenstopp: danach kommt die Standzeit).
+                   ohneStopp: !!opt.ohneStopp };
   }
   // Nach der Randfahrt: mit radLenk erst noch mit eingeschlagenen Raedern an den Rand ('rad'),
   // sonst gleich halten.
@@ -5579,7 +5613,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (now - h.at >= h.haltMs) {
       g.randHalt = null;
       const fertig = h.fertig;
-      stopGhost(car);
+      if (!h.ohneStopp) stopGhost(car);
       if (fertig) fertig(car);
     }
     return true;
@@ -5600,11 +5634,19 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const pk = pitKachelFuer(p.platz);
 
     if (p.phase === 'anfahrt') {
-      // Am eigenen Platz angekommen? Dann NICHT sofort bremsen, sondern erst die bestellte
-      // Sekunde am Rand fahren - siehe PIT_RAND_MS.
-      if (g.tileIndex === pk) { p.phase = 'rand'; p.at = now; }
+      // v1.2.4 BESTELLT: "NPC-Boxenstopp ueberarbeiten: so wie Safety Car." Am eigenen Platz die Einparkfolge des
+      // Safety Cars (scEin, rechts), danach steht das Auto (randHalt ohne Abstellen) und die Standzeit beginnt.
+      if (g.tileIndex === pk) {
+        p.phase = 'einparken'; p.at = now;
+        const sk = MANOEVER.scEin;
+        randHaltStarten(car, { phase: 'skript', quer: 0, skript: sk, anpassMs: MANOEVER_ANPASS_MS,
+          vonDrive: letztesGas(car, sk[0][2]), haltMs: 500, sofort: true, ohneStopp: true,
+          fertig: (c) => npcBoxStehen(c) });
+        log(garageLabel(car) + ': parkt in der Box ein (Safety-Car-Folge).', 'info');
+      }
       return true;
     }
+    if (p.phase === 'einparken') return true;     // die Folge laeuft (randHaltTick)
     if (p.phase === 'rand') {
       // BIS AN DEN RAND, und erst dann abbremsen - nicht blind nach PIT_RAND_MS. Ein
       // langsames Auto (kleines tempoAnteil) erreicht die Breite erst spaeter; ein
@@ -5633,6 +5675,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (p.phase === 'stand') {
       if (now - p.at >= p.laenge) {
         p.phase = 'raus'; p.at = now;
+        npcBoxKlang(car, false);
+        // v1.2.4: Ausparken wie das Safety Car (scAus, mit dem Gasfaktor), ohne Halt in das normale Fahren.
+        randHaltStarten(car, { phase: 'skript', quer: 0, skript: scAusSkript(), anpassMs: 0, vonDrive: 0, weiter: true,
+          fertig: (c) => { if (c.ghost) { c.ghost.pit = null; } pitPlatzRaeumen(c); if (c.ghost) pitFaelligZiehen(c.ghost); } });
         // ---- DIE REIFEN KOMMEN AM ENDE DER STANDZEIT DRAUF -------------------------
         //
         // Am ENDE und nicht am Anfang: die Standzeit IST die Arbeit, und ein Auto, das mit
@@ -5661,13 +5707,32 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       }
       return true;
     }
-    // 'raus': fertig, sobald die Querlage zurueck ist.
-    if (now - p.at >= PIT_RAUS_MS) {
+    // 'raus': die Ausparkfolge (randHalt 'skript', weiter) raeumt den Stopp in ihrem fertig(). Rueckfall, falls sie
+    // nicht laeuft: nach PIT_RAUS_MS wie bisher.
+    if (!g.randHalt && now - p.at >= PIT_RAUS_MS) {
       g.pit = null;
       pitPlatzRaeumen(car);
       pitFaelligZiehen(g);
     }
     return true;
+  }
+  // Ende der Einparkfolge: die Standzeit beginnt (mit Rammstrafe), dazu die Ratsche.
+  function npcBoxStehen(car) {
+    const p = car.ghost && car.ghost.pit;
+    if (!p) return;
+    p.phase = 'stand'; p.at = Date.now();
+    const strafe = typeof rammStrafeAbsitzen === 'function' ? rammStrafeAbsitzen(car) : 0;
+    if (strafe > 0) p.laenge += strafe * 1000;
+    npcBoxKlang(car, true);
+    log(garageLabel(car) + ': steht in der Box, ' + (p.laenge / 1000).toFixed(1)
+        + ' s' + (strafe > 0 ? ' (davon ' + strafe + ' s Strafe)' : '') + '.', 'info');
+  }
+  // v1.2.4 BESTELLT: "Es soll dann auch der Sound abgespielt werden von den Ratschen beim NPC-Boxenstopp." Die Ratsche
+  // (pit_repair.ogg) als Schleife, solange der NPC steht, auf seiner Stereoseite.
+  function npcBoxKlang(car, an) {
+    if (typeof setPitLoopFuer !== 'function' || !car || !car.device) return;
+    const pan = typeof ghostStimmePan === 'function' ? ghostStimmePan(car) : 0;
+    setPitLoopFuer('npc:' + car.device.id, 'repair', !!an, pan);
   }
 
   let finishSeiteZaehler = 0;
@@ -6522,10 +6587,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (((g.tileIndex % n) + n) % n !== k) return;
     g.scHeim = false;
     if (scParkArt() === 'aufnahme') {
-      randHaltStarten(car, { phase: 'skript', quer: 0, skript: MANOEVER.scEin, anpassMs: MANOEVER_ANPASS_MS,
-                             vonDrive: letztesGas(car, MANOEVER.scEin[0][2]), haltMs: SC_PARK_HALT_MS, sofort: true,
+      const sk = scEinPassend(k);
+      randHaltStarten(car, { phase: 'skript', quer: 0, skript: sk.skript, anpassMs: MANOEVER_ANPASS_MS,
+                             vonDrive: letztesGas(car, sk.skript[0][2]), haltMs: SC_PARK_HALT_MS, sofort: true,
                              fertig: safetyCarFertig });
-      log(garageLabel(car) + ': Safety Car parkt auf Kachel ' + k + ' (Aufnahme).', 'info');
+      log(garageLabel(car) + ': Safety Car parkt auf Kachel ' + k + ' (Aufnahme'
+          + (sk.faktor < 1 ? ', Gas x ' + sk.faktor.toFixed(2) + ' - nur ' + sk.gerade + ' Gerade(n) frei' : '') + ').', 'info');
       return;
     }
     randHaltStarten(car, { phase: 'rad', quer: 0, tempo: scParkTempo(), radTempo: scParkTempo(), radLenk: SC_RAD_LENK,
@@ -6535,6 +6602,50 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         + scAusfahrtLinksMs() + ' ms, ' + Math.round(scParkTempo() * 100) + ' %).', 'info');
   }
   const SC_PARK_HALT_MS = 800;
+  // ---- PARKEN AUF KURZEN GERADEN (v1.2.4) ------------------------------------------------------
+  // GEMELDET: "Safety-Car-Parkplatz: das klappt gerade nur, wenn ich nach Start/Ziel noch zwei Geraden habe. Mach es
+  // so, dass das Auto rechtzeitig mittig faehrt und ab Start/Ziel direkt am Rand einparkt (bzw. ab der Schiene, die
+  // ich zum Parken gewaehlt habe)." Die Einparkfolge rollt nach dem Start am gewaehlten Teil noch etwa D Teile weiter
+  // (Rollweg aus Gas x Zeit: 0,0119 m/s je Gasschritt, also 1,51 m/s bei Vollgas; ein gerades Teil 0,43 m). Liegt
+  // dort eine Kurve, faehrt die Folge mit geraden Raedern hinaus. Jetzt: zaehlen, wie viele Geraden ab dem Parkteil
+  // frei sind, und das Gas der Folge so stauchen, dass der Rollweg hineinpasst (hoechstens auf die Haelfte). Dazu
+  // faehrt das Safety Car ab zwei Teilen vor dem Parkteil mittig (pitQuer).
+  // Gerechnet rollt scEin 1,3 Teile; GEMELDET klappt es erst mit Start/Ziel plus zwei Geraden, also eher 2-2,5 Teile
+  // (Anfahrt mit Schwung, Nachrollen nach dem Bremsen). Daher die Korrektur 1,7 aus genau dieser Beobachtung.
+  const SC_GAS_MPS = 1.51, SC_GERADE_M = 0.43, SC_ROLL_KORREKTUR = 1.7;
+  function scRollweg(skript, vonDrive) {
+    let weg = (vonDrive || skript[0][2]) * MANOEVER_ANPASS_MS / 1000;
+    for (let i = 1; i < skript.length; i++) weg += skript[i - 1][2] * (skript[i][0] - skript[i - 1][0]) / 1000;
+    return weg * SC_GAS_MPS / SC_GERADE_M * SC_ROLL_KORREKTUR;
+  }
+  function scGeradenAb(k) {
+    const tiles = currentTrackTiles || [], n = tiles.length;
+    let z = 0;
+    for (let d = 0; d < n; d++) {
+      const t = tiles[(k + d) % n];
+      if (!t || (t.type !== TILE_TYPE.STRAIGHT && t.type !== TILE_TYPE.START)) break;
+      z++;
+    }
+    return z;
+  }
+  function scEinPassend(k) {
+    const sk = MANOEVER.scEin;
+    const gerade = scGeradenAb(k);
+    const D = scRollweg(sk);
+    // Etwas Reserve: die Folge soll VOR dem Ende der letzten Geraden stehen.
+    const frei = Math.max(0.5, gerade - 0.2);
+    const faktor = D > frei ? Math.max(0.5, frei / D) : 1;
+    return { skript: faktor < 1 ? sk.map(([ms, l, gas]) => [ms, l, gas * faktor]) : sk, faktor, gerade, D };
+  }
+  // Ab zwei Teilen vor dem Parkteil mittig fahren (Querlage 0), solange das Safety Car heimfaehrt.
+  function scVorParkMittig(car) {
+    const g = car && car.ghost;
+    if (!g || car.role !== 'safetycar' || !g.scHeim || g.randHalt) return false;
+    const n = currentTrackTiles ? currentTrackTiles.length : 0;
+    if (!n || g.tileIndex === null || g.tileIndex === undefined) return false;
+    const d = ((scParkKachel() - g.tileIndex) % n + n) % n;
+    return d <= 2;
+  }
   function safetyCarFertig(c) {
     const gelbWartet = !!(c.ghost && c.ghost.scGelbNachParken);
     c.scGeparkt = true;          // v1.1.30: beim naechsten Losfahren die aufgenommene Ausparkfolge
@@ -6766,7 +6877,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const n = currentTrackTiles ? currentTrackTiles.length : 0;
     const i = car.ghost.tileIndex;
     if (!n || i === null || i === undefined) return null;
-    return (i === 0 || i === 1 || i === n - 1) ? SC_VORBEI_QUER : null;
+    // v1.2.4: um das GEWAEHLTE Parkteil herum (vorher fest die Teile 0, 1 und n-1) - eins davor bis zwei danach.
+    const d = ((i - scParkKachel()) % n + n) % n;
+    return (d <= 2 || d === n - 1) ? SC_VORBEI_QUER : null;
   }
   // lenk: Radstellung beim letzten Befehl (-1..1, negativ = links); Vorgabe gerade.
   function safetyCarLichtAus(sc, lenk) {

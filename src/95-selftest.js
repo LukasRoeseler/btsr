@@ -5429,6 +5429,86 @@
 
   // v1.1.45 GEMELDET: helles Licht ohne Verbindung (Kopplung), Latenz nach Neuverbinden, Abgleich verlaesst das
   // Menue, Kartenpunkte springen, Aufstellung ab Reihe 2, Regenflackern; dazu Kleinigkeiten.
+  // v1.2.4 BESTELLT: Renntypen je Sensormodus, Fahrgefuehl je Spieler, Pacejka in Community-Challenges, Minigame-
+  // Rueckmeldung, mechanische Boxensignale, NPC-Box wie Safety Car, Safety-Car-Parken auf kurzen Geraden.
+  stAdd('Rennen und Spieler v1.2.4: Renntyp je Sensormodus, Fahrgefuehl je Spieler, Pacejka-Challenges', () => {
+    const f = [];
+    const merk = { tm: trackMode, rm: $('race-mode').value };
+    try {
+      trackMode = 'on';
+      if (renntypErlaubt('derby') || !renntypErlaubt('bestzeit')) f.push('Bahn: Derby erlaubt oder Time Attack verboten');
+      trackMode = 'off';
+      if (!renntypErlaubt('derby') || renntypErlaubt('bestzeit')) f.push('Ausdruck: Time Attack erlaubt oder Derby verboten');
+      trackMode = 'on';
+      $('race-mode').value = 'derby';
+      renntypenFiltern();
+      if ($('race-mode').value !== 'practice') f.push('Derby auf der Bahn nicht auf Training zurueckgesetzt');
+      const derbyKachel = document.querySelector('#race-mode-tiles .mode-tile[data-mode="derby"]');
+      if (derbyKachel && !derbyKachel.hidden) f.push('Derby-Kachel auf der Bahn sichtbar');
+      const opt = [...$('race-mode').options].find((o) => o.value === 'derby');
+      if (!opt || !opt.disabled) f.push('Derby in der Liste waehlbar');
+      // Durchschalten ueberspringt gesperrte Typen.
+      for (let k = 0; k < 10; k++) { konsoleQuadWechsel('renntyp', 1); if ($('race-mode').value === 'derby') { f.push('Durchschalten landet auf Derby'); break; } }
+    } finally {
+      trackMode = merk.tm; renntypenFiltern();
+      $('race-mode').value = merk.rm; $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    // Fahrgefuehl je Spieler: Spieler 2 Arcade, Spieler 1 bleibt.
+    const p1Modus = $('phys-mode').value;
+    const merkP2 = window.__spielerPreset(2);
+    try {
+      window.__spielerPresetSetzen(2, 'arcade');
+      if ($('phys-mode').value !== p1Modus) f.push('Spieler 1 hat seinen Modus verloren');
+      const arc = window.__presetValues('arcade')['phys-mode'];
+      if (physEngine2.config.physModus !== arc) f.push('Spieler 2 hat nicht Arcade (' + physEngine2.config.physModus + ')');
+      window.__spielerPresetSetzen(2, null);
+      if (physEngine2.config.physModus) f.push('"wie Spieler 1" setzt nicht zurueck');
+    } finally { window.__spielerPresetSetzen(2, merkP2); }
+    // Community-Challenges: Pacejka waehlbar, und chAnwenden laesst Pacejka stehen.
+    if (COMMUNITY_PRESETS.indexOf('propacejka') < 0) f.push('Pacejka fehlt in den Community-Presets');
+    if (String(chAnwenden).indexOf("'pacejka' ? 'pacejka' : 'physik'") < 0) f.push('Challenge erzwingt weiter Physik');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bahn ohne Derby, Ausdruck ohne Time Attack, Spieler 2 eigenes Preset, Pacejka-Challenges' };
+  });
+
+  stAdd('Boxen v1.2.4: Minigame-Haken nur bei richtig, mechanische Signale, NPC-Box wie Safety Car, SC-Parken passt', () => {
+    const f = [];
+    // Minigame: Zeitablauf loescht die Rueckmeldung; die Reihe zeigt die naechsten vier.
+    const el = $('pit-spiel');
+    if (!el || el.querySelectorAll('.ps-slot').length !== 4) f.push('Reihe mit vier Plaetzen fehlt');
+    if (!el || !el.querySelector('.ps-falsch')) f.push('Kreuz fuer falsch fehlt');
+    const css = [...document.querySelectorAll('style')].map((x) => x.textContent).join('\n');
+    if (/\.pit-spiel\[data-symbol=""\] \.ps-fertig\s*\{\s*display:\s*block/.test(css)) f.push('Haken noch in jeder Pause');
+    if (String(pitSpielTick).indexOf("sp.blitz = ''") < 0) f.push('Zeitablauf laesst die alte Rueckmeldung stehen');
+    // Signale: Schalter ab Werk aus, an = alte Toene.
+    const alt = $('setting-pit-alt-toene');
+    if (!alt || alt.defaultChecked) f.push('Schalter alte Signaltoene fehlt oder ab Werk an');
+    else { const m = alt.checked; alt.checked = true; if (pitSignalMechanisch('fertig')) f.push('alte Toene an, trotzdem mechanisch'); alt.checked = m; }
+    // NPC-Box: mit Safety Car eine andere Kachel, auf zwei Geraden.
+    const merk = { tiles: currentTrackTiles, garage: garage.slice() };
+    try {
+      currentTrackTiles = codeToTrack('SG4RG4').tiles;
+      const ohne = pitKachel();
+      garage.push({ role: 'safetycar', device: { id: 'probe-sc-box' } });
+      const mit = pitKachel();
+      const k = scParkKachel();
+      if (mit === ohne && mit === k) f.push('NPC-Box liegt auf dem Safety-Car-Platz');
+      const t = currentTrackTiles;
+      const g = (i) => [TILE_TYPE.STRAIGHT, TILE_TYPE.START].includes(t[i % t.length].type);
+      if (!g(mit) || !g(mit + 1)) f.push('NPC-Box nicht auf zwei Geraden (' + mit + ')');
+      // SC-Parken: nur Start/Ziel als Gerade -> Gas gestaucht, mit drei Geraden nicht.
+      const kurz = codeToTrack('SRG4R').tiles, lang = codeToTrack('SG3R').tiles;
+      currentTrackTiles = kurz;
+      const a = scEinPassend(0);
+      currentTrackTiles = lang;
+      const b = scEinPassend(0);
+      if (!(a.faktor < 1) || b.faktor !== 1) f.push('Stauchung falsch (kurz ' + a.faktor.toFixed(2) + ', lang ' + b.faktor.toFixed(2) + ')');
+      if (!(a.skript[1][2] < MANOEVER.scEin[1][2])) f.push('Gas der Folge nicht gestaucht');
+    } finally { currentTrackTiles = merk.tiles; garage.length = 0; merk.garage.forEach((c) => garage.push(c)); }
+    if (String(pitTick).indexOf("p.phase = 'einparken'") < 0 || String(pitTick).indexOf('scAusSkript()') < 0) f.push('NPC-Box nicht mit Safety-Car-Folgen');
+    if (String(npcBoxKlang).indexOf("'repair'") < 0) f.push('keine Ratsche im Stand');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Haken/Kreuz/nichts, vier im Voraus, mechanisch, NPC-Box neben dem SC, SC-Gas gestaucht' };
+  });
+
   stAdd('Kopplung, Abgleich und Karte v1.1.45: Trennen bei Fehler, Entwurf bis Uebernehmen, Punkt springt nicht', async () => {
     const f = [];
     // Kopplung: ein Aufbau, der nach connect scheitert, trennt; ein zweiter gleichzeitiger wird abgewiesen.
@@ -7814,44 +7894,21 @@
   // meldet 0x00, sobald das Auto steht - genau wie ein Auto, das nichts mehr liest. Eine
   // Nachbildung der Zustandsmaschine wuerde den Melder nicht enthalten und waere gruen,
   // waehrend das Auto auf dem Teppich blinkt.
-  stAdd('NPC-Boxenstopp: Phasen, rechter Rand, und kein Parken', () => {
+  // v1.2.4 BESTELLT: "NPC-Boxenstopp so wie Safety Car." Seitdem: Anfahrt, Einparkfolge (scEin), Stand, Ausparkfolge.
+  // Die Querlage kommt in der Folge aus dem Radwinkel, nicht mehr aus querSoll - gepruft wird darum die Folge, dass
+  // die Anfahrt rechts endet und dass nicht geparkt wird.
+  stAdd('NPC-Boxenstopp: Phasen wie das Safety Car (Einparken, Stand, Raus), und kein Parken', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostPitProbe) {
       return { skip: true, mass: 'ghostPitProbe nicht vorhanden' };
     }
     const r = OMEGA_TEST.ghostPitProbe({ laenge: 10, takte: 600, autos: 1 });
     const fehler = [];
-    // 1. NICHT GEPARKT. Zehn Sekunden Stillstand, also weit ueber der Bestaetigung.
     if (r.geparkt) fehler.push('waehrend des Stopps geparkt');
-    // 2. Die Phasen in der Reihenfolge, und die Sequenz ENDET.
-    //
-    // 'rand' ist seit v0.6.8 dabei: die bestellte Sekunde, in der am Rand GEFAHREN wird,
-    // bevor gebremst wird. Vorher gab pitBremse() in der Haltephase sofort volle Bremse,
-    // das Auto stand also, bevor die Querfuehrung es an den Rand bringen konnte - und eine
-    // Querfuehrung ohne Fahrt bewegt nichts. Das war die Meldung "haelt mitten auf der
-    // Strecke".
-    const soll = [null, 'anfahrt', 'rand', 'halt', 'stand', 'raus', null];
-    if (r.folge.join('>') !== soll.join('>')) {
-      fehler.push('Folge ' + r.folge.join('>') + ' statt ' + soll.join('>'));
-    }
-    // 3. RECHTS, nicht links. Am ENDE jeder Phase, nicht im Minimum: g.querSoll ist ein
-    //    nachlaufender Filter, sein Minimum ist der Startwert der Phase.
-    //
-    //    Byte 7 positiv ist rechts, und das ist nicht Konvention, sondern nachgemessen: bei
-    //    konstantem Versatz gibt +4 einen mittleren Bahnradius von 38,8 Einheiten, -4 nur
-    //    30,7 - der groessere Radius ist der aeussere.
-    // 'rand' MIT geprueft: das ist die Phase, an deren Ende das Auto am Rand sein soll -
-    // und der einzige Grund, warum es die Phase gibt.
-    for (const ph of ['rand', 'halt', 'stand']) {
-      const q = r.querEnde ? r.querEnde[ph] : null;
-      if (!(q >= 0.9)) fehler.push(ph + ': Querlage ' + q + ' statt am rechten Rand');
-    }
-    if (!(r.querEnde && r.querEnde.anfahrt > 0)) {
-      fehler.push('Anfahrt endet nicht rechts der Mitte');
-    }
+    const soll = [null, 'anfahrt', 'einparken', 'stand', 'raus', null];
+    if (r.folge.join('>') !== soll.join('>')) fehler.push('Folge ' + r.folge.join('>') + ' statt ' + soll.join('>'));
+    if (!(r.querEnde && r.querEnde.anfahrt > 0)) fehler.push('Anfahrt endet nicht rechts der Mitte');
     return { ok: !fehler.length,
-             mass: r.folge.join(' > ') + ' | Querlage am Phasenende '
-                 + JSON.stringify(r.querEnde) + ' | geparkt ' + r.geparkt
-                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+             mass: r.folge.join(' > ') + ' | geparkt ' + r.geparkt + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
   // ---- Einer pittet, die anderen weichen aus ----
@@ -12925,7 +12982,9 @@
   //
   // Jetzt gibt es eine eigene Phase 'rand', in der GEFAHREN wird, und die Bremse laeuft
   // ueber eine Rampe hoch statt zu schlagen.
-  stAdd('Boxenstopp: zwei Sekunden am Rand fahren, dann gerampt bremsen', () => {
+  // v1.2.4: statt "zwei Sekunden am Rand, dann gerampt bremsen" die Einparkfolge des Safety Cars. Geprueft: sie
+  // dauert so lange wie die Folge (Angleichen + Aufnahme + Halt), im Stand wird gebremst und geblinkt, nicht geparkt.
+  stAdd('Boxenstopp v1.2.4: Einparkfolge in Folgendauer, im Stand Bremse und Blinken', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostPitProbe) {
       return { skip: true, mass: 'ghostPitProbe nicht vorhanden' };
     }
@@ -12933,48 +12992,14 @@
     if (!r || !r.jePhase) return { skip: true, mass: 'kein Lauf' };
     const fehler = [];
     const P = r.jePhase;
-    // 1. DIE PHASE GIBT ES, und sie steht zwischen Anfahrt und Halt.
-    const soll = ['anfahrt', 'rand', 'halt', 'stand', 'raus'];
     const echt = r.folge.filter(Boolean);
-    if (echt.join('>') !== soll.join('>')) {
-      fehler.push('Folge ' + echt.join('>') + ' statt ' + soll.join('>'));
-    }
-    // 2. IN 'rand' WIRD GEFAHREN, nicht gestanden. Das ist der Kern der Meldung: ohne
-    //    Fahrt gibt es keine Querbewegung. Bei 45 ms Takt sind 2000 ms (v1.0.25, vorher
-    //    1000) rund 44 Takte.
-    if (P.rand) {
-      if (!(P.rand.takte >= 40 && P.rand.takte <= 52)) {
-        fehler.push('Randphase ' + P.rand.takte + ' Takte, erwartet rund 44');
-      }
-      if (!(P.rand.kmhEnde > 0.05)) {
-        fehler.push('steht schon in der Randphase (' + P.rand.kmhEnde + ' km/h)');
-      }
-    } else { fehler.push('keine Randphase'); }
-    // 3. UND AM ENDE DER RANDPHASE IST ES AM RAND. Das ist die eigentliche Zusage.
-    if (!(r.querEnde && r.querEnde.rand >= 0.95)) {
-      fehler.push('am Ende der Randphase nur bei ' + (r.querEnde || {}).rand);
-    }
-    // 4. DIE BREMSE LAEUFT HOCH. Ein Sprung von 0 auf 1 im ersten Takt waere genau das,
-    //    was "nicht direkt auf 0" ausschliesst.
-    const v = (P.halt && P.halt.bremseVerlauf) || [];
-    if (v.length < 3) {
-      fehler.push('kein Bremsverlauf aufgezeichnet');
-    } else if (!(v[0] < 0.2 && v[1] > v[0] && v[v.length - 1] >= 0.99)) {
-      fehler.push('Bremsverlauf ' + v.slice(0, 4).join('/') + ' ist keine Rampe');
-    }
-    // 5. ES BLINKT WAEHREND RANDFAHRT, BREMSEN UND STEHEN - nicht nur beim Herausfahren.
-    for (const ph of ['rand', 'halt', 'stand']) {
-      if (P[ph] && !(P[ph].dunkel > 0)) fehler.push('kein Blinken in Phase ' + ph);
-    }
-    // 6. UND ES PARKT SICH NICHT SELBST. Die Gnade muss ueber den ganzen Stopp halten.
+    if (echt.join('>') !== 'anfahrt>einparken>stand>raus') fehler.push('Folge ' + echt.join('>'));
+    const soll = (MANOEVER_ANPASS_MS + manoeverDauer(MANOEVER.scEin) + 500) / 45;
+    if (!P.einparken || !(Math.abs(P.einparken.takte - soll) <= 12)) fehler.push('Einparken ' + (P.einparken ? P.einparken.takte : '?') + ' Takte, erwartet rund ' + Math.round(soll));
+    if (!(P.stand && P.stand.dunkel > 0)) fehler.push('kein Blinken im Stand');
     if (r.geparkt) fehler.push('parkt sich waehrend des Stopps selbst');
     return { ok: !fehler.length,
-             mass: echt.join('>')
-                 + ' | rand ' + (P.rand ? P.rand.takte + ' Takte, ' + P.rand.kmhEnde
-                                          + ' km/h, quer ' + r.querEnde.rand : '?')
-                 + ' | Bremse ' + v.slice(0, 5).join('/')
-                 + ' | dunkel ' + ['rand', 'halt', 'stand']
-                     .map((k) => k + ' ' + (P[k] ? P[k].dunkel : '?')).join(', ')
+             mass: echt.join('>') + ' | einparken ' + (P.einparken ? P.einparken.takte : '?') + ' Takte'
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
@@ -19797,9 +19822,10 @@
       if (!sc.ghost.randHalt) f.push('parkt nicht auf dem gewaehlten Teil');
       // Andere Autos fahren an ihm links vorbei (Start/Ziel, Folgeschiene), nicht mitten auf der Strecke.
       sc.ghost = { running: true, randHalt: { scLinie: true } };
-      const npc = { device: { id: 'v1' }, role: 'ghost', ghost: { running: true, tileIndex: 0 } };
-      if (scVorbeiQuer(npc) !== SC_VORBEI_QUER || !(SC_VORBEI_QUER < 0)) f.push('auf Start/Ziel nicht links vorbei');
-      npc.ghost.tileIndex = 4;
+      // v1.2.4: links vorbei um das GEWAEHLTE Parkteil (hier 3), nicht mehr fest um Start/Ziel.
+      const npc = { device: { id: 'v1' }, role: 'ghost', ghost: { running: true, tileIndex: 3 } };
+      if (scVorbeiQuer(npc) !== SC_VORBEI_QUER || !(SC_VORBEI_QUER < 0)) f.push('am Parkteil nicht links vorbei');
+      npc.ghost.tileIndex = 8;
       if (scVorbeiQuer(npc) !== null) f.push('mitten auf der Strecke links gezwungen');
       // "Neben der Strecke" ist nicht mehr waehlbar.
       const opt = $('sc-parkplatz') ? [...$('sc-parkplatz').options].find((o) => o.value === 'neben') : null;

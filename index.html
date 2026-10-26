@@ -2866,8 +2866,24 @@
   .ps-sym { width: 58%; height: 58%; fill: none; stroke-width: 2.4; display: none; }
   .ps-quad { stroke: #ff8ad8; } .ps-kreis { stroke: #ff6b7a; }
   .pit-spiel[data-symbol="quad"] .ps-quad, .pit-spiel[data-symbol="kreis"] .ps-kreis { display: block; }
-  .ps-fertig { display: none; font-size: 40px; color: var(--good); }
-  .pit-spiel[data-symbol=""] .ps-fertig { display: block; }
+  /* v1.2.4 GEMELDET: "Der gruene Haken ist komisch, weil er auch kommt, wenn ich nichts druecke oder was Falsches."
+     Er stand in JEDER Pause. Jetzt: Haken nur nach einem richtigen Druck, Kreuz nach einem falschen, nichts nach
+     Zeitablauf. */
+  .ps-fertig, .ps-falsch { display: none; font-size: 40px; }
+  .ps-fertig { color: var(--good); } .ps-falsch { color: var(--bad); }
+  .pit-spiel[data-symbol=""][data-blitz="ok"] .ps-fertig { display: block; }
+  .pit-spiel[data-symbol=""][data-blitz="falsch"] .ps-falsch { display: block; }
+  /* Die Reihe: der aktuelle und die drei naechsten Knoepfe. Beim Weiterschalten rutscht sie um einen Platz nach
+     links (data-schieben setzt sie einen Platz nach rechts, dann gleitet sie zurueck). */
+  .ps-reihe { display: flex; gap: 8px; height: 30px; overflow: hidden; width: calc(4 * 30px + 3 * 8px); }
+  .ps-reihe-innen { display: flex; gap: 8px; transition: transform .22s ease-out; }
+  .pit-spiel[data-schieben="1"] .ps-reihe-innen { transform: translateX(38px); transition: none; }
+  .ps-slot { width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 4px;
+    border: 1px solid rgba(255,255,255,.25); opacity: .55; }
+  .ps-slot:first-child { opacity: 1; border-color: var(--k-blau); box-shadow: 0 0 0 2px var(--k-blau); }
+  .ps-slot svg { width: 20px; height: 20px; fill: none; stroke-width: 2.4; display: none; }
+  .ps-slot[data-s="quad"] .ps-quad, .ps-slot[data-s="kreis"] .ps-kreis { display: block; }
+  .ps-slot[data-s=""] { border-color: transparent; box-shadow: none; }
   .pit-spiel[data-blitz="ok"] .ps-karte { border-color: var(--good); box-shadow: 0 0 0 3px var(--good), 0 10px 40px rgba(0,0,0,.7); }
   .pit-spiel[data-blitz="falsch"] .ps-karte { border-color: var(--bad); box-shadow: 0 0 0 3px var(--bad), 0 10px 40px rgba(0,0,0,.7); }
   .ps-fuss { display: flex; gap: 14px; align-items: center; font-size: 12px; }
@@ -4867,7 +4883,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.2.3</span></span>
+        <span class="foot-ver">v<span id="app-version">1.2.4</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5289,7 +5305,14 @@
             <svg class="ps-sym ps-quad" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg>
             <svg class="ps-sym ps-kreis" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/></svg>
             <span class="ps-fertig" data-i18n-skip>&#10003;</span>
+            <span class="ps-falsch" data-i18n-skip>&#10007;</span>
           </div>
+          <div class="ps-reihe" aria-hidden="true"><div class="ps-reihe-innen">
+            <span class="ps-slot" data-s=""><svg class="ps-quad" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg><svg class="ps-kreis" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/></svg></span>
+            <span class="ps-slot" data-s=""><svg class="ps-quad" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg><svg class="ps-kreis" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/></svg></span>
+            <span class="ps-slot" data-s=""><svg class="ps-quad" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg><svg class="ps-kreis" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/></svg></span>
+            <span class="ps-slot" data-s=""><svg class="ps-quad" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg><svg class="ps-kreis" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/></svg></span>
+          </div></div>
           <div class="ps-fuss"><button type="button" id="pit-spiel-quad" aria-label="Quadrat">&#9633;</button>
             <span id="pit-spiel-treffer" data-i18n-skip></span>
             <button type="button" id="pit-spiel-kreis" aria-label="Kreis">&#9675;</button></div>
@@ -6022,6 +6045,10 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.2</span></b></p>
       <ul class="muted" id="patchnotes-12" style="padding-left:20px; line-height:1.7">
+        <li>Spieler und Renntypen: Spieler 2 und 3 k&#246;nnen in der Garage ein eigenes Fahrgef&#252;hl w&#228;hlen (z. B. Spieler 1 Pacejka, Spieler 2 Arcade) oder &#8222;wie Spieler 1&#8220;; ihre Reifenmischung wird nicht mehr von Spieler 1 &#252;berschrieben. Renntypen folgen dem Sensormodus: auf der Bahn kein Demolition Derby, im Ausdruck kein Time Attack (auch beim Durchschalten auf FAHREN); Rennstart und Meisterschaft warnen, wenn im Ausdruck-Modus NPCs oder ein Safety Car in der Garage stehen. Community-Challenges gibt es jetzt auch mit Pacejka (Apps Script neu bereitstellen).</li>
+        <li>Boxen: Im Minigame kommt der gr&#252;ne Haken nur noch nach einem richtigen Druck, ein rotes Kreuz nach einem falschen, nichts nach Zeitablauf; darunter stehen der aktuelle und die drei n&#228;chsten Kn&#246;pfe in einer Reihe, die animiert weiterrutscht. Die Signalt&#246;ne der Boxengasse (Bling, Blip, D&#252;&#252;t) sind jetzt mechanisch &#8211; kurze Ausschnitte aus Ratsche und Schlagschrauber; die alten T&#246;ne gibt es mit dem Schalter &#8222;Alte Boxen-Signalt&#246;ne&#8220;.</li>
+        <li>NPC-Boxenstopp wie das Safety Car (WIP): einparken mit der Einparkfolge des Safety Cars, im Stand l&#228;uft die Ratsche, ausparken mit der Ausparkfolge. Weiterhin immer nur ein Auto. Steht ein Safety Car in der Garage, liegt die NPC-Box auf dem ersten St&#252;ck mit zwei Geraden ab drei Teilen hinter dessen Parkplatz.</li>
+        <li>Safety Car parkt auch auf kurzen Geraden: Ab zwei Teilen vor dem Parkteil f&#228;hrt es mittig; reicht die Gerade ab dem Parkteil nicht f&#252;r den Rollweg der Einparkfolge, wird ihr Gas gestaucht (h&#246;chstens auf die H&#228;lfte), damit es auf der Geraden steht statt in die Kurve zu rollen. Andere Autos fahren um das gew&#228;hlte Parkteil links vorbei (vorher fest um Start/Ziel).</li>
         <li>Bluetooth: Kein helles &#8222;verbunden&#8220;-Licht mehr ohne Verbindung. Ein Verbindungsaufbau, der nach dem Koppeln scheitert oder h&#228;ngt (h&#246;chstens 20 s), trennt jetzt sauber; zwei gleichzeitige Aufbauten zum selben Auto (automatisches Verbinden und Klick) gibt es nicht mehr; beim App-Start werden alte Verbindungen geschlossen; &#8222;Alle trennen&#8220; trennt in der App auch h&#228;ngende Verbindungen. Latenz: W&#228;hrend ein Auto neu verbindet, schreiben NPCs nicht mehr (das sperrte den schnellen Weg bis zu 10 Minuten), und meldet ein Auto dauerhaft langsamer, wird das schnelle Verbindungsintervall neu angefordert. Teile davon brauchen die neue APK.</li>
         <li>Controller-Abgleich: &#196;nderungen sind jetzt ein Entwurf und werden erst mit &#8222;&#220;bernehmen&#8220; gespeichert (am Pad: Options 1 s halten), &#8222;Abbrechen&#8220; verwirft sie. Solange reagiert der Controller auf nichts anderes, und danach erst wieder, wenn alle Tasten losgelassen sind &#8211; vorher l&#246;ste eine gehaltene Taste nach der Erfassung Zur&#252;ck, Reiterwechsel oder Cockpit aus. Die Ruhelage wird erst bei losgelassenen Tasten genommen (X erfasste sich sonst selbst).</li>
         <li>Karte und Aufstellung: Der eigene Punkt misst jetzt seine Kachelzeiten (vorher feste 800 ms, er blieb am Kachelende stehen und sprang), z&#228;hlt verlorene Meldungen mit und springt nicht mehr eine Kachel zur&#252;ck, solange der neue Z&#228;hlerstand noch nicht verarbeitet ist. Automatische Aufstellung: Ab Reihe 2 gilt ein knapp (bis eine halbe Kachel) &#252;berfahrener Platz &#8211; vorher drehten diese Autos eine weitere Runde. In der Schlange f&#228;llt kein Auto mehr unter die Lesegrenze. Gas der Safety-Car-Folge Standard 70 % statt 75 % (Reihe 1 stand etwas zu weit au&#223;en).</li>
@@ -10589,6 +10616,10 @@
         </div></div>
       <div class="opt-row"><div class="opt-label">Regen<small>Select oder W. Reifen kommen beim Boxenstopp passend.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-rain"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Alte Boxen-Signaltöne<small>Aus (Standard): In der Boxengasse klingen
+          fertig getankt, Reifen gewechselt, repariert und &bdquo;los&ldquo; mechanisch &ndash; kurze Ausschnitte aus Ratsche
+          und Schlagschrauber. An: die früheren Signaltöne (Bling, Blip, Düüt).</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-pit-alt-toene"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Blitz bei Gewitter<small>Bei Regen blitzt das Cockpit alle 20 bis 30&nbsp;s kurz auf. Aus: nur der Donner.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-blitz" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Strecken-Ambience<small>Vorbeifahrten, Regen, Donner.</small></div>
@@ -15142,6 +15173,16 @@
     "Karte und Aufstellung: Der eigene Punkt misst jetzt seine Kachelzeiten (vorher feste 800 ms, er blieb am Kachelende stehen und sprang), zählt verlorene Meldungen mit und springt nicht mehr eine Kachel zurück, solange der neue Zählerstand noch nicht verarbeitet ist. Automatische Aufstellung: Ab Reihe 2 gilt ein knapp (bis eine halbe Kachel) überfahrener Platz – vorher drehten diese Autos eine weitere Runde. In der Schlange fällt kein Auto mehr unter die Lesegrenze. Gas der Safety-Car-Folge Standard 70 % statt 75 % (Reihe 1 stand etwas zu weit außen).": "Map and line-up: your own dot now measures its tile times (before a fixed 800 ms, so it stopped at the tile end and jumped), counts lost messages and no longer jumps back a tile while the new counter value is not yet processed. Automatic line-up: from row 2 a slot that was just passed (up to half a tile) counts – before, these cars did another lap. In the queue no car drops below the reading limit any more. Throttle of the safety car sequence default 70% instead of 75% (row 1 stood a bit too far out).",
     "Controller-Abgleich: Änderungen sind jetzt ein Entwurf und werden erst mit „Übernehmen“ gespeichert (am Pad: Options 1 s halten), „Abbrechen“ verwirft sie. Solange reagiert der Controller auf nichts anderes, und danach erst wieder, wenn alle Tasten losgelassen sind – vorher löste eine gehaltene Taste nach der Erfassung Zurück, Reiterwechsel oder Cockpit aus. Die Ruhelage wird erst bei losgelassenen Tasten genommen (X erfasste sich sonst selbst).": "Controller mapping: changes are now a draft and are only saved with “Apply” (on the pad: hold Options for 1 s); “Cancel” discards them. Until then the controller reacts to nothing else, and afterwards only once all buttons are released – before, a held button triggered Back, tab switching or the cockpit after a capture. The rest position is only taken with all buttons released (X captured itself otherwise).",
     "Bluetooth: Kein helles „verbunden“-Licht mehr ohne Verbindung. Ein Verbindungsaufbau, der nach dem Koppeln scheitert oder hängt (höchstens 20 s), trennt jetzt sauber; zwei gleichzeitige Aufbauten zum selben Auto (automatisches Verbinden und Klick) gibt es nicht mehr; beim App-Start werden alte Verbindungen geschlossen; „Alle trennen“ trennt in der App auch hängende Verbindungen. Latenz: Während ein Auto neu verbindet, schreiben NPCs nicht mehr (das sperrte den schnellen Weg bis zu 10 Minuten), und meldet ein Auto dauerhaft langsamer, wird das schnelle Verbindungsintervall neu angefordert. Teile davon brauchen die neue APK.": "Bluetooth: no more bright “connected” light without a connection. A connection attempt that fails or hangs after pairing (at most 20 s) now disconnects cleanly; two simultaneous attempts to the same car (auto-connect and a tap) no longer happen; old connections are closed when the app starts; “Disconnect all” in the app also closes hanging connections. Latency: while a car reconnects, NPCs no longer write (that locked the fast path for up to 10 minutes), and if a car keeps reporting more slowly, the fast connection interval is requested again. Parts of this need the new APK.",
+    "wie Spieler 1": "like player 1",
+    "Ausdruck-Modus: NPCs und Safety Car fahren hier nicht": "Printout mode: NPCs and safety car do not drive here",
+    "gibt es im Ausdruck-Modus nicht": "is not available in printout mode",
+    "gibt es auf der Bahn nicht": "is not available on the track",
+    "Aus (Standard): In der Boxengasse klingen fertig getankt, Reifen gewechselt, repariert und „los“ mechanisch – kurze Ausschnitte aus Ratsche und Schlagschrauber. An: die früheren Signaltöne (Bling, Blip, Düüt).": "Off (default): in the pit lane, refuelled, tyres changed, repaired and “go” sound mechanical – short snippets of ratchet and impact wrench. On: the earlier signal tones (bling, blip, doot).",
+    "Alte Boxen-Signaltöne": "Old pit signal tones",
+    "Safety Car parkt auch auf kurzen Geraden: Ab zwei Teilen vor dem Parkteil fährt es mittig; reicht die Gerade ab dem Parkteil nicht für den Rollweg der Einparkfolge, wird ihr Gas gestaucht (höchstens auf die Hälfte), damit es auf der Geraden steht statt in die Kurve zu rollen. Andere Autos fahren um das gewählte Parkteil links vorbei (vorher fest um Start/Ziel).": "The safety car also parks on short straights: from two pieces before its parking piece it drives in the middle; if the straight from the parking piece is too short for the rolling distance of the parking sequence, its throttle is scaled down (at most to half) so it stops on the straight instead of rolling into the corner. Other cars pass on the left around the chosen parking piece (before always around start/finish).",
+    "NPC-Boxenstopp wie das Safety Car (WIP): einparken mit der Einparkfolge des Safety Cars, im Stand läuft die Ratsche, ausparken mit der Ausparkfolge. Weiterhin immer nur ein Auto. Steht ein Safety Car in der Garage, liegt die NPC-Box auf dem ersten Stück mit zwei Geraden ab drei Teilen hinter dessen Parkplatz.": "NPC pit stop like the safety car (WIP): parking with the safety car's parking sequence, the ratchet runs while it stands, leaving with the exit sequence. Still only one car at a time. If there is a safety car in the garage, the NPC pit lies on the first stretch with two straights from three pieces behind its parking spot.",
+    "Boxen: Im Minigame kommt der grüne Haken nur noch nach einem richtigen Druck, ein rotes Kreuz nach einem falschen, nichts nach Zeitablauf; darunter stehen der aktuelle und die drei nächsten Knöpfe in einer Reihe, die animiert weiterrutscht. Die Signaltöne der Boxengasse (Bling, Blip, Düüt) sind jetzt mechanisch – kurze Ausschnitte aus Ratsche und Schlagschrauber; die alten Töne gibt es mit dem Schalter „Alte Boxen-Signaltöne“.": "Pit: in the minigame the green tick now only appears after a correct press, a red cross after a wrong one, nothing after a timeout; below, the current and the next three buttons stand in a row that slides on with an animation. The pit lane signal tones (bling, blip, doot) are now mechanical – short snippets of ratchet and impact wrench; the old tones are available with the switch “Old pit signal tones”.",
+    "Spieler und Renntypen: Spieler 2 und 3 können in der Garage ein eigenes Fahrgefühl wählen (z. B. Spieler 1 Pacejka, Spieler 2 Arcade) oder „wie Spieler 1“; ihre Reifenmischung wird nicht mehr von Spieler 1 überschrieben. Renntypen folgen dem Sensormodus: auf der Bahn kein Demolition Derby, im Ausdruck kein Time Attack (auch beim Durchschalten auf FAHREN); Rennstart und Meisterschaft warnen, wenn im Ausdruck-Modus NPCs oder ein Safety Car in der Garage stehen. Community-Challenges gibt es jetzt auch mit Pacejka (Apps Script neu bereitstellen).": "Players and race types: players 2 and 3 can choose their own driving feel in the garage (e.g. player 1 Pacejka, player 2 Arcade) or “like player 1”; their tyre compound is no longer overwritten by player 1. Race types follow the sensor mode: no Demolition Derby on the track, no Time Attack in printout mode (also when cycling on DRIVE); race start and championship warn if NPCs or a safety car are in the garage in printout mode. Community challenges are now also available with Pacejka (redeploy the Apps Script).",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -19454,7 +19495,7 @@
     if (!z.car) return;
     physicsStepVon(z);
     // v1.0.25: auch im Modus "Aus" (RC) die Physik-Ausgabe, solange der Autopilot faehrt.
-    const physJetzt = physicsEnabled || !!z.apTakt;
+    const physJetzt = spielerPhysikAn(z) || !!z.apTakt;   // v1.2.4: eigener Modus je Spieler
     // v1.1.3: RC wie Auto 1 - Lenkung roh, Gas durch rcGas (vorher fuhr die Bremse sofort rueckwaerts).
     let steer = physJetzt ? z.outSteer : z.steer;
     if (!z.rcLage) z.rcLage = rcLageNeu();
@@ -23006,6 +23047,29 @@
   function zusatzMotorAbgleichen(m) {
     Object.assign(m.config, physEngine.config);
     if (Array.isArray(physEngine.config.gears)) m.config.gears = physEngine.config.gears.map((g) => Object.assign({}, g));
+    if (m.spieler >= 2) spielerGefuehlUeberlagern(m.spieler, m);
+  }
+  // v1.2.4: das eigene Preset eines Zusatzspielers (98-presets.js) ueber die kopierte Abstimmung legen, und seine
+  // eigene Reifenmischung wieder einsetzen (die Kopie brachte Grip und Verschleiss von Spieler 1 mit).
+  function spielerGefuehlUeberlagern(nr, motor) {
+    if (!motor) return;
+    const key = typeof window.__spielerPreset === 'function' ? window.__spielerPreset(nr) : null;
+    const snap = key && typeof window.__presetSchnappschuss === 'function' ? window.__presetSchnappschuss(key) : null;
+    if (snap) {
+      Object.assign(motor.config, JSON.parse(JSON.stringify(snap.config)));
+      motor.config.physModus = snap.modus;
+    } else {
+      motor.config.physModus = null;
+    }
+    const z = typeof zusatzPlatz === 'function' ? zusatzPlatz(nr) : null;
+    if (z && z.reifen && typeof mischungAnwenden === 'function' && typeof wxRainLevel === 'function') {
+      try { mischungAnwenden(motor, z.reifen, wxRainLevel() * wxRainLevel()); } catch (e) { /* beim Laden */ }
+    }
+  }
+  // Rechnet dieser Spieler mit Physik (Physik/Pacejka) oder RC? Ohne eigenes Preset wie Spieler 1.
+  function spielerPhysikAn(z) {
+    const m = z && z.motor && z.motor.config.physModus;
+    return m ? (m === 'physik' || m === 'pacejka') : physicsEnabled;
   }
   // =========================================================================
   // Fahren: Regler, Kalibrierung, Makros
@@ -23080,6 +23144,8 @@
       // selbst haelt. Sie wird angeschrieben, damit man nicht versehentlich darin faehrt.
       b.classList.toggle('warn', !rail);
     }
+    // v1.2.4: die Renntypen folgen dem Sensormodus (70-race.js, zur Laufzeit da).
+    if (typeof renntypenFiltern === 'function') { try { renntypenFiltern(); } catch (e) { /* beim Laden */ } }
     return rail;
   }
 
@@ -26455,7 +26521,8 @@
   // Tempo, eigene Reifen- und Bremsentemperatur - alles, was den Wagen fahren laesst.
   function physicsStepVon(z) {
     z.apTakt = false;
-    if (!physicsEnabled) {
+    // v1.2.4: eigener Modus je Spieler (spielerPhysikAn, 49-spieler.js).
+    if (!spielerPhysikAn(z)) {
       if (!autopilotGreiftFuer(z.nr)) { z.lastTime = null; return; }
       z.apTakt = true;
       if (z.lastTime === null) apEinstieg(z.motor, Math.max(0, z.throttle || 0));
@@ -26557,10 +26624,14 @@
   // dieselben Objekte. Sonst schriebe ein Schaltvorgang von Spieler 2 in die Gaenge von
   // Spieler 1 (genau diese Falle steht bei den Ghosts schon einmal beschrieben).
   function physEngine2Abgleichen() {
+    // v1.2.4: waehrend ein Preset fuer einen Zusatzspieler durchgerechnet wird (presetSchnappschuss), stehen
+    // die Regler kurz auf einem fremden Stand - nicht abgleichen.
+    if (typeof window.__presetSchnappLaeuft === 'function' && window.__presetSchnappLaeuft()) return;
     Object.assign(physEngine2.config, physEngine.config);
     if (Array.isArray(physEngine.config.gears)) {
       physEngine2.config.gears = physEngine.config.gears.map(g => Object.assign({}, g));
     }
+    spielerGefuehlUeberlagern(2, physEngine2);
     // Und die weiteren Plaetze (v0.9.17): dieselbe Abstimmung fuer alle.
     for (let n = 3; n <= SPIELER_MAX; n++) zusatzMotorAbgleichen(zusatzPlatz(n).motor);
   }
@@ -26588,12 +26659,21 @@
   // WAS NICHT UEBER config LAEUFT, steht weiter unten in spielerZweiSenden(): die
   // Hoechstgeschwindigkeit und die Batteriekompensation sitzen im Sendeweg von Auto 1, den
   // Auto 2 gar nicht nimmt.
+  let abgleichUhr = null;
   for (const art of ['input', 'change']) {
     document.addEventListener(art, (e) => {
       if (!zweiSpieler) return;
+      if (typeof window.__presetSchnappLaeuft === 'function' && window.__presetSchnappLaeuft()) return;
       const el = e.target;
       if (!el || !el.closest || !el.closest('#tab-options, #tab-race')) return;
-      physEngine2Abgleichen();
+      // v1.2.4: hat ein Zusatzspieler ein eigenes Preset, ist dessen Abstimmung nach einer Aenderung neu zu rechnen -
+      // gesammelt nach 250 ms, damit ein gezogener Schieber nicht bei jedem Schritt alle Regler zweimal setzt.
+      const eigen = typeof window.__spielerPreset === 'function'
+        && [2, 3].some((n) => window.__spielerPreset(n));
+      if (!eigen) { physEngine2Abgleichen(); return; }
+      if (typeof window.__presetSchnappLeeren === 'function') window.__presetSchnappLeeren();
+      clearTimeout(abgleichUhr);
+      abgleichUhr = setTimeout(physEngine2Abgleichen, 250);
     }, true);
   }
 
@@ -28001,7 +28081,14 @@
   function konsoleQuadWechsel(q, dir) {
     if (q === 'renntyp') {
       const s = $('race-mode');
-      s.selectedIndex = (s.selectedIndex + dir + s.options.length) % s.options.length;
+      // v1.2.4: nur erlaubte Renntypen (renntypenFiltern sperrt die anderen je Sensormodus).
+      const n = s.options.length;
+      let i = s.selectedIndex;
+      for (let k = 0; k < n; k++) {
+        i = (i + dir + n) % n;
+        if (!s.options[i].disabled) break;
+      }
+      s.selectedIndex = i;
       s.dispatchEvent(new Event('change', { bubbles: true }));
     } else if (q === 'bahn') {
       const cb = $('setting-ontrack');
@@ -28043,7 +28130,8 @@
     }
     if (quad === 'renntyp') {
       const s = $('race-mode');
-      return { anzahl: s ? s.options.length : 0, index: s ? s.selectedIndex : -1 };
+      const frei = s ? [...s.options].filter((o) => !o.disabled) : [];
+      return { anzahl: frei.length, index: s ? frei.indexOf(s.options[s.selectedIndex]) : -1 };
     }
     if (quad === 'profil') {
       const keys = window.__presetKeysFahren ? window.__presetKeysFahren()
@@ -39503,6 +39591,10 @@
     // deren Autopilot haette das Fahrerauto mitten im Rennen zu seinem Startplatz gesteuert.
     if (typeof aufstellenStoppen === 'function') aufstellenStoppen(false);
     weichVerbotAnwenden();
+    {
+      const w = ausdruckNpcWarnung();
+      if (w) { showHudToast(w); log(w, 'warn'); }
+    }
     // EINSCHALTRAMPE: der Schirm zieht in 300 ms von schwarz auf Wert hoch, wie ein TFT beim
     // Einschalten. Hier und nicht in raceGreen(), weil der Schirm mit dem Knopfdruck
     // "angeht" und nicht erst bei Gruen - im Countdown will man ihn schon lesen.
@@ -40007,6 +40099,35 @@
   // Kacheln und Wetterknoepfe schreiben in das versteckte Auswahlfeld und loesen change
   // aus. Damit gibt es weiter genau EINE Stelle, die auf eine Aenderung reagiert, und die
   // Voreinstellungen koennen den Modus setzen, ohne die Kacheln zu kennen.
+  // ---- RENNTYPEN JE SENSORMODUS (v1.2.4) ---------------------------------------------------
+  // BESTELLT: "Mach die auswaehlbaren Renntypen abhaengig vom Sensor-Modus. Also wenn ich auf der Bahn fahre, dann
+  // kein Demolition Derby, und wenn ich frei fahre, kein Time Attack." Ein verbotener Typ verschwindet aus Kacheln,
+  // Liste und dem Durchschalten auf FAHREN; war er gewaehlt, faellt die Wahl auf Training zurueck.
+  function renntypErlaubt(modus) {
+    return trackMode === 'on' ? modus !== 'derby' : modus !== 'bestzeit';
+  }
+  function renntypenFiltern() {
+    const s = $('race-mode');
+    if (!s) return;
+    for (const o of s.options) { o.disabled = !renntypErlaubt(o.value); o.hidden = o.disabled; }
+    for (const b of document.querySelectorAll('#race-mode-tiles .mode-tile')) b.hidden = !renntypErlaubt(b.dataset.mode);
+    if (!renntypErlaubt(s.value)) {
+      const alt = RACE_MODES[s.value] ? RACE_MODES[s.value].label : s.value;
+      s.value = 'practice';
+      s.dispatchEvent(new Event('change', { bubbles: true }));
+      if (typeof showHudToast === 'function') {
+        showHudToast(t(alt) + ' ' + (trackMode === 'on' ? t('gibt es auf der Bahn nicht') : t('gibt es im Ausdruck-Modus nicht')) + ' – ' + t('Training'));
+      }
+    }
+    syncRaceModeTiles();
+  }
+  // Im Ausdruck-Modus koennen NPCs und Safety Car nicht fahren (sie brauchen die gelesene Bahn). Eine Warnung, wenn
+  // trotzdem welche in der Garage stehen - beim Rennstart und beim Meisterschafts-Event.
+  function ausdruckNpcWarnung() {
+    if (trackMode === 'on' || typeof garage === 'undefined') return '';
+    const n = garage.filter((c) => c.device && (c.role === 'ghost' || c.role === 'safetycar')).length;
+    return n ? t('Ausdruck-Modus: NPCs und Safety Car fahren hier nicht') + ' (' + n + ')' : '';
+  }
   function syncRaceModeTiles() {
     const v = $('race-mode').value;
     for (const b of document.querySelectorAll('#race-mode-tiles .mode-tile')) {
@@ -40038,6 +40159,8 @@
   syncRaceWxPick();
 
   $('race-mode').addEventListener('change', (e) => {
+    // v1.2.4: ein im Sensormodus verbotener Typ (z. B. aus der Sicherung) faellt auf Training zurueck.
+    if (!renntypErlaubt(e.target.value)) { renntypenFiltern(); return; }
     raceMode = e.target.value;
     // Sensible default per mode rather than carrying a minute count over into a lap count.
     // DERBY (v0.8.126): das Limit ist das KILLS-ZIEL, Voreinstellung 1.
@@ -40048,6 +40171,8 @@
     if (raceMode === 'knockout') knockoutBereit(true);
     if (raceMode === 'bestzeit') bestzeitBereit(true);
   });
+  // v1.2.4: beim Laden einmal nach dem Sensormodus filtern (applyScanMode lief schon, bevor es diese Datei gab).
+  renntypenFiltern();
   $('race-limit').addEventListener('input', (e) => {
     const v = parseInt(e.target.value, 10);
     if (Number.isFinite(v) && (v >= 1 || (v === 0 && (raceMode === 'practice' || raceMode === 'bestzeit')))) raceLimit = v;
@@ -41928,8 +42053,10 @@
       const stoodLongEnough = pitStandElapsed >= PIT_MANDATORY_STAND_S;
       pitPlan = null; pitDone = null; pitReady = false;
       if (pitServiceStart !== null) {
-        playTone(440, 0.12, 'sine', 0.18);
-        setTimeout(() => playTone(660, 0.22, 'sine', 0.18), 120); // rising: throttle released
+        if (!pitSignalMechanisch('raus')) {
+          playTone(440, 0.12, 'sine', 0.18);
+          setTimeout(() => playTone(660, 0.22, 'sine', 0.18), 120); // rising: throttle released
+        }
         padRumble(0.25, 0.15, 120, 'box');
       }
       // A mandatory stop counts after PIT_MANDATORY_STAND_S of standing time. Requiring the
@@ -41990,8 +42117,10 @@
       // Boxen-Ansage nicht im Weg stehen.
       if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); lapAnsageBeendet(); }
       ansage('pit', t('Boxenstopp eingeleitet'));
-      playTone(880, 0.12, 'square', 0.16);
-      setTimeout(() => playTone(880, 0.12, 'square', 0.16), 180);
+      if (!pitSignalMechanisch('gasse')) {
+        playTone(880, 0.12, 'square', 0.16);
+        setTimeout(() => playTone(880, 0.12, 'square', 0.16), 180);
+      }
       showHudToast('BOXENGASSE AKTIV, ' + PIT_DOUBLE_KMH + ' KM/H');
       log('Boxengasse per doppeltem Ausdruck: zweiter Kontakt nach ' + seit
           + ' ms, Tempolimit ' + PIT_DOUBLE_KMH + ' km/h fuer '
@@ -42235,6 +42364,7 @@
     if (sp.i < sp.folge.length && pitStandElapsed - sp.fensterAb >= sp.fensterS) {
       sp.i++;
       sp.fensterAb = pitStandElapsed + PIT_SPIEL_PAUSE;
+      sp.blitz = ''; sp.blitzBis = 0;   // v1.2.4: Zeit abgelaufen - weder Haken noch Kreuz
     }
     const anteil = Math.min(1, (pitStandElapsed + sp.bonus) / sp.T);
     if (pl.refuel) {
@@ -42279,7 +42409,19 @@
     // In der Pause (vor fensterAb) ist das Feld leer.
     const sym = sp.i < sp.folge.length && pitStandElapsed >= sp.fensterAb ? sp.folge[sp.i] : '';
     el.dataset.symbol = sym;
+    // v1.2.4: Zeitablauf setzt blitz zurueck (pitSpielTick), damit dort kein Haken erscheint.
     el.dataset.blitz = pitStandElapsed < sp.blitzBis ? sp.blitz : '';
+    // Die Reihe der naechsten vier Knoepfe (vergangene verschwinden), animiert beim Weiterschalten.
+    const slots = el.querySelectorAll('.ps-slot');
+    slots.forEach((s, k) => { s.dataset.s = sp.folge[sp.i + k] || ''; });
+    if (el.dataset.i !== String(sp.i)) {
+      if (el.dataset.i !== undefined && el.dataset.i !== '') {
+        el.dataset.schieben = '1';
+        void el.offsetWidth;          // Stand ohne Uebergang festhalten, dann zuruecklaufen lassen
+        el.dataset.schieben = '';
+      }
+      el.dataset.i = String(sp.i);
+    }
     el.style.setProperty('--fenster', sym
       ? String(Math.max(0, 1 - (pitStandElapsed - sp.fensterAb) / sp.fensterS)) : '0');
     $('pit-spiel-zaehler').textContent = Math.min(sp.i + 1, PIT_SPIEL_ANZAHL) + '/' + PIT_SPIEL_ANZAHL;
@@ -43829,7 +43971,8 @@
   // Dieselben Schleifen wie bei Auto 1, je Spielerplatz eigene Quellen und auf SEINER
   // Stereoseite (spielerPan) - zwei Stopps gleichzeitig sollen sich nicht abschalten.
   const pitLoopsZ = {};
-  function setPitLoopFuer(nr, which, on) {
+  // nr: Spielerplatz (2, 3) oder ein eigener Schluessel (v1.2.4: 'npc:<id>' fuer NPC-Boxenstopps); pan optional.
+  function setPitLoopFuer(nr, which, on, pan) {
     const spec = PIT_LOOP_SPEC[which];
     if (!spec) return;
     const l = pitLoopsZ[nr] || (pitLoopsZ[nr] = {});
@@ -43847,9 +43990,9 @@
       const g = audioCtx.createGain();
       g.gain.value = spec.gain;
       let ziel = audioCtx.destination;
-      if (audioCtx.createStereoPanner && typeof spielerPan === 'function') {
+      if (audioCtx.createStereoPanner && (pan !== undefined || typeof spielerPan === 'function')) {
         const p = audioCtx.createStereoPanner();
-        p.pan.value = spielerPan(nr);
+        p.pan.value = pan !== undefined ? pan : spielerPan(nr);
         p.connect(audioCtx.destination);
         ziel = p;
       }
@@ -44805,15 +44948,50 @@
   }, 120);
 
   // Three distinguishable confirmations, so the ear alone tells you which job finished.
-  function pitChimeFuel()   { playTone(520, 0.10, 'sine', 0.16);
+  // ---- MECHANISCHE SIGNALE IN DER BOXENGASSE (v1.2.4) -------------------------------------
+  // BESTELLT: "Boxengasse-Sounds: koennen wir das Bling, Blip und Duueet standardmaessig ausschalten oder durch einen
+  // mechanischen Ton ersetzen?" Statt Sinus- und Rechtecktoenen kurze Ausschnitte aus den Aufnahmen, die in der Box
+  // ohnehin laufen: die Ratsche (pit_repair.ogg) und der Schlagschrauber (pit_wrench_paar.ogg). Die alten Toene gibt
+  // es weiter mit dem Schalter "Alte Boxen-Signaltoene" (Optionen > Ton, Standard aus).
+  function pitAlteSignale() { const el = $('setting-pit-alt-toene'); return !!(el && el.checked); }
+  function pitEinzelklang(buf, ab, dauer, gain) {
+    if (!buf || !audioCtx || !soundEnabled) return false;
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    const g = audioCtx.createGain();
+    g.gain.value = gain;
+    src.connect(g).connect(audioCtx.destination);
+    src.start(0, Math.min(ab, Math.max(0, buf.duration - 0.05)), dauer);
+    return true;
+  }
+  // true = mechanisch gespielt (dann kein alter Ton). Faellt eine Aufnahme aus, kommt der alte Ton.
+  function pitSignalMechanisch(art) {
+    if (pitAlteSignale()) return false;
+    const ratsche = fxBuffers.pitRepair, schrauber = fxBuffers.pitPaar;
+    if (art === 'tank') return pitEinzelklang(ratsche, 0, 0.16, 0.5);
+    if (art === 'reifen') return pitEinzelklang(schrauber, 1.30, 0.32, 0.5);
+    if (art === 'reparatur') return pitEinzelklang(ratsche, 0, 0.34, 0.5);
+    if (art === 'fertig') {
+      const a = pitEinzelklang(schrauber, 0.02, 0.36, 0.6);
+      setTimeout(() => pitEinzelklang(ratsche, 0, 0.16, 0.55), 380);
+      return a;
+    }
+    if (art === 'raus' || art === 'gasse') return pitEinzelklang(ratsche, 0, 0.2, 0.45);
+    return false;
+  }
+  function pitChimeFuel()   { if (pitSignalMechanisch('tank')) return;
+                              playTone(520, 0.10, 'sine', 0.16);
                               setTimeout(() => playTone(780, 0.16, 'sine', 0.16), 90); }
-  function pitChimeTyres()  { playTone(300, 0.12, 'triangle', 0.16);
+  function pitChimeTyres()  { if (pitSignalMechanisch('reifen')) return;
+                              playTone(300, 0.12, 'triangle', 0.16);
                               setTimeout(() => playTone(300, 0.16, 'triangle', 0.14), 130); }
-  function pitChimeRepair() { playTone(660, 0.10, 'sine', 0.15);
+  function pitChimeRepair() { if (pitSignalMechanisch('reparatur')) return;
+                              playTone(660, 0.10, 'sine', 0.15);
                               setTimeout(() => playTone(880, 0.10, 'sine', 0.15), 80);
                               setTimeout(() => playTone(1170, 0.18, 'sine', 0.15), 160); }
   // Deliberately the loudest and most distinct of the four: this is the one that means GO.
-  function pitChimeReady()  { playTone(880, 0.13, 'square', 0.20);
+  function pitChimeReady()  { if (pitSignalMechanisch('fertig')) return;
+                              playTone(880, 0.13, 'square', 0.20);
                               setTimeout(() => playTone(1320, 0.26, 'square', 0.20), 120); }
 
   function describePitPlan(p) {
@@ -46158,7 +46336,9 @@
   // der Strecke in der Vorschau und im jeweiligen Challenge-Submenue an."
   // Nur die festen Voreinstellungen, keine eigene Abstimmung. Unbekannt oder alt = Pro, wie
   // alle Challenges bisher.
-  const COMMUNITY_PRESETS = ['arcade', 'pro', 'gt3', 'f1', 'realgt3'];
+  // v1.2.4 BESTELLT: "Bei Community-Challenges bitte die Schwierigkeitsgrade anpassen, zumindest Pacejka ergaenzen."
+  // Dieselbe Liste steht im Apps Script (tools/challenges-apps-script.gs, C_PRESETS) - beide muessen gleich sein.
+  const COMMUNITY_PRESETS = ['arcade', 'pro', 'gt3', 'f1', 'realgt3', 'propacejka'];
   function communityPresetGueltig(p) { return COMMUNITY_PRESETS.indexOf(p) >= 0 ? p : 'pro'; }
   function communityPresetName(p) {
     const k = communityPresetGueltig(p);
@@ -46635,7 +46815,10 @@
   }
   function chAnwenden(def, modus, preset) {
     applyPreset(preset);
-    chSetzen('phys-mode', 'physik');
+    // v1.2.4: Challenges fahren mit Physik - ausser das Preset ist Pacejka, dann bleibt es Pacejka (vorher stellte
+    // diese Zeile jede Pacejka-Abstimmung zurueck auf Physik).
+    const pv = typeof window.__presetValues === 'function' ? window.__presetValues(preset) : null;
+    chSetzen('phys-mode', pv && pv['phys-mode'] === 'pacejka' ? 'pacejka' : 'physik');
     chSetzen('race-mode', modus === 'rennen' ? 'laps' : 'practice');
     // Rennen: bis CH_EXTRA_LAPS mehr als die Soll-Rundenzahl, damit eine verpatzte Runde mit
     // einer extra ausgeglichen werden kann (siehe challengeRundeFertig).
@@ -47990,6 +48173,8 @@
     const ev = meister.plan.events[lauf.idx];
     if (!ev) return;
     if (kRennenLaeuft()) { msMeldung(t('Erst das laufende Rennen beenden')); return; }
+    // v1.2.4 BESTELLT: Warnung, wenn im Ausdruck-Modus NPCs oder ein Safety Car mitfahren sollen.
+    if (typeof ausdruckNpcWarnung === 'function' && ausdruckNpcWarnung()) msMeldung(ausdruckNpcWarnung());
     const f = meisterFormat(ev);
     const rennen = meisterIstRennen(ev);
     meisterStreckeMp = meisterStreckeAnwenden(ev);
@@ -54373,7 +54558,21 @@
       // v0.10.5 BESTELLT: "Lass mich in der Garage bei gesteuerten Autos das Fahrgefuehl ueber
       // Preset einstellen." Dieselben vier wie im FAHREN-Menue. Die Abstimmung gilt fuer alle
       // gesteuerten Autos zugleich (Spieler 2/3 uebernehmen die von Spieler 1).
-      if (/^player/.test(car.role) && window.__presetKeysFahren && window.__applyPreset) {
+      // v1.2.4 BESTELLT: "verschiedene Schwierigkeitsstufen je Spieler (z. B. Spieler 1 Pacejka, Spieler 2 Arcade)."
+      // Spieler 1 stellt wie bisher die Regler (und damit alle ohne eigenes Preset); Spieler 2 und 3 waehlen ein
+      // EIGENES Preset oder "wie Spieler 1".
+      const nrZ = zusatzPlatzVonRolle(car.role) ? Number(String(car.role).replace('player', '')) : 1;
+      if (nrZ >= 2 && window.__presetKeysFahren && window.__spielerPresetSetzen) {
+        const keys = [null].concat(window.__presetKeysFahren());
+        const aktiv = window.__spielerPreset(nrZ);
+        const i = Math.max(0, keys.indexOf(aktiv));
+        const wahl = (d) => {
+          window.__spielerPresetSetzen(nrZ, keys[(i + d + keys.length) % keys.length]);
+          renderGarage();
+        };
+        box.appendChild(garWertZeile('Fahrgefühl', aktiv ? window.__presetLabel(aktiv) : t('wie Spieler 1'),
+                                     () => wahl(-1), () => wahl(1)));
+      } else if (/^player/.test(car.role) && window.__presetKeysFahren && window.__applyPreset) {
         const keys = window.__presetKeysFahren();
         const aktiv = window.__presetActive ? window.__presetActive() : null;
         const i = keys.indexOf(aktiv);
@@ -55280,6 +55479,7 @@
   }
 
   function stopGhost(car) {
+    npcBoxKlang(car, false);                            // v1.2.4: die Ratsche der Box mit anhalten
     if (car.ghost) car.ghost.aufstellZiel = null;      // v0.9.22: Aufstellung endet mit
     // v0.9.61 (D8): die Motorstimme des Ghosts mit anhalten.
     if (car.ghost && typeof ghostStimmeStoppen === 'function') ghostStimmeStoppen(car);
@@ -57603,9 +57803,24 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
 
   // Die Boxenkachel von Platz 0: die Start/Ziel-Kachel des Layouts. NICHT 0 annehmen -
   // ortStartIndex() sucht sie, und auf einem gescannten Layout kann sie irgendwo liegen.
+  // v1.2.4 BESTELLT: "NPC-Boxenstopp so wie Safety Car, aber an anderer Stelle, wenn beides an ist." Ohne Safety Car
+  // bleibt die Box an Start/Ziel. Steht ein Safety Car in der Garage, parkt es dort (scParkKachel) und braucht danach
+  // rund zwei Teile Rollweg - dann liegt die NPC-Box auf dem ersten Stueck mit zwei Geraden ab drei Teilen dahinter.
   function pitKachel() {
     if (!currentTrackTiles || currentTrackTiles.length < 3) return -1;
-    return ortStartIndex(currentTrackTiles);
+    const s = ortStartIndex(currentTrackTiles);
+    const sc = typeof garage !== 'undefined' && garage.some((c) => c.role === 'safetycar' && c.device);
+    if (!sc) return s;
+    return npcBoxNeben(scParkKachel());
+  }
+  function npcBoxNeben(k) {
+    const tiles = currentTrackTiles, n = tiles.length;
+    const gerade = (i) => { const t = tiles[((i % n) + n) % n]; return !!t && (t.type === TILE_TYPE.STRAIGHT || t.type === TILE_TYPE.START); };
+    for (let d = 3; d < n; d++) {
+      const i = (k + d) % n;
+      if (gerade(i) && gerade(i + 1)) return i;
+    }
+    return (k + 3) % n;
   }
 
   // Und die Kachel eines beliebigen Platzes. Platz 1 liegt eine Kachel SPAETER, also in
@@ -57656,6 +57871,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // v1.0.25: der Randhalt (Safety Car, Aufstellung) haelt dieselbe Querlage wie ein Stopp.
     const rh = car.ghost && car.ghost.randHalt;
     if (rh) return rh.quer;
+    // v1.2.4: das Safety Car faehrt vor seinem Parkteil mittig (scVorParkMittig).
+    if (scVorParkMittig(car)) return 0;
     const p = car.ghost && car.ghost.pit;
     if (!p) return null;
     // ---- DIE GASSE HINUNTER, DANN HEREIN ------------------------------------------
@@ -58078,7 +58295,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                    tempoAb: opt.tempoAb || 0, rundTakt: !!opt.rundTakt,
                    sofort: !!opt.sofort,
                    skript: opt.skript || null, anpassMs: opt.anpassMs || 0, vonDrive: opt.vonDrive || 0,
-                   lenkFaktor: opt.lenkFaktor, weiter: !!opt.weiter };
+                   lenkFaktor: opt.lenkFaktor, weiter: !!opt.weiter,
+                   // v1.2.4: am Ende NICHT abstellen, nur fertig() rufen (NPC-Boxenstopp: danach kommt die Standzeit).
+                   ohneStopp: !!opt.ohneStopp };
   }
   // Nach der Randfahrt: mit radLenk erst noch mit eingeschlagenen Raedern an den Rand ('rad'),
   // sonst gleich halten.
@@ -58161,7 +58380,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (now - h.at >= h.haltMs) {
       g.randHalt = null;
       const fertig = h.fertig;
-      stopGhost(car);
+      if (!h.ohneStopp) stopGhost(car);
       if (fertig) fertig(car);
     }
     return true;
@@ -58182,11 +58401,19 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const pk = pitKachelFuer(p.platz);
 
     if (p.phase === 'anfahrt') {
-      // Am eigenen Platz angekommen? Dann NICHT sofort bremsen, sondern erst die bestellte
-      // Sekunde am Rand fahren - siehe PIT_RAND_MS.
-      if (g.tileIndex === pk) { p.phase = 'rand'; p.at = now; }
+      // v1.2.4 BESTELLT: "NPC-Boxenstopp ueberarbeiten: so wie Safety Car." Am eigenen Platz die Einparkfolge des
+      // Safety Cars (scEin, rechts), danach steht das Auto (randHalt ohne Abstellen) und die Standzeit beginnt.
+      if (g.tileIndex === pk) {
+        p.phase = 'einparken'; p.at = now;
+        const sk = MANOEVER.scEin;
+        randHaltStarten(car, { phase: 'skript', quer: 0, skript: sk, anpassMs: MANOEVER_ANPASS_MS,
+          vonDrive: letztesGas(car, sk[0][2]), haltMs: 500, sofort: true, ohneStopp: true,
+          fertig: (c) => npcBoxStehen(c) });
+        log(garageLabel(car) + ': parkt in der Box ein (Safety-Car-Folge).', 'info');
+      }
       return true;
     }
+    if (p.phase === 'einparken') return true;     // die Folge laeuft (randHaltTick)
     if (p.phase === 'rand') {
       // BIS AN DEN RAND, und erst dann abbremsen - nicht blind nach PIT_RAND_MS. Ein
       // langsames Auto (kleines tempoAnteil) erreicht die Breite erst spaeter; ein
@@ -58215,6 +58442,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (p.phase === 'stand') {
       if (now - p.at >= p.laenge) {
         p.phase = 'raus'; p.at = now;
+        npcBoxKlang(car, false);
+        // v1.2.4: Ausparken wie das Safety Car (scAus, mit dem Gasfaktor), ohne Halt in das normale Fahren.
+        randHaltStarten(car, { phase: 'skript', quer: 0, skript: scAusSkript(), anpassMs: 0, vonDrive: 0, weiter: true,
+          fertig: (c) => { if (c.ghost) { c.ghost.pit = null; } pitPlatzRaeumen(c); if (c.ghost) pitFaelligZiehen(c.ghost); } });
         // ---- DIE REIFEN KOMMEN AM ENDE DER STANDZEIT DRAUF -------------------------
         //
         // Am ENDE und nicht am Anfang: die Standzeit IST die Arbeit, und ein Auto, das mit
@@ -58243,13 +58474,32 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       }
       return true;
     }
-    // 'raus': fertig, sobald die Querlage zurueck ist.
-    if (now - p.at >= PIT_RAUS_MS) {
+    // 'raus': die Ausparkfolge (randHalt 'skript', weiter) raeumt den Stopp in ihrem fertig(). Rueckfall, falls sie
+    // nicht laeuft: nach PIT_RAUS_MS wie bisher.
+    if (!g.randHalt && now - p.at >= PIT_RAUS_MS) {
       g.pit = null;
       pitPlatzRaeumen(car);
       pitFaelligZiehen(g);
     }
     return true;
+  }
+  // Ende der Einparkfolge: die Standzeit beginnt (mit Rammstrafe), dazu die Ratsche.
+  function npcBoxStehen(car) {
+    const p = car.ghost && car.ghost.pit;
+    if (!p) return;
+    p.phase = 'stand'; p.at = Date.now();
+    const strafe = typeof rammStrafeAbsitzen === 'function' ? rammStrafeAbsitzen(car) : 0;
+    if (strafe > 0) p.laenge += strafe * 1000;
+    npcBoxKlang(car, true);
+    log(garageLabel(car) + ': steht in der Box, ' + (p.laenge / 1000).toFixed(1)
+        + ' s' + (strafe > 0 ? ' (davon ' + strafe + ' s Strafe)' : '') + '.', 'info');
+  }
+  // v1.2.4 BESTELLT: "Es soll dann auch der Sound abgespielt werden von den Ratschen beim NPC-Boxenstopp." Die Ratsche
+  // (pit_repair.ogg) als Schleife, solange der NPC steht, auf seiner Stereoseite.
+  function npcBoxKlang(car, an) {
+    if (typeof setPitLoopFuer !== 'function' || !car || !car.device) return;
+    const pan = typeof ghostStimmePan === 'function' ? ghostStimmePan(car) : 0;
+    setPitLoopFuer('npc:' + car.device.id, 'repair', !!an, pan);
   }
 
   let finishSeiteZaehler = 0;
@@ -59104,10 +59354,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (((g.tileIndex % n) + n) % n !== k) return;
     g.scHeim = false;
     if (scParkArt() === 'aufnahme') {
-      randHaltStarten(car, { phase: 'skript', quer: 0, skript: MANOEVER.scEin, anpassMs: MANOEVER_ANPASS_MS,
-                             vonDrive: letztesGas(car, MANOEVER.scEin[0][2]), haltMs: SC_PARK_HALT_MS, sofort: true,
+      const sk = scEinPassend(k);
+      randHaltStarten(car, { phase: 'skript', quer: 0, skript: sk.skript, anpassMs: MANOEVER_ANPASS_MS,
+                             vonDrive: letztesGas(car, sk.skript[0][2]), haltMs: SC_PARK_HALT_MS, sofort: true,
                              fertig: safetyCarFertig });
-      log(garageLabel(car) + ': Safety Car parkt auf Kachel ' + k + ' (Aufnahme).', 'info');
+      log(garageLabel(car) + ': Safety Car parkt auf Kachel ' + k + ' (Aufnahme'
+          + (sk.faktor < 1 ? ', Gas x ' + sk.faktor.toFixed(2) + ' - nur ' + sk.gerade + ' Gerade(n) frei' : '') + ').', 'info');
       return;
     }
     randHaltStarten(car, { phase: 'rad', quer: 0, tempo: scParkTempo(), radTempo: scParkTempo(), radLenk: SC_RAD_LENK,
@@ -59117,6 +59369,50 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         + scAusfahrtLinksMs() + ' ms, ' + Math.round(scParkTempo() * 100) + ' %).', 'info');
   }
   const SC_PARK_HALT_MS = 800;
+  // ---- PARKEN AUF KURZEN GERADEN (v1.2.4) ------------------------------------------------------
+  // GEMELDET: "Safety-Car-Parkplatz: das klappt gerade nur, wenn ich nach Start/Ziel noch zwei Geraden habe. Mach es
+  // so, dass das Auto rechtzeitig mittig faehrt und ab Start/Ziel direkt am Rand einparkt (bzw. ab der Schiene, die
+  // ich zum Parken gewaehlt habe)." Die Einparkfolge rollt nach dem Start am gewaehlten Teil noch etwa D Teile weiter
+  // (Rollweg aus Gas x Zeit: 0,0119 m/s je Gasschritt, also 1,51 m/s bei Vollgas; ein gerades Teil 0,43 m). Liegt
+  // dort eine Kurve, faehrt die Folge mit geraden Raedern hinaus. Jetzt: zaehlen, wie viele Geraden ab dem Parkteil
+  // frei sind, und das Gas der Folge so stauchen, dass der Rollweg hineinpasst (hoechstens auf die Haelfte). Dazu
+  // faehrt das Safety Car ab zwei Teilen vor dem Parkteil mittig (pitQuer).
+  // Gerechnet rollt scEin 1,3 Teile; GEMELDET klappt es erst mit Start/Ziel plus zwei Geraden, also eher 2-2,5 Teile
+  // (Anfahrt mit Schwung, Nachrollen nach dem Bremsen). Daher die Korrektur 1,7 aus genau dieser Beobachtung.
+  const SC_GAS_MPS = 1.51, SC_GERADE_M = 0.43, SC_ROLL_KORREKTUR = 1.7;
+  function scRollweg(skript, vonDrive) {
+    let weg = (vonDrive || skript[0][2]) * MANOEVER_ANPASS_MS / 1000;
+    for (let i = 1; i < skript.length; i++) weg += skript[i - 1][2] * (skript[i][0] - skript[i - 1][0]) / 1000;
+    return weg * SC_GAS_MPS / SC_GERADE_M * SC_ROLL_KORREKTUR;
+  }
+  function scGeradenAb(k) {
+    const tiles = currentTrackTiles || [], n = tiles.length;
+    let z = 0;
+    for (let d = 0; d < n; d++) {
+      const t = tiles[(k + d) % n];
+      if (!t || (t.type !== TILE_TYPE.STRAIGHT && t.type !== TILE_TYPE.START)) break;
+      z++;
+    }
+    return z;
+  }
+  function scEinPassend(k) {
+    const sk = MANOEVER.scEin;
+    const gerade = scGeradenAb(k);
+    const D = scRollweg(sk);
+    // Etwas Reserve: die Folge soll VOR dem Ende der letzten Geraden stehen.
+    const frei = Math.max(0.5, gerade - 0.2);
+    const faktor = D > frei ? Math.max(0.5, frei / D) : 1;
+    return { skript: faktor < 1 ? sk.map(([ms, l, gas]) => [ms, l, gas * faktor]) : sk, faktor, gerade, D };
+  }
+  // Ab zwei Teilen vor dem Parkteil mittig fahren (Querlage 0), solange das Safety Car heimfaehrt.
+  function scVorParkMittig(car) {
+    const g = car && car.ghost;
+    if (!g || car.role !== 'safetycar' || !g.scHeim || g.randHalt) return false;
+    const n = currentTrackTiles ? currentTrackTiles.length : 0;
+    if (!n || g.tileIndex === null || g.tileIndex === undefined) return false;
+    const d = ((scParkKachel() - g.tileIndex) % n + n) % n;
+    return d <= 2;
+  }
   function safetyCarFertig(c) {
     const gelbWartet = !!(c.ghost && c.ghost.scGelbNachParken);
     c.scGeparkt = true;          // v1.1.30: beim naechsten Losfahren die aufgenommene Ausparkfolge
@@ -59348,7 +59644,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const n = currentTrackTiles ? currentTrackTiles.length : 0;
     const i = car.ghost.tileIndex;
     if (!n || i === null || i === undefined) return null;
-    return (i === 0 || i === 1 || i === n - 1) ? SC_VORBEI_QUER : null;
+    // v1.2.4: um das GEWAEHLTE Parkteil herum (vorher fest die Teile 0, 1 und n-1) - eins davor bis zwei danach.
+    const d = ((i - scParkKachel()) % n + n) % n;
+    return (d <= 2 || d === n - 1) ? SC_VORBEI_QUER : null;
   }
   // lenk: Radstellung beim letzten Befehl (-1..1, negativ = links); Vorgabe gerade.
   function safetyCarLichtAus(sc, lenk) {
@@ -81710,6 +82008,86 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
 
   // v1.1.45 GEMELDET: helles Licht ohne Verbindung (Kopplung), Latenz nach Neuverbinden, Abgleich verlaesst das
   // Menue, Kartenpunkte springen, Aufstellung ab Reihe 2, Regenflackern; dazu Kleinigkeiten.
+  // v1.2.4 BESTELLT: Renntypen je Sensormodus, Fahrgefuehl je Spieler, Pacejka in Community-Challenges, Minigame-
+  // Rueckmeldung, mechanische Boxensignale, NPC-Box wie Safety Car, Safety-Car-Parken auf kurzen Geraden.
+  stAdd('Rennen und Spieler v1.2.4: Renntyp je Sensormodus, Fahrgefuehl je Spieler, Pacejka-Challenges', () => {
+    const f = [];
+    const merk = { tm: trackMode, rm: $('race-mode').value };
+    try {
+      trackMode = 'on';
+      if (renntypErlaubt('derby') || !renntypErlaubt('bestzeit')) f.push('Bahn: Derby erlaubt oder Time Attack verboten');
+      trackMode = 'off';
+      if (!renntypErlaubt('derby') || renntypErlaubt('bestzeit')) f.push('Ausdruck: Time Attack erlaubt oder Derby verboten');
+      trackMode = 'on';
+      $('race-mode').value = 'derby';
+      renntypenFiltern();
+      if ($('race-mode').value !== 'practice') f.push('Derby auf der Bahn nicht auf Training zurueckgesetzt');
+      const derbyKachel = document.querySelector('#race-mode-tiles .mode-tile[data-mode="derby"]');
+      if (derbyKachel && !derbyKachel.hidden) f.push('Derby-Kachel auf der Bahn sichtbar');
+      const opt = [...$('race-mode').options].find((o) => o.value === 'derby');
+      if (!opt || !opt.disabled) f.push('Derby in der Liste waehlbar');
+      // Durchschalten ueberspringt gesperrte Typen.
+      for (let k = 0; k < 10; k++) { konsoleQuadWechsel('renntyp', 1); if ($('race-mode').value === 'derby') { f.push('Durchschalten landet auf Derby'); break; } }
+    } finally {
+      trackMode = merk.tm; renntypenFiltern();
+      $('race-mode').value = merk.rm; $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    // Fahrgefuehl je Spieler: Spieler 2 Arcade, Spieler 1 bleibt.
+    const p1Modus = $('phys-mode').value;
+    const merkP2 = window.__spielerPreset(2);
+    try {
+      window.__spielerPresetSetzen(2, 'arcade');
+      if ($('phys-mode').value !== p1Modus) f.push('Spieler 1 hat seinen Modus verloren');
+      const arc = window.__presetValues('arcade')['phys-mode'];
+      if (physEngine2.config.physModus !== arc) f.push('Spieler 2 hat nicht Arcade (' + physEngine2.config.physModus + ')');
+      window.__spielerPresetSetzen(2, null);
+      if (physEngine2.config.physModus) f.push('"wie Spieler 1" setzt nicht zurueck');
+    } finally { window.__spielerPresetSetzen(2, merkP2); }
+    // Community-Challenges: Pacejka waehlbar, und chAnwenden laesst Pacejka stehen.
+    if (COMMUNITY_PRESETS.indexOf('propacejka') < 0) f.push('Pacejka fehlt in den Community-Presets');
+    if (String(chAnwenden).indexOf("'pacejka' ? 'pacejka' : 'physik'") < 0) f.push('Challenge erzwingt weiter Physik');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bahn ohne Derby, Ausdruck ohne Time Attack, Spieler 2 eigenes Preset, Pacejka-Challenges' };
+  });
+
+  stAdd('Boxen v1.2.4: Minigame-Haken nur bei richtig, mechanische Signale, NPC-Box wie Safety Car, SC-Parken passt', () => {
+    const f = [];
+    // Minigame: Zeitablauf loescht die Rueckmeldung; die Reihe zeigt die naechsten vier.
+    const el = $('pit-spiel');
+    if (!el || el.querySelectorAll('.ps-slot').length !== 4) f.push('Reihe mit vier Plaetzen fehlt');
+    if (!el || !el.querySelector('.ps-falsch')) f.push('Kreuz fuer falsch fehlt');
+    const css = [...document.querySelectorAll('style')].map((x) => x.textContent).join('\n');
+    if (/\.pit-spiel\[data-symbol=""\] \.ps-fertig\s*\{\s*display:\s*block/.test(css)) f.push('Haken noch in jeder Pause');
+    if (String(pitSpielTick).indexOf("sp.blitz = ''") < 0) f.push('Zeitablauf laesst die alte Rueckmeldung stehen');
+    // Signale: Schalter ab Werk aus, an = alte Toene.
+    const alt = $('setting-pit-alt-toene');
+    if (!alt || alt.defaultChecked) f.push('Schalter alte Signaltoene fehlt oder ab Werk an');
+    else { const m = alt.checked; alt.checked = true; if (pitSignalMechanisch('fertig')) f.push('alte Toene an, trotzdem mechanisch'); alt.checked = m; }
+    // NPC-Box: mit Safety Car eine andere Kachel, auf zwei Geraden.
+    const merk = { tiles: currentTrackTiles, garage: garage.slice() };
+    try {
+      currentTrackTiles = codeToTrack('SG4RG4').tiles;
+      const ohne = pitKachel();
+      garage.push({ role: 'safetycar', device: { id: 'probe-sc-box' } });
+      const mit = pitKachel();
+      const k = scParkKachel();
+      if (mit === ohne && mit === k) f.push('NPC-Box liegt auf dem Safety-Car-Platz');
+      const t = currentTrackTiles;
+      const g = (i) => [TILE_TYPE.STRAIGHT, TILE_TYPE.START].includes(t[i % t.length].type);
+      if (!g(mit) || !g(mit + 1)) f.push('NPC-Box nicht auf zwei Geraden (' + mit + ')');
+      // SC-Parken: nur Start/Ziel als Gerade -> Gas gestaucht, mit drei Geraden nicht.
+      const kurz = codeToTrack('SRG4R').tiles, lang = codeToTrack('SG3R').tiles;
+      currentTrackTiles = kurz;
+      const a = scEinPassend(0);
+      currentTrackTiles = lang;
+      const b = scEinPassend(0);
+      if (!(a.faktor < 1) || b.faktor !== 1) f.push('Stauchung falsch (kurz ' + a.faktor.toFixed(2) + ', lang ' + b.faktor.toFixed(2) + ')');
+      if (!(a.skript[1][2] < MANOEVER.scEin[1][2])) f.push('Gas der Folge nicht gestaucht');
+    } finally { currentTrackTiles = merk.tiles; garage.length = 0; merk.garage.forEach((c) => garage.push(c)); }
+    if (String(pitTick).indexOf("p.phase = 'einparken'") < 0 || String(pitTick).indexOf('scAusSkript()') < 0) f.push('NPC-Box nicht mit Safety-Car-Folgen');
+    if (String(npcBoxKlang).indexOf("'repair'") < 0) f.push('keine Ratsche im Stand');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Haken/Kreuz/nichts, vier im Voraus, mechanisch, NPC-Box neben dem SC, SC-Gas gestaucht' };
+  });
+
   stAdd('Kopplung, Abgleich und Karte v1.1.45: Trennen bei Fehler, Entwurf bis Uebernehmen, Punkt springt nicht', async () => {
     const f = [];
     // Kopplung: ein Aufbau, der nach connect scheitert, trennt; ein zweiter gleichzeitiger wird abgewiesen.
@@ -84095,44 +84473,21 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // meldet 0x00, sobald das Auto steht - genau wie ein Auto, das nichts mehr liest. Eine
   // Nachbildung der Zustandsmaschine wuerde den Melder nicht enthalten und waere gruen,
   // waehrend das Auto auf dem Teppich blinkt.
-  stAdd('NPC-Boxenstopp: Phasen, rechter Rand, und kein Parken', () => {
+  // v1.2.4 BESTELLT: "NPC-Boxenstopp so wie Safety Car." Seitdem: Anfahrt, Einparkfolge (scEin), Stand, Ausparkfolge.
+  // Die Querlage kommt in der Folge aus dem Radwinkel, nicht mehr aus querSoll - gepruft wird darum die Folge, dass
+  // die Anfahrt rechts endet und dass nicht geparkt wird.
+  stAdd('NPC-Boxenstopp: Phasen wie das Safety Car (Einparken, Stand, Raus), und kein Parken', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostPitProbe) {
       return { skip: true, mass: 'ghostPitProbe nicht vorhanden' };
     }
     const r = OMEGA_TEST.ghostPitProbe({ laenge: 10, takte: 600, autos: 1 });
     const fehler = [];
-    // 1. NICHT GEPARKT. Zehn Sekunden Stillstand, also weit ueber der Bestaetigung.
     if (r.geparkt) fehler.push('waehrend des Stopps geparkt');
-    // 2. Die Phasen in der Reihenfolge, und die Sequenz ENDET.
-    //
-    // 'rand' ist seit v0.6.8 dabei: die bestellte Sekunde, in der am Rand GEFAHREN wird,
-    // bevor gebremst wird. Vorher gab pitBremse() in der Haltephase sofort volle Bremse,
-    // das Auto stand also, bevor die Querfuehrung es an den Rand bringen konnte - und eine
-    // Querfuehrung ohne Fahrt bewegt nichts. Das war die Meldung "haelt mitten auf der
-    // Strecke".
-    const soll = [null, 'anfahrt', 'rand', 'halt', 'stand', 'raus', null];
-    if (r.folge.join('>') !== soll.join('>')) {
-      fehler.push('Folge ' + r.folge.join('>') + ' statt ' + soll.join('>'));
-    }
-    // 3. RECHTS, nicht links. Am ENDE jeder Phase, nicht im Minimum: g.querSoll ist ein
-    //    nachlaufender Filter, sein Minimum ist der Startwert der Phase.
-    //
-    //    Byte 7 positiv ist rechts, und das ist nicht Konvention, sondern nachgemessen: bei
-    //    konstantem Versatz gibt +4 einen mittleren Bahnradius von 38,8 Einheiten, -4 nur
-    //    30,7 - der groessere Radius ist der aeussere.
-    // 'rand' MIT geprueft: das ist die Phase, an deren Ende das Auto am Rand sein soll -
-    // und der einzige Grund, warum es die Phase gibt.
-    for (const ph of ['rand', 'halt', 'stand']) {
-      const q = r.querEnde ? r.querEnde[ph] : null;
-      if (!(q >= 0.9)) fehler.push(ph + ': Querlage ' + q + ' statt am rechten Rand');
-    }
-    if (!(r.querEnde && r.querEnde.anfahrt > 0)) {
-      fehler.push('Anfahrt endet nicht rechts der Mitte');
-    }
+    const soll = [null, 'anfahrt', 'einparken', 'stand', 'raus', null];
+    if (r.folge.join('>') !== soll.join('>')) fehler.push('Folge ' + r.folge.join('>') + ' statt ' + soll.join('>'));
+    if (!(r.querEnde && r.querEnde.anfahrt > 0)) fehler.push('Anfahrt endet nicht rechts der Mitte');
     return { ok: !fehler.length,
-             mass: r.folge.join(' > ') + ' | Querlage am Phasenende '
-                 + JSON.stringify(r.querEnde) + ' | geparkt ' + r.geparkt
-                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+             mass: r.folge.join(' > ') + ' | geparkt ' + r.geparkt + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
   // ---- Einer pittet, die anderen weichen aus ----
@@ -89206,7 +89561,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   //
   // Jetzt gibt es eine eigene Phase 'rand', in der GEFAHREN wird, und die Bremse laeuft
   // ueber eine Rampe hoch statt zu schlagen.
-  stAdd('Boxenstopp: zwei Sekunden am Rand fahren, dann gerampt bremsen', () => {
+  // v1.2.4: statt "zwei Sekunden am Rand, dann gerampt bremsen" die Einparkfolge des Safety Cars. Geprueft: sie
+  // dauert so lange wie die Folge (Angleichen + Aufnahme + Halt), im Stand wird gebremst und geblinkt, nicht geparkt.
+  stAdd('Boxenstopp v1.2.4: Einparkfolge in Folgendauer, im Stand Bremse und Blinken', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostPitProbe) {
       return { skip: true, mass: 'ghostPitProbe nicht vorhanden' };
     }
@@ -89214,48 +89571,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!r || !r.jePhase) return { skip: true, mass: 'kein Lauf' };
     const fehler = [];
     const P = r.jePhase;
-    // 1. DIE PHASE GIBT ES, und sie steht zwischen Anfahrt und Halt.
-    const soll = ['anfahrt', 'rand', 'halt', 'stand', 'raus'];
     const echt = r.folge.filter(Boolean);
-    if (echt.join('>') !== soll.join('>')) {
-      fehler.push('Folge ' + echt.join('>') + ' statt ' + soll.join('>'));
-    }
-    // 2. IN 'rand' WIRD GEFAHREN, nicht gestanden. Das ist der Kern der Meldung: ohne
-    //    Fahrt gibt es keine Querbewegung. Bei 45 ms Takt sind 2000 ms (v1.0.25, vorher
-    //    1000) rund 44 Takte.
-    if (P.rand) {
-      if (!(P.rand.takte >= 40 && P.rand.takte <= 52)) {
-        fehler.push('Randphase ' + P.rand.takte + ' Takte, erwartet rund 44');
-      }
-      if (!(P.rand.kmhEnde > 0.05)) {
-        fehler.push('steht schon in der Randphase (' + P.rand.kmhEnde + ' km/h)');
-      }
-    } else { fehler.push('keine Randphase'); }
-    // 3. UND AM ENDE DER RANDPHASE IST ES AM RAND. Das ist die eigentliche Zusage.
-    if (!(r.querEnde && r.querEnde.rand >= 0.95)) {
-      fehler.push('am Ende der Randphase nur bei ' + (r.querEnde || {}).rand);
-    }
-    // 4. DIE BREMSE LAEUFT HOCH. Ein Sprung von 0 auf 1 im ersten Takt waere genau das,
-    //    was "nicht direkt auf 0" ausschliesst.
-    const v = (P.halt && P.halt.bremseVerlauf) || [];
-    if (v.length < 3) {
-      fehler.push('kein Bremsverlauf aufgezeichnet');
-    } else if (!(v[0] < 0.2 && v[1] > v[0] && v[v.length - 1] >= 0.99)) {
-      fehler.push('Bremsverlauf ' + v.slice(0, 4).join('/') + ' ist keine Rampe');
-    }
-    // 5. ES BLINKT WAEHREND RANDFAHRT, BREMSEN UND STEHEN - nicht nur beim Herausfahren.
-    for (const ph of ['rand', 'halt', 'stand']) {
-      if (P[ph] && !(P[ph].dunkel > 0)) fehler.push('kein Blinken in Phase ' + ph);
-    }
-    // 6. UND ES PARKT SICH NICHT SELBST. Die Gnade muss ueber den ganzen Stopp halten.
+    if (echt.join('>') !== 'anfahrt>einparken>stand>raus') fehler.push('Folge ' + echt.join('>'));
+    const soll = (MANOEVER_ANPASS_MS + manoeverDauer(MANOEVER.scEin) + 500) / 45;
+    if (!P.einparken || !(Math.abs(P.einparken.takte - soll) <= 12)) fehler.push('Einparken ' + (P.einparken ? P.einparken.takte : '?') + ' Takte, erwartet rund ' + Math.round(soll));
+    if (!(P.stand && P.stand.dunkel > 0)) fehler.push('kein Blinken im Stand');
     if (r.geparkt) fehler.push('parkt sich waehrend des Stopps selbst');
     return { ok: !fehler.length,
-             mass: echt.join('>')
-                 + ' | rand ' + (P.rand ? P.rand.takte + ' Takte, ' + P.rand.kmhEnde
-                                          + ' km/h, quer ' + r.querEnde.rand : '?')
-                 + ' | Bremse ' + v.slice(0, 5).join('/')
-                 + ' | dunkel ' + ['rand', 'halt', 'stand']
-                     .map((k) => k + ' ' + (P[k] ? P[k].dunkel : '?')).join(', ')
+             mass: echt.join('>') + ' | einparken ' + (P.einparken ? P.einparken.takte : '?') + ' Takte'
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
@@ -96078,9 +96401,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!sc.ghost.randHalt) f.push('parkt nicht auf dem gewaehlten Teil');
       // Andere Autos fahren an ihm links vorbei (Start/Ziel, Folgeschiene), nicht mitten auf der Strecke.
       sc.ghost = { running: true, randHalt: { scLinie: true } };
-      const npc = { device: { id: 'v1' }, role: 'ghost', ghost: { running: true, tileIndex: 0 } };
-      if (scVorbeiQuer(npc) !== SC_VORBEI_QUER || !(SC_VORBEI_QUER < 0)) f.push('auf Start/Ziel nicht links vorbei');
-      npc.ghost.tileIndex = 4;
+      // v1.2.4: links vorbei um das GEWAEHLTE Parkteil (hier 3), nicht mehr fest um Start/Ziel.
+      const npc = { device: { id: 'v1' }, role: 'ghost', ghost: { running: true, tileIndex: 3 } };
+      if (scVorbeiQuer(npc) !== SC_VORBEI_QUER || !(SC_VORBEI_QUER < 0)) f.push('am Parkteil nicht links vorbei');
+      npc.ghost.tileIndex = 8;
       if (scVorbeiQuer(npc) !== null) f.push('mitten auf der Strecke links gezwungen');
       // "Neben der Strecke" ist nicht mehr waehlbar.
       const opt = $('sc-parkplatz') ? [...$('sc-parkplatz').options].find((o) => o.value === 'neben') : null;
@@ -100931,6 +101255,54 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   window.__presetTexts = (k) => (PRESETS[k]
     ? { label: PRESETS[k].label, kurz: PRESETS[k].kurz, text: PRESETS[k].text } : null);
   window.__presetLabel = (k) => (PRESETS[k] || {}).label || k;
+
+  // ---- FAHRGEFUEHL JE SPIELER (v1.2.4) -----------------------------------------------------
+  // BESTELLT: "Ich moechte fuer verschiedene Spieler verschiedene Schwierigkeitsstufen zulassen (z. B. Spieler 1
+  // Pacejka, Spieler 2 Arcade). Aktuell schaltet ein Knopf auch den anderen um." Die Regler unter Optionen gelten
+  // fuer Spieler 1; Spieler 2 und 3 uebernahmen sie (physEngine2Abgleichen). Jetzt kann jeder Zusatzspieler ein
+  // EIGENES Preset haben. Seine Abstimmung entsteht, indem das Preset kurz auf die Regler gelegt, die entstandene
+  // Konfiguration abgeschrieben und Spieler 1s Stand sofort zurueckgelegt wird (presetSchnappschuss) - so rechnet
+  // jedes Preset durch dieselben Handler wie sonst, ohne eine zweite Umrechnung von Regler auf Physikwert.
+  const SPIELER_PRESET_STORE = 'omegasim-preset-spieler-';
+  const presetSchnappCache = {};
+  let presetSchnappLaeuft = false;
+  function presetSchnappschuss(key) {
+    if (presetSchnappCache[key]) return presetSchnappCache[key];
+    const p = PRESETS[key];
+    if (!p || presetSchnappLaeuft) return null;
+    const vorher = presetRead();
+    const merkZuletzt = presetZuletzt;
+    presetSchnappLaeuft = true;
+    try {
+      for (const [id, val] of Object.entries(p.v)) presetSet(id, val);
+      setzeBrakeStealLast();
+      const snap = { config: JSON.parse(JSON.stringify(physEngine.config)),
+                     modus: $('phys-mode') ? $('phys-mode').value : 'physik' };
+      presetSchnappCache[key] = snap;
+      return snap;
+    } finally {
+      for (const [id, val] of Object.entries(vorher)) presetSet(id, val);
+      setzeBrakeStealLast();
+      presetZuletzt = merkZuletzt;
+      presetSchnappLaeuft = false;
+    }
+  }
+  function spielerPreset(nr) {
+    try { const k = localStorage.getItem(SPIELER_PRESET_STORE + nr); return k && PRESETS[k] ? k : null; }
+    catch (e) { return null; }
+  }
+  function spielerPresetSetzen(nr, key) {
+    try {
+      if (key && PRESETS[key]) localStorage.setItem(SPIELER_PRESET_STORE + nr, key);
+      else localStorage.removeItem(SPIELER_PRESET_STORE + nr);
+    } catch (e) { /* privat */ }
+    if (typeof physEngine2Abgleichen === 'function') physEngine2Abgleichen();
+  }
+  window.__presetSchnappschuss = presetSchnappschuss;
+  window.__presetSchnappLaeuft = () => presetSchnappLaeuft;
+  window.__presetSchnappLeeren = () => { for (const k of Object.keys(presetSchnappCache)) delete presetSchnappCache[k]; };
+  window.__spielerPreset = spielerPreset;
+  window.__spielerPresetSetzen = spielerPresetSetzen;
 
   // Der Erklaertext der EINGESTELLTEN Variante, aus demselben Objekt. Bis v0.5 standen alle
   // fuenf untereinander; das war eine Wand aus Text, in der man den eigenen Zustand nicht
