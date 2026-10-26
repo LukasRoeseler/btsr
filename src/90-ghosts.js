@@ -3334,6 +3334,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // v1.1.42 (WIP): Stufe MAX (ghostMaxTempo) - Gerade, Radius-1-Kurve (60 Grad und kleine 30 Grad),
     // Radius-2-Kurve (weite 30 Grad), Bremspunkt 'schiene' (ein Teil vorher) oder 'teil' (am Kurvenbeginn).
     maxGerade: 1.0, maxR1: 0.52, maxR2: 0.8, maxBremspunkt: 'schiene',
+    // v1.2.5: Beschleunigung des MAX-Motormodells (Vielfaches von Spieler 1s Abstimmung), keine Schaltpause.
+    maxBeschl: 2.0,
     paare: true,        // v1.0.31: Paare links/rechts, Reihe dahinter (ghostPaare); Schalter fuer die Messsonde    // how much of that is given up in a curve
     // 0.5 statt 0. Die Naeherungslogik in ghostAssignBias gab es laengst - gleiche Runde
     // und Kachelindex hoechstens eins auseinander ergibt gegenlaeufige Versaetze - aber sie
@@ -7522,7 +7524,28 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Einfuehrungsrunde fahren MAX-NPCs wie alle anderen.
   // Die Regler im NPC-Menue. AUS DEM MARKUP lesen und dann auf input hoeren. Hier und nicht in 80-sound.js:
   // dort ist ghostCfg beim Laden noch nicht angelegt (Totzone), und der Fehler brach das Laden ab.
-  [['ghost-max-gerade', 'maxGerade'], ['ghost-max-r1', 'maxR1'], ['ghost-max-r2', 'maxR2']].forEach(([id, feld]) => {
+  // v1.2.5: das Motormodell eines MAX-NPCs. Das NPC-Modell ist eine Kopie von Spieler 1s Abstimmung, und das
+  // gesendete Gas ist sein Tempoanteil - auf einer 43-cm-Geraden (0,3-0,5 s) kam es von 0,5 kaum hoeher, weil Schub
+  // mit dem Tempo faellt und jedes Hochschalten 120 ms ohne Antrieb kostet. MAX bekommt maxBeschl x Beschleunigung
+  // und keine Schaltpause; zurueckgestellt, sobald das Auto eine andere Stufe hat.
+  // v1.2.5: NPCs schalten frueher zurueck (5200 statt 4200/min). Sie fahren meist 35-60 % und blieben sonst in einem
+  // Gang - man hoerte keine Gaenge. 5200 und nicht hoeher: nach dem Hochschalten (bei 8800) faellt die Drehzahl auf
+  // 5585 (1->2) bis 7170 (5->6); laege die Grenze darueber, schaltete der NPC sofort zurueck und pendelte.
+  const NPC_RUECKSCHALT_RPM = 5200;
+  function ghostMaxMotor(car, e) {
+    const g = car.ghost;
+    if (!g || !e) return;
+    e.config.downshiftRpm = NPC_RUECKSCHALT_RPM;
+    if (g.basisBeschl === undefined) { g.basisBeschl = e.config.accelerationFactor; g.basisShiftMs = e.config.shiftMs; }
+    if (ghostIstMax(car)) {
+      e.config.accelerationFactor = g.basisBeschl * (ghostCfg.maxBeschl || 1);
+      e.config.shiftMs = 0;
+    } else {
+      e.config.accelerationFactor = g.basisBeschl;
+      e.config.shiftMs = g.basisShiftMs;
+    }
+  }
+  [['ghost-max-gerade', 'maxGerade'], ['ghost-max-r1', 'maxR1'], ['ghost-max-r2', 'maxR2'], ['ghost-max-beschl', 'maxBeschl']].forEach(([id, feld]) => {
     const el = $(id);
     if (!el) return;
     const an = () => {
@@ -7995,7 +8018,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const car = scanFahrAuto;
     if (!car || typeof garageScan === 'undefined' || !garageScan.aktiv || garageScan.car !== car) { scanFahrStopp(); return; }
     const neben = car.tileCode === TILE_OFFTRACK;
-    const ziel = formationPace() * (scanInHaarnadel(car) ? SCAN_TEMPO_HAARNADEL : SCAN_TEMPO);
+    const ziel = formationPace() * scanTempoFaktor(car);
     const gas = neben ? 0 : Math.max(ziel, (physEngine.config.minMoveThrottle || 0.05) * 1.5);
     const spur = trackMode === 'on' && !neben
       ? { 10: AUTO_MODE.b10, 15: AUTO_MODE.b15, 16: scanLiveCode(car.tileCode), 17: 0x02, 18: 0x02 } : null;
@@ -8010,6 +8033,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function scanInHaarnadel(car) {
     const code = car ? car.tileCode : null;
     return code === TILE_TYPE.HAIRPIN || code === TILE_TYPE.HAIRPIN_LEFT;
+  }
+  // v1.2.5: der Anteil am Formationstempo je gemeldetem Teil - Haarnadel (und Engstelle), Kurve, sonst Gerade.
+  function scanTempoFaktor(car) {
+    if (scanInHaarnadel(car)) return SCAN_TEMPO_HAARNADEL;
+    const k = car && car.tileCode !== null && car.tileCode !== undefined ? ghostTileInfo(car.tileCode).curve : 0;
+    return k >= 2 ? SCAN_TEMPO_HAARNADEL : k >= 1 ? SCAN_TEMPO_KURVE : SCAN_TEMPO;
   }
 
   function spielerOrtTick(auto) {
@@ -9980,6 +10009,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         + Math.abs(g.engine.state.speedKmh || 0) * KMH_TO_UNITS * dt;
     }
     const e = g.engine, cfg = e.config;
+    ghostMaxMotor(car, e);
     // Die Oberflaeche aus Wetter und aufgezogenem Reifen, JEDEN TAKT. Nicht nur beim
     // Wetterwechsel: wxRainLevel() ist eine Rampe ueber zehn Sekunden (WX_RAMP_S), ein
     // einmaliges Setzen wuerde also einen von hundert Zwischenwerten festhalten. Kostet
@@ -10403,8 +10433,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Der gelernte Tempofaktor. Er steht VOR der gelben Flagge, damit das Limit unter
       // Gelb wirklich das Limit ist: ein lernender Ghost darf sich nicht ueber eine
       // Neutralisierung hinwegsetzen.
-      target = Math.max(0.05, Math.min(1, target * learnFactors(car).pace));
-      target *= ghostStreuFaktor(car);
+      // v1.2.5: MAX faehrt sein Profil ungedrosselt - weder Lernfaktor noch Streuung nehmen ihm Tempo.
+      if (!ghostIstMax(car)) {
+        target = Math.max(0.05, Math.min(1, target * learnFactors(car).pace));
+        target *= ghostStreuFaktor(car);
+      }
       // Gelbe Flagge: alle auf denselben Wert, und zwar bevor irgendetwas anderes daran
       // dreht. Gleiches Tempo fuer alle heisst von selbst "kein Ueberholen".
       const underYellow = flagState !== 'green';
@@ -10578,7 +10611,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // alle gleich schnell fahren." Die Staffel schob den Letzten auch unter Gelb um bis zu 10 % an -
       // unter Gelb gibt es keinen Ersten und Letzten, nur das Gelb-Tempo.
       // v1.1.41: auch in der Einfuehrungsrunde - dort rollen alle im selben Tempo (bestellt: gleich schnell).
-      const staffel = (underYellow || raceFormationLap) ? 1 : ghostFeldStaffel(car);
+      // v1.2.5 GEMELDET: "MAX-NPC kann auf der Geraden eine schnellere Beschleunigung haben - auf vier Geraden war die
+      // Geschwindigkeit nicht viel hoeher." Fuehrt ein MAX-NPC, bremste ihn die Staffel um 10 %. Auf Geraden nicht mehr.
+      const staffel = (underYellow || raceFormationLap || (ghostIstMax(car) && tight === 0)) ? 1 : ghostFeldStaffel(car);
       // v1.1.37: auch die Staffel schiebt vor und in der Haarnadel nicht mehr an (bremsen darf sie).
       target *= (spice.haeltAbstand || vorHaarnadel) ? Math.min(1, staffel) : staffel;
 

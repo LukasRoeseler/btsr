@@ -4883,7 +4883,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.2.4</span></span>
+        <span class="foot-ver">v<span id="app-version">1.2.5</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6045,6 +6045,8 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.2</span></b></p>
       <ul class="muted" id="patchnotes-12" style="padding-left:20px; line-height:1.7">
+        <li>NPC-Stufe MAX beschleunigt auf Geraden deutlich schneller: eigenes Motormodell mit doppelter Beschleunigung (Regler &#8222;MAX: Beschleunigung&#8220;, 1&#8211;4&#215;) und ohne Schaltpause; auf Geraden bremsen Feld-Staffel, Lernfaktor und Streuung MAX nicht mehr. Der Streckenscan f&#228;hrt schneller: Geraden 80 % statt 67 %, Kurven 67 %, nur die Haarnadel bleibt bei 47 %.</li>
+        <li>Klang (WIP, Vorschlag): Beim Schalten bleibt der Motorklang jetzt bei allen Motoren stehen, bricht kurz ein wie bei einer Z&#252;ndunterbrechung, und die Tonh&#246;he gleitet statt zu springen &#8211; so wie bisher nur die Mustang-GT3-Aufnahme; der alte Klang kommt mit dem Schalter &#8222;Schaltklang: alt&#8220;. NPCs schalten fr&#252;her zur&#252;ck (ab 5200/min), sodass man ihre G&#228;nge h&#246;rt, knallen auch beim Bremsen aus dem Auspuff und etwas lauter; die alten Knaller gibt es mit &#8222;NPC-Motorklang: alt&#8220;.</li>
         <li>Spieler und Renntypen: Spieler 2 und 3 k&#246;nnen in der Garage ein eigenes Fahrgef&#252;hl w&#228;hlen (z. B. Spieler 1 Pacejka, Spieler 2 Arcade) oder &#8222;wie Spieler 1&#8220;; ihre Reifenmischung wird nicht mehr von Spieler 1 &#252;berschrieben. Renntypen folgen dem Sensormodus: auf der Bahn kein Demolition Derby, im Ausdruck kein Time Attack (auch beim Durchschalten auf FAHREN); Rennstart und Meisterschaft warnen, wenn im Ausdruck-Modus NPCs oder ein Safety Car in der Garage stehen. Community-Challenges gibt es jetzt auch mit Pacejka (Apps Script neu bereitstellen).</li>
         <li>Boxen: Im Minigame kommt der gr&#252;ne Haken nur noch nach einem richtigen Druck, ein rotes Kreuz nach einem falschen, nichts nach Zeitablauf; darunter stehen der aktuelle und die drei n&#228;chsten Kn&#246;pfe in einer Reihe, die animiert weiterrutscht. Die Signalt&#246;ne der Boxengasse (Bling, Blip, D&#252;&#252;t) sind jetzt mechanisch &#8211; kurze Ausschnitte aus Ratsche und Schlagschrauber; die alten T&#246;ne gibt es mit dem Schalter &#8222;Alte Boxen-Signalt&#246;ne&#8220;.</li>
         <li>NPC-Boxenstopp wie das Safety Car (WIP): einparken mit der Einparkfolge des Safety Cars, im Stand l&#228;uft die Ratsche, ausparken mit der Ausparkfolge. Weiterhin immer nur ein Auto. Steht ein Safety Car in der Garage, liegt die NPC-Box auf dem ersten St&#252;ck mit zwei Geraden ab drei Teilen hinter dessen Parkplatz.</li>
@@ -10616,6 +10618,15 @@
         </div></div>
       <div class="opt-row"><div class="opt-label">Regen<small>Select oder W. Reifen kommen beim Boxenstopp passend.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-rain"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Schaltklang: alt<span class="wip-tag">WIP</span><small>Aus (Standard, neu): Beim
+          Schalten bleibt der Motorklang derselbe, bricht kurz ein wie bei einer Zündunterbrechung, und die Tonhöhe gleitet
+          statt zu springen &ndash; bei allen Motoren so, wie es bisher nur die Mustang-GT3-Aufnahme konnte. An: der
+          frühere Klang (Überblenden auf das Schubband).</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-schaltklang-alt"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">NPC-Motorklang: alt<span class="wip-tag">WIP</span><small>Aus (Standard, neu): NPCs
+          knallen auch beim Anbremsen aus dem Auspuff, und ihre Knaller sind etwas lauter. An: die früheren Knaller (nur
+          beim Gaswegnehmen, leiser). Dass man die Gänge der NPCs hört, gilt immer (sie schalten seit v1.2.5 früher zurück).</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-npc-klang-alt"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Alte Boxen-Signaltöne<small>Aus (Standard): In der Boxengasse klingen
           fertig getankt, Reifen gewechselt, repariert und &bdquo;los&ldquo; mechanisch &ndash; kurze Ausschnitte aus Ratsche
           und Schlagschrauber. An: die früheren Signaltöne (Bling, Blip, Düüt).</small></div>
@@ -11232,6 +11243,13 @@
           <input type="range" id="ghost-max-r2" min="0.3" max="1" step="0.01" value="0.8">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-max-r2-val">80%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">MAX: Beschleunigung <span class="wip-tag">WIP</span><small>Wie viel kräftiger das Motormodell eines MAX-NPCs beschleunigt als das von Spieler&nbsp;1, und ohne Schaltpause. Das gesendete Gas folgt diesem Modell &ndash; auf kurzen Geraden kam ein MAX-NPC sonst kaum über sein Kurventempo. Standard 2&times;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-max-beschl" min="1" max="4" step="0.1" value="2">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-max-beschl-val">200%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">MAX: Bremspunkt <span class="wip-tag">WIP</span><small>Wo ein MAX-NPC vom Geradentempo auf das Kurventempo geht: eine Schiene vor der Kurve (Standard) oder erst am Beginn des Kurventeils. Vor der Haarnadel bremsen alle NPCs wie bisher zwei Teile vorher.</small></div>
         <select id="ghost-max-bremspunkt">

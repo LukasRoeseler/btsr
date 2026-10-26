@@ -5431,6 +5431,38 @@
   // Menue, Kartenpunkte springen, Aufstellung ab Reihe 2, Regenflackern; dazu Kleinigkeiten.
   // v1.2.4 BESTELLT: Renntypen je Sensormodus, Fahrgefuehl je Spieler, Pacejka in Community-Challenges, Minigame-
   // Rueckmeldung, mechanische Boxensignale, NPC-Box wie Safety Car, Safety-Car-Parken auf kurzen Geraden.
+  // v1.2.5: MAX schneller auf Geraden, Scan schneller (ausser Haarnadel), Schaltklang und NPC-Klang.
+  stAdd('NPC und Klang v1.2.5: MAX-Motor, Scan-Tempo je Teil, Schaltklang haelt die Mischung, NPC schaltet hoerbar', () => {
+    const f = [];
+    const e = new CarreraPhysicsEngine();
+    Object.assign(e.config, physEngine.config);
+    const basis = e.config.accelerationFactor, basisShift = e.config.shiftMs;
+    const car = { role: 'ghost', ghostStufe: GHOST_STUFE_MAX, ghost: {} };
+    const merkB = ghostCfg.maxBeschl;
+    try {
+      ghostCfg.maxBeschl = 2;
+      ghostMaxMotor(car, e);
+      if (Math.abs(e.config.accelerationFactor - basis * 2) > 1e-9 || e.config.shiftMs !== 0) f.push('MAX-Motor nicht 2x / ohne Schaltpause');
+      if (e.config.downshiftRpm !== 5200) f.push('NPC schaltet nicht bei 5200 zurueck');
+      car.ghostStufe = 1;
+      ghostMaxMotor(car, e);
+      if (e.config.accelerationFactor !== basis || e.config.shiftMs !== basisShift) f.push('andere Stufe nicht zurueckgestellt');
+    } finally { ghostCfg.maxBeschl = merkB; }
+    const src = String(ghostTick);
+    if (src.indexOf('(ghostIstMax(car) && tight === 0)) ? 1 : ghostFeldStaffel(car)') < 0) f.push('Staffel bremst MAX auf Geraden');
+    if (src.indexOf('if (!ghostIstMax(car)) {') < 0) f.push('Lernfaktor/Streuung drosseln MAX');
+    if (!$('ghost-max-beschl') || Math.abs(parseFloat($('ghost-max-beschl').defaultValue) - 2) > 1e-9) f.push('Regler MAX: Beschleunigung fehlt');
+    // Scan: Gerade 0,80, Kurve 0,67, Haarnadel 0,47.
+    const s1 = scanTempoFaktor({ tileCode: TILE_TYPE.STRAIGHT }), s2 = scanTempoFaktor({ tileCode: TILE_TYPE.CURVE_RIGHT }),
+          s3 = scanTempoFaktor({ tileCode: TILE_TYPE.HAIRPIN });
+    if (s1 !== 0.80 || s2 !== 0.67 || s3 !== 0.47) f.push('Scan-Tempi ' + [s1, s2, s3].join('/'));
+    // Schaltklang: Schalter ab Werk aus (neu), die Mischung bleibt beim Schalten stehen.
+    if (!$('setting-schaltklang-alt') || $('setting-schaltklang-alt').defaultChecked) f.push('Schaltklang-Schalter fehlt oder ab Werk alt');
+    if (String(updateSampleEngineIn).indexOf('store.schaltMix') < 0) f.push('Schaltklang haelt die Mischung nicht');
+    if (!$('setting-npc-klang-alt') || $('setting-npc-klang-alt').defaultChecked) f.push('NPC-Klang-Schalter fehlt oder ab Werk alt');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'MAX 2x ohne Schaltpause, Staffel/Lernen aus, Scan 0,80/0,67/0,47, Schaltklang neu, NPC 5200/min' };
+  });
+
   stAdd('Rennen und Spieler v1.2.4: Renntyp je Sensormodus, Fahrgefuehl je Spieler, Pacejka-Challenges', () => {
     const f = [];
     const merk = { tm: trackMode, rm: $('race-mode').value };
@@ -22226,7 +22258,7 @@
     const f = [];
     const src = String(ghostTick);
     // Gelb: keine Staffel; dein Autopilot mit demselben Boden und derselben Haarnadel-Obergrenze.
-    if (src.indexOf('(underYellow || raceFormationLap) ? 1 : ghostFeldStaffel(car)') < 0) f.push('Staffel wirkt unter Gelb');
+    if (src.indexOf('(underYellow || raceFormationLap || (ghostIstMax(car) && tight === 0)) ? 1 : ghostFeldStaffel(car)') < 0) f.push('Staffel wirkt unter Gelb');
     const merkT = currentTrackTiles, merkH = ghostCfg.haarnadelMax;
     try {
       ghostCfg.haarnadelMax = 0.35;
@@ -22404,6 +22436,6 @@
     // Einfuehrungsrunde: Autopilot mit derselben Kurvenformel, keine Staffel.
     const ap = String(autopilot);
     if (ap.indexOf('Math.min(formationPace(), (typeof ghostCfg') < 0) f.push('Autopilot: Formation nicht wie die NPCs');
-    if (String(ghostTick).indexOf('(underYellow || raceFormationLap) ? 1 : ghostFeldStaffel(car)') < 0) f.push('Staffel in der Einfuehrungsrunde');
+    if (String(ghostTick).indexOf('(underYellow || raceFormationLap || (ghostIstMax(car) && tight === 0)) ? 1 : ghostFeldStaffel(car)') < 0) f.push('Staffel in der Einfuehrungsrunde');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'mittig, links -0,9, rechts +0,9 je n Teile, dann Halt; SC = Feld; Formation = NPC-Formel' };
   });
