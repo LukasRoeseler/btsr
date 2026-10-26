@@ -4883,7 +4883,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.2.9</span></span>
+        <span class="foot-ver">v<span id="app-version">1.2.11</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6045,6 +6045,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.2</span></b></p>
       <ul class="muted" id="patchnotes-12" style="padding-left:20px; line-height:1.7">
+        <li>Erkl&#228;rtexte berichtigt, die nicht mehr zum Verhalten passten: Boxen-Minigame (f&#252;nf Tasten, je 8 Prozent schneller, falsche 8 Prozent langsamer), Mischungsunterschied (weich 2,6-facher, hart 0,4-facher Verschlei&#223;), Regen-Schalter, NPC-Boxenstopp (eine Box, wie das Safety Car), wechselhaftes Wetter (Schauer von 30 bis 90 s alle 1 bis 3 min), Fahrgef&#252;hle Arcade, Pro, Pacejka und Omega (Werte wie eingestellt), Mehrspieler an einem Ger&#228;t (eigenes Fahrgef&#252;hl je Spieler) und die Codetabelle der Streckenteile (auf der Bahn 0x01 Start/Ziel, 0x0a Engstelle).</li>
         <li>Karte: Die Autos sind jetzt Silhouetten in Draufsicht &#8211; Porsche 911 GT3 R, Ford Mustang GT3, BMW M4 GT3, Ferrari 296 GT3 und ein Formelwagen (Modell &#8222;Red Bull&#8220;), jeweils mit Heckfl&#252;gel und in der Farbe, die in der Garage f&#252;r das Auto gew&#228;hlt ist. Welche Form ein Auto bekommt, richtet sich nach &#8222;Marke / Modell&#8220; in der Garage; Audi, McLaren, Mercedes, VW K&#228;fer und nicht zugeordnete Autos bleiben Rechtecke mit Spoilerstreifen.</li>
         <li>NPC-Stufe MAX beschleunigt auf Geraden deutlich schneller: eigenes Motormodell mit doppelter Beschleunigung (Regler &#8222;MAX: Beschleunigung&#8220;, 1&#8211;4&#215;) und ohne Schaltpause; auf Geraden bremsen Feld-Staffel, Lernfaktor und Streuung MAX nicht mehr. Der Streckenscan f&#228;hrt schneller: Geraden 80 % statt 67 %, Kurven 67 %, nur die Haarnadel bleibt bei 47 %.</li>
         <li>Klang (WIP, Vorschlag): Beim Schalten bleibt der Motorklang jetzt bei allen Motoren stehen, bricht kurz ein wie bei einer Z&#252;ndunterbrechung, und die Tonh&#246;he gleitet statt zu springen &#8211; so wie bisher nur die Mustang-GT3-Aufnahme; der alte Klang kommt mit dem Schalter &#8222;Schaltklang: alt&#8220;. NPCs schalten fr&#252;her zur&#252;ck (ab 5200/min), sodass man ihre G&#228;nge h&#246;rt, knallen auch beim Bremsen aus dem Auspuff und etwas lauter; die alten Knaller gibt es mit &#8222;NPC-Motorklang: alt&#8220;.</li>
@@ -7032,8 +7033,8 @@
         <b>Was hier <em>nicht</em> steht:</b> welche Zahl das Auto aus diesen 17 Bits bildet
         und wie es sie auf die Streckenart abbildet, ist nicht entschl&uuml;sselt. Bekannt
         ist nur, was am Ende in Byte&nbsp;12 ankommt &ndash; und das h&auml;ngt am Modus:
-        im Bahn-Modus 0x0a Start/Ziel, 0x02 Gerade, 0x03 Linkskurve, 0x04 Rechtskurve, im
-        Ausdruck-Modus 0x01 f&uuml;r Start/Ziel. Das Bild zeigt die Geometrie, nicht die
+        im Bahn-Modus 0x01 Start/Ziel, 0x02 Gerade, 0x03 Linkskurve, 0x04 Rechtskurve, 0x0a Engstelle, im
+        Ausdruck-Modus 0x0a (Originalblatt) oder 0x01 (Blätter der App) f&uuml;r Start/Ziel. Das Bild zeigt die Geometrie, nicht die
         Bedeutung.
       </p>
       <p class="muted">
@@ -7058,11 +7059,11 @@
 
       <h3 style="font-size:14px; margin:16px 0 6px 0">Was wir nicht wissen</h3>
       <p class="muted">
-        Die belegten Codes im <b>Bahn-Modus</b> sind <code>0x0a</code> Start/Ziel,
+        Die belegten Codes im <b>Bahn-Modus</b> sind <code>0x01</code> Start/Ziel,
         <code>0x02</code> Gerade, <code>0x03</code> Linkskurve, <code>0x04</code>
-        Rechtskurve, <code>0x05</code> Haarnadel links, <code>0x06</code> Haarnadel rechts
-        und <code>0x00</code> abseits der Bahn; im <b>Ausdruck-Modus</b> ist
-        <code>0x01</code> Start/Ziel. <b>Die Kodierungsregel selbst kennen wir nicht.</b> Aus
+        Rechtskurve, <code>0x05</code> Haarnadel links, <code>0x06</code> Haarnadel rechts,
+        <code>0x0a</code> Engstelle und <code>0x00</code> abseits der Bahn; im <b>Ausdruck-Modus</b> ist
+        <code>0x0a</code> Start/Ziel auf dem Originalblatt und <code>0x01</code> auf den Bl&auml;ttern der App. <b>Die Kodierungsregel selbst kennen wir nicht.</b> Aus
         <em>einem</em> exakt ausgemessenen Muster l&auml;sst sich nicht ableiten, wie die 17
         Elemente in die Zahl <code>0x01</code> &uuml;bersetzt werden, daf&uuml;r
         br&auml;uchte es die Muster der anderen Kacheln, senkrecht von oben fotografiert und
@@ -7177,7 +7178,7 @@
         <tr><td>9</td><td>freilaufender Paketz&auml;hler, 0&ndash;255, &auml;ndert sich in <em>jedem</em> Paket</td><td class="doc-sure">belegt</td></tr>
         <tr><td>10</td><td>Akkustand</td><td class="doc-sure">belegt</td></tr>
         <tr><td><strong>11</strong></td><td><strong>Z&auml;hler der Muster&uuml;berfahrten.</strong> Erh&ouml;ht sich um 1, sobald das Auto ein gedrucktes Muster &uuml;berf&auml;hrt, die Rundenz&auml;hlung passiert also in der Hardware</td><td class="doc-sure">belegt</td></tr>
-        <tr><td><strong>12</strong></td><td><strong>Mustercode.</strong> <code>0x0a</code> Start/Ziel, <code>0x02</code> Gerade, <code>0x03</code> Linkskurve, <code>0x04</code> Rechtskurve, <code>0x05</code> Haarnadel links, <code>0x06</code> Haarnadel rechts, <code>0x00</code> abseits der Bahn. <code>0xFF</code> hei&szlig;t &bdquo;noch nie eins gesehen&ldquo;. Der Wert bleibt <em>stehen</em>, er zeigt das zuletzt gelesene Muster</td><td class="doc-sure">belegt</td></tr>
+        <tr><td><strong>12</strong></td><td><strong>Mustercode.</strong> <code>0x01</code> Start/Ziel (Bahn; im Ausdruck-Modus <code>0x0a</code>), <code>0x02</code> Gerade, <code>0x03</code> Linkskurve, <code>0x04</code> Rechtskurve, <code>0x05</code> Haarnadel links, <code>0x06</code> Haarnadel rechts, <code>0x00</code> abseits der Bahn. <code>0xFF</code> hei&szlig;t &bdquo;noch nie eins gesehen&ldquo;. Der Wert bleibt <em>stehen</em>, er zeigt das zuletzt gelesene Muster</td><td class="doc-sure">belegt</td></tr>
         <tr><td>13</td><td><code>0x00</code></td><td class="doc-sure">belegt</td></tr>
         <tr><td>14</td><td>rollender Z&auml;hler (l&auml;uft &uuml;ber). Nicht zu verwechseln mit Byte&nbsp;14 der <em>Senderichtung</em>, das ist das Licht</td><td class="doc-sure">belegt</td></tr>
         <tr><td><strong>15</strong></td><td><code>0x08</code>, solange das Auto k&ouml;rperlich &uuml;ber einem Muster steht (~1&nbsp;s bei Fahrt), sonst <code>0x00</code></td><td class="doc-sure">belegt</td></tr>
@@ -7388,13 +7389,12 @@
              genau die Messung, die inzwischen als unbrauchbar verworfen ist. Der
              Belegstatus wird deshalb getrennt gehalten: ein Rennmitschnitt und eine
              Beobachtung sind nicht dasselbe. -->
-        <tr><td><code>0x01</code></td><td>Start/Ziel <b>im Ausdruck-Modus</b>, also am
-          gedruckten Blatt. Der Ausdruck hat seine eigene Codetabelle &ndash; dieselbe Zahl
-          bedeutet im Bahn-Modus etwas anderes</td><td class="doc-sure">am Auto
-          beobachtet</td></tr>
-        <tr><td><code>0x0a</code></td><td>Start/Ziel <b>im Bahn-Modus</b>, also von der
-          Kunststoffschiene. Belegt aus dem Rennmitschnitt, aus dem auch 0x02 bis 0x06
-          stammen</td><td class="doc-sure">belegt</td></tr>
+        <tr><td><code>0x01</code></td><td>Start/Ziel <b>im Bahn-Modus</b>, also von der
+          Kunststoffschiene (von seVen best&auml;tigt, seit v0.6.14 so gelesen); im Ausdruck-Modus
+          melden die Bl&auml;tter der App ebenfalls 0x01</td><td class="doc-sure">belegt</td></tr>
+        <tr><td><code>0x0a</code></td><td>Start/Ziel <b>im Ausdruck-Modus</b> auf dem Originalblatt
+          (gemessen 25.08.); im Bahn-Modus dagegen die <b>Engstelle</b>. Dieselbe Zahl, zwei
+          Bedeutungen &ndash; deshalb liest die App sie je nach Modus</td><td class="doc-sure">belegt</td></tr>
         <tr><td><code>0x02</code></td><td>Gerade</td><td class="doc-sure">belegt</td></tr>
         <tr><td><code>0x03</code></td><td><b>Linkskurve</b></td><td class="doc-sure">belegt (21.08.)</td></tr>
         <tr><td><code>0x04</code></td><td>Rechtskurve</td><td class="doc-sure">belegt</td></tr>
@@ -9460,7 +9460,7 @@
 
       <div class="opt-row"><div class="opt-label">Wetter zu Beginn
           <small>Trocken, Regen &ndash; oder wechselhaft: dann beginnt es trocken, und alle
-          2 bis 6 Minuten f&auml;llt ein Schauer von 1 bis 3 Minuten. Beide Zeiten werden je
+          1 bis 3 Minuten f&auml;llt ein Schauer von 30 bis 90 Sekunden. Beide Zeiten werden je
           Phase neu gezogen. Bei einem kurzen Rennen kann es sein, dass man keinen Schauer
           sieht &ndash; ein Schauer h&auml;ngt nicht daran, wie viele Runden gefahren
           werden.</small></div>
@@ -9992,9 +9992,10 @@
           <small>Standard: gemacht wird, was geplant ist, und losfahren beendet den Stopp.
           Minigame: gewechselt wird alles, was simuliert wird &ndash; Reifen, Tank voll,
           Reparatur &ndash;, und bis alles fertig ist, kommst du nicht los. In der Mitte
-          erscheinen nacheinander acht Tasten, Quadrat oder Kreis (Tastatur: K und I).
-          Jede richtig gedr&uuml;ckte k&uuml;rzt den Stopp um 5 Prozent, alle acht k&uuml;rzen ihn um
-          40 Prozent; wer nichts dr&uuml;ckt, wartet die volle Zeit. Am Ende wartest du noch
+          erscheinen nacheinander f&uuml;nf Tasten, Quadrat oder Kreis (Tastatur: K und I); darunter
+          stehen die aktuelle und die n&auml;chsten drei in einer Reihe. Jede richtig gedr&uuml;ckte
+          k&uuml;rzt den Stopp um 8 Prozent (gr&uuml;ner Haken), alle f&uuml;nf k&uuml;rzen ihn um 40 Prozent;
+          eine falsche verl&auml;ngert ihn um 8 Prozent (rotes Kreuz); wer nichts dr&uuml;ckt, wartet die volle Zeit. Am Ende wartest du noch
           mindestens eine Sekunde, bei falschen Tasten l&auml;nger. Abbrechen: Kreuz tippen.</small></div>
         <select id="pit-modus" data-preset-skip>
           <option value="standard">Standard</option>
@@ -10279,9 +10280,9 @@
           <small>Wie stark sich weich, mittel, hart und Regen unterscheiden. Der Regler bewegt
           alle Werte zugleich &ndash; Grip und Verschlei&szlig; &ndash; und zwar als
           Abstand zum Mittelreifen. Bei 0 rechnen alle drei Slicks wie mittel, bei 100 Prozent
-          gilt die Tabelle (weich +20&nbsp;% Grip und 2,2-facher Verschlei&szlig;, hart &minus;15&nbsp;% und halber),
+          gilt die Tabelle (weich +20&nbsp;% Grip und 2,6-facher Verschlei&szlig;, hart &minus;15&nbsp;% und 0,4-facher),
           dar&uuml;ber ist der Unterschied gr&ouml;&szlig;er. Standard seit v1.1.42: 150&nbsp;%
-          (weich +30&nbsp;%, hart &minus;22&nbsp;%), bis 300&nbsp;%. Steht die Reifensimulation dar&uuml;ber auf aus,
+          (weich +30&nbsp;% Grip und 3,4-facher Verschlei&szlig;, hart &minus;22&nbsp;% und 0,1-facher), bis 300&nbsp;%. Steht die Reifensimulation dar&uuml;ber auf aus,
           fahren ohnehin alle den Mittelreifen, egal was hier steht.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -10617,7 +10618,7 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-knall-volume-val">100%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Regen<small>Select oder W. Reifen kommen beim Boxenstopp passend.</small></div>
+      <div class="opt-row"><div class="opt-label">Regen<small>Schaltet Regen sofort an oder aus (im Entwicklermodus auch Shift+W). Reifen kommen beim Boxenstopp passend.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-rain"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Schaltklang: alt<span class="wip-tag">WIP</span><small>Aus (Standard, neu): Beim
           Schalten bleibt der Motorklang derselbe, bricht kurz ein wie bei einer Zündunterbrechung, und die Tonhöhe gleitet
@@ -11494,32 +11495,18 @@
 
       <div class="opt-row"><div class="opt-label">NPC: Boxenstopp
           <span class="wip-tag">experimentell</span>
-          <small>Ein NPC f&auml;hrt auf der Start/Ziel-Kachel rechts an den Rand, bleibt
-          ein paar Sekunden stehen und f&auml;hrt wieder los. Die Anfahrt beginnt schon auf
-          der Kachel davor, im Formationstempo &ndash; ein Auto, das mit Renntempo &uuml;ber
-          die Linie kommt, braucht eine Kachel zum Verz&ouml;gern. Standardm&auml;&szlig;ig AUS: ein Auto, das mitten
-          im Rennen stehen bleibt, liest man beim ersten Start als Fehler und nicht als
-          Feature. Der Ablauf ist absichtlich hart &ndash; eine Sekunde am rechten Rand mit
-          voller Bremse (am Tempo-Regler vorbei, der braucht f&uuml;r einen sauberen Halt
-          1,1&nbsp;s), dann ruckartig heraus in 0,5&nbsp;s, das ist die Grenze der
-          Querf&uuml;hrung, und dabei blinken die Lichter doppelt.
-          Es gibt vier Boxen hintereinander: Platz 1 auf der Start/Ziel-Kachel,
-          Platz 2 eine Kachel sp&auml;ter und so weiter. Wer gleichzeitig f&auml;llig ist, nimmt den n&auml;chsten freien und h&auml;lt
-          eine Kachel dahinter; wer als F&uuml;nfter kommt, wartet, bis eine frei wird.
-          Auf dem Weg zur eigenen Box f&auml;hrt er am Gegenrand vorbei &ndash; sonst
-          w&uuml;rde er dem Stehenden ins Heck fahren. Gemessen bei einem Wetterwechsel
-          mit sechs NPCs: vier stehen gleichzeitig, keine Doppelbelegung, und in
-          555 Takten Vorbeifahrt kein einziger Takt mit rechter Anforderung. Vier
-          Kacheln sind 1,72&nbsp;m &ndash; mehr Boxen w&uuml;rden auf einem kleinen Layout
-          einen merklichen Teil der Bahn f&uuml;llen.
+          <small>Ein NPC parkt zum Stopp wie das Safety Car: Einfahrt mit dessen Einparkfolge an den
+          rechten Rand, im Stand l&auml;uft die Ratsche, Ausfahrt mit der Ausparkfolge (seit v1.2.4). Es steht
+          immer nur ein Auto in der Box; wer gleichzeitig f&auml;llig ist, wartet, bis sie frei ist. Die Box liegt
+          auf der Start/Ziel-Kachel &ndash; steht ein Safety Car in der Garage, auf dem ersten St&uuml;ck mit zwei
+          Geraden ab drei Teilen hinter dessen Parkplatz, damit sich beide nicht in die Quere kommen. Die
+          Anfahrt beginnt schon auf der Kachel davor, im Formationstempo. Standardm&auml;&szlig;ig AUS: ein Auto, das
+          mitten im Rennen stehen bleibt, liest man beim ersten Start als Fehler und nicht als Feature.
           <br>Die anderen weichen auf der Boxenkachel nach links aus, und ihre Querlage ist
-          dort nach rechts gesperrt &ndash; das Ausweichen allein w&auml;re nur die weiche
-          H&auml;lfte, die Sperre ist die Zusage. Dein eigenes Auto ist nicht steuerbar; es
+          dort nach rechts gesperrt. Dein eigenes Auto ist nicht steuerbar; es
           gibt eine Meldung und den Punkt auf der Karte, mehr geht nicht.
           <br>Was der Stopp nicht kann: wissen, wo der Rand ist. Das Auto meldet seine
-          Querlage nicht, voller Ausschlag ist ein Befehl und keine Messung. Die Zusage ist
-          nicht die Randlage, sondern dass die anderen auf der anderen Seite
-          sind.
+          Querlage nicht, voller Ausschlag ist ein Befehl und keine Messung.
           <br>Regenreifen: setzt Regen ein, kommt jeder NPC so früh wie möglich herein und rüstet um &ndash; und beim Wechsel zurück auf trocken genauso. Solange die falschen Reifen drauf sind, fährt er langsamer: 0,64 gegen 0,85 mit Regenreifen im Regen, abgeleitet aus derselben Grifftabelle, die dein Auto benutzt. Bei leichtem Regen ist der Slick noch vorn &ndash; der Nachteil kommt mit dem Wasser, nicht mit der Meldung. Ist dieser Schalter aus, können NPCs keine falschen Reifen haben, sonst kröchen sie nach dem ersten Regen ohne Ausweg.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-pit"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">NPC: Boxenstopp im freien Fahren
@@ -12234,7 +12221,9 @@
       <p class="muted">Was Auto&nbsp;2 <b>hat</b>: eine eigene Fahrphysik mit eigenen
         G&auml;ngen, eigener Drehzahl, eigenem Tempo und eigenen Temperaturen. Die
         Einstellungen aus &bdquo;Fahrgef&uuml;hl&ldquo; werden bei jedem Anschalten
-        &uuml;bernommen, damit beide Autos gleich fahren.</p>
+        &uuml;bernommen &ndash; au&szlig;er, in der Garage ist f&uuml;r diesen Spieler unter
+        &bdquo;Fahrgef&uuml;hl&ldquo; ein eigenes gew&auml;hlt (seit v1.2.4, z.&nbsp;B. Spieler&nbsp;1 Pacejka,
+        Spieler&nbsp;2 Arcade); dann f&auml;hrt er mit seinem.</p>
       <p class="muted">Und ein Vergleichsschirm: bl&auml;ttere im Cockpit mit dem Pfeil
         oben links oder dem Steuerkreuz auf &bdquo;Beide&ldquo;. Dort stehen beide Autos
         <em>nebeneinander</em> &ndash; Tempo, Schaltlichter, Gang, Tank, Zustand, Reifen-
@@ -12275,12 +12264,11 @@
         Regler wie Auto&nbsp;1, das Tankgewicht in seiner Fahrphysik, die Warnstufen als
         Meldung und den Notlauf des leeren Tanks &ndash; und der geht &uuml;ber eine Rampe
         zu, nicht in einem Takt.</p>
-      <p class="muted">Alle globalen Einstellungen gelten f&uuml;r beide Autos: die
-        Abstimmung aus &bdquo;Fahrgef&uuml;hl&ldquo; wandert bei jeder &Auml;nderung
-        sofort her&uuml;ber, und Tank, Schaden, Reifenverschlei&szlig;, Wetter, die
-        H&ouml;chstgeschwindigkeit und die Batteriekompensation wirken auf beide
-        gleicherma&szlig;en. Zwei Autos mit verschiedener Abstimmung w&auml;ren kein
-        faires Rennen.</p>
+      <p class="muted">Die globalen Einstellungen gelten f&uuml;r alle Autos: Tank, Schaden,
+        Reifenverschlei&szlig;, Wetter, die H&ouml;chstgeschwindigkeit und die Batteriekompensation
+        wirken auf alle gleicherma&szlig;en. Die Abstimmung aus &bdquo;Fahrgef&uuml;hl&ldquo; wandert bei
+        jeder &Auml;nderung sofort her&uuml;ber, solange der Spieler &bdquo;wie Spieler&nbsp;1&ldquo; f&auml;hrt;
+        mit eigenem Fahrgef&uuml;hl (Garage) beh&auml;lt er seine Abstimmung und seine Reifenmischung.</p>
       <p class="muted">Dazu einen eigenen Schaden: Crasherkennung aus seinen eigenen
         Sensorbytes, Leistungsverlust mit dem Schaden, Notlauf im Totalschaden und
         ausgefallene Lampen &ndash; und die Kontrollleuchten des einen sagen nichts mehr

@@ -18,10 +18,10 @@
     arcade: {
       label: 'Arcade',
       kurz: 'Der ursprüngliche Sim-Modus',
-      text: 'Automatik, 2,0 s auf 100, voller Grip, kein Reifenverschleiß und kein '
+      text: 'Automatik, 1,6 s auf 100, voller Grip, kein Reifenverschleiß und kein '
           + 'Tankgewicht. Das Tempo ist gedrosselt, die Bremse dafür die kräftigste von allen, '
-          + 'also der kürzeste Bremsweg, und die Lenkkalibrierung auf 250 Prozent: der volle '
-          + 'Einschlag liegt schon bei einem Viertel Stick an. Crashs bremsen, machen aber '
+          + 'also der kürzeste Bremsweg, und die Lenkkalibrierung auf 300 Prozent: der volle '
+          + 'Einschlag liegt schon bei einem Drittel Stick an. Crashs bremsen, machen aber '
           + 'keinen Schaden. Zum Fahren ohne Nachdenken.',
       // BESTELLT: "bei arcade die bremskraft verstaerken um 50%" - von 1.5 (dem alten
       // Deckel des Reglers) auf 2.25. Der Regler selbst hat jetzt Platz bis 2.5, siehe
@@ -81,9 +81,9 @@
     pro: {
       label: 'Pro',
       kurz: 'Halb so weit zwischen Arcade und Realismus GT3',
-      text: 'Automatik, 2,6 s auf 100, voller Grip, Reifenmodell an und kein '
-          + 'Tankgewicht. Lenkkalibrierung 200 Prozent, damit auch enge Strecken gehen '
-          + '– der volle Einschlag liegt bei etwa einem Drittel Stick an. Fading und '
+      text: 'Automatik, 2,6 s auf 100, voller Grip, Reifenmodell und Tankgewicht an. '
+          + 'Lenkkalibrierung 250 Prozent, damit auch enge Strecken gehen '
+          + '– der volle Einschlag liegt bei zwei Fünfteln Stick an. Fading und '
           + 'Windschatten sind aus; sie stehen ab GT3 zur Verfügung.',
       // AUTOMATIK, obwohl Pro sonst die Zwischenstufe zu GT3 ist. Pro ist seit v0.5 die
       // Vorgabe, und wer beim ersten Start von Hand schalten muss und es nicht weiss, bleibt
@@ -280,8 +280,8 @@
   PRESETS.propacejka = {
     label: 'Pacejka',
     kurz: 'Pro mit Pacejka-Lenkmodell',
-    text: 'Die Pro-Abstimmung (Automatik, 2,6 s auf 100, voller Grip, Reifenmodell an, '
-        + 'kein Tankgewicht) mit dem experimentellen Pacejka-Lenkmodell: unterhalb der '
+    text: 'Die Pro-Abstimmung (Automatik, 2,6 s auf 100, voller Grip, Reifenmodell und '
+        + 'Tankgewicht an) mit dem experimentellen Pacejka-Lenkmodell: unterhalb der '
         + 'Haftgrenze f\u00e4hrt es sich wie Physik, dar\u00fcber sp\u00fcrbar \u00dcbersteuern und '
         + 'Untersteuern, beides vibriert und quietscht. Zum Ausprobieren der Magic Formula, '
         + 'ohne die Klassen-Abstimmung.',
@@ -298,7 +298,7 @@
     label: 'Omega',
     kurz: 'Pro, wie es in v0.9 war - eingefroren',
     text: 'Die Pro-Abstimmung aus v0.9 (Automatik, 2,6 s auf 100, voller Grip, Reifenmodell '
-        + 'an, kein Tankgewicht, Lenkkalibrierung 250 Prozent) und bleibt so: wird Pro '
+        + 'und Tankgewicht an, Lenkkalibrierung 250 Prozent) und bleibt so: wird Pro '
         + 'künftig angepasst, ändert sich Omega nicht.',
     v: { 'phys-mode': 'physik', 'setting-grip': 1, 'setting-brakepower': 1.4, 'setting-autoshift': true,
          'setting-zero-to-top': 2.6, 'setting-coast-drag': 0.6, 'setting-fuelweight': 1, 'setting-tyres': 1,
