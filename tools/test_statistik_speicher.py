@@ -121,7 +121,7 @@ async def run(args):
         await seed()
         await check(await page.locator('#stat-clean-car option').count()==3,'Autoauswahl nur zwei echte Dateneintraege plus Platzhalter')
         await check(await page.locator('#stat-clean-track option').count()==2,'Streckenauswahl nur Zeitdaten, keine leeren oder ausschliesslich fremden Eintraege')
-        await check('IndexedDB' in await page.locator('#stat-clean-storage-info').text_content(),'Neuer Speicherfix deutlich sichtbar markiert')
+        await check(await page.locator('#stat-clean-info').count()==1,'Erklaerung zur Sicherung hinter dem i im Kreis')
         await check('Nur Name' not in await page.locator('#stat-inhalt').text_content(),'Leere Autos auch aus Statistik-Tabelle ausgeblendet')
         await check('Nur Name' not in await page.locator('#sess-list').text_content(),'Leere Fahrzeug-Summen auch in Renneinstellungen ausgeblendet')
         await page.locator('#stat-clean-track').select_option(fixture['key']);await page.locator('#stat-clean-seconds').fill('5')
@@ -159,7 +159,7 @@ async def run(args):
         await check(not errors,'Keine JavaScript-Lade- oder Laufzeitfehler')
         if args.screenshot:
             await page.set_viewport_size({'width':390,'height':844})
-            await page.locator('#stat-clean-storage-info').scroll_into_view_if_needed()
+            await page.locator('#stat-clean-refresh-info').scroll_into_view_if_needed()
             await page.screenshot(path=args.screenshot)
         if args.report:Path(args.report).write_text(json.dumps({'checks':labels,'pageerrors':errors},ensure_ascii=False,indent=2))
         print('\n'.join('OK: '+n for n in labels));print(f'BESTANDEN: {len(labels)} Speicher- und Listenpruefungen.')

@@ -149,7 +149,7 @@ Manuelle Tests auf dem Webserver bleiben ohne Playwright moeglich.
 
 - Nach Loeschen und Rueckgaengig werden Statistik, Sitzungsliste und Bereinigungsbereich aus dem aktuellen localStorage neu gezeichnet. Kein Seiten-Reload, keine Loeschung der Website-Daten.
 - Die ausgewaehlte Strecke, die eingegebene Sekundengrenze und die offene Trefferansicht bleiben erhalten. Die Zeitvorschau wird neu berechnet: nach erfolgreicher Zeitbereinigung stehen dort null Treffer, der Loeschknopf ist gesperrt.
-- Eine Statusmeldung nennt den Loeschumfang. `Live-Aktualisierung` mit Fahrzeug- und Sitzungszahl zeigt an, dass dieser Korrekturstand geladen ist.
+- Eine Statusmeldung nennt den Loeschumfang. `Gespeichert: … Fahrzeug(e), … Sitzung(en).` zeigt den geladenen Stand.
 - `Anzeige aktualisieren` liest die gespeicherten Daten erneut ein, ohne zu loeschen oder die Rueckgaengig-Sicherung zu ersetzen.
 - Fahrzeug- und Sitzungsauswahl werden zurueckgesetzt, damit kein alter Index versehentlich einen anderen Datensatz loescht.
 - Darstellungsfehler erscheinen sichtbar im Status. Eine erfolgreich gespeicherte Bereinigung wird deswegen nicht automatisch rueckgaengig gemacht.
@@ -182,7 +182,7 @@ Optionaler Regressionstest: `python tools/test_statistik_zeiten.py` (Playwright 
 - Nach Entfernen der letzten Zeit verschwindet die Strecke sofort aus der Auswahl;
   eine Meldung erklaert das. Rueckgaengig bringt die Daten und die Listeneintraege
   ohne F5 zurueck. Gespeicherte Strecken in der Garage werden nicht geloescht.
-- Sichtbare Build-Kennung: `Sicherung: IndexedDB – Speicherfix aktiv.`
+- Die Erklaerung zur Sicherung steht hinter dem i im Kreis neben der Ueberschrift.
 - Website-Daten weiterhin NICHT loeschen: das wuerde auch IndexedDB-Sicherungen
   und die eigentlichen Statistikdaten entfernen. Bei Deployment im gleichen
   Browser-Ursprung (Schema, Host und Port) bleiben die Daten erhalten.
@@ -194,3 +194,16 @@ F5/Undo/JSON-Export, Migration/Fehler, Schutz der bisherigen Sicherung,
 Fahrtstart waehrend Sicherung sowie leere Auto-/Streckeneintraege.
 Die bisherigen 54 + 78 Pruefungen und 7 vorhandenen Tests bestehen ebenfalls.
 Manuelles Testen auf dem Webserver erfordert weiterhin kein Playwright.
+
+## Uebernahme in OmegaSim (Nacharbeiten)
+
+- Alle Texte laufen ueber das normale Woerterbuch (`t()`, I18N_EN und I18N_ES in
+  `src/10-ble-explorer.js`); `#stat-bereinigen` ist nicht mehr `data-i18n-skip`.
+  Spanisch zeigt damit Spanisch statt Deutsch.
+- Altsitzungen ohne `statistikBuchung`, deren Auto beim Speichern nicht in der Garage
+  stand, tragen in der Sitzung `a.id`, gebucht wurde aber unter `name:<Name>`.
+  `statCleanAutoKey` bildet das jetzt nach: das Auto steht nur noch einmal in der
+  Auswahl und seine Anteile werden zugeordnet statt uebersprungen.
+- Selbsttest `Statistikbereinigung v1.2.12` (src/95-selftest.js): Vorschau, zu kurze
+  Zeiten, Ruecknahme auf Probe-Schluesseln, Altdaten-Zuordnung und Spanisch.
+- Bereich als WIP gekennzeichnet.

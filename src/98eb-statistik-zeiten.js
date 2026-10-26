@@ -8,11 +8,10 @@
       (p.nachher === null || typeof p.nachher === 'string'));
   }
   function statCleanExtraAktuell(extra, seite) {
-    if (!statCleanExtraGueltig(extra)) throw new Error('Ungültige zusätzliche Statistikablage.');
+    if (!statCleanExtraGueltig(extra)) throw new Error(statCleanT('Ungültige zusätzliche Statistikablage.'));
     for (const [key, p] of Object.entries(extra)) {
-      if (localStorage.getItem(key) !== p[seite]) throw new Error(statCleanText(
-        'Bestzeit- oder Telemetriedaten haben sich geändert. Bitte Auswahl erneuern.',
-        'Time-attack or telemetry data have changed. Please renew the selection.'));
+      if (localStorage.getItem(key) !== p[seite]) throw new Error(statCleanT(
+        'Bestzeit- oder Telemetriedaten haben sich geändert. Bitte Auswahl erneuern.'));
     }
   }
   function statCleanSchreiben(paare, seite) {
@@ -21,7 +20,7 @@
     function schreiben(key, text) {
       if (text === null) localStorage.removeItem(key);
       else localStorage.setItem(key, text);
-      if (localStorage.getItem(key) !== text) throw new Error('Statistik nicht geschrieben: ' + key);
+      if (localStorage.getItem(key) !== text) throw new Error(statCleanT('Statistik nicht geschrieben: {k}', { k: key }));
     }
     try {
       for (const [key, p] of Object.entries(paare)) schreiben(key, p[seite]);
@@ -33,16 +32,15 @@
         try { if (localStorage.getItem(key) !== text) schreiben(key, text); }
         catch (r) { fehler.push(key); }
       }
-      if (fehler.length) throw new Error(statCleanText(
-        'Speicherfehler; Rücknahme unvollständig. Lokale Sicherung als JSON exportieren: ',
-        'Storage error; rollback incomplete. Export the local backup as JSON: ') + fehler.join(', '));
+      if (fehler.length) throw new Error(statCleanT(
+        'Speicherfehler; Rücknahme unvollständig. Lokale Sicherung als JSON exportieren: {k}', { k: fehler.join(', ') }));
       throw e;
     }
   }
   function statCleanAblage(key) {
     const raw = localStorage.getItem(key);
     const o = JSON.parse(raw || '{}');
-    if (!o || typeof o !== 'object' || Array.isArray(o)) throw new Error('Ungültige Ablage: ' + key);
+    if (!o || typeof o !== 'object' || Array.isArray(o)) throw new Error(statCleanT('Ungültige Ablage: {k}', { k: key }));
     return { raw, o };
   }
   function statCleanStreckenKey(code) {
@@ -57,18 +55,17 @@
   }
   function statCleanGrenze(wert) {
     const s = String(wert).trim().replace(',', '.');
-    if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(s)) throw new Error(statCleanText(
-      'Bitte eine positive Sekundenzahl eingeben.', 'Please enter a positive number of seconds.'));
+    if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(s)) throw new Error(statCleanT('Bitte eine positive Sekundenzahl eingeben.'));
     const ms = Number(s) * 1000;
-    if (!Number.isFinite(ms) || ms <= 0) throw new Error('Ungültiger Zeitgrenzwert.');
+    if (!Number.isFinite(ms) || ms <= 0) throw new Error(statCleanT('Ungültiger Zeitgrenzwert.'));
     return ms;
   }
   function statCleanZeitenPlan(o, code, grenze, bzRaw, teleRaw) {
-    if (!o || !Array.isArray(o.sessions) || !o.cars || Array.isArray(o.cars)) throw new Error('Ungültige Statistikdaten.');
+    if (!o || !Array.isArray(o.sessions) || !o.cars || Array.isArray(o.cars)) throw new Error(statCleanT('Ungültige Statistikdaten.'));
     const key = statCleanStreckenKey(code);
-    if (!key || !Number.isFinite(grenze) || grenze <= 0) throw new Error('Strecke oder Grenzwert fehlt.');
+    if (!key || !Number.isFinite(grenze) || grenze <= 0) throw new Error(statCleanT('Strecke oder Grenzwert fehlt.'));
     const neu = statCleanKopie(o), bz = JSON.parse(bzRaw || '{}'), tele = JSON.parse(teleRaw || '{}');
-    for (const d of [bz, tele]) if (!d || typeof d !== 'object' || Array.isArray(d)) throw new Error('Ungültige Zeitablage.');
+    for (const d of [bz, tele]) if (!d || typeof d !== 'object' || Array.isArray(d)) throw new Error(statCleanT('Ungültige Zeitablage.'));
     const b = { runden: 0, sitzungen: 0, rekorde: 0, spuren: 0, besteUnbekannt: 0, treffer: [] };
     const beruehrt = new Set();
     const kurz = ms => typeof ms === 'number' && Number.isFinite(ms) && ms < grenze;
@@ -143,21 +140,14 @@
     return { neu, bericht: b, extra, key, grenze };
   }
   function statCleanZeitenBericht(plan) {
-    const b = plan.bericht, txt = statCleanText;
-    return b.runden + txt(' Runde(n) in ', ' lap(s) in ') + b.sitzungen + txt(' Sitzung(en), ', ' session(s), ')
-      + b.rekorde + txt(' Bestzeit-Rekord(e), ', ' time-attack record(s), ') + b.spuren
-      + txt(' lokale Telemetrie-Einträge. Nur Zeiten strikt unter ', ' local telemetry entries. Only times strictly below ')
-      + (plan.grenze / 1000) + txt(' Sekunden auf dieser Strecke (einschließlich gespiegeltem Layout). ',
-        ' seconds on this track (including its mirrored layout). ')
-      + txt('Sitzungen und Kilometer bleiben erhalten. Rundenereignisse werden mit entfernt. ',
-        'Sessions and distances are preserved. Corresponding lap events are removed too. ')
-      + (b.rekorde ? txt('Ungültige separate Rekorde und ihre Medaillen werden zurückgesetzt; keine zweitbeste Historie vorhanden. ',
-        'Invalid separate records and their medals are reset; no second-best history is available. ') : '')
-      + (b.besteUnbekannt ? txt('Fahrzeugrekorde ohne vollständige Historie werden ab der nächsten Fahrt neu geführt.',
-        'Car records without a complete history are tracked anew from the next drive.') : '');
+    const b = plan.bericht, txt = statCleanT;
+    return txt('{r} Runde(n) in {s} Sitzung(en), {b} Bestzeit-Rekord(e), {t} lokale Telemetrie-Einträge. Nur Zeiten strikt unter {g} Sekunden auf dieser Strecke (auch gespiegelt). Sitzungen und Kilometer bleiben erhalten, die Rundenereignisse werden mit entfernt.',
+      { r: b.runden, s: b.sitzungen, b: b.rekorde, t: b.spuren, g: plan.grenze / 1000 })
+      + (b.rekorde ? ' ' + txt('Ungültige separate Rekorde und ihre Medaillen werden zurückgesetzt; es gibt keine zweitbeste Historie.') : '')
+      + (b.besteUnbekannt ? ' ' + txt('Fahrzeugrekorde ohne vollständige Historie werden ab der nächsten Fahrt neu geführt.') : '');
   }
   function statCleanZeitenHtml(o) {
-    const txt = statCleanText, esc = statCleanEsc, keys = new Set();
+    const txt = statCleanT, esc = statCleanEsc, keys = new Set();
     const zeit = ms => typeof ms === 'number' && Number.isFinite(ms);
     for (const s of o.sessions) if (s.strecke && (s.autos || []).some(a =>
       (a.laps || []).some(zeit))) keys.add(statCleanStreckenKey(s.strecke));
@@ -172,17 +162,17 @@
           keys.add(statCleanStreckenKey(k));
       }
     } catch (e) { /* Vorschau zeigt Parse-/Speicherfehler ohne Daten zu loeschen */ }
-    return '<hr><label for="stat-clean-track">' + esc(txt('Zu kurze Zeiten je Strecke löschen', 'Delete short times for one track'))
-      + '</label><select id="stat-clean-track"><option value="">' + esc(txt('Strecke auswählen …', 'Select track …')) + '</option>'
+    return '<hr><label for="stat-clean-track">' + esc(txt('Zu kurze Zeiten je Strecke löschen'))
+      + '</label><select id="stat-clean-track"><option value="">' + esc(txt('Strecke auswählen …')) + '</option>'
       + [...keys].filter(Boolean).sort().map(k => '<option value="' + esc(k) + '">' + esc(k) + '</option>').join('')
-      + '</select><label for="stat-clean-seconds">' + esc(txt('Zeiten unter … Sekunden', 'Times below … seconds'))
+      + '</select><label for="stat-clean-seconds">' + esc(txt('Zeiten unter … Sekunden'))
       + '</label><input type="text" inputmode="decimal" id="stat-clean-seconds" value="5" autocomplete="off"'
       + ' style="width:100%;box-sizing:border-box;min-height:40px">'
       + '<p class="stat-clean-preview" id="stat-clean-times-preview" aria-live="polite"></p>'
-      + '<details id="stat-clean-times-hits"><summary>' + esc(txt('Treffer ansehen', 'View matches')) + '</summary>'
+      + '<details id="stat-clean-times-hits"><summary>' + esc(txt('Treffer ansehen')) + '</summary>'
       + '<ul id="stat-clean-times-list"></ul></details>'
       + '<button type="button" class="stat-clean-danger" id="stat-clean-times-delete" disabled>'
-      + esc(txt('Zeiten unter Grenzwert löschen', 'Delete times below threshold')) + '</button>';
+      + esc(txt('Zeiten unter Grenzwert löschen')) + '</button>';
   }
   function statCleanZeitenVerdrahten(o, raw, zustand = {}) {
     const track = $('stat-clean-track'), input = $('stat-clean-seconds'), preview = $('stat-clean-times-preview');
@@ -197,8 +187,8 @@
         plan = statCleanZeitenPlan(o, track.value, statCleanGrenze(input.value), bz.raw, tele.raw);
         preview.textContent = statCleanZeitenBericht(plan);
         liste.innerHTML = plan.bericht.treffer.map(z => '<li>' + statCleanEsc(
-          (z.art === 'runde' ? (z.zeit || '?') + ' · ' : z.art === 'rekord' ? 'Time Attack · ' : 'Telemetrie · ')
-          + z.name + (z.runden ? ' · ' + statCleanText('Runde ', 'Lap ') + z.runden.join(', ') : '')
+          (z.art === 'runde' ? (z.zeit || '?') + ' · ' : z.art === 'rekord' ? t('Time Attack') + ' · ' : t('Telemetrie') + ' · ')
+          + z.name + (z.runden ? ' · ' + t('Runde') + ' ' + z.runden.join(', ') : '')
           + ' · ' + z.ms.map(sessionFmt).join(', ')) + '</li>').join('');
         button.disabled = statCleanGesperrt() || !(plan.bericht.runden + plan.bericht.rekorde + plan.bericht.spuren);
       } catch (e) { preview.textContent = e.message || String(e); }
@@ -208,15 +198,13 @@
       if (!plan || button.disabled) return;
       try {
         statCleanAktuell(raw); statCleanExtraAktuell(plan.extra, 'vorher');
-        if (!confirm(statCleanText('Diese Zeiten wirklich löschen? Strecke: ', 'Really delete these times? Track: ')
-          + plan.key + '\n\n' + statCleanZeitenBericht(plan) + '\n\n'
-          + statCleanText('Der vorherige Stand wird lokal gesichert.', 'The previous state will be backed up locally.'))) return;
+        if (!confirm(statCleanT('Diese Zeiten wirklich löschen? Strecke: {k}', { k: plan.key }) + '\n\n'
+          + statCleanZeitenBericht(plan) + '\n\n'
+          + statCleanT('Der vorherige Stand wird lokal gesichert.'))) return;
         const b = plan.bericht;
         await statCleanAnwenden(raw, plan, 'Zeiten < ' + plan.grenze / 1000 + 's: ' + plan.key,
-          statCleanText('Zeiten gelöscht: ', 'Times deleted: ') + b.runden
-          + statCleanText(' Runde(n), ', ' lap(s), ') + b.rekorde
-          + statCleanText(' Bestzeit-Rekord(e), ', ' time-attack record(s), ') + b.spuren
-          + statCleanText(' Telemetrie-Einträge. Lokale Sicherung erstellt.', ' telemetry entries. Local backup created.'));
+          statCleanT('Zeiten gelöscht: {r} Runde(n), {b} Bestzeit-Rekord(e), {t} Telemetrie-Einträge. Lokale Sicherung erstellt.',
+            { r: b.runden, b: b.rekorde, t: b.spuren }));
       } catch (e) { statCleanFehler(e); }
     });
     // Nach Loeschen/Undo gleiche Strecke und eigene Grenze sofort erneut auswerten.
@@ -224,7 +212,6 @@
     if ([...track.options].some(option => option.value === zustand.track)) track.value = zustand.track;
     if ($('stat-clean-times-hits')) $('stat-clean-times-hits').open = !!zustand.trefferOffen;
     vorschau();
-    if (zustand.track && !track.value) preview.textContent = statCleanText(
-      'Für die zuvor gewählte Strecke sind keine gespeicherten Zeiten mehr vorhanden. Sie wurde aus der Auswahl entfernt.',
-      'No stored times remain for the previously selected track. It has been removed from the selection.');
+    if (zustand.track && !track.value) preview.textContent = statCleanT(
+      'Für die zuvor gewählte Strecke sind keine gespeicherten Zeiten mehr vorhanden. Sie wurde aus der Auswahl entfernt.');
   }

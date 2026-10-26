@@ -3,8 +3,14 @@
   const STAT_CLEAN_BACKUP = 'chc.statistics.undo.v1';
   const STAT_CLEAN_BACKUP_TYP = 'omegasim-statistik-sicherung';
 
-  function statCleanText(de, en) {
-    return typeof lang !== 'undefined' && lang === 'en' ? en : de;
+  // Texte laufen ueber das normale Woerterbuch (I18N_EN/I18N_ES, 10-ble-explorer.js): der
+  // deutsche Text ist der Schluessel, {x} sind Platzhalter fuer Zahlen und Namen. Vorher
+  // stand hier eine eigene Weiche Deutsch/Englisch, und der Bereich war data-i18n-skip -
+  // Spanisch sah deshalb Deutsch.
+  function statCleanT(de, werte) {
+    let s = typeof t === 'function' ? t(de) : de;
+    if (werte) for (const k of Object.keys(werte)) s = s.split('{' + k + '}').join(String(werte[k]));
+    return s;
   }
   function statCleanEsc(x) {
     return String(x == null ? '' : x).replace(/[&<>"']/g, (c) =>
@@ -13,25 +19,39 @@
   function statCleanZahl(x) { return typeof x === 'number' && Number.isFinite(x) && x >= 0; }
   function statCleanKopie(o) { return JSON.parse(JSON.stringify(o)); }
 
-  // Namen werden NUR ohne Geraetekennung und bei eindeutiger Zuordnung verwendet.
-  // Zwei Autos gleichen Namens mit verschiedenen IDs werden niemals zusammengelegt.
+  // Derselbe Schluessel, unter dem sessionRecord() (97-sessions.js) die Summen gebucht hat.
+  // Neue Sitzungen tragen ihn in statistikBuchung.id. Bei alten Sitzungen wird er so
+  // nachgebildet, wie sessionRecord ihn damals vergeben hat: die Geraetekennung, wenn das
+  // Auto in der Garage stand, sonst 'name:<Name>' - auch dann, wenn die Sitzung selbst eine
+  // a.id traegt (das Auto war beim Speichern nicht in der Garage). Vorher galt in diesem
+  // Fall a.id: das Auto stand doppelt in der Auswahl (einmal als 'name:X' aus dem Speicher,
+  // einmal als a.id aus den Sitzungen) und seine Anteile galten als "nicht zuordenbar".
+  // Zwei Autos gleichen Namens mit verschiedenen IDs werden nie zusammengelegt.
   function statCleanAutoKey(a, o) {
     if (a.statistikBuchung && typeof a.statistikBuchung.id === 'string') return a.statistikBuchung.id;
-    if (a.id != null && String(a.id)) return String(a.id);
-    const ids = Object.keys(o.cars).filter((id) => o.cars[id].name === a.name);
-    return ids.length === 1 ? ids[0] : 'name:' + String(a.name || '?');
+    const cars = (o && o.cars) || {};
+    const hat = (k) => Object.prototype.hasOwnProperty.call(cars, k);
+    const nameKey = 'name:' + String(a.name || '?');
+    if (a.id != null && String(a.id)) {
+      const id = String(a.id);
+      if (hat(id)) return id;
+      if (hat(nameKey)) return nameKey;
+      return id;
+    }
+    const ids = Object.keys(cars).filter((id) => !id.startsWith('name:') && cars[id] && cars[id].name === a.name);
+    return ids.length === 1 && !hat(nameKey) ? ids[0] : nameKey;
   }
 
   function statCleanPlan(o, art, key) {
     if (!o || !Array.isArray(o.sessions) || !o.cars || typeof o.cars !== 'object') {
-      throw new Error(statCleanText('Ungültige Statistikdaten.', 'Invalid statistics data.'));
+      throw new Error(statCleanT('Ungültige Statistikdaten.'));
     }
     const neu = statCleanKopie(o);
     const bericht = { autos: 0, sitzungen: 0, anteile: 0, runden: 0, kmUnbekannt: 0,
       zuordnungUnbekannt: 0, besteUnbekannt: 0 };
     const geloescht = [];
     if (art === 'sitzung') {
-      if (!Number.isInteger(key) || key < 0 || key >= o.sessions.length) throw new Error('Sitzung fehlt.');
+      if (!Number.isInteger(key) || key < 0 || key >= o.sessions.length) throw new Error(statCleanT('Sitzung fehlt.'));
       const s = o.sessions[key];
       for (const a of (s.autos || [])) geloescht.push({ a, id: statCleanAutoKey(a, o) });
       neu.sessions.splice(key, 1);
@@ -55,8 +75,8 @@
         neu.sessions.push(kopie);
       });
       if (Object.prototype.hasOwnProperty.call(neu.cars, id)) { delete neu.cars[id]; bericht.autos = 1; }
-      if (!bericht.autos && !geloescht.length) throw new Error('Auto fehlt.');
-    } else { throw new Error('Unbekannte Bereinigung.'); }
+      if (!bericht.autos && !geloescht.length) throw new Error(statCleanT('Auto fehlt.'));
+    } else { throw new Error(statCleanT('Unbekannte Bereinigung.')); }
 
     const beruehrt = new Set();
     for (const { a, id } of geloescht) {
@@ -105,11 +125,9 @@
       || (typeof vfAktiv === 'function' && vfAktiv());
   }
   function statCleanAktuell(raw) {
-    if (statCleanGesperrt()) throw new Error(statCleanText(
-      'Bitte zuerst die laufende Fahrt beenden.', 'Please finish the current drive first.'));
-    if (localStorage.getItem(SESSION_STORE) !== raw) throw new Error(statCleanText(
-      'Die Statistikdaten haben sich geändert. Bitte die Auswahl neu öffnen.',
-      'Statistics have changed. Please reopen the selection.'));
+    if (statCleanGesperrt()) throw new Error(statCleanT('Bitte zuerst die laufende Fahrt beenden.'));
+    if (localStorage.getItem(SESSION_STORE) !== raw) throw new Error(statCleanT(
+      'Die Statistikdaten haben sich geändert. Bitte die Auswahl neu öffnen.'));
   }
   // Rueckgaengig-Daten gehoeren nicht in den kleinen localStorage. Jede Aktion
   // sichert zuerst dauerhaft in IndexedDB und wartet auf den Transaktionsabschluss.
@@ -117,10 +135,9 @@
   let statCleanBusy = false;
 
   function statCleanSpeicherFehler(e) {
-    return new Error(statCleanText(
-      'Statistik-Sicherung nicht verfügbar. Nichts weiter geändert. Bitte freien Gerätespeicher und die Browser-Speicherfreigabe prüfen; keine Website-Daten löschen. ',
-      'Statistics backup unavailable. No further changes made. Check free device space and browser storage permissions; do not clear site data. ')
-      + (e && e.name ? '(' + e.name + ')' : ''));
+    return new Error(statCleanT(
+      'Statistik-Sicherung nicht verfügbar. Nichts weiter geändert. Bitte freien Gerätespeicher und die Browser-Speicherfreigabe prüfen; keine Website-Daten löschen.')
+      + (e && e.name ? ' (' + e.name + ')' : ''));
   }
   function statCleanDbOeffnen() {
     return new Promise((resolve, reject) => {
@@ -167,13 +184,13 @@
     const raw = localStorage.getItem(STAT_CLEAN_BACKUP);
     if (raw === null) return;
     let b;
-    try { b = JSON.parse(raw); } catch (e) { throw new Error('Alte Statistik-Sicherung ist beschädigt; bitte zuerst sichern.'); }
-    if (!statCleanBackupGueltig(b)) throw new Error('Alte Statistik-Sicherung ist ungültig; bitte zuerst sichern.');
+    try { b = JSON.parse(raw); } catch (e) { throw new Error(statCleanT('Alte Statistik-Sicherung ist beschädigt; bitte zuerst sichern.')); }
+    if (!statCleanBackupGueltig(b)) throw new Error(statCleanT('Alte Statistik-Sicherung ist ungültig; bitte zuerst sichern.'));
     await statCleanDbTransaktion('readwrite', (store, done, fail) => {
       const req = store.get('legacy');
       req.onsuccess = () => { try {
         if (req.result && JSON.stringify(req.result) !== JSON.stringify(b)) {
-          fail(new Error('Eine andere alte Sicherung ist bereits vorhanden. Bitte zuerst exportieren.')); return;
+          fail(new Error(statCleanT('Eine andere alte Sicherung ist bereits vorhanden. Bitte zuerst exportieren.'))); return;
         }
         store.put(b, 'legacy'); done(b);
 
@@ -206,9 +223,8 @@
       const req = store.get('pending');
       req.onsuccess = () => { try {
         if (req.result) {
-          fail(new Error(statCleanText(
-            'Eine nicht abgeschlossene Bereinigung ist gesichert. Bitte zuerst Rückgängig oder JSON-Sicherung verwenden.',
-            'An unfinished cleanup is backed up. Use Undo or JSON backup first.'))); return;
+          fail(new Error(statCleanT(
+            'Eine nicht abgeschlossene Bereinigung ist gesichert. Bitte zuerst Rückgängig oder JSON-Sicherung verwenden.'))); return;
         }
         store.put(b, 'pending'); done(b);
 
@@ -221,7 +237,7 @@
       const req = store.get('pending');
       req.onsuccess = () => { try {
         if (!req.result || req.result.token !== b.token) {
-          fail(new Error('Sicherungsstand hat sich geändert.')); return;
+          fail(new Error(statCleanT('Sicherungsstand hat sich geändert.'))); return;
         }
         if (erfolg) { store.put(b, 'current'); store.delete('legacy'); }
         store.delete('pending'); done(true);
@@ -234,14 +250,14 @@
       .every(([key, pair]) => localStorage.getItem(key) === pair[seite]);
   }
   async function statCleanExklusiv(arbeit) {
-    if (statCleanBusy) throw new Error(statCleanText('Bereinigung läuft bereits.', 'Cleanup is already running.'));
+    if (statCleanBusy) throw new Error(statCleanT('Bereinigung läuft bereits.'));
     statCleanBusy = true;
     const buttons = ['stat-clean-car-delete', 'stat-clean-session-delete', 'stat-clean-times-delete',
       'stat-clean-undo', 'stat-clean-refresh'];
     const vorher = buttons.map(id => [$(id), $(id) && $(id).disabled]);
     vorher.forEach(([el]) => { if (el) el.disabled = true; });
     const status = $('stat-clean-status');
-    if (status) status.textContent = statCleanText('Sicherung und Bereinigung laufen …', 'Backup and cleanup in progress …');
+    if (status) status.textContent = statCleanT('Sicherung und Bereinigung laufen …');
     try {
       // Web Locks koordinieren auch zwei Tabs desselben Ursprungs, falls verfügbar.
       return await (typeof navigator.locks !== 'undefined'
@@ -270,24 +286,21 @@
       }
       let warnung = '';
       try { await statCleanBackupAbschliessen(b, true); }
-      catch (e) { warnung = statCleanText(' Sicherung bleibt als offene Wiederherstellung erhalten.',
-        ' Backup remains available as pending recovery.'); }
-      statCleanAuffrischen((meldung || statCleanText(
-        'Statistik bereinigt. Sicherung in IndexedDB erstellt.', 'Statistics cleaned up. IndexedDB backup created.')) + warnung);
+      catch (e) { warnung = ' ' + statCleanT('Sicherung bleibt als offene Wiederherstellung erhalten.'); }
+      statCleanAuffrischen((meldung || statCleanT('Statistik bereinigt. Sicherung erstellt.')) + warnung);
     });
   }
   async function statCleanUndo() {
     return statCleanExklusiv(async () => {
       const b = await statCleanBackupLesen();
-      if (!b) throw new Error('Keine Statistik-Sicherung vorhanden.');
+      if (!b) throw new Error(statCleanT('Keine Statistik-Sicherung vorhanden.'));
       const abgebrochen = b.ablage === 'pending' && statCleanPaareGleich(b, 'vorher');
       if (!abgebrochen) { statCleanAktuell(b.nachher); statCleanExtraAktuell(b.extra || {}, 'nachher'); }
-      if (!confirm(abgebrochen ? statCleanText(
-        'Die Bereinigung wurde nicht geschrieben. Offenen Sicherungsversuch abschließen? Statistik bleibt unverändert.',
-        'Cleanup was not written. Close the pending backup attempt? Statistics remain unchanged.')
-        : statCleanText('Letzte Statistik-Bereinigung rückgängig machen?', 'Undo the last statistics cleanup?'))) return;
+      if (!confirm(abgebrochen
+        ? statCleanT('Die Bereinigung wurde nicht geschrieben. Offenen Sicherungsversuch abschließen? Statistik bleibt unverändert.')
+        : statCleanT('Letzte Statistik-Bereinigung rückgängig machen?'))) return;
       if (abgebrochen) {
-        if (!statCleanPaareGleich(b, 'vorher')) throw new Error('Statistikdaten haben sich geändert.');
+        if (!statCleanPaareGleich(b, 'vorher')) throw new Error(statCleanT('Statistikdaten haben sich geändert.'));
       } else {
         statCleanAktuell(b.nachher); statCleanExtraAktuell(b.extra || {}, 'nachher');
         statCleanSchreiben({ [SESSION_STORE]: b, ...(b.extra || {}) }, 'vorher');
@@ -298,15 +311,15 @@
           const req = store.get(b.ablage);
           req.onsuccess = () => { try {
             if (JSON.stringify(req.result) !== JSON.stringify((({ ablage, ...rest }) => rest)(b))) {
-              fail(new Error('Sicherungsstand hat sich geändert.')); return;
+              fail(new Error(statCleanT('Sicherungsstand hat sich geändert.'))); return;
             }
             store.delete(b.ablage); done(true);
 
-      } catch (e) { fail(statCleanSpeicherFehler(e)); } };
+          } catch (e) { fail(statCleanSpeicherFehler(e)); } };
         });
-      } catch (e) { warnung = ' Sicherungsmarker konnte nicht entfernt werden.'; }
-      statCleanAuffrischen(statCleanText(abgebrochen ? 'Offener Sicherungsversuch abgeschlossen.' : 'Letzte Bereinigung rückgängig gemacht.',
-        abgebrochen ? 'Pending backup attempt closed.' : 'Last cleanup undone.') + warnung);
+      } catch (e) { warnung = ' ' + statCleanT('Sicherungsmarker konnte nicht entfernt werden.'); }
+      statCleanAuffrischen(statCleanT(abgebrochen ? 'Offener Sicherungsversuch abgeschlossen.'
+        : 'Letzte Bereinigung rückgängig gemacht.') + warnung);
     });
   }
   // Ein Name/Foto oder eine Null-Summe allein ist keine Fahrzeugstatistik.
@@ -342,35 +355,37 @@
     }
     const el = $('stat-clean-status');
     if (el) el.textContent = (meldung ? meldung + ' ' : '') + (warnungen.length
-      ? statCleanText('Anzeige nicht vollständig aktualisiert: ', 'Display not fully refreshed: ') + warnungen.join('; ')
-      : statCleanText('Anzeige und Trefferliste aktualisiert.', 'Display and match list refreshed.'));
+      ? statCleanT('Anzeige nicht vollständig aktualisiert: {m}', { m: warnungen.join('; ') })
+      : statCleanT('Anzeige und Trefferliste aktualisiert.'));
     if (warnungen.length) log('Statistik-Darstellungsfehler: ' + warnungen.join('; '), 'err');
     if (typeof autoSicherungPlanen === 'function') autoSicherungPlanen();
   }
   function statCleanFehler(e) {
-    const msg = statCleanText('Nicht gelöscht / nicht wiederhergestellt: ', 'Not deleted / not restored: ')
-      + (e && e.message ? e.message : String(e));
+    const msg = statCleanT('Nicht gelöscht / nicht wiederhergestellt: {m}',
+      { m: e && e.message ? e.message : String(e) });
     const el = $('stat-clean-status');
     if (el) el.textContent = msg;
     log(msg, 'err');
   }
   function statCleanBericht(b) {
-    const teile = [statCleanText('Betroffen: ', 'Affected: ') + b.sitzungen
-      + statCleanText(' vollständige Sitzung(en), ', ' complete session(s), ') + b.anteile
-      + statCleanText(' Fahrzeuganteil(e), ', ' car entry/entries, ') + b.runden + statCleanText(' Runde(n).', ' lap(s).')];
-    if (b.kmUnbekannt) teile.push(statCleanText(
-      'Altdaten ohne exakte Kilometerbuchung: Lebenszeit-Kilometer bleiben bei ',
-      'Legacy data without exact distance entries: lifetime distances remain unchanged for ')
-      + b.kmUnbekannt + statCleanText(' Fahrzeuganteil(en) unverändert. Sitzungen und Runden werden abgezogen.',
-      ' car entry/entries. Session and lap counts are deducted.'));
-    if (b.zuordnungUnbekannt) teile.push(statCleanText(
-      'Nicht eindeutig zuordenbare Altdaten: zugehörige Fahrzeug-Summen bleiben unverändert.',
-      'Unmatched legacy entries: corresponding car totals remain unchanged.'));
-    if (b.besteUnbekannt) teile.push(statCleanText(
-      'Eine gelöschte Bestzeit hat keine vollständig gespeicherte Historie. Der Fahrzeugrekord wird zurückgesetzt und ab der nächsten Fahrt neu geführt.',
-      'A deleted best lap has no complete stored history. The car record is reset and starts again with the next drive.'));
+    const teile = [statCleanT('Betroffen: {s} vollständige Sitzung(en), {a} Fahrzeuganteil(e), {r} Runde(n).',
+      { s: b.sitzungen, a: b.anteile, r: b.runden })];
+    if (b.kmUnbekannt) teile.push(statCleanT(
+      'Altdaten ohne exakte Kilometerbuchung: Die Lebenszeit-Kilometer bleiben bei {n} Fahrzeuganteil(en) unverändert. Sitzungen und Runden werden abgezogen.',
+      { n: b.kmUnbekannt }));
+    if (b.zuordnungUnbekannt) teile.push(statCleanT(
+      'Nicht eindeutig zuordenbare Altdaten: zugehörige Fahrzeug-Summen bleiben unverändert.'));
+    if (b.besteUnbekannt) teile.push(statCleanT(
+      'Eine gelöschte Bestzeit hat keine vollständig gespeicherte Historie. Der Fahrzeugrekord wird zurückgesetzt und ab der nächsten Fahrt neu geführt.'));
     return teile.join('\n');
   }
+
+  // Die Erklaerung steht hinter dem i im Kreis (optInfoOeffnen, 98c-opt-info.js), nicht als
+  // Fliesstext unter den Auswahlfeldern.
+  const STAT_CLEAN_INFO = [
+    'Vor jedem Löschen wird der bisherige Stand in der Browser-Datenbank (IndexedDB) gesichert. Die Sicherung enthält den Stand vor der letzten Bereinigung. Garage, Fotos und Challenges bleiben erhalten. Beim Entfernen eines Autos oder einer Sitzung bleiben die getrennten Bestzeit-Rekorde stehen; die Zeitbereinigung prüft sie zusätzlich.',
+    'Rückgängig geht nur, solange sich die Statistik seit der Bereinigung nicht geändert hat. Erst die nächste erfolgreiche Löschung ersetzt die Sicherung. Für dauerhafte Sicherungen vorher Optionen → Sicherung nutzen. Die JSON-Datei lässt sich dort importieren und ersetzt dann die gesamte Statistikablage. Die Zeitbereinigung sichert auch lokale Bestzeiten und Telemetrie. Der JSON-Download funktioniert im Browser; in der App die vorhandene Sicherungsfunktion nutzen.',
+  ];
 
   function statBereinigungZeichnen(zustand = statCleanUiZustand()) {
     const host = $('stat-bereinigen');
@@ -382,51 +397,52 @@
     const autos = statCleanAutos(o);
     const ids = [...autos.keys()].sort((a, b) => String(autos.get(a)).localeCompare(String(autos.get(b))));
     const esc = statCleanEsc;
-    const txt = statCleanText;
+    const txt = statCleanT;
     const backup = null; // Status nach dem Neuaufbau asynchron laden.
     host.innerHTML = '<details class="stat-clean"' + (offen ? ' open' : '') + '><summary>'
-      + esc(txt('Statistiken bereinigen', 'Clean up statistics')) + '</summary>'
+      + esc(txt('Statistiken bereinigen')) + ' <span class="wip-tag">WIP</span>'
+      + ' <button type="button" class="opt-info-btn" id="stat-clean-info" aria-label="'
+      + esc(txt('Erklärung anzeigen')) + '">i</button></summary>'
       + '<p id="stat-clean-refresh-info" class="stat-clean-note" aria-live="polite">'
-      + esc(txt('Live-Aktualisierung: ', 'Live refresh: ') + ids.length
-        + txt(' Fahrzeug(e), ', ' car(s), ') + o.sessions.length + txt(' Sitzung(en).', ' session(s).')) + '</p>'
-      + '<p id="stat-clean-storage-info" class="stat-clean-note">'
-      + esc(txt('Sicherung: IndexedDB – Speicherfix aktiv.', 'Backup: IndexedDB – storage fix active.')) + '</p>'
-      + '<p class="stat-clean-note">' + esc(txt(
-        'Speicherfix aktiv: Vor jedem Löschen wird die Statistik-Sicherung in IndexedDB erstellt, nicht im begrenzten LocalStorage. Sie enthält den Stand vor der letzten Bereinigung. Garagenkonfiguration, Fotos und Challenges bleiben erhalten. Beim Entfernen eines Autos oder einer Sitzung bleiben separate Bestzeit-Rekorde erhalten; die Zeitbereinigung unten prüft sie zusätzlich.',
-        'Storage fix active: Before each deletion, an IndexedDB backup is created, not stored in the limited localStorage. It contains the state before the last cleanup. Garage configuration, photos and challenges are preserved. Removing a car or session preserves separate time-attack records; the time cleanup below checks them too.')) + '</p>'
-      + '<label for="stat-clean-car">' + esc(txt('Fahrzeugstatistik entfernen', 'Remove car statistics')) + '</label>'
-      + '<select id="stat-clean-car"><option value="">' + esc(txt('Auto auswählen …', 'Select car …')) + '</option>'
+      + esc(txt('Gespeichert: {a} Fahrzeug(e), {s} Sitzung(en).', { a: ids.length, s: o.sessions.length })) + '</p>'
+      + '<label for="stat-clean-car">' + esc(txt('Fahrzeugstatistik entfernen')) + '</label>'
+      + '<select id="stat-clean-car"><option value="">' + esc(txt('Auto auswählen …')) + '</option>'
       + ids.map((id, i) => '<option value="' + i + '">' + esc(autos.get(id) + ' [' + id + ']') + '</option>').join('')
       + '</select><p class="stat-clean-preview" id="stat-clean-car-preview"></p>'
       + '<button type="button" class="stat-clean-danger" id="stat-clean-car-delete" disabled>'
-      + esc(txt('Ausgewählte Fahrzeugstatistik löschen', 'Delete selected car statistics')) + '</button>'
-      + '<label for="stat-clean-session">' + esc(txt('Einzelne Sitzung löschen', 'Delete one session')) + '</label>'
-      + '<select id="stat-clean-session"><option value="">' + esc(txt('Sitzung auswählen …', 'Select session …')) + '</option>'
+      + esc(txt('Ausgewählte Fahrzeugstatistik löschen')) + '</button>'
+      + '<label for="stat-clean-session">' + esc(txt('Einzelne Sitzung löschen')) + '</label>'
+      + '<select id="stat-clean-session"><option value="">' + esc(txt('Sitzung auswählen …')) + '</option>'
       + o.sessions.map((s, i) => {
         const laps = (s.autos || []).flatMap((a) => a.laps || []);
-        const best = laps.length ? ' · ' + txt('beste ', 'best ') + sessionFmt(Math.min(...laps)) : '';
+        const best = laps.length ? ' · ' + txt('beste {z}', { z: sessionFmt(Math.min(...laps)) }) : '';
         const mode = RACE_MODES[s.modus] ? t(RACE_MODES[s.modus].label) : s.modus;
         return { i, label: (s.zeit || '?') + ' · ' + mode + ' · '
-          + (s.autos || []).map((a) => a.name).join(', ') + ' · ' + laps.length + txt(' Runden', ' laps')
+          + (s.autos || []).map((a) => a.name).join(', ') + ' · ' + txt('{n} Runde(n)', { n: laps.length })
           + best + (s.strecke ? ' · ' + s.strecke : '') };
       }).reverse().map((s) => '<option value="' + s.i + '">' + esc(s.label) + '</option>').join('')
       + '</select><p class="stat-clean-preview" id="stat-clean-session-preview"></p>'
       + '<button type="button" class="stat-clean-danger" id="stat-clean-session-delete" disabled>'
-      + esc(txt('Ausgewählte Sitzung löschen', 'Delete selected session')) + '</button>'
+      + esc(txt('Ausgewählte Sitzung löschen')) + '</button>'
       + statCleanZeitenHtml(o)
       + '<div class="stat-clean-actions"><button type="button" id="stat-clean-refresh">'
-      + esc(txt('Anzeige aktualisieren', 'Refresh display')) + '</button>'
+      + esc(txt('Anzeige aktualisieren')) + '</button>'
       + '<button type="button" id="stat-clean-undo"' + (backup ? '' : ' disabled') + '>'
-      + esc(txt('Letzte Bereinigung rückgängig', 'Undo last cleanup')) + '</button>'
+      + esc(txt('Letzte Bereinigung rückgängig')) + '</button>'
       + '<button type="button" id="stat-clean-backup"' + (backup ? '' : ' disabled') + '>'
-      + esc(txt('Statistik-Sicherung als JSON', 'Statistics backup as JSON')) + '</button></div>'
-      + '<p class="stat-clean-note">' + esc(txt(
-        'Rückgängig ist nur möglich, solange seit der Bereinigung keine Statistikdaten geändert wurden. Erst die nächste erfolgreiche Löschung ersetzt die Sicherung. Alte LocalStorage-Sicherungen werden sicher nach IndexedDB übernommen. Für dauerhafte Sicherungen nutze Optionen → Sicherung vor dem Bereinigen. JSON kann unter Optionen → Sicherung importiert werden und ersetzt dann die gesamte Statistikablage. Zeitbereinigung sichert auch lokale Bestzeit- und Telemetriedaten. JSON-Download funktioniert im Browser; in der APK nutze die vorhandene Sicherungsfunktion.',
-        'Undo is possible only while statistics have not changed since cleanup. Only the next successful deletion replaces the backup. Legacy localStorage backups are safely migrated to IndexedDB. For permanent backups use Options → Backup before cleanup. JSON can be imported via Options → Backup and replaces the entire statistics store. Time cleanup also backs up local time-attack and telemetry records. JSON download works in the browser; in the APK use the existing backup feature.')) + '</p>'
+      + esc(txt('Statistik-Sicherung als JSON')) + '</button></div>'
       + (Object.values(o.cars).some((c) => c.besteSeitBereinigung) ? '<p class="stat-clean-note">' + esc(txt(
-        'Hinweis: Zurückgesetzte Fahrzeug-Bestzeiten werden seit der Bereinigung neu geführt; ältere, nicht mehr gespeicherte Runden sind unbekannt.',
-        'Note: reset car best laps are tracked from cleanup onwards; older laps no longer in the archive are unknown.')) + '</p>' : '')
+        'Hinweis: Zurückgesetzte Fahrzeug-Bestzeiten werden seit der Bereinigung neu geführt; ältere, nicht mehr gespeicherte Runden sind unbekannt.')) + '</p>' : '')
       + '<p id="stat-clean-status" role="status" aria-live="polite"></p></details>';
+
+    $('stat-clean-info').addEventListener('click', (e) => {
+      // Im <summary>: ohne preventDefault klappt der Knopf den Bereich mit auf oder zu.
+      e.preventDefault(); e.stopPropagation();
+      if (typeof optInfoOeffnen === 'function') {
+        optInfoOeffnen(txt('Statistiken bereinigen'),
+          STAT_CLEAN_INFO.map((p) => '<p>' + esc(txt(p)) + '</p>').join(''));
+      }
+    });
 
     function verdrahten(selId, previewId, buttonId, art, keyVon) {
       const sel = $(selId), preview = $(previewId), button = $(buttonId);
@@ -447,13 +463,11 @@
           statCleanAktuell(raw);
           const label = art === 'auto' ? autos.get(key) + ' [' + key + ']'
             : (o.sessions[key].zeit || '?') + ' · ' + (o.sessions[key].autos || []).map((a) => a.name).join(', ');
-          if (!confirm(txt('Wirklich löschen: ', 'Really delete: ') + label + '?\n\n'
-              + statCleanBericht(plan.bericht) + '\n\n' + txt(
-                'Der vorherige Statistikstand wird lokal gesichert. Garagendaten bleiben erhalten.',
-                'The previous statistics state will be backed up locally. Garage data is preserved.'))) return;
-          await statCleanAnwenden(raw, plan, art + ': ' + label, txt(
-            'Statistik gelöscht: ', 'Statistics deleted: ') + label + '. ' + txt(
-            'Lokale Sicherung erstellt.', 'Local backup created.'));
+          if (!confirm(txt('Wirklich löschen: {x}?', { x: label }) + '\n\n'
+              + statCleanBericht(plan.bericht) + '\n\n'
+              + txt('Der vorherige Statistikstand wird lokal gesichert. Garagendaten bleiben erhalten.'))) return;
+          await statCleanAnwenden(raw, plan, art + ': ' + label,
+            txt('Statistik gelöscht: {x}. Lokale Sicherung erstellt.', { x: label }));
         } catch (e) { statCleanFehler(e); }
       });
     }
@@ -467,7 +481,7 @@
     $('stat-clean-backup').addEventListener('click', async () => {
       try {
         const b = await statCleanBackupLesen();
-        if (!b) throw new Error('Keine Statistik-Sicherung vorhanden.');
+        if (!b) throw new Error(statCleanT('Keine Statistik-Sicherung vorhanden.'));
         // Vorheriger Statistikstand im Format des EXISTIERENDEN Sicherungsimports.
         // Import fuehrt nur diese Ablage zurueck; aktuelle Garagen-/Reglerdaten bleiben.
         const ums = { typ: SICHERUNG_TYP, version: SICHERUNG_VERSION,
@@ -487,3 +501,10 @@
       if (undoButton.isConnected) statCleanFehler(e);
     });
   }
+
+  // Zusammengesetzte Texte (Zahlen in Saetzen) erreicht der Textknoten-Uebersetzer nicht;
+  // beim Sprachwechsel deshalb neu zeichnen, wenn der Bereich schon steht.
+  if (typeof i18nOnLangChange === 'function') i18nOnLangChange(() => {
+    const host = $('stat-bereinigen');
+    if (host && host.childElementCount) statBereinigungZeichnen();
+  });

@@ -12170,7 +12170,7 @@
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Statistiken</h2>
       <div id="stat-inhalt"></div>
-      <div id="stat-bereinigen" data-i18n-skip></div>
+      <div id="stat-bereinigen"></div>
     </div>
     <!-- STUDIE (98f-studie.js): Einwilligung, NARQ, Selbsteinschaetzung, Reaktionstest. Der Inhalt
          entsteht im Code und wird dort mit t() uebersetzt. -->
@@ -17366,6 +17366,76 @@
     "Durchschnitt der drei schnellsten aufeinanderfolgenden Runden.": "Average of the three fastest consecutive laps.",
     "Nur in der Android-App: dieses Telefon wird Host, die anderen finden es im WLAN. Im Browser geht das nicht – dort den Weg über den PC nehmen. Wer im Browser mitspielen will, braucht für das Auto die App (Web Bluetooth verlangt einen secure context; das APK hat das eingebaut).": "Only in the Android app: this phone becomes the host, the others find it over Wi-Fi. That does not work in the browser – use the PC route there. Anyone who wants to join in the browser needs the app for the car (Web Bluetooth requires a secure context; the APK has that built in).",
     "Solange das Auto steht (0 km/h), zählt kein Stoß als Crash – du kannst es aufheben, ohne dass es simulierten Schaden nimmt.": "As long as the car is standing still (0 km/h), no crash is counted – you can lift it up without it taking simulated damage.",
+    "Ungültige Statistikdaten.": "Invalid statistics data.",
+    "Sitzung fehlt.": "Session missing.",
+    "Auto fehlt.": "Car missing.",
+    "Unbekannte Bereinigung.": "Unknown cleanup.",
+    "Bitte zuerst die laufende Fahrt beenden.": "Please finish the current drive first.",
+    "Die Statistikdaten haben sich geändert. Bitte die Auswahl neu öffnen.": "The statistics have changed. Please reopen the selection.",
+    "Statistik-Sicherung nicht verfügbar. Nichts weiter geändert. Bitte freien Gerätespeicher und die Browser-Speicherfreigabe prüfen; keine Website-Daten löschen.": "Statistics backup unavailable. Nothing else was changed. Check free device storage and the browser storage permission; do not clear site data.",
+    "Alte Statistik-Sicherung ist beschädigt; bitte zuerst sichern.": "The old statistics backup is damaged; please back up first.",
+    "Alte Statistik-Sicherung ist ungültig; bitte zuerst sichern.": "The old statistics backup is invalid; please back up first.",
+    "Eine andere alte Sicherung ist bereits vorhanden. Bitte zuerst exportieren.": "A different old backup already exists. Please export it first.",
+    "Eine nicht abgeschlossene Bereinigung ist gesichert. Bitte zuerst Rückgängig oder JSON-Sicherung verwenden.": "An unfinished cleanup is backed up. Use Undo or the JSON backup first.",
+    "Sicherungsstand hat sich geändert.": "The backup has changed.",
+    "Bereinigung läuft bereits.": "Cleanup is already running.",
+    "Sicherung und Bereinigung laufen …": "Backup and cleanup in progress …",
+    "Sicherung bleibt als offene Wiederherstellung erhalten.": "The backup remains available as a pending recovery.",
+    "Statistik bereinigt. Sicherung erstellt.": "Statistics cleaned up. Backup created.",
+    "Keine Statistik-Sicherung vorhanden.": "No statistics backup available.",
+    "Die Bereinigung wurde nicht geschrieben. Offenen Sicherungsversuch abschließen? Statistik bleibt unverändert.": "The cleanup was not written. Close the pending backup attempt? Statistics remain unchanged.",
+    "Letzte Statistik-Bereinigung rückgängig machen?": "Undo the last statistics cleanup?",
+    "Statistikdaten haben sich geändert.": "The statistics have changed.",
+    "Sicherungsmarker konnte nicht entfernt werden.": "The backup marker could not be removed.",
+    "Offener Sicherungsversuch abgeschlossen.": "Pending backup attempt closed.",
+    "Letzte Bereinigung rückgängig gemacht.": "Last cleanup undone.",
+    "Anzeige nicht vollständig aktualisiert: {m}": "Display not fully refreshed: {m}",
+    "Anzeige und Trefferliste aktualisiert.": "Display and match list refreshed.",
+    "Nicht gelöscht / nicht wiederhergestellt: {m}": "Not deleted / not restored: {m}",
+    "Betroffen: {s} vollständige Sitzung(en), {a} Fahrzeuganteil(e), {r} Runde(n).": "Affected: {s} complete session(s), {a} car entry/entries, {r} lap(s).",
+    "Altdaten ohne exakte Kilometerbuchung: Die Lebenszeit-Kilometer bleiben bei {n} Fahrzeuganteil(en) unverändert. Sitzungen und Runden werden abgezogen.": "Legacy data without exact distance entries: lifetime distance stays unchanged for {n} car entry/entries. Sessions and laps are deducted.",
+    "Nicht eindeutig zuordenbare Altdaten: zugehörige Fahrzeug-Summen bleiben unverändert.": "Legacy entries that cannot be matched: the corresponding car totals stay unchanged.",
+    "Eine gelöschte Bestzeit hat keine vollständig gespeicherte Historie. Der Fahrzeugrekord wird zurückgesetzt und ab der nächsten Fahrt neu geführt.": "A deleted best lap has no complete stored history. The car record is reset and starts again with the next drive.",
+    "Vor jedem Löschen wird der bisherige Stand in der Browser-Datenbank (IndexedDB) gesichert. Die Sicherung enthält den Stand vor der letzten Bereinigung. Garage, Fotos und Challenges bleiben erhalten. Beim Entfernen eines Autos oder einer Sitzung bleiben die getrennten Bestzeit-Rekorde stehen; die Zeitbereinigung prüft sie zusätzlich.": "Before each deletion the previous state is backed up in the browser database (IndexedDB). The backup holds the state before the last cleanup. Garage, photos and challenges are kept. Removing a car or a session keeps the separate time-attack records; the time cleanup checks those too.",
+    "Rückgängig geht nur, solange sich die Statistik seit der Bereinigung nicht geändert hat. Erst die nächste erfolgreiche Löschung ersetzt die Sicherung. Für dauerhafte Sicherungen vorher Optionen → Sicherung nutzen. Die JSON-Datei lässt sich dort importieren und ersetzt dann die gesamte Statistikablage. Die Zeitbereinigung sichert auch lokale Bestzeiten und Telemetrie. Der JSON-Download funktioniert im Browser; in der App die vorhandene Sicherungsfunktion nutzen.": "Undo works only as long as the statistics have not changed since the cleanup. Only the next successful deletion replaces the backup. For permanent backups use Options → Backup first. The JSON file can be imported there and then replaces the whole statistics store. The time cleanup also backs up local best times and telemetry. The JSON download works in the browser; in the app use the existing backup feature.",
+    "Statistiken bereinigen": "Clean up statistics",
+    "Gespeichert: {a} Fahrzeug(e), {s} Sitzung(en).": "Stored: {a} car(s), {s} session(s).",
+    "Fahrzeugstatistik entfernen": "Remove car statistics",
+    "Auto auswählen …": "Select car …",
+    "Ausgewählte Fahrzeugstatistik löschen": "Delete selected car statistics",
+    "Einzelne Sitzung löschen": "Delete one session",
+    "Sitzung auswählen …": "Select session …",
+    "beste {z}": "best {z}",
+    "{n} Runde(n)": "{n} lap(s)",
+    "Ausgewählte Sitzung löschen": "Delete selected session",
+    "Anzeige aktualisieren": "Refresh display",
+    "Letzte Bereinigung rückgängig": "Undo last cleanup",
+    "Statistik-Sicherung als JSON": "Statistics backup as JSON",
+    "Hinweis: Zurückgesetzte Fahrzeug-Bestzeiten werden seit der Bereinigung neu geführt; ältere, nicht mehr gespeicherte Runden sind unbekannt.": "Note: reset car best laps are tracked anew since the cleanup; older laps that are no longer stored are unknown.",
+    "Wirklich löschen: {x}?": "Really delete: {x}?",
+    "Der vorherige Statistikstand wird lokal gesichert. Garagendaten bleiben erhalten.": "The previous statistics state is backed up locally. Garage data is kept.",
+    "Statistik gelöscht: {x}. Lokale Sicherung erstellt.": "Statistics deleted: {x}. Local backup created.",
+    "Ungültige zusätzliche Statistikablage.": "Invalid additional statistics store.",
+    "Bestzeit- oder Telemetriedaten haben sich geändert. Bitte Auswahl erneuern.": "Best-time or telemetry data have changed. Please renew the selection.",
+    "Statistik nicht geschrieben: {k}": "Statistics not written: {k}",
+    "Speicherfehler; Rücknahme unvollständig. Lokale Sicherung als JSON exportieren: {k}": "Storage error; rollback incomplete. Export the local backup as JSON: {k}",
+    "Ungültige Ablage: {k}": "Invalid store: {k}",
+    "Bitte eine positive Sekundenzahl eingeben.": "Please enter a positive number of seconds.",
+    "Ungültiger Zeitgrenzwert.": "Invalid time threshold.",
+    "Strecke oder Grenzwert fehlt.": "Track or threshold missing.",
+    "Ungültige Zeitablage.": "Invalid time store.",
+    "{r} Runde(n) in {s} Sitzung(en), {b} Bestzeit-Rekord(e), {t} lokale Telemetrie-Einträge. Nur Zeiten strikt unter {g} Sekunden auf dieser Strecke (auch gespiegelt). Sitzungen und Kilometer bleiben erhalten, die Rundenereignisse werden mit entfernt.": "{r} lap(s) in {s} session(s), {b} time-attack record(s), {t} local telemetry entries. Only times strictly below {g} seconds on this track (mirrored layout included). Sessions and distances are kept; the lap events are removed too.",
+    "Ungültige separate Rekorde und ihre Medaillen werden zurückgesetzt; es gibt keine zweitbeste Historie.": "Invalid separate records and their medals are reset; there is no second-best history.",
+    "Fahrzeugrekorde ohne vollständige Historie werden ab der nächsten Fahrt neu geführt.": "Car records without a complete history are tracked anew from the next drive.",
+    "Zu kurze Zeiten je Strecke löschen": "Delete too-short times for one track",
+    "Strecke auswählen …": "Select track …",
+    "Zeiten unter … Sekunden": "Times below … seconds",
+    "Treffer ansehen": "View matches",
+    "Zeiten unter Grenzwert löschen": "Delete times below threshold",
+    "Diese Zeiten wirklich löschen? Strecke: {k}": "Really delete these times? Track: {k}",
+    "Der vorherige Stand wird lokal gesichert.": "The previous state is backed up locally.",
+    "Zeiten gelöscht: {r} Runde(n), {b} Bestzeit-Rekord(e), {t} Telemetrie-Einträge. Lokale Sicherung erstellt.": "Times deleted: {r} lap(s), {b} time-attack record(s), {t} telemetry entries. Local backup created.",
+    "Für die zuvor gewählte Strecke sind keine gespeicherten Zeiten mehr vorhanden. Sie wurde aus der Auswahl entfernt.": "No stored times remain for the previously selected track. It has been removed from the selection.",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -18476,6 +18546,78 @@
     "Lichthupe lässt das Rücklicht an, simulierter Gyro-Punkt folgt der Kurve.": "La ráfaga de luces mantiene encendida la luz trasera, el punto de giro simulado sigue la curva.",
     "Gemerkte Autos: nur geänderte Namen und Farben, Zuordnung per Klick.": "Coches recordados: solo nombres y colores cambiados, asignación con un clic.",
     "Vollständige Gestaltungsfreiheit für deine Carrera Hybrid Bahn": "Libertad creativa total para tu pista Carrera Hybrid",
+    "Ungültige Statistikdaten.": "Datos estadísticos no válidos.",
+    "Sitzung fehlt.": "Falta la sesión.",
+    "Auto fehlt.": "Falta el coche.",
+    "Unbekannte Bereinigung.": "Limpieza desconocida.",
+    "Bitte zuerst die laufende Fahrt beenden.": "Termina primero la conducción en curso.",
+    "Die Statistikdaten haben sich geändert. Bitte die Auswahl neu öffnen.": "Las estadísticas han cambiado. Vuelve a abrir la selección.",
+    "Statistik-Sicherung nicht verfügbar. Nichts weiter geändert. Bitte freien Gerätespeicher und die Browser-Speicherfreigabe prüfen; keine Website-Daten löschen.": "Copia de seguridad de estadísticas no disponible. No se ha cambiado nada más. Comprueba el espacio libre del dispositivo y el permiso de almacenamiento del navegador; no borres los datos del sitio.",
+    "Alte Statistik-Sicherung ist beschädigt; bitte zuerst sichern.": "La copia antigua de estadísticas está dañada; haz primero una copia de seguridad.",
+    "Alte Statistik-Sicherung ist ungültig; bitte zuerst sichern.": "La copia antigua de estadísticas no es válida; haz primero una copia de seguridad.",
+    "Eine andere alte Sicherung ist bereits vorhanden. Bitte zuerst exportieren.": "Ya existe otra copia antigua. Expórtala primero.",
+    "Eine nicht abgeschlossene Bereinigung ist gesichert. Bitte zuerst Rückgängig oder JSON-Sicherung verwenden.": "Hay una limpieza sin terminar guardada. Usa primero Deshacer o la copia JSON.",
+    "Sicherungsstand hat sich geändert.": "La copia de seguridad ha cambiado.",
+    "Bereinigung läuft bereits.": "La limpieza ya está en curso.",
+    "Sicherung und Bereinigung laufen …": "Copia de seguridad y limpieza en curso …",
+    "Sicherung bleibt als offene Wiederherstellung erhalten.": "La copia se conserva como recuperación pendiente.",
+    "Statistik bereinigt. Sicherung erstellt.": "Estadísticas limpiadas. Copia de seguridad creada.",
+    "Keine Statistik-Sicherung vorhanden.": "No hay copia de seguridad de estadísticas.",
+    "Die Bereinigung wurde nicht geschrieben. Offenen Sicherungsversuch abschließen? Statistik bleibt unverändert.": "La limpieza no se guardó. ¿Cerrar el intento de copia pendiente? Las estadísticas no cambian.",
+    "Letzte Statistik-Bereinigung rückgängig machen?": "¿Deshacer la última limpieza de estadísticas?",
+    "Statistikdaten haben sich geändert.": "Las estadísticas han cambiado.",
+    "Sicherungsmarker konnte nicht entfernt werden.": "No se pudo quitar la marca de copia de seguridad.",
+    "Offener Sicherungsversuch abgeschlossen.": "Intento de copia pendiente cerrado.",
+    "Letzte Bereinigung rückgängig gemacht.": "Última limpieza deshecha.",
+    "Anzeige nicht vollständig aktualisiert: {m}": "La vista no se actualizó por completo: {m}",
+    "Anzeige und Trefferliste aktualisiert.": "Vista y lista de coincidencias actualizadas.",
+    "Nicht gelöscht / nicht wiederhergestellt: {m}": "No borrado / no restaurado: {m}",
+    "Betroffen: {s} vollständige Sitzung(en), {a} Fahrzeuganteil(e), {r} Runde(n).": "Afectado: {s} sesión(es) completa(s), {a} entrada(s) de coche, {r} vuelta(s).",
+    "Altdaten ohne exakte Kilometerbuchung: Die Lebenszeit-Kilometer bleiben bei {n} Fahrzeuganteil(en) unverändert. Sitzungen und Runden werden abgezogen.": "Datos antiguos sin registro exacto de distancia: la distancia total no cambia en {n} entrada(s) de coche. Se descuentan sesiones y vueltas.",
+    "Nicht eindeutig zuordenbare Altdaten: zugehörige Fahrzeug-Summen bleiben unverändert.": "Datos antiguos sin asignación clara: los totales del coche no cambian.",
+    "Eine gelöschte Bestzeit hat keine vollständig gespeicherte Historie. Der Fahrzeugrekord wird zurückgesetzt und ab der nächsten Fahrt neu geführt.": "Una mejor vuelta borrada no tiene historial completo guardado. El récord del coche se reinicia y vuelve a contar desde la próxima conducción.",
+    "Vor jedem Löschen wird der bisherige Stand in der Browser-Datenbank (IndexedDB) gesichert. Die Sicherung enthält den Stand vor der letzten Bereinigung. Garage, Fotos und Challenges bleiben erhalten. Beim Entfernen eines Autos oder einer Sitzung bleiben die getrennten Bestzeit-Rekorde stehen; die Zeitbereinigung prüft sie zusätzlich.": "Antes de cada borrado se guarda el estado anterior en la base de datos del navegador (IndexedDB). La copia contiene el estado previo a la última limpieza. El garaje, las fotos y los desafíos se conservan. Al quitar un coche o una sesión se mantienen aparte los récords de contrarreloj; la limpieza de tiempos también los revisa.",
+    "Rückgängig geht nur, solange sich die Statistik seit der Bereinigung nicht geändert hat. Erst die nächste erfolgreiche Löschung ersetzt die Sicherung. Für dauerhafte Sicherungen vorher Optionen → Sicherung nutzen. Die JSON-Datei lässt sich dort importieren und ersetzt dann die gesamte Statistikablage. Die Zeitbereinigung sichert auch lokale Bestzeiten und Telemetrie. Der JSON-Download funktioniert im Browser; in der App die vorhandene Sicherungsfunktion nutzen.": "Deshacer solo funciona mientras las estadísticas no hayan cambiado desde la limpieza. Solo el siguiente borrado correcto reemplaza la copia. Para copias permanentes usa antes Opciones → Copia de seguridad. El archivo JSON se puede importar allí y sustituye todo el almacén de estadísticas. La limpieza de tiempos también guarda las mejores vueltas locales y la telemetría. La descarga JSON funciona en el navegador; en la app usa la función de copia existente.",
+    "Statistiken bereinigen": "Limpiar estadísticas",
+    "Gespeichert: {a} Fahrzeug(e), {s} Sitzung(en).": "Guardado: {a} coche(s), {s} sesión(es).",
+    "Fahrzeugstatistik entfernen": "Quitar estadísticas de un coche",
+    "Auto auswählen …": "Elegir coche …",
+    "Ausgewählte Fahrzeugstatistik löschen": "Borrar las estadísticas del coche elegido",
+    "Einzelne Sitzung löschen": "Borrar una sesión",
+    "Sitzung auswählen …": "Elegir sesión …",
+    "beste {z}": "mejor {z}",
+    "{n} Runde(n)": "{n} vuelta(s)",
+    "Ausgewählte Sitzung löschen": "Borrar la sesión elegida",
+    "Anzeige aktualisieren": "Actualizar vista",
+    "Letzte Bereinigung rückgängig": "Deshacer la última limpieza",
+    "Statistik-Sicherung als JSON": "Copia de estadísticas como JSON",
+    "Hinweis: Zurückgesetzte Fahrzeug-Bestzeiten werden seit der Bereinigung neu geführt; ältere, nicht mehr gespeicherte Runden sind unbekannt.": "Nota: las mejores vueltas reiniciadas se cuentan de nuevo desde la limpieza; las vueltas antiguas ya no guardadas son desconocidas.",
+    "Wirklich löschen: {x}?": "¿Borrar de verdad: {x}?",
+    "Der vorherige Statistikstand wird lokal gesichert. Garagendaten bleiben erhalten.": "El estado anterior de las estadísticas se guarda localmente. Los datos del garaje se conservan.",
+    "Statistik gelöscht: {x}. Lokale Sicherung erstellt.": "Estadísticas borradas: {x}. Copia local creada.",
+    "Ungültige zusätzliche Statistikablage.": "Almacén adicional de estadísticas no válido.",
+    "Bestzeit- oder Telemetriedaten haben sich geändert. Bitte Auswahl erneuern.": "Los datos de mejores tiempos o de telemetría han cambiado. Renueva la selección.",
+    "Statistik nicht geschrieben: {k}": "Estadísticas no guardadas: {k}",
+    "Speicherfehler; Rücknahme unvollständig. Lokale Sicherung als JSON exportieren: {k}": "Error de almacenamiento; reversión incompleta. Exporta la copia local como JSON: {k}",
+    "Ungültige Ablage: {k}": "Almacén no válido: {k}",
+    "Bitte eine positive Sekundenzahl eingeben.": "Introduce un número positivo de segundos.",
+    "Ungültiger Zeitgrenzwert.": "Límite de tiempo no válido.",
+    "Strecke oder Grenzwert fehlt.": "Falta el circuito o el límite.",
+    "Ungültige Zeitablage.": "Almacén de tiempos no válido.",
+    "{r} Runde(n) in {s} Sitzung(en), {b} Bestzeit-Rekord(e), {t} lokale Telemetrie-Einträge. Nur Zeiten strikt unter {g} Sekunden auf dieser Strecke (auch gespiegelt). Sitzungen und Kilometer bleiben erhalten, die Rundenereignisse werden mit entfernt.": "{r} vuelta(s) en {s} sesión(es), {b} récord(s) de contrarreloj, {t} entradas de telemetría local. Solo tiempos estrictamente por debajo de {g} segundos en este circuito (incluido el trazado espejado). Las sesiones y distancias se conservan; los eventos de vuelta también se eliminan.",
+    "Ungültige separate Rekorde und ihre Medaillen werden zurückgesetzt; es gibt keine zweitbeste Historie.": "Los récords aparte no válidos y sus medallas se reinician; no hay historial de segunda mejor vuelta.",
+    "Fahrzeugrekorde ohne vollständige Historie werden ab der nächsten Fahrt neu geführt.": "Los récords de coche sin historial completo se cuentan de nuevo desde la próxima conducción.",
+    "Zu kurze Zeiten je Strecke löschen": "Borrar tiempos demasiado cortos por circuito",
+    "Strecke auswählen …": "Elegir circuito …",
+    "Zeiten unter … Sekunden": "Tiempos por debajo de … segundos",
+    "Treffer ansehen": "Ver coincidencias",
+    "Zeiten unter Grenzwert löschen": "Borrar tiempos por debajo del límite",
+    "Diese Zeiten wirklich löschen? Strecke: {k}": "¿Borrar de verdad estos tiempos? Circuito: {k}",
+    "Der vorherige Stand wird lokal gesichert.": "El estado anterior se guarda localmente.",
+    "Zeiten gelöscht: {r} Runde(n), {b} Bestzeit-Rekord(e), {t} Telemetrie-Einträge. Lokale Sicherung erstellt.": "Tiempos borrados: {r} vuelta(s), {b} récord(s) de contrarreloj, {t} entradas de telemetría. Copia local creada.",
+    "Für die zuvor gewählte Strecke sind keine gespeicherten Zeiten mehr vorhanden. Sie wurde aus der Auswahl entfernt.": "No quedan tiempos guardados para el circuito elegido antes. Se ha quitado de la selección.",
+    "Erklärung anzeigen": "Mostrar explicación",
+    "Time Attack": "Contrarreloj",
   };
 
   // ============================================================================
@@ -95588,6 +95730,90 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Sieger je Modus, Korrektur einmalig, Seite gezeichnet' };
   });
 
+  // Statistikbereinigung (98ea/98eb, PR #10): nur die reinen Planfunktionen und das
+  // Schreiben/Zuruecknehmen auf eigenen Probe-Schluesseln. Der echte Statistikspeicher und
+  // die IndexedDB-Sicherung des Nutzers werden nicht angefasst.
+  stAdd('Statistikbereinigung v1.2.12: Vorschau, zu kurze Zeiten, Ruecknahme, Altdaten-Zuordnung', () => {
+    const f = [];
+    const code = 'SG2RG2R';
+    const buch = (id, km, n) => ({ id, km, realKm: km / 10, runden: n, sitzungen: 1 });
+    const o = { kmV: 2, cars: {
+      a: { name: 'A', km: 3, realKm: 0.3, runden: 5, sitzungen: 2, besteMs: 2000 },
+      b: { name: 'B', km: 1, realKm: 0.1, runden: 2, sitzungen: 1, besteMs: 4000 },
+      'name:Alt': { name: 'Alt', km: 5, realKm: 0.5, runden: 3, sitzungen: 1, besteMs: 6000 } },
+    sessions: [
+      { zeit: '2026-10-20T12:00:00Z', strecke: code, modus: 'laps', simKm: 1, realKm: 0.1, autos: [
+        { name: 'A', id: 'a', rolle: 'player', laps: [2000, 5000, 6000],
+          ereignisse: [{ pit: 1 }, { pit: 2 }, { pit: 3 }], statistikBuchung: buch('a', 1, 3) },
+        { name: 'B', id: 'b', rolle: 'ghost', laps: [4000, 8000], statistikBuchung: buch('b', 1, 2) }] },
+      { zeit: '2026-10-21T12:00:00Z', strecke: code, modus: 'laps', simKm: 2, realKm: 0.2, autos: [
+        { name: 'A', id: 'a', rolle: 'player', laps: [3000, 9000], statistikBuchung: buch('a', 2, 2) }] },
+      // Altsitzung ohne Buchung: in der Sitzung steht eine a.id, gebucht wurde unter 'name:Alt'
+      // (Auto war beim Speichern nicht in der Garage).
+      { zeit: '2026-01-01T12:00:00Z', strecke: '', modus: 'laps', autos: [
+        { name: 'Alt', id: 'dev-alt', rolle: 'ghost', laps: [6000, 7000, 8000] }] }] };
+    const roh = JSON.stringify(o);
+    try {
+      // Altdaten-Zuordnung: ein Auto, nicht zwei
+      const liste = statCleanAutos(o);
+      if (liste.size !== 3 || liste.has('dev-alt')) f.push('Altauto doppelt in der Auswahl (' + [...liste.keys()].join(',') + ')');
+      const pAlt = statCleanPlan(o, 'sitzung', 2);
+      if (pAlt.bericht.zuordnungUnbekannt) f.push('Altsitzung nicht zuordenbar');
+      if (pAlt.neu.cars['name:Alt'].sitzungen !== 0 || pAlt.neu.cars['name:Alt'].runden !== 0) f.push('Altsitzung nicht abgezogen');
+      const pAltAuto = statCleanPlan(o, 'auto', 'name:Alt');
+      if (pAltAuto.bericht.anteile !== 1 || pAltAuto.neu.sessions.length !== 2 || pAltAuto.neu.cars['name:Alt']) {
+        f.push('Altauto nicht vollstaendig entfernt');
+      }
+      // Vorschau einer Sitzungsloeschung
+      const p = statCleanPlan(o, 'sitzung', 0);
+      const b = p.bericht;
+      if (b.sitzungen !== 1 || b.runden !== 5 || b.kmUnbekannt) f.push('Vorschau zaehlt falsch: ' + JSON.stringify(b));
+      if (p.neu.cars.a.km !== 2 || p.neu.cars.a.runden !== 2 || p.neu.cars.a.sitzungen !== 1) f.push('Summen von A falsch');
+      if (p.neu.cars.a.besteMs !== 3000 || p.neu.cars.b.besteMs !== null) f.push('Bestzeiten nicht neu bestimmt');
+      if (!/\d/.test(statCleanBericht(b))) f.push('Vorschautext leer');
+      // Zu kurze Zeiten
+      const bzKey = statCleanStreckenKey(code);
+      const bz = JSON.stringify({ [bzKey]: { fahrer: { a: { name: 'A', beste: 2000, medaille: 3, runden: 9 } } } });
+      const z = statCleanZeitenPlan(o, code, 5000, bz, '{}');
+      if (z.bericht.runden !== 3 || z.bericht.sitzungen !== 2) f.push('Zeiten: ' + z.bericht.runden + ' Runden in ' + z.bericht.sitzungen + ' Sitzungen');
+      const a0 = z.neu.sessions[0].autos[0];
+      if (JSON.stringify(a0.laps) !== '[5000,6000]') f.push('Grenzwert selbst geloescht oder Runde vergessen');
+      if (!a0.ereignisse || a0.ereignisse[0].pit !== 2) f.push('Rundenereignisse verrutscht');
+      if (z.neu.cars.a.runden !== 3 || z.neu.cars.a.km !== 3) f.push('Zeiten: Runden/km von A falsch');
+      if (z.neu.cars.a.besteMs !== 5000 || z.neu.cars.b.besteMs !== 8000) f.push('Zeiten: Bestzeit nicht nachgezogen');
+      const bzNeu = JSON.parse(z.extra[BESTZEIT_STORE].nachher);
+      if (z.bericht.rekorde !== 1 || bzNeu[bzKey].fahrer.a.beste !== null || bzNeu[bzKey].fahrer.a.runden !== 9) {
+        f.push('Bestzeit-Rekord nicht sauber zurueckgesetzt');
+      }
+      if (statCleanGrenze('5,25') !== 5250) f.push('Dezimalkomma');
+      let wirft = false; try { statCleanGrenze('-1'); } catch (e) { wirft = true; }
+      if (!wirft) f.push('negativer Grenzwert angenommen');
+      if (JSON.stringify(o) !== roh) f.push('Plan veraendert die Originaldaten');
+    } catch (e) { f.push('Wurf: ' + e.message); }
+    // Ruecknahme: schreiben und zuruecknehmen auf eigenen Probe-Schluesseln
+    const k1 = 'omegasim-selbsttest-statclean-1', k2 = 'omegasim-selbsttest-statclean-2';
+    try {
+      localStorage.removeItem(k1); localStorage.setItem(k2, 'alt');
+      const paare = { [k1]: { vorher: null, nachher: 'neu1' }, [k2]: { vorher: 'alt', nachher: 'neu2' } };
+      statCleanSchreiben(paare, 'nachher');
+      if (localStorage.getItem(k1) !== 'neu1' || localStorage.getItem(k2) !== 'neu2') f.push('Bereinigung nicht geschrieben');
+      statCleanSchreiben(paare, 'vorher');
+      if (localStorage.getItem(k1) !== null || localStorage.getItem(k2) !== 'alt') f.push('Ruecknahme stellt nicht her');
+    } catch (e) { f.push('Ruecknahme wirft: ' + e.message); }
+    finally { localStorage.removeItem(k1); localStorage.removeItem(k2); }
+    // Spanisch sieht Spanisch (vorher data-i18n-skip und eine eigene DE/EN-Weiche)
+    const vorher = lang;
+    try {
+      setLang('es');
+      statBereinigungZeichnen();
+      const sum = $('stat-bereinigen') && $('stat-bereinigen').querySelector('summary');
+      if (!sum || sum.textContent.indexOf('Limpiar estadísticas') < 0) f.push('Spanisch zeigt nicht Spanisch');
+      if ($('stat-bereinigen').closest('[data-i18n-skip]')) f.push('Bereich noch data-i18n-skip');
+    } catch (e) { f.push('Sprache: ' + e.message); }
+    finally { if (lang !== vorher) setLang(vorher); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Vorschau, Zeitgrenze, Ruecknahme, Altdaten und Spanisch stimmen' };
+  });
+
   stAdd('Spiegeln: jede Challenge-Strecke schliesst gespiegelt wie im Original', () => {
     const r = OMEGA_TEST.spiegelSchluss();
     const kaputt = r.filter((x) => x.orig !== x.gesp).map((x) => x.id);
@@ -103402,8 +103628,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   const STAT_CLEAN_BACKUP = 'chc.statistics.undo.v1';
   const STAT_CLEAN_BACKUP_TYP = 'omegasim-statistik-sicherung';
 
-  function statCleanText(de, en) {
-    return typeof lang !== 'undefined' && lang === 'en' ? en : de;
+  // Texte laufen ueber das normale Woerterbuch (I18N_EN/I18N_ES, 10-ble-explorer.js): der
+  // deutsche Text ist der Schluessel, {x} sind Platzhalter fuer Zahlen und Namen. Vorher
+  // stand hier eine eigene Weiche Deutsch/Englisch, und der Bereich war data-i18n-skip -
+  // Spanisch sah deshalb Deutsch.
+  function statCleanT(de, werte) {
+    let s = typeof t === 'function' ? t(de) : de;
+    if (werte) for (const k of Object.keys(werte)) s = s.split('{' + k + '}').join(String(werte[k]));
+    return s;
   }
   function statCleanEsc(x) {
     return String(x == null ? '' : x).replace(/[&<>"']/g, (c) =>
@@ -103412,25 +103644,39 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function statCleanZahl(x) { return typeof x === 'number' && Number.isFinite(x) && x >= 0; }
   function statCleanKopie(o) { return JSON.parse(JSON.stringify(o)); }
 
-  // Namen werden NUR ohne Geraetekennung und bei eindeutiger Zuordnung verwendet.
-  // Zwei Autos gleichen Namens mit verschiedenen IDs werden niemals zusammengelegt.
+  // Derselbe Schluessel, unter dem sessionRecord() (97-sessions.js) die Summen gebucht hat.
+  // Neue Sitzungen tragen ihn in statistikBuchung.id. Bei alten Sitzungen wird er so
+  // nachgebildet, wie sessionRecord ihn damals vergeben hat: die Geraetekennung, wenn das
+  // Auto in der Garage stand, sonst 'name:<Name>' - auch dann, wenn die Sitzung selbst eine
+  // a.id traegt (das Auto war beim Speichern nicht in der Garage). Vorher galt in diesem
+  // Fall a.id: das Auto stand doppelt in der Auswahl (einmal als 'name:X' aus dem Speicher,
+  // einmal als a.id aus den Sitzungen) und seine Anteile galten als "nicht zuordenbar".
+  // Zwei Autos gleichen Namens mit verschiedenen IDs werden nie zusammengelegt.
   function statCleanAutoKey(a, o) {
     if (a.statistikBuchung && typeof a.statistikBuchung.id === 'string') return a.statistikBuchung.id;
-    if (a.id != null && String(a.id)) return String(a.id);
-    const ids = Object.keys(o.cars).filter((id) => o.cars[id].name === a.name);
-    return ids.length === 1 ? ids[0] : 'name:' + String(a.name || '?');
+    const cars = (o && o.cars) || {};
+    const hat = (k) => Object.prototype.hasOwnProperty.call(cars, k);
+    const nameKey = 'name:' + String(a.name || '?');
+    if (a.id != null && String(a.id)) {
+      const id = String(a.id);
+      if (hat(id)) return id;
+      if (hat(nameKey)) return nameKey;
+      return id;
+    }
+    const ids = Object.keys(cars).filter((id) => !id.startsWith('name:') && cars[id] && cars[id].name === a.name);
+    return ids.length === 1 && !hat(nameKey) ? ids[0] : nameKey;
   }
 
   function statCleanPlan(o, art, key) {
     if (!o || !Array.isArray(o.sessions) || !o.cars || typeof o.cars !== 'object') {
-      throw new Error(statCleanText('Ungültige Statistikdaten.', 'Invalid statistics data.'));
+      throw new Error(statCleanT('Ungültige Statistikdaten.'));
     }
     const neu = statCleanKopie(o);
     const bericht = { autos: 0, sitzungen: 0, anteile: 0, runden: 0, kmUnbekannt: 0,
       zuordnungUnbekannt: 0, besteUnbekannt: 0 };
     const geloescht = [];
     if (art === 'sitzung') {
-      if (!Number.isInteger(key) || key < 0 || key >= o.sessions.length) throw new Error('Sitzung fehlt.');
+      if (!Number.isInteger(key) || key < 0 || key >= o.sessions.length) throw new Error(statCleanT('Sitzung fehlt.'));
       const s = o.sessions[key];
       for (const a of (s.autos || [])) geloescht.push({ a, id: statCleanAutoKey(a, o) });
       neu.sessions.splice(key, 1);
@@ -103454,8 +103700,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         neu.sessions.push(kopie);
       });
       if (Object.prototype.hasOwnProperty.call(neu.cars, id)) { delete neu.cars[id]; bericht.autos = 1; }
-      if (!bericht.autos && !geloescht.length) throw new Error('Auto fehlt.');
-    } else { throw new Error('Unbekannte Bereinigung.'); }
+      if (!bericht.autos && !geloescht.length) throw new Error(statCleanT('Auto fehlt.'));
+    } else { throw new Error(statCleanT('Unbekannte Bereinigung.')); }
 
     const beruehrt = new Set();
     for (const { a, id } of geloescht) {
@@ -103504,11 +103750,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       || (typeof vfAktiv === 'function' && vfAktiv());
   }
   function statCleanAktuell(raw) {
-    if (statCleanGesperrt()) throw new Error(statCleanText(
-      'Bitte zuerst die laufende Fahrt beenden.', 'Please finish the current drive first.'));
-    if (localStorage.getItem(SESSION_STORE) !== raw) throw new Error(statCleanText(
-      'Die Statistikdaten haben sich geändert. Bitte die Auswahl neu öffnen.',
-      'Statistics have changed. Please reopen the selection.'));
+    if (statCleanGesperrt()) throw new Error(statCleanT('Bitte zuerst die laufende Fahrt beenden.'));
+    if (localStorage.getItem(SESSION_STORE) !== raw) throw new Error(statCleanT(
+      'Die Statistikdaten haben sich geändert. Bitte die Auswahl neu öffnen.'));
   }
   // Rueckgaengig-Daten gehoeren nicht in den kleinen localStorage. Jede Aktion
   // sichert zuerst dauerhaft in IndexedDB und wartet auf den Transaktionsabschluss.
@@ -103516,10 +103760,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   let statCleanBusy = false;
 
   function statCleanSpeicherFehler(e) {
-    return new Error(statCleanText(
-      'Statistik-Sicherung nicht verfügbar. Nichts weiter geändert. Bitte freien Gerätespeicher und die Browser-Speicherfreigabe prüfen; keine Website-Daten löschen. ',
-      'Statistics backup unavailable. No further changes made. Check free device space and browser storage permissions; do not clear site data. ')
-      + (e && e.name ? '(' + e.name + ')' : ''));
+    return new Error(statCleanT(
+      'Statistik-Sicherung nicht verfügbar. Nichts weiter geändert. Bitte freien Gerätespeicher und die Browser-Speicherfreigabe prüfen; keine Website-Daten löschen.')
+      + (e && e.name ? ' (' + e.name + ')' : ''));
   }
   function statCleanDbOeffnen() {
     return new Promise((resolve, reject) => {
@@ -103566,13 +103809,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const raw = localStorage.getItem(STAT_CLEAN_BACKUP);
     if (raw === null) return;
     let b;
-    try { b = JSON.parse(raw); } catch (e) { throw new Error('Alte Statistik-Sicherung ist beschädigt; bitte zuerst sichern.'); }
-    if (!statCleanBackupGueltig(b)) throw new Error('Alte Statistik-Sicherung ist ungültig; bitte zuerst sichern.');
+    try { b = JSON.parse(raw); } catch (e) { throw new Error(statCleanT('Alte Statistik-Sicherung ist beschädigt; bitte zuerst sichern.')); }
+    if (!statCleanBackupGueltig(b)) throw new Error(statCleanT('Alte Statistik-Sicherung ist ungültig; bitte zuerst sichern.'));
     await statCleanDbTransaktion('readwrite', (store, done, fail) => {
       const req = store.get('legacy');
       req.onsuccess = () => { try {
         if (req.result && JSON.stringify(req.result) !== JSON.stringify(b)) {
-          fail(new Error('Eine andere alte Sicherung ist bereits vorhanden. Bitte zuerst exportieren.')); return;
+          fail(new Error(statCleanT('Eine andere alte Sicherung ist bereits vorhanden. Bitte zuerst exportieren.'))); return;
         }
         store.put(b, 'legacy'); done(b);
 
@@ -103605,9 +103848,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const req = store.get('pending');
       req.onsuccess = () => { try {
         if (req.result) {
-          fail(new Error(statCleanText(
-            'Eine nicht abgeschlossene Bereinigung ist gesichert. Bitte zuerst Rückgängig oder JSON-Sicherung verwenden.',
-            'An unfinished cleanup is backed up. Use Undo or JSON backup first.'))); return;
+          fail(new Error(statCleanT(
+            'Eine nicht abgeschlossene Bereinigung ist gesichert. Bitte zuerst Rückgängig oder JSON-Sicherung verwenden.'))); return;
         }
         store.put(b, 'pending'); done(b);
 
@@ -103620,7 +103862,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const req = store.get('pending');
       req.onsuccess = () => { try {
         if (!req.result || req.result.token !== b.token) {
-          fail(new Error('Sicherungsstand hat sich geändert.')); return;
+          fail(new Error(statCleanT('Sicherungsstand hat sich geändert.'))); return;
         }
         if (erfolg) { store.put(b, 'current'); store.delete('legacy'); }
         store.delete('pending'); done(true);
@@ -103633,14 +103875,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       .every(([key, pair]) => localStorage.getItem(key) === pair[seite]);
   }
   async function statCleanExklusiv(arbeit) {
-    if (statCleanBusy) throw new Error(statCleanText('Bereinigung läuft bereits.', 'Cleanup is already running.'));
+    if (statCleanBusy) throw new Error(statCleanT('Bereinigung läuft bereits.'));
     statCleanBusy = true;
     const buttons = ['stat-clean-car-delete', 'stat-clean-session-delete', 'stat-clean-times-delete',
       'stat-clean-undo', 'stat-clean-refresh'];
     const vorher = buttons.map(id => [$(id), $(id) && $(id).disabled]);
     vorher.forEach(([el]) => { if (el) el.disabled = true; });
     const status = $('stat-clean-status');
-    if (status) status.textContent = statCleanText('Sicherung und Bereinigung laufen …', 'Backup and cleanup in progress …');
+    if (status) status.textContent = statCleanT('Sicherung und Bereinigung laufen …');
     try {
       // Web Locks koordinieren auch zwei Tabs desselben Ursprungs, falls verfügbar.
       return await (typeof navigator.locks !== 'undefined'
@@ -103669,24 +103911,21 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       }
       let warnung = '';
       try { await statCleanBackupAbschliessen(b, true); }
-      catch (e) { warnung = statCleanText(' Sicherung bleibt als offene Wiederherstellung erhalten.',
-        ' Backup remains available as pending recovery.'); }
-      statCleanAuffrischen((meldung || statCleanText(
-        'Statistik bereinigt. Sicherung in IndexedDB erstellt.', 'Statistics cleaned up. IndexedDB backup created.')) + warnung);
+      catch (e) { warnung = ' ' + statCleanT('Sicherung bleibt als offene Wiederherstellung erhalten.'); }
+      statCleanAuffrischen((meldung || statCleanT('Statistik bereinigt. Sicherung erstellt.')) + warnung);
     });
   }
   async function statCleanUndo() {
     return statCleanExklusiv(async () => {
       const b = await statCleanBackupLesen();
-      if (!b) throw new Error('Keine Statistik-Sicherung vorhanden.');
+      if (!b) throw new Error(statCleanT('Keine Statistik-Sicherung vorhanden.'));
       const abgebrochen = b.ablage === 'pending' && statCleanPaareGleich(b, 'vorher');
       if (!abgebrochen) { statCleanAktuell(b.nachher); statCleanExtraAktuell(b.extra || {}, 'nachher'); }
-      if (!confirm(abgebrochen ? statCleanText(
-        'Die Bereinigung wurde nicht geschrieben. Offenen Sicherungsversuch abschließen? Statistik bleibt unverändert.',
-        'Cleanup was not written. Close the pending backup attempt? Statistics remain unchanged.')
-        : statCleanText('Letzte Statistik-Bereinigung rückgängig machen?', 'Undo the last statistics cleanup?'))) return;
+      if (!confirm(abgebrochen
+        ? statCleanT('Die Bereinigung wurde nicht geschrieben. Offenen Sicherungsversuch abschließen? Statistik bleibt unverändert.')
+        : statCleanT('Letzte Statistik-Bereinigung rückgängig machen?'))) return;
       if (abgebrochen) {
-        if (!statCleanPaareGleich(b, 'vorher')) throw new Error('Statistikdaten haben sich geändert.');
+        if (!statCleanPaareGleich(b, 'vorher')) throw new Error(statCleanT('Statistikdaten haben sich geändert.'));
       } else {
         statCleanAktuell(b.nachher); statCleanExtraAktuell(b.extra || {}, 'nachher');
         statCleanSchreiben({ [SESSION_STORE]: b, ...(b.extra || {}) }, 'vorher');
@@ -103697,15 +103936,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
           const req = store.get(b.ablage);
           req.onsuccess = () => { try {
             if (JSON.stringify(req.result) !== JSON.stringify((({ ablage, ...rest }) => rest)(b))) {
-              fail(new Error('Sicherungsstand hat sich geändert.')); return;
+              fail(new Error(statCleanT('Sicherungsstand hat sich geändert.'))); return;
             }
             store.delete(b.ablage); done(true);
 
-      } catch (e) { fail(statCleanSpeicherFehler(e)); } };
+          } catch (e) { fail(statCleanSpeicherFehler(e)); } };
         });
-      } catch (e) { warnung = ' Sicherungsmarker konnte nicht entfernt werden.'; }
-      statCleanAuffrischen(statCleanText(abgebrochen ? 'Offener Sicherungsversuch abgeschlossen.' : 'Letzte Bereinigung rückgängig gemacht.',
-        abgebrochen ? 'Pending backup attempt closed.' : 'Last cleanup undone.') + warnung);
+      } catch (e) { warnung = ' ' + statCleanT('Sicherungsmarker konnte nicht entfernt werden.'); }
+      statCleanAuffrischen(statCleanT(abgebrochen ? 'Offener Sicherungsversuch abgeschlossen.'
+        : 'Letzte Bereinigung rückgängig gemacht.') + warnung);
     });
   }
   // Ein Name/Foto oder eine Null-Summe allein ist keine Fahrzeugstatistik.
@@ -103741,35 +103980,37 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     const el = $('stat-clean-status');
     if (el) el.textContent = (meldung ? meldung + ' ' : '') + (warnungen.length
-      ? statCleanText('Anzeige nicht vollständig aktualisiert: ', 'Display not fully refreshed: ') + warnungen.join('; ')
-      : statCleanText('Anzeige und Trefferliste aktualisiert.', 'Display and match list refreshed.'));
+      ? statCleanT('Anzeige nicht vollständig aktualisiert: {m}', { m: warnungen.join('; ') })
+      : statCleanT('Anzeige und Trefferliste aktualisiert.'));
     if (warnungen.length) log('Statistik-Darstellungsfehler: ' + warnungen.join('; '), 'err');
     if (typeof autoSicherungPlanen === 'function') autoSicherungPlanen();
   }
   function statCleanFehler(e) {
-    const msg = statCleanText('Nicht gelöscht / nicht wiederhergestellt: ', 'Not deleted / not restored: ')
-      + (e && e.message ? e.message : String(e));
+    const msg = statCleanT('Nicht gelöscht / nicht wiederhergestellt: {m}',
+      { m: e && e.message ? e.message : String(e) });
     const el = $('stat-clean-status');
     if (el) el.textContent = msg;
     log(msg, 'err');
   }
   function statCleanBericht(b) {
-    const teile = [statCleanText('Betroffen: ', 'Affected: ') + b.sitzungen
-      + statCleanText(' vollständige Sitzung(en), ', ' complete session(s), ') + b.anteile
-      + statCleanText(' Fahrzeuganteil(e), ', ' car entry/entries, ') + b.runden + statCleanText(' Runde(n).', ' lap(s).')];
-    if (b.kmUnbekannt) teile.push(statCleanText(
-      'Altdaten ohne exakte Kilometerbuchung: Lebenszeit-Kilometer bleiben bei ',
-      'Legacy data without exact distance entries: lifetime distances remain unchanged for ')
-      + b.kmUnbekannt + statCleanText(' Fahrzeuganteil(en) unverändert. Sitzungen und Runden werden abgezogen.',
-      ' car entry/entries. Session and lap counts are deducted.'));
-    if (b.zuordnungUnbekannt) teile.push(statCleanText(
-      'Nicht eindeutig zuordenbare Altdaten: zugehörige Fahrzeug-Summen bleiben unverändert.',
-      'Unmatched legacy entries: corresponding car totals remain unchanged.'));
-    if (b.besteUnbekannt) teile.push(statCleanText(
-      'Eine gelöschte Bestzeit hat keine vollständig gespeicherte Historie. Der Fahrzeugrekord wird zurückgesetzt und ab der nächsten Fahrt neu geführt.',
-      'A deleted best lap has no complete stored history. The car record is reset and starts again with the next drive.'));
+    const teile = [statCleanT('Betroffen: {s} vollständige Sitzung(en), {a} Fahrzeuganteil(e), {r} Runde(n).',
+      { s: b.sitzungen, a: b.anteile, r: b.runden })];
+    if (b.kmUnbekannt) teile.push(statCleanT(
+      'Altdaten ohne exakte Kilometerbuchung: Die Lebenszeit-Kilometer bleiben bei {n} Fahrzeuganteil(en) unverändert. Sitzungen und Runden werden abgezogen.',
+      { n: b.kmUnbekannt }));
+    if (b.zuordnungUnbekannt) teile.push(statCleanT(
+      'Nicht eindeutig zuordenbare Altdaten: zugehörige Fahrzeug-Summen bleiben unverändert.'));
+    if (b.besteUnbekannt) teile.push(statCleanT(
+      'Eine gelöschte Bestzeit hat keine vollständig gespeicherte Historie. Der Fahrzeugrekord wird zurückgesetzt und ab der nächsten Fahrt neu geführt.'));
     return teile.join('\n');
   }
+
+  // Die Erklaerung steht hinter dem i im Kreis (optInfoOeffnen, 98c-opt-info.js), nicht als
+  // Fliesstext unter den Auswahlfeldern.
+  const STAT_CLEAN_INFO = [
+    'Vor jedem Löschen wird der bisherige Stand in der Browser-Datenbank (IndexedDB) gesichert. Die Sicherung enthält den Stand vor der letzten Bereinigung. Garage, Fotos und Challenges bleiben erhalten. Beim Entfernen eines Autos oder einer Sitzung bleiben die getrennten Bestzeit-Rekorde stehen; die Zeitbereinigung prüft sie zusätzlich.',
+    'Rückgängig geht nur, solange sich die Statistik seit der Bereinigung nicht geändert hat. Erst die nächste erfolgreiche Löschung ersetzt die Sicherung. Für dauerhafte Sicherungen vorher Optionen → Sicherung nutzen. Die JSON-Datei lässt sich dort importieren und ersetzt dann die gesamte Statistikablage. Die Zeitbereinigung sichert auch lokale Bestzeiten und Telemetrie. Der JSON-Download funktioniert im Browser; in der App die vorhandene Sicherungsfunktion nutzen.',
+  ];
 
   function statBereinigungZeichnen(zustand = statCleanUiZustand()) {
     const host = $('stat-bereinigen');
@@ -103781,51 +104022,52 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const autos = statCleanAutos(o);
     const ids = [...autos.keys()].sort((a, b) => String(autos.get(a)).localeCompare(String(autos.get(b))));
     const esc = statCleanEsc;
-    const txt = statCleanText;
+    const txt = statCleanT;
     const backup = null; // Status nach dem Neuaufbau asynchron laden.
     host.innerHTML = '<details class="stat-clean"' + (offen ? ' open' : '') + '><summary>'
-      + esc(txt('Statistiken bereinigen', 'Clean up statistics')) + '</summary>'
+      + esc(txt('Statistiken bereinigen')) + ' <span class="wip-tag">WIP</span>'
+      + ' <button type="button" class="opt-info-btn" id="stat-clean-info" aria-label="'
+      + esc(txt('Erklärung anzeigen')) + '">i</button></summary>'
       + '<p id="stat-clean-refresh-info" class="stat-clean-note" aria-live="polite">'
-      + esc(txt('Live-Aktualisierung: ', 'Live refresh: ') + ids.length
-        + txt(' Fahrzeug(e), ', ' car(s), ') + o.sessions.length + txt(' Sitzung(en).', ' session(s).')) + '</p>'
-      + '<p id="stat-clean-storage-info" class="stat-clean-note">'
-      + esc(txt('Sicherung: IndexedDB – Speicherfix aktiv.', 'Backup: IndexedDB – storage fix active.')) + '</p>'
-      + '<p class="stat-clean-note">' + esc(txt(
-        'Speicherfix aktiv: Vor jedem Löschen wird die Statistik-Sicherung in IndexedDB erstellt, nicht im begrenzten LocalStorage. Sie enthält den Stand vor der letzten Bereinigung. Garagenkonfiguration, Fotos und Challenges bleiben erhalten. Beim Entfernen eines Autos oder einer Sitzung bleiben separate Bestzeit-Rekorde erhalten; die Zeitbereinigung unten prüft sie zusätzlich.',
-        'Storage fix active: Before each deletion, an IndexedDB backup is created, not stored in the limited localStorage. It contains the state before the last cleanup. Garage configuration, photos and challenges are preserved. Removing a car or session preserves separate time-attack records; the time cleanup below checks them too.')) + '</p>'
-      + '<label for="stat-clean-car">' + esc(txt('Fahrzeugstatistik entfernen', 'Remove car statistics')) + '</label>'
-      + '<select id="stat-clean-car"><option value="">' + esc(txt('Auto auswählen …', 'Select car …')) + '</option>'
+      + esc(txt('Gespeichert: {a} Fahrzeug(e), {s} Sitzung(en).', { a: ids.length, s: o.sessions.length })) + '</p>'
+      + '<label for="stat-clean-car">' + esc(txt('Fahrzeugstatistik entfernen')) + '</label>'
+      + '<select id="stat-clean-car"><option value="">' + esc(txt('Auto auswählen …')) + '</option>'
       + ids.map((id, i) => '<option value="' + i + '">' + esc(autos.get(id) + ' [' + id + ']') + '</option>').join('')
       + '</select><p class="stat-clean-preview" id="stat-clean-car-preview"></p>'
       + '<button type="button" class="stat-clean-danger" id="stat-clean-car-delete" disabled>'
-      + esc(txt('Ausgewählte Fahrzeugstatistik löschen', 'Delete selected car statistics')) + '</button>'
-      + '<label for="stat-clean-session">' + esc(txt('Einzelne Sitzung löschen', 'Delete one session')) + '</label>'
-      + '<select id="stat-clean-session"><option value="">' + esc(txt('Sitzung auswählen …', 'Select session …')) + '</option>'
+      + esc(txt('Ausgewählte Fahrzeugstatistik löschen')) + '</button>'
+      + '<label for="stat-clean-session">' + esc(txt('Einzelne Sitzung löschen')) + '</label>'
+      + '<select id="stat-clean-session"><option value="">' + esc(txt('Sitzung auswählen …')) + '</option>'
       + o.sessions.map((s, i) => {
         const laps = (s.autos || []).flatMap((a) => a.laps || []);
-        const best = laps.length ? ' · ' + txt('beste ', 'best ') + sessionFmt(Math.min(...laps)) : '';
+        const best = laps.length ? ' · ' + txt('beste {z}', { z: sessionFmt(Math.min(...laps)) }) : '';
         const mode = RACE_MODES[s.modus] ? t(RACE_MODES[s.modus].label) : s.modus;
         return { i, label: (s.zeit || '?') + ' · ' + mode + ' · '
-          + (s.autos || []).map((a) => a.name).join(', ') + ' · ' + laps.length + txt(' Runden', ' laps')
+          + (s.autos || []).map((a) => a.name).join(', ') + ' · ' + txt('{n} Runde(n)', { n: laps.length })
           + best + (s.strecke ? ' · ' + s.strecke : '') };
       }).reverse().map((s) => '<option value="' + s.i + '">' + esc(s.label) + '</option>').join('')
       + '</select><p class="stat-clean-preview" id="stat-clean-session-preview"></p>'
       + '<button type="button" class="stat-clean-danger" id="stat-clean-session-delete" disabled>'
-      + esc(txt('Ausgewählte Sitzung löschen', 'Delete selected session')) + '</button>'
+      + esc(txt('Ausgewählte Sitzung löschen')) + '</button>'
       + statCleanZeitenHtml(o)
       + '<div class="stat-clean-actions"><button type="button" id="stat-clean-refresh">'
-      + esc(txt('Anzeige aktualisieren', 'Refresh display')) + '</button>'
+      + esc(txt('Anzeige aktualisieren')) + '</button>'
       + '<button type="button" id="stat-clean-undo"' + (backup ? '' : ' disabled') + '>'
-      + esc(txt('Letzte Bereinigung rückgängig', 'Undo last cleanup')) + '</button>'
+      + esc(txt('Letzte Bereinigung rückgängig')) + '</button>'
       + '<button type="button" id="stat-clean-backup"' + (backup ? '' : ' disabled') + '>'
-      + esc(txt('Statistik-Sicherung als JSON', 'Statistics backup as JSON')) + '</button></div>'
-      + '<p class="stat-clean-note">' + esc(txt(
-        'Rückgängig ist nur möglich, solange seit der Bereinigung keine Statistikdaten geändert wurden. Erst die nächste erfolgreiche Löschung ersetzt die Sicherung. Alte LocalStorage-Sicherungen werden sicher nach IndexedDB übernommen. Für dauerhafte Sicherungen nutze Optionen → Sicherung vor dem Bereinigen. JSON kann unter Optionen → Sicherung importiert werden und ersetzt dann die gesamte Statistikablage. Zeitbereinigung sichert auch lokale Bestzeit- und Telemetriedaten. JSON-Download funktioniert im Browser; in der APK nutze die vorhandene Sicherungsfunktion.',
-        'Undo is possible only while statistics have not changed since cleanup. Only the next successful deletion replaces the backup. Legacy localStorage backups are safely migrated to IndexedDB. For permanent backups use Options → Backup before cleanup. JSON can be imported via Options → Backup and replaces the entire statistics store. Time cleanup also backs up local time-attack and telemetry records. JSON download works in the browser; in the APK use the existing backup feature.')) + '</p>'
+      + esc(txt('Statistik-Sicherung als JSON')) + '</button></div>'
       + (Object.values(o.cars).some((c) => c.besteSeitBereinigung) ? '<p class="stat-clean-note">' + esc(txt(
-        'Hinweis: Zurückgesetzte Fahrzeug-Bestzeiten werden seit der Bereinigung neu geführt; ältere, nicht mehr gespeicherte Runden sind unbekannt.',
-        'Note: reset car best laps are tracked from cleanup onwards; older laps no longer in the archive are unknown.')) + '</p>' : '')
+        'Hinweis: Zurückgesetzte Fahrzeug-Bestzeiten werden seit der Bereinigung neu geführt; ältere, nicht mehr gespeicherte Runden sind unbekannt.')) + '</p>' : '')
       + '<p id="stat-clean-status" role="status" aria-live="polite"></p></details>';
+
+    $('stat-clean-info').addEventListener('click', (e) => {
+      // Im <summary>: ohne preventDefault klappt der Knopf den Bereich mit auf oder zu.
+      e.preventDefault(); e.stopPropagation();
+      if (typeof optInfoOeffnen === 'function') {
+        optInfoOeffnen(txt('Statistiken bereinigen'),
+          STAT_CLEAN_INFO.map((p) => '<p>' + esc(txt(p)) + '</p>').join(''));
+      }
+    });
 
     function verdrahten(selId, previewId, buttonId, art, keyVon) {
       const sel = $(selId), preview = $(previewId), button = $(buttonId);
@@ -103846,13 +104088,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
           statCleanAktuell(raw);
           const label = art === 'auto' ? autos.get(key) + ' [' + key + ']'
             : (o.sessions[key].zeit || '?') + ' · ' + (o.sessions[key].autos || []).map((a) => a.name).join(', ');
-          if (!confirm(txt('Wirklich löschen: ', 'Really delete: ') + label + '?\n\n'
-              + statCleanBericht(plan.bericht) + '\n\n' + txt(
-                'Der vorherige Statistikstand wird lokal gesichert. Garagendaten bleiben erhalten.',
-                'The previous statistics state will be backed up locally. Garage data is preserved.'))) return;
-          await statCleanAnwenden(raw, plan, art + ': ' + label, txt(
-            'Statistik gelöscht: ', 'Statistics deleted: ') + label + '. ' + txt(
-            'Lokale Sicherung erstellt.', 'Local backup created.'));
+          if (!confirm(txt('Wirklich löschen: {x}?', { x: label }) + '\n\n'
+              + statCleanBericht(plan.bericht) + '\n\n'
+              + txt('Der vorherige Statistikstand wird lokal gesichert. Garagendaten bleiben erhalten.'))) return;
+          await statCleanAnwenden(raw, plan, art + ': ' + label,
+            txt('Statistik gelöscht: {x}. Lokale Sicherung erstellt.', { x: label }));
         } catch (e) { statCleanFehler(e); }
       });
     }
@@ -103866,7 +104106,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     $('stat-clean-backup').addEventListener('click', async () => {
       try {
         const b = await statCleanBackupLesen();
-        if (!b) throw new Error('Keine Statistik-Sicherung vorhanden.');
+        if (!b) throw new Error(statCleanT('Keine Statistik-Sicherung vorhanden.'));
         // Vorheriger Statistikstand im Format des EXISTIERENDEN Sicherungsimports.
         // Import fuehrt nur diese Ablage zurueck; aktuelle Garagen-/Reglerdaten bleiben.
         const ums = { typ: SICHERUNG_TYP, version: SICHERUNG_VERSION,
@@ -103886,6 +104126,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (undoButton.isConnected) statCleanFehler(e);
     });
   }
+
+  // Zusammengesetzte Texte (Zahlen in Saetzen) erreicht der Textknoten-Uebersetzer nicht;
+  // beim Sprachwechsel deshalb neu zeichnen, wenn der Bereich schon steht.
+  if (typeof i18nOnLangChange === 'function') i18nOnLangChange(() => {
+    const host = $('stat-bereinigen');
+    if (host && host.childElementCount) statBereinigungZeichnen();
+  });
   // Rundenzeitbereinigung: nur lokale gespeicherte Daten, keine laufenden Rennen.
   // Eine falsche Zeit beweist NICHT, dass die gefahrenen Kilometer falsch sind.
   function statCleanExtraGueltig(extra) {
@@ -103896,11 +104143,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       (p.nachher === null || typeof p.nachher === 'string'));
   }
   function statCleanExtraAktuell(extra, seite) {
-    if (!statCleanExtraGueltig(extra)) throw new Error('Ungültige zusätzliche Statistikablage.');
+    if (!statCleanExtraGueltig(extra)) throw new Error(statCleanT('Ungültige zusätzliche Statistikablage.'));
     for (const [key, p] of Object.entries(extra)) {
-      if (localStorage.getItem(key) !== p[seite]) throw new Error(statCleanText(
-        'Bestzeit- oder Telemetriedaten haben sich geändert. Bitte Auswahl erneuern.',
-        'Time-attack or telemetry data have changed. Please renew the selection.'));
+      if (localStorage.getItem(key) !== p[seite]) throw new Error(statCleanT(
+        'Bestzeit- oder Telemetriedaten haben sich geändert. Bitte Auswahl erneuern.'));
     }
   }
   function statCleanSchreiben(paare, seite) {
@@ -103909,7 +104155,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     function schreiben(key, text) {
       if (text === null) localStorage.removeItem(key);
       else localStorage.setItem(key, text);
-      if (localStorage.getItem(key) !== text) throw new Error('Statistik nicht geschrieben: ' + key);
+      if (localStorage.getItem(key) !== text) throw new Error(statCleanT('Statistik nicht geschrieben: {k}', { k: key }));
     }
     try {
       for (const [key, p] of Object.entries(paare)) schreiben(key, p[seite]);
@@ -103921,16 +104167,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         try { if (localStorage.getItem(key) !== text) schreiben(key, text); }
         catch (r) { fehler.push(key); }
       }
-      if (fehler.length) throw new Error(statCleanText(
-        'Speicherfehler; Rücknahme unvollständig. Lokale Sicherung als JSON exportieren: ',
-        'Storage error; rollback incomplete. Export the local backup as JSON: ') + fehler.join(', '));
+      if (fehler.length) throw new Error(statCleanT(
+        'Speicherfehler; Rücknahme unvollständig. Lokale Sicherung als JSON exportieren: {k}', { k: fehler.join(', ') }));
       throw e;
     }
   }
   function statCleanAblage(key) {
     const raw = localStorage.getItem(key);
     const o = JSON.parse(raw || '{}');
-    if (!o || typeof o !== 'object' || Array.isArray(o)) throw new Error('Ungültige Ablage: ' + key);
+    if (!o || typeof o !== 'object' || Array.isArray(o)) throw new Error(statCleanT('Ungültige Ablage: {k}', { k: key }));
     return { raw, o };
   }
   function statCleanStreckenKey(code) {
@@ -103945,18 +104190,17 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
   function statCleanGrenze(wert) {
     const s = String(wert).trim().replace(',', '.');
-    if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(s)) throw new Error(statCleanText(
-      'Bitte eine positive Sekundenzahl eingeben.', 'Please enter a positive number of seconds.'));
+    if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(s)) throw new Error(statCleanT('Bitte eine positive Sekundenzahl eingeben.'));
     const ms = Number(s) * 1000;
-    if (!Number.isFinite(ms) || ms <= 0) throw new Error('Ungültiger Zeitgrenzwert.');
+    if (!Number.isFinite(ms) || ms <= 0) throw new Error(statCleanT('Ungültiger Zeitgrenzwert.'));
     return ms;
   }
   function statCleanZeitenPlan(o, code, grenze, bzRaw, teleRaw) {
-    if (!o || !Array.isArray(o.sessions) || !o.cars || Array.isArray(o.cars)) throw new Error('Ungültige Statistikdaten.');
+    if (!o || !Array.isArray(o.sessions) || !o.cars || Array.isArray(o.cars)) throw new Error(statCleanT('Ungültige Statistikdaten.'));
     const key = statCleanStreckenKey(code);
-    if (!key || !Number.isFinite(grenze) || grenze <= 0) throw new Error('Strecke oder Grenzwert fehlt.');
+    if (!key || !Number.isFinite(grenze) || grenze <= 0) throw new Error(statCleanT('Strecke oder Grenzwert fehlt.'));
     const neu = statCleanKopie(o), bz = JSON.parse(bzRaw || '{}'), tele = JSON.parse(teleRaw || '{}');
-    for (const d of [bz, tele]) if (!d || typeof d !== 'object' || Array.isArray(d)) throw new Error('Ungültige Zeitablage.');
+    for (const d of [bz, tele]) if (!d || typeof d !== 'object' || Array.isArray(d)) throw new Error(statCleanT('Ungültige Zeitablage.'));
     const b = { runden: 0, sitzungen: 0, rekorde: 0, spuren: 0, besteUnbekannt: 0, treffer: [] };
     const beruehrt = new Set();
     const kurz = ms => typeof ms === 'number' && Number.isFinite(ms) && ms < grenze;
@@ -104031,21 +104275,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { neu, bericht: b, extra, key, grenze };
   }
   function statCleanZeitenBericht(plan) {
-    const b = plan.bericht, txt = statCleanText;
-    return b.runden + txt(' Runde(n) in ', ' lap(s) in ') + b.sitzungen + txt(' Sitzung(en), ', ' session(s), ')
-      + b.rekorde + txt(' Bestzeit-Rekord(e), ', ' time-attack record(s), ') + b.spuren
-      + txt(' lokale Telemetrie-Einträge. Nur Zeiten strikt unter ', ' local telemetry entries. Only times strictly below ')
-      + (plan.grenze / 1000) + txt(' Sekunden auf dieser Strecke (einschließlich gespiegeltem Layout). ',
-        ' seconds on this track (including its mirrored layout). ')
-      + txt('Sitzungen und Kilometer bleiben erhalten. Rundenereignisse werden mit entfernt. ',
-        'Sessions and distances are preserved. Corresponding lap events are removed too. ')
-      + (b.rekorde ? txt('Ungültige separate Rekorde und ihre Medaillen werden zurückgesetzt; keine zweitbeste Historie vorhanden. ',
-        'Invalid separate records and their medals are reset; no second-best history is available. ') : '')
-      + (b.besteUnbekannt ? txt('Fahrzeugrekorde ohne vollständige Historie werden ab der nächsten Fahrt neu geführt.',
-        'Car records without a complete history are tracked anew from the next drive.') : '');
+    const b = plan.bericht, txt = statCleanT;
+    return txt('{r} Runde(n) in {s} Sitzung(en), {b} Bestzeit-Rekord(e), {t} lokale Telemetrie-Einträge. Nur Zeiten strikt unter {g} Sekunden auf dieser Strecke (auch gespiegelt). Sitzungen und Kilometer bleiben erhalten, die Rundenereignisse werden mit entfernt.',
+      { r: b.runden, s: b.sitzungen, b: b.rekorde, t: b.spuren, g: plan.grenze / 1000 })
+      + (b.rekorde ? ' ' + txt('Ungültige separate Rekorde und ihre Medaillen werden zurückgesetzt; es gibt keine zweitbeste Historie.') : '')
+      + (b.besteUnbekannt ? ' ' + txt('Fahrzeugrekorde ohne vollständige Historie werden ab der nächsten Fahrt neu geführt.') : '');
   }
   function statCleanZeitenHtml(o) {
-    const txt = statCleanText, esc = statCleanEsc, keys = new Set();
+    const txt = statCleanT, esc = statCleanEsc, keys = new Set();
     const zeit = ms => typeof ms === 'number' && Number.isFinite(ms);
     for (const s of o.sessions) if (s.strecke && (s.autos || []).some(a =>
       (a.laps || []).some(zeit))) keys.add(statCleanStreckenKey(s.strecke));
@@ -104060,17 +104297,17 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
           keys.add(statCleanStreckenKey(k));
       }
     } catch (e) { /* Vorschau zeigt Parse-/Speicherfehler ohne Daten zu loeschen */ }
-    return '<hr><label for="stat-clean-track">' + esc(txt('Zu kurze Zeiten je Strecke löschen', 'Delete short times for one track'))
-      + '</label><select id="stat-clean-track"><option value="">' + esc(txt('Strecke auswählen …', 'Select track …')) + '</option>'
+    return '<hr><label for="stat-clean-track">' + esc(txt('Zu kurze Zeiten je Strecke löschen'))
+      + '</label><select id="stat-clean-track"><option value="">' + esc(txt('Strecke auswählen …')) + '</option>'
       + [...keys].filter(Boolean).sort().map(k => '<option value="' + esc(k) + '">' + esc(k) + '</option>').join('')
-      + '</select><label for="stat-clean-seconds">' + esc(txt('Zeiten unter … Sekunden', 'Times below … seconds'))
+      + '</select><label for="stat-clean-seconds">' + esc(txt('Zeiten unter … Sekunden'))
       + '</label><input type="text" inputmode="decimal" id="stat-clean-seconds" value="5" autocomplete="off"'
       + ' style="width:100%;box-sizing:border-box;min-height:40px">'
       + '<p class="stat-clean-preview" id="stat-clean-times-preview" aria-live="polite"></p>'
-      + '<details id="stat-clean-times-hits"><summary>' + esc(txt('Treffer ansehen', 'View matches')) + '</summary>'
+      + '<details id="stat-clean-times-hits"><summary>' + esc(txt('Treffer ansehen')) + '</summary>'
       + '<ul id="stat-clean-times-list"></ul></details>'
       + '<button type="button" class="stat-clean-danger" id="stat-clean-times-delete" disabled>'
-      + esc(txt('Zeiten unter Grenzwert löschen', 'Delete times below threshold')) + '</button>';
+      + esc(txt('Zeiten unter Grenzwert löschen')) + '</button>';
   }
   function statCleanZeitenVerdrahten(o, raw, zustand = {}) {
     const track = $('stat-clean-track'), input = $('stat-clean-seconds'), preview = $('stat-clean-times-preview');
@@ -104085,8 +104322,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         plan = statCleanZeitenPlan(o, track.value, statCleanGrenze(input.value), bz.raw, tele.raw);
         preview.textContent = statCleanZeitenBericht(plan);
         liste.innerHTML = plan.bericht.treffer.map(z => '<li>' + statCleanEsc(
-          (z.art === 'runde' ? (z.zeit || '?') + ' · ' : z.art === 'rekord' ? 'Time Attack · ' : 'Telemetrie · ')
-          + z.name + (z.runden ? ' · ' + statCleanText('Runde ', 'Lap ') + z.runden.join(', ') : '')
+          (z.art === 'runde' ? (z.zeit || '?') + ' · ' : z.art === 'rekord' ? t('Time Attack') + ' · ' : t('Telemetrie') + ' · ')
+          + z.name + (z.runden ? ' · ' + t('Runde') + ' ' + z.runden.join(', ') : '')
           + ' · ' + z.ms.map(sessionFmt).join(', ')) + '</li>').join('');
         button.disabled = statCleanGesperrt() || !(plan.bericht.runden + plan.bericht.rekorde + plan.bericht.spuren);
       } catch (e) { preview.textContent = e.message || String(e); }
@@ -104096,15 +104333,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!plan || button.disabled) return;
       try {
         statCleanAktuell(raw); statCleanExtraAktuell(plan.extra, 'vorher');
-        if (!confirm(statCleanText('Diese Zeiten wirklich löschen? Strecke: ', 'Really delete these times? Track: ')
-          + plan.key + '\n\n' + statCleanZeitenBericht(plan) + '\n\n'
-          + statCleanText('Der vorherige Stand wird lokal gesichert.', 'The previous state will be backed up locally.'))) return;
+        if (!confirm(statCleanT('Diese Zeiten wirklich löschen? Strecke: {k}', { k: plan.key }) + '\n\n'
+          + statCleanZeitenBericht(plan) + '\n\n'
+          + statCleanT('Der vorherige Stand wird lokal gesichert.'))) return;
         const b = plan.bericht;
         await statCleanAnwenden(raw, plan, 'Zeiten < ' + plan.grenze / 1000 + 's: ' + plan.key,
-          statCleanText('Zeiten gelöscht: ', 'Times deleted: ') + b.runden
-          + statCleanText(' Runde(n), ', ' lap(s), ') + b.rekorde
-          + statCleanText(' Bestzeit-Rekord(e), ', ' time-attack record(s), ') + b.spuren
-          + statCleanText(' Telemetrie-Einträge. Lokale Sicherung erstellt.', ' telemetry entries. Local backup created.'));
+          statCleanT('Zeiten gelöscht: {r} Runde(n), {b} Bestzeit-Rekord(e), {t} Telemetrie-Einträge. Lokale Sicherung erstellt.',
+            { r: b.runden, b: b.rekorde, t: b.spuren }));
       } catch (e) { statCleanFehler(e); }
     });
     // Nach Loeschen/Undo gleiche Strecke und eigene Grenze sofort erneut auswerten.
@@ -104112,9 +104347,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if ([...track.options].some(option => option.value === zustand.track)) track.value = zustand.track;
     if ($('stat-clean-times-hits')) $('stat-clean-times-hits').open = !!zustand.trefferOffen;
     vorschau();
-    if (zustand.track && !track.value) preview.textContent = statCleanText(
-      'Für die zuvor gewählte Strecke sind keine gespeicherten Zeiten mehr vorhanden. Sie wurde aus der Auswahl entfernt.',
-      'No stored times remain for the previously selected track. It has been removed from the selection.');
+    if (zustand.track && !track.value) preview.textContent = statCleanT(
+      'Für die zuvor gewählte Strecke sind keine gespeicherten Zeiten mehr vorhanden. Sie wurde aus der Auswahl entfernt.');
   }
   // ============================== STUDIE (v1.0, experimentell) ==============================
   //
