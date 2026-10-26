@@ -11058,6 +11058,12 @@
           &ndash; unter Windows sind sie lokal vorhanden, auf Android k&ouml;nnen sie fehlen.
           Fehlt eine, steht das einmal im Protokoll und nicht bei jeder Runde.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Rennintro vor der Ampel
+          <small>Lokale Starts: Modus, Runden- oder Zeitlimit und Startwetter als Piper-Aufnahmen.
+          Die Ampel beginnt erst danach. Standard aus; im WLAN-Mehrspieler ohne Intro.
+          Nutzt Sprache, Sprechgeschwindigkeit, Lautst&auml;rke und Hall der Rennstand-Ansagen.
+          Fehlende Aufnahmen werden ausgelassen, der Start bleibt m&ouml;glich.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-intro" data-preset-skip><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Rennstand alle paar Runden ansagen <span class="wip-tag">WIP</span>
           <small>Die ersten drei Fahrzeuge des lokalen Rennfelds, mit Runde, Wagenfarbe und Marke / Modell.
           Nach jeder eingestellten Zahl vollendeter Runden des f&uuml;hrenden Fahrzeugs.
@@ -13969,6 +13975,9 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "Rennintro vor der Ampel": "Race intro before the starting lights",
+    "Rennintro…": "Race intro…",
+    "Lokale Starts: Modus, Runden- oder Zeitlimit und Startwetter als Piper-Aufnahmen. Die Ampel beginnt erst danach. Standard aus; im WLAN-Mehrspieler ohne Intro. Nutzt Sprache, Sprechgeschwindigkeit, Lautstärke und Hall der Rennstand-Ansagen. Fehlende Aufnahmen werden ausgelassen, der Start bleibt möglich.": "Local starts: mode, lap or time limit and starting weather as Piper recordings. The lights begin afterwards. Off by default; no intro in Wi-Fi multiplayer. Uses the language, speed, volume and reverb of the race announcements. Missing recordings are skipped so the race can still start.",
     "RC (WIP)": "RC (WIP)",
     "Alle: RC (WIP)": "All: RC (WIP)",
     "Arcade, nur viel extremer: wie ein Fernsteuerungsauto": "Arcade, only much more extreme: like a remote-control car",
@@ -39886,6 +39895,8 @@
     if (raceState !== 'idle' && raceState !== 'finished') return; // ignore while armed/racing
     if (!knockoutBereit(true)) return;
     if (!bestzeitBereit(true)) return;
+    rennintroAbbrechen();
+    const introStartToken = ++rennintroStartGeneration;
     bestzeitVorherMerken();
     // v1.1.3: ein neues Rennen beginnt nie unter Gelb (stand vorher aus dem letzten Rennen).
     if (flagState !== 'green') gelbBeenden();
@@ -39983,9 +39994,11 @@
     $('race-lap-current').textContent = '-';
     // Freies Training braucht keine Ampel: es gibt niemanden, gegen den man gleichzeitig
     // losfahren muesste. Drei Sekunden Warten vor einer Trainingsrunde sind nur Wartezeit.
+    // Ein aktiviertes lokales Intro bekommt ebenfalls die Ampel nach der Ansage.
     // CHALLENGE "Beste Runde" laeuft als freies Training, aber MIT Ampel: "Auto muss stehen,
     // dann kommt eine Ampel" (72-challenges.js).
-    if (raceMode === 'practice' && !gruenBei && !(typeof challengeLaeuft === 'function' && challengeLaeuft())) {
+    if (raceMode === 'practice' && !gruenBei && !(typeof challengeLaeuft === 'function' && challengeLaeuft())
+        && !rennintroErlaubt(gruenZiel, mpPlan)) {
       raceState = 'racing';
       $('race-start-btn').disabled = true;
       $('race-stop-btn').disabled = false;
@@ -40004,41 +40017,62 @@
       finishSeitenZaehlerZuruecksetzen();
     }
     raceState = 'countdown';
-    fruehstartBeginnen();
+    fruehstartReset();
     $('race-start-btn').disabled = true;
     // Abbrechen muss schon im Countdown gehen: requestRaceStop() raeumt den Zaehler mit
     // auf, und ein Countdown, aus dem man nicht herauskommt, ist eine Falle.
     $('race-stop-btn').disabled = false;
     $('race-status').textContent = 'Countdown…';
-    // Zufaellige 1-3 s Pause vor dem Start; im Mehrspieler gibt der Host sie im Plan vor,
-    // damit alle gleichzeitig losfahren (sonst wuerde jedes Telefon anders wuerfeln).
-    const ampelVerzog = (mpPlan && Number.isFinite(mpPlan.ampelVerzog)) ? mpPlan.ampelVerzog
-                      : (1000 + Math.random() * 2000);
-    // Lokal: Gruen so setzen, dass die 1. Lampe 600 ms nach dem Start erscheint
-    // (1. Lampe = gruen - verzog - 4000).
-    const plan = ampelZeitplan(gruenBei || Date.now() + 4600 + ampelVerzog, ampelVerzog);
-    clearTimeout(raceCountdownTimer);
-    const schritt = (k) => {
-      if (raceState !== 'countdown') return;
-      ampelK = k;
-      const [bei, stufe] = plan[k];
-      const warte = bei - Date.now();
-      if (warte > 4) { raceCountdownTimer = setTimeout(() => schritt(k), warte); return; }
-      // Kommt der Plan spaet an, werden verpasste Lichter uebersprungen - nur Gruen zaehlt.
-      if (stufe > 0 && warte < -400 && k + 1 < plan.length) { schritt(k + 1); return; }
-      if (stufe > 0) {
-        setRaceLights(stufe);
-        ampelTon(440 + (stufe - 1) * 60, 0.18, 'square', 0.18);
-        schritt(k + 1);
-        return;
-      }
-      setRaceLights('go');
-      ampelTon(880, 0.35, 'square', 0.22);
-      raceGreen();
-      setTimeout(() => setRaceLights(0), 900);
+    clearTimeout(raceCountdownTimer); raceCountdownTimer = null;
+    ampelPlan = null; ampelSchritt = null; ampelK = 0;
+    setRaceLights(0);
+    let ampelGestartet = false;
+    const ampelBeginnen = () => {
+      if (ampelGestartet || raceState !== 'countdown') return;
+      ampelGestartet = true;
+      fruehstartBeginnen();
+      $('race-status').textContent = 'Countdown…';
+      // Zufaellige 1-3 s Pause vor dem Start; im Mehrspieler gibt der Host sie im Plan vor,
+      // damit alle gleichzeitig losfahren (sonst wuerde jedes Telefon anders wuerfeln).
+      const ampelVerzog = (mpPlan && Number.isFinite(mpPlan.ampelVerzog)) ? mpPlan.ampelVerzog
+                        : (1000 + Math.random() * 2000);
+      // Lokal: Gruen so setzen, dass die 1. Lampe 600 ms nach dem Start erscheint
+      // (1. Lampe = gruen - verzog - 4000).
+      const plan = ampelZeitplan(gruenBei || Date.now() + 4600 + ampelVerzog, ampelVerzog);
+      clearTimeout(raceCountdownTimer);
+      const schritt = (k) => {
+        if (raceState !== 'countdown') return;
+        ampelK = k;
+        const [bei, stufe] = plan[k];
+        const warte = bei - Date.now();
+        if (warte > 4) { raceCountdownTimer = setTimeout(() => schritt(k), warte); return; }
+        // Kommt der Plan spaet an, werden verpasste Lichter uebersprungen - nur Gruen zaehlt.
+        if (stufe > 0 && warte < -400 && k + 1 < plan.length) { schritt(k + 1); return; }
+        if (stufe > 0) {
+          setRaceLights(stufe);
+          ampelTon(440 + (stufe - 1) * 60, 0.18, 'square', 0.18);
+          schritt(k + 1);
+          return;
+        }
+        setRaceLights('go');
+        ampelTon(880, 0.35, 'square', 0.22);
+        raceGreen();
+        setTimeout(() => setRaceLights(0), 900);
+      };
+      ampelPlan = plan; ampelSchritt = schritt;
+      schritt(0);
     };
-    ampelPlan = plan; ampelSchritt = schritt;
-    schritt(0);
+    if (rennintroErlaubt(gruenZiel, mpPlan)) {
+      $('race-status').textContent = t('Rennintro…');
+      const intro = rennintroVorAmpel();
+      const weiter = () => {
+        // Stop + Neustart darf keinen alten Countdown wiederbeleben.
+        // Ausschalten waehrend des Intros darf dagegen zur Ampel weitergehen.
+        if (introStartToken !== rennintroStartGeneration) return;
+        ampelBeginnen();
+      };
+      intro.then(weiter, weiter);
+    } else ampelBeginnen();
   }
   // v0.9.32: die laufende Ampel um delta ms verschieben (WLAN-Mehrspieler: feinerer
   // Uhrabgleich waehrend des Vorlaufs). Nur solange noch keine Lampe leuchtet.
@@ -40188,6 +40222,8 @@
   // requestRaceStop() uebergibt ausdruecklich false.
   function finishRace(auslaufen) {
     if (raceState === 'finished') return; // Ergebnisansage nur einmal planen.
+    rennintroStartGeneration++;
+    rennintroAbbrechen();
     rennstandAbbrechen();
     raceState = 'finished';
     // v1.1.3 GEMELDET: "Rennende sollte auch die gelbe Flagge beenden". Nicht ueber
@@ -53121,6 +53157,196 @@
   if (rennstandTestKnopf) {
     rennstandTestKnopf.addEventListener('click', () => { rennstandTesten(); });
     i18nOnLangChange(() => rennstandTestSetBusy(false));
+  }
+  // Lokales Rennintro auf Basis v1.1.44. Kein gemeinsamer Mehrspieler-Vorlauf.
+  // Eigener Schalter, gespeichert durch die vorhandene Selbstsicherung.
+  let rennintroAn = false, rennintroGeneration = 0, rennintroTimer = null;
+  let rennintroStartGeneration = 0;
+  let rennintroFertig = null, rennintroQuellen = [], rennintroAktiv = false;
+  const rennintroBuffers = new Map();
+  // Die vollstaendige Aufstellung braucht bei mehreren Autos mehr als 40 Sekunden.
+  // Begrenzte parallele Downloads verhindern lange serielle Clip-Ladezeiten.
+  const RENINTRO_LADE_MS = 10000, RENINTRO_MAX_MS = 180000;
+
+  function rennintroAbbrechen() {
+    rennintroGeneration++;
+    if (rennintroTimer !== null) clearTimeout(rennintroTimer);
+    rennintroTimer = null;
+    for (const q of rennintroQuellen) {
+      q.onended = null;
+      try { q.stop(); } catch (e) {}
+      try { q.disconnect(); } catch (e) {}
+    }
+    rennintroQuellen = []; rennintroAktiv = false;
+    const fertig = rennintroFertig; rennintroFertig = null;
+    if (fertig) fertig(false);
+  }
+
+  // Dieselbe Reihenfolge wie auf dem Startschirm, nicht Garage oder Live-Rangliste.
+  // Safety Car / Reinigungsauto sind in raceGridCars() bereits ausgeschlossen.
+  // Identitaeten einmal kopieren: spaetere Garagenaenderungen aendern das Intro nicht.
+  function rennintroStartaufstellung() {
+    return raceGridCars().map((car) => {
+      const farbe = carColor(car);
+      return { farbeId: farbe.id, modellId: carModellWert(car.modellId) };
+    });
+  }
+
+  function rennintroTeilnehmerFolge(aufstellung) {
+    const folge = [];
+    const cars = Array.isArray(aufstellung) ? aufstellung : [];
+    if (cars.length === 1) folge.push('i:teilnehmer_einer');
+    else folge.push('i:teilnehmer_anfang', ...rennstandZahlFolge(cars.length), 'i:teilnehmer_ende');
+    cars.forEach((car, i) => {
+      const farbeId = car && car.farbeId;
+      const farbe = CAR_COLORS.some((c) => c.id === farbeId) && farbeId !== 'keine'
+        ? farbeId : 'unbekannt';
+      const modell = carModellWert(car && car.modellId) || 'auto';
+      folge.push('i:startposition', ...rennstandZahlFolge(i + 1), 'i:startposition_wagen',
+        'i:startfarbe_' + farbe, 'i:startmodell_' + modell);
+    });
+    return folge;
+  }
+
+  function rennintroFolge(modus, limit, wetter, pflichtstopps = 0, aufstellung = []) {
+    const folge = ['i:willkommen', 'i:modus_' + modus];
+    const n = Number.isFinite(limit) ? Math.max(0, Math.round(limit)) : 0;
+    if (modus === 'laps' && n > 0) {
+      folge.push('i:distanz');
+      if (n === 1) folge.push('i:runde');
+      else folge.push(...rennstandZahlFolge(n), 'i:runden');
+    } else if (['practice', 'bestzeit', 'qualifying', 'endurance'].includes(modus)) {
+      if (n > 0) {
+        folge.push('i:zeitlimit');
+        if (n === 1) folge.push('i:minute');
+        else folge.push(...rennstandZahlFolge(n), 'i:minuten');
+      }
+      else folge.push('i:ohne_limit');
+    }
+    const stopps = Number.isFinite(pflichtstopps) ? Math.max(0, Math.round(pflichtstopps)) : 0;
+    if (stopps === 0) folge.push('i:boxenstopps_keine');
+    else if (stopps === 1) folge.push('i:boxenstopp_einer');
+    else folge.push('i:boxenstopps_anzahl', ...rennstandZahlFolge(stopps), 'i:boxenstopps_pflicht');
+    folge.push(...rennintroTeilnehmerFolge(aufstellung));
+    folge.push(wetter === 'rain' ? 'i:wetter_regen' : 'i:wetter_trocken', 'i:bereit');
+    return folge;
+  }
+
+  async function rennintroClipsLaden(folge, spr, signal) {
+    const quelle = spr === 'de' ? 'de' : 'en';
+    const satz = {}, manifests = {};
+    const keys = [...new Set(folge)];
+    let cursor = 0;
+    const laden = async (key) => {
+      if (signal.aborted) throw new Error('Laden abgebrochen');
+      const cacheKey = quelle + ':' + key;
+      if (rennintroBuffers.has(cacheKey)) { satz[key] = rennintroBuffers.get(cacheKey); return; }
+      const prefix = key.slice(0, 2), name = key.slice(2);
+      if (prefix !== 'n:' && prefix !== 'i:') throw new Error('Unbekannter Clip: ' + key);
+      if (!manifests[prefix]) {
+        const path = prefix === 'n:' ? 'audio/zahlen.json' : 'audio/rennintro.json';
+        manifests[prefix] = (async () => {
+          const res = await fetch(path, { signal });
+          if (!res.ok) throw new Error(path + ' HTTP ' + res.status);
+          return (await res.json())[quelle];
+        })();
+      }
+      const katalog = await manifests[prefix];
+      const file = katalog && katalog[name];
+      if (!file) throw new Error('Clip fehlt: ' + key);
+      const res = await fetch('audio/' + file, { signal });
+      if (!res.ok) throw new Error(file + ' HTTP ' + res.status);
+      const buffer = await audioCtx.decodeAudioData(await res.arrayBuffer());
+      if (signal.aborted) throw new Error('Laden abgebrochen');
+      rennintroBuffers.set(cacheKey, buffer); satz[key] = buffer;
+    };
+    // Hoechstens sechs Requests gleichzeitig; jedes Manifest nur einmal anfordern.
+    await Promise.all(Array.from({ length: Math.min(6, keys.length) }, async () => {
+      while (cursor < keys.length) await laden(keys[cursor++]);
+    }));
+    return satz;
+  }
+
+  function rennintroErlaubt(gruenZiel, mpPlan) {
+    return rennintroAn && !mpPlan && typeof gruenZiel !== 'number'
+      && !(typeof mp !== 'undefined' && mp.an) && soundEnabled
+      && rennstandLautstaerke > 0;
+  }
+
+  async function rennintroVorAmpel() {
+    rennintroAbbrechen();
+    const token = rennintroGeneration, spr = lang;
+    const aufstellung = rennintroStartaufstellung();
+    const folge = rennintroFolge(raceMode, raceLimit, raceWxStart, racePitRequired, aufstellung);
+    const controller = new AbortController();
+    rennintroAktiv = true;
+    return new Promise((resolve) => {
+      let erledigt = false;
+      const fertig = (ok) => {
+        if (erledigt) return;
+        erledigt = true; controller.abort();
+        if (token === rennintroGeneration) {
+          if (rennintroTimer !== null) clearTimeout(rennintroTimer);
+          rennintroTimer = null; rennintroFertig = null;
+          rennintroAktiv = false;
+          for (const q of rennintroQuellen) {
+            q.onended = null;
+            try { q.stop(); } catch (e) {}
+            try { q.disconnect(); } catch (e) {}
+          }
+          rennintroQuellen = [];
+        }
+        resolve(ok);
+      };
+      rennintroFertig = fertig;
+      rennintroTimer = setTimeout(() => {
+        log('Rennintro: Ladezeit ueberschritten; Start ohne Intro.', 'info');
+        fertig(false);
+      }, RENINTRO_LADE_MS);
+      (async () => {
+        try {
+          if (!audioCtx) initEngineSound();
+          await audioCtx.resume();
+          const satz = await rennintroClipsLaden(folge, spr, controller.signal);
+          if (erledigt || token !== rennintroGeneration || !rennintroAn || !soundEnabled
+              || spr !== lang || raceState !== 'countdown' || rennstandLautstaerke <= 0) {
+            fertig(false); return;
+          }
+          if (audioCtx.state !== 'running') throw new Error('Audiokontext nicht aktiv');
+          const tempo = rennstandTempoWert(rennstandTempo);
+          const dauer = folge.reduce((sum, key) => sum + satz[key].duration / tempo + 0.08, 0);
+          if (!Number.isFinite(dauer) || dauer <= 0 || dauer * 1000 > RENINTRO_MAX_MS)
+            throw new Error('Ungueltige oder zu lange Ansage');
+          clearTimeout(rennintroTimer);
+          rennintroTimer = setTimeout(() => {
+            log('Rennintro: Wiedergabe-Timeout; Start ohne weitere Ansage.', 'info');
+            fertig(false);
+          }, Math.min(RENINTRO_MAX_MS, Math.ceil((dauer + 1) * 1000)));
+          let bei = audioCtx.currentTime + 0.03;
+          for (const key of folge) {
+            const src = audioCtx.createBufferSource();
+            src.buffer = satz[key]; src.playbackRate.value = tempo;
+            src.connect(rennstandGain());
+            rennintroQuellen.push(src);
+            if (key === folge[folge.length - 1]) src.onended = () => fertig(true);
+            src.start(bei); bei += src.buffer.duration / tempo + 0.08;
+          }
+        } catch (err) {
+          if (!erledigt && token === rennintroGeneration)
+            log('Rennintro nicht ladbar (' + err.message + '); Start ohne Intro.', 'info');
+          fertig(false);
+        }
+      })();
+    });
+  }
+
+  const rennintroSchalter = $('setting-announce-intro');
+  if (rennintroSchalter) {
+    rennintroAn = rennintroSchalter.checked;
+    rennintroSchalter.addEventListener('change', () => {
+      rennintroAn = rennintroSchalter.checked;
+      if (!rennintroAn) rennintroAbbrechen();
+    });
   }
   // =========================================================================
   // Autonome Gegner, und alles was an ihnen haengt

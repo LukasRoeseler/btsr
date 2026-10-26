@@ -373,6 +373,9 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "Rennintro vor der Ampel": "Race intro before the starting lights",
+    "Rennintro…": "Race intro…",
+    "Lokale Starts: Modus, Runden- oder Zeitlimit und Startwetter als Piper-Aufnahmen. Die Ampel beginnt erst danach. Standard aus; im WLAN-Mehrspieler ohne Intro. Nutzt Sprache, Sprechgeschwindigkeit, Lautstärke und Hall der Rennstand-Ansagen. Fehlende Aufnahmen werden ausgelassen, der Start bleibt möglich.": "Local starts: mode, lap or time limit and starting weather as Piper recordings. The lights begin afterwards. Off by default; no intro in Wi-Fi multiplayer. Uses the language, speed, volume and reverb of the race announcements. Missing recordings are skipped so the race can still start.",
     "RC (WIP)": "RC (WIP)",
     "Alle: RC (WIP)": "All: RC (WIP)",
     "Arcade, nur viel extremer: wie ein Fernsteuerungsauto": "Arcade, only much more extreme: like a remote-control car",
