@@ -64,6 +64,8 @@
   }
 
   function rennstandReset() {
+    ansagenReset();
+    rennEreignisReset();
     rennstandAbbrechen();
     rennstandGemeldet.clear();
     rennstandMesspunkte.clear(); rennstandMessGeneration++;
@@ -406,7 +408,6 @@
       u.onend = fertig; u.onerror = fertig;
       // Manche Stimmen melden kein Ende: nach grob geschaetzter Sprechdauer freigeben.
       setTimeout(fertig, 3000 + text.length * 110 / u.rate);
-      window.speechSynthesis.cancel();
       rennstandSprache = u;
       window.speechSynthesis.speak(u);
       rennstandSatzRunde = ergebnis ? null : runde;
@@ -454,7 +455,7 @@
 
   async function rennstandSpielen(rows, runde, ergebnis = false, messung = null) {
     const token = rennstandGeneration, spr = lang;
-    if (rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
+    if (rennPauseAktiv() || rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
         || performance.now() < lapAnsageRuheBis) return false;
     const perStimme = rennstandStimmeNoetig(rows);
     const satz = perStimme ? null : await rennstandClipsLaden(spr);
@@ -464,7 +465,7 @@
         || !audioCtx || !(ergebnis ? raceState === 'finished'
           : ['racing', 'finishing'].includes(raceState)) || (!perStimme && !satz)) return false;
     // Auch nach dem asynchronen Laden erneut pruefen. Keine Rundenzeit abbrechen.
-    if (rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
+    if (rennPauseAktiv() || rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
         || performance.now() < lapAnsageRuheBis) return false;
     // Pitch-Shift vor dem Einplanen berechnen. Er veraendert nicht die Clipdauer;
     // die Sprechgeschwindigkeit wird erst bei playbackRate angewandt.
@@ -472,7 +473,7 @@
         || rennstandLautstaerke <= 0 || !['laps', 'endurance'].includes(raceMode)
         || !audioCtx || !(ergebnis ? raceState === 'finished'
           : ['racing', 'finishing'].includes(raceState)) || (!perStimme && !satz)
-        || rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
+        || rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
         || performance.now() < lapAnsageRuheBis) return false;
     // Den eingefrorenen Messstand der benannten Runde sprechen, nicht die
     // inzwischen aktuelle Rundenzahl oder Ortung nach dem asynchronen Clip-Laden.
@@ -572,7 +573,7 @@
   }
 
   async function rennstandTesten() {
-    if (rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
+    if (rennPauseAktiv() || rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
         || performance.now() < lapAnsageRuheBis) {
       rennstandTestStatus(lang === 'de' ? 'Bitte laufende Ansage abwarten.' : 'Please wait for the current announcement.');
       return false;
@@ -683,7 +684,7 @@
       if (token !== rennstandGeneration) return;
       rennstandTimer = null;
       if (!rennstandErgebnisErlaubt()) return;
-      if (rennstandErgebnisNochAuslauf(Date.now()) || rennstandBeschaeftigt()
+      if (rennPauseAktiv() || ansagenWarten() || rennstandErgebnisNochAuslauf(Date.now()) || rennstandBeschaeftigt()
           || lapAnsageBeschaeftigt() || performance.now() < lapAnsageRuheBis
           || (audioCtx && audioCtx.currentTime < fanfareBis)) {
         rennstandTimer = setTimeout(pruefen, 100);
@@ -694,7 +695,7 @@
       const ok = await rennstandSpielen(rows, rennstandBezugsrunde(rows), true);
       if (token !== rennstandGeneration) return;
       if (ok) rennstandErgebnisGesprochen = true;
-      else if (rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
+      else if (rennPauseAktiv() || rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
           || performance.now() < lapAnsageRuheBis) {
         rennstandTimer = setTimeout(pruefen, 100);
       }
@@ -719,7 +720,7 @@
       if (token !== rennstandGeneration) return;
       rennstandTimer = null;
       if (!rennstandErlaubt()) { rennstandWartend = null; return; }
-      if (rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
+      if (rennPauseAktiv() || rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
           || performance.now() < lapAnsageRuheBis) {
         rennstandTimer = setTimeout(pruefen, 100);
         return;
@@ -733,7 +734,7 @@
       if (!ok && !rennstandMessstandGueltig(messung)) {
         rennstandGemeldet.delete(n); rennstandMesspunkte.set(n, { n, start: Date.now() });
         rennstandWartend = null;
-      } else if (!ok && (rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
+      } else if (!ok && (rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
           || performance.now() < lapAnsageRuheBis)) {
         rennstandTimer = setTimeout(pruefen, 100);
       } else rennstandWartend = null;
@@ -742,10 +743,10 @@
   }
 
   // Laufende Zwischenstands-/Ergebnisansagen werden nicht fuer eine neue
-  // Spielerzeit unterbrochen. Diese Sprachansage entfaellt, ohne Nachholwarteschlange.
+  // Spielerzeit unterbrochen. Neue Spielerzeiten warten in der Rennansagen-Queue.
   // Rundenwertung, Anzeige, Bestzeit und Rundenton bleiben unveraendert.
   function rennstandVorRundenzeit() {
-    return !rennstandBeschaeftigt();
+    return !rennstandBeschaeftigt() && !ansagenWarten();
   }
 
   function rennstandMessungPruefen() {

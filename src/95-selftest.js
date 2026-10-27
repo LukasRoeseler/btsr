@@ -7014,43 +7014,23 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : '5 Zeiten richtig zerlegt, 65 Clips je Sprache' };
   });
 
-  // ---- Ansage: jede Aeusserung bricht die vorherige ab ----
-  //
-  // Zwei Runden kurz hintereinander duerfen sich nicht stapeln, sonst laeuft die Stimme
-  // nach und sagt die vorletzte Zeit, waehrend man schon in der naechsten Runde ist.
-  // Geprueft wird an den Zaehlern und nicht am Lautsprecher: ob wirklich Ton kommt, haengt
-  // an den Stimmen des Systems, aber DASS vor jeder Aeusserung abgebrochen wird, ist eine
-  // Eigenschaft des Codes.
-  stAdd('Ansage: stapelt sich nicht', () => {
-    if (!window.OMEGA_TEST || !OMEGA_TEST.ansage || typeof speakLap !== 'function') {
-      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
-    }
-    if (!('speechSynthesis' in window)) return { skip: true, mass: 'keine Sprachausgabe' };
-    const el = $('setting-announce');
-    const merk = el ? el.checked : null;
+  // Die Queue pruefen, ohne echte Stimme oder Nutzereinstellungen anzutasten.
+  stAdd('Ansage: priorisiert und unterbricht nicht', async () => {
+    const folge = [], fehler = [];
+    const q = new RennAnsagenQueue(() => false, e => fehler.push(String(e)));
+    let fertig;
     try {
-      if (el && !el.checked) { el.checked = true; el.dispatchEvent(new Event('change', { bubbles: true })); }
-      const vor = OMEGA_TEST.ansage();
-      speakLap(58300, false);
-      speakLap(59100, true);
-      const nach = OMEGA_TEST.ansage();
-      const rufe = nach.calls - vor.calls;
-      const abbr = nach.cancels - vor.cancels;
-      // Und die Gegenprobe: ausgeschaltet darf gar nichts passieren.
-      if (el) { el.checked = false; el.dispatchEvent(new Event('change', { bubbles: true })); }
-      speakLap(60000, false);
-      const aus = OMEGA_TEST.ansage();
-      const stillRufe = aus.calls - nach.calls;
-      const ok = rufe === 2 && abbr === 2 && stillRufe === 0;
-      return { ok, mass: rufe + ' Aeusserungen, ' + abbr + ' Abbrueche, ausgeschaltet '
-                         + stillRufe + ' Aeusserungen' };
-    } finally {
-      if (el && merk !== null) {
-        el.checked = merk;
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-    }
+      q.einreihen('lap', 0, () => { folge.push('lap-start'); return new Promise(r => { fertig = r; }); });
+      await new Promise(r => setTimeout(r, 30));
+      q.einreihen('lap', 0, () => folge.push('lap-2'));
+      q.einreihen('event', 20, () => folge.push('event'));
+      await new Promise(r => setTimeout(r, 30));
+      const unberuehrt = folge.join(',') === 'lap-start' && typeof fertig === 'function';
+      if (fertig) fertig();
+      await new Promise(r => setTimeout(r, 750));
+      return { ok: unberuehrt && folge.join(',') === 'lap-start,event,lap-2' && !fehler.length,
+        mass: folge.join(' -> ') + (fehler.length ? ' | ' + fehler.join(';') : '') };
+    } finally { q.reset(); if (fertig) fertig(); }
   });
 
   // ---- Marke und Zaehler: die zwei aussenwirksamen Zeilen ----

@@ -531,3 +531,13 @@ oben). Die bisherigen `shift_up.ogg` / `shift_down.ogg` bleiben für den Schalte
 
 Aus einer eigenen Aufnahme des Autors (Video eines Ford Mustang GT3, nicht Teil des Repos,
 `photos/` ist ausgeschlossen) geschnitten. Lizenz wie OmegaSim (MIT).
+
+## Erweiterte Rennereignis-Ansagen
+
+`rennereignis_*.ogg` werden lokal mit `tools/voice_rennereignisse.py` erzeugt:
+Piper und die bereits fuer `voice_zahlen.py` verwendeten Modelle
+`de_DE-thorsten-medium` / `en_US-ljspeech-medium`. Herkunft und Modellkarten
+wie im bestehenden Abschnitt zu den Zahlenclips. Funkfilter ohne Knacken
+aus `voice_zahlen.py`; keine Nutzerstimme und kein Onlinedienst.
+116 neue Satz-/Zahlbausteine; die bestehenden Zahlen- und Fahrzeugclips
+bleiben unveraendert. Die erzeugten Sprachdateien gehoeren in den PR.

@@ -11168,6 +11168,21 @@
           <button type="button" id="setting-announce-stand-test" data-i18n-skip>Testen</button>
           <span class="muted" id="setting-announce-stand-test-status" aria-live="polite"></span>
         </div></div>
+      <div class="opt-head">Erweiterte Rennereignisse</div>
+      <p class="muted" data-i18n-skip>Ereignisse warten bis zum Ende einer laufenden Ansage. Danach kommen sie vor wartenden Rundenzeiten und Rennstandmeldungen. Lokale Spieler 1–3; neue Schalter standardmäßig aus. Sprachclips verwenden Stadionhall, Lautstärke und Tempo wie der Rennstart (Rennstand-Regler). Bei fehlenden Clips spricht die Gerätestimme ohne Hall.</p>
+      <div class="opt-row" data-i18n-skip><div class="opt-label">Schwere Beschädigung ansagen
+        <small>Farbe, Modell und Spieler. Nur bei aktivem Schaden; einmal unter der Zustandsgrenze. Nach Reparatur um 8 Prozentpunkte über die Grenze wieder freigegeben. Ersetzt dann die allgemeine Schadenswarnung.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-event-damage" data-preset-skip><span></span></label></div>
+      <div class="opt-row" data-i18n-skip><div class="opt-label">Zustandsgrenze für Schadensansage
+        <small>Verbleibender Fahrzeugzustand in Prozent, 1–100; Standard 30. Strikt darunter, nicht genau am Grenzwert.</small></div>
+        <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="setting-announce-event-damage-limit" value="30" min="1" max="100" step="1" style="width:84px" data-preset-skip><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
+      <div class="opt-row" data-i18n-skip><div class="opt-label">Spieler in der Box ansagen
+        <small>„Spieler X ist in der Box.“ Einmal beim tatsächlichen Servicebeginn, nicht bei der Anforderung. Ersetzt dann die alte Boxenstopp-Anforderungsansage.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-event-pit" data-preset-skip><span></span></label></div>
+      <div class="opt-row" data-i18n-skip><div class="opt-label">Zeitstrafen ansagen
+        <small>Neu verhängte Sekunden für Frühstart, Rammen und fehlende Pflichtstopps am regulären Rennende. Keine Meldung für reine Bremsstrafen.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-event-penalty" data-preset-skip><span></span></label></div>
+      <div class="opt-head">Weitere Warnungen</div>
       <div class="opt-row"><div class="opt-label">Schaden ansagen<small>Einmal, wenn der Schadensbalken auf 10&nbsp;% gefallen ist. Erst nach einer Reparatur wieder scharf.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-damage" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Tank ansagen<small>Einmal, wenn noch 10&nbsp;% im Tank sind. Erst nach dem Tanken wieder scharf.</small></div>
@@ -38865,6 +38880,7 @@
         if (w >= 2 && !(zweiSpieler && zusatzPlatz(w) && zusatzPlatz(w).car)) return;
         if (!fruehstart[w].frueh && fruehstartTempo(w) > FRUEHSTART_KMH) {
           fruehstart[w].frueh = true;
+          if (fruehstartZeitAn()) rennEreignisStrafe(w, FRUEHSTART_ZEIT_MS / 1000);
           showHudToast(w >= 2 ? t('Frühstart Spieler {n}!').replace('{n}', w) : t('Frühstart!'));
         }
       });
@@ -40758,6 +40774,7 @@
     // Wer schon steht oder gar nicht faehrt, laeuft nicht aus - fuer den gilt die Flagge
     // sofort, sonst wartete das Rennen auf ein Auto, das sich nicht bewegt.
     const willAuslaufen = auslaufen !== false;
+    if (!willAuslaufen) ansagenReset();
     ghostAuslaufBis = willAuslaufen ? now + GHOST_AUSLAUF_MAX_MS : 0;
     nachZielBis = willAuslaufen ? now + GHOST_AUSLAUF_MAX_MS : 0;
     // ---- WIE VIELE LAUFEN AUS? Das ist der Nenner der Ausroll-Staffel -------------
@@ -40787,6 +40804,10 @@
     if (typeof ghostStimmenRennende === 'function') ghostStimmenRennende();
     if (willAuslaufen && garage.some(c => c.role === 'ghost' && c.ghost && c.ghost.auslauf)) {
       showHudToast(t('NPCs fahren die Runde zu Ende'));
+    }
+    if (willAuslaufen) {
+      rennEreignisStrafe(1, racePenaltyMs() / 1000);
+      zusatzAktiv().forEach(z => rennEreignisStrafe(z.nr, strafeMsVon(z.nr) / 1000));
     }
     const missed = Math.max(0, racePitRequired - racePitDone);
     $('race-status').textContent =
@@ -42934,6 +42955,7 @@
     // Sicherheitsnetz.
     if (pitLimiterTimer) { rennZeitTimeoutStop(pitLimiterTimer); pitLimiterTimer = null; }
     if (next === 'servicing') {
+      rennEreignisBox(1);
       pitServiceStart = rennZeitJetzt();
       pitFuelGained = 0; pitDamageRepaired = 0;
       pitDone = { refuel: false, tyres: false, repair: false };
@@ -43712,6 +43734,7 @@
     if (z.box.lage === 'angefordert') {
       if (steht) {
         z.box.lage = 'service';
+        rennEreignisBox(z.nr);
         z.box.strafeBis = null;
         const strafe = rammStrafeOffen(z.car);
         showHudToast('P' + z.nr + ': ' + (strafe > 0 ? t('STRAFE') + ' ' + strafe + ' s' : 'SERVICE LAEUFT'));
@@ -44063,6 +44086,7 @@
       if (zwei) zPl.schaden.wert = Math.min(100, zPl.schaden.wert + 100 / crashesToTotal);
       else damage = Math.min(100, damage + 100 / crashesToTotal);
     }
+    if (schadenAn) rennEreignisSchaden(wer >= 2 ? wer : 1);
     const stand = zwei ? zPl.schaden.wert : damage;
     const end = vonHinten ? 'rear' : crashEnd(wer);
     if (schadenAn && stand >= LIGHT_DEAD_DAMAGE && !licht[end]) {
@@ -46457,6 +46481,7 @@
     if (e.rams >= rammAb()) {
       e.rams = 0;
       e.offen += rammStrafeS();
+      rennEreignisStrafe(spielerNrVon(rammer), rammStrafeS());
       showHudToast(t('STRAFE') + ' ' + rammStrafeS() + ' s · ' + garageLabel(rammer));
       log(garageLabel(rammer) + ': ' + rammStrafeS() + ' s Strafe beim naechsten Boxenstopp.', 'err');
     }
@@ -49737,6 +49762,7 @@
       loadEngineSamples(); // needs the AudioContext, so it can only start from here
       loadFxSamples();
       loadVoiceSamples();
+      if (Object.values(rennEreignisAn).some(Boolean)) { rennEreignisClipsLaden(lang); rennstandClipsLaden(lang, true); }
       rennstandClipsLaden(lang);
       if (!('speechSynthesis' in window)) zahlenClipsLaden(lang);
       loadAmbience();
@@ -49755,11 +49781,13 @@
       loadEngineSamples();
       loadFxSamples();
       loadVoiceSamples();
+      if (Object.values(rennEreignisAn).some(Boolean)) { rennEreignisClipsLaden(lang); rennstandClipsLaden(lang, true); }
       rennstandClipsLaden(lang);
       if (!('speechSynthesis' in window)) zahlenClipsLaden(lang);
       loadAmbience();
       refreshAmbienceGains();
     } else if (engineGain) {
+      ansagenReset();
       rennstandAbbrechen();
       refreshAmbienceGains();
       engineGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
@@ -50433,49 +50461,8 @@
   // sich jede Runde, eine feste Aufnahme kann sie nicht sagen) und der seltene Fall, dass
   // die Aufnahme selbst fehlt (Datei nicht geladen, Sprache ohne Aufnahme).
   function ansage(art, text, klangSchluessel) {
-    if (!ansageAn[art]) return false;
-    // Waehrend einer Rennstand-/Ergebnisansage entfaellt diese Spielerzeit.
-    if (art === 'lap' && !rennstandVorRundenzeit()) return false;
-    if (art !== 'lap') {
-      rennstandAbbrechen();
-      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-      for (const q of zahlenQuellen) { try { q.stop(); } catch (e) {} }
-      zahlenQuellen = []; lapAnsageBeendet();
-    }
-    if (art !== 'lap' && playAnsageClip(klangSchluessel || art)) return true;
-    if (!('speechSynthesis' in window)) return false;
-    try {
-      // ABBRECHEN VOR DEM SPRECHEN. Zwei Meldungen kurz hintereinander duerfen sich nicht
-      // stapeln - sonst laeuft die Stimme der Gegenwart nach und meldet den Tank, waehrend
-      // man schon in der naechsten Runde ist.
-      window.speechSynthesis.cancel();
-      lapAnsageBeendet();
-      announceCancels++;
-      const u = new SpeechSynthesisUtterance(text);
-      if (art === 'lap') lapAnsageAktuell = u;
-      u.onend = () => { if (art === 'lap') lapAnsageBeendet(u); };
-      u.lang = lang === 'de' ? 'de-DE' : 'en-US';
-      // Funk spricht schneller und flacher. Beides ist an der Stimme einstellbar, und mehr
-      // gibt die Schnittstelle nicht her.
-      u.rate = 1.15;
-      u.onerror = (ev) => {
-        if (art === 'lap') lapAnsageBeendet(u);
-        if (announceFailLogged) return;
-        announceFailLogged = true;
-        log('Ansage: keine Stimme verfuegbar (' + (ev && ev.error ? ev.error : '?')
-            + '). Die Ansage bleibt aus, alles andere laeuft weiter.', 'info');
-      };
-      window.speechSynthesis.speak(u);
-      announceCalls++;
-      return true;
-    } catch (e) {
-      lapAnsageBeendet();
-      if (!announceFailLogged) {
-        announceFailLogged = true;
-        log('Ansage nicht moeglich: ' + e.message, 'info');
-      }
-      return false;
-    }
+    if (art === 'pit' && rennEreignisAn.pit) return false;
+    return ansagenEinreihen(art, text, klangSchluessel);
   }
 
   // ---- Die vier Zustandsmeldungen --------------------------------------------------
@@ -50487,10 +50474,11 @@
   // Funktion ohne laufendes Rennen pruefbar, und der Test muss nicht fuenf Variablen in
   // einer fremden Datei stellen.
   function ansagenPruefen(w) {
+    rennEreignisSchadenErholen();
     const raus = [];
     const de = lang === 'de';
     // Schaden: der Balken zeigt GESUNDHEIT, gemeldet wird also, wenn nur noch 10 % steht.
-    if (w.health !== null && w.health !== undefined) {
+    if (!rennEreignisAn.damage && w.health !== null && w.health !== undefined) {
       if (w.health <= ANSAGE_SCHWELLE && !ansageLatch.damage) {
         ansageLatch.damage = true;
         if (ansage('damage', de ? 'Achtung, Schaden kritisch' : 'Warning, damage critical')) {
@@ -50579,13 +50567,8 @@
   }
 
   function speakLap(ms, istBest) {
-    if (!ansageAn.lap || !rennstandVorRundenzeit()) return;
-    // Ohne Sprachausgabe (App-WebView): die Zahlen-Clips.
-    if (!('speechSynthesis' in window)) {
-      if (ansageAn.lap) lapClipsSpielen(ms, istBest);
-      return;
-    }
-    ansage('lap', lapSpeechText(ms, istBest));
+    if (!Number.isFinite(ms) || ms < 0) return;
+    ansagenEinreihen('lap', lapSpeechText(ms, istBest), null, ms, istBest);
   }
 
   // Die fuenf Schalter und der Funkfilter. Alle lesen ihren Anfangswert AUS DEM MARKUP -
@@ -50606,14 +50589,9 @@
     el.addEventListener('change', (e) => {
       ansageAn[art] = e.target.checked;
       if (art === 'lap') announceOn = e.target.checked;
-      // Beim Ausschalten sofort still sein und nicht den Satz noch beenden.
-      if (!e.target.checked && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel(); lapAnsageBeendet();
-      }
-      if (!e.target.checked && art === 'lap') {
-        for (const q of zahlenQuellen) { try { q.stop(); } catch (e2) {} }
-        zahlenQuellen = []; lapAnsageBeendet();
-      }
+      // Wartende Meldungen entfallen beim Ausschalten, laufende Saetze anderer
+      // Ansagearten werden dabei niemals abgebrochen.
+
     });
   });
 
@@ -52496,6 +52474,150 @@
 
   refreshTrackPreview();
 
+  // Prioritaet gilt nur fuer wartende Ansagen, niemals fuer laufende Saetze.
+  class RennAnsagenQueue {
+    constructor(blockiert, fehler) {
+      this.blockiert = blockiert; this.fehler = fehler;
+      this.jobs = []; this.aktiv = null; this.timer = null; this.generation = 0;
+      this.folge = 0; this.ruheBis = 0;
+    }
+    einreihen(art, prioritaet, spielen, erlaubt = () => true) {
+      this.jobs.push({ art, prioritaet, spielen, erlaubt, nr: this.folge++ });
+      this.wecken(); return true;
+    }
+    wecken(ms = 0) {
+      if (this.timer !== null || this.aktiv) return;
+      this.timer = setTimeout(() => { this.timer = null; this.pump(); }, ms);
+    }
+    async pump() {
+      if (this.aktiv) return;
+      this.jobs = this.jobs.filter(j => j.erlaubt());
+      if (!this.jobs.length) return;
+      if (this.blockiert() || performance.now() < this.ruheBis) { this.wecken(50); return; }
+      this.jobs.sort((a, b) => b.prioritaet - a.prioritaet || a.nr - b.nr);
+      const job = this.jobs.shift(), token = this.generation;
+      this.aktiv = job;
+      try { await job.spielen(() => token === this.generation && job.erlaubt()); }
+      catch (err) { this.fehler(err); }
+      finally {
+        if (token === this.generation) {
+          this.aktiv = null; this.ruheBis = performance.now() + 300; this.wecken();
+        }
+      }
+    }
+    reset() {
+      this.generation++; this.jobs = []; this.aktiv = null; this.ruheBis = 0;
+      if (this.timer !== null) clearTimeout(this.timer);
+      this.timer = null;
+    }
+    get beschaeftigt() { return !!this.aktiv || this.jobs.some(j => j.erlaubt()); }
+  }
+  let ansagenAktuellStop = null;
+  const rennAnsagen = new RennAnsagenQueue(
+    () => !soundEnabled || rennPauseAktiv() || rennstandBeschaeftigt()
+      || rennintroAktiv || lapAnsageBeschaeftigt()
+      || performance.now() < lapAnsageRuheBis,
+    err => log('Ansage fehlgeschlagen: ' + err.message, 'info'));
+  function ansagenReset() {
+    rennAnsagen.reset();
+    if (ansagenAktuellStop) ansagenAktuellStop();
+    ansagenAktuellStop = null;
+  }
+  function ansagenWarten() { return rennAnsagen.beschaeftigt; }
+  function ansagenEinreihen(art, text, schluessel, ms, best) {
+    if (!ansageAn[art] || !soundEnabled) return false;
+    const spr = lang;
+    return rennAnsagen.einreihen(art, art === 'lap' ? 0 : 15, async gueltig => {
+      if (!gueltig()) return;
+      if (art === 'lap' && !('speechSynthesis' in window)) {
+        const satz = await rennstandClipsLaden(spr, true);
+        if (!gueltig()) return;
+        const folge = lapClipFolge(ms, best).map(k => satz && satz['n:' + k]);
+        if (folge.every(Boolean)) await ansagenPufferSpielen(folge);
+        else log('Rundenzeit: Aufnahmen fehlen.', 'info');
+      } else if (art !== 'lap') {
+        const satz = voiceBuffers[schluessel || art];
+        const puffer = satz && (satz[spr] || satz.en);
+        if (puffer) await ansagenPufferSpielen([puffer]);
+        else await ansagenTextSpielen(text, spr);
+      } else await ansagenTextSpielen(text, spr);
+    }, () => !!ansageAn[art] && soundEnabled && lang === spr);
+  }
+  function ansagenPufferSpielen(puffer, optionen = {}) {
+    if (!audioCtx || !soundEnabled || !puffer.length) return Promise.resolve(false);
+    return new Promise(resolve => {
+      const quellen = []; let offen = puffer.length, fertig = false, hallTimer = null;
+      // Nur opt-in: bestehende Runden-/Warnansagen behalten ihren Audiopfad.
+      // Rennereignisse verwenden denselben Hall, Pegel und dasselbe Tempo wie das Intro.
+      const stadion = optionen.stadion === true;
+      const tempo = stadion ? rennstandTempoWert(rennstandTempo) : 1;
+      const ende = (ok = true) => {
+        if (fertig) return; fertig = true;
+        if (hallTimer !== null) clearTimeout(hallTimer);
+        if (ansagenAktuellStop === stop) ansagenAktuellStop = null;
+        for (const q of quellen) { try { q.disconnect(); } catch (e) {} }
+        lapAnsageBeendet(); resolve(ok);
+      };
+      const stop = () => {
+        for (const q of quellen) { q.onended = null; try { q.stop(); } catch (e) {} }
+        ende(false);
+      };
+      ansagenAktuellStop = stop;
+      try {
+        const ziel = stadion ? rennstandGain() : audioCtx.destination;
+        let zeit = audioCtx.currentTime + 0.03;
+        for (const buffer of puffer) {
+          const q = audioCtx.createBufferSource(); q.buffer = buffer;
+          q.playbackRate.value = tempo;
+          q.connect(ziel); quellen.push(q);
+          q.onended = () => {
+            if (--offen !== 0) return;
+            // Convolver klingt weiter, wenn die letzte Quelle schon beendet ist.
+            // Queue und Stop-Handler bleiben bis zum Hallende aktiv, damit keine
+            // Rundenzeit/Rennstandansage in die ausklingende Ereignismeldung faellt.
+            const hallMs = stadion && rennstandHall > 0 ? RENNSTAND_HALL_DAUER * 1000 : 0;
+            if (hallMs > 0) hallTimer = setTimeout(() => ende(), hallMs);
+            else ende();
+          };
+          q.start(zeit); zeit += buffer.duration / tempo + 0.055;
+        }
+        announceCalls++;
+      } catch (err) { log('Ansage-Wiedergabe: ' + err.message, 'info'); stop(); }
+    });
+  }
+  function ansagenTextSpielen(text, spr, maxMs = 120000) {
+    if (!('speechSynthesis' in window)) {
+      log('Ansage: Sprachclips fehlen und keine Geraetestimme verfuegbar.', 'info');
+      return Promise.resolve(false);
+    }
+    return new Promise(resolve => {
+      let fertig = false, timer = null;
+      const start = performance.now();
+      const u = new SpeechSynthesisUtterance(text);
+      const ende = (ok = true) => {
+        if (fertig) return; fertig = true;
+        if (timer !== null) clearTimeout(timer);
+        if (ansagenAktuellStop === stop) ansagenAktuellStop = null;
+        lapAnsageBeendet(); resolve(ok);
+      };
+      const stop = () => { window.speechSynthesis.cancel(); ende(false); };
+      ansagenAktuellStop = stop;
+      u.lang = spr === 'de' ? 'de-DE' : 'en-US'; u.rate = 1.15;
+      u.onend = () => ende();
+      u.onerror = ev => { log('Ansage: ' + (ev.error || 'Stimmenfehler'), 'info'); ende(false); };
+      // Kein onend: nur freigeben, wenn die Stimme tatsaechlich nicht mehr spricht.
+      const pruefen = () => {
+        if (performance.now() - start >= maxMs) {
+          log('Ansage: Geraetestimme meldet kein Ende; nach 120 s abgebrochen. Warteschlange freigegeben.', 'info');
+          stop(); return;
+        }
+        if (window.speechSynthesis.speaking || window.speechSynthesis.pending) timer = setTimeout(pruefen, 500);
+        else ende();
+      };
+      try { window.speechSynthesis.speak(u); announceCalls++; timer = setTimeout(pruefen, Math.min(maxMs, 5000 + text.length * 120)); }
+      catch (err) { log('Ansage: ' + err.message, 'info'); ende(false); }
+    });
+  }
   // ============================== DUALSENSE-TRIGGER (v1.1.3, WIP) ==============================
   //
   // BESTELLT: "Wenn ABS an ist, ein DualSense-Triggereffekt auf dem linken Trigger (falls er
@@ -52675,6 +52797,8 @@
   }
 
   function rennstandReset() {
+    ansagenReset();
+    rennEreignisReset();
     rennstandAbbrechen();
     rennstandGemeldet.clear();
     rennstandMesspunkte.clear(); rennstandMessGeneration++;
@@ -53017,7 +53141,6 @@
       u.onend = fertig; u.onerror = fertig;
       // Manche Stimmen melden kein Ende: nach grob geschaetzter Sprechdauer freigeben.
       setTimeout(fertig, 3000 + text.length * 110 / u.rate);
-      window.speechSynthesis.cancel();
       rennstandSprache = u;
       window.speechSynthesis.speak(u);
       rennstandSatzRunde = ergebnis ? null : runde;
@@ -53065,7 +53188,7 @@
 
   async function rennstandSpielen(rows, runde, ergebnis = false, messung = null) {
     const token = rennstandGeneration, spr = lang;
-    if (rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
+    if (rennPauseAktiv() || rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
         || performance.now() < lapAnsageRuheBis) return false;
     const perStimme = rennstandStimmeNoetig(rows);
     const satz = perStimme ? null : await rennstandClipsLaden(spr);
@@ -53075,7 +53198,7 @@
         || !audioCtx || !(ergebnis ? raceState === 'finished'
           : ['racing', 'finishing'].includes(raceState)) || (!perStimme && !satz)) return false;
     // Auch nach dem asynchronen Laden erneut pruefen. Keine Rundenzeit abbrechen.
-    if (rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
+    if (rennPauseAktiv() || rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
         || performance.now() < lapAnsageRuheBis) return false;
     // Pitch-Shift vor dem Einplanen berechnen. Er veraendert nicht die Clipdauer;
     // die Sprechgeschwindigkeit wird erst bei playbackRate angewandt.
@@ -53083,7 +53206,7 @@
         || rennstandLautstaerke <= 0 || !['laps', 'endurance'].includes(raceMode)
         || !audioCtx || !(ergebnis ? raceState === 'finished'
           : ['racing', 'finishing'].includes(raceState)) || (!perStimme && !satz)
-        || rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
+        || rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
         || performance.now() < lapAnsageRuheBis) return false;
     // Den eingefrorenen Messstand der benannten Runde sprechen, nicht die
     // inzwischen aktuelle Rundenzahl oder Ortung nach dem asynchronen Clip-Laden.
@@ -53183,7 +53306,7 @@
   }
 
   async function rennstandTesten() {
-    if (rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
+    if (rennPauseAktiv() || rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
         || performance.now() < lapAnsageRuheBis) {
       rennstandTestStatus(lang === 'de' ? 'Bitte laufende Ansage abwarten.' : 'Please wait for the current announcement.');
       return false;
@@ -53294,7 +53417,7 @@
       if (token !== rennstandGeneration) return;
       rennstandTimer = null;
       if (!rennstandErgebnisErlaubt()) return;
-      if (rennstandErgebnisNochAuslauf(Date.now()) || rennstandBeschaeftigt()
+      if (rennPauseAktiv() || ansagenWarten() || rennstandErgebnisNochAuslauf(Date.now()) || rennstandBeschaeftigt()
           || lapAnsageBeschaeftigt() || performance.now() < lapAnsageRuheBis
           || (audioCtx && audioCtx.currentTime < fanfareBis)) {
         rennstandTimer = setTimeout(pruefen, 100);
@@ -53305,7 +53428,7 @@
       const ok = await rennstandSpielen(rows, rennstandBezugsrunde(rows), true);
       if (token !== rennstandGeneration) return;
       if (ok) rennstandErgebnisGesprochen = true;
-      else if (rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
+      else if (rennPauseAktiv() || rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
           || performance.now() < lapAnsageRuheBis) {
         rennstandTimer = setTimeout(pruefen, 100);
       }
@@ -53330,7 +53453,7 @@
       if (token !== rennstandGeneration) return;
       rennstandTimer = null;
       if (!rennstandErlaubt()) { rennstandWartend = null; return; }
-      if (rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
+      if (rennPauseAktiv() || rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
           || performance.now() < lapAnsageRuheBis) {
         rennstandTimer = setTimeout(pruefen, 100);
         return;
@@ -53344,7 +53467,7 @@
       if (!ok && !rennstandMessstandGueltig(messung)) {
         rennstandGemeldet.delete(n); rennstandMesspunkte.set(n, { n, start: Date.now() });
         rennstandWartend = null;
-      } else if (!ok && (rennstandBeschaeftigt() || lapAnsageBeschaeftigt()
+      } else if (!ok && (rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
           || performance.now() < lapAnsageRuheBis)) {
         rennstandTimer = setTimeout(pruefen, 100);
       } else rennstandWartend = null;
@@ -53353,10 +53476,10 @@
   }
 
   // Laufende Zwischenstands-/Ergebnisansagen werden nicht fuer eine neue
-  // Spielerzeit unterbrochen. Diese Sprachansage entfaellt, ohne Nachholwarteschlange.
+  // Spielerzeit unterbrochen. Neue Spielerzeiten warten in der Rennansagen-Queue.
   // Rundenwertung, Anzeige, Bestzeit und Rundenton bleiben unveraendert.
   function rennstandVorRundenzeit() {
-    return !rennstandBeschaeftigt();
+    return !rennstandBeschaeftigt() && !ansagenWarten();
   }
 
   function rennstandMessungPruefen() {
@@ -53970,6 +54093,149 @@
       if (!rennintroAn) rennintroAbbrechen();
     });
   }
+  // Nur lokale Fahrer 1-3; keine neue WLAN-Ereignissynchronisierung.
+  const rennEreignisAn = { damage: false, pit: false, penalty: false };
+  let rennEreignisGrenze = 30;
+  const rennEreignisLatch = new Map(), rennEreignisBuffers = {}, rennEreignisLaden = {};
+  function rennEreignisGrenzwert(v) {
+    if (v === null || String(v).trim() === '') return 30;
+    const n = Number(String(v).replace(',', '.'));
+    return Number.isFinite(n) ? Math.max(1, Math.min(100, Math.round(n))) : 30;
+  }
+  function rennEreignisAuto(nr) {
+    if (nr === 1) return playerCar;
+    const z = zweiSpieler && zusatzPlatz(nr);
+    return z && z.car || null;
+  }
+  function rennEreignisIdentitaet(nr) {
+    if (![1, 2, 3].includes(nr)) return null;
+    const car = rennEreignisAuto(nr);
+    if (!car) return null;
+    const farbe = carColor(car);
+    return { nr, farbeId: farbe.id === 'keine' ? 'unbekannt' : farbe.id,
+      modellId: carModellWert(car.modellId) || 'auto' };
+  }
+  function rennEreignisReset() { rennEreignisLatch.clear(); }
+  function rennEreignisSchadenErholen() {
+    for (const nr of [1, 2, 3]) {
+      const car = rennEreignisAuto(nr), latch = rennEreignisLatch.get(nr);
+      if (!car || (latch && (latch.car !== car || 100 - schadenVon(nr) >= Math.min(100, rennEreignisGrenze + 8)))) {
+        rennEreignisLatch.delete(nr);
+      }
+    }
+  }
+  function rennEreignisSchaden(nr) {
+    if (!rennEreignisAn.damage || !crashSchadenAn() || rennPauseAktiv()
+        || !['racing', 'finishing'].includes(raceState) || raceFormationLap) return false;
+    rennEreignisSchadenErholen();
+    if (100 - schadenVon(nr) >= rennEreignisGrenze || rennEreignisLatch.has(nr)) return false;
+    const car = rennEreignisAuto(nr);
+    if (!car) return false;
+    rennEreignisLatch.set(nr, { car });
+    return rennEreignisMelden('damage', nr);
+  }
+  function rennEreignisBox(nr) {
+    if (rennPauseAktiv() || !['racing', 'finishing'].includes(raceState) || raceFormationLap) return false;
+    return rennEreignisMelden('pit', nr);
+  }
+  function rennEreignisStrafe(nr, sekunden) {
+    if (!Number.isFinite(sekunden) || sekunden <= 0 || rennPauseAktiv()
+        || !['countdown', 'racing', 'finishing', 'finished'].includes(raceState) || raceFormationLap) return false;
+    return rennEreignisMelden('penalty', nr, sekunden);
+  }
+  function rennEreignisZahlFolge(n) {
+    if (!Number.isInteger(n) || n < 0 || n > 999) return null;
+    const folge = [], hundert = Math.floor(n / 100), rest = n % 100;
+    if (hundert) folge.push('v:hundred_' + hundert);
+    if (rest || !hundert) folge.push(rest <= 60 ? 'n:' + rest : 'v:number_' + rest);
+    return folge;
+  }
+  function rennEreignisFolge(art, x, sekunden) {
+    if (art === 'damage') return ['e:farbe_' + x.farbeId, 'e:modell_' + x.modellId,
+      'e:spieler' + x.nr, 'v:damage'];
+    if (art === 'pit') return ['v:pit' + x.nr];
+    if (sekunden === 1) return ['v:penalty_one', 'v:penalty_player' + x.nr];
+    const z = Math.round(sekunden * 10), zahl = rennEreignisZahlFolge(Math.floor(z / 10));
+    if (!zahl) return null;
+    if (z % 10) zahl.push('n:komma', 'n:' + z % 10);
+    return ['v:penalty_start', ...zahl, 'v:seconds', 'v:penalty_player' + x.nr];
+  }
+  function rennEreignisText(art, x, sekunden, spr) {
+    const de = spr === 'de', L = de ? 'de' : 'en';
+    if (art === 'pit') return de ? 'Spieler ' + x.nr + ' ist in der Box.' : 'Player ' + x.nr + ' is in the pits.';
+    if (art === 'penalty') return de ? 'Zeitstrafe von ' + (sekunden === 1 ? 'einer Sekunde' : String(sekunden).replace('.', ',') + ' Sekunden')
+      + ' für Spieler ' + x.nr + '.' : 'Time penalty of ' + sekunden + (sekunden === 1 ? ' second' : ' seconds') + ' for player ' + x.nr + '.';
+    let farbe = RENNSTAND_FARBWORT[L][x.farbeId] || (de ? 'der' : 'the');
+    farbe = farbe.charAt(0).toUpperCase() + farbe.slice(1);
+    return farbe + ' ' + RENNSTAND_MODELLWORT[L][x.modellId]
+      + (de ? ' von Spieler ' : ' driven by player ') + x.nr
+      + (de ? ' ist schwer beschädigt.' : ' is badly damaged.');
+  }
+  async function rennEreignisClipsLaden(spr) {
+    const quelle = spr === 'de' ? 'de' : 'en';
+    if (rennEreignisBuffers[quelle]) return rennEreignisBuffers[quelle];
+    if (!audioCtx) return null;
+    if (rennEreignisLaden[quelle]) return rennEreignisLaden[quelle];
+    rennEreignisLaden[quelle] = (async () => {
+      try {
+        const res = await fetch('audio/rennereignisse.json');
+        if (!res.ok) throw Error('HTTP ' + res.status);
+        const manifest = await res.json(), satz = {};
+        const entries = Object.entries(manifest[quelle] || {});
+        for (let i = 0; i < entries.length; i += 4) {
+          await Promise.all(entries.slice(i, i + 4).map(async ([key, file]) => {
+            const response = await fetch('audio/' + file);
+            if (!response.ok) throw Error(file);
+            satz['v:' + key] = await audioCtx.decodeAudioData(await response.arrayBuffer());
+          }));
+        }
+        rennEreignisBuffers[quelle] = satz; return satz;
+      } catch (err) {
+        log('Rennereignis-Clips fehlen (' + err.message + '). Bitte Piper-Erzeugung ausfuehren.', 'info');
+        return null;
+      } finally { delete rennEreignisLaden[quelle]; }
+    })();
+    return rennEreignisLaden[quelle];
+  }
+  function rennEreignisMelden(art, nr, sekunden = 0) {
+    if (!rennEreignisAn[art] || !soundEnabled) return false;
+    const x = rennEreignisIdentitaet(nr), spr = lang;
+    if (!x) return false;
+    return rennAnsagen.einreihen('event-' + art, 20, async gueltig => {
+      const neu = await rennEreignisClipsLaden(spr), basis = await rennstandClipsLaden(spr, true);
+      if (!gueltig()) return;
+      const satz = { ...basis, ...neu }, keys = rennEreignisFolge(art, x, sekunden);
+      const folge = keys && keys.map(k => satz[k]);
+      if (folge && folge.every(Boolean)) await ansagenPufferSpielen(folge, { stadion: true });
+      else {
+        // Web Speech laesst sich nicht an einen Web-Audio-Convolver anschliessen.
+        log('Rennereignis: Sprachclips fehlen; Geraetestimme ohne Stadionhall. Bitte Piper-Clips erzeugen und deployen.', 'info');
+        await ansagenTextSpielen(rennEreignisText(art, x, sekunden, spr), spr);
+      }
+    }, () => rennEreignisAn[art] && soundEnabled && lang === spr);
+  }
+  for (const [art, id] of Object.entries({damage: 'setting-announce-event-damage',
+      pit: 'setting-announce-event-pit', penalty: 'setting-announce-event-penalty'})) {
+    const el = $(id); if (!el) continue;
+    rennEreignisAn[art] = el.checked;
+    el.addEventListener('change', () => {
+      rennEreignisAn[art] = el.checked;
+      if (el.checked && audioCtx) { rennEreignisClipsLaden(lang); rennstandClipsLaden(lang, true); }
+    });
+  }
+  const rennEreignisGrenzfeld = $('setting-announce-event-damage-limit');
+  if (rennEreignisGrenzfeld) {
+    rennEreignisGrenze = rennEreignisGrenzwert(rennEreignisGrenzfeld.value);
+    rennEreignisGrenzfeld.addEventListener('input', () => {
+      rennEreignisGrenze = rennEreignisGrenzwert(rennEreignisGrenzfeld.value);
+    });
+    rennEreignisGrenzfeld.addEventListener('change', () => {
+      rennEreignisGrenze = rennEreignisGrenzwert(rennEreignisGrenzfeld.value);
+      rennEreignisGrenzfeld.value = rennEreignisGrenze;
+    });
+  }
+
+  numSteuer('setting-announce-event-damage-limit');
   // =========================================================================
   // Autonome Gegner, und alles was an ihnen haengt
   // =========================================================================
@@ -70085,6 +70351,18 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // haengt die Pruefung, dass jede nur EINMAL faellt und erst nach der Hysterese
     // wieder scharf ist.
     ansagenFolge(schritte, o) {
+      // Zustands-/Clip-Probe synchron isolieren. Die echte Queue wird separat
+      // durch "Ansage: priorisiert und unterbricht nicht" geprueft.
+      const queueEcht = ansagenEinreihen, eventDamageEcht = rennEreignisAn.damage;
+      rennEreignisAn.damage = false;
+      ansagenEinreihen = (art, text, key) => {
+        if (!ansageAn[art]) return false;
+        if (art !== 'lap' && playAnsageClip(key || art)) return true;
+        if (!('speechSynthesis' in window)) return false;
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance(text)); return true;
+      };
+      try {
+
       const opt = o || {};
       const merk = {};
       const kaesten = { lap: 'setting-announce', damage: 'setting-announce-damage',
@@ -70153,6 +70431,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
           el.dispatchEvent(new Event('change', { bubbles: true }));
         });
       }
+      } finally { ansagenEinreihen = queueEcht; rennEreignisAn.damage = eventDamageEcht; }
+
     },
     // ---- Derselbe Ablauf, aber OHNE speechSynthesis: der Funk-Ersatz -------------
     //
@@ -70163,6 +70443,18 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // selbst bekommt fuer die Dauer der Probe fuenf erfundene, eindeutig markierte
     // Eintraege, damit die Attrappe den Schluessel zurueckverfolgen kann.
     ansagenFunkProbe(schritte) {
+      // Zustands-/Clip-Probe synchron isolieren. Die echte Queue wird separat
+      // durch "Ansage: priorisiert und unterbricht nicht" geprueft.
+      const queueEcht = ansagenEinreihen, eventDamageEcht = rennEreignisAn.damage;
+      rennEreignisAn.damage = false;
+      ansagenEinreihen = (art, text, key) => {
+        if (!ansageAn[art]) return false;
+        if (art !== 'lap' && playAnsageClip(key || art)) return true;
+        if (!('speechSynthesis' in window)) return false;
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance(text)); return true;
+      };
+      try {
+
       const kaesten = { lap: 'setting-announce', damage: 'setting-announce-damage',
                         fuel: 'setting-announce-fuel', tyre: 'setting-announce-tyre',
                         rain: 'setting-announce-rain', battery: 'setting-announce-battery' };
@@ -70216,6 +70508,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
           el.dispatchEvent(new Event('change', { bubbles: true }));
         });
       }
+      } finally { ansagenEinreihen = queueEcht; rennEreignisAn.damage = eventDamageEcht; }
+
     },
     // ---- Die Aufnahme hat Vorrang, auch WENN es speechSynthesis gibt --------------
     //
@@ -70225,6 +70519,18 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // gleichzeitig verfuegbar (echte Attrappen-Buffer UND ein speechSynthesis-Double)
     // und prueft, welcher tatsaechlich gezogen wird.
     ansagenVorrangProbe() {
+      // Zustands-/Clip-Probe synchron isolieren. Die echte Queue wird separat
+      // durch "Ansage: priorisiert und unterbricht nicht" geprueft.
+      const queueEcht = ansagenEinreihen, eventDamageEcht = rennEreignisAn.damage;
+      rennEreignisAn.damage = false;
+      ansagenEinreihen = (art, text, key) => {
+        if (!ansageAn[art]) return false;
+        if (art !== 'lap' && playAnsageClip(key || art)) return true;
+        if (!('speechSynthesis' in window)) return false;
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance(text)); return true;
+      };
+      try {
+
       const echtHatSpeech = 'speechSynthesis' in window;
       const echtSpeech = echtHatSpeech ? window.speechSynthesis : undefined;
       const echtPlayFx = playFx;
@@ -70255,6 +70561,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         }
         Object.assign(ansageLatch, merkLatch);
       }
+      } finally { ansagenEinreihen = queueEcht; rennEreignisAn.damage = eventDamageEcht; }
+
     },
     // Die Gaskennlinie als reine Rechnung, siehe gasKennlinie() in 40-physics.js.
     gasKennlinie,
@@ -84870,43 +85178,23 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join('; ') : '5 Zeiten richtig zerlegt, 65 Clips je Sprache' };
   });
 
-  // ---- Ansage: jede Aeusserung bricht die vorherige ab ----
-  //
-  // Zwei Runden kurz hintereinander duerfen sich nicht stapeln, sonst laeuft die Stimme
-  // nach und sagt die vorletzte Zeit, waehrend man schon in der naechsten Runde ist.
-  // Geprueft wird an den Zaehlern und nicht am Lautsprecher: ob wirklich Ton kommt, haengt
-  // an den Stimmen des Systems, aber DASS vor jeder Aeusserung abgebrochen wird, ist eine
-  // Eigenschaft des Codes.
-  stAdd('Ansage: stapelt sich nicht', () => {
-    if (!window.OMEGA_TEST || !OMEGA_TEST.ansage || typeof speakLap !== 'function') {
-      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
-    }
-    if (!('speechSynthesis' in window)) return { skip: true, mass: 'keine Sprachausgabe' };
-    const el = $('setting-announce');
-    const merk = el ? el.checked : null;
+  // Die Queue pruefen, ohne echte Stimme oder Nutzereinstellungen anzutasten.
+  stAdd('Ansage: priorisiert und unterbricht nicht', async () => {
+    const folge = [], fehler = [];
+    const q = new RennAnsagenQueue(() => false, e => fehler.push(String(e)));
+    let fertig;
     try {
-      if (el && !el.checked) { el.checked = true; el.dispatchEvent(new Event('change', { bubbles: true })); }
-      const vor = OMEGA_TEST.ansage();
-      speakLap(58300, false);
-      speakLap(59100, true);
-      const nach = OMEGA_TEST.ansage();
-      const rufe = nach.calls - vor.calls;
-      const abbr = nach.cancels - vor.cancels;
-      // Und die Gegenprobe: ausgeschaltet darf gar nichts passieren.
-      if (el) { el.checked = false; el.dispatchEvent(new Event('change', { bubbles: true })); }
-      speakLap(60000, false);
-      const aus = OMEGA_TEST.ansage();
-      const stillRufe = aus.calls - nach.calls;
-      const ok = rufe === 2 && abbr === 2 && stillRufe === 0;
-      return { ok, mass: rufe + ' Aeusserungen, ' + abbr + ' Abbrueche, ausgeschaltet '
-                         + stillRufe + ' Aeusserungen' };
-    } finally {
-      if (el && merk !== null) {
-        el.checked = merk;
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-    }
+      q.einreihen('lap', 0, () => { folge.push('lap-start'); return new Promise(r => { fertig = r; }); });
+      await new Promise(r => setTimeout(r, 30));
+      q.einreihen('lap', 0, () => folge.push('lap-2'));
+      q.einreihen('event', 20, () => folge.push('event'));
+      await new Promise(r => setTimeout(r, 30));
+      const unberuehrt = folge.join(',') === 'lap-start' && typeof fertig === 'function';
+      if (fertig) fertig();
+      await new Promise(r => setTimeout(r, 750));
+      return { ok: unberuehrt && folge.join(',') === 'lap-start,event,lap-2' && !fehler.length,
+        mass: folge.join(' -> ') + (fehler.length ? ' | ' + fehler.join(';') : '') };
+    } finally { q.reset(); if (fertig) fertig(); }
   });
 
   // ---- Marke und Zaehler: die zwei aussenwirksamen Zeilen ----
