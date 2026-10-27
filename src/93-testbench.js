@@ -7266,7 +7266,7 @@
         mpi.spur.clear();
         mpiAufnehmen(d);
         const autos = karte ? [...karte.querySelectorAll('g.karte-autos > g')]
-          .filter((g) => g.getAttribute('visibility') === 'visible').length : 0;
+          .filter((g) => g.getAttribute('visibility') !== 'hidden').length : 0;   // v1.2.32: sichtbar = ohne Attribut (erbt)
         const texte = karte ? [...karte.querySelectorAll('g.karte-autos text')].map((t) => t.textContent) : [];
         const zeilen = $('mpi-rows') ? $('mpi-rows').rows.length : 0;
         return { svg: !!(karte && karte.querySelector('svg')), autos, texte, zeilen,

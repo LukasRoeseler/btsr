@@ -280,11 +280,33 @@
   // NPCs im virtuellen Fahren (v1.1.46): wie viele andere Autos mitfahren (0-3), und ihre Skins werden
   // zufaellig ohne Zuruecklegen aus den echten Modellen gezogen - nie der weisse Kasten. Sie folgen der
   // Mittellinie mit leichtem Querversatz und drosseln ihr Tempo nach der Kurvigkeit voraus.
+  // Seit v1.2.32 mit dem Tempo der Garagenstufe 1 und einem eigenen Fahrzeugmodell (siehe unten).
   const VF_NPC_STORE = 'omegasim-vf-npc';
   const VF_NPC_POOL = ['v5r', 'fmcgt4', 'boxer96', 'lynx220'];
-  const VF_NPC_BASE = 3.2;    // Zieltempo auf der Geraden (Modell-km/h; Anzeige mal TACHO_SCALE)
-  const VF_NPC_ACC = 2.5;     // Beschleunigung auf das Zieltempo (Modell-km/h je Sekunde)
-  const VF_NPC_BREMS = 6.0;   // Abbremsen auf das Zieltempo (Modell-km/h je Sekunde)
+  // v1.2.32 GEMELDET: "Die NPCs sind außerdem zu schnell und haben eine starke Neigung (sollte
+  // auf Stufe 1 sein)." Gemessen auf Balkonia (1.2.31, 8 s Fahrt, drei NPCs):
+  //   - Geradentempo 3,2 Modell-km/h (VF_NPC_BASE), mal 1,03 bis 3,3. Das ist 80 % Gas, mehr als
+  //     die Garagenstufe "schnell" (65 %); Stufe 1 (mittel) ist ghostCfg.speed = 55 % und damit
+  //     0,55 x 4 = 2,2 km/h (die Gegenprobe aus 90b-sim.js: halbes Gas rund 55 cm/s).
+  //   - Beschleunigung 2,5 und Bremsen 6,0 km/h je s fest. Das eigene Auto (dasselbe Fahrzeugmodell)
+  //     braucht mit Vollgas 5,7 s von 0 auf 2,2 km/h (im Mittel 0,4 km/h je s) und verzoegert voll
+  //     gebremst mit 1,0 km/h je s: die NPCs zogen am Kurvenausgang sechsmal so schnell davon.
+  //   - In der Kurve 2,1 km/h: auf einem Radius von 34 Einheiten sind das 6,9 g Querbeschleunigung
+  //     im GT3-Mass. Das eigene Auto schafft mit dem Reifenmodell (vfDynamik, VF_GT3) 1,3 bis 1,5 g.
+  //   - Die Querbeschleunigung fuer die Federung kam aus dem Sprung der Fahrtrichtung zwischen zwei
+  //     Mittellinienpunkten durch dt: 0 in einem Bild, bis 225 m/s^2 (23 g) im naechsten. Daraus
+  //     rollte der Aufbau bis 0,59 rad (34 Grad) - die "starke Neigung". Das eigene Auto rollt bei
+  //     1,5 g um 0,5 Grad (siehe vfFederSicht).
+  // Jetzt: Garagenstufe 1 als Geradentempo, Gas und Bremse ueber ein eigenes, stummes Fahrzeugmodell
+  // wie beim eigenen Auto, Kurventempo aus der Kruemmung mit hoechstens VF_NPC_QUER_MAX, und die
+  // Querbeschleunigung aus derselben Kruemmung (stetig, ohne Spruenge). Die Neigung zeichnet weiter
+  // mit 1x (nicht mit "Neigung sichtbar" des eigenen Autos).
+  const VF_NPC_STUFE = 1;          // Garagenstufe (GHOST_TEMPO_STUFEN): 1 = mittel, wie ein neuer NPC
+  const VF_NPC_QUER_MAX = 13.0;    // m/s^2 im GT3-Mass (1,3 g): knapp unter dem eigenen Auto (gemessen 13,1-14,7)
+  const VF_NPC_BREMS = 0.8;        // Modell-km/h je s fuer die Bremspunkte: 80 % der gemessenen Vollbremsung
+  // So weit (s) voraus liest der NPC sein Zieltempo: die Bremse wirkt verhaeltnisgleich zum Fehlbetrag,
+  // also traf er mit 0,3 s zu spaet ein (gemessen 15,6 m/s^2 statt 13 am Kurveneingang).
+  const VF_NPC_VORAUS_S = 0.5;
   function vfNpcAnzahl() {
     try { const v = +localStorage.getItem(VF_NPC_STORE); return (v >= 0 && v <= 3) ? v : 3; } catch (e) { return 3; }
   }
@@ -308,44 +330,158 @@
     }
     return { bogen, runde: bogen[pts.length] };
   }
-  // Ein NPC-Schritt (rein, fuer den Selbsttest): Tempo nach der Kurvigkeit voraus, dann auf der
-  // Mittellinie weiter. Liefert die neue Lage und die Zielgroessen zum Zeichnen.
-  function vfNpcSteuern(npc, dt, pts, nrm, bogen, runde) {
-    const n = pts.length;
-    const i = npc.idx;
-    let dMax = 0, vorher = pts[i].heading;
-    const W = 18;
-    for (let k = 1; k <= W; k++) {
-      const j = (i + k) % n;
-      let dh = pts[j].heading - vorher;
-      dh = ((dh + 540) % 360) - 180;
-      if (Math.abs(dh) > Math.abs(dMax)) dMax = dh;
-      vorher = pts[j].heading;
+  // Geradentempo der Garagenstufe in Modell-km/h: dieselbe Rechnung wie ghostStufeFaktor() fuer ein
+  // echtes NPC-Auto (Stufe relativ zur Vorgabe ghostCfg.speed), als Anteil des Vollgastempos.
+  function vfNpcStufenTempo(stufe) {
+    const st = typeof GHOST_TEMPO_STUFEN !== 'undefined' ? GHOST_TEMPO_STUFEN[stufe === undefined ? VF_NPC_STUFE : stufe] : null;
+    const basis = (typeof ghostCfg !== 'undefined' && ghostCfg.speed) || 0.55;
+    const anteil = st && !st.max ? st.speed / 0.55 * basis : basis;
+    const top = (physEngine && physEngine.config && physEngine.config.topSpeedKmh) || 4;
+    return Math.max(0.2, Math.min(1, anteil)) * top;
+  }
+  // Das Fahrzeugmodell eines NPC: eine eigene, stumme Instanz wie in startGhost() (90-ghosts.js) und
+  // 61-simlinie.js - die Abstimmung des eigenen Autos, aber Automatik, ohne Boxenlimiter, ohne Tank-
+  // und Reifeneinfluss, trocken, ohne Meldungen, Ruckeln und Schaltton.
+  function vfNpcMotor() {
+    const e = new CarreraPhysicsEngine();
+    Object.assign(e.config, physEngine.config);
+    e.config.gears = physEngine.config.gears;
+    Object.assign(e.config, { autoShift: true, speedLimitFactor: 1, fuelWeightEffect: 0, tyreEffect: 0, gripScale: 1, aquaplaning: 0 });
+    e.spieler = 9;
+    e.meldung = () => {}; e.ruck = () => {}; e.schaltTon = () => {};
+    if (typeof e.calibrateAccel === 'function') e.calibrateAccel();
+    e.state.driveMode = 'forward';
+    e.state.currentGear = 0;
+    return e;
+  }
+  // Kruemmung einer geschlossenen Linie je Punkt (rad je Einheit, + = rechts), gemessen zwischen den
+  // Sehnen ueber 3 Punkte davor und danach. Von Punkt zu Punkt gemessen gab es auf Balkonia an der
+  // Schliessstelle einen Knick mit Radius 3 (Bahnradien sonst 17, 34, 56, 73): dort haette der NPC fast
+  // angehalten. Ueber sechs Punkte bleibt ein Kreisbogen exakt, ein Knick wird geglaettet.
+  function vfNpcKruemmung(pts) {
+    const n = pts.length, W = 3, k = new Array(n);
+    const dir = (a, b) => Math.atan2(b.x - a.x, -(b.y - a.y));
+    for (let i = 0; i < n; i++) {
+      const a = pts[(i - W + n) % n], p = pts[i], b = pts[(i + W) % n];
+      let d = dir(p, b) - dir(a, p);
+      d = Math.atan2(Math.sin(d), Math.cos(d));
+      const s = Math.hypot(p.x - a.x, p.y - a.y) + Math.hypot(b.x - p.x, b.y - p.y);
+      k[i] = s > 1e-6 ? d / (s / 2) : 0;
     }
-    const kappa = Math.abs(dMax) / 2.86;
-    const ziel = VF_NPC_BASE * Math.max(0.3, 1 - kappa / 4.5 * 0.7) * npc.faktor;
-    if (npc.kmh < ziel) npc.kmh = Math.min(ziel, npc.kmh + VF_NPC_ACC * dt);
-    else npc.kmh = Math.max(ziel, npc.kmh - VF_NPC_BREMS * dt);
-    const vE = npc.kmh / 3.6 * 100 * TRACK_UNITS_PER_CM;
-    npc.s = (((npc.s + vE * dt) % runde) + runde) % runde;
-    let j = npc.idx;
-    while (j < n - 1 && bogen[j + 1] <= npc.s) j++;
-    while (j > 0 && bogen[j] > npc.s) j--;
-    npc.idx = j;
-    const p = pts[j], q = pts[(j + 1) % n], nr = nrm[j];
-    npc.x = p.x + nr.x * npc.offset;
-    npc.y = p.y + nr.y * npc.offset;
-    npc.h = Math.atan2(q.x - p.x, -(q.y - p.y)) * 180 / Math.PI;
-    npc.raddreh = ((npc.raddreh || 0) + vE / (VF_AUTO.L / 4.64 * 0.335)) % (Math.PI * 2);
-    let dH = npc.h - (npc.vorherH === undefined ? npc.h : npc.vorherH);
-    dH = ((dH + 540) % 360) - 180;
-    npc.vorherH = npc.h;
-    const yaw = dt > 0 ? dH * Math.PI / 180 / dt : 0;
-    const vReal = npc.kmh * REAL_SCALE / 3.6;
-    npc.ay = vReal * yaw;
-    npc.ax = 0;
-    const dSeg = Math.max(-1, Math.min(1, dMax / 8));
-    npc.lenkWinkel = dSeg * (npc.P ? npc.P.lenkGrad : 21) * Math.PI / 180;
+    return k;
+  }
+  // Die Fahrspur eines NPC: die Mittellinie um seinen Querversatz verschoben, mit eigener Bogenlaenge,
+  // Kruemmung und erlaubtem Tempo je Punkt. Eigene Spur statt Mittellinie, weil auf der Innenbahn der
+  // Radius kleiner ist (Haarnadel 17 Einheiten, Versatz 3: 18 % mehr Querbeschleunigung).
+  //   Kurve:  a_quer = v_GT3 * Gierrate = REAL_SCALE * v^2 * k (v in Modell-m/s, k in 1/m Modell)
+  //           also v_E^2 = VF_NPC_QUER_MAX * 100 * TRACK_UNITS_PER_CM / (REAL_SCALE * k)   (Einheiten/s)
+  //   Bremse: rueckwaerts um die Runde (zweimal, wegen Start/Ziel) v_i^2 <= v_(i+1)^2 + 2 * a * ds
+  function vfNpcBahn(npc, pts, nrm) {
+    if (npc.bahn && npc.bahn.quelle === pts && npc.bahn.offset === npc.offset) return npc.bahn;
+    const n = pts.length, q = npc.offset || 0;
+    const lauf = pts.map((p, i) => ({ x: p.x + nrm[i].x * q, y: p.y + nrm[i].y * q }));
+    // Die Schliessstelle: auf Balkonia liegt der letzte Punkt der Mittellinie 0,44 Einheiten vor dem
+    // ersten (sonst 2,4 bis 2,9 Einheiten Abstand) und nicht genau auf der Linie. Dort sprang die
+    // Fahrtrichtung um 4,9 Grad in einem Bild. Ein Punkt mit so kurzem Nachbarabschnitt kommt auf die
+    // Mitte seiner Nachbarn.
+    const ds = (i) => { const a = lauf[i], b = lauf[(i + 1) % n]; return Math.hypot(b.x - a.x, b.y - a.y); };
+    const median = lauf.map((_, i) => ds(i)).sort((x, y) => x - y)[n >> 1];
+    for (let i = 0; i < n; i++) {
+      if (Math.min(ds(i), ds((i - 1 + n) % n)) < median * 0.35) {
+        const a = lauf[(i - 1 + n) % n], b = lauf[(i + 1) % n];
+        lauf[i] = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      }
+    }
+    const bogen = vfNpcBogen(lauf);
+    const kr = vfNpcKruemmung(lauf);
+    const K = 100 * TRACK_UNITS_PER_CM / 3.6;                // Modell-km/h -> Einheiten je s
+    const vGerade = vfNpcStufenTempo();
+    const v = kr.map((k) => {
+      const a = Math.abs(k);
+      return a > 1e-6 ? Math.min(vGerade, Math.sqrt(VF_NPC_QUER_MAX * 100 * TRACK_UNITS_PER_CM / (REAL_SCALE * a)) / K) : vGerade;
+    });
+    const aB = VF_NPC_BREMS * K;
+    for (let r = 2 * n - 1; r >= 0; r--) {
+      const i = r % n, j = (i + 1) % n;
+      const uj = v[j] * K, ds = bogen.bogen[i + 1] - bogen.bogen[i];
+      const vi = Math.sqrt(uj * uj + 2 * aB * ds) / K;
+      if (vi < v[i]) v[i] = vi;
+    }
+    npc.bahn = { quelle: pts, offset: npc.offset, lauf, bogen: bogen.bogen, runde: bogen.runde, kr, v, vGerade };
+    return npc.bahn;
+  }
+  // Punkt auf der Spur bei Bogenlaenge s (gewickelt), Suche ab Punkt j0.
+  function vfNpcPunkt(B, s, j0) {
+    const n = B.lauf.length;
+    s = ((s % B.runde) + B.runde) % B.runde;
+    let j = Math.max(0, Math.min(n - 1, j0 || 0));
+    while (j < n - 1 && B.bogen[j + 1] <= s) j++;
+    while (j > 0 && B.bogen[j] > s) j--;
+    const f = Math.max(0, Math.min(1, (s - B.bogen[j]) / Math.max(1e-9, B.bogen[j + 1] - B.bogen[j])));
+    const p = B.lauf[j], q = B.lauf[(j + 1) % n];
+    return { j, f, x: p.x + (q.x - p.x) * f, y: p.y + (q.y - p.y) * f };
+  }
+  // Ein NPC-Schritt (rein, fuer den Selbsttest): Zieltempo aus der Spur ein Stueck voraus, Gas und
+  // Bremse wie in 61-simlinie.js auf das eigene Fahrzeugmodell, dann auf der Spur weiter. Liefert die
+  // neue Lage und die Groessen zum Zeichnen (Querbeschleunigung ay und Laengsbeschleunigung ax in m/s^2
+  // im GT3-Mass, wie beim eigenen Auto VF.ay/VF.ax). Die frueheren Argumente bogen/runde (Mittellinie)
+  // werden nicht mehr gebraucht: jeder NPC rechnet auf seiner eigenen Spur.
+  function vfNpcSteuern(npc, dt, pts, nrm) {
+    const B = vfNpcBahn(npc, pts, nrm);
+    const n = pts.length, K = 100 * TRACK_UNITS_PER_CM / 3.6;
+    if (npc.s === undefined || npc.s === null || !isFinite(npc.s)) npc.s = B.bogen[npc.idx || 0];
+    let weg = 0;                                         // Einheiten in diesem Schritt
+    if (dt > 0) {
+      if (!npc.motor) {
+        npc.motor = vfNpcMotor();
+        // Ein NPC, der schon faehrt (Selbsttest), behaelt sein Tempo. Nur speedKmh zu setzen reicht
+        // nicht: Gang und Drehzahl stuenden noch im Stand, und der erste Gang bremste den Motor in
+        // 0,5 s von 2,2 auf 1,7 km/h. Also mit Vollgas bis dorthin hochfahren (hoechstens 15 s).
+        if (npc.kmh > 0) {
+          for (let i = 0; i < 300 && npc.motor.state.speedKmh < npc.kmh; i++) npc.motor.update({ throttle: 1, brake: 0, steering: 0, headlights: false }, 0.05);
+          npc.motor.state.speedKmh = npc.kmh;
+        }
+      }
+      const e = npc.motor;
+      const top = e.config.topSpeedKmh || 4;
+      // In Teilschritten von hoechstens 50 ms wie vfBild: ein grosser Schritt (Selbsttest 0,5 s) liess
+      // das Modell mit Gas 0 in einem Zug von 2,2 auf 1,69 km/h fallen.
+      const teile = Math.max(1, Math.ceil(dt / 0.05)), h = dt / teile;
+      for (let t = 0; t < teile; t++) {
+        const v = Math.max(0, e.state.speedKmh || 0);
+        const voraus = vfNpcPunkt(B, npc.s + v * K * VF_NPC_VORAUS_S, npc.idx);
+        const ziel = Math.min(B.v[npc.idx], B.v[voraus.j]) * (npc.faktor || 1);
+        const fehl = ziel - v;
+        const throttle = fehl > 0 ? Math.min(1, fehl / (top * 0.06)) : 0;
+        const brake = fehl < -top * 0.01 ? Math.min(1, -fehl / (top * 0.05)) : 0;
+        e.update({ throttle, brake, steering: 0, headlights: false }, h);
+        const d = Math.max(0, e.state.speedKmh || 0) * K * h;
+        npc.s = (((npc.s + d) % B.runde) + B.runde) % B.runde;
+        weg += d;
+      }
+      npc.kmh = Math.max(0, e.state.speedKmh || 0);
+      npc.ax = (e.state.gLong || 0) * 15;              // wie das eigene Auto (vfBild)
+    } else {
+      npc.ax = 0;
+    }
+    const vE = npc.kmh * K;
+    const hier = vfNpcPunkt(B, npc.s, npc.idx);
+    npc.idx = hier.j;
+    npc.x = hier.x; npc.y = hier.y;
+    // Fahrtrichtung aus der Spur 1,5 Einheiten davor und dahinter: stetig, statt von Punkt zu Punkt
+    // um bis zu 6 Grad zu springen.
+    const a = vfNpcPunkt(B, npc.s - 1.5, hier.j), b = vfNpcPunkt(B, npc.s + 1.5, hier.j);
+    npc.h = Math.atan2(b.x - a.x, -(b.y - a.y)) * 180 / Math.PI;
+    npc.raddreh = ((npc.raddreh || 0) + weg / (VF_AUTO.L / 4.64 * 0.335)) % (Math.PI * 2);
+    // Querbeschleunigung aus der Kruemmung, zwischen zwei Punkten eingeblendet: Gierrate = k * v_E.
+    const k = B.kr[hier.j] + (B.kr[(hier.j + 1) % n] - B.kr[hier.j]) * hier.f;
+    npc.ay = npc.kmh * REAL_SCALE / 3.6 * k * vE;
+    // Vorderraeder: Einschlag des Einspurmodells, delta = atan(Radstand * k), Radstand des Modells
+    // in Streckeneinheiten (Laenge wie gezeichnet, VF_AUTO.L).
+    const d = npc.modell && npc.modell.d;
+    const achse = d ? (d.a + d.b) * VF_AUTO.L / d.laenge : VF_ACHSE;
+    const grenze = (npc.P ? npc.P.lenkGrad : 21) * Math.PI / 180;
+    npc.lenkWinkel = Math.max(-grenze, Math.min(grenze, Math.atan(achse * k)));
     return npc;
   }
   // NPCs anlegen: Anzahl aus der Garage, Skins zufaellig ohne Zuruecklegen aus den echten Modellen.
@@ -362,13 +498,13 @@
       const auto = pool[k];
       const startIdx = (start + Math.floor(n * (k + 1) / (nAnzahl + 1))) % n;
       const npc = {
-        auto, modell: null, P: null, idx: startIdx, s: bogen.bogen[startIdx], kmh: 0,
+        auto, modell: null, P: null, idx: startIdx, s: null, kmh: 0, motor: vfNpcMotor(), bahn: null,
         offset: [3.0, -3.0, 0.0][k] || 0,
         faktor: 0.97 + 0.03 * k,
-        x: 0, y: 0, h: 0, raddreh: 0, lenkWinkel: 0, ay: 0, ax: 0, vorherH: undefined,
+        x: 0, y: 0, h: 0, raddreh: 0, lenkWinkel: 0, ay: 0, ax: 0,
         feder: { z: 0, vz: 0, th: 0, vth: 0, ph: 0, vph: 0 },
       };
-      vfNpcSteuern(npc, 0, VF.pts, VF.nrm, VF.npcBogen, VF.npcRunde);
+      vfNpcSteuern(npc, 0, VF.pts, VF.nrm);
       VF.npcs.push(npc);
       vfModellDaten(VF_MODELL_PFADE[auto]).then((daten) => {
         if (!VF.aktiv || VF.gl !== gl) return;
@@ -691,10 +827,10 @@
       st.speedKmh *= Math.exp(-VF_ABSEITS_BREMSE * dt);
       if (rennZeitJetzt() - VF.abseitsSeit > VF_ABSEITS_ZURUECK_MS) vfZuruecksetzen();
     }
-    // NPCs: folgen der Mittellinie und drosseln in Kurven.
+    // NPCs: folgen ihrer Spur mit Stufe-1-Tempo und bremsen vor Kurven (vfNpcSteuern).
     if (VF.npcs && VF.npcBogen) {
       for (const npc of VF.npcs) {
-        vfNpcSteuern(npc, dt, VF.pts, VF.nrm, VF.npcBogen, VF.npcRunde);
+        vfNpcSteuern(npc, dt, VF.pts, VF.nrm);
         if (npc.modell && npc.modell.d && npc.modell.d.reifen) vfFederung(npc.feder, npc.ax || 0, npc.ay || 0, dt, npc.modell.d, 0);
       }
     }
@@ -775,7 +911,10 @@
     if (VF.npcs && VF.tprog) {
       for (const npc of VF.npcs) {
         if (!npc.modell) continue;
-        vfModellZeichnen(gl, pv, blick, npc.modell, VF.tprog, npc.x, npc.y, npc.h, npc.feder, npc.lenkWinkel, npc.raddreh, VF.radModell, true, false, 1);
+        // Neigung 1x: "Neigung sichtbar" gilt nur fuer das eigene Auto (v1.2.32 GEMELDET: "sollte auf
+        // Stufe 1 sein"). Bremslicht, wenn das Fahrzeugmodell des NPC bremst.
+        vfModellZeichnen(gl, pv, blick, npc.modell, VF.tprog, npc.x, npc.y, npc.h, npc.feder, npc.lenkWinkel, npc.raddreh, VF.radModell, true,
+          !!(npc.motor && npc.motor.outputs && npc.motor.outputs.lights && npc.motor.outputs.lights.brake), 1);
       }
     }
   }

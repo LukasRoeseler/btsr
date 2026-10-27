@@ -15450,7 +15450,9 @@
       if (vfNpcAnzahl() !== 2) f.push('Anzahl 2 nicht uebernommen');
     } finally { if (merk === null) localStorage.removeItem(VF_NPC_STORE); else localStorage.setItem(VF_NPC_STORE, merk); }
     // Ein NPC auf einer Teststrecke: er faehrt vorwaerts, und in der Kurve bremst er ab.
-    const tiles = codeToTrack('SG4R4G4').tiles, pts = trackCenterline(tiles), nrm = trackNormals(pts);
+    // v1.2.32: SG8R3G9R3 statt SG4R4G4 - eine Kurve ist 60 Grad, SG4R4G4 schloss sich nicht (125
+    // Einheiten Luecke), und das neue Tempoprofil bremste vor dem Sprung ueber die Luecke.
+    const tiles = codeToTrack('SG8R3G9R3').tiles, pts = trackCenterline(tiles), nrm = trackNormals(pts);
     const bogen = vfNpcBogen(pts);
     const mk = (idx, kmh) => ({ idx, s: bogen.bogen[idx], kmh, offset: 0, faktor: 1, x: 0, y: 0, h: 0, raddreh: 0, lenkWinkel: 0, ay: 0, ax: 0, vorherH: undefined, P: null });
     const npc = mk(10, 0);
@@ -15478,20 +15480,25 @@
       vfNpcSteuern(c, 0.5, pts, nrm, bogen.bogen, bogen.runde);
       if (!(c.kmh < 3.0)) f.push('Kurve: NPC bremst nicht: ' + c.kmh.toFixed(2) + ' (Kurve ' + dMaxKurve.toFixed(1) + ' Grad)');
       // Auf der Geraden mit gleichem Tempo haelt er das Ziel (kein Abbremsen unter 2).
+      // v1.2.32: 40 Punkte davor und danach gerade statt 18 danach - das Tempoprofil bremst jetzt
+      // aus Stufe-1-Tempo rechtzeitig vor der Kurve (rund 22 Punkte) und misst die Kruemmung ueber
+      // +-3 Punkte; direkt am Kurvenausgang oder am Bremspunkt waere es keine Gerade.
       let geradeIdx = 0, dMin = Infinity;
       for (let i = 0; i < pts.length; i++) {
-        let dM = 0, vorher = pts[i].heading;
-        for (let k = 1; k <= 18; k++) {
-          const j = (i + k) % pts.length;
+        let dM = 0, vorher = pts[(i - 40 + pts.length) % pts.length].heading;
+        for (let k = -39; k <= 40; k++) {
+          const j = (i + k + pts.length) % pts.length;
           let dh = pts[j].heading - vorher; dh = ((dh + 540) % 360) - 180;
           if (Math.abs(dh) > Math.abs(dM)) dM = dh;
           vorher = pts[j].heading;
         }
         if (Math.abs(dM) < dMin) { dMin = Math.abs(dM); geradeIdx = i; }
       }
-      const g2 = mk(geradeIdx, 3.0);
+      // v1.2.32: Ziel auf der Geraden ist das Tempo der Stufe 1 (vfNpcStufenTempo, 2,2 km/h), nicht mehr 3,2.
+      const vS = vfNpcStufenTempo();
+      const g2 = mk(geradeIdx, vS);
       vfNpcSteuern(g2, 0.5, pts, nrm, bogen.bogen, bogen.runde);
-      if (!(g2.kmh >= 2.5)) f.push('Gerade: NPC bricht zu stark ab: ' + g2.kmh.toFixed(2));
+      if (!(g2.kmh >= vS * 0.95)) f.push('Gerade: NPC bricht zu stark ab: ' + g2.kmh.toFixed(2) + ' (Stufe 1: ' + vS.toFixed(2) + ')');
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'NPC faehrt vorwaerts, Kurve drosselt (Kurve ' + dMaxKurve.toFixed(1) + ' Grad)' };
   });
@@ -15520,6 +15527,123 @@
       if (vfHandling() !== 'gt3') f.push('ungueltiger Modus faellt nicht auf GT3 zurueck');
     } finally { if (merk === null) localStorage.removeItem(VF_HANDLING_STORE); else localStorage.setItem(VF_HANDLING_STORE, merk); }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'GT3 unveraendert, Schnell +Grip/+Einschlag/+Tempo' };
+  });
+
+  // v1.2.32 GEMELDET: "Im virtuellen Fahren ist die Autoposition als Silhouette mit im Bild. Da ist
+  // irgendwo ein Fehler." karteAutosSetzen() setzte visibility="visible" auf jede Autogruppe, und
+  // dieser Wert schlaegt das geerbte hidden: das virtuelle Fahren verbirgt die Seite (body.vf-an
+  // main), das Auto aus dem Regenradar des Cockpits stand trotzdem ueber dem 3D-Bild.
+  stAdd('Virtuell v1.2.32: Kartenauto bleibt unter der 3D-Schicht verborgen, Silhouette an Ort, Skala und Drehung', () => {
+    const f = [];
+    const r = renderTrackPreview(codeToTrack('SG3R2G3R2').tiles, null, { detailed: true, cars: [] });
+    const main = document.querySelector('main');
+    const host = document.createElement('div');
+    host.style.cssText = 'position:fixed;left:0;top:0;width:240px;height:240px;pointer-events:none';
+    const svg = document.createElementNS(NS_SVG, 'svg');
+    host.appendChild(svg);
+    (main || document.body).appendChild(host);
+    const hatteVf = document.body.classList.contains('vf-an');
+    let mass = '';
+    try {
+      const a = { index: 4, phase: 0.5, farbe: '#ff0000', modell: 'bmw', kuerzel: 'A' };
+      karteAutosSetzen(svg, r.geo, [a], { gross: 3, ohneText: true });
+      const g = svg.querySelector('g.karte-autos > g');
+      const k = g && g.querySelector('.auto-koerper');
+      if (!g || !k) f.push('kein Auto gesetzt');
+      else {
+        if (g.getAttribute('visibility') === 'visible') f.push('visibility="visible" schlaegt das geerbte hidden');
+        // Der Fall aus der Meldung: die Seite unter der 3D-Schicht ist verborgen (body.vf-an main).
+        document.body.classList.add('vf-an');
+        if (main && getComputedStyle(k).visibility !== 'hidden') f.push('Kartenauto ueber dem 3D-Bild sichtbar');
+        const durch = [...document.querySelectorAll('main .karte-autos > g')].filter((x) => getComputedStyle(x).visibility === 'visible').length;
+        if (durch) f.push(durch + ' Kartenautos sichtbar, waehrend body.vf-an die Seite verbirgt');
+        if (!hatteVf) document.body.classList.remove('vf-an');
+        if (getComputedStyle(k).visibility !== 'visible') f.push('Kartenauto bei sichtbarer Karte verborgen');
+        // Lage: translate = Punkt der Mittellinie, rotate = Fahrtrichtung dort, scale = Silhouette mal gross.
+        const i = trackPunktIndex(r.geo.kachelTab, r.geo.pts, a.index, a.phase);
+        const p = r.geo.pts[i];
+        const m = /translate\(([-\d.]+) ([-\d.]+)\) rotate\(([-\d.]+)\) scale\(([\d.]+)\)/.exec(g.getAttribute('transform') || '');
+        if (!m) f.push('transform unvollstaendig: ' + g.getAttribute('transform'));
+        else {
+          const dOrt = Math.hypot(+m[1] - (p.x + r.geo.ox), +m[2] - (p.y + r.geo.oy));
+          let dW = +m[3] - trackWinkelBei(r.geo.pts, i);
+          dW = ((dW + 540) % 360) - 180;
+          if (dOrt > 0.1) f.push('Ort daneben: ' + dOrt.toFixed(2));
+          if (Math.abs(dW) > 0.1) f.push('Drehung daneben: ' + dW.toFixed(2) + ' Grad');
+          if (Math.abs(+m[4] - AUTO_FORM_SKALA * 3) > 1e-3) f.push('Skala ' + m[4] + ' statt ' + (AUTO_FORM_SKALA * 3).toFixed(4));
+          // Front zeigt +x: die Silhouette ist laengs der x-Achse lang (vor dem rotate).
+          const bb = k.getBBox();
+          if (!(bb.width > bb.height * 1.5)) f.push('Silhouette nicht laengs +x: ' + bb.width.toFixed(0) + ' x ' + bb.height.toFixed(0));
+          // Auf dem Bildschirm so lang wie ein Auto in Bahnmass mal gross.
+          const lang = bb.width * +m[4];
+          if (Math.abs(lang - AUTO_LANG * 3) > AUTO_LANG * 0.15) f.push('Laenge ' + lang.toFixed(1) + ' statt ' + (AUTO_LANG * 3).toFixed(1));
+          mass = 'Ort +-' + dOrt.toFixed(2) + ', Drehung +-' + Math.abs(dW).toFixed(2) + ' Grad, Laenge ' + lang.toFixed(1) + ' E';
+        }
+        // Ein Auto weniger: verborgen; wieder da: das Attribut ist weg (erbt), nicht "visible".
+        karteAutosSetzen(svg, r.geo, [], { gross: 3, ohneText: true });
+        if (g.getAttribute('visibility') !== 'hidden') f.push('fehlendes Auto nicht verborgen');
+        karteAutosSetzen(svg, r.geo, [a], { gross: 3, ohneText: true });
+        if (g.hasAttribute('visibility')) f.push('wieder gesetztes Auto traegt visibility="' + g.getAttribute('visibility') + '"');
+      }
+    } finally {
+      if (!hatteVf) document.body.classList.remove('vf-an');
+      host.remove();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'unter body.vf-an verborgen, ' + mass };
+  });
+
+  // v1.2.32 GEMELDET: "Die NPCs sind außerdem zu schnell und haben eine starke Neigung (sollte auf
+  // Stufe 1 sein)." Vorher (1.2.31, Balkonia): Gerade 3,2-3,3 km/h, Beschleunigung 2,5 km/h je s,
+  // Querbeschleunigung in Spruengen bis 225 m/s^2, Rollen bis 0,59 rad (34 Grad).
+  stAdd('Virtuell v1.2.32: NPCs fahren Stufe 1 mit dem Fahrzeugmodell, Querlage und Neigung in Grenzen', async () => {
+    const f = [];
+    const vS = vfNpcStufenTempo();
+    const soll = GHOST_TEMPO_STUFEN[1].speed / 0.55 * (ghostCfg.speed || 0.55) * (physEngine.config.topSpeedKmh || 4);
+    if (VF_NPC_STUFE !== 1) f.push('Stufe ' + VF_NPC_STUFE + ' statt 1');
+    if (Math.abs(vS - soll) > 1e-9) f.push('Stufentempo ' + vS.toFixed(3) + ' statt ' + soll.toFixed(3));
+    if (!(vfNpcStufenTempo(0) < vS && vS < vfNpcStufenTempo(2))) f.push('Stufen nicht geordnet');
+    // Fahrdaten des V5R fuer die Federung (ueber file:// nicht ladbar: dann ohne Neigungspruefung).
+    let d = null;
+    if (location.protocol !== 'file:') { try { d = (await vfModellDaten('img/autos/v5r/')).meta.physik; } catch (e) { d = null; } }
+    const lauf = (code, sek) => {
+      const tiles = codeToTrack(code).tiles, pts = trackCenterline(tiles), nrm = trackNormals(pts);
+      const npcs = [3, -3, 0].map((q, k) => ({ idx: Math.floor(pts.length * (k + 1) / 4), s: null, kmh: 0, offset: q, faktor: 0.97 + 0.03 * k,
+        x: 0, y: 0, h: 0, raddreh: 0, lenkWinkel: 0, ay: 0, ax: 0, P: null, modell: d ? { d } : null,
+        feder: { z: 0, vz: 0, th: 0, vth: 0, ph: 0, vph: 0 } }));
+      const e = { vMax: 0, ayMax: 0, phMax: 0, dhMax: 0, weg: 0, lenkMax: 0 };
+      npcs.forEach((n) => vfNpcSteuern(n, 0, pts, nrm));
+      for (let i = 0; i < sek * 60; i++) {
+        for (const n of npcs) {
+          const h0 = n.h, x0 = n.x, y0 = n.y;
+          vfNpcSteuern(n, 1 / 60, pts, nrm);
+          if (d) vfFederung(n.feder, n.ax, n.ay, 1 / 60, d, 0);
+          let dh = n.h - h0; dh = ((dh + 540) % 360) - 180;
+          e.vMax = Math.max(e.vMax, n.kmh / n.faktor);
+          e.ayMax = Math.max(e.ayMax, Math.abs(n.ay));
+          e.phMax = Math.max(e.phMax, Math.abs(n.feder.ph));
+          e.dhMax = Math.max(e.dhMax, Math.abs(dh));
+          e.lenkMax = Math.max(e.lenkMax, Math.abs(n.lenkWinkel));
+          e.weg += Math.hypot(n.x - x0, n.y - y0);
+        }
+      }
+      e.vMittel = e.weg / npcs.length / sek / (100 * TRACK_UNITS_PER_CM / 3.6);
+      return e;
+    };
+    const kurvig = lauf(CH_DAUER.find((x) => x.id === 'dauer-balkonia').code, 40);
+    const lang = lauf('SG8R3G9R3', 40);
+    for (const [name, e] of [['Balkonia', kurvig], ['SG8R3G9R3', lang]]) {
+      if (e.vMax > vS * 1.01 + 0.01) f.push(name + ': schneller als Stufe 1: ' + e.vMax.toFixed(2) + ' > ' + vS.toFixed(2));
+      if (e.ayMax > VF_NPC_QUER_MAX * 1.2) f.push(name + ': Querbeschleunigung ' + e.ayMax.toFixed(1) + ' m/s^2');
+      if (e.dhMax > 2) f.push(name + ': Richtung springt um ' + e.dhMax.toFixed(1) + ' Grad je Bild');
+      if (d && e.phMax > 0.03) f.push(name + ': Rollen ' + (e.phMax * 180 / Math.PI).toFixed(1) + ' Grad');
+      if (!(e.vMittel > 0.4)) f.push(name + ': NPC kommt nicht voran: ' + e.vMittel.toFixed(2) + ' km/h');
+    }
+    if (lang.vMax < vS * 0.95) f.push('lange Gerade: Stufe 1 nicht erreicht: ' + lang.vMax.toFixed(2));
+    // Kein Zwischenlauf ohne Fahrzeugmodell: die NPCs beschleunigen wie das eigene Auto.
+    if (String(vfNpcSteuern).indexOf('.update(') < 0) f.push('NPC ohne Fahrzeugmodell');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Stufe 1 = ' + vS.toFixed(2) + ' km/h (vorher 3,2), Spitze ' + lang.vMax.toFixed(2)
+      + ', Balkonia Mittel ' + kurvig.vMittel.toFixed(2) + ' km/h, quer bis ' + Math.max(kurvig.ayMax, lang.ayMax).toFixed(1) + ' m/s^2 (vorher 225), Rollen bis '
+      + (d ? (Math.max(kurvig.phMax, lang.phMax) * 180 / Math.PI).toFixed(2) + ' Grad (vorher 34)' : 'ohne Modelldaten') + ', Richtung je Bild bis ' + Math.max(kurvig.dhMax, lang.dhMax).toFixed(2) + ' Grad' };
   });
 
   stAdd('Aufstellung: Mittelgasse, versetzte Haltepunkte, Impuls mit Tempo und Dauer aus den Reglern', () => {
