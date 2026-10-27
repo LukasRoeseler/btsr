@@ -2810,7 +2810,10 @@
          + `fill="#0b0c0f" opacity="0.55"/>`;
   }
   // Der Massstab gehoert in den transform der Autogruppe, aber nur fuer Silhouetten.
-  const autoFormSkala = (modell) => (AUTO_FORMEN[modell] ? ' scale(' + AUTO_FORM_SKALA.toFixed(4) + ')' : '');
+  const autoFormSkala = (modell, gross) => {
+    const k = (AUTO_FORMEN[modell] ? AUTO_FORM_SKALA : 1) * (gross || 1);
+    return k === 1 ? '' : ' scale(' + k.toFixed(4) + ')';
+  };
 
   // Die Fahrtrichtung an einem Abtastpunkt, in Grad. AUS DEN PUNKTEN und nicht aus der
   // Normalen: die Normale hat eine Vorzeichenkonvention, die in diesem Projekt schon zwei
@@ -3507,8 +3510,12 @@
   // nur an einem der beiden Orte zu berichtigen.
   function querSollAlsLage(v) { return -(v || 0); }
 
-  function karteAutosSetzen(svg, geo, cars) {
+  // opt (v1.2.12, Karte im Regenradar): { gross: Faktor fuer die Autos, ohneText: Kuerzel weglassen }.
+  // Auf einer Karte von wenigen Zentimetern waere ein Auto in Bahnmass nur ein Punkt.
+  function karteAutosSetzen(svg, geo, cars, opt) {
     if (!svg || !geo) return 0;
+    const gross = opt && opt.gross > 0 ? opt.gross : 1;
+    const ohneText = !!(opt && opt.ohneText);
     let g = svg.querySelector('g.karte-autos');
     if (!g) {
       g = document.createElementNS(NS_SVG, 'g');
@@ -3553,7 +3560,7 @@
       const y = p.y + n.y * q * geo.half + geo.oy;
       const w = trackWinkelBei(geo.pts, i);
       c.setAttribute('transform',
-        'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + w.toFixed(1) + ')' + autoFormSkala(a.modell));
+        'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + w.toFixed(1) + ')' + autoFormSkala(a.modell, gross));
       // Neu zeichnen nur bei anderem Modell oder anderer Farbe: zehnmal je Sekunde den
       // Inhalt zu ersetzen waere genau die Verwerfung, die diese Funktion vermeiden soll.
       const form = (a.modell || '') + '|' + (a.farbe || '#ff5c5c');
@@ -3563,7 +3570,7 @@
       }
       t.setAttribute('x', x.toFixed(1));
       t.setAttribute('y', (y - 6).toFixed(1));
-      t.textContent = a.kuerzel || '';
+      t.textContent = ohneText ? '' : (a.kuerzel || '');
     }
     return liste.length;
   }
@@ -5680,7 +5687,10 @@
       learn.seq = [{ type: TILE_TYPE.START }];
       return;
     }
-    learn.seq.push({ type: best });
+    // v1.2.12: AUCH HIER uebersetzt (gefunden beim Wiki-Schreiben). Nur der Anker oben ging durch
+    // codeZuTyp(); jede andere Kachel landete roh - eine Engstelle der Schiene (0x0a) also als
+    // ZWEITES Start/Ziel in der Karte und eine Boxengasse (0x07) als Typ ohne Buchstaben.
+    learn.seq.push({ type: codeZuTyp(best) });
     // Eine Runde kann nicht beliebig lang sein. Laeuft es davon, ist die Start/Ziel-Kachel
     // nicht erkannt worden, und weiterzuzaehlen wuerde nur Unsinn ansammeln.
     if (learn.seq.length > 60) {
@@ -5850,7 +5860,7 @@
       garageScan.seq = [{ type: TILE_TYPE.START }];
       return;
     }
-    garageScan.seq.push({ type: best });
+    garageScan.seq.push({ type: codeZuTyp(best) });
     if (garageScan.seq.length > 60) {
       garageScanAbbrechen('Abgebrochen: 60 Teile ohne zweite Start/Ziel-Überfahrt.');
       log('Garagenscan verworfen: 60 Teile ohne zweite Start/Ziel-Ueberfahrt.', 'err');

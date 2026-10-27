@@ -311,7 +311,18 @@
      der Klick weiter auf der Kachel landet - sie schaltet das Wetter. */
   .gt3-wx { position: relative; overflow: hidden; }
   .wx-radar { position: absolute; inset: 0; width: 100%; height: 100%; display: block;
-    pointer-events: none; border-radius: inherit; }
+    pointer-events: none; border-radius: inherit; z-index: 1; }
+  /* v1.2.12: die Strecke mit den Autos UNTER dem Radar. Der Grund ist der des Radars, damit die
+     Kachel mit und ohne Karte gleich aussieht; das SVG behaelt sein Seitenverhaeltnis. */
+  .wx-karte { position: absolute; inset: 0; z-index: 0; pointer-events: none; display: grid;
+    place-items: center; background: var(--wx-grund, #0d1219); border-radius: inherit; overflow: hidden; }
+  .wx-karte[hidden] { display: none; }
+  .wx-karte .tp-karte { width: 100%; height: 100%; max-width: 100%; max-height: 100%;
+    background: none !important; border: 0 !important; border-radius: 0; }
+  .wx-karte img { width: 100%; height: 100%; object-fit: cover; opacity: .8; }
+  /* Die Fahrbahn ist im Editor fast schwarz - auf dem dunklen Radargrund unsichtbar. Hier
+     etwas heller, damit Strecke, Randsteine und Autos sich abheben. */
+  .wx-karte path[stroke="#0d0f13"] { stroke: #2c3442; }
   /* Das Symbol in die obere linke Ecke, klein. Es ist jetzt eine Marke und keine Anzeige:
      was das Wetter TUT, steht im Radar. */
   .wx-ico { position: absolute; top: 5px; left: 6px; z-index: 2; line-height: 0; }
@@ -1474,10 +1485,20 @@
   .stat-kachel.stat-medaille b { font-size: clamp(16px, 2.3vw, 22px); white-space: nowrap; }
   /* Acht Spalten auf 375 px sind 40 px je Kachel, und darin passt keine Beschriftung:
      gemessen lief der Reifentext ueber die Akkukachel. Unter 560 px deshalb zweireihig. */
+  /* v1.2.12 BESTELLT: Tank und Schaden schmaler, das Regenradar (mit der Strecke darin) breiter
+     und hoeher. Reihenfolge: Tank, Schaden, Reifen, Akku, Licht, Radar, Boxenwahl, G-Plot. */
   .gt3-strip { grid-area: strip; display: grid; gap: clamp(3px, .7vw, 8px);
-    grid-template-columns: repeat(8, minmax(0, 1fr)); }
+    grid-template-columns: .6fr .6fr 1fr 1fr .8fr 2.6fr 1fr 1fr; }
+  /* Hoeher nur, wo Platz ist: im Vollbild und auf niedrigen Schirmen rechnet cockpitPassung()
+     sonst einen kleineren Massstab fuer das ganze Cockpit (Selbsttest "Cockpit passt im Vollbild"). */
+  @media (min-height: 561px) {
+    body:not(.race-fs) .gt3-strip > .gt3-wx { min-height: clamp(64px, 10vw, 120px); }
+  }
   @media (max-width: 560px) {
-    .gt3-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    /* Zwei Reihen: oben Tank, Schaden, Reifen, Akku, Licht; unten das Radar ueber drei Spalten,
+       dann Boxenwahl und G-Plot. */
+    .gt3-strip { grid-template-columns: .7fr .7fr 1fr 1fr 1fr; }
+    .gt3-strip > .gt3-wx { grid-column: span 3; }
   }
 
   /* The captioned tile. Square and borderless: the reference dashes separate cells by
@@ -4679,7 +4700,8 @@
   body.race-fs.race-turn #race-dash .gt3-marke,
   body.race-fs.race-turn #race-dash .gt3-foot { display: none; }
   body.race-fs.race-turn #race-dash .gt3-strip {
-    grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 3px; }
+    grid-template-columns: .6fr .6fr 1fr 1fr .8fr 2.6fr 1fr 1fr; gap: 3px; }
+  body.race-fs.race-turn #race-dash .gt3-strip > .gt3-wx { grid-column: auto; }
   body.race-fs .race-bar { position: fixed; z-index: 201; top: 8px; left: 8px; }
   body.race-fs.race-turn .race-bar { top: auto; bottom: 8px; left: 8px; }
 
@@ -4895,7 +4917,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.2.11</span></span>
+        <span class="foot-ver">v<span id="app-version">1.2.14</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5212,6 +5234,7 @@
              wer nur "wechselhaft" sieht, weiss nicht, worauf er gerade faehrt. -->
         <div class="gt3-box gt3-click gt3-wx" id="race-wx-box"
              title="Wetter umschalten: sonnig, Regen, wechselhaft">
+          <div class="wx-karte" id="race-wx-karte" aria-hidden="true" hidden></div>
           <canvas id="race-wx-radar" class="wx-radar" width="200" height="150"
                   aria-hidden="true"></canvas>
           <div class="wx-ico"><svg class="gt3-ico" id="race-wx-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Trocken"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg><svg class="gt3-ico" id="race-wx-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Regen" style="display:none"><path d="M6.5 14a4 4 0 0 1 .4-8 5.5 5.5 0 0 1 10.5 1.4A3.6 3.6 0 0 1 17.5 14z"/><path d="M8 17.5l-1 2.5M12 17.5l-1 2.5M16 17.5l-1 2.5"/></svg><span class="wx-wechsel" id="race-wx-wechsel" aria-label="wechselhaft" style="display:none" data-i18n-skip>&#8646;</span></div></div>
@@ -6057,6 +6080,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.2</span></b></p>
       <ul class="muted" id="patchnotes-12" style="padding-left:20px; line-height:1.7">
+        <li>Cockpit: Das Regenradar ist breiter und zeigt die Strecke mit allen Autos (WIP, Schalter &#8222;Strecke im Regenradar&#8220; unter Optionen &#8594; Allgemein); Wolken und Regen ziehen dar&#252;ber. Hochkant gezeichnete Strecken werden in der breiten Kachel gedreht, im Ausdruck-Modus steht dort das eigene Foto der Bahn. Tank und Schaden sind schmaler. Die Position oben links neben der Runde hei&#223;t jetzt #2/5 statt P2/5 und erscheint auch bei Time Attack (nach Bestzeit). Streckenscan: jede Kachel wird jetzt nach Leseart &#252;bersetzt, eine Engstelle auf der Bahn wurde vorher als zweites Start/Ziel eingetragen. Hinweistexte zu Lenkd&#228;mpfung (Vorgabe 0) und Bremskennlinie (Vorgabe 2,45) berichtigt.</li>
         <li>Erkl&#228;rtexte berichtigt, die nicht mehr zum Verhalten passten: Boxen-Minigame (f&#252;nf Tasten, je 8 Prozent schneller, falsche 8 Prozent langsamer), Mischungsunterschied (weich 2,6-facher, hart 0,4-facher Verschlei&#223;), Regen-Schalter, NPC-Boxenstopp (eine Box, wie das Safety Car), wechselhaftes Wetter (Schauer von 30 bis 90 s alle 1 bis 3 min), Fahrgef&#252;hle Arcade, Pro, Pacejka und Omega (Werte wie eingestellt), Mehrspieler an einem Ger&#228;t (eigenes Fahrgef&#252;hl je Spieler) und die Codetabelle der Streckenteile (auf der Bahn 0x01 Start/Ziel, 0x0a Engstelle).</li>
         <li>Karte: Die Autos sind jetzt Silhouetten in Draufsicht &#8211; Porsche 911 GT3 R, Ford Mustang GT3, BMW M4 GT3, Ferrari 296 GT3 und ein Formelwagen (Modell &#8222;Red Bull&#8220;), jeweils mit Heckfl&#252;gel und in der Farbe, die in der Garage f&#252;r das Auto gew&#228;hlt ist. Welche Form ein Auto bekommt, richtet sich nach &#8222;Marke / Modell&#8220; in der Garage; Audi, McLaren, Mercedes, VW K&#228;fer und nicht zugeordnete Autos bleiben Rechtecke mit Spoilerstreifen.</li>
         <li>NPC-Stufe MAX beschleunigt auf Geraden deutlich schneller: eigenes Motormodell mit doppelter Beschleunigung (Regler &#8222;MAX: Beschleunigung&#8220;, 1&#8211;4&#215;) und ohne Schaltpause; auf Geraden bremsen Feld-Staffel, Lernfaktor und Streuung MAX nicht mehr. Der Streckenscan f&#228;hrt schneller: Geraden 80 % statt 67 %, Kurven 67 %, nur die Haarnadel bleibt bei 47 %.</li>
@@ -9845,6 +9869,10 @@
           <option value="modern">Modern, 2000er (hell)</option>
           <option value="klassiker">Klassiker: Walnuss und Chrom</option>
         </select></div>
+      <div class="opt-row"><div class="opt-label">Strecke im Regenradar <span class="wip-tag">WIP</span><small>Das Regenradar im
+          Cockpit zeigt die Strecke mit allen Autos, die Wolken und der Regen ziehen dar&uuml;ber. Im Ausdruck-Modus
+          steht dort das eigene Foto der Bahn, sonst das Radar allein. Aus: das Radar wie bisher.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-wx-karte" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Startampel
           <small>Wie die Startampel erscheint: als Bild &uuml;ber dem Cockpit mit T&ouml;nen (Vorgabe), nur mit den T&ouml;nen &ndash; das Cockpit bleibt frei &ndash;, oder nur als Bild ohne T&ouml;ne. Gilt f&uuml;r den Rennstart und den Neustart nach Gelb.</small></div>
         <select id="setting-ampel" data-preset-skip>
@@ -10446,7 +10474,7 @@
           die Hand die Rate vor, und eine zweite Begrenzung dahinter f&uuml;hlt sich wie
           Verz&ouml;gerung an. Am Gamepad ist ein Daumen in etwa 150&nbsp;ms von der Mitte am
           Anschlag, und ohne D&auml;mpfung wird daraus ein Sprung am Servo.
-          <br>83&nbsp;ms ist die Vorgabe und nicht gew&auml;hlt, sondern der bisherige Wert
+          <br>Die Vorgabe ist 0 (sofort). Die fr&uuml;heren 83&nbsp;ms waren nicht gew&auml;hlt, sondern der alte Wert
           nachgerechnet: 6,0&nbsp;Anschl&auml;ge je Sekunde mal dem kalibrierten
           Lenkansprechen von 200&nbsp;% sind 12 je Sekunde. Bis v0.5.40 hing die Zeit
           zus&auml;tzlich am Lenkansprechen &ndash; wer es auf 240&nbsp;% stellte, machte
@@ -10524,8 +10552,8 @@
            Anfangsbereich; soll so aussehen wie die fuers Gas geben)". Dieselbe Formel. -->
       <div class="opt-row"><div class="opt-label">Bremskennlinie <span class="wip-tag">WIP</span>
           <small>Wie der Bremsweg des Controllers auf die Bremskraft abgebildet wird, mit
-          derselben Formel wie die Gaskennlinie. 1,0 ist die Gerade. Die Vorgabe 1,3 macht
-          den Anfangsbereich etwas unempfindlicher: leichtes Antippen bremst sanft, voller
+          derselben Formel wie die Gaskennlinie. 1,0 ist die Gerade. Die Vorgabe 2,45 macht
+          den Anfangsbereich deutlich unempfindlicher: leichtes Antippen bremst sanft, voller
           Druck bleibt volle Bremse.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -12183,7 +12211,7 @@
          entsteht im Code und wird dort mit t() uebersetzt. -->
     <div class="card subpage" id="sub-opt-studie">
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
-      <h2>OmegaLab <span class="wip-tag">experimentell</span></h2>
+      <h2>OmegaLab <span class="wip-tag">WIP</span></h2>
       <div id="studie-inhalt" data-i18n-skip></div>
     </div>
 

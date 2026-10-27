@@ -311,7 +311,18 @@
      der Klick weiter auf der Kachel landet - sie schaltet das Wetter. */
   .gt3-wx { position: relative; overflow: hidden; }
   .wx-radar { position: absolute; inset: 0; width: 100%; height: 100%; display: block;
-    pointer-events: none; border-radius: inherit; }
+    pointer-events: none; border-radius: inherit; z-index: 1; }
+  /* v1.2.12: die Strecke mit den Autos UNTER dem Radar. Der Grund ist der des Radars, damit die
+     Kachel mit und ohne Karte gleich aussieht; das SVG behaelt sein Seitenverhaeltnis. */
+  .wx-karte { position: absolute; inset: 0; z-index: 0; pointer-events: none; display: grid;
+    place-items: center; background: var(--wx-grund, #0d1219); border-radius: inherit; overflow: hidden; }
+  .wx-karte[hidden] { display: none; }
+  .wx-karte .tp-karte { width: 100%; height: 100%; max-width: 100%; max-height: 100%;
+    background: none !important; border: 0 !important; border-radius: 0; }
+  .wx-karte img { width: 100%; height: 100%; object-fit: cover; opacity: .8; }
+  /* Die Fahrbahn ist im Editor fast schwarz - auf dem dunklen Radargrund unsichtbar. Hier
+     etwas heller, damit Strecke, Randsteine und Autos sich abheben. */
+  .wx-karte path[stroke="#0d0f13"] { stroke: #2c3442; }
   /* Das Symbol in die obere linke Ecke, klein. Es ist jetzt eine Marke und keine Anzeige:
      was das Wetter TUT, steht im Radar. */
   .wx-ico { position: absolute; top: 5px; left: 6px; z-index: 2; line-height: 0; }
@@ -1474,10 +1485,20 @@
   .stat-kachel.stat-medaille b { font-size: clamp(16px, 2.3vw, 22px); white-space: nowrap; }
   /* Acht Spalten auf 375 px sind 40 px je Kachel, und darin passt keine Beschriftung:
      gemessen lief der Reifentext ueber die Akkukachel. Unter 560 px deshalb zweireihig. */
+  /* v1.2.12 BESTELLT: Tank und Schaden schmaler, das Regenradar (mit der Strecke darin) breiter
+     und hoeher. Reihenfolge: Tank, Schaden, Reifen, Akku, Licht, Radar, Boxenwahl, G-Plot. */
   .gt3-strip { grid-area: strip; display: grid; gap: clamp(3px, .7vw, 8px);
-    grid-template-columns: repeat(8, minmax(0, 1fr)); }
+    grid-template-columns: .6fr .6fr 1fr 1fr .8fr 2.6fr 1fr 1fr; }
+  /* Hoeher nur, wo Platz ist: im Vollbild und auf niedrigen Schirmen rechnet cockpitPassung()
+     sonst einen kleineren Massstab fuer das ganze Cockpit (Selbsttest "Cockpit passt im Vollbild"). */
+  @media (min-height: 561px) {
+    body:not(.race-fs) .gt3-strip > .gt3-wx { min-height: clamp(64px, 10vw, 120px); }
+  }
   @media (max-width: 560px) {
-    .gt3-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    /* Zwei Reihen: oben Tank, Schaden, Reifen, Akku, Licht; unten das Radar ueber drei Spalten,
+       dann Boxenwahl und G-Plot. */
+    .gt3-strip { grid-template-columns: .7fr .7fr 1fr 1fr 1fr; }
+    .gt3-strip > .gt3-wx { grid-column: span 3; }
   }
 
   /* The captioned tile. Square and borderless: the reference dashes separate cells by
@@ -4679,7 +4700,8 @@
   body.race-fs.race-turn #race-dash .gt3-marke,
   body.race-fs.race-turn #race-dash .gt3-foot { display: none; }
   body.race-fs.race-turn #race-dash .gt3-strip {
-    grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 3px; }
+    grid-template-columns: .6fr .6fr 1fr 1fr .8fr 2.6fr 1fr 1fr; gap: 3px; }
+  body.race-fs.race-turn #race-dash .gt3-strip > .gt3-wx { grid-column: auto; }
   body.race-fs .race-bar { position: fixed; z-index: 201; top: 8px; left: 8px; }
   body.race-fs.race-turn .race-bar { top: auto; bottom: 8px; left: 8px; }
 
@@ -4895,7 +4917,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.2.11</span></span>
+        <span class="foot-ver">v<span id="app-version">1.2.14</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5212,6 +5234,7 @@
              wer nur "wechselhaft" sieht, weiss nicht, worauf er gerade faehrt. -->
         <div class="gt3-box gt3-click gt3-wx" id="race-wx-box"
              title="Wetter umschalten: sonnig, Regen, wechselhaft">
+          <div class="wx-karte" id="race-wx-karte" aria-hidden="true" hidden></div>
           <canvas id="race-wx-radar" class="wx-radar" width="200" height="150"
                   aria-hidden="true"></canvas>
           <div class="wx-ico"><svg class="gt3-ico" id="race-wx-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Trocken"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg><svg class="gt3-ico" id="race-wx-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Regen" style="display:none"><path d="M6.5 14a4 4 0 0 1 .4-8 5.5 5.5 0 0 1 10.5 1.4A3.6 3.6 0 0 1 17.5 14z"/><path d="M8 17.5l-1 2.5M12 17.5l-1 2.5M16 17.5l-1 2.5"/></svg><span class="wx-wechsel" id="race-wx-wechsel" aria-label="wechselhaft" style="display:none" data-i18n-skip>&#8646;</span></div></div>
@@ -6057,6 +6080,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.2</span></b></p>
       <ul class="muted" id="patchnotes-12" style="padding-left:20px; line-height:1.7">
+        <li>Cockpit: Das Regenradar ist breiter und zeigt die Strecke mit allen Autos (WIP, Schalter &#8222;Strecke im Regenradar&#8220; unter Optionen &#8594; Allgemein); Wolken und Regen ziehen dar&#252;ber. Hochkant gezeichnete Strecken werden in der breiten Kachel gedreht, im Ausdruck-Modus steht dort das eigene Foto der Bahn. Tank und Schaden sind schmaler. Die Position oben links neben der Runde hei&#223;t jetzt #2/5 statt P2/5 und erscheint auch bei Time Attack (nach Bestzeit). Streckenscan: jede Kachel wird jetzt nach Leseart &#252;bersetzt, eine Engstelle auf der Bahn wurde vorher als zweites Start/Ziel eingetragen. Hinweistexte zu Lenkd&#228;mpfung (Vorgabe 0) und Bremskennlinie (Vorgabe 2,45) berichtigt.</li>
         <li>Erkl&#228;rtexte berichtigt, die nicht mehr zum Verhalten passten: Boxen-Minigame (f&#252;nf Tasten, je 8 Prozent schneller, falsche 8 Prozent langsamer), Mischungsunterschied (weich 2,6-facher, hart 0,4-facher Verschlei&#223;), Regen-Schalter, NPC-Boxenstopp (eine Box, wie das Safety Car), wechselhaftes Wetter (Schauer von 30 bis 90 s alle 1 bis 3 min), Fahrgef&#252;hle Arcade, Pro, Pacejka und Omega (Werte wie eingestellt), Mehrspieler an einem Ger&#228;t (eigenes Fahrgef&#252;hl je Spieler) und die Codetabelle der Streckenteile (auf der Bahn 0x01 Start/Ziel, 0x0a Engstelle).</li>
         <li>Karte: Die Autos sind jetzt Silhouetten in Draufsicht &#8211; Porsche 911 GT3 R, Ford Mustang GT3, BMW M4 GT3, Ferrari 296 GT3 und ein Formelwagen (Modell &#8222;Red Bull&#8220;), jeweils mit Heckfl&#252;gel und in der Farbe, die in der Garage f&#252;r das Auto gew&#228;hlt ist. Welche Form ein Auto bekommt, richtet sich nach &#8222;Marke / Modell&#8220; in der Garage; Audi, McLaren, Mercedes, VW K&#228;fer und nicht zugeordnete Autos bleiben Rechtecke mit Spoilerstreifen.</li>
         <li>NPC-Stufe MAX beschleunigt auf Geraden deutlich schneller: eigenes Motormodell mit doppelter Beschleunigung (Regler &#8222;MAX: Beschleunigung&#8220;, 1&#8211;4&#215;) und ohne Schaltpause; auf Geraden bremsen Feld-Staffel, Lernfaktor und Streuung MAX nicht mehr. Der Streckenscan f&#228;hrt schneller: Geraden 80 % statt 67 %, Kurven 67 %, nur die Haarnadel bleibt bei 47 %.</li>
@@ -9845,6 +9869,10 @@
           <option value="modern">Modern, 2000er (hell)</option>
           <option value="klassiker">Klassiker: Walnuss und Chrom</option>
         </select></div>
+      <div class="opt-row"><div class="opt-label">Strecke im Regenradar <span class="wip-tag">WIP</span><small>Das Regenradar im
+          Cockpit zeigt die Strecke mit allen Autos, die Wolken und der Regen ziehen dar&uuml;ber. Im Ausdruck-Modus
+          steht dort das eigene Foto der Bahn, sonst das Radar allein. Aus: das Radar wie bisher.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-wx-karte" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Startampel
           <small>Wie die Startampel erscheint: als Bild &uuml;ber dem Cockpit mit T&ouml;nen (Vorgabe), nur mit den T&ouml;nen &ndash; das Cockpit bleibt frei &ndash;, oder nur als Bild ohne T&ouml;ne. Gilt f&uuml;r den Rennstart und den Neustart nach Gelb.</small></div>
         <select id="setting-ampel" data-preset-skip>
@@ -10446,7 +10474,7 @@
           die Hand die Rate vor, und eine zweite Begrenzung dahinter f&uuml;hlt sich wie
           Verz&ouml;gerung an. Am Gamepad ist ein Daumen in etwa 150&nbsp;ms von der Mitte am
           Anschlag, und ohne D&auml;mpfung wird daraus ein Sprung am Servo.
-          <br>83&nbsp;ms ist die Vorgabe und nicht gew&auml;hlt, sondern der bisherige Wert
+          <br>Die Vorgabe ist 0 (sofort). Die fr&uuml;heren 83&nbsp;ms waren nicht gew&auml;hlt, sondern der alte Wert
           nachgerechnet: 6,0&nbsp;Anschl&auml;ge je Sekunde mal dem kalibrierten
           Lenkansprechen von 200&nbsp;% sind 12 je Sekunde. Bis v0.5.40 hing die Zeit
           zus&auml;tzlich am Lenkansprechen &ndash; wer es auf 240&nbsp;% stellte, machte
@@ -10524,8 +10552,8 @@
            Anfangsbereich; soll so aussehen wie die fuers Gas geben)". Dieselbe Formel. -->
       <div class="opt-row"><div class="opt-label">Bremskennlinie <span class="wip-tag">WIP</span>
           <small>Wie der Bremsweg des Controllers auf die Bremskraft abgebildet wird, mit
-          derselben Formel wie die Gaskennlinie. 1,0 ist die Gerade. Die Vorgabe 1,3 macht
-          den Anfangsbereich etwas unempfindlicher: leichtes Antippen bremst sanft, voller
+          derselben Formel wie die Gaskennlinie. 1,0 ist die Gerade. Die Vorgabe 2,45 macht
+          den Anfangsbereich deutlich unempfindlicher: leichtes Antippen bremst sanft, voller
           Druck bleibt volle Bremse.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -12183,7 +12211,7 @@
          entsteht im Code und wird dort mit t() uebersetzt. -->
     <div class="card subpage" id="sub-opt-studie">
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
-      <h2>OmegaLab <span class="wip-tag">experimentell</span></h2>
+      <h2>OmegaLab <span class="wip-tag">WIP</span></h2>
       <div id="studie-inhalt" data-i18n-skip></div>
     </div>
 
@@ -14476,8 +14504,7 @@
     "Eingang": "Input",
     "Wie der Stickweg auf den Lenkeinschlag abgebildet wird – dieselbe Formel wie Gas- und Bremskennlinie, mit Vorzeichen. Der Plot zeigt, was das Auto wirklich bekommt, samt Lenkansprechen und Lenkkalibrierung. Gestrichelt: dieselbe Verstärkung linear. Über 1,0 liegt die Kurve darunter: ein leicht angetippter Stick lenkt weniger ein als linear. Der rote Punkt zeigt deinen Stick live.":
       "How stick travel maps to steering lock – the same formula as the throttle and brake curves, with sign. The plot shows what the car really gets, including steering response and steering calibration. Dashed: the same gain, linear. Above 1.0 the curve lies below it: a lightly touched stick steers less than linear. The red dot shows your stick live.",
-    "Wie der Bremsweg des Controllers auf die Bremskraft abgebildet wird, mit derselben Formel wie die Gaskennlinie. 1,0 ist die Gerade. Die Vorgabe 1,3 macht den Anfangsbereich etwas unempfindlicher: leichtes Antippen bremst sanft, voller Druck bleibt volle Bremse.":
-      "How the controller’s brake travel maps to braking force, with the same formula as the throttle curve. 1.0 is the straight line. The default 1.3 makes the initial range a little less sensitive: a light touch brakes gently, full pressure stays full braking.",
+    "Wie der Bremsweg des Controllers auf die Bremskraft abgebildet wird, mit derselben Formel wie die Gaskennlinie. 1,0 ist die Gerade. Die Vorgabe 2,45 macht den Anfangsbereich deutlich unempfindlicher: leichtes Antippen bremst sanft, voller Druck bleibt volle Bremse.": "How the brake travel of the controller maps to braking force, with the same formula as the throttle curve. 1.0 is the straight line. The default 2.45 makes the initial range much less sensitive: a light touch brakes gently, full pressure stays full braking.",
     "Lenkkraft unter Gas": "Steering force under throttle",
     "Wie stark die Lastverlagerung beim Beschleunigen die Lenkung schwaecht - abhaengig davon, wie stark du gerade beschleunigst. 0 % ist unveraendert (die Vorderachse entlastet sich normal), 100 % hebt die Abschwaechung unter Gas ganz auf - unabhaengig vom Bremsverhalten, das ruehrt dieser Regler nicht an.":
       "How much weight transfer under acceleration weakens the steering - depending on how hard you are accelerating. 0% is unchanged (the front axle unloads normally), 100% cancels the weakening under throttle entirely - independent of braking behaviour, which this slider does not touch.",
@@ -15218,6 +15245,9 @@
     "NPC-Stufe MAX beschleunigt auf Geraden deutlich schneller: eigenes Motormodell mit doppelter Beschleunigung (Regler „MAX: Beschleunigung“, 1–4×) und ohne Schaltpause; auf Geraden bremsen Feld-Staffel, Lernfaktor und Streuung MAX nicht mehr. Der Streckenscan fährt schneller: Geraden 80 % statt 67 %, Kurven 67 %, nur die Haarnadel bleibt bei 47 %.": "NPC stage MAX accelerates much faster on straights: its own engine model with double acceleration (slider “MAX: acceleration”, 1–4×) and no shift pause; on straights the field staggering, learning factor and spread no longer slow MAX down. The track scan runs faster: straights 80% instead of 67%, corners 67%, only the hairpin stays at 47%.",
     "Karte: Die Autos sind jetzt Silhouetten in Draufsicht – Porsche 911 GT3 R, Ford Mustang GT3, BMW M4 GT3, Ferrari 296 GT3 und ein Formelwagen (Modell „Red Bull“), jeweils mit Heckflügel und in der Farbe, die in der Garage für das Auto gewählt ist. Welche Form ein Auto bekommt, richtet sich nach „Marke / Modell“ in der Garage; Audi, McLaren, Mercedes, VW Käfer und nicht zugeordnete Autos bleiben Rechtecke mit Spoilerstreifen.": "Map: cars are now top-view silhouettes – Porsche 911 GT3 R, Ford Mustang GT3, BMW M4 GT3, Ferrari 296 GT3 and a formula car (model “Red Bull”), each with a rear wing and in the colour chosen for the car in the garage. The shape follows “Make / model” in the garage; Audi, McLaren, Mercedes, VW Beetle and unassigned cars stay rectangles with a spoiler stripe.",
     "Erklärtexte berichtigt, die nicht mehr zum Verhalten passten: Boxen-Minigame (fünf Tasten, je 8 Prozent schneller, falsche 8 Prozent langsamer), Mischungsunterschied (weich 2,6-facher, hart 0,4-facher Verschleiß), Regen-Schalter, NPC-Boxenstopp (eine Box, wie das Safety Car), wechselhaftes Wetter (Schauer von 30 bis 90 s alle 1 bis 3 min), Fahrgefühle Arcade, Pro, Pacejka und Omega (Werte wie eingestellt), Mehrspieler an einem Gerät (eigenes Fahrgefühl je Spieler) und die Codetabelle der Streckenteile (auf der Bahn 0x01 Start/Ziel, 0x0a Engstelle).": "Corrected help texts that no longer matched the behaviour: pit minigame (five buttons, each 8 percent faster, wrong ones 8 percent slower), compound difference (soft 2.6×, hard 0.4× wear), rain switch, NPC pit stop (one pit, like the safety car), changeable weather (showers of 30 to 90 s every 1 to 3 min), driving feels Arcade, Pro, Pacejka and Omega (values as set), several players on one device (own driving feel per player) and the code table of the track pieces (on the track 0x01 start/finish, 0x0a narrow section).",
+    "Das Regenradar im Cockpit zeigt die Strecke mit allen Autos, die Wolken und der Regen ziehen darüber. Im Ausdruck-Modus steht dort das eigene Foto der Bahn, sonst das Radar allein. Aus: das Radar wie bisher.": "The rain radar in the cockpit shows the track with all cars, and the clouds and rain drift across it. In printout mode it shows your own photo of the track, otherwise the radar alone. Off: the radar as before.",
+    "Strecke im Regenradar": "Track in the rain radar",
+    "Cockpit: Das Regenradar ist breiter und zeigt die Strecke mit allen Autos (WIP, Schalter „Strecke im Regenradar“ unter Optionen → Allgemein); Wolken und Regen ziehen darüber. Hochkant gezeichnete Strecken werden in der breiten Kachel gedreht, im Ausdruck-Modus steht dort das eigene Foto der Bahn. Tank und Schaden sind schmaler. Die Position oben links neben der Runde heißt jetzt #2/5 statt P2/5 und erscheint auch bei Time Attack (nach Bestzeit). Streckenscan: jede Kachel wird jetzt nach Leseart übersetzt, eine Engstelle auf der Bahn wurde vorher als zweites Start/Ziel eingetragen. Hinweistexte zu Lenkdämpfung (Vorgabe 0) und Bremskennlinie (Vorgabe 2,45) berichtigt.": "Cockpit: the rain radar is wider and shows the track with all cars (WIP, switch “Track in the rain radar” under Options → General); clouds and rain drift across it. Tracks drawn upright are rotated in the wide tile, in printout mode it shows your own photo of the track. Fuel and damage are narrower. The position at the top left next to the lap now reads #2/5 instead of P2/5 and also appears in Time Attack (by best lap). Track scan: every piece is now translated according to the reading mode; a narrow section on the track used to be entered as a second start/finish. Help texts for steering damping (default 0) and brake curve (default 2.45) corrected.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -17118,8 +17148,7 @@
       "How long the servo takes from centre to the full deflection currently available. This is not the steering-angle limit above it – that one says how far, this one says how fast.",
     "0 heißt sofort. Am Lenkrad und an der RC-Funke ist das richtig: dort gibt die Hand die Rate vor, und eine zweite Begrenzung dahinter fühlt sich wie Verzögerung an. Am Gamepad ist ein Daumen in etwa 150 ms von der Mitte am Anschlag, und ohne Dämpfung wird daraus ein Sprung am Servo.":
       "0 means instant. On a wheel or an RC transmitter that is right: there the hand sets the rate, and a second limit behind it feels like lag. On a gamepad a thumb goes from centre to the stop in about 150 ms, and without damping that becomes a jump at the servo.",
-    "83 ms ist die Vorgabe und nicht gewählt, sondern der bisherige Wert nachgerechnet: 6,0 Anschläge je Sekunde mal dem kalibrierten Lenkansprechen von 200 % sind 12 je Sekunde. Bis v0.5.40 hing die Zeit zusätzlich am Lenkansprechen – wer es auf 240 % stellte, machte unangekündigt auch die Lenkung schneller, 69 statt 83 ms. Jetzt macht jeder der beiden Regler genau eine Sache.":
-      "83 ms is the default, and it is not chosen but the previous value worked out: 6.0 full locks per second times the calibrated steering response of 200% is 12 per second. Up to v0.5.40 the time also depended on the steering response – setting it to 240% silently made the steering faster too, 69 instead of 83 ms. Now each of the two sliders does exactly one thing.",
+    "Die Vorgabe ist 0 (sofort). Die früheren 83 ms waren nicht gewählt, sondern der alte Wert nachgerechnet: 6,0 Anschläge je Sekunde mal dem kalibrierten Lenkansprechen von 200 % sind 12 je Sekunde. Bis v0.5.40 hing die Zeit zusätzlich am Lenkansprechen – wer es auf 240 % stellte, machte unangekündigt auch die Lenkung schneller, 69 statt 83 ms. Jetzt macht jeder der beiden Regler genau eine Sache.": "The default is 0 (immediate). The former 83 ms were not chosen but the old value recalculated: 6.0 full deflections per second times the calibrated steering response of 200 % make 12 per second. Up to v0.5.40 the time also depended on the steering response – setting it to 240 % silently made the steering faster too, 69 instead of 83 ms. Now each of the two sliders does exactly one thing.",
     "Ein Fahrzeugwechsel weiter oben setzt diesen Regler mit: das Trägheitsmoment ist die einzige Stelle, an der sich ein leichteres Auto zeigen kann, und es ergibt 56 ms beim Formelwagen bis 125 ms beim Frontmotor-GT3. Danach kannst du frei darüber verfügen.":
       "Changing the vehicle above sets this slider too: the moment of inertia is the only place a lighter car can show itself, and it gives 56 ms for the formula car up to 125 ms for the front-engined GT3. After that it is yours to set.",
     "NPC: Kurven öffnen": "NPC: open up the corners",
@@ -25805,7 +25834,8 @@
     if (posEl) {
       const p = raceCockpitPosition();
       posEl.hidden = !p;
-      if (p) posEl.textContent = 'P' + p.pos + '/' + p.von;
+      // v1.2.12 BESTELLT: "#X/Y format" statt P3/6.
+      if (p) posEl.textContent = '#' + p.pos + '/' + p.von;
     }
     $('race-lap-list').innerHTML = laps.slice().reverse().slice(0, 10).map(l =>
       `<li><span>${l.lap}</span><span${l.ms === best ? ' class="gt3-ok"' : ''}>${formatLapTime(l.ms)}</span></li>`
@@ -25858,11 +25888,12 @@
   // nicht)." Rundenrennen und Endurance: dieselbe Reihenfolge wie die Rennuebersicht (ovDaten: Runden,
   // dann Gesamtzeit, dann Ort), damit Cockpit, Uebersicht und Ergebnis denselben Platz nennen.
   // Qualifying: die beste Runde, ohne Runde hinten (dort nach dem Ort). Gezaehlt wird Auto 1.
+  // v1.2.12: Time Attack ebenso nach Bestzeit (gefragt: "Auch dort, nach Bestzeit").
   function raceCockpitPosition() {
     if (raceState !== 'racing' && raceState !== 'finished') return null;
-    if (raceMode !== 'laps' && raceMode !== 'endurance' && raceMode !== 'qualifying') return null;
+    if (raceMode !== 'laps' && raceMode !== 'endurance' && raceMode !== 'qualifying' && raceMode !== 'bestzeit') return null;
     let reihe;
-    if (raceMode === 'qualifying') {
+    if (raceMode === 'qualifying' || raceMode === 'bestzeit') {
       const ortVon = (c) => (typeof c.ort === 'number' ? c.ort : -Infinity);
       reihe = raceAllCars().map((c) => ({ rolle: c.role, beste: c.laps.length ? Math.min.apply(null, c.laps.map((l) => l.ms)) : Infinity, ort: ortVon(c) }))
         .sort((a, b) => (a.beste - b.beste) || (b.ort - a.ort));
@@ -32298,7 +32329,10 @@
          + `fill="#0b0c0f" opacity="0.55"/>`;
   }
   // Der Massstab gehoert in den transform der Autogruppe, aber nur fuer Silhouetten.
-  const autoFormSkala = (modell) => (AUTO_FORMEN[modell] ? ' scale(' + AUTO_FORM_SKALA.toFixed(4) + ')' : '');
+  const autoFormSkala = (modell, gross) => {
+    const k = (AUTO_FORMEN[modell] ? AUTO_FORM_SKALA : 1) * (gross || 1);
+    return k === 1 ? '' : ' scale(' + k.toFixed(4) + ')';
+  };
 
   // Die Fahrtrichtung an einem Abtastpunkt, in Grad. AUS DEN PUNKTEN und nicht aus der
   // Normalen: die Normale hat eine Vorzeichenkonvention, die in diesem Projekt schon zwei
@@ -32995,8 +33029,12 @@
   // nur an einem der beiden Orte zu berichtigen.
   function querSollAlsLage(v) { return -(v || 0); }
 
-  function karteAutosSetzen(svg, geo, cars) {
+  // opt (v1.2.12, Karte im Regenradar): { gross: Faktor fuer die Autos, ohneText: Kuerzel weglassen }.
+  // Auf einer Karte von wenigen Zentimetern waere ein Auto in Bahnmass nur ein Punkt.
+  function karteAutosSetzen(svg, geo, cars, opt) {
     if (!svg || !geo) return 0;
+    const gross = opt && opt.gross > 0 ? opt.gross : 1;
+    const ohneText = !!(opt && opt.ohneText);
     let g = svg.querySelector('g.karte-autos');
     if (!g) {
       g = document.createElementNS(NS_SVG, 'g');
@@ -33041,7 +33079,7 @@
       const y = p.y + n.y * q * geo.half + geo.oy;
       const w = trackWinkelBei(geo.pts, i);
       c.setAttribute('transform',
-        'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + w.toFixed(1) + ')' + autoFormSkala(a.modell));
+        'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + w.toFixed(1) + ')' + autoFormSkala(a.modell, gross));
       // Neu zeichnen nur bei anderem Modell oder anderer Farbe: zehnmal je Sekunde den
       // Inhalt zu ersetzen waere genau die Verwerfung, die diese Funktion vermeiden soll.
       const form = (a.modell || '') + '|' + (a.farbe || '#ff5c5c');
@@ -33051,7 +33089,7 @@
       }
       t.setAttribute('x', x.toFixed(1));
       t.setAttribute('y', (y - 6).toFixed(1));
-      t.textContent = a.kuerzel || '';
+      t.textContent = ohneText ? '' : (a.kuerzel || '');
     }
     return liste.length;
   }
@@ -35168,7 +35206,10 @@
       learn.seq = [{ type: TILE_TYPE.START }];
       return;
     }
-    learn.seq.push({ type: best });
+    // v1.2.12: AUCH HIER uebersetzt (gefunden beim Wiki-Schreiben). Nur der Anker oben ging durch
+    // codeZuTyp(); jede andere Kachel landete roh - eine Engstelle der Schiene (0x0a) also als
+    // ZWEITES Start/Ziel in der Karte und eine Boxengasse (0x07) als Typ ohne Buchstaben.
+    learn.seq.push({ type: codeZuTyp(best) });
     // Eine Runde kann nicht beliebig lang sein. Laeuft es davon, ist die Start/Ziel-Kachel
     // nicht erkannt worden, und weiterzuzaehlen wuerde nur Unsinn ansammeln.
     if (learn.seq.length > 60) {
@@ -35338,7 +35379,7 @@
       garageScan.seq = [{ type: TILE_TYPE.START }];
       return;
     }
-    garageScan.seq.push({ type: best });
+    garageScan.seq.push({ type: codeZuTyp(best) });
     if (garageScan.seq.length > 60) {
       garageScanAbbrechen('Abgebrochen: 60 Teile ohne zweite Start/Ziel-Überfahrt.');
       log('Garagenscan verworfen: 60 Teile ohne zweite Start/Ziel-Ueberfahrt.', 'err');
@@ -41789,9 +41830,93 @@
     }
   }
 
+  // ---- DIE STRECKE IM REGENRADAR (v1.2.12, WIP) ------------------------------------
+  // BESTELLT: "Anzeigen fuer Tank und Schaden schmaler und dafuer Regenradar vergroessern und die
+  // Streckenanzeige mit Fahrzeugpositionen (bzw. Bild der Bahn) dort anzeigen. Stelle sicher, dass
+  // verschiedene Streckenlayouts da gut hinpassen. Die Wolken sollten dann auch da drauf sein."
+  //
+  // Eine SVG-Ebene UNTER dem Canvas: die Strecke zeichnet renderTrackPreview nur, wenn sich das
+  // Layout aendert (wie ovKarteMalen), die Autos setzt karteAutosSetzen je Radarbild (0,03 ms).
+  // Das SVG behaelt sein Seitenverhaeltnis (meet) und steht mittig - eine lange, flache Strecke
+  // fuellt die breite Kachel, eine runde steht mit Rand links und rechts.
+  let wxKarteSchluessel = null, wxKarteGeo = null, wxKarteGross = 1;
+  function wxKarteAn() {
+    const s = $('setting-wx-karte');
+    return !s || s.checked;
+  }
+  function wxKarteMalen() {
+    const host = $('race-wx-karte');
+    if (!host) return false;
+    const tiles = currentTrackTiles;
+    const frei = !(($('setting-ontrack') || {}).checked);
+    // Ausdruck-Modus: das eigene Foto der Bahn (wie in der Uebersicht, v0.9.31), ohne Autos - und
+    // ohne Foto KEIN Editor-Layout, denn das ist dann nicht die Bahn, auf der gefahren wird.
+    const foto = frei ? ((typeof konsoleFoto === 'function' && konsoleFoto()) || '') : '';
+    if (!wxKarteAn() || (frei && !foto) || (!foto && (!tiles || tiles.length < 2))) {
+      if (host.firstChild) { host.innerHTML = ''; wxKarteSchluessel = null; wxKarteGeo = null; }
+      host.hidden = true;
+      return false;
+    }
+    host.hidden = false;
+    if (foto) {
+      const s = 'foto:' + foto.length + ':' + foto.slice(-24);
+      if (s !== wxKarteSchluessel) {
+        host.innerHTML = '';
+        const img = document.createElement('img');
+        img.alt = '';
+        img.src = foto;
+        host.appendChild(img);
+        wxKarteSchluessel = s;
+        wxKarteGeo = null;
+      }
+      return true;
+    }
+    const schluessel = tiles.length + ':' + (typeof trackToCode === 'function'
+      ? trackToCode(tiles) : String(tiles.map((t) => t.type)));
+    if (schluessel !== wxKarteSchluessel) {
+      // Schlicht: ohne Ideallinie und ohne deren Rechnung - auf ein paar Zentimetern Kachel waere
+      // sie nur ein Strich mehr, und sie kostet den Grossteil der 94 ms.
+      const r = renderTrackPreview(tiles, null, { detailed: true, cars: [], ohneLinie: true, ohneLinieRechnen: true, rand: 18 });
+      host.innerHTML = r.html;
+      wxKarteGeo = r.geo;
+      wxKarteSchluessel = schluessel;
+      // Die Autos auf rund 7 Prozent der laengeren Kartenseite, mindestens Bahnmass.
+      const vb = (host.firstElementChild && host.firstElementChild.getAttribute('viewBox') || '').split(/\s+/).map(Number);
+      const lang = Math.max(vb[2] || 0, vb[3] || 0);
+      wxKarteGross = Math.max(1, (0.07 * lang) / AUTO_LANG);
+    }
+    const svg = host.firstElementChild;
+    // HOCHKANT IN EINER BREITEN KACHEL: um 90 Grad drehen. Die App zeichnet lange Strecken oft
+    // senkrecht, und in der breiten Radarkachel bliebe dann links und rechts der meiste Platz leer.
+    // Gedreht wird das ganze SVG (Strecke UND Autos), also stimmen auch die Fahrtrichtungen.
+    if (svg && svg.tagName.toLowerCase() === 'svg') {
+      const vb = (svg.getAttribute('viewBox') || '').split(/\s+/).map(Number);
+      const hw = host.clientWidth, hh = host.clientHeight;
+      const drehen = vb[3] > vb[2] * 1.15 && hw > hh * 1.15;
+      const soll = drehen ? hh + 'x' + hw : '';
+      if (svg.dataset.dreh !== soll) {
+        svg.dataset.dreh = soll;
+        svg.style.width = drehen ? hh + 'px' : '';
+        svg.style.height = drehen ? hw + 'px' : '';
+        svg.style.maxWidth = svg.style.maxHeight = drehen ? 'none' : '';
+        // Absolut in die Mitte und dort drehen: im Raster wuerde das hohe Element oben anliegen.
+        svg.style.position = drehen ? 'absolute' : '';
+        svg.style.left = svg.style.top = drehen ? '50%' : '';
+        svg.style.transform = drehen ? 'translate(-50%, -50%) rotate(90deg)' : '';
+      }
+    }
+    if (svg && wxKarteGeo && typeof karteAutosSetzen === 'function') {
+      karteAutosSetzen(svg, wxKarteGeo, trackCarMarks(), { gross: wxKarteGross, ohneText: true });
+    }
+    return true;
+  }
+
   function wxRadarDraw() {
     const cv = $('race-wx-radar');
     if (!cv || document.hidden || !cv.clientWidth) return;
+    // Liegt die Strecke darunter, ist das Radar durchsichtig: kein Grund, kein Gitter, kein
+    // Fadenkreuz (wo WIR sind, zeigt dann das eigene Auto), nur Regenfaerbung und Wolken.
+    const mitKarte = wxKarteMalen();
     // Auf die tatsaechliche Anzeigegroesse ziehen: ein Canvas mit falscher Pufferbreite wird
     // von der Grafikkarte skaliert und sieht unscharf aus.
     const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -41807,13 +41932,15 @@
     const wxGrund = (wxCss.getPropertyValue('--wx-grund') || '#0d1219').trim();
     const wxWolke = (wxCss.getPropertyValue('--wx-wolke') || '226, 236, 246').trim();
     const wxRegen = (wxCss.getPropertyValue('--wx-regen') || '104, 166, 186').trim();
-    g.fillStyle = wxGrund;
-    g.fillRect(0, 0, W, H);
+    if (!mitKarte) {
+      g.fillStyle = wxGrund;
+      g.fillRect(0, 0, W, H);
+    }
 
     // Gitter: fein und dunkel, damit die Formen davor stehen.
     g.strokeStyle = 'rgba(255,255,255,0.055)';
     g.lineWidth = 1;
-    for (let k = 1; k < 4; k++) {
+    for (let k = 1; k < 4 && !mitKarte; k++) {
       const x = Math.round(W * k / 4) + 0.5, y = Math.round(H * k / 4) + 0.5;
       g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke();
       g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke();
@@ -41831,7 +41958,7 @@
     // gleichmaessiger blauer Kasten oder ein Schauermuster.
     const stk = wxRainLevel();
     if (stk > 0.01) {
-      g.fillStyle = 'rgba(' + wxRegen + ',' + (0.3 * stk).toFixed(3) + ')';
+      g.fillStyle = 'rgba(' + wxRegen + ',' + ((mitKarte ? 0.2 : 0.3) * stk).toFixed(3) + ')';
       g.fillRect(0, 0, W, H);
     }
 
@@ -41842,6 +41969,8 @@
       const cy = my + (WX_WIND.y * b.l + WX_WIND.x * b.quer) * S * spanne;
       let deck = b.deck;
       if (b.regen && b.weg) deck *= Math.max(0, b.weg);
+      // Ueber der Strecke etwas duenner, damit Bahn und Autos durchscheinen.
+      if (mitKarte) deck *= b.regen ? 0.85 : 0.6;
       if (deck <= 0.004) continue;
 
       // ---- zeichnen: drei geschachtelte Zonen, EINFARBIG ----
@@ -41873,7 +42002,8 @@
     }
 
     // Das Kreuz und der Punkt: wo WIR sind. Zuletzt gezeichnet, damit es ueber den Formen
-    // liegt - es ist der Bezugspunkt fuer alles andere.
+    // liegt - es ist der Bezugspunkt fuer alles andere. Mit Karte zeigt das eigene Auto den Ort.
+    if (mitKarte) return;
     g.strokeStyle = 'rgba(255,255,255,0.5)';
     g.lineWidth = Math.max(1, dpr);
     g.beginPath();
@@ -82659,6 +82789,60 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Menue, Kartenpunkte springen, Aufstellung ab Reihe 2, Regenflackern; dazu Kleinigkeiten.
   // v1.2.4 BESTELLT: Renntypen je Sensormodus, Fahrgefuehl je Spieler, Pacejka in Community-Challenges, Minigame-
   // Rueckmeldung, mechanische Boxensignale, NPC-Box wie Safety Car, Safety-Car-Parken auf kurzen Geraden.
+  // v1.2.12 BESTELLT: Tank und Schaden schmaler, Regenradar groesser mit Strecke und Autos darin,
+  // Wolken obenauf. Dazu: der Streckenscan uebersetzt jede Kachel (Engstelle war Start/Ziel).
+  stAdd('Cockpit v1.2.12: Strecke im Regenradar, schmale Tank-/Schadenkachel, Scan uebersetzt jede Kachel', () => {
+    const f = [];
+    const host = $('race-wx-karte'), sw = $('setting-wx-karte'), ot = $('setting-ontrack');
+    if (!host || !sw || !sw.defaultChecked) f.push('Kartenebene oder Schalter fehlt / ab Werk aus');
+    const css = [...document.querySelectorAll('style')].map((x) => x.textContent).join('\n');
+    if (css.indexOf('grid-template-columns: .6fr .6fr 1fr 1fr .8fr 2.6fr 1fr 1fr') < 0) f.push('Streifen nicht umverteilt');
+    const merk = { tiles: currentTrackTiles, sw: sw && sw.checked, ot: ot && ot.checked };
+    try {
+      currentTrackTiles = codeToTrack('SG3R2G3R2').tiles;
+      if (ot) ot.checked = true;
+      if (sw) sw.checked = true;
+      if (!wxKarteMalen() || !host.querySelector('svg.tp-karte')) f.push('Karte wird nicht gezeichnet');
+      const erst = host.firstElementChild;
+      wxKarteMalen();
+      if (host.firstElementChild !== erst) f.push('Strecke wird je Bild neu aufgebaut');
+      if (!host.querySelector('g.karte-autos')) f.push('keine Autoebene');
+      if (!(wxKarteGross > 1)) f.push('Autos nicht vergroessert (' + wxKarteGross + ')');
+      currentTrackTiles = codeToTrack('SG9RG9R').tiles;
+      wxKarteMalen();
+      if (host.firstElementChild === erst) f.push('Layoutwechsel zeichnet nicht neu');
+      // Lange Strecke: hochkant gezeichnet wird sie in einer breiten Kachel gedreht.
+      const vb = host.firstElementChild.getAttribute('viewBox').split(' ').map(Number);
+      if (!(Math.max(vb[2], vb[3]) > Math.min(vb[2], vb[3]) * 1.5)) f.push('lange Strecke nicht lang (' + vb.join(' ') + ')');
+      if (String(wxKarteMalen).indexOf("rotate(90deg)") < 0) f.push('hochkante Strecke wird nicht gedreht');
+      if (sw) sw.checked = false;
+      if (wxKarteMalen() || !host.hidden) f.push('Schalter aus laesst die Karte stehen');
+      // Ausdruck-Modus ohne eigenes Foto: kein Editor-Layout.
+      if (sw) sw.checked = true;
+      if (ot) ot.checked = false;
+      const fotoDa = typeof konsoleFoto === 'function' && konsoleFoto();
+      if (!fotoDa && wxKarteMalen()) f.push('Ausdruck-Modus zeigt das Editor-Layout');
+    } finally {
+      currentTrackTiles = merk.tiles;
+      if (sw) sw.checked = merk.sw; if (ot) ot.checked = merk.ot;
+      wxKarteSchluessel = null; wxKarteMalen();
+    }
+    // Groessere Autos: der Faktor steht im transform, die Sonden lesen weiter translate/rotate.
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const r = renderTrackPreview(codeToTrack('SG3R2G3R2').tiles, null, { detailed: true, cars: [] });
+    karteAutosSetzen(svg, r.geo, [{ index: 1, phase: 0.5, farbe: '#f00', modell: '', kuerzel: 'A' }], { gross: 4, ohneText: true });
+    const g = svg.querySelector('g.karte-autos > g'), tx = svg.querySelector('g.karte-autos text');
+    if (!g || !/translate\([-\d.]+ [-\d.]+\) rotate\([-\d.]+\) scale\(4\.0000\)/.test(g.getAttribute('transform') || '')) f.push('Vergroesserung fehlt');
+    if (tx && tx.textContent) f.push('Kuerzel trotz ohneText');
+    // Scan: jede Kachel durch codeZuTyp().
+    for (const fn of [learnTick, garageScanTick]) {
+      if (/seq\.push\(\{ type: best \}\)/.test(String(fn))) f.push(fn.name + ' schreibt rohe Codes');
+    }
+    const tm = trackMode;
+    try { trackMode = 'on'; if (codeZuTyp(0x0a) !== TILE_TYPE.ENGE) f.push('Engstelle auf der Bahn nicht erkannt'); } finally { trackMode = tm; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Strecke im Radar, einmal je Layout, Autos x' + wxKarteGross.toFixed(1) + ', Scan uebersetzt' };
+  });
+
   // v1.2.9 BESTELLT: Silhouetten (Draufsicht) fuer Porsche, Ford, BMW, Ferrari und den
   // Formelwagen, in der Farbe aus dem Menue.
   stAdd('Karte v1.2.9: Silhouetten je Modell in der Menuefarbe', () => {
@@ -99733,7 +99917,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       raceMode = 'qualifying';
       p = raceCockpitPosition();
       if (!p || p.pos !== 1 || p.von !== 3) f.push('Qualifying (Bestzeit): ' + JSON.stringify(p) + ' statt P1/3');
-      for (const m of ['practice', 'bestzeit', 'knockout', 'derby']) {
+      raceMode = 'bestzeit';
+      p = raceCockpitPosition();
+      if (!p || p.pos !== 1 || p.von !== 3) f.push('Time Attack (Bestzeit, seit v1.2.12): ' + JSON.stringify(p));
+      if (String(updateRaceScreen).indexOf("'#' + p.pos + '/' + p.von") < 0) f.push('Anzeige nicht im Format #X/Y');
+      for (const m of ['practice', 'knockout', 'derby']) {
         raceMode = m;
         if (raceCockpitPosition()) f.push(m + ' zeigt eine Position');
       }
@@ -99742,7 +99930,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const el = $('race-pos');
       if (!el || !el.closest('.gt3-box') || !el.closest('.gt3-box').querySelector('#race-lap-count')) f.push('Anzeige nicht neben der Runde');
     } finally { raceState = merk.rs; raceMode = merk.rm; raceAllCars = merk.alle; }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'P2/3 nach Runden, P1/3 nach Bestzeit, sonst nichts' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '#2/3 nach Runden, #1/3 nach Bestzeit (Quali, Time Attack), sonst nichts' };
   });
 
   // v1.1.41 BESTELLT: "Spiel exakt das Makro vom Safetycar ab, aber mit geringerer Geschwindigkeit und fuer die,
