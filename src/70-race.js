@@ -526,6 +526,7 @@
         if (w >= 2 && !(zweiSpieler && zusatzPlatz(w) && zusatzPlatz(w).car)) return;
         if (!fruehstart[w].frueh && fruehstartTempo(w) > FRUEHSTART_KMH) {
           fruehstart[w].frueh = true;
+          if (fruehstartZeitAn()) rennEreignisStrafe(w, FRUEHSTART_ZEIT_MS / 1000);
           showHudToast(w >= 2 ? t('Frühstart Spieler {n}!').replace('{n}', w) : t('Frühstart!'));
         }
       });
@@ -2419,6 +2420,7 @@
     // Wer schon steht oder gar nicht faehrt, laeuft nicht aus - fuer den gilt die Flagge
     // sofort, sonst wartete das Rennen auf ein Auto, das sich nicht bewegt.
     const willAuslaufen = auslaufen !== false;
+    if (!willAuslaufen) ansagenReset();
     ghostAuslaufBis = willAuslaufen ? now + GHOST_AUSLAUF_MAX_MS : 0;
     nachZielBis = willAuslaufen ? now + GHOST_AUSLAUF_MAX_MS : 0;
     // ---- WIE VIELE LAUFEN AUS? Das ist der Nenner der Ausroll-Staffel -------------
@@ -2448,6 +2450,10 @@
     if (typeof ghostStimmenRennende === 'function') ghostStimmenRennende();
     if (willAuslaufen && garage.some(c => c.role === 'ghost' && c.ghost && c.ghost.auslauf)) {
       showHudToast(t('NPCs fahren die Runde zu Ende'));
+    }
+    if (willAuslaufen) {
+      rennEreignisStrafe(1, racePenaltyMs() / 1000);
+      zusatzAktiv().forEach(z => rennEreignisStrafe(z.nr, strafeMsVon(z.nr) / 1000));
     }
     const missed = Math.max(0, racePitRequired - racePitDone);
     $('race-status').textContent =
@@ -4595,6 +4601,7 @@
     // Sicherheitsnetz.
     if (pitLimiterTimer) { rennZeitTimeoutStop(pitLimiterTimer); pitLimiterTimer = null; }
     if (next === 'servicing') {
+      rennEreignisBox(1);
       pitServiceStart = rennZeitJetzt();
       pitFuelGained = 0; pitDamageRepaired = 0;
       pitDone = { refuel: false, tyres: false, repair: false };
@@ -5373,6 +5380,7 @@
     if (z.box.lage === 'angefordert') {
       if (steht) {
         z.box.lage = 'service';
+        rennEreignisBox(z.nr);
         z.box.strafeBis = null;
         const strafe = rammStrafeOffen(z.car);
         showHudToast('P' + z.nr + ': ' + (strafe > 0 ? t('STRAFE') + ' ' + strafe + ' s' : 'SERVICE LAEUFT'));
@@ -5724,6 +5732,7 @@
       if (zwei) zPl.schaden.wert = Math.min(100, zPl.schaden.wert + 100 / crashesToTotal);
       else damage = Math.min(100, damage + 100 / crashesToTotal);
     }
+    if (schadenAn) rennEreignisSchaden(wer >= 2 ? wer : 1);
     const stand = zwei ? zPl.schaden.wert : damage;
     const end = vonHinten ? 'rear' : crashEnd(wer);
     if (schadenAn && stand >= LIGHT_DEAD_DAMAGE && !licht[end]) {

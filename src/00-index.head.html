@@ -11168,6 +11168,21 @@
           <button type="button" id="setting-announce-stand-test" data-i18n-skip>Testen</button>
           <span class="muted" id="setting-announce-stand-test-status" aria-live="polite"></span>
         </div></div>
+      <div class="opt-head">Erweiterte Rennereignisse</div>
+      <p class="muted" data-i18n-skip>Ereignisse warten bis zum Ende einer laufenden Ansage. Danach kommen sie vor wartenden Rundenzeiten und Rennstandmeldungen. Lokale Spieler 1–3; neue Schalter standardmäßig aus. Sprachclips verwenden Stadionhall, Lautstärke und Tempo wie der Rennstart (Rennstand-Regler). Bei fehlenden Clips spricht die Gerätestimme ohne Hall.</p>
+      <div class="opt-row" data-i18n-skip><div class="opt-label">Schwere Beschädigung ansagen
+        <small>Farbe, Modell und Spieler. Nur bei aktivem Schaden; einmal unter der Zustandsgrenze. Nach Reparatur um 8 Prozentpunkte über die Grenze wieder freigegeben. Ersetzt dann die allgemeine Schadenswarnung.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-event-damage" data-preset-skip><span></span></label></div>
+      <div class="opt-row" data-i18n-skip><div class="opt-label">Zustandsgrenze für Schadensansage
+        <small>Verbleibender Fahrzeugzustand in Prozent, 1–100; Standard 30. Strikt darunter, nicht genau am Grenzwert.</small></div>
+        <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="setting-announce-event-damage-limit" value="30" min="1" max="100" step="1" style="width:84px" data-preset-skip><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
+      <div class="opt-row" data-i18n-skip><div class="opt-label">Spieler in der Box ansagen
+        <small>„Spieler X ist in der Box.“ Einmal beim tatsächlichen Servicebeginn, nicht bei der Anforderung. Ersetzt dann die alte Boxenstopp-Anforderungsansage.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-event-pit" data-preset-skip><span></span></label></div>
+      <div class="opt-row" data-i18n-skip><div class="opt-label">Zeitstrafen ansagen
+        <small>Neu verhängte Sekunden für Frühstart, Rammen und fehlende Pflichtstopps am regulären Rennende. Keine Meldung für reine Bremsstrafen.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-event-penalty" data-preset-skip><span></span></label></div>
+      <div class="opt-head">Weitere Warnungen</div>
       <div class="opt-row"><div class="opt-label">Schaden ansagen<small>Einmal, wenn der Schadensbalken auf 10&nbsp;% gefallen ist. Erst nach einer Reparatur wieder scharf.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-damage" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Tank ansagen<small>Einmal, wenn noch 10&nbsp;% im Tank sind. Erst nach dem Tanken wieder scharf.</small></div>
