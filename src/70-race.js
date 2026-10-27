@@ -3881,9 +3881,93 @@
     }
   }
 
+  // ---- DIE STRECKE IM REGENRADAR (v1.2.12, WIP) ------------------------------------
+  // BESTELLT: "Anzeigen fuer Tank und Schaden schmaler und dafuer Regenradar vergroessern und die
+  // Streckenanzeige mit Fahrzeugpositionen (bzw. Bild der Bahn) dort anzeigen. Stelle sicher, dass
+  // verschiedene Streckenlayouts da gut hinpassen. Die Wolken sollten dann auch da drauf sein."
+  //
+  // Eine SVG-Ebene UNTER dem Canvas: die Strecke zeichnet renderTrackPreview nur, wenn sich das
+  // Layout aendert (wie ovKarteMalen), die Autos setzt karteAutosSetzen je Radarbild (0,03 ms).
+  // Das SVG behaelt sein Seitenverhaeltnis (meet) und steht mittig - eine lange, flache Strecke
+  // fuellt die breite Kachel, eine runde steht mit Rand links und rechts.
+  let wxKarteSchluessel = null, wxKarteGeo = null, wxKarteGross = 1;
+  function wxKarteAn() {
+    const s = $('setting-wx-karte');
+    return !s || s.checked;
+  }
+  function wxKarteMalen() {
+    const host = $('race-wx-karte');
+    if (!host) return false;
+    const tiles = currentTrackTiles;
+    const frei = !(($('setting-ontrack') || {}).checked);
+    // Ausdruck-Modus: das eigene Foto der Bahn (wie in der Uebersicht, v0.9.31), ohne Autos - und
+    // ohne Foto KEIN Editor-Layout, denn das ist dann nicht die Bahn, auf der gefahren wird.
+    const foto = frei ? ((typeof konsoleFoto === 'function' && konsoleFoto()) || '') : '';
+    if (!wxKarteAn() || (frei && !foto) || (!foto && (!tiles || tiles.length < 2))) {
+      if (host.firstChild) { host.innerHTML = ''; wxKarteSchluessel = null; wxKarteGeo = null; }
+      host.hidden = true;
+      return false;
+    }
+    host.hidden = false;
+    if (foto) {
+      const s = 'foto:' + foto.length + ':' + foto.slice(-24);
+      if (s !== wxKarteSchluessel) {
+        host.innerHTML = '';
+        const img = document.createElement('img');
+        img.alt = '';
+        img.src = foto;
+        host.appendChild(img);
+        wxKarteSchluessel = s;
+        wxKarteGeo = null;
+      }
+      return true;
+    }
+    const schluessel = tiles.length + ':' + (typeof trackToCode === 'function'
+      ? trackToCode(tiles) : String(tiles.map((t) => t.type)));
+    if (schluessel !== wxKarteSchluessel) {
+      // Schlicht: ohne Ideallinie und ohne deren Rechnung - auf ein paar Zentimetern Kachel waere
+      // sie nur ein Strich mehr, und sie kostet den Grossteil der 94 ms.
+      const r = renderTrackPreview(tiles, null, { detailed: true, cars: [], ohneLinie: true, ohneLinieRechnen: true, rand: 18 });
+      host.innerHTML = r.html;
+      wxKarteGeo = r.geo;
+      wxKarteSchluessel = schluessel;
+      // Die Autos auf rund 7 Prozent der laengeren Kartenseite, mindestens Bahnmass.
+      const vb = (host.firstElementChild && host.firstElementChild.getAttribute('viewBox') || '').split(/\s+/).map(Number);
+      const lang = Math.max(vb[2] || 0, vb[3] || 0);
+      wxKarteGross = Math.max(1, (0.07 * lang) / AUTO_LANG);
+    }
+    const svg = host.firstElementChild;
+    // HOCHKANT IN EINER BREITEN KACHEL: um 90 Grad drehen. Die App zeichnet lange Strecken oft
+    // senkrecht, und in der breiten Radarkachel bliebe dann links und rechts der meiste Platz leer.
+    // Gedreht wird das ganze SVG (Strecke UND Autos), also stimmen auch die Fahrtrichtungen.
+    if (svg && svg.tagName.toLowerCase() === 'svg') {
+      const vb = (svg.getAttribute('viewBox') || '').split(/\s+/).map(Number);
+      const hw = host.clientWidth, hh = host.clientHeight;
+      const drehen = vb[3] > vb[2] * 1.15 && hw > hh * 1.15;
+      const soll = drehen ? hh + 'x' + hw : '';
+      if (svg.dataset.dreh !== soll) {
+        svg.dataset.dreh = soll;
+        svg.style.width = drehen ? hh + 'px' : '';
+        svg.style.height = drehen ? hw + 'px' : '';
+        svg.style.maxWidth = svg.style.maxHeight = drehen ? 'none' : '';
+        // Absolut in die Mitte und dort drehen: im Raster wuerde das hohe Element oben anliegen.
+        svg.style.position = drehen ? 'absolute' : '';
+        svg.style.left = svg.style.top = drehen ? '50%' : '';
+        svg.style.transform = drehen ? 'translate(-50%, -50%) rotate(90deg)' : '';
+      }
+    }
+    if (svg && wxKarteGeo && typeof karteAutosSetzen === 'function') {
+      karteAutosSetzen(svg, wxKarteGeo, trackCarMarks(), { gross: wxKarteGross, ohneText: true });
+    }
+    return true;
+  }
+
   function wxRadarDraw() {
     const cv = $('race-wx-radar');
     if (!cv || document.hidden || !cv.clientWidth) return;
+    // Liegt die Strecke darunter, ist das Radar durchsichtig: kein Grund, kein Gitter, kein
+    // Fadenkreuz (wo WIR sind, zeigt dann das eigene Auto), nur Regenfaerbung und Wolken.
+    const mitKarte = wxKarteMalen();
     // Auf die tatsaechliche Anzeigegroesse ziehen: ein Canvas mit falscher Pufferbreite wird
     // von der Grafikkarte skaliert und sieht unscharf aus.
     const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -3899,13 +3983,15 @@
     const wxGrund = (wxCss.getPropertyValue('--wx-grund') || '#0d1219').trim();
     const wxWolke = (wxCss.getPropertyValue('--wx-wolke') || '226, 236, 246').trim();
     const wxRegen = (wxCss.getPropertyValue('--wx-regen') || '104, 166, 186').trim();
-    g.fillStyle = wxGrund;
-    g.fillRect(0, 0, W, H);
+    if (!mitKarte) {
+      g.fillStyle = wxGrund;
+      g.fillRect(0, 0, W, H);
+    }
 
     // Gitter: fein und dunkel, damit die Formen davor stehen.
     g.strokeStyle = 'rgba(255,255,255,0.055)';
     g.lineWidth = 1;
-    for (let k = 1; k < 4; k++) {
+    for (let k = 1; k < 4 && !mitKarte; k++) {
       const x = Math.round(W * k / 4) + 0.5, y = Math.round(H * k / 4) + 0.5;
       g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke();
       g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke();
@@ -3923,7 +4009,7 @@
     // gleichmaessiger blauer Kasten oder ein Schauermuster.
     const stk = wxRainLevel();
     if (stk > 0.01) {
-      g.fillStyle = 'rgba(' + wxRegen + ',' + (0.3 * stk).toFixed(3) + ')';
+      g.fillStyle = 'rgba(' + wxRegen + ',' + ((mitKarte ? 0.2 : 0.3) * stk).toFixed(3) + ')';
       g.fillRect(0, 0, W, H);
     }
 
@@ -3934,6 +4020,8 @@
       const cy = my + (WX_WIND.y * b.l + WX_WIND.x * b.quer) * S * spanne;
       let deck = b.deck;
       if (b.regen && b.weg) deck *= Math.max(0, b.weg);
+      // Ueber der Strecke etwas duenner, damit Bahn und Autos durchscheinen.
+      if (mitKarte) deck *= b.regen ? 0.85 : 0.6;
       if (deck <= 0.004) continue;
 
       // ---- zeichnen: drei geschachtelte Zonen, EINFARBIG ----
@@ -3965,7 +4053,8 @@
     }
 
     // Das Kreuz und der Punkt: wo WIR sind. Zuletzt gezeichnet, damit es ueber den Formen
-    // liegt - es ist der Bezugspunkt fuer alles andere.
+    // liegt - es ist der Bezugspunkt fuer alles andere. Mit Karte zeigt das eigene Auto den Ort.
+    if (mitKarte) return;
     g.strokeStyle = 'rgba(255,255,255,0.5)';
     g.lineWidth = Math.max(1, dpr);
     g.beginPath();

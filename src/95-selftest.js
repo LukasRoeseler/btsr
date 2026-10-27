@@ -5431,6 +5431,60 @@
   // Menue, Kartenpunkte springen, Aufstellung ab Reihe 2, Regenflackern; dazu Kleinigkeiten.
   // v1.2.4 BESTELLT: Renntypen je Sensormodus, Fahrgefuehl je Spieler, Pacejka in Community-Challenges, Minigame-
   // Rueckmeldung, mechanische Boxensignale, NPC-Box wie Safety Car, Safety-Car-Parken auf kurzen Geraden.
+  // v1.2.12 BESTELLT: Tank und Schaden schmaler, Regenradar groesser mit Strecke und Autos darin,
+  // Wolken obenauf. Dazu: der Streckenscan uebersetzt jede Kachel (Engstelle war Start/Ziel).
+  stAdd('Cockpit v1.2.12: Strecke im Regenradar, schmale Tank-/Schadenkachel, Scan uebersetzt jede Kachel', () => {
+    const f = [];
+    const host = $('race-wx-karte'), sw = $('setting-wx-karte'), ot = $('setting-ontrack');
+    if (!host || !sw || !sw.defaultChecked) f.push('Kartenebene oder Schalter fehlt / ab Werk aus');
+    const css = [...document.querySelectorAll('style')].map((x) => x.textContent).join('\n');
+    if (css.indexOf('grid-template-columns: .6fr .6fr 1fr 1fr .8fr 2.6fr 1fr 1fr') < 0) f.push('Streifen nicht umverteilt');
+    const merk = { tiles: currentTrackTiles, sw: sw && sw.checked, ot: ot && ot.checked };
+    try {
+      currentTrackTiles = codeToTrack('SG3R2G3R2').tiles;
+      if (ot) ot.checked = true;
+      if (sw) sw.checked = true;
+      if (!wxKarteMalen() || !host.querySelector('svg.tp-karte')) f.push('Karte wird nicht gezeichnet');
+      const erst = host.firstElementChild;
+      wxKarteMalen();
+      if (host.firstElementChild !== erst) f.push('Strecke wird je Bild neu aufgebaut');
+      if (!host.querySelector('g.karte-autos')) f.push('keine Autoebene');
+      if (!(wxKarteGross > 1)) f.push('Autos nicht vergroessert (' + wxKarteGross + ')');
+      currentTrackTiles = codeToTrack('SG9RG9R').tiles;
+      wxKarteMalen();
+      if (host.firstElementChild === erst) f.push('Layoutwechsel zeichnet nicht neu');
+      // Lange Strecke: hochkant gezeichnet wird sie in einer breiten Kachel gedreht.
+      const vb = host.firstElementChild.getAttribute('viewBox').split(' ').map(Number);
+      if (!(Math.max(vb[2], vb[3]) > Math.min(vb[2], vb[3]) * 1.5)) f.push('lange Strecke nicht lang (' + vb.join(' ') + ')');
+      if (String(wxKarteMalen).indexOf("rotate(90deg)") < 0) f.push('hochkante Strecke wird nicht gedreht');
+      if (sw) sw.checked = false;
+      if (wxKarteMalen() || !host.hidden) f.push('Schalter aus laesst die Karte stehen');
+      // Ausdruck-Modus ohne eigenes Foto: kein Editor-Layout.
+      if (sw) sw.checked = true;
+      if (ot) ot.checked = false;
+      const fotoDa = typeof konsoleFoto === 'function' && konsoleFoto();
+      if (!fotoDa && wxKarteMalen()) f.push('Ausdruck-Modus zeigt das Editor-Layout');
+    } finally {
+      currentTrackTiles = merk.tiles;
+      if (sw) sw.checked = merk.sw; if (ot) ot.checked = merk.ot;
+      wxKarteSchluessel = null; wxKarteMalen();
+    }
+    // Groessere Autos: der Faktor steht im transform, die Sonden lesen weiter translate/rotate.
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const r = renderTrackPreview(codeToTrack('SG3R2G3R2').tiles, null, { detailed: true, cars: [] });
+    karteAutosSetzen(svg, r.geo, [{ index: 1, phase: 0.5, farbe: '#f00', modell: '', kuerzel: 'A' }], { gross: 4, ohneText: true });
+    const g = svg.querySelector('g.karte-autos > g'), tx = svg.querySelector('g.karte-autos text');
+    if (!g || !/translate\([-\d.]+ [-\d.]+\) rotate\([-\d.]+\) scale\(4\.0000\)/.test(g.getAttribute('transform') || '')) f.push('Vergroesserung fehlt');
+    if (tx && tx.textContent) f.push('Kuerzel trotz ohneText');
+    // Scan: jede Kachel durch codeZuTyp().
+    for (const fn of [learnTick, garageScanTick]) {
+      if (/seq\.push\(\{ type: best \}\)/.test(String(fn))) f.push(fn.name + ' schreibt rohe Codes');
+    }
+    const tm = trackMode;
+    try { trackMode = 'on'; if (codeZuTyp(0x0a) !== TILE_TYPE.ENGE) f.push('Engstelle auf der Bahn nicht erkannt'); } finally { trackMode = tm; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Strecke im Radar, einmal je Layout, Autos x' + wxKarteGross.toFixed(1) + ', Scan uebersetzt' };
+  });
+
   // v1.2.9 BESTELLT: Silhouetten (Draufsicht) fuer Porsche, Ford, BMW, Ferrari und den
   // Formelwagen, in der Farbe aus dem Menue.
   stAdd('Karte v1.2.9: Silhouetten je Modell in der Menuefarbe', () => {
@@ -22372,7 +22426,11 @@
       raceMode = 'qualifying';
       p = raceCockpitPosition();
       if (!p || p.pos !== 1 || p.von !== 3) f.push('Qualifying (Bestzeit): ' + JSON.stringify(p) + ' statt P1/3');
-      for (const m of ['practice', 'bestzeit', 'knockout', 'derby']) {
+      raceMode = 'bestzeit';
+      p = raceCockpitPosition();
+      if (!p || p.pos !== 1 || p.von !== 3) f.push('Time Attack (Bestzeit, seit v1.2.12): ' + JSON.stringify(p));
+      if (String(updateRaceScreen).indexOf("'#' + p.pos + '/' + p.von") < 0) f.push('Anzeige nicht im Format #X/Y');
+      for (const m of ['practice', 'knockout', 'derby']) {
         raceMode = m;
         if (raceCockpitPosition()) f.push(m + ' zeigt eine Position');
       }
@@ -22381,7 +22439,7 @@
       const el = $('race-pos');
       if (!el || !el.closest('.gt3-box') || !el.closest('.gt3-box').querySelector('#race-lap-count')) f.push('Anzeige nicht neben der Runde');
     } finally { raceState = merk.rs; raceMode = merk.rm; raceAllCars = merk.alle; }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'P2/3 nach Runden, P1/3 nach Bestzeit, sonst nichts' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '#2/3 nach Runden, #1/3 nach Bestzeit (Quali, Time Attack), sonst nichts' };
   });
 
   // v1.1.41 BESTELLT: "Spiel exakt das Makro vom Safetycar ab, aber mit geringerer Geschwindigkeit und fuer die,

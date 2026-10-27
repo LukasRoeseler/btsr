@@ -2553,7 +2553,8 @@
     if (posEl) {
       const p = raceCockpitPosition();
       posEl.hidden = !p;
-      if (p) posEl.textContent = 'P' + p.pos + '/' + p.von;
+      // v1.2.12 BESTELLT: "#X/Y format" statt P3/6.
+      if (p) posEl.textContent = '#' + p.pos + '/' + p.von;
     }
     $('race-lap-list').innerHTML = laps.slice().reverse().slice(0, 10).map(l =>
       `<li><span>${l.lap}</span><span${l.ms === best ? ' class="gt3-ok"' : ''}>${formatLapTime(l.ms)}</span></li>`
@@ -2606,11 +2607,12 @@
   // nicht)." Rundenrennen und Endurance: dieselbe Reihenfolge wie die Rennuebersicht (ovDaten: Runden,
   // dann Gesamtzeit, dann Ort), damit Cockpit, Uebersicht und Ergebnis denselben Platz nennen.
   // Qualifying: die beste Runde, ohne Runde hinten (dort nach dem Ort). Gezaehlt wird Auto 1.
+  // v1.2.12: Time Attack ebenso nach Bestzeit (gefragt: "Auch dort, nach Bestzeit").
   function raceCockpitPosition() {
     if (raceState !== 'racing' && raceState !== 'finished') return null;
-    if (raceMode !== 'laps' && raceMode !== 'endurance' && raceMode !== 'qualifying') return null;
+    if (raceMode !== 'laps' && raceMode !== 'endurance' && raceMode !== 'qualifying' && raceMode !== 'bestzeit') return null;
     let reihe;
-    if (raceMode === 'qualifying') {
+    if (raceMode === 'qualifying' || raceMode === 'bestzeit') {
       const ortVon = (c) => (typeof c.ort === 'number' ? c.ort : -Infinity);
       reihe = raceAllCars().map((c) => ({ rolle: c.role, beste: c.laps.length ? Math.min.apply(null, c.laps.map((l) => l.ms)) : Infinity, ort: ortVon(c) }))
         .sort((a, b) => (a.beste - b.beste) || (b.ort - a.ort));
