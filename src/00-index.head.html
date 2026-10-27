@@ -4757,6 +4757,18 @@
     #ampel-overlay { transition: none; }
   }
 </style>
+<style>
+  .stat-clean { margin-top:20px; border:1px solid var(--line,#454b57); border-radius:8px; padding:12px; }
+  .stat-clean summary { cursor:pointer; font-weight:700; }
+  .stat-clean label { display:block; margin:16px 0 6px; font-weight:600; }
+  .stat-clean select { display:block; width:100%; min-width:0; box-sizing:border-box; }
+  .stat-clean code { overflow-wrap:anywhere; white-space:normal; }
+  .stat-clean-actions { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
+  .stat-clean-preview { white-space:pre-line; overflow-wrap:anywhere; margin:8px 0; }
+  .stat-clean-note { font-size:14px; line-height:1.55; }
+  .stat-clean button { min-height:40px; margin-top:6px; }
+  .stat-clean .stat-clean-danger { border-color:var(--bad,#df4f4f); }
+</style>
 </head>
 <body>
 
@@ -11074,6 +11086,13 @@
           &ndash; unter Windows sind sie lokal vorhanden, auf Android k&ouml;nnen sie fehlen.
           Fehlt eine, steht das einmal im Protokoll und nicht bei jeder Runde.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Rennintro vor der Ampel <span class="wip-tag">WIP</span>
+          <small>Lokale Starts: Modus, Runden- oder Zeitlimit, Pflichtstopps, Startaufstellung und Startwetter als Piper-Aufnahmen.
+          Die Ampel beginnt erst danach; wer w&auml;hrend des Intros losf&auml;hrt, macht einen Fr&uuml;hstart.
+          Standard aus; nicht in Challenges und nicht im WLAN-Mehrspieler.
+          Nutzt Sprache, Sprechgeschwindigkeit, Lautst&auml;rke und Hall der Rennstand-Ansagen.
+          Fehlende Aufnahmen werden ausgelassen, der Start bleibt m&ouml;glich.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-intro" data-preset-skip><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Rennstand alle paar Runden ansagen <span class="wip-tag">WIP</span>
           <small>Die ersten drei Fahrzeuge des lokalen Rennfelds, mit Runde, Wagenfarbe und Marke / Modell.
           Nach jeder eingestellten Zahl vollendeter Runden des f&uuml;hrenden Fahrzeugs.
@@ -12186,6 +12205,7 @@
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Statistiken</h2>
       <div id="stat-inhalt"></div>
+      <div id="stat-bereinigen"></div>
     </div>
     <!-- STUDIE (98f-studie.js): Einwilligung, NARQ, Selbsteinschaetzung, Reaktionstest. Der Inhalt
          entsteht im Code und wird dort mit t() uebersetzt. -->

@@ -4757,6 +4757,18 @@
     #ampel-overlay { transition: none; }
   }
 </style>
+<style>
+  .stat-clean { margin-top:20px; border:1px solid var(--line,#454b57); border-radius:8px; padding:12px; }
+  .stat-clean summary { cursor:pointer; font-weight:700; }
+  .stat-clean label { display:block; margin:16px 0 6px; font-weight:600; }
+  .stat-clean select { display:block; width:100%; min-width:0; box-sizing:border-box; }
+  .stat-clean code { overflow-wrap:anywhere; white-space:normal; }
+  .stat-clean-actions { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
+  .stat-clean-preview { white-space:pre-line; overflow-wrap:anywhere; margin:8px 0; }
+  .stat-clean-note { font-size:14px; line-height:1.55; }
+  .stat-clean button { min-height:40px; margin-top:6px; }
+  .stat-clean .stat-clean-danger { border-color:var(--bad,#df4f4f); }
+</style>
 </head>
 <body>
 
@@ -11074,6 +11086,13 @@
           &ndash; unter Windows sind sie lokal vorhanden, auf Android k&ouml;nnen sie fehlen.
           Fehlt eine, steht das einmal im Protokoll und nicht bei jeder Runde.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Rennintro vor der Ampel <span class="wip-tag">WIP</span>
+          <small>Lokale Starts: Modus, Runden- oder Zeitlimit, Pflichtstopps, Startaufstellung und Startwetter als Piper-Aufnahmen.
+          Die Ampel beginnt erst danach; wer w&auml;hrend des Intros losf&auml;hrt, macht einen Fr&uuml;hstart.
+          Standard aus; nicht in Challenges und nicht im WLAN-Mehrspieler.
+          Nutzt Sprache, Sprechgeschwindigkeit, Lautst&auml;rke und Hall der Rennstand-Ansagen.
+          Fehlende Aufnahmen werden ausgelassen, der Start bleibt m&ouml;glich.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-intro" data-preset-skip><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Rennstand alle paar Runden ansagen <span class="wip-tag">WIP</span>
           <small>Die ersten drei Fahrzeuge des lokalen Rennfelds, mit Runde, Wagenfarbe und Marke / Modell.
           Nach jeder eingestellten Zahl vollendeter Runden des f&uuml;hrenden Fahrzeugs.
@@ -12186,6 +12205,7 @@
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Statistiken</h2>
       <div id="stat-inhalt"></div>
+      <div id="stat-bereinigen"></div>
     </div>
     <!-- STUDIE (98f-studie.js): Einwilligung, NARQ, Selbsteinschaetzung, Reaktionstest. Der Inhalt
          entsteht im Code und wird dort mit t() uebersetzt. -->
@@ -17382,6 +17402,79 @@
     "Durchschnitt der drei schnellsten aufeinanderfolgenden Runden.": "Average of the three fastest consecutive laps.",
     "Nur in der Android-App: dieses Telefon wird Host, die anderen finden es im WLAN. Im Browser geht das nicht – dort den Weg über den PC nehmen. Wer im Browser mitspielen will, braucht für das Auto die App (Web Bluetooth verlangt einen secure context; das APK hat das eingebaut).": "Only in the Android app: this phone becomes the host, the others find it over Wi-Fi. That does not work in the browser – use the PC route there. Anyone who wants to join in the browser needs the app for the car (Web Bluetooth requires a secure context; the APK has that built in).",
     "Solange das Auto steht (0 km/h), zählt kein Stoß als Crash – du kannst es aufheben, ohne dass es simulierten Schaden nimmt.": "As long as the car is standing still (0 km/h), no crash is counted – you can lift it up without it taking simulated damage.",
+    "Ungültige Statistikdaten.": "Invalid statistics data.",
+    "Sitzung fehlt.": "Session missing.",
+    "Auto fehlt.": "Car missing.",
+    "Unbekannte Bereinigung.": "Unknown cleanup.",
+    "Bitte zuerst die laufende Fahrt beenden.": "Please finish the current drive first.",
+    "Die Statistikdaten haben sich geändert. Bitte die Auswahl neu öffnen.": "The statistics have changed. Please reopen the selection.",
+    "Statistik-Sicherung nicht verfügbar. Nichts weiter geändert. Bitte freien Gerätespeicher und die Browser-Speicherfreigabe prüfen; keine Website-Daten löschen.": "Statistics backup unavailable. Nothing else was changed. Check free device storage and the browser storage permission; do not clear site data.",
+    "Alte Statistik-Sicherung ist beschädigt; bitte zuerst sichern.": "The old statistics backup is damaged; please back up first.",
+    "Alte Statistik-Sicherung ist ungültig; bitte zuerst sichern.": "The old statistics backup is invalid; please back up first.",
+    "Eine andere alte Sicherung ist bereits vorhanden. Bitte zuerst exportieren.": "A different old backup already exists. Please export it first.",
+    "Eine nicht abgeschlossene Bereinigung ist gesichert. Bitte zuerst Rückgängig oder JSON-Sicherung verwenden.": "An unfinished cleanup is backed up. Use Undo or the JSON backup first.",
+    "Sicherungsstand hat sich geändert.": "The backup has changed.",
+    "Bereinigung läuft bereits.": "Cleanup is already running.",
+    "Sicherung und Bereinigung laufen …": "Backup and cleanup in progress …",
+    "Sicherung bleibt als offene Wiederherstellung erhalten.": "The backup remains available as a pending recovery.",
+    "Statistik bereinigt. Sicherung erstellt.": "Statistics cleaned up. Backup created.",
+    "Keine Statistik-Sicherung vorhanden.": "No statistics backup available.",
+    "Die Bereinigung wurde nicht geschrieben. Offenen Sicherungsversuch abschließen? Statistik bleibt unverändert.": "The cleanup was not written. Close the pending backup attempt? Statistics remain unchanged.",
+    "Letzte Statistik-Bereinigung rückgängig machen?": "Undo the last statistics cleanup?",
+    "Statistikdaten haben sich geändert.": "The statistics have changed.",
+    "Sicherungsmarker konnte nicht entfernt werden.": "The backup marker could not be removed.",
+    "Offener Sicherungsversuch abgeschlossen.": "Pending backup attempt closed.",
+    "Letzte Bereinigung rückgängig gemacht.": "Last cleanup undone.",
+    "Anzeige nicht vollständig aktualisiert: {m}": "Display not fully refreshed: {m}",
+    "Anzeige und Trefferliste aktualisiert.": "Display and match list refreshed.",
+    "Nicht gelöscht / nicht wiederhergestellt: {m}": "Not deleted / not restored: {m}",
+    "Betroffen: {s} vollständige Sitzung(en), {a} Fahrzeuganteil(e), {r} Runde(n).": "Affected: {s} complete session(s), {a} car entry/entries, {r} lap(s).",
+    "Altdaten ohne exakte Kilometerbuchung: Die Lebenszeit-Kilometer bleiben bei {n} Fahrzeuganteil(en) unverändert. Sitzungen und Runden werden abgezogen.": "Legacy data without exact distance entries: lifetime distance stays unchanged for {n} car entry/entries. Sessions and laps are deducted.",
+    "Nicht eindeutig zuordenbare Altdaten: zugehörige Fahrzeug-Summen bleiben unverändert.": "Legacy entries that cannot be matched: the corresponding car totals stay unchanged.",
+    "Eine gelöschte Bestzeit hat keine vollständig gespeicherte Historie. Der Fahrzeugrekord wird zurückgesetzt und ab der nächsten Fahrt neu geführt.": "A deleted best lap has no complete stored history. The car record is reset and starts again with the next drive.",
+    "Vor jedem Löschen wird der bisherige Stand in der Browser-Datenbank (IndexedDB) gesichert. Die Sicherung enthält den Stand vor der letzten Bereinigung. Garage, Fotos und Challenges bleiben erhalten. Beim Entfernen eines Autos oder einer Sitzung bleiben die getrennten Bestzeit-Rekorde stehen; die Zeitbereinigung prüft sie zusätzlich.": "Before each deletion the previous state is backed up in the browser database (IndexedDB). The backup holds the state before the last cleanup. Garage, photos and challenges are kept. Removing a car or a session keeps the separate time-attack records; the time cleanup checks those too.",
+    "Rückgängig geht nur, solange sich die Statistik seit der Bereinigung nicht geändert hat. Erst die nächste erfolgreiche Löschung ersetzt die Sicherung. Für dauerhafte Sicherungen vorher Optionen → Sicherung nutzen. Die JSON-Datei lässt sich dort importieren und ersetzt dann die gesamte Statistikablage. Die Zeitbereinigung sichert auch lokale Bestzeiten und Telemetrie. Der JSON-Download funktioniert im Browser; in der App die vorhandene Sicherungsfunktion nutzen.": "Undo works only as long as the statistics have not changed since the cleanup. Only the next successful deletion replaces the backup. For permanent backups use Options → Backup first. The JSON file can be imported there and then replaces the whole statistics store. The time cleanup also backs up local best times and telemetry. The JSON download works in the browser; in the app use the existing backup feature.",
+    "Statistiken bereinigen": "Clean up statistics",
+    "Gespeichert: {a} Fahrzeug(e), {s} Sitzung(en).": "Stored: {a} car(s), {s} session(s).",
+    "Fahrzeugstatistik entfernen": "Remove car statistics",
+    "Auto auswählen …": "Select car …",
+    "Ausgewählte Fahrzeugstatistik löschen": "Delete selected car statistics",
+    "Einzelne Sitzung löschen": "Delete one session",
+    "Sitzung auswählen …": "Select session …",
+    "beste {z}": "best {z}",
+    "{n} Runde(n)": "{n} lap(s)",
+    "Ausgewählte Sitzung löschen": "Delete selected session",
+    "Anzeige aktualisieren": "Refresh display",
+    "Letzte Bereinigung rückgängig": "Undo last cleanup",
+    "Statistik-Sicherung als JSON": "Statistics backup as JSON",
+    "Hinweis: Zurückgesetzte Fahrzeug-Bestzeiten werden seit der Bereinigung neu geführt; ältere, nicht mehr gespeicherte Runden sind unbekannt.": "Note: reset car best laps are tracked anew since the cleanup; older laps that are no longer stored are unknown.",
+    "Wirklich löschen: {x}?": "Really delete: {x}?",
+    "Der vorherige Statistikstand wird lokal gesichert. Garagendaten bleiben erhalten.": "The previous statistics state is backed up locally. Garage data is kept.",
+    "Statistik gelöscht: {x}. Lokale Sicherung erstellt.": "Statistics deleted: {x}. Local backup created.",
+    "Ungültige zusätzliche Statistikablage.": "Invalid additional statistics store.",
+    "Bestzeit- oder Telemetriedaten haben sich geändert. Bitte Auswahl erneuern.": "Best-time or telemetry data have changed. Please renew the selection.",
+    "Statistik nicht geschrieben: {k}": "Statistics not written: {k}",
+    "Speicherfehler; Rücknahme unvollständig. Lokale Sicherung als JSON exportieren: {k}": "Storage error; rollback incomplete. Export the local backup as JSON: {k}",
+    "Ungültige Ablage: {k}": "Invalid store: {k}",
+    "Bitte eine positive Sekundenzahl eingeben.": "Please enter a positive number of seconds.",
+    "Ungültiger Zeitgrenzwert.": "Invalid time threshold.",
+    "Strecke oder Grenzwert fehlt.": "Track or threshold missing.",
+    "Ungültige Zeitablage.": "Invalid time store.",
+    "{r} Runde(n) in {s} Sitzung(en), {b} Bestzeit-Rekord(e), {t} lokale Telemetrie-Einträge. Nur Zeiten strikt unter {g} Sekunden auf dieser Strecke (auch gespiegelt). Sitzungen und Kilometer bleiben erhalten, die Rundenereignisse werden mit entfernt.": "{r} lap(s) in {s} session(s), {b} time-attack record(s), {t} local telemetry entries. Only times strictly below {g} seconds on this track (mirrored layout included). Sessions and distances are kept; the lap events are removed too.",
+    "Ungültige separate Rekorde und ihre Medaillen werden zurückgesetzt; es gibt keine zweitbeste Historie.": "Invalid separate records and their medals are reset; there is no second-best history.",
+    "Fahrzeugrekorde ohne vollständige Historie werden ab der nächsten Fahrt neu geführt.": "Car records without a complete history are tracked anew from the next drive.",
+    "Zu kurze Zeiten je Strecke löschen": "Delete too-short times for one track",
+    "Strecke auswählen …": "Select track …",
+    "Zeiten unter … Sekunden": "Times below … seconds",
+    "Treffer ansehen": "View matches",
+    "Zeiten unter Grenzwert löschen": "Delete times below threshold",
+    "Diese Zeiten wirklich löschen? Strecke: {k}": "Really delete these times? Track: {k}",
+    "Der vorherige Stand wird lokal gesichert.": "The previous state is backed up locally.",
+    "Zeiten gelöscht: {r} Runde(n), {b} Bestzeit-Rekord(e), {t} Telemetrie-Einträge. Lokale Sicherung erstellt.": "Times deleted: {r} lap(s), {b} time-attack record(s), {t} telemetry entries. Local backup created.",
+    "Für die zuvor gewählte Strecke sind keine gespeicherten Zeiten mehr vorhanden. Sie wurde aus der Auswahl entfernt.": "No stored times remain for the previously selected track. It has been removed from the selection.",
+    "Rennintro vor der Ampel": "Race intro before the starting lights",
+    "Rennintro…": "Race intro…",
+    "Lokale Starts: Modus, Runden- oder Zeitlimit, Pflichtstopps, Startaufstellung und Startwetter als Piper-Aufnahmen. Die Ampel beginnt erst danach; wer während des Intros losfährt, macht einen Frühstart. Standard aus; nicht in Challenges und nicht im WLAN-Mehrspieler. Nutzt Sprache, Sprechgeschwindigkeit, Lautstärke und Hall der Rennstand-Ansagen. Fehlende Aufnahmen werden ausgelassen, der Start bleibt möglich.": "Local starts: mode, lap or time limit, mandatory pit stops, starting grid and starting weather as Piper recordings. The lights begin afterwards; anyone who drives off during the intro jumps the start. Off by default; not in challenges and not in Wi-Fi multiplayer. Uses the language, speed, volume and reverb of the race announcements. Missing recordings are skipped, the race can still start.",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -18492,6 +18585,81 @@
     "Lichthupe lässt das Rücklicht an, simulierter Gyro-Punkt folgt der Kurve.": "La ráfaga de luces mantiene encendida la luz trasera, el punto de giro simulado sigue la curva.",
     "Gemerkte Autos: nur geänderte Namen und Farben, Zuordnung per Klick.": "Coches recordados: solo nombres y colores cambiados, asignación con un clic.",
     "Vollständige Gestaltungsfreiheit für deine Carrera Hybrid Bahn": "Libertad creativa total para tu pista Carrera Hybrid",
+    "Ungültige Statistikdaten.": "Datos estadísticos no válidos.",
+    "Sitzung fehlt.": "Falta la sesión.",
+    "Auto fehlt.": "Falta el coche.",
+    "Unbekannte Bereinigung.": "Limpieza desconocida.",
+    "Bitte zuerst die laufende Fahrt beenden.": "Termina primero la conducción en curso.",
+    "Die Statistikdaten haben sich geändert. Bitte die Auswahl neu öffnen.": "Las estadísticas han cambiado. Vuelve a abrir la selección.",
+    "Statistik-Sicherung nicht verfügbar. Nichts weiter geändert. Bitte freien Gerätespeicher und die Browser-Speicherfreigabe prüfen; keine Website-Daten löschen.": "Copia de seguridad de estadísticas no disponible. No se ha cambiado nada más. Comprueba el espacio libre del dispositivo y el permiso de almacenamiento del navegador; no borres los datos del sitio.",
+    "Alte Statistik-Sicherung ist beschädigt; bitte zuerst sichern.": "La copia antigua de estadísticas está dañada; haz primero una copia de seguridad.",
+    "Alte Statistik-Sicherung ist ungültig; bitte zuerst sichern.": "La copia antigua de estadísticas no es válida; haz primero una copia de seguridad.",
+    "Eine andere alte Sicherung ist bereits vorhanden. Bitte zuerst exportieren.": "Ya existe otra copia antigua. Expórtala primero.",
+    "Eine nicht abgeschlossene Bereinigung ist gesichert. Bitte zuerst Rückgängig oder JSON-Sicherung verwenden.": "Hay una limpieza sin terminar guardada. Usa primero Deshacer o la copia JSON.",
+    "Sicherungsstand hat sich geändert.": "La copia de seguridad ha cambiado.",
+    "Bereinigung läuft bereits.": "La limpieza ya está en curso.",
+    "Sicherung und Bereinigung laufen …": "Copia de seguridad y limpieza en curso …",
+    "Sicherung bleibt als offene Wiederherstellung erhalten.": "La copia se conserva como recuperación pendiente.",
+    "Statistik bereinigt. Sicherung erstellt.": "Estadísticas limpiadas. Copia de seguridad creada.",
+    "Keine Statistik-Sicherung vorhanden.": "No hay copia de seguridad de estadísticas.",
+    "Die Bereinigung wurde nicht geschrieben. Offenen Sicherungsversuch abschließen? Statistik bleibt unverändert.": "La limpieza no se guardó. ¿Cerrar el intento de copia pendiente? Las estadísticas no cambian.",
+    "Letzte Statistik-Bereinigung rückgängig machen?": "¿Deshacer la última limpieza de estadísticas?",
+    "Statistikdaten haben sich geändert.": "Las estadísticas han cambiado.",
+    "Sicherungsmarker konnte nicht entfernt werden.": "No se pudo quitar la marca de copia de seguridad.",
+    "Offener Sicherungsversuch abgeschlossen.": "Intento de copia pendiente cerrado.",
+    "Letzte Bereinigung rückgängig gemacht.": "Última limpieza deshecha.",
+    "Anzeige nicht vollständig aktualisiert: {m}": "La vista no se actualizó por completo: {m}",
+    "Anzeige und Trefferliste aktualisiert.": "Vista y lista de coincidencias actualizadas.",
+    "Nicht gelöscht / nicht wiederhergestellt: {m}": "No borrado / no restaurado: {m}",
+    "Betroffen: {s} vollständige Sitzung(en), {a} Fahrzeuganteil(e), {r} Runde(n).": "Afectado: {s} sesión(es) completa(s), {a} entrada(s) de coche, {r} vuelta(s).",
+    "Altdaten ohne exakte Kilometerbuchung: Die Lebenszeit-Kilometer bleiben bei {n} Fahrzeuganteil(en) unverändert. Sitzungen und Runden werden abgezogen.": "Datos antiguos sin registro exacto de distancia: la distancia total no cambia en {n} entrada(s) de coche. Se descuentan sesiones y vueltas.",
+    "Nicht eindeutig zuordenbare Altdaten: zugehörige Fahrzeug-Summen bleiben unverändert.": "Datos antiguos sin asignación clara: los totales del coche no cambian.",
+    "Eine gelöschte Bestzeit hat keine vollständig gespeicherte Historie. Der Fahrzeugrekord wird zurückgesetzt und ab der nächsten Fahrt neu geführt.": "Una mejor vuelta borrada no tiene historial completo guardado. El récord del coche se reinicia y vuelve a contar desde la próxima conducción.",
+    "Vor jedem Löschen wird der bisherige Stand in der Browser-Datenbank (IndexedDB) gesichert. Die Sicherung enthält den Stand vor der letzten Bereinigung. Garage, Fotos und Challenges bleiben erhalten. Beim Entfernen eines Autos oder einer Sitzung bleiben die getrennten Bestzeit-Rekorde stehen; die Zeitbereinigung prüft sie zusätzlich.": "Antes de cada borrado se guarda el estado anterior en la base de datos del navegador (IndexedDB). La copia contiene el estado previo a la última limpieza. El garaje, las fotos y los desafíos se conservan. Al quitar un coche o una sesión se mantienen aparte los récords de contrarreloj; la limpieza de tiempos también los revisa.",
+    "Rückgängig geht nur, solange sich die Statistik seit der Bereinigung nicht geändert hat. Erst die nächste erfolgreiche Löschung ersetzt die Sicherung. Für dauerhafte Sicherungen vorher Optionen → Sicherung nutzen. Die JSON-Datei lässt sich dort importieren und ersetzt dann die gesamte Statistikablage. Die Zeitbereinigung sichert auch lokale Bestzeiten und Telemetrie. Der JSON-Download funktioniert im Browser; in der App die vorhandene Sicherungsfunktion nutzen.": "Deshacer solo funciona mientras las estadísticas no hayan cambiado desde la limpieza. Solo el siguiente borrado correcto reemplaza la copia. Para copias permanentes usa antes Opciones → Copia de seguridad. El archivo JSON se puede importar allí y sustituye todo el almacén de estadísticas. La limpieza de tiempos también guarda las mejores vueltas locales y la telemetría. La descarga JSON funciona en el navegador; en la app usa la función de copia existente.",
+    "Statistiken bereinigen": "Limpiar estadísticas",
+    "Gespeichert: {a} Fahrzeug(e), {s} Sitzung(en).": "Guardado: {a} coche(s), {s} sesión(es).",
+    "Fahrzeugstatistik entfernen": "Quitar estadísticas de un coche",
+    "Auto auswählen …": "Elegir coche …",
+    "Ausgewählte Fahrzeugstatistik löschen": "Borrar las estadísticas del coche elegido",
+    "Einzelne Sitzung löschen": "Borrar una sesión",
+    "Sitzung auswählen …": "Elegir sesión …",
+    "beste {z}": "mejor {z}",
+    "{n} Runde(n)": "{n} vuelta(s)",
+    "Ausgewählte Sitzung löschen": "Borrar la sesión elegida",
+    "Anzeige aktualisieren": "Actualizar vista",
+    "Letzte Bereinigung rückgängig": "Deshacer la última limpieza",
+    "Statistik-Sicherung als JSON": "Copia de estadísticas como JSON",
+    "Hinweis: Zurückgesetzte Fahrzeug-Bestzeiten werden seit der Bereinigung neu geführt; ältere, nicht mehr gespeicherte Runden sind unbekannt.": "Nota: las mejores vueltas reiniciadas se cuentan de nuevo desde la limpieza; las vueltas antiguas ya no guardadas son desconocidas.",
+    "Wirklich löschen: {x}?": "¿Borrar de verdad: {x}?",
+    "Der vorherige Statistikstand wird lokal gesichert. Garagendaten bleiben erhalten.": "El estado anterior de las estadísticas se guarda localmente. Los datos del garaje se conservan.",
+    "Statistik gelöscht: {x}. Lokale Sicherung erstellt.": "Estadísticas borradas: {x}. Copia local creada.",
+    "Ungültige zusätzliche Statistikablage.": "Almacén adicional de estadísticas no válido.",
+    "Bestzeit- oder Telemetriedaten haben sich geändert. Bitte Auswahl erneuern.": "Los datos de mejores tiempos o de telemetría han cambiado. Renueva la selección.",
+    "Statistik nicht geschrieben: {k}": "Estadísticas no guardadas: {k}",
+    "Speicherfehler; Rücknahme unvollständig. Lokale Sicherung als JSON exportieren: {k}": "Error de almacenamiento; reversión incompleta. Exporta la copia local como JSON: {k}",
+    "Ungültige Ablage: {k}": "Almacén no válido: {k}",
+    "Bitte eine positive Sekundenzahl eingeben.": "Introduce un número positivo de segundos.",
+    "Ungültiger Zeitgrenzwert.": "Límite de tiempo no válido.",
+    "Strecke oder Grenzwert fehlt.": "Falta el circuito o el límite.",
+    "Ungültige Zeitablage.": "Almacén de tiempos no válido.",
+    "{r} Runde(n) in {s} Sitzung(en), {b} Bestzeit-Rekord(e), {t} lokale Telemetrie-Einträge. Nur Zeiten strikt unter {g} Sekunden auf dieser Strecke (auch gespiegelt). Sitzungen und Kilometer bleiben erhalten, die Rundenereignisse werden mit entfernt.": "{r} vuelta(s) en {s} sesión(es), {b} récord(s) de contrarreloj, {t} entradas de telemetría local. Solo tiempos estrictamente por debajo de {g} segundos en este circuito (incluido el trazado espejado). Las sesiones y distancias se conservan; los eventos de vuelta también se eliminan.",
+    "Ungültige separate Rekorde und ihre Medaillen werden zurückgesetzt; es gibt keine zweitbeste Historie.": "Los récords aparte no válidos y sus medallas se reinician; no hay historial de segunda mejor vuelta.",
+    "Fahrzeugrekorde ohne vollständige Historie werden ab der nächsten Fahrt neu geführt.": "Los récords de coche sin historial completo se cuentan de nuevo desde la próxima conducción.",
+    "Zu kurze Zeiten je Strecke löschen": "Borrar tiempos demasiado cortos por circuito",
+    "Strecke auswählen …": "Elegir circuito …",
+    "Zeiten unter … Sekunden": "Tiempos por debajo de … segundos",
+    "Treffer ansehen": "Ver coincidencias",
+    "Zeiten unter Grenzwert löschen": "Borrar tiempos por debajo del límite",
+    "Diese Zeiten wirklich löschen? Strecke: {k}": "¿Borrar de verdad estos tiempos? Circuito: {k}",
+    "Der vorherige Stand wird lokal gesichert.": "El estado anterior se guarda localmente.",
+    "Zeiten gelöscht: {r} Runde(n), {b} Bestzeit-Rekord(e), {t} Telemetrie-Einträge. Lokale Sicherung erstellt.": "Tiempos borrados: {r} vuelta(s), {b} récord(s) de contrarreloj, {t} entradas de telemetría. Copia local creada.",
+    "Für die zuvor gewählte Strecke sind keine gespeicherten Zeiten mehr vorhanden. Sie wurde aus der Auswahl entfernt.": "No quedan tiempos guardados para el circuito elegido antes. Se ha quitado de la selección.",
+    "Erklärung anzeigen": "Mostrar explicación",
+    "Time Attack": "Contrarreloj",
+    "Rennintro vor der Ampel": "Intro de carrera antes del semáforo",
+    "Rennintro…": "Intro de carrera…",
+    "Lokale Starts: Modus, Runden- oder Zeitlimit, Pflichtstopps, Startaufstellung und Startwetter als Piper-Aufnahmen. Die Ampel beginnt erst danach; wer während des Intros losfährt, macht einen Frühstart. Standard aus; nicht in Challenges und nicht im WLAN-Mehrspieler. Nutzt Sprache, Sprechgeschwindigkeit, Lautstärke und Hall der Rennstand-Ansagen. Fehlende Aufnahmen werden ausgelassen, der Start bleibt möglich.": "Salidas locales: modo, límite de vueltas o de tiempo, paradas obligatorias, parrilla de salida y clima de salida como grabaciones de Piper. El semáforo empieza después; quien arranca durante la intro hace una salida anticipada. Desactivado por defecto; no en desafíos ni en multijugador por Wi-Fi. Usa el idioma, la velocidad, el volumen y la reverberación de los anuncios de posiciones. Las grabaciones que faltan se omiten y la salida sigue siendo posible.",
   };
 
   // ============================================================================
@@ -39772,6 +39940,8 @@
     if (raceState !== 'idle' && raceState !== 'finished') return; // ignore while armed/racing
     if (!knockoutBereit(true)) return;
     if (!bestzeitBereit(true)) return;
+    rennintroAbbrechen();
+    const introStartToken = ++rennintroStartGeneration;
     bestzeitVorherMerken();
     // v1.1.3: ein neues Rennen beginnt nie unter Gelb (stand vorher aus dem letzten Rennen).
     if (flagState !== 'green') gelbBeenden();
@@ -39869,9 +40039,11 @@
     $('race-lap-current').textContent = '-';
     // Freies Training braucht keine Ampel: es gibt niemanden, gegen den man gleichzeitig
     // losfahren muesste. Drei Sekunden Warten vor einer Trainingsrunde sind nur Wartezeit.
+    // Ein aktiviertes lokales Intro bekommt ebenfalls die Ampel nach der Ansage.
     // CHALLENGE "Beste Runde" laeuft als freies Training, aber MIT Ampel: "Auto muss stehen,
     // dann kommt eine Ampel" (72-challenges.js).
-    if (raceMode === 'practice' && !gruenBei && !(typeof challengeLaeuft === 'function' && challengeLaeuft())) {
+    if (raceMode === 'practice' && !gruenBei && !(typeof challengeLaeuft === 'function' && challengeLaeuft())
+        && !rennintroErlaubt(gruenZiel, mpPlan)) {
       raceState = 'racing';
       $('race-start-btn').disabled = true;
       $('race-stop-btn').disabled = false;
@@ -39890,41 +40062,65 @@
       finishSeitenZaehlerZuruecksetzen();
     }
     raceState = 'countdown';
+    // Fruehstart-Erkennung ab HIER, auch waehrend eines Rennintros: raceState ist schon
+    // 'countdown', und wer waehrend der Ansage losfaehrt, faehrt genauso zu frueh wie
+    // waehrend der Ampel (PR #8 startete die Erkennung erst mit der Ampel, man konnte das
+    // ganze Intro lang frei fahren).
     fruehstartBeginnen();
     $('race-start-btn').disabled = true;
     // Abbrechen muss schon im Countdown gehen: requestRaceStop() raeumt den Zaehler mit
     // auf, und ein Countdown, aus dem man nicht herauskommt, ist eine Falle.
     $('race-stop-btn').disabled = false;
     $('race-status').textContent = 'Countdown…';
-    // Zufaellige 1-3 s Pause vor dem Start; im Mehrspieler gibt der Host sie im Plan vor,
-    // damit alle gleichzeitig losfahren (sonst wuerde jedes Telefon anders wuerfeln).
-    const ampelVerzog = (mpPlan && Number.isFinite(mpPlan.ampelVerzog)) ? mpPlan.ampelVerzog
-                      : (1000 + Math.random() * 2000);
-    // Lokal: Gruen so setzen, dass die 1. Lampe 600 ms nach dem Start erscheint
-    // (1. Lampe = gruen - verzog - 4000).
-    const plan = ampelZeitplan(gruenBei || Date.now() + 4600 + ampelVerzog, ampelVerzog);
-    clearTimeout(raceCountdownTimer);
-    const schritt = (k) => {
-      if (raceState !== 'countdown') return;
-      ampelK = k;
-      const [bei, stufe] = plan[k];
-      const warte = bei - Date.now();
-      if (warte > 4) { raceCountdownTimer = setTimeout(() => schritt(k), warte); return; }
-      // Kommt der Plan spaet an, werden verpasste Lichter uebersprungen - nur Gruen zaehlt.
-      if (stufe > 0 && warte < -400 && k + 1 < plan.length) { schritt(k + 1); return; }
-      if (stufe > 0) {
-        setRaceLights(stufe);
-        ampelTon(440 + (stufe - 1) * 60, 0.18, 'square', 0.18);
-        schritt(k + 1);
-        return;
-      }
-      setRaceLights('go');
-      ampelTon(880, 0.35, 'square', 0.22);
-      raceGreen();
-      setTimeout(() => setRaceLights(0), 900);
+    clearTimeout(raceCountdownTimer); raceCountdownTimer = null;
+    ampelPlan = null; ampelSchritt = null; ampelK = 0;
+    setRaceLights(0);
+    let ampelGestartet = false;
+    const ampelBeginnen = () => {
+      if (ampelGestartet || raceState !== 'countdown') return;
+      ampelGestartet = true;
+      $('race-status').textContent = 'Countdown…';
+      // Zufaellige 1-3 s Pause vor dem Start; im Mehrspieler gibt der Host sie im Plan vor,
+      // damit alle gleichzeitig losfahren (sonst wuerde jedes Telefon anders wuerfeln).
+      const ampelVerzog = (mpPlan && Number.isFinite(mpPlan.ampelVerzog)) ? mpPlan.ampelVerzog
+                        : (1000 + Math.random() * 2000);
+      // Lokal: Gruen so setzen, dass die 1. Lampe 600 ms nach dem Start erscheint
+      // (1. Lampe = gruen - verzog - 4000).
+      const plan = ampelZeitplan(gruenBei || Date.now() + 4600 + ampelVerzog, ampelVerzog);
+      clearTimeout(raceCountdownTimer);
+      const schritt = (k) => {
+        if (raceState !== 'countdown') return;
+        ampelK = k;
+        const [bei, stufe] = plan[k];
+        const warte = bei - Date.now();
+        if (warte > 4) { raceCountdownTimer = setTimeout(() => schritt(k), warte); return; }
+        // Kommt der Plan spaet an, werden verpasste Lichter uebersprungen - nur Gruen zaehlt.
+        if (stufe > 0 && warte < -400 && k + 1 < plan.length) { schritt(k + 1); return; }
+        if (stufe > 0) {
+          setRaceLights(stufe);
+          ampelTon(440 + (stufe - 1) * 60, 0.18, 'square', 0.18);
+          schritt(k + 1);
+          return;
+        }
+        setRaceLights('go');
+        ampelTon(880, 0.35, 'square', 0.22);
+        raceGreen();
+        setTimeout(() => setRaceLights(0), 900);
+      };
+      ampelPlan = plan; ampelSchritt = schritt;
+      schritt(0);
     };
-    ampelPlan = plan; ampelSchritt = schritt;
-    schritt(0);
+    if (rennintroErlaubt(gruenZiel, mpPlan)) {
+      $('race-status').textContent = t('Rennintro…');
+      const intro = rennintroVorAmpel();
+      const weiter = () => {
+        // Stop + Neustart darf keinen alten Countdown wiederbeleben.
+        // Ausschalten waehrend des Intros darf dagegen zur Ampel weitergehen.
+        if (introStartToken !== rennintroStartGeneration) return;
+        ampelBeginnen();
+      };
+      intro.then(weiter, weiter);
+    } else ampelBeginnen();
   }
   // v0.9.32: die laufende Ampel um delta ms verschieben (WLAN-Mehrspieler: feinerer
   // Uhrabgleich waehrend des Vorlaufs). Nur solange noch keine Lampe leuchtet.
@@ -40074,6 +40270,8 @@
   // requestRaceStop() uebergibt ausdruecklich false.
   function finishRace(auslaufen) {
     if (raceState === 'finished') return; // Ergebnisansage nur einmal planen.
+    rennintroStartGeneration++;
+    rennintroAbbrechen();
     rennstandAbbrechen();
     raceState = 'finished';
     // v1.1.3 GEMELDET: "Rennende sollte auch die gelbe Flagge beenden". Nicht ueber
@@ -53096,6 +53294,220 @@
   if (rennstandTestKnopf) {
     rennstandTestKnopf.addEventListener('click', () => { rennstandTesten(); });
     i18nOnLangChange(() => rennstandTestSetBusy(false));
+  }
+  // Lokales Rennintro auf Basis v1.1.44. Kein gemeinsamer Mehrspieler-Vorlauf.
+  // Eigener Schalter, gespeichert durch die vorhandene Selbstsicherung.
+  let rennintroAn = false, rennintroGeneration = 0, rennintroTimer = null;
+  let rennintroStartGeneration = 0;
+  let rennintroFertig = null, rennintroQuellen = [], rennintroAktiv = false;
+  const rennintroBuffers = new Map();
+  // Die vollstaendige Aufstellung braucht bei mehreren Autos mehr als 40 Sekunden.
+  // Begrenzte parallele Downloads verhindern lange serielle Clip-Ladezeiten.
+  // Ladelimit 20 s statt 10 s: auf langsamen Handys reichte das beim ersten Start nicht.
+  // Einmal geladene Clips bleiben in rennintroBuffers; reisst das Limit, laufen die
+  // Downloads im Hintergrund weiter und fuellen den Speicher fuer den naechsten Start.
+  const RENINTRO_LADE_MS = 20000, RENINTRO_MAX_MS = 180000;
+
+  function rennintroAbbrechen() {
+    rennintroGeneration++;
+    if (rennintroTimer !== null) clearTimeout(rennintroTimer);
+    rennintroTimer = null;
+    for (const q of rennintroQuellen) {
+      q.onended = null;
+      try { q.stop(); } catch (e) {}
+      try { q.disconnect(); } catch (e) {}
+    }
+    rennintroQuellen = []; rennintroAktiv = false;
+    const fertig = rennintroFertig; rennintroFertig = null;
+    if (fertig) fertig(false);
+  }
+
+  // Dieselbe Reihenfolge wie auf dem Startschirm, nicht Garage oder Live-Rangliste.
+  // Safety Car / Reinigungsauto sind in raceGridCars() bereits ausgeschlossen.
+  // Identitaeten einmal kopieren: spaetere Garagenaenderungen aendern das Intro nicht.
+  function rennintroStartaufstellung() {
+    return raceGridCars().map((car) => {
+      const farbe = carColor(car);
+      return { farbeId: farbe.id, modellId: carModellWert(car.modellId) };
+    });
+  }
+
+  function rennintroTeilnehmerFolge(aufstellung) {
+    const folge = [];
+    const cars = Array.isArray(aufstellung) ? aufstellung : [];
+    if (cars.length === 1) folge.push('i:teilnehmer_einer');
+    else folge.push('i:teilnehmer_anfang', ...rennstandZahlFolge(cars.length), 'i:teilnehmer_ende');
+    cars.forEach((car, i) => {
+      const farbeId = car && car.farbeId;
+      const farbe = CAR_COLORS.some((c) => c.id === farbeId) && farbeId !== 'keine'
+        ? farbeId : 'unbekannt';
+      const modell = carModellWert(car && car.modellId) || 'auto';
+      folge.push('i:startposition', ...rennstandZahlFolge(i + 1), 'i:startposition_wagen',
+        'i:startfarbe_' + farbe, 'i:startmodell_' + modell);
+    });
+    return folge;
+  }
+
+  function rennintroFolge(modus, limit, wetter, pflichtstopps = 0, aufstellung = []) {
+    const folge = ['i:willkommen', 'i:modus_' + modus];
+    const n = Number.isFinite(limit) ? Math.max(0, Math.round(limit)) : 0;
+    if (modus === 'laps' && n > 0) {
+      folge.push('i:distanz');
+      if (n === 1) folge.push('i:runde');
+      else folge.push(...rennstandZahlFolge(n), 'i:runden');
+    } else if (['practice', 'bestzeit', 'qualifying', 'endurance'].includes(modus)) {
+      if (n > 0) {
+        folge.push('i:zeitlimit');
+        if (n === 1) folge.push('i:minute');
+        else folge.push(...rennstandZahlFolge(n), 'i:minuten');
+      }
+      else folge.push('i:ohne_limit');
+    }
+    const stopps = Number.isFinite(pflichtstopps) ? Math.max(0, Math.round(pflichtstopps)) : 0;
+    if (stopps === 0) folge.push('i:boxenstopps_keine');
+    else if (stopps === 1) folge.push('i:boxenstopp_einer');
+    else folge.push('i:boxenstopps_anzahl', ...rennstandZahlFolge(stopps), 'i:boxenstopps_pflicht');
+    folge.push(...rennintroTeilnehmerFolge(aufstellung));
+    folge.push(wetter === 'rain' ? 'i:wetter_regen' : 'i:wetter_trocken', 'i:bereit');
+    return folge;
+  }
+
+  // Fehlt ein einzelner Clip (nicht im Manifest, HTTP-Fehler, nicht dekodierbar), wird nur
+  // er ausgelassen. Vorher brach ein einzelner Fehler das ganze Intro ab, obwohl der
+  // Optionstext "fehlende Aufnahmen werden ausgelassen" verspricht. Nur ein Abbruch
+  // (Stopp, Neustart) bricht das Laden ab.
+  async function rennintroClipsLaden(folge, spr, signal) {
+    const quelle = spr === 'de' ? 'de' : 'en';
+    const satz = {}, manifests = {}, fehlend = [];
+    const keys = [...new Set(folge)];
+    let cursor = 0;
+    const laden = async (key) => {
+      if (signal.aborted) throw new Error('Laden abgebrochen');
+      try { await ladenEiner(key); } catch (e) {
+        if (signal.aborted) throw e;
+        fehlend.push(key + ' (' + e.message + ')');
+      }
+    };
+    const ladenEiner = async (key) => {
+      const cacheKey = quelle + ':' + key;
+      if (rennintroBuffers.has(cacheKey)) { satz[key] = rennintroBuffers.get(cacheKey); return; }
+      const prefix = key.slice(0, 2), name = key.slice(2);
+      if (prefix !== 'n:' && prefix !== 'i:') throw new Error('Unbekannter Clip: ' + key);
+      if (!manifests[prefix]) {
+        const path = prefix === 'n:' ? 'audio/zahlen.json' : 'audio/rennintro.json';
+        manifests[prefix] = (async () => {
+          const res = await fetch(path, { signal });
+          if (!res.ok) throw new Error(path + ' HTTP ' + res.status);
+          return (await res.json())[quelle];
+        })();
+      }
+      const katalog = await manifests[prefix];
+      const file = katalog && katalog[name];
+      if (!file) throw new Error('Clip fehlt: ' + key);
+      const res = await fetch('audio/' + file, { signal });
+      if (!res.ok) throw new Error(file + ' HTTP ' + res.status);
+      const buffer = await audioCtx.decodeAudioData(await res.arrayBuffer());
+      if (signal.aborted) throw new Error('Laden abgebrochen');
+      rennintroBuffers.set(cacheKey, buffer); satz[key] = buffer;
+    };
+    // Hoechstens sechs Requests gleichzeitig; jedes Manifest nur einmal anfordern.
+    await Promise.all(Array.from({ length: Math.min(6, keys.length) }, async () => {
+      while (cursor < keys.length) await laden(keys[cursor++]);
+    }));
+    return { satz, fehlend };
+  }
+
+  // Challenges ausgenommen: sie haben ihren eigenen Ablauf ("Auto muss stehen, dann kommt
+  // eine Ampel"), und das Intro lief sonst vor jedem Versuch, beim Knockout vor jedem Start.
+  function rennintroErlaubt(gruenZiel, mpPlan) {
+    return rennintroAn && !mpPlan && typeof gruenZiel !== 'number'
+      && !(typeof mp !== 'undefined' && mp.an) && soundEnabled
+      && !(typeof challengeLaeuft === 'function' && challengeLaeuft())
+      && rennstandLautstaerke > 0;
+  }
+
+  async function rennintroVorAmpel() {
+    rennintroAbbrechen();
+    const token = rennintroGeneration, spr = lang;
+    const aufstellung = rennintroStartaufstellung();
+    const folge = rennintroFolge(raceMode, raceLimit, raceWxStart, racePitRequired, aufstellung);
+    const controller = new AbortController();
+    rennintroAktiv = true;
+    return new Promise((resolve) => {
+      let erledigt = false;
+      // abbrechen = false beim Ladelimit: die Downloads laufen weiter in den Speicher.
+      const fertig = (ok, abbrechen = true) => {
+        if (erledigt) return;
+        erledigt = true;
+        if (abbrechen) controller.abort();
+        if (token === rennintroGeneration) {
+          if (rennintroTimer !== null) clearTimeout(rennintroTimer);
+          rennintroTimer = null; rennintroFertig = null;
+          rennintroAktiv = false;
+          for (const q of rennintroQuellen) {
+            q.onended = null;
+            try { q.stop(); } catch (e) {}
+            try { q.disconnect(); } catch (e) {}
+          }
+          rennintroQuellen = [];
+        }
+        resolve(ok);
+      };
+      rennintroFertig = fertig;
+      rennintroTimer = setTimeout(() => {
+        log('Rennintro: Ladezeit ueberschritten; Start ohne Intro.', 'info');
+        fertig(false, false);
+      }, RENINTRO_LADE_MS);
+      (async () => {
+        try {
+          if (!audioCtx) initEngineSound();
+          await audioCtx.resume();
+          const { satz, fehlend } = await rennintroClipsLaden(folge, spr, controller.signal);
+          if (erledigt || token !== rennintroGeneration || !rennintroAn || !soundEnabled
+              || spr !== lang || raceState !== 'countdown' || rennstandLautstaerke <= 0) {
+            fertig(false); return;
+          }
+          if (fehlend.length) {
+            log('Rennintro: ' + fehlend.length + ' Aufnahme(n) fehlen und werden ausgelassen: '
+              + fehlend.slice(0, 4).join(', ') + (fehlend.length > 4 ? ' …' : ''), 'info');
+          }
+          const spielbar = folge.filter((key) => satz[key]);
+          if (!spielbar.length) throw new Error('keine Aufnahme ladbar');
+          if (audioCtx.state !== 'running') throw new Error('Audiokontext nicht aktiv');
+          const tempo = rennstandTempoWert(rennstandTempo);
+          const dauer = spielbar.reduce((sum, key) => sum + satz[key].duration / tempo + 0.08, 0);
+          if (!Number.isFinite(dauer) || dauer <= 0 || dauer * 1000 > RENINTRO_MAX_MS)
+            throw new Error('Ungueltige oder zu lange Ansage');
+          clearTimeout(rennintroTimer);
+          rennintroTimer = setTimeout(() => {
+            log('Rennintro: Wiedergabe-Timeout; Start ohne weitere Ansage.', 'info');
+            fertig(false);
+          }, Math.min(RENINTRO_MAX_MS, Math.ceil((dauer + 1) * 1000)));
+          let bei = audioCtx.currentTime + 0.03;
+          spielbar.forEach((key, i) => {
+            const src = audioCtx.createBufferSource();
+            src.buffer = satz[key]; src.playbackRate.value = tempo;
+            src.connect(rennstandGain());
+            rennintroQuellen.push(src);
+            if (i === spielbar.length - 1) src.onended = () => fertig(true);
+            src.start(bei); bei += src.buffer.duration / tempo + 0.08;
+          });
+        } catch (err) {
+          if (!erledigt && token === rennintroGeneration)
+            log('Rennintro nicht ladbar (' + err.message + '); Start ohne Intro.', 'info');
+          fertig(false);
+        }
+      })();
+    });
+  }
+
+  const rennintroSchalter = $('setting-announce-intro');
+  if (rennintroSchalter) {
+    rennintroAn = rennintroSchalter.checked;
+    rennintroSchalter.addEventListener('change', () => {
+      rennintroAn = rennintroSchalter.checked;
+      if (!rennintroAn) rennintroAbbrechen();
+    });
   }
   // =========================================================================
   // Autonome Gegner, und alles was an ihnen haengt
@@ -95759,6 +96171,139 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Sieger je Modus, Korrektur einmalig, Seite gezeichnet' };
   });
 
+  // Statistikbereinigung (98ea/98eb, PR #10): nur die reinen Planfunktionen und das
+  // Schreiben/Zuruecknehmen auf eigenen Probe-Schluesseln. Der echte Statistikspeicher und
+  // die IndexedDB-Sicherung des Nutzers werden nicht angefasst.
+  stAdd('Statistikbereinigung v1.2.15: Vorschau, zu kurze Zeiten, Ruecknahme, Altdaten-Zuordnung', () => {
+    const f = [];
+    const code = 'SG2RG2R';
+    const buch = (id, km, n) => ({ id, km, realKm: km / 10, runden: n, sitzungen: 1 });
+    const o = { kmV: 2, cars: {
+      a: { name: 'A', km: 3, realKm: 0.3, runden: 5, sitzungen: 2, besteMs: 2000 },
+      b: { name: 'B', km: 1, realKm: 0.1, runden: 2, sitzungen: 1, besteMs: 4000 },
+      'name:Alt': { name: 'Alt', km: 5, realKm: 0.5, runden: 3, sitzungen: 1, besteMs: 6000 } },
+    sessions: [
+      { zeit: '2026-10-20T12:00:00Z', strecke: code, modus: 'laps', simKm: 1, realKm: 0.1, autos: [
+        { name: 'A', id: 'a', rolle: 'player', laps: [2000, 5000, 6000],
+          ereignisse: [{ pit: 1 }, { pit: 2 }, { pit: 3 }], statistikBuchung: buch('a', 1, 3) },
+        { name: 'B', id: 'b', rolle: 'ghost', laps: [4000, 8000], statistikBuchung: buch('b', 1, 2) }] },
+      { zeit: '2026-10-21T12:00:00Z', strecke: code, modus: 'laps', simKm: 2, realKm: 0.2, autos: [
+        { name: 'A', id: 'a', rolle: 'player', laps: [3000, 9000], statistikBuchung: buch('a', 2, 2) }] },
+      // Altsitzung ohne Buchung: in der Sitzung steht eine a.id, gebucht wurde unter 'name:Alt'
+      // (Auto war beim Speichern nicht in der Garage).
+      { zeit: '2026-01-01T12:00:00Z', strecke: '', modus: 'laps', autos: [
+        { name: 'Alt', id: 'dev-alt', rolle: 'ghost', laps: [6000, 7000, 8000] }] }] };
+    const roh = JSON.stringify(o);
+    try {
+      // Altdaten-Zuordnung: ein Auto, nicht zwei
+      const liste = statCleanAutos(o);
+      if (liste.size !== 3 || liste.has('dev-alt')) f.push('Altauto doppelt in der Auswahl (' + [...liste.keys()].join(',') + ')');
+      const pAlt = statCleanPlan(o, 'sitzung', 2);
+      if (pAlt.bericht.zuordnungUnbekannt) f.push('Altsitzung nicht zuordenbar');
+      if (pAlt.neu.cars['name:Alt'].sitzungen !== 0 || pAlt.neu.cars['name:Alt'].runden !== 0) f.push('Altsitzung nicht abgezogen');
+      const pAltAuto = statCleanPlan(o, 'auto', 'name:Alt');
+      if (pAltAuto.bericht.anteile !== 1 || pAltAuto.neu.sessions.length !== 2 || pAltAuto.neu.cars['name:Alt']) {
+        f.push('Altauto nicht vollstaendig entfernt');
+      }
+      // Vorschau einer Sitzungsloeschung
+      const p = statCleanPlan(o, 'sitzung', 0);
+      const b = p.bericht;
+      if (b.sitzungen !== 1 || b.runden !== 5 || b.kmUnbekannt) f.push('Vorschau zaehlt falsch: ' + JSON.stringify(b));
+      if (p.neu.cars.a.km !== 2 || p.neu.cars.a.runden !== 2 || p.neu.cars.a.sitzungen !== 1) f.push('Summen von A falsch');
+      if (p.neu.cars.a.besteMs !== 3000 || p.neu.cars.b.besteMs !== null) f.push('Bestzeiten nicht neu bestimmt');
+      if (!/\d/.test(statCleanBericht(b))) f.push('Vorschautext leer');
+      // Zu kurze Zeiten
+      const bzKey = statCleanStreckenKey(code);
+      const bz = JSON.stringify({ [bzKey]: { fahrer: { a: { name: 'A', beste: 2000, medaille: 3, runden: 9 } } } });
+      const z = statCleanZeitenPlan(o, code, 5000, bz, '{}');
+      if (z.bericht.runden !== 3 || z.bericht.sitzungen !== 2) f.push('Zeiten: ' + z.bericht.runden + ' Runden in ' + z.bericht.sitzungen + ' Sitzungen');
+      const a0 = z.neu.sessions[0].autos[0];
+      if (JSON.stringify(a0.laps) !== '[5000,6000]') f.push('Grenzwert selbst geloescht oder Runde vergessen');
+      if (!a0.ereignisse || a0.ereignisse[0].pit !== 2) f.push('Rundenereignisse verrutscht');
+      if (z.neu.cars.a.runden !== 3 || z.neu.cars.a.km !== 3) f.push('Zeiten: Runden/km von A falsch');
+      if (z.neu.cars.a.besteMs !== 5000 || z.neu.cars.b.besteMs !== 8000) f.push('Zeiten: Bestzeit nicht nachgezogen');
+      const bzNeu = JSON.parse(z.extra[BESTZEIT_STORE].nachher);
+      if (z.bericht.rekorde !== 1 || bzNeu[bzKey].fahrer.a.beste !== null || bzNeu[bzKey].fahrer.a.runden !== 9) {
+        f.push('Bestzeit-Rekord nicht sauber zurueckgesetzt');
+      }
+      if (statCleanGrenze('5,25') !== 5250) f.push('Dezimalkomma');
+      let wirft = false; try { statCleanGrenze('-1'); } catch (e) { wirft = true; }
+      if (!wirft) f.push('negativer Grenzwert angenommen');
+      if (JSON.stringify(o) !== roh) f.push('Plan veraendert die Originaldaten');
+    } catch (e) { f.push('Wurf: ' + e.message); }
+    // Ruecknahme: schreiben und zuruecknehmen auf eigenen Probe-Schluesseln
+    const k1 = 'omegasim-selbsttest-statclean-1', k2 = 'omegasim-selbsttest-statclean-2';
+    try {
+      localStorage.removeItem(k1); localStorage.setItem(k2, 'alt');
+      const paare = { [k1]: { vorher: null, nachher: 'neu1' }, [k2]: { vorher: 'alt', nachher: 'neu2' } };
+      statCleanSchreiben(paare, 'nachher');
+      if (localStorage.getItem(k1) !== 'neu1' || localStorage.getItem(k2) !== 'neu2') f.push('Bereinigung nicht geschrieben');
+      statCleanSchreiben(paare, 'vorher');
+      if (localStorage.getItem(k1) !== null || localStorage.getItem(k2) !== 'alt') f.push('Ruecknahme stellt nicht her');
+    } catch (e) { f.push('Ruecknahme wirft: ' + e.message); }
+    finally { localStorage.removeItem(k1); localStorage.removeItem(k2); }
+    // Spanisch sieht Spanisch (vorher data-i18n-skip und eine eigene DE/EN-Weiche)
+    const vorher = lang;
+    try {
+      setLang('es');
+      statBereinigungZeichnen();
+      const sum = $('stat-bereinigen') && $('stat-bereinigen').querySelector('summary');
+      if (!sum || sum.textContent.indexOf('Limpiar estadísticas') < 0) f.push('Spanisch zeigt nicht Spanisch');
+      if ($('stat-bereinigen').closest('[data-i18n-skip]')) f.push('Bereich noch data-i18n-skip');
+    } catch (e) { f.push('Sprache: ' + e.message); }
+    finally { if (lang !== vorher) setLang(vorher); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Vorschau, Zeitgrenze, Ruecknahme, Altdaten und Spanisch stimmen' };
+  });
+
+  // Rennintro (80d-rennintro.js, PR #8): Reihenfolge der Ansage, jede Aufnahme im Manifest,
+  // einzelne fehlende Clips werden ausgelassen, Challenges ohne Intro, Fruehstart ab Intro.
+  stAdd('Rennintro v1.2.15: Folge, Manifest, fehlende Clips, Challenges, Fruehstart', async () => {
+    const f = [];
+    const z = (n) => rennstandZahlFolge(n);
+    const soll = ['i:willkommen', 'i:modus_laps', 'i:distanz', ...z(5), 'i:runden', 'i:boxenstopps_keine',
+      'i:teilnehmer_einer', 'i:startposition', ...z(1), 'i:startposition_wagen', 'i:startfarbe_rot',
+      'i:startmodell_ferrari', 'i:wetter_trocken', 'i:bereit'];
+    const ist = rennintroFolge('laps', 5, 'dry', 0, [{ farbeId: 'rot', modellId: 'ferrari' }]);
+    if (JSON.stringify(ist) !== JSON.stringify(soll)) f.push('Rennen 5 Runden: ' + ist.join(' '));
+    const zeit = rennintroFolge('endurance', 1, 'rain', 2, [{ farbeId: 'keine', modellId: '' }, { farbeId: 'blau', modellId: 'bmw' }]);
+    for (const k of ['i:zeitlimit', 'i:minute', 'i:boxenstopps_anzahl', 'i:boxenstopps_pflicht', 'i:teilnehmer_anfang',
+      'i:teilnehmer_ende', 'i:startfarbe_unbekannt', 'i:startmodell_auto', 'i:startmodell_bmw', 'i:wetter_regen']) {
+      if (zeit.indexOf(k) < 0) f.push('Langstrecke ohne ' + k);
+    }
+    if (rennintroFolge('practice', 0, 'dry').indexOf('i:ohne_limit') < 0) f.push('Training ohne Limit fehlt');
+    if (rennintroFolge('laps', 1, 'dry').indexOf('i:runde') < 0) f.push('eine Runde: Einzahl fehlt');
+    // Jede moegliche Aufnahme muss im Manifest stehen, in beiden Sprachen.
+    try {
+      const m = await (await fetch('audio/rennintro.json')).json();
+      const alle = new Set();
+      const autos = CAR_COLORS.map((c, i) => ({ farbeId: c.id, modellId: CAR_MODELLE[i % CAR_MODELLE.length].id }));
+      for (const modus of Object.keys(RACE_MODES)) {
+        for (const lim of [0, 1, 7]) for (const st of [0, 1, 3]) for (const wx of ['dry', 'rain']) {
+          rennintroFolge(modus, lim, wx, st, autos).forEach((k) => { if (k.startsWith('i:')) alle.add(k.slice(2)); });
+        }
+      }
+      CAR_MODELLE.forEach((mo) => rennintroFolge('laps', 1, 'dry', 0, [{ farbeId: 'rot', modellId: mo.id }])
+        .forEach((k) => { if (k.startsWith('i:')) alle.add(k.slice(2)); }));
+      for (const spr of ['de', 'en']) {
+        const fehlt = [...alle].filter((k) => !(m[spr] && m[spr][k]));
+        if (fehlt.length) f.push(spr + ' fehlt im Manifest: ' + fehlt.slice(0, 4).join(', '));
+      }
+    } catch (e) { f.push('Manifest nicht lesbar: ' + e.message); }
+    // Ein fehlender Clip bricht nicht das ganze Laden ab
+    try {
+      const r = await rennintroClipsLaden(['i:gibt_es_nicht', 'x:unbekannt'], 'de', new AbortController().signal);
+      if (!r || !Array.isArray(r.fehlend) || r.fehlend.length !== 2 || Object.keys(r.satz).length) f.push('fehlende Clips falsch gemeldet');
+    } catch (e) { f.push('fehlender Clip bricht ab: ' + e.message); }
+    if (!/challengeLaeuft/.test(String(rennintroErlaubt))) f.push('Challenges nicht ausgeschlossen');
+    if (RENINTRO_LADE_MS < 20000) f.push('Ladelimit ' + RENINTRO_LADE_MS + ' ms');
+    const q = String(startRaceCountdown);
+    const iFrueh = q.indexOf('fruehstartBeginnen()'), iAmpel = q.indexOf('const ampelBeginnen');
+    if (iFrueh < 0 || iAmpel < 0 || iFrueh > iAmpel || q.indexOf('fruehstartBeginnen()', iAmpel) >= 0) {
+      f.push('Fruehstart-Erkennung nicht ab Intro-Beginn');
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Folge, Manifest DE/EN, Auslassen, Challenges, Fruehstart stimmen' };
+  });
+
   stAdd('Spiegeln: jede Challenge-Strecke schliesst gespiegelt wie im Original', () => {
     const r = OMEGA_TEST.spiegelSchluss();
     const kaputt = r.filter((x) => x.orig !== x.gesp).map((x) => x.id);
@@ -99740,6 +100285,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         const beste = Math.min.apply(null, c.laps.map(l => l.ms));
         if (e.besteMs === null || beste < e.besteMs) e.besteMs = beste;
       }
+      // Exakte Buchung fuer selektives Loeschen: nicht aus den letzten 200
+      // Sitzungen neu summieren, weil die Lebenszeit-Summen weiter zurueckreichen.
+      eintrag.autos[autos.indexOf(c)].statistikBuchung = {
+        id, km: eigenSim, realKm: eigenReal, runden: c.laps.length, sitzungen: 1
+      };
       o.cars[id] = e;
     }
 
@@ -99939,7 +100489,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Ergebnisse zeichnet, und zwei Darstellungen desselben Speichers.
     plotAuswahl();
     const o = sessionStore();
-    const autos = Object.values(o.cars);
+    const datenAutos = typeof statCleanAutos === 'function' ? statCleanAutos(o) : null;
+    const autos = Object.keys(o.cars).filter(id => !datenAutos || datenAutos.has(id)).map(id => o.cars[id]);
     const kopf = $('sess-summary');
     if (kopf) {
       kopf.textContent = o.sessions.length
@@ -103356,12 +103907,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
 
   function statDaten() {
     const o = sessionStore();
+    const autosMitDaten = typeof statCleanAutos === 'function' ? statCleanAutos(o) : null;
     const s = o.sessions;
     const d = {
       sitzungen: s.length, rennen: 0, siege: 0, rennenMehr: 0, simKm: 0, realKm: 0, fahrMs: 0,
       runden: 0, besteMs: null, boxen: 0, crashs: 0, jeModus: {}, seit: s.length ? s[0].zeit : null,
       // v1.1.3: mit Kennung (Foto, Farbe).
-      autos: Object.keys(o.cars).map((id) => Object.assign({ id }, o.cars[id])).sort((a, b) => (b.km || 0) - (a.km || 0)),
+      autos: Object.keys(o.cars).filter(id => !autosMitDaten || autosMitDaten.has(id)).map((id) => Object.assign({ id }, o.cars[id])).sort((a, b) => (b.km || 0) - (a.km || 0)),
       medaillen: { 3: 0, 2: 0, 1: 0 }, strecken: 0, streckenGefahren: 0,
     };
     const codes = new Set();
@@ -103494,7 +104046,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (min < 60) return min + ' min';
     return Math.floor(min / 60) + ' h ' + String(min % 60).padStart(2, '0') + ' min';
   }
-  function statZeichnen() {
+  function statZeichnen(bereinigung = true) {
     const host = $('stat-inhalt');
     if (!host) return;
     const d = statDaten();
@@ -103563,6 +104115,734 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     html += '<p class="stat-fuss"><button type="button" id="stat-tele">' + esc(t('Telemetrie ansehen')) + '</button></p>';
     host.innerHTML = html;
     if ($('stat-tele')) $('stat-tele').addEventListener('click', () => teleSeiteOeffnen());
+    if (bereinigung && typeof statBereinigungZeichnen === 'function') statBereinigungZeichnen();
+  }
+  // Selektive Statistikbereinigung. Garagen- und Challengeablagen bleiben
+  // unangetastet; Zeitbereinigung erfasst auch lokale Bestzeiten und Telemetrie. Kein Eingriff in den 45-ms-Fahrtakt; nur explizite Benutzeraktionen.
+  const STAT_CLEAN_BACKUP = 'chc.statistics.undo.v1';
+  const STAT_CLEAN_BACKUP_TYP = 'omegasim-statistik-sicherung';
+
+  // Texte laufen ueber das normale Woerterbuch (I18N_EN/I18N_ES, 10-ble-explorer.js): der
+  // deutsche Text ist der Schluessel, {x} sind Platzhalter fuer Zahlen und Namen. Vorher
+  // stand hier eine eigene Weiche Deutsch/Englisch, und der Bereich war data-i18n-skip -
+  // Spanisch sah deshalb Deutsch.
+  function statCleanT(de, werte) {
+    let s = typeof t === 'function' ? t(de) : de;
+    if (werte) for (const k of Object.keys(werte)) s = s.split('{' + k + '}').join(String(werte[k]));
+    return s;
+  }
+  function statCleanEsc(x) {
+    return String(x == null ? '' : x).replace(/[&<>"']/g, (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  }
+  function statCleanZahl(x) { return typeof x === 'number' && Number.isFinite(x) && x >= 0; }
+  function statCleanKopie(o) { return JSON.parse(JSON.stringify(o)); }
+
+  // Derselbe Schluessel, unter dem sessionRecord() (97-sessions.js) die Summen gebucht hat.
+  // Neue Sitzungen tragen ihn in statistikBuchung.id. Bei alten Sitzungen wird er so
+  // nachgebildet, wie sessionRecord ihn damals vergeben hat: die Geraetekennung, wenn das
+  // Auto in der Garage stand, sonst 'name:<Name>' - auch dann, wenn die Sitzung selbst eine
+  // a.id traegt (das Auto war beim Speichern nicht in der Garage). Vorher galt in diesem
+  // Fall a.id: das Auto stand doppelt in der Auswahl (einmal als 'name:X' aus dem Speicher,
+  // einmal als a.id aus den Sitzungen) und seine Anteile galten als "nicht zuordenbar".
+  // Zwei Autos gleichen Namens mit verschiedenen IDs werden nie zusammengelegt.
+  function statCleanAutoKey(a, o) {
+    if (a.statistikBuchung && typeof a.statistikBuchung.id === 'string') return a.statistikBuchung.id;
+    const cars = (o && o.cars) || {};
+    const hat = (k) => Object.prototype.hasOwnProperty.call(cars, k);
+    const nameKey = 'name:' + String(a.name || '?');
+    if (a.id != null && String(a.id)) {
+      const id = String(a.id);
+      if (hat(id)) return id;
+      if (hat(nameKey)) return nameKey;
+      return id;
+    }
+    const ids = Object.keys(cars).filter((id) => !id.startsWith('name:') && cars[id] && cars[id].name === a.name);
+    return ids.length === 1 && !hat(nameKey) ? ids[0] : nameKey;
+  }
+
+  function statCleanPlan(o, art, key) {
+    if (!o || !Array.isArray(o.sessions) || !o.cars || typeof o.cars !== 'object') {
+      throw new Error(statCleanT('Ungültige Statistikdaten.'));
+    }
+    const neu = statCleanKopie(o);
+    const bericht = { autos: 0, sitzungen: 0, anteile: 0, runden: 0, kmUnbekannt: 0,
+      zuordnungUnbekannt: 0, besteUnbekannt: 0 };
+    const geloescht = [];
+    if (art === 'sitzung') {
+      if (!Number.isInteger(key) || key < 0 || key >= o.sessions.length) throw new Error(statCleanT('Sitzung fehlt.'));
+      const s = o.sessions[key];
+      for (const a of (s.autos || [])) geloescht.push({ a, id: statCleanAutoKey(a, o) });
+      neu.sessions.splice(key, 1);
+      bericht.sitzungen = 1;
+    } else if (art === 'auto') {
+      const id = String(key);
+      neu.sessions = [];
+      o.sessions.forEach((s, i) => {
+        const kopie = statCleanKopie(s);
+        const weg = (s.autos || []).filter((a) => statCleanAutoKey(a, o) === id);
+        if (!weg.length) { neu.sessions.push(kopie); return; }
+        kopie.autos = (s.autos || []).filter((a) => statCleanAutoKey(a, o) !== id).map(statCleanKopie);
+        weg.forEach((a) => geloescht.push({ a, id }));
+        bericht.anteile += weg.length;
+        if (!kopie.autos.length) { bericht.sitzungen++; return; }
+        // Sitzungsweite Werte stammen von Spieler 1, nicht von allen Mitfahrern.
+        // Nach Entfernen dieses Fahrers duerfen seine km/Fahrstil/Strafe nicht weiterzaehlen.
+        if (weg.some((a) => a.rolle === 'player')) {
+          kopie.simKm = 0; kopie.realKm = 0; kopie.fahrstil = null; kopie.strafeS = null;
+        }
+        neu.sessions.push(kopie);
+      });
+      if (Object.prototype.hasOwnProperty.call(neu.cars, id)) { delete neu.cars[id]; bericht.autos = 1; }
+      if (!bericht.autos && !geloescht.length) throw new Error(statCleanT('Auto fehlt.'));
+    } else { throw new Error(statCleanT('Unbekannte Bereinigung.')); }
+
+    const beruehrt = new Set();
+    for (const { a, id } of geloescht) {
+      const laps = Array.isArray(a.laps) ? a.laps : [];
+      bericht.runden += laps.length;
+      if (art === 'auto') continue; // Nur diese Auto-Summen entfernt; Mitfahrer bleiben unveraendert.
+      if (!Object.prototype.hasOwnProperty.call(neu.cars, id)) { bericht.zuordnungUnbekannt++; continue; }
+      const c = neu.cars[id];
+      c.runden = Math.max(0, (Number(c.runden) || 0) - laps.length);
+      c.sitzungen = Math.max(0, (Number(c.sitzungen) || 0) - 1);
+      const b = a.statistikBuchung;
+      if (b && b.id === id && statCleanZahl(b.km) && statCleanZahl(b.realKm)) {
+        c.km = +Math.max(0, (Number(c.km) || 0) - b.km).toFixed(3);
+        c.realKm = +Math.max(0, (Number(c.realKm) || 0) - b.realKm).toFixed(4);
+      } else {
+        // Alte Sitzungen haben keine exakten Buchungen je Auto. Rekonstruktion aus
+        // Runden/Bahnlaenge waere bei alten Versionen eine nicht belegbare Schaetzung.
+        bericht.kmUnbekannt++;
+      }
+      if (laps.some((ms) => ms === c.besteMs)) beruehrt.add(id);
+    }
+    for (const id of beruehrt) {
+      const c = neu.cars[id];
+      const rest = [];
+      let anzahl = 0;
+      for (const s of neu.sessions) for (const a of (s.autos || [])) {
+        if (statCleanAutoKey(a, o) !== id) continue;
+        anzahl++;
+        for (const ms of (a.laps || [])) if (statCleanZahl(ms) && ms > 0) rest.push(ms);
+      }
+      // Wenn aeltere Sitzungen bereits aus dem 200er Archiv gefallen sind, ist die
+      // zweitbeste Lebenszeit-Runde unbekannt. Nicht einfach einen falschen Rekord setzen.
+      if (c.sitzungen === anzahl) {
+        c.besteMs = rest.length ? Math.min(...rest) : null;
+      } else {
+        c.besteMs = null;
+        c.besteSeitBereinigung = new Date().toISOString();
+        bericht.besteUnbekannt++;
+      }
+    }
+    return { neu, bericht };
+  }
+
+  function statCleanGesperrt() {
+    return (typeof raceState !== 'undefined' && ['countdown', 'racing', 'finishing'].includes(raceState))
+      || (typeof vfAktiv === 'function' && vfAktiv());
+  }
+  function statCleanAktuell(raw) {
+    if (statCleanGesperrt()) throw new Error(statCleanT('Bitte zuerst die laufende Fahrt beenden.'));
+    if (localStorage.getItem(SESSION_STORE) !== raw) throw new Error(statCleanT(
+      'Die Statistikdaten haben sich geändert. Bitte die Auswahl neu öffnen.'));
+  }
+  // Rueckgaengig-Daten gehoeren nicht in den kleinen localStorage. Jede Aktion
+  // sichert zuerst dauerhaft in IndexedDB und wartet auf den Transaktionsabschluss.
+  const STAT_CLEAN_DB = 'omegasim-statistics-backups';
+  let statCleanBusy = false;
+
+  function statCleanSpeicherFehler(e) {
+    return new Error(statCleanT(
+      'Statistik-Sicherung nicht verfügbar. Nichts weiter geändert. Bitte freien Gerätespeicher und die Browser-Speicherfreigabe prüfen; keine Website-Daten löschen.')
+      + (e && e.name ? ' (' + e.name + ')' : ''));
+  }
+  function statCleanDbOeffnen() {
+    return new Promise((resolve, reject) => {
+      if (typeof indexedDB === 'undefined') { reject(statCleanSpeicherFehler()); return; }
+      let req, fertig = false;
+      const timer = setTimeout(() => { fertig = true; reject(statCleanSpeicherFehler({ name: 'Timeout' })); }, 8000);
+      function fehler(e) { if (fertig) return; fertig = true; clearTimeout(timer); reject(statCleanSpeicherFehler(e)); }
+      try { req = indexedDB.open(STAT_CLEAN_DB, 1); }
+      catch (e) { fehler(e); return; }
+      req.onupgradeneeded = () => {
+        if (!req.result.objectStoreNames.contains('backup')) req.result.createObjectStore('backup');
+      };
+      req.onerror = () => fehler(req.error);
+      req.onblocked = () => fehler({ name: 'Blocked' });
+      req.onsuccess = () => {
+        if (fertig) { req.result.close(); return; }
+        fertig = true; clearTimeout(timer); resolve(req.result);
+      };
+    });
+  }
+  async function statCleanDbTransaktion(mode, arbeit) {
+    const db = await statCleanDbOeffnen();
+    return new Promise((resolve, reject) => {
+      let tx, wert, fehler;
+      try { tx = db.transaction('backup', mode); }
+      catch (e) { db.close(); reject(statCleanSpeicherFehler(e)); return; }
+      tx.oncomplete = () => { db.close(); resolve(wert); };
+      tx.onabort = tx.onerror = () => { db.close(); reject(fehler || statCleanSpeicherFehler(tx.error)); };
+      try {
+        arbeit(tx.objectStore('backup'), x => { wert = x; }, e => { fehler = e; tx.abort(); });
+      } catch (e) { fehler = e; tx.abort(); }
+    });
+  }
+  function statCleanBackupGueltig(b) {
+    try {
+      if (!b || b.typ !== STAT_CLEAN_BACKUP_TYP || ![1, 2].includes(b.version)
+          || !(b.vorher === null || typeof b.vorher === 'string') || typeof b.nachher !== 'string') return false;
+      const o = JSON.parse(b.vorher || '{"cars":{},"sessions":[]}');
+      return !!(o && o.cars && Array.isArray(o.sessions)
+        && (b.version !== 2 || statCleanExtraGueltig(b.extra)));
+    } catch (e) { return false; }
+  }
+  async function statCleanBackupMigrieren() {
+    const raw = localStorage.getItem(STAT_CLEAN_BACKUP);
+    if (raw === null) return;
+    let b;
+    try { b = JSON.parse(raw); } catch (e) { throw new Error(statCleanT('Alte Statistik-Sicherung ist beschädigt; bitte zuerst sichern.')); }
+    if (!statCleanBackupGueltig(b)) throw new Error(statCleanT('Alte Statistik-Sicherung ist ungültig; bitte zuerst sichern.'));
+    await statCleanDbTransaktion('readwrite', (store, done, fail) => {
+      const req = store.get('legacy');
+      req.onsuccess = () => { try {
+        if (req.result && JSON.stringify(req.result) !== JSON.stringify(b)) {
+          fail(new Error(statCleanT('Eine andere alte Sicherung ist bereits vorhanden. Bitte zuerst exportieren.'))); return;
+        }
+        store.put(b, 'legacy'); done(b);
+
+      } catch (e) { fail(statCleanSpeicherFehler(e)); } };
+    });
+    // Erst nach dauerhaft erfolgreicher Migration den alten Platz freigeben.
+    if (localStorage.getItem(STAT_CLEAN_BACKUP) === raw) localStorage.removeItem(STAT_CLEAN_BACKUP);
+  }
+  async function statCleanBackupLesen() {
+    await statCleanBackupMigrieren();
+    return statCleanDbTransaktion('readonly', (store, done) => {
+      const req = store.getAll(), keys = store.getAllKeys();
+      keys.onsuccess = () => {
+        const daten = new Map(keys.result.map((k, i) => [k, req.result[i]]));
+        for (const k of ['pending', 'current', 'legacy']) {
+          const b = daten.get(k);
+          if (statCleanBackupGueltig(b)) { done({ ...b, ablage: k }); return; }
+        }
+        done(null);
+      };
+    });
+  }
+  async function statCleanSichern(raw, nachher, aktion, extra = {}) {
+    await statCleanBackupMigrieren();
+    const b = { typ: STAT_CLEAN_BACKUP_TYP, version: 1, erstellt: new Date().toISOString(),
+      aktion, vorher: raw, nachher, token: typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID() : Date.now() + '-' + Math.random() };
+    if (Object.keys(extra).length) { b.version = 2; b.extra = extra; }
+    await statCleanDbTransaktion('readwrite', (store, done, fail) => {
+      const req = store.get('pending');
+      req.onsuccess = () => { try {
+        if (req.result) {
+          fail(new Error(statCleanT(
+            'Eine nicht abgeschlossene Bereinigung ist gesichert. Bitte zuerst Rückgängig oder JSON-Sicherung verwenden.'))); return;
+        }
+        store.put(b, 'pending'); done(b);
+
+      } catch (e) { fail(statCleanSpeicherFehler(e)); } };
+    });
+    return b;
+  }
+  async function statCleanBackupAbschliessen(b, erfolg) {
+    await statCleanDbTransaktion('readwrite', (store, done, fail) => {
+      const req = store.get('pending');
+      req.onsuccess = () => { try {
+        if (!req.result || req.result.token !== b.token) {
+          fail(new Error(statCleanT('Sicherungsstand hat sich geändert.'))); return;
+        }
+        if (erfolg) { store.put(b, 'current'); store.delete('legacy'); }
+        store.delete('pending'); done(true);
+
+      } catch (e) { fail(statCleanSpeicherFehler(e)); } };
+    });
+  }
+  function statCleanPaareGleich(b, seite) {
+    return Object.entries({ [SESSION_STORE]: b, ...(b.extra || {}) })
+      .every(([key, pair]) => localStorage.getItem(key) === pair[seite]);
+  }
+  async function statCleanExklusiv(arbeit) {
+    if (statCleanBusy) throw new Error(statCleanT('Bereinigung läuft bereits.'));
+    statCleanBusy = true;
+    const buttons = ['stat-clean-car-delete', 'stat-clean-session-delete', 'stat-clean-times-delete',
+      'stat-clean-undo', 'stat-clean-refresh'];
+    const vorher = buttons.map(id => [$(id), $(id) && $(id).disabled]);
+    vorher.forEach(([el]) => { if (el) el.disabled = true; });
+    const status = $('stat-clean-status');
+    if (status) status.textContent = statCleanT('Sicherung und Bereinigung laufen …');
+    try {
+      // Web Locks koordinieren auch zwei Tabs desselben Ursprungs, falls verfügbar.
+      return await (typeof navigator.locks !== 'undefined'
+        ? navigator.locks.request('omegasim-statistics-cleanup', arbeit) : arbeit());
+    } finally {
+      statCleanBusy = false;
+      vorher.forEach(([el, disabled]) => { if (el && el.isConnected) el.disabled = disabled; });
+    }
+  }
+  async function statCleanAnwenden(raw, plan, aktion, meldung) {
+    return statCleanExklusiv(async () => {
+      statCleanAktuell(raw);
+      const text = JSON.stringify(plan.neu), extra = plan.extra || {};
+      statCleanExtraAktuell(extra, 'vorher');
+      const b = await statCleanSichern(raw, text, aktion, extra);
+      try {
+        // Waehrend der asynchronen Sicherung koennen Fahrt/zweiter Tab Daten aendern.
+        statCleanAktuell(raw); statCleanExtraAktuell(extra, 'vorher');
+        statCleanSchreiben({ [SESSION_STORE]: { vorher: raw, nachher: text }, ...extra }, 'nachher');
+      } catch (e) {
+        // Alte Undo-Sicherung erst nach erfolgreicher Bereinigung ersetzen.
+        if (statCleanPaareGleich(b, 'vorher')) {
+          try { await statCleanBackupAbschliessen(b, false); } catch (r) { /* pending bleibt exportierbar */ }
+        }
+        throw e;
+      }
+      let warnung = '';
+      try { await statCleanBackupAbschliessen(b, true); }
+      catch (e) { warnung = ' ' + statCleanT('Sicherung bleibt als offene Wiederherstellung erhalten.'); }
+      statCleanAuffrischen((meldung || statCleanT('Statistik bereinigt. Sicherung erstellt.')) + warnung);
+    });
+  }
+  async function statCleanUndo() {
+    return statCleanExklusiv(async () => {
+      const b = await statCleanBackupLesen();
+      if (!b) throw new Error(statCleanT('Keine Statistik-Sicherung vorhanden.'));
+      const abgebrochen = b.ablage === 'pending' && statCleanPaareGleich(b, 'vorher');
+      if (!abgebrochen) { statCleanAktuell(b.nachher); statCleanExtraAktuell(b.extra || {}, 'nachher'); }
+      if (!confirm(abgebrochen
+        ? statCleanT('Die Bereinigung wurde nicht geschrieben. Offenen Sicherungsversuch abschließen? Statistik bleibt unverändert.')
+        : statCleanT('Letzte Statistik-Bereinigung rückgängig machen?'))) return;
+      if (abgebrochen) {
+        if (!statCleanPaareGleich(b, 'vorher')) throw new Error(statCleanT('Statistikdaten haben sich geändert.'));
+      } else {
+        statCleanAktuell(b.nachher); statCleanExtraAktuell(b.extra || {}, 'nachher');
+        statCleanSchreiben({ [SESSION_STORE]: b, ...(b.extra || {}) }, 'vorher');
+      }
+      let warnung = '';
+      try {
+        await statCleanDbTransaktion('readwrite', (store, done, fail) => {
+          const req = store.get(b.ablage);
+          req.onsuccess = () => { try {
+            if (JSON.stringify(req.result) !== JSON.stringify((({ ablage, ...rest }) => rest)(b))) {
+              fail(new Error(statCleanT('Sicherungsstand hat sich geändert.'))); return;
+            }
+            store.delete(b.ablage); done(true);
+
+          } catch (e) { fail(statCleanSpeicherFehler(e)); } };
+        });
+      } catch (e) { warnung = ' ' + statCleanT('Sicherungsmarker konnte nicht entfernt werden.'); }
+      statCleanAuffrischen(statCleanT(abgebrochen ? 'Offener Sicherungsversuch abgeschlossen.'
+        : 'Letzte Bereinigung rückgängig gemacht.') + warnung);
+    });
+  }
+  // Ein Name/Foto oder eine Null-Summe allein ist keine Fahrzeugstatistik.
+  function statCleanAutoHatDaten(c) {
+    return !!(c && (['km', 'realKm', 'runden', 'sitzungen'].some(k => Number(c[k]) > 0)
+      || (typeof c.besteMs === 'number' && Number.isFinite(c.besteMs))));
+  }
+  function statCleanAutos(o) {
+    const autos = new Map(Object.keys(o.cars).filter(id => statCleanAutoHatDaten(o.cars[id]))
+      .map(id => [id, o.cars[id].name || id]));
+    for (const s of o.sessions) for (const a of (s.autos || [])) {
+      const id = statCleanAutoKey(a, o);
+      if (!autos.has(id)) autos.set(id, a.name || id);
+    }
+    return autos;
+  }
+  function statCleanUiZustand() {
+    const host = $('stat-bereinigen'), track = $('stat-clean-track'), seconds = $('stat-clean-seconds');
+    return {
+      offen: !!(host && host.querySelector('details.stat-clean[open]')),
+      track: track ? track.value : '', seconds: seconds ? seconds.value : '5',
+      trefferOffen: !!($('stat-clean-times-hits') && $('stat-clean-times-hits').open)
+    };
+  }
+  function statCleanAuffrischen(meldung = '') {
+    const zustand = statCleanUiZustand(), warnungen = [];
+    // Nur EIN Neuaufbau der Bereinigung, nachdem die anderen Ansichten aktualisiert sind.
+    // Den Kontext vorher sichern; neue Listener lesen den aktuellen Speicherstand.
+    for (const zeichnen of [() => statZeichnen(false), renderSessions,
+      ...(typeof teleSeiteZeichnen === 'function' ? [teleSeiteZeichnen] : []),
+      () => statBereinigungZeichnen(zustand)]) {
+      try { zeichnen(); } catch (e) { warnungen.push(e.message || String(e)); }
+    }
+    const el = $('stat-clean-status');
+    if (el) el.textContent = (meldung ? meldung + ' ' : '') + (warnungen.length
+      ? statCleanT('Anzeige nicht vollständig aktualisiert: {m}', { m: warnungen.join('; ') })
+      : statCleanT('Anzeige und Trefferliste aktualisiert.'));
+    if (warnungen.length) log('Statistik-Darstellungsfehler: ' + warnungen.join('; '), 'err');
+    if (typeof autoSicherungPlanen === 'function') autoSicherungPlanen();
+  }
+  function statCleanFehler(e) {
+    const msg = statCleanT('Nicht gelöscht / nicht wiederhergestellt: {m}',
+      { m: e && e.message ? e.message : String(e) });
+    const el = $('stat-clean-status');
+    if (el) el.textContent = msg;
+    log(msg, 'err');
+  }
+  function statCleanBericht(b) {
+    const teile = [statCleanT('Betroffen: {s} vollständige Sitzung(en), {a} Fahrzeuganteil(e), {r} Runde(n).',
+      { s: b.sitzungen, a: b.anteile, r: b.runden })];
+    if (b.kmUnbekannt) teile.push(statCleanT(
+      'Altdaten ohne exakte Kilometerbuchung: Die Lebenszeit-Kilometer bleiben bei {n} Fahrzeuganteil(en) unverändert. Sitzungen und Runden werden abgezogen.',
+      { n: b.kmUnbekannt }));
+    if (b.zuordnungUnbekannt) teile.push(statCleanT(
+      'Nicht eindeutig zuordenbare Altdaten: zugehörige Fahrzeug-Summen bleiben unverändert.'));
+    if (b.besteUnbekannt) teile.push(statCleanT(
+      'Eine gelöschte Bestzeit hat keine vollständig gespeicherte Historie. Der Fahrzeugrekord wird zurückgesetzt und ab der nächsten Fahrt neu geführt.'));
+    return teile.join('\n');
+  }
+
+  // Die Erklaerung steht hinter dem i im Kreis (optInfoOeffnen, 98c-opt-info.js), nicht als
+  // Fliesstext unter den Auswahlfeldern.
+  const STAT_CLEAN_INFO = [
+    'Vor jedem Löschen wird der bisherige Stand in der Browser-Datenbank (IndexedDB) gesichert. Die Sicherung enthält den Stand vor der letzten Bereinigung. Garage, Fotos und Challenges bleiben erhalten. Beim Entfernen eines Autos oder einer Sitzung bleiben die getrennten Bestzeit-Rekorde stehen; die Zeitbereinigung prüft sie zusätzlich.',
+    'Rückgängig geht nur, solange sich die Statistik seit der Bereinigung nicht geändert hat. Erst die nächste erfolgreiche Löschung ersetzt die Sicherung. Für dauerhafte Sicherungen vorher Optionen → Sicherung nutzen. Die JSON-Datei lässt sich dort importieren und ersetzt dann die gesamte Statistikablage. Die Zeitbereinigung sichert auch lokale Bestzeiten und Telemetrie. Der JSON-Download funktioniert im Browser; in der App die vorhandene Sicherungsfunktion nutzen.',
+  ];
+
+  function statBereinigungZeichnen(zustand = statCleanUiZustand()) {
+    const host = $('stat-bereinigen');
+    if (!host) return;
+    const offen = zustand.offen;
+    const o = sessionStore();
+    let raw;
+    try { raw = localStorage.getItem(SESSION_STORE); } catch (e) { statCleanFehler(e); return; }
+    const autos = statCleanAutos(o);
+    const ids = [...autos.keys()].sort((a, b) => String(autos.get(a)).localeCompare(String(autos.get(b))));
+    const esc = statCleanEsc;
+    const txt = statCleanT;
+    const backup = null; // Status nach dem Neuaufbau asynchron laden.
+    host.innerHTML = '<details class="stat-clean"' + (offen ? ' open' : '') + '><summary>'
+      + esc(txt('Statistiken bereinigen')) + ' <span class="wip-tag">WIP</span>'
+      + ' <button type="button" class="opt-info-btn" id="stat-clean-info" aria-label="'
+      + esc(txt('Erklärung anzeigen')) + '">i</button></summary>'
+      + '<p id="stat-clean-refresh-info" class="stat-clean-note" aria-live="polite">'
+      + esc(txt('Gespeichert: {a} Fahrzeug(e), {s} Sitzung(en).', { a: ids.length, s: o.sessions.length })) + '</p>'
+      + '<label for="stat-clean-car">' + esc(txt('Fahrzeugstatistik entfernen')) + '</label>'
+      + '<select id="stat-clean-car"><option value="">' + esc(txt('Auto auswählen …')) + '</option>'
+      + ids.map((id, i) => '<option value="' + i + '">' + esc(autos.get(id) + ' [' + id + ']') + '</option>').join('')
+      + '</select><p class="stat-clean-preview" id="stat-clean-car-preview"></p>'
+      + '<button type="button" class="stat-clean-danger" id="stat-clean-car-delete" disabled>'
+      + esc(txt('Ausgewählte Fahrzeugstatistik löschen')) + '</button>'
+      + '<label for="stat-clean-session">' + esc(txt('Einzelne Sitzung löschen')) + '</label>'
+      + '<select id="stat-clean-session"><option value="">' + esc(txt('Sitzung auswählen …')) + '</option>'
+      + o.sessions.map((s, i) => {
+        const laps = (s.autos || []).flatMap((a) => a.laps || []);
+        const best = laps.length ? ' · ' + txt('beste {z}', { z: sessionFmt(Math.min(...laps)) }) : '';
+        const mode = RACE_MODES[s.modus] ? t(RACE_MODES[s.modus].label) : s.modus;
+        return { i, label: (s.zeit || '?') + ' · ' + mode + ' · '
+          + (s.autos || []).map((a) => a.name).join(', ') + ' · ' + txt('{n} Runde(n)', { n: laps.length })
+          + best + (s.strecke ? ' · ' + s.strecke : '') };
+      }).reverse().map((s) => '<option value="' + s.i + '">' + esc(s.label) + '</option>').join('')
+      + '</select><p class="stat-clean-preview" id="stat-clean-session-preview"></p>'
+      + '<button type="button" class="stat-clean-danger" id="stat-clean-session-delete" disabled>'
+      + esc(txt('Ausgewählte Sitzung löschen')) + '</button>'
+      + statCleanZeitenHtml(o)
+      + '<div class="stat-clean-actions"><button type="button" id="stat-clean-refresh">'
+      + esc(txt('Anzeige aktualisieren')) + '</button>'
+      + '<button type="button" id="stat-clean-undo"' + (backup ? '' : ' disabled') + '>'
+      + esc(txt('Letzte Bereinigung rückgängig')) + '</button>'
+      + '<button type="button" id="stat-clean-backup"' + (backup ? '' : ' disabled') + '>'
+      + esc(txt('Statistik-Sicherung als JSON')) + '</button></div>'
+      + (Object.values(o.cars).some((c) => c.besteSeitBereinigung) ? '<p class="stat-clean-note">' + esc(txt(
+        'Hinweis: Zurückgesetzte Fahrzeug-Bestzeiten werden seit der Bereinigung neu geführt; ältere, nicht mehr gespeicherte Runden sind unbekannt.')) + '</p>' : '')
+      + '<p id="stat-clean-status" role="status" aria-live="polite"></p></details>';
+
+    $('stat-clean-info').addEventListener('click', (e) => {
+      // Im <summary>: ohne preventDefault klappt der Knopf den Bereich mit auf oder zu.
+      e.preventDefault(); e.stopPropagation();
+      if (typeof optInfoOeffnen === 'function') {
+        optInfoOeffnen(txt('Statistiken bereinigen'),
+          STAT_CLEAN_INFO.map((p) => '<p>' + esc(txt(p)) + '</p>').join(''));
+      }
+    });
+
+    function verdrahten(selId, previewId, buttonId, art, keyVon) {
+      const sel = $(selId), preview = $(previewId), button = $(buttonId);
+      let plan = null, key;
+      sel.addEventListener('change', () => {
+        plan = null; button.disabled = true; preview.textContent = '';
+        if (sel.value === '') return;
+        try {
+          key = keyVon(Number(sel.value));
+          plan = statCleanPlan(o, art, key);
+          preview.textContent = statCleanBericht(plan.bericht);
+          button.disabled = statCleanGesperrt();
+        } catch (e) { statCleanFehler(e); }
+      });
+      button.addEventListener('click', async () => {
+        if (!plan) return;
+        try {
+          statCleanAktuell(raw);
+          const label = art === 'auto' ? autos.get(key) + ' [' + key + ']'
+            : (o.sessions[key].zeit || '?') + ' · ' + (o.sessions[key].autos || []).map((a) => a.name).join(', ');
+          if (!confirm(txt('Wirklich löschen: {x}?', { x: label }) + '\n\n'
+              + statCleanBericht(plan.bericht) + '\n\n'
+              + txt('Der vorherige Statistikstand wird lokal gesichert. Garagendaten bleiben erhalten.'))) return;
+          await statCleanAnwenden(raw, plan, art + ': ' + label,
+            txt('Statistik gelöscht: {x}. Lokale Sicherung erstellt.', { x: label }));
+        } catch (e) { statCleanFehler(e); }
+      });
+    }
+    verdrahten('stat-clean-car', 'stat-clean-car-preview', 'stat-clean-car-delete', 'auto', (i) => ids[i]);
+    verdrahten('stat-clean-session', 'stat-clean-session-preview', 'stat-clean-session-delete', 'sitzung', (i) => i);
+    statCleanZeitenVerdrahten(o, raw, zustand);
+    $('stat-clean-refresh').addEventListener('click', () => {
+      try { statCleanAuffrischen(); } catch (e) { statCleanFehler(e); }
+    });
+    $('stat-clean-undo').addEventListener('click', async () => { try { await statCleanUndo(); } catch (e) { statCleanFehler(e); } });
+    $('stat-clean-backup').addEventListener('click', async () => {
+      try {
+        const b = await statCleanBackupLesen();
+        if (!b) throw new Error(statCleanT('Keine Statistik-Sicherung vorhanden.'));
+        // Vorheriger Statistikstand im Format des EXISTIERENDEN Sicherungsimports.
+        // Import fuehrt nur diese Ablage zurueck; aktuelle Garagen-/Reglerdaten bleiben.
+        const ums = { typ: SICHERUNG_TYP, version: SICHERUNG_VERSION,
+          erstellt: b.erstellt, regler: {}, ablagen: { [SESSION_STORE]: b.vorher || '{"cars":{},"sessions":[],"kmV":2}' } };
+        for (const [key, pair] of Object.entries(b.extra || {})) ums.ablagen[key] = pair.vorher || '{}';
+        const url = URL.createObjectURL(new Blob([JSON.stringify(ums, null, 2)], { type: 'application/json' }));
+        const a = document.createElement('a'); a.href = url;
+        a.download = 'omegasim-statistik-sicherung-' + new Date(b.erstellt).toISOString().replace(/[:.]/g, '-') + '.json';
+        a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+      } catch (e) { statCleanFehler(e); }
+    });
+    const undoButton = $('stat-clean-undo'), backupButton = $('stat-clean-backup');
+    statCleanBackupLesen().then(b => {
+      if (undoButton.isConnected) undoButton.disabled = !b;
+      if (backupButton.isConnected) backupButton.disabled = !b;
+    }).catch(e => {
+      if (undoButton.isConnected) statCleanFehler(e);
+    });
+  }
+
+  // Zusammengesetzte Texte (Zahlen in Saetzen) erreicht der Textknoten-Uebersetzer nicht;
+  // beim Sprachwechsel deshalb neu zeichnen, wenn der Bereich schon steht.
+  if (typeof i18nOnLangChange === 'function') i18nOnLangChange(() => {
+    const host = $('stat-bereinigen');
+    if (host && host.childElementCount) statBereinigungZeichnen();
+  });
+  // Rundenzeitbereinigung: nur lokale gespeicherte Daten, keine laufenden Rennen.
+  // Eine falsche Zeit beweist NICHT, dass die gefahrenen Kilometer falsch sind.
+  function statCleanExtraGueltig(extra) {
+    if (!extra || typeof extra !== 'object' || Array.isArray(extra)) return false;
+    return Object.entries(extra).every(([key, p]) =>
+      [BESTZEIT_STORE, TELE_STORE].includes(key) && p &&
+      (p.vorher === null || typeof p.vorher === 'string') &&
+      (p.nachher === null || typeof p.nachher === 'string'));
+  }
+  function statCleanExtraAktuell(extra, seite) {
+    if (!statCleanExtraGueltig(extra)) throw new Error(statCleanT('Ungültige zusätzliche Statistikablage.'));
+    for (const [key, p] of Object.entries(extra)) {
+      if (localStorage.getItem(key) !== p[seite]) throw new Error(statCleanT(
+        'Bestzeit- oder Telemetriedaten haben sich geändert. Bitte Auswahl erneuern.'));
+    }
+  }
+  function statCleanSchreiben(paare, seite) {
+    const vorher = {};
+    for (const key of Object.keys(paare)) vorher[key] = localStorage.getItem(key);
+    function schreiben(key, text) {
+      if (text === null) localStorage.removeItem(key);
+      else localStorage.setItem(key, text);
+      if (localStorage.getItem(key) !== text) throw new Error(statCleanT('Statistik nicht geschrieben: {k}', { k: key }));
+    }
+    try {
+      for (const [key, p] of Object.entries(paare)) schreiben(key, p[seite]);
+    } catch (e) {
+      // localStorage besitzt keine Mehrfach-Transaktion. Bei erkannten Schreibfehlern
+      // bereits geschriebene Ablagen zuruecknehmen; Sicherung bleibt fuer Notfaelle.
+      const fehler = [];
+      for (const [key, text] of Object.entries(vorher)) {
+        try { if (localStorage.getItem(key) !== text) schreiben(key, text); }
+        catch (r) { fehler.push(key); }
+      }
+      if (fehler.length) throw new Error(statCleanT(
+        'Speicherfehler; Rücknahme unvollständig. Lokale Sicherung als JSON exportieren: {k}', { k: fehler.join(', ') }));
+      throw e;
+    }
+  }
+  function statCleanAblage(key) {
+    const raw = localStorage.getItem(key);
+    const o = JSON.parse(raw || '{}');
+    if (!o || typeof o !== 'object' || Array.isArray(o)) throw new Error(statCleanT('Ungültige Ablage: {k}', { k: key }));
+    return { raw, o };
+  }
+  function statCleanStreckenKey(code) {
+    const c = String(code || '').trim().toUpperCase();
+    if (!c) return '';
+    try {
+      const parsed = codeToTrack(c);
+      const tiles = parsed && parsed.tiles;
+      if (tiles && tiles.length > 1) return bestzeitSchluessel(tiles);
+    } catch (e) { /* unbekannte Altcodes bleiben exakt unterscheidbar */ }
+    return c;
+  }
+  function statCleanGrenze(wert) {
+    const s = String(wert).trim().replace(',', '.');
+    if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(s)) throw new Error(statCleanT('Bitte eine positive Sekundenzahl eingeben.'));
+    const ms = Number(s) * 1000;
+    if (!Number.isFinite(ms) || ms <= 0) throw new Error(statCleanT('Ungültiger Zeitgrenzwert.'));
+    return ms;
+  }
+  function statCleanZeitenPlan(o, code, grenze, bzRaw, teleRaw) {
+    if (!o || !Array.isArray(o.sessions) || !o.cars || Array.isArray(o.cars)) throw new Error(statCleanT('Ungültige Statistikdaten.'));
+    const key = statCleanStreckenKey(code);
+    if (!key || !Number.isFinite(grenze) || grenze <= 0) throw new Error(statCleanT('Strecke oder Grenzwert fehlt.'));
+    const neu = statCleanKopie(o), bz = JSON.parse(bzRaw || '{}'), tele = JSON.parse(teleRaw || '{}');
+    for (const d of [bz, tele]) if (!d || typeof d !== 'object' || Array.isArray(d)) throw new Error(statCleanT('Ungültige Zeitablage.'));
+    const b = { runden: 0, sitzungen: 0, rekorde: 0, spuren: 0, besteUnbekannt: 0, treffer: [] };
+    const beruehrt = new Set();
+    const kurz = ms => typeof ms === 'number' && Number.isFinite(ms) && ms < grenze;
+    const spurKurz = sp => sp && kurz(sp.ms);
+    for (let si = 0; si < neu.sessions.length; si++) {
+      const s = neu.sessions[si];
+      if (statCleanStreckenKey(s.strecke) !== key) continue;
+      let betroffen = false;
+      for (const a of (s.autos || [])) {
+        const laps = Array.isArray(a.laps) ? a.laps : [], weg = [];
+        laps.forEach((ms, i) => { if (kurz(ms)) weg.push(i); });
+        if (!weg.length) continue;
+        betroffen = true; b.runden += weg.length;
+        const id = statCleanAutoKey(a, o), c = neu.cars[id];
+        b.treffer.push({ art: 'runde', name: a.name || id, zeit: s.zeit,
+          runden: weg.map(i => i + 1), ms: weg.map(i => laps[i]) });
+        const behalten = new Set(laps.map((_, i) => i).filter(i => !weg.includes(i)));
+        a.laps = laps.filter((_, i) => behalten.has(i));
+        if (Array.isArray(a.ereignisse)) a.ereignisse = a.laps.map((_, j) => {
+          const alt = [...behalten][j]; return a.ereignisse[alt] || {};
+        });
+        if (a.statistikBuchung) a.statistikBuchung.runden = a.laps.length;
+        if (c) {
+          c.runden = Math.max(0, (Number(c.runden) || 0) - weg.length);
+          if (weg.some(i => laps[i] === c.besteMs)) beruehrt.add(id);
+        }
+        if (a.rolle === 'player') s.fahrstil = null;
+      }
+      if (betroffen) b.sitzungen++;
+    }
+    for (const id of beruehrt) {
+      const c = neu.cars[id]; let anzahl = 0; const rest = [];
+      for (const s of neu.sessions) for (const a of (s.autos || [])) {
+        if (statCleanAutoKey(a, o) !== id) continue;
+        anzahl++;
+        for (const ms of (a.laps || [])) if (statCleanZahl(ms) && ms > 0) rest.push(ms);
+      }
+      if (Number(c.sitzungen) === anzahl) c.besteMs = rest.length ? Math.min(...rest) : null;
+      else { c.besteMs = null; c.besteSeitBereinigung = new Date().toISOString(); b.besteUnbekannt++; }
+    }
+    for (const [k, e] of Object.entries(bz)) {
+      if (statCleanStreckenKey(k) !== key || !e || !e.fahrer) continue;
+      for (const [id, f] of Object.entries(e.fahrer)) {
+        if (!f || !kurz(f.beste)) continue;
+        b.rekorde++; b.treffer.push({ art: 'rekord', name: f.name || id, ms: [f.beste] });
+        f.beste = null; f.medaille = 0; delete f.datum;
+        f.besteSeitBereinigung = new Date().toISOString();
+        // Keine zweitbeste Historie in dieser Ablage: kein erfundener Ersatzrekord.
+      }
+    }
+    for (const [k, e] of Object.entries(tele)) {
+      if (statCleanStreckenKey(k) !== key || !e || !e.fahrer) continue;
+      for (const [id, f] of Object.entries(e.fahrer)) {
+        // Fremde/online geteilte Telemetrie wird nicht lokal umgeschrieben.
+        if (!f || id.startsWith('fremd:')) continue;
+        for (const art of ['beste', 'letzte']) if (spurKurz(f[art])) {
+          b.spuren++; b.treffer.push({ art: 'tele', name: f[art].name || id, ms: [f[art].ms] });
+          delete f[art];
+        }
+        if (f.fahrt && Array.isArray(f.fahrt.runden)) {
+          const weg = f.fahrt.runden.filter(spurKurz);
+          b.spuren += weg.length;
+          if (weg.length) b.treffer.push({ art: 'tele', name: id, ms: weg.map(sp => sp.ms) });
+          f.fahrt.runden = f.fahrt.runden.filter(sp => !spurKurz(sp));
+        }
+      }
+    }
+    const extra = {
+      [BESTZEIT_STORE]: { vorher: bzRaw, nachher: b.rekorde ? JSON.stringify(bz) : bzRaw },
+      [TELE_STORE]: { vorher: teleRaw, nachher: b.spuren ? JSON.stringify(tele) : teleRaw }
+    };
+    return { neu, bericht: b, extra, key, grenze };
+  }
+  function statCleanZeitenBericht(plan) {
+    const b = plan.bericht, txt = statCleanT;
+    return txt('{r} Runde(n) in {s} Sitzung(en), {b} Bestzeit-Rekord(e), {t} lokale Telemetrie-Einträge. Nur Zeiten strikt unter {g} Sekunden auf dieser Strecke (auch gespiegelt). Sitzungen und Kilometer bleiben erhalten, die Rundenereignisse werden mit entfernt.',
+      { r: b.runden, s: b.sitzungen, b: b.rekorde, t: b.spuren, g: plan.grenze / 1000 })
+      + (b.rekorde ? ' ' + txt('Ungültige separate Rekorde und ihre Medaillen werden zurückgesetzt; es gibt keine zweitbeste Historie.') : '')
+      + (b.besteUnbekannt ? ' ' + txt('Fahrzeugrekorde ohne vollständige Historie werden ab der nächsten Fahrt neu geführt.') : '');
+  }
+  function statCleanZeitenHtml(o) {
+    const txt = statCleanT, esc = statCleanEsc, keys = new Set();
+    const zeit = ms => typeof ms === 'number' && Number.isFinite(ms);
+    for (const s of o.sessions) if (s.strecke && (s.autos || []).some(a =>
+      (a.laps || []).some(zeit))) keys.add(statCleanStreckenKey(s.strecke));
+    try {
+      for (const [k, e] of Object.entries(statCleanAblage(BESTZEIT_STORE).o)) {
+        if (e && e.fahrer && Object.values(e.fahrer).some(f => f && zeit(f.beste)))
+          keys.add(statCleanStreckenKey(k));
+      }
+      for (const [k, e] of Object.entries(statCleanAblage(TELE_STORE).o)) {
+        if (e && e.fahrer && Object.entries(e.fahrer).some(([id, f]) => !id.startsWith('fremd:') && f &&
+          ([f.beste, f.letzte, ...((f.fahrt && f.fahrt.runden) || [])].some(sp => sp && zeit(sp.ms)))))
+          keys.add(statCleanStreckenKey(k));
+      }
+    } catch (e) { /* Vorschau zeigt Parse-/Speicherfehler ohne Daten zu loeschen */ }
+    return '<hr><label for="stat-clean-track">' + esc(txt('Zu kurze Zeiten je Strecke löschen'))
+      + '</label><select id="stat-clean-track"><option value="">' + esc(txt('Strecke auswählen …')) + '</option>'
+      + [...keys].filter(Boolean).sort().map(k => '<option value="' + esc(k) + '">' + esc(k) + '</option>').join('')
+      + '</select><label for="stat-clean-seconds">' + esc(txt('Zeiten unter … Sekunden'))
+      + '</label><input type="text" inputmode="decimal" id="stat-clean-seconds" value="5" autocomplete="off"'
+      + ' style="width:100%;box-sizing:border-box;min-height:40px">'
+      + '<p class="stat-clean-preview" id="stat-clean-times-preview" aria-live="polite"></p>'
+      + '<details id="stat-clean-times-hits"><summary>' + esc(txt('Treffer ansehen')) + '</summary>'
+      + '<ul id="stat-clean-times-list"></ul></details>'
+      + '<button type="button" class="stat-clean-danger" id="stat-clean-times-delete" disabled>'
+      + esc(txt('Zeiten unter Grenzwert löschen')) + '</button>';
+  }
+  function statCleanZeitenVerdrahten(o, raw, zustand = {}) {
+    const track = $('stat-clean-track'), input = $('stat-clean-seconds'), preview = $('stat-clean-times-preview');
+    const button = $('stat-clean-times-delete'), liste = $('stat-clean-times-list');
+    if (!track || !input || !preview || !button || !liste) return;
+    let plan = null;
+    function vorschau() {
+      plan = null; button.disabled = true; preview.textContent = ''; liste.innerHTML = '';
+      if (!track.value) return;
+      try {
+        const bz = statCleanAblage(BESTZEIT_STORE), tele = statCleanAblage(TELE_STORE);
+        plan = statCleanZeitenPlan(o, track.value, statCleanGrenze(input.value), bz.raw, tele.raw);
+        preview.textContent = statCleanZeitenBericht(plan);
+        liste.innerHTML = plan.bericht.treffer.map(z => '<li>' + statCleanEsc(
+          (z.art === 'runde' ? (z.zeit || '?') + ' · ' : z.art === 'rekord' ? t('Time Attack') + ' · ' : t('Telemetrie') + ' · ')
+          + z.name + (z.runden ? ' · ' + t('Runde') + ' ' + z.runden.join(', ') : '')
+          + ' · ' + z.ms.map(sessionFmt).join(', ')) + '</li>').join('');
+        button.disabled = statCleanGesperrt() || !(plan.bericht.runden + plan.bericht.rekorde + plan.bericht.spuren);
+      } catch (e) { preview.textContent = e.message || String(e); }
+    }
+    track.addEventListener('change', vorschau); input.addEventListener('input', vorschau);
+    button.addEventListener('click', async () => {
+      if (!plan || button.disabled) return;
+      try {
+        statCleanAktuell(raw); statCleanExtraAktuell(plan.extra, 'vorher');
+        if (!confirm(statCleanT('Diese Zeiten wirklich löschen? Strecke: {k}', { k: plan.key }) + '\n\n'
+          + statCleanZeitenBericht(plan) + '\n\n'
+          + statCleanT('Der vorherige Stand wird lokal gesichert.'))) return;
+        const b = plan.bericht;
+        await statCleanAnwenden(raw, plan, 'Zeiten < ' + plan.grenze / 1000 + 's: ' + plan.key,
+          statCleanT('Zeiten gelöscht: {r} Runde(n), {b} Bestzeit-Rekord(e), {t} Telemetrie-Einträge. Lokale Sicherung erstellt.',
+            { r: b.runden, b: b.rekorde, t: b.spuren }));
+      } catch (e) { statCleanFehler(e); }
+    });
+    // Nach Loeschen/Undo gleiche Strecke und eigene Grenze sofort erneut auswerten.
+    input.value = typeof zustand.seconds === 'string' ? zustand.seconds : '5';
+    if ([...track.options].some(option => option.value === zustand.track)) track.value = zustand.track;
+    if ($('stat-clean-times-hits')) $('stat-clean-times-hits').open = !!zustand.trefferOffen;
+    vorschau();
+    if (zustand.track && !track.value) preview.textContent = statCleanT(
+      'Für die zuvor gewählte Strecke sind keine gespeicherten Zeiten mehr vorhanden. Sie wurde aus der Auswahl entfernt.');
   }
   // ============================== STUDIE (v1.0, experimentell) ==============================
   //

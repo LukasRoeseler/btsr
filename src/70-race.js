@@ -2021,6 +2021,8 @@
     if (raceState !== 'idle' && raceState !== 'finished') return; // ignore while armed/racing
     if (!knockoutBereit(true)) return;
     if (!bestzeitBereit(true)) return;
+    rennintroAbbrechen();
+    const introStartToken = ++rennintroStartGeneration;
     bestzeitVorherMerken();
     // v1.1.3: ein neues Rennen beginnt nie unter Gelb (stand vorher aus dem letzten Rennen).
     if (flagState !== 'green') gelbBeenden();
@@ -2118,9 +2120,11 @@
     $('race-lap-current').textContent = '-';
     // Freies Training braucht keine Ampel: es gibt niemanden, gegen den man gleichzeitig
     // losfahren muesste. Drei Sekunden Warten vor einer Trainingsrunde sind nur Wartezeit.
+    // Ein aktiviertes lokales Intro bekommt ebenfalls die Ampel nach der Ansage.
     // CHALLENGE "Beste Runde" laeuft als freies Training, aber MIT Ampel: "Auto muss stehen,
     // dann kommt eine Ampel" (72-challenges.js).
-    if (raceMode === 'practice' && !gruenBei && !(typeof challengeLaeuft === 'function' && challengeLaeuft())) {
+    if (raceMode === 'practice' && !gruenBei && !(typeof challengeLaeuft === 'function' && challengeLaeuft())
+        && !rennintroErlaubt(gruenZiel, mpPlan)) {
       raceState = 'racing';
       $('race-start-btn').disabled = true;
       $('race-stop-btn').disabled = false;
@@ -2139,41 +2143,65 @@
       finishSeitenZaehlerZuruecksetzen();
     }
     raceState = 'countdown';
+    // Fruehstart-Erkennung ab HIER, auch waehrend eines Rennintros: raceState ist schon
+    // 'countdown', und wer waehrend der Ansage losfaehrt, faehrt genauso zu frueh wie
+    // waehrend der Ampel (PR #8 startete die Erkennung erst mit der Ampel, man konnte das
+    // ganze Intro lang frei fahren).
     fruehstartBeginnen();
     $('race-start-btn').disabled = true;
     // Abbrechen muss schon im Countdown gehen: requestRaceStop() raeumt den Zaehler mit
     // auf, und ein Countdown, aus dem man nicht herauskommt, ist eine Falle.
     $('race-stop-btn').disabled = false;
     $('race-status').textContent = 'Countdown…';
-    // Zufaellige 1-3 s Pause vor dem Start; im Mehrspieler gibt der Host sie im Plan vor,
-    // damit alle gleichzeitig losfahren (sonst wuerde jedes Telefon anders wuerfeln).
-    const ampelVerzog = (mpPlan && Number.isFinite(mpPlan.ampelVerzog)) ? mpPlan.ampelVerzog
-                      : (1000 + Math.random() * 2000);
-    // Lokal: Gruen so setzen, dass die 1. Lampe 600 ms nach dem Start erscheint
-    // (1. Lampe = gruen - verzog - 4000).
-    const plan = ampelZeitplan(gruenBei || Date.now() + 4600 + ampelVerzog, ampelVerzog);
-    clearTimeout(raceCountdownTimer);
-    const schritt = (k) => {
-      if (raceState !== 'countdown') return;
-      ampelK = k;
-      const [bei, stufe] = plan[k];
-      const warte = bei - Date.now();
-      if (warte > 4) { raceCountdownTimer = setTimeout(() => schritt(k), warte); return; }
-      // Kommt der Plan spaet an, werden verpasste Lichter uebersprungen - nur Gruen zaehlt.
-      if (stufe > 0 && warte < -400 && k + 1 < plan.length) { schritt(k + 1); return; }
-      if (stufe > 0) {
-        setRaceLights(stufe);
-        ampelTon(440 + (stufe - 1) * 60, 0.18, 'square', 0.18);
-        schritt(k + 1);
-        return;
-      }
-      setRaceLights('go');
-      ampelTon(880, 0.35, 'square', 0.22);
-      raceGreen();
-      setTimeout(() => setRaceLights(0), 900);
+    clearTimeout(raceCountdownTimer); raceCountdownTimer = null;
+    ampelPlan = null; ampelSchritt = null; ampelK = 0;
+    setRaceLights(0);
+    let ampelGestartet = false;
+    const ampelBeginnen = () => {
+      if (ampelGestartet || raceState !== 'countdown') return;
+      ampelGestartet = true;
+      $('race-status').textContent = 'Countdown…';
+      // Zufaellige 1-3 s Pause vor dem Start; im Mehrspieler gibt der Host sie im Plan vor,
+      // damit alle gleichzeitig losfahren (sonst wuerde jedes Telefon anders wuerfeln).
+      const ampelVerzog = (mpPlan && Number.isFinite(mpPlan.ampelVerzog)) ? mpPlan.ampelVerzog
+                        : (1000 + Math.random() * 2000);
+      // Lokal: Gruen so setzen, dass die 1. Lampe 600 ms nach dem Start erscheint
+      // (1. Lampe = gruen - verzog - 4000).
+      const plan = ampelZeitplan(gruenBei || Date.now() + 4600 + ampelVerzog, ampelVerzog);
+      clearTimeout(raceCountdownTimer);
+      const schritt = (k) => {
+        if (raceState !== 'countdown') return;
+        ampelK = k;
+        const [bei, stufe] = plan[k];
+        const warte = bei - Date.now();
+        if (warte > 4) { raceCountdownTimer = setTimeout(() => schritt(k), warte); return; }
+        // Kommt der Plan spaet an, werden verpasste Lichter uebersprungen - nur Gruen zaehlt.
+        if (stufe > 0 && warte < -400 && k + 1 < plan.length) { schritt(k + 1); return; }
+        if (stufe > 0) {
+          setRaceLights(stufe);
+          ampelTon(440 + (stufe - 1) * 60, 0.18, 'square', 0.18);
+          schritt(k + 1);
+          return;
+        }
+        setRaceLights('go');
+        ampelTon(880, 0.35, 'square', 0.22);
+        raceGreen();
+        setTimeout(() => setRaceLights(0), 900);
+      };
+      ampelPlan = plan; ampelSchritt = schritt;
+      schritt(0);
     };
-    ampelPlan = plan; ampelSchritt = schritt;
-    schritt(0);
+    if (rennintroErlaubt(gruenZiel, mpPlan)) {
+      $('race-status').textContent = t('Rennintro…');
+      const intro = rennintroVorAmpel();
+      const weiter = () => {
+        // Stop + Neustart darf keinen alten Countdown wiederbeleben.
+        // Ausschalten waehrend des Intros darf dagegen zur Ampel weitergehen.
+        if (introStartToken !== rennintroStartGeneration) return;
+        ampelBeginnen();
+      };
+      intro.then(weiter, weiter);
+    } else ampelBeginnen();
   }
   // v0.9.32: die laufende Ampel um delta ms verschieben (WLAN-Mehrspieler: feinerer
   // Uhrabgleich waehrend des Vorlaufs). Nur solange noch keine Lampe leuchtet.
@@ -2323,6 +2351,8 @@
   // requestRaceStop() uebergibt ausdruecklich false.
   function finishRace(auslaufen) {
     if (raceState === 'finished') return; // Ergebnisansage nur einmal planen.
+    rennintroStartGeneration++;
+    rennintroAbbrechen();
     rennstandAbbrechen();
     raceState = 'finished';
     // v1.1.3 GEMELDET: "Rennende sollte auch die gelbe Flagge beenden". Nicht ueber

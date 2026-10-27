@@ -18813,6 +18813,139 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Sieger je Modus, Korrektur einmalig, Seite gezeichnet' };
   });
 
+  // Statistikbereinigung (98ea/98eb, PR #10): nur die reinen Planfunktionen und das
+  // Schreiben/Zuruecknehmen auf eigenen Probe-Schluesseln. Der echte Statistikspeicher und
+  // die IndexedDB-Sicherung des Nutzers werden nicht angefasst.
+  stAdd('Statistikbereinigung v1.2.15: Vorschau, zu kurze Zeiten, Ruecknahme, Altdaten-Zuordnung', () => {
+    const f = [];
+    const code = 'SG2RG2R';
+    const buch = (id, km, n) => ({ id, km, realKm: km / 10, runden: n, sitzungen: 1 });
+    const o = { kmV: 2, cars: {
+      a: { name: 'A', km: 3, realKm: 0.3, runden: 5, sitzungen: 2, besteMs: 2000 },
+      b: { name: 'B', km: 1, realKm: 0.1, runden: 2, sitzungen: 1, besteMs: 4000 },
+      'name:Alt': { name: 'Alt', km: 5, realKm: 0.5, runden: 3, sitzungen: 1, besteMs: 6000 } },
+    sessions: [
+      { zeit: '2026-10-20T12:00:00Z', strecke: code, modus: 'laps', simKm: 1, realKm: 0.1, autos: [
+        { name: 'A', id: 'a', rolle: 'player', laps: [2000, 5000, 6000],
+          ereignisse: [{ pit: 1 }, { pit: 2 }, { pit: 3 }], statistikBuchung: buch('a', 1, 3) },
+        { name: 'B', id: 'b', rolle: 'ghost', laps: [4000, 8000], statistikBuchung: buch('b', 1, 2) }] },
+      { zeit: '2026-10-21T12:00:00Z', strecke: code, modus: 'laps', simKm: 2, realKm: 0.2, autos: [
+        { name: 'A', id: 'a', rolle: 'player', laps: [3000, 9000], statistikBuchung: buch('a', 2, 2) }] },
+      // Altsitzung ohne Buchung: in der Sitzung steht eine a.id, gebucht wurde unter 'name:Alt'
+      // (Auto war beim Speichern nicht in der Garage).
+      { zeit: '2026-01-01T12:00:00Z', strecke: '', modus: 'laps', autos: [
+        { name: 'Alt', id: 'dev-alt', rolle: 'ghost', laps: [6000, 7000, 8000] }] }] };
+    const roh = JSON.stringify(o);
+    try {
+      // Altdaten-Zuordnung: ein Auto, nicht zwei
+      const liste = statCleanAutos(o);
+      if (liste.size !== 3 || liste.has('dev-alt')) f.push('Altauto doppelt in der Auswahl (' + [...liste.keys()].join(',') + ')');
+      const pAlt = statCleanPlan(o, 'sitzung', 2);
+      if (pAlt.bericht.zuordnungUnbekannt) f.push('Altsitzung nicht zuordenbar');
+      if (pAlt.neu.cars['name:Alt'].sitzungen !== 0 || pAlt.neu.cars['name:Alt'].runden !== 0) f.push('Altsitzung nicht abgezogen');
+      const pAltAuto = statCleanPlan(o, 'auto', 'name:Alt');
+      if (pAltAuto.bericht.anteile !== 1 || pAltAuto.neu.sessions.length !== 2 || pAltAuto.neu.cars['name:Alt']) {
+        f.push('Altauto nicht vollstaendig entfernt');
+      }
+      // Vorschau einer Sitzungsloeschung
+      const p = statCleanPlan(o, 'sitzung', 0);
+      const b = p.bericht;
+      if (b.sitzungen !== 1 || b.runden !== 5 || b.kmUnbekannt) f.push('Vorschau zaehlt falsch: ' + JSON.stringify(b));
+      if (p.neu.cars.a.km !== 2 || p.neu.cars.a.runden !== 2 || p.neu.cars.a.sitzungen !== 1) f.push('Summen von A falsch');
+      if (p.neu.cars.a.besteMs !== 3000 || p.neu.cars.b.besteMs !== null) f.push('Bestzeiten nicht neu bestimmt');
+      if (!/\d/.test(statCleanBericht(b))) f.push('Vorschautext leer');
+      // Zu kurze Zeiten
+      const bzKey = statCleanStreckenKey(code);
+      const bz = JSON.stringify({ [bzKey]: { fahrer: { a: { name: 'A', beste: 2000, medaille: 3, runden: 9 } } } });
+      const z = statCleanZeitenPlan(o, code, 5000, bz, '{}');
+      if (z.bericht.runden !== 3 || z.bericht.sitzungen !== 2) f.push('Zeiten: ' + z.bericht.runden + ' Runden in ' + z.bericht.sitzungen + ' Sitzungen');
+      const a0 = z.neu.sessions[0].autos[0];
+      if (JSON.stringify(a0.laps) !== '[5000,6000]') f.push('Grenzwert selbst geloescht oder Runde vergessen');
+      if (!a0.ereignisse || a0.ereignisse[0].pit !== 2) f.push('Rundenereignisse verrutscht');
+      if (z.neu.cars.a.runden !== 3 || z.neu.cars.a.km !== 3) f.push('Zeiten: Runden/km von A falsch');
+      if (z.neu.cars.a.besteMs !== 5000 || z.neu.cars.b.besteMs !== 8000) f.push('Zeiten: Bestzeit nicht nachgezogen');
+      const bzNeu = JSON.parse(z.extra[BESTZEIT_STORE].nachher);
+      if (z.bericht.rekorde !== 1 || bzNeu[bzKey].fahrer.a.beste !== null || bzNeu[bzKey].fahrer.a.runden !== 9) {
+        f.push('Bestzeit-Rekord nicht sauber zurueckgesetzt');
+      }
+      if (statCleanGrenze('5,25') !== 5250) f.push('Dezimalkomma');
+      let wirft = false; try { statCleanGrenze('-1'); } catch (e) { wirft = true; }
+      if (!wirft) f.push('negativer Grenzwert angenommen');
+      if (JSON.stringify(o) !== roh) f.push('Plan veraendert die Originaldaten');
+    } catch (e) { f.push('Wurf: ' + e.message); }
+    // Ruecknahme: schreiben und zuruecknehmen auf eigenen Probe-Schluesseln
+    const k1 = 'omegasim-selbsttest-statclean-1', k2 = 'omegasim-selbsttest-statclean-2';
+    try {
+      localStorage.removeItem(k1); localStorage.setItem(k2, 'alt');
+      const paare = { [k1]: { vorher: null, nachher: 'neu1' }, [k2]: { vorher: 'alt', nachher: 'neu2' } };
+      statCleanSchreiben(paare, 'nachher');
+      if (localStorage.getItem(k1) !== 'neu1' || localStorage.getItem(k2) !== 'neu2') f.push('Bereinigung nicht geschrieben');
+      statCleanSchreiben(paare, 'vorher');
+      if (localStorage.getItem(k1) !== null || localStorage.getItem(k2) !== 'alt') f.push('Ruecknahme stellt nicht her');
+    } catch (e) { f.push('Ruecknahme wirft: ' + e.message); }
+    finally { localStorage.removeItem(k1); localStorage.removeItem(k2); }
+    // Spanisch sieht Spanisch (vorher data-i18n-skip und eine eigene DE/EN-Weiche)
+    const vorher = lang;
+    try {
+      setLang('es');
+      statBereinigungZeichnen();
+      const sum = $('stat-bereinigen') && $('stat-bereinigen').querySelector('summary');
+      if (!sum || sum.textContent.indexOf('Limpiar estadísticas') < 0) f.push('Spanisch zeigt nicht Spanisch');
+      if ($('stat-bereinigen').closest('[data-i18n-skip]')) f.push('Bereich noch data-i18n-skip');
+    } catch (e) { f.push('Sprache: ' + e.message); }
+    finally { if (lang !== vorher) setLang(vorher); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Vorschau, Zeitgrenze, Ruecknahme, Altdaten und Spanisch stimmen' };
+  });
+
+  // Rennintro (80d-rennintro.js, PR #8): Reihenfolge der Ansage, jede Aufnahme im Manifest,
+  // einzelne fehlende Clips werden ausgelassen, Challenges ohne Intro, Fruehstart ab Intro.
+  stAdd('Rennintro v1.2.15: Folge, Manifest, fehlende Clips, Challenges, Fruehstart', async () => {
+    const f = [];
+    const z = (n) => rennstandZahlFolge(n);
+    const soll = ['i:willkommen', 'i:modus_laps', 'i:distanz', ...z(5), 'i:runden', 'i:boxenstopps_keine',
+      'i:teilnehmer_einer', 'i:startposition', ...z(1), 'i:startposition_wagen', 'i:startfarbe_rot',
+      'i:startmodell_ferrari', 'i:wetter_trocken', 'i:bereit'];
+    const ist = rennintroFolge('laps', 5, 'dry', 0, [{ farbeId: 'rot', modellId: 'ferrari' }]);
+    if (JSON.stringify(ist) !== JSON.stringify(soll)) f.push('Rennen 5 Runden: ' + ist.join(' '));
+    const zeit = rennintroFolge('endurance', 1, 'rain', 2, [{ farbeId: 'keine', modellId: '' }, { farbeId: 'blau', modellId: 'bmw' }]);
+    for (const k of ['i:zeitlimit', 'i:minute', 'i:boxenstopps_anzahl', 'i:boxenstopps_pflicht', 'i:teilnehmer_anfang',
+      'i:teilnehmer_ende', 'i:startfarbe_unbekannt', 'i:startmodell_auto', 'i:startmodell_bmw', 'i:wetter_regen']) {
+      if (zeit.indexOf(k) < 0) f.push('Langstrecke ohne ' + k);
+    }
+    if (rennintroFolge('practice', 0, 'dry').indexOf('i:ohne_limit') < 0) f.push('Training ohne Limit fehlt');
+    if (rennintroFolge('laps', 1, 'dry').indexOf('i:runde') < 0) f.push('eine Runde: Einzahl fehlt');
+    // Jede moegliche Aufnahme muss im Manifest stehen, in beiden Sprachen.
+    try {
+      const m = await (await fetch('audio/rennintro.json')).json();
+      const alle = new Set();
+      const autos = CAR_COLORS.map((c, i) => ({ farbeId: c.id, modellId: CAR_MODELLE[i % CAR_MODELLE.length].id }));
+      for (const modus of Object.keys(RACE_MODES)) {
+        for (const lim of [0, 1, 7]) for (const st of [0, 1, 3]) for (const wx of ['dry', 'rain']) {
+          rennintroFolge(modus, lim, wx, st, autos).forEach((k) => { if (k.startsWith('i:')) alle.add(k.slice(2)); });
+        }
+      }
+      CAR_MODELLE.forEach((mo) => rennintroFolge('laps', 1, 'dry', 0, [{ farbeId: 'rot', modellId: mo.id }])
+        .forEach((k) => { if (k.startsWith('i:')) alle.add(k.slice(2)); }));
+      for (const spr of ['de', 'en']) {
+        const fehlt = [...alle].filter((k) => !(m[spr] && m[spr][k]));
+        if (fehlt.length) f.push(spr + ' fehlt im Manifest: ' + fehlt.slice(0, 4).join(', '));
+      }
+    } catch (e) { f.push('Manifest nicht lesbar: ' + e.message); }
+    // Ein fehlender Clip bricht nicht das ganze Laden ab
+    try {
+      const r = await rennintroClipsLaden(['i:gibt_es_nicht', 'x:unbekannt'], 'de', new AbortController().signal);
+      if (!r || !Array.isArray(r.fehlend) || r.fehlend.length !== 2 || Object.keys(r.satz).length) f.push('fehlende Clips falsch gemeldet');
+    } catch (e) { f.push('fehlender Clip bricht ab: ' + e.message); }
+    if (!/challengeLaeuft/.test(String(rennintroErlaubt))) f.push('Challenges nicht ausgeschlossen');
+    if (RENINTRO_LADE_MS < 20000) f.push('Ladelimit ' + RENINTRO_LADE_MS + ' ms');
+    const q = String(startRaceCountdown);
+    const iFrueh = q.indexOf('fruehstartBeginnen()'), iAmpel = q.indexOf('const ampelBeginnen');
+    if (iFrueh < 0 || iAmpel < 0 || iFrueh > iAmpel || q.indexOf('fruehstartBeginnen()', iAmpel) >= 0) {
+      f.push('Fruehstart-Erkennung nicht ab Intro-Beginn');
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Folge, Manifest DE/EN, Auslassen, Challenges, Fruehstart stimmen' };
+  });
+
   stAdd('Spiegeln: jede Challenge-Strecke schliesst gespiegelt wie im Original', () => {
     const r = OMEGA_TEST.spiegelSchluss();
     const kaputt = r.filter((x) => x.orig !== x.gesp).map((x) => x.id);
