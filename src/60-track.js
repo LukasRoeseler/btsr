@@ -3559,7 +3559,16 @@
         t.textContent = '';
         continue;
       }
-      c.setAttribute('visibility', 'visible');
+      // v1.2.32 GEMELDET: "Im virtuellen Fahren ist die Autoposition als Silhouette mit im
+      // Bild. Da ist irgendwo ein Fehler." Hier stand setAttribute('visibility', 'visible').
+      // visible ist kein "nicht mehr verborgen", sondern ein eigener Wert, und der schlaegt
+      // das geerbte hidden der Vorfahren: das virtuelle Fahren verbirgt die ganze Seite
+      // (body.vf-an main { visibility: hidden }), das Auto im Regenradar des Cockpits stand
+      // aber trotzdem ueber dem 3D-Bild - in Bildschirmlage der verborgenen Karte, gemessen
+      // 15 x 18 px bei (807, 414) neben dem Auto, mit der Fahrtrichtung der Karte gedreht.
+      // Dasselbe gilt fuer jeden anderen verborgenen Vorfahren (eingeklappte Kachel, Tab).
+      // Das Attribut entfernen heisst: wieder erben, sichtbar genau dann, wenn die Karte es ist.
+      c.removeAttribute('visibility');
       const i = trackPunktIndex(geo.kachelTab, geo.pts, a.index, a.phase);
       const p = geo.pts[i], n = geo.nrm[i] || { x: 0, y: 0 };
       const q = Math.max(-0.85, Math.min(0.85, a.quer || 0));
