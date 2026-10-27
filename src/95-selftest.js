@@ -18816,7 +18816,7 @@
   // Statistikbereinigung (98ea/98eb, PR #10): nur die reinen Planfunktionen und das
   // Schreiben/Zuruecknehmen auf eigenen Probe-Schluesseln. Der echte Statistikspeicher und
   // die IndexedDB-Sicherung des Nutzers werden nicht angefasst.
-  stAdd('Statistikbereinigung v1.2.12: Vorschau, zu kurze Zeiten, Ruecknahme, Altdaten-Zuordnung', () => {
+  stAdd('Statistikbereinigung v1.2.15: Vorschau, zu kurze Zeiten, Ruecknahme, Altdaten-Zuordnung', () => {
     const f = [];
     const code = 'SG2RG2R';
     const buch = (id, km, n) => ({ id, km, realKm: km / 10, runden: n, sitzungen: 1 });
@@ -18899,7 +18899,7 @@
 
   // Rennintro (80d-rennintro.js, PR #8): Reihenfolge der Ansage, jede Aufnahme im Manifest,
   // einzelne fehlende Clips werden ausgelassen, Challenges ohne Intro, Fruehstart ab Intro.
-  stAdd('Rennintro v1.2.12: Folge, Manifest, fehlende Clips, Challenges, Fruehstart', async () => {
+  stAdd('Rennintro v1.2.15: Folge, Manifest, fehlende Clips, Challenges, Fruehstart', async () => {
     const f = [];
     const z = (n) => rennstandZahlFolge(n);
     const soll = ['i:willkommen', 'i:modus_laps', 'i:distanz', ...z(5), 'i:runden', 'i:boxenstopps_keine',

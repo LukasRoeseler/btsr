@@ -204,6 +204,6 @@ Manuelles Testen auf dem Webserver erfordert weiterhin kein Playwright.
   stand, tragen in der Sitzung `a.id`, gebucht wurde aber unter `name:<Name>`.
   `statCleanAutoKey` bildet das jetzt nach: das Auto steht nur noch einmal in der
   Auswahl und seine Anteile werden zugeordnet statt uebersprungen.
-- Selbsttest `Statistikbereinigung v1.2.12` (src/95-selftest.js): Vorschau, zu kurze
+- Selbsttest `Statistikbereinigung v1.2.15` (src/95-selftest.js): Vorschau, zu kurze
   Zeiten, Ruecknahme auf Probe-Schluesseln, Altdaten-Zuordnung und Spanisch.
 - Bereich als WIP gekennzeichnet.
