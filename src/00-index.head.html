@@ -4925,7 +4925,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.2.33</span></span>
+        <span class="foot-ver">v<span id="app-version">1.2.38</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6093,6 +6093,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.2</span></b></p>
       <ul class="muted" id="patchnotes-12" style="padding-left:20px; line-height:1.7">
+        <li>NPCs: Start/Ziel gilt jetzt &#252;berall als Gerade. Die Linie h&#228;lt dort die Querlage wie auf jeder Geraden, statt hinter einer Kurve halb innen zu bleiben, und der Vorausblick ans Auto meldet auf der Bahn Start/Ziel (0x01) statt der Engstelle (0x0A). NPC-Stufe MAX: Ohne Schaltpause wurde der Schaltvorgang nach dem ersten Hochschalten nie beendet, das Auto hatte danach keinen Antrieb mehr &#8211; behoben, MAX f&#228;hrt auf Geraden etwa doppelt so schnell wie vorher. Ideallinie (Linienmodell SIMULATOR, WIP): Die Suche rechnet mit dem echten Kurventempo der NPCs und f&#228;hrt au&#223;en-innen-au&#223;en (Kurveneingang und -ausgang au&#223;en, Scheitel innen), statt nur die innere H&#228;lfte zu nutzen; die Haarnadel bleibt davon ausgenommen, gespeicherte Linien werden neu gesucht.</li>
         <li>Virtuell fahren: Neben dem eigenen Auto stand im 3D-Bild ein kleines Kartenauto, die Silhouette aus dem Regenradar des Cockpits, das darunter eigentlich verborgen ist; es ist weg. Die NPCs fahren jetzt mit dem Tempo der Garagenstufe 1 (mittel, 55 %) statt mit rund 80 %, beschleunigen und bremsen mit demselben Fahrzeugmodell wie das eigene Auto und nehmen Kurven mit h&#246;chstens 1,3 g. Ihre Neigung in Kurven war durch einen Rechenfehler bis zu 34 Grad gro&#223; und ist jetzt so klein wie beim eigenen Auto (unter 1 Grad).</li>
         <li>Cockpit: Die Rennpause ist jetzt ein kleines Symbol oben rechts, mit Abstand links neben dem Beenden-Knopf (Pause, Fortsetzen, Wiederanlauf stoppen). Boxen-Minigame: Alle f&#252;nf Kn&#246;pfe stehen von Anfang an in einer Reihe an festen Pl&#228;tzen, erledigte blenden aus. Streckeneditor: Mit einer Haarnadel in der Strecke fehlte an der letzten Fuge vor Start/Ziel ein St&#252;ck Randstreifen (rund 3 cm), sodass z. B. SHG3R4L nicht zusammenzupassen schien; die Ma&#223;e selbst stimmen und schlie&#223;en exakt.</li>
         <li>Neu von Playdater1974, &#252;bernommen mit Korrekturen: Rennpause (WIP) &#8211; das Rennen l&#228;sst sich anhalten (Knopf im Cockpit oder frei belegbare Controllertaste), die Autos bleiben stehen, die Rennuhr steht still, weiter geht es mit einer kurzen Wiederanlauf-Ampel. Im WLAN-Mehrspieler ist die Pause gesperrt. Nach einem Neuladen der App bleibt kein Auto mehr in der Pause h&#228;ngen (braucht die neue APK).</li>
