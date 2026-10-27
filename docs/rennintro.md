@@ -12,10 +12,11 @@
   mit "einen Teilnehmer" angekuendigt, bei leerem Feld null Teilnehmer und keine Positionen.
 - Vorproduzierte Piper-Clips: Deutsch/Englisch; Spanisch nutzt wie bisher Englisch.
 - Verwendet Rennstand-Sprechtempo, Lautstaerke und Hall. Ton aus bzw. Lautstaerke 0 ueberspringt das Intro.
-- Ampel erst nach dem letzten Clip; Fruehstartueberwachung erst ab Ampel-Vorlauf.
+- Ampel erst nach dem letzten Clip; Fruehstartueberwachung schon ab Intro-Beginn (raceState ist dann bereits countdown).
+- Nicht in Challenges (eigener Ablauf mit Ampel, sonst vor jedem Versuch ein Intro).
 - Training mit aktivem Intro bekommt die Ampel, ohne Intro weiter unmittelbarer Start.
-- Fehlende Clips / fehlender Audiokontext: Fallback zum Start ohne Ansage.
-- Lade-Timeout 10 s (maximal sechs parallele Downloads); maximale Ansagedauer 180 s
+- Einzelne fehlende Clips werden ausgelassen (einmal im Protokoll); nur wenn keiner ladbar ist oder der Audiokontext fehlt, Start ohne Ansage.
+- Lade-Timeout 20 s (maximal sechs parallele Downloads, geladene Clips bleiben im Speicher; nach dem Timeout laden sie im Hintergrund weiter); maximale Ansagedauer 180 s
   mit Wiedergabe-Watchdog, damit auch groessere Startfelder vollstaendig angesagt werden.
 - Abbrechen stoppt Audios und verhindert nachtraegliche Ampeln. Ausschalten waehrend des
   Intros beendet die Ansage und geht zur Ampel weiter.
@@ -107,7 +108,7 @@ Eine Versionsanhebung fuer die spaetere Auslieferung ist hier nicht enthalten.
 - Build und `build.py --check`, Element-IDs, Woerterbuch und JS-Klammern erfolgreich.
 - Chromium: App startet als 1.1.44 ohne JavaScript-Laufzeitfehler.
 - 20 Browser-Checks bestanden: Schalter-Default/Persistenz, Clipfolge, Ampel nach Intro,
-  Fruehstart erst ab Ampel, Abbruch/Neustart, Ausschalten, Training, Ton-aus,
+  Fruehstart ab Intro, Abbruch/Neustart, Ausschalten, Training, Ton-aus,
   Multiplayer-Ausschluss, fehlende Clips und Lade-Timeout.
 - Audio-Werkzeug: mit simuliertem Piper getestet; echter Funkfilter und ffmpeg/Ogg-Encoding,
   36 Dateien, Manifestpruefung und erneuter Lauf ohne Ueberschreiben erfolgreich.

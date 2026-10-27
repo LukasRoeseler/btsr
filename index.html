@@ -11058,9 +11058,10 @@
           &ndash; unter Windows sind sie lokal vorhanden, auf Android k&ouml;nnen sie fehlen.
           Fehlt eine, steht das einmal im Protokoll und nicht bei jeder Runde.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Rennintro vor der Ampel
-          <small>Lokale Starts: Modus, Runden- oder Zeitlimit und Startwetter als Piper-Aufnahmen.
-          Die Ampel beginnt erst danach. Standard aus; im WLAN-Mehrspieler ohne Intro.
+      <div class="opt-row"><div class="opt-label">Rennintro vor der Ampel <span class="wip-tag">WIP</span>
+          <small>Lokale Starts: Modus, Runden- oder Zeitlimit, Pflichtstopps, Startaufstellung und Startwetter als Piper-Aufnahmen.
+          Die Ampel beginnt erst danach; wer w&auml;hrend des Intros losf&auml;hrt, macht einen Fr&uuml;hstart.
+          Standard aus; nicht in Challenges und nicht im WLAN-Mehrspieler.
           Nutzt Sprache, Sprechgeschwindigkeit, Lautst&auml;rke und Hall der Rennstand-Ansagen.
           Fehlende Aufnahmen werden ausgelassen, der Start bleibt m&ouml;glich.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-intro" data-preset-skip><span></span></label></div>
@@ -13975,9 +13976,6 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
-    "Rennintro vor der Ampel": "Race intro before the starting lights",
-    "Rennintro…": "Race intro…",
-    "Lokale Starts: Modus, Runden- oder Zeitlimit und Startwetter als Piper-Aufnahmen. Die Ampel beginnt erst danach. Standard aus; im WLAN-Mehrspieler ohne Intro. Nutzt Sprache, Sprechgeschwindigkeit, Lautstärke und Hall der Rennstand-Ansagen. Fehlende Aufnahmen werden ausgelassen, der Start bleibt möglich.": "Local starts: mode, lap or time limit and starting weather as Piper recordings. The lights begin afterwards. Off by default; no intro in Wi-Fi multiplayer. Uses the language, speed, volume and reverb of the race announcements. Missing recordings are skipped so the race can still start.",
     "RC (WIP)": "RC (WIP)",
     "Alle: RC (WIP)": "All: RC (WIP)",
     "Arcade, nur viel extremer: wie ein Fernsteuerungsauto": "Arcade, only much more extreme: like a remote-control car",
@@ -17445,6 +17443,9 @@
     "Der vorherige Stand wird lokal gesichert.": "The previous state is backed up locally.",
     "Zeiten gelöscht: {r} Runde(n), {b} Bestzeit-Rekord(e), {t} Telemetrie-Einträge. Lokale Sicherung erstellt.": "Times deleted: {r} lap(s), {b} time-attack record(s), {t} telemetry entries. Local backup created.",
     "Für die zuvor gewählte Strecke sind keine gespeicherten Zeiten mehr vorhanden. Sie wurde aus der Auswahl entfernt.": "No stored times remain for the previously selected track. It has been removed from the selection.",
+    "Rennintro vor der Ampel": "Race intro before the starting lights",
+    "Rennintro…": "Race intro…",
+    "Lokale Starts: Modus, Runden- oder Zeitlimit, Pflichtstopps, Startaufstellung und Startwetter als Piper-Aufnahmen. Die Ampel beginnt erst danach; wer während des Intros losfährt, macht einen Frühstart. Standard aus; nicht in Challenges und nicht im WLAN-Mehrspieler. Nutzt Sprache, Sprechgeschwindigkeit, Lautstärke und Hall der Rennstand-Ansagen. Fehlende Aufnahmen werden ausgelassen, der Start bleibt möglich.": "Local starts: mode, lap or time limit, mandatory pit stops, starting grid and starting weather as Piper recordings. The lights begin afterwards; anyone who drives off during the intro jumps the start. Off by default; not in challenges and not in Wi-Fi multiplayer. Uses the language, speed, volume and reverb of the race announcements. Missing recordings are skipped, the race can still start.",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -18627,6 +18628,9 @@
     "Für die zuvor gewählte Strecke sind keine gespeicherten Zeiten mehr vorhanden. Sie wurde aus der Auswahl entfernt.": "No quedan tiempos guardados para el circuito elegido antes. Se ha quitado de la selección.",
     "Erklärung anzeigen": "Mostrar explicación",
     "Time Attack": "Contrarreloj",
+    "Rennintro vor der Ampel": "Intro de carrera antes del semáforo",
+    "Rennintro…": "Intro de carrera…",
+    "Lokale Starts: Modus, Runden- oder Zeitlimit, Pflichtstopps, Startaufstellung und Startwetter als Piper-Aufnahmen. Die Ampel beginnt erst danach; wer während des Intros losfährt, macht einen Frühstart. Standard aus; nicht in Challenges und nicht im WLAN-Mehrspieler. Nutzt Sprache, Sprechgeschwindigkeit, Lautstärke und Hall der Rennstand-Ansagen. Fehlende Aufnahmen werden ausgelassen, der Start bleibt möglich.": "Salidas locales: modo, límite de vueltas o de tiempo, paradas obligatorias, parrilla de salida y clima de salida como grabaciones de Piper. El semáforo empieza después; quien arranca durante la intro hace una salida anticipada. Desactivado por defecto; no en desafíos ni en multijugador por Wi-Fi. Usa el idioma, la velocidad, el volumen y la reverberación de los anuncios de posiciones. Las grabaciones que faltan se omiten y la salida sigue siendo posible.",
   };
 
   // ============================================================================
@@ -40017,7 +40021,11 @@
       finishSeitenZaehlerZuruecksetzen();
     }
     raceState = 'countdown';
-    fruehstartReset();
+    // Fruehstart-Erkennung ab HIER, auch waehrend eines Rennintros: raceState ist schon
+    // 'countdown', und wer waehrend der Ansage losfaehrt, faehrt genauso zu frueh wie
+    // waehrend der Ampel (PR #8 startete die Erkennung erst mit der Ampel, man konnte das
+    // ganze Intro lang frei fahren).
+    fruehstartBeginnen();
     $('race-start-btn').disabled = true;
     // Abbrechen muss schon im Countdown gehen: requestRaceStop() raeumt den Zaehler mit
     // auf, und ein Countdown, aus dem man nicht herauskommt, ist eine Falle.
@@ -40030,7 +40038,6 @@
     const ampelBeginnen = () => {
       if (ampelGestartet || raceState !== 'countdown') return;
       ampelGestartet = true;
-      fruehstartBeginnen();
       $('race-status').textContent = 'Countdown…';
       // Zufaellige 1-3 s Pause vor dem Start; im Mehrspieler gibt der Host sie im Plan vor,
       // damit alle gleichzeitig losfahren (sonst wuerde jedes Telefon anders wuerfeln).
@@ -53166,7 +53173,10 @@
   const rennintroBuffers = new Map();
   // Die vollstaendige Aufstellung braucht bei mehreren Autos mehr als 40 Sekunden.
   // Begrenzte parallele Downloads verhindern lange serielle Clip-Ladezeiten.
-  const RENINTRO_LADE_MS = 10000, RENINTRO_MAX_MS = 180000;
+  // Ladelimit 20 s statt 10 s: auf langsamen Handys reichte das beim ersten Start nicht.
+  // Einmal geladene Clips bleiben in rennintroBuffers; reisst das Limit, laufen die
+  // Downloads im Hintergrund weiter und fuellen den Speicher fuer den naechsten Start.
+  const RENINTRO_LADE_MS = 20000, RENINTRO_MAX_MS = 180000;
 
   function rennintroAbbrechen() {
     rennintroGeneration++;
@@ -53232,13 +53242,23 @@
     return folge;
   }
 
+  // Fehlt ein einzelner Clip (nicht im Manifest, HTTP-Fehler, nicht dekodierbar), wird nur
+  // er ausgelassen. Vorher brach ein einzelner Fehler das ganze Intro ab, obwohl der
+  // Optionstext "fehlende Aufnahmen werden ausgelassen" verspricht. Nur ein Abbruch
+  // (Stopp, Neustart) bricht das Laden ab.
   async function rennintroClipsLaden(folge, spr, signal) {
     const quelle = spr === 'de' ? 'de' : 'en';
-    const satz = {}, manifests = {};
+    const satz = {}, manifests = {}, fehlend = [];
     const keys = [...new Set(folge)];
     let cursor = 0;
     const laden = async (key) => {
       if (signal.aborted) throw new Error('Laden abgebrochen');
+      try { await ladenEiner(key); } catch (e) {
+        if (signal.aborted) throw e;
+        fehlend.push(key + ' (' + e.message + ')');
+      }
+    };
+    const ladenEiner = async (key) => {
       const cacheKey = quelle + ':' + key;
       if (rennintroBuffers.has(cacheKey)) { satz[key] = rennintroBuffers.get(cacheKey); return; }
       const prefix = key.slice(0, 2), name = key.slice(2);
@@ -53264,12 +53284,15 @@
     await Promise.all(Array.from({ length: Math.min(6, keys.length) }, async () => {
       while (cursor < keys.length) await laden(keys[cursor++]);
     }));
-    return satz;
+    return { satz, fehlend };
   }
 
+  // Challenges ausgenommen: sie haben ihren eigenen Ablauf ("Auto muss stehen, dann kommt
+  // eine Ampel"), und das Intro lief sonst vor jedem Versuch, beim Knockout vor jedem Start.
   function rennintroErlaubt(gruenZiel, mpPlan) {
     return rennintroAn && !mpPlan && typeof gruenZiel !== 'number'
       && !(typeof mp !== 'undefined' && mp.an) && soundEnabled
+      && !(typeof challengeLaeuft === 'function' && challengeLaeuft())
       && rennstandLautstaerke > 0;
   }
 
@@ -53282,9 +53305,11 @@
     rennintroAktiv = true;
     return new Promise((resolve) => {
       let erledigt = false;
-      const fertig = (ok) => {
+      // abbrechen = false beim Ladelimit: die Downloads laufen weiter in den Speicher.
+      const fertig = (ok, abbrechen = true) => {
         if (erledigt) return;
-        erledigt = true; controller.abort();
+        erledigt = true;
+        if (abbrechen) controller.abort();
         if (token === rennintroGeneration) {
           if (rennintroTimer !== null) clearTimeout(rennintroTimer);
           rennintroTimer = null; rennintroFertig = null;
@@ -53301,20 +53326,26 @@
       rennintroFertig = fertig;
       rennintroTimer = setTimeout(() => {
         log('Rennintro: Ladezeit ueberschritten; Start ohne Intro.', 'info');
-        fertig(false);
+        fertig(false, false);
       }, RENINTRO_LADE_MS);
       (async () => {
         try {
           if (!audioCtx) initEngineSound();
           await audioCtx.resume();
-          const satz = await rennintroClipsLaden(folge, spr, controller.signal);
+          const { satz, fehlend } = await rennintroClipsLaden(folge, spr, controller.signal);
           if (erledigt || token !== rennintroGeneration || !rennintroAn || !soundEnabled
               || spr !== lang || raceState !== 'countdown' || rennstandLautstaerke <= 0) {
             fertig(false); return;
           }
+          if (fehlend.length) {
+            log('Rennintro: ' + fehlend.length + ' Aufnahme(n) fehlen und werden ausgelassen: '
+              + fehlend.slice(0, 4).join(', ') + (fehlend.length > 4 ? ' …' : ''), 'info');
+          }
+          const spielbar = folge.filter((key) => satz[key]);
+          if (!spielbar.length) throw new Error('keine Aufnahme ladbar');
           if (audioCtx.state !== 'running') throw new Error('Audiokontext nicht aktiv');
           const tempo = rennstandTempoWert(rennstandTempo);
-          const dauer = folge.reduce((sum, key) => sum + satz[key].duration / tempo + 0.08, 0);
+          const dauer = spielbar.reduce((sum, key) => sum + satz[key].duration / tempo + 0.08, 0);
           if (!Number.isFinite(dauer) || dauer <= 0 || dauer * 1000 > RENINTRO_MAX_MS)
             throw new Error('Ungueltige oder zu lange Ansage');
           clearTimeout(rennintroTimer);
@@ -53323,14 +53354,14 @@
             fertig(false);
           }, Math.min(RENINTRO_MAX_MS, Math.ceil((dauer + 1) * 1000)));
           let bei = audioCtx.currentTime + 0.03;
-          for (const key of folge) {
+          spielbar.forEach((key, i) => {
             const src = audioCtx.createBufferSource();
             src.buffer = satz[key]; src.playbackRate.value = tempo;
             src.connect(rennstandGain());
             rennintroQuellen.push(src);
-            if (key === folge[folge.length - 1]) src.onended = () => fertig(true);
+            if (i === spielbar.length - 1) src.onended = () => fertig(true);
             src.start(bei); bei += src.buffer.duration / tempo + 0.08;
-          }
+          });
         } catch (err) {
           if (!erledigt && token === rennintroGeneration)
             log('Rennintro nicht ladbar (' + err.message + '); Start ohne Intro.', 'info');
@@ -96038,6 +96069,55 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     } catch (e) { f.push('Sprache: ' + e.message); }
     finally { if (lang !== vorher) setLang(vorher); }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Vorschau, Zeitgrenze, Ruecknahme, Altdaten und Spanisch stimmen' };
+  });
+
+  // Rennintro (80d-rennintro.js, PR #8): Reihenfolge der Ansage, jede Aufnahme im Manifest,
+  // einzelne fehlende Clips werden ausgelassen, Challenges ohne Intro, Fruehstart ab Intro.
+  stAdd('Rennintro v1.2.12: Folge, Manifest, fehlende Clips, Challenges, Fruehstart', async () => {
+    const f = [];
+    const z = (n) => rennstandZahlFolge(n);
+    const soll = ['i:willkommen', 'i:modus_laps', 'i:distanz', ...z(5), 'i:runden', 'i:boxenstopps_keine',
+      'i:teilnehmer_einer', 'i:startposition', ...z(1), 'i:startposition_wagen', 'i:startfarbe_rot',
+      'i:startmodell_ferrari', 'i:wetter_trocken', 'i:bereit'];
+    const ist = rennintroFolge('laps', 5, 'dry', 0, [{ farbeId: 'rot', modellId: 'ferrari' }]);
+    if (JSON.stringify(ist) !== JSON.stringify(soll)) f.push('Rennen 5 Runden: ' + ist.join(' '));
+    const zeit = rennintroFolge('endurance', 1, 'rain', 2, [{ farbeId: 'keine', modellId: '' }, { farbeId: 'blau', modellId: 'bmw' }]);
+    for (const k of ['i:zeitlimit', 'i:minute', 'i:boxenstopps_anzahl', 'i:boxenstopps_pflicht', 'i:teilnehmer_anfang',
+      'i:teilnehmer_ende', 'i:startfarbe_unbekannt', 'i:startmodell_auto', 'i:startmodell_bmw', 'i:wetter_regen']) {
+      if (zeit.indexOf(k) < 0) f.push('Langstrecke ohne ' + k);
+    }
+    if (rennintroFolge('practice', 0, 'dry').indexOf('i:ohne_limit') < 0) f.push('Training ohne Limit fehlt');
+    if (rennintroFolge('laps', 1, 'dry').indexOf('i:runde') < 0) f.push('eine Runde: Einzahl fehlt');
+    // Jede moegliche Aufnahme muss im Manifest stehen, in beiden Sprachen.
+    try {
+      const m = await (await fetch('audio/rennintro.json')).json();
+      const alle = new Set();
+      const autos = CAR_COLORS.map((c, i) => ({ farbeId: c.id, modellId: CAR_MODELLE[i % CAR_MODELLE.length].id }));
+      for (const modus of Object.keys(RACE_MODES)) {
+        for (const lim of [0, 1, 7]) for (const st of [0, 1, 3]) for (const wx of ['dry', 'rain']) {
+          rennintroFolge(modus, lim, wx, st, autos).forEach((k) => { if (k.startsWith('i:')) alle.add(k.slice(2)); });
+        }
+      }
+      CAR_MODELLE.forEach((mo) => rennintroFolge('laps', 1, 'dry', 0, [{ farbeId: 'rot', modellId: mo.id }])
+        .forEach((k) => { if (k.startsWith('i:')) alle.add(k.slice(2)); }));
+      for (const spr of ['de', 'en']) {
+        const fehlt = [...alle].filter((k) => !(m[spr] && m[spr][k]));
+        if (fehlt.length) f.push(spr + ' fehlt im Manifest: ' + fehlt.slice(0, 4).join(', '));
+      }
+    } catch (e) { f.push('Manifest nicht lesbar: ' + e.message); }
+    // Ein fehlender Clip bricht nicht das ganze Laden ab
+    try {
+      const r = await rennintroClipsLaden(['i:gibt_es_nicht', 'x:unbekannt'], 'de', new AbortController().signal);
+      if (!r || !Array.isArray(r.fehlend) || r.fehlend.length !== 2 || Object.keys(r.satz).length) f.push('fehlende Clips falsch gemeldet');
+    } catch (e) { f.push('fehlender Clip bricht ab: ' + e.message); }
+    if (!/challengeLaeuft/.test(String(rennintroErlaubt))) f.push('Challenges nicht ausgeschlossen');
+    if (RENINTRO_LADE_MS < 20000) f.push('Ladelimit ' + RENINTRO_LADE_MS + ' ms');
+    const q = String(startRaceCountdown);
+    const iFrueh = q.indexOf('fruehstartBeginnen()'), iAmpel = q.indexOf('const ampelBeginnen');
+    if (iFrueh < 0 || iAmpel < 0 || iFrueh > iAmpel || q.indexOf('fruehstartBeginnen()', iAmpel) >= 0) {
+      f.push('Fruehstart-Erkennung nicht ab Intro-Beginn');
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Folge, Manifest DE/EN, Auslassen, Challenges, Fruehstart stimmen' };
   });
 
   stAdd('Spiegeln: jede Challenge-Strecke schliesst gespiegelt wie im Original', () => {

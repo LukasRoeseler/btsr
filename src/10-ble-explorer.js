@@ -373,9 +373,6 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
-    "Rennintro vor der Ampel": "Race intro before the starting lights",
-    "Rennintro…": "Race intro…",
-    "Lokale Starts: Modus, Runden- oder Zeitlimit und Startwetter als Piper-Aufnahmen. Die Ampel beginnt erst danach. Standard aus; im WLAN-Mehrspieler ohne Intro. Nutzt Sprache, Sprechgeschwindigkeit, Lautstärke und Hall der Rennstand-Ansagen. Fehlende Aufnahmen werden ausgelassen, der Start bleibt möglich.": "Local starts: mode, lap or time limit and starting weather as Piper recordings. The lights begin afterwards. Off by default; no intro in Wi-Fi multiplayer. Uses the language, speed, volume and reverb of the race announcements. Missing recordings are skipped so the race can still start.",
     "RC (WIP)": "RC (WIP)",
     "Alle: RC (WIP)": "All: RC (WIP)",
     "Arcade, nur viel extremer: wie ein Fernsteuerungsauto": "Arcade, only much more extreme: like a remote-control car",
@@ -3843,6 +3840,9 @@
     "Der vorherige Stand wird lokal gesichert.": "The previous state is backed up locally.",
     "Zeiten gelöscht: {r} Runde(n), {b} Bestzeit-Rekord(e), {t} Telemetrie-Einträge. Lokale Sicherung erstellt.": "Times deleted: {r} lap(s), {b} time-attack record(s), {t} telemetry entries. Local backup created.",
     "Für die zuvor gewählte Strecke sind keine gespeicherten Zeiten mehr vorhanden. Sie wurde aus der Auswahl entfernt.": "No stored times remain for the previously selected track. It has been removed from the selection.",
+    "Rennintro vor der Ampel": "Race intro before the starting lights",
+    "Rennintro…": "Race intro…",
+    "Lokale Starts: Modus, Runden- oder Zeitlimit, Pflichtstopps, Startaufstellung und Startwetter als Piper-Aufnahmen. Die Ampel beginnt erst danach; wer während des Intros losfährt, macht einen Frühstart. Standard aus; nicht in Challenges und nicht im WLAN-Mehrspieler. Nutzt Sprache, Sprechgeschwindigkeit, Lautstärke und Hall der Rennstand-Ansagen. Fehlende Aufnahmen werden ausgelassen, der Start bleibt möglich.": "Local starts: mode, lap or time limit, mandatory pit stops, starting grid and starting weather as Piper recordings. The lights begin afterwards; anyone who drives off during the intro jumps the start. Off by default; not in challenges and not in Wi-Fi multiplayer. Uses the language, speed, volume and reverb of the race announcements. Missing recordings are skipped, the race can still start.",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -5025,6 +5025,9 @@
     "Für die zuvor gewählte Strecke sind keine gespeicherten Zeiten mehr vorhanden. Sie wurde aus der Auswahl entfernt.": "No quedan tiempos guardados para el circuito elegido antes. Se ha quitado de la selección.",
     "Erklärung anzeigen": "Mostrar explicación",
     "Time Attack": "Contrarreloj",
+    "Rennintro vor der Ampel": "Intro de carrera antes del semáforo",
+    "Rennintro…": "Intro de carrera…",
+    "Lokale Starts: Modus, Runden- oder Zeitlimit, Pflichtstopps, Startaufstellung und Startwetter als Piper-Aufnahmen. Die Ampel beginnt erst danach; wer während des Intros losfährt, macht einen Frühstart. Standard aus; nicht in Challenges und nicht im WLAN-Mehrspieler. Nutzt Sprache, Sprechgeschwindigkeit, Lautstärke und Hall der Rennstand-Ansagen. Fehlende Aufnahmen werden ausgelassen, der Start bleibt möglich.": "Salidas locales: modo, límite de vueltas o de tiempo, paradas obligatorias, parrilla de salida y clima de salida como grabaciones de Piper. El semáforo empieza después; quien arranca durante la intro hace una salida anticipada. Desactivado por defecto; no en desafíos ni en multijugador por Wi-Fi. Usa el idioma, la velocidad, el volumen y la reverberación de los anuncios de posiciones. Las grabaciones que faltan se omiten y la salida sigue siendo posible.",
   };
 
   // ============================================================================

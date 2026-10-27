@@ -18843,6 +18843,55 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Vorschau, Zeitgrenze, Ruecknahme, Altdaten und Spanisch stimmen' };
   });
 
+  // Rennintro (80d-rennintro.js, PR #8): Reihenfolge der Ansage, jede Aufnahme im Manifest,
+  // einzelne fehlende Clips werden ausgelassen, Challenges ohne Intro, Fruehstart ab Intro.
+  stAdd('Rennintro v1.2.12: Folge, Manifest, fehlende Clips, Challenges, Fruehstart', async () => {
+    const f = [];
+    const z = (n) => rennstandZahlFolge(n);
+    const soll = ['i:willkommen', 'i:modus_laps', 'i:distanz', ...z(5), 'i:runden', 'i:boxenstopps_keine',
+      'i:teilnehmer_einer', 'i:startposition', ...z(1), 'i:startposition_wagen', 'i:startfarbe_rot',
+      'i:startmodell_ferrari', 'i:wetter_trocken', 'i:bereit'];
+    const ist = rennintroFolge('laps', 5, 'dry', 0, [{ farbeId: 'rot', modellId: 'ferrari' }]);
+    if (JSON.stringify(ist) !== JSON.stringify(soll)) f.push('Rennen 5 Runden: ' + ist.join(' '));
+    const zeit = rennintroFolge('endurance', 1, 'rain', 2, [{ farbeId: 'keine', modellId: '' }, { farbeId: 'blau', modellId: 'bmw' }]);
+    for (const k of ['i:zeitlimit', 'i:minute', 'i:boxenstopps_anzahl', 'i:boxenstopps_pflicht', 'i:teilnehmer_anfang',
+      'i:teilnehmer_ende', 'i:startfarbe_unbekannt', 'i:startmodell_auto', 'i:startmodell_bmw', 'i:wetter_regen']) {
+      if (zeit.indexOf(k) < 0) f.push('Langstrecke ohne ' + k);
+    }
+    if (rennintroFolge('practice', 0, 'dry').indexOf('i:ohne_limit') < 0) f.push('Training ohne Limit fehlt');
+    if (rennintroFolge('laps', 1, 'dry').indexOf('i:runde') < 0) f.push('eine Runde: Einzahl fehlt');
+    // Jede moegliche Aufnahme muss im Manifest stehen, in beiden Sprachen.
+    try {
+      const m = await (await fetch('audio/rennintro.json')).json();
+      const alle = new Set();
+      const autos = CAR_COLORS.map((c, i) => ({ farbeId: c.id, modellId: CAR_MODELLE[i % CAR_MODELLE.length].id }));
+      for (const modus of Object.keys(RACE_MODES)) {
+        for (const lim of [0, 1, 7]) for (const st of [0, 1, 3]) for (const wx of ['dry', 'rain']) {
+          rennintroFolge(modus, lim, wx, st, autos).forEach((k) => { if (k.startsWith('i:')) alle.add(k.slice(2)); });
+        }
+      }
+      CAR_MODELLE.forEach((mo) => rennintroFolge('laps', 1, 'dry', 0, [{ farbeId: 'rot', modellId: mo.id }])
+        .forEach((k) => { if (k.startsWith('i:')) alle.add(k.slice(2)); }));
+      for (const spr of ['de', 'en']) {
+        const fehlt = [...alle].filter((k) => !(m[spr] && m[spr][k]));
+        if (fehlt.length) f.push(spr + ' fehlt im Manifest: ' + fehlt.slice(0, 4).join(', '));
+      }
+    } catch (e) { f.push('Manifest nicht lesbar: ' + e.message); }
+    // Ein fehlender Clip bricht nicht das ganze Laden ab
+    try {
+      const r = await rennintroClipsLaden(['i:gibt_es_nicht', 'x:unbekannt'], 'de', new AbortController().signal);
+      if (!r || !Array.isArray(r.fehlend) || r.fehlend.length !== 2 || Object.keys(r.satz).length) f.push('fehlende Clips falsch gemeldet');
+    } catch (e) { f.push('fehlender Clip bricht ab: ' + e.message); }
+    if (!/challengeLaeuft/.test(String(rennintroErlaubt))) f.push('Challenges nicht ausgeschlossen');
+    if (RENINTRO_LADE_MS < 20000) f.push('Ladelimit ' + RENINTRO_LADE_MS + ' ms');
+    const q = String(startRaceCountdown);
+    const iFrueh = q.indexOf('fruehstartBeginnen()'), iAmpel = q.indexOf('const ampelBeginnen');
+    if (iFrueh < 0 || iAmpel < 0 || iFrueh > iAmpel || q.indexOf('fruehstartBeginnen()', iAmpel) >= 0) {
+      f.push('Fruehstart-Erkennung nicht ab Intro-Beginn');
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Folge, Manifest DE/EN, Auslassen, Challenges, Fruehstart stimmen' };
+  });
+
   stAdd('Spiegeln: jede Challenge-Strecke schliesst gespiegelt wie im Original', () => {
     const r = OMEGA_TEST.spiegelSchluss();
     const kaputt = r.filter((x) => x.orig !== x.gesp).map((x) => x.id);

@@ -6,7 +6,10 @@
   const rennintroBuffers = new Map();
   // Die vollstaendige Aufstellung braucht bei mehreren Autos mehr als 40 Sekunden.
   // Begrenzte parallele Downloads verhindern lange serielle Clip-Ladezeiten.
-  const RENINTRO_LADE_MS = 10000, RENINTRO_MAX_MS = 180000;
+  // Ladelimit 20 s statt 10 s: auf langsamen Handys reichte das beim ersten Start nicht.
+  // Einmal geladene Clips bleiben in rennintroBuffers; reisst das Limit, laufen die
+  // Downloads im Hintergrund weiter und fuellen den Speicher fuer den naechsten Start.
+  const RENINTRO_LADE_MS = 20000, RENINTRO_MAX_MS = 180000;
 
   function rennintroAbbrechen() {
     rennintroGeneration++;
@@ -72,13 +75,23 @@
     return folge;
   }
 
+  // Fehlt ein einzelner Clip (nicht im Manifest, HTTP-Fehler, nicht dekodierbar), wird nur
+  // er ausgelassen. Vorher brach ein einzelner Fehler das ganze Intro ab, obwohl der
+  // Optionstext "fehlende Aufnahmen werden ausgelassen" verspricht. Nur ein Abbruch
+  // (Stopp, Neustart) bricht das Laden ab.
   async function rennintroClipsLaden(folge, spr, signal) {
     const quelle = spr === 'de' ? 'de' : 'en';
-    const satz = {}, manifests = {};
+    const satz = {}, manifests = {}, fehlend = [];
     const keys = [...new Set(folge)];
     let cursor = 0;
     const laden = async (key) => {
       if (signal.aborted) throw new Error('Laden abgebrochen');
+      try { await ladenEiner(key); } catch (e) {
+        if (signal.aborted) throw e;
+        fehlend.push(key + ' (' + e.message + ')');
+      }
+    };
+    const ladenEiner = async (key) => {
       const cacheKey = quelle + ':' + key;
       if (rennintroBuffers.has(cacheKey)) { satz[key] = rennintroBuffers.get(cacheKey); return; }
       const prefix = key.slice(0, 2), name = key.slice(2);
@@ -104,12 +117,15 @@
     await Promise.all(Array.from({ length: Math.min(6, keys.length) }, async () => {
       while (cursor < keys.length) await laden(keys[cursor++]);
     }));
-    return satz;
+    return { satz, fehlend };
   }
 
+  // Challenges ausgenommen: sie haben ihren eigenen Ablauf ("Auto muss stehen, dann kommt
+  // eine Ampel"), und das Intro lief sonst vor jedem Versuch, beim Knockout vor jedem Start.
   function rennintroErlaubt(gruenZiel, mpPlan) {
     return rennintroAn && !mpPlan && typeof gruenZiel !== 'number'
       && !(typeof mp !== 'undefined' && mp.an) && soundEnabled
+      && !(typeof challengeLaeuft === 'function' && challengeLaeuft())
       && rennstandLautstaerke > 0;
   }
 
@@ -122,9 +138,11 @@
     rennintroAktiv = true;
     return new Promise((resolve) => {
       let erledigt = false;
-      const fertig = (ok) => {
+      // abbrechen = false beim Ladelimit: die Downloads laufen weiter in den Speicher.
+      const fertig = (ok, abbrechen = true) => {
         if (erledigt) return;
-        erledigt = true; controller.abort();
+        erledigt = true;
+        if (abbrechen) controller.abort();
         if (token === rennintroGeneration) {
           if (rennintroTimer !== null) clearTimeout(rennintroTimer);
           rennintroTimer = null; rennintroFertig = null;
@@ -141,20 +159,26 @@
       rennintroFertig = fertig;
       rennintroTimer = setTimeout(() => {
         log('Rennintro: Ladezeit ueberschritten; Start ohne Intro.', 'info');
-        fertig(false);
+        fertig(false, false);
       }, RENINTRO_LADE_MS);
       (async () => {
         try {
           if (!audioCtx) initEngineSound();
           await audioCtx.resume();
-          const satz = await rennintroClipsLaden(folge, spr, controller.signal);
+          const { satz, fehlend } = await rennintroClipsLaden(folge, spr, controller.signal);
           if (erledigt || token !== rennintroGeneration || !rennintroAn || !soundEnabled
               || spr !== lang || raceState !== 'countdown' || rennstandLautstaerke <= 0) {
             fertig(false); return;
           }
+          if (fehlend.length) {
+            log('Rennintro: ' + fehlend.length + ' Aufnahme(n) fehlen und werden ausgelassen: '
+              + fehlend.slice(0, 4).join(', ') + (fehlend.length > 4 ? ' …' : ''), 'info');
+          }
+          const spielbar = folge.filter((key) => satz[key]);
+          if (!spielbar.length) throw new Error('keine Aufnahme ladbar');
           if (audioCtx.state !== 'running') throw new Error('Audiokontext nicht aktiv');
           const tempo = rennstandTempoWert(rennstandTempo);
-          const dauer = folge.reduce((sum, key) => sum + satz[key].duration / tempo + 0.08, 0);
+          const dauer = spielbar.reduce((sum, key) => sum + satz[key].duration / tempo + 0.08, 0);
           if (!Number.isFinite(dauer) || dauer <= 0 || dauer * 1000 > RENINTRO_MAX_MS)
             throw new Error('Ungueltige oder zu lange Ansage');
           clearTimeout(rennintroTimer);
@@ -163,14 +187,14 @@
             fertig(false);
           }, Math.min(RENINTRO_MAX_MS, Math.ceil((dauer + 1) * 1000)));
           let bei = audioCtx.currentTime + 0.03;
-          for (const key of folge) {
+          spielbar.forEach((key, i) => {
             const src = audioCtx.createBufferSource();
             src.buffer = satz[key]; src.playbackRate.value = tempo;
             src.connect(rennstandGain());
             rennintroQuellen.push(src);
-            if (key === folge[folge.length - 1]) src.onended = () => fertig(true);
+            if (i === spielbar.length - 1) src.onended = () => fertig(true);
             src.start(bei); bei += src.buffer.duration / tempo + 0.08;
-          }
+          });
         } catch (err) {
           if (!erledigt && token === rennintroGeneration)
             log('Rennintro nicht ladbar (' + err.message + '); Start ohne Intro.', 'info');

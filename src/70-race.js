@@ -2143,7 +2143,11 @@
       finishSeitenZaehlerZuruecksetzen();
     }
     raceState = 'countdown';
-    fruehstartReset();
+    // Fruehstart-Erkennung ab HIER, auch waehrend eines Rennintros: raceState ist schon
+    // 'countdown', und wer waehrend der Ansage losfaehrt, faehrt genauso zu frueh wie
+    // waehrend der Ampel (PR #8 startete die Erkennung erst mit der Ampel, man konnte das
+    // ganze Intro lang frei fahren).
+    fruehstartBeginnen();
     $('race-start-btn').disabled = true;
     // Abbrechen muss schon im Countdown gehen: requestRaceStop() raeumt den Zaehler mit
     // auf, und ein Countdown, aus dem man nicht herauskommt, ist eine Falle.
@@ -2156,7 +2160,6 @@
     const ampelBeginnen = () => {
       if (ampelGestartet || raceState !== 'countdown') return;
       ampelGestartet = true;
-      fruehstartBeginnen();
       $('race-status').textContent = 'Countdown…';
       // Zufaellige 1-3 s Pause vor dem Start; im Mehrspieler gibt der Host sie im Plan vor,
       // damit alle gleichzeitig losfahren (sonst wuerde jedes Telefon anders wuerfeln).
