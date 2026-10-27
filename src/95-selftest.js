@@ -5431,6 +5431,32 @@
   // Menue, Kartenpunkte springen, Aufstellung ab Reihe 2, Regenflackern; dazu Kleinigkeiten.
   // v1.2.4 BESTELLT: Renntypen je Sensormodus, Fahrgefuehl je Spieler, Pacejka in Community-Challenges, Minigame-
   // Rueckmeldung, mechanische Boxensignale, NPC-Box wie Safety Car, Safety-Car-Parken auf kurzen Geraden.
+  // v1.2.30 BESTELLT: Pause als kleines Symbol links neben "Beenden"; Minigame-Reihe mit festen Plaetzen;
+  // SHG3R4L schliesst auch in der Zeichnung (Randstreifen ab dem Ursprung).
+  stAdd('Cockpit v1.2.30: Pause-Symbol neben Beenden, Minigame feste Plaetze, Randstreifen schliesst', () => {
+    const f = [];
+    const pk = $('race-act-pause'), menue = $('race-menue');
+    if (!pk || !menue || pk.parentElement !== menue.parentElement || pk.nextElementSibling !== menue) f.push('Pause nicht links neben Beenden');
+    rennPauseMalen();
+    if (!pk || !pk.querySelector('svg') || /Pause|Fortsetzen/.test(pk.textContent.replace('WIP', ''))) f.push('Pause ist kein Symbol');
+    if (pk && parseFloat(getComputedStyle(pk).marginRight) < 12) f.push('zu wenig Abstand zu Beenden');
+    const el = $('pit-spiel');
+    if (!el || el.querySelectorAll('.ps-slot').length !== PIT_SPIEL_ANZAHL) f.push('nicht ein Platz je Knopf');
+    if (String(pitSpielMalen).indexOf("k < sp.i ? 'fertig'") < 0) f.push('erledigte Knoepfe blenden nicht aus');
+    // Randstreifen: der weisse Streifen beginnt am Ursprung (pts[0]), auch mit Haarnadel.
+    const r = renderTrackPreview(codeToTrack('SHG3R4L').tiles, null, { detailed: true, echt: true, ohneLinie: true, ohneLinieRechnen: true });
+    const d = new DOMParser().parseFromString(r.html, 'image/svg+xml');
+    const p0 = r.geo.pts[0], ox = r.geo.ox, oy = r.geo.oy;
+    const nahe = [...d.querySelectorAll('path')].some((p) => {
+      const m = /^M\s*([-\d.]+)\s+([-\d.]+)/.exec((p.getAttribute('d') || '').trim());
+      return m && +p.getAttribute('stroke-width') > 1 && Math.abs(+m[2] - (p0.y + oy)) < 1.2;
+    });
+    if (!nahe) f.push('Randstreifen beginnt nicht am Ursprung');
+    const sc = trackSchluss(trackCenterline(codeToTrack('SHG3R4L').tiles));
+    if (!(sc.lueckeCm < 0.5)) f.push('SHG3R4L schliesst nicht (' + sc.lueckeCm.toFixed(2) + ' cm)');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Symbol neben Beenden, ' + PIT_SPIEL_ANZAHL + ' feste Plaetze, SHG3R4L geschlossen und durchgezeichnet' };
+  });
+
   // v1.2.24 BESTELLT (Variante C): tiefer Schaltklang statt des hellen Klacks, auch beim Runterschalten.
   stAdd('Klang v1.2.24: tiefer Schaltklang mit Knall, Metall gedaempft, alt per Schalter', () => {
     const f = [];
@@ -5616,7 +5642,7 @@
     const f = [];
     // Minigame: Zeitablauf loescht die Rueckmeldung; die Reihe zeigt die naechsten vier.
     const el = $('pit-spiel');
-    if (!el || el.querySelectorAll('.ps-slot').length !== 4) f.push('Reihe mit vier Plaetzen fehlt');
+    if (!el || el.querySelectorAll('.ps-slot').length !== PIT_SPIEL_ANZAHL) f.push('Reihe nicht mit einem Platz je Knopf (seit v1.2.30)');
     if (!el || !el.querySelector('.ps-falsch')) f.push('Kreuz fuer falsch fehlt');
     const css = [...document.querySelectorAll('style')].map((x) => x.textContent).join('\n');
     if (/\.pit-spiel\[data-symbol=""\] \.ps-fertig\s*\{\s*display:\s*block/.test(css)) f.push('Haken noch in jeder Pause');

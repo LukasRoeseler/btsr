@@ -3015,6 +3015,12 @@
     const istNadel = (k) => NADEL_KERBS_AN && !!(tiles && tiles[k]
       && (tiles[k].type === TILE_TYPE.HAIRPIN || tiles[k].type === TILE_TYPE.HAIRPIN_LEFT));
     const mitNadeln = NADEL_KERBS_AN && tiles && tiles.some((x, k) => istNadel(k));
+    // v1.2.30: Teil 0 beginnt HIER beim Ursprung pts[0]. trackCenterline() legt ihn mit Kachel -1 an,
+    // die Kacheltabelle laesst Teil 0 deshalb erst bei pts[1] beginnen (fuer Ortung und Linie richtig
+    // so). Fuer die Zeichnung fehlte damit das Stueck pts[0] -> pts[1]: gemeldet als "bei SHG3R4L
+    // passen die Teile am Ende nicht perfekt zusammen", rund 3 cm Luecke im Randstreifen an der
+    // letzten Fuge. Die Geometrie schliesst exakt (Haarnadel-Anfahrt 21,91 cm, TRACK_HAIRPIN_LEAD_CM).
+    const anfang = (k) => (k === 0 ? 0 : kachelTab.start[k]);
     let out = '';
     for (const [seite, farbe] of [[1, ECHT_BLAU], [-1, ECHT_ROT]]) {
       const linie = offsetPath(pts, nrm, mitte * seite);
@@ -3026,7 +3032,7 @@
         let stuecke = '', lauf = null;
         for (let k = 0; k <= nTeile; k++) {
           const ende = k === nTeile || istNadel(k);
-          const i0 = k < nTeile ? kachelTab.start[k] : pts.length - 1;
+          const i0 = k < nTeile ? anfang(k) : pts.length - 1;
           if (!ende && lauf === null) lauf = i0;
           if (ende && lauf !== null) {
             const bis = k < nTeile ? kachelTab.start[k] : pts.length - 1;
@@ -3040,7 +3046,7 @@
       const kante = mitNadeln ? offsetPath(pts, nrm, (half - bw) * seite) : null;
       let d = '', zapfen = '', weissNadel = '', streifenGerade = '';
       for (let k = 0; k < nTeile; k++) {
-        const i0 = kachelTab.start[k];
+        const i0 = anfang(k);
         const i1 = k + 1 < nTeile ? kachelTab.start[k + 1] : pts.length - 1;
         if (i0 === undefined || i1 === undefined || i1 <= i0) continue;
         // Bogenlaenge entlang DIESER Seite.
@@ -3238,7 +3244,8 @@
       // trackKachelTabelle(): eine Haarnadel hat 49 Abtastpunkte, eine Gerade 14, und mit
       // der Multiplikation lagen die Fugen falsch und fehlten im letzten Drittel ganz.
       for (let k = 0; k < tiles.length; k++) {
-        const i = kachelTab.start[k];
+        // v1.2.30: die Fuge von Teil 0 am Ursprung pts[0], nicht bei pts[1] (siehe echtRandstreifen).
+        const i = k === 0 ? 0 : kachelTab.start[k];
         const A = [pts[i].x + nrm[i].x * half, pts[i].y + nrm[i].y * half];
         const B = [pts[i].x - nrm[i].x * half, pts[i].y - nrm[i].y * half];
         body += o.echt

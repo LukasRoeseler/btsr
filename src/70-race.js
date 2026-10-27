@@ -4994,17 +4994,15 @@
     el.dataset.symbol = sym;
     // v1.2.4: Zeitablauf setzt blitz zurueck (pitSpielTick), damit dort kein Haken erscheint.
     el.dataset.blitz = pitStandElapsed < sp.blitzBis ? sp.blitz : '';
-    // Die Reihe der naechsten vier Knoepfe (vergangene verschwinden), animiert beim Weiterschalten.
+    // v1.2.30 BESTELLT: "von Anfang an die in einer Reihe anzeigen und wenn eins erledigt ist, dann
+    // ausblenden." Jeder Knopf des Durchgangs hat seinen FESTEN Platz; erledigte werden unsichtbar
+    // (Platz bleibt), der aktuelle ist markiert. Kein Nachruecken mehr, also auch keine leeren Plaetze,
+    // die wie weitere Knoepfe aussehen.
     const slots = el.querySelectorAll('.ps-slot');
-    slots.forEach((s, k) => { s.dataset.s = sp.folge[sp.i + k] || ''; });
-    if (el.dataset.i !== String(sp.i)) {
-      if (el.dataset.i !== undefined && el.dataset.i !== '') {
-        el.dataset.schieben = '1';
-        void el.offsetWidth;          // Stand ohne Uebergang festhalten, dann zuruecklaufen lassen
-        el.dataset.schieben = '';
-      }
-      el.dataset.i = String(sp.i);
-    }
+    slots.forEach((s, k) => {
+      s.dataset.s = sp.folge[k] || '';
+      s.dataset.zustand = k < sp.i ? 'fertig' : (k === sp.i ? 'jetzt' : 'kommt');
+    });
     el.style.setProperty('--fenster', sym
       ? String(Math.max(0, 1 - (pitStandElapsed - sp.fensterAb) / sp.fensterS)) : '0');
     $('pit-spiel-zaehler').textContent = Math.min(sp.i + 1, PIT_SPIEL_ANZAHL) + '/' + PIT_SPIEL_ANZAHL;

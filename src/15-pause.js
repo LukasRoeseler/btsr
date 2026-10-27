@@ -243,10 +243,16 @@
       knopf.disabled = !rennPauseAktiv() && !rennPauseErlaubt();
       const text = rennPause.phase === 'ampel' ? t('Wiederanlauf stoppen')
         : (rennPauseAktiv() ? t('Fortsetzen') : t('Pause'));
-      // Neue Funktion: WIP-Kennzeichen von Anfang an. Nur bei Aenderung schreiben, das
-      // laeuft im Takt von updateRaceActButtons().
-      const html = text + ' <span class="wip-tag">WIP</span>';
+      // v1.2.30: ein Symbol oben rechts statt eines Schriftzugs (Pause = zwei Balken, Fortsetzen =
+      // Dreieck, Wiederanlauf stoppen = Quadrat). Der Name steht im title/aria-label. WIP-Kennzeichen
+      // von Anfang an, hier winzig. Nur bei Aenderung schreiben, das laeuft im Takt von updateRaceActButtons().
+      const form = rennPause.phase === 'ampel' ? '<rect x="7" y="7" width="10" height="10" rx="1"/>'
+        : (rennPauseAktiv() ? '<path d="M8 5.5v13l10.5-6.5z"/>' : '<rect x="6.5" y="5" width="3.6" height="14" rx="1"/><rect x="13.9" y="5" width="3.6" height="14" rx="1"/>');
+      const html = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' + form + '</svg><span class="wip-tag">WIP</span>';
       if (knopf.dataset.pauseHtml !== html) { knopf.dataset.pauseHtml = html; knopf.innerHTML = html; }
+      knopf.title = text + ' (WIP)';
+      knopf.setAttribute('aria-label', text);
+      knopf.classList.toggle('an', rennPauseAktiv());
     }
     const el = document.getElementById('renn-pause-ui');
     if (!el) return;

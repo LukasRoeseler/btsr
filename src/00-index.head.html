@@ -2894,14 +2894,14 @@
   .ps-fertig { color: var(--good); } .ps-falsch { color: var(--bad); }
   .pit-spiel[data-symbol=""][data-blitz="ok"] .ps-fertig { display: block; }
   .pit-spiel[data-symbol=""][data-blitz="falsch"] .ps-falsch { display: block; }
-  /* Die Reihe: der aktuelle und die drei naechsten Knoepfe. Beim Weiterschalten rutscht sie um einen Platz nach
-     links (data-schieben setzt sie einen Platz nach rechts, dann gleitet sie zurueck). */
-  .ps-reihe { display: flex; gap: 8px; height: 30px; overflow: hidden; width: calc(4 * 30px + 3 * 8px); }
-  .ps-reihe-innen { display: flex; gap: 8px; transition: transform .22s ease-out; }
-  .pit-spiel[data-schieben="1"] .ps-reihe-innen { transform: translateX(38px); transition: none; }
+  /* Die Reihe (v1.2.30): alle Knoepfe des Durchgangs an festen Plaetzen, der aktuelle markiert, erledigte
+     blenden aus. */
+  .ps-reihe { display: flex; gap: 8px; height: 30px; overflow: hidden; }
+  .ps-reihe-innen { display: flex; gap: 8px; }
   .ps-slot { width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 4px;
-    border: 1px solid rgba(255,255,255,.25); opacity: .55; }
-  .ps-slot:first-child { opacity: 1; border-color: var(--k-blau); box-shadow: 0 0 0 2px var(--k-blau); }
+    border: 1px solid rgba(255,255,255,.25); opacity: .55; transition: opacity .25s ease-out, transform .25s ease-out; }
+  .ps-slot[data-zustand="jetzt"] { opacity: 1; border-color: var(--k-blau); box-shadow: 0 0 0 2px var(--k-blau); }
+  .ps-slot[data-zustand="fertig"] { opacity: 0; transform: scale(.6); }
   .ps-slot svg { width: 20px; height: 20px; fill: none; stroke-width: 2.4; display: none; }
   .ps-slot[data-s="quad"] .ps-quad, .ps-slot[data-s="kreis"] .ps-kreis { display: block; }
   .ps-slot[data-s=""] { border-color: transparent; box-shadow: none; }
@@ -4586,6 +4586,14 @@
   /* Die linke Ecke traegt das Blaettern. Dieselbe Hoehe wie rechts, damit die zwei Ecken
      auf einer Linie liegen. */
   .race-corner-links { left: 6px; right: auto; }
+  /* Pause: klein und gedeckt, mit Luft zum Beenden-Knopf rechts daneben. */
+  .race-corner button.race-pause-knopf { position: relative; width: 28px; height: 34px; margin-right: 18px;
+    background: rgba(10, 14, 22, .45); opacity: .6; }
+  .race-corner button.race-pause-knopf:hover, .race-corner button.race-pause-knopf.an { opacity: 1; }
+  .race-corner button.race-pause-knopf:disabled { opacity: .25; cursor: default; }
+  .race-corner button.race-pause-knopf svg { width: 14px; height: 14px; }
+  .race-pause-knopf .wip-tag { position: absolute; top: -6px; left: -8px; font-size: 6px; padding: 0 2px;
+    letter-spacing: 0; line-height: 1.4; pointer-events: none; }
   /* SCHMALER UND GEDECKTER als die Vollbildknoepfe: eine Nebenbedienung. Sie werden erst
      beim Zeigen deutlich, damit sie im Fahren nicht ablenken. */
   .race-corner button.schirm-pfeil { width: 26px; height: 34px;
@@ -4917,7 +4925,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.2.29</span></span>
+        <span class="foot-ver">v<span id="app-version">1.2.31</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5043,6 +5051,10 @@
         <span class="schirm-punkte" id="race-screen-dots" aria-hidden="true"></span>
       </div>
       <div class="race-corner">
+        <!-- v1.2.30 BESTELLT: "Pause-Button oben subtil und klein links neben den Beenden-Button und als
+             Piktogramm, mit etwas Abstand, damit ich nicht versehentlich auf Beenden druecke."
+             Das Symbol setzt rennPauseMalen() (15-pause.js): Pause, Fortsetzen, Wiederanlauf stoppen. -->
+        <button type="button" id="race-act-pause" class="race-pause-knopf" title="Pause (WIP)" aria-label="Pause"></button>
         <button type="button" id="race-menue" aria-label="Zurück zum Menü" title="Zurück zum Menü (Options, Esc)">
           <!-- BESTELLT: "selbe Funktion, aber das Icon soll ein klares Zurueck oder Beenden
                signalisieren": Pfeil aus einer offenen Tuer. -->
@@ -5152,7 +5164,6 @@
           </div>
           <ul class="gt3-laps" id="race-lap-list"></ul></div>
         <button type="button" class="gt3-act" id="race-act-start">Rennen starten</button>
-        <button type="button" class="gt3-act" id="race-act-pause">Pause</button>
         <!-- Der Motorklang gehoert ins Cockpit, weil man ihn im Fahren wechselt: das ist
              kein Einrichten, sondern Ausprobieren. MIT Namen und nicht nur mit dem Symbol -
              ein Knopf, der durch zehn Eintraege schaltet, muss sagen wo er steht, sonst
@@ -5344,6 +5355,7 @@
             <span class="ps-falsch" data-i18n-skip>&#10007;</span>
           </div>
           <div class="ps-reihe" aria-hidden="true"><div class="ps-reihe-innen">
+            <span class="ps-slot" data-s=""><svg class="ps-quad" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg><svg class="ps-kreis" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/></svg></span>
             <span class="ps-slot" data-s=""><svg class="ps-quad" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg><svg class="ps-kreis" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/></svg></span>
             <span class="ps-slot" data-s=""><svg class="ps-quad" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg><svg class="ps-kreis" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/></svg></span>
             <span class="ps-slot" data-s=""><svg class="ps-quad" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg><svg class="ps-kreis" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/></svg></span>
@@ -6081,6 +6093,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.2</span></b></p>
       <ul class="muted" id="patchnotes-12" style="padding-left:20px; line-height:1.7">
+        <li>Cockpit: Die Rennpause ist jetzt ein kleines Symbol oben rechts, mit Abstand links neben dem Beenden-Knopf (Pause, Fortsetzen, Wiederanlauf stoppen). Boxen-Minigame: Alle f&#252;nf Kn&#246;pfe stehen von Anfang an in einer Reihe an festen Pl&#228;tzen, erledigte blenden aus. Streckeneditor: Mit einer Haarnadel in der Strecke fehlte an der letzten Fuge vor Start/Ziel ein St&#252;ck Randstreifen (rund 3 cm), sodass z. B. SHG3R4L nicht zusammenzupassen schien; die Ma&#223;e selbst stimmen und schlie&#223;en exakt.</li>
         <li>Neu von Playdater1974, &#252;bernommen mit Korrekturen: Rennpause (WIP) &#8211; das Rennen l&#228;sst sich anhalten (Knopf im Cockpit oder frei belegbare Controllertaste), die Autos bleiben stehen, die Rennuhr steht still, weiter geht es mit einer kurzen Wiederanlauf-Ampel. Im WLAN-Mehrspieler ist die Pause gesperrt. Nach einem Neuladen der App bleibt kein Auto mehr in der Pause h&#228;ngen (braucht die neue APK).</li>
         <li>Schaltklang (WIP): statt des hellen &#8222;Klack&#8220; jetzt bei allen Motoren ein tiefer, weicher Schaltschlag mit Auspuffknall &#8211; auch beim Runterschalten, so wie es bisher nur beim Hochschalten des Mustang v2 unter Last klang. Der helle Metallanteil ist fast weg. Der fr&#252;here Klang kommt mit &#8222;Schaltklang: alt&#8220; (Optionen &#8594; Ton).</li>
         <li>Neu von Playdater1974, &#252;bernommen mit Korrekturen: Rennintro (WIP) &#8211; auf Wunsch sagt eine Stimme vor der Startampel Modus, Limit, Pflichtstopps, Startaufstellung und Wetter an; fehlende Aufnahmen werden einzeln &#252;bersprungen, Fr&#252;hstarts z&#228;hlen schon ab dem Intro, in Challenges gibt es kein Intro. Statistikbereinigung (WIP) unter Optionen &#8594; Statistiken: Fahrzeugstatistiken, einzelne Sitzungen und zu kurze Rundenzeiten mit Vorschau l&#246;schen, mit Sicherung zum R&#252;ckg&#228;ngigmachen und JSON-Export; jetzt auch auf Englisch und Spanisch, und alte Sitzungen erscheinen nicht mehr doppelt.</li>
@@ -10037,7 +10050,7 @@
           Minigame: gewechselt wird alles, was simuliert wird &ndash; Reifen, Tank voll,
           Reparatur &ndash;, und bis alles fertig ist, kommst du nicht los. In der Mitte
           erscheinen nacheinander f&uuml;nf Tasten, Quadrat oder Kreis (Tastatur: K und I); darunter
-          stehen die aktuelle und die n&auml;chsten drei in einer Reihe. Jede richtig gedr&uuml;ckte
+          stehen alle f&uuml;nf in einer Reihe, die erledigten blenden aus. Jede richtig gedr&uuml;ckte
           k&uuml;rzt den Stopp um 8 Prozent (gr&uuml;ner Haken), alle f&uuml;nf k&uuml;rzen ihn um 40 Prozent;
           eine falsche verl&auml;ngert ihn um 8 Prozent (rotes Kreuz); wer nichts dr&uuml;ckt, wartet die volle Zeit. Am Ende wartest du noch
           mindestens eine Sekunde, bei falschen Tasten l&auml;nger. Abbrechen: Kreuz tippen.</small></div>
