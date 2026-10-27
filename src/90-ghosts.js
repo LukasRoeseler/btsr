@@ -9495,8 +9495,19 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Bahn-Modus, siehe codeZuTyp() in 60-track.js). Im Ausdruck-Modus gibt es sie als
     // Schienenteil ohnehin nicht wirklich, also faellt sie dort wie jeder unbekannte Typ auf
     // Gerade zurueck.
+    // ---- START/ZIEL GEHT ALS START/ZIEL HINAUS (v1.2.32) ---------------------------
+    //
+    // Hier ging TILE_TYPE.START unveraendert hinaus, also 0x0a - und 0x0a ist auf der Schiene die
+    // ENGSTELLE (codeZuTyp in 60-track.js). Im Bahn-Modus bekam das Auto damit auf Start/Ziel und
+    // auf den zwei Teilen davor die Ansage "Engstelle", obwohl dort eine Gerade liegt; das gemessene
+    // Alphabet der Original-App (oben) sendet 0x01. Gefunden bei der Pruefung "ist Start/Ziel ueberall
+    // eine Gerade" (BESTELLT, v1.2.32). Was die Firmware mit einer angesagten Engstelle tut, ist nicht
+    // gemessen; im Ausdruck-Modus bleibt 0x0a (das gedruckte Blatt meldet selbst 0x0a).
     const code = (t) => {
-      if (t === TILE_TYPE.START || t === TILE_TYPE.STRAIGHT
+      if (t === TILE_TYPE.START) {
+        return (typeof trackMode === 'string' && trackMode === 'on') ? START_CODE_RAIL : START_CODE_PRINT;
+      }
+      if (t === TILE_TYPE.STRAIGHT
           || t === TILE_TYPE.CURVE_LEFT || t === TILE_TYPE.CURVE_RIGHT
           || t === TILE_TYPE.HAIRPIN_LEFT || t === TILE_TYPE.HAIRPIN
           || t === TILE_TYPE.WEIT_LEFT || t === TILE_TYPE.WEIT_RIGHT

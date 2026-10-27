@@ -1950,7 +1950,7 @@
   //   5. EIN LAUF DER LAENGE 1, UNMITTELBAR (ohne Gerade dazwischen) einem gegensinnigen
   //      Lauf folgend, ist "gedaempft": seine einzige Kachel wird 0 statt des Scheitels,
   //      und der volle Scheitelwert wandert auf die naechste Kachel weiter, WENN diese
-  //      eine einfache Gerade ist (keine Startkachel, keine weitere Kurve) - belegt an
+  //      eine einfache Gerade ist (seit v1.2.32 auch Start/Ziel, keine weitere Kurve) - belegt an
   //      SRLG (R triftt L ohne Puffer: R selbst bleibt bei +100, L wird zu 0, die
   //      folgende Gerade traegt den vollen Linksscheitel -100). Nur ein Beleg, als
   //      Sonderfall uebernommen.
@@ -1972,6 +1972,9 @@
   //      Rampen auf, statt zusaetzlich ueber die Mitte zu erzwingen. Berechnet NACH allen
   //      anderen Ankern; siehe der Kommentar an der Berechnung selbst, warum das keine
   //      Ringabhaengigkeit ist.
+  //      v1.2.32 ABGELOEST: Start/Ziel ist eine Gerade und bekommt die Geradenregel (Punkt 6);
+  //      der Mittelwert liess sie hinter einem Scheitel innen stehen. Begruendung und Zahlen
+  //      an der Berechnung in luukeLinieAnker().
   //
   //   ZWEI OFFENE RESTFRAGEN, nicht stillschweigend festgelegt (an Luuke zurueckspielen):
   //     - SGR3G und SR2GL2G haben je EINE Gerade unmittelbar vor der Startkachel (nach
@@ -2029,11 +2032,18 @@
   // enthaelt eine Weitkurve.
   function luukeBase(tightness) { return tightness === 0 ? 50 : 100; }
 
-  // Geraden - NICHT die Startkachel, die bekommt ihren eigenen Anker separat (Punkt 7
-  // oben) - siehe Punkt 6 oben.
-  function luukeGeradenWert(i, tiles, runOf, closed, at) {
+  // Geraden - seit v1.2.32 AUCH die Startkachel (siehe Punkt 7 oben) - siehe Punkt 6 oben.
+  //
+  // startWert: der Anker der Startkachel unmittelbar davor (nur fuer die Kachel nach Start/Ziel).
+  // Die Halbregel "unmittelbar nach der Startkachel" stammt aus Luukes Beispielen, in denen die
+  // Startkachel auf 0 stand - sie ist die Rampe von dieser Mitte zur naechsten Kurve. Sie gilt
+  // deshalb nur noch, wenn die Startkachel tatsaechlich in der Mitte steht; steht sie (als
+  // gewoehnliche Gerade) schon aussen, faehrt die Kachel danach wie jede andere Gerade weiter,
+  // statt auf halbem Weg zur Mitte zurueckzufallen.
+  function luukeGeradenWert(i, tiles, runOf, closed, at, startWert) {
     const n = tiles.length;
-    const justAfterS = (closed || i > 0) && tiles[at(i - 1)].type === TILE_TYPE.START;
+    const justAfterS = (closed || i > 0) && tiles[at(i - 1)].type === TILE_TYPE.START
+      && tiles[at(i)].type !== TILE_TYPE.START && !startWert;
     let prevRun = null;
     for (let back = 1; back <= n; back++) {
       if (!closed && i - back < 0) break;
@@ -2123,7 +2133,8 @@
         if (gedaempft && p === apexPos) {
           anker[idx] = 0;
           const naechsterIdx = at(lauf.bis + 1);
-          if (!runOf[naechsterIdx] && tiles[naechsterIdx].type !== TILE_TYPE.START) {
+          // v1.2.32: Start/Ziel ist eine Gerade und traegt den Scheitel genauso weiter.
+          if (!runOf[naechsterIdx]) {
             override.set(naechsterIdx, wert);
           }
         } else {
@@ -2132,27 +2143,39 @@
       }
     });
 
-    const startIdxListe = [];
+    // ---- START/ZIEL IST EINE GERADE (v1.2.32) ------------------------------------------
+    //
+    // BESTELLT: "Pruefe, ob beim NPC-Verhalten klar ist, dass Start/Ziel eine Gerade ist [...] Ich habe
+    // ausserdem das Gefuehl, dass die Autos dort tendenziell nicht ihre Querlage halten, sondern etwas
+    // weiter innen fahren."
+    //
+    // Hier stand bis v1.2.31 eine eigene Regel fuer die Startkachel: der MITTELWERT ihrer beiden
+    // Nachbarn (BESTELLT damals: "nicht bei Start immer in der Mitte, sondern so, dass man von der
+    // Schiene davor und danach moeglichst wenig lenken muss"). Folgt Start/Ziel direkt auf einen
+    // Kurvenlauf, dessen letzte Kachel der Scheitel ist (Lauflaenge 2), erbt sie damit den halben
+    // Scheitel - eine gewoehnliche Gerade an derselben Stelle geht dagegen nach aussen. Gemessen auf
+    // dem gleichseitigen Dreieck SR2GR2GR2, wo Start/Ziel und die zwei Geraden dieselbe Lage haben:
+    //
+    //                  Start/Ziel                   Gerade nach R2 (beide)
+    //     v1.2.31      0,00 [-0,99 .. +0,99]        -0,85 [-1,00 .. -0,03]    (Befehl, + = rechts = innen)
+    //     v1.2.32      wie die Gerade               -0,85
+    //
+    // Also 0,85 Bahnhaelften weiter innen, genau die Beobachtung. Jetzt laeuft die Startkachel durch
+    // dieselbe Geradenregel (luukeGeradenWert) wie jede Gerade, in einem ersten Durchgang, damit die
+    // Kachel danach den Anker der Startkachel kennt (siehe startWert dort). Die alte Absicht bleibt
+    // erfuellt: die Geradenregel ist an beiden Nachbarn ausgerichtet und zwingt nicht ueber die Mitte.
+    // Mehrere Startkacheln (Sektoren) werden alle so behandelt.
+    const istStart = (i) => tiles[i].type === TILE_TYPE.START;
     for (let i = 0; i < n; i++) {
-      if (runOf[i]) continue;
-      if (tiles[i].type === TILE_TYPE.START) { startIdxListe.push(i); continue; }
-      if (override.has(i)) { anker[i] = override.get(i); continue; }
-      anker[i] = luukeGeradenWert(i, tiles, runOf, closed, at);
+      if (runOf[i] || !istStart(i)) continue;
+      anker[i] = override.has(i) ? override.get(i) : luukeGeradenWert(i, tiles, runOf, closed, at);
     }
-    // DIE STARTKACHEL NICHT MEHR FEST AUF 0: BESTELLT, "nicht bei Start immer in der
-    // Mitte, sondern so, dass man von der Schiene davor und danach moeglichst wenig
-    // lenken muss." Der Mittelwert der beiden Nachbarn teilt die noetige Lenkbewegung
-    // gleichmaessig auf die Rampe davor UND danach auf, statt zusaetzlich ueber die
-    // Mitte zu erzwingen - eine dritte, unnoetige Wende. Erst NACH allen anderen Ankern
-    // berechnet: luukeGeradenWert() und die gedaempfte Uebergabe oben pruefen nur den
-    // TYP der Startkachel (TILE_TYPE.START), nie ihren Zahlenwert - keine Ringabhaengigkeit.
-    // BESTELLT: mehrere Start/Ziel-Geraden als Sektoren - JEDE Startkachel wird so
-    // gesetzt, nicht nur die letzte.
-    if (startIdxListe.length && n > 1) {
-      startIdxListe.forEach((si) => {
-        const vorIdx = at(si - 1), nachIdx = at(si + 1);
-        anker[si] = (anker[vorIdx] + anker[nachIdx]) / 2;
-      });
+    for (let i = 0; i < n; i++) {
+      if (runOf[i] || istStart(i)) continue;
+      if (override.has(i)) { anker[i] = override.get(i); continue; }
+      const vor = at(i - 1);
+      const startWert = ((closed || i > 0) && istStart(vor)) ? anker[vor] : 0;
+      anker[i] = luukeGeradenWert(i, tiles, runOf, closed, at, startWert);
     }
     return anker;
   }
