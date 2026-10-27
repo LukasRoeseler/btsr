@@ -573,6 +573,7 @@
 
   // ---- Takt: Pakete wie ein echtes Auto --------------------------------------------------------
   function vfPaket() {
+    if (rennPauseAktiv()) return;
     if (!VF.aktiv || !VF.car) return;
     const tile = Math.max(0, VF.pts[VF.idx].tile);
     if (tile !== VF.kachel) {
@@ -581,7 +582,7 @@
       VF.kachel = tile;
       // Eigene Rundenanzeige fuer die Kopfzeile (die Zeitnahme selbst laeuft in der App).
       if (vorher !== -2 && VF.tiles[tile] && VF.tiles[tile].type === TILE_TYPE.START && !VF.abseits) {
-        const jetzt = Date.now();
+        const jetzt = rennZeitJetzt();
         if (VF.rundeAb) {
           VF.letzte = jetzt - VF.rundeAb;
           if (VF.beste === null || VF.letzte < VF.beste) VF.beste = VF.letzte;
@@ -605,6 +606,9 @@
   function vfBild(now) {
     if (!VF.aktiv) return;
     VF.raf = requestAnimationFrame(vfBild);
+    if (rennPauseAktiv()) {
+      VF.letzt = now; VF.dtBild = 0; vfMalen(); vfHud(); return;
+    }
     const dt = VF.letzt ? Math.min(0.05, (now - VF.letzt) / 1000) : 0.016;
     VF.letzt = now;
     const st = physEngine.state;
@@ -681,11 +685,11 @@
     const o = vfOrt(VF.pts, VF.nrm, VF.x, VF.y, VF.idx);
     VF.idx = o.idx;
     const ab = Math.abs(o.quer) > TRACK_HALF_W * 1.19 + VF_AUTO.B * 0.3;
-    if (ab && !VF.abseits) VF.abseitsSeit = Date.now();
+    if (ab && !VF.abseits) VF.abseitsSeit = rennZeitJetzt();
     VF.abseits = ab;
     if (ab) {
       st.speedKmh *= Math.exp(-VF_ABSEITS_BREMSE * dt);
-      if (Date.now() - VF.abseitsSeit > VF_ABSEITS_ZURUECK_MS) vfZuruecksetzen();
+      if (rennZeitJetzt() - VF.abseitsSeit > VF_ABSEITS_ZURUECK_MS) vfZuruecksetzen();
     }
     // NPCs: folgen der Mittellinie und drosseln in Kurven.
     if (VF.npcs && VF.npcBogen) {
@@ -711,7 +715,7 @@
     VF.rennenEnde = true;
     const was = VF.modus === 'laps' ? (Math.min(VF.runden, VF.limit) + ' ' + t('Runden')) : (VF.limit + ' min');
     showHudToast(t('Rennen beendet') + ': ' + was);
-    setTimeout(() => { if (VF.aktiv) virtuellBeenden(); }, 1600);
+    rennZeitTimeout(() => { if (VF.aktiv) virtuellBeenden(); }, 1600);
   }
   function vfMalen() {
     const gl = VF.gl, cv = VF.cv;
@@ -963,7 +967,7 @@
     if (!el) return;
     const st = physEngine.state;
     const kmh = Math.round(Math.abs(st.speedKmh || 0) * TACHO_SCALE * (VF.tempoFaktor || 1));   // wie im Cockpit (race-speed)
-    const lauf = VF.rundeAb ? Date.now() - VF.rundeAb : null;
+    const lauf = VF.rundeAb ? rennZeitJetzt() - VF.rundeAb : null;
     // Nur bei Aenderung schreiben: jedes textContent= ist Arbeit fuer die Seite, und das hier laeuft je Bild.
     const setz = (sel, txt) => { const e = el.querySelector(sel); if (e.textContent !== txt) e.textContent = txt; };
     setz('.vf-tempo', kmh + ' km/h');
@@ -1266,6 +1270,7 @@
     } catch (e) { /* ohne Ton weiterfahren */ }
   }
   function virtuellBeenden() {
+    rennPauseBeenden();
     if (!VF.aktiv) return;
     // Laeuft eine Challenge (z. B. die Studienfahrt) mit dem virtuellen Auto, endet sie mit: abgebrochen,
     // nicht gewertet (VF.abbruch sagt das der Studie, 98f-studie.js).

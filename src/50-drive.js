@@ -537,7 +537,7 @@
   function gbStatus(gasRoh, bremsRoh, kmhAnz, grund) {
     const el = $('setting-gasbrake-reverse-status');
     if (!el || !el.offsetParent) return;
-    const jetzt = Date.now();
+    const jetzt = rennZeitJetzt();
     // Springt die Uhr zurueck (jetzt < gbStatusAt), wird trotzdem geschrieben - sonst bliebe die Anzeige
     // stumm, bis die Uhr den alten Zeitpunkt wieder erreicht hat.
     if (jetzt >= gbStatusAt && jetzt - gbStatusAt < 150) return;
@@ -567,7 +567,7 @@
       if (!z) gbStatus(gasRoh, bremsRoh, kmhAnz, 'Option aus');
       return null;
     }
-    const jetzt = Date.now();
+    const jetzt = rennZeitJetzt();
     // Das gilt fuer BEIDE Richtungen: RC unberuehrt, nicht unter Autopilot, nur Automatik.
     const frei = physicsEnabled && !driftModus && cfg.autoShift
                  && !(typeof autopilotGreiftFuer === 'function' && autopilotGreiftFuer(nr));
@@ -1211,7 +1211,7 @@
   let schirmKlickSperreBis = 0;
   if ($('race-screen-next')) {
     $('race-screen-next').addEventListener('click', () => {
-      const jetzt = Date.now();
+      const jetzt = rennZeitJetzt();
       if (jetzt < schirmKlickSperreBis) return;
       schirmKlickSperreBis = jetzt + 220;
       cockpitScreenStep(+1);
@@ -2206,7 +2206,7 @@
     }
     // On the limiter the whole strip flashes blue, which no steady pattern can be mistaken
     // for.
-    if (amBegrenzer && Math.floor(Date.now() / 90) % 2 === 0) {
+    if (amBegrenzer && Math.floor(rennZeitJetzt() / 90) % 2 === 0) {
       for (let i = 0; i < n; i++) {
         lamps[i].style.background = '#3d8bff';
         lamps[i].style.boxShadow = '0 0 8px #3d8bff';
@@ -2516,7 +2516,7 @@
         : (pitSpielAktiv()
           ? 'PIT GAME \u00b7 ' + pitSpielRest().toFixed(1) + 's \u00b7 \u2713 ' + pitSpiel.treffer
             + '/' + PIT_SPIEL_ANZAHL
-          : 'PIT STOP \u00b7 ' + ((Date.now() - (pitServiceStart || Date.now())) / 1000).toFixed(1) + 's'
+          : 'PIT STOP \u00b7 ' + ((rennZeitJetzt() - (pitServiceStart || rennZeitJetzt())) / 1000).toFixed(1) + 's'
           + ' \u00b7 TANK +' + fuelLiters(pitFuelGained) + 'l'
           + ' \u00b7 REP +' + Math.round(pitDamageRepaired) + '%');
     }
@@ -2528,8 +2528,8 @@
       return;
     }
     $('race-lap-now').textContent = raceLapStart !== null
-      ? formatLapTime(Date.now() - raceLapStart)
-      : (dashLapStart !== null ? formatLapTime(Date.now() - dashLapStart) : '\u2013');
+      ? formatLapTime(rennZeitJetzt() - raceLapStart)
+      : (dashLapStart !== null ? formatLapTime(rennZeitJetzt() - dashLapStart) : '\u2013');
     const laps = raceLapTimes.length ? raceLapTimes : dashLapTimes.map((ms, i) => ({ lap: i + 1, ms }));
     const best = laps.length ? Math.min(...laps.map(l => l.ms)) : null;
     schreibeWert($('race-lap-best'), best === null ? '\u2013' : formatLapTime(best));
@@ -2903,7 +2903,7 @@
   // Haarnadel bei 0,47 (Delta 21).
   const SCAN_TEMPO = 0.80, SCAN_TEMPO_KURVE = 0.67, SCAN_TEMPO_HAARNADEL = 0.47;
   const scanStopp = { car: null, bis: 0 };
-  function scanAnhalten(car) { if (car) { scanStopp.car = car; scanStopp.bis = Date.now() + 1500; } }
+  function scanAnhalten(car) { if (car) { scanStopp.car = car; scanStopp.bis = rennZeitJetzt() + 1500; } }
   // ---- GREIFT DER AUTOPILOT GERADE? (v1.0.25) --------------------------------------
   //
   // GEMELDET: "Streckenscan: das Spielerauto faehrt einfach geradeaus" und "Meine
@@ -2948,7 +2948,7 @@
     const zPl = wer >= 2 ? zusatzPlatz(wer) : null;
     const car = zPl ? zPl.car : playerCar;
     if (!car) return false;
-    if (scanStopp.car === car && Date.now() < scanStopp.bis) return true;
+    if (scanStopp.car === car && rennZeitJetzt() < scanStopp.bis) return true;
     if (typeof garageScan !== 'undefined' && garageScan.aktiv && garageScan.car === car) return true;
     if (trackMode === 'on' && typeof aufstellenSpielerZiel === 'function' && aufstellenSpielerZiel(car) && !aufstellRennenLaeuft()) return true;
     return !!autopilotGrund();
@@ -2970,7 +2970,7 @@
     const meinAuto = zwei ? zPl.car : playerCar;
     // NACH DEM SCAN ANHALTEN (v0.9.4). BESTELLT: "wenn livescan fertig, dann auto anhalten".
     // 1,5 s Bremse, danach wieder der Fahrer - steht der Gashebel auf null, bleibt das Auto stehen.
-    if (scanStopp.car && scanStopp.car === meinAuto && Date.now() < scanStopp.bis) {
+    if (scanStopp.car && scanStopp.car === meinAuto && rennZeitJetzt() < scanStopp.bis) {
       return { grund: 'scan', throttle: 0, brake: 1, steer: 0, lenkt: false };
     }
     if (typeof garageScan !== 'undefined' && garageScan.aktiv && garageScan.car === meinAuto) {
@@ -2981,8 +2981,8 @@
         return { grund: 'scan', throttle: 0, brake: 1, steer: 0, lenkt: false };
       }
       const v = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
-      const dt = Math.max(0.01, Math.min(0.25, (Date.now() - (regler.at || Date.now())) / 1000));
-      regler.at = Date.now();
+      const dt = Math.max(0.01, Math.min(0.25, (rennZeitJetzt() - (regler.at || rennZeitJetzt())) / 1000));
+      regler.at = rennZeitJetzt();
       // formationPace(): dasselbe Mindesttempo wie die Einfuehrungsrunde - hoch genug,
       // um die Streckencodes zuverlaessig zu lesen (siehe GHOST_READ_MIN dort).
       // BESTELLT: "Scan-Modus [...] das Auto faehrt so schnell, dass es aus der
@@ -3011,7 +3011,7 @@
       const aA = aufstellenSpielerZiel(meinAuto);
       const lenk = 0;
       // v1.0.31: gestaffelter Start der Aufstellung - bis zu seinem Zeitpunkt steht das Auto.
-      if (aA && aA.ab && Date.now() < aA.ab) {
+      if (aA && aA.ab && rennZeitJetzt() < aA.ab) {
         return { grund: 'aufstellen', throttle: 0, brake: fahrerBremse > 0.05 ? fahrerBremse : 1, steer: 0, lenkt: false };
       }
       // Angekommen: ein Takt Einschlag zur Seite, ein Takt zurueck (aufstellenSpielerEinlenken),
@@ -3035,8 +3035,8 @@
         return { grund: 'aufstellen', throttle: 0, brake: 1, steer: 0, lenkt: false, radLenk: fo ? fo.lenk : 0 };
       }
       const vA = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
-      const dtS = Math.max(0.01, Math.min(0.25, (Date.now() - (regler.at || Date.now())) / 1000));
-      regler.at = Date.now();
+      const dtS = Math.max(0.01, Math.min(0.25, (rennZeitJetzt() - (regler.at || rennZeitJetzt())) / 1000));
+      regler.at = rennZeitJetzt();
       // v1.0.25: mit Kurven- und Haarnadeldrosselung wie die NPCs (aufstellTempo, 90-ghosts.js).
       const g = ghostSpeedControl(regler, typeof aufstellTempo === 'function' ? aufstellTempo(meinAuto) : formationPace(), vA, dtS);
       if (fahrerBremse > 0.05) return { grund: 'aufstellen', throttle: 0, brake: fahrerBremse, steer: lenk, lenkt: false };
@@ -3093,8 +3093,8 @@
     const ziel = grund === 'yellow' && typeof autopilotGelbGrenzen === 'function' ? autopilotGelbGrenzen(meinAuto, zielSc) : zielSc;
     const v = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
     const dtA = Math.max(0.01, Math.min(0.25,
-      (Date.now() - (regler.at || Date.now())) / 1000));
-    regler.at = Date.now();
+      (rennZeitJetzt() - (regler.at || rennZeitJetzt())) / 1000));
+    regler.at = rennZeitJetzt();
     const geregelt = ghostSpeedControl(regler, ziel, v, dtA);
     let throttle = geregelt.throttle;
     let brake = geregelt.brake;
@@ -3190,7 +3190,7 @@
   // Gerufen aus dem Meldekanal in 70-race.js (Auto 1) und aus dem Meldestrom je Auto in
   // 90-ghosts.js (Auto 2), also je Paket. `wer` ist 1, wenn nichts dasteht.
   function offtrackMelden(abseits, wer) {
-    const jetzt = Date.now();
+    const jetzt = rennZeitJetzt();
     if (wer >= 2) {
       const a = zusatzPlatz(wer).abseits;
       if (abseits) {
@@ -3309,6 +3309,7 @@
   let fuelCut = 1;
 
   function physicsStep() {
+    if (rennPauseAktiv()) return;
     // v1.0.25: im Modus "Aus" (Fahrgefuehl RC) nur dann rechnen, wenn der Autopilot faehrt -
     // siehe autopilotGreiftFuer(). Beim Einstieg steht das Modell noch auf dem Tempo von
     // vorher; es bekommt deshalb das, was der Stick gerade verlangt, als Startwert.
@@ -3379,7 +3380,7 @@
     // ... und das Brummen an seinem. padRumble() prueft rumbleOn selbst, also steht hier nur
     // die Frage, OB gebrummt werden soll - nicht, ob der Nutzer Vibration will.
     if (abseitsJetzt()) {
-      const jetzt = Date.now();
+      const jetzt = rennZeitJetzt();
       if (jetzt - offtrackRumbleAt >= OFFTRACK_RUMBLE_MS - 40) {
         offtrackRumbleAt = jetzt;
         // Dauerhaft und schwach, nicht ein Stoss wie beim Crash: ein Dauerrumble in
@@ -3452,6 +3453,7 @@
   // Was er HAT: eine eigene Physikinstanz, also eigene Gaenge, eigene Drehzahl, eigenes
   // Tempo, eigene Reifen- und Bremsentemperatur - alles, was den Wagen fahren laesst.
   function physicsStepVon(z) {
+    if (rennPauseAktiv()) return;
     z.apTakt = false;
     // v1.2.4: eigener Modus je Spieler (spielerPhysikAn, 49-spieler.js).
     if (!spielerPhysikAn(z)) {
@@ -3526,7 +3528,7 @@
     // Und das Rumpeln, an seinen eigenen Pad. Bis v0.6.45 waere es der Pad von Spieler 1
     // gewesen; jetzt hat jeder Stoss eine Adresse.
     if (abseitsJetztFuer(z.nr)) {
-      const jetzt = Date.now();
+      const jetzt = rennZeitJetzt();
       if (jetzt - z.rumbleAt >= OFFTRACK_RUMBLE_MS - 40) {
         z.rumbleAt = jetzt;
         padRumble(0.12, 0.34, OFFTRACK_RUMBLE_MS, 'abseits', z.nr);
@@ -3711,7 +3713,7 @@
   let calibStepLog = [];
 
   function calibNotifyListener(e) {
-    calibNotifyLog.push({ t: Date.now(), bytes: notifyBytes(e.target.value) });
+    calibNotifyLog.push({ t: rennZeitJetzt(), bytes: notifyBytes(e.target.value) });
   }
 
   async function ensureCalibNotifySubscribed() {
@@ -3724,16 +3726,16 @@
     }
   }
 
-  function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+  function sleep(ms) { return new Promise(resolve => rennZeitTimeout(resolve, ms)); }
 
   async function runCalibrationStep(step) {
-    const tStart = Date.now();
+    const tStart = rennZeitJetzt();
     const endAt = tStart + step.ms;
-    while (Date.now() < endAt && calibRunning) {
+    while (rennZeitJetzt() < endAt && calibRunning) {
       await sendControlValue(step.steer, step.throttle);
       await sleep(45);
     }
-    calibStepLog.push({ ...step, tStart, tEnd: Date.now() });
+    calibStepLog.push({ ...step, tStart, tEnd: rennZeitJetzt() });
   }
 
   async function runCalibration() {
@@ -3830,7 +3832,7 @@
     $('btn-record').classList.toggle('primary', !recording);
     if (recording) {
       macro = [];
-      recordStartTime = Date.now();
+      recordStartTime = rennZeitJetzt();
       $('record-status').textContent = 'nimmt auf…';
     } else {
       $('record-status').textContent = `bereit (${macro.length} Schritte aufgezeichnet)`;
@@ -3854,12 +3856,12 @@
   let macroWert = null;
   function macroWiedergabeWert() { return playing ? macroWert : null; }
   function runPlayback() {
-    playTimers.forEach(clearTimeout);
+    playTimers.forEach(rennZeitTimeoutStop);
     playTimers = [];
-    const startedAt = Date.now();
+    const startedAt = rennZeitJetzt();
     macroWert = { steer: 0, throttle: 0 };
     macro.forEach((step, i) => {
-      const timer = setTimeout(() => {
+      const timer = rennZeitTimeout(() => {
         macroWert = { steer: step.steer, throttle: step.throttle };
         playLog(`Schritt ${i + 1}/${macro.length}  t=${step.t}ms  steer=${step.steer.toFixed(2)}  throttle=${step.throttle.toFixed(2)}`);
         if (i === macro.length - 1) {
@@ -3875,7 +3877,7 @@
   }
 
   function stopPlayback() {
-    playTimers.forEach(clearTimeout);
+    playTimers.forEach(rennZeitTimeoutStop);
     playTimers = [];
     playing = false; // must be cleared BEFORE releasing, or playbackLocked blocks it
     macroWert = null;

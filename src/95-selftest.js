@@ -22686,3 +22686,152 @@
     if (String(ghostTick).indexOf('(underYellow || raceFormationLap || (ghostIstMax(car) && tight === 0)) ? 1 : ghostFeldStaffel(car)') < 0) f.push('Staffel in der Einfuehrungsrunde');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'mittig, links -0,9, rechts +0,9 je n Teile, dann Halt; SC = Feld; Formation = NPC-Formel' };
   });
+
+  // v1.2.25: PR #9 (Rennpause, Playdater1974) mit den Fixes der Uebernahme. Mit einer eigenen Uhr
+  // (Date.now, setTimeout, Math.random nur fuer die Dauer des Tests ersetzt), damit Ampel und
+  // Pausendauer ohne Warten pruefbar sind. Die Renn-Timeouts der Seite liegen waehrenddessen
+  // beiseite (eigene Menge), sonst landeten sie auf der falschen Uhr.
+  stAdd('Rennpause v1.2.25: Uhr steht, Ampel, verzug-Reset, MP-Start, native Sperre beim Laden', () => {
+    const f = [];
+    if (rennPauseAktiv()) return { ok: false, mass: 'eine Pause laeuft schon, Test nicht moeglich' };
+    const echt = { now: Date.now, st: window.setTimeout, ct: window.clearTimeout, rnd: Math.random };
+    const merk = { rs: raceState, rm: raceMode, fl: flagState, rsa: raceStartedAt, rls: raceLapStart,
+                   aw: raceAwaitingMove, mp: mp.an, mpi: mpi.an, verzug: rennPause.verzug,
+                   timer: rennPause.zeitTimer, gruen: raceGreen,
+                   status: $('race-status') ? $('race-status').textContent : null,
+                   tab: document.querySelector('.tabpage.active') };
+    const direktDa = Object.prototype.hasOwnProperty.call(window, 'OmegaDirekt');
+    const direktVorher = window.OmegaDirekt;
+    let wand = echt.now.call(Date), seq = 0;
+    const uhren = new Map();
+    const weiter = (ms) => {
+      const ende = wand + ms;
+      for (let n = 0; n < 10000; n++) {
+        let naechste = null;
+        for (const [id, u] of uhren) if (u.bei <= ende && (!naechste || u.bei < naechste[1].bei)) naechste = [id, u];
+        if (!naechste) break;
+        uhren.delete(naechste[0]); wand = naechste[1].bei; naechste[1].fn();
+      }
+      wand = ende;
+    };
+    const nativ = [];
+    let hinweis = '';
+    const attrappe = { rennPause: (an) => nativ.push(an), schreibe: () => {} };
+    try {
+      Date.now = () => wand;
+      window.setTimeout = (fn, ms, ...a) => {
+        const id = 'st' + (++seq);
+        uhren.set(id, { bei: wand + Math.max(0, Number(ms) || 0), fn: () => fn(...a) });
+        return id;
+      };
+      window.clearTimeout = (id) => { if (!uhren.delete(id)) echt.ct.call(window, id); };
+      Math.random = () => 0;
+      rennPause.zeitTimer = new Set();
+      try { window.OmegaDirekt = attrappe; } catch (e) { /* in der App evtl. nicht ersetzbar */ }
+      const mitAttrappe = window.OmegaDirekt === attrappe;
+      document.querySelectorAll('.tabpage').forEach((el) => el.classList.toggle('active', el.id === 'tab-race'));
+      mp.an = false; mpi.an = false;
+      raceState = 'racing'; raceMode = 'practice'; flagState = 'green'; raceAwaitingMove = false;
+      raceStartedAt = rennZeitJetzt() - 1000; raceLapStart = rennZeitJetzt() - 500;
+      const start = raceStartedAt;
+      let gefeuert = 0;
+      rennZeitTimeout(() => gefeuert++, 100);
+      // 1. Pause haelt die Rennuhr an.
+      const vorher = rennZeitJetzt();
+      rennPauseUmschalten();
+      if (rennPause.phase !== 'pause') f.push('Pause beginnt nicht (' + rennPause.phase + ')');
+      weiter(10000);
+      if (rennZeitJetzt() !== vorher) f.push('Rennuhr laeuft in der Pause weiter');
+      if (gefeuert) f.push('Renn-Timeout feuert in der Pause');
+      // 2. Fortsetzen nur ueber die Ampel, ohne Sprung der Rennuhr.
+      rennPauseUmschalten();
+      if (rennPause.phase !== 'ampel') f.push('Fortsetzen startet keine Ampel');
+      weiter(5599);
+      if (rennPause.phase !== 'ampel' || rennZeitJetzt() !== vorher) f.push('vor Gruen schon frei');
+      weiter(1);
+      if (rennPause.phase !== 'aus') f.push('nach Gruen noch ' + rennPause.phase);
+      if (rennZeitJetzt() !== vorher || raceStartedAt !== start) f.push('Rennuhr springt beim Fortsetzen');
+      if (rennPause.verzug !== merk.verzug + 15600) f.push('verzug ' + rennPause.verzug + ' statt Pausendauer');
+      weiter(99); if (gefeuert) f.push('Timeout ohne Restzeit');
+      weiter(1); if (gefeuert !== 1) f.push('Timeout setzt nach der Pause nicht fort');
+      // 3. verzug-Reset beim Rennstart: Rennuhr = Wanduhr, wartende Timeouts behalten ihren Wandzeitpunkt.
+      rennPause.verzug = 5000;
+      const z = rennZeitTimeout(() => {}, 1000);
+      const restVor = z.bei - rennZeitJetzt();
+      rennUhrNullen();
+      if (rennPause.verzug !== 0 || rennZeitJetzt() !== Date.now()) f.push('rennUhrNullen setzt verzug nicht zurueck');
+      if (z.bei - rennZeitJetzt() !== restVor) f.push('wartender Timeout verschiebt sich beim Nullen');
+      rennZeitTimeoutStop(z);
+      const q = String(startRaceCountdown);
+      const iNull = q.indexOf('rennUhrNullen()'), iGruen = q.indexOf('const gruenBei');
+      if (iNull < 0 || iGruen < 0 || iNull > iGruen) f.push('startRaceCountdown nullt die Rennuhr nicht vor gruenBei');
+      // 4. MP-Start nicht verschoben: die Wanduhr-Zielzeit des Hosts liegt nach dem Nullen genau dort.
+      rennPause.verzug = 5000;
+      rennUhrNullen();
+      const gruenZiel = Date.now() + 8000;
+      const plan = ampelZeitplan(gruenZiel, 2000);
+      const versatz = plan[plan.length - 1][0] - rennZeitJetzt() - 8000;
+      if (versatz !== 0) f.push('MP-Gruen um ' + versatz + ' ms verschoben');
+      // Im Mehrspieler keine Pause, eine schon laufende endet, und ein Startplan beendet sie auch.
+      mp.an = true; rennPauseUmschalten();
+      if (rennPauseAktiv()) f.push('Pause im Mehrspieler moeglich');
+      mp.an = false; rennPauseUmschalten(); mp.an = true;
+      if (!rennPauseWache() || rennPauseAktiv()) f.push('laufende Pause endet nicht, wenn der Mehrspieler dazukommt');
+      mp.an = false; rennPauseUmschalten();
+      // raceState ist 'racing': startRaceCountdown() endet direkt nach der Pausenpruefung.
+      startRaceCountdown(Date.now() + 8000, { modus: 'practice' });
+      if (rennPauseAktiv()) f.push('Mehrspieler-Startplan bleibt an der lokalen Pause haengen');
+      rennPauseUmschalten(); startRaceCountdown();
+      if (!rennPauseAktiv()) f.push('lokaler Start beendet die Pause');
+      rennPauseBeenden();
+      // 5. Unterbrochener Erststart: Intro abgebrochen, Gruen genau einmal ueber die Wiederanlaufampel.
+      let gruen = 0;
+      raceGreen = () => { gruen++; raceState = 'racing'; };
+      raceState = 'countdown';
+      const gen0 = rennintroStartGeneration;
+      rennPauseUmschalten();
+      if (rennintroStartGeneration !== gen0 + 1) f.push('Pause im Countdown bricht das Rennintro nicht ab');
+      rennPauseUmschalten(); weiter(7700);
+      if (gruen !== 1) f.push('Erststart nach Pause ' + gruen + 'x freigegeben');
+      raceGreen = merk.gruen;
+      // 6. Native Sperre (Attrappe der Bruecke): Pause setzt sie, Fortsetzen loest sie, Laden loest sie.
+      if (mitAttrappe) {
+        if (nativ.indexOf(true) < 0 || nativ[nativ.length - 1] !== false) f.push('Bruecke: rennPause ' + JSON.stringify(nativ));
+        nativ.length = 0;
+        const ladenFrei = window.OMEGA_BRUECKE.rennPauseLadenFrei;
+        ladenFrei();
+        if (nativ.length !== 1 || nativ[0] !== false) f.push('Laden loest die native Sperre nicht: ' + JSON.stringify(nativ));
+      } else hinweis = ' (Bruecke hier nicht ersetzbar, Attrappen-Teil ausgelassen)';
+      // Suchtexte zusammengesetzt: woertlich stuenden sie in diesem Test selbst und faenden sich.
+      const skripte = Array.from(document.scripts).map((s) => s.textContent).join('\n');
+      const name = 'window.OMEGA_BRUECKE.' + 'rennPauseLadenFrei';
+      const iDef = skripte.indexOf(name + ' = ');
+      if (iDef < 0 || skripte.indexOf(name + '();', iDef) < 0) f.push('rennPauseLadenFrei wird beim Laden nicht gerufen');
+      // 7. Projektregeln: WIP, Uebersetzung, keine feste Version.
+      if (!document.querySelector('#renn-pause-ui .wip-tag') || !document.querySelector('#race-act-pause .wip-tag')) f.push('WIP-Kennzeichen fehlt');
+      for (const k of ['Beenden', 'Pause beendet: Mehrspieler aktiv', 'Pause / Fortsetzen']) {
+        if (!I18N_EN[k] || !I18N_ES[k]) f.push('Uebersetzung fehlt: ' + k);
+      }
+      if ('version' in window.OMEGA_PAUSE.status()) f.push('OMEGA_PAUSE meldet eine feste Version');
+    } catch (e) {
+      f.push('Ausnahme: ' + e.message);
+    } finally {
+      try { if (rennPauseAktiv()) rennPauseBeenden(); } catch (e) { f.push('Aufraeumen: ' + e.message); }
+      Date.now = echt.now; window.setTimeout = echt.st; window.clearTimeout = echt.ct; Math.random = echt.rnd;
+      for (const z of [...rennPause.zeitTimer]) rennZeitTimeoutStop(z);
+      rennPause.zeitTimer = merk.timer;
+      rennPause.verzug = merk.verzug;
+      rennPause.gasWarten = {}; rennPause.inputWarten.clear(); rennPause.steerWarten.clear();
+      try { if (direktDa) window.OmegaDirekt = direktVorher; else delete window.OmegaDirekt; } catch (e) { /* */ }
+      window.OMEGA_BRUECKE.rennPause(false);
+      raceGreen = merk.gruen;
+      raceState = merk.rs; raceMode = merk.rm; flagState = merk.fl; raceStartedAt = merk.rsa;
+      raceLapStart = merk.rls; raceAwaitingMove = merk.aw; mp.an = merk.mp; mpi.an = merk.mpi;
+      if (merk.status !== null) $('race-status').textContent = merk.status;
+      document.querySelectorAll('.tabpage').forEach((el) => el.classList.toggle('active', el === merk.tab));
+      setRaceLights(0);
+      rennPauseMalen();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ')
+      : 'Uhr steht 10 s, Ampel 5,6 s, verzug 0 bei Rennstart, MP-Gruen exakt, MP sperrt und beendet Pause, Intro ab, Bruecke frei beim Laden' + hinweis };
+  });

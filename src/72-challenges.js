@@ -1379,8 +1379,9 @@
     return ungueltig;
   }
   function chWachen() {
+    if (rennPauseAktiv()) return;
     if (!chLauf) { clearInterval(chWaechter); chWaechter = null; return; }
-    const v = chTempo(), jetzt = Date.now();
+    const v = chTempo(), jetzt = rennZeitJetzt();
     // Einstellungen geaendert? Zweimal je Sekunde reicht.
     if (jetzt - chLauf.pruefAt > 500 && chLauf.soll) {
       chLauf.pruefAt = jetzt;

@@ -5152,6 +5152,7 @@
           </div>
           <ul class="gt3-laps" id="race-lap-list"></ul></div>
         <button type="button" class="gt3-act" id="race-act-start">Rennen starten</button>
+        <button type="button" class="gt3-act" id="race-act-pause">Pause</button>
         <!-- Der Motorklang gehoert ins Cockpit, weil man ihn im Fahren wechselt: das ist
              kein Einrichten, sondern Ausprobieren. MIT Namen und nicht nur mit dem Symbol -
              ein Knopf, der durch zehn Eintraege schaltet, muss sagen wo er steht, sonst
@@ -13145,6 +13146,24 @@
   // ohne Telefon pruefen soll. Sie tun nichts, solange niemand sie ruft.
   window.OMEGA_BRUECKE = { uuid, zuHex, ausHex };
 
+  // Neue APK: native Queue unmittelbar sperren. Alte APKs bleiben kompatibel:
+  // der JS-Egress ersetzt dort jeden wartenden Befehl durch Neutralgas.
+  window.OMEGA_BRUECKE.rennPause = an => {
+    try {
+      if (window.OmegaDirekt && typeof window.OmegaDirekt.rennPause === 'function') {
+        window.OmegaDirekt.rennPause(!!an);
+      }
+    } catch (_) { /* JS-Paketsperre bleibt aktiv */ }
+  };
+  // ---- BEIM LADEN IMMER LOESEN (v1.2.25) -------------------------------------------
+  // rennPausiert lebt im Plugin (OmegaBlePlugin.java), nicht in der Seite. Wurde die Seite
+  // waehrend einer Pause neu geladen (Web-Aktualisierung, Absturz, direktNeu), hat niemand
+  // rennPause(false) gerufen - das Plugin neutralisierte danach jedes Fahrpaket, und das Auto
+  // fuhr nicht mehr. Eine frisch geladene Seite hat nie eine Pause, also hier sofort frei.
+  // Das Plugin setzt sich bei jedem Seitenstart ausserdem selbst zurueck (neue APK).
+  window.OMEGA_BRUECKE.rennPauseLadenFrei = () => window.OMEGA_BRUECKE.rennPause(false);
+  window.OMEGA_BRUECKE.rennPauseLadenFrei();
+
   const C = window.Capacitor;
   if (!C || typeof C.isNativePlatform !== 'function' || !C.isNativePlatform()
       || typeof C.nativePromise !== 'function') return;
@@ -14007,6 +14026,18 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "Pause / Fortsetzen": "Pause / Resume",
+    "Pause": "Pause",
+    "Fortsetzen": "Resume",
+    "Pausiert": "Paused",
+    "Wiederanlauf": "Resuming",
+    "Wiederanlauf stoppen": "Stop resuming",
+    "Weiter über Rennampel": "Resume via start lights",
+    "Alle Autos bleiben bis zur grünen Ampel gesperrt.": "All cars remain stopped until the lights turn green.",
+    "Fahr-Ausgabe und Rennabläufe sind angehalten. Nach der Ampel Gas und Bremse zunächst loslassen.": "Driving output and race progress are paused. Release throttle and brake after the start lights.",
+    "Pause nur im lokalen Betrieb verfügbar": "Pause is only available in local mode",
+    "Aktuell kein pausierbarer Fahrbetrieb": "There is currently no driving session to pause",
+    "Pause beendet: Mehrspieler aktiv": "Pause ended: multiplayer active",
     "RC (WIP)": "RC (WIP)",
     "Alle: RC (WIP)": "All: RC (WIP)",
     "Arcade, nur viel extremer: wie ein Fernsteuerungsauto": "Arcade, only much more extreme: like a remote-control car",
@@ -17488,6 +17519,18 @@
   // nachzieht. Bewusst KEINE Ansagen (Rundenzeit, Tank, Schaden): dafuer gibt es noch keine
   // spanischen Aufnahmen, und die Sprachausgabe nutzt die englische als Platzhalter.
   const I18N_ES = {
+    "Pause / Fortsetzen": "Pausa / Continuar",
+    "Pause": "Pausa",
+    "Fortsetzen": "Continuar",
+    "Pausiert": "En pausa",
+    "Wiederanlauf": "Reanudando",
+    "Wiederanlauf stoppen": "Detener reanudación",
+    "Weiter über Rennampel": "Continuar con el semáforo",
+    "Alle Autos bleiben bis zur grünen Ampel gesperrt.": "Todos los coches siguen detenidos hasta que el semáforo se ponga verde.",
+    "Fahr-Ausgabe und Rennabläufe sind angehalten. Nach der Ampel Gas und Bremse zunächst loslassen.": "La conducción y la carrera están en pausa. Suelta el acelerador y el freno después del semáforo.",
+    "Pause nur im lokalen Betrieb verfügbar": "La pausa solo está disponible en modo local",
+    "Aktuell kein pausierbarer Fahrbetrieb": "No hay ninguna sesión de conducción que pausar",
+    "Pause beendet: Mehrspieler aktiv": "Pausa terminada: multijugador activo",
     "RC (WIP)": "RC (WIP)",
     "Alle: RC (WIP)": "Todos: RC (WIP)",
     "Arcade, nur viel extremer: wie ein Fernsteuerungsauto": "Arcade, pero mucho más extremo: como un coche teledirigido",
@@ -19120,6 +19163,351 @@
   // boundary is measured, clamp reverse to this confirmed-safe depth only.
   const MIN_THROTTLE_DELTA = -64;
 
+
+  // Lokale Rennpause: Rennzustand bleibt erhalten. Nur diese eigene Uhr steht;
+  // Date.now()/performance.now() fuer Funk-Wachhund und Netzwerk bleiben echt.
+  const rennPause = {
+    phase: 'aus', verzug: 0, wandStart: 0, uhrStop: 0,
+    generation: 0, ampelTimer: [], zeitTimer: new Set(),
+    padVorher: {}, padSperre: {}, gasWarten: {}, inputWarten: new Set(), steerWarten: new Set(),
+    letzterDruck: -Infinity, statusVorher: '', erststart: false, flagRestart: false,
+    letzterHalt: -Infinity
+  };
+
+  function rennPauseAktiv() { return rennPause.phase !== 'aus'; }
+
+  function rennZeitJetzt() {
+    return rennPauseAktiv() ? rennPause.uhrStop : Date.now() - rennPause.verzug;
+  }
+
+  // ---- DER VERZUG GILT NUR FUER EIN RENNEN (v1.2.25) ----------------------------------
+  // verzug ist die Summe aller Pausen. Er wuchs bisher ueber die ganze Sitzung und wurde nie
+  // zurueckgesetzt - und der WLAN-Mehrspieler rechnet seine Startzeit in WANDUHR (r.startAt -
+  // mp.offset, 97-sessions.js), die startRaceCountdown() dann gegen rennZeitJetzt() legt. Nach
+  // einer frueheren lokalen Pause lag Gruen damit auf diesem Telefon um genau diese Pausen
+  // spaeter als auf den anderen. Deshalb beim Rennstart auf 0: im Rennen gilt danach
+  // rennZeitJetzt() === Date.now(), solange niemand pausiert, und im Mehrspieler kann niemand
+  // pausieren (rennPauseErlaubt, rennPauseWache). Wartende Renn-Timeouts behalten dabei ihren
+  // Wanduhr-Zeitpunkt, nur ihre Zielzeit wird in die neue Zaehlung umgerechnet.
+  function rennUhrNullen() {
+    if (rennPauseAktiv() || !rennPause.verzug) return;
+    const v = rennPause.verzug;
+    for (const z of rennPause.zeitTimer) z.bei += v;
+    rennPause.verzug = 0;
+  }
+
+  // Pausierbare Renn-Timeouts; Browser-Timeouts selbst bleiben unveraendert.
+  function rennZeitTimerStart(z) {
+    if (z.abgebrochen || rennPauseAktiv()) return;
+    z.native = setTimeout(() => {
+      z.native = null;
+      if (z.abgebrochen || rennPauseAktiv()) return;
+      rennPause.zeitTimer.delete(z);
+      z.fn(...z.args);
+    }, Math.max(0, z.bei - rennZeitJetzt()));
+  }
+
+  function rennZeitTimeout(fn, ms, ...args) {
+    const z = { rennZeitTimer: true, fn, args, native: null, abgebrochen: false,
+      bei: rennZeitJetzt() + Math.max(0, Number(ms) || 0) };
+    rennPause.zeitTimer.add(z);
+    rennZeitTimerStart(z);
+    return z;
+  }
+
+  function rennZeitTimeoutStop(z) {
+    if (!z || !z.rennZeitTimer) { clearTimeout(z); return; }
+    z.abgebrochen = true;
+    if (z.native !== null) clearTimeout(z.native);
+    z.native = null;
+    rennPause.zeitTimer.delete(z);
+  }
+
+  function rennPauseTimerHalten() {
+    for (const z of rennPause.zeitTimer) {
+      if (z.native !== null) clearTimeout(z.native);
+      z.native = null;
+    }
+  }
+
+  function rennPauseTimerWeiter() {
+    for (const z of [...rennPause.zeitTimer]) rennZeitTimerStart(z);
+  }
+
+  function rennPauseAmpelAbbrechen() {
+    rennPause.generation++;
+    rennPause.ampelTimer.forEach(clearTimeout);
+    rennPause.ampelTimer = [];
+  }
+
+  function rennPauseMehrspieler() {
+    try { return !!mp.an || !!mpi.an; } catch (_) { return false; }
+  }
+
+  // Verbundene Autos allein reichen nicht: Pause nur in der Fahr-/Rennansicht.
+  function rennPauseFahransicht() {
+    const tab = document.querySelector('.tabpage.active');
+    return !!tab && tab.id === 'tab-race';
+  }
+
+  // Mehrspieler und Pause schliessen sich aus: eine Pause hielte nur DIESES Telefon an, die
+  // anderen fuehren weiter, und die gemeinsame Uhr (Startzeit, Wetterplan, Rangliste) waere
+  // nicht mehr gemeinsam. rennPauseErlaubt() verhindert das Beginnen; diese Wache beendet eine
+  // lokale Pause, die schon lief, als der Mehrspieler dazukam (Beitritt, Startplan des Hosts).
+  // Ohne Ampel: der Ablauf des Hosts geht vor, Gas und Lenkung muessen trotzdem erst neutral.
+  function rennPauseWache() {
+    if (!rennPauseAktiv() || !rennPauseMehrspieler()) return false;
+    rennPauseBeenden();
+    try { showHudToast(t('Pause beendet: Mehrspieler aktiv')); } catch (_) { /* ohne Hinweis */ }
+    return true;
+  }
+
+  function rennPauseErlaubt() {
+    if (!rennPauseFahransicht() || rennPauseMehrspieler()) return false;
+    try {
+      if (calibRunning) return false; // eigener zeitkritischer Kalibrierlauf
+      return ['countdown', 'racing', 'finishing'].includes(raceState)
+        || (typeof vfAktiv === 'function' && vfAktiv())
+        || garage.some(c => c && c.rx);
+    } catch (_) { return false; }
+  }
+
+  function rennPauseMotorHalten(m) {
+    if (!m || !m.state) return;
+    // Kein reset(): Gang, Tank, Reifen, Schaden, Runden bleiben erhalten.
+    const st = m.state;
+    for (const k of ['speedKmh', 'virtualSpeed', 'speed', 'throttle',
+      'throttleSmooth', 'smoothedThrottle', 'acceleration', 'accel', 'accelG',
+      'gLong', 'gLat', 'longUse', 'lateralG']) {
+      if (typeof st[k] === 'number') st[k] = 0;
+    }
+  }
+
+  function rennPauseEingabenSperren() {
+    rennPause.gasWarten = { 1: true, 2: true, 3: true };
+    rennPause.steerWarten.add("p2"); rennPause.steerWarten.add("p3");
+    for (const source of Object.values(SRC)) {
+      if (source !== SRC.MACRO) {
+        rennPause.inputWarten.add(source); rennPause.steerWarten.add(source);
+      }
+    }
+    if (typeof keys !== 'undefined') keys.clear();
+    releaseAllInputs();
+    if (playing) macroWert = { steer: 0, throttle: 0 };
+    rennPauseMotorHalten(physEngine);
+    physOutThrottle = 0; physOutSteer = 0; physLastTime = null;
+    Object.assign(rcLage, rcLageNeu());
+    for (const z of zusatzPlaetze()) {
+      z.throttle = 0; z.steer = 0; z.outThrottle = 0; z.outSteer = 0; z.lastTime = null;
+      rennPauseMotorHalten(z.motor);
+      if (z.rcLage) Object.assign(z.rcLage, rcLageNeu());
+    }
+    for (const c of garage) if (c.ghost) rennPauseMotorHalten(c.ghost.engine);
+    if (typeof VF !== 'undefined' && VF.aktiv) {
+      VF.dyn = { vy: 0, r: 0 }; VF.ax = 0; VF.ay = 0;
+    }
+    if (typeof simState !== 'undefined' && simState) simState.wandZuvor = rennZeitJetzt();
+  }
+
+  function rennPauseFilterGas(nr, gas, bremse) {
+    if (rennPauseAktiv()) return [0, 0];
+    if (rennPause.gasWarten[nr]) {
+      if (Math.abs(gas) < 0.001 && Math.abs(bremse) < 0.001) {
+        rennPause.gasWarten[nr] = false;
+      } else return [0, 0];
+    }
+    return [gas, bremse];
+  }
+
+  function rennPauseInput(source, value) {
+    if (rennPauseAktiv()) return false;
+    if (rennPause.inputWarten.has(source)) {
+      if (Math.abs(value) <= INPUT_NEUTRAL_EPS) rennPause.inputWarten.delete(source);
+      else return false;
+    }
+    return true;
+  }
+
+  function rennPauseLenkung(source, value) {
+    if (rennPauseAktiv()) return false;
+    if (rennPause.steerWarten.has(source)) {
+      if (Math.abs(value) <= INPUT_NEUTRAL_EPS) rennPause.steerWarten.delete(source);
+      else return false;
+    }
+    return true;
+  }
+
+  function rennPausePaket(payload) {
+    if (!rennPauseAktiv() || !payload || payload.length !== 20 || payload[0] !== 0xaf) {
+      return payload;
+    }
+    const p = new Uint8Array(payload);
+    p[6] = 0xdf; p[7] = 0; p[9] = 0; p[14] |= LIGHT_BRAKE;
+    p[19] = crc8(Array.from(p.slice(0, 19)));
+    return p;
+  }
+
+  function rennPauseSenden(sofort = false) {
+    const jetzt = performance.now();
+    // Alle sofort neutralisieren; danach 10 Hz je Auto statt das Funkbudget zu fluten.
+    if (!sofort && jetzt - rennPause.letzterHalt < 100) return;
+    rennPause.letzterHalt = jetzt;
+    const ziele = new Set(garage.filter(c => c && c.rx).map(c => c.rx));
+    if (playerCar && playerCar.rx) ziele.add(playerCar.rx);
+    try {
+      const entry = charByUuid.get(controlSelect.value);
+      if (entry && entry.char) ziele.add(entry.char);
+    } catch (_) { /* kein Explorer-Steuerziel */ }
+    for (const rx of ziele) {
+      Promise.resolve(funkSchreiben(rx, buildCommandPacket(0, 0), null)).catch(() => {});
+    }
+  }
+
+  function rennPauseTaste(pad, belegung, nr) {
+    const binding = belegung && belegung.pause;
+    const gedrueckt = !!pad && binding && binding.type === 'button'
+      && readBindingValue(pad, binding) > BUTTON_CAPTURE_THRESHOLD;
+    const vorher = !!rennPause.padVorher[nr];
+    rennPause.padVorher[nr] = !!gedrueckt;
+    // Nach Belegung erst loslassen, damit der Erfassungsdruck nicht pausiert.
+    if (rennPause.padSperre[nr]) {
+      if (!gedrueckt) rennPause.padSperre[nr] = false;
+      return rennPauseAktiv();
+    }
+    // Menue-Eingaben still ignorieren, auch bei einer bereits aktiven Pause.
+    // Die Flanke oben trotzdem merken: gehaltene Taste darf beim Wechsel ins
+    // Cockpit keine Pause oder Wiederanlaufampel nachtraeglich ausloesen.
+    if (!rennPauseFahransicht()) return rennPauseAktiv();
+    if (gedrueckt && !vorher) {
+      const now = performance.now();
+      // Zwei Spieler im selben Poll duerfen Pause nicht sofort wieder aufheben.
+      if (now - rennPause.letzterDruck >= 250) {
+        rennPause.letzterDruck = now;
+        rennPauseUmschalten();
+      }
+    }
+    return rennPauseAktiv();
+  }
+
+  function rennPauseLicht(stufe) {
+    setRaceLights(stufe);
+    const el = document.getElementById('renn-pause-ui');
+    if (!el) return;
+    el.querySelectorAll('[data-pause-lampe]').forEach(dot => {
+      const n = Number(dot.dataset.pauseLampe);
+      dot.style.background = stufe === 'go' ? '#39c878'
+        : (n <= Number(stufe) ? '#e53935' : '#424854');
+      dot.style.boxShadow = stufe === 'go' ? '0 0 12px #39c878'
+        : (n <= Number(stufe) ? '0 0 12px #e53935' : '');
+    });
+  }
+
+  function rennPauseMalen() {
+    const knopf = document.getElementById('race-act-pause');
+    if (knopf) {
+      knopf.disabled = !rennPauseAktiv() && !rennPauseErlaubt();
+      const text = rennPause.phase === 'ampel' ? t('Wiederanlauf stoppen')
+        : (rennPauseAktiv() ? t('Fortsetzen') : t('Pause'));
+      // Neue Funktion: WIP-Kennzeichen von Anfang an. Nur bei Aenderung schreiben, das
+      // laeuft im Takt von updateRaceActButtons().
+      const html = text + ' <span class="wip-tag">WIP</span>';
+      if (knopf.dataset.pauseHtml !== html) { knopf.dataset.pauseHtml = html; knopf.innerHTML = html; }
+    }
+    const el = document.getElementById('renn-pause-ui');
+    if (!el) return;
+    el.hidden = !rennPauseAktiv();
+    const ampel = rennPause.phase === 'ampel';
+    document.getElementById('renn-pause-titel').textContent = ampel ? t('Wiederanlauf') : t('Pausiert');
+    document.getElementById('renn-pause-hinweis').textContent = ampel
+      ? t('Alle Autos bleiben bis zur grünen Ampel gesperrt.')
+      : t('Fahr-Ausgabe und Rennabläufe sind angehalten. Nach der Ampel Gas und Bremse zunächst loslassen.');
+    document.getElementById('renn-pause-weiter').textContent = ampel
+      ? t('Wiederanlauf stoppen') : t('Weiter über Rennampel');
+    // Das Overlay haengt an body, ausserhalb der Wurzeln von i18nApply(): ohne t() bliebe
+    // "Beenden" auch im englischen und spanischen Modus deutsch.
+    const ende = document.getElementById('renn-pause-ende');
+    if (ende) ende.textContent = t('Beenden');
+  }
+
+  // Nur Abbruch oder Ampelfreigabe: kein raceGreen() fuer ein laufendes Rennen.
+  function rennPauseBeenden() {
+    if (!rennPauseAktiv()) return;
+    rennPauseAmpelAbbrechen();
+    rennPauseSenden(true); // noch mit aktiver Paketsperre
+    rennPause.verzug += Date.now() - rennPause.wandStart;
+    rennPause.phase = 'aus';
+    rennPauseEingabenSperren();
+    if (typeof window.OMEGA_BRUECKE.rennPause === 'function') {
+      window.OMEGA_BRUECKE.rennPause(false);
+    }
+    rennPauseTimerWeiter();
+    if ($('race-status')) $('race-status').textContent = rennPause.statusVorher;
+    rennPauseMalen();
+  }
+
+  function rennPauseUmschalten() {
+    if (rennPause.phase === 'ampel') {
+      rennPauseAmpelAbbrechen();
+      rennPause.phase = 'pause';
+      rennPauseSenden(true); rennPauseMalen(); rennPauseLicht(0);
+      return;
+    }
+    if (rennPause.phase === 'aus') {
+      if (!rennPauseErlaubt()) {
+        showHudToast(rennPauseMehrspieler() ? t('Pause nur im lokalen Betrieb verfügbar')
+          : t('Aktuell kein pausierbarer Fahrbetrieb'));
+        return;
+      }
+      rennPause.uhrStop = rennZeitJetzt();
+      rennPause.wandStart = Date.now();
+      rennPause.erststart = raceState === 'countdown';
+      rennPause.flagRestart = flagState === 'restart';
+      rennPause.statusVorher = $('race-status') ? $('race-status').textContent : '';
+      rennPause.phase = 'pause';
+      if (typeof window.OMEGA_BRUECKE.rennPause === 'function') {
+        window.OMEGA_BRUECKE.rennPause(true);
+      }
+      rennPauseTimerHalten();
+      if (rennPause.erststart) {
+        rennZeitTimeoutStop(raceCountdownTimer); raceCountdownTimer = null;
+        ampelPlan = null; ampelSchritt = null;
+        // Ein laufendes Rennintro (80d-rennintro.js) ebenfalls abbrechen: es spielt auf der
+        // Audiouhr weiter und wuerde danach die Startampel MITTEN in der Pause beginnen. Die
+        // Generation zuerst, damit sein "weiter" in startRaceCountdown() nichts mehr tut; den
+        // Start uebernimmt die Wiederanlaufampel (raceGreen()).
+        if (typeof rennintroAbbrechen === 'function') {
+          rennintroStartGeneration++;
+          rennintroAbbrechen();
+        }
+      }
+      rennPauseEingabenSperren(); rennPauseSenden(true);
+      if ($('race-status')) $('race-status').textContent = t('Pausiert');
+      rennPauseMalen(); rennPauseLicht(0);
+      return;
+    }
+    rennPause.phase = 'ampel';
+    rennPauseAmpelAbbrechen();
+    const gen = rennPause.generation;
+    const gueltig = () => rennPause.phase === 'ampel' && rennPause.generation === gen;
+    rennPauseMalen();
+    for (let i = 1; i <= 5; i++) {
+      rennPause.ampelTimer.push(setTimeout(() => {
+        if (!gueltig()) return;
+        rennPauseLicht(i);
+        ampelTon(440 + (i - 1) * 60, 0.18, 'square', 0.18);
+      }, 600 + (i - 1) * 1000));
+    }
+    const warte = 4600 + 1000 + Math.random() * 2000;
+    rennPause.ampelTimer.push(setTimeout(() => {
+      if (!gueltig()) return;
+      const erststart = rennPause.erststart, flagRestart = rennPause.flagRestart;
+      rennPauseBeenden(); rennPauseLicht('go');
+      ampelTon(880, 0.35, 'square', 0.22);
+      if (erststart && raceState === 'countdown') raceGreen();
+      else if (flagRestart && flagState === 'restart') setFlag('green');
+      rennZeitTimeout(() => { if (!rennPauseAktiv()) setRaceLights(0); }, 900);
+    }, warte));
+  }
   // =========================================================================
   // Das Protokoll: was hinausgeht
   // =========================================================================
@@ -19262,6 +19650,9 @@
     }
     // Per-car mode bytes (a ghost in guard-rail mode). Same rule: before the checksum.
     if (byteOverride) for (const k in byteOverride) body[k | 0] = byteOverride[k] & 0xff;
+    if (rennPauseAktiv()) {
+      body[6] = 0xdf; body[7] = 0; body[9] = 0; body[14] |= LIGHT_BRAKE;
+    }
     body.push(crc8(body));
     return new Uint8Array(body);
   }
@@ -19341,6 +19732,7 @@
     return { n: w.length, mittel, p95: w[Math.min(w.length - 1, Math.floor(w.length * 0.95))], haenger: funkMess.haenger };
   }
   async function funkSchreiben(ziel, payload, notiz) {
+    payload = rennPausePaket(payload);
     // v1.1.3: getrennt, Neuverbinden laeuft (reconnectCar) - nichts senden.
     if (ziel && ziel.verbindungWeg) return;
     const z = funkZustand(ziel);
@@ -19355,6 +19747,8 @@
     writeInFlight = true;
     let auf = { payload, notiz };
     while (auf) {
+      // Auch ein vor der Pause wartendes Gas-Paket muss neutral werden.
+      auf.payload = rennPausePaket(auf.payload);
       z.seit = performance.now();
       try {
         if (ziel.properties.writeWithoutResponse) await ziel.writeValueWithoutResponse(auf.payload);
@@ -19376,7 +19770,7 @@
     const steer = overrideSteer !== undefined ? overrideSteer : steerX;
     let throttle = overrideThrottle !== undefined ? overrideThrottle : throttleY;
     if (recording) {
-      macro.push({ t: Date.now() - recordStartTime, steer, throttle });
+      macro.push({ t: rennZeitJetzt() - recordStartTime, steer, throttle });
     }
     // "Geschwindigkeit" setting — a simple top-speed cap applied at this single choke
     // point so every input source respects it consistently. Defaults to 1 (no effect).
@@ -19640,6 +20034,14 @@
     // v0.9.87: in try/finally. Eine Ausnahme im Spielerteil (Physik, Senden) liess sonst
     // den ganzen Rest aus - die Ghosts bekamen keinen Takt und fuhren mit ihrem letzten
     // Befehl weiter, auch neben der Bahn.
+    if (rennPauseAktiv() && !rennPauseWache()) {
+      physLastTime = null;
+      rennPauseSenden();
+      if (typeof cockpitNachSenden === 'function') {
+        cockpitMalFaellig = true; cockpitNachSenden();
+      }
+      return;
+    }
     try {
       if (typeof spielerOrtTick === 'function') {
         spielerOrtTick(playerCar);
@@ -19891,6 +20293,7 @@
   }
 
   function applySteerInput(source, value) {
+    if (!rennPauseLenkung(source, value)) return;
     if (playbackLocked(source)) return; // playback is an explicit hands-off mode
     const live = Math.abs(value) > INPUT_NEUTRAL_EPS;
     if (!live && !steerClaim[source]) return;
@@ -19900,6 +20303,7 @@
 
   // Takes a LOGICAL throttle (forward positive), same convention as setThrottleLogical().
   function applyThrottleInput(source, value) {
+    if (!rennPauseInput(source, value)) return;
     if (playbackLocked(source)) return;
     const live = Math.abs(value) > INPUT_NEUTRAL_EPS;
     if (!live && !throttleClaim[source]) return;
@@ -19908,11 +20312,13 @@
   }
 
   function releaseSteerInput(source) {
+    rennPause.steerWarten.delete(source);
     if (!steerClaim[source]) return;
     steerClaim[source] = false;
     setStick(0, 0);
   }
   function releaseThrottleInput(source) {
+    rennPause.inputWarten.delete(source);
     if (!throttleClaim[source]) return;
     throttleClaim[source] = false;
     setThrottleLogical(0);
@@ -23823,7 +24229,7 @@
   function gbStatus(gasRoh, bremsRoh, kmhAnz, grund) {
     const el = $('setting-gasbrake-reverse-status');
     if (!el || !el.offsetParent) return;
-    const jetzt = Date.now();
+    const jetzt = rennZeitJetzt();
     // Springt die Uhr zurueck (jetzt < gbStatusAt), wird trotzdem geschrieben - sonst bliebe die Anzeige
     // stumm, bis die Uhr den alten Zeitpunkt wieder erreicht hat.
     if (jetzt >= gbStatusAt && jetzt - gbStatusAt < 150) return;
@@ -23853,7 +24259,7 @@
       if (!z) gbStatus(gasRoh, bremsRoh, kmhAnz, 'Option aus');
       return null;
     }
-    const jetzt = Date.now();
+    const jetzt = rennZeitJetzt();
     // Das gilt fuer BEIDE Richtungen: RC unberuehrt, nicht unter Autopilot, nur Automatik.
     const frei = physicsEnabled && !driftModus && cfg.autoShift
                  && !(typeof autopilotGreiftFuer === 'function' && autopilotGreiftFuer(nr));
@@ -24497,7 +24903,7 @@
   let schirmKlickSperreBis = 0;
   if ($('race-screen-next')) {
     $('race-screen-next').addEventListener('click', () => {
-      const jetzt = Date.now();
+      const jetzt = rennZeitJetzt();
       if (jetzt < schirmKlickSperreBis) return;
       schirmKlickSperreBis = jetzt + 220;
       cockpitScreenStep(+1);
@@ -25492,7 +25898,7 @@
     }
     // On the limiter the whole strip flashes blue, which no steady pattern can be mistaken
     // for.
-    if (amBegrenzer && Math.floor(Date.now() / 90) % 2 === 0) {
+    if (amBegrenzer && Math.floor(rennZeitJetzt() / 90) % 2 === 0) {
       for (let i = 0; i < n; i++) {
         lamps[i].style.background = '#3d8bff';
         lamps[i].style.boxShadow = '0 0 8px #3d8bff';
@@ -25802,7 +26208,7 @@
         : (pitSpielAktiv()
           ? 'PIT GAME \u00b7 ' + pitSpielRest().toFixed(1) + 's \u00b7 \u2713 ' + pitSpiel.treffer
             + '/' + PIT_SPIEL_ANZAHL
-          : 'PIT STOP \u00b7 ' + ((Date.now() - (pitServiceStart || Date.now())) / 1000).toFixed(1) + 's'
+          : 'PIT STOP \u00b7 ' + ((rennZeitJetzt() - (pitServiceStart || rennZeitJetzt())) / 1000).toFixed(1) + 's'
           + ' \u00b7 TANK +' + fuelLiters(pitFuelGained) + 'l'
           + ' \u00b7 REP +' + Math.round(pitDamageRepaired) + '%');
     }
@@ -25814,8 +26220,8 @@
       return;
     }
     $('race-lap-now').textContent = raceLapStart !== null
-      ? formatLapTime(Date.now() - raceLapStart)
-      : (dashLapStart !== null ? formatLapTime(Date.now() - dashLapStart) : '\u2013');
+      ? formatLapTime(rennZeitJetzt() - raceLapStart)
+      : (dashLapStart !== null ? formatLapTime(rennZeitJetzt() - dashLapStart) : '\u2013');
     const laps = raceLapTimes.length ? raceLapTimes : dashLapTimes.map((ms, i) => ({ lap: i + 1, ms }));
     const best = laps.length ? Math.min(...laps.map(l => l.ms)) : null;
     schreibeWert($('race-lap-best'), best === null ? '\u2013' : formatLapTime(best));
@@ -26189,7 +26595,7 @@
   // Haarnadel bei 0,47 (Delta 21).
   const SCAN_TEMPO = 0.80, SCAN_TEMPO_KURVE = 0.67, SCAN_TEMPO_HAARNADEL = 0.47;
   const scanStopp = { car: null, bis: 0 };
-  function scanAnhalten(car) { if (car) { scanStopp.car = car; scanStopp.bis = Date.now() + 1500; } }
+  function scanAnhalten(car) { if (car) { scanStopp.car = car; scanStopp.bis = rennZeitJetzt() + 1500; } }
   // ---- GREIFT DER AUTOPILOT GERADE? (v1.0.25) --------------------------------------
   //
   // GEMELDET: "Streckenscan: das Spielerauto faehrt einfach geradeaus" und "Meine
@@ -26234,7 +26640,7 @@
     const zPl = wer >= 2 ? zusatzPlatz(wer) : null;
     const car = zPl ? zPl.car : playerCar;
     if (!car) return false;
-    if (scanStopp.car === car && Date.now() < scanStopp.bis) return true;
+    if (scanStopp.car === car && rennZeitJetzt() < scanStopp.bis) return true;
     if (typeof garageScan !== 'undefined' && garageScan.aktiv && garageScan.car === car) return true;
     if (trackMode === 'on' && typeof aufstellenSpielerZiel === 'function' && aufstellenSpielerZiel(car) && !aufstellRennenLaeuft()) return true;
     return !!autopilotGrund();
@@ -26256,7 +26662,7 @@
     const meinAuto = zwei ? zPl.car : playerCar;
     // NACH DEM SCAN ANHALTEN (v0.9.4). BESTELLT: "wenn livescan fertig, dann auto anhalten".
     // 1,5 s Bremse, danach wieder der Fahrer - steht der Gashebel auf null, bleibt das Auto stehen.
-    if (scanStopp.car && scanStopp.car === meinAuto && Date.now() < scanStopp.bis) {
+    if (scanStopp.car && scanStopp.car === meinAuto && rennZeitJetzt() < scanStopp.bis) {
       return { grund: 'scan', throttle: 0, brake: 1, steer: 0, lenkt: false };
     }
     if (typeof garageScan !== 'undefined' && garageScan.aktiv && garageScan.car === meinAuto) {
@@ -26267,8 +26673,8 @@
         return { grund: 'scan', throttle: 0, brake: 1, steer: 0, lenkt: false };
       }
       const v = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
-      const dt = Math.max(0.01, Math.min(0.25, (Date.now() - (regler.at || Date.now())) / 1000));
-      regler.at = Date.now();
+      const dt = Math.max(0.01, Math.min(0.25, (rennZeitJetzt() - (regler.at || rennZeitJetzt())) / 1000));
+      regler.at = rennZeitJetzt();
       // formationPace(): dasselbe Mindesttempo wie die Einfuehrungsrunde - hoch genug,
       // um die Streckencodes zuverlaessig zu lesen (siehe GHOST_READ_MIN dort).
       // BESTELLT: "Scan-Modus [...] das Auto faehrt so schnell, dass es aus der
@@ -26297,7 +26703,7 @@
       const aA = aufstellenSpielerZiel(meinAuto);
       const lenk = 0;
       // v1.0.31: gestaffelter Start der Aufstellung - bis zu seinem Zeitpunkt steht das Auto.
-      if (aA && aA.ab && Date.now() < aA.ab) {
+      if (aA && aA.ab && rennZeitJetzt() < aA.ab) {
         return { grund: 'aufstellen', throttle: 0, brake: fahrerBremse > 0.05 ? fahrerBremse : 1, steer: 0, lenkt: false };
       }
       // Angekommen: ein Takt Einschlag zur Seite, ein Takt zurueck (aufstellenSpielerEinlenken),
@@ -26321,8 +26727,8 @@
         return { grund: 'aufstellen', throttle: 0, brake: 1, steer: 0, lenkt: false, radLenk: fo ? fo.lenk : 0 };
       }
       const vA = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
-      const dtS = Math.max(0.01, Math.min(0.25, (Date.now() - (regler.at || Date.now())) / 1000));
-      regler.at = Date.now();
+      const dtS = Math.max(0.01, Math.min(0.25, (rennZeitJetzt() - (regler.at || rennZeitJetzt())) / 1000));
+      regler.at = rennZeitJetzt();
       // v1.0.25: mit Kurven- und Haarnadeldrosselung wie die NPCs (aufstellTempo, 90-ghosts.js).
       const g = ghostSpeedControl(regler, typeof aufstellTempo === 'function' ? aufstellTempo(meinAuto) : formationPace(), vA, dtS);
       if (fahrerBremse > 0.05) return { grund: 'aufstellen', throttle: 0, brake: fahrerBremse, steer: lenk, lenkt: false };
@@ -26379,8 +26785,8 @@
     const ziel = grund === 'yellow' && typeof autopilotGelbGrenzen === 'function' ? autopilotGelbGrenzen(meinAuto, zielSc) : zielSc;
     const v = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
     const dtA = Math.max(0.01, Math.min(0.25,
-      (Date.now() - (regler.at || Date.now())) / 1000));
-    regler.at = Date.now();
+      (rennZeitJetzt() - (regler.at || rennZeitJetzt())) / 1000));
+    regler.at = rennZeitJetzt();
     const geregelt = ghostSpeedControl(regler, ziel, v, dtA);
     let throttle = geregelt.throttle;
     let brake = geregelt.brake;
@@ -26476,7 +26882,7 @@
   // Gerufen aus dem Meldekanal in 70-race.js (Auto 1) und aus dem Meldestrom je Auto in
   // 90-ghosts.js (Auto 2), also je Paket. `wer` ist 1, wenn nichts dasteht.
   function offtrackMelden(abseits, wer) {
-    const jetzt = Date.now();
+    const jetzt = rennZeitJetzt();
     if (wer >= 2) {
       const a = zusatzPlatz(wer).abseits;
       if (abseits) {
@@ -26595,6 +27001,7 @@
   let fuelCut = 1;
 
   function physicsStep() {
+    if (rennPauseAktiv()) return;
     // v1.0.25: im Modus "Aus" (Fahrgefuehl RC) nur dann rechnen, wenn der Autopilot faehrt -
     // siehe autopilotGreiftFuer(). Beim Einstieg steht das Modell noch auf dem Tempo von
     // vorher; es bekommt deshalb das, was der Stick gerade verlangt, als Startwert.
@@ -26665,7 +27072,7 @@
     // ... und das Brummen an seinem. padRumble() prueft rumbleOn selbst, also steht hier nur
     // die Frage, OB gebrummt werden soll - nicht, ob der Nutzer Vibration will.
     if (abseitsJetzt()) {
-      const jetzt = Date.now();
+      const jetzt = rennZeitJetzt();
       if (jetzt - offtrackRumbleAt >= OFFTRACK_RUMBLE_MS - 40) {
         offtrackRumbleAt = jetzt;
         // Dauerhaft und schwach, nicht ein Stoss wie beim Crash: ein Dauerrumble in
@@ -26738,6 +27145,7 @@
   // Was er HAT: eine eigene Physikinstanz, also eigene Gaenge, eigene Drehzahl, eigenes
   // Tempo, eigene Reifen- und Bremsentemperatur - alles, was den Wagen fahren laesst.
   function physicsStepVon(z) {
+    if (rennPauseAktiv()) return;
     z.apTakt = false;
     // v1.2.4: eigener Modus je Spieler (spielerPhysikAn, 49-spieler.js).
     if (!spielerPhysikAn(z)) {
@@ -26812,7 +27220,7 @@
     // Und das Rumpeln, an seinen eigenen Pad. Bis v0.6.45 waere es der Pad von Spieler 1
     // gewesen; jetzt hat jeder Stoss eine Adresse.
     if (abseitsJetztFuer(z.nr)) {
-      const jetzt = Date.now();
+      const jetzt = rennZeitJetzt();
       if (jetzt - z.rumbleAt >= OFFTRACK_RUMBLE_MS - 40) {
         z.rumbleAt = jetzt;
         padRumble(0.12, 0.34, OFFTRACK_RUMBLE_MS, 'abseits', z.nr);
@@ -26997,7 +27405,7 @@
   let calibStepLog = [];
 
   function calibNotifyListener(e) {
-    calibNotifyLog.push({ t: Date.now(), bytes: notifyBytes(e.target.value) });
+    calibNotifyLog.push({ t: rennZeitJetzt(), bytes: notifyBytes(e.target.value) });
   }
 
   async function ensureCalibNotifySubscribed() {
@@ -27010,16 +27418,16 @@
     }
   }
 
-  function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+  function sleep(ms) { return new Promise(resolve => rennZeitTimeout(resolve, ms)); }
 
   async function runCalibrationStep(step) {
-    const tStart = Date.now();
+    const tStart = rennZeitJetzt();
     const endAt = tStart + step.ms;
-    while (Date.now() < endAt && calibRunning) {
+    while (rennZeitJetzt() < endAt && calibRunning) {
       await sendControlValue(step.steer, step.throttle);
       await sleep(45);
     }
-    calibStepLog.push({ ...step, tStart, tEnd: Date.now() });
+    calibStepLog.push({ ...step, tStart, tEnd: rennZeitJetzt() });
   }
 
   async function runCalibration() {
@@ -27116,7 +27524,7 @@
     $('btn-record').classList.toggle('primary', !recording);
     if (recording) {
       macro = [];
-      recordStartTime = Date.now();
+      recordStartTime = rennZeitJetzt();
       $('record-status').textContent = 'nimmt auf…';
     } else {
       $('record-status').textContent = `bereit (${macro.length} Schritte aufgezeichnet)`;
@@ -27140,12 +27548,12 @@
   let macroWert = null;
   function macroWiedergabeWert() { return playing ? macroWert : null; }
   function runPlayback() {
-    playTimers.forEach(clearTimeout);
+    playTimers.forEach(rennZeitTimeoutStop);
     playTimers = [];
-    const startedAt = Date.now();
+    const startedAt = rennZeitJetzt();
     macroWert = { steer: 0, throttle: 0 };
     macro.forEach((step, i) => {
-      const timer = setTimeout(() => {
+      const timer = rennZeitTimeout(() => {
         macroWert = { steer: step.steer, throttle: step.throttle };
         playLog(`Schritt ${i + 1}/${macro.length}  t=${step.t}ms  steer=${step.steer.toFixed(2)}  throttle=${step.throttle.toFixed(2)}`);
         if (i === macro.length - 1) {
@@ -27161,7 +27569,7 @@
   }
 
   function stopPlayback() {
-    playTimers.forEach(clearTimeout);
+    playTimers.forEach(rennZeitTimeoutStop);
     playTimers = [];
     playing = false; // must be cleared BEFORE releasing, or playbackLocked blocks it
     macroWert = null;
@@ -36887,6 +37295,7 @@
 
   // ---- Takt: Pakete wie ein echtes Auto --------------------------------------------------------
   function vfPaket() {
+    if (rennPauseAktiv()) return;
     if (!VF.aktiv || !VF.car) return;
     const tile = Math.max(0, VF.pts[VF.idx].tile);
     if (tile !== VF.kachel) {
@@ -36895,7 +37304,7 @@
       VF.kachel = tile;
       // Eigene Rundenanzeige fuer die Kopfzeile (die Zeitnahme selbst laeuft in der App).
       if (vorher !== -2 && VF.tiles[tile] && VF.tiles[tile].type === TILE_TYPE.START && !VF.abseits) {
-        const jetzt = Date.now();
+        const jetzt = rennZeitJetzt();
         if (VF.rundeAb) {
           VF.letzte = jetzt - VF.rundeAb;
           if (VF.beste === null || VF.letzte < VF.beste) VF.beste = VF.letzte;
@@ -36919,6 +37328,9 @@
   function vfBild(now) {
     if (!VF.aktiv) return;
     VF.raf = requestAnimationFrame(vfBild);
+    if (rennPauseAktiv()) {
+      VF.letzt = now; VF.dtBild = 0; vfMalen(); vfHud(); return;
+    }
     const dt = VF.letzt ? Math.min(0.05, (now - VF.letzt) / 1000) : 0.016;
     VF.letzt = now;
     const st = physEngine.state;
@@ -36995,11 +37407,11 @@
     const o = vfOrt(VF.pts, VF.nrm, VF.x, VF.y, VF.idx);
     VF.idx = o.idx;
     const ab = Math.abs(o.quer) > TRACK_HALF_W * 1.19 + VF_AUTO.B * 0.3;
-    if (ab && !VF.abseits) VF.abseitsSeit = Date.now();
+    if (ab && !VF.abseits) VF.abseitsSeit = rennZeitJetzt();
     VF.abseits = ab;
     if (ab) {
       st.speedKmh *= Math.exp(-VF_ABSEITS_BREMSE * dt);
-      if (Date.now() - VF.abseitsSeit > VF_ABSEITS_ZURUECK_MS) vfZuruecksetzen();
+      if (rennZeitJetzt() - VF.abseitsSeit > VF_ABSEITS_ZURUECK_MS) vfZuruecksetzen();
     }
     // NPCs: folgen der Mittellinie und drosseln in Kurven.
     if (VF.npcs && VF.npcBogen) {
@@ -37025,7 +37437,7 @@
     VF.rennenEnde = true;
     const was = VF.modus === 'laps' ? (Math.min(VF.runden, VF.limit) + ' ' + t('Runden')) : (VF.limit + ' min');
     showHudToast(t('Rennen beendet') + ': ' + was);
-    setTimeout(() => { if (VF.aktiv) virtuellBeenden(); }, 1600);
+    rennZeitTimeout(() => { if (VF.aktiv) virtuellBeenden(); }, 1600);
   }
   function vfMalen() {
     const gl = VF.gl, cv = VF.cv;
@@ -37277,7 +37689,7 @@
     if (!el) return;
     const st = physEngine.state;
     const kmh = Math.round(Math.abs(st.speedKmh || 0) * TACHO_SCALE * (VF.tempoFaktor || 1));   // wie im Cockpit (race-speed)
-    const lauf = VF.rundeAb ? Date.now() - VF.rundeAb : null;
+    const lauf = VF.rundeAb ? rennZeitJetzt() - VF.rundeAb : null;
     // Nur bei Aenderung schreiben: jedes textContent= ist Arbeit fuer die Seite, und das hier laeuft je Bild.
     const setz = (sel, txt) => { const e = el.querySelector(sel); if (e.textContent !== txt) e.textContent = txt; };
     setz('.vf-tempo', kmh + ' km/h');
@@ -37580,6 +37992,7 @@
     } catch (e) { /* ohne Ton weiterfahren */ }
   }
   function virtuellBeenden() {
+    rennPauseBeenden();
     if (!VF.aktiv) return;
     // Laeuft eine Challenge (z. B. die Studienfahrt) mit dem virtuellen Auto, endet sie mit: abgebrochen,
     // nicht gewertet (VF.abbruch sagt das der Studie, 98f-studie.js).
@@ -38109,7 +38522,7 @@
   function raceLapTarget(gefahren) {
     if (raceMode === 'laps') return gefahren + ' / ' + raceLimit;
     if (RACE_MODES[raceMode].timed && raceStartedAt !== null) {
-      const restMs = Math.max(0, raceLimit * 60000 - (Date.now() - raceStartedAt));
+      const restMs = Math.max(0, raceLimit * 60000 - (rennZeitJetzt() - raceStartedAt));
       const s = Math.floor(restMs / 1000);
       return gefahren + ' \u00b7 ' + Math.floor(s / 60) + ':'
              + String(s % 60).padStart(2, '0');
@@ -38121,13 +38534,13 @@
     if (raceState !== 'racing') return false;
     // Training: mit Zeitlimit (> 0) endet es nach der Zeit, mit 0 nur von Hand.
     if (raceMode === 'practice' || raceMode === 'bestzeit') {
-      return raceLimit > 0 && raceStartedAt !== null && (Date.now() - raceStartedAt) >= raceLimit * 60000;
+      return raceLimit > 0 && raceStartedAt !== null && (rennZeitJetzt() - raceStartedAt) >= raceLimit * 60000;
     }
     if (!RACE_MODES[raceMode].timed) return false;
     if (raceMode === 'laps') {
       return raceAllCars().some(c => c.laps.length >= raceLimit);
     }
-    return raceStartedAt !== null && (Date.now() - raceStartedAt) >= raceLimit * 60000;
+    return raceStartedAt !== null && (rennZeitJetzt() - raceStartedAt) >= raceLimit * 60000;
   }
 
   // ---- Knockout-Wertung (experimentell) ----
@@ -38151,7 +38564,7 @@
     knockoutGeister = knockoutGeisterZaehlen();
     if (typeof playTone === 'function') {   // positiver Ton
       playTone(880, 0.06, 'sine', 0.2);
-      setTimeout(() => playTone(1320, 0.09, 'sine', 0.2), 45);
+      rennZeitTimeout(() => playTone(1320, 0.09, 'sine', 0.2), 45);
     }
     showHudToast(t('Geist raus · noch {n} Geister').replace('{n}', knockoutGeister));
     knockoutPruefen();
@@ -38174,7 +38587,7 @@
   function playLebenWeg() {
     if (typeof playTone !== 'function') return;
     playTone(392, 0.16, 'sine', 0.24);
-    setTimeout(() => playTone(311, 0.26, 'sine', 0.24), 170);
+    rennZeitTimeout(() => playTone(311, 0.26, 'sine', 0.24), 170);
   }
   // Game over: vier absteigende Halbtoene, der letzte lang - das bekannte "wah wah wah
   // waaah". Rechteck, damit es auch aus dem Handylautsprecher kommt (alles ueber 250 Hz).
@@ -38182,7 +38595,7 @@
                            { hz: 294, ab: 0.52, dauer: 0.22 }, { hz: 277, ab: 0.78, dauer: 0.8 }];
   function playGameOver() {
     if (typeof playTone !== 'function') return;
-    for (const n of GAME_OVER_NOTEN) setTimeout(() => playTone(n.hz, n.dauer, 'square', 0.15), n.ab * 1000);
+    for (const n of GAME_OVER_NOTEN) rennZeitTimeout(() => playTone(n.hz, n.dauer, 'square', 0.15), n.ab * 1000);
   }
   // Ende: alle Geister raus -> Sieg; alle Menschen raus -> Niederlage.
   // Die Entscheidung allein, ohne Folgen (v0.9.16, fuer den Selbsttest): null = weiter.
@@ -38244,7 +38657,7 @@
     const kills = zs ? zs.derbyKills : derbyKills;
     if (typeof playTone === 'function') {   // positiver Ton fuer den Abschuss
       playTone(880, 0.06, 'sine', 0.2);
-      setTimeout(() => playTone(1320, 0.09, 'sine', 0.2), 45);
+      rennZeitTimeout(() => playTone(1320, 0.09, 'sine', 0.2), 45);
     }
     // Die Kills dessen, der getroffen hat (v0.9.16; vorher immer die von Spieler 1).
     showHudToast(t('Geist aus') + ' · ' + t('Spieler {n}').replace('{n}', zs ? schuetze : 1) + ' · Kills ' + kills);
@@ -38314,7 +38727,7 @@
     derbySieger = sieger; derbyLaeuft = false;
     if (sieger === 'p1') { if (typeof playRaceEndFanfare === 'function') playRaceEndFanfare(); showHudToast(t('Derby: Spieler 1 gewinnt!')); }
     else if (/^p[2-9]$/.test(sieger)) { if (typeof playRaceEndFanfare === 'function') playRaceEndFanfare(); showHudToast(t('Derby: Spieler {n} gewinnt!').replace('{n}', sieger.slice(1))); }
-    else { if (typeof playTone === 'function') { playTone(200, 0.12, 'square', 0.16); setTimeout(() => playTone(140, 0.16, 'square', 0.14), 70); setTimeout(() => playTone(110, 0.2, 'square', 0.12), 160); } showHudToast(t('Derby: Geist gewinnt.')); }
+    else { if (typeof playTone === 'function') { playTone(200, 0.12, 'square', 0.16); rennZeitTimeout(() => playTone(140, 0.16, 'square', 0.14), 70); rennZeitTimeout(() => playTone(110, 0.2, 'square', 0.12), 160); } showHudToast(t('Derby: Geist gewinnt.')); }
     if (typeof finishRace === 'function') finishRace(false);
   }
   // ---- DERBY-COCKPIT (v0.8.126) ----
@@ -38374,7 +38787,7 @@
       const dist = Math.abs(ghostOrtGes(c) - ort);
       // EIN Treffer je Annaeherung (v0.9.16): vorher zog jeder 45-ms-Takt 20 % ab, ein naher
       // Ghost war nach fuenf Takten (0,2 s) raus. Jetzt hoechstens ein Treffer je Sekunde.
-      const jetzt = Date.now();
+      const jetzt = rennZeitJetzt();
       if (dist < DERBY_RAM_TILES && tempo > DERBY_RAM_KMH && jetzt - (c.ghost.derbyTrefferAt || 0) > DERBY_TREFFER_MS) {
         c.ghost.derbyTrefferAt = jetzt;
         derbySchaden(c, 20, 1);
@@ -38444,6 +38857,7 @@
   function fruehstartBeginnen() {
     fruehstartReset();
     fruehstartTimer = setInterval(() => {
+      if (rennPauseAktiv()) return;
       if (raceState !== 'countdown') return;
       FRUEH_SPIELER.forEach((w) => {
         if (w >= 2 && !(zweiSpieler && zusatzPlatz(w) && zusatzPlatz(w).car)) return;
@@ -38463,7 +38877,7 @@
   function fruehstartStrafeAktiv(w) {
     const f = fruehstart[w];
     if (!f || fruehstartZeitAn()) return false;     // Zeitstrafe statt Ausbremsen
-    const jetzt = Date.now();
+    const jetzt = rennZeitJetzt();
     if (f.warten && (raceState === 'racing' || raceState === 'finishing') && fruehstartTempo(w) > FRUEHSTART_KMH) {
       f.warten = false;
       f.bis = jetzt + FRUEHSTART_STRAFE_MS;
@@ -38474,6 +38888,7 @@
   function fruehstartGab(w) { const f = fruehstart[w || 1]; return !!(f && f.frueh); }
 
   function raceClockTick() {
+    if (rennPauseAktiv()) return;
     if (raceState !== 'racing') return;
     if (raceAwaitingMove) {
       if (!raceMoveErkannt()) {
@@ -38482,8 +38897,8 @@
         return;
       }
       raceAwaitingMove = false;
-      raceLapStart = Date.now();
-      raceStartedAt = Date.now();
+      raceLapStart = rennZeitJetzt();
+      raceStartedAt = rennZeitJetzt();
       // Die Kachel, auf der das Auto beim Start steht: eine Ziellinie darauf ist keine Runde.
       dashLapZaehler = dashLastTileCounter;
       raceAnlaufZaehler = trackMode === 'on' ? dashLastTileCounter : null;
@@ -38495,13 +38910,13 @@
     const el = $('race-clock');
     if (el) {
       if (!RACE_MODES[raceMode].timed) {
-        const up = Date.now() - raceStartedAt;
+        const up = rennZeitJetzt() - raceStartedAt;
         el.textContent = formatLapTime(up) + ' gefahren';
       } else if (raceMode === 'laps') {
         const best = Math.max(0, ...raceAllCars().map(c => c.laps.length));
         el.textContent = `Runde ${best} / ${raceLimit}`;   // best = vollendete Runden
       } else {
-        const left = Math.max(0, raceLimit * 60000 - (Date.now() - raceStartedAt));
+        const left = Math.max(0, raceLimit * 60000 - (rennZeitJetzt() - raceStartedAt));
         el.textContent = formatLapTime(left) + ' übrig';
       }
     }
@@ -38573,14 +38988,14 @@
     raceFormationLap = false;
     limitFormation = 1; applySpeedLimit();
     updateFlagUi();
-    raceLapStart = Date.now();
-    garage.forEach(c => { if (c.race) c.race.lapStart = Date.now(); });
+    raceLapStart = rennZeitJetzt();
+    garage.forEach(c => { if (c.race) c.race.lapStart = rennZeitJetzt(); });
     setRaceLights('go');
     playTone(1046, 0.30, 'square', 0.22);
     showHudToast(t('Frei, volle Fahrt!'));
     log('Einführungsrunde beendet, Rennen freigegeben.', 'info');
     $('race-status').textContent = t('{m} läuft').replace('{m}', t(RACE_MODES[raceMode].label));
-    setTimeout(() => setRaceLights(0), 900);
+    rennZeitTimeout(() => setRaceLights(0), 900);
   }
 
   // ---- Die Start/Ziel-Sperre des AUTOS: Byte 15, Bit 3 im Meldekanal ------------------
@@ -38604,10 +39019,11 @@
   }
 
   function carRaceNotify(car, b) {
+    if (rennPauseAktiv()) return;
     if (!car.race) car.race = { laps: [], lapStart: null, pending: null, seen: 0,
                                 lastActed: 0, lastCount: null };
     const r = car.race;
-    const now = Date.now();
+    const now = rennZeitJetzt();
     // Die Kachel, auf der das Auto stand, als diese Wertung begann (tileCount wird erst
     // NACH diesem Aufruf auf das neue Paket gesetzt).
     if (r.lapZaehler === undefined) r.lapZaehler = car.tileCount === undefined ? null : car.tileCount;
@@ -38657,6 +39073,7 @@
   // Derselbe Grund wie bei playerLapCrossed(): eine Stelle, die eine Runde zaehlt, und die
   // Testtaste nimmt sie mit.
   function carLapCrossed(car) {
+    if (rennPauseAktiv()) return;
     // v0.10.7: das Safety Car faehrt keine Runden - es wartet nur auf Start/Ziel nach Gruen.
     if (car.role === 'safetycar') {
       if (car.ghost && typeof safetyCarLinie === 'function') safetyCarLinie(car);
@@ -38664,7 +39081,7 @@
     }
     if (!car.race) car.race = { laps: [], lapStart: null, pending: null, seen: 0,
                                 lastActed: 0, lastCount: null };
-    const r = car.race, now = Date.now();
+    const r = car.race, now = rennZeitJetzt();
     // DIE AUSLAUFRUNDE endet hier, und nur hier: dieses Auto hat Start/Ziel ueberfahren,
     // also gilt die Zielflagge fuer es. Die Runde wird noch GEWERTET - sie ist gefahren
     // worden, und eine gefahrene Runde zu verschweigen waere die zweite Unwahrheit nach der
@@ -39242,7 +39659,7 @@
       // In einem Zeitrennen faellt der erste Schauer sicher hinein: spaetestens bei der
       // Haelfte der Renndauer.
       if (RACE_MODES[raceMode].timed && raceMode !== 'laps') {
-        wxWechselAt = Math.min(wxWechselAt, Date.now() + raceLimit * 60000 * 0.5);
+        wxWechselAt = Math.min(wxWechselAt, rennZeitJetzt() + raceLimit * 60000 * 0.5);
       }
       return;
     }
@@ -39250,7 +39667,7 @@
     const total = RACE_MODES[raceMode].timed && raceMode !== 'laps'
       ? raceLimit * 60000
       : 5 * 60000;   // practice / lap races: assume a five-minute window
-    raceWxSwitchAt = Date.now() + total * (0.35 + Math.random() * 0.3);
+    raceWxSwitchAt = rennZeitJetzt() + total * (0.35 + Math.random() * 0.3);
   }
 
   // ---- WECHSELHAFT ------------------------------------------------------------------
@@ -39282,16 +39699,17 @@
   function wxWechselPlanen(nass) {
     const min = nass ? WX_REGEN_MIN_MS : WX_TROCKEN_MIN_MS;
     const max = nass ? WX_REGEN_MAX_MS : WX_TROCKEN_MAX_MS;
-    wxWechselAt = Date.now() + min + Math.random() * (max - min);
+    wxWechselAt = rennZeitJetzt() + min + Math.random() * (max - min);
   }
 
   // Ein eigener Takt, unabhaengig vom Rennen. Der Aufruf aus raceClockTick() bleibt, er
   // schadet nicht: nach dem ersten Umschalten liegt wxWechselAt in der Zukunft.
   setInterval(() => { wxWechselTick(); }, 1000);
   function wxWechselTick() {
+    if (rennPauseAktiv()) return;
     if (mpWetter) { mpWetterTick(); return; }
     if (raceWxStart !== 'wechsel' || wxWechselAt === null) return;
-    if (Date.now() < wxWechselAt) return;
+    if (rennZeitJetzt() < wxWechselAt) return;
     const warNass = weather === 'rain';
     setWeather(warNass ? 'dry' : 'rain');
     showHudToast(warNass ? t('Es trocknet ab') : t('Es fängt an zu regnen'));
@@ -39330,7 +39748,7 @@
   }
   function mpWetterTick() {
     if (!mpWetter || (raceState !== 'racing' && raceState !== 'finishing')) return;
-    const jetzt = Date.now();
+    const jetzt = rennZeitJetzt();
     while (mpWetter.i < mpWetter.liste.length && mpWetter.gruen + mpWetter.liste[mpWetter.i].abMs <= jetzt) {
       const e = mpWetter.liste[mpWetter.i++];
       if (e.wetter !== weather) {
@@ -39342,7 +39760,7 @@
 
   function maybeSwitchRaceWeather() {
     if (mpWetter) { mpWetterTick(); return; }
-    if (raceWxSwitchAt === null || Date.now() < raceWxSwitchAt) return;
+    if (raceWxSwitchAt === null || rennZeitJetzt() < raceWxSwitchAt) return;
     raceWxSwitchAt = null;   // once per race
     const next = weather === 'rain' ? 'dry' : 'rain';
     setWeather(next);
@@ -39939,12 +40357,21 @@
       knoepfe.push([t('Telemetrie ansehen'), () => teleSeiteOeffnen()]);
     }
     knoepfe.push([t('Schließen'), null]);
-    setTimeout(() => konsoleFrage(t('Time Attack beendet'), text, knoepfe, true), 900);
+    rennZeitTimeout(() => konsoleFrage(t('Time Attack beendet'), text, knoepfe, true), 900);
   }
   function startRaceCountdown(gruenZiel, mpPlan) {
+    // Ein Startplan des Mehrspieler-Hosts geht einer lokalen Pause vor: sonst verpasste
+    // dieses Telefon den gemeinsamen Start still. Lokal startet waehrend der Pause nichts.
+    if (rennPauseAktiv()) {
+      if (mpPlan || typeof gruenZiel === 'number' || rennPauseMehrspieler()) rennPauseBeenden();
+      else return;
+    }
     if (raceState !== 'idle' && raceState !== 'finished') return; // ignore while armed/racing
     if (!knockoutBereit(true)) return;
     if (!bestzeitBereit(true)) return;
+    // Rennuhr = Wanduhr ab hier (siehe rennUhrNullen in 15-pause.js): die Mehrspieler-Zielzeit
+    // gruenZiel ist Wanduhr und wird unten direkt gegen rennZeitJetzt() gelegt.
+    rennUhrNullen();
     rennintroAbbrechen();
     const introStartToken = ++rennintroStartGeneration;
     bestzeitVorherMerken();
@@ -39970,7 +40397,7 @@
         schirm.classList.remove('gt3-warm');
         void schirm.offsetWidth;
         schirm.classList.add('gt3-warm');
-        setTimeout(() => schirm.classList.remove('gt3-warm'), 320);
+        rennZeitTimeout(() => schirm.classList.remove('gt3-warm'), 320);
       }
     }
     // Starting conditions, applied before the lights: weather first, because the tyre
@@ -39983,7 +40410,7 @@
     // hier direkt danach steht es, weil beides zur selben "was fuer ein Rennen wird das"-
     // Ansage am Start gehoert.
     wxWindWuerfeln();
-    const gruenBei = typeof gruenZiel === 'number' && gruenZiel > Date.now() + 200 ? gruenZiel : null;
+    const gruenBei = typeof gruenZiel === 'number' && gruenZiel > rennZeitJetzt() + 200 ? gruenZiel : null;
     // Mehrspieler: Wind und Wetterplan fuer alle gleich (v0.8.42).
     mpWetter = null;
     if (mpPlan && gruenBei) {
@@ -40059,7 +40486,7 @@
     // Intervall alle 400 ms nachgezogen, und in diesem Fenster stand dort noch "Rennen
     // starten", waehrend das Rennen schon lief - ein Druck darauf hat es dann gestoppt. Ein
     // Knopf, der luegt, was er tun wird, ist schlimmer als einer, der langsam ist.
-    setTimeout(updateRaceActButtons, 0);
+    rennZeitTimeout(updateRaceActButtons, 0);
     // Die Seiten des Zieleinlaufs beginnen bei jedem Rennen von vorn - sonst haengt die
     // Seite eines Autos an der Zahl der Rennen davor, und dieselbe Aufstellung endete beim
     // zweiten Mal anders als beim ersten.
@@ -40077,7 +40504,7 @@
     // auf, und ein Countdown, aus dem man nicht herauskommt, ist eine Falle.
     $('race-stop-btn').disabled = false;
     $('race-status').textContent = 'Countdown…';
-    clearTimeout(raceCountdownTimer); raceCountdownTimer = null;
+    rennZeitTimeoutStop(raceCountdownTimer); raceCountdownTimer = null;
     ampelPlan = null; ampelSchritt = null; ampelK = 0;
     setRaceLights(0);
     let ampelGestartet = false;
@@ -40091,14 +40518,14 @@
                         : (1000 + Math.random() * 2000);
       // Lokal: Gruen so setzen, dass die 1. Lampe 600 ms nach dem Start erscheint
       // (1. Lampe = gruen - verzog - 4000).
-      const plan = ampelZeitplan(gruenBei || Date.now() + 4600 + ampelVerzog, ampelVerzog);
-      clearTimeout(raceCountdownTimer);
+      const plan = ampelZeitplan(gruenBei || rennZeitJetzt() + 4600 + ampelVerzog, ampelVerzog);
+      rennZeitTimeoutStop(raceCountdownTimer);
       const schritt = (k) => {
         if (raceState !== 'countdown') return;
         ampelK = k;
         const [bei, stufe] = plan[k];
-        const warte = bei - Date.now();
-        if (warte > 4) { raceCountdownTimer = setTimeout(() => schritt(k), warte); return; }
+        const warte = bei - rennZeitJetzt();
+        if (warte > 4) { raceCountdownTimer = rennZeitTimeout(() => schritt(k), warte); return; }
         // Kommt der Plan spaet an, werden verpasste Lichter uebersprungen - nur Gruen zaehlt.
         if (stufe > 0 && warte < -400 && k + 1 < plan.length) { schritt(k + 1); return; }
         if (stufe > 0) {
@@ -40110,7 +40537,7 @@
         setRaceLights('go');
         ampelTon(880, 0.35, 'square', 0.22);
         raceGreen();
-        setTimeout(() => setRaceLights(0), 900);
+        rennZeitTimeout(() => setRaceLights(0), 900);
       };
       ampelPlan = plan; ampelSchritt = schritt;
       schritt(0);
@@ -40132,9 +40559,9 @@
   let ampelPlan = null, ampelSchritt = null, ampelK = 0;
   function ampelVerschieben(delta) {
     if (!ampelPlan || !ampelSchritt || raceState !== 'countdown' || ampelK > 0) return false;
-    if (ampelPlan[0][0] + delta < Date.now() + 300) return false;
+    if (ampelPlan[0][0] + delta < rennZeitJetzt() + 300) return false;
     for (const p of ampelPlan) p[0] += delta;
-    clearTimeout(raceCountdownTimer);
+    rennZeitTimeoutStop(raceCountdownTimer);
     ampelSchritt(ampelK);
     return true;
   }
@@ -40145,7 +40572,7 @@
     // A flying start goes to the formation lap first: the cars roll at pit-lane speed
     // and no laps count until the field crosses the line.
     raceFormationLap = raceFlying;
-    raceGreenAt = raceFlying ? null : Date.now();
+    raceGreenAt = raceFlying ? null : rennZeitJetzt();
     fruehstartGruen();
     rammReset();
     // FRISCH ZAEHLEN. Ohne das traegt ein zweites Rennen die Ueberfahrten des ersten mit
@@ -40206,7 +40633,7 @@
     // stehenden Start gehoert zur Zeit, sonst waere ein Zoegern gratis.
     if (imChallenge) {
       raceAwaitingMove = false;
-      raceLapStart = Date.now();
+      raceLapStart = rennZeitJetzt();
       raceStartedAt = raceLapStart;
       dashLapZaehler = dashLastTileCounter;
     }
@@ -40226,7 +40653,7 @@
   // counting a partial lap would poison the fastest-lap column.
   function requestRaceStop() {
     if (raceState !== 'racing' && raceState !== 'countdown' && raceState !== 'finishing') return;
-    if (raceCountdownTimer) { clearInterval(raceCountdownTimer); raceCountdownTimer = null; }
+    if (raceCountdownTimer) { rennZeitTimeoutStop(raceCountdownTimer); raceCountdownTimer = null; }
     setRaceLights(0);
     // KEIN AUSLAUFEN bei einem Abbruch von Hand. Wer abbricht, will, dass es aufhoert -
     // eine Extrarunde saehe aus, als haette der Knopf nichts getan. Dieselbe Ueberlegung,
@@ -40274,6 +40701,7 @@
   // `auslaufen` = die Ghosts duerfen ihre angefangene Runde zu Ende fahren. Vorgabe ja;
   // requestRaceStop() uebergibt ausdruecklich false.
   function finishRace(auslaufen) {
+    rennPauseBeenden();
     if (raceState === 'finished') return; // Ergebnisansage nur einmal planen.
     rennintroStartGeneration++;
     rennintroAbbrechen();
@@ -40297,9 +40725,9 @@
     if (typeof derbyCockpitMalen === 'function') derbyCockpitMalen();
     mpWetter = null;
     // Die laufende Runde festhalten und die Uhr anhalten. Ohne das Nullsetzen von
-    // raceLapStart rechnet die Anzeige weiter gegen Date.now() und die Runde waechst nach
+    // raceLapStart rechnet die Anzeige weiter gegen rennZeitJetzt() und die Runde waechst nach
     // dem Ende einfach weiter.
-    const now = Date.now();
+    const now = rennZeitJetzt();
     racePartialMs = raceLapStart !== null ? now - raceLapStart
                   : (dashLapStart !== null ? now - dashLapStart : null);
     raceLapStart = null;
@@ -40430,7 +40858,8 @@
   // laeuft; ein geparktes, umgekipptes oder neben der Bahn stehendes Auto steht sofort.
   // Der Takt prueft das jede Sekunde weiter, bis kein NPC mehr unterwegs ist.
   function nachZielTick(jetzt) {
-    const now = jetzt || Date.now();
+    if (rennPauseAktiv()) return;
+    const now = jetzt || rennZeitJetzt();
     if (!nachZielBis || now < nachZielBis) return 0;
     let n = 0, gestoppt = 0, unterwegs = 0;
     ghostAuslaufBis = 0;
@@ -40811,6 +41240,7 @@
   }
 
   function updateRaceActButtons() {
+    rennPauseMalen();
     const a = $('race-act-start');
     if (a) {
       const live = raceState === 'racing' || raceState === 'countdown' || raceState === 'finishing';
@@ -40918,7 +41348,7 @@
   let tileTimeline = [];      // [{ code, pakete, von, bis, counter }], neueste zuletzt
 
   function tileTimelineTick(code, counter) {
-    const jetzt = Date.now();
+    const jetzt = rennZeitJetzt();
     const letzte = tileTimeline[tileTimeline.length - 1];
     if (letzte && letzte.code === code) {
       letzte.pakete++;
@@ -40940,7 +41370,7 @@
     // Verschwendung, und die Zeitleiste soll das Fahren nicht stoeren.
     if (tileTlDirty) return;
     tileTlDirty = true;
-    setTimeout(() => {
+    rennZeitTimeout(() => {
       tileTlDirty = false;
       const host = $('tile-timeline');
       if (!host) return;
@@ -40980,6 +41410,13 @@
 
 
   function handleDashboardBytes(bytes) {
+    if (rennPauseAktiv()) {
+      dashBattery = akkuGlaetten(dashAkkuHalter, bytes[10], rennZeitJetzt());
+      dashLastTileCounter = bytes[11];
+      dashOnMarker = (bytes[15] & 0x08) !== 0;
+      dashMarkerPrev = dashOnMarker;
+      return;
+    }
     recNotify(bytes);
     if (probeOverride && bytes[12] !== 0xff) {
       probeStats.codes++;
@@ -40987,7 +41424,7 @@
     }
     // dashBattery wird weiter gebraucht: die Akkukachel im Cockpit liest ihn. Die Zeile
     // darunter schrieb in #dash-battery, ein Element der entfernten alten Karte.
-    dashBattery = akkuGlaetten(dashAkkuHalter, bytes[10], Date.now());
+    dashBattery = akkuGlaetten(dashAkkuHalter, bytes[10], rennZeitJetzt());
 
     // Byte 15 was read as "off track". The 2026-08-19 snoop logs disprove that: on a PRINTED
     // sheet it rises in the same packet as the start pattern. On the RAIL (logs 16.-21.08.)
@@ -41015,7 +41452,7 @@
     // Wer zuerst kommt, zaehlt; der andere ist fuer TILE_REPEAT_BLOCK_MS still.
     if (trackMode === 'off' && dashOnMarker && !markerVorher) {
       const code = bytes[12];
-      const jetzt = Date.now();
+      const jetzt = rennZeitJetzt();
       const frei = !(dashLastActedCode === code
                      && jetzt - dashLastActedAt < TILE_REPEAT_BLOCK_MS);
       if (frei && isStartCode(code)) {
@@ -41070,7 +41507,7 @@
       dashLapZaehler = null;
     }
     if (trackMode !== 'off' && dashOnMarker && !markerVorher) {
-      const jetzt = Date.now(), zaehler = bytes[11];
+      const jetzt = rennZeitJetzt(), zaehler = bytes[11];
       if (!dashZielGesehen) {
         dashZielGesehen = true;
         log('Ziellinie: das Auto meldet sie selbst (Byte 15) - ab jetzt wird dort gemessen.', 'info');
@@ -41196,7 +41633,7 @@
     // INNERHALB der Kachel, und die braucht der Windschatten: ein Abstand in ganzen Kacheln
     // ist bei 43 cm Kachellaenge zu grob, um "dicht dahinter" von "eine Laenge dahinter" zu
     // unterscheiden.
-    const jetztT = Date.now();
+    const jetztT = rennZeitJetzt();
     if (dashTileAt) {
       const ms = jetztT - dashTileAt;
       if (ms > 60 && ms < 20000) dashTileMs = dashTileMs ? dashTileMs * 0.7 + ms * 0.3 : ms;
@@ -41209,7 +41646,7 @@
 
     // Guard 2 applies only to the two codes that trigger something irreversible; the
     // ordinary straight and curve codes may repeat as often as the track says.
-    const nowCode = Date.now();
+    const nowCode = rennZeitJetzt();
     const repeatBlocked = (isStartCode(type) || type === pitMarkerCode)
       && dashLastActedCode === type
       && nowCode - dashLastActedAt < TILE_REPEAT_BLOCK_MS;
@@ -41433,7 +41870,8 @@
     });
   }
   function playerLapCrossed() {
-    const now = Date.now();
+    if (rennPauseAktiv()) return;
+    const now = rennZeitJetzt();
     // v0.9.43: Wartet die Rennuhr noch auf die erste Bewegung, BEWEIST eine Ueberfahrt die
     // Bewegung - die Uhr startet hier, und diese Ueberfahrt ist der Anfang der ersten Runde.
     if ((raceState === 'racing' || raceState === 'finishing') && raceAwaitingMove && !raceFormationLap) {
@@ -41600,7 +42038,7 @@
     if (!dashTileAt || !dashTileMs) return 0;
     const f = (typeof ghostTileLenFactor === 'function' && dashMinimapIndex !== null)
       ? ghostTileLenFactor(dashMinimapIndex) : 1;
-    return Math.max(0, Math.min(1, (Date.now() - dashTileAt) / (dashTileMs * f)));
+    return Math.max(0, Math.min(1, (rennZeitJetzt() - dashTileAt) / (dashTileMs * f)));
   }
 
   // Der Ort des eigenen Autos, in derselben Einheit wie ghostOrtGes(): monoton, ueber
@@ -41640,7 +42078,7 @@
 
   setInterval(() => {
     if ((raceState === 'racing' || raceState === 'finishing') && raceLapStart !== null) {
-      $('race-lap-current').textContent = formatLapTime(Date.now() - raceLapStart);
+      $('race-lap-current').textContent = formatLapTime(rennZeitJetzt() - raceLapStart);
     }
   }, 200);
 
@@ -41951,7 +42389,7 @@
       g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke();
     }
 
-    const t = Date.now() / 1000;
+    const t = rennZeitJetzt() / 1000;
     const mx = W / 2, my = H / 2;
 
     // GRUNDFAERBUNG, getragen von der Regenstaerke. Sie ist der Teil, der "es regnet HIER"
@@ -42024,7 +42462,8 @@
   // Eigener Zeitgeber und nicht im Fahrtakt: das Wetter zieht auch, wenn niemand faehrt -
   // im Menue, in der Garage, beim Zuschauen. 80 ms sind fuer ziehende Wolken reichlich.
   function wxTick() {
-    const now = Date.now();
+    if (rennPauseAktiv()) return;
+    const now = rennZeitJetzt();
     const dt = wxTickAt ? Math.min(0.5, (now - wxTickAt) / 1000) : 0;
     wxTickAt = now;
     if (wxFront !== wxFrontTo) {
@@ -42249,7 +42688,7 @@
       playAmbienceOneShot(ambience.thunder[0], 0.7, true);
     } else if (weather === 'dry') {
       playTone(520, 0.10, 'sine', 0.14);
-      setTimeout(() => playTone(780, 0.16, 'sine', 0.14), 110);
+      rennZeitTimeout(() => playTone(780, 0.16, 'sine', 0.14), 110);
     }
 
     const need = (weather === 'rain' && tyres === 'slick') || (weather === 'dry' && tyres === 'wet');
@@ -42460,7 +42899,7 @@
   function setPitState(next) {
     if (next !== 'servicing') {
       pitSpiel = null;
-      if (typeof pitSpielMalen === 'function') setTimeout(pitSpielMalen, 0);
+      if (typeof pitSpielMalen === 'function') rennZeitTimeout(pitSpielMalen, 0);
     }
     if (pitState === next) return;
     pitState = next;
@@ -42491,9 +42930,9 @@
     // Doppelausdruck-Modus - das Fenster PIT_DOUBLE_LIMIT_MS laeuft ab. Das prueft
     // pitLaneTick selbst, und dort ist die Frist Teil der Bedienung und kein
     // Sicherheitsnetz.
-    if (pitLimiterTimer) { clearTimeout(pitLimiterTimer); pitLimiterTimer = null; }
+    if (pitLimiterTimer) { rennZeitTimeoutStop(pitLimiterTimer); pitLimiterTimer = null; }
     if (next === 'servicing') {
-      pitServiceStart = Date.now();
+      pitServiceStart = rennZeitJetzt();
       pitFuelGained = 0; pitDamageRepaired = 0;
       pitDone = { refuel: false, tyres: false, repair: false };
       pitTyreElapsed = 0; pitEmptyElapsed = 0; pitStandElapsed = 0; pitReady = false;
@@ -42535,7 +42974,7 @@
       if (pitServiceStart !== null) {
         if (!pitSignalMechanisch('raus')) {
           playTone(440, 0.12, 'sine', 0.18);
-          setTimeout(() => playTone(660, 0.22, 'sine', 0.18), 120); // rising: throttle released
+          rennZeitTimeout(() => playTone(660, 0.22, 'sine', 0.18), 120); // rising: throttle released
         }
         padRumble(0.25, 0.15, 120, 'box');
       }
@@ -42556,7 +42995,7 @@
             + `${PIT_MANDATORY_STAND_S.toFixed(0)} s), zählt nicht als Pflichtstopp.`, 'err');
       }
       if (pitServiceStart !== null) {
-        log(`Boxenstopp beendet nach ${((Date.now() - pitServiceStart) / 1000).toFixed(1)}s: ` +
+        log(`Boxenstopp beendet nach ${((rennZeitJetzt() - pitServiceStart) / 1000).toFixed(1)}s: ` +
             `+${fuelLiters(pitFuelGained)} l Sprit, -${Math.round(pitDamageRepaired)}% Schaden.`, 'info');
       }
       pitServiceStart = null;
@@ -42599,7 +43038,7 @@
       ansage('pit', t('Boxenstopp eingeleitet'));
       if (!pitSignalMechanisch('gasse')) {
         playTone(880, 0.12, 'square', 0.16);
-        setTimeout(() => playTone(880, 0.12, 'square', 0.16), 180);
+        rennZeitTimeout(() => playTone(880, 0.12, 'square', 0.16), 180);
       }
       showHudToast('BOXENGASSE AKTIV, ' + PIT_DOUBLE_KMH + ' KM/H');
       log('Boxengasse per doppeltem Ausdruck: zweiter Kontakt nach ' + seit
@@ -42614,7 +43053,7 @@
   function onPitMarkerCrossed() {
     if (!pitLaneEnabled || pitState !== 'off') return;
     // Just aborted: do not drag the car straight back in while it is still on the marker.
-    if (Date.now() < pitRearmBlockedUntil) return;
+    if (rennZeitJetzt() < pitRearmBlockedUntil) return;
     setPitState('limited');
     showHudToast('Boxengasse, Tempolimit');
   }
@@ -42623,7 +43062,8 @@
   // often the car happens to send notifications.
   let pitLastTick = null;
   function pitLaneTick() {
-    const now = Date.now();
+    if (rennPauseAktiv()) return;
+    const now = rennZeitJetzt();
     const dt = pitLastTick ? Math.min(0.5, (now - pitLastTick) / 1000) : 0;
     pitLastTick = now;
 
@@ -42826,16 +43266,16 @@
       const letzter = i === PIT_SPIEL_ANZAHL - 1;
       if (letzter) {
         playTone(1560, 0.08, 'sine', 0.2);
-        setTimeout(() => playTone(1960, 0.10, 'sine', 0.2), 60);
-        setTimeout(() => playTone(2400, 0.14, 'sine', 0.2), 120);
+        rennZeitTimeout(() => playTone(1960, 0.10, 'sine', 0.2), 60);
+        rennZeitTimeout(() => playTone(2400, 0.14, 'sine', 0.2), 120);
       } else {
         const f = 660 + i * 55;
         playTone(f, 0.06, 'sine', 0.2);
-        setTimeout(() => playTone(f * 1.5, 0.08, 'sine', 0.2), 45);
+        rennZeitTimeout(() => playTone(f * 1.5, 0.08, 'sine', 0.2), 45);
       }
     } else {
       playTone(200, 0.12, 'square', 0.16);
-      setTimeout(() => playTone(140, 0.14, 'square', 0.14), 70);
+      rennZeitTimeout(() => playTone(140, 0.14, 'square', 0.14), 70);
     }
   }
   function pitSpielTick(dt) {
@@ -43026,9 +43466,9 @@
     if (pitState === 'servicing' && pitReady) {
       // Erst beim Umschlag den Zeitpunkt setzen, nicht bei jedem Durchlauf: sonst wuerde
       // das GO stehen bleiben, solange das Auto in der Box wartet.
-      if (!pitGoUntil) pitGoUntil = Date.now() + 1000;
+      if (!pitGoUntil) pitGoUntil = rennZeitJetzt() + 1000;
     }
-    if (pitGoUntil && Date.now() < pitGoUntil) {
+    if (pitGoUntil && rennZeitJetzt() < pitGoUntil) {
       el.className = 'gt3-board on go';
       el.textContent = 'GO';
       return;
@@ -43257,7 +43697,7 @@
   // verlaessliches dt, und dieselbe Begruendung steht bei fuelTankTick().
   function boxTickVon(z) {
     if (z.box.lage === 'aus') { z.box.letzterTick = null; return; }
-    const now = Date.now();
+    const now = rennZeitJetzt();
     const dt = z.box.letzterTick !== null
       ? Math.max(0, Math.min(0.5, (now - z.box.letzterTick) / 1000)) : 0;
     z.box.letzterTick = now;
@@ -43284,7 +43724,7 @@
         resetTyres(z.motor);
         // Toene wie bei Auto 1: Schrauber kurz, Tanken und Reparatur, solange sie laufen.
         setPitLoopFuer(z.nr, 'wrench', true);
-        setTimeout(() => setPitLoopFuer(z.nr, 'wrench', false), PIT_TYRE_CHANGE_S * 1000);
+        rennZeitTimeout(() => setPitLoopFuer(z.nr, 'wrench', false), PIT_TYRE_CHANGE_S * 1000);
         if (z.tank.stand < z.tankZiel - 0.05) setPitLoopFuer(z.nr, 'fuel', true);
         if (schadenVon(z.nr) > 0.05) setPitLoopFuer(z.nr, 'repair', true);
       }
@@ -43517,7 +43957,7 @@
     const d1 = v1 - L.avg1, d3 = v3 - L.avg3;
     L.avg1 += (v1 - L.avg1) * CRASH_ROLLING_ALPHA;
     L.avg3 += (v3 - L.avg3) * CRASH_ROLLING_ALPHA;
-    const now = Date.now();
+    const now = rennZeitJetzt();
 
     // ---- Ein Auto neben der Bahn wird AUFGEHOBEN, und das ist kein Crash ---------------
     //
@@ -43703,7 +44143,7 @@
   const FLASH_MS = FLASH_PULSES * FLASH_PERIOD_MS - FLASH_OFF_MS;
 
   function resolveLights(baseHead, baseBrake) {
-    const now = Date.now();
+    const now = rennZeitJetzt();
     let head = baseHead, brake = baseBrake;
     if (now < lightFx.flashUntil) {
       // Verstrichene Zeit seit dem Ausloesen, nicht die restliche: die Phase muss vorwaerts
@@ -43768,8 +44208,8 @@
   }
 
   function triggerHeadlightFlash() {
-    if (Date.now() < lightFx.flashUntil) return;   // already flashing; ignore a double tap
-    lightFx.flashUntil = Date.now() + FLASH_MS;
+    if (rennZeitJetzt() < lightFx.flashUntil) return;   // already flashing; ignore a double tap
+    lightFx.flashUntil = rennZeitJetzt() + FLASH_MS;
     showHudToast('Lichthupe');
     playFlashSound();
   }
@@ -43777,8 +44217,8 @@
   // Akku-Warnblinken fuer das Fahrerauto: zehn Umschaltphasen, ohne Gas oder Lenkung zu
   // beruehren. Andere Autos nutzen blinkCar() aus 90-ghosts.js.
   function lichtBatterieBlink() {
-    if (Date.now() < lightFx.batteryUntil) return;
-    lightFx.batteryUntil = Date.now() + BATT_BLINK_MS;
+    if (rennZeitJetzt() < lightFx.batteryUntil) return;
+    lightFx.batteryUntil = rennZeitJetzt() + BATT_BLINK_MS;
   }
 
   // ---- DIESELBE LICHTHUPE FUER AUTO 2 -----------------------------------------------
@@ -43791,8 +44231,8 @@
   // keine Lichthupe mehr, sondern ein Zufall.
   let flash2Until = 0;
   function flashVon(z) {
-    if (Date.now() < z.flashBis) return;
-    z.flashBis = Date.now() + FLASH_MS;
+    if (rennZeitJetzt() < z.flashBis) return;
+    z.flashBis = rennZeitJetzt() + FLASH_MS;
     showHudToast('P' + z.nr + ': Lichthupe');
     playFlashSound();
   }
@@ -43803,7 +44243,7 @@
   // FLASH_ON_MS sind gemeinsame Konstanten), aber OHNE Schaden-, Tank- oder Regenlicht -
   // die haengen an Zaehlern, die es fuer Auto 2 in dieser schmalen Fassung nicht gibt.
   function headlichtVon(z, baseHead) {
-    const now = Date.now();
+    const now = rennZeitJetzt();
     if (now >= z.flashBis) return baseHead;
     const elapsed = FLASH_MS - (z.flashBis - now);
     const on = (elapsed % FLASH_PERIOD_MS) < FLASH_ON_MS;
@@ -43921,7 +44361,7 @@
   }
 
   function realSpeedTick(counter, type) {
-    const now = Date.now();
+    const now = rennZeitJetzt();
     if (realTileCount === null) {
       realTileCount = counter; realTileTime = now; realTileType = type;
       return;
@@ -43999,7 +44439,7 @@
   }
 
   function trackTimeTick(onTrack) {
-    const now = Date.now();
+    const now = rennZeitJetzt();
     if (trackTimeLast !== null) {
       // Capped like the fuel tick: a tab that was in the background for a minute must not
       // book that minute as driving.
@@ -44060,8 +44500,9 @@
   // eigenen Schirm), und die Boxen-Ausnahme `pitState !== 'servicing'` gilt nur fuer
   // Auto 1, weil nur Auto 1 in die Box fahren kann.
   function fuelTankTick(throttle, wer) {
+    if (rennPauseAktiv()) return;
     if (wer >= 2) return tankTickVon(zusatzPlatz(wer), throttle);
-    const now = Date.now();
+    const now = rennZeitJetzt();
     if (fuelLastTickTime !== null && pitState !== 'servicing') {
       // ---- NIE NEGATIV, und das ist keine Vorsicht, sondern ein gefundener Fehler ----
       //
@@ -44069,7 +44510,7 @@
       // zu einer Addition. Gefunden hat es ein Prueflauf, der die Uhr faelscht und dabei
       // ZURUECK stellte - der Tank ging von 1,5 auf 5,5 Prozent.
       //
-      // Im Betrieb laeuft Date.now() monoton, der Fall kam also nie vor. "Kam nie vor" ist
+      // Im Betrieb laeuft rennZeitJetzt() monoton, der Fall kam also nie vor. "Kam nie vor" ist
       // aber kein Schutz, sondern Glueck: eine Zeitumstellung des Systems, eine
       // Zeitsynchronisierung im Hintergrund oder der naechste Prueflauf genuegen. Und ein
       // Tank, der voller wird, ist ein Fehler, den man niemandem erklaeren kann.
@@ -44102,7 +44543,8 @@
   }
 
   function tankTickVon(z, throttle) {
-    const now = Date.now();
+    if (rennPauseAktiv()) return;
+    const now = rennZeitJetzt();
     if (z.tank.letzterTick !== null) {
       const dt = Math.max(0, Math.min(0.5, (now - z.tank.letzterTick) / 1000));
       const vorher = z.tank.stand;
@@ -44496,7 +44938,7 @@
   let pitRumbleAt = 0;
   function pitRumbleWhileWorking(anyRunning) {
     if (!anyRunning) return;
-    const now = Date.now();
+    const now = rennZeitJetzt();
     if (now - pitRumbleAt < 180) return;
     pitRumbleAt = now;
     padRumble(0.16, 0.10, 200, 'box');
@@ -44769,7 +45211,7 @@
       // Die Standzeit gehoert hier hin und nicht in den Kopf: sie IST der Messwert dieser
       // Zeile, so wie Prozent der Messwert der anderen ist.
       const zahl = (pitState === 'servicing' && pitServiceStart)
-        ? ((Date.now() - pitServiceStart) / 1000).toFixed(1) + ' s' : '';
+        ? ((rennZeitJetzt() - pitServiceStart) / 1000).toFixed(1) + ' s' : '';
       return { zahl, wort };
     }
     if (z.art === 'wahl') {
@@ -45453,7 +45895,7 @@
     if (art === 'reparatur') return pitEinzelklang(ratsche, 0, 0.34, 0.5);
     if (art === 'fertig') {
       const a = pitEinzelklang(schrauber, 0.02, 0.36, 0.6);
-      setTimeout(() => pitEinzelklang(ratsche, 0, 0.16, 0.55), 380);
+      rennZeitTimeout(() => pitEinzelklang(ratsche, 0, 0.16, 0.55), 380);
       return a;
     }
     if (art === 'raus' || art === 'gasse') return pitEinzelklang(ratsche, 0, 0.2, 0.45);
@@ -45461,18 +45903,18 @@
   }
   function pitChimeFuel()   { if (pitSignalMechanisch('tank')) return;
                               playTone(520, 0.10, 'sine', 0.16);
-                              setTimeout(() => playTone(780, 0.16, 'sine', 0.16), 90); }
+                              rennZeitTimeout(() => playTone(780, 0.16, 'sine', 0.16), 90); }
   function pitChimeTyres()  { if (pitSignalMechanisch('reifen')) return;
                               playTone(300, 0.12, 'triangle', 0.16);
-                              setTimeout(() => playTone(300, 0.16, 'triangle', 0.14), 130); }
+                              rennZeitTimeout(() => playTone(300, 0.16, 'triangle', 0.14), 130); }
   function pitChimeRepair() { if (pitSignalMechanisch('reparatur')) return;
                               playTone(660, 0.10, 'sine', 0.15);
-                              setTimeout(() => playTone(880, 0.10, 'sine', 0.15), 80);
-                              setTimeout(() => playTone(1170, 0.18, 'sine', 0.15), 160); }
+                              rennZeitTimeout(() => playTone(880, 0.10, 'sine', 0.15), 80);
+                              rennZeitTimeout(() => playTone(1170, 0.18, 'sine', 0.15), 160); }
   // Deliberately the loudest and most distinct of the four: this is the one that means GO.
   function pitChimeReady()  { if (pitSignalMechanisch('fertig')) return;
                               playTone(880, 0.13, 'square', 0.20);
-                              setTimeout(() => playTone(1320, 0.26, 'square', 0.20), 120); }
+                              rennZeitTimeout(() => playTone(1320, 0.26, 'square', 0.20), 120); }
 
   function describePitPlan(p) {
     if (pitPlanEmpty(p)) return `nur ${PIT_EMPTY_STOP_S.toFixed(0)} s Standzeit`;
@@ -45593,7 +46035,7 @@
       showHudToast('Derby: kein Boxenstopp');
       return;
     }
-    const now = Date.now();
+    const now = rennZeitJetzt();
     pitLastPress = now;
 
     if (pitState === 'off') {
@@ -45681,9 +46123,10 @@
 
   // Aus physicsStep, jeden Takt; gespeichert wird etwa alle 100 ms.
   function teleProbe(gas, bremse) {
+    if (rennPauseAktiv()) return;
     const l = teleLauf;
     if (!l || !teleRennenAktiv() || l.start !== raceLapStart) return;
-    const jetzt = Date.now();
+    const jetzt = rennZeitJetzt();
     if (jetzt - l.probeAt < TELE_PROBE_MS) return;
     l.probeAt = jetzt;
     const st = physEngine.state, top = physEngine.config.topSpeedKmh || 1;
@@ -45985,7 +46428,7 @@
   function crashEreignis(car, richtung) {
     const vorwaerts = richtung;
     if (!car || raceState !== 'racing' || !(rammAb() > 0)) return null;
-    const jetzt = Date.now();
+    const jetzt = rennZeitJetzt();
     rammEreignisse = rammEreignisse.filter((e) => jetzt - e.at <= RAMM_FENSTER_MS);
     const anderer = rammEreignisse.find((e) => e.car !== car && !e.gepaart);
     const neu = { car, at: jetzt, vorwaerts, tempo: rammTempo(car), gepaart: false };
@@ -46027,7 +46470,7 @@
     const d1 = v1 - L.avg1, d3 = v3 - L.avg3;
     L.avg1 += (v1 - L.avg1) * CRASH_ROLLING_ALPHA;
     L.avg3 += (v3 - L.avg3) * CRASH_ROLLING_ALPHA;
-    const jetzt = Date.now();
+    const jetzt = rennZeitJetzt();
     if (dev > crashThreshold && jetzt - L.letzter > CRASH_REFRACTORY_MS) {
       L.letzter = jetzt;
       crashEreignis(car, crashRichtung(d1, d3));
@@ -46060,7 +46503,7 @@
     if (h <= 25) return DERBY_LICHT_AUS;
     if (h <= 50) {
       // Unregelmaessig wie ein Wackelkontakt: zwei ueberlagerte Takte.
-      const ms = Date.now();
+      const ms = rennZeitJetzt();
       return ((ms % 330) < 110) !== ((ms % 770) < 160) ? DERBY_LICHT_AUS : DERBY_LICHT_AN;
     }
     return null;
@@ -46069,7 +46512,7 @@
     if (typeof derbyLaeuft === 'undefined' || !derbyLaeuft || !(gas > 0)) return gas;
     const h = wer >= 2 ? zusatzPlatz(wer).derbyHealth : derbyHealth;
     if (h > 25) return gas;
-    return (Date.now() % 500) < 160 ? gas * 0.55 : gas;
+    return (rennZeitJetzt() % 500) < 160 ? gas * 0.55 : gas;
   }
   // Derby ohne Tank und Reifenverschleiss; nach dem Rennen kommt alles zurueck.
   let derbyMerk = null;
@@ -47471,8 +47914,9 @@
     return ungueltig;
   }
   function chWachen() {
+    if (rennPauseAktiv()) return;
     if (!chLauf) { clearInterval(chWaechter); chWaechter = null; return; }
-    const v = chTempo(), jetzt = Date.now();
+    const v = chTempo(), jetzt = rennZeitJetzt();
     // Einstellungen geaendert? Zweimal je Sekunde reicht.
     if (jetzt - chLauf.pruefAt > 500 && chLauf.soll) {
       chLauf.pruefAt = jetzt;
@@ -53545,6 +53989,7 @@
   // Boxenstopp on Y and collide with the headlight button that now lives there.
   const GAMEPAD_BINDINGS_KEY = 'carrera-hybrid-gamepad-bindings-v2';
   const DEFAULT_BINDINGS = {
+    pause: { type: 'none', index: -1, label: 'nicht belegt' },
     throttle: { type: 'button', index: 7, label: 'Rechter Trigger (R2 / RT)' },
     brake: { type: 'button', index: 6, label: 'Linker Trigger (L2 / LT)' },
     steering: { type: 'axis', index: 0, invert: false, label: 'Linker Stick (X-Achse)' },
@@ -53634,6 +54079,7 @@
     resetcar: { type: 'none', index: -1, label: 'nicht belegt' },
   };
   const BIND_ACTION_LABELS = {
+    pause: 'Pause / Fortsetzen',
     throttle: 'Gas', brake: 'Bremse', steering: 'Lenkung',
     downshift: 'Runterschalten', upshift: 'Hochschalten',
     headlights: 'Licht an/aus', lightflash: 'Lichthupe', pitstop: 'Menü (Cockpit ↔ Fahren)',
@@ -54120,7 +54566,7 @@
       const tr = document.createElement('tr');
       const listening = listeningFor === action;
       tr.innerHTML = `
-        <td>${BIND_ACTION_LABELS[action]}</td>
+        <td>${BIND_ACTION_LABELS[action]}${action === 'pause' ? ' <span class="wip-tag">WIP</span>' : ''}</td>
         <td><span class="bind-value${listening ? ' bind-listening' : ''}">${listening ? 'Eingabe erwartet…' : bindingDescription(ab[action])}</span></td>
         <td><button data-action="${action}" ${listening ? 'disabled' : ''}>Neu zuweisen</button>
         <button data-loeschen="${action}" ${listening || !ab[action] ? 'disabled' : ''}
@@ -54265,6 +54711,8 @@
       }
     }
     if (!bester) return;
+    // Pause ist eine Taste, keine potenziell rauschende Lenkachse.
+    if (action === 'pause' && bester.art !== 'button') return;
     const vorher = ziel[action] ? { ...ziel[action] } : null;
     if (bester.art === 'axis') {
       // Die Richtung: hat sich die Achse nach unten bewegt, ist sie invertiert. Gemessen
@@ -54287,6 +54735,7 @@
       log(`Zuordnung gesetzt (Spieler ${bindEditSpieler}): ${BIND_ACTION_LABELS[action]} `
           + `-> Knopf ${bester.i}`, 'info');
     }
+    if (action === 'pause') rennPause.padSperre[bindEditSpieler] = true;
     bindingKollisionTauschen(ziel, action, vorher);
     activeSaveBindings();
     listeningFor = null;
@@ -54905,18 +55354,19 @@
     lat.step++;
     lat.steer = Math.min(1, lat.steer + parseFloat($('lat-inc').value));
     lat.tiles = 0;
-    lat.stepAt = Date.now();
+    lat.stepAt = rennZeitJetzt();
     latRender();
     if (lat.steer >= 1) latStop('voller Lenkausschlag erreicht, ohne dass es kippte');
   }
 
   function latTick() {
+    if (rennPauseAktiv()) return;
     if (!lat.on || !lat.car) return;
     // Aus der Garage entfernt oder getrennt - dann ist die Messung ungueltig, nicht
     // stillschweigend zu Ende.
     if (!garage.includes(lat.car) || !lat.car.rx) { latStop('Auto nicht mehr verbunden'); return; }
     const hold = parseInt($('lat-hold').value, 10);
-    if (Date.now() - lat.stepAt >= hold) { latCommit(true); return; }
+    if (rennZeitJetzt() - lat.stepAt >= hold) { latCommit(true); return; }
     writeToCar(lat.car, lat.steer * lat.dir, parseFloat($('lat-throttle').value),
                trackModeBit() | LIGHT_HEAD);
   }
@@ -54930,6 +55380,13 @@
   }
 
   async function writeToCar(car, steer, throttle, lightBits, modeBytes) {
+    if (rennPauseAktiv()) {
+      steer = 0; throttle = 0; lightBits = (lightBits || 0) | LIGHT_BRAKE;
+      if (car.rx && !car.testSenke) {
+        await funkSchreiben(car.rx, buildCommandPacket(0, 0, lightBits), null);
+        return;
+      }
+    }
     // EINE SENKE FUER DEN PRUEFLAUF. Ohne sie ist nicht pruefbar, WAS hinausgeht - nur, was
     // eine Funktion sich vorgenommen hat. Genau dort lag der Fehler beim Zieleinlauf: die
     // Seite war zugeteilt und landete im Gas-Platz. Ein Prueflauf, der die Zuteilung liest,
@@ -54990,8 +55447,7 @@
                                      typeof lichtSchadenVon === 'function'
                                        ? lichtSchadenVon(car) : undefined);
       recWrite(pkt, garageLabel(car));
-      if (car.rx.properties.writeWithoutResponse) await car.rx.writeValueWithoutResponse(pkt);
-      else await car.rx.writeValueWithResponse(pkt);
+      await funkSchreiben(car.rx, pkt, null);
     } catch (err) {
       // A disconnect mid-drive is normal; do not spam the log from a 22 Hz loop.
       car.writeErrors = (car.writeErrors || 0) + 1;
@@ -55022,7 +55478,7 @@
     if (!car) return;
     const faehrt = (car.role === 'ghost' && car.ghost && car.ghost.running)
       || (typeof spielerNrVon === 'function' && spielerNrVon(car) >= 2);
-    if (faehrt) car.akkuBlinkBis = Date.now() + AKKU_BLINK_MS * AKKU_BLINK_PHASEN;
+    if (faehrt) car.akkuBlinkBis = rennZeitJetzt() + AKKU_BLINK_MS * AKKU_BLINK_PHASEN;
     else blinkCar(car);
   }
   function akkuBlinkAus(car, now) {
@@ -56152,6 +56608,14 @@
     const b = notifyBytes(e.target.value);
     if (b.length < 16) return;
     meldetaktBeobachten(car, performance.now());
+    if (rennPauseAktiv()) {
+      car.tileCode = b[12]; car.tileCount = b[11];
+      car.lastCodeAt = rennZeitJetzt();
+      car.battery = akkuGlaetten(car, b[10], rennZeitJetzt());
+      if (car.race) zielSperreFlanke(car.race, b);
+      if (car === playerCar) handleDashboardBytes(b);
+      return;
+    }
     recNotify(b, garageLabel(car));
     // Lap timing for EVERY connected car, whatever its role: the start/finish code arrives
     // on its own notify stream, so there is no reason to only count the player's laps.
@@ -56180,14 +56644,14 @@
     // 0x00 is a valid REPORT but not a valid READING, so it must not refresh the
     // last-seen-code timestamp — otherwise a car sitting beside the track looks alive.
     if (code !== 0xff && code !== TILE_OFFTRACK) {
-      car.lastCodeAt = Date.now();
+      car.lastCodeAt = rennZeitJetzt();
       // v0.9.64: der letzte GUELTIGE Code. Der Abgangsmelder braucht ihn als Gegenprobe:
       // war der zuletzt gelesene Code eine Kurve/Haarnadel, liest der Ghost dort 0x00, weil
       // er (unter der Leseschwelle) langsam ist - nicht, weil er neben der Bahn liegt.
       car.lastCode = code;
     }
     if (code !== car.tileCode) { car.tileCode = code; }
-    if (car.tileCount !== b[11]) { car.tileCount = b[11]; car.tileAt = Date.now(); }
+    if (car.tileCount !== b[11]) { car.tileCount = b[11]; car.tileAt = rennZeitJetzt(); }
     // ---- DAS ABSEITS VON AUTO 2, aus SEINEN Bytes --------------------------------
     //
     // Fuer Auto 1 macht das handleDashboardBytes() in 70-race.js - und das laeuft nur fuer
@@ -56234,7 +56698,7 @@
     car.yaw = b[3] > 127 ? b[3] - 256 : b[3];
     // v0.9.87: geglaettet (Maximum der letzten 5 s) - unter Gas sackt die Spannung ab, und
     // der Rohwert sprang dann um bis zu zehn Prozent.
-    car.battery = akkuGlaetten(car, b[10], Date.now());
+    car.battery = akkuGlaetten(car, b[10], rennZeitJetzt());
   }
 
   function stopGhost(car) {
@@ -56280,11 +56744,11 @@
   const STOPP_NACHSENDEN_MS = 3000;
   function stoppNachsenden(car) {
     if (!car || !car.rx) return;
-    car.stoppBis = Date.now() + STOPP_NACHSENDEN_MS;
+    car.stoppBis = rennZeitJetzt() + STOPP_NACHSENDEN_MS;
     if (car.stoppTakt) return;
     car.stoppTakt = setInterval(() => {
       const gesteuert = car === playerCar || (typeof spielerNrVon === 'function' && spielerNrVon(car) >= 2);
-      if (Date.now() > car.stoppBis || !car.rx || garage.indexOf(car) < 0 || gesteuert
+      if (rennZeitJetzt() > car.stoppBis || !car.rx || garage.indexOf(car) < 0 || gesteuert
           || (car.ghost && car.ghost.running)) {
         clearInterval(car.stoppTakt); car.stoppTakt = null;
         return;
@@ -56507,11 +56971,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (a.fertig) return true;
     if (!aufstellStartPruefen(a, car)) return false;
     const o = car.ghost ? ghostOrt(car) : null;
-    if (aufstellAmPunkt(o, a.ziel, gridPosOf(car)) && Date.now() - a.seit > 1200) {
+    if (aufstellAmPunkt(o, a.ziel, gridPosOf(car)) && rennZeitJetzt() - a.seit > 1200) {
       a.fertig = true;
-      a.fertigAt = Date.now();
+      a.fertigAt = rennZeitJetzt();
       log(garageLabel(car) + ': steht auf seinem Startplatz.', 'info');
-      if (!aufstellenLaeuft()) { clearTimeout(aufstellenTimer); showHudToast(t('Startaufstellung steht')); }
+      if (!aufstellenLaeuft()) { rennZeitTimeoutStop(aufstellenTimer); showHudToast(t('Startaufstellung steht')); }
     }
     return a.fertig;
   }
@@ -56527,8 +56991,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const platz = gridPosOf(car);
     const seite = platz >= 0 && platz % 2 ? -1 : 1;
     const w = EINPARK_LENK * einparkStaerke();
-    if (!a.fertigAt) a.fertigAt = Date.now();
-    const t = Date.now() - a.fertigAt, ms = einparkMs();
+    if (!a.fertigAt) a.fertigAt = rennZeitJetzt();
+    const t = rennZeitJetzt() - a.fertigAt, ms = einparkMs();
     // v1.1.30: die Aufnahme (wie bei den NPCs), mit Angleichen vom aktuellen Gas.
     if (aufstellArt() === 'aufnahme') {
       const sk = aufstellSkript(seite);
@@ -56577,7 +57041,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const ziel = aufstellZielKachel(platz, n);
       // "Steht schon" nur mit FRISCHER Ortung: ein angehaltener NPC behaelt seinen letzten Ort,
       // auch wenn er seitdem von Hand woandershin gestellt wurde.
-      const frisch = !!(car.ghost && car.lastCodeAt && Date.now() - car.lastCodeAt < AUFSTELL_ORT_FRISCH_MS
+      const frisch = !!(car.ghost && car.lastCodeAt && rennZeitJetzt() - car.lastCodeAt < AUFSTELL_ORT_FRISCH_MS
                         && car.ghost.ortAngewandt);
       const o = car.ghost && frisch ? ghostOrt(car) : null;
       if (o !== null && Math.floor(o) === ziel) {
@@ -56591,7 +57055,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const hier = car.ghost ? ghostOrt(car) : null;
       const nah = hier === null ? gestartet.length
         : gestartet.filter((o) => o === null || Math.min(((hier - o) % n2 + n2) % n2, ((o - hier) % n2 + n2) % n2) <= AUFSTELL_STAFFEL_NAH).length;
-      const ab = Date.now() + nah * AUFSTELL_STAFFEL_MS;
+      const ab = rennZeitJetzt() + nah * AUFSTELL_STAFFEL_MS;
       gestartet.push(hier);
       if (spielerNrVon(car) >= 1) {
         aufstellSpieler.set(car, { ziel, seit: ab, ab, fertig: false,
@@ -56616,8 +57080,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       car.ghost.gnadeBis = ab + GHOST_START_GNADE_MS;
       zahl++;
     }
-    clearTimeout(aufstellenTimer);
-    if (zahl) aufstellenTimer = setTimeout(() => aufstellenStoppen(true), AUFSTELLEN_MAX_MS + zahl * AUFSTELL_STAFFEL_MS);
+    rennZeitTimeoutStop(aufstellenTimer);
+    if (zahl) aufstellenTimer = rennZeitTimeout(() => aufstellenStoppen(true), AUFSTELLEN_MAX_MS + zahl * AUFSTELL_STAFFEL_MS);
     log('Automatische Aufstellung: Staffel ' + AUFSTELL_STAFFEL_MS + ' ms nur bei Autos in '
         + AUFSTELL_STAFFEL_NAH + ' Kacheln Naehe; bekannter Ort spart die Runde ueber Start/Ziel.', 'info');
     showHudToast(zahl ? t('Autos fahren in die Startaufstellung') : t('Alle Autos stehen schon'));
@@ -56632,7 +57096,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!aufstellStartPruefen(g, car)) return false;
     const o = ghostOrt(car);
     const platz = g.aufstellPlatz !== undefined ? g.aufstellPlatz : gridPosOf(car);
-    if (!aufstellAmPunkt(o, g.aufstellZiel, platz) || Date.now() - (g.aufstellSeit || 0) < 1200) return false;
+    if (!aufstellAmPunkt(o, g.aufstellZiel, platz) || rennZeitJetzt() - (g.aufstellSeit || 0) < 1200) return false;
     const seite = platz >= 0 && platz % 2 ? -1 : 1;     // wie formationOffset
     // v1.0.37 GEMELDET: "Bei automatischer Aufstellung parkt das erste Auto nicht vor der
     // Startgeraden, sondern dahinter" und BESTELLT: "Die Autos sollen fuer die automatische
@@ -56652,7 +57116,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                              fertig: (c) => {
         log(garageLabel(c) + ': steht auf seinem Startplatz (Safety-Car-Folge ' + (seite > 0 ? 'rechts' : 'links') + ').', 'info');
         if (g.nachZiel) blinkCar(c);
-        if (!aufstellenLaeuft()) { clearTimeout(aufstellenTimer); showHudToast(t('Startaufstellung steht')); }
+        if (!aufstellenLaeuft()) { rennZeitTimeoutStop(aufstellenTimer); showHudToast(t('Startaufstellung steht')); }
       } });
       return false;
     }
@@ -56669,7 +57133,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       log(garageLabel(c) + ': steht auf seinem Startplatz.', 'info');
       if (g.nachZiel) blinkCar(c);
       if (!aufstellenLaeuft()) {
-        clearTimeout(aufstellenTimer);
+        rennZeitTimeoutStop(aufstellenTimer);
         showHudToast(t('Startaufstellung steht'));
       }
     } }));
@@ -56704,7 +57168,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return formationPace() * f;
   }
   function aufstellenStoppen(zeitUm) {
-    clearTimeout(aufstellenTimer);
+    rennZeitTimeoutStop(aufstellenTimer);
     aufstellSpieler.clear();
     for (const c of garage) {
       if (c.ghost && c.ghost.aufstellZiel !== null && c.ghost.aufstellZiel !== undefined) stopGhost(c);
@@ -56769,7 +57233,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const c = car || garage.find(x => x.role === 'player');
     const nr = c ? spielerNrVon(c) : 0;
     const halter = nr >= 2 ? (formationFahrerJe[nr] || formationFahrerZwei) : formationFahrer;
-    return formationOffset(halter, gridPosOf(c), Date.now(), breite);
+    return formationOffset(halter, gridPosOf(c), rennZeitJetzt(), breite);
   }
   const GHOST_OFFTRACK_MS = 1500;   // measured: tiles last 0.4-2.7 s with no 0xff between
   // Wie lange 0x00 stehen muss, bevor der Ghost anhaelt. Vorher hielt ein EINZIGES 0x00-Paket
@@ -57510,7 +57974,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Testfolge SGHGH waren das 0.39 quer ueber die Bahn, gegen 0.12 auf einer Strecke ohne
     // Haarnadel. Die relative Laenge kommt aus der Abtastdichte der Mittellinie, die
     // trackCenterline() ohnehin nach Drehwinkel vergibt.
-    return Math.max(0, Math.min(1, (Date.now() - car.tileAt) / ghostTileDauer(g)));
+    return Math.max(0, Math.min(1, (rennZeitJetzt() - car.tileAt) / ghostTileDauer(g)));
   }
 
   // ====================================================================================
@@ -57931,7 +58395,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Also verworfen und neu zugehoert. Das kostet die Lernphase von 1,2 Sekunden, und die
     // ist gut angelegt: ohne frischen Ruhewert waere die Schwelle eine Zahl aus einer
     // anderen Situation.
-    const jetztSh = Date.now();
+    const jetztSh = rennZeitJetzt();
     if (sh.lastAt && jetztSh - sh.lastAt > SHAKE_LUECKE_MS) {
       sh.win = []; sh.sum = 0; sh.p1 = null; sh.p3 = null;
       sh.parkedAt = 0; sh.base = null;
@@ -57948,7 +58412,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (sh.win.length < SHAKE_WIN) return;
 
     if (!car.parked) { sh.quiet = []; sh.base = null; sh.parkedAt = 0; return; }
-    if (!sh.parkedAt) sh.parkedAt = Date.now();
+    if (!sh.parkedAt) sh.parkedAt = rennZeitJetzt();
 
     // ---- DER RUHEWERT IST DAS MINIMUM, NICHT DER MEDIAN DER ERSTEN 1,2 SEKUNDEN ----
     //
@@ -57976,7 +58440,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Groesse: gesucht war immer "was meldet dieses Auto, wenn es still liegt", und das
     // ist ein Minimum und kein Mittelwert.
     sh.base = sh.base === null ? sh.sum : Math.min(sh.base, sh.sum);
-    if (Date.now() - sh.parkedAt < SHAKE_SETTLE_MS) return;
+    if (rennZeitJetzt() - sh.parkedAt < SHAKE_SETTLE_MS) return;
 
     // ---- UND EIN DECKEL, damit "immer" auch immer heisst -------------------------
     //
@@ -58053,7 +58517,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // sie werden nur beim Parken gelesen und in ghostTick nur mitgeschrieben.
     if (car.ghost) {
       const g = car.ghost;
-      const seit = g.tileStart ? Math.round(Date.now() - g.tileStart) : null;
+      const seit = g.tileStart ? Math.round(rennZeitJetzt() - g.tileStart) : null;
       log('  Diagnose ' + garageLabel(car) + ': Zieltempo '
           + (g.lastTarget === undefined ? '?' : g.lastTarget.toFixed(3))
           + ' (Leseschwelle ' + GHOST_READ_MIN + '), erreicht '
@@ -58649,7 +59113,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const amPlatz = car.ghost.tileIndex === pitKachelFuer(p.platz);
     if (!amPlatz && pitVorbeiNoetig(car)) return PIT_VORBEI;
     if (p.phase === 'raus') {
-      const f = Math.max(0, 1 - (Date.now() - p.at) / PIT_RAUS_MS);
+      const f = Math.max(0, 1 - (rennZeitJetzt() - p.at) / PIT_RAUS_MS);
       return PIT_RAND * f;
     }
     return PIT_RAND;
@@ -58690,7 +59154,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const rh = car.ghost && car.ghost.randHalt;
     // 'brems' (Safety Car, Bremsimpuls nach dem Links-Impuls): sofort voll; danach haelt 'halt' die volle Bremse.
     if (rh) return rh.phase === 'brems' ? 1
-                 : rh.phase === 'halt' ? ((rh.sofort || rh.bremsMs) ? 1 : Math.max(0, Math.min(1, (Date.now() - rh.at) / PIT_BREMS_RAMPE_MS))) : null;
+                 : rh.phase === 'halt' ? ((rh.sofort || rh.bremsMs) ? 1 : Math.max(0, Math.min(1, (rennZeitJetzt() - rh.at) / PIT_BREMS_RAMPE_MS))) : null;
     const p = car.ghost && car.ghost.pit;
     if (!p) return null;
     // In der Randphase wird NICHT gebremst - dort wird gefahren.
@@ -58702,7 +59166,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // schraeg." Ein Schlag auf volle Bremse blockiert, und ein blockiertes Auto dreht sich
     // um seine Hochachse, statt gerade stehen zu bleiben. Ueber PIT_BREMS_RAMPE_MS
     // hochgefahren bleibt es "abrupt" (ein Drittel der Haltephase) und trotzdem gerade.
-    const seit = Date.now() - (p.at || 0);
+    const seit = rennZeitJetzt() - (p.at || 0);
     return Math.max(0, Math.min(1, seit / PIT_BREMS_RAMPE_MS));
   }
 
@@ -58806,7 +59270,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Mitte, und dann ist links so gut wie rechts - dieselbe Wahl wie in der Boxengasse.
     const q = ghostQuerLage(steher);
     const seite = (q === null || q >= 0) ? -1 : 1;
-    const now = Date.now();
+    const now = rennZeitJetzt();
     for (const c of garage) {
       if (c === steher || !c.ghost || c.role !== 'ghost' || c.parked) continue;
       const meins = ghostOrt(c);
@@ -58820,7 +59284,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
 
   function pitAusweichenSetzen(pitCar) {
-    const now = Date.now();
+    const now = rennZeitJetzt();
     for (const c of garage) {
       if (c === pitCar || !c.ghost || c.role !== 'ghost') continue;
       if (!pitSperreRechts(c)) continue;
@@ -59045,7 +59509,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function randHaltStarten(car, opt) {
     const g = car.ghost;
     if (!g) return;
-    g.randHalt = { phase: opt.phase || 'rand', at: Date.now(), quer: opt.quer,
+    g.randHalt = { phase: opt.phase || 'rand', at: rennZeitJetzt(), quer: opt.quer,
                    tempo: opt.tempo === undefined ? formationPace() : opt.tempo,
                    randMs: opt.randMs || 0, haltMs: opt.haltMs || PIT_BREMS_MS, fertig: opt.fertig || null,
                    nachRandMs: opt.nachRandMs || 0, randErreicht: 0,
@@ -59072,7 +59536,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function randHaltRadLenk(car) {
     const h = car.ghost && car.ghost.randHalt;
     // v1.1.30: eine aufgenommene Folge lenkt selbst; im anschliessenden Halt stehen die Raeder gerade.
-    if (h && h.skript) return h.phase === 'skript' ? skriptSchritt(h, Date.now()).lenk : 0;
+    if (h && h.skript) return h.phase === 'skript' ? skriptSchritt(h, rennZeitJetzt()).lenk : 0;
     if (!h || !h.radLenk) return null;
     if (h.phase === 'rad') return h.radLenk;
     if (h.phase === 'gegen') return -h.radLenk;
@@ -59084,7 +59548,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function randHaltTick(car) {
     const g = car.ghost, h = g && g.randHalt;
     if (!h) return false;
-    const now = Date.now();
+    const now = rennZeitJetzt();
     g.gnadeBis = now + PIT_GNADE_MS;             // langsam am Rand ist kein Abflug
     if (h.phase === 'rand') {
       const seit = now - h.at;
@@ -59150,7 +59614,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function pitTick(car) {
     const g = car.ghost, p = g && g.pit;
     if (!p) return false;
-    const now = Date.now();
+    const now = rennZeitJetzt();
     // DIE GNADE, JEDEN TAKT NEU. Ohne diese Zeile parkt sich der Ghost nach vier Sekunden
     // selbst - siehe den Befund oben. Sie steht als ERSTES, damit kein Ausstieg darunter sie
     // ueberspringen kann.
@@ -59248,7 +59712,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function npcBoxStehen(car) {
     const p = car.ghost && car.ghost.pit;
     if (!p) return;
-    p.phase = 'stand'; p.at = Date.now();
+    p.phase = 'stand'; p.at = rennZeitJetzt();
     const strafe = typeof rammStrafeAbsitzen === 'function' ? rammStrafeAbsitzen(car) : 0;
     if (strafe > 0) p.laenge += strafe * 1000;
     npcBoxKlang(car, true);
@@ -59326,10 +59790,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       g.aufstellZiel = aufstellZielKachel(pl, nStr);
       g.aufstellPlatz = pl;
       g.gridPos = pl;                       // Seite der Querlage (formationOffset)
-      g.aufstellSeit = Date.now();
+      g.aufstellSeit = rennZeitJetzt();
       g.aufstellAb = 0;
       g.startGesehen = true;                // steht gerade auf Start/Ziel
-      g.aufstellBis = Date.now() + AUFSTELLEN_MAX_MS;
+      g.aufstellBis = rennZeitJetzt() + AUFSTELLEN_MAX_MS;
       g.nachZiel = true;
       log(garageLabel(car) + ': faehrt zurueck auf Startplatz ' + (pl + 1) + '.', 'info');
       return;
@@ -59350,7 +59814,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // v0.9.87: nach EINLAUFREIHENFOLGE, nicht nach Startseite - zwei Autos, die direkt
     // nacheinander ankamen, konnten sonst dieselbe Seite haben und aufeinander auffahren.
     const seite = platz >= 0 ? (platz % 2 ? -1 : 1) : (g.seite || 1);
-    g.finish = { phase: 'roll', at: Date.now(),
+    g.finish = { phase: 'roll', at: rennZeitJetzt(),
                  seite,
                  kacheln,
                  // Der Zaehlerstand beim Einlauf. Byte 11 laeuft ueber, deshalb wird die
@@ -59367,7 +59831,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // direkt, nicht durch die Physik: ein Parkmanoever ueber zwei Sekunden braucht kein
   // Fahrzeugmodell, und der Tempo-Regler wuerde bei Ziel 0 nur dagegenarbeiten.
   function ghostFinishTick(car) {
-    const g = car.ghost, f = g.finish, now = Date.now();
+    const g = car.ghost, f = g.finish, now = rennZeitJetzt();
     // ---- VERAENDERLICH, UND ZWAR NOTWENDIG ---------------------------------------
     //
     // Hier stand `const seit`. Seit die Rollphase in dieselben Takt in die Bremsphase
@@ -59452,7 +59916,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (car.ghost) {
       car.ghost.cutOut = false; car.ghost.offSince = 0;
       car.ghost.recoverUntil = 0; car.ghost.recoverStuckSince = 0;
-      car.ghost.unparkAt = Date.now();
+      car.ghost.unparkAt = rennZeitJetzt();
       // ---- DIE GNADE GILT AUCH HIER, und das war die gemeldete Luecke ------------------
       //
       // Sie wurde bisher NUR beim Start eines Ghosts erteilt. Wer ein abgeflogenes Auto
@@ -59469,7 +59933,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       //
       // DIESELBE Zahl wie beim Start, weil es dieselbe Lage ist: das Auto ist gerade von
       // Hand hingestellt worden.
-      car.ghost.gnadeBis = Date.now() + GHOST_START_GNADE_MS;
+      car.ghost.gnadeBis = rennZeitJetzt() + GHOST_START_GNADE_MS;
       // Den I-Anteil loeschen. Er ist waehrend des Stillstands nicht gewachsen (geparkt wird
       // ghostSpeedControl nicht gerufen), aber der Wert VOR dem Abflug steht noch da - und
       // der gehoert zu einem Tempo, das dieses Auto gerade nicht hat. Mit ihm wuerde die
@@ -59507,7 +59971,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const b = $('race-act-flag');
     if (!b) return;
     if (flagHoldStart === null) { b.style.removeProperty('--hold'); return; }
-    const p = Math.min(1, (Date.now() - flagHoldStart) / FLAG_HOLD_MS);
+    const p = Math.min(1, (rennZeitJetzt() - flagHoldStart) / FLAG_HOLD_MS);
     b.style.setProperty('--hold', (p * 100).toFixed(1) + '%');
     if (p >= 1) flagHoldRelease(true);
   }
@@ -59515,7 +59979,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function flagHoldPress() {
     if (flagHoldStart !== null) return;          // schon am Halten
     if (flagState === 'restart') return;         // die Ampel laeuft, nichts umschalten
-    flagHoldStart = Date.now();
+    flagHoldStart = rennZeitJetzt();
     flagHoldPaint();
     flagHoldTimer = setInterval(flagHoldPaint, FLAG_HOLD_TICK_MS);
   }
@@ -59584,15 +60048,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // mode aktivieren (statt OPTIONS)". Getippt heisst: vor Ablauf der Haltesekunde
       // losgelassen - gemessen an der eigenen Uhr des Drucks, weil flagHoldPress() waehrend
       // der Neustart-Ampel gar nicht erst zu laden beginnt.
-      if (flagNow && !prevYellowFlag) { padFlagFired = false; padKreuzSeit = Date.now(); flagHoldPress(); }
+      if (flagNow && !prevYellowFlag) { padFlagFired = false; padKreuzSeit = rennZeitJetzt(); flagHoldPress(); }
       if (flagNow && !padFlagFired && flagHoldStart !== null
-          && Date.now() - flagHoldStart >= FLAG_HOLD_MS) {
+          && rennZeitJetzt() - flagHoldStart >= FLAG_HOLD_MS) {
         padFlagFired = true;
         flagHoldRelease(true);
       }
       if (!flagNow && prevYellowFlag) {
         flagHoldRelease(false);
-        if (!padFlagFired && padKreuzSeit !== null && Date.now() - padKreuzSeit < FLAG_HOLD_MS) requestPitStop();
+        if (!padFlagFired && padKreuzSeit !== null && rennZeitJetzt() - padKreuzSeit < FLAG_HOLD_MS) requestPitStop();
         padKreuzSeit = null;
       }
     }
@@ -59835,7 +60299,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function scGegenschubDrive(car, drive0) {
     const h = car && car.ghost && car.ghost.randHalt;
     if (!h) return drive0;
-    const jetzt = Date.now();
+    const jetzt = rennZeitJetzt();
     // Nach dem Rechts-Impuls (erster Gegenschub).
     if (h.gegenschubRadMs && h.radEnde && h.phase !== 'rand' && h.phase !== 'rad'
         && (jetzt - h.radEnde) < h.gegenschubRadMs) return scGegenschubWert(jetzt - h.radEnde);
@@ -60181,7 +60645,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     safetyCarLichtAus(c, scAusfahrt(c) ? -scEndLenk() : 0);
     if (gelbWartet) {
       // Gelb kam waehrend des Einparkens (safetyCarRaus): jetzt, wo es steht, neu losfahren.
-      setTimeout(() => { if (flagState === 'yellow' && safetyCar() === c) safetyCarRaus(); }, 300);
+      rennZeitTimeout(() => { if (flagState === 'yellow' && safetyCar() === c) safetyCarRaus(); }, 300);
     }
     log(garageLabel(c) + (scAusfahrt(c) ? ': Safety Car steht neben der Strecke, Licht aus.'
                                          : ': Safety Car steht rechts am Rand, Licht aus.'), 'info');
@@ -60259,7 +60723,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!g || g.finish) return;
     if (g.randHalt) {
       if (g.randHalt.scLinie && g.randHalt.phase === 'rand') {
-        randHaltWeiter(g.randHalt, Date.now());
+        randHaltWeiter(g.randHalt, rennZeitJetzt());
         log(garageLabel(sc) + (scAusfahrt(sc)
           ? ': Safety Car lenkt auf Kachel ' + g.tileIndex + ' von der Bahn (Startpunkt ' + scZielKachel(sc)
             + ', Verschiebung ' + scAusfahrtKachel() + ', Rechts ' + scAusfahrtMs() + ' ms, Links ' + scAusfahrtLinksMs() + ' ms, Gegenschub nach Rechts ' + scGegenschubRadMs() + ' ms, nach Links ' + scGegenschubMs() + ' ms, Raeder am Ende ' + Math.round(scEndLenk() * 100) + ' %).'
@@ -60664,19 +61128,19 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     updateFlagUi();
     const verzog = 1000 + Math.random() * 2000;
     for (let i = 1; i <= 5; i++) {
-      setTimeout(() => {
+      rennZeitTimeout(() => {
         if (flagState !== 'restart') return;
         setRaceLights(i);
         ampelTon(440 + (i - 1) * 60, 0.18, 'square', 0.18);
       }, 600 + (i - 1) * 1000);
     }
     // Nach der 5. Lampe (600 + 4*1000 = 4600 ms) die zufaellige Pause, dann alle aus.
-    setTimeout(() => {
+    rennZeitTimeout(() => {
       if (flagState !== 'restart') return;
       setRaceLights('go');
       ampelTon(880, 0.35, 'square', 0.22);
       setFlag('green');
-      setTimeout(() => setRaceLights(0), 900);
+      rennZeitTimeout(() => setRaceLights(0), 900);
     }, 4600 + verzog);
   }
 
@@ -60863,13 +61327,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // ---- EIN MERKER UND KEINE UHRFRAGE ----------------------------------------------
   //
   // DER FEHLER, DEN DAS BEHEBT, war gemessen und nicht offensichtlich: die erste Fassung
-  // rechnete hier `hupeDunkel(Date.now() - g.ansageSeit)`. In der Rennsimulation ist
+  // rechnete hier `hupeDunkel(rennZeitJetzt() - g.ansageSeit)`. In der Rennsimulation ist
   // Date.now aber GEFAELSCHT - simSchritt() setzt es auf seine eigene Uhr und stellt es im
   // finally zurueck (90b-sim.js). ghostTick() laeuft innerhalb dieses Fensters, simZeichnen()
   // und simZustand() laufen ausserhalb.
   //
   // Eine Funktion, die die Uhr selbst fragt, gibt also je nach Aufrufer eine andere Antwort:
-  // g.ansageSeit stammt von der gefaelschten Uhr, Date.now() beim Zeichnen von der echten,
+  // g.ansageSeit stammt von der gefaelschten Uhr, rennZeitJetzt() beim Zeichnen von der echten,
   // und die Differenz ist Unsinn. Gemessen: 650 Takte in der Ansage und NULL dunkle - auf
   // der Karte haette es nie geblitzt.
   //
@@ -61541,6 +62005,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return true;
   }
   function scanFahrTick() {
+    if (rennPauseAktiv()) return;
     const car = scanFahrAuto;
     if (!car || typeof garageScan === 'undefined' || !garageScan.aktiv || garageScan.car !== car) { scanFahrStopp(); return; }
     const neben = car.tileCode === TILE_OFFTRACK;
@@ -61629,7 +62094,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     const g = spielerOrt(c);
     if (!g || !currentTrackTiles || currentTrackTiles.length < 3) return;
-    const now = Date.now();
+    const now = rennZeitJetzt();
     // Kachelwechsel: DIESELBE Buchfuehrung wie in ghostTick, nur ohne Antrieb. Sie steht
     // hier ein zweites Mal und nicht als gemeinsame Funktion, weil der Ghost-Zweig noch
     // Lernbilanz, Rundenuhr und Abgangsmelder daran haengt - eine Funktion, die beides
@@ -61870,7 +62335,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Kacheldauer.
   function ghostClosing(car, gap) {
     const g = car.ghost;
-    const now = Date.now();
+    const now = rennZeitJetzt();
     if (gap === null) { g.gapLast = undefined; g.naehern = 0; return 0; }
     let roh = 0;
     if (g.gapLast !== undefined && g.gapAt) {
@@ -61930,7 +62395,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const g = car.ghost;
     if (!g || g.tileIndex === null || g.tileIndex === undefined) return;
     if (!g.kachelZeit) g.kachelZeit = [];
-    g.kachelZeit[g.tileIndex] = Date.now();
+    g.kachelZeit[g.tileIndex] = rennZeitJetzt();
   }
 
   // Die Zeitluecke zum Vorausfahrenden, in Sekunden. null heisst "nicht messbar" - und das
@@ -61957,7 +62422,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
 
   // Tagesform fortschreiben. Begrenzter Zufallslauf: er haelt an, laeuft aber nicht weg.
   function ghostFormTick(car) {
-    const g = car.ghost, now = Date.now();
+    const g = car.ghost, now = rennZeitJetzt();
     if (!g.formAt) { g.formAt = now; g.form = 0; return; }
     if (now - g.formAt < SPICE_FORM_MS) return;
     g.formAt = now;
@@ -61975,7 +62440,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // laengere Reichweite von SPICE_PASS_KEIN_HAARNADEL_VORAUS braucht (ghostTick(), siehe
   // dort), gibt sie ausdruecklich mit.
   function ghostSpice(car, aheadTight, haarnadelNah) {
-    const g = car.ghost, now = Date.now();
+    const g = car.ghost, now = rennZeitJetzt();
     if (!wuerzeAn()) { g.attackUntil = 0; return { factor: 1, attack: 0 }; }
 
     ghostFormTick(car);
@@ -63100,7 +63565,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const altG = car.ghost;
     const tilesJ = currentTrackTiles || [];
     const altOrt = (altG && !altG.nurOrt && altG.ortSicher && altG.tileIndex !== null && altG.tileIndex !== undefined
-      && car.lastCodeAt && Date.now() - car.lastCodeAt < AUFSTELL_ORT_FRISCH_MS
+      && car.lastCodeAt && rennZeitJetzt() - car.lastCodeAt < AUFSTELL_ORT_FRISCH_MS
       && tilesJ[altG.tileIndex] && ortPasst(tilesJ[altG.tileIndex].type, car.tileCode)) ? altG.tileIndex : null;
     car.ghost = { engine: e, tileIndex: null, lastCount: car.tileCount,
                   lastTick: 0, bias: 0, laps: 0, cutOut: false, freeRun: false,
@@ -63168,7 +63633,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                   // Startgnade: siehe GHOST_START_GNADE_MS. Ohne sie kommt ein geparktes
                   // Auto nie wieder hoch, weil es zum Lesen fahren muesste und zum Fahren
                   // gelesen haben muesste.
-                  gnadeBis: Date.now() + GHOST_START_GNADE_MS,
+                  gnadeBis: rennZeitJetzt() + GHOST_START_GNADE_MS,
                   // Startlenkung gerade: siehe GHOST_START_LENK_MS. startLenkBis ist der
                   // Zeitpunkt, bis zu dem die Lenkung nach dem Anfahren gerade gehalten
                   // wird; armedVorher merkt sich die Flanke, damit die Frist GENAU beim
@@ -63273,6 +63738,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // controlHeartbeat() in 20-protocol.js NACH spielerZweiSenden(). Das Schreiben selbst
   // bleibt beim "verwerfen, wenn noch einer laeuft" in writeToCar().
   function ghostHerzschlag() {
+    if (rennPauseAktiv()) return;
     for (const car of garage) {
       if (car.imTakt && car.ghost && car.ghost.running) ghostTick(car);
     }
@@ -63430,7 +63896,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     lmState.warOff[kennung] = offJetzt;
 
     if (rundeVoll) {
-      const now = Date.now();
+      const now = rennZeitJetzt();
       if (d.letzteRunde !== null) d.runden.push(now - d.letzteRunde);
       d.letzteRunde = now;
       lmRender();
@@ -63510,9 +63976,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   if ($('lm-csv')) $('lm-csv').addEventListener('click', lmCsv);
 
   function ghostTick(car) {
+    if (rennPauseAktiv()) return;
     const g = car.ghost;
     if (!g) return;
-    const now = Date.now();
+    const now = rennZeitJetzt();
     const dt = g.lastTick ? Math.min(0.25, (now - g.lastTick) / 1000)
                           : CONTROL_SEND_INTERVAL_MS / 1000;
     g.lastTick = now;
@@ -64722,11 +65189,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // dem Tisch sofort, welches gemeint ist.
     if (car.role === 'safetycar' && !car.parked) {
       // BESTELLT: "Safetycar-Lichter blinken bei gelber Flagge alle 750 ms fuer 250 ms auf."
-      const on = flagState !== 'green' && (Date.now() % SC_BLINK_MS) < SC_BLINK_AN_MS;
+      const on = flagState !== 'green' && (rennZeitJetzt() % SC_BLINK_MS) < SC_BLINK_AN_MS;
       lights = trackModeBit() | (on ? LIGHT_HEAD : 0);
     } else if (flagState !== 'green' || car.parked) {
       const period = car.parked ? 260 : 520;
-      const on = Math.floor(Date.now() / period) % 2 === 0;
+      const on = Math.floor(rennZeitJetzt() / period) % 2 === 0;
       lights = trackModeBit() | (on ? LIGHT_HEAD : 0) | (on ? 0 : LIGHT_BRAKE);
     }
     // DER PRUEFSTAND SENDET AM SERVOWEG VORBEI, und das ist der Unterschied zwischen einer
@@ -65127,6 +65594,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Simulation laeuft, ist das die Doppelspur, die es nicht geben soll: die Simulation ruft
   // explizit mit ihrem eigenen dt, also reicht das.
   function ghostAssignBias(dtSek) {
+    if (rennPauseAktiv()) return;
     if (dtSek === undefined && typeof simAn === 'function' && simAn()) return;
     const schritt = GHOST_BIAS_STEP
       * ((dtSek === undefined ? GHOST_BIAS_MS / 1000 : Math.max(0, dtSek)) / (GHOST_BIAS_MS / 1000));
@@ -65153,7 +65621,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Jetzt: zusammenhaengende Gruppen (wer nah an wem ist), und in jeder Gruppe die Seiten
     // nach der aktuellen QUERLAGE verteilt. Wer gerade weiter links faehrt, bleibt links -
     // so kreuzt niemand den anderen. Die Startseite entscheidet nur, wenn zwei gleich liegen.
-    const fresh = raceStartedAt && (Date.now() - raceStartedAt) < GHOST_GRID_MS;
+    const fresh = raceStartedAt && (rennZeitJetzt() - raceStartedAt) < GHOST_GRID_MS;
     const gruppen = fresh ? [feld] : ghostNahGruppen(feld);
     for (const gruppe of gruppen) {
       if (gruppe.length < 2) continue;
@@ -65248,7 +65716,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
   // Wer faehrt gerade mit wem als Paar? Map Auto -> { mit, seite }. Je 100 ms neu.
   function ghostPaare() {
-    const now = Date.now();
+    const now = rennZeitJetzt();
     if (paarCache.at >= 0 && now - paarCache.at < 100 && now >= paarCache.at) return paarCache.map;
     const map = new Map();
     paarCache = { at: now, map };
@@ -65292,7 +65760,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Die Querlage eines NPC im Paar, oder null (kein Paar, Gelb, Attacke, Ausweichen).
   function ghostPaarQuer(car) {
     const g = car && car.ghost;
-    if (!ghostCfg.paare || !g || g.nurOrt || flagState !== 'green' || g.attackUntil || (g.yieldUntil && Date.now() < g.yieldUntil)) return null;
+    if (!ghostCfg.paare || !g || g.nurOrt || flagState !== 'green' || g.attackUntil || (g.yieldUntil && rennZeitJetzt() < g.yieldUntil)) return null;
     const p = ghostPaare().get(car);
     if (!p) return null;
     const dir = ghostTurnOf(car.tileCode);
@@ -65667,14 +66135,20 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       return;
     }
     if (listeningFor && bindEditSpieler === z.nr) {
+      z.steer = 0; z.throttle = 0;
       tryCaptureBinding(pad);
       return;
     }
     // z.bindings: Spieler 2s EIGENE Belegung (siehe die Begruendung bei GAMEPAD_BINDINGS_KEY2
     // weiter oben) - vorher las diese Funktion `bindings`, also Spieler 1s Tabelle mit.
-    const gas = applyDeadzone(Math.max(0, readBindingValue(pad, z.bindings.throttle)), TRIGGER_DEADZONE);
-    const bremse = applyDeadzone(Math.max(0, readBindingValue(pad, z.bindings.brake)), TRIGGER_DEADZONE);
+    if (rennPauseTaste(pad, z.bindings, z.nr)) {
+      z.steer = 0; z.throttle = 0; return;
+    }
+    let gas = applyDeadzone(Math.max(0, readBindingValue(pad, z.bindings.throttle)), TRIGGER_DEADZONE);
+    let bremse = applyDeadzone(Math.max(0, readBindingValue(pad, z.bindings.brake)), TRIGGER_DEADZONE);
+    [gas, bremse] = rennPauseFilterGas(z.nr, gas, bremse);
     z.steer = applyDeadzone(readBindingValue(pad, z.bindings.steering));
+    if (!rennPauseLenkung("p" + z.nr, z.steer)) z.steer = 0;
     // Gas und Bremse getrennt pruefen, BEVOR sie zu einer Zahl werden (siehe 50-drive.js).
     const gbUeber = (typeof gasBremseRueckwaertsPruefen === 'function') ? gasBremseRueckwaertsPruefen(gas, bremse, z) : null;
     z.throttle = gbUeber !== null ? gbUeber : gas - bremse;
@@ -65808,6 +66282,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       releaseInput(SRC.PAD);
       return;
     }
+    if (!(listeningFor && bindEditSpieler < 2) && rennPauseTaste(pad, bindings, 1)) {
+      releaseInput(SRC.PAD); return;
+    }
     // Startaufstellung offen: das Steuerkreuz waehlt den Knopf (X bestaetigt, flagTasteTick).
     if (typeof raceGridOffen === 'function' && raceGridOffen()) {
       const r = (padDpad(pad, 'left') || padDpad(pad, 'up')) ? -1
@@ -65838,11 +66315,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Spieler 2s Tabelle bearbeitet wird (bindEditSpieler === 2), soll Spieler 1
     // weiterfahren koennen, statt fuer eine fremde Zuordnung stillzustehen.
     if (listeningFor && bindEditSpieler < 2) {
+      releaseInput(SRC.PAD);
       tryCaptureBinding(pad);
     } else {
-      const throttleRaw = applyDeadzone(Math.max(0, readBindingValue(pad, bindings.throttle)), TRIGGER_DEADZONE);
-      const brakeRaw = applyDeadzone(Math.max(0, readBindingValue(pad, bindings.brake)), TRIGGER_DEADZONE);
+      let throttleRaw = applyDeadzone(Math.max(0, readBindingValue(pad, bindings.throttle)), TRIGGER_DEADZONE);
+      let brakeRaw = applyDeadzone(Math.max(0, readBindingValue(pad, bindings.brake)), TRIGGER_DEADZONE);
       const steerRaw = applyDeadzone(readBindingValue(pad, bindings.steering));
+      [throttleRaw, brakeRaw] = rennPauseFilterGas(1, throttleRaw, brakeRaw);
 
       // v0.9.26 (Plan Schritt 2): die Live-Texte nur bei ANDERUNG schreiben - dieser Weg
       // laeuft jeden Frame und zusaetzlich im Sendetakt, und jedes textContent= ist Arbeit
@@ -66338,7 +66817,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const doppelt = !!(($('sim-fast') || {}).checked);
 
     const bahn = simBahn(tiles);
-    const uhrStart = Date.now();
+    const uhrStart = rennZeitJetzt();
     simState = {
       tiles, bahn, runden, doppelt, geliehen,
       // Die eigene Uhr der Simulation. Sie laeuft mit der Wandzeit, bei doppelter
@@ -66427,9 +66906,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   const SIM_SPRUNG_MAX_MS = 250;
 
   function simSchritt(msFest) {
+    if (rennPauseAktiv()) return;
     const st = simState;
     if (!st) return;
-    const wand = Date.now();
+    const wand = rennZeitJetzt();
     let roh = msFest;
     if (roh === undefined || roh === null) {
       roh = st.wandZuvor ? (wand - st.wandZuvor) : SIM_TAKT_MS;
@@ -66465,12 +66945,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
 
     // ---- Die Uhr faelschen, aber nur fuer die Dauer der Ticks ------------------------
     //
-    // ghostTick() rechnet seine Zeitschritte aus Date.now(); ohne diesen Griff waere dt in
+    // ghostTick() rechnet seine Zeitschritte aus rennZeitJetzt(); ohne diesen Griff waere dt in
     // einer Simulation mit eigener Uhr sinnlos. Der Griff ist SYNCHRON eingeklammert: die
     // echte Uhr steht wieder, bevor irgendein Zuhoerer, Zeitgeber oder Versprechen dran ist.
     // Alles andere wuerde einer ganzen Seite die Zeit verstellen.
     const echtNow = Date.now;
-    Date.now = () => st.uhr;
+    Date.now = () => st.uhr + rennPause.verzug;
     try {
       for (const a of st.autos) {
         // Das Auto hat gerade einen Code gelesen - es faehrt ja. Ohne diese Zeile schlaegt
@@ -66943,11 +67423,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   let aufnahmeRState = null;
 
   function aufnahmeRundenTick(b) {
+    if (rennPauseAktiv()) return;
     if (!aufnahmeRState) {
       aufnahmeRState = { pending: null, seen: 0, lastCount: null, sperreVor: false,
                           sperreGesehen: false, lastActed: 0 };
     }
-    const r = aufnahmeRState, jetzt = Date.now();
+    const r = aufnahmeRState, jetzt = rennZeitJetzt();
     let ueberfahren = false;
     const sperreJetzt = (b[15] & ZIEL_SPERRE_BIT) !== 0;
     if (sperreJetzt && !r.sperreVor) {
@@ -67229,7 +67710,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       return challengerDeckeln(car, basis, ch.stufe || 1, !!(spice && spice.haeltAbstand));
     } else {
       if (raceStartedAt === null || raceStartedAt === undefined) return basis;
-      const tMs = Date.now() - raceStartedAt;
+      const tMs = rennZeitJetzt() - raceStartedAt;
       if (tMs < 0) return basis;
       if (ch.ortStart === null) ch.ortStart = ist;
       const n = ch.teile.length;
@@ -100059,6 +100540,155 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (String(ghostTick).indexOf('(underYellow || raceFormationLap || (ghostIstMax(car) && tight === 0)) ? 1 : ghostFeldStaffel(car)') < 0) f.push('Staffel in der Einfuehrungsrunde');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'mittig, links -0,9, rechts +0,9 je n Teile, dann Halt; SC = Feld; Formation = NPC-Formel' };
   });
+
+  // v1.2.25: PR #9 (Rennpause, Playdater1974) mit den Fixes der Uebernahme. Mit einer eigenen Uhr
+  // (Date.now, setTimeout, Math.random nur fuer die Dauer des Tests ersetzt), damit Ampel und
+  // Pausendauer ohne Warten pruefbar sind. Die Renn-Timeouts der Seite liegen waehrenddessen
+  // beiseite (eigene Menge), sonst landeten sie auf der falschen Uhr.
+  stAdd('Rennpause v1.2.25: Uhr steht, Ampel, verzug-Reset, MP-Start, native Sperre beim Laden', () => {
+    const f = [];
+    if (rennPauseAktiv()) return { ok: false, mass: 'eine Pause laeuft schon, Test nicht moeglich' };
+    const echt = { now: Date.now, st: window.setTimeout, ct: window.clearTimeout, rnd: Math.random };
+    const merk = { rs: raceState, rm: raceMode, fl: flagState, rsa: raceStartedAt, rls: raceLapStart,
+                   aw: raceAwaitingMove, mp: mp.an, mpi: mpi.an, verzug: rennPause.verzug,
+                   timer: rennPause.zeitTimer, gruen: raceGreen,
+                   status: $('race-status') ? $('race-status').textContent : null,
+                   tab: document.querySelector('.tabpage.active') };
+    const direktDa = Object.prototype.hasOwnProperty.call(window, 'OmegaDirekt');
+    const direktVorher = window.OmegaDirekt;
+    let wand = echt.now.call(Date), seq = 0;
+    const uhren = new Map();
+    const weiter = (ms) => {
+      const ende = wand + ms;
+      for (let n = 0; n < 10000; n++) {
+        let naechste = null;
+        for (const [id, u] of uhren) if (u.bei <= ende && (!naechste || u.bei < naechste[1].bei)) naechste = [id, u];
+        if (!naechste) break;
+        uhren.delete(naechste[0]); wand = naechste[1].bei; naechste[1].fn();
+      }
+      wand = ende;
+    };
+    const nativ = [];
+    let hinweis = '';
+    const attrappe = { rennPause: (an) => nativ.push(an), schreibe: () => {} };
+    try {
+      Date.now = () => wand;
+      window.setTimeout = (fn, ms, ...a) => {
+        const id = 'st' + (++seq);
+        uhren.set(id, { bei: wand + Math.max(0, Number(ms) || 0), fn: () => fn(...a) });
+        return id;
+      };
+      window.clearTimeout = (id) => { if (!uhren.delete(id)) echt.ct.call(window, id); };
+      Math.random = () => 0;
+      rennPause.zeitTimer = new Set();
+      try { window.OmegaDirekt = attrappe; } catch (e) { /* in der App evtl. nicht ersetzbar */ }
+      const mitAttrappe = window.OmegaDirekt === attrappe;
+      document.querySelectorAll('.tabpage').forEach((el) => el.classList.toggle('active', el.id === 'tab-race'));
+      mp.an = false; mpi.an = false;
+      raceState = 'racing'; raceMode = 'practice'; flagState = 'green'; raceAwaitingMove = false;
+      raceStartedAt = rennZeitJetzt() - 1000; raceLapStart = rennZeitJetzt() - 500;
+      const start = raceStartedAt;
+      let gefeuert = 0;
+      rennZeitTimeout(() => gefeuert++, 100);
+      // 1. Pause haelt die Rennuhr an.
+      const vorher = rennZeitJetzt();
+      rennPauseUmschalten();
+      if (rennPause.phase !== 'pause') f.push('Pause beginnt nicht (' + rennPause.phase + ')');
+      weiter(10000);
+      if (rennZeitJetzt() !== vorher) f.push('Rennuhr laeuft in der Pause weiter');
+      if (gefeuert) f.push('Renn-Timeout feuert in der Pause');
+      // 2. Fortsetzen nur ueber die Ampel, ohne Sprung der Rennuhr.
+      rennPauseUmschalten();
+      if (rennPause.phase !== 'ampel') f.push('Fortsetzen startet keine Ampel');
+      weiter(5599);
+      if (rennPause.phase !== 'ampel' || rennZeitJetzt() !== vorher) f.push('vor Gruen schon frei');
+      weiter(1);
+      if (rennPause.phase !== 'aus') f.push('nach Gruen noch ' + rennPause.phase);
+      if (rennZeitJetzt() !== vorher || raceStartedAt !== start) f.push('Rennuhr springt beim Fortsetzen');
+      if (rennPause.verzug !== merk.verzug + 15600) f.push('verzug ' + rennPause.verzug + ' statt Pausendauer');
+      weiter(99); if (gefeuert) f.push('Timeout ohne Restzeit');
+      weiter(1); if (gefeuert !== 1) f.push('Timeout setzt nach der Pause nicht fort');
+      // 3. verzug-Reset beim Rennstart: Rennuhr = Wanduhr, wartende Timeouts behalten ihren Wandzeitpunkt.
+      rennPause.verzug = 5000;
+      const z = rennZeitTimeout(() => {}, 1000);
+      const restVor = z.bei - rennZeitJetzt();
+      rennUhrNullen();
+      if (rennPause.verzug !== 0 || rennZeitJetzt() !== Date.now()) f.push('rennUhrNullen setzt verzug nicht zurueck');
+      if (z.bei - rennZeitJetzt() !== restVor) f.push('wartender Timeout verschiebt sich beim Nullen');
+      rennZeitTimeoutStop(z);
+      const q = String(startRaceCountdown);
+      const iNull = q.indexOf('rennUhrNullen()'), iGruen = q.indexOf('const gruenBei');
+      if (iNull < 0 || iGruen < 0 || iNull > iGruen) f.push('startRaceCountdown nullt die Rennuhr nicht vor gruenBei');
+      // 4. MP-Start nicht verschoben: die Wanduhr-Zielzeit des Hosts liegt nach dem Nullen genau dort.
+      rennPause.verzug = 5000;
+      rennUhrNullen();
+      const gruenZiel = Date.now() + 8000;
+      const plan = ampelZeitplan(gruenZiel, 2000);
+      const versatz = plan[plan.length - 1][0] - rennZeitJetzt() - 8000;
+      if (versatz !== 0) f.push('MP-Gruen um ' + versatz + ' ms verschoben');
+      // Im Mehrspieler keine Pause, eine schon laufende endet, und ein Startplan beendet sie auch.
+      mp.an = true; rennPauseUmschalten();
+      if (rennPauseAktiv()) f.push('Pause im Mehrspieler moeglich');
+      mp.an = false; rennPauseUmschalten(); mp.an = true;
+      if (!rennPauseWache() || rennPauseAktiv()) f.push('laufende Pause endet nicht, wenn der Mehrspieler dazukommt');
+      mp.an = false; rennPauseUmschalten();
+      // raceState ist 'racing': startRaceCountdown() endet direkt nach der Pausenpruefung.
+      startRaceCountdown(Date.now() + 8000, { modus: 'practice' });
+      if (rennPauseAktiv()) f.push('Mehrspieler-Startplan bleibt an der lokalen Pause haengen');
+      rennPauseUmschalten(); startRaceCountdown();
+      if (!rennPauseAktiv()) f.push('lokaler Start beendet die Pause');
+      rennPauseBeenden();
+      // 5. Unterbrochener Erststart: Intro abgebrochen, Gruen genau einmal ueber die Wiederanlaufampel.
+      let gruen = 0;
+      raceGreen = () => { gruen++; raceState = 'racing'; };
+      raceState = 'countdown';
+      const gen0 = rennintroStartGeneration;
+      rennPauseUmschalten();
+      if (rennintroStartGeneration !== gen0 + 1) f.push('Pause im Countdown bricht das Rennintro nicht ab');
+      rennPauseUmschalten(); weiter(7700);
+      if (gruen !== 1) f.push('Erststart nach Pause ' + gruen + 'x freigegeben');
+      raceGreen = merk.gruen;
+      // 6. Native Sperre (Attrappe der Bruecke): Pause setzt sie, Fortsetzen loest sie, Laden loest sie.
+      if (mitAttrappe) {
+        if (nativ.indexOf(true) < 0 || nativ[nativ.length - 1] !== false) f.push('Bruecke: rennPause ' + JSON.stringify(nativ));
+        nativ.length = 0;
+        const ladenFrei = window.OMEGA_BRUECKE.rennPauseLadenFrei;
+        ladenFrei();
+        if (nativ.length !== 1 || nativ[0] !== false) f.push('Laden loest die native Sperre nicht: ' + JSON.stringify(nativ));
+      } else hinweis = ' (Bruecke hier nicht ersetzbar, Attrappen-Teil ausgelassen)';
+      // Suchtexte zusammengesetzt: woertlich stuenden sie in diesem Test selbst und faenden sich.
+      const skripte = Array.from(document.scripts).map((s) => s.textContent).join('\n');
+      const name = 'window.OMEGA_BRUECKE.' + 'rennPauseLadenFrei';
+      const iDef = skripte.indexOf(name + ' = ');
+      if (iDef < 0 || skripte.indexOf(name + '();', iDef) < 0) f.push('rennPauseLadenFrei wird beim Laden nicht gerufen');
+      // 7. Projektregeln: WIP, Uebersetzung, keine feste Version.
+      if (!document.querySelector('#renn-pause-ui .wip-tag') || !document.querySelector('#race-act-pause .wip-tag')) f.push('WIP-Kennzeichen fehlt');
+      for (const k of ['Beenden', 'Pause beendet: Mehrspieler aktiv', 'Pause / Fortsetzen']) {
+        if (!I18N_EN[k] || !I18N_ES[k]) f.push('Uebersetzung fehlt: ' + k);
+      }
+      if ('version' in window.OMEGA_PAUSE.status()) f.push('OMEGA_PAUSE meldet eine feste Version');
+    } catch (e) {
+      f.push('Ausnahme: ' + e.message);
+    } finally {
+      try { if (rennPauseAktiv()) rennPauseBeenden(); } catch (e) { f.push('Aufraeumen: ' + e.message); }
+      Date.now = echt.now; window.setTimeout = echt.st; window.clearTimeout = echt.ct; Math.random = echt.rnd;
+      for (const z of [...rennPause.zeitTimer]) rennZeitTimeoutStop(z);
+      rennPause.zeitTimer = merk.timer;
+      rennPause.verzug = merk.verzug;
+      rennPause.gasWarten = {}; rennPause.inputWarten.clear(); rennPause.steerWarten.clear();
+      try { if (direktDa) window.OmegaDirekt = direktVorher; else delete window.OmegaDirekt; } catch (e) { /* */ }
+      window.OMEGA_BRUECKE.rennPause(false);
+      raceGreen = merk.gruen;
+      raceState = merk.rs; raceMode = merk.rm; flagState = merk.fl; raceStartedAt = merk.rsa;
+      raceLapStart = merk.rls; raceAwaitingMove = merk.aw; mp.an = merk.mp; mpi.an = merk.mpi;
+      if (merk.status !== null) $('race-status').textContent = merk.status;
+      document.querySelectorAll('.tabpage').forEach((el) => el.classList.toggle('active', el === merk.tab));
+      setRaceLights(0);
+      rennPauseMalen();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ')
+      : 'Uhr steht 10 s, Ampel 5,6 s, verzug 0 bei Rennstart, MP-Gruen exakt, MP sperrt und beendet Pause, Intro ab, Bruecke frei beim Laden' + hinweis };
+  });
   // ============================== HOME ==============================
   // Der Schirm beim Laden, erreichbar ueber das Logo. Die Zahl der Einstellungen wird
   // zur Laufzeit gezaehlt, damit sie nicht veraltet.
@@ -105536,6 +106166,68 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     });
     return s + '</svg>';
   }
+
+  // UI erst nach allen Modulen initialisieren, keine TDZ beim Laden.
+  if (!bindings.pause) bindings.pause = { ...DEFAULT_BINDINGS.pause };
+  for (const z of zusatzPlaetze()) {
+    if (z.bindings && !z.bindings.pause) z.bindings.pause = { ...DEFAULT_BINDINGS.pause };
+  }
+  const pauseStyle = document.createElement('style');
+  pauseStyle.textContent = `
+    #renn-pause-ui[hidden]{display:none}
+    #renn-pause-ui{position:fixed;inset:0;z-index:12000;display:grid;place-items:center;
+      background:rgba(0,0,0,.68);padding:18px}
+    #renn-pause-ui .pause-panel{width:min(440px,100%);box-sizing:border-box;
+      background:#161b25;color:#fff;border:1px solid #586174;border-radius:14px;
+      padding:24px;text-align:center;font:16px system-ui}
+    #renn-pause-ui .pause-lampen{display:flex;justify-content:center;gap:12px;margin:20px 0}
+    #renn-pause-ui .pause-saeule{display:grid;gap:8px}
+    #renn-pause-ui [data-pause-lampe]{width:26px;height:26px;border-radius:50%;
+      background:#424854;display:block}
+    #renn-pause-ui button{margin:6px;padding:12px 18px;cursor:pointer}
+    #renn-pause-ui p{line-height:1.5}
+  `;
+  document.head.appendChild(pauseStyle);
+  const pauseOverlay = document.createElement('div');
+  pauseOverlay.id = 'renn-pause-ui'; pauseOverlay.hidden = true;
+  pauseOverlay.setAttribute('role', 'dialog'); pauseOverlay.setAttribute('aria-modal', 'true');
+  pauseOverlay.setAttribute('aria-labelledby', 'renn-pause-titel');
+  const pauseLampen = Array.from({ length: 5 }, (_, k) =>
+    `<span class="pause-saeule"><i data-pause-lampe="${k + 1}"></i>`
+      + `<i data-pause-lampe="${k + 1}"></i></span>`).join('');
+  pauseOverlay.innerHTML = `<div class="pause-panel">
+    <h2><span id="renn-pause-titel">Pausiert</span> <span class="wip-tag">WIP</span></h2><div class="pause-lampen">${pauseLampen}</div>
+    <p id="renn-pause-hinweis"></p>
+    <button type="button" id="renn-pause-weiter">Weiter über Rennampel</button>
+    <button type="button" id="renn-pause-ende">Beenden</button>
+  </div>`;
+  document.body.appendChild(pauseOverlay);
+  document.getElementById('renn-pause-weiter').onclick = rennPauseUmschalten;
+  document.getElementById('renn-pause-ende').onclick = () => {
+    rennPauseBeenden();
+    if (['countdown', 'racing', 'finishing'].includes(raceState)) requestRaceStop();
+    else if (vfAktiv()) virtuellBeenden();
+    else for (const c of garage) if (c.ghost && c.ghost.running) stopGhost(c);
+  };
+  document.getElementById('race-act-pause').onclick = rennPauseUmschalten;
+  // Fahr-/Boxen-Tastatur waehrend Pause nicht durch das Overlay hindurch ausloesen.
+  window.addEventListener('keydown', e => {
+    if (!rennPauseAktiv() || e.ctrlKey || e.altKey || e.metaKey) return;
+    const target = e.target;
+    if (target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) return;
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ',
+      'x', 'X', 'q', 'Q', 'c', 'C', 'f', 'F', 'r', 'R'].includes(e.key)) {
+      e.preventDefault(); e.stopImmediatePropagation();
+    }
+  }, true);
+  // Diagnose und lokale Teststeuerung; keine Multiplayer-Pause.
+  window.OMEGA_PAUSE = Object.freeze({
+    umschalten: rennPauseUmschalten,
+    status: () => ({ phase: rennPause.phase, rennzeit: rennZeitJetzt(),
+      verzug: rennPause.verzug, lokal: !rennPauseMehrspieler() })
+  });
+  i18nOnLangChange(rennPauseMalen);
+  rennPauseMalen();
 
   // ---- ENDE DES GEMEINSAMEN GUELTIGKEITSBEREICHS --------------------------------
   //
