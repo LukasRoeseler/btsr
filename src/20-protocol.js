@@ -524,7 +524,7 @@
     // v0.9.87: in try/finally. Eine Ausnahme im Spielerteil (Physik, Senden) liess sonst
     // den ganzen Rest aus - die Ghosts bekamen keinen Takt und fuhren mit ihrem letzten
     // Befehl weiter, auch neben der Bahn.
-    if (rennPauseAktiv()) {
+    if (rennPauseAktiv() && !rennPauseWache()) {
       physLastTime = null;
       rennPauseSenden();
       if (typeof cockpitNachSenden === 'function') {

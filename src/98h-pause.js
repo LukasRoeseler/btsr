@@ -28,7 +28,7 @@
     `<span class="pause-saeule"><i data-pause-lampe="${k + 1}"></i>`
       + `<i data-pause-lampe="${k + 1}"></i></span>`).join('');
   pauseOverlay.innerHTML = `<div class="pause-panel">
-    <h2 id="renn-pause-titel">Pausiert</h2><div class="pause-lampen">${pauseLampen}</div>
+    <h2><span id="renn-pause-titel">Pausiert</span> <span class="wip-tag">WIP</span></h2><div class="pause-lampen">${pauseLampen}</div>
     <p id="renn-pause-hinweis"></p>
     <button type="button" id="renn-pause-weiter">Weiter über Rennampel</button>
     <button type="button" id="renn-pause-ende">Beenden</button>
@@ -56,7 +56,7 @@
   window.OMEGA_PAUSE = Object.freeze({
     umschalten: rennPauseUmschalten,
     status: () => ({ phase: rennPause.phase, rennzeit: rennZeitJetzt(),
-      version: '1.1.54', lokal: !rennPauseMehrspieler() })
+      verzug: rennPause.verzug, lokal: !rennPauseMehrspieler() })
   });
   i18nOnLangChange(rennPauseMalen);
   rennPauseMalen();

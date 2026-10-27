@@ -1,6 +1,6 @@
 # Lokale Rennpause
 
-Basis: OmegaSim 1.1.54, Commit 6b89a02. Feature-Branch, kein offizieller Release.
+Urspruenglich PR #9 (Playdater1974) auf Basis 1.1.54, uebernommen in 1.2.25 (WIP).
 
 ## Bedienung
 Controllerbelegung: Pause / Fortsetzen einer freien Taste zuweisen (anfangs unbelegt).
@@ -45,5 +45,18 @@ Handtests: Spieler 1-3 und Gegner; Pause waehrend Startampel, Gelb,
 Einfuehrungsrunde, Zielauslauf, Tank-/Reifen-/Reparaturstopp; Runden-/Sektor-
 und Restzeit nach langer Pause; Abbruch; Verbindungsabbruch/Wiederverbinden.
 
-Release-Version und Service-Worker-Cache bleiben 1.1.54: bei lokalen Tests
-alte Service Worker/Website-Caches entfernen. Kein Commit/Push im Patch.
+## Aenderungen bei der Uebernahme (1.2.25)
+- Native Sperre ueberlebt kein Neuladen mehr: die Seite ruft beim Laden
+  OMEGA_BRUECKE.rennPause(false), das Plugin setzt sich in load() und bei
+  jedem Seitenstart der WebView (onPageStarted) selbst zurueck.
+- verzug (Summe der Pausen) wird beim Rennstart auf 0 gesetzt
+  (rennUhrNullen). Damit gilt im Rennen rennZeitJetzt() = Date.now(), und die
+  Wanduhr-Startzeit des WLAN-Mehrspielers liegt wieder exakt.
+- Mehrspieler: keine Pause; eine schon laufende lokale Pause endet ohne Ampel,
+  sobald der Mehrspieler aktiv ist oder ein Startplan des Hosts kommt.
+- Pause im Countdown bricht ein laufendes Rennintro ab; Gruen kommt ueber die
+  Wiederanlaufampel.
+- Java: ohne Pause ist der Schreibpfad wieder exakt wie vorher (erster Versuch
+  wird immer geschrieben); verworfen wird nur, wenn seit der Entnahme eine
+  Pause begann.
+- Selbsttest "Rennpause v1.2.25" in src/95-selftest.js.

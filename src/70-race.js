@@ -2023,10 +2023,18 @@
     rennZeitTimeout(() => konsoleFrage(t('Time Attack beendet'), text, knoepfe, true), 900);
   }
   function startRaceCountdown(gruenZiel, mpPlan) {
-    if (rennPauseAktiv()) return;
+    // Ein Startplan des Mehrspieler-Hosts geht einer lokalen Pause vor: sonst verpasste
+    // dieses Telefon den gemeinsamen Start still. Lokal startet waehrend der Pause nichts.
+    if (rennPauseAktiv()) {
+      if (mpPlan || typeof gruenZiel === 'number' || rennPauseMehrspieler()) rennPauseBeenden();
+      else return;
+    }
     if (raceState !== 'idle' && raceState !== 'finished') return; // ignore while armed/racing
     if (!knockoutBereit(true)) return;
     if (!bestzeitBereit(true)) return;
+    // Rennuhr = Wanduhr ab hier (siehe rennUhrNullen in 15-pause.js): die Mehrspieler-Zielzeit
+    // gruenZiel ist Wanduhr und wird unten direkt gegen rennZeitJetzt() gelegt.
+    rennUhrNullen();
     rennintroAbbrechen();
     const introStartToken = ++rennintroStartGeneration;
     bestzeitVorherMerken();

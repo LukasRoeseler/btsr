@@ -596,7 +596,7 @@
       const tr = document.createElement('tr');
       const listening = listeningFor === action;
       tr.innerHTML = `
-        <td>${BIND_ACTION_LABELS[action]}</td>
+        <td>${BIND_ACTION_LABELS[action]}${action === 'pause' ? ' <span class="wip-tag">WIP</span>' : ''}</td>
         <td><span class="bind-value${listening ? ' bind-listening' : ''}">${listening ? 'Eingabe erwartet…' : bindingDescription(ab[action])}</span></td>
         <td><button data-action="${action}" ${listening ? 'disabled' : ''}>Neu zuweisen</button>
         <button data-loeschen="${action}" ${listening || !ab[action] ? 'disabled' : ''}

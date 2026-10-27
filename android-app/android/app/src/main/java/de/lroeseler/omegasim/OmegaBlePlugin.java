@@ -16,6 +16,7 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginHandle;
 import com.getcapacitor.PluginMethod;
+import com.getcapacitor.WebViewListener;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -85,6 +86,23 @@ public class OmegaBlePlugin extends Plugin {
         writeThread = new HandlerThread("OmegaBle-Write");
         writeThread.start();
         writeHandler = new Handler(writeThread.getLooper());
+        // RENNPAUSE NICHT UEBER EIN NEULADEN HINWEG: rennPausiert lebt hier im Plugin, die Seite
+        // aber nicht. Nach Pause + Neuladen (Update, Absturz, direktNeu) wuerde sonst jedes
+        // 0xAF-Paket weiter neutralisiert, und das Auto fuhre nicht mehr. Deshalb beim Laden des
+        // Plugins UND bei jedem Seitenstart der WebView zuruecksetzen; die Seite ruft beim Laden
+        // ausserdem selbst rennPause(false).
+        // Der Zuhoerer wird NACHGEREICHT: load() laeuft noch im Konstruktor der Bridge, und
+        // Bridge.Builder.create() ersetzt danach mit setWebViewListeners() die ganze Liste - ein
+        // hier direkt angemeldeter Zuhoerer waere verloren. Der Hauptthread ist erst danach frei.
+        rennPauseSetzen(false);
+        new Handler(Looper.getMainLooper()).post(() -> {
+            try {
+                getBridge().addWebViewListener(new WebViewListener() {
+                    @Override
+                    public void onPageStarted(WebView webView) { rennPauseSetzen(false); }
+                });
+            } catch (Throwable e) { /* ohne Zuhoerer bleibt der Ruecksetzer der Seite */ }
+        });
         // ---- DER DIREKTE WEG (v0.10.4) --------------------------------------------------
         // GEMELDET: "Latenz in der APK ist langsamer als im Browser." Jeder Befehl lief als
         // JSON ueber den Android-Hauptthread und den gemeinsamen Capacitor-Thread, bevor er
@@ -290,7 +308,10 @@ public class OmegaBlePlugin extends Plugin {
             if (!zielHolen(deviceId, p, false)) continue;
             // Keine vor der Pause entnommene Fahrt nach Wiederaufnahme nachsenden.
             // Bereits an GATT uebergebene Befehle bleiben physisch nicht rueckrufbar.
-            if (pauseGeneration != rennPauseGeneration.get() || p.neu.get() != null) {
+            // NUR wenn seit der Entnahme eine Rennpause begann (Generation erhoeht): ohne Pause
+            // bleibt der heisse 45-ms-Pfad exakt wie vorher, der erste Versuch wird immer
+            // geschrieben, und "verworfen" zaehlt nur echte Verwuerfe.
+            if (pauseGeneration != rennPauseGeneration.get()) {
                 p.verworfen.incrementAndGet(); return;
             }
             int erg = schreibeGatt(p.gatt, p.ziel, rennPauseWert(wert));

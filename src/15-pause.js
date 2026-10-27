@@ -15,6 +15,22 @@
     return rennPauseAktiv() ? rennPause.uhrStop : Date.now() - rennPause.verzug;
   }
 
+  // ---- DER VERZUG GILT NUR FUER EIN RENNEN (v1.2.25) ----------------------------------
+  // verzug ist die Summe aller Pausen. Er wuchs bisher ueber die ganze Sitzung und wurde nie
+  // zurueckgesetzt - und der WLAN-Mehrspieler rechnet seine Startzeit in WANDUHR (r.startAt -
+  // mp.offset, 97-sessions.js), die startRaceCountdown() dann gegen rennZeitJetzt() legt. Nach
+  // einer frueheren lokalen Pause lag Gruen damit auf diesem Telefon um genau diese Pausen
+  // spaeter als auf den anderen. Deshalb beim Rennstart auf 0: im Rennen gilt danach
+  // rennZeitJetzt() === Date.now(), solange niemand pausiert, und im Mehrspieler kann niemand
+  // pausieren (rennPauseErlaubt, rennPauseWache). Wartende Renn-Timeouts behalten dabei ihren
+  // Wanduhr-Zeitpunkt, nur ihre Zielzeit wird in die neue Zaehlung umgerechnet.
+  function rennUhrNullen() {
+    if (rennPauseAktiv() || !rennPause.verzug) return;
+    const v = rennPause.verzug;
+    for (const z of rennPause.zeitTimer) z.bei += v;
+    rennPause.verzug = 0;
+  }
+
   // Pausierbare Renn-Timeouts; Browser-Timeouts selbst bleiben unveraendert.
   function rennZeitTimerStart(z) {
     if (z.abgebrochen || rennPauseAktiv()) return;
@@ -67,6 +83,18 @@
   function rennPauseFahransicht() {
     const tab = document.querySelector('.tabpage.active');
     return !!tab && tab.id === 'tab-race';
+  }
+
+  // Mehrspieler und Pause schliessen sich aus: eine Pause hielte nur DIESES Telefon an, die
+  // anderen fuehren weiter, und die gemeinsame Uhr (Startzeit, Wetterplan, Rangliste) waere
+  // nicht mehr gemeinsam. rennPauseErlaubt() verhindert das Beginnen; diese Wache beendet eine
+  // lokale Pause, die schon lief, als der Mehrspieler dazukam (Beitritt, Startplan des Hosts).
+  // Ohne Ampel: der Ablauf des Hosts geht vor, Gas und Lenkung muessen trotzdem erst neutral.
+  function rennPauseWache() {
+    if (!rennPauseAktiv() || !rennPauseMehrspieler()) return false;
+    rennPauseBeenden();
+    try { showHudToast(t('Pause beendet: Mehrspieler aktiv')); } catch (_) { /* ohne Hinweis */ }
+    return true;
   }
 
   function rennPauseErlaubt() {
@@ -213,8 +241,12 @@
     const knopf = document.getElementById('race-act-pause');
     if (knopf) {
       knopf.disabled = !rennPauseAktiv() && !rennPauseErlaubt();
-      knopf.textContent = rennPause.phase === 'ampel' ? t('Wiederanlauf stoppen')
+      const text = rennPause.phase === 'ampel' ? t('Wiederanlauf stoppen')
         : (rennPauseAktiv() ? t('Fortsetzen') : t('Pause'));
+      // Neue Funktion: WIP-Kennzeichen von Anfang an. Nur bei Aenderung schreiben, das
+      // laeuft im Takt von updateRaceActButtons().
+      const html = text + ' <span class="wip-tag">WIP</span>';
+      if (knopf.dataset.pauseHtml !== html) { knopf.dataset.pauseHtml = html; knopf.innerHTML = html; }
     }
     const el = document.getElementById('renn-pause-ui');
     if (!el) return;
@@ -226,6 +258,10 @@
       : t('Fahr-Ausgabe und Rennabläufe sind angehalten. Nach der Ampel Gas und Bremse zunächst loslassen.');
     document.getElementById('renn-pause-weiter').textContent = ampel
       ? t('Wiederanlauf stoppen') : t('Weiter über Rennampel');
+    // Das Overlay haengt an body, ausserhalb der Wurzeln von i18nApply(): ohne t() bliebe
+    // "Beenden" auch im englischen und spanischen Modus deutsch.
+    const ende = document.getElementById('renn-pause-ende');
+    if (ende) ende.textContent = t('Beenden');
   }
 
   // Nur Abbruch oder Ampelfreigabe: kein raceGreen() fuer ein laufendes Rennen.
@@ -270,6 +306,14 @@
       if (rennPause.erststart) {
         rennZeitTimeoutStop(raceCountdownTimer); raceCountdownTimer = null;
         ampelPlan = null; ampelSchritt = null;
+        // Ein laufendes Rennintro (80d-rennintro.js) ebenfalls abbrechen: es spielt auf der
+        // Audiouhr weiter und wuerde danach die Startampel MITTEN in der Pause beginnen. Die
+        // Generation zuerst, damit sein "weiter" in startRaceCountdown() nichts mehr tut; den
+        // Start uebernimmt die Wiederanlaufampel (raceGreen()).
+        if (typeof rennintroAbbrechen === 'function') {
+          rennintroStartGeneration++;
+          rennintroAbbrechen();
+        }
       }
       rennPauseEingabenSperren(); rennPauseSenden(true);
       if ($('race-status')) $('race-status').textContent = t('Pausiert');
