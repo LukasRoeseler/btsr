@@ -5514,6 +5514,54 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') + ' || ' + m.join(', ') : 'Vorausblick 0x01, MAX wie Gerade, ' + m.join(', ') };
   });
 
+  // v1.2.32 BESTELLT: "Pruefe, ob du die Ideallinie mit der Pacejka-Simulation noch etwas verbessern kannst. Die Autos
+  // fahren tendenziell nur auf der inneren Haelfte der Fahrbahn und nutzen die Breite nicht vollstaendig. Etwas Toleranz
+  // nach aussen in der Haarnadelkurve ist gut - hier nichts aendern." Gemessen v1.2.31 auf SR3G2R3G (SIMULATOR, 200
+  // Auswertungen): 0 % der Punkte in der aeusseren Haelfte, 0 % der Kurvenpunkte aussen, Weg 0,88 der Mittellinie (innen3
+  // gewinnt). v1.2.32: 65-68 % aussen, 42-46 % der Kurvenpunkte aussen, jeder Scheitel innen, Weg 1,00.
+  stAdd('NPC v1.2.32: Ideallinie nutzt die Breite (SIMULATOR aussen-innen-aussen, Haarnadel unberuehrt)', async () => {
+    const f = [];
+    const gz = fahrGrenzen();
+    if (!(simKurvenALat(gz) > 2 * gz.aLat)) f.push('Kurvengrenze der Suche nicht aus dem NPC-Kurventempo');
+    const tiles = codeToTrack('SR3G2R3G').tiles;
+    const pts = trackCenterline(tiles), nrm = trackNormals(pts);
+    const closed = trackSchluss(pts).closed;
+    const o = { closed, tiles, aLat: gz.aLat, aAcc: gz.aAcc, aBrk: gz.aBrk, vMax: gz.vMax, nurRechnen: true, maxAuswertungen: 80 };
+    const e = await simSuche({ key: 'selbsttest', abbruch: false, auswertungen: 0 }, pts, nrm, o);
+    if (!e || !e.alpha) return { ok: false, mass: 'Suche ohne Ergebnis' };
+    const limit = TRACK_HALF_W - 3;
+    // Das Ergebnis ist auf 0,01 Einheiten gerundet (simSuche), daher die Toleranz unten.
+    const anker = simAussenAnker(pts, tiles, closed);
+    let n = 0, aussen = 0, kN = 0, kA = 0;
+    pts.forEach((p, i) => {
+      if (p.tile < 0) return;
+      const q = -e.alpha[i] / limit;                       // + = rechts = innen auf dieser Rechtsstrecke
+      n++; if (q < -0.01) aussen++;
+      const d = ghostTurnOf(tiles[p.tile].type);
+      if (d) { kN++; if (q * d < -0.01) kA++; }
+    });
+    const anteil = aussen / n, kurve = kA / Math.max(1, kN);
+    if (!(anteil >= 0.4)) f.push('nur ' + Math.round(anteil * 100) + ' % in der aeusseren Haelfte');
+    if (!(kurve >= 0.25)) f.push('nur ' + Math.round(kurve * 100) + ' % der Kurvenpunkte aussen');
+    const unerfuellt = anker.filter((a) => e.alpha[a.i] * a.seite < SIM_AUSSEN_ANTEIL * limit - 0.011).length;
+    if (unerfuellt || !anker.length) f.push(unerfuellt + ' von ' + anker.length + ' Ein-/Ausgaengen nicht aussen');
+    const sch = anker.scheitel || [];
+    const scheitelInnen = sch.filter((sc) => sc.idx.some((k) => e.alpha[k] * sc.seite >= SIM_AUSSEN_ANTEIL * limit - 0.011)).length;
+    if (scheitelInnen !== sch.length) f.push('Scheitel innen ' + scheitelInnen + '/' + sch.length);
+    if (e.alpha.some((a) => Math.abs(a) > limit + 1e-9)) f.push('Linie ueber der Grenze (Randabstand)');
+    // Haarnadel: kein Anker an einer Haarnadel, und keine Beule reicht in sie hinein.
+    const hp = codeToTrack('SHG3R4L').tiles, hpPts = trackCenterline(hp);
+    const hpAnker = simAussenAnker(hpPts, hp, true);
+    const hpIdx = [];
+    hpPts.forEach((p, i) => { if (p.tile >= 0 && tileTightness(hp[p.tile].type) >= 2) hpIdx.push(i); });
+    if (hpAnker.some((a) => hpIdx.some((j) => Math.abs(j - a.i) <= a.b))) f.push('Beule reicht in die Haarnadel');
+    const zwei = codeToTrack('SHG4HG3').tiles;
+    if (simAussenAnker(trackCenterline(zwei), zwei, true).length) f.push('Anker an Haarnadel-Geraden');
+    return { ok: !f.length, mass: (f.length ? f.join(' | ') + ' || ' : '') + 'SR3G2R3G: ' + Math.round(anteil * 100) + ' % aussen, Kurve '
+      + Math.round(kurve * 100) + ' % aussen, Scheitel ' + scheitelInnen + '/' + sch.length + ', ' + anker.length + ' Anker, '
+      + e.zeit.toFixed(2) + ' s (' + e.herkunft.slice(0, 10) + ')' };
+  });
+
   // v1.1.45 GEMELDET: helles Licht ohne Verbindung (Kopplung), Latenz nach Neuverbinden, Abgleich verlaesst das
   // Menue, Kartenpunkte springen, Aufstellung ab Reihe 2, Regenflackern; dazu Kleinigkeiten.
   // v1.2.4 BESTELLT: Renntypen je Sensormodus, Fahrgefuehl je Spieler, Pacejka in Community-Challenges, Minigame-
