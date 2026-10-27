@@ -1450,6 +1450,14 @@
       if (st.shiftLeft > 0) {
         st.shiftLeft = Math.max(0, st.shiftLeft - Math.max(0, dt));
         st.isShifting = st.shiftLeft > 0;
+      } else if (st.isShifting) {
+        // v1.2.32: OHNE SCHALTPAUSE (shiftMs = 0, seit v1.2.5 beim MAX-NPC, ghostMaxMotor) setzt
+        // triggerShift() isShifting = true und shiftLeft = 0 - und der Zweig darueber lief dann nie,
+        // der Gang wurde nie fertig geschaltet. Gemessen in der Rennsimulation auf SR3G2R3G: MAX-NPC
+        // mit Gas 1 und Ziel 1,0 auf der Geraden blieb nach dem ersten Hochschalten bei 0,24 der
+        // Spitze stehen (Drehzahl fallend, kein Antrieb), Stufe mittel fuhr 0,45. Ohne Pause ist der
+        // Schaltvorgang im selben Takt vorbei.
+        st.isShifting = false;
       }
 
       // Speed is simulated in real km/h and the throttle byte is DERIVED from it, rather

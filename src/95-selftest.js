@@ -366,9 +366,10 @@
   // und SR2GL2G (+100 belegt, die Regel sagt 0 vorher) - beides offene Fragen an Luuke,
   // keine stillschweigend geratenen Sonderregeln - UND die Startkachel selbst (Index 0):
   // ihr Anker wird seit "nicht bei Start immer in der Mitte, sondern so, dass man von der
-  // Schiene davor und danach moeglichst wenig lenken muss" BERECHNET (Mittelwert der
-  // Nachbarn), nicht mehr aus den Beispielen abgeschrieben - dort stand zufaellig immer 0,
-  // weil niemand sie absichtlich anders vorgegeben hatte.
+  // Schiene davor und danach moeglichst wenig lenken muss" BERECHNET (bis v1.2.31 Mittelwert
+  // der Nachbarn, seit v1.2.32 die Geradenregel: Start/Ziel ist eine Gerade), nicht mehr aus
+  // den Beispielen abgeschrieben - dort stand zufaellig immer 0, weil niemand sie absichtlich
+  // anders vorgegeben hatte.
   stAdd('Luuke-Linie: trifft die fuenf verlaesslichen Beispiele', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.luukeLinieAnker || !OMEGA_TEST.codeToTrack) {
       return { skip: true, mass: 'Pruefzugang nicht vorhanden' };
@@ -377,9 +378,13 @@
     // { code, erwartet, offen: [Kachelindizes, die nicht hart geprueft werden] } - Index 0
     // (Startkachel) steht in jedem Beispiel mit in "offen", aus dem oben genannten Grund.
     const beispiele = [
-      { code: 'SGR3G', erwartet: [0, -50, -100, 100, -50, 100], offen: [0, 5] },
+      // v1.2.32: Kachel 1 (die Gerade nach Start/Ziel) in SGR3G und SGHG offen. Ihre -50 sind die
+      // Rampe von der Startkachel auf 0 zur naechsten Kurve; seit Start/Ziel eine gewoehnliche
+      // Gerade ist und hier schon aussen (-100) steht, faehrt die Kachel danach wie jede Gerade
+      // weiter aussen, statt halb zur Mitte zurueckzufallen (siehe luukeGeradenWert).
+      { code: 'SGR3G', erwartet: [0, -50, -100, 100, -50, 100], offen: [0, 1, 5] },
       { code: 'SRLG', erwartet: [0, 100, 0, -100], offen: [0] },
-      { code: 'SGHG', erwartet: [0, -50, 100, 0], offen: [0, 2] },
+      { code: 'SGHG', erwartet: [0, -50, 100, 0], offen: [0, 1, 2] },
       { code: 'SR2GL2G', erwartet: [0, -100, 100, 0, 100, -100, 100], offen: [0, 6] },
       { code: 'SR2G2RG2', erwartet: [0, -100, 100, -100, -100, 100, 0, -100], offen: [0] },
     ];
@@ -398,13 +403,15 @@
         const diff = Math.abs(anker[i] - b.erwartet[i]);
         if (diff > TOLERANZ) abweichungen.push('Kachel ' + i + ': ' + anker[i] + ' statt ' + b.erwartet[i]);
       }
-      // Die Startkachel selbst NICHT gegen die (zufaellige) Beispielzahl gepruft,
-      // sondern gegen die eigentliche Vorschrift: Mittelwert der beiden Nachbarn -
-      // "moeglichst wenig lenken" ist damit eine echte Rechnung und keine Behauptung.
-      const erwarteterStart = (anker[anker.length - 1] + anker[1]) / 2;
+      // Die Startkachel selbst NICHT gegen die (zufaellige) Beispielzahl gepruft, sondern gegen
+      // die Vorschrift: seit v1.2.32 die Geradenregel wie fuer jede Gerade (vorher der
+      // Mittelwert der Nachbarn, der sie hinter einem Scheitel innen stehen liess).
+      const tl = p.tiles, nT = tl.length, atT = (i) => ((i % nT) + nT) % nT;
+      const runOfT = new Array(nT).fill(null);
+      luukeLaeufe(tl, true).forEach((l) => { for (let q = l.von; q <= l.bis; q++) runOfT[atT(q)] = l; });
+      const erwarteterStart = luukeGeradenWert(0, tl, runOfT, true, atT);
       if (Math.abs(anker[0] - erwarteterStart) > 0.01) {
-        abweichungen.push('Startkachel: ' + anker[0] + ' statt Mittelwert ' + erwarteterStart
-          + ' aus Nachbarn ' + anker[anker.length - 1] + '/' + anker[1]);
+        abweichungen.push('Startkachel: ' + anker[0] + ' statt Geradenwert ' + erwarteterStart);
       }
       teile.push(b.code + ': ' + anker.join(','));
       if (abweichungen.length) schlecht.push(b.code + ' || ' + abweichungen.join('; '));
@@ -2988,7 +2995,7 @@
                                            cfg: { line: 1, lanes: 0.5, lateral: 0.5 } });
     if (!r) return { skip: true, mass: 'keine Strecke geladen' };
     if (r.fehler) return { ok: false, mass: 'Messung warf: ' + r.fehler };
-    const kurven = r.kacheln.filter((k) => k.typ !== 2);
+    const kurven = r.kacheln.filter((k) => tileIsCurve(k.typ))  /* v1.2.32: Start/Ziel ist keine Kurve */;
     if (!kurven.length) return { skip: true, mass: 'Strecke ohne Kurven' };
     const spanne = kurven.reduce((a, k) => a + k.spanne, 0) / kurven.length;
     const schlecht = [];
@@ -3050,7 +3057,7 @@
       setz(0);
       const r0 = OMEGA_TEST.ghostLinieTrace({ takte: 400, kurvenFaktor: 1.2,
                                               cfg: { line: 1, lanes: 0.5, lateral: 0.5 } });
-      const kurven = r0.kacheln.filter((k) => k.typ !== 2);
+      const kurven = r0.kacheln.filter((k) => tileIsCurve(k.typ));
       const sp = kurven.length ? kurven.reduce((a, k) => a + k.spanne, 0) / kurven.length : 0;
       teile.push('aus: Kurvenspanne ' + Math.round(sp));
       if (!(sp > 25)) schlecht.push('bei 0 ist die Linie weg (Spanne ' + Math.round(sp) + ')');
@@ -5425,6 +5432,86 @@
       if (ghostStufeAusSpeed(0.95) === GHOST_STUFE_MAX) f.push('alte Werte wandern in MAX');
     } finally { currentTrackTiles = merkT; Object.assign(ghostCfg, merkC); }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gerade 100, R1 52, R2 80, Bremspunkt Schiene/Teil, Haarnadel normal' };
+  });
+
+  // v1.2.32 BESTELLT: "Pruefe, ob beim NPC-Verhalten klar ist, dass Start/Ziel eine Gerade ist und dort auch z. B.
+  // die MAX-Geschwindigkeit gilt. Ich habe ausserdem das Gefuehl, dass die Autos dort tendenziell nicht ihre Querlage
+  // halten, sondern etwas weiter innen fahren." Gefunden: der Vorausblick sagte Start/Ziel auf der Schiene als
+  // Engstelle (0x0a) an, die Luuke-Linie liess Start/Ziel hinter einem Scheitel innen stehen (Mittelwert der Nachbarn),
+  // und MAX blieb ohne Schaltpause nach dem ersten Hochschalten im Schaltvorgang haengen (0,24 statt 0,5 der Spitze).
+  // Geprueft auf dem gleichseitigen Dreieck SR2GR2GR2: Start/Ziel und die zwei Geraden haben dieselbe Lage.
+  stAdd('NPC v1.2.32: Start/Ziel ist eine Gerade (MAX-Tempo, Querlage, Vorausblick)', () => {
+    const f = [], m = [];
+    if (tileTightness(TILE_TYPE.START) !== 0 || ghostMaxArt(TILE_TYPE.START) !== 'gerade' || tileIsCurve(TILE_TYPE.START)
+        || ghostTurnOf(START_CODE_RAIL) !== 0 || ghostTurnOf(START_CODE_PRINT) !== 0) f.push('Start/Ziel nicht als Gerade eingestuft');
+    const merkT = currentTrackTiles, merkMode = trackMode, merkLM = getLineModel();
+    const merkBp = ghostCfg.maxBremspunkt;
+    try {
+      // Vorausblick: auf der Schiene 0x01 (wie die Original-App), im Ausdruck 0x0a.
+      currentTrackTiles = codeToTrack('SR3G2R3G').tiles; lineCache = null;
+      trackMode = 'on';
+      const la = ghostLookahead({ ghost: { tileIndex: 9 } });
+      if (!la || la[17] !== START_CODE_RAIL) f.push('Vorausblick Schiene: Start/Ziel als 0x' + (la ? la[17].toString(16) : '?'));
+      trackMode = 'off';
+      const lb = ghostLookahead({ ghost: { tileIndex: 9 } });
+      if (!lb || lb[17] !== START_CODE_PRINT) f.push('Vorausblick Ausdruck veraendert');
+      trackMode = 'on';
+      // MAX: Start/Ziel vor einer Kurve wie jede Gerade vor einer Kurve, die Gerade vor Start/Ziel voll.
+      const mx = (i, code) => ghostMaxTempo({ role: 'ghost', ghostStufe: GHOST_STUFE_MAX, tileCode: code, ghost: { tileIndex: i } });
+      ghostCfg.maxBremspunkt = 'schiene';
+      const vS = mx(0, START_CODE_RAIL), vG5 = mx(5, TILE_TYPE.STRAIGHT), vG9 = mx(9, TILE_TYPE.STRAIGHT);
+      if (Math.abs(vS - vG5) > 1e-9) f.push('MAX auf Start/Ziel ' + vS + ' statt ' + vG5 + ' wie die Gerade vor R');
+      if (Math.abs(vG9 - Math.min(1, ghostCfg.maxGerade)) > 1e-9) f.push('Gerade vor Start/Ziel nicht MAX-Gerade: ' + vG9);
+      ghostCfg.maxBremspunkt = 'teil';
+      if (Math.abs(mx(0, START_CODE_RAIL) - Math.min(1, ghostCfg.maxGerade)) > 1e-9) f.push('MAX auf Start/Ziel nicht MAX-Gerade');
+      ghostCfg.maxBremspunkt = merkBp;
+      // Luuke-Anker: Start/Ziel wie die gleichliegenden Geraden.
+      const dreieck = codeToTrack('SR2GR2GR2').tiles;
+      const an = luukeLinieAnker(dreieck, true);
+      if (an[0] !== an[3] || an[0] !== an[6]) f.push('Luuke-Anker S/G/G ' + [an[0], an[3], an[6]].join('/'));
+      // Fahrt: ein MAX-NPC allein in der Rennsimulation, Querlage und Tempo je Teil.
+      currentTrackTiles = dreieck; lineCache = null;
+      setLineModel('luuke');
+      $('sim-ghosts').value = '2';
+      simStart();
+      const st = simState;
+      if (!st) f.push('Simulation startet nicht');
+      else {
+        while (st.autos.length > 1) { const b = st.autos.pop(); stopGhost(b.car); }
+        const a = st.autos[0];
+        a.car.ghostStufe = GHOST_STUFE_MAX;
+        const je = dreieck.map(() => ({ n: 0, q: 0, v: 0 }));
+        for (let k = 0; k < 1800 && simAn(); k++) {
+          simSchritt(45);
+          if (k < 400 || a.car.parked || !a.car.ghost) continue;
+          const t = je[a.kachel];
+          t.n++; t.q += a.car.ghost.querSoll;
+          t.v += Math.abs(a.car.ghost.engine.state.speedKmh) / a.car.ghost.engine.config.topSpeedKmh;
+        }
+        simStop('Selbsttest');
+        const mit = (i, k) => je[i][k] / Math.max(1, je[i].n);
+        const qS = mit(0, 'q'), qG = (mit(3, 'q') + mit(6, 'q')) / 2, vSim = mit(0, 'v'), vG = (mit(3, 'v') + mit(6, 'v')) / 2;
+        m.push('Querlage S ' + qS.toFixed(2) + ' / G ' + qG.toFixed(2) + ', MAX-Tempo S ' + vSim.toFixed(2) + ' / G ' + vG.toFixed(2));
+        // Gemessen v1.2.31: S +0,25 gegen G -0,55 (0,80 weiter innen), MAX 0,22 auf allen Teilen.
+        if (!(Math.abs(qS - qG) < 0.1)) f.push('Querlage auf Start/Ziel ' + qS.toFixed(2) + ' statt ' + qG.toFixed(2));
+        if (!(vSim > 0.4) || !(Math.abs(vSim - vG) < 0.05)) f.push('MAX-Tempo auf Start/Ziel ' + vSim.toFixed(2) + ' (Geraden ' + vG.toFixed(2) + ')');
+      }
+      // Physik: ohne Schaltpause ist der Schaltvorgang im naechsten Takt vorbei.
+      const e = new CarreraPhysicsEngine();
+      Object.assign(e.config, physEngine.config, { autoShift: true, shiftMs: 0 });
+      e.meldung = () => {}; e.ruck = () => {}; e.schaltTon = () => {};
+      let haengt = 0;
+      for (let k = 0; k < 120; k++) {
+        e.update({ throttle: 1, brake: 0, steering: 0, headlights: false }, 0.045);
+        if (e.state.isShifting) haengt++;
+      }
+      if (haengt > 2) f.push('Schaltpause 0: ' + haengt + ' von 120 Takten im Schaltvorgang');
+    } finally {
+      if (simAn()) simStop('Selbsttest');
+      trackMode = merkMode; currentTrackTiles = merkT; lineCache = null; setLineModel(merkLM);
+      ghostCfg.maxBremspunkt = merkBp;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') + ' || ' + m.join(', ') : 'Vorausblick 0x01, MAX wie Gerade, ' + m.join(', ') };
   });
 
   // v1.1.45 GEMELDET: helles Licht ohne Verbindung (Kopplung), Latenz nach Neuverbinden, Abgleich verlaesst das
