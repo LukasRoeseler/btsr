@@ -17,7 +17,7 @@
 </div>
 <h1 class="wiki-title">Rennarten</h1>
 <div class="mw-content-ltr mw-parser-output" lang="de" dir="ltr"><div class="omegasim-stand" style="border:1px solid #a2a9b1; border-left:4px solid #36c; background-color:var(--background-color-neutral-subtle, #f8f9fa); color:inherit; padding:6px 12px; margin:0 0 1em 0; font-size:90%; line-height:1.5;">
-<p><b>Stand dieses Artikels:</b> OmegaSim <b>1.2.9</b> vom 26.10.2026 · Firmware des Autos: nicht bekannt (OmegaSim liest die Firmware-Version nicht aus)<br />
+<p><b>Stand dieses Artikels:</b> OmegaSim <b>1.2.45</b> vom 29.10.2026 · Firmware des Autos: nicht bekannt (OmegaSim liest die Firmware-Version nicht aus)<br />
 <small>Dieser Text wurde <b>mithilfe von KI erstellt</b> (Claude) und ist nicht in jedem Punkt von Menschen geprüft. Fehler bitte direkt verbessern oder auf der Diskussionsseite melden, siehe <a href="./Mitmachen.html" title="Mitmachen">Mitmachen</a>. Die öffentliche Fassung auf luuke42.github.io/omegasim kann älter sein als der hier beschriebene Stand.</small>
 </p>
 </div>
@@ -57,7 +57,7 @@
 </td></tr>
 <tr>
 <td>Status</td>
-<td>Rennfunktion WIP; Time Attack, Knockout, Derby, fliegender Start, Sektoren, automatisches Aufstellen experimentell
+<td>Rennfunktion WIP; Time Attack, Knockout, Derby, fliegender Start, Sektoren, automatisches Aufstellen, Rennpause, Rennintro und Rennstand-Ansage experimentell
 </td></tr>
 <tr>
 <td>Quelldateien</td>
@@ -412,6 +412,108 @@ Seitenbruch    = 0,15 rechts (gerade Plätze), 0,0 links (ungerade Plätze)</pre
 oder schon auf der nächsten Kachel, aber höchstens eine halbe Kachel weiter</pre>
 <p>Die zweite Bedingung (seit 1.2) verhindert, dass ein knapp vorbeigerollter Wagen eine weitere Runde dreht. Am Platz fährt das Auto die aufgenommene Einparkfolge des Safety Cars (<code>MANOEVER.scEin</code>), für die linke Spalte mit gespiegelter Lenkung, mit 300 ms Angleichen ans Aufnahmetempo und mit dem Gas der Folge mal 0,70 (<code>AUFSTELL_SC_GAS</code>; bis 1.2 0,75, Reihe 1 stand etwas zu weit außen). In der Schlange fällt das Tempo nie unter 0,28 des Höchsttempos (<code>AUFSTELL_BODEN</code>), sonst meldete das Auto die Bahn nicht mehr und würde als abgeflogen abgestellt. Zeitgrenze für die ganze Aufstellung: 60 s (<code>AUFSTELLEN_MAX_MS</code>). Mit „Lenkimpuls“ fährt das Auto stattdessen kurz voll zu seiner Seite und genauso lang zurück.
 </p>
+<div class="mw-heading mw-heading3"><h3 id="Rennpause">Rennpause</h3></div>
+<p>Die <b>Rennpause</b> (seit 1.2.25, übernommen aus PR #9 von Playdater1974; als WIP gekennzeichnet) hält ein laufendes Rennen an, ohne es zu beenden: Die Autos bleiben stehen, die Rennuhr steht still, der Rennzustand bleibt erhalten. Weiter geht es mit einer kurzen <b>Wiederanlauf-Ampel</b>. Der Ablauf ist im Code <code>src/15-pause.js</code> und <code>src/98h-pause.js</code> umgesetzt.
+</p>
+<table class="wikitable">
+<tbody><tr>
+<th>Merkmal</th>
+<th>Wert
+</th></tr>
+<tr>
+<td>Menüpfad</td>
+<td>Cockpit-Symbol oben rechts (neben dem Beenden-Knopf); oder unter Optionen → Controller eine freie Taste mit „Pause / Fortsetzen“ belegen (anfangs unbelegt)
+</td></tr>
+<tr>
+<td>Wirkung</td>
+<td>Autos bleiben stehen, Rennuhr steht still (<code>rennZeitJetzt()</code>), Rennzustand bleibt
+</td></tr>
+<tr>
+<td>Fortsetzen</td>
+<td>erneuter Druck zeigt die Wiederanlauf-Ampel; ein weiterer Druck während der Ampel bricht den Wiederanlauf ab und bleibt pausiert
+</td></tr>
+<tr>
+<td>Nach Grün</td>
+<td>Gas/Bremse und Lenkung zuerst neutral stellen
+</td></tr>
+<tr>
+<td>Ausgenommen</td>
+<td>WLAN-Mehrspieler (Pause gesperrt) und Kalibrierung
+</td></tr>
+<tr>
+<td>Gilt für</td>
+<td>lokale Fahrmodi inkl. Training, Endurance, Time Attack, Qualifying, Runden, Knockout, Derby und virtuelles Fahren
+</td></tr></tbody></table>
+<p><b>Details aus dem Code:</b>
+</p>
+<ul><li>Die Pause verwendet eine eigene Uhr (<code>rennPause.uhrStop</code>); <code>Date.now()</code> und <code>performance.now()</code> bleiben für Funk-Wachhund und Netzwerk echt.</li>
+<li><code>verzug</code> (die Summe aller Pausen) wird beim Rennstart auf 0 gesetzt (<code>rennUhrNullen()</code>); damit gilt im Rennen <code>rennZeitJetzt() === Date.now()</code>, solange niemand pausiert, und die Wanduhr-Startzeit des WLAN-Mehrspielers liegt wieder exakt.</li>
+<li>Nach einem Neuladen der App bleibt kein Auto mehr in der Pause hängen: Beim Laden ruft die Seite <code>OMEGA_BRUECKE.rennPause(false)</code>, und das Plugin setzt sich selbst in <code>load()</code> und bei jedem Seitenstart der WebView zurück.</li>
+<li>Ein Druck im Countdown bricht ein laufendes Rennintro ab; Grün kommt über die Wiederanlauf-Ampel.</li>
+<li>Pausierbare Renn-Timeouts laufen über <code>rennZeitTimerStart()</code>, Browser-Timeouts bleiben unverändert.</li>
+<li>Selbsttest: „Rennpause v1.2.25“ in <code>src/95-selftest.js</code>.</li></ul>
+<div class="mw-heading mw-heading3"><h3 id="Rennintro">Rennintro</h3></div>
+<p>Das <b>Rennintro</b> (Optionen → Ansagen → „Rennintro vor der Ampel“, <code>setting-announce-intro</code>; Standard aus, WIP) sagt vor der Startampel den Start an. Es verwendet vorproduzierte Piper-Aufnahmen und die Sprache, Sprechgeschwindigkeit, Lautstärke und den Hall der <a href="#Rennstand-Ansage">Rennstand-Ansagen</a>.
+</p>
+<ul><li>Gesagt werden: Willkommen, Modus, Rundendistanz bzw. Minutenlimit, Pflichtboxenstopps, Teilnehmerzahl, vollständige Startaufstellung (Position, Farbe, Modell), Startwetter und Bereitschaft.</li>
+<li>Teilnehmer und Reihenfolge entsprechen dem Startschirm (inklusive NPCs/Spielerautos, ohne Safety Car/Reinigungsauto); die Identitäten werden beim Introstart eingefroren.</li>
+<li>Ohne Farbzuordnung nur der Artikel, ohne Modellzuordnung „Wagen“. Ein Teilnehmer wird mit „einen Teilnehmer“ angekündigt, bei leerem Feld null Teilnehmer und keine Positionen.</li>
+<li>Die Ampel beginnt erst nach dem letzten Clip; die Frühstartüberwachung läuft schon ab Intro-Beginn (der Rennzustand ist dann bereits <code>countdown</code>).</li>
+<li>Nicht in <a href="./Challenges.html" title="Challenges">Challenges</a> (eigener Ablauf mit Ampel) und nicht im WLAN-Mehrspieler; dort gibt es kein Intro.</li>
+<li>Training mit aktivem Intro bekommt die Ampel, ohne Intro weiter den unmittelbaren Start.</li>
+<li>Einzelne fehlende Clips werden ausgelassen (einmal im Protokoll); nur wenn keiner ladbar ist oder der Audiokontext fehlt, Start ohne Ansage.</li>
+<li>Lade-Timeout 20 s (maximal sechs parallele Downloads, geladene Clips bleiben im Speicher), maximale Ansagedauer 180 s mit Wiedergabe-Watchdog.</li>
+<li>Abbrechen stoppt die Audios und verhindert nachträgliche Ampeln; Ausschalten während des Intros beendet die Ansage und geht zur Ampel weiter.</li>
+<li>Sprachaufnahmen: 94 Ogg-Clips unter <code>audio/rennintro_*.ogg</code> (Deutsch/Englisch; Spanisch nutzt Englisch). Erzeugt mit <code>tools/voice_rennintro.py</code>.</li>
+<li>Code: <code>src/80d-rennintro.js</code>; Selbsttest in <code>src/95-selftest.js</code>.</li></ul>
+<div class="mw-heading mw-heading3"><h3 id="Rennstand-Ansage">Rennstand-Ansage</h3></div>
+<p>Die <b>Rennstand-Ansage</b> (Optionen → Ansagen; als WIP gekennzeichnet) sagt während eines Rennens den Zwischenstand des lokalen Rennfelds an, und nach der Zielflagge das Ergebnis. Sie verwendet vorproduzierte Sprachclips aus <code>src/80c-rennstand.js</code>.
+</p>
+<table class="wikitable">
+<tbody><tr>
+<th>Schalter</th>
+<th>Werte</th>
+<th>Standard</th>
+<th>Wirkung
+</th></tr>
+<tr>
+<td>Rennstand alle paar Runden ansagen (<code>setting-announce-stand</code>)</td>
+<td>an/aus</td>
+<td>an</td>
+<td>die ersten drei Fahrzeuge des lokalen Rennfelds, mit Runde, Wagenfarbe und Marke/Modell
+</td></tr>
+<tr>
+<td>Rennstand alle X Runden (<code>setting-announce-stand-interval</code>)</td>
+<td>1 bis 20</td>
+<td>5</td>
+<td>nach jeder eingestellten Zahl vollendeter Runden des führenden Fahrzeugs (z. B. nach Runde 5, 10 und 15)
+</td></tr>
+<tr>
+<td>Rennstand maximale Wartezeit (<code>setting-announce-stand-wait</code>)</td>
+<td>5 bis 30 s</td>
+<td>30</td>
+<td>ab der ersten Durchfahrt der Messrunde; sobald die Top 3 durch sind, wird früher angesagt
+</td></tr>
+<tr>
+<td>Rennergebnis ansagen (<code>setting-announce-result</code>)</td>
+<td>an/aus</td>
+<td>an</td>
+<td>einmal nach der Zielflagge: der Sieger und die nächsten zwei mit Rückstand
+</td></tr>
+<tr>
+<td>Namen in der Garage (<code>setting-announce-stand-namensart</code>)</td>
+<td>Autobezeichnungen, Fahrernamen</td>
+<td>Autobezeichnungen</td>
+<td>eigene Namen statt Marke; spricht die Stimme des Geräts, nicht die Aufnahmen
+</td></tr></tbody></table>
+<p><b>Messung</b> (Beispiel Intervall 5): Sobald das erste Auto Runde 5 beendet (Runde 6 beginnt), wird der Messstand vorgemerkt. Nach drei Durchfahrten derselben Runde erfolgt die Ansage; bei weniger als drei Autos werden alle abgewartet. Die ersten drei Durchfahrtszeitpunkte bestimmen die Reihenfolge und die Sekundenrückstände; spätere Runden ändern den eingefrorenen Messstand nicht. Nach Ablauf der Wartezeit werden nur die vorhandenen Messwerte gesprochen; fehlende Durchfahrten werden nicht als Überrundung ausgegeben.
+</p>
+<ul><li>Der Einstieg lautet „Nach Runde drei“. Farbe, Modell und gegebenenfalls die lokale Spielerkennung identifizieren die Fahrzeuge; ohne Zuordnung „Wagen“.</li>
+<li>Die Ergebnisansage beginnt mit „Gewonnen hat …“ und verwendet die finale Rennwertung; sie ist von der Zwischenstands-Messung getrennt.</li>
+<li>Nur lokale Teilnehmer in Rundenrennen und Endurance, keine entfernten Clients. Warnungen und Rennende haben Vorrang; am Rennende keine zusätzliche Zwischenstandsansage.</li>
+<li>Deutsch/Englisch; Spanisch verwendet Englisch. Zahlenclips werden wiederverwendet; keine Online-TTS und keine native Android-Erweiterung erforderlich.</li>
+<li>Die separate Rennstand-Lautstärke beeinflusst Zwischenstand und Ergebnis, nicht Motoren, Regen oder Warnungen (0&#160;% stumm, bis 200&#160;% mit Boost); optionaler Stadionhall liegt nur auf dem Rennstand-Bus.</li>
+<li>Code: <code>src/80c-rennstand.js</code>; automatische Rennstand-Tests im bestehenden Selbsttest.</li></ul>
 <div class="mw-heading mw-heading3"><h3 id="Einschränkungen_je_Sensormodus"><span id="Einschr.C3.A4nkungen_je_Sensormodus"></span>Einschränkungen je Sensormodus</h3></div>
 <p>Seit 1.2.4 gilt (<code>renntypErlaubt()</code>):
 </p>
@@ -661,22 +763,25 @@ Schnellste Runde: +1 für den Gewerteten mit der besten Runde (nur Rennen)</pre>
 <ul><li><code>src/70-race.js</code>: <code>RACE_MODES</code>, <code>raceLimitReached()</code>, <code>raceClockTick()</code>, <code>startRaceCountdown()</code>, <code>ampelZeitplan()</code>, <code>ampelVerschieben()</code>, <code>raceGreen()</code>, <code>finishRace()</code>, <code>requestRaceStop()</code>, <code>raceMoveErkannt()</code>, <code>fruehstartBeginnen()</code>, <code>fruehstartZuschlag()</code>, <code>fruehstartStrafeAktiv()</code>, <code>formationNoetig()</code>, <code>endFormationLap()</code>, <code>carRaceNotify()</code>, <code>carLapCrossed()</code>, <code>playerLapCrossed()</code>, <code>rundeMinMs()</code>, <code>renderRaceResults()</code>, <code>renntypErlaubt()</code>, <code>renntypenFiltern()</code>, <code>ausdruckNpcWarnung()</code>, <code>knockoutUrteil()</code>, <code>derbyUrteil()</code>, <code>derbyAufprall()</code>, <code>derbyTick()</code>, <code>bestzeitRunde()</code>, <code>applySpeedLimit()</code>, <code>yellowFactor()</code></li>
 <li><code>src/73-meisterschaft.js</code>: <code>MEISTER_FORMATE</code>, <code>MEISTER_GLOBAL</code>, <code>MEISTER_PUNKTE</code>, <code>meisterKlassieren()</code>, <code>meisterPunkteFuer()</code>, <code>meisterPunkteVergeben()</code>, <code>meisterTabelle()</code>, <code>meisterMischen()</code>, <code>meisterAufstAufgeloest()</code>, <code>meisterStartReihe()</code>, <code>meisterEventStarten()</code>, <code>meisterRennenEnde()</code>, <code>meisterWerten()</code></li>
 <li><code>src/90-ghosts.js</code>: <code>formationPace()</code>, <code>aufstellZielOrt()</code>, <code>aufstellHaltBruch()</code>, <code>aufstellAmPunkt()</code>, <code>aufstellSkript()</code>, <code>AUFSTELL_SC_GAS</code>, <code>AUFSTELL_BODEN</code>, <code>AUFSTELL_REIHE_KACHEL</code></li>
-<li><code>src/71-rammen.js</code>: <code>crashRichtung()</code>, Rammstrafe</li></ul>
+<li><code>src/71-rammen.js</code>: <code>crashRichtung()</code>, Rammstrafe</li>
+<li><code>src/15-pause.js</code>, <code>src/98h-pause.js</code>: <code>rennPauseAktiv()</code>, <code>rennZeitJetzt()</code>, <code>rennUhrNullen()</code>, <code>rennZeitTimerStart()</code>, <code>rennPauseErlaubt()</code>, <code>rennPauseWache()</code>, <code>rennPauseMalen()</code></li>
+<li><code>src/80d-rennintro.js</code>: Rennintro; <code>src/80c-rennstand.js</code>: <code>rennstandAnwenden()</code>, <code>rennstandMessen()</code>, <code>rennstandSagen()</code>, Ergebnisansage</li></ul>
 <div class="mw-heading mw-heading2"><h2 id="Weblinks">Weblinks</h2></div>
 <ul><li>Browserfassung, Android-App und Quellcode: Links auf der <a href="./Hauptseite.html" title="Hauptseite">Hauptseite</a></li></ul>
+
 <!-- 
 NewPP limit report
-Parsed by mw151
-Cached time: 20261027053454
+Parsed by mw201
+Cached time: 20261029081239
 Cache expiry: 1296000
 Reduced expiry: false
 Complications: [show‐toc]
-CPU time usage: 0.073 seconds
-Real time usage: 0.078 seconds
-Preprocessor visited node count: 192/1000000
-Revision size: 28881/2097152 bytes
-Post‐expand include size: 752/2097152 bytes
-Template argument size: 15/2097152 bytes
+CPU time usage: 0.107 seconds
+Real time usage: 0.122 seconds
+Preprocessor visited node count: 203/1000000
+Revision size: 36301/2097152 bytes
+Post‐expand include size: 753/2097152 bytes
+Template argument size: 16/2097152 bytes
 Highest expansion depth: 3/100
 Expensive parser function count: 1/99
 Unstrip recursion depth: 0/20
@@ -684,14 +789,11 @@ Unstrip post‐expand size: 3101/5000000 bytes
 -->
 <!--
 Transclusion expansion time report (%,ms,calls,template)
-100.00%    2.718      1 Vorlage:Stand
-100.00%    2.718      1 -total
+100.00%    5.302      1 Vorlage:Stand
+100.00%    5.302      1 -total
 -->
 
-<!-- Render ID 233c14e2-d1c8-11f1-98ba-bc2411ac95a6 -->
-
-<!-- Saved in parser cache with key omegasimwiki:pcache:30:|#|:idhash:canonical and timestamp 20261027053454 and revision id 89. Rendering was triggered because: api-parse
- -->
+<!-- Render ID 81a4038b-d370-11f1-a4a7-bc2411441f04 -->
 </div>
 </main>
 <footer class="wiki-foot">Snapshot aus dem OmegaSim Wiki (CC BY-SA 4.0)</footer>

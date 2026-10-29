@@ -17,7 +17,7 @@
 </div>
 <h1 class="wiki-title">OmegaSim</h1>
 <div class="mw-content-ltr mw-parser-output" lang="de" dir="ltr"><div class="omegasim-stand" style="border:1px solid #a2a9b1; border-left:4px solid #36c; background-color:var(--background-color-neutral-subtle, #f8f9fa); color:inherit; padding:6px 12px; margin:0 0 1em 0; font-size:90%; line-height:1.5;">
-<p><b>Stand dieses Artikels:</b> OmegaSim <b>1.2.9</b> vom 26.10.2026 · Firmware des Autos: nicht bekannt (OmegaSim liest die Firmware-Version nicht aus)<br />
+<p><b>Stand dieses Artikels:</b> OmegaSim <b>1.2.45</b> vom 29.10.2026 · Firmware des Autos: nicht bekannt (OmegaSim liest die Firmware-Version nicht aus)<br />
 <small>Dieser Text wurde <b>mithilfe von KI erstellt</b> (Claude) und ist nicht in jedem Punkt von Menschen geprüft. Fehler bitte direkt verbessern oder auf der Diskussionsseite melden, siehe <a href="./Mitmachen.html" title="Mitmachen">Mitmachen</a>. Die öffentliche Fassung auf luuke42.github.io/omegasim kann älter sein als der hier beschriebene Stand.</small>
 </p>
 </div>
@@ -41,7 +41,7 @@
 </td></tr>
 <tr>
 <td>Aktuelle Version</td>
-<td>1.2.9 vom 26.10.2026 (Schema 1.&lt;Woche&gt;.&lt;Push&gt;)
+<td>1.2.45 vom 29.10.2026 (Schema 1.&lt;Woche&gt;.&lt;Push&gt;)
 </td></tr>
 <tr>
 <td>Plattformen</td>
@@ -262,6 +262,10 @@
 <td>Öffnet den gemeinsamen Gültigkeitsbereich; BLE-Werkbank, <code>crc8()</code>, Wörterbücher Englisch/Spanisch und Übersetzungsmechanik.
 </td></tr>
 <tr>
+<td><code>15-pause.js</code></td>
+<td>Lokale <a href="./Rennarten.html#Rennpause" title="Rennarten">Rennpause</a>: eigene Uhr, Wiederanlauf-Ampel, pausierbare Renn-Timeouts.
+</td></tr>
+<tr>
 <td><code>20-protocol.js</code></td>
 <td>Das 20-Byte-Befehlspaket, der 45-ms-Herzschlag, das Schreibschloss je Merkmal und der RC-Gasverlauf.
 </td></tr>
@@ -351,7 +355,11 @@
 </td></tr>
 <tr>
 <td><code>80c-rennstand.js</code></td>
-<td>Ansagen zum Rennstand aus vorproduzierten Sprachclips.
+<td>Ansagen zum Rennstand aus vorproduzierten Sprachclips (siehe <a href="./Rennarten.html#Rennstand-Ansage" title="Rennarten">Rennarten#Rennstand-Ansage</a>).
+</td></tr>
+<tr>
+<td><code>80d-rennintro.js</code></td>
+<td>Rennintro vor der Startampel (siehe <a href="./Rennarten.html#Rennintro" title="Rennarten">Rennarten#Rennintro</a>).
 </td></tr>
 <tr>
 <td><code>90-ghosts.js</code></td>
@@ -427,7 +435,7 @@
 </td></tr>
 <tr>
 <td><code>98e-statistik.js</code></td>
-<td>Statistiken (Kilometer, Ranglisten).
+<td>Statistiken (Kilometer, Ranglisten); <code>98ea-statistik-bereinigen.js</code> und <code>98eb-statistik-zeiten.js</code> zur <a href="./OmegaSim.html#Statistikbereinigung" title="OmegaSim">Statistikbereinigung</a>.
 </td></tr>
 <tr>
 <td><code>98f-studie.js</code></td>
@@ -436,6 +444,10 @@
 <tr>
 <td><code>98g-telemetrie-seite.js</code></td>
 <td>Seite Optionen → Telemetrie (WIP).
+</td></tr>
+<tr>
+<td><code>98h-pause.js</code></td>
+<td>Rennpause: Anzeige und Bedienung im Cockpit (siehe <a href="./Rennarten.html#Rennpause" title="Rennarten">Rennarten#Rennpause</a>).
 </td></tr>
 <tr>
 <td><code>99-index.tail.html</code></td>
@@ -568,6 +580,10 @@ Version = 1.(Woche − 10).Push     ab Woche 10 (12.10.2026)
 <td>Sitzungshistorie: Rennen mit allen Rundenzeiten (bis 200 Rennen)
 </td></tr>
 <tr>
+<td><code>chc.statistics.undo.v1</code></td>
+<td>Sicherung des vorherigen Statistikstands für „Letzte Bereinigung rückgängig“ (seit einem Folgepatch in IndexedDB)
+</td></tr>
+<tr>
 <td><code>chc.auto.v1</code></td>
 <td>Selbstsicherung aller Regler
 </td></tr>
@@ -617,6 +633,36 @@ Version = 1.(Woche − 10).Push     ab Woche 10 (12.10.2026)
 </td></tr></tbody></table>
 <p><b>Sicherungsdatei.</b> Optionen → Daten sichern schreibt alle Schlüssel mit diesen Präfixen in eine JSON-Datei vom Typ <code>omegasim-sicherung</code> (Version 1), dazu den Stand der Regler aus Optionen und Steuerung. Eine Präfixregel statt einer Schlüsselliste ist Absicht: Beim Sammeln fanden sich zwölf Schlüssel im Quelltext und ein dreizehnter (die Tastenbelegung, 1223 Byte Handarbeit) erst im laufenden Browser; eine Liste hätte ihn vergessen. Ein Selbsttest prüft, dass jede bekannte Schlüsselkonstante unter die Regel fällt. In der App schreibt <code>OmegaSicherung</code> die Datei zusätzlich nach <i>Dokumente/OmegaSim/OmegaSim-Sicherung.json</i>; sie überlebt eine Deinstallation, und eine neue Installation öffnet sie über den Dateiwähler. Seit 0.8.96 bittet die App den Browser außerdem, den Speicher dauerhaft zu halten (<code>navigator.storage.persist()</code>).
 </p>
+<div class="mw-heading mw-heading3"><h3 id="Statistikbereinigung">Statistikbereinigung</h3></div>
+<p>Die <b>Statistikbereinigung</b> (Optionen → Statistiken → „Statistiken bereinigen“, übernommen aus dem PR von Playdater1974; als WIP gekennzeichnet) entfernt gezielt Teile der Statistikablage, mit Vorschau, Rückfrage und Rückgängig. Sie liegt in <code>src/98ea-statistik-bereinigen.js</code> und <code>src/98eb-statistik-zeiten.js</code>.
+</p>
+<table class="wikitable">
+<tbody><tr>
+<th>Löschart</th>
+<th>Was entfernt wird
+</th></tr>
+<tr>
+<td>Auto (Name und Kennung)</td>
+<td>seine Lebenszeit-Statistik und seine Anteile aus gespeicherten Sitzungen; Mitfahrer und Garagenkonfiguration (Foto, Name, Farbe) bleiben erhalten
+</td></tr>
+<tr>
+<td>Einzelne Sitzung (Datum/ISO-Zeit, Modus, Autos, Runden, Bestzeit, Streckencode)</td>
+<td>nur diese Sitzung
+</td></tr>
+<tr>
+<td>Zu kurze Zeiten je Strecke</td>
+<td>alle gespeicherten Sitzungsrunden mit Zeiten strikt unter dem Grenzwert in Sekunden, samt ihrer indexbezogenen Boxen-/Crash-Ereignisse
+</td></tr></tbody></table>
+<ul><li>Umfang und Sonderfälle werden vor dem Löschen angezeigt und nochmals bestätigt. Falls durch eine Auto-Löschung keine Teilnehmer übrigbleiben, wird die Sitzung entfernt.</li>
+<li>Beim Löschen von Spieler 1 werden auch seine sitzungsweiten Kilometer, Fahrstil- und Strafdaten entfernt; bei NPC-Löschung bleiben diese Spielerwerte erhalten.</li>
+<li>Beide Ansichten (Statistiken und die Sitzungsliste in Renneinstellungen) sowie CSV-Exports verwenden danach die bereinigte Statistikablage.</li>
+<li>Bereinigung und Undo sind im laufenden Rennen/Training oder virtuellen Fahren gesperrt.</li>
+<li>Zu kurze Runden: Strecke über ihren Code; Drehung und gespiegeltes Layout gehören wie bei den Bestzeiten zur gleichen Strecke. Rundenanzahl und betroffene Fahrzeugrekorde werden korrigiert; Kilometer, Sitzungsanzahl und Kilometerbuchungen bleiben bewusst unverändert. Zusätzlich werden zu kurze lokale Time-Attack-Bestzeiten samt Medaille zurückgesetzt; lokale Telemetrie-Einträge unter dem Grenzwert werden entfernt.</li>
+<li>Nach jeder Bereinigung und nach Rückgängig werden Auswahl- und Statistiklisten sofort neu aufgebaut; der Bereich bleibt aufgeklappt.</li></ul>
+<p><b>Sicherung und Rückgängig:</b> Vor jeder Löschung wird der vorherige Statistikstand automatisch und bytegetreu unter <code>chc.statistics.undo.v1</code> gesichert (seit einem Folgepatch asynchron in IndexedDB, Datenbank <code>omegasim-statistics-backups</code>). Schlägt die Sicherung fehl, wird nicht gelöscht. „Letzte Bereinigung rückgängig“ funktioniert auch nach Neuladen, solange die Ablagen seit der Löschung unverändert sind. „Statistik-Sicherung als JSON“ exportiert den VORHERIGEN Stand im Format des Sicherungsimports.
+</p><p><b>Altdaten:</b> Die Lebenszeit-Summen sind unabhängig von den letzten maximal 200 Sitzungen und werden bewusst nicht aus diesem begrenzten Archiv neu aufgebaut. Neu gespeicherte Sitzungen erhalten pro Auto <code>statistikBuchung</code> mit dem exakt gebuchten Schlüssel und den km-/Runden-/Sitzungsbeiträgen; beim Löschen werden nur diese exakten Beiträge abgezogen. Alte Sitzungen ohne diese Buchung: Runden und Sitzungsanzahl werden abgezogen, soweit die Zuordnung eindeutig ist, die Lebenszeit-Kilometer bleiben unverändert (Vorschau und Rückfrage weisen darauf hin). Gerätekennungen haben Vorrang vor Namen; mehrdeutige Altdaten erscheinen als eigene <code>name:…</code>-Gruppe.
+</p>
+<ul><li>Selbsttest „Statistikbereinigung v1.2.15“ in <code>src/95-selftest.js</code>.</li></ul>
 <div class="mw-heading mw-heading3"><h3 id="Sprachen_(i18n)"><span id="Sprachen_.28i18n.29"></span>Sprachen (i18n)</h3></div>
 <p>Übersetzt wird mit dem <b>deutschen Text als Schlüssel</b><sup id="cite&#95;ref-7" class="reference"><a href="#cite_note-7"><span class="cite-bracket">&#91;</span>7<span class="cite-bracket">&#93;</span></a></sup>:
 </p>
@@ -788,25 +834,29 @@ Version = 1.(Woche − 10).Push     ab Woche 10 (12.10.2026)
 <li><code>android-app/…/OmegaSicherungPlugin.java</code>, <code>MainActivity.java</code></li>
 <li><code>src/97b-app.js</code>: <code>appAnbinden()</code>, <code>pruefen()</code></li>
 <li><code>src/98b-sicherung.js</code>: <code>SICHERUNG_PRAEFIXE</code>, <code>SICHERUNG_TYP</code></li>
+<li><code>src/98e-statistik.js</code>, <code>src/98ea-statistik-bereinigen.js</code>, <code>src/98eb-statistik-zeiten.js</code>: Statistik, Bereinigung, Zeitbereinigung</li>
+<li><code>src/15-pause.js</code>, <code>src/98h-pause.js</code>: Rennpause</li>
+<li><code>src/80c-rennstand.js</code>, <code>src/80d-rennintro.js</code>: Rennstand-Ansage und Rennintro</li>
 <li><code>src/10-ble-explorer.js</code>: <code>I18N_EN</code>, <code>I18N_ES</code>, <code>i18nApply()</code>, <code>setLang()</code>, <code>t()</code></li>
 <li><code>src/95-selftest.js</code>: <code>stAdd()</code>, <code>ST_TESTS</code>; <code>src/93-testbench.js</code>: <code>OMEGA_TEST</code></li>
 <li><code>src/20-protocol.js</code>: <code>controlHeartbeat()</code>, <code>CONTROL_SEND_INTERVAL_MS</code></li>
 <li><code>src/91-pwa.js</code></li></ul>
 <div class="mw-heading mw-heading2"><h2 id="Weblinks">Weblinks</h2></div>
 <ul><li>Browserfassung, Android-App und Quellcode: Links auf der <a href="./Hauptseite.html" title="Hauptseite">Hauptseite</a></li></ul>
+
 <!-- 
 NewPP limit report
-Parsed by mw162
-Cached time: 20261027053452
+Parsed by mw181
+Cached time: 20261029081240
 Cache expiry: 1296000
 Reduced expiry: false
 Complications: [show‐toc]
-CPU time usage: 0.097 seconds
-Real time usage: 0.101 seconds
-Preprocessor visited node count: 239/1000000
-Revision size: 36935/2097152 bytes
-Post‐expand include size: 752/2097152 bytes
-Template argument size: 15/2097152 bytes
+CPU time usage: 0.124 seconds
+Real time usage: 0.146 seconds
+Preprocessor visited node count: 247/1000000
+Revision size: 41329/2097152 bytes
+Post‐expand include size: 753/2097152 bytes
+Template argument size: 16/2097152 bytes
 Highest expansion depth: 3/100
 Expensive parser function count: 0/99
 Unstrip recursion depth: 0/20
@@ -814,14 +864,11 @@ Unstrip post‐expand size: 3305/5000000 bytes
 -->
 <!--
 Transclusion expansion time report (%,ms,calls,template)
-100.00%    2.515      1 Vorlage:Stand
-100.00%    2.515      1 -total
+100.00%    5.863      1 Vorlage:Stand
+100.00%    5.863      1 -total
 -->
 
-<!-- Render ID 220af358-d1c8-11f1-8c5d-bc241171d117 -->
-
-<!-- Saved in parser cache with key omegasimwiki:pcache:26:|#|:idhash:canonical and timestamp 20261027053452 and revision id 85. Rendering was triggered because: api-parse
- -->
+<!-- Render ID 823c9d25-d370-11f1-a459-bc2411dc6fa3 -->
 </div>
 </main>
 <footer class="wiki-foot">Snapshot aus dem OmegaSim Wiki (CC BY-SA 4.0)</footer>

@@ -318,6 +318,10 @@ Version = 0.woche.push               sonst
 <td>Beginn der gemeinsamen IIFE: BLE-Werkbank (GATT-Baum), <code>crc8()</code>, Protokoll-Hilfen und die Wörterbücher Englisch und Spanisch samt Übersetzungsmechanik.
 </td></tr>
 <tr>
+<td><code>15-pause.js</code></td>
+<td>Die lokale Rennpause: eigene Uhr, Wiederanlauf-Ampel und pausierbare Renn-Timeouts.
+</td></tr>
+<tr>
 <td><code>20-protocol.js</code></td>
 <td>Der 20-Byte-Fahrbefehl, der 45-ms-Herzschlag, das Schreibschloss je Charakteristik und der RC-Gasverlauf.
 </td></tr>
@@ -407,7 +411,7 @@ Version = 0.woche.push               sonst
 </td></tr>
 <tr>
 <td><code>80c-rennstand.js</code></td>
-<td>Sprachansagen zum Rennstand aus vorproduzierten Sprachclips.
+<td>Sprachansagen zum Rennstand aus vorproduzierten Sprachclips; <code>80d-rennintro.js</code> das Rennintro vor der Ampel.
 </td></tr>
 <tr>
 <td><code>90-ghosts.js</code></td>
@@ -483,7 +487,7 @@ Version = 0.woche.push               sonst
 </td></tr>
 <tr>
 <td><code>98e-statistik.js</code></td>
-<td>Statistiken aus den gespeicherten Sitzungen.
+<td>Statistiken aus den gespeicherten Sitzungen; <code>98ea-statistik-bereinigen.js</code> und <code>98eb-statistik-zeiten.js</code> die Statistikbereinigung.
 </td></tr>
 <tr>
 <td><code>98f-studie.js</code></td>
@@ -492,6 +496,10 @@ Version = 0.woche.push               sonst
 <tr>
 <td><code>98g-telemetrie-seite.js</code></td>
 <td>Vergleich zweier Runden unter <b>Optionen → Telemetrie</b> (WIP).
+</td></tr>
+<tr>
+<td><code>98h-pause.js</code></td>
+<td>Die Rennpause im Cockpit (Symbol, Bedienung).
 </td></tr>
 <tr>
 <td><code>99-index.tail.html</code></td>
@@ -632,17 +640,18 @@ Version = 0.woche.push               sonst
 <li><code>LICENSE</code></li></ul>
 <div class="mw-heading mw-heading2"><h2 id="Weblinks">Weblinks</h2></div>
 <ul><li>Browserfassung, Android-App und Quellcode: Links auf der <a href="./Hauptseite.html" title="Hauptseite">Hauptseite</a></li></ul>
+
 <!-- 
 NewPP limit report
-Parsed by mw202
-Cached time: 20261027053449
+Parsed by mw191
+Cached time: 20261029081243
 Cache expiry: 1296000
 Reduced expiry: false
 Complications: [show‐toc]
-CPU time usage: 0.101 seconds
-Real time usage: 0.106 seconds
+CPU time usage: 0.107 seconds
+Real time usage: 0.115 seconds
 Preprocessor visited node count: 223/1000000
-Revision size: 34902/2097152 bytes
+Revision size: 35269/2097152 bytes
 Post‐expand include size: 752/2097152 bytes
 Template argument size: 15/2097152 bytes
 Highest expansion depth: 3/100
@@ -652,14 +661,11 @@ Unstrip post‐expand size: 4042/5000000 bytes
 -->
 <!--
 Transclusion expansion time report (%,ms,calls,template)
-100.00%    2.837      1 Vorlage:Stand
-100.00%    2.837      1 -total
+100.00%    3.833      1 Vorlage:Stand
+100.00%    3.833      1 -total
 -->
 
-<!-- Render ID 20413444-d1c8-11f1-ad68-bc24110065aa -->
-
-<!-- Saved in parser cache with key omegasimwiki:pcache:55:|#|:idhash:canonical and timestamp 20261027053449 and revision id 78. Rendering was triggered because: api-parse
- -->
+<!-- Render ID 8406576a-d370-11f1-b9bb-bc24110d777b -->
 </div>
 </main>
 <footer class="wiki-foot">Snapshot aus dem OmegaSim Wiki (CC BY-SA 4.0)</footer>
