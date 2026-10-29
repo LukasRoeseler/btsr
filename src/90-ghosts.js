@@ -1447,7 +1447,12 @@
     // WACHHUND: haengt ein Schreibvorgang laenger als FUNK_HAENGT_MS, gilt er als verloren -
     // sonst stuende dieses Auto (Spieler 2, Ghost) fuer immer still.
     const jetzt = performance.now();
-    if (car.writeInFlight && jetzt - (car.writeSeit || 0) < FUNK_HAENGT_MS) return;
+    // v1.2.50: Einpark-/Haltefolgen (randHalt) und der Zieleinlauf (finish) verlieren KEINEN
+    // Takt - ihre Lenkimpulse und Bremsphasen dauern nur ~100 ms, und ein verworfenes Paket
+    // laesst das Auto durch die Folge springen. funkSchreiben() buendelt den neuesten Wert
+    // ohnehin, es wird nichts doppelt gesendet; der Wachhund dort bleibt aktiv.
+    const manOever = car.ghost && (car.ghost.randHalt || car.ghost.finish);
+    if (car.writeInFlight && !manOever && jetzt - (car.writeSeit || 0) < FUNK_HAENGT_MS) return;
     // v1.1.24 FUNKLAST: GEMELDET "Mit einem NPC klappt es gut" - mit mehreren nicht (Autos halten nicht,
     // fahren chaotisch, das eigene Auto reagiert nicht). Jedes fahrende Auto schrieb alle 45 ms, mit vier
     // NPCs und dem Fahrer ~110 Pakete/s ueber einen Bluetooth-Adapter; er war belegt, wiederholte und
@@ -5193,7 +5198,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const rh = car.ghost && car.ghost.randHalt;
     // 'brems' (Safety Car, Bremsimpuls nach dem Links-Impuls): sofort voll; danach haelt 'halt' die volle Bremse.
     if (rh) return rh.phase === 'brems' ? 1
-                 : rh.phase === 'halt' ? ((rh.sofort || rh.bremsMs) ? 1 : Math.max(0, Math.min(1, (rennZeitJetzt() - rh.at) / PIT_BREMS_RAMPE_MS))) : null;
+                 : rh.phase === 'halt' ? ((rh.sofort || rh.bremsMs) ? 1 : Math.max(0, Math.min(1, (makroUhr(car.ghost) - rh.at) / PIT_BREMS_RAMPE_MS))) : null;
     const p = car.ghost && car.ghost.pit;
     if (!p) return null;
     // In der Randphase wird NICHT gebremst - dort wird gefahren.
@@ -5502,6 +5507,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     for (const p of m) { if (p[0] <= ms) w = p; else break; }
     return w;
   }
+  // v1.2.50: die Uhr der Makros. Sie laeuft mit der PHYSIK-dt (g.macroMs, ghostTick), nicht
+  // mit der Wanduhr: unter Last waere die Folge sonst weiter als das Auto, und die Lenkimpulse
+  // kaemen zu einem falschen Zeitpunkt. Fuer Pruefstaende (kein g.macroMs) faellt sie auf die
+  // Wanduhr zurueck, damit die Tests, die h.at direkt setzen, unveraendert rechnen.
+  function makroUhr(g) {
+    return (g && typeof g.macroMs === 'number') ? g.macroMs : rennZeitJetzt();
+  }
   // Der Schritt einer laufenden Folge (randHalt-Phase 'skript'): erst angleichen, dann die Aufnahme.
   function skriptSchritt(h, now) {
     const e = now - h.at;
@@ -5548,7 +5560,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function randHaltStarten(car, opt) {
     const g = car.ghost;
     if (!g) return;
-    g.randHalt = { phase: opt.phase || 'rand', at: rennZeitJetzt(), quer: opt.quer,
+    g.randHalt = { phase: opt.phase || 'rand', at: makroUhr(g), quer: opt.quer,
                    tempo: opt.tempo === undefined ? formationPace() : opt.tempo,
                    randMs: opt.randMs || 0, haltMs: opt.haltMs || PIT_BREMS_MS, fertig: opt.fertig || null,
                    nachRandMs: opt.nachRandMs || 0, randErreicht: 0,
@@ -5575,7 +5587,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function randHaltRadLenk(car) {
     const h = car.ghost && car.ghost.randHalt;
     // v1.1.30: eine aufgenommene Folge lenkt selbst; im anschliessenden Halt stehen die Raeder gerade.
-    if (h && h.skript) return h.phase === 'skript' ? skriptSchritt(h, rennZeitJetzt()).lenk : 0;
+    if (h && h.skript) return h.phase === 'skript' ? skriptSchritt(h, makroUhr(car.ghost)).lenk : 0;
     if (!h || !h.radLenk) return null;
     if (h.phase === 'rad') return h.radLenk;
     if (h.phase === 'gegen') return -h.radLenk;
@@ -5588,16 +5600,17 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const g = car.ghost, h = g && g.randHalt;
     if (!h) return false;
     const now = rennZeitJetzt();
+    const t = makroUhr(g);                       // v1.2.50: Makro-Uhr (Physik-dt), nicht die Wanduhr
     g.gnadeBis = now + PIT_GNADE_MS;             // langsam am Rand ist kein Abflug
     if (h.phase === 'rand') {
-      const seit = now - h.at;
+      const seit = t - h.at;
       const amRand = Math.abs(g.querSoll || 0) >= Math.abs(h.quer) * PIT_RAND_TARGET;
       // nachRandMs: so lange NACH dem Erreichen der Querlage weiterfahren, damit das Auto sich
       // gerade zieht (v1.0.28, Aufstellung: "sodass sie gerade stehen und nicht schraeg").
-      if (amRand && !h.randErreicht) h.randErreicht = now;
-      const gerade = !h.nachRandMs || (h.randErreicht && now - h.randErreicht >= h.nachRandMs);
+      if (amRand && !h.randErreicht) h.randErreicht = t;
+      const gerade = !h.nachRandMs || (h.randErreicht && t - h.randErreicht >= h.nachRandMs);
       if ((seit >= h.randMs && amRand && gerade) || seit >= h.randMs + h.nachRandMs + RANDHALT_MAX_ZUSATZ_MS) {
-        randHaltWeiter(h, now);
+        randHaltWeiter(h, t);
       }
       return true;
     }
@@ -5608,17 +5621,17 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Ablauf jedes Mal ein bisschen anders. Nachholen hoechstens RANDHALT_NACHHOL_MS, damit nach einer
     // Pause keine kurze Phase uebersprungen wird.
     const naechste = (dauer, phase) => {
-      h.at = h.nominal ? Math.max(h.at + dauer, now - RANDHALT_NACHHOL_MS) : now;
+      h.at = h.nominal ? Math.max(h.at + dauer, t - RANDHALT_NACHHOL_MS) : t;
       h.phase = phase;
     };
     // v1.1.11 BESTELLT: "nach dem Ende des Lenkimpulses direkt die Geschwindigkeit auf 0". Der Takt
     // (~45 ms) bemerkte das Ende bisher erst im naechsten Takt danach - bis zu 45 ms mehr Fahrt bei
     // 30 % Tempo. Mit rundTakt (Aufstellung) endet eine Phase im Takt, der ihrem Ende am naechsten
     // liegt, und die Bremse greift im selben Takt voll (pitBremse, 'halt' mit sofort).
-    const vorbei = (dauer) => now - h.at >= dauer - (h.rundTakt ? RANDHALT_HALBTAKT_MS : 0);
+    const vorbei = (dauer) => t - h.at >= dauer - (h.rundTakt ? RANDHALT_HALBTAKT_MS : 0);
     if (h.phase === 'skript') {
       const dauer = h.anpassMs + manoeverDauer(h.skript);
-      if (now - h.at >= dauer) {
+      if (t - h.at >= dauer) {
         // Ausparken (weiter): ohne Halt in das normale Fahren uebergehen.
         if (h.weiter) { g.randHalt = null; if (h.fertig) h.fertig(car); }
         else naechste(dauer, 'halt');
@@ -5638,10 +5651,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       return true;
     }
     if (h.phase === 'brems') {
-      if (now - h.at >= h.bremsMs) naechste(h.bremsMs, 'halt');
+      if (t - h.at >= h.bremsMs) naechste(h.bremsMs, 'halt');
       return true;
     }
-    if (now - h.at >= h.haltMs) {
+    if (t - h.at >= h.haltMs) {
       g.randHalt = null;
       const fertig = h.fertig;
       if (!h.ohneStopp) stopGhost(car);
@@ -6338,7 +6351,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function scGegenschubDrive(car, drive0) {
     const h = car && car.ghost && car.ghost.randHalt;
     if (!h) return drive0;
-    const jetzt = rennZeitJetzt();
+    const jetzt = makroUhr(car.ghost);
     // Nach dem Rechts-Impuls (erster Gegenschub).
     if (h.gegenschubRadMs && h.radEnde && h.phase !== 'rand' && h.phase !== 'rad'
         && (jetzt - h.radEnde) < h.gegenschubRadMs) return scGegenschubWert(jetzt - h.radEnde);
@@ -6762,7 +6775,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!g || g.finish) return;
     if (g.randHalt) {
       if (g.randHalt.scLinie && g.randHalt.phase === 'rand') {
-        randHaltWeiter(g.randHalt, rennZeitJetzt());
+        randHaltWeiter(g.randHalt, makroUhr(g));
         log(garageLabel(sc) + (scAusfahrt(sc)
           ? ': Safety Car lenkt auf Kachel ' + g.tileIndex + ' von der Bahn (Startpunkt ' + scZielKachel(sc)
             + ', Verschiebung ' + scAusfahrtKachel() + ', Rechts ' + scAusfahrtMs() + ' ms, Links ' + scAusfahrtLinksMs() + ' ms, Gegenschub nach Rechts ' + scGegenschubRadMs() + ' ms, nach Links ' + scGegenschubMs() + ' ms, Raeder am Ende ' + Math.round(scEndLenk() * 100) + ' %).'
@@ -9625,6 +9638,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       && tilesJ[altG.tileIndex] && ortPasst(tilesJ[altG.tileIndex].type, car.tileCode)) ? altG.tileIndex : null;
     car.ghost = { engine: e, tileIndex: null, lastCount: car.tileCount,
                   lastTick: 0, bias: 0, laps: 0, cutOut: false, freeRun: false,
+                  // v1.2.50: die Makro-Uhr. Sie laeuft mit der PHYSIK-dt (ghostTick) statt mit
+                  // der Wanduhr, damit Einpark-/Haltefolgen mit dem Auto im Gleichschritt
+                  // bleiben, auch wenn der Herzschlag unter Last stoelpert (makroUhr()).
+                  macroMs: 0,
                   // Recovery-Versuch nach einem Abgang - siehe ghostRecoveryTick().
                   // recoverUntil > 0 heisst "wird gerade versucht", recoverStuckSince > 0
                   // heisst "seit hier steht das Tempo, moeglicherweise ein Aufprall".
@@ -10039,6 +10056,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const dt = g.lastTick ? Math.min(0.25, (now - g.lastTick) / 1000)
                           : CONTROL_SEND_INTERVAL_MS / 1000;
     g.lastTick = now;
+    // v1.2.50: die Makro-Uhr im Gleichschritt mit der Physik. `dt` ist gegen den Herzschlag
+    // gedeckelt (0,25 s); die Wanduhr `now` ist es nicht. Nur die Makro-Uhr vorruecken lassen,
+    // sonst laeuft die Folge der Wanduhr hinterher, waehrend das Auto erst die dt gefahren ist.
+    g.macroMs = (g.macroMs || 0) + dt * 1000;
     // Zieleinlauf hat Vorrang vor allem anderen: keine Linie, keine Wuerze, kein
     // Leitplanken-Modus. Steht die Sequenz, gilt nur noch sie.
     if (g.finish) { ghostFinishTick(car); return; }
@@ -11270,15 +11291,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // v1.1.30: eine aufgenommene Folge gibt auch das Gas vor. Das Fahrzeugmodell laeuft mit, damit es nach
     // dem Ausparken ohne Sprung weitergeht.
     if (g.randHalt && g.randHalt.phase === 'skript') {
-      const sk = skriptSchritt(g.randHalt, now);
+      const sk = skriptSchritt(g.randHalt, makroUhr(g));
       driveOut = sk.drive;
       e.state.speedKmh = sk.drive * e.config.topSpeedKmh;
       e.state.virtualSpeed = sk.drive;
     }
     // v1.1.3: neben der Strecke weich (randHaltLenkGlatt), und die feste Ausparkfolge.
-    if (radLenk !== null && g.randHalt && g.randHalt.nominal) radLenk = randHaltLenkGlatt(g.randHalt, radLenk, now);
+    if (radLenk !== null && g.randHalt && g.randHalt.nominal) radLenk = randHaltLenkGlatt(g.randHalt, radLenk, makroUhr(g));
     if (radLenk === null && armed) {
-      const ap = scAusparkSchritt(car, now);
+      const ap = scAusparkSchritt(car, makroUhr(g));
       if (ap) { radLenk = ap.lenk; driveOut = Math.max(drive, ap.drive); }
     }
     // Rueckweg mit Lenkung: zuruecksetzen, Raeder zur Kurveninnenseite, dann wieder auf die Bahn (rwSchritt).
