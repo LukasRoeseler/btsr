@@ -10862,8 +10862,9 @@
       if (!r.fertig) f.push('nicht fertig geworden (' + r.stand + ')');
       // v1.0.45: nach dem letzten Knopf 1 s Erholung (kein Fehler hier), danach erst fertig.
       if (Math.abs(r.dauer - (r.T + PIT_ERHOL_BASE)) > 0.3) f.push('Dauer ' + r.dauer.toFixed(2) + ' s statt ' + (r.T + PIT_ERHOL_BASE).toFixed(2));
-      // v1.1.11: fuenf Symbole, Fenster = T/5 minus 250 ms Pause (70-race.js, pitSpielFenster). Ohne
-      // Tasten laufen sie in die Standzeit hinein ab: Erwartung = so viele, wie bis zum Ende passen.
+      // v1.1.11: fuenf Symbole, Fenster = T/5 minus 250 ms Pause (70-race.js, pitSpielFenster); seit
+      // v1.2.4 ohne Pause. Ohne Tasten laufen sie in die Standzeit hinein ab: Erwartung = so viele, wie
+      // bis zum Ende passen.
       const fensterS = pitSpielFenster(r.T);
       const erwartet = Math.min(PIT_SPIEL_ANZAHL, Math.floor((r.T + PIT_ERHOL_BASE) / (fensterS + PIT_SPIEL_PAUSE)));
       if (r.i < erwartet) f.push('nur ' + r.i + ' Symbole abgelaufen statt ' + erwartet);

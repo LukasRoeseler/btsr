@@ -524,7 +524,7 @@
     display: flex; flex-direction: row; align-items: center; gap: 12px;
     text-align: left; padding: 10px 14px; min-height: 0;
     background: var(--panel-2); border: 1px solid var(--border-strong); border-radius: 6px;
-    color: inherit; font: inherit; cursor: pointer;
+    color: inherit; font: inherit; cursor: pointer; text-decoration: none;
   }
   .misc-tile:hover { background: var(--panel-3); border-color: var(--bad); }
   .misc-tile svg { width: 26px; height: 26px; flex-shrink: 0; }
@@ -4923,7 +4923,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.2.45</span></span>
+        <span class="foot-ver">v<span id="app-version">1.2.47</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -9840,6 +9840,13 @@
           <b>App &amp; Updates</b>
           <span>Version der Android-App, Updates ohne neue APK.</span>
         </button>
+        <a class="misc-tile" href="https://lukasroeseler.github.io/btsr/wiki/" target="_blank"
+           rel="noopener noreferrer">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M24 6a18 18 0 1 0 0 36 18 18 0 0 0 0-36z"/><path d="M6 24h36M24 6c-6 5-9 11-9 18s3 13 9 18c6-5 9-11 9-18s-3-13-9-18z"/></svg>
+          <b>Wiki</b>
+          <span>Das OmegaSim-Wiki: Idee von Gnen54, offene Artikel von Luuke42 unter CC BY-SA.</span>
+        </a>
       </div>
     </div>
     <div class="card subpage" id="sub-opt-general">
@@ -15918,6 +15925,7 @@
     "Jetzt laden": "Download now",
     "App & Updates": "App & updates",
     "Version der Android-App, Updates ohne neue APK.": "Android app version, updates without a new APK.",
+    "Das OmegaSim-Wiki: Idee von Gnen54, offene Artikel von Luuke42 unter CC BY-SA.": "The OmegaSim wiki: idea by Gnen54, open articles by Luuke42 under CC BY-SA.",
     "Die App lädt neue Fassungen selbst, direkt von der Projektseite. Geladen wird nur, was sich geändert hat, und alle Einstellungen bleiben erhalten. Startet eine neue Fassung nicht, schaltet die App von selbst auf die vorige zurück.": "The app downloads new versions itself, straight from the project page. Only what changed is downloaded, and all settings are kept. If a new version does not start, the app switches back to the previous one on its own.",
     "Web-Fassung": "Web version",
     "Quelle": "Source",
@@ -18623,6 +18631,7 @@
     "Jetzt laden": "Descargar ahora",
     "App & Updates": "App y actualizaciones",
     "Version der Android-App, Updates ohne neue APK.": "Versión de la app de Android, actualizaciones sin una nueva APK.",
+    "Das OmegaSim-Wiki: Idee von Gnen54, offene Artikel von Luuke42 unter CC BY-SA.": "El wiki de OmegaSim: idea de Gnen54, artículos abiertos de Luuke42 bajo CC BY-SA.",
     "Web-Fassung": "Versión web",
     "Quelle": "Fuente",
     "Nach Update suchen": "Buscar actualizaciones",
@@ -43186,18 +43195,20 @@
   let pitSpiel = null;
   // v1.1.11 BESTELLT: "Pit-Minigame: mach nur 5 Button-Events, nach jedem 250 ms ausblenden. Sieh zu,
   // dass es mit der Zeit noch ungefaehr passt." Fuenf Tasten statt acht; nach jeder (gedrueckt oder
-  // abgelaufen) ist das Feld 250 ms leer. Jedes Fenster ist ein Fuenftel der Standzeit minus diese
-  // Pause, so passen alle fuenf in die Zeit. Ein Treffer bringt 8 % statt 5 %: fuenf Treffer sparen
+  // abgelaufen) war das Feld 250 ms leer. Jedes Fenster war ein Fuenftel der Standzeit minus diese
+  // Pause, so passten alle fuenf in die Zeit. Ein Treffer bringt 8 % statt 5 %: fuenf Treffer sparen
   // wie bisher acht zusammen 40 %.
+  // v1.2.4 BESTELLT: "die Wartezeit nach jedem Knopf entfernen." Die Pause faellt weg: die Knoepfe
+  // erscheinen Rueck an Rueck, jedes Fenster ist ein Fuenftel der Standzeit.
   const PIT_SPIEL_ANZAHL = 5;
   const PIT_SPIEL_BONUS = 0.08;
-  const PIT_SPIEL_PAUSE = 0.25;
+  const PIT_SPIEL_PAUSE = 0;
   // v1.0.45 BESTELLT: nach dem letzten Knopf mindestens 1 s Erholung, laenger als Strafzeit
   // bei falschen Tasten. Erholung zusaetzlich zur Bonus-Strafe (5 % je falsche Taste).
   const PIT_ERHOL_BASE = 1.0;
   const PIT_ERHOL_PRO_FEHLER = 0.3;
-  // v1.0.45 BESTELLT: die Zeit zum Druecken 0,5 s laenger (T/Anzahl + 0,7 s). Seit v1.1.11 statt
-  // dessen T/Anzahl minus die Pause (siehe oben), mindestens PIT_SPIEL_FENSTER_MIN.
+  // v1.0.45 BESTELLT: die Zeit zum Druecken 0,5 s laenger. Seit v1.2.4 T/Anzahl ohne Pause,
+  // mindestens PIT_SPIEL_FENSTER_MIN.
   const PIT_SPIEL_FENSTER_MIN = 0.7;
   function pitSpielFenster(T) { return Math.max(PIT_SPIEL_FENSTER_MIN, T / PIT_SPIEL_ANZAHL - PIT_SPIEL_PAUSE); }
   let pitServiceStart = null;
@@ -43566,7 +43577,7 @@
     else { sp.bonus -= PIT_SPIEL_BONUS * sp.T; sp.fehler++; sp.blitz = 'falsch'; pitSpielTon(false, sp.i); }
     sp.blitzBis = pitStandElapsed + 0.3;
     sp.i++;
-    sp.fensterAb = pitStandElapsed + PIT_SPIEL_PAUSE;    // das naechste Fenster beginnt nach der Pause
+    sp.fensterAb = pitStandElapsed;    // das naechste Fenster beginnt sofort (keine Pause)
     pitSpielMalen();
     return true;
   }
@@ -43596,7 +43607,7 @@
     pitStandElapsed += dt;
     if (sp.i < sp.folge.length && pitStandElapsed - sp.fensterAb >= sp.fensterS) {
       sp.i++;
-      sp.fensterAb = pitStandElapsed + PIT_SPIEL_PAUSE;
+      sp.fensterAb = pitStandElapsed;    // das naechste Fenster beginnt sofort (keine Pause)
       sp.blitz = ''; sp.blitzBis = 0;   // v1.2.4: Zeit abgelaufen - weder Haken noch Kreuz
     }
     const anteil = Math.min(1, (pitStandElapsed + sp.bonus) / sp.T);
@@ -43639,7 +43650,7 @@
     el.hidden = !an;
     if (!an) return;
     const sp = pitSpiel;
-    // In der Pause (vor fensterAb) ist das Feld leer.
+    // Ohne Pause (v1.2.4): das naechste Symbol steht sofort da, sobald das Fenster offen ist.
     const sym = sp.i < sp.folge.length && pitStandElapsed >= sp.fensterAb ? sp.folge[sp.i] : '';
     el.dataset.symbol = sym;
     // v1.2.4: Zeitablauf setzt blitz zurueck (pitSpielTick), damit dort kein Haken erscheint.
@@ -61093,6 +61104,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if ((g.scStartKacheln || 0) < Math.max(2, nk / 2)) return;
       g.scErsteRunde = false;
       g.scHeim = true;
+      // GEMELDET: "das Einparken nach der ersten Runde klappt nicht gut". Die Startrunde endet an
+      // Start/Ziel, und dort ist der Ort BEKANNT - g.ortSicher wird sonst erst weiter unten im
+      // selben Takt von ortAbgleich() gesetzt, und scParkTick() verlangt es schon jetzt (siehe
+      // scOrtSicher()). Ohne diese Zeile fehlt dem Heimweg in genau diesem Moment die Bestaetigung,
+      // er laesst die Kachel verstreichen und faehrt noch eine Runde, bevor er parkt.
+      g.ortSicher = true;
       log(garageLabel(sc) + ': Safety Car hat seine Startrunde gefahren, parkt jetzt.', 'info');
       return;
     }
@@ -89049,8 +89066,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!r.fertig) f.push('nicht fertig geworden (' + r.stand + ')');
       // v1.0.45: nach dem letzten Knopf 1 s Erholung (kein Fehler hier), danach erst fertig.
       if (Math.abs(r.dauer - (r.T + PIT_ERHOL_BASE)) > 0.3) f.push('Dauer ' + r.dauer.toFixed(2) + ' s statt ' + (r.T + PIT_ERHOL_BASE).toFixed(2));
-      // v1.1.11: fuenf Symbole, Fenster = T/5 minus 250 ms Pause (70-race.js, pitSpielFenster). Ohne
-      // Tasten laufen sie in die Standzeit hinein ab: Erwartung = so viele, wie bis zum Ende passen.
+      // v1.1.11: fuenf Symbole, Fenster = T/5 minus 250 ms Pause (70-race.js, pitSpielFenster); seit
+      // v1.2.4 ohne Pause. Ohne Tasten laufen sie in die Standzeit hinein ab: Erwartung = so viele, wie
+      // bis zum Ende passen.
       const fensterS = pitSpielFenster(r.T);
       const erwartet = Math.min(PIT_SPIEL_ANZAHL, Math.floor((r.T + PIT_ERHOL_BASE) / (fensterS + PIT_SPIEL_PAUSE)));
       if (r.i < erwartet) f.push('nur ' + r.i + ' Symbole abgelaufen statt ' + erwartet);

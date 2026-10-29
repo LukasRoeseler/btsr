@@ -6812,6 +6812,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if ((g.scStartKacheln || 0) < Math.max(2, nk / 2)) return;
       g.scErsteRunde = false;
       g.scHeim = true;
+      // GEMELDET: "das Einparken nach der ersten Runde klappt nicht gut". Die Startrunde endet an
+      // Start/Ziel, und dort ist der Ort BEKANNT - g.ortSicher wird sonst erst weiter unten im
+      // selben Takt von ortAbgleich() gesetzt, und scParkTick() verlangt es schon jetzt (siehe
+      // scOrtSicher()). Ohne diese Zeile fehlt dem Heimweg in genau diesem Moment die Bestaetigung,
+      // er laesst die Kachel verstreichen und faehrt noch eine Runde, bevor er parkt.
+      g.ortSicher = true;
       log(garageLabel(sc) + ': Safety Car hat seine Startrunde gefahren, parkt jetzt.', 'info');
       return;
     }

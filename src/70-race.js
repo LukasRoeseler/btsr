@@ -4469,18 +4469,20 @@
   let pitSpiel = null;
   // v1.1.11 BESTELLT: "Pit-Minigame: mach nur 5 Button-Events, nach jedem 250 ms ausblenden. Sieh zu,
   // dass es mit der Zeit noch ungefaehr passt." Fuenf Tasten statt acht; nach jeder (gedrueckt oder
-  // abgelaufen) ist das Feld 250 ms leer. Jedes Fenster ist ein Fuenftel der Standzeit minus diese
-  // Pause, so passen alle fuenf in die Zeit. Ein Treffer bringt 8 % statt 5 %: fuenf Treffer sparen
+  // abgelaufen) war das Feld 250 ms leer. Jedes Fenster war ein Fuenftel der Standzeit minus diese
+  // Pause, so passten alle fuenf in die Zeit. Ein Treffer bringt 8 % statt 5 %: fuenf Treffer sparen
   // wie bisher acht zusammen 40 %.
+  // v1.2.4 BESTELLT: "die Wartezeit nach jedem Knopf entfernen." Die Pause faellt weg: die Knoepfe
+  // erscheinen Rueck an Rueck, jedes Fenster ist ein Fuenftel der Standzeit.
   const PIT_SPIEL_ANZAHL = 5;
   const PIT_SPIEL_BONUS = 0.08;
-  const PIT_SPIEL_PAUSE = 0.25;
+  const PIT_SPIEL_PAUSE = 0;
   // v1.0.45 BESTELLT: nach dem letzten Knopf mindestens 1 s Erholung, laenger als Strafzeit
   // bei falschen Tasten. Erholung zusaetzlich zur Bonus-Strafe (5 % je falsche Taste).
   const PIT_ERHOL_BASE = 1.0;
   const PIT_ERHOL_PRO_FEHLER = 0.3;
-  // v1.0.45 BESTELLT: die Zeit zum Druecken 0,5 s laenger (T/Anzahl + 0,7 s). Seit v1.1.11 statt
-  // dessen T/Anzahl minus die Pause (siehe oben), mindestens PIT_SPIEL_FENSTER_MIN.
+  // v1.0.45 BESTELLT: die Zeit zum Druecken 0,5 s laenger. Seit v1.2.4 T/Anzahl ohne Pause,
+  // mindestens PIT_SPIEL_FENSTER_MIN.
   const PIT_SPIEL_FENSTER_MIN = 0.7;
   function pitSpielFenster(T) { return Math.max(PIT_SPIEL_FENSTER_MIN, T / PIT_SPIEL_ANZAHL - PIT_SPIEL_PAUSE); }
   let pitServiceStart = null;
@@ -4849,7 +4851,7 @@
     else { sp.bonus -= PIT_SPIEL_BONUS * sp.T; sp.fehler++; sp.blitz = 'falsch'; pitSpielTon(false, sp.i); }
     sp.blitzBis = pitStandElapsed + 0.3;
     sp.i++;
-    sp.fensterAb = pitStandElapsed + PIT_SPIEL_PAUSE;    // das naechste Fenster beginnt nach der Pause
+    sp.fensterAb = pitStandElapsed;    // das naechste Fenster beginnt sofort (keine Pause)
     pitSpielMalen();
     return true;
   }
@@ -4879,7 +4881,7 @@
     pitStandElapsed += dt;
     if (sp.i < sp.folge.length && pitStandElapsed - sp.fensterAb >= sp.fensterS) {
       sp.i++;
-      sp.fensterAb = pitStandElapsed + PIT_SPIEL_PAUSE;
+      sp.fensterAb = pitStandElapsed;    // das naechste Fenster beginnt sofort (keine Pause)
       sp.blitz = ''; sp.blitzBis = 0;   // v1.2.4: Zeit abgelaufen - weder Haken noch Kreuz
     }
     const anteil = Math.min(1, (pitStandElapsed + sp.bonus) / sp.T);
@@ -4922,7 +4924,7 @@
     el.hidden = !an;
     if (!an) return;
     const sp = pitSpiel;
-    // In der Pause (vor fensterAb) ist das Feld leer.
+    // Ohne Pause (v1.2.4): das naechste Symbol steht sofort da, sobald das Fenster offen ist.
     const sym = sp.i < sp.folge.length && pitStandElapsed >= sp.fensterAb ? sp.folge[sp.i] : '';
     el.dataset.symbol = sym;
     // v1.2.4: Zeitablauf setzt blitz zurueck (pitSpielTick), damit dort kein Haken erscheint.
