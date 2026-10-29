@@ -123,10 +123,10 @@
            // 1,15 faellt es auf den Notboden von 11 Grad, und dann lenkt das Auto
            // unter Bremsen gar nicht mehr.
            // v1.0.43 BESTELLT: "Bremsen nimmt Lenkung auf 95 %". Mit dem schnellen Bremsaufbau
-           // (0,12 s) schlugen 115 % voll durch: bei einer Vollbremsung aus hohem Tempo lag die
-           // Lenkung nach einer halben Sekunde auf dem Notboden. Sim+ und Pacejka erben den Wert;
-           // Omega behaelt 1,15 (eingefroren).
-           'setting-brake-steal': 0.95,
+            // (0,12 s) schlugen 115 % voll durch: bei einer Vollbremsung aus hohem Tempo lag die
+            // Lenkung nach einer halben Sekunde auf dem Notboden. Sim+ erbt den Wert; Pacejka
+            // ueberschreibt ihn (v1.2.47, 0,75); Omega behaelt 1,15 (eingefroren).
+            'setting-brake-steal': 0.95,
            // Waermer an, weil Pro die Vorgabe ist: wer zum ersten Mal faehrt, soll nicht drei
            // Runden auf Grip warten und das fuer das Fahrverhalten halten.
            'setting-tyre-blankets': false,
@@ -285,7 +285,11 @@
         + 'Haftgrenze f\u00e4hrt es sich wie Physik, dar\u00fcber sp\u00fcrbar \u00dcbersteuern und '
         + 'Untersteuern, beides vibriert und quietscht. Zum Ausprobieren der Magic Formula, '
         + 'ohne die Klassen-Abstimmung.',
-    v: Object.assign({}, PRESETS.pro.v, { 'phys-mode': 'pacejka' }),
+    v: Object.assign({}, PRESETS.pro.v, { 'phys-mode': 'pacejka',
+      // v1.2.47: Pacejka-EIGENE Abstimmung (nur hier, nicht in Pro): schnellerer Anzug,
+      // etwas mehr Lenkwinkel und weniger Bremsen-Lenkungs-Kopplung. Bewusst als Override
+      // statt im Pro-Table, damit Pro unveraendert bleibt.
+      'phys-accel': 1.1, 'setting-steer-calib': 2.8, 'setting-brake-steal': 0.75 }),
   };
   // ---- OMEGA (v1.0.36): Pro, EINGEFROREN -------------------------------------------------
   // BESTELLT: "'Omega'-Fahrgefuehlmodus ergaenzen: so wie das Pro, was so lange bitgleich

@@ -4923,7 +4923,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.2.47</span></span>
+        <span class="foot-ver">v<span id="app-version">1.2.48</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -10516,9 +10516,9 @@
       <div class="opt-row"><div class="opt-label">Bremsen nimmt Lenkung<small>Der Reibkreis: was die Bremse an der Vorderachse verbraucht, fehlt der Lenkung. 0 hei&szlig;t, Bremsen und Lenken behindern sich nicht; h&ouml;here Werte lassen das Auto beim Anbremsen deutlich schlechter einlenken. Zu beachten: die Lenkwinkel-Kalibrierung darunter holt genau das wieder zur&uuml;ck, also wirkt ein starker Wert erst, wenn die Kalibrierung ihn nicht mehr ausgleichen kann.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-brake-steal" min="0" max="1.5" step="0.05" value="0.95">
+          <input type="range" id="setting-brake-steal" min="0" max="1.5" step="0.05" value="0.75">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-brake-steal-val">95%</span>
+          <span class="opt-val" id="setting-brake-steal-val">75%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Bremsaufbau<small>Wie schnell die Bremskraft am Reifen
           ansteht - und damit, wie fr&uuml;h beim Anbremsen die Lenkung nachl&auml;sst (siehe &bdquo;Bremsen nimmt
@@ -10534,16 +10534,16 @@
       <div class="opt-row"><div class="opt-label">Lenkwinkel-Kalibrierung<small>Für enge Strecken. Der Regler sitzt hinter dem Reibkreis: beim Anbremsen einer Kurve beschneidet der die Lenkung auf etwa 60 Prozent, und bei 200 Prozent erreicht dieser beschnittene Wunsch wieder den vollen Anschlag. Weiter als 45 Grad kann kein Wert lenken, das ist die Mechanik des Autos und nicht die App. Der Preis ist Feingefühl: je höher, desto früher liegt der Anschlag an und desto weniger sagt der letzte Teil des Sticks.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-steer-calib" min="1" max="3" step="0.05" value="2.5">
+          <input type="range" id="setting-steer-calib" min="1" max="3" step="0.05" value="2.8">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-steer-calib-val">250%</span>
+          <span class="opt-val" id="setting-steer-calib-val">280%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Beschleunigungsfaktor<small>Feinabstimmung, 1.0 = die eingestellte Zeit.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="phys-accel" min="0.4" max="2.0" step="0.05" value="1">
+          <input type="range" id="phys-accel" min="0.4" max="2.0" step="0.05" value="1.1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="phys-accel-val">1.00</span>
+          <span class="opt-val" id="phys-accel-val">1.10</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Tempo r&uuml;ckw&auml;rts<small>H&ouml;chsttempo im R&uuml;ckw&auml;rtsgang, in Prozent des bisherigen Werts. 50&nbsp;% ist die Vorgabe seit 1.1.11 (vorher 100&nbsp;%). Gilt auch f&uuml;r &bdquo;Gas und Bremse zusammen&ldquo;; das Auto f&auml;hrt dabei wirklich langsamer, nicht nur die Anzeige. Wenn das Auto selbst f&auml;hrt (gelbe Flagge, Aufstellung), gilt der Regler nicht.</small></div>
         <div class="opt-slider">
@@ -103192,10 +103192,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
            // 1,15 faellt es auf den Notboden von 11 Grad, und dann lenkt das Auto
            // unter Bremsen gar nicht mehr.
            // v1.0.43 BESTELLT: "Bremsen nimmt Lenkung auf 95 %". Mit dem schnellen Bremsaufbau
-           // (0,12 s) schlugen 115 % voll durch: bei einer Vollbremsung aus hohem Tempo lag die
-           // Lenkung nach einer halben Sekunde auf dem Notboden. Sim+ und Pacejka erben den Wert;
-           // Omega behaelt 1,15 (eingefroren).
-           'setting-brake-steal': 0.95,
+            // (0,12 s) schlugen 115 % voll durch: bei einer Vollbremsung aus hohem Tempo lag die
+            // Lenkung nach einer halben Sekunde auf dem Notboden. Sim+ erbt den Wert; Pacejka
+            // ueberschreibt ihn (v1.2.47, 0,75); Omega behaelt 1,15 (eingefroren).
+            'setting-brake-steal': 0.95,
            // Waermer an, weil Pro die Vorgabe ist: wer zum ersten Mal faehrt, soll nicht drei
            // Runden auf Grip warten und das fuer das Fahrverhalten halten.
            'setting-tyre-blankets': false,
@@ -103354,7 +103354,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         + 'Haftgrenze f\u00e4hrt es sich wie Physik, dar\u00fcber sp\u00fcrbar \u00dcbersteuern und '
         + 'Untersteuern, beides vibriert und quietscht. Zum Ausprobieren der Magic Formula, '
         + 'ohne die Klassen-Abstimmung.',
-    v: Object.assign({}, PRESETS.pro.v, { 'phys-mode': 'pacejka' }),
+    v: Object.assign({}, PRESETS.pro.v, { 'phys-mode': 'pacejka',
+      // v1.2.47: Pacejka-EIGENE Abstimmung (nur hier, nicht in Pro): schnellerer Anzug,
+      // etwas mehr Lenkwinkel und weniger Bremsen-Lenkungs-Kopplung. Bewusst als Override
+      // statt im Pro-Table, damit Pro unveraendert bleibt.
+      'phys-accel': 1.1, 'setting-steer-calib': 2.8, 'setting-brake-steal': 0.75 }),
   };
   // ---- OMEGA (v1.0.36): Pro, EINGEFROREN -------------------------------------------------
   // BESTELLT: "'Omega'-Fahrgefuehlmodus ergaenzen: so wie das Pro, was so lange bitgleich
