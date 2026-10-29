@@ -5625,40 +5625,13 @@
   // Wolken obenauf. Dazu: der Streckenscan uebersetzt jede Kachel (Engstelle war Start/Ziel).
   stAdd('Cockpit v1.2.12: Strecke im Regenradar, schmale Tank-/Schadenkachel, Scan uebersetzt jede Kachel', () => {
     const f = [];
-    const host = $('race-wx-karte'), sw = $('setting-wx-karte'), ot = $('setting-ontrack');
-    if (!host || !sw || !sw.defaultChecked) f.push('Kartenebene oder Schalter fehlt / ab Werk aus');
+    // v1.2.39: die Strecke im Radar ist wieder entfernt (Latenz), dafuer laesst sich das Radar abschalten.
+    if (String(wxRadarDraw).indexOf('const mitKarte = false') < 0) f.push('Strecke im Radar noch aktiv');
+    const sw = $('setting-wx-radar');
+    if (!sw || !sw.defaultChecked) f.push('Schalter Regenradar fehlt / ab Werk aus');
+    if (String(wxRadarDraw).indexOf('!wxRadarAn()') < 0) f.push('Radar zeichnet auch ausgeschaltet');
     const css = [...document.querySelectorAll('style')].map((x) => x.textContent).join('\n');
     if (css.indexOf('grid-template-columns: .6fr .6fr 1fr 1fr .8fr 2.6fr 1fr 1fr') < 0) f.push('Streifen nicht umverteilt');
-    const merk = { tiles: currentTrackTiles, sw: sw && sw.checked, ot: ot && ot.checked };
-    try {
-      currentTrackTiles = codeToTrack('SG3R2G3R2').tiles;
-      if (ot) ot.checked = true;
-      if (sw) sw.checked = true;
-      if (!wxKarteMalen() || !host.querySelector('svg.tp-karte')) f.push('Karte wird nicht gezeichnet');
-      const erst = host.firstElementChild;
-      wxKarteMalen();
-      if (host.firstElementChild !== erst) f.push('Strecke wird je Bild neu aufgebaut');
-      if (!host.querySelector('g.karte-autos')) f.push('keine Autoebene');
-      if (!(wxKarteGross > 1)) f.push('Autos nicht vergroessert (' + wxKarteGross + ')');
-      currentTrackTiles = codeToTrack('SG9RG9R').tiles;
-      wxKarteMalen();
-      if (host.firstElementChild === erst) f.push('Layoutwechsel zeichnet nicht neu');
-      // Lange Strecke: hochkant gezeichnet wird sie in einer breiten Kachel gedreht.
-      const vb = host.firstElementChild.getAttribute('viewBox').split(' ').map(Number);
-      if (!(Math.max(vb[2], vb[3]) > Math.min(vb[2], vb[3]) * 1.5)) f.push('lange Strecke nicht lang (' + vb.join(' ') + ')');
-      if (String(wxKarteMalen).indexOf("rotate(90deg)") < 0) f.push('hochkante Strecke wird nicht gedreht');
-      if (sw) sw.checked = false;
-      if (wxKarteMalen() || !host.hidden) f.push('Schalter aus laesst die Karte stehen');
-      // Ausdruck-Modus ohne eigenes Foto: kein Editor-Layout.
-      if (sw) sw.checked = true;
-      if (ot) ot.checked = false;
-      const fotoDa = typeof konsoleFoto === 'function' && konsoleFoto();
-      if (!fotoDa && wxKarteMalen()) f.push('Ausdruck-Modus zeigt das Editor-Layout');
-    } finally {
-      currentTrackTiles = merk.tiles;
-      if (sw) sw.checked = merk.sw; if (ot) ot.checked = merk.ot;
-      wxKarteSchluessel = null; wxKarteMalen();
-    }
     // Groessere Autos: der Faktor steht im transform, die Sonden lesen weiter translate/rotate.
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     const r = renderTrackPreview(codeToTrack('SG3R2G3R2').tiles, null, { detailed: true, cars: [] });
@@ -5672,7 +5645,7 @@
     }
     const tm = trackMode;
     try { trackMode = 'on'; if (codeZuTyp(0x0a) !== TILE_TYPE.ENGE) f.push('Engstelle auf der Bahn nicht erkannt'); } finally { trackMode = tm; }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Strecke im Radar, einmal je Layout, Autos x' + wxKarteGross.toFixed(1) + ', Scan uebersetzt' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Radar abschaltbar, keine Strecke im Radar, Scan uebersetzt' };
   });
 
   // v1.2.9 BESTELLT: Silhouetten (Draufsicht) fuer Porsche, Ford, BMW, Ferrari und den

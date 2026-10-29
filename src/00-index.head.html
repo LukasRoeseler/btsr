@@ -314,6 +314,7 @@
     pointer-events: none; border-radius: inherit; z-index: 1; }
   /* v1.2.12: die Strecke mit den Autos UNTER dem Radar. Der Grund ist der des Radars, damit die
      Kachel mit und ohne Karte gleich aussieht; das SVG behaelt sein Seitenverhaeltnis. */
+  body.wx-radar-aus .wx-radar { display: none; }
   .wx-karte { position: absolute; inset: 0; z-index: 0; pointer-events: none; display: grid;
     place-items: center; background: var(--wx-grund, #0d1219); border-radius: inherit; overflow: hidden; }
   .wx-karte[hidden] { display: none; }
@@ -1491,9 +1492,6 @@
     grid-template-columns: .6fr .6fr 1fr 1fr .8fr 2.6fr 1fr 1fr; }
   /* Hoeher nur, wo Platz ist: im Vollbild und auf niedrigen Schirmen rechnet cockpitPassung()
      sonst einen kleineren Massstab fuer das ganze Cockpit (Selbsttest "Cockpit passt im Vollbild"). */
-  @media (min-height: 561px) {
-    body:not(.race-fs) .gt3-strip > .gt3-wx { min-height: clamp(64px, 10vw, 120px); }
-  }
   @media (max-width: 560px) {
     /* Zwei Reihen: oben Tank, Schaden, Reifen, Akku, Licht; unten das Radar ueber drei Spalten,
        dann Boxenwahl und G-Plot. */
@@ -4925,7 +4923,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.2.38</span></span>
+        <span class="foot-ver">v<span id="app-version">1.2.44</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4955,7 +4953,6 @@
         <span class="k-knopfreihe">
           <button type="button" class="k-knopf" id="fa-verbinden">Verbinden</button>
           <button type="button" class="k-knopf" id="fa-garage">Garage</button>
-          <button type="button" class="k-knopf" id="fa-reinig" hidden>Reinigungsfahrzeug starten</button>
         </span>
       </div>
       <div class="k-kachel " id="fa-strecke" role="button" tabindex="0" data-quad="bahn">
@@ -5246,7 +5243,6 @@
              wer nur "wechselhaft" sieht, weiss nicht, worauf er gerade faehrt. -->
         <div class="gt3-box gt3-click gt3-wx" id="race-wx-box"
              title="Wetter umschalten: sonnig, Regen, wechselhaft">
-          <div class="wx-karte" id="race-wx-karte" aria-hidden="true" hidden></div>
           <canvas id="race-wx-radar" class="wx-radar" width="200" height="150"
                   aria-hidden="true"></canvas>
           <div class="wx-ico"><svg class="gt3-ico" id="race-wx-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Trocken"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg><svg class="gt3-ico" id="race-wx-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Regen" style="display:none"><path d="M6.5 14a4 4 0 0 1 .4-8 5.5 5.5 0 0 1 10.5 1.4A3.6 3.6 0 0 1 17.5 14z"/><path d="M8 17.5l-1 2.5M12 17.5l-1 2.5M16 17.5l-1 2.5"/></svg><span class="wx-wechsel" id="race-wx-wechsel" aria-label="wechselhaft" style="display:none" data-i18n-skip>&#8646;</span></div></div>
@@ -6093,6 +6089,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.2</span></b></p>
       <ul class="muted" id="patchnotes-12" style="padding-left:20px; line-height:1.7">
+        <li>Latenz: Die Strecke im Regenradar ist wieder entfernt, und das Radar zeichnet nur noch in einfacher Aufl&#246;sung (auf hochaufl&#246;senden Handys ein Viertel der Bildpunkte). Neuer Schalter &#8222;Regenradar&#8220; unter Optionen &#8594; Allgemein: aus, wird das Radar gar nicht gezeichnet. Der Knopf &#8222;Reinigungsfahrzeug starten&#8220; steht nur noch in der Bahn-Kachel, nicht mehr in der Garagen-Kachel.</li>
         <li>NPCs: Start/Ziel gilt jetzt &#252;berall als Gerade. Die Linie h&#228;lt dort die Querlage wie auf jeder Geraden, statt hinter einer Kurve halb innen zu bleiben, und der Vorausblick ans Auto meldet auf der Bahn Start/Ziel (0x01) statt der Engstelle (0x0A). NPC-Stufe MAX: Ohne Schaltpause wurde der Schaltvorgang nach dem ersten Hochschalten nie beendet, das Auto hatte danach keinen Antrieb mehr &#8211; behoben, MAX f&#228;hrt auf Geraden etwa doppelt so schnell wie vorher. Ideallinie (Linienmodell SIMULATOR, WIP): Die Suche rechnet mit dem echten Kurventempo der NPCs und f&#228;hrt au&#223;en-innen-au&#223;en (Kurveneingang und -ausgang au&#223;en, Scheitel innen), statt nur die innere H&#228;lfte zu nutzen; die Haarnadel bleibt davon ausgenommen, gespeicherte Linien werden neu gesucht.</li>
         <li>Virtuell fahren: Neben dem eigenen Auto stand im 3D-Bild ein kleines Kartenauto, die Silhouette aus dem Regenradar des Cockpits, das darunter eigentlich verborgen ist; es ist weg. Die NPCs fahren jetzt mit dem Tempo der Garagenstufe 1 (mittel, 55 %) statt mit rund 80 %, beschleunigen und bremsen mit demselben Fahrzeugmodell wie das eigene Auto und nehmen Kurven mit h&#246;chstens 1,3 g. Ihre Neigung in Kurven war durch einen Rechenfehler bis zu 34 Grad gro&#223; und ist jetzt so klein wie beim eigenen Auto (unter 1 Grad).</li>
         <li>Cockpit: Die Rennpause ist jetzt ein kleines Symbol oben rechts, mit Abstand links neben dem Beenden-Knopf (Pause, Fortsetzen, Wiederanlauf stoppen). Boxen-Minigame: Alle f&#252;nf Kn&#246;pfe stehen von Anfang an in einer Reihe an festen Pl&#228;tzen, erledigte blenden aus. Streckeneditor: Mit einer Haarnadel in der Strecke fehlte an der letzten Fuge vor Start/Ziel ein St&#252;ck Randstreifen (rund 3 cm), sodass z. B. SHG3R4L nicht zusammenzupassen schien; die Ma&#223;e selbst stimmen und schlie&#223;en exakt.</li>
@@ -9888,10 +9885,9 @@
           <option value="modern">Modern, 2000er (hell)</option>
           <option value="klassiker">Klassiker: Walnuss und Chrom</option>
         </select></div>
-      <div class="opt-row"><div class="opt-label">Strecke im Regenradar <span class="wip-tag">WIP</span><small>Das Regenradar im
-          Cockpit zeigt die Strecke mit allen Autos, die Wolken und der Regen ziehen dar&uuml;ber. Im Ausdruck-Modus
-          steht dort das eigene Foto der Bahn, sonst das Radar allein. Aus: das Radar wie bisher.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-wx-karte" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Regenradar<small>Das Regenradar im Cockpit. Aus: die Kachel
+          bleibt leer und das Radar wird gar nicht gezeichnet &ndash; das spart Rechenzeit auf schwachen Handys.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-wx-radar" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Startampel
           <small>Wie die Startampel erscheint: als Bild &uuml;ber dem Cockpit mit T&ouml;nen (Vorgabe), nur mit den T&ouml;nen &ndash; das Cockpit bleibt frei &ndash;, oder nur als Bild ohne T&ouml;ne. Gilt f&uuml;r den Rennstart und den Neustart nach Gelb.</small></div>
         <select id="setting-ampel" data-preset-skip>

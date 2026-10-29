@@ -3936,96 +3936,29 @@
     }
   }
 
-  // ---- DIE STRECKE IM REGENRADAR (v1.2.12, WIP) ------------------------------------
-  // BESTELLT: "Anzeigen fuer Tank und Schaden schmaler und dafuer Regenradar vergroessern und die
-  // Streckenanzeige mit Fahrzeugpositionen (bzw. Bild der Bahn) dort anzeigen. Stelle sicher, dass
-  // verschiedene Streckenlayouts da gut hinpassen. Die Wolken sollten dann auch da drauf sein."
-  //
-  // Eine SVG-Ebene UNTER dem Canvas: die Strecke zeichnet renderTrackPreview nur, wenn sich das
-  // Layout aendert (wie ovKarteMalen), die Autos setzt karteAutosSetzen je Radarbild (0,03 ms).
-  // Das SVG behaelt sein Seitenverhaeltnis (meet) und steht mittig - eine lange, flache Strecke
-  // fuellt die breite Kachel, eine runde steht mit Rand links und rechts.
-  let wxKarteSchluessel = null, wxKarteGeo = null, wxKarteGross = 1;
-  function wxKarteAn() {
-    const s = $('setting-wx-karte');
+  // ---- REGENRADAR AN/AUS (v1.2.39) ------------------------------------------------
+  // BESTELLT: "Latenz mit 2 Spielern und mit 1 Spieler und NPCs ist zu hoch. Evtl. kann das vom
+  // neuen Strecken+Regenradar kommen, also das bitte rueckgaengig machen sowie mir die Option geben,
+  // den Radar auszublenden. Die App muss auf 100-Euro-Handys fluessig laufen." Die Strecke im Radar
+  // (v1.2.12) ist wieder entfernt; aus gezeichnet wird gar nichts.
+  function wxRadarAn() {
+    const s = $('setting-wx-radar');
     return !s || s.checked;
   }
-  function wxKarteMalen() {
-    const host = $('race-wx-karte');
-    if (!host) return false;
-    const tiles = currentTrackTiles;
-    const frei = !(($('setting-ontrack') || {}).checked);
-    // Ausdruck-Modus: das eigene Foto der Bahn (wie in der Uebersicht, v0.9.31), ohne Autos - und
-    // ohne Foto KEIN Editor-Layout, denn das ist dann nicht die Bahn, auf der gefahren wird.
-    const foto = frei ? ((typeof konsoleFoto === 'function' && konsoleFoto()) || '') : '';
-    if (!wxKarteAn() || (frei && !foto) || (!foto && (!tiles || tiles.length < 2))) {
-      if (host.firstChild) { host.innerHTML = ''; wxKarteSchluessel = null; wxKarteGeo = null; }
-      host.hidden = true;
-      return false;
-    }
-    host.hidden = false;
-    if (foto) {
-      const s = 'foto:' + foto.length + ':' + foto.slice(-24);
-      if (s !== wxKarteSchluessel) {
-        host.innerHTML = '';
-        const img = document.createElement('img');
-        img.alt = '';
-        img.src = foto;
-        host.appendChild(img);
-        wxKarteSchluessel = s;
-        wxKarteGeo = null;
-      }
-      return true;
-    }
-    const schluessel = tiles.length + ':' + (typeof trackToCode === 'function'
-      ? trackToCode(tiles) : String(tiles.map((t) => t.type)));
-    if (schluessel !== wxKarteSchluessel) {
-      // Schlicht: ohne Ideallinie und ohne deren Rechnung - auf ein paar Zentimetern Kachel waere
-      // sie nur ein Strich mehr, und sie kostet den Grossteil der 94 ms.
-      const r = renderTrackPreview(tiles, null, { detailed: true, cars: [], ohneLinie: true, ohneLinieRechnen: true, rand: 18 });
-      host.innerHTML = r.html;
-      wxKarteGeo = r.geo;
-      wxKarteSchluessel = schluessel;
-      // Die Autos auf rund 7 Prozent der laengeren Kartenseite, mindestens Bahnmass.
-      const vb = (host.firstElementChild && host.firstElementChild.getAttribute('viewBox') || '').split(/\s+/).map(Number);
-      const lang = Math.max(vb[2] || 0, vb[3] || 0);
-      wxKarteGross = Math.max(1, (0.07 * lang) / AUTO_LANG);
-    }
-    const svg = host.firstElementChild;
-    // HOCHKANT IN EINER BREITEN KACHEL: um 90 Grad drehen. Die App zeichnet lange Strecken oft
-    // senkrecht, und in der breiten Radarkachel bliebe dann links und rechts der meiste Platz leer.
-    // Gedreht wird das ganze SVG (Strecke UND Autos), also stimmen auch die Fahrtrichtungen.
-    if (svg && svg.tagName.toLowerCase() === 'svg') {
-      const vb = (svg.getAttribute('viewBox') || '').split(/\s+/).map(Number);
-      const hw = host.clientWidth, hh = host.clientHeight;
-      const drehen = vb[3] > vb[2] * 1.15 && hw > hh * 1.15;
-      const soll = drehen ? hh + 'x' + hw : '';
-      if (svg.dataset.dreh !== soll) {
-        svg.dataset.dreh = soll;
-        svg.style.width = drehen ? hh + 'px' : '';
-        svg.style.height = drehen ? hw + 'px' : '';
-        svg.style.maxWidth = svg.style.maxHeight = drehen ? 'none' : '';
-        // Absolut in die Mitte und dort drehen: im Raster wuerde das hohe Element oben anliegen.
-        svg.style.position = drehen ? 'absolute' : '';
-        svg.style.left = svg.style.top = drehen ? '50%' : '';
-        svg.style.transform = drehen ? 'translate(-50%, -50%) rotate(90deg)' : '';
-      }
-    }
-    if (svg && wxKarteGeo && typeof karteAutosSetzen === 'function') {
-      karteAutosSetzen(svg, wxKarteGeo, trackCarMarks(), { gross: wxKarteGross, ohneText: true });
-    }
-    return true;
+  if ($('setting-wx-radar')) {
+    const radarSchalter = () => document.body.classList.toggle('wx-radar-aus', !wxRadarAn());
+    $('setting-wx-radar').addEventListener('change', radarSchalter);
+    radarSchalter();
   }
 
   function wxRadarDraw() {
     const cv = $('race-wx-radar');
-    if (!cv || document.hidden || !cv.clientWidth) return;
-    // Liegt die Strecke darunter, ist das Radar durchsichtig: kein Grund, kein Gitter, kein
-    // Fadenkreuz (wo WIR sind, zeigt dann das eigene Auto), nur Regenfaerbung und Wolken.
-    const mitKarte = wxKarteMalen();
+    if (!cv || document.hidden || !cv.clientWidth || !wxRadarAn()) return;
+    const mitKarte = false;   // v1.2.39: Strecke im Radar entfernt (Latenz), siehe wxRadarAn()
     // Auf die tatsaechliche Anzeigegroesse ziehen: ein Canvas mit falscher Pufferbreite wird
     // von der Grafikkarte skaliert und sieht unscharf aus.
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    // v1.2.39: hoechstens 1 Puffer-Pixel je CSS-Pixel - auf einem dpr-2-Handy ein Viertel der Flaeche.
+    const dpr = 1;
     const bw = Math.round(cv.clientWidth * dpr), bh = Math.round(cv.clientHeight * dpr);
     if (cv.width !== bw || cv.height !== bh) { cv.width = bw; cv.height = bh; }
     const g = cv.getContext('2d');
