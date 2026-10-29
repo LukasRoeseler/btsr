@@ -2619,14 +2619,23 @@
   // Android geht nach einiger Zeit oft vom schnellen Verbindungsintervall zurueck, und angefordert wurde es nur
   // beim Verbinden (und 5 s danach). Ein Auto meldet sich normal etwa alle 45 ms; liegt der geglaettete Abstand
   // laenger als MELDE_LANGSAM_MS darueber, wird die hohe Prioritaet erneut angefordert - hoechstens alle 20 s.
-  const MELDE_LANGSAM_MS = 75, MELDE_PRIO_PAUSE_MS = 20000;
+  // v1.2.45 BESTELLT (Latenz mit 2 Spielern + NPCs): vorher ab 75 ms gleitendem Meldeabstand alle 20 s je
+  // Auto neu angefordert. Ein Auto meldet schon allein alle 61-69 ms, mit vier Autos auf einem billigen
+  // Adapter lag es dauerhaft darueber - dann handelte das Handy etwa alle 5 s mit irgendeinem Auto die
+  // Verbindung neu aus, und jede Neuverhandlung kann den Funk stocken lassen. Jetzt: erst wenn ein Auto
+  // MELDE_LANGSAM_DAUER_MS lang ueber MELDE_LANGSAM_MS liegt, und nur EINMAL je Verbindung (car.rx).
+  const MELDE_LANGSAM_MS = 120, MELDE_LANGSAM_DAUER_MS = 5000;
   function meldetaktBeobachten(car, jetzt) {
     if (car.meldungAt) {
       const d = Math.min(1000, jetzt - car.meldungAt);
       car.meldeAbstand = car.meldeAbstand === undefined ? d : car.meldeAbstand + (d - car.meldeAbstand) * 0.05;
       const b = window.OMEGA_BRUECKE;
-      if (car.meldeAbstand > MELDE_LANGSAM_MS && jetzt - (car.prioAt || 0) > MELDE_PRIO_PAUSE_MS
+      if (car.meldeAbstand > MELDE_LANGSAM_MS) {
+        if (!car.langsamSeit) car.langsamSeit = jetzt;
+      } else car.langsamSeit = 0;
+      if (car.langsamSeit && jetzt - car.langsamSeit > MELDE_LANGSAM_DAUER_MS && car.prioFuerRx !== car.rx
           && b && typeof b.prioritaetHoch === 'function') {
+        car.prioFuerRx = car.rx;
         car.prioAt = jetzt;
         b.prioritaetHoch(car.device.id);
         log(garageLabel(car) + ': Meldungen nur alle ' + Math.round(car.meldeAbstand) + ' ms - schnelles Verbindungsintervall neu angefordert.', 'info');

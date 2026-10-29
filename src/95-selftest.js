@@ -5527,7 +5527,10 @@
     const pts = trackCenterline(tiles), nrm = trackNormals(pts);
     const closed = trackSchluss(pts).closed;
     const o = { closed, tiles, aLat: gz.aLat, aAcc: gz.aAcc, aBrk: gz.aBrk, vMax: gz.vMax, nurRechnen: true, maxAuswertungen: 80 };
-    const e = await simSuche({ key: 'selbsttest', abbruch: false, auswertungen: 0 }, pts, nrm, o);
+    simOhneEditor = true;   // v1.2.45: die Suche laeuft sonst nur bei offenem Editor
+    let e;
+    try { e = await simSuche({ key: 'selbsttest', abbruch: false, auswertungen: 0 }, pts, nrm, o); }
+    finally { simOhneEditor = false; }
     if (!e || !e.alpha) return { ok: false, mass: 'Suche ohne Ergebnis' };
     const limit = TRACK_HALF_W - 3;
     // Das Ergebnis ist auf 0,01 Einheiten gerundet (simSuche), daher die Toleranz unten.
@@ -5566,6 +5569,33 @@
   // Menue, Kartenpunkte springen, Aufstellung ab Reihe 2, Regenflackern; dazu Kleinigkeiten.
   // v1.2.4 BESTELLT: Renntypen je Sensormodus, Fahrgefuehl je Spieler, Pacejka in Community-Challenges, Minigame-
   // Rueckmeldung, mechanische Boxensignale, NPC-Box wie Safety Car, Safety-Car-Parken auf kurzen Geraden.
+  // v1.2.45 BESTELLT: Latenz - Funkprioritaet nur einmal je Verbindung, SIMULATOR-Linie nur im Editor.
+  stAdd('Latenz v1.2.45: Prioritaet einmal je Verbindung, SIMULATOR nur im Editor', () => {
+    const f = [];
+    const merkB = window.OMEGA_BRUECKE;
+    let aufrufe = 0;
+    const car = { rx: {}, device: { id: 'probe-prio' }, alias: 'Probe' };
+    try {
+      window.OMEGA_BRUECKE = Object.assign({}, merkB || {}, { prioritaetHoch: () => { aufrufe++; } });
+      // 20 s lang alle 150 ms gemeldet: genau eine Anforderung, erst nach > 5 s.
+      let t = 1000, ersteBei = null;
+      for (; t < 21000; t += 150) { meldetaktBeobachten(car, t); if (aufrufe && ersteBei === null) ersteBei = t; }
+      if (aufrufe !== 1) f.push(aufrufe + ' Anforderungen statt 1');
+      if (ersteBei !== null && ersteBei < 5000) f.push('zu frueh (' + ersteBei + ' ms)');
+      // Neue Verbindung (neues rx): wieder eine erlaubt.
+      car.rx = {};
+      for (let k = 0; k < 80; k++, t += 150) meldetaktBeobachten(car, t);
+      if (aufrufe !== 2) f.push('neue Verbindung fordert nicht neu an (' + aufrufe + ')');
+      // Normaler Takt (65 ms): nie.
+      const ruhig = { rx: {}, device: { id: 'probe-ruhig' } }; const vor = aufrufe;
+      for (let k = 0; k < 400; k++) meldetaktBeobachten(ruhig, 1000 + k * 65);
+      if (aufrufe !== vor) f.push('fordert bei 65 ms an');
+    } finally { window.OMEGA_BRUECKE = merkB; }
+    if (String(simulatorLinie).indexOf('if (simImEditor()) simStarten') < 0) f.push('SIMULATOR sucht ausserhalb des Editors');
+    if (String(simPause).indexOf('!simImEditor()') < 0) f.push('SIMULATOR-Suche pausiert ausserhalb des Editors nicht');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eine Anforderung je Verbindung ab >120 ms fuer 5 s, SIMULATOR nur im Editor' };
+  });
+
   // v1.2.30 BESTELLT: Pause als kleines Symbol links neben "Beenden"; Minigame-Reihe mit festen Plaetzen;
   // SHG3R4L schliesst auch in der Zeichnung (Randstreifen ab dem Ursprung).
   stAdd('Cockpit v1.2.30: Pause-Symbol neben Beenden, Minigame feste Plaetze, Randstreifen schliesst', () => {

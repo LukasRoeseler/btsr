@@ -208,6 +208,16 @@
     try { return typeof simErgebnisse === 'object' && typeof SIM_STORE === 'string'; } catch (e) { return false; }
   }
   // Aus buildLine(): fertige Linie, sonst die Luuke-Linie als Zwischenstand und Suche starten.
+  // v1.2.45 BESTELLT: "Das Linienmodell Simulator sollte nur einmal im Editor berechnet werden und
+  // nicht nebenbei neu." Die Suche laeuft auf dem Hauptfaden zwischen den 45-ms-Paketen und kostete im
+  // freien Fahren Takt (Latenz auf schwachen Handys). Gesucht wird nur noch bei offenem Strecken-Editor;
+  // sonst gilt die gespeicherte Linie, und fehlt sie, die Luuke-Linie ohne Hintergrundrechnung.
+  var simOhneEditor = false;   // nur fuer den Selbsttest, der simSuche() direkt aufruft
+  function simImEditor() {
+    if (simOhneEditor) return true;
+    const tab = document.querySelector('.tabpage.active');
+    return !!tab && tab.id === 'tab-track';
+  }
   function simulatorLinie(pts, nrm, o) {
     const basis = luukeLinie(pts, nrm, o);
     if (!simBereit()) return Object.assign(basis, { vorlaeufig: true });
@@ -222,7 +232,7 @@
         span: alpha.reduce((m, a) => Math.max(m, Math.abs(a)), 0),
         simZeit: fertig.zeit, simRunden: fertig.runden, vorlaeufig: false });
     }
-    simStarten(key, pts, nrm, o);
+    if (simImEditor()) simStarten(key, pts, nrm, o);
     return Object.assign(basis, { vorlaeufig: true });
   }
 
@@ -302,7 +312,8 @@
       const kanal = new MessageChannel();
       const pruefen = () => {
         const rennen = typeof kRennenLaeuft === 'function' && kRennenLaeuft();
-        if (rennen) { setTimeout(pruefen, 1000); return; }
+        // v1.2.45: auch ausserhalb des Editors anhalten - weiter geht es erst, wenn er wieder offen ist.
+        if (rennen || !simImEditor()) { setTimeout(pruefen, 1000); return; }
         kanal.port1.onmessage = () => weiter();
         kanal.port2.postMessage(0);
       };
@@ -440,6 +451,7 @@
       simVorrechnenZeit = null;
       try {
         if (getLineModel() !== 'simulator' || !currentTrackTiles || currentTrackTiles.length < 3) return;
+        if (!simImEditor()) return;   // v1.2.45: nur im Editor vorrechnen
         if (typeof ghostLine === 'function') ghostLine();
       } catch (e) { /* ohne Ghosts */ }
     }, 600);

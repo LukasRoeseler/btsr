@@ -4923,7 +4923,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.2.44</span></span>
+        <span class="foot-ver">v<span id="app-version">1.2.45</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6089,6 +6089,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.2</span></b></p>
       <ul class="muted" id="patchnotes-12" style="padding-left:20px; line-height:1.7">
+        <li>Latenz: Das schnelle Verbindungsintervall wird nur noch einmal je Verbindung nachgefordert, und erst wenn ein Auto 5 s lang langsamer als alle 120 ms meldet (vorher alle 20 s je Auto ab 75 ms &#8211; mit vier Autos handelte das Handy etwa alle 5 s eine Verbindung neu aus). Linienmodell SIMULATOR: Die Linie wird nur noch im Strecken-Editor berechnet und gespeichert, beim Fahren nie mehr im Hintergrund; fehlt sie, fahren die NPCs die normale Linie.</li>
         <li>Latenz: Die Strecke im Regenradar ist wieder entfernt, und das Radar zeichnet nur noch in einfacher Aufl&#246;sung (auf hochaufl&#246;senden Handys ein Viertel der Bildpunkte). Neuer Schalter &#8222;Regenradar&#8220; unter Optionen &#8594; Allgemein: aus, wird das Radar gar nicht gezeichnet. Der Knopf &#8222;Reinigungsfahrzeug starten&#8220; steht nur noch in der Bahn-Kachel, nicht mehr in der Garagen-Kachel.</li>
         <li>NPCs: Start/Ziel gilt jetzt &#252;berall als Gerade. Die Linie h&#228;lt dort die Querlage wie auf jeder Geraden, statt hinter einer Kurve halb innen zu bleiben, und der Vorausblick ans Auto meldet auf der Bahn Start/Ziel (0x01) statt der Engstelle (0x0A). NPC-Stufe MAX: Ohne Schaltpause wurde der Schaltvorgang nach dem ersten Hochschalten nie beendet, das Auto hatte danach keinen Antrieb mehr &#8211; behoben, MAX f&#228;hrt auf Geraden etwa doppelt so schnell wie vorher. Ideallinie (Linienmodell SIMULATOR, WIP): Die Suche rechnet mit dem echten Kurventempo der NPCs und f&#228;hrt au&#223;en-innen-au&#223;en (Kurveneingang und -ausgang au&#223;en, Scheitel innen), statt nur die innere H&#228;lfte zu nutzen; die Haarnadel bleibt davon ausgenommen, gespeicherte Linien werden neu gesucht.</li>
         <li>Virtuell fahren: Neben dem eigenen Auto stand im 3D-Bild ein kleines Kartenauto, die Silhouette aus dem Regenradar des Cockpits, das darunter eigentlich verborgen ist; es ist weg. Die NPCs fahren jetzt mit dem Tempo der Garagenstufe 1 (mittel, 55 %) statt mit rund 80 %, beschleunigen und bremsen mit demselben Fahrzeugmodell wie das eigene Auto und nehmen Kurven mit h&#246;chstens 1,3 g. Ihre Neigung in Kurven war durch einen Rechenfehler bis zu 34 Grad gro&#223; und ist jetzt so klein wie beim eigenen Auto (unter 1 Grad).</li>
