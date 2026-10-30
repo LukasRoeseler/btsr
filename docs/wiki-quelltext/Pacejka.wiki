@@ -51,10 +51,43 @@ Die vier Zahlen formen die Kurve:
 == Untersteuern und Übersteuern ==
 Der Bereich hinter dem Scheitel ist das eigentliche „Fahrgefühl“: Was passiert, wenn man über die Haftgrenze hinauslenkt?
 
-* '''Untersteuern''' (Vorderachse am Limit): Das Auto will nicht mehr in die Kurve, es schiebt geradeaus – die Räder zeigen in die Kurve, aber das Auto fährt außen weiter.
-* '''Übersteuern''' (Hinterachse am Limit): Das Heck bricht aus, das Auto dreht sich schneller, als gelenkt wurde – es „schnappt“ ein.
+* '''Untersteuern''' (Vorderachse am Limit): Das Auto will nicht mehr in die Kurve, es schiebt geradeaus – die Räder zeigen in die Kurve, aber das Auto fährt außen weiter. Die Vorderachse hat ihre Haftgrenze erreicht; mehr Lenkeinschlag bringt keine zusätzliche Kurvenkraft, die Bahn wird nur weiter außen.
+* '''Übersteuern''' (Hinterachse am Limit): Das Heck bricht aus, das Auto dreht sich schneller, als gelenkt wurde – es „schnappt“ ein. Die Hinterachse hat ihre Haftgrenze erreicht; der Wagen rotiert stärker als die Vorderräder zeigen.
 
 Welche Achse zuerst ihre Grenze erreicht, entscheidet, ob das Auto unter- oder übersteuert. Das kann man im Fahrgefühl '''Pacejka''' einstellen.
+
+=== Was die Haftgrenze verschiebt ===
+Dieselbe Reifenkennlinie, nur die '''Achslast''' und der '''Reibkreis''' verschieben, welche Achse zuerst über den Scheitel gerät:
+
+* '''Bremsen''' entlastet die Hinterachse und belastet die Vorderachse. Die Hinterachse verliert Seitenhalt → beim Anbremsen in der Kurve kommt das Heck (Übersteuern beim Einlenken, ''Trail-Braking'').
+* '''Gas''' entlastet die Vorderachse und belastet die Hinterachse. Die Vorderachse verliert Seitenhalt → unter Gas schiebt die Front (Untersteuern).
+* '''Antrieb hinten''': Der Antrieb verbraucht Querkraft-Budget (Reibkreis). Wer mitten in der Kurve Gas gibt, hat hinten weniger Seitenhalt → '''Leistungsübersteuern'''.
+
+=== Wie OmegaSim das Übersteuern simuliert ===
+Der Kern liegt in <code>pacejkaStep()</code> (<code>src/40-physics.js</code>). Er rechnet je Achse eine '''Ausnutzung''' <code>u</code> – die Querkraft, geteilt durch die Haftgrenze. <code>u = 1</code> ist der Scheitel; <code>u > 1</code> heißt „hinter dem Scheitel“.
+
+<pre>uV = quer · vorn / grip           (Vorderachse)
+uH = quer · hinten / grip / rest / HeckReserve   (Hinterachse)</pre>
+
+Der '''Wirkfaktor''' <code>wirk(u)</code> sagt, wie viel Kraft ein Reifen bei dieser Ausnutzung noch bringt – unterhalb des Scheitels 1, dahinter fällt er ab:
+
+<pre>wirk(u) = u ≤ 1 ? 1 : pacY(u) / u</pre>
+
+* '''Untersteuern''' – Vorderachse über dem Scheitel (<code>uV &gt; 1</code>): Der Lenkbefehl wird mit <code>wirk(uV)</code> '''gekürzt'''. Mehr Einschlag bringt also keine zusätzliche Drehung, das Auto schiebt geradeaus. Zusätzlich entlastet Gas die Front (Regler „Lenkentlastung unter Gas“).
+* '''Übersteuern''' – Hinterachse '''weiter''' über dem Scheitel als die Front (<code>uH &gt; 1</code> und <code>uH &gt; uV</code>): Die App '''gibt Einschlag in die Kurve dazu'''. Es gilt <code>zielO = min(pacUeberMax, 1 − wirk(uH))</code>, also genau das, was die Hinterachse nicht mehr an Kraft bringt. Der Servo wird dann
+  <pre>servo = servo · pacUnter + pacRichtung · pacUeber</pre>
+  – das Auto dreht von selbst weiter ein, das Heck kommt.
+
+Drei Eigenschaften machen das Übersteuern „echt“:
+
+# '''Es hält an.''' Einmal ausgelöst, klingt das Heck nicht von selbst ab: Solange man Gas oder Bremse hält (<code>pedalHalt</code>), bleibt <code>pacUeber</code> stehen – gedeckelt auf <code>pacejkaHaltMax</code> Sekunden und nicht bei Schritttempo.
+# '''Gegenlenken fängt es.''' Lenkt man gegen die Rutschrichtung (<code>gegen</code>), sinkt der Zuschlag schnell (Zeitkonstante 0,1 s statt 0,25 s) und das Auto beruhigt sich.
+# '''Es kostet Vortrieb.''' Solange das Heck rutscht, senkt <code>pacVortrieb</code> die Antriebskraft (bis 55 %), damit das Auto nicht weiter einzieht.
+
+'''Woher das Übersteuern kommt''', gibt der Schalter '''Übersteuern (Pacejka)''' vor (ab Werk aus):
+* Beim '''Anbremsen''': Bremsen entlastet hinten → das Heck kommt beim Einlenken.
+* Beim '''Leistungsübersteuern''': Über 40 % Gas wird <code>uH</code> zusätzlich erhöht (bis <code>pacejkaLeistung</code> 1,4) – Vollgas in der Kurve bringt das Heck.
+* Ab Werk ist hinten über <code>pacejkaHeckReserve = 1,2</code> 20 % mehr Seitenhalt: das Standard-Pacejka ist deshalb leicht '''untersteuernd''', das Übersteuern ist eine bewusste Einstellung.
 
 == Der Reibkreis ==
 Die Kraft des Reifens ist begrenzt und teilt sich zwischen Längs (Gas/Bremse) und Quer (Kurve) auf. Zeichnet man beide als Achsen, liegt die Grenze ungefähr auf einem '''Kreis''' – dem Reibkreis (auch Kamm-Kreis):
@@ -73,7 +106,7 @@ Im Fahrgefühl '''Pacejka''' (Steuerungsmodus „Pacejka“, seit 0.8) rechnet d
 * Die Formel ist '''normiert''': <code>u = 1</code> ist der Scheitel und <code>y(1) = 1</code>.
 * Die Höhe <code>D</code> ist damit fest 1; die eigentliche Grenze steckt in der '''Haftgrenze''' (Vorgabe 0,7).
 * '''Untersteuern''': Ist die Vorderachse über der Grenze, wird der Lenkbefehl '''reduziert'''.
-* '''Übersteuern''' (eigener Schalter): Ist die Hinterachse über der Grenze, lenkt das Auto '''von selbst weiter ein'''.
+* '''Übersteuern''' (eigener Schalter): Ist die Hinterachse über der Grenze, lenkt das Auto '''von selbst weiter ein''' – die genaue Rechnung im Abschnitt [[#Wie OmegaSim das Übersteuern simuliert|Wie OmegaSim das Übersteuern simuliert]].
 
 Die konkreten Werte im Code (<code>src/40-physics.js</code>):
 
@@ -89,6 +122,16 @@ Die konkreten Werte im Code (<code>src/40-physics.js</code>):
 | <code>pacejkaGrenze</code> || 0,7 || Querausnutzung am Scheitel (Haftgrenze)
 |-
 | <code>pacejkaHeckReserve</code> || 1,2 || hinten 20 % mehr Seitenhalt: ab Werk leicht untersteuernd
+|-
+| <code>pacejkaUebersteuern</code> || Schalter || Übersteuern an (beim Bremsen und unter Gas)
+|-
+| <code>pacejkaUeberMax</code> || 0,35 || größter Lenkzuschlag beim Übersteuern (Anteil des Servos)
+|-
+| <code>pacejkaLeistung</code> || 1,4 || wie stark Vollgas den Seitenhalt hinten senkt
+|-
+| <code>pacejkaRutschVortrieb</code> || 0,55 || wie viel Vortrieb beim Rutschen verloren geht
+|-
+| <code>pacejkaHaltMax</code> || 2,0 || wie lange ein Rutsch ohne Gegenlenken hält (Sekunden)
 |}
 
 == Wo man das einstellt ==

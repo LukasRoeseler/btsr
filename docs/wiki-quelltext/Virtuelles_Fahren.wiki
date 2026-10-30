@@ -2,6 +2,11 @@
 [[Datei:OmegaSim-Garage.png|mini|Die Garage von OmegaSim, in der die virtuelle Fahrt gestartet wird]]
 '''Virtuelles Fahren''' (in der App „Virtuell fahren“, in Arbeit) ist ein Modus von [[OmegaSim]], in dem ein simuliertes Auto ohne Bluetooth-Verbindung in einer 3D-Ansicht über die Strecke aus dem [[Strecken- und Raum-Editor]] fährt. Das virtuelle Auto ist für die App ein gewöhnliches Garagenauto, das sich seine Funkmeldungen selbst erzeugt; dadurch laufen Rundenzeit, Rennen, Telemetrie und Motorklang unverändert mit. Gefahren wird mit dem Tempo des gewählten Fahrgefühls und einem Querdynamikmodell nach dem Vorbild eines GT3-Rennwagens. Verwandt, aber getrennt davon ist '''Rennen simulieren''': Dort fahren NPC-Attrappen ohne Hardware mit der echten NPC-Steuerung (siehe [[NPC-Fahrverhalten]]); beides wird auf dieser Seite beschrieben, weil beide Autos ohne [[Carrera HYBRID]]-Hardware bewegen.
 
+[[Datei:OmegaSim-Virtuell-Fahren.png|mini|Die virtuelle Fahrt: der Vulture V5.R aus Speed Dreams in der 3D-Ansicht, mit Verfolgerkamera über die Strecke aus dem Editor.]]
+[[Datei:OmegaSim-Virtuell-Auto.png|mini|Das virtuelle Auto, der Vulture V5.R aus [https://www.speed-dreams.org/ Speed Dreams] (nahe Verfolgerkamera).]]
+
+Das '''Fahrzeugmodell''' stammt für das Standard-Auto aus '''[https://www.speed-dreams.org/ Speed Dreams]''', einem freien Rennsimulator (GPL-2+): Das Modell <code>ls1-vulture-v5r</code> (Vulture V5.R) wird mit <code>tools/sd_auto.py</code> übernommen – samt Lichtorten, Rädern und den Fahrzeugdaten (Masse, Schwerpunkt, Radstand, Einschlag, Bremsbalance, Abtrieb) aus der <code>.xml</code>-Datei des Originals. Einige weitere Modelle folgen demselben Schema ([[#Einstellungen|siehe Auto-Auswahl]]).
+
 == Auf einen Blick ==
 {| class="wikitable"
 ! Merkmal !! Wert
@@ -255,9 +260,12 @@ Zwei Simulations-NPCs liegen 5&nbsp;cm hintereinander (d_längs = 4,65 Einheiten
 * <code>src/60-track.js</code>: <code>TRACK_TILE_CM</code>, <code>TRACK_UNITS_PER_CM</code>, <code>TRACK_HALF_W</code>, <code>AUTO_LANG</code>, <code>AUTO_BREIT</code>, <code>trackCenterline()</code>
 * <code>src/90-ghosts.js</code>: <code>setCarRole()</code>, <code>removeCar()</code>, <code>onCarNotify()</code>
 * <code>src/51-konsole.js</code>: Tasten Escape, C und Options in der virtuellen Fahrt
+* <code>tools/sd_auto.py</code>, <code>img/autos/v5r/</code>: das Speed-Dreams-Auto (Vulture V5.R) mit Modell, Lichtern und Fahrdaten
 
 == Weblinks ==
 * Browserfassung, Android-App und Quellcode: Links auf der [[Hauptseite]]
+* [https://www.speed-dreams.org/ Speed Dreams] – der freie Rennsimulator, aus dem die virtuellen Autos (Vulture V5.R u.&nbsp;a.) stammen
+* [https://sourceforge.net/projects/speed-dreams/ Speed Dreams auf SourceForge]
 
 [[Kategorie:OmegaSim]]
 [[Kategorie:Spielfunktionen]]
