@@ -2604,8 +2604,10 @@
   .k-titel-fuss { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; align-items: center;
     font-size: 12px; color: var(--k-dim); margin-top: 4vh; }
   /* Wiki-Knopf in der Startseiten-Knopfreihe: wie ein Tutorial-Knopf, aber komplett weiss
-     (BESTELLT: "so gross wie der Tutorial-Knopf, mit aktuellem Text und komplett weiss"). */
-  .k-tutorial-knopf.k-wiki { background: #fff; color: #141414; border-color: #fff; text-decoration: none; }
+     (BESTELLT: "so gross wie der Tutorial-Knopf, mit aktuellem Text und komplett weiss"),
+     mit Times New Roman und mittig ausgerichtetem Schriftzug. */
+  .k-tutorial-knopf.k-wiki { background: #fff; color: #141414; border-color: #fff; text-decoration: none;
+    font-family: 'Times New Roman', Times, serif; display: inline-flex; align-items: center; justify-content: center; }
   .k-tutorial-knopf.k-wiki:hover { background: var(--k-blau); color: var(--k-blau-text); border-color: var(--k-blau); }
 
   /* Optionszeilen: die angewaehlte Zeile rot hinterlegt wie bei ACC */
@@ -4931,7 +4933,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.2.58</span></span>
+        <span class="foot-ver">v<span id="app-version">1.2.60</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
