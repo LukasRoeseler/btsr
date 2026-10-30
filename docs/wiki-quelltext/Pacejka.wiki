@@ -1,6 +1,6 @@
 {{Stand|app=1.2.51|appdatum=30.10.2026}}
 [[Datei:OmegaSim-Reibkreis-MagicFormula.png|mini|Oben der Reibkreis, unten die Magic-Formula-Reifenkennlinie.]]
-Die '''Magic Formula''' („Zauberformel“) von '''Hans B. Pacejka''' beschreibt, wie viel Seitenkraft ein [[Carrera HYBRID|Reifen]] in der Kurve überträgt. In [[OmegaSim]] steckt sie im Fahrgefühl '''Pacejka''' und sorgt dafür, dass ein Auto am Haftgrenz-Limit nicht einfach weiterlenkt, sondern wirklich schiebt oder das Heck ausbrechen lässt.
+Die '''Magic Formula''' („Zauberformel“) von '''Hans B. Pacejka''' (siehe [https://en.wikipedia.org/wiki/Hans_B._Pacejka Hans B. Pacejka] auf Wikipedia) beschreibt, wie viel Seitenkraft ein [[Carrera HYBRID|Reifen]] in der Kurve überträgt. In [[OmegaSim]] steckt sie im Fahrgefühl '''Pacejka''' und sorgt dafür, dass ein Auto am Haftgrenz-Limit nicht einfach weiterlenkt, sondern wirklich schiebt oder das Heck ausbrechen lässt.
 
 Dieser Artikel erklärt die Formel von Grund auf – für alle, die noch nie davon gehört haben. Die technische Abrechnung in der App steht in [[Fahrverhalten]].
 
@@ -62,6 +62,10 @@ Die Kraft des Reifens ist begrenzt und teilt sich zwischen Längs (Gas/Bremse) u
 <pre>Längsanteil = √(1 − Queranteil²)</pre>
 
 Wer in der Kurve schon viel Querkraft braucht, hat für Gas oder Bremse nur noch den Rest. Deshalb kann man nicht mit Vollgas und vollem Lenkeinschlag gleichzeitig das Maximum herausholen.
+
+== Animation: So lenkt ein Auto unter Bremsen ==
+[[Datei:OmegaSim-Bremsen-Lenken-Trajektorie.gif|mini|rechts|Ein Auto fährt geradeaus, bremst an der Kurve und lenkt ein. Links die Trajektorie, rechts der Reibkreis: Die Kraft aus Bremsen und Kurvenfahrt bleibt innerhalb der Haftgrenze.]]
+Beim Einlenken unter Bremsen (''Trail-Braking'') teilt sich die Reifenkraft in Längs- und Queranteil. Solange der Kraftpfeil im Reibkreis bleibt, hält das Auto die Spur. Wird zu stark gebremst, zeigt der Pfeil nach außen, und das Auto schiebt geradeaus (Untersteuern).
 
 == So nutzt OmegaSim die Pacejka ==
 Im Fahrgefühl '''Pacejka''' (Steuerungsmodus „Pacejka“, seit 0.8) rechnet die App mit der Magic Formula, um die '''Haftgrenze''' der Achsen zu bestimmen. Unterhalb der Grenze fährt das Auto wie im normalen Physik-Modus; erst darüber greift die Formel ein:

@@ -1,4 +1,4 @@
-{{Stand|app=1.2.50|appdatum=30.10.2026}}
+{{Stand|app=1.2.51|appdatum=30.10.2026}}
 [[Datei:OmegaSim-Ton.png|mini|Die Seite Optionen → Ton in OmegaSim]]
 Der '''Motorsound''' von [[OmegaSim]] ist der Klang, den das [[Carrera HYBRID]]-Auto über die Web Audio API erzeugt, während es fährt. Er folgt der Drehzahl und dem Gas des Fahrzeugs und besteht aus mehreren nahtlos aneinandergereihten '''Drehzahlbändern'''. Es gibt zwei Wege, wie die Klänge entstehen: eine '''Synthese''' nach dem Modell von ''engine-sim'' und echte '''Aufnahmen'''. Beides wird in der App gleich abgespielt.
 
@@ -18,7 +18,7 @@ Der '''Motorsound''' von [[OmegaSim]] ist der Klang, den das [[Carrera HYBRID]]-
 |}
 
 == Wie der Motorsound entsteht ==
-Der Klang eines Motors ist kein einzelner Ton, sondern ein Zug von '''Zündimpulsen''', die durch die '''Resonanz des Auspuffs''' geformt werden. Entscheidend ist dabei nicht die Tonhöhe, sondern das '''Muster der Zündung''': Ein gleichmäßig zündender Reihen- oder Boxer-Sechser klingt wie ein glattes Kreischen, ein '''Cross-Plane-V8''' zündet innerhalb jeder Bank ungleichmäßig – das ist das „Blubbern“, das man von amerikanischen V8 kennt.
+Der Klang eines Motors ist kein einzelner Ton, sondern ein Zug von '''Zündimpulsen''', die durch die '''Resonanz des Auspuffs''' geformt werden. Entscheidend ist dabei nicht die Tonhöhe, sondern das '''Muster der Zündung''': Ein gleichmäßig zündender Reihen- oder Boxer-Sechser klingt wie ein glattes Kreischen, ein '''Cross-Plane-V8''' (siehe [https://en.wikipedia.org/wiki/Crossplane Crossplane] auf Wikipedia) zündet innerhalb jeder Bank ungleichmäßig – das ist das „Blubbern“, das man von amerikanischen V8 kennt.
 
 Die Zündrate ist physikalisch bestimmt:
 <pre>Zündrate [Hz] = Umdrehungen/min ÷ 60 × Zylinder ÷ 2</pre>
@@ -57,11 +57,22 @@ Jeder Motor führt sein eigenes Drehzahlband. Zum Beispiel dreht der Porsche 911
 Zum Anhören liegen die fertigen Ogg-Dateien im <code>audio/</code>-Ordner der App:
 
 * '''Drehzahlbänder''' eines Motors, z. B. <code>audio/p992gt3r_idle.ogg</code>, <code>p992gt3r_mid.ogg</code>, <code>p992gt3r_high.ogg</code> (Leerlauf, Mitte, Vollgas) oder <code>audio/mustang_idle.ogg</code>/<code>_mid</code>/<code>_high</code> (Cross-Plane-V8).
-* '''Beschleunigungs-Demo''': <code>audio/p992gt3r_demo.ogg</code> – ein voller Fahrzyklus mit Gangwechseln.
+ * '''Beschleunigungs-Demo''': <code>audio/p992gt3r_demo.ogg</code> – Beschleunigung aus dem Stand mit Gangwechseln.
 * '''Motorstart''': <code>audio/p992gt3r_start.ogg</code> – Anlasser, Anspringen, Leerlauf.
 * '''Effekte''': <code>audio/brake_squeal.ogg</code>, <code>audio/tyre_squeal.ogg</code>, <code>audio/crash_*.ogg</code>, <code>audio/shift_up/down.ogg</code>, <code>audio/pit_wrench.ogg</code>.
 
 Am besten hört man die Unterschiede aber in der '''Motorwerkstatt''', wo man den Drehzahl-Slider zieht und den Motor bei jeder Drehzahl anhört.
+
+== Hörbeispiele ==
+Hier lassen sich vier fertige Klänge direkt anhören – je zwei aus der '''Synthese''' (engine-sim) und zwei aus den '''Aufnahmen''' (Speed Dreams, CC0). Im Browser öffnet sich ein Abspieler; jeder Klang ist eine '''Beschleunigung aus dem Stand bis zum Höchsttempo mit 5 Gangwechseln''' (der Ton dreht hoch und fällt beim Schalten kurz ab).
+
+=== Aus der Synthese (engine-sim) ===
+[[Datei:p992gt3r_demo.ogg|mini|Porsche 911 GT3 R (Boxer-6): gleichmäßige Zündung, glattes Kreischen – der Ton dreht hoch und schaltet]]
+[[Datei:mustang_demo.ogg|mini|Ford Mustang GT3 (Cross-Plane-V8): die ungleichmäßige Zündung „blubbert“ beim Hochdrehen]]
+
+=== Aus den Aufnahmen (Speed Dreams, CC0) ===
+[[Datei:sd_v8gt_demo.ogg|mini|Nissan GT-R GT500 (V8): Aufnahme, als Beschleunigung mit Gangwechseln zusammengesetzt]]
+[[Datei:sd_v10_demo.ogg|mini|Audi R8 LMS (V10): Aufnahme, hochdrehend bis zum Begrenzer]]
 
 == Die Motorwerkstatt: das Drehzahl-Werkzeug ==
 Unter '''Optionen → Ton → Motorwerkstatt''' läuft der komplette Synthese-Kern live im Browser. Jede Änderung ist sofort hörbar, ohne dass eine Datei entsteht.
