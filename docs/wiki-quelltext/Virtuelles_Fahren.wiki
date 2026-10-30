@@ -31,7 +31,7 @@ Die Strecke liegt in einem ebenen '''Koordinatensystem''' mit x und y in „Stre
 Das '''Einspurmodell''' (auch Fahrradmodell) fasst die beiden Räder einer Achse zu einem zusammen. Mit Radstand L, Radeinschlag δ und Tempo v dreht sich das Auto mit der Gierrate ω = v · tan(δ) / L. Mehr Querkraft, als die Reifen übertragen können, gibt es nicht: Dann rutscht das Auto.
 
 === Reifenmodell nach Pacejka ===
-Die '''Magic Formula''' von Hans Pacejka beschreibt, wie viel Seitenkraft ein Reifen bei einem bestimmten '''Schräglaufwinkel''' α (Winkel zwischen Laufrichtung und Blickrichtung des Rads) überträgt. Die vereinfachte Form lautet F = D · sin(C · arctan(B · α)): Bei kleinem α steigt die Kraft fast linear, erreicht ein Maximum D und fällt dann leicht ab. Ein '''Reibkreis''' teilt die Haftung zwischen Bremsen/Antreiben und Kurvenkraft auf: Wer voll bremst, hat weniger Seitenhalt. Mehr dazu unter [[Fahrverhalten]].
+Die '''Magic Formula''' von Hans Pacejka (von Grund auf erklärt im Artikel [[Pacejka]]) beschreibt, wie viel Seitenkraft ein Reifen bei einem bestimmten '''Schräglaufwinkel''' α (Winkel zwischen Laufrichtung und Blickrichtung des Rads) überträgt. Die vereinfachte Form lautet F = D · sin(C · arctan(B · α)): Bei kleinem α steigt die Kraft fast linear, erreicht ein Maximum D und fällt dann leicht ab. Ein '''Reibkreis''' teilt die Haftung zwischen Bremsen/Antreiben und Kurvenkraft auf: Wer voll bremst, hat weniger Seitenhalt. Mehr dazu unter [[Fahrverhalten]].
 
 === WebGL ===
 WebGL ist die Schnittstelle des Browsers, mit der Programme die Grafikkarte nutzen. OmegaSim bringt dafür einen eigenen, kleinen Zeichner mit, ohne fremde Bibliothek (zum Aufbau der App siehe [[Aufbau von OmegaSim]]).

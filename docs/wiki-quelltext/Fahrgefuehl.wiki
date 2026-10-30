@@ -29,7 +29,7 @@ Das '''Arcade'''-Fahrgefühl ist der einfachste und nachsichtigste Satz. Es scha
 '''Sim+''' („Pro mit mehr Lenkung, Beschleunigung und Bremse“) übernimmt die komplette Pro-Abstimmung, ändert aber drei Werte: eine direktere Lenkung (<code>phys-steerresp</code> 3,3 statt 2,5), einen höheren Beschleunigungsfaktor (1,15) und eine stärkere Bremse (2,2). Der Rechenweg ist identisch mit Pro – es fühlt sich nur agiler und leichter an.
 
 === Pacejka ===
-'''Pacejka''' ist Pro plus der Reifenkennlinie nach der '''Magic Formula''' (siehe [[Fahrverhalten]]). Der Rechenweg läuft genauso wie bei Physik, aber die Lenkung wird am Limit von der Pacejka-Kurve geformt. Unterhalb der Haftgrenze fährt sich Pacejka wie Physik; darüber reduziert es den Einschlag (Untersteuern) oder – bei eingeschaltetem Übersteuern – lenkt es von selbst weiter ein. Pacejka ist '''experimentell''' und die '''Vorgabe nach Neuinstallation'''.
+'''Pacejka''' ist Pro plus der Reifenkennlinie nach der '''Magic Formula''' (von Grund auf erklärt im Artikel [[Pacejka]], Abrechnung siehe [[Fahrverhalten]]). Der Rechenweg läuft genauso wie bei Physik, aber die Lenkung wird am Limit von der Pacejka-Kurve geformt. Unterhalb der Haftgrenze fährt sich Pacejka wie Physik; darüber reduziert es den Einschlag (Untersteuern) oder – bei eingeschaltetem Übersteuern – lenkt es von selbst weiter ein. Pacejka ist '''experimentell''' und die '''Vorgabe nach Neuinstallation'''.
 
 == Die übrigen sechs Fahrgefühle ==
 Die übrigen Sätze liegen unter '''Optionen → Fahrgefühl → Voreinstellungen''' (Reihenfolge dort):

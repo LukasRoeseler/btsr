@@ -1,0 +1,112 @@
+{{Stand|app=1.2.51|appdatum=30.10.2026}}
+[[Datei:OmegaSim-Reibkreis-MagicFormula.png|mini|Oben der Reibkreis, unten die Magic-Formula-Reifenkennlinie.]]
+Die '''Magic Formula''' („Zauberformel“) von '''Hans B. Pacejka''' beschreibt, wie viel Seitenkraft ein [[Carrera HYBRID|Reifen]] in der Kurve überträgt. In [[OmegaSim]] steckt sie im Fahrgefühl '''Pacejka''' und sorgt dafür, dass ein Auto am Haftgrenz-Limit nicht einfach weiterlenkt, sondern wirklich schiebt oder das Heck ausbrechen lässt.
+
+Dieser Artikel erklärt die Formel von Grund auf – für alle, die noch nie davon gehört haben. Die technische Abrechnung in der App steht in [[Fahrverhalten]].
+
+== Das Problem: Was ein Reifen kann ==
+Das Einzige, was das Auto mit der Straße verbindet, sind die vier Reifen. Alles Fahren – Beschleunigen, Bremsen, Kurven – läuft über ihre Kraft. Ein Reifen kann die Straße aber nur mit einer '''begrenzten''' Kraft packen, und er teilt diese Kraft in zwei Richtungen auf:
+
+* '''Längs''' (nach vorn/hinten): Beschleunigen und Bremsen.
+* '''Quer''' (seitlich): die Kraft, die das Auto in der Kurve auf der Bahn hält.
+
+Wer beides gleichzeitig will – etwa in der Kurve bremsen –, muss die Kraft aufteilen. Dafür gibt es den [[#Der Reibkreis|Reibkreis]] (weiter unten).
+
+== Der Schräglaufwinkel: der „Eingang“ des Reifens ==
+Wenn man das Lenkrad dreht, zeigen die Vorderräder in eine Richtung. Das Auto fährt aber nicht sofort genau dorthin, sondern zunächst in die alte Richtung weiter. So entsteht ein '''Winkel''' zwischen zwei Richtungen:
+
+* der Richtung, in die das Rad zeigt, und
+* der Richtung, in die das Auto tatsächlich fährt.
+
+Dieser Winkel heißt '''Schräglaufwinkel''' (α). Er ist die Eingabe, auf die der Reifen antwortet. Wichtig: Ein Reifen braucht diesen kleinen Winkel, um überhaupt Kurvenkraft zu bilden. Ganz ohne Schräglauf gibt es keine Seitenkraft.
+
+== Die Reifenkennlinie: die „Antwort“ des Reifens ==
+Trägt man die Seitenkraft über den Schräglaufwinkel auf, erhält man immer dieselbe typische Kurve:
+
+* Bei kleinem Winkel steigt die Kraft fast '''gerade''' (der Reifen ist „steif“): etwas mehr Lenkung, etwas mehr Kraft.
+* Bei größerem Winkel wird die Zunahme '''flacher''', bis die Kraft ihr '''Maximum''' erreicht – das ist die Haftgrenze.
+* Hinter dem Maximum fällt die Kraft '''wieder ab''': noch mehr Lenkung bringt nichts mehr, das Auto beginnt zu rutschen.
+
+Diese Kurve heißt '''Reifenkennlinie'''. Sie ist bei jedem Reifen etwas anders, hat aber immer diese S-Form.
+
+== Die Magic Formula: eine Formel für die Kurve ==
+Hans B. Pacejka und Egbert Bakker (1992) fanden heraus, dass sich diese S-Kurve mit '''einer''' Formel und '''vier''' Zahlen nachbilden lässt. Deshalb „Zauberformel“ – sie passt wie eine Schablone auf viele gemessene Reifen:
+
+<pre>y(u) = sin( C · atan( B·u − E·(B·u − atan(B·u)) ) )</pre>
+
+Die vier Zahlen formen die Kurve:
+
+{| class="wikitable"
+! Kürzel !! Name !! Was es bewirkt
+|-
+| <code>B</code> || Steifigkeit || wie steil die Kurve am Anfang steigt („steifer“ Reifen)
+|-
+| <code>C</code> || Formfaktor || die grundsätzliche Form und Höhe der Kurve (typisch ~1,3 für Seitenkraft)
+|-
+| <code>D</code> || Scheitelhöhe || die größte Kraft, also das Maximum
+|-
+| <code>E</code> || Scheitelform || wie spitz der Scheitel ist (negativ: ausgeprägter Scheitel, danach stärkerer Abfall)
+|}
+
+== Untersteuern und Übersteuern ==
+Der Bereich hinter dem Scheitel ist das eigentliche „Fahrgefühl“: Was passiert, wenn man über die Haftgrenze hinauslenkt?
+
+* '''Untersteuern''' (Vorderachse am Limit): Das Auto will nicht mehr in die Kurve, es schiebt geradeaus – die Räder zeigen in die Kurve, aber das Auto fährt außen weiter.
+* '''Übersteuern''' (Hinterachse am Limit): Das Heck bricht aus, das Auto dreht sich schneller, als gelenkt wurde – es „schnappt“ ein.
+
+Welche Achse zuerst ihre Grenze erreicht, entscheidet, ob das Auto unter- oder übersteuert. Das kann man im Fahrgefühl '''Pacejka''' einstellen.
+
+== Der Reibkreis ==
+Die Kraft des Reifens ist begrenzt und teilt sich zwischen Längs (Gas/Bremse) und Quer (Kurve) auf. Zeichnet man beide als Achsen, liegt die Grenze ungefähr auf einem '''Kreis''' – dem Reibkreis (auch Kamm-Kreis):
+
+<pre>Längsanteil = √(1 − Queranteil²)</pre>
+
+Wer in der Kurve schon viel Querkraft braucht, hat für Gas oder Bremse nur noch den Rest. Deshalb kann man nicht mit Vollgas und vollem Lenkeinschlag gleichzeitig das Maximum herausholen.
+
+== So nutzt OmegaSim die Pacejka ==
+Im Fahrgefühl '''Pacejka''' (Steuerungsmodus „Pacejka“, seit 0.8) rechnet die App mit der Magic Formula, um die '''Haftgrenze''' der Achsen zu bestimmen. Unterhalb der Grenze fährt das Auto wie im normalen Physik-Modus; erst darüber greift die Formel ein:
+
+* Die Formel ist '''normiert''': <code>u = 1</code> ist der Scheitel und <code>y(1) = 1</code>.
+* Die Höhe <code>D</code> ist damit fest 1; die eigentliche Grenze steckt in der '''Haftgrenze''' (Vorgabe 0,7).
+* '''Untersteuern''': Ist die Vorderachse über der Grenze, wird der Lenkbefehl '''reduziert'''.
+* '''Übersteuern''' (eigener Schalter): Ist die Hinterachse über der Grenze, lenkt das Auto '''von selbst weiter ein'''.
+
+Die konkreten Werte im Code (<code>src/40-physics.js</code>):
+
+{| class="wikitable"
+! Größe !! Wert !! Bedeutung
+|-
+| <code>pacejkaC</code> || 1,3 || Formfaktor für Seitenkraft
+|-
+| <code>pacejkaE</code> || −0,5 || ausgeprägter Scheitel
+|-
+| <code>pacB()</code> || ≈ 2,1355 || sorgt dafür, dass der Scheitel genau bei u = 1 liegt
+|-
+| <code>pacejkaGrenze</code> || 0,7 || Querausnutzung am Scheitel (Haftgrenze)
+|-
+| <code>pacejkaHeckReserve</code> || 1,2 || hinten 20 % mehr Seitenhalt: ab Werk leicht untersteuernd
+|}
+
+== Wo man das einstellt ==
+* '''FAHREN''' → Kachel '''Fahrgefühl''' → '''Pacejka''' (ebenso in der '''Garage''' und am '''Cockpit-Knopf''').
+* Unter '''Optionen → Fahrgefühl → Voreinstellungen''' liegt Pacejka als einer der neun Sätze.
+* Nach einer Neuinstallation ist '''Pacejka''' die Vorgabe.
+* Der Schalter '''Übersteuern (Pacejka)''' liegt unter '''Optionen → Allgemein''' (ab Werk aus).
+
+== Siehe auch ==
+* [[Fahrverhalten]]
+* [[Fahrgefuehl|Fahrgefühl]]
+* [[Virtuelles Fahren]]
+* [[Glossar]]
+* [[Carrera HYBRID]]
+
+== Quellen im Code ==
+* <code>src/40-physics.js</code>: <code>pacY()</code> (die Formel), <code>pacB()</code> (Scheitel suchen), <code>pacejkaStep()</code>, <code>pacGasFaktor()</code>
+* <code>src/98-presets.js</code>: <code>PRESETS</code> – die Werte des Fahrgefühls Pacejka
+
+== Weblinks ==
+* Browserfassung, Android-App und Quellcode: Links auf der [[Hauptseite]]
+
+[[Kategorie:OmegaSim]]
+[[Kategorie:Spielfunktionen]]
+[[Kategorie:Software]]

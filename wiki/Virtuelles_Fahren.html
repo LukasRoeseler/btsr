@@ -65,7 +65,7 @@
 <p>Das <b>Einspurmodell</b> (auch Fahrradmodell) fasst die beiden Räder einer Achse zu einem zusammen. Mit Radstand L, Radeinschlag δ und Tempo v dreht sich das Auto mit der Gierrate ω = v · tan(δ) / L. Mehr Querkraft, als die Reifen übertragen können, gibt es nicht: Dann rutscht das Auto.
 </p>
 <div class="mw-heading mw-heading3"><h3 id="Reifenmodell_nach_Pacejka">Reifenmodell nach Pacejka</h3></div>
-<p>Die <b>Magic Formula</b> von Hans Pacejka beschreibt, wie viel Seitenkraft ein Reifen bei einem bestimmten <b>Schräglaufwinkel</b> α (Winkel zwischen Laufrichtung und Blickrichtung des Rads) überträgt. Die vereinfachte Form lautet F = D · sin(C · arctan(B · α)): Bei kleinem α steigt die Kraft fast linear, erreicht ein Maximum D und fällt dann leicht ab. Ein <b>Reibkreis</b> teilt die Haftung zwischen Bremsen/Antreiben und Kurvenkraft auf: Wer voll bremst, hat weniger Seitenhalt. Mehr dazu unter <a href="./Fahrverhalten.html" title="Fahrverhalten">Fahrverhalten</a>.
+<p>Die <b>Magic Formula</b> von Hans Pacejka (von Grund auf erklärt im Artikel <a href="./Pacejka.html" title="Pacejka">Pacejka</a>) beschreibt, wie viel Seitenkraft ein Reifen bei einem bestimmten <b>Schräglaufwinkel</b> α (Winkel zwischen Laufrichtung und Blickrichtung des Rads) überträgt. Die vereinfachte Form lautet F = D · sin(C · arctan(B · α)): Bei kleinem α steigt die Kraft fast linear, erreicht ein Maximum D und fällt dann leicht ab. Ein <b>Reibkreis</b> teilt die Haftung zwischen Bremsen/Antreiben und Kurvenkraft auf: Wer voll bremst, hat weniger Seitenhalt. Mehr dazu unter <a href="./Fahrverhalten.html" title="Fahrverhalten">Fahrverhalten</a>.
 </p>
 <div class="mw-heading mw-heading3"><h3 id="WebGL">WebGL</h3></div>
 <p>WebGL ist die Schnittstelle des Browsers, mit der Programme die Grafikkarte nutzen. OmegaSim bringt dafür einen eigenen, kleinen Zeichner mit, ohne fremde Bibliothek (zum Aufbau der App siehe <a href="./Aufbau_von_OmegaSim.html" title="Aufbau von OmegaSim">Aufbau von OmegaSim</a>).
@@ -239,14 +239,16 @@ dr/dt     = (a·F_y,vorn·cos δ − b·F_y,hinten)/I_z − 1,5·r
 </p>
 <div class="mw-heading mw-heading3"><h3 id="Geist_und_virtuelle_NPCs">Geist und virtuelle NPCs</h3></div>
 <p>Der <b>Geist</b> schreibt in der ersten Runde je Bild Ort, Richtung und Zeit mit. Ab der ersten Start/Ziel-Überfahrt spielt er die Aufzeichnung in einer Schleife ab, zwischen zwei Punkten linear eingeblendet.
-</p><p>Die <b>virtuellen NPCs</b> (seit 1.1.46) sind <b>keine</b> echten NPCs. Sie folgen der Mittellinie mit festem Querversatz (+3, −3 und 0 Einheiten) und eigenem Tempofaktor (0,97, 1,00, 1,03), gleichmäßig über die Runde verteilt gestartet:<sup id="cite&#95;ref-4" class="reference"><a href="#cite_note-4"><span class="cite-bracket">&#91;</span>4<span class="cite-bracket">&#93;</span></a></sup>
+</p><p>Die <b>virtuellen NPCs</b> (seit 1.1.46) sind <b>keine</b> echten NPCs. Jeder folgt seiner eigenen Spur, der Mittellinie mit festem Querversatz (+3, −3 und 0 Einheiten), mit eigenem Tempofaktor (0,97, 1,00, 1,03), gleichmäßig über die Runde verteilt gestartet. Seit 1.2.32 fahren sie mit dem Tempo der Garagenstufe 1 (mittel) und mit einem eigenen, stummen Fahrzeugmodell wie das eigene Auto:<sup id="cite&#95;ref-4" class="reference"><a href="#cite_note-4"><span class="cite-bracket">&#91;</span>4<span class="cite-bracket">&#93;</span></a></sup>
 </p>
-<pre>Δh_max = größte Richtungsänderung zwischen zwei Nachbarpunkten in den nächsten 18 Punkten (Grad)
-κ      = |Δh_max| / 2,86
-Ziel   = 3,2 × max(0,3; 1 − κ/4,5 × 0,7) × Faktor          (Modell-km/h)
-Tempo  → Ziel mit +2,5 km/h je s (beschleunigen) bzw. −6,0 km/h je s (bremsen)
+<pre>v_Gerade = Stufenwert / 0,55 × ghostCfg.speed × topSpeedKmh   (Stufe 1, Vorgabe: 0,55 × 4 = 2,2 Modell-km/h)
+k        = Richtungsänderung zwischen den Sehnen über ±3 Punkte / halbe Sehnenlänge   (1/Einheit)
+v_Kurve  = √(13 m/s² × 100 × 0,930 / (73,75 × k)) Einheiten/s                         (höchstens 1,3 g im GT3-Maß)
+v_i      = min(v_Gerade, v_Kurve, √(v_(i+1)² + 2 × 0,8 km/h/s × ds))                  (Bremspunkte, rückwärts um die Runde)
+Ziel     = min(v hier, v 0,5 s voraus) × Faktor;  Gas = Fehl / (0,06 × top), Bremse = −Fehl / (0,05 × top)
+a_quer   = v_GT3 × k × v_E   (für die Federung, Neigung 1×)
 </pre>
-<p>Sie haben keine Querdynamik, keine Berührungen mit dem eigenen Auto und keine Rundenwertung; es gibt in der virtuellen Fahrt überhaupt keine Kollisionsprüfung.
+<p>Vorher (bis 1.2.31) fuhren sie mit festem Geradentempo 3,2 Modell-km/h, beschleunigten mit 2,5 und bremsten mit 6,0 km/h je s, und die Querbeschleunigung für die Federung sprang zwischen zwei Mittellinienpunkten (bis 225 m/s², Rollen bis 34 Grad). Sie haben keine Berührungen mit dem eigenen Auto und keine Rundenwertung; es gibt in der virtuellen Fahrt überhaupt keine Kollisionsprüfung.
 </p>
 <div class="mw-heading mw-heading3"><h3 id="Rennen_simulieren">Rennen simulieren</h3></div>
 <p><code>simStart()</code> nimmt die eingetragene Strecke (ohne Strecke die Vorgabe SR3GLR2GR2G2, „geliehen“), legt die echte Garage beiseite und füllt sie mit 2 bis 6 Attrappen <code>S1</code> … <code>S6</code>; nach dem Ende kommt die Garage zurück. Jede Attrappe bekommt <code>startGhost()</code> und fährt mit der vollen NPC-Logik.<sup id="cite&#95;ref-5" class="reference"><a href="#cite_note-5"><span class="cite-bracket">&#91;</span>5<span class="cite-bracket">&#93;</span></a></sup>
@@ -334,7 +336,7 @@ Berührung, wenn d_längs &lt; AUTO_LANG und d_quer &lt; AUTO_BREIT
 </li>
 <li id="cite&#95;note-3"><span class="mw-cite-backlink"><a href="#cite_ref-3">↑</a></span> <span class="reference-text"><code>VF_GT3</code>, <code>vfDynamik()</code>, <code>vfPhysikAus()</code>.</span>
 </li>
-<li id="cite&#95;note-4"><span class="mw-cite-backlink"><a href="#cite_ref-4">↑</a></span> <span class="reference-text"><code>vfNpcSteuern()</code>, <code>vfNpcStarten()</code>.</span>
+<li id="cite&#95;note-4"><span class="mw-cite-backlink"><a href="#cite_ref-4">↑</a></span> <span class="reference-text"><code>vfNpcStufenTempo()</code>, <code>vfNpcBahn()</code>, <code>vfNpcSteuern()</code>, <code>vfNpcStarten()</code>.</span>
 </li>
 <li id="cite&#95;note-5"><span class="mw-cite-backlink"><a href="#cite_ref-5">↑</a></span> <span class="reference-text"><code>src/90b-sim.js</code>, <code>simStart()</code>, <code>simSchritt()</code>, <code>simTeilschritt()</code>.</span>
 </li>
@@ -358,34 +360,32 @@ Berührung, wenn d_längs &lt; AUTO_LANG und d_quer &lt; AUTO_BREIT
 <li><code>src/51-konsole.js</code>: Tasten Escape, C und Options in der virtuellen Fahrt</li></ul>
 <div class="mw-heading mw-heading2"><h2 id="Weblinks">Weblinks</h2></div>
 <ul><li>Browserfassung, Android-App und Quellcode: Links auf der <a href="./Hauptseite.html" title="Hauptseite">Hauptseite</a></li></ul>
+
 <!-- 
 NewPP limit report
-Parsed by mw171
-Cached time: 20261027053457
+Parsed by mw201
+Cached time: 20261030073508
 Cache expiry: 1296000
 Reduced expiry: false
 Complications: [show‐toc]
-CPU time usage: 0.065 seconds
-Real time usage: 0.070 seconds
-Preprocessor visited node count: 186/1000000
-Revision size: 25285/2097152 bytes
+CPU time usage: 0.070 seconds
+Real time usage: 0.075 seconds
+Preprocessor visited node count: 187/1000000
+Revision size: 26132/2097152 bytes
 Post‐expand include size: 752/2097152 bytes
 Template argument size: 15/2097152 bytes
 Highest expansion depth: 3/100
 Expensive parser function count: 1/99
 Unstrip recursion depth: 0/20
-Unstrip post‐expand size: 7749/5000000 bytes
+Unstrip post‐expand size: 8161/5000000 bytes
 -->
 <!--
 Transclusion expansion time report (%,ms,calls,template)
-100.00%    3.177      1 Vorlage:Stand
-100.00%    3.177      1 -total
+100.00%    3.648      1 Vorlage:Stand
+100.00%    3.648      1 -total
 -->
 
-<!-- Render ID 2505dbe1-d1c8-11f1-9c18-bc241110675b -->
-
-<!-- Saved in parser cache with key omegasimwiki:pcache:36:|#|:idhash:canonical and timestamp 20261027053457 and revision id 95. Rendering was triggered because: api-parse
- -->
+<!-- Render ID 6e5a6c06-d434-11f1-a4a7-bc2411441f04 -->
 </div>
 </main>
 <footer class="wiki-foot">Snapshot aus dem OmegaSim Wiki (CC BY-SA 4.0)</footer>
