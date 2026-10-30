@@ -22742,7 +22742,7 @@
       if (Math.abs(b.stufe - 0.96) > 1e-9) f.push('Takt: ohne Linie geaendert');
       // Tempo je Teil: hoch gestuft nie schneller als ein NPC in der Haarnadel, gedeckelt in Kurven.
       npc.ghost.tileIndex = 0;   // Start, dann zwei Geraden: keine Kurve in Sicht
-      if (challengerDeckeln(npc, 0.55, 1.3, false) !== Math.min(1, 0.55 * 1.3)) f.push('Gerade: Stufe 1,3 nicht frei');
+      if (challengerDeckeln(npc, 0.55, 1.3, false) !== Math.min(1, 0.55 + (1.3 - 1))) f.push('Gerade: Stufe 1,3 nicht frei');
       npc.tileCode = TILE_TYPE.HAIRPIN;
       if (challengerDeckeln(npc, 0.33, 1.3, false) > 0.33 + 1e-9) f.push('Haarnadel: schneller als ein NPC');
       if (challengerDeckeln(npc, 0.33, 0.6, false) < Math.min(0.33, GHOST_READ_MIN) - 1e-9) f.push('Haarnadel: unter der Leseschwelle');

@@ -2603,6 +2603,14 @@
   @media (prefers-reduced-motion: reduce) { .k-druecken { animation: none; } }
   .k-titel-fuss { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; align-items: center;
     font-size: 12px; color: var(--k-dim); margin-top: 4vh; }
+  /* Wiki-Knopf unten links auf der Startseite: weisser Kreis, Times New Roman. Nur sichtbar,
+     solange der Start-Tab aktiv ist - sonst klebt er ueber FAHREN und Cockpit. */
+  .home-wiki { position: fixed; left: calc(12px + env(safe-area-inset-left));
+    bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 60; width: 54px; height: 54px;
+    border-radius: 50%; background: #fff; color: #141414; font-family: 'Times New Roman', Times, serif;
+    font-size: 15px; font-weight: 700; letter-spacing: .02em; display: flex; align-items: center;
+    justify-content: center; text-decoration: none; box-shadow: 0 2px 12px var(--shadow); }
+  #tab-home:not(.active) .home-wiki { display: none; }
 
   /* Optionszeilen: die angewaehlte Zeile rot hinterlegt wie bei ACC */
   .opt-row.menu-nav-sel { outline: 2px solid #fff; background: rgba(0,163,224,.22); }
@@ -4923,12 +4931,16 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.2.50</span></span>
+        <span class="foot-ver">v<span id="app-version">1.2.51</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
         <button id="home-install" hidden>Als App installieren</button>
       </div>
+      <!-- BESTELLT: "Wiki" unten links am Bildschirmrand der Startseite, Times New Roman,
+           weisser Kreis; Klick oeffnet das OmegaSim-Wiki im Browser. -->
+      <a class="home-wiki" href="https://omegasim.miraheze.org/wiki/Hauptseite"
+         target="_blank" rel="noopener noreferrer" aria-label="Wiki">Wiki</a>
     </div>
   </section>
 
@@ -9840,7 +9852,7 @@
           <b>App &amp; Updates</b>
           <span>Version der Android-App, Updates ohne neue APK.</span>
         </button>
-        <a class="misc-tile" href="https://lukasroeseler.github.io/btsr/wiki/" target="_blank"
+        <a class="misc-tile" href="https://omegasim.miraheze.org/wiki/Hauptseite" target="_blank"
            rel="noopener noreferrer">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M24 6a18 18 0 1 0 0 36 18 18 0 0 0 0-36z"/><path d="M6 24h36M24 6c-6 5-9 11-9 18s3 13 9 18c6-5 9-11 9-18s-3-13-9-18z"/></svg>
