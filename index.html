@@ -2603,14 +2603,10 @@
   @media (prefers-reduced-motion: reduce) { .k-druecken { animation: none; } }
   .k-titel-fuss { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; align-items: center;
     font-size: 12px; color: var(--k-dim); margin-top: 4vh; }
-  /* Wiki-Knopf unten links auf der Startseite: weisser Kreis, Times New Roman. Nur sichtbar,
-     solange der Start-Tab aktiv ist - sonst klebt er ueber FAHREN und Cockpit. */
-  .home-wiki { position: fixed; left: calc(12px + env(safe-area-inset-left));
-    bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 60; width: 54px; height: 54px;
-    border-radius: 50%; background: #fff; color: #141414; font-family: 'Times New Roman', Times, serif;
-    font-size: 15px; font-weight: 700; letter-spacing: .02em; display: flex; align-items: center;
-    justify-content: center; text-decoration: none; box-shadow: 0 2px 12px var(--shadow); }
-  #tab-home:not(.active) .home-wiki { display: none; }
+  /* Wiki-Knopf in der Startseiten-Knopfreihe: wie ein Tutorial-Knopf, aber komplett weiss
+     (BESTELLT: "so gross wie der Tutorial-Knopf, mit aktuellem Text und komplett weiss"). */
+  .k-tutorial-knopf.k-wiki { background: #fff; color: #141414; border-color: #fff; text-decoration: none; }
+  .k-tutorial-knopf.k-wiki:hover { background: var(--k-blau); color: var(--k-blau-text); border-color: var(--k-blau); }
 
   /* Optionszeilen: die angewaehlte Zeile rot hinterlegt wie bei ACC */
   .opt-row.menu-nav-sel { outline: 2px solid #fff; background: rgba(0,163,224,.22); }
@@ -4895,6 +4891,10 @@
       </button>
       <!-- TUTORIAL (51b-tutorial.js): Klick, Dreieck oder T. -->
       <div class="k-tutorial-reihe">
+        <!-- BESTELLT: "Wiki" links neben Tutorial/Steuerung/Starten, so gross wie ein
+             Tutorial-Knopf und komplett weiss; Klick oeffnet das OmegaSim-Wiki im Browser. -->
+        <a class="k-tutorial-knopf k-wiki" href="https://omegasim.miraheze.org/wiki/Hauptseite"
+           target="_blank" rel="noopener noreferrer" aria-label="Wiki">Wiki</a>
         <button type="button" id="k-tutorial-start" class="k-tutorial-knopf">Tutorial
           <span class="k-tutorial-taste" data-i18n-skip>&#9651; / T</span></button>
         <!-- BESTELLT: "neben dem Tutorial-Button noch einen Button zur Steuerung ... dass es nur
@@ -4931,16 +4931,12 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.2.51</span></span>
+        <span class="foot-ver">v<span id="app-version">1.2.58</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
         <button id="home-install" hidden>Als App installieren</button>
       </div>
-      <!-- BESTELLT: "Wiki" unten links am Bildschirmrand der Startseite, Times New Roman,
-           weisser Kreis; Klick oeffnet das OmegaSim-Wiki im Browser. -->
-      <a class="home-wiki" href="https://omegasim.miraheze.org/wiki/Hauptseite"
-         target="_blank" rel="noopener noreferrer" aria-label="Wiki">Wiki</a>
     </div>
   </section>
 
