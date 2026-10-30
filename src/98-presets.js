@@ -291,6 +291,29 @@
       // statt im Pro-Table, damit Pro unveraendert bleibt.
       'phys-accel': 1.1, 'setting-steer-calib': 2.8, 'setting-brake-steal': 0.75 }),
   };
+  // ---- GRAN ACCELERATO (v1.2.62) ---------------------------------------------------------
+  // BESTELLT: "Fuege einen neuen Fahrgefuehl Modus ein, den ich auch im Garagenmenue auswaehlen
+  // kann. Name 'Gran Accelerato'. Baue dabei alle Vorschlaege ein." Das Pacejka-Lenkmodell,
+  // verfeinert wie ein GT3 in Assetto Corsa Competizione / Gran Turismo Sport: Abtrieb hebt den
+  // Griff bei Tempo, die Lenkung wird mit Tempo feiner und zentriert sich selbst, die
+  // Lastempfindlichkeit ist staerker, das Uebersteuern baut weicher auf und wird vom
+  // Schwimmwinkel stabilisiert - und die GIERRATE wird gefahren statt nur angezeigt: das Auto
+  // dreht beim Einlenken ein, schiebt am Limit und kann beim Uebersteuern gefangen werden.
+  // Die gran*-Werte stecken in setzeGran() (config, kein DOM-Regler), weil sie nur dieses
+  // Fahrgefuehl betreffen und keine Einstellkachel brauchen.
+  PRESETS.gran = {
+    label: 'Gran Accelerato',
+    kurz: 'Pacejka, verfeinert wie ACC/GT7',
+    text: 'Das Pacejka-Lenkmodell, verfeinert wie ein GT3 in Assetto Corsa Competizione und '
+        + 'Gran Turismo Sport: Abtrieb hebt den Griff bei Tempo, die Lenkung wird mit Tempo '
+        + 'feiner und zentriert sich selbst, die Lastempfindlichkeit ist st\u00e4rker, und das '
+        + '\u00dcbersteuern baut weicher auf und wird vom Schwimmwinkel stabilisiert. Neu ist '
+        + 'die dynamische Gierregelung: das Auto dreht beim Einlenken ein, statt zu springen, '
+        + 'und schiebt am Limit, statt hart abzurei\u00dfen.',
+    v: Object.assign({}, PRESETS.pro.v, { 'phys-mode': 'gran',
+      'phys-steerresp': 3.2, 'setting-steer-calib': 2.6, 'setting-brake-steal': 0.8,
+      'phys-accel': 1.05 }),
+  };
   // ---- OMEGA (v1.0.36): Pro, EINGEFROREN -------------------------------------------------
   // BESTELLT: "'Omega'-Fahrgefuehlmodus ergaenzen: so wie das Pro, was so lange bitgleich
   // bleiben sollte (z. B. v0.9.x), nach Pacejka in den Presets einordnen." Die Werte sind die
@@ -364,10 +387,10 @@
   // Reduzierung (BESTELLT: "Behalte dabei: arcade, sim+, pacejka; pacejka als standard")
   // sind es nur noch die drei - sie erscheinen auch in der Garage, die uebrigen bleiben in
   // den Optionen.
-  const PRESETS_FAHREN = ['arcade', 'simplus', 'propacejka'];
+  const PRESETS_FAHREN = ['arcade', 'simplus', 'propacejka', 'gran'];
   // Reihenfolge im Optionen-Menue (preset-buttons und die Preset-Liste je Menue): die drei
   // gebraeuchlichen zuerst, der Rest darunter (BESTELLT: "schiebe ein paar nach unten").
-  const PRESETS_REIHENFOLGE = ['arcade', 'simplus', 'propacejka',
+  const PRESETS_REIHENFOLGE = ['arcade', 'simplus', 'propacejka', 'gran',
                                'pro', 'gt3', 'f1', 'realgt3', 'omega', 'rc'];
   // Bis v0.4 hiess GT3 "real". Aeltere exportierte Abstimmungen und der Knopf im
   // Garagenschirm duerfen den alten Namen weiter benutzen.
@@ -446,6 +469,25 @@
       physEngine.config.lenkKopplungAus = presetAktiv() === 'arcade' ? 1 : 0;
     }
   }
+  // v1.2.62: Gran Accelerato - die gran*-Stellschrauben (config, kein DOM-Regler). Aus = null.
+  // Abstimmen gegen ACC/GT7: kräftiger Abtrieb (GT3), weniger harte Tempo-Lenkung, starke
+  // Lastempfindlichkeit, weicher Uebersteuern-Aufbau und eine dynamische Gierregelung
+  // (granYawTau/granYawFeed), die das Auto beim Einlenken eindrehen lässt.
+  function setzeGran() {
+    if (typeof physEngine !== 'undefined' && physEngine.config) {
+      const an = presetAktiv() === 'gran';
+      const c = physEngine.config;
+      c.gran = an;
+      c.granAeroK = an ? 0.15 : 0;
+      c.granLenkTempo = an ? 1.0 : 0;
+      c.granZentrier = an ? 0.7 : 0;
+      c.granGier = an ? 0.6 : 0;
+      c.granLastEmpf = an ? 0.14 : 0;
+      c.granTauUeber = an ? 0.35 : 0.25;
+      c.granYawTau = an ? 0.28 : 0;
+      c.granYawFeed = an ? 0.25 : 0;
+    }
+  }
 
   // v1.0.36: welches Preset zuletzt gesetzt wurde. Omega und Pro haben (noch) dieselben Werte -
   // gemessen allein waere die Anzeige dann immer "Pro". Bei Gleichstand gewinnt das gewaehlte.
@@ -463,6 +505,7 @@
       if (presetSet(id, val)) n++; else missing.push(id);
     }
     setzeBrakeStealLast();
+    setzeGran();
     presetSay(p.label + ': ' + n + ' Regler gesetzt'
               + (missing.length ? ', nicht gefunden: ' + missing.join(', ') : ''));
     $('preset-json').value = JSON.stringify(presetRead());
@@ -559,6 +602,7 @@
     try {
       for (const [id, val] of Object.entries(p.v)) presetSet(id, val);
       setzeBrakeStealLast();
+      setzeGran();
       const snap = { config: JSON.parse(JSON.stringify(physEngine.config)),
                      modus: $('phys-mode') ? $('phys-mode').value : 'physik' };
       presetSchnappCache[key] = snap;
@@ -566,6 +610,7 @@
     } finally {
       for (const [id, val] of Object.entries(vorher)) presetSet(id, val);
       setzeBrakeStealLast();
+      setzeGran();
       presetZuletzt = merkZuletzt;
       presetSchnappLaeuft = false;
     }

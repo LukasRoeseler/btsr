@@ -5287,6 +5287,62 @@
                        + ' (hinten ' + an.nutzH.toFixed(2) + ' gegen vorn ' + an.nutzV.toFixed(2) + ')' };
   });
 
+  // v1.2.62 GRAN ACCELERATO: die Gier wird gefahren (baut sich dynamisch auf), das Auto
+  // dreht beim Einlenken ein, und am Limit schiebt es (vorn ueber der Grenze). Der Test
+  // misst die gran*-Werte aus setzeGran() direkt an einem Motor.
+  stAdd('Gran Accelerato: Gier baut sich auf, Einlenken, Limit schiebt', () => {
+    const f = [];
+    const GRAN = { gran: true, pacejka: true, granAeroK: 0.15, granLenkTempo: 1.0, granZentrier: 0.7,
+                   granGier: 0.6, granLastEmpf: 0.14, granTauUeber: 0.35, granYawTau: 0.28, granYawFeed: 0.25 };
+    const e = new CarreraPhysicsEngine();
+    Object.assign(e.config, GRAN);
+    const st = e.state;
+    st.driveMode = 'forward';
+    st.currentGear = 3;
+    // 1) Dynamische Gier: beim Einlenken (120 km/h, voller Einschlag) baut sie sich ueber die
+    //    Takte auf, statt zu springen.
+    st.speedKmh = 120 / REAL_SCALE;
+    e.update({ throttle: 0.6, brake: 0, steering: 1 }, 0.045);
+    const yawErster = st.granYaw;
+    let yawSpaeter = yawErster;
+    for (let i = 0; i < 60; i++) {
+      st.speedKmh = 120 / REAL_SCALE;
+      e.update({ throttle: 0.6, brake: 0, steering: 1 }, 0.045);
+      yawSpaeter = st.granYaw;
+    }
+    if (!(yawErster > 0)) f.push('Gier baut sich nicht auf (erster ' + yawErster.toFixed(3) + dbg + ')');
+    if (!(yawSpaeter > yawErster)) f.push('Gier waechst nicht (' + yawErster.toFixed(3) + ' -> ' + yawSpaeter.toFixed(3) + ')');
+    if (yawErster > yawSpaeter) f.push('Gier springt sofort (erster ' + yawErster.toFixed(3) + ')');
+    // 2) Limit: voller Einschlag bei hohem Tempo schiebt (vorn ueber der Grenze), trotz Abtrieb.
+    const e2 = new CarreraPhysicsEngine();
+    Object.assign(e2.config, GRAN);
+    const st2 = e2.state;
+    st2.driveMode = 'forward';
+    st2.currentGear = 3;
+    for (let i = 0; i < 40; i++) {
+      st2.speedKmh = 250 / REAL_SCALE;
+      e2.update({ throttle: 0.9, brake: 0, steering: 1 }, 0.045);
+    }
+    if (!(st2.pacNutzV > 1)) f.push('Vollausschlag bei 250 schiebt nicht (vorn ' + st2.pacNutzV.toFixed(2) + ')');
+    // 3) Linkskurve: die Gier und der Einlenk-Zuschlag muessen NEGATIV sein (sonst lenkt der
+    //    Zuschlag in eine Linkskurve nach rechts - der Sign-Bug).
+    const e3 = new CarreraPhysicsEngine();
+    Object.assign(e3.config, GRAN);
+    const st3 = e3.state;
+    st3.driveMode = 'forward';
+    st3.currentGear = 3;
+    for (let i = 0; i < 40; i++) {
+      st3.speedKmh = 120 / REAL_SCALE;
+      e3.update({ throttle: 0.6, brake: 0, steering: -1 }, 0.045);
+    }
+    if (!(st3.granYaw < 0)) f.push('Linkskurve: Gier nicht negativ (' + st3.granYaw.toFixed(3) + ')');
+    if (!(e3.outputs.servoAngle < 0)) f.push('Linkskurve: Einschlag nicht links (' + e3.outputs.servoAngle.toFixed(3) + ')');
+    return { ok: !f.length, mass: f.length ? f.join('; ')
+      : 'Gier ' + yawErster.toFixed(3) + ' -> ' + yawSpaeter.toFixed(3)
+        + ', 250 km/h schiebt (vorn ' + st2.pacNutzV.toFixed(2) + ', hinten ' + st2.pacNutzH.toFixed(2)
+        + '), Links Gier ' + st3.granYaw.toFixed(3) };
+  });
+
   // BESTELLT (v0.8.24): Uebersteuern spuerbar - Vortrieb weg, Leistungsuebersteuern, der
   // Rutsch haelt bis Gegenlenken oder Pedal weg, staerkere Vibration. Alles abschaltbar.
   stAdd('Pacejka: Vollgas in der Kurve bringt das Heck, Vortrieb geht weg', () => {
@@ -5909,7 +5965,7 @@
     const seite = $('sub-opt-vibration');
     if (!seite) return { ok: false, mass: 'Seite sub-opt-vibration fehlt' };
     for (const id of ['setting-vibration', 'vib-test', 'vib-schalt', 'vib-abs', 'vib-crash', 'vib-abseits', 'vib-box',
-                      'vib-rutschen', 'vib-untersteuern', 'vib-quietschen', 'vib-meldung', 'vib-trigger']) {
+                      'vib-rutschen', 'vib-untersteuern', 'vib-quietschen', 'vib-kerb', 'vib-meldung', 'vib-trigger']) {
       const el = $(id);
       if (!el || !seite.contains(el)) f.push(id + ' nicht in der Kachel');
     }
@@ -19945,10 +20001,10 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Auslaufen 2 s, Bremse bis Stillstand, Rueckwaerts erst beim neuen Druck' };
   });
 
-  stAdd('Abstimmungen: FAHREN zeigt nur Arcade, Sim+, Pacejka; Lenkeinschlag erreichbar ausser Realismus GT3', () => {
+  stAdd('Abstimmungen: FAHREN zeigt Arcade, Sim+, Pacejka, Gran Accelerato; Lenkeinschlag erreichbar ausser Realismus GT3', () => {
     const f = [];
     const fahren = window.__presetKeysFahren ? window.__presetKeysFahren() : [];
-    if (fahren.join(',') !== 'arcade,simplus,propacejka') f.push('FAHREN: ' + fahren.join(','));
+    if (fahren.join(',') !== 'arcade,simplus,propacejka,gran') f.push('FAHREN: ' + fahren.join(','));
     for (const k of ['arcade', 'simplus', 'gt3', 'f1']) {
       const v = window.__presetValues(k) || {};
       const resp = v['phys-steerresp'] === undefined ? 3 : v['phys-steerresp'];

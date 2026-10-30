@@ -1427,6 +1427,10 @@
     border-radius: 10px; }
   .ch-spiegel-knopf svg { width: 26px; height: 26px; }
   .ch-spiegel-knopf.an { background: var(--k-blau, #0b84d6); color: #fff; border-color: transparent; }
+  /* Studie (98f-studie.js, v1.2.62): der Homington-Plan auf der Startseite, klickbar zum
+     Vergroessern (nutzt die .ch-karte-Vollbild-Regeln), mit Spiegel-Knopf. */
+  .studie-plan { margin: 12px 0 4px; }
+  #studie-spiegel-knopf.an { background: var(--k-blau, #0b84d6); color: #fff; border-color: transparent; }
   /* Fahren: Fahrgefuehl-Kachel mit groesserer Schrift (v0.9.31) */
   .k-fahren-unten #fa-profil .k-kt { font-size: clamp(14px, 2.6vh, 22px); }
   #fa-profil.k-meister { background: linear-gradient(90deg, rgba(8,10,14,.88) 0%, rgba(8,10,14,.45) 70%),
@@ -4944,7 +4948,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.2.61</span></span>
+        <span class="foot-ver">v<span id="app-version">1.2.62</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -9953,6 +9957,7 @@
         <select id="phys-mode">
           <option value="physik">Physik</option>
           <option value="pacejka" selected>Pacejka (experimentell)</option>
+          <option value="gran">Gran Accelerato</option>
           <option value="aus">RC (experimentell)</option>
         </select></div>
       <!-- BESTELLT: "Eventuell sage ich spaeter, dass das Uebersteuern abgeschaltet werden
@@ -11091,6 +11096,11 @@
           du bist an der Haftgrenze, aber noch nicht dar&uuml;ber. Kommt vor dem Untersteuern und dem
           &Uuml;bersteuern &ndash; die Warnung davor.</small></div>
         <label class="tgl"><input type="checkbox" id="vib-quietschen" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Randsteine (Virtuell fahren)
+          <small>Ein kurzes R&auml;tteln und Brummen, wenn das Auto mit dem Rand &uuml;ber den
+          erhabenen Stein f&auml;hrt &ndash; das Rattern der Curbs-Schwelle. Nur im virtuellen
+          Fahren, wo die Randsteine als 3D-Objekt gezeichnet sind.</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-kerb" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Meldungen
           <small>Wetterwechsel und leerer Tank. Standard aus: das sind Nachrichten und
           keine Kr&auml;fte am Auto &ndash; wer sie will, bekommt sie hier.</small></div>
@@ -14154,7 +14164,11 @@
     "Wie lange": "How long",
     "Fragen und Reaktionstest etwa 3 Minuten. Fahrt auf der Bahn etwa 10 Minuten (Strecke aufbauen etwa 5, fünf Runden etwa 3–5). Virtuelle Fahrt etwa 5 Minuten. Insgesamt also 3 bis 18 Minuten, je nachdem, was du fährst.": "Questions and reaction test about 3 minutes. Drive on the track about 10 minutes (building the track about 5, five laps about 3–5). Virtual drive about 5 minutes. So 3 to 18 minutes in total, depending on what you drive.",
     "6 Aussagen zur Persönlichkeit bewerten, eine Frage zu deinem Fahrkönnen beantworten, einen Reaktionstest mit dem Controller machen (10 Durchgänge) und danach, wenn du magst, eine Fahrverhaltens-Challenge fahren: 5 Runden auf Homington (nur Teile der Grundpackung) mit dem Fahrgefühl Sim+ – auf der echten Bahn, virtuell in der App oder beides.": "Rate 6 statements about personality, answer one question about your driving skill, do a reaction test with the controller (10 rounds) and then, if you like, drive a driving-behaviour challenge: 5 laps on Homington (base set pieces only) with the Sim+ handling – on the real track, virtually in the app, or both.",
-    "Auf der Bahn: Baue Homington aus der Grundpackung auf (der Plan erscheint beim Start), stelle dein Auto auf Start/Ziel und fahre 5 Runden – etwa 10 Minuten.": "On the track: build Homington from the base set (the plan appears at the start), put your car on start/finish and drive 5 laps – about 10 minutes.",
+    "Auf der Bahn: Baue Homington aus der Grundpackung auf, stelle dein Auto auf Start/Ziel und fahre 5 Runden – etwa 10 Minuten.": "On the track: build Homington from the base set, put your car on start/finish and drive 5 laps – about 10 minutes.",
+    "Die Strecke": "The track",
+    "Homington – der Plan steht hier daneben. Baue ihn aus der Grundpackung auf (spiegeln geht, wenn deine Packung linkslastig ist), stelle dein Auto auf Start/Ziel und fahre 5 Runden.": "Homington – the plan is shown here beside it. Build it from the base set (mirroring works if your set is left-heavy), put your car on start/finish and drive 5 laps.",
+    "Zum Vergrößern klicken": "Click to enlarge",
+    "Layout spiegeln": "Mirror layout",
     "Virtuell: dieselbe Strecke und dieselben 5 Runden in der App, ohne Bahn und Auto – etwa 5 Minuten. Du kannst beides fahren, nacheinander.": "Virtual: the same track and the same 5 laps in the app, without track or car – about 5 minutes. You can drive both, one after the other.",
     "Fahrgefühl Sim+, trocken, keine Bestenliste. Gemessen werden Rundenzeiten, Gas, Bremse, Lenkung und Abflüge. Ohne Fahrt kannst du auch gleich abschließen.": "Sim+ handling, dry, no leaderboard. Measured are lap times, throttle, brake, steering and off-track moments. You can also finish right away without driving.",
     "Auf der Bahn fahren": "Drive on the track",
@@ -14949,6 +14963,7 @@
     "Pro-Pacejka": "Pro-Pacejka",
     "Pro mit Pacejka-Lenkmodell": "Pro with Pacejka handling model",
     "Die Pro-Abstimmung (Automatik, 2,6 s auf 100, voller Grip, Reifenmodell und Tankgewicht an) mit dem experimentellen Pacejka-Lenkmodell: unterhalb der Haftgrenze fährt es sich wie Physik, darüber spürbar Übersteuern und Untersteuern, beides vibriert und quietscht. Zum Ausprobieren der Magic Formula, ohne die Klassen-Abstimmung.": "The Pro setup (automatic, 2.6 s to 100, full grip, tyre model and fuel weight on) with the experimental Pacejka steering model: below the grip limit it drives like Physics, above it noticeable oversteer and understeer, both vibrate and squeal. For trying out the Magic Formula without the class setup.",
+    "Das Pacejka-Lenkmodell, verfeinert wie ein GT3 in Assetto Corsa Competizione und Gran Turismo Sport: Abtrieb hebt den Griff bei Tempo, die Lenkung wird mit Tempo feiner und zentriert sich selbst, die Lastempfindlichkeit ist st\u00e4rker, und das \u00dcbersteuern baut weicher auf und wird vom Schwimmwinkel stabilisiert. Neu ist die dynamische Gierregelung: das Auto dreht beim Einlenken ein, statt zu springen, und schiebt am Limit, statt hart abzurei\u00dfen.": "The Pacejka steering model, refined like a GT3 in Assetto Corsa Competizione and Gran Turismo Sport: downforce raises grip with speed, the steering gets finer and self-centres with speed, load sensitivity is stronger, and oversteer builds up more softly and is stabilised by the slip angle. New is the dynamic yaw control: the car rotates in when you steer in instead of snapping, and pushes at the limit instead of breaking away hard.",
 
     // Die Kachelseite der Optionen
     "Einstellungen": "Settings",
@@ -16919,6 +16934,8 @@
     "vorn bei Gas": "front on throttle",
     "bei Bremse": "on the brake",
     "Reifenquietschen": "Tyre squeal",
+    "Randsteine (Virtuell fahren)": "Kerbs (virtual driving)",
+    "Ein kurzes Rätteln und Brummen, wenn das Auto mit dem Rand über den erhabenen Stein fährt – das Rattern der Curbs-Schwelle. Nur im virtuellen Fahren, wo die Randsteine als 3D-Objekt gezeichnet sind.": "A brief rattle and rumble when the car runs its edge over the raised kerb – the chatter of the curb strip. Only in virtual driving, where the kerbs are drawn as a 3D object.",
     "Am Grenzbereich, im Stil von Gran Turismo: Lautstärke und Tonhöhe laufen stetig mit der Querausnutzung des Reibkreises, Einsatz ab 60 Prozent – also ab etwa 98 km/h bei vollem Lenkausschlag, ab 197 km/h bei halbem, und bei einem Viertel Ausschlag nie. Eine Haarnadel quietscht, eine lange schnelle Kurve nicht. Bis v0.4.55 stand die Schwelle bei 85 Prozent und war damit unerreichbar: gemessen kommt die Querausnutzung erst bei 265 km/h dorthin, weil der Lenkausschlag mit dem Tempo beschnitten wird. Es hat deshalb nie gequietscht.": "At the limit, in the style of Gran Turismo: volume and pitch run continuously with the lateral use of the friction circle, starting at 60 per cent – so from about 98 km/h at full lock, from 197 km/h at half, and at a quarter of lock never. A hairpin squeals, a long fast corner does not. Up to v0.4.55 the threshold sat at 85 per cent and was therefore unreachable: measured, the lateral use only gets there at 265 km/h, because the steering lock is cut back with speed. It therefore never squealed.",
     "WLAN Mehrspieler": "WIFI Multiplayer",
     "Sportlich, mit Simulationstiefe": "Sporty, with simulation depth",
@@ -17656,7 +17673,11 @@
     "Wie lange": "Cuánto dura",
     "Fragen und Reaktionstest etwa 3 Minuten. Fahrt auf der Bahn etwa 10 Minuten (Strecke aufbauen etwa 5, fünf Runden etwa 3–5). Virtuelle Fahrt etwa 5 Minuten. Insgesamt also 3 bis 18 Minuten, je nachdem, was du fährst.": "Preguntas y prueba de reacción unos 3 minutos. Carrera en la pista unos 10 minutos (montar la pista unos 5, cinco vueltas unos 3–5). Carrera virtual unos 5 minutos. En total de 3 a 18 minutos, según lo que conduzcas.",
     "6 Aussagen zur Persönlichkeit bewerten, eine Frage zu deinem Fahrkönnen beantworten, einen Reaktionstest mit dem Controller machen (10 Durchgänge) und danach, wenn du magst, eine Fahrverhaltens-Challenge fahren: 5 Runden auf Homington (nur Teile der Grundpackung) mit dem Fahrgefühl Sim+ – auf der echten Bahn, virtuell in der App oder beides.": "Valorar 6 afirmaciones sobre la personalidad, responder una pregunta sobre tu habilidad, hacer una prueba de reacción con el mando (10 rondas) y después, si quieres, un reto de conducción: 5 vueltas en Homington (solo piezas del set básico) con el manejo Sim+ – en la pista real, virtualmente en la app o ambas.",
-    "Auf der Bahn: Baue Homington aus der Grundpackung auf (der Plan erscheint beim Start), stelle dein Auto auf Start/Ziel und fahre 5 Runden – etwa 10 Minuten.": "En la pista: monta Homington con el set básico (el plano aparece al empezar), pon tu coche en salida/meta y da 5 vueltas – unos 10 minutos.",
+    "Auf der Bahn: Baue Homington aus der Grundpackung auf, stelle dein Auto auf Start/Ziel und fahre 5 Runden – etwa 10 Minuten.": "En la pista: monta Homington con el set básico, pon tu coche en salida/meta y da 5 vueltas – unos 10 minutos.",
+    "Die Strecke": "La pista",
+    "Homington – der Plan steht hier daneben. Baue ihn aus der Grundpackung auf (spiegeln geht, wenn deine Packung linkslastig ist), stelle dein Auto auf Start/Ziel und fahre 5 Runden.": "Homington – el plano está aquí al lado. Móntalo con el set básico (se puede reflejar si tu set es zurdo), pon tu coche en salida/meta y da 5 vueltas.",
+    "Zum Vergrößern klicken": "Haz clic para ampliar",
+    "Layout spiegeln": "Reflejar el trazado",
     "Virtuell: dieselbe Strecke und dieselben 5 Runden in der App, ohne Bahn und Auto – etwa 5 Minuten. Du kannst beides fahren, nacheinander.": "Virtual: la misma pista y las mismas 5 vueltas en la app, sin pista ni coche – unos 5 minutos. Puedes hacer ambas, una tras otra.",
     "Fahrgefühl Sim+, trocken, keine Bestenliste. Gemessen werden Rundenzeiten, Gas, Bremse, Lenkung und Abflüge. Ohne Fahrt kannst du auch gleich abschließen.": "Manejo Sim+, seco, sin clasificación. Se miden tiempos de vuelta, acelerador, freno, dirección y salidas de pista. También puedes terminar ya sin conducir.",
     "Auf der Bahn fahren": "Conducir en la pista",
@@ -21540,6 +21561,21 @@
         pacejkaLeistung: 1.4,
         pacejkaHaltMax: 2.0,
 
+        // ---- GRAN ACCELERATO (v1.2.62): ACC-/GT7-artiges Fahrgefuehl auf Pacejka-Basis ----
+        // Eigener Steuerungsmodus "gran": wie Pacejka, aber mit Abtrieb, tempoabhaengiger
+        // Lenkung, Selbstzentrierung, starker Lastempfindlichkeit, weicherem Uebersteuern und
+        // einer DYNAMISCHEN GIERREGELUNG (das Einspurmodell wird gefahren, nicht nur angezeigt).
+        // Die Stellschrauben stehen hier, die Voreinstellung ist das Preset "gran" (98-presets.js).
+        gran: false,
+        granAeroK: 0.0,          // Abtrieb: wie stark der Griff mit (v/Vmax)^2 waechst
+        granLenkTempo: 0.0,      // tempoabhaengige Lenkung: wie stark der Einschlag mit Tempo sinkt
+        granZentrier: 0.0,       // Selbstzentrierung: Kraft zur Mitte (0..1, je Takt bei 60 Hz)
+        granGier: 0.0,           // Gierdynamik-Rueckfuehrung: wie stark slipAngle stabilisiert
+        granLastEmpf: 0.0,       // zusaetzliche Lastempfindlichkeit (Reibwert sinkt mit Last)
+        granTauUeber: 0.25,      // weicherer Uebersteuern-Aufbau (Zeitkonstante in s)
+        granYawTau: 0.28,        // Traegheit des Gieraufbaus: wie schnell die Gier der Wunsch-Gier folgt (s)
+        granYawFeed: 0.0,        // Zuschlag beim Einlenken (0..1): wie stark das Auto "eindreht"
+
         // ---- Longitudinal weight transfer ----
         // Under braking the mass pitches onto the front axle, under power onto the rear.
         // TWO time constants on purpose, and the difference between them is the whole
@@ -22107,6 +22143,121 @@
       st.pacZustand = st.pacUeber > 0.03 ? 'ueber' : (st.pacUnter < 0.97 ? 'unter' : '');
       this.outputs.servoAngle = Math.max(-1, Math.min(1,
         this.outputs.servoAngle * st.pacUnter + st.pacRichtung * st.pacUeber));
+    }
+
+    // ---- GRAN ACCELERATO (v1.2.62): der Pacejka-Schritt, verfeinert ---------------------
+    // Wie pacejkaStep, aber mit den ACC-/GT7-Vorschlaegen: Abtrieb hebt den Griff bei Tempo,
+    // die Lenkung wird mit Tempo feiner und zentriert sich selbst, die Lastempfindlichkeit ist
+    // staerker, der Uebersteuern-Aufbau ist weicher, der Schwimmwinkel stabilisiert das Heck -
+    // und die GIERRATE wird gefahren statt nur angezeigt (das Einspurmodell wird zum
+    // Stellglied, nicht mehr zum Instrument). Das ist der grosse Hebel Richtung ACC/GT7:
+    // das Auto dreht beim Einlenken EIN (Gier baut sich mit der Traegheit auf), schiebt am
+    // Limit (Gier kommt nicht nach) und dreht beim Uebersteuern zu viel - gegenlenken faengt es.
+    granStep(dt, inputs) {
+      const st = this.state, cfg = this.config;
+      const gas = inputs ? Math.max(0, inputs.throttle || 0) : 0;
+      const bremse = inputs ? Math.max(0, inputs.brake || 0) : 0;
+      const kmhAnteil = Math.abs(st.speedKmh) / Math.max(0.1, cfg.topSpeedKmh);
+      const roh = inputs ? (inputs.steering === undefined ? 0 : inputs.steering) : 0;
+      const tempo = kmhAnteil * kmhAnteil;
+      // Tempoabhaengige Lenkung: mit Tempo wird der Einschlag feiner (wie im virtuellen Modell).
+      let lenk = this.state.dampedSteering / (1 + cfg.granLenkTempo * tempo);
+      // Selbstzentrierung (Nachlauf): ohne Lenkeingabe zieht die Lenkung zur Mitte, und bei
+      // Tempo staerker - ein echtes Auto steht bei Tempo von selbst gerade.
+      if (Math.abs(roh) < 0.02 && cfg.granZentrier > 0) {
+        lenk -= lenk * Math.min(1, cfg.granZentrier * (0.5 + 0.5 * kmhAnteil) * dt * 60);
+      }
+
+      // ---- DYNAMISCHE GIERREGELUNG (Einspurmodell als Stellglied) -------------------------
+      // Der Wunsch-Gier folgt aus dem Eigenlenkgradienten des Layouts (vorn/mittel/heck),
+      // die Ist-Gier laeuft ihm mit der Traegheit nach. Das ist das "Einlenken" eines echten
+      // Autos: erst dreht es ein, dann haelt es. Der Fehler zwischen Wunsch und Ist gibt beim
+      // Einlenken einen kleinen Zuschlag (das Auto dreht EIN, statt zu springen); am Limit
+      // (vorn schiebt) verpufft er, weil mehr Einschlag dann nichts mehr bringt.
+      const v = Math.abs(st.speedKmh) * REAL_SCALE / 3.6;   // m/s, echtes Mass
+      let rZiel = 0, gierAufbau = 0;
+      if (v > 2) {
+        const L = cfg.wheelbaseM, m = cfg.vehicleMassKg, p = cfg.stiffnessLoadExp;
+        const Cv = cfg.corneringStiffness * Math.pow(cfg.loadFrontStatic, p);
+        const Ch = cfg.corneringStiffness * Math.pow(1 - cfg.loadFrontStatic, p);
+        const kU = (m * cfg.loadFrontStatic) / Cv - (m * (1 - cfg.loadFrontStatic)) / Ch;
+        const delta = lenk * STEER_MAX_DEG * Math.PI / 180;
+        rZiel = delta * v / Math.max(1e-6, L + kU * v * v);
+        if (st.granYaw === undefined) st.granYaw = 0;
+        const rAlt = st.granYaw;
+        st.granYaw = rAlt + (rZiel - rAlt) * Math.min(1, dt / cfg.granYawTau);
+        // Aufbauanteil: der Zuschlag, solange die Gier der Wunsch-Gier hinterherhinkt. Vorzeichen
+        // behalten, damit der Zuschlag auch in einer Linkskurve nach links lenkt (nicht nur rechts).
+        gierAufbau = Math.max(-0.3, Math.min(0.3, (rZiel - st.granYaw) / Math.max(0.1, Math.abs(rZiel))));
+      }
+
+      // ---- Reibkreis mit Abtrieb und Lastempfindlichkeit --------------------------------
+      const quer = Math.abs(lenk) * kmhAnteil * cfg.corneringLoad
+                   / Math.max(0.1, cfg.pacejkaGrenze);
+      // Abtrieb (Downforce): der Griff waechst mit dem Quadrat des Tempos - ein GT3 hat das,
+      // und deshalb ist das Auto bei Tempo "festgenagelt" statt leicht.
+      const aero = 1 + cfg.granAeroK * tempo;
+      const grip = Math.max(0.2, (st.tyreGrip === undefined ? 1 : st.tyreGrip) * cfg.gripScale) * aero;
+      const vorn = Math.max(0.6, Math.min(1, cfg.loadFrontStatic / Math.max(0.05, st.loadFront)));
+      const hinten = Math.max(0.6, Math.min(1.6, (1 - cfg.loadFrontStatic) / Math.max(0.05, 1 - st.loadFront)));
+      // Staerkere Lastempfindlichkeit: die entlastete Achse behaelt relativ mehr Griff.
+      const lastF = 1 + cfg.granLastEmpf * (vorn - 1);
+      const lastH = 1 + cfg.granLastEmpf * (hinten - 1);
+      const antrieb = Math.max(0, Math.min(1, st.longUse)) * 0.7;
+      const rest = Math.sqrt(Math.max(0.2, 1 - antrieb * antrieb));
+      const uV = quer * vorn / grip * lastF;
+      let uH = quer * hinten / grip / rest / Math.max(0.5, cfg.pacejkaHeckReserve) * lastH;
+      // Leistungsuebersteuern: ab 40 % Gas nimmt der Antrieb hinten zusaetzlich Seitenhalt.
+      if (gas > 0.4) {
+        const x = Math.min(1, (gas - 0.4) / 0.6);
+        uH *= 1 + cfg.pacejkaLeistung * x * x * (3 - 2 * x);
+      }
+      st.pacNutzV = uV; st.pacNutzH = uH;
+      const C = cfg.pacejkaC, E = cfg.pacejkaE, B = pacB(C, E);
+      const wirk = (u) => (u <= 1 ? 1 : pacY(u, B, C, E) / u);
+      const zielU = wirk(uV) * pacGasFaktor(cfg, st.longUse);
+      st.pacUnter += (zielU - st.pacUnter) * (1 - Math.exp(-dt / 0.08));
+      let zielO = 0;
+      const richtung = Math.sign(lenk);
+      const gegen = !!(st.pacRichtung && richtung && richtung !== st.pacRichtung);
+      if (uH > 1 && uH > uV) {
+        if (!st.pacRichtung && richtung) st.pacRichtung = richtung;
+        if (!gegen) zielO = Math.min(cfg.pacejkaUeberMax, 1 - wirk(uH));
+        if (zielO > 0) st.pacLeistung = true;
+      }
+      // Gierdynamik-Rueckfuehrung (Einspurmodell-Instrument): der Schwimmwinkel stabilisiert
+      // das Heck - zu viel Rutsch wird sanft abgefangen, statt zu kippen.
+      if (cfg.granGier > 0 && Math.abs(st.slipAngle) > 0.04 && st.pacRichtung) {
+        const richtungSlip = Math.sign(st.slipAngle);
+        if (richtungSlip && richtungSlip === st.pacRichtung) {
+          zielO *= Math.max(0, 1 - Math.min(1, cfg.granGier * Math.abs(st.slipAngle)));
+        }
+      }
+      const pedalHalt = Math.min(1, Math.max(gas, bremse) / 0.4);
+      if (st.pacUeber > 0.05 && st.pacRichtung && !gegen && pedalHalt > 0
+          && kmhAnteil > 0.15 && st.pacHaltSeit < cfg.pacejkaHaltMax) {
+        zielO = Math.max(zielO, st.pacUeber * pedalHalt);
+        st.pacHaltSeit += dt;
+      }
+      // Weicherer Aufbau (granTauUeber), schnelleres Abklingen beim Gegenlenken.
+      const tau = zielO > st.pacUeber ? cfg.granTauUeber : (gegen ? 0.1 : 0.25);
+      st.pacUeber += (zielO - st.pacUeber) * (1 - Math.exp(-dt / tau));
+      if (st.pacUeber < 0.005 && zielO === 0) {
+        st.pacUeber = 0; st.pacRichtung = 0; st.pacHaltSeit = 0; st.pacLeistung = false;
+      }
+      st.pacVortrieb = 1 - cfg.pacejkaRutschVortrieb * Math.min(1, st.pacUeber / Math.max(0.01, cfg.pacejkaUeberMax));
+      st.pacZustand = st.pacUeber > 0.03 ? 'ueber' : (st.pacUnter < 0.97 ? 'unter' : '');
+
+      // ---- Servo formen: Untersteuern kuerzt, Uebersteuern ergaenzt, Gier formt den Anfang ----
+      let servo = this.outputs.servoAngle * st.pacUnter + st.pacRichtung * st.pacUeber;
+      // Gier-Aufbau: beim Einlenken ein kleiner Zuschlag (das Auto dreht EIN), mit dem
+      // Vorzeichen der Kurve. Er verpufft, sobald die Front ans Limit kommt (uV > 0,9) - dann
+      // schiebt das Auto, und mehr Einschlag hilft nicht mehr. Auch bei Uebersteuern (uH > 0,9)
+      // verpufft er: dann dreht das Auto schon zu viel, und der Zuschlag waere ein Fehler.
+      if (Math.abs(gierAufbau) > 0 && uV < 0.9 && uH < 0.9) {
+        servo += gierAufbau * cfg.granYawFeed * Math.max(0, 1 - Math.max(0, (uV - 0.7) / 0.2));
+      }
+      this.outputs.servoAngle = Math.max(-1, Math.min(1, servo));
     }
 
     // ---- EINSPURMODELL, ein Schritt ---------------------------------------------------
@@ -23196,7 +23347,8 @@
         : st.steerDemand * cfg.steerCalib + zug));
       // Pacejka formt den Befehl NACH dem Deckel, siehe dort. Nur hinter dem Schalter:
       // "Physik" rechnet keinen Schritt davon.
-      if (cfg.pacejka) this.pacejkaStep(dt, inputs);
+      if (cfg.gran) this.granStep(dt, inputs);
+      else if (cfg.pacejka) this.pacejkaStep(dt, inputs);
 
       // ---- EINSPURMODELL, ein Schritt --------------------------------------------------
       //
@@ -23455,7 +23607,7 @@
   // v1.1.42: 'rutschen' ist nur noch das Uebersteuern; dazu 'untersteuern' und 'quietschen' (Kachel Vibration).
   const RUMBLE_ARTEN = { schalt: true, abs: true, crash: true,
                          abseits: false, box: true, meldung: false, rutschen: true,
-                         untersteuern: true, quietschen: true };
+                         untersteuern: true, quietschen: true, kerb: true };
 
   // ---- Trigger-Vibration, und WELCHER Trigger zu welcher Art gehoert -----------------
   //
@@ -24190,12 +24342,14 @@
   function physModusAnwenden(melden) {
     const v = $('phys-mode') ? $('phys-mode').value : 'physik';
     driftModus = (v === 'drift');
-    physicsEnabled = (v === 'physik' || v === 'pacejka');
-    physEngine.config.pacejka = physEngine2.config.pacejka = (v === 'pacejka');
+    physicsEnabled = (v === 'physik' || v === 'pacejka' || v === 'gran');
+    physEngine.config.pacejka = physEngine2.config.pacejka = (v === 'pacejka' || v === 'gran');
+    physEngine.config.gran = physEngine2.config.gran = (v === 'gran');
     physLastTime = null;
     if (melden) {
       log('Steuerungsmodus: ' + (v === 'physik' ? 'Physik'
                              : v === 'pacejka' ? 'Pacejka (experimentell)'
+                             : v === 'gran' ? 'Gran Accelerato'
                              : 'RC (Auslaufen, Bremse zweimal = rueckwaerts)'), 'info');
     }
   }
@@ -24578,7 +24732,8 @@
   const VIB_KAESTCHEN = { 'vib-schalt': 'schalt', 'vib-abs': 'abs', 'vib-crash': 'crash',
                           'vib-abseits': 'abseits', 'vib-box': 'box',
                           'vib-meldung': 'meldung', 'vib-rutschen': 'rutschen',
-                          'vib-untersteuern': 'untersteuern', 'vib-quietschen': 'quietschen' };
+                          'vib-untersteuern': 'untersteuern', 'vib-quietschen': 'quietschen',
+                          'vib-kerb': 'kerb' };
   Object.keys(VIB_KAESTCHEN).forEach((id) => {
     const el = $(id);
     if (!el) return;
@@ -37006,6 +37161,10 @@
   function vfQuad(a, p1, p2, p3, p4, y, f) {
     [p1, p2, p3, p1, p3, p4].forEach((p) => a.push(p[0], y, p[1], f[0], f[1], f[2]));
   }
+  // Eine senkrechte Wand (zwei Dreiecke) zwischen y0 und y1 an den zwei Kartenpunkten p1, p2.
+  function vfWand(a, p1, p2, y0, y1, f) {
+    [p1, p2, p2, p1, p2, p1].forEach((p, i) => a.push(p[0], [y0, y0, y1, y0, y1, y1][i], p[1], f[0], f[1], f[2]));
+  }
   // Die Fahrbahn aus der Mittellinie. Koordinaten: x = Karten-x, z = Karten-y, y nach oben.
   function vfBahnBauen(gl, pts, nrm, tiles) {
     const a = [];
@@ -37018,8 +37177,20 @@
     for (let i = 0; i < pts.length - 1; i++) {
       vfQuad(a, off(i, half), off(i + 1, half), off(i + 1, -half), off(i, -half), 0, [0.07, 0.08, 0.10]);
       const weiss = Math.floor(i / 2) % 2 === 0;
-      vfQuad(a, off(i, half + rand), off(i + 1, half + rand), off(i + 1, half), off(i, half), 0.02, weiss ? [0.93, 0.94, 0.96] : [0.10, 0.45, 0.95]);
-      vfQuad(a, off(i, -half), off(i + 1, -half), off(i + 1, -half - rand), off(i, -half - rand), 0.02, weiss ? [0.93, 0.94, 0.96] : [0.88, 0.12, 0.14]);
+      // Randsteine als erhabenes 3D-Objekt (v1.2.62): Oberseite angehoben und eine senkrechte
+      // Innenseite, damit der Stein wie eine echte Curbs-Schwelle aussieht und das Rattern
+      // nachvollziehbar macht.
+      const ky = 0.09;
+      const farbL = weiss ? [0.93, 0.94, 0.96] : [0.10, 0.45, 0.95];
+      const farbR = weiss ? [0.93, 0.94, 0.96] : [0.88, 0.12, 0.14];
+      const li = off(i, half), li2 = off(i + 1, half);
+      const lo = off(i, half + rand), lo2 = off(i + 1, half + rand);
+      vfQuad(a, lo, lo2, li2, li, ky, farbL);
+      vfWand(a, li, li2, 0.02, ky, farbL);
+      const ri = off(i, -half), ri2 = off(i + 1, -half);
+      const ro = off(i, -half - rand), ro2 = off(i + 1, -half - rand);
+      vfQuad(a, ri, ri2, ro2, ro, ky, farbR);
+      vfWand(a, ri, ri2, 0.02, ky, farbR);
       // Teilegrenze: duenner weisser Strich quer ueber die Bahn
       if (pts[i + 1].tile !== pts[i].tile) {
         const t0 = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y) || 1;
@@ -37210,7 +37381,8 @@
   // (muV/muH), mehr Einschlag (lenkGrad), eine schnellere Gierantwort (weniger Daempfung) und ein
   // hoeheres Tempo (Weg und Tacho, Faktor vfTempoFaktor).
   const VF_HANDLING_STORE = 'omegasim-vf-handling';
-  const VF_HANDLING_MODI = [{ id: 'gt3', name: 'GT3' }, { id: 'schnell', name: 'Schnell' }];
+  const VF_HANDLING_MODI = [{ id: 'gt3', name: 'GT3' }, { id: 'schnell', name: 'Schnell' },
+                            { id: 'gran', name: 'Gran Accelerato' }];
   function vfHandling() {
     try { const v = localStorage.getItem(VF_HANDLING_STORE); return VF_HANDLING_MODI.some((m) => m.id === v) ? v : 'gt3'; } catch (e) { return 'gt3'; }
   }
@@ -37421,13 +37593,30 @@
   // Die schnellere Abstimmung auf ein Fahrprofil anwenden: mehr Grip, mehr Einschlag und eine
   // schnellere Gierantwort. Bei "GT3" bleibt das Profil unveraendert (P zurueck).
   function vfHandlingProfil(P) {
-    if (!P || vfHandling() !== 'schnell') return P;
-    return Object.assign({}, P, {
-      muV: P.muV * 1.35,
-      muH: P.muH * 1.35,
-      lenkGrad: Math.min(45, P.lenkGrad * 1.5),
-      yawDamp: (P.yawDamp || 1.5) * 0.6,
-    });
+    if (!P) return P;
+    const h = vfHandling();
+    if (h === 'schnell') {
+      return Object.assign({}, P, {
+        muV: P.muV * 1.35,
+        muH: P.muH * 1.35,
+        lenkGrad: Math.min(45, P.lenkGrad * 1.5),
+        yawDamp: (P.yawDamp || 1.5) * 0.6,
+      });
+    }
+    if (h === 'gran') {
+      // Gran Accelerato (v1.2.62): staerkere Lastempfindlichkeit, mehr Abtrieb, weichere
+      // Gierantwort, etwas mehr Einschlag und eine nach hinten verlagerte Bremsbalance - wie
+      // ein ACC-GT3. Reifentemperatur und Tempo-Lenkung kommen im Fahrtakt (vfBild) dazu.
+      return Object.assign({}, P, {
+        lastEmpf: (P.lastEmpf || 0.15) * 1.4,
+        yawDamp: (P.yawDamp || 1.5) * 1.15,
+        bremsVorn: 0.68,
+        lenkGrad: Math.min(45, (P.lenkGrad || 16) * 1.1),
+        kV: (P.kV || 0) * 1.5,
+        kH: (P.kH || 0) * 1.5,
+      });
+    }
+    return P;
   }
   // ---- Federung: vier Ecken mit Feder, Daempfer (Druck/Zug) und Stabilisator --------------------
   // Zustand f: z (Einfedern, m, + = tiefer), th (Nicken, rad, + = Nase runter), ph (Rollen, rad, + = rechts
@@ -37650,6 +37839,7 @@
       if (VF.modusZeit >= VF.limit * 60) vfRennenEnde();
     }
     const kmh = (st.speedKmh || 0) * (VF.tempoFaktor || 1);
+    const granModus = vfHandling() === 'gran';
     // v1.1.11 GEMELDET: "Virtuelles Fahren ruckelt und ist sehr traege." Bisher lenkte das Auto mit
     // physEngine.state.dampedSteering: das rechnet die Physik nur alle 45 ms (Treppenstufen in der
     // Gierrate = Ruckeln), mit der Servodaempfung und der Lenkbegrenzung bei Tempo des ECHTEN Autos
@@ -37672,8 +37862,17 @@
       // des Modellauto-Tempos - das beschleunigt umgerechnet weit ueber jedes echte Auto.
       const ax = (st.gLong || 0) * 15;
       if (!VF.dyn) VF.dyn = { vy: 0, r: 0 };
-      vfDynamik(VF.dyn, vVoll, ax, Math.max(0, st.longUse || 0), lenk, dt,
-        (physEngine.config.gripScale || 1) * (VF.abseits ? 0.55 : 1), VF.P);
+      let mu = (physEngine.config.gripScale || 1) * (VF.abseits ? 0.55 : 1);
+      if (granModus) {
+        // Reifentemperatur (v1.2.62): kalt = weniger Griff, warm = optimal, ueberhitzt = weniger.
+        // Heizt mit Tempo und Querbelastung auf; ueber 0,6 kuehlt sie langsam wieder.
+        if (VF.tyreTemp === undefined) VF.tyreTemp = 0;
+        const aufheiz = (Math.min(1, Math.abs(vVollL) / 40 + Math.abs(VF.ay || 0) / 20)) * dt * 0.25;
+        VF.tyreTemp = Math.max(0, Math.min(1, VF.tyreTemp + aufheiz - (VF.tyreTemp > 0.6 ? dt * 0.01 : 0)));
+        const tt = VF.tyreTemp;
+        mu *= tt < 0.3 ? 0.85 + (tt / 0.3) * 0.15 : (tt < 0.6 ? 1.0 : Math.max(0.9, 1.0 - (tt - 0.6) * 0.25));
+      }
+      vfDynamik(VF.dyn, vVoll, ax, Math.max(0, st.longUse || 0), lenk, dt, mu, VF.P);
       VF.ax = ax; VF.ay = vVoll * VF.dyn.r;
       // Weg in der Bahnwelt: Tempo des Modellautos, Richtung = Kurs + Schwimmwinkel.
       VF.h += VF.dyn.r * dt * 180 / Math.PI;
@@ -37718,6 +37917,18 @@
     const ab = Math.abs(o.quer) > TRACK_HALF_W * 1.19 + VF_AUTO.B * 0.3;
     if (ab && !VF.abseits) VF.abseitsSeit = rennZeitJetzt();
     VF.abseits = ab;
+    // Randstein (v1.2.62): der erhabene Stein links/rechts der Fahrbahn. Faehrt das Auto mit dem
+    // Rand ueber ihn, rattert es und der Controller brummt.
+    const q = Math.abs(o.quer);
+    const kerbRand = TRACK_HALF_W * 2 * 0.095;
+    const kerb = !ab && q > TRACK_HALF_W - VF_AUTO.B * 0.5 && q < TRACK_HALF_W + kerbRand;
+    if (kerb && Math.abs(kmh) > 0.05) {
+      if (VF.kerbSeit === undefined || rennZeitJetzt() - VF.kerbSeit > 70) {
+        VF.kerbSeit = rennZeitJetzt();
+        padRumble(0.3, 0.25, 55, 'kerb', 1);
+        vfRattern(0.10 + Math.min(0.10, Math.abs(kmh) / 40));
+      }
+    }
     if (ab) {
       st.speedKmh *= Math.exp(-VF_ABSEITS_BREMSE * dt);
       if (rennZeitJetzt() - VF.abseitsSeit > VF_ABSEITS_ZURUECK_MS) vfZuruecksetzen();
@@ -38272,6 +38483,23 @@
     los.onclick = () => virtuellStarten();
     z.appendChild(los);
     rechts.appendChild(z);
+  }
+
+  // v1.2.62: ein kurzes "Rattern" (weisses Rauschen) fuer die Randsteine, ueber audioCtx (80-sound.js).
+  function vfRattern(staerke) {
+    if (!audioCtx || !soundEnabled) return;
+    try {
+      const dauer = 0.06, n = Math.max(1, Math.floor(audioCtx.sampleRate * dauer));
+      const buf = audioCtx.createBuffer(1, n, audioCtx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+      const src = audioCtx.createBufferSource();
+      src.buffer = buf;
+      const g = audioCtx.createGain();
+      g.gain.value = staerke;
+      src.connect(g); g.connect(audioCtx.destination);
+      src.start();
+    } catch (e) { /* ohne Ton */ }
   }
 
   // v1.1.3 GEMELDET: "ein komischer hoher Ton ab und zu" und BESTELLT "auch Motorensounds". Ohne
@@ -48243,10 +48471,14 @@
   // virtuell (v1.1.11): erst die virtuelle Fahrt auf der Studienstrecke starten - ihr Auto ist dann das
   // gesteuerte -, dann dieselbe Challenge wie auf der Bahn (Ampel, Teilepruefung, Runden, Fahrstil).
   function studieChallengeStarten(virtuell) {
+    // v1.2.62: das gespiegelte Layout der Studie uebernehmen (fuer die linkslastige Grundpackung).
+    const spiegel = !!(st && st.spiegel);
+    chSpiegel = spiegel;
     if (virtuell) {
-      if (typeof virtuellStarten !== 'function' || !virtuellStarten({ tiles: chTiles(CH_STUDIE), studie: true })) return false;
+      const tiles = spiegel ? chSpiegelTiles(chTiles(CH_STUDIE)) : chTiles(CH_STUDIE);
+      if (typeof virtuellStarten !== 'function' || !virtuellStarten({ tiles, studie: true })) { chSpiegel = false; return false; }
     }
-    chWahl = CH_STUDIE.id; chModus = 'rennen'; chSpiegel = false;
+    chWahl = CH_STUDIE.id; chModus = 'rennen';
     challengeStarten();
     if (!chLauf && virtuell && typeof virtuellBeenden === 'function') virtuellBeenden();
     return !!chLauf;
@@ -83610,6 +83842,62 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                        + ' (hinten ' + an.nutzH.toFixed(2) + ' gegen vorn ' + an.nutzV.toFixed(2) + ')' };
   });
 
+  // v1.2.62 GRAN ACCELERATO: die Gier wird gefahren (baut sich dynamisch auf), das Auto
+  // dreht beim Einlenken ein, und am Limit schiebt es (vorn ueber der Grenze). Der Test
+  // misst die gran*-Werte aus setzeGran() direkt an einem Motor.
+  stAdd('Gran Accelerato: Gier baut sich auf, Einlenken, Limit schiebt', () => {
+    const f = [];
+    const GRAN = { gran: true, pacejka: true, granAeroK: 0.15, granLenkTempo: 1.0, granZentrier: 0.7,
+                   granGier: 0.6, granLastEmpf: 0.14, granTauUeber: 0.35, granYawTau: 0.28, granYawFeed: 0.25 };
+    const e = new CarreraPhysicsEngine();
+    Object.assign(e.config, GRAN);
+    const st = e.state;
+    st.driveMode = 'forward';
+    st.currentGear = 3;
+    // 1) Dynamische Gier: beim Einlenken (120 km/h, voller Einschlag) baut sie sich ueber die
+    //    Takte auf, statt zu springen.
+    st.speedKmh = 120 / REAL_SCALE;
+    e.update({ throttle: 0.6, brake: 0, steering: 1 }, 0.045);
+    const yawErster = st.granYaw;
+    let yawSpaeter = yawErster;
+    for (let i = 0; i < 60; i++) {
+      st.speedKmh = 120 / REAL_SCALE;
+      e.update({ throttle: 0.6, brake: 0, steering: 1 }, 0.045);
+      yawSpaeter = st.granYaw;
+    }
+    if (!(yawErster > 0)) f.push('Gier baut sich nicht auf (erster ' + yawErster.toFixed(3) + dbg + ')');
+    if (!(yawSpaeter > yawErster)) f.push('Gier waechst nicht (' + yawErster.toFixed(3) + ' -> ' + yawSpaeter.toFixed(3) + ')');
+    if (yawErster > yawSpaeter) f.push('Gier springt sofort (erster ' + yawErster.toFixed(3) + ')');
+    // 2) Limit: voller Einschlag bei hohem Tempo schiebt (vorn ueber der Grenze), trotz Abtrieb.
+    const e2 = new CarreraPhysicsEngine();
+    Object.assign(e2.config, GRAN);
+    const st2 = e2.state;
+    st2.driveMode = 'forward';
+    st2.currentGear = 3;
+    for (let i = 0; i < 40; i++) {
+      st2.speedKmh = 250 / REAL_SCALE;
+      e2.update({ throttle: 0.9, brake: 0, steering: 1 }, 0.045);
+    }
+    if (!(st2.pacNutzV > 1)) f.push('Vollausschlag bei 250 schiebt nicht (vorn ' + st2.pacNutzV.toFixed(2) + ')');
+    // 3) Linkskurve: die Gier und der Einlenk-Zuschlag muessen NEGATIV sein (sonst lenkt der
+    //    Zuschlag in eine Linkskurve nach rechts - der Sign-Bug).
+    const e3 = new CarreraPhysicsEngine();
+    Object.assign(e3.config, GRAN);
+    const st3 = e3.state;
+    st3.driveMode = 'forward';
+    st3.currentGear = 3;
+    for (let i = 0; i < 40; i++) {
+      st3.speedKmh = 120 / REAL_SCALE;
+      e3.update({ throttle: 0.6, brake: 0, steering: -1 }, 0.045);
+    }
+    if (!(st3.granYaw < 0)) f.push('Linkskurve: Gier nicht negativ (' + st3.granYaw.toFixed(3) + ')');
+    if (!(e3.outputs.servoAngle < 0)) f.push('Linkskurve: Einschlag nicht links (' + e3.outputs.servoAngle.toFixed(3) + ')');
+    return { ok: !f.length, mass: f.length ? f.join('; ')
+      : 'Gier ' + yawErster.toFixed(3) + ' -> ' + yawSpaeter.toFixed(3)
+        + ', 250 km/h schiebt (vorn ' + st2.pacNutzV.toFixed(2) + ', hinten ' + st2.pacNutzH.toFixed(2)
+        + '), Links Gier ' + st3.granYaw.toFixed(3) };
+  });
+
   // BESTELLT (v0.8.24): Uebersteuern spuerbar - Vortrieb weg, Leistungsuebersteuern, der
   // Rutsch haelt bis Gegenlenken oder Pedal weg, staerkere Vibration. Alles abschaltbar.
   stAdd('Pacejka: Vollgas in der Kurve bringt das Heck, Vortrieb geht weg', () => {
@@ -84232,7 +84520,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const seite = $('sub-opt-vibration');
     if (!seite) return { ok: false, mass: 'Seite sub-opt-vibration fehlt' };
     for (const id of ['setting-vibration', 'vib-test', 'vib-schalt', 'vib-abs', 'vib-crash', 'vib-abseits', 'vib-box',
-                      'vib-rutschen', 'vib-untersteuern', 'vib-quietschen', 'vib-meldung', 'vib-trigger']) {
+                      'vib-rutschen', 'vib-untersteuern', 'vib-quietschen', 'vib-kerb', 'vib-meldung', 'vib-trigger']) {
       const el = $(id);
       if (!el || !seite.contains(el)) f.push(id + ' nicht in der Kachel');
     }
@@ -98268,10 +98556,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Auslaufen 2 s, Bremse bis Stillstand, Rueckwaerts erst beim neuen Druck' };
   });
 
-  stAdd('Abstimmungen: FAHREN zeigt nur Arcade, Sim+, Pacejka; Lenkeinschlag erreichbar ausser Realismus GT3', () => {
+  stAdd('Abstimmungen: FAHREN zeigt Arcade, Sim+, Pacejka, Gran Accelerato; Lenkeinschlag erreichbar ausser Realismus GT3', () => {
     const f = [];
     const fahren = window.__presetKeysFahren ? window.__presetKeysFahren() : [];
-    if (fahren.join(',') !== 'arcade,simplus,propacejka') f.push('FAHREN: ' + fahren.join(','));
+    if (fahren.join(',') !== 'arcade,simplus,propacejka,gran') f.push('FAHREN: ' + fahren.join(','));
     for (const k of ['arcade', 'simplus', 'gt3', 'f1']) {
       const v = window.__presetValues(k) || {};
       const resp = v['phys-steerresp'] === undefined ? 3 : v['phys-steerresp'];
@@ -103479,6 +103767,29 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // statt im Pro-Table, damit Pro unveraendert bleibt.
       'phys-accel': 1.1, 'setting-steer-calib': 2.8, 'setting-brake-steal': 0.75 }),
   };
+  // ---- GRAN ACCELERATO (v1.2.62) ---------------------------------------------------------
+  // BESTELLT: "Fuege einen neuen Fahrgefuehl Modus ein, den ich auch im Garagenmenue auswaehlen
+  // kann. Name 'Gran Accelerato'. Baue dabei alle Vorschlaege ein." Das Pacejka-Lenkmodell,
+  // verfeinert wie ein GT3 in Assetto Corsa Competizione / Gran Turismo Sport: Abtrieb hebt den
+  // Griff bei Tempo, die Lenkung wird mit Tempo feiner und zentriert sich selbst, die
+  // Lastempfindlichkeit ist staerker, das Uebersteuern baut weicher auf und wird vom
+  // Schwimmwinkel stabilisiert - und die GIERRATE wird gefahren statt nur angezeigt: das Auto
+  // dreht beim Einlenken ein, schiebt am Limit und kann beim Uebersteuern gefangen werden.
+  // Die gran*-Werte stecken in setzeGran() (config, kein DOM-Regler), weil sie nur dieses
+  // Fahrgefuehl betreffen und keine Einstellkachel brauchen.
+  PRESETS.gran = {
+    label: 'Gran Accelerato',
+    kurz: 'Pacejka, verfeinert wie ACC/GT7',
+    text: 'Das Pacejka-Lenkmodell, verfeinert wie ein GT3 in Assetto Corsa Competizione und '
+        + 'Gran Turismo Sport: Abtrieb hebt den Griff bei Tempo, die Lenkung wird mit Tempo '
+        + 'feiner und zentriert sich selbst, die Lastempfindlichkeit ist st\u00e4rker, und das '
+        + '\u00dcbersteuern baut weicher auf und wird vom Schwimmwinkel stabilisiert. Neu ist '
+        + 'die dynamische Gierregelung: das Auto dreht beim Einlenken ein, statt zu springen, '
+        + 'und schiebt am Limit, statt hart abzurei\u00dfen.',
+    v: Object.assign({}, PRESETS.pro.v, { 'phys-mode': 'gran',
+      'phys-steerresp': 3.2, 'setting-steer-calib': 2.6, 'setting-brake-steal': 0.8,
+      'phys-accel': 1.05 }),
+  };
   // ---- OMEGA (v1.0.36): Pro, EINGEFROREN -------------------------------------------------
   // BESTELLT: "'Omega'-Fahrgefuehlmodus ergaenzen: so wie das Pro, was so lange bitgleich
   // bleiben sollte (z. B. v0.9.x), nach Pacejka in den Presets einordnen." Die Werte sind die
@@ -103552,10 +103863,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Reduzierung (BESTELLT: "Behalte dabei: arcade, sim+, pacejka; pacejka als standard")
   // sind es nur noch die drei - sie erscheinen auch in der Garage, die uebrigen bleiben in
   // den Optionen.
-  const PRESETS_FAHREN = ['arcade', 'simplus', 'propacejka'];
+  const PRESETS_FAHREN = ['arcade', 'simplus', 'propacejka', 'gran'];
   // Reihenfolge im Optionen-Menue (preset-buttons und die Preset-Liste je Menue): die drei
   // gebraeuchlichen zuerst, der Rest darunter (BESTELLT: "schiebe ein paar nach unten").
-  const PRESETS_REIHENFOLGE = ['arcade', 'simplus', 'propacejka',
+  const PRESETS_REIHENFOLGE = ['arcade', 'simplus', 'propacejka', 'gran',
                                'pro', 'gt3', 'f1', 'realgt3', 'omega', 'rc'];
   // Bis v0.4 hiess GT3 "real". Aeltere exportierte Abstimmungen und der Knopf im
   // Garagenschirm duerfen den alten Namen weiter benutzen.
@@ -103634,6 +103945,25 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       physEngine.config.lenkKopplungAus = presetAktiv() === 'arcade' ? 1 : 0;
     }
   }
+  // v1.2.62: Gran Accelerato - die gran*-Stellschrauben (config, kein DOM-Regler). Aus = null.
+  // Abstimmen gegen ACC/GT7: kräftiger Abtrieb (GT3), weniger harte Tempo-Lenkung, starke
+  // Lastempfindlichkeit, weicher Uebersteuern-Aufbau und eine dynamische Gierregelung
+  // (granYawTau/granYawFeed), die das Auto beim Einlenken eindrehen lässt.
+  function setzeGran() {
+    if (typeof physEngine !== 'undefined' && physEngine.config) {
+      const an = presetAktiv() === 'gran';
+      const c = physEngine.config;
+      c.gran = an;
+      c.granAeroK = an ? 0.15 : 0;
+      c.granLenkTempo = an ? 1.0 : 0;
+      c.granZentrier = an ? 0.7 : 0;
+      c.granGier = an ? 0.6 : 0;
+      c.granLastEmpf = an ? 0.14 : 0;
+      c.granTauUeber = an ? 0.35 : 0.25;
+      c.granYawTau = an ? 0.28 : 0;
+      c.granYawFeed = an ? 0.25 : 0;
+    }
+  }
 
   // v1.0.36: welches Preset zuletzt gesetzt wurde. Omega und Pro haben (noch) dieselben Werte -
   // gemessen allein waere die Anzeige dann immer "Pro". Bei Gleichstand gewinnt das gewaehlte.
@@ -103651,6 +103981,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (presetSet(id, val)) n++; else missing.push(id);
     }
     setzeBrakeStealLast();
+    setzeGran();
     presetSay(p.label + ': ' + n + ' Regler gesetzt'
               + (missing.length ? ', nicht gefunden: ' + missing.join(', ') : ''));
     $('preset-json').value = JSON.stringify(presetRead());
@@ -103747,6 +104078,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     try {
       for (const [id, val] of Object.entries(p.v)) presetSet(id, val);
       setzeBrakeStealLast();
+      setzeGran();
       const snap = { config: JSON.parse(JSON.stringify(physEngine.config)),
                      modus: $('phys-mode') ? $('phys-mode').value : 'physik' };
       presetSchnappCache[key] = snap;
@@ -103754,6 +104086,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     } finally {
       for (const [id, val] of Object.entries(vorher)) presetSet(id, val);
       setzeBrakeStealLast();
+      setzeGran();
       presetZuletzt = merkZuletzt;
       presetSchnappLaeuft = false;
     }
@@ -106337,9 +106670,20 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function studieNeu() {
     return { schritt: 'start', alter: '', geschlecht: '', volljaehrig: false, einwilligung: false,
              narq: new Array(NARQ_ITEMS.length).fill(0), item: 0, selbst: 0, rt: [], frueh: 0, verpasst: 0,
-             quelle: '', controller: '', nurUeben: false };
+             quelle: '', controller: '', nurUeben: false, spiegel: false };
   }
   function stEsc(s) { return String(s === undefined || s === null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }
+
+  // v1.2.62: der Homington-Plan fuer die Startseite der Studienfahrt. Spiegelt, wenn st.spiegel.
+  function studieKarteHtml() {
+    const def = CH_STUDIE;
+    const tiles = st.spiegel ? chSpiegelTiles(chTiles(def)) : chTiles(def);
+    const merk = trackRotationDeg;
+    trackRotationDeg = 0;
+    try {
+      return renderTrackPreview(tiles, null, { detailed: true, echt: true, ohneLinie: true }).html;
+    } finally { trackRotationDeg = merk; }
+  }
 
   function studieZeichnen() {
     const host = $('studie-inhalt');
@@ -106393,10 +106737,17 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     } else if (st.schritt === 'fahrt-info') {
       // v1.1.11 BESTELLT: "In der Studie erlaube mir, virtuell zu fahren (selbe Strecke, selbe
       // Rundenanzahl zusaetzlich zur physischen Bahn); erklaere vorher, wie lange das alles dauert."
+      // v1.2.62: Layout der Strecke direkt hier, klickbar zum Vergroessern, mit Spiegel-Knopf fuer
+      // die linkslastige Grundpackung.
       h += '<div class="studie-text"><p><b>' + stEsc(t('Fahrverhaltens-Challenge')) + '</b></p>'
-        + '<p>' + stEsc(t('Auf der Bahn: Baue Homington aus der Grundpackung auf (der Plan erscheint beim Start), stelle dein Auto auf Start/Ziel und fahre 5 Runden – etwa 10 Minuten.')) + '</p>'
+        + '<p><b>' + stEsc(t('Die Strecke')) + ':</b> ' + stEsc(t('Homington – der Plan steht hier daneben. Baue ihn aus der Grundpackung auf (spiegeln geht, wenn deine Packung linkslastig ist), stelle dein Auto auf Start/Ziel und fahre 5 Runden.')) + '</p>'
+        + '<p>' + stEsc(t('Auf der Bahn: Baue Homington aus der Grundpackung auf, stelle dein Auto auf Start/Ziel und fahre 5 Runden – etwa 10 Minuten.')) + '</p>'
         + '<p>' + stEsc(t('Virtuell: dieselbe Strecke und dieselben 5 Runden in der App, ohne Bahn und Auto – etwa 5 Minuten. Du kannst beides fahren, nacheinander.')) + '</p>'
         + '<p class="muted">' + stEsc(t('Fahrgefühl Sim+, trocken, keine Bestenliste. Gemessen werden Rundenzeiten, Gas, Bremse, Lenkung und Abflüge. Ohne Fahrt kannst du auch gleich abschließen.')) + '</p></div>'
+        + '<div class="studie-plan">'
+        + '<div class="ch-karte" id="studie-karte" title="' + stEsc(t('Zum Vergrößern klicken')) + '">' + studieKarteHtml() + '</div>'
+        + '<div class="ch-karte-knoepfe"><button type="button" id="studie-spiegel-knopf" data-st="spiegel">' + stEsc(t('Layout spiegeln')) + '</button></div>'
+        + '</div>'
         + '<div class="studie-knoepfe"><button type="button" class="primary" data-st="fahren">' + stEsc(t('Auf der Bahn fahren')) + '</button>'
         + '<button type="button" class="primary" data-st="fahren-virtuell">' + stEsc(t('Virtuell fahren')) + '</button>'
         + '<button type="button" data-st="ohne-fahrt">' + stEsc(t('Ohne Fahrt abschließen')) + '</button></div>';
@@ -106668,6 +107019,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
 
   function studieKlick(ev) {
+    // v1.2.62: Tap auf den Streckenplan vergroessert/verkleinert ihn (wie die Challenge-Karte).
+    const karte = ev.target.closest('#studie-karte');
+    if (karte) { karte.classList.toggle('ch-voll'); return; }
     const b = ev.target.closest('[data-st]');
     if (!b || b.disabled) return;
     const a = b.dataset.st, v = parseInt(b.dataset.v, 10);
@@ -106676,6 +107030,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       st.narq[st.item] = v;
       if (st.item < NARQ_ITEMS.length - 1) st.item++; else st.schritt = 'selbst';
     } else if (a === 'selbst') { st.selbst = v; st.schritt = 'rt-info'; }
+    else if (a === 'spiegel') {
+      st.spiegel = !st.spiegel;
+      const k = $('studie-karte');
+      if (k) k.innerHTML = studieKarteHtml();
+      b.classList.toggle('an', st.spiegel);
+      return;
+    }
     else if (a === 'zurueck') {
       if (st.schritt === 'selbst') { st.schritt = 'narq'; st.item = NARQ_ITEMS.length - 1; }
       else if (st.item > 0) st.item--; else st.schritt = 'start';

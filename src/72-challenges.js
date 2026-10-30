@@ -1292,10 +1292,14 @@
   // virtuell (v1.1.11): erst die virtuelle Fahrt auf der Studienstrecke starten - ihr Auto ist dann das
   // gesteuerte -, dann dieselbe Challenge wie auf der Bahn (Ampel, Teilepruefung, Runden, Fahrstil).
   function studieChallengeStarten(virtuell) {
+    // v1.2.62: das gespiegelte Layout der Studie uebernehmen (fuer die linkslastige Grundpackung).
+    const spiegel = !!(st && st.spiegel);
+    chSpiegel = spiegel;
     if (virtuell) {
-      if (typeof virtuellStarten !== 'function' || !virtuellStarten({ tiles: chTiles(CH_STUDIE), studie: true })) return false;
+      const tiles = spiegel ? chSpiegelTiles(chTiles(CH_STUDIE)) : chTiles(CH_STUDIE);
+      if (typeof virtuellStarten !== 'function' || !virtuellStarten({ tiles, studie: true })) { chSpiegel = false; return false; }
     }
-    chWahl = CH_STUDIE.id; chModus = 'rennen'; chSpiegel = false;
+    chWahl = CH_STUDIE.id; chModus = 'rennen';
     challengeStarten();
     if (!chLauf && virtuell && typeof virtuellBeenden === 'function') virtuellBeenden();
     return !!chLauf;

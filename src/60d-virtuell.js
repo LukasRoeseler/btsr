@@ -111,6 +111,10 @@
   function vfQuad(a, p1, p2, p3, p4, y, f) {
     [p1, p2, p3, p1, p3, p4].forEach((p) => a.push(p[0], y, p[1], f[0], f[1], f[2]));
   }
+  // Eine senkrechte Wand (zwei Dreiecke) zwischen y0 und y1 an den zwei Kartenpunkten p1, p2.
+  function vfWand(a, p1, p2, y0, y1, f) {
+    [p1, p2, p2, p1, p2, p1].forEach((p, i) => a.push(p[0], [y0, y0, y1, y0, y1, y1][i], p[1], f[0], f[1], f[2]));
+  }
   // Die Fahrbahn aus der Mittellinie. Koordinaten: x = Karten-x, z = Karten-y, y nach oben.
   function vfBahnBauen(gl, pts, nrm, tiles) {
     const a = [];
@@ -123,8 +127,20 @@
     for (let i = 0; i < pts.length - 1; i++) {
       vfQuad(a, off(i, half), off(i + 1, half), off(i + 1, -half), off(i, -half), 0, [0.07, 0.08, 0.10]);
       const weiss = Math.floor(i / 2) % 2 === 0;
-      vfQuad(a, off(i, half + rand), off(i + 1, half + rand), off(i + 1, half), off(i, half), 0.02, weiss ? [0.93, 0.94, 0.96] : [0.10, 0.45, 0.95]);
-      vfQuad(a, off(i, -half), off(i + 1, -half), off(i + 1, -half - rand), off(i, -half - rand), 0.02, weiss ? [0.93, 0.94, 0.96] : [0.88, 0.12, 0.14]);
+      // Randsteine als erhabenes 3D-Objekt (v1.2.62): Oberseite angehoben und eine senkrechte
+      // Innenseite, damit der Stein wie eine echte Curbs-Schwelle aussieht und das Rattern
+      // nachvollziehbar macht.
+      const ky = 0.09;
+      const farbL = weiss ? [0.93, 0.94, 0.96] : [0.10, 0.45, 0.95];
+      const farbR = weiss ? [0.93, 0.94, 0.96] : [0.88, 0.12, 0.14];
+      const li = off(i, half), li2 = off(i + 1, half);
+      const lo = off(i, half + rand), lo2 = off(i + 1, half + rand);
+      vfQuad(a, lo, lo2, li2, li, ky, farbL);
+      vfWand(a, li, li2, 0.02, ky, farbL);
+      const ri = off(i, -half), ri2 = off(i + 1, -half);
+      const ro = off(i, -half - rand), ro2 = off(i + 1, -half - rand);
+      vfQuad(a, ri, ri2, ro2, ro, ky, farbR);
+      vfWand(a, ri, ri2, 0.02, ky, farbR);
       // Teilegrenze: duenner weisser Strich quer ueber die Bahn
       if (pts[i + 1].tile !== pts[i].tile) {
         const t0 = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y) || 1;
@@ -315,7 +331,8 @@
   // (muV/muH), mehr Einschlag (lenkGrad), eine schnellere Gierantwort (weniger Daempfung) und ein
   // hoeheres Tempo (Weg und Tacho, Faktor vfTempoFaktor).
   const VF_HANDLING_STORE = 'omegasim-vf-handling';
-  const VF_HANDLING_MODI = [{ id: 'gt3', name: 'GT3' }, { id: 'schnell', name: 'Schnell' }];
+  const VF_HANDLING_MODI = [{ id: 'gt3', name: 'GT3' }, { id: 'schnell', name: 'Schnell' },
+                            { id: 'gran', name: 'Gran Accelerato' }];
   function vfHandling() {
     try { const v = localStorage.getItem(VF_HANDLING_STORE); return VF_HANDLING_MODI.some((m) => m.id === v) ? v : 'gt3'; } catch (e) { return 'gt3'; }
   }
@@ -526,13 +543,30 @@
   // Die schnellere Abstimmung auf ein Fahrprofil anwenden: mehr Grip, mehr Einschlag und eine
   // schnellere Gierantwort. Bei "GT3" bleibt das Profil unveraendert (P zurueck).
   function vfHandlingProfil(P) {
-    if (!P || vfHandling() !== 'schnell') return P;
-    return Object.assign({}, P, {
-      muV: P.muV * 1.35,
-      muH: P.muH * 1.35,
-      lenkGrad: Math.min(45, P.lenkGrad * 1.5),
-      yawDamp: (P.yawDamp || 1.5) * 0.6,
-    });
+    if (!P) return P;
+    const h = vfHandling();
+    if (h === 'schnell') {
+      return Object.assign({}, P, {
+        muV: P.muV * 1.35,
+        muH: P.muH * 1.35,
+        lenkGrad: Math.min(45, P.lenkGrad * 1.5),
+        yawDamp: (P.yawDamp || 1.5) * 0.6,
+      });
+    }
+    if (h === 'gran') {
+      // Gran Accelerato (v1.2.62): staerkere Lastempfindlichkeit, mehr Abtrieb, weichere
+      // Gierantwort, etwas mehr Einschlag und eine nach hinten verlagerte Bremsbalance - wie
+      // ein ACC-GT3. Reifentemperatur und Tempo-Lenkung kommen im Fahrtakt (vfBild) dazu.
+      return Object.assign({}, P, {
+        lastEmpf: (P.lastEmpf || 0.15) * 1.4,
+        yawDamp: (P.yawDamp || 1.5) * 1.15,
+        bremsVorn: 0.68,
+        lenkGrad: Math.min(45, (P.lenkGrad || 16) * 1.1),
+        kV: (P.kV || 0) * 1.5,
+        kH: (P.kH || 0) * 1.5,
+      });
+    }
+    return P;
   }
   // ---- Federung: vier Ecken mit Feder, Daempfer (Druck/Zug) und Stabilisator --------------------
   // Zustand f: z (Einfedern, m, + = tiefer), th (Nicken, rad, + = Nase runter), ph (Rollen, rad, + = rechts
@@ -755,6 +789,7 @@
       if (VF.modusZeit >= VF.limit * 60) vfRennenEnde();
     }
     const kmh = (st.speedKmh || 0) * (VF.tempoFaktor || 1);
+    const granModus = vfHandling() === 'gran';
     // v1.1.11 GEMELDET: "Virtuelles Fahren ruckelt und ist sehr traege." Bisher lenkte das Auto mit
     // physEngine.state.dampedSteering: das rechnet die Physik nur alle 45 ms (Treppenstufen in der
     // Gierrate = Ruckeln), mit der Servodaempfung und der Lenkbegrenzung bei Tempo des ECHTEN Autos
@@ -777,8 +812,17 @@
       // des Modellauto-Tempos - das beschleunigt umgerechnet weit ueber jedes echte Auto.
       const ax = (st.gLong || 0) * 15;
       if (!VF.dyn) VF.dyn = { vy: 0, r: 0 };
-      vfDynamik(VF.dyn, vVoll, ax, Math.max(0, st.longUse || 0), lenk, dt,
-        (physEngine.config.gripScale || 1) * (VF.abseits ? 0.55 : 1), VF.P);
+      let mu = (physEngine.config.gripScale || 1) * (VF.abseits ? 0.55 : 1);
+      if (granModus) {
+        // Reifentemperatur (v1.2.62): kalt = weniger Griff, warm = optimal, ueberhitzt = weniger.
+        // Heizt mit Tempo und Querbelastung auf; ueber 0,6 kuehlt sie langsam wieder.
+        if (VF.tyreTemp === undefined) VF.tyreTemp = 0;
+        const aufheiz = (Math.min(1, Math.abs(vVollL) / 40 + Math.abs(VF.ay || 0) / 20)) * dt * 0.25;
+        VF.tyreTemp = Math.max(0, Math.min(1, VF.tyreTemp + aufheiz - (VF.tyreTemp > 0.6 ? dt * 0.01 : 0)));
+        const tt = VF.tyreTemp;
+        mu *= tt < 0.3 ? 0.85 + (tt / 0.3) * 0.15 : (tt < 0.6 ? 1.0 : Math.max(0.9, 1.0 - (tt - 0.6) * 0.25));
+      }
+      vfDynamik(VF.dyn, vVoll, ax, Math.max(0, st.longUse || 0), lenk, dt, mu, VF.P);
       VF.ax = ax; VF.ay = vVoll * VF.dyn.r;
       // Weg in der Bahnwelt: Tempo des Modellautos, Richtung = Kurs + Schwimmwinkel.
       VF.h += VF.dyn.r * dt * 180 / Math.PI;
@@ -823,6 +867,18 @@
     const ab = Math.abs(o.quer) > TRACK_HALF_W * 1.19 + VF_AUTO.B * 0.3;
     if (ab && !VF.abseits) VF.abseitsSeit = rennZeitJetzt();
     VF.abseits = ab;
+    // Randstein (v1.2.62): der erhabene Stein links/rechts der Fahrbahn. Faehrt das Auto mit dem
+    // Rand ueber ihn, rattert es und der Controller brummt.
+    const q = Math.abs(o.quer);
+    const kerbRand = TRACK_HALF_W * 2 * 0.095;
+    const kerb = !ab && q > TRACK_HALF_W - VF_AUTO.B * 0.5 && q < TRACK_HALF_W + kerbRand;
+    if (kerb && Math.abs(kmh) > 0.05) {
+      if (VF.kerbSeit === undefined || rennZeitJetzt() - VF.kerbSeit > 70) {
+        VF.kerbSeit = rennZeitJetzt();
+        padRumble(0.3, 0.25, 55, 'kerb', 1);
+        vfRattern(0.10 + Math.min(0.10, Math.abs(kmh) / 40));
+      }
+    }
     if (ab) {
       st.speedKmh *= Math.exp(-VF_ABSEITS_BREMSE * dt);
       if (rennZeitJetzt() - VF.abseitsSeit > VF_ABSEITS_ZURUECK_MS) vfZuruecksetzen();
@@ -1377,6 +1433,23 @@
     los.onclick = () => virtuellStarten();
     z.appendChild(los);
     rechts.appendChild(z);
+  }
+
+  // v1.2.62: ein kurzes "Rattern" (weisses Rauschen) fuer die Randsteine, ueber audioCtx (80-sound.js).
+  function vfRattern(staerke) {
+    if (!audioCtx || !soundEnabled) return;
+    try {
+      const dauer = 0.06, n = Math.max(1, Math.floor(audioCtx.sampleRate * dauer));
+      const buf = audioCtx.createBuffer(1, n, audioCtx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+      const src = audioCtx.createBufferSource();
+      src.buffer = buf;
+      const g = audioCtx.createGain();
+      g.gain.value = staerke;
+      src.connect(g); g.connect(audioCtx.destination);
+      src.start();
+    } catch (e) { /* ohne Ton */ }
   }
 
   // v1.1.3 GEMELDET: "ein komischer hoher Ton ab und zu" und BESTELLT "auch Motorensounds". Ohne

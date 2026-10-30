@@ -1427,6 +1427,10 @@
     border-radius: 10px; }
   .ch-spiegel-knopf svg { width: 26px; height: 26px; }
   .ch-spiegel-knopf.an { background: var(--k-blau, #0b84d6); color: #fff; border-color: transparent; }
+  /* Studie (98f-studie.js, v1.2.62): der Homington-Plan auf der Startseite, klickbar zum
+     Vergroessern (nutzt die .ch-karte-Vollbild-Regeln), mit Spiegel-Knopf. */
+  .studie-plan { margin: 12px 0 4px; }
+  #studie-spiegel-knopf.an { background: var(--k-blau, #0b84d6); color: #fff; border-color: transparent; }
   /* Fahren: Fahrgefuehl-Kachel mit groesserer Schrift (v0.9.31) */
   .k-fahren-unten #fa-profil .k-kt { font-size: clamp(14px, 2.6vh, 22px); }
   #fa-profil.k-meister { background: linear-gradient(90deg, rgba(8,10,14,.88) 0%, rgba(8,10,14,.45) 70%),
@@ -4944,7 +4948,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.2.61</span></span>
+        <span class="foot-ver">v<span id="app-version">1.2.62</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -9953,6 +9957,7 @@
         <select id="phys-mode">
           <option value="physik">Physik</option>
           <option value="pacejka" selected>Pacejka (experimentell)</option>
+          <option value="gran">Gran Accelerato</option>
           <option value="aus">RC (experimentell)</option>
         </select></div>
       <!-- BESTELLT: "Eventuell sage ich spaeter, dass das Uebersteuern abgeschaltet werden
@@ -11091,6 +11096,11 @@
           du bist an der Haftgrenze, aber noch nicht dar&uuml;ber. Kommt vor dem Untersteuern und dem
           &Uuml;bersteuern &ndash; die Warnung davor.</small></div>
         <label class="tgl"><input type="checkbox" id="vib-quietschen" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Randsteine (Virtuell fahren)
+          <small>Ein kurzes R&auml;tteln und Brummen, wenn das Auto mit dem Rand &uuml;ber den
+          erhabenen Stein f&auml;hrt &ndash; das Rattern der Curbs-Schwelle. Nur im virtuellen
+          Fahren, wo die Randsteine als 3D-Objekt gezeichnet sind.</small></div>
+        <label class="tgl"><input type="checkbox" id="vib-kerb" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Meldungen
           <small>Wetterwechsel und leerer Tank. Standard aus: das sind Nachrichten und
           keine Kr&auml;fte am Auto &ndash; wer sie will, bekommt sie hier.</small></div>

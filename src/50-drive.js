@@ -414,12 +414,14 @@
   function physModusAnwenden(melden) {
     const v = $('phys-mode') ? $('phys-mode').value : 'physik';
     driftModus = (v === 'drift');
-    physicsEnabled = (v === 'physik' || v === 'pacejka');
-    physEngine.config.pacejka = physEngine2.config.pacejka = (v === 'pacejka');
+    physicsEnabled = (v === 'physik' || v === 'pacejka' || v === 'gran');
+    physEngine.config.pacejka = physEngine2.config.pacejka = (v === 'pacejka' || v === 'gran');
+    physEngine.config.gran = physEngine2.config.gran = (v === 'gran');
     physLastTime = null;
     if (melden) {
       log('Steuerungsmodus: ' + (v === 'physik' ? 'Physik'
                              : v === 'pacejka' ? 'Pacejka (experimentell)'
+                             : v === 'gran' ? 'Gran Accelerato'
                              : 'RC (Auslaufen, Bremse zweimal = rueckwaerts)'), 'info');
     }
   }
@@ -802,7 +804,8 @@
   const VIB_KAESTCHEN = { 'vib-schalt': 'schalt', 'vib-abs': 'abs', 'vib-crash': 'crash',
                           'vib-abseits': 'abseits', 'vib-box': 'box',
                           'vib-meldung': 'meldung', 'vib-rutschen': 'rutschen',
-                          'vib-untersteuern': 'untersteuern', 'vib-quietschen': 'quietschen' };
+                          'vib-untersteuern': 'untersteuern', 'vib-quietschen': 'quietschen',
+                          'vib-kerb': 'kerb' };
   Object.keys(VIB_KAESTCHEN).forEach((id) => {
     const el = $(id);
     if (!el) return;

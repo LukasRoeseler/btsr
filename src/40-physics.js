@@ -539,6 +539,21 @@
         pacejkaLeistung: 1.4,
         pacejkaHaltMax: 2.0,
 
+        // ---- GRAN ACCELERATO (v1.2.62): ACC-/GT7-artiges Fahrgefuehl auf Pacejka-Basis ----
+        // Eigener Steuerungsmodus "gran": wie Pacejka, aber mit Abtrieb, tempoabhaengiger
+        // Lenkung, Selbstzentrierung, starker Lastempfindlichkeit, weicherem Uebersteuern und
+        // einer DYNAMISCHEN GIERREGELUNG (das Einspurmodell wird gefahren, nicht nur angezeigt).
+        // Die Stellschrauben stehen hier, die Voreinstellung ist das Preset "gran" (98-presets.js).
+        gran: false,
+        granAeroK: 0.0,          // Abtrieb: wie stark der Griff mit (v/Vmax)^2 waechst
+        granLenkTempo: 0.0,      // tempoabhaengige Lenkung: wie stark der Einschlag mit Tempo sinkt
+        granZentrier: 0.0,       // Selbstzentrierung: Kraft zur Mitte (0..1, je Takt bei 60 Hz)
+        granGier: 0.0,           // Gierdynamik-Rueckfuehrung: wie stark slipAngle stabilisiert
+        granLastEmpf: 0.0,       // zusaetzliche Lastempfindlichkeit (Reibwert sinkt mit Last)
+        granTauUeber: 0.25,      // weicherer Uebersteuern-Aufbau (Zeitkonstante in s)
+        granYawTau: 0.28,        // Traegheit des Gieraufbaus: wie schnell die Gier der Wunsch-Gier folgt (s)
+        granYawFeed: 0.0,        // Zuschlag beim Einlenken (0..1): wie stark das Auto "eindreht"
+
         // ---- Longitudinal weight transfer ----
         // Under braking the mass pitches onto the front axle, under power onto the rear.
         // TWO time constants on purpose, and the difference between them is the whole
@@ -1106,6 +1121,121 @@
       st.pacZustand = st.pacUeber > 0.03 ? 'ueber' : (st.pacUnter < 0.97 ? 'unter' : '');
       this.outputs.servoAngle = Math.max(-1, Math.min(1,
         this.outputs.servoAngle * st.pacUnter + st.pacRichtung * st.pacUeber));
+    }
+
+    // ---- GRAN ACCELERATO (v1.2.62): der Pacejka-Schritt, verfeinert ---------------------
+    // Wie pacejkaStep, aber mit den ACC-/GT7-Vorschlaegen: Abtrieb hebt den Griff bei Tempo,
+    // die Lenkung wird mit Tempo feiner und zentriert sich selbst, die Lastempfindlichkeit ist
+    // staerker, der Uebersteuern-Aufbau ist weicher, der Schwimmwinkel stabilisiert das Heck -
+    // und die GIERRATE wird gefahren statt nur angezeigt (das Einspurmodell wird zum
+    // Stellglied, nicht mehr zum Instrument). Das ist der grosse Hebel Richtung ACC/GT7:
+    // das Auto dreht beim Einlenken EIN (Gier baut sich mit der Traegheit auf), schiebt am
+    // Limit (Gier kommt nicht nach) und dreht beim Uebersteuern zu viel - gegenlenken faengt es.
+    granStep(dt, inputs) {
+      const st = this.state, cfg = this.config;
+      const gas = inputs ? Math.max(0, inputs.throttle || 0) : 0;
+      const bremse = inputs ? Math.max(0, inputs.brake || 0) : 0;
+      const kmhAnteil = Math.abs(st.speedKmh) / Math.max(0.1, cfg.topSpeedKmh);
+      const roh = inputs ? (inputs.steering === undefined ? 0 : inputs.steering) : 0;
+      const tempo = kmhAnteil * kmhAnteil;
+      // Tempoabhaengige Lenkung: mit Tempo wird der Einschlag feiner (wie im virtuellen Modell).
+      let lenk = this.state.dampedSteering / (1 + cfg.granLenkTempo * tempo);
+      // Selbstzentrierung (Nachlauf): ohne Lenkeingabe zieht die Lenkung zur Mitte, und bei
+      // Tempo staerker - ein echtes Auto steht bei Tempo von selbst gerade.
+      if (Math.abs(roh) < 0.02 && cfg.granZentrier > 0) {
+        lenk -= lenk * Math.min(1, cfg.granZentrier * (0.5 + 0.5 * kmhAnteil) * dt * 60);
+      }
+
+      // ---- DYNAMISCHE GIERREGELUNG (Einspurmodell als Stellglied) -------------------------
+      // Der Wunsch-Gier folgt aus dem Eigenlenkgradienten des Layouts (vorn/mittel/heck),
+      // die Ist-Gier laeuft ihm mit der Traegheit nach. Das ist das "Einlenken" eines echten
+      // Autos: erst dreht es ein, dann haelt es. Der Fehler zwischen Wunsch und Ist gibt beim
+      // Einlenken einen kleinen Zuschlag (das Auto dreht EIN, statt zu springen); am Limit
+      // (vorn schiebt) verpufft er, weil mehr Einschlag dann nichts mehr bringt.
+      const v = Math.abs(st.speedKmh) * REAL_SCALE / 3.6;   // m/s, echtes Mass
+      let rZiel = 0, gierAufbau = 0;
+      if (v > 2) {
+        const L = cfg.wheelbaseM, m = cfg.vehicleMassKg, p = cfg.stiffnessLoadExp;
+        const Cv = cfg.corneringStiffness * Math.pow(cfg.loadFrontStatic, p);
+        const Ch = cfg.corneringStiffness * Math.pow(1 - cfg.loadFrontStatic, p);
+        const kU = (m * cfg.loadFrontStatic) / Cv - (m * (1 - cfg.loadFrontStatic)) / Ch;
+        const delta = lenk * STEER_MAX_DEG * Math.PI / 180;
+        rZiel = delta * v / Math.max(1e-6, L + kU * v * v);
+        if (st.granYaw === undefined) st.granYaw = 0;
+        const rAlt = st.granYaw;
+        st.granYaw = rAlt + (rZiel - rAlt) * Math.min(1, dt / cfg.granYawTau);
+        // Aufbauanteil: der Zuschlag, solange die Gier der Wunsch-Gier hinterherhinkt. Vorzeichen
+        // behalten, damit der Zuschlag auch in einer Linkskurve nach links lenkt (nicht nur rechts).
+        gierAufbau = Math.max(-0.3, Math.min(0.3, (rZiel - st.granYaw) / Math.max(0.1, Math.abs(rZiel))));
+      }
+
+      // ---- Reibkreis mit Abtrieb und Lastempfindlichkeit --------------------------------
+      const quer = Math.abs(lenk) * kmhAnteil * cfg.corneringLoad
+                   / Math.max(0.1, cfg.pacejkaGrenze);
+      // Abtrieb (Downforce): der Griff waechst mit dem Quadrat des Tempos - ein GT3 hat das,
+      // und deshalb ist das Auto bei Tempo "festgenagelt" statt leicht.
+      const aero = 1 + cfg.granAeroK * tempo;
+      const grip = Math.max(0.2, (st.tyreGrip === undefined ? 1 : st.tyreGrip) * cfg.gripScale) * aero;
+      const vorn = Math.max(0.6, Math.min(1, cfg.loadFrontStatic / Math.max(0.05, st.loadFront)));
+      const hinten = Math.max(0.6, Math.min(1.6, (1 - cfg.loadFrontStatic) / Math.max(0.05, 1 - st.loadFront)));
+      // Staerkere Lastempfindlichkeit: die entlastete Achse behaelt relativ mehr Griff.
+      const lastF = 1 + cfg.granLastEmpf * (vorn - 1);
+      const lastH = 1 + cfg.granLastEmpf * (hinten - 1);
+      const antrieb = Math.max(0, Math.min(1, st.longUse)) * 0.7;
+      const rest = Math.sqrt(Math.max(0.2, 1 - antrieb * antrieb));
+      const uV = quer * vorn / grip * lastF;
+      let uH = quer * hinten / grip / rest / Math.max(0.5, cfg.pacejkaHeckReserve) * lastH;
+      // Leistungsuebersteuern: ab 40 % Gas nimmt der Antrieb hinten zusaetzlich Seitenhalt.
+      if (gas > 0.4) {
+        const x = Math.min(1, (gas - 0.4) / 0.6);
+        uH *= 1 + cfg.pacejkaLeistung * x * x * (3 - 2 * x);
+      }
+      st.pacNutzV = uV; st.pacNutzH = uH;
+      const C = cfg.pacejkaC, E = cfg.pacejkaE, B = pacB(C, E);
+      const wirk = (u) => (u <= 1 ? 1 : pacY(u, B, C, E) / u);
+      const zielU = wirk(uV) * pacGasFaktor(cfg, st.longUse);
+      st.pacUnter += (zielU - st.pacUnter) * (1 - Math.exp(-dt / 0.08));
+      let zielO = 0;
+      const richtung = Math.sign(lenk);
+      const gegen = !!(st.pacRichtung && richtung && richtung !== st.pacRichtung);
+      if (uH > 1 && uH > uV) {
+        if (!st.pacRichtung && richtung) st.pacRichtung = richtung;
+        if (!gegen) zielO = Math.min(cfg.pacejkaUeberMax, 1 - wirk(uH));
+        if (zielO > 0) st.pacLeistung = true;
+      }
+      // Gierdynamik-Rueckfuehrung (Einspurmodell-Instrument): der Schwimmwinkel stabilisiert
+      // das Heck - zu viel Rutsch wird sanft abgefangen, statt zu kippen.
+      if (cfg.granGier > 0 && Math.abs(st.slipAngle) > 0.04 && st.pacRichtung) {
+        const richtungSlip = Math.sign(st.slipAngle);
+        if (richtungSlip && richtungSlip === st.pacRichtung) {
+          zielO *= Math.max(0, 1 - Math.min(1, cfg.granGier * Math.abs(st.slipAngle)));
+        }
+      }
+      const pedalHalt = Math.min(1, Math.max(gas, bremse) / 0.4);
+      if (st.pacUeber > 0.05 && st.pacRichtung && !gegen && pedalHalt > 0
+          && kmhAnteil > 0.15 && st.pacHaltSeit < cfg.pacejkaHaltMax) {
+        zielO = Math.max(zielO, st.pacUeber * pedalHalt);
+        st.pacHaltSeit += dt;
+      }
+      // Weicherer Aufbau (granTauUeber), schnelleres Abklingen beim Gegenlenken.
+      const tau = zielO > st.pacUeber ? cfg.granTauUeber : (gegen ? 0.1 : 0.25);
+      st.pacUeber += (zielO - st.pacUeber) * (1 - Math.exp(-dt / tau));
+      if (st.pacUeber < 0.005 && zielO === 0) {
+        st.pacUeber = 0; st.pacRichtung = 0; st.pacHaltSeit = 0; st.pacLeistung = false;
+      }
+      st.pacVortrieb = 1 - cfg.pacejkaRutschVortrieb * Math.min(1, st.pacUeber / Math.max(0.01, cfg.pacejkaUeberMax));
+      st.pacZustand = st.pacUeber > 0.03 ? 'ueber' : (st.pacUnter < 0.97 ? 'unter' : '');
+
+      // ---- Servo formen: Untersteuern kuerzt, Uebersteuern ergaenzt, Gier formt den Anfang ----
+      let servo = this.outputs.servoAngle * st.pacUnter + st.pacRichtung * st.pacUeber;
+      // Gier-Aufbau: beim Einlenken ein kleiner Zuschlag (das Auto dreht EIN), mit dem
+      // Vorzeichen der Kurve. Er verpufft, sobald die Front ans Limit kommt (uV > 0,9) - dann
+      // schiebt das Auto, und mehr Einschlag hilft nicht mehr. Auch bei Uebersteuern (uH > 0,9)
+      // verpufft er: dann dreht das Auto schon zu viel, und der Zuschlag waere ein Fehler.
+      if (Math.abs(gierAufbau) > 0 && uV < 0.9 && uH < 0.9) {
+        servo += gierAufbau * cfg.granYawFeed * Math.max(0, 1 - Math.max(0, (uV - 0.7) / 0.2));
+      }
+      this.outputs.servoAngle = Math.max(-1, Math.min(1, servo));
     }
 
     // ---- EINSPURMODELL, ein Schritt ---------------------------------------------------
@@ -2195,7 +2325,8 @@
         : st.steerDemand * cfg.steerCalib + zug));
       // Pacejka formt den Befehl NACH dem Deckel, siehe dort. Nur hinter dem Schalter:
       // "Physik" rechnet keinen Schritt davon.
-      if (cfg.pacejka) this.pacejkaStep(dt, inputs);
+      if (cfg.gran) this.granStep(dt, inputs);
+      else if (cfg.pacejka) this.pacejkaStep(dt, inputs);
 
       // ---- EINSPURMODELL, ein Schritt --------------------------------------------------
       //
@@ -2454,7 +2585,7 @@
   // v1.1.42: 'rutschen' ist nur noch das Uebersteuern; dazu 'untersteuern' und 'quietschen' (Kachel Vibration).
   const RUMBLE_ARTEN = { schalt: true, abs: true, crash: true,
                          abseits: false, box: true, meldung: false, rutschen: true,
-                         untersteuern: true, quietschen: true };
+                         untersteuern: true, quietschen: true, kerb: true };
 
   // ---- Trigger-Vibration, und WELCHER Trigger zu welcher Art gehoert -----------------
   //
