@@ -3926,23 +3926,9 @@
     } else {
       badge.textContent = t('Offen');
     }
-    const list = $('track-tile-list');
-    // The first tile is the Start/Finish anchor and is not deletable.
-    list.innerHTML = currentTrackTiles.map((t, i) =>
-      `<li>${TILE_LABEL[t.type] || ('0x' + t.type.toString(16))}
-        ${i === 0 ? '<span class="muted" style="font-size:11px">(fest)</span>'
-                  : `<button data-idx="${i}" class="track-del-btn" style="padding:1px 6px;font-size:11px;margin-left:6px">×</button>`}</li>`
-    ).join('');
-    list.querySelectorAll('.track-del-btn').forEach(btn => {
-      btn.onclick = () => {
-        // Der Knopf wird fuer Index 0 gar nicht erst gezeichnet; der Riegel steht trotzdem
-        // hier, weil die Liste die einzige Stelle ist, die nach Index loescht.
-        const i = parseInt(btn.dataset.idx, 10);
-        if (!(i > 0)) return;
-        trackSel = i;
-        trackTeilEntfernen();
-      };
-    });
+    // Die Teile-Liste unter dem Editor ist seit v1.2.61 entfernt (BESTELLT): die Strecke
+    // wird direkt in der Karte gebaut, die Liste war nur ein Abbild davon.
+    editorOptZeigen();
     $('track-rotation-val').textContent = trackRotationDeg + '°';
   }
 
@@ -4696,7 +4682,10 @@
     if (!trackEndeNah(tiles)) return false;
     const pts = trackCenterline(tiles);
     const s = trackSchluss(pts);
-    return s.closed && s.lueckeCm <= TRACK_SCHLUSS_STRENG_CM && trackKreuzungsfrei(pts);
+    // Bruecken (v1.2.61): erlaubt Strecken, die uebereinander gehen - die
+    // Kreuzungsfrei-Pruefung faellt dann weg.
+    return s.closed && s.lueckeCm <= TRACK_SCHLUSS_STRENG_CM &&
+      (trackEditorOpt.bruecken || trackKreuzungsfrei(pts));
   }
   // Passt die Strecke in den angegebenen Raum? Die Strecke darf in 45°-Schritten gedreht
   // werden, deshalb wird jede der 8 Lagen geprueft. Rueckgabe: die passende Drehung in Grad
@@ -5032,13 +5021,17 @@
     const zufallSchritt = [TILE_TYPE.WEIT_LEFT, TILE_TYPE.WEIT_RIGHT, TILE_TYPE.KLEIN_LEFT, TILE_TYPE.KLEIN_RIGHT]
       .some((t) => hat(t) > 0) ? 30 : 60;
     return { b, letzte, besser, startZeit, zufallSchritt, versuch: 0,
-             beste: null, besteAnders: null, besteGleich: null, raumZuKlein: false };
+             beste: null, besteAnders: null, besteGleich: null, raumZuKlein: false,
+             ziel: trackEditorOpt.ziel };
   }
   // Ein einzelner Versuch der Suche (v0.9.42 aus der Schleife geloest, damit die Suche in
   // Haeppchen laufen und dabei eine Ladeanimation zeigen kann).
   function trackZufallVersuch(z) {
     const b = z.b, zufallSchritt = z.zufallSchritt;
-    const dir = Math.random() < 0.5 ? 1 : -1;
+    // Linkslastig (v1.2.61): 75 % der Versuche drehen nach links statt 50/50.
+    const dir = trackEditorOpt.linkslastig
+      ? (Math.random() < 0.75 ? 1 : -1)
+      : (Math.random() < 0.5 ? 1 : -1);
     const r = Math.random();
     const nc = r < 0.05 ? 1 : r < 0.5 ? 2 : r < 0.75 ? 3 : r < 0.93 ? 4 : 5;
     const used = {};
@@ -5070,6 +5063,9 @@
     if (!gaps) return;
     const tiles = trackZufallBaueTiles(runs, gaps, b);
     if (!tiles) return;
+    // Laenge begrenzen (v1.2.61): "max" = unbegrenzt (Ziel Infinity), sonst hoechstens
+    // so viele Teile wie der Schieber verlangt.
+    if (z.ziel !== Infinity && tiles.length > z.ziel) return;
     trackRotationDeg = 0;
     if (!trackZufallPasst(tiles)) return;
     // Fussabdruck: die Strecke muss in den angegebenen Raum passen (45°-Schritte).
@@ -5259,6 +5255,62 @@
     return t > 0 && t < 1 && u > 0 && u < 1;
   }
   $('track-random').onclick = () => trackZufallMitAnimation();
+
+  // ---- Editor-Optionen (v1.2.61) ----
+  // Der "Optionen"-Knopf in der Aktionsleiste klappt ein Feld auf: Laenge/Teile-Slider,
+  // Linkslastig, Bruecken und "Strecke spiegeln". Die ersten drei wirken auf den Zufallsknopf.
+  const trackEditorOpt = { ziel: Infinity, linkslastig: false, bruecken: false };
+  function editorOptGesamtTeile() {
+    const b = teileBestand() || {};
+    let n = 0;
+    for (const k in b) n += (+b[k] || 0);
+    return n;
+  }
+  function editorOptMax() { return Math.max(4, editorOptGesamtTeile()); }
+  function editorOptZeigen() {
+    const ziel = $('track-opt-ziel');
+    if (!ziel) return;
+    const max = editorOptMax();
+    ziel.max = String(max);
+    // "max" heisst: der Schieber steht ganz rechts (Wert = max) und ziel = Infinity.
+    const akt = trackEditorOpt.ziel === Infinity ? max : Math.min(max, trackEditorOpt.ziel);
+    ziel.value = String(Math.max(4, akt));
+    const wert = $('track-opt-ziel-wert');
+    if (wert) wert.textContent = trackEditorOpt.ziel === Infinity ? 'max' : String(Math.max(4, akt));
+  }
+  function trackOptionenToggle(an) {
+    const p = $('track-opt-panel'), b = $('track-opt-toggle');
+    if (b) { b.setAttribute('aria-pressed', an ? 'true' : 'false'); b.classList.toggle('an', an); }
+    if (p) p.hidden = !an;
+    if (an) editorOptZeigen();
+  }
+  if ($('track-opt-toggle')) {
+    $('track-opt-toggle').onclick = () => { trackOptionenToggle($('track-opt-panel').hidden); };
+  }
+  if ($('track-opt-ziel')) {
+    $('track-opt-ziel').oninput = () => {
+      const v = +$('track-opt-ziel').value;
+      trackEditorOpt.ziel = (v >= editorOptMax()) ? Infinity : v;
+      editorOptZeigen();
+    };
+  }
+  if ($('track-opt-links')) {
+    $('track-opt-links').onchange = () => { trackEditorOpt.linkslastig = $('track-opt-links').checked; };
+  }
+  if ($('track-opt-bruecken')) {
+    $('track-opt-bruecken').onchange = () => { trackEditorOpt.bruecken = $('track-opt-bruecken').checked; };
+  }
+  // "Strecke spiegeln": links/rechts tauschen und die Schleife rueckwaerts fahren (chSpiegelTiles).
+  if ($('track-spiegel')) {
+    $('track-spiegel').onclick = () => {
+      if (!currentTrackTiles.length) { showHudToast(t('Erst die Strecke bauen')); return; }
+      if (typeof chSpiegelTiles !== 'function') { showHudToast(t('Spiegeln nicht verfuegbar')); return; }
+      trackMerken();
+      currentTrackTiles = chSpiegelTiles(currentTrackTiles);
+      trackSel = null;
+      refreshTrackPreview();
+    };
+  }
 
   // Hier standen sechs Bindungen auf Knopf-ids, die es seit dem Umbau auf die Bildleiste
   // nicht mehr gibt (track-add-start und fuenf weitere). Sie prueften auf Vorhandensein und
