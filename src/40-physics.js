@@ -1232,7 +1232,9 @@
       // Vorzeichen der Kurve. Er verpufft, sobald die Front ans Limit kommt (uV > 0,9) - dann
       // schiebt das Auto, und mehr Einschlag hilft nicht mehr. Auch bei Uebersteuern (uH > 0,9)
       // verpufft er: dann dreht das Auto schon zu viel, und der Zuschlag waere ein Fehler.
-      if (Math.abs(gierAufbau) > 0 && uV < 0.9 && uH < 0.9) {
+      // UND nur, solange wirklich gelenkt wird (|roh| > 0,02): sonst lenkt die Rest-Gier aus
+      // der vorigen Kurve das Auto weiter, wenn man nur Gas gibt - der gemeldete Drift.
+      if (Math.abs(gierAufbau) > 0 && Math.abs(roh) > 0.02 && uV < 0.9 && uH < 0.9) {
         servo += gierAufbau * cfg.granYawFeed * Math.max(0, 1 - Math.max(0, (uV - 0.7) / 0.2));
       }
       this.outputs.servoAngle = Math.max(-1, Math.min(1, servo));

@@ -5337,6 +5337,26 @@
     }
     if (!(st3.granYaw < 0)) f.push('Linkskurve: Gier nicht negativ (' + st3.granYaw.toFixed(3) + ')');
     if (!(e3.outputs.servoAngle < 0)) f.push('Linkskurve: Einschlag nicht links (' + e3.outputs.servoAngle.toFixed(3) + ')');
+    // 4) NUR Gas, kein Lenken: der Servo darf nicht wegdrehen (der gemeldete Drift). Erst
+    //    eine Rechtskurve (Gier baut sich auf), dann geradeaus nur Gas - die Rest-Gier darf
+    //    nicht weiterlenken.
+    const e4 = new CarreraPhysicsEngine();
+    Object.assign(e4.config, GRAN);
+    const st4 = e4.state;
+    st4.driveMode = 'forward';
+    st4.currentGear = 3;
+    for (let i = 0; i < 40; i++) {
+      st4.speedKmh = 120 / REAL_SCALE;
+      e4.update({ throttle: 0.6, brake: 0, steering: 1 }, 0.045);
+    }
+    let tikAb = -1;
+    for (let i = 0; i < 60; i++) {
+      st4.speedKmh = 120 / REAL_SCALE;
+      e4.update({ throttle: 1, brake: 0, steering: 0 }, 0.045);
+      if (tikAb < 0 && Math.abs(e4.outputs.servoAngle) < 0.02) tikAb = i;
+    }
+    if (tikAb < 0 || tikAb > 8) f.push('Nur Gas lenkt nach Kurve (unter 0,02 erst nach ' + tikAb
+        + ' Takten, Ende ' + e4.outputs.servoAngle.toFixed(3) + ')');
     return { ok: !f.length, mass: f.length ? f.join('; ')
       : 'Gier ' + yawErster.toFixed(3) + ' -> ' + yawSpaeter.toFixed(3)
         + ', 250 km/h schiebt (vorn ' + st2.pacNutzV.toFixed(2) + ', hinten ' + st2.pacNutzH.toFixed(2)

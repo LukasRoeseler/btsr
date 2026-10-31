@@ -4948,7 +4948,7 @@
       </div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.2.62</span></span>
+        <span class="foot-ver">v<span id="app-version">1.2.66</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -22254,7 +22254,9 @@
       // Vorzeichen der Kurve. Er verpufft, sobald die Front ans Limit kommt (uV > 0,9) - dann
       // schiebt das Auto, und mehr Einschlag hilft nicht mehr. Auch bei Uebersteuern (uH > 0,9)
       // verpufft er: dann dreht das Auto schon zu viel, und der Zuschlag waere ein Fehler.
-      if (Math.abs(gierAufbau) > 0 && uV < 0.9 && uH < 0.9) {
+      // UND nur, solange wirklich gelenkt wird (|roh| > 0,02): sonst lenkt die Rest-Gier aus
+      // der vorigen Kurve das Auto weiter, wenn man nur Gas gibt - der gemeldete Drift.
+      if (Math.abs(gierAufbau) > 0 && Math.abs(roh) > 0.02 && uV < 0.9 && uH < 0.9) {
         servo += gierAufbau * cfg.granYawFeed * Math.max(0, 1 - Math.max(0, (uV - 0.7) / 0.2));
       }
       this.outputs.servoAngle = Math.max(-1, Math.min(1, servo));
@@ -83892,6 +83894,26 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     if (!(st3.granYaw < 0)) f.push('Linkskurve: Gier nicht negativ (' + st3.granYaw.toFixed(3) + ')');
     if (!(e3.outputs.servoAngle < 0)) f.push('Linkskurve: Einschlag nicht links (' + e3.outputs.servoAngle.toFixed(3) + ')');
+    // 4) NUR Gas, kein Lenken: der Servo darf nicht wegdrehen (der gemeldete Drift). Erst
+    //    eine Rechtskurve (Gier baut sich auf), dann geradeaus nur Gas - die Rest-Gier darf
+    //    nicht weiterlenken.
+    const e4 = new CarreraPhysicsEngine();
+    Object.assign(e4.config, GRAN);
+    const st4 = e4.state;
+    st4.driveMode = 'forward';
+    st4.currentGear = 3;
+    for (let i = 0; i < 40; i++) {
+      st4.speedKmh = 120 / REAL_SCALE;
+      e4.update({ throttle: 0.6, brake: 0, steering: 1 }, 0.045);
+    }
+    let tikAb = -1;
+    for (let i = 0; i < 60; i++) {
+      st4.speedKmh = 120 / REAL_SCALE;
+      e4.update({ throttle: 1, brake: 0, steering: 0 }, 0.045);
+      if (tikAb < 0 && Math.abs(e4.outputs.servoAngle) < 0.02) tikAb = i;
+    }
+    if (tikAb < 0 || tikAb > 8) f.push('Nur Gas lenkt nach Kurve (unter 0,02 erst nach ' + tikAb
+        + ' Takten, Ende ' + e4.outputs.servoAngle.toFixed(3) + ')');
     return { ok: !f.length, mass: f.length ? f.join('; ')
       : 'Gier ' + yawErster.toFixed(3) + ' -> ' + yawSpaeter.toFixed(3)
         + ', 250 km/h schiebt (vorn ' + st2.pacNutzV.toFixed(2) + ', hinten ' + st2.pacNutzH.toFixed(2)
