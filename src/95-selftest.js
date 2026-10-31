@@ -5645,6 +5645,37 @@
   // Menue, Kartenpunkte springen, Aufstellung ab Reihe 2, Regenflackern; dazu Kleinigkeiten.
   // v1.2.4 BESTELLT: Renntypen je Sensormodus, Fahrgefuehl je Spieler, Pacejka in Community-Challenges, Minigame-
   // Rueckmeldung, mechanische Boxensignale, NPC-Box wie Safety Car, Safety-Car-Parken auf kurzen Geraden.
+  // v1.2.67 BESTELLT: NPC-Tankort "Streckenrand ueber Querlage" (Standard: Einparkfolge wie Safety Car).
+  stAdd('NPC v1.2.67: Tankort Streckenrand ueber Querlage, Standard Einparkfolge', () => {
+    const f = [];
+    const sel = $('ghost-pit-ort');
+    if (!sel || sel.options[sel.selectedIndex].defaultSelected !== true || sel.value !== 'folge') f.push('Standard ist nicht die Einparkfolge');
+    const merk = { tiles: currentTrackTiles, wert: sel && sel.value, garage: garage.slice() };
+    try {
+      currentTrackTiles = codeToTrack('SG3R2G3R2').tiles;
+      if (sel) sel.value = 'rand';
+      const pk = pitKachelFuer(0);
+      const car = { role: 'ghost', device: { id: 'probe-tankort' }, ghost: { tileIndex: pk, querSoll: 1,
+        pit: { phase: 'anfahrt', platz: 0, laenge: 1000, at: rennZeitJetzt() } } };
+      garage.push(car);
+      const p = car.ghost.pit;
+      pitTick(car);
+      if (p.phase !== 'rand' || p.ort !== 'rand' || car.ghost.randHalt) f.push('faehrt nicht per Querlage an den Rand (' + p.phase + ')');
+      if (pitQuer(car) !== PIT_RAND) f.push('Querlage nicht am rechten Rand');
+      p.at = rennZeitJetzt() - PIT_RAND_MAX_MS - 1; pitTick(car);
+      if (p.phase !== 'halt') f.push('haelt nicht an (' + p.phase + ')');
+      p.at = rennZeitJetzt() - PIT_BREMS_MS - 1; pitTick(car);
+      if (p.phase !== 'stand') f.push('steht nicht (' + p.phase + ')');
+      p.at = rennZeitJetzt() - p.laenge - 1; pitTick(car);
+      if (p.phase !== 'raus' || car.ghost.randHalt) f.push('zieht nicht per Querlage heraus (' + p.phase + ')');
+      npcBoxKlang(car, false);
+    } finally {
+      currentTrackTiles = merk.tiles; if (sel) sel.value = merk.wert;
+      garage.length = 0; merk.garage.forEach((c) => garage.push(c));
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Standard Einparkfolge; Querlage: anfahrt > rand > halt > stand > raus ohne Lenkfolge' };
+  });
+
   // v1.2.45 BESTELLT: Latenz - Funkprioritaet nur einmal je Verbindung, SIMULATOR-Linie nur im Editor.
   stAdd('Latenz v1.2.45: Prioritaet einmal je Verbindung, SIMULATOR nur im Editor', () => {
     const f = [];

@@ -11611,6 +11611,14 @@
           Querlage nicht, voller Ausschlag ist ein Befehl und keine Messung.
           <br>Regenreifen: setzt Regen ein, kommt jeder NPC so früh wie möglich herein und rüstet um &ndash; und beim Wechsel zurück auf trocken genauso. Solange die falschen Reifen drauf sind, fährt er langsamer: 0,64 gegen 0,85 mit Regenreifen im Regen, abgeleitet aus derselben Grifftabelle, die dein Auto benutzt. Bei leichtem Regen ist der Slick noch vorn &ndash; der Nachteil kommt mit dem Wasser, nicht mit der Meldung. Ist dieser Schalter aus, können NPCs keine falschen Reifen haben, sonst kröchen sie nach dem ersten Regen ohne Ausweg.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-pit"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">NPC: Tankort <span class="wip-tag">WIP</span><small>Wie ein NPC zum
+          Boxenstopp an den Rand f&auml;hrt. Einparkfolge (Standard): wie das Safety Car mit der aufgenommenen Ein- und
+          Ausparkfolge. Streckenrand &uuml;ber Querlage: das Auto zieht auf dem Boxenteil per Querlage an den rechten Rand,
+          bremst dort, steht und zieht danach per Querlage wieder auf die Fahrbahn &ndash; ohne Lenkfolge.</small></div>
+        <select id="ghost-pit-ort">
+          <option value="folge" selected>Einparkfolge (wie Safety Car)</option>
+          <option value="rand">Streckenrand &uuml;ber Querlage</option>
+        </select></div>
       <div class="opt-row"><div class="opt-label">NPC: Boxenstopp im freien Fahren
           <small>Ob auch au&szlig;erhalb eines Rennens gepittet wird. Beim Losfahren aus der
           Garage stellt man meist Regler ein, und ein Auto, das dabei zehn Sekunden steht,
@@ -15363,6 +15371,10 @@
     "NPCs: Start/Ziel gilt jetzt überall als Gerade. Die Linie hält dort die Querlage wie auf jeder Geraden, statt hinter einer Kurve halb innen zu bleiben, und der Vorausblick ans Auto meldet auf der Bahn Start/Ziel (0x01) statt der Engstelle (0x0A). NPC-Stufe MAX: Ohne Schaltpause wurde der Schaltvorgang nach dem ersten Hochschalten nie beendet, das Auto hatte danach keinen Antrieb mehr – behoben, MAX fährt auf Geraden etwa doppelt so schnell wie vorher. Ideallinie (Linienmodell SIMULATOR, WIP): Die Suche rechnet mit dem echten Kurventempo der NPCs und fährt außen-innen-außen (Kurveneingang und -ausgang außen, Scheitel innen), statt nur die innere Hälfte zu nutzen; die Haarnadel bleibt davon ausgenommen, gespeicherte Linien werden neu gesucht.": "NPCs: start/finish now counts as a straight everywhere. The line holds its lateral position there as on any straight instead of staying half inside behind a corner, and the look-ahead sent to the car reports start/finish (0x01) on the track instead of the narrow section (0x0A). NPC level MAX: without a shift pause the shift was never finished after the first upshift, leaving the car without drive – fixed, MAX now runs about twice as fast on straights. Ideal line (line model SIMULATOR, WIP): the search uses the NPCs' real cornering speed and drives outside-inside-outside (corner entry and exit outside, apex inside) instead of only using the inner half; the hairpin is excluded, saved lines are searched again.",
     "Latenz: Die Strecke im Regenradar ist wieder entfernt, und das Radar zeichnet nur noch in einfacher Auflösung (auf hochauflösenden Handys ein Viertel der Bildpunkte). Neuer Schalter „Regenradar“ unter Optionen → Allgemein: aus, wird das Radar gar nicht gezeichnet. Der Knopf „Reinigungsfahrzeug starten“ steht nur noch in der Bahn-Kachel, nicht mehr in der Garagen-Kachel.": "Latency: the track in the rain radar is removed again, and the radar is drawn at single resolution only (a quarter of the pixels on high-resolution phones). New switch “Rain radar” under Options → General: when off, the radar is not drawn at all. The “Start cleaning car” button is now only in the track tile, no longer in the garage tile.",
     "Latenz: Das schnelle Verbindungsintervall wird nur noch einmal je Verbindung nachgefordert, und erst wenn ein Auto 5 s lang langsamer als alle 120 ms meldet (vorher alle 20 s je Auto ab 75 ms – mit vier Autos handelte das Handy etwa alle 5 s eine Verbindung neu aus). Linienmodell SIMULATOR: Die Linie wird nur noch im Strecken-Editor berechnet und gespeichert, beim Fahren nie mehr im Hintergrund; fehlt sie, fahren die NPCs die normale Linie.": "Latency: the fast connection interval is requested again only once per connection, and only after a car has reported more slowly than every 120 ms for 5 s (before: every 20 s per car from 75 ms – with four cars the phone renegotiated a connection about every 5 s). Line model SIMULATOR: the line is only computed and saved in the track editor, never in the background while driving; if it is missing, the NPCs drive the normal line.",
+    "Streckenrand über Querlage": "Track edge via lateral position",
+    "Einparkfolge (wie Safety Car)": "Parking sequence (like safety car)",
+    "Wie ein NPC zum Boxenstopp an den Rand fährt. Einparkfolge (Standard): wie das Safety Car mit der aufgenommenen Ein- und Ausparkfolge. Streckenrand über Querlage: das Auto zieht auf dem Boxenteil per Querlage an den rechten Rand, bremst dort, steht und zieht danach per Querlage wieder auf die Fahrbahn – ohne Lenkfolge.": "How an NPC pulls over to the edge for a pit stop. Parking sequence (default): like the safety car, with the recorded parking and exit sequence. Track edge via lateral position: on the pit piece the car moves to the right edge via its lateral position, brakes there, stands and then moves back onto the track via its lateral position, without a steering sequence.",
+    "NPC: Tankort": "NPC: refuelling spot",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -60300,6 +60312,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (p.phase === 'anfahrt') {
       // v1.2.4 BESTELLT: "NPC-Boxenstopp ueberarbeiten: so wie Safety Car." Am eigenen Platz die Einparkfolge des
       // Safety Cars (scEin, rechts), danach steht das Auto (randHalt ohne Abstellen) und die Standzeit beginnt.
+      // v1.2.67 BESTELLT: "Fuer NPCs als Tankort 'Streckenrand ueber Querlage' einstellen (Standard sollte das
+      // aktuelle sein)." Der Querlagen-Weg sind die Phasen rand > halt > stand > raus von vor v1.2.4 (pitQuer und
+      // pitZiel bedienen sie weiter); Standard bleibt die Einparkfolge.
+      if (g.tileIndex === pk && npcTankort() === 'rand') {
+        p.ort = 'rand'; p.phase = 'rand'; p.at = now;
+        log(garageLabel(car) + ': zieht per Querlage an den Rand der Box.', 'info');
+        return true;
+      }
       if (g.tileIndex === pk) {
         p.phase = 'einparken'; p.at = now;
         const sk = MANOEVER.scEin;
@@ -60328,6 +60348,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // ein Ghost kann den Boxenplatz nicht dadurch blockieren, dass er nicht ganz stillsteht.
       if (now - p.at >= PIT_BREMS_MS) {
         p.phase = 'stand'; p.at = now;
+        npcBoxKlang(car, true);
         // Rammstrafe (v0.9.21): zusaetzlich im Stand.
         const strafe = typeof rammStrafeAbsitzen === 'function' ? rammStrafeAbsitzen(car) : 0;
         if (strafe > 0) p.laenge += strafe * 1000;
@@ -60341,8 +60362,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         p.phase = 'raus'; p.at = now;
         npcBoxKlang(car, false);
         // v1.2.4: Ausparken wie das Safety Car (scAus, mit dem Gasfaktor), ohne Halt in das normale Fahren.
-        randHaltStarten(car, { phase: 'skript', quer: 0, skript: scAusSkript(), anpassMs: 0, vonDrive: 0, weiter: true,
-          fertig: (c) => { if (c.ghost) { c.ghost.pit = null; } pitPlatzRaeumen(c); if (c.ghost) pitFaelligZiehen(c.ghost); } });
+        // v1.2.67: beim Querlagen-Tankort heraus ueber die Querlage (pitQuer blendet in PIT_RAUS_MS aus).
+        if (p.ort !== 'rand') {
+          randHaltStarten(car, { phase: 'skript', quer: 0, skript: scAusSkript(), anpassMs: 0, vonDrive: 0, weiter: true,
+            fertig: (c) => { if (c.ghost) { c.ghost.pit = null; } pitPlatzRaeumen(c); if (c.ghost) pitFaelligZiehen(c.ghost); } });
+        }
         // ---- DIE REIFEN KOMMEN AM ENDE DER STANDZEIT DRAUF -------------------------
         //
         // Am ENDE und nicht am Anfang: die Standzeit IST die Arbeit, und ein Auto, das mit
@@ -60381,6 +60405,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return true;
   }
   // Ende der Einparkfolge: die Standzeit beginnt (mit Rammstrafe), dazu die Ratsche.
+  function npcTankort() {
+    const s = $('ghost-pit-ort');
+    return s && s.value === 'rand' ? 'rand' : 'folge';
+  }
   function npcBoxStehen(car) {
     const p = car.ghost && car.ghost.pit;
     if (!p) return;
@@ -84202,6 +84230,37 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Menue, Kartenpunkte springen, Aufstellung ab Reihe 2, Regenflackern; dazu Kleinigkeiten.
   // v1.2.4 BESTELLT: Renntypen je Sensormodus, Fahrgefuehl je Spieler, Pacejka in Community-Challenges, Minigame-
   // Rueckmeldung, mechanische Boxensignale, NPC-Box wie Safety Car, Safety-Car-Parken auf kurzen Geraden.
+  // v1.2.67 BESTELLT: NPC-Tankort "Streckenrand ueber Querlage" (Standard: Einparkfolge wie Safety Car).
+  stAdd('NPC v1.2.67: Tankort Streckenrand ueber Querlage, Standard Einparkfolge', () => {
+    const f = [];
+    const sel = $('ghost-pit-ort');
+    if (!sel || sel.options[sel.selectedIndex].defaultSelected !== true || sel.value !== 'folge') f.push('Standard ist nicht die Einparkfolge');
+    const merk = { tiles: currentTrackTiles, wert: sel && sel.value, garage: garage.slice() };
+    try {
+      currentTrackTiles = codeToTrack('SG3R2G3R2').tiles;
+      if (sel) sel.value = 'rand';
+      const pk = pitKachelFuer(0);
+      const car = { role: 'ghost', device: { id: 'probe-tankort' }, ghost: { tileIndex: pk, querSoll: 1,
+        pit: { phase: 'anfahrt', platz: 0, laenge: 1000, at: rennZeitJetzt() } } };
+      garage.push(car);
+      const p = car.ghost.pit;
+      pitTick(car);
+      if (p.phase !== 'rand' || p.ort !== 'rand' || car.ghost.randHalt) f.push('faehrt nicht per Querlage an den Rand (' + p.phase + ')');
+      if (pitQuer(car) !== PIT_RAND) f.push('Querlage nicht am rechten Rand');
+      p.at = rennZeitJetzt() - PIT_RAND_MAX_MS - 1; pitTick(car);
+      if (p.phase !== 'halt') f.push('haelt nicht an (' + p.phase + ')');
+      p.at = rennZeitJetzt() - PIT_BREMS_MS - 1; pitTick(car);
+      if (p.phase !== 'stand') f.push('steht nicht (' + p.phase + ')');
+      p.at = rennZeitJetzt() - p.laenge - 1; pitTick(car);
+      if (p.phase !== 'raus' || car.ghost.randHalt) f.push('zieht nicht per Querlage heraus (' + p.phase + ')');
+      npcBoxKlang(car, false);
+    } finally {
+      currentTrackTiles = merk.tiles; if (sel) sel.value = merk.wert;
+      garage.length = 0; merk.garage.forEach((c) => garage.push(c));
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Standard Einparkfolge; Querlage: anfahrt > rand > halt > stand > raus ohne Lenkfolge' };
+  });
+
   // v1.2.45 BESTELLT: Latenz - Funkprioritaet nur einmal je Verbindung, SIMULATOR-Linie nur im Editor.
   stAdd('Latenz v1.2.45: Prioritaet einmal je Verbindung, SIMULATOR nur im Editor', () => {
     const f = [];

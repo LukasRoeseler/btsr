@@ -5680,6 +5680,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (p.phase === 'anfahrt') {
       // v1.2.4 BESTELLT: "NPC-Boxenstopp ueberarbeiten: so wie Safety Car." Am eigenen Platz die Einparkfolge des
       // Safety Cars (scEin, rechts), danach steht das Auto (randHalt ohne Abstellen) und die Standzeit beginnt.
+      // v1.2.67 BESTELLT: "Fuer NPCs als Tankort 'Streckenrand ueber Querlage' einstellen (Standard sollte das
+      // aktuelle sein)." Der Querlagen-Weg sind die Phasen rand > halt > stand > raus von vor v1.2.4 (pitQuer und
+      // pitZiel bedienen sie weiter); Standard bleibt die Einparkfolge.
+      if (g.tileIndex === pk && npcTankort() === 'rand') {
+        p.ort = 'rand'; p.phase = 'rand'; p.at = now;
+        log(garageLabel(car) + ': zieht per Querlage an den Rand der Box.', 'info');
+        return true;
+      }
       if (g.tileIndex === pk) {
         p.phase = 'einparken'; p.at = now;
         const sk = MANOEVER.scEin;
@@ -5708,6 +5716,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // ein Ghost kann den Boxenplatz nicht dadurch blockieren, dass er nicht ganz stillsteht.
       if (now - p.at >= PIT_BREMS_MS) {
         p.phase = 'stand'; p.at = now;
+        npcBoxKlang(car, true);
         // Rammstrafe (v0.9.21): zusaetzlich im Stand.
         const strafe = typeof rammStrafeAbsitzen === 'function' ? rammStrafeAbsitzen(car) : 0;
         if (strafe > 0) p.laenge += strafe * 1000;
@@ -5721,8 +5730,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         p.phase = 'raus'; p.at = now;
         npcBoxKlang(car, false);
         // v1.2.4: Ausparken wie das Safety Car (scAus, mit dem Gasfaktor), ohne Halt in das normale Fahren.
-        randHaltStarten(car, { phase: 'skript', quer: 0, skript: scAusSkript(), anpassMs: 0, vonDrive: 0, weiter: true,
-          fertig: (c) => { if (c.ghost) { c.ghost.pit = null; } pitPlatzRaeumen(c); if (c.ghost) pitFaelligZiehen(c.ghost); } });
+        // v1.2.67: beim Querlagen-Tankort heraus ueber die Querlage (pitQuer blendet in PIT_RAUS_MS aus).
+        if (p.ort !== 'rand') {
+          randHaltStarten(car, { phase: 'skript', quer: 0, skript: scAusSkript(), anpassMs: 0, vonDrive: 0, weiter: true,
+            fertig: (c) => { if (c.ghost) { c.ghost.pit = null; } pitPlatzRaeumen(c); if (c.ghost) pitFaelligZiehen(c.ghost); } });
+        }
         // ---- DIE REIFEN KOMMEN AM ENDE DER STANDZEIT DRAUF -------------------------
         //
         // Am ENDE und nicht am Anfang: die Standzeit IST die Arbeit, und ein Auto, das mit
@@ -5761,6 +5773,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return true;
   }
   // Ende der Einparkfolge: die Standzeit beginnt (mit Rammstrafe), dazu die Ratsche.
+  function npcTankort() {
+    const s = $('ghost-pit-ort');
+    return s && s.value === 'rand' ? 'rand' : 'folge';
+  }
   function npcBoxStehen(car) {
     const p = car.ghost && car.ghost.pit;
     if (!p) return;
