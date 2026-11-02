@@ -599,8 +599,9 @@
   // (98-presets.js setzeBrakeStealLast). Nachdem die Selbstsicherung die Regler
   // zurueckgeholt hat, stimmt das aktive Preset - also den Schalter jetzt setzen.
   if (typeof setzeBrakeStealLast === 'function') setzeBrakeStealLast();
-  // Gran Accelerato haengt am Modus (granWerteSetzen, 50-drive.js); nach dem Laden einmal
-  // nachziehen, auch wenn das Auswahlfeld schon auf 'gran' stand und kein 'change' kam.
+  // Gran Hybrismo/Assetto Carrera haengen am Modus (granWerteSetzen, 50-drive.js); nach dem Laden
+  // einmal nachziehen, auch wenn das Auswahlfeld schon auf 'gran'/'acc' stand und kein 'change' kam.
+  // Ein alter Modusname ("Gran Accelerato") wird dabei von presetSet()/physModusAnwenden() umgestellt.
   if (typeof setzeGran === 'function') setzeGran();
   // ---- DIE ANZEIGETEXTE DER SCHIEBEREGLER, EINMAL BEIM LADEN --------------------
   //

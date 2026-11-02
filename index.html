@@ -6112,9 +6112,13 @@
     <div class="card subpage" id="sub-patchnotes">
       <button class="misc-back goto-tab" data-tab="options">&larr; Optionen</button>
       <h2>Patchnotes</h2>
+      <p class="muted"><b><span data-i18n-skip>1.3</span></b></p>
+      <ul class="muted" id="patchnotes-13" style="padding-left:20px; line-height:1.7">
+        <li>Das Fahrgef&#252;hl Gran Accelerato wird zu zwei Modi (WIP): &#8222;Gran Hybrismo&#8220; wie Gran Turismo Sport (viel Grip, weicher Reifenscheitel, kaum Lastwechsel, eine Stabilit&#228;tshilfe lenkt ein ausbrechendes Heck sanft gegen, beim Bremsen bleibt die Lenkung wie mit ABS, die Reifentemperatur wirkt wenig) und &#8222;Assetto Carrera&#8220; wie Assetto Corsa Competizione (leicht bremsen dreht ein, Lupfen l&#228;sst das Heck kommen, Gas schiebt, scharfe Haftgrenze mit Untersteuern beim &#220;berfahren, Reifenfenster: kalt und &#252;berhitzt deutlich weniger Grip, warm am meisten; keine Hilfen). Gespeicherte St&#228;nde mit Gran Accelerato laden als Gran Hybrismo. Behoben: Tempo-Lenkung und Selbstzentrierung kamen nie am Auto an, die Lastempfindlichkeit verst&#228;rkte die Lastwechsel statt sie zu d&#228;mpfen, der Schalter &#8222;&#220;bersteuern&#8220; wurde ignoriert, und beim virtuellen Fahren waren die Reifen nach wenigen Sekunden dauerhaft &#252;berhitzt (jetzt mit Abk&#252;hlung, und das Standardauto hat Abtrieb). NPCs: MAX beschleunigt und bremst wie Arcade, alle anderen Stufen wie Sim+, unabh&#228;ngig von der Abstimmung von Spieler 1; der Regler &#8222;MAX: Beschleunigung&#8220; entf&#228;llt.</li>
+        <li>Neue Option &#8222;NPC: Tankort&#8220; (WIP, Optionen &#8594; NPCs): Einparkfolge wie das Safety Car (Standard, wie bisher) oder &#8222;Streckenrand &#252;ber Querlage&#8220; &#8211; der NPC zieht auf dem Boxenteil per Querlage an den rechten Rand, bremst, steht mit Ratsche und zieht per Querlage wieder heraus, ohne Lenkfolge.</li>
+      </ul>
       <p class="muted"><b><span data-i18n-skip>1.2</span></b></p>
       <ul class="muted" id="patchnotes-12" style="padding-left:20px; line-height:1.7">
-        <li>Neue Option &#8222;NPC: Tankort&#8220; (WIP, Optionen &#8594; NPCs): Einparkfolge wie das Safety Car (Standard, wie bisher) oder &#8222;Streckenrand &#252;ber Querlage&#8220; &#8211; der NPC zieht auf dem Boxenteil per Querlage an den rechten Rand, bremst, steht mit Ratsche und zieht per Querlage wieder heraus, ohne Lenkfolge.</li>
         <li>Seit 1.2.47: Wiki-Knopf auf der Startseite und Wiki-Kachel in den Optionen. Das Safety Car parkt nach der ersten Runde. Boxen-Minigame ohne lange Wartezeit zwischen den Kn&#246;pfen; eine L&#252;cke von 90 ms bleibt, damit ein Wechsel auf dasselbe Symbol sichtbar ist und ein doppelter Druck nicht f&#252;r den n&#228;chsten Knopf z&#228;hlt. Pacejka hat eine eigene Abstimmung (Beschleunigungsfaktor 1,1, Lenkkalibrierung 280 %, Bremsen nimmt Lenkung 75 %); sie steht nur im Preset Pacejka, das beim ersten Start gesetzt wird, die Werkseinstellungen der Regler sind wieder die von vor 1.2.48. NPC-Einpark- und Haltefolgen laufen bei Simulationsautos mit der Physikzeit, bei echten Autos nach der Uhr. Der Challenger regelt sein Tempo additiv gegen die Bestzeit, und f&#252;r MAX gilt ein Deckel je Streckenteil statt des 60-%-Kurvendeckels. Streckeneditor-Optionen (WIP): L&#228;nge/Teile, Linkslastig, Br&#252;cken und Strecke spiegeln. Neues Fahrgef&#252;hl Gran Accelerato (WIP): Pacejka mit Abtrieb, Selbstzentrierung und dynamischer Gierregelung; es gilt jetzt auch f&#252;r Spieler 2 und 3 und in Challenges, und seine Werte h&#228;ngen am Modus, bleiben also nach dem Laden und beim Verstellen eines Reglers erhalten. OmegaLabs-Studie auf der Startseite, Layout spiegelbar (WIP, wird mit den Studiendaten gespeichert; nach der Studie ist Spiegeln wieder aus). Randstein-Rumpeln beim virtuellen Fahren (WIP). Latenz: Pakete von NPCs in Einpark- und Haltefolgen werden nur noch bei ge&#228;ndertem Befehl oder Phasenwechsel nachgereicht, sonst wie immer verworfen; virtuelles Fahren liest den Handling-Modus nicht mehr in jedem Bild und legt f&#252;r das Randstein-Rattern keinen neuen Tonpuffer mehr an.</li>
         <li>Latenz: Das schnelle Verbindungsintervall wird nur noch einmal je Verbindung nachgefordert, und erst wenn ein Auto 5 s lang langsamer als alle 120 ms meldet (vorher alle 20 s je Auto ab 75 ms &#8211; mit vier Autos handelte das Handy etwa alle 5 s eine Verbindung neu aus). Linienmodell SIMULATOR: Die Linie wird nur noch im Strecken-Editor berechnet und gespeichert, beim Fahren nie mehr im Hintergrund; fehlt sie, fahren die NPCs die normale Linie.</li>
         <li>Latenz: Die Strecke im Regenradar ist wieder entfernt, und das Radar zeichnet nur noch in einfacher Aufl&#246;sung (auf hochaufl&#246;senden Handys ein Viertel der Bildpunkte). Neuer Schalter &#8222;Regenradar&#8220; unter Optionen &#8594; Allgemein: aus, wird das Radar gar nicht gezeichnet. Der Knopf &#8222;Reinigungsfahrzeug starten&#8220; steht nur noch in der Bahn-Kachel, nicht mehr in der Garagen-Kachel.</li>
@@ -9959,7 +9963,8 @@
         <select id="phys-mode">
           <option value="physik">Physik</option>
           <option value="pacejka" selected>Pacejka (experimentell)</option>
-          <option value="gran">Gran Accelerato (WIP)</option>
+          <option value="gran">Gran Hybrismo (WIP)</option>
+          <option value="acc">Assetto Carrera (WIP)</option>
           <option value="aus">RC (experimentell)</option>
         </select></div>
       <!-- BESTELLT: "Eventuell sage ich spaeter, dass das Uebersteuern abgeschaltet werden
@@ -11349,13 +11354,6 @@
           <input type="range" id="ghost-max-r2" min="0.3" max="1" step="0.01" value="0.8">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-max-r2-val">80%</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">MAX: Beschleunigung <span class="wip-tag">WIP</span><small>Wie viel kräftiger das Motormodell eines MAX-NPCs beschleunigt als das von Spieler&nbsp;1, und ohne Schaltpause. Das gesendete Gas folgt diesem Modell &ndash; auf kurzen Geraden kam ein MAX-NPC sonst kaum über sein Kurventempo. Standard 2&times;.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-max-beschl" min="1" max="4" step="0.1" value="2">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="ghost-max-beschl-val">200%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">MAX: Bremspunkt <span class="wip-tag">WIP</span><small>Wo ein MAX-NPC vom Geradentempo auf das Kurventempo geht: eine Schiene vor der Kurve (Standard) oder erst am Beginn des Kurventeils. Vor der Haarnadel bremsen alle NPCs wie bisher zwei Teile vorher.</small></div>
         <select id="ghost-max-bremspunkt">
@@ -14976,7 +14974,16 @@
     "Pro-Pacejka": "Pro-Pacejka",
     "Pro mit Pacejka-Lenkmodell": "Pro with Pacejka handling model",
     "Die Pro-Abstimmung (Automatik, 2,6 s auf 100, voller Grip, Reifenmodell und Tankgewicht an) mit dem experimentellen Pacejka-Lenkmodell: unterhalb der Haftgrenze fährt es sich wie Physik, darüber spürbar Übersteuern und Untersteuern, beides vibriert und quietscht. Zum Ausprobieren der Magic Formula, ohne die Klassen-Abstimmung.": "The Pro setup (automatic, 2.6 s to 100, full grip, tyre model and fuel weight on) with the experimental Pacejka steering model: below the grip limit it drives like Physics, above it noticeable oversteer and understeer, both vibrate and squeal. For trying out the Magic Formula without the class setup.",
-    "Das Pacejka-Lenkmodell, verfeinert wie ein GT3 in Assetto Corsa Competizione und Gran Turismo Sport: Abtrieb hebt den Griff bei Tempo, die Lenkung wird mit Tempo feiner und zentriert sich selbst, die Lastempfindlichkeit ist st\u00e4rker, und das \u00dcbersteuern baut weicher auf und wird vom Schwimmwinkel stabilisiert. Neu ist die dynamische Gierregelung: das Auto dreht beim Einlenken ein, statt zu springen, und schiebt am Limit, statt hart abzurei\u00dfen.": "The Pacejka steering model, refined like a GT3 in Assetto Corsa Competizione and Gran Turismo Sport: downforce raises grip with speed, the steering gets finer and self-centres with speed, load sensitivity is stronger, and oversteer builds up more softly and is stabilised by the slip angle. New is the dynamic yaw control: the car rotates in when you steer in instead of snapping, and pushes at the limit instead of breaking away hard.",
+    "Gran Hybrismo (WIP)": "Gran Hybrismo (WIP)",
+    "Assetto Carrera (WIP)": "Assetto Carrera (WIP)",
+    "Gran Hybrismo": "Gran Hybrismo",
+    "Assetto Carrera": "Assetto Carrera",
+    "Alle: Gran Hybrismo (WIP)": "All: Gran Hybrismo (WIP)",
+    "Alle: Assetto Carrera (WIP)": "All: Assetto Carrera (WIP)",
+    "Pacejka wie Gran Turismo Sport: viel Grip, verzeihend": "Pacejka like Gran Turismo Sport: lots of grip, forgiving",
+    "Pacejka wie Assetto Corsa Competizione: Gewicht und Reifen zählen": "Pacejka like Assetto Corsa Competizione: weight and tyres matter",
+    "Automatik, 2,6 s auf 100, Reifenmodell und Tankgewicht an, Reifenwärmer an. Das Pacejka-Lenkmodell im Stil von Gran Turismo Sport: viel Grip und Abtrieb, ein weicher Reifenscheitel, kaum Lastwechsel und eine Stabilitätshilfe, die ein ausbrechendes Heck sanft gegenlenkt. Beim Bremsen bleibt die Lenkung wie mit kräftigem ABS, die Reifentemperatur wirkt nur wenig. Bis 1.3.4 hieß der Modus Gran Accelerato.": "Automatic, 2.6 s to 100, tyre model and fuel weight on, tyre warmers on. The Pacejka steering model in the style of Gran Turismo Sport: lots of grip and downforce, a soft tyre peak, hardly any load transfer and a stability aid that gently counter-steers a rear that steps out. Under braking the steering stays as with strong ABS, and tyre temperature has only a small effect. Up to 1.3.4 the mode was called Gran Accelerato.",
+    "Automatik, 2,6 s auf 100, Reifenmodell und Tankgewicht an, ohne Reifenwärmer. Das Pacejka-Lenkmodell im Stil von Assetto Corsa Competizione: die Gewichtsverlagerung lenkt mit (leicht bremsen dreht das Auto ein, Lupfen lässt das Heck kommen, Gas schiebt), die Haftgrenze ist scharf, und wer sie überfährt, schiebt über die Vorderräder. Die Reifen haben ein Fenster: kalt rutschen sie, warm greifen sie am besten, überhitzt lässt der Grip spürbar nach. Keine Hilfen.": "Automatic, 2.6 s to 100, tyre model and fuel weight on, no tyre warmers. The Pacejka steering model in the style of Assetto Corsa Competizione: weight transfer steers with you (light braking rotates the car, lifting off brings the rear round, throttle pushes), the limit is sharp, and if you overdrive it the car pushes over the front wheels. The tyres have a window: cold they slide, warm they grip best, overheated the grip drops noticeably. No aids.",
 
     // Die Kachelseite der Optionen
     "Einstellungen": "Settings",
@@ -15359,8 +15366,6 @@
     "NPC-Motorklang: alt": "NPC engine sound: old",
     "Aus (Standard, neu): Beim Schalten bleibt der Motorklang derselbe, bricht kurz ein wie bei einer Zündunterbrechung, und die Tonhöhe gleitet statt zu springen – bei allen Motoren so, wie es bisher nur die Mustang-GT3-Aufnahme konnte. Dazu seit v1.2.24 ein tiefer Schaltschlag mit Auspuffknall statt des hellen Klacks, auch beim Runterschalten. An: der frühere Klang (Überblenden auf das Schubband, heller Schaltklick).": "Off (default, new): when shifting, the engine sound stays the same, dips briefly like an ignition cut, and the pitch glides instead of jumping – for every engine, as only the Mustang GT3 recording could so far. Since v1.2.24 also a deep shift thud with an exhaust bang instead of the bright clack, on downshifts too. On: the earlier sound (crossfade to the overrun loop, bright shift click).",
     "Schaltklang: alt": "Shift sound: old",
-    "Wie viel kräftiger das Motormodell eines MAX-NPCs beschleunigt als das von Spieler 1, und ohne Schaltpause. Das gesendete Gas folgt diesem Modell – auf kurzen Geraden kam ein MAX-NPC sonst kaum über sein Kurventempo. Standard 2×.": "How much harder the engine model of a MAX NPC accelerates than player 1’s, and without a shift pause. The sent throttle follows this model – on short straights a MAX NPC otherwise barely got above its corner speed. Default 2×.",
-    "MAX: Beschleunigung": "MAX: acceleration",
     "Klang (WIP, Vorschlag): Beim Schalten bleibt der Motorklang jetzt bei allen Motoren stehen, bricht kurz ein wie bei einer Zündunterbrechung, und die Tonhöhe gleitet statt zu springen – so wie bisher nur die Mustang-GT3-Aufnahme; der alte Klang kommt mit dem Schalter „Schaltklang: alt“. NPCs schalten früher zurück (ab 5200/min), sodass man ihre Gänge hört, knallen auch beim Bremsen aus dem Auspuff und etwas lauter; die alten Knaller gibt es mit „NPC-Motorklang: alt“.": "Sound (WIP, proposal): when shifting, the engine sound now holds for every engine, dips briefly like an ignition cut, and the pitch glides instead of jumping – as only the Mustang GT3 recording did so far; the old sound returns with the switch “Shift sound: old”. NPCs downshift earlier (from 5200 rpm) so you hear their gears, also pop from the exhaust when braking, and a bit louder; the old pops are available with “NPC engine sound: old”.",
     "NPC-Stufe MAX beschleunigt auf Geraden deutlich schneller: eigenes Motormodell mit doppelter Beschleunigung (Regler „MAX: Beschleunigung“, 1–4×) und ohne Schaltpause; auf Geraden bremsen Feld-Staffel, Lernfaktor und Streuung MAX nicht mehr. Der Streckenscan fährt schneller: Geraden 80 % statt 67 %, Kurven 67 %, nur die Haarnadel bleibt bei 47 %.": "NPC stage MAX accelerates much faster on straights: its own engine model with double acceleration (slider “MAX: acceleration”, 1–4×) and no shift pause; on straights the field staggering, learning factor and spread no longer slow MAX down. The track scan runs faster: straights 80% instead of 67%, corners 67%, only the hairpin stays at 47%.",
     "Karte: Die Autos sind jetzt Silhouetten in Draufsicht – Porsche 911 GT3 R, Ford Mustang GT3, BMW M4 GT3, Ferrari 296 GT3 und ein Formelwagen (Modell „Red Bull“), jeweils mit Heckflügel und in der Farbe, die in der Garage für das Auto gewählt ist. Welche Form ein Auto bekommt, richtet sich nach „Marke / Modell“ in der Garage; Audi, McLaren, Mercedes, VW Käfer und nicht zugeordnete Autos bleiben Rechtecke mit Spoilerstreifen.": "Map: cars are now top-view silhouettes – Porsche 911 GT3 R, Ford Mustang GT3, BMW M4 GT3, Ferrari 296 GT3 and a formula car (model “Red Bull”), each with a rear wing and in the colour chosen for the car in the garage. The shape follows “Make / model” in the garage; Audi, McLaren, Mercedes, VW Beetle and unassigned cars stay rectangles with a spoiler stripe.",
@@ -15382,6 +15387,7 @@
     "NPC: Tankort": "NPC: refuelling spot",
     "Seit 1.2.47: Wiki-Knopf auf der Startseite und Wiki-Kachel in den Optionen. Das Safety Car parkt nach der ersten Runde. Boxen-Minigame ohne lange Wartezeit zwischen den Knöpfen; eine Lücke von 90 ms bleibt, damit ein Wechsel auf dasselbe Symbol sichtbar ist und ein doppelter Druck nicht für den nächsten Knopf zählt. Pacejka hat eine eigene Abstimmung (Beschleunigungsfaktor 1,1, Lenkkalibrierung 280 %, Bremsen nimmt Lenkung 75 %); sie steht nur im Preset Pacejka, das beim ersten Start gesetzt wird, die Werkseinstellungen der Regler sind wieder die von vor 1.2.48. NPC-Einpark- und Haltefolgen laufen bei Simulationsautos mit der Physikzeit, bei echten Autos nach der Uhr. Der Challenger regelt sein Tempo additiv gegen die Bestzeit, und für MAX gilt ein Deckel je Streckenteil statt des 60-%-Kurvendeckels. Streckeneditor-Optionen (WIP): Länge/Teile, Linkslastig, Brücken und Strecke spiegeln. Neues Fahrgefühl Gran Accelerato (WIP): Pacejka mit Abtrieb, Selbstzentrierung und dynamischer Gierregelung; es gilt jetzt auch für Spieler 2 und 3 und in Challenges, und seine Werte hängen am Modus, bleiben also nach dem Laden und beim Verstellen eines Reglers erhalten. OmegaLabs-Studie auf der Startseite, Layout spiegelbar (WIP, wird mit den Studiendaten gespeichert; nach der Studie ist Spiegeln wieder aus). Randstein-Rumpeln beim virtuellen Fahren (WIP). Latenz: Pakete von NPCs in Einpark- und Haltefolgen werden nur noch bei geändertem Befehl oder Phasenwechsel nachgereicht, sonst wie immer verworfen; virtuelles Fahren liest den Handling-Modus nicht mehr in jedem Bild und legt für das Randstein-Rattern keinen neuen Tonpuffer mehr an.": "Since 1.2.47: Wiki button on the start screen and a Wiki tile in the options. The safety car parks after the first lap. Pit minigame without the long wait between buttons; a 90 ms gap remains so that a change to the same symbol is visible and a double press does not count for the next button. Pacejka has its own setup (acceleration factor 1.1, steering calibration 280 %, braking takes steering 75 %); it lives only in the Pacejka preset, which is applied on first start, and the factory defaults of the sliders are back to those before 1.2.48. NPC parking and stopping sequences run on physics time for simulated cars and on the clock for real cars. The Challenger adjusts its pace additively against the best time, and MAX has a cap per track piece instead of the 60 % corner cap. Track editor options (WIP): length/pieces, left-heavy, bridges and mirror track. New driving feel Gran Accelerato (WIP): Pacejka with downforce, self-centring and dynamic yaw control; it now also applies to players 2 and 3 and in challenges, and its values follow the mode, so they survive loading and adjusting a slider. OmegaLabs study on the start screen, layout can be mirrored (WIP, stored with the study data; mirroring is off again after the study). Kerb rumble in virtual driving (WIP). Latency: packets from NPCs in parking and stopping sequences are only passed on when the command changes or a phase switches, otherwise dropped as always; virtual driving no longer reads the handling mode every frame and no longer creates a new sound buffer for the kerb rattle.",
     "Neue Option „NPC: Tankort“ (WIP, Optionen → NPCs): Einparkfolge wie das Safety Car (Standard, wie bisher) oder „Streckenrand über Querlage“ – der NPC zieht auf dem Boxenteil per Querlage an den rechten Rand, bremst, steht mit Ratsche und zieht per Querlage wieder heraus, ohne Lenkfolge.": "New option “NPC: refuelling spot” (WIP, Options → NPCs): parking sequence like the safety car (default, as before) or “track edge via lateral position” – on the pit piece the NPC moves to the right edge via its lateral position, brakes, stands with the ratchet and moves back out via its lateral position, without a steering sequence.",
+    "Das Fahrgefühl Gran Accelerato wird zu zwei Modi (WIP): „Gran Hybrismo“ wie Gran Turismo Sport (viel Grip, weicher Reifenscheitel, kaum Lastwechsel, eine Stabilitätshilfe lenkt ein ausbrechendes Heck sanft gegen, beim Bremsen bleibt die Lenkung wie mit ABS, die Reifentemperatur wirkt wenig) und „Assetto Carrera“ wie Assetto Corsa Competizione (leicht bremsen dreht ein, Lupfen lässt das Heck kommen, Gas schiebt, scharfe Haftgrenze mit Untersteuern beim Überfahren, Reifenfenster: kalt und überhitzt deutlich weniger Grip, warm am meisten; keine Hilfen). Gespeicherte Stände mit Gran Accelerato laden als Gran Hybrismo. Behoben: Tempo-Lenkung und Selbstzentrierung kamen nie am Auto an, die Lastempfindlichkeit verstärkte die Lastwechsel statt sie zu dämpfen, der Schalter „Übersteuern“ wurde ignoriert, und beim virtuellen Fahren waren die Reifen nach wenigen Sekunden dauerhaft überhitzt (jetzt mit Abkühlung, und das Standardauto hat Abtrieb). NPCs: MAX beschleunigt und bremst wie Arcade, alle anderen Stufen wie Sim+, unabhängig von der Abstimmung von Spieler 1; der Regler „MAX: Beschleunigung“ entfällt.": "The Gran Accelerato driving feel becomes two modes (WIP): “Gran Hybrismo” like Gran Turismo Sport (lots of grip, a soft tyre peak, hardly any load transfer, a stability aid gently counter-steers a rear that steps out, the steering stays under braking as with ABS, tyre temperature has little effect) and “Assetto Carrera” like Assetto Corsa Competizione (light braking rotates the car, lifting off brings the rear round, throttle pushes, a sharp limit with understeer when you overdrive it, a tyre window: cold and overheated clearly less grip, warm the most; no aids). Saved states with Gran Accelerato load as Gran Hybrismo. Fixed: speed-sensitive steering and self-centring never reached the car, load sensitivity amplified load transfer instead of damping it, the “Oversteer” switch was ignored, and in virtual driving the tyres were permanently overheated after a few seconds (now they cool down, and the default car has downforce). NPCs: MAX accelerates and brakes like Arcade, all other levels like Sim+, independent of player 1's setup; the “MAX: acceleration” slider is gone.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -15744,8 +15750,6 @@
     "Strecke spiegeln: Kurven links/rechts tauschen und die Schleife rückwärts fahren": "Mirror track: swap left and right corners and drive the loop backwards",
     "Editor-Optionen: Länge, Linkslastig, Brücken, Spiegeln": "Editor options: length, left-heavy, bridges, mirror",
     "Editor-Optionen": "Editor options",
-    "Pacejka, verfeinert wie ACC/GT7": "Pacejka, refined like ACC/GT7",
-    "Gran Accelerato (WIP)": "Gran Accelerato (WIP)",
     "Teile eingeben": "Enter track parts",
     "Zufällige Strecke aus den vorhandenen Teilen bauen": "Build a random track from the available pieces",
     "Zufall": "Random",
@@ -18465,9 +18469,16 @@
     "Editor-Optionen: Länge, Linkslastig, Brücken, Spiegeln": "Opciones del editor: longitud, más curvas a la izquierda, puentes, reflejo",
     "Editor-Optionen": "Opciones del editor",
     "Optionen": "Opciones",
-    "Pacejka, verfeinert wie ACC/GT7": "Pacejka, refinado como ACC/GT7",
-    "Gran Accelerato (WIP)": "Gran Accelerato (WIP)",
-    "Das Pacejka-Lenkmodell, verfeinert wie ein GT3 in Assetto Corsa Competizione und Gran Turismo Sport: Abtrieb hebt den Griff bei Tempo, die Lenkung wird mit Tempo feiner und zentriert sich selbst, die Lastempfindlichkeit ist stärker, und das Übersteuern baut weicher auf und wird vom Schwimmwinkel stabilisiert. Neu ist die dynamische Gierregelung: das Auto dreht beim Einlenken ein, statt zu springen, und schiebt am Limit, statt hart abzureißen.": "El modelo de dirección Pacejka, refinado como un GT3 en Assetto Corsa Competizione y Gran Turismo Sport: la carga aerodinámica aumenta el agarre con la velocidad, la dirección se vuelve más fina con la velocidad y se centra sola, la sensibilidad a la carga es mayor, y el sobreviraje se forma de manera más suave y lo estabiliza el ángulo de deriva. Lo nuevo es el control dinámico de guiñada: el coche gira al entrar en la curva en lugar de saltar, y en el límite empuja en lugar de soltarse de golpe.",
+    "Gran Hybrismo (WIP)": "Gran Hybrismo (WIP)",
+    "Assetto Carrera (WIP)": "Assetto Carrera (WIP)",
+    "Gran Hybrismo": "Gran Hybrismo",
+    "Assetto Carrera": "Assetto Carrera",
+    "Alle: Gran Hybrismo (WIP)": "Todos: Gran Hybrismo (WIP)",
+    "Alle: Assetto Carrera (WIP)": "Todos: Assetto Carrera (WIP)",
+    "Pacejka wie Gran Turismo Sport: viel Grip, verzeihend": "Pacejka como Gran Turismo Sport: mucho agarre, permisivo",
+    "Pacejka wie Assetto Corsa Competizione: Gewicht und Reifen zählen": "Pacejka como Assetto Corsa Competizione: el peso y los neumáticos cuentan",
+    "Automatik, 2,6 s auf 100, Reifenmodell und Tankgewicht an, Reifenwärmer an. Das Pacejka-Lenkmodell im Stil von Gran Turismo Sport: viel Grip und Abtrieb, ein weicher Reifenscheitel, kaum Lastwechsel und eine Stabilitätshilfe, die ein ausbrechendes Heck sanft gegenlenkt. Beim Bremsen bleibt die Lenkung wie mit kräftigem ABS, die Reifentemperatur wirkt nur wenig. Bis 1.3.4 hieß der Modus Gran Accelerato.": "Automático, 2,6 s de 0 a 100, modelo de neumáticos y peso del combustible activados, calentadores de neumáticos activados. El modelo de dirección Pacejka al estilo de Gran Turismo Sport: mucho agarre y carga aerodinámica, un pico de neumático suave, apenas transferencia de carga y una ayuda de estabilidad que contravolantea con suavidad cuando la trasera se escapa. Al frenar la dirección se mantiene como con un ABS potente, y la temperatura de los neumáticos influye poco. Hasta la 1.3.4 el modo se llamaba Gran Accelerato.",
+    "Automatik, 2,6 s auf 100, Reifenmodell und Tankgewicht an, ohne Reifenwärmer. Das Pacejka-Lenkmodell im Stil von Assetto Corsa Competizione: die Gewichtsverlagerung lenkt mit (leicht bremsen dreht das Auto ein, Lupfen lässt das Heck kommen, Gas schiebt), die Haftgrenze ist scharf, und wer sie überfährt, schiebt über die Vorderräder. Die Reifen haben ein Fenster: kalt rutschen sie, warm greifen sie am besten, überhitzt lässt der Grip spürbar nach. Keine Hilfen.": "Automático, 2,6 s de 0 a 100, modelo de neumáticos y peso del combustible activados, sin calentadores de neumáticos. El modelo de dirección Pacejka al estilo de Assetto Corsa Competizione: la transferencia de peso dirige contigo (frenar suave hace girar el coche, levantar el pie hace venir la trasera, el gas empuja), el límite es nítido, y quien lo sobrepasa empuja con las ruedas delanteras. Los neumáticos tienen una ventana: en frío deslizan, templados agarran mejor, sobrecalentados el agarre cae de forma notable. Sin ayudas.",
     "Randsteine (Virtuell fahren)": "Pianos (conducción virtual)",
     "Ein kurzes Rätteln und Brummen, wenn das Auto mit dem Rand über den erhabenen Stein fährt – das Rattern der Curbs-Schwelle. Nur im virtuellen Fahren, wo die Randsteine als 3D-Objekt gezeichnet sind.": "Una breve vibración y zumbido cuando el coche pasa con el borde sobre el piano elevado: el traqueteo del bordillo. Solo en la conducción virtual, donde los pianos se dibujan como objeto 3D.",
     "NPC: Tankort": "NPC: lugar de repostaje",
@@ -21620,6 +21631,22 @@
         granTauUeber: 0.25,      // weicherer Uebersteuern-Aufbau (Zeitkonstante in s)
         granYawTau: 0.28,        // Traegheit des Gieraufbaus: wie schnell die Gier der Wunsch-Gier folgt (s)
         granYawFeed: 0.0,        // Zuschlag beim Einlenken (0..1): wie stark das Auto "eindreht"
+        // v1.3.5: zwei Auspraegungen desselben Schritts, Gran Hybrismo (granArt 'gran', wie Gran
+        // Turismo Sport) und Assetto Carrera ('acc', wie Assetto Corsa Competizione). Die Werte je
+        // Modus stehen in GRAN_WERTE (50-drive.js); hier die Grundwerte = "aus".
+        granArt: '',             // '' | 'gran' | 'acc' (nur zur Anzeige und fuer Tests)
+        granC: 0,                // Magic Formula Formfaktor; 0 = pacejkaC
+        granE: null,             // Kruemmung; null = pacejkaE
+        granGripPlus: 1.0,       // Faktor auf den Grenzgrip (viel Grip = verzeihend)
+        granHeckReserve: 0,      // Seitenhalt hinten gegen vorn; 0 = pacejkaHeckReserve
+        granHeck: 0,             // 1 = das Heck kommt im Modus selbst, auch ohne Schalter "Uebersteuern"
+        granStabi: 0,            // Stabilitaetshilfe: Anteil des Uebersteuerns, den die App wegnimmt (sanftes Gegenlenken)
+        granLastGier: 0,         // Gier aus der Laengs-Lastverlagerung (Trail-Braking dreht ein, Gas schiebt)
+        granVornMin: 0.6,        // Deckel der Lastkopplung vorn (Pacejka: 0,6)
+        granHintenMax: 1.6,      // ... hinten (Pacejka: 1,6)
+        granAbs: 0,              // ABS-Gefuehl: so viel Einschlag bleibt beim Bremsen am Limit mindestens
+        granTempEinfluss: 1,     // wie stark der Reifenzustand (tyreGrip) auf die Haftgrenze wirkt
+        granTempOpt: 0,          // Griff-Zuschlag im warmen Fenster um tyreOptimalC (Glocke, +-12 Grad)
 
         // ---- Longitudinal weight transfer ----
         // Under braking the mass pitches onto the front axle, under power onto the rear.
@@ -22190,14 +22217,25 @@
         this.outputs.servoAngle * st.pacUnter + st.pacRichtung * st.pacUeber));
     }
 
-    // ---- GRAN ACCELERATO (v1.2.62): der Pacejka-Schritt, verfeinert ---------------------
-    // Wie pacejkaStep, aber mit den ACC-/GT7-Vorschlaegen: Abtrieb hebt den Griff bei Tempo,
-    // die Lenkung wird mit Tempo feiner und zentriert sich selbst, die Lastempfindlichkeit ist
-    // staerker, der Uebersteuern-Aufbau ist weicher, der Schwimmwinkel stabilisiert das Heck -
-    // und die GIERRATE wird gefahren statt nur angezeigt (das Einspurmodell wird zum
-    // Stellglied, nicht mehr zum Instrument). Das ist der grosse Hebel Richtung ACC/GT7:
-    // das Auto dreht beim Einlenken EIN (Gier baut sich mit der Traegheit auf), schiebt am
-    // Limit (Gier kommt nicht nach) und dreht beim Uebersteuern zu viel - gegenlenken faengt es.
+    // ---- GRAN HYBRISMO / ASSETTO CARRERA: der Pacejka-Schritt, verfeinert ------------------
+    // v1.2.62 als "Gran Accelerato" (ACC-/GT7-Vorschlaege: Abtrieb, Tempo-Lenkung,
+    // Selbstzentrierung, Lastempfindlichkeit, weicheres Uebersteuern, und die GIERRATE wird
+    // gefahren statt nur angezeigt). Seit v1.3.5 zwei Auspraegungen mit eigenen Werten
+    // (GRAN_WERTE, 50-drive.js):
+    //   Gran Hybrismo (granArt 'gran', wie Gran Turismo Sport): viel Grip, flacher Reifenscheitel,
+    //     kaum Lastwechsel, Stabilitaetshilfe (Uebersteuern wird sanft gegengelenkt), ABS-Gefuehl.
+    //   Assetto Carrera ('acc', wie Assetto Corsa Competizione): Gier aus der Lastverlagerung
+    //     (Trail-Braking dreht ein, Lupfen laesst das Heck kommen), scharfer Scheitel, Reifen
+    //     mit warmem Fenster, Untersteuern beim Ueberfahren, keine Hilfen.
+    // KORREKTUREN v1.3.5 (vorher wirkungslos oder verkehrt):
+    //   - Tempo-Lenkung und Selbstzentrierung formten nur die Rechengroesse lenk, NICHT
+    //     servoAngle - am Auto kam keins von beiden an. Jetzt Faktoren auf den Servo.
+    //   - granLastEmpf verstaerkte die Lastwechsel (1 + k*(vorn-1)), obwohl der Kommentar das
+    //     Gegenteil versprach. Jetzt degressiv: die entlastete Achse behaelt relativ mehr Griff.
+    //   - Der Schalter "Uebersteuern" (pacejkaUebersteuern) wurde ignoriert: das Heck kam immer,
+    //     und der Rutsch hielt auch ohne Stick. Jetzt nur mit Schalter oder im Modus selbst
+    //     (granHeck), und HALTEN nur mit Schalter (v1.1.25 BESTELLT: kein Weiterlenken ohne Stick).
+    //   - pacLeistung (Rumble "rutschen") stand bei jedem Uebersteuern auf true, auch ohne Gas.
     granStep(dt, inputs) {
       const st = this.state, cfg = this.config;
       const gas = inputs ? Math.max(0, inputs.throttle || 0) : 0;
@@ -22205,13 +22243,19 @@
       const kmhAnteil = Math.abs(st.speedKmh) / Math.max(0.1, cfg.topSpeedKmh);
       const roh = inputs ? (inputs.steering === undefined ? 0 : inputs.steering) : 0;
       const tempo = kmhAnteil * kmhAnteil;
-      // Tempoabhaengige Lenkung: mit Tempo wird der Einschlag feiner (wie im virtuellen Modell).
-      let lenk = this.state.dampedSteering / (1 + cfg.granLenkTempo * tempo);
-      // Selbstzentrierung (Nachlauf): ohne Lenkeingabe zieht die Lenkung zur Mitte, und bei
-      // Tempo staerker - ein echtes Auto steht bei Tempo von selbst gerade.
+      // Tempoabhaengige Lenkung: mit Tempo wird der Einschlag feiner.
+      const tempoF = 1 / (1 + cfg.granLenkTempo * tempo);
+      // Selbstzentrierung (Nachlauf) als Zustand: ohne Lenkeingabe klingt der Faktor ab (bei
+      // Tempo schneller), mit Lenkeingabe steht er sofort wieder auf 1. Eine reine Rechnung je
+      // Takt (wie bis 1.3.4) sprang bei granZentrier 0,7 in einem Takt auf null.
+      if (st.granZentr === undefined) st.granZentr = 1;
       if (Math.abs(roh) < 0.02 && cfg.granZentrier > 0) {
-        lenk -= lenk * Math.min(1, cfg.granZentrier * (0.5 + 0.5 * kmhAnteil) * dt * 60);
+        st.granZentr *= Math.exp(-cfg.granZentrier * 60 * (0.5 + 0.5 * kmhAnteil) * dt);
+      } else {
+        st.granZentr = 1;
       }
+      const lenkF = tempoF * st.granZentr;
+      const lenk = st.dampedSteering * lenkF;
 
       // ---- DYNAMISCHE GIERREGELUNG (Einspurmodell als Stellglied) -------------------------
       // Der Wunsch-Gier folgt aus dem Eigenlenkgradienten des Layouts (vorn/mittel/heck),
@@ -22236,39 +22280,57 @@
         gierAufbau = Math.max(-0.3, Math.min(0.3, (rZiel - st.granYaw) / Math.max(0.1, Math.abs(rZiel))));
       }
 
-      // ---- Reibkreis mit Abtrieb und Lastempfindlichkeit --------------------------------
+      // ---- Reibkreis mit Abtrieb, Reifenfenster und Lastempfindlichkeit -----------------
       const quer = Math.abs(lenk) * kmhAnteil * cfg.corneringLoad
                    / Math.max(0.1, cfg.pacejkaGrenze);
-      // Abtrieb (Downforce): der Griff waechst mit dem Quadrat des Tempos - ein GT3 hat das,
-      // und deshalb ist das Auto bei Tempo "festgenagelt" statt leicht.
+      // Abtrieb (Downforce): der Griff waechst mit dem Quadrat des Tempos.
       const aero = 1 + cfg.granAeroK * tempo;
-      const grip = Math.max(0.2, (st.tyreGrip === undefined ? 1 : st.tyreGrip) * cfg.gripScale) * aero;
-      const vorn = Math.max(0.6, Math.min(1, cfg.loadFrontStatic / Math.max(0.05, st.loadFront)));
-      const hinten = Math.max(0.6, Math.min(1.6, (1 - cfg.loadFrontStatic) / Math.max(0.05, 1 - st.loadFront)));
-      // Staerkere Lastempfindlichkeit: die entlastete Achse behaelt relativ mehr Griff.
-      const lastF = 1 + cfg.granLastEmpf * (vorn - 1);
-      const lastH = 1 + cfg.granLastEmpf * (hinten - 1);
+      // Reifen: granTempEinfluss skaliert, wie stark der Reifenzustand (kalt, heiss, abgefahren)
+      // auf die Haftgrenze durchschlaegt (Hybrismo wenig, Assetto Carrera mehr als Pacejka), und
+      // granTempOpt legt im warmen Fenster um tyreOptimalC einen Griff-Zuschlag darauf.
+      const tg = st.tyreGrip === undefined ? 1 : st.tyreGrip;
+      let reifen = 1 + cfg.granTempEinfluss * (tg - 1);
+      if (cfg.granTempOpt > 0 && cfg.tyreEffect > 0 && typeof st.tyreTempC === 'number') {
+        const d = (st.tyreTempC - cfg.tyreOptimalC) / 12;
+        reifen *= 1 + cfg.granTempOpt * Math.min(1, cfg.tyreEffect) * Math.exp(-d * d);
+      }
+      const grip = Math.max(0.2, Math.max(0.3, reifen) * cfg.gripScale) * aero * (cfg.granGripPlus || 1);
+      const vorn = Math.max(cfg.granVornMin, Math.min(1, cfg.loadFrontStatic / Math.max(0.05, st.loadFront)));
+      const hinten = Math.max(0.6, Math.min(cfg.granHintenMax, (1 - cfg.loadFrontStatic) / Math.max(0.05, 1 - st.loadFront)));
+      // DEGRESSIVE Lastempfindlichkeit: der Reibwert sinkt mit der Radlast, mu = mu0*(1-k*(l-1))
+      // mit l = Last/Ruhelast = 1/vorn. Die Ausnutzung bekommt den Kehrwert davon: die belastete
+      // Achse gewinnt weniger, die entlastete verliert weniger - das Auto bleibt unter Last gutmuetig.
+      const k = cfg.granLastEmpf;
+      const lastF = 1 / Math.max(0.5, 1 - k * (1 / vorn - 1));
+      const lastH = 1 / Math.max(0.5, 1 - k * (1 / hinten - 1));
       const antrieb = Math.max(0, Math.min(1, st.longUse)) * 0.7;
       const rest = Math.sqrt(Math.max(0.2, 1 - antrieb * antrieb));
       const uV = quer * vorn / grip * lastF;
-      let uH = quer * hinten / grip / rest / Math.max(0.5, cfg.pacejkaHeckReserve) * lastH;
-      // Leistungsuebersteuern: ab 40 % Gas nimmt der Antrieb hinten zusaetzlich Seitenhalt.
-      if (gas > 0.4) {
+      let uH = quer * hinten / grip / rest
+               / Math.max(0.5, cfg.granHeckReserve || cfg.pacejkaHeckReserve) * lastH;
+      // Das Heck kommt nur mit dem Schalter "Uebersteuern" oder im Modus selbst (granHeck).
+      const heck = !!cfg.pacejkaUebersteuern || cfg.granHeck > 0;
+      const leistung = heck && gas > 0.4;
+      if (leistung) {
         const x = Math.min(1, (gas - 0.4) / 0.6);
         uH *= 1 + cfg.pacejkaLeistung * x * x * (3 - 2 * x);
       }
       st.pacNutzV = uV; st.pacNutzH = uH;
-      const C = cfg.pacejkaC, E = cfg.pacejkaE, B = pacB(C, E);
+      const C = cfg.granC || cfg.pacejkaC;
+      const E = (cfg.granE === null || cfg.granE === undefined) ? cfg.pacejkaE : cfg.granE;
+      const B = pacB(C, E);
       const wirk = (u) => (u <= 1 ? 1 : pacY(u, B, C, E) / u);
-      const zielU = wirk(uV) * pacGasFaktor(cfg, st.longUse);
+      let zielU = wirk(uV) * pacGasFaktor(cfg, st.longUse);
+      // ABS-Gefuehl: beim Bremsen bleibt am Limit mindestens granAbs vom Einschlag.
+      if (cfg.granAbs > 0 && bremse > 0.05) zielU = Math.max(zielU, Math.min(1, cfg.granAbs));
       st.pacUnter += (zielU - st.pacUnter) * (1 - Math.exp(-dt / 0.08));
       let zielO = 0;
       const richtung = Math.sign(lenk);
       const gegen = !!(st.pacRichtung && richtung && richtung !== st.pacRichtung);
-      if (uH > 1 && uH > uV) {
+      if (heck && uH > 1 && uH > uV) {
         if (!st.pacRichtung && richtung) st.pacRichtung = richtung;
         if (!gegen) zielO = Math.min(cfg.pacejkaUeberMax, 1 - wirk(uH));
-        if (zielO > 0) st.pacLeistung = true;
+        if (zielO > 0) st.pacLeistung = leistung;
       }
       // Gierdynamik-Rueckfuehrung (Einspurmodell-Instrument): der Schwimmwinkel stabilisiert
       // das Heck - zu viel Rutsch wird sanft abgefangen, statt zu kippen.
@@ -22278,8 +22340,10 @@
           zielO *= Math.max(0, 1 - Math.min(1, cfg.granGier * Math.abs(st.slipAngle)));
         }
       }
+      // DER RUTSCH HAELT nur mit dem Schalter (wie in pacejkaStep). Ohne ihn klingt er ab,
+      // sobald der Stick nicht mehr in die Kurve zeigt - kein Weiterlenken ohne eigene Eingabe.
       const pedalHalt = Math.min(1, Math.max(gas, bremse) / 0.4);
-      if (st.pacUeber > 0.05 && st.pacRichtung && !gegen && pedalHalt > 0
+      if (cfg.pacejkaUebersteuern && st.pacUeber > 0.05 && st.pacRichtung && !gegen && pedalHalt > 0
           && kmhAnteil > 0.15 && st.pacHaltSeit < cfg.pacejkaHaltMax) {
         zielO = Math.max(zielO, st.pacUeber * pedalHalt);
         st.pacHaltSeit += dt;
@@ -22290,11 +22354,29 @@
       if (st.pacUeber < 0.005 && zielO === 0) {
         st.pacUeber = 0; st.pacRichtung = 0; st.pacHaltSeit = 0; st.pacLeistung = false;
       }
-      st.pacVortrieb = 1 - cfg.pacejkaRutschVortrieb * Math.min(1, st.pacUeber / Math.max(0.01, cfg.pacejkaUeberMax));
+      st.pacVortrieb = heck
+        ? 1 - cfg.pacejkaRutschVortrieb * Math.min(1, st.pacUeber / Math.max(0.01, cfg.pacejkaUeberMax))
+        : 1;
       st.pacZustand = st.pacUeber > 0.03 ? 'ueber' : (st.pacUnter < 0.97 ? 'unter' : '');
 
-      // ---- Servo formen: Untersteuern kuerzt, Uebersteuern ergaenzt, Gier formt den Anfang ----
-      let servo = this.outputs.servoAngle * st.pacUnter + st.pacRichtung * st.pacUeber;
+      // ---- Servo formen ---------------------------------------------------------------
+      // Tempo-Lenkung und Selbstzentrierung am uebertragenen Winkel (Korrektur v1.3.5).
+      let servo = this.outputs.servoAngle * lenkF;
+      // GIER AUS DER LASTVERLAGERUNG (granLastGier, Assetto Carrera): mehr Last vorn = mehr
+      // Seitenkraft vorn, weniger hinten = das Auto dreht ein. dl = Verlagerung in Einheiten von
+      // transferK (+1 Vollbremsung, -1 Vollgas). Bremsseite als Hoecker: leicht bremsen
+      // (Trail-Braking) und Lupfen drehen am meisten ein, voll bremsen nicht mehr (dann
+      // blockiert die Front - der Reibkreis kuerzt ohnehin). Gasseite mit 40 %: unter Zug
+      // schiebt das Auto etwas, statt sich aufzustellen. Unter 30 % Tempo eingeblendet.
+      if (cfg.granLastGier) {
+        const dl = Math.max(-1, Math.min(1, (st.loadFront - cfg.loadFrontStatic) / Math.max(0.05, cfg.transferK)));
+        const g = dl < 0 ? 0.4 * dl : (dl <= 0.4 ? dl : 0.4 * (1 - dl) / 0.6);
+        servo *= 1 + cfg.granLastGier * g * Math.min(1, kmhAnteil / 0.3);
+      }
+      // Untersteuern kuerzt, Uebersteuern ergaenzt - abzueglich der Stabilitaetshilfe
+      // (granStabi, Hybrismo): sie lenkt den Anteil sanft gegen, wie die Hilfe in GT Sport.
+      servo = servo * st.pacUnter
+              + st.pacRichtung * st.pacUeber * (1 - Math.max(0, Math.min(1, cfg.granStabi)));
       // Gier-Aufbau: beim Einlenken ein kleiner Zuschlag (das Auto dreht EIN), mit dem
       // Vorzeichen der Kurve. Er verpufft, sobald die Front ans Limit kommt (uV > 0,9) - dann
       // schiebt das Auto, und mehr Einschlag hilft nicht mehr. Auch bei Uebersteuern (uH > 0,9)
@@ -22529,6 +22611,7 @@
       st.pacUnter = 1; st.pacUeber = 0; st.pacRichtung = 0;
       st.pacNutzV = 0; st.pacNutzH = 0; st.pacZustand = '';
       st.pacVortrieb = 1; st.pacHaltSeit = 0; st.pacLeistung = false;
+      st.granYaw = 0; st.granZentr = 1;
     }
 
     // rpm comes from the gear RATIO, not from the band edges. Consequence straight out of
@@ -23968,10 +24051,11 @@
       try { mischungAnwenden(motor, z.reifen, wxRainLevel() * wxRainLevel()); } catch (e) { /* beim Laden */ }
     }
   }
-  // Rechnet dieser Spieler mit Physik (Physik/Pacejka/Gran Accelerato) oder RC? Ohne eigenes Preset wie Spieler 1.
+  // Rechnet dieser Spieler mit Physik (Physik/Pacejka/Gran Hybrismo/Assetto Carrera) oder RC? Ohne eigenes
+  // Preset wie Spieler 1. Die Liste steht einmal in physModusIstPhysik() (50-drive.js).
   function spielerPhysikAn(z) {
     const m = z && z.motor && z.motor.config.physModus;
-    return m ? (m === 'physik' || m === 'pacejka' || m === 'gran') : physicsEnabled;
+    return m ? physModusIstPhysik(m) : physicsEnabled;
   }
   // =========================================================================
   // Fahren: Regler, Kalibrierung, Makros
@@ -24353,6 +24437,10 @@
           gc.downshiftRpm = pc.downshiftRpm;
           gc.shiftMs = pc.shiftMs;
           gc.rpmScale = pc.rpmScale;
+          // v1.3.5: der NPC-Motor (ghostMaxMotor) setzt Schaltzeit und Rueckschaltpunkt nur beim
+          // Stufenwechsel; hier neu anstossen, mit der Schaltzeit des neuen Getriebes als Grundwert.
+          c.ghost.basisShiftMs = pc.shiftMs;
+          gc.npcMotorArt = null;
           c.ghost.engine.state.currentGear =
             Math.min(c.ghost.engine.state.currentGear, gc.gears.length - 1);
         });
@@ -24393,28 +24481,71 @@
   // wer "Gran Accelerato" direkt im Auswahlfeld waehlte, bekam sie gar nicht. EINE Stelle:
   // physModusAnwenden() (laeuft bei jedem Wechsel des Auswahlfelds, also auch nach
   // applyPreset() und nach dem Laden). AUS = die Grundwerte aus 40-physics.js.
-  const GRAN_AN = { granAeroK: 0.15, granLenkTempo: 1.0, granZentrier: 0.7, granGier: 0.6,
-                    granLastEmpf: 0.14, granTauUeber: 0.35, granYawTau: 0.28, granYawFeed: 0.25 };
-  const GRAN_AUS = { granAeroK: 0, granLenkTempo: 0, granZentrier: 0, granGier: 0,
-                     granLastEmpf: 0, granTauUeber: 0.25, granYawTau: 0.28, granYawFeed: 0 };
+  // v1.3.5 BESTELLT: "Neues Fahrgefuehl Gran Accelerato pruefen und verbessern. Soll sich anfuehlen
+  // wie eine Kombination aus Gran Turismo Sport und Assetto Corsa Competizione. Wenn noetig, mach 2
+  // Modi draus (Gran Hybrismo und Assetto Carrera)." Zwei Modi, weil die Benchmarks sich in genau
+  // den Punkten widersprechen, die das Gefuehl ausmachen (Hilfen, Lastwechsel, Reifenfenster).
+  // Interner Wert bleibt 'gran' (= Gran Hybrismo, gespeicherte Stände laden weiter), neu ist 'acc'.
+  //   gran / Gran Hybrismo (GT Sport): viel Grip (granGripPlus, Abtrieb), flacher Reifenscheitel
+  //     (C 1,15, E 0), kaum Lastwechsel (starke degressive Lastempfindlichkeit, und granLastGier
+  //     -0,12 gleicht den Trail-Bonus der Grundphysik etwa aus: Gas und Bremse verdrehen das Auto kaum),
+  //     Stabilitaetshilfe (granStabi nimmt 60 % des Uebersteuerns weg, granGier faengt am
+  //     Schwimmwinkel), ABS-Gefuehl (beim Bremsen bleiben 85 % Einschlag), Reifenzustand nur zu
+  //     40 % an der Haftgrenze, sanfter Gieraufbau.
+  //   acc / Assetto Carrera (ACC): Gier aus der Lastverlagerung (granLastGier: Trail-Braking und
+  //     Lupfen drehen ein, Gas schiebt), lockere Lastkopplung (0,5/1,9 statt 0,6/1,6), das Heck
+  //     kommt im Modus selbst (granHeck, ohne Halten - das bleibt am Schalter), scharfer Scheitel
+  //     (C 1,7, E -1), Reifenfenster (Zustand zu 120 %, +6 % Griff um tyreOptimalC), keine Hilfen.
+  const GRAN_WERTE = {
+    gran: { granArt: 'gran', granAeroK: 0.2, granLenkTempo: 0.35, granZentrier: 0.12, granGier: 0.8,
+            granLastEmpf: 0.3, granTauUeber: 0.45, granYawTau: 0.34, granYawFeed: 0.15,
+            granC: 1.15, granE: 0, granGripPlus: 1.12, granHeckReserve: 1.35, granHeck: 0,
+            granStabi: 0.6, granLastGier: -0.12, granVornMin: 0.6, granHintenMax: 1.6, granAbs: 0.85,
+            granTempEinfluss: 0.4, granTempOpt: 0 },
+    acc: { granArt: 'acc', granAeroK: 0.15, granLenkTempo: 0.25, granZentrier: 0.06, granGier: 0.3,
+           granLastEmpf: 0.08, granTauUeber: 0.2, granYawTau: 0.22, granYawFeed: 0.3,
+           granC: 1.7, granE: -1.0, granGripPlus: 1.0, granHeckReserve: 1.08, granHeck: 1,
+           granStabi: 0, granLastGier: 0.5, granVornMin: 0.5, granHintenMax: 1.9, granAbs: 0,
+           granTempEinfluss: 1.2, granTempOpt: 0.06 },
+  };
+  // Bisheriger Name fuer die Hybrismo-Werte (Selbsttests, Schnappschuss-Pruefung).
+  const GRAN_AN = GRAN_WERTE.gran;
+  const GRAN_AUS = { granArt: '', granAeroK: 0, granLenkTempo: 0, granZentrier: 0, granGier: 0,
+                     granLastEmpf: 0, granTauUeber: 0.25, granYawTau: 0.28, granYawFeed: 0,
+                     granC: 0, granE: null, granGripPlus: 1, granHeckReserve: 0, granHeck: 0,
+                     granStabi: 0, granLastGier: 0, granVornMin: 0.6, granHintenMax: 1.6, granAbs: 0,
+                     granTempEinfluss: 1, granTempOpt: 0 };
+  // Die Physikmodi, die mit granStep() rechnen. Alias: der alte Anzeigename "Gran Accelerato"
+  // (und seine Schreibweisen) ist Gran Hybrismo.
+  const GRAN_MODI = ['gran', 'acc'];
+  const PHYS_MODUS_ALIAS = { 'Gran Accelerato': 'gran', 'gran accelerato': 'gran', granaccelerato: 'gran',
+                             'Gran Hybrismo': 'gran', 'Assetto Carrera': 'acc', assettocarrera: 'acc' };
+  function physModusNormal(v) { return PHYS_MODUS_ALIAS[v] || v; }
+  // Rechnet dieser Steuerungsmodus mit der Physik-Kette (Physik, Pacejka, Gran Hybrismo, Assetto Carrera)?
+  function physModusIstPhysik(v) { v = physModusNormal(v); return v === 'physik' || v === 'pacejka' || GRAN_MODI.includes(v); }
+  // an: 'gran' | 'acc' | true (= 'gran', alte Aufrufer) | false/'' (aus).
   function granWerteSetzen(cfg, an) {
     if (!cfg) return;
-    Object.assign(cfg, an ? GRAN_AN : GRAN_AUS);
-    cfg.gran = !!an;
-    if (an) cfg.pacejka = true;
+    const art = an === true ? 'gran' : (GRAN_MODI.includes(physModusNormal(an)) ? physModusNormal(an) : '');
+    Object.assign(cfg, art ? GRAN_WERTE[art] : GRAN_AUS);
+    cfg.gran = !!art;
+    if (art) cfg.pacejka = true;
   }
   function physModusAnwenden(melden) {
-    const v = $('phys-mode') ? $('phys-mode').value : 'physik';
+    let v = $('phys-mode') ? $('phys-mode').value : 'physik';
+    // Ein alter Name im Auswahlfeld (Sicherung, Profil) wird auf den Wert umgestellt.
+    if (PHYS_MODUS_ALIAS[v] && $('phys-mode')) { v = PHYS_MODUS_ALIAS[v]; $('phys-mode').value = v; }
     driftModus = (v === 'drift');
-    physicsEnabled = (v === 'physik' || v === 'pacejka' || v === 'gran');
-    physEngine.config.pacejka = physEngine2.config.pacejka = (v === 'pacejka' || v === 'gran');
-    granWerteSetzen(physEngine.config, v === 'gran');
-    granWerteSetzen(physEngine2.config, v === 'gran');
+    physicsEnabled = physModusIstPhysik(v);
+    physEngine.config.pacejka = physEngine2.config.pacejka = (v === 'pacejka' || GRAN_MODI.includes(v));
+    granWerteSetzen(physEngine.config, v);
+    granWerteSetzen(physEngine2.config, v);
     physLastTime = null;
     if (melden) {
       log('Steuerungsmodus: ' + (v === 'physik' ? 'Physik'
                              : v === 'pacejka' ? 'Pacejka (experimentell)'
-                             : v === 'gran' ? 'Gran Accelerato'
+                             : v === 'gran' ? 'Gran Hybrismo'
+                             : v === 'acc' ? 'Assetto Carrera'
                              : 'RC (Auslaufen, Bremse zweimal = rueckwaerts)'), 'info');
     }
   }
@@ -37446,8 +37577,14 @@
   // (muV/muH), mehr Einschlag (lenkGrad), eine schnellere Gierantwort (weniger Daempfung) und ein
   // hoeheres Tempo (Weg und Tacho, Faktor vfTempoFaktor).
   const VF_HANDLING_STORE = 'omegasim-vf-handling';
+  // v1.3.5: 'gran' heisst Gran Hybrismo (wie Gran Turismo Sport), neu 'acc' Assetto Carrera (wie
+  // ACC). Die Kennung 'gran' bleibt, damit eine gespeicherte Wahl weiter gilt.
   const VF_HANDLING_MODI = [{ id: 'gt3', name: 'GT3' }, { id: 'schnell', name: 'Schnell' },
-                            { id: 'gran', name: 'Gran Accelerato' }];
+                            { id: 'gran', name: 'Gran Hybrismo' }, { id: 'acc', name: 'Assetto Carrera' }];
+  // Abtrieb fuer Profile ohne eigene Werte (VF_GT3 hat kein kV/kH): N je (m/s)^2 je Achse, etwa
+  // 19 % des Gewichts bei 216 km/h. Bis 1.3.4 rechnete Gran mit (P.kV || 0) * 1,5 - beim
+  // Standardauto also mit null Abtrieb.
+  const VF_ABTRIEB_GRUND = { kV: 0.28, kH: 0.40 };
   // BESTELLT: Latenz. Korrektur nach 1.2.66: vfHandling() wird je Bild gefragt (vfSchritt,
   // Gran-Modus) - localStorage.getItem ist ein synchroner Speicherzugriff und auf schwachen
   // Handys je Bild spuerbar. Gelesen wird einmal (und neu beim Start einer Fahrt), geschrieben
@@ -37683,19 +37820,56 @@
       });
     }
     if (h === 'gran') {
-      // Gran Accelerato (v1.2.62): staerkere Lastempfindlichkeit, mehr Abtrieb, weichere
-      // Gierantwort, etwas mehr Einschlag und eine nach hinten verlagerte Bremsbalance - wie
-      // ein ACC-GT3. Reifentemperatur und Tempo-Lenkung kommen im Fahrtakt (vfBild) dazu.
+      // Gran Hybrismo (v1.3.5, vorher Gran Accelerato): wie Gran Turismo Sport. Mehr Grip und
+      // Abtrieb, ein flacherer Reifenscheitel (C), kaum Lastwechsel (niedrigerer Schwerpunkt im
+      // Modell), staerkere Gierdaempfung als Stabilitaetshilfe und etwas mehr Einschlag.
       return Object.assign({}, P, {
+        muV: P.muV * 1.12, muH: P.muH * 1.12,
+        C: Math.max(1.1, (P.C || 1.35) - 0.15),
+        h: (P.h || 0.38) * 0.6,
         lastEmpf: (P.lastEmpf || 0.15) * 1.4,
-        yawDamp: (P.yawDamp || 1.5) * 1.15,
-        bremsVorn: 0.68,
+        yawDamp: (P.yawDamp || 1.5) * 1.4,
         lenkGrad: Math.min(45, (P.lenkGrad || 16) * 1.1),
-        kV: (P.kV || 0) * 1.5,
-        kH: (P.kH || 0) * 1.5,
+        kV: (P.kV || VF_ABTRIEB_GRUND.kV) * 1.5,
+        kH: (P.kH || VF_ABTRIEB_GRUND.kH) * 1.5,
+      });
+    }
+    if (h === 'acc') {
+      // Assetto Carrera (v1.3.5): wie ACC. Deutliche Lastverlagerung (hoeherer Schwerpunkt),
+      // scharfer Reifenscheitel, weniger Gierdaempfung, Bremsbalance nach hinten (Trail-Braking
+      // dreht ein) und ein Reifenfenster (im Fahrtakt, vfReifenGriff).
+      return Object.assign({}, P, {
+        C: (P.C || 1.35) + 0.12,
+        h: (P.h || 0.38) * 1.15,
+        yawDamp: (P.yawDamp || 1.5) * 0.85,
+        bremsVorn: 0.68,
+        lenkGrad: Math.min(45, (P.lenkGrad || 16) * 1.05),
+        kV: P.kV || VF_ABTRIEB_GRUND.kV,
+        kH: P.kH || VF_ABTRIEB_GRUND.kH,
       });
     }
     return P;
+  }
+  // ---- REIFENTEMPERATUR IM VIRTUELLEN FAHREN (v1.3.5) ------------------------------------------
+  // T: 0 = Umgebung, 0,5-0,65 = Fenster, 1 = weit ueberhitzt. Erster Ordnung: dT/dt = (Arbeit - T)/12 s,
+  // die Gleichgewichtstemperatur IST die Arbeit. Arbeit aus Tempo (40 %) und Querbeschleunigung (60 %):
+  // zuegig gefahren (~0,55) liegt sie im Fenster, Dauerangriff (~0,9) ueberhitzt, Bummeln kuehlt ab.
+  function vfReifenTemp(T, vMs, ay, dt) {
+    const arbeit = Math.min(1.2, 0.4 * Math.abs(vMs) / 50 + 0.6 * Math.abs(ay) / 14);
+    return Math.max(0, Math.min(1.2, T + (arbeit - T) * dt / 12));
+  }
+  // Griff-Faktor aus der Temperatur. Assetto Carrera: kalt 0,85, im Fenster 1,04, ueberhitzt bis 0,85.
+  // Gran Hybrismo: dieselbe Kurve, aber nur zu 35 % (GT Sport: die Temperatur spielt kaum eine Rolle).
+  function vfReifenGriff(T, hand) {
+    let f;
+    if (T < 0.5) f = 0.85 + 0.15 * (T / 0.5);
+    else if (T <= 0.65) f = 1.0;
+    else f = Math.max(0.85, 1 - (T - 0.65) * 0.5);
+    if (hand === 'acc') {
+      const d = (T - 0.575) / 0.1;
+      return f * (1 + 0.04 * Math.exp(-d * d));
+    }
+    return 1 + 0.35 * (f - 1);
   }
   // ---- Federung: vier Ecken mit Feder, Daempfer (Druck/Zug) und Stabilisator --------------------
   // Zustand f: z (Einfedern, m, + = tiefer), th (Nicken, rad, + = Nase runter), ph (Rollen, rad, + = rechts
@@ -37918,7 +38092,8 @@
       if (VF.modusZeit >= VF.limit * 60) vfRennenEnde();
     }
     const kmh = (st.speedKmh || 0) * (VF.tempoFaktor || 1);
-    const granModus = vfHandling() === 'gran';
+    const hand = vfHandling();
+    const reifenModus = hand === 'gran' || hand === 'acc';
     // v1.1.11 GEMELDET: "Virtuelles Fahren ruckelt und ist sehr traege." Bisher lenkte das Auto mit
     // physEngine.state.dampedSteering: das rechnet die Physik nur alle 45 ms (Treppenstufen in der
     // Gierrate = Ruckeln), mit der Servodaempfung und der Lenkbegrenzung bei Tempo des ECHTEN Autos
@@ -37942,14 +38117,13 @@
       const ax = (st.gLong || 0) * 15;
       if (!VF.dyn) VF.dyn = { vy: 0, r: 0 };
       let mu = (physEngine.config.gripScale || 1) * (VF.abseits ? 0.55 : 1);
-      if (granModus) {
-        // Reifentemperatur (v1.2.62): kalt = weniger Griff, warm = optimal, ueberhitzt = weniger.
-        // Heizt mit Tempo und Querbelastung auf; ueber 0,6 kuehlt sie langsam wieder.
+      if (reifenModus) {
+        // Reifentemperatur (v1.2.62, Korrektur v1.3.5): kalt = weniger Griff, warm = optimal,
+        // ueberhitzt = weniger. Bis 1.3.4 heizte sie mit bis zu 0,25/s und kuehlte nur mit
+        // 0,01/s - nach wenigen Sekunden stand sie dauerhaft am Anschlag (ueberhitzt).
         if (VF.tyreTemp === undefined) VF.tyreTemp = 0;
-        const aufheiz = (Math.min(1, Math.abs(vVollL) / 40 + Math.abs(VF.ay || 0) / 20)) * dt * 0.25;
-        VF.tyreTemp = Math.max(0, Math.min(1, VF.tyreTemp + aufheiz - (VF.tyreTemp > 0.6 ? dt * 0.01 : 0)));
-        const tt = VF.tyreTemp;
-        mu *= tt < 0.3 ? 0.85 + (tt / 0.3) * 0.15 : (tt < 0.6 ? 1.0 : Math.max(0.9, 1.0 - (tt - 0.6) * 0.25));
+        VF.tyreTemp = vfReifenTemp(VF.tyreTemp, vVollL, VF.ay || 0, dt);
+        mu *= vfReifenGriff(VF.tyreTemp, hand);
       }
       vfDynamik(VF.dyn, vVoll, ax, Math.max(0, st.longUse || 0), lenk, dt, mu, VF.P);
       VF.ax = ax; VF.ay = vVoll * VF.dyn.r;
@@ -38391,6 +38565,7 @@
     VF.geistAuto = vfAutoBauen(gl, [0.45, 0.75, 1.0]);
     VF.geist = { an: vfGeistAn(), aufzeichnung: [], aktiv: false, zeit: 0, t: 0, i: 0, x: 0, y: 0, h: 0 };
     VF.modell = null; VF.P = vfHandlingProfil(VF_GT3); VF.feder = null; VF.raddreh = 0;
+    VF.tyreTemp = 0;   // v1.3.5: jede Fahrt beginnt mit kalten Reifen (vorher blieb die alte Temperatur stehen)
     VF.tempoFaktor = vfTempoFaktor();
     try { VF.tprog = vfProgrammTex(gl); } catch (e) { VF.tprog = null; }
     if (VF.tprog) {
@@ -48479,9 +48654,10 @@
     // diese Zeile jede Pacejka-Abstimmung zurueck auf Physik).
     const pv = typeof window.__presetValues === 'function' ? window.__presetValues(preset) : null;
     // Korrektur nach 1.2.66: Gran Accelerato ist Pacejka plus Gierregelung und wird genauso
-    // durchgereicht (vorher fiel es hier auf Physik zurueck).
+    // durchgereicht (vorher fiel es hier auf Physik zurueck). v1.3.5: Gran Hybrismo ('gran') und
+    // Assetto Carrera ('acc').
     const pm = pv && pv['phys-mode'];
-    chSetzen('phys-mode', pm === 'pacejka' || pm === 'gran' ? pm : 'physik');
+    chSetzen('phys-mode', pm === 'pacejka' || GRAN_MODI.includes(pm) ? pm : 'physik');
     chSetzen('race-mode', modus === 'rennen' ? 'laps' : 'practice');
     // Rennen: bis CH_EXTRA_LAPS mehr als die Soll-Rundenzahl, damit eine verpatzte Runde mit
     // einer extra ausgeglichen werden kann (siehe challengeRundeFertig).
@@ -49537,7 +49713,7 @@
     ['letztes', 'Wie letztes Ergebnis'], ['zufall', 'Zufall']];
   const MEISTER_GLOBAL = [
     { id: 'fahrgefuehl', l: 'Fahrgefühl', w: [['garage', 'Wie in der Garage'], ['p1', 'Alle wie Spieler 1'],
-      ['arcade', 'Alle: Arcade'], ['simplus', 'Alle: Sim+'], ['pro', 'Alle: Pro'], ['propacejka', 'Alle: Pacejka'], ['omega', 'Alle: Omega'], ['rc', 'Alle: RC (WIP)']] },
+      ['arcade', 'Alle: Arcade'], ['simplus', 'Alle: Sim+'], ['pro', 'Alle: Pro'], ['propacejka', 'Alle: Pacejka'], ['gran', 'Alle: Gran Hybrismo (WIP)'], ['acc', 'Alle: Assetto Carrera (WIP)'], ['omega', 'Alle: Omega'], ['rc', 'Alle: RC (WIP)']] },
     { id: 'start1', l: 'Startaufstellung 1. Event', w: [['zufall', 'Zufall'], ['beste_zuletzt', 'Beste zuletzt'],
       ['beste_zuerst', 'Beste zuerst'], ['garage', 'Garagen-Reihenfolge']] },
     { id: 'punkte', l: 'Punkte', w: [['f1', 'F1 · 25-18-15-12-10'], ['klassisch', 'Klassisch · 10-6-4-3-2'],
@@ -58134,8 +58310,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // v1.1.42 (WIP): Stufe MAX (ghostMaxTempo) - Gerade, Radius-1-Kurve (60 Grad und kleine 30 Grad),
     // Radius-2-Kurve (weite 30 Grad), Bremspunkt 'schiene' (ein Teil vorher) oder 'teil' (am Kurvenbeginn).
     maxGerade: 1.0, maxR1: 0.52, maxR2: 0.8, maxBremspunkt: 'schiene',
-    // v1.2.5: Beschleunigung des MAX-Motormodells (Vielfaches von Spieler 1s Abstimmung), keine Schaltpause.
-    maxBeschl: 2.0,
+    // (v1.2.5 stand hier maxBeschl; seit v1.3.5 faehrt MAX mit den Arcade-Werten, siehe npcMotorWerte.)
     paare: true,        // v1.0.31: Paare links/rechts, Reihe dahinter (ghostPaare); Schalter fuer die Messsonde    // how much of that is given up in a curve
     // 0.5 statt 0. Die Naeherungslogik in ghostAssignBias gab es laengst - gleiche Runde
     // und Kachelindex hoechstens eins auseinander ergibt gegenlaeufige Versaetze - aber sie
@@ -62364,26 +62539,54 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // dort ist ghostCfg beim Laden noch nicht angelegt (Totzone), und der Fehler brach das Laden ab.
   // v1.2.5: das Motormodell eines MAX-NPCs. Das NPC-Modell ist eine Kopie von Spieler 1s Abstimmung, und das
   // gesendete Gas ist sein Tempoanteil - auf einer 43-cm-Geraden (0,3-0,5 s) kam es von 0,5 kaum hoeher, weil Schub
-  // mit dem Tempo faellt und jedes Hochschalten 120 ms ohne Antrieb kostet. MAX bekommt maxBeschl x Beschleunigung
-  // und keine Schaltpause; zurueckgestellt, sobald das Auto eine andere Stufe hat.
+  // mit dem Tempo faellt und jedes Hochschalten 120 ms ohne Antrieb kostet. MAX bekam deshalb keine Schaltpause
+  // (bleibt so, siehe den Fix aus 1.2.32 in 40-physics.js: Schaltvorgang ohne Pause im selben Takt fertig).
   // v1.2.5: NPCs schalten frueher zurueck (5200 statt 4200/min). Sie fahren meist 35-60 % und blieben sonst in einem
   // Gang - man hoerte keine Gaenge. 5200 und nicht hoeher: nach dem Hochschalten (bei 8800) faellt die Drehzahl auf
   // 5585 (1->2) bis 7170 (5->6); laege die Grenze darueber, schaltete der NPC sofort zurueck und pendelte.
   const NPC_RUECKSCHALT_RPM = 5200;
+  // ---- BESCHLEUNIGUNG UND BREMSE DER NPCs (v1.3.5) -------------------------------------------------
+  // BESTELLT: "MAX-NPC-Schwierigkeitsmodus pruefen: er darf schnellere Beschleunigung und bessere Bremsen haben,
+  // naemlich Arcade. Ansonsten sollen NPCs mit Sim+-Beschleunigungs- und Bremsparametern fahren."
+  // Bis 1.3.4 fuhr jeder NPC mit der Abstimmung von Spieler 1 (wer Realismus GT3 fuhr, hatte langsame NPCs, wer
+  // Arcade fuhr, schnelle), und MAX mit maxBeschl (Regler, ab Werk 2,0) mal Spieler 1s Beschleunigungsfaktor.
+  // Jetzt feste Werte aus den Presets, unabhaengig von Spieler 1: MAX = Arcade, alle anderen Stufen = Sim+.
+  // Was das NPC-Motormodell davon liest (alles Laengsdynamik, die Querlogik bleibt unberuehrt):
+  //   setting-zero-to-top -> launchAnchorTimeS (Anfahrzeit, mit calibrateAccel)
+  //   phys-accel          -> accelerationFactor
+  //   setting-coast-drag  -> coastDragPerS (Ausrollen, Teil der Kalibrierung)
+  //   setting-brakepower  -> brakeDecelBase/brakeDecelAero (mal der Grundbremse, wie der Regler)
+  //   phys-brake-tau      -> useTauBrems (Bremsaufbau)
+  // Nicht: setting-topspeed (Gasfaktor des Fahrersticks; ein NPC sendet seinen Tempoanteil), Lenkung, Reifen.
+  // Der Regler "MAX: Beschleunigung" (maxBeschl) ist entfallen: ein Faktor obendrauf waere nicht mehr Arcade,
+  // und ein gespeicherter alter Wert (ab Werk 2,0) haette die Arcade-Beschleunigung still verdoppelt.
+  const NPC_MOTOR_PRESET = { max: 'arcade', normal: 'simplus' };
+  function npcMotorWerte(art) {
+    const p = PRESETS[NPC_MOTOR_PRESET[art] || 'simplus'];
+    const v = p ? p.v : {};
+    const brems = +v['setting-brakepower'] || 1;
+    return { launchAnchorTimeS: +v['setting-zero-to-top'], accelerationFactor: +v['phys-accel'],
+             coastDragPerS: +v['setting-coast-drag'], useTauBrems: +v['phys-brake-tau'],
+             brakeDecelBase: BASE_BRAKE.base * brems, brakeDecelAero: BASE_BRAKE.aero * brems };
+  }
+  // Gerufen in jedem NPC-Takt, ARBEITET aber nur beim Wechsel der Stufe (oder wenn die Konfiguration neu von
+  // Spieler 1 kopiert wurde und die Marke npcMotorArt fehlt): Latenz, keine neue Arbeit im 45-ms-Takt.
+  // calibrateAccel() (30 Anfahrsimulationen) nur, wenn Anfahrzeit oder Ausrollen sich wirklich aendern.
   function ghostMaxMotor(car, e) {
     const g = car.ghost;
     if (!g || !e) return;
+    const art = ghostIstMax(car) ? 'max' : 'normal';
+    if (e.config.npcMotorArt === art) return;
+    if (g.basisShiftMs === undefined) g.basisShiftMs = e.config.shiftMs;
+    const w = npcMotorWerte(art);
+    const neuKalib = w.launchAnchorTimeS !== e.config.launchAnchorTimeS || w.coastDragPerS !== e.config.coastDragPerS;
+    Object.assign(e.config, w);
     e.config.downshiftRpm = NPC_RUECKSCHALT_RPM;
-    if (g.basisBeschl === undefined) { g.basisBeschl = e.config.accelerationFactor; g.basisShiftMs = e.config.shiftMs; }
-    if (ghostIstMax(car)) {
-      e.config.accelerationFactor = g.basisBeschl * (ghostCfg.maxBeschl || 1);
-      e.config.shiftMs = 0;
-    } else {
-      e.config.accelerationFactor = g.basisBeschl;
-      e.config.shiftMs = g.basisShiftMs;
-    }
+    e.config.shiftMs = art === 'max' ? 0 : g.basisShiftMs;
+    e.config.npcMotorArt = art;
+    if (neuKalib && typeof e.calibrateAccel === 'function') e.calibrateAccel();
   }
-  [['ghost-max-gerade', 'maxGerade'], ['ghost-max-r1', 'maxR1'], ['ghost-max-r2', 'maxR2'], ['ghost-max-beschl', 'maxBeschl']].forEach(([id, feld]) => {
+  [['ghost-max-gerade', 'maxGerade'], ['ghost-max-r1', 'maxR1'], ['ghost-max-r2', 'maxR2']].forEach(([id, feld]) => {
     const el = $(id);
     if (!el) return;
     const an = () => {
@@ -64407,6 +64610,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // dann aus dem eigenen Reifen des Ghosts.
     e.config.gripScale = 1;
     e.config.aquaplaning = 0;
+    // v1.3.5: die Fahrgefuehle Gran Hybrismo/Assetto Carrera formen den SERVO des Fahrers (Tempo-Lenkung,
+    // Selbstzentrierung, Lastgier, Stabilitaetshilfe). Ein NPC lenkt nach seiner Ideallinie, und die ist gegen
+    // Physik/Pacejka abgestimmt - also rechnet er hoechstens Pacejka, nie granStep (pacejka bleibt, wie kopiert).
+    granWerteSetzen(e.config, false);
     // Nach dem Kopieren neu kalibrieren: accelScale() haengt an topSpeedKmh, an der
     // Anfahrzeit und an den Gaengen, und die kommen jetzt vom Fahrer.
     if (typeof e.calibrateAccel === 'function') e.calibrateAccel();
@@ -84030,7 +84237,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // ---- Korrektur nach 1.2.66: Gran-Werte haengen am MODUS, nicht am Preset ----
   // Vorher leitete setzeGran() sie aus presetAktiv() ab: direkt im Auswahlfeld "Gran" gewaehlt gab
   // es keine Gierregelung, und ein verstellter Regler oder das Laden schaltete sie ab.
-  stAdd('Gran Accelerato: Werte nach Moduswahl, Reglerzug und Laden (am Modus, nicht am Preset)', () => {
+  stAdd('Gran Hybrismo: Werte nach Moduswahl, Reglerzug und Laden (am Modus, nicht am Preset)', () => {
     const f = [];
     const sel = $('phys-mode');
     if (!sel || typeof GRAN_AN === 'undefined') return { skip: true, mass: 'phys-mode/GRAN_AN fehlt' };
@@ -84067,7 +84274,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Auswahlfeld, Reglerzug und Laden: Gierregelung bleibt an, Wechsel schaltet sie ab' };
   });
 
-  stAdd('Gran Accelerato: Spieler 2 faehrt mit Physik und eigener Gierregelung', () => {
+  stAdd('Gran Hybrismo: Spieler 2 faehrt mit Physik und eigener Gierregelung', () => {
     const f = [];
     if (typeof spielerPhysikAn !== 'function' || !window.__presetSchnappschuss) return { skip: true, mass: 'spielerPhysikAn fehlt' };
     if (!spielerPhysikAn({ motor: { config: { physModus: 'gran' } } })) f.push('Modus gran gilt nicht als Physik');
@@ -84175,7 +84382,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // v1.2.62 GRAN ACCELERATO: die Gier wird gefahren (baut sich dynamisch auf), das Auto
   // dreht beim Einlenken ein, und am Limit schiebt es (vorn ueber der Grenze). Der Test
   // misst die gran*-Werte (GRAN_AN, 50-drive.js) direkt an einem Motor.
-  stAdd('Gran Accelerato: Gier baut sich auf, Einlenken, Limit schiebt', () => {
+  stAdd('Gran Hybrismo: Gier baut sich auf, Einlenken, Limit schiebt', () => {
     const f = [];
     // Dieselben Werte wie im Spiel (GRAN_AN, 50-drive.js), keine Abschrift.
     const GRAN = Object.assign({ gran: true, pacejka: true }, GRAN_AN);
@@ -84246,6 +84453,251 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       : 'Gier ' + yawErster.toFixed(3) + ' -> ' + yawSpaeter.toFixed(3)
         + ', 250 km/h schiebt (vorn ' + st2.pacNutzV.toFixed(2) + ', hinten ' + st2.pacNutzH.toFixed(2)
         + '), Links Gier ' + st3.granYaw.toFixed(3) };
+  });
+
+  // ---- v1.3.5: GRAN HYBRISMO UND ASSETTO CARRERA ------------------------------------------------
+  // BESTELLT: "Neues Fahrgefuehl Gran Accelerato pruefen und verbessern. Soll sich anfuehlen wie eine
+  // Kombination aus Gran Turismo Sport und Assetto Corsa Competizione. Wenn noetig, mach 2 Modi draus."
+  // Der Pruefstand: ein frischer Motor mit der Konfiguration des Presets (Schnappschuss, also durch
+  // dieselben Regler-Handler wie im Spiel), festes Tempo je Takt, Reifentemperatur auf Wunsch fest.
+  function fgMotor(key, patch) {
+    if (window.__presetSchnappLeeren) window.__presetSchnappLeeren();
+    const snap = window.__presetSchnappschuss(key);
+    const e = new CarreraPhysicsEngine();
+    Object.assign(e.config, JSON.parse(JSON.stringify(snap.config)), patch || {});
+    e.config.gears = physEngine.config.gears;
+    e.state.driveMode = 'forward'; e.state.currentGear = 3;
+    return e;
+  }
+  function fgFahre(e, abschnitte, T) {
+    const st = e.state;
+    return abschnitte.map((a) => {
+      let maxS = 0, maxUeber = 0;
+      for (let i = 0; i < a.takte; i++) {
+        st.speedKmh = a.kmh / REAL_SCALE;
+        if (T !== undefined) { for (let j = 0; j < 4; j++) st.tyreTemp4[j] = T; st.tyreTempC = T; }
+        e.update({ throttle: a.gas || 0, brake: a.bremse || 0, steering: a.lenk || 0 }, 0.045);
+        maxS = Math.max(maxS, Math.abs(e.outputs.servoAngle));
+        maxUeber = Math.max(maxUeber, st.pacUeber);
+      }
+      return { servo: e.outputs.servoAngle, maxS, maxUeber, ueber: st.pacUeber, uV: st.pacNutzV, uH: st.pacNutzH,
+               leistung: st.pacLeistung };
+    });
+  }
+  // Grenztempo (km/h im echten Mass): das kleinste Tempo, bei dem die Vorderachse bei vollem Stick
+  // und Gas 0,3 ueber die Haftgrenze kommt. Hoeher = mehr Grip.
+  function fgGrenze(key, T) {
+    let lo = 20, hi = 400;
+    for (let k = 0; k < 16; k++) {
+      const mid = (lo + hi) / 2;
+      const r = fgFahre(fgMotor(key), [{ takte: 25, kmh: mid, gas: 0.3, lenk: 1 }], T)[0];
+      if (r.uV > 1) hi = mid; else lo = mid;
+    }
+    return Math.round((lo + hi) / 2);
+  }
+  // Gier beim Lupfen in der Kurve: groesster Einschlag in 0,3 s ohne Gas gegen den mit Gas 0,5 davor.
+  function fgLupfen(key) {
+    const a = fgFahre(fgMotor(key), [{ takte: 40, kmh: 190, gas: 0.5, lenk: 1 }, { takte: 7, kmh: 190, gas: 0, lenk: 1 }], 85);
+    return { gier: a[1].maxS / Math.max(1e-6, Math.abs(a[0].servo)), ueber: a[1].ueber, leistung: a[1].leistung };
+  }
+  // Trail-Braking: Einschlag mit leichter Bremse (0,3) gegen Rollen, 120 km/h, Stick 0,8.
+  function fgTrail(key) {
+    const roll = fgFahre(fgMotor(key), [{ takte: 30, kmh: 120, lenk: 0.8 }], 85)[0];
+    const brems = fgFahre(fgMotor(key), [{ takte: 30, kmh: 120, bremse: 0.3, lenk: 0.8 }], 85)[0];
+    return Math.abs(brems.servo) / Math.max(1e-6, Math.abs(roll.servo));
+  }
+
+  stAdd('Fahrgefuehl v1.3.5: Gran Hybrismo stabiler als Assetto Carrera (Grenzgrip, Gier beim Lupfen)', () => {
+    const f = [];
+    if (!window.__presetValues('gran') || !window.__presetValues('acc')) return { ok: false, mass: 'Presets gran/acc fehlen' };
+    const gH = fgGrenze('gran', 85), gA = fgGrenze('acc', 85), gP = fgGrenze('propacejka', 85);
+    if (!(gH > gA + 10)) f.push('Grenzgrip Hybrismo ' + gH + ' nicht ueber Assetto ' + gA);
+    if (!(gH > gP + 20)) f.push('Hybrismo ' + gH + ' nicht deutlich ueber Pacejka ' + gP);
+    const lH = fgLupfen('gran'), lA = fgLupfen('acc');
+    if (!(lA.gier > lH.gier + 0.2)) f.push('Lupfen: Assetto ' + lA.gier.toFixed(2) + ' nicht deutlich ueber Hybrismo ' + lH.gier.toFixed(2));
+    if (!(lH.gier < 1.15)) f.push('Hybrismo dreht beim Lupfen ein: ' + lH.gier.toFixed(2));
+    if (!(lA.ueber > 0.05)) f.push('Assetto: beim Lupfen kommt das Heck nicht (' + lA.ueber.toFixed(2) + ')');
+    if (lA.leistung) f.push('Lupfen als Leistungsuebersteuern gemeldet');
+    return { ok: !f.length, mass: f.length ? f.join(' | ')
+      : 'Grenztempo Hybrismo ' + gH + ', Assetto ' + gA + ', Pacejka ' + gP + ' km/h; Lupfen Gier x' + lH.gier.toFixed(2)
+        + ' gegen x' + lA.gier.toFixed(2) + ' (Heck ' + lA.ueber.toFixed(2) + ')' };
+  });
+
+  stAdd('Fahrgefuehl v1.3.5: Assetto Carrera mit Reifenfenster, Trail-Braking-Gier, Untersteuern beim Ueberfahren', () => {
+    const f = [];
+    const aK = fgGrenze('acc', 20), aW = fgGrenze('acc', 85), aH = fgGrenze('acc', 118);
+    const hK = fgGrenze('gran', 20), hW = fgGrenze('gran', 85), hH = fgGrenze('gran', 118);
+    if (!(aW > aK + 30)) f.push('Assetto kalt ' + aK + ' nicht deutlich unter warm ' + aW);
+    if (!(aW > aH + 30)) f.push('Assetto ueberhitzt ' + aH + ' nicht deutlich unter warm ' + aW);
+    const spA = aW - Math.min(aK, aH), spH = hW - Math.min(hK, hH);
+    if (!(spH < spA / 2)) f.push('Hybrismo-Temperatureinfluss ' + spH + ' nicht klein gegen Assetto ' + spA);
+    const tA = fgTrail('acc'), tH = fgTrail('gran');
+    if (!(tA > 1.05 && tA > tH + 0.03)) f.push('Trail-Braking: Assetto x' + tA.toFixed(3) + ', Hybrismo x' + tH.toFixed(3));
+    const uA = fgFahre(fgMotor('acc'), [{ takte: 30, kmh: 290, gas: 0.4, lenk: 1 }], 85)[0];
+    const uH = fgFahre(fgMotor('gran'), [{ takte: 30, kmh: 290, gas: 0.4, lenk: 1 }], 85)[0];
+    if (!(uA.servo < uH.servo - 0.05 && uA.uV > 1.2)) f.push('Ueberfahren: Assetto Servo ' + uA.servo.toFixed(2) + ' (vorn ' + uA.uV.toFixed(2) + '), Hybrismo ' + uH.servo.toFixed(2));
+    return { ok: !f.length, mass: f.length ? f.join(' | ')
+      : 'Grenztempo Assetto kalt/warm/heiss ' + aK + '/' + aW + '/' + aH + ', Hybrismo ' + hK + '/' + hW + '/' + hH
+        + '; Trail x' + tA.toFixed(2) + ' gegen x' + tH.toFixed(2) + '; 290 km/h Servo ' + uA.servo.toFixed(2) + ' gegen ' + uH.servo.toFixed(2) };
+  });
+
+  stAdd('Fahrgefuehl v1.3.5: granStep-Korrekturen (Tempo-Lenkung und Zentrierung am Servo, degressive Last, Schalter Uebersteuern)', () => {
+    const f = [];
+    // Tempo-Lenkung wirkt am uebertragenen Winkel.
+    const s0 = fgFahre(fgMotor('gran', { granLenkTempo: 0 }), [{ takte: 25, kmh: 200, gas: 0.2, lenk: 0.6 }], 85)[0].servo;
+    const s1 = fgFahre(fgMotor('gran', { granLenkTempo: 1 }), [{ takte: 25, kmh: 200, gas: 0.2, lenk: 0.6 }], 85)[0].servo;
+    if (!(s1 < s0 * 0.85)) f.push('Tempo-Lenkung nicht am Servo (' + s0.toFixed(3) + ' -> ' + s1.toFixed(3) + ')');
+    // Selbstzentrierung wirkt am Servo: Stick los, zwei Takte spaeter.
+    const z = (zf) => fgFahre(fgMotor('gran', { granZentrier: zf }), [{ takte: 30, kmh: 150, gas: 0.3, lenk: 0.8 }, { takte: 1, kmh: 150, gas: 0.3, lenk: 0 }], 85)[1].servo;
+    const z0 = z(0), z1 = z(0.3);
+    if (!(Math.abs(z1) < Math.abs(z0) * 0.8)) f.push('Zentrierung nicht am Servo (' + z0.toFixed(3) + ' / ' + z1.toFixed(3) + ')');
+    // Degressive Lastempfindlichkeit: unter Bremsen ist hinten entlastet; mit k behaelt es mehr Griff.
+    const hk = (k) => fgFahre(fgMotor('acc', { granLastEmpf: k }), [{ takte: 25, kmh: 150, bremse: 0.6, lenk: 1 }], 85)[0].uH;
+    const h0 = hk(0), h3 = hk(0.3);
+    if (!(h3 < h0)) f.push('Lastempfindlichkeit nicht degressiv (hinten ' + h0.toFixed(3) + ' -> ' + h3.toFixed(3) + ')');
+    // Schalter Uebersteuern: Hybrismo ohne Schalter kein Heck, mit Schalter schon.
+    const vg = [{ takte: 30, kmh: 150, gas: 1, lenk: 0.8 }];
+    const hAus = fgFahre(fgMotor('gran', { pacejkaUebersteuern: false }), vg, 85)[0];
+    const hAn = fgFahre(fgMotor('gran', { pacejkaUebersteuern: true }), vg, 85)[0];
+    if (hAus.maxUeber !== 0) f.push('Hybrismo ohne Schalter: Heck ' + hAus.maxUeber.toFixed(2));
+    if (!(hAn.maxUeber > 0)) f.push('Hybrismo mit Schalter: kein Heck');
+    // Assetto: Heck im Modus, aber ohne Schalter haelt der Rutsch nicht ohne Stick.
+    const a = fgFahre(fgMotor('acc', { pacejkaUebersteuern: false }), [vg[0], { takte: 16, kmh: 150, gas: 1, lenk: 0 }], 85);
+    if (!(a[0].maxUeber > 0.05)) f.push('Assetto: Heck kommt unter Vollgas nicht (' + a[0].maxUeber.toFixed(2) + ')');
+    if (!(a[1].ueber < 0.02 && Math.abs(a[1].servo) < 0.05)) f.push('Assetto ohne Schalter lenkt ohne Stick weiter (' + a[1].ueber.toFixed(2) + ', Servo ' + a[1].servo.toFixed(2) + ')');
+    return { ok: !f.length, mass: f.length ? f.join(' | ')
+      : 'Tempo-Lenkung ' + s0.toFixed(2) + ' -> ' + s1.toFixed(2) + ', Zentrierung ' + z0.toFixed(2) + ' -> ' + z1.toFixed(2)
+        + ', hinten unter Bremse ' + h0.toFixed(2) + ' -> ' + h3.toFixed(2) + ', Schalter wirkt, kein Halten ohne Schalter' };
+  });
+
+  stAdd('Fahrgefuehl v1.3.5: Alias "Gran Accelerato" laedt, Assetto Carrera ueberall wie Gran (WIP, Physik, Listen)', () => {
+    const f = [];
+    const sel = $('phys-mode');
+    const merk = presetRead();
+    const merkZ = presetZuletzt;
+    let merkZS = null;
+    try { merkZS = localStorage.getItem(PRESET_ZULETZT_STORE); } catch (e) { /* privat */ }
+    try {
+      applyPreset('Gran Accelerato');
+      if (presetAktiv() !== 'gran' || sel.value !== 'gran' || physEngine.config.granArt !== 'gran') f.push('Preset-Alias: ' + presetAktiv() + '/' + sel.value);
+      presetSet('phys-mode', 'physik');
+      if (presetPruefen({ 'phys-mode': 'Gran Accelerato' }).bad.length) f.push('Sicherung mit "Gran Accelerato" gilt als unbrauchbar');
+      presetSet('phys-mode', 'Gran Accelerato');
+      if (sel.value !== 'gran' || !physEngine.config.gran || physEngine.config.granArt !== 'gran') f.push('Modus-Alias: ' + sel.value);
+      presetSet('phys-mode', 'acc');
+      if (!physicsEnabled || !physEngine.config.pacejka || physEngine.config.granArt !== 'acc' || physEngine2.config.granArt !== 'acc') f.push('acc: Physik/Pacejka/Werte fehlen');
+      for (const k of Object.keys(GRAN_WERTE.acc)) if (physEngine.config[k] !== GRAN_WERTE.acc[k]) { f.push('acc-Wert ' + k); break; }
+    } finally {
+      for (const [id, val] of Object.entries(merk)) presetSet(id, val);
+      setzeBrakeStealLast(); setzeGran();
+      presetZuletzt = merkZ;
+      try { if (merkZS === null) localStorage.removeItem(PRESET_ZULETZT_STORE); else localStorage.setItem(PRESET_ZULETZT_STORE, merkZS); } catch (e) { /* privat */ }
+    }
+    if (!physModusIstPhysik('acc') || !spielerPhysikAn({ motor: { config: { physModus: 'acc' } } })) f.push('acc gilt nicht als Physik');
+    const oG = sel.querySelector('option[value="gran"]'), oA = sel.querySelector('option[value="acc"]');
+    if (!oG || oG.textContent.trim() !== 'Gran Hybrismo (WIP)') f.push('Option gran: ' + (oG && oG.textContent));
+    if (!oA || oA.textContent.trim() !== 'Assetto Carrera (WIP)') f.push('Option acc fehlt');
+    if (!PRESETS.gran.wip || !PRESETS.acc.wip || PRESETS.gran.label !== 'Gran Hybrismo' || PRESETS.acc.label !== 'Assetto Carrera') f.push('Labels/WIP');
+    const knopfAcc = document.getElementById('preset-' + 'acc');   // gebaut aus PRESETS (renderPresetButtons)
+    if (!knopfAcc || !knopfAcc.querySelector('.wip-tag')) f.push('Preset-Knopf Assetto ohne WIP');
+    if (!PRESETS_BREMSSTEAL_LAST.includes('acc')) f.push('acc fehlt im Bremssteal');
+    if (String(chAnwenden).indexOf('GRAN_MODI.includes(pm)') < 0) f.push('Challenges reichen acc nicht durch');
+    const fg = MEISTER_GLOBAL.find((g) => g.id === 'fahrgefuehl');
+    if (!fg || !fg.w.some((w) => w[0] === 'acc') || !fg.w.some((w) => w[0] === 'gran')) f.push('Meisterschaft ohne gran/acc');
+    if (!VF_HANDLING_MODI.some((m) => m.id === 'acc') || vfHandlingName('gran') !== t('Gran Hybrismo')) f.push('Virtuell: Handling-Modi');
+    if (String(startGhost).indexOf('granWerteSetzen(e.config, false)') < 0) f.push('NPCs rechnen granStep');
+    if (window.__presetSchnappLeeren) window.__presetSchnappLeeren();
+    const snap = window.__presetSchnappschuss('acc');
+    if (!snap || snap.modus !== 'acc' || snap.config.granArt !== 'acc') f.push('Schnappschuss acc');
+    if (window.__presetSchnappLeeren) window.__presetSchnappLeeren();
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gran Accelerato laedt als Gran Hybrismo, acc in Auswahl, Presets, Spielern, Challenges, Meisterschaft, Virtuell' };
+  });
+
+  stAdd('Fahrgefuehl v1.3.5: virtuelles Fahren - Reifentemperatur im Gleichgewicht, Abtrieb, zwei Profile', () => {
+    const f = [];
+    // Zuegig fahren (40 m/s, 7 m/s^2) bringt die Reifen ins Fenster, Dauerangriff ueberhitzt, Bummeln kuehlt.
+    let T = 0;
+    for (let i = 0; i < 3600; i++) T = vfReifenTemp(T, 40, 7, 1 / 60);
+    if (!(T > 0.5 && T < 0.7)) f.push('zuegig: ' + T.toFixed(2) + ' nicht im Fenster');
+    let Th = T;
+    for (let i = 0; i < 3600; i++) Th = vfReifenTemp(Th, 60, 14, 1 / 60);
+    if (!(Th > 0.8)) f.push('Angriff ueberhitzt nicht (' + Th.toFixed(2) + ')');
+    let Tk = Th;
+    for (let i = 0; i < 3600; i++) Tk = vfReifenTemp(Tk, 10, 0, 1 / 60);
+    if (!(Tk < 0.3)) f.push('kuehlt nicht ab (' + Tk.toFixed(2) + ')');
+    const gA = [0, 0.575, Th].map((x) => vfReifenGriff(x, 'acc')), gH = [0, 0.575, Th].map((x) => vfReifenGriff(x, 'gran'));
+    if (!(gA[1] > gA[0] + 0.1 && gA[1] > gA[2] + 0.05)) f.push('Assetto-Fenster ' + gA.map((x) => x.toFixed(2)).join('/'));
+    if (!((gH[1] - Math.min(gH[0], gH[2])) < (gA[1] - Math.min(gA[0], gA[2])) / 2)) f.push('Hybrismo-Temperatur zu stark');
+    let merk = null;
+    try { merk = localStorage.getItem(VF_HANDLING_STORE); } catch (e) { /* privat */ }
+    try {
+      vfHandlingSetzen('gran'); const pH = vfHandlingProfil(VF_GT3);
+      vfHandlingSetzen('acc'); const pA = vfHandlingProfil(VF_GT3);
+      if (!(pH.kV > 0 && pH.kH > 0 && pA.kV > 0 && pA.kH > 0)) f.push('Standardauto ohne Abtrieb');
+      if (!(pH.muH > pA.muH && pH.yawDamp > pA.yawDamp && pA.h > pH.h)) f.push('Profile nicht Hybrismo griffig/gedaempft, Assetto Lastwechsel');
+    } finally { if (merk === null) { try { localStorage.removeItem(VF_HANDLING_STORE); } catch (e) { /* privat */ } vfHandlingCache = null; } else vfHandlingSetzen(merk); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ')
+      : 'zuegig ' + T.toFixed(2) + ', Angriff ' + Th.toFixed(2) + ', Bummeln ' + Tk.toFixed(2) + '; Assetto-Griff kalt/warm/heiss '
+        + gA.map((x) => x.toFixed(2)).join('/') + ', Hybrismo ' + gH.map((x) => x.toFixed(2)).join('/') };
+  });
+
+  // ---- v1.3.5 BESTELLT: "MAX-NPC: schnellere Beschleunigung und bessere Bremsen, naemlich Arcade. Ansonsten
+  // sollen NPCs mit Sim+-Beschleunigungs- und Bremsparametern fahren." ----
+  stAdd('NPC v1.3.5: MAX faehrt mit Arcade-, andere Stufen mit Sim+-Beschleunigung und -Bremse', () => {
+    const f = [];
+    const e = new CarreraPhysicsEngine();
+    Object.assign(e.config, physEngine.config);
+    e.config.accelerationFactor = 0.7; e.config.launchAnchorTimeS = 3.2;   // "Spieler 1" mit anderer Abstimmung
+    let kalib = 0;
+    const orig = e.calibrateAccel.bind(e);
+    e.calibrateAccel = () => { kalib++; orig(); };
+    const pruefe = (art, key) => {
+      const v = PRESETS[key].v;
+      const soll = { launchAnchorTimeS: v['setting-zero-to-top'], accelerationFactor: v['phys-accel'], coastDragPerS: v['setting-coast-drag'],
+                     useTauBrems: v['phys-brake-tau'], brakeDecelBase: BASE_BRAKE.base * v['setting-brakepower'],
+                     brakeDecelAero: BASE_BRAKE.aero * v['setting-brakepower'] };
+      for (const [k, w] of Object.entries(soll)) if (Math.abs(e.config[k] - w) > 1e-9) f.push(art + ': ' + k + ' ' + e.config[k] + ' statt ' + w);
+    };
+    const car = { role: 'ghost', ghostStufe: GHOST_STUFE_MAX, ghost: {} };
+    ghostMaxMotor(car, e);
+    pruefe('MAX', 'arcade');
+    if (e.config.shiftMs !== 0) f.push('MAX mit Schaltpause');
+    const k1 = kalib;
+    ghostMaxMotor(car, e); ghostMaxMotor(car, e);
+    if (kalib !== k1) f.push('Takt ohne Stufenwechsel kalibriert neu');
+    car.ghostStufe = 1;
+    ghostMaxMotor(car, e);
+    pruefe('Stufe mittel', 'simplus');
+    if (e.config.shiftMs === 0) f.push('mittel ohne Schaltpause');
+    if (kalib !== k1 + 1) f.push('Stufenwechsel kalibriert nicht (' + (kalib - k1) + ')');
+    // Gemessen: MAX zieht schneller hoch und bremst kuerzer.
+    const lauf = (stufe) => {
+      const m = new CarreraPhysicsEngine();
+      Object.assign(m.config, physEngine.config);
+      const c = { role: 'ghost', ghostStufe: stufe, ghost: {} };
+      ghostMaxMotor(c, m);
+      m.state.driveMode = 'forward'; m.state.currentGear = 0;
+      let t80 = null;
+      for (let i = 0; i < 400 && t80 === null; i++) {
+        m.update({ throttle: 1, brake: 0, steering: 0 }, 0.045);
+        if (m.state.speedKmh >= 0.8 * m.config.topSpeedKmh) t80 = i * 0.045;
+      }
+      m.state.speedKmh = 0.8 * m.config.topSpeedKmh;
+      let tB = null;
+      for (let i = 0; i < 400 && tB === null; i++) {
+        m.update({ throttle: 0, brake: 1, steering: 0 }, 0.045);
+        if (m.state.speedKmh <= 0.2 * m.config.topSpeedKmh) tB = i * 0.045;
+      }
+      return { t80, tB };
+    };
+    const lM = lauf(GHOST_STUFE_MAX), lN = lauf(1);
+    if (!(lM.t80 !== null && lN.t80 !== null && lM.t80 < lN.t80)) f.push('MAX zieht nicht schneller hoch (' + lM.t80 + ' / ' + lN.t80 + ')');
+    if (!(lM.tB !== null && lN.tB !== null && lM.tB < lN.tB)) f.push('MAX bremst nicht kuerzer (' + lM.tB + ' / ' + lN.tB + ')');
+    if (document.getElementById('ghost-max-' + 'beschl') || ghostCfg.maxBeschl !== undefined) f.push('Regler maxBeschl noch da');
+    return { ok: !f.length, mass: f.length ? f.join(' | ')
+      : 'MAX = Arcade (' + PRESETS.arcade.v['setting-zero-to-top'] + ' s, Bremse ' + PRESETS.arcade.v['setting-brakepower'] + '), sonst Sim+ ('
+        + PRESETS.simplus.v['setting-zero-to-top'] + ' s, Bremse ' + PRESETS.simplus.v['setting-brakepower'] + '); 80 % Tempo in '
+        + lM.t80.toFixed(2) + ' gegen ' + lN.t80.toFixed(2) + ' s, Bremsen auf 20 % in ' + lM.tB.toFixed(2) + ' gegen ' + lN.tB.toFixed(2) + ' s' };
   });
 
   // BESTELLT (v0.8.24): Uebersteuern spuerbar - Vortrieb weg, Leistungsuebersteuern, der
@@ -84700,24 +85152,20 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // v1.2.5: MAX schneller auf Geraden, Scan schneller (ausser Haarnadel), Schaltklang und NPC-Klang.
   stAdd('NPC und Klang v1.2.5: MAX-Motor, Scan-Tempo je Teil, Schaltklang haelt die Mischung, NPC schaltet hoerbar', () => {
     const f = [];
+    // v1.3.5: MAX faehrt mit den Arcade-Werten statt maxBeschl x Spieler 1 (eigener Test "NPC v1.3.5").
     const e = new CarreraPhysicsEngine();
     Object.assign(e.config, physEngine.config);
-    const basis = e.config.accelerationFactor, basisShift = e.config.shiftMs;
+    const basisShift = e.config.shiftMs;
     const car = { role: 'ghost', ghostStufe: GHOST_STUFE_MAX, ghost: {} };
-    const merkB = ghostCfg.maxBeschl;
-    try {
-      ghostCfg.maxBeschl = 2;
-      ghostMaxMotor(car, e);
-      if (Math.abs(e.config.accelerationFactor - basis * 2) > 1e-9 || e.config.shiftMs !== 0) f.push('MAX-Motor nicht 2x / ohne Schaltpause');
-      if (e.config.downshiftRpm !== 5200) f.push('NPC schaltet nicht bei 5200 zurueck');
-      car.ghostStufe = 1;
-      ghostMaxMotor(car, e);
-      if (e.config.accelerationFactor !== basis || e.config.shiftMs !== basisShift) f.push('andere Stufe nicht zurueckgestellt');
-    } finally { ghostCfg.maxBeschl = merkB; }
+    ghostMaxMotor(car, e);
+    if (e.config.accelerationFactor !== PRESETS.arcade.v['phys-accel'] || e.config.shiftMs !== 0) f.push('MAX-Motor nicht Arcade / ohne Schaltpause');
+    if (e.config.downshiftRpm !== 5200) f.push('NPC schaltet nicht bei 5200 zurueck');
+    car.ghostStufe = 1;
+    ghostMaxMotor(car, e);
+    if (e.config.accelerationFactor !== PRESETS.simplus.v['phys-accel'] || e.config.shiftMs !== basisShift) f.push('andere Stufe nicht zurueckgestellt');
     const src = String(ghostTick);
     if (src.indexOf('(ghostIstMax(car) && tight === 0)) ? 1 : ghostFeldStaffel(car)') < 0) f.push('Staffel bremst MAX auf Geraden');
     if (src.indexOf('if (!ghostIstMax(car)) {') < 0) f.push('Lernfaktor/Streuung drosseln MAX');
-    if (!$('ghost-max-beschl') || Math.abs(parseFloat($('ghost-max-beschl').defaultValue) - 2) > 1e-9) f.push('Regler MAX: Beschleunigung fehlt');
     // Scan: Gerade 0,80, Kurve 0,67, Haarnadel 0,47.
     const s1 = scanTempoFaktor({ tileCode: TILE_TYPE.STRAIGHT }), s2 = scanTempoFaktor({ tileCode: TILE_TYPE.CURVE_RIGHT }),
           s3 = scanTempoFaktor({ tileCode: TILE_TYPE.HAIRPIN });
@@ -84726,7 +85174,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!$('setting-schaltklang-alt') || $('setting-schaltklang-alt').defaultChecked) f.push('Schaltklang-Schalter fehlt oder ab Werk alt');
     if (String(updateSampleEngineIn).indexOf('store.schaltMix') < 0) f.push('Schaltklang haelt die Mischung nicht');
     if (!$('setting-npc-klang-alt') || $('setting-npc-klang-alt').defaultChecked) f.push('NPC-Klang-Schalter fehlt oder ab Werk alt');
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'MAX 2x ohne Schaltpause, Staffel/Lernen aus, Scan 0,80/0,67/0,47, Schaltklang neu, NPC 5200/min' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'MAX Arcade ohne Schaltpause, Staffel/Lernen aus, Scan 0,80/0,67/0,47, Schaltklang neu, NPC 5200/min' };
   });
 
   stAdd('Rennen und Spieler v1.2.4: Renntyp je Sensormodus, Fahrgefuehl je Spieler, Pacejka-Challenges', () => {
@@ -84765,7 +85213,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Community-Challenges: Pacejka waehlbar, und chAnwenden laesst Pacejka stehen.
     if (COMMUNITY_PRESETS.indexOf('propacejka') < 0) f.push('Pacejka fehlt in den Community-Presets');
     // Korrektur nach 1.2.66: Gran Accelerato wird genauso durchgereicht.
-    if (String(chAnwenden).indexOf("pm === 'pacejka' || pm === 'gran' ? pm : 'physik'") < 0) f.push('Challenge erzwingt weiter Physik (Pacejka/Gran)');
+    if (String(chAnwenden).indexOf("pm === 'pacejka' || GRAN_MODI.includes(pm) ? pm : 'physik'") < 0) f.push('Challenge erzwingt weiter Physik (Pacejka/Gran/Assetto)');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bahn ohne Derby, Ausdruck ohne Time Attack, Spieler 2 eigenes Preset, Pacejka-Challenges' };
   });
 
@@ -98947,10 +99395,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Auslaufen 2 s, Bremse bis Stillstand, Rueckwaerts erst beim neuen Druck' };
   });
 
-  stAdd('Abstimmungen: FAHREN zeigt Arcade, Sim+, Pacejka, Gran Accelerato; Lenkeinschlag erreichbar ausser Realismus GT3', () => {
+  stAdd('Abstimmungen: FAHREN zeigt Arcade, Sim+, Pacejka, Gran Hybrismo, Assetto Carrera; Lenkeinschlag erreichbar ausser Realismus GT3', () => {
     const f = [];
     const fahren = window.__presetKeysFahren ? window.__presetKeysFahren() : [];
-    if (fahren.join(',') !== 'arcade,simplus,propacejka,gran') f.push('FAHREN: ' + fahren.join(','));
+    if (fahren.join(',') !== 'arcade,simplus,propacejka,gran,acc') f.push('FAHREN: ' + fahren.join(','));
     for (const k of ['arcade', 'simplus', 'gt3', 'f1']) {
       const v = window.__presetValues(k) || {};
       const resp = v['phys-steerresp'] === undefined ? 3 : v['phys-steerresp'];
@@ -104161,29 +104609,45 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         + 'ohne die Klassen-Abstimmung.',
     v: Object.assign({}, PRESETS.pro.v, { 'phys-mode': 'pacejka' }, PACEJKA_EIGEN),
   };
-  // ---- GRAN ACCELERATO (v1.2.62) ---------------------------------------------------------
-  // BESTELLT: "Fuege einen neuen Fahrgefuehl Modus ein, den ich auch im Garagenmenue auswaehlen
-  // kann. Name 'Gran Accelerato'. Baue dabei alle Vorschlaege ein." Das Pacejka-Lenkmodell,
-  // verfeinert wie ein GT3 in Assetto Corsa Competizione / Gran Turismo Sport: Abtrieb hebt den
-  // Griff bei Tempo, die Lenkung wird mit Tempo feiner und zentriert sich selbst, die
-  // Lastempfindlichkeit ist staerker, das Uebersteuern baut weicher auf und wird vom
-  // Schwimmwinkel stabilisiert - und die GIERRATE wird gefahren statt nur angezeigt: das Auto
-  // dreht beim Einlenken ein, schiebt am Limit und kann beim Uebersteuern gefangen werden.
-  // Die gran*-Werte stecken in setzeGran() (config, kein DOM-Regler), weil sie nur dieses
-  // Fahrgefuehl betreffen und keine Einstellkachel brauchen.
+  // ---- GRAN HYBRISMO UND ASSETTO CARRERA (v1.2.62 als "Gran Accelerato", zwei Modi seit v1.3.5) ----
+  // BESTELLT (v1.2.62): "Fuege einen neuen Fahrgefuehl Modus ein, den ich auch im Garagenmenue
+  // auswaehlen kann. Name 'Gran Accelerato'. Baue dabei alle Vorschlaege ein." Das Pacejka-
+  // Lenkmodell mit Abtrieb, Tempo-Lenkung, Selbstzentrierung und dynamischer Gierregelung.
+  // BESTELLT (v1.3.5): "Soll sich anfuehlen wie eine Kombination aus Gran Turismo Sport und Assetto
+  // Corsa Competizione. Wenn noetig, mach 2 Modi draus (Gran Hybrismo und Assetto Carrera), die
+  // sich jeweils staerker wie die Benchmarks anfuehlen." Der Schluessel 'gran' bleibt (gespeicherte
+  // Spieler-Presets, Sicherungen, Profile), der alte Name laedt ueber PRESET_ALIAS. Die gran*-Werte
+  // haengen am Modus (GRAN_WERTE, 50-drive.js), hier stehen nur die Regler.
   PRESETS.gran = {
-    label: 'Gran Accelerato',
-    wip: true,   // Korrektur nach 1.2.66: neu, deshalb am Knopf als WIP gekennzeichnet
-    kurz: 'Pacejka, verfeinert wie ACC/GT7',
-    text: 'Das Pacejka-Lenkmodell, verfeinert wie ein GT3 in Assetto Corsa Competizione und '
-        + 'Gran Turismo Sport: Abtrieb hebt den Griff bei Tempo, die Lenkung wird mit Tempo '
-        + 'feiner und zentriert sich selbst, die Lastempfindlichkeit ist st\u00e4rker, und das '
-        + '\u00dcbersteuern baut weicher auf und wird vom Schwimmwinkel stabilisiert. Neu ist '
-        + 'die dynamische Gierregelung: das Auto dreht beim Einlenken ein, statt zu springen, '
-        + 'und schiebt am Limit, statt hart abzurei\u00dfen.',
+    label: 'Gran Hybrismo',
+    wip: true,
+    kurz: 'Pacejka wie Gran Turismo Sport: viel Grip, verzeihend',
+    text: 'Automatik, 2,6 s auf 100, Reifenmodell und Tankgewicht an, Reifenwärmer an. Das '
+        + 'Pacejka-Lenkmodell im Stil von Gran Turismo Sport: viel Grip und Abtrieb, ein weicher '
+        + 'Reifenscheitel, kaum Lastwechsel und eine Stabilitätshilfe, die ein ausbrechendes '
+        + 'Heck sanft gegenlenkt. Beim Bremsen bleibt die Lenkung wie mit kräftigem ABS, '
+        + 'die Reifentemperatur wirkt nur wenig. Bis 1.3.4 hieß der Modus Gran Accelerato.',
+    // Bremse 1,8 und Bremsen nimmt Lenkung 0,6: das ABS-Gefuehl von GT Sport (kurzer Weg, die
+    // Lenkung bleibt). Reifenwaermer an: in GT Sport spielt die Temperatur kaum eine Rolle.
     v: Object.assign({}, PRESETS.pro.v, { 'phys-mode': 'gran',
-      'phys-steerresp': 3.2, 'setting-steer-calib': 2.6, 'setting-brake-steal': 0.8,
-      'phys-accel': 1.05 }),
+      'phys-steerresp': 3.2, 'setting-steer-calib': 2.6, 'setting-brake-steal': 0.6,
+      'phys-accel': 1.05, 'setting-brakepower': 1.8, 'setting-tyre-blankets': true }),
+  };
+  PRESETS.acc = {
+    label: 'Assetto Carrera',
+    wip: true,
+    kurz: 'Pacejka wie Assetto Corsa Competizione: Gewicht und Reifen zählen',
+    text: 'Automatik, 2,6 s auf 100, Reifenmodell und Tankgewicht an, ohne Reifenwärmer. Das '
+        + 'Pacejka-Lenkmodell im Stil von Assetto Corsa Competizione: die Gewichtsverlagerung '
+        + 'lenkt mit (leicht bremsen dreht das Auto ein, Lupfen lässt das Heck kommen, Gas '
+        + 'schiebt), die Haftgrenze ist scharf, und wer sie überfährt, schiebt über die '
+        + 'Vorderräder. Die Reifen haben ein Fenster: kalt rutschen sie, warm greifen sie am '
+        + 'besten, überhitzt lässt der Grip spürbar nach. Keine Hilfen.',
+    // Bremsen nimmt Lenkung 0,95 wie Pro: Trail-Braking soll sich lohnen, eine Vollbremsung in
+    // der Kurve nicht. Reifenwaermer aus: das Fenster muss man sich erfahren.
+    v: Object.assign({}, PRESETS.pro.v, { 'phys-mode': 'acc',
+      'phys-steerresp': 3.2, 'setting-steer-calib': 2.5, 'setting-brake-steal': 0.95,
+      'phys-accel': 1.0, 'setting-tyre-blankets': false }),
   };
   // ---- OMEGA (v1.0.36): Pro, EINGEFROREN -------------------------------------------------
   // BESTELLT: "'Omega'-Fahrgefuehlmodus ergaenzen: so wie das Pro, was so lange bitgleich
@@ -104258,14 +104722,18 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Reduzierung (BESTELLT: "Behalte dabei: arcade, sim+, pacejka; pacejka als standard")
   // sind es nur noch die drei - sie erscheinen auch in der Garage, die uebrigen bleiben in
   // den Optionen.
-  const PRESETS_FAHREN = ['arcade', 'simplus', 'propacejka', 'gran'];
+  const PRESETS_FAHREN = ['arcade', 'simplus', 'propacejka', 'gran', 'acc'];
   // Reihenfolge im Optionen-Menue (preset-buttons und die Preset-Liste je Menue): die drei
   // gebraeuchlichen zuerst, der Rest darunter (BESTELLT: "schiebe ein paar nach unten").
-  const PRESETS_REIHENFOLGE = ['arcade', 'simplus', 'propacejka', 'gran',
+  const PRESETS_REIHENFOLGE = ['arcade', 'simplus', 'propacejka', 'gran', 'acc',
                                'pro', 'gt3', 'f1', 'realgt3', 'omega', 'rc'];
   // Bis v0.4 hiess GT3 "real". Aeltere exportierte Abstimmungen und der Knopf im
   // Garagenschirm duerfen den alten Namen weiter benutzen.
-  const PRESET_ALIAS = { real: 'gt3', realismus: 'gt3' };
+  // v1.3.5: "Gran Accelerato" heisst jetzt Gran Hybrismo (Schluessel 'gran' unveraendert); der alte
+  // Name und die Schreibweisen ohne Leerzeichen laden weiter.
+  const PRESET_ALIAS = { real: 'gt3', realismus: 'gt3', 'Gran Accelerato': 'gran', granaccelerato: 'gran',
+                         'gran accelerato': 'gran', granhybrismo: 'gran', 'Gran Hybrismo': 'gran',
+                         assettocarrera: 'acc', 'Assetto Carrera': 'acc' };
 
   // Every control in an option row, found by walking the DOM rather than from a list. A
   // hand-kept list would silently omit whatever gets added next, and the omission would only
@@ -104306,6 +104774,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function presetSet(id, val) {
     const el = document.getElementById(id);
     if (!el) return false;
+    // v1.3.5: alte Namen des Steuerungsmodus ("Gran Accelerato") auf den Wert umstellen.
+    if (id === 'phys-mode' && typeof physModusNormal === 'function') val = physModusNormal(val);
     if (el.type === 'checkbox') {
       if (el.checked === !!val) return true;
       el.checked = !!val;
@@ -104332,8 +104802,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Pro, Sim+, Pacejka, GT3, F1 und Realismus GT3. Omega ist eingefroren (bleibt beim
   // flachen Faktor), und Arcade/RC fahren absichtlich den einfachen Reibkreis.
   // Korrektur nach 1.2.66: Gran Accelerato gehoert dazu - es ist Pro-Pacejka (Pro-Tabelle mit
-  // Reifenmodell und echtem Reibkreis) plus Gierregelung, kein vereinfachtes Preset.
-  const PRESETS_BREMSSTEAL_LAST = ['pro', 'simplus', 'propacejka', 'gran', 'gt3', 'f1', 'realgt3'];
+  // Reifenmodell und echtem Reibkreis) plus Gierregelung, kein vereinfachtes Preset. v1.3.5: beide
+  // Nachfolger (Gran Hybrismo 'gran', Assetto Carrera 'acc').
+  const PRESETS_BREMSSTEAL_LAST = ['pro', 'simplus', 'propacejka', 'gran', 'acc', 'gt3', 'f1', 'realgt3'];
   function setzeBrakeStealLast() {
     if (typeof physEngine !== 'undefined' && physEngine.config) {
       physEngine.config.brakeStealLast = PRESETS_BREMSSTEAL_LAST.includes(presetAktiv()) ? 1 : 0;
@@ -104343,14 +104814,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
   }
   // v1.2.62: Gran Accelerato - die gran*-Stellschrauben (config, kein DOM-Regler).
-  // Seit der Korrektur nach 1.2.66 haengen sie am MODUS (phys-mode = 'gran'), nicht an
+  // Seit der Korrektur nach 1.2.66 haengen sie am MODUS (phys-mode = 'gran', seit v1.3.5 auch
+  // 'acc'), nicht an
   // presetAktiv(): Werte und Begruendung bei granWerteSetzen() in 50-drive.js. Diese Funktion
   // bleibt als Aufruf an den alten Stellen (applyPreset, Schnappschuss, Laden), damit die
   // Werte auch dann stimmen, wenn das Auswahlfeld schon auf dem Modus stand und deshalb kein
   // 'change' feuerte.
   function setzeGran() {
     if (typeof physEngine !== 'undefined' && physEngine.config) {
-      granWerteSetzen(physEngine.config, ($('phys-mode') || {}).value === 'gran');
+      granWerteSetzen(physEngine.config, ($('phys-mode') || {}).value || '');
     }
   }
 
@@ -104590,7 +105062,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!el) { unknown.push(id); continue; }
       if (el.type === 'checkbox') continue;
       if (el.tagName === 'SELECT') {
-        if (![].some.call(el.options, o => o.value === val)) bad.push(id + '=' + val);
+        const w = id === 'phys-mode' && typeof physModusNormal === 'function' ? physModusNormal(val) : val;
+        if (![].some.call(el.options, o => o.value === w)) bad.push(id + '=' + val);
       } else {
         const v = +val;
         if (!isFinite(v) || v < +el.min || v > +el.max) bad.push(id + '=' + val);
@@ -105334,8 +105807,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // (98-presets.js setzeBrakeStealLast). Nachdem die Selbstsicherung die Regler
   // zurueckgeholt hat, stimmt das aktive Preset - also den Schalter jetzt setzen.
   if (typeof setzeBrakeStealLast === 'function') setzeBrakeStealLast();
-  // Gran Accelerato haengt am Modus (granWerteSetzen, 50-drive.js); nach dem Laden einmal
-  // nachziehen, auch wenn das Auswahlfeld schon auf 'gran' stand und kein 'change' kam.
+  // Gran Hybrismo/Assetto Carrera haengen am Modus (granWerteSetzen, 50-drive.js); nach dem Laden
+  // einmal nachziehen, auch wenn das Auswahlfeld schon auf 'gran'/'acc' stand und kein 'change' kam.
+  // Ein alter Modusname ("Gran Accelerato") wird dabei von presetSet()/physModusAnwenden() umgestellt.
   if (typeof setzeGran === 'function') setzeGran();
   // ---- DIE ANZEIGETEXTE DER SCHIEBEREGLER, EINMAL BEIM LADEN --------------------
   //

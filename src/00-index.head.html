@@ -6112,9 +6112,13 @@
     <div class="card subpage" id="sub-patchnotes">
       <button class="misc-back goto-tab" data-tab="options">&larr; Optionen</button>
       <h2>Patchnotes</h2>
+      <p class="muted"><b><span data-i18n-skip>1.3</span></b></p>
+      <ul class="muted" id="patchnotes-13" style="padding-left:20px; line-height:1.7">
+        <li>Das Fahrgef&#252;hl Gran Accelerato wird zu zwei Modi (WIP): &#8222;Gran Hybrismo&#8220; wie Gran Turismo Sport (viel Grip, weicher Reifenscheitel, kaum Lastwechsel, eine Stabilit&#228;tshilfe lenkt ein ausbrechendes Heck sanft gegen, beim Bremsen bleibt die Lenkung wie mit ABS, die Reifentemperatur wirkt wenig) und &#8222;Assetto Carrera&#8220; wie Assetto Corsa Competizione (leicht bremsen dreht ein, Lupfen l&#228;sst das Heck kommen, Gas schiebt, scharfe Haftgrenze mit Untersteuern beim &#220;berfahren, Reifenfenster: kalt und &#252;berhitzt deutlich weniger Grip, warm am meisten; keine Hilfen). Gespeicherte St&#228;nde mit Gran Accelerato laden als Gran Hybrismo. Behoben: Tempo-Lenkung und Selbstzentrierung kamen nie am Auto an, die Lastempfindlichkeit verst&#228;rkte die Lastwechsel statt sie zu d&#228;mpfen, der Schalter &#8222;&#220;bersteuern&#8220; wurde ignoriert, und beim virtuellen Fahren waren die Reifen nach wenigen Sekunden dauerhaft &#252;berhitzt (jetzt mit Abk&#252;hlung, und das Standardauto hat Abtrieb). NPCs: MAX beschleunigt und bremst wie Arcade, alle anderen Stufen wie Sim+, unabh&#228;ngig von der Abstimmung von Spieler 1; der Regler &#8222;MAX: Beschleunigung&#8220; entf&#228;llt.</li>
+        <li>Neue Option &#8222;NPC: Tankort&#8220; (WIP, Optionen &#8594; NPCs): Einparkfolge wie das Safety Car (Standard, wie bisher) oder &#8222;Streckenrand &#252;ber Querlage&#8220; &#8211; der NPC zieht auf dem Boxenteil per Querlage an den rechten Rand, bremst, steht mit Ratsche und zieht per Querlage wieder heraus, ohne Lenkfolge.</li>
+      </ul>
       <p class="muted"><b><span data-i18n-skip>1.2</span></b></p>
       <ul class="muted" id="patchnotes-12" style="padding-left:20px; line-height:1.7">
-        <li>Neue Option &#8222;NPC: Tankort&#8220; (WIP, Optionen &#8594; NPCs): Einparkfolge wie das Safety Car (Standard, wie bisher) oder &#8222;Streckenrand &#252;ber Querlage&#8220; &#8211; der NPC zieht auf dem Boxenteil per Querlage an den rechten Rand, bremst, steht mit Ratsche und zieht per Querlage wieder heraus, ohne Lenkfolge.</li>
         <li>Seit 1.2.47: Wiki-Knopf auf der Startseite und Wiki-Kachel in den Optionen. Das Safety Car parkt nach der ersten Runde. Boxen-Minigame ohne lange Wartezeit zwischen den Kn&#246;pfen; eine L&#252;cke von 90 ms bleibt, damit ein Wechsel auf dasselbe Symbol sichtbar ist und ein doppelter Druck nicht f&#252;r den n&#228;chsten Knopf z&#228;hlt. Pacejka hat eine eigene Abstimmung (Beschleunigungsfaktor 1,1, Lenkkalibrierung 280 %, Bremsen nimmt Lenkung 75 %); sie steht nur im Preset Pacejka, das beim ersten Start gesetzt wird, die Werkseinstellungen der Regler sind wieder die von vor 1.2.48. NPC-Einpark- und Haltefolgen laufen bei Simulationsautos mit der Physikzeit, bei echten Autos nach der Uhr. Der Challenger regelt sein Tempo additiv gegen die Bestzeit, und f&#252;r MAX gilt ein Deckel je Streckenteil statt des 60-%-Kurvendeckels. Streckeneditor-Optionen (WIP): L&#228;nge/Teile, Linkslastig, Br&#252;cken und Strecke spiegeln. Neues Fahrgef&#252;hl Gran Accelerato (WIP): Pacejka mit Abtrieb, Selbstzentrierung und dynamischer Gierregelung; es gilt jetzt auch f&#252;r Spieler 2 und 3 und in Challenges, und seine Werte h&#228;ngen am Modus, bleiben also nach dem Laden und beim Verstellen eines Reglers erhalten. OmegaLabs-Studie auf der Startseite, Layout spiegelbar (WIP, wird mit den Studiendaten gespeichert; nach der Studie ist Spiegeln wieder aus). Randstein-Rumpeln beim virtuellen Fahren (WIP). Latenz: Pakete von NPCs in Einpark- und Haltefolgen werden nur noch bei ge&#228;ndertem Befehl oder Phasenwechsel nachgereicht, sonst wie immer verworfen; virtuelles Fahren liest den Handling-Modus nicht mehr in jedem Bild und legt f&#252;r das Randstein-Rattern keinen neuen Tonpuffer mehr an.</li>
         <li>Latenz: Das schnelle Verbindungsintervall wird nur noch einmal je Verbindung nachgefordert, und erst wenn ein Auto 5 s lang langsamer als alle 120 ms meldet (vorher alle 20 s je Auto ab 75 ms &#8211; mit vier Autos handelte das Handy etwa alle 5 s eine Verbindung neu aus). Linienmodell SIMULATOR: Die Linie wird nur noch im Strecken-Editor berechnet und gespeichert, beim Fahren nie mehr im Hintergrund; fehlt sie, fahren die NPCs die normale Linie.</li>
         <li>Latenz: Die Strecke im Regenradar ist wieder entfernt, und das Radar zeichnet nur noch in einfacher Aufl&#246;sung (auf hochaufl&#246;senden Handys ein Viertel der Bildpunkte). Neuer Schalter &#8222;Regenradar&#8220; unter Optionen &#8594; Allgemein: aus, wird das Radar gar nicht gezeichnet. Der Knopf &#8222;Reinigungsfahrzeug starten&#8220; steht nur noch in der Bahn-Kachel, nicht mehr in der Garagen-Kachel.</li>
@@ -9959,7 +9963,8 @@
         <select id="phys-mode">
           <option value="physik">Physik</option>
           <option value="pacejka" selected>Pacejka (experimentell)</option>
-          <option value="gran">Gran Accelerato (WIP)</option>
+          <option value="gran">Gran Hybrismo (WIP)</option>
+          <option value="acc">Assetto Carrera (WIP)</option>
           <option value="aus">RC (experimentell)</option>
         </select></div>
       <!-- BESTELLT: "Eventuell sage ich spaeter, dass das Uebersteuern abgeschaltet werden
@@ -11349,13 +11354,6 @@
           <input type="range" id="ghost-max-r2" min="0.3" max="1" step="0.01" value="0.8">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-max-r2-val">80%</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">MAX: Beschleunigung <span class="wip-tag">WIP</span><small>Wie viel kräftiger das Motormodell eines MAX-NPCs beschleunigt als das von Spieler&nbsp;1, und ohne Schaltpause. Das gesendete Gas folgt diesem Modell &ndash; auf kurzen Geraden kam ein MAX-NPC sonst kaum über sein Kurventempo. Standard 2&times;.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-max-beschl" min="1" max="4" step="0.1" value="2">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="ghost-max-beschl-val">200%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">MAX: Bremspunkt <span class="wip-tag">WIP</span><small>Wo ein MAX-NPC vom Geradentempo auf das Kurventempo geht: eine Schiene vor der Kurve (Standard) oder erst am Beginn des Kurventeils. Vor der Haarnadel bremsen alle NPCs wie bisher zwei Teile vorher.</small></div>
         <select id="ghost-max-bremspunkt">

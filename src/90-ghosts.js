@@ -3405,8 +3405,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // v1.1.42 (WIP): Stufe MAX (ghostMaxTempo) - Gerade, Radius-1-Kurve (60 Grad und kleine 30 Grad),
     // Radius-2-Kurve (weite 30 Grad), Bremspunkt 'schiene' (ein Teil vorher) oder 'teil' (am Kurvenbeginn).
     maxGerade: 1.0, maxR1: 0.52, maxR2: 0.8, maxBremspunkt: 'schiene',
-    // v1.2.5: Beschleunigung des MAX-Motormodells (Vielfaches von Spieler 1s Abstimmung), keine Schaltpause.
-    maxBeschl: 2.0,
+    // (v1.2.5 stand hier maxBeschl; seit v1.3.5 faehrt MAX mit den Arcade-Werten, siehe npcMotorWerte.)
     paare: true,        // v1.0.31: Paare links/rechts, Reihe dahinter (ghostPaare); Schalter fuer die Messsonde    // how much of that is given up in a curve
     // 0.5 statt 0. Die Naeherungslogik in ghostAssignBias gab es laengst - gleiche Runde
     // und Kachelindex hoechstens eins auseinander ergibt gegenlaeufige Versaetze - aber sie
@@ -7635,26 +7634,54 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // dort ist ghostCfg beim Laden noch nicht angelegt (Totzone), und der Fehler brach das Laden ab.
   // v1.2.5: das Motormodell eines MAX-NPCs. Das NPC-Modell ist eine Kopie von Spieler 1s Abstimmung, und das
   // gesendete Gas ist sein Tempoanteil - auf einer 43-cm-Geraden (0,3-0,5 s) kam es von 0,5 kaum hoeher, weil Schub
-  // mit dem Tempo faellt und jedes Hochschalten 120 ms ohne Antrieb kostet. MAX bekommt maxBeschl x Beschleunigung
-  // und keine Schaltpause; zurueckgestellt, sobald das Auto eine andere Stufe hat.
+  // mit dem Tempo faellt und jedes Hochschalten 120 ms ohne Antrieb kostet. MAX bekam deshalb keine Schaltpause
+  // (bleibt so, siehe den Fix aus 1.2.32 in 40-physics.js: Schaltvorgang ohne Pause im selben Takt fertig).
   // v1.2.5: NPCs schalten frueher zurueck (5200 statt 4200/min). Sie fahren meist 35-60 % und blieben sonst in einem
   // Gang - man hoerte keine Gaenge. 5200 und nicht hoeher: nach dem Hochschalten (bei 8800) faellt die Drehzahl auf
   // 5585 (1->2) bis 7170 (5->6); laege die Grenze darueber, schaltete der NPC sofort zurueck und pendelte.
   const NPC_RUECKSCHALT_RPM = 5200;
+  // ---- BESCHLEUNIGUNG UND BREMSE DER NPCs (v1.3.5) -------------------------------------------------
+  // BESTELLT: "MAX-NPC-Schwierigkeitsmodus pruefen: er darf schnellere Beschleunigung und bessere Bremsen haben,
+  // naemlich Arcade. Ansonsten sollen NPCs mit Sim+-Beschleunigungs- und Bremsparametern fahren."
+  // Bis 1.3.4 fuhr jeder NPC mit der Abstimmung von Spieler 1 (wer Realismus GT3 fuhr, hatte langsame NPCs, wer
+  // Arcade fuhr, schnelle), und MAX mit maxBeschl (Regler, ab Werk 2,0) mal Spieler 1s Beschleunigungsfaktor.
+  // Jetzt feste Werte aus den Presets, unabhaengig von Spieler 1: MAX = Arcade, alle anderen Stufen = Sim+.
+  // Was das NPC-Motormodell davon liest (alles Laengsdynamik, die Querlogik bleibt unberuehrt):
+  //   setting-zero-to-top -> launchAnchorTimeS (Anfahrzeit, mit calibrateAccel)
+  //   phys-accel          -> accelerationFactor
+  //   setting-coast-drag  -> coastDragPerS (Ausrollen, Teil der Kalibrierung)
+  //   setting-brakepower  -> brakeDecelBase/brakeDecelAero (mal der Grundbremse, wie der Regler)
+  //   phys-brake-tau      -> useTauBrems (Bremsaufbau)
+  // Nicht: setting-topspeed (Gasfaktor des Fahrersticks; ein NPC sendet seinen Tempoanteil), Lenkung, Reifen.
+  // Der Regler "MAX: Beschleunigung" (maxBeschl) ist entfallen: ein Faktor obendrauf waere nicht mehr Arcade,
+  // und ein gespeicherter alter Wert (ab Werk 2,0) haette die Arcade-Beschleunigung still verdoppelt.
+  const NPC_MOTOR_PRESET = { max: 'arcade', normal: 'simplus' };
+  function npcMotorWerte(art) {
+    const p = PRESETS[NPC_MOTOR_PRESET[art] || 'simplus'];
+    const v = p ? p.v : {};
+    const brems = +v['setting-brakepower'] || 1;
+    return { launchAnchorTimeS: +v['setting-zero-to-top'], accelerationFactor: +v['phys-accel'],
+             coastDragPerS: +v['setting-coast-drag'], useTauBrems: +v['phys-brake-tau'],
+             brakeDecelBase: BASE_BRAKE.base * brems, brakeDecelAero: BASE_BRAKE.aero * brems };
+  }
+  // Gerufen in jedem NPC-Takt, ARBEITET aber nur beim Wechsel der Stufe (oder wenn die Konfiguration neu von
+  // Spieler 1 kopiert wurde und die Marke npcMotorArt fehlt): Latenz, keine neue Arbeit im 45-ms-Takt.
+  // calibrateAccel() (30 Anfahrsimulationen) nur, wenn Anfahrzeit oder Ausrollen sich wirklich aendern.
   function ghostMaxMotor(car, e) {
     const g = car.ghost;
     if (!g || !e) return;
+    const art = ghostIstMax(car) ? 'max' : 'normal';
+    if (e.config.npcMotorArt === art) return;
+    if (g.basisShiftMs === undefined) g.basisShiftMs = e.config.shiftMs;
+    const w = npcMotorWerte(art);
+    const neuKalib = w.launchAnchorTimeS !== e.config.launchAnchorTimeS || w.coastDragPerS !== e.config.coastDragPerS;
+    Object.assign(e.config, w);
     e.config.downshiftRpm = NPC_RUECKSCHALT_RPM;
-    if (g.basisBeschl === undefined) { g.basisBeschl = e.config.accelerationFactor; g.basisShiftMs = e.config.shiftMs; }
-    if (ghostIstMax(car)) {
-      e.config.accelerationFactor = g.basisBeschl * (ghostCfg.maxBeschl || 1);
-      e.config.shiftMs = 0;
-    } else {
-      e.config.accelerationFactor = g.basisBeschl;
-      e.config.shiftMs = g.basisShiftMs;
-    }
+    e.config.shiftMs = art === 'max' ? 0 : g.basisShiftMs;
+    e.config.npcMotorArt = art;
+    if (neuKalib && typeof e.calibrateAccel === 'function') e.calibrateAccel();
   }
-  [['ghost-max-gerade', 'maxGerade'], ['ghost-max-r1', 'maxR1'], ['ghost-max-r2', 'maxR2'], ['ghost-max-beschl', 'maxBeschl']].forEach(([id, feld]) => {
+  [['ghost-max-gerade', 'maxGerade'], ['ghost-max-r1', 'maxR1'], ['ghost-max-r2', 'maxR2']].forEach(([id, feld]) => {
     const el = $(id);
     if (!el) return;
     const an = () => {
@@ -9678,6 +9705,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // dann aus dem eigenen Reifen des Ghosts.
     e.config.gripScale = 1;
     e.config.aquaplaning = 0;
+    // v1.3.5: die Fahrgefuehle Gran Hybrismo/Assetto Carrera formen den SERVO des Fahrers (Tempo-Lenkung,
+    // Selbstzentrierung, Lastgier, Stabilitaetshilfe). Ein NPC lenkt nach seiner Ideallinie, und die ist gegen
+    // Physik/Pacejka abgestimmt - also rechnet er hoechstens Pacejka, nie granStep (pacejka bleibt, wie kopiert).
+    granWerteSetzen(e.config, false);
     // Nach dem Kopieren neu kalibrieren: accelScale() haengt an topSpeedKmh, an der
     // Anfahrzeit und an den Gaengen, und die kommen jetzt vom Fahrer.
     if (typeof e.calibrateAccel === 'function') e.calibrateAccel();

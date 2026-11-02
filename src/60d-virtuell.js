@@ -331,8 +331,14 @@
   // (muV/muH), mehr Einschlag (lenkGrad), eine schnellere Gierantwort (weniger Daempfung) und ein
   // hoeheres Tempo (Weg und Tacho, Faktor vfTempoFaktor).
   const VF_HANDLING_STORE = 'omegasim-vf-handling';
+  // v1.3.5: 'gran' heisst Gran Hybrismo (wie Gran Turismo Sport), neu 'acc' Assetto Carrera (wie
+  // ACC). Die Kennung 'gran' bleibt, damit eine gespeicherte Wahl weiter gilt.
   const VF_HANDLING_MODI = [{ id: 'gt3', name: 'GT3' }, { id: 'schnell', name: 'Schnell' },
-                            { id: 'gran', name: 'Gran Accelerato' }];
+                            { id: 'gran', name: 'Gran Hybrismo' }, { id: 'acc', name: 'Assetto Carrera' }];
+  // Abtrieb fuer Profile ohne eigene Werte (VF_GT3 hat kein kV/kH): N je (m/s)^2 je Achse, etwa
+  // 19 % des Gewichts bei 216 km/h. Bis 1.3.4 rechnete Gran mit (P.kV || 0) * 1,5 - beim
+  // Standardauto also mit null Abtrieb.
+  const VF_ABTRIEB_GRUND = { kV: 0.28, kH: 0.40 };
   // BESTELLT: Latenz. Korrektur nach 1.2.66: vfHandling() wird je Bild gefragt (vfSchritt,
   // Gran-Modus) - localStorage.getItem ist ein synchroner Speicherzugriff und auf schwachen
   // Handys je Bild spuerbar. Gelesen wird einmal (und neu beim Start einer Fahrt), geschrieben
@@ -568,19 +574,56 @@
       });
     }
     if (h === 'gran') {
-      // Gran Accelerato (v1.2.62): staerkere Lastempfindlichkeit, mehr Abtrieb, weichere
-      // Gierantwort, etwas mehr Einschlag und eine nach hinten verlagerte Bremsbalance - wie
-      // ein ACC-GT3. Reifentemperatur und Tempo-Lenkung kommen im Fahrtakt (vfBild) dazu.
+      // Gran Hybrismo (v1.3.5, vorher Gran Accelerato): wie Gran Turismo Sport. Mehr Grip und
+      // Abtrieb, ein flacherer Reifenscheitel (C), kaum Lastwechsel (niedrigerer Schwerpunkt im
+      // Modell), staerkere Gierdaempfung als Stabilitaetshilfe und etwas mehr Einschlag.
       return Object.assign({}, P, {
+        muV: P.muV * 1.12, muH: P.muH * 1.12,
+        C: Math.max(1.1, (P.C || 1.35) - 0.15),
+        h: (P.h || 0.38) * 0.6,
         lastEmpf: (P.lastEmpf || 0.15) * 1.4,
-        yawDamp: (P.yawDamp || 1.5) * 1.15,
-        bremsVorn: 0.68,
+        yawDamp: (P.yawDamp || 1.5) * 1.4,
         lenkGrad: Math.min(45, (P.lenkGrad || 16) * 1.1),
-        kV: (P.kV || 0) * 1.5,
-        kH: (P.kH || 0) * 1.5,
+        kV: (P.kV || VF_ABTRIEB_GRUND.kV) * 1.5,
+        kH: (P.kH || VF_ABTRIEB_GRUND.kH) * 1.5,
+      });
+    }
+    if (h === 'acc') {
+      // Assetto Carrera (v1.3.5): wie ACC. Deutliche Lastverlagerung (hoeherer Schwerpunkt),
+      // scharfer Reifenscheitel, weniger Gierdaempfung, Bremsbalance nach hinten (Trail-Braking
+      // dreht ein) und ein Reifenfenster (im Fahrtakt, vfReifenGriff).
+      return Object.assign({}, P, {
+        C: (P.C || 1.35) + 0.12,
+        h: (P.h || 0.38) * 1.15,
+        yawDamp: (P.yawDamp || 1.5) * 0.85,
+        bremsVorn: 0.68,
+        lenkGrad: Math.min(45, (P.lenkGrad || 16) * 1.05),
+        kV: P.kV || VF_ABTRIEB_GRUND.kV,
+        kH: P.kH || VF_ABTRIEB_GRUND.kH,
       });
     }
     return P;
+  }
+  // ---- REIFENTEMPERATUR IM VIRTUELLEN FAHREN (v1.3.5) ------------------------------------------
+  // T: 0 = Umgebung, 0,5-0,65 = Fenster, 1 = weit ueberhitzt. Erster Ordnung: dT/dt = (Arbeit - T)/12 s,
+  // die Gleichgewichtstemperatur IST die Arbeit. Arbeit aus Tempo (40 %) und Querbeschleunigung (60 %):
+  // zuegig gefahren (~0,55) liegt sie im Fenster, Dauerangriff (~0,9) ueberhitzt, Bummeln kuehlt ab.
+  function vfReifenTemp(T, vMs, ay, dt) {
+    const arbeit = Math.min(1.2, 0.4 * Math.abs(vMs) / 50 + 0.6 * Math.abs(ay) / 14);
+    return Math.max(0, Math.min(1.2, T + (arbeit - T) * dt / 12));
+  }
+  // Griff-Faktor aus der Temperatur. Assetto Carrera: kalt 0,85, im Fenster 1,04, ueberhitzt bis 0,85.
+  // Gran Hybrismo: dieselbe Kurve, aber nur zu 35 % (GT Sport: die Temperatur spielt kaum eine Rolle).
+  function vfReifenGriff(T, hand) {
+    let f;
+    if (T < 0.5) f = 0.85 + 0.15 * (T / 0.5);
+    else if (T <= 0.65) f = 1.0;
+    else f = Math.max(0.85, 1 - (T - 0.65) * 0.5);
+    if (hand === 'acc') {
+      const d = (T - 0.575) / 0.1;
+      return f * (1 + 0.04 * Math.exp(-d * d));
+    }
+    return 1 + 0.35 * (f - 1);
   }
   // ---- Federung: vier Ecken mit Feder, Daempfer (Druck/Zug) und Stabilisator --------------------
   // Zustand f: z (Einfedern, m, + = tiefer), th (Nicken, rad, + = Nase runter), ph (Rollen, rad, + = rechts
@@ -803,7 +846,8 @@
       if (VF.modusZeit >= VF.limit * 60) vfRennenEnde();
     }
     const kmh = (st.speedKmh || 0) * (VF.tempoFaktor || 1);
-    const granModus = vfHandling() === 'gran';
+    const hand = vfHandling();
+    const reifenModus = hand === 'gran' || hand === 'acc';
     // v1.1.11 GEMELDET: "Virtuelles Fahren ruckelt und ist sehr traege." Bisher lenkte das Auto mit
     // physEngine.state.dampedSteering: das rechnet die Physik nur alle 45 ms (Treppenstufen in der
     // Gierrate = Ruckeln), mit der Servodaempfung und der Lenkbegrenzung bei Tempo des ECHTEN Autos
@@ -827,14 +871,13 @@
       const ax = (st.gLong || 0) * 15;
       if (!VF.dyn) VF.dyn = { vy: 0, r: 0 };
       let mu = (physEngine.config.gripScale || 1) * (VF.abseits ? 0.55 : 1);
-      if (granModus) {
-        // Reifentemperatur (v1.2.62): kalt = weniger Griff, warm = optimal, ueberhitzt = weniger.
-        // Heizt mit Tempo und Querbelastung auf; ueber 0,6 kuehlt sie langsam wieder.
+      if (reifenModus) {
+        // Reifentemperatur (v1.2.62, Korrektur v1.3.5): kalt = weniger Griff, warm = optimal,
+        // ueberhitzt = weniger. Bis 1.3.4 heizte sie mit bis zu 0,25/s und kuehlte nur mit
+        // 0,01/s - nach wenigen Sekunden stand sie dauerhaft am Anschlag (ueberhitzt).
         if (VF.tyreTemp === undefined) VF.tyreTemp = 0;
-        const aufheiz = (Math.min(1, Math.abs(vVollL) / 40 + Math.abs(VF.ay || 0) / 20)) * dt * 0.25;
-        VF.tyreTemp = Math.max(0, Math.min(1, VF.tyreTemp + aufheiz - (VF.tyreTemp > 0.6 ? dt * 0.01 : 0)));
-        const tt = VF.tyreTemp;
-        mu *= tt < 0.3 ? 0.85 + (tt / 0.3) * 0.15 : (tt < 0.6 ? 1.0 : Math.max(0.9, 1.0 - (tt - 0.6) * 0.25));
+        VF.tyreTemp = vfReifenTemp(VF.tyreTemp, vVollL, VF.ay || 0, dt);
+        mu *= vfReifenGriff(VF.tyreTemp, hand);
       }
       vfDynamik(VF.dyn, vVoll, ax, Math.max(0, st.longUse || 0), lenk, dt, mu, VF.P);
       VF.ax = ax; VF.ay = vVoll * VF.dyn.r;
@@ -1276,6 +1319,7 @@
     VF.geistAuto = vfAutoBauen(gl, [0.45, 0.75, 1.0]);
     VF.geist = { an: vfGeistAn(), aufzeichnung: [], aktiv: false, zeit: 0, t: 0, i: 0, x: 0, y: 0, h: 0 };
     VF.modell = null; VF.P = vfHandlingProfil(VF_GT3); VF.feder = null; VF.raddreh = 0;
+    VF.tyreTemp = 0;   // v1.3.5: jede Fahrt beginnt mit kalten Reifen (vorher blieb die alte Temperatur stehen)
     VF.tempoFaktor = vfTempoFaktor();
     try { VF.tprog = vfProgrammTex(gl); } catch (e) { VF.tprog = null; }
     if (VF.tprog) {
