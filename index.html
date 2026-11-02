@@ -3336,6 +3336,10 @@
   .ch-sterne { letter-spacing: .06em; white-space: nowrap; }
   /* v1.3.15: Online-Streckenzeiten (72c-strecken-online.js) */
   .sk-block { margin-top: 16px; }
+  .sk-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 4px; }
+  .sk-chip { font-size: 12px; padding: 4px 10px; border-radius: 999px; }
+  .sk-chip.an { border-color: var(--info); background: rgba(0,163,224,.22); font-weight: 700; }
+  .sk-eigene { margin-left: 2px; }
   .sk-block #sk-editor-auffrischen { margin-top: 8px; }
   .sk-lokal { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .04em; padding: 0 5px;
     border: 1px solid var(--muted); border-radius: 4px; color: var(--muted); white-space: nowrap; }
@@ -15591,6 +15595,9 @@
     "Aus (Standard): deine Zeiten bleiben auf diesem Gerät. Sie stehen trotzdem in derselben Liste wie die Online-Zeiten, markiert als „nur lokal“. An: gewertete Runden auf deinen Strecken gehen an die gemeinsame Liste, mit Streckencode, Streckenname, Rundenzeiten, Autoname, deinem Namen und einer zufälligen Gerätekennung. Name und Strecke sind dann öffentlich.": "Off (default): your times stay on this device. They still appear in the same list as the online times, marked “local only”. On: counted laps on your tracks go to the shared list, with track code, track name, lap times, car name, your name and a random device ID. Name and track are then public.",
     "Online-Streckenzeiten (WIP): Für jede Strecke gibt es Bestzeit und beste 3 Runden, im Editor unter „Zeiten auf dieser Strecke“. Eigene Zeiten stehen immer mit in der Liste, nicht geteilte als „nur lokal“. Neu unter Optionen → Online: Name und Schalter „Zeiten online synchronisieren“ (Standard aus); beim ersten Speichern einer Strecke kommt einmal die Frage, mit dem Hinweis, dass Name und Strecke dann öffentlich gespeichert werden. Challenges → Community-Strecken listet alle Strecken mit mehr als 3 Fahrern. Funkpriorität beim Start (WIP, Optionen → System, Standard an): Zu Beginn der Startampel bekommen die gesteuerten Autos die schnellste Verbindungsstufe, NPCs, Safety Car und Reinigungswagen die mittlere, damit die Spieler Vorrang im Funk haben. Engstelle und Startgerade sehen aus wie die Originalteile: weiße Querbalken statt Verengung, Karoband bei 80 % der Startgeraden.": "Online track times (WIP): every track has a best time and best 3 laps, in the editor under “Times on this track”. Your own times are always in the list, unshared ones marked “local only”. New under Options → Online: name and switch “Sync times online” (default off); the first time you save a track you are asked once, with the note that your name and the track are then stored publicly. Challenges → Community tracks lists all tracks with more than 3 drivers. Radio priority at the start (WIP, Options → System, default on): when the start lights begin, the controlled cars get the fastest connection level, NPCs, safety car and cleaning car the middle one, so players have priority on the radio. Narrow section and start straight look like the original pieces: white cross bars instead of a narrowing, checkered band at 80 % of the start straight.",
     "Neues Tutorial (WIP) mit Frauenstimme: Mit einem Auto und einem Gamepad führt es in höchstens 3 Minuten durch Gas, Bremse und Lenken (es wartet jeweils auf die Taste), erste Runden in Arcade, dann realistischeres Einlenken mit Beschleunigung und Untersteuern, einen Boxenstopp mit Minispiel und einen Wechsel des Motorklangs, mit Hinweisen auf Garage und Optionen. Danach geht es automatisch zurück ins Menü; Fahrgefühl, Motorklang und Boxeneinstellungen werden wiederhergestellt. Die deutsche Stimme ist mit Piper (Kerstin) vorab aufgenommen, auf Englisch und Spanisch spricht die Stimme des Geräts.": "New tutorial (WIP) with a female voice: with one car and one gamepad it takes you in at most 3 minutes through throttle, brake and steering (it waits for each button), first laps in Arcade, then more realistic turn-in with acceleration and understeer, a pit stop with the minigame and a change of engine sound, with pointers to the garage and the options. Afterwards it returns to the menu automatically; driving feel, engine sound and pit settings are restored. The German voice is pre-recorded with Piper (Kerstin); in English and Spanish the device voice speaks.",
+    "unbekannt": "unknown",
+    "Dein Fahrgefühl": "Your driving feel",
+    "eigene Zeiten": "your times",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -19201,6 +19208,10 @@
     "Linker Stick": "Stick izquierdo",
     "Rechter Stick": "Stick derecho",
     "WIP": "WIP",
+    "unbekannt": "desconocido",
+    "Dein Fahrgefühl": "Tu sensación de conducción",
+    "eigene Zeiten": "tus tiempos",
+    "Eigene Abstimmung": "Ajuste propio",
   };
 
   // ============================================================================
@@ -50869,28 +50880,39 @@
   // Leute eine Zeit gefahren haben, aufgelistet werden. Ich will meine lokal gespeicherten Zeiten
   // auch mit den Online-Zeiten [sehen], wenn ich meine nicht online teile."
   //
-  // DER SCHLUESSEL EINER STRECKE ist bestzeitSchluessel(tiles) aus 70-race.js, also derselbe wie
-  // fuer die lokalen Time-Attack-Bestzeiten:
-  //   - Streckencode OHNE Drehung (trackToCode(tiles, 0)). Die Drehung ist nur die Lage der Karte
-  //     auf dem Bildschirm, die Bahn auf dem Boden ist dieselbe.
-  //   - Von Code und Code der RUECKWAERTS gefahrenen Schleife (chSpiegelTiles: Reihenfolge
-  //     umkehren, links/rechts tauschen) gilt der kleinere. Das ist dieselbe Bahn in die andere
-  //     Richtung: gleiche Laenge, gleiche Teile, und die Teilepruefung der Challenges
-  //     (chRundePruefen) erkennt sie ohnehin als dieselbe. Ein echtes Spiegelbild (nur links und
-  //     rechts tauschen) ist dagegen eine andere Bahn und bekommt einen anderen Schluessel.
-  //   - Die Lage von Start/Ziel bleibt Teil des Codes: es ist ein echtes Teil der Bahn.
-  // Das Apps Script rechnet denselben Schluessel aus dem Code nach (stSchluessel), damit auch ein
-  // falsch normalisierter Eintrag in der richtigen Liste landet.
+  // NACHBESSERUNG (nach 1.3.20) BESTELLT: "Gespiegelt sollte dieselbe sein, rueckwaerts eine
+  // andere." / "In Challenges -> Community-Strecken sollten auch noch die stehen, die beigetragen
+  // wurden." / "Bitte auch die Fahr-Presets (Pacejka und so) beruecksichtigen."
+  //
+  // DER SCHLUESSEL EINER STRECKE (skSchluessel, eigener Schluessel nur fuer diese Zeiten):
+  //   - Streckencode OHNE Drehung (trackToCode(tiles, 0)): die Drehung ist nur die Lage der Karte.
+  //   - Von Code und Code des SPIEGELBILDS (skSpiegelLR: jedes Teil links/rechts getauscht, die
+  //     Reihenfolge bleibt) gilt der kleinere. Ein Spiegelbild ist dieselbe Strecke.
+  //   - RUECKWAERTS gefahren (Reihenfolge umgekehrt) ist eine ANDERE Strecke.
+  //   - Die Lage von Start/Ziel bleibt Teil des Codes.
+  // bestzeitSchluessel() (70-race.js) bleibt unveraendert: an ihm haengen die lokalen Time-Attack-
+  // Bestzeiten, die Telemetrie und die Statistik-Bereinigung; ein anderer Schluessel dort wuerde
+  // gespeicherte Daten verwaisen lassen. Das Apps Script rechnet denselben Schluessel (stSchluessel)
+  // und beim Lesen neu, statt der gespeicherten Spalte zu trauen.
+  //
+  // FAHRGEFUEHL: Jede Zeit traegt das Preset, mit dem sie gefahren wurde (presetAktiv(),
+  // 98-presets.js; 'eigen' bei einer eigenen Abstimmung, 'unbekannt' bei Eintraegen von vor der
+  // Nachbesserung). Bestzeit und beste 3 Runden werden je Fahrgefuehl verglichen.
   //
   // LATENZ: Im Rennen wird je Runde und je gelesenem Teil nur ein Wert an ein Feld gehaengt
   // (skRunde, skTeilGelesen). Pruefen, Speichern und Senden laufen erst nach dem Rennen
   // (skSitzungEnde -> setTimeout), Abrufe nur beim Oeffnen einer Ansicht, mit Zwischenspeicher.
   const SK_STORE = 'omegasim-strecken-zeiten';
+  const SK_STORE_V = 'omegasim-strecken-zeiten-v';
   const SK_OPT_STORE = 'omegasim-strecken-online';
   const SK_CACHE_STORE = 'omegasim-strecken-cache';
   const SK_MIN_FAHRER = 4;                 // "mehr als 3 verschiedene Leute"
   const SK_LISTE_MS = 5 * 60000;           // Community-Strecken hoechstens alle 5 min holen
   const SK_ZEITEN_MS = 2 * 60000;          // Zeiten einer Strecke hoechstens alle 2 min
+  // Alle Presets aus 98-presets.js plus 'eigen' und 'unbekannt'. Dieselbe Liste steht im Apps
+  // Script (ST_FAHRGEFUEHLE); der Selbsttest prueft, dass jedes Preset darin steht.
+  const SK_FAHRGEFUEHLE = ['arcade', 'simplus', 'propacejka', 'gran', 'acc', 'pro', 'gt3', 'f1', 'realgt3',
+                           'omega', 'rc', 'eigen', 'unbekannt'];
 
   // ---- Einstellungen: Schalter (Standard AUS) und die einmalige Frage ----
   function skOpt() {
@@ -50903,7 +50925,41 @@
   }
   function skSyncAn() { return skOpt().sync; }
   function skUrl() { const o = chOnline(); return o && o.url ? o.url : ''; }
-  function skSchluessel(tiles) { return bestzeitSchluessel(tiles); }
+
+  // ---- Schluessel: Spiegelbild = dieselbe Strecke, rueckwaerts = eine andere ----
+  function skSpiegelLR(tiles) {
+    const tausch = {
+      [TILE_TYPE.CURVE_LEFT]: TILE_TYPE.CURVE_RIGHT, [TILE_TYPE.CURVE_RIGHT]: TILE_TYPE.CURVE_LEFT,
+      [TILE_TYPE.HAIRPIN]: TILE_TYPE.HAIRPIN_LEFT, [TILE_TYPE.HAIRPIN_LEFT]: TILE_TYPE.HAIRPIN,
+      [TILE_TYPE.WEIT_RIGHT]: TILE_TYPE.WEIT_LEFT, [TILE_TYPE.WEIT_LEFT]: TILE_TYPE.WEIT_RIGHT,
+      [TILE_TYPE.KLEIN_RIGHT]: TILE_TYPE.KLEIN_LEFT, [TILE_TYPE.KLEIN_LEFT]: TILE_TYPE.KLEIN_RIGHT,
+    };
+    return tiles.map((x) => (tausch[x.type] !== undefined ? Object.assign({}, x, { type: tausch[x.type] }) : x));
+  }
+  function skSchluessel(tiles) {
+    const a = trackToCode(tiles, 0), b = trackToCode(skSpiegelLR(tiles), 0);
+    return a < b ? a : b;
+  }
+  function skSchluesselAusCode(code) {
+    const p = codeToTrack(code);
+    return p && p.tiles.length >= 3 ? skSchluessel(p.tiles) : '';
+  }
+
+  // ---- Fahrgefuehl ----
+  function skFgGueltig(fg) { return SK_FAHRGEFUEHLE.indexOf(fg) >= 0 ? fg : 'unbekannt'; }
+  // Das aktuelle Fahrgefuehl des Spielers. presetRead() liest alle Regler - nur nach dem Rennen
+  // und beim Zeichnen einer Ansicht rufen, nie im Fahrtakt.
+  function skFgAktuell() {
+    let k = null;
+    try { k = typeof presetAktiv === 'function' ? presetAktiv() : null; } catch (e) { k = null; }
+    return k && SK_FAHRGEFUEHLE.indexOf(k) >= 0 ? k : 'eigen';
+  }
+  function skFgName(fg) {
+    if (fg === 'eigen') return t('Eigene Abstimmung');
+    if (fg === 'unbekannt') return t('unbekannt');
+    return typeof window.__presetLabel === 'function' ? t(window.__presetLabel(fg)) : fg;
+  }
+
   // Ein Name: derselbe Wert wie der Name der Challenges-Bestenliste (CH_ONLINE_STORE).
   function skNameSetzen(name) {
     const o = chOnline();
@@ -50972,7 +51028,8 @@
   // (chDreierBeste verwirft jede Gruppe mit einer Runde unter der Mindestzeit).
   function skAuswerten(lauf) {
     const tiles = lauf.tiles;
-    const def = { code: trackToCode(tiles, 0), runden: 1 };
+    const code = trackToCode(tiles, 0);
+    const def = { code, runden: 1 };
     const minMs = chMinRundeMs(def);
     let quote = 1;
     const runden = lauf.runden.map((r) => {
@@ -50988,7 +51045,8 @@
     const teilen = skSyncAn() && !!o.url;
     const e = { zeit: Math.min(...gueltig), runden, datum: Date.now(), fahrer: o.fahrer || '',
       auto: (typeof playerCar !== 'undefined' && playerCar) ? garageLabel(playerCar) : '', geraet: chGeraet(),
-      quote: Math.round(quote * 100) / 100, geteilt: teilen };
+      quote: Math.round(quote * 100) / 100, geteilt: teilen, code,
+      fahrgefuehl: skFgGueltig(lauf.fahrgefuehl || skFgAktuell()) };
     const key = skSchluessel(tiles);
     skLokalSpeichern(key, e);
     if (teilen) skHochladen(key, e, o);
@@ -50997,9 +51055,27 @@
   }
 
   // ---- Lokale Zeiten ----
+  // Einmalig: Ablagen aus 1.3.20 hatten den alten Schluessel (rueckwaerts = dieselbe). Neu
+  // einsortiert nach dem gefahrenen Code, wenn er dabei ist, sonst nach dem alten Schluessel.
+  function skMigrieren(d) {
+    let v = null;
+    try { v = localStorage.getItem(SK_STORE_V); } catch (e) { v = '2'; }
+    if (v === '2') return d;
+    const neu = {};
+    Object.keys(d).forEach((k) => {
+      (Array.isArray(d[k]) ? d[k] : []).forEach((e) => {
+        const nk = skSchluesselAusCode(e.code || k) || k;
+        (neu[nk] = neu[nk] || []).push(e);
+      });
+    });
+    Object.keys(neu).forEach((k) => { neu[k].sort((a, b) => a.zeit - b.zeit); neu[k] = neu[k].slice(0, 30); });
+    chSchreiben(SK_STORE, neu);
+    try { localStorage.setItem(SK_STORE_V, '2'); } catch (e) { /* privat */ }
+    return neu;
+  }
   function skLokalAlle() {
     const d = chLesen(SK_STORE, {});
-    return d && typeof d === 'object' && !Array.isArray(d) ? d : {};
+    return skMigrieren(d && typeof d === 'object' && !Array.isArray(d) ? d : {});
   }
   function skLokalSpeichern(key, e) {
     const alle = skLokalAlle();
@@ -51012,17 +51088,20 @@
     chSchreiben(SK_STORE, alle);
   }
   // Eigene Zeiten dieser Strecke: die neue Ablage plus die Time-Attack-Bestzeiten
-  // (omegasim-bestzeiten, gleicher Schluessel), die es schon vorher gab.
+  // (omegasim-bestzeiten), deren gespeicherter Code auf denselben Schluessel fuehrt.
   function skLokal(key) {
     const eig = (skLokalAlle()[key] || []).map((z) => ({ zeit_ms: +z.zeit, fahrer: z.fahrer || '', auto: z.auto || '',
-      geraet: z.geraet || chGeraet(), runden_ms: Array.isArray(z.runden) ? z.runden.map(Number) : [], quelle: 'lokal' }));
-    const bz = (typeof bestzeitLesen === 'function' ? bestzeitLesen() : {})[key];
-    if (bz && bz.fahrer) {
+      geraet: z.geraet || chGeraet(), runden_ms: Array.isArray(z.runden) ? z.runden.map(Number) : [], quelle: 'lokal',
+      fahrgefuehl: skFgGueltig(z.fahrgefuehl) }));
+    const alle = typeof bestzeitLesen === 'function' ? bestzeitLesen() : {};
+    Object.keys(alle).forEach((k) => {
+      const bz = alle[k];
+      if (!bz || !bz.fahrer || skSchluesselAusCode(bz.code || k) !== key) return;
       Object.values(bz.fahrer).forEach((f) => {
         if (f && f.beste > 0) eig.push({ zeit_ms: +f.beste, fahrer: chOnline().fahrer || '', auto: f.name || '',
-          geraet: chGeraet(), runden_ms: [], quelle: 'lokal' });
+          geraet: chGeraet(), runden_ms: [], quelle: 'lokal', fahrgefuehl: 'unbekannt' });
       });
-    }
+    });
     return eig;
   }
 
@@ -51039,9 +51118,10 @@
   }
   function skHochladen(key, e, o) {
     const p = codeToTrack(key);
-    const eintrag = { art: 'strecke-zeit', strecke: key, teile: p ? p.tiles.length : 0, zeit_ms: Math.round(e.zeit),
-      runden_ms: e.runden.map(Math.round), fahrer: e.fahrer, auto: String(e.auto || '').slice(0, 40), geraet: e.geraet,
-      quote: e.quote, streckenname: skStreckenName(key), version: ($('app-version') || {}).textContent || '' };
+    const eintrag = { art: 'strecke-zeit', strecke: key, code: e.code || key, teile: p ? p.tiles.length : 0,
+      zeit_ms: Math.round(e.zeit), runden_ms: e.runden.map(Math.round), fahrer: e.fahrer, auto: String(e.auto || '').slice(0, 40),
+      geraet: e.geraet, quote: e.quote, fahrgefuehl: skFgGueltig(e.fahrgefuehl), streckenname: skStreckenName(key),
+      version: ($('app-version') || {}).textContent || '' };
     eintrag.nr = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
     eintrag.url = o.url;
     chAusgangSchreiben(chAusgangLesen().concat([eintrag]));
@@ -51053,6 +51133,7 @@
   function skNachUpload(key) {
     const z = skOnline.zeiten[key];
     if (z) z.at = 0;
+    skOnline.listeAt = 0;
     if (skSeiteOffen('edit')) skEditorZeichnen();
     if (skSeiteOffen('ch-sk') && skDetail && skDetail.strecke === key) skDetailZeichnen();
   }
@@ -51087,13 +51168,16 @@
     // Einmal wiederholen: dieselbe sporadische 404 der Google-Echo-Seite wie bei den Challenges.
     return holen().catch(() => new Promise((ok) => setTimeout(ok, 1200)).then(holen));
   }
-  // Community-Strecken: ?strecken=1 -> { ok, strecken: [{ strecke, name, fahrer, beste_ms, beste_fahrer, laeufe }] }
+  // Community-Strecken: ?strecken=1&geraet=<g> -> { ok, strecken: [{ strecke, name, fahrer, beste_ms,
+  // beste_fahrer, laeufe, eigene, je: { <fahrgefuehl>: { fahrer, beste_ms, beste_fahrer } } }] }.
+  // Die Geraetekennung (zufaellig, ohne Personenbezug, geht ohnehin mit jeder Zeit mit) laesst den
+  // Server auch eigene Strecken mit weniger Fahrern liefern.
   function skListeHolen(frisch) {
     skCacheLaden();
     if (!skUrl() || skOnline.listeLaedt || !chNetzErlaubt()) return Promise.resolve(skOnline.liste);
     if (!frisch && skOnline.liste && Date.now() - skOnline.listeAt < SK_LISTE_MS) return Promise.resolve(skOnline.liste);
     skOnline.listeLaedt = true;
-    return skGet('strecken=1').then((j) => {
+    return skGet('strecken=1&geraet=' + encodeURIComponent(chGeraet())).then((j) => {
       if (!j || !j.ok || !Array.isArray(j.strecken)) throw new Error((j && j.fehler) || 'keine Antwort');
       skOnline.liste = j.strecken; skOnline.listeFehler = false;
       skCacheSchreiben();
@@ -51119,7 +51203,7 @@
   function skAlleZeiten(key) {
     const on = skOnline.zeiten[key];
     const online = on && Array.isArray(on.zeiten) ? on.zeiten.map((z) => ({ zeit_ms: +z.zeit_ms, fahrer: String(z.fahrer || ''),
-      auto: String(z.auto || ''), geraet: String(z.geraet || ''),
+      auto: String(z.auto || ''), geraet: String(z.geraet || ''), fahrgefuehl: skFgGueltig(z.fahrgefuehl),
       runden_ms: Array.isArray(z.runden_ms) ? z.runden_ms.map(Number) : [], quelle: 'online' })) : [];
     const da = (z) => online.some((x) => x.geraet === z.geraet && Math.abs(x.zeit_ms - z.zeit_ms) < 2);
     const lokal = skLokal(key).filter((z) => !da(z));
@@ -51146,15 +51230,44 @@
     });
     return [...beste.values()].sort((a, b) => a.best - b.best);
   }
-  // Community-Strecken: nur mit MEHR als 3 verschiedenen Fahrern (auch wenn der Server mehr
-  // schickt), meiste Fahrer zuerst, dann die schnellere Bestzeit.
-  function skCommunityGefiltert(liste) {
-    return (Array.isArray(liste) ? liste : [])
-      .filter((s) => s && typeof s.strecke === 'string' && (+s.fahrer || 0) >= SK_MIN_FAHRER && codeToTrack(s.strecke))
+  // Eigene Strecken (lokal gespeicherte Zeiten) als Eintraege wie aus ?strecken=1.
+  function skEigeneStrecken() {
+    const alle = skLokalAlle();
+    return Object.keys(alle).filter((k) => Array.isArray(alle[k]) && alle[k].length && codeToTrack(k)).map((k) => {
+      const je = {};
+      alle[k].forEach((e) => {
+        const fg = skFgGueltig(e.fahrgefuehl);
+        if (!je[fg] || e.zeit < je[fg].beste_ms) je[fg] = { fahrer: 1, beste_ms: +e.zeit, beste_fahrer: e.fahrer || '' };
+      });
+      const best = alle[k].reduce((a, b) => (a.zeit <= b.zeit ? a : b));
+      return { strecke: k, name: skStreckenName(k), fahrer: 1, beste_ms: +best.zeit, beste_fahrer: best.fahrer || '',
+               je, eigene: true, nurLokal: true };
+    });
+  }
+  // Community-Strecken: alle mit MEHR als 3 verschiedenen Fahrern (auch wenn der Server mehr
+  // schickt) und alle, zu denen dieses Geraet Zeiten beigetragen hat (online: eigene=true vom
+  // Server, lokal: omegasim-strecken-zeiten). Meiste Fahrer zuerst, dann die schnellere Bestzeit.
+  function skCommunityGefiltert(liste, eigene) {
+    const raus = [];
+    const gesehen = {};
+    (Array.isArray(liste) ? liste : []).forEach((s) => {
+      if (!s || typeof s.strecke !== 'string' || !codeToTrack(s.strecke)) return;
+      const k = skSchluesselAusCode(s.strecke) || s.strecke;
+      if (gesehen[k]) return;
+      gesehen[k] = Object.assign({}, s, { strecke: k, eigene: !!s.eigene });
+      raus.push(gesehen[k]);
+    });
+    (Array.isArray(eigene) ? eigene : []).forEach((s) => {
+      if (gesehen[s.strecke]) { gesehen[s.strecke].eigene = true; if (!gesehen[s.strecke].name && s.name) gesehen[s.strecke].name = s.name; return; }
+      gesehen[s.strecke] = s;
+      raus.push(s);
+    });
+    return raus.filter((s) => (+s.fahrer || 0) >= SK_MIN_FAHRER || s.eigene)
       .sort((a, b) => ((+b.fahrer || 0) - (+a.fahrer || 0)) || ((+a.beste_ms || 0) - (+b.beste_ms || 0)));
   }
 
   // ---- Anzeige ----
+  let skFgWahl = null;          // gewaehltes Fahrgefuehl in der Streckenansicht (null = das eigene aktuelle)
   function skSeiteOffen(key) { const p = $('sub-' + key); return !!(p && p.classList.contains('on')); }
   function skZelle(tr, txt, kl) {
     const td = document.createElement('td');
@@ -51173,20 +51286,45 @@
     td.appendChild(document.createTextNode(' '));
     td.appendChild(m);
   }
-  // Zeichnet Status, Bestzeiten und beste 3 Runden einer Strecke in `host`.
+  // Zeichnet Fahrgefuehl-Auswahl, Status, Bestzeiten und beste 3 Runden einer Strecke in `host`.
   function skZeichnen(host, key) {
     if (!host) return;
     const p = codeToTrack(key);
     const minMs = p ? chMinRundeMs({ code: key, runden: 1 }) : 0;
     const a = skAlleZeiten(key);
+    const aktuell = skFgAktuell();
+    const wahl = skFgWahl || aktuell;
+    // Chips: das eigene aktuelle Fahrgefuehl immer, dazu jedes, zu dem es Zeiten gibt.
+    const fgs = [aktuell];
+    a.eintraege.forEach((z) => { if (fgs.indexOf(z.fahrgefuehl) < 0) fgs.push(z.fahrgefuehl); });
+    if (fgs.indexOf(wahl) < 0) fgs.push(wahl);
+    fgs.sort((x, y) => SK_FAHRGEFUEHLE.indexOf(x) - SK_FAHRGEFUEHLE.indexOf(y));
     host.innerHTML = '';
+    const chips = document.createElement('div');
+    chips.className = 'sk-chips';
+    chips.setAttribute('role', 'group');
+    chips.setAttribute('aria-label', t('Fahrgefühl'));
+    fgs.forEach((fg) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sk-chip' + (fg === wahl ? ' an' : '');
+      b.dataset.fg = fg;
+      b.setAttribute('aria-pressed', fg === wahl ? 'true' : 'false');
+      b.setAttribute('data-i18n-skip', '');
+      const n = new Set(a.eintraege.filter((z) => z.fahrgefuehl === fg).map((z) => z.geraet)).size;
+      b.textContent = skFgName(fg) + (n ? ' (' + n + ')' : '');
+      b.onclick = () => { skFgWahl = fg; skZeichnen(host, key); };
+      chips.appendChild(b);
+    });
+    host.appendChild(chips);
+    const eintraege = a.eintraege.filter((z) => z.fahrgefuehl === wahl);
     const st = document.createElement('p');
     st.className = 'muted sk-status';
     st.setAttribute('data-i18n-skip', '');
-    const lokalN = a.eintraege.filter((z) => z.quelle === 'lokal').length;
+    const lokalN = eintraege.filter((z) => z.quelle === 'lokal').length;
     st.textContent = (!skUrl() ? t('Nur auf diesem Gerät (keine Online-Adresse eingestellt).')
       : a.laedt && !a.online ? t('Lade Bestenliste …')
-      : a.online ? t('Online-Bestenliste') + ': ' + (a.eintraege.length - lokalN) + ' ' + t('Zeiten')
+      : a.online ? t('Online-Bestenliste') + ': ' + (eintraege.length - lokalN) + ' ' + t('Zeiten')
         + (a.stand ? ' · ' + t('Stand') + ' ' + new Date(a.stand).toLocaleTimeString(lang === 'en' ? 'en-GB' : lang === 'es' ? 'es-ES' : 'de-DE', { hour: '2-digit', minute: '2-digit' }) : '')
       : a.fehler ? t('Online-Bestenliste nicht erreichbar, hier stehen deine eigenen Zeiten.')
       : t('Lade Bestenliste …'))
@@ -51212,7 +51350,7 @@
       }
       return body;
     };
-    const best = skBestzeiten(a.eintraege);
+    const best = skBestzeiten(eintraege);
     const b1 = tabelle(t('Bestzeit'), best, t('Noch keine Zeit auf dieser Strecke.'));
     best.slice(0, 30).forEach((z, i) => {
       const tr = document.createElement('tr');
@@ -51223,7 +51361,7 @@
       skZelle(tr, i ? '+' + chZahl((z.zeit_ms - best[0].zeit_ms) / 1000, 3) : '–');
       b1.appendChild(tr);
     });
-    const drei = skDreier(a.eintraege, minMs);
+    const drei = skDreier(eintraege, minMs);
     const b3 = tabelle(t('Beste 3 Runden'), drei, t('Noch keine 3er-Serie'));
     drei.slice(0, 30).forEach((z, i) => {
       const tr = document.createElement('tr');
@@ -51259,6 +51397,18 @@
       skZeitenHolen(key, false).then(() => { if (skSeiteOffen('edit')) skZeichnen($('sk-editor-inhalt'), key); });
     }
   }
+  // Die Bestzeit einer Listenzeile: fuer das eigene aktuelle Fahrgefuehl, sonst die schnellste
+  // ueberhaupt mit ihrem Fahrgefuehl.
+  function skListenBestzeit(s, aktuell) {
+    const je = s.je && typeof s.je === 'object' ? s.je : null;
+    if (je && je[aktuell] && je[aktuell].beste_ms) return { ms: +je[aktuell].beste_ms, wer: je[aktuell].beste_fahrer || '', fg: aktuell };
+    if (je) {
+      let b = null;
+      Object.keys(je).forEach((fg) => { if (je[fg] && je[fg].beste_ms && (!b || +je[fg].beste_ms < b.ms)) b = { ms: +je[fg].beste_ms, wer: je[fg].beste_fahrer || '', fg }; });
+      if (b) return b;
+    }
+    return s.beste_ms ? { ms: +s.beste_ms, wer: s.beste_fahrer || '', fg: 'unbekannt' } : null;
+  }
   // Challenges > Community-Strecken
   function skListeZeichnen() {
     const host = $('sk-liste-bereich');
@@ -51267,15 +51417,17 @@
     if (skUrl() && !skOnline.listeLaedt && Date.now() - skOnline.listeAt > SK_LISTE_MS) {
       skListeHolen(false).then(() => { if (skSeiteOffen('ch-strecken')) skListeZeichnen(); });
     }
-    const liste = skCommunityGefiltert(skOnline.liste);
+    const liste = skCommunityGefiltert(skOnline.liste, skEigeneStrecken());
+    const aktuell = skFgAktuell();
     host.innerHTML = '';
     const st = document.createElement('p');
     st.className = 'muted community-stand';
     st.setAttribute('data-i18n-skip', '');
-    st.textContent = !skUrl() ? t('Nur auf diesem Gerät (keine Online-Adresse eingestellt).')
+    st.textContent = (!skUrl() ? t('Nur auf diesem Gerät (keine Online-Adresse eingestellt).')
       : skOnline.listeLaedt && !skOnline.liste ? t('Lade die gemeinsame Liste …')
       : skOnline.listeFehler && !skOnline.liste ? t('Gemeinsame Liste nicht erreichbar.')
-      : t('Strecken mit mehr als drei Fahrern: {n}').replace('{n}', liste.length);
+      : t('Strecken mit mehr als drei Fahrern: {n}').replace('{n}', liste.filter((s) => (+s.fahrer || 0) >= SK_MIN_FAHRER).length))
+      + ' · ' + t('Dein Fahrgefühl') + ': ' + skFgName(aktuell);
     host.appendChild(st);
     if (!liste.length) {
       const p = document.createElement('p');
@@ -51307,10 +51459,18 @@
       const b = document.createElement('b');
       b.setAttribute('data-i18n-skip', '');
       b.textContent = s.name ? s.name + ' · ' + s.strecke : s.strecke;
+      if (s.eigene) {
+        const m = document.createElement('span');
+        m.className = 'community-modus sk-eigene';
+        m.textContent = s.nurLokal ? t('eigene Zeiten') + ', ' + t('nur lokal') : t('eigene Zeiten');
+        b.appendChild(document.createTextNode(' '));
+        b.appendChild(m);
+      }
       const em = document.createElement('em');
       em.setAttribute('data-i18n-skip', '');
+      const bz = skListenBestzeit(s, aktuell);
       em.textContent = t('{n} Fahrer').replace('{n}', +s.fahrer || 0)
-        + (s.beste_ms ? ' · ' + t('Bestzeit') + ' ' + chZeit(+s.beste_ms) + (s.beste_fahrer ? ' (' + s.beste_fahrer + ')' : '') : '');
+        + (bz ? ' · ' + t('Bestzeit') + ' ' + chZeit(bz.ms) + ' (' + (bz.wer ? bz.wer + ', ' : '') + skFgName(bz.fg) + ')' : '');
       tx.appendChild(b); tx.appendChild(em);
       auf.appendChild(tx);
       row.appendChild(auf);
@@ -51322,6 +51482,7 @@
   let skDetail = null;
   function skDetailOeffnen(s) {
     skDetail = s;
+    skFgWahl = null;
     showSubpage('ch-sk');
   }
   function skDetailZeichnen() {
@@ -104837,23 +104998,24 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Alle Tests sichern die beruehrten Ablagen und Zustaende und stellen sie danach wieder her;
   // fetch, konsoleFrage und chAusgangSenden sind Attrappen - kein Test geht ins Netz.
   function stSkMerken() {
-    const keys = [SK_STORE, SK_OPT_STORE, SK_CACHE_STORE, CH_ONLINE_STORE, CH_AUSGANG, BESTZEIT_STORE, TRACK_STORE_KEY];
+    const keys = [SK_STORE, SK_STORE_V, SK_OPT_STORE, SK_CACHE_STORE, CH_ONLINE_STORE, CH_AUSGANG, BESTZEIT_STORE, TRACK_STORE_KEY];
     const ls = {};
     keys.forEach((k) => { ls[k] = localStorage.getItem(k); });
     const m = { ls, fetch: window.fetch, frage: konsoleFrage, senden: chAusgangSenden, rs: raceState,
       tiles: currentTrackTiles, rot: trackRotationDeg, wert: kFrageWert, lauf: skLauf, gelesen: skGelesen,
-      detail: skDetail, on: { liste: skOnline.liste, listeAt: skOnline.listeAt, listeLaedt: skOnline.listeLaedt,
+      detail: skDetail, fgWahl: skFgWahl, on: { liste: skOnline.liste, listeAt: skOnline.listeAt, listeLaedt: skOnline.listeLaedt,
         listeFehler: skOnline.listeFehler, zeiten: skOnline.zeiten },
       tab: document.querySelector('.tabpage.active'), subOn: [...document.querySelectorAll('.subpage.on')],
       home: [...document.querySelectorAll('.subpage-home')].map((h) => h.style.display),
       name: $('track-name') ? $('track-name').value : '' };
     skOnline.zeiten = {};
+    localStorage.setItem(SK_STORE_V, '2');
     return m;
   }
   function stSkZurueck(m) {
     window.fetch = m.fetch; konsoleFrage = m.frage; chAusgangSenden = m.senden; raceState = m.rs;
     currentTrackTiles = m.tiles; trackRotationDeg = m.rot; kFrageWert = m.wert; skLauf = m.lauf; skGelesen = m.gelesen;
-    skDetail = m.detail;
+    skDetail = m.detail; skFgWahl = m.fgWahl;
     Object.assign(skOnline, m.on);
     Object.keys(m.ls).forEach((k) => { if (m.ls[k] === null) localStorage.removeItem(k); else localStorage.setItem(k, m.ls[k]); });
     if ($('track-name')) $('track-name').value = m.name;
@@ -104867,9 +105029,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function stSkStrecke() {
     const def = CH_ALLE.find((d) => d.kat === 'C') || CH_ALLE[0];
     const tiles = codeToTrack(def.code).tiles;
-    const minMs = chMinRundeMs({ code: trackToCode(tiles, 0), runden: 1 });
+    const code = trackToCode(tiles, 0);
+    const minMs = chMinRundeMs({ code, runden: 1 });
     const gelesen = tiles.slice(1).map((x) => x.type);
-    return { tiles, minMs, gelesen, key: skSchluessel(tiles) };
+    return { tiles, code, minMs, gelesen, key: skSchluessel(tiles) };
   }
 
   stAdd('Online v1.3.15: Standard aus, Pop-up beim ersten Speichern genau einmal', () => {
@@ -104920,7 +105083,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!document.querySelector('#sub-opt-online h2 .wip-tag')) f.push('WIP fehlt (Optionen)');
       if (!document.querySelector('#sub-ch-strecken h2 .wip-tag')) f.push('WIP fehlt (Community-Strecken)');
       if (!document.querySelector('#sub-opt-online .opt-label small')) f.push('Erklaerung nicht als small');
-      for (const k of ['Zeiten online synchronisieren', 'Community-Strecken', 'nur lokal', 'Beste 3 Runden',
+      for (const k of ['Zeiten online synchronisieren', 'Community-Strecken', 'nur lokal', 'Beste 3 Runden', 'eigene Zeiten',
+                       'unbekannt', 'Dein Fahrgefühl',
                        'Zeiten zu dieser Strecke online speichern? Dann werden dein Name und die Strecke öffentlich gespeichert.']) {
         if (!I18N_EN[k] || !I18N_ES[k]) f.push('Uebersetzung fehlt: ' + k);
       }
@@ -104958,6 +105122,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (netz) f.push('im Rennen ' + netz + 'x Netz');
       if (!skLauf || skLauf.runden.length !== 4) f.push('Runden nicht gemerkt');
       const lauf = skLauf; skLauf = null;
+      lauf.fahrgefuehl = 'propacejka';
       raceState = 'idle';
       // 2. Schalter aus: lokal gespeichert, nichts gesendet.
       const r1 = skAuswerten(lauf);
@@ -104966,6 +105131,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         if (r1.gesendet) f.push('gesendet, obwohl aus');
         if (JSON.stringify(r1.eintrag.runden) !== JSON.stringify([l1, 0, 0, l4])) f.push('Runden ' + JSON.stringify(r1.eintrag.runden));
         if (r1.eintrag.zeit !== l1) f.push('Bestzeit ' + r1.eintrag.zeit + ' statt ' + l1);
+        if (r1.eintrag.fahrgefuehl !== 'propacejka') f.push('Fahrgefuehl ' + r1.eintrag.fahrgefuehl);
+        if (r1.eintrag.code !== s.code) f.push('gefahrener Code fehlt');
       }
       if (chAusgangLesen().length || senden || netz) f.push('bei AUS in der Schlange/gesendet');
       if ((skLokalAlle()[s.key] || []).length !== 1) f.push('nicht lokal gespeichert');
@@ -104978,89 +105145,121 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       else {
         if (a[0].teile !== codeToTrack(s.key).tiles.length) f.push('Teilezahl ' + a[0].teile);
         if (!(a[0].quote >= 0.9)) f.push('Quote ' + a[0].quote);
+        if (a[0].fahrgefuehl !== 'propacejka') f.push('Fahrgefuehl in der Schlange ' + a[0].fahrgefuehl);
+        if (a[0].code !== s.code) f.push('Code in der Schlange ' + a[0].code);
       }
       if (senden !== 1) f.push('Schlange ' + senden + 'x angestossen');
       // 4. Eine Runde ohne erkannte Teile allein zaehlt nirgends.
       if (skAuswerten({ tiles: s.tiles, runden: [{ ms: l1, gelesen: [], ungueltig: false }] })) f.push('Runde ohne Teile gewertet');
+      // 5. Ohne gesetztes Fahrgefuehl gilt das aktuelle (ein bekannter Wert).
+      const r3 = skAuswerten({ tiles: s.tiles, runden: [{ ms: l1, gelesen: s.gelesen, ungueltig: false }] });
+      if (!r3 || SK_FAHRGEFUEHLE.indexOf(r3.eintrag.fahrgefuehl) < 0) f.push('aktuelles Fahrgefuehl unbekannt');
     } finally {
       stSkZurueck(m);
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'aus: nur lokal; an: Schlange (strecke-zeit); zu schnell und ohne Teile als 0; im Rennen 0 Speicher/Netz' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'aus: nur lokal; an: Schlange (strecke-zeit, Fahrgefuehl, Code); zu schnell und ohne Teile als 0; im Rennen 0 Speicher/Netz' };
   });
 
-  stAdd('Online v1.3.15: lokale und Online-Zeiten in einer Liste, lokal markiert', () => {
+  stAdd('Online v1.3.15: lokale und Online-Zeiten in einer Liste, lokal markiert, je Fahrgefuehl', () => {
     const f = [];
     const m = stSkMerken();
     try {
       const s = stSkStrecke();
       const ich = chGeraet();
       const z = (k) => Math.round(s.minMs * k);
+      const PP = 'propacejka';
       localStorage.removeItem(BESTZEIT_STORE);
       localStorage.setItem(SK_STORE, JSON.stringify({ [s.key]: [
-        { zeit: z(1.2), runden: [z(1.2), z(1.3), z(1.25)], datum: 1, fahrer: 'Ich', auto: 'R', geraet: ich, geteilt: false },
-        { zeit: z(1.8), runden: [z(1.8)], datum: 2, fahrer: 'Ich', auto: 'R', geraet: ich, geteilt: true }] }));
+        { zeit: z(1.2), runden: [z(1.2), z(1.3), z(1.25)], datum: 1, fahrer: 'Ich', auto: 'R', geraet: ich, geteilt: false, fahrgefuehl: PP },
+        { zeit: z(1.8), runden: [z(1.8)], datum: 2, fahrer: 'Ich', auto: 'R', geraet: ich, geteilt: true, fahrgefuehl: PP }] }));
       skOnline.zeiten[s.key] = { at: Date.now(), stand: Date.now(), zeiten: [
-        { zeit_ms: z(1.5), fahrer: 'A', geraet: 'stA', runden_ms: [z(1.5), z(1.6), z(1.7)] },
-        { zeit_ms: z(1.6), fahrer: 'B', geraet: 'stB', runden_ms: [z(1.6), z(1.6), z(1.6)] },
-        { zeit_ms: z(1.8), fahrer: 'Ich', geraet: ich, runden_ms: [z(1.8)] }] };
+        { zeit_ms: z(1.5), fahrer: 'A', geraet: 'stA', runden_ms: [z(1.5), z(1.6), z(1.7)], fahrgefuehl: PP },
+        { zeit_ms: z(1.6), fahrer: 'B', geraet: 'stB', runden_ms: [z(1.6), z(1.6), z(1.6)], fahrgefuehl: PP },
+        { zeit_ms: z(1.8), fahrer: 'Ich', geraet: ich, runden_ms: [z(1.8)], fahrgefuehl: PP },
+        { zeit_ms: z(1.1), fahrer: 'Arc', geraet: 'stC', runden_ms: [z(1.1), z(1.1), z(1.1)], fahrgefuehl: 'arcade' }] };
+      skFgWahl = PP;
       const host = document.createElement('div');
       skZeichnen(host, s.key);
       const tabs = host.querySelectorAll('table');
       const zeilen = tabs[0] ? [...tabs[0].querySelectorAll('tr')] : [];
-      if (zeilen.length !== 3) f.push('Bestzeit ' + zeilen.length + ' statt 3 Zeilen');
+      if (zeilen.length !== 3) f.push('Bestzeit Pacejka ' + zeilen.length + ' statt 3 Zeilen');
       else {
         if (!zeilen[0].querySelector('.sk-lokal')) f.push('eigene lokale Bestzeit nicht markiert');
         if (zeilen[0].className !== 'du') f.push('eigene Zeile nicht hervorgehoben');
         if (zeilen[1].querySelector('.sk-lokal') || zeilen[2].querySelector('.sk-lokal')) f.push('Online-Zeit als lokal markiert');
         if (zeilen[1].textContent.indexOf('A') < 0) f.push('Reihenfolge: ' + zeilen[1].textContent);
+        if ([...tabs].some((tb) => tb.textContent.indexOf('Arc') >= 0)) f.push('Arcade-Zeit in der Pacejka-Liste');
       }
-      if (skAlleZeiten(s.key).eintraege.length !== 4) f.push('doppelte eigene Zeit nicht zusammengelegt: ' + skAlleZeiten(s.key).eintraege.length);
+      if (skAlleZeiten(s.key).eintraege.length !== 5) f.push('doppelte eigene Zeit nicht zusammengelegt: ' + skAlleZeiten(s.key).eintraege.length);
       const drei = tabs[1] ? [...tabs[1].querySelectorAll('tr')] : [];
       if (drei.length !== 3) f.push('3er ' + drei.length + ' statt 3 Zeilen');
+      // Umschalten auf Arcade: nur die Arcade-Zeit.
+      const chip = host.querySelector('.sk-chip[data-fg="arcade"]');
+      if (!chip) f.push('kein Arcade-Chip');
+      else {
+        chip.click();
+        const za = [...host.querySelectorAll('table')[0].querySelectorAll('tr')];
+        if (za.length !== 1 || za[0].textContent.indexOf('Arc') < 0) f.push('Arcade-Liste: ' + za.length + ' Zeilen');
+        if (!host.querySelector('.sk-chip.an[data-fg="arcade"]')) f.push('Chip nicht markiert');
+      }
       // Ohne Online-Liste (nicht erreichbar) bleiben die eigenen Zeiten da, markiert.
+      skFgWahl = PP;
       delete skOnline.zeiten[s.key];
       skZeichnen(host, s.key);
       const z2 = [...host.querySelectorAll('table')[0].querySelectorAll('tr')];
       if (z2.length !== 1 || !z2[0].querySelector('.sk-lokal')) f.push('ohne Online: ' + z2.length + ' Zeilen');
-      // Die alten Time-Attack-Bestzeiten (gleicher Schluessel) gehoeren dazu.
-      localStorage.removeItem(SK_STORE);
-      localStorage.setItem(BESTZEIT_STORE, JSON.stringify({ [s.key]: { code: s.key, fahrer: { x: { name: 'Auto', beste: z(1.4), medaille: 1, runden: 3 } } } }));
-      if (!skLokal(s.key).some((e) => e.zeit_ms === z(1.4))) f.push('Time-Attack-Bestzeit fehlt');
+      // Alte Eintraege ohne Fahrgefuehl und die Time-Attack-Bestzeiten (gespeicherter Code) gelten als unbekannt.
+      localStorage.setItem(SK_STORE, JSON.stringify({ [s.key]: [{ zeit: z(1.3), runden: [z(1.3)], datum: 1, geraet: ich }] }));
+      localStorage.setItem(BESTZEIT_STORE, JSON.stringify({ [bestzeitSchluessel(s.tiles)]: { code: s.code, fahrer: { x: { name: 'Auto', beste: z(1.4), medaille: 1, runden: 3 } } } }));
+      const lok = skLokal(s.key);
+      if (!lok.some((e) => e.zeit_ms === z(1.4) && e.fahrgefuehl === 'unbekannt')) f.push('Time-Attack-Bestzeit fehlt');
+      if (!lok.some((e) => e.zeit_ms === z(1.3) && e.fahrgefuehl === 'unbekannt')) f.push('alter Eintrag nicht unbekannt');
     } finally {
       stSkZurueck(m);
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'online + lokal gemischt, eigene lokale Zeit vorn und nur-lokal-Marke, doppelte Zeit einmal' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'online + lokal gemischt, nur-lokal-Marke, je Fahrgefuehl getrennt (Chips), alte als unbekannt' };
   });
 
-  stAdd('Online v1.3.15: Community-Strecken nur mit mehr als 3 Fahrern, Abruf gecacht', async () => {
+  stAdd('Online v1.3.15: Community-Strecken mit mehr als 3 Fahrern plus eigene, Abruf gecacht', async () => {
     const f = [];
     const m = stSkMerken();
     try {
-      const codes = CH_ALLE.slice(0, 3).map((d) => skSchluessel(codeToTrack(d.code).tiles));
+      const keys = [];
+      CH_ALLE.forEach((d) => { const k = skSchluessel(codeToTrack(d.code).tiles); if (keys.indexOf(k) < 0) keys.push(k); });
+      const codes = keys.slice(0, 5);
       const antwort = { ok: true, strecken: [
         { strecke: codes[0], name: 'Drei', fahrer: 3, beste_ms: 5000 },
         { strecke: codes[1], name: 'Vier', fahrer: 4, beste_ms: 7000 },
-        { strecke: codes[2], name: 'Fuenf', fahrer: 5, beste_ms: 9000 },
+        { strecke: codes[2], name: 'Fuenf', fahrer: 5, beste_ms: 9000,
+          je: { propacejka: { fahrer: 3, beste_ms: 9500, beste_fahrer: 'P' }, arcade: { fahrer: 2, beste_ms: 9000, beste_fahrer: 'A' } } },
+        { strecke: codes[3], name: 'Zwei', fahrer: 2, beste_ms: 8000, eigene: true },
         { strecke: 'S??', name: 'Kaputt', fahrer: 9, beste_ms: 1 }] };
+      localStorage.setItem(SK_STORE, JSON.stringify({ [codes[4]]: [{ zeit: 6000, runden: [6000], datum: 1, fahrer: 'Ich', geraet: chGeraet(), fahrgefuehl: 'arcade' }] }));
       const urls = [];
       window.fetch = (u) => { urls.push(String(u)); return Promise.resolve({ json: () => Promise.resolve(antwort) }); };
       const o = chOnline(); o.url = 'https://example.invalid/exec'; chSchreiben(CH_ONLINE_STORE, o);
       raceState = 'idle';
       skOnline.liste = null; skOnline.listeAt = 0; skOnline.listeLaedt = false;
       await skListeHolen(false);
-      if (urls.length !== 1 || urls[0].indexOf('strecken=1') < 0) f.push('Abruf: ' + JSON.stringify(urls));
+      if (urls.length !== 1 || urls[0].indexOf('strecken=1') < 0 || urls[0].indexOf('geraet=') < 0) f.push('Abruf: ' + JSON.stringify(urls));
       await skListeHolen(false);
       if (urls.length !== 1) f.push('zweiter Abruf trotz Zwischenspeicher');
       raceState = 'racing'; skOnline.listeAt = 0;
       await skListeHolen(true);
       if (urls.length !== 1) f.push('Abruf im Rennen');
       raceState = 'idle';
-      const g = skCommunityGefiltert(skOnline.liste);
-      if (g.map((x) => x.name).join(',') !== 'Fuenf,Vier') f.push('Filter: ' + g.map((x) => x.name).join(','));
+      const g = skCommunityGefiltert(skOnline.liste, skEigeneStrecken());
+      if (g.map((x) => (x.nurLokal ? 'lokal' : x.name)).join(',') !== 'Fuenf,Vier,Zwei,lokal') f.push('Filter: ' + g.map((x) => (x.nurLokal ? 'lokal' : x.name)).join(','));
+      if (!g[2] || !g[2].eigene || !g[3] || !g[3].eigene || !g[3].nurLokal || g[0].eigene) f.push('eigene falsch markiert');
+      // Bestzeit je Fahrgefuehl: das aktuelle, sonst die schnellste mit ihrem Fahrgefuehl.
+      const b1 = skListenBestzeit(antwort.strecken[2], 'propacejka'), b2 = skListenBestzeit(antwort.strecken[2], 'gran');
+      if (!b1 || b1.ms !== 9500 || b1.fg !== 'propacejka') f.push('Bestzeit Pacejka ' + JSON.stringify(b1));
+      if (!b2 || b2.ms !== 9000 || b2.fg !== 'arcade') f.push('Bestzeit ohne eigenes Fahrgefuehl ' + JSON.stringify(b2));
       skOnline.listeAt = Date.now();
       skListeZeichnen();
       const reihen = [...document.querySelectorAll('#sk-liste-bereich .community-zeile')];
-      if (reihen.length !== 2) f.push(reihen.length + ' Reihen statt 2');
+      if (reihen.length !== 4) f.push(reihen.length + ' Reihen statt 4');
+      if (document.querySelectorAll('#sk-liste-bereich .sk-eigene').length !== 2) f.push('Marke eigene nicht zweimal');
       // Antippen: Strecke mit Karte und Liste, dann in den Editor laden.
       codes.forEach((c) => { skOnline.zeiten[c] = { zeiten: [], at: Date.now(), stand: Date.now() }; });
       if (reihen[0]) reihen[0].querySelector('.community-oeffnen').click();
@@ -105068,6 +105267,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if ($('sk-titel').textContent !== 'Fuenf') f.push('Titel ' + $('sk-titel').textContent);
       if (!$('sk-karte').querySelector('svg')) f.push('keine Karte');
       if (!$('sk-detail-inhalt').querySelector('table')) f.push('keine Zeitenliste');
+      if (!$('sk-detail-inhalt').querySelector('.sk-chip')) f.push('keine Fahrgefuehl-Auswahl');
       if (urls.length !== 1) f.push('Strecke trotz frischem Zwischenspeicher geholt');
       konsoleZurueck();
       if (!$('sub-ch-strecken').classList.contains('on')) f.push('Kreis fuehrt nicht in die Liste');
@@ -105079,35 +105279,53 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     } finally {
       stSkZurueck(m);
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : '2 von 4 (>3 Fahrer, Code lesbar), ein Abruf, keiner im Rennen, Strecke + Editor' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '4 von 6 (>3 Fahrer oder eigene, online und nur lokal), Bestzeit je Fahrgefuehl, ein Abruf, keiner im Rennen' };
   });
 
-  stAdd('Online v1.3.15: Schluessel stabil (Drehung, Rueckwaerts) und gleich wie im Apps Script', () => {
+  stAdd('Online v1.3.15: Schluessel (Spiegel gleich, rueckwaerts anders) wie im Apps Script', () => {
     const f = [];
     // Erwartete Werte aus stSchluessel/stMinRundeMs des Apps Scripts (tools/challenges-apps-script.gs).
-    const soll = { 'SGR2GRGRLR3G@270': ['SGL3RLGLGL2G', 2016], 'SG4R3G4R3': ['SG4R3G4R3', 2379],
-                   'SG3HG3H': ['SG3HG3H', 1771], 'SGJG3J': ['SGJG3J', 1440] };
+    const soll = { 'SGR2GRGRLR3G@270': ['SGL2GLGLRL3G', 2016], 'SG4R3G4R3': ['SG4L3G4L3', 2379],
+                   'SG3HG3H': ['SG3HG3H', 1771], 'SGJG3J': ['SGHG3H', 1440], 'SG2R3G2R2L': ['SG2L3G2L2R', 1718] };
     for (const code of Object.keys(soll)) {
       const tiles = codeToTrack(code).tiles;
       const k = skSchluessel(tiles);
       if (k !== soll[code][0]) f.push(code + ' -> ' + k + ' statt ' + soll[code][0]);
-      if (skSchluessel(chSpiegelTiles(tiles)) !== k) f.push(code + ': rueckwaerts anderer Schluessel');
+      if (skSchluessel(skSpiegelLR(tiles)) !== k) f.push(code + ': Spiegelbild anderer Schluessel');
       const p = codeToTrack(k + '@90');
       if (!p || skSchluessel(p.tiles) !== k) f.push(code + ': mit Drehung anders');
       // Mindestrunde der App (2,5 m/s) liegt hoechstens 5 % ueber der des Skripts, nie darunter.
       const app = chMinRundeMs({ code: k, runden: 1 });
       if (!(soll[code][1] <= app && soll[code][1] >= app * 0.95)) f.push(code + ': Mindestrunde App ' + app + ' / Skript ' + soll[code][1]);
     }
+    // Rueckwaerts gefahren ist eine andere Strecke (nicht symmetrische Bahn).
+    const asym = codeToTrack('SG2R3G2R2L').tiles;
+    if (skSchluessel(chSpiegelTiles(asym)) === skSchluessel(asym)) f.push('rueckwaerts gleicher Schluessel');
+    // Die lokalen Time-Attack-Bestzeiten behalten ihren Schluessel (rueckwaerts = dieselbe).
+    if (bestzeitSchluessel(chSpiegelTiles(asym)) !== bestzeitSchluessel(asym)) f.push('bestzeitSchluessel veraendert');
     // Laengen je Teil wie ST_LAENGE_M im Apps Script.
     const ST = { S: 0.43, G: 0.43, E: 0.43, B: 0.86, R: 0.38746, L: 0.38746, K: 0.19373, M: 0.19373, W: 0.58643, Q: 0.58643, H: 0.80034, J: 0.80034 };
     for (const b of Object.keys(ST)) {
       const l = trackLaengeM([{ type: TRACK_CODE_TYPE[b] }]);
       if (Math.abs(l - ST[b]) > 0.0005) f.push(b + ': App ' + l.toFixed(5) + ' m, Skript ' + ST[b]);
     }
-    // Ein echtes Spiegelbild (nur links/rechts tauschen, gleiche Richtung) ist eine andere Bahn.
-    const a = skSchluessel(codeToTrack('SG2R3G2R2L').tiles), b2 = skSchluessel(codeToTrack('SG2L3G2L2R').tiles);
-    if (a === b2) f.push('Spiegelbild zusammengelegt');
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : '4 Codes wie im Skript, Drehung und Rueckwaerts gleich, Teillaengen gleich' };
+    // Jedes Preset ist ein bekanntes Fahrgefuehl (dieselbe Liste steht im Apps Script).
+    Object.keys(PRESETS).forEach((k) => { if (SK_FAHRGEFUEHLE.indexOf(k) < 0) f.push('Preset fehlt in SK_FAHRGEFUEHLE: ' + k); });
+    // Alte lokale Ablage (1.3.20, Schluessel rueckwaerts = dieselbe) wird nach dem gefahrenen Code einsortiert.
+    const KEY = SK_STORE, KV = SK_STORE_V;
+    const merk = { a: localStorage.getItem(KEY), v: localStorage.getItem(KV) };
+    try {
+      const rueck = chSpiegelTiles(asym);
+      localStorage.setItem(KEY, JSON.stringify({ [bestzeitSchluessel(asym)]: [{ zeit: 5000, runden: [5000], code: trackToCode(rueck, 0) }] }));
+      localStorage.removeItem(KV);
+      const neu = skLokalAlle();
+      if (!neu[skSchluessel(rueck)] || neu[skSchluessel(asym)]) f.push('Wanderung: ' + Object.keys(neu).join(','));
+      if (localStorage.getItem(KV) !== '2') f.push('Wanderung nicht vermerkt');
+    } finally {
+      if (merk.a === null) localStorage.removeItem(KEY); else localStorage.setItem(KEY, merk.a);
+      if (merk.v === null) localStorage.removeItem(KV); else localStorage.setItem(KV, merk.v);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '5 Codes wie im Skript, Spiegel und Drehung gleich, rueckwaerts anders, Presets bekannt, Wanderung' };
   });
   // ============================== HOME ==============================
   // Der Schirm beim Laden, erreichbar ueber das Logo. Die Zahl der Einstellungen wird
