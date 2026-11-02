@@ -12232,6 +12232,9 @@
       <div class="opt-row"><div class="opt-label">Bekannte Autos beim Start verbinden
           <small>Nur in der Android-App: Beim Start verbindet sie nacheinander alle Autos, die schon einmal verbunden waren (mit gemerkter Rolle oder gemerktem Namen) und gerade erreichbar sind. Ein Auto, das mit einem anderen Ger&auml;t verbunden, aus oder au&szlig;er Reichweite ist, wird ausgelassen. Im Browser verlangt Bluetooth f&uuml;r jedes Auto einen Klick.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-autoverbinden" checked><span></span></label></div>
+      <!-- v1.3.15 (WIP): Funkprioritaet je Rolle zu Beginn der Startampel (funkPrioritaetVorStart, 90-ghosts.js). -->
+      <div class="opt-row"><div class="opt-label">Funkpriorit&auml;t beim Start<span class="wip-tag">WIP</span><small>Nur in der Android-App: Zu Beginn der Startampel, solange alle Autos stehen, bekommen die gesteuerten Autos (Spieler 1&ndash;3) das schnellste Verbindungsintervall und NPCs, Safety Car und Reinigungswagen ein ausgewogenes. So nehmen die NPCs dem Funk nicht die kurzen Zeitfenster weg, und die gesteuerten Autos reagieren schneller. Die Autos werden nacheinander umgestellt, im Abstand von 0,15 s.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-funk-prio" checked><span></span></label></div>
       <div class="opt-row" id="opt-app-zeile" hidden><div class="opt-label">App &amp; Updates
           <small>Nur in der Android-App: Version, Updates ohne neue APK.</small></div>
         <button type="button" class="goto-tab" data-tab="info" data-k-sub="app">&Ouml;ffnen</button></div>
@@ -13559,6 +13562,39 @@
   window.OMEGA_BRUECKE.alleSchliessen = omegaAlleSchliessen;
   window.OMEGA_BRUECKE.prioritaetHoch = (deviceId) =>
     ruf('requestConnectionPriority', { deviceId, connectionPriority: 1 }).catch(() => {});
+  // ---- PRIORITAET JE ROLLE (v1.3.15, WIP) ------------------------------------------------
+  // Zu Beginn der Startampel: gesteuerte Autos 'hoch', NPCs & Co. 'ausgewogen' (funkPrioritaetVorStart,
+  // 90-ghosts.js). Zuerst ueber OmegaBle.prioritaetSetzen (neue APK, meldet ehrlich, warum etwas nicht
+  // ging). FEATURE-ERKENNUNG ueber die Methodenliste, die Capacitor beim Start in PluginHeaders legt:
+  // eine unbekannte Methode beantwortet Capacitor gar nicht (nur ein Log-Eintrag), das Promise bliebe
+  // ewig offen. Fehlt die Methode (aeltere APK), geht dieselbe Anfrage ueber das Community-Plugin, das
+  // requestConnectionPriority mit allen drei Android-Stufen kennt (0 BALANCED, 1 HIGH, 2 LOW_POWER).
+  // Antwortet nie mit einem Fehler: { ok, grund, weg }.
+  const PRIO_WERT = { hoch: 1, ausgewogen: 0, sparsam: 2 };
+  let omegaPrioDa = null;
+  function omegaPrioVerfuegbar() {
+    if (omegaPrioDa === null) {
+      try {
+        const h = omegaBleVerfuegbar() && (C.PluginHeaders || []).find((p) => p && p.name === 'OmegaBle');
+        omegaPrioDa = !!(h && Array.isArray(h.methods) && h.methods.some((m) => m && m.name === 'prioritaetSetzen'));
+      } catch (e) { omegaPrioDa = false; }
+    }
+    return omegaPrioDa;
+  }
+  window.OMEGA_BRUECKE.prioritaetSetzen = (deviceId, stufe) => {
+    if (!deviceId || !Object.prototype.hasOwnProperty.call(PRIO_WERT, stufe)) {
+      return Promise.resolve({ ok: false, grund: 'ungueltig', weg: '' });
+    }
+    const text = (e) => String((e && (e.message || e.code)) || e || 'Fehler');
+    if (omegaPrioVerfuegbar()) {
+      return C.nativePromise('OmegaBle', 'prioritaetSetzen', { deviceId: String(deviceId), stufe })
+        .then((r) => ({ ok: !!(r && r.ok), grund: (r && r.grund) || '', weg: 'OmegaBle' }),
+              (e) => ({ ok: false, grund: text(e), weg: 'OmegaBle' }));
+    }
+    return ruf('requestConnectionPriority', { deviceId: String(deviceId), connectionPriority: PRIO_WERT[stufe] })
+      .then(() => ({ ok: true, grund: 'angenommen', weg: 'Plugin' }),
+            (e) => ({ ok: false, grund: text(e), weg: 'Plugin' }));
+  };
   window.OMEGA_BRUECKE.schliessen = omegaSchliessen;
   // Haengende Verbindungen: vom System als verbunden gemeldete HYBRID-Autos, die nicht in der Garage stehen.
   // Erst trennen und schliessen; ist eines danach immer noch verbunden (Verbindung ohne eigenen Griff), einmal
@@ -14155,6 +14191,8 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "Funkpriorität beim Start": "Radio priority at the start",
+    "Nur in der Android-App: Zu Beginn der Startampel, solange alle Autos stehen, bekommen die gesteuerten Autos (Spieler 1–3) das schnellste Verbindungsintervall und NPCs, Safety Car und Reinigungswagen ein ausgewogenes. So nehmen die NPCs dem Funk nicht die kurzen Zeitfenster weg, und die gesteuerten Autos reagieren schneller. Die Autos werden nacheinander umgestellt, im Abstand von 0,15 s.": "Android app only: at the start of the start lights, while all cars are standing, the controlled cars (players 1–3) get the fastest connection interval and NPCs, safety car and cleaning car a balanced one. That way the NPCs do not take the short radio slots, and the controlled cars respond faster. The cars are switched one after another, 0.15 s apart.",
     "Pause / Fortsetzen": "Pause / Resume",
     "Pause": "Pause",
     "Fortsetzen": "Resume",
@@ -17697,6 +17735,8 @@
   // nachzieht. Bewusst KEINE Ansagen (Rundenzeit, Tank, Schaden): dafuer gibt es noch keine
   // spanischen Aufnahmen, und die Sprachausgabe nutzt die englische als Platzhalter.
   const I18N_ES = {
+    "Funkpriorität beim Start": "Prioridad de radio en la salida",
+    "Nur in der Android-App: Zu Beginn der Startampel, solange alle Autos stehen, bekommen die gesteuerten Autos (Spieler 1–3) das schnellste Verbindungsintervall und NPCs, Safety Car und Reinigungswagen ein ausgewogenes. So nehmen die NPCs dem Funk nicht die kurzen Zeitfenster weg, und die gesteuerten Autos reagieren schneller. Die Autos werden nacheinander umgestellt, im Abstand von 0,15 s.": "Solo en la app de Android: al comenzar el semáforo de salida, mientras todos los coches están parados, los coches controlados (jugadores 1–3) reciben el intervalo de conexión más rápido y los NPC, el coche de seguridad y el coche de limpieza uno equilibrado. Así los NPC no ocupan las ventanas cortas de radio y los coches controlados responden más rápido. Los coches se cambian uno tras otro, con 0,15 s de separación.",
     "Pause / Fortsetzen": "Pausa / Continuar",
     "Pause": "Pausa",
     "Fortsetzen": "Continuar",
@@ -41861,6 +41901,9 @@
     rennZeitTimeoutStop(raceCountdownTimer); raceCountdownTimer = null;
     ampelPlan = null; ampelSchritt = null; ampelK = 0;
     setRaceLights(0);
+    // v1.3.15 (WIP, Optionen > System): Funkprioritaet je Rolle, solange alle stehen - gesteuerte
+    // Autos HIGH, NPCs & Co. BALANCED, gestaffelt (funkPrioritaetVorStart, 90-ghosts.js).
+    if (typeof funkPrioritaetVorStart === 'function') funkPrioritaetVorStart();
     let ampelGestartet = false;
     const ampelBeginnen = () => {
       if (ampelGestartet || raceState !== 'countdown') return;
@@ -57958,8 +58001,10 @@
       if (car.meldeAbstand > MELDE_LANGSAM_MS) {
         if (!car.langsamSeit) car.langsamSeit = jetzt;
       } else car.langsamSeit = 0;
+      // v1.3.15: mit "Funkprioritaet beim Start" nur noch fuer gesteuerte Autos - NPCs & Co. stehen
+      // absichtlich auf BALANCED, hier hochgezogen waere die Absicht umgekehrt.
       if (car.langsamSeit && jetzt - car.langsamSeit > MELDE_LANGSAM_DAUER_MS && car.prioFuerRx !== car.rx
-          && b && typeof b.prioritaetHoch === 'function') {
+          && b && typeof b.prioritaetHoch === 'function' && (!funkPrioAn() || funkPrioGesteuert(car))) {
         car.prioFuerRx = car.rx;
         car.prioAt = jetzt;
         b.prioritaetHoch(car.device.id);
@@ -57967,6 +58012,59 @@
       }
     }
     car.meldungAt = jetzt;
+  }
+
+  // ---- FUNKPRIORITAET BEIM START (v1.3.15, WIP) ----------------------------------------------
+  // GEFRAGT: "Waere es sinnvoll, vor dem Rennstart kurz die Bluetooth-Verbindungen zu sortieren, damit die
+  // gesteuerten Autos minimale Latenz haben? Klappt das waehrend der Startampel?" Eine Reihenfolge gibt es
+  // nicht - Android vergibt je Verbindung ein Verbindungsintervall. Also eine PRIORITAET: gesteuerte Autos
+  // (Spieler 1-3) HIGH, alle anderen (NPC, Safety Car, Reinigungswagen, Aus) BALANCED, damit sie dem
+  // Adapter nicht dieselben kurzen Zeitfenster abnehmen. Zu Beginn des Countdowns (startRaceCountdown,
+  // 70-race.js): dort stehen alle Autos 4-6 s, eine Neuaushandlung stoert niemanden, ein eigener
+  // Ladebildschirm ist nicht noetig. GESTAFFELT (FUNK_PRIO_ABSTAND_MS je Auto, gesteuerte zuerst), damit
+  // nicht alle Neuaushandlungen auf einmal laufen. Nichts davon im 45-ms-Takt. Im Browser fehlt
+  // OMEGA_BRUECKE.prioritaetSetzen (nur in der App), dann geschieht nichts.
+  const FUNK_PRIO_ABSTAND_MS = 150;
+  function funkPrioAn() {
+    const cb = $('setting-funk-prio');
+    return !cb || !!cb.checked;
+  }
+  function funkPrioGesteuert(car) {
+    if (!car) return false;
+    if (car === playerCar || /^player\d?$/.test(String(car.role || ''))) return true;
+    return typeof spielerNrVon === 'function' && spielerNrVon(car) > 0;
+  }
+  let funkPrioLauf = 0;
+  // opt.autos / opt.planen nur fuer den Selbsttest (Attrappen statt garage und setTimeout).
+  function funkPrioritaetVorStart(opt) {
+    opt = opt || {};
+    if (!funkPrioAn()) return 0;
+    const b = window.OMEGA_BRUECKE;
+    if (!b || typeof b.prioritaetSetzen !== 'function') return 0;
+    const planen = opt.planen || ((fn, ms) => setTimeout(fn, ms));
+    const verbunden = (c) => !!(c && !c.sim && c.device && c.device.id && c.device.gatt
+      && c.device.gatt.connected !== false && !(c.rx && c.rx.verbindungWeg));
+    const autos = (opt.autos || garage).filter(verbunden);
+    // Gesteuerte zuerst: sie sollen ihr kurzes Intervall als erste haben.
+    const liste = autos.filter(funkPrioGesteuert).concat(autos.filter((c) => !funkPrioGesteuert(c)));
+    const lauf = ++funkPrioLauf;
+    liste.forEach((car, i) => {
+      const stufe = funkPrioGesteuert(car) ? 'hoch' : 'ausgewogen';
+      const los = () => {
+        if (lauf !== funkPrioLauf || !verbunden(car)) return;
+        car.funkPrioStufe = stufe;
+        let p = null;
+        try { p = b.prioritaetSetzen(car.device.id, stufe); } catch (e) { p = Promise.resolve({ ok: false, grund: String(e) }); }
+        Promise.resolve(p).then((r) => {
+          const ok = !r || r.ok !== false;
+          log(garageLabel(car) + ': Funkprioritaet ' + (stufe === 'hoch' ? 'HOCH (gesteuert)' : 'AUSGEWOGEN')
+              + (ok ? '' : ' - nicht gesetzt (' + ((r && r.grund) || '?') + ')')
+              + (r && r.weg ? ' [' + r.weg + ']' : ''), ok ? 'info' : 'warn');
+        }, () => {});
+      };
+      if (i === 0) los(); else planen(los, i * FUNK_PRIO_ABSTAND_MS);
+    });
+    return liste.length;
   }
   function onCarNotify(car, e) {
     const b = notifyBytes(e.target.value);
@@ -85391,12 +85489,96 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Standard Einparkfolge; Querlage: anfahrt > rand > halt > stand > raus ohne Lenkfolge' };
   });
 
+  // v1.3.15 GEFRAGT: Bluetooth-Verbindungen vor dem Start "sortieren" - als Prioritaet je Rolle zu Beginn
+  // der Startampel (funkPrioritaetVorStart, 90-ghosts.js). Mit Attrappen-Bruecke und Attrappen-Autos.
+  stAdd('Funk v1.3.15: Prioritaet je Rolle beim Start - Spieler hoch, NPC ausgewogen, gestaffelt', () => {
+    const f = [];
+    const merkB = window.OMEGA_BRUECKE;
+    const cb = $('setting-funk-prio');
+    const merkCb = cb ? cb.checked : null;
+    const auto = (id, role, extra) => Object.assign({ device: { id, name: id, gatt: { connected: true } }, role, rx: {}, alias: id }, extra || {});
+    const sp1 = auto('st-fp-sp1', 'player'), sp2 = auto('st-fp-sp2', 'player2'), npc = auto('st-fp-npc', 'ghost'),
+          sc = auto('st-fp-sc', 'safetycar'), rein = auto('st-fp-rein', 'reinig'),
+          weg = auto('st-fp-weg', 'ghost'), sim = auto('st-fp-sim', 'ghost', { sim: true });
+    weg.device.gatt.connected = false;
+    const aufrufe = [], geplant = [];
+    const planen = (fn, ms) => { geplant.push({ fn, ms }); };
+    const attrappe = (extra) => { window.OMEGA_BRUECKE = Object.assign({}, merkB || {}, extra); };
+    try {
+      if (!cb) f.push('Schalter setting-funk-prio fehlt');
+      else {
+        if (!cb.defaultChecked) f.push('Schalter nicht standardmaessig an');
+        const zeile = cb.closest('.opt-row'), lab = zeile && zeile.querySelector('.opt-label');
+        if (!lab || !lab.querySelector('.wip-tag')) f.push('ohne WIP-Kennzeichnung');
+        if (!zeile || !zeile.closest('#sub-opt-system')) f.push('nicht unter Optionen > System');
+        cb.checked = true;
+      }
+      attrappe({ prioritaetSetzen: (id, stufe) => { aufrufe.push({ id, stufe }); return Promise.resolve({ ok: true, weg: 'Test' }); } });
+      const n = funkPrioritaetVorStart({ autos: [npc, sp1, sc, weg, sp2, sim, rein], planen });
+      if (n !== 5) f.push(n + ' Autos statt 5 (getrennte/Simulation duerfen nicht mitzaehlen)');
+      if (aufrufe.length !== 1) f.push('sofort ' + aufrufe.length + ' Aufrufe statt 1 (nicht gestaffelt)');
+      const abst = geplant.map((g) => g.ms).join(',');
+      if (abst !== '150,300,450,600') f.push('Abstaende ' + abst + ' statt 150,300,450,600');
+      geplant.forEach((g) => g.fn());
+      const stufe = (id) => (aufrufe.find((a) => a.id === id) || {}).stufe;
+      if (stufe('st-fp-sp1') !== 'hoch') f.push('Spieler 1: ' + stufe('st-fp-sp1'));
+      if (stufe('st-fp-sp2') !== 'hoch') f.push('Spieler 2: ' + stufe('st-fp-sp2'));
+      if (stufe('st-fp-npc') !== 'ausgewogen') f.push('NPC: ' + stufe('st-fp-npc'));
+      if (stufe('st-fp-sc') !== 'ausgewogen') f.push('Safety Car: ' + stufe('st-fp-sc'));
+      if (stufe('st-fp-rein') !== 'ausgewogen') f.push('Reinigungswagen: ' + stufe('st-fp-rein'));
+      if (stufe('st-fp-weg') || stufe('st-fp-sim')) f.push('getrenntes Auto/Simulation angefragt');
+      if (aufrufe.slice(0, 2).some((a) => a.stufe !== 'hoch')) f.push('gesteuerte Autos nicht zuerst');
+      // Schalter aus: keine Aufrufe.
+      aufrufe.length = 0; geplant.length = 0;
+      if (cb) {
+        cb.checked = false;
+        funkPrioritaetVorStart({ autos: [npc, sp1], planen });
+        geplant.forEach((g) => g.fn());
+        if (aufrufe.length) f.push('Schalter aus: ' + aufrufe.length + ' Aufrufe');
+        cb.checked = true;
+      }
+      // Ohne die Methode (Browser): nichts, kein Fehler. Wirft sie: auch kein Fehler.
+      attrappe({}); delete window.OMEGA_BRUECKE.prioritaetSetzen;
+      try { if (funkPrioritaetVorStart({ autos: [npc, sp1], planen: (fn) => fn() }) !== 0) f.push('ohne Methode trotzdem geplant'); }
+      catch (e) { f.push('ohne Methode: ' + e.message); }
+      attrappe({ prioritaetSetzen: () => { throw new Error('Attrappe'); } });
+      try { funkPrioritaetVorStart({ autos: [npc, sp1], planen: (fn) => fn() }); }
+      catch (e) { f.push('werfende Methode: ' + e.message); }
+      // Ein neuer Start ueberholt einen noch laufenden: dessen spaete Aufrufe entfallen.
+      aufrufe.length = 0; geplant.length = 0;
+      attrappe({ prioritaetSetzen: (id, s) => { aufrufe.push({ id, stufe: s }); return null; } });
+      funkPrioritaetVorStart({ autos: [sp1, npc], planen });
+      const alt = geplant.slice(); geplant.length = 0;
+      funkPrioritaetVorStart({ autos: [sp1, npc], planen });
+      alt.forEach((g) => g.fn());
+      if (aufrufe.length !== 2) f.push('alter Lauf feuert nach Neustart (' + aufrufe.length + ' Aufrufe)');
+      // Wachfunktion: zieht mit Schalter an nur gesteuerte Autos hoch, mit Schalter aus wie bisher alle.
+      const hoch = [];
+      attrappe({ prioritaetHoch: (id) => { hoch.push(id); } });
+      const wn = auto('st-fp-wn', 'ghost'), wp = auto('st-fp-wp', 'player'), wa = auto('st-fp-wa', 'ghost');
+      for (let t = 1000; t < 21000; t += 150) { meldetaktBeobachten(wn, t); meldetaktBeobachten(wp, t); }
+      if (hoch.indexOf('st-fp-wn') >= 0) f.push('Wachfunktion zieht NPC hoch');
+      if (hoch.indexOf('st-fp-wp') < 0) f.push('Wachfunktion zieht Spieler nicht mehr hoch');
+      if (cb) {
+        cb.checked = false;
+        for (let t = 1000; t < 21000; t += 150) meldetaktBeobachten(wa, t);
+        if (hoch.indexOf('st-fp-wa') < 0) f.push('Schalter aus: Wachfunktion zieht NPC nicht mehr hoch');
+      }
+      if (String(startRaceCountdown).indexOf('funkPrioritaetVorStart()') < 0) f.push('Countdown ruft funkPrioritaetVorStart nicht');
+    } finally {
+      window.OMEGA_BRUECKE = merkB;
+      if (cb && merkCb !== null) cb.checked = merkCb;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Spieler hoch, NPC/Safety Car/Reinigung ausgewogen, 150 ms gestaffelt, Schalter/Methode/Wachfunktion wie bestellt' };
+  });
+
   // v1.2.45 BESTELLT: Latenz - Funkprioritaet nur einmal je Verbindung, SIMULATOR-Linie nur im Editor.
   stAdd('Latenz v1.2.45: Prioritaet einmal je Verbindung, SIMULATOR nur im Editor', () => {
     const f = [];
     const merkB = window.OMEGA_BRUECKE;
     let aufrufe = 0;
-    const car = { rx: {}, device: { id: 'probe-prio' }, alias: 'Probe' };
+    // v1.3.15: als gesteuertes Auto - NPCs zieht die Wachfunktion mit "Funkprioritaet beim Start" nicht mehr hoch.
+    const car = { rx: {}, device: { id: 'probe-prio' }, alias: 'Probe', role: 'player' };
     try {
       window.OMEGA_BRUECKE = Object.assign({}, merkB || {}, { prioritaetHoch: () => { aufrufe++; } });
       // 20 s lang alle 150 ms gemeldet: genau eine Anforderung, erst nach > 5 s.
