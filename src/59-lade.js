@@ -39,6 +39,26 @@
     el.remove = () => { weg(); if (!host.querySelector('.lade-ueber')) host.classList.remove('lade-traeger'); };
     return el;
   }
+  // ---- LADEANZEIGE AUF DEM STARTSCHIRM (v1.3.5) ----
+  // BESTELLT: "Spiele auf dem Startbildschirm eine Animation unten links ab (das sich drehende
+  // Streckenteil, aber kleiner), wenn auf Updates geprueft wird oder wenn Sounddateien geladen
+  // werden." Jeder Ladevorgang meldet sich mit einem Grund an und ab; sichtbar, solange einer
+  // laeuft. Der Platz #home-lade liegt im Startschirm, auf anderen Seiten ist er also von selbst
+  // weg. Die Drehung ist CSS (transform), kostet den Hauptfaden also nichts.
+  const ladeGruende = new Set();
+  function ladeAnzeigeSetzen(grund, an) {
+    if (an) ladeGruende.add(grund); else ladeGruende.delete(grund);
+    const slot = document.getElementById('home-lade-dreh');
+    if (slot) ladeAnimationSetzen(slot, ladeGruende.size > 0);
+    const box = document.getElementById('home-lade');
+    if (box) box.hidden = ladeGruende.size === 0;
+  }
+  // Fuer ein Promise: an, bis es erfuellt oder gescheitert ist.
+  function ladeAnzeigeMit(grund, laeuft) {
+    ladeAnzeigeSetzen(grund, true);
+    Promise.resolve(laeuft).catch(() => {}).then(() => ladeAnzeigeSetzen(grund, false));
+    return laeuft;
+  }
   // Fest in einem Platzhalter (Bereitschaftsschirm): an/aus, ohne bei jedem Abruf neu zu bauen.
   function ladeAnimationSetzen(slot, an) {
     if (!slot) return;

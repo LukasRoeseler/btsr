@@ -2521,7 +2521,8 @@
   .k-punkt { display: inline-block; width: .7em; height: .7em; border-radius: 50%; margin-right: .4em; vertical-align: 0; }
   .k-knopfreihe { display: flex; gap: 6px; padding: 0 10px 12px; flex-wrap: wrap; }
   /* v1.3.5: Mehrspieler-Stand in der Autos-Kachel ("Host: ..." / "Verbunden mit ..."). */
-  .k-mp-status { display: block; margin: -6px 10px 8px; font-size: 11.5px; letter-spacing: .03em; color: var(--k-blau, #00a3e0);
+  .k-mp-status { display: block; position: relative; z-index: 1; margin: 0 10px 6px; font-size: 11.5px; font-weight: 700;
+    letter-spacing: .03em; color: var(--k-blau, #00a3e0); text-shadow: 0 1px 3px rgba(0,0,0,.95);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .k-mp-status[hidden] { display: none; }
   #fa-mp .wip-tag { font-size: 8px; padding: 0 3px; margin-left: 4px; vertical-align: 1px; }
@@ -2933,11 +2934,12 @@
     background: rgba(10,12,18,.7); color: #fff; border: 2px solid var(--k-blau); border-radius: 0; padding: 6px 16px; }
   .k-tutorial-knopf:hover { background: var(--k-blau); color: var(--k-blau-text); }
   /* v1.0.15 BESTELLT: "Startknopf auf Startbildschirm farblich anders hinterlegen, damit er klarer wird." */
-  .k-tutorial-knopf.k-starten-haupt { background: var(--k-blau, #00a3e0); color: var(--k-blau-text, #04070c);
-    border-color: var(--k-blau, #00a3e0); font-weight: 800; }
-  .k-tutorial-knopf.k-starten-haupt .k-tutorial-taste { color: inherit; opacity: .75; }
-  .k-tutorial-knopf.k-starten-haupt:hover { background: #fff; border-color: #fff; color: #04070c; }
-  .k-tutorial-taste { margin-left: 8px; color: var(--k-dim); font-size: 11px; letter-spacing: .04em; }
+  .k-tutorial-knopf.k-starten-haupt { font-weight: 800; }
+  /* v1.3.5: blau gefuellt ist der GEWAEHLTE Knopf (Steuerkreuz, Pfeiltasten, Maus) - beim Laden
+     "Starten", wie bisher. Kreuz / A / Enter loest ihn aus (96-home.js). */
+  .k-tutorial-knopf.k-fokus, .k-tutorial-knopf.k-wiki.k-fokus { background: var(--k-blau, #00a3e0);
+    color: var(--k-blau-text, #04070c); border-color: var(--k-blau, #00a3e0); }
+  .k-tutorial-knopf:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
   .k-tour { position: fixed; inset: 0; z-index: 450; font-family: var(--k-font); }
   body.track-fs .k-tour { z-index: 900; }
   .k-tour[hidden], .k-tour-spot[hidden] { display: none; }
@@ -3876,6 +3878,12 @@
     border: 1px solid rgba(255,255,255,.15); border-radius: 6px; color: #eef0f4; font-size: 12.5px; font-weight: 600;
     letter-spacing: .03em; pointer-events: none; }
   .sim-lade .lade-dreh { width: 30px; height: 30px; }
+  /* v1.3.5: dieselbe drehende Gerade, klein unten links auf dem Startschirm (59-lade.js). */
+  .home-lade:not([hidden]) { position: fixed; left: calc(12px + env(safe-area-inset-left));
+    bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 30; display: flex; align-items: center; gap: 6px;
+    pointer-events: none; }
+  .home-lade .lade-dreh { width: 26px; height: 26px; }
+  .home-lade .wip-tag { font-size: 7.5px; padding: 0 3px; opacity: .8; }
   .lade-ebene { position: absolute; inset: 0; display: grid; place-items: center; }
   .lade-ebene svg, .lade-ebene .tp-karte { width: 100%; height: 100%; max-width: none; max-height: none; }
   .lade-a { animation: ladeDreh 1s linear infinite; }
@@ -4932,19 +4940,19 @@
       <div class="k-tutorial-reihe">
         <!-- BESTELLT: "Wiki" links neben Tutorial/Steuerung/Starten, so gross wie ein
              Tutorial-Knopf und komplett weiss; Klick oeffnet das OmegaSim-Wiki im Browser. -->
-        <a class="k-tutorial-knopf k-wiki" href="https://omegasim.miraheze.org/wiki/Hauptseite"
+        <!-- v1.3.5 BESTELLT: "Auf dem Startbildschirm nicht die Tasten anzeigen, sondern die
+             Buttons mit D-Pad oder Pfeiltasten (oder Maus) waehlbar machen. Standardmaessig ist
+             Start ausgewaehlt und blau ausgefuellt". Die Wahl fuehrt 96-home.js (homeFokus). -->
+        <a class="k-tutorial-knopf k-wiki" id="k-wiki" href="https://omegasim.miraheze.org/wiki/Hauptseite"
            target="_blank" rel="noopener noreferrer" aria-label="Wiki">Wiki</a>
-        <button type="button" id="k-tutorial-start" class="k-tutorial-knopf">Tutorial
-          <span class="k-tutorial-taste" data-i18n-skip>&#9651; / T</span></button>
+        <button type="button" id="k-tutorial-start" class="k-tutorial-knopf">Tutorial</button>
         <!-- BESTELLT: "neben dem Tutorial-Button noch einen Button zur Steuerung ... dass es nur
              mit Gamepad funktioniert, zeige die Tasten und am Ende, wo man das Bild vom
              Controller mit allen Tasten sieht und die Belegung aendern kann". -->
-        <button type="button" id="k-steuerung-start" class="k-tutorial-knopf">Steuerung
-          <span class="k-tutorial-taste" data-i18n-skip>&#9675; / S</span></button>
+        <button type="button" id="k-steuerung-start" class="k-tutorial-knopf">Steuerung</button>
         <!-- v0.10.5 BESTELLT: "Auf dem Startscreen 'Starten' als dritten Button neben Tutorial
              und Steuerung." Derselbe Weg wie X / Enter. -->
-        <button type="button" id="k-starten-start" class="k-tutorial-knopf k-starten-haupt">Starten
-          <span class="k-tutorial-taste" data-i18n-skip>&#10005; / Enter</span></button>
+        <button type="button" id="k-starten-start" class="k-tutorial-knopf k-starten-haupt k-fokus">Starten</button>
       </div>
       <!-- v0.10.6: "✕ zum Starten" entfernt - der Knopf "Starten" daneben sagt dasselbe (BESTELLT). -->
       <!-- BESTELLT: "auf der Titelseite zur .apk verlinken, falls die App nicht darueber
@@ -4969,6 +4977,11 @@
         <button type="button" id="app-update-abbrechen">Abbrechen</button>
       </div>
     </div>
+      <!-- v1.3.5: kleine Ladeanimation unten links, solange Updates gesucht oder Klaenge geladen
+           werden (ladeAnzeigeSetzen in 59-lade.js). -->
+      <div class="home-lade" id="home-lade" role="status" aria-label="Lädt …" hidden>
+        <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="wip-tag">WIP</span>
+      </div>
       <div class="k-titel-fuss">
         <span class="foot-ver">v<span id="app-version">1.3.4</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
@@ -4995,15 +5008,15 @@
         <span class="k-kt" id="fa-auto-titel"></span>
         <span class="k-kb" id="fa-auto-bild" style="background-image:url(img/garage.jpg)"></span>
         <span class="k-ki" id="fa-auto-info"></span>
+        <span class="k-mp-status" id="fa-mp-status" data-i18n-skip hidden></span>
         <!-- BESTELLT: "Autos-Menü sollte auch Option für Garage haben zum Einstellen" - auch
              ohne verbundenes Auto (gemerkte Autos, Farben, Rollen). -->
         <span class="k-knopfreihe">
           <button type="button" class="k-knopf" id="fa-verbinden">Verbinden</button>
           <button type="button" class="k-knopf" id="fa-garage">Garage</button>
-          <!-- v1.3.5: der WLAN-Mehrspieler als Knopf statt als Reiter, darunter der Stand. -->
+          <!-- v1.3.5: der WLAN-Mehrspieler als Knopf statt als Reiter, darueber der Stand. -->
           <button type="button" class="k-knopf" id="fa-mp">Mehrspieler <span class="wip-tag">WIP</span></button>
         </span>
-        <span class="k-mp-status" id="fa-mp-status" data-i18n-skip hidden></span>
       </div>
       <div class="k-kachel " id="fa-strecke" role="button" tabindex="0" data-quad="bahn">
         <span class="k-kk">Strecke</span>

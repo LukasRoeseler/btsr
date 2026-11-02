@@ -3899,6 +3899,7 @@
     "Host:": "Host:",
     "Verbunden mit": "Connected to",
     "Info-Screen:": "Info screen:",
+    "Lädt …": "Loading …",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -5130,6 +5131,7 @@
     "Host:": "Host:",
     "Verbunden mit": "Conectado a",
     "Info-Screen:": "Pantalla de info:",
+    "Lädt …": "Cargando …",
   };
 
   // ============================================================================

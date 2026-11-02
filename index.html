@@ -2521,7 +2521,8 @@
   .k-punkt { display: inline-block; width: .7em; height: .7em; border-radius: 50%; margin-right: .4em; vertical-align: 0; }
   .k-knopfreihe { display: flex; gap: 6px; padding: 0 10px 12px; flex-wrap: wrap; }
   /* v1.3.5: Mehrspieler-Stand in der Autos-Kachel ("Host: ..." / "Verbunden mit ..."). */
-  .k-mp-status { display: block; margin: -6px 10px 8px; font-size: 11.5px; letter-spacing: .03em; color: var(--k-blau, #00a3e0);
+  .k-mp-status { display: block; position: relative; z-index: 1; margin: 0 10px 6px; font-size: 11.5px; font-weight: 700;
+    letter-spacing: .03em; color: var(--k-blau, #00a3e0); text-shadow: 0 1px 3px rgba(0,0,0,.95);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .k-mp-status[hidden] { display: none; }
   #fa-mp .wip-tag { font-size: 8px; padding: 0 3px; margin-left: 4px; vertical-align: 1px; }
@@ -2933,11 +2934,12 @@
     background: rgba(10,12,18,.7); color: #fff; border: 2px solid var(--k-blau); border-radius: 0; padding: 6px 16px; }
   .k-tutorial-knopf:hover { background: var(--k-blau); color: var(--k-blau-text); }
   /* v1.0.15 BESTELLT: "Startknopf auf Startbildschirm farblich anders hinterlegen, damit er klarer wird." */
-  .k-tutorial-knopf.k-starten-haupt { background: var(--k-blau, #00a3e0); color: var(--k-blau-text, #04070c);
-    border-color: var(--k-blau, #00a3e0); font-weight: 800; }
-  .k-tutorial-knopf.k-starten-haupt .k-tutorial-taste { color: inherit; opacity: .75; }
-  .k-tutorial-knopf.k-starten-haupt:hover { background: #fff; border-color: #fff; color: #04070c; }
-  .k-tutorial-taste { margin-left: 8px; color: var(--k-dim); font-size: 11px; letter-spacing: .04em; }
+  .k-tutorial-knopf.k-starten-haupt { font-weight: 800; }
+  /* v1.3.5: blau gefuellt ist der GEWAEHLTE Knopf (Steuerkreuz, Pfeiltasten, Maus) - beim Laden
+     "Starten", wie bisher. Kreuz / A / Enter loest ihn aus (96-home.js). */
+  .k-tutorial-knopf.k-fokus, .k-tutorial-knopf.k-wiki.k-fokus { background: var(--k-blau, #00a3e0);
+    color: var(--k-blau-text, #04070c); border-color: var(--k-blau, #00a3e0); }
+  .k-tutorial-knopf:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
   .k-tour { position: fixed; inset: 0; z-index: 450; font-family: var(--k-font); }
   body.track-fs .k-tour { z-index: 900; }
   .k-tour[hidden], .k-tour-spot[hidden] { display: none; }
@@ -3876,6 +3878,12 @@
     border: 1px solid rgba(255,255,255,.15); border-radius: 6px; color: #eef0f4; font-size: 12.5px; font-weight: 600;
     letter-spacing: .03em; pointer-events: none; }
   .sim-lade .lade-dreh { width: 30px; height: 30px; }
+  /* v1.3.5: dieselbe drehende Gerade, klein unten links auf dem Startschirm (59-lade.js). */
+  .home-lade:not([hidden]) { position: fixed; left: calc(12px + env(safe-area-inset-left));
+    bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 30; display: flex; align-items: center; gap: 6px;
+    pointer-events: none; }
+  .home-lade .lade-dreh { width: 26px; height: 26px; }
+  .home-lade .wip-tag { font-size: 7.5px; padding: 0 3px; opacity: .8; }
   .lade-ebene { position: absolute; inset: 0; display: grid; place-items: center; }
   .lade-ebene svg, .lade-ebene .tp-karte { width: 100%; height: 100%; max-width: none; max-height: none; }
   .lade-a { animation: ladeDreh 1s linear infinite; }
@@ -4932,19 +4940,19 @@
       <div class="k-tutorial-reihe">
         <!-- BESTELLT: "Wiki" links neben Tutorial/Steuerung/Starten, so gross wie ein
              Tutorial-Knopf und komplett weiss; Klick oeffnet das OmegaSim-Wiki im Browser. -->
-        <a class="k-tutorial-knopf k-wiki" href="https://omegasim.miraheze.org/wiki/Hauptseite"
+        <!-- v1.3.5 BESTELLT: "Auf dem Startbildschirm nicht die Tasten anzeigen, sondern die
+             Buttons mit D-Pad oder Pfeiltasten (oder Maus) waehlbar machen. Standardmaessig ist
+             Start ausgewaehlt und blau ausgefuellt". Die Wahl fuehrt 96-home.js (homeFokus). -->
+        <a class="k-tutorial-knopf k-wiki" id="k-wiki" href="https://omegasim.miraheze.org/wiki/Hauptseite"
            target="_blank" rel="noopener noreferrer" aria-label="Wiki">Wiki</a>
-        <button type="button" id="k-tutorial-start" class="k-tutorial-knopf">Tutorial
-          <span class="k-tutorial-taste" data-i18n-skip>&#9651; / T</span></button>
+        <button type="button" id="k-tutorial-start" class="k-tutorial-knopf">Tutorial</button>
         <!-- BESTELLT: "neben dem Tutorial-Button noch einen Button zur Steuerung ... dass es nur
              mit Gamepad funktioniert, zeige die Tasten und am Ende, wo man das Bild vom
              Controller mit allen Tasten sieht und die Belegung aendern kann". -->
-        <button type="button" id="k-steuerung-start" class="k-tutorial-knopf">Steuerung
-          <span class="k-tutorial-taste" data-i18n-skip>&#9675; / S</span></button>
+        <button type="button" id="k-steuerung-start" class="k-tutorial-knopf">Steuerung</button>
         <!-- v0.10.5 BESTELLT: "Auf dem Startscreen 'Starten' als dritten Button neben Tutorial
              und Steuerung." Derselbe Weg wie X / Enter. -->
-        <button type="button" id="k-starten-start" class="k-tutorial-knopf k-starten-haupt">Starten
-          <span class="k-tutorial-taste" data-i18n-skip>&#10005; / Enter</span></button>
+        <button type="button" id="k-starten-start" class="k-tutorial-knopf k-starten-haupt k-fokus">Starten</button>
       </div>
       <!-- v0.10.6: "✕ zum Starten" entfernt - der Knopf "Starten" daneben sagt dasselbe (BESTELLT). -->
       <!-- BESTELLT: "auf der Titelseite zur .apk verlinken, falls die App nicht darueber
@@ -4969,6 +4977,11 @@
         <button type="button" id="app-update-abbrechen">Abbrechen</button>
       </div>
     </div>
+      <!-- v1.3.5: kleine Ladeanimation unten links, solange Updates gesucht oder Klaenge geladen
+           werden (ladeAnzeigeSetzen in 59-lade.js). -->
+      <div class="home-lade" id="home-lade" role="status" aria-label="Lädt …" hidden>
+        <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="wip-tag">WIP</span>
+      </div>
       <div class="k-titel-fuss">
         <span class="foot-ver">v<span id="app-version">1.3.4</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
@@ -4995,15 +5008,15 @@
         <span class="k-kt" id="fa-auto-titel"></span>
         <span class="k-kb" id="fa-auto-bild" style="background-image:url(img/garage.jpg)"></span>
         <span class="k-ki" id="fa-auto-info"></span>
+        <span class="k-mp-status" id="fa-mp-status" data-i18n-skip hidden></span>
         <!-- BESTELLT: "Autos-Menü sollte auch Option für Garage haben zum Einstellen" - auch
              ohne verbundenes Auto (gemerkte Autos, Farben, Rollen). -->
         <span class="k-knopfreihe">
           <button type="button" class="k-knopf" id="fa-verbinden">Verbinden</button>
           <button type="button" class="k-knopf" id="fa-garage">Garage</button>
-          <!-- v1.3.5: der WLAN-Mehrspieler als Knopf statt als Reiter, darunter der Stand. -->
+          <!-- v1.3.5: der WLAN-Mehrspieler als Knopf statt als Reiter, darueber der Stand. -->
           <button type="button" class="k-knopf" id="fa-mp">Mehrspieler <span class="wip-tag">WIP</span></button>
         </span>
-        <span class="k-mp-status" id="fa-mp-status" data-i18n-skip hidden></span>
       </div>
       <div class="k-kachel " id="fa-strecke" role="button" tabindex="0" data-quad="bahn">
         <span class="k-kk">Strecke</span>
@@ -17669,6 +17682,7 @@
     "Host:": "Host:",
     "Verbunden mit": "Connected to",
     "Info-Screen:": "Info screen:",
+    "Lädt …": "Loading …",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -18900,6 +18914,7 @@
     "Host:": "Host:",
     "Verbunden mit": "Conectado a",
     "Info-Screen:": "Pantalla de info:",
+    "Lädt …": "Cargando …",
   };
 
   // ============================================================================
@@ -28833,6 +28848,9 @@
     // dort nichts), also auch keinen Stapel. Der Titel kommt nie auf den Stapel. Jeder
     // Eintrag merkt die Unterseite, die beim Verlassen offen war - Kreis oeffnet sie wieder.
     if (K_EBENE1.includes(neu)) kStapel = [];
+    // v1.3.5: zurueck auf dem Titel ist wieder "Starten" gewaehlt (96-home.js).
+    // try: waehrend des Ladens liegen HOME_START & Co. (96-home.js) noch in der Todeszone.
+    if (neu === 'home') { try { homeFokusSetzen(HOME_START); } catch (e) { /* noch nicht geladen */ } }
     else if (!kZurueckLaeuft && alt && alt !== neu && alt !== 'home') {
       kStapel.push({ tab: alt, sub: altSub || '' });
       if (kStapel.length > 40) kStapel.shift();
@@ -29715,11 +29733,14 @@
       return false;
     }
     if (kAktiverTab() !== 'home') return false;
-    if (neu === 14 || neu === 15 || neu === 4 || neu === 5) { wechsleSprache(); return true; }
+    // v1.3.5: Steuerkreuz links/rechts waehlt den Knopf (96-home.js), L1/R1 die Sprache.
+    if (neu === 14 || neu === 15) { homeFokusSchritt(neu === 14 ? -1 : 1); return true; }
+    if (neu === 4 || neu === 5) { wechsleSprache(); return true; }
     // BESTELLT: "'Press any key' und 'press triangle for tutorial' ist auch etwas
     // verwirrend. Ich wuerde sagen: X zum Starten, Dreieck fuer Tutorial, Kreis fuer
     // Steuerung." Alle anderen Tasten tun auf dem Titel nichts mehr.
-    if (neu === 0) { konsoleTitelWeiter(); kTitelSperre = true; return true; }
+    // v1.3.5: Kreuz (A am Xbox-Pad) loest den GEWAEHLTEN Knopf aus - vorgewaehlt ist Starten.
+    if (neu === 0) { kTitelSperre = true; homeFokusAusloesen(); return true; }
     if (neu === 3) { kTitelSperre = true; konsoleTourStart(K_TOUR); return true; }
     if (neu === 1) { kTitelSperre = true; konsoleTourStart(K_STEUERUNG); return true; }
     return true;
@@ -29769,11 +29790,13 @@
     if (typeof studieTestAktiv === 'function' && studieTestAktiv()) return;
     if (kAktiverTab() === 'home' && !e.ctrlKey && !e.altKey && !e.metaKey && k !== 'tab' && k !== 'shift') {
       e.preventDefault(); e.stopImmediatePropagation();
-      // Tastatur wie am Pad: Enter, Leertaste oder X starten, T das Tutorial, S die Steuerung.
-      if (k === 'arrowleft' || k === 'arrowright') wechsleSprache();
+      // Tastatur wie am Pad: Pfeile links/rechts waehlen den Knopf, Enter, Leertaste oder X
+      // loesen ihn aus (v1.3.5), Q/E wie L1/R1 die Sprache. T und S bleiben als Abkuerzung.
+      if (k === 'arrowleft' || k === 'arrowright') homeFokusSchritt(k === 'arrowleft' ? -1 : 1);
+      else if (k === 'q' || k === 'e') wechsleSprache();
       else if (k === 't') konsoleTourStart(K_TOUR);
       else if (k === 's') konsoleTourStart(K_STEUERUNG);
-      else if (k === 'enter' || k === ' ' || k === 'x') konsoleTitelWeiter();
+      else if (k === 'enter' || k === ' ' || k === 'x') homeFokusAusloesen();
       return;
     }
     if (kAktiverTab() === 'race' && !kFrageOffen && k === 'escape' && !document.body.classList.contains('track-fs')) {
@@ -30298,6 +30321,26 @@
     const weg = el.remove.bind(el);
     el.remove = () => { weg(); if (!host.querySelector('.lade-ueber')) host.classList.remove('lade-traeger'); };
     return el;
+  }
+  // ---- LADEANZEIGE AUF DEM STARTSCHIRM (v1.3.5) ----
+  // BESTELLT: "Spiele auf dem Startbildschirm eine Animation unten links ab (das sich drehende
+  // Streckenteil, aber kleiner), wenn auf Updates geprueft wird oder wenn Sounddateien geladen
+  // werden." Jeder Ladevorgang meldet sich mit einem Grund an und ab; sichtbar, solange einer
+  // laeuft. Der Platz #home-lade liegt im Startschirm, auf anderen Seiten ist er also von selbst
+  // weg. Die Drehung ist CSS (transform), kostet den Hauptfaden also nichts.
+  const ladeGruende = new Set();
+  function ladeAnzeigeSetzen(grund, an) {
+    if (an) ladeGruende.add(grund); else ladeGruende.delete(grund);
+    const slot = document.getElementById('home-lade-dreh');
+    if (slot) ladeAnimationSetzen(slot, ladeGruende.size > 0);
+    const box = document.getElementById('home-lade');
+    if (box) box.hidden = ladeGruende.size === 0;
+  }
+  // Fuer ein Promise: an, bis es erfuellt oder gescheitert ist.
+  function ladeAnzeigeMit(grund, laeuft) {
+    ladeAnzeigeSetzen(grund, true);
+    Promise.resolve(laeuft).catch(() => {}).then(() => ladeAnzeigeSetzen(grund, false));
+    return laeuft;
   }
   // Fest in einem Platzhalter (Bereitschaftsschirm): an/aus, ohne bei jedem Abruf neu zu bauen.
   function ladeAnimationSetzen(slot, an) {
@@ -50821,16 +50864,20 @@
   // Browsers refuse to start audio without a user gesture, so even though sound is on by
   // default we can only actually create the AudioContext once the user interacts. This
   // one-shot listener does it on the very first click/keypress anywhere in the app.
+  // Alle Klangdateien laden (Motor, Effekte, Stimmen, Ansagen, Umgebung). v1.3.5: als EIN
+  // Vorgang fuer die Ladeanimation auf dem Startschirm (ladeAnzeigeMit, 59-lade.js) - sie
+  // laeuft, bis alles da oder gescheitert ist. Reihenfolge wie bisher.
+  function klangDateienLaden() {
+    const laeufe = [loadEngineSamples(), loadFxSamples(), loadVoiceSamples(), rennstandClipsLaden(lang)];
+    if (!('speechSynthesis' in window)) laeufe.push(zahlenClipsLaden(lang));
+    laeufe.push(loadAmbience());
+    if (typeof ladeAnzeigeMit === 'function') ladeAnzeigeMit('klang', Promise.allSettled(laeufe));
+  }
   function unlockAudioOnFirstGesture() {
     if (soundEnabled) {
       initEngineSound();
       if (audioCtx.state === 'suspended') audioCtx.resume();
-      loadEngineSamples(); // needs the AudioContext, so it can only start from here
-      loadFxSamples();
-      loadVoiceSamples();
-      rennstandClipsLaden(lang);
-      if (!('speechSynthesis' in window)) zahlenClipsLaden(lang);
-      loadAmbience();
+      klangDateienLaden(); // needs the AudioContext, so it can only start from here
     }
     document.removeEventListener('pointerdown', unlockAudioOnFirstGesture);
     document.removeEventListener('keydown', unlockAudioOnFirstGesture);
@@ -50843,12 +50890,7 @@
     if (soundEnabled) {
       initEngineSound(); // lazy-start on this user gesture, per browser autoplay policy
       if (audioCtx.state === 'suspended') audioCtx.resume();
-      loadEngineSamples();
-      loadFxSamples();
-      loadVoiceSamples();
-      rennstandClipsLaden(lang);
-      if (!('speechSynthesis' in window)) zahlenClipsLaden(lang);
-      loadAmbience();
+      klangDateienLaden();
       refreshAmbienceGains();
     } else if (engineGain) {
       rennstandAbbrechen();
@@ -92628,6 +92670,100 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Reiter weg, Knopf in der Kachel (Steuerkreuz, Kreis zurueck), Stand: ' + merk.text };
   });
 
+  // BESTELLT: "Auf dem Startbildschirm nicht die Tasten anzeigen, sondern die Buttons mit D-Pad
+  // oder Pfeiltasten (oder Maus) waehlbar machen. Standardmaessig ist Start ausgewaehlt".
+  stAdd('Start v1.3.5: Startschirm-Knöpfe per Pfeil/Steuerkreuz/Maus, Start vorgewählt, keine Tastenhinweise', () => {
+    const f = [];
+    const merk = { tab: kAktiverTab(), stapel: kStapel.slice(), sperre: kTitelSperre, vorher: kPadVorher.slice() };
+    const gewaehlt = () => HOME_KNOEPFE.filter((id) => $(id) && $(id).classList.contains('k-fokus'));
+    const taste = (key) => window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+    const pad = (i) => {
+      const b = Array.from({ length: 17 }, (x, k) => ({ pressed: k === i, touched: false, value: k === i ? 1 : 0 }));
+      konsolePadTitel({ buttons: b, axes: [0, 0, 0, 0] });
+      konsolePadTitel({ buttons: b.map(() => ({ pressed: false, touched: false, value: 0 })), axes: [0, 0, 0, 0] });
+    };
+    try {
+      kStapel = [];
+      showTab('fahren');
+      showTab('home');
+      if (gewaehlt().join() !== 'k-starten-start') f.push('vorgewaehlt: ' + (gewaehlt().join() || 'nichts'));
+      const zeile = document.querySelector('#tab-home .k-tutorial-reihe');
+      if (!zeile || zeile.querySelector('.k-tutorial-taste') || /[△○✕]|\/ T|\/ S|Enter/.test(zeile.textContent)) f.push('Tastenhinweise noch da');
+      const bg = (id) => getComputedStyle($(id)).backgroundColor;
+      if (bg('k-starten-start') === bg('k-tutorial-start')) f.push('gewaehlter Knopf nicht anders gefuellt');
+      const blauStart = bg('k-starten-start');
+      taste('ArrowLeft');
+      if (gewaehlt().join() !== 'k-steuerung-start') f.push('Pfeil links -> ' + gewaehlt().join());
+      if (bg('k-steuerung-start') !== blauStart || bg('k-starten-start') === blauStart) f.push('Fuellung wandert nicht mit');
+      taste('ArrowLeft'); taste('ArrowLeft');
+      if (gewaehlt().join() !== 'k-wiki') f.push('Pfeil links x3 -> ' + gewaehlt().join());
+      taste('ArrowLeft');
+      if (gewaehlt().join() !== 'k-starten-start') f.push('kein Umlauf -> ' + gewaehlt().join());
+      kTitelSperre = false;
+      pad(14);
+      if (gewaehlt().join() !== 'k-steuerung-start') f.push('Steuerkreuz links -> ' + gewaehlt().join());
+      pad(15);
+      if (gewaehlt().join() !== 'k-starten-start') f.push('Steuerkreuz rechts -> ' + gewaehlt().join());
+      $('k-tutorial-start').dispatchEvent(new PointerEvent('pointerenter'));
+      if (gewaehlt().join() !== 'k-tutorial-start') f.push('Maus waehlt nicht');
+      taste('ArrowRight'); taste('ArrowRight');
+      if (kAktiverTab() !== 'home') f.push('Pfeil verlaesst den Titel');
+      if (gewaehlt().join() !== 'k-starten-start') f.push('Pfeil rechts x2 -> ' + gewaehlt().join());
+      taste('Enter');
+      if (kAktiverTab() !== 'fahren') f.push('Enter auf Starten fuehrt nach ' + kAktiverTab());
+      showTab('home');
+      if (gewaehlt().join() !== 'k-starten-start') f.push('zurueck auf dem Titel nicht wieder Starten');
+    } catch (e) {
+      f.push('Ausnahme: ' + e.message);
+    } finally {
+      kTitelSperre = merk.sperre; kPadVorher.splice(0, kPadVorher.length, ...merk.vorher);
+      kStapel = merk.stapel;
+      if (merk.tab) showTab(merk.tab);
+      homeFokusSetzen(HOME_START);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Starten vorgewaehlt und blau, Pfeile/Steuerkreuz/Maus waehlen mit Umlauf, keine Tastenhinweise' };
+  });
+
+  // BESTELLT: "Spiele auf dem Startbildschirm eine Animation unten links ab (das sich drehende
+  // Streckenteil, aber kleiner), wenn auf Updates geprueft wird oder wenn Sounddateien geladen werden."
+  stAdd('Start v1.3.5: Ladeanimation unten links, solange Updates oder Klänge laden', async () => {
+    const f = [];
+    const merk = kAktiverTab();
+    const box = $('home-lade');
+    let mass = '';
+    try {
+      showTab('home');
+      if (!box) return { ok: false, mass: '#home-lade fehlt' };
+      const vorher = box.hidden;
+      ladeAnzeigeSetzen('selbsttest', true);
+      if (box.hidden || !box.querySelector('.lade-dreh svg')) f.push('waehrend des Ladens nicht sichtbar');
+      const r = box.getBoundingClientRect();
+      if (innerWidth && innerHeight) {
+        if (!(r.left < 60 && r.bottom > innerHeight - 70)) f.push('nicht unten links (' + Math.round(r.left) + ', ' + Math.round(r.bottom) + ')');
+        if (!(r.height <= 40)) f.push('zu gross (' + Math.round(r.height) + ' px)');
+        mass = Math.round(r.left) + '/' + Math.round(innerHeight - r.bottom) + ' px vom Rand, ' + Math.round(r.height) + ' px hoch';
+      }
+      ladeAnzeigeSetzen('selbsttest', false);
+      if (box.hidden !== vorher) f.push('bleibt nach dem Laden stehen');
+      let fertig;
+      const p = new Promise((ok) => { fertig = ok; });
+      ladeAnzeigeMit('selbsttest2', p);
+      if (box.hidden) f.push('ladeAnzeigeMit zeigt nichts');
+      fertig();
+      await p; await Promise.resolve(); await new Promise((ok) => setTimeout(ok, 0));
+      if (box.hidden !== vorher) f.push('ladeAnzeigeMit raeumt nicht ab');
+      // Angeschlossen: Update-Pruefung (97b-app.js) und Klangdateien (80-sound.js).
+      const quelle = [...document.scripts].map((s) => s.textContent).join('\n');
+      if (quelle.indexOf("ladeAnzeigeSetzen('update', true)") < 0 || quelle.indexOf("ladeAnzeigeSetzen('update', false)") < 0) f.push('Update-Pruefung nicht angeschlossen');
+      if (String(klangDateienLaden).indexOf('ladeAnzeigeMit') < 0 || String(unlockAudioOnFirstGesture).indexOf('klangDateienLaden') < 0) f.push('Klangdateien nicht angeschlossen');
+      if (!box.querySelector('.wip-tag')) f.push('WIP fehlt');
+    } finally {
+      ladeAnzeigeSetzen('selbsttest', false); ladeAnzeigeSetzen('selbsttest2', false);
+      if (merk) showTab(merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'sichtbar beim Laden, ' + mass + ', Update und Klaenge angeschlossen' };
+  });
+
   // ---- Die Wetterkachel schaltet durch drei Lagen ----
   //
   // BESTELLT: "Lass mich mit der Regenumschalttaste im Cockpitview bzw. durch
@@ -102717,6 +102853,39 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     });
   }
 
+  // ---- STARTSCHIRM: KNOEPFE WAEHLEN STATT TASTEN ZEIGEN (v1.3.5) ----
+  // BESTELLT: "Auf dem Startbildschirm nicht die Tasten anzeigen, sondern die Buttons mit D-Pad
+  // oder Pfeiltasten (oder Maus) waehlbar machen. Standardmaessig ist Start ausgewaehlt und dann
+  // blau ausgefuellt so wie aktuell, sodass ich X druecken kann zum Starten (oder A auf
+  // Xbox-Controller)." Die Tasten kommen aus 51-konsole.js (konsolePadTitel und der
+  // Tastatur-Zuhoerer); hier steht nur, WELCHER Knopf gewaehlt ist und was er tut.
+  const HOME_KNOEPFE = ['k-wiki', 'k-tutorial-start', 'k-steuerung-start', 'k-starten-start'];
+  const HOME_START = HOME_KNOEPFE.indexOf('k-starten-start');
+  let homeFokus = HOME_START;
+  function homeFokusSetzen(i) {
+    homeFokus = Math.max(0, Math.min(HOME_KNOEPFE.length - 1, i));
+    HOME_KNOEPFE.forEach((id, k) => {
+      const el = $(id);
+      if (el) el.classList.toggle('k-fokus', k === homeFokus);
+    });
+  }
+  function homeFokusSchritt(d) {
+    homeFokusSetzen((homeFokus + d + HOME_KNOEPFE.length) % HOME_KNOEPFE.length);
+    if (typeof menuNavTonBewegen === 'function') menuNavTonBewegen();
+  }
+  function homeFokusAusloesen() {
+    const el = $(HOME_KNOEPFE[homeFokus]);
+    if (el) el.click();
+  }
+  HOME_KNOEPFE.forEach((id, k) => {
+    const el = $(id);
+    if (!el) return;
+    // Maus und Tab-Taste waehlen mit: der blaue Knopf ist immer der, den Kreuz/Enter ausloest.
+    el.addEventListener('pointerenter', () => homeFokusSetzen(k));
+    el.addEventListener('focus', () => homeFokusSetzen(k));
+  });
+  homeFokusSetzen(HOME_START);
+
   // ---- TITEL-GLITCH JE BUCHSTABE (v0.8.38) ----
   // BESTELLT: "je Buchstabe je Seite (oben, unten) zufaellig festlegen, ob der Glitch-Effekt
   // blau oder rot ist." Bei jedem Laden neu gewuerfelt; die Animation je Buchstabe versetzt,
@@ -104198,6 +104367,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
 
     async function pruefen(still) {
+      // v1.3.5: Ladeanimation unten links auf dem Startschirm, solange gefragt wird.
+      if (typeof ladeAnzeigeSetzen === 'function') ladeAnzeigeSetzen('update', true);
       try {
         const r = await upd('pruefen');
         if (!neuer(r.version, webVersion())) {
@@ -104212,6 +104383,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       } catch (e) {
         if (!still) meldung(String(e && e.message || e), true);
         return null;
+      } finally {
+        if (typeof ladeAnzeigeSetzen === 'function') ladeAnzeigeSetzen('update', false);
       }
     }
 

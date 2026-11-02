@@ -83,6 +83,9 @@
     // dort nichts), also auch keinen Stapel. Der Titel kommt nie auf den Stapel. Jeder
     // Eintrag merkt die Unterseite, die beim Verlassen offen war - Kreis oeffnet sie wieder.
     if (K_EBENE1.includes(neu)) kStapel = [];
+    // v1.3.5: zurueck auf dem Titel ist wieder "Starten" gewaehlt (96-home.js).
+    // try: waehrend des Ladens liegen HOME_START & Co. (96-home.js) noch in der Todeszone.
+    if (neu === 'home') { try { homeFokusSetzen(HOME_START); } catch (e) { /* noch nicht geladen */ } }
     else if (!kZurueckLaeuft && alt && alt !== neu && alt !== 'home') {
       kStapel.push({ tab: alt, sub: altSub || '' });
       if (kStapel.length > 40) kStapel.shift();
@@ -965,11 +968,14 @@
       return false;
     }
     if (kAktiverTab() !== 'home') return false;
-    if (neu === 14 || neu === 15 || neu === 4 || neu === 5) { wechsleSprache(); return true; }
+    // v1.3.5: Steuerkreuz links/rechts waehlt den Knopf (96-home.js), L1/R1 die Sprache.
+    if (neu === 14 || neu === 15) { homeFokusSchritt(neu === 14 ? -1 : 1); return true; }
+    if (neu === 4 || neu === 5) { wechsleSprache(); return true; }
     // BESTELLT: "'Press any key' und 'press triangle for tutorial' ist auch etwas
     // verwirrend. Ich wuerde sagen: X zum Starten, Dreieck fuer Tutorial, Kreis fuer
     // Steuerung." Alle anderen Tasten tun auf dem Titel nichts mehr.
-    if (neu === 0) { konsoleTitelWeiter(); kTitelSperre = true; return true; }
+    // v1.3.5: Kreuz (A am Xbox-Pad) loest den GEWAEHLTEN Knopf aus - vorgewaehlt ist Starten.
+    if (neu === 0) { kTitelSperre = true; homeFokusAusloesen(); return true; }
     if (neu === 3) { kTitelSperre = true; konsoleTourStart(K_TOUR); return true; }
     if (neu === 1) { kTitelSperre = true; konsoleTourStart(K_STEUERUNG); return true; }
     return true;
@@ -1019,11 +1025,13 @@
     if (typeof studieTestAktiv === 'function' && studieTestAktiv()) return;
     if (kAktiverTab() === 'home' && !e.ctrlKey && !e.altKey && !e.metaKey && k !== 'tab' && k !== 'shift') {
       e.preventDefault(); e.stopImmediatePropagation();
-      // Tastatur wie am Pad: Enter, Leertaste oder X starten, T das Tutorial, S die Steuerung.
-      if (k === 'arrowleft' || k === 'arrowright') wechsleSprache();
+      // Tastatur wie am Pad: Pfeile links/rechts waehlen den Knopf, Enter, Leertaste oder X
+      // loesen ihn aus (v1.3.5), Q/E wie L1/R1 die Sprache. T und S bleiben als Abkuerzung.
+      if (k === 'arrowleft' || k === 'arrowright') homeFokusSchritt(k === 'arrowleft' ? -1 : 1);
+      else if (k === 'q' || k === 'e') wechsleSprache();
       else if (k === 't') konsoleTourStart(K_TOUR);
       else if (k === 's') konsoleTourStart(K_STEUERUNG);
-      else if (k === 'enter' || k === ' ' || k === 'x') konsoleTitelWeiter();
+      else if (k === 'enter' || k === ' ' || k === 'x') homeFokusAusloesen();
       return;
     }
     if (kAktiverTab() === 'race' && !kFrageOffen && k === 'escape' && !document.body.classList.contains('track-fs')) {

@@ -13565,6 +13565,100 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Reiter weg, Knopf in der Kachel (Steuerkreuz, Kreis zurueck), Stand: ' + merk.text };
   });
 
+  // BESTELLT: "Auf dem Startbildschirm nicht die Tasten anzeigen, sondern die Buttons mit D-Pad
+  // oder Pfeiltasten (oder Maus) waehlbar machen. Standardmaessig ist Start ausgewaehlt".
+  stAdd('Start v1.3.5: Startschirm-Knöpfe per Pfeil/Steuerkreuz/Maus, Start vorgewählt, keine Tastenhinweise', () => {
+    const f = [];
+    const merk = { tab: kAktiverTab(), stapel: kStapel.slice(), sperre: kTitelSperre, vorher: kPadVorher.slice() };
+    const gewaehlt = () => HOME_KNOEPFE.filter((id) => $(id) && $(id).classList.contains('k-fokus'));
+    const taste = (key) => window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+    const pad = (i) => {
+      const b = Array.from({ length: 17 }, (x, k) => ({ pressed: k === i, touched: false, value: k === i ? 1 : 0 }));
+      konsolePadTitel({ buttons: b, axes: [0, 0, 0, 0] });
+      konsolePadTitel({ buttons: b.map(() => ({ pressed: false, touched: false, value: 0 })), axes: [0, 0, 0, 0] });
+    };
+    try {
+      kStapel = [];
+      showTab('fahren');
+      showTab('home');
+      if (gewaehlt().join() !== 'k-starten-start') f.push('vorgewaehlt: ' + (gewaehlt().join() || 'nichts'));
+      const zeile = document.querySelector('#tab-home .k-tutorial-reihe');
+      if (!zeile || zeile.querySelector('.k-tutorial-taste') || /[△○✕]|\/ T|\/ S|Enter/.test(zeile.textContent)) f.push('Tastenhinweise noch da');
+      const bg = (id) => getComputedStyle($(id)).backgroundColor;
+      if (bg('k-starten-start') === bg('k-tutorial-start')) f.push('gewaehlter Knopf nicht anders gefuellt');
+      const blauStart = bg('k-starten-start');
+      taste('ArrowLeft');
+      if (gewaehlt().join() !== 'k-steuerung-start') f.push('Pfeil links -> ' + gewaehlt().join());
+      if (bg('k-steuerung-start') !== blauStart || bg('k-starten-start') === blauStart) f.push('Fuellung wandert nicht mit');
+      taste('ArrowLeft'); taste('ArrowLeft');
+      if (gewaehlt().join() !== 'k-wiki') f.push('Pfeil links x3 -> ' + gewaehlt().join());
+      taste('ArrowLeft');
+      if (gewaehlt().join() !== 'k-starten-start') f.push('kein Umlauf -> ' + gewaehlt().join());
+      kTitelSperre = false;
+      pad(14);
+      if (gewaehlt().join() !== 'k-steuerung-start') f.push('Steuerkreuz links -> ' + gewaehlt().join());
+      pad(15);
+      if (gewaehlt().join() !== 'k-starten-start') f.push('Steuerkreuz rechts -> ' + gewaehlt().join());
+      $('k-tutorial-start').dispatchEvent(new PointerEvent('pointerenter'));
+      if (gewaehlt().join() !== 'k-tutorial-start') f.push('Maus waehlt nicht');
+      taste('ArrowRight'); taste('ArrowRight');
+      if (kAktiverTab() !== 'home') f.push('Pfeil verlaesst den Titel');
+      if (gewaehlt().join() !== 'k-starten-start') f.push('Pfeil rechts x2 -> ' + gewaehlt().join());
+      taste('Enter');
+      if (kAktiverTab() !== 'fahren') f.push('Enter auf Starten fuehrt nach ' + kAktiverTab());
+      showTab('home');
+      if (gewaehlt().join() !== 'k-starten-start') f.push('zurueck auf dem Titel nicht wieder Starten');
+    } catch (e) {
+      f.push('Ausnahme: ' + e.message);
+    } finally {
+      kTitelSperre = merk.sperre; kPadVorher.splice(0, kPadVorher.length, ...merk.vorher);
+      kStapel = merk.stapel;
+      if (merk.tab) showTab(merk.tab);
+      homeFokusSetzen(HOME_START);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Starten vorgewaehlt und blau, Pfeile/Steuerkreuz/Maus waehlen mit Umlauf, keine Tastenhinweise' };
+  });
+
+  // BESTELLT: "Spiele auf dem Startbildschirm eine Animation unten links ab (das sich drehende
+  // Streckenteil, aber kleiner), wenn auf Updates geprueft wird oder wenn Sounddateien geladen werden."
+  stAdd('Start v1.3.5: Ladeanimation unten links, solange Updates oder Klänge laden', async () => {
+    const f = [];
+    const merk = kAktiverTab();
+    const box = $('home-lade');
+    let mass = '';
+    try {
+      showTab('home');
+      if (!box) return { ok: false, mass: '#home-lade fehlt' };
+      const vorher = box.hidden;
+      ladeAnzeigeSetzen('selbsttest', true);
+      if (box.hidden || !box.querySelector('.lade-dreh svg')) f.push('waehrend des Ladens nicht sichtbar');
+      const r = box.getBoundingClientRect();
+      if (innerWidth && innerHeight) {
+        if (!(r.left < 60 && r.bottom > innerHeight - 70)) f.push('nicht unten links (' + Math.round(r.left) + ', ' + Math.round(r.bottom) + ')');
+        if (!(r.height <= 40)) f.push('zu gross (' + Math.round(r.height) + ' px)');
+        mass = Math.round(r.left) + '/' + Math.round(innerHeight - r.bottom) + ' px vom Rand, ' + Math.round(r.height) + ' px hoch';
+      }
+      ladeAnzeigeSetzen('selbsttest', false);
+      if (box.hidden !== vorher) f.push('bleibt nach dem Laden stehen');
+      let fertig;
+      const p = new Promise((ok) => { fertig = ok; });
+      ladeAnzeigeMit('selbsttest2', p);
+      if (box.hidden) f.push('ladeAnzeigeMit zeigt nichts');
+      fertig();
+      await p; await Promise.resolve(); await new Promise((ok) => setTimeout(ok, 0));
+      if (box.hidden !== vorher) f.push('ladeAnzeigeMit raeumt nicht ab');
+      // Angeschlossen: Update-Pruefung (97b-app.js) und Klangdateien (80-sound.js).
+      const quelle = [...document.scripts].map((s) => s.textContent).join('\n');
+      if (quelle.indexOf("ladeAnzeigeSetzen('update', true)") < 0 || quelle.indexOf("ladeAnzeigeSetzen('update', false)") < 0) f.push('Update-Pruefung nicht angeschlossen');
+      if (String(klangDateienLaden).indexOf('ladeAnzeigeMit') < 0 || String(unlockAudioOnFirstGesture).indexOf('klangDateienLaden') < 0) f.push('Klangdateien nicht angeschlossen');
+      if (!box.querySelector('.wip-tag')) f.push('WIP fehlt');
+    } finally {
+      ladeAnzeigeSetzen('selbsttest', false); ladeAnzeigeSetzen('selbsttest2', false);
+      if (merk) showTab(merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'sichtbar beim Laden, ' + mass + ', Update und Klaenge angeschlossen' };
+  });
+
   // ---- Die Wetterkachel schaltet durch drei Lagen ----
   //
   // BESTELLT: "Lass mich mit der Regenumschalttaste im Cockpitview bzw. durch
