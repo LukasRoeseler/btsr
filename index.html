@@ -92067,7 +92067,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         'Abbrechen: Kreis oder Esc', 'Beenden: Options oder Esc', 'oder', 'Beenden'];
       const fehltUeb = texte.filter((k) => !I18N_EN[k] || !I18N_ES[k]);
       if (fehltUeb.length) f.push('Übersetzung fehlt: ' + fehltUeb.slice(0, 3).join(' | '));
-      if (/—/.test(texte.join(' ') + $('tut-ui').textContent)) f.push('Gedankenstrich');
+      if ((texte.join(' ') + $('tut-ui').textContent).indexOf(String.fromCharCode(0x2014)) >= 0) f.push('Gedankenstrich');
     } catch (e) {
       f.push('Ausnahme: ' + e.message);
     } finally {

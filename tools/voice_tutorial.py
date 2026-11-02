@@ -155,7 +155,8 @@ def erzeugen(python, modell, nur):
             neu[key] = {'datei': datei(key), 'dauer': dauer_von(ziel), 'text': text}
             print('%-16s %5.2f s' % (key, neu[key]['dauer']))
     manifest = {'stimme': STIMME, 'de': neu}
-    MANIFEST.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+    with MANIFEST.open('w', encoding='utf-8', newline='\n') as f:
+        f.write(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
     print('Zusammen %.1f s in %d Clips.' % (sum(e['dauer'] for e in neu.values()), len(neu)))
     return 0
 
