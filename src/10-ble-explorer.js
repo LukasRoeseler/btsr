@@ -373,6 +373,8 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "Funkpriorität beim Start": "Radio priority at the start",
+    "Nur in der Android-App: Zu Beginn der Startampel, solange alle Autos stehen, bekommen die gesteuerten Autos (Spieler 1–3) das schnellste Verbindungsintervall und NPCs, Safety Car und Reinigungswagen ein ausgewogenes. So nehmen die NPCs dem Funk nicht die kurzen Zeitfenster weg, und die gesteuerten Autos reagieren schneller. Die Autos werden nacheinander umgestellt, im Abstand von 0,15 s.": "Android app only: at the start of the start lights, while all cars are standing, the controlled cars (players 1–3) get the fastest connection interval and NPCs, safety car and cleaning car a balanced one. That way the NPCs do not take the short radio slots, and the controlled cars respond faster. The cars are switched one after another, 0.15 s apart.",
     "Pause / Fortsetzen": "Pause / Resume",
     "Pause": "Pause",
     "Fortsetzen": "Resume",
@@ -3915,6 +3917,8 @@
   // nachzieht. Bewusst KEINE Ansagen (Rundenzeit, Tank, Schaden): dafuer gibt es noch keine
   // spanischen Aufnahmen, und die Sprachausgabe nutzt die englische als Platzhalter.
   const I18N_ES = {
+    "Funkpriorität beim Start": "Prioridad de radio en la salida",
+    "Nur in der Android-App: Zu Beginn der Startampel, solange alle Autos stehen, bekommen die gesteuerten Autos (Spieler 1–3) das schnellste Verbindungsintervall und NPCs, Safety Car und Reinigungswagen ein ausgewogenes. So nehmen die NPCs dem Funk nicht die kurzen Zeitfenster weg, und die gesteuerten Autos reagieren schneller. Die Autos werden nacheinander umgestellt, im Abstand von 0,15 s.": "Solo en la app de Android: al comenzar el semáforo de salida, mientras todos los coches están parados, los coches controlados (jugadores 1–3) reciben el intervalo de conexión más rápido y los NPC, el coche de seguridad y el coche de limpieza uno equilibrado. Así los NPC no ocupan las ventanas cortas de radio y los coches controlados responden más rápido. Los coches se cambian uno tras otro, con 0,15 s de separación.",
     "Pause / Fortsetzen": "Pausa / Continuar",
     "Pause": "Pausa",
     "Fortsetzen": "Continuar",

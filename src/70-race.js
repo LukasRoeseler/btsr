@@ -2170,6 +2170,9 @@
     rennZeitTimeoutStop(raceCountdownTimer); raceCountdownTimer = null;
     ampelPlan = null; ampelSchritt = null; ampelK = 0;
     setRaceLights(0);
+    // v1.3.15 (WIP, Optionen > System): Funkprioritaet je Rolle, solange alle stehen - gesteuerte
+    // Autos HIGH, NPCs & Co. BALANCED, gestaffelt (funkPrioritaetVorStart, 90-ghosts.js).
+    if (typeof funkPrioritaetVorStart === 'function') funkPrioritaetVorStart();
     let ampelGestartet = false;
     const ampelBeginnen = () => {
       if (ampelGestartet || raceState !== 'countdown') return;

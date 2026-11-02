@@ -6077,12 +6077,96 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Standard Einparkfolge; Querlage: anfahrt > rand > halt > stand > raus ohne Lenkfolge' };
   });
 
+  // v1.3.15 GEFRAGT: Bluetooth-Verbindungen vor dem Start "sortieren" - als Prioritaet je Rolle zu Beginn
+  // der Startampel (funkPrioritaetVorStart, 90-ghosts.js). Mit Attrappen-Bruecke und Attrappen-Autos.
+  stAdd('Funk v1.3.15: Prioritaet je Rolle beim Start - Spieler hoch, NPC ausgewogen, gestaffelt', () => {
+    const f = [];
+    const merkB = window.OMEGA_BRUECKE;
+    const cb = $('setting-funk-prio');
+    const merkCb = cb ? cb.checked : null;
+    const auto = (id, role, extra) => Object.assign({ device: { id, name: id, gatt: { connected: true } }, role, rx: {}, alias: id }, extra || {});
+    const sp1 = auto('st-fp-sp1', 'player'), sp2 = auto('st-fp-sp2', 'player2'), npc = auto('st-fp-npc', 'ghost'),
+          sc = auto('st-fp-sc', 'safetycar'), rein = auto('st-fp-rein', 'reinig'),
+          weg = auto('st-fp-weg', 'ghost'), sim = auto('st-fp-sim', 'ghost', { sim: true });
+    weg.device.gatt.connected = false;
+    const aufrufe = [], geplant = [];
+    const planen = (fn, ms) => { geplant.push({ fn, ms }); };
+    const attrappe = (extra) => { window.OMEGA_BRUECKE = Object.assign({}, merkB || {}, extra); };
+    try {
+      if (!cb) f.push('Schalter setting-funk-prio fehlt');
+      else {
+        if (!cb.defaultChecked) f.push('Schalter nicht standardmaessig an');
+        const zeile = cb.closest('.opt-row'), lab = zeile && zeile.querySelector('.opt-label');
+        if (!lab || !lab.querySelector('.wip-tag')) f.push('ohne WIP-Kennzeichnung');
+        if (!zeile || !zeile.closest('#sub-opt-system')) f.push('nicht unter Optionen > System');
+        cb.checked = true;
+      }
+      attrappe({ prioritaetSetzen: (id, stufe) => { aufrufe.push({ id, stufe }); return Promise.resolve({ ok: true, weg: 'Test' }); } });
+      const n = funkPrioritaetVorStart({ autos: [npc, sp1, sc, weg, sp2, sim, rein], planen });
+      if (n !== 5) f.push(n + ' Autos statt 5 (getrennte/Simulation duerfen nicht mitzaehlen)');
+      if (aufrufe.length !== 1) f.push('sofort ' + aufrufe.length + ' Aufrufe statt 1 (nicht gestaffelt)');
+      const abst = geplant.map((g) => g.ms).join(',');
+      if (abst !== '150,300,450,600') f.push('Abstaende ' + abst + ' statt 150,300,450,600');
+      geplant.forEach((g) => g.fn());
+      const stufe = (id) => (aufrufe.find((a) => a.id === id) || {}).stufe;
+      if (stufe('st-fp-sp1') !== 'hoch') f.push('Spieler 1: ' + stufe('st-fp-sp1'));
+      if (stufe('st-fp-sp2') !== 'hoch') f.push('Spieler 2: ' + stufe('st-fp-sp2'));
+      if (stufe('st-fp-npc') !== 'ausgewogen') f.push('NPC: ' + stufe('st-fp-npc'));
+      if (stufe('st-fp-sc') !== 'ausgewogen') f.push('Safety Car: ' + stufe('st-fp-sc'));
+      if (stufe('st-fp-rein') !== 'ausgewogen') f.push('Reinigungswagen: ' + stufe('st-fp-rein'));
+      if (stufe('st-fp-weg') || stufe('st-fp-sim')) f.push('getrenntes Auto/Simulation angefragt');
+      if (aufrufe.slice(0, 2).some((a) => a.stufe !== 'hoch')) f.push('gesteuerte Autos nicht zuerst');
+      // Schalter aus: keine Aufrufe.
+      aufrufe.length = 0; geplant.length = 0;
+      if (cb) {
+        cb.checked = false;
+        funkPrioritaetVorStart({ autos: [npc, sp1], planen });
+        geplant.forEach((g) => g.fn());
+        if (aufrufe.length) f.push('Schalter aus: ' + aufrufe.length + ' Aufrufe');
+        cb.checked = true;
+      }
+      // Ohne die Methode (Browser): nichts, kein Fehler. Wirft sie: auch kein Fehler.
+      attrappe({}); delete window.OMEGA_BRUECKE.prioritaetSetzen;
+      try { if (funkPrioritaetVorStart({ autos: [npc, sp1], planen: (fn) => fn() }) !== 0) f.push('ohne Methode trotzdem geplant'); }
+      catch (e) { f.push('ohne Methode: ' + e.message); }
+      attrappe({ prioritaetSetzen: () => { throw new Error('Attrappe'); } });
+      try { funkPrioritaetVorStart({ autos: [npc, sp1], planen: (fn) => fn() }); }
+      catch (e) { f.push('werfende Methode: ' + e.message); }
+      // Ein neuer Start ueberholt einen noch laufenden: dessen spaete Aufrufe entfallen.
+      aufrufe.length = 0; geplant.length = 0;
+      attrappe({ prioritaetSetzen: (id, s) => { aufrufe.push({ id, stufe: s }); return null; } });
+      funkPrioritaetVorStart({ autos: [sp1, npc], planen });
+      const alt = geplant.slice(); geplant.length = 0;
+      funkPrioritaetVorStart({ autos: [sp1, npc], planen });
+      alt.forEach((g) => g.fn());
+      if (aufrufe.length !== 2) f.push('alter Lauf feuert nach Neustart (' + aufrufe.length + ' Aufrufe)');
+      // Wachfunktion: zieht mit Schalter an nur gesteuerte Autos hoch, mit Schalter aus wie bisher alle.
+      const hoch = [];
+      attrappe({ prioritaetHoch: (id) => { hoch.push(id); } });
+      const wn = auto('st-fp-wn', 'ghost'), wp = auto('st-fp-wp', 'player'), wa = auto('st-fp-wa', 'ghost');
+      for (let t = 1000; t < 21000; t += 150) { meldetaktBeobachten(wn, t); meldetaktBeobachten(wp, t); }
+      if (hoch.indexOf('st-fp-wn') >= 0) f.push('Wachfunktion zieht NPC hoch');
+      if (hoch.indexOf('st-fp-wp') < 0) f.push('Wachfunktion zieht Spieler nicht mehr hoch');
+      if (cb) {
+        cb.checked = false;
+        for (let t = 1000; t < 21000; t += 150) meldetaktBeobachten(wa, t);
+        if (hoch.indexOf('st-fp-wa') < 0) f.push('Schalter aus: Wachfunktion zieht NPC nicht mehr hoch');
+      }
+      if (String(startRaceCountdown).indexOf('funkPrioritaetVorStart()') < 0) f.push('Countdown ruft funkPrioritaetVorStart nicht');
+    } finally {
+      window.OMEGA_BRUECKE = merkB;
+      if (cb && merkCb !== null) cb.checked = merkCb;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Spieler hoch, NPC/Safety Car/Reinigung ausgewogen, 150 ms gestaffelt, Schalter/Methode/Wachfunktion wie bestellt' };
+  });
+
   // v1.2.45 BESTELLT: Latenz - Funkprioritaet nur einmal je Verbindung, SIMULATOR-Linie nur im Editor.
   stAdd('Latenz v1.2.45: Prioritaet einmal je Verbindung, SIMULATOR nur im Editor', () => {
     const f = [];
     const merkB = window.OMEGA_BRUECKE;
     let aufrufe = 0;
-    const car = { rx: {}, device: { id: 'probe-prio' }, alias: 'Probe' };
+    // v1.3.15: als gesteuertes Auto - NPCs zieht die Wachfunktion mit "Funkprioritaet beim Start" nicht mehr hoch.
+    const car = { rx: {}, device: { id: 'probe-prio' }, alias: 'Probe', role: 'player' };
     try {
       window.OMEGA_BRUECKE = Object.assign({}, merkB || {}, { prioritaetHoch: () => { aufrufe++; } });
       // 20 s lang alle 150 ms gemeldet: genau eine Anforderung, erst nach > 5 s.

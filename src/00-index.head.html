@@ -12232,6 +12232,9 @@
       <div class="opt-row"><div class="opt-label">Bekannte Autos beim Start verbinden
           <small>Nur in der Android-App: Beim Start verbindet sie nacheinander alle Autos, die schon einmal verbunden waren (mit gemerkter Rolle oder gemerktem Namen) und gerade erreichbar sind. Ein Auto, das mit einem anderen Ger&auml;t verbunden, aus oder au&szlig;er Reichweite ist, wird ausgelassen. Im Browser verlangt Bluetooth f&uuml;r jedes Auto einen Klick.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-autoverbinden" checked><span></span></label></div>
+      <!-- v1.3.15 (WIP): Funkprioritaet je Rolle zu Beginn der Startampel (funkPrioritaetVorStart, 90-ghosts.js). -->
+      <div class="opt-row"><div class="opt-label">Funkpriorit&auml;t beim Start<span class="wip-tag">WIP</span><small>Nur in der Android-App: Zu Beginn der Startampel, solange alle Autos stehen, bekommen die gesteuerten Autos (Spieler 1&ndash;3) das schnellste Verbindungsintervall und NPCs, Safety Car und Reinigungswagen ein ausgewogenes. So nehmen die NPCs dem Funk nicht die kurzen Zeitfenster weg, und die gesteuerten Autos reagieren schneller. Die Autos werden nacheinander umgestellt, im Abstand von 0,15 s.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-funk-prio" checked><span></span></label></div>
       <div class="opt-row" id="opt-app-zeile" hidden><div class="opt-label">App &amp; Updates
           <small>Nur in der Android-App: Version, Updates ohne neue APK.</small></div>
         <button type="button" class="goto-tab" data-tab="info" data-k-sub="app">&Ouml;ffnen</button></div>
