@@ -3312,6 +3312,14 @@
   .ch-tabelle tr.du td { background: rgba(0,163,224,.2); font-weight: 800; }
   .ch-sterne-hinweis { font-size: 11px; margin: 2px 0 10px; }
   .ch-sterne { letter-spacing: .06em; white-space: nowrap; }
+  /* v1.3.15: Online-Streckenzeiten (72c-strecken-online.js) */
+  .sk-block { margin-top: 16px; }
+  .sk-block #sk-editor-auffrischen { margin-top: 8px; }
+  .sk-lokal { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .04em; padding: 0 5px;
+    border: 1px solid var(--muted); border-radius: 4px; color: var(--muted); white-space: nowrap; }
+  .sk-karte { max-width: 420px; display: flex; justify-content: center; background: rgba(0,0,0,.25);
+    border-radius: 8px; overflow: hidden; margin: 6px 0; }
+  .sk-karte svg { display: block; max-width: 100%; max-height: 280px; width: auto; height: auto; }
   /* ---- Streckeneditor (v0.8.28) ---- */
   .te-warn { border-left: 3px solid var(--warn); padding: 3px 10px; font-size: 12px; color: #f3d9a0; background: rgba(255,180,0,.08); }
   .te-start-reihe { gap: 10px; align-items: center; margin: 8px 0; }
@@ -5824,6 +5832,12 @@
           <b>Community-Bestzeiten</b>
           <span>Eigene Strecken mit Abstimmung einreichen und Bestzeiten teilen.</span>
         </button>
+        <!-- v1.3.15: alle Strecken, auf denen mehr als drei Fahrer eine Zeit haben (72c-strecken-online.js). -->
+        <button class="misc-tile subpage-open" data-sub="ch-strecken">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 34c0-10 6-20 14-20s14 6 14 12-6 8-12 8H10z"/><path d="M14 40h6M22 40h6M30 40h6" stroke="var(--accent)"/></svg>
+          <b>Community-Strecken <span class="wip-tag">WIP</span></b>
+          <span>Alle Strecken, auf denen mehr als drei Fahrer eine Zeit haben.</span>
+        </button>
       </div>
     </div>
     <div class="card subpage" id="sub-ch-a">
@@ -5864,6 +5878,20 @@
       <button class="misc-back" id="ch-strecke-zurueck" type="button">&larr; Community-Bestzeiten</button>
       <h2><span class="ch-titel" data-i18n-skip></span> <span class="wip-tag">experimentell</span></h2>
       <div class="ch-platz"></div>
+    </div>
+    <!-- v1.3.15: Community-Strecken (Liste) und eine Strecke daraus (72c-strecken-online.js). -->
+    <div class="card subpage" id="sub-ch-strecken">
+      <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
+      <h2>Community-Strecken <span class="wip-tag">WIP</span></h2>
+      <div id="sk-liste-bereich"></div>
+    </div>
+    <div class="card subpage" id="sub-ch-sk">
+      <button class="misc-back" id="sk-zurueck" type="button">&larr; Community-Strecken</button>
+      <h2><span id="sk-titel" data-i18n-skip></span> <span class="wip-tag">WIP</span></h2>
+      <div class="sk-karte" id="sk-karte" aria-hidden="true"></div>
+      <p class="muted" id="sk-fakten" data-i18n-skip></p>
+      <div class="row"><button type="button" class="primary" id="sk-laden">In den Editor laden</button></div>
+      <div id="sk-detail-inhalt"></div>
     </div>
     <div class="card subpage" id="sub-ch-online">
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
@@ -9840,6 +9868,12 @@
           <b>Telemetrie <span class="wip-tag">WIP</span></b>
           <span>Deine Runden Teil f&uuml;r Teil: wo du Zeit gewinnst und verlierst, Tempo, Gas und Bremse.</span>
         </button>
+        <button class="misc-tile subpage-open" data-sub="opt-online">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="24" r="16"/><path d="M8 24h32M24 8c6 5 6 27 0 32M24 8c-6 5-6 27 0 32" stroke="var(--bad)"/></svg>
+          <b>Online <span class="wip-tag">WIP</span></b>
+          <span>Dein Name in den Bestenlisten und ob Zeiten auf deinen Strecken online gespeichert werden.</span>
+        </button>
         <button class="misc-tile subpage-open" data-sub="opt-studie" id="opt-studie-kachel" hidden>
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6h12M20 6v12L9 38a3 3 0 0 0 3 4h24a3 3 0 0 0 3-4L28 18V6"/><path d="M14 30h20" stroke="var(--bad)"/></svg>
@@ -12306,6 +12340,18 @@
       <h2>Telemetrie <span class="wip-tag">WIP</span></h2>
       <div id="tele-inhalt" data-i18n-skip></div>
     </div>
+    <!-- v1.3.15 BESTELLT: Online-Optionen (72c-strecken-online.js). Der Name ist derselbe Wert wie
+         der Name unter Challenges > Online (eine Quelle, omegasim-ch-online). -->
+    <div class="card subpage" id="sub-opt-online">
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
+      <h2>Online <span class="wip-tag">WIP</span></h2>
+      <div class="opt-row"><div class="opt-label">Dein Name in der Liste
+          <small>H&ouml;chstens 16 Zeichen. Derselbe Name wie in den Challenges-Bestenlisten.</small></div>
+        <input type="text" id="on-fahrer" maxlength="16" data-preset-skip></div>
+      <div class="opt-row"><div class="opt-label">Zeiten online synchronisieren
+          <small>Aus (Standard): deine Zeiten bleiben auf diesem Ger&auml;t. Sie stehen trotzdem in derselben Liste wie die Online-Zeiten, markiert als &bdquo;nur lokal&ldquo;. An: gewertete Runden auf deinen Strecken gehen an die gemeinsame Liste, mit Streckencode, Streckenname, Rundenzeiten, Autoname, deinem Namen und einer zuf&auml;lligen Ger&auml;tekennung. Name und Strecke sind dann &ouml;ffentlich.</small></div>
+        <label class="tgl"><input type="checkbox" id="on-sync" data-preset-skip><span></span></label></div>
+    </div>
     <div class="card subpage" id="sub-opt-stats">
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Statistiken</h2>
@@ -12703,7 +12749,13 @@
         Der Code beschreibt die Reihenfolge der Teile und die Ausrichtung. Damit stellst du
         auf einem anderen Ger&auml;t dieselbe Strecke ein, ohne sie neu zu klicken.
       </p>
-
+      <!-- v1.3.15 BESTELLT: Bestzeit und beste 3 Runden fuer jede Strecke, eigene und online
+           zusammen (72c-strecken-online.js). Gezeichnet beim Oeffnen der Seite. -->
+      <div class="sk-block" id="sk-editor">
+        <h3 class="ch-zweite">Zeiten auf dieser Strecke <span class="wip-tag">WIP</span></h3>
+        <div id="sk-editor-inhalt"></div>
+        <button type="button" id="sk-editor-auffrischen">Online-Zeiten neu laden</button>
+      </div>
     </div>
     <div class="card subpage" id="sub-laden">
       <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>

@@ -178,6 +178,8 @@
     const tab = kAktiverTab();
     // Eine Community-Strecke (v0.9.49) geht zurueck in ihre Liste, nicht auf die Kacheln.
     if (typeof chCommunitySeiteOffen === 'function' && chCommunitySeiteOffen()) { showSubpage('ch-community'); return true; }
+    // v1.3.15: eine Strecke aus den Community-Strecken geht zurueck in deren Liste.
+    if ($('sub-ch-sk') && $('sub-ch-sk').classList.contains('on')) { showSubpage('ch-strecken'); return true; }
     if (tab === 'info' && document.querySelector('#tab-info .subpage.on')) { konsoleZeige('fahren'); return true; }
     if (document.querySelector('.tabpage.active .subpage.on')) { showSubpage(''); return true; }
     if (tab === 'home' || tab === 'fahren') return false;
@@ -214,7 +216,8 @@
           // derselben Ebene wie die Wochenkategorien - BESTELLT: "wöchentliche Challenges und
           // Dauerrennen sind auf verschiedenen menü-ebenen, bitte angleichen".
           an: k.dataset.ch ? k.dataset.ch === chWahl
-              : k.dataset.sub === (offen.id === 'sub-ch-strecke' ? 'ch-community' : offen.id.replace(/^sub-/, '')),
+              : k.dataset.sub === (offen.id === 'sub-ch-strecke' ? 'ch-community'
+                : offen.id === 'sub-ch-sk' ? 'ch-strecken' : offen.id.replace(/^sub-/, '')),
           wahl: () => {
             if (k.dataset.ch && typeof challengeSeiteZeigen === 'function') challengeSeiteZeigen(k.dataset.ch);
             else showSubpage(k.dataset.sub);
