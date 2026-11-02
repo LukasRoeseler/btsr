@@ -6,6 +6,21 @@ Heranfuehrung an Funktionen." Die App (src/51b-tutorial.js) spielt diese Clips j
 und liest aus audio/tutorial.json Datei, Dauer und Wortlaut. Der Wortlaut hier und in
 TUT_SPRUCH (51b-tutorial.js) muss gleich sein; der Selbsttest vergleicht beide.
 
+ZWEI TEXTE JE CLIP (Nachbesserung zu 1.3.24): `text` steht auf dem Schirm, `sprech` bekommt
+Piper. GEMELDET: "'Tutorial / App' wird deutsch ausgesprochen. Nimm dann lieber deutsche
+Begriffe 'Einfuehrung' und 'Aepp'." Die deutsche Kerstin-Stimme liest englische Woerter nach
+deutschen Regeln (espeak-ng 'de'); fuer die betroffenen Woerter steht in SPRECH eine
+Lautschreibung, geprueft an den espeak-Phonemen und an einer Whisper-Abschrift der Clips:
+  Tutorial -> Einfuehrung (auch auf dem Schirm), App -> Aepp, Arcade -> Ahkehd,
+  OmegaSim -> Omega-ssimm (stimmloses s), Mustang -> Mass-taeng, Garagenmenue -> Garaschenmenue
+  (sonst spricht espeak ein hartes g). Fuer "Gamepad" und "Crew"
+  fand sich keine Lautschreibung, die die deutsche Stimme verstaendlich spricht: gesprochen
+  wird "Kontroller" und "Mannschaft", der Schirm zeigt weiter Gamepad und Crew.
+
+PIPER LIEST STDIN IN DER KONSOLEN-KODIERUNG. Unter Windows (cp1252) wurden aus UTF-8-Umlauten
+Zeichensalat ("geaendert" mit A-Tilde und Waehrungszeichen), und genau so klangen die Clips
+bis 1.3.24. Deshalb laeuft Piper mit PYTHONUTF8=1.
+
 Stimme: Piper (piper-tts, im venv), Modell de_DE-kerstin-low von
 huggingface.co/rhasspy/piper-voices (Modell MIT, Datensatz "Kerstin" CC0). Weder das Modell
 noch Roh-WAVs kommen ins Repository, nur die fertigen Ogg-Clips.
@@ -38,10 +53,11 @@ MANIFEST = OUT / 'tutorial.json'
 STIMME = 'de_DE-kerstin-low'
 
 # Schluessel = Clipname in der App (TUT_SPRUCH in src/51b-tutorial.js). Keine Gedankenstriche.
+# Anzeigetext; was Piper sprechen soll, steht in SPRECH (fehlt ein Schluessel: derselbe Text).
 TEXTE = {
-    'voraussetzung': 'Für das Tutorial brauchst du ein verbundenes Auto und ein Gamepad. '
+    'voraussetzung': 'Für die Einführung brauchst du ein verbundenes Auto und ein Gamepad. '
                      'Ich warte, bis beides bereit ist.',
-    'willkommen': 'Willkommen bei OmegaSim! In diesem Tutorial lernst du die App kennen '
+    'willkommen': 'Willkommen bei OmegaSim! In dieser Einführung lernst du die App kennen '
                   'und drehst deine ersten Runden.',
     'gas': 'Drücke die Gas-Taste, um zu beschleunigen.',
     'bremse': 'Drücke jetzt die Bremstaste, um zu bremsen.',
@@ -63,12 +79,30 @@ TEXTE = {
     'garage': 'Im Garagenmenü passt du den Motorsound für jedes Auto einzeln an.',
     'optionen': 'Ansagen, Tastenbelegung, Fahrverhalten und vieles mehr '
                 'stellst du im Optionenmenü ein.',
-    'abschluss': 'Du hast das Tutorial abgeschlossen. Herzlich willkommen bei OmegaSim!',
+    'abschluss': 'Du hast die Einführung abgeschlossen. Herzlich willkommen bei OmegaSim!',
+}
+# Lautschreibung fuer Piper (nur die Aussprache; der Schirm zeigt TEXTE).
+SPRECH = {
+    'voraussetzung': 'Für die Einführung brauchst du ein verbundenes Auto und einen Kontroller. '
+                     'Ich warte, bis beides bereit ist.',
+    'willkommen': 'Willkommen bei Omega-ßimm! In dieser Einführung lernst du die Äpp kennen '
+                  'und drehst deine ersten Runden.',
+    'arcade': 'Fahr jetzt ein paar Runden im Ahkehd-Modus. '
+              'Das Auto lenkt direkt ein und bremst kräftig.',
+    'box_erklaerung': 'Zeit für einen Boxenstopp. Gleich erscheinen Tasten auf dem Schirm. '
+                      'Drückst du sie rechtzeitig, ist die Mannschaft schneller.',
+    'motor': 'Der Motorsound wird nun geändert zu Ford Mass-täng.',
+    'garage': 'Im Garaschenmenü passt du den Motorsound für jedes Auto einzeln an.',
+    'abschluss': 'Du hast die Einführung abgeschlossen. Herzlich willkommen bei Omega-ßimm!',
 }
 # Piper length_scale: 1 = Modellvorgabe, kleiner = schneller. Kerstin spricht langsam; 0,9 bleibt
 # deutlich und haelt das ganze Tutorial unter drei Minuten.
 TEMPO = 0.9
 SATZPAUSE = 0.15
+
+
+def sprech(key):
+    return SPRECH.get(key, TEXTE[key])
 
 
 def datei(key):
@@ -96,6 +130,8 @@ def pruefen():
         e = clips.get(key) or {}
         if e.get('text') != text:
             fehler.append('Wortlaut weicht ab: ' + key)
+        if e.get('sprech') != sprech(key):
+            fehler.append('Sprechtext weicht ab: ' + key)
         if e.get('datei') != datei(key):
             fehler.append('Dateiname weicht ab: ' + key)
         p = OUT / datei(key)
@@ -132,13 +168,15 @@ def erzeugen(python, modell, nur):
         work = Path(temp)
         for key, text in TEXTE.items():
             ziel = OUT / datei(key)
-            if nur and key not in nur and ziel.is_file() and key in alt and alt[key].get('text') == text:
+            if (nur and key not in nur and ziel.is_file() and key in alt and alt[key].get('text') == text
+                    and alt[key].get('sprech') == sprech(key)):
                 neu[key] = alt[key]
                 continue
             roh = work / (key + '_raw.wav')
             subprocess.run([str(python), '-m', 'piper', '-m', str(modell), '-f', str(roh),
                             '--length-scale', str(TEMPO), '--sentence-silence', str(SATZPAUSE)],
-                           input=text.encode('utf-8'), check=True,
+                           input=sprech(key).encode('utf-8'), check=True,
+                           env=dict(os.environ, PYTHONUTF8='1', PYTHONIOENCODING='utf-8'),
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             ogg = work / datei(key)
             # Stille vorn und hinten weg (dafuer zweimal umkehren), Hochpass 70 Hz, dann
@@ -152,7 +190,7 @@ def erzeugen(python, modell, nur):
                            check=True)
             shutil.copyfile(str(ogg), str(ziel) + '.tmp')
             os.replace(str(ziel) + '.tmp', ziel)
-            neu[key] = {'datei': datei(key), 'dauer': dauer_von(ziel), 'text': text}
+            neu[key] = {'datei': datei(key), 'dauer': dauer_von(ziel), 'text': text, 'sprech': sprech(key)}
             print('%-16s %5.2f s' % (key, neu[key]['dauer']))
     manifest = {'stimme': STIMME, 'de': neu}
     with MANIFEST.open('w', encoding='utf-8', newline='\n') as f:

@@ -355,9 +355,12 @@
   // beim Text. Fehlt ein Clip, steht der Text so lange da, wie man zum Lesen braucht.
 
   // Wortlaut der Clips, derselbe wie TEXTE in tools/voice_tutorial.py (der Selbsttest vergleicht).
+  // Das ist der ANZEIGETEXT. Piper bekommt einen eigenen Sprechtext (SPRECH im Werkzeug, "sprech" im
+  // Manifest) mit Lautschreibung fuer englische Woerter. GEMELDET: "'Tutorial / App' wird deutsch
+  // ausgesprochen. Nimm dann lieber deutsche Begriffe 'Einfuehrung' und 'Aepp'."
   const TUT_SPRUCH = {
-    voraussetzung: 'Für das Tutorial brauchst du ein verbundenes Auto und ein Gamepad. Ich warte, bis beides bereit ist.',
-    willkommen: 'Willkommen bei OmegaSim! In diesem Tutorial lernst du die App kennen und drehst deine ersten Runden.',
+    voraussetzung: 'Für die Einführung brauchst du ein verbundenes Auto und ein Gamepad. Ich warte, bis beides bereit ist.',
+    willkommen: 'Willkommen bei OmegaSim! In dieser Einführung lernst du die App kennen und drehst deine ersten Runden.',
     gas: 'Drücke die Gas-Taste, um zu beschleunigen.',
     bremse: 'Drücke jetzt die Bremstaste, um zu bremsen.',
     links: 'Lenke nach links.',
@@ -374,7 +377,7 @@
     motor: 'Der Motorsound wird nun geändert zu Ford Mustang.',
     garage: 'Im Garagenmenü passt du den Motorsound für jedes Auto einzeln an.',
     optionen: 'Ansagen, Tastenbelegung, Fahrverhalten und vieles mehr stellst du im Optionenmenü ein.',
-    abschluss: 'Du hast das Tutorial abgeschlossen. Herzlich willkommen bei OmegaSim!',
+    abschluss: 'Du hast die Einführung abgeschlossen. Herzlich willkommen bei OmegaSim!',
   };
   // zeige: Text auf dem Schirm, {taste} = Tastenname aus der aktuellen Belegung (Aktion `taste`).
   // Die Clips sprechen generisch ("die Gas-Taste"), denn sie koennen nicht jede Belegung abdecken.

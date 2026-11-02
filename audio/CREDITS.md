@@ -537,6 +537,10 @@ Aus einer eigenen Aufnahme des Autors (Video eines Ford Mustang GT3, nicht Teil 
 19 Sprachclips (`tutorial_*_de.ogg`, nur Deutsch), Manifest mit Datei, Dauer und Wortlaut:
 `audio/tutorial.json`. Erzeugung: `tools/voice_tutorial.py` (Piper, danach ffmpeg: Stille
 abschneiden, Hochpass 70 Hz, Lautheit auf -16 LUFS, Ogg Vorbis). Kein Funkfilter.
+Piper bekommt je Clip einen eigenen Sprechtext mit Lautschreibung fuer englische Woerter
+(Einfuehrung statt Tutorial, Aepp, Ahkehd, Omega-ssimm, Mass-taeng, Kontroller, Mannschaft),
+der Schirm zeigt die normale Schreibung. Seit der Nachbesserung zu 1.3.24 laeuft Piper mit
+UTF-8-Eingabe; vorher wurden die Umlaute unter Windows als Zeichensalat gesprochen.
 
 * **Software:** piper-tts 1.8.0 (https://github.com/OHF-voice/piper1-gpl, GPL-3.0). Die Lizenz
   des Programms erstreckt sich nicht auf die damit erzeugten Aufnahmen.

@@ -3,98 +3,117 @@
   "de": {
     "voraussetzung": {
       "datei": "tutorial_voraussetzung_de.ogg",
-      "dauer": 7.22,
-      "text": "Für das Tutorial brauchst du ein verbundenes Auto und ein Gamepad. Ich warte, bis beides bereit ist."
+      "dauer": 6.12,
+      "text": "Für die Einführung brauchst du ein verbundenes Auto und ein Gamepad. Ich warte, bis beides bereit ist.",
+      "sprech": "Für die Einführung brauchst du ein verbundenes Auto und einen Kontroller. Ich warte, bis beides bereit ist."
     },
     "willkommen": {
       "datei": "tutorial_willkommen_de.ogg",
-      "dauer": 6.12,
-      "text": "Willkommen bei OmegaSim! In diesem Tutorial lernst du die App kennen und drehst deine ersten Runden."
+      "dauer": 5.92,
+      "text": "Willkommen bei OmegaSim! In dieser Einführung lernst du die App kennen und drehst deine ersten Runden.",
+      "sprech": "Willkommen bei Omega-ßimm! In dieser Einführung lernst du die Äpp kennen und drehst deine ersten Runden."
     },
     "gas": {
       "datei": "tutorial_gas_de.ogg",
-      "dauer": 4.32,
-      "text": "Drücke die Gas-Taste, um zu beschleunigen."
+      "dauer": 2.37,
+      "text": "Drücke die Gas-Taste, um zu beschleunigen.",
+      "sprech": "Drücke die Gas-Taste, um zu beschleunigen."
     },
     "bremse": {
       "datei": "tutorial_bremse_de.ogg",
-      "dauer": 4.12,
-      "text": "Drücke jetzt die Bremstaste, um zu bremsen."
+      "dauer": 2.51,
+      "text": "Drücke jetzt die Bremstaste, um zu bremsen.",
+      "sprech": "Drücke jetzt die Bremstaste, um zu bremsen."
     },
     "links": {
       "datei": "tutorial_links_de.ogg",
       "dauer": 0.89,
-      "text": "Lenke nach links."
+      "text": "Lenke nach links.",
+      "sprech": "Lenke nach links."
     },
     "rechts": {
       "datei": "tutorial_rechts_de.ogg",
-      "dauer": 1.15,
-      "text": "Und jetzt nach rechts."
+      "dauer": 1.14,
+      "text": "Und jetzt nach rechts.",
+      "sprech": "Und jetzt nach rechts."
     },
     "gut": {
       "datei": "tutorial_gut_de.ogg",
-      "dauer": 0.63,
-      "text": "Sehr gut!"
+      "dauer": 0.64,
+      "text": "Sehr gut!",
+      "sprech": "Sehr gut!"
     },
     "prima": {
       "datei": "tutorial_prima_de.ogg",
-      "dauer": 0.48,
-      "text": "Prima!"
+      "dauer": 0.46,
+      "text": "Prima!",
+      "sprech": "Prima!"
     },
     "arcade": {
       "datei": "tutorial_arcade_de.ogg",
-      "dauer": 7.12,
-      "text": "Fahr jetzt ein paar Runden im Arcade-Modus. Das Auto lenkt direkt ein und bremst kräftig."
+      "dauer": 5.62,
+      "text": "Fahr jetzt ein paar Runden im Arcade-Modus. Das Auto lenkt direkt ein und bremst kräftig.",
+      "sprech": "Fahr jetzt ein paar Runden im Ahkehd-Modus. Das Auto lenkt direkt ein und bremst kräftig."
     },
     "pacejka": {
       "datei": "tutorial_pacejka_de.ogg",
-      "dauer": 2.86,
-      "text": "Nun wird ein realistischeres Einlenken simuliert."
+      "dauer": 2.94,
+      "text": "Nun wird ein realistischeres Einlenken simuliert.",
+      "sprech": "Nun wird ein realistischeres Einlenken simuliert."
     },
     "beschleunigung": {
       "datei": "tutorial_beschleunigung_de.ogg",
-      "dauer": 3.6,
-      "text": "Das Auto beschleunigt jetzt langsamer, wie ein echter Rennwagen."
+      "dauer": 3.66,
+      "text": "Das Auto beschleunigt jetzt langsamer, wie ein echter Rennwagen.",
+      "sprech": "Das Auto beschleunigt jetzt langsamer, wie ein echter Rennwagen."
     },
     "untersteuern": {
       "datei": "tutorial_untersteuern_de.ogg",
-      "dauer": 8.92,
-      "text": "Fährst du zu schnell in eine Kurve, schiebt das Auto geradeaus. Das ist Untersteuern. Bremse also vor der Kurve."
+      "dauer": 7.02,
+      "text": "Fährst du zu schnell in eine Kurve, schiebt das Auto geradeaus. Das ist Untersteuern. Bremse also vor der Kurve.",
+      "sprech": "Fährst du zu schnell in eine Kurve, schiebt das Auto geradeaus. Das ist Untersteuern. Bremse also vor der Kurve."
     },
     "box_erklaerung": {
       "datei": "tutorial_box_erklaerung_de.ogg",
-      "dauer": 9.82,
-      "text": "Zeit für einen Boxenstopp. Gleich erscheinen Tasten auf dem Schirm. Drückst du sie rechtzeitig, ist die Crew schneller."
+      "dauer": 6.92,
+      "text": "Zeit für einen Boxenstopp. Gleich erscheinen Tasten auf dem Schirm. Drückst du sie rechtzeitig, ist die Crew schneller.",
+      "sprech": "Zeit für einen Boxenstopp. Gleich erscheinen Tasten auf dem Schirm. Drückst du sie rechtzeitig, ist die Mannschaft schneller."
     },
     "box": {
       "datei": "tutorial_box_de.ogg",
-      "dauer": 2.7,
-      "text": "Tippe jetzt die Boxenstopp-Taste und halte an."
+      "dauer": 2.79,
+      "text": "Tippe jetzt die Boxenstopp-Taste und halte an.",
+      "sprech": "Tippe jetzt die Boxenstopp-Taste und halte an."
     },
     "box_fertig": {
       "datei": "tutorial_box_fertig_de.ogg",
-      "dauer": 1.56,
-      "text": "Fertig! Fahr weiter."
+      "dauer": 1.54,
+      "text": "Fertig! Fahr weiter.",
+      "sprech": "Fertig! Fahr weiter."
     },
     "motor": {
       "datei": "tutorial_motor_de.ogg",
-      "dauer": 4.52,
-      "text": "Der Motorsound wird nun geändert zu Ford Mustang."
+      "dauer": 2.86,
+      "text": "Der Motorsound wird nun geändert zu Ford Mustang.",
+      "sprech": "Der Motorsound wird nun geändert zu Ford Mass-täng."
     },
     "garage": {
       "datei": "tutorial_garage_de.ogg",
-      "dauer": 6.42,
-      "text": "Im Garagenmenü passt du den Motorsound für jedes Auto einzeln an."
+      "dauer": 3.68,
+      "text": "Im Garagenmenü passt du den Motorsound für jedes Auto einzeln an.",
+      "sprech": "Im Garaschenmenü passt du den Motorsound für jedes Auto einzeln an."
     },
     "optionen": {
       "datei": "tutorial_optionen_de.ogg",
-      "dauer": 6.02,
-      "text": "Ansagen, Tastenbelegung, Fahrverhalten und vieles mehr stellst du im Optionenmenü ein."
+      "dauer": 4.82,
+      "text": "Ansagen, Tastenbelegung, Fahrverhalten und vieles mehr stellst du im Optionenmenü ein.",
+      "sprech": "Ansagen, Tastenbelegung, Fahrverhalten und vieles mehr stellst du im Optionenmenü ein."
     },
     "abschluss": {
       "datei": "tutorial_abschluss_de.ogg",
-      "dauer": 4.62,
-      "text": "Du hast das Tutorial abgeschlossen. Herzlich willkommen bei OmegaSim!"
+      "dauer": 4.72,
+      "text": "Du hast die Einführung abgeschlossen. Herzlich willkommen bei OmegaSim!",
+      "sprech": "Du hast die Einführung abgeschlossen. Herzlich willkommen bei Omega-ßimm!"
     }
   }
 }
