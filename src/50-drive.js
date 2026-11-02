@@ -378,6 +378,10 @@
           gc.downshiftRpm = pc.downshiftRpm;
           gc.shiftMs = pc.shiftMs;
           gc.rpmScale = pc.rpmScale;
+          // v1.3.5: der NPC-Motor (ghostMaxMotor) setzt Schaltzeit und Rueckschaltpunkt nur beim
+          // Stufenwechsel; hier neu anstossen, mit der Schaltzeit des neuen Getriebes als Grundwert.
+          c.ghost.basisShiftMs = pc.shiftMs;
+          gc.npcMotorArt = null;
           c.ghost.engine.state.currentGear =
             Math.min(c.ghost.engine.state.currentGear, gc.gears.length - 1);
         });
@@ -418,28 +422,71 @@
   // wer "Gran Accelerato" direkt im Auswahlfeld waehlte, bekam sie gar nicht. EINE Stelle:
   // physModusAnwenden() (laeuft bei jedem Wechsel des Auswahlfelds, also auch nach
   // applyPreset() und nach dem Laden). AUS = die Grundwerte aus 40-physics.js.
-  const GRAN_AN = { granAeroK: 0.15, granLenkTempo: 1.0, granZentrier: 0.7, granGier: 0.6,
-                    granLastEmpf: 0.14, granTauUeber: 0.35, granYawTau: 0.28, granYawFeed: 0.25 };
-  const GRAN_AUS = { granAeroK: 0, granLenkTempo: 0, granZentrier: 0, granGier: 0,
-                     granLastEmpf: 0, granTauUeber: 0.25, granYawTau: 0.28, granYawFeed: 0 };
+  // v1.3.5 BESTELLT: "Neues Fahrgefuehl Gran Accelerato pruefen und verbessern. Soll sich anfuehlen
+  // wie eine Kombination aus Gran Turismo Sport und Assetto Corsa Competizione. Wenn noetig, mach 2
+  // Modi draus (Gran Hybrismo und Assetto Carrera)." Zwei Modi, weil die Benchmarks sich in genau
+  // den Punkten widersprechen, die das Gefuehl ausmachen (Hilfen, Lastwechsel, Reifenfenster).
+  // Interner Wert bleibt 'gran' (= Gran Hybrismo, gespeicherte Stände laden weiter), neu ist 'acc'.
+  //   gran / Gran Hybrismo (GT Sport): viel Grip (granGripPlus, Abtrieb), flacher Reifenscheitel
+  //     (C 1,15, E 0), kaum Lastwechsel (starke degressive Lastempfindlichkeit, und granLastGier
+  //     -0,12 gleicht den Trail-Bonus der Grundphysik etwa aus: Gas und Bremse verdrehen das Auto kaum),
+  //     Stabilitaetshilfe (granStabi nimmt 60 % des Uebersteuerns weg, granGier faengt am
+  //     Schwimmwinkel), ABS-Gefuehl (beim Bremsen bleiben 85 % Einschlag), Reifenzustand nur zu
+  //     40 % an der Haftgrenze, sanfter Gieraufbau.
+  //   acc / Assetto Carrera (ACC): Gier aus der Lastverlagerung (granLastGier: Trail-Braking und
+  //     Lupfen drehen ein, Gas schiebt), lockere Lastkopplung (0,5/1,9 statt 0,6/1,6), das Heck
+  //     kommt im Modus selbst (granHeck, ohne Halten - das bleibt am Schalter), scharfer Scheitel
+  //     (C 1,7, E -1), Reifenfenster (Zustand zu 120 %, +6 % Griff um tyreOptimalC), keine Hilfen.
+  const GRAN_WERTE = {
+    gran: { granArt: 'gran', granAeroK: 0.2, granLenkTempo: 0.35, granZentrier: 0.12, granGier: 0.8,
+            granLastEmpf: 0.3, granTauUeber: 0.45, granYawTau: 0.34, granYawFeed: 0.15,
+            granC: 1.15, granE: 0, granGripPlus: 1.12, granHeckReserve: 1.35, granHeck: 0,
+            granStabi: 0.6, granLastGier: -0.12, granVornMin: 0.6, granHintenMax: 1.6, granAbs: 0.85,
+            granTempEinfluss: 0.4, granTempOpt: 0 },
+    acc: { granArt: 'acc', granAeroK: 0.15, granLenkTempo: 0.25, granZentrier: 0.06, granGier: 0.3,
+           granLastEmpf: 0.08, granTauUeber: 0.2, granYawTau: 0.22, granYawFeed: 0.3,
+           granC: 1.7, granE: -1.0, granGripPlus: 1.0, granHeckReserve: 1.08, granHeck: 1,
+           granStabi: 0, granLastGier: 0.5, granVornMin: 0.5, granHintenMax: 1.9, granAbs: 0,
+           granTempEinfluss: 1.2, granTempOpt: 0.06 },
+  };
+  // Bisheriger Name fuer die Hybrismo-Werte (Selbsttests, Schnappschuss-Pruefung).
+  const GRAN_AN = GRAN_WERTE.gran;
+  const GRAN_AUS = { granArt: '', granAeroK: 0, granLenkTempo: 0, granZentrier: 0, granGier: 0,
+                     granLastEmpf: 0, granTauUeber: 0.25, granYawTau: 0.28, granYawFeed: 0,
+                     granC: 0, granE: null, granGripPlus: 1, granHeckReserve: 0, granHeck: 0,
+                     granStabi: 0, granLastGier: 0, granVornMin: 0.6, granHintenMax: 1.6, granAbs: 0,
+                     granTempEinfluss: 1, granTempOpt: 0 };
+  // Die Physikmodi, die mit granStep() rechnen. Alias: der alte Anzeigename "Gran Accelerato"
+  // (und seine Schreibweisen) ist Gran Hybrismo.
+  const GRAN_MODI = ['gran', 'acc'];
+  const PHYS_MODUS_ALIAS = { 'Gran Accelerato': 'gran', 'gran accelerato': 'gran', granaccelerato: 'gran',
+                             'Gran Hybrismo': 'gran', 'Assetto Carrera': 'acc', assettocarrera: 'acc' };
+  function physModusNormal(v) { return PHYS_MODUS_ALIAS[v] || v; }
+  // Rechnet dieser Steuerungsmodus mit der Physik-Kette (Physik, Pacejka, Gran Hybrismo, Assetto Carrera)?
+  function physModusIstPhysik(v) { v = physModusNormal(v); return v === 'physik' || v === 'pacejka' || GRAN_MODI.includes(v); }
+  // an: 'gran' | 'acc' | true (= 'gran', alte Aufrufer) | false/'' (aus).
   function granWerteSetzen(cfg, an) {
     if (!cfg) return;
-    Object.assign(cfg, an ? GRAN_AN : GRAN_AUS);
-    cfg.gran = !!an;
-    if (an) cfg.pacejka = true;
+    const art = an === true ? 'gran' : (GRAN_MODI.includes(physModusNormal(an)) ? physModusNormal(an) : '');
+    Object.assign(cfg, art ? GRAN_WERTE[art] : GRAN_AUS);
+    cfg.gran = !!art;
+    if (art) cfg.pacejka = true;
   }
   function physModusAnwenden(melden) {
-    const v = $('phys-mode') ? $('phys-mode').value : 'physik';
+    let v = $('phys-mode') ? $('phys-mode').value : 'physik';
+    // Ein alter Name im Auswahlfeld (Sicherung, Profil) wird auf den Wert umgestellt.
+    if (PHYS_MODUS_ALIAS[v] && $('phys-mode')) { v = PHYS_MODUS_ALIAS[v]; $('phys-mode').value = v; }
     driftModus = (v === 'drift');
-    physicsEnabled = (v === 'physik' || v === 'pacejka' || v === 'gran');
-    physEngine.config.pacejka = physEngine2.config.pacejka = (v === 'pacejka' || v === 'gran');
-    granWerteSetzen(physEngine.config, v === 'gran');
-    granWerteSetzen(physEngine2.config, v === 'gran');
+    physicsEnabled = physModusIstPhysik(v);
+    physEngine.config.pacejka = physEngine2.config.pacejka = (v === 'pacejka' || GRAN_MODI.includes(v));
+    granWerteSetzen(physEngine.config, v);
+    granWerteSetzen(physEngine2.config, v);
     physLastTime = null;
     if (melden) {
       log('Steuerungsmodus: ' + (v === 'physik' ? 'Physik'
                              : v === 'pacejka' ? 'Pacejka (experimentell)'
-                             : v === 'gran' ? 'Gran Accelerato'
+                             : v === 'gran' ? 'Gran Hybrismo'
+                             : v === 'acc' ? 'Assetto Carrera'
                              : 'RC (Auslaufen, Bremse zweimal = rueckwaerts)'), 'info');
     }
   }

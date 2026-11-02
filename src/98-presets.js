@@ -294,29 +294,45 @@
         + 'ohne die Klassen-Abstimmung.',
     v: Object.assign({}, PRESETS.pro.v, { 'phys-mode': 'pacejka' }, PACEJKA_EIGEN),
   };
-  // ---- GRAN ACCELERATO (v1.2.62) ---------------------------------------------------------
-  // BESTELLT: "Fuege einen neuen Fahrgefuehl Modus ein, den ich auch im Garagenmenue auswaehlen
-  // kann. Name 'Gran Accelerato'. Baue dabei alle Vorschlaege ein." Das Pacejka-Lenkmodell,
-  // verfeinert wie ein GT3 in Assetto Corsa Competizione / Gran Turismo Sport: Abtrieb hebt den
-  // Griff bei Tempo, die Lenkung wird mit Tempo feiner und zentriert sich selbst, die
-  // Lastempfindlichkeit ist staerker, das Uebersteuern baut weicher auf und wird vom
-  // Schwimmwinkel stabilisiert - und die GIERRATE wird gefahren statt nur angezeigt: das Auto
-  // dreht beim Einlenken ein, schiebt am Limit und kann beim Uebersteuern gefangen werden.
-  // Die gran*-Werte stecken in setzeGran() (config, kein DOM-Regler), weil sie nur dieses
-  // Fahrgefuehl betreffen und keine Einstellkachel brauchen.
+  // ---- GRAN HYBRISMO UND ASSETTO CARRERA (v1.2.62 als "Gran Accelerato", zwei Modi seit v1.3.5) ----
+  // BESTELLT (v1.2.62): "Fuege einen neuen Fahrgefuehl Modus ein, den ich auch im Garagenmenue
+  // auswaehlen kann. Name 'Gran Accelerato'. Baue dabei alle Vorschlaege ein." Das Pacejka-
+  // Lenkmodell mit Abtrieb, Tempo-Lenkung, Selbstzentrierung und dynamischer Gierregelung.
+  // BESTELLT (v1.3.5): "Soll sich anfuehlen wie eine Kombination aus Gran Turismo Sport und Assetto
+  // Corsa Competizione. Wenn noetig, mach 2 Modi draus (Gran Hybrismo und Assetto Carrera), die
+  // sich jeweils staerker wie die Benchmarks anfuehlen." Der Schluessel 'gran' bleibt (gespeicherte
+  // Spieler-Presets, Sicherungen, Profile), der alte Name laedt ueber PRESET_ALIAS. Die gran*-Werte
+  // haengen am Modus (GRAN_WERTE, 50-drive.js), hier stehen nur die Regler.
   PRESETS.gran = {
-    label: 'Gran Accelerato',
-    wip: true,   // Korrektur nach 1.2.66: neu, deshalb am Knopf als WIP gekennzeichnet
-    kurz: 'Pacejka, verfeinert wie ACC/GT7',
-    text: 'Das Pacejka-Lenkmodell, verfeinert wie ein GT3 in Assetto Corsa Competizione und '
-        + 'Gran Turismo Sport: Abtrieb hebt den Griff bei Tempo, die Lenkung wird mit Tempo '
-        + 'feiner und zentriert sich selbst, die Lastempfindlichkeit ist st\u00e4rker, und das '
-        + '\u00dcbersteuern baut weicher auf und wird vom Schwimmwinkel stabilisiert. Neu ist '
-        + 'die dynamische Gierregelung: das Auto dreht beim Einlenken ein, statt zu springen, '
-        + 'und schiebt am Limit, statt hart abzurei\u00dfen.',
+    label: 'Gran Hybrismo',
+    wip: true,
+    kurz: 'Pacejka wie Gran Turismo Sport: viel Grip, verzeihend',
+    text: 'Automatik, 2,6 s auf 100, Reifenmodell und Tankgewicht an, Reifenwärmer an. Das '
+        + 'Pacejka-Lenkmodell im Stil von Gran Turismo Sport: viel Grip und Abtrieb, ein weicher '
+        + 'Reifenscheitel, kaum Lastwechsel und eine Stabilitätshilfe, die ein ausbrechendes '
+        + 'Heck sanft gegenlenkt. Beim Bremsen bleibt die Lenkung wie mit kräftigem ABS, '
+        + 'die Reifentemperatur wirkt nur wenig. Bis 1.3.4 hieß der Modus Gran Accelerato.',
+    // Bremse 1,8 und Bremsen nimmt Lenkung 0,6: das ABS-Gefuehl von GT Sport (kurzer Weg, die
+    // Lenkung bleibt). Reifenwaermer an: in GT Sport spielt die Temperatur kaum eine Rolle.
     v: Object.assign({}, PRESETS.pro.v, { 'phys-mode': 'gran',
-      'phys-steerresp': 3.2, 'setting-steer-calib': 2.6, 'setting-brake-steal': 0.8,
-      'phys-accel': 1.05 }),
+      'phys-steerresp': 3.2, 'setting-steer-calib': 2.6, 'setting-brake-steal': 0.6,
+      'phys-accel': 1.05, 'setting-brakepower': 1.8, 'setting-tyre-blankets': true }),
+  };
+  PRESETS.acc = {
+    label: 'Assetto Carrera',
+    wip: true,
+    kurz: 'Pacejka wie Assetto Corsa Competizione: Gewicht und Reifen zählen',
+    text: 'Automatik, 2,6 s auf 100, Reifenmodell und Tankgewicht an, ohne Reifenwärmer. Das '
+        + 'Pacejka-Lenkmodell im Stil von Assetto Corsa Competizione: die Gewichtsverlagerung '
+        + 'lenkt mit (leicht bremsen dreht das Auto ein, Lupfen lässt das Heck kommen, Gas '
+        + 'schiebt), die Haftgrenze ist scharf, und wer sie überfährt, schiebt über die '
+        + 'Vorderräder. Die Reifen haben ein Fenster: kalt rutschen sie, warm greifen sie am '
+        + 'besten, überhitzt lässt der Grip spürbar nach. Keine Hilfen.',
+    // Bremsen nimmt Lenkung 0,95 wie Pro: Trail-Braking soll sich lohnen, eine Vollbremsung in
+    // der Kurve nicht. Reifenwaermer aus: das Fenster muss man sich erfahren.
+    v: Object.assign({}, PRESETS.pro.v, { 'phys-mode': 'acc',
+      'phys-steerresp': 3.2, 'setting-steer-calib': 2.5, 'setting-brake-steal': 0.95,
+      'phys-accel': 1.0, 'setting-tyre-blankets': false }),
   };
   // ---- OMEGA (v1.0.36): Pro, EINGEFROREN -------------------------------------------------
   // BESTELLT: "'Omega'-Fahrgefuehlmodus ergaenzen: so wie das Pro, was so lange bitgleich
@@ -391,14 +407,18 @@
   // Reduzierung (BESTELLT: "Behalte dabei: arcade, sim+, pacejka; pacejka als standard")
   // sind es nur noch die drei - sie erscheinen auch in der Garage, die uebrigen bleiben in
   // den Optionen.
-  const PRESETS_FAHREN = ['arcade', 'simplus', 'propacejka', 'gran'];
+  const PRESETS_FAHREN = ['arcade', 'simplus', 'propacejka', 'gran', 'acc'];
   // Reihenfolge im Optionen-Menue (preset-buttons und die Preset-Liste je Menue): die drei
   // gebraeuchlichen zuerst, der Rest darunter (BESTELLT: "schiebe ein paar nach unten").
-  const PRESETS_REIHENFOLGE = ['arcade', 'simplus', 'propacejka', 'gran',
+  const PRESETS_REIHENFOLGE = ['arcade', 'simplus', 'propacejka', 'gran', 'acc',
                                'pro', 'gt3', 'f1', 'realgt3', 'omega', 'rc'];
   // Bis v0.4 hiess GT3 "real". Aeltere exportierte Abstimmungen und der Knopf im
   // Garagenschirm duerfen den alten Namen weiter benutzen.
-  const PRESET_ALIAS = { real: 'gt3', realismus: 'gt3' };
+  // v1.3.5: "Gran Accelerato" heisst jetzt Gran Hybrismo (Schluessel 'gran' unveraendert); der alte
+  // Name und die Schreibweisen ohne Leerzeichen laden weiter.
+  const PRESET_ALIAS = { real: 'gt3', realismus: 'gt3', 'Gran Accelerato': 'gran', granaccelerato: 'gran',
+                         'gran accelerato': 'gran', granhybrismo: 'gran', 'Gran Hybrismo': 'gran',
+                         assettocarrera: 'acc', 'Assetto Carrera': 'acc' };
 
   // Every control in an option row, found by walking the DOM rather than from a list. A
   // hand-kept list would silently omit whatever gets added next, and the omission would only
@@ -439,6 +459,8 @@
   function presetSet(id, val) {
     const el = document.getElementById(id);
     if (!el) return false;
+    // v1.3.5: alte Namen des Steuerungsmodus ("Gran Accelerato") auf den Wert umstellen.
+    if (id === 'phys-mode' && typeof physModusNormal === 'function') val = physModusNormal(val);
     if (el.type === 'checkbox') {
       if (el.checked === !!val) return true;
       el.checked = !!val;
@@ -465,8 +487,9 @@
   // Pro, Sim+, Pacejka, GT3, F1 und Realismus GT3. Omega ist eingefroren (bleibt beim
   // flachen Faktor), und Arcade/RC fahren absichtlich den einfachen Reibkreis.
   // Korrektur nach 1.2.66: Gran Accelerato gehoert dazu - es ist Pro-Pacejka (Pro-Tabelle mit
-  // Reifenmodell und echtem Reibkreis) plus Gierregelung, kein vereinfachtes Preset.
-  const PRESETS_BREMSSTEAL_LAST = ['pro', 'simplus', 'propacejka', 'gran', 'gt3', 'f1', 'realgt3'];
+  // Reifenmodell und echtem Reibkreis) plus Gierregelung, kein vereinfachtes Preset. v1.3.5: beide
+  // Nachfolger (Gran Hybrismo 'gran', Assetto Carrera 'acc').
+  const PRESETS_BREMSSTEAL_LAST = ['pro', 'simplus', 'propacejka', 'gran', 'acc', 'gt3', 'f1', 'realgt3'];
   function setzeBrakeStealLast() {
     if (typeof physEngine !== 'undefined' && physEngine.config) {
       physEngine.config.brakeStealLast = PRESETS_BREMSSTEAL_LAST.includes(presetAktiv()) ? 1 : 0;
@@ -476,14 +499,15 @@
     }
   }
   // v1.2.62: Gran Accelerato - die gran*-Stellschrauben (config, kein DOM-Regler).
-  // Seit der Korrektur nach 1.2.66 haengen sie am MODUS (phys-mode = 'gran'), nicht an
+  // Seit der Korrektur nach 1.2.66 haengen sie am MODUS (phys-mode = 'gran', seit v1.3.5 auch
+  // 'acc'), nicht an
   // presetAktiv(): Werte und Begruendung bei granWerteSetzen() in 50-drive.js. Diese Funktion
   // bleibt als Aufruf an den alten Stellen (applyPreset, Schnappschuss, Laden), damit die
   // Werte auch dann stimmen, wenn das Auswahlfeld schon auf dem Modus stand und deshalb kein
   // 'change' feuerte.
   function setzeGran() {
     if (typeof physEngine !== 'undefined' && physEngine.config) {
-      granWerteSetzen(physEngine.config, ($('phys-mode') || {}).value === 'gran');
+      granWerteSetzen(physEngine.config, ($('phys-mode') || {}).value || '');
     }
   }
 
@@ -723,7 +747,8 @@
       if (!el) { unknown.push(id); continue; }
       if (el.type === 'checkbox') continue;
       if (el.tagName === 'SELECT') {
-        if (![].some.call(el.options, o => o.value === val)) bad.push(id + '=' + val);
+        const w = id === 'phys-mode' && typeof physModusNormal === 'function' ? physModusNormal(val) : val;
+        if (![].some.call(el.options, o => o.value === w)) bad.push(id + '=' + val);
       } else {
         const v = +val;
         if (!isFinite(v) || v < +el.min || v > +el.max) bad.push(id + '=' + val);

@@ -1207,9 +1207,10 @@
     // diese Zeile jede Pacejka-Abstimmung zurueck auf Physik).
     const pv = typeof window.__presetValues === 'function' ? window.__presetValues(preset) : null;
     // Korrektur nach 1.2.66: Gran Accelerato ist Pacejka plus Gierregelung und wird genauso
-    // durchgereicht (vorher fiel es hier auf Physik zurueck).
+    // durchgereicht (vorher fiel es hier auf Physik zurueck). v1.3.5: Gran Hybrismo ('gran') und
+    // Assetto Carrera ('acc').
     const pm = pv && pv['phys-mode'];
-    chSetzen('phys-mode', pm === 'pacejka' || pm === 'gran' ? pm : 'physik');
+    chSetzen('phys-mode', pm === 'pacejka' || GRAN_MODI.includes(pm) ? pm : 'physik');
     chSetzen('race-mode', modus === 'rennen' ? 'laps' : 'practice');
     // Rennen: bis CH_EXTRA_LAPS mehr als die Soll-Rundenzahl, damit eine verpatzte Runde mit
     // einer extra ausgeglichen werden kann (siehe challengeRundeFertig).
