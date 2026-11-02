@@ -333,8 +333,22 @@
   const VF_HANDLING_STORE = 'omegasim-vf-handling';
   const VF_HANDLING_MODI = [{ id: 'gt3', name: 'GT3' }, { id: 'schnell', name: 'Schnell' },
                             { id: 'gran', name: 'Gran Accelerato' }];
+  // BESTELLT: Latenz. Korrektur nach 1.2.66: vfHandling() wird je Bild gefragt (vfSchritt,
+  // Gran-Modus) - localStorage.getItem ist ein synchroner Speicherzugriff und auf schwachen
+  // Handys je Bild spuerbar. Gelesen wird einmal (und neu beim Start einer Fahrt), geschrieben
+  // nur ueber vfHandlingSetzen(), das den Zwischenspeicher mitzieht.
+  let vfHandlingCache = null;
   function vfHandling() {
-    try { const v = localStorage.getItem(VF_HANDLING_STORE); return VF_HANDLING_MODI.some((m) => m.id === v) ? v : 'gt3'; } catch (e) { return 'gt3'; }
+    if (vfHandlingCache === null) {
+      let v = null;
+      try { v = localStorage.getItem(VF_HANDLING_STORE); } catch (e) { /* privat */ }
+      vfHandlingCache = VF_HANDLING_MODI.some((m) => m.id === v) ? v : 'gt3';
+    }
+    return vfHandlingCache;
+  }
+  function vfHandlingSetzen(id) {
+    try { localStorage.setItem(VF_HANDLING_STORE, id); } catch (e) { /* privat */ }
+    vfHandlingCache = null;
   }
   function vfHandlingName(id) { const m = VF_HANDLING_MODI.find((x) => x.id === id); return m ? t(m.name) : t('GT3'); }
   function vfTempoFaktor() { return vfHandling() === 'schnell' ? 1.15 : 1.0; }
@@ -1201,6 +1215,7 @@
   function virtuellStarten(opts) {
     opts = opts || {};
     if (VF.aktiv) return false;
+    vfHandlingCache = null;   // einmal frisch lesen (z. B. in einem anderen Tab geaendert)
     if (!physicsEnabled) { showHudToast(t('Virtuell braucht ein Fahrgefühl mit Physik (nicht RC)')); return false; }
     // Editor-Strecke und gemerkte Rollen gehoeren dem Fahrer: die Ersatzstrecke (Balkonia) und die Rolle
     // des virtuellen Autos werden beim Beenden wieder zurueckgenommen.
@@ -1388,7 +1403,7 @@
     const hId = vfHandling();
     const hWahl = (dd) => {
       const i = Math.max(0, VF_HANDLING_MODI.findIndex((m) => m.id === hId));
-      try { localStorage.setItem(VF_HANDLING_STORE, VF_HANDLING_MODI[(i + dd + VF_HANDLING_MODI.length) % VF_HANDLING_MODI.length].id); } catch (e) { /* egal */ }
+      vfHandlingSetzen(VF_HANDLING_MODI[(i + dd + VF_HANDLING_MODI.length) % VF_HANDLING_MODI.length].id);
       renderGarage();
     };
     rechts.appendChild(garWertZeile(t('Handling'), vfHandlingName(hId), () => hWahl(-1), () => hWahl(1)));
@@ -1436,15 +1451,24 @@
   }
 
   // v1.2.62: ein kurzes "Rattern" (weisses Rauschen) fuer die Randsteine, ueber audioCtx (80-sound.js).
+  // BESTELLT: Latenz. Korrektur nach 1.2.66: der Rauschpuffer (60 ms, abklingend) wird EINMAL je
+  // AudioContext angelegt und wiederverwendet. Vorher entstand alle 70 ms ein neuer Puffer samt
+  // 2.880 Zufallszahlen - Muell fuer die Speicherbereinigung, die auf schwachen Handys als
+  // Ruckler im Bild und im Funktakt ankommt. Ein AudioBuffer darf von beliebig vielen
+  // BufferSources gleichzeitig gespielt werden.
+  let vfRatternPuffer = null, vfRatternCtx = null;
   function vfRattern(staerke) {
     if (!audioCtx || !soundEnabled) return;
     try {
-      const dauer = 0.06, n = Math.max(1, Math.floor(audioCtx.sampleRate * dauer));
-      const buf = audioCtx.createBuffer(1, n, audioCtx.sampleRate);
-      const d = buf.getChannelData(0);
-      for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+      if (!vfRatternPuffer || vfRatternCtx !== audioCtx) {
+        const dauer = 0.06, n = Math.max(1, Math.floor(audioCtx.sampleRate * dauer));
+        const buf = audioCtx.createBuffer(1, n, audioCtx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+        vfRatternPuffer = buf; vfRatternCtx = audioCtx;
+      }
       const src = audioCtx.createBufferSource();
-      src.buffer = buf;
+      src.buffer = vfRatternPuffer;
       const g = audioCtx.createGain();
       g.gain.value = staerke;
       src.connect(g); g.connect(audioCtx.destination);

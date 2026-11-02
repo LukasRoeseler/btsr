@@ -6114,6 +6114,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.2</span></b></p>
       <ul class="muted" id="patchnotes-12" style="padding-left:20px; line-height:1.7">
+        <li>Seit 1.2.47: Wiki-Knopf auf der Startseite und Wiki-Kachel in den Optionen. Das Safety Car parkt nach der ersten Runde. Boxen-Minigame ohne lange Wartezeit zwischen den Kn&#246;pfen; eine L&#252;cke von 90 ms bleibt, damit ein Wechsel auf dasselbe Symbol sichtbar ist und ein doppelter Druck nicht f&#252;r den n&#228;chsten Knopf z&#228;hlt. Pacejka hat eine eigene Abstimmung (Beschleunigungsfaktor 1,1, Lenkkalibrierung 280 %, Bremsen nimmt Lenkung 75 %); sie steht nur im Preset Pacejka, das beim ersten Start gesetzt wird, die Werkseinstellungen der Regler sind wieder die von vor 1.2.48. NPC-Einpark- und Haltefolgen laufen bei Simulationsautos mit der Physikzeit, bei echten Autos nach der Uhr. Der Challenger regelt sein Tempo additiv gegen die Bestzeit, und f&#252;r MAX gilt ein Deckel je Streckenteil statt des 60-%-Kurvendeckels. Streckeneditor-Optionen (WIP): L&#228;nge/Teile, Linkslastig, Br&#252;cken und Strecke spiegeln. Neues Fahrgef&#252;hl Gran Accelerato (WIP): Pacejka mit Abtrieb, Selbstzentrierung und dynamischer Gierregelung; es gilt jetzt auch f&#252;r Spieler 2 und 3 und in Challenges, und seine Werte h&#228;ngen am Modus, bleiben also nach dem Laden und beim Verstellen eines Reglers erhalten. OmegaLabs-Studie auf der Startseite, Layout spiegelbar (WIP, wird mit den Studiendaten gespeichert; nach der Studie ist Spiegeln wieder aus). Randstein-Rumpeln beim virtuellen Fahren (WIP). Latenz: Pakete von NPCs in Einpark- und Haltefolgen werden nur noch bei ge&#228;ndertem Befehl oder Phasenwechsel nachgereicht, sonst wie immer verworfen; virtuelles Fahren liest den Handling-Modus nicht mehr in jedem Bild und legt f&#252;r das Randstein-Rattern keinen neuen Tonpuffer mehr an.</li>
         <li>Latenz: Das schnelle Verbindungsintervall wird nur noch einmal je Verbindung nachgefordert, und erst wenn ein Auto 5 s lang langsamer als alle 120 ms meldet (vorher alle 20 s je Auto ab 75 ms &#8211; mit vier Autos handelte das Handy etwa alle 5 s eine Verbindung neu aus). Linienmodell SIMULATOR: Die Linie wird nur noch im Strecken-Editor berechnet und gespeichert, beim Fahren nie mehr im Hintergrund; fehlt sie, fahren die NPCs die normale Linie.</li>
         <li>Latenz: Die Strecke im Regenradar ist wieder entfernt, und das Radar zeichnet nur noch in einfacher Aufl&#246;sung (auf hochaufl&#246;senden Handys ein Viertel der Bildpunkte). Neuer Schalter &#8222;Regenradar&#8220; unter Optionen &#8594; Allgemein: aus, wird das Radar gar nicht gezeichnet. Der Knopf &#8222;Reinigungsfahrzeug starten&#8220; steht nur noch in der Bahn-Kachel, nicht mehr in der Garagen-Kachel.</li>
         <li>NPCs: Start/Ziel gilt jetzt &#252;berall als Gerade. Die Linie h&#228;lt dort die Querlage wie auf jeder Geraden, statt hinter einer Kurve halb innen zu bleiben, und der Vorausblick ans Auto meldet auf der Bahn Start/Ziel (0x01) statt der Engstelle (0x0A). NPC-Stufe MAX: Ohne Schaltpause wurde der Schaltvorgang nach dem ersten Hochschalten nie beendet, das Auto hatte danach keinen Antrieb mehr &#8211; behoben, MAX f&#228;hrt auf Geraden etwa doppelt so schnell wie vorher. Ideallinie (Linienmodell SIMULATOR, WIP): Die Suche rechnet mit dem echten Kurventempo der NPCs und f&#228;hrt au&#223;en-innen-au&#223;en (Kurveneingang und -ausgang au&#223;en, Scheitel innen), statt nur die innere H&#228;lfte zu nutzen; die Haarnadel bleibt davon ausgenommen, gespeicherte Linien werden neu gesucht.</li>
@@ -9957,7 +9958,7 @@
         <select id="phys-mode">
           <option value="physik">Physik</option>
           <option value="pacejka" selected>Pacejka (experimentell)</option>
-          <option value="gran">Gran Accelerato</option>
+          <option value="gran">Gran Accelerato (WIP)</option>
           <option value="aus">RC (experimentell)</option>
         </select></div>
       <!-- BESTELLT: "Eventuell sage ich spaeter, dass das Uebersteuern abgeschaltet werden
@@ -10542,9 +10543,9 @@
       <div class="opt-row"><div class="opt-label">Bremsen nimmt Lenkung<small>Der Reibkreis: was die Bremse an der Vorderachse verbraucht, fehlt der Lenkung. 0 hei&szlig;t, Bremsen und Lenken behindern sich nicht; h&ouml;here Werte lassen das Auto beim Anbremsen deutlich schlechter einlenken. Zu beachten: die Lenkwinkel-Kalibrierung darunter holt genau das wieder zur&uuml;ck, also wirkt ein starker Wert erst, wenn die Kalibrierung ihn nicht mehr ausgleichen kann.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-brake-steal" min="0" max="1.5" step="0.05" value="0.75">
+          <input type="range" id="setting-brake-steal" min="0" max="1.5" step="0.05" value="0.95">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-brake-steal-val">75%</span>
+          <span class="opt-val" id="setting-brake-steal-val">95%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Bremsaufbau<small>Wie schnell die Bremskraft am Reifen
           ansteht - und damit, wie fr&uuml;h beim Anbremsen die Lenkung nachl&auml;sst (siehe &bdquo;Bremsen nimmt
@@ -10560,16 +10561,16 @@
       <div class="opt-row"><div class="opt-label">Lenkwinkel-Kalibrierung<small>Für enge Strecken. Der Regler sitzt hinter dem Reibkreis: beim Anbremsen einer Kurve beschneidet der die Lenkung auf etwa 60 Prozent, und bei 200 Prozent erreicht dieser beschnittene Wunsch wieder den vollen Anschlag. Weiter als 45 Grad kann kein Wert lenken, das ist die Mechanik des Autos und nicht die App. Der Preis ist Feingefühl: je höher, desto früher liegt der Anschlag an und desto weniger sagt der letzte Teil des Sticks.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-steer-calib" min="1" max="3" step="0.05" value="2.8">
+          <input type="range" id="setting-steer-calib" min="1" max="3" step="0.05" value="2.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-steer-calib-val">280%</span>
+          <span class="opt-val" id="setting-steer-calib-val">250%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Beschleunigungsfaktor<small>Feinabstimmung, 1.0 = die eingestellte Zeit.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="phys-accel" min="0.4" max="2.0" step="0.05" value="1.1">
+          <input type="range" id="phys-accel" min="0.4" max="2.0" step="0.05" value="1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="phys-accel-val">1.10</span>
+          <span class="opt-val" id="phys-accel-val">1.00</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Tempo r&uuml;ckw&auml;rts<small>H&ouml;chsttempo im R&uuml;ckw&auml;rtsgang, in Prozent des bisherigen Werts. 50&nbsp;% ist die Vorgabe seit 1.1.11 (vorher 100&nbsp;%). Gilt auch f&uuml;r &bdquo;Gas und Bremse zusammen&ldquo;; das Auto f&auml;hrt dabei wirklich langsamer, nicht nur die Anzeige. Wenn das Auto selbst f&auml;hrt (gelbe Flagge, Aufstellung), gilt der Regler nicht.</small></div>
         <div class="opt-slider">
@@ -11096,7 +11097,7 @@
           du bist an der Haftgrenze, aber noch nicht dar&uuml;ber. Kommt vor dem Untersteuern und dem
           &Uuml;bersteuern &ndash; die Warnung davor.</small></div>
         <label class="tgl"><input type="checkbox" id="vib-quietschen" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Randsteine (Virtuell fahren)
+      <div class="opt-row"><div class="opt-label">Randsteine (Virtuell fahren) <span class="wip-tag">WIP</span>
           <small>Ein kurzes R&auml;tteln und Brummen, wenn das Auto mit dem Rand &uuml;ber den
           erhabenen Stein f&auml;hrt &ndash; das Rattern der Curbs-Schwelle. Nur im virtuellen
           Fahren, wo die Randsteine als 3D-Objekt gezeichnet sind.</small></div>
@@ -12587,6 +12588,9 @@
           <span class="tp-info" id="track-fs-info" data-i18n-skip></span>
           <span class="tp-tasten" id="track-fs-tasten"></span>
           <div class="tp-opt" id="track-opt-panel" hidden>
+            <!-- Korrektur nach 1.2.66: alle vier Editor-Optionen (v1.2.61) sind neu und als WIP
+                 gekennzeichnet - ein Schild fuer das ganze Feld. -->
+            <span class="wip-tag">WIP</span>
             <label>L&auml;nge / Teile
               <input type="range" id="track-opt-ziel" min="4" max="4" value="4">
               <span class="tp-opt-wert" id="track-opt-ziel-wert">max</span>
@@ -15375,6 +15379,7 @@
     "Einparkfolge (wie Safety Car)": "Parking sequence (like safety car)",
     "Wie ein NPC zum Boxenstopp an den Rand fährt. Einparkfolge (Standard): wie das Safety Car mit der aufgenommenen Ein- und Ausparkfolge. Streckenrand über Querlage: das Auto zieht auf dem Boxenteil per Querlage an den rechten Rand, bremst dort, steht und zieht danach per Querlage wieder auf die Fahrbahn – ohne Lenkfolge.": "How an NPC pulls over to the edge for a pit stop. Parking sequence (default): like the safety car, with the recorded parking and exit sequence. Track edge via lateral position: on the pit piece the car moves to the right edge via its lateral position, brakes there, stands and then moves back onto the track via its lateral position, without a steering sequence.",
     "NPC: Tankort": "NPC: refuelling spot",
+    "Seit 1.2.47: Wiki-Knopf auf der Startseite und Wiki-Kachel in den Optionen. Das Safety Car parkt nach der ersten Runde. Boxen-Minigame ohne lange Wartezeit zwischen den Knöpfen; eine Lücke von 90 ms bleibt, damit ein Wechsel auf dasselbe Symbol sichtbar ist und ein doppelter Druck nicht für den nächsten Knopf zählt. Pacejka hat eine eigene Abstimmung (Beschleunigungsfaktor 1,1, Lenkkalibrierung 280 %, Bremsen nimmt Lenkung 75 %); sie steht nur im Preset Pacejka, das beim ersten Start gesetzt wird, die Werkseinstellungen der Regler sind wieder die von vor 1.2.48. NPC-Einpark- und Haltefolgen laufen bei Simulationsautos mit der Physikzeit, bei echten Autos nach der Uhr. Der Challenger regelt sein Tempo additiv gegen die Bestzeit, und für MAX gilt ein Deckel je Streckenteil statt des 60-%-Kurvendeckels. Streckeneditor-Optionen (WIP): Länge/Teile, Linkslastig, Brücken und Strecke spiegeln. Neues Fahrgefühl Gran Accelerato (WIP): Pacejka mit Abtrieb, Selbstzentrierung und dynamischer Gierregelung; es gilt jetzt auch für Spieler 2 und 3 und in Challenges, und seine Werte hängen am Modus, bleiben also nach dem Laden und beim Verstellen eines Reglers erhalten. OmegaLabs-Studie auf der Startseite, Layout spiegelbar (WIP, wird mit den Studiendaten gespeichert; nach der Studie ist Spiegeln wieder aus). Randstein-Rumpeln beim virtuellen Fahren (WIP). Latenz: Pakete von NPCs in Einpark- und Haltefolgen werden nur noch bei geändertem Befehl oder Phasenwechsel nachgereicht, sonst wie immer verworfen; virtuelles Fahren liest den Handling-Modus nicht mehr in jedem Bild und legt für das Randstein-Rattern keinen neuen Tonpuffer mehr an.": "Since 1.2.47: Wiki button on the start screen and a Wiki tile in the options. The safety car parks after the first lap. Pit minigame without the long wait between buttons; a 90 ms gap remains so that a change to the same symbol is visible and a double press does not count for the next button. Pacejka has its own setup (acceleration factor 1.1, steering calibration 280 %, braking takes steering 75 %); it lives only in the Pacejka preset, which is applied on first start, and the factory defaults of the sliders are back to those before 1.2.48. NPC parking and stopping sequences run on physics time for simulated cars and on the clock for real cars. The Challenger adjusts its pace additively against the best time, and MAX has a cap per track piece instead of the 60 % corner cap. Track editor options (WIP): length/pieces, left-heavy, bridges and mirror track. New driving feel Gran Accelerato (WIP): Pacejka with downforce, self-centring and dynamic yaw control; it now also applies to players 2 and 3 and in challenges, and its values follow the mode, so they survive loading and adjusting a slider. OmegaLabs study on the start screen, layout can be mirrored (WIP, stored with the study data; mirroring is off again after the study). Kerb rumble in virtual driving (WIP). Latency: packets from NPCs in parking and stopping sequences are only passed on when the command changes or a phase switches, otherwise dropped as always; virtual driving no longer reads the handling mode every frame and no longer creates a new sound buffer for the kerb rattle.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -15729,7 +15734,16 @@
     "Zufall: Keine Streckenteile": "Random: No track parts",
     "Erst die Streckenteile eingeben": "Enter track parts first",
     "Erst die Strecke bauen": "Build the track first",
-    "Spiegeln nicht verfuegbar": "Mirroring not available",
+    "Spiegeln nicht verfügbar": "Mirroring not available",
+    "Länge / Teile": "Length / pieces",
+    "Linkslastig": "Left-heavy",
+    "Brücken": "Bridges",
+    "Strecke spiegeln": "Mirror track",
+    "Strecke spiegeln: Kurven links/rechts tauschen und die Schleife rückwärts fahren": "Mirror track: swap left and right corners and drive the loop backwards",
+    "Editor-Optionen: Länge, Linkslastig, Brücken, Spiegeln": "Editor options: length, left-heavy, bridges, mirror",
+    "Editor-Optionen": "Editor options",
+    "Pacejka, verfeinert wie ACC/GT7": "Pacejka, refined like ACC/GT7",
+    "Gran Accelerato (WIP)": "Gran Accelerato (WIP)",
     "Teile eingeben": "Enter track parts",
     "Zufällige Strecke aus den vorhandenen Teilen bauen": "Build a random track from the available pieces",
     "Zufall": "Random",
@@ -18440,7 +18454,24 @@
     "Zufall: Keine Streckenteile": "Aleatorio: no hay piezas de pista",
     "Erst die Streckenteile eingeben": "Introduce primero las piezas de pista",
     "Erst die Strecke bauen": "Construye primero la pista",
-    "Spiegeln nicht verfuegbar": "Reflejo no disponible",
+    "Spiegeln nicht verfügbar": "Reflejo no disponible",
+    "Länge / Teile": "Longitud / piezas",
+    "Linkslastig": "Más curvas a la izquierda",
+    "Brücken": "Puentes",
+    "Strecke spiegeln": "Reflejar la pista",
+    "Strecke spiegeln: Kurven links/rechts tauschen und die Schleife rückwärts fahren": "Reflejar la pista: intercambiar las curvas izquierda y derecha y recorrer el circuito al revés",
+    "Editor-Optionen: Länge, Linkslastig, Brücken, Spiegeln": "Opciones del editor: longitud, más curvas a la izquierda, puentes, reflejo",
+    "Editor-Optionen": "Opciones del editor",
+    "Optionen": "Opciones",
+    "Pacejka, verfeinert wie ACC/GT7": "Pacejka, refinado como ACC/GT7",
+    "Gran Accelerato (WIP)": "Gran Accelerato (WIP)",
+    "Das Pacejka-Lenkmodell, verfeinert wie ein GT3 in Assetto Corsa Competizione und Gran Turismo Sport: Abtrieb hebt den Griff bei Tempo, die Lenkung wird mit Tempo feiner und zentriert sich selbst, die Lastempfindlichkeit ist stärker, und das Übersteuern baut weicher auf und wird vom Schwimmwinkel stabilisiert. Neu ist die dynamische Gierregelung: das Auto dreht beim Einlenken ein, statt zu springen, und schiebt am Limit, statt hart abzureißen.": "El modelo de dirección Pacejka, refinado como un GT3 en Assetto Corsa Competizione y Gran Turismo Sport: la carga aerodinámica aumenta el agarre con la velocidad, la dirección se vuelve más fina con la velocidad y se centra sola, la sensibilidad a la carga es mayor, y el sobreviraje se forma de manera más suave y lo estabiliza el ángulo de deriva. Lo nuevo es el control dinámico de guiñada: el coche gira al entrar en la curva en lugar de saltar, y en el límite empuja en lugar de soltarse de golpe.",
+    "Randsteine (Virtuell fahren)": "Pianos (conducción virtual)",
+    "Ein kurzes Rätteln und Brummen, wenn das Auto mit dem Rand über den erhabenen Stein fährt – das Rattern der Curbs-Schwelle. Nur im virtuellen Fahren, wo die Randsteine als 3D-Objekt gezeichnet sind.": "Una breve vibración y zumbido cuando el coche pasa con el borde sobre el piano elevado: el traqueteo del bordillo. Solo en la conducción virtual, donde los pianos se dibujan como objeto 3D.",
+    "NPC: Tankort": "NPC: lugar de repostaje",
+    "Einparkfolge (wie Safety Car)": "Secuencia de aparcamiento (como el Safety Car)",
+    "Streckenrand über Querlage": "Borde de la pista por posición lateral",
+    "Wie ein NPC zum Boxenstopp an den Rand fährt. Einparkfolge (Standard): wie das Safety Car mit der aufgenommenen Ein- und Ausparkfolge. Streckenrand über Querlage: das Auto zieht auf dem Boxenteil per Querlage an den rechten Rand, bremst dort, steht und zieht danach per Querlage wieder auf die Fahrbahn – ohne Lenkfolge.": "Cómo un NPC se aparta al borde para la parada en boxes. Secuencia de aparcamiento (estándar): como el Safety Car, con la secuencia grabada de entrada y salida. Borde de la pista por posición lateral: en la pieza de boxes el coche se desplaza lateralmente al borde derecho, frena allí, se detiene y después vuelve a la calzada por posición lateral, sin secuencia de dirección.",
     "Teile eingeben": "Introducir piezas",
     "Zufällige Strecke aus den vorhandenen Teilen bauen": "Construir una pista aleatoria con las piezas disponibles",
     "Zufall": "Aleatorio",
@@ -23935,10 +23966,10 @@
       try { mischungAnwenden(motor, z.reifen, wxRainLevel() * wxRainLevel()); } catch (e) { /* beim Laden */ }
     }
   }
-  // Rechnet dieser Spieler mit Physik (Physik/Pacejka) oder RC? Ohne eigenes Preset wie Spieler 1.
+  // Rechnet dieser Spieler mit Physik (Physik/Pacejka/Gran Accelerato) oder RC? Ohne eigenes Preset wie Spieler 1.
   function spielerPhysikAn(z) {
     const m = z && z.motor && z.motor.config.physModus;
-    return m ? (m === 'physik' || m === 'pacejka') : physicsEnabled;
+    return m ? (m === 'physik' || m === 'pacejka' || m === 'gran') : physicsEnabled;
   }
   // =========================================================================
   // Fahren: Regler, Kalibrierung, Makros
@@ -24353,12 +24384,30 @@
   // PACEJKA ist "Physik" plus ein Schritt: dieselbe Kette (Gaenge, Reibkreis, Kennlinien),
   // danach formt pacejkaStep() den Lenkbefehl am Limit. Deshalb physicsEnabled = true, und
   // der Unterschied sitzt allein in config.pacejka - fuer BEIDE Autos.
+  // GRAN ACCELERATO: die gran*-Stellschrauben (config, kein DOM-Regler) haengen am MODUS
+  // "gran" und nicht am Preset. Bis 1.2.66 leitete setzeGran() sie aus presetAktiv() ab:
+  // ein verstellter Regler (dann ist kein Preset mehr "aktiv") oder ein Laden aus der
+  // Selbstsicherung schaltete die Gierregelung ab, waehrend der Modus noch "gran" war, und
+  // wer "Gran Accelerato" direkt im Auswahlfeld waehlte, bekam sie gar nicht. EINE Stelle:
+  // physModusAnwenden() (laeuft bei jedem Wechsel des Auswahlfelds, also auch nach
+  // applyPreset() und nach dem Laden). AUS = die Grundwerte aus 40-physics.js.
+  const GRAN_AN = { granAeroK: 0.15, granLenkTempo: 1.0, granZentrier: 0.7, granGier: 0.6,
+                    granLastEmpf: 0.14, granTauUeber: 0.35, granYawTau: 0.28, granYawFeed: 0.25 };
+  const GRAN_AUS = { granAeroK: 0, granLenkTempo: 0, granZentrier: 0, granGier: 0,
+                     granLastEmpf: 0, granTauUeber: 0.25, granYawTau: 0.28, granYawFeed: 0 };
+  function granWerteSetzen(cfg, an) {
+    if (!cfg) return;
+    Object.assign(cfg, an ? GRAN_AN : GRAN_AUS);
+    cfg.gran = !!an;
+    if (an) cfg.pacejka = true;
+  }
   function physModusAnwenden(melden) {
     const v = $('phys-mode') ? $('phys-mode').value : 'physik';
     driftModus = (v === 'drift');
     physicsEnabled = (v === 'physik' || v === 'pacejka' || v === 'gran');
     physEngine.config.pacejka = physEngine2.config.pacejka = (v === 'pacejka' || v === 'gran');
-    physEngine.config.gran = physEngine2.config.gran = (v === 'gran');
+    granWerteSetzen(physEngine.config, v === 'gran');
+    granWerteSetzen(physEngine2.config, v === 'gran');
     physLastTime = null;
     if (melden) {
       log('Steuerungsmodus: ' + (v === 'physik' ? 'Physik'
@@ -35487,7 +35536,7 @@
   if ($('track-spiegel')) {
     $('track-spiegel').onclick = () => {
       if (!currentTrackTiles.length) { showHudToast(t('Erst die Strecke bauen')); return; }
-      if (typeof chSpiegelTiles !== 'function') { showHudToast(t('Spiegeln nicht verfuegbar')); return; }
+      if (typeof chSpiegelTiles !== 'function') { showHudToast(t('Spiegeln nicht verfügbar')); return; }
       trackMerken();
       currentTrackTiles = chSpiegelTiles(currentTrackTiles);
       trackSel = null;
@@ -37397,8 +37446,22 @@
   const VF_HANDLING_STORE = 'omegasim-vf-handling';
   const VF_HANDLING_MODI = [{ id: 'gt3', name: 'GT3' }, { id: 'schnell', name: 'Schnell' },
                             { id: 'gran', name: 'Gran Accelerato' }];
+  // BESTELLT: Latenz. Korrektur nach 1.2.66: vfHandling() wird je Bild gefragt (vfSchritt,
+  // Gran-Modus) - localStorage.getItem ist ein synchroner Speicherzugriff und auf schwachen
+  // Handys je Bild spuerbar. Gelesen wird einmal (und neu beim Start einer Fahrt), geschrieben
+  // nur ueber vfHandlingSetzen(), das den Zwischenspeicher mitzieht.
+  let vfHandlingCache = null;
   function vfHandling() {
-    try { const v = localStorage.getItem(VF_HANDLING_STORE); return VF_HANDLING_MODI.some((m) => m.id === v) ? v : 'gt3'; } catch (e) { return 'gt3'; }
+    if (vfHandlingCache === null) {
+      let v = null;
+      try { v = localStorage.getItem(VF_HANDLING_STORE); } catch (e) { /* privat */ }
+      vfHandlingCache = VF_HANDLING_MODI.some((m) => m.id === v) ? v : 'gt3';
+    }
+    return vfHandlingCache;
+  }
+  function vfHandlingSetzen(id) {
+    try { localStorage.setItem(VF_HANDLING_STORE, id); } catch (e) { /* privat */ }
+    vfHandlingCache = null;
   }
   function vfHandlingName(id) { const m = VF_HANDLING_MODI.find((x) => x.id === id); return m ? t(m.name) : t('GT3'); }
   function vfTempoFaktor() { return vfHandling() === 'schnell' ? 1.15 : 1.0; }
@@ -38265,6 +38328,7 @@
   function virtuellStarten(opts) {
     opts = opts || {};
     if (VF.aktiv) return false;
+    vfHandlingCache = null;   // einmal frisch lesen (z. B. in einem anderen Tab geaendert)
     if (!physicsEnabled) { showHudToast(t('Virtuell braucht ein Fahrgefühl mit Physik (nicht RC)')); return false; }
     // Editor-Strecke und gemerkte Rollen gehoeren dem Fahrer: die Ersatzstrecke (Balkonia) und die Rolle
     // des virtuellen Autos werden beim Beenden wieder zurueckgenommen.
@@ -38452,7 +38516,7 @@
     const hId = vfHandling();
     const hWahl = (dd) => {
       const i = Math.max(0, VF_HANDLING_MODI.findIndex((m) => m.id === hId));
-      try { localStorage.setItem(VF_HANDLING_STORE, VF_HANDLING_MODI[(i + dd + VF_HANDLING_MODI.length) % VF_HANDLING_MODI.length].id); } catch (e) { /* egal */ }
+      vfHandlingSetzen(VF_HANDLING_MODI[(i + dd + VF_HANDLING_MODI.length) % VF_HANDLING_MODI.length].id);
       renderGarage();
     };
     rechts.appendChild(garWertZeile(t('Handling'), vfHandlingName(hId), () => hWahl(-1), () => hWahl(1)));
@@ -38500,15 +38564,24 @@
   }
 
   // v1.2.62: ein kurzes "Rattern" (weisses Rauschen) fuer die Randsteine, ueber audioCtx (80-sound.js).
+  // BESTELLT: Latenz. Korrektur nach 1.2.66: der Rauschpuffer (60 ms, abklingend) wird EINMAL je
+  // AudioContext angelegt und wiederverwendet. Vorher entstand alle 70 ms ein neuer Puffer samt
+  // 2.880 Zufallszahlen - Muell fuer die Speicherbereinigung, die auf schwachen Handys als
+  // Ruckler im Bild und im Funktakt ankommt. Ein AudioBuffer darf von beliebig vielen
+  // BufferSources gleichzeitig gespielt werden.
+  let vfRatternPuffer = null, vfRatternCtx = null;
   function vfRattern(staerke) {
     if (!audioCtx || !soundEnabled) return;
     try {
-      const dauer = 0.06, n = Math.max(1, Math.floor(audioCtx.sampleRate * dauer));
-      const buf = audioCtx.createBuffer(1, n, audioCtx.sampleRate);
-      const d = buf.getChannelData(0);
-      for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+      if (!vfRatternPuffer || vfRatternCtx !== audioCtx) {
+        const dauer = 0.06, n = Math.max(1, Math.floor(audioCtx.sampleRate * dauer));
+        const buf = audioCtx.createBuffer(1, n, audioCtx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+        vfRatternPuffer = buf; vfRatternCtx = audioCtx;
+      }
       const src = audioCtx.createBufferSource();
-      src.buffer = buf;
+      src.buffer = vfRatternPuffer;
       const g = audioCtx.createGain();
       g.gain.value = staerke;
       src.connect(g); g.connect(audioCtx.destination);
@@ -43534,17 +43607,20 @@
   // abgelaufen) war das Feld 250 ms leer. Jedes Fenster war ein Fuenftel der Standzeit minus diese
   // Pause, so passten alle fuenf in die Zeit. Ein Treffer bringt 8 % statt 5 %: fuenf Treffer sparen
   // wie bisher acht zusammen 40 %.
-  // v1.2.4 BESTELLT: "die Wartezeit nach jedem Knopf entfernen." Die Pause faellt weg: die Knoepfe
-  // erscheinen Rueck an Rueck, jedes Fenster ist ein Fuenftel der Standzeit.
+  // v1.2.47 BESTELLT: "die Wartezeit nach jedem Knopf entfernen." Die 250-ms-Pause faellt weg.
+  // Korrektur nach 1.2.66: GANZ ohne Luecke war ein Wechsel auf DASSELBE Symbol (Kreis, Kreis)
+  // unsichtbar, und ein spaeter oder doppelter Druck zaehlte schon fuer den naechsten Knopf.
+  // Jetzt 90 ms leer (kaum merklich, aber sichtbar als Neuanfang); ein Druck darin gehoert dem
+  // Spiel und zaehlt nicht.
   const PIT_SPIEL_ANZAHL = 5;
   const PIT_SPIEL_BONUS = 0.08;
-  const PIT_SPIEL_PAUSE = 0;
+  const PIT_SPIEL_PAUSE = 0.09;
   // v1.0.45 BESTELLT: nach dem letzten Knopf mindestens 1 s Erholung, laenger als Strafzeit
   // bei falschen Tasten. Erholung zusaetzlich zur Bonus-Strafe (5 % je falsche Taste).
   const PIT_ERHOL_BASE = 1.0;
   const PIT_ERHOL_PRO_FEHLER = 0.3;
-  // v1.0.45 BESTELLT: die Zeit zum Druecken 0,5 s laenger. Seit v1.2.4 T/Anzahl ohne Pause,
-  // mindestens PIT_SPIEL_FENSTER_MIN.
+  // v1.0.45 BESTELLT: die Zeit zum Druecken 0,5 s laenger. Seit v1.2.47 T/Anzahl minus die kurze
+  // Luecke (PIT_SPIEL_PAUSE), mindestens PIT_SPIEL_FENSTER_MIN.
   const PIT_SPIEL_FENSTER_MIN = 0.7;
   function pitSpielFenster(T) { return Math.max(PIT_SPIEL_FENSTER_MIN, T / PIT_SPIEL_ANZAHL - PIT_SPIEL_PAUSE); }
   let pitServiceStart = null;
@@ -43905,7 +43981,8 @@
     if (!pitSpielAktiv()) return false;
     const sp = pitSpiel;
     if (sp.i >= sp.folge.length) return true;
-    // In der Pause nach einer Taste ist nichts zu druecken (die Taste gehoert trotzdem dem Spiel).
+    // In der Luecke nach einer Taste ist nichts zu druecken (die Taste gehoert trotzdem dem Spiel und
+    // zaehlt nicht - ein doppelter Druck trifft also nicht den naechsten Knopf).
     if (pitStandElapsed < sp.fensterAb) return true;
     // BESTELLT: "Wenn ich die falsche Taste druecke, fuege Zeit hinzu. Wenn ich richtig
     // druecke, ziehe Zeit ab." Beides um 5 % der Grundzeit.
@@ -43913,7 +43990,7 @@
     else { sp.bonus -= PIT_SPIEL_BONUS * sp.T; sp.fehler++; sp.blitz = 'falsch'; pitSpielTon(false, sp.i); }
     sp.blitzBis = pitStandElapsed + 0.3;
     sp.i++;
-    sp.fensterAb = pitStandElapsed;    // das naechste Fenster beginnt sofort (keine Pause)
+    sp.fensterAb = pitStandElapsed + PIT_SPIEL_PAUSE;    // nach der kurzen Luecke (90 ms)
     pitSpielMalen();
     return true;
   }
@@ -43943,7 +44020,7 @@
     pitStandElapsed += dt;
     if (sp.i < sp.folge.length && pitStandElapsed - sp.fensterAb >= sp.fensterS) {
       sp.i++;
-      sp.fensterAb = pitStandElapsed;    // das naechste Fenster beginnt sofort (keine Pause)
+      sp.fensterAb = pitStandElapsed + PIT_SPIEL_PAUSE;    // nach der kurzen Luecke (90 ms)
       sp.blitz = ''; sp.blitzBis = 0;   // v1.2.4: Zeit abgelaufen - weder Haken noch Kreuz
     }
     const anteil = Math.min(1, (pitStandElapsed + sp.bonus) / sp.T);
@@ -43986,7 +44063,7 @@
     el.hidden = !an;
     if (!an) return;
     const sp = pitSpiel;
-    // Ohne Pause (v1.2.4): das naechste Symbol steht sofort da, sobald das Fenster offen ist.
+    // In der kurzen Luecke (vor fensterAb, 90 ms) ist das Feld leer, danach steht das Symbol da.
     const sym = sp.i < sp.folge.length && pitStandElapsed >= sp.fensterAb ? sp.folge[sp.i] : '';
     el.dataset.symbol = sym;
     // v1.2.4: Zeitablauf setzt blitz zurueck (pitSpielTick), damit dort kein Haken erscheint.
@@ -48399,7 +48476,10 @@
     // v1.2.4: Challenges fahren mit Physik - ausser das Preset ist Pacejka, dann bleibt es Pacejka (vorher stellte
     // diese Zeile jede Pacejka-Abstimmung zurueck auf Physik).
     const pv = typeof window.__presetValues === 'function' ? window.__presetValues(preset) : null;
-    chSetzen('phys-mode', pv && pv['phys-mode'] === 'pacejka' ? 'pacejka' : 'physik');
+    // Korrektur nach 1.2.66: Gran Accelerato ist Pacejka plus Gierregelung und wird genauso
+    // durchgereicht (vorher fiel es hier auf Physik zurueck).
+    const pm = pv && pv['phys-mode'];
+    chSetzen('phys-mode', pm === 'pacejka' || pm === 'gran' ? pm : 'physik');
     chSetzen('race-mode', modus === 'rennen' ? 'laps' : 'practice');
     // Rennen: bis CH_EXTRA_LAPS mehr als die Soll-Rundenzahl, damit eine verpatzte Runde mit
     // einer extra ausgeglichen werden kann (siehe challengeRundeFertig).
@@ -48484,17 +48564,29 @@
   // Fuer die Studie: die Studienstrecke als Rennen starten (Ampel, Teilepruefung wie jede Challenge).
   // virtuell (v1.1.11): erst die virtuelle Fahrt auf der Studienstrecke starten - ihr Auto ist dann das
   // gesteuerte -, dann dieselbe Challenge wie auf der Bahn (Ampel, Teilepruefung, Runden, Fahrstil).
+  // Korrektur nach 1.2.66: die Studie setzt chSpiegel fuer ihre Fahrt; danach muss es wieder
+  // aus sein, sonst startet die naechste normale Challenge unbemerkt gespiegelt, und der
+  // Umschalter in der Challenge-Seite muss denselben Stand zeigen.
+  function chSpiegelSetzen(an) {
+    chSpiegel = !!an;
+    if ($('ch-spiegel')) $('ch-spiegel').checked = chSpiegel;
+    if ($('ch-spiegel-knopf')) {
+      $('ch-spiegel-knopf').setAttribute('aria-pressed', chSpiegel ? 'true' : 'false');
+      $('ch-spiegel-knopf').classList.toggle('an', chSpiegel);
+    }
+  }
   function studieChallengeStarten(virtuell) {
     // v1.2.62: das gespiegelte Layout der Studie uebernehmen (fuer die linkslastige Grundpackung).
     const spiegel = !!(st && st.spiegel);
     chSpiegel = spiegel;
     if (virtuell) {
       const tiles = spiegel ? chSpiegelTiles(chTiles(CH_STUDIE)) : chTiles(CH_STUDIE);
-      if (typeof virtuellStarten !== 'function' || !virtuellStarten({ tiles, studie: true })) { chSpiegel = false; return false; }
+      if (typeof virtuellStarten !== 'function' || !virtuellStarten({ tiles, studie: true })) { chSpiegelSetzen(false); return false; }
     }
     chWahl = CH_STUDIE.id; chModus = 'rennen';
     challengeStarten();
     if (!chLauf && virtuell && typeof virtuellBeenden === 'function') virtuellBeenden();
+    if (!chLauf) chSpiegelSetzen(false);
     return !!chLauf;
   }
   function challengeStartenDialog() {
@@ -48618,7 +48710,9 @@
   function challengeAbbrechen() {
     if (!chLauf) return;
     const m = chLauf.merk;
+    const warStudie = !!(chDef(chLauf.id) || {}).studie;
     chLauf = null;
+    if (warStudie) chSpiegelSetzen(false);
     clearInterval(chWaechter); chWaechter = null;
     chSperre(false);
     chZuruecksetzen(m);
@@ -48644,6 +48738,7 @@
     chLetzt = erg;
     // v1.1.3: die Studienfahrt geht nur an die Studie (kein Speichern als Challenge-Zeit, kein Upload).
     if (def.studie) {
+      chSpiegelSetzen(false);
       const stil = typeof fahrstilWerte === 'function' ? fahrstilWerte(rundenMs) : null;
       if (typeof studieFahrtFertig === 'function') studieFahrtFertig(erg, stil);
       chZeichneDetail();
@@ -56079,12 +56174,35 @@
     // WACHHUND: haengt ein Schreibvorgang laenger als FUNK_HAENGT_MS, gilt er als verloren -
     // sonst stuende dieses Auto (Spieler 2, Ghost) fuer immer still.
     const jetzt = performance.now();
-    // v1.2.50: Einpark-/Haltefolgen (randHalt) und der Zieleinlauf (finish) verlieren KEINEN
-    // Takt - ihre Lenkimpulse und Bremsphasen dauern nur ~100 ms, und ein verworfenes Paket
-    // laesst das Auto durch die Folge springen. funkSchreiben() buendelt den neuesten Wert
-    // ohnehin, es wird nichts doppelt gesendet; der Wachhund dort bleibt aktiv.
-    const manOever = car.ghost && (car.ghost.randHalt || car.ghost.finish);
-    if (car.writeInFlight && !manOever && jetzt - (car.writeSeit || 0) < FUNK_HAENGT_MS) return;
+    if (car.writeInFlight && jetzt - (car.writeSeit || 0) < FUNK_HAENGT_MS) {
+      // BESTELLT: Latenz (Stabilitaet und geringe Latenz auf 100-EUR-Handys, 2 Spieler + 2 NPCs).
+      // Korrektur nach 1.2.66: 1.2.50 liess Einpark-/Haltefolgen (randHalt) und den Zieleinlauf
+      // (finish) hier IMMER durch. Folge: jeder Takt reihte ein Paket in funkSchreiben() ein,
+      // das Auto schrieb Rueckenan-Ruecken und belegte den Funk auch dann, wenn sich nichts
+      // aenderte - und das finally unten setzte writeInFlight=false, sobald funkSchreiben() den
+      // Befehl nur eingereiht hatte, waehrend das vorige Paket noch unterwegs war (danach lief
+      // jeder Takt am Verwerfen vorbei). Jetzt: durchgereicht wird nur ein GEAENDERTER Befehl
+      // (andere Bytes fuer Lenkung/Gas/Licht als das zuletzt gesendete oder eingereihte Paket)
+      // oder ein Phasenwechsel der Folge - die ~100-ms-Impulse gehen also nicht verloren. Sonst
+      // wird wie immer verworfen. Durchgereicht wird OHNE writeInFlight/writeGen anzufassen:
+      // funkSchreiben() legt das Paket in den einen Warteplatz (ersetzt dort ein aelteres), und
+      // der laufende Aufruf sendet es im selben Durchgang - erst danach faellt writeInFlight.
+      const g = car.ghost;
+      const folge = g && (g.randHalt || g.finish);
+      if (!folge || car.testSenke) return;
+      const phase = (g.randHalt ? 'r:' : 'f:') + folge.phase;
+      const pktNeu = buildCommandPacket(steer, throttle, lightBits, modeBytes,
+                                        typeof lichtSchadenVon === 'function' ? lichtSchadenVon(car) : undefined);
+      if (phase === car.letztePhase && funkPaketGleich(pktNeu, car.letztesPaket)) return;
+      car.letztePhase = phase;
+      car.letztesPaket = pktNeu;
+      car.letzterBefehl = [steer, throttle, lightBits];
+      car.letzterBefehlAt = jetzt;
+      car.funkDurchgereicht = (car.funkDurchgereicht || 0) + 1;
+      recWrite(pktNeu, garageLabel(car));
+      funkSchreiben(car.rx, pktNeu, null).catch(() => { car.writeErrors = (car.writeErrors || 0) + 1; });
+      return;
+    }
     // v1.1.24 FUNKLAST: GEMELDET "Mit einem NPC klappt es gut" - mit mehreren nicht (Autos halten nicht,
     // fahren chaotisch, das eigene Auto reagiert nicht). Jedes fahrende Auto schrieb alle 45 ms, mit vier
     // NPCs und dem Fahrer ~110 Pakete/s ueber einen Bluetooth-Adapter; er war belegt, wiederholte und
@@ -56113,6 +56231,10 @@
       const pkt = buildCommandPacket(steer, throttle, lightBits, modeBytes,
                                      typeof lichtSchadenVon === 'function'
                                        ? lichtSchadenVon(car) : undefined);
+      // Fuer den Vergleich oben (Durchreichen nur bei geaendertem Befehl/Phasenwechsel).
+      car.letztesPaket = pkt;
+      car.letztePhase = car.ghost && (car.ghost.randHalt || car.ghost.finish)
+        ? (car.ghost.randHalt ? 'r:' : 'f:') + (car.ghost.randHalt || car.ghost.finish).phase : null;
       recWrite(pkt, garageLabel(car));
       await funkSchreiben(car.rx, pkt, null);
     } catch (err) {
@@ -56121,6 +56243,16 @@
     } finally {
       if (car.writeGen === gen) car.writeInFlight = false;
     }
+  }
+
+  // Zwei Steuerpakete byteweise gleich? (Durchreichen in writeToCar nur bei einer Aenderung.)
+  function funkPaketGleich(a, b) {
+    if (!a || !b) return false;
+    const x = a instanceof Uint8Array ? a : new Uint8Array(a.buffer || a);
+    const y = b instanceof Uint8Array ? b : new Uint8Array(b.buffer || b);
+    if (x.length !== y.length) return false;
+    for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return false;
+    return true;
   }
 
   // Identify: blink the headlights of ONE car so it can be matched to its row.
@@ -60141,10 +60273,18 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
   // v1.2.50: die Uhr der Makros. Sie laeuft mit der PHYSIK-dt (g.macroMs, ghostTick), nicht
   // mit der Wanduhr: unter Last waere die Folge sonst weiter als das Auto, und die Lenkimpulse
-  // kaemen zu einem falschen Zeitpunkt. Fuer Pruefstaende (kein g.macroMs) faellt sie auf die
-  // Wanduhr zurueck, damit die Tests, die h.at direkt setzen, unveraendert rechnen.
+  // kaemen zu einem falschen Zeitpunkt.
+  // Korrektur nach 1.2.66 (BESTELLT: Latenz/Stabilitaet auf schwachen Handys): das gilt nur
+  // fuer Autos, deren Bewegung die Physik-dt IST - Simulationsautos und die virtuelle Fahrt
+  // (g.makroPhysik). Ein ECHTES Auto faehrt in Wanduhrzeit: es haelt den zuletzt gesendeten
+  // Befehl, bis der naechste kommt. Die dt ist je Takt auf 0,25 s gedeckelt; stockt der
+  // Herzschlag (Last, gedrosselter Hintergrund-Zeitgeber: 1 s), liefe die Makro-Uhr hinter der
+  // Wanduhr her, und ein abgestimmter 100-ms-Lenkimpuls laege am echten Auto um die
+  // Differenz LAENGER an (bei 1 s Stocken 750 ms) - genau das Abfliegen, das die Folge
+  // verhindern soll. Mit der Wanduhr endet die Phase nach dem Stocken sofort. Echte Autos
+  // rechnen deshalb wieder wie bis 1.2.49 mit rennZeitJetzt(); Pruefstaende ohne Ghost auch.
   function makroUhr(g) {
-    return (g && typeof g.macroMs === 'number') ? g.macroMs : rennZeitJetzt();
+    return (g && g.makroPhysik && typeof g.macroMs === 'number') ? g.macroMs : rennZeitJetzt();
   }
   // Der Schritt einer laufenden Folge (randHalt-Phase 'skript'): erst angleichen, dann die Aufnahme.
   function skriptSchritt(h, now) {
@@ -64290,6 +64430,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                   // der Wanduhr, damit Einpark-/Haltefolgen mit dem Auto im Gleichschritt
                   // bleiben, auch wenn der Herzschlag unter Last stoelpert (makroUhr()).
                   macroMs: 0,
+                  // Nur Sim-/virtuelle Autos fahren nach der Makro-Uhr, echte nach der Wanduhr.
+                  makroPhysik: !!(car.sim || (car.device && car.device.id === 'virtuell')),
                   // Recovery-Versuch nach einem Abgang - siehe ghostRecoveryTick().
                   // recoverUntil > 0 heisst "wird gerade versucht", recoverStuckSince > 0
                   // heisst "seit hier steht das Tempo, moeglicherweise ein Aufprall".
@@ -79936,7 +80078,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       + (spiegel ? '' : ' | NICHT GESPIEGELT') };
   });
 
-  // ---- Die Markup-Vorgaben MUESSEN die Voreinstellung Pacejka sein ----
+  // ---- Die Markup-Vorgaben MUESSEN die Pacejka-Grundlage sein ----
   //
   // Pacejka ist die Vorgabe (BESTELLT: "pajecka als standard"). Steht ein Regler beim Laden
   // anders, zeigt die Legende "eigene Abstimmung", ohne dass jemand etwas verstellt hat - und
@@ -79946,28 +80088,39 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // dem ALTEN Pro, siebzehn Abweichungen. Zwei Orte fuer eine Aussage laufen auseinander,
   // sobald einer nachgezogen wird - und ein Vorgabewert sagt beim Ansehen nicht, aus welcher
   // Voreinstellung er stammt.
-  stAdd('Markup-Vorgaben sind die Voreinstellung Pacejka', () => {
+  //
+  // Korrektur nach 1.2.66: Pacejka hat seit 1.2.48 drei EIGENE Werte (PACEJKA_EIGEN in
+  // 98-presets.js). Die stehen nur im Preset, nicht im Markup - dort steht fuer sie der
+  // Pro-Wert (Stand vor 1.2.48), und der erste Start legt das Preset ausdruecklich an
+  // (98b-sicherung.js). Alle UEBRIGEN Regler muessen weiter genau Pacejka sein.
+  stAdd('Markup-Vorgaben sind die Pacejka-Grundlage (eigene Pacejka-Werte nur im Preset)', () => {
     if (!window.__presetValues) return { skip: true, mass: 'presetValues nicht erreichbar' };
     const soll = window.__presetValues('propacejka');
-    if (!soll) return { skip: true, mass: 'Voreinstellung propacejka nicht vorhanden' };
+    const pro = window.__presetValues('pro');
+    if (!soll || !pro) return { skip: true, mass: 'Voreinstellung propacejka/pro nicht vorhanden' };
+    const eigen = window.__pacejkaEigen ? window.__pacejkaEigen() : {};
     const ab = [];
     for (const k of Object.keys(soll)) {
       const el = $(k);
       if (!el) { ab.push(k + ': nicht im Dokument'); continue; }
+      const ziel = k in eigen ? pro[k] : soll[k];
+      const wer = k in eigen ? 'Pro' : 'Pacejka';
       // Der VORGABEWERT und nicht der aktuelle: defaultValue und defaultChecked stehen fuer
       // das, was im Markup steht. el.value waere der Stand nach jedem Reglerzug dieser
       // Sitzung, und der Test wuerde dann messen, was der Nutzer gerade tut.
       if (el.type === 'checkbox') {
-        if (el.defaultChecked !== !!soll[k]) {
-          ab.push(k + ': Markup ' + el.defaultChecked + ', Pacejka ' + soll[k]);
-        }
-      } else if (Math.abs(parseFloat(el.defaultValue) - parseFloat(soll[k])) > 1e-9) {
-        ab.push(k + ': Markup ' + el.defaultValue + ', Pacejka ' + soll[k]);
+        if (el.defaultChecked !== !!ziel) ab.push(k + ': Markup ' + el.defaultChecked + ', ' + wer + ' ' + ziel);
+      } else if (Math.abs(parseFloat(el.defaultValue) - parseFloat(ziel)) > 1e-9) {
+        ab.push(k + ': Markup ' + el.defaultValue + ', ' + wer + ' ' + ziel);
       }
     }
+    // Gegenprobe: die eigenen Werte unterscheiden sich wirklich von Pro, sonst waere die
+    // Ausnahme leer und der Test pruefte nichts Neues.
+    const echt = Object.keys(eigen).filter((k) => Math.abs(parseFloat(eigen[k]) - parseFloat(pro[k])) > 1e-9);
+    if (echt.length !== Object.keys(eigen).length) ab.push('PACEJKA_EIGEN enthaelt Pro-Werte');
     return { ok: ab.length === 0,
-             mass: ab.length === 0 ? Object.keys(soll).length + ' Vorgaben stimmen mit Pacejka'
-                                   : ab.length + ' Abweichungen \u2013 ' + ab.slice(0, 3).join('; ') };
+             mass: ab.length === 0 ? Object.keys(soll).length + ' Vorgaben stimmen (' + echt.length + ' davon Pro statt Pacejka-eigen)'
+                                   : ab.length + ' Abweichungen – ' + ab.slice(0, 3).join('; ') };
   });
 
   // ---- Ziffernversatz: nur bei WECHSEL, nicht in jedem Frame ----
@@ -83872,13 +84025,158 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                        + ' (hinten ' + an.nutzH.toFixed(2) + ' gegen vorn ' + an.nutzV.toFixed(2) + ')' };
   });
 
+  // ---- Korrektur nach 1.2.66: Gran-Werte haengen am MODUS, nicht am Preset ----
+  // Vorher leitete setzeGran() sie aus presetAktiv() ab: direkt im Auswahlfeld "Gran" gewaehlt gab
+  // es keine Gierregelung, und ein verstellter Regler oder das Laden schaltete sie ab.
+  stAdd('Gran Accelerato: Werte nach Moduswahl, Reglerzug und Laden (am Modus, nicht am Preset)', () => {
+    const f = [];
+    const sel = $('phys-mode');
+    if (!sel || typeof GRAN_AN === 'undefined') return { skip: true, mass: 'phys-mode/GRAN_AN fehlt' };
+    const merk = presetRead();
+    const c = physEngine.config;
+    const granAn = (wo) => {
+      if (!c.gran || !c.pacejka) f.push(wo + ': gran/pacejka aus');
+      for (const k of Object.keys(GRAN_AN)) if (c[k] !== GRAN_AN[k]) { f.push(wo + ': ' + k + ' ' + c[k]); break; }
+    };
+    try {
+      // 1) Direkt im Auswahlfeld gewaehlt (ohne Preset-Knopf).
+      presetSet('phys-mode', 'physik');
+      presetSet('phys-mode', 'gran');
+      granAn('Auswahlfeld');
+      if (!physicsEnabled) f.push('Gran ohne Physik');
+      // 2) Einen Regler verstellen (dann ist kein Preset mehr "aktiv") und die alten Aufrufer laufen lassen.
+      const sc = $('setting-steer-calib');
+      presetSet('setting-steer-calib', Math.abs(parseFloat(sc.value) - 1.35) < 1e-9 ? 1.4 : 1.35);
+      setzeBrakeStealLast(); setzeGran();
+      granAn('nach Reglerzug');
+      // 3) Laden: das Feld steht schon auf 'gran' (kein change), die Sicherung ruft setzeGran().
+      granWerteSetzen(c, false);
+      sel.value = 'gran';
+      setzeGran();
+      granAn('nach Laden');
+      // 4) Wechsel weg von Gran schaltet alles ab.
+      presetSet('phys-mode', 'pacejka');
+      if (c.gran || c.granYawFeed !== 0 || c.granAeroK !== 0) f.push('nach Wechsel auf Pacejka noch Gran-Werte');
+      if (!c.pacejka) f.push('Pacejka aus');
+    } finally {
+      for (const [id, val] of Object.entries(merk)) presetSet(id, val);
+      setzeBrakeStealLast(); setzeGran();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Auswahlfeld, Reglerzug und Laden: Gierregelung bleibt an, Wechsel schaltet sie ab' };
+  });
+
+  stAdd('Gran Accelerato: Spieler 2 faehrt mit Physik und eigener Gierregelung', () => {
+    const f = [];
+    if (typeof spielerPhysikAn !== 'function' || !window.__presetSchnappschuss) return { skip: true, mass: 'spielerPhysikAn fehlt' };
+    if (!spielerPhysikAn({ motor: { config: { physModus: 'gran' } } })) f.push('Modus gran gilt nicht als Physik');
+    if (!spielerPhysikAn({ motor: { config: { physModus: 'pacejka' } } })) f.push('Modus pacejka gilt nicht als Physik');
+    if (spielerPhysikAn({ motor: { config: { physModus: 'aus' } } })) f.push('RC gilt als Physik');
+    const vorher = { gran: physEngine.config.gran, modus: $('phys-mode').value };
+    if (window.__presetSchnappLeeren) window.__presetSchnappLeeren();
+    const snap = window.__presetSchnappschuss('gran');
+    if (!snap) f.push('kein Schnappschuss');
+    else {
+      if (snap.modus !== 'gran') f.push('Schnappschuss-Modus ' + snap.modus);
+      if (!snap.config.gran || !snap.config.pacejka) f.push('Schnappschuss ohne gran/pacejka');
+      if (snap.config.granYawFeed !== GRAN_AN.granYawFeed || snap.config.granAeroK !== GRAN_AN.granAeroK) f.push('Schnappschuss ohne Gran-Werte');
+    }
+    if (physEngine.config.gran !== vorher.gran || $('phys-mode').value !== vorher.modus) f.push('Spieler 1 wurde vom Schnappschuss veraendert');
+    if (window.__presetSchnappLeeren) window.__presetSchnappLeeren();
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'gran rechnet mit Physik, Schnappschuss traegt die Gran-Werte, Spieler 1 unberuehrt' };
+  });
+
+  // ---- Korrektur nach 1.2.66 (BESTELLT: Latenz): NPC-Folgen reichen nur GEAENDERTE Befehle durch ----
+  // 1.2.50 liess in Einpark-/Haltefolgen jeden Takt am Verwerfen vorbei, und writeInFlight fiel,
+  // waehrend noch gesendet wurde. Gemessen an einer Senke, deren Schreibvorgaenge von Hand enden.
+  stAdd('Funk: NPC-Folge sendet ohne Befehlsaenderung nichts nach, Aenderung/Phasenwechsel schon', async () => {
+    const f = [];
+    const offen = [];
+    let gesendet = 0;
+    const rx = { properties: { writeWithoutResponse: true },
+                 writeValueWithoutResponse() { gesendet++; return new Promise((r) => offen.push(r)); } };
+    const car = { role: 'ghost', alias: 'Funkfolge', device: { name: 'Funkfolge', id: 'funkfolge' }, rx,
+                  writeInFlight: false, ghost: { running: true, randHalt: { phase: 'rand' } } };
+    const bits = trackModeBit() | LIGHT_HEAD;
+    const ticks = async () => { for (let i = 0; i < 12; i++) await Promise.resolve(); };
+    const loesen = async () => { const r = offen.shift(); if (r) r(); await ticks(); };
+    try {
+      writeToCar(car, 0.5, 0.3, bits);
+      await ticks();
+      if (gesendet !== 1) f.push('erstes Paket: ' + gesendet);
+      // Waehrend es unterwegs ist: sechsmal derselbe Befehl.
+      for (let i = 0; i < 6; i++) writeToCar(car, 0.5, 0.3, bits);
+      await ticks();
+      if (!car.writeInFlight) f.push('writeInFlight fiel, waehrend gesendet wird');
+      await loesen();
+      if (gesendet !== 1) f.push('ohne Aenderung nachgereicht: ' + (gesendet - 1) + ' Pakete');
+      if (car.writeInFlight) f.push('writeInFlight haengt nach dem Ende');
+      // Wieder unterwegs, dann ein GEAENDERTER Lenkbefehl: er wird eingereiht und folgt sofort.
+      writeToCar(car, 0.5, 0.3, bits);
+      await ticks();
+      const n0 = gesendet;
+      writeToCar(car, -0.5, 0.3, bits);
+      writeToCar(car, -0.5, 0.3, bits);                       // derselbe noch einmal: nichts Neues
+      await ticks();
+      if (!car.writeInFlight) f.push('writeInFlight fiel nach dem Einreihen');
+      await loesen();
+      if (gesendet !== n0 + 1) f.push('geaenderter Befehl: ' + (gesendet - n0) + ' Pakete statt 1');
+      if (!car.writeInFlight) f.push('writeInFlight fiel, waehrend das eingereihte Paket unterwegs ist');
+      // Phasenwechsel bei gleichem Befehl: wird auch durchgereicht.
+      car.ghost.randHalt.phase = 'halt';
+      writeToCar(car, -0.5, 0.3, bits);
+      await loesen();
+      if (gesendet !== n0 + 2) f.push('Phasenwechsel nicht durchgereicht (' + (gesendet - n0) + ')');
+      while (offen.length) await loesen();
+      if (car.writeInFlight) f.push('writeInFlight haengt am Ende');
+    } finally {
+      while (offen.length) { const r = offen.shift(); r(); }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'gleicher Befehl verworfen, Aenderung und Phasenwechsel je 1 Paket, writeInFlight bis zum letzten Paket' };
+  });
+
+  // ---- Korrektur nach 1.2.66: Boxen-Minigame mit kurzer Luecke zwischen den Knoepfen ----
+  stAdd('Boxen-Minigame: kurze Luecke (80-100 ms), doppelter Druck zaehlt nicht fuer den naechsten Knopf', () => {
+    const merk = { modus: pitModus, an: pitLaneEnabled, trig: pitTrigger, kmh: physEngine.state.speedKmh, zwei: zweiSpieler };
+    const reifen = pitSpielReifenMerk();
+    const f = [];
+    try {
+      if (!(PIT_SPIEL_PAUSE >= 0.08 && PIT_SPIEL_PAUSE <= 0.1)) f.push('Luecke ' + PIT_SPIEL_PAUSE + ' s');
+      pitModus = 'minigame'; pitLaneEnabled = true; pitTrigger = 'anywhere';
+      zweiSpieler = false;
+      physEngine.state.speedKmh = 0; throttleY = 0;
+      setPitState('off'); pitRearmBlockedUntil = 0;
+      setPitState('limited'); pitLastTick = 0; pitLaneTick();
+      if (!pitSpielAktiv()) return { ok: false, mass: 'kein Minigame-Stopp' };
+      const sp = pitSpiel;
+      sp.fensterAb = pitStandElapsed;
+      pitSpielTaste(sp.folge[0]);
+      if (sp.i !== 1 || sp.treffer !== 1) f.push('erster Druck zaehlt nicht');
+      // Sofort noch einmal (doppelter/spaeter Druck): in der Luecke, zaehlt nicht.
+      pitSpielTaste(sp.folge[1]);
+      if (sp.i !== 1 || sp.treffer !== 1 || sp.fehler !== 0) f.push('Druck in der Luecke zaehlte (i ' + sp.i + ', Treffer ' + sp.treffer + ', Fehler ' + sp.fehler + ')');
+      if (!(pitStandElapsed < sp.fensterAb)) f.push('keine Luecke nach dem Druck');
+      pitStandElapsed = sp.fensterAb + 0.001;
+      pitSpielTaste(sp.folge[1]);
+      if (sp.i !== 2 || sp.treffer !== 2) f.push('nach der Luecke zaehlt der Druck nicht');
+      // Fuenf Fenster mit Luecken passen weiter in die Standzeit.
+      if (sp.fensterS > PIT_SPIEL_FENSTER_MIN && Math.abs(PIT_SPIEL_ANZAHL * (sp.fensterS + PIT_SPIEL_PAUSE) - sp.T) > 0.01) f.push('Fenster passen nicht in die Zeit');
+    } finally {
+      setPitState('off'); pitRearmBlockedUntil = 0;
+      pitModus = merk.modus; pitLaneEnabled = merk.an; pitTrigger = merk.trig;
+      zweiSpieler = merk.zwei;
+      physEngine.state.speedKmh = merk.kmh;
+      pitSpielReifenZurueck(reifen);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Luecke ' + Math.round(PIT_SPIEL_PAUSE * 1000) + ' ms, Druck darin zaehlt nicht, danach schon' };
+  });
+
   // v1.2.62 GRAN ACCELERATO: die Gier wird gefahren (baut sich dynamisch auf), das Auto
   // dreht beim Einlenken ein, und am Limit schiebt es (vorn ueber der Grenze). Der Test
-  // misst die gran*-Werte aus setzeGran() direkt an einem Motor.
+  // misst die gran*-Werte (GRAN_AN, 50-drive.js) direkt an einem Motor.
   stAdd('Gran Accelerato: Gier baut sich auf, Einlenken, Limit schiebt', () => {
     const f = [];
-    const GRAN = { gran: true, pacejka: true, granAeroK: 0.15, granLenkTempo: 1.0, granZentrier: 0.7,
-                   granGier: 0.6, granLastEmpf: 0.14, granTauUeber: 0.35, granYawTau: 0.28, granYawFeed: 0.25 };
+    // Dieselben Werte wie im Spiel (GRAN_AN, 50-drive.js), keine Abschrift.
+    const GRAN = Object.assign({ gran: true, pacejka: true }, GRAN_AN);
     const e = new CarreraPhysicsEngine();
     Object.assign(e.config, GRAN);
     const st = e.state;
@@ -83895,7 +84193,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       e.update({ throttle: 0.6, brake: 0, steering: 1 }, 0.045);
       yawSpaeter = st.granYaw;
     }
-    if (!(yawErster > 0)) f.push('Gier baut sich nicht auf (erster ' + yawErster.toFixed(3) + dbg + ')');
+    if (!(yawErster > 0)) f.push('Gier baut sich nicht auf (erster ' + yawErster.toFixed(3) + ')');
     if (!(yawSpaeter > yawErster)) f.push('Gier waechst nicht (' + yawErster.toFixed(3) + ' -> ' + yawSpaeter.toFixed(3) + ')');
     if (yawErster > yawSpaeter) f.push('Gier springt sofort (erster ' + yawErster.toFixed(3) + ')');
     // 2) Limit: voller Einschlag bei hohem Tempo schiebt (vorn ueber der Grenze), trotz Abtrieb.
@@ -84464,7 +84762,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     } finally { window.__spielerPresetSetzen(2, merkP2); }
     // Community-Challenges: Pacejka waehlbar, und chAnwenden laesst Pacejka stehen.
     if (COMMUNITY_PRESETS.indexOf('propacejka') < 0) f.push('Pacejka fehlt in den Community-Presets');
-    if (String(chAnwenden).indexOf("'pacejka' ? 'pacejka' : 'physik'") < 0) f.push('Challenge erzwingt weiter Physik');
+    // Korrektur nach 1.2.66: Gran Accelerato wird genauso durchgereicht.
+    if (String(chAnwenden).indexOf("pm === 'pacejka' || pm === 'gran' ? pm : 'physik'") < 0) f.push('Challenge erzwingt weiter Physik (Pacejka/Gran)');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bahn ohne Derby, Ausdruck ohne Time Attack, Spieler 2 eigenes Preset, Pacejka-Challenges' };
   });
 
@@ -86044,10 +86343,16 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       return { skip: true, mass: 'physLayoutDrive nicht vorhanden' };
     }
     const namen = ['neutral', 'gt3front', 'gt3mid', 'gt3rear', 'f1'];
+    // Korrektur nach 1.2.66: die Bezugsabstimmung (Pro: Bremsen nimmt Lenkung 0,95, Bremssteal
+    // aus der Gewichtsverlagerung an) steht jetzt im Patch, wie schon steerCalib und
+    // useTauBrems. Vorher kamen die beiden Werte aus dem Stand beim Pruefen - und der ist seit
+    // 1.2.48 die eigene Pacejka-Abstimmung (0,75): dann liegen alle fuenf Layouts beim
+    // Vollbremsen am 45-Grad-Anschlag, und der Test maass das Preset statt der Layouts.
     const werte = namen.map(n => {
       const r = OMEGA_TEST.physLayoutDrive(n, { kmh: 140, throttle: 0, brake: 1,
                                                 steering: 1, patch: { steerCalib: 2.0, useTauBrems: 0.45,
-                                                                       pacejka: false } });
+                                                                       pacejka: false, brakeUseGain: 0.95,
+                                                                       brakeStealLast: 1 } });
       const v = OMEGA_TEST.physLayouts()[n];
       return { n, grad: r.grad, sg: r.steerGrip, vorn: v.vorn, ms: v.daempfungMs, iz: v.iz };
     });
@@ -94114,7 +94419,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   stAdd('Lenkung aus Gewichtsverlagerung: leicht bremsen ueber 100 %, voll bremsen deutlich weniger, Loesen erholt sich', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerGrip) return { skip: true, mass: 'physSteerGrip nicht vorhanden' };
     const f = [];
-    const p = { brakeStealLast: 1, lenkAlt: 0, lenkKopplungAus: 0, pacejka: false, useTauBrems: 0.12 };
+    // Korrektur nach 1.2.66: Bezug Pro (brakeUseGain 0,95, steerCalib 2,5) fest im Patch, nicht
+    // der Stand beim Pruefen (seit 1.2.48 die eigene Pacejka-Abstimmung, siehe Layout-Test).
+    const p = { brakeStealLast: 1, lenkAlt: 0, lenkKopplungAus: 0, pacejka: false, useTauBrems: 0.12,
+                brakeUseGain: 0.95, steerCalib: 2.5 };
     const g = (brake, throttle) => OMEGA_TEST.physSteerGrip({ kmh: 250, throttle: throttle || 0, brake, steering: 0.3, patch: p }).steerGrip;
     // Bezug: Gas gerade so gehalten (kein Nicken, keine Laengskraft).
     const roll = g(0, 0.03), leicht = g(0.25), voll = g(1), gas = g(0, 1);
@@ -94340,12 +94648,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const lauf = (P, v, l, sek) => { const z = { vy: 0, r: 0 }; for (let i = 0; i < sek * 60; i++) vfDynamik(z, v, 0, 0, l, 1 / 60, 1, P); return z; };
     try {
       // GT3 (Standard): kein Tempo-Faktor, das Profil bleibt dasselbe Objekt.
-      localStorage.setItem(VF_HANDLING_STORE, 'gt3');
+      vfHandlingSetzen('gt3');
       if (vfHandling() !== 'gt3') f.push('GT3 nicht uebernommen');
       if (vfTempoFaktor() !== 1.0) f.push('GT3: Tempo nicht 1.0');
       if (vfHandlingProfil(VF_GT3) !== VF_GT3) f.push('GT3: Profil wird veraendert');
       // Schnell: mehr Grip, mehr Einschlag, Tempo-Faktor und eine engere Kurve.
-      localStorage.setItem(VF_HANDLING_STORE, 'schnell');
+      vfHandlingSetzen('schnell');
       if (vfHandling() !== 'schnell') f.push('schnell nicht uebernommen');
       if (!(vfTempoFaktor() > 1.0)) f.push('Schnell: kein Tempo-Faktor');
       const schnell = vfHandlingProfil(VF_GT3);
@@ -94354,9 +94662,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const zGT3 = lauf(VF_GT3, 30, 0.5, 2), zSchnell = lauf(schnell, 30, 0.5, 2);
       if (!(Math.abs(zSchnell.r) > Math.abs(zGT3.r))) f.push('Schnell dreht nicht enger: ' + zSchnell.r + ' / ' + zGT3.r);
       // Ungueltiger Wert faellt auf GT3 zurueck.
-      localStorage.setItem(VF_HANDLING_STORE, 'gibtsnicht');
+      vfHandlingSetzen('gibtsnicht');
       if (vfHandling() !== 'gt3') f.push('ungueltiger Modus faellt nicht auf GT3 zurueck');
-    } finally { if (merk === null) localStorage.removeItem(VF_HANDLING_STORE); else localStorage.setItem(VF_HANDLING_STORE, merk); }
+    } finally { if (merk === null) { localStorage.removeItem(VF_HANDLING_STORE); vfHandlingCache = null; } else vfHandlingSetzen(merk); }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'GT3 unveraendert, Schnell +Grip/+Einschlag/+Tempo' };
   });
 
@@ -103834,6 +104142,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // v0.9.64: Pro-Pacejka - die Pro-Abstimmung, aber mit dem Pacejka-Lenkmodell. Es ist
   // dieselbe Tabelle wie Pro plus der Steuerungsmodus "pacejka", damit man die Magic
   // Formula als EINEN Namen anwaehlen kann, statt zwei Stellen zu bedienen.
+  // v1.2.48: Pacejka-EIGENE Abstimmung (nur hier, nicht in Pro): schnellerer Anzug, etwas
+  // mehr Lenkwinkel und weniger Bremsen-Lenkungs-Kopplung. Bewusst als Override statt im
+  // Pro-Table, damit Pro unveraendert bleibt - und NUR hier, nicht im Markup (Korrektur nach
+  // 1.2.66: 1.2.48 hatte die drei Werte auch als Vorgabe ins Markup geschrieben, damit galten
+  // sie global). Der erste Start bekommt das Preset ausdruecklich (98b-sicherung.js), und der
+  // Selbsttest "Markup-Vorgaben sind die Pacejka-Grundlage" liest diese Liste.
+  const PACEJKA_EIGEN = { 'phys-accel': 1.1, 'setting-steer-calib': 2.8, 'setting-brake-steal': 0.75 };
   PRESETS.propacejka = {
     label: 'Pacejka',
     kurz: 'Pro mit Pacejka-Lenkmodell',
@@ -103842,11 +104157,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         + 'Haftgrenze f\u00e4hrt es sich wie Physik, dar\u00fcber sp\u00fcrbar \u00dcbersteuern und '
         + 'Untersteuern, beides vibriert und quietscht. Zum Ausprobieren der Magic Formula, '
         + 'ohne die Klassen-Abstimmung.',
-    v: Object.assign({}, PRESETS.pro.v, { 'phys-mode': 'pacejka',
-      // v1.2.47: Pacejka-EIGENE Abstimmung (nur hier, nicht in Pro): schnellerer Anzug,
-      // etwas mehr Lenkwinkel und weniger Bremsen-Lenkungs-Kopplung. Bewusst als Override
-      // statt im Pro-Table, damit Pro unveraendert bleibt.
-      'phys-accel': 1.1, 'setting-steer-calib': 2.8, 'setting-brake-steal': 0.75 }),
+    v: Object.assign({}, PRESETS.pro.v, { 'phys-mode': 'pacejka' }, PACEJKA_EIGEN),
   };
   // ---- GRAN ACCELERATO (v1.2.62) ---------------------------------------------------------
   // BESTELLT: "Fuege einen neuen Fahrgefuehl Modus ein, den ich auch im Garagenmenue auswaehlen
@@ -103860,6 +104171,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Fahrgefuehl betreffen und keine Einstellkachel brauchen.
   PRESETS.gran = {
     label: 'Gran Accelerato',
+    wip: true,   // Korrektur nach 1.2.66: neu, deshalb am Knopf als WIP gekennzeichnet
     kurz: 'Pacejka, verfeinert wie ACC/GT7',
     text: 'Das Pacejka-Lenkmodell, verfeinert wie ein GT3 in Assetto Corsa Competizione und '
         + 'Gran Turismo Sport: Abtrieb hebt den Griff bei Tempo, die Lenkung wird mit Tempo '
@@ -104017,7 +104329,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Realismus-Presets sind die, die das Reifenmodell und einen echten Reibkreis fahren:
   // Pro, Sim+, Pacejka, GT3, F1 und Realismus GT3. Omega ist eingefroren (bleibt beim
   // flachen Faktor), und Arcade/RC fahren absichtlich den einfachen Reibkreis.
-  const PRESETS_BREMSSTEAL_LAST = ['pro', 'simplus', 'propacejka', 'gt3', 'f1', 'realgt3'];
+  // Korrektur nach 1.2.66: Gran Accelerato gehoert dazu - es ist Pro-Pacejka (Pro-Tabelle mit
+  // Reifenmodell und echtem Reibkreis) plus Gierregelung, kein vereinfachtes Preset.
+  const PRESETS_BREMSSTEAL_LAST = ['pro', 'simplus', 'propacejka', 'gran', 'gt3', 'f1', 'realgt3'];
   function setzeBrakeStealLast() {
     if (typeof physEngine !== 'undefined' && physEngine.config) {
       physEngine.config.brakeStealLast = PRESETS_BREMSSTEAL_LAST.includes(presetAktiv()) ? 1 : 0;
@@ -104026,23 +104340,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       physEngine.config.lenkKopplungAus = presetAktiv() === 'arcade' ? 1 : 0;
     }
   }
-  // v1.2.62: Gran Accelerato - die gran*-Stellschrauben (config, kein DOM-Regler). Aus = null.
-  // Abstimmen gegen ACC/GT7: kräftiger Abtrieb (GT3), weniger harte Tempo-Lenkung, starke
-  // Lastempfindlichkeit, weicher Uebersteuern-Aufbau und eine dynamische Gierregelung
-  // (granYawTau/granYawFeed), die das Auto beim Einlenken eindrehen lässt.
+  // v1.2.62: Gran Accelerato - die gran*-Stellschrauben (config, kein DOM-Regler).
+  // Seit der Korrektur nach 1.2.66 haengen sie am MODUS (phys-mode = 'gran'), nicht an
+  // presetAktiv(): Werte und Begruendung bei granWerteSetzen() in 50-drive.js. Diese Funktion
+  // bleibt als Aufruf an den alten Stellen (applyPreset, Schnappschuss, Laden), damit die
+  // Werte auch dann stimmen, wenn das Auswahlfeld schon auf dem Modus stand und deshalb kein
+  // 'change' feuerte.
   function setzeGran() {
     if (typeof physEngine !== 'undefined' && physEngine.config) {
-      const an = presetAktiv() === 'gran';
-      const c = physEngine.config;
-      c.gran = an;
-      c.granAeroK = an ? 0.15 : 0;
-      c.granLenkTempo = an ? 1.0 : 0;
-      c.granZentrier = an ? 0.7 : 0;
-      c.granGier = an ? 0.6 : 0;
-      c.granLastEmpf = an ? 0.14 : 0;
-      c.granTauUeber = an ? 0.35 : 0.25;
-      c.granYawTau = an ? 0.28 : 0;
-      c.granYawFeed = an ? 0.25 : 0;
+      granWerteSetzen(physEngine.config, ($('phys-mode') || {}).value === 'gran');
     }
   }
 
@@ -104110,6 +104416,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       b.type = 'button';
       b.id = klein ? '' : 'preset-' + key;
       b.textContent = p.label;
+      if (p.wip) b.insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
       b.title = p.kurz + ' \u2013 ' + p.text;
       b.addEventListener('click', () => applyPreset(key));
       host.appendChild(b);
@@ -104138,6 +104445,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   window.__presetTexts = (k) => (PRESETS[k]
     ? { label: PRESETS[k].label, kurz: PRESETS[k].kurz, text: PRESETS[k].text } : null);
   window.__presetLabel = (k) => (PRESETS[k] || {}).label || k;
+  window.__pacejkaEigen = () => Object.assign({}, PACEJKA_EIGEN);
 
   // ---- FAHRGEFUEHL JE SPIELER (v1.2.4) -----------------------------------------------------
   // BESTELLT: "Ich moechte fuer verschiedene Spieler verschiedene Schwierigkeitsstufen zulassen (z. B. Spieler 1
@@ -105010,10 +105318,23 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   if (autoGeladen) {
     log('Einstellungen aus der letzten Sitzung geladen: ' + autoGeladen + ' Regler.', 'info');
   }
+  // Korrektur nach 1.2.66: ERSTER START (keine Selbstsicherung, nie ein Preset gewaehlt) faehrt
+  // die Voreinstellung Pacejka (BESTELLT: "pacejka als standard"). Bis 1.2.47 erledigte das
+  // das Markup, weil Pacejka Wert fuer Wert Pro war. 1.2.48 gab Pacejka eine EIGENE Abstimmung
+  // (Anzug 1,1, Lenkkalibrierung 2,8, Bremsen nimmt Lenkung 0,75) und schrieb sie dafuer ins
+  // Markup - damit galt sie global (Werkseinstellung, neue Profile). Jetzt steht sie nur im
+  // Preset, das Markup ist wieder der Stand vor 1.2.48, und ein neuer Nutzer bekommt das
+  // Preset hier ausdruecklich, statt eine Mischung, die "Eigene Abstimmung" hiesse.
+  // Ohne Selbstsicherung heisst: nie etwas verstellt (jede Aenderung schreibt sie). Dann
+  // jedes Mal dasselbe Preset, bis der Nutzer etwas aendert.
+  if (!autoGeladen && typeof applyPreset === 'function') applyPreset('propacejka');
   // v1.0.44: Der gewichtsverlagerungs-gekoppelte Bremssteal haengt am AKTIVEN Preset
   // (98-presets.js setzeBrakeStealLast). Nachdem die Selbstsicherung die Regler
   // zurueckgeholt hat, stimmt das aktive Preset - also den Schalter jetzt setzen.
   if (typeof setzeBrakeStealLast === 'function') setzeBrakeStealLast();
+  // Gran Accelerato haengt am Modus (granWerteSetzen, 50-drive.js); nach dem Laden einmal
+  // nachziehen, auch wenn das Auswahlfeld schon auf 'gran' stand und kein 'change' kam.
+  if (typeof setzeGran === 'function') setzeGran();
   // ---- DIE ANZEIGETEXTE DER SCHIEBEREGLER, EINMAL BEIM LADEN --------------------
   //
   // GEMESSEN, und es war eine Ueberraschung: ZEHN Regler zeigten einen Text, der nicht zu
@@ -106827,7 +107148,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         + '<p class="muted">' + stEsc(t('Fahrgefühl Sim+, trocken, keine Bestenliste. Gemessen werden Rundenzeiten, Gas, Bremse, Lenkung und Abflüge. Ohne Fahrt kannst du auch gleich abschließen.')) + '</p></div>'
         + '<div class="studie-plan">'
         + '<div class="ch-karte" id="studie-karte" title="' + stEsc(t('Zum Vergrößern klicken')) + '">' + studieKarteHtml() + '</div>'
-        + '<div class="ch-karte-knoepfe"><button type="button" id="studie-spiegel-knopf" data-st="spiegel">' + stEsc(t('Layout spiegeln')) + '</button></div>'
+        + '<div class="ch-karte-knoepfe"><button type="button" id="studie-spiegel-knopf" data-st="spiegel">' + stEsc(t('Layout spiegeln')) + ' <span class="wip-tag">WIP</span></button></div>'
         + '</div>'
         + '<div class="studie-knoepfe"><button type="button" class="primary" data-st="fahren">' + stEsc(t('Auf der Bahn fahren')) + '</button>'
         + '<button type="button" class="primary" data-st="fahren-virtuell">' + stEsc(t('Virtuell fahren')) + '</button>'
@@ -106988,6 +107309,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       rt_ms: st.rt, rt_median: rtMedian(st.rt), fruehstarts: st.frueh, verpasst: st.verpasst,
       quelle: st.quelle, controller: String(st.controller).slice(0, 80),
       version: (($('app-version') || {}).textContent || '').slice(0, 20), sprache: typeof lang === 'string' ? lang : '' };
+    // Korrektur nach 1.2.66: ob das Layout gespiegelt war (linkslastige Grundpackung). Je Fahrt
+    // steht der Stand beim Fahren (fahrt.spiegel), hier der zuletzt gewaehlte.
+    daten.spiegel = !!st.spiegel;
     if (st.fahrt) daten.fahrt = st.fahrt;
     if (st.fahrtVirtuell) daten.fahrt_virtuell = st.fahrtVirtuell;
     return daten;
@@ -107006,7 +107330,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const fahrt = { strecke: 'studie-homington', art: virtuell ? 'virtuell' : 'bahn', preset: erg.preset || 'simplus', gueltig: !!erg.gueltig,
                     grund: erg.gueltig ? '' : String(erg.grund || '').slice(0, 60), runden_ms: r.slice(0, 12),
                     beste_ms: r.length ? Math.min.apply(null, r) : null, gesamt_ms: erg.gueltig ? Math.round(erg.zeit) : null,
-                    stil: stil || null };
+                    stil: stil || null, spiegel: !!st.spiegel };
     if (virtuell) st.fahrtVirtuell = fahrt; else st.fahrt = fahrt;
     st.fahrtArt = null;
     // Die virtuelle Fahrt endet mit der Challenge (einen Takt spaeter: die Challenge raeumt noch auf).

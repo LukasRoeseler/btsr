@@ -6114,6 +6114,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.2</span></b></p>
       <ul class="muted" id="patchnotes-12" style="padding-left:20px; line-height:1.7">
+        <li>Seit 1.2.47: Wiki-Knopf auf der Startseite und Wiki-Kachel in den Optionen. Das Safety Car parkt nach der ersten Runde. Boxen-Minigame ohne lange Wartezeit zwischen den Kn&#246;pfen; eine L&#252;cke von 90 ms bleibt, damit ein Wechsel auf dasselbe Symbol sichtbar ist und ein doppelter Druck nicht f&#252;r den n&#228;chsten Knopf z&#228;hlt. Pacejka hat eine eigene Abstimmung (Beschleunigungsfaktor 1,1, Lenkkalibrierung 280 %, Bremsen nimmt Lenkung 75 %); sie steht nur im Preset Pacejka, das beim ersten Start gesetzt wird, die Werkseinstellungen der Regler sind wieder die von vor 1.2.48. NPC-Einpark- und Haltefolgen laufen bei Simulationsautos mit der Physikzeit, bei echten Autos nach der Uhr. Der Challenger regelt sein Tempo additiv gegen die Bestzeit, und f&#252;r MAX gilt ein Deckel je Streckenteil statt des 60-%-Kurvendeckels. Streckeneditor-Optionen (WIP): L&#228;nge/Teile, Linkslastig, Br&#252;cken und Strecke spiegeln. Neues Fahrgef&#252;hl Gran Accelerato (WIP): Pacejka mit Abtrieb, Selbstzentrierung und dynamischer Gierregelung; es gilt jetzt auch f&#252;r Spieler 2 und 3 und in Challenges, und seine Werte h&#228;ngen am Modus, bleiben also nach dem Laden und beim Verstellen eines Reglers erhalten. OmegaLabs-Studie auf der Startseite, Layout spiegelbar (WIP, wird mit den Studiendaten gespeichert; nach der Studie ist Spiegeln wieder aus). Randstein-Rumpeln beim virtuellen Fahren (WIP). Latenz: Pakete von NPCs in Einpark- und Haltefolgen werden nur noch bei ge&#228;ndertem Befehl oder Phasenwechsel nachgereicht, sonst wie immer verworfen; virtuelles Fahren liest den Handling-Modus nicht mehr in jedem Bild und legt f&#252;r das Randstein-Rattern keinen neuen Tonpuffer mehr an.</li>
         <li>Latenz: Das schnelle Verbindungsintervall wird nur noch einmal je Verbindung nachgefordert, und erst wenn ein Auto 5 s lang langsamer als alle 120 ms meldet (vorher alle 20 s je Auto ab 75 ms &#8211; mit vier Autos handelte das Handy etwa alle 5 s eine Verbindung neu aus). Linienmodell SIMULATOR: Die Linie wird nur noch im Strecken-Editor berechnet und gespeichert, beim Fahren nie mehr im Hintergrund; fehlt sie, fahren die NPCs die normale Linie.</li>
         <li>Latenz: Die Strecke im Regenradar ist wieder entfernt, und das Radar zeichnet nur noch in einfacher Aufl&#246;sung (auf hochaufl&#246;senden Handys ein Viertel der Bildpunkte). Neuer Schalter &#8222;Regenradar&#8220; unter Optionen &#8594; Allgemein: aus, wird das Radar gar nicht gezeichnet. Der Knopf &#8222;Reinigungsfahrzeug starten&#8220; steht nur noch in der Bahn-Kachel, nicht mehr in der Garagen-Kachel.</li>
         <li>NPCs: Start/Ziel gilt jetzt &#252;berall als Gerade. Die Linie h&#228;lt dort die Querlage wie auf jeder Geraden, statt hinter einer Kurve halb innen zu bleiben, und der Vorausblick ans Auto meldet auf der Bahn Start/Ziel (0x01) statt der Engstelle (0x0A). NPC-Stufe MAX: Ohne Schaltpause wurde der Schaltvorgang nach dem ersten Hochschalten nie beendet, das Auto hatte danach keinen Antrieb mehr &#8211; behoben, MAX f&#228;hrt auf Geraden etwa doppelt so schnell wie vorher. Ideallinie (Linienmodell SIMULATOR, WIP): Die Suche rechnet mit dem echten Kurventempo der NPCs und f&#228;hrt au&#223;en-innen-au&#223;en (Kurveneingang und -ausgang au&#223;en, Scheitel innen), statt nur die innere H&#228;lfte zu nutzen; die Haarnadel bleibt davon ausgenommen, gespeicherte Linien werden neu gesucht.</li>
@@ -9957,7 +9958,7 @@
         <select id="phys-mode">
           <option value="physik">Physik</option>
           <option value="pacejka" selected>Pacejka (experimentell)</option>
-          <option value="gran">Gran Accelerato</option>
+          <option value="gran">Gran Accelerato (WIP)</option>
           <option value="aus">RC (experimentell)</option>
         </select></div>
       <!-- BESTELLT: "Eventuell sage ich spaeter, dass das Uebersteuern abgeschaltet werden
@@ -10542,9 +10543,9 @@
       <div class="opt-row"><div class="opt-label">Bremsen nimmt Lenkung<small>Der Reibkreis: was die Bremse an der Vorderachse verbraucht, fehlt der Lenkung. 0 hei&szlig;t, Bremsen und Lenken behindern sich nicht; h&ouml;here Werte lassen das Auto beim Anbremsen deutlich schlechter einlenken. Zu beachten: die Lenkwinkel-Kalibrierung darunter holt genau das wieder zur&uuml;ck, also wirkt ein starker Wert erst, wenn die Kalibrierung ihn nicht mehr ausgleichen kann.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-brake-steal" min="0" max="1.5" step="0.05" value="0.75">
+          <input type="range" id="setting-brake-steal" min="0" max="1.5" step="0.05" value="0.95">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-brake-steal-val">75%</span>
+          <span class="opt-val" id="setting-brake-steal-val">95%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Bremsaufbau<small>Wie schnell die Bremskraft am Reifen
           ansteht - und damit, wie fr&uuml;h beim Anbremsen die Lenkung nachl&auml;sst (siehe &bdquo;Bremsen nimmt
@@ -10560,16 +10561,16 @@
       <div class="opt-row"><div class="opt-label">Lenkwinkel-Kalibrierung<small>Für enge Strecken. Der Regler sitzt hinter dem Reibkreis: beim Anbremsen einer Kurve beschneidet der die Lenkung auf etwa 60 Prozent, und bei 200 Prozent erreicht dieser beschnittene Wunsch wieder den vollen Anschlag. Weiter als 45 Grad kann kein Wert lenken, das ist die Mechanik des Autos und nicht die App. Der Preis ist Feingefühl: je höher, desto früher liegt der Anschlag an und desto weniger sagt der letzte Teil des Sticks.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-steer-calib" min="1" max="3" step="0.05" value="2.8">
+          <input type="range" id="setting-steer-calib" min="1" max="3" step="0.05" value="2.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-steer-calib-val">280%</span>
+          <span class="opt-val" id="setting-steer-calib-val">250%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Beschleunigungsfaktor<small>Feinabstimmung, 1.0 = die eingestellte Zeit.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="phys-accel" min="0.4" max="2.0" step="0.05" value="1.1">
+          <input type="range" id="phys-accel" min="0.4" max="2.0" step="0.05" value="1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="phys-accel-val">1.10</span>
+          <span class="opt-val" id="phys-accel-val">1.00</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Tempo r&uuml;ckw&auml;rts<small>H&ouml;chsttempo im R&uuml;ckw&auml;rtsgang, in Prozent des bisherigen Werts. 50&nbsp;% ist die Vorgabe seit 1.1.11 (vorher 100&nbsp;%). Gilt auch f&uuml;r &bdquo;Gas und Bremse zusammen&ldquo;; das Auto f&auml;hrt dabei wirklich langsamer, nicht nur die Anzeige. Wenn das Auto selbst f&auml;hrt (gelbe Flagge, Aufstellung), gilt der Regler nicht.</small></div>
         <div class="opt-slider">
@@ -11096,7 +11097,7 @@
           du bist an der Haftgrenze, aber noch nicht dar&uuml;ber. Kommt vor dem Untersteuern und dem
           &Uuml;bersteuern &ndash; die Warnung davor.</small></div>
         <label class="tgl"><input type="checkbox" id="vib-quietschen" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Randsteine (Virtuell fahren)
+      <div class="opt-row"><div class="opt-label">Randsteine (Virtuell fahren) <span class="wip-tag">WIP</span>
           <small>Ein kurzes R&auml;tteln und Brummen, wenn das Auto mit dem Rand &uuml;ber den
           erhabenen Stein f&auml;hrt &ndash; das Rattern der Curbs-Schwelle. Nur im virtuellen
           Fahren, wo die Randsteine als 3D-Objekt gezeichnet sind.</small></div>
@@ -12587,6 +12588,9 @@
           <span class="tp-info" id="track-fs-info" data-i18n-skip></span>
           <span class="tp-tasten" id="track-fs-tasten"></span>
           <div class="tp-opt" id="track-opt-panel" hidden>
+            <!-- Korrektur nach 1.2.66: alle vier Editor-Optionen (v1.2.61) sind neu und als WIP
+                 gekennzeichnet - ein Schild fuer das ganze Feld. -->
+            <span class="wip-tag">WIP</span>
             <label>L&auml;nge / Teile
               <input type="range" id="track-opt-ziel" min="4" max="4" value="4">
               <span class="tp-opt-wert" id="track-opt-ziel-wert">max</span>

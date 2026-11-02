@@ -4472,17 +4472,20 @@
   // abgelaufen) war das Feld 250 ms leer. Jedes Fenster war ein Fuenftel der Standzeit minus diese
   // Pause, so passten alle fuenf in die Zeit. Ein Treffer bringt 8 % statt 5 %: fuenf Treffer sparen
   // wie bisher acht zusammen 40 %.
-  // v1.2.4 BESTELLT: "die Wartezeit nach jedem Knopf entfernen." Die Pause faellt weg: die Knoepfe
-  // erscheinen Rueck an Rueck, jedes Fenster ist ein Fuenftel der Standzeit.
+  // v1.2.47 BESTELLT: "die Wartezeit nach jedem Knopf entfernen." Die 250-ms-Pause faellt weg.
+  // Korrektur nach 1.2.66: GANZ ohne Luecke war ein Wechsel auf DASSELBE Symbol (Kreis, Kreis)
+  // unsichtbar, und ein spaeter oder doppelter Druck zaehlte schon fuer den naechsten Knopf.
+  // Jetzt 90 ms leer (kaum merklich, aber sichtbar als Neuanfang); ein Druck darin gehoert dem
+  // Spiel und zaehlt nicht.
   const PIT_SPIEL_ANZAHL = 5;
   const PIT_SPIEL_BONUS = 0.08;
-  const PIT_SPIEL_PAUSE = 0;
+  const PIT_SPIEL_PAUSE = 0.09;
   // v1.0.45 BESTELLT: nach dem letzten Knopf mindestens 1 s Erholung, laenger als Strafzeit
   // bei falschen Tasten. Erholung zusaetzlich zur Bonus-Strafe (5 % je falsche Taste).
   const PIT_ERHOL_BASE = 1.0;
   const PIT_ERHOL_PRO_FEHLER = 0.3;
-  // v1.0.45 BESTELLT: die Zeit zum Druecken 0,5 s laenger. Seit v1.2.4 T/Anzahl ohne Pause,
-  // mindestens PIT_SPIEL_FENSTER_MIN.
+  // v1.0.45 BESTELLT: die Zeit zum Druecken 0,5 s laenger. Seit v1.2.47 T/Anzahl minus die kurze
+  // Luecke (PIT_SPIEL_PAUSE), mindestens PIT_SPIEL_FENSTER_MIN.
   const PIT_SPIEL_FENSTER_MIN = 0.7;
   function pitSpielFenster(T) { return Math.max(PIT_SPIEL_FENSTER_MIN, T / PIT_SPIEL_ANZAHL - PIT_SPIEL_PAUSE); }
   let pitServiceStart = null;
@@ -4843,7 +4846,8 @@
     if (!pitSpielAktiv()) return false;
     const sp = pitSpiel;
     if (sp.i >= sp.folge.length) return true;
-    // In der Pause nach einer Taste ist nichts zu druecken (die Taste gehoert trotzdem dem Spiel).
+    // In der Luecke nach einer Taste ist nichts zu druecken (die Taste gehoert trotzdem dem Spiel und
+    // zaehlt nicht - ein doppelter Druck trifft also nicht den naechsten Knopf).
     if (pitStandElapsed < sp.fensterAb) return true;
     // BESTELLT: "Wenn ich die falsche Taste druecke, fuege Zeit hinzu. Wenn ich richtig
     // druecke, ziehe Zeit ab." Beides um 5 % der Grundzeit.
@@ -4851,7 +4855,7 @@
     else { sp.bonus -= PIT_SPIEL_BONUS * sp.T; sp.fehler++; sp.blitz = 'falsch'; pitSpielTon(false, sp.i); }
     sp.blitzBis = pitStandElapsed + 0.3;
     sp.i++;
-    sp.fensterAb = pitStandElapsed;    // das naechste Fenster beginnt sofort (keine Pause)
+    sp.fensterAb = pitStandElapsed + PIT_SPIEL_PAUSE;    // nach der kurzen Luecke (90 ms)
     pitSpielMalen();
     return true;
   }
@@ -4881,7 +4885,7 @@
     pitStandElapsed += dt;
     if (sp.i < sp.folge.length && pitStandElapsed - sp.fensterAb >= sp.fensterS) {
       sp.i++;
-      sp.fensterAb = pitStandElapsed;    // das naechste Fenster beginnt sofort (keine Pause)
+      sp.fensterAb = pitStandElapsed + PIT_SPIEL_PAUSE;    // nach der kurzen Luecke (90 ms)
       sp.blitz = ''; sp.blitzBis = 0;   // v1.2.4: Zeit abgelaufen - weder Haken noch Kreuz
     }
     const anteil = Math.min(1, (pitStandElapsed + sp.bonus) / sp.T);
@@ -4924,7 +4928,7 @@
     el.hidden = !an;
     if (!an) return;
     const sp = pitSpiel;
-    // Ohne Pause (v1.2.4): das naechste Symbol steht sofort da, sobald das Fenster offen ist.
+    // In der kurzen Luecke (vor fensterAb, 90 ms) ist das Feld leer, danach steht das Symbol da.
     const sym = sp.i < sp.folge.length && pitStandElapsed >= sp.fensterAb ? sp.folge[sp.i] : '';
     el.dataset.symbol = sym;
     // v1.2.4: Zeitablauf setzt blitz zurueck (pitSpielTick), damit dort kein Haken erscheint.

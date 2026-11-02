@@ -5304,7 +5304,7 @@
   if ($('track-spiegel')) {
     $('track-spiegel').onclick = () => {
       if (!currentTrackTiles.length) { showHudToast(t('Erst die Strecke bauen')); return; }
-      if (typeof chSpiegelTiles !== 'function') { showHudToast(t('Spiegeln nicht verfuegbar')); return; }
+      if (typeof chSpiegelTiles !== 'function') { showHudToast(t('Spiegeln nicht verfügbar')); return; }
       trackMerken();
       currentTrackTiles = chSpiegelTiles(currentTrackTiles);
       trackSel = null;

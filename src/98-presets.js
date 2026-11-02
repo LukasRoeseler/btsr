@@ -277,6 +277,13 @@
   // v0.9.64: Pro-Pacejka - die Pro-Abstimmung, aber mit dem Pacejka-Lenkmodell. Es ist
   // dieselbe Tabelle wie Pro plus der Steuerungsmodus "pacejka", damit man die Magic
   // Formula als EINEN Namen anwaehlen kann, statt zwei Stellen zu bedienen.
+  // v1.2.48: Pacejka-EIGENE Abstimmung (nur hier, nicht in Pro): schnellerer Anzug, etwas
+  // mehr Lenkwinkel und weniger Bremsen-Lenkungs-Kopplung. Bewusst als Override statt im
+  // Pro-Table, damit Pro unveraendert bleibt - und NUR hier, nicht im Markup (Korrektur nach
+  // 1.2.66: 1.2.48 hatte die drei Werte auch als Vorgabe ins Markup geschrieben, damit galten
+  // sie global). Der erste Start bekommt das Preset ausdruecklich (98b-sicherung.js), und der
+  // Selbsttest "Markup-Vorgaben sind die Pacejka-Grundlage" liest diese Liste.
+  const PACEJKA_EIGEN = { 'phys-accel': 1.1, 'setting-steer-calib': 2.8, 'setting-brake-steal': 0.75 };
   PRESETS.propacejka = {
     label: 'Pacejka',
     kurz: 'Pro mit Pacejka-Lenkmodell',
@@ -285,11 +292,7 @@
         + 'Haftgrenze f\u00e4hrt es sich wie Physik, dar\u00fcber sp\u00fcrbar \u00dcbersteuern und '
         + 'Untersteuern, beides vibriert und quietscht. Zum Ausprobieren der Magic Formula, '
         + 'ohne die Klassen-Abstimmung.',
-    v: Object.assign({}, PRESETS.pro.v, { 'phys-mode': 'pacejka',
-      // v1.2.47: Pacejka-EIGENE Abstimmung (nur hier, nicht in Pro): schnellerer Anzug,
-      // etwas mehr Lenkwinkel und weniger Bremsen-Lenkungs-Kopplung. Bewusst als Override
-      // statt im Pro-Table, damit Pro unveraendert bleibt.
-      'phys-accel': 1.1, 'setting-steer-calib': 2.8, 'setting-brake-steal': 0.75 }),
+    v: Object.assign({}, PRESETS.pro.v, { 'phys-mode': 'pacejka' }, PACEJKA_EIGEN),
   };
   // ---- GRAN ACCELERATO (v1.2.62) ---------------------------------------------------------
   // BESTELLT: "Fuege einen neuen Fahrgefuehl Modus ein, den ich auch im Garagenmenue auswaehlen
@@ -303,6 +306,7 @@
   // Fahrgefuehl betreffen und keine Einstellkachel brauchen.
   PRESETS.gran = {
     label: 'Gran Accelerato',
+    wip: true,   // Korrektur nach 1.2.66: neu, deshalb am Knopf als WIP gekennzeichnet
     kurz: 'Pacejka, verfeinert wie ACC/GT7',
     text: 'Das Pacejka-Lenkmodell, verfeinert wie ein GT3 in Assetto Corsa Competizione und '
         + 'Gran Turismo Sport: Abtrieb hebt den Griff bei Tempo, die Lenkung wird mit Tempo '
@@ -460,7 +464,9 @@
   // Realismus-Presets sind die, die das Reifenmodell und einen echten Reibkreis fahren:
   // Pro, Sim+, Pacejka, GT3, F1 und Realismus GT3. Omega ist eingefroren (bleibt beim
   // flachen Faktor), und Arcade/RC fahren absichtlich den einfachen Reibkreis.
-  const PRESETS_BREMSSTEAL_LAST = ['pro', 'simplus', 'propacejka', 'gt3', 'f1', 'realgt3'];
+  // Korrektur nach 1.2.66: Gran Accelerato gehoert dazu - es ist Pro-Pacejka (Pro-Tabelle mit
+  // Reifenmodell und echtem Reibkreis) plus Gierregelung, kein vereinfachtes Preset.
+  const PRESETS_BREMSSTEAL_LAST = ['pro', 'simplus', 'propacejka', 'gran', 'gt3', 'f1', 'realgt3'];
   function setzeBrakeStealLast() {
     if (typeof physEngine !== 'undefined' && physEngine.config) {
       physEngine.config.brakeStealLast = PRESETS_BREMSSTEAL_LAST.includes(presetAktiv()) ? 1 : 0;
@@ -469,23 +475,15 @@
       physEngine.config.lenkKopplungAus = presetAktiv() === 'arcade' ? 1 : 0;
     }
   }
-  // v1.2.62: Gran Accelerato - die gran*-Stellschrauben (config, kein DOM-Regler). Aus = null.
-  // Abstimmen gegen ACC/GT7: kräftiger Abtrieb (GT3), weniger harte Tempo-Lenkung, starke
-  // Lastempfindlichkeit, weicher Uebersteuern-Aufbau und eine dynamische Gierregelung
-  // (granYawTau/granYawFeed), die das Auto beim Einlenken eindrehen lässt.
+  // v1.2.62: Gran Accelerato - die gran*-Stellschrauben (config, kein DOM-Regler).
+  // Seit der Korrektur nach 1.2.66 haengen sie am MODUS (phys-mode = 'gran'), nicht an
+  // presetAktiv(): Werte und Begruendung bei granWerteSetzen() in 50-drive.js. Diese Funktion
+  // bleibt als Aufruf an den alten Stellen (applyPreset, Schnappschuss, Laden), damit die
+  // Werte auch dann stimmen, wenn das Auswahlfeld schon auf dem Modus stand und deshalb kein
+  // 'change' feuerte.
   function setzeGran() {
     if (typeof physEngine !== 'undefined' && physEngine.config) {
-      const an = presetAktiv() === 'gran';
-      const c = physEngine.config;
-      c.gran = an;
-      c.granAeroK = an ? 0.15 : 0;
-      c.granLenkTempo = an ? 1.0 : 0;
-      c.granZentrier = an ? 0.7 : 0;
-      c.granGier = an ? 0.6 : 0;
-      c.granLastEmpf = an ? 0.14 : 0;
-      c.granTauUeber = an ? 0.35 : 0.25;
-      c.granYawTau = an ? 0.28 : 0;
-      c.granYawFeed = an ? 0.25 : 0;
+      granWerteSetzen(physEngine.config, ($('phys-mode') || {}).value === 'gran');
     }
   }
 
@@ -553,6 +551,7 @@
       b.type = 'button';
       b.id = klein ? '' : 'preset-' + key;
       b.textContent = p.label;
+      if (p.wip) b.insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
       b.title = p.kurz + ' \u2013 ' + p.text;
       b.addEventListener('click', () => applyPreset(key));
       host.appendChild(b);
@@ -581,6 +580,7 @@
   window.__presetTexts = (k) => (PRESETS[k]
     ? { label: PRESETS[k].label, kurz: PRESETS[k].kurz, text: PRESETS[k].text } : null);
   window.__presetLabel = (k) => (PRESETS[k] || {}).label || k;
+  window.__pacejkaEigen = () => Object.assign({}, PACEJKA_EIGEN);
 
   // ---- FAHRGEFUEHL JE SPIELER (v1.2.4) -----------------------------------------------------
   // BESTELLT: "Ich moechte fuer verschiedene Spieler verschiedene Schwierigkeitsstufen zulassen (z. B. Spieler 1

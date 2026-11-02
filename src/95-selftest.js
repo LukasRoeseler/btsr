@@ -1351,7 +1351,7 @@
       + (spiegel ? '' : ' | NICHT GESPIEGELT') };
   });
 
-  // ---- Die Markup-Vorgaben MUESSEN die Voreinstellung Pacejka sein ----
+  // ---- Die Markup-Vorgaben MUESSEN die Pacejka-Grundlage sein ----
   //
   // Pacejka ist die Vorgabe (BESTELLT: "pajecka als standard"). Steht ein Regler beim Laden
   // anders, zeigt die Legende "eigene Abstimmung", ohne dass jemand etwas verstellt hat - und
@@ -1361,28 +1361,39 @@
   // dem ALTEN Pro, siebzehn Abweichungen. Zwei Orte fuer eine Aussage laufen auseinander,
   // sobald einer nachgezogen wird - und ein Vorgabewert sagt beim Ansehen nicht, aus welcher
   // Voreinstellung er stammt.
-  stAdd('Markup-Vorgaben sind die Voreinstellung Pacejka', () => {
+  //
+  // Korrektur nach 1.2.66: Pacejka hat seit 1.2.48 drei EIGENE Werte (PACEJKA_EIGEN in
+  // 98-presets.js). Die stehen nur im Preset, nicht im Markup - dort steht fuer sie der
+  // Pro-Wert (Stand vor 1.2.48), und der erste Start legt das Preset ausdruecklich an
+  // (98b-sicherung.js). Alle UEBRIGEN Regler muessen weiter genau Pacejka sein.
+  stAdd('Markup-Vorgaben sind die Pacejka-Grundlage (eigene Pacejka-Werte nur im Preset)', () => {
     if (!window.__presetValues) return { skip: true, mass: 'presetValues nicht erreichbar' };
     const soll = window.__presetValues('propacejka');
-    if (!soll) return { skip: true, mass: 'Voreinstellung propacejka nicht vorhanden' };
+    const pro = window.__presetValues('pro');
+    if (!soll || !pro) return { skip: true, mass: 'Voreinstellung propacejka/pro nicht vorhanden' };
+    const eigen = window.__pacejkaEigen ? window.__pacejkaEigen() : {};
     const ab = [];
     for (const k of Object.keys(soll)) {
       const el = $(k);
       if (!el) { ab.push(k + ': nicht im Dokument'); continue; }
+      const ziel = k in eigen ? pro[k] : soll[k];
+      const wer = k in eigen ? 'Pro' : 'Pacejka';
       // Der VORGABEWERT und nicht der aktuelle: defaultValue und defaultChecked stehen fuer
       // das, was im Markup steht. el.value waere der Stand nach jedem Reglerzug dieser
       // Sitzung, und der Test wuerde dann messen, was der Nutzer gerade tut.
       if (el.type === 'checkbox') {
-        if (el.defaultChecked !== !!soll[k]) {
-          ab.push(k + ': Markup ' + el.defaultChecked + ', Pacejka ' + soll[k]);
-        }
-      } else if (Math.abs(parseFloat(el.defaultValue) - parseFloat(soll[k])) > 1e-9) {
-        ab.push(k + ': Markup ' + el.defaultValue + ', Pacejka ' + soll[k]);
+        if (el.defaultChecked !== !!ziel) ab.push(k + ': Markup ' + el.defaultChecked + ', ' + wer + ' ' + ziel);
+      } else if (Math.abs(parseFloat(el.defaultValue) - parseFloat(ziel)) > 1e-9) {
+        ab.push(k + ': Markup ' + el.defaultValue + ', ' + wer + ' ' + ziel);
       }
     }
+    // Gegenprobe: die eigenen Werte unterscheiden sich wirklich von Pro, sonst waere die
+    // Ausnahme leer und der Test pruefte nichts Neues.
+    const echt = Object.keys(eigen).filter((k) => Math.abs(parseFloat(eigen[k]) - parseFloat(pro[k])) > 1e-9);
+    if (echt.length !== Object.keys(eigen).length) ab.push('PACEJKA_EIGEN enthaelt Pro-Werte');
     return { ok: ab.length === 0,
-             mass: ab.length === 0 ? Object.keys(soll).length + ' Vorgaben stimmen mit Pacejka'
-                                   : ab.length + ' Abweichungen \u2013 ' + ab.slice(0, 3).join('; ') };
+             mass: ab.length === 0 ? Object.keys(soll).length + ' Vorgaben stimmen (' + echt.length + ' davon Pro statt Pacejka-eigen)'
+                                   : ab.length + ' Abweichungen – ' + ab.slice(0, 3).join('; ') };
   });
 
   // ---- Ziffernversatz: nur bei WECHSEL, nicht in jedem Frame ----
@@ -5287,13 +5298,158 @@
                        + ' (hinten ' + an.nutzH.toFixed(2) + ' gegen vorn ' + an.nutzV.toFixed(2) + ')' };
   });
 
+  // ---- Korrektur nach 1.2.66: Gran-Werte haengen am MODUS, nicht am Preset ----
+  // Vorher leitete setzeGran() sie aus presetAktiv() ab: direkt im Auswahlfeld "Gran" gewaehlt gab
+  // es keine Gierregelung, und ein verstellter Regler oder das Laden schaltete sie ab.
+  stAdd('Gran Accelerato: Werte nach Moduswahl, Reglerzug und Laden (am Modus, nicht am Preset)', () => {
+    const f = [];
+    const sel = $('phys-mode');
+    if (!sel || typeof GRAN_AN === 'undefined') return { skip: true, mass: 'phys-mode/GRAN_AN fehlt' };
+    const merk = presetRead();
+    const c = physEngine.config;
+    const granAn = (wo) => {
+      if (!c.gran || !c.pacejka) f.push(wo + ': gran/pacejka aus');
+      for (const k of Object.keys(GRAN_AN)) if (c[k] !== GRAN_AN[k]) { f.push(wo + ': ' + k + ' ' + c[k]); break; }
+    };
+    try {
+      // 1) Direkt im Auswahlfeld gewaehlt (ohne Preset-Knopf).
+      presetSet('phys-mode', 'physik');
+      presetSet('phys-mode', 'gran');
+      granAn('Auswahlfeld');
+      if (!physicsEnabled) f.push('Gran ohne Physik');
+      // 2) Einen Regler verstellen (dann ist kein Preset mehr "aktiv") und die alten Aufrufer laufen lassen.
+      const sc = $('setting-steer-calib');
+      presetSet('setting-steer-calib', Math.abs(parseFloat(sc.value) - 1.35) < 1e-9 ? 1.4 : 1.35);
+      setzeBrakeStealLast(); setzeGran();
+      granAn('nach Reglerzug');
+      // 3) Laden: das Feld steht schon auf 'gran' (kein change), die Sicherung ruft setzeGran().
+      granWerteSetzen(c, false);
+      sel.value = 'gran';
+      setzeGran();
+      granAn('nach Laden');
+      // 4) Wechsel weg von Gran schaltet alles ab.
+      presetSet('phys-mode', 'pacejka');
+      if (c.gran || c.granYawFeed !== 0 || c.granAeroK !== 0) f.push('nach Wechsel auf Pacejka noch Gran-Werte');
+      if (!c.pacejka) f.push('Pacejka aus');
+    } finally {
+      for (const [id, val] of Object.entries(merk)) presetSet(id, val);
+      setzeBrakeStealLast(); setzeGran();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Auswahlfeld, Reglerzug und Laden: Gierregelung bleibt an, Wechsel schaltet sie ab' };
+  });
+
+  stAdd('Gran Accelerato: Spieler 2 faehrt mit Physik und eigener Gierregelung', () => {
+    const f = [];
+    if (typeof spielerPhysikAn !== 'function' || !window.__presetSchnappschuss) return { skip: true, mass: 'spielerPhysikAn fehlt' };
+    if (!spielerPhysikAn({ motor: { config: { physModus: 'gran' } } })) f.push('Modus gran gilt nicht als Physik');
+    if (!spielerPhysikAn({ motor: { config: { physModus: 'pacejka' } } })) f.push('Modus pacejka gilt nicht als Physik');
+    if (spielerPhysikAn({ motor: { config: { physModus: 'aus' } } })) f.push('RC gilt als Physik');
+    const vorher = { gran: physEngine.config.gran, modus: $('phys-mode').value };
+    if (window.__presetSchnappLeeren) window.__presetSchnappLeeren();
+    const snap = window.__presetSchnappschuss('gran');
+    if (!snap) f.push('kein Schnappschuss');
+    else {
+      if (snap.modus !== 'gran') f.push('Schnappschuss-Modus ' + snap.modus);
+      if (!snap.config.gran || !snap.config.pacejka) f.push('Schnappschuss ohne gran/pacejka');
+      if (snap.config.granYawFeed !== GRAN_AN.granYawFeed || snap.config.granAeroK !== GRAN_AN.granAeroK) f.push('Schnappschuss ohne Gran-Werte');
+    }
+    if (physEngine.config.gran !== vorher.gran || $('phys-mode').value !== vorher.modus) f.push('Spieler 1 wurde vom Schnappschuss veraendert');
+    if (window.__presetSchnappLeeren) window.__presetSchnappLeeren();
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'gran rechnet mit Physik, Schnappschuss traegt die Gran-Werte, Spieler 1 unberuehrt' };
+  });
+
+  // ---- Korrektur nach 1.2.66 (BESTELLT: Latenz): NPC-Folgen reichen nur GEAENDERTE Befehle durch ----
+  // 1.2.50 liess in Einpark-/Haltefolgen jeden Takt am Verwerfen vorbei, und writeInFlight fiel,
+  // waehrend noch gesendet wurde. Gemessen an einer Senke, deren Schreibvorgaenge von Hand enden.
+  stAdd('Funk: NPC-Folge sendet ohne Befehlsaenderung nichts nach, Aenderung/Phasenwechsel schon', async () => {
+    const f = [];
+    const offen = [];
+    let gesendet = 0;
+    const rx = { properties: { writeWithoutResponse: true },
+                 writeValueWithoutResponse() { gesendet++; return new Promise((r) => offen.push(r)); } };
+    const car = { role: 'ghost', alias: 'Funkfolge', device: { name: 'Funkfolge', id: 'funkfolge' }, rx,
+                  writeInFlight: false, ghost: { running: true, randHalt: { phase: 'rand' } } };
+    const bits = trackModeBit() | LIGHT_HEAD;
+    const ticks = async () => { for (let i = 0; i < 12; i++) await Promise.resolve(); };
+    const loesen = async () => { const r = offen.shift(); if (r) r(); await ticks(); };
+    try {
+      writeToCar(car, 0.5, 0.3, bits);
+      await ticks();
+      if (gesendet !== 1) f.push('erstes Paket: ' + gesendet);
+      // Waehrend es unterwegs ist: sechsmal derselbe Befehl.
+      for (let i = 0; i < 6; i++) writeToCar(car, 0.5, 0.3, bits);
+      await ticks();
+      if (!car.writeInFlight) f.push('writeInFlight fiel, waehrend gesendet wird');
+      await loesen();
+      if (gesendet !== 1) f.push('ohne Aenderung nachgereicht: ' + (gesendet - 1) + ' Pakete');
+      if (car.writeInFlight) f.push('writeInFlight haengt nach dem Ende');
+      // Wieder unterwegs, dann ein GEAENDERTER Lenkbefehl: er wird eingereiht und folgt sofort.
+      writeToCar(car, 0.5, 0.3, bits);
+      await ticks();
+      const n0 = gesendet;
+      writeToCar(car, -0.5, 0.3, bits);
+      writeToCar(car, -0.5, 0.3, bits);                       // derselbe noch einmal: nichts Neues
+      await ticks();
+      if (!car.writeInFlight) f.push('writeInFlight fiel nach dem Einreihen');
+      await loesen();
+      if (gesendet !== n0 + 1) f.push('geaenderter Befehl: ' + (gesendet - n0) + ' Pakete statt 1');
+      if (!car.writeInFlight) f.push('writeInFlight fiel, waehrend das eingereihte Paket unterwegs ist');
+      // Phasenwechsel bei gleichem Befehl: wird auch durchgereicht.
+      car.ghost.randHalt.phase = 'halt';
+      writeToCar(car, -0.5, 0.3, bits);
+      await loesen();
+      if (gesendet !== n0 + 2) f.push('Phasenwechsel nicht durchgereicht (' + (gesendet - n0) + ')');
+      while (offen.length) await loesen();
+      if (car.writeInFlight) f.push('writeInFlight haengt am Ende');
+    } finally {
+      while (offen.length) { const r = offen.shift(); r(); }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'gleicher Befehl verworfen, Aenderung und Phasenwechsel je 1 Paket, writeInFlight bis zum letzten Paket' };
+  });
+
+  // ---- Korrektur nach 1.2.66: Boxen-Minigame mit kurzer Luecke zwischen den Knoepfen ----
+  stAdd('Boxen-Minigame: kurze Luecke (80-100 ms), doppelter Druck zaehlt nicht fuer den naechsten Knopf', () => {
+    const merk = { modus: pitModus, an: pitLaneEnabled, trig: pitTrigger, kmh: physEngine.state.speedKmh, zwei: zweiSpieler };
+    const reifen = pitSpielReifenMerk();
+    const f = [];
+    try {
+      if (!(PIT_SPIEL_PAUSE >= 0.08 && PIT_SPIEL_PAUSE <= 0.1)) f.push('Luecke ' + PIT_SPIEL_PAUSE + ' s');
+      pitModus = 'minigame'; pitLaneEnabled = true; pitTrigger = 'anywhere';
+      zweiSpieler = false;
+      physEngine.state.speedKmh = 0; throttleY = 0;
+      setPitState('off'); pitRearmBlockedUntil = 0;
+      setPitState('limited'); pitLastTick = 0; pitLaneTick();
+      if (!pitSpielAktiv()) return { ok: false, mass: 'kein Minigame-Stopp' };
+      const sp = pitSpiel;
+      sp.fensterAb = pitStandElapsed;
+      pitSpielTaste(sp.folge[0]);
+      if (sp.i !== 1 || sp.treffer !== 1) f.push('erster Druck zaehlt nicht');
+      // Sofort noch einmal (doppelter/spaeter Druck): in der Luecke, zaehlt nicht.
+      pitSpielTaste(sp.folge[1]);
+      if (sp.i !== 1 || sp.treffer !== 1 || sp.fehler !== 0) f.push('Druck in der Luecke zaehlte (i ' + sp.i + ', Treffer ' + sp.treffer + ', Fehler ' + sp.fehler + ')');
+      if (!(pitStandElapsed < sp.fensterAb)) f.push('keine Luecke nach dem Druck');
+      pitStandElapsed = sp.fensterAb + 0.001;
+      pitSpielTaste(sp.folge[1]);
+      if (sp.i !== 2 || sp.treffer !== 2) f.push('nach der Luecke zaehlt der Druck nicht');
+      // Fuenf Fenster mit Luecken passen weiter in die Standzeit.
+      if (sp.fensterS > PIT_SPIEL_FENSTER_MIN && Math.abs(PIT_SPIEL_ANZAHL * (sp.fensterS + PIT_SPIEL_PAUSE) - sp.T) > 0.01) f.push('Fenster passen nicht in die Zeit');
+    } finally {
+      setPitState('off'); pitRearmBlockedUntil = 0;
+      pitModus = merk.modus; pitLaneEnabled = merk.an; pitTrigger = merk.trig;
+      zweiSpieler = merk.zwei;
+      physEngine.state.speedKmh = merk.kmh;
+      pitSpielReifenZurueck(reifen);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Luecke ' + Math.round(PIT_SPIEL_PAUSE * 1000) + ' ms, Druck darin zaehlt nicht, danach schon' };
+  });
+
   // v1.2.62 GRAN ACCELERATO: die Gier wird gefahren (baut sich dynamisch auf), das Auto
   // dreht beim Einlenken ein, und am Limit schiebt es (vorn ueber der Grenze). Der Test
-  // misst die gran*-Werte aus setzeGran() direkt an einem Motor.
+  // misst die gran*-Werte (GRAN_AN, 50-drive.js) direkt an einem Motor.
   stAdd('Gran Accelerato: Gier baut sich auf, Einlenken, Limit schiebt', () => {
     const f = [];
-    const GRAN = { gran: true, pacejka: true, granAeroK: 0.15, granLenkTempo: 1.0, granZentrier: 0.7,
-                   granGier: 0.6, granLastEmpf: 0.14, granTauUeber: 0.35, granYawTau: 0.28, granYawFeed: 0.25 };
+    // Dieselben Werte wie im Spiel (GRAN_AN, 50-drive.js), keine Abschrift.
+    const GRAN = Object.assign({ gran: true, pacejka: true }, GRAN_AN);
     const e = new CarreraPhysicsEngine();
     Object.assign(e.config, GRAN);
     const st = e.state;
@@ -5310,7 +5466,7 @@
       e.update({ throttle: 0.6, brake: 0, steering: 1 }, 0.045);
       yawSpaeter = st.granYaw;
     }
-    if (!(yawErster > 0)) f.push('Gier baut sich nicht auf (erster ' + yawErster.toFixed(3) + dbg + ')');
+    if (!(yawErster > 0)) f.push('Gier baut sich nicht auf (erster ' + yawErster.toFixed(3) + ')');
     if (!(yawSpaeter > yawErster)) f.push('Gier waechst nicht (' + yawErster.toFixed(3) + ' -> ' + yawSpaeter.toFixed(3) + ')');
     if (yawErster > yawSpaeter) f.push('Gier springt sofort (erster ' + yawErster.toFixed(3) + ')');
     // 2) Limit: voller Einschlag bei hohem Tempo schiebt (vorn ueber der Grenze), trotz Abtrieb.
@@ -5879,7 +6035,8 @@
     } finally { window.__spielerPresetSetzen(2, merkP2); }
     // Community-Challenges: Pacejka waehlbar, und chAnwenden laesst Pacejka stehen.
     if (COMMUNITY_PRESETS.indexOf('propacejka') < 0) f.push('Pacejka fehlt in den Community-Presets');
-    if (String(chAnwenden).indexOf("'pacejka' ? 'pacejka' : 'physik'") < 0) f.push('Challenge erzwingt weiter Physik');
+    // Korrektur nach 1.2.66: Gran Accelerato wird genauso durchgereicht.
+    if (String(chAnwenden).indexOf("pm === 'pacejka' || pm === 'gran' ? pm : 'physik'") < 0) f.push('Challenge erzwingt weiter Physik (Pacejka/Gran)');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bahn ohne Derby, Ausdruck ohne Time Attack, Spieler 2 eigenes Preset, Pacejka-Challenges' };
   });
 
@@ -7459,10 +7616,16 @@
       return { skip: true, mass: 'physLayoutDrive nicht vorhanden' };
     }
     const namen = ['neutral', 'gt3front', 'gt3mid', 'gt3rear', 'f1'];
+    // Korrektur nach 1.2.66: die Bezugsabstimmung (Pro: Bremsen nimmt Lenkung 0,95, Bremssteal
+    // aus der Gewichtsverlagerung an) steht jetzt im Patch, wie schon steerCalib und
+    // useTauBrems. Vorher kamen die beiden Werte aus dem Stand beim Pruefen - und der ist seit
+    // 1.2.48 die eigene Pacejka-Abstimmung (0,75): dann liegen alle fuenf Layouts beim
+    // Vollbremsen am 45-Grad-Anschlag, und der Test maass das Preset statt der Layouts.
     const werte = namen.map(n => {
       const r = OMEGA_TEST.physLayoutDrive(n, { kmh: 140, throttle: 0, brake: 1,
                                                 steering: 1, patch: { steerCalib: 2.0, useTauBrems: 0.45,
-                                                                       pacejka: false } });
+                                                                       pacejka: false, brakeUseGain: 0.95,
+                                                                       brakeStealLast: 1 } });
       const v = OMEGA_TEST.physLayouts()[n];
       return { n, grad: r.grad, sg: r.steerGrip, vorn: v.vorn, ms: v.daempfungMs, iz: v.iz };
     });
@@ -15529,7 +15692,10 @@
   stAdd('Lenkung aus Gewichtsverlagerung: leicht bremsen ueber 100 %, voll bremsen deutlich weniger, Loesen erholt sich', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerGrip) return { skip: true, mass: 'physSteerGrip nicht vorhanden' };
     const f = [];
-    const p = { brakeStealLast: 1, lenkAlt: 0, lenkKopplungAus: 0, pacejka: false, useTauBrems: 0.12 };
+    // Korrektur nach 1.2.66: Bezug Pro (brakeUseGain 0,95, steerCalib 2,5) fest im Patch, nicht
+    // der Stand beim Pruefen (seit 1.2.48 die eigene Pacejka-Abstimmung, siehe Layout-Test).
+    const p = { brakeStealLast: 1, lenkAlt: 0, lenkKopplungAus: 0, pacejka: false, useTauBrems: 0.12,
+                brakeUseGain: 0.95, steerCalib: 2.5 };
     const g = (brake, throttle) => OMEGA_TEST.physSteerGrip({ kmh: 250, throttle: throttle || 0, brake, steering: 0.3, patch: p }).steerGrip;
     // Bezug: Gas gerade so gehalten (kein Nicken, keine Laengskraft).
     const roll = g(0, 0.03), leicht = g(0.25), voll = g(1), gas = g(0, 1);
@@ -15755,12 +15921,12 @@
     const lauf = (P, v, l, sek) => { const z = { vy: 0, r: 0 }; for (let i = 0; i < sek * 60; i++) vfDynamik(z, v, 0, 0, l, 1 / 60, 1, P); return z; };
     try {
       // GT3 (Standard): kein Tempo-Faktor, das Profil bleibt dasselbe Objekt.
-      localStorage.setItem(VF_HANDLING_STORE, 'gt3');
+      vfHandlingSetzen('gt3');
       if (vfHandling() !== 'gt3') f.push('GT3 nicht uebernommen');
       if (vfTempoFaktor() !== 1.0) f.push('GT3: Tempo nicht 1.0');
       if (vfHandlingProfil(VF_GT3) !== VF_GT3) f.push('GT3: Profil wird veraendert');
       // Schnell: mehr Grip, mehr Einschlag, Tempo-Faktor und eine engere Kurve.
-      localStorage.setItem(VF_HANDLING_STORE, 'schnell');
+      vfHandlingSetzen('schnell');
       if (vfHandling() !== 'schnell') f.push('schnell nicht uebernommen');
       if (!(vfTempoFaktor() > 1.0)) f.push('Schnell: kein Tempo-Faktor');
       const schnell = vfHandlingProfil(VF_GT3);
@@ -15769,9 +15935,9 @@
       const zGT3 = lauf(VF_GT3, 30, 0.5, 2), zSchnell = lauf(schnell, 30, 0.5, 2);
       if (!(Math.abs(zSchnell.r) > Math.abs(zGT3.r))) f.push('Schnell dreht nicht enger: ' + zSchnell.r + ' / ' + zGT3.r);
       // Ungueltiger Wert faellt auf GT3 zurueck.
-      localStorage.setItem(VF_HANDLING_STORE, 'gibtsnicht');
+      vfHandlingSetzen('gibtsnicht');
       if (vfHandling() !== 'gt3') f.push('ungueltiger Modus faellt nicht auf GT3 zurueck');
-    } finally { if (merk === null) localStorage.removeItem(VF_HANDLING_STORE); else localStorage.setItem(VF_HANDLING_STORE, merk); }
+    } finally { if (merk === null) { localStorage.removeItem(VF_HANDLING_STORE); vfHandlingCache = null; } else vfHandlingSetzen(merk); }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'GT3 unveraendert, Schnell +Grip/+Einschlag/+Tempo' };
   });
 

@@ -411,12 +411,30 @@
   // PACEJKA ist "Physik" plus ein Schritt: dieselbe Kette (Gaenge, Reibkreis, Kennlinien),
   // danach formt pacejkaStep() den Lenkbefehl am Limit. Deshalb physicsEnabled = true, und
   // der Unterschied sitzt allein in config.pacejka - fuer BEIDE Autos.
+  // GRAN ACCELERATO: die gran*-Stellschrauben (config, kein DOM-Regler) haengen am MODUS
+  // "gran" und nicht am Preset. Bis 1.2.66 leitete setzeGran() sie aus presetAktiv() ab:
+  // ein verstellter Regler (dann ist kein Preset mehr "aktiv") oder ein Laden aus der
+  // Selbstsicherung schaltete die Gierregelung ab, waehrend der Modus noch "gran" war, und
+  // wer "Gran Accelerato" direkt im Auswahlfeld waehlte, bekam sie gar nicht. EINE Stelle:
+  // physModusAnwenden() (laeuft bei jedem Wechsel des Auswahlfelds, also auch nach
+  // applyPreset() und nach dem Laden). AUS = die Grundwerte aus 40-physics.js.
+  const GRAN_AN = { granAeroK: 0.15, granLenkTempo: 1.0, granZentrier: 0.7, granGier: 0.6,
+                    granLastEmpf: 0.14, granTauUeber: 0.35, granYawTau: 0.28, granYawFeed: 0.25 };
+  const GRAN_AUS = { granAeroK: 0, granLenkTempo: 0, granZentrier: 0, granGier: 0,
+                     granLastEmpf: 0, granTauUeber: 0.25, granYawTau: 0.28, granYawFeed: 0 };
+  function granWerteSetzen(cfg, an) {
+    if (!cfg) return;
+    Object.assign(cfg, an ? GRAN_AN : GRAN_AUS);
+    cfg.gran = !!an;
+    if (an) cfg.pacejka = true;
+  }
   function physModusAnwenden(melden) {
     const v = $('phys-mode') ? $('phys-mode').value : 'physik';
     driftModus = (v === 'drift');
     physicsEnabled = (v === 'physik' || v === 'pacejka' || v === 'gran');
     physEngine.config.pacejka = physEngine2.config.pacejka = (v === 'pacejka' || v === 'gran');
-    physEngine.config.gran = physEngine2.config.gran = (v === 'gran');
+    granWerteSetzen(physEngine.config, v === 'gran');
+    granWerteSetzen(physEngine2.config, v === 'gran');
     physLastTime = null;
     if (melden) {
       log('Steuerungsmodus: ' + (v === 'physik' ? 'Physik'

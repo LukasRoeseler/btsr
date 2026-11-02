@@ -131,7 +131,7 @@
         + '<p class="muted">' + stEsc(t('Fahrgefühl Sim+, trocken, keine Bestenliste. Gemessen werden Rundenzeiten, Gas, Bremse, Lenkung und Abflüge. Ohne Fahrt kannst du auch gleich abschließen.')) + '</p></div>'
         + '<div class="studie-plan">'
         + '<div class="ch-karte" id="studie-karte" title="' + stEsc(t('Zum Vergrößern klicken')) + '">' + studieKarteHtml() + '</div>'
-        + '<div class="ch-karte-knoepfe"><button type="button" id="studie-spiegel-knopf" data-st="spiegel">' + stEsc(t('Layout spiegeln')) + '</button></div>'
+        + '<div class="ch-karte-knoepfe"><button type="button" id="studie-spiegel-knopf" data-st="spiegel">' + stEsc(t('Layout spiegeln')) + ' <span class="wip-tag">WIP</span></button></div>'
         + '</div>'
         + '<div class="studie-knoepfe"><button type="button" class="primary" data-st="fahren">' + stEsc(t('Auf der Bahn fahren')) + '</button>'
         + '<button type="button" class="primary" data-st="fahren-virtuell">' + stEsc(t('Virtuell fahren')) + '</button>'
@@ -292,6 +292,9 @@
       rt_ms: st.rt, rt_median: rtMedian(st.rt), fruehstarts: st.frueh, verpasst: st.verpasst,
       quelle: st.quelle, controller: String(st.controller).slice(0, 80),
       version: (($('app-version') || {}).textContent || '').slice(0, 20), sprache: typeof lang === 'string' ? lang : '' };
+    // Korrektur nach 1.2.66: ob das Layout gespiegelt war (linkslastige Grundpackung). Je Fahrt
+    // steht der Stand beim Fahren (fahrt.spiegel), hier der zuletzt gewaehlte.
+    daten.spiegel = !!st.spiegel;
     if (st.fahrt) daten.fahrt = st.fahrt;
     if (st.fahrtVirtuell) daten.fahrt_virtuell = st.fahrtVirtuell;
     return daten;
@@ -310,7 +313,7 @@
     const fahrt = { strecke: 'studie-homington', art: virtuell ? 'virtuell' : 'bahn', preset: erg.preset || 'simplus', gueltig: !!erg.gueltig,
                     grund: erg.gueltig ? '' : String(erg.grund || '').slice(0, 60), runden_ms: r.slice(0, 12),
                     beste_ms: r.length ? Math.min.apply(null, r) : null, gesamt_ms: erg.gueltig ? Math.round(erg.zeit) : null,
-                    stil: stil || null };
+                    stil: stil || null, spiegel: !!st.spiegel };
     if (virtuell) st.fahrtVirtuell = fahrt; else st.fahrt = fahrt;
     st.fahrtArt = null;
     // Die virtuelle Fahrt endet mit der Challenge (einen Takt spaeter: die Challenge raeumt noch auf).

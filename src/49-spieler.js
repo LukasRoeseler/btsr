@@ -150,8 +150,8 @@
       try { mischungAnwenden(motor, z.reifen, wxRainLevel() * wxRainLevel()); } catch (e) { /* beim Laden */ }
     }
   }
-  // Rechnet dieser Spieler mit Physik (Physik/Pacejka) oder RC? Ohne eigenes Preset wie Spieler 1.
+  // Rechnet dieser Spieler mit Physik (Physik/Pacejka/Gran Accelerato) oder RC? Ohne eigenes Preset wie Spieler 1.
   function spielerPhysikAn(z) {
     const m = z && z.motor && z.motor.config.physModus;
-    return m ? (m === 'physik' || m === 'pacejka') : physicsEnabled;
+    return m ? (m === 'physik' || m === 'pacejka' || m === 'gran') : physicsEnabled;
   }

@@ -1447,12 +1447,35 @@
     // WACHHUND: haengt ein Schreibvorgang laenger als FUNK_HAENGT_MS, gilt er als verloren -
     // sonst stuende dieses Auto (Spieler 2, Ghost) fuer immer still.
     const jetzt = performance.now();
-    // v1.2.50: Einpark-/Haltefolgen (randHalt) und der Zieleinlauf (finish) verlieren KEINEN
-    // Takt - ihre Lenkimpulse und Bremsphasen dauern nur ~100 ms, und ein verworfenes Paket
-    // laesst das Auto durch die Folge springen. funkSchreiben() buendelt den neuesten Wert
-    // ohnehin, es wird nichts doppelt gesendet; der Wachhund dort bleibt aktiv.
-    const manOever = car.ghost && (car.ghost.randHalt || car.ghost.finish);
-    if (car.writeInFlight && !manOever && jetzt - (car.writeSeit || 0) < FUNK_HAENGT_MS) return;
+    if (car.writeInFlight && jetzt - (car.writeSeit || 0) < FUNK_HAENGT_MS) {
+      // BESTELLT: Latenz (Stabilitaet und geringe Latenz auf 100-EUR-Handys, 2 Spieler + 2 NPCs).
+      // Korrektur nach 1.2.66: 1.2.50 liess Einpark-/Haltefolgen (randHalt) und den Zieleinlauf
+      // (finish) hier IMMER durch. Folge: jeder Takt reihte ein Paket in funkSchreiben() ein,
+      // das Auto schrieb Rueckenan-Ruecken und belegte den Funk auch dann, wenn sich nichts
+      // aenderte - und das finally unten setzte writeInFlight=false, sobald funkSchreiben() den
+      // Befehl nur eingereiht hatte, waehrend das vorige Paket noch unterwegs war (danach lief
+      // jeder Takt am Verwerfen vorbei). Jetzt: durchgereicht wird nur ein GEAENDERTER Befehl
+      // (andere Bytes fuer Lenkung/Gas/Licht als das zuletzt gesendete oder eingereihte Paket)
+      // oder ein Phasenwechsel der Folge - die ~100-ms-Impulse gehen also nicht verloren. Sonst
+      // wird wie immer verworfen. Durchgereicht wird OHNE writeInFlight/writeGen anzufassen:
+      // funkSchreiben() legt das Paket in den einen Warteplatz (ersetzt dort ein aelteres), und
+      // der laufende Aufruf sendet es im selben Durchgang - erst danach faellt writeInFlight.
+      const g = car.ghost;
+      const folge = g && (g.randHalt || g.finish);
+      if (!folge || car.testSenke) return;
+      const phase = (g.randHalt ? 'r:' : 'f:') + folge.phase;
+      const pktNeu = buildCommandPacket(steer, throttle, lightBits, modeBytes,
+                                        typeof lichtSchadenVon === 'function' ? lichtSchadenVon(car) : undefined);
+      if (phase === car.letztePhase && funkPaketGleich(pktNeu, car.letztesPaket)) return;
+      car.letztePhase = phase;
+      car.letztesPaket = pktNeu;
+      car.letzterBefehl = [steer, throttle, lightBits];
+      car.letzterBefehlAt = jetzt;
+      car.funkDurchgereicht = (car.funkDurchgereicht || 0) + 1;
+      recWrite(pktNeu, garageLabel(car));
+      funkSchreiben(car.rx, pktNeu, null).catch(() => { car.writeErrors = (car.writeErrors || 0) + 1; });
+      return;
+    }
     // v1.1.24 FUNKLAST: GEMELDET "Mit einem NPC klappt es gut" - mit mehreren nicht (Autos halten nicht,
     // fahren chaotisch, das eigene Auto reagiert nicht). Jedes fahrende Auto schrieb alle 45 ms, mit vier
     // NPCs und dem Fahrer ~110 Pakete/s ueber einen Bluetooth-Adapter; er war belegt, wiederholte und
@@ -1481,6 +1504,10 @@
       const pkt = buildCommandPacket(steer, throttle, lightBits, modeBytes,
                                      typeof lichtSchadenVon === 'function'
                                        ? lichtSchadenVon(car) : undefined);
+      // Fuer den Vergleich oben (Durchreichen nur bei geaendertem Befehl/Phasenwechsel).
+      car.letztesPaket = pkt;
+      car.letztePhase = car.ghost && (car.ghost.randHalt || car.ghost.finish)
+        ? (car.ghost.randHalt ? 'r:' : 'f:') + (car.ghost.randHalt || car.ghost.finish).phase : null;
       recWrite(pkt, garageLabel(car));
       await funkSchreiben(car.rx, pkt, null);
     } catch (err) {
@@ -1489,6 +1516,16 @@
     } finally {
       if (car.writeGen === gen) car.writeInFlight = false;
     }
+  }
+
+  // Zwei Steuerpakete byteweise gleich? (Durchreichen in writeToCar nur bei einer Aenderung.)
+  function funkPaketGleich(a, b) {
+    if (!a || !b) return false;
+    const x = a instanceof Uint8Array ? a : new Uint8Array(a.buffer || a);
+    const y = b instanceof Uint8Array ? b : new Uint8Array(b.buffer || b);
+    if (x.length !== y.length) return false;
+    for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return false;
+    return true;
   }
 
   // Identify: blink the headlights of ONE car so it can be matched to its row.
@@ -5509,10 +5546,18 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
   // v1.2.50: die Uhr der Makros. Sie laeuft mit der PHYSIK-dt (g.macroMs, ghostTick), nicht
   // mit der Wanduhr: unter Last waere die Folge sonst weiter als das Auto, und die Lenkimpulse
-  // kaemen zu einem falschen Zeitpunkt. Fuer Pruefstaende (kein g.macroMs) faellt sie auf die
-  // Wanduhr zurueck, damit die Tests, die h.at direkt setzen, unveraendert rechnen.
+  // kaemen zu einem falschen Zeitpunkt.
+  // Korrektur nach 1.2.66 (BESTELLT: Latenz/Stabilitaet auf schwachen Handys): das gilt nur
+  // fuer Autos, deren Bewegung die Physik-dt IST - Simulationsautos und die virtuelle Fahrt
+  // (g.makroPhysik). Ein ECHTES Auto faehrt in Wanduhrzeit: es haelt den zuletzt gesendeten
+  // Befehl, bis der naechste kommt. Die dt ist je Takt auf 0,25 s gedeckelt; stockt der
+  // Herzschlag (Last, gedrosselter Hintergrund-Zeitgeber: 1 s), liefe die Makro-Uhr hinter der
+  // Wanduhr her, und ein abgestimmter 100-ms-Lenkimpuls laege am echten Auto um die
+  // Differenz LAENGER an (bei 1 s Stocken 750 ms) - genau das Abfliegen, das die Folge
+  // verhindern soll. Mit der Wanduhr endet die Phase nach dem Stocken sofort. Echte Autos
+  // rechnen deshalb wieder wie bis 1.2.49 mit rennZeitJetzt(); Pruefstaende ohne Ghost auch.
   function makroUhr(g) {
-    return (g && typeof g.macroMs === 'number') ? g.macroMs : rennZeitJetzt();
+    return (g && g.makroPhysik && typeof g.macroMs === 'number') ? g.macroMs : rennZeitJetzt();
   }
   // Der Schritt einer laufenden Folge (randHalt-Phase 'skript'): erst angleichen, dann die Aufnahme.
   function skriptSchritt(h, now) {
@@ -9658,6 +9703,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                   // der Wanduhr, damit Einpark-/Haltefolgen mit dem Auto im Gleichschritt
                   // bleiben, auch wenn der Herzschlag unter Last stoelpert (makroUhr()).
                   macroMs: 0,
+                  // Nur Sim-/virtuelle Autos fahren nach der Makro-Uhr, echte nach der Wanduhr.
+                  makroPhysik: !!(car.sim || (car.device && car.device.id === 'virtuell')),
                   // Recovery-Versuch nach einem Abgang - siehe ghostRecoveryTick().
                   // recoverUntil > 0 heisst "wird gerade versucht", recoverStuckSince > 0
                   // heisst "seit hier steht das Tempo, moeglicherweise ein Aufprall".
