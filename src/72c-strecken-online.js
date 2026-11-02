@@ -38,7 +38,8 @@
   const SK_STORE_V = 'omegasim-strecken-zeiten-v';
   const SK_OPT_STORE = 'omegasim-strecken-online';
   const SK_CACHE_STORE = 'omegasim-strecken-cache';
-  const SK_MIN_FAHRER = 4;                 // "mehr als 3 verschiedene Leute"
+  // v1.3.25 BESTELLT: "Nicht nur Strecken mit 3 Personen anzeigen, sondern alle." Vorher 4.
+  const SK_MIN_FAHRER = 1;
   const SK_LISTE_MS = 5 * 60000;           // Community-Strecken hoechstens alle 5 min holen
   const SK_ZEITEN_MS = 2 * 60000;          // Zeiten einer Strecke hoechstens alle 2 min
   // Alle Presets aus 98-presets.js plus 'eigen' und 'unbekannt'. Dieselbe Liste steht im Apps
@@ -558,13 +559,13 @@
     st.textContent = (!skUrl() ? t('Nur auf diesem Gerät (keine Online-Adresse eingestellt).')
       : skOnline.listeLaedt && !skOnline.liste ? t('Lade die gemeinsame Liste …')
       : skOnline.listeFehler && !skOnline.liste ? t('Gemeinsame Liste nicht erreichbar.')
-      : t('Strecken mit mehr als drei Fahrern: {n}').replace('{n}', liste.filter((s) => (+s.fahrer || 0) >= SK_MIN_FAHRER).length))
+      : t('Strecken mit Zeiten: {n}').replace('{n}', liste.filter((s) => (+s.fahrer || 0) >= SK_MIN_FAHRER).length))
       + ' · ' + t('Dein Fahrgefühl') + ': ' + skFgName(aktuell);
     host.appendChild(st);
     if (!liste.length) {
       const p = document.createElement('p');
       p.className = 'muted';
-      p.textContent = t('Noch keine Strecke mit mehr als drei Fahrern. Schalte unter Optionen > Online das Synchronisieren ein, damit deine Strecken hier erscheinen können.');
+      p.textContent = t('Noch keine Strecke mit Zeiten. Schalte unter Optionen > Online das Synchronisieren ein, damit deine Strecken hier erscheinen.');
       host.appendChild(p);
       return;
     }

@@ -22599,7 +22599,7 @@
   // v1.3.25 BESTELLT: OmegaLab mit kurzer Erklaerung, Einwilligung und Studienwahl, "nur ein
   // Mock-Up und sag Coming Soon". Geprueft: Portal statt Fragebogen, alle Karten gesperrt,
   // Einwilligung schaltet nur die Beschriftung um, nichts wird gesendet oder gespeichert.
-  stAdd('OmegaLab v1.3.25: Portal-Mockup mit Einwilligung, Studien nur Coming Soon', () => {
+  stAdd('OmegaLab v1.3.25: Portal mit Einwilligung, Testbetrieb ohne Datensammlung', () => {
     const f = [];
     const host = $('studie-inhalt');
     if (!host) return { skip: true, mass: 'kein #studie-inhalt' };
@@ -22612,14 +22612,23 @@
       const karten = host.querySelectorAll('.lab-karte');
       if (karten.length !== LAB_STUDIEN.length || karten.length < 6) f.push(karten.length + ' Karten');
       if (host.querySelector('#st-alter')) f.push('Fragebogen statt Portal');
-      if (!/Coming Soon/.test(host.textContent)) f.push('kein Coming Soon');
+      if (!host.querySelector('.lab-bald') || !/Testzwecken/.test(t('OmegaLab ist im Moment nur zu Testzwecken eingebaut. Es werden keine Daten gesendet oder gesammelt. Später soll daraus ein Forschungsportal mit echten Verhaltensdaten werden.'))) f.push('kein Testbetrieb-Hinweis');
       if (!host.querySelector('#lab-einwilligung')) f.push('keine Einwilligung');
       if ([...host.querySelectorAll('.lab-karte button')].some((b) => !b.disabled)) f.push('Karte startbar');
       const cb = host.querySelector('#lab-einwilligung');
       if (cb) cb.click();   // schaltet den Haken um und loest den Klick aus, wie ein Tippen
       if (!labEinwilligung) f.push('Einwilligung greift nicht');
       if (host.querySelectorAll('.lab-karte.gesperrt').length) f.push('nach Einwilligung noch ausgegraut');
-      if ([...host.querySelectorAll('.lab-karte button')].some((b) => !b.disabled)) f.push('nach Einwilligung startbar');
+      const startbar = [...host.querySelectorAll('.lab-karte button')].filter((b) => !b.disabled);
+      if (startbar.length !== 1 || startbar[0].dataset.labStart !== 'fahrstil') f.push('startbar: ' + startbar.length);
+      if (!/Coming Soon/.test(host.textContent)) f.push('kein Coming Soon nach Einwilligung');
+      // Durchlaufen bis zum Abschluss: nichts gesendet, nichts gespeichert, Hinweis im Dank.
+      if (startbar[0]) startbar[0].click();
+      if (!host.querySelector('#st-alter')) f.push('Studie startet nicht');
+      if (!host.querySelector('.lab-bald')) f.push('Studie ohne Testbetrieb-Hinweis');
+      st.rt = [250, 260, 270]; st.narq = [1, 2, 3, 4, 5, 6]; st.selbst = 3;
+      studieAbschliessen();
+      if (st.schritt !== 'danke' || !/nichts gesendet/.test(host.textContent)) f.push('Abschluss ohne Testbetrieb-Dank');
       if (LAB_STUDIEN.some((x) => labMedaillen(x.min) !== (x.min <= 20 ? 3 : x.min <= 26 ? 4 : 5))) f.push('Medaillen nicht nach Dauer');
       if (gesendet) f.push(gesendet + 'x gesendet');
       if (localStorage.getItem(STUDIE_STORE) !== vorher) f.push('Studienspeicher veraendert');
@@ -24403,7 +24412,7 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'online + lokal gemischt, nur-lokal-Marke, je Fahrgefuehl getrennt (Chips), alte als unbekannt' };
   });
 
-  stAdd('Online v1.3.15: Community-Strecken mit mehr als 3 Fahrern plus eigene, Abruf gecacht', async () => {
+  stAdd('Online v1.3.25: Community-Strecken alle (auch unter 4 Fahrern) plus eigene, Abruf gecacht', async () => {
     const f = [];
     const m = stSkMerken();
     try {
@@ -24432,8 +24441,8 @@
       if (urls.length !== 1) f.push('Abruf im Rennen');
       raceState = 'idle';
       const g = skCommunityGefiltert(skOnline.liste, skEigeneStrecken());
-      if (g.map((x) => (x.nurLokal ? 'lokal' : x.name)).join(',') !== 'Fuenf,Vier,Zwei,lokal') f.push('Filter: ' + g.map((x) => (x.nurLokal ? 'lokal' : x.name)).join(','));
-      if (!g[2] || !g[2].eigene || !g[3] || !g[3].eigene || !g[3].nurLokal || g[0].eigene) f.push('eigene falsch markiert');
+      if (g.map((x) => (x.nurLokal ? 'lokal' : x.name)).join(',') !== 'Fuenf,Vier,Drei,Zwei,lokal') f.push('Filter: ' + g.map((x) => (x.nurLokal ? 'lokal' : x.name)).join(','));
+      if (!g[3] || !g[3].eigene || !g[4] || !g[4].eigene || !g[4].nurLokal || g[0].eigene || g[2].eigene) f.push('eigene falsch markiert');
       // Bestzeit je Fahrgefuehl: das aktuelle, sonst die schnellste mit ihrem Fahrgefuehl.
       const b1 = skListenBestzeit(antwort.strecken[2], 'propacejka'), b2 = skListenBestzeit(antwort.strecken[2], 'gran');
       if (!b1 || b1.ms !== 9500 || b1.fg !== 'propacejka') f.push('Bestzeit Pacejka ' + JSON.stringify(b1));
@@ -24441,7 +24450,7 @@
       skOnline.listeAt = Date.now();
       skListeZeichnen();
       const reihen = [...document.querySelectorAll('#sk-liste-bereich .community-zeile')];
-      if (reihen.length !== 4) f.push(reihen.length + ' Reihen statt 4');
+      if (reihen.length !== 5) f.push(reihen.length + ' Reihen statt 5');
       if (document.querySelectorAll('#sk-liste-bereich .sk-eigene').length !== 2) f.push('Marke eigene nicht zweimal');
       // Antippen: Strecke mit Karte und Liste, dann in den Editor laden.
       codes.forEach((c) => { skOnline.zeiten[c] = { zeiten: [], at: Date.now(), stand: Date.now() }; });

@@ -268,7 +268,7 @@ function communityGet() {
 const ST_BLATT = 'Strecken';
 const ST_KOPF = ['zeitpunkt', 'fahrer', 'strecke', 'zeit_ms', 'runden_ms', 'teile', 'version', 'geraet', 'auto', 'quote',
   'streckenname', 'fahrgefuehl', 'code'];
-const ST_MIN_FAHRER = 4;
+const ST_MIN_FAHRER = 1;   // v1.3.25: alle Strecken (vorher erst ab 4 Geraeten)
 // Dieselbe Liste wie SK_FAHRGEFUEHLE in src/72c-strecken-online.js (alle Presets plus eigen/unbekannt).
 const ST_FAHRGEFUEHLE = ['arcade', 'simplus', 'propacejka', 'gran', 'acc', 'pro', 'gt3', 'f1', 'realgt3', 'omega', 'rc', 'eigen', 'unbekannt'];
 // Laenge je Teil in m, wie trackLaengeM in der App (src/60-track.js, tileLength). Dieselben Werte

@@ -77,11 +77,15 @@
   // (mockup/manylaps_opus.html): neutrale Namen, Medaillen nur nach Dauer (bis 20 Min. 3,
   // bis 26 Min. 4, darueber 5), Voraussetzungen je Studie. Nichts davon startet etwas: jede
   // Karte traegt "Coming Soon", und die Einwilligung hier wird nicht gespeichert.
-  // Die bisherige Studie (NARQ, Reaktionstest, Fahrt) bleibt im Code und ist die erste Karte;
-  // erreichbar ist sie erst wieder, wenn die Karten freigeschaltet werden (LAB_OFFEN).
-  const LAB_OFFEN = false;
+  // Die bisherige Studie (NARQ, Reaktionstest, Fahrt) ist die erste Karte.
+  // v1.3.25 BESTELLT: "OmegaLab einbauen ohne echte Datensammlung und sagen, dass das aktuell nur
+  // zu Testzwecken ist und ein Forschungsportal mit echten Verhaltensdaten werden soll." Im
+  // TESTBETRIEB laesst sich die erste Studie durchlaufen (Karte "Ausprobieren"), aber
+  // studieAbschliessen sendet nichts und speichert nichts, und ausstehende Daten aus frueheren
+  // Fassungen werden nicht nachgesendet. Die uebrigen Karten bleiben "Coming Soon".
+  const LAB_TESTBETRIEB = true;
   const LAB_STUDIEN = [
-    { id: 'fahrstil', name: 'Persönlichkeit und Fahrstil', min: 12,
+    { id: 'fahrstil', name: 'Persönlichkeit und Fahrstil', min: 12, bereit: true,
       text: 'Sechs Aussagen zur Persönlichkeit, ein Reaktionstest mit dem Controller und fünf Runden auf Homington.',
       req: ['Controller', 'Auto oder virtuell'] },
     { id: 'serie', name: 'Ridge Run', min: 18,
@@ -99,6 +103,10 @@
   ];
   const labMedaillen = (min) => (min <= 20 ? 3 : min <= 26 ? 4 : 5);
   let labEinwilligung = false;   // nur fuer diese Ansicht, nie gespeichert
+  function labTestHinweis() {
+    return LAB_TESTBETRIEB ? '<div class="lab-bald"><b>' + stEsc(t('Testbetrieb')) + '</b> '
+      + stEsc(t('OmegaLab ist im Moment nur zu Testzwecken eingebaut. Es werden keine Daten gesendet oder gesammelt. Später soll daraus ein Forschungsportal mit echten Verhaltensdaten werden.')) + '</div>' : '';
+  }
   function labPortalHtml() {
     const summe = LAB_STUDIEN.reduce((a, x) => a + labMedaillen(x.min), 0);
     const karten = LAB_STUDIEN.map((x) => '<div class="lab-karte' + (labEinwilligung ? '' : ' gesperrt') + '" data-lab="' + x.id + '">'
@@ -108,9 +116,10 @@
       + '<p>' + stEsc(t(x.text)) + '</p>'
       + '<div class="lab-req"><span class="lab-chip" data-i18n-skip>~' + x.min + ' min</span>'
       + x.req.map((r) => '<span class="lab-chip">' + stEsc(t(r)) + '</span>').join('') + '</div>'
-      + '<button type="button" disabled>' + stEsc(t(labEinwilligung ? 'Coming Soon' : 'Erst einwilligen')) + '</button></div>').join('');
-    return '<div class="lab-bald"><b>' + stEsc(t('Coming Soon')) + '</b> '
-      + stEsc(t('Die Studien sind noch in Vorbereitung. Diese Seite zeigt, wie OmegaLab aussehen wird; es wird nichts gestartet und nichts gesendet.')) + '</div>'
+      + (labEinwilligung && x.bereit
+        ? '<button type="button" class="primary" data-lab-start="' + x.id + '">' + stEsc(t('Ausprobieren')) + '</button></div>'
+        : '<button type="button" disabled>' + stEsc(t(labEinwilligung ? 'Coming Soon' : 'Erst einwilligen')) + '</button></div>')).join('');
+    return labTestHinweis()
       + '<div class="studie-text">'
       + '<h3>' + stEsc(t('Was ist OmegaLab?')) + '</h3>'
       + '<p>' + stEsc(t('OmegaLab ist das Forschungslabor in OmegaSim. In kurzen, abgeschlossenen Studien fährst du Runden, spielst kleine Spiele oder beantwortest ein paar Fragen. Du wählst selbst, welche Studien du machst und in welcher Reihenfolge.')) + '</p>'
@@ -135,9 +144,9 @@
     if (!host) return;
     if (!st) st = studieNeu();
     // v1.3.25: vor der Studie das OmegaLab-Portal (Mockup, siehe LAB_STUDIEN).
-    if (!LAB_OFFEN && st.schritt === 'start' && !st.nochmal) { host.innerHTML = labPortalHtml(); return; }
+    if (st.schritt === 'start' && !st.nochmal && !st.ausPortal) { host.innerHTML = labPortalHtml(); return; }
     const d = studieLesen();
-    if (d.ausstehend && st.schritt === 'start') studieSenden(d.ausstehend, true);
+    if (!LAB_TESTBETRIEB && d.ausstehend && st.schritt === 'start') studieSenden(d.ausstehend, true);
     let h = '';
     if (st.schritt === 'start' && d.gesendet && !st.nochmal) {
       h += '<p>' + stEsc(t('Danke, du hast teilgenommen am')) + ' ' + stEsc(new Date(d.gesendet).toLocaleDateString()) + '.</p>'
@@ -221,7 +230,7 @@
         + (st.nurUeben ? '' : studieErgebnisHtml())
         + '<div class="studie-knoepfe"><button type="button" class="primary" data-st="fertig">' + stEsc(t('Fertig')) + '</button></div>';
     }
-    host.innerHTML = h;
+    host.innerHTML = labTestHinweis() + h;
     studieFormPruefen();
     if (st.schritt === 'rt') studieRtStarten();
   }
@@ -390,6 +399,12 @@
     studieZeichnen();
   }
   function studieAbschliessen() {
+    if (LAB_TESTBETRIEB) {
+      st.fehler = t('Testbetrieb: Es wurde nichts gesendet und nichts gespeichert.');
+      st.schritt = 'danke';
+      studieZeichnen();
+      return;
+    }
     const daten = studieDaten();
     const d = studieLesen();
     d.gesendet = new Date().toISOString();
@@ -471,6 +486,13 @@
   function studieKlick(ev) {
     if (ev.target && ev.target.id === 'lab-einwilligung') {
       labEinwilligung = !!ev.target.checked;
+      studieZeichnen();
+      return;
+    }
+    const lab = ev.target.closest('[data-lab-start]');
+    if (lab) {
+      if (!labEinwilligung) return;
+      st = Object.assign(studieNeu(), { ausPortal: true });
       studieZeichnen();
       return;
     }
