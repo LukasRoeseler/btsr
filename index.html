@@ -3343,6 +3343,12 @@
   .teile-zeile:nth-child(odd) { background: rgba(255,255,255,.03); }
   .teile-zeile .teile-name { color: var(--ink); flex: 1 1 auto; min-width: 0; }
   .teile-zeile .teile-ic { width: 22px; height: 22px; flex: 0 0 auto; color: var(--ink); opacity: .95; }
+  /* v1.3.5: echte Teilebilder (teilBildSvg) statt Strichsymbol - etwas groesser, damit Pfeile,
+     Kurvenrichtung und die Bucht der Boxengasse klein noch lesbar sind. */
+  .teile-zeile .teil-bild.teile-ic { width: 36px; height: 36px; opacity: 1; }
+  /* Heller Grund wie ein Fussboden: sonst verschwindet die schwarze Fahrbahn auf dem dunklen
+     Knopf, und man sieht nur noch zwei Randstreifen. */
+  .teile-zeile .teil-bild, .tp-btn .teil-bild { background: rgba(190,198,212,.38); border-radius: 4px; }
   .teile-zeile .teile-steuer { display: inline-flex; align-items: center; gap: 6px; }
   .teile-zeile .teile-zahl { font-weight: 800; color: var(--k-blau); min-width: 3ch; text-align: right;
     font-variant-numeric: tabular-nums; }
@@ -4012,6 +4018,7 @@
   .tp-btn { width: 54px; min-height: 60px; padding: 3px 0 2px 0; display: flex; flex-direction: column;
     align-items: center; justify-content: flex-start; border-radius: 8px; }
   .tp-btn svg { width: 26px; height: 26px; }
+  .tp-btn .teil-bild { width: 32px; height: 32px; max-width: none; flex: 0 0 auto; }
   .tp-btn.sel { border-color: var(--accent); border-width: 3px; background: var(--panel-3); }
   .tp-actions .tp-btn.sel { border-color: var(--info); }
   .tp-btn .tp-cap { font-size: 8.5px; letter-spacing: .04em; text-transform: uppercase;
@@ -4087,6 +4094,7 @@
      den Fall fuer das Rasterkind ab, nicht aber die Spurberechnung selbst.) */
   body.track-fs #track-fs-host { grid-template-rows: auto minmax(0, 1fr) auto; }
   body.track-fs .tp-btn { width: 46px; min-height: 52px; }
+  body.track-fs .tp-btn .teil-bild { width: 30px; height: 30px; }
   /* Space usage, subtle, in a corner as asked. */
   /* The gamepad moves the REAL focus rather than a painted marker of its own, so keyboard,
      controller and screen reader all agree on where you are. That only works if focus is
@@ -30193,18 +30201,12 @@
   // Animiert wird nur transform und opacity: das laeuft im Compositor weiter, auch wenn der
   // Hauptfaden kurz rechnet. Zwei Ebenen, beide drehen sich in 500 ms einmal; die eine ist in
   // der ersten, die andere in der zweiten Haelfte eines 1-s-Takts sichtbar.
-  let ladeTeileCache = null;
+  // v1.3.5: aus teilBildSvg() (60-track.js) - dasselbe gemerkte Bild wie in der Teileleiste
+  // des Editors, immer nach oben gerichtet. Scheitert es (zu frueh beim Laden), wird nichts
+  // gemerkt und beim naechsten Mal neu versucht; vorher blieb dann dauerhaft ein leeres Bild.
   function ladeTeileSvg() {
-    if (ladeTeileCache) return ladeTeileCache;
-    const gerade = (() => {
-      try {
-        // Enger Rand und ohne die Kartenklasse (die bringt Grund und Rahmen mit): nur das Teil.
-        return renderTrackPreview([{ type: TILE_TYPE.STRAIGHT }], null,
-          { detailed: true, echt: true, ohneLinie: true, ohneLinieRechnen: true, rand: 3 }).html
-          .replace('class="tp-karte"', 'class="lade-teil"');
-      } catch (e) { return ''; }
-    })();
-    ladeTeileCache = [gerade];
+    let gerade = '';
+    try { gerade = teilBildSvg(TILE_TYPE.STRAIGHT, 'lade-teil'); } catch (e) { gerade = ''; }
     return [gerade];
   }
   function ladeAnimationHtml(text) {
@@ -33096,6 +33098,98 @@
   const ECHT_STREIFEN = TRACK_KERB_W;
   const ECHT_PFEIL_H = 0.75, ECHT_PFEIL_L = 2.3, ECHT_TAKT = 3.1;   // je Streifenhoehe
   const ECHT_BLAU = '#2f9fe6', ECHT_ROT = '#ff4d22', ECHT_WEISS = '#f3f5f8';
+  // ---- DIE BOXENGASSE WIE DAS ORIGINALTEIL (v1.3.5) -----------------------------------
+  // BESTELLT: "Neues Symbol fuer die Boxengasse; Vorlage liegt im photos-Ordner mit dem Namen
+  // boxengasse". Die Vorlage zeigt zwei gerade Teile hintereinander: links der blaue Streifen
+  // durchgehend, rechts weitet sich die rote Kante nach aussen zu einer Bucht und schliesst
+  // wieder. In der Bucht eine Reihe Punkte und quer liegende Striche, die zur Teilfuge in der
+  // Mitte hin kuerzer werden. Masse aus dem Bild, je halber Bahnbreite bzw. Teillaenge:
+  // Bucht ~0,95 tief, oeffnet und schliesst ueber je ~19 % der Laenge (weiches S).
+  const BOX_BUCHT = 0.95, BOX_RAMPE = 0.19;
+  function boxBucht(u) {
+    if (!(u > 0 && u < 1)) return 0;
+    const w = (x) => x * x * (3 - 2 * x);
+    if (u < BOX_RAMPE) return w(u / BOX_RAMPE);
+    if (u > 1 - BOX_RAMPE) return w((1 - u) / BOX_RAMPE);
+    return 1;
+  }
+  // Je Boxenkachel ihr Anfangspunkt s (der letzte Punkt der Kachel davor) und ihr letzter
+  // Punkt b; null, wenn die Strecke keine Box hat.
+  function boxKacheln(pts, tiles) {
+    if (!tiles || !tiles.some((x) => x.type === TILE_TYPE.PIT)) return null;
+    const r = {};
+    for (let i = 1; i < pts.length; i++) {
+      const k = pts[i].tile;
+      if (k < 0 || !tiles[k] || tiles[k].type !== TILE_TYPE.PIT) continue;
+      if (!r[k]) r[k] = { s: i - 1, b: i };
+      else r[k].b = i;
+    }
+    return r;
+  }
+  // Eine Kante im Abstand `abstand` (mit Vorzeichen, wie offsetPath), die ueber den
+  // Boxenkacheln um `tiefe` * boxBucht() nach aussen geht. Dichter abgetastet (FEIN je
+  // Abschnitt), weil eine Boxenkachel nur 14 Punkte auf 86 cm hat - die Rampe laege sonst auf
+  // drei Punkten. map[i] ist die Stelle von Originalpunkt i in der dichten Linie.
+  function boxKante(pts, nrm, box, abstand, tiefe) {
+    const FEIN = 6, linie = [], map = [];
+    const u = (i, k) => (i - box[k].s) / Math.max(1, box[k].b - box[k].s);
+    for (let i = 0; i < pts.length; i++) {
+      const k = pts[i].tile;
+      if (i > 0 && box[k]) {
+        for (let f = 1; f < FEIN; f++) {
+          const q = f / FEIN, a = pts[i - 1], z = pts[i];
+          let nx = nrm[i - 1].x + (nrm[i].x - nrm[i - 1].x) * q, ny = nrm[i - 1].y + (nrm[i].y - nrm[i - 1].y) * q;
+          const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
+          const d = abstand + tiefe * boxBucht(u(i - 1, k) + q / Math.max(1, box[k].b - box[k].s));
+          linie.push([a.x + (z.x - a.x) * q + nx * d, a.y + (z.y - a.y) * q + ny * d]);
+        }
+      }
+      map.push(linie.length);
+      const d = abstand + (box[k] ? tiefe * boxBucht(u(i, k)) : 0);
+      linie.push([pts[i].x + nrm[i].x * d, pts[i].y + nrm[i].y * d]);
+    }
+    return { linie, map };
+  }
+  // Bucht, Teilfuge und Boxenmarkierungen jeder Boxenkachel (nur im echten Stil). SIDE -1 =
+  // Fahrerrechts, die rote Seite - wie auf dem Originalteil.
+  function boxBuchtSvg(pts, nrm, box, half, P2) {
+    const SIDE = -1;
+    const kante = boxKante(pts, nrm, box, half * SIDE, BOX_BUCHT * half * SIDE);
+    let out = '';
+    for (const k of Object.keys(box)) {
+      const { s, b } = box[k];
+      const aussen = kante.linie.slice(kante.map[s], kante.map[b] + 1);
+      const innen = [];
+      for (let i = b; i >= s; i--) {
+        innen.push([pts[i].x + nrm[i].x * (half - 0.6) * SIDE, pts[i].y + nrm[i].y * (half - 0.6) * SIDE]);
+      }
+      out += `<path class="box-bucht" d="M ${aussen.concat(innen).map(P2).join(' L ')} Z" fill="#0d0f13" stroke="none"/>`;
+      // Punkt bei Anteil uu der Kachel, v halbe Bahnbreiten nach rechts.
+      const A = pts[s], Z = pts[b], n = nrm[Math.min(b, s + 1)];
+      const P = (uu, v) => [A.x + (Z.x - A.x) * uu + n.x * v * half * SIDE,
+                            A.y + (Z.y - A.y) * uu + n.y * v * half * SIDE];
+      // Die Fuge zwischen den beiden Originalteilen, quer ueber Bahn und Bucht.
+      out += `<path d="M ${P2(P(0.5, -1))} L ${P2(P(0.5, 1 + BOX_BUCHT))}" stroke="#3a404b" stroke-width="0.6"/>`;
+      let striche = '', punkte = '';
+      const pr = 0.3;
+      for (const spiegel of [false, true]) {
+        for (let j = 0; j < 10; j++) {
+          const uu0 = 0.257 + j * 0.215 / 9, uu = spiegel ? 1 - uu0 : uu0;
+          const hl = 0.33 - j * (0.33 - 0.155) / 9;          // lang aussen, kurz an der Fuge
+          striche += ` M ${P2(P(uu, 1.33 - hl))} L ${P2(P(uu, 1.33 + hl))}`;
+        }
+        for (let j = 0; j < 8; j++) {
+          const uu0 = 0.257 + j * 0.165 / 7, uu = spiegel ? 1 - uu0 : uu0;
+          const [x, y] = P2(P(uu, 0.88)).split(' ');
+          punkte += `<rect class="box-punkt" x="${(+x - pr).toFixed(1)}" y="${(+y - pr).toFixed(1)}" `
+                  + `width="${(pr * 2).toFixed(1)}" height="${(pr * 2).toFixed(1)}" fill="${ECHT_WEISS}"/>`;
+        }
+      }
+      out += `<path class="box-striche" d="${striche.trim()}" stroke="${ECHT_WEISS}" stroke-width="0.45" fill="none"/>`
+           + punkte;
+    }
+    return out;
+  }
   // ---- HAARNADEL-KERBS (v1.0.18, dritter Versuch) -------------------------------------------
   // BESTELLT: "Haarnadel-Kerbs passend zu photos/haarnadel.png" - und nach zwei Entwuerfen: "Die
   // Form der Pfeile passt nicht. Es sind keine Pfeile mehr sondern verzerrte Pfeile, der weisse
@@ -33278,9 +33372,14 @@
     // passen die Teile am Ende nicht perfekt zusammen", rund 3 cm Luecke im Randstreifen an der
     // letzten Fuge. Die Geometrie schliesst exakt (Haarnadel-Anfahrt 21,91 cm, TRACK_HAIRPIN_LEAD_CM).
     const anfang = (k) => (k === 0 ? 0 : kachelTab.start[k]);
+    // v1.3.5: rechts (rot) folgt der Streifen ueber der Boxengasse der Bucht (boxKante).
+    const box = boxKacheln(pts, tiles);
     let out = '';
     for (const [seite, farbe] of [[1, ECHT_BLAU], [-1, ECHT_ROT]]) {
-      const linie = offsetPath(pts, nrm, mitte * seite);
+      const kb = seite === -1 && box ? boxKante(pts, nrm, box, mitte * seite, BOX_BUCHT * half * seite) : null;
+      const linie = kb ? kb.linie : offsetPath(pts, nrm, mitte * seite);
+      // Originalpunkt -> Stelle in `linie` (mit Bucht dichter abgetastet, sonst gleich).
+      const M = kb ? (i) => kb.map[i] : (i) => i;
       if (!mitNadeln) {
         out += `<path d="M ${linie.map(P2).join(' L ')}" fill="none" stroke="${ECHT_WEISS}" `
              + `stroke-width="${bw.toFixed(2)}" stroke-linecap="butt" stroke-linejoin="round"/>`;
@@ -33293,7 +33392,7 @@
           if (!ende && lauf === null) lauf = i0;
           if (ende && lauf !== null) {
             const bis = k < nTeile ? kachelTab.start[k] : pts.length - 1;
-            if (bis > lauf) stuecke += ` M ${linie.slice(lauf, bis + 1).map(P2).join(' L ')}`;
+            if (bis > lauf) stuecke += ` M ${linie.slice(M(lauf), M(bis) + 1).map(P2).join(' L ')}`;
             lauf = null;
           }
         }
@@ -33307,7 +33406,7 @@
         const i1 = k + 1 < nTeile ? kachelTab.start[k + 1] : pts.length - 1;
         if (i0 === undefined || i1 === undefined || i1 <= i0) continue;
         // Bogenlaenge entlang DIESER Seite.
-        const seg = linie.slice(i0, i1 + 1), acc = [0];
+        const seg = linie.slice(M(i0), M(i1) + 1), acc = [0];
         for (let q = 1; q < seg.length; q++) {
           acc.push(acc[q - 1] + Math.hypot(seg[q][0] - seg[q - 1][0], seg[q][1] - seg[q - 1][1]));
         }
@@ -33334,8 +33433,8 @@
           if (r) {
             weissNadel += ' ' + r.weiss; d += r.farbe;
             // Gerade Stuecke des Teils: weisser Streifen und kleine Pfeile wie sonst.
-            if (r.von > 0) streifenGerade += ` M ${linie.slice(i0, i0 + r.von + 1).map(P2).join(' L ')}`;
-            if (r.bis < i1 - i0) streifenGerade += ` M ${linie.slice(i0 + r.bis, i1 + 1).map(P2).join(' L ')}`;
+            if (r.von > 0) streifenGerade += ` M ${linie.slice(M(i0), M(i0 + r.von) + 1).map(P2).join(' L ')}`;
+            if (r.bis < i1 - i0) streifenGerade += ` M ${linie.slice(M(i0 + r.bis), M(i1) + 1).map(P2).join(' L ')}`;
             nadelBogen = [acc[r.von], acc[r.bis]];
           }
         }
@@ -33398,8 +33497,11 @@
     // o.rand: eigener Rand in Kartenpunkten (Ladeanimation: das Teil soll den Platz fuellen).
     const pad = o.rand !== undefined ? o.rand : (o.detailed ? half + 14 : 30);
     const all = [...pts.map(p => [p.x, p.y])];
+    // v1.3.5: die Bucht der Boxengasse ragt nach rechts heraus - sie gehoert mit in den Rahmen.
+    const box = o.detailed && o.echt ? boxKacheln(pts, tiles) : null;
     if (o.detailed) {
       all.push(...offsetPath(pts, nrm, half + 6), ...offsetPath(pts, nrm, -(half + 6)));
+      if (box) all.push(...boxKante(pts, nrm, box, -half, -BOX_BUCHT * half).linie);
     }
     // Raum-Rechteck (o.raum, in Metern): die Zufallsstrecke muss in dieses Rechteck passen.
     // Es wird mittig auf den Umriss der Strecke gelegt und erweitert die Ansicht, damit es
@@ -33438,7 +33540,9 @@
       // 2) Pit bulge, on the driver's RIGHT — the blue side, as on the real track. It used
       //    to be drawn on the positive normal, which the sign check above shows is the LEFT.
       //    Hence the -1 factor: same shape, correct side.
-      tiles.forEach((t, idx) => {
+      // v1.3.5: im echten Stil wie das Originalteil (boxBuchtSvg), sonst die alte Beule.
+      if (box) body += boxBuchtSvg(pts, nrm, box, half, P2);
+      if (!o.echt) tiles.forEach((t, idx) => {
         if (t.type !== TILE_TYPE.PIT) return;
         const seg = pts.map((p, i) => ({ p, i })).filter(q => q.p.tile === idx);
         if (seg.length < 3) return;
@@ -34478,10 +34582,45 @@
     [TILE_TYPE.ENGE]: '<path d="M7 2 L7 8 L10 12 L10 22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
       + '<path d="M17 2 L17 8 L14 12 L14 22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
   };
+  // ---- ECHTE TEILEBILDER (v1.3.5) ------------------------------------------------------
+  // BESTELLT: "Streckenteile im Streckeneditor durch die echten Renders ersetzen bei den
+  // Teileauswahl-Buttons am unteren Bildschirmrand; die Teilebildchen auch im 'Meine Teile'-
+  // Menue anzeigen." Derselbe Zeichner wie Editor und Ladeanimation (renderTrackPreview, echt),
+  // je Sorte EINMAL gerechnet und als Text gemerkt - die Leiste wird bei jedem Druck aufs
+  // Steuerkreuz neu markiert, das darf keine Streckenberechnung ausloesen. Immer nach oben
+  // gerichtet (trackRotationDeg kurz 0), egal wie die Strecke im Editor gedreht ist. Das
+  // Strichsymbol (TILE_ICON / TRACK_PALETTE.icon) bleibt nur der Rueckfall, falls das Zeichnen
+  // scheitert.
+  const TEIL_BILD = {};
+  function teilBildSvg(typ, klasse) {
+    if (TEIL_BILD[typ] === undefined) {
+      const rot = trackRotationDeg;
+      let html = '';
+      try {
+        trackRotationDeg = 0;
+        html = renderTrackPreview([{ type: typ }], null,
+          { detailed: true, echt: true, ohneLinie: true, ohneLinieRechnen: true, rand: 3 }).html;
+      } catch (e) { html = ''; } finally { trackRotationDeg = rot; }
+      if (!/^<svg/.test(html)) return '';            // nicht merken: beim naechsten Mal neu versuchen
+      TEIL_BILD[typ] = html.replace('class="tp-karte"', 'class="teil-bild" aria-hidden="true" focusable="false"');
+    }
+    return klasse ? TEIL_BILD[typ].replace('class="teil-bild"', 'class="teil-bild ' + klasse + '"') : TEIL_BILD[typ];
+  }
   function teileZeichnen() {
     const host = $('teile-liste');
     if (!host) return;
     const b = teileBestand() || {};
+    // v1.3.5: stehen die Zeilen schon, nur die Zahlen setzen. Mit den Teilebildern waere ein
+    // Neuaufbau je Plus/Minus (beim Halten mehrmals je Sekunde) rund 100 kB SVG zum Parsen.
+    const da = host.querySelectorAll('.teile-zeile');
+    if (da.length === TEILE_SORTEN.length && [...da].every((z, i) => +z.dataset.teile === TEILE_SORTEN[i])) {
+      da.forEach((z, i) => {
+        const typ = TEILE_SORTEN[i], v = b[typ];
+        z.querySelector('.teile-zahl').textContent = v === undefined || v === null ? 0 : +v;
+        z.querySelector('.teile-name').textContent = t(TILE_LABEL[typ] || ('0x' + typ.toString(16)));
+      });
+      return;
+    }
     host.innerHTML = '';
     for (const typ of TEILE_SORTEN) {
       const z = document.createElement('div');
@@ -34494,8 +34633,8 @@
       const wert = b[typ] === undefined || b[typ] === null ? 0 : +b[typ];
       // Symbol links, Name in der Mitte, rechts Minus/Zahl/Plus - so aendert man den
       // Bestand mit der Maus oder dem Finger und nicht nur mit dem D-Pad.
-      z.innerHTML = '<svg class="teile-ic" viewBox="0 0 24 24" aria-hidden="true">'
-          + (TILE_ICON[typ] || '') + '</svg>'
+      z.innerHTML = (teilBildSvg(typ, 'teile-ic')
+          || '<svg class="teile-ic" viewBox="0 0 24 24" aria-hidden="true">' + (TILE_ICON[typ] || '') + '</svg>')
           + '<span class="teile-name"></span>'
           + '<span class="teile-steuer">'
           + '<button class="teile-minus" type="button" aria-label="' + name + ' weniger">&#8722;</button>'
@@ -34684,6 +34823,26 @@
   function renderTrackPalette() {
     const host = $('track-palette');
     if (!host) return;
+    const bilanz = teileBilanz(currentTrackTiles);
+    const restHtml = (p) => {
+      const bil = bilanz.find((x) => x.typ === p.type());
+      return bil && bil.hat !== null ? `<span class="tp-rest${bil.rest < 0 ? ' fehlt' : ''}">${bil.rest}</span>` : '';
+    };
+    // v1.3.5: die Knoepfe tragen die echten Teilebilder (teilBildSvg) und werden nur EINMAL
+    // gebaut. Danach setzt jeder Aufruf - bei jedem Druck aufs Steuerkreuz - nur Auswahl und
+    // Restzahl; die Bilder neu zu parsen waere je Druck rund 100 kB SVG.
+    const da = host.querySelectorAll('.tp-btn');
+    if (da.length === TRACK_PALETTE.length) {
+      da.forEach((b, i) => {
+        b.classList.toggle('sel', i === trackPaletteSel);
+        const neu = restHtml(TRACK_PALETTE[i]), alt = b.querySelector('.tp-rest');
+        if ((alt ? alt.outerHTML : '') !== neu) {
+          if (alt) alt.remove();
+          if (neu) b.insertAdjacentHTML('beforeend', neu);
+        }
+      });
+      return;
+    }
     host.innerHTML = '';
     // Gruppe je Teil: links drehend, gerade (auch Enge und Box), rechts drehend. Wechselt sie,
     // steht ein feiner Strich davor (BESTELLT: "Trenne die Streckenteile im Editor jeweils
@@ -34691,15 +34850,12 @@
     const gruppe = (p) => Math.sign(tileTurnDeg(p.type()));
     TRACK_PALETTE.forEach((p, i) => {
       const b = document.createElement('button');
-      b.className = 'tp-btn' + (i === trackPaletteSel ? ' sel' : '')
+      b.className = 'tp-btn tp-teil' + (i === trackPaletteSel ? ' sel' : '')
         + (i > 0 && gruppe(p) !== gruppe(TRACK_PALETTE[i - 1]) ? ' tp-trenn' : '');
       b.title = p.cap;
       b.setAttribute('aria-label', p.cap);
-      const bil = teileBilanz(currentTrackTiles).find((x) => x.typ === p.type());
-      const rest = bil && bil.hat !== null
-        ? `<span class="tp-rest${bil.rest < 0 ? ' fehlt' : ''}">${bil.rest}</span>` : '';
-      b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${p.icon}</svg>`
-                  + `<span class="tp-cap">${p.cap}</span>` + rest;
+      b.innerHTML = (teilBildSvg(p.type()) || `<svg viewBox="0 0 24 24" aria-hidden="true">${p.icon}</svg>`)
+                  + `<span class="tp-cap">${p.cap}</span>` + restHtml(p);
       b.onclick = () => { trackPaletteSel = i; renderTrackPalette(); addTile(p.type()); };
       host.appendChild(b);
     });
@@ -92083,6 +92239,67 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                  + r.messungen.map((m) => m.hoehe + ': Karte ' + m.karteH
                      + ', Teile ' + m.paletteH + ', Luft ' + m.luft).join(' | ')
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- v1.3.5: Editor, Startschirm, Garage ----
+  // BESTELLT: echte Teilebilder in der Teileleiste und in "Meine Teile" (einmal gerechnet).
+  stAdd('Editor v1.3.5: echte Teilebilder in der Teileleiste und in Meine Teile', () => {
+    const f = [];
+    renderTrackPalette();
+    const knoepfe = [...document.querySelectorAll('#track-palette .tp-btn')];
+    if (knoepfe.length !== TRACK_PALETTE.length) f.push(knoepfe.length + ' Knoepfe statt ' + TRACK_PALETTE.length);
+    const echt = (svg) => !!svg && svg.getAttribute('viewBox') !== '0 0 24 24'
+      && !!svg.querySelector('path[fill="' + ECHT_BLAU + '"]') && !!svg.querySelector('path[fill="' + ECHT_ROT + '"]');
+    knoepfe.forEach((b, i) => { if (!echt(b.querySelector('svg.teil-bild'))) f.push('Leiste ' + TRACK_PALETTE[i].key + ' ohne echtes Bild'); });
+    // Einmal gebaut: ein weiterer Aufruf (jeder Steuerkreuz-Druck) tauscht die Bilder nicht aus.
+    const vorher = knoepfe[0] && knoepfe[0].querySelector('svg');
+    renderTrackPalette();
+    const nachher = document.querySelector('#track-palette .tp-btn svg');
+    if (vorher && nachher !== vorher) f.push('Leiste wird bei jedem Aufruf neu gebaut');
+    if (teilBildSvg(TILE_TYPE.STRAIGHT) !== teilBildSvg(TILE_TYPE.STRAIGHT)) f.push('Bild nicht gemerkt');
+    teileZeichnen();
+    const zeilen = [...document.querySelectorAll('#teile-liste .teile-zeile')];
+    if (zeilen.length !== TEILE_SORTEN.length) f.push(zeilen.length + ' Zeilen in Meine Teile');
+    zeilen.forEach((z) => { if (!echt(z.querySelector('svg.teil-bild'))) f.push('Meine Teile 0x' + (+z.dataset.teile).toString(16) + ' ohne echtes Bild'); });
+    // Nach oben gerichtet, egal wie die Strecke gedreht ist: die Gerade ist hoeher als breit.
+    const vb = (teilBildSvg(TILE_TYPE.STRAIGHT).match(/viewBox="0 0 (\d+) (\d+)"/) || []).slice(1).map(Number);
+    if (!(vb[1] > vb[0])) f.push('Gerade nicht nach oben gerichtet (' + vb.join('x') + ')');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : knoepfe.length + ' Knoepfe und ' + zeilen.length + ' Zeilen mit echtem Bild, gemerkt, Leiste nur einmal gebaut' };
+  });
+
+  // BESTELLT: Boxengasse wie photos/boxengasse.png - rote Kante weitet sich zur Bucht, darin
+  // Punkte und Querstriche, die zur Teilfuge hin kuerzer werden.
+  stAdd('Editor v1.3.5: Boxengasse mit Bucht und Boxenmarkierungen', () => {
+    const f = [];
+    const rot = trackRotationDeg;
+    let r = null, g = null;
+    try {
+      trackRotationDeg = 0;
+      const o = { detailed: true, echt: true, ohneLinie: true, ohneLinieRechnen: true, rand: 3 };
+      r = renderTrackPreview([{ type: TILE_TYPE.PIT }], null, o);
+      g = renderTrackPreview([{ type: TILE_TYPE.STRAIGHT }], null, o);
+    } finally { trackRotationDeg = rot; }
+    const d = new DOMParser().parseFromString(r.html, 'image/svg+xml');
+    if (!d.querySelector('path.box-bucht')) f.push('keine Bucht');
+    const punkte = d.querySelectorAll('rect.box-punkt').length;
+    if (punkte !== 16) f.push(punkte + ' Punkte statt 16');
+    const striche = ((d.querySelector('path.box-striche') || { getAttribute: () => '' }).getAttribute('d') || '')
+      .split('M').map((x) => x.trim()).filter(Boolean)
+      .map((x) => { const n = x.replace('L', ' ').split(/\s+/).map(Number); return Math.hypot(n[2] - n[0], n[3] - n[1]); });
+    if (striche.length !== 20) f.push(striche.length + ' Striche statt 20');
+    else if (!(striche[0] > striche[9] * 1.5 && striche[10] > striche[19] * 1.5)) f.push('Striche werden zur Fuge hin nicht kuerzer');
+    // Die rote Kante geht in der Bucht nach aussen (rechts = +x bei Fahrt nach oben).
+    const mitte = r.geo.pts[0].x + r.geo.ox, half = r.geo.half;
+    const rotX = [...d.querySelectorAll('path[fill="' + ECHT_ROT + '"]')]
+      .flatMap((p) => (p.getAttribute('d') || '').match(/-?\d+(\.\d+)?/g) || []).map(Number).filter((v, i) => i % 2 === 0);
+    const weit = Math.max(...rotX) - mitte;
+    if (!(weit > half * 1.6)) f.push('rote Kante nur ' + (weit / half).toFixed(2) + ' halbe Bahnbreiten aussen');
+    const blauX = [...d.querySelectorAll('path[fill="' + ECHT_BLAU + '"]')]
+      .flatMap((p) => (p.getAttribute('d') || '').match(/-?\d+(\.\d+)?/g) || []).map(Number).filter((v, i) => i % 2 === 0);
+    if (!(mitte - Math.min(...blauX) < half * 1.05)) f.push('blaue Seite weicht aus');
+    const w = (h) => +(/viewBox="0 0 (\d+)/.exec(h) || [0, 0])[1];
+    if (!(w(r.html) - mitte >= half * (1 + BOX_BUCHT)) || !(w(r.html) > w(g.html))) f.push('Bucht passt nicht in den Rahmen');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bucht ' + (weit / half).toFixed(2) + ' halbe Breiten, ' + punkte + ' Punkte, ' + striche.length + ' Striche (lang ' + striche[0].toFixed(1) + ' / kurz ' + striche[9].toFixed(1) + ')' };
   });
 
   // ---- Die Wetterkachel schaltet durch drei Lagen ----

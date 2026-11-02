@@ -13356,6 +13356,67 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- v1.3.5: Editor, Startschirm, Garage ----
+  // BESTELLT: echte Teilebilder in der Teileleiste und in "Meine Teile" (einmal gerechnet).
+  stAdd('Editor v1.3.5: echte Teilebilder in der Teileleiste und in Meine Teile', () => {
+    const f = [];
+    renderTrackPalette();
+    const knoepfe = [...document.querySelectorAll('#track-palette .tp-btn')];
+    if (knoepfe.length !== TRACK_PALETTE.length) f.push(knoepfe.length + ' Knoepfe statt ' + TRACK_PALETTE.length);
+    const echt = (svg) => !!svg && svg.getAttribute('viewBox') !== '0 0 24 24'
+      && !!svg.querySelector('path[fill="' + ECHT_BLAU + '"]') && !!svg.querySelector('path[fill="' + ECHT_ROT + '"]');
+    knoepfe.forEach((b, i) => { if (!echt(b.querySelector('svg.teil-bild'))) f.push('Leiste ' + TRACK_PALETTE[i].key + ' ohne echtes Bild'); });
+    // Einmal gebaut: ein weiterer Aufruf (jeder Steuerkreuz-Druck) tauscht die Bilder nicht aus.
+    const vorher = knoepfe[0] && knoepfe[0].querySelector('svg');
+    renderTrackPalette();
+    const nachher = document.querySelector('#track-palette .tp-btn svg');
+    if (vorher && nachher !== vorher) f.push('Leiste wird bei jedem Aufruf neu gebaut');
+    if (teilBildSvg(TILE_TYPE.STRAIGHT) !== teilBildSvg(TILE_TYPE.STRAIGHT)) f.push('Bild nicht gemerkt');
+    teileZeichnen();
+    const zeilen = [...document.querySelectorAll('#teile-liste .teile-zeile')];
+    if (zeilen.length !== TEILE_SORTEN.length) f.push(zeilen.length + ' Zeilen in Meine Teile');
+    zeilen.forEach((z) => { if (!echt(z.querySelector('svg.teil-bild'))) f.push('Meine Teile 0x' + (+z.dataset.teile).toString(16) + ' ohne echtes Bild'); });
+    // Nach oben gerichtet, egal wie die Strecke gedreht ist: die Gerade ist hoeher als breit.
+    const vb = (teilBildSvg(TILE_TYPE.STRAIGHT).match(/viewBox="0 0 (\d+) (\d+)"/) || []).slice(1).map(Number);
+    if (!(vb[1] > vb[0])) f.push('Gerade nicht nach oben gerichtet (' + vb.join('x') + ')');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : knoepfe.length + ' Knoepfe und ' + zeilen.length + ' Zeilen mit echtem Bild, gemerkt, Leiste nur einmal gebaut' };
+  });
+
+  // BESTELLT: Boxengasse wie photos/boxengasse.png - rote Kante weitet sich zur Bucht, darin
+  // Punkte und Querstriche, die zur Teilfuge hin kuerzer werden.
+  stAdd('Editor v1.3.5: Boxengasse mit Bucht und Boxenmarkierungen', () => {
+    const f = [];
+    const rot = trackRotationDeg;
+    let r = null, g = null;
+    try {
+      trackRotationDeg = 0;
+      const o = { detailed: true, echt: true, ohneLinie: true, ohneLinieRechnen: true, rand: 3 };
+      r = renderTrackPreview([{ type: TILE_TYPE.PIT }], null, o);
+      g = renderTrackPreview([{ type: TILE_TYPE.STRAIGHT }], null, o);
+    } finally { trackRotationDeg = rot; }
+    const d = new DOMParser().parseFromString(r.html, 'image/svg+xml');
+    if (!d.querySelector('path.box-bucht')) f.push('keine Bucht');
+    const punkte = d.querySelectorAll('rect.box-punkt').length;
+    if (punkte !== 16) f.push(punkte + ' Punkte statt 16');
+    const striche = ((d.querySelector('path.box-striche') || { getAttribute: () => '' }).getAttribute('d') || '')
+      .split('M').map((x) => x.trim()).filter(Boolean)
+      .map((x) => { const n = x.replace('L', ' ').split(/\s+/).map(Number); return Math.hypot(n[2] - n[0], n[3] - n[1]); });
+    if (striche.length !== 20) f.push(striche.length + ' Striche statt 20');
+    else if (!(striche[0] > striche[9] * 1.5 && striche[10] > striche[19] * 1.5)) f.push('Striche werden zur Fuge hin nicht kuerzer');
+    // Die rote Kante geht in der Bucht nach aussen (rechts = +x bei Fahrt nach oben).
+    const mitte = r.geo.pts[0].x + r.geo.ox, half = r.geo.half;
+    const rotX = [...d.querySelectorAll('path[fill="' + ECHT_ROT + '"]')]
+      .flatMap((p) => (p.getAttribute('d') || '').match(/-?\d+(\.\d+)?/g) || []).map(Number).filter((v, i) => i % 2 === 0);
+    const weit = Math.max(...rotX) - mitte;
+    if (!(weit > half * 1.6)) f.push('rote Kante nur ' + (weit / half).toFixed(2) + ' halbe Bahnbreiten aussen');
+    const blauX = [...d.querySelectorAll('path[fill="' + ECHT_BLAU + '"]')]
+      .flatMap((p) => (p.getAttribute('d') || '').match(/-?\d+(\.\d+)?/g) || []).map(Number).filter((v, i) => i % 2 === 0);
+    if (!(mitte - Math.min(...blauX) < half * 1.05)) f.push('blaue Seite weicht aus');
+    const w = (h) => +(/viewBox="0 0 (\d+)/.exec(h) || [0, 0])[1];
+    if (!(w(r.html) - mitte >= half * (1 + BOX_BUCHT)) || !(w(r.html) > w(g.html))) f.push('Bucht passt nicht in den Rahmen');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bucht ' + (weit / half).toFixed(2) + ' halbe Breiten, ' + punkte + ' Punkte, ' + striche.length + ' Striche (lang ' + striche[0].toFixed(1) + ' / kurz ' + striche[9].toFixed(1) + ')' };
+  });
+
   // ---- Die Wetterkachel schaltet durch drei Lagen ----
   //
   // BESTELLT: "Lass mich mit der Regenumschalttaste im Cockpitview bzw. durch

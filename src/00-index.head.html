@@ -3343,6 +3343,12 @@
   .teile-zeile:nth-child(odd) { background: rgba(255,255,255,.03); }
   .teile-zeile .teile-name { color: var(--ink); flex: 1 1 auto; min-width: 0; }
   .teile-zeile .teile-ic { width: 22px; height: 22px; flex: 0 0 auto; color: var(--ink); opacity: .95; }
+  /* v1.3.5: echte Teilebilder (teilBildSvg) statt Strichsymbol - etwas groesser, damit Pfeile,
+     Kurvenrichtung und die Bucht der Boxengasse klein noch lesbar sind. */
+  .teile-zeile .teil-bild.teile-ic { width: 36px; height: 36px; opacity: 1; }
+  /* Heller Grund wie ein Fussboden: sonst verschwindet die schwarze Fahrbahn auf dem dunklen
+     Knopf, und man sieht nur noch zwei Randstreifen. */
+  .teile-zeile .teil-bild, .tp-btn .teil-bild { background: rgba(190,198,212,.38); border-radius: 4px; }
   .teile-zeile .teile-steuer { display: inline-flex; align-items: center; gap: 6px; }
   .teile-zeile .teile-zahl { font-weight: 800; color: var(--k-blau); min-width: 3ch; text-align: right;
     font-variant-numeric: tabular-nums; }
@@ -4012,6 +4018,7 @@
   .tp-btn { width: 54px; min-height: 60px; padding: 3px 0 2px 0; display: flex; flex-direction: column;
     align-items: center; justify-content: flex-start; border-radius: 8px; }
   .tp-btn svg { width: 26px; height: 26px; }
+  .tp-btn .teil-bild { width: 32px; height: 32px; max-width: none; flex: 0 0 auto; }
   .tp-btn.sel { border-color: var(--accent); border-width: 3px; background: var(--panel-3); }
   .tp-actions .tp-btn.sel { border-color: var(--info); }
   .tp-btn .tp-cap { font-size: 8.5px; letter-spacing: .04em; text-transform: uppercase;
@@ -4087,6 +4094,7 @@
      den Fall fuer das Rasterkind ab, nicht aber die Spurberechnung selbst.) */
   body.track-fs #track-fs-host { grid-template-rows: auto minmax(0, 1fr) auto; }
   body.track-fs .tp-btn { width: 46px; min-height: 52px; }
+  body.track-fs .tp-btn .teil-bild { width: 30px; height: 30px; }
   /* Space usage, subtle, in a corner as asked. */
   /* The gamepad moves the REAL focus rather than a painted marker of its own, so keyboard,
      controller and screen reader all agree on where you are. That only works if focus is

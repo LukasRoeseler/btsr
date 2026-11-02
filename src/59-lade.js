@@ -13,18 +13,12 @@
   // Animiert wird nur transform und opacity: das laeuft im Compositor weiter, auch wenn der
   // Hauptfaden kurz rechnet. Zwei Ebenen, beide drehen sich in 500 ms einmal; die eine ist in
   // der ersten, die andere in der zweiten Haelfte eines 1-s-Takts sichtbar.
-  let ladeTeileCache = null;
+  // v1.3.5: aus teilBildSvg() (60-track.js) - dasselbe gemerkte Bild wie in der Teileleiste
+  // des Editors, immer nach oben gerichtet. Scheitert es (zu frueh beim Laden), wird nichts
+  // gemerkt und beim naechsten Mal neu versucht; vorher blieb dann dauerhaft ein leeres Bild.
   function ladeTeileSvg() {
-    if (ladeTeileCache) return ladeTeileCache;
-    const gerade = (() => {
-      try {
-        // Enger Rand und ohne die Kartenklasse (die bringt Grund und Rahmen mit): nur das Teil.
-        return renderTrackPreview([{ type: TILE_TYPE.STRAIGHT }], null,
-          { detailed: true, echt: true, ohneLinie: true, ohneLinieRechnen: true, rand: 3 }).html
-          .replace('class="tp-karte"', 'class="lade-teil"');
-      } catch (e) { return ''; }
-    })();
-    ladeTeileCache = [gerade];
+    let gerade = '';
+    try { gerade = teilBildSvg(TILE_TYPE.STRAIGHT, 'lade-teil'); } catch (e) { gerade = ''; }
     return [gerade];
   }
   function ladeAnimationHtml(text) {
