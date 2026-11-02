@@ -25,6 +25,7 @@
  *     "Verbindung testen". Fertig.
  *
  * Das Blatt "Zeiten" legt das Skript beim ersten Eintrag selbst an. Jede Zeile ist ein Lauf.
+ * Ebenso (v1.3.15) das Blatt "Strecken" fuer die Zeiten eigener Strecken.
  * Einträge löschen oder korrigieren geht direkt im Sheet.
  *
  * ÄNDERUNGEN AM SKRIPT: nach dem Speichern "Bereitstellen" > "Bereitstellungen verwalten" >
@@ -247,6 +248,128 @@ function communityGet() {
   });
   Object.keys(zeiten).forEach((id) => { zeiten[id] = zeiten[id].sort((a, b) => a.zeit_ms - b.zeit_ms).slice(0, 100); });
   return { ok: true, community: true, tracks: communityStrecken(), zeiten: zeiten };
+}
+
+// ---- STRECKEN (v1.3.15): Zeiten auf JEDER Strecke --------------------------------------------
+// BESTELLT: Bestzeit und beste 3 Runden fuer jede Strecke, die jemand im Editor hat; Senden nur,
+// wenn in der App unter Optionen > Online "Zeiten online synchronisieren" an ist. Ein Blatt
+// "Strecken", eine Zeile je Rennen (beste Runde plus alle Runden; ungueltige Runden stehen als 0
+// darin, damit die 3er-Serie nur aufeinanderfolgende gueltige Runden zaehlt).
+//   ?strecken=1        Strecken mit MEHR als 3 verschiedenen Fahrern (Geraeten), meiste zuerst
+//   ?strecke=<code>    die Zeiten einer Strecke, schnellste zuerst
+//   POST art 'strecke-zeit'   ein Rennen eintragen (Pruefungen in streckenPost)
+const ST_BLATT = 'Strecken';
+const ST_KOPF = ['zeitpunkt', 'fahrer', 'strecke', 'zeit_ms', 'runden_ms', 'teile', 'version', 'geraet', 'auto', 'quote', 'streckenname'];
+const ST_MIN_FAHRER = 4;
+// Laenge je Teil in m, wie trackLaengeM in der App (src/60-track.js, tileLength). Dieselben Werte
+// stehen im Selbsttest "Online v1.3.15: Apps-Script-Laengen" - beide muessen gleich sein.
+const ST_LAENGE_M = { S: 0.43, G: 0.43, E: 0.43, B: 0.86, R: 0.38746, L: 0.38746, K: 0.19373, M: 0.19373,
+                      W: 0.58643, Q: 0.58643, H: 0.80034, J: 0.80034 };
+// Rueckwaerts gefahren: links und rechts tauschen (wie chSpiegelTiles in der App).
+const ST_SPIEGEL = { R: 'L', L: 'R', H: 'J', J: 'H', W: 'Q', Q: 'W', K: 'M', M: 'K' };
+function stTeile(code) {
+  const m = String(code || '').toUpperCase().match(/^([SGRLBHJWQKME0-9]+)(?:@[0-9]{1,3})?$/);
+  if (!m) return null;
+  const teile = [];
+  const re = /([SGRLBHJWQKME])([0-9]*)/g;
+  let h;
+  while ((h = re.exec(m[1])) !== null) {
+    const n = h[2] ? parseInt(h[2], 10) : 1;
+    if (!(n >= 1 && n <= 99)) return null;
+    for (let k = 0; k < n; k++) teile.push(h[1]);
+  }
+  if (!teile.length || teile.length > 400) return null;
+  if (teile[0] !== 'S') teile.unshift('S');
+  return teile;
+}
+function stCode(teile) {
+  let out = '', i = 0;
+  while (i < teile.length) {
+    let n = 1;
+    while (i + n < teile.length && teile[i + n] === teile[i]) n++;
+    out += teile[i] + (n > 1 ? n : '');
+    i += n;
+  }
+  return out;
+}
+// Derselbe Schluessel wie bestzeitSchluessel in der App: ohne Drehung, von Code und rueckwaerts
+// gefahrener Schleife der kleinere.
+function stSchluessel(code) {
+  const a = stTeile(code);
+  if (!a) return '';
+  const b = [a[0]].concat(a.slice(1).reverse().map((x) => ST_SPIEGEL[x] || x));
+  const ca = stCode(a), cb = stCode(b);
+  return ca < cb ? ca : cb;
+}
+function stMinRundeMs(teile) {
+  const m = teile.reduce((s, x) => s + (ST_LAENGE_M[x] || 0), 0);
+  return Math.round(m / 2.5 * 1000 * 0.96);       // 2,5 m/s wie die App, 4 % Luft
+}
+function streckenPost(d) {
+  if (!d.geraet) return { ok: false, fehler: 'keine Geräte-Kennung' };
+  const teile = stTeile(d.strecke);
+  if (!teile || teile.length < 3) return { ok: false, fehler: 'Streckencode unplausibel' };
+  if (Number(d.teile) !== teile.length) return { ok: false, fehler: 'Teilezahl passt nicht zur Strecke' };
+  const min = stMinRundeMs(teile);
+  const r = Array.isArray(d.runden_ms) ? d.runden_ms.map(Number) : [];
+  if (!r.length || r.length > 200 || r.some((x) => !isFinite(x) || x < 0 || x > 600000)) return { ok: false, fehler: 'Rundenzeit unplausibel' };
+  const gueltig = r.filter((x) => x > 0);
+  if (!gueltig.length) return { ok: false, fehler: 'keine gültige Runde' };
+  if (gueltig.some((x) => x < min)) return { ok: false, fehler: 'Runde unter der Mindestzeit' };
+  const z = Number(d.zeit_ms);
+  if (!isFinite(z) || Math.abs(Math.min.apply(null, gueltig) - z) > 50) return { ok: false, fehler: 'beste Runde passt nicht zu den Runden' };
+  const quote = Number(d.quote);
+  if (!(quote >= 0.9 && quote <= 1)) return { ok: false, fehler: 'zu wenige Teile erkannt' };
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sh = blattMit(ST_BLATT, ST_KOPF);
+    sh.appendRow([new Date(), String(d.fahrer || '').slice(0, 16), stSchluessel(d.strecke), Math.round(z),
+      JSON.stringify(r.map(Math.round)), teile.length, String(d.version || '').slice(0, 20), String(d.geraet).slice(0, 40),
+      String(d.auto || '').slice(0, 40), Math.round(quote * 100) / 100, String(d.streckenname || '').slice(0, 32)]);
+  } finally { lock.releaseLock(); }
+  return { ok: true };
+}
+function streckenZeilen() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss ? ss.getSheetByName(ST_BLATT) : null;
+  if (!sh) return [];
+  const werte = sh.getDataRange().getValues();
+  const kopf = (werte[0] || []).map((x) => String(x));
+  return werte.slice(1).map((z) => {
+    const o = {};
+    kopf.forEach((k, i) => { o[k] = z[i]; });
+    let runden = [];
+    try { runden = JSON.parse(o.runden_ms || '[]'); } catch (e) { runden = []; }
+    return { zeitpunkt: o.zeitpunkt, fahrer: String(o.fahrer || ''), strecke: String(o.strecke || ''), zeit_ms: Number(o.zeit_ms) || 0,
+      runden_ms: Array.isArray(runden) ? runden.map(Number) : [], geraet: String(o.geraet || ''), auto: String(o.auto || ''),
+      streckenname: String(o.streckenname || '') };
+  }).filter((x) => x.strecke && x.zeit_ms > 0);
+}
+function streckenListe() {
+  const je = {};
+  streckenZeilen().forEach((z) => {
+    const s = je[z.strecke] || (je[z.strecke] = { strecke: z.strecke, geraete: {}, beste_ms: 0, beste_fahrer: '', laeufe: 0, name: '', nameAt: 0 });
+    s.geraete[z.geraet || ('?' + z.fahrer)] = true;
+    s.laeufe++;
+    if (!s.beste_ms || z.zeit_ms < s.beste_ms) { s.beste_ms = z.zeit_ms; s.beste_fahrer = z.fahrer; }
+    const at = new Date(z.zeitpunkt).getTime() || 0;
+    if (z.streckenname && at >= s.nameAt) { s.name = z.streckenname; s.nameAt = at; }
+  });
+  const strecken = Object.keys(je).map((k) => {
+    const s = je[k];
+    return { strecke: s.strecke, name: s.name, fahrer: Object.keys(s.geraete).length, beste_ms: s.beste_ms,
+             beste_fahrer: s.beste_fahrer, laeufe: s.laeufe };
+  }).filter((s) => s.fahrer >= ST_MIN_FAHRER)
+    .sort((a, b) => (b.fahrer - a.fahrer) || (a.beste_ms - b.beste_ms));
+  return { ok: true, strecken: strecken.slice(0, MAX_ZEILEN_ANTWORT) };
+}
+function streckeGet(code) {
+  const key = stSchluessel(code);
+  if (!key) return { ok: false, fehler: 'Streckencode unplausibel' };
+  const liste = streckenZeilen().filter((z) => z.strecke === key).sort((a, b) => a.zeit_ms - b.zeit_ms)
+    .map((z) => ({ zeitpunkt: z.zeitpunkt, zeit_ms: z.zeit_ms, runden_ms: z.runden_ms, fahrer: z.fahrer, geraet: z.geraet, auto: z.auto }));
+  return { ok: true, strecke: key, anzahl: liste.length, zeiten: liste.slice(0, MAX_ZEILEN_ANTWORT) };
 }
 
 // ---- SPUREN (v1.0.21): Telemetrie einer Runde, je Liste und Geraet die beste ----
@@ -478,6 +601,14 @@ function doPost(e) {
     cache.put(cs, '1', 60);
     return antwort(studiePost(d));
   }
+  // v1.3.15: Zeiten eigener Strecken (Blatt "Strecken"), hoechstens eine je Geraet alle 15 s.
+  if (d && d.art === 'strecke-zeit') {
+    const cache = CacheService.getScriptCache();
+    const cs = 'k_' + String(d.geraet).slice(0, 40);
+    if (cache.get(cs)) return antwort({ ok: false, fehler: 'zu schnell hintereinander' });
+    cache.put(cs, '1', 15);
+    return antwort(streckenPost(d));
+  }
   if (d && (d.art === 'community-strecke' || d.art === 'community-zeit')) {
     const cache = CacheService.getScriptCache();
     const cs = 'c_' + String(d.geraet).slice(0, 40);
@@ -578,6 +709,8 @@ function doGet(e) {
       kopf: kopf, zeilen: zeilen, challenges: challenges });
   }
   if (p.community) return antwort(communityGet());
+  if (p.strecken) return antwort(streckenListe());
+  if (p.strecke) return antwort(streckeGet(String(p.strecke)));
   // v1.1.3: Studie nur zusammengefasst oder anonymisiert (siehe studieZusammenfassung).
   if (p.studie === 'zusammenfassung') return antwort(studieZusammenfassung());
   if (p.studie === 'daten') return antwort(studieDatenOeffentlich());

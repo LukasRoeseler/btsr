@@ -11017,7 +11017,8 @@
     // Unterseiten, die aus ERZEUGTEN Listenzeilen aufgehen, haben keinen festen Oeffner im
     // Dokument. Sie gelten als erreichbar, wenn ihre Liste es ist. v0.9.49: eine
     // Community-Strecke oeffnet sich aus jeder Zeile der Community-Liste (communityZeichnen).
-    const AUS_LISTE = { 'ch-strecke': 'ch-community' };
+    // v1.3.15: eine Strecke der Community-Strecken (ch-sk) oeffnet sich aus deren Liste (skListeZeichnen).
+    const AUS_LISTE = { 'ch-strecke': 'ch-community', 'ch-sk': 'ch-strecken' };
     Object.keys(AUS_LISTE).forEach((x) => { if (oeffner.has(AUS_LISTE[x])) oeffner.add(x); });
     const ohne = subs.filter((x) => !oeffner.has(x));
     return { ok: !fehlt.length && !ohne.length,
@@ -23940,4 +23941,281 @@
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ')
       : 'Uhr steht 10 s, Ampel 5,6 s, verzug 0 bei Rennstart, MP-Gruen exakt, MP sperrt und beendet Pause, Intro ab, Bruecke frei beim Laden' + hinweis };
+  });
+
+  // ---- v1.3.15: Online-Streckenzeiten (72c-strecken-online.js) ----------------------------
+  // Alle Tests sichern die beruehrten Ablagen und Zustaende und stellen sie danach wieder her;
+  // fetch, konsoleFrage und chAusgangSenden sind Attrappen - kein Test geht ins Netz.
+  function stSkMerken() {
+    const keys = [SK_STORE, SK_OPT_STORE, SK_CACHE_STORE, CH_ONLINE_STORE, CH_AUSGANG, BESTZEIT_STORE, TRACK_STORE_KEY];
+    const ls = {};
+    keys.forEach((k) => { ls[k] = localStorage.getItem(k); });
+    const m = { ls, fetch: window.fetch, frage: konsoleFrage, senden: chAusgangSenden, rs: raceState,
+      tiles: currentTrackTiles, rot: trackRotationDeg, wert: kFrageWert, lauf: skLauf, gelesen: skGelesen,
+      detail: skDetail, on: { liste: skOnline.liste, listeAt: skOnline.listeAt, listeLaedt: skOnline.listeLaedt,
+        listeFehler: skOnline.listeFehler, zeiten: skOnline.zeiten },
+      tab: document.querySelector('.tabpage.active'), subOn: [...document.querySelectorAll('.subpage.on')],
+      home: [...document.querySelectorAll('.subpage-home')].map((h) => h.style.display),
+      name: $('track-name') ? $('track-name').value : '' };
+    skOnline.zeiten = {};
+    return m;
+  }
+  function stSkZurueck(m) {
+    window.fetch = m.fetch; konsoleFrage = m.frage; chAusgangSenden = m.senden; raceState = m.rs;
+    currentTrackTiles = m.tiles; trackRotationDeg = m.rot; kFrageWert = m.wert; skLauf = m.lauf; skGelesen = m.gelesen;
+    skDetail = m.detail;
+    Object.assign(skOnline, m.on);
+    Object.keys(m.ls).forEach((k) => { if (m.ls[k] === null) localStorage.removeItem(k); else localStorage.setItem(k, m.ls[k]); });
+    if ($('track-name')) $('track-name').value = m.name;
+    document.querySelectorAll('.tabpage').forEach((el) => el.classList.toggle('active', el === m.tab));
+    document.querySelectorAll('.subpage.on').forEach((p) => p.classList.remove('on'));
+    m.subOn.forEach((p) => p.classList.add('on'));
+    document.querySelectorAll('.subpage-home').forEach((h, i) => { h.style.display = m.home[i]; });
+    try { refreshTrackList(); refreshTrackPreview(); skOptZeichnen(); chAusgangZeichnen(); } catch (e) { /* egal */ }
+  }
+  // Eine Strecke mit Runden, wie sie die Schiene liefern wuerde.
+  function stSkStrecke() {
+    const def = CH_ALLE.find((d) => d.kat === 'C') || CH_ALLE[0];
+    const tiles = codeToTrack(def.code).tiles;
+    const minMs = chMinRundeMs({ code: trackToCode(tiles, 0), runden: 1 });
+    const gelesen = tiles.slice(1).map((x) => x.type);
+    return { tiles, minMs, gelesen, key: skSchluessel(tiles) };
+  }
+
+  stAdd('Online v1.3.15: Standard aus, Pop-up beim ersten Speichern genau einmal', () => {
+    const f = [];
+    const m = stSkMerken();
+    try {
+      localStorage.removeItem(SK_OPT_STORE);
+      skOptZeichnen();
+      if (skSyncAn()) f.push('Synchronisieren ist ohne Wahl an');
+      if ($('on-sync') && $('on-sync').checked) f.push('Schalter in den Optionen steht an');
+      const fragen = [];
+      konsoleFrage = (titel, text, knoepfe) => { fragen.push({ titel, text, knoepfe }); };
+      const s = stSkStrecke();
+      currentTrackTiles = s.tiles;
+      const store = loadTrackStore();
+      delete store['ST Probe 1']; delete store['ST Probe 2'];
+      saveTrackStore(store);
+      trackSpeichern('ST Probe 1');
+      trackSpeichern('ST Probe 2');
+      if (fragen.length !== 1) f.push('Frage ' + fragen.length + 'x statt genau einmal');
+      else {
+        const fr = fragen[0];
+        if (fr.text.indexOf(t('Zeiten zu dieser Strecke online speichern? Dann werden dein Name und die Strecke öffentlich gespeichert.')) < 0) {
+          f.push('Hinweis auf öffentlich fehlt: ' + fr.text);
+        }
+        if (skSyncAn()) f.push('schon vor der Antwort an');
+        // Nein: bleibt aus.
+        const nein = fr.knoepfe.find((k) => k[0] === t('Nein, nur lokal'));
+        if (!nein) f.push('kein Nein-Knopf'); else if (nein[1]) nein[1]();
+        if (skSyncAn()) f.push('Nein schaltet ein');
+        // Noch einmal von vorn (nicht gefragt): Ja schaltet ein und uebernimmt den Namen.
+        localStorage.removeItem(SK_OPT_STORE);
+        fragen.length = 0;
+        skErsteStreckeFrage();
+        const ja = fragen[0] && fragen[0].knoepfe.find((k) => k[0] === t('Ja, online speichern'));
+        if (!ja) f.push('kein Ja-Knopf');
+        else {
+          if ($('k-frage-eingabe-feld')) $('k-frage-eingabe-feld').value = '';
+          kFrageWert = 'STProbe';
+          ja[1]();
+          if (!skSyncAn()) f.push('Ja schaltet nicht ein');
+          if (chOnline().fahrer !== 'STProbe') f.push('Name nicht uebernommen: ' + chOnline().fahrer);
+          if ($('on-sync') && !$('on-sync').checked) f.push('Optionen-Schalter folgt nicht');
+        }
+        if (skErsteStreckeFrage()) f.push('fragt nach Ja noch einmal');
+      }
+      // Regeln: WIP, Erklaerung als small in .opt-label, Uebersetzung.
+      if (!document.querySelector('#sub-opt-online h2 .wip-tag')) f.push('WIP fehlt (Optionen)');
+      if (!document.querySelector('#sub-ch-strecken h2 .wip-tag')) f.push('WIP fehlt (Community-Strecken)');
+      if (!document.querySelector('#sub-opt-online .opt-label small')) f.push('Erklaerung nicht als small');
+      for (const k of ['Zeiten online synchronisieren', 'Community-Strecken', 'nur lokal', 'Beste 3 Runden',
+                       'Zeiten zu dieser Strecke online speichern? Dann werden dein Name und die Strecke öffentlich gespeichert.']) {
+        if (!I18N_EN[k] || !I18N_ES[k]) f.push('Uebersetzung fehlt: ' + k);
+      }
+    } finally {
+      stSkZurueck(m);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'aus ab Werk, eine Frage bei zwei Speicherungen, Nein aus, Ja an mit Name' };
+  });
+
+  stAdd('Online v1.3.15: Senden nur wenn an, Runden geprueft wie Challenges, nichts im Takt', () => {
+    const f = [];
+    const m = stSkMerken();
+    try {
+      const s = stSkStrecke();
+      let netz = 0, senden = 0, schreiben = 0;
+      window.fetch = () => { netz++; return new Promise(() => {}); };
+      chAusgangSenden = () => { senden++; };
+      localStorage.setItem(CH_AUSGANG, '[]');
+      localStorage.removeItem(SK_STORE);
+      localStorage.removeItem(SK_OPT_STORE);
+      // 1. Aufzeichnen im Rennen: nur Felder, kein Speicher, kein Netz.
+      raceState = 'racing';
+      currentTrackTiles = s.tiles;
+      skLauf = null; skGelesen = [];
+      const l1 = Math.round(s.minMs * 1.5), l2 = Math.round(s.minMs * 0.5), l3 = Math.round(s.minMs * 1.4), l4 = Math.round(s.minMs * 1.6);
+      const setItem = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (k, v) { schreiben++; return setItem.call(this, k, v); };
+      try {
+        s.gelesen.forEach((c) => skTeilGelesen(c)); skRunde(0, l1, false);
+        s.gelesen.forEach((c) => skTeilGelesen(c)); skRunde(1, l2, true);          // zu schnell
+        skRunde(2, l3, false);                                                     // keine Teile gelesen
+        s.gelesen.forEach((c) => skTeilGelesen(c)); skRunde(3, l4, false);
+      } finally { Storage.prototype.setItem = setItem; }
+      if (schreiben) f.push('im Rennen ' + schreiben + 'x gespeichert');
+      if (netz) f.push('im Rennen ' + netz + 'x Netz');
+      if (!skLauf || skLauf.runden.length !== 4) f.push('Runden nicht gemerkt');
+      const lauf = skLauf; skLauf = null;
+      raceState = 'idle';
+      // 2. Schalter aus: lokal gespeichert, nichts gesendet.
+      const r1 = skAuswerten(lauf);
+      if (!r1) f.push('keine Wertung');
+      else {
+        if (r1.gesendet) f.push('gesendet, obwohl aus');
+        if (JSON.stringify(r1.eintrag.runden) !== JSON.stringify([l1, 0, 0, l4])) f.push('Runden ' + JSON.stringify(r1.eintrag.runden));
+        if (r1.eintrag.zeit !== l1) f.push('Bestzeit ' + r1.eintrag.zeit + ' statt ' + l1);
+      }
+      if (chAusgangLesen().length || senden || netz) f.push('bei AUS in der Schlange/gesendet');
+      if ((skLokalAlle()[s.key] || []).length !== 1) f.push('nicht lokal gespeichert');
+      // 3. Schalter an: in die Warteschlange der Challenges, mit eigener Art.
+      skOptSetzen({ sync: true });
+      const r2 = skAuswerten(lauf);
+      const a = chAusgangLesen();
+      if (!r2 || !r2.gesendet) f.push('bei AN nicht gesendet');
+      if (a.length !== 1 || a[0].art !== 'strecke-zeit' || a[0].strecke !== s.key) f.push('Schlange: ' + JSON.stringify(a).slice(0, 120));
+      else {
+        if (a[0].teile !== codeToTrack(s.key).tiles.length) f.push('Teilezahl ' + a[0].teile);
+        if (!(a[0].quote >= 0.9)) f.push('Quote ' + a[0].quote);
+      }
+      if (senden !== 1) f.push('Schlange ' + senden + 'x angestossen');
+      // 4. Eine Runde ohne erkannte Teile allein zaehlt nirgends.
+      if (skAuswerten({ tiles: s.tiles, runden: [{ ms: l1, gelesen: [], ungueltig: false }] })) f.push('Runde ohne Teile gewertet');
+    } finally {
+      stSkZurueck(m);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'aus: nur lokal; an: Schlange (strecke-zeit); zu schnell und ohne Teile als 0; im Rennen 0 Speicher/Netz' };
+  });
+
+  stAdd('Online v1.3.15: lokale und Online-Zeiten in einer Liste, lokal markiert', () => {
+    const f = [];
+    const m = stSkMerken();
+    try {
+      const s = stSkStrecke();
+      const ich = chGeraet();
+      const z = (k) => Math.round(s.minMs * k);
+      localStorage.removeItem(BESTZEIT_STORE);
+      localStorage.setItem(SK_STORE, JSON.stringify({ [s.key]: [
+        { zeit: z(1.2), runden: [z(1.2), z(1.3), z(1.25)], datum: 1, fahrer: 'Ich', auto: 'R', geraet: ich, geteilt: false },
+        { zeit: z(1.8), runden: [z(1.8)], datum: 2, fahrer: 'Ich', auto: 'R', geraet: ich, geteilt: true }] }));
+      skOnline.zeiten[s.key] = { at: Date.now(), stand: Date.now(), zeiten: [
+        { zeit_ms: z(1.5), fahrer: 'A', geraet: 'stA', runden_ms: [z(1.5), z(1.6), z(1.7)] },
+        { zeit_ms: z(1.6), fahrer: 'B', geraet: 'stB', runden_ms: [z(1.6), z(1.6), z(1.6)] },
+        { zeit_ms: z(1.8), fahrer: 'Ich', geraet: ich, runden_ms: [z(1.8)] }] };
+      const host = document.createElement('div');
+      skZeichnen(host, s.key);
+      const tabs = host.querySelectorAll('table');
+      const zeilen = tabs[0] ? [...tabs[0].querySelectorAll('tr')] : [];
+      if (zeilen.length !== 3) f.push('Bestzeit ' + zeilen.length + ' statt 3 Zeilen');
+      else {
+        if (!zeilen[0].querySelector('.sk-lokal')) f.push('eigene lokale Bestzeit nicht markiert');
+        if (zeilen[0].className !== 'du') f.push('eigene Zeile nicht hervorgehoben');
+        if (zeilen[1].querySelector('.sk-lokal') || zeilen[2].querySelector('.sk-lokal')) f.push('Online-Zeit als lokal markiert');
+        if (zeilen[1].textContent.indexOf('A') < 0) f.push('Reihenfolge: ' + zeilen[1].textContent);
+      }
+      if (skAlleZeiten(s.key).eintraege.length !== 4) f.push('doppelte eigene Zeit nicht zusammengelegt: ' + skAlleZeiten(s.key).eintraege.length);
+      const drei = tabs[1] ? [...tabs[1].querySelectorAll('tr')] : [];
+      if (drei.length !== 3) f.push('3er ' + drei.length + ' statt 3 Zeilen');
+      // Ohne Online-Liste (nicht erreichbar) bleiben die eigenen Zeiten da, markiert.
+      delete skOnline.zeiten[s.key];
+      skZeichnen(host, s.key);
+      const z2 = [...host.querySelectorAll('table')[0].querySelectorAll('tr')];
+      if (z2.length !== 1 || !z2[0].querySelector('.sk-lokal')) f.push('ohne Online: ' + z2.length + ' Zeilen');
+      // Die alten Time-Attack-Bestzeiten (gleicher Schluessel) gehoeren dazu.
+      localStorage.removeItem(SK_STORE);
+      localStorage.setItem(BESTZEIT_STORE, JSON.stringify({ [s.key]: { code: s.key, fahrer: { x: { name: 'Auto', beste: z(1.4), medaille: 1, runden: 3 } } } }));
+      if (!skLokal(s.key).some((e) => e.zeit_ms === z(1.4))) f.push('Time-Attack-Bestzeit fehlt');
+    } finally {
+      stSkZurueck(m);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'online + lokal gemischt, eigene lokale Zeit vorn und nur-lokal-Marke, doppelte Zeit einmal' };
+  });
+
+  stAdd('Online v1.3.15: Community-Strecken nur mit mehr als 3 Fahrern, Abruf gecacht', async () => {
+    const f = [];
+    const m = stSkMerken();
+    try {
+      const codes = CH_ALLE.slice(0, 3).map((d) => skSchluessel(codeToTrack(d.code).tiles));
+      const antwort = { ok: true, strecken: [
+        { strecke: codes[0], name: 'Drei', fahrer: 3, beste_ms: 5000 },
+        { strecke: codes[1], name: 'Vier', fahrer: 4, beste_ms: 7000 },
+        { strecke: codes[2], name: 'Fuenf', fahrer: 5, beste_ms: 9000 },
+        { strecke: 'S??', name: 'Kaputt', fahrer: 9, beste_ms: 1 }] };
+      const urls = [];
+      window.fetch = (u) => { urls.push(String(u)); return Promise.resolve({ json: () => Promise.resolve(antwort) }); };
+      const o = chOnline(); o.url = 'https://example.invalid/exec'; chSchreiben(CH_ONLINE_STORE, o);
+      raceState = 'idle';
+      skOnline.liste = null; skOnline.listeAt = 0; skOnline.listeLaedt = false;
+      await skListeHolen(false);
+      if (urls.length !== 1 || urls[0].indexOf('strecken=1') < 0) f.push('Abruf: ' + JSON.stringify(urls));
+      await skListeHolen(false);
+      if (urls.length !== 1) f.push('zweiter Abruf trotz Zwischenspeicher');
+      raceState = 'racing'; skOnline.listeAt = 0;
+      await skListeHolen(true);
+      if (urls.length !== 1) f.push('Abruf im Rennen');
+      raceState = 'idle';
+      const g = skCommunityGefiltert(skOnline.liste);
+      if (g.map((x) => x.name).join(',') !== 'Fuenf,Vier') f.push('Filter: ' + g.map((x) => x.name).join(','));
+      skOnline.listeAt = Date.now();
+      skListeZeichnen();
+      const reihen = [...document.querySelectorAll('#sk-liste-bereich .community-zeile')];
+      if (reihen.length !== 2) f.push(reihen.length + ' Reihen statt 2');
+      // Antippen: Strecke mit Karte und Liste, dann in den Editor laden.
+      codes.forEach((c) => { skOnline.zeiten[c] = { zeiten: [], at: Date.now(), stand: Date.now() }; });
+      if (reihen[0]) reihen[0].querySelector('.community-oeffnen').click();
+      if (!$('sub-ch-sk').classList.contains('on')) f.push('Strecke geht nicht auf');
+      if ($('sk-titel').textContent !== 'Fuenf') f.push('Titel ' + $('sk-titel').textContent);
+      if (!$('sk-karte').querySelector('svg')) f.push('keine Karte');
+      if (!$('sk-detail-inhalt').querySelector('table')) f.push('keine Zeitenliste');
+      if (urls.length !== 1) f.push('Strecke trotz frischem Zwischenspeicher geholt');
+      konsoleZurueck();
+      if (!$('sub-ch-strecken').classList.contains('on')) f.push('Kreis fuehrt nicht in die Liste');
+      skDetail = antwort.strecken[2];
+      currentTrackTiles = [{ type: TILE_TYPE.START }];
+      if (!skInEditorLaden()) f.push('Laden abgelehnt');
+      if (skSchluessel(currentTrackTiles) !== codes[2]) f.push('falsche Strecke im Editor');
+      if (!$('sub-edit').classList.contains('on')) f.push('Editor nicht offen');
+    } finally {
+      stSkZurueck(m);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '2 von 4 (>3 Fahrer, Code lesbar), ein Abruf, keiner im Rennen, Strecke + Editor' };
+  });
+
+  stAdd('Online v1.3.15: Schluessel stabil (Drehung, Rueckwaerts) und gleich wie im Apps Script', () => {
+    const f = [];
+    // Erwartete Werte aus stSchluessel/stMinRundeMs des Apps Scripts (tools/challenges-apps-script.gs).
+    const soll = { 'SGR2GRGRLR3G@270': ['SGL3RLGLGL2G', 2016], 'SG4R3G4R3': ['SG4R3G4R3', 2379],
+                   'SG3HG3H': ['SG3HG3H', 1771], 'SGJG3J': ['SGJG3J', 1440] };
+    for (const code of Object.keys(soll)) {
+      const tiles = codeToTrack(code).tiles;
+      const k = skSchluessel(tiles);
+      if (k !== soll[code][0]) f.push(code + ' -> ' + k + ' statt ' + soll[code][0]);
+      if (skSchluessel(chSpiegelTiles(tiles)) !== k) f.push(code + ': rueckwaerts anderer Schluessel');
+      const p = codeToTrack(k + '@90');
+      if (!p || skSchluessel(p.tiles) !== k) f.push(code + ': mit Drehung anders');
+      // Mindestrunde der App (2,5 m/s) liegt hoechstens 5 % ueber der des Skripts, nie darunter.
+      const app = chMinRundeMs({ code: k, runden: 1 });
+      if (!(soll[code][1] <= app && soll[code][1] >= app * 0.95)) f.push(code + ': Mindestrunde App ' + app + ' / Skript ' + soll[code][1]);
+    }
+    // Laengen je Teil wie ST_LAENGE_M im Apps Script.
+    const ST = { S: 0.43, G: 0.43, E: 0.43, B: 0.86, R: 0.38746, L: 0.38746, K: 0.19373, M: 0.19373, W: 0.58643, Q: 0.58643, H: 0.80034, J: 0.80034 };
+    for (const b of Object.keys(ST)) {
+      const l = trackLaengeM([{ type: TRACK_CODE_TYPE[b] }]);
+      if (Math.abs(l - ST[b]) > 0.0005) f.push(b + ': App ' + l.toFixed(5) + ' m, Skript ' + ST[b]);
+    }
+    // Ein echtes Spiegelbild (nur links/rechts tauschen, gleiche Richtung) ist eine andere Bahn.
+    const a = skSchluessel(codeToTrack('SG2R3G2R2L').tiles), b2 = skSchluessel(codeToTrack('SG2L3G2L2R').tiles);
+    if (a === b2) f.push('Spiegelbild zusammengelegt');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '4 Codes wie im Skript, Drehung und Rueckwaerts gleich, Teillaengen gleich' };
   });

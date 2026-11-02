@@ -5770,6 +5770,9 @@
     saveTrackStore(store);
     refreshTrackList();
     log(`Strecke "${name}" gespeichert (${currentTrackTiles.length} Teile).`, 'info');
+    // v1.3.15 BESTELLT: beim ersten Speichern einer Strecke einmal fragen, ob ihre Zeiten online
+    // gespeichert werden sollen (72c-strecken-online.js, gemerkt, nur einmal).
+    if (typeof skErsteStreckeFrage === 'function') skErsteStreckeFrage();
   }
   $('track-save').onclick = () => {
     const name = $('track-name').value.trim();
