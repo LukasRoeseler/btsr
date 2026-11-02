@@ -2520,6 +2520,11 @@
   .k-w { color: #fff; font-weight: 800; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .k-punkt { display: inline-block; width: .7em; height: .7em; border-radius: 50%; margin-right: .4em; vertical-align: 0; }
   .k-knopfreihe { display: flex; gap: 6px; padding: 0 10px 12px; flex-wrap: wrap; }
+  /* v1.3.5: Mehrspieler-Stand in der Autos-Kachel ("Host: ..." / "Verbunden mit ..."). */
+  .k-mp-status { display: block; margin: -6px 10px 8px; font-size: 11.5px; letter-spacing: .03em; color: var(--k-blau, #00a3e0);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .k-mp-status[hidden] { display: none; }
+  #fa-mp .wip-tag { font-size: 8px; padding: 0 3px; margin-left: 4px; vertical-align: 1px; }
   .k-knopf { background: var(--k-grau); color: #fff; border: 2px solid transparent; border-radius: 0; padding: 7px 12px;
     font-family: var(--k-font); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
   .k-knopf:hover, .k-knopf.menu-nav-sel { border-color: #fff; background: var(--k-blau); color: var(--k-blau-text); outline: 0; }
@@ -4863,7 +4868,9 @@
        Entwickler/Selbsttest/Code-Sonde ueber Entwicklertools. -->
   <button class="tab-btn" data-tab="control" data-parent="options" hidden style="display:none">Renneinstellungen</button>
   <button class="tab-btn" data-tab="challenges">Challenges</button>
-  <button class="tab-btn" data-tab="mp">WLAN Mehrspieler</button>
+  <!-- v1.3.5 BESTELLT: "WLAN-Mehrspieler nicht als eigenen Tab, sondern als Button in der
+       FAHREN -> Garage-Kachel." Der Reiter bleibt als tabpage, erreichbar ueber #fa-mp. -->
+  <button class="tab-btn" data-tab="mp" data-parent="fahren" hidden style="display:none">WLAN Mehrspieler</button>
   <button class="tab-btn" data-tab="info" data-parent="options" hidden style="display:none">Info</button>
   <button class="tab-btn" data-tab="misc">Entwicklertools</button>
   <!-- Nicht in der Leiste, aber weiter als Tab-Knopf vorhanden: showTab() sucht genau
@@ -4993,7 +5000,10 @@
         <span class="k-knopfreihe">
           <button type="button" class="k-knopf" id="fa-verbinden">Verbinden</button>
           <button type="button" class="k-knopf" id="fa-garage">Garage</button>
+          <!-- v1.3.5: der WLAN-Mehrspieler als Knopf statt als Reiter, darunter der Stand. -->
+          <button type="button" class="k-knopf" id="fa-mp">Mehrspieler <span class="wip-tag">WIP</span></button>
         </span>
+        <span class="k-mp-status" id="fa-mp-status" data-i18n-skip hidden></span>
       </div>
       <div class="k-kachel " id="fa-strecke" role="button" tabindex="0" data-quad="bahn">
         <span class="k-kk">Strecke</span>
@@ -17656,6 +17666,9 @@
     "Mehr Brücken": "More bridges",
     "Zufall: {n} Brücken mit diesen Teilen nicht möglich": "Random: {n} bridges not possible with these parts",
     "Zufall: Boxengasse mit diesen Teilen nicht möglich": "Random: pit lane not possible with these parts",
+    "Host:": "Host:",
+    "Verbunden mit": "Connected to",
+    "Info-Screen:": "Info screen:",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -18884,6 +18897,9 @@
     "Mehr Brücken": "Más puentes",
     "Zufall: {n} Brücken mit diesen Teilen nicht möglich": "Aleatorio: {n} puentes no es posible con estas piezas",
     "Zufall: Boxengasse mit diesen Teilen nicht möglich": "Aleatorio: calle de boxes no es posible con estas piezas",
+    "Host:": "Host:",
+    "Verbunden mit": "Conectado a",
+    "Info-Screen:": "Pantalla de info:",
   };
 
   // ============================================================================
@@ -28765,7 +28781,9 @@
   // fuer Challenges."
   // BESTELLT (v0.8.35): "Reihenfolge der Tabs oben: FAHREN, MEHRSPIELER, CHALLENGES, OPTIONEN".
   // BESTELLT (v0.9.20): "Tausche die Tabs WLAN MEHRSPIELER und CHALLENGES (zuerst CHALLENGES)".
-  const K_EBENE1 = ['fahren', 'challenges', 'mp', 'options', 'misc'];
+  // v1.3.5 BESTELLT: "WLAN-Mehrspieler nicht als eigenen Tab, sondern als Button in der
+  // FAHREN -> Garage-Kachel" - mp ist jetzt eine tiefe Seite unter Fahren (#fa-mp).
+  const K_EBENE1 = ['fahren', 'challenges', 'options', 'misc'];
   const K_NAME = {
     home: 'Titel', fahren: 'Fahren', garage: 'Garage', race: 'Cockpit',
     options: 'Optionen', control: 'Renneinstellungen', track: 'Strecke', mp: 'WLAN Mehrspieler',
@@ -28776,7 +28794,7 @@
   // Zu welchem Reiter der Ebene 1 eine tiefe Seite gehoert: der Reiter bleibt hervorgehoben,
   // und Kreis fuehrt dorthin, wenn der Stapel leer ist.
   const K_ELTERN = {
-    garage: 'fahren', info: 'options', control: 'fahren', track: 'fahren',
+    garage: 'fahren', info: 'options', control: 'fahren', track: 'fahren', mp: 'fahren',
     doc: 'misc', school: 'misc', dev: 'misc', selftest: 'misc', probe: 'misc',
     numtrain: 'misc', record: 'misc',
   };
@@ -29125,6 +29143,25 @@
     kStapel = [];
     konsoleZeige('fahren');
     return true;
+  }
+
+  // ---- Mehrspieler-Stand in der Autos-Kachel (v1.3.5) --------------------------------
+  // "Dort dann anzeigen, wenn man hostet oder wo man beigetreten ist." Aus dem vorhandenen
+  // Zustand: mpAppHost (Host-Plugin der App, 97b-app.js), mp (Fahrer) und mpi (Info-Screen),
+  // beide 97-sessions.js. Nur Text setzen - gerufen beim Zeichnen der Kachel und wenn sich der
+  // Zustand aendert, nie im Takt.
+  function konsoleMpStatus() {
+    const el = $('fa-mp-status');
+    if (!el) return;
+    let text = '';
+    try {
+      const ohne = (h) => String(h || '').replace(/^https?:\/\//, '').replace(/\/+$/, '');
+      if (mpAppHost.laeuft) text = t('Host:') + ' ' + (ohne(mpAppHost.url) || t('keine WLAN-Adresse'));
+      else if (mp.an && mp.host) text = t('Verbunden mit') + ' ' + ohne(mp.host);
+      else if (mpi.an && mpi.host) text = t('Info-Screen:') + ' ' + ohne(mpi.host);
+    } catch (e) { text = ''; }
+    if (el.textContent !== text) el.textContent = text;
+    el.hidden = !text;
   }
 
   // ---- Fahren: Start und Auto --------------------------------------------------------
@@ -29496,6 +29533,7 @@
       }
       ab.dataset.bild = abNeu;
     }
+    konsoleMpStatus();
     kZeilen($('fa-auto-info'), autos.length
       ? autos.map((c) => [kPunkt(carColor(c).hex, garageLabel(c)), t(K_ROLLE[c.role] || c.role)])
       : [[t('Status'), t('nicht verbunden')]]);
@@ -29785,6 +29823,7 @@
     kn('fa-auto', (e) => { if (!e.target.closest('.k-knopf')) konsoleAuto(); });
     kn('fa-verbinden', () => { konsoleVerbinden(); });
     kn('fa-garage', () => konsoleZeige('garage'));
+    kn('fa-mp', () => konsoleZeige('mp'));
     kn('fa-start', () => { konsoleLosfahren(); });
     // v1.1.3 BESTELLT: "Tippe ich bei der Kachel STRECKE auf STRECKE oder AUF DER BAHN, soll
     // umgeschaltet werden; tippe ich auf das Bild, oeffnet sich das Menue dazu." Vorher schaltete nur
@@ -29915,7 +29954,8 @@
       text: 'Ein Druck startet die Ampel. Im Cockpit fordert Kreuz den Boxenstopp an, Options öffnet das Menü.' },
     { tab: 'fahren', ziel: null, bild: 'box', titel: 'Boxenstopp als Minigame',
       text: 'Beim Stopp erscheinen zehn Tasten. Triffst du Quadrat oder Kreis rechtzeitig, ist die Crew schneller fertig. Abschalten kannst du es unter Optionen, Allgemein, Tank & Schaden.' },
-    { tab: 'mp', ziel: ['#k-reiter button:nth-child(3)', '#sub-home-mp .misc-grid'], bild: 'mehrspieler', titel: 'WLAN Mehrspieler und Info-Screen',
+    // v1.3.5: kein eigener Reiter mehr - der Knopf in der Autos-Kachel.
+    { tab: 'fahren', ziel: ['#fa-mp'], bild: 'mehrspieler', titel: 'WLAN Mehrspieler und Info-Screen',
       text: 'Mehrere Telefone fahren in einer gemeinsamen Rangliste. Ein Tablet zeigt als Info-Screen Strecke und Zeiten.' },
     { tab: 'fahren', ziel: ['#fa-auto'], bild: 'fahren', titel: "Los geht's",
       text: 'Verbinde jetzt dein erstes Auto. Zum Tutorial kommst du jederzeit zurück: Klick auf das Omega oben links.' },
@@ -89777,7 +89817,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Kanten: Kacheln mit data-tab (goto-tab), Unterseiten-Kacheln (data-sub), die Reiter der
     // Ebene 1 (oben neben dem Logo, von jeder Seite aus) und die Kacheln des Fahren-Schirms
     // (JS-Knoepfe, hier von Hand genannt). Der Titel fuehrt nach Fahren.
-    const kanten = { home: ['fahren'], fahren: ['garage', 'control', 'track', 'race'] };
+    // v1.3.5: der Mehrspieler ist kein Reiter mehr, sondern der Knopf #fa-mp in der Autos-Kachel.
+    const kanten = { home: ['fahren'], fahren: ['garage', 'control', 'track', 'race', 'mp'] };
     K_EBENE1.forEach((x) => { kanten.fahren.push(x); });
     const tabs = [...document.querySelectorAll('.tabpage')].map((t) => t.id.replace(/^tab-/, ''));
     tabs.forEach((t) => {
@@ -92533,6 +92574,58 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!I18N_EN[k] || !I18N_ES[k]) f.push('Uebersetzung fehlt: ' + k);
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : mass.join(' | ') };
+  });
+
+  // BESTELLT: "WLAN-Mehrspieler nicht als eigenen Tab, sondern als Button in der FAHREN ->
+  // Garage-Kachel. Dort dann anzeigen, wenn man hostet oder wo man beigetreten ist."
+  stAdd('Garage v1.3.5: kein Mehrspieler-Reiter, Knopf und Stand in der Autos-Kachel', () => {
+    const f = [];
+    const merk = { tab: kAktiverTab(), stapel: kStapel.slice(), mpAn: mp.an, mpHost: mp.host,
+                   host: Object.assign({}, mpAppHost), mpiAn: mpi.an, mpiHost: mpi.host };
+    const st = $('fa-mp-status');
+    try {
+      kStapel = [];
+      showTab('fahren');
+      konsoleZeichnen();
+      if (K_EBENE1.indexOf('mp') >= 0) f.push('mp steht noch in Ebene 1');
+      const reiter = (konsoleReiterEbene1() || []).map((x) => x.text);
+      if (reiter.indexOf(t('WLAN Mehrspieler')) >= 0) f.push('Reiter WLAN Mehrspieler noch oben');
+      const tb = document.querySelector('.tab-btn[data-tab="mp"]');
+      if (tb && getComputedStyle(tb).display !== 'none') f.push('Tab-Knopf sichtbar');
+      const kn = $('fa-mp');
+      if (!kn || !$('fa-auto').contains(kn) || !kn.closest('.k-knopfreihe')) f.push('Knopf fehlt in der Autos-Kachel');
+      if (kn && !kn.querySelector('.wip-tag')) f.push('WIP fehlt am Knopf');
+      menuNavEnsureContext();
+      if (!menuNavRows().some((r) => r.el === kn)) f.push('Steuerkreuz erreicht den Knopf nicht');
+      if (kn) kn.click();
+      if (kAktiverTab() !== 'mp') f.push('Knopf fuehrt nach ' + kAktiverTab());
+      if (!(konsoleReiterEbene1() || []).some((x) => x.an && x.text === t('Fahren'))) f.push('im Mehrspieler ist oben nicht FAHREN hervorgehoben');
+      konsoleZurueck();
+      if (kAktiverTab() !== 'fahren') f.push('Kreis im Mehrspieler fuehrt nach ' + kAktiverTab());
+      // Stand: nichts, beigetreten, Host, Info-Screen.
+      mpAppHost.laeuft = false; mp.an = false; mpi.an = false;
+      konsoleMpStatus();
+      if (!st || !st.hidden) f.push('Stand sichtbar ohne Mehrspieler');
+      mp.an = true; mp.host = 'http://192.168.1.20:8080';
+      konsoleMpStatus();
+      if (st.hidden || st.textContent !== t('Verbunden mit') + ' 192.168.1.20:8080') f.push('beigetreten: "' + st.textContent + '"');
+      const bei = st.textContent;
+      mpAppHost.laeuft = true; mpAppHost.url = 'http://192.168.1.5:8080';
+      konsoleMpStatus();
+      if (st.hidden || st.textContent !== t('Host:') + ' 192.168.1.5:8080') f.push('Host: "' + st.textContent + '"');
+      const hst = st.textContent;
+      mpAppHost.laeuft = false; mp.an = false; mpi.an = true; mpi.host = 'http://192.168.1.5:8080';
+      konsoleMpStatus();
+      if (st.hidden || st.textContent.indexOf('192.168.1.5:8080') < 0) f.push('Info-Screen: "' + st.textContent + '"');
+      merk.text = bei + ' / ' + hst;
+    } finally {
+      mp.an = merk.mpAn; mp.host = merk.mpHost; Object.assign(mpAppHost, merk.host);
+      mpi.an = merk.mpiAn; mpi.host = merk.mpiHost;
+      konsoleMpStatus();
+      kStapel = merk.stapel;
+      if (merk.tab) showTab(merk.tab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Reiter weg, Knopf in der Kachel (Steuerkreuz, Kreis zurueck), Stand: ' + merk.text };
   });
 
   // ---- Die Wetterkachel schaltet durch drei Lagen ----
@@ -103180,6 +103273,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   const MP_HEARTBEAT_MS = 5000; // Lebenszeichen, damit die eigene Zeile nicht blass wird
   const mp = { host: '', name: '', id: '', an: false, timer: null, letzterBericht: 0,
                zuschauer: 0, posTimer: null, bekannt: null };
+  // v1.3.5: laeuft dieses Telefon als Host (Plugin OmegaHost, 97b-app.js), und unter welcher
+  // Adresse? Fuer den Stand in der Autos-Kachel (konsoleMpStatus).
+  const mpAppHost = { laeuft: false, url: '' };
+  function mpStatusMelden() {
+    if (typeof konsoleMpStatus === 'function') konsoleMpStatus();
+  }
   // POSITIONEN NUR, WENN JEMAND ZUSIEHT. Der Host zaehlt die Info-Screens (zuschauer in
   // /mp/state); ist keiner da, bleibt es bei Rundenschluss und Lebenszeichen wie bisher.
   // Mit Zuschauer drei Berichte je Sekunde - der Info-Screen rechnet dazwischen weiter.
@@ -103710,6 +103809,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     mpHolen();
     log('Mehrspieler: bei ' + mp.host + ' angemeldet als "' + (mp.name || 'ohne Namen')
         + '".', 'info');
+    mpStatusMelden();
   }
 
   function mpLeave() {
@@ -103727,6 +103827,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (mp.timer !== null) { clearInterval(mp.timer); mp.timer = null; }
     mpSay(t('nicht verbunden'));
     log('Mehrspieler verlassen.', 'info');
+    mpStatusMelden();
   }
 
   // ============================== INFO-SCREEN ==============================
@@ -103900,6 +104001,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     mpiHolen();
     if (mpi.rahmen === null) mpi.rahmen = requestAnimationFrame(mpiMalen);
     log('Info-Screen: zeigt ' + h + '.', 'info');
+    mpStatusMelden();
     return true;
   }
 
@@ -103908,6 +104010,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (mpi.timer !== null) { clearInterval(mpi.timer); mpi.timer = null; }
     if (mpi.rahmen !== null) { cancelAnimationFrame(mpi.rahmen); mpi.rahmen = null; }
     if ($('mp-info')) $('mp-info').hidden = true;
+    mpStatusMelden();
   }
 
   if ($('mp-info-join')) $('mp-info-join').addEventListener('click', () => mpiStart());
@@ -104190,6 +104293,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       hostLaeuft = !!(r && r.laeuft);
       const ip = r && r.adressen && r.adressen[0];
       const url = ip ? 'http://' + ip + ':' + r.port : '';
+      // v1.3.5: Stand fuer die Autos-Kachel (konsoleMpStatus in 51-konsole.js).
+      mpAppHost.laeuft = hostLaeuft;
+      mpAppHost.url = url;
+      mpStatusMelden();
       if ($('mp-app-host')) $('mp-app-host').textContent = t(hostLaeuft ? 'Host beenden' : 'Dieses Telefon ist Host');
       if ($('mp-app-adresse')) $('mp-app-adresse').textContent = hostLaeuft ? (url || t('keine WLAN-Adresse')) : '';
       if ($('mp-app-info')) {

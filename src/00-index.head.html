@@ -2520,6 +2520,11 @@
   .k-w { color: #fff; font-weight: 800; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .k-punkt { display: inline-block; width: .7em; height: .7em; border-radius: 50%; margin-right: .4em; vertical-align: 0; }
   .k-knopfreihe { display: flex; gap: 6px; padding: 0 10px 12px; flex-wrap: wrap; }
+  /* v1.3.5: Mehrspieler-Stand in der Autos-Kachel ("Host: ..." / "Verbunden mit ..."). */
+  .k-mp-status { display: block; margin: -6px 10px 8px; font-size: 11.5px; letter-spacing: .03em; color: var(--k-blau, #00a3e0);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .k-mp-status[hidden] { display: none; }
+  #fa-mp .wip-tag { font-size: 8px; padding: 0 3px; margin-left: 4px; vertical-align: 1px; }
   .k-knopf { background: var(--k-grau); color: #fff; border: 2px solid transparent; border-radius: 0; padding: 7px 12px;
     font-family: var(--k-font); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
   .k-knopf:hover, .k-knopf.menu-nav-sel { border-color: #fff; background: var(--k-blau); color: var(--k-blau-text); outline: 0; }
@@ -4863,7 +4868,9 @@
        Entwickler/Selbsttest/Code-Sonde ueber Entwicklertools. -->
   <button class="tab-btn" data-tab="control" data-parent="options" hidden style="display:none">Renneinstellungen</button>
   <button class="tab-btn" data-tab="challenges">Challenges</button>
-  <button class="tab-btn" data-tab="mp">WLAN Mehrspieler</button>
+  <!-- v1.3.5 BESTELLT: "WLAN-Mehrspieler nicht als eigenen Tab, sondern als Button in der
+       FAHREN -> Garage-Kachel." Der Reiter bleibt als tabpage, erreichbar ueber #fa-mp. -->
+  <button class="tab-btn" data-tab="mp" data-parent="fahren" hidden style="display:none">WLAN Mehrspieler</button>
   <button class="tab-btn" data-tab="info" data-parent="options" hidden style="display:none">Info</button>
   <button class="tab-btn" data-tab="misc">Entwicklertools</button>
   <!-- Nicht in der Leiste, aber weiter als Tab-Knopf vorhanden: showTab() sucht genau
@@ -4993,7 +5000,10 @@
         <span class="k-knopfreihe">
           <button type="button" class="k-knopf" id="fa-verbinden">Verbinden</button>
           <button type="button" class="k-knopf" id="fa-garage">Garage</button>
+          <!-- v1.3.5: der WLAN-Mehrspieler als Knopf statt als Reiter, darunter der Stand. -->
+          <button type="button" class="k-knopf" id="fa-mp">Mehrspieler <span class="wip-tag">WIP</span></button>
         </span>
+        <span class="k-mp-status" id="fa-mp-status" data-i18n-skip hidden></span>
       </div>
       <div class="k-kachel " id="fa-strecke" role="button" tabindex="0" data-quad="bahn">
         <span class="k-kk">Strecke</span>

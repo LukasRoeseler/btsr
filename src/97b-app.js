@@ -200,6 +200,10 @@
       hostLaeuft = !!(r && r.laeuft);
       const ip = r && r.adressen && r.adressen[0];
       const url = ip ? 'http://' + ip + ':' + r.port : '';
+      // v1.3.5: Stand fuer die Autos-Kachel (konsoleMpStatus in 51-konsole.js).
+      mpAppHost.laeuft = hostLaeuft;
+      mpAppHost.url = url;
+      mpStatusMelden();
       if ($('mp-app-host')) $('mp-app-host').textContent = t(hostLaeuft ? 'Host beenden' : 'Dieses Telefon ist Host');
       if ($('mp-app-adresse')) $('mp-app-adresse').textContent = hostLaeuft ? (url || t('keine WLAN-Adresse')) : '';
       if ($('mp-app-info')) {

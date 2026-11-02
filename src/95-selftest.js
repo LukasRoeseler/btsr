@@ -10754,7 +10754,8 @@
     // Kanten: Kacheln mit data-tab (goto-tab), Unterseiten-Kacheln (data-sub), die Reiter der
     // Ebene 1 (oben neben dem Logo, von jeder Seite aus) und die Kacheln des Fahren-Schirms
     // (JS-Knoepfe, hier von Hand genannt). Der Titel fuehrt nach Fahren.
-    const kanten = { home: ['fahren'], fahren: ['garage', 'control', 'track', 'race'] };
+    // v1.3.5: der Mehrspieler ist kein Reiter mehr, sondern der Knopf #fa-mp in der Autos-Kachel.
+    const kanten = { home: ['fahren'], fahren: ['garage', 'control', 'track', 'race', 'mp'] };
     K_EBENE1.forEach((x) => { kanten.fahren.push(x); });
     const tabs = [...document.querySelectorAll('.tabpage')].map((t) => t.id.replace(/^tab-/, ''));
     tabs.forEach((t) => {
@@ -13510,6 +13511,58 @@
       if (!I18N_EN[k] || !I18N_ES[k]) f.push('Uebersetzung fehlt: ' + k);
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : mass.join(' | ') };
+  });
+
+  // BESTELLT: "WLAN-Mehrspieler nicht als eigenen Tab, sondern als Button in der FAHREN ->
+  // Garage-Kachel. Dort dann anzeigen, wenn man hostet oder wo man beigetreten ist."
+  stAdd('Garage v1.3.5: kein Mehrspieler-Reiter, Knopf und Stand in der Autos-Kachel', () => {
+    const f = [];
+    const merk = { tab: kAktiverTab(), stapel: kStapel.slice(), mpAn: mp.an, mpHost: mp.host,
+                   host: Object.assign({}, mpAppHost), mpiAn: mpi.an, mpiHost: mpi.host };
+    const st = $('fa-mp-status');
+    try {
+      kStapel = [];
+      showTab('fahren');
+      konsoleZeichnen();
+      if (K_EBENE1.indexOf('mp') >= 0) f.push('mp steht noch in Ebene 1');
+      const reiter = (konsoleReiterEbene1() || []).map((x) => x.text);
+      if (reiter.indexOf(t('WLAN Mehrspieler')) >= 0) f.push('Reiter WLAN Mehrspieler noch oben');
+      const tb = document.querySelector('.tab-btn[data-tab="mp"]');
+      if (tb && getComputedStyle(tb).display !== 'none') f.push('Tab-Knopf sichtbar');
+      const kn = $('fa-mp');
+      if (!kn || !$('fa-auto').contains(kn) || !kn.closest('.k-knopfreihe')) f.push('Knopf fehlt in der Autos-Kachel');
+      if (kn && !kn.querySelector('.wip-tag')) f.push('WIP fehlt am Knopf');
+      menuNavEnsureContext();
+      if (!menuNavRows().some((r) => r.el === kn)) f.push('Steuerkreuz erreicht den Knopf nicht');
+      if (kn) kn.click();
+      if (kAktiverTab() !== 'mp') f.push('Knopf fuehrt nach ' + kAktiverTab());
+      if (!(konsoleReiterEbene1() || []).some((x) => x.an && x.text === t('Fahren'))) f.push('im Mehrspieler ist oben nicht FAHREN hervorgehoben');
+      konsoleZurueck();
+      if (kAktiverTab() !== 'fahren') f.push('Kreis im Mehrspieler fuehrt nach ' + kAktiverTab());
+      // Stand: nichts, beigetreten, Host, Info-Screen.
+      mpAppHost.laeuft = false; mp.an = false; mpi.an = false;
+      konsoleMpStatus();
+      if (!st || !st.hidden) f.push('Stand sichtbar ohne Mehrspieler');
+      mp.an = true; mp.host = 'http://192.168.1.20:8080';
+      konsoleMpStatus();
+      if (st.hidden || st.textContent !== t('Verbunden mit') + ' 192.168.1.20:8080') f.push('beigetreten: "' + st.textContent + '"');
+      const bei = st.textContent;
+      mpAppHost.laeuft = true; mpAppHost.url = 'http://192.168.1.5:8080';
+      konsoleMpStatus();
+      if (st.hidden || st.textContent !== t('Host:') + ' 192.168.1.5:8080') f.push('Host: "' + st.textContent + '"');
+      const hst = st.textContent;
+      mpAppHost.laeuft = false; mp.an = false; mpi.an = true; mpi.host = 'http://192.168.1.5:8080';
+      konsoleMpStatus();
+      if (st.hidden || st.textContent.indexOf('192.168.1.5:8080') < 0) f.push('Info-Screen: "' + st.textContent + '"');
+      merk.text = bei + ' / ' + hst;
+    } finally {
+      mp.an = merk.mpAn; mp.host = merk.mpHost; Object.assign(mpAppHost, merk.host);
+      mpi.an = merk.mpiAn; mpi.host = merk.mpiHost;
+      konsoleMpStatus();
+      kStapel = merk.stapel;
+      if (merk.tab) showTab(merk.tab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Reiter weg, Knopf in der Kachel (Steuerkreuz, Kreis zurueck), Stand: ' + merk.text };
   });
 
   // ---- Die Wetterkachel schaltet durch drei Lagen ----

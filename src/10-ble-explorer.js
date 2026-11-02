@@ -3896,6 +3896,9 @@
     "Mehr Brücken": "More bridges",
     "Zufall: {n} Brücken mit diesen Teilen nicht möglich": "Random: {n} bridges not possible with these parts",
     "Zufall: Boxengasse mit diesen Teilen nicht möglich": "Random: pit lane not possible with these parts",
+    "Host:": "Host:",
+    "Verbunden mit": "Connected to",
+    "Info-Screen:": "Info screen:",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -5124,6 +5127,9 @@
     "Mehr Brücken": "Más puentes",
     "Zufall: {n} Brücken mit diesen Teilen nicht möglich": "Aleatorio: {n} puentes no es posible con estas piezas",
     "Zufall: Boxengasse mit diesen Teilen nicht möglich": "Aleatorio: calle de boxes no es posible con estas piezas",
+    "Host:": "Host:",
+    "Verbunden mit": "Conectado a",
+    "Info-Screen:": "Pantalla de info:",
   };
 
   // ============================================================================

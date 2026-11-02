@@ -30,7 +30,8 @@
       text: 'Ein Druck startet die Ampel. Im Cockpit fordert Kreuz den Boxenstopp an, Options öffnet das Menü.' },
     { tab: 'fahren', ziel: null, bild: 'box', titel: 'Boxenstopp als Minigame',
       text: 'Beim Stopp erscheinen zehn Tasten. Triffst du Quadrat oder Kreis rechtzeitig, ist die Crew schneller fertig. Abschalten kannst du es unter Optionen, Allgemein, Tank & Schaden.' },
-    { tab: 'mp', ziel: ['#k-reiter button:nth-child(3)', '#sub-home-mp .misc-grid'], bild: 'mehrspieler', titel: 'WLAN Mehrspieler und Info-Screen',
+    // v1.3.5: kein eigener Reiter mehr - der Knopf in der Autos-Kachel.
+    { tab: 'fahren', ziel: ['#fa-mp'], bild: 'mehrspieler', titel: 'WLAN Mehrspieler und Info-Screen',
       text: 'Mehrere Telefone fahren in einer gemeinsamen Rangliste. Ein Tablet zeigt als Info-Screen Strecke und Zeiten.' },
     { tab: 'fahren', ziel: ['#fa-auto'], bild: 'fahren', titel: "Los geht's",
       text: 'Verbinde jetzt dein erstes Auto. Zum Tutorial kommst du jederzeit zurück: Klick auf das Omega oben links.' },

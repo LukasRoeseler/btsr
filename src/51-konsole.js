@@ -31,7 +31,9 @@
   // fuer Challenges."
   // BESTELLT (v0.8.35): "Reihenfolge der Tabs oben: FAHREN, MEHRSPIELER, CHALLENGES, OPTIONEN".
   // BESTELLT (v0.9.20): "Tausche die Tabs WLAN MEHRSPIELER und CHALLENGES (zuerst CHALLENGES)".
-  const K_EBENE1 = ['fahren', 'challenges', 'mp', 'options', 'misc'];
+  // v1.3.5 BESTELLT: "WLAN-Mehrspieler nicht als eigenen Tab, sondern als Button in der
+  // FAHREN -> Garage-Kachel" - mp ist jetzt eine tiefe Seite unter Fahren (#fa-mp).
+  const K_EBENE1 = ['fahren', 'challenges', 'options', 'misc'];
   const K_NAME = {
     home: 'Titel', fahren: 'Fahren', garage: 'Garage', race: 'Cockpit',
     options: 'Optionen', control: 'Renneinstellungen', track: 'Strecke', mp: 'WLAN Mehrspieler',
@@ -42,7 +44,7 @@
   // Zu welchem Reiter der Ebene 1 eine tiefe Seite gehoert: der Reiter bleibt hervorgehoben,
   // und Kreis fuehrt dorthin, wenn der Stapel leer ist.
   const K_ELTERN = {
-    garage: 'fahren', info: 'options', control: 'fahren', track: 'fahren',
+    garage: 'fahren', info: 'options', control: 'fahren', track: 'fahren', mp: 'fahren',
     doc: 'misc', school: 'misc', dev: 'misc', selftest: 'misc', probe: 'misc',
     numtrain: 'misc', record: 'misc',
   };
@@ -391,6 +393,25 @@
     kStapel = [];
     konsoleZeige('fahren');
     return true;
+  }
+
+  // ---- Mehrspieler-Stand in der Autos-Kachel (v1.3.5) --------------------------------
+  // "Dort dann anzeigen, wenn man hostet oder wo man beigetreten ist." Aus dem vorhandenen
+  // Zustand: mpAppHost (Host-Plugin der App, 97b-app.js), mp (Fahrer) und mpi (Info-Screen),
+  // beide 97-sessions.js. Nur Text setzen - gerufen beim Zeichnen der Kachel und wenn sich der
+  // Zustand aendert, nie im Takt.
+  function konsoleMpStatus() {
+    const el = $('fa-mp-status');
+    if (!el) return;
+    let text = '';
+    try {
+      const ohne = (h) => String(h || '').replace(/^https?:\/\//, '').replace(/\/+$/, '');
+      if (mpAppHost.laeuft) text = t('Host:') + ' ' + (ohne(mpAppHost.url) || t('keine WLAN-Adresse'));
+      else if (mp.an && mp.host) text = t('Verbunden mit') + ' ' + ohne(mp.host);
+      else if (mpi.an && mpi.host) text = t('Info-Screen:') + ' ' + ohne(mpi.host);
+    } catch (e) { text = ''; }
+    if (el.textContent !== text) el.textContent = text;
+    el.hidden = !text;
   }
 
   // ---- Fahren: Start und Auto --------------------------------------------------------
@@ -762,6 +783,7 @@
       }
       ab.dataset.bild = abNeu;
     }
+    konsoleMpStatus();
     kZeilen($('fa-auto-info'), autos.length
       ? autos.map((c) => [kPunkt(carColor(c).hex, garageLabel(c)), t(K_ROLLE[c.role] || c.role)])
       : [[t('Status'), t('nicht verbunden')]]);
@@ -1051,6 +1073,7 @@
     kn('fa-auto', (e) => { if (!e.target.closest('.k-knopf')) konsoleAuto(); });
     kn('fa-verbinden', () => { konsoleVerbinden(); });
     kn('fa-garage', () => konsoleZeige('garage'));
+    kn('fa-mp', () => konsoleZeige('mp'));
     kn('fa-start', () => { konsoleLosfahren(); });
     // v1.1.3 BESTELLT: "Tippe ich bei der Kachel STRECKE auf STRECKE oder AUF DER BAHN, soll
     // umgeschaltet werden; tippe ich auf das Bild, oeffnet sich das Menue dazu." Vorher schaltete nur
