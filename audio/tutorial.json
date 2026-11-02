@@ -1,0 +1,100 @@
+{
+  "stimme": "de_DE-kerstin-low",
+  "de": {
+    "voraussetzung": {
+      "datei": "tutorial_voraussetzung_de.ogg",
+      "dauer": 7.22,
+      "text": "Für das Tutorial brauchst du ein verbundenes Auto und ein Gamepad. Ich warte, bis beides bereit ist."
+    },
+    "willkommen": {
+      "datei": "tutorial_willkommen_de.ogg",
+      "dauer": 6.12,
+      "text": "Willkommen bei OmegaSim! In diesem Tutorial lernst du die App kennen und drehst deine ersten Runden."
+    },
+    "gas": {
+      "datei": "tutorial_gas_de.ogg",
+      "dauer": 4.32,
+      "text": "Drücke die Gas-Taste, um zu beschleunigen."
+    },
+    "bremse": {
+      "datei": "tutorial_bremse_de.ogg",
+      "dauer": 4.12,
+      "text": "Drücke jetzt die Bremstaste, um zu bremsen."
+    },
+    "links": {
+      "datei": "tutorial_links_de.ogg",
+      "dauer": 0.89,
+      "text": "Lenke nach links."
+    },
+    "rechts": {
+      "datei": "tutorial_rechts_de.ogg",
+      "dauer": 1.15,
+      "text": "Und jetzt nach rechts."
+    },
+    "gut": {
+      "datei": "tutorial_gut_de.ogg",
+      "dauer": 0.63,
+      "text": "Sehr gut!"
+    },
+    "prima": {
+      "datei": "tutorial_prima_de.ogg",
+      "dauer": 0.48,
+      "text": "Prima!"
+    },
+    "arcade": {
+      "datei": "tutorial_arcade_de.ogg",
+      "dauer": 7.12,
+      "text": "Fahr jetzt ein paar Runden im Arcade-Modus. Das Auto lenkt direkt ein und bremst kräftig."
+    },
+    "pacejka": {
+      "datei": "tutorial_pacejka_de.ogg",
+      "dauer": 2.86,
+      "text": "Nun wird ein realistischeres Einlenken simuliert."
+    },
+    "beschleunigung": {
+      "datei": "tutorial_beschleunigung_de.ogg",
+      "dauer": 3.6,
+      "text": "Das Auto beschleunigt jetzt langsamer, wie ein echter Rennwagen."
+    },
+    "untersteuern": {
+      "datei": "tutorial_untersteuern_de.ogg",
+      "dauer": 8.92,
+      "text": "Fährst du zu schnell in eine Kurve, schiebt das Auto geradeaus. Das ist Untersteuern. Bremse also vor der Kurve."
+    },
+    "box_erklaerung": {
+      "datei": "tutorial_box_erklaerung_de.ogg",
+      "dauer": 9.82,
+      "text": "Zeit für einen Boxenstopp. Gleich erscheinen Tasten auf dem Schirm. Drückst du sie rechtzeitig, ist die Crew schneller."
+    },
+    "box": {
+      "datei": "tutorial_box_de.ogg",
+      "dauer": 2.7,
+      "text": "Tippe jetzt die Boxenstopp-Taste und halte an."
+    },
+    "box_fertig": {
+      "datei": "tutorial_box_fertig_de.ogg",
+      "dauer": 1.56,
+      "text": "Fertig! Fahr weiter."
+    },
+    "motor": {
+      "datei": "tutorial_motor_de.ogg",
+      "dauer": 4.52,
+      "text": "Der Motorsound wird nun geändert zu Ford Mustang."
+    },
+    "garage": {
+      "datei": "tutorial_garage_de.ogg",
+      "dauer": 6.42,
+      "text": "Im Garagenmenü passt du den Motorsound für jedes Auto einzeln an."
+    },
+    "optionen": {
+      "datei": "tutorial_optionen_de.ogg",
+      "dauer": 6.02,
+      "text": "Ansagen, Tastenbelegung, Fahrverhalten und vieles mehr stellst du im Optionenmenü ein."
+    },
+    "abschluss": {
+      "datei": "tutorial_abschluss_de.ogg",
+      "dauer": 4.62,
+      "text": "Du hast das Tutorial abgeschlossen. Herzlich willkommen bei OmegaSim!"
+    }
+  }
+}

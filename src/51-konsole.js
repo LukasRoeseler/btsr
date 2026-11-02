@@ -182,6 +182,8 @@
     if ($('sub-ch-sk') && $('sub-ch-sk').classList.contains('on')) { showSubpage('ch-strecken'); return true; }
     if (tab === 'info' && document.querySelector('#tab-info .subpage.on')) { konsoleZeige('fahren'); return true; }
     if (document.querySelector('.tabpage.active .subpage.on')) { showSubpage(''); return true; }
+    // v1.3.15: das gefuehrte Tutorial wartet auf Auto und Gamepad - Kreis/Esc bricht es ab.
+    if (typeof tutLaeuft === 'function' && tutLaeuft()) { tutAbbrechen('Kreis/Esc'); return true; }
     if (tab === 'home' || tab === 'fahren') return false;
     // BESTELLT: "wenn ich aus menues mit kreistaste zurueckgehe, will ich zu fahren kommen."
     // Der Stapel fuehrte sonst in den zuletzt besuchten Menue-Reiter zurueck; Kreis soll
@@ -979,7 +981,7 @@
     // Steuerung." Alle anderen Tasten tun auf dem Titel nichts mehr.
     // v1.3.5: Kreuz (A am Xbox-Pad) loest den GEWAEHLTEN Knopf aus - vorgewaehlt ist Starten.
     if (neu === 0) { kTitelSperre = true; homeFokusAusloesen(); return true; }
-    if (neu === 3) { kTitelSperre = true; konsoleTourStart(K_TOUR); return true; }
+    if (neu === 3) { kTitelSperre = true; tutorialStarten(); return true; }
     if (neu === 1) { kTitelSperre = true; konsoleTourStart(K_STEUERUNG); return true; }
     return true;
   }
@@ -1032,7 +1034,7 @@
       // loesen ihn aus (v1.3.5), Q/E wie L1/R1 die Sprache. T und S bleiben als Abkuerzung.
       if (k === 'arrowleft' || k === 'arrowright') homeFokusSchritt(k === 'arrowleft' ? -1 : 1);
       else if (k === 'q' || k === 'e') wechsleSprache();
-      else if (k === 't') konsoleTourStart(K_TOUR);
+      else if (k === 't') tutorialStarten();
       else if (k === 's') konsoleTourStart(K_STEUERUNG);
       else if (k === 'enter' || k === ' ' || k === 'x') homeFokusAusloesen();
       return;

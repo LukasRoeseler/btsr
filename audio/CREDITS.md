@@ -531,3 +531,19 @@ oben). Die bisherigen `shift_up.ogg` / `shift_down.ogg` bleiben für den Schalte
 
 Aus einer eigenen Aufnahme des Autors (Video eines Ford Mustang GT3, nicht Teil des Repos,
 `photos/` ist ausgeschlossen) geschnitten. Lizenz wie OmegaSim (MIT).
+
+## Tutorial-Stimme (v1.3.15, WIP)
+
+19 Sprachclips (`tutorial_*_de.ogg`, nur Deutsch), Manifest mit Datei, Dauer und Wortlaut:
+`audio/tutorial.json`. Erzeugung: `tools/voice_tutorial.py` (Piper, danach ffmpeg: Stille
+abschneiden, Hochpass 70 Hz, Lautheit auf -16 LUFS, Ogg Vorbis). Kein Funkfilter.
+
+* **Software:** piper-tts 1.8.0 (https://github.com/OHF-voice/piper1-gpl, GPL-3.0). Die Lizenz
+  des Programms erstreckt sich nicht auf die damit erzeugten Aufnahmen.
+* **Stimme:** `de_DE-kerstin-low` von https://huggingface.co/rhasspy/piper-voices (Modell MIT),
+  Datensatz "Kerstin", CC0. Das Modell ist nicht im Repository, nur die erzeugten Clips.
+
+Englisch und Spanisch haben keine eigenen Aufnahmen: dort zeigt die App den uebersetzten Text
+und spricht ihn, wenn vorhanden, mit der Sprachausgabe des Geraets (speechSynthesis).
+Die Nennung "Ford Mustang" bezeichnet nur den gewaehlten Motorklang; keine Beteiligung oder
+Unterstuetzung des Herstellers.
