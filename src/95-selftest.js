@@ -22590,6 +22590,40 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : '3 Bewunderung / 3 Rivalitaet, Median ok' };
   });
 
+  // v1.3.25 BESTELLT: OmegaLab mit kurzer Erklaerung, Einwilligung und Studienwahl, "nur ein
+  // Mock-Up und sag Coming Soon". Geprueft: Portal statt Fragebogen, alle Karten gesperrt,
+  // Einwilligung schaltet nur die Beschriftung um, nichts wird gesendet oder gespeichert.
+  stAdd('OmegaLab v1.3.25: Portal-Mockup mit Einwilligung, Studien nur Coming Soon', () => {
+    const f = [];
+    const host = $('studie-inhalt');
+    if (!host) return { skip: true, mass: 'kein #studie-inhalt' };
+    const merkSt = st, merkJa = labEinwilligung, merkSenden = studieSenden, vorher = localStorage.getItem(STUDIE_STORE);
+    let gesendet = 0;
+    studieSenden = () => { gesendet++; };
+    try {
+      st = studieNeu(); labEinwilligung = false;
+      studieZeichnen();
+      const karten = host.querySelectorAll('.lab-karte');
+      if (karten.length !== LAB_STUDIEN.length || karten.length < 6) f.push(karten.length + ' Karten');
+      if (host.querySelector('#st-alter')) f.push('Fragebogen statt Portal');
+      if (!/Coming Soon/.test(host.textContent)) f.push('kein Coming Soon');
+      if (!host.querySelector('#lab-einwilligung')) f.push('keine Einwilligung');
+      if ([...host.querySelectorAll('.lab-karte button')].some((b) => !b.disabled)) f.push('Karte startbar');
+      const cb = host.querySelector('#lab-einwilligung');
+      if (cb) cb.click();   // schaltet den Haken um und loest den Klick aus, wie ein Tippen
+      if (!labEinwilligung) f.push('Einwilligung greift nicht');
+      if (host.querySelectorAll('.lab-karte.gesperrt').length) f.push('nach Einwilligung noch ausgegraut');
+      if ([...host.querySelectorAll('.lab-karte button')].some((b) => !b.disabled)) f.push('nach Einwilligung startbar');
+      if (LAB_STUDIEN.some((x) => labMedaillen(x.min) !== (x.min <= 20 ? 3 : x.min <= 26 ? 4 : 5))) f.push('Medaillen nicht nach Dauer');
+      if (gesendet) f.push(gesendet + 'x gesendet');
+      if (localStorage.getItem(STUDIE_STORE) !== vorher) f.push('Studienspeicher veraendert');
+    } finally {
+      studieSenden = merkSenden; st = merkSt; labEinwilligung = merkJa;
+      studieZeichnen();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : LAB_STUDIEN.length + ' Studien, alle Coming Soon, nichts gesendet' };
+  });
+
   // ---- v1.0: Meisterschaft (73-meisterschaft.js) ----
   stAdd('Meisterschaft: Wertung, Punkte, schnellste Runde, Gleichstand', () => {
     const f = [];

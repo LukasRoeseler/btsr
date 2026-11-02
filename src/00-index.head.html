@@ -3095,6 +3095,23 @@
   .grid-timeattack .ta-stand { border-collapse: collapse; }
   .grid-timeattack .ta-stand td { padding: 1px 10px 1px 0; }
   /* ---- STUDIE (98f-studie.js) ---- */
+  /* v1.3.25: OmegaLab-Portal (Mockup) */
+  .lab-bald { background: rgba(255, 176, 46, .12); border: 1px solid var(--warn, #ffb02e); border-radius: 10px; padding: 10px 12px; margin: 6px 0 12px; line-height: 1.4; }
+  .lab-bald b { color: var(--warn, #ffb02e); margin-right: 4px; }
+  #studie-inhalt h3 { margin: 14px 0 4px; font-size: 1.05em; }
+  .lab-liste { margin: 4px 0 8px; padding-left: 20px; line-height: 1.45; }
+  .lab-ja { display: flex; align-items: center; gap: 10px; margin: 10px 0; font-weight: 600; }
+  .lab-ja input { width: 22px; height: 22px; }
+  .lab-stand { margin: 6px 0 10px; opacity: .85; }
+  .lab-gitter { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+  .lab-karte { border: 1px solid rgba(255, 255, 255, .14); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .lab-karte.gesperrt { opacity: .6; }
+  .lab-karte p { margin: 0; line-height: 1.4; flex: 1; }
+  .lab-kopf { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .lab-med { white-space: nowrap; }
+  .lab-erste { font-size: .82em; color: var(--warn, #ffb02e); font-weight: 600; }
+  .lab-req { display: flex; flex-wrap: wrap; gap: 4px; }
+  .lab-chip { font-size: .78em; border: 1px solid rgba(255, 255, 255, .2); border-radius: 999px; padding: 1px 8px; }
   .studie-text p { line-height: 1.45; margin: 4px 0 8px; }
   .studie-text code, #studie-inhalt code { font-size: .9em; }
   .studie-knoepfe { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
@@ -9902,7 +9919,7 @@
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6h12M20 6v12L9 38a3 3 0 0 0 3 4h24a3 3 0 0 0 3-4L28 18V6"/><path d="M14 30h20" stroke="var(--bad)"/></svg>
           <b>OmegaLab <span class="wip-tag">WIP</span></b>
-          <span>Persönlichkeit, Reaktionszeit und Fahrverhalten. Freiwillig, ab 18, Daten anonymisiert öffentlich.</span>
+          <span>Studien zum Fahrverhalten: kurz, freiwillig, mit Medaillen. Coming Soon.</span>
         </button>
         <button class="misc-tile subpage-open" data-sub="opt-tutorials">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
