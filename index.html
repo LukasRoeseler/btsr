@@ -90022,9 +90022,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       konsoleFokusAuf('fa-start');
       if (schritt('right') !== 'fa-start') f.push('rechts am Rand springt weg');
       konsoleFokusAuf('fa-auto');
-      // Unter AUTO erst seine Knoepfe (Verbinden, Garage), dann FAHRGEFUEHL.
+      // Unter AUTO erst seine Knoepfe (Verbinden, Garage, seit v1.3.5 Mehrspieler), dann FAHRGEFUEHL.
       const knopf = schritt('down');
-      if (knopf !== 'fa-garage' && knopf !== 'fa-verbinden') f.push('unter AUTO liegen nicht seine Knoepfe (' + knopf + ')');
+      if (['fa-garage', 'fa-verbinden', 'fa-mp'].indexOf(knopf) < 0) f.push('unter AUTO liegen nicht seine Knoepfe (' + knopf + ')');
       if (schritt('down') !== 'fa-profil') f.push('unter den AUTO-Knoepfen ist nicht FAHRGEFUEHL');
     } finally { if (merk) showTab(merk); }
     return { ok: !f.length, mass: f.length ? f.join('; ') + ' | ' + weg.join(' ') : weg.join(' ') };
