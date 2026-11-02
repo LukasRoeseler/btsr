@@ -299,9 +299,32 @@
   const TRACK_HAIRPIN_LEAD = TRACK_HAIRPIN_LEAD_CM * TRACK_UNITS_PER_CM;
   const TRACK_RADIUS = TRACK_RADIUS_CM * TRACK_UNITS_PER_CM;
   // "Radius 2": die weite 30-Grad-Kurve. Herleitung bei tileRadius().
-  // Wieviel die Engstelle je Seite hereinnimmt, als Anteil der halben Bahnbreite. Eine
-  // DARSTELLUNG und keine Messung - siehe die Begruendung an der Zeichenstelle.
-  const ENGE_ANTEIL = 0.34;
+  // v1.3.15: DIE ENGSTELLE UND DIE STARTGERADE WIE DIE ORIGINALTEILE. BESTELLT: "Engstelle
+  // Bahnteil und Startgerade mit den Bildern aus dem Ordner abgleichen." Vermessen an
+  // photos/engstelle.jpg (900x1500, Fahrbahn 721 px) und photos/startgerade.jpg (800x800,
+  // Fahrbahn 384 px). Laengs: Anteil der Kachel, 0 Anfang, 1 Ende (die Pfeile zeigen auf
+  // den Bildern nach oben, also ist unten der Anfang). Quer: Anteil der halben schwarzen
+  // Fahrbahn, +1 linker (blauer) Rand, -1 rechter (roter) Rand.
+  //
+  // Die Engstelle ist auf dem Original KEINE schmalere Fahrbahn, sondern eine Folge
+  // weisser Querbalken: zuerst einer von links bis zur Mitte, dann zehn von rechts, die
+  // zur Mitte hin laenger werden. Sie sagen, wo man faehrt: erst rechts, dann links -
+  // genau die Linie, die die Engstelle den NPCs schreibt (siehe buildLine).
+  // Je Balken: [laengs, quer von, quer bis]. Dicke 22 von 1500 px.
+  const ENGE_BALKEN = [
+    [0.178, 1, 0],
+    [0.456, -1, -0.858], [0.503, -1, -0.761], [0.549, -1, -0.669], [0.596, -1, -0.575],
+    [0.642, -1, -0.478], [0.688, -1, -0.381], [0.734, -1, -0.287], [0.781, -1, -0.193],
+    [0.827, -1, -0.098], [0.874, -1, 0],
+  ];
+  const ENGE_BALKEN_DICKE = 0.0147;
+  // Die Ziellinie: zwei duenne Linien quer, ueber der oberen eine Reihe weisser Quadrate,
+  // unter der unteren eine zweite, um eine halbe Teilung versetzt - zusammen ein Karoband
+  // bei 80 % der Kachel. Quadrat 15 x 7 px, Teilung 30 px, Linien 2 px.
+  const ZIEL_LAENGS = { reiheOben: 0.8138, linieOben: 0.8081, linieUnten: 0.7956, reiheUnten: 0.79 };
+  const ZIEL_QUADRAT_H = 0.00875, ZIEL_LINIE_D = 0.0025;
+  const ZIEL_QUADRAT_B = 0.078, ZIEL_TEILUNG = 0.156;
+  const ZIEL_ERSTES = { oben: 0.958, unten: 0.875 };
   const TRACK_R2_CM = 112;
   const TRACK_R2 = TRACK_R2_CM * TRACK_UNITS_PER_CM;
   const TRACK_TURN_DEG = 60;
@@ -3296,6 +3319,26 @@
     const poly = (arr) => 'M ' + arr.map(P2).join(' L ');
     const centre = pts.map(p => [p.x, p.y]);
 
+    // EIN RECHTECK QUER ZUR FAHRBAHN auf einer geraden Kachel: bei `u` (Anteil der Kachel),
+    // `du` lang (ebenfalls Anteil), quer von `q1` bis `q2` (Einheiten, + = links). Gerechnet
+    // aus dem ersten Abtastschritt der Kachel - sie ist gerade, die Schritte sind gleich.
+    // Kachel 0 beginnt bei pts[0] (siehe echtRandstreifen), alle anderen bei start[k].
+    const querStueck = (k, u, du, q1, q2, farbe, merk) => {
+      if (!kachelTab) return '';
+      const a = k === 0 ? 0 : kachelTab.start[k];
+      const b = k + 1 < tiles.length ? kachelTab.start[k + 1] : kachelTab.start[k] + kachelTab.zahl[k];
+      const n = b - a;
+      if (!(n > 0) || !pts[a] || !pts[a + 1]) return '';
+      const sx = pts[a + 1].x - pts[a].x, sy = pts[a + 1].y - pts[a].y;
+      const sl = Math.hypot(sx, sy) || 1;
+      const tx = sx / sl, ty = sy / sl, nx = nrm[a].x, ny = nrm[a].y;
+      const cx = pts[a].x + sx * u * n, cy = pts[a].y + sy * u * n;
+      const h = du * sl * n / 2;
+      const ecke = (q, l) => [cx + nx * q + tx * l, cy + ny * q + ty * l];
+      return `<path ${merk || ''} d="M ${P2(ecke(q1, -h))} L ${P2(ecke(q2, -h))} L ${P2(ecke(q2, h))} `
+           + `L ${P2(ecke(q1, h))} Z" fill="${farbe}" stroke="none"/>`;
+    };
+
     let body = '';
     if (o.detailed) {
       // 1) The roadway itself: one very wide black stroke along the centreline.
@@ -3325,43 +3368,18 @@
         body += `<text x="${(mid[0] + ox).toFixed(1)}" y="${(mid[1] + oy).toFixed(1)}" fill="#ffb02e" font-size="9" font-weight="700" text-anchor="middle">BOX</text>`;
       });
 
-      // 2b) Die Engstelle: zwei Sperren, die von beiden Seiten hereinragen.
-      //
-      // BESTELLT: "grafisch hervorheben wie die Original-Engstelle."
-      //
-      // DIESELBE BAUFORM wie die Boxenausbuchtung darueber - je Kachel ueber p.tile und die
-      // Normalen -, nur nach INNEN statt nach aussen. Eine schmalere Fahrbahn zu zeichnen
-      // ginge nicht: die Strasse ist EIN breiter Strich entlang der Mittellinie, und eine
-      // Breite je Kachel hat ein Strich nicht.
-      //
-      // WIE SCHMAL SIE WIRKLICH IST, WEISS ICH NICHT. Die Breite ist nicht gemessen - aus
-      // den Bildern des Original-Editors laesst sie sich nicht ablesen. Was hier steht, ist
-      // also eine DARSTELLUNG und keine Massangabe: sie sagt "hier wird es eng", und die
-      // Zahl daneben ist ein Drittel je Seite, weil das sichtbar ist, ohne die Bahn
-      // zuzumauern. Sobald ein Mass vorliegt, gehoert es hierher.
+      // 2b) Die Engstelle wie das Originalteil: weisse Querbalken (Masse bei ENGE_BALKEN).
+      //     Bis 1.3.14 standen hier zwei braune Sperren mit "ENG" - eine Verengung, die das
+      //     echte Teil nicht hat. Die Balken liegen auf der SCHWARZEN Fahrbahn, im echten
+      //     Stil also innerhalb der weissen Randstreifen.
       tiles.forEach((tk, idx) => {
         if (tk.type !== TILE_TYPE.ENGE) return;
-        const seg = pts.map((p, i) => ({ p, i })).filter(q => q.p.tile === idx);
-        if (seg.length < 3) return;
-        for (const SIDE of [1, -1]) {
-          const aussen = seg.map(q => [q.p.x + nrm[q.i].x * half * SIDE,
-                                       q.p.y + nrm[q.i].y * half * SIDE]);
-          const innen = seg.map((q, k) => {
-            // Null an beiden Enden, am tiefsten in der Mitte - wie die Boxenausbuchtung,
-            // nur mit umgekehrtem Vorzeichen. Eine Sperre mit Kante waere ein Teil, das
-            // man nicht anfahren kann.
-            const u = k / (seg.length - 1);
-            const tief = Math.sin(u * Math.PI) * half * ENGE_ANTEIL;
-            return [q.p.x + nrm[q.i].x * (half - tief) * SIDE,
-                    q.p.y + nrm[q.i].y * (half - tief) * SIDE];
-          });
-          body += `<path d="${poly(aussen)} L ${innen.slice().reverse().map(P2).join(' L ')} Z" `
-               + `fill="#3a2a12" stroke="#ffb02e" stroke-width="0.8" stroke-linejoin="round"/>`;
+        const r = o.echt ? half - ECHT_STREIFEN : half;
+        for (const [u, von, bis] of ENGE_BALKEN) {
+          body += querStueck(idx, u, ENGE_BALKEN_DICKE, von * r, bis * r, '#ffffff', 'data-enge="1"');
         }
-        const m = seg[Math.floor(seg.length / 2)];
-        body += `<text x="${(m.p.x + ox).toFixed(1)}" y="${(m.p.y + oy + 3).toFixed(1)}" `
-             + `fill="#ffb02e" font-size="8" font-weight="700" text-anchor="middle">ENG</text>`;
       });
+
 
       // 3) Joints: a white tick across the roadway at every element boundary, so the
       //    individual pieces are visible instead of one continuous ribbon.
@@ -3461,19 +3479,38 @@
     }
 
     // Start line and the live position marker. Die ERSTE Start/Ziel-Gerade ist die
-    // Rundenlinie (gruen); jede weitere ist eine Sektorgrenze und wird gelb gezeichnet,
-    // damit man sie von der ersten unterscheidet (BESTELLT: "die zweite Start/Ziel-Gerade
-    // soll sich deutlich von der ersten unterscheiden").
+    // Rundenlinie; jede weitere ist eine Sektorgrenze und wird gelb gezeichnet, damit man
+    // sie von der ersten unterscheidet (BESTELLT: "die zweite Start/Ziel-Gerade soll sich
+    // deutlich von der ersten unterscheiden").
+    //
+    // v1.3.15: Die Linie liegt bei 80 % der Startkachel wie auf dem Originalteil (vorher
+    // 66 %, geschaetzt; BESTELLT war nur "nicht am Anfang des Teils, sondern ein Stueck
+    // spaeter"). Im echten Stil ist sie das Karoband des Originals (ZIEL_*), auf JEDER
+    // Startgeraden - jedes echte Teil traegt es. Die Sektorgrenzen bekommen zusaetzlich
+    // einen gelben Strich zwischen den beiden Reihen. Die Sektorgrenzen im Kartenstil
+    // bleiben an der Kante.
     let ersteStart = true;
     for (let ti = 0; ti < tiles.length; ti++) {
       if (tiles[ti].type !== TILE_TYPE.START) continue;
+      if (o.detailed && o.echt && kachelTab) {
+        const r = half - ECHT_STREIFEN, Z = ZIEL_LAENGS;
+        body += querStueck(ti, Z.linieOben, ZIEL_LINIE_D, r, -r, '#ffffff', 'data-ziel="linie"');
+        body += querStueck(ti, Z.linieUnten, ZIEL_LINIE_D, r, -r, '#ffffff', 'data-ziel="linie"');
+        if (!ersteStart) {
+          body += querStueck(ti, (Z.linieOben + Z.linieUnten) / 2, Z.linieOben - Z.linieUnten - ZIEL_LINIE_D,
+                             r, -r, '#ffd400', 'data-ziel="sektor"');
+        }
+        for (const [reihe, erstes] of [[Z.reiheOben, ZIEL_ERSTES.oben], [Z.reiheUnten, ZIEL_ERSTES.unten]]) {
+          for (let q = erstes; q - ZIEL_QUADRAT_B >= -1.001; q -= ZIEL_TEILUNG) {
+            body += querStueck(ti, reihe, ZIEL_QUADRAT_H, q * r, (q - ZIEL_QUADRAT_B) * r, '#ffffff', 'data-ziel="karo"');
+          }
+        }
+        ersteStart = false;
+        continue;
+      }
       let pi = kachelTab && kachelTab.start ? kachelTab.start[ti] : 0;
-      // Die gruene Start/Ziel-Linie liegt bei ~66 % der Startkachel, nicht an ihrer Kante.
-      // Eine Linie ganz am Rand eines Teils sagt nicht, wo genau sie liegt (BESTELLT: "nicht
-      // am Anfang des Teils, sondern ein Stueck spaeter, sonst weiss man nicht, ob Start
-      // oder Ziel"). Die gelben Sektorgrenzen bleiben an der Kante.
       if (ersteStart && kachelTab && kachelTab.zahl) {
-        pi = kachelTab.start[ti] + Math.round(kachelTab.zahl[ti] * 0.66);
+        pi = kachelTab.start[ti] + Math.round(kachelTab.zahl[ti] * ZIEL_LAENGS.linieOben);
         const maxP = kachelTab.start[ti] + kachelTab.zahl[ti] - 1;
         if (pi > maxP) pi = maxP;
       }
@@ -3487,6 +3524,7 @@
         : `<circle cx="${(p.x + ox).toFixed(1)}" cy="${(p.y + oy).toFixed(1)}" r="5" fill="${farbe}"/>`;
       ersteStart = false;
     }
+
     // ---- Die Autos ----------------------------------------------------------------
     //
     // `currentIndex` zeichnet EIN Auto und bleibt fuer alte Aufrufer; `o.cars` zeichnet
@@ -4552,11 +4590,11 @@
       icon: '<path d="M15 22 L15 12 A20 20 0 0 0 9.5 3.2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>' },
     { key: 'straight', type: () => TILE_TYPE.STRAIGHT, cap: 'Gerade',
       icon: '<path d="M12 22 L12 2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>' },
-    // Die Engstelle: eine Gerade, die in der Mitte einspringt. Das Symbol sagt genau das,
-    // was die Kachel ist - die Breite selbst ist noch nicht gemessen (siehe trackCenterline).
+    // Die Engstelle: eine Gerade mit den Querbalken des Originals (ENGE_BALKEN) - einer von
+    // links, darueber die von rechts, nach oben laenger.
     { key: 'enge', type: () => TILE_TYPE.ENGE, cap: 'Enge',
-      icon: '<path d="M7 2 L7 8 L10 12 L10 22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
-          + '<path d="M17 2 L17 8 L14 12 L14 22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' },
+      icon: '<path d="M6 2 L6 22 M18 2 L18 22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>'
+          + '<path d="M6 18 H12 M18 13 H16 M18 10 H14.5 M18 7 H13 M18 4 H12" fill="none" stroke="currentColor" stroke-width="1.6"/>' },
     { key: 'pit', type: () => TILE_TYPE.PIT, cap: 'Box',
       icon: '<path d="M8 22 L8 2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'
           + '<path d="M16 20 L16 9 A5 5 0 0 1 21 4" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2.5" stroke-linecap="round"/>' },

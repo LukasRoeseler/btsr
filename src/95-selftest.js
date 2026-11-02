@@ -10846,7 +10846,10 @@
     if (!(r.ende < -0.9)) fehler.push('endet bei ' + r.ende + ' statt ganz links');
     // 3. UND SIE STEHT IM BILD. Ohne diese Zeile waere der Test auch gruen, wenn die
     //    Engstelle nur gefahren, aber nicht gezeichnet wuerde.
-    if (r.gezeichnet && !(r.gezeichnet.eng === 1 && r.gezeichnet.sperren === 2)) {
+    // v1.3.15: wie das Originalteil - 11 Querbalken je Engstelle in beiden Stilen, und die
+    //    Startgerade im echten Stil mit Karoband (13 + 12 Quadrate, 2 Linien).
+    if (r.gezeichnet && !(r.gezeichnet.balken === 11 && r.gezeichnet.balkenEcht === 11
+                          && r.gezeichnet.karo === 25 && r.gezeichnet.linien === 2)) {
       fehler.push('gezeichnet: ' + JSON.stringify(r.gezeichnet));
     }
     // 4. DIE NEUEN 30-GRAD-KURVEN DREHEN. Sie haengen an derselben Tabelle, und beim
@@ -10862,7 +10865,7 @@
     return { ok: !fehler.length,
              mass: 'Stufe ' + r.tight.enge + ' (Haarnadel ' + r.tight.haarnadel + ')'
                  + ' | Lenkung ' + r.start + ' -> ' + r.ende
-                 + ' | ' + (r.gezeichnet ? r.gezeichnet.sperren + ' Sperren' : 'ungezeichnet')
+                 + ' | ' + (r.gezeichnet ? r.gezeichnet.balken + ' Balken, ' + r.gezeichnet.karo + ' Karos' : 'ungezeichnet')
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
