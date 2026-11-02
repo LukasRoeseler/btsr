@@ -17856,8 +17856,8 @@
     "Tippe {taste} (Boxenstopp) und halte an.": "Tap {taste} (pit stop) and stop the car.",
     "Halte an. Die Crew beginnt, sobald das Auto steht.": "Stop the car. The crew starts as soon as it stands still.",
     "Drücke {taste}, sobald die Taste aufleuchtet.": "Press {taste} as soon as the button lights up.",
-    "Für das Tutorial brauchst du ein verbundenes Auto und ein Gamepad. Ich warte, bis beides bereit ist.": "For the tutorial you need a connected car and a gamepad. I will wait until both are ready.",
-    "Willkommen bei OmegaSim! In diesem Tutorial lernst du die App kennen und drehst deine ersten Runden.": "Welcome to OmegaSim! In this tutorial you get to know the app and drive your first laps.",
+    "Für die Einführung brauchst du ein verbundenes Auto und ein Gamepad. Ich warte, bis beides bereit ist.": "For the tutorial you need a connected car and a gamepad. I will wait until both are ready.",
+    "Willkommen bei OmegaSim! In dieser Einführung lernst du die App kennen und drehst deine ersten Runden.": "Welcome to OmegaSim! In this tutorial you get to know the app and drive your first laps.",
     "Drücke die Gas-Taste, um zu beschleunigen.": "Press the throttle button to accelerate.",
     "Drücke jetzt die Bremstaste, um zu bremsen.": "Now press the brake button to brake.",
     "Lenke nach links.": "Steer left.",
@@ -17874,7 +17874,7 @@
     "Der Motorsound wird nun geändert zu Ford Mustang.": "The engine sound is now changed to Ford Mustang.",
     "Im Garagenmenü passt du den Motorsound für jedes Auto einzeln an.": "In the garage menu you set the engine sound for each car.",
     "Ansagen, Tastenbelegung, Fahrverhalten und vieles mehr stellst du im Optionenmenü ein.": "Announcements, button mapping, handling and much more are set in the options menu.",
-    "Du hast das Tutorial abgeschlossen. Herzlich willkommen bei OmegaSim!": "You have completed the tutorial. A warm welcome to OmegaSim!",
+    "Du hast die Einführung abgeschlossen. Herzlich willkommen bei OmegaSim!": "You have completed the tutorial. A warm welcome to OmegaSim!",
     "Bereit machen": "Get ready",
     "Auto: unter FAHREN in der Kachel AUTOS verbinden.": "Car: connect it under DRIVE in the CARS tile.",
     "Gamepad: einschalten und eine Taste drücken.": "Gamepad: switch it on and press a button.",
@@ -19171,8 +19171,8 @@
     "Tippe {taste} (Boxenstopp) und halte an.": "Toca {taste} (parada en boxes) y detén el coche.",
     "Halte an. Die Crew beginnt, sobald das Auto steht.": "Detén el coche. El equipo empieza en cuanto está parado.",
     "Drücke {taste}, sobald die Taste aufleuchtet.": "Pulsa {taste} en cuanto se ilumine el botón.",
-    "Für das Tutorial brauchst du ein verbundenes Auto und ein Gamepad. Ich warte, bis beides bereit ist.": "Para el tutorial necesitas un coche conectado y un mando. Espero hasta que ambos estén listos.",
-    "Willkommen bei OmegaSim! In diesem Tutorial lernst du die App kennen und drehst deine ersten Runden.": "¡Bienvenido a OmegaSim! En este tutorial conoces la aplicación y das tus primeras vueltas.",
+    "Für die Einführung brauchst du ein verbundenes Auto und ein Gamepad. Ich warte, bis beides bereit ist.": "Para el tutorial necesitas un coche conectado y un mando. Espero hasta que ambos estén listos.",
+    "Willkommen bei OmegaSim! In dieser Einführung lernst du die App kennen und drehst deine ersten Runden.": "¡Bienvenido a OmegaSim! En este tutorial conoces la aplicación y das tus primeras vueltas.",
     "Drücke die Gas-Taste, um zu beschleunigen.": "Pulsa el botón de acelerador para acelerar.",
     "Drücke jetzt die Bremstaste, um zu bremsen.": "Ahora pulsa el botón de freno para frenar.",
     "Lenke nach links.": "Gira a la izquierda.",
@@ -19189,7 +19189,7 @@
     "Der Motorsound wird nun geändert zu Ford Mustang.": "El sonido del motor cambia ahora a Ford Mustang.",
     "Im Garagenmenü passt du den Motorsound für jedes Auto einzeln an.": "En el menú del garaje ajustas el sonido del motor de cada coche.",
     "Ansagen, Tastenbelegung, Fahrverhalten und vieles mehr stellst du im Optionenmenü ein.": "Los anuncios, la asignación de botones, el comportamiento y mucho más se ajustan en el menú de opciones.",
-    "Du hast das Tutorial abgeschlossen. Herzlich willkommen bei OmegaSim!": "Has completado el tutorial. ¡Te damos la bienvenida a OmegaSim!",
+    "Du hast die Einführung abgeschlossen. Herzlich willkommen bei OmegaSim!": "Has completado el tutorial. ¡Te damos la bienvenida a OmegaSim!",
     "Bereit machen": "Prepárate",
     "Auto: unter FAHREN in der Kachel AUTOS verbinden.": "Coche: conéctalo en CONDUCIR, en la tarjeta COCHES.",
     "Gamepad: einschalten und eine Taste drücken.": "Mando: enciéndelo y pulsa un botón.",
@@ -30716,9 +30716,12 @@
   // beim Text. Fehlt ein Clip, steht der Text so lange da, wie man zum Lesen braucht.
 
   // Wortlaut der Clips, derselbe wie TEXTE in tools/voice_tutorial.py (der Selbsttest vergleicht).
+  // Das ist der ANZEIGETEXT. Piper bekommt einen eigenen Sprechtext (SPRECH im Werkzeug, "sprech" im
+  // Manifest) mit Lautschreibung fuer englische Woerter. GEMELDET: "'Tutorial / App' wird deutsch
+  // ausgesprochen. Nimm dann lieber deutsche Begriffe 'Einfuehrung' und 'Aepp'."
   const TUT_SPRUCH = {
-    voraussetzung: 'Für das Tutorial brauchst du ein verbundenes Auto und ein Gamepad. Ich warte, bis beides bereit ist.',
-    willkommen: 'Willkommen bei OmegaSim! In diesem Tutorial lernst du die App kennen und drehst deine ersten Runden.',
+    voraussetzung: 'Für die Einführung brauchst du ein verbundenes Auto und ein Gamepad. Ich warte, bis beides bereit ist.',
+    willkommen: 'Willkommen bei OmegaSim! In dieser Einführung lernst du die App kennen und drehst deine ersten Runden.',
     gas: 'Drücke die Gas-Taste, um zu beschleunigen.',
     bremse: 'Drücke jetzt die Bremstaste, um zu bremsen.',
     links: 'Lenke nach links.',
@@ -30735,7 +30738,7 @@
     motor: 'Der Motorsound wird nun geändert zu Ford Mustang.',
     garage: 'Im Garagenmenü passt du den Motorsound für jedes Auto einzeln an.',
     optionen: 'Ansagen, Tastenbelegung, Fahrverhalten und vieles mehr stellst du im Optionenmenü ein.',
-    abschluss: 'Du hast das Tutorial abgeschlossen. Herzlich willkommen bei OmegaSim!',
+    abschluss: 'Du hast die Einführung abgeschlossen. Herzlich willkommen bei OmegaSim!',
   };
   // zeige: Text auf dem Schirm, {taste} = Tastenname aus der aktuellen Belegung (Aktion `taste`).
   // Die Clips sprechen generisch ("die Gas-Taste"), denn sie koennen nicht jede Belegung abdecken.
@@ -92834,8 +92837,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         if (!e) { f.push('Manifest ohne ' + k); continue; }
         if (e.text !== TUT_SPRUCH[k]) f.push('Wortlaut weicht ab: ' + k);
         if (!/^tutorial_\w+_de\.ogg$/.test(e.datei || '')) f.push('Datei: ' + k);
+        // Nachbesserung: getrennter Sprechtext; "Tutorial" heisst gesprochen und auf der Karte
+        // "Einfuehrung", "App" wird als "Aepp" gesprochen (GEMELDET: deutsch ausgesprochen).
+        if (typeof e.sprech !== 'string' || !e.sprech) f.push('Sprechtext fehlt: ' + k);
+        else if (/Tutorial|\bApp\b|Gamepad|Arcade|OmegaSim|Mustang|Crew/.test(e.sprech)) f.push('Sprechtext mit englischer Schreibung: ' + k);
+        if (/Tutorial/.test(TUT_SPRUCH[k])) f.push('Ansagetext sagt Tutorial: ' + k);
         dauer[k] = e.dauer;
       }
+      if (!/Einführung/.test(TUT_SPRUCH.willkommen) || !/Äpp/.test((m.de.willkommen || {}).sprech || '')) f.push('Willkommen ohne Einführung/Äpp');
     } catch (e) { f.push('Manifest nicht lesbar: ' + e.message); }
     const budget = tutBudget(dauer);
     if (!(budget > 60 && budget <= TUT_MAX_S)) f.push('Clips + Wartezeiten ' + budget.toFixed(1) + ' s');

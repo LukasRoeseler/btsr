@@ -12138,8 +12138,14 @@
         if (!e) { f.push('Manifest ohne ' + k); continue; }
         if (e.text !== TUT_SPRUCH[k]) f.push('Wortlaut weicht ab: ' + k);
         if (!/^tutorial_\w+_de\.ogg$/.test(e.datei || '')) f.push('Datei: ' + k);
+        // Nachbesserung: getrennter Sprechtext; "Tutorial" heisst gesprochen und auf der Karte
+        // "Einfuehrung", "App" wird als "Aepp" gesprochen (GEMELDET: deutsch ausgesprochen).
+        if (typeof e.sprech !== 'string' || !e.sprech) f.push('Sprechtext fehlt: ' + k);
+        else if (/Tutorial|\bApp\b|Gamepad|Arcade|OmegaSim|Mustang|Crew/.test(e.sprech)) f.push('Sprechtext mit englischer Schreibung: ' + k);
+        if (/Tutorial/.test(TUT_SPRUCH[k])) f.push('Ansagetext sagt Tutorial: ' + k);
         dauer[k] = e.dauer;
       }
+      if (!/Einführung/.test(TUT_SPRUCH.willkommen) || !/Äpp/.test((m.de.willkommen || {}).sprech || '')) f.push('Willkommen ohne Einführung/Äpp');
     } catch (e) { f.push('Manifest nicht lesbar: ' + e.message); }
     const budget = tutBudget(dauer);
     if (!(budget > 60 && budget <= TUT_MAX_S)) f.push('Clips + Wartezeiten ' + budget.toFixed(1) + ' s');
