@@ -2975,6 +2975,28 @@
     font-size: 12px; padding: 4px 12px; border-radius: 0; }
   .k-tour-knoepfe .k-tour-leise { margin-right: auto; background: transparent; border-color: transparent; color: var(--k-dim); }
   .k-tour-knoepfe button.menu-nav-sel { outline: 0; border-color: #fff; background: var(--k-blau); color: var(--k-blau-text); }
+  /* ---- Gefuehrtes Tutorial (v1.3.15, WIP): Karte oben mittig ueber dem Cockpit; solange es auf
+     Auto und Gamepad wartet (Menue FAHREN), unten, damit die Kopfzeile sie nicht verdeckt ---- */
+  .tut-ui { position: fixed; top: max(8px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
+    z-index: 460; width: min(560px, calc(100vw - 32px)); max-height: 60vh; overflow: auto; box-sizing: border-box;
+    background: rgba(12,15,22,.94); border-top: 3px solid var(--k-blau, #00a3e0); box-shadow: 0 10px 30px rgba(0,0,0,.7);
+    color: #eef0f4; font-family: var(--k-font); padding: 8px 12px;
+    display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 12px; align-items: center; }
+  .tut-ui.unten { top: auto; bottom: max(8px, env(safe-area-inset-bottom)); }
+  .tut-ui[hidden], .tut-taste[hidden] { display: none; }
+  .tut-kopf { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px;
+    font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--k-dim); }
+  .tut-hinweis { margin-left: auto; text-transform: none; letter-spacing: .04em; }
+  .tut-taste { grid-row: span 2; display: grid; place-items: center; min-width: clamp(56px, 14vh, 96px);
+    padding: 6px 8px; background: #161a24; border: 2px solid var(--k-blau, #00a3e0); font-size: clamp(16px, 5vh, 26px);
+    font-weight: 900; color: #fff; text-align: center; line-height: 1.1; }
+  .tut-taste.gedrueckt { border-color: var(--good); box-shadow: 0 0 0 2px var(--good); }
+  .tut-ui h2 { grid-column: 2; margin: 0; font-size: clamp(13px, 3.4vh, 17px); letter-spacing: .08em; text-transform: uppercase; }
+  .tut-ui p { grid-column: 2; margin: 0; font-size: clamp(12px, 3vh, 14px); line-height: 1.4; white-space: pre-line; }
+  .tut-ui .tut-taste[hidden] ~ h2, .tut-ui .tut-taste[hidden] ~ p { grid-column: 1 / -1; }
+  .tut-kopf button { font-family: var(--k-font); letter-spacing: .08em; text-transform: uppercase; font-size: 11px;
+    padding: 2px 8px; border-radius: 0; background: transparent; color: var(--k-dim); border: 1px solid var(--k-dim); }
+  .tut-kopf button:hover, .tut-kopf button:focus-visible { color: #fff; border-color: #fff; }
   /* ---- Mehrspieler (v0.8.26) ---- */
   .mp-warnung { border-left: 3px solid var(--warn); padding: 3px 10px; margin: 6px 0 10px; font-size: 12px; color: #f3d9a0;
     background: rgba(255,180,0,.08); }
@@ -4945,7 +4967,7 @@
              Start ausgewaehlt und blau ausgefuellt". Die Wahl fuehrt 96-home.js (homeFokus). -->
         <a class="k-tutorial-knopf k-wiki" id="k-wiki" href="https://omegasim.miraheze.org/wiki/Hauptseite"
            target="_blank" rel="noopener noreferrer" aria-label="Wiki">Wiki</a>
-        <button type="button" id="k-tutorial-start" class="k-tutorial-knopf">Tutorial</button>
+        <button type="button" id="k-tutorial-start" class="k-tutorial-knopf">Tutorial <span class="wip-tag">WIP</span></button>
         <!-- BESTELLT: "neben dem Tutorial-Button noch einen Button zur Steuerung ... dass es nur
              mit Gamepad funktioniert, zeige die Tasten und am Ende, wo man das Bild vom
              Controller mit allen Tasten sieht und die Belegung aendern kann". -->
@@ -12434,7 +12456,7 @@
     <div class="card subpage" id="sub-opt-tutorials">
       <div class="opt-head">Tutorials</div>
       <div class="opt-row"><div class="opt-label">Alle F&uuml;hrungen an einem Ort. Jede startet auf dem passenden Schirm.</div></div>
-      <div class="opt-row tut-zeile"><button class="tut-knopf" data-tour="start"><b>Tutorial</b><span>Erste Schritte &uuml;ber die echten Schirme.</span></button></div>
+      <div class="opt-row tut-zeile"><button class="tut-knopf" data-tour="start"><b>Tutorial <span class="wip-tag">WIP</span></b><span>Erste Runden mit Ansage: Gas, Bremse, Lenken, Fahrgef&uuml;hl, Boxenstopp und Motorsound.</span></button></div>
       <div class="opt-row tut-zeile"><button class="tut-knopf" data-tour="steuerung"><b>Steuerung</b><span>Gamepad beim Fahren: Tasten ansehen und dr&uuml;cken.</span></button></div>
       <div class="opt-row tut-zeile"><button class="tut-knopf" data-tour="editor"><b>Streckeneditor</b><span>Teile ausw&auml;hlen, einf&uuml;gen, drehen, r&uuml;ckg&auml;ngig.</span></button></div>
       <div class="opt-row tut-zeile"><button class="tut-knopf" data-tour="raum"><b>Raumgestalter</b><span>Boden und M&ouml;bel zeichnen, Strecke einpassen.</span></button></div>
@@ -13092,6 +13114,15 @@
         <button type="button" id="k-tour-weiter" class="primary">Weiter &#9654;</button>
       </div>
     </div>
+  </div>
+  <!-- GEFUEHRTES TUTORIAL (v1.3.15, WIP, 51b-tutorial.js): eine Karte oben ueber dem Cockpit.
+       Sie nimmt keine Tasten: gefahren wird darunter ganz normal. -->
+  <div class="tut-ui" id="tut-ui" hidden role="status" aria-live="polite">
+    <div class="tut-kopf"><span>Tutorial <span class="wip-tag">WIP</span></span><span id="tut-fortschritt" data-i18n-skip></span>
+      <span class="tut-hinweis" id="tut-hinweis" data-i18n-skip></span><button type="button" id="tut-beenden">Beenden</button></div>
+    <span class="tut-taste" id="tut-taste" hidden data-i18n-skip></span>
+    <h2 id="tut-titel" data-i18n-skip></h2>
+    <p id="tut-text" data-i18n-skip></p>
   </div>
   <!-- RENNENDE AUS EINEM MENUE: eine Einblendung statt eines Sprungs ins Cockpit. -->
   <button type="button" class="k-ergebnis" id="k-ergebnis" hidden>Rennen beendet – Ergebnis ansehen</button>
@@ -17689,6 +17720,46 @@
     "Verbunden mit": "Connected to",
     "Info-Screen:": "Info screen:",
     "Lädt …": "Loading …",
+    "Gas geben": "Accelerate",
+    "Bremsen": "Braking",
+    "Fahrgefühl: Arcade": "Driving feel: Arcade",
+    "Fahrgefühl: Pacejka": "Driving feel: Pacejka",
+    "Beschleunigung": "Acceleration",
+    "Boxen-Minispiel": "Pit minigame",
+    "Geschafft": "Done",
+    "Drücke {taste}, um zu beschleunigen.": "Press {taste} to accelerate.",
+    "Drücke {taste}, um zu bremsen.": "Press {taste} to brake.",
+    "Lenke mit {taste} nach links.": "Steer left with {taste}.",
+    "Und jetzt mit {taste} nach rechts.": "And now right with {taste}.",
+    "Zeit für einen Boxenstopp. Gleich erscheinen Tasten auf dem Schirm ({taste}). Drückst du sie rechtzeitig, ist die Crew schneller.": "Time for a pit stop. Buttons will appear on the screen ({taste}). Press them in time and the crew is faster.",
+    "Tippe {taste} (Boxenstopp) und halte an.": "Tap {taste} (pit stop) and stop the car.",
+    "Halte an. Die Crew beginnt, sobald das Auto steht.": "Stop the car. The crew starts as soon as it stands still.",
+    "Drücke {taste}, sobald die Taste aufleuchtet.": "Press {taste} as soon as the button lights up.",
+    "Für das Tutorial brauchst du ein verbundenes Auto und ein Gamepad. Ich warte, bis beides bereit ist.": "For the tutorial you need a connected car and a gamepad. I will wait until both are ready.",
+    "Willkommen bei OmegaSim! In diesem Tutorial lernst du die App kennen und drehst deine ersten Runden.": "Welcome to OmegaSim! In this tutorial you get to know the app and drive your first laps.",
+    "Drücke die Gas-Taste, um zu beschleunigen.": "Press the throttle button to accelerate.",
+    "Drücke jetzt die Bremstaste, um zu bremsen.": "Now press the brake button to brake.",
+    "Lenke nach links.": "Steer left.",
+    "Und jetzt nach rechts.": "And now right.",
+    "Sehr gut!": "Very good!",
+    "Prima!": "Great!",
+    "Fahr jetzt ein paar Runden im Arcade-Modus. Das Auto lenkt direkt ein und bremst kräftig.": "Now drive a few laps in arcade mode. The car turns in directly and brakes hard.",
+    "Nun wird ein realistischeres Einlenken simuliert.": "Now a more realistic turn-in is simulated.",
+    "Das Auto beschleunigt jetzt langsamer, wie ein echter Rennwagen.": "The car now accelerates more slowly, like a real race car.",
+    "Fährst du zu schnell in eine Kurve, schiebt das Auto geradeaus. Das ist Untersteuern. Bremse also vor der Kurve.": "If you enter a corner too fast, the car pushes straight on. That is understeer. So brake before the corner.",
+    "Zeit für einen Boxenstopp. Gleich erscheinen Tasten auf dem Schirm. Drückst du sie rechtzeitig, ist die Crew schneller.": "Time for a pit stop. Buttons will appear on the screen. Press them in time and the crew is faster.",
+    "Tippe jetzt die Boxenstopp-Taste und halte an.": "Now tap the pit stop button and stop the car.",
+    "Fertig! Fahr weiter.": "Done! Drive on.",
+    "Der Motorsound wird nun geändert zu Ford Mustang.": "The engine sound is now changed to Ford Mustang.",
+    "Im Garagenmenü passt du den Motorsound für jedes Auto einzeln an.": "In the garage menu you set the engine sound for each car.",
+    "Ansagen, Tastenbelegung, Fahrverhalten und vieles mehr stellst du im Optionenmenü ein.": "Announcements, button mapping, handling and much more are set in the options menu.",
+    "Du hast das Tutorial abgeschlossen. Herzlich willkommen bei OmegaSim!": "You have completed the tutorial. A warm welcome to OmegaSim!",
+    "Bereit machen": "Get ready",
+    "Auto: unter FAHREN in der Kachel AUTOS verbinden.": "Car: connect it under DRIVE in the CARS tile.",
+    "Gamepad: einschalten und eine Taste drücken.": "Gamepad: switch it on and press a button.",
+    "Abbrechen: Kreis oder Esc": "Cancel: Circle or Esc",
+    "Beenden: Options oder Esc": "Quit: Options or Esc",
+    "Erste Runden mit Ansage: Gas, Bremse, Lenken, Fahrgefühl, Boxenstopp und Motorsound.": "First laps with voice guidance: throttle, brake, steering, driving feel, pit stop and engine sound.",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -18928,6 +18999,54 @@
     "Verbunden mit": "Conectado a",
     "Info-Screen:": "Pantalla de info:",
     "Lädt …": "Cargando …",
+    "Gas geben": "Acelerar",
+    "Bremsen": "Frenar",
+    "Fahrgefühl: Arcade": "Sensación de conducción: Arcade",
+    "Fahrgefühl: Pacejka": "Sensación de conducción: Pacejka",
+    "Beschleunigung": "Aceleración",
+    "Untersteuern": "Subviraje",
+    "Boxen-Minispiel": "Minijuego de boxes",
+    "Motorsound": "Sonido del motor",
+    "Garage": "Garaje",
+    "Geschafft": "Conseguido",
+    "Drücke {taste}, um zu beschleunigen.": "Pulsa {taste} para acelerar.",
+    "Drücke {taste}, um zu bremsen.": "Pulsa {taste} para frenar.",
+    "Lenke mit {taste} nach links.": "Gira a la izquierda con {taste}.",
+    "Und jetzt mit {taste} nach rechts.": "Y ahora a la derecha con {taste}.",
+    "Zeit für einen Boxenstopp. Gleich erscheinen Tasten auf dem Schirm ({taste}). Drückst du sie rechtzeitig, ist die Crew schneller.": "Hora de una parada en boxes. Aparecerán botones en la pantalla ({taste}). Si los pulsas a tiempo, el equipo es más rápido.",
+    "Tippe {taste} (Boxenstopp) und halte an.": "Toca {taste} (parada en boxes) y detén el coche.",
+    "Halte an. Die Crew beginnt, sobald das Auto steht.": "Detén el coche. El equipo empieza en cuanto está parado.",
+    "Drücke {taste}, sobald die Taste aufleuchtet.": "Pulsa {taste} en cuanto se ilumine el botón.",
+    "Für das Tutorial brauchst du ein verbundenes Auto und ein Gamepad. Ich warte, bis beides bereit ist.": "Para el tutorial necesitas un coche conectado y un mando. Espero hasta que ambos estén listos.",
+    "Willkommen bei OmegaSim! In diesem Tutorial lernst du die App kennen und drehst deine ersten Runden.": "¡Bienvenido a OmegaSim! En este tutorial conoces la aplicación y das tus primeras vueltas.",
+    "Drücke die Gas-Taste, um zu beschleunigen.": "Pulsa el botón de acelerador para acelerar.",
+    "Drücke jetzt die Bremstaste, um zu bremsen.": "Ahora pulsa el botón de freno para frenar.",
+    "Lenke nach links.": "Gira a la izquierda.",
+    "Und jetzt nach rechts.": "Y ahora a la derecha.",
+    "Sehr gut!": "¡Muy bien!",
+    "Prima!": "¡Genial!",
+    "Fahr jetzt ein paar Runden im Arcade-Modus. Das Auto lenkt direkt ein und bremst kräftig.": "Ahora da unas vueltas en modo arcade. El coche gira de forma directa y frena con fuerza.",
+    "Nun wird ein realistischeres Einlenken simuliert.": "Ahora se simula un giro más realista.",
+    "Das Auto beschleunigt jetzt langsamer, wie ein echter Rennwagen.": "Ahora el coche acelera más despacio, como un coche de carreras de verdad.",
+    "Fährst du zu schnell in eine Kurve, schiebt das Auto geradeaus. Das ist Untersteuern. Bremse also vor der Kurve.": "Si entras demasiado rápido en una curva, el coche sigue recto. Eso es subviraje. Así que frena antes de la curva.",
+    "Zeit für einen Boxenstopp. Gleich erscheinen Tasten auf dem Schirm. Drückst du sie rechtzeitig, ist die Crew schneller.": "Hora de una parada en boxes. Aparecerán botones en la pantalla. Si los pulsas a tiempo, el equipo es más rápido.",
+    "Tippe jetzt die Boxenstopp-Taste und halte an.": "Ahora toca el botón de parada en boxes y detén el coche.",
+    "Fertig! Fahr weiter.": "¡Listo! Sigue conduciendo.",
+    "Der Motorsound wird nun geändert zu Ford Mustang.": "El sonido del motor cambia ahora a Ford Mustang.",
+    "Im Garagenmenü passt du den Motorsound für jedes Auto einzeln an.": "En el menú del garaje ajustas el sonido del motor de cada coche.",
+    "Ansagen, Tastenbelegung, Fahrverhalten und vieles mehr stellst du im Optionenmenü ein.": "Los anuncios, la asignación de botones, el comportamiento y mucho más se ajustan en el menú de opciones.",
+    "Du hast das Tutorial abgeschlossen. Herzlich willkommen bei OmegaSim!": "Has completado el tutorial. ¡Te damos la bienvenida a OmegaSim!",
+    "Bereit machen": "Prepárate",
+    "Auto: unter FAHREN in der Kachel AUTOS verbinden.": "Coche: conéctalo en CONDUCIR, en la tarjeta COCHES.",
+    "Gamepad: einschalten und eine Taste drücken.": "Mando: enciéndelo y pulsa un botón.",
+    "Abbrechen: Kreis oder Esc": "Cancelar: Círculo o Esc",
+    "Beenden: Options oder Esc": "Salir: Options o Esc",
+    "Erste Runden mit Ansage: Gas, Bremse, Lenken, Fahrgefühl, Boxenstopp und Motorsound.": "Primeras vueltas con voz: acelerador, freno, dirección, sensación de conducción, parada en boxes y sonido del motor.",
+    "oder": "o",
+    "nicht belegt": "sin asignar",
+    "Linker Stick": "Stick izquierdo",
+    "Rechter Stick": "Stick derecho",
+    "WIP": "WIP",
   };
 
   // ============================================================================
@@ -29078,6 +29197,8 @@
     if (typeof chCommunitySeiteOffen === 'function' && chCommunitySeiteOffen()) { showSubpage('ch-community'); return true; }
     if (tab === 'info' && document.querySelector('#tab-info .subpage.on')) { konsoleZeige('fahren'); return true; }
     if (document.querySelector('.tabpage.active .subpage.on')) { showSubpage(''); return true; }
+    // v1.3.15: das gefuehrte Tutorial wartet auf Auto und Gamepad - Kreis/Esc bricht es ab.
+    if (typeof tutLaeuft === 'function' && tutLaeuft()) { tutAbbrechen('Kreis/Esc'); return true; }
     if (tab === 'home' || tab === 'fahren') return false;
     // BESTELLT: "wenn ich aus menues mit kreistaste zurueckgehe, will ich zu fahren kommen."
     // Der Stapel fuehrte sonst in den zuletzt besuchten Menue-Reiter zurueck; Kreis soll
@@ -29874,7 +29995,7 @@
     // Steuerung." Alle anderen Tasten tun auf dem Titel nichts mehr.
     // v1.3.5: Kreuz (A am Xbox-Pad) loest den GEWAEHLTEN Knopf aus - vorgewaehlt ist Starten.
     if (neu === 0) { kTitelSperre = true; homeFokusAusloesen(); return true; }
-    if (neu === 3) { kTitelSperre = true; konsoleTourStart(K_TOUR); return true; }
+    if (neu === 3) { kTitelSperre = true; tutorialStarten(); return true; }
     if (neu === 1) { kTitelSperre = true; konsoleTourStart(K_STEUERUNG); return true; }
     return true;
   }
@@ -29927,7 +30048,7 @@
       // loesen ihn aus (v1.3.5), Q/E wie L1/R1 die Sprache. T und S bleiben als Abkuerzung.
       if (k === 'arrowleft' || k === 'arrowright') homeFokusSchritt(k === 'arrowleft' ? -1 : 1);
       else if (k === 'q' || k === 'e') wechsleSprache();
-      else if (k === 't') konsoleTourStart(K_TOUR);
+      else if (k === 't') tutorialStarten();
       else if (k === 's') konsoleTourStart(K_STEUERUNG);
       else if (k === 'enter' || k === ' ' || k === 'x') homeFokusAusloesen();
       return;
@@ -30093,29 +30214,9 @@
   // Der erste Schritt steht schon auf FAHREN und nicht auf dem Titel: auf dem Titel
   // verbraucht konsolePadTitel() jede Taste, dort gaebe es kein Weiter.
 
-  // TEXTE KURZ UND OHNE GEDANKENSTRICHE (BESTELLT: "Emdashes rausnehmen aus den
-  // Tutorialtexten und bessere Formulierung nehmen. Moeglichst kurz und knapp.").
-  const K_TOUR = [
-    { tab: 'fahren', ziel: null, bild: 'titel', titel: 'Willkommen bei OmegaSim',
-      text: 'OmegaSim steuert deine Carrera-Hybrid-Autos per Bluetooth. Mit echter Fahrphysik, simuliertem Motorsound und einem Cockpit wie im Rennsimulator.' },
-    { tab: 'fahren', ziel: ['#fa-auto'], bild: 'auto', titel: 'Autos verbinden',
-      text: 'Verbinde hier dein Auto. Das erste steuerst du selbst, jedes weitere fährt als NPC gegen dich. Namen, Farben und Fotos stellst du in der Garage ein.' },
-    { tab: 'fahren', ziel: ['#fa-strecke'], bild: 'strecke-frei', titel: 'Deine Strecke',
-      text: 'Auf der Bahn liest das Auto die Schiene. Scanne deine Strecke oder bau sie im Editor nach. Ohne Bahn druckst du Vorlagen aus.' },
-    { tab: 'fahren', ziel: ['#fa-renn'], bild: 'rennen', titel: 'Rennoptionen',
-      text: 'Training, Qualifying, Rennen oder Endurance. Dazu Wetter, Pflichtstopps, Tank und Reifenverschleiß.' },
-    { tab: 'fahren', ziel: ['#fa-profil'], bild: 'rennen', titel: 'Meisterschaft',
-      text: 'Bald: mehrere Rennen hintereinander, mit Punkten und Startaufstellung. Die Abstimmung (Fahrgefühl) und den Motorsound wählst du je Auto in der Garage.' },
-    { tab: 'fahren', ziel: ['#fa-start'], bild: 'start', titel: 'Losfahren',
-      text: 'Ein Druck startet die Ampel. Im Cockpit fordert Kreuz den Boxenstopp an, Options öffnet das Menü.' },
-    { tab: 'fahren', ziel: null, bild: 'box', titel: 'Boxenstopp als Minigame',
-      text: 'Beim Stopp erscheinen zehn Tasten. Triffst du Quadrat oder Kreis rechtzeitig, ist die Crew schneller fertig. Abschalten kannst du es unter Optionen, Allgemein, Tank & Schaden.' },
-    // v1.3.5: kein eigener Reiter mehr - der Knopf in der Autos-Kachel.
-    { tab: 'fahren', ziel: ['#fa-mp'], bild: 'mehrspieler', titel: 'WLAN Mehrspieler und Info-Screen',
-      text: 'Mehrere Telefone fahren in einer gemeinsamen Rangliste. Ein Tablet zeigt als Info-Screen Strecke und Zeiten.' },
-    { tab: 'fahren', ziel: ['#fa-auto'], bild: 'fahren', titel: "Los geht's",
-      text: 'Verbinde jetzt dein erstes Auto. Zum Tutorial kommst du jederzeit zurück: Klick auf das Omega oben links.' },
-  ];
+  // v1.3.15: das Tutorial auf dem Titel ist keine Bildfolge mehr (bis v1.3.14 K_TOUR, neun
+  // Karten ueber die Schirme), sondern die gefuehrte Fahrt mit Ansage am Ende dieser Datei
+  // (tutorialStarten). Die Fuehrungen unten (Steuerung, Editor, Raum, ...) bleiben Karten.
 
   // DIE STEUERUNG BEIM FAHREN. BESTELLT: "neben dem Tutorial-Button noch einen Button zur
   // Steuerung ... nur mit Gamepad ... am Ende, wo man das Bild vom Controller sieht und die
@@ -30279,16 +30380,18 @@
     return true;
   }
   // Wo eine Fuehrung endet: das Tutorial auf Fahren, die Steuerung dort, wo sie hinfuehrt.
-  const K_TOUR_ENDE = new Map([[K_TOUR, 'fahren'], [K_STEUERUNG, 'bleiben'], [K_EDITOR, 'bleiben'], [K_RAUM, 'bleiben'],
+  const K_TOUR_ENDE = new Map([[K_STEUERUNG, 'bleiben'], [K_EDITOR, 'bleiben'], [K_RAUM, 'bleiben'],
                                [K_SAFETY, 'fahren'], [K_MEISTER, 'fahren'], [K_TIMEATTACK, 'fahren'], [K_CHALLENGES, 'fahren']]);
 
   let kTourOffen = false;
   let kTourSchritt = 0;
-  let kTourListe = K_TOUR;
+  let kTourListe = K_STEUERUNG;
   function konsoleTourOffen() { return kTourOffen; }
 
   function konsoleTourStart(liste) {
-    kTourListe = Array.isArray(liste) ? liste : K_TOUR;
+    // Ohne Liste (frueher K_TOUR): das gefuehrte Tutorial (v1.3.15).
+    if (!Array.isArray(liste)) { tutorialStarten(); return; }
+    kTourListe = liste;
     kTourOffen = true;
     kTourSchritt = 0;
     const d = $('k-tour');
@@ -30399,20 +30502,500 @@
 
   (() => {
     const kn = (id, fn) => { const el = $(id); if (el) el.addEventListener('click', fn); };
-    kn('k-tutorial-start', (e) => { e.stopPropagation(); konsoleTourStart(K_TOUR); });
+    kn('k-tutorial-start', (e) => { e.stopPropagation(); tutorialStarten(); });
     kn('k-steuerung-start', (e) => { e.stopPropagation(); konsoleTourStart(K_STEUERUNG); });
     kn('k-starten-start', (e) => { e.stopPropagation(); konsoleTitelWeiter(); });
     // v1.0.45 BESTELLT: "in den Optionen eine extra Kachel mit Tutorials" - jede Kachel in
     // der Liste startet ihre Fuehrung auf dem passenden Schirm.
-    const K_TOUREN = { start: K_TOUR, steuerung: K_STEUERUNG, editor: K_EDITOR, raum: K_RAUM,
+    const K_TOUREN = { steuerung: K_STEUERUNG, editor: K_EDITOR, raum: K_RAUM,
                        safety: K_SAFETY, meister: K_MEISTER, time: K_TIMEATTACK, challenges: K_CHALLENGES };
     document.querySelectorAll('.tut-knopf').forEach((el) => {
-      el.addEventListener('click', (e) => { e.stopPropagation(); konsoleTourStart(K_TOUREN[el.dataset.tour] || K_TOUR); });
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (K_TOUREN[el.dataset.tour]) konsoleTourStart(K_TOUREN[el.dataset.tour]); else tutorialStarten();
+      });
     });
     kn('k-tour-weiter', () => konsoleTourWeiter());
     kn('k-tour-zurueck', () => konsoleTourZurueck());
     kn('k-tour-ende', () => konsoleTourZu(false));
     window.addEventListener('resize', () => { if (kTourOffen) konsoleTourSpot(); });
+  })();
+
+
+  // ============================ GEFUEHRTES TUTORIAL (v1.3.15, WIP) ======================
+  //
+  // BESTELLT: "Tutorial von Grund auf ueberarbeiten: mit freundlicher Frauenstimme und
+  // Heranfuehrung an Funktionen. Fange an mit einer Willkommensnachricht ... Dafuer muss nur
+  // ein Auto und Gamepad verbunden sein. Dann Gas, Bremse, Lenken nacheinander erklaeren und
+  // jeweils warten, bis die Taste gedrueckt wurde ... Erstmal Arcade als Steuerungsmodus, dann
+  // nach X Sekunden 'Nun wird ein realistischeres Einlenken simuliert', dann Beschleunigung,
+  // Untersteuern. Dann Tankvorgang initiieren und Minigame erklaeren. Dann Motorsound aendern
+  // ... Abschlussansage ... und zurueck ins Menue automatisch. Sollte insgesamt max. 3 min dauern."
+  //
+  // Eine Zustandsmaschine im Cockpit. Phasen: 'warten' (Auto oder Gamepad fehlen noch: Hinweis
+  // gesprochen und als Text), 'lauf' (TUT_SCHRITTE der Reihe nach), danach zurueck ins Menue.
+  // Jeder Schritt: beim Betreten eine Aktion (vorher), dann der Clip, dann - falls `warte` -
+  // die Wartebedingung mit Zeitlimit `s` (laeuft ab dem Clipende; wer schon waehrend des Clips
+  // drueckt, zaehlt). `min` ist die Mindestdauer ab Beginn des Schritts (Fahrzeit), `lob` ein
+  // kurzer Clip nach erfuellter Bedingung. Ein abgelaufenes Limit geht ohne Lob weiter; den
+  // Boxenstopp loest das Tutorial dann selbst aus.
+  //
+  // LAST: ein Takt alle TUT_TAKT_MS (100 ms) per setTimeout, nicht im 45-ms-Herzschlag. Die
+  // Tasten liest er ueber die vorhandene Belegung (readBindingValue auf demselben Pad, das
+  // pollGamepad faehrt); gefahren wird ganz normal ueber pollGamepad, das Tutorial verbraucht
+  // keine Taste.
+  //
+  // ABBRUCH: im Cockpit Options oder Esc (beide fuehren ins Menue; wer das Cockpit verlaesst,
+  // beendet das Tutorial), vorher Kreis oder Esc (konsoleZurueck), jederzeit der Knopf "Beenden".
+  // Fahrgefuehl, Motorklang und Boxeneinstellungen werden vorher gesichert und am Ende oder beim
+  // Abbruch wiederhergestellt.
+  //
+  // STIMME: Piper de_DE-kerstin-low (tools/voice_tutorial.py, audio/tutorial.json). Fuer Englisch
+  // und Spanisch gibt es ohne neuen Download keine Piper-Frauenstimme: dort spricht
+  // speechSynthesis den uebersetzten Text (falls das Geraet eine Stimme hat), sonst bleibt es
+  // beim Text. Fehlt ein Clip, steht der Text so lange da, wie man zum Lesen braucht.
+
+  // Wortlaut der Clips, derselbe wie TEXTE in tools/voice_tutorial.py (der Selbsttest vergleicht).
+  const TUT_SPRUCH = {
+    voraussetzung: 'Für das Tutorial brauchst du ein verbundenes Auto und ein Gamepad. Ich warte, bis beides bereit ist.',
+    willkommen: 'Willkommen bei OmegaSim! In diesem Tutorial lernst du die App kennen und drehst deine ersten Runden.',
+    gas: 'Drücke die Gas-Taste, um zu beschleunigen.',
+    bremse: 'Drücke jetzt die Bremstaste, um zu bremsen.',
+    links: 'Lenke nach links.',
+    rechts: 'Und jetzt nach rechts.',
+    gut: 'Sehr gut!',
+    prima: 'Prima!',
+    arcade: 'Fahr jetzt ein paar Runden im Arcade-Modus. Das Auto lenkt direkt ein und bremst kräftig.',
+    pacejka: 'Nun wird ein realistischeres Einlenken simuliert.',
+    beschleunigung: 'Das Auto beschleunigt jetzt langsamer, wie ein echter Rennwagen.',
+    untersteuern: 'Fährst du zu schnell in eine Kurve, schiebt das Auto geradeaus. Das ist Untersteuern. Bremse also vor der Kurve.',
+    box_erklaerung: 'Zeit für einen Boxenstopp. Gleich erscheinen Tasten auf dem Schirm. Drückst du sie rechtzeitig, ist die Crew schneller.',
+    box: 'Tippe jetzt die Boxenstopp-Taste und halte an.',
+    box_fertig: 'Fertig! Fahr weiter.',
+    motor: 'Der Motorsound wird nun geändert zu Ford Mustang.',
+    garage: 'Im Garagenmenü passt du den Motorsound für jedes Auto einzeln an.',
+    optionen: 'Ansagen, Tastenbelegung, Fahrverhalten und vieles mehr stellst du im Optionenmenü ein.',
+    abschluss: 'Du hast das Tutorial abgeschlossen. Herzlich willkommen bei OmegaSim!',
+  };
+  // zeige: Text auf dem Schirm, {taste} = Tastenname aus der aktuellen Belegung (Aktion `taste`).
+  // Die Clips sprechen generisch ("die Gas-Taste"), denn sie koennen nicht jede Belegung abdecken.
+  const TUT_SCHRITTE = [
+    { id: 'willkommen', titel: 'Willkommen bei OmegaSim', clip: 'willkommen' },
+    { id: 'gas', titel: 'Gas geben', clip: 'gas', taste: 'throttle', zeige: 'Drücke {taste}, um zu beschleunigen.',
+      warte: 'gas', s: 10, lob: 'gut' },
+    { id: 'bremse', titel: 'Bremsen', clip: 'bremse', taste: 'brake', zeige: 'Drücke {taste}, um zu bremsen.',
+      warte: 'bremse', s: 10, lob: 'prima' },
+    { id: 'links', titel: 'Lenken', clip: 'links', taste: 'steering', zeige: 'Lenke mit {taste} nach links.',
+      warte: 'links', s: 8 },
+    { id: 'rechts', titel: 'Lenken', clip: 'rechts', taste: 'steering', zeige: 'Und jetzt mit {taste} nach rechts.',
+      warte: 'rechts', s: 8, lob: 'gut' },
+    // "nach X Sekunden": 20 s Arcade ab Beginn des Schritts (der Clip zaehlt mit).
+    { id: 'arcade', titel: 'Fahrgefühl: Arcade', clip: 'arcade', min: 20 },
+    { id: 'pacejka', titel: 'Fahrgefühl: Pacejka', clip: 'pacejka', vorher: 'pacejka' },
+    { id: 'beschleunigung', titel: 'Beschleunigung', clip: 'beschleunigung', min: 8 },
+    { id: 'untersteuern', titel: 'Untersteuern', clip: 'untersteuern', min: 12 },
+    { id: 'box_erklaerung', titel: 'Boxenstopp', clip: 'box_erklaerung', taste: 'spiel',
+      zeige: 'Zeit für einen Boxenstopp. Gleich erscheinen Tasten auf dem Schirm ({taste}). Drückst du sie rechtzeitig, ist die Crew schneller.' },
+    { id: 'box', titel: 'Boxenstopp', clip: 'box', taste: 'yellowflag', zeige: 'Tippe {taste} (Boxenstopp) und halte an.',
+      warte: 'box_an', s: 10 },
+    { id: 'box_steht', titel: 'Boxenstopp', zeige: 'Halte an. Die Crew beginnt, sobald das Auto steht.',
+      warte: 'box_steht', s: 10 },
+    { id: 'box_spiel', titel: 'Boxen-Minispiel', taste: 'spiel', zeige: 'Drücke {taste}, sobald die Taste aufleuchtet.',
+      warte: 'box_fertig', s: 14 },
+    { id: 'box_fertig', titel: 'Boxenstopp', clip: 'box_fertig' },
+    { id: 'motor', titel: 'Motorsound', clip: 'motor', vorher: 'motor', min: 5 },
+    { id: 'garage', titel: 'Garage', clip: 'garage' },
+    { id: 'optionen', titel: 'Optionen', clip: 'optionen' },
+    { id: 'abschluss', titel: 'Geschafft', clip: 'abschluss' },
+  ];
+  const TUT_TAKT_MS = 100;
+  const TUT_LUECKE_S = 0.3;      // Pause nach jedem Clip
+  const TUT_LADE_MS = 4000;      // so lange wartet der Start hoechstens auf die Clips
+  const TUT_MAX_S = 180;         // BESTELLT: "insgesamt max. 3 min"
+  const TUT_SCHWELLE = 0.5;      // Gas, Bremse, Lenkausschlag
+  // Ziel des Motorklang-Schritts. Die Ansage sagt "Ford Mustang"; steht schon der Mustang v2
+  // drin, wird es der gerechnete Mustang.
+  const TUT_MOTOR = 'mustang2v';
+  const TUT_MOTOR_ERSATZ = 'mustang';
+
+  // Wie lange ein Schritt hoechstens dauert (Clip, Mindestdauer, Zeitlimit, Lob). `dauer` sind
+  // die Clipdauern aus dem Manifest. Der Selbsttest prueft die Summe gegen TUT_MAX_S.
+  function tutBudget(dauer) {
+    const d = (k) => (k && dauer && dauer[k] > 0 ? dauer[k] + TUT_LUECKE_S : 0);
+    return TUT_SCHRITTE.reduce((sum, s) => sum + Math.max(d(s.clip), s.min || 0) + (s.s || 0) + d(s.lob), 0);
+  }
+
+  // ---- Tastennamen aus der aktuellen Belegung ----
+  const TUT_KNOPF = { 0: '✕ / A', 1: '○ / B', 2: '□ / X', 3: '△ / Y', 4: 'L1 / LB', 5: 'R1 / RB', 6: 'L2 / LT',
+    7: 'R2 / RT', 8: 'Share / Back', 9: 'Options / Start', 10: 'L3', 11: 'R3', 12: '▲', 13: '▼', 14: '◀', 15: '▶' };
+  const TUT_ACHSE = { 0: 'Linker Stick', 1: 'Linker Stick', 2: 'Rechter Stick', 3: 'Rechter Stick' };
+  function tutTasteName(aktion) {
+    if (aktion === 'spiel') return tutTasteName('downshift') + ' ' + t('oder') + ' ' + tutTasteName('upshift');
+    const b = typeof bindings !== 'undefined' && bindings ? bindings[aktion] : null;
+    if (!b || b.type === 'none' || !(b.index >= 0)) return t('nicht belegt');
+    if (b.type === 'button' && TUT_KNOPF[b.index]) return TUT_KNOPF[b.index];
+    if (b.type === 'axis' && TUT_ACHSE[b.index]) return t(TUT_ACHSE[b.index]);
+    return t(b.label || ('#' + b.index));
+  }
+
+  // ---- Die echte Umgebung. Der Selbsttest ersetzt Teile davon durch Attrappen. ----
+  function tutPad() {
+    if (typeof padsFuerSpieler !== 'function') return null;
+    let p = padsFuerSpieler().p1;
+    if (p && typeof padNativ === 'function') p = padNativ(p);
+    return p || null;
+  }
+  let tutVoiceGain = null, tutQuelle = null;
+  const tutBuffers = new Map();
+  let tutManifest = null, tutLadenLaeuft = null;
+  // Wie die Rennintro-Clips (80d-rennintro.js): Manifest, dann hoechstens sechs Downloads
+  // gleichzeitig. Ein fehlender Clip laesst nur seinen Ton aus.
+  function tutClipsLaden() {
+    if (tutLadenLaeuft) return tutLadenLaeuft;
+    tutLadenLaeuft = (async () => {
+      try {
+        if (!tutManifest) {
+          const res = await fetch('audio/tutorial.json');
+          if (!res.ok) throw new Error('tutorial.json HTTP ' + res.status);
+          tutManifest = await res.json();
+        }
+        if (!audioCtx && typeof initEngineSound === 'function') initEngineSound();
+        if (!audioCtx) return;
+        const katalog = tutManifest.de || {};
+        const keys = Object.keys(TUT_SPRUCH).filter((k) => !tutBuffers.has(k) && katalog[k]);
+        let i = 0;
+        await Promise.all(Array.from({ length: Math.min(6, keys.length) }, async () => {
+          while (i < keys.length) {
+            const k = keys[i++];
+            try {
+              const r = await fetch('audio/' + katalog[k].datei);
+              if (!r.ok) throw new Error('HTTP ' + r.status);
+              tutBuffers.set(k, await audioCtx.decodeAudioData(await r.arrayBuffer()));
+            } catch (e) { log('Tutorial: Clip ' + k + ' nicht ladbar (' + e.message + '), der Text bleibt stehen.', 'info'); }
+          }
+        }));
+      } catch (e) {
+        log('Tutorial: Aufnahmen nicht ladbar (' + e.message + '), nur Text.', 'info');
+      } finally {
+        tutLadenLaeuft = null;
+        tut.geladen = true;
+      }
+    })();
+    return tutLadenLaeuft;
+  }
+  function tutVerstummen() {
+    if (tutQuelle) {
+      tutQuelle.onended = null;
+      try { tutQuelle.stop(); } catch (e) { /* schon aus */ }
+      tutQuelle = null;
+    }
+    try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) { /* ohne Sprachausgabe */ }
+  }
+  // Lesedauer, wenn nichts gesprochen wird: rund 15 Zeichen je Sekunde, mindestens 2 s.
+  function tutLesedauer(text) { return Math.max(2, String(text || '').length / 15); }
+  // Spricht `key` und gibt die Dauer in Sekunden zurueck (bei speechSynthesis geschaetzt; das
+  // Ende kuerzt den Schritt dann ueber tutClipFertig()).
+  function tutSprechenEcht(key) {
+    const de = TUT_SPRUCH[key] || '';
+    tutVerstummen();
+    if (typeof soundEnabled !== 'undefined' && !soundEnabled) return tutLesedauer(t(de));
+    if (lang === 'de') {
+      const buf = tutBuffers.get(key);
+      if (!buf || !audioCtx) return tutLesedauer(de);
+      try {
+        if (audioCtx.state !== 'running') audioCtx.resume();
+        if (!tutVoiceGain || tutVoiceGain.context !== audioCtx) {
+          tutVoiceGain = audioCtx.createGain();
+          tutVoiceGain.gain.value = 1.0;
+          tutVoiceGain.connect(audioCtx.destination);
+        }
+        const q = audioCtx.createBufferSource();
+        q.buffer = buf;
+        q.connect(tutVoiceGain);
+        q.onended = () => { if (tutQuelle === q) { tutQuelle = null; tutClipFertig(); } };
+        q.start(audioCtx.currentTime + 0.02);
+        tutQuelle = q;
+        return buf.duration + 0.02;
+      } catch (e) { return tutLesedauer(de); }
+    }
+    // EN/ES: Geraetestimme, eine weibliche, wenn sie sich am Namen erkennen laesst.
+    const text = t(de);
+    try {
+      const ss = window.speechSynthesis;
+      if (!ss || typeof SpeechSynthesisUtterance !== 'function') return tutLesedauer(text);
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = lang === 'es' ? 'es-ES' : 'en-US';
+      const stimmen = (ss.getVoices() || []).filter((v) => (v.lang || '').toLowerCase().startsWith(lang));
+      u.voice = stimmen.find((v) => /female|zira|aria|jenny|samantha|susan|hazel|libby|helena|laura|elvira|monica|paulina|lucia|sabina/i.test(v.name))
+        || stimmen[0] || null;
+      u.onend = () => tutClipFertig();
+      ss.speak(u);
+      return text.length / 11 + 1;
+    } catch (e) { return tutLesedauer(text); }
+  }
+  // Boxeneinstellungen, die der Stopp im Tutorial braucht: Knopf statt Doppelausdruck (der
+  // lehnt den Knopf ab), ueberall halten (nicht nur neben der Bahn), Minispiel an.
+  function tutBoxMerken() { return { an: pitLaneEnabled, trig: pitTrigger, modus: pitModus }; }
+  function tutBoxVorbereiten() { pitLaneEnabled = true; pitTrigger = 'anywhere'; pitModus = 'minigame'; }
+  function tutBoxZurueck(m) {
+    if (!m) return;
+    pitLaneEnabled = m.an; pitTrigger = m.trig; pitModus = m.modus;
+    if (!pitLaneEnabled && pitState !== 'off') setPitState('off');
+  }
+  function tutPresetMerken() { return { regler: presetRead(), zuletzt: presetZuletzt }; }
+  function tutPresetZurueck(m) {
+    if (!m) return;
+    for (const [id, val] of Object.entries(m.regler)) presetSet(id, val);
+    setzeBrakeStealLast();
+    setzeGran();
+    presetZuletzt = m.zuletzt;
+    try {
+      if (m.zuletzt) localStorage.setItem(PRESET_ZULETZT_STORE, m.zuletzt);
+      else localStorage.removeItem(PRESET_ZULETZT_STORE);
+    } catch (e) { /* privat */ }
+    if (typeof renderPresetLegende === 'function') renderPresetLegende();
+  }
+  function tutMotorSetzen(v) {
+    const sel = $('sound-profile');
+    if (!sel || !v || sel.value === v) return;
+    if (![...sel.options].some((o) => o.value === v)) return;
+    sel.value = v;
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  const TUT_ECHT = {
+    jetzt: () => performance.now(),
+    laden: () => { tutClipsLaden(); },
+    bereit: () => tut.geladen || tut.umg.jetzt() - tut.startAb > TUT_LADE_MS,
+    autoDa: () => {
+      if (typeof playerCar === 'undefined' || !playerCar) return false;
+      const g = playerCar.device && playerCar.device.gatt;
+      return !g || g.connected !== false;
+    },
+    padDa: () => !!tutPad(),
+    eingaben: () => {
+      const p = tutPad();
+      if (!p || typeof bindings === 'undefined') return { gas: 0, bremse: 0, lenk: 0 };
+      const w = (b) => (b ? readBindingValue(p, b) || 0 : 0);
+      return { gas: Math.max(0, w(bindings.throttle)), bremse: Math.max(0, w(bindings.brake)), lenk: w(bindings.steering) };
+    },
+    tab: () => kAktiverTab(),
+    insFahren: () => konsoleZeige('fahren'),
+    insCockpit: () => konsoleInsCockpit(false),
+    insMenue: () => { if (kAktiverTab() === 'race') konsoleZumMenue(true); },
+    presetMerken: tutPresetMerken,
+    presetSetzen: (key) => applyPreset(key),
+    presetZurueck: tutPresetZurueck,
+    motorLesen: () => ($('sound-profile') ? $('sound-profile').value : ''),
+    motorSetzen: tutMotorSetzen,
+    boxMerken: tutBoxMerken,
+    boxVorbereiten: tutBoxVorbereiten,
+    boxZurueck: tutBoxZurueck,
+    boxZustand: () => pitState,
+    boxAnfordern: () => { if (pitState === 'off') requestPitStop(); },
+    boxAbbrechen: () => { if (pitState === 'limited') requestPitStop(); },
+    sprechen: tutSprechenEcht,
+    verstummen: tutVerstummen,
+  };
+
+  // ---- Zustand ----
+  const tut = { an: false, phase: 'aus', i: -1, schrittAb: 0, clipBis: 0, warteAb: null, erfuellt: false,
+    lobDran: false, boxService: false, umg: TUT_ECHT, merk: null, timer: null, startAb: 0, geladen: false,
+    hinweisGesprochen: false, protokoll: [], ende: '' };
+  function tutLaeuft() { return tut.an; }
+  function tutSchrittId() { return tut.phase === 'lauf' && TUT_SCHRITTE[tut.i] ? TUT_SCHRITTE[tut.i].id : tut.phase; }
+
+  // opts.umgebung: Attrappen (Selbsttest); opts.ohneTimer: der Test taktet selbst (tutTick).
+  function tutorialStarten(opts) {
+    const o = opts || {};
+    if (tut.an) tutAbbrechen('Neustart');
+    if (typeof konsoleTourOffen === 'function' && konsoleTourOffen()) konsoleTourZu(false);
+    tut.umg = Object.assign({}, TUT_ECHT, o.umgebung || {});
+    Object.assign(tut, { an: true, phase: 'warten', i: -1, clipBis: 0, warteAb: null, erfuellt: false, lobDran: false,
+      boxService: false, merk: null, startAb: tut.umg.jetzt(), geladen: false, hinweisGesprochen: false,
+      protokoll: [], ende: '' });
+    tut.umg.laden();
+    if (tut.umg.tab() === 'home') tut.umg.insFahren();
+    const ui = $('tut-ui');
+    if (ui) ui.hidden = false;
+    tutTick();
+    if (!o.ohneTimer) tutTakt();
+  }
+  function tutTakt() {
+    clearTimeout(tut.timer);
+    tut.timer = setTimeout(() => { tutTick(); if (tut.an) tutTakt(); }, TUT_TAKT_MS);
+  }
+  function tutClipFertig() {
+    if (tut.an) tut.clipBis = Math.min(tut.clipBis, tut.umg.jetzt());
+  }
+  function tutSprich(key) {
+    const s = tut.umg.sprechen(key, TUT_SPRUCH[key]);
+    const dauer = Number.isFinite(s) && s > 0 ? s : tutLesedauer(TUT_SPRUCH[key]);
+    tut.clipBis = tut.umg.jetzt() + (dauer + TUT_LUECKE_S) * 1000;
+  }
+  function tutFehlt() {
+    const f = [];
+    if (!tut.umg.autoDa()) f.push('auto');
+    if (!tut.umg.padDa()) f.push('pad');
+    return f;
+  }
+
+  function tutTick() {
+    if (!tut.an) return;
+    const u = tut.umg, jetzt = u.jetzt();
+    if (tut.phase === 'warten') {
+      // Wer zum Titel geht, ist raus.
+      if (u.tab() === 'home') { tutAbbrechen('Titel'); return; }
+      const fehlt = tutFehlt();
+      if (!u.bereit()) { tutVoraussetzungZeigen(fehlt); return; }
+      if (fehlt.length) {
+        if (!tut.hinweisGesprochen) { tut.hinweisGesprochen = true; tutSprich('voraussetzung'); }
+        tutVoraussetzungZeigen(fehlt);
+        return;
+      }
+      // Alles da: sichern, Arcade, ins Cockpit, los.
+      u.verstummen();
+      tut.merk = { preset: u.presetMerken(), motor: u.motorLesen(), box: u.boxMerken() };
+      u.presetSetzen('arcade');
+      u.boxVorbereiten();
+      u.insCockpit();
+      tut.phase = 'lauf';
+      tutSchritt(0);
+      return;
+    }
+    if (tut.phase !== 'lauf') return;
+    if (u.tab() !== 'race') { tutAbbrechen('Cockpit verlassen'); return; }
+    const s = TUT_SCHRITTE[tut.i];
+    if (s.warte && !tut.erfuellt && tutBedingung(s.warte)) {
+      tut.erfuellt = true;
+      const el = $('tut-taste');
+      if (el) el.classList.add('gedrueckt');
+    }
+    if (jetzt < tut.clipBis) return;
+    if (jetzt < tut.schrittAb + (s.min || 0) * 1000) return;
+    if (s.warte && !tut.erfuellt) {
+      if (tut.warteAb === null) tut.warteAb = jetzt;
+      if (jetzt - tut.warteAb < (s.s || 0) * 1000) return;
+      // Zeitlimit: weiter ohne Lob. Den Boxenstopp loest das Tutorial dann selbst aus, und ein
+      // Auto, das nicht anhaelt, faehrt nicht mit dem Boxenbegrenzer weiter.
+      if (s.warte === 'box_an') u.boxAnfordern();
+      if (s.warte === 'box_steht') u.boxAbbrechen();
+    } else if (s.lob && tut.erfuellt && !tut.lobDran) {
+      tut.lobDran = true;
+      tutSprich(s.lob);
+      return;
+    }
+    tutSchritt(tut.i + 1);
+  }
+
+  function tutBedingung(w) {
+    const u = tut.umg;
+    if (w === 'box_an') return u.boxZustand() !== 'off';
+    if (w === 'box_steht') {
+      const steht = u.boxZustand() === 'servicing';
+      if (steht) tut.boxService = true;
+      return steht;
+    }
+    if (w === 'box_fertig') return u.boxZustand() !== 'servicing';
+    const e = u.eingaben() || {};
+    if (w === 'gas') return (e.gas || 0) >= TUT_SCHWELLE;
+    if (w === 'bremse') return (e.bremse || 0) >= TUT_SCHWELLE;
+    if (w === 'links') return (e.lenk || 0) <= -TUT_SCHWELLE;
+    if (w === 'rechts') return (e.lenk || 0) >= TUT_SCHWELLE;
+    return true;
+  }
+  // Schritte, die nichts zu tun haetten: kein Warten aufs Anhalten, wenn das Auto schon steht
+  // (oder kein Stopp angefordert ist), kein Minispiel und kein "Fertig" ohne Stopp.
+  function tutUeberspringen(s) {
+    const z = tut.umg.boxZustand();
+    if (z === 'servicing') tut.boxService = true;
+    if (s.id === 'box_steht') return z !== 'limited';
+    if (s.id === 'box_spiel') return z !== 'servicing';
+    if (s.id === 'box_fertig') return !tut.boxService;
+    return false;
+  }
+
+  function tutSchritt(n) {
+    while (n < TUT_SCHRITTE.length && tutUeberspringen(TUT_SCHRITTE[n])) n++;
+    if (n >= TUT_SCHRITTE.length) { tutEnde(); return; }
+    const u = tut.umg, s = TUT_SCHRITTE[n];
+    Object.assign(tut, { i: n, schrittAb: u.jetzt(), clipBis: u.jetzt(), warteAb: null, erfuellt: false, lobDran: false });
+    tut.protokoll.push(s.id);
+    if (s.vorher === 'pacejka') u.presetSetzen('propacejka');
+    if (s.vorher === 'motor') u.motorSetzen(u.motorLesen() === TUT_MOTOR ? TUT_MOTOR_ERSATZ : TUT_MOTOR);
+    tutSchrittZeigen(s, n);
+    if (s.clip) tutSprich(s.clip);
+  }
+
+  // Gesichertes zurueck, genau einmal. Gerufen am Ende und beim Abbruch.
+  function tutZurueckstellen() {
+    const m = tut.merk, u = tut.umg;
+    tut.merk = null;
+    if (!m) return;
+    try { u.presetZurueck(m.preset); } catch (e) { log('Tutorial: Fahrgefühl nicht zurückgestellt (' + e.message + ')', 'warn'); }
+    try { u.motorSetzen(m.motor); } catch (e) { log('Tutorial: Motorklang nicht zurückgestellt (' + e.message + ')', 'warn'); }
+    try { u.boxZurueck(m.box); } catch (e) { log('Tutorial: Boxeneinstellungen nicht zurückgestellt (' + e.message + ')', 'warn'); }
+  }
+  function tutAus(grund) {
+    clearTimeout(tut.timer);
+    tut.timer = null;
+    tut.umg.verstummen();
+    tutZurueckstellen();
+    tut.an = false;
+    tut.ende = grund;
+    const ui = $('tut-ui');
+    if (ui) ui.hidden = true;
+  }
+  function tutEnde() {
+    const imCockpit = tut.umg.tab() === 'race';
+    tut.phase = 'fertig';
+    tutAus('fertig');
+    if (imCockpit) tut.umg.insMenue();
+  }
+  function tutAbbrechen(grund) {
+    if (!tut.an) return;
+    const imCockpit = tut.umg.tab() === 'race';
+    tut.phase = 'abgebrochen';
+    tutAus(grund || 'abgebrochen');
+    // Nur aus dem Cockpit (Knopf "Beenden"); wer schon im Menue ist, bleibt dort.
+    if (imCockpit) tut.umg.insMenue();
+  }
+
+  // ---- Anzeige ----
+  function tutText(id, text) {
+    const el = $(id);
+    if (el && el.textContent !== text) el.textContent = text;
+  }
+  function tutVoraussetzungZeigen(fehlt) {
+    tutText('tut-fortschritt', '');
+    tutText('tut-titel', t('Bereit machen'));
+    tutText('tut-text', [
+      (fehlt.includes('auto') ? '✗ ' : '✓ ') + t('Auto: unter FAHREN in der Kachel AUTOS verbinden.'),
+      (fehlt.includes('pad') ? '✗ ' : '✓ ') + t('Gamepad: einschalten und eine Taste drücken.'),
+    ].join('\n'));
+    const tk = $('tut-taste');
+    if (tk) tk.hidden = true;
+    tutText('tut-hinweis', t('Abbrechen: Kreis oder Esc'));
+    const ui = $('tut-ui');
+    if (ui) ui.classList.add('unten');
+  }
+  function tutSchrittZeigen(s, n) {
+    tutText('tut-fortschritt', (n + 1) + ' / ' + TUT_SCHRITTE.length);
+    tutText('tut-titel', t(s.titel));
+    const taste = s.taste ? tutTasteName(s.taste) : '';
+    tutText('tut-text', t(s.zeige || TUT_SPRUCH[s.clip] || '').replace('{taste}', taste));
+    const tk = $('tut-taste');
+    if (tk) {
+      tk.hidden = !s.taste || s.taste === 'spiel';
+      tk.textContent = taste;
+      tk.classList.remove('gedrueckt');
+    }
+    tutText('tut-hinweis', t('Beenden: Options oder Esc'));
+    const ui = $('tut-ui');
+    if (ui) ui.classList.remove('unten');
+  }
+  (() => {
+    const b = $('tut-beenden');
+    if (b) b.addEventListener('click', (e) => { e.stopPropagation(); tutAbbrechen('Knopf'); });
   })();
   // =========================================================================
   // Ladeanimation: ein Streckenteil, das sich dreht (v0.9.45)
@@ -91350,44 +91933,151 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join('; ') : '8 Stopps, letzter Knopf immer Kreis' };
   });
 
-  stAdd('Tutorial: startet vom Titel, führt durch alle Schritte, Kreis zurück', () => {
-    const merk = kAktiverTab();
+  // v1.3.15: das gefuehrte Tutorial (51b-tutorial.js) mit Attrappen - kein Auto, kein Pad, keine
+  // Uhr: Zeit, Tasten, Boxenzustand, Cockpit und Ton sind gestellt und der Test taktet tutTick()
+  // selbst. Echt sind Fahrgefuehl (applyPreset) und Motorklang (#sound-profile), damit das
+  // Zurueckstellen wirklich geprueft wird.
+  stAdd('Tutorial v1.3.15: Schritte, Warten auf Tasten, Arcade→Pacejka, Boxenstopp, Motorklang, ≤ 180 s, zurück ins Menü', async () => {
     const f = [];
-    const messbar = innerWidth > 0 && innerHeight > 0;
+    const dauer = {};
     try {
-      showTab('home');
-      $('k-tutorial-start').click();
-      if (!konsoleTourOffen() || $('k-tour').hidden) f.push('Knopf oeffnet nicht');
-      if (kAktiverTab() !== 'fahren') f.push('erster Schritt auf ' + kAktiverTab() + ' statt Fahren');
-      if (menuNavContainer() !== $('k-tour-karte')) f.push('Menuezeilen gelten nicht fuer die Karte');
-      const sel = document.querySelector('.menu-nav-sel');
-      if (!sel || sel.id !== 'k-tour-weiter') f.push('vorgewaehlt ist nicht Weiter');
-      const fehlt = [];
-      for (let i = 0; i < K_TOUR.length; i++) {
-        if (kTourSchritt !== i) { f.push('Schritt ' + kTourSchritt + ' statt ' + i); break; }
-        if (!$('k-tour-titel').textContent) f.push('Schritt ' + i + ' ohne Titel');
-        if (messbar && K_TOUR[i].ziel && !kTourRechteck(K_TOUR[i].ziel)) fehlt.push(i + 1);
-        if (messbar) {
-          konsoleTourSpot();
-          const kopf = $('k-kopf').getBoundingClientRect().bottom;
-          if ($('k-tour-karte').getBoundingClientRect().top < kopf - 1) f.push('Schritt ' + (i + 1) + ': Karte unter der Kopfzeile');
-        }
-        if (i < K_TOUR.length - 1) konsoleTourWeiter();
+      const m = await (await fetch('audio/tutorial.json')).json();
+      for (const k of Object.keys(TUT_SPRUCH)) {
+        const e = m.de && m.de[k];
+        if (!e) { f.push('Manifest ohne ' + k); continue; }
+        if (e.text !== TUT_SPRUCH[k]) f.push('Wortlaut weicht ab: ' + k);
+        if (!/^tutorial_\w+_de\.ogg$/.test(e.datei || '')) f.push('Datei: ' + k);
+        dauer[k] = e.dauer;
       }
-      if (fehlt.length) f.push('Ziel nicht sichtbar in Schritt ' + fehlt.join(', '));
-      konsoleZurueck();
-      if (kTourSchritt !== K_TOUR.length - 2) f.push('Kreis geht nicht einen Schritt zurueck');
-      konsoleTourWeiter(); konsoleTourWeiter();
-      if (konsoleTourOffen()) f.push('nach dem letzten Schritt noch offen');
-      if (kAktiverTab() !== 'fahren') f.push('endet auf ' + kAktiverTab());
-      konsoleTourStart();
-      konsoleZurueck();
-      if (konsoleTourOffen()) f.push('Kreis im ersten Schritt schliesst nicht');
+    } catch (e) { f.push('Manifest nicht lesbar: ' + e.message); }
+    const budget = tutBudget(dauer);
+    if (!(budget > 60 && budget <= TUT_MAX_S)) f.push('Clips + Wartezeiten ' + budget.toFixed(1) + ' s');
+    const sel = $('sound-profile');
+    const vorher = { regler: JSON.stringify(presetRead()), motor: sel.value, zuletzt: presetZuletzt, box: tutBoxMerken() };
+    let uhr = 0, tab = 'fahren', box = 'off', autoDa = false, padDa = false, menue = 0, angefordert = 0;
+    const ein = { gas: 0, bremse: 0, lenk: 0 };
+    const gesprochen = [];
+    const attrappe = {
+      jetzt: () => uhr, laden: () => {}, bereit: () => true,
+      autoDa: () => autoDa, padDa: () => padDa, eingaben: () => ein,
+      tab: () => tab, insFahren: () => { tab = 'fahren'; }, insCockpit: () => { tab = 'race'; },
+      insMenue: () => { tab = 'fahren'; menue++; },
+      boxZustand: () => box, boxMerken: () => null, boxVorbereiten: () => {}, boxZurueck: () => {},
+      boxAnfordern: () => { angefordert++; if (box === 'off') box = 'limited'; },
+      boxAbbrechen: () => { if (box === 'limited') box = 'off'; },
+      sprechen: (k) => { gesprochen.push(k); return dauer[k] || 2; }, verstummen: () => {},
+    };
+    const takt = (ms) => { for (let x = 0; x < ms && tut.an; x += TUT_TAKT_MS) { uhr += TUT_TAKT_MS; tutTick(); } };
+    const bis = (id, ms) => {
+      for (let x = 0; x < ms && tut.an && tutSchrittId() !== id; x += TUT_TAKT_MS) { uhr += TUT_TAKT_MS; tutTick(); }
+      return tutSchrittId() === id;
+    };
+    const druck = (k, v) => { ein[k] = v; takt(300); ein[k] = 0; };
+    const zurueck = (wann) => {
+      if (sel.value !== vorher.motor) f.push(wann + ': Motorklang nicht zurück (' + sel.value + ')');
+      if (JSON.stringify(presetRead()) !== vorher.regler) f.push(wann + ': Fahrgefühl nicht zurück');
+      if (presetZuletzt !== vorher.zuletzt) f.push(wann + ': letztes Preset nicht zurück');
+    };
+    try {
+      // 1) Ohne Auto und Gamepad: wartet mit Hinweis, startet erst mit beidem.
+      tutorialStarten({ umgebung: attrappe, ohneTimer: true });
+      takt(3000);
+      if (tut.phase !== 'warten' || tab !== 'fahren') f.push('läuft ohne Auto/Gamepad los');
+      if (gesprochen[0] !== 'voraussetzung') f.push('Hinweis nicht gesprochen');
+      if ($('tut-ui').hidden) f.push('Karte nicht sichtbar');
+      autoDa = true; takt(1000);
+      if (tut.phase !== 'warten') f.push('läuft ohne Gamepad los');
+      padDa = true; takt(TUT_TAKT_MS);
+      if (tab !== 'race') f.push('nicht ins Cockpit');
+      if (presetZuletzt !== 'arcade') f.push('beginnt nicht mit Arcade (' + presetZuletzt + ')');
+      // 2) Gas, Bremse, Lenken: jeweils warten, bis gedrueckt.
+      if (!bis('gas', 20000)) f.push('kein Gas-Schritt nach ' + tutSchrittId());
+      takt(((dauer.gas || 2) + 6) * 1000);
+      if (tutSchrittId() !== 'gas') f.push('wartet nicht auf Gas');
+      if ($('tut-taste').textContent !== tutTasteName('throttle')) f.push('Gas-Taste nicht angezeigt');
+      druck('gas', 1);
+      if (!bis('bremse', 5000)) f.push('Gas führt nicht weiter');
+      if (gesprochen.indexOf('gut') < 0) f.push('kein Lob nach Gas');
+      takt(((dauer.bremse || 2) + 5) * 1000);
+      if (tutSchrittId() !== 'bremse') f.push('wartet nicht auf die Bremse');
+      druck('bremse', 1);
+      if (!bis('links', 5000)) f.push('Bremse führt nicht weiter');
+      druck('lenk', 0.9);
+      takt(2000);
+      if (tutSchrittId() !== 'links') f.push('rechts gilt als links');
+      druck('lenk', -0.9);
+      if (!bis('rechts', 3000)) f.push('links führt nicht weiter');
+      druck('lenk', 0.9);
+      // 3) Arcade 20 s, dann Pacejka.
+      if (!bis('arcade', 5000)) f.push('kein Arcade-Schritt');
+      const ab = uhr;
+      if (presetZuletzt !== 'arcade') f.push('im Arcade-Schritt ' + presetZuletzt);
+      if (!bis('pacejka', 30000)) f.push('kein Pacejka-Schritt');
+      if (uhr - ab < 19900) f.push('Arcade nur ' + ((uhr - ab) / 1000).toFixed(1) + ' s');
+      if (presetZuletzt !== 'propacejka') f.push('kein Wechsel auf Pacejka (' + presetZuletzt + ')');
+      if (!bis('beschleunigung', 10000) || !bis('untersteuern', 20000)) f.push('Beschleunigung/Untersteuern fehlen');
+      // 4) Boxenstopp: der Fahrer tippt, haelt an, Minispiel, fertig.
+      if (!bis('box', 40000)) f.push('kein Boxenschritt');
+      takt(1000);
+      box = 'limited';
+      if (!bis('box_steht', 10000)) f.push('Tippen führt nicht weiter');
+      takt(2000);
+      if (tutSchrittId() !== 'box_steht') f.push('wartet nicht aufs Anhalten');
+      box = 'servicing';
+      if (!bis('box_spiel', 3000)) f.push('kein Minispiel-Schritt');
+      takt(2000);
+      if (tutSchrittId() !== 'box_spiel') f.push('wartet nicht aufs Minispiel');
+      box = 'off';
+      if (!bis('box_fertig', 3000)) f.push('kein Box-fertig');
+      // 5) Motorklang gewechselt, dann Abschluss und zurueck ins Menue.
+      if (!bis('motor', 10000)) f.push('kein Motorschritt');
+      if (sel.value === vorher.motor || !/^mustang/.test(sel.value)) f.push('Motorklang nicht gewechselt (' + sel.value + ')');
+      if (!bis('abschluss', 30000)) f.push('kein Abschluss');
+      takt(15000);
+      if (tut.an || tut.ende !== 'fertig') f.push('endet nicht (' + tutSchrittId() + ')');
+      if (tab !== 'fahren' || menue !== 1) f.push('nicht zurück ins Menü');
+      if (!$('tut-ui').hidden) f.push('Karte bleibt stehen');
+      const soll = TUT_SCHRITTE.map((s) => s.id).join(' ');
+      if (tut.protokoll.join(' ') !== soll) f.push('Reihenfolge: ' + tut.protokoll.join(' '));
+      zurueck('Ende');
+      // 6) Niemand drueckt: Zeitlimits, den Stopp loest das Tutorial selbst aus, hoechstens 3 min.
+      box = 'off'; menue = 0; angefordert = 0;
+      tutorialStarten({ umgebung: attrappe, ohneTimer: true });
+      const start = uhr;
+      takt((TUT_MAX_S + 30) * 1000);
+      const lauf = (uhr - start) / 1000;
+      if (tut.an) f.push('ohne Eingaben nach ' + lauf.toFixed(0) + ' s nicht fertig');
+      else if (lauf > TUT_MAX_S) f.push('ohne Eingaben ' + lauf.toFixed(1) + ' s');
+      if (!angefordert) f.push('Boxenstopp nicht selbst ausgelöst');
+      if (box !== 'off') f.push('Boxenbegrenzer bleibt an');
+      if (tut.protokoll.includes('box_spiel')) f.push('Minispiel ohne Stopp');
+      zurueck('Zeitlimit');
+      // 7) Abbruch: wer das Cockpit verlaesst, beendet es; Kreis/Esc im Warten (konsoleZurueck).
+      tutorialStarten({ umgebung: attrappe, ohneTimer: true });
+      bis('gas', 20000);
+      tab = 'fahren';
+      takt(300);
+      if (tut.an || tut.ende !== 'Cockpit verlassen') f.push('Verlassen bricht nicht ab');
+      zurueck('Abbruch');
+      if (!/tutAbbrechen/.test(String(konsoleZurueck))) f.push('Kreis/Esc bricht nicht ab');
+      // 8) Projektregeln: WIP, EN und ES, keine Gedankenstriche, Clips sprechen keine Taste.
+      if (!document.querySelector('#k-tutorial-start .wip-tag') || !document.querySelector('#tut-ui .wip-tag')) f.push('WIP fehlt');
+      const texte = [...Object.values(TUT_SPRUCH), ...TUT_SCHRITTE.map((s) => s.titel), ...TUT_SCHRITTE.map((s) => s.zeige).filter(Boolean),
+        'Bereit machen', 'Auto: unter FAHREN in der Kachel AUTOS verbinden.', 'Gamepad: einschalten und eine Taste drücken.',
+        'Abbrechen: Kreis oder Esc', 'Beenden: Options oder Esc', 'oder', 'Beenden'];
+      const fehltUeb = texte.filter((k) => !I18N_EN[k] || !I18N_ES[k]);
+      if (fehltUeb.length) f.push('Übersetzung fehlt: ' + fehltUeb.slice(0, 3).join(' | '));
+      if (/—/.test(texte.join(' ') + $('tut-ui').textContent)) f.push('Gedankenstrich');
+    } catch (e) {
+      f.push('Ausnahme: ' + e.message);
     } finally {
-      if (konsoleTourOffen()) konsoleTourZu(false);
-      if (merk) showTab(merk);
+      if (tut.an) tutAbbrechen('Test');
+      tut.umg = TUT_ECHT;
+      if (sel.value !== vorher.motor) { sel.value = vorher.motor; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+      tutBoxZurueck(vorher.box);
     }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : K_TOUR.length + ' Schritte, Ziele ' + (messbar ? 'sichtbar' : 'nicht messbar'), skip: false };
+    return { ok: !f.length, mass: f.length ? f.join(' | ')
+      : TUT_SCHRITTE.length + ' Schritte, ' + Object.keys(dauer).length + ' Clips, höchstens ' + budget.toFixed(1) + ' s, Fahrgefühl und Motorklang zurück' };
   });
 
   stAdd('Steuerung: vom Titel durch alle Tasten bis zur Controller-Belegung', () => {
