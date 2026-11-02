@@ -4082,6 +4082,13 @@
   .tp-opt input[type=checkbox] { accent-color: var(--k-blau, #00a3e0); width: 16px; height: 16px; }
   .tp-opt .tp-opt-wert { min-width: 3ch; text-align: right; font-weight: 700; color: var(--k-blau, #00a3e0); }
   .tp-opt .tp-opt-knopf { margin-left: auto; }
+  /* v1.3.5: Brueckenzahl (Minus/Zahl/Plus) und die ausgegraute Box-Option samt Hinweis. */
+  .tp-opt .tp-opt-gruppe { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .tp-opt .num-steuer input[type="number"] { width: 44px; }
+  .tp-opt .num-steuer .num-minus, .tp-opt .num-steuer .num-plus { width: 26px; height: 26px; font-size: 15px; }
+  .tp-opt label.tp-opt-aus { opacity: .5; cursor: not-allowed; }
+  .tp-opt .tp-opt-hinweis { font-size: 11px; color: var(--muted); white-space: normal; }
+  .tp-opt .tp-opt-hinweis[hidden] { display: none; }
   /* Aktionen oben, Karte in der Mitte, Teile unten - so liegt das Steuerkreuz auf dem
      Bildschirm genauso wie in der Hand: hoch zu den Aktionen, runter zu den Teilen. */
   /* minmax(0, 1fr) UND NICHT 1fr. `1fr` ist `minmax(auto, 1fr)`, und dieses `auto` ist
@@ -12607,8 +12614,19 @@
             <label>Linkslastig
               <input type="checkbox" id="track-opt-links">
             </label>
-            <label>Br&uuml;cken
-              <input type="checkbox" id="track-opt-bruecken">
+            <!-- v1.3.5: Brueckenzahl statt Schalter, und "Boxengasse erzwingen" (nur mit Box im
+                 Bestand). Ein span statt label um die Zahl: ein label leitet den Klick auf den
+                 Text an den ersten Knopf darin weiter - hier das Minus. -->
+            <span class="tp-opt-gruppe">Br&uuml;cken
+              <span class="num-steuer">
+                <button type="button" class="num-minus" aria-label="Weniger Br&uuml;cken">&#8722;</button>
+                <input type="number" id="track-opt-bruecken" min="0" max="4" step="1" value="0" inputmode="numeric" aria-label="Anzahl Br&uuml;cken">
+                <button type="button" class="num-plus" aria-label="Mehr Br&uuml;cken">+</button>
+              </span>
+            </span>
+            <label>Boxengasse erzwingen
+              <input type="checkbox" id="track-opt-box">
+              <small class="tp-opt-hinweis" id="track-opt-box-hinweis" hidden>Erst unter Meine Teile eine Boxengasse eintragen</small>
             </label>
             <button class="tp-opt-knopf" id="track-spiegel" title="Strecke spiegeln: Kurven links/rechts tauschen und die Schleife r&uuml;ckw&auml;rts fahren">Strecke spiegeln</button>
           </div>

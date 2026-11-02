@@ -3889,6 +3889,13 @@
     "Rennintro vor der Ampel": "Race intro before the starting lights",
     "Rennintro…": "Race intro…",
     "Lokale Starts: Modus, Runden- oder Zeitlimit, Pflichtstopps, Startaufstellung und Startwetter als Piper-Aufnahmen. Die Ampel beginnt erst danach; wer während des Intros losfährt, macht einen Frühstart. Standard aus; nicht in Challenges und nicht im WLAN-Mehrspieler. Nutzt Sprache, Sprechgeschwindigkeit, Lautstärke und Hall der Rennstand-Ansagen. Fehlende Aufnahmen werden ausgelassen, der Start bleibt möglich.": "Local starts: mode, lap or time limit, mandatory pit stops, starting grid and starting weather as Piper recordings. The lights begin afterwards; anyone who drives off during the intro jumps the start. Off by default; not in challenges and not in Wi-Fi multiplayer. Uses the language, speed, volume and reverb of the race announcements. Missing recordings are skipped, the race can still start.",
+    "Boxengasse erzwingen": "Force pit lane",
+    "Erst unter Meine Teile eine Boxengasse eintragen": "First add a pit lane under My parts",
+    "Anzahl Brücken": "Number of bridges",
+    "Weniger Brücken": "Fewer bridges",
+    "Mehr Brücken": "More bridges",
+    "Zufall: {n} Brücken mit diesen Teilen nicht möglich": "Random: {n} bridges not possible with these parts",
+    "Zufall: Boxengasse mit diesen Teilen nicht möglich": "Random: pit lane not possible with these parts",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -5110,6 +5117,13 @@
     "Rennintro vor der Ampel": "Intro de carrera antes del semáforo",
     "Rennintro…": "Intro de carrera…",
     "Lokale Starts: Modus, Runden- oder Zeitlimit, Pflichtstopps, Startaufstellung und Startwetter als Piper-Aufnahmen. Die Ampel beginnt erst danach; wer während des Intros losfährt, macht einen Frühstart. Standard aus; nicht in Challenges und nicht im WLAN-Mehrspieler. Nutzt Sprache, Sprechgeschwindigkeit, Lautstärke und Hall der Rennstand-Ansagen. Fehlende Aufnahmen werden ausgelassen, der Start bleibt möglich.": "Salidas locales: modo, límite de vueltas o de tiempo, paradas obligatorias, parrilla de salida y clima de salida como grabaciones de Piper. El semáforo empieza después; quien arranca durante la intro hace una salida anticipada. Desactivado por defecto; no en desafíos ni en multijugador por Wi-Fi. Usa el idioma, la velocidad, el volumen y la reverberación de los anuncios de posiciones. Las grabaciones que faltan se omiten y la salida sigue siendo posible.",
+    "Boxengasse erzwingen": "Forzar calle de boxes",
+    "Erst unter Meine Teile eine Boxengasse eintragen": "Primero añade una calle de boxes en Mis piezas",
+    "Anzahl Brücken": "Número de puentes",
+    "Weniger Brücken": "Menos puentes",
+    "Mehr Brücken": "Más puentes",
+    "Zufall: {n} Brücken mit diesen Teilen nicht möglich": "Aleatorio: {n} puentes no es posible con estas piezas",
+    "Zufall: Boxengasse mit diesen Teilen nicht möglich": "Aleatorio: calle de boxes no es posible con estas piezas",
   };
 
   // ============================================================================

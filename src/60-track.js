@@ -4308,6 +4308,8 @@
     trackZufallCodes = [];
     teileZeichnen();
     refreshTrackPreview();
+    // v1.3.5: "Boxengasse erzwingen" haengt am Bestand.
+    if (typeof editorOptZeigen === 'function') editorOptZeigen();
   }
   // Je Sorte: vorhanden (null = nicht gezaehlt), gebraucht, Rest.
   function teileBilanz(tiles) {
@@ -4831,15 +4833,16 @@
     const c = trackToCode(tiles, 0);
     return c === 'SR3GR3' || c === 'SL3GL3';
   }
-  function trackZufallPasst(tiles) {
+  function trackZufallPasst(tiles, bruecken) {
     if (trackLangweilig(tiles)) return false;
     if (!trackEndeNah(tiles)) return false;
     const pts = trackCenterline(tiles);
     const s = trackSchluss(pts);
-    // Bruecken (v1.2.61): erlaubt Strecken, die uebereinander gehen - die
-    // Kreuzungsfrei-Pruefung faellt dann weg.
-    return s.closed && s.lueckeCm <= TRACK_SCHLUSS_STRENG_CM &&
-      (trackEditorOpt.bruecken || trackKreuzungsfrei(pts));
+    if (!(s.closed && s.lueckeCm <= TRACK_SCHLUSS_STRENG_CM)) return false;
+    // Bruecken (v1.3.5 statt des Schalters aus 1.2.61): GENAU so viele Kreuzungen wie
+    // verlangt, 0 heisst kreuzungsfrei wie bisher.
+    const n = bruecken !== undefined ? bruecken : trackEditorOpt.bruecken;
+    return n > 0 ? trackBrueckenPasst(pts, n) : trackKreuzungsfrei(pts);
   }
   // Passt die Strecke in den angegebenen Raum? Die Strecke darf in 45°-Schritten gedreht
   // werden, deshalb wird jede der 8 Lagen geprueft. Rueckgabe: die passende Drehung in Grad
@@ -5176,7 +5179,13 @@
       .some((t) => hat(t) > 0) ? 30 : 60;
     return { b, letzte, besser, startZeit, zufallSchritt, versuch: 0,
              beste: null, besteAnders: null, besteGleich: null, raumZuKlein: false,
-             ziel: trackEditorOpt.ziel };
+             ziel: trackEditorOpt.ziel,
+             // v1.3.5: Brueckenzahl und Box; die Box nur, wenn sie im Bestand ist (sonst ist die
+             // Option ausgegraut, siehe editorOptZeigen). Mit Bruecken mehr Versuche - die Acht
+             // braucht volle Schleifen, und davon schliessen weniger.
+             bruecken: Math.max(0, Math.floor(+trackEditorOpt.bruecken || 0)),
+             box: !!trackEditorOpt.box && hat(TILE_TYPE.PIT) > 0, ohneBox: false,
+             maxVersuche: trackEditorOpt.bruecken > 0 ? 1500 : 400 };
   }
   // Ein einzelner Versuch der Suche (v0.9.42 aus der Schleife geloest, damit die Suche in
   // Haeppchen laufen und dabei eine Ladeanimation zeigen kann).
@@ -5192,6 +5201,22 @@
     const turns = trackZufallRunTurns(dir, nc, zufallSchritt);
     if (!turns) return;
     trackZufallGegenlauf(turns, dir, b);
+    // BRUECKEN (v1.3.5): eine geschlossene Bahn mit Gesamtdrehung +-360 kreuzt sich immer eine
+    // GERADE Anzahl Male (Satz von Whitney), mit 0 Grad (die Acht) eine ungerade. Fuer eine
+    // ungerade Brueckenzahl kommt deshalb eine volle Gegenschleife dazu, fuer eine gerade
+    // meist ein Paar aus Gegen- und Mitschleife. Ob es genau passt, zaehlt danach
+    // trackBrueckenPasst().
+    if (z.bruecken > 0) {
+      const extra = [];
+      const schleife = (d) => {
+        const tt = trackZufallRunTurns(d, 1 + Math.floor(Math.random() * 3), zufallSchritt);
+        if (tt) extra.push(...tt);
+        return !!tt;
+      };
+      if (z.bruecken % 2 === 1) { if (!schleife(-dir)) return; }
+      else if (Math.random() < 0.6 && !(schleife(-dir) && schleife(dir))) return;
+      for (const x of extra) turns.splice(Math.floor(Math.random() * (turns.length + 1)), 0, x);
+    }
     const runs = [];
     let gut = true;
     for (const t of turns) {
@@ -5217,11 +5242,14 @@
     if (!gaps) return;
     const tiles = trackZufallBaueTiles(runs, gaps, b);
     if (!tiles) return;
+    // Boxengasse erzwingen (v1.3.5): die Luecken fuellt trackZufallFuellGap() ohnehin zuerst mit
+    // der Box, wenn eine da ist - fehlt sie trotzdem, ist es der naechste Versuch.
+    if (z.box && !tiles.some((x) => x.type === TILE_TYPE.PIT)) { z.ohneBox = true; return; }
     // Laenge begrenzen (v1.2.61): "max" = unbegrenzt (Ziel Infinity), sonst hoechstens
     // so viele Teile wie der Schieber verlangt.
     if (z.ziel !== Infinity && tiles.length > z.ziel) return;
     trackRotationDeg = 0;
-    if (!trackZufallPasst(tiles)) return;
+    if (!trackZufallPasst(tiles, z.bruecken)) return;
     // Fussabdruck: die Strecke muss in den angegebenen Raum passen (45°-Schritte).
     const rot = trackZufallPasstRaum(tiles);
     if (rot < 0) { z.raumZuKlein = true; return; }
@@ -5236,7 +5264,7 @@
     if (z.besser(z.besteGleich, kandidat)) z.besteGleich = kandidat;
   }
   function trackZufallRunde(z, bisMs) {
-    while (z.versuch < 400) {
+    while (z.versuch < (z.maxVersuche || 400)) {
       const jetzt = performance.now();
       if (jetzt - z.startZeit > z.budgetMs) return true;
       if (jetzt >= bisMs) return false;
@@ -5272,6 +5300,15 @@
     }
     if (z.raumZuKlein) {
       showHudToast(t('Zufall: Raum zu klein für einen Rundkurs'));
+      return false;
+    }
+    // v1.3.5: Brueckenzahl oder Box liessen sich mit dem Bestand nicht bauen.
+    if (z.bruecken > 0) {
+      showHudToast(t('Zufall: {n} Brücken mit diesen Teilen nicht möglich').replace('{n}', z.bruecken));
+      return false;
+    }
+    if (z.box && z.ohneBox) {
+      showHudToast(t('Zufall: Boxengasse mit diesen Teilen nicht möglich'));
       return false;
     }
     showHudToast(t('Zufall: Nicht genug Kurventeile für einen Rundkurs'));
@@ -5399,6 +5436,47 @@
     }
     return true;
   }
+  // ---- BRUECKEN ZAEHLEN (v1.3.5) ----
+  // Jede Kreuzung der Mittellinie ist eine Bruecke. Gezaehlt wie in trackKreuzungsfrei(): zwei
+  // nicht benachbarte Abschnitte, die sich schneiden. Rueckgabe: die Kreuzungspunkte.
+  function trackKreuzungen(pts) {
+    const m = pts.length, out = [];
+    for (let i = 0; i < m; i++) {
+      const i1 = (i + 1) % m;
+      for (let j = i + 2; j < m; j++) {
+        if (i === 0 && j === m - 1) continue;
+        const j1 = (j + 1) % m;
+        if (segKreuz(pts[i], pts[i1], pts[j], pts[j1])) {
+          out.push({ x: (pts[i].x + pts[i1].x) / 2, y: (pts[i].y + pts[i1].y) / 2 });
+        }
+      }
+    }
+    return out;
+  }
+  // Genau n Kreuzungen, mindestens 60 cm auseinander (zwei Bruecken uebereinander gehen
+  // nicht), und abseits davon dieselben 30 cm Abstand wie ohne Bruecken. Nahe einer Kreuzung
+  // (45 cm) liegen die Bahnen naturgemaess dichter; ein flacher Winkel liegt laenger dicht und
+  // faellt deshalb hier heraus.
+  function trackBrueckenPasst(pts, n, minCm, gap) {
+    const kr = trackKreuzungen(pts);
+    if (kr.length !== n) return false;
+    const U = TRACK_UNITS_PER_CM;
+    for (let a = 0; a < kr.length; a++) {
+      for (let c = a + 1; c < kr.length; c++) {
+        if (Math.hypot(kr[a].x - kr[c].x, kr[a].y - kr[c].y) / U < 60) return false;
+      }
+    }
+    const min = minCm || 30, gapS = gap || 40, R = 45 * U, m = pts.length;
+    const nah = pts.map((p) => kr.some((c) => Math.hypot(p.x - c.x, p.y - c.y) < R));
+    for (let i = 0; i < m; i++) {
+      for (let j = i + 1; j < m; j++) {
+        const arc = Math.min(j - i, m - (j - i));
+        if (arc < gapS || (nah[i] && nah[j])) continue;
+        if (Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y) / U < min) return false;
+      }
+    }
+    return true;
+  }
   function segKreuz(a, b, c, d) {
     const d1x = b.x - a.x, d1y = b.y - a.y;
     const d2x = d.x - c.x, d2y = d.y - c.y;
@@ -5413,7 +5491,9 @@
   // ---- Editor-Optionen (v1.2.61) ----
   // Der "Optionen"-Knopf in der Aktionsleiste klappt ein Feld auf: Laenge/Teile-Slider,
   // Linkslastig, Bruecken und "Strecke spiegeln". Die ersten drei wirken auf den Zufallsknopf.
-  const trackEditorOpt = { ziel: Infinity, linkslastig: false, bruecken: false };
+  // v1.3.5: bruecken ist eine ANZAHL (vorher ein Schalter), box erzwingt ein Boxenteil.
+  const trackEditorOpt = { ziel: Infinity, linkslastig: false, bruecken: 0, box: false };
+  const BRUECKEN_MAX = 4;
   function editorOptGesamtTeile() {
     const b = teileBestand() || {};
     let n = 0;
@@ -5431,6 +5511,19 @@
     ziel.value = String(Math.max(4, akt));
     const wert = $('track-opt-ziel-wert');
     if (wert) wert.textContent = trackEditorOpt.ziel === Infinity ? 'max' : String(Math.max(4, akt));
+    // Boxengasse erzwingen: nur waehlbar, wenn in "Meine Teile" eine Boxengasse steht.
+    const box = $('track-opt-box');
+    if (box) {
+      const hatBox = ((teileBestand() || {})[TILE_TYPE.PIT] || 0) > 0;
+      box.disabled = !hatBox;
+      box.checked = hatBox && trackEditorOpt.box;
+      const zeile = box.closest('label');
+      if (zeile) zeile.classList.toggle('tp-opt-aus', !hatBox);
+      const hinweis = $('track-opt-box-hinweis');
+      if (hinweis) hinweis.hidden = hatBox;
+    }
+    const br = $('track-opt-bruecken');
+    if (br) br.value = String(trackEditorOpt.bruecken);
   }
   function trackOptionenToggle(an) {
     const p = $('track-opt-panel'), b = $('track-opt-toggle');
@@ -5451,8 +5544,21 @@
   if ($('track-opt-links')) {
     $('track-opt-links').onchange = () => { trackEditorOpt.linkslastig = $('track-opt-links').checked; };
   }
+  // Bruecken: Zahl 0 bis BRUECKEN_MAX, mit Minus/Plus wie die Zahlenfelder der Einstellungen.
+  function brueckenSetzen(v) {
+    const n = Math.floor(+v);
+    trackEditorOpt.bruecken = isFinite(n) ? Math.max(0, Math.min(BRUECKEN_MAX, n)) : 0;
+    editorOptZeigen();
+  }
   if ($('track-opt-bruecken')) {
-    $('track-opt-bruecken').onchange = () => { trackEditorOpt.bruecken = $('track-opt-bruecken').checked; };
+    $('track-opt-bruecken').onchange = () => brueckenSetzen($('track-opt-bruecken').value);
+    const steuer = $('track-opt-bruecken').closest('.num-steuer');
+    const mi = steuer && steuer.querySelector('.num-minus'), pl = steuer && steuer.querySelector('.num-plus');
+    if (mi) mi.onclick = () => brueckenSetzen(trackEditorOpt.bruecken - 1);
+    if (pl) pl.onclick = () => brueckenSetzen(trackEditorOpt.bruecken + 1);
+  }
+  if ($('track-opt-box')) {
+    $('track-opt-box').onchange = () => { trackEditorOpt.box = $('track-opt-box').checked; };
   }
   // "Strecke spiegeln": links/rechts tauschen und die Schleife rueckwaerts fahren (chSpiegelTiles).
   if ($('track-spiegel')) {

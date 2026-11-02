@@ -13417,6 +13417,101 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bucht ' + (weit / half).toFixed(2) + ' halbe Breiten, ' + punkte + ' Punkte, ' + striche.length + ' Striche (lang ' + striche[0].toFixed(1) + ' / kurz ' + striche[9].toFixed(1) + ')' };
   });
 
+  // Zufallsstrecke mit festem Bestand bauen, ohne Raum und ohne die "schon gehabt"-Liste; alles
+  // danach zurueck. Fuer die beiden Editor-Optionen unten.
+  function stZufallMit(bestand, opt, pruefen) {
+    const merk = { teile: localStorage.getItem(TEILE_KEY), tiles: currentTrackTiles, rot: trackRotationDeg,
+                   codes: trackZufallCodes.slice(), opt: Object.assign({}, trackEditorOpt), rv: raumVersatz,
+                   raum: raumEinpassen, toast: ($('hud-toast') || {}).textContent };
+    try {
+      localStorage.setItem(TEILE_KEY, JSON.stringify(bestand));
+      trackZufallCodes = [];
+      raumEinpassen = () => ({ rot: 0, versatz: null });
+      Object.assign(trackEditorOpt, opt);
+      editorOptZeigen();
+      const ok = trackZufall();
+      return pruefen(ok, currentTrackTiles.slice(), ($('hud-toast') || {}).textContent || '');
+    } finally {
+      if (merk.teile === null) localStorage.removeItem(TEILE_KEY); else localStorage.setItem(TEILE_KEY, merk.teile);
+      currentTrackTiles = merk.tiles; trackRotationDeg = merk.rot; trackZufallCodes = merk.codes;
+      Object.assign(trackEditorOpt, merk.opt); raumVersatz = merk.rv; raumEinpassen = merk.raum;
+      editorOptZeigen();
+      refreshTrackPreview();
+      if ($('hud-toast') && merk.toast !== undefined) $('hud-toast').textContent = merk.toast;
+    }
+  }
+  function stBestand(pakete, extra) {
+    const n = {};
+    TEILE_SORTEN.forEach((x) => { n[x] = 0; });
+    for (const p of pakete) for (const [typ, k] of TEILE_PAKETE[p]) n[typ] += k;
+    return Object.assign(n, extra || {});
+  }
+
+  // BESTELLT: Editor-Option "Boxengasse erzwingen" - nur waehlbar mit Box in "Meine Teile".
+  stAdd('Editor v1.3.5: Boxengasse erzwingen baut ein Boxenteil ein, ohne Box gesperrt', () => {
+    const f = [];
+    const mitBox = stBestand(['grund'], { [TILE_TYPE.PIT]: 1 });
+    stZufallMit(mitBox, { box: true, bruecken: 0 }, (ok, tiles) => {
+      if (!ok) f.push('mit Box keine Strecke');
+      else if (!tiles.some((x) => x.type === TILE_TYPE.PIT)) f.push('Strecke ohne Boxenteil');
+      if ($('track-opt-box').disabled) f.push('mit Box im Bestand gesperrt');
+    });
+    stZufallMit(stBestand(['grund']), { box: true, bruecken: 0 }, (ok, tiles) => {
+      const kb = $('track-opt-box');
+      if (!kb.disabled) f.push('ohne Box waehlbar');
+      if (kb.checked) f.push('ohne Box angehakt');
+      if ($('track-opt-box-hinweis').hidden) f.push('kein Hinweis ohne Box');
+      if (!kb.closest('label').classList.contains('tp-opt-aus')) f.push('nicht ausgegraut');
+      if (!ok) f.push('ohne Box baut der Zufall gar nicht mehr');
+    });
+    if (!document.querySelector('#track-opt-panel .wip-tag')) f.push('WIP fehlt');
+    for (const k of ['Boxengasse erzwingen', 'Erst unter Meine Teile eine Boxengasse eintragen', 'Zufall: Boxengasse mit diesen Teilen nicht möglich']) {
+      if (!I18N_EN[k] || !I18N_ES[k]) f.push('Uebersetzung fehlt: ' + k);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'mit Box: Boxenteil drin; ohne Box: gesperrt, ausgegraut, Hinweis' };
+  });
+
+  // BESTELLT: Editor-Option "Bruecken" als Anzahl (Standard 0) mit Pruefung, ob es geht.
+  stAdd('Editor v1.3.5: Brücken-Anzahl wird gezählt, unmöglich meldet es', () => {
+    const f = [];
+    const mass = [];
+    const el = $('track-opt-bruecken');
+    if (!el || el.type !== 'number' || el.defaultValue !== '0' || +el.min !== 0) f.push('kein Zahlenfeld ab 0 mit Vorgabe 0');
+    // Eine Acht (1 Bruecke) aus Grundpackung und Linkskurven-Set.
+    stZufallMit(stBestand(['grund', 'links', 'haarnadel']), { bruecken: 1, box: false }, (ok, tiles) => {
+      if (!ok) { f.push('1 Bruecke nicht gebaut'); return; }
+      const n = trackKreuzungen(trackCenterline(tiles)).length;
+      if (n !== 1) f.push('1 verlangt, ' + n + ' Kreuzungen');
+      mass.push('1 Bruecke: ' + trackToCode(tiles, 0));
+    });
+    // 0 bleibt kreuzungsfrei.
+    stZufallMit(stBestand(['grund']), { bruecken: 0, box: false }, (ok, tiles) => {
+      if (!ok || trackKreuzungen(trackCenterline(tiles)).length !== 0) f.push('0 Bruecken nicht kreuzungsfrei');
+    });
+    // Unmoeglich: 3 Bruecken aus der Grundpackung (nur 2 Linkskurven).
+    stZufallMit(stBestand(['grund']), { bruecken: 3, box: false }, (ok, tiles, toast) => {
+      if (ok) f.push('3 Bruecken aus der Grundpackung angeblich gebaut');
+      if (!/nicht möglich|not possible|no es posible/.test(toast)) f.push('keine Meldung (' + toast + ')');
+      else mass.push('3 Bruecken: ' + toast);
+    });
+    // Minus/Plus und Grenzen.
+    const merk = trackEditorOpt.bruecken;
+    try {
+      const steuer = el.closest('.num-steuer');
+      trackEditorOpt.bruecken = 0;
+      steuer.querySelector('.num-minus').click();
+      if (trackEditorOpt.bruecken !== 0) f.push('Minus unter 0');
+      steuer.querySelector('.num-plus').click(); steuer.querySelector('.num-plus').click();
+      if (trackEditorOpt.bruecken !== 2 || el.value !== '2') f.push('Plus zaehlt nicht (' + trackEditorOpt.bruecken + ')');
+      el.value = '99'; el.dispatchEvent(new Event('change'));
+      if (trackEditorOpt.bruecken !== BRUECKEN_MAX) f.push('keine Obergrenze');
+    } finally { trackEditorOpt.bruecken = merk; editorOptZeigen(); }
+    for (const k of ['Anzahl Brücken', 'Weniger Brücken', 'Mehr Brücken', 'Zufall: {n} Brücken mit diesen Teilen nicht möglich']) {
+      if (!I18N_EN[k] || !I18N_ES[k]) f.push('Uebersetzung fehlt: ' + k);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : mass.join(' | ') };
+  });
+
   // ---- Die Wetterkachel schaltet durch drei Lagen ----
   //
   // BESTELLT: "Lass mich mit der Regenumschalttaste im Cockpitview bzw. durch
