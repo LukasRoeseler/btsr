@@ -24895,7 +24895,7 @@
       if (!document.querySelector('#sub-opt-online h2 .wip-tag')) f.push('WIP fehlt (Optionen)');
       if (!document.querySelector('#sub-ch-strecken h2 .wip-tag')) f.push('WIP fehlt (Community-Strecken)');
       if (!document.querySelector('#sub-opt-online .opt-label small')) f.push('Erklaerung nicht als small');
-      for (const k of ['Zeiten online synchronisieren', 'Community-Strecken', 'nur lokal', 'Beste 3 Runden', 'eigene Zeiten',
+      for (const k of ['Zeiten online synchronisieren', 'Alle Strecken', 'nur lokal', 'Beste 3 Runden', 'eigene Zeiten',
                        'unbekannt', 'Dein Fahrgefühl',
                        'Zeiten zu dieser Strecke online speichern? Dann werden dein Name und die Strecke öffentlich gespeichert.']) {
         if (!I18N_EN[k] || !I18N_ES[k]) f.push('Uebersetzung fehlt: ' + k);
@@ -25335,4 +25335,188 @@
       spektrum = 'Schwerpunkt ' + Math.round(schwer) + ' Hz, ' + Math.round(unter * 100) + ' % unter 300 Hz';
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Takt 40/120 km/h ' + t40.toFixed(1) + '/' + t120.toFixed(1) + '/s, ' + gebaut + ' Knoten einmal, 0 je Aufruf, ' + spektrum };
+  });
+
+  // ---- v1.3.58: Challenges-Startseite umgebaut (72d-ch-vorschau.js, 59-lade.js) -----------------
+  // Sichert zusaetzlich zu stSkMerken die Community-Zustaende; fetch ist immer eine Attrappe.
+  function stChuMerken() {
+    const m = stSkMerken();
+    m.comm = { on: communityOnline, at: communityOnlineAt, holt: communityHolt, fehler: communityFehler,
+               ls: localStorage.getItem(COMMUNITY_STORE) };
+    m.gruende = [...ladeGruende];
+    m.ch = { wahl: chWahl, modus: chModus, spiegel: chSpiegel, eltern: $('ch-detail').parentNode, hidden: $('ch-detail').hidden };
+    m.tabName = kAktiverTab();
+    localStorage.setItem(COMMUNITY_STORE, JSON.stringify({ tracks: [], times: {}, nextId: 1 }));
+    localStorage.setItem(SK_STORE, '{}');
+    return m;
+  }
+  function stChuZurueck(m) {
+    communityOnline = m.comm.on; communityOnlineAt = m.comm.at; communityHolt = m.comm.holt; communityFehler = m.comm.fehler;
+    if (m.comm.ls === null) localStorage.removeItem(COMMUNITY_STORE); else localStorage.setItem(COMMUNITY_STORE, m.comm.ls);
+    [...ladeGruende].forEach((g) => { if (m.gruende.indexOf(g) < 0) ladeAnzeigeSetzen(g, false); });
+    stSkZurueck(m);
+    chWahl = m.ch.wahl; chModus = m.ch.modus; chSpiegel = m.ch.spiegel;
+    if (m.ch.eltern && $('ch-detail').parentNode !== m.ch.eltern) m.ch.eltern.appendChild($('ch-detail'));
+    $('ch-detail').hidden = m.ch.hidden;
+    if (m.tabName && kAktiverTab() !== m.tabName) { try { showTab(m.tabName); } catch (e) { /* egal */ } }
+    try { chZeichneDetail(); chVorschauZeichnen(); } catch (e) { /* egal */ }
+  }
+  function stChuDaten() {
+    const codes = [];
+    CH_ALLE.forEach((d) => { const k = skSchluessel(codeToTrack(d.code).tiles); if (codes.indexOf(k) < 0) codes.push(k); });
+    const z = (g, ms) => ({ zeitpunkt: '2026-11-01', zeit_ms: ms, fahrer: g, geraet: g, runden_ms: [ms] });
+    const community = { ok: true, tracks: [
+      { id: '0901', code: codes[0], name: 'Eins', preset: 'arcade' },
+      { id: '0902', code: codes[1], name: 'Zwei', preset: 'gt3' },
+      { id: '0903', code: codes[2], name: 'Drei', preset: 'propacejka' }],
+      zeiten: { '0901': [z('a', 5000), z('a', 5100), z('a', 5200)],          // 1 Fahrer, 3 Laeufe
+                '0902': [z('a', 6000), z('b', 6100)],                       // 2 Fahrer, 2 Laeufe
+                '0903': [z('a', 7000), z('b', 7100), z('b', 7200)] } };     // 2 Fahrer, 3 Laeufe -> diese
+    const strecken = { ok: true, strecken: [
+      { strecke: codes[3], name: 'Viel', fahrer: 3, laeufe: 5, beste_ms: 4000 },
+      { strecke: codes[4], name: 'Meist', fahrer: 3, laeufe: 9, beste_ms: 4500,
+        je: { arcade: { fahrer: 2, beste_ms: 4600, beste_fahrer: 'x' }, gran: { fahrer: 1, beste_ms: 4500, beste_fahrer: 'y' } } },
+      { strecke: codes[5], name: 'Wenig', fahrer: 1, laeufe: 1, beste_ms: 3000 }] };
+    return { codes, community, strecken };
+  }
+
+  stAdd('Challenges v1.3.58: neue Namen, Community oben, Network unten, Alle anzeigen', () => {
+    const f = [];
+    const home = $('sub-home-challenges');
+    const koepfe = [...home.querySelectorAll('h3.k-zwischen')].map((h) => h.textContent.trim());
+    if (koepfe[0] !== t('Community')) f.push('zuerst: ' + koepfe[0]);
+    if (koepfe[koepfe.length - 1] !== 'Network') f.push('zuletzt: ' + koepfe[koepfe.length - 1]);
+    // Die Vorschau steht vor den Wochenkacheln.
+    const v = $('ch-v-challenge'), w = home.querySelector('.ch-mini[data-kat="a"]');
+    if (!v || !w || !(v.compareDocumentPosition(w) & Node.DOCUMENT_POSITION_FOLLOWING)) f.push('Vorschau nicht vor den Wochen-Challenges');
+    const texte = $('tab-challenges').textContent;
+    for (const alt of ['Community-Bestzeiten', 'Community-Strecken']) if (texte.indexOf(alt) >= 0) f.push('alter Name steht noch: ' + alt);
+    if ($('sub-ch-community').querySelector('h2').textContent.indexOf(t('Community Challenges')) < 0) f.push('Ueberschrift Community Challenges');
+    if ($('sub-ch-strecken').querySelector('h2').textContent.indexOf(t('Alle Strecken')) < 0) f.push('Ueberschrift Alle Strecken');
+    if ($('sk-zurueck').textContent.indexOf(t('Alle Strecken')) < 0) f.push('Zurueck-Knopf Alle Strecken');
+    if ($('ch-strecke-zurueck').textContent.indexOf(t('Community Challenges')) < 0) f.push('Zurueck-Knopf Community Challenges');
+    const alle = [...home.querySelectorAll('.ch-alle')];
+    if (alle.map((b) => b.dataset.sub).join(',') !== 'ch-community,ch-strecken') f.push('Alle anzeigen: ' + alle.map((b) => b.dataset.sub).join(','));
+    if (alle.some((b) => b.textContent.indexOf(t('Alle anzeigen')) < 0)) f.push('Knopftext Alle anzeigen');
+    for (const k of ['Community Challenges', 'Alle Strecken', 'Alle anzeigen', 'Community', 'Strecken', 'Noch keine Strecke mit Zeiten']) {
+      if (!I18N_EN[k] || !I18N_ES[k]) f.push('Uebersetzung fehlt: ' + k);
+    }
+    if (I18N_EN['Community-Strecken'] || I18N_EN['Community-Bestzeiten']) f.push('alter Woerterbuchschluessel steht noch');
+    // Alle anzeigen oeffnet die vorhandene Listenseite.
+    const onVorher = [...document.querySelectorAll('.subpage.on')];
+    const homeVorher = [...document.querySelectorAll('.subpage-home')].map((h) => h.style.display);
+    try {
+      alle[1].click();
+      if (!$('sub-ch-strecken').classList.contains('on')) f.push('Alle anzeigen (Strecken) oeffnet die Liste nicht');
+      alle[0].click();
+      if (!$('sub-ch-community').classList.contains('on')) f.push('Alle anzeigen (Challenges) oeffnet die Liste nicht');
+    } finally {
+      document.querySelectorAll('.subpage.on').forEach((p) => p.classList.remove('on'));
+      onVorher.forEach((p) => p.classList.add('on'));
+      document.querySelectorAll('.subpage-home').forEach((h, i) => { h.style.display = homeVorher[i]; });
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : koepfe.join(' > ') + '; Alle anzeigen oeffnet beide Listen' };
+  });
+
+  stAdd('Challenges v1.3.58: Vorschau waehlt die meistgefahrene, Spielerzahl und Fahrgefuehl', () => {
+    const f = [];
+    const m = stChuMerken();
+    try {
+      const d = stChuDaten();
+      let netz = 0;
+      // Nur die Listen zaehlen: die Challenge-Seite fragt daneben z. B. Spuren ab (72b-spuren.js).
+      window.fetch = (u) => { if (/community=1|strecken?=/.test(String(u))) netz++; return new Promise(() => {}); };
+      communityOnline = d.community; communityOnlineAt = Date.now();
+      skOnline.liste = d.strecken.strecken; skOnline.listeAt = Date.now();
+      const c = chVorschauChallengeWahl(communitySicht());
+      if (!c || c.tr.id !== '0903' || c.spieler !== 2 || c.laeufe !== 3) f.push('Challenge-Wahl ' + JSON.stringify(c && { id: c.tr.id, s: c.spieler, l: c.laeufe }));
+      const s = chVorschauStreckeWahl(skCommunityGefiltert(skOnline.liste, []));
+      if (!s || s.s.name !== 'Meist') f.push('Strecken-Wahl ' + (s && s.s.name));
+      if (chVorschauFahrgefuehl(d.strecken.strecken[1]) !== 'arcade') f.push('Fahrgefuehl ' + chVorschauFahrgefuehl(d.strecken.strecken[1]));
+      if (chVorschauFahrgefuehl({ je: { gran: { fahrer: 1, beste_ms: 5000 }, acc: { fahrer: 1, beste_ms: 4000 } } }) !== 'acc') f.push('Gleichstand: schnellere Bestzeit');
+      chVorschauZeichnen();
+      const kc = $('ch-v-challenge'), ks = $('ch-v-strecke');
+      if (kc.querySelector('.ch-k-name').textContent.indexOf('Drei') < 0) f.push('Karte Challenge: ' + kc.querySelector('.ch-k-name').textContent);
+      if (kc.querySelector('.ch-v-label').textContent !== communityPresetName('propacejka')) f.push('Label Challenge: ' + kc.querySelector('.ch-v-label').textContent);
+      if (kc.querySelector('.ch-k-anzahl').textContent.indexOf(t('{n} Spieler').replace('{n}', 2)) < 0) f.push('Spieler Challenge: ' + kc.querySelector('.ch-k-anzahl').textContent);
+      if (!kc.querySelector('.ch-mini svg')) f.push('Challenge ohne Streckenbild');
+      if (ks.querySelector('.ch-k-name').textContent !== 'Meist') f.push('Karte Strecke: ' + ks.querySelector('.ch-k-name').textContent);
+      if (ks.querySelector('.ch-v-label').textContent !== skFgName('arcade')) f.push('Label Strecke: ' + ks.querySelector('.ch-v-label').textContent);
+      if (ks.querySelector('.ch-k-anzahl').textContent.indexOf(t('{n} Spieler').replace('{n}', 3)) < 0) f.push('Spieler Strecke');
+      // Antippen oeffnet wie in der Liste.
+      d.codes.forEach((k) => { skOnline.zeiten[k] = { zeiten: [], at: Date.now(), stand: Date.now() }; });
+      ks.click();
+      if (!$('sub-ch-sk').classList.contains('on') || !skDetail || skDetail.name !== 'Meist') f.push('Strecke oeffnet nicht');
+      kc.click();
+      if (!$('sub-ch-strecke').classList.contains('on')) f.push('Challenge oeffnet nicht');
+      // Ohne Daten: freundlicher Platzhalter, Antippen oeffnet die Liste.
+      showSubpage('');
+      communityOnline = { ok: true, tracks: [], zeiten: {} }; communityHolt = false;
+      skOnline.liste = []; skOnline.listeLaedt = false;
+      chVorschauZeichnen();
+      if (!kc.classList.contains('ch-v-leer') || kc.querySelector('.ch-k-name').textContent !== t('Noch keine Community Challenge')) f.push('Platzhalter Challenge');
+      if (!ks.classList.contains('ch-v-leer') || ks.querySelector('.ch-k-name').textContent !== t('Noch keine Strecke mit Zeiten')) f.push('Platzhalter Strecke');
+      ks.click();
+      if (!$('sub-ch-strecken').classList.contains('on')) f.push('Platzhalter oeffnet die Liste nicht');
+      if (netz) f.push(netz + ' Abrufe trotz frischer Daten');
+    } finally {
+      stChuZurueck(m);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'meiste Fahrer, dann Laeufe; Pacejka/Arcade-Label, Spielerzahl, oeffnet wie die Liste, Platzhalter' };
+  });
+
+  stAdd('Challenges v1.3.58: Tab-Klick laedt im Hintergrund mit Ladeanzeige, Steuerkreuz erreicht alles', async () => {
+    const f = [];
+    const m = stChuMerken();
+    const raus = [];
+    try {
+      const d = stChuDaten();
+      const urls = [];
+      window.fetch = (u) => {
+        urls.push(String(u));
+        const j = String(u).indexOf('community=1') >= 0 ? d.community : String(u).indexOf('strecken=1') >= 0 ? d.strecken : { ok: false };
+        return new Promise((ok) => raus.push(() => ok({ json: () => Promise.resolve(j) })));
+      };
+      const o = chOnline(); o.url = 'https://example.invalid/exec'; chSchreiben(CH_ONLINE_STORE, o);
+      raceState = 'idle';
+      communityOnline = null; communityOnlineAt = 0; communityHolt = false;
+      skOnline.liste = null; skOnline.listeAt = 0; skOnline.listeLaedt = false;
+      showTab('challenges');
+      showSubpage('');
+      if (!urls.some((u) => u.indexOf('community=1') >= 0) || !urls.some((u) => u.indexOf('strecken=1') >= 0)) f.push('nicht geladen: ' + JSON.stringify(urls));
+      const box = $('ch-lade');
+      if (!box || box.hidden) f.push('keine Ladeanzeige');
+      else {
+        const r = box.getBoundingClientRect();
+        if (!(r.left < 60 && r.bottom > innerHeight - 70)) f.push('nicht unten links (' + Math.round(r.left) + ', ' + Math.round(r.bottom) + ')');
+        if (!box.querySelector('.lade-dreh svg')) f.push('kein drehendes Teil');
+        if (box.querySelector('.wip-tag')) f.push('WIP-Label');
+        const tx = $('ch-lade-text').textContent;
+        if (tx.indexOf(t('Challenges')) < 0 && tx.indexOf(t('Strecken')) < 0) f.push('Text: ' + tx);
+      }
+      if (!$('ch-v-challenge').classList.contains('ch-v-laedt')) f.push('Karte zeigt kein Laden');
+      // Antworten kommen: Anzeige weg, Karten gefuellt.
+      raus.splice(0).forEach((x) => x());
+      for (let i = 0; i < 6; i++) await new Promise((ok) => setTimeout(ok, 0));
+      if (!box.hidden) f.push('Ladeanzeige bleibt stehen');
+      if ($('ch-v-challenge').querySelector('.ch-k-name').textContent.indexOf('Drei') < 0) f.push('Challenge-Karte nach dem Laden: ' + $('ch-v-challenge').querySelector('.ch-k-name').textContent);
+      if ($('ch-v-strecke').querySelector('.ch-k-name').textContent !== 'Meist') f.push('Strecken-Karte nach dem Laden');
+      // Zweiter Tab-Klick innerhalb der Zwischenspeicher: kein neuer Abruf.
+      const n = urls.length;
+      showTab('challenges');
+      if (urls.length !== n) f.push('zweiter Abruf trotz Zwischenspeicher');
+      // Im Rennen nie.
+      communityOnlineAt = 0; skOnline.listeAt = 0; raceState = 'racing';
+      chVorschauLaden();
+      if (urls.length !== n) f.push('Abruf im Rennen');
+      raceState = 'idle';
+      // Steuerkreuz: Karten und Alle-anzeigen-Knoepfe sind Zeilen.
+      const zeilen = typeof menuNavRows === 'function' ? menuNavRows().map((r) => r.el) : [];
+      for (const id of ['ch-v-challenge', 'ch-v-strecke']) if (zeilen.indexOf($(id)) < 0) f.push('Steuerkreuz erreicht ' + id + ' nicht');
+      if ([...document.querySelectorAll('#sub-home-challenges .ch-alle')].some((b) => zeilen.indexOf(b) < 0)) f.push('Steuerkreuz erreicht Alle anzeigen nicht');
+    } finally {
+      raus.splice(0).forEach((x) => x());
+      stChuZurueck(m);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'beide Listen beim Tab-Klick, Ladeanzeige unten links mit Text, gecacht, nicht im Rennen, Steuerkreuz erreicht Karten und Knoepfe' };
   });

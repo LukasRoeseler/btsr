@@ -1722,9 +1722,9 @@
     "Strecke in den Editor geladen": "Track loaded into the editor",
     "Zeiten auf dieser Strecke": "Times on this track",
     "Online-Zeiten neu laden": "Reload online times",
-    "Community-Strecken": "Community tracks",
+    "Alle Strecken": "All tracks",
     "Alle Strecken, auf denen jemand eine Zeit gefahren ist.": "All tracks on which someone has driven a time.",
-    "← Community-Strecken": "← Community tracks",
+    "← Alle Strecken": "← All tracks",
     "In den Editor laden": "Load into the editor",
     "Online": "Online",
     "Dein Name in den Bestenlisten und ob Zeiten auf deinen Strecken online gespeichert werden.": "Your name in the leaderboards and whether times on your tracks are saved online.",
@@ -2566,7 +2566,7 @@
     "NOTHALT": "EMERGENCY STOP",
     "Name der Aufnahme": "Recording name",
     "Name der Strecke": "Track name",
-    "Community-Bestzeiten": "Community best times",
+    "Community Challenges": "Community challenges",
     "Takt": "Tick",
     "Brücke": "bridge",
     "ersetzt": "replaced",
@@ -2578,7 +2578,7 @@
     "Community-Bestenliste": "Community leaderboard",
     "Gemeinsame Liste nicht erreichbar, hier deine eigenen Zeiten.": "Shared list unreachable, showing your own times.",
     "Strecke öffnen": "Open track",
-    "← Community-Bestzeiten": "← Community best times",
+    "← Community Challenges": "← Community challenges",
     "Eigene Strecken mit Abstimmung einreichen und Bestzeiten teilen.": "Submit your own tracks with a setup and share best times.",
     "Eigene Strecke einreichen": "Submit my track",
     "Noch keine Community-Strecken. Reiche deine Strecke ein.": "No community tracks yet. Submit your track.",
@@ -4071,6 +4071,13 @@
     "Kamera frei": "Free camera",
     "Standard": "Default",
     "Kamera: Standardansicht": "Camera: default view",
+    "Community": "Community",
+    "Alle anzeigen": "Show all",
+    "Strecken": "Tracks",
+    "Noch keine Community Challenge": "No community challenge yet",
+    "Unter „Alle anzeigen“ kannst du deine Strecke einreichen.": "Under “Show all” you can submit your track.",
+    "Noch keine Strecke mit Zeiten": "No track with times yet",
+    "Fahr ein Rennen auf deiner Strecke, dann erscheint sie hier.": "Drive a race on your track and it will appear here.",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -5376,9 +5383,9 @@
     "Strecke in den Editor geladen": "Circuito cargado en el editor",
     "Zeiten auf dieser Strecke": "Tiempos en este circuito",
     "Online-Zeiten neu laden": "Recargar tiempos online",
-    "Community-Strecken": "Circuitos de la comunidad",
+    "Alle Strecken": "Todos los circuitos",
     "Alle Strecken, auf denen jemand eine Zeit gefahren ist.": "Todos los circuitos en los que alguien ha marcado un tiempo.",
-    "← Community-Strecken": "← Circuitos de la comunidad",
+    "← Alle Strecken": "← Todos los circuitos",
     "In den Editor laden": "Cargar en el editor",
     "Online": "Online",
     "Dein Name in den Bestenlisten und ob Zeiten auf deinen Strecken online gespeichert werden.": "Tu nombre en las clasificaciones y si los tiempos de tus circuitos se guardan online.",
@@ -5484,6 +5491,15 @@
     "Kamera: Standardansicht": "Cámara: vista estándar",
     "Reifen": "Neumáticos",
     "Tank": "Combustible",
+    "Community": "Comunidad",
+    "Alle anzeigen": "Ver todo",
+    "Strecken": "Circuitos",
+    "Noch keine Community Challenge": "Todavía no hay ningún reto de la comunidad",
+    "Unter „Alle anzeigen“ kannst du deine Strecke einreichen.": "En «Ver todo» puedes enviar tu circuito.",
+    "Noch keine Strecke mit Zeiten": "Todavía no hay circuitos con tiempos",
+    "Fahr ein Rennen auf deiner Strecke, dann erscheint sie hier.": "Corre una carrera en tu circuito y aparecerá aquí.",
+    "Community Challenges": "Retos de la comunidad",
+    "← Community Challenges": "← Retos de la comunidad",
   };
 
   // ============================================================================
@@ -5831,6 +5847,8 @@
       // Challenges: die Kachel-Raenge (Medaille + Perzentil) beim Oeffnen auffrischen, sonst
       // bleibt nach einem Lauf der alte Stand stehen.
       if (btn.dataset.tab === 'challenges' && typeof chKachelnZeichnen === 'function') chKachelnZeichnen();
+      // v1.3.58: Community-Listen im Hintergrund laden, mit Ladeanzeige unten links (72d-ch-vorschau.js).
+      if (btn.dataset.tab === 'challenges' && typeof chVorschauLaden === 'function') chVorschauLaden();
       // Den gewaehlten Tab in die Sicht holen, siehe scrollTabIntoView(). Am Ende des
       // Handlers, weil .active erst darueber gesetzt wird und der Hinweis am Rand den
       // neuen Scrollstand braucht.

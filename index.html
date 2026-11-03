@@ -3313,6 +3313,16 @@
   .ch-kachel .ch-k-rang:empty { display: none; }
   .ch-kachel .ch-k-anzahl { display: block; font-style: normal; font-size: 10.5px; color: var(--dim, #a3acbd); text-align: center; padding: 0 4px 5px; }
   .ch-kachel .ch-k-anzahl[hidden] { display: none; }
+  /* v1.3.58: Community-Vorschau (72d-ch-vorschau.js): Karte plus kleiner "Alle anzeigen"-Knopf. */
+  .ch-v-paar { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .ch-v-paar .ch-v-karte { flex: 1 1 auto; }
+  .ch-v-karte .ch-k-woche .ch-v-label { display: inline-block; font-weight: 800; letter-spacing: .05em; padding: 1px 7px;
+    border: 1px solid var(--k-blau); color: #eef0f4; border-radius: 3px; }
+  .ch-v-karte .ch-mini .lade-dreh { position: relative; width: 34px; height: 34px; }
+  .ch-v-karte.ch-v-leer .ch-mini { opacity: .55; }
+  .misc-tile.ch-alle { flex-direction: row; justify-content: center; align-items: center; padding: 6px 10px; }
+  .misc-tile.ch-alle b[hidden] { display: none; }
+  .ch-alle-txt { font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
   .ch-k-medaille-hinweis { font-size: 12px; line-height: 1.5; margin: 2px 0 8px; }
   .ch-detail { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 16px; align-items: start; }
   .ch-rechts > h3:first-child { margin-top: 0; }
@@ -6025,8 +6035,40 @@
        Wertung in src/72-challenges.js. Je Strecke eine Unterseite, damit L1/R1 zwischen ihnen
        blaettern; der Inhalt (#ch-detail) ist EINER und wird in die offene Seite gehaengt. -->
   <section class="tabpage" id="tab-challenges">
+    <!-- v1.3.58: dieselbe Ladeanzeige wie auf dem Startschirm, unten links (59-lade.js). -->
+    <div class="home-lade" id="ch-lade" role="status" aria-label="Lädt …" hidden>
+      <span class="home-lade-dreh" id="ch-lade-dreh"></span><span class="home-lade-text" id="ch-lade-text" data-i18n-skip></span></div>
     <div class="card subpage-home" id="sub-home-challenges">
       <h2>Challenges <span class="wip-tag">experimentell</span></h2>
+      <!-- v1.3.58 BESTELLT: "Strukturiere die Challenges um ... Der Community-Tab ganz oben (vor
+           woechentlichen Challenges) und Network ganz unten. Fuege eine Vorschau der jeweils
+           meistgefahrenen Strecke beider Typen ein und einen Button 'Alle anzeigen'." Die Karten
+           haben das Markup der Wochen-/Dauerrennen-Kacheln (ch-kachel) und werden in
+           72d-ch-vorschau.js gefuellt. "Alle anzeigen" ist eine kleine Kachel (misc-tile), damit das
+           Steuerkreuz sie erreicht; der versteckte Name ist ihr Eintrag in der Reiterleiste. -->
+      <h3 class="k-zwischen">Community</h3>
+      <div class="misc-grid ch-kacheln ch-v-gitter">
+        <div class="ch-v-paar">
+          <button class="misc-tile ch-kachel ch-v-karte" id="ch-v-challenge" type="button">
+            <span class="ch-mini" aria-hidden="true"></span>
+            <b class="ch-k-name" data-i18n-skip></b>
+            <span class="ch-k-info" data-i18n-skip></span>
+            <em class="ch-k-woche" data-i18n-skip></em>
+            <em class="ch-k-anzahl" data-i18n-skip></em></button>
+          <button class="misc-tile subpage-open ch-alle" data-sub="ch-community" type="button"
+                  title="Eigene Strecken mit Abstimmung einreichen und Bestzeiten teilen."><b hidden>Community Challenges</b><strong class="ch-alle-txt">Alle anzeigen</strong></button>
+        </div>
+        <div class="ch-v-paar">
+          <button class="misc-tile ch-kachel ch-v-karte" id="ch-v-strecke" type="button">
+            <span class="ch-mini" aria-hidden="true"></span>
+            <b class="ch-k-name" data-i18n-skip></b>
+            <span class="ch-k-info" data-i18n-skip></span>
+            <em class="ch-k-woche" data-i18n-skip></em>
+            <em class="ch-k-anzahl" data-i18n-skip></em></button>
+          <button class="misc-tile subpage-open ch-alle" data-sub="ch-strecken" type="button"
+                  title="Alle Strecken, auf denen jemand eine Zeit gefahren ist."><b hidden>Alle Strecken</b><strong class="ch-alle-txt">Alle anzeigen</strong></button>
+        </div>
+      </div>
       <h3 class="k-zwischen">W&ouml;chentliche Challenges <span class="ch-woche-kopf" id="ch-woche-kopf" data-i18n-skip></span></h3>
       <div class="misc-grid ch-kacheln">
         <button class="misc-tile subpage-open ch-kachel" data-sub="ch-a">
@@ -6087,20 +6129,6 @@
           <span>Gemeinsame Bestenliste &uuml;ber ein Google Sheet.</span>
         </button>
       </div>
-      <h3 class="k-zwischen">Community-Bestzeiten</h3>
-      <div class="misc-grid">
-        <button class="misc-tile subpage-open" data-sub="ch-community">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 34c0-4 3-8 8-8s8 3 8 8M20 14a6 6 0 1 1 0 12 6 6 0 0 1 0-12z"/><path d="M28 14c4-2 10-1 12 4M36 26c-2 4-6 6-10 6" stroke="var(--accent)"/></svg>
-          <b>Community-Bestzeiten</b>
-          <span>Eigene Strecken mit Abstimmung einreichen und Bestzeiten teilen.</span>
-        </button>
-        <!-- v1.3.15: Community-Strecken (72c-strecken-online.js); seit v1.3.25 alle, nicht erst ab vier Fahrern. -->
-        <button class="misc-tile subpage-open" data-sub="ch-strecken">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 34c0-10 6-20 14-20s14 6 14 12-6 8-12 8H10z"/><path d="M14 40h6M22 40h6M30 40h6" stroke="var(--accent)"/></svg>
-          <b>Community-Strecken <span class="wip-tag">WIP</span></b>
-          <span>Alle Strecken, auf denen jemand eine Zeit gefahren ist.</span>
-        </button>
-      </div>
     </div>
     <div class="card subpage" id="sub-ch-a">
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
@@ -6131,24 +6159,24 @@
     </div>
     <div class="card subpage" id="sub-ch-community">
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
-      <h2>Community-Bestzeiten <span class="wip-tag">experimentell</span></h2>
+      <h2>Community Challenges <span class="wip-tag">experimentell</span></h2>
       <div id="community-bereich"></div>
     </div>
     <!-- v0.9.49: EINE Community-Strecke (chCommunitySeite). Keine Kachel und kein Reiter -
          die Strecken wechseln; geoeffnet wird aus der Liste, Zurueck fuehrt dorthin. -->
     <div class="card subpage" id="sub-ch-strecke">
-      <button class="misc-back" id="ch-strecke-zurueck" type="button">&larr; Community-Bestzeiten</button>
+      <button class="misc-back" id="ch-strecke-zurueck" type="button">&larr; Community Challenges</button>
       <h2><span class="ch-titel" data-i18n-skip></span> <span class="wip-tag">experimentell</span></h2>
       <div class="ch-platz"></div>
     </div>
-    <!-- v1.3.15: Community-Strecken (Liste) und eine Strecke daraus (72c-strecken-online.js). -->
+    <!-- v1.3.15: Alle Strecken (bis 1.3.57 "Community-Strecken", Liste) und eine Strecke daraus (72c-strecken-online.js). -->
     <div class="card subpage" id="sub-ch-strecken">
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
-      <h2>Community-Strecken <span class="wip-tag">WIP</span></h2>
+      <h2>Alle Strecken <span class="wip-tag">WIP</span></h2>
       <div id="sk-liste-bereich"></div>
     </div>
     <div class="card subpage" id="sub-ch-sk">
-      <button class="misc-back" id="sk-zurueck" type="button">&larr; Community-Strecken</button>
+      <button class="misc-back" id="sk-zurueck" type="button">&larr; Alle Strecken</button>
       <h2><span id="sk-titel" data-i18n-skip></span> <span class="wip-tag">WIP</span></h2>
       <div class="sk-karte" id="sk-karte" aria-hidden="true"></div>
       <p class="muted" id="sk-fakten" data-i18n-skip></p>
@@ -15903,9 +15931,9 @@
     "Strecke in den Editor geladen": "Track loaded into the editor",
     "Zeiten auf dieser Strecke": "Times on this track",
     "Online-Zeiten neu laden": "Reload online times",
-    "Community-Strecken": "Community tracks",
+    "Alle Strecken": "All tracks",
     "Alle Strecken, auf denen jemand eine Zeit gefahren ist.": "All tracks on which someone has driven a time.",
-    "← Community-Strecken": "← Community tracks",
+    "← Alle Strecken": "← All tracks",
     "In den Editor laden": "Load into the editor",
     "Online": "Online",
     "Dein Name in den Bestenlisten und ob Zeiten auf deinen Strecken online gespeichert werden.": "Your name in the leaderboards and whether times on your tracks are saved online.",
@@ -16747,7 +16775,7 @@
     "NOTHALT": "EMERGENCY STOP",
     "Name der Aufnahme": "Recording name",
     "Name der Strecke": "Track name",
-    "Community-Bestzeiten": "Community best times",
+    "Community Challenges": "Community challenges",
     "Takt": "Tick",
     "Brücke": "bridge",
     "ersetzt": "replaced",
@@ -16759,7 +16787,7 @@
     "Community-Bestenliste": "Community leaderboard",
     "Gemeinsame Liste nicht erreichbar, hier deine eigenen Zeiten.": "Shared list unreachable, showing your own times.",
     "Strecke öffnen": "Open track",
-    "← Community-Bestzeiten": "← Community best times",
+    "← Community Challenges": "← Community challenges",
     "Eigene Strecken mit Abstimmung einreichen und Bestzeiten teilen.": "Submit your own tracks with a setup and share best times.",
     "Eigene Strecke einreichen": "Submit my track",
     "Noch keine Community-Strecken. Reiche deine Strecke ein.": "No community tracks yet. Submit your track.",
@@ -18252,6 +18280,13 @@
     "Kamera frei": "Free camera",
     "Standard": "Default",
     "Kamera: Standardansicht": "Camera: default view",
+    "Community": "Community",
+    "Alle anzeigen": "Show all",
+    "Strecken": "Tracks",
+    "Noch keine Community Challenge": "No community challenge yet",
+    "Unter „Alle anzeigen“ kannst du deine Strecke einreichen.": "Under “Show all” you can submit your track.",
+    "Noch keine Strecke mit Zeiten": "No track with times yet",
+    "Fahr ein Rennen auf deiner Strecke, dann erscheint sie hier.": "Drive a race on your track and it will appear here.",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -19557,9 +19592,9 @@
     "Strecke in den Editor geladen": "Circuito cargado en el editor",
     "Zeiten auf dieser Strecke": "Tiempos en este circuito",
     "Online-Zeiten neu laden": "Recargar tiempos online",
-    "Community-Strecken": "Circuitos de la comunidad",
+    "Alle Strecken": "Todos los circuitos",
     "Alle Strecken, auf denen jemand eine Zeit gefahren ist.": "Todos los circuitos en los que alguien ha marcado un tiempo.",
-    "← Community-Strecken": "← Circuitos de la comunidad",
+    "← Alle Strecken": "← Todos los circuitos",
     "In den Editor laden": "Cargar en el editor",
     "Online": "Online",
     "Dein Name in den Bestenlisten und ob Zeiten auf deinen Strecken online gespeichert werden.": "Tu nombre en las clasificaciones y si los tiempos de tus circuitos se guardan online.",
@@ -19665,6 +19700,15 @@
     "Kamera: Standardansicht": "Cámara: vista estándar",
     "Reifen": "Neumáticos",
     "Tank": "Combustible",
+    "Community": "Comunidad",
+    "Alle anzeigen": "Ver todo",
+    "Strecken": "Circuitos",
+    "Noch keine Community Challenge": "Todavía no hay ningún reto de la comunidad",
+    "Unter „Alle anzeigen“ kannst du deine Strecke einreichen.": "En «Ver todo» puedes enviar tu circuito.",
+    "Noch keine Strecke mit Zeiten": "Todavía no hay circuitos con tiempos",
+    "Fahr ein Rennen auf deiner Strecke, dann erscheint sie hier.": "Corre una carrera en tu circuito y aparecerá aquí.",
+    "Community Challenges": "Retos de la comunidad",
+    "← Community Challenges": "← Retos de la comunidad",
   };
 
   // ============================================================================
@@ -20012,6 +20056,8 @@
       // Challenges: die Kachel-Raenge (Medaille + Perzentil) beim Oeffnen auffrischen, sonst
       // bleibt nach einem Lauf der alte Stand stehen.
       if (btn.dataset.tab === 'challenges' && typeof chKachelnZeichnen === 'function') chKachelnZeichnen();
+      // v1.3.58: Community-Listen im Hintergrund laden, mit Ladeanzeige unten links (72d-ch-vorschau.js).
+      if (btn.dataset.tab === 'challenges' && typeof chVorschauLaden === 'function') chVorschauLaden();
       // Den gewaehlten Tab in die Sicht holen, siehe scrollTabIntoView(). Am Ende des
       // Handlers, weil .active erst darueber gesetzt wird und der Hinweis am Rand den
       // neuen Scrollstand braucht.
@@ -31929,21 +31975,36 @@
   // Klammer um alle Klanggruppen und steht nur, wenn keine Gruppe mehr laeuft.
   const LADE_NAMEN = { update: 'Suche nach Updates', 'klang-motor': 'Motorklänge', 'klang-effekte': 'Effekte',
     'klang-stimmen': 'Stimmen', 'klang-ansagen': 'Ansagen', 'klang-zahlen': 'Zahlen', 'klang-umgebung': 'Umgebung',
-    'klang-ereignisse': 'Rennereignisse', klang: 'Klänge' };
-  function ladeAnzeigeText() {
-    const namen = [...ladeGruende].filter((g) => LADE_NAMEN[g] && g !== 'klang');
-    if (!namen.length) return ladeGruende.has('klang') ? t('Lädt') + ': ' + t(LADE_NAMEN.klang) : '';
+    'klang-ereignisse': 'Rennereignisse', klang: 'Klänge',
+    // v1.3.58: beim Oeffnen des Challenges-Tabs (72d-ch-vorschau.js).
+    'ch-community': 'Challenges', 'ch-strecken': 'Strecken' };
+  // v1.3.58: je Platz eine Auswahl der Gruende. Der Startschirm zeigt die Challenges-Abrufe nicht
+  // (sie gehoeren zum Challenges-Tab), der Challenges-Tab zeigt alles, seine eigenen zuerst.
+  function ladeAnzeigeText(gruende) {
+    const liste = gruende || [...ladeGruende];
+    const namen = liste.filter((g) => LADE_NAMEN[g] && g !== 'klang');
+    if (!namen.length) return liste.indexOf('klang') >= 0 ? t('Lädt') + ': ' + t(LADE_NAMEN.klang) : '';
     const erst = namen[0] === 'update' ? t(LADE_NAMEN.update) : t('Lädt') + ': ' + t(LADE_NAMEN[namen[0]]);
     return erst + (namen.length > 1 ? ' (+' + (namen.length - 1) + ')' : '');
   }
+  // v1.3.58 BESTELLT: "Wenn ich auf den Tab [Challenges] klicke, fange an, die Zeiten zu laden mit
+  // Lade-Symbol (drehendes Streckenteil) unten links (ohne WIP-Label)." Zweiter Platz #ch-lade im
+  // Challenges-Tab, gleich gebaut; jeder Platz ist nur sichtbar, solange sein Tab es ist.
+  const LADE_PLAETZE = {
+    'home-lade': (alle) => alle.filter((g) => g.indexOf('ch-') !== 0),
+    'ch-lade': (alle) => alle.filter((g) => g.indexOf('ch-') === 0).concat(alle.filter((g) => g.indexOf('ch-') !== 0)),
+  };
   function ladeAnzeigeSetzen(grund, an) {
     if (an) ladeGruende.add(grund); else ladeGruende.delete(grund);
-    const slot = document.getElementById('home-lade-dreh');
-    if (slot) ladeAnimationSetzen(slot, ladeGruende.size > 0);
-    const box = document.getElementById('home-lade');
-    if (box) box.hidden = ladeGruende.size === 0;
-    const txt = document.getElementById('home-lade-text');
-    if (txt) txt.textContent = ladeGruende.size ? ladeAnzeigeText() : '';
+    Object.keys(LADE_PLAETZE).forEach((id) => {
+      const gruende = LADE_PLAETZE[id]([...ladeGruende]);
+      const slot = document.getElementById(id + '-dreh');
+      if (slot) ladeAnimationSetzen(slot, gruende.length > 0);
+      const box = document.getElementById(id);
+      if (box) box.hidden = gruende.length === 0;
+      const txt = document.getElementById(id + '-text');
+      if (txt) txt.textContent = gruende.length ? ladeAnzeigeText(gruende) : '';
+    });
   }
   // Fuer ein Promise: an, bis es erfuellt oder gescheitert ist.
   function ladeAnzeigeMit(grund, laeuft) {
@@ -53134,6 +53195,174 @@
     });
   }
   skOptZeichnen();
+  // ====================================================================================
+  // CHALLENGES-STARTSEITE: Community-Vorschau und Laden beim Oeffnen (v1.3.58)
+  // ====================================================================================
+  //
+  // BESTELLT: "Strukturiere die Challenges um: Wenn ich auf den Tab klicke, fange an, die Zeiten
+  // zu laden mit Lade-Symbol (drehendes Streckenteil) unten links (ohne WIP-Label). Aendere
+  // 'Community-Bestzeiten' zu 'Community Challenges' und 'Community-Strecken' zu 'Alle Strecken'.
+  // Der Community-Tab [soll] ganz oben stehen (vor woechentlichen Challenges) und Network ganz
+  // unten. Fuege eine Vorschau der jeweils meistgefahrenen Strecke beider Typen ein und einen
+  // Button 'Alle anzeigen', der dann zu dem existierenden Listenmenue fuehrt. Die Vorschau sollte
+  // wie die anderen Dauerrennen etc. Vorschauen die Anzahl Spieler haben, aber auch ein
+  // Schwierigkeits-Label (z. B. Pacejka)."
+  //
+  // MEISTGEFAHREN = meiste verschiedene Fahrer (Geraete), bei Gleichstand meiste Laeufe.
+  // SCHWIERIGKEIT = Fahrgefuehl: bei einer Community Challenge die vorgeschriebene Abstimmung
+  // (tr.preset), bei einer Strecke aus "Alle Strecken" das Fahrgefuehl mit den meisten Fahrern
+  // (je Fahrgefuehl vom Server), bei Gleichstand das der schnelleren Bestzeit.
+  //
+  // Geladen wird beim Oeffnen des Tabs (10-ble-explorer.js) im Hintergrund, mit denselben
+  // Zwischenspeichern wie die Listen (2 bzw. 5 Minuten) und nie waehrend Countdown/Rennen
+  // (chNetzErlaubt). Die Ladeanzeige ist die drehende Gerade aus 59-lade.js, unten links.
+
+  // ---- Auswahl: reine Rechnungen (Selbsttest) ----
+  function chVorschauChallengeWahl(data) {
+    let best = null;
+    for (const tr of (data && data.tracks) || []) {
+      const sp = communitySpieler(data, tr.id), lf = (data.times[tr.id] || []).length;
+      if (!best || sp > best.spieler || (sp === best.spieler && lf > best.laeufe)) best = { tr, spieler: sp, laeufe: lf };
+    }
+    return best;
+  }
+  function chVorschauStreckeLaeufe(s) {
+    if (+s.laeufe > 0) return +s.laeufe;
+    if (s.nurLokal) { const l = skLokalAlle()[s.strecke]; return Array.isArray(l) ? l.length : 0; }
+    return 0;
+  }
+  function chVorschauStreckeWahl(liste) {
+    let best = null;
+    for (const s of liste || []) {
+      const sp = +s.fahrer || 0, lf = chVorschauStreckeLaeufe(s);
+      if (!best || sp > best.spieler || (sp === best.spieler && lf > best.laeufe)) best = { s, spieler: sp, laeufe: lf };
+    }
+    return best;
+  }
+  // Das haeufigste Fahrgefuehl einer Strecke (meiste Fahrer), bei Gleichstand das der schnelleren
+  // Bestzeit; ohne Angaben je Fahrgefuehl das der Bestzeit.
+  function chVorschauFahrgefuehl(s) {
+    const je = s && s.je && typeof s.je === 'object' ? s.je : null;
+    let best = null;
+    if (je) {
+      Object.keys(je).forEach((fg) => {
+        const e = je[fg] || {};
+        const n = +e.fahrer || 0, ms = +e.beste_ms || Infinity;
+        if (!best || n > best.n || (n === best.n && ms < best.ms)) best = { fg, n, ms };
+      });
+    }
+    if (best) return skFgGueltig(best.fg);
+    const bz = skListenBestzeit(s || {}, skFgAktuell());
+    return bz ? skFgGueltig(bz.fg) : 'unbekannt';
+  }
+
+  // ---- Zeichnen ----
+  function chVorschauMini(tiles) {
+    if (!tiles || tiles.length < 3) return '';
+    const merk = trackRotationDeg;
+    trackRotationDeg = 0;
+    try { return renderTrackPreview(tiles, null, {}).html; } catch (e) { return ''; } finally { trackRotationDeg = merk; }
+  }
+  function chVorschauSpielerText(sp, lf) {
+    return (sp === 1 ? t('1 Spieler') : t('{n} Spieler').replace('{n}', sp))
+      + ' · ' + (lf === 1 ? t('1 Ergebnis') : t('{n} Ergebnisse').replace('{n}', lf));
+  }
+  // Eine Karte fuellen. z: { laedt, leer, tiles, name, info, label, spieler, laeufe, oeffnen }
+  function chVorschauKarte(karte, z) {
+    if (!karte) return;
+    const mini = karte.querySelector('.ch-mini');
+    const name = karte.querySelector('.ch-k-name');
+    const info = karte.querySelector('.ch-k-info');
+    const woche = karte.querySelector('.ch-k-woche');
+    const anzahl = karte.querySelector('.ch-k-anzahl');
+    karte.classList.toggle('ch-v-leer', !!(z.leer || z.laedt));
+    karte.classList.toggle('ch-v-laedt', !!z.laedt);
+    if (z.laedt) {
+      mini.innerHTML = typeof ladeAnimationHtml === 'function' ? ladeAnimationHtml('') : '';
+      name.textContent = t('Lädt …');
+      info.textContent = '';
+      woche.textContent = '';
+      anzahl.textContent = '';
+      anzahl.hidden = true;
+    } else if (z.leer) {
+      mini.innerHTML = '';
+      name.textContent = z.name;
+      info.textContent = '';
+      woche.textContent = z.info || '';
+      anzahl.textContent = '';
+      anzahl.hidden = true;
+    } else {
+      const html = chVorschauMini(z.tiles);
+      if (mini.dataset.code !== z.code || !mini.firstChild || mini.querySelector('.lade-dreh')) { mini.innerHTML = html; mini.dataset.code = z.code; }
+      name.textContent = z.name;
+      info.textContent = z.info || '';
+      woche.innerHTML = '';
+      const l = document.createElement('span');
+      l.className = 'ch-v-label';
+      l.textContent = z.label;
+      woche.appendChild(l);
+      anzahl.hidden = false;
+      anzahl.textContent = chVorschauSpielerText(z.spieler, z.laeufe);
+    }
+    karte.setAttribute('aria-label', (z.laedt ? t('Lädt …') : z.name) + (z.leer || z.laedt ? '' : ', ' + z.label + ', '
+      + chVorschauSpielerText(z.spieler, z.laeufe)));
+    karte.onclick = z.oeffnen;
+  }
+  function chVorschauZeichnen() {
+    const kc = $('ch-v-challenge'), ks = $('ch-v-strecke');
+    if (!kc && !ks) return;
+    // (a) meistgefahrene Community Challenge
+    const data = communitySicht();
+    const c = chVorschauChallengeWahl(data);
+    if (c) {
+      const tr = c.tr;
+      const p = codeToTrack(tr.code);
+      const best = communityBesteZeit(data, tr.id);
+      chVorschauKarte(kc, { tiles: p ? p.tiles : null, code: tr.code, name: tr.id + ' · ' + tr.name,
+        info: best ? t('Bestzeit') + ' ' + chZeit(best) : t('Noch keine Zeit'),
+        label: communityPresetName(tr.preset), spieler: c.spieler, laeufe: c.laeufe,
+        oeffnen: () => challengeSeiteZeigen(tr.id) });
+    } else {
+      chVorschauKarte(kc, { laedt: communityHolt && !communityOnline, leer: true,
+        name: t('Noch keine Community Challenge'), info: t('Unter „Alle anzeigen“ kannst du deine Strecke einreichen.'),
+        oeffnen: () => showSubpage('ch-community') });
+    }
+    // (b) meistgefahrene Strecke aus "Alle Strecken"
+    if (typeof skCacheLaden === 'function') skCacheLaden();
+    const liste = skCommunityGefiltert(skOnline.liste, skEigeneStrecken());
+    const s = chVorschauStreckeWahl(liste);
+    if (s) {
+      const p = codeToTrack(s.s.strecke);
+      const fg = chVorschauFahrgefuehl(s.s);
+      const bz = skListenBestzeit(s.s, fg);
+      chVorschauKarte(ks, { tiles: p ? p.tiles : null, code: s.s.strecke, name: s.s.name || s.s.strecke,
+        info: bz ? t('Bestzeit') + ' ' + chZeit(bz.ms) : t('Noch keine Zeit'),
+        label: skFgName(fg), spieler: s.spieler, laeufe: s.laeufe, oeffnen: () => skDetailOeffnen(s.s) });
+    } else {
+      chVorschauKarte(ks, { laedt: skOnline.listeLaedt && !skOnline.liste, leer: true,
+        name: t('Noch keine Strecke mit Zeiten'), info: t('Fahr ein Rennen auf deiner Strecke, dann erscheint sie hier.'),
+        oeffnen: () => showSubpage('ch-strecken') });
+    }
+  }
+
+  // ---- Laden beim Oeffnen des Tabs ----
+  // Rueckgabe: ein Promise, das nach beiden Abrufen (oder sofort, wenn nichts zu holen ist) erfuellt ist.
+  function chVorschauLaden() {
+    const jobs = [];
+    if (chNetzErlaubt()) {
+      if (communityUrl() && !communityHolt && (!communityOnline || Date.now() - communityOnlineAt > 120000)) {
+        jobs.push(ladeAnzeigeMit('ch-community', communityHolen(false)));
+      }
+      if (typeof skCacheLaden === 'function') skCacheLaden();
+      if (skUrl() && !skOnline.listeLaedt && (!skOnline.liste || Date.now() - skOnline.listeAt > SK_LISTE_MS)) {
+        jobs.push(ladeAnzeigeMit('ch-strecken', skListeHolen(false)));
+      }
+    }
+    chVorschauZeichnen();
+    return Promise.all(jobs.map((j) => Promise.resolve(j).catch(() => null))).then(() => { chVorschauZeichnen(); });
+  }
+  setTimeout(() => { try { chVorschauZeichnen(); } catch (e) { /* noch nicht bereit */ } }, 0);
+  if (typeof i18nOnLangChange === 'function') i18nOnLangChange(() => { try { chVorschauZeichnen(); } catch (e) { /* egal */ } });
   // ============================== MEISTERSCHAFT (v1.0, experimentell) ==============================
   //
   // BESTELLT: "Wie bei Garage, nur dass jede Zeile ein Rennen ist. Ich kann aus meinen geladenen
@@ -107922,7 +108151,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!document.querySelector('#sub-opt-online h2 .wip-tag')) f.push('WIP fehlt (Optionen)');
       if (!document.querySelector('#sub-ch-strecken h2 .wip-tag')) f.push('WIP fehlt (Community-Strecken)');
       if (!document.querySelector('#sub-opt-online .opt-label small')) f.push('Erklaerung nicht als small');
-      for (const k of ['Zeiten online synchronisieren', 'Community-Strecken', 'nur lokal', 'Beste 3 Runden', 'eigene Zeiten',
+      for (const k of ['Zeiten online synchronisieren', 'Alle Strecken', 'nur lokal', 'Beste 3 Runden', 'eigene Zeiten',
                        'unbekannt', 'Dein Fahrgefühl',
                        'Zeiten zu dieser Strecke online speichern? Dann werden dein Name und die Strecke öffentlich gespeichert.']) {
         if (!I18N_EN[k] || !I18N_ES[k]) f.push('Uebersetzung fehlt: ' + k);
@@ -108362,6 +108591,190 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       spektrum = 'Schwerpunkt ' + Math.round(schwer) + ' Hz, ' + Math.round(unter * 100) + ' % unter 300 Hz';
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Takt 40/120 km/h ' + t40.toFixed(1) + '/' + t120.toFixed(1) + '/s, ' + gebaut + ' Knoten einmal, 0 je Aufruf, ' + spektrum };
+  });
+
+  // ---- v1.3.58: Challenges-Startseite umgebaut (72d-ch-vorschau.js, 59-lade.js) -----------------
+  // Sichert zusaetzlich zu stSkMerken die Community-Zustaende; fetch ist immer eine Attrappe.
+  function stChuMerken() {
+    const m = stSkMerken();
+    m.comm = { on: communityOnline, at: communityOnlineAt, holt: communityHolt, fehler: communityFehler,
+               ls: localStorage.getItem(COMMUNITY_STORE) };
+    m.gruende = [...ladeGruende];
+    m.ch = { wahl: chWahl, modus: chModus, spiegel: chSpiegel, eltern: $('ch-detail').parentNode, hidden: $('ch-detail').hidden };
+    m.tabName = kAktiverTab();
+    localStorage.setItem(COMMUNITY_STORE, JSON.stringify({ tracks: [], times: {}, nextId: 1 }));
+    localStorage.setItem(SK_STORE, '{}');
+    return m;
+  }
+  function stChuZurueck(m) {
+    communityOnline = m.comm.on; communityOnlineAt = m.comm.at; communityHolt = m.comm.holt; communityFehler = m.comm.fehler;
+    if (m.comm.ls === null) localStorage.removeItem(COMMUNITY_STORE); else localStorage.setItem(COMMUNITY_STORE, m.comm.ls);
+    [...ladeGruende].forEach((g) => { if (m.gruende.indexOf(g) < 0) ladeAnzeigeSetzen(g, false); });
+    stSkZurueck(m);
+    chWahl = m.ch.wahl; chModus = m.ch.modus; chSpiegel = m.ch.spiegel;
+    if (m.ch.eltern && $('ch-detail').parentNode !== m.ch.eltern) m.ch.eltern.appendChild($('ch-detail'));
+    $('ch-detail').hidden = m.ch.hidden;
+    if (m.tabName && kAktiverTab() !== m.tabName) { try { showTab(m.tabName); } catch (e) { /* egal */ } }
+    try { chZeichneDetail(); chVorschauZeichnen(); } catch (e) { /* egal */ }
+  }
+  function stChuDaten() {
+    const codes = [];
+    CH_ALLE.forEach((d) => { const k = skSchluessel(codeToTrack(d.code).tiles); if (codes.indexOf(k) < 0) codes.push(k); });
+    const z = (g, ms) => ({ zeitpunkt: '2026-11-01', zeit_ms: ms, fahrer: g, geraet: g, runden_ms: [ms] });
+    const community = { ok: true, tracks: [
+      { id: '0901', code: codes[0], name: 'Eins', preset: 'arcade' },
+      { id: '0902', code: codes[1], name: 'Zwei', preset: 'gt3' },
+      { id: '0903', code: codes[2], name: 'Drei', preset: 'propacejka' }],
+      zeiten: { '0901': [z('a', 5000), z('a', 5100), z('a', 5200)],          // 1 Fahrer, 3 Laeufe
+                '0902': [z('a', 6000), z('b', 6100)],                       // 2 Fahrer, 2 Laeufe
+                '0903': [z('a', 7000), z('b', 7100), z('b', 7200)] } };     // 2 Fahrer, 3 Laeufe -> diese
+    const strecken = { ok: true, strecken: [
+      { strecke: codes[3], name: 'Viel', fahrer: 3, laeufe: 5, beste_ms: 4000 },
+      { strecke: codes[4], name: 'Meist', fahrer: 3, laeufe: 9, beste_ms: 4500,
+        je: { arcade: { fahrer: 2, beste_ms: 4600, beste_fahrer: 'x' }, gran: { fahrer: 1, beste_ms: 4500, beste_fahrer: 'y' } } },
+      { strecke: codes[5], name: 'Wenig', fahrer: 1, laeufe: 1, beste_ms: 3000 }] };
+    return { codes, community, strecken };
+  }
+
+  stAdd('Challenges v1.3.58: neue Namen, Community oben, Network unten, Alle anzeigen', () => {
+    const f = [];
+    const home = $('sub-home-challenges');
+    const koepfe = [...home.querySelectorAll('h3.k-zwischen')].map((h) => h.textContent.trim());
+    if (koepfe[0] !== t('Community')) f.push('zuerst: ' + koepfe[0]);
+    if (koepfe[koepfe.length - 1] !== 'Network') f.push('zuletzt: ' + koepfe[koepfe.length - 1]);
+    // Die Vorschau steht vor den Wochenkacheln.
+    const v = $('ch-v-challenge'), w = home.querySelector('.ch-mini[data-kat="a"]');
+    if (!v || !w || !(v.compareDocumentPosition(w) & Node.DOCUMENT_POSITION_FOLLOWING)) f.push('Vorschau nicht vor den Wochen-Challenges');
+    const texte = $('tab-challenges').textContent;
+    for (const alt of ['Community-Bestzeiten', 'Community-Strecken']) if (texte.indexOf(alt) >= 0) f.push('alter Name steht noch: ' + alt);
+    if ($('sub-ch-community').querySelector('h2').textContent.indexOf(t('Community Challenges')) < 0) f.push('Ueberschrift Community Challenges');
+    if ($('sub-ch-strecken').querySelector('h2').textContent.indexOf(t('Alle Strecken')) < 0) f.push('Ueberschrift Alle Strecken');
+    if ($('sk-zurueck').textContent.indexOf(t('Alle Strecken')) < 0) f.push('Zurueck-Knopf Alle Strecken');
+    if ($('ch-strecke-zurueck').textContent.indexOf(t('Community Challenges')) < 0) f.push('Zurueck-Knopf Community Challenges');
+    const alle = [...home.querySelectorAll('.ch-alle')];
+    if (alle.map((b) => b.dataset.sub).join(',') !== 'ch-community,ch-strecken') f.push('Alle anzeigen: ' + alle.map((b) => b.dataset.sub).join(','));
+    if (alle.some((b) => b.textContent.indexOf(t('Alle anzeigen')) < 0)) f.push('Knopftext Alle anzeigen');
+    for (const k of ['Community Challenges', 'Alle Strecken', 'Alle anzeigen', 'Community', 'Strecken', 'Noch keine Strecke mit Zeiten']) {
+      if (!I18N_EN[k] || !I18N_ES[k]) f.push('Uebersetzung fehlt: ' + k);
+    }
+    if (I18N_EN['Community-Strecken'] || I18N_EN['Community-Bestzeiten']) f.push('alter Woerterbuchschluessel steht noch');
+    // Alle anzeigen oeffnet die vorhandene Listenseite.
+    const onVorher = [...document.querySelectorAll('.subpage.on')];
+    const homeVorher = [...document.querySelectorAll('.subpage-home')].map((h) => h.style.display);
+    try {
+      alle[1].click();
+      if (!$('sub-ch-strecken').classList.contains('on')) f.push('Alle anzeigen (Strecken) oeffnet die Liste nicht');
+      alle[0].click();
+      if (!$('sub-ch-community').classList.contains('on')) f.push('Alle anzeigen (Challenges) oeffnet die Liste nicht');
+    } finally {
+      document.querySelectorAll('.subpage.on').forEach((p) => p.classList.remove('on'));
+      onVorher.forEach((p) => p.classList.add('on'));
+      document.querySelectorAll('.subpage-home').forEach((h, i) => { h.style.display = homeVorher[i]; });
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : koepfe.join(' > ') + '; Alle anzeigen oeffnet beide Listen' };
+  });
+
+  stAdd('Challenges v1.3.58: Vorschau waehlt die meistgefahrene, Spielerzahl und Fahrgefuehl', () => {
+    const f = [];
+    const m = stChuMerken();
+    try {
+      const d = stChuDaten();
+      let netz = 0;
+      // Nur die Listen zaehlen: die Challenge-Seite fragt daneben z. B. Spuren ab (72b-spuren.js).
+      window.fetch = (u) => { if (/community=1|strecken?=/.test(String(u))) netz++; return new Promise(() => {}); };
+      communityOnline = d.community; communityOnlineAt = Date.now();
+      skOnline.liste = d.strecken.strecken; skOnline.listeAt = Date.now();
+      const c = chVorschauChallengeWahl(communitySicht());
+      if (!c || c.tr.id !== '0903' || c.spieler !== 2 || c.laeufe !== 3) f.push('Challenge-Wahl ' + JSON.stringify(c && { id: c.tr.id, s: c.spieler, l: c.laeufe }));
+      const s = chVorschauStreckeWahl(skCommunityGefiltert(skOnline.liste, []));
+      if (!s || s.s.name !== 'Meist') f.push('Strecken-Wahl ' + (s && s.s.name));
+      if (chVorschauFahrgefuehl(d.strecken.strecken[1]) !== 'arcade') f.push('Fahrgefuehl ' + chVorschauFahrgefuehl(d.strecken.strecken[1]));
+      if (chVorschauFahrgefuehl({ je: { gran: { fahrer: 1, beste_ms: 5000 }, acc: { fahrer: 1, beste_ms: 4000 } } }) !== 'acc') f.push('Gleichstand: schnellere Bestzeit');
+      chVorschauZeichnen();
+      const kc = $('ch-v-challenge'), ks = $('ch-v-strecke');
+      if (kc.querySelector('.ch-k-name').textContent.indexOf('Drei') < 0) f.push('Karte Challenge: ' + kc.querySelector('.ch-k-name').textContent);
+      if (kc.querySelector('.ch-v-label').textContent !== communityPresetName('propacejka')) f.push('Label Challenge: ' + kc.querySelector('.ch-v-label').textContent);
+      if (kc.querySelector('.ch-k-anzahl').textContent.indexOf(t('{n} Spieler').replace('{n}', 2)) < 0) f.push('Spieler Challenge: ' + kc.querySelector('.ch-k-anzahl').textContent);
+      if (!kc.querySelector('.ch-mini svg')) f.push('Challenge ohne Streckenbild');
+      if (ks.querySelector('.ch-k-name').textContent !== 'Meist') f.push('Karte Strecke: ' + ks.querySelector('.ch-k-name').textContent);
+      if (ks.querySelector('.ch-v-label').textContent !== skFgName('arcade')) f.push('Label Strecke: ' + ks.querySelector('.ch-v-label').textContent);
+      if (ks.querySelector('.ch-k-anzahl').textContent.indexOf(t('{n} Spieler').replace('{n}', 3)) < 0) f.push('Spieler Strecke');
+      // Antippen oeffnet wie in der Liste.
+      d.codes.forEach((k) => { skOnline.zeiten[k] = { zeiten: [], at: Date.now(), stand: Date.now() }; });
+      ks.click();
+      if (!$('sub-ch-sk').classList.contains('on') || !skDetail || skDetail.name !== 'Meist') f.push('Strecke oeffnet nicht');
+      kc.click();
+      if (!$('sub-ch-strecke').classList.contains('on')) f.push('Challenge oeffnet nicht');
+      // Ohne Daten: freundlicher Platzhalter, Antippen oeffnet die Liste.
+      showSubpage('');
+      communityOnline = { ok: true, tracks: [], zeiten: {} }; communityHolt = false;
+      skOnline.liste = []; skOnline.listeLaedt = false;
+      chVorschauZeichnen();
+      if (!kc.classList.contains('ch-v-leer') || kc.querySelector('.ch-k-name').textContent !== t('Noch keine Community Challenge')) f.push('Platzhalter Challenge');
+      if (!ks.classList.contains('ch-v-leer') || ks.querySelector('.ch-k-name').textContent !== t('Noch keine Strecke mit Zeiten')) f.push('Platzhalter Strecke');
+      ks.click();
+      if (!$('sub-ch-strecken').classList.contains('on')) f.push('Platzhalter oeffnet die Liste nicht');
+      if (netz) f.push(netz + ' Abrufe trotz frischer Daten');
+    } finally {
+      stChuZurueck(m);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'meiste Fahrer, dann Laeufe; Pacejka/Arcade-Label, Spielerzahl, oeffnet wie die Liste, Platzhalter' };
+  });
+
+  stAdd('Challenges v1.3.58: Tab-Klick laedt im Hintergrund mit Ladeanzeige, Steuerkreuz erreicht alles', async () => {
+    const f = [];
+    const m = stChuMerken();
+    const raus = [];
+    try {
+      const d = stChuDaten();
+      const urls = [];
+      window.fetch = (u) => {
+        urls.push(String(u));
+        const j = String(u).indexOf('community=1') >= 0 ? d.community : String(u).indexOf('strecken=1') >= 0 ? d.strecken : { ok: false };
+        return new Promise((ok) => raus.push(() => ok({ json: () => Promise.resolve(j) })));
+      };
+      const o = chOnline(); o.url = 'https://example.invalid/exec'; chSchreiben(CH_ONLINE_STORE, o);
+      raceState = 'idle';
+      communityOnline = null; communityOnlineAt = 0; communityHolt = false;
+      skOnline.liste = null; skOnline.listeAt = 0; skOnline.listeLaedt = false;
+      showTab('challenges');
+      showSubpage('');
+      if (!urls.some((u) => u.indexOf('community=1') >= 0) || !urls.some((u) => u.indexOf('strecken=1') >= 0)) f.push('nicht geladen: ' + JSON.stringify(urls));
+      const box = $('ch-lade');
+      if (!box || box.hidden) f.push('keine Ladeanzeige');
+      else {
+        const r = box.getBoundingClientRect();
+        if (!(r.left < 60 && r.bottom > innerHeight - 70)) f.push('nicht unten links (' + Math.round(r.left) + ', ' + Math.round(r.bottom) + ')');
+        if (!box.querySelector('.lade-dreh svg')) f.push('kein drehendes Teil');
+        if (box.querySelector('.wip-tag')) f.push('WIP-Label');
+        const tx = $('ch-lade-text').textContent;
+        if (tx.indexOf(t('Challenges')) < 0 && tx.indexOf(t('Strecken')) < 0) f.push('Text: ' + tx);
+      }
+      if (!$('ch-v-challenge').classList.contains('ch-v-laedt')) f.push('Karte zeigt kein Laden');
+      // Antworten kommen: Anzeige weg, Karten gefuellt.
+      raus.splice(0).forEach((x) => x());
+      for (let i = 0; i < 6; i++) await new Promise((ok) => setTimeout(ok, 0));
+      if (!box.hidden) f.push('Ladeanzeige bleibt stehen');
+      if ($('ch-v-challenge').querySelector('.ch-k-name').textContent.indexOf('Drei') < 0) f.push('Challenge-Karte nach dem Laden: ' + $('ch-v-challenge').querySelector('.ch-k-name').textContent);
+      if ($('ch-v-strecke').querySelector('.ch-k-name').textContent !== 'Meist') f.push('Strecken-Karte nach dem Laden');
+      // Zweiter Tab-Klick innerhalb der Zwischenspeicher: kein neuer Abruf.
+      const n = urls.length;
+      showTab('challenges');
+      if (urls.length !== n) f.push('zweiter Abruf trotz Zwischenspeicher');
+      // Im Rennen nie.
+      communityOnlineAt = 0; skOnline.listeAt = 0; raceState = 'racing';
+      chVorschauLaden();
+      if (urls.length !== n) f.push('Abruf im Rennen');
+      raceState = 'idle';
+      // Steuerkreuz: Karten und Alle-anzeigen-Knoepfe sind Zeilen.
+      const zeilen = typeof menuNavRows === 'function' ? menuNavRows().map((r) => r.el) : [];
+      for (const id of ['ch-v-challenge', 'ch-v-strecke']) if (zeilen.indexOf($(id)) < 0) f.push('Steuerkreuz erreicht ' + id + ' nicht');
+      if ([...document.querySelectorAll('#sub-home-challenges .ch-alle')].some((b) => zeilen.indexOf(b) < 0)) f.push('Steuerkreuz erreicht Alle anzeigen nicht');
+    } finally {
+      raus.splice(0).forEach((x) => x());
+      stChuZurueck(m);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'beide Listen beim Tab-Klick, Ladeanzeige unten links mit Text, gecacht, nicht im Rennen, Steuerkreuz erreicht Karten und Knoepfe' };
   });
   // ============================== HOME ==============================
   // Der Schirm beim Laden, erreichbar ueber das Logo. Die Zahl der Einstellungen wird

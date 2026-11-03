@@ -3313,6 +3313,16 @@
   .ch-kachel .ch-k-rang:empty { display: none; }
   .ch-kachel .ch-k-anzahl { display: block; font-style: normal; font-size: 10.5px; color: var(--dim, #a3acbd); text-align: center; padding: 0 4px 5px; }
   .ch-kachel .ch-k-anzahl[hidden] { display: none; }
+  /* v1.3.58: Community-Vorschau (72d-ch-vorschau.js): Karte plus kleiner "Alle anzeigen"-Knopf. */
+  .ch-v-paar { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .ch-v-paar .ch-v-karte { flex: 1 1 auto; }
+  .ch-v-karte .ch-k-woche .ch-v-label { display: inline-block; font-weight: 800; letter-spacing: .05em; padding: 1px 7px;
+    border: 1px solid var(--k-blau); color: #eef0f4; border-radius: 3px; }
+  .ch-v-karte .ch-mini .lade-dreh { position: relative; width: 34px; height: 34px; }
+  .ch-v-karte.ch-v-leer .ch-mini { opacity: .55; }
+  .misc-tile.ch-alle { flex-direction: row; justify-content: center; align-items: center; padding: 6px 10px; }
+  .misc-tile.ch-alle b[hidden] { display: none; }
+  .ch-alle-txt { font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
   .ch-k-medaille-hinweis { font-size: 12px; line-height: 1.5; margin: 2px 0 8px; }
   .ch-detail { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 16px; align-items: start; }
   .ch-rechts > h3:first-child { margin-top: 0; }
@@ -6025,8 +6035,40 @@
        Wertung in src/72-challenges.js. Je Strecke eine Unterseite, damit L1/R1 zwischen ihnen
        blaettern; der Inhalt (#ch-detail) ist EINER und wird in die offene Seite gehaengt. -->
   <section class="tabpage" id="tab-challenges">
+    <!-- v1.3.58: dieselbe Ladeanzeige wie auf dem Startschirm, unten links (59-lade.js). -->
+    <div class="home-lade" id="ch-lade" role="status" aria-label="Lädt …" hidden>
+      <span class="home-lade-dreh" id="ch-lade-dreh"></span><span class="home-lade-text" id="ch-lade-text" data-i18n-skip></span></div>
     <div class="card subpage-home" id="sub-home-challenges">
       <h2>Challenges <span class="wip-tag">experimentell</span></h2>
+      <!-- v1.3.58 BESTELLT: "Strukturiere die Challenges um ... Der Community-Tab ganz oben (vor
+           woechentlichen Challenges) und Network ganz unten. Fuege eine Vorschau der jeweils
+           meistgefahrenen Strecke beider Typen ein und einen Button 'Alle anzeigen'." Die Karten
+           haben das Markup der Wochen-/Dauerrennen-Kacheln (ch-kachel) und werden in
+           72d-ch-vorschau.js gefuellt. "Alle anzeigen" ist eine kleine Kachel (misc-tile), damit das
+           Steuerkreuz sie erreicht; der versteckte Name ist ihr Eintrag in der Reiterleiste. -->
+      <h3 class="k-zwischen">Community</h3>
+      <div class="misc-grid ch-kacheln ch-v-gitter">
+        <div class="ch-v-paar">
+          <button class="misc-tile ch-kachel ch-v-karte" id="ch-v-challenge" type="button">
+            <span class="ch-mini" aria-hidden="true"></span>
+            <b class="ch-k-name" data-i18n-skip></b>
+            <span class="ch-k-info" data-i18n-skip></span>
+            <em class="ch-k-woche" data-i18n-skip></em>
+            <em class="ch-k-anzahl" data-i18n-skip></em></button>
+          <button class="misc-tile subpage-open ch-alle" data-sub="ch-community" type="button"
+                  title="Eigene Strecken mit Abstimmung einreichen und Bestzeiten teilen."><b hidden>Community Challenges</b><strong class="ch-alle-txt">Alle anzeigen</strong></button>
+        </div>
+        <div class="ch-v-paar">
+          <button class="misc-tile ch-kachel ch-v-karte" id="ch-v-strecke" type="button">
+            <span class="ch-mini" aria-hidden="true"></span>
+            <b class="ch-k-name" data-i18n-skip></b>
+            <span class="ch-k-info" data-i18n-skip></span>
+            <em class="ch-k-woche" data-i18n-skip></em>
+            <em class="ch-k-anzahl" data-i18n-skip></em></button>
+          <button class="misc-tile subpage-open ch-alle" data-sub="ch-strecken" type="button"
+                  title="Alle Strecken, auf denen jemand eine Zeit gefahren ist."><b hidden>Alle Strecken</b><strong class="ch-alle-txt">Alle anzeigen</strong></button>
+        </div>
+      </div>
       <h3 class="k-zwischen">W&ouml;chentliche Challenges <span class="ch-woche-kopf" id="ch-woche-kopf" data-i18n-skip></span></h3>
       <div class="misc-grid ch-kacheln">
         <button class="misc-tile subpage-open ch-kachel" data-sub="ch-a">
@@ -6087,20 +6129,6 @@
           <span>Gemeinsame Bestenliste &uuml;ber ein Google Sheet.</span>
         </button>
       </div>
-      <h3 class="k-zwischen">Community-Bestzeiten</h3>
-      <div class="misc-grid">
-        <button class="misc-tile subpage-open" data-sub="ch-community">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 34c0-4 3-8 8-8s8 3 8 8M20 14a6 6 0 1 1 0 12 6 6 0 0 1 0-12z"/><path d="M28 14c4-2 10-1 12 4M36 26c-2 4-6 6-10 6" stroke="var(--accent)"/></svg>
-          <b>Community-Bestzeiten</b>
-          <span>Eigene Strecken mit Abstimmung einreichen und Bestzeiten teilen.</span>
-        </button>
-        <!-- v1.3.15: Community-Strecken (72c-strecken-online.js); seit v1.3.25 alle, nicht erst ab vier Fahrern. -->
-        <button class="misc-tile subpage-open" data-sub="ch-strecken">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 34c0-10 6-20 14-20s14 6 14 12-6 8-12 8H10z"/><path d="M14 40h6M22 40h6M30 40h6" stroke="var(--accent)"/></svg>
-          <b>Community-Strecken <span class="wip-tag">WIP</span></b>
-          <span>Alle Strecken, auf denen jemand eine Zeit gefahren ist.</span>
-        </button>
-      </div>
     </div>
     <div class="card subpage" id="sub-ch-a">
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
@@ -6131,24 +6159,24 @@
     </div>
     <div class="card subpage" id="sub-ch-community">
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
-      <h2>Community-Bestzeiten <span class="wip-tag">experimentell</span></h2>
+      <h2>Community Challenges <span class="wip-tag">experimentell</span></h2>
       <div id="community-bereich"></div>
     </div>
     <!-- v0.9.49: EINE Community-Strecke (chCommunitySeite). Keine Kachel und kein Reiter -
          die Strecken wechseln; geoeffnet wird aus der Liste, Zurueck fuehrt dorthin. -->
     <div class="card subpage" id="sub-ch-strecke">
-      <button class="misc-back" id="ch-strecke-zurueck" type="button">&larr; Community-Bestzeiten</button>
+      <button class="misc-back" id="ch-strecke-zurueck" type="button">&larr; Community Challenges</button>
       <h2><span class="ch-titel" data-i18n-skip></span> <span class="wip-tag">experimentell</span></h2>
       <div class="ch-platz"></div>
     </div>
-    <!-- v1.3.15: Community-Strecken (Liste) und eine Strecke daraus (72c-strecken-online.js). -->
+    <!-- v1.3.15: Alle Strecken (bis 1.3.57 "Community-Strecken", Liste) und eine Strecke daraus (72c-strecken-online.js). -->
     <div class="card subpage" id="sub-ch-strecken">
       <button class="misc-back subpage-back" data-sub="">&larr; Challenges</button>
-      <h2>Community-Strecken <span class="wip-tag">WIP</span></h2>
+      <h2>Alle Strecken <span class="wip-tag">WIP</span></h2>
       <div id="sk-liste-bereich"></div>
     </div>
     <div class="card subpage" id="sub-ch-sk">
-      <button class="misc-back" id="sk-zurueck" type="button">&larr; Community-Strecken</button>
+      <button class="misc-back" id="sk-zurueck" type="button">&larr; Alle Strecken</button>
       <h2><span id="sk-titel" data-i18n-skip></span> <span class="wip-tag">WIP</span></h2>
       <div class="sk-karte" id="sk-karte" aria-hidden="true"></div>
       <p class="muted" id="sk-fakten" data-i18n-skip></p>
