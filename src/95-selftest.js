@@ -24479,6 +24479,116 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : '4 von 6 (>3 Fahrer oder eigene, online und nur lokal), Bestzeit je Fahrgefuehl, ein Abruf, keiner im Rennen' };
   });
 
+  // v1.3.31 GEMELDET: "Im Garagenmenue komme ich nicht von der linken zur rechten Haelfte und ich kann nicht
+  // nach oben zum Auto mit der Auswahl gehen." Gedrueckt wird wie am Steuerkreuz (menuNavMove/menuNavSeitwaerts,
+  // jede Taste wieder losgelassen), gemessen wird, wo die Auswahl steht.
+  stAdd('Garage v1.3.31: Navigation links/rechts zwischen den Haelften, hoch zu den Autos, alles erreichbar', () => {
+    const f = [];
+    const merkTab = kAktiverTab();
+    const merkSub = document.querySelector('.tabpage.active .subpage.on');
+    const merk = { auf: garAufAuto, virt: garVirtuellAuf, l: garScrollStand.l, r: garScrollStand.r };
+    const probe = ['ghost', 'ghost', 'none'].map((role, i) => ({ role, device: { id: 'probe-nav-' + i, name: 'Probe' },
+      alias: 'Nav ' + i, colorId: ['rot', 'blau', 'gelb'][i], sim: false, testSenke: [], probe: true }));
+    const cur = () => menuNavRows()[menuNavIndex] || null;
+    const seite = (r) => (r && r.el.closest('.gar-a-links') ? 'L' : r && r.el.closest('.gar-a-rechts') ? 'R' : '-');
+    const name = (r) => (r ? (r.el.textContent || r.el.className || '').replace(/\s+/g, ' ').trim().slice(0, 24) : 'nichts');
+    const druecke = (dir) => {
+      if (dir === 'up' || dir === 'down') menuNavMove(dir);
+      else { menuNavSeitwaerts(dir, true); menuNavAdjustGehalten(dir, false); }
+      return cur();
+    };
+    const setze = (pruef) => {
+      const i = menuNavRows().findIndex(pruef);
+      if (i < 0) return false;
+      menuNavIndex = i; menuNavGezeigt = true; menuNavArmed = false; menuNavRender();
+      return true;
+    };
+    try {
+      probe.forEach((c) => garage.push(c));
+      carRetag();
+      showTab('garage');
+      garAufAuto = probe[0]; garVirtuellAuf = false;
+      renderGarage();
+      menuNavEnsureContext();
+      const autoZeile = (car) => (r) => r.el._car === car;
+      // 1. Die Autos links sind Stationen der Liste.
+      const autos = menuNavRows().filter((r) => r.el.classList.contains('gar-a-zeile'));
+      if (autos.length !== probe.length) f.push(autos.length + ' Autozeilen erreichbar statt ' + probe.length);
+      // 2. Nach oben zu den Autos: von "+ Auto verbinden" hoch landet man auf dem letzten Auto.
+      if (!setze((r) => r.el.querySelector && r.el.querySelector('.gar-karte-neu'))) f.push('"+ Auto verbinden" nicht in der Liste');
+      else {
+        const hoch = druecke('up');
+        if (!hoch || hoch.el._car !== probe[2]) f.push('hoch von "+ Auto verbinden" -> ' + name(hoch) + ' statt zum letzten Auto');
+      }
+      // 3. Rechts auf einem Auto: waehlt es und geht in die rechte Haelfte (Rolle zuerst).
+      setze(autoZeile(probe[1]));
+      let r = druecke('right');
+      if (seite(r) !== 'R') f.push('rechts auf einem Auto bleibt links (' + name(r) + ')');
+      if (garAufAuto !== probe[1]) f.push('rechts auf einem Auto waehlt es nicht');
+      if (r && !r.el.classList.contains('gar-a-rolle')) f.push('rechts landet nicht auf der Rolle, sondern ' + name(r));
+      // 4. Zurueck nach links: hoch/runter bleibt in der rechten Spalte, links von einem Knopf geht hinueber.
+      let n = 0;
+      while (r && seite(r) === 'R' && !['button', 'text'].includes(r.kind) && n++ < 20) r = druecke('down');
+      if (!r || seite(r) !== 'R') f.push('runter verlaesst die rechte Spalte (' + name(r) + ')');
+      r = druecke('left');
+      if (seite(r) === 'R' && r.zeile) r = druecke('left');   // Farbklecks vor dem Namen
+      if (seite(r) !== 'L') f.push('links von einem Knopf rechts bleibt rechts (' + name(r) + ')');
+      // Kreis in der rechten Spalte: zurueck zum gewaehlten Auto.
+      setze((x) => x.el.classList.contains('gar-a-rolle'));
+      if (!menuNavGarageZurueck() || !cur() || cur().el._car !== probe[1]) f.push('Kreis rechts fuehrt nicht zum gewaehlten Auto (' + name(cur()) + ')');
+      // 5. Links von einer Aktion (kein Auto) nach rechts: raeumlich in die rechte Spalte, und zurueck.
+      setze((x) => x.el.querySelector && x.el.querySelector('.gar-karte-neu'));
+      r = druecke('right');
+      if (seite(r) !== 'R') f.push('rechts von "+ Auto verbinden" bleibt ' + seite(r));
+      // 6. Alles erreichbar: jede Spalte mit hoch/runter ablaufen, geteilte Zeilen mit links/rechts.
+      const besucht = new Set();
+      const lauf = (start) => {
+        if (!setze(start)) { f.push('Startzeile fehlt'); return; }
+        const N = menuNavRows().length + 2;
+        for (let k = 0; k < N; k++) {
+          const z = cur();
+          besucht.add(z.el);
+          if (z.zeile) {
+            let s = z, m = 0;
+            while (m++ < 4) { const s2 = druecke('right'); if (!s2 || s2.zeile !== z.zeile || s2 === s) break; besucht.add(s2.el); s = s2; }
+            setze((x) => x.el === z.el);
+          }
+          druecke('down');
+        }
+      };
+      garAufAuto = probe[0]; renderGarage();
+      lauf(autoZeile(probe[0]));
+      lauf((x) => x.el.classList.contains('gar-a-rolle'));
+      const fehlt = [];
+      const fokus = [...$('gar-list').querySelectorAll('button, select, input, a[href]')]
+        .filter((c) => menuNavSichtbar(c) && !c.disabled);
+      fokus.forEach((c) => {
+        const ok = menuNavRows().some((x) => besucht.has(x.el) && (x.control === c || x.el === c
+          || (['range', 'select', 'toggle'].includes(x.kind) && x.el.contains(c))));
+        if (!ok) fehlt.push((c.textContent || c.getAttribute('aria-label') || c.className || c.tagName).trim().slice(0, 20));
+      });
+      if (fehlt.length) f.push('nicht erreichbar: ' + fehlt.join(', '));
+      // 7. Sichtbarer Fokusrahmen, und die virtuelle Fahrt springt ebenfalls nach rechts.
+      setze(autoZeile(probe[0]));
+      const sel = document.querySelector('.menu-nav-sel');
+      if (!sel || getComputedStyle(sel).outlineStyle === 'none') f.push('kein Fokusrahmen am Auto');
+      setze((x) => x.el.classList.contains('gar-a-virtuell'));
+      r = druecke('right');
+      if (!garVirtuellAuf || seite(r) !== 'R') f.push('rechts auf "Virtuell fahren" zeigt die Optionen nicht');
+    } catch (e) {
+      f.push('Fehler: ' + e.message);
+    } finally {
+      for (let i = garage.length - 1; i >= 0; i--) if (probe.includes(garage[i])) garage.splice(i, 1);
+      garAufAuto = merk.auf; garVirtuellAuf = merk.virt;
+      carRetag();
+      renderGarage();
+      garScrollStand.l = merk.l; garScrollStand.r = merk.r;
+      if (merkTab) showTab(merkTab);
+      if (merkSub) showSubpage(merkSub.id.replace(/^sub-/, ''));
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Autos erreichbar, rechts waehlt und wechselt, links/Kreis zurueck, alle Bedienelemente erreichbar' };
+  });
+
   stAdd('Online v1.3.15: Schluessel (Spiegel gleich, rueckwaerts anders) wie im Apps Script', () => {
     const f = [];
     // Erwartete Werte aus stSchluessel/stMinRundeMs des Apps Scripts (tools/challenges-apps-script.gs).
