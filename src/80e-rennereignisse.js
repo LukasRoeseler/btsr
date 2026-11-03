@@ -106,7 +106,7 @@
     if (!rennEreignisAn[art] || !soundEnabled) return false;
     const x = rennEreignisIdentitaet(nr), spr = lang;
     if (!x) return false;
-    return rennAnsagen.einreihen('event-' + art, 20, async gueltig => {
+    const spielen = async gueltig => {
       const neu = await rennEreignisClipsLaden(spr), basis = await rennstandClipsLaden(spr, true);
       if (!gueltig()) return;
       const satz = { ...basis, ...neu }, keys = rennEreignisFolge(art, x, sekunden);
@@ -117,7 +117,12 @@
         log('Rennereignis: Sprachclips fehlen; Geraetestimme ohne Stadionhall. Bitte Piper-Clips erzeugen und deployen.', 'info');
         await ansagenTextSpielen(rennEreignisText(art, x, sekunden, spr), spr);
       }
-    }, () => rennEreignisAn[art] && soundEnabled && lang === spr);
+    };
+    const erlaubt = () => rennEreignisAn[art] && soundEnabled && lang === spr;
+    // v1.3.39: "Ansagen in Warteschlange" aus - die laufende Ansage endet sofort, die
+    // Schlange wird geleert, und die Meldung spielt direkt (keine Wartenden).
+    if (!ansageWarteschlange) return ansagenSofort('event-' + art, spielen, erlaubt);
+    return rennAnsagen.einreihen('event-' + art, 20, spielen, erlaubt);
   }
   for (const [art, id] of Object.entries({damage: 'setting-announce-event-damage',
       pit: 'setting-announce-event-pit', penalty: 'setting-announce-event-penalty'})) {
@@ -125,7 +130,12 @@
     rennEreignisAn[art] = el.checked;
     el.addEventListener('change', () => {
       rennEreignisAn[art] = el.checked;
-      if (el.checked && audioCtx) { rennEreignisClipsLaden(lang); rennstandClipsLaden(lang, true); }
+      // v1.3.39: beim Ausschalten sofort still, wenn gerade eine Meldung dieser Art laeuft.
+      if (!el.checked) ansagenArtStoppen('event-' + art);
+      if (el.checked && audioCtx) {
+        ladeAnzeigeMit('klang-ereignisse',
+          Promise.allSettled([rennEreignisClipsLaden(lang), rennstandClipsLaden(lang, true)]));
+      }
     });
   }
   const rennEreignisGrenzfeld = $('setting-announce-event-damage-limit');

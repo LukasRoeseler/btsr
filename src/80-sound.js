@@ -742,7 +742,54 @@
   // die Aufnahme selbst fehlt (Datei nicht geladen, Sprache ohne Aufnahme).
   function ansage(art, text, klangSchluessel) {
     if (art === 'pit' && rennEreignisAn.pit) return false;
+    // v1.3.39: "Ansagen in Warteschlange" (80a-ansagen.js). An = Schlange aus PR #11,
+    // aus = der Weg von vorher, unten unveraendert als ansageSofort().
+    if (!ansageWarteschlange) return ansageSofort(art, text, klangSchluessel);
     return ansagenEinreihen(art, text, klangSchluessel);
+  }
+  // Der Weg vor PR #11 (Stand 1.3.38): jede Meldung bricht die laufende ab, nichts wartet.
+  // Einzige Ergaenzung: eine laufende Rennereignis-Meldung (die es vorher nicht gab) endet
+  // genauso (ansagenAllesStill bzw. ansagenEreignisStill).
+  function ansageSofort(art, text, klangSchluessel) {
+    if (!ansageAn[art]) return false;
+    // Waehrend einer Rennstand-/Ergebnisansage entfaellt diese Spielerzeit.
+    if (art === 'lap' && !rennstandVorRundenzeit()) return false;
+    if (art !== 'lap') ansagenAllesStill();
+    else ansagenEreignisStill();
+    if (art !== 'lap' && playAnsageClip(klangSchluessel || art)) return true;
+    if (!('speechSynthesis' in window)) return false;
+    try {
+      // ABBRECHEN VOR DEM SPRECHEN. Zwei Meldungen kurz hintereinander duerfen sich nicht
+      // stapeln - sonst laeuft die Stimme der Gegenwart nach und meldet den Tank, waehrend
+      // man schon in der naechsten Runde ist.
+      window.speechSynthesis.cancel();
+      lapAnsageBeendet();
+      announceCancels++;
+      const u = new SpeechSynthesisUtterance(text);
+      if (art === 'lap') lapAnsageAktuell = u;
+      u.onend = () => { if (art === 'lap') lapAnsageBeendet(u); };
+      u.lang = lang === 'de' ? 'de-DE' : 'en-US';
+      // Funk spricht schneller und flacher. Beides ist an der Stimme einstellbar, und mehr
+      // gibt die Schnittstelle nicht her.
+      u.rate = 1.15;
+      u.onerror = (ev) => {
+        if (art === 'lap') lapAnsageBeendet(u);
+        if (announceFailLogged) return;
+        announceFailLogged = true;
+        log('Ansage: keine Stimme verfuegbar (' + (ev && ev.error ? ev.error : '?')
+            + '). Die Ansage bleibt aus, alles andere laeuft weiter.', 'info');
+      };
+      window.speechSynthesis.speak(u);
+      announceCalls++;
+      return true;
+    } catch (e) {
+      lapAnsageBeendet();
+      if (!announceFailLogged) {
+        announceFailLogged = true;
+        log('Ansage nicht moeglich: ' + e.message, 'info');
+      }
+      return false;
+    }
   }
 
   // ---- Die vier Zustandsmeldungen --------------------------------------------------
@@ -848,7 +895,18 @@
 
   function speakLap(ms, istBest) {
     if (!Number.isFinite(ms) || ms < 0) return;
-    ansagenEinreihen('lap', lapSpeechText(ms, istBest), null, ms, istBest);
+    if (ansageWarteschlange) {
+      ansagenEinreihen('lap', lapSpeechText(ms, istBest), null, ms, istBest);
+      return;
+    }
+    // "Ansagen in Warteschlange" aus: der Weg vor PR #11.
+    if (!ansageAn.lap || !rennstandVorRundenzeit()) return;
+    // Ohne Sprachausgabe (App-WebView): die Zahlen-Clips.
+    if (!('speechSynthesis' in window)) {
+      if (ansageAn.lap) { ansagenEreignisStill(); lapClipsSpielen(ms, istBest); }
+      return;
+    }
+    ansage('lap', lapSpeechText(ms, istBest));
   }
 
   // Die fuenf Schalter und der Funkfilter. Alle lesen ihren Anfangswert AUS DEM MARKUP -
@@ -869,9 +927,21 @@
     el.addEventListener('change', (e) => {
       ansageAn[art] = e.target.checked;
       if (art === 'lap') announceOn = e.target.checked;
-      // Wartende Meldungen entfallen beim Ausschalten, laufende Saetze anderer
-      // Ansagearten werden dabei niemals abgebrochen.
-
+      // Wartende Meldungen entfallen beim Ausschalten (ihr erlaubt() fragt den Schalter).
+      if (e.target.checked) return;
+      // v1.3.39: Mit Warteschlange wird nur eine laufende Ansage DIESER Art sofort still,
+      // laufende Saetze anderer Arten sprechen zu Ende.
+      if (ansageWarteschlange) { ansagenArtStoppen(art); return; }
+      // Ohne Warteschlange wie vor PR #11: beim Ausschalten sofort still sein und nicht
+      // den Satz noch beenden.
+      ansagenArtStoppen(art);
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel(); lapAnsageBeendet();
+      }
+      if (art === 'lap') {
+        for (const q of zahlenQuellen) { try { q.stop(); } catch (e2) {} }
+        zahlenQuellen = []; lapAnsageBeendet();
+      }
     });
   });
 

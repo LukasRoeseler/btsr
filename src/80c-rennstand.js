@@ -409,6 +409,8 @@
       // Manche Stimmen melden kein Ende: nach grob geschaetzter Sprechdauer freigeben.
       setTimeout(fertig, 3000 + text.length * 110 / u.rate);
       rennstandSprache = u;
+      // Ohne Warteschlange wie vor PR #11: vorher abbrechen.
+      if (!ansageWarteschlange) window.speechSynthesis.cancel();
       window.speechSynthesis.speak(u);
       rennstandSatzRunde = ergebnis ? null : runde;
       announceCalls++;
@@ -455,7 +457,7 @@
 
   async function rennstandSpielen(rows, runde, ergebnis = false, messung = null) {
     const token = rennstandGeneration, spr = lang;
-    if (rennPauseAktiv() || rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
+    if (rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
         || performance.now() < lapAnsageRuheBis) return false;
     const perStimme = rennstandStimmeNoetig(rows);
     const satz = perStimme ? null : await rennstandClipsLaden(spr);
@@ -465,7 +467,7 @@
         || !audioCtx || !(ergebnis ? raceState === 'finished'
           : ['racing', 'finishing'].includes(raceState)) || (!perStimme && !satz)) return false;
     // Auch nach dem asynchronen Laden erneut pruefen. Keine Rundenzeit abbrechen.
-    if (rennPauseAktiv() || rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
+    if (rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
         || performance.now() < lapAnsageRuheBis) return false;
     // Pitch-Shift vor dem Einplanen berechnen. Er veraendert nicht die Clipdauer;
     // die Sprechgeschwindigkeit wird erst bei playbackRate angewandt.
@@ -573,7 +575,7 @@
   }
 
   async function rennstandTesten() {
-    if (rennPauseAktiv() || rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
+    if (rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
         || performance.now() < lapAnsageRuheBis) {
       rennstandTestStatus(lang === 'de' ? 'Bitte laufende Ansage abwarten.' : 'Please wait for the current announcement.');
       return false;
@@ -695,7 +697,7 @@
       const ok = await rennstandSpielen(rows, rennstandBezugsrunde(rows), true);
       if (token !== rennstandGeneration) return;
       if (ok) rennstandErgebnisGesprochen = true;
-      else if (rennPauseAktiv() || rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
+      else if (rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
           || performance.now() < lapAnsageRuheBis) {
         rennstandTimer = setTimeout(pruefen, 100);
       }
@@ -720,7 +722,7 @@
       if (token !== rennstandGeneration) return;
       rennstandTimer = null;
       if (!rennstandErlaubt()) { rennstandWartend = null; return; }
-      if (rennPauseAktiv() || rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
+      if (rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
           || performance.now() < lapAnsageRuheBis) {
         rennstandTimer = setTimeout(pruefen, 100);
         return;
@@ -743,10 +745,13 @@
   }
 
   // Laufende Zwischenstands-/Ergebnisansagen werden nicht fuer eine neue
-  // Spielerzeit unterbrochen. Neue Spielerzeiten warten in der Rennansagen-Queue.
+  // Spielerzeit unterbrochen. Mit "Ansagen in Warteschlange" warten neue Spielerzeiten in
+  // der Rennansagen-Queue (die fragt rennstandBeschaeftigt() selbst); ohne entfaellt diese
+  // Sprachansage, ohne Nachholwarteschlange (v1.3.39: wieder die Regel von vorher - sie
+  // wird nur noch auf dem Weg ohne Warteschlange gefragt).
   // Rundenwertung, Anzeige, Bestzeit und Rundenton bleiben unveraendert.
   function rennstandVorRundenzeit() {
-    return !rennstandBeschaeftigt() && !ansagenWarten();
+    return !rennstandBeschaeftigt();
   }
 
   function rennstandMessungPruefen() {

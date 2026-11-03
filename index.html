@@ -11272,11 +11272,15 @@
           Gesprochen von der eingebauten Stimme des Browsers &ndash; kein Dienst, kein Netz,
           nichts verl&auml;sst das Ger&auml;t. Absichtlich kurz gehalten, damit die Ansage
           vor der n&auml;chsten Kurve fertig ist. Kommt eine zweite Runde herein, w&auml;hrend
-          noch geredet wird, bricht die alte Ansage ab: die Zeit der Gegenwart ist
-          wichtiger. Ob es &uuml;berhaupt spricht, h&auml;ngt an den Stimmen des Systems
+          noch geredet wird, entscheidet der Schalter &bdquo;Ansagen in Warteschlange&ldquo;, ob
+          sie wartet oder die alte Ansage abbricht. Ob es &uuml;berhaupt spricht, h&auml;ngt an den Stimmen des Systems
           &ndash; unter Windows sind sie lokal vorhanden, auf Android k&ouml;nnen sie fehlen.
           Fehlt eine, steht das einmal im Protokoll und nicht bei jeder Runde.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Ansagen in Warteschlange <span class="wip-tag">WIP</span>
+          <small>An: Eine laufende Ansage wird zu Ende gesprochen, neue warten, bis sie dran sind. Rennereignisse kommen vor wartenden Rundenzeiten; eine Rundenzeit, die l&auml;nger als 2,5 Sekunden warten m&uuml;sste, entf&auml;llt.
+          Aus: keine Warteschlange. Jede neue Ansage beendet die laufende sofort, und nichts wird nachgeholt.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-queue" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Rennintro vor der Ampel <span class="wip-tag">WIP</span>
           <small>Lokale Starts: Modus, Runden- oder Zeitlimit, Pflichtstopps, Startaufstellung und Startwetter als Piper-Aufnahmen.
           Die Ampel beginnt erst danach; wer w&auml;hrend des Intros losf&auml;hrt, macht einen Fr&uuml;hstart.
@@ -11355,18 +11359,18 @@
           <span class="muted" id="setting-announce-stand-test-status" aria-live="polite"></span>
         </div></div>
       <div class="opt-head">Erweiterte Rennereignisse</div>
-      <p class="muted" data-i18n-skip>Ereignisse warten bis zum Ende einer laufenden Ansage. Danach kommen sie vor wartenden Rundenzeiten und Rennstandmeldungen. Lokale Spieler 1–3; neue Schalter standardmäßig aus. Sprachclips verwenden Stadionhall, Lautstärke und Tempo wie der Rennstart (Rennstand-Regler). Bei fehlenden Clips spricht die Gerätestimme ohne Hall.</p>
-      <div class="opt-row" data-i18n-skip><div class="opt-label">Schwere Beschädigung ansagen
-        <small>Farbe, Modell und Spieler. Nur bei aktivem Schaden; einmal unter der Zustandsgrenze. Nach Reparatur um 8 Prozentpunkte über die Grenze wieder freigegeben. Ersetzt dann die allgemeine Schadenswarnung.</small></div>
+      <div class="opt-row"><div class="opt-label">Schwere Besch&auml;digung ansagen <span class="wip-tag">WIP</span>
+        <small>Farbe, Modell und Spieler. Nur bei aktivem Schaden; einmal unter der Zustandsgrenze. Nach Reparatur um 8 Prozentpunkte &uuml;ber die Grenze wieder freigegeben. Ersetzt dann die allgemeine Schadenswarnung.</small>
+        <small>F&uuml;r alle drei Rennereignisse: lokale Spieler 1 bis 3, Standard aus. Die Sprachclips nutzen Stadionhall, Lautst&auml;rke und Tempo der Rennstand-Regler. Fehlen die Clips, spricht die Ger&auml;testimme ohne Hall.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-event-damage" data-preset-skip><span></span></label></div>
-      <div class="opt-row" data-i18n-skip><div class="opt-label">Zustandsgrenze für Schadensansage
-        <small>Verbleibender Fahrzeugzustand in Prozent, 1–100; Standard 30. Strikt darunter, nicht genau am Grenzwert.</small></div>
+      <div class="opt-row"><div class="opt-label">Zustandsgrenze f&uuml;r Schadensansage <span class="wip-tag">WIP</span>
+        <small>Verbleibender Fahrzeugzustand in Prozent, 1 bis 100; Standard 30. Strikt darunter, nicht genau am Grenzwert.</small></div>
         <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="setting-announce-event-damage-limit" value="30" min="1" max="100" step="1" style="width:84px" data-preset-skip><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
-      <div class="opt-row" data-i18n-skip><div class="opt-label">Spieler in der Box ansagen
-        <small>„Spieler X ist in der Box.“ Einmal beim tatsächlichen Servicebeginn, nicht bei der Anforderung. Ersetzt dann die alte Boxenstopp-Anforderungsansage.</small></div>
+      <div class="opt-row"><div class="opt-label">Spieler in der Box ansagen <span class="wip-tag">WIP</span>
+        <small>&bdquo;Spieler X ist in der Box.&ldquo; Einmal beim tats&auml;chlichen Servicebeginn, nicht bei der Anforderung. Ersetzt dann die alte Boxenstopp-Anforderungsansage.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-event-pit" data-preset-skip><span></span></label></div>
-      <div class="opt-row" data-i18n-skip><div class="opt-label">Zeitstrafen ansagen
-        <small>Neu verhängte Sekunden für Frühstart, Rammen und fehlende Pflichtstopps am regulären Rennende. Keine Meldung für reine Bremsstrafen.</small></div>
+      <div class="opt-row"><div class="opt-label">Zeitstrafen ansagen <span class="wip-tag">WIP</span>
+        <small>Neu verh&auml;ngte Sekunden f&uuml;r Fr&uuml;hstart, Rammen und fehlende Pflichtstopps am regul&auml;ren Rennende. Keine Meldung f&uuml;r reine Bremsstrafen.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-event-penalty" data-preset-skip><span></span></label></div>
       <div class="opt-head">Weitere Warnungen</div>
       <div class="opt-row"><div class="opt-label">Schaden ansagen<small>Einmal, wenn der Schadensbalken auf 10&nbsp;% gefallen ist. Erst nach einer Reparatur wieder scharf.</small></div>
@@ -17428,7 +17432,7 @@
     "Die ersten drei Fahrzeuge des lokalen Rennfelds, mit Runde, Wagenfarbe und Marke / Modell. Nach jeder eingestellten Zahl vollendeter Runden des führenden Fahrzeugs. Die Ansage wartet auf die ersten drei Durchfahrten derselben Messrunde. Sekundenrückstände stammen aus diesen Durchfahrtszeiten, nicht aus Live-Abständen. Nur Rundenrennen und Endurance. Vorproduzierte Clips, auch in der Android-App.": "The first three cars in the local race field, with lap, colour and make / model. After every selected number of laps completed by the leading car. The announcement waits for the first three crossings of the same measured lap. Gaps in seconds use these crossing times, not live distances. Lap races and Endurance only. Pre-rendered clips also work in the Android app.",
     "Rennstand alle X Runden": "Race standings every X laps",
     "1 bis 20, Standard 5. Zum Beispiel nach Runde 5, 10 und 15.": "1 to 20, default 5. For example after lap 5, 10 and 15.",
-    "Nach jeder Runde die Zeit, und bei einer eigenen Bestzeit ein Wort dazu. Gesprochen von der eingebauten Stimme des Browsers – kein Dienst, kein Netz, nichts verlässt das Gerät. Absichtlich kurz gehalten, damit die Ansage vor der nächsten Kurve fertig ist. Kommt eine zweite Runde herein, während noch geredet wird, bricht die alte Ansage ab: die Zeit der Gegenwart ist wichtiger. Ob es überhaupt spricht, hängt an den Stimmen des Systems – unter Windows sind sie lokal vorhanden, auf Android können sie fehlen. Fehlt eine, steht das einmal im Protokoll und nicht bei jeder Runde.": "The time after every lap, and a word with it on a personal best. Spoken by the browser’s built-in voice – no service, no network, nothing leaves the device. Deliberately kept short so the announcement is finished before the next corner. If a second lap comes in while it is still talking, the old announcement is cut off: the time of the present matters more. Whether it speaks at all depends on the voices of the system – under Windows they are installed locally, on Android they can be missing. If one is missing, that goes into the log once and not on every lap.",
+    "Nach jeder Runde die Zeit, und bei einer eigenen Bestzeit ein Wort dazu. Gesprochen von der eingebauten Stimme des Browsers – kein Dienst, kein Netz, nichts verlässt das Gerät. Absichtlich kurz gehalten, damit die Ansage vor der nächsten Kurve fertig ist. Kommt eine zweite Runde herein, während noch geredet wird, entscheidet der Schalter „Ansagen in Warteschlange“, ob sie wartet oder die alte Ansage abbricht. Ob es überhaupt spricht, hängt an den Stimmen des Systems – unter Windows sind sie lokal vorhanden, auf Android können sie fehlen. Fehlt eine, steht das einmal im Protokoll und nicht bei jeder Runde.": "The time after every lap, and a word with it on a personal best. Spoken by the browser’s built-in voice – no service, no network, nothing leaves the device. Deliberately kept short so the announcement is finished before the next corner. If a second lap comes in while it is still talking, the “Queue announcements” switch decides whether it waits or cuts off the old announcement. Whether it speaks at all depends on the voices of the system – under Windows they are installed locally, on Android they can be missing. If one is missing, that goes into the log once and not on every lap.",
     "Alle sind aus Zylinderzahl, Kurbelwelle, Bankaufteilung und Zündfolge gerechnet – keine Aufnahme. Bei den aufgeladenen Originalen fehlt der Lader. Die sechs mit WIP sind noch nicht nach Gehör geprüft; beim Maserati kommt dazu, dass dieses Modell den Bankwinkel gar nicht darstellt, weshalb er sich vom Ferrari-V12 nur in Drehzahl und Rohrlänge unterscheidet. Der Boxer-Rumpel des Subaru kommt aus ungleich langen Krümmerrohren; das Modell trägt feste Zeitversätze je Zylinder und damit die richtige Art von Unregelmäßigkeit, aber ihr genaues Muster ist gewählt und nicht aus Rohrlängen gerechnet.": "All of them are computed from cylinder count, crankshaft, bank split and firing order – none is a recording. The forced-induction originals are missing their turbo. The six marked WIP have not been judged by ear; with the Maserati there is the added point that this model cannot represent bank angle at all, so it differs from the Ferrari V12 only in revs and pipe length. The Subaru boxer rumble comes from unequal-length headers; the model carries fixed per-cylinder timing offsets and therefore the right KIND of irregularity, but their exact pattern is chosen, not computed from pipe lengths.",
     "Trapez-Muster, randlos, ohne Strichcode": "Trapezoid pattern, borderless, no barcode",
     "Zum Auslegen und Fotografieren, ohne jede Behauptung, maschinenlesbar zu sein - anders als die Blätter oben, die trotz ihrer Warnung noch ein (falsches) Strichcode-Wort tragen. Senkrechte Trapez-Balken, randlos bis zum Blattrand: oben (bzw. innen in der Kurve) schmal, unten (aussen) breit, mit einer Lücke dazwischen, die genau dieselbe Form kopfueber hat. Die genaue Folge ist ERFUNDEN - das echte Wort ist weder für die Gerade (Byte 12 = 0x02) noch die Rechtskurve (0x04) entziffert, und ein bereits gemachter Messversuch an Infrarot-Fotos wie diesen ist dokumentiert gescheitert (CARRERA_HYBRID.md, Fluchtpunkt-Fit, 31.08.) - nur ein Flachbett-Scan gäbe echte Millimeter. Die Zahlen hier (5/20 mm) sind daher eine grobe Ausseneinschätzung, direkt übernommen, keine Messung.":
@@ -17999,6 +18003,20 @@
     "Die Regenreifen sind drauf. Fahr weiter.": "The rain tyres are on. Drive on.",
     "Randstein-Klang: alt": "Kerb sound: old",
     "Aus (Standard, neu): Im virtuellen Fahren rumpelt der Randstein dumpf wie in Assetto Corsa Competizione, im Takt der Rippen, schneller mit dem Tempo und lauter, je weiter das Auto auf dem Stein ist. An: das frühere helle Rattern.": "Off (default, new): in virtual driving the kerb rumbles deeply like in Assetto Corsa Competizione, in time with the ridges, faster with speed and louder the further the car is on the kerb. On: the earlier bright rattle.",
+    "Ansagen in Warteschlange": "Queue announcements",
+    "An: Eine laufende Ansage wird zu Ende gesprochen, neue warten, bis sie dran sind. Rennereignisse kommen vor wartenden Rundenzeiten; eine Rundenzeit, die länger als 2,5 Sekunden warten müsste, entfällt. Aus: keine Warteschlange. Jede neue Ansage beendet die laufende sofort, und nichts wird nachgeholt.": "On: an announcement in progress is finished, new ones wait for their turn. Race events come before waiting lap times; a lap time that would have to wait longer than 2.5 seconds is dropped. Off: no queue. Every new announcement ends the current one immediately, and nothing is made up later.",
+    "Erweiterte Rennereignisse": "Extended race events",
+    "Schwere Beschädigung ansagen": "Announce heavy damage",
+    "Farbe, Modell und Spieler. Nur bei aktivem Schaden; einmal unter der Zustandsgrenze. Nach Reparatur um 8 Prozentpunkte über die Grenze wieder freigegeben. Ersetzt dann die allgemeine Schadenswarnung.": "Colour, model and player. Only with damage enabled; once below the condition limit. Armed again after a repair to 8 percentage points above the limit. Then replaces the general damage warning.",
+    "Für alle drei Rennereignisse: lokale Spieler 1 bis 3, Standard aus. Die Sprachclips nutzen Stadionhall, Lautstärke und Tempo der Rennstand-Regler. Fehlen die Clips, spricht die Gerätestimme ohne Hall.": "For all three race events: local players 1 to 3, off by default. The voice clips use the stadium reverb, volume and speed of the race standings sliders. If the clips are missing, the device voice speaks without reverb.",
+    "Zustandsgrenze für Schadensansage": "Condition limit for the damage announcement",
+    "Verbleibender Fahrzeugzustand in Prozent, 1 bis 100; Standard 30. Strikt darunter, nicht genau am Grenzwert.": "Remaining car condition in percent, 1 to 100; default 30. Strictly below, not exactly at the limit.",
+    "Spieler in der Box ansagen": "Announce player in the pits",
+    "„Spieler X ist in der Box.“ Einmal beim tatsächlichen Servicebeginn, nicht bei der Anforderung. Ersetzt dann die alte Boxenstopp-Anforderungsansage.": "“Player X is in the pits.” Once when the service actually starts, not when it is requested. Then replaces the old pit stop request announcement.",
+    "Zeitstrafen ansagen": "Announce time penalties",
+    "Neu verhängte Sekunden für Frühstart, Rammen und fehlende Pflichtstopps am regulären Rennende. Keine Meldung für reine Bremsstrafen.": "Newly imposed seconds for jump starts, ramming and missing mandatory stops at the regular end of the race. No message for pure brake penalties.",
+    "Weitere Warnungen": "Further warnings",
+    "Rennereignisse": "Race events",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -19386,6 +19404,20 @@
     "Die Regenreifen sind drauf. Fahr weiter.": "Ya están los neumáticos de lluvia. Sigue conduciendo.",
     "Randstein-Klang: alt": "Sonido de los pianos: antiguo",
     "Aus (Standard, neu): Im virtuellen Fahren rumpelt der Randstein dumpf wie in Assetto Corsa Competizione, im Takt der Rippen, schneller mit dem Tempo und lauter, je weiter das Auto auf dem Stein ist. An: das frühere helle Rattern.": "Desactivado (por defecto, nuevo): en la conducción virtual el piano retumba grave como en Assetto Corsa Competizione, al ritmo de sus estrías, más rápido con la velocidad y más fuerte cuanto más pisa el coche el piano. Activado: el traqueteo agudo de antes.",
+    "Ansagen in Warteschlange": "Anuncios en cola",
+    "An: Eine laufende Ansage wird zu Ende gesprochen, neue warten, bis sie dran sind. Rennereignisse kommen vor wartenden Rundenzeiten; eine Rundenzeit, die länger als 2,5 Sekunden warten müsste, entfällt. Aus: keine Warteschlange. Jede neue Ansage beendet die laufende sofort, und nichts wird nachgeholt.": "Activado: un anuncio en curso se termina de decir, los nuevos esperan su turno. Los eventos de carrera van antes que los tiempos de vuelta en espera; un tiempo de vuelta que tendría que esperar más de 2,5 segundos se descarta. Desactivado: sin cola. Cada anuncio nuevo termina el actual de inmediato y no se recupera nada.",
+    "Erweiterte Rennereignisse": "Eventos de carrera ampliados",
+    "Schwere Beschädigung ansagen": "Anunciar daños graves",
+    "Farbe, Modell und Spieler. Nur bei aktivem Schaden; einmal unter der Zustandsgrenze. Nach Reparatur um 8 Prozentpunkte über die Grenze wieder freigegeben. Ersetzt dann die allgemeine Schadenswarnung.": "Color, modelo y jugador. Solo con daños activados; una vez por debajo del límite de estado. Se rearma tras una reparación a 8 puntos porcentuales por encima del límite. Entonces sustituye al aviso general de daños.",
+    "Für alle drei Rennereignisse: lokale Spieler 1 bis 3, Standard aus. Die Sprachclips nutzen Stadionhall, Lautstärke und Tempo der Rennstand-Regler. Fehlen die Clips, spricht die Gerätestimme ohne Hall.": "Para los tres eventos de carrera: jugadores locales 1 a 3, desactivado por defecto. Los clips de voz usan la reverberación de estadio, el volumen y la velocidad de los reguladores de posiciones. Si faltan los clips, habla la voz del dispositivo sin reverberación.",
+    "Zustandsgrenze für Schadensansage": "Límite de estado para el anuncio de daños",
+    "Verbleibender Fahrzeugzustand in Prozent, 1 bis 100; Standard 30. Strikt darunter, nicht genau am Grenzwert.": "Estado restante del coche en porcentaje, 1 a 100; por defecto 30. Estrictamente por debajo, no justo en el límite.",
+    "Spieler in der Box ansagen": "Anunciar jugador en boxes",
+    "„Spieler X ist in der Box.“ Einmal beim tatsächlichen Servicebeginn, nicht bei der Anforderung. Ersetzt dann die alte Boxenstopp-Anforderungsansage.": "«El jugador X está en boxes.» Una vez al empezar realmente el servicio, no al solicitarlo. Entonces sustituye al antiguo anuncio de solicitud de parada en boxes.",
+    "Zeitstrafen ansagen": "Anunciar penalizaciones de tiempo",
+    "Neu verhängte Sekunden für Frühstart, Rammen und fehlende Pflichtstopps am regulären Rennende. Keine Meldung für reine Bremsstrafen.": "Segundos recién impuestos por salida anticipada, embestidas y paradas obligatorias no realizadas al final regular de la carrera. Sin aviso para penalizaciones solo de frenado.",
+    "Weitere Warnungen": "Otros avisos",
+    "Rennereignisse": "Eventos de carrera",
   };
 
   // ============================================================================
@@ -53711,7 +53743,54 @@
   // die Aufnahme selbst fehlt (Datei nicht geladen, Sprache ohne Aufnahme).
   function ansage(art, text, klangSchluessel) {
     if (art === 'pit' && rennEreignisAn.pit) return false;
+    // v1.3.39: "Ansagen in Warteschlange" (80a-ansagen.js). An = Schlange aus PR #11,
+    // aus = der Weg von vorher, unten unveraendert als ansageSofort().
+    if (!ansageWarteschlange) return ansageSofort(art, text, klangSchluessel);
     return ansagenEinreihen(art, text, klangSchluessel);
+  }
+  // Der Weg vor PR #11 (Stand 1.3.38): jede Meldung bricht die laufende ab, nichts wartet.
+  // Einzige Ergaenzung: eine laufende Rennereignis-Meldung (die es vorher nicht gab) endet
+  // genauso (ansagenAllesStill bzw. ansagenEreignisStill).
+  function ansageSofort(art, text, klangSchluessel) {
+    if (!ansageAn[art]) return false;
+    // Waehrend einer Rennstand-/Ergebnisansage entfaellt diese Spielerzeit.
+    if (art === 'lap' && !rennstandVorRundenzeit()) return false;
+    if (art !== 'lap') ansagenAllesStill();
+    else ansagenEreignisStill();
+    if (art !== 'lap' && playAnsageClip(klangSchluessel || art)) return true;
+    if (!('speechSynthesis' in window)) return false;
+    try {
+      // ABBRECHEN VOR DEM SPRECHEN. Zwei Meldungen kurz hintereinander duerfen sich nicht
+      // stapeln - sonst laeuft die Stimme der Gegenwart nach und meldet den Tank, waehrend
+      // man schon in der naechsten Runde ist.
+      window.speechSynthesis.cancel();
+      lapAnsageBeendet();
+      announceCancels++;
+      const u = new SpeechSynthesisUtterance(text);
+      if (art === 'lap') lapAnsageAktuell = u;
+      u.onend = () => { if (art === 'lap') lapAnsageBeendet(u); };
+      u.lang = lang === 'de' ? 'de-DE' : 'en-US';
+      // Funk spricht schneller und flacher. Beides ist an der Stimme einstellbar, und mehr
+      // gibt die Schnittstelle nicht her.
+      u.rate = 1.15;
+      u.onerror = (ev) => {
+        if (art === 'lap') lapAnsageBeendet(u);
+        if (announceFailLogged) return;
+        announceFailLogged = true;
+        log('Ansage: keine Stimme verfuegbar (' + (ev && ev.error ? ev.error : '?')
+            + '). Die Ansage bleibt aus, alles andere laeuft weiter.', 'info');
+      };
+      window.speechSynthesis.speak(u);
+      announceCalls++;
+      return true;
+    } catch (e) {
+      lapAnsageBeendet();
+      if (!announceFailLogged) {
+        announceFailLogged = true;
+        log('Ansage nicht moeglich: ' + e.message, 'info');
+      }
+      return false;
+    }
   }
 
   // ---- Die vier Zustandsmeldungen --------------------------------------------------
@@ -53817,7 +53896,18 @@
 
   function speakLap(ms, istBest) {
     if (!Number.isFinite(ms) || ms < 0) return;
-    ansagenEinreihen('lap', lapSpeechText(ms, istBest), null, ms, istBest);
+    if (ansageWarteschlange) {
+      ansagenEinreihen('lap', lapSpeechText(ms, istBest), null, ms, istBest);
+      return;
+    }
+    // "Ansagen in Warteschlange" aus: der Weg vor PR #11.
+    if (!ansageAn.lap || !rennstandVorRundenzeit()) return;
+    // Ohne Sprachausgabe (App-WebView): die Zahlen-Clips.
+    if (!('speechSynthesis' in window)) {
+      if (ansageAn.lap) { ansagenEreignisStill(); lapClipsSpielen(ms, istBest); }
+      return;
+    }
+    ansage('lap', lapSpeechText(ms, istBest));
   }
 
   // Die fuenf Schalter und der Funkfilter. Alle lesen ihren Anfangswert AUS DEM MARKUP -
@@ -53838,9 +53928,21 @@
     el.addEventListener('change', (e) => {
       ansageAn[art] = e.target.checked;
       if (art === 'lap') announceOn = e.target.checked;
-      // Wartende Meldungen entfallen beim Ausschalten, laufende Saetze anderer
-      // Ansagearten werden dabei niemals abgebrochen.
-
+      // Wartende Meldungen entfallen beim Ausschalten (ihr erlaubt() fragt den Schalter).
+      if (e.target.checked) return;
+      // v1.3.39: Mit Warteschlange wird nur eine laufende Ansage DIESER Art sofort still,
+      // laufende Saetze anderer Arten sprechen zu Ende.
+      if (ansageWarteschlange) { ansagenArtStoppen(art); return; }
+      // Ohne Warteschlange wie vor PR #11: beim Ausschalten sofort still sein und nicht
+      // den Satz noch beenden.
+      ansagenArtStoppen(art);
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel(); lapAnsageBeendet();
+      }
+      if (art === 'lap') {
+        for (const q of zahlenQuellen) { try { q.stop(); } catch (e2) {} }
+        zahlenQuellen = []; lapAnsageBeendet();
+      }
     });
   });
 
@@ -55842,17 +55944,21 @@
       this.jobs = []; this.aktiv = null; this.timer = null; this.generation = 0;
       this.folge = 0; this.ruheBis = 0;
     }
-    einreihen(art, prioritaet, spielen, erlaubt = () => true) {
-      this.jobs.push({ art, prioritaet, spielen, erlaubt, nr: this.folge++ });
+    // v1.3.39: verfallMs (optional) - ein wartender Eintrag, der aelter ist, wenn er dran
+    // waere, entfaellt (Rundenzeiten auf kurzen Strecken, siehe ANSAGE_LAP_VERFALL_MS).
+    einreihen(art, prioritaet, spielen, erlaubt = () => true, verfallMs = 0) {
+      this.jobs.push({ art, prioritaet, spielen, erlaubt, nr: this.folge++,
+        bis: verfallMs > 0 ? performance.now() + verfallMs : 0 });
       this.wecken(); return true;
     }
+    gueltig(j, jetzt = performance.now()) { return (!j.bis || jetzt <= j.bis) && j.erlaubt(); }
     wecken(ms = 0) {
       if (this.timer !== null || this.aktiv) return;
       this.timer = setTimeout(() => { this.timer = null; this.pump(); }, ms);
     }
     async pump() {
       if (this.aktiv) return;
-      this.jobs = this.jobs.filter(j => j.erlaubt());
+      this.jobs = this.jobs.filter(j => this.gueltig(j));
       if (!this.jobs.length) return;
       if (this.blockiert() || performance.now() < this.ruheBis) { this.wecken(50); return; }
       this.jobs.sort((a, b) => b.prioritaet - a.prioritaet || a.nr - b.nr);
@@ -55871,7 +55977,7 @@
       if (this.timer !== null) clearTimeout(this.timer);
       this.timer = null;
     }
-    get beschaeftigt() { return !!this.aktiv || this.jobs.some(j => j.erlaubt()); }
+    get beschaeftigt() { return !!this.aktiv || this.jobs.some(j => this.gueltig(j)); }
   }
   let ansagenAktuellStop = null;
   const rennAnsagen = new RennAnsagenQueue(
@@ -55884,7 +55990,76 @@
     if (ansagenAktuellStop) ansagenAktuellStop();
     ansagenAktuellStop = null;
   }
-  function ansagenWarten() { return rennAnsagen.beschaeftigt; }
+  function ansagenWarten() { return rennAnsagen.beschaeftigt || ansagenSofortArt !== null; }
+
+  // ---- WARTESCHLANGE ABSCHALTBAR (v1.3.39, WIP) -----------------------------------------
+  // BESTELLT (zu PR #11): "Uebernimm die Sachen, aber lass mich einstellen, dass keine
+  // Warteschlangen entstehen in den Ansagen-Optionen." Schalter "Ansagen in Warteschlange"
+  // (setting-announce-queue, Vorgabe an):
+  //   an  = PR #11: laufende Ansagen werden zu Ende gesprochen, neue warten in rennAnsagen.
+  //         Wartende Rundenzeiten verfallen nach ANSAGE_LAP_VERFALL_MS (sonst waechst auf
+  //         kurzen Strecken mit 4-5-s-Runden ein Rueckstand auf).
+  //   aus = das Verhalten vor PR #11: jede neue Ansage beendet die laufende sofort, nichts
+  //         wird nachgeholt (ansageSofort() in 80-sound.js, speakLap()). Die Rennereignisse
+  //         spielen dann ueber ansagenSofort(): erst alles still, dann direkt - die Schlange
+  //         laeuft bei aus gar nicht (kein 50-ms-Nachsehen).
+  let ansageWarteschlange = true;
+  let ansageLapVerfallMs = 2500;   // ANSAGE_LAP_VERFALL_MS; let, damit der Selbsttest kuerzen kann
+  let ansagenSofortNr = 0, ansagenSofortArt = null;
+  // Bei aus: alles, was gerade spricht, sofort beenden (wie frueher ansage() vor dem Sprechen),
+  // dazu die Rennereignis-Wiedergabe und die (leere) Schlange.
+  function ansagenAllesStill() {
+    ansagenSofortNr++; ansagenSofortArt = null;
+    ansagenReset();
+    rennstandAbbrechen();
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    for (const q of zahlenQuellen) { try { q.stop(); } catch (e) {} }
+    zahlenQuellen = []; lapAnsageBeendet();
+  }
+  // Nur die Rennereignis-Wiedergabe beenden (Rundenzeit bei aus: die alte Abbruchregel
+  // gilt dort weiter, sie bricht keinen Rennstand ab).
+  function ansagenEreignisStill() {
+    if (ansagenSofortArt === null && !rennAnsagen.beschaeftigt && !ansagenAktuellStop) return;
+    ansagenSofortNr++; ansagenSofortArt = null;
+    ansagenReset();
+  }
+  function ansagenSofort(art, spielen, erlaubt) {
+    ansagenAllesStill();
+    const nr = ++ansagenSofortNr;
+    ansagenSofortArt = art;
+    Promise.resolve()
+      .then(() => spielen(() => nr === ansagenSofortNr && erlaubt()))
+      .catch((err) => log('Ansage fehlgeschlagen: ' + err.message, 'info'))
+      .finally(() => { if (nr === ansagenSofortNr) ansagenSofortArt = null; });
+    return true;
+  }
+  // Laeuft gerade eine Ansage dieser Art (Schlange oder direkt), sofort still. Wartende
+  // dieser Art entfallen ohnehin (ihr erlaubt() fragt den Schalter).
+  function ansagenArtStoppen(art) {
+    rennAnsagen.jobs = rennAnsagen.jobs.filter((j) => j.art !== art);
+    const laeuft = (rennAnsagen.aktiv && rennAnsagen.aktiv.art === art) || ansagenSofortArt === art;
+    if (!laeuft) return false;
+    if (ansagenSofortArt === art) { ansagenSofortNr++; ansagenSofortArt = null; }
+    if (ansagenAktuellStop) ansagenAktuellStop();
+    return true;
+  }
+  if ($('setting-announce-queue')) {
+    const el = $('setting-announce-queue');
+    ansageWarteschlange = el.checked;
+    el.addEventListener('change', () => {
+      ansageWarteschlange = el.checked;
+      // Beim Abschalten entfallen die Wartenden; ein laufender Satz darf zu Ende sprechen.
+      if (!el.checked) {
+        rennAnsagen.jobs = [];
+        if (rennAnsagen.timer !== null) { clearTimeout(rennAnsagen.timer); rennAnsagen.timer = null; }
+      }
+      // Beim Einschalten: eine Rundenzeit vom alten Weg, deren Stimme nie ein Ende gemeldet
+      // hat, darf die Schlange nicht dauerhaft anhalten (lapAnsageAktuell).
+      const synth = 'speechSynthesis' in window ? window.speechSynthesis : null;
+      if (el.checked && lapAnsageAktuell && !(synth && (synth.speaking || synth.pending))) lapAnsageBeendet();
+    });
+  }
+
   function ansagenEinreihen(art, text, schluessel, ms, best) {
     if (!ansageAn[art] || !soundEnabled) return false;
     const spr = lang;
@@ -55902,7 +56077,7 @@
         if (puffer) await ansagenPufferSpielen([puffer]);
         else await ansagenTextSpielen(text, spr);
       } else await ansagenTextSpielen(text, spr);
-    }, () => !!ansageAn[art] && soundEnabled && lang === spr);
+    }, () => !!ansageAn[art] && soundEnabled && lang === spr, art === 'lap' ? ansageLapVerfallMs : 0);
   }
   function ansagenPufferSpielen(puffer, optionen = {}) {
     if (!audioCtx || !soundEnabled || !puffer.length) return Promise.resolve(false);
@@ -56503,6 +56678,8 @@
       // Manche Stimmen melden kein Ende: nach grob geschaetzter Sprechdauer freigeben.
       setTimeout(fertig, 3000 + text.length * 110 / u.rate);
       rennstandSprache = u;
+      // Ohne Warteschlange wie vor PR #11: vorher abbrechen.
+      if (!ansageWarteschlange) window.speechSynthesis.cancel();
       window.speechSynthesis.speak(u);
       rennstandSatzRunde = ergebnis ? null : runde;
       announceCalls++;
@@ -56549,7 +56726,7 @@
 
   async function rennstandSpielen(rows, runde, ergebnis = false, messung = null) {
     const token = rennstandGeneration, spr = lang;
-    if (rennPauseAktiv() || rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
+    if (rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
         || performance.now() < lapAnsageRuheBis) return false;
     const perStimme = rennstandStimmeNoetig(rows);
     const satz = perStimme ? null : await rennstandClipsLaden(spr);
@@ -56559,7 +56736,7 @@
         || !audioCtx || !(ergebnis ? raceState === 'finished'
           : ['racing', 'finishing'].includes(raceState)) || (!perStimme && !satz)) return false;
     // Auch nach dem asynchronen Laden erneut pruefen. Keine Rundenzeit abbrechen.
-    if (rennPauseAktiv() || rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
+    if (rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
         || performance.now() < lapAnsageRuheBis) return false;
     // Pitch-Shift vor dem Einplanen berechnen. Er veraendert nicht die Clipdauer;
     // die Sprechgeschwindigkeit wird erst bei playbackRate angewandt.
@@ -56667,7 +56844,7 @@
   }
 
   async function rennstandTesten() {
-    if (rennPauseAktiv() || rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
+    if (rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
         || performance.now() < lapAnsageRuheBis) {
       rennstandTestStatus(lang === 'de' ? 'Bitte laufende Ansage abwarten.' : 'Please wait for the current announcement.');
       return false;
@@ -56789,7 +56966,7 @@
       const ok = await rennstandSpielen(rows, rennstandBezugsrunde(rows), true);
       if (token !== rennstandGeneration) return;
       if (ok) rennstandErgebnisGesprochen = true;
-      else if (rennPauseAktiv() || rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
+      else if (rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
           || performance.now() < lapAnsageRuheBis) {
         rennstandTimer = setTimeout(pruefen, 100);
       }
@@ -56814,7 +56991,7 @@
       if (token !== rennstandGeneration) return;
       rennstandTimer = null;
       if (!rennstandErlaubt()) { rennstandWartend = null; return; }
-      if (rennPauseAktiv() || rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
+      if (rennPauseAktiv() || rennstandBeschaeftigt() || ansagenWarten() || lapAnsageBeschaeftigt()
           || performance.now() < lapAnsageRuheBis) {
         rennstandTimer = setTimeout(pruefen, 100);
         return;
@@ -56837,10 +57014,13 @@
   }
 
   // Laufende Zwischenstands-/Ergebnisansagen werden nicht fuer eine neue
-  // Spielerzeit unterbrochen. Neue Spielerzeiten warten in der Rennansagen-Queue.
+  // Spielerzeit unterbrochen. Mit "Ansagen in Warteschlange" warten neue Spielerzeiten in
+  // der Rennansagen-Queue (die fragt rennstandBeschaeftigt() selbst); ohne entfaellt diese
+  // Sprachansage, ohne Nachholwarteschlange (v1.3.39: wieder die Regel von vorher - sie
+  // wird nur noch auf dem Weg ohne Warteschlange gefragt).
   // Rundenwertung, Anzeige, Bestzeit und Rundenton bleiben unveraendert.
   function rennstandVorRundenzeit() {
-    return !rennstandBeschaeftigt() && !ansagenWarten();
+    return !rennstandBeschaeftigt();
   }
 
   function rennstandMessungPruefen() {
@@ -57562,7 +57742,7 @@
     if (!rennEreignisAn[art] || !soundEnabled) return false;
     const x = rennEreignisIdentitaet(nr), spr = lang;
     if (!x) return false;
-    return rennAnsagen.einreihen('event-' + art, 20, async gueltig => {
+    const spielen = async gueltig => {
       const neu = await rennEreignisClipsLaden(spr), basis = await rennstandClipsLaden(spr, true);
       if (!gueltig()) return;
       const satz = { ...basis, ...neu }, keys = rennEreignisFolge(art, x, sekunden);
@@ -57573,7 +57753,12 @@
         log('Rennereignis: Sprachclips fehlen; Geraetestimme ohne Stadionhall. Bitte Piper-Clips erzeugen und deployen.', 'info');
         await ansagenTextSpielen(rennEreignisText(art, x, sekunden, spr), spr);
       }
-    }, () => rennEreignisAn[art] && soundEnabled && lang === spr);
+    };
+    const erlaubt = () => rennEreignisAn[art] && soundEnabled && lang === spr;
+    // v1.3.39: "Ansagen in Warteschlange" aus - die laufende Ansage endet sofort, die
+    // Schlange wird geleert, und die Meldung spielt direkt (keine Wartenden).
+    if (!ansageWarteschlange) return ansagenSofort('event-' + art, spielen, erlaubt);
+    return rennAnsagen.einreihen('event-' + art, 20, spielen, erlaubt);
   }
   for (const [art, id] of Object.entries({damage: 'setting-announce-event-damage',
       pit: 'setting-announce-event-pit', penalty: 'setting-announce-event-penalty'})) {
@@ -57581,7 +57766,12 @@
     rennEreignisAn[art] = el.checked;
     el.addEventListener('change', () => {
       rennEreignisAn[art] = el.checked;
-      if (el.checked && audioCtx) { rennEreignisClipsLaden(lang); rennstandClipsLaden(lang, true); }
+      // v1.3.39: beim Ausschalten sofort still, wenn gerade eine Meldung dieser Art laeuft.
+      if (!el.checked) ansagenArtStoppen('event-' + art);
+      if (el.checked && audioCtx) {
+        ladeAnzeigeMit('klang-ereignisse',
+          Promise.allSettled([rennEreignisClipsLaden(lang), rennstandClipsLaden(lang, true)]));
+      }
     });
   }
   const rennEreignisGrenzfeld = $('setting-announce-event-damage-limit');
@@ -79084,10 +79274,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const gesagt = [];
       let uhr = echteNow.call(Date);
       try {
-        Object.defineProperty(window, 'speechSynthesis', {
-          configurable: true,
-          value: { cancel() {}, speak(u) { gesagt.push(u.text); } },
-        });
+        // v1.3.39: eigeneStimme - der Aufrufer hat schon eine Attrappe eingesetzt (die
+        // Warteschlange spricht erst nach dieser Probe) und raeumt sie selbst ab.
+        if (!opt.eigeneStimme) {
+          Object.defineProperty(window, 'speechSynthesis', {
+            configurable: true,
+            value: { cancel() {}, speak(u) { gesagt.push(u.text); } },
+          });
+        }
         Date.now = () => uhr;
         // KEIN Rennen - genau die Lage, in der bisher nichts gesagt wurde.
         raceState = opt.raceState || 'idle';
@@ -79111,7 +79305,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         return { folge, gesagt, runden: dashLapTimes.slice() };
       } finally {
         Date.now = echteNow;
-        if (echteStimme) {
+        if (opt.eigeneStimme) { /* der Aufrufer stellt die Stimme zurueck */ }
+        else if (echteStimme) {
           Object.defineProperty(window, 'speechSynthesis',
                                 { configurable: true, value: echteStimme });
         } else { delete window.speechSynthesis; }
@@ -89503,6 +89698,56 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join('; ') : '5 Zeiten richtig zerlegt, 65 Clips je Sprache' };
   });
 
+  // ---- Ansage: jede Aeusserung bricht die vorherige ab ----
+  //
+  // Zwei Runden kurz hintereinander duerfen sich nicht stapeln, sonst laeuft die Stimme
+  // nach und sagt die vorletzte Zeit, waehrend man schon in der naechsten Runde ist.
+  // Geprueft wird an den Zaehlern und nicht am Lautsprecher: ob wirklich Ton kommt, haengt
+  // an den Stimmen des Systems, aber DASS vor jeder Aeusserung abgebrochen wird, ist eine
+  // Eigenschaft des Codes.
+  // v1.3.39: gilt mit "Ansagen in Warteschlange" AUS (das Verhalten vor PR #11). Mit
+  // Warteschlange prueft das "Ansagen v1.3.39: Warteschlange abschaltbar ...".
+  stAdd('Ansage: stapelt sich nicht', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ansage || typeof speakLap !== 'function') {
+      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
+    }
+    if (!('speechSynthesis' in window)) return { skip: true, mass: 'keine Sprachausgabe' };
+    const el = $('setting-announce');
+    const merk = el ? el.checked : null;
+    const qEl = $('setting-announce-queue');
+    const merkQ = qEl ? qEl.checked : null;
+    try {
+      if (qEl && qEl.checked) { qEl.checked = false; qEl.dispatchEvent(new Event('change', { bubbles: true })); }
+      if (el && !el.checked) { el.checked = true; el.dispatchEvent(new Event('change', { bubbles: true })); }
+      const vor = OMEGA_TEST.ansage();
+      speakLap(58300, false);
+      speakLap(59100, true);
+      const nach = OMEGA_TEST.ansage();
+      const rufe = nach.calls - vor.calls;
+      const abbr = nach.cancels - vor.cancels;
+      // Und die Gegenprobe: ausgeschaltet darf gar nichts passieren.
+      if (el) { el.checked = false; el.dispatchEvent(new Event('change', { bubbles: true })); }
+      speakLap(60000, false);
+      const aus = OMEGA_TEST.ansage();
+      const stillRufe = aus.calls - nach.calls;
+      const ok = rufe === 2 && abbr === 2 && stillRufe === 0 && !ansagenWarten();
+      return { ok, mass: '(ohne Warteschlange) ' + rufe + ' Aeusserungen, ' + abbr + ' Abbrueche, ausgeschaltet '
+                         + stillRufe + ' Aeusserungen' };
+    } finally {
+      if (el && merk !== null) {
+        el.checked = merk;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      if (qEl && merkQ !== null && qEl.checked !== merkQ) {
+        qEl.checked = merkQ;
+        qEl.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      // Eine stumm geschaltete Stimme meldet kein Ende: nicht als laufend liegen lassen.
+      lapAnsageBeendet(); lapAnsageRuheBis = 0;
+    }
+  });
+
   // Die Queue pruefen, ohne echte Stimme oder Nutzereinstellungen anzutasten.
   stAdd('Ansage: priorisiert und unterbricht nicht', async () => {
     const folge = [], fehler = [];
@@ -89520,6 +89765,119 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       return { ok: unberuehrt && folge.join(',') === 'lap-start,event,lap-2' && !fehler.length,
         mass: folge.join(' -> ') + (fehler.length ? ' | ' + fehler.join(';') : '') };
     } finally { q.reset(); if (fertig) fertig(); }
+  });
+
+  // v1.3.39 BESTELLT (zu PR #11): "Uebernimm die Sachen, aber lass mich einstellen, dass keine
+  // Warteschlangen entstehen in den Ansagen-Optionen." Geprueft: Schalter (Ort, Vorgabe an,
+  // WIP, Erklaerung als <small>, gespeichert wie die anderen Ansage-Schalter); AUS = keine
+  // Schlange, kein Nachsehen, neue Ansage beendet eine laufende Rennereignis-Meldung; AN =
+  // zu alte Rundenzeiten verfallen, Ausschalten einer Art macht eine laufende Ansage DIESER
+  // Art sofort still, andere sprechen weiter; Umschalten auf AUS leert die Wartenden.
+  stAdd('Ansagen v1.3.39: Warteschlange abschaltbar, alte Rundenzeiten verfallen, Ausschalten sofort still', async () => {
+    const f = [];
+    const qEl = $('setting-announce-queue'), seite = $('sub-opt-ansagen');
+    if (!qEl) return { ok: false, mass: 'Schalter setting-announce-queue fehlt' };
+    const zeile = qEl.closest('.opt-row'), label = zeile && zeile.querySelector('.opt-label');
+    if (!seite || !seite.contains(qEl)) f.push('nicht auf der Ansagen-Seite');
+    if (!qEl.defaultChecked) f.push('Vorgabe nicht an');
+    if (!label || !label.querySelector('.wip-tag')) f.push('WIP-Etikett fehlt');
+    if (!label || !label.querySelector('small')) f.push('Erklaerung (<small>) fehlt');
+    if (qEl.hasAttribute('data-preset-skip') !== $('setting-announce').hasAttribute('data-preset-skip')) {
+      f.push('anders gespeichert als setting-announce');
+    }
+    const merk = { q: qEl.checked, sound: soundEnabled, verfall: ansageLapVerfallMs,
+      an: Object.assign({}, ansageAn), fuelClip: voiceBuffers.fuel };
+    const echteStimme = window.speechSynthesis;
+    const gesagt = []; let abbrueche = 0, laufend = null;
+    const setzeQ = (an) => { qEl.checked = an; qEl.dispatchEvent(new Event('change', { bubbles: true })); };
+    const schalte = (id, an) => { const el = $(id); el.checked = an; el.dispatchEvent(new Event('change', { bubbles: true })); };
+    const warte = (ms) => new Promise((res) => setTimeout(res, ms));
+    const bis = async (fn, ms) => { const t0 = performance.now(); while (!fn() && performance.now() - t0 < ms) await warte(20); return fn(); };
+    try {
+      soundEnabled = true;
+      delete voiceBuffers.fuel;   // Tankmeldung als Text, damit die Attrappe sie hoert
+      ansageAn.lap = true; ansageAn.fuel = true; ansageAn.rain = true;
+      ansagenReset(); lapAnsageRuheBis = 0;
+      // Stimme, die erst beim Abbruch endet (ein "langer Satz").
+      Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: {
+        get speaking() { return !!laufend; }, pending: false,
+        cancel() { abbrueche++; const u = laufend; laufend = null; if (u && u.onerror) u.onerror({ error: 'interrupted' }); },
+        speak(u) { gesagt.push(u.text); laufend = u; } } });
+
+      // ---- AUS: keine Schlange, kein Nachsehen ----
+      setzeQ(false);
+      speakLap(7000, false); speakLap(7100, false);
+      if (rennAnsagen.jobs.length || rennAnsagen.timer !== null || rennAnsagen.aktiv) f.push('AUS: Schlange laeuft');
+      if (gesagt.length !== 2) f.push('AUS: ' + gesagt.length + ' statt 2 Rundenzeiten sofort');
+      ansage('fuel', 'Tank fast leer');
+      if (rennAnsagen.jobs.length || rennAnsagen.timer !== null) f.push('AUS: Meldung wartet');
+      // Eine laufende Rennereignis-Meldung endet, wenn eine neue Ansage kommt.
+      let ereignisGestoppt = false;
+      ansagenSofort('event-test', async () => {
+        ansagenAktuellStop = () => { ereignisGestoppt = true; ansagenAktuellStop = null; };
+        await warte(300);
+      }, () => true);
+      await bis(() => ansagenAktuellStop !== null, 200);
+      if (!ansagenWarten()) f.push('AUS: Ereignis zaehlt nicht als laufend');
+      speakLap(7200, false);
+      if (!ereignisGestoppt) f.push('AUS: Rundenzeit beendet laufendes Ereignis nicht');
+      if (rennAnsagen.jobs.length || rennAnsagen.timer !== null) f.push('AUS: Ereignis hat Schlange benutzt');
+      window.speechSynthesis.cancel();
+
+      // ---- AN: zu alte Rundenzeit verfaellt ----
+      setzeQ(true);
+      ansagenReset(); gesagt.length = 0;
+      ansageLapVerfallMs = 120;
+      lapAnsageRuheBis = performance.now() + 400;   // Schlange kurz blockiert
+      speakLap(7300, false);
+      if (rennAnsagen.jobs.length !== 1) f.push('AN: Rundenzeit nicht eingereiht');
+      await warte(600);
+      if (gesagt.length) f.push('AN: zu alte Rundenzeit gesprochen');
+      if (ansagenWarten()) f.push('AN: zu alte Rundenzeit wartet noch');
+      ansageLapVerfallMs = merk.verfall;
+      // Wartet sie nur kurz, kommt sie.
+      lapAnsageRuheBis = performance.now() + 150;
+      speakLap(7400, false);
+      await bis(() => gesagt.length === 1, 1500);
+      if (gesagt.length !== 1) f.push('AN: frische Rundenzeit nicht gesprochen (' + gesagt.length + ')');
+
+      // ---- AN: Ausschalten einer Art macht DIESE sofort still ----
+      // Die Rundenzeit spricht noch (laufend), eine Tankmeldung wartet.
+      ansage('fuel', 'Tank fast leer');
+      await warte(80);
+      if (gesagt.length !== 1) f.push('AN: Tankmeldung hat die laufende Rundenzeit unterbrochen');
+      const vorAbbr = abbrueche;
+      schalte('setting-announce-rain', false);   // andere Art: nichts passiert
+      if (abbrueche !== vorAbbr || !rennAnsagen.aktiv || rennAnsagen.aktiv.art !== 'lap') {
+        f.push('AN: fremde Art abgeschaltet bricht Rundenzeit ab');
+      }
+      schalte('setting-announce', false);        // eigene Art: sofort still
+      if (abbrueche === vorAbbr) f.push('AN: Rundenzeit nach Ausschalten nicht sofort still');
+      await bis(() => gesagt.length === 2, 1500);
+      if (gesagt[1] !== 'Tank fast leer') f.push('AN: wartende Tankmeldung danach nicht gesprochen');
+      schalte('setting-announce', true); schalte('setting-announce-rain', merk.an.rain);
+
+      // ---- Umschalten auf AUS leert die Wartenden ----
+      window.speechSynthesis.cancel(); ansagenReset();
+      lapAnsageRuheBis = performance.now() + 2000;
+      speakLap(7500, false);
+      const wartend = rennAnsagen.jobs.length;
+      setzeQ(false);
+      if (wartend !== 1 || rennAnsagen.jobs.length || rennAnsagen.timer !== null) f.push('AN->AUS: Wartende bleiben');
+    } finally {
+      ansageLapVerfallMs = merk.verfall; lapAnsageRuheBis = 0;
+      ansagenReset();
+      if (echteStimme) Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: echteStimme });
+      else delete window.speechSynthesis;
+      if ($('setting-announce').checked !== merk.an.lap) schalte('setting-announce', merk.an.lap);
+      if ($('setting-announce-rain').checked !== merk.an.rain) schalte('setting-announce-rain', merk.an.rain);
+      Object.assign(ansageAn, merk.an);
+      if (qEl.checked !== merk.q) setzeQ(merk.q);
+      soundEnabled = merk.sound;
+      if (merk.fuelClip) voiceBuffers.fuel = merk.fuelClip;
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ')
+      : 'AUS: sofort, keine Schlange; AN: Verfall nach ' + merk.verfall + ' ms, Ausschalten sofort still' };
   });
 
   // ---- Marke und Zaehler: die zwei aussenwirksamen Zeilen ----
@@ -96306,14 +96664,65 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   //
   // GEFAHREN WIRD UEBER playerLapCrossed(), den echten Weg. Ein Prueflauf, der speakLap()
   // direkt riefe, prueefte die Stimme und nicht die Bedingung, an der es lag.
-  stAdd('Freie Fahrt: Rundenzeiten werden angesagt', () => {
+  // v1.3.39 (PR #11): zweimal gefahren. Ohne Warteschlange wie bisher synchron; mit
+  // Warteschlange spricht die Schlange asynchron - dann wird mit einer Attrappe, die
+  // ein Ende meldet, auf die leere Schlange gewartet und dieselbe Erwartung geprueft.
+  // Absichtlich so gewaehlt, dass die MITTLERE Runde die schnellste ist: damit zeigt sich,
+  // ob die Bestzeit an der Zeit haengt und nicht an der Reihenfolge.
+  stAdd('Freie Fahrt: Rundenzeiten werden angesagt', async () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.freieRundeProbe) {
       return { skip: true, mass: 'freieRundeProbe nicht vorhanden' };
     }
-    // Absichtlich so gewaehlt, dass die MITTLERE die schnellste ist: damit zeigt sich, ob
-    // die Bestzeit an der Zeit haengt und nicht an der Reihenfolge.
-    const r = OMEGA_TEST.freieRundeProbe({ zeiten: [9000, 8000, 8500] });
-    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const qEl = $('setting-announce-queue');
+    if (!qEl) return { ok: false, mass: 'Schalter setting-announce-queue fehlt' };
+    const merkQ = qEl.checked, merkSound = soundEnabled;
+    const setzeQ = (an) => { qEl.checked = an; qEl.dispatchEvent(new Event('change', { bubbles: true })); };
+    const teile = [];
+    try {
+      setzeQ(false);
+      const r1 = freieFahrtAnsageAuswerten(OMEGA_TEST.freieRundeProbe({ zeiten: [9000, 8000, 8500] }));
+      if (!r1) return { skip: true, mass: 'kein Lauf' };
+      r1.mass = '(ohne Warteschlange) ' + r1.mass;
+      teile.push(r1);
+      // Die Attrappe der Probe meldet kein Ende: den letzten Satz als beendet buchen, sonst
+      // haelt lapAnsageAktuell die Schlange (und den Rennstand) fest.
+      lapAnsageBeendet(); lapAnsageRuheBis = 0;
+      // MIT Warteschlange: eigene Stimmen-Attrappe, die bis zum Leerlaufen der Schlange bleibt.
+      setzeQ(true);
+      ansagenReset();
+      soundEnabled = true;
+      const echteStimme = window.speechSynthesis;
+      const gesagt = [];
+      Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: {
+        speaking: false, pending: false, cancel() {},
+        speak(u) { gesagt.push(u.text); setTimeout(() => { if (u.onend) u.onend(); }, 10); } } });
+      let r2;
+      try {
+        const roh = OMEGA_TEST.freieRundeProbe({ zeiten: [9000, 8000, 8500], eigeneStimme: true });
+        const synchron = gesagt.length;
+        const wartet = ansagenWarten();
+        const t0 = performance.now();
+        while (ansagenWarten() && performance.now() - t0 < 5000) await new Promise((res) => setTimeout(res, 25));
+        // Der Lauf hat keine Saetze geliefert (asynchron); jetzt die gesprochenen zuordnen.
+        roh.folge.forEach((x, i) => { x.gesagt = gesagt[i] || null; });
+        r2 = freieFahrtAnsageAuswerten(roh);
+        r2.ok = r2.ok && synchron === 0 && wartet && gesagt.length === 3 && !ansagenWarten();
+        r2.mass = '(Warteschlange) ' + r2.mass + ' | synchron ' + synchron + ', gewartet '
+          + Math.round(performance.now() - t0) + ' ms';
+      } finally {
+        ansagenReset();
+        if (echteStimme) Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: echteStimme });
+        else delete window.speechSynthesis;
+      }
+      teile.push(r2);
+      return { ok: teile.every((x) => x.ok), mass: teile.map((x) => x.mass).join(' || ') };
+    } finally {
+      soundEnabled = merkSound;
+      if (qEl.checked !== merkQ) setzeQ(merkQ);
+    }
+  });
+  function freieFahrtAnsageAuswerten(r) {
+    if (!r) return null;
     const fehler = [];
     // 1. JEDE RUNDE WIRD ANGESAGT. Das ist die Bestellung.
     const stumm = r.folge.filter((x) => !x.gesagt);
@@ -96337,7 +96746,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !fehler.length,
              mass: r.folge.map((x) => x.ms + ' ms -> ' + (x.gesagt || 'STUMM')).join(' | ')
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
-  });
+  }
 
   // ---- Alle fuenf Ansagen stehen ab Werk an ----
   //
@@ -105063,9 +105472,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       rennstandAbbrechen = () => { abbruch++; };
       rennstandBeschaeftigt = () => true;
       const gesperrt = rennstandVorRundenzeit() === false;
+      // v1.3.39: mit Warteschlange haelt ein laufender Rennstand die Schlange an, statt
+      // abgebrochen zu werden; ohne Warteschlange gilt die Regel oben (der alte Weg).
+      const schlangeHaelt = rennAnsagen.blockiert() === true;
       rennstandBeschaeftigt = () => false;
-      return { ok: gesperrt && rennstandVorRundenzeit() === true && abbruch === 0,
-        mass: 'Kein Abbruch und kein Nachholen durch Spielerzeiten' };
+      return { ok: gesperrt && schlangeHaelt && rennstandVorRundenzeit() === true && abbruch === 0,
+        mass: 'Kein Abbruch und kein Nachholen durch Spielerzeiten; Schlange wartet auf den Rennstand' };
     } finally {
       rennstandBeschaeftigt = echt; rennstandAbbrechen = abbrechen; rennstandBis = alt;
     }

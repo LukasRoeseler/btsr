@@ -5,17 +5,21 @@
       this.jobs = []; this.aktiv = null; this.timer = null; this.generation = 0;
       this.folge = 0; this.ruheBis = 0;
     }
-    einreihen(art, prioritaet, spielen, erlaubt = () => true) {
-      this.jobs.push({ art, prioritaet, spielen, erlaubt, nr: this.folge++ });
+    // v1.3.39: verfallMs (optional) - ein wartender Eintrag, der aelter ist, wenn er dran
+    // waere, entfaellt (Rundenzeiten auf kurzen Strecken, siehe ANSAGE_LAP_VERFALL_MS).
+    einreihen(art, prioritaet, spielen, erlaubt = () => true, verfallMs = 0) {
+      this.jobs.push({ art, prioritaet, spielen, erlaubt, nr: this.folge++,
+        bis: verfallMs > 0 ? performance.now() + verfallMs : 0 });
       this.wecken(); return true;
     }
+    gueltig(j, jetzt = performance.now()) { return (!j.bis || jetzt <= j.bis) && j.erlaubt(); }
     wecken(ms = 0) {
       if (this.timer !== null || this.aktiv) return;
       this.timer = setTimeout(() => { this.timer = null; this.pump(); }, ms);
     }
     async pump() {
       if (this.aktiv) return;
-      this.jobs = this.jobs.filter(j => j.erlaubt());
+      this.jobs = this.jobs.filter(j => this.gueltig(j));
       if (!this.jobs.length) return;
       if (this.blockiert() || performance.now() < this.ruheBis) { this.wecken(50); return; }
       this.jobs.sort((a, b) => b.prioritaet - a.prioritaet || a.nr - b.nr);
@@ -34,7 +38,7 @@
       if (this.timer !== null) clearTimeout(this.timer);
       this.timer = null;
     }
-    get beschaeftigt() { return !!this.aktiv || this.jobs.some(j => j.erlaubt()); }
+    get beschaeftigt() { return !!this.aktiv || this.jobs.some(j => this.gueltig(j)); }
   }
   let ansagenAktuellStop = null;
   const rennAnsagen = new RennAnsagenQueue(
@@ -47,7 +51,76 @@
     if (ansagenAktuellStop) ansagenAktuellStop();
     ansagenAktuellStop = null;
   }
-  function ansagenWarten() { return rennAnsagen.beschaeftigt; }
+  function ansagenWarten() { return rennAnsagen.beschaeftigt || ansagenSofortArt !== null; }
+
+  // ---- WARTESCHLANGE ABSCHALTBAR (v1.3.39, WIP) -----------------------------------------
+  // BESTELLT (zu PR #11): "Uebernimm die Sachen, aber lass mich einstellen, dass keine
+  // Warteschlangen entstehen in den Ansagen-Optionen." Schalter "Ansagen in Warteschlange"
+  // (setting-announce-queue, Vorgabe an):
+  //   an  = PR #11: laufende Ansagen werden zu Ende gesprochen, neue warten in rennAnsagen.
+  //         Wartende Rundenzeiten verfallen nach ANSAGE_LAP_VERFALL_MS (sonst waechst auf
+  //         kurzen Strecken mit 4-5-s-Runden ein Rueckstand auf).
+  //   aus = das Verhalten vor PR #11: jede neue Ansage beendet die laufende sofort, nichts
+  //         wird nachgeholt (ansageSofort() in 80-sound.js, speakLap()). Die Rennereignisse
+  //         spielen dann ueber ansagenSofort(): erst alles still, dann direkt - die Schlange
+  //         laeuft bei aus gar nicht (kein 50-ms-Nachsehen).
+  let ansageWarteschlange = true;
+  let ansageLapVerfallMs = 2500;   // ANSAGE_LAP_VERFALL_MS; let, damit der Selbsttest kuerzen kann
+  let ansagenSofortNr = 0, ansagenSofortArt = null;
+  // Bei aus: alles, was gerade spricht, sofort beenden (wie frueher ansage() vor dem Sprechen),
+  // dazu die Rennereignis-Wiedergabe und die (leere) Schlange.
+  function ansagenAllesStill() {
+    ansagenSofortNr++; ansagenSofortArt = null;
+    ansagenReset();
+    rennstandAbbrechen();
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    for (const q of zahlenQuellen) { try { q.stop(); } catch (e) {} }
+    zahlenQuellen = []; lapAnsageBeendet();
+  }
+  // Nur die Rennereignis-Wiedergabe beenden (Rundenzeit bei aus: die alte Abbruchregel
+  // gilt dort weiter, sie bricht keinen Rennstand ab).
+  function ansagenEreignisStill() {
+    if (ansagenSofortArt === null && !rennAnsagen.beschaeftigt && !ansagenAktuellStop) return;
+    ansagenSofortNr++; ansagenSofortArt = null;
+    ansagenReset();
+  }
+  function ansagenSofort(art, spielen, erlaubt) {
+    ansagenAllesStill();
+    const nr = ++ansagenSofortNr;
+    ansagenSofortArt = art;
+    Promise.resolve()
+      .then(() => spielen(() => nr === ansagenSofortNr && erlaubt()))
+      .catch((err) => log('Ansage fehlgeschlagen: ' + err.message, 'info'))
+      .finally(() => { if (nr === ansagenSofortNr) ansagenSofortArt = null; });
+    return true;
+  }
+  // Laeuft gerade eine Ansage dieser Art (Schlange oder direkt), sofort still. Wartende
+  // dieser Art entfallen ohnehin (ihr erlaubt() fragt den Schalter).
+  function ansagenArtStoppen(art) {
+    rennAnsagen.jobs = rennAnsagen.jobs.filter((j) => j.art !== art);
+    const laeuft = (rennAnsagen.aktiv && rennAnsagen.aktiv.art === art) || ansagenSofortArt === art;
+    if (!laeuft) return false;
+    if (ansagenSofortArt === art) { ansagenSofortNr++; ansagenSofortArt = null; }
+    if (ansagenAktuellStop) ansagenAktuellStop();
+    return true;
+  }
+  if ($('setting-announce-queue')) {
+    const el = $('setting-announce-queue');
+    ansageWarteschlange = el.checked;
+    el.addEventListener('change', () => {
+      ansageWarteschlange = el.checked;
+      // Beim Abschalten entfallen die Wartenden; ein laufender Satz darf zu Ende sprechen.
+      if (!el.checked) {
+        rennAnsagen.jobs = [];
+        if (rennAnsagen.timer !== null) { clearTimeout(rennAnsagen.timer); rennAnsagen.timer = null; }
+      }
+      // Beim Einschalten: eine Rundenzeit vom alten Weg, deren Stimme nie ein Ende gemeldet
+      // hat, darf die Schlange nicht dauerhaft anhalten (lapAnsageAktuell).
+      const synth = 'speechSynthesis' in window ? window.speechSynthesis : null;
+      if (el.checked && lapAnsageAktuell && !(synth && (synth.speaking || synth.pending))) lapAnsageBeendet();
+    });
+  }
+
   function ansagenEinreihen(art, text, schluessel, ms, best) {
     if (!ansageAn[art] || !soundEnabled) return false;
     const spr = lang;
@@ -65,7 +138,7 @@
         if (puffer) await ansagenPufferSpielen([puffer]);
         else await ansagenTextSpielen(text, spr);
       } else await ansagenTextSpielen(text, spr);
-    }, () => !!ansageAn[art] && soundEnabled && lang === spr);
+    }, () => !!ansageAn[art] && soundEnabled && lang === spr, art === 'lap' ? ansageLapVerfallMs : 0);
   }
   function ansagenPufferSpielen(puffer, optionen = {}) {
     if (!audioCtx || !soundEnabled || !puffer.length) return Promise.resolve(false);

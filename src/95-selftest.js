@@ -7767,6 +7767,56 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : '5 Zeiten richtig zerlegt, 65 Clips je Sprache' };
   });
 
+  // ---- Ansage: jede Aeusserung bricht die vorherige ab ----
+  //
+  // Zwei Runden kurz hintereinander duerfen sich nicht stapeln, sonst laeuft die Stimme
+  // nach und sagt die vorletzte Zeit, waehrend man schon in der naechsten Runde ist.
+  // Geprueft wird an den Zaehlern und nicht am Lautsprecher: ob wirklich Ton kommt, haengt
+  // an den Stimmen des Systems, aber DASS vor jeder Aeusserung abgebrochen wird, ist eine
+  // Eigenschaft des Codes.
+  // v1.3.39: gilt mit "Ansagen in Warteschlange" AUS (das Verhalten vor PR #11). Mit
+  // Warteschlange prueft das "Ansagen v1.3.39: Warteschlange abschaltbar ...".
+  stAdd('Ansage: stapelt sich nicht', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ansage || typeof speakLap !== 'function') {
+      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
+    }
+    if (!('speechSynthesis' in window)) return { skip: true, mass: 'keine Sprachausgabe' };
+    const el = $('setting-announce');
+    const merk = el ? el.checked : null;
+    const qEl = $('setting-announce-queue');
+    const merkQ = qEl ? qEl.checked : null;
+    try {
+      if (qEl && qEl.checked) { qEl.checked = false; qEl.dispatchEvent(new Event('change', { bubbles: true })); }
+      if (el && !el.checked) { el.checked = true; el.dispatchEvent(new Event('change', { bubbles: true })); }
+      const vor = OMEGA_TEST.ansage();
+      speakLap(58300, false);
+      speakLap(59100, true);
+      const nach = OMEGA_TEST.ansage();
+      const rufe = nach.calls - vor.calls;
+      const abbr = nach.cancels - vor.cancels;
+      // Und die Gegenprobe: ausgeschaltet darf gar nichts passieren.
+      if (el) { el.checked = false; el.dispatchEvent(new Event('change', { bubbles: true })); }
+      speakLap(60000, false);
+      const aus = OMEGA_TEST.ansage();
+      const stillRufe = aus.calls - nach.calls;
+      const ok = rufe === 2 && abbr === 2 && stillRufe === 0 && !ansagenWarten();
+      return { ok, mass: '(ohne Warteschlange) ' + rufe + ' Aeusserungen, ' + abbr + ' Abbrueche, ausgeschaltet '
+                         + stillRufe + ' Aeusserungen' };
+    } finally {
+      if (el && merk !== null) {
+        el.checked = merk;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      if (qEl && merkQ !== null && qEl.checked !== merkQ) {
+        qEl.checked = merkQ;
+        qEl.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      // Eine stumm geschaltete Stimme meldet kein Ende: nicht als laufend liegen lassen.
+      lapAnsageBeendet(); lapAnsageRuheBis = 0;
+    }
+  });
+
   // Die Queue pruefen, ohne echte Stimme oder Nutzereinstellungen anzutasten.
   stAdd('Ansage: priorisiert und unterbricht nicht', async () => {
     const folge = [], fehler = [];
@@ -7784,6 +7834,119 @@
       return { ok: unberuehrt && folge.join(',') === 'lap-start,event,lap-2' && !fehler.length,
         mass: folge.join(' -> ') + (fehler.length ? ' | ' + fehler.join(';') : '') };
     } finally { q.reset(); if (fertig) fertig(); }
+  });
+
+  // v1.3.39 BESTELLT (zu PR #11): "Uebernimm die Sachen, aber lass mich einstellen, dass keine
+  // Warteschlangen entstehen in den Ansagen-Optionen." Geprueft: Schalter (Ort, Vorgabe an,
+  // WIP, Erklaerung als <small>, gespeichert wie die anderen Ansage-Schalter); AUS = keine
+  // Schlange, kein Nachsehen, neue Ansage beendet eine laufende Rennereignis-Meldung; AN =
+  // zu alte Rundenzeiten verfallen, Ausschalten einer Art macht eine laufende Ansage DIESER
+  // Art sofort still, andere sprechen weiter; Umschalten auf AUS leert die Wartenden.
+  stAdd('Ansagen v1.3.39: Warteschlange abschaltbar, alte Rundenzeiten verfallen, Ausschalten sofort still', async () => {
+    const f = [];
+    const qEl = $('setting-announce-queue'), seite = $('sub-opt-ansagen');
+    if (!qEl) return { ok: false, mass: 'Schalter setting-announce-queue fehlt' };
+    const zeile = qEl.closest('.opt-row'), label = zeile && zeile.querySelector('.opt-label');
+    if (!seite || !seite.contains(qEl)) f.push('nicht auf der Ansagen-Seite');
+    if (!qEl.defaultChecked) f.push('Vorgabe nicht an');
+    if (!label || !label.querySelector('.wip-tag')) f.push('WIP-Etikett fehlt');
+    if (!label || !label.querySelector('small')) f.push('Erklaerung (<small>) fehlt');
+    if (qEl.hasAttribute('data-preset-skip') !== $('setting-announce').hasAttribute('data-preset-skip')) {
+      f.push('anders gespeichert als setting-announce');
+    }
+    const merk = { q: qEl.checked, sound: soundEnabled, verfall: ansageLapVerfallMs,
+      an: Object.assign({}, ansageAn), fuelClip: voiceBuffers.fuel };
+    const echteStimme = window.speechSynthesis;
+    const gesagt = []; let abbrueche = 0, laufend = null;
+    const setzeQ = (an) => { qEl.checked = an; qEl.dispatchEvent(new Event('change', { bubbles: true })); };
+    const schalte = (id, an) => { const el = $(id); el.checked = an; el.dispatchEvent(new Event('change', { bubbles: true })); };
+    const warte = (ms) => new Promise((res) => setTimeout(res, ms));
+    const bis = async (fn, ms) => { const t0 = performance.now(); while (!fn() && performance.now() - t0 < ms) await warte(20); return fn(); };
+    try {
+      soundEnabled = true;
+      delete voiceBuffers.fuel;   // Tankmeldung als Text, damit die Attrappe sie hoert
+      ansageAn.lap = true; ansageAn.fuel = true; ansageAn.rain = true;
+      ansagenReset(); lapAnsageRuheBis = 0;
+      // Stimme, die erst beim Abbruch endet (ein "langer Satz").
+      Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: {
+        get speaking() { return !!laufend; }, pending: false,
+        cancel() { abbrueche++; const u = laufend; laufend = null; if (u && u.onerror) u.onerror({ error: 'interrupted' }); },
+        speak(u) { gesagt.push(u.text); laufend = u; } } });
+
+      // ---- AUS: keine Schlange, kein Nachsehen ----
+      setzeQ(false);
+      speakLap(7000, false); speakLap(7100, false);
+      if (rennAnsagen.jobs.length || rennAnsagen.timer !== null || rennAnsagen.aktiv) f.push('AUS: Schlange laeuft');
+      if (gesagt.length !== 2) f.push('AUS: ' + gesagt.length + ' statt 2 Rundenzeiten sofort');
+      ansage('fuel', 'Tank fast leer');
+      if (rennAnsagen.jobs.length || rennAnsagen.timer !== null) f.push('AUS: Meldung wartet');
+      // Eine laufende Rennereignis-Meldung endet, wenn eine neue Ansage kommt.
+      let ereignisGestoppt = false;
+      ansagenSofort('event-test', async () => {
+        ansagenAktuellStop = () => { ereignisGestoppt = true; ansagenAktuellStop = null; };
+        await warte(300);
+      }, () => true);
+      await bis(() => ansagenAktuellStop !== null, 200);
+      if (!ansagenWarten()) f.push('AUS: Ereignis zaehlt nicht als laufend');
+      speakLap(7200, false);
+      if (!ereignisGestoppt) f.push('AUS: Rundenzeit beendet laufendes Ereignis nicht');
+      if (rennAnsagen.jobs.length || rennAnsagen.timer !== null) f.push('AUS: Ereignis hat Schlange benutzt');
+      window.speechSynthesis.cancel();
+
+      // ---- AN: zu alte Rundenzeit verfaellt ----
+      setzeQ(true);
+      ansagenReset(); gesagt.length = 0;
+      ansageLapVerfallMs = 120;
+      lapAnsageRuheBis = performance.now() + 400;   // Schlange kurz blockiert
+      speakLap(7300, false);
+      if (rennAnsagen.jobs.length !== 1) f.push('AN: Rundenzeit nicht eingereiht');
+      await warte(600);
+      if (gesagt.length) f.push('AN: zu alte Rundenzeit gesprochen');
+      if (ansagenWarten()) f.push('AN: zu alte Rundenzeit wartet noch');
+      ansageLapVerfallMs = merk.verfall;
+      // Wartet sie nur kurz, kommt sie.
+      lapAnsageRuheBis = performance.now() + 150;
+      speakLap(7400, false);
+      await bis(() => gesagt.length === 1, 1500);
+      if (gesagt.length !== 1) f.push('AN: frische Rundenzeit nicht gesprochen (' + gesagt.length + ')');
+
+      // ---- AN: Ausschalten einer Art macht DIESE sofort still ----
+      // Die Rundenzeit spricht noch (laufend), eine Tankmeldung wartet.
+      ansage('fuel', 'Tank fast leer');
+      await warte(80);
+      if (gesagt.length !== 1) f.push('AN: Tankmeldung hat die laufende Rundenzeit unterbrochen');
+      const vorAbbr = abbrueche;
+      schalte('setting-announce-rain', false);   // andere Art: nichts passiert
+      if (abbrueche !== vorAbbr || !rennAnsagen.aktiv || rennAnsagen.aktiv.art !== 'lap') {
+        f.push('AN: fremde Art abgeschaltet bricht Rundenzeit ab');
+      }
+      schalte('setting-announce', false);        // eigene Art: sofort still
+      if (abbrueche === vorAbbr) f.push('AN: Rundenzeit nach Ausschalten nicht sofort still');
+      await bis(() => gesagt.length === 2, 1500);
+      if (gesagt[1] !== 'Tank fast leer') f.push('AN: wartende Tankmeldung danach nicht gesprochen');
+      schalte('setting-announce', true); schalte('setting-announce-rain', merk.an.rain);
+
+      // ---- Umschalten auf AUS leert die Wartenden ----
+      window.speechSynthesis.cancel(); ansagenReset();
+      lapAnsageRuheBis = performance.now() + 2000;
+      speakLap(7500, false);
+      const wartend = rennAnsagen.jobs.length;
+      setzeQ(false);
+      if (wartend !== 1 || rennAnsagen.jobs.length || rennAnsagen.timer !== null) f.push('AN->AUS: Wartende bleiben');
+    } finally {
+      ansageLapVerfallMs = merk.verfall; lapAnsageRuheBis = 0;
+      ansagenReset();
+      if (echteStimme) Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: echteStimme });
+      else delete window.speechSynthesis;
+      if ($('setting-announce').checked !== merk.an.lap) schalte('setting-announce', merk.an.lap);
+      if ($('setting-announce-rain').checked !== merk.an.rain) schalte('setting-announce-rain', merk.an.rain);
+      Object.assign(ansageAn, merk.an);
+      if (qEl.checked !== merk.q) setzeQ(merk.q);
+      soundEnabled = merk.sound;
+      if (merk.fuelClip) voiceBuffers.fuel = merk.fuelClip;
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ')
+      : 'AUS: sofort, keine Schlange; AN: Verfall nach ' + merk.verfall + ' ms, Ausschalten sofort still' };
   });
 
   // ---- Marke und Zaehler: die zwei aussenwirksamen Zeilen ----
@@ -14570,14 +14733,65 @@
   //
   // GEFAHREN WIRD UEBER playerLapCrossed(), den echten Weg. Ein Prueflauf, der speakLap()
   // direkt riefe, prueefte die Stimme und nicht die Bedingung, an der es lag.
-  stAdd('Freie Fahrt: Rundenzeiten werden angesagt', () => {
+  // v1.3.39 (PR #11): zweimal gefahren. Ohne Warteschlange wie bisher synchron; mit
+  // Warteschlange spricht die Schlange asynchron - dann wird mit einer Attrappe, die
+  // ein Ende meldet, auf die leere Schlange gewartet und dieselbe Erwartung geprueft.
+  // Absichtlich so gewaehlt, dass die MITTLERE Runde die schnellste ist: damit zeigt sich,
+  // ob die Bestzeit an der Zeit haengt und nicht an der Reihenfolge.
+  stAdd('Freie Fahrt: Rundenzeiten werden angesagt', async () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.freieRundeProbe) {
       return { skip: true, mass: 'freieRundeProbe nicht vorhanden' };
     }
-    // Absichtlich so gewaehlt, dass die MITTLERE die schnellste ist: damit zeigt sich, ob
-    // die Bestzeit an der Zeit haengt und nicht an der Reihenfolge.
-    const r = OMEGA_TEST.freieRundeProbe({ zeiten: [9000, 8000, 8500] });
-    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const qEl = $('setting-announce-queue');
+    if (!qEl) return { ok: false, mass: 'Schalter setting-announce-queue fehlt' };
+    const merkQ = qEl.checked, merkSound = soundEnabled;
+    const setzeQ = (an) => { qEl.checked = an; qEl.dispatchEvent(new Event('change', { bubbles: true })); };
+    const teile = [];
+    try {
+      setzeQ(false);
+      const r1 = freieFahrtAnsageAuswerten(OMEGA_TEST.freieRundeProbe({ zeiten: [9000, 8000, 8500] }));
+      if (!r1) return { skip: true, mass: 'kein Lauf' };
+      r1.mass = '(ohne Warteschlange) ' + r1.mass;
+      teile.push(r1);
+      // Die Attrappe der Probe meldet kein Ende: den letzten Satz als beendet buchen, sonst
+      // haelt lapAnsageAktuell die Schlange (und den Rennstand) fest.
+      lapAnsageBeendet(); lapAnsageRuheBis = 0;
+      // MIT Warteschlange: eigene Stimmen-Attrappe, die bis zum Leerlaufen der Schlange bleibt.
+      setzeQ(true);
+      ansagenReset();
+      soundEnabled = true;
+      const echteStimme = window.speechSynthesis;
+      const gesagt = [];
+      Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: {
+        speaking: false, pending: false, cancel() {},
+        speak(u) { gesagt.push(u.text); setTimeout(() => { if (u.onend) u.onend(); }, 10); } } });
+      let r2;
+      try {
+        const roh = OMEGA_TEST.freieRundeProbe({ zeiten: [9000, 8000, 8500], eigeneStimme: true });
+        const synchron = gesagt.length;
+        const wartet = ansagenWarten();
+        const t0 = performance.now();
+        while (ansagenWarten() && performance.now() - t0 < 5000) await new Promise((res) => setTimeout(res, 25));
+        // Der Lauf hat keine Saetze geliefert (asynchron); jetzt die gesprochenen zuordnen.
+        roh.folge.forEach((x, i) => { x.gesagt = gesagt[i] || null; });
+        r2 = freieFahrtAnsageAuswerten(roh);
+        r2.ok = r2.ok && synchron === 0 && wartet && gesagt.length === 3 && !ansagenWarten();
+        r2.mass = '(Warteschlange) ' + r2.mass + ' | synchron ' + synchron + ', gewartet '
+          + Math.round(performance.now() - t0) + ' ms';
+      } finally {
+        ansagenReset();
+        if (echteStimme) Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: echteStimme });
+        else delete window.speechSynthesis;
+      }
+      teile.push(r2);
+      return { ok: teile.every((x) => x.ok), mass: teile.map((x) => x.mass).join(' || ') };
+    } finally {
+      soundEnabled = merkSound;
+      if (qEl.checked !== merkQ) setzeQ(merkQ);
+    }
+  });
+  function freieFahrtAnsageAuswerten(r) {
+    if (!r) return null;
     const fehler = [];
     // 1. JEDE RUNDE WIRD ANGESAGT. Das ist die Bestellung.
     const stumm = r.folge.filter((x) => !x.gesagt);
@@ -14601,7 +14815,7 @@
     return { ok: !fehler.length,
              mass: r.folge.map((x) => x.ms + ' ms -> ' + (x.gesagt || 'STUMM')).join(' | ')
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
-  });
+  }
 
   // ---- Alle fuenf Ansagen stehen ab Werk an ----
   //
@@ -23327,9 +23541,12 @@
       rennstandAbbrechen = () => { abbruch++; };
       rennstandBeschaeftigt = () => true;
       const gesperrt = rennstandVorRundenzeit() === false;
+      // v1.3.39: mit Warteschlange haelt ein laufender Rennstand die Schlange an, statt
+      // abgebrochen zu werden; ohne Warteschlange gilt die Regel oben (der alte Weg).
+      const schlangeHaelt = rennAnsagen.blockiert() === true;
       rennstandBeschaeftigt = () => false;
-      return { ok: gesperrt && rennstandVorRundenzeit() === true && abbruch === 0,
-        mass: 'Kein Abbruch und kein Nachholen durch Spielerzeiten' };
+      return { ok: gesperrt && schlangeHaelt && rennstandVorRundenzeit() === true && abbruch === 0,
+        mass: 'Kein Abbruch und kein Nachholen durch Spielerzeiten; Schlange wartet auf den Rennstand' };
     } finally {
       rennstandBeschaeftigt = echt; rennstandAbbrechen = abbrechen; rennstandBis = alt;
     }

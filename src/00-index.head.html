@@ -11272,11 +11272,15 @@
           Gesprochen von der eingebauten Stimme des Browsers &ndash; kein Dienst, kein Netz,
           nichts verl&auml;sst das Ger&auml;t. Absichtlich kurz gehalten, damit die Ansage
           vor der n&auml;chsten Kurve fertig ist. Kommt eine zweite Runde herein, w&auml;hrend
-          noch geredet wird, bricht die alte Ansage ab: die Zeit der Gegenwart ist
-          wichtiger. Ob es &uuml;berhaupt spricht, h&auml;ngt an den Stimmen des Systems
+          noch geredet wird, entscheidet der Schalter &bdquo;Ansagen in Warteschlange&ldquo;, ob
+          sie wartet oder die alte Ansage abbricht. Ob es &uuml;berhaupt spricht, h&auml;ngt an den Stimmen des Systems
           &ndash; unter Windows sind sie lokal vorhanden, auf Android k&ouml;nnen sie fehlen.
           Fehlt eine, steht das einmal im Protokoll und nicht bei jeder Runde.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Ansagen in Warteschlange <span class="wip-tag">WIP</span>
+          <small>An: Eine laufende Ansage wird zu Ende gesprochen, neue warten, bis sie dran sind. Rennereignisse kommen vor wartenden Rundenzeiten; eine Rundenzeit, die l&auml;nger als 2,5 Sekunden warten m&uuml;sste, entf&auml;llt.
+          Aus: keine Warteschlange. Jede neue Ansage beendet die laufende sofort, und nichts wird nachgeholt.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-queue" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Rennintro vor der Ampel <span class="wip-tag">WIP</span>
           <small>Lokale Starts: Modus, Runden- oder Zeitlimit, Pflichtstopps, Startaufstellung und Startwetter als Piper-Aufnahmen.
           Die Ampel beginnt erst danach; wer w&auml;hrend des Intros losf&auml;hrt, macht einen Fr&uuml;hstart.
@@ -11355,18 +11359,18 @@
           <span class="muted" id="setting-announce-stand-test-status" aria-live="polite"></span>
         </div></div>
       <div class="opt-head">Erweiterte Rennereignisse</div>
-      <p class="muted" data-i18n-skip>Ereignisse warten bis zum Ende einer laufenden Ansage. Danach kommen sie vor wartenden Rundenzeiten und Rennstandmeldungen. Lokale Spieler 1–3; neue Schalter standardmäßig aus. Sprachclips verwenden Stadionhall, Lautstärke und Tempo wie der Rennstart (Rennstand-Regler). Bei fehlenden Clips spricht die Gerätestimme ohne Hall.</p>
-      <div class="opt-row" data-i18n-skip><div class="opt-label">Schwere Beschädigung ansagen
-        <small>Farbe, Modell und Spieler. Nur bei aktivem Schaden; einmal unter der Zustandsgrenze. Nach Reparatur um 8 Prozentpunkte über die Grenze wieder freigegeben. Ersetzt dann die allgemeine Schadenswarnung.</small></div>
+      <div class="opt-row"><div class="opt-label">Schwere Besch&auml;digung ansagen <span class="wip-tag">WIP</span>
+        <small>Farbe, Modell und Spieler. Nur bei aktivem Schaden; einmal unter der Zustandsgrenze. Nach Reparatur um 8 Prozentpunkte &uuml;ber die Grenze wieder freigegeben. Ersetzt dann die allgemeine Schadenswarnung.</small>
+        <small>F&uuml;r alle drei Rennereignisse: lokale Spieler 1 bis 3, Standard aus. Die Sprachclips nutzen Stadionhall, Lautst&auml;rke und Tempo der Rennstand-Regler. Fehlen die Clips, spricht die Ger&auml;testimme ohne Hall.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-event-damage" data-preset-skip><span></span></label></div>
-      <div class="opt-row" data-i18n-skip><div class="opt-label">Zustandsgrenze für Schadensansage
-        <small>Verbleibender Fahrzeugzustand in Prozent, 1–100; Standard 30. Strikt darunter, nicht genau am Grenzwert.</small></div>
+      <div class="opt-row"><div class="opt-label">Zustandsgrenze f&uuml;r Schadensansage <span class="wip-tag">WIP</span>
+        <small>Verbleibender Fahrzeugzustand in Prozent, 1 bis 100; Standard 30. Strikt darunter, nicht genau am Grenzwert.</small></div>
         <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="setting-announce-event-damage-limit" value="30" min="1" max="100" step="1" style="width:84px" data-preset-skip><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
-      <div class="opt-row" data-i18n-skip><div class="opt-label">Spieler in der Box ansagen
-        <small>„Spieler X ist in der Box.“ Einmal beim tatsächlichen Servicebeginn, nicht bei der Anforderung. Ersetzt dann die alte Boxenstopp-Anforderungsansage.</small></div>
+      <div class="opt-row"><div class="opt-label">Spieler in der Box ansagen <span class="wip-tag">WIP</span>
+        <small>&bdquo;Spieler X ist in der Box.&ldquo; Einmal beim tats&auml;chlichen Servicebeginn, nicht bei der Anforderung. Ersetzt dann die alte Boxenstopp-Anforderungsansage.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-event-pit" data-preset-skip><span></span></label></div>
-      <div class="opt-row" data-i18n-skip><div class="opt-label">Zeitstrafen ansagen
-        <small>Neu verhängte Sekunden für Frühstart, Rammen und fehlende Pflichtstopps am regulären Rennende. Keine Meldung für reine Bremsstrafen.</small></div>
+      <div class="opt-row"><div class="opt-label">Zeitstrafen ansagen <span class="wip-tag">WIP</span>
+        <small>Neu verh&auml;ngte Sekunden f&uuml;r Fr&uuml;hstart, Rammen und fehlende Pflichtstopps am regul&auml;ren Rennende. Keine Meldung f&uuml;r reine Bremsstrafen.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-event-penalty" data-preset-skip><span></span></label></div>
       <div class="opt-head">Weitere Warnungen</div>
       <div class="opt-row"><div class="opt-label">Schaden ansagen<small>Einmal, wenn der Schadensbalken auf 10&nbsp;% gefallen ist. Erst nach einer Reparatur wieder scharf.</small></div>

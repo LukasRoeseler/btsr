@@ -6964,10 +6964,14 @@
       const gesagt = [];
       let uhr = echteNow.call(Date);
       try {
-        Object.defineProperty(window, 'speechSynthesis', {
-          configurable: true,
-          value: { cancel() {}, speak(u) { gesagt.push(u.text); } },
-        });
+        // v1.3.39: eigeneStimme - der Aufrufer hat schon eine Attrappe eingesetzt (die
+        // Warteschlange spricht erst nach dieser Probe) und raeumt sie selbst ab.
+        if (!opt.eigeneStimme) {
+          Object.defineProperty(window, 'speechSynthesis', {
+            configurable: true,
+            value: { cancel() {}, speak(u) { gesagt.push(u.text); } },
+          });
+        }
         Date.now = () => uhr;
         // KEIN Rennen - genau die Lage, in der bisher nichts gesagt wurde.
         raceState = opt.raceState || 'idle';
@@ -6991,7 +6995,8 @@
         return { folge, gesagt, runden: dashLapTimes.slice() };
       } finally {
         Date.now = echteNow;
-        if (echteStimme) {
+        if (opt.eigeneStimme) { /* der Aufrufer stellt die Stimme zurueck */ }
+        else if (echteStimme) {
           Object.defineProperty(window, 'speechSynthesis',
                                 { configurable: true, value: echteStimme });
         } else { delete window.speechSynthesis; }

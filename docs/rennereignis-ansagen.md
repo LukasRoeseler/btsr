@@ -36,6 +36,14 @@ Ein einzelner Schalter verwirft wartende Meldungen seiner Art, kuerzt aber keine
 aktiven fremden Satz. Defekte Web Speech ohne Ende wird durch einen 120-s-Watchdog
 abgebrochen; ein normal eintreffendes Ereignis loest nie diesen Abbruch aus.
 
+Seit OmegaSim 1.3.39 gilt das alles nur mit dem Schalter "Ansagen in Warteschlange"
+(Optionen, Ansagen; Vorgabe an). Zusaetzlich verfallen wartende Rundenzeiten, die
+laenger als 2,5 s auf ihren Platz warten wuerden (kurze Strecken, 4-5-s-Runden), und
+das Ausschalten einer Ansageart macht einen gerade laufenden Satz DIESER Art sofort
+still. Mit dem Schalter aus gilt das Verhalten vor diesem PR: jede neue Ansage beendet
+die laufende sofort, nichts wird nachgeholt, und die Schlange laeuft gar nicht; die
+Rennereignisse beenden dann ebenfalls die laufende Ansage und spielen direkt.
+
 ## Sprachdateien mit Piper
 
 ```powershell
@@ -70,7 +78,9 @@ Piper-Stimmen und keine echten Autos. Sie pruefen Prioritaet, Nicht-Unterbrechun
 Offline-Clip-Pfad, Pause, Schwellen/Hysterese, Reset und Settings nach Neuladen.
 Vorhandene Ansagen-/Rennstandtests werden mitgeprueft; alte synchrone Clip-Proben
 sind vom Queue-Test isoliert. Der fruehere Selbsttest, der absichtliche Abbrueche
-forderte, prueft nun die neue priorisierte Warteschlange.
+forderte ("Ansage: stapelt sich nicht"), gilt seit 1.3.39 wieder fuer den Schalter
+"Ansagen in Warteschlange" aus; beide Wege prueft "Ansagen v1.3.39: Warteschlange
+abschaltbar ...".
 
 Vor PR manuell pruefen: DE/EN-Aufnahmen anhoeren, reale Crash-Flanken fuer alle
 lokalen Spieler, Boxenanfordern vs. Servicebeginn, Fruehstart/Rammstrafe/Pflichtstopps,

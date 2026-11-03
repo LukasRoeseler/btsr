@@ -1,10 +1,8 @@
 {"version":"1.3.38","apk":2,"dateien":[
-{"p":"index.html","h":"dd52b165e287cd539e34974c6fe221c2204bdb0e27d2e9cf5fbcdabc3175f63e","g":7215524},
+{"p":"index.html","h":"7bd33b9c6bc0c5f1c2181c24d01e4b210193c5bfae4c0b54bedfca95b30bdb90","g":7243009},
 {"p":"mp-overview.html","h":"61388dad99cb805de167fe9a10b9ffdb1d4655c450f175f4eeb9ede3a24d04aa","g":9956},
 {"p":"manifest.webmanifest","h":"868416fe2c9d41ebed0b5d479f07bbd16679dd4835e9c526da9eae8046e1e36a","g":639},
 {"p":"favicon.svg","h":"bc804f771d409b0efff2f2a78238a91d843d8d02efc2c614c6bdc544763de931","g":5456},
-{"p":"audio/CREDITS.md","h":"975ec5f304f526612b9dbb11746d5bce4cd641ead3772ce80875544c82566a1d","g":37104},
-{"p":"audio/CREDITS.md","h":"975ec5f304f526612b9dbb11746d5bce4cd641ead3772ce80875544c82566a1d","g":37104},
 {"p":"audio/CREDITS.md","h":"975ec5f304f526612b9dbb11746d5bce4cd641ead3772ce80875544c82566a1d","g":37104},
 {"p":"audio/amb_bed.ogg","h":"8e1c557a1914ba8e4bf7e564e07f365f33a309813344cad083ce3f61856f9e5c","g":41200},
 {"p":"audio/amb_pass_0.ogg","h":"e41c23f2023392b496023705d8f16719baf8b6d21e74c3491703f8a3dedda3ba","g":17972},
