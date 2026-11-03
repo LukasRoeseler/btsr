@@ -532,9 +532,9 @@ oben). Die bisherigen `shift_up.ogg` / `shift_down.ogg` bleiben für den Schalte
 Aus einer eigenen Aufnahme des Autors (Video eines Ford Mustang GT3, nicht Teil des Repos,
 `photos/` ist ausgeschlossen) geschnitten. Lizenz wie OmegaSim (MIT).
 
-## Tutorial-Stimme (v1.3.15, WIP)
+## Tutorial-Stimme (v1.3.15, erweitert v1.3.31)
 
-19 Sprachclips (`tutorial_*_de.ogg`, nur Deutsch), Manifest mit Datei, Dauer und Wortlaut:
+29 Sprachclips (`tutorial_*_de.ogg`, nur Deutsch; seit v1.3.31 auch Rolle, Bahn/Boden, Licht, Regen, Regenreifen, zweiter Stopp), Manifest mit Datei, Dauer und Wortlaut:
 `audio/tutorial.json`. Erzeugung: `tools/voice_tutorial.py` (Piper, danach ffmpeg: Stille
 abschneiden, Hochpass 70 Hz, Lautheit auf -16 LUFS, Ogg Vorbis). Kein Funkfilter.
 Piper bekommt je Clip einen eigenen Sprechtext mit Lautschreibung fuer englische Woerter

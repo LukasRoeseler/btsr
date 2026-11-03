@@ -138,6 +138,10 @@
   // Aus pollGamepad (90-ghosts.js): waehrend der Steuerungs-Fuehrung gehoert der Pad ihr.
   // Gibt true zurueck, wenn die Fuehrung den Pad verbraucht hat - dann faehrt nichts.
   function konsoleTourPad(pad) {
+    // v1.3.31: die Wahl "Mit Bahn / Auf dem Boden" der Einfuehrung nimmt das Pad (Steuerkreuz und
+    // Kreuz/A), bis Kreuz wieder losgelassen ist - sonst loeste derselbe Druck danach im Cockpit
+    // einen Boxenstopp aus (flagTasteTick sieht eine neue Flanke).
+    if (typeof tutWahlOffen === 'function' && tutWahlOffen()) { tutWahlPad(pad); return true; }
     if (!kTourOffen) return false;
     // Editor-Fuehrung: im Vollbild bedient sonst der Editor den Pad; hier blaettert er nur.
     if (kTourListe === K_EDITOR || kTourListe === K_RAUM) {
@@ -321,7 +325,7 @@
   })();
 
 
-  // ============================ GEFUEHRTES TUTORIAL (v1.3.15, WIP) ======================
+  // ============================ GEFUEHRTES TUTORIAL (v1.3.15, ohne WIP seit v1.3.31) =====
   //
   // BESTELLT: "Tutorial von Grund auf ueberarbeiten: mit freundlicher Frauenstimme und
   // Heranfuehrung an Funktionen. Fange an mit einer Willkommensnachricht ... Dafuer muss nur
@@ -378,34 +382,72 @@
     garage: 'Im Garagenmenü passt du den Motorsound für jedes Auto einzeln an.',
     optionen: 'Ansagen, Tastenbelegung, Fahrverhalten und vieles mehr stellst du im Optionenmenü ein.',
     abschluss: 'Du hast die Einführung abgeschlossen. Herzlich willkommen bei OmegaSim!',
+    // v1.3.31 (nach 1.3.30) BESTELLT: "Wenn ein Auto verbunden ist, aber nicht als [Spieler 1], weise
+    // darauf hin, dass ich die Rolle in der Garage fuer das Auto aendern muss. Lass mich waehlen, ob ich
+    // das Tutorial mit Bahn oder auf dem Boden mache. Fuege noch ein, dass ich das Licht aus- und
+    // einschalte am Anfang. Nach dem Boxenstopp aendere das Wetter, lasse mich die Reifeneinstellung zu
+    // Regen wechseln, und noch einen Stopp machen. Dann den Abschlusstext. WIP-Label dann weg."
+    rolle: 'Dein Auto ist verbunden, hat aber nicht die Rolle Spieler 1. Stelle sie in der Garage auf Spieler 1.',
+    modus_frage: 'Fährst du auf der Bahn oder auf dem Boden? Wähle mit dem Steuerkreuz und bestätige.',
+    modus_bahn: 'Gut, wir fahren auf der Bahn.',
+    modus_boden: 'Gut, wir fahren auf dem Boden, ohne Streckenteile.',
+    licht: 'Schalte das Licht mit der Licht-Taste aus und wieder ein.',
+    arcade_boden: 'Fahr jetzt ein wenig herum, im Arcade-Modus. Das Auto lenkt direkt ein und bremst kräftig.',
+    regen: 'Jetzt fängt es an zu regnen. Mit Trockenreifen rutscht das Auto viel mehr.',
+    reifen: 'Wähle für den nächsten Stopp Regenreifen. Drücke dazu die Reifen-Taste, bis Regen angezeigt wird.',
+    box2: 'Und jetzt der zweite Boxenstopp. Tippe die Boxenstopp-Taste und halte an.',
+    box2_fertig: 'Die Regenreifen sind drauf. Fahr weiter.',
   };
   // zeige: Text auf dem Schirm, {taste} = Tastenname aus der aktuellen Belegung (Aktion `taste`).
   // Die Clips sprechen generisch ("die Gas-Taste"), denn sie koennen nicht jede Belegung abdecken.
+  // modus: nur auf der Bahn ('bahn') oder nur auf dem Boden ('boden'). box: Teil eines Boxenstopps
+  // (steht/spiel/fertig), uebersprungen, wenn es dazu nichts zu tun gibt.
   const TUT_SCHRITTE = [
     { id: 'willkommen', titel: 'Willkommen bei OmegaSim', clip: 'willkommen' },
+    // Bahn oder Boden: Steuerkreuz und Kreuz/A, Maus, Finger, Pfeiltasten und Enter. Ohne Wahl
+    // bleibt es nach dem Limit bei der eingestellten Fahrweise.
+    { id: 'modus', titel: 'Bahn oder Boden?', clip: 'modus_frage', taste: 'dpad',
+      zeige: 'Wähle mit {taste} und bestätige mit ✕ / A. Maus, Finger und Pfeiltasten gehen auch.',
+      warte: 'wahl', s: 10 },
+    { id: 'modus_bahn', titel: 'Mit Bahn', clip: 'modus_bahn', modus: 'bahn' },
+    { id: 'modus_boden', titel: 'Auf dem Boden', clip: 'modus_boden', modus: 'boden' },
     { id: 'gas', titel: 'Gas geben', clip: 'gas', taste: 'throttle', zeige: 'Drücke {taste}, um zu beschleunigen.',
-      warte: 'gas', s: 10, lob: 'gut' },
+      warte: 'gas', s: 8, lob: 'gut' },
     { id: 'bremse', titel: 'Bremsen', clip: 'bremse', taste: 'brake', zeige: 'Drücke {taste}, um zu bremsen.',
-      warte: 'bremse', s: 10, lob: 'prima' },
+      warte: 'bremse', s: 8, lob: 'prima' },
     { id: 'links', titel: 'Lenken', clip: 'links', taste: 'steering', zeige: 'Lenke mit {taste} nach links.',
-      warte: 'links', s: 8 },
+      warte: 'links', s: 6 },
     { id: 'rechts', titel: 'Lenken', clip: 'rechts', taste: 'steering', zeige: 'Und jetzt mit {taste} nach rechts.',
-      warte: 'rechts', s: 8, lob: 'gut' },
+      warte: 'rechts', s: 6, lob: 'gut' },
+    { id: 'licht', titel: 'Licht', clip: 'licht', taste: 'headlights',
+      zeige: 'Schalte das Licht mit {taste} aus und wieder ein.', warte: 'licht', s: 8, lob: 'gut' },
     // "nach X Sekunden": 20 s Arcade ab Beginn des Schritts (der Clip zaehlt mit).
-    { id: 'arcade', titel: 'Fahrgefühl: Arcade', clip: 'arcade', min: 20 },
+    { id: 'arcade', titel: 'Fahrgefühl: Arcade', clip: 'arcade', min: 20, modus: 'bahn' },
+    { id: 'arcade_boden', titel: 'Fahrgefühl: Arcade', clip: 'arcade_boden', min: 20, modus: 'boden' },
     { id: 'pacejka', titel: 'Fahrgefühl: Pacejka', clip: 'pacejka', vorher: 'pacejka' },
-    { id: 'beschleunigung', titel: 'Beschleunigung', clip: 'beschleunigung', min: 8 },
-    { id: 'untersteuern', titel: 'Untersteuern', clip: 'untersteuern', min: 12 },
+    { id: 'beschleunigung', titel: 'Beschleunigung', clip: 'beschleunigung', min: 6 },
+    { id: 'untersteuern', titel: 'Untersteuern', clip: 'untersteuern', min: 10 },
     { id: 'box_erklaerung', titel: 'Boxenstopp', clip: 'box_erklaerung', taste: 'spiel',
       zeige: 'Zeit für einen Boxenstopp. Gleich erscheinen Tasten auf dem Schirm ({taste}). Drückst du sie rechtzeitig, ist die Crew schneller.' },
     { id: 'box', titel: 'Boxenstopp', clip: 'box', taste: 'yellowflag', zeige: 'Tippe {taste} (Boxenstopp) und halte an.',
       warte: 'box_an', s: 10 },
     { id: 'box_steht', titel: 'Boxenstopp', zeige: 'Halte an. Die Crew beginnt, sobald das Auto steht.',
-      warte: 'box_steht', s: 10 },
+      warte: 'box_steht', s: 8, box: 'steht' },
     { id: 'box_spiel', titel: 'Boxen-Minispiel', taste: 'spiel', zeige: 'Drücke {taste}, sobald die Taste aufleuchtet.',
-      warte: 'box_fertig', s: 14 },
-    { id: 'box_fertig', titel: 'Boxenstopp', clip: 'box_fertig' },
-    { id: 'motor', titel: 'Motorsound', clip: 'motor', vorher: 'motor', min: 5 },
+      warte: 'box_fertig', s: 12, box: 'spiel' },
+    { id: 'box_fertig', titel: 'Boxenstopp', clip: 'box_fertig', box: 'fertig' },
+    // Nach dem ersten Stopp: Regen, Regenreifen waehlen, zweiter Stopp.
+    { id: 'regen', titel: 'Regen', clip: 'regen', vorher: 'regen', min: 6 },
+    { id: 'reifen', titel: 'Regenreifen', clip: 'reifen', taste: 'tyreSelect',
+      zeige: 'Drücke {taste}, bis als Reifenwahl „Regen“ angezeigt wird.', warte: 'reifen', s: 10, lob: 'prima' },
+    { id: 'box2', titel: 'Zweiter Boxenstopp', clip: 'box2', taste: 'yellowflag', zeige: 'Tippe {taste} (Boxenstopp) und halte an.',
+      warte: 'box_an', s: 10 },
+    { id: 'box2_steht', titel: 'Zweiter Boxenstopp', zeige: 'Halte an. Die Crew beginnt, sobald das Auto steht.',
+      warte: 'box_steht', s: 8, box: 'steht' },
+    { id: 'box2_spiel', titel: 'Boxen-Minispiel', taste: 'spiel', zeige: 'Drücke {taste}, sobald die Taste aufleuchtet.',
+      warte: 'box_fertig', s: 12, box: 'spiel' },
+    { id: 'box2_fertig', titel: 'Regenreifen', clip: 'box2_fertig', box: 'fertig' },
+    { id: 'motor', titel: 'Motorsound', clip: 'motor', vorher: 'motor', min: 4 },
     { id: 'garage', titel: 'Garage', clip: 'garage' },
     { id: 'optionen', titel: 'Optionen', clip: 'optionen' },
     { id: 'abschluss', titel: 'Geschafft', clip: 'abschluss' },
@@ -413,7 +455,9 @@
   const TUT_TAKT_MS = 100;
   const TUT_LUECKE_S = 0.3;      // Pause nach jedem Clip
   const TUT_LADE_MS = 4000;      // so lange wartet der Start hoechstens auf die Clips
-  const TUT_MAX_S = 180;         // BESTELLT: "insgesamt max. 3 min"
+  // Bis 1.3.30: "insgesamt max. 3 min". Mit Licht, Wahl, Regen, Regenreifen und zweitem Stopp
+  // (v1.3.31): "halte es so knapp wie moeglich (Zielwert <= 4 min inkl. Zeitlimits)".
+  const TUT_MAX_S = 240;
   const TUT_SCHWELLE = 0.5;      // Gas, Bremse, Lenkausschlag
   // Ziel des Motorklang-Schritts. Die Ansage sagt "Ford Mustang"; steht schon der Mustang v2
   // drin, wird es der gerechnete Mustang.
@@ -422,9 +466,12 @@
 
   // Wie lange ein Schritt hoechstens dauert (Clip, Mindestdauer, Zeitlimit, Lob). `dauer` sind
   // die Clipdauern aus dem Manifest. Der Selbsttest prueft die Summe gegen TUT_MAX_S.
-  function tutBudget(dauer) {
+  // `modus`: 'bahn' oder 'boden' (ohne Angabe: der laengere der beiden Wege).
+  function tutBudget(dauer, modus) {
+    if (!modus) return Math.max(tutBudget(dauer, 'bahn'), tutBudget(dauer, 'boden'));
     const d = (k) => (k && dauer && dauer[k] > 0 ? dauer[k] + TUT_LUECKE_S : 0);
-    return TUT_SCHRITTE.reduce((sum, s) => sum + Math.max(d(s.clip), s.min || 0) + (s.s || 0) + d(s.lob), 0);
+    return TUT_SCHRITTE.filter((s) => !s.modus || s.modus === modus)
+      .reduce((sum, s) => sum + Math.max(d(s.clip), s.min || 0) + (s.s || 0) + d(s.lob), 0);
   }
 
   // ---- Tastennamen aus der aktuellen Belegung ----
@@ -433,7 +480,10 @@
   const TUT_ACHSE = { 0: 'Linker Stick', 1: 'Linker Stick', 2: 'Rechter Stick', 3: 'Rechter Stick' };
   function tutTasteName(aktion) {
     if (aktion === 'spiel') return tutTasteName('downshift') + ' ' + t('oder') + ' ' + tutTasteName('upshift');
+    if (aktion === 'dpad') return '◀ ▶';
     const b = typeof bindings !== 'undefined' && bindings ? bindings[aktion] : null;
+    // Licht ohne Pad-Taste: der Lichtschalter im Cockpit (#dash-head-toggle) geht immer.
+    if (aktion === 'headlights' && (!b || b.type === 'none' || !(b.index >= 0))) return t('Licht-Schalter im Cockpit');
     if (!b || b.type === 'none' || !(b.index >= 0)) return t('nicht belegt');
     if (b.type === 'button' && TUT_KNOPF[b.index]) return TUT_KNOPF[b.index];
     if (b.type === 'axis' && TUT_ACHSE[b.index]) return t(TUT_ACHSE[b.index]);
@@ -557,6 +607,26 @@
     } catch (e) { /* privat */ }
     if (typeof renderPresetLegende === 'function') renderPresetLegende();
   }
+  // Bahn oder Boden: derselbe Schalter wie FAHREN > Strecke (#setting-ontrack, 50-drive.js). Aus
+  // ist das Fahren auf dem Boden ohne Streckenteile (trackMode 'off', keine Bahnerkennung).
+  function tutBahnSetzen(an) {
+    const cb = $('setting-ontrack');
+    if (!cb || cb.checked === !!an) return;
+    cb.checked = !!an;
+    cb.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  // Licht wie die Licht-Taste im Cockpit (pollGamepad): Merker und Schalter gemeinsam.
+  function tutLichtSetzen(an) {
+    headlightsOn = !!an;
+    const cb = $('dash-head-toggle');
+    if (cb) cb.checked = headlightsOn;
+  }
+  function tutReifenMerken() { return { tyres, wunsch: mischungWunsch }; }
+  function tutReifenZurueck(m) {
+    if (!m) return;
+    mischungWunsch = m.wunsch;
+    if (tyres !== m.tyres) { tyres = m.tyres; applySurface(); }
+  }
   function tutMotorSetzen(v) {
     const sel = $('sound-profile');
     if (!sel || !v || sel.value === v) return;
@@ -573,6 +643,8 @@
       const g = playerCar.device && playerCar.device.gatt;
       return !g || g.connected !== false;
     },
+    // Ein Auto ist verbunden, aber keines hat die Rolle Spieler 1 (NPC, Safety Car, Aus ...).
+    autoVerbunden: () => typeof garage !== 'undefined' && garage.length > 0,
     padDa: () => !!tutPad(),
     eingaben: () => {
       const p = tutPad();
@@ -595,6 +667,16 @@
     boxZustand: () => pitState,
     boxAnfordern: () => { if (pitState === 'off') requestPitStop(); },
     boxAbbrechen: () => { if (pitState === 'limited') requestPitStop(); },
+    bahnLesen: () => !!($('setting-ontrack') || {}).checked,
+    bahnSetzen: tutBahnSetzen,
+    lichtLesen: () => !!headlightsOn,
+    lichtSetzen: tutLichtSetzen,
+    wetterLesen: () => weather,
+    wetterSetzen: (w) => setWeather(w),
+    reifenMerken: tutReifenMerken,
+    reifenZurueck: tutReifenZurueck,
+    reifenWahl: () => pitMischungWahl(),
+    reifenWahlSetzen: (m) => { mischungWunsch = m; },
     sprechen: tutSprechenEcht,
     verstummen: tutVerstummen,
   };
@@ -602,8 +684,10 @@
   // ---- Zustand ----
   const tut = { an: false, phase: 'aus', i: -1, schrittAb: 0, clipBis: 0, warteAb: null, erfuellt: false,
     lobDran: false, boxService: false, umg: TUT_ECHT, merk: null, timer: null, startAb: 0, geladen: false,
-    hinweisGesprochen: false, protokoll: [], ende: '' };
+    hinweise: [], protokoll: [], ende: '', modus: null, wahl: 'bahn', wahlAktiv: false, wahlSperre: false,
+    wahlPadVorher: null, lichtVorher: null, lichtWechsel: 0 };
   function tutLaeuft() { return tut.an; }
+  function tutWahlOffen() { return tut.an && (tut.wahlAktiv || tut.wahlSperre); }
   function tutSchrittId() { return tut.phase === 'lauf' && TUT_SCHRITTE[tut.i] ? TUT_SCHRITTE[tut.i].id : tut.phase; }
 
   // opts.umgebung: Attrappen (Selbsttest); opts.ohneTimer: der Test taktet selbst (tutTick).
@@ -613,8 +697,9 @@
     if (typeof konsoleTourOffen === 'function' && konsoleTourOffen()) konsoleTourZu(false);
     tut.umg = Object.assign({}, TUT_ECHT, o.umgebung || {});
     Object.assign(tut, { an: true, phase: 'warten', i: -1, clipBis: 0, warteAb: null, erfuellt: false, lobDran: false,
-      boxService: false, merk: null, startAb: tut.umg.jetzt(), geladen: false, hinweisGesprochen: false,
-      protokoll: [], ende: '' });
+      boxService: false, merk: null, startAb: tut.umg.jetzt(), geladen: false, hinweise: [],
+      protokoll: [], ende: '', modus: null, wahl: 'bahn', wahlAktiv: false, wahlSperre: false, wahlPadVorher: null,
+      lichtVorher: null, lichtWechsel: 0 });
     tut.umg.laden();
     if (tut.umg.tab() === 'home') tut.umg.insFahren();
     const ui = $('tut-ui');
@@ -636,7 +721,7 @@
   }
   function tutFehlt() {
     const f = [];
-    if (!tut.umg.autoDa()) f.push('auto');
+    if (!tut.umg.autoDa()) f.push(tut.umg.autoVerbunden() ? 'rolle' : 'auto');
     if (!tut.umg.padDa()) f.push('pad');
     return f;
   }
@@ -650,13 +735,17 @@
       const fehlt = tutFehlt();
       if (!u.bereit()) { tutVoraussetzungZeigen(fehlt); return; }
       if (fehlt.length) {
-        if (!tut.hinweisGesprochen) { tut.hinweisGesprochen = true; tutSprich('voraussetzung'); }
+        // Jeder Hinweis einmal, und nicht in einen laufenden hinein: erst "Auto und Gamepad",
+        // spaeter (Auto verbunden, falsche Rolle) der Rollen-Hinweis.
+        const hinweis = fehlt.includes('rolle') ? 'rolle' : 'voraussetzung';
+        if (!tut.hinweise.includes(hinweis) && jetzt >= tut.clipBis) { tut.hinweise.push(hinweis); tutSprich(hinweis); }
         tutVoraussetzungZeigen(fehlt);
         return;
       }
       // Alles da: sichern, Arcade, ins Cockpit, los.
       u.verstummen();
-      tut.merk = { preset: u.presetMerken(), motor: u.motorLesen(), box: u.boxMerken() };
+      tut.merk = { preset: u.presetMerken(), motor: u.motorLesen(), box: u.boxMerken(), bahn: u.bahnLesen(),
+        licht: u.lichtLesen(), wetter: u.wetterLesen(), reifen: u.reifenMerken() };
       u.presetSetzen('arcade');
       u.boxVorbereiten();
       u.insCockpit();
@@ -681,6 +770,10 @@
       // Auto, das nicht anhaelt, faehrt nicht mit dem Boxenbegrenzer weiter.
       if (s.warte === 'box_an') u.boxAnfordern();
       if (s.warte === 'box_steht') u.boxAbbrechen();
+      // Keine Wahl: es bleibt bei der eingestellten Fahrweise. Keine Regenreifen gewaehlt: das
+      // Tutorial waehlt sie, damit der zweite Stopp sie aufzieht.
+      if (s.warte === 'wahl') tutWahlBestaetigen();
+      if (s.warte === 'reifen') u.reifenWahlSetzen('regen');
     } else if (s.lob && tut.erfuellt && !tut.lobDran) {
       tut.lobDran = true;
       tutSprich(s.lob);
@@ -698,6 +791,15 @@
       return steht;
     }
     if (w === 'box_fertig') return u.boxZustand() !== 'servicing';
+    if (w === 'wahl') return !!tut.modus;
+    if (w === 'reifen') return u.reifenWahl() === 'regen';
+    if (w === 'licht') {
+      // Aus UND wieder ein: zwei Wechsel, egal in welchem Zustand das Licht anfing.
+      const l = u.lichtLesen();
+      if (tut.lichtVorher !== null && l !== tut.lichtVorher) tut.lichtWechsel++;
+      tut.lichtVorher = l;
+      return tut.lichtWechsel >= 2;
+    }
     const e = u.eingaben() || {};
     if (w === 'gas') return (e.gas || 0) >= TUT_SCHWELLE;
     if (w === 'bremse') return (e.bremse || 0) >= TUT_SCHWELLE;
@@ -708,11 +810,12 @@
   // Schritte, die nichts zu tun haetten: kein Warten aufs Anhalten, wenn das Auto schon steht
   // (oder kein Stopp angefordert ist), kein Minispiel und kein "Fertig" ohne Stopp.
   function tutUeberspringen(s) {
+    if (s.modus && s.modus !== tut.modus) return true;
     const z = tut.umg.boxZustand();
     if (z === 'servicing') tut.boxService = true;
-    if (s.id === 'box_steht') return z !== 'limited';
-    if (s.id === 'box_spiel') return z !== 'servicing';
-    if (s.id === 'box_fertig') return !tut.boxService;
+    if (s.box === 'steht') return z !== 'limited';
+    if (s.box === 'spiel') return z !== 'servicing';
+    if (s.box === 'fertig') return !tut.boxService;
     return false;
   }
 
@@ -722,9 +825,14 @@
     const u = tut.umg, s = TUT_SCHRITTE[n];
     Object.assign(tut, { i: n, schrittAb: u.jetzt(), clipBis: u.jetzt(), warteAb: null, erfuellt: false, lobDran: false });
     tut.protokoll.push(s.id);
+    // Jeder Boxenstopp zaehlt fuer sich (der zweite nicht mit dem Service des ersten).
+    if (s.warte === 'box_an') tut.boxService = false;
+    if (s.warte === 'licht') { tut.lichtVorher = u.lichtLesen(); tut.lichtWechsel = 0; }
+    if (s.warte === 'wahl') { tut.modus = null; tut.wahl = u.bahnLesen() ? 'bahn' : 'boden'; tut.wahlAktiv = true; tut.wahlPadVorher = null; }
+    if (s.vorher === 'regen') u.wetterSetzen('rain');
     if (s.vorher === 'pacejka') u.presetSetzen('propacejka');
     if (s.vorher === 'motor') u.motorSetzen(u.motorLesen() === TUT_MOTOR ? TUT_MOTOR_ERSATZ : TUT_MOTOR);
-    tutSchrittZeigen(s, n);
+    tutSchrittZeigen(s);
     if (s.clip) tutSprich(s.clip);
   }
 
@@ -736,6 +844,10 @@
     try { u.presetZurueck(m.preset); } catch (e) { log('Tutorial: Fahrgefühl nicht zurückgestellt (' + e.message + ')', 'warn'); }
     try { u.motorSetzen(m.motor); } catch (e) { log('Tutorial: Motorklang nicht zurückgestellt (' + e.message + ')', 'warn'); }
     try { u.boxZurueck(m.box); } catch (e) { log('Tutorial: Boxeneinstellungen nicht zurückgestellt (' + e.message + ')', 'warn'); }
+    try { if (u.wetterLesen() !== m.wetter) u.wetterSetzen(m.wetter); } catch (e) { log('Tutorial: Wetter nicht zurückgestellt (' + e.message + ')', 'warn'); }
+    try { u.reifenZurueck(m.reifen); } catch (e) { log('Tutorial: Reifen nicht zurückgestellt (' + e.message + ')', 'warn'); }
+    try { if (u.lichtLesen() !== m.licht) u.lichtSetzen(m.licht); } catch (e) { /* Licht bleibt */ }
+    try { u.bahnSetzen(m.bahn); } catch (e) { log('Tutorial: Bahn/Boden nicht zurückgestellt (' + e.message + ')', 'warn'); }
   }
   function tutAus(grund) {
     clearTimeout(tut.timer);
@@ -744,6 +856,7 @@
     tutZurueckstellen();
     tut.an = false;
     tut.ende = grund;
+    tut.wahlAktiv = false; tut.wahlSperre = false;
     const ui = $('tut-ui');
     if (ui) ui.hidden = true;
   }
@@ -771,17 +884,22 @@
     tutText('tut-fortschritt', '');
     tutText('tut-titel', t('Bereit machen'));
     tutText('tut-text', [
-      (fehlt.includes('auto') ? '✗ ' : '✓ ') + t('Auto: unter FAHREN in der Kachel AUTOS verbinden.'),
+      fehlt.includes('rolle') ? '✗ ' + t('Auto: verbunden, aber nicht Spieler 1. Unter FAHREN, AUTOS, GARAGE die Rolle auf Spieler 1 stellen.')
+        : (fehlt.includes('auto') ? '✗ ' : '✓ ') + t('Auto: unter FAHREN in der Kachel AUTOS verbinden.'),
       (fehlt.includes('pad') ? '✗ ' : '✓ ') + t('Gamepad: einschalten und eine Taste drücken.'),
     ].join('\n'));
     const tk = $('tut-taste');
     if (tk) tk.hidden = true;
+    tutWahlZeigen();
     tutText('tut-hinweis', t('Abbrechen: Kreis oder Esc'));
     const ui = $('tut-ui');
     if (ui) ui.classList.add('unten');
   }
-  function tutSchrittZeigen(s, n) {
-    tutText('tut-fortschritt', (n + 1) + ' / ' + TUT_SCHRITTE.length);
+  function tutSchrittZeigen(s) {
+    // Gezaehlt werden die Schritte des gewaehlten Wegs (vor der Wahl: der eingestellte).
+    const weg = tut.modus || tut.wahl;
+    const liste = TUT_SCHRITTE.filter((x) => !x.modus || x.modus === weg);
+    tutText('tut-fortschritt', (liste.indexOf(s) + 1) + ' / ' + liste.length);
     tutText('tut-titel', t(s.titel));
     const taste = s.taste ? tutTasteName(s.taste) : '';
     tutText('tut-text', t(s.zeige || TUT_SPRUCH[s.clip] || '').replace('{taste}', taste));
@@ -791,11 +909,66 @@
       tk.textContent = taste;
       tk.classList.remove('gedrueckt');
     }
+    tutWahlZeigen();
     tutText('tut-hinweis', t('Beenden: Options oder Esc'));
     const ui = $('tut-ui');
     if (ui) ui.classList.remove('unten');
   }
+  // ---- Wahl: Mit Bahn / Auf dem Boden ----
+  // w: 'links' (Bahn), 'rechts' (Boden) oder 'ok'. Gerufen von Pad, Tastatur und Klick.
+  function tutWahlTaste(w) {
+    if (!tut.an || !tut.wahlAktiv) return;
+    if (w === 'links') tut.wahl = 'bahn';
+    else if (w === 'rechts') tut.wahl = 'boden';
+    else if (w === 'ok') { tutWahlBestaetigen(); return; }
+    tutWahlZeigen();
+  }
+  function tutWahlBestaetigen() {
+    if (!tut.wahlAktiv) return;
+    tut.wahlAktiv = false;
+    tut.modus = tut.wahl === 'boden' ? 'boden' : 'bahn';
+    tut.umg.bahnSetzen(tut.modus === 'bahn');
+    tutWahlZeigen();
+  }
+  function tutWahlPad(pad) {
+    const dp = (r) => (typeof padDpad === 'function' ? padDpad(pad, r)
+      : !!(pad.buttons[r === 'left' ? 14 : 15] && pad.buttons[r === 'left' ? 14 : 15].pressed));
+    const jetzt = { l: dp('left'), r: dp('right'), ok: !!(pad.buttons[0] && pad.buttons[0].pressed) };
+    const v = tut.wahlPadVorher;
+    tut.wahlPadVorher = jetzt;
+    if (tut.wahlSperre) { if (!jetzt.ok) tut.wahlSperre = false; return; }
+    if (!v) return;
+    if (jetzt.l && !v.l) tutWahlTaste('links');
+    if (jetzt.r && !v.r) tutWahlTaste('rechts');
+    if (jetzt.ok && !v.ok) { tut.wahlSperre = true; tutWahlTaste('ok'); }
+  }
+  function tutWahlZeigen() {
+    const box = $('tut-wahl');
+    if (!box) return;
+    box.hidden = !(tut.an && tut.wahlAktiv);
+    box.querySelectorAll('[data-wahl]').forEach((b) => b.classList.toggle('gewaehlt', b.dataset.wahl === tut.wahl));
+  }
   (() => {
     const b = $('tut-beenden');
     if (b) b.addEventListener('click', (e) => { e.stopPropagation(); tutAbbrechen('Knopf'); });
+    document.querySelectorAll('#tut-wahl [data-wahl]').forEach((k) => {
+      k.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!tut.wahlAktiv) return;
+        tut.wahl = k.dataset.wahl;
+        tutWahlBestaetigen();
+      });
+    });
+    // Tastatur: Pfeile waehlen, Enter/Leertaste/X bestaetigen. In der Erfassungsphase, damit die
+    // Pfeile in der Wahl nicht zugleich lenken (30-input.js hoert in der Blasenphase).
+    window.addEventListener('keydown', (e) => {
+      if (!tut.an || !tut.wahlAktiv) return;
+      const k = e.key;
+      const w = (k === 'ArrowLeft' || k === 'ArrowUp') ? 'links' : (k === 'ArrowRight' || k === 'ArrowDown') ? 'rechts'
+        : (k === 'Enter' || k === ' ' || k === 'x' || k === 'X') ? 'ok' : null;
+      if (!w) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if (!e.repeat) tutWahlTaste(w);
+    }, true);
   })();

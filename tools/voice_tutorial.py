@@ -80,6 +80,21 @@ TEXTE = {
     'optionen': 'Ansagen, Tastenbelegung, Fahrverhalten und vieles mehr '
                 'stellst du im Optionenmenü ein.',
     'abschluss': 'Du hast die Einführung abgeschlossen. Herzlich willkommen bei OmegaSim!',
+    # Runde 3 (nach 1.3.30): Rolle, Bahn oder Boden, Licht, Regen, Regenreifen, zweiter Stopp.
+    'rolle': 'Dein Auto ist verbunden, hat aber nicht die Rolle Spieler 1. '
+             'Stelle sie in der Garage auf Spieler 1.',
+    'modus_frage': 'Fährst du auf der Bahn oder auf dem Boden? '
+                   'Wähle mit dem Steuerkreuz und bestätige.',
+    'modus_bahn': 'Gut, wir fahren auf der Bahn.',
+    'modus_boden': 'Gut, wir fahren auf dem Boden, ohne Streckenteile.',
+    'licht': 'Schalte das Licht mit der Licht-Taste aus und wieder ein.',
+    'arcade_boden': 'Fahr jetzt ein wenig herum, im Arcade-Modus. '
+                    'Das Auto lenkt direkt ein und bremst kräftig.',
+    'regen': 'Jetzt fängt es an zu regnen. Mit Trockenreifen rutscht das Auto viel mehr.',
+    'reifen': 'Wähle für den nächsten Stopp Regenreifen. '
+              'Drücke dazu die Reifen-Taste, bis Regen angezeigt wird.',
+    'box2': 'Und jetzt der zweite Boxenstopp. Tippe die Boxenstopp-Taste und halte an.',
+    'box2_fertig': 'Die Regenreifen sind drauf. Fahr weiter.',
 }
 # Lautschreibung fuer Piper (nur die Aussprache; der Schirm zeigt TEXTE).
 SPRECH = {
@@ -94,9 +109,11 @@ SPRECH = {
     'motor': 'Der Motorsound wird nun geändert zu Ford Mass-täng.',
     'garage': 'Im Garaschenmenü passt du den Motorsound für jedes Auto einzeln an.',
     'abschluss': 'Du hast die Einführung abgeschlossen. Herzlich willkommen bei Omega-ßimm!',
+    'arcade_boden': 'Fahr jetzt ein wenig herum, im Ahkehd-Modus. '
+                    'Das Auto lenkt direkt ein und bremst kräftig.',
 }
 # Piper length_scale: 1 = Modellvorgabe, kleiner = schneller. Kerstin spricht langsam; 0,9 bleibt
-# deutlich und haelt das ganze Tutorial unter drei Minuten.
+# deutlich und haelt die ganze Einfuehrung kurz (hoechstens vier Minuten mit allen Zeitlimits).
 TEMPO = 0.9
 SATZPAUSE = 0.15
 
