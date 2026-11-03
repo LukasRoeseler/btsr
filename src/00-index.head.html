@@ -4956,6 +4956,11 @@
     margin-left: 0; padding: .1em .45em .04em; line-height: 1.1; vertical-align: 0;
     background: var(--acc-blau); color: var(--k-blau-text, #04070c); text-shadow: none;
     letter-spacing: .04em; font-size: clamp(14px, 2.4vw, 24px); }
+  /* Die vier Knoepfe nehmen die Hoehe, die die Zeiten rechts ohnehin vorgeben: groessere
+     Trefferflaeche, ohne dass das Cockpit dadurch hoeher wird (1fr verteilt nur den Rest). */
+  body[data-cockpit="acc"] #race-dash .gt3-left {
+    grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr); align-content: stretch; }
+  body[data-cockpit="acc"] #race-dash .gt3-left .gt3-half .gt3-act { align-content: center; }
   body[data-cockpit="acc"] #race-dash .gt3-act { letter-spacing: .08em; text-transform: uppercase; }
   body[data-cockpit="acc"] #race-dash .gt3-left .gt3-act:not(.strafe) {
     box-shadow: inset 0 -2px 0 var(--acc-blau); }
@@ -5039,8 +5044,8 @@
   body.race-turn[data-cockpit="acc"] #race-dash .gt3-gearnum { font-size: clamp(54px, 12.5vh, 124px); }
   body.race-turn[data-cockpit="acc"] #race-dash .gt3-gear .gt3-val.big { font-size: clamp(24px, 4.6vh, 48px); }
   body.race-turn[data-cockpit="acc"] #race-shift > span { height: clamp(12px, 2.6vh, 24px); }
-  body[data-cockpit="acc"] #race-tyre-box .gt3-val.sm {
-    text-align: center; font-size: clamp(9px, 1.25vw, 13px); }
+  body[data-cockpit="acc"] #race-dash > .gt3-strip > #race-tyre-box > .gt3-val.sm {
+    text-align: center; white-space: normal; font-size: clamp(10.5px, 1.3vw, 14px); }
   body[data-cockpit="acc"] #race-dash .gt3-foot { box-shadow: inset 3px 0 0 var(--acc-blau); }
 </style>
 <style>
