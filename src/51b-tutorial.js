@@ -325,7 +325,7 @@
   })();
 
 
-  // ============================ GEFUEHRTES TUTORIAL (v1.3.15, WIP) ======================
+  // ============================ GEFUEHRTES TUTORIAL (v1.3.15, ohne WIP seit v1.3.31) =====
   //
   // BESTELLT: "Tutorial von Grund auf ueberarbeiten: mit freundlicher Frauenstimme und
   // Heranfuehrung an Funktionen. Fange an mit einer Willkommensnachricht ... Dafuer muss nur
