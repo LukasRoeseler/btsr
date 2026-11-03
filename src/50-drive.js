@@ -293,6 +293,12 @@
   // EIGENE ABLAGE, wie beim Layout und beim Getriebe: der Waehler traegt data-preset-skip,
   // weil eine Voreinstellung eine Abstimmung ist und das Aussehen keine.
   const COCKPIT_STORE = 'chc.cockpit.v1';
+  // v1.3.51 (WIP): die Ansicht "ACC" hat KEIN Regenradar - bestellt war "alle Elemente des
+  // aktuellen ausser Regenradar". Ausgeblendet wird es per CSS; dieser Merker sorgt dafuer,
+  // dass wxRadarDraw() (70-race.js) es auch nicht zeichnet, so wie beim Schalter
+  // "Regenradar aus". Ein Merker und keine Abfrage am body je Bild: gesetzt wird er nur beim
+  // Umschalten der Ansicht. Der Schalter selbst bleibt unberuehrt.
+  let cockpitOhneRadar = false;
   if ($('setting-cockpit')) {
     const ansichtAnwenden = (melden) => {
       const v = $('setting-cockpit').value;
@@ -302,6 +308,7 @@
       // Ueberleitung darunter.
       if (v === 'omega') document.body.removeAttribute('data-cockpit');
       else document.body.setAttribute('data-cockpit', v);
+      cockpitOhneRadar = v === 'acc';
       if (melden) {
         const opt = $('setting-cockpit').selectedOptions[0];
         log('Cockpit-Ansicht: ' + (opt ? opt.textContent : v) + '.', 'info');

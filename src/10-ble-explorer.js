@@ -373,6 +373,8 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "ACC: Rennspiel-Stil (WIP)": "ACC: racing game style (WIP)",
+    "„ACC“ (WIP) ist an das Rennspiel Assetto Corsa Competizione angelehnt: fast schwarze, kantige Felder mit schmalen blauen Akzentlinien, segmentierte Drehzahlleiste, der Gang groß in der Mitte und die Zeiten wie im Timing-Fenster des Spiels; das Regenradar entfällt dort und wird auch nicht gezeichnet.": "“ACC” (WIP) is modelled on the racing game Assetto Corsa Competizione: near-black, square panels with thin blue accent lines, a segmented rev bar, the gear large in the middle and the times laid out like the game's timing window; the rain radar is left out there and is not drawn at all.",
     "Fahrer am Rand": "Driver at the edge",
     "Eiche hell": "Light oak",
     "Laminat grau": "Grey laminate",
@@ -4076,6 +4078,8 @@
   // nachzieht. Bewusst KEINE Ansagen (Rundenzeit, Tank, Schaden): dafuer gibt es noch keine
   // spanischen Aufnahmen, und die Sprachausgabe nutzt die englische als Platzhalter.
   const I18N_ES = {
+    "ACC: Rennspiel-Stil (WIP)": "ACC: estilo de juego de carreras (WIP)",
+    "„ACC“ (WIP) ist an das Rennspiel Assetto Corsa Competizione angelehnt: fast schwarze, kantige Felder mit schmalen blauen Akzentlinien, segmentierte Drehzahlleiste, der Gang groß in der Mitte und die Zeiten wie im Timing-Fenster des Spiels; das Regenradar entfällt dort und wird auch nicht gezeichnet.": "«ACC» (WIP) se inspira en el juego de carreras Assetto Corsa Competizione: paneles casi negros y rectos con finas líneas de acento azules, barra de revoluciones segmentada, la marcha grande en el centro y los tiempos como en la ventana de cronometraje del juego; el radar de lluvia desaparece ahí y tampoco se dibuja.",
     "Fahrer am Rand": "Piloto en el borde",
     "Eiche hell": "Roble claro",
     "Laminat grau": "Laminado gris",
