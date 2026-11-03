@@ -3968,8 +3968,7 @@
 
   function wxRadarDraw() {
     const cv = $('race-wx-radar');
-    // cockpitOhneRadar: die Ansicht ACC (v1.3.51, 50-drive.js) zeigt kein Radar.
-    if (!cv || cockpitOhneRadar || document.hidden || !cv.clientWidth || !wxRadarAn()) return;
+    if (!cv || document.hidden || !cv.clientWidth || !wxRadarAn()) return;
     const mitKarte = false;   // v1.2.39: Strecke im Radar entfernt (Latenz), siehe wxRadarAn()
     // Auf die tatsaechliche Anzeigegroesse ziehen: ein Canvas mit falscher Pufferbreite wird
     // von der Grafikkarte skaliert und sieht unscharf aus.

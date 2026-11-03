@@ -2262,9 +2262,12 @@
       if (werte.length < 3) schlecht.push('nur ' + werte.length + ' Ansichten');
       const proben = werte.map(messe);
 
-      // 1. Die Vorgabe setzt KEIN Attribut: sonst waeren ihre Werte eine zweite Abschrift
-      //    dessen, was in :root steht.
-      if (proben[0].attr !== null) schlecht.push('Vorgabe setzt ' + proben[0].attr);
+      // 1. Omega setzt KEIN Attribut: sonst waeren seine Werte eine zweite Abschrift dessen,
+      //    was in :root steht. Bis v1.3.57 war Omega die Vorgabe und stand vorn; seit ACC die
+      //    Vorgabe ist, wird es beim Namen gesucht und nicht an der ersten Stelle.
+      const omegaProbe = proben.find(p => p.v === 'omega');
+      if (!omegaProbe) schlecht.push('Ansicht omega fehlt');
+      else if (omegaProbe.attr !== null) schlecht.push('Omega setzt ' + omegaProbe.attr);
 
       // 2. Sichtbar verschieden, Paar fuer Paar.
       const paare = [];
@@ -2507,25 +2510,25 @@
   });
 
 
-  // ---- Cockpit v1.3.51: Ansicht ACC (WIP) ----
+  // ---- Cockpit v1.3.51 / v1.3.58: Ansicht ACC ----
   //
-  // BESTELLT: "ein alternativer Haupt-Cockpit-Screen im Stil von ACC, mit allen Elementen
-  // des aktuellen ausser Regenradar", waehlbar im Menue der Cockpit-Ansichten.
+  // BESTELLT (v1.3.51): "ein alternativer Haupt-Cockpit-Screen im Stil von ACC". In v1.3.58
+  // abgenommen und geaendert: das Regenradar ist WIEDER da ("Ersetze die Wetterkachel mit der
+  // Sonne wieder durch den Regenradar"), und ACC ist die Vorgabe.
   //
-  // Geprueft wird, was die Bestellung zusichert: die Option steht mit WIP-Etikett im
-  // Waehler, sie setzt das Attribut, das Radar ist ausgeblendet UND wird nicht gezeichnet,
-  // jede andere Haupt-Kachel ist sichtbar und hat eine Flaeche, und das Cockpit passt in
-  // ein Handy quer (800 x 370) mindestens so gut wie die Vorgabe, ohne dass ein Wert seine
-  // Kachel verlaesst.
-  stAdd('Cockpit v1.3.51: Ansicht ACC - WIP-Option, kein Regenradar, alle Kacheln sichtbar, passt auf 800x370', () => {
+  // Geprueft wird: die Option steht im Waehler, sie setzt das Attribut, das Radar ist
+  // sichtbar UND wird gezeichnet wie in der Vorgabe, jede andere Haupt-Kachel ist sichtbar und
+  // hat eine Flaeche, und das Cockpit passt in ein Handy quer (800 x 370) mindestens so gut
+  // wie Omega, ohne dass ein Wert seine Kachel verlaesst.
+  stAdd('Cockpit v1.3.51: Ansicht ACC - Regenradar sichtbar und gezeichnet, alle Kacheln sichtbar, passt auf 800x370', () => {
     const sel = $('setting-cockpit');
     const dash = $('race-dash');
     if (!sel || !dash) return { ok: false, mass: 'Waehler oder Cockpit fehlt' };
     const f = [], teile = [];
     const opt = [...sel.options].find(o => o.value === 'acc');
     if (!opt) return { ok: false, mass: 'Option acc fehlt' };
-    if (!/WIP/.test(opt.textContent)) f.push('Option ohne WIP-Etikett');
-    if (String(wxRadarDraw).indexOf('cockpitOhneRadar') < 0) f.push('wxRadarDraw fragt die Ansicht nicht ab');
+    // v1.3.58: kein Sonderweg mehr - das Radar fragt nach keiner Ansicht.
+    if (typeof cockpitOhneRadar !== 'undefined') f.push('Radar-Merker cockpitOhneRadar gibt es noch');
     // Der Schalter "Regenradar" bleibt, wie er ist.
     if (String(wxRadarDraw).indexOf('!wxRadarAn()') < 0) f.push('Schalter Regenradar wirkt nicht mehr');
     const merk = sel.value;
@@ -2535,12 +2538,10 @@
     try {
       setze('acc');
       if (document.body.getAttribute('data-cockpit') !== 'acc') f.push('Attribut nicht gesetzt');
-      if (cockpitOhneRadar !== true) f.push('Radar-Merker nicht gesetzt');
-      const cv = $('race-wx-radar');
-      if (!cv || getComputedStyle(cv).display !== 'none') f.push('Radar nicht ausgeblendet');
-      setze('omega');
-      if (cockpitOhneRadar !== false) f.push('Radar-Merker bleibt nach dem Zurueckschalten');
-      setze('acc');
+      // Sichtbar, solange der Schalter "Regenradar" an ist - wie in jeder Ansicht.
+      const cvSicht = $('race-wx-radar');
+      if (!cvSicht) f.push('Radar fehlt');
+      else if (wxRadarAn() && getComputedStyle(cvSicht).display === 'none') f.push('Radar in ACC ausgeblendet');
 
       // Ab hier braucht es ein Fenster: ohne Breite rechnen die Medienabfragen falsch.
       if (!(window.innerWidth > 0) || !(window.innerHeight > 0) || !OMEGA_TEST.cockpitPassung) {
@@ -2565,27 +2566,20 @@
         });
         if (fehlt.length) f.push('nicht sichtbar: ' + fehlt.join(', '));
 
-        // NICHT GEZEICHNET, mit Gegenprobe. Die Leinwand wird dafuer kurz sichtbar gemacht -
-        // sonst stiege wxRadarDraw() schon an der Breite 0 aus, und der Test bewiese nichts.
-        // Gemessen wird an der Puffergroesse: die passt die Routine vor dem Zeichnen an.
+        // GEZEICHNET, wie in der Vorgabe. Gemessen an der Puffergroesse: die passt die
+        // Routine vor dem Zeichnen an die Kachel an - bleibt sie bei 7 x 5, hat sie nichts
+        // gezeichnet.
         const cv = $('race-wx-radar');
         if (cv && !document.hidden && wxRadarAn()) {
           const bw = cv.width, bh = cv.height;
-          cv.style.display = 'block';
           try {
             cv.width = 7; cv.height = 5;
             wxRadarDraw();
-            if (cv.width !== 7 || cv.height !== 5) f.push('Radar wurde in ACC gezeichnet');
-            setze('omega');
-            cv.width = 7; cv.height = 5;
-            wxRadarDraw();
-            const gegen = cv.width !== 7;
-            if (!gegen) f.push('Gegenprobe: Radar zeichnet auch in der Vorgabe nicht');
-            teile.push('Radar ACC ungezeichnet, Vorgabe ' + (gegen ? 'gezeichnet' : 'NICHT gezeichnet'));
+            const gemalt = cv.width !== 7 && cv.width === cv.clientWidth;
+            if (!gemalt) f.push('Radar wird in ACC nicht gezeichnet');
+            teile.push('Radar in ACC ' + (gemalt ? 'gezeichnet (' + cv.width + 'x' + cv.height + ')' : 'NICHT gezeichnet'));
           } finally {
-            cv.style.display = '';
             cv.width = bw; cv.height = bh;
-            setze('acc');
           }
         } else {
           teile.push('Zeichnen nicht pruefbar (Radar aus oder Seite verborgen)');
@@ -2602,7 +2596,7 @@
         else {
           teile.push('800x370: Faktor ACC ' + acc.faktor + ', Omega ' + vorgabe.faktor);
           if (!acc.passt && !acc.amBoden) f.push('ACC steht ' + acc.ueberstand + ' px ueber');
-          if (acc.faktor < vorgabe.faktor - 0.03) f.push('ACC kleiner als die Vorgabe');
+          if (acc.faktor < vorgabe.faktor - 0.03) f.push('ACC kleiner als Omega');
           // Kein Wert verlaesst seine Kachel: die Kacheln schneiden nicht ab, ein
           // Ueberlauf waere also sichtbar ueber der Nachbarkachel.
           const ueber = [];
@@ -2627,8 +2621,109 @@
       if (OMEGA_TEST.cockpitPassung) OMEGA_TEST.cockpitPassung();
     }
     return { ok: f.length === 0,
-             mass: 'Option "' + opt.textContent + '", Radar aus und ungezeichnet | ' + teile.join(' | ')
+             mass: 'Option "' + opt.textContent + '" | ' + teile.join(' | ')
                    + (f.length ? ' || ' + f.join('; ') : '') };
+  });
+
+  // ---- Cockpit v1.3.58: ACC ist die Vorgabe, Balken dick und mittig ----
+  //
+  // BESTELLT: "Mache die drei Balken von unten (Tank, Schaden, Batterie) mit groesserer Hoehe,
+  // damit sie leichter zu erkennen sind. Sie sollten sich ausserdem in der Mitte der Kachel
+  // befinden. [...] Mach diese Ansicht zum Standard."
+  //
+  // Drei Aussagen:
+  //   1. ACC ist die Vorgabe im Waehler (selected, "Vorgabe" im Text, kein WIP mehr), Omega
+  //      traegt "Vorgabe" nicht mehr.
+  //   2. Die Umstellung fuer Bestandsnutzer greift GENAU EINMAL: ein gespeichertes 'omega' wird
+  //      zu 'acc', eine spaetere eigene Wahl von Omega bleibt, jede andere Ansicht bleibt.
+  //      Gefahren an einer Attrappe, nicht an der echten Ablage.
+  //   3. Tank, Zustand und Akku: der Balken ist mindestens 12 px dick (v1.3.51: 5 bis 7 px),
+  //      liegt waagerecht und mit seiner Mitte hoechstens 10 % der Kachelhoehe neben der
+  //      Kachelmitte - im Vollbild auf 800 x 370 und auf 1280 x 800.
+  stAdd('Cockpit v1.3.58: ACC ist Vorgabe (einmalige Umstellung), Tank/Zustand/Akku-Balken dick und mittig', () => {
+    const sel = $('setting-cockpit');
+    const dash = $('race-dash');
+    if (!sel || !dash) return { ok: false, mass: 'Waehler oder Cockpit fehlt' };
+    const f = [], teile = [];
+
+    // 1. Vorgabe im Waehler.
+    const acc = [...sel.options].find(o => o.value === 'acc');
+    const omega = [...sel.options].find(o => o.value === 'omega');
+    if (!acc || !acc.defaultSelected) f.push('ACC ist nicht selected');
+    if (acc && !/Vorgabe/.test(acc.textContent)) f.push('ACC ohne "Vorgabe"');
+    if (acc && /WIP/.test(acc.textContent)) f.push('ACC traegt noch WIP');
+    if (omega && /Vorgabe/.test(omega.textContent)) f.push('Omega heisst noch Vorgabe');
+    if ([...sel.options].filter(o => o.defaultSelected).length !== 1) f.push('nicht genau eine Vorgabe');
+
+    // 2. Die einmalige Umstellung, an einer Attrappe.
+    if (typeof cockpitVorgabeUmstellen !== 'function') {
+      f.push('cockpitVorgabeUmstellen fehlt');
+    } else {
+      const attrappe = (anfang) => {
+        const m = new Map(Object.entries(anfang));
+        return { m, getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)) };
+      };
+      const alt = attrappe({ [COCKPIT_STORE]: 'omega' });
+      const r1 = cockpitVorgabeUmstellen(alt);
+      if (!r1 || alt.getItem(COCKPIT_STORE) !== 'acc') f.push('gespeichertes omega nicht umgestellt');
+      alt.setItem(COCKPIT_STORE, 'omega');          // danach bewusst wieder Omega gewaehlt
+      const r2 = cockpitVorgabeUmstellen(alt);
+      if (r2 || alt.getItem(COCKPIT_STORE) !== 'omega') f.push('Umstellung greift ein zweites Mal');
+      const retro = attrappe({ [COCKPIT_STORE]: 'retro' });
+      if (cockpitVorgabeUmstellen(retro) || retro.getItem(COCKPIT_STORE) !== 'retro') f.push('eigene Wahl retro ueberschrieben');
+      const neu = attrappe({});
+      if (cockpitVorgabeUmstellen(neu) || neu.getItem(COCKPIT_STORE) !== null) f.push('neuer Nutzer: Ablage beschrieben');
+      if (!neu.getItem(COCKPIT_ACC_VORGABE)) f.push('Merker nicht gesetzt');
+      teile.push('Umstellung omega->acc einmal, danach Omega behalten, retro unberuehrt');
+      try {
+        if (localStorage.getItem(COCKPIT_ACC_VORGABE) !== '1') f.push('Merker in der echten Ablage fehlt');
+      } catch (e) { /* privater Modus */ }
+    }
+
+    // 3. Die Balken.
+    if (!(window.innerWidth > 0) || !(window.innerHeight > 0) || !OMEGA_TEST.cockpitPassung) {
+      teile.push('Balken nicht pruefbar (kein Fenster)');
+      return { ok: f.length === 0, mass: teile.join(' | ') + (f.length ? ' || ' + f.join('; ') : '') };
+    }
+    const merk = sel.value;
+    const warFs = document.body.classList.contains('race-fs');
+    const warTurn = document.body.classList.contains('race-turn');
+    const setze = (v) => { sel.value = v; sel.dispatchEvent(new Event('change', { bubbles: true })); };
+    try {
+      setze('acc');
+      const btn = document.querySelector('[data-tab="race"]');
+      if (btn) btn.click();
+      document.body.classList.add('race-fs');
+      document.body.classList.remove('race-turn');
+      for (const [b, h] of [[800, 370], [1280, 800]]) {
+        OMEGA_TEST.cockpitPassung(h, b);
+        const zeile = [];
+        for (const id of ['race-fuel-bar', 'race-dmg-bar', 'race-batt-bar']) {
+          const balken = $(id) && $(id).parentElement;
+          const kachel = balken && balken.parentElement;
+          if (!balken || !kachel) { f.push(id + ' fehlt'); continue; }
+          const dicke = balken.offsetWidth;            // vor der Drehung: die Breite ist die Dicke
+          const br = balken.getBoundingClientRect(), kr = kachel.getBoundingClientRect();
+          if (!(kr.height > 0)) { f.push(b + 'x' + h + ' ' + id + ': Kachel ohne Hoehe'); continue; }
+          const waagerecht = br.width > br.height * 2;
+          const versatz = Math.abs((br.top + br.bottom) / 2 - (kr.top + kr.bottom) / 2) / kr.height;
+          const innen = br.left >= kr.left - 1 && br.right <= kr.right + 1;
+          zeile.push(id.replace('race-', '').replace('-bar', '') + ' ' + dicke + 'px/'
+                     + Math.round(versatz * 100) + '%');
+          if (dicke < 12) f.push(b + 'x' + h + ' ' + id + ': nur ' + dicke + ' px dick');
+          if (!waagerecht) f.push(b + 'x' + h + ' ' + id + ': nicht waagerecht');
+          if (versatz >= 0.1) f.push(b + 'x' + h + ' ' + id + ': ' + Math.round(versatz * 100) + ' % neben der Mitte');
+          if (!innen) f.push(b + 'x' + h + ' ' + id + ': ragt aus der Kachel');
+        }
+        teile.push(b + 'x' + h + ': ' + zeile.join(', '));
+      }
+    } finally {
+      document.body.classList.toggle('race-fs', warFs);
+      document.body.classList.toggle('race-turn', warTurn);
+      setze(merk);
+      OMEGA_TEST.cockpitPassung();
+    }
+    return { ok: f.length === 0, mass: teile.join(' | ') + (f.length ? ' || ' + f.join('; ') : '') };
   });
 
 
