@@ -373,6 +373,10 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "Fahrer am Rand": "Driver at the edge",
+    "Eiche hell": "Light oak",
+    "Laminat grau": "Grey laminate",
+    "Fischgrät": "Herringbone",
     "Suche nach Updates": "Checking for updates",
     "Lädt": "Loading",
     "Motorklänge": "Engine sounds",
@@ -4067,6 +4071,10 @@
   // nachzieht. Bewusst KEINE Ansagen (Rundenzeit, Tank, Schaden): dafuer gibt es noch keine
   // spanischen Aufnahmen, und die Sprachausgabe nutzt die englische als Platzhalter.
   const I18N_ES = {
+    "Fahrer am Rand": "Piloto en el borde",
+    "Eiche hell": "Roble claro",
+    "Laminat grau": "Laminado gris",
+    "Fischgrät": "Espiga",
     "Suche nach Updates": "Buscando actualizaciones",
     "Lädt": "Cargando",
     "Motorklänge": "Sonidos de motor",
