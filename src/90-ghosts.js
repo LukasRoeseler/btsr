@@ -12816,12 +12816,18 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (konsoleMenue() && !imEditorVollbild) {
         if (konsoleWdh('up', dUp)) menuNavMove('up');
         if (konsoleWdh('down', dDown)) menuNavMove('down');
-        if (menuNavIstRaum()) {
-          if (konsoleWdh('left', dLeft)) menuNavRaum('left');
-          if (konsoleWdh('right', dRight)) menuNavRaum('right');
-        } else if (dLeft) menuNavSeitwaerts('left', true);
-        else if (dRight) menuNavSeitwaerts('right', true);
-        else menuNavAdjustPad('left', false);
+        // v1.3.31 Latenz: menuNavIstRaum() liest alle Zeilen samt Layout - nur, wenn links/rechts
+        // wirklich gedrueckt ist, nicht in jedem Takt.
+        if (dLeft || dRight) {
+          if (menuNavIstRaum()) {
+            if (konsoleWdh('left', dLeft)) menuNavRaum('left');
+            if (konsoleWdh('right', dRight)) menuNavRaum('right');
+          } else if (dLeft) menuNavSeitwaerts('left', true);
+          else menuNavSeitwaerts('right', true);
+        } else {
+          konsoleWdh('left', false); konsoleWdh('right', false);
+          menuNavAdjustPad('left', false);
+        }
         prevDpad.left = dLeft; prevDpad.right = dRight;
       } else {
         if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitScreenPad('up')
