@@ -46,12 +46,26 @@
   // laeuft. Der Platz #home-lade liegt im Startschirm, auf anderen Seiten ist er also von selbst
   // weg. Die Drehung ist CSS (transform), kostet den Hauptfaden also nichts.
   const ladeGruende = new Set();
+  // v1.3.31 BESTELLT: "WIP-Label bei Soundladen weg und klein daneben schreiben, was gerade
+  // geladen wird." Gezeigt wird der aelteste noch laufende Grund mit Namen; 'klang' ist die
+  // Klammer um alle Klanggruppen und steht nur, wenn keine Gruppe mehr laeuft.
+  const LADE_NAMEN = { update: 'Suche nach Updates', 'klang-motor': 'Motorklänge', 'klang-effekte': 'Effekte',
+    'klang-stimmen': 'Stimmen', 'klang-ansagen': 'Ansagen', 'klang-zahlen': 'Zahlen', 'klang-umgebung': 'Umgebung',
+    klang: 'Klänge' };
+  function ladeAnzeigeText() {
+    const namen = [...ladeGruende].filter((g) => LADE_NAMEN[g] && g !== 'klang');
+    if (!namen.length) return ladeGruende.has('klang') ? t('Lädt') + ': ' + t(LADE_NAMEN.klang) : '';
+    const erst = namen[0] === 'update' ? t(LADE_NAMEN.update) : t('Lädt') + ': ' + t(LADE_NAMEN[namen[0]]);
+    return erst + (namen.length > 1 ? ' (+' + (namen.length - 1) + ')' : '');
+  }
   function ladeAnzeigeSetzen(grund, an) {
     if (an) ladeGruende.add(grund); else ladeGruende.delete(grund);
     const slot = document.getElementById('home-lade-dreh');
     if (slot) ladeAnimationSetzen(slot, ladeGruende.size > 0);
     const box = document.getElementById('home-lade');
     if (box) box.hidden = ladeGruende.size === 0;
+    const txt = document.getElementById('home-lade-text');
+    if (txt) txt.textContent = ladeGruende.size ? ladeAnzeigeText() : '';
   }
   // Fuer ein Promise: an, bis es erfuellt oder gescheitert ist.
   function ladeAnzeigeMit(grund, laeuft) {

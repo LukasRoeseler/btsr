@@ -373,6 +373,14 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "Suche nach Updates": "Checking for updates",
+    "Lädt": "Loading",
+    "Motorklänge": "Engine sounds",
+    "Effekte": "Effects",
+    "Stimmen": "Voices",
+    "Zahlen": "Numbers",
+    "Umgebung": "Ambience",
+    "Klänge": "Sounds",
     "Testbetrieb": "Test mode",
     "OmegaLab ist im Moment nur zu Testzwecken eingebaut. Es werden keine Daten gesendet oder gesammelt. Später soll daraus ein Forschungsportal mit echten Verhaltensdaten werden.": "OmegaLab is currently built in for testing only. No data is sent or collected. Later it is meant to become a research portal with real behavioural data.",
     "Ausprobieren": "Try it",
@@ -4021,6 +4029,15 @@
   // nachzieht. Bewusst KEINE Ansagen (Rundenzeit, Tank, Schaden): dafuer gibt es noch keine
   // spanischen Aufnahmen, und die Sprachausgabe nutzt die englische als Platzhalter.
   const I18N_ES = {
+    "Suche nach Updates": "Buscando actualizaciones",
+    "Lädt": "Cargando",
+    "Motorklänge": "Sonidos de motor",
+    "Effekte": "Efectos",
+    "Stimmen": "Voces",
+    "Ansagen": "Anuncios",
+    "Zahlen": "Números",
+    "Umgebung": "Ambiente",
+    "Klänge": "Sonidos",
     "Testbetrieb": "Modo de prueba",
     "OmegaLab ist im Moment nur zu Testzwecken eingebaut. Es werden keine Daten gesendet oder gesammelt. Später soll daraus ein Forschungsportal mit echten Verhaltensdaten werden.": "Por ahora OmegaLab está integrado solo para pruebas. No se envía ni se recoge ningún dato. Más adelante será un portal de investigación con datos de comportamiento reales.",
     "Ausprobieren": "Probar",

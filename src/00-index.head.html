@@ -3934,7 +3934,7 @@
     bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 30; display: flex; align-items: center; gap: 6px;
     pointer-events: none; }
   .home-lade .lade-dreh { width: 26px; height: 26px; }
-  .home-lade .wip-tag { font-size: 7.5px; padding: 0 3px; opacity: .8; }
+  .home-lade-text { font-size: 10px; opacity: .75; white-space: nowrap; }
   .lade-ebene { position: absolute; inset: 0; display: grid; place-items: center; }
   .lade-ebene svg, .lade-ebene .tp-karte { width: 100%; height: 100%; max-width: none; max-height: none; }
   .lade-a { animation: ladeDreh 1s linear infinite; }
@@ -5031,7 +5031,7 @@
       <!-- v1.3.5: kleine Ladeanimation unten links, solange Updates gesucht oder Klaenge geladen
            werden (ladeAnzeigeSetzen in 59-lade.js). -->
       <div class="home-lade" id="home-lade" role="status" aria-label="Lädt …" hidden>
-        <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="wip-tag">WIP</span>
+        <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
         <span class="foot-ver">v<span id="app-version">1.3.30</span></span>

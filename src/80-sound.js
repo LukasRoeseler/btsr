@@ -35,10 +35,13 @@
   // Vorgang fuer die Ladeanimation auf dem Startschirm (ladeAnzeigeMit, 59-lade.js) - sie
   // laeuft, bis alles da oder gescheitert ist. Reihenfolge wie bisher.
   function klangDateienLaden() {
-    const laeufe = [loadEngineSamples(), loadFxSamples(), loadVoiceSamples(), rennstandClipsLaden(lang)];
-    if (!('speechSynthesis' in window)) laeufe.push(zahlenClipsLaden(lang));
-    laeufe.push(loadAmbience());
-    if (typeof ladeAnzeigeMit === 'function') ladeAnzeigeMit('klang', Promise.allSettled(laeufe));
+    // v1.3.31: je Gruppe ein eigener Grund, damit die Anzeige sagt, was gerade laedt.
+    const mit = (grund, p) => (typeof ladeAnzeigeMit === 'function' ? ladeAnzeigeMit(grund, p) : p);
+    const laeufe = [mit('klang-motor', loadEngineSamples()), mit('klang-effekte', loadFxSamples()),
+                    mit('klang-stimmen', loadVoiceSamples()), mit('klang-ansagen', rennstandClipsLaden(lang))];
+    if (!('speechSynthesis' in window)) laeufe.push(mit('klang-zahlen', zahlenClipsLaden(lang)));
+    laeufe.push(mit('klang-umgebung', loadAmbience()));
+    mit('klang', Promise.allSettled(laeufe));
   }
   function unlockAudioOnFirstGesture() {
     if (soundEnabled) {

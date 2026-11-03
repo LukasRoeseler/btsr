@@ -14093,9 +14093,14 @@
       const quelle = [...document.scripts].map((s) => s.textContent).join('\n');
       if (quelle.indexOf("ladeAnzeigeSetzen('update', true)") < 0 || quelle.indexOf("ladeAnzeigeSetzen('update', false)") < 0) f.push('Update-Pruefung nicht angeschlossen');
       if (String(klangDateienLaden).indexOf('ladeAnzeigeMit') < 0 || String(unlockAudioOnFirstGesture).indexOf('klangDateienLaden') < 0) f.push('Klangdateien nicht angeschlossen');
-      if (!box.querySelector('.wip-tag')) f.push('WIP fehlt');
+      // v1.3.31: kein WIP mehr, dafuer klein daneben, was laedt.
+      if (box.querySelector('.wip-tag')) f.push('WIP noch da');
+      ladeAnzeigeSetzen('klang-motor', true);
+      if (!/Motorkl/.test(($('home-lade-text') || {}).textContent || '')) f.push('Text: ' + (($('home-lade-text') || {}).textContent || 'leer'));
+      ladeAnzeigeSetzen('klang-motor', false);
+      if (String(klangDateienLaden).indexOf("'klang-motor'") < 0) f.push('Klanggruppen nicht einzeln gemeldet');
     } finally {
-      ladeAnzeigeSetzen('selbsttest', false); ladeAnzeigeSetzen('selbsttest2', false);
+      ladeAnzeigeSetzen('selbsttest', false); ladeAnzeigeSetzen('selbsttest2', false); ladeAnzeigeSetzen('klang-motor', false);
       if (merk) showTab(merk);
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'sichtbar beim Laden, ' + mass + ', Update und Klaenge angeschlossen' };
