@@ -4901,16 +4901,17 @@
   @media (prefers-reduced-motion: reduce) {
     #ampel-overlay { transition: none; }
   }
-  /* ======================= COCKPIT-ANSICHT "ACC" (v1.3.51, WIP) =======================
+  /* ======================= COCKPIT-ANSICHT "ACC" (v1.3.51, Vorgabe seit v1.3.58) =========
      BESTELLT: "ein alternativer Haupt-Cockpit-Screen fuer das nicht-virtuelle Fahren, mit
      allen Elementen des aktuellen ausser Regenradar, im Stil von ACC [Assetto Corsa
      Competizione], mit der blauen Akzentfarbe der App, waehlbar im Menue der Ansichten."
+     Abgenommen in v1.3.58: "Ich liebe den Cockpit View [...] Ersetze die Wetterkachel mit
+     der Sonne wieder durch den Regenradar. Mach diese Ansicht zum Standard."
 
      ANDERS ALS DIE UEBRIGEN ANSICHTEN aendert diese auch die ANORDNUNG und nicht nur die
      acht Groessen aus :root - ACC erkennt man an der Form der Felder, nicht an der Farbe.
      Trotzdem NUR CSS ueber dieselben Elemente: kein zusaetzlicher Knoten, kein zweiter
-     Malcode, der Cockpit-Takt schreibt dieselben ids wie immer. Die einzige JS-Stelle ist
-     der Merker cockpitOhneRadar (50-drive.js), damit das Radar auch nicht GEZEICHNET wird.
+     Malcode, der Cockpit-Takt schreibt dieselben ids wie immer.
 
      Die Regeln stehen absichtlich HIER am Ende und mit #race-dash: sie muessen die spaeten
      Bestellungen (Zeiten doppelt so gross, rechteckige Lichter) und die Vollbild-Regeln
@@ -4948,6 +4949,11 @@
     --acc-feld-klick: rgba(23, 27, 35, .94);
     --acc-feld-hover: rgba(33, 39, 50, .96);
     --acc-kante: rgba(255, 255, 255, .13);
+    /* Das Regenradar auf den Grund der Felder: fast schwarz statt blaeulich. Die Wolken
+       bleiben weiss, der Regen wird eine Spur heller, weil er sonst im Grund verschwindet
+       - dieselbe Abwaegung wie bei "GT3". */
+    --wx-grund: #07090d;
+    --wx-regen: 120, 186, 214;
   }
   body[data-cockpit="acc"] #race-dash.gt3 {
     grid-template-columns: minmax(0, 1fr) minmax(0, .92fr) minmax(0, 1.22fr); }
@@ -5033,38 +5039,59 @@
     font-size: clamp(11px, 1.55vw, 16px); max-height: 5.5em; margin-top: clamp(3px, .6vw, 6px); }
   body[data-cockpit="acc"] #race-dash .gt3-laps li > span:first-child { color: var(--gt3-lbl); }
 
-  /* UNTEN: dieselben acht Kacheln, das Radarfeld ist nur noch die Wetteranzeige. */
+  /* UNTEN: dieselben acht Kacheln, das Regenradar wieder breit wie in den anderen
+     Ansichten (v1.3.58 BESTELLT: "Ersetze die Wetterkachel mit der Sonne wieder durch den
+     Regenradar"). */
   body[data-cockpit="acc"] #race-dash.gt3 > .gt3-strip {
-    grid-template-columns: .85fr .85fr 1.2fr .85fr .7fr .7fr 1fr 1fr; gap: clamp(3px, .6vw, 6px); }
+    grid-template-columns: .8fr .8fr 1.1fr .8fr .65fr 2.2fr .95fr .95fr;
+    gap: clamp(3px, .6vw, 6px); }
+  /* Schmal zweireihig wie die Vorgabe: oben fuenf Kacheln, unten das Radar ueber drei
+     Spalten (die span-Regel der Grundansicht gilt weiter), Boxenwahl und G-Plot. */
   @media (max-width: 560px) {
     body[data-cockpit="acc"]:not(.race-turn) #race-dash.gt3 > .gt3-strip {
-      grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    body[data-cockpit="acc"]:not(.race-turn) #race-dash .gt3-strip > .gt3-wx { grid-column: auto; }
+      grid-template-columns: .8fr .8fr 1fr .8fr .8fr; }
   }
-  /* KEIN REGENRADAR. Ausgeblendet hier, nicht gezeichnet ueber cockpitOhneRadar. Die
-     Kachel bleibt: sie zeigt das Wetter und schaltet es beim Antippen. */
-  body[data-cockpit="acc"] #race-dash .wx-radar { display: none; }
-  body[data-cockpit="acc"] #race-dash .wx-ico {
-    position: static; display: flex; align-items: center; gap: 3px; line-height: 0; }
-  body[data-cockpit="acc"] #race-dash .wx-ico .gt3-ico { width: clamp(22px, 4vw, 40px); height: auto; }
+  /* Das Radar zeichnet wie ueberall (der Schalter "Regenradar" gilt), auf dem dunklen Grund
+     aus --wx-grund. Die blaue Kopflinie liegt UEBER der Leinwand - als Hintergrundschicht
+     wie bei den anderen Feldern waere sie unter ihr verschwunden. Antippen schaltet weiter
+     das Wetter: die Kachel ist dieselbe. */
+  body[data-cockpit="acc"] #race-wx-box::before {
+    content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px;
+    background: var(--acc-blau); z-index: 3; pointer-events: none; }
 
-  /* TANK, ZUSTAND, AKKU: Symbol und Zahl in einer Zeile, darunter ein WAAGERECHTER Balken.
-     Der Takt setzt die Fuellung als height, weil der Balken sonst senkrecht steht - also
-     wird hier der ganze Balken um 90 Grad gelegt, statt am Malcode etwas zu aendern. Seine
-     Laenge ist die Kachelbreite (cqw), darum ist die Kachel ein Container. Gefuellt wird
-     damit von links nach rechts, voll heisst ganz rechts. */
+  /* TANK, ZUSTAND, AKKU: oben Symbol und Zahl, in der MITTE der Kachel ein dicker
+     WAAGERECHTER Balken (v1.3.58 BESTELLT: "mit groesserer Hoehe, damit sie leichter zu
+     erkennen sind. Sie sollten sich ausserdem in der Mitte der Kachel befinden.").
+
+     Der Takt setzt die Fuellung als height, weil der Balken in den anderen Ansichten
+     senkrecht steht - also wird hier der ganze Balken um 90 Grad gelegt, statt am Malcode
+     etwas zu aendern. Gefuellt wird damit von links nach rechts.
+
+     SEINE LAENGE IST DIE KACHELBREITE, und die kommt ohne Container-Einheiten aus: ein
+     Innenabstand in Prozent rechnet immer gegen die BREITE des umgebenden Blocks, auch der
+     obere. Der Balken hat also die Hoehe 0 und einen padding-top von "Kachelbreite minus
+     Raender" - und weil die Fuellung absolut darin steht, rechnet ihr height in Prozent gegen
+     genau diese Hoehe. Das laeuft auch auf alten WebViews ohne cqw (v1.3.51 brauchte sie).
+
+     Senkrecht mittig: der Drehpunkt ist die untere linke Ecke, und der gedrehte Balken liegt
+     von dort um seine Dicke NACH UNTEN. Die Unterkante steht deshalb eine halbe Dicke ueber
+     der Kachelmitte. */
   body[data-cockpit="acc"] #race-dash > .gt3-strip > .gt3-box:has(> .gt3-bar-v) {
-    position: relative; container-type: inline-size;
+    position: relative;
     display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center;
-    align-content: start; column-gap: clamp(3px, .6vw, 6px);
-    padding-bottom: clamp(16px, 2.6vw, 22px); }
+    align-content: start; column-gap: clamp(3px, .6vw, 6px); }
   body[data-cockpit="acc"] #race-dash > .gt3-strip > .gt3-box > .gt3-val.sm {
     text-align: right; white-space: nowrap; font-size: clamp(13px, 2.1vw, 22px); }
   body[data-cockpit="acc"] #race-dash > .gt3-strip > .gt3-box > .gt3-bar-v {
-    position: absolute; margin: 0; width: clamp(5px, .8vw, 7px);
-    left: clamp(4px, .8vw, 8px); bottom: calc(clamp(5px, .9vw, 8px) + clamp(5px, .8vw, 7px));
-    height: 60px; height: calc(100cqw);
-    transform-origin: 0 100%; transform: rotate(90deg); background: #1c212b; }
+    --acc-dicke: clamp(12px, 2vw, 20px);
+    --acc-rand: clamp(4px, .8vw, 8px);
+    position: absolute; display: block; margin: 0;
+    left: var(--acc-rand); bottom: calc(50% + var(--acc-dicke) / 2);
+    width: var(--acc-dicke); height: 0; padding-top: calc(100% - 2 * var(--acc-rand));
+    transform-origin: 0 100%; transform: rotate(90deg); background: #1c212b;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .07); }
+  body[data-cockpit="acc"] #race-dash > .gt3-strip > .gt3-box > .gt3-bar-v > i {
+    position: absolute; left: 0; right: 0; bottom: 0; width: auto; }
   /* Reifen: dieselben vier Felder, kantiger und mit etwas mehr Flaeche. */
   body[data-cockpit="acc"] #race-tyre-box .gt3-t4 { border-radius: 2px; }
   /* Gedeckelt: die Reifen haben ein festes Seitenverhaeltnis, und in der breiteren Spalte
@@ -5078,6 +5105,7 @@
   body.race-turn[data-cockpit="acc"] #race-dash .gt3-gearnum { font-size: clamp(54px, 12.5vh, 124px); }
   body.race-turn[data-cockpit="acc"] #race-dash .gt3-gear .gt3-val.big { font-size: clamp(24px, 4.6vh, 48px); }
   body.race-turn[data-cockpit="acc"] #race-shift > span { height: clamp(12px, 2.6vh, 24px); }
+  body.race-turn[data-cockpit="acc"] #race-dash > .gt3-strip > .gt3-box > .gt3-bar-v { --acc-dicke: clamp(12px, 2vh, 20px); }
   body[data-cockpit="acc"] #race-dash > .gt3-strip > #race-tyre-box > .gt3-val.sm {
     text-align: center; white-space: normal; font-size: clamp(10.5px, 1.3vw, 14px); }
   body[data-cockpit="acc"] #race-dash .gt3-foot { box-shadow: inset 3px 0 0 var(--acc-blau); }
@@ -10246,30 +10274,30 @@
         </div></div>
       <div class="opt-row"><div class="opt-label">Cockpit-Ansicht<small>Nur das Aussehen des
           Cockpit-Schirms &ndash; Anzeigen, Tasten und Physik bleiben, wie sie sind.
-          &bdquo;GT3&ldquo; ist die Vorgabe: Carbon und wei&szlig;e Schrift auf
-          Schwarz. &bdquo;Oldschool&ldquo; ist Bernstein auf Schwarz mit sichtbaren
-          Pixelzeilen, breiter Kunststoffblende und Messingschrauben, wie die
+          &bdquo;ACC&ldquo; ist die Vorgabe und an das Rennspiel Assetto Corsa Competizione
+          angelehnt: fast schwarze, kantige Felder mit schmalen blauen Akzentlinien,
+          segmentierte Drehzahlleiste, der Gang gro&szlig; in der Mitte und die Zeiten wie im
+          Timing-Fenster des Spiels. &bdquo;Omega&ldquo; ist Carbon und wei&szlig;e Schrift auf
+          Schwarz. &bdquo;GT3&ldquo; sind schwarze Kacheln mit wei&szlig;er Schrift, auf
+          gr&ouml;&szlig;ten Kontrast getrimmt. &bdquo;Oldschool&ldquo; ist Bernstein auf Schwarz
+          mit sichtbaren Pixelzeilen, breiter Kunststoffblende und Messingschrauben, wie die
           Vakuumfluoreszenz-Armaturen der 1980er. &bdquo;Modern&ldquo; ist ein wei&szlig;er
           Schirm mit schwarzen Bedienfl&auml;chen und schmaler Alublende, wie die ersten
           Farb-TFT der 2000er &ndash; Regenradar und G-Plot behalten dort ihren dunklen
           Einsatz, weil sie hell auf dunkel zeichnen und auf Wei&szlig; unsichtbar w&auml;ren.
           &bdquo;Klassiker&ldquo; ist Walnussfurnier mit Chromschrauben und cremefarbener
           Schrift auf Schwarzbraun, wie das Armaturenbrett eines Gran Turismo der Sechziger.
-          Die Bedeutungsfarben bleiben in allen vier gleich: der Tankbalken ist gr&uuml;n und
-          der Schaden rot, auch in der Retro-Ansicht &ndash; eine Ansicht darf &auml;ndern,
+          Die Bedeutungsfarben bleiben in allen Ansichten gleich: der Tankbalken ist gr&uuml;n
+          und der Schaden rot, auch in der Retro-Ansicht &ndash; eine Ansicht darf &auml;ndern,
           wie es aussieht, nicht was eine Farbe sagt. Die Voreinstellungen fassen die Ansicht
-          nicht an. <span>&bdquo;ACC&ldquo; (WIP) ist an das Rennspiel Assetto Corsa
-          Competizione angelehnt: fast schwarze, kantige Felder mit schmalen blauen
-          Akzentlinien, segmentierte Drehzahlleiste, der Gang gro&szlig; in der Mitte und die
-          Zeiten wie im Timing-Fenster des Spiels; das Regenradar entf&auml;llt dort und wird
-          auch nicht gezeichnet.</span></small></div>
+          nicht an.</small></div>
         <select id="setting-cockpit" data-preset-skip>
-          <option value="omega" selected>Omega (Vorgabe)</option>
+          <option value="acc" selected>ACC (Vorgabe)</option>
+          <option value="omega">Omega</option>
           <option value="gt3">GT3: schwarze Kacheln (WIP)</option>
           <option value="retro">Oldschool, 1980er</option>
           <option value="modern">Modern, 2000er (hell)</option>
           <option value="klassiker">Klassiker: Walnuss und Chrom</option>
-          <option value="acc">ACC: Rennspiel-Stil (WIP)</option>
         </select></div>
       <div class="opt-row"><div class="opt-label">Regenradar<small>Das Regenradar im Cockpit. Aus: die Kachel
           bleibt leer und das Radar wird gar nicht gezeichnet &ndash; das spart Rechenzeit auf schwachen Handys.</small></div>
@@ -14554,8 +14582,7 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
-    "ACC: Rennspiel-Stil (WIP)": "ACC: racing game style (WIP)",
-    "„ACC“ (WIP) ist an das Rennspiel Assetto Corsa Competizione angelehnt: fast schwarze, kantige Felder mit schmalen blauen Akzentlinien, segmentierte Drehzahlleiste, der Gang groß in der Mitte und die Zeiten wie im Timing-Fenster des Spiels; das Regenradar entfällt dort und wird auch nicht gezeichnet.": "“ACC” (WIP) is modelled on the racing game Assetto Corsa Competizione: near-black, square panels with thin blue accent lines, a segmented rev bar, the gear large in the middle and the times laid out like the game's timing window; the rain radar is left out there and is not drawn at all.",
+    "ACC (Vorgabe)": "ACC (default)",
     "Fahrer am Rand": "Driver at the edge",
     "Eiche hell": "Light oak",
     "Laminat grau": "Grey laminate",
@@ -18013,7 +18040,7 @@
     "GT3 (Vorgabe)": "GT3 (default)",
     "Oldschool, 1980er": "Oldschool, 1980s",
     "Modern, 2000er": "Modern, 2000s",
-    "Nur das Aussehen des Cockpit-Schirms – Anzeigen, Tasten und Physik bleiben, wie sie sind. „GT3“ ist die Vorgabe: Carbon und weiße Schrift auf Schwarz. „Oldschool“ ist Bernstein auf Schwarz mit sichtbaren Pixelzeilen, breiter Kunststoffblende und Messingschrauben, wie die Vakuumfluoreszenz-Armaturen der 1980er. „Modern“ ist ein weißer Schirm mit schwarzen Bedienflächen und schmaler Alublende, wie die ersten Farb-TFT der 2000er – Regenradar und G-Plot behalten dort ihren dunklen Einsatz, weil sie hell auf dunkel zeichnen und auf Weiß unsichtbar wären. „Klassiker“ ist Walnussfurnier mit Chromschrauben und cremefarbener Schrift auf Schwarzbraun, wie das Armaturenbrett eines Gran Turismo der Sechziger. Die Bedeutungsfarben bleiben in allen vier gleich: der Tankbalken ist grün und der Schaden rot, auch in der Retro-Ansicht – eine Ansicht darf ändern, wie es aussieht, nicht was eine Farbe sagt. Die Voreinstellungen fassen die Ansicht nicht an.": "Only the look of the cockpit screen – readouts, buttons and physics stay as they are. “GT3” is the default: carbon and white type on black. “Oldschool” is amber on black with visible scan lines, a wide plastic bezel and brass screws, like the vacuum-fluorescent instruments of the 1980s. “Modern” is a white screen with black controls and a narrow aluminium bezel, like the first colour TFTs of the 2000s – the rain radar and the g-plot keep their dark inset there, because they draw light on dark and would be invisible on white. “Classic” is walnut veneer with chrome screws and cream type on dark brown, like the fascia of a 1960s grand tourer. The meaning colours stay the same in all four: the fuel bar is green and damage is red, in the retro look as well – a look may change how something appears, not what a colour says. The presets do not touch the look.",
+    "Nur das Aussehen des Cockpit-Schirms – Anzeigen, Tasten und Physik bleiben, wie sie sind. „ACC“ ist die Vorgabe und an das Rennspiel Assetto Corsa Competizione angelehnt: fast schwarze, kantige Felder mit schmalen blauen Akzentlinien, segmentierte Drehzahlleiste, der Gang groß in der Mitte und die Zeiten wie im Timing-Fenster des Spiels. „Omega“ ist Carbon und weiße Schrift auf Schwarz. „GT3“ sind schwarze Kacheln mit weißer Schrift, auf größten Kontrast getrimmt. „Oldschool“ ist Bernstein auf Schwarz mit sichtbaren Pixelzeilen, breiter Kunststoffblende und Messingschrauben, wie die Vakuumfluoreszenz-Armaturen der 1980er. „Modern“ ist ein weißer Schirm mit schwarzen Bedienflächen und schmaler Alublende, wie die ersten Farb-TFT der 2000er – Regenradar und G-Plot behalten dort ihren dunklen Einsatz, weil sie hell auf dunkel zeichnen und auf Weiß unsichtbar wären. „Klassiker“ ist Walnussfurnier mit Chromschrauben und cremefarbener Schrift auf Schwarzbraun, wie das Armaturenbrett eines Gran Turismo der Sechziger. Die Bedeutungsfarben bleiben in allen Ansichten gleich: der Tankbalken ist grün und der Schaden rot, auch in der Retro-Ansicht – eine Ansicht darf ändern, wie es aussieht, nicht was eine Farbe sagt. Die Voreinstellungen fassen die Ansicht nicht an.": "Only the look of the cockpit screen – readouts, buttons and physics stay as they are. “ACC” is the default and is modelled on the racing game Assetto Corsa Competizione: near-black, square panels with thin blue accent lines, a segmented rev bar, the gear large in the middle and the times laid out like the timing window of the game. “Omega” is carbon and white type on black. “GT3” is black tiles with white type, tuned for maximum contrast. “Oldschool” is amber on black with visible scan lines, a wide plastic bezel and brass screws, like the vacuum-fluorescent instruments of the 1980s. “Modern” is a white screen with black controls and a narrow aluminium bezel, like the first colour TFTs of the 2000s – the rain radar and the g-plot keep their dark inset there, because they draw light on dark and would be invisible on white. “Classic” is walnut veneer with chrome screws and cream type on dark brown, like the fascia of a 1960s grand tourer. The meaning colours stay the same in every look: the fuel bar is green and damage is red, in the retro look as well – a look may change how something appears, not what a colour says. The presets do not touch the look.",
     "Modern, 2000er (hell)": "Modern, 2000s (light)",
     "Klassiker: Walnuss und Chrom": "Classic: walnut and chrome",
     "Motorton-Zusätze": "Engine sound extras",
@@ -18260,8 +18287,8 @@
   // nachzieht. Bewusst KEINE Ansagen (Rundenzeit, Tank, Schaden): dafuer gibt es noch keine
   // spanischen Aufnahmen, und die Sprachausgabe nutzt die englische als Platzhalter.
   const I18N_ES = {
-    "ACC: Rennspiel-Stil (WIP)": "ACC: estilo de juego de carreras (WIP)",
-    "„ACC“ (WIP) ist an das Rennspiel Assetto Corsa Competizione angelehnt: fast schwarze, kantige Felder mit schmalen blauen Akzentlinien, segmentierte Drehzahlleiste, der Gang groß in der Mitte und die Zeiten wie im Timing-Fenster des Spiels; das Regenradar entfällt dort und wird auch nicht gezeichnet.": "«ACC» (WIP) se inspira en el juego de carreras Assetto Corsa Competizione: paneles casi negros y rectos con finas líneas de acento azules, barra de revoluciones segmentada, la marcha grande en el centro y los tiempos como en la ventana de cronometraje del juego; el radar de lluvia desaparece ahí y tampoco se dibuja.",
+    "ACC (Vorgabe)": "ACC (predeterminado)",
+    "Nur das Aussehen des Cockpit-Schirms – Anzeigen, Tasten und Physik bleiben, wie sie sind. „ACC“ ist die Vorgabe und an das Rennspiel Assetto Corsa Competizione angelehnt: fast schwarze, kantige Felder mit schmalen blauen Akzentlinien, segmentierte Drehzahlleiste, der Gang groß in der Mitte und die Zeiten wie im Timing-Fenster des Spiels. „Omega“ ist Carbon und weiße Schrift auf Schwarz. „GT3“ sind schwarze Kacheln mit weißer Schrift, auf größten Kontrast getrimmt. „Oldschool“ ist Bernstein auf Schwarz mit sichtbaren Pixelzeilen, breiter Kunststoffblende und Messingschrauben, wie die Vakuumfluoreszenz-Armaturen der 1980er. „Modern“ ist ein weißer Schirm mit schwarzen Bedienflächen und schmaler Alublende, wie die ersten Farb-TFT der 2000er – Regenradar und G-Plot behalten dort ihren dunklen Einsatz, weil sie hell auf dunkel zeichnen und auf Weiß unsichtbar wären. „Klassiker“ ist Walnussfurnier mit Chromschrauben und cremefarbener Schrift auf Schwarzbraun, wie das Armaturenbrett eines Gran Turismo der Sechziger. Die Bedeutungsfarben bleiben in allen Ansichten gleich: der Tankbalken ist grün und der Schaden rot, auch in der Retro-Ansicht – eine Ansicht darf ändern, wie es aussieht, nicht was eine Farbe sagt. Die Voreinstellungen fassen die Ansicht nicht an.": "Solo el aspecto de la pantalla del cockpit – indicadores, botones y física se quedan como están. «ACC» es la opción predeterminada y se inspira en el juego de carreras Assetto Corsa Competizione: paneles casi negros y rectos con finas líneas de acento azules, barra de revoluciones segmentada, la marcha grande en el centro y los tiempos como en la ventana de cronometraje del juego. «Omega» es carbono y letra blanca sobre negro. «GT3» son casillas negras con letra blanca, ajustadas al máximo contraste. «Oldschool» es ámbar sobre negro con líneas de píxeles visibles, un marco ancho de plástico y tornillos de latón, como los instrumentos fluorescentes de vacío de los años 80. «Modern» es una pantalla blanca con controles negros y un marco estrecho de aluminio, como los primeros TFT en color de los años 2000 – el radar de lluvia y el gráfico G conservan ahí su fondo oscuro, porque dibujan claro sobre oscuro y serían invisibles sobre blanco. «Clásico» es chapa de nogal con tornillos cromados y letra crema sobre marrón oscuro, como el salpicadero de un gran turismo de los años sesenta. Los colores con significado son iguales en todas las vistas: la barra del depósito es verde y el daño rojo, también en la vista retro – una vista puede cambiar cómo se ve algo, no lo que dice un color. Los preajustes no tocan la vista.",
     "Fahrer am Rand": "Piloto en el borde",
     "Eiche hell": "Roble claro",
     "Laminat grau": "Laminado gris",
@@ -25165,22 +25192,34 @@
   // EIGENE ABLAGE, wie beim Layout und beim Getriebe: der Waehler traegt data-preset-skip,
   // weil eine Voreinstellung eine Abstimmung ist und das Aussehen keine.
   const COCKPIT_STORE = 'chc.cockpit.v1';
-  // v1.3.51 (WIP): die Ansicht "ACC" hat KEIN Regenradar - bestellt war "alle Elemente des
-  // aktuellen ausser Regenradar". Ausgeblendet wird es per CSS; dieser Merker sorgt dafuer,
-  // dass wxRadarDraw() (70-race.js) es auch nicht zeichnet, so wie beim Schalter
-  // "Regenradar aus". Ein Merker und keine Abfrage am body je Bild: gesetzt wird er nur beim
-  // Umschalten der Ansicht. Der Schalter selbst bleibt unberuehrt.
-  let cockpitOhneRadar = false;
+  // ---- Ueberleitung v1.3.58: ACC wird die Vorgabe ------------------------------------
+  //
+  // BESTELLT: "Mach diese Ansicht [ACC] zum Standard." Ein neuer Nutzer bekommt sie ueber das
+  // selected im Waehler. Ein BESTANDSNUTZER hat aber fast immer 'omega' gespeichert, auch ohne
+  // es je gewaehlt zu haben: ansichtAnwenden() schreibt den Wert bei JEDEM Start. Ein
+  // gespeichertes 'omega' heisst also nur "die alte Vorgabe" - es wird darum EINMAL auf 'acc'
+  // umgestellt. Der Merker sorgt dafuer, dass es bei einem Mal bleibt: wer danach wieder
+  // Omega waehlt, behaelt es. Jede andere gespeicherte Ansicht war eine Wahl und bleibt.
+  //
+  // Als Funktion mit uebergebener Ablage, damit der Selbsttest sie an einer Attrappe fahren
+  // kann, ohne die echte Einstellung anzufassen.
+  const COCKPIT_ACC_VORGABE = 'chc.cockpit.acc.v1';
+  function cockpitVorgabeUmstellen(ablage) {
+    if (ablage.getItem(COCKPIT_ACC_VORGABE)) return false;
+    const umgestellt = ablage.getItem(COCKPIT_STORE) === 'omega';
+    if (umgestellt) ablage.setItem(COCKPIT_STORE, 'acc');
+    ablage.setItem(COCKPIT_ACC_VORGABE, '1');
+    return umgestellt;
+  }
   if ($('setting-cockpit')) {
     const ansichtAnwenden = (melden) => {
       const v = $('setting-cockpit').value;
-      // 'omega' ist die Vorgabe und setzt KEIN Attribut: so stehen die Werte aus :root, und
-      // die Vorgabe ist damit nicht eine zweite Kopie derselben Zahlen. Sie hiess bis
-      // v0.5.16 'gt3'; unter diesem Namen steht jetzt eine ANDERE Ansicht, siehe die
-      // Ueberleitung darunter.
+      // 'omega' setzt KEIN Attribut: so stehen die Werte aus :root, und Omega ist damit nicht
+      // eine zweite Kopie derselben Zahlen. Omega war bis v1.3.57 die Vorgabe (seit v1.3.58
+      // ist es ACC, siehe cockpitVorgabeUmstellen) und hiess bis v0.5.16 'gt3'; unter diesem
+      // Namen steht jetzt eine ANDERE Ansicht, siehe die Ueberleitung darunter.
       if (v === 'omega') document.body.removeAttribute('data-cockpit');
       else document.body.setAttribute('data-cockpit', v);
-      cockpitOhneRadar = v === 'acc';
       if (melden) {
         const opt = $('setting-cockpit').selectedOptions[0];
         log('Cockpit-Ansicht: ' + (opt ? opt.textContent : v) + '.', 'info');
@@ -25205,6 +25244,12 @@
               + 'steht seit v0.5.16 eine neue Ansicht mit schwarzen Kacheln.', 'info');
         }
         localStorage.setItem(COCKPIT_UMBENANNT, '1');
+      }
+    } catch (e) { /* privater Modus */ }
+    try {
+      if (cockpitVorgabeUmstellen(localStorage)) {
+        log('Cockpit-Ansicht: neue Vorgabe ist "ACC". Omega bleibt unter Optionen > '
+            + 'Allgemein > Cockpit-Ansicht waehlbar.', 'info');
       }
     } catch (e) { /* privater Modus */ }
     try {
@@ -46037,8 +46082,7 @@
 
   function wxRadarDraw() {
     const cv = $('race-wx-radar');
-    // cockpitOhneRadar: die Ansicht ACC (v1.3.51, 50-drive.js) zeigt kein Radar.
-    if (!cv || cockpitOhneRadar || document.hidden || !cv.clientWidth || !wxRadarAn()) return;
+    if (!cv || document.hidden || !cv.clientWidth || !wxRadarAn()) return;
     const mitKarte = false;   // v1.2.39: Strecke im Radar entfernt (Latenz), siehe wxRadarAn()
     // Auf die tatsaechliche Anzeigegroesse ziehen: ein Canvas mit falscher Pufferbreite wird
     // von der Grafikkarte skaliert und sieht unscharf aus.
@@ -80881,7 +80925,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
           //
           // Zwoelf davon stehen als Konstante im Quelltext, der dreizehnte
           // (Gamepad-Belegung) ist mir erst im laufenden Browser aufgefallen.
-          bekannt: ['chc.cars.v1', 'chc.cockpit.v1', 'chc.cockpit.omega.v1',
+          bekannt: ['chc.cars.v1', 'chc.cockpit.v1', 'chc.cockpit.omega.v1', 'chc.cockpit.acc.v1',
                     'chc.gearbox.v1', 'chc.layout.v1', 'chc.mp.v1',
                     'chc.motorwerkstatt.v1', 'chc.presets.v1', 'chc.sessions.v1',
                     'carrera-hybrid-macros', 'carrera-hybrid-tracks',
@@ -85289,9 +85333,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (werte.length < 3) schlecht.push('nur ' + werte.length + ' Ansichten');
       const proben = werte.map(messe);
 
-      // 1. Die Vorgabe setzt KEIN Attribut: sonst waeren ihre Werte eine zweite Abschrift
-      //    dessen, was in :root steht.
-      if (proben[0].attr !== null) schlecht.push('Vorgabe setzt ' + proben[0].attr);
+      // 1. Omega setzt KEIN Attribut: sonst waeren seine Werte eine zweite Abschrift dessen,
+      //    was in :root steht. Bis v1.3.57 war Omega die Vorgabe und stand vorn; seit ACC die
+      //    Vorgabe ist, wird es beim Namen gesucht und nicht an der ersten Stelle.
+      const omegaProbe = proben.find(p => p.v === 'omega');
+      if (!omegaProbe) schlecht.push('Ansicht omega fehlt');
+      else if (omegaProbe.attr !== null) schlecht.push('Omega setzt ' + omegaProbe.attr);
 
       // 2. Sichtbar verschieden, Paar fuer Paar.
       const paare = [];
@@ -85534,25 +85581,25 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   });
 
 
-  // ---- Cockpit v1.3.51: Ansicht ACC (WIP) ----
+  // ---- Cockpit v1.3.51 / v1.3.58: Ansicht ACC ----
   //
-  // BESTELLT: "ein alternativer Haupt-Cockpit-Screen im Stil von ACC, mit allen Elementen
-  // des aktuellen ausser Regenradar", waehlbar im Menue der Cockpit-Ansichten.
+  // BESTELLT (v1.3.51): "ein alternativer Haupt-Cockpit-Screen im Stil von ACC". In v1.3.58
+  // abgenommen und geaendert: das Regenradar ist WIEDER da ("Ersetze die Wetterkachel mit der
+  // Sonne wieder durch den Regenradar"), und ACC ist die Vorgabe.
   //
-  // Geprueft wird, was die Bestellung zusichert: die Option steht mit WIP-Etikett im
-  // Waehler, sie setzt das Attribut, das Radar ist ausgeblendet UND wird nicht gezeichnet,
-  // jede andere Haupt-Kachel ist sichtbar und hat eine Flaeche, und das Cockpit passt in
-  // ein Handy quer (800 x 370) mindestens so gut wie die Vorgabe, ohne dass ein Wert seine
-  // Kachel verlaesst.
-  stAdd('Cockpit v1.3.51: Ansicht ACC - WIP-Option, kein Regenradar, alle Kacheln sichtbar, passt auf 800x370', () => {
+  // Geprueft wird: die Option steht im Waehler, sie setzt das Attribut, das Radar ist
+  // sichtbar UND wird gezeichnet wie in der Vorgabe, jede andere Haupt-Kachel ist sichtbar und
+  // hat eine Flaeche, und das Cockpit passt in ein Handy quer (800 x 370) mindestens so gut
+  // wie Omega, ohne dass ein Wert seine Kachel verlaesst.
+  stAdd('Cockpit v1.3.51: Ansicht ACC - Regenradar sichtbar und gezeichnet, alle Kacheln sichtbar, passt auf 800x370', () => {
     const sel = $('setting-cockpit');
     const dash = $('race-dash');
     if (!sel || !dash) return { ok: false, mass: 'Waehler oder Cockpit fehlt' };
     const f = [], teile = [];
     const opt = [...sel.options].find(o => o.value === 'acc');
     if (!opt) return { ok: false, mass: 'Option acc fehlt' };
-    if (!/WIP/.test(opt.textContent)) f.push('Option ohne WIP-Etikett');
-    if (String(wxRadarDraw).indexOf('cockpitOhneRadar') < 0) f.push('wxRadarDraw fragt die Ansicht nicht ab');
+    // v1.3.58: kein Sonderweg mehr - das Radar fragt nach keiner Ansicht.
+    if (typeof cockpitOhneRadar !== 'undefined') f.push('Radar-Merker cockpitOhneRadar gibt es noch');
     // Der Schalter "Regenradar" bleibt, wie er ist.
     if (String(wxRadarDraw).indexOf('!wxRadarAn()') < 0) f.push('Schalter Regenradar wirkt nicht mehr');
     const merk = sel.value;
@@ -85562,12 +85609,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     try {
       setze('acc');
       if (document.body.getAttribute('data-cockpit') !== 'acc') f.push('Attribut nicht gesetzt');
-      if (cockpitOhneRadar !== true) f.push('Radar-Merker nicht gesetzt');
-      const cv = $('race-wx-radar');
-      if (!cv || getComputedStyle(cv).display !== 'none') f.push('Radar nicht ausgeblendet');
-      setze('omega');
-      if (cockpitOhneRadar !== false) f.push('Radar-Merker bleibt nach dem Zurueckschalten');
-      setze('acc');
+      // Sichtbar, solange der Schalter "Regenradar" an ist - wie in jeder Ansicht.
+      const cvSicht = $('race-wx-radar');
+      if (!cvSicht) f.push('Radar fehlt');
+      else if (wxRadarAn() && getComputedStyle(cvSicht).display === 'none') f.push('Radar in ACC ausgeblendet');
 
       // Ab hier braucht es ein Fenster: ohne Breite rechnen die Medienabfragen falsch.
       if (!(window.innerWidth > 0) || !(window.innerHeight > 0) || !OMEGA_TEST.cockpitPassung) {
@@ -85592,27 +85637,20 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         });
         if (fehlt.length) f.push('nicht sichtbar: ' + fehlt.join(', '));
 
-        // NICHT GEZEICHNET, mit Gegenprobe. Die Leinwand wird dafuer kurz sichtbar gemacht -
-        // sonst stiege wxRadarDraw() schon an der Breite 0 aus, und der Test bewiese nichts.
-        // Gemessen wird an der Puffergroesse: die passt die Routine vor dem Zeichnen an.
+        // GEZEICHNET, wie in der Vorgabe. Gemessen an der Puffergroesse: die passt die
+        // Routine vor dem Zeichnen an die Kachel an - bleibt sie bei 7 x 5, hat sie nichts
+        // gezeichnet.
         const cv = $('race-wx-radar');
         if (cv && !document.hidden && wxRadarAn()) {
           const bw = cv.width, bh = cv.height;
-          cv.style.display = 'block';
           try {
             cv.width = 7; cv.height = 5;
             wxRadarDraw();
-            if (cv.width !== 7 || cv.height !== 5) f.push('Radar wurde in ACC gezeichnet');
-            setze('omega');
-            cv.width = 7; cv.height = 5;
-            wxRadarDraw();
-            const gegen = cv.width !== 7;
-            if (!gegen) f.push('Gegenprobe: Radar zeichnet auch in der Vorgabe nicht');
-            teile.push('Radar ACC ungezeichnet, Vorgabe ' + (gegen ? 'gezeichnet' : 'NICHT gezeichnet'));
+            const gemalt = cv.width !== 7 && cv.width === cv.clientWidth;
+            if (!gemalt) f.push('Radar wird in ACC nicht gezeichnet');
+            teile.push('Radar in ACC ' + (gemalt ? 'gezeichnet (' + cv.width + 'x' + cv.height + ')' : 'NICHT gezeichnet'));
           } finally {
-            cv.style.display = '';
             cv.width = bw; cv.height = bh;
-            setze('acc');
           }
         } else {
           teile.push('Zeichnen nicht pruefbar (Radar aus oder Seite verborgen)');
@@ -85629,7 +85667,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         else {
           teile.push('800x370: Faktor ACC ' + acc.faktor + ', Omega ' + vorgabe.faktor);
           if (!acc.passt && !acc.amBoden) f.push('ACC steht ' + acc.ueberstand + ' px ueber');
-          if (acc.faktor < vorgabe.faktor - 0.03) f.push('ACC kleiner als die Vorgabe');
+          if (acc.faktor < vorgabe.faktor - 0.03) f.push('ACC kleiner als Omega');
           // Kein Wert verlaesst seine Kachel: die Kacheln schneiden nicht ab, ein
           // Ueberlauf waere also sichtbar ueber der Nachbarkachel.
           const ueber = [];
@@ -85654,8 +85692,109 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (OMEGA_TEST.cockpitPassung) OMEGA_TEST.cockpitPassung();
     }
     return { ok: f.length === 0,
-             mass: 'Option "' + opt.textContent + '", Radar aus und ungezeichnet | ' + teile.join(' | ')
+             mass: 'Option "' + opt.textContent + '" | ' + teile.join(' | ')
                    + (f.length ? ' || ' + f.join('; ') : '') };
+  });
+
+  // ---- Cockpit v1.3.58: ACC ist die Vorgabe, Balken dick und mittig ----
+  //
+  // BESTELLT: "Mache die drei Balken von unten (Tank, Schaden, Batterie) mit groesserer Hoehe,
+  // damit sie leichter zu erkennen sind. Sie sollten sich ausserdem in der Mitte der Kachel
+  // befinden. [...] Mach diese Ansicht zum Standard."
+  //
+  // Drei Aussagen:
+  //   1. ACC ist die Vorgabe im Waehler (selected, "Vorgabe" im Text, kein WIP mehr), Omega
+  //      traegt "Vorgabe" nicht mehr.
+  //   2. Die Umstellung fuer Bestandsnutzer greift GENAU EINMAL: ein gespeichertes 'omega' wird
+  //      zu 'acc', eine spaetere eigene Wahl von Omega bleibt, jede andere Ansicht bleibt.
+  //      Gefahren an einer Attrappe, nicht an der echten Ablage.
+  //   3. Tank, Zustand und Akku: der Balken ist mindestens 12 px dick (v1.3.51: 5 bis 7 px),
+  //      liegt waagerecht und mit seiner Mitte hoechstens 10 % der Kachelhoehe neben der
+  //      Kachelmitte - im Vollbild auf 800 x 370 und auf 1280 x 800.
+  stAdd('Cockpit v1.3.58: ACC ist Vorgabe (einmalige Umstellung), Tank/Zustand/Akku-Balken dick und mittig', () => {
+    const sel = $('setting-cockpit');
+    const dash = $('race-dash');
+    if (!sel || !dash) return { ok: false, mass: 'Waehler oder Cockpit fehlt' };
+    const f = [], teile = [];
+
+    // 1. Vorgabe im Waehler.
+    const acc = [...sel.options].find(o => o.value === 'acc');
+    const omega = [...sel.options].find(o => o.value === 'omega');
+    if (!acc || !acc.defaultSelected) f.push('ACC ist nicht selected');
+    if (acc && !/Vorgabe/.test(acc.textContent)) f.push('ACC ohne "Vorgabe"');
+    if (acc && /WIP/.test(acc.textContent)) f.push('ACC traegt noch WIP');
+    if (omega && /Vorgabe/.test(omega.textContent)) f.push('Omega heisst noch Vorgabe');
+    if ([...sel.options].filter(o => o.defaultSelected).length !== 1) f.push('nicht genau eine Vorgabe');
+
+    // 2. Die einmalige Umstellung, an einer Attrappe.
+    if (typeof cockpitVorgabeUmstellen !== 'function') {
+      f.push('cockpitVorgabeUmstellen fehlt');
+    } else {
+      const attrappe = (anfang) => {
+        const m = new Map(Object.entries(anfang));
+        return { m, getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)) };
+      };
+      const alt = attrappe({ [COCKPIT_STORE]: 'omega' });
+      const r1 = cockpitVorgabeUmstellen(alt);
+      if (!r1 || alt.getItem(COCKPIT_STORE) !== 'acc') f.push('gespeichertes omega nicht umgestellt');
+      alt.setItem(COCKPIT_STORE, 'omega');          // danach bewusst wieder Omega gewaehlt
+      const r2 = cockpitVorgabeUmstellen(alt);
+      if (r2 || alt.getItem(COCKPIT_STORE) !== 'omega') f.push('Umstellung greift ein zweites Mal');
+      const retro = attrappe({ [COCKPIT_STORE]: 'retro' });
+      if (cockpitVorgabeUmstellen(retro) || retro.getItem(COCKPIT_STORE) !== 'retro') f.push('eigene Wahl retro ueberschrieben');
+      const neu = attrappe({});
+      if (cockpitVorgabeUmstellen(neu) || neu.getItem(COCKPIT_STORE) !== null) f.push('neuer Nutzer: Ablage beschrieben');
+      if (!neu.getItem(COCKPIT_ACC_VORGABE)) f.push('Merker nicht gesetzt');
+      teile.push('Umstellung omega->acc einmal, danach Omega behalten, retro unberuehrt');
+      try {
+        if (localStorage.getItem(COCKPIT_ACC_VORGABE) !== '1') f.push('Merker in der echten Ablage fehlt');
+      } catch (e) { /* privater Modus */ }
+    }
+
+    // 3. Die Balken.
+    if (!(window.innerWidth > 0) || !(window.innerHeight > 0) || !OMEGA_TEST.cockpitPassung) {
+      teile.push('Balken nicht pruefbar (kein Fenster)');
+      return { ok: f.length === 0, mass: teile.join(' | ') + (f.length ? ' || ' + f.join('; ') : '') };
+    }
+    const merk = sel.value;
+    const warFs = document.body.classList.contains('race-fs');
+    const warTurn = document.body.classList.contains('race-turn');
+    const setze = (v) => { sel.value = v; sel.dispatchEvent(new Event('change', { bubbles: true })); };
+    try {
+      setze('acc');
+      const btn = document.querySelector('[data-tab="race"]');
+      if (btn) btn.click();
+      document.body.classList.add('race-fs');
+      document.body.classList.remove('race-turn');
+      for (const [b, h] of [[800, 370], [1280, 800]]) {
+        OMEGA_TEST.cockpitPassung(h, b);
+        const zeile = [];
+        for (const id of ['race-fuel-bar', 'race-dmg-bar', 'race-batt-bar']) {
+          const balken = $(id) && $(id).parentElement;
+          const kachel = balken && balken.parentElement;
+          if (!balken || !kachel) { f.push(id + ' fehlt'); continue; }
+          const dicke = balken.offsetWidth;            // vor der Drehung: die Breite ist die Dicke
+          const br = balken.getBoundingClientRect(), kr = kachel.getBoundingClientRect();
+          if (!(kr.height > 0)) { f.push(b + 'x' + h + ' ' + id + ': Kachel ohne Hoehe'); continue; }
+          const waagerecht = br.width > br.height * 2;
+          const versatz = Math.abs((br.top + br.bottom) / 2 - (kr.top + kr.bottom) / 2) / kr.height;
+          const innen = br.left >= kr.left - 1 && br.right <= kr.right + 1;
+          zeile.push(id.replace('race-', '').replace('-bar', '') + ' ' + dicke + 'px/'
+                     + Math.round(versatz * 100) + '%');
+          if (dicke < 12) f.push(b + 'x' + h + ' ' + id + ': nur ' + dicke + ' px dick');
+          if (!waagerecht) f.push(b + 'x' + h + ' ' + id + ': nicht waagerecht');
+          if (versatz >= 0.1) f.push(b + 'x' + h + ' ' + id + ': ' + Math.round(versatz * 100) + ' % neben der Mitte');
+          if (!innen) f.push(b + 'x' + h + ' ' + id + ': ragt aus der Kachel');
+        }
+        teile.push(b + 'x' + h + ': ' + zeile.join(', '));
+      }
+    } finally {
+      document.body.classList.toggle('race-fs', warFs);
+      document.body.classList.toggle('race-turn', warTurn);
+      setze(merk);
+      OMEGA_TEST.cockpitPassung();
+    }
+    return { ok: f.length === 0, mass: teile.join(' | ') + (f.length ? ' || ' + f.join('; ') : '') };
   });
 
 

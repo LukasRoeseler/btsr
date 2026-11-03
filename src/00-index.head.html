@@ -4901,16 +4901,17 @@
   @media (prefers-reduced-motion: reduce) {
     #ampel-overlay { transition: none; }
   }
-  /* ======================= COCKPIT-ANSICHT "ACC" (v1.3.51, WIP) =======================
+  /* ======================= COCKPIT-ANSICHT "ACC" (v1.3.51, Vorgabe seit v1.3.58) =========
      BESTELLT: "ein alternativer Haupt-Cockpit-Screen fuer das nicht-virtuelle Fahren, mit
      allen Elementen des aktuellen ausser Regenradar, im Stil von ACC [Assetto Corsa
      Competizione], mit der blauen Akzentfarbe der App, waehlbar im Menue der Ansichten."
+     Abgenommen in v1.3.58: "Ich liebe den Cockpit View [...] Ersetze die Wetterkachel mit
+     der Sonne wieder durch den Regenradar. Mach diese Ansicht zum Standard."
 
      ANDERS ALS DIE UEBRIGEN ANSICHTEN aendert diese auch die ANORDNUNG und nicht nur die
      acht Groessen aus :root - ACC erkennt man an der Form der Felder, nicht an der Farbe.
      Trotzdem NUR CSS ueber dieselben Elemente: kein zusaetzlicher Knoten, kein zweiter
-     Malcode, der Cockpit-Takt schreibt dieselben ids wie immer. Die einzige JS-Stelle ist
-     der Merker cockpitOhneRadar (50-drive.js), damit das Radar auch nicht GEZEICHNET wird.
+     Malcode, der Cockpit-Takt schreibt dieselben ids wie immer.
 
      Die Regeln stehen absichtlich HIER am Ende und mit #race-dash: sie muessen die spaeten
      Bestellungen (Zeiten doppelt so gross, rechteckige Lichter) und die Vollbild-Regeln
@@ -4948,6 +4949,11 @@
     --acc-feld-klick: rgba(23, 27, 35, .94);
     --acc-feld-hover: rgba(33, 39, 50, .96);
     --acc-kante: rgba(255, 255, 255, .13);
+    /* Das Regenradar auf den Grund der Felder: fast schwarz statt blaeulich. Die Wolken
+       bleiben weiss, der Regen wird eine Spur heller, weil er sonst im Grund verschwindet
+       - dieselbe Abwaegung wie bei "GT3". */
+    --wx-grund: #07090d;
+    --wx-regen: 120, 186, 214;
   }
   body[data-cockpit="acc"] #race-dash.gt3 {
     grid-template-columns: minmax(0, 1fr) minmax(0, .92fr) minmax(0, 1.22fr); }
@@ -5033,38 +5039,59 @@
     font-size: clamp(11px, 1.55vw, 16px); max-height: 5.5em; margin-top: clamp(3px, .6vw, 6px); }
   body[data-cockpit="acc"] #race-dash .gt3-laps li > span:first-child { color: var(--gt3-lbl); }
 
-  /* UNTEN: dieselben acht Kacheln, das Radarfeld ist nur noch die Wetteranzeige. */
+  /* UNTEN: dieselben acht Kacheln, das Regenradar wieder breit wie in den anderen
+     Ansichten (v1.3.58 BESTELLT: "Ersetze die Wetterkachel mit der Sonne wieder durch den
+     Regenradar"). */
   body[data-cockpit="acc"] #race-dash.gt3 > .gt3-strip {
-    grid-template-columns: .85fr .85fr 1.2fr .85fr .7fr .7fr 1fr 1fr; gap: clamp(3px, .6vw, 6px); }
+    grid-template-columns: .8fr .8fr 1.1fr .8fr .65fr 2.2fr .95fr .95fr;
+    gap: clamp(3px, .6vw, 6px); }
+  /* Schmal zweireihig wie die Vorgabe: oben fuenf Kacheln, unten das Radar ueber drei
+     Spalten (die span-Regel der Grundansicht gilt weiter), Boxenwahl und G-Plot. */
   @media (max-width: 560px) {
     body[data-cockpit="acc"]:not(.race-turn) #race-dash.gt3 > .gt3-strip {
-      grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    body[data-cockpit="acc"]:not(.race-turn) #race-dash .gt3-strip > .gt3-wx { grid-column: auto; }
+      grid-template-columns: .8fr .8fr 1fr .8fr .8fr; }
   }
-  /* KEIN REGENRADAR. Ausgeblendet hier, nicht gezeichnet ueber cockpitOhneRadar. Die
-     Kachel bleibt: sie zeigt das Wetter und schaltet es beim Antippen. */
-  body[data-cockpit="acc"] #race-dash .wx-radar { display: none; }
-  body[data-cockpit="acc"] #race-dash .wx-ico {
-    position: static; display: flex; align-items: center; gap: 3px; line-height: 0; }
-  body[data-cockpit="acc"] #race-dash .wx-ico .gt3-ico { width: clamp(22px, 4vw, 40px); height: auto; }
+  /* Das Radar zeichnet wie ueberall (der Schalter "Regenradar" gilt), auf dem dunklen Grund
+     aus --wx-grund. Die blaue Kopflinie liegt UEBER der Leinwand - als Hintergrundschicht
+     wie bei den anderen Feldern waere sie unter ihr verschwunden. Antippen schaltet weiter
+     das Wetter: die Kachel ist dieselbe. */
+  body[data-cockpit="acc"] #race-wx-box::before {
+    content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px;
+    background: var(--acc-blau); z-index: 3; pointer-events: none; }
 
-  /* TANK, ZUSTAND, AKKU: Symbol und Zahl in einer Zeile, darunter ein WAAGERECHTER Balken.
-     Der Takt setzt die Fuellung als height, weil der Balken sonst senkrecht steht - also
-     wird hier der ganze Balken um 90 Grad gelegt, statt am Malcode etwas zu aendern. Seine
-     Laenge ist die Kachelbreite (cqw), darum ist die Kachel ein Container. Gefuellt wird
-     damit von links nach rechts, voll heisst ganz rechts. */
+  /* TANK, ZUSTAND, AKKU: oben Symbol und Zahl, in der MITTE der Kachel ein dicker
+     WAAGERECHTER Balken (v1.3.58 BESTELLT: "mit groesserer Hoehe, damit sie leichter zu
+     erkennen sind. Sie sollten sich ausserdem in der Mitte der Kachel befinden.").
+
+     Der Takt setzt die Fuellung als height, weil der Balken in den anderen Ansichten
+     senkrecht steht - also wird hier der ganze Balken um 90 Grad gelegt, statt am Malcode
+     etwas zu aendern. Gefuellt wird damit von links nach rechts.
+
+     SEINE LAENGE IST DIE KACHELBREITE, und die kommt ohne Container-Einheiten aus: ein
+     Innenabstand in Prozent rechnet immer gegen die BREITE des umgebenden Blocks, auch der
+     obere. Der Balken hat also die Hoehe 0 und einen padding-top von "Kachelbreite minus
+     Raender" - und weil die Fuellung absolut darin steht, rechnet ihr height in Prozent gegen
+     genau diese Hoehe. Das laeuft auch auf alten WebViews ohne cqw (v1.3.51 brauchte sie).
+
+     Senkrecht mittig: der Drehpunkt ist die untere linke Ecke, und der gedrehte Balken liegt
+     von dort um seine Dicke NACH UNTEN. Die Unterkante steht deshalb eine halbe Dicke ueber
+     der Kachelmitte. */
   body[data-cockpit="acc"] #race-dash > .gt3-strip > .gt3-box:has(> .gt3-bar-v) {
-    position: relative; container-type: inline-size;
+    position: relative;
     display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center;
-    align-content: start; column-gap: clamp(3px, .6vw, 6px);
-    padding-bottom: clamp(16px, 2.6vw, 22px); }
+    align-content: start; column-gap: clamp(3px, .6vw, 6px); }
   body[data-cockpit="acc"] #race-dash > .gt3-strip > .gt3-box > .gt3-val.sm {
     text-align: right; white-space: nowrap; font-size: clamp(13px, 2.1vw, 22px); }
   body[data-cockpit="acc"] #race-dash > .gt3-strip > .gt3-box > .gt3-bar-v {
-    position: absolute; margin: 0; width: clamp(5px, .8vw, 7px);
-    left: clamp(4px, .8vw, 8px); bottom: calc(clamp(5px, .9vw, 8px) + clamp(5px, .8vw, 7px));
-    height: 60px; height: calc(100cqw);
-    transform-origin: 0 100%; transform: rotate(90deg); background: #1c212b; }
+    --acc-dicke: clamp(12px, 2vw, 20px);
+    --acc-rand: clamp(4px, .8vw, 8px);
+    position: absolute; display: block; margin: 0;
+    left: var(--acc-rand); bottom: calc(50% + var(--acc-dicke) / 2);
+    width: var(--acc-dicke); height: 0; padding-top: calc(100% - 2 * var(--acc-rand));
+    transform-origin: 0 100%; transform: rotate(90deg); background: #1c212b;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .07); }
+  body[data-cockpit="acc"] #race-dash > .gt3-strip > .gt3-box > .gt3-bar-v > i {
+    position: absolute; left: 0; right: 0; bottom: 0; width: auto; }
   /* Reifen: dieselben vier Felder, kantiger und mit etwas mehr Flaeche. */
   body[data-cockpit="acc"] #race-tyre-box .gt3-t4 { border-radius: 2px; }
   /* Gedeckelt: die Reifen haben ein festes Seitenverhaeltnis, und in der breiteren Spalte
@@ -5078,6 +5105,7 @@
   body.race-turn[data-cockpit="acc"] #race-dash .gt3-gearnum { font-size: clamp(54px, 12.5vh, 124px); }
   body.race-turn[data-cockpit="acc"] #race-dash .gt3-gear .gt3-val.big { font-size: clamp(24px, 4.6vh, 48px); }
   body.race-turn[data-cockpit="acc"] #race-shift > span { height: clamp(12px, 2.6vh, 24px); }
+  body.race-turn[data-cockpit="acc"] #race-dash > .gt3-strip > .gt3-box > .gt3-bar-v { --acc-dicke: clamp(12px, 2vh, 20px); }
   body[data-cockpit="acc"] #race-dash > .gt3-strip > #race-tyre-box > .gt3-val.sm {
     text-align: center; white-space: normal; font-size: clamp(10.5px, 1.3vw, 14px); }
   body[data-cockpit="acc"] #race-dash .gt3-foot { box-shadow: inset 3px 0 0 var(--acc-blau); }
@@ -10246,30 +10274,30 @@
         </div></div>
       <div class="opt-row"><div class="opt-label">Cockpit-Ansicht<small>Nur das Aussehen des
           Cockpit-Schirms &ndash; Anzeigen, Tasten und Physik bleiben, wie sie sind.
-          &bdquo;GT3&ldquo; ist die Vorgabe: Carbon und wei&szlig;e Schrift auf
-          Schwarz. &bdquo;Oldschool&ldquo; ist Bernstein auf Schwarz mit sichtbaren
-          Pixelzeilen, breiter Kunststoffblende und Messingschrauben, wie die
+          &bdquo;ACC&ldquo; ist die Vorgabe und an das Rennspiel Assetto Corsa Competizione
+          angelehnt: fast schwarze, kantige Felder mit schmalen blauen Akzentlinien,
+          segmentierte Drehzahlleiste, der Gang gro&szlig; in der Mitte und die Zeiten wie im
+          Timing-Fenster des Spiels. &bdquo;Omega&ldquo; ist Carbon und wei&szlig;e Schrift auf
+          Schwarz. &bdquo;GT3&ldquo; sind schwarze Kacheln mit wei&szlig;er Schrift, auf
+          gr&ouml;&szlig;ten Kontrast getrimmt. &bdquo;Oldschool&ldquo; ist Bernstein auf Schwarz
+          mit sichtbaren Pixelzeilen, breiter Kunststoffblende und Messingschrauben, wie die
           Vakuumfluoreszenz-Armaturen der 1980er. &bdquo;Modern&ldquo; ist ein wei&szlig;er
           Schirm mit schwarzen Bedienfl&auml;chen und schmaler Alublende, wie die ersten
           Farb-TFT der 2000er &ndash; Regenradar und G-Plot behalten dort ihren dunklen
           Einsatz, weil sie hell auf dunkel zeichnen und auf Wei&szlig; unsichtbar w&auml;ren.
           &bdquo;Klassiker&ldquo; ist Walnussfurnier mit Chromschrauben und cremefarbener
           Schrift auf Schwarzbraun, wie das Armaturenbrett eines Gran Turismo der Sechziger.
-          Die Bedeutungsfarben bleiben in allen vier gleich: der Tankbalken ist gr&uuml;n und
-          der Schaden rot, auch in der Retro-Ansicht &ndash; eine Ansicht darf &auml;ndern,
+          Die Bedeutungsfarben bleiben in allen Ansichten gleich: der Tankbalken ist gr&uuml;n
+          und der Schaden rot, auch in der Retro-Ansicht &ndash; eine Ansicht darf &auml;ndern,
           wie es aussieht, nicht was eine Farbe sagt. Die Voreinstellungen fassen die Ansicht
-          nicht an. <span>&bdquo;ACC&ldquo; (WIP) ist an das Rennspiel Assetto Corsa
-          Competizione angelehnt: fast schwarze, kantige Felder mit schmalen blauen
-          Akzentlinien, segmentierte Drehzahlleiste, der Gang gro&szlig; in der Mitte und die
-          Zeiten wie im Timing-Fenster des Spiels; das Regenradar entf&auml;llt dort und wird
-          auch nicht gezeichnet.</span></small></div>
+          nicht an.</small></div>
         <select id="setting-cockpit" data-preset-skip>
-          <option value="omega" selected>Omega (Vorgabe)</option>
+          <option value="acc" selected>ACC (Vorgabe)</option>
+          <option value="omega">Omega</option>
           <option value="gt3">GT3: schwarze Kacheln (WIP)</option>
           <option value="retro">Oldschool, 1980er</option>
           <option value="modern">Modern, 2000er (hell)</option>
           <option value="klassiker">Klassiker: Walnuss und Chrom</option>
-          <option value="acc">ACC: Rennspiel-Stil (WIP)</option>
         </select></div>
       <div class="opt-row"><div class="opt-label">Regenradar<small>Das Regenradar im Cockpit. Aus: die Kachel
           bleibt leer und das Radar wird gar nicht gezeichnet &ndash; das spart Rechenzeit auf schwachen Handys.</small></div>
