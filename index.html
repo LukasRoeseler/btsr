@@ -10847,6 +10847,10 @@
           ein tiefer Schaltschlag mit Auspuffknall statt des hellen Klacks, auch beim Runterschalten. An: der
           frühere Klang (Überblenden auf das Schubband, heller Schaltklick).</small></div>
         <label class="tgl"><input type="checkbox" id="setting-schaltklang-alt"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Randstein-Klang: alt<span class="wip-tag">WIP</span><small>Aus (Standard, neu): Im
+          virtuellen Fahren rumpelt der Randstein dumpf wie in Assetto Corsa Competizione, im Takt der Rippen, schneller mit
+          dem Tempo und lauter, je weiter das Auto auf dem Stein ist. An: das frühere helle Rattern.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-randstein-alt"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">NPC-Motorklang: alt<span class="wip-tag">WIP</span><small>Aus (Standard, neu): NPCs
           knallen auch beim Anbremsen aus dem Auspuff, und ihre Knaller sind etwas lauter. An: die früheren Knaller (nur
           beim Gaswegnehmen, leiser). Dass man die Gänge der NPCs hört, gilt immer (sie schalten seit v1.2.5 früher zurück).</small></div>
@@ -17978,6 +17982,8 @@
     "Wähle für den nächsten Stopp Regenreifen. Drücke dazu die Reifen-Taste, bis Regen angezeigt wird.": "Choose rain tyres for the next stop. Press the tyre button until rain is shown.",
     "Und jetzt der zweite Boxenstopp. Tippe die Boxenstopp-Taste und halte an.": "And now the second pit stop. Tap the pit stop button and stop the car.",
     "Die Regenreifen sind drauf. Fahr weiter.": "The rain tyres are on. Drive on.",
+    "Randstein-Klang: alt": "Kerb sound: old",
+    "Aus (Standard, neu): Im virtuellen Fahren rumpelt der Randstein dumpf wie in Assetto Corsa Competizione, im Takt der Rippen, schneller mit dem Tempo und lauter, je weiter das Auto auf dem Stein ist. An: das frühere helle Rattern.": "Off (default, new): in virtual driving the kerb rumbles deeply like in Assetto Corsa Competizione, in time with the ridges, faster with speed and louder the further the car is on the kerb. On: the earlier bright rattle.",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -19363,6 +19369,8 @@
     "Wähle für den nächsten Stopp Regenreifen. Drücke dazu die Reifen-Taste, bis Regen angezeigt wird.": "Elige neumáticos de lluvia para la próxima parada. Pulsa el botón de neumáticos hasta que aparezca lluvia.",
     "Und jetzt der zweite Boxenstopp. Tippe die Boxenstopp-Taste und halte an.": "Y ahora la segunda parada en boxes. Toca el botón de parada en boxes y detén el coche.",
     "Die Regenreifen sind drauf. Fahr weiter.": "Ya están los neumáticos de lluvia. Sigue conduciendo.",
+    "Randstein-Klang: alt": "Sonido de los pianos: antiguo",
+    "Aus (Standard, neu): Im virtuellen Fahren rumpelt der Randstein dumpf wie in Assetto Corsa Competizione, im Takt der Rippen, schneller mit dem Tempo und lauter, je weiter das Auto auf dem Stein ist. An: das frühere helle Rattern.": "Desactivado (por defecto, nuevo): en la conducción virtual el piano retumba grave como en Assetto Corsa Competizione, al ritmo de sus estrías, más rápido con la velocidad y más fuerte cuanto más pisa el coche el piano. Activado: el traqueteo agudo de antes.",
   };
 
   // ============================================================================
@@ -39766,9 +39774,10 @@
       if (VF.kerbSeit === undefined || rennZeitJetzt() - VF.kerbSeit > 70) {
         VF.kerbSeit = rennZeitJetzt();
         padRumble(0.3, 0.25, 55, 'kerb', 1);
-        vfRattern(0.10 + Math.min(0.10, Math.abs(kmh) / 40));
+        if (randsteinKlangAlt) vfRattern(0.10 + Math.min(0.10, Math.abs(kmh) / 40));
       }
     }
+    vfRandsteinTon(kerb, q, kmh);   // v1.3.39: dumpfes Rumpeln, je Bild (billig), blendet selbst aus
     if (ab) {
       st.speedKmh *= Math.exp(-VF_ABSEITS_BREMSE * dt);
       if (rennZeitJetzt() - VF.abseitsSeit > VF_ABSEITS_ZURUECK_MS) vfZuruecksetzen();
@@ -40327,7 +40336,32 @@
     rechts.appendChild(z);
   }
 
+  // v1.3.39 BESTELLT: "Verbessere den Randstein-Sound. Aktuell ist es ein hohes Klicken ... Es soll
+  // dumpf sein, eher wie bei Assetto Corsa Competizione." Das Rumpeln selbst steht in 80-sound.js
+  // (randsteinKlang); hier nur, was die Bahn dazu weiss:
+  //   Takt  = Rippen je Sekunde = VF_KERB_RIPPEN * Weg je Sekunde / Laenge eines Farbfelds. Ein Farbfeld
+  //           (rot oder weiss) sind zwei Mittellinienpunkte (vfTilesWaehlen: Math.floor(i / 2) % 2), also
+  //           2 * TRACK_STEP / TRACK_SAMPLES_PER_TILE Einheiten auf der Geraden. Drei Rippen je Feld:
+  //           Tacho 40 km/h -> 8, 120 km/h -> 24, ab 200 km/h 40 Schlaege/s (Grenzen 8..40).
+  //   Menge = wie weit das Auto auf dem Stein ist (0 = Kante beruehrt, 1 = Mitte auf dem Rand) und Tempo.
+  // Mit "Randstein-Klang: alt" bleibt das neue Rumpeln stumm und vfRattern spielt wie bis v1.3.38.
+  const VF_KERB_STREIFEN = 2 * TRACK_STEP / TRACK_SAMPLES_PER_TILE;
+  const VF_KERB_RIPPEN = 3;
+  function vfRandsteinTakt(kmh) {
+    const vE = Math.abs(kmh) / 3.6 * 100 * TRACK_UNITS_PER_CM;
+    return Math.max(8, Math.min(40, VF_KERB_RIPPEN * vE / VF_KERB_STREIFEN));
+  }
+  function vfRandsteinMenge(kerb, q, kmh) {
+    if (!kerb || randsteinKlangAlt || !(Math.abs(kmh) > 0.05)) return 0;
+    const tiefe = Math.max(0, Math.min(1, (q - (TRACK_HALF_W - VF_AUTO.B * 0.5)) / (VF_AUTO.B * 0.5)));
+    return (0.45 + 0.55 * tiefe) * Math.min(1, 0.35 + Math.abs(kmh) * TACHO_SCALE / 160);
+  }
+  function vfRandsteinTon(kerb, q, kmh) {
+    randsteinKlang(vfRandsteinMenge(kerb, q, kmh), vfRandsteinTakt(kmh));
+  }
+
   // v1.2.62: ein kurzes "Rattern" (weisses Rauschen) fuer die Randsteine, ueber audioCtx (80-sound.js).
+  // Seit v1.3.39 nur noch mit dem Schalter "Randstein-Klang: alt".
   // BESTELLT: Latenz. Korrektur nach 1.2.66: der Rauschpuffer (60 ms, abklingend) wird EINMAL je
   // AudioContext angelegt und wiederverwendet. Vorher entstand alle 70 ms ein neuer Puffer samt
   // 2.880 Zufallszahlen - Muell fuer die Speicherbereinigung, die auf schwachen Handys als
@@ -53983,6 +54017,118 @@
       offroadNode = null; offroadGain = null;
       setTimeout(() => { try { node.stop(); } catch (e) { /* schon gestoppt */ } }, 500);
     }
+  }
+
+  // ---- RANDSTEIN-KLANG IM VIRTUELLEN FAHREN (v1.3.39, WIP) ------------------------------------
+  // BESTELLT: "Verbessere den Randstein-Sound. Aktuell ist es ein hohes Klicken. Das ist ein Problem
+  // wie mit den urspruenglichen Schaltgeraeuschen. Es soll dumpf sein, eher wie bei Assetto Corsa
+  // Competizione klingen." Bisher (vfRattern, 60d-virtuell.js) alle ~83 ms ein 60-ms-Puffer weisses
+  // Rauschen: Schwerpunkt um 12 kHz, also ein helles Klicken. Neu ein rhythmisches Rumpeln wie in ACC:
+  //   Quelle  = Rauschen tiefpass 95 Hz (Grundrumpeln) + Rauschen bandpass 190 Hz (Karosserie)
+  //             + Sinus 38 + 1,2 * Takt Hz (Grundton 48..86 Hz)
+  //   Huelle  = ((1 + cos(2 pi Takt t)) / 2)^3 je Rippe, als PeriodicWave (DC 0,3125 im Gain)
+  //   danach sanfter Waveshaper tanh(1,6 x), Tiefpass 700 Hz, Pegel 0,55 * menge * Reifenregler.
+  //   Takt = Tempo / Rippenabstand (60d-virtuell.js, vfRandsteinTakt), 8..40 Schlaege/s.
+  // Synthetisch statt einer Datei wie beim Schaltklang (tools/shift_tief.py): eine Aufnahme haette
+  // EINEN Takt; per playbackRate nachgezogen wandert die ganze Klangfarbe mit (wie beim Reifenquietschen
+  // die Schleifennaht), und eine Schleife wiederholt sich hoerbar. Hier laufen Takt und Klangfarbe
+  // getrennt, und es kostet nichts im Bildtakt.
+  // LATENZ: die Kette wird EINMAL je AudioContext angelegt (beim ersten Randstein) und laeuft weiter;
+  // je Bild nur ein Vergleich, und hoechstens alle 100 ms (oder bei merklicher Aenderung) zwei bis
+  // vier setTargetAtTime. Kein Knoten und kein Puffer je Kontakt. Ein- und Ausblenden mit 30-35 ms
+  // Zeitkonstante, also kein Knacken. Ein "Totmann" (Ziel 0 nach 250 ms) blendet aus, falls keine
+  // Aufrufe mehr kommen (Pause, Fahrt beendet). Ist die Kette 0,4 s still, wird sie vom Ausgang
+  // getrennt (dann rechnet der Audio-Thread sie nicht mehr). Hoerproben: tools/randstein_proben.py
+  // (dieselben Zahlen wie RS hier).
+  // Schalter "Randstein-Klang: alt" (Optionen -> Ton) bringt das alte Rattern zurueck.
+  let randsteinKlangAlt = false;
+  if ($('setting-randstein-alt')) {
+    const el = $('setting-randstein-alt');
+    randsteinKlangAlt = el.checked;
+    el.addEventListener('change', () => { randsteinKlangAlt = el.checked; });
+  }
+  const RS = { tiefHz: 95, tiefQdB: 0, tiefG: 6.0, koerperHz: 190, koerperQ: 2.0, koerperG: 3.5, tonG: 0.28,
+               huelle: [0.3125, 0.46875, 0.1875, 0.03125], formK: 1.6, glattHz: 700, glattQdB: -3, pegel: 0.55 };
+  function randsteinKlangBauen(ctx) {
+    const sr = ctx.sampleRate, n = Math.max(1, Math.floor(sr));
+    const buf = ctx.createBuffer(1, n, sr);           // 1 s Rauschen als Schleife, einmal
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    const rausch = ctx.createBufferSource();
+    rausch.buffer = buf; rausch.loop = true;
+    const tief = ctx.createBiquadFilter();
+    tief.type = 'lowpass'; tief.frequency.value = RS.tiefHz; tief.Q.value = RS.tiefQdB;
+    const tiefG = ctx.createGain(); tiefG.gain.value = RS.tiefG;
+    const koerper = ctx.createBiquadFilter();
+    koerper.type = 'bandpass'; koerper.frequency.value = RS.koerperHz; koerper.Q.value = RS.koerperQ;
+    const koerperG = ctx.createGain(); koerperG.gain.value = RS.koerperG;
+    const ton = ctx.createOscillator();
+    ton.type = 'sine'; ton.frequency.value = 48;
+    const tonG = ctx.createGain(); tonG.gain.value = RS.tonG;
+    // Huelle je Rippe: das Gain traegt den Gleichanteil, die LFO-Welle die Obertoene.
+    const am = ctx.createGain(); am.gain.value = RS.huelle[0];
+    const lfo = ctx.createOscillator();
+    lfo.frequency.value = 8;
+    let lfoZiel = am.gain;
+    try {
+      const re = new Float32Array([0, RS.huelle[1], RS.huelle[2], RS.huelle[3]]);
+      lfo.setPeriodicWave(ctx.createPeriodicWave(re, new Float32Array(4), { disableNormalization: true }));
+    } catch (e) {
+      lfo.type = 'sine'; am.gain.value = 0.5;       // ohne PeriodicWave: weiche Sinus-Huelle 0..1
+      const tiefe = ctx.createGain(); tiefe.gain.value = 0.5;
+      tiefe.connect(am.gain); lfoZiel = tiefe;
+    }
+    lfo.connect(lfoZiel);
+    const form = ctx.createWaveShaper();
+    const kurve = new Float32Array(257), th = Math.tanh(RS.formK);
+    for (let i = 0; i < 257; i++) kurve[i] = Math.tanh(RS.formK * (i / 128 - 1)) / th;
+    form.curve = kurve;
+    const glatt = ctx.createBiquadFilter();
+    glatt.type = 'lowpass'; glatt.frequency.value = RS.glattHz; glatt.Q.value = RS.glattQdB;
+    const aus = ctx.createGain(); aus.gain.value = 0;
+    rausch.connect(tief); tief.connect(tiefG); tiefG.connect(am);
+    rausch.connect(koerper); koerper.connect(koerperG); koerperG.connect(am);
+    ton.connect(tonG); tonG.connect(am);
+    am.connect(form); form.connect(glatt); glatt.connect(aus);
+    rausch.start(); ton.start(); lfo.start();
+    return { ctx, aus, lfo, ton, verbunden: false, ziel: 0, takt: 8, gesetzt: -1, stillAb: 0, setzungen: 0 };
+  }
+  // menge 0..1 (0 = kein Randstein), takt in Schlaegen je Sekunde. Billig, wenn nichts zu tun ist.
+  function randsteinKlangSetzen(g, menge, takt, jetzt) {
+    menge = menge > 0 ? Math.min(1, menge) : 0;
+    if (menge <= 0) {
+      if (g.ziel > 0) {
+        g.aus.gain.cancelScheduledValues(jetzt);
+        g.aus.gain.setTargetAtTime(0, jetzt, 0.035);
+        g.ziel = 0; g.stillAb = jetzt + 0.4; g.setzungen++;
+      } else if (g.verbunden && jetzt > g.stillAb) {
+        try { g.aus.disconnect(); } catch (e) { /* schon getrennt */ }
+        g.verbunden = false;
+      }
+      return;
+    }
+    if (Math.abs(menge - g.ziel) < 0.03 && Math.abs(takt - g.takt) < g.takt * 0.04 && jetzt - g.gesetzt < 0.1) return;
+    if (!g.verbunden) { g.aus.connect(g.ctx.destination); g.verbunden = true; }
+    const vol = typeof tyreVolume === 'number' ? tyreVolume / 0.35 : 1;
+    const p = g.aus.gain;
+    p.cancelScheduledValues(jetzt);
+    p.setTargetAtTime(menge * RS.pegel * vol, jetzt, 0.03);
+    p.setTargetAtTime(0, jetzt + 0.25, 0.05);       // Totmann, vom naechsten Aufruf wieder aufgehoben
+    if (Math.abs(takt - g.takt) > 0.01 || g.gesetzt < 0) {
+      g.lfo.frequency.setTargetAtTime(takt, jetzt, 0.05);
+      g.ton.frequency.setTargetAtTime(38 + 1.2 * takt, jetzt, 0.08);
+    }
+    g.ziel = menge; g.takt = takt; g.gesetzt = jetzt; g.setzungen++;
+  }
+  let rsKette = null;
+  function randsteinKlang(menge, takt) {
+    if (!audioCtx) return;
+    if (!soundEnabled) menge = 0;
+    if (!rsKette || rsKette.ctx !== audioCtx) {
+      if (!(menge > 0)) return;
+      try { rsKette = randsteinKlangBauen(audioCtx); } catch (e) { return; }
+    }
+    randsteinKlangSetzen(rsKette, menge, takt, audioCtx.currentTime);
   }
 
   // ---- Ambience: a quiet bed plus scattered one-off events ----
@@ -105980,6 +106126,93 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (merk.v === null) localStorage.removeItem(KV); else localStorage.setItem(KV, merk.v);
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : '5 Codes wie im Skript, Spiegel und Drehung gleich, rueckwaerts anders, Presets bekannt, Wanderung' };
+  });
+
+  // v1.3.39 BESTELLT: "Verbessere den Randstein-Sound. Aktuell ist es ein hohes Klicken ... Es soll dumpf sein,
+  // eher wie bei Assetto Corsa Competizione." Eine dauerhafte WebAudio-Kette (80-sound.js randsteinKlang),
+  // je Aufruf nur Ziele (setTargetAtTime), Takt aus Tempo / Rippenabstand, Schalter "Randstein-Klang: alt".
+  stAdd('Virtuell v1.3.39: Randstein-Klang dumpf, Takt mit Tempo, eine Kette, alt per Schalter', async () => {
+    const f = [];
+    const sw = $('setting-randstein-alt');
+    if (!sw) f.push('Schalter fehlt');
+    else {
+      if (sw.defaultChecked) f.push('Schalter ab Werk an');
+      const lab = sw.closest('.opt-row') && sw.closest('.opt-row').querySelector('.opt-label');
+      if (!lab || !lab.querySelector('.wip-tag') || !lab.querySelector('small')) f.push('Schalter ohne WIP oder ohne <small>');
+    }
+    // Takt: steigt mit dem Tempo, Grenzen 8..40.
+    const kmhVon = (anz) => anz / TACHO_SCALE;
+    const t40 = vfRandsteinTakt(kmhVon(40)), t120 = vfRandsteinTakt(kmhVon(120));
+    if (!(Math.abs(t40 - 8) < 0.5 && Math.abs(t120 - 24) < 1 && t120 > t40)) f.push('Takt 40/120 km/h: ' + t40.toFixed(1) + '/' + t120.toFixed(1));
+    if (vfRandsteinTakt(kmhVon(5)) !== 8 || vfRandsteinTakt(kmhVon(400)) !== 40) f.push('Taktgrenzen 8..40 nicht eingehalten');
+    if (!(vfRandsteinTakt(kmhVon(80)) > t40 && vfRandsteinTakt(kmhVon(160)) > t120)) f.push('Takt nicht monoton');
+    // Menge: 0 ohne Randstein und im Stand; tiefer auf dem Stein und schneller = lauter; Schalter alt = stumm.
+    const kante = TRACK_HALF_W - VF_AUTO.B * 0.5;
+    const merkAlt = randsteinKlangAlt;
+    try {
+      randsteinKlangAlt = false;
+      if (vfRandsteinMenge(false, TRACK_HALF_W, kmhVon(120)) !== 0) f.push('Menge ohne Randstein nicht 0');
+      if (vfRandsteinMenge(true, TRACK_HALF_W, 0) !== 0) f.push('Menge im Stand nicht 0');
+      const flach = vfRandsteinMenge(true, kante + 0.1, kmhVon(120)), tief = vfRandsteinMenge(true, TRACK_HALF_W, kmhVon(120));
+      if (!(flach > 0 && tief > flach && tief <= 1)) f.push('Menge nach Tiefe: ' + flach.toFixed(2) + '/' + tief.toFixed(2));
+      if (!(vfRandsteinMenge(true, TRACK_HALF_W, kmhVon(40)) < tief)) f.push('Menge steigt nicht mit dem Tempo');
+      randsteinKlangAlt = true;
+      if (vfRandsteinMenge(true, TRACK_HALF_W, kmhVon(120)) !== 0) f.push('Schalter alt: neues Rumpeln nicht stumm');
+    } finally { randsteinKlangAlt = merkAlt; }
+    // Aufruf im Bild: neues Rumpeln je Bild, altes Rattern nur mit dem Schalter, Controller-Rumpeln unveraendert.
+    const bild = String(vfBild);
+    if (bild.indexOf('vfRandsteinTon(kerb, q, kmh)') < 0) f.push('vfBild ruft vfRandsteinTon nicht');
+    if (bild.indexOf('if (randsteinKlangAlt) vfRattern(') < 0) f.push('altes Rattern nicht am Schalter');
+    if (bild.indexOf("padRumble(0.3, 0.25, 55, 'kerb', 1)") < 0) f.push('Controller-Rumpeln am Randstein fehlt');
+    // Kette: einmal anlegen, danach keine neuen Knoten je Aufruf. OfflineAudioContext, Zeitachse vorab geplant.
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) return { ok: !f.length, mass: f.length ? f.join(' | ') : 'ohne OfflineAudioContext nur Takt/Menge geprueft' };
+    const SR = 8000, ctx = new OAC(1, SR, SR);
+    let neu = 0;
+    ['createGain', 'createBiquadFilter', 'createOscillator', 'createBufferSource', 'createWaveShaper', 'createBuffer', 'createPeriodicWave']
+      .forEach((n) => { const orig = ctx[n]; ctx[n] = function () { neu++; return orig.apply(ctx, arguments); }; });
+    const g = randsteinKlangBauen(ctx);
+    const gebaut = neu;
+    randsteinKlangSetzen(g, 1, 24, 0.05);               // Randstein an (verbindet einmal mit dem Ausgang)
+    const nachStart = neu;
+    const s0 = g.setzungen;
+    randsteinKlangSetzen(g, 1, 24, 0.06);
+    if (g.setzungen !== s0) f.push('setzt bei gleichem Ziel nach 10 ms erneut');
+    for (let t = 0.07; t < 0.6; t += 0.02) randsteinKlangSetzen(g, 1, 24, t);
+    if (g.ziel !== 1 || Math.abs(g.takt - 24) > 1e-9) f.push('Ziel/Takt nicht gesetzt');
+    for (let t = 0.6; t < 0.98; t += 0.02) randsteinKlangSetzen(g, 0, 24, t);   // Randstein verlassen
+    if (g.ziel !== 0) f.push('Gain-Ziel ohne Randstein nicht 0');
+    if (neu !== nachStart) f.push((neu - nachStart) + ' neue Knoten waehrend der Aufrufe');
+    if (gebaut > 16) f.push(gebaut + ' Knoten fuer die Kette');
+    const buf = await ctx.startRendering();
+    const d = buf.getChannelData(0);
+    let summe = 0;
+    for (let i = 0; i < d.length; i++) summe += d[i] * d[i];
+    let spektrum = 'Spektrum nicht gemessen (Ausgang stumm geschaltet)';
+    if (summe > 1e-9) {
+      // Grobe DFT ueber 0,20..0,456 s (2048 Werte, voll auf dem Randstein): Anteil unter 300 Hz, Schwerpunkt.
+      const N = 2048, a0 = Math.round(0.2 * SR);
+      let e = 0, eT = 0, num = 0;
+      for (let k = 1; k < N / 2; k++) {
+        let re = 0, im = 0;
+        for (let i = 0; i < N; i++) { const w = 2 * Math.PI * k * i / N; re += d[a0 + i] * Math.cos(w); im -= d[a0 + i] * Math.sin(w); }
+        const p = re * re + im * im, hz = k * SR / N;
+        e += p; num += p * hz; if (hz < 300) eT += p;
+      }
+      const schwer = num / (e || 1), unter = eT / (e || 1);
+      if (!(schwer < 300)) f.push('Schwerpunkt ' + Math.round(schwer) + ' Hz');
+      if (!(unter > 0.8)) f.push('nur ' + Math.round(unter * 100) + ' % unter 300 Hz');
+      // Weich: in den ersten 3 ms nach dem Einschalten unter 30 % der Spitze, am Ende still.
+      let spitze = 0, anlauf = 0, ende = 0;
+      for (let i = a0; i < a0 + N; i++) spitze = Math.max(spitze, Math.abs(d[i]));
+      for (let i = Math.round(0.05 * SR); i < Math.round(0.053 * SR); i++) anlauf = Math.max(anlauf, Math.abs(d[i]));
+      for (let i = Math.round(0.85 * SR); i < SR; i++) ende = Math.max(ende, Math.abs(d[i]));
+      if (!(spitze > 0.05)) f.push('zu leise (Spitze ' + spitze.toFixed(3) + ')');
+      if (!(anlauf < spitze * 0.3)) f.push('harter Einsatz (' + anlauf.toFixed(3) + ' von ' + spitze.toFixed(3) + ')');
+      if (!(ende < spitze * 0.02)) f.push('blendet nicht aus (' + ende.toFixed(3) + ')');
+      spektrum = 'Schwerpunkt ' + Math.round(schwer) + ' Hz, ' + Math.round(unter * 100) + ' % unter 300 Hz';
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Takt 40/120 km/h ' + t40.toFixed(1) + '/' + t120.toFixed(1) + '/s, ' + gebaut + ' Knoten einmal, 0 je Aufruf, ' + spektrum };
   });
   // ============================== HOME ==============================
   // Der Schirm beim Laden, erreichbar ueber das Logo. Die Zahl der Einstellungen wird

@@ -24701,3 +24701,90 @@
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : '5 Codes wie im Skript, Spiegel und Drehung gleich, rueckwaerts anders, Presets bekannt, Wanderung' };
   });
+
+  // v1.3.39 BESTELLT: "Verbessere den Randstein-Sound. Aktuell ist es ein hohes Klicken ... Es soll dumpf sein,
+  // eher wie bei Assetto Corsa Competizione." Eine dauerhafte WebAudio-Kette (80-sound.js randsteinKlang),
+  // je Aufruf nur Ziele (setTargetAtTime), Takt aus Tempo / Rippenabstand, Schalter "Randstein-Klang: alt".
+  stAdd('Virtuell v1.3.39: Randstein-Klang dumpf, Takt mit Tempo, eine Kette, alt per Schalter', async () => {
+    const f = [];
+    const sw = $('setting-randstein-alt');
+    if (!sw) f.push('Schalter fehlt');
+    else {
+      if (sw.defaultChecked) f.push('Schalter ab Werk an');
+      const lab = sw.closest('.opt-row') && sw.closest('.opt-row').querySelector('.opt-label');
+      if (!lab || !lab.querySelector('.wip-tag') || !lab.querySelector('small')) f.push('Schalter ohne WIP oder ohne <small>');
+    }
+    // Takt: steigt mit dem Tempo, Grenzen 8..40.
+    const kmhVon = (anz) => anz / TACHO_SCALE;
+    const t40 = vfRandsteinTakt(kmhVon(40)), t120 = vfRandsteinTakt(kmhVon(120));
+    if (!(Math.abs(t40 - 8) < 0.5 && Math.abs(t120 - 24) < 1 && t120 > t40)) f.push('Takt 40/120 km/h: ' + t40.toFixed(1) + '/' + t120.toFixed(1));
+    if (vfRandsteinTakt(kmhVon(5)) !== 8 || vfRandsteinTakt(kmhVon(400)) !== 40) f.push('Taktgrenzen 8..40 nicht eingehalten');
+    if (!(vfRandsteinTakt(kmhVon(80)) > t40 && vfRandsteinTakt(kmhVon(160)) > t120)) f.push('Takt nicht monoton');
+    // Menge: 0 ohne Randstein und im Stand; tiefer auf dem Stein und schneller = lauter; Schalter alt = stumm.
+    const kante = TRACK_HALF_W - VF_AUTO.B * 0.5;
+    const merkAlt = randsteinKlangAlt;
+    try {
+      randsteinKlangAlt = false;
+      if (vfRandsteinMenge(false, TRACK_HALF_W, kmhVon(120)) !== 0) f.push('Menge ohne Randstein nicht 0');
+      if (vfRandsteinMenge(true, TRACK_HALF_W, 0) !== 0) f.push('Menge im Stand nicht 0');
+      const flach = vfRandsteinMenge(true, kante + 0.1, kmhVon(120)), tief = vfRandsteinMenge(true, TRACK_HALF_W, kmhVon(120));
+      if (!(flach > 0 && tief > flach && tief <= 1)) f.push('Menge nach Tiefe: ' + flach.toFixed(2) + '/' + tief.toFixed(2));
+      if (!(vfRandsteinMenge(true, TRACK_HALF_W, kmhVon(40)) < tief)) f.push('Menge steigt nicht mit dem Tempo');
+      randsteinKlangAlt = true;
+      if (vfRandsteinMenge(true, TRACK_HALF_W, kmhVon(120)) !== 0) f.push('Schalter alt: neues Rumpeln nicht stumm');
+    } finally { randsteinKlangAlt = merkAlt; }
+    // Aufruf im Bild: neues Rumpeln je Bild, altes Rattern nur mit dem Schalter, Controller-Rumpeln unveraendert.
+    const bild = String(vfBild);
+    if (bild.indexOf('vfRandsteinTon(kerb, q, kmh)') < 0) f.push('vfBild ruft vfRandsteinTon nicht');
+    if (bild.indexOf('if (randsteinKlangAlt) vfRattern(') < 0) f.push('altes Rattern nicht am Schalter');
+    if (bild.indexOf("padRumble(0.3, 0.25, 55, 'kerb', 1)") < 0) f.push('Controller-Rumpeln am Randstein fehlt');
+    // Kette: einmal anlegen, danach keine neuen Knoten je Aufruf. OfflineAudioContext, Zeitachse vorab geplant.
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) return { ok: !f.length, mass: f.length ? f.join(' | ') : 'ohne OfflineAudioContext nur Takt/Menge geprueft' };
+    const SR = 8000, ctx = new OAC(1, SR, SR);
+    let neu = 0;
+    ['createGain', 'createBiquadFilter', 'createOscillator', 'createBufferSource', 'createWaveShaper', 'createBuffer', 'createPeriodicWave']
+      .forEach((n) => { const orig = ctx[n]; ctx[n] = function () { neu++; return orig.apply(ctx, arguments); }; });
+    const g = randsteinKlangBauen(ctx);
+    const gebaut = neu;
+    randsteinKlangSetzen(g, 1, 24, 0.05);               // Randstein an (verbindet einmal mit dem Ausgang)
+    const nachStart = neu;
+    const s0 = g.setzungen;
+    randsteinKlangSetzen(g, 1, 24, 0.06);
+    if (g.setzungen !== s0) f.push('setzt bei gleichem Ziel nach 10 ms erneut');
+    for (let t = 0.07; t < 0.6; t += 0.02) randsteinKlangSetzen(g, 1, 24, t);
+    if (g.ziel !== 1 || Math.abs(g.takt - 24) > 1e-9) f.push('Ziel/Takt nicht gesetzt');
+    for (let t = 0.6; t < 0.98; t += 0.02) randsteinKlangSetzen(g, 0, 24, t);   // Randstein verlassen
+    if (g.ziel !== 0) f.push('Gain-Ziel ohne Randstein nicht 0');
+    if (neu !== nachStart) f.push((neu - nachStart) + ' neue Knoten waehrend der Aufrufe');
+    if (gebaut > 16) f.push(gebaut + ' Knoten fuer die Kette');
+    const buf = await ctx.startRendering();
+    const d = buf.getChannelData(0);
+    let summe = 0;
+    for (let i = 0; i < d.length; i++) summe += d[i] * d[i];
+    let spektrum = 'Spektrum nicht gemessen (Ausgang stumm geschaltet)';
+    if (summe > 1e-9) {
+      // Grobe DFT ueber 0,20..0,456 s (2048 Werte, voll auf dem Randstein): Anteil unter 300 Hz, Schwerpunkt.
+      const N = 2048, a0 = Math.round(0.2 * SR);
+      let e = 0, eT = 0, num = 0;
+      for (let k = 1; k < N / 2; k++) {
+        let re = 0, im = 0;
+        for (let i = 0; i < N; i++) { const w = 2 * Math.PI * k * i / N; re += d[a0 + i] * Math.cos(w); im -= d[a0 + i] * Math.sin(w); }
+        const p = re * re + im * im, hz = k * SR / N;
+        e += p; num += p * hz; if (hz < 300) eT += p;
+      }
+      const schwer = num / (e || 1), unter = eT / (e || 1);
+      if (!(schwer < 300)) f.push('Schwerpunkt ' + Math.round(schwer) + ' Hz');
+      if (!(unter > 0.8)) f.push('nur ' + Math.round(unter * 100) + ' % unter 300 Hz');
+      // Weich: in den ersten 3 ms nach dem Einschalten unter 30 % der Spitze, am Ende still.
+      let spitze = 0, anlauf = 0, ende = 0;
+      for (let i = a0; i < a0 + N; i++) spitze = Math.max(spitze, Math.abs(d[i]));
+      for (let i = Math.round(0.05 * SR); i < Math.round(0.053 * SR); i++) anlauf = Math.max(anlauf, Math.abs(d[i]));
+      for (let i = Math.round(0.85 * SR); i < SR; i++) ende = Math.max(ende, Math.abs(d[i]));
+      if (!(spitze > 0.05)) f.push('zu leise (Spitze ' + spitze.toFixed(3) + ')');
+      if (!(anlauf < spitze * 0.3)) f.push('harter Einsatz (' + anlauf.toFixed(3) + ' von ' + spitze.toFixed(3) + ')');
+      if (!(ende < spitze * 0.02)) f.push('blendet nicht aus (' + ende.toFixed(3) + ')');
+      spektrum = 'Schwerpunkt ' + Math.round(schwer) + ' Hz, ' + Math.round(unter * 100) + ' % unter 300 Hz';
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Takt 40/120 km/h ' + t40.toFixed(1) + '/' + t120.toFixed(1) + '/s, ' + gebaut + ' Knoten einmal, 0 je Aufruf, ' + spektrum };
+  });

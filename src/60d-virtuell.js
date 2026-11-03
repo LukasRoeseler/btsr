@@ -933,9 +933,10 @@
       if (VF.kerbSeit === undefined || rennZeitJetzt() - VF.kerbSeit > 70) {
         VF.kerbSeit = rennZeitJetzt();
         padRumble(0.3, 0.25, 55, 'kerb', 1);
-        vfRattern(0.10 + Math.min(0.10, Math.abs(kmh) / 40));
+        if (randsteinKlangAlt) vfRattern(0.10 + Math.min(0.10, Math.abs(kmh) / 40));
       }
     }
+    vfRandsteinTon(kerb, q, kmh);   // v1.3.39: dumpfes Rumpeln, je Bild (billig), blendet selbst aus
     if (ab) {
       st.speedKmh *= Math.exp(-VF_ABSEITS_BREMSE * dt);
       if (rennZeitJetzt() - VF.abseitsSeit > VF_ABSEITS_ZURUECK_MS) vfZuruecksetzen();
@@ -1494,7 +1495,32 @@
     rechts.appendChild(z);
   }
 
+  // v1.3.39 BESTELLT: "Verbessere den Randstein-Sound. Aktuell ist es ein hohes Klicken ... Es soll
+  // dumpf sein, eher wie bei Assetto Corsa Competizione." Das Rumpeln selbst steht in 80-sound.js
+  // (randsteinKlang); hier nur, was die Bahn dazu weiss:
+  //   Takt  = Rippen je Sekunde = VF_KERB_RIPPEN * Weg je Sekunde / Laenge eines Farbfelds. Ein Farbfeld
+  //           (rot oder weiss) sind zwei Mittellinienpunkte (vfTilesWaehlen: Math.floor(i / 2) % 2), also
+  //           2 * TRACK_STEP / TRACK_SAMPLES_PER_TILE Einheiten auf der Geraden. Drei Rippen je Feld:
+  //           Tacho 40 km/h -> 8, 120 km/h -> 24, ab 200 km/h 40 Schlaege/s (Grenzen 8..40).
+  //   Menge = wie weit das Auto auf dem Stein ist (0 = Kante beruehrt, 1 = Mitte auf dem Rand) und Tempo.
+  // Mit "Randstein-Klang: alt" bleibt das neue Rumpeln stumm und vfRattern spielt wie bis v1.3.38.
+  const VF_KERB_STREIFEN = 2 * TRACK_STEP / TRACK_SAMPLES_PER_TILE;
+  const VF_KERB_RIPPEN = 3;
+  function vfRandsteinTakt(kmh) {
+    const vE = Math.abs(kmh) / 3.6 * 100 * TRACK_UNITS_PER_CM;
+    return Math.max(8, Math.min(40, VF_KERB_RIPPEN * vE / VF_KERB_STREIFEN));
+  }
+  function vfRandsteinMenge(kerb, q, kmh) {
+    if (!kerb || randsteinKlangAlt || !(Math.abs(kmh) > 0.05)) return 0;
+    const tiefe = Math.max(0, Math.min(1, (q - (TRACK_HALF_W - VF_AUTO.B * 0.5)) / (VF_AUTO.B * 0.5)));
+    return (0.45 + 0.55 * tiefe) * Math.min(1, 0.35 + Math.abs(kmh) * TACHO_SCALE / 160);
+  }
+  function vfRandsteinTon(kerb, q, kmh) {
+    randsteinKlang(vfRandsteinMenge(kerb, q, kmh), vfRandsteinTakt(kmh));
+  }
+
   // v1.2.62: ein kurzes "Rattern" (weisses Rauschen) fuer die Randsteine, ueber audioCtx (80-sound.js).
+  // Seit v1.3.39 nur noch mit dem Schalter "Randstein-Klang: alt".
   // BESTELLT: Latenz. Korrektur nach 1.2.66: der Rauschpuffer (60 ms, abklingend) wird EINMAL je
   // AudioContext angelegt und wiederverwendet. Vorher entstand alle 70 ms ein neuer Puffer samt
   // 2.880 Zufallszahlen - Muell fuer die Speicherbereinigung, die auf schwachen Handys als

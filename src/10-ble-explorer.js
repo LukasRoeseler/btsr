@@ -4042,6 +4042,8 @@
     "Wähle für den nächsten Stopp Regenreifen. Drücke dazu die Reifen-Taste, bis Regen angezeigt wird.": "Choose rain tyres for the next stop. Press the tyre button until rain is shown.",
     "Und jetzt der zweite Boxenstopp. Tippe die Boxenstopp-Taste und halte an.": "And now the second pit stop. Tap the pit stop button and stop the car.",
     "Die Regenreifen sind drauf. Fahr weiter.": "The rain tyres are on. Drive on.",
+    "Randstein-Klang: alt": "Kerb sound: old",
+    "Aus (Standard, neu): Im virtuellen Fahren rumpelt der Randstein dumpf wie in Assetto Corsa Competizione, im Takt der Rippen, schneller mit dem Tempo und lauter, je weiter das Auto auf dem Stein ist. An: das frühere helle Rattern.": "Off (default, new): in virtual driving the kerb rumbles deeply like in Assetto Corsa Competizione, in time with the ridges, faster with speed and louder the further the car is on the kerb. On: the earlier bright rattle.",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -5427,6 +5429,8 @@
     "Wähle für den nächsten Stopp Regenreifen. Drücke dazu die Reifen-Taste, bis Regen angezeigt wird.": "Elige neumáticos de lluvia para la próxima parada. Pulsa el botón de neumáticos hasta que aparezca lluvia.",
     "Und jetzt der zweite Boxenstopp. Tippe die Boxenstopp-Taste und halte an.": "Y ahora la segunda parada en boxes. Toca el botón de parada en boxes y detén el coche.",
     "Die Regenreifen sind drauf. Fahr weiter.": "Ya están los neumáticos de lluvia. Sigue conduciendo.",
+    "Randstein-Klang: alt": "Sonido de los pianos: antiguo",
+    "Aus (Standard, neu): Im virtuellen Fahren rumpelt der Randstein dumpf wie in Assetto Corsa Competizione, im Takt der Rippen, schneller mit dem Tempo und lauter, je weiter das Auto auf dem Stein ist. An: das frühere helle Rattern.": "Desactivado (por defecto, nuevo): en la conducción virtual el piano retumba grave como en Assetto Corsa Competizione, al ritmo de sus estrías, más rápido con la velocidad y más fuerte cuanto más pisa el coche el piano. Activado: el traqueteo agudo de antes.",
   };
 
   // ============================================================================
