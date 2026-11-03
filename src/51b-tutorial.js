@@ -375,7 +375,7 @@
     pacejka: 'Nun wird ein realistischeres Einlenken simuliert.',
     beschleunigung: 'Das Auto beschleunigt jetzt langsamer, wie ein echter Rennwagen.',
     untersteuern: 'Fährst du zu schnell in eine Kurve, schiebt das Auto geradeaus. Das ist Untersteuern. Bremse also vor der Kurve.',
-    box_erklaerung: 'Zeit für einen Boxenstopp. Gleich erscheinen Tasten auf dem Schirm. Drückst du sie rechtzeitig, ist die Crew schneller.',
+    box_erklaerung: 'Zeit für einen Boxenstopp. Gleich erscheinen Tasten auf dem Schirm. Drückst du sie schnell und richtig, ist die Crew schneller.',
     box: 'Tippe jetzt die Boxenstopp-Taste und halte an.',
     box_fertig: 'Fertig! Fahr weiter.',
     motor: 'Der Motorsound wird nun geändert zu Ford Mustang.',

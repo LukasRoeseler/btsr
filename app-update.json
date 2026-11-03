@@ -1,5 +1,5 @@
-{"version":"1.3.61","apk":2,"dateien":[
-{"p":"index.html","h":"6fa8db0fec2f1e0b788a4e38337a28163a5a01ce081196d4d419ade30318db6f","g":7399843},
+{"version":"1.3.65","apk":2,"dateien":[
+{"p":"index.html","h":"adb040d356c4a481bdc96310c83b2256bafa250b12dbe1e1e7d36350e93b8116","g":7402407},
 {"p":"mp-overview.html","h":"61388dad99cb805de167fe9a10b9ffdb1d4655c450f175f4eeb9ede3a24d04aa","g":9956},
 {"p":"manifest.webmanifest","h":"868416fe2c9d41ebed0b5d479f07bbd16679dd4835e9c526da9eae8046e1e36a","g":639},
 {"p":"favicon.svg","h":"bc804f771d409b0efff2f2a78238a91d843d8d02efc2c614c6bdc544763de931","g":5456},
@@ -597,7 +597,7 @@
 {"p":"audio/thunder_0.ogg","h":"33e6c03c9947806e8aa8ad28bc39d0e4bf41a57c7aa488ce29337f06e66cc4fb","g":16587},
 {"p":"audio/thunder_1.ogg","h":"b5556f7ecc9e77d4bf6ac8d6e202d816310a2234d07479c5c21bb2f41487f410","g":15902},
 {"p":"audio/thunder_2.ogg","h":"018fad65187e44a93c8cf9736b8d2b49b3553d689560526c1f9e1b8ca2caee31","g":16217},
-{"p":"audio/tutorial.json","h":"fe1c081af8546892d3030ec5b51a812b7d887dd5e6fd027005b7801f8229b714","g":7371},
+{"p":"audio/tutorial.json","h":"10347753e1f0e389814c136f4a8d7c0c832c74a7b6a5491b1f142098e53fdc4c","g":7387},
 {"p":"audio/tutorial_abschluss_de.ogg","h":"b9b1cdf2c745d1c83729c483296101e5285b5ac39df31b998470d78d0af39779","g":26143},
 {"p":"audio/tutorial_arcade_boden_de.ogg","h":"bafcfa3091f7a91da3fc8cb8f4579f70780aa6e9f4000e3afa0813717befba70","g":34162},
 {"p":"audio/tutorial_arcade_de.ogg","h":"33184d874d71237edde77f08c4cc6c09860f1a11e924b1eb53c926299a9e97d4","g":32247},
@@ -605,7 +605,7 @@
 {"p":"audio/tutorial_box2_de.ogg","h":"73c126717156d8257472be91be46f80560ce67301bb408e9b104c7d100d5ece6","g":28581},
 {"p":"audio/tutorial_box2_fertig_de.ogg","h":"67e9e223f33e23429f8fe128815508024e4846378c97a04b2d82f18087e5d3bb","g":16629},
 {"p":"audio/tutorial_box_de.ogg","h":"1600742402dcf8e72d7ac4e1497832b810ea60c31625e1489ec25907853f4f16","g":18124},
-{"p":"audio/tutorial_box_erklaerung_de.ogg","h":"e5c4074037e79416f1e4dbdc298b712e1b2fb33ae74f0a287c50efd74822e29a","g":38025},
+{"p":"audio/tutorial_box_erklaerung_de.ogg","h":"8614c07e2d7e28103a7bd18d99288596f18bdfa1b2b509b202697f2bb8ecb6d7","g":39269},
 {"p":"audio/tutorial_box_fertig_de.ogg","h":"0061778ad1ca3b0b65ae5ddfd38275fea0013aff40cb9714ddc44647d68cfdab","g":10397},
 {"p":"audio/tutorial_bremse_de.ogg","h":"a4b4a9d28b36ec016270ac39c50ed67aa9534a7f35c17d1e6b403a30f6cfffe1","g":16684},
 {"p":"audio/tutorial_garage_de.ogg","h":"782ac8530dfac3876a55c2fb6a3211531277fecf7c5be332a351648388a025b2","g":22138},
