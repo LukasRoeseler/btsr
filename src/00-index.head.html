@@ -2997,6 +2997,11 @@
   .tut-kopf button { font-family: var(--k-font); letter-spacing: .08em; text-transform: uppercase; font-size: 11px;
     padding: 2px 8px; border-radius: 0; background: transparent; color: var(--k-dim); border: 1px solid var(--k-dim); }
   .tut-kopf button:hover, .tut-kopf button:focus-visible { color: #fff; border-color: #fff; }
+  .tut-wahl { grid-column: 1 / -1; display: flex; gap: 8px; margin-top: 6px; }
+  .tut-wahl[hidden] { display: none; }
+  .tut-wahl button { flex: 1 1 0; font-family: var(--k-font); letter-spacing: .08em; text-transform: uppercase;
+    font-size: 13px; padding: 8px 10px; border-radius: 0; background: #161a24; color: #fff; border: 2px solid var(--k-blau, #00a3e0); }
+  .tut-wahl button.gewaehlt { background: var(--k-blau, #00a3e0); color: var(--k-blau-text, #04070c); }
   /* ---- Mehrspieler (v0.8.26) ---- */
   .mp-warnung { border-left: 3px solid var(--warn); padding: 3px 10px; margin: 6px 0 10px; font-size: 12px; color: #f3d9a0;
     background: rgba(255,180,0,.08); }
@@ -4996,7 +5001,7 @@
              Start ausgewaehlt und blau ausgefuellt". Die Wahl fuehrt 96-home.js (homeFokus). -->
         <a class="k-tutorial-knopf k-wiki" id="k-wiki" href="https://omegasim.miraheze.org/wiki/Hauptseite"
            target="_blank" rel="noopener noreferrer" aria-label="Wiki">Wiki</a>
-        <button type="button" id="k-tutorial-start" class="k-tutorial-knopf">Tutorial <span class="wip-tag">WIP</span></button>
+        <button type="button" id="k-tutorial-start" class="k-tutorial-knopf">Tutorial</button>
         <!-- BESTELLT: "neben dem Tutorial-Button noch einen Button zur Steuerung ... dass es nur
              mit Gamepad funktioniert, zeige die Tasten und am Ende, wo man das Bild vom
              Controller mit allen Tasten sieht und die Belegung aendern kann". -->
@@ -12529,7 +12534,7 @@
     <div class="card subpage" id="sub-opt-tutorials">
       <div class="opt-head">Tutorials</div>
       <div class="opt-row"><div class="opt-label">Alle F&uuml;hrungen an einem Ort. Jede startet auf dem passenden Schirm.</div></div>
-      <div class="opt-row tut-zeile"><button class="tut-knopf" data-tour="start"><b>Tutorial <span class="wip-tag">WIP</span></b><span>Erste Runden mit Ansage: Gas, Bremse, Lenken, Fahrgef&uuml;hl, Boxenstopp und Motorsound.</span></button></div>
+      <div class="opt-row tut-zeile"><button class="tut-knopf" data-tour="start"><b>Tutorial</b><span>Erste Runden mit Ansage: Gas, Bremse, Lenken, Licht, Fahrgef&uuml;hl, Boxenstopp, Regenreifen und Motorsound, mit Bahn oder auf dem Boden.</span></button></div>
       <div class="opt-row tut-zeile"><button class="tut-knopf" data-tour="steuerung"><b>Steuerung</b><span>Gamepad beim Fahren: Tasten ansehen und dr&uuml;cken.</span></button></div>
       <div class="opt-row tut-zeile"><button class="tut-knopf" data-tour="editor"><b>Streckeneditor</b><span>Teile ausw&auml;hlen, einf&uuml;gen, drehen, r&uuml;ckg&auml;ngig.</span></button></div>
       <div class="opt-row tut-zeile"><button class="tut-knopf" data-tour="raum"><b>Raumgestalter</b><span>Boden und M&ouml;bel zeichnen, Strecke einpassen.</span></button></div>
@@ -13197,11 +13202,16 @@
   <!-- GEFUEHRTES TUTORIAL (v1.3.15, WIP, 51b-tutorial.js): eine Karte oben ueber dem Cockpit.
        Sie nimmt keine Tasten: gefahren wird darunter ganz normal. -->
   <div class="tut-ui" id="tut-ui" hidden role="status" aria-live="polite">
-    <div class="tut-kopf"><span>Tutorial <span class="wip-tag">WIP</span></span><span id="tut-fortschritt" data-i18n-skip></span>
+    <div class="tut-kopf"><span>Tutorial</span><span id="tut-fortschritt" data-i18n-skip></span>
       <span class="tut-hinweis" id="tut-hinweis" data-i18n-skip></span><button type="button" id="tut-beenden">Beenden</button></div>
     <span class="tut-taste" id="tut-taste" hidden data-i18n-skip></span>
     <h2 id="tut-titel" data-i18n-skip></h2>
     <p id="tut-text" data-i18n-skip></p>
+    <!-- v1.3.31: Wahl Bahn oder Boden (Steuerkreuz + Kreuz/A, Maus, Finger, Pfeile + Enter). -->
+    <div class="tut-wahl" id="tut-wahl" hidden>
+      <button type="button" data-wahl="bahn">Mit Bahn</button>
+      <button type="button" data-wahl="boden">Auf dem Boden</button>
+    </div>
   </div>
   <!-- RENNENDE AUS EINEM MENUE: eine Einblendung statt eines Sprungs ins Cockpit. -->
   <button type="button" class="k-ergebnis" id="k-ergebnis" hidden>Rennen beendet – Ergebnis ansehen</button>
