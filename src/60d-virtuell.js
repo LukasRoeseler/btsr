@@ -149,8 +149,8 @@
   const VF_ATLAS_B = 2048, VF_ATLAS_H = 1024;   // Bodenatlas (8 MB, mit Mipmaps 10,7 MB)
   const VF_BAHN_TEX = 1024, VF_BAHN_SPALTE = 256;  // Fahrbahn: 4 Teile nebeneinander (3 gebraucht, 1 Start/Ziel)
   const VF_RAND_B = 256, VF_RAND_H = 1024;       // Randstreifen: blau | rot, 4 Pfeiltakte uebereinander
-  const VF_FUGE = 0.12;                          // halbe Steckfuge in Einheiten (zusammen ~2,6 mm)
-  const VF_FUGE_FARBE = [0.13, 0.13, 0.14];
+  const VF_FUGE = 0.07;                          // halbe Steckfuge in Einheiten (zusammen ~1,5 mm)
+  const VF_FUGE_FARBE = [0.22, 0.22, 0.23];
   // Gemerkte Pixel (einmal je Sitzung) und wie oft sie erzeugt wurden (Selbsttest).
   const vfTexDaten = { bahn: null, rand: null, boden: null, bodenId: null };
   const vfTexZaehler = { bahn: 0, rand: 0, boden: 0 };
@@ -257,11 +257,27 @@
   // Bodenatlas fuer eine Art: spalten x zeilen Stuecke (Diele 256 x 1024 px, Stab 128 x 512 px).
   // Gemerkt wird nur die gerade gewaehlte Art. Dazu der Mittelwert (fuer die weite Flaeche ausserhalb
   // der Dielen) und das Texel (0,0), ueber das diese Flaeche ihre Farbe holt.
+  // ERZEUGT WIRD IN SCHRITTEN (Generator, ein Holzstueck bzw. eine Bahnspalte je Schritt): so kann es
+  // im Leerlauf der Garage laufen (vfTexturenVorbereiten), und der Start laedt nur noch hoch. Startet
+  // die Fahrt vorher, rechnet vfBodenTexturDaten/vfBahnTexturDaten den Rest sofort fertig.
+  const vfTexLauf = { boden: null, bodenId: null, bahn: null };
+  function vfBodenLauf(P) {
+    if (!vfTexLauf.boden || vfTexLauf.bodenId !== P.id) {
+      vfTexZaehler.boden++;
+      vfTexDaten.boden = null; vfTexDaten.bodenId = null;   // die vorige Art freigeben
+      vfTexLauf.boden = vfBodenBau(P); vfTexLauf.bodenId = P.id;
+    }
+    return vfTexLauf.boden;
+  }
   function vfBodenTexturDaten(id) {
     const P = vfBodenArt(id);
     if (vfTexDaten.boden && vfTexDaten.bodenId === P.id) return vfTexDaten.boden;
-    vfTexZaehler.boden++;
-    vfTexDaten.boden = null;     // die vorige Art freigeben, bevor die neue Speicher belegt
+    const L = vfBodenLauf(P);
+    while (!L.next().done) { /* naechstes Stueck */ }
+    vfTexLauf.boden = null;
+    return vfTexDaten.boden;
+  }
+  function* vfBodenBau(P) {
     const AW = VF_ATLAS_B, AH = VF_ATLAS_H, d = new Uint8ClampedArray(AW * AH * 4);
     const rnd = vfZufall(P.id === 'eiche' ? 1911 : P.id === 'grau' ? 2701 : 3307);
     const w = AW / P.spalten, h = AH / P.zeilen, stuecke = [];
@@ -269,6 +285,7 @@
       for (let s = 0; s < P.spalten; s++) {
         vfHolzStueck(d, AW, s * w, r * h, w, h, P, rnd);
         stuecke.push([(s * w + 0.5) / AW, (r * h + 0.5) / AH, ((s + 1) * w - 0.5) / AW, ((r + 1) * h - 0.5) / AH]);
+        yield;
       }
     }
     let sr = 0, sg = 0, sb = 0, sa = 0;
@@ -279,15 +296,23 @@
     const texel = [Math.max(1, d[0]) / 255, Math.max(1, d[1]) / 255, Math.max(1, d[2]) / 255];
     vfTexDaten.boden = { d: new Uint8Array(d.buffer), w: AW, h: AH, stuecke, mittel, ferne: [mittel[0] / texel[0], mittel[1] / texel[1], mittel[2] / texel[2]], art: P };
     vfTexDaten.bodenId = P.id;
-    return vfTexDaten.boden;
   }
   // Fahrbahn: matt schwarzer Kunststoff mit feiner Koernung, leichten Glanzunterschieden (Alpha),
   // einer etwas glatter gefahrenen Spur, Kratzern und Staub. Je Bahnteil (v = 0..1 ueber das Teil)
   // eine Spalte: drei Gebrauchsgrade und das Start/Ziel-Teil mit der karierten Linie wie auf dem Foto.
-  // Die Steckfuge liegt an beiden Enden (je 3 px, mit heller Kante daneben).
+  // Die Steckfuge liegt an beiden Enden (je 2 px = 0,8 mm dunkel, mit heller Kante daneben).
+  function vfBahnLauf() {
+    if (!vfTexLauf.bahn) { vfTexZaehler.bahn++; vfTexLauf.bahn = vfBahnBau(); }
+    return vfTexLauf.bahn;
+  }
   function vfBahnTexturDaten() {
     if (vfTexDaten.bahn) return vfTexDaten.bahn;
-    vfTexZaehler.bahn++;
+    const L = vfBahnLauf();
+    while (!L.next().done) { /* naechste Spalte */ }
+    vfTexLauf.bahn = null;
+    return vfTexDaten.bahn;
+  }
+  function* vfBahnBau() {
     const W = VF_BAHN_TEX, H = VF_BAHN_TEX, SW = VF_BAHN_SPALTE;
     const cv = document.createElement('canvas');
     cv.width = W; cv.height = H;
@@ -303,24 +328,25 @@
         for (let x = 0; x < SW; x++) { const q = (x / SW - m) / b; if (q > -3 && q < 3) spur[x] += st * Math.exp(-q * q); }
       }
       for (let y = 0; y < H; y++) {
-        const fuge = y < 3 || y >= H - 3, fase = y === 3 || y === H - 4;
+        const fuge = y === 0 || y === H - 1, halb = y === 1 || y === H - 2, fase = y === 2 || y === H - 3;
         for (let x = 0; x < SW; x++) {
           const fi = y * SW + x, sp = spur[x];
           let v = 30 + fleck[fi] * 2.6 + (vfHash(s * SW + x, y) - 0.5) * 6 - sp * 1.6;
           let gl = 0.36 + 0.24 * glanzF[fi] + 0.12 * (sp > 1 ? 1 : sp);
-          if (fuge) { v = 11; gl = 0; } else if (fase) { v = 44; gl = 0.1; }
+          if (fuge) { v = 12; gl = 0; } else if (halb) { v = 21; gl = 0.1; } else if (fase) { v = 40; gl = 0.2; }
           const i = (y * W + s * SW + x) * 4;
           d[i] = v * 0.96; d[i + 1] = v * 0.98; d[i + 2] = v * 1.05; d[i + 3] = 255;
           glanz[y * W + s * SW + x] = gl * 255;
         }
       }
+      yield;
     }
     g.putImageData(bild, 0, 0);
     const pxB = SW / 25, pxL = H / 43;   // px je cm quer / laengs
     for (let s = 0; s < 4; s++) {
       const rnd = vfZufall(5003 + s * 104729);
       g.save();
-      g.beginPath(); g.rect(s * SW, 4, SW, H - 8); g.clip();
+      g.beginPath(); g.rect(s * SW, 3, SW, H - 6); g.clip();
       g.setTransform(pxB, 0, 0, pxL, s * SW, 0);       // ab hier in cm
       if (s === 3) {
         // Start/Ziel wie auf dem Foto: zwei Reihen weisser Kaestchen, versetzt, mit einer Linie dazwischen.
@@ -368,7 +394,6 @@
       out[i + 3] = fertig[i + 1] - d[i + 1] > 5 ? glanz[p] * 0.3 : glanz[p];
     }
     vfTexDaten.bahn = { d: out, w: W, h: H };
-    return vfTexDaten.bahn;
   }
   // Randstreifen: weiss mit blauen (links) bzw. roten (rechts) Pfeilen wie auf den Bahnteilen
   // (photos/startgerade.jpg; Masse wie echtRandstreifen in 60-track.js: Pfeil 75 % der Streifenbreite,
@@ -432,10 +457,34 @@
     vfTexDaten.rand = { d: out, w: W, h: H };
     return vfTexDaten.rand;
   }
-  // Pixel als Textur hochladen: Mipmaps, trilinear (oder nur bilinear je Mip-Stufe: die fast einfarbige
-  // Fahrbahn), anisotrop hoechstens aniso-fach, wenn vorhanden. Gemessen (Software-GL, 1280 x 720,
-  // Verfolger): 4-fach auf allen drei kostete 14 ms je Bild mehr als 1-fach; 2-fach auf Boden und
-  // Randstein haelt Pfeile und Fugen in der Ferne lesbar, die Fahrbahn braucht es nicht.
+  // Im Leerlauf vorbereiten (aus der Garage gerufen, wenn die Optionen der virtuellen Fahrt offen sind):
+  // je Leerlauf-Haeppchen so viele Schritte, wie die Frist erlaubt (ein Schritt ~10-35 ms auf dem Handy).
+  // Laeuft die Fahrt schon, macht der Start den Rest selbst.
+  let vfVorbereiten = false;
+  function vfTexturenVorbereiten() {
+    if (vfVorbereiten) return;
+    vfVorbereiten = true;
+    const ric = window.requestIdleCallback ? (f) => window.requestIdleCallback(f, { timeout: 3000 })
+      : (f) => setTimeout(() => f({ timeRemaining: () => 12 }), 80);
+    const schritt = (frist) => {
+      if (VF.aktiv) { vfVorbereiten = false; return; }
+      do {
+        const P = vfBodenArt(vfBodenWahl());
+        if (!vfTexDaten.bahn) { if (vfBahnLauf().next().done) vfTexLauf.bahn = null; }
+        else if (!vfTexDaten.rand) vfRandTexturDaten();
+        else if (!(vfTexDaten.boden && vfTexDaten.bodenId === P.id)) { if (vfBodenLauf(P).next().done) vfTexLauf.boden = null; }
+        else { vfVorbereiten = false; return; }
+      } while (frist.timeRemaining() > 8);
+      ric(schritt);
+    };
+    ric(schritt);
+  }
+  // Pixel als Textur hochladen: Mipmaps, trilinear oder nur bilinear je Mip-Stufe, anisotrop hoechstens
+  // aniso-fach, wenn vorhanden. Gemessen (Software-GL, 1280 x 720, Verfolger, je Bild): 4-fach auf allen
+  // drei kostete 14 ms mehr als 1-fach, trilinear auf dem Boden (der den halben Schirm fuellt) 10 ms
+  // mehr als bilinear. Also: Boden bilinear und 2-fach (Fugen in der Ferne bleiben lesbar, der
+  // Mip-Wechsel faellt auf Holz nicht auf), Randstein trilinear und 2-fach (kleine Flaeche, Pfeile),
+  // Fahrbahn bilinear und 1-fach (fast einfarbig).
   function vfTexturHoch(gl, t, wiederholenV, aniso, trilinear) {
     const tx = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, tx);
@@ -560,13 +609,15 @@
   // Stab A [0,L]x[0,B], Stab B [L,L+B]x[B-L,B], verschoben um i(B,B) + j(L,-L)). Dielen bis
   // VF_BODEN_RAND um die Strecke, dahinter eine weite Flaeche im Mittelwert der Textur (keine Kante im
   // Nebel). Rein (ohne WebGL); liefert die Zahlen und die Masse fuer den Selbsttest.
-  const VF_BODEN_RAND = 650, VF_BODEN_WEIT = 3000;
+  const VF_BODEN_RAND = 650, VF_BODEN_RAND_FG = 420, VF_BODEN_WEIT = 3000;
   const VF_BODEN_HELL = 0.84;   // Zimmerlicht: der Boden etwas dunkler als die Textur
   function vfBodenGeometrie(pts, T, art) {
     const a = [], y = -0.05, cm = TRACK_UNITS_PER_CM;
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     pts.forEach((p) => { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); });
-    const x0 = minX - VF_BODEN_RAND, x1 = maxX + VF_BODEN_RAND, z0 = minY - VF_BODEN_RAND, z1 = maxY + VF_BODEN_RAND;
+    // Fischgraet hat 18-mal so viele Stuecke je Flaeche: dort ein schmalerer Rand (Ecken je Bild).
+    const R = art.art === 'fischgraet' ? VF_BODEN_RAND_FG : VF_BODEN_RAND;
+    const x0 = minX - R, x1 = maxX + R, z0 = minY - R, z1 = maxY + R;
     const B = art.breiteCm * cm, L = art.laengeCm * cm, rnd = vfZufall(9001 + pts.length);
     const reihen = [];
     let stuecke = 0;
@@ -626,7 +677,7 @@
     return {
       prog, art, pv: new Float32Array(16),
       txBahn: vfTexturHoch(gl, vfBahnTexturDaten(), false, 1, false), txRand: vfTexturHoch(gl, vfRandTexturDaten(), true, 2, true),
-      txBoden: vfTexturHoch(gl, TB, false, 2, true),
+      txBoden: vfTexturHoch(gl, TB, false, 2, false),
       strasse: vfPufferF(gl, bahn.strasse), rand: vfPufferF(gl, bahn.rand), boden: vfPufferF(gl, boden.daten),
     };
   }
@@ -1993,6 +2044,7 @@
   }
   function vfGarageOptionen(rechts) {
     vfTonVorbereiten();
+    vfTexturenVorbereiten();   // v1.3.39: Bahn- und Bodentexturen im Leerlauf rechnen
     const kopf = document.createElement('h3');
     kopf.className = 'gar-a-titel';
     kopf.textContent = t('Virtuelles Auto');

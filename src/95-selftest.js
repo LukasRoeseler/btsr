@@ -16762,6 +16762,99 @@
   // irgendwo ein Fehler." karteAutosSetzen() setzte visibility="visible" auf jede Autogruppe, und
   // dieser Wert schlaegt das geerbte hidden: das virtuelle Fahren verbirgt die Seite (body.vf-an
   // main), das Auto aus dem Regenradar des Cockpits stand trotzdem ueber dem 3D-Bild.
+  // v1.3.39 BESTELLT: "Verbessere die Textur der Schienen", "Textur jenseits der Schienen ... Parkett- oder
+  // Laminatboden ... Massstab korrekt (1/50)" und "eine Kamera ... wie eine Person, die das Auto vom Rand
+  // aus steuert (ca. 1 m Hoehe, Blick folgt dem Auto mit etwas Smoothing)".
+  stAdd('Virtuell v1.3.39: Dielen in echten cm, Boeden waehlbar, Texturen einmal, Kamera Fahrer am Rand', () => {
+    const f = [], cm = TRACK_UNITS_PER_CM;
+    const tiles = codeToTrack('SG4R4G4').tiles, pts = trackCenterline(tiles), nrm = trackNormals(pts);
+    // 1. Boeden: mindestens zwei (Dielen und Fischgraet), die Wahl bleibt gespeichert, Garagenzeile mit WIP.
+    if (VF_BOEDEN.length < 2 || !VF_BOEDEN.some((b) => b.art === 'diele') || !VF_BOEDEN.some((b) => b.art === 'fischgraet')) f.push('Boeden fehlen');
+    let vorher = null;
+    try { vorher = localStorage.getItem(VF_BODEN_STORE); } catch (e) { /* privat */ }
+    try {
+      for (const b of VF_BOEDEN) { vfBodenSetzen(b.id); if (vfBodenWahl() !== b.id) f.push('Wahl ' + b.id + ' nicht gespeichert'); }
+      vfBodenSetzen(VF_BOEDEN[0].id);
+      const box = document.createElement('div');
+      vfGarageOptionen(box);
+      const z = box.querySelector('[data-vf-boden]');
+      if (!z || !z.querySelector('.wip-tag')) f.push('Bodenzeile mit WIP fehlt in der Garage');
+      else if (z.querySelector('b').textContent !== t(VF_BOEDEN[0].name)) f.push('Bodenzeile zeigt ' + z.querySelector('b').textContent);
+    } finally {
+      try { if (vorher === null) localStorage.removeItem(VF_BODEN_STORE); else localStorage.setItem(VF_BODEN_STORE, vorher); } catch (e) { /* privat */ }
+    }
+    // 2. Masse in echten cm: erste Diele/erster Stab der Geometrie, Stossfugen versetzt, Verhaeltnis zur Bahn.
+    const bahnCm = TRACK_HALF_W * 2 / cm, masse = [];
+    for (const b of VF_BOEDEN) {
+      const T = vfBodenTexturDaten(b.id), g = vfBodenGeometrie(pts, T, b), d = g.daten;
+      const L = Math.hypot(d[8] - d[0], d[10] - d[2]) / cm, B = Math.hypot(d[16] - d[8], d[18] - d[10]) / cm;
+      if (Math.abs(L - b.laengeCm) > 0.05 || Math.abs(B - b.breiteCm) > 0.05) f.push(b.id + ': ' + B.toFixed(2) + ' x ' + L.toFixed(2) + ' cm statt ' + b.breiteCm + ' x ' + b.laengeCm);
+      if (g.stuecke < 100) f.push(b.id + ': nur ' + g.stuecke + ' Stuecke');
+      if (T.w > 2048 || T.h > 2048 || (T.w & (T.w - 1)) || (T.h & (T.h - 1))) f.push(b.id + ': Atlas ' + T.w + ' x ' + T.h);
+      if (b.art === 'diele') {
+        for (let i = 1; i < g.reihen.length; i++) {
+          const dd = Math.abs(g.reihen[i] - g.reihen[i - 1]) % g.laenge;
+          if (Math.min(dd, g.laenge - dd) < g.laenge * 0.25 - 1e-6) { f.push(b.id + ': Stossfugen in Reihe ' + i + ' nicht versetzt'); break; }
+        }
+      }
+      masse.push(b.id + ' ' + B.toFixed(1) + 'x' + L.toFixed(0));
+    }
+    const dieleZuBahn = VF_BOEDEN[0].breiteCm / bahnCm;
+    if (Math.abs(bahnCm - 25) > 0.01 || dieleZuBahn < 0.6 || dieleZuBahn > 0.9) f.push('Bahn ' + bahnCm.toFixed(2) + ' cm, Diele/Bahn ' + dieleZuBahn.toFixed(2));
+    // 3. Texturen nur einmal: zweiter Aufruf liefert dasselbe Objekt, der Zaehler steigt hoechstens einmal.
+    const z0 = Object.assign({}, vfTexZaehler);
+    const a1 = vfBahnTexturDaten(), a2 = vfBahnTexturDaten(), r1 = vfRandTexturDaten(), r2 = vfRandTexturDaten();
+    const b1 = vfBodenTexturDaten('grau'), b2 = vfBodenTexturDaten('grau');
+    if (a1 !== a2 || r1 !== r2 || b1 !== b2) f.push('Textur ein zweites Mal erzeugt');
+    if (vfTexZaehler.bahn - z0.bahn > 1 || vfTexZaehler.rand - z0.rand > 1 || vfTexZaehler.boden - z0.boden > 1) f.push('Zaehler: ' + JSON.stringify(vfTexZaehler));
+    // Mit WebGL: zwei Fahrten hintereinander laden nur hoch, die Pixel entstehen nicht neu.
+    const gl = document.createElement('canvas').getContext('webgl');
+    if (gl) {
+      const z1 = Object.assign({}, vfTexZaehler), bodenNeu = vfTexDaten.bodenId === vfBodenWahl() ? 0 : 1;
+      vfFlaechenBauen(gl, pts, nrm, tiles); vfFlaechenBauen(gl, pts, nrm, tiles);
+      if (vfTexZaehler.bahn !== z1.bahn || vfTexZaehler.rand !== z1.rand || vfTexZaehler.boden - z1.boden > bodenNeu) f.push('Fahrtstart erzeugt Texturen neu');
+      const ext = gl.getExtension('WEBGL_lose_context');
+      if (ext) ext.loseContext();
+    }
+    // Bahnteile nicht alle gleich: mindestens zwei Gebrauchsspalten, das Start/Ziel-Teil mit eigener.
+    const geo = vfBahnGeometrie(pts, nrm, tiles), spalten = new Set();
+    for (let i = 3; i < geo.strasse.length; i += 8) spalten.add(Math.floor(geo.strasse[i] * VF_BAHN_TEX / VF_BAHN_SPALTE));
+    if (spalten.size < 3 || !spalten.has(3)) f.push('Bahnspalten ' + [...spalten].join(','));
+    // 4. Kamera "Fahrer am Rand": vorhanden, Augenhoehe 100 cm, 50-100 cm neben dem Randstein, fest, folgt gedaempft.
+    if (!VF_KAMERAS.some((k) => k.id === 'fahrer')) f.push('Kamera fehlt in VF_KAMERAS');
+    const ort = vfFahrerOrt(pts, nrm, tiles);
+    if (Math.abs(ort.h / cm - 100) > 1e-6) f.push('Augenhoehe ' + (ort.h / cm).toFixed(1) + ' cm');
+    let dmin = Infinity;
+    for (const p of pts) dmin = Math.min(dmin, Math.hypot(p.x - ort.x, p.y - ort.y));
+    const randCm = (dmin - TRACK_HALF_W - TRACK_KERB_W) / cm;
+    if (randCm < 50 || randCm > 100) f.push('Abstand zum Rand ' + randCm.toFixed(0) + ' cm');
+    const winkel = (k, x, y) => {
+      const v = [k.ziel[0] - k.auge[0], k.ziel[1] - k.auge[1], k.ziel[2] - k.auge[2]];
+      const w = [x - k.auge[0], VF_AUTO.H * 0.5 - k.auge[1], y - k.auge[2]];
+      const c = (v[0] * w[0] + v[1] * w[1] + v[2] * w[2]) / Math.hypot(...v) / Math.hypot(...w);
+      return Math.acos(Math.max(-1, Math.min(1, c))) * 180 / Math.PI;
+    };
+    const lauf = (dt, n) => {
+      const F = { ort, z: {}, k: null }, A = pts[0], Bp = pts[Math.floor(pts.length / 3)];
+      vfFahrerKamera(F, A.x, A.y, dt);
+      const fehler = [winkel(F.k, Bp.x, Bp.y)], auge = F.k.auge.slice();
+      for (let i = 0; i < n; i++) {
+        vfFahrerKamera(F, Bp.x, Bp.y, dt);
+        fehler.push(winkel(F.k, Bp.x, Bp.y));
+        if (F.k.auge.some((q, j) => q !== auge[j])) { f.push('Kamera bewegt sich'); break; }
+      }
+      return fehler;
+    };
+    const e60 = lauf(1 / 60, 90), e30 = lauf(1 / 30, 45);
+    if (!(e60[0] > 10)) f.push('Testsprung zu klein: ' + e60[0].toFixed(1) + ' Grad');
+    if (!(e60[1] > e60[0] * 0.8)) f.push('Blick springt sofort: ' + e60[0].toFixed(1) + ' -> ' + e60[1].toFixed(1) + ' Grad');
+    if (e60.some((e, i) => i && e > e60[i - 1] + 1e-9)) f.push('Blick naehert sich nicht stetig');
+    if (!(e60[e60.length - 1] < 1)) f.push('nach 1,5 s noch ' + e60[e60.length - 1].toFixed(2) + ' Grad daneben');
+    if (Math.abs(e60[60] - e30[30]) > 0.5) f.push('haengt von der Bildrate ab: ' + e60[60].toFixed(2) + ' / ' + e30[30].toFixed(2) + ' Grad');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bahn ' + bahnCm.toFixed(0) + ' cm, ' + masse.join(', ') + ' cm, Fahrer '
+      + randCm.toFixed(0) + ' cm neben dem Rand, Blick ' + e60[0].toFixed(0) + ' -> ' + e60[15].toFixed(1) + ' (0,25 s) -> ' + e60[90].toFixed(2) + ' Grad' };
+  });
+
   stAdd('Virtuell v1.2.32: Kartenauto bleibt unter der 3D-Schicht verborgen, Silhouette an Ort, Skala und Drehung', () => {
     const f = [];
     const r = renderTrackPreview(codeToTrack('SG3R2G3R2').tiles, null, { detailed: true, cars: [] });
