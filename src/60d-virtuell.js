@@ -1365,7 +1365,11 @@
   function vfPaket() {
     if (rennPauseAktiv()) return;
     if (!VF.aktiv || !VF.car) return;
-    const tile = Math.max(0, VF.pts[VF.idx].tile);
+    // Der Vorpunkt vor Kachel 0 (tile -1) liegt auf dem letzten Punkt der Schleife. Bis 1.3.50 zaehlte er
+    // als Kachel 0 (Start): pendelte der naechste Punkt dort zwischen beiden, war das eine "Runde" von
+    // 0,3 s (Letzte/Beste im HUD). Jetzt gilt am Vorpunkt die Kachel davor weiter.
+    const roh = VF.pts[VF.idx].tile;
+    const tile = roh >= 0 ? roh : (VF.kachel >= 0 ? VF.kachel : 0);
     if (tile !== VF.kachel) {
       if (VF.kachel !== -2) VF.zaehler = (VF.zaehler + 1) & 0xff;
       const vorher = VF.kachel;
@@ -1375,7 +1379,8 @@
         const jetzt = rennZeitJetzt();
         if (VF.rundeAb) {
           VF.letzte = jetzt - VF.rundeAb;
-          if (VF.beste === null || VF.letzte < VF.beste) VF.beste = VF.letzte;
+          // Delta (HUD): die Zwischenzeiten der besten Runde je Punkt der Mittellinie.
+          if (VF.beste === null || VF.letzte < VF.beste) { VF.beste = VF.letzte; VF.besteSplits = VF.splits; }
           // Nach der ersten Runde beginnt der Geist, die aufgezeichnete Linie abzufahren.
           if (VF.geist && !VF.geist.aktiv) { VF.geist.aktiv = true; VF.geist.zeit = 0; VF.geist.i = 0; }
           // Rundenrennen: nach der Ziel-Lap ist Schluss.
@@ -1383,6 +1388,7 @@
           if (VF.modus === 'laps' && VF.runden >= VF.limit) vfRennenEnde();
         }
         VF.rundeAb = jetzt;
+        VF.splits = [];
       }
     }
     const b = new Uint8Array(19);
@@ -1484,6 +1490,7 @@
     VF.lenkWinkel = Math.max(-1, Math.min(1, lenk)) * (VF.P ? VF.P.lenkGrad : VF_GT3.lenkGrad) * Math.PI / 180;
     const o = vfOrt(VF.pts, VF.nrm, VF.x, VF.y, VF.idx);
     VF.idx = o.idx;
+    if (VF.splits && VF.splits[VF.idx] === undefined) VF.splits[VF.idx] = rennZeitJetzt() - VF.rundeAb;
     const ab = Math.abs(o.quer) > TRACK_HALF_W * 1.19 + VF_AUTO.B * 0.3;
     if (ab && !VF.abseits) VF.abseitsSeit = rennZeitJetzt();
     VF.abseits = ab;
@@ -1612,8 +1619,124 @@
     const i = VF_KAMERAS.findIndex((k) => k.id === vfKameraId());
     const neu = VF_KAMERAS[(i + 1) % VF_KAMERAS.length];
     VF.kamera = neu.id; VF.kam = null;
+    vfDrehNull();   // jede Kamera beginnt in ihrer Standardansicht
     try { localStorage.setItem(VF_KAMERA_STORE, neu.id); } catch (e) { /* egal */ }
     showHudToast(t(neu.name) + (neu.wip ? ' (WIP)' : ''));
+  }
+  // ---- Kamera drehen mit dem rechten Stick (WIP) ------------------------------------------------
+  // BESTELLT: "Erlaube mir, im virtuellen Fahren mit dem rechten Stick die Kamera um das Auto herum zu
+  // drehen (bzw. in eine andere Richtung einfach). Wenn ich den rechten Stick dann reindruecke, soll die
+  // Kamera wieder die Standardansicht haben."
+  // ZWEI ARTEN: Verfolger, nah und statisch kreisen UM das Auto (waagrecht ganz herum, senkrecht
+  // -10..+60 Grad zur Standardhoehe), von oben dreht das Bild und neigt sich bis 60 Grad. Motorhaube und
+  // "Fahrer am Rand" drehen den BLICK (umsehen, senkrecht +-35 Grad). Stick rechts = Blick nach rechts,
+  // Stick hoch = Blick nach oben (die kreisenden Kameras sinken dafuer), wie in den meisten Spielen.
+  // GEFUEHL: Totzone und quadratische Kennlinie (feines Zielen), die Drehrate laeuft der Auslenkung mit
+  // einer Zeitkonstante nach (sanftes Anfahren und Auslaufen). Gerechnet nach der ZEIT und exakt
+  // integriert: 30 und 60 Bilder/s drehen gleich weit. Losgelassen BLEIBT der Blick stehen.
+  // R3 (die Lichthupen-Belegung): gedreht -> zurueck zur Standardansicht, sonst wie bisher naechste
+  // Kamera. Tastatur: T/F/G/H drehen (hoch/links/runter/rechts), V setzt zurueck, C wechselt weiter
+  // (I/J/K/L waeren naheliegend, aber I/K schalten und L ist die Lichthupe).
+  // Der Pad-Stick gilt nur fuer Achsen, die keine Belegung in Optionen -> Controller traegt, und nur
+  // bei Standard-Belegung des Pads (sonst koennten Achse 2/3 die Trigger sein und dauernd drehen).
+  const VF_DREH_GIER = 200 * Math.PI / 180, VF_DREH_NICK = 100 * Math.PI / 180, VF_DREH_TAU = 0.12;
+  const VF_DREH_TOT = 0.16, VF_DREH_SCHWELLE = 2 * Math.PI / 180, VF_DREH_PAD_MS = 250;
+  const VF_DREH_TASTEN = { t: 'hoch', f: 'links', g: 'runter', h: 'rechts' };
+  function vfDreh() {
+    if (!VF.dreh) VF.dreh = { g: 0, n: 0, vg: 0, vn: 0 };
+    return VF.dreh;
+  }
+  function vfDrehNull() { const D = vfDreh(); D.g = 0; D.n = 0; D.vg = 0; D.vn = 0; }
+  function vfDrehArt(id) { return id === 'haube' || id === 'fahrer' ? 'umsehen' : (id === 'oben' ? 'oben' : 'kreisen'); }
+  // Grenzen der Hoehe n (Bogenmass): kreisen = Erhebung gegen die Standardhoehe, oben = Neigung aus der
+  // Senkrechten, umsehen = Blick nach unten (positiv) / oben (negativ).
+  function vfDrehGrenzen(art) {
+    const r = Math.PI / 180;
+    return art === 'oben' ? [0, 60 * r] : (art === 'umsehen' ? [-35 * r, 35 * r] : [-10 * r, 60 * r]);
+  }
+  function vfKameraGedreht() { const D = vfDreh(); return Math.abs(D.g) > VF_DREH_SCHWELLE || Math.abs(D.n) > VF_DREH_SCHWELLE; }
+  function vfKameraStandard() {
+    vfDrehNull(); VF.kam = null;
+    showHudToast(t('Kamera: Standardansicht'));
+  }
+  // R3 / Lichthupen-Belegung: gedreht -> Standardansicht, sonst die naechste Kamera.
+  function vfKameraTaste() { if (vfKameraGedreht()) vfKameraStandard(); else vfKameraWechseln(); }
+  // Stick (aus pollGamepad): x/y nach Totzone und Kennlinie, mit Zeitstempel - bleibt der Takt aus
+  // (Pad weg, Menue-Abfang), zaehlt der alte Wert nach VF_DREH_PAD_MS nicht mehr.
+  function vfStickSetzen(pad, b) {
+    if (!pad || pad.mapping !== 'standard') { VF.stick = null; return; }
+    const belegt = (i) => Object.keys(b || {}).some((k) => b[k] && b[k].type === 'axis' && b[k].index === i);
+    const achse = (i) => {
+      if (belegt(i)) return 0;
+      const v = (pad.axes || [])[i] || 0, m = Math.abs(v);
+      if (m < VF_DREH_TOT) return 0;
+      const s = Math.min(1, (m - VF_DREH_TOT) / (1 - VF_DREH_TOT));
+      return Math.sign(v) * s * s;
+    };
+    VF.stick = { x: achse(2), y: achse(3), t: performance.now() };
+  }
+  function vfDrehTaste(e, an) {
+    if (!VF.aktiv || e.ctrlKey || e.altKey || e.metaKey) return;
+    const k = (e.key || '').toLowerCase();
+    if (!VF.tasten) VF.tasten = {};
+    if (VF_DREH_TASTEN[k]) { VF.tasten[VF_DREH_TASTEN[k]] = an; e.preventDefault(); }
+    else if (k === 'v' && an && !e.repeat) { e.preventDefault(); if (vfKameraGedreht()) vfKameraStandard(); }
+  }
+  window.addEventListener('keydown', (e) => vfDrehTaste(e, true));
+  window.addEventListener('keyup', (e) => vfDrehTaste(e, false));
+  window.addEventListener('blur', () => { VF.tasten = {}; });
+  function vfDrehEingabe() {
+    let x = 0, y = 0;
+    const s = VF.stick;
+    if (s && performance.now() - s.t < VF_DREH_PAD_MS) { x = s.x; y = s.y; }
+    const k = VF.tasten;
+    if (k) { x += (k.rechts ? 1 : 0) - (k.links ? 1 : 0); y += (k.runter ? 1 : 0) - (k.hoch ? 1 : 0); }
+    return [Math.max(-1, Math.min(1, x)), Math.max(-1, Math.min(1, y))];
+  }
+  // Ein Zeitschritt (rein, fuer den Selbsttest): die Rate laeuft exponentiell zur Sollrate, der Winkel
+  // ist das exakte Integral davon. Stick nach unten = Kamera hoeher / Blick tiefer (n waechst).
+  function vfDrehSchritt(D, sx, sy, dt, grenzen) {
+    if (!(dt > 0)) return D;
+    const e = Math.exp(-dt / VF_DREH_TAU);
+    const zg = sx * VF_DREH_GIER, zn = sy * VF_DREH_NICK;
+    D.g += zg * dt + (D.vg - zg) * VF_DREH_TAU * (1 - e);
+    D.n += zn * dt + (D.vn - zn) * VF_DREH_TAU * (1 - e);
+    D.vg = zg + (D.vg - zg) * e;
+    D.vn = zn + (D.vn - zn) * e;
+    D.g = Math.atan2(Math.sin(D.g), Math.cos(D.g));
+    if (D.n < grenzen[0]) { D.n = grenzen[0]; if (D.vn < 0) D.vn = 0; }
+    if (D.n > grenzen[1]) { D.n = grenzen[1]; if (D.vn > 0) D.vn = 0; }
+    if (Math.abs(D.vg) < 1e-4 && !sx) D.vg = 0;
+    if (Math.abs(D.vn) < 1e-4 && !sy) D.vn = 0;
+    return D;
+  }
+  // Drehung anwenden (rein): k = { auge, ziel, oben? } der Standardansicht, (px, py, pz) = Drehpunkt
+  // (das Auto). Kreisen: Auge und Ziel um die Senkrechte durch das Auto, das Auge dazu auf seiner
+  // Kugel hoeher/tiefer; umsehen: Blickrichtung um das Auge; oben: Bildoben drehen und neigen.
+  function vfDrehAnwenden(k, art, D, px, py, pz) {
+    if (!D || (!D.g && !D.n)) return k;
+    const cg = Math.cos(D.g), sg = Math.sin(D.g);
+    const rot = (x, z) => [x * cg - z * sg, x * sg + z * cg];
+    if (art === 'umsehen') {
+      const dx = k.ziel[0] - k.auge[0], dy = k.ziel[1] - k.auge[1], dz = k.ziel[2] - k.auge[2];
+      const w = Math.hypot(dx, dz), L = Math.hypot(w, dy);
+      const nick = Math.max(-1.5, Math.min(1.5, Math.atan2(dy, w) - D.n));
+      const r = rot(dx / (w || 1), dz / (w || 1));
+      return Object.assign({}, k, { ziel: [k.auge[0] + r[0] * Math.cos(nick) * L, k.auge[1] + Math.sin(nick) * L, k.auge[2] + r[1] * Math.cos(nick) * L] });
+    }
+    if (art === 'oben') {
+      const o = k.oben || [0, 0, -1], ro = rot(o[0], o[2]), hoch = k.auge[1] - k.ziel[1];
+      const auge = [k.ziel[0] - ro[0] * Math.sin(D.n) * hoch, k.ziel[1] + Math.cos(D.n) * hoch, k.ziel[2] - ro[1] * Math.sin(D.n) * hoch];
+      return Object.assign({}, k, { auge, oben: [ro[0], 0, ro[1]] });
+    }
+    const ox = k.auge[0] - px, oz = k.auge[2] - pz, d0 = Math.hypot(ox, oz) || 1e-6, h0 = k.auge[1] - py;
+    const R = Math.hypot(d0, h0), e = Math.max(3 * Math.PI / 180, Math.min(85 * Math.PI / 180, Math.atan2(h0, d0) + D.n));
+    const ro = rot(ox / d0, oz / d0);
+    const auge = [px + ro[0] * Math.cos(e) * R, py + Math.sin(e) * R, pz + ro[1] * Math.cos(e) * R];
+    // Das Ziel dreht mit; je hoeher die Kamera, desto naeher rueckt es ans Auto (sonst faellt es von oben aus dem Bild).
+    const nah = 1 - 0.8 * Math.max(0, Math.min(1, D.n / (60 * Math.PI / 180)));
+    const rz = rot((k.ziel[0] - px) * nah, (k.ziel[2] - pz) * nah);
+    return Object.assign({}, k, { auge, ziel: [px + rz[0], k.ziel[1], pz + rz[1]] });
   }
   // ---- Kamera "Fahrer am Rand" (v1.3.39, WIP) ----------------------------------------------------
   // BESTELLT: "Fuege eine Kamera hinzu, die so funktioniert wie eine Person, die das Auto vom Rand aus
@@ -1683,6 +1806,13 @@
   function vfKamera(dt) {
     const r = VF.h * Math.PI / 180, fx = Math.sin(r), fz = -Math.cos(r);
     const id = vfKameraId();
+    // Rechter Stick / T-F-G-H: die Drehung laeuft nach der Zeit (in der Pause ist dt 0).
+    const art = vfDrehArt(id), D = vfDreh(), ein = vfDrehEingabe();
+    vfDrehSchritt(D, ein[0], ein[1], dt, vfDrehGrenzen(art));
+    const k = vfKameraBasis(id, fx, fz, dt, art, D);
+    return art === 'kreisen' ? k : vfDrehAnwenden(k, art, D, VF.x, 0, VF.y);
+  }
+  function vfKameraBasis(id, fx, fz, dt, art, D) {
     if (id === 'fahrer' && VF.fahrer) { VF.kam = null; return vfFahrerKamera(VF.fahrer, VF.x, VF.y, dt); }
     if (id === 'haube') {
       // Auf der Motorhaube (Speed Dreams: Bonnet 0,75 m vor, 0,95 m hoch), fest am Auto.
@@ -1706,14 +1836,18 @@
       const lx = -fz, lz = fx;               // senkrecht zur Fahrtrichtung ("links")
       const auge = [VF.x + lx * 9, 4.5, VF.y + lz * 9];
       VF.kam = null;
-      return { auge, ziel: [VF.x, 1.2, VF.y], fov: 62, nah: 0.3 };
+      return vfDrehAnwenden({ auge, ziel: [VF.x, 1.2, VF.y], fov: 62, nah: 0.3 }, art, D, VF.x, 1.2, VF.y);
     }
     const nah = id === 'nah';
     const hinten = nah ? 15 : 30, hoehe = nah ? 6 : 13, tau = nah ? 0.08 : 0.15;
-    const soll = [VF.x - fx * hinten, hoehe, VF.y - fz * hinten];
+    // Gedreht kreist der SOLL-Ort um das Auto; die Nachfuehrung (tau) bleibt dieselbe.
+    const zh = nah ? 2.2 : 1.5, vor = nah ? 10 : 14;
+    const k = vfDrehAnwenden({ auge: [VF.x - fx * hinten, hoehe, VF.y - fz * hinten], ziel: [VF.x + fx * vor, zh, VF.y + fz * vor] },
+      art, D, VF.x, zh, VF.y);
+    const soll = k.auge;
     const a = 1 - Math.exp(-Math.max(0, dt) / tau);
     VF.kam = VF.kam ? VF.kam.map((q, i) => q + (soll[i] - q) * a) : soll;
-    return { auge: VF.kam, ziel: [VF.x + fx * (nah ? 10 : 14), nah ? 2.2 : 1.5, VF.y + fz * (nah ? 10 : 14)], fov: nah ? 66 : 62, nah: 0.5 };
+    return { auge: VF.kam, ziel: k.ziel, fov: nah ? 66 : 62, nah: 0.5 };
   }
   function vfModellMalen(gl, pv, blick) {
     vfModellZeichnen(gl, pv, blick, VF.modell, VF.tprog, VF.x, VF.y, VF.h, VF.feder, VF.lenkWinkel, VF.raddreh, VF.radModell,
@@ -1845,17 +1979,56 @@
     [T.ap, T.an, T.auv].forEach((a) => gl.disableVertexAttribArray(a));
   }
   function vfZeit(ms) { return ms === null || ms === undefined ? '–' : (ms / 1000).toFixed(2) + ' s'; }
+  // ---- HUD im Stil von ACC (WIP) -----------------------------------------------------------------
+  // BESTELLT: "Aendere im virtuellen Fahren das UI so, dass es so aehnlich wie Assetto Corsa
+  // Competizione (ACC) aussieht, nur mit der blauen Akzentfarbe."
+  // Kantige, fast schwarze Kacheln mit schmaler Akzentlinie in --k-blau: oben links Zeiten (Modus,
+  // Runde, Delta, Letzte, Beste), unten Mitte der Tacho-Block (Drehzahl als Segmentbalken, Gang gross
+  // in der Mitte, Tempo links, Drehzahl rechts), daneben Reifen (vier Felder in Temperaturfarbe) und
+  // Tank (Wert und Balken). Nichts von vorher faellt weg.
+  // KOSTEN: das HUD laeuft je Bild. Die Elemente sind beim Start einmal gesucht (VF.ui), geschrieben
+  // wird nur, was sich gegenueber dem letzten Wert (VF.ui.alt) aendert - Texte, eine CSS-Variable
+  // (Drehzahl in 20 Stufen, nur clip-path, kein Layout), transform am Tankbalken, Farben der Reifen
+  // nur bei ganzem Grad. Keine Layout-Abfragen.
+  // DELTA: Zeit dieser Runde gegen die beste Runde am selben Punkt der Mittellinie (VF.splits je
+  // Punkt, beim ersten Erreichen), alle 0,1 s mit der Rundenzeit.
+  function vfZeitAcc(ms, stellen) {
+    if (ms === null || ms === undefined || !isFinite(ms)) return stellen === 1 ? '-:--.-' : '-:--.---';
+    // Abgeschnitten wie eine Zeitnahme (nie aufgerundet, also nie "0:60.0").
+    const teil = Math.pow(10, stellen), ein = Math.floor(Math.max(0, ms) * teil / 1000);
+    const sek = Math.floor(ein / teil), m = Math.floor(sek / 60), s = sek % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s + '.' + String(ein % teil).padStart(stellen, '0');
+  }
+  function vfDeltaText(d) { return d === null ? '--.--' : (d > 0 ? '+' : (d < 0 ? '-' : '')) + Math.abs(d / 1000).toFixed(2); }
+  function vfHudBauen(schicht) {
+    const q = (sel) => schicht.querySelector(sel);
+    VF.ui = { runde: q('.vf-runde'), letzte: q('.vf-letzte'), beste: q('.vf-beste'), delta: q('.vf-delta'), deltaBar: q('.vf-delta-bar > i'),
+              modus: q('.vf-modus'), abseits: q('.vf-abseits'), acc: q('.vf-acc'), tempo: q('.vf-acc .vf-tempo'), gang: q('.vf-gang'),
+              rpm: q('.vf-rpm'), reifen: Array.from(schicht.querySelectorAll('.vf-reifen > i')), tank: q('.vf-tank'), tankBar: q('.vf-tank-bar > i'),
+              dreh: q('.vf-dreh-stab'), kamFrei: q('.vf-kamfrei'), alt: {} };
+  }
   function vfHud() {
-    const el = VF.hud;
-    if (!el) return;
-    const st = physEngine.state;
+    const u = VF.ui;
+    if (!u) return;
+    const A = u.alt, st = physEngine.state;
+    const txt = (el, key, v) => { if (A[key] !== v) { A[key] = v; el.textContent = v; } };
     const kmh = Math.round(Math.abs(st.speedKmh || 0) * TACHO_SCALE * (VF.tempoFaktor || 1));   // wie im Cockpit (race-speed)
+    // Zeiten: Rundenzeit in 0,1 s, das Delta mit ihr.
     const lauf = VF.rundeAb ? rennZeitJetzt() - VF.rundeAb : null;
-    // Nur bei Aenderung schreiben: jedes textContent= ist Arbeit fuer die Seite, und das hier laeuft je Bild.
-    const setz = (sel, txt) => { const e = el.querySelector(sel); if (e.textContent !== txt) e.textContent = txt; };
-    setz('.vf-tempo', kmh + ' km/h');
-    setz('.vf-runde', t('Runde') + ' ' + vfZeit(lauf === null ? null : Math.floor(lauf / 100) * 100));
-    setz('.vf-zeiten', t('Letzte') + ' ' + vfZeit(VF.letzte) + ' · ' + t('Beste') + ' ' + vfZeit(VF.beste));
+    const lq = lauf === null ? null : Math.floor(lauf / 100) * 100;
+    if (A.lq !== lq) {
+      A.lq = lq;
+      u.runde.textContent = vfZeitAcc(lq, 1);
+      const ref = VF.besteSplits && lauf !== null ? VF.besteSplits[VF.idx] : undefined;
+      const d = ref === undefined ? null : lauf - ref;
+      txt(u.delta, 'd', vfDeltaText(d));
+      const kl = d === null ? '' : (d > 0 ? 'langsamer' : 'schneller');
+      if (A.dk !== kl) { A.dk = kl; u.delta.parentNode.dataset.d = kl; }
+      const f = d === null ? 0 : Math.max(-1, Math.min(1, -d / 2000));
+      if (A.df !== f) { A.df = f; u.deltaBar.style.transform = 'scaleX(' + f.toFixed(3) + ')'; }
+    }
+    txt(u.letzte, 'l', vfZeitAcc(VF.letzte, 3));
+    txt(u.beste, 'b', vfZeitAcc(VF.beste, 3));
     let modusTxt = '';
     if (VF.modus && RACE_MODES[VF.modus]) {
       if (VF.modus === 'practice') modusTxt = t('Training');
@@ -1865,22 +2038,32 @@
         else modusTxt += ' · ' + vfZeit(Math.floor(VF.modusZeit * 1000 / 100) * 100);
       }
     }
-    setz('.vf-modus', modusTxt);
-    const ab = el.querySelector('.vf-abseits');
-    if (ab.hidden === VF.abseits) ab.hidden = !VF.abseits;
-    // ACC-Cluster unten: Tempo, Gang, Drehzahl, Reifen, Tank - dieselben Werte wie das Cockpit.
-    const acc = document.querySelector('.vf-acc');
-    if (!acc) return;
-    const setzA = (sel, txt) => { const e = acc.querySelector(sel); if (e.textContent !== txt) e.textContent = txt; };
-    setzA('.vf-tempo', kmh + ' km/h');
-    setzA('.vf-rpm', Math.round(motorDrehzahl(st)) + ' 1/min');
+    txt(u.modus, 'm', modusTxt);
+    if (u.abseits.hidden === VF.abseits) u.abseits.hidden = !VF.abseits;
+    const frei = vfKameraGedreht();
+    if (u.kamFrei.hidden === frei) u.kamFrei.hidden = !frei;
+    // Tacho-Block: Tempo, Gang, Drehzahl, Reifen, Tank - dieselben Werte wie das Cockpit.
+    txt(u.tempo, 'v', String(kmh));
+    txt(u.rpm, 'r', String(Math.round(motorDrehzahl(st) / 10) * 10));
     const g = st.currentGear;
-    setzA('.vf-gang', g > 0 ? String(g) : (g < 0 ? 'R' : 'N'));
+    txt(u.gang, 'g', g > 0 ? String(g) : (g < 0 ? 'R' : 'N'));
     const t4 = st.tyreTemp4 || [st.tyreTempC];
-    setzA('.vf-reifen', t4.map((t) => Math.round(t) + '°').join(' / '));
-    setzA('.vf-tank', fuelLiters(typeof fuel !== 'undefined' ? fuel : 100) + ' l');
-    const stab = acc.querySelector('.vf-dreh-stab');
-    if (stab) stab.style.setProperty('--f', String(Math.max(0, Math.min(1, st.rpmFrac || 0))));
+    for (let i = 0; i < 4; i++) {
+      const T = Math.round(t4[i] !== undefined ? t4[i] : t4[0]);
+      if (A['t' + i] !== T) { A['t' + i] = T; u.reifen[i].textContent = T + '°'; u.reifen[i].style.background = reifenFarbe(T); }
+    }
+    const tank = typeof fuel !== 'undefined' ? fuel : 100;
+    txt(u.tank, 'f', fuelLiters(tank) + ' L');
+    const tf = Math.round(Math.max(0, Math.min(100, tank)));
+    if (A.tf !== tf) { A.tf = tf; u.tankBar.style.transform = 'scaleX(' + (tf / 100) + ')'; }
+    // Drehzahl in 20 Segmenten; in den letzten zwei blinkt der Gang blau (Schaltlicht).
+    const seg = Math.round(Math.max(0, Math.min(1, st.rpmFrac || 0)) * 20);
+    if (A.seg !== seg) {
+      A.seg = seg;
+      u.dreh.style.setProperty('--f', String(seg / 20));
+      const schalt = seg >= 19;
+      if (A.schalt !== schalt) { A.schalt = schalt; u.acc.classList.toggle('vf-schalt', schalt); }
+    }
   }
 
   // ---- Starten und Beenden ------------------------------------------------------------------
@@ -1900,17 +2083,25 @@
     VF.studie = !!opts.studie;
     const schicht = document.createElement('div');
     schicht.className = 'vf-schicht';
-    schicht.innerHTML = '<canvas class="vf-bild"></canvas><div class="vf-hud" data-i18n-skip>'
-      + '<b class="vf-tempo"></b><span class="vf-runde"></span><span class="vf-zeiten"></span>'
-      + '<span class="vf-abseits" hidden>' + t('Neben der Bahn') + '</span><span class="vf-modus"></span></div>'
-      + '<div class="vf-acc" data-i18n-skip><b class="vf-tempo"></b>'
-      + '<div class="vf-acc-zeile"><span class="vf-lbl">' + t('Gang') + '</span><span class="vf-gang"></span>'
-      + '<span class="vf-lbl">' + t('Drehzahl') + '</span><span class="vf-rpm"></span></div>'
-      + '<div class="vf-acc-dreh"><i class="vf-dreh-stab"></i></div>'
-      + '<div class="vf-acc-zeile"><span class="vf-lbl">' + t('Reifen') + '</span><span class="vf-reifen"></span>'
-      + '<span class="vf-lbl">' + t('Tank') + '</span><span class="vf-tank"></span></div></div>'
+    const lbl = (txt) => '<span class="vf-lbl">' + txt + '</span>';
+    schicht.innerHTML = '<canvas class="vf-bild"></canvas>'
+      // Zeiten oben links (ACC: Positions-/Zeitenblock).
+      + '<div class="vf-hud vf-kachel" data-i18n-skip><div class="vf-modus"></div>'
+      + '<div class="vf-z vf-z-akt">' + lbl(t('Runde')) + '<b class="vf-runde"></b></div>'
+      + '<div class="vf-z vf-z-delta">' + lbl(t('Delta')) + '<span class="vf-delta"></span><i class="vf-delta-bar"><i></i></i></div>'
+      + '<div class="vf-z">' + lbl(t('Letzte')) + '<span class="vf-letzte"></span></div>'
+      + '<div class="vf-z">' + lbl(t('Beste')) + '<span class="vf-beste"></span></div>'
+      + '<span class="vf-abseits" hidden>' + t('Neben der Bahn') + '</span></div>'
+      // Tacho-Block unten Mitte: Reifen | Drehzahl, Tempo, Gang | Tank.
+      + '<div class="vf-acc" data-i18n-skip>'
+      + '<div class="vf-kachel vf-acc-reifen">' + lbl(t('Reifen')) + '<div class="vf-reifen"><i></i><i></i><i></i><i></i></div></div>'
+      + '<div class="vf-kachel vf-acc-kern"><div class="vf-acc-dreh"><i class="vf-dreh-stab"></i></div>'
+      + '<div class="vf-acc-werte"><div class="vf-acc-wert"><b class="vf-tempo"></b>' + lbl('km/h') + '</div>'
+      + '<b class="vf-gang"></b><div class="vf-acc-wert"><b class="vf-rpm"></b>' + lbl('1/min') + '</div></div></div>'
+      + '<div class="vf-kachel vf-acc-tank">' + lbl(t('Tank')) + '<b class="vf-tank"></b><i class="vf-tank-bar"><i></i></i></div></div>'
       + '<div class="vf-knoepfe"><button type="button" data-vf="licht">' + t('Licht') + '</button><button type="button" data-vf="reset">' + t('Zurücksetzen') + '</button>'
       + '<button type="button" data-vf="zu" aria-label="' + t('Beenden') + '">&#10005;</button></div>'
+      + '<span class="vf-kamfrei" hidden data-i18n-skip>' + t('Kamera frei') + ' · R3 / V: ' + t('Standard') + ' <span class="wip-tag">WIP</span></span>'
       + '<span class="vf-wip">' + t('Virtuell') + ' <span class="wip-tag">WIP</span></span>';
     document.body.appendChild(schicht);
     const cv = schicht.querySelector('canvas');
@@ -1925,6 +2116,9 @@
     document.body.classList.add('vf-an');
     gl.enable(gl.DEPTH_TEST);
     VF.gl = gl; VF.cv = cv; VF.schicht = schicht; VF.hud = schicht.querySelector('.vf-hud');
+    vfHudBauen(schicht);
+    vfDrehNull(); VF.stick = null; VF.tasten = {};
+    VF.splits = null; VF.besteSplits = null;
     VF.tiles = tiles;
     VF.pts = trackCenterline(tiles);
     VF.nrm = trackNormals(VF.pts);
@@ -2259,7 +2453,7 @@
     if (VF.autoShiftVorher !== undefined) physEngine.config.autoShift = VF.autoShiftVorher;
     VF.autoShiftVorher = undefined;
     if (VF.schicht) VF.schicht.remove();
-    VF.schicht = null; VF.gl = null; VF.flaeche = null; VF.fahrer = null;
+    VF.schicht = null; VF.gl = null; VF.flaeche = null; VF.fahrer = null; VF.ui = null; VF.stick = null; VF.tasten = {};
     renderGarage();
     // Zurueck in die Garage, wo die Optionen der virtuellen Fahrt stehen (dort startet die naechste).
     // Eine Studienfahrt geht zurueck in die Studie (98f-studie.js zeigt sie selbst).

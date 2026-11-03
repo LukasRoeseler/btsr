@@ -3787,47 +3787,81 @@
   body.vf-an #hud-toast-wrap { position: fixed; z-index: 400; top: max(52px, env(safe-area-inset-top)); left: 50%; right: auto;
     transform: translateX(-50%); pointer-events: none; }
   .vf-bild { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
-  .vf-hud { position: absolute; left: max(10px, env(safe-area-inset-left)); top: max(8px, env(safe-area-inset-top)); display: grid; gap: 2px;
-    background: rgba(5,7,12,.62); color: #f3f4f6; padding: 6px 10px; border-radius: 8px; font-variant-numeric: tabular-nums;
-    font-family: "Bahnschrift SemiCondensed", "Roboto Condensed", system-ui, sans-serif; font-size: clamp(12px, 1.8vw, 16px); }
-  .vf-hud b { font-size: 1.6em; line-height: 1; }
-  .vf-abseits { color: #ffb02e; font-weight: 700; }
-  .vf-modus { color: #8fd3ff; font-weight: 700; }
-  .vf-acc { position: absolute; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); transform: translateX(-50%);
-    display: grid; gap: 6px; background: rgba(5,7,12,.62); color: #f3f4f6; padding: 10px 16px; border-radius: 10px;
-    font-variant-numeric: tabular-nums; font-family: "Bahnschrift SemiCondensed", "Roboto Condensed", system-ui, sans-serif; }
-  .vf-acc .vf-tempo { font-size: clamp(30px, 6vw, 56px); line-height: 1; font-weight: 700; color: #fff; }
-  .vf-acc-zeile { display: flex; gap: 10px; align-items: baseline; justify-content: space-between; }
-  .vf-lbl { color: #9aa3b2; font-size: 0.8em; text-transform: uppercase; letter-spacing: .06em; }
-  .vf-gang { font-size: 1.3em; font-weight: 700; color: #8fd3ff; }
-  .vf-rpm, .vf-reifen, .vf-tank { font-weight: 700; }
-  .vf-acc-dreh { height: 8px; background: #20303c; border-radius: 4px; overflow: hidden; }
-  .vf-dreh-stab { display: block; height: 100%; width: calc(var(--f, 0) * 100%); background: linear-gradient(90deg, #2ee06a, #ffb02e 60%, #ff5252); transition: width .08s linear; }
-  .vf-knoepfe { position: absolute; right: max(10px, env(safe-area-inset-right)); top: max(8px, env(safe-area-inset-top)); display: flex; gap: 6px; }
-  .vf-knoepfe button { background: rgba(5,7,12,.62); color: #fff; border: 1px solid rgba(255,255,255,.35); padding: 6px 12px; min-height: 2.2em; }
-  .vf-wip { position: absolute; left: 10px; bottom: 8px; color: #0b0c10; font-weight: 700; font-size: 12px; }
-  /* v1.1.55: Auf dem Handy war das HUD zu gross und verdeckte das Auto. Das HUD wird flach und in
-     zwei Ecken unten aufgeteilt: links die Fahrwerte (Tempo/Gang/Drehzahl/Reifen/Tank), rechts die
-     Renn-Infos (Runde/Zeiten/Modus). Die Mitte bleibt fuer das Auto frei. Gilt fuer alle Mobil- und
-     Touch-Geraete (auch quer gehalten und Tablets), daher max-width 1000px plus (pointer: coarse). */
-  @media (max-width: 1000px), (pointer: coarse) {
-    /* Renn-Infos unten rechts, flach und rechtsbuendig; das grosse Tempo steht im ACC-Cluster links. */
-    .vf-hud { left: auto; right: max(5px, env(safe-area-inset-right)); bottom: max(5px, env(safe-area-inset-bottom)); top: auto;
-      font-size: 8px; padding: 2px 5px; gap: 0; max-width: min(44vw, 320px); justify-items: end; line-height: 1.1; }
-    .vf-hud b { font-size: 1.1em; }
-    .vf-hud .vf-tempo { display: none; }
-    /* Fahrwerte unten links, flach. */
-    .vf-acc { left: max(5px, env(safe-area-inset-left)); bottom: max(5px, env(safe-area-inset-bottom)); transform: none;
-      padding: 2px 5px; gap: 0; max-width: min(44vw, 320px); line-height: 1.1; }
-    .vf-acc .vf-tempo { font-size: clamp(14px, 3vw, 20px); }
-    .vf-acc-zeile { gap: 4px; }
-    .vf-lbl { font-size: 0.55em; }
-    .vf-gang { font-size: 0.95em; }
-    .vf-rpm, .vf-reifen, .vf-tank { font-size: 0.76em; }
-    .vf-acc-dreh { height: 3px; }
-    .vf-knoepfe { right: max(5px, env(safe-area-inset-right)); top: max(5px, env(safe-area-inset-top)); gap: 4px; }
-    .vf-knoepfe button { padding: 3px 7px; min-height: 1.5em; font-size: 10px; }
-    .vf-wip { left: max(5px, env(safe-area-inset-left)); right: auto; bottom: auto; top: max(5px, env(safe-area-inset-top)); font-size: 10px; }
+  /* HUD im Stil von ACC (WIP, 60d-virtuell.js vfHud): kantige, fast schwarze Kacheln mit schmaler
+     Akzentlinie in --k-blau, kleine gesperrte Grossbuchstaben, grosse Zahlen in der schmalen App-Schrift.
+     Eine Groesse (--vf-s) fuer alles, aus Breite UND Hoehe: auf dem Handy quer (800x370) etwa 13 px, am
+     Desktop 17 px. Bewegt wird je Bild nur clip-path/transform (kein Layout). */
+  .vf-schicht { --vf-s: clamp(10px, calc(1.1vw + 1.2vh), 18px); --vf-bg: rgba(8,10,14,.8); --vf-linie: var(--k-blau, #00a3e0);
+    --vf-dim: var(--k-dim, #a3acbd); font-family: var(--k-font); }
+  .vf-kachel { background: var(--vf-bg); color: #f3f4f6; border-top: 2px solid var(--vf-linie); font-size: var(--vf-s);
+    font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .vf-lbl { color: var(--vf-dim); font-size: .62em; font-weight: 600; text-transform: uppercase; letter-spacing: .14em; white-space: nowrap; }
+  /* Zeiten oben links */
+  .vf-hud { position: absolute; left: max(8px, env(safe-area-inset-left)); top: max(8px, env(safe-area-inset-top));
+    display: grid; width: 11.5em; padding: 0 0 .35em; }
+  .vf-modus { background: var(--vf-linie); color: var(--k-blau-text, #04070c); font-size: .64em; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .14em; padding: .3em .75em .25em; margin-bottom: .2em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .vf-modus:empty { display: none; }
+  .vf-z { display: grid; grid-template-columns: auto 1fr; align-items: baseline; gap: .5em; padding: .12em .6em; }
+  .vf-z > :nth-child(2) { text-align: right; font-weight: 700; }
+  .vf-z-akt > b { font-size: 1.5em; line-height: 1.05; }
+  .vf-z-delta { grid-template-columns: auto 1fr; row-gap: .2em; }
+  .vf-delta { color: var(--vf-dim); }
+  .vf-z-delta[data-d="schneller"] .vf-delta { color: #3ee07a; }
+  .vf-z-delta[data-d="langsamer"] .vf-delta { color: #ff5a5a; }
+  .vf-delta-bar { grid-column: 1 / -1; position: relative; display: block; height: .3em; background: rgba(255,255,255,.1); }
+  .vf-delta-bar::before { content: ""; position: absolute; left: 50%; top: -.15em; bottom: -.15em; width: 1px; background: rgba(255,255,255,.55); }
+  .vf-delta-bar > i { position: absolute; left: 50%; top: 0; bottom: 0; width: 50%; transform-origin: 0 50%; transform: scaleX(0); background: #ff5a5a; }
+  .vf-z-delta[data-d="schneller"] .vf-delta-bar > i { background: #3ee07a; }
+  .vf-abseits { margin: .3em .6em 0; background: #ffb02e; color: #0b0c10; font-size: .7em; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .12em; padding: .25em .5em; text-align: center; }
+  .vf-abseits[hidden] { display: none; }
+  /* Tacho-Block unten Mitte: Reifen | Kern | Tank */
+  .vf-acc { position: absolute; left: 50%; bottom: max(8px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+    display: flex; align-items: stretch; gap: 3px; }
+  .vf-acc-kern { width: 14em; padding: .45em .6em .35em; display: grid; gap: .3em; }
+  .vf-acc-dreh { position: relative; height: .5em;
+    background: linear-gradient(90deg, rgba(255,255,255,.13) 0 calc(100% - 2px), transparent 0) 0 0 / 5% 100% repeat-x; }
+  /* 20 Segmente: Gruen, die letzten fuenf Rot, die letzten zwei Blau - die Farben der Schaltlampen im Cockpit. */
+  .vf-dreh-stab { position: absolute; inset: 0; display: block;
+    background: linear-gradient(90deg, #2ee06a 0 75%, #ff3b3b 75% 90%, var(--vf-linie) 90%);
+    -webkit-mask: linear-gradient(90deg, #000 0 calc(100% - 2px), transparent 0) 0 0 / 5% 100% repeat-x;
+    mask: linear-gradient(90deg, #000 0 calc(100% - 2px), transparent 0) 0 0 / 5% 100% repeat-x;
+    clip-path: inset(0 calc(100% - var(--f, 0) * 100%) 0 0); }
+  .vf-acc-werte { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: .5em; }
+  .vf-acc-wert { display: grid; justify-items: center; gap: .1em; }
+  .vf-acc-wert b { font-size: 1.55em; font-weight: 700; line-height: 1; }
+  .vf-gang { min-width: 1.35em; text-align: center; font-size: 2.6em; font-weight: 700; line-height: 1; padding: .02em .12em 0;
+    border-bottom: 2px solid var(--vf-linie); background: rgba(255,255,255,.05); }
+  .vf-acc.vf-schalt .vf-gang { background: var(--vf-linie); color: var(--k-blau-text, #04070c); }
+  .vf-acc-reifen, .vf-acc-tank { padding: .4em .55em; display: grid; align-content: start; gap: .3em; justify-items: center; }
+  .vf-reifen { display: grid; grid-template-columns: repeat(2, 2.3em); gap: 3px .55em; }
+  .vf-reifen > i { display: block; font-style: normal; font-weight: 700; font-size: .78em; text-align: center; padding: .28em 0;
+    color: #04070c; background: #4a5568; }
+  .vf-acc-tank { min-width: 4.6em; }
+  .vf-tank { font-size: 1.25em; font-weight: 700; line-height: 1; }
+  .vf-tank-bar { display: block; width: 100%; height: .35em; background: rgba(255,255,255,.13); }
+  .vf-tank-bar > i { display: block; height: 100%; background: var(--vf-linie); transform-origin: 0 50%; }
+  /* Knoepfe oben rechts im selben Stil */
+  .vf-knoepfe { position: absolute; right: max(8px, env(safe-area-inset-right)); top: max(8px, env(safe-area-inset-top)); display: flex; gap: 3px; }
+  .vf-knoepfe button { background: var(--vf-bg); color: #f3f4f6; border: 0; border-top: 2px solid var(--vf-linie); border-radius: 0;
+    font-family: var(--k-font); font-size: calc(var(--vf-s) * .72); font-weight: 700; text-transform: uppercase; letter-spacing: .12em;
+    padding: .55em 1em; min-height: 2.6em; min-width: 2.6em; cursor: pointer; }
+  .vf-knoepfe button:hover, .vf-knoepfe button:focus-visible { background: var(--vf-linie); color: var(--k-blau-text, #04070c); outline: 0; }
+  .vf-kamfrei { position: absolute; right: max(8px, env(safe-area-inset-right)); top: calc(max(8px, env(safe-area-inset-top)) + var(--vf-s) * 2.3);
+    background: var(--vf-bg); color: var(--vf-dim); border-left: 2px solid var(--vf-linie); font-size: calc(var(--vf-s) * .62);
+    text-transform: uppercase; letter-spacing: .12em; padding: .35em .7em; white-space: nowrap; }
+  .vf-kamfrei[hidden] { display: none; }
+  .vf-wip { position: absolute; left: max(8px, env(safe-area-inset-left)); bottom: max(8px, env(safe-area-inset-bottom));
+    background: var(--vf-bg); color: var(--vf-dim); font-size: calc(var(--vf-s) * .62); font-weight: 700; text-transform: uppercase;
+    letter-spacing: .12em; padding: .3em .6em; }
+  /* Hochkant und sehr schmal: Reifen und Tank ruecken naeher, damit der Block in die Breite passt. */
+  @media (max-width: 520px) {
+    .vf-acc-kern { width: 12em; }
+    .vf-reifen { grid-template-columns: repeat(2, 2em); gap: 2px .3em; }
+    .vf-acc-reifen, .vf-acc-tank { padding: .35em .4em; }
+    .vf-acc-tank { min-width: 3.8em; }
+    .vf-wip { bottom: auto; top: calc(max(8px, env(safe-area-inset-top)) + var(--vf-s) * 9.5); }
   }
   /* v1.1.3: Autobild und Versatz - rechts stehende Autos (P1, P3 ...) nach rechts, links stehende
      nach links geschoben, wie auf einem Startplan. */

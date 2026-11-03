@@ -17049,6 +17049,139 @@
       + randCm.toFixed(0) + ' cm neben dem Rand, Blick ' + e60[0].toFixed(0) + ' -> ' + e60[15].toFixed(1) + ' (0,25 s) -> ' + e60[90].toFixed(2) + ' Grad' };
   });
 
+  // BESTELLT: "Erlaube mir, im virtuellen Fahren mit dem rechten Stick die Kamera um das Auto herum zu
+  // drehen ... Wenn ich den rechten Stick dann reindruecke, soll die Kamera wieder die Standardansicht
+  // haben." Wie beim Bildlauf-Test ruft der Test pollGamepad() selbst mit einem gefaelschten Pad; die
+  // virtuelle Fahrt laeuft dafuer nicht (nur VF.aktiv), die Drehung rechnet vfDrehSchritt wie vfKamera.
+  stAdd('Virtuell: rechter Stick dreht die Kamera, Blick bleibt, R3 setzt zurueck oder wechselt, bildratenunabhaengig (WIP)', () => {
+    const f = [], grad = 180 / Math.PI;
+    const echt = navigator.getGamepads;
+    const merk = { aktiv: VF.aktiv, kamera: VF.kamera, dreh: VF.dreh ? Object.assign({}, VF.dreh) : null, stick: VF.stick, kam: VF.kam, tasten: VF.tasten };
+    let gespeichert = null;
+    try { gespeichert = localStorage.getItem(VF_KAMERA_STORE); } catch (e) { /* privat */ }
+    const pad = { id: 'Selbsttest (STANDARD GAMEPAD)', index: 0, connected: true, mapping: 'standard', timestamp: performance.now(),
+      axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, touched: false, value: 0 })) };
+    const r3 = bindings.lightflash;
+    const r3Knopf = r3 && r3.type === 'button' && pad.buttons[r3.index];
+    const r3Setzen = (an) => { if (r3Knopf) pad.buttons[r3.index] = { pressed: an, touched: an, value: an ? 1 : 0 }; };
+    const stickFrei = ![2, 3].some((i) => Object.keys(bindings).some((k) => bindings[k] && bindings[k].type === 'axis' && bindings[k].index === i));
+    const bild = (n, dt) => { for (let i = 0; i < n; i++) { pollGamepad(); const e = vfDrehEingabe(); vfDrehSchritt(vfDreh(), e[0], e[1], dt, vfDrehGrenzen(vfDrehArt(vfKameraId()))); } };
+    let mass = '';
+    try {
+      navigator.getGamepads = () => [pad, null, null, null];
+      VF.aktiv = true; VF.kamera = 'verfolger'; VF.tasten = {}; vfDrehNull();
+      pollGamepad();
+      // 1. Stick rechts: die Kamera kreist, nach dem Loslassen bleibt der Winkel stehen.
+      let g1 = 0;
+      if (stickFrei) {
+        pad.axes[2] = 0.9;
+        bild(30, 1 / 60);
+        g1 = vfDreh().g * grad;
+        if (!(g1 > 30)) f.push('nach 0,5 s Stick rechts nur ' + g1.toFixed(1) + ' Grad');
+        pad.axes[2] = 0;
+        bild(45, 1 / 60);
+        const ga = vfDreh().g * grad;
+        bild(60, 1 / 60);
+        const gb = vfDreh().g * grad;
+        if (Math.abs(gb - ga) > 0.5 || Math.abs(vfDreh().vg) > 1e-3) f.push('Blick laeuft nach dem Loslassen weiter: ' + ga.toFixed(1) + ' -> ' + gb.toFixed(1));
+        if (!vfKameraGedreht()) f.push('Kamera gilt nach dem Drehen nicht als gedreht');
+        pad.axes[3] = 1;
+        bild(120, 1 / 60);
+        const nMax = vfDreh().n * grad;
+        if (Math.abs(nMax - 60) > 0.01) f.push('senkrecht nicht bei +60 Grad begrenzt: ' + nMax.toFixed(1));
+        pad.axes[3] = 0;
+        bild(5, 1 / 60);
+        mass = g1.toFixed(0) + ' Grad in 0,5 s, bleibt ' + gb.toFixed(1) + ', oben ' + nMax.toFixed(0);
+      } else {
+        vfDreh().g = 1; vfDreh().n = 0.3;
+        mass = 'Achse 2/3 ist belegt - Stick bleibt aus, Drehung von Hand gesetzt';
+      }
+      // 2. R3 (Lichthupen-Belegung) gedreht: Standardansicht, dieselbe Kamera.
+      if (r3Knopf) {
+        r3Setzen(true); pollGamepad(); r3Setzen(false); pollGamepad();
+        if (vfKameraGedreht() || vfDreh().g || vfDreh().n) f.push('R3 setzt die gedrehte Kamera nicht zurueck');
+        if (VF.kamera !== 'verfolger') f.push('R3 bei gedrehter Kamera wechselt zu ' + VF.kamera);
+        // 3. R3 ungedreht: naechste Kamera wie bisher.
+        r3Setzen(true); pollGamepad(); r3Setzen(false); pollGamepad();
+        if (VF.kamera !== 'nah') f.push('R3 ungedreht wechselt nicht zur naechsten Kamera (' + VF.kamera + ')');
+        mass += ', R3 zurueck/wechselt';
+      } else mass += ', R3 nicht als Knopf belegt (uebersprungen)';
+      // 4. Bildratenunabhaengig: 1 s halten und 0,5 s auslaufen, mit 60 und mit 25 Bildern/s.
+      const lauf = (fps) => { const D = { g: 0, n: 0, vg: 0, vn: 0 }; for (let i = 0; i < fps; i++) vfDrehSchritt(D, 0.6, -0.4, 1 / fps, [-1, 1]);
+        for (let i = 0; i < fps / 2; i++) vfDrehSchritt(D, 0, 0, 1 / fps, [-1, 1]); return D; };
+      const a = lauf(60), b = lauf(25);
+      if (Math.abs(a.g - b.g) * grad > 0.05 || Math.abs(a.n - b.n) * grad > 0.05) f.push('haengt von der Bildrate ab: ' + (a.g * grad).toFixed(2) + ' / ' + (b.g * grad).toFixed(2) + ' Grad');
+      // 5. Belegung respektieren: eine belegte Achse dreht nicht; ohne Standard-Belegung kein Stick.
+      vfStickSetzen({ mapping: 'standard', axes: [0, 0, 0.9, 0.9] }, { steering: { type: 'axis', index: 2 } });
+      if (!VF.stick || VF.stick.x !== 0 || !(VF.stick.y > 0)) f.push('belegte Achse 2 dreht trotzdem: ' + JSON.stringify(VF.stick));
+      vfStickSetzen({ mapping: '', axes: [0, 0, 0.9, 0.9] }, {});
+      if (VF.stick !== null) f.push('Pad ohne Standard-Belegung dreht');
+      // 6. Geometrie: 90 Grad kreisen haelt den Abstand, Standardansicht unveraendert; umsehen dreht nur das Ziel.
+      const k = { auge: [0, 13, 30], ziel: [0, 1.5, -14] };
+      if (vfDrehAnwenden(k, 'kreisen', { g: 0, n: 0 }, 0, 1.5, 0) !== k) f.push('ungedreht nicht die Standardansicht');
+      const k90 = vfDrehAnwenden(k, 'kreisen', { g: Math.PI / 2, n: 0 }, 0, 1.5, 0);
+      const r0 = Math.hypot(k.auge[0], k.auge[1] - 1.5, k.auge[2]), r1 = Math.hypot(k90.auge[0], k90.auge[1] - 1.5, k90.auge[2]);
+      if (Math.abs(r0 - r1) > 1e-6 || Math.abs(k90.auge[0] + 30) > 1e-6 || Math.abs(k90.auge[1] - 13) > 1e-6) f.push('Kreisen: ' + k90.auge.map((x) => x.toFixed(2)).join(','));
+      const ku = vfDrehAnwenden(k, 'umsehen', { g: Math.PI / 2, n: 0 }, 0, 0, 0);
+      if (ku.auge !== k.auge || !(ku.ziel[0] > 40)) f.push('Umsehen: ' + ku.ziel.map((x) => x.toFixed(1)).join(','));
+      // 7. Tastatur: H dreht nach rechts, V setzt zurueck.
+      VF.kamera = 'verfolger'; vfDrehNull();
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'h' }));
+      const ein = vfDrehEingabe();
+      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'h' }));
+      if (ein[0] !== 1 || vfDrehEingabe()[0] !== 0) f.push('Taste H: ' + ein.join(','));
+      vfDreh().g = 0.5;
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'v' }));
+      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'v' }));
+      if (vfKameraGedreht()) f.push('Taste V setzt nicht zurueck');
+    } finally {
+      r3Setzen(false); pad.axes = [0, 0, 0, 0];
+      try { pollGamepad(); } catch (e) { /* weiter */ }
+      navigator.getGamepads = echt;
+      VF.aktiv = merk.aktiv; VF.kamera = merk.kamera; VF.stick = merk.stick; VF.kam = merk.kam; VF.tasten = merk.tasten;
+      if (merk.dreh) Object.assign(vfDreh(), merk.dreh); else vfDrehNull();
+      try { if (gespeichert === null) localStorage.removeItem(VF_KAMERA_STORE); else localStorage.setItem(VF_KAMERA_STORE, gespeichert); } catch (e) { /* privat */ }
+      try { pollGamepad(); } catch (e) { /* ohne Pad */ }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : mass + ', 60/25 fps gleich, belegte Achse frei, H/V' };
+  });
+
+  // HUD im ACC-Stil: Zeitformat abgeschnitten (nie 0:60), Delta-Text, alle Felder da, je Bild nur Aenderungen.
+  stAdd('Virtuell: HUD im ACC-Stil - Zeiten, Delta, Reifen, Tank, Drehzahl, schreibt nur Aenderungen (WIP)', () => {
+    const f = [];
+    if (vfZeitAcc(59999, 1) !== '0:59.9' || vfZeitAcc(61234, 3) !== '1:01.234' || vfZeitAcc(null, 3) !== '-:--.---') f.push('Zeitformat ' + vfZeitAcc(59999, 1) + ' / ' + vfZeitAcc(61234, 3));
+    if (vfDeltaText(-420) !== '-0.42' || vfDeltaText(1234) !== '+1.23' || vfDeltaText(null) !== '--.--') f.push('Delta ' + vfDeltaText(-420) + ' / ' + vfDeltaText(1234));
+    const merk = { ui: VF.ui, rundeAb: VF.rundeAb, letzte: VF.letzte, beste: VF.beste, splits: VF.besteSplits, idx: VF.idx, modus: VF.modus, abseits: VF.abseits, dreh: VF.dreh };
+    const box = document.createElement('div');
+    try {
+      // Dasselbe Markup wie virtuellStarten: aus der Quelle der Funktion waere es zerbrechlich, also die Felder pruefen.
+      box.innerHTML = '<div class="vf-hud"><div class="vf-modus"></div><b class="vf-runde"></b><div><span class="vf-delta"></span><i class="vf-delta-bar"><i></i></i></div>'
+        + '<span class="vf-letzte"></span><span class="vf-beste"></span><span class="vf-abseits" hidden></span></div>'
+        + '<div class="vf-acc"><div class="vf-reifen"><i></i><i></i><i></i><i></i></div><b class="vf-tempo"></b><b class="vf-gang"></b><b class="vf-rpm"></b>'
+        + '<b class="vf-tank"></b><i class="vf-tank-bar"><i></i></i><i class="vf-dreh-stab"></i></div><span class="vf-kamfrei" hidden></span>';
+      vfHudBauen(box);
+      const fehlt = Object.keys(VF.ui).filter((k) => k !== 'alt' && (!VF.ui[k] || (Array.isArray(VF.ui[k]) && VF.ui[k].length !== 4)));
+      if (fehlt.length) f.push('Felder fehlen: ' + fehlt.join(','));
+      VF.rundeAb = 0; VF.letzte = 62345; VF.beste = 61000; VF.besteSplits = null; VF.modus = 'practice'; VF.abseits = false; VF.idx = 0; vfDrehNull();
+      vfHud();
+      if (VF.ui.letzte.textContent !== '1:02.345' || VF.ui.beste.textContent !== '1:01.000') f.push('Letzte/Beste ' + VF.ui.letzte.textContent + ' / ' + VF.ui.beste.textContent);
+      if (VF.ui.reifen.some((r) => !/°$/.test(r.textContent) || !r.style.background)) f.push('Reifenfelder ohne Wert oder Farbe');
+      if (!/ L$/.test(VF.ui.tank.textContent) || !VF.ui.tankBar.style.transform) f.push('Tank ' + VF.ui.tank.textContent);
+      if (VF.ui.dreh.style.getPropertyValue('--f') === '') f.push('Drehzahlbalken ohne --f');
+      // Zweiter Aufruf ohne Aenderung: kein Textknoten wird neu geschrieben.
+      let schreib = 0;
+      const mo = new MutationObserver((l) => { schreib += l.length; });
+      mo.observe(box, { subtree: true, childList: true, characterData: true, attributes: true });
+      vfHud();
+      mo.takeRecords().forEach(() => schreib++);
+      mo.disconnect();
+      if (schreib) f.push(schreib + ' DOM-Aenderungen ohne neue Werte');
+    } finally {
+      Object.assign(VF, { ui: merk.ui, rundeAb: merk.rundeAb, letzte: merk.letzte, beste: merk.beste, besteSplits: merk.splits, idx: merk.idx, modus: merk.modus, abseits: merk.abseits });
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'm:ss.mmm abgeschnitten, Delta +/-, Reifen/Tank/Drehzahl gesetzt, zweites Bild ohne DOM-Arbeit' };
+  });
+
   stAdd('Virtuell v1.2.32: Kartenauto bleibt unter der 3D-Schicht verborgen, Silhouette an Ort, Skala und Drehung', () => {
     const f = [];
     const r = renderTrackPreview(codeToTrack('SG3R2G3R2').tiles, null, { detailed: true, cars: [] });

@@ -4064,6 +4064,10 @@
     "Neu verhängte Sekunden für Frühstart, Rammen und fehlende Pflichtstopps am regulären Rennende. Keine Meldung für reine Bremsstrafen.": "Newly imposed seconds for jump starts, ramming and missing mandatory stops at the regular end of the race. No message for pure brake penalties.",
     "Weitere Warnungen": "Further warnings",
     "Rennereignisse": "Race events",
+    "Delta": "Delta",
+    "Kamera frei": "Free camera",
+    "Standard": "Default",
+    "Kamera: Standardansicht": "Camera: default view",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -5469,6 +5473,12 @@
     "Neu verhängte Sekunden für Frühstart, Rammen und fehlende Pflichtstopps am regulären Rennende. Keine Meldung für reine Bremsstrafen.": "Segundos recién impuestos por salida anticipada, embestidas y paradas obligatorias no realizadas al final regular de la carrera. Sin aviso para penalizaciones solo de frenado.",
     "Weitere Warnungen": "Otros avisos",
     "Rennereignisse": "Eventos de carrera",
+    "Delta": "Delta",
+    "Kamera frei": "Cámara libre",
+    "Standard": "Estándar",
+    "Kamera: Standardansicht": "Cámara: vista estándar",
+    "Reifen": "Neumáticos",
+    "Tank": "Combustible",
   };
 
   // ============================================================================
