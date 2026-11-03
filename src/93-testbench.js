@@ -3701,6 +3701,23 @@
                schild: brd ? { klasse: brd.className, text: brd.textContent } : null,
                beschreibung: pitPlan ? describePitPlan(pitPlan) : null };
     },
+    // v1.3.62: ein Boxen-Minispiel fuer Bildschirmfotos und Sichtpruefungen aufstellen - ein
+    // echter Stopp (Boxengasse, anhalten, Service) und danach die gewuenschten Druecke, je
+    // nach `abstand` Sekunden Standzeit. tasten: Liste aus 'richtig' und 'falsch'.
+    pitSpielSchau(tasten, abstand) {
+      pitModus = 'minigame'; pitLaneEnabled = true; pitTrigger = 'anywhere'; zweiSpieler = false;
+      physEngine.state.speedKmh = 0; throttleY = 0; fuel = 30; damage = 20;
+      setPitState('off'); pitRearmBlockedUntil = 0; setPitState('limited');
+      pitLastTick = 0; pitLaneTick();
+      if (!pitSpiel) return null;
+      for (const w of (tasten || [])) {
+        pitStandElapsed += (abstand || 0.5);
+        const soll = pitSpiel.folge[pitSpiel.i];
+        pitSpielTaste(w === 'richtig' ? soll : (soll === 'quad' ? 'kreis' : 'quad'));
+      }
+      pitSpielMalen();
+      return { folge: pitSpiel.folge.slice(), i: pitSpiel.i, bonus: pitSpiel.bonus, T: pitSpiel.T };
+    },
     // Eine Kachel antippen, als haette es ein Finger getan.
     pitTap(which) {
       const el = document.querySelector('.pit-tile[data-pit="' + which + '"]');

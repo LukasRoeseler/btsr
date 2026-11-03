@@ -5651,8 +5651,6 @@
       pitStandElapsed = sp.fensterAb + 0.001;
       pitSpielTaste(sp.folge[1]);
       if (sp.i !== 2 || sp.treffer !== 2) f.push('nach der Luecke zaehlt der Druck nicht');
-      // Fuenf Fenster mit Luecken passen weiter in die Standzeit.
-      if (sp.fensterS > PIT_SPIEL_FENSTER_MIN && Math.abs(PIT_SPIEL_ANZAHL * (sp.fensterS + PIT_SPIEL_PAUSE) - sp.T) > 0.01) f.push('Fenster passen nicht in die Zeit');
     } finally {
       setPitState('off'); pitRearmBlockedUntil = 0;
       pitModus = merk.modus; pitLaneEnabled = merk.an; pitTrigger = merk.trig;
@@ -6419,7 +6417,8 @@
     if (pk && parseFloat(getComputedStyle(pk).marginRight) < 12) f.push('zu wenig Abstand zu Beenden');
     const el = $('pit-spiel');
     if (!el || el.querySelectorAll('.ps-slot').length !== PIT_SPIEL_ANZAHL) f.push('nicht ein Platz je Knopf');
-    if (String(pitSpielMalen).indexOf("k < sp.i ? 'fertig'") < 0) f.push('erledigte Knoepfe blenden nicht aus');
+    // v1.3.62: erledigte Knoepfe blenden nicht mehr aus, sie bleiben gruen oder rot umrahmt stehen.
+    if (String(pitSpielMalen).indexOf('sp.ergebnis[k]') < 0) f.push('erledigte Knoepfe behalten ihr Ergebnis nicht');
     // Randstreifen: der weisse Streifen beginnt am Ursprung (pts[0]), auch mit Haarnadel.
     const r = renderTrackPreview(codeToTrack('SHG3R4L').tiles, null, { detailed: true, echt: true, ohneLinie: true, ohneLinieRechnen: true });
     const d = new DOMParser().parseFromString(r.html, 'image/svg+xml');
@@ -6587,13 +6586,10 @@
 
   stAdd('Boxen v1.2.4: Minigame-Haken nur bei richtig, mechanische Signale, NPC-Box wie Safety Car, SC-Parken passt', () => {
     const f = [];
-    // Minigame: Zeitablauf loescht die Rueckmeldung; die Reihe zeigt die naechsten vier.
+    // Minigame: seit v1.3.62 gibt es weder Haken noch Zeitablauf - die Rueckmeldung ist der Rahmen
+    // am gedrueckten Knopf (eigener Test "Boxen v1.3.62"). Hier bleibt: ein Platz je Knopf.
     const el = $('pit-spiel');
     if (!el || el.querySelectorAll('.ps-slot').length !== PIT_SPIEL_ANZAHL) f.push('Reihe nicht mit einem Platz je Knopf (seit v1.2.30)');
-    if (!el || !el.querySelector('.ps-falsch')) f.push('Kreuz fuer falsch fehlt');
-    const css = [...document.querySelectorAll('style')].map((x) => x.textContent).join('\n');
-    if (/\.pit-spiel\[data-symbol=""\] \.ps-fertig\s*\{\s*display:\s*block/.test(css)) f.push('Haken noch in jeder Pause');
-    if (String(pitSpielTick).indexOf("sp.blitz = ''") < 0) f.push('Zeitablauf laesst die alte Rueckmeldung stehen');
     // Signale: Schalter ab Werk aus, an = alte Toene.
     const alt = $('setting-pit-alt-toene');
     if (!alt || alt.defaultChecked) f.push('Schalter alte Signaltoene fehlt oder ab Werk an');
@@ -11825,19 +11821,13 @@
       if (!r.fertig) f.push('nicht fertig geworden (' + r.stand + ')');
       // v1.0.45: nach dem letzten Knopf 1 s Erholung (kein Fehler hier), danach erst fertig.
       if (Math.abs(r.dauer - (r.T + PIT_ERHOL_BASE)) > 0.3) f.push('Dauer ' + r.dauer.toFixed(2) + ' s statt ' + (r.T + PIT_ERHOL_BASE).toFixed(2));
-      // v1.1.11: fuenf Symbole, Fenster = T/5 minus 250 ms Pause (70-race.js, pitSpielFenster); seit
-      // v1.2.4 ohne Pause. Ohne Tasten laufen sie in die Standzeit hinein ab: Erwartung = so viele, wie
-      // bis zum Ende passen.
-      const fensterS = pitSpielFenster(r.T);
-      const erwartet = Math.min(PIT_SPIEL_ANZAHL, Math.floor((r.T + PIT_ERHOL_BASE) / (fensterS + PIT_SPIEL_PAUSE)));
-      if (r.i < erwartet) f.push('nur ' + r.i + ' Symbole abgelaufen statt ' + erwartet);
-      // Wo das Fenster nicht unter seinem Minimum liegt, fuellen fuenf Fenster samt Pausen genau die Standzeit.
-      if (fensterS > PIT_SPIEL_FENSTER_MIN && Math.abs(PIT_SPIEL_ANZAHL * (fensterS + PIT_SPIEL_PAUSE) - r.T) > 0.01)
-        f.push('fuenf Fenster passen nicht in die Zeit: ' + (PIT_SPIEL_ANZAHL * (fensterS + PIT_SPIEL_PAUSE)).toFixed(2) + ' s zu ' + r.T.toFixed(2));
+      // v1.3.62: kein Zeitlimit je Knopf - ohne Druck bleibt der erste dran, und das Spiel endet
+      // mit der Arbeit (Deckel gegen Warten: T plus Erholung, wie ohne Druck bisher).
+      if (r.i !== 0) f.push(r.i + ' Knoepfe ohne Druck weitergesprungen');
       if (fuelSimOn() && r.fuel < 99.9) f.push('Tank am Ende ' + r.fuel.toFixed(1));
       if (r.plan.repair && r.damage > 0.01) f.push('Schaden am Ende ' + r.damage.toFixed(1));
     }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'T ' + (r.T || 0).toFixed(1) + ' s, voll abgewartet, ' + r.i + ' Symbole abgelaufen, Gas und Rueckwaerts zu' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'T ' + (r.T || 0).toFixed(1) + ' s, voll abgewartet (' + (r.dauer || 0).toFixed(1) + ' s), kein Knopf abgelaufen, Gas und Rueckwaerts zu' };
   });
 
   // ---- Rueckwaertsgang: Gas und Bremse zusammen ----
@@ -12395,21 +12385,120 @@
     return { ok: !f.length, mass: (info.length ? info.join(' | ') + ' | ' : '') + (f.length ? 'FEHLER: ' + f.join(' | ') : 'alle Bedingungen gepr\u00fcft') };
   });
 
-  stAdd('Boxen-Minigame: fuenf richtige sparen 40 %, falsche kosten Zeit', () => {
+  stAdd('Boxen-Minigame: schnelle richtige sparen bis 40 %, falsche kosten Zeit', () => {
     const a = pitSpielLauf('richtig');
     const b = pitSpielLauf('falsch');
     const f = a.f.concat(b.f);
     if (!f.length) {
       if (a.treffer !== PIT_SPIEL_ANZAHL) f.push(a.treffer + ' Treffer statt ' + PIT_SPIEL_ANZAHL);
-      // Fuenf richtige geben je 8 % Bonus (v1.1.11; vorher acht mal 5 %): 0,6 * T plus 1 s Erholung.
-      const aSoll = 0.6 * a.T + PIT_ERHOL_BASE;
-      if (Math.abs(a.dauer - aSoll) > 0.3) f.push('mit 5 Treffern ' + a.dauer.toFixed(2) + ' s statt ' + aSoll.toFixed(2));
-      if (b.treffer !== 0 || !(b.bonus < 0)) f.push('falsche Tasten: Treffer ' + b.treffer + ', Bonus ' + b.bonus);
-      // Fuenf falsche kosten je 8 % (1,4 * T) plus Erholung mit 5 Fehlern (Strafzeit).
-      const bSoll = 1.4 * b.T + PIT_ERHOL_BASE + PIT_SPIEL_ANZAHL * PIT_ERHOL_PRO_FEHLER;
-      if (Math.abs(b.dauer - bSoll) > 0.4) f.push('mit falschen Tasten ' + b.dauer.toFixed(2) + ' s statt ' + bSoll.toFixed(2));
+      // v1.3.62: je richtigem Knopf 10 % von T mal (1 - Reaktion / 2 s). Der Prueflauf drueckt in
+      // jedem 50-ms-Takt, sobald der Prellschutz frei ist - also nach 50 bis 100 ms: fast alles.
+      if (!(a.bonus > 0.36 * a.T && a.bonus <= 0.4 * a.T + 1e-9)) f.push('Gutschrift ' + a.bonus.toFixed(2) + ' s bei T ' + a.T.toFixed(2));
+      const aSoll = a.T - a.bonus + PIT_ERHOL_BASE;
+      if (Math.abs(a.dauer - aSoll) > 0.12) f.push('mit 4 Treffern ' + a.dauer.toFixed(2) + ' s statt ' + aSoll.toFixed(2));
+      if (b.treffer !== 0 || Math.abs(b.bonus + PIT_SPIEL_ANZAHL * PIT_SPIEL_STRAFE * b.T) > 1e-6) f.push('falsche Tasten: Treffer ' + b.treffer + ', Bonus ' + b.bonus);
+      // Vier falsche kosten je 10 % (1,4 * T) plus Erholung mit 4 Fehlern (Strafzeit).
+      const bSoll = (1 + PIT_SPIEL_ANZAHL * PIT_SPIEL_STRAFE) * b.T + PIT_ERHOL_BASE + PIT_SPIEL_ANZAHL * PIT_ERHOL_PRO_FEHLER;
+      if (Math.abs(b.dauer - bSoll) > 0.12) f.push('mit falschen Tasten ' + b.dauer.toFixed(2) + ' s statt ' + bSoll.toFixed(2));
     }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : '40 % schneller mit 5 Treffern (' + a.dauer.toFixed(1) + ' von ' + a.T.toFixed(1) + ' s), fuenf falsche: ' + b.dauer.toFixed(1) + ' s' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : Math.round(100 * a.bonus / a.T) + ' % schneller mit 4 schnellen Treffern (' + a.dauer.toFixed(1) + ' von ' + a.T.toFixed(1) + ' s + 1 s Erholung), vier falsche: ' + b.dauer.toFixed(1) + ' s' };
+  });
+
+  // ---- Boxen v1.3.62: vier Knoepfe, Rahmen gruen/rot, ohne Zeitlimit ----
+  //
+  // BESTELLT: "Zeige in der Kachel darueber die Folge der vier Knoepfe, und je Knopf, den ich
+  // druecke, wird dann der Knopf gruen (richtig) oder rot (falsch) umrahmt (+ Feedback-Ton). Ich
+  // moechte nicht das Gedoens darueber und darunter und kein Zeitlimit zum Druecken der Knoepfe.
+  // Im Hintergrund soll sich die Schnelligkeit des Drueckens sowie Korrektheit schon noch auf
+  // die Pit-Zeit auswirken (ausser ich stelle das Minigame ab, natuerlich)."
+  stAdd('Boxen v1.3.62: Minispiel vier Knoepfe, Rahmen gruen/rot, ohne Zeitlimit, wirkt auf Standzeit', () => {
+    const f = [], teile = [];
+    const el = $('pit-spiel');
+    if (!el) return { ok: false, mass: 'pit-spiel fehlt' };
+    // 1. Nur die Reihe: vier Plaetze, kein Zaehler, keine Restzeit, kein Ring, keine Trefferzahl.
+    if (PIT_SPIEL_ANZAHL !== 4) f.push(PIT_SPIEL_ANZAHL + ' Knoepfe statt 4');
+    if (el.querySelectorAll('.ps-slot').length !== 4) f.push(el.querySelectorAll('.ps-slot').length + ' Plaetze statt 4');
+    for (const weg of ['#pit-spiel-zaehler', '#pit-spiel-rest', '#pit-spiel-treffer', '.ps-kopf', '.ps-mitte', '.ps-ring']) {
+      if (el.querySelector(weg)) f.push(weg + ' ist noch da');
+    }
+    if (String(pitSpielMalen).indexOf('--fenster') >= 0) f.push('Zeitbalken wird noch gemalt');
+    // Die Tipp-Flaechen nur ohne Gamepad.
+    const fuss = el.querySelector('.ps-fuss');
+    const touchMerk = el.classList.contains('ps-touch');
+    el.classList.remove('ps-touch');
+    if (!fuss || getComputedStyle(fuss).display !== 'none') f.push('Tipp-Flaechen trotz Gamepad sichtbar');
+    el.classList.add('ps-touch');
+    if (!fuss || getComputedStyle(fuss).display === 'none') f.push('ohne Gamepad keine Tipp-Flaechen');
+    el.classList.toggle('ps-touch', touchMerk);
+    // Ton: dumpf, kein Rechteck mehr.
+    if (/'square'/.test(String(pitSpielTon))) f.push('Fehlerton noch Rechteck');
+
+    const merk = { modus: pitModus, an: pitLaneEnabled, trig: pitTrigger, kmh: physEngine.state.speedKmh,
+                   zwei: zweiSpieler, fuel, damage };
+    const reifen = pitSpielReifenMerk();
+    try {
+      pitModus = 'minigame'; pitLaneEnabled = true; pitTrigger = 'anywhere'; zweiSpieler = false;
+      physEngine.state.speedKmh = 0; throttleY = 0; fuel = 30; damage = 20;
+      setPitState('off'); pitRearmBlockedUntil = 0;
+      setPitState('limited'); pitLastTick = 0; pitLaneTick();
+      if (!pitSpielAktiv()) return { ok: false, mass: 'kein Minigame-Stopp' };
+      const sp = pitSpiel, T = sp.T;
+      const slots = el.querySelectorAll('.ps-slot');
+      const zustand = () => [...slots].map(x => x.dataset.zustand).join(',');
+      if (zustand() !== 'jetzt,kommt,kommt,kommt') f.push('Start: ' + zustand());
+      if ([...slots].some((x, k) => x.dataset.s !== sp.folge[k])) f.push('Plaetze zeigen nicht die Folge');
+      // 2. Kein Zeitlimit: lange warten (aber vor dem Ende der Arbeit) - der erste bleibt dran.
+      const warte = Math.min(0.7 * T, 3);
+      pitSpielTick(warte);
+      if (sp.i !== 0 || slots[0].dataset.zustand !== 'jetzt') f.push('nach ' + warte.toFixed(1) + ' s ohne Druck weitergesprungen');
+      // 3. Richtig nach langer Bedenkzeit: Rahmen gruen, aber (fast) keine Gutschrift.
+      const b0 = sp.bonus;
+      pitSpielTaste(sp.folge[0]);
+      const g1 = sp.bonus - b0;
+      const g1Soll = PIT_SPIEL_BONUS * T * Math.max(0, 1 - warte / PIT_SPIEL_REAKTION);
+      if (Math.abs(g1 - g1Soll) > 1e-6) f.push('Gutschrift nach ' + warte.toFixed(1) + ' s ' + g1.toFixed(3) + ' statt ' + g1Soll.toFixed(3));
+      if (slots[0].dataset.zustand !== 'ok' || slots[1].dataset.zustand !== 'jetzt') f.push('nach richtig: ' + zustand());
+      // 4. Schnell richtig (0,5 s): drei Viertel der vollen Gutschrift.
+      pitSpielTick(0.5);
+      const b1 = sp.bonus;
+      pitSpielTaste(sp.folge[1]);
+      const g2 = sp.bonus - b1, g2Soll = PIT_SPIEL_BONUS * T * (1 - 0.5 / PIT_SPIEL_REAKTION);
+      if (Math.abs(g2 - g2Soll) > 1e-6) f.push('Gutschrift nach 0,5 s ' + g2.toFixed(3) + ' statt ' + g2Soll.toFixed(3));
+      // 5. Falsch: roter Rahmen, Folge geht weiter, Aufschlag 10 % von T.
+      pitSpielTick(0.3);
+      const b2 = sp.bonus;
+      pitSpielTaste(sp.folge[2] === 'quad' ? 'kreis' : 'quad');
+      if (Math.abs((b2 - sp.bonus) - PIT_SPIEL_STRAFE * T) > 1e-6) f.push('Aufschlag ' + (b2 - sp.bonus).toFixed(3) + ' statt ' + (PIT_SPIEL_STRAFE * T).toFixed(3));
+      if (zustand() !== 'ok,ok,falsch,jetzt') f.push('nach falsch: ' + zustand());
+      const farbe = (x) => getComputedStyle(x).borderTopColor;
+      const gruen = getComputedStyle(document.body).getPropertyValue('--good').trim();
+      teile.push('Rahmen ' + farbe(slots[0]) + ' / ' + farbe(slots[2]));
+      if (farbe(slots[0]) === farbe(slots[2]) || farbe(slots[0]) === farbe(slots[3])) f.push('Rahmen richtig/falsch/aktuell nicht verschieden');
+      if (!gruen) f.push('--good fehlt');
+      // 6. Der letzte: das Spiel ist vorbei, alle vier bleiben markiert, weitere Druecke zaehlen nicht.
+      pitSpielTick(0.3);
+      pitSpielTaste(sp.folge[3]);
+      if (!sp.vorbei || zustand() !== 'ok,ok,falsch,ok') f.push('Ende: ' + zustand() + (sp.vorbei ? '' : ', nicht vorbei'));
+      const bEnde = sp.bonus;
+      pitSpielTick(0.3);
+      pitSpielTaste('kreis');
+      if (sp.bonus !== bEnde || sp.i !== 4) f.push('Druck nach dem Ende zaehlte');
+      teile.push('T ' + T.toFixed(2) + ' s, Gutschrift ' + (g1 + g2).toFixed(2) + ' s, Aufschlag ' + (PIT_SPIEL_STRAFE * T).toFixed(2) + ' s');
+      // 7. Minigame aus: kein Spiel, Standzeit wie ohne Spiel.
+      setPitState('off'); pitRearmBlockedUntil = 0;
+      pitModus = 'standard';
+      setPitState('limited'); pitLastTick = 0; pitLaneTick();
+      if (pitState !== 'servicing') f.push('Standard-Stopp beginnt nicht');
+      pitSpielMalen();
+      if (pitSpiel || !el.hidden) f.push('Minigame aus, trotzdem ein Spiel');
+    } finally {
+      setPitState('off'); pitRearmBlockedUntil = 0;
+      pitModus = merk.modus; pitLaneEnabled = merk.an; pitTrigger = merk.trig; zweiSpieler = merk.zwei;
+      physEngine.state.speedKmh = merk.kmh; fuel = merk.fuel; damage = merk.damage;
+      pitSpielReifenZurueck(reifen);
+      updateDamageFuelUI(); updatePitUI();
+    }
+    return { ok: !f.length, mass: teile.join(' | ') + (f.length ? ' || ' + f.join('; ') : '') };
   });
 
   stAdd('Boxen-Minigame: Quadrat und Kreis schalten waehrenddessen nicht, Kreuz bricht ab', () => {
