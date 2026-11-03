@@ -2507,6 +2507,131 @@
   });
 
 
+  // ---- Cockpit v1.3.51: Ansicht ACC (WIP) ----
+  //
+  // BESTELLT: "ein alternativer Haupt-Cockpit-Screen im Stil von ACC, mit allen Elementen
+  // des aktuellen ausser Regenradar", waehlbar im Menue der Cockpit-Ansichten.
+  //
+  // Geprueft wird, was die Bestellung zusichert: die Option steht mit WIP-Etikett im
+  // Waehler, sie setzt das Attribut, das Radar ist ausgeblendet UND wird nicht gezeichnet,
+  // jede andere Haupt-Kachel ist sichtbar und hat eine Flaeche, und das Cockpit passt in
+  // ein Handy quer (800 x 370) mindestens so gut wie die Vorgabe, ohne dass ein Wert seine
+  // Kachel verlaesst.
+  stAdd('Cockpit v1.3.51: Ansicht ACC - WIP-Option, kein Regenradar, alle Kacheln sichtbar, passt auf 800x370', () => {
+    const sel = $('setting-cockpit');
+    const dash = $('race-dash');
+    if (!sel || !dash) return { ok: false, mass: 'Waehler oder Cockpit fehlt' };
+    const f = [], teile = [];
+    const opt = [...sel.options].find(o => o.value === 'acc');
+    if (!opt) return { ok: false, mass: 'Option acc fehlt' };
+    if (!/WIP/.test(opt.textContent)) f.push('Option ohne WIP-Etikett');
+    if (String(wxRadarDraw).indexOf('cockpitOhneRadar') < 0) f.push('wxRadarDraw fragt die Ansicht nicht ab');
+    // Der Schalter "Regenradar" bleibt, wie er ist.
+    if (String(wxRadarDraw).indexOf('!wxRadarAn()') < 0) f.push('Schalter Regenradar wirkt nicht mehr');
+    const merk = sel.value;
+    const warFs = document.body.classList.contains('race-fs');
+    const warTurn = document.body.classList.contains('race-turn');
+    const setze = (v) => { sel.value = v; sel.dispatchEvent(new Event('change', { bubbles: true })); };
+    try {
+      setze('acc');
+      if (document.body.getAttribute('data-cockpit') !== 'acc') f.push('Attribut nicht gesetzt');
+      if (cockpitOhneRadar !== true) f.push('Radar-Merker nicht gesetzt');
+      const cv = $('race-wx-radar');
+      if (!cv || getComputedStyle(cv).display !== 'none') f.push('Radar nicht ausgeblendet');
+      setze('omega');
+      if (cockpitOhneRadar !== false) f.push('Radar-Merker bleibt nach dem Zurueckschalten');
+      setze('acc');
+
+      // Ab hier braucht es ein Fenster: ohne Breite rechnen die Medienabfragen falsch.
+      if (!(window.innerWidth > 0) || !(window.innerHeight > 0) || !OMEGA_TEST.cockpitPassung) {
+        teile.push('Sichtbarkeit nicht pruefbar (kein Fenster)');
+      } else {
+        const btn = document.querySelector('[data-tab="race"]');
+        if (btn) btn.click();
+        const ids = ['race-shift', 'race-lap-count', 'race-act-pit', 'race-act-flag',
+          'race-act-scan', 'race-act-mode', 'race-gear', 'race-rpm', 'race-speed', 'race-abs',
+          'race-lap-now', 'race-lap-last', 'race-lap-best', 'race-fuel', 'race-fuel-bar',
+          'race-dmg', 'race-dmg-bar', 'race-tyre-box', 'race-tyre-fl', 'race-tyre-rr',
+          'race-batt', 'race-light-box', 'race-wx-box', 'race-pit-tyre-row',
+          'race-pit-fuel-row', 'race-gplot', 'race-act-pause', 'race-menue',
+          'race-screen-next'];
+        const fehlt = ids.filter((id) => {
+          const el = $(id);
+          if (!el) return true;
+          const r = el.getBoundingClientRect();
+          // Die Balken fuellen sich mit dem Wert; gemessen wird ihr Rahmen.
+          const box = /-bar$/.test(id) ? el.parentElement.getBoundingClientRect() : r;
+          return getComputedStyle(el).visibility === 'hidden' || !(box.width > 0 && box.height > 0);
+        });
+        if (fehlt.length) f.push('nicht sichtbar: ' + fehlt.join(', '));
+
+        // NICHT GEZEICHNET, mit Gegenprobe. Die Leinwand wird dafuer kurz sichtbar gemacht -
+        // sonst stiege wxRadarDraw() schon an der Breite 0 aus, und der Test bewiese nichts.
+        // Gemessen wird an der Puffergroesse: die passt die Routine vor dem Zeichnen an.
+        const cv = $('race-wx-radar');
+        if (cv && !document.hidden && wxRadarAn()) {
+          const bw = cv.width, bh = cv.height;
+          cv.style.display = 'block';
+          try {
+            cv.width = 7; cv.height = 5;
+            wxRadarDraw();
+            if (cv.width !== 7 || cv.height !== 5) f.push('Radar wurde in ACC gezeichnet');
+            setze('omega');
+            cv.width = 7; cv.height = 5;
+            wxRadarDraw();
+            const gegen = cv.width !== 7;
+            if (!gegen) f.push('Gegenprobe: Radar zeichnet auch in der Vorgabe nicht');
+            teile.push('Radar ACC ungezeichnet, Vorgabe ' + (gegen ? 'gezeichnet' : 'NICHT gezeichnet'));
+          } finally {
+            cv.style.display = '';
+            cv.width = bw; cv.height = bh;
+            setze('acc');
+          }
+        } else {
+          teile.push('Zeichnen nicht pruefbar (Radar aus oder Seite verborgen)');
+        }
+        teile.push(ids.length - fehlt.length + '/' + ids.length + ' Kacheln sichtbar');
+
+        // Handy quer im Vollbild, wie im Fahrbetrieb: ACC gegen die Vorgabe.
+        document.body.classList.add('race-fs');
+        document.body.classList.remove('race-turn');
+        const faktor = (v) => { setze(v); const r = OMEGA_TEST.cockpitPassung(370, 800); return r; };
+        const vorgabe = faktor('omega');
+        const acc = faktor('acc');
+        if (!acc || !vorgabe) f.push('keine Vollbildmessung');
+        else {
+          teile.push('800x370: Faktor ACC ' + acc.faktor + ', Omega ' + vorgabe.faktor);
+          if (!acc.passt && !acc.amBoden) f.push('ACC steht ' + acc.ueberstand + ' px ueber');
+          if (acc.faktor < vorgabe.faktor - 0.03) f.push('ACC kleiner als die Vorgabe');
+          // Kein Wert verlaesst seine Kachel: die Kacheln schneiden nicht ab, ein
+          // Ueberlauf waere also sichtbar ueber der Nachbarkachel.
+          const ueber = [];
+          dash.querySelectorAll(':scope > .gt3-left > .gt3-box, :scope > .gt3-right > .gt3-box, '
+            + ':scope > .gt3-gear, :scope > .gt3-strip > .gt3-box').forEach((k) => {
+            const kr = k.getBoundingClientRect();
+            k.querySelectorAll('.gt3-val, .gt3-lbl, .gt3-gearnum, .gt3-rpm, svg, .gt3-tyres4').forEach((x) => {
+              const xr = x.getBoundingClientRect();
+              if (!(xr.width > 0)) return;
+              if (xr.left < kr.left - 1 || xr.right > kr.right + 1) {
+                ueber.push((x.id || k.id || x.className.baseVal || x.className) + ' ' + Math.round(xr.right - kr.right));
+              }
+            });
+          });
+          if (ueber.length) f.push('Ueberlauf: ' + ueber.slice(0, 4).join(', '));
+        }
+      }
+    } finally {
+      document.body.classList.toggle('race-fs', warFs);
+      document.body.classList.toggle('race-turn', warTurn);
+      setze(merk);
+      if (OMEGA_TEST.cockpitPassung) OMEGA_TEST.cockpitPassung();
+    }
+    return { ok: f.length === 0,
+             mass: 'Option "' + opt.textContent + '", Radar aus und ungezeichnet | ' + teile.join(' | ')
+                   + (f.length ? ' || ' + f.join('; ') : '') };
+  });
+
+
   // ---- Ein Schirmwechsel aendert die Einpassung nicht ----
   //
   // DIE ZUSICHERUNG, AUF DER DIE GANZE BAUFORM STEHT. Die zwei zusaetzlichen Schirme sind
