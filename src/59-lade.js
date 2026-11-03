@@ -51,7 +51,7 @@
   // Klammer um alle Klanggruppen und steht nur, wenn keine Gruppe mehr laeuft.
   const LADE_NAMEN = { update: 'Suche nach Updates', 'klang-motor': 'Motorklänge', 'klang-effekte': 'Effekte',
     'klang-stimmen': 'Stimmen', 'klang-ansagen': 'Ansagen', 'klang-zahlen': 'Zahlen', 'klang-umgebung': 'Umgebung',
-    klang: 'Klänge' };
+    'klang-ereignisse': 'Rennereignisse', klang: 'Klänge' };
   function ladeAnzeigeText() {
     const namen = [...ladeGruende].filter((g) => LADE_NAMEN[g] && g !== 'klang');
     if (!namen.length) return ladeGruende.has('klang') ? t('Lädt') + ': ' + t(LADE_NAMEN.klang) : '';

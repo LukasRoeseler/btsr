@@ -1798,6 +1798,18 @@
     // haengt die Pruefung, dass jede nur EINMAL faellt und erst nach der Hysterese
     // wieder scharf ist.
     ansagenFolge(schritte, o) {
+      // Zustands-/Clip-Probe synchron isolieren. Die echte Queue wird separat
+      // durch "Ansage: priorisiert und unterbricht nicht" geprueft.
+      const queueEcht = ansagenEinreihen, eventDamageEcht = rennEreignisAn.damage;
+      rennEreignisAn.damage = false;
+      ansagenEinreihen = (art, text, key) => {
+        if (!ansageAn[art]) return false;
+        if (art !== 'lap' && playAnsageClip(key || art)) return true;
+        if (!('speechSynthesis' in window)) return false;
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance(text)); return true;
+      };
+      try {
+
       const opt = o || {};
       const merk = {};
       const kaesten = { lap: 'setting-announce', damage: 'setting-announce-damage',
@@ -1866,6 +1878,8 @@
           el.dispatchEvent(new Event('change', { bubbles: true }));
         });
       }
+      } finally { ansagenEinreihen = queueEcht; rennEreignisAn.damage = eventDamageEcht; }
+
     },
     // ---- Derselbe Ablauf, aber OHNE speechSynthesis: der Funk-Ersatz -------------
     //
@@ -1876,6 +1890,18 @@
     // selbst bekommt fuer die Dauer der Probe fuenf erfundene, eindeutig markierte
     // Eintraege, damit die Attrappe den Schluessel zurueckverfolgen kann.
     ansagenFunkProbe(schritte) {
+      // Zustands-/Clip-Probe synchron isolieren. Die echte Queue wird separat
+      // durch "Ansage: priorisiert und unterbricht nicht" geprueft.
+      const queueEcht = ansagenEinreihen, eventDamageEcht = rennEreignisAn.damage;
+      rennEreignisAn.damage = false;
+      ansagenEinreihen = (art, text, key) => {
+        if (!ansageAn[art]) return false;
+        if (art !== 'lap' && playAnsageClip(key || art)) return true;
+        if (!('speechSynthesis' in window)) return false;
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance(text)); return true;
+      };
+      try {
+
       const kaesten = { lap: 'setting-announce', damage: 'setting-announce-damage',
                         fuel: 'setting-announce-fuel', tyre: 'setting-announce-tyre',
                         rain: 'setting-announce-rain', battery: 'setting-announce-battery' };
@@ -1929,6 +1955,8 @@
           el.dispatchEvent(new Event('change', { bubbles: true }));
         });
       }
+      } finally { ansagenEinreihen = queueEcht; rennEreignisAn.damage = eventDamageEcht; }
+
     },
     // ---- Die Aufnahme hat Vorrang, auch WENN es speechSynthesis gibt --------------
     //
@@ -1938,6 +1966,18 @@
     // gleichzeitig verfuegbar (echte Attrappen-Buffer UND ein speechSynthesis-Double)
     // und prueft, welcher tatsaechlich gezogen wird.
     ansagenVorrangProbe() {
+      // Zustands-/Clip-Probe synchron isolieren. Die echte Queue wird separat
+      // durch "Ansage: priorisiert und unterbricht nicht" geprueft.
+      const queueEcht = ansagenEinreihen, eventDamageEcht = rennEreignisAn.damage;
+      rennEreignisAn.damage = false;
+      ansagenEinreihen = (art, text, key) => {
+        if (!ansageAn[art]) return false;
+        if (art !== 'lap' && playAnsageClip(key || art)) return true;
+        if (!('speechSynthesis' in window)) return false;
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance(text)); return true;
+      };
+      try {
+
       const echtHatSpeech = 'speechSynthesis' in window;
       const echtSpeech = echtHatSpeech ? window.speechSynthesis : undefined;
       const echtPlayFx = playFx;
@@ -1968,6 +2008,8 @@
         }
         Object.assign(ansageLatch, merkLatch);
       }
+      } finally { ansagenEinreihen = queueEcht; rennEreignisAn.damage = eventDamageEcht; }
+
     },
     // Die Gaskennlinie als reine Rechnung, siehe gasKennlinie() in 40-physics.js.
     gasKennlinie,

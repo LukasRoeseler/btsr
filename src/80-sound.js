@@ -41,6 +41,10 @@
                     mit('klang-stimmen', loadVoiceSamples()), mit('klang-ansagen', rennstandClipsLaden(lang))];
     if (!('speechSynthesis' in window)) laeufe.push(mit('klang-zahlen', zahlenClipsLaden(lang)));
     laeufe.push(mit('klang-umgebung', loadAmbience()));
+    // PR #11 (Playdater1974): die Rennereignis-Clips nur laden, wenn eine Ereignisansage an ist.
+    if (Object.values(rennEreignisAn).some(Boolean)) {
+      laeufe.push(mit('klang-ereignisse', Promise.allSettled([rennEreignisClipsLaden(lang), rennstandClipsLaden(lang, true)])));
+    }
     mit('klang', Promise.allSettled(laeufe));
   }
   function unlockAudioOnFirstGesture() {
@@ -63,6 +67,7 @@
       klangDateienLaden();
       refreshAmbienceGains();
     } else if (engineGain) {
+      ansagenReset();
       rennstandAbbrechen();
       refreshAmbienceGains();
       engineGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
@@ -736,49 +741,8 @@
   // sich jede Runde, eine feste Aufnahme kann sie nicht sagen) und der seltene Fall, dass
   // die Aufnahme selbst fehlt (Datei nicht geladen, Sprache ohne Aufnahme).
   function ansage(art, text, klangSchluessel) {
-    if (!ansageAn[art]) return false;
-    // Waehrend einer Rennstand-/Ergebnisansage entfaellt diese Spielerzeit.
-    if (art === 'lap' && !rennstandVorRundenzeit()) return false;
-    if (art !== 'lap') {
-      rennstandAbbrechen();
-      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-      for (const q of zahlenQuellen) { try { q.stop(); } catch (e) {} }
-      zahlenQuellen = []; lapAnsageBeendet();
-    }
-    if (art !== 'lap' && playAnsageClip(klangSchluessel || art)) return true;
-    if (!('speechSynthesis' in window)) return false;
-    try {
-      // ABBRECHEN VOR DEM SPRECHEN. Zwei Meldungen kurz hintereinander duerfen sich nicht
-      // stapeln - sonst laeuft die Stimme der Gegenwart nach und meldet den Tank, waehrend
-      // man schon in der naechsten Runde ist.
-      window.speechSynthesis.cancel();
-      lapAnsageBeendet();
-      announceCancels++;
-      const u = new SpeechSynthesisUtterance(text);
-      if (art === 'lap') lapAnsageAktuell = u;
-      u.onend = () => { if (art === 'lap') lapAnsageBeendet(u); };
-      u.lang = lang === 'de' ? 'de-DE' : 'en-US';
-      // Funk spricht schneller und flacher. Beides ist an der Stimme einstellbar, und mehr
-      // gibt die Schnittstelle nicht her.
-      u.rate = 1.15;
-      u.onerror = (ev) => {
-        if (art === 'lap') lapAnsageBeendet(u);
-        if (announceFailLogged) return;
-        announceFailLogged = true;
-        log('Ansage: keine Stimme verfuegbar (' + (ev && ev.error ? ev.error : '?')
-            + '). Die Ansage bleibt aus, alles andere laeuft weiter.', 'info');
-      };
-      window.speechSynthesis.speak(u);
-      announceCalls++;
-      return true;
-    } catch (e) {
-      lapAnsageBeendet();
-      if (!announceFailLogged) {
-        announceFailLogged = true;
-        log('Ansage nicht moeglich: ' + e.message, 'info');
-      }
-      return false;
-    }
+    if (art === 'pit' && rennEreignisAn.pit) return false;
+    return ansagenEinreihen(art, text, klangSchluessel);
   }
 
   // ---- Die vier Zustandsmeldungen --------------------------------------------------
@@ -790,10 +754,11 @@
   // Funktion ohne laufendes Rennen pruefbar, und der Test muss nicht fuenf Variablen in
   // einer fremden Datei stellen.
   function ansagenPruefen(w) {
+    rennEreignisSchadenErholen();
     const raus = [];
     const de = lang === 'de';
     // Schaden: der Balken zeigt GESUNDHEIT, gemeldet wird also, wenn nur noch 10 % steht.
-    if (w.health !== null && w.health !== undefined) {
+    if (!rennEreignisAn.damage && w.health !== null && w.health !== undefined) {
       if (w.health <= ANSAGE_SCHWELLE && !ansageLatch.damage) {
         ansageLatch.damage = true;
         if (ansage('damage', de ? 'Achtung, Schaden kritisch' : 'Warning, damage critical')) {
@@ -882,13 +847,8 @@
   }
 
   function speakLap(ms, istBest) {
-    if (!ansageAn.lap || !rennstandVorRundenzeit()) return;
-    // Ohne Sprachausgabe (App-WebView): die Zahlen-Clips.
-    if (!('speechSynthesis' in window)) {
-      if (ansageAn.lap) lapClipsSpielen(ms, istBest);
-      return;
-    }
-    ansage('lap', lapSpeechText(ms, istBest));
+    if (!Number.isFinite(ms) || ms < 0) return;
+    ansagenEinreihen('lap', lapSpeechText(ms, istBest), null, ms, istBest);
   }
 
   // Die fuenf Schalter und der Funkfilter. Alle lesen ihren Anfangswert AUS DEM MARKUP -
@@ -909,14 +869,9 @@
     el.addEventListener('change', (e) => {
       ansageAn[art] = e.target.checked;
       if (art === 'lap') announceOn = e.target.checked;
-      // Beim Ausschalten sofort still sein und nicht den Satz noch beenden.
-      if (!e.target.checked && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel(); lapAnsageBeendet();
-      }
-      if (!e.target.checked && art === 'lap') {
-        for (const q of zahlenQuellen) { try { q.stop(); } catch (e2) {} }
-        zahlenQuellen = []; lapAnsageBeendet();
-      }
+      // Wartende Meldungen entfallen beim Ausschalten, laufende Saetze anderer
+      // Ansagearten werden dabei niemals abgebrochen.
+
     });
   });
 
