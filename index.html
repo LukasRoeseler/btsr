@@ -4204,6 +4204,12 @@
   .tp-sek-leiste .tp-sek-zahl { color: #3ddc84; font-size: 15px; white-space: nowrap; }
   body.track-sek #track-fs-host > .tp-actions { display: none; }
   body.track-sek #track-palette { visibility: hidden; }
+  /* Mit dem Sektoren-Knopf sind es 15 Knoepfe: auf 800 px Breite rutschte "Schliessen" in eine
+     zweite Zeile. Schmaler Abstand und Knopf, nur auf schmalen Schirmen. */
+  @media (max-width: 880px) {
+    body.track-fs #track-fs-host > .tp-actions { column-gap: 3px; }
+    body.track-fs #track-fs-host > .tp-actions > .tp-btn { width: 44px; margin-left: 0; margin-right: 0; }
+  }
   .tp-opt label { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
   .tp-opt input[type=range] { width: 150px; accent-color: var(--k-blau, #00a3e0); }
   .tp-opt input[type=checkbox] { accent-color: var(--k-blau, #00a3e0); width: 16px; height: 16px; }
