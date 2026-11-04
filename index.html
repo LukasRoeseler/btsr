@@ -31408,19 +31408,19 @@
     // bleibt es nach dem Limit bei der eingestellten Fahrweise.
     { id: 'modus', titel: 'Bahn oder Boden?', clip: 'modus_frage', taste: 'dpad',
       zeige: 'Wähle mit {taste} und bestätige mit ✕ / A. Maus, Finger und Pfeiltasten gehen auch.',
-      warte: 'wahl', s: 10 },
+      warte: 'wahl', s: 8 },
     { id: 'modus_bahn', titel: 'Mit Bahn', clip: 'modus_bahn', modus: 'bahn' },
     { id: 'modus_boden', titel: 'Auf dem Boden', clip: 'modus_boden', modus: 'boden' },
     { id: 'gas', titel: 'Gas geben', clip: 'gas', taste: 'throttle', zeige: 'Drücke {taste}, um zu beschleunigen.',
-      warte: 'gas', s: 8, lob: 'gut' },
+      warte: 'gas', s: 6, lob: 'gut' },
     { id: 'bremse', titel: 'Bremsen', clip: 'bremse', taste: 'brake', zeige: 'Drücke {taste}, um zu bremsen.',
-      warte: 'bremse', s: 8, lob: 'prima' },
+      warte: 'bremse', s: 6, lob: 'prima' },
     { id: 'links', titel: 'Lenken', clip: 'links', taste: 'steering', zeige: 'Lenke mit {taste} nach links.',
       warte: 'links', s: 6 },
     { id: 'rechts', titel: 'Lenken', clip: 'rechts', taste: 'steering', zeige: 'Und jetzt mit {taste} nach rechts.',
       warte: 'rechts', s: 6, lob: 'gut' },
     { id: 'licht', titel: 'Licht', clip: 'licht', taste: 'headlights',
-      zeige: 'Schalte das Licht mit {taste} aus und wieder ein.', warte: 'licht', s: 8, lob: 'gut' },
+      zeige: 'Schalte das Licht mit {taste} aus und wieder ein.', warte: 'licht', s: 6, lob: 'gut' },
     // "nach X Sekunden": 20 s Arcade ab Beginn des Schritts (der Clip zaehlt mit).
     { id: 'arcade', titel: 'Fahrgefühl: Arcade', clip: 'arcade', min: 20, modus: 'bahn' },
     { id: 'arcade_boden', titel: 'Fahrgefühl: Arcade', clip: 'arcade_boden', min: 20, modus: 'boden' },
@@ -31432,7 +31432,7 @@
     // die Hochschalt-Taste legt wieder vorwaerts ein. Ist "Rueckwaerts mit Gas und Bremse" an, nennt
     // die Karte das zusaetzlich.
     { id: 'rueckwaerts', titel: 'Rückwärtsgang', clip: 'rueckwaerts', taste: 'downshift',
-      zeige: 'Halte an, drücke {taste} (Rückwärtsgang) und gib dann Gas.', warte: 'rueck', s: 10, lob: 'gut' },
+      zeige: 'Halte an, drücke {taste} (Rückwärtsgang) und gib dann Gas.', warte: 'rueck', s: 8, lob: 'gut' },
     { id: 'vorwaerts', titel: 'Vorwärts', clip: 'vorwaerts', taste: 'upshift',
       zeige: 'Mit {taste} geht es wieder vorwärts.', warte: 'vorwaerts', s: 6, nurRueck: true },
     // EIN Boxenstopp, und zwar erst im Regen: Wetter umstellen, warten, bis die App-eigene
@@ -31446,7 +31446,7 @@
     { id: 'box', titel: 'Boxenstopp', clip: 'box', taste: 'yellowflag', zeige: 'Tippe {taste} (Boxenstopp) und halte an.',
       warte: 'box_an', s: 10 },
     { id: 'box_steht', titel: 'Boxenstopp', zeige: 'Halte an. Die Crew beginnt, sobald das Auto steht.',
-      warte: 'box_steht', s: 8, box: 'steht' },
+      warte: 'box_steht', s: 6, box: 'steht' },
     { id: 'box_spiel', titel: 'Boxen-Minispiel', taste: 'spiel', zeige: 'Drücke die vier Tasten der Reihe nach ({taste}).',
       warte: 'box_fertig', s: 12, box: 'spiel' },
     { id: 'box_fertig', titel: 'Regenreifen', clip: 'box_fertig', box: 'fertig' },
