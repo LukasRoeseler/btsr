@@ -170,7 +170,11 @@
   function zevTick() {
     if (zev.plan === null && zevAktiv === null) return;
     if (rennPauseAktiv()) return;
-    if (raceState !== 'racing' && raceState !== 'finishing') return;
+    if (raceState !== 'racing' && raceState !== 'finishing') {
+      // Rennen auf einem anderen Weg als finishRace() verlassen: nichts weiterwirken lassen.
+      if (zevAktiv !== null && raceState !== 'countdown') zevEnde('rennende');
+      return;
+    }
     const jetzt = rennZeitJetzt();
     const sperre = zevSperre();
     if (zevAktiv !== null) {
@@ -188,7 +192,13 @@
     }
     zevBannerMalen(false);
   }
-  setInterval(() => { try { zevTick(); } catch (e) { log('Zufallsevents: ' + e.message, 'warn'); } }, ZEV_TAKT_MS);
+  // Ein Fehler wird EINMAL protokolliert und nicht fuenfmal je Sekunde.
+  let zevFehlerZuletzt = '';
+  setInterval(() => {
+    try { zevTick(); } catch (e) {
+      if (e.message !== zevFehlerZuletzt) { zevFehlerZuletzt = e.message; log('Zufallsevents: ' + e.message, 'warn'); }
+    }
+  }, ZEV_TAKT_MS);
 
   // Die Spielerplaetze, die gerade ein Auto fahren (1 und die aktiven Zusatzplaetze).
   function zevSpielerNrs() {
