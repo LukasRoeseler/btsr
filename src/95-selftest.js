@@ -2669,12 +2669,17 @@
       alt.setItem(COCKPIT_STORE, 'omega');          // danach bewusst wieder Omega gewaehlt
       const r2 = cockpitVorgabeUmstellen(alt);
       if (r2 || alt.getItem(COCKPIT_STORE) !== 'omega') f.push('Umstellung greift ein zweites Mal');
+      // v1.3.76: die zweite Ueberleitung stellt JEDE gespeicherte Ansicht einmal auf ACC.
       const retro = attrappe({ [COCKPIT_STORE]: 'retro' });
-      if (cockpitVorgabeUmstellen(retro) || retro.getItem(COCKPIT_STORE) !== 'retro') f.push('eigene Wahl retro ueberschrieben');
+      if (!cockpitVorgabeUmstellen(retro) || retro.getItem(COCKPIT_STORE) !== 'acc') f.push('retro nicht einmal auf ACC gestellt');
+      retro.setItem(COCKPIT_STORE, 'gt3');
+      if (cockpitVorgabeUmstellen(retro) || retro.getItem(COCKPIT_STORE) !== 'gt3') f.push('spaetere eigene Wahl gt3 ueberschrieben');
+      const schonAcc = attrappe({ [COCKPIT_STORE]: 'acc' });
+      if (cockpitVorgabeUmstellen(schonAcc) || schonAcc.getItem(COCKPIT_STORE) !== 'acc') f.push('acc als Umstellung gemeldet');
       const neu = attrappe({});
       if (cockpitVorgabeUmstellen(neu) || neu.getItem(COCKPIT_STORE) !== null) f.push('neuer Nutzer: Ablage beschrieben');
       if (!neu.getItem(COCKPIT_ACC_VORGABE)) f.push('Merker nicht gesetzt');
-      teile.push('Umstellung omega->acc einmal, danach Omega behalten, retro unberuehrt');
+      teile.push('Umstellung jeder Ansicht auf acc genau einmal, danach eigene Wahl behalten');
       try {
         if (localStorage.getItem(COCKPIT_ACC_VORGABE) !== '1') f.push('Merker in der echten Ablage fehlt');
       } catch (e) { /* privater Modus */ }

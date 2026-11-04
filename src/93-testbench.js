@@ -7492,7 +7492,7 @@
           //
           // Zwoelf davon stehen als Konstante im Quelltext, der dreizehnte
           // (Gamepad-Belegung) ist mir erst im laufenden Browser aufgefallen.
-          bekannt: ['chc.cars.v1', 'chc.cockpit.v1', 'chc.cockpit.omega.v1', 'chc.cockpit.acc.v1',
+          bekannt: ['chc.cars.v1', 'chc.cockpit.v1', 'chc.cockpit.omega.v1', 'chc.cockpit.acc.v1', 'chc.cockpit.acc.v2',
                     'chc.gearbox.v1', 'chc.layout.v1', 'chc.mp.v1',
                     'chc.motorwerkstatt.v1', 'chc.presets.v1', 'chc.sessions.v1',
                     'carrera-hybrid-macros', 'carrera-hybrid-tracks',
