@@ -23503,6 +23503,29 @@
     return { ok, mass };
   });
 
+  // v1.3.77 GEMELDET: die blaue Radar-Kopflinie (ACC) stach durch die anderen Cockpit-Schirme.
+  stAdd('Cockpit v1.3.77: ACC-Radarlinie nur auf dem Hauptschirm', () => {
+    const dash = $('race-dash'), box = $('race-wx-box');
+    if (!dash || !box || typeof COCKPIT_SCREENS === 'undefined') return { skip: true, mass: 'kein Cockpit' };
+    const merkAttr = document.body.getAttribute('data-cockpit'), merkScreen = dash.dataset.screen;
+    const f = [];
+    try {
+      document.body.setAttribute('data-cockpit', 'acc');
+      const linie = () => getComputedStyle(box, '::before').display;
+      dash.dataset.screen = 'main';
+      if (linie() === 'none') f.push('auf dem Hauptschirm aus');
+      for (const s of COCKPIT_SCREENS) {
+        if (s.id === 'main') continue;
+        dash.dataset.screen = s.id;
+        if (linie() !== 'none') f.push('sichtbar auf ' + s.id);
+      }
+    } finally {
+      if (merkAttr === null) document.body.removeAttribute('data-cockpit'); else document.body.setAttribute('data-cockpit', merkAttr);
+      if (merkScreen === undefined) delete dash.dataset.screen; else dash.dataset.screen = merkScreen;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Hauptschirm an, ' + (COCKPIT_SCREENS.length - 1) + ' andere Schirme aus' };
+  });
+
   // ---- v1.0: Meisterschaft (73-meisterschaft.js) ----
   stAdd('Meisterschaft: Wertung, Punkte, schnellste Runde, Gleichstand', () => {
     const f = [];
