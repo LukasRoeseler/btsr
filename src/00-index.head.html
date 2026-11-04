@@ -1767,6 +1767,17 @@
     font-weight: 800; letter-spacing: .16em; text-align: center;
     padding: clamp(2px, .6vw, 6px) 0; font-size: clamp(9px, 1.5vw, 14px); }
   body.flag-yellow #gt3-flag { display: block; }
+  /* v1.3.88 Zufallsevents: dasselbe Feld und Mass wie das Flaggenband, Farbe je Ereignisart. */
+  #gt3-zev { display: none; grid-area: flag; background: #2b2f3a; color: #f4f6fb;
+    font-weight: 800; letter-spacing: .12em; text-align: center; font-family: inherit;
+    padding: clamp(2px, .6vw, 6px) 0; font-size: clamp(9px, 1.5vw, 14px); }
+  body.zev-an #gt3-zev { display: block; }
+  body.flag-yellow #gt3-zev { display: none; }
+  #gt3-zev[data-art="gelb"] { background: #4a3c00; color: #ffd83d; }
+  #gt3-zev[data-art="dreck"] { background: #3a2a14; color: #f3cf9c; }
+  #gt3-zev[data-art="oel"] { background: #2a1c40; color: #e0ccff; }
+  #gt3-zev[data-art="teile"] { background: #40220c; color: #ffcb9a; }
+  #gt3-zev[data-art="strafe"] { background: #4a1010; color: #ffc4c4; }
   /* Und ein Rahmen um den ganzen Schirm, damit es auch aus dem Augenwinkel auffaellt. */
   body.flag-yellow .gt3 { box-shadow: inset 0 0 0 3px #ffd83d55; }
 
@@ -6044,6 +6055,9 @@
       </div>
 
       <div class="gt3-banner" id="gt3-flag"><span id="race-flag"></span></div>
+      <!-- v1.3.88 Zufallsevents: Ereignis, Ort, Restzeit, offene Durchfahrtsstrafe/Tank-Leck. Im
+           Flaggenfeld - unter echter Gelber gibt es keine Events, die beiden stehen nie zugleich. -->
+      <div class="gt3-banner" id="gt3-zev"><span id="gt3-zev-text" data-i18n-skip></span></div>
       <!-- Ein Auto, das von selbst langsamer wird und im Controller brummt, sieht ohne
            Anschrift nach einem Defekt aus. Eigener Streifen und nicht der Flaggenstreifen:
            beides kann gleichzeitig gelten. -->
@@ -10394,6 +10408,44 @@
           <option value="15">15 s</option>
           <option value="20">20 s</option>
         </select></div>
+      <!-- v1.3.88 ZUFALLSEVENTS (74-zufallsevents.js). Hauptschalter ab Werk aus, die Einzelschalter an:
+           ausgewaehlt wird nur unter den eingeschalteten. Erklaerungen nur im <small> (i-Popup). -->
+      <div class="opt-row"><div class="opt-label">Zufallsevents<span class="wip-tag">experimentell</span><small>An: Im laufenden Rennen passiert ab und zu etwas in einem zufälligen Sektor (ohne Sektoren auf der ganzen Bahn). Der Sprecher sagt es an, im Cockpit steht ein Banner mit Ort und Restzeit, auf der Karte des Rennen-Schirms ist der Bereich farbig markiert. Nie in Countdown, Einführungsrunde, Pause, Tutorial oder Challenge und nie unter echter Gelber Flagge oder Safety Car; höchstens ein Event zugleich. Im WLAN-Mehrspieler würfelt das startende Telefon für alle.</small></div>
+        <label class="tgl"><input type="checkbox" id="race-zev"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Zufallsevents: Häufigkeit<span class="wip-tag">experimentell</span><small>Im Mittel alle so viele Minuten ein Event; jeder Abstand wird zufällig um bis zu 40 Prozent kürzer oder länger gezogen.</small></div>
+        <select id="race-zev-min">
+          <option value="1">1 min</option>
+          <option value="2">2 min</option>
+          <option value="3" selected>3 min</option>
+          <option value="4">4 min</option>
+          <option value="5">5 min</option>
+          <option value="6">6 min</option>
+          <option value="7">7 min</option>
+          <option value="8">8 min</option>
+          <option value="9">9 min</option>
+          <option value="10">10 min</option>
+        </select></div>
+      <div class="opt-row"><div class="opt-label">Zufallsevents: Dauer<span class="wip-tag">experimentell</span><small>So lange dauert ein Event. Ausnahme Tank-Leck: es bleibt bis zum nächsten Boxenstopp.</small></div>
+        <select id="race-zev-dauer">
+          <option value="10">10 s</option>
+          <option value="15">15 s</option>
+          <option value="20">20 s</option>
+          <option value="30" selected>30 s</option>
+          <option value="45">45 s</option>
+          <option value="60">60 s</option>
+          <option value="90">90 s</option>
+          <option value="120">120 s</option>
+        </select></div>
+      <div class="opt-row"><div class="opt-label">Event: Fahrbahn verschmutzt<span class="wip-tag">experimentell</span><small>Im Bereich fährt es sich wie im Regen (derselbe Griffverlust), für dich und die NPCs, die dort langsamer und vorsichtiger fahren. Das Wetter selbst ändert sich nicht.</small></div>
+        <label class="tgl"><input type="checkbox" id="race-zev-dreck" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Event: Gelbe Flagge im Sektor<span class="wip-tag">experimentell</span><small>Im Bereich gilt 80 km/h (Tacho). Die NPCs halten sich daran. Wer dort nach 1,5 Sekunden Reaktionszeit eine Sekunde lang schneller als 85 km/h fährt, bekommt eine Durchfahrtsstrafe: anhalten in der Box (Box aktivieren), dabei wird nichts am Auto gemacht, nach 2 Sekunden darf man los. Nicht abgeleistet bis zum Ziel: plus 20 Sekunden im Ergebnis.</small></div>
+        <label class="tgl"><input type="checkbox" id="race-zev-gelb" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Event: Ölspur<span class="wip-tag">experimentell</span><small>Im Bereich deutlich weniger Griff als im Regen, und beim Einlenken kommt das Heck leicht (in Pacejka und Gran Hybrismo; sonst nur der Griffverlust). NPCs fahren dort mit 60 Prozent Tempo.</small></div>
+        <label class="tgl"><input type="checkbox" id="race-zev-oel" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Event: Teile auf der Strecke<span class="wip-tag">experimentell</span><small>Auf einem Streckenteil liegen Trümmer links oder rechts; die Ansage sagt die Seite, die Karte zeigt ein Warndreieck. NPCs weichen auf die freie Seite aus. Wer auf dem Teil davor oder darauf nicht deutlich zur freien Seite lenkt, nimmt 8 bis 15 Prozent Schaden, je nach Tempo. Nur mit bekannter Strecke.</small></div>
+        <label class="tgl"><input type="checkbox" id="race-zev-teile" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Event: Tank-Leck<span class="wip-tag">experimentell</span><small>Ein zufälliges Spielerauto (keine NPCs) verbraucht doppelt so viel Benzin, bis es in die Box kommt; die Einstellung Dauer gilt hier nicht. Nur mit Tanksimulation.</small></div>
+        <label class="tgl"><input type="checkbox" id="race-zev-leck" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Tank beim Start (l)</div>
         <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="race-fuel-start" value="110" min="5" max="110" step="5" style="width:84px"><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
       <p class="muted" style="margin-top:8px; font-size:11.5px">
