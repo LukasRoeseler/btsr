@@ -26085,3 +26085,341 @@
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'beide Listen beim Tab-Klick, Ladeanzeige unten links mit Text, gecacht, nicht im Rennen' };
   });
+
+  // ---- AUTOMATISCHE SEKTOREN (v1.3.81, WIP) ----------------------------------------------
+  //
+  // BESTELLT: automatische Sektoren, Standard an und automatische Anzahl, abschaltbar, Anzahl
+  // waehlbar; Anzahl nach Teilezahl (8 Teile keine, 100 Teile hoechstens 10); duenne gruene
+  // Linie an jeder Grenze. Abgestimmt: Teilung nach LAENGE, Grenzen auf Teilefugen, Sektorende
+  // am Kachelwechsel, echte Start/Ziel-Teile haben Vorrang, verzaehlte Runde -> Sektorzeit
+  // ungueltig, Runde gueltig. Gemeinsamer Rahmen: alles merken und zuruecklegen.
+  const ST_SEK_OVAL = 'SG11R3G12R3';   // 30 Teile, geschlossenes Oval
+  function stSekMerk() {
+    return { an: autoSektorAn, wahl: autoSektorWahl, tm: trackMode, tiles: currentTrackTiles,
+             sc: sectorCount, sh: sectorHistory, ss: sectorStart, si: sectorIndex,
+             st: sectorTimes.slice(), sp: Object.assign({}, autoSekSp) };
+  }
+  function stSekZurueck(m) {
+    autoSektorAn = m.an; autoSektorWahl = m.wahl; trackMode = m.tm; currentTrackTiles = m.tiles;
+    sectorCount = m.sc; sectorHistory = m.sh; sectorStart = m.ss; sectorIndex = m.si; sectorTimes = m.st;
+    Object.assign(autoSekSp, m.sp);
+    lineCache = null;
+    renderSectors();
+  }
+  function stSekStrecke(code) {
+    const tr = codeToTrack(code);
+    const tiles = tr ? tr.tiles : [];
+    let zu = false;
+    try { zu = trackSchluss(trackCenterline(tiles)).closed; } catch (e) { zu = false; }
+    return { tiles, zu };
+  }
+
+  stAdd('Sektoren v1.3.81: Formel der automatischen Anzahl, Begrenzung, Optionen', () => {
+    const f = [];
+    const m = stSekMerk();
+    try {
+      autoSektorAn = true; autoSektorWahl = 0;
+      const erw = { 3: 1, 8: 1, 14: 1, 15: 2, 25: 3, 30: 3, 100: 10, 160: 10 };
+      for (const n of Object.keys(erw)) {
+        if (autoSektorZahl(+n) !== erw[n]) f.push(n + ' Teile: ' + autoSektorZahl(+n) + ' statt ' + erw[n]);
+      }
+      autoSektorWahl = 10;
+      if (autoSektorZahl(12) !== 6) f.push('fest 10 bei 12 Teilen: ' + autoSektorZahl(12) + ' statt 6 (Teile/2)');
+      if (autoSektorZahl(100) !== 10) f.push('fest 10 bei 100 Teilen: ' + autoSektorZahl(100));
+      autoSektorWahl = 4;
+      if (autoSektorZahl(30) !== 4) f.push('fest 4 bei 30 Teilen: ' + autoSektorZahl(30));
+      autoSektorWahl = 0; autoSektorAn = false;
+      if (autoSektorZahl(100) !== 1) f.push('abgeschaltet und trotzdem ' + autoSektorZahl(100));
+      // Die Optionen: Vorgabe an und automatisch, WIP, Erklaerung nur als small, gesichert.
+      const cb = $('auto-sektoren'), sel = $('auto-sektoren-zahl');
+      if (!cb || !cb.defaultChecked) f.push('Schalter fehlt oder nicht vorab an');
+      const vor = sel ? sel.querySelector('option[selected]') : null;
+      if (!vor || vor.value !== '0') f.push('Anzahl nicht vorab automatisch');
+      if (sel && [...sel.options].map((o) => o.value).join(',') !== '0,2,3,4,5,6,7,8,9,10') f.push('Auswahl falsch');
+      for (const el of [cb, sel, $('sector-count')]) {
+        const row = el && el.closest('.opt-row');
+        if (!row || !row.querySelector('.opt-label small') || !row.querySelector('.opt-label .wip-tag')) f.push((el && el.id) + ': kein WIP-Etikett oder keine Erklaerung');
+        if (row && row.textContent.indexOf(String.fromCharCode(0x2014)) >= 0) f.push((el && el.id) + ': Gedankenstrich');
+      }
+      const ids = typeof sicherungRegler === 'function' ? sicherungRegler().map((el) => el.id) : [];
+      if (ids.indexOf('auto-sektoren') < 0 || ids.indexOf('auto-sektoren-zahl') < 0) f.push('nicht in der Sicherung');
+      for (const k of ['Automatische Sektoren', 'Anzahl automatischer Sektoren', 'Sektoren (Ausdruck)', 'Automatisch']) {
+        if (!I18N_EN[k] || !I18N_ES[k]) f.push('Uebersetzung fehlt: ' + k);
+      }
+      // Anzahl mit Schalter: aus macht die Auswahl stumm.
+      if (cb && sel) {
+        const merkCb = cb.checked, merkSel = sel.value;
+        try {
+          cb.checked = false; cb.dispatchEvent(new Event('change'));
+          if (autoSektorAn || !sel.disabled) f.push('Schalter aus wirkt nicht');
+          cb.checked = true; sel.value = '5'; sel.dispatchEvent(new Event('change'));
+          if (!autoSektorAn || autoSektorWahl !== 5 || sel.disabled) f.push('Auswahl 5 wirkt nicht');
+        } finally {
+          cb.checked = merkCb; sel.value = merkSel; sel.dispatchEvent(new Event('change'));
+        }
+      }
+    } finally { stSekZurueck(m); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '8 keine, 15 zwei, 25 drei, 100 zehn, Deckel Teile/2; Optionen WIP, gesichert, EN/ES' };
+  });
+
+  stAdd('Sektoren v1.3.81: Grenzen auf Teilefugen und etwa gleich lang, Vorrang der Start/Ziel-Teile, Ausdruck unveraendert', () => {
+    const f = [];
+    const m = stSekMerk();
+    const mass = [];
+    try {
+      autoSektorAn = true; autoSektorWahl = 0; trackMode = 'on'; sectorCount = 1;
+      const geschlossen = ['SG11R3G12R3', 'SG7HG8H', 'SG10HG11H', 'SG3R3G2HG3R3G4H', 'SG46R3G47R3']
+        .map((c) => Object.assign({ code: c }, stSekStrecke(c))).filter((s) => s.zu);
+      if (geschlossen.length < 3) f.push('zu wenige geschlossene Pruefstrecken: ' + geschlossen.map((s) => s.code).join(','));
+      for (const s of geschlossen) {
+        const n = s.tiles.length;
+        const p = autoSektorPlanFuer(s.tiles, true);
+        const soll = autoSektorFormel(n);
+        if (soll <= 1) { if (p) f.push(s.code + ': Sektoren trotz Formel 1'); continue; }
+        if (!p || p.n !== soll) { f.push(s.code + ': ' + (p ? p.n : 'kein Plan') + ' statt ' + soll); continue; }
+        if (p.grenzen.length !== p.n - 1) f.push(s.code + ': ' + p.grenzen.length + ' Grenzen');
+        let vor = 0;
+        p.grenzen.forEach((j, i) => {
+          if (!Number.isInteger(j) || j <= vor || j >= n) f.push(s.code + ': Grenze ' + j + ' keine Fuge');
+          if (p.kacheln[i] !== (p.s + j) % n) f.push(s.code + ': Kachel ' + p.kacheln[i]);
+          vor = j;
+        });
+        const maxTeil = Math.max.apply(null, s.tiles.map((t) => tileLength(t.type)));
+        const mittel = p.gesamt / p.n;
+        const abw = Math.max.apply(null, p.laengen.map((l) => Math.abs(l - mittel)));
+        if (abw > maxTeil + 1e-6) f.push(s.code + ': Abschnitt weicht ' + abw.toFixed(1) + ' ab (laengstes Teil ' + maxTeil.toFixed(1) + ')');
+        if (Math.abs(p.laengen.reduce((a, b) => a + b, 0) - p.gesamt) > 1e-6) f.push(s.code + ': Summe der Abschnitte');
+        // Nach Laenge und nicht nach Teilezahl: die Teilung nach Teilezahl weicht mindestens so weit ab.
+        const proTeil = p.grenzen.map((_, i) => Math.round(n * (i + 1) / p.n));
+        const lPos = (j) => {
+          let u = tileLength(s.tiles[p.s].type) * (1 - ZIEL_LAENGS.linieOben);
+          for (let q = 1; q < j; q++) u += tileLength(s.tiles[(p.s + q) % n].type);
+          return u;
+        };
+        const zPos = [0].concat(proTeil.map(lPos)).concat([p.gesamt]);
+        const abwZahl = Math.max.apply(null, zPos.slice(1).map((x, i) => Math.abs(x - zPos[i] - mittel)));
+        if (abw > abwZahl + 1e-6) f.push(s.code + ': nach Laenge schlechter als nach Teilezahl (' + abw.toFixed(1) + ' > ' + abwZahl.toFixed(1) + ')');
+        mass.push(n + ' Teile: ' + p.n + ' S, Fugen ' + p.grenzen.join('/') + ', +-' + (abw / mittel * 100).toFixed(0) + ' %');
+      }
+      // Offene Strecke: keine.
+      if (autoSektorPlanFuer(stSekStrecke('SG20').tiles, false)) f.push('offene Strecke hat Sektoren');
+      // Vorrang: eine zweite Start/Ziel-Gerade -> heutige Sektoren, keine automatischen.
+      const zwei = stSekStrecke('SG11R3G5SG6R3');
+      if (autoSektorPlanFuer(zwei.tiles, true)) f.push('automatische Sektoren trotz zweiter Start/Ziel-Geraden');
+      currentTrackTiles = zwei.tiles;
+      if (sektorZiel() !== 2 || sektorAnzeigeZahl() !== 2 || autoSektorenAktiv()) f.push('Vorrang: Ziel ' + sektorZiel() + ', Anzeige ' + sektorAnzeigeZahl());
+      // Bahn: der Regler gilt nicht mehr, die automatischen gelten.
+      currentTrackTiles = stSekStrecke(ST_SEK_OVAL).tiles;
+      sectorCount = 3;
+      if (sektorZiel() !== 1 || sektorAnzeigeZahl() !== 3 || !autoSektorenAktiv()) f.push('Bahn mit Regler 3: Ziel ' + sektorZiel() + ', Anzeige ' + sektorAnzeigeZahl());
+      // Ausdruck: unveraendert der Regler, keine automatischen.
+      trackMode = 'off';
+      if (sektorZiel() !== 3 || sektorAnzeigeZahl() !== 3 || autoSektorenAktiv() || autoSektorPlanAktuell()) f.push('Ausdruck: Ziel ' + sektorZiel() + ', auto ' + autoSektorenAktiv());
+      sectorCount = 1;
+      if (sektorZiel() !== 1 || sektorAnzeigeZahl() !== 1) f.push('Ausdruck ohne Regler: ' + sektorAnzeigeZahl());
+      if (autoSektorPlanFuer(currentTrackTiles, true)) f.push('Ausdruck: Plan fuer die Zeichnung');
+    } finally { stSekZurueck(m); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : mass.join('; ') + '; Start/Ziel-Teile vor, Ausdruck = Regler' };
+  });
+
+  stAdd('Sektoren v1.3.81: Zeitmessung an Kachelwechseln, Verzaehlen macht Sektoren ungueltig, nicht die Runde', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.feedNotify) return { skip: true, mass: 'feedNotify nicht vorhanden' };
+    const f = [];
+    const m = stSekMerk();
+    const sw = $('setting-ontrack');
+    const uhr = Date.now;
+    const g = { state: raceState, laps: raceLapTimes.slice(), start: raceLapStart, dash: dashLapStart,
+                part: racePartialMs, form: raceFormationLap, rail: sw ? sw.checked : true, sp: playerCar,
+                mp: dashMarkerPrev, ac: dashLastActedCode, aa: dashLastActedAt, pc: dashPendingCode,
+                ps: dashPendingSeen, lc: dashLastTileCounter, zg: dashZielGesehen, za: dashZielAt,
+                sa: dashStartLapAt, zauto: dashZielAuto, lz: dashLapZaehler, aw: raceAwaitingMove,
+                az: raceAnlaufZaehler, dt: dashLapTimes.slice(), ev: raceLapEvents.slice() };
+    const wirt = $('race-results-laps'), wirt2 = $('race-results-body');
+    const merkHtml = [wirt ? wirt.innerHTML : '', wirt2 ? wirt2.innerHTML : ''];
+    let jetzt = uhr.call(Date);
+    let mass = '';
+    try {
+      Date.now = () => jetzt;
+      if (sw && !sw.checked) { sw.checked = true; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+      trackMode = 'on';
+      autoSektorAn = true; autoSektorWahl = 0; sectorCount = 1;
+      const tiles = stSekStrecke(ST_SEK_OVAL).tiles;
+      currentTrackTiles = tiles; lineCache = null;
+      const p = autoSektorPlanAktuell();
+      if (!p || p.n !== 3) return { ok: false, mass: 'kein Plan mit 3 Sektoren: ' + JSON.stringify(p) };
+      const n = tiles.length;
+      const START = [0x01, 0x0a].find((c) => isStartCode(c));
+      const codeVon = (j) => { const tl = tiles[(p.s + j) % n]; return tl.type === TILE_TYPE.START ? START : tl.type; };
+      const auto = { device: { id: 'st-autosek', name: 'Pruefwagen' }, role: 'player', rx: null, tx: null,
+                     tileCode: 0xff, tileCount: null, lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null };
+      const npc = { device: { id: 'st-autosek-npc', name: 'Pruef-NPC' }, role: 'ghost', rx: null, tx: null,
+                    tileCode: 0xff, lastCodeAt: 0, ghost: null, timer: null, race: null };
+      const paket = (zaehler, code, ziel) => {
+        const a = new Array(19).fill(0);
+        a[11] = zaehler & 0xff; a[12] = code; a[14] = 0x82; a[15] = ziel ? 0x08 : 0;
+        return a;
+      };
+      const sende = (zz, c, ziel) => {
+        for (let i = 0; i < 2; i++) {
+          OMEGA_TEST.feedNotify(paket(zz, c, ziel), { car: auto });
+          carRaceNotify(npc, Uint8Array.from(paket(zz, c, ziel)));
+        }
+      };
+      playerCar = auto; raceState = 'racing'; raceFormationLap = false; raceLapTimes = []; raceLapEvents = [];
+      raceAwaitingMove = false; raceLapStart = jetzt; dashLapStart = jetzt; racePartialMs = null;
+      dashMarkerPrev = false; dashLastActedCode = null; dashLastActedAt = 0;
+      dashPendingCode = null; dashPendingSeen = 0; dashLastTileCounter = null;
+      dashZielAuto = auto; dashZielGesehen = true; dashZielAt = 0; dashLapZaehler = null;
+      sectorReset(); sectorHistory = []; autoSekSync(autoSekSp, null, 0);
+      let z = 100;
+      raceAnlaufZaehler = 99;                 // Anlauf: Runde 1 beginnt an der Linie
+      sende(z, START, false);
+      jetzt += 300; sende(z, START, true);
+      if (autoSekSp.z !== 100) f.push('an der Linie nicht angesetzt (' + autoSekSp.z + ')');
+      if (raceLapTimes.length) f.push('Anlauf zaehlt eine Runde');
+      // Eine Runde; o.versatz verschiebt den Zaehler ab Kachel o.ab (Abflug: +3 mit 0x00,
+      // verpasst: -1 ohne 0x00). Gibt die Sektorzeiten zurueck, die bei richtiger Zaehlung gelten.
+      const runde = (o) => {
+        const opt = o || {};
+        const t0 = jetzt, grenz = [];
+        let vers = 0;
+        for (let j = 1; j <= n; j++) {
+          jetzt += 280 + (j * 37) % 190;
+          if (opt.ab === j) {
+            if (opt.versatz > 0) {
+              for (let q = 1; q <= opt.versatz; q++) { jetzt += 40; sende(z + j - 1 + q, TILE_OFFTRACK, false); }
+              jetzt += 400;
+            }
+            vers = opt.versatz;
+          }
+          if (p.grenzen.indexOf(j) >= 0) grenz.push(jetzt);
+          if (opt.versatz < 0 && opt.ab === j) continue;   // diese Kachel liest das Auto nicht
+          sende(z + j + vers, codeVon(j % n), false);
+        }
+        jetzt += 300; sende(z + n + vers, START, true);
+        z = z + n + vers;
+        return { soll: [grenz[0] - t0, grenz[1] - grenz[0], jetzt - grenz[1]], runde: jetzt - t0 };
+      };
+      const gleich = (a, b) => a !== null && a !== undefined && Math.abs(a - b) <= 1;
+      // 1) eine saubere Runde
+      const r1 = runde();
+      if (raceLapTimes.length !== 1) f.push('Runde 1: ' + raceLapTimes.length + ' Runden');
+      const h1 = sectorHistory[0] || [];
+      if (h1.length !== 3 || !h1.every((v, i) => gleich(v, r1.soll[i]))) f.push('Runde 1 Sektoren ' + JSON.stringify(h1) + ' statt ' + JSON.stringify(r1.soll));
+      const summe = h1.reduce((a, b) => a + (b || 0), 0);
+      if (raceLapTimes[0] && Math.abs(summe - raceLapTimes[0].ms) > 2) f.push('Summe ' + summe + ' gegen Runde ' + raceLapTimes[0].ms);
+      if (raceLapTimes[0] && !gleich(raceLapTimes[0].ms, r1.runde)) f.push('Rundenzeit ' + raceLapTimes[0].ms + ' statt ' + r1.runde);
+      // 2) Abflug in Sektor 2: der Zaehler rast um 3 weiter -> S2 und S3 ungueltig, S1 gilt, die Runde gilt
+      const r2 = runde({ ab: p.grenzen[0] + 2, versatz: 3 });
+      const h2 = sectorHistory[1] || [];
+      if (raceLapTimes.length !== 2) f.push('Abflug-Runde nicht gezaehlt (' + raceLapTimes.length + ')');
+      else if (!gleich(raceLapTimes[1].ms, r2.runde)) f.push('Abflug-Runde ' + raceLapTimes[1].ms + ' statt ' + r2.runde);
+      if (!(gleich(h2[0], r2.soll[0]) && h2[1] === null && h2[2] === null)) f.push('Abflug: ' + JSON.stringify(h2));
+      // 3) danach an Start/Ziel neu angesetzt: wieder alles gueltig
+      const r3 = runde();
+      const h3 = sectorHistory[2] || [];
+      if (h3.length !== 3 || !h3.every((v, i) => gleich(v, r3.soll[i]))) f.push('nach dem Abflug nicht neu angesetzt: ' + JSON.stringify(h3));
+      // 4) eine verpasste Kachel ohne Abflug: Ort unbekannt -> alle Sektoren der Runde ungueltig
+      runde({ ab: p.grenzen[1] + 1, versatz: -1 });
+      const h4 = sectorHistory[3] || [];
+      if (raceLapTimes.length !== 4) f.push('Runde mit verpasster Kachel nicht gezaehlt');
+      if (h4.length !== 3 || h4.some((v) => v !== null)) f.push('verpasste Kachel: ' + JSON.stringify(h4));
+      // NPC: dieselbe Regel je Auto (car.race.sek.hist), im gleichen Index wie seine Runden.
+      const nh = (npc.race && npc.race.sek && npc.race.sek.hist) || [];
+      const nl = (npc.race && npc.race.laps) || [];
+      if (nh.length !== nl.length || nl.length !== 4) f.push('NPC: ' + nh.length + ' Sektorreihen auf ' + nl.length + ' Runden');
+      else {
+        if (!nh[0].every((v, i) => gleich(v, r1.soll[i]))) f.push('NPC Runde 1: ' + JSON.stringify(nh[0]));
+        if (!(gleich(nh[1][0], r2.soll[0]) && nh[1][1] === null && nh[1][2] === null)) f.push('NPC Abflug: ' + JSON.stringify(nh[1]));
+        if (nh[3].some((v) => v !== null)) f.push('NPC verpasste Kachel: ' + JSON.stringify(nh[3]));
+        if (Math.abs(nh[0].reduce((a, b) => a + b, 0) - nl[0].ms) > 2) f.push('NPC Summe gegen Runde');
+      }
+      // Anzeige: Sektorentabelle mit einer Nachkommastelle und "–", Zeitentabelle, Rennen-Schirm.
+      renderSectors();
+      const liste = $('sector-list') ? $('sector-list').textContent : '';
+      if (!/S1 \d+\.\ds/.test(liste) || /S1 \d+\.\d\ds/.test(liste)) f.push('Sektorentabelle nicht mit einer Nachkommastelle: ' + liste.slice(0, 80));
+      if (liste.indexOf('S2 –') < 0) f.push('ungueltig nicht als Strich: ' + liste.slice(0, 120));
+      renderRaceResults();
+      const tab = wirt ? wirt.innerHTML : '';
+      const sZeilen = (tab.match(/S1 /g) || []).length;
+      if (sZeilen !== 4 || tab.indexOf('S2 –') < 0) f.push('Zeitentabelle: ' + sZeilen + ' Sektorzeilen');
+      ovSektorenMalen();
+      const ov = $('ov-sektoren');
+      const kopf = ov ? [...ov.querySelectorAll('th')].map((x) => x.textContent).join(',') : '';
+      if (kopf.indexOf(',S1,S2,S3,') !== 0) f.push('Rennen-Schirm Kopf: ' + kopf);
+      const zellen = ov ? [...ov.querySelectorAll('td')].map((x) => x.textContent) : [];
+      if (!zellen.some((x) => /^\d+\.\d$/.test(x)) || !zellen.some((x) => /^\d+\.\d\d$/.test(x))) f.push('Rennen-Schirm: Sektor eine, Runde zwei Stellen? ' + zellen.join(' '));
+      mass = 'S ' + h1.map((v) => (v / 1000).toFixed(2)).join('/') + ' = ' + (summe / 1000).toFixed(2) + ' s (Runde '
+        + (raceLapTimes[0] ? (raceLapTimes[0].ms / 1000).toFixed(2) : '?') + '); Abflug ' + h2.map((v) => v === null ? '-' : 'ok').join('/')
+        + '; verpasst alle -; NPC gleich; Anzeige 1 Stelle';
+    } finally {
+      Date.now = uhr;
+      raceState = g.state; raceLapTimes = g.laps; raceLapStart = g.start; dashLapStart = g.dash;
+      racePartialMs = g.part; raceFormationLap = g.form; playerCar = g.sp;
+      dashMarkerPrev = g.mp; dashLastActedCode = g.ac; dashLastActedAt = g.aa; dashPendingCode = g.pc;
+      dashPendingSeen = g.ps; dashLastTileCounter = g.lc; dashZielGesehen = g.zg; dashZielAt = g.za;
+      dashStartLapAt = g.sa; dashZielAuto = g.zauto; dashLapZaehler = g.lz; raceAwaitingMove = g.aw;
+      raceAnlaufZaehler = g.az; dashLapTimes = g.dt; raceLapEvents = g.ev;
+      if (wirt) wirt.innerHTML = merkHtml[0];
+      if (wirt2) wirt2.innerHTML = merkHtml[1];
+      stSekZurueck(m);
+      if (sw && sw.checked !== g.rail) { sw.checked = g.rail; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+      trackMode = m.tm;
+      ovSektorenMalen();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : mass };
+  });
+
+  stAdd('Sektoren v1.3.81: duenne gruene Linie an jeder Grenze, nur wenn aktiv', () => {
+    const f = [];
+    const m = stSekMerk();
+    const mass = [];
+    try {
+      autoSektorAn = true; autoSektorWahl = 0; trackMode = 'on'; sectorCount = 1;
+      const tiles = stSekStrecke(ST_SEK_OVAL).tiles;
+      const svg = (o, ti) => { const d = document.createElement('div'); d.innerHTML = renderTrackPreview(ti || tiles, null, o).html; return d; };
+      const linien = (d) => [...d.querySelectorAll('[data-sektor="auto"]')];
+      const p = autoSektorPlanFuer(tiles, true);
+      // Echter Stil (Vorgabe) und Kartenstil: N-1 Linien (die N-te Grenze ist Start/Ziel selbst).
+      for (const [name, o] of [['echt', { detailed: true, cars: [] }], ['Karte', { detailed: true, echt: false, cars: [] }]]) {
+        const d = svg(o);
+        const l = linien(d);
+        if (l.length !== p.n - 1) f.push(name + ': ' + l.length + ' Linien statt ' + (p.n - 1));
+        for (const e of l) {
+          if (e.getAttribute('stroke') !== '#3ddc84' || !(parseFloat(e.getAttribute('stroke-width')) <= 1.5)) f.push(name + ': nicht duenn gruen');
+        }
+        // Auf der Fuge: die Mitte der Linie ist die Mitte eines Fugenstrichs.
+        if (name === 'echt') {
+          const mitte = (e) => { const zs = e.getAttribute('d').match(/-?\d+(\.\d+)?/g).map(Number); return [(zs[0] + zs[2]) / 2, (zs[1] + zs[3]) / 2]; };
+          const fugen = [...d.querySelectorAll('path[stroke="#3a404b"]')].map(mitte);
+          for (const e of l) {
+            const q = mitte(e);
+            if (!fugen.some((u) => Math.hypot(u[0] - q[0], u[1] - q[1]) < 0.3)) f.push('Linie nicht auf einer Fuge');
+          }
+        }
+        mass.push(name + ' ' + l.length);
+      }
+      autoSektorWahl = 5;
+      const fuenf = linien(svg({ detailed: true })).length;
+      if (fuenf !== 4) f.push('fest 5: ' + fuenf + ' statt 4');
+      autoSektorWahl = 0; autoSektorAn = false;
+      if (linien(svg({ detailed: true })).length) f.push('abgeschaltet und trotzdem Linien');
+      autoSektorAn = true; trackMode = 'off';
+      if (linien(svg({ detailed: true })).length) f.push('Ausdruck-Modus mit Linien');
+      trackMode = 'on';
+      const zwei = stSekStrecke('SG11R3G5SG6R3').tiles;
+      const dz = svg({ detailed: true }, zwei);
+      if (linien(dz).length || dz.querySelectorAll('[data-ziel="sektor"]').length !== 1) f.push('zweite Start/Ziel-Gerade: ' + linien(dz).length + ' gruene, ' + dz.querySelectorAll('[data-ziel="sektor"]').length + ' gelbe');
+      if (linien(svg({ detailed: true }, stSekStrecke('SG7').tiles)).length) f.push('kurze offene Strecke mit Linien');
+      // Der Editor zeichnet sie auch (refreshTrackPreview).
+      currentTrackTiles = tiles;
+      refreshTrackPreview();
+      const ed = $('track-preview-svg');
+      const edN = ed ? ed.querySelectorAll('[data-sektor="auto"]').length : -1;
+      if (edN !== p.n - 1) f.push('Editor: ' + edN + ' Linien');
+    } finally {
+      stSekZurueck(m);
+      try { refreshTrackPreview(); } catch (e) { /* egal */ }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : mass.join(', ') + ' Linien bei 30 Teilen; fest 5 = 4; aus/Ausdruck/zweite Start/Ziel = 0; Editor ja' };
+  });

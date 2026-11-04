@@ -2867,15 +2867,15 @@
     "für die gelbe Flagge: alles rollt mit": "for the yellow flag: everything rolls on at",
     "km/h mittig weiter, kein Überholen, Lichter blinken. Nochmal eine Sekunde halten startet die Ampel und gibt wieder frei. Der Knopf im Cockpit reicht mit einem Tipp – die Taste liegt neben allem anderen, der Knopf nicht.":
       "km/h in the middle, no overtaking, lights flashing. Holding for another second starts the lights and releases. The cockpit button needs only a tap – the key sits next to everything else, the button does not.",
-    "Sektoren": "Sectors",
+    "Sektoren (Ausdruck)": "Sectors (print mode)",
     "Überfahrten je Runde. Nur": "Crossings per lap. Only",
     "Überfahrten je Runde.": "Crossings per lap.",
     "experimentell": "experimental",
     "Überfahrten je Runde": "Crossings per lap",
     "1 (aus)": "1 (off)",
     "Im Bahn-Modus": "In track mode",
-    "(Editor) bestimmt die Strecke die Sektorzahl: jede Start/Ziel-Gerade ist eine Sektorgrenze, die erste ist die Rundenlinie.":
-      "(editor) the track determines the sector count: each start/finish straight is a sector boundary, the first one is the lap line.",
+    "gilt dieser Regler nicht: dort ist jede weitere Start/Ziel-Gerade im Editor eine Sektorgrenze, sonst gelten die automatischen Sektoren darunter.":
+      "this control does not apply: there every further start/finish straight in the editor is a sector boundary, otherwise the automatic sectors below apply.",
     "Ohne Bahn": "Without a track",
     "(Ausdruck) gilt dieser Regler - dort legt man die Muster selbst hin, drei Ausdrucke über eine Runde verteilt sind drei Sektoren. Eine Sektorzeit ist die":
       "(print mode) this control applies - there you place the patterns yourself, three printouts spread over a lap are three sectors. A sector time is the",
@@ -4103,6 +4103,13 @@
     "Rd": "Laps",
     "Mix": "Mix",
     "Rückst.": "Gap",
+    // v1.3.81: automatische Sektoren
+    "Automatische Sektoren": "Automatic sectors",
+    "Nur im Bahn-Modus auf einer geschlossenen Editor-Strecke mit einer einzigen Start/Ziel-Geraden: die Strecke wird nach Länge in etwa gleich lange Abschnitte geteilt, jede Grenze liegt auf einer Teilefuge (dünne grüne Linie in der Streckenkarte). Ein Sektor endet, wenn das Auto das erste Teil nach der Grenze meldet. Stimmt die Teilezahl einer Runde nicht (Abflug, verpasste Teile), steht die Sektorzeit als – da, die Runde zählt trotzdem. Sektorzeiten mit einer Nachkommastelle, denn die Meldung kommt nur auf etwa 0,1 s genau.":
+      "Only in track mode on a closed editor track with a single start/finish straight: the track is split by length into roughly equal sections, every boundary lies on a joint between pieces (thin green line on the track map). A sector ends when the car reports the first piece after the boundary. If a lap has the wrong number of pieces (crash, missed pieces), the sector time shows as – while the lap still counts. Sector times have one decimal, because the report is only accurate to about 0.1 s.",
+    "Anzahl automatischer Sektoren": "Number of automatic sectors",
+    "Automatisch: Teilezahl durch 10, gerundet, höchstens 10 (8 Teile: keine Sektoren, 15: zwei, 25: drei, 100: zehn). Nie mehr als ein Sektor je zwei Teile.":
+      "Automatic: number of pieces divided by 10, rounded, at most 10 (8 pieces: no sectors, 15: two, 25: three, 100: ten). Never more than one sector per two pieces.",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -5552,6 +5559,17 @@
     "Zustand": "Estado",
     "Pflichtstopp": "parada obligatoria",
     "Stopps": "paradas",
+    // v1.3.81: sectores automáticos
+    "Sektoren (Ausdruck)": "Sectores (modo impreso)",
+    "gilt dieser Regler nicht: dort ist jede weitere Start/Ziel-Gerade im Editor eine Sektorgrenze, sonst gelten die automatischen Sektoren darunter.":
+      "este control no se aplica: allí cada recta de salida/meta adicional del editor es un límite de sector; si no, se aplican los sectores automáticos de abajo.",
+    "Automatische Sektoren": "Sectores automáticos",
+    "Nur im Bahn-Modus auf einer geschlossenen Editor-Strecke mit einer einzigen Start/Ziel-Geraden: die Strecke wird nach Länge in etwa gleich lange Abschnitte geteilt, jede Grenze liegt auf einer Teilefuge (dünne grüne Linie in der Streckenkarte). Ein Sektor endet, wenn das Auto das erste Teil nach der Grenze meldet. Stimmt die Teilezahl einer Runde nicht (Abflug, verpasste Teile), steht die Sektorzeit als – da, die Runde zählt trotzdem. Sektorzeiten mit einer Nachkommastelle, denn die Meldung kommt nur auf etwa 0,1 s genau.":
+      "Solo en modo pista, en un circuito cerrado del editor con una única recta de salida/meta: el circuito se divide por longitud en tramos de longitud parecida, y cada límite queda en una junta entre piezas (línea verde fina en el mapa). Un sector termina cuando el coche informa de la primera pieza tras el límite. Si una vuelta no tiene el número correcto de piezas (salida de pista, piezas perdidas), el tiempo de sector aparece como – y la vuelta cuenta igualmente. Tiempos de sector con un decimal, porque el aviso solo es preciso a unos 0,1 s.",
+    "Anzahl automatischer Sektoren": "Número de sectores automáticos",
+    "Automatisch: Teilezahl durch 10, gerundet, höchstens 10 (8 Teile: keine Sektoren, 15: zwei, 25: drei, 100: zehn). Nie mehr als ein Sektor je zwei Teile.":
+      "Automático: número de piezas dividido entre 10, redondeado, como máximo 10 (8 piezas: sin sectores, 15: dos, 25: tres, 100: diez). Nunca más de un sector por cada dos piezas.",
+    "Automatisch": "Automático",
   };
 
   // ============================================================================

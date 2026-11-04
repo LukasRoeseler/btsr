@@ -10168,11 +10168,14 @@
       <div class="opt-row"><div class="opt-label"><span id="race-limit-label">Minuten</span>
           <small>Beim Training und bei Bestzeit: 0 hei&szlig;t ohne Ende.</small></div>
         <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="race-limit" value="0" min="0" max="120" step="1" style="width:84px"><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
-      <div class="opt-row"><div class="opt-label">Sektoren
+      <!-- v1.3.81: der Regler gilt nur noch im Ausdruck-Modus (sektorZiel). Auf der Bahn
+           bestimmen die Start/Ziel-Geraden des Editors die Sektoren, sonst die automatischen
+           Sektoren darunter - zwei Regler fuer dieselbe Sache gibt es damit nicht. -->
+      <div class="opt-row"><div class="opt-label">Sektoren (Ausdruck)
           <span class="wip-tag">experimentell</span>
-          <small>&Uuml;berfahrten je Runde. <b>Im Bahn-Modus</b> (Editor) bestimmt die Strecke
-          die Sektorzahl: jede Start/Ziel-Gerade ist eine Sektorgrenze, die erste ist die
-          Rundenlinie. <b>Ohne Bahn</b> (Ausdruck) gilt dieser Regler - dort legt man die
+          <small>&Uuml;berfahrten je Runde. <b>Im Bahn-Modus</b> gilt dieser Regler nicht:
+          dort ist jede weitere Start/Ziel-Gerade im Editor eine Sektorgrenze, sonst gelten
+          die automatischen Sektoren darunter. <b>Ohne Bahn</b> (Ausdruck) gilt dieser Regler - dort legt man die
           Muster selbst hin, drei Ausdrucke &uuml;ber eine Runde verteilt sind drei Sektoren.
           Eine Sektorzeit ist die <em>gemessene</em> Zeit zwischen zwei Kontakten und nicht
           die Rundenzeit geteilt durch drei: genau darin liegt der Wert, denn die Streuung
@@ -10182,6 +10185,35 @@
           <option value="2">2</option>
           <option value="3">3</option>
           <option value="4">4</option>
+        </select></div>
+      <!-- v1.3.81 BESTELLT: automatische Sektoren, Standard an und automatische Anzahl, mit
+           Option zum Abschalten und zum Bestimmen der Anzahl (autoSektorZahl, 60-track.js). -->
+      <div class="opt-row"><div class="opt-label">Automatische Sektoren
+          <span class="wip-tag">WIP</span>
+          <small>Nur im Bahn-Modus auf einer geschlossenen Editor-Strecke mit einer einzigen
+          Start/Ziel-Geraden: die Strecke wird nach L&auml;nge in etwa gleich lange Abschnitte
+          geteilt, jede Grenze liegt auf einer Teilefuge (d&uuml;nne gr&uuml;ne Linie in der
+          Streckenkarte). Ein Sektor endet, wenn das Auto das erste Teil nach der Grenze
+          meldet. Stimmt die Teilezahl einer Runde nicht (Abflug, verpasste Teile), steht die
+          Sektorzeit als &ndash; da, die Runde z&auml;hlt trotzdem. Sektorzeiten mit einer
+          Nachkommastelle, denn die Meldung kommt nur auf etwa 0,1 s genau.</small></div>
+        <label class="tgl"><input type="checkbox" id="auto-sektoren" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Anzahl automatischer Sektoren
+          <span class="wip-tag">WIP</span>
+          <small>Automatisch: Teilezahl durch 10, gerundet, h&ouml;chstens 10 (8 Teile: keine
+          Sektoren, 15: zwei, 25: drei, 100: zehn). Nie mehr als ein Sektor je zwei
+          Teile.</small></div>
+        <select id="auto-sektoren-zahl">
+          <option value="0" selected>Automatisch</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
         </select></div>
       <!-- ENTSPERRT in v0.4.54. Die Sperre war laenger falsch als richtig: die
            Einfuehrungsrunde stand vollstaendig im Code - Boxentempo ueber limitFormation,

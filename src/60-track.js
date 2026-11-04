@@ -156,6 +156,12 @@
   // transitions in that session were of this kind. It is an immediate signal, which makes the
   // old 1.5 s timeout on 0xff unnecessary as the primary detector.
   const TILE_OFFTRACK = 0x00;
+  // ---- AUTOMATISCHE SEKTOREN (v1.3.81, WIP): die zwei Optionen -------------------------
+  // So weit oben, weil renderTrackPreview() sie liest und schon beim Laden zeichnen kann -
+  // weiter unten (oder in 70-race.js) staenden sie dann noch in der temporalen Todeszone.
+  // Die Logik dazu steht bei autoSektorZahl() (diese Datei) und autoSekSync() (70-race.js).
+  let autoSektorAn = true;     // #auto-sektoren
+  let autoSektorWahl = 0;      // #auto-sektoren-zahl: 0 = automatisch, sonst fest 2..10
   // The LEFT curve is TILE_TYPE.CURVE_LEFT = 0x03. Established from the race capture of
   // 21.08 on track "az2108": the reported code sequence per lap is S R G R ? R, identical
   // across all 16 laps, and by tile counter the lap is 11 tiles long as S R2 G2 R3 L R2 -
@@ -3525,6 +3531,26 @@
       ersteStart = false;
     }
 
+    // ---- AUTOMATISCHE SEKTORGRENZEN (v1.3.81, WIP) ------------------------------------
+    // BESTELLT: "zwischen den Teilen, wo ein Sektor wechselt, eine subtile Markierung (z. B.
+    // duenne gruene Linie)". Genau auf der Fuge, quer ueber die Fahrbahn (im echten Stil
+    // zwischen den Randstreifen), duenn und halb durchsichtig - die gelbe Linie der echten
+    // Sektor-Startgeraden bleibt die auffaellige. Nur wenn die automatischen Sektoren fuer
+    // diese Strecke gelten (autoSektorPlanFuer), und nur in der Fahrbahn-Zeichnung.
+    if (o.detailed && kachelTab && o.sektorMarken !== false) {
+      let plan = null;
+      try { plan = autoSektorPlanFuer(tiles, closed); } catch (e) { plan = null; }
+      const r = o.echt ? half - ECHT_STREIFEN : half;
+      for (const k of (plan ? plan.kacheln : [])) {
+        const i = k === 0 ? 0 : kachelTab.start[k];
+        if (!(i >= 0) || !pts[i] || !nrm[i]) continue;
+        const A = [pts[i].x + nrm[i].x * r, pts[i].y + nrm[i].y * r];
+        const B = [pts[i].x - nrm[i].x * r, pts[i].y - nrm[i].y * r];
+        body += `<path data-sektor="auto" d="M ${P2(A)} L ${P2(B)}" stroke="#3ddc84" `
+              + `stroke-width="1.3" stroke-opacity=".8" stroke-linecap="butt"/>`;
+      }
+    }
+
     // ---- Die Autos ----------------------------------------------------------------
     //
     // `currentIndex` zeichnet EIN Auto und bleibt fuer alte Aufrufer; `o.cars` zeichnet
@@ -4116,6 +4142,75 @@
   // die weiteren sind Sektorgrenzen (Zwischenzeit).
   function trackSektorAnzahl(tiles) {
     return (tiles || []).filter((t) => t.type === TILE_TYPE.START).length;
+  }
+
+  // ---- AUTOMATISCHE SEKTOREN (v1.3.81, WIP) -------------------------------------------
+  //
+  // BESTELLT: "automatische Sektoren [...] Standard: angeschaltet und automatische Anzahl,
+  // aber mit Option zur Abschaltung und Option zum Bestimmen der Anzahl. Die automatische
+  // Anzahl soll in Abhaengigkeit der Anzahl der Streckenteile stehen (bei 8 Teilen keine
+  // Sektoren, bei 100 Teilen nicht mehr als 10 Sektoren)."
+  //
+  // Abgestimmt: die Strecke wird nach LAENGE (nicht nach Teilezahl) in N etwa gleich lange
+  // Abschnitte geteilt, jede Grenze liegt auf einer Teilefuge, und ein Sektor endet, wenn
+  // das Auto die erste Kachel nach der Grenze meldet. Gemessen wird ab der Rundenlinie (sie
+  // liegt bei ZIEL_LAENGS.linieOben der ersten Start/Ziel-Kachel), damit Sektor 1 nicht um
+  // das letzte Fuenftel der Startkachel zu lang ist.
+  //
+  // Die Anzahl: N = runde(Teile / 10), 1 bis 10; 1 heisst keine Sektoren (8 -> 1, 15 -> 2,
+  // 25 -> 3, 100 -> 10). Ein Abschnitt unter zwei Teilen misst nur noch die Meldegenauigkeit,
+  // also nie mehr als Teile / 2 - das gilt auch fuer eine fest gewaehlte Anzahl.
+  function autoSektorFormel(teile) {
+    const n = Math.max(1, Math.min(10, Math.round((teile || 0) / 10)));
+    return Math.max(1, Math.min(n, Math.floor((teile || 0) / 2)));
+  }
+  function autoSektorZahl(teile) {
+    if (!autoSektorAn) return 1;
+    const n = autoSektorWahl >= 2 ? autoSektorWahl : autoSektorFormel(teile);
+    return Math.max(1, Math.min(n, Math.floor((teile || 0) / 2)));
+  }
+  // Die Grenzen als Fugen. `grenzen[i]` ist die Zahl der Kachelwechsel seit der Rundenlinie,
+  // nach der Sektor i+1 endet (j heisst: das Auto hat Kachel s+j erreicht); `kacheln[i]` ist
+  // dieselbe Fuge als Kachelindex der Strecke (die Fuge VOR dieser Kachel), fuer die Zeichnung.
+  // Einmal je Strecke und Einstellung gerechnet; im Fahrtakt wird nur noch verglichen.
+  function autoSektorGrenzen(tiles, n) {
+    const nT = tiles ? tiles.length : 0;
+    if (!(n > 1) || nT < 4) return null;
+    let s = tiles.findIndex((t) => t.type === TILE_TYPE.START);
+    if (s < 0) s = 0;
+    const len = (i) => {
+      try { return Math.max(1e-6, tileLength(tiles[(s + i) % nT].type)); } catch (e) { return 1; }
+    };
+    const linie = ZIEL_LAENGS.linieOben;
+    // pos[j]: Laenge von der Rundenlinie bis zur Fuge vor Kachel s+j (j = 1 .. nT-1).
+    const pos = new Array(nT).fill(0);
+    let acc = len(0) * (1 - linie);
+    for (let j = 1; j < nT; j++) { pos[j] = acc; acc += len(j); }
+    const gesamt = acc + len(0) * linie;
+    const grenzen = [];
+    let vor = 0;
+    for (let i = 1; i < n; i++) {
+      const ziel = gesamt * i / n;
+      const lo = vor + 1, hi = nT - (n - i);   // fuer jeden folgenden Sektor bleibt ein Teil
+      let best = lo;
+      for (let j = lo; j <= hi; j++) {
+        if (Math.abs(pos[j] - ziel) < Math.abs(pos[best] - ziel)) best = j;
+      }
+      grenzen.push(best);
+      vor = best;
+    }
+    const laengen = grenzen.map((j, i) => pos[j] - (i ? pos[grenzen[i - 1]] : 0));
+    laengen.push(gesamt - pos[grenzen[grenzen.length - 1]]);
+    return { n, s, teile: nT, grenzen, kacheln: grenzen.map((j) => (s + j) % nT), laengen, gesamt };
+  }
+  // Gelten die automatischen Sektoren fuer DIESE Strecke? Nur im Bahn-Modus, nur auf einer
+  // geschlossenen Strecke, und nur, wenn keine echten Sektoren gelten: weitere Start/Ziel-
+  // Kacheln haben Vorrang (dann misst das Auto die Grenze selbst, das ist genauer).
+  function autoSektorPlanFuer(tiles, geschlossen) {
+    if (!autoSektorAn || !tiles || tiles.length < 4 || !geschlossen) return null;
+    if (typeof trackMode === 'string' && trackMode !== 'on') return null;
+    if (trackSektorAnzahl(tiles) > 1) return null;
+    return autoSektorGrenzen(tiles, autoSektorZahl(tiles.length));
   }
   function trackIstGeschlossen() {
     if (currentTrackTiles.length < 3) return false;

@@ -2907,8 +2907,10 @@
     // laesst die Daten stehen (fuer einen Blick auf den Schirm), sonst wird alles zurueckgelegt.
     ovDiagrammProbe(behalten) {
       const merk = { sc: sectorCount, lt: raceLapTimes.slice(), sh: sectorHistory.slice(),
-                     art: ovDiagrammArt };
+                     art: ovDiagrammArt, tm: trackMode };
       try {
+        // v1.3.81: der Sektor-Regler gilt nur im Ausdruck-Modus (sektorZiel).
+        trackMode = 'off';
         sectorCount = 3;
         raceLapTimes.length = 0;
         sectorHistory.length = 0;
@@ -2928,6 +2930,7 @@
                  spalten: sek ? sek.querySelectorAll('th').length : -1 };
       } finally {
         if (!behalten) {
+          trackMode = merk.tm;
           sectorCount = merk.sc;
           raceLapTimes.length = 0; merk.lt.forEach((l) => raceLapTimes.push(l));
           sectorHistory.length = 0; merk.sh.forEach((l) => sectorHistory.push(l));
@@ -8052,6 +8055,7 @@
       const merkGarage = garage.slice();
       const merkSc = sectorCount;
       const merkSh = sectorHistory.slice();
+      const merkTm = trackMode;
       const wirt = $('race-results-laps');
       const wirt2 = $('race-results-body');
       const merkHtml = wirt ? wirt.innerHTML : null;
@@ -8067,6 +8071,9 @@
         });
         garage.push(mk('steuern', 'Fahrer', 'rot', runden.map((r) => r.reduce((a, b) => a + b, 0))));
         garage.push(mk('ghost', 'G1', 'blau', [12100, 12300]));
+        // v1.3.81: der Sektor-Regler gilt nur im Ausdruck-Modus (sektorZiel); auto=true
+        // prueft stattdessen die automatischen Sektoren auf der Bahn.
+        trackMode = opt.auto ? 'on' : 'off';
         sectorCount = opt.sektoren === undefined ? 3 : opt.sektoren;
         sectorHistory.length = 0;
         runden.forEach((r) => sectorHistory.push(r.slice()));
@@ -8081,6 +8088,7 @@
       } finally {
         garage.length = 0;
         merkGarage.forEach((c) => garage.push(c));
+        trackMode = merkTm;
         sectorCount = merkSc;
         sectorHistory.length = 0;
         merkSh.forEach((x) => sectorHistory.push(x));
