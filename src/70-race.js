@@ -2098,6 +2098,7 @@
     raceStartZuruecksetzen(fuel);
     updateDamageFuelUI();
     racePitDone = 0;
+    pitBilanz = null;   // "Letzter Stopp" im Boxenschirm gehoert zum Rennen
     // v1.0.12 BESTELLT: "Pflichtstopps bitte fuer alle spieler gesteuerten Autos zaehlen."
     if (typeof zusatzPlaetze === 'function') zusatzPlaetze().forEach((z) => { z.pitDone = 0; });
     syncRaceGridOrder();
@@ -4524,6 +4525,9 @@
   const PIT_ERHOL_PRO_FEHLER = 0.3;
   let pitServiceStart = null;
   let pitFuelGained = 0, pitDamageRepaired = 0;
+  // Bilanz des letzten vollendeten Stopps in diesem Rennen (ACC-Boxenschirm, v1.3.78):
+  // gesetzt beim Verlassen der Box (pitBilanzMerken), geleert beim Rennstart.
+  let pitBilanz = null;
   const PIT_FUEL_PER_SEC = 22;
   // Repair speed used to be this flat 18%/s constant; replaced by repairRateAt() above,
   // which is non-linear and driven by the "Vollstaendige Reparatur dauert" setting.
@@ -4532,6 +4536,9 @@
   const PIT_STANDSTILL_KMH = 10 / REAL_SCALE;
 
   function setPitState(next) {
+    // Die Bilanz des Stopps fuer den Boxenschirm (ACC, v1.3.78), VOR dem Leeren von Spiel und
+    // Plan: sie liest beide. Einmal je Stopp, beim Verlassen der Box - nicht je Takt.
+    if (pitState === 'servicing' && next !== 'servicing' && pitServiceStart !== null) pitBilanzMerken();
     if (next !== 'servicing') {
       pitSpiel = null;
       if (typeof pitSpielMalen === 'function') rennZeitTimeout(pitSpielMalen, 0);
@@ -6774,6 +6781,9 @@
       schreibeWert(w, teil.wort);
     }
     pitScreenBilder();
+    // ACC (Entwurf B): Mitte und rechte Spalte. Nur in dieser Ansicht - in den anderen sind
+    // die Bloecke verborgen, und Arbeit fuer Unsichtbares kostet den Takt nur Zeit.
+    if (document.body.dataset.cockpit === 'acc') pitAccMalen();
     // Die Fusszeile nennt die Taste, mit der gewaehlt wird - und zwar die WIRKLICH belegte.
     // Ist die Flaggenaktion nicht belegt, steht das da, statt dass man raet.
     const fuss = $('pit-fuss');
@@ -6784,6 +6794,89 @@
     }
   }
 
+  // ---- ACC-Boxenschirm nach Entwurf B (v1.3.78) -------------------------------------
+  //
+  // BESTELLT: "Ja zu Box B [...] Baue das ein." Links bleiben die fuenf Zeilen (der Plan,
+  // dieselbe Bedienung), die Mitte traegt Standzeit, Zustand und - an der Stelle des
+  // Gangs - das Minispiel, rechts stehen die Messwerte. Pflichtstopp, Strafe und die
+  // Bilanz erscheinen nur, wenn die App sie wirklich kennt.
+  //
+  // KEINE LAYOUTABFRAGE: nur Text, Klassen und hidden, je mit Vergleich vorher. Anders als
+  // schreibeWert() ohne Tick-Animation - die erzwingt ein offsetWidth, und das hier sind
+  // zwoelf Werte mehr im selben Takt.
+  function pitTextSetzen(el, s) { if (el && el.textContent !== s) el.textContent = s; }
+  function pitVerbergen(el, weg) { if (el && el.hidden !== weg) el.hidden = weg; }
+
+  // Was der Stopp gebracht hat. Eine Zahl nur, wenn der Plan die Arbeit enthielt - ein
+  // "+0 l" fuer einen Stopp ohne Tanken waere eine Angabe ueber etwas, das nicht geschah.
+  function pitBilanzWerte() {
+    const pl = pitPlan || {};
+    return {
+      stand: pitServiceStart !== null ? (rennZeitJetzt() - pitServiceStart) / 1000 : 0,
+      sprit: pl.refuel && pitFuelGained > 0.05 ? fuelLiters(pitFuelGained) : null,
+      zustand: pl.repair && pitDamageRepaired > 0.05 ? Math.round(pitDamageRepaired) : null,
+      reifen: pl.tyres ? tyres : null,
+      spiel: pitSpiel ? pitSpiel.treffer : null,
+    };
+  }
+  function pitBilanzMerken() { pitBilanz = pitBilanzWerte(); }
+
+  function pitAccMalen() {
+    const scr = $('race-pitscreen');
+    const lage = pitState === 'off' ? 'aus' : pitState === 'limited' ? 'gasse'
+               : pitReady ? 'fertig' : 'arbeit';
+    if (scr.dataset.lage !== lage) scr.dataset.lage = lage;
+
+    // MITTE: Standzeit gross, darunter das Zustandswort.
+    const imStopp = pitState === 'servicing' && pitServiceStart !== null;
+    pitTextSetzen($('pit-stand'), imStopp
+      ? ((rennZeitJetzt() - pitServiceStart) / 1000).toFixed(1) : '–');
+    const box = $('pit-stand-box');
+    if (box) box.classList.toggle('leer', !imStopp);
+    pitTextSetzen($('pit-mitte-lage'), t(lage === 'aus' ? 'aus' : lage === 'gasse' ? 'Boxengasse'
+      : lage === 'fertig' ? 'fertig' : 'Arbeit läuft'));
+    // Bilanz: im fertigen Stopp die laufende, ausserhalb der Box die des letzten Stopps.
+    const bil = lage === 'fertig' ? pitBilanzWerte() : lage === 'aus' ? pitBilanz : null;
+    pitVerbergen($('pit-bilanz'), !bil);
+    pitVerbergen($('pit-hinweis'), !!bil || imStopp);
+    if (bil) {
+      pitTextSetzen($('pit-bil-titel'), lage === 'fertig' ? t('Dieser Stopp')
+        : t('Letzter Stopp') + ' · ' + bil.stand.toFixed(1) + ' s');
+      pitVerbergen($('pit-bil-sprit'), bil.sprit === null);
+      if (bil.sprit !== null) pitTextSetzen($('pit-bil-sprit-z'), '+' + bil.sprit + ' l');
+      pitVerbergen($('pit-bil-zustand'), bil.zustand === null);
+      if (bil.zustand !== null) pitTextSetzen($('pit-bil-zustand-z'), '+' + bil.zustand + '%');
+      pitVerbergen($('pit-bil-reifen'), bil.reifen === null);
+      if (bil.reifen !== null) pitTextSetzen($('pit-bil-reifen-z'), mischungName(bil.reifen));
+      pitVerbergen($('pit-bil-spiel'), bil.spiel === null);
+      if (bil.spiel !== null) pitTextSetzen($('pit-bil-spiel-z'), bil.spiel + '/' + PIT_SPIEL_ANZAHL);
+    }
+
+    // RECHTS: Runde und P-Zeichen, dann die Messwerte - dieselben Zahlen wie in den Zeilen.
+    pitTextSetzen($('pit-w-runde'), raceLapTimes.length ? String(raceLapTimes.length) : '–');
+    const pz = $('pit-w-zeichen');
+    if (pz) {
+      pz.classList.toggle('pz-gasse', lage === 'gasse');
+      pz.classList.toggle('pz-arbeit', lage === 'arbeit');
+      pz.classList.toggle('pz-fertig', lage === 'fertig');
+    }
+    pitTextSetzen($('pit-w-tank'), $('pit-zahl-refuel').textContent);
+    pitTextSetzen($('pit-w-rep'), $('pit-zahl-repair').textContent);
+    pitTextSetzen($('pit-w-reifen'), $('pit-zahl-tyres').textContent);
+    // Pflichtstopp nur, wenn welche verlangt sind; Strafe nur, wenn eine offen ist.
+    const pf = $('pit-w-pflicht');
+    pitVerbergen(pf, !(racePitRequired > 0));
+    if (racePitRequired > 0) {
+      const erledigt = racePitDone >= racePitRequired;
+      pitTextSetzen($('pit-w-pflicht-z'), Math.min(racePitDone, racePitRequired) + '/'
+        + racePitRequired + (erledigt ? ' ✓' : ''));
+      pf.classList.toggle('pw-gut', erledigt);
+    }
+    const offen = typeof rammStrafeOffen === 'function' ? rammStrafeOffen(playerCar) : 0;
+    pitVerbergen($('pit-w-strafe'), !(offen > 0));
+    if (offen > 0) pitTextSetzen($('pit-w-strafe-z'), '+' + offen + ' s');
+  }
+
   // ---- Die Bilder in den Zeilen ------------------------------------------------------
   //
   // DIESELBEN QUELLEN wie im Streifen, nur ein zweites Mal gezeichnet. Kein eigener
@@ -6791,20 +6884,31 @@
   // reifenFarbe() ist dieselbe Funktion. Zwei Bilder, eine Wahrheit.
   const PIT_T4 = ['pit-tyre-fl', 'pit-tyre-fr', 'pit-tyre-rl', 'pit-tyre-rr'];
 
+  // ACC (Entwurf B): dasselbe Reifenbild und dieselben Balken ein zweites Mal in der rechten
+  // Spalte. Geschrieben nur in dieser Ansicht, im selben Durchlauf und mit denselben Werten.
+  const PIT_W_T4 = ['pit-w-tyre-fl', 'pit-w-tyre-fr', 'pit-w-tyre-rl', 'pit-w-tyre-rr'];
+
   function pitScreenBilder() {
     const st = physEngine.state;
     const aus = !(physEngine.config.tyreEffect > 0);
+    const acc = document.body.dataset.cockpit === 'acc';
     const abListe = typeof pitWheelsOff === 'function' ? pitWheelsOff() : [];
     for (let i = 0; i < 4; i++) {
       const el = $(PIT_T4[i]);
       if (!el || !el.firstChild) continue;
       const ab = abListe.includes(i);
-      el.classList.toggle('t4-ab', ab);
       const w = aus ? 0 : (st.tyreWear4 ? st.tyreWear4[i] : st.tyreWear);
       const rest = ab ? 0 : Math.max(0, Math.min(100, 100 - w * 100));
+      const farbe = reifenFarbe(st.tyreTemp4 ? st.tyreTemp4[i] : st.tyreTempC);
+      el.classList.toggle('t4-ab', ab);
       el.firstChild.style.height = rest + '%';
-      el.firstChild.style.background =
-        reifenFarbe(st.tyreTemp4 ? st.tyreTemp4[i] : st.tyreTempC);
+      el.firstChild.style.background = farbe;
+      const el2 = acc ? $(PIT_W_T4[i]) : null;
+      if (el2 && el2.firstChild) {
+        el2.classList.toggle('t4-ab', ab);
+        el2.firstChild.style.height = rest + '%';
+        el2.firstChild.style.background = farbe;
+      }
     }
 
     // Die vier Mischungen: die GELTENDE ist umrahmt. Waehrend eines Stopps ist das die
@@ -6816,18 +6920,24 @@
       for (const i of feld.children) i.classList.toggle('an', i.dataset.mix === wahl);
     }
 
-    const tank = $('pit-bar-refuel');
-    if (tank) {
-      tank.style.width = Math.max(0, Math.min(100, fuel)) + '%';
-      // Dieselbe Ampel wie am Streifen: unter 20 Prozent gelb, unter 10 rot.
-      tank.style.background = fuel < 10 ? 'var(--bad)' : fuel < 20 ? 'var(--warn)' : 'var(--good)';
+    // Dieselbe Ampel wie am Streifen: unter 20 Prozent gelb, unter 10 rot.
+    const tankB = Math.max(0, Math.min(100, fuel)) + '%';
+    const tankF = fuel < 10 ? 'var(--bad)' : fuel < 20 ? 'var(--warn)' : 'var(--good)';
+    const heil = Math.max(0, Math.min(100, 100 - damage));
+    const repB = heil + '%';
+    const repF = heil < 25 ? 'var(--bad)' : heil < 60 ? 'var(--warn)' : 'var(--good)';
+    pitBalken('pit-bar-refuel', tankB, tankF);
+    pitBalken('pit-bar-repair', repB, repF);
+    if (acc) {
+      pitBalken('pit-w-bar-tank', tankB, tankF);
+      pitBalken('pit-w-bar-rep', repB, repF);
     }
-    const rep = $('pit-bar-repair');
-    if (rep) {
-      const heil = Math.max(0, Math.min(100, 100 - damage));
-      rep.style.width = heil + '%';
-      rep.style.background = heil < 25 ? 'var(--bad)' : heil < 60 ? 'var(--warn)' : 'var(--good)';
-    }
+  }
+  function pitBalken(id, breite, farbe) {
+    const el = $(id);
+    if (!el) return;
+    el.style.width = breite;
+    el.style.background = farbe;
   }
 
   // Zurueck kommen ZWEI Teile: die Zahl und das Zustandswort. Sie stehen in getrennten
@@ -7238,8 +7348,15 @@
     schreibeWert($('ov-kopf-lage'), t(raceState === 'idle' ? 'kein Rennen'
       : raceState === 'countdown' ? 'Start'
       : raceFormationLap ? 'Einführungsrunde'
-      : raceState === 'finishing' ? 'letzte Runde' : 'läuft'));
-    schreibeWert($('ov-kopf-runde'), zeilen.length ? zeilen[0].runden + '' : '');
+      : raceState === 'finishing' ? 'letzte Runde'
+      // v1.3.78 BEHOBEN: nach der Zielflagge stand hier "laeuft" - 'finished' fehlte.
+      : raceState === 'finished' ? 'beendet' : 'läuft'));
+    // Die Kachel der Strecke traegt im ACC-Schirm eine Ueberschrift (CSS ::before aus
+    // data-titel), damit sie uebersetzt werden kann.
+    const karteEl = $('ov-karte');
+    if (karteEl && karteEl.dataset.titel !== t('Strecke')) karteEl.dataset.titel = t('Strecke');
+    // "Runde 10" statt einer nackten 10 rechts im Kopf (v1.3.78).
+    schreibeWert($('ov-kopf-runde'), zeilen.length ? t('Runde') + ' ' + zeilen[0].runden : '');
 
     ovDiagrammMalen();
     ovSektorenMalen();
@@ -7250,7 +7367,7 @@
           + '<span></span><span class="ov-name" data-i18n-skip>'
           + t('Noch keine Runde gefahren') + '</span>'
           + '<span></span><span></span><span></span><span></span><span></span>'
-          + '<span></span></div>';
+          + '<span></span><span class="ov-strafe"></span></div>';
       }
       return;
     }
@@ -7259,6 +7376,29 @@
     // NEU AUFGEBAUT statt eingesetzt: die Zeilen wechseln ihre Reihenfolge, und ein
     // Umsortieren vorhandener Knoten waere mehr Buchhaltung als ein neuer Aufbau von
     // hoechstens acht Zeilen. Element-ids gibt es hier keine, der Zaehltest bleibt heil.
+    // STRAFEN (v1.3.78, aus Entwurf A): RAMMER fuer eine offene Rammstrafe, beim eigenen
+    // Auto nach dem Ziel die Zeit fuer verpasste Pflichtstopps. Die Spalte erscheint nur,
+    // wenn eine Zeile eine Strafe hat (Klasse ov-mit-strafe) - sonst bleibt alles wie es war.
+    let mitStrafe = false;
+    const strafeVon = (z, eigen) => {
+      let txt = '';
+      if (typeof rammStrafeOffen === 'function' && z.id) {
+        const car = garage.find((c) => c.device && String(c.device.id) === z.id);
+        if (car && rammStrafeOffen(car) > 0) txt = t('RAMMER');
+      }
+      if (eigen && raceState === 'finished' && racePenaltyMs() > 0) {
+        txt += (txt ? ' ' : '') + '+' + Math.round(racePenaltyMs() / 1000) + ' s';
+      }
+      if (txt) mitStrafe = true;
+      return txt;
+    };
+    // DIE KOPFZEILE der Spalten. Sichtbar nur in der Ansicht ACC (Timing-Fenster); die
+    // anderen Ansichten erklaeren die Spalten wie bisher in der Fusszeile.
+    const kopfZeile = '<div class="ov-zeile ov-kopfz" aria-hidden="true"><span class="ov-pos"></span><span></span>'
+      + '<span class="ov-name">' + t('Auto') + '</span><span class="ov-runden">' + t('Rd') + '</span>'
+      + '<span class="ov-pit">' + t('Stopps') + '</span><span>' + t('Mix') + '</span>'
+      + '<span class="ov-zeit ov-letzte">' + t('Letzte') + '</span><span class="ov-zeit">' + t('Beste') + '</span>'
+      + '<span class="ov-luecke">' + t('Rückst.') + '</span><span class="ov-strafe">' + t('Strafe') + '</span></div>';
     const html = zeilen.map((z) => {
       const eigen = z.rolle === 'player';
       const stops = eigen ? racePitDone : 0;
@@ -7281,6 +7421,7 @@
         + '<span class="ov-zeit' + (z.istBeste ? ' ov-feldbeste' : '') + '">'
         + (z.beste === null ? '&ndash;' : formatLapTime(z.beste)) + '</span>'
         + '<span class="ov-luecke">' + z.luecke + '</span>'
+        + '<span class="ov-strafe">' + strafeVon(z, eigen) + '</span>'
         + '</div>';
     }).join('');
     // BESTELLT: "im Mehrspieler alle Spieler mit ihren Zeiten und Positionen zeigen". Die
@@ -7316,10 +7457,12 @@
           + '<span class="ov-zeit ov-letzte">' + (f.letzte === null || f.letzte === undefined ? '&ndash;' : formatLapTime(Math.round(f.letzte * 1000))) + '</span>'
           + '<span class="ov-zeit' + (best ? '' : ' ov-feldbeste') + '">' + (best ? '&ndash;' : formatLapTime(Math.round(f.beste * 1000))) + '</span>'
           + '<span class="ov-luecke"></span>'
+          + '<span class="ov-strafe"></span>'
           + '</div>';
       });
     }
-    const zusammen = html + mpHtml;
+    const zusammen = kopfZeile + html + mpHtml;
+    tab.classList.toggle('ov-mit-strafe', mitStrafe);
     // Die Mischungsfarbe steht als eigener Balken NEBEN der Zeile, weil sie eine Farbe und
     // keine Zahl ist. Sie wird hier eingesetzt, damit die Spaltenbreiten fest bleiben.
     if (tab.innerHTML !== zusammen) tab.innerHTML = zusammen;
@@ -7327,7 +7470,7 @@
     if (fuss) {
       fuss.textContent = 'Platz \u00b7 Runden \u00b7 Stopps \u00b7 Mischung'
         + (raceState === 'finished' ? '' : ' \u00b7 letzte')
-        + ' \u00b7 beste \u00b7 R\u00fcckstand \u2014 Reifen und Stopps nur f\u00fcr das'
+        + ' \u00b7 beste \u00b7 R\u00fcckstand \u00b7 Reifen und Stopps nur f\u00fcr das'
         + ' eigene Auto simuliert';
     }
   }

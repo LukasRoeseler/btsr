@@ -4091,6 +4091,17 @@
     "Jetzt schaltest du selbst, die Automatik ist aus. Schalte mit der Hochschalt-Taste einen Gang hoch.": "Now you shift yourself, the automatic is off. Shift up one gear with the upshift button.",
     "Und mit der Runterschalt-Taste wieder einen Gang runter.": "And down one gear again with the downshift button.",
     "Ab jetzt schaltet wieder die Automatik.": "From now on the automatic shifts again.",
+    "Standzeit": "Standing time",
+    "Vorwahl für den nächsten Stopp": "Preselection for the next stop",
+    "Sprit": "Fuel",
+    "Minispiel": "Minigame",
+    "Strafe": "Penalty",
+    "Dieser Stopp": "This stop",
+    "Letzter Stopp": "Last stop",
+    "beendet": "finished",
+    "Rd": "Laps",
+    "Mix": "Mix",
+    "Rückst.": "Gap",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -5526,6 +5537,20 @@
     "Jetzt schaltest du selbst, die Automatik ist aus. Schalte mit der Hochschalt-Taste einen Gang hoch.": "Ahora cambias tú, el automático está apagado. Sube una marcha con el botón para subir de marcha.",
     "Und mit der Runterschalt-Taste wieder einen Gang runter.": "Y baja una marcha otra vez con el botón para bajar de marcha.",
     "Ab jetzt schaltet wieder die Automatik.": "A partir de ahora vuelve a cambiar el automático.",
+    "Standzeit": "Tiempo parado",
+    "Vorwahl für den nächsten Stopp": "Preselección para la próxima parada",
+    "Sprit": "Combustible",
+    "Minispiel": "Minijuego",
+    "Strafe": "Penalización",
+    "Dieser Stopp": "Esta parada",
+    "Letzter Stopp": "Última parada",
+    "beendet": "terminada",
+    "Rd": "V",
+    "Mix": "Mezcla",
+    "Rückst.": "Dif.",
+    "Zustand": "Estado",
+    "Pflichtstopp": "parada obligatoria",
+    "Stopps": "paradas",
   };
 
   // ============================================================================

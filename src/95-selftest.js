@@ -12506,6 +12506,224 @@
     return { ok: !f.length, mass: teile.join(' | ') + (f.length ? ' || ' + f.join('; ') : '') };
   });
 
+  // ---- Box v1.3.78: ACC-Box nach Entwurf B ----
+  //
+  // BESTELLT: "Ja zu Box B und Ergebnis A. Baue das ein." Geprueft wird, was den Entwurf
+  // ausmacht: die Dreiteilung (Knoepfe links, Standzeit und Minispiel in der Mitte,
+  // Messwerte rechts), der Ort des Minispiels (Mitte im Boxenschirm, mittig im Hauptschirm
+  // wie bisher), die optionalen Felder NUR mit Daten, die Bilanz nach dem Stopp, die anderen
+  // Ansichten unveraendert - und kein Ueberlauf im Vollbild auf 800 x 370.
+  stAdd('Box v1.3.78: ACC-Box nach Entwurf B (Dreiteilung, Minispiel in der Mitte, Pflichtstopp/Strafe/Bilanz nur mit Daten, 800x370)', () => {
+    const sel = $('setting-cockpit');
+    const scr = $('race-pitscreen'), spiel = $('pit-spiel');
+    if (!sel || !scr || !spiel || !OMEGA_TEST.boxSchau) return { ok: false, mass: 'Boxenschirm oder Probe fehlt' };
+    for (const id of ['pit-mitte', 'pit-stand', 'pit-mitte-lage', 'pit-hinweis', 'pit-bilanz', 'pit-werte',
+                      'pit-w-tank', 'pit-w-rep', 'pit-w-reifen', 'pit-w-tyre-fl', 'pit-w-pflicht', 'pit-w-strafe']) {
+      if (!$(id)) return { ok: false, mass: id + ' fehlt' };
+    }
+    if (!(window.innerWidth > 0) || !(window.innerHeight > 0)) return { skip: true, mass: 'kein Fenster' };
+    const f = [], teile = [];
+    const merkView = sel.value;
+    const merkTab = document.querySelector('nav.tabs [data-tab].active');
+    const warFs = document.body.classList.contains('race-fs');
+    const warTurn = document.body.classList.contains('race-turn');
+    const reifen = pitSpielReifenMerk();
+    const merkKmh = physEngine.state.speedKmh, merkGas = throttleY;
+    const merkPC = playerCar;
+    const setze = (v) => { sel.value = v; sel.dispatchEvent(new Event('change', { bubbles: true })); };
+    const sichtbar = (el) => !!el && !el.hidden && getComputedStyle(el).display !== 'none'
+      && el.getBoundingClientRect().width > 0;
+    const R = (el) => el.getBoundingClientRect();
+    try {
+      setze('acc');
+      const btn = document.querySelector('[data-tab="race"]');
+      if (btn) btn.click();
+      // 1. Fahrt, keine Pflichtstopps, keine Strafe: Dreiteilung, Hinweis, keine Zusatzfelder.
+      OMEGA_TEST.boxSchau('fahrt', { pflicht: 0, erledigt: 0 });
+      if (!(R(scr).width > 0)) return { skip: true, mass: 'Boxenschirm nicht sichtbar' };
+      if (sichtbar(scr.querySelector('.pit-kopf'))) f.push('alter Kopf in ACC sichtbar');
+      const zeilen = [...scr.querySelectorAll('.pit-row')];
+      const mitte = $('pit-mitte'), werte = $('pit-werte');
+      if (!sichtbar(mitte) || !sichtbar(werte)) f.push('Mitte oder Werte nicht sichtbar');
+      if (zeilen.some((z) => R(z).right > R(mitte).left + 1)) f.push('Zeilen nicht links der Mitte');
+      if (R(werte).left < R(mitte).right - 1) f.push('Werte nicht rechts der Mitte');
+      if (zeilen.some((z) => getComputedStyle(z.querySelector('.pr-zahl')).display !== 'none')) f.push('Zahl noch in den Knoepfen');
+      if (!sichtbar($('pit-hinweis'))) f.push('Vorwahl-Hinweis fehlt');
+      if (sichtbar($('pit-w-pflicht'))) f.push('Pflichtstopp ohne Pflichtstopps');
+      if (sichtbar($('pit-w-strafe'))) f.push('Strafe ohne Strafe');
+      if (sichtbar($('pit-bilanz'))) f.push('Bilanz ohne Stopp');
+      if ($('pit-w-tank').textContent !== $('pit-zahl-refuel').textContent) f.push('Tank rechts weicht ab');
+      // 2. Mit Pflichtstopp und offener Rammstrafe: beide Felder da, mit den Werten.
+      if (!playerCar) playerCar = { device: { id: 'probe-box-st' }, role: 'player', alias: 'Probe' };
+      rammStand.set(playerCar, { rams: 1, offen: 3, verbuesst: 0 });
+      OMEGA_TEST.boxSchau('fahrt', { pflicht: 1, erledigt: 0 });
+      if (!sichtbar($('pit-w-pflicht')) || $('pit-w-pflicht-z').textContent !== '0/1') f.push('Pflichtstopp: ' + $('pit-w-pflicht-z').textContent);
+      if (!sichtbar($('pit-w-strafe')) || $('pit-w-strafe-z').textContent !== '+3 s') f.push('Strafe: ' + $('pit-w-strafe-z').textContent);
+      rammStand.delete(playerCar);
+      // 3. Arbeit mit Minispiel: es steht in der Mitte, unter der Standzeit.
+      OMEGA_TEST.boxSchau('arbeit', { pflicht: 1, erledigt: 0 });
+      const karte = spiel.querySelector('.ps-karte');
+      if (scr.dataset.lage !== 'arbeit' || spiel.hidden) f.push('kein Minispiel im Stopp');
+      else {
+        const k = R(karte), m = R(mitte), st = R($('pit-stand-box'));
+        const dx = Math.abs((k.left + k.right) / 2 - (m.left + m.right) / 2);
+        if (dx > m.width * 0.08) f.push('Minispiel ' + Math.round(dx) + ' px neben der Mitte');
+        if (k.left < m.left - 1 || k.right > m.right + 1) f.push('Minispiel breiter als die Mitte');
+        if (k.top < st.bottom) f.push('Minispiel deckt die Standzeit');
+        if (k.bottom > m.bottom + 1) f.push('Minispiel unter der Kachel');
+        teile.push('Minispiel ' + Math.round(k.width) + ' px in Mitte ' + Math.round(m.width) + ' px');
+      }
+      // ... und im Hauptschirm wie bisher mittig ueber dem Cockpit.
+      OMEGA_TEST.schirmZu('main');
+      if (!spiel.hidden) {
+        const k = R(karte), d = R($('race-dash'));
+        const dx = Math.abs((k.left + k.right) / 2 - (d.left + d.right) / 2);
+        if (dx > 4) f.push('Hauptschirm: Minispiel ' + Math.round(dx) + ' px aus der Mitte');
+      }
+      // 4. Fertig: die Bilanz dieses Stopps, mit dem Ergebnis des Minispiels.
+      OMEGA_TEST.boxSchau('fertig', { pflicht: 1, erledigt: 0 });
+      if (scr.dataset.lage !== 'fertig' || !sichtbar($('pit-bilanz'))) f.push('keine Bilanz im fertigen Stopp');
+      if (!sichtbar($('pit-bil-spiel')) || $('pit-bil-spiel-z').textContent !== '3/' + PIT_SPIEL_ANZAHL) f.push('Minispiel-Bilanz: ' + $('pit-bil-spiel-z').textContent);
+      if (!/^\d+\.\d$/.test($('pit-stand').textContent)) f.push('Standzeit "' + $('pit-stand').textContent + '"');
+      // 5. Nach dem Stopp: "Letzter Stopp" bleibt stehen.
+      OMEGA_TEST.boxSchau('raus', { pflicht: 1, erledigt: 0 });
+      if (!sichtbar($('pit-bilanz')) || $('pit-bil-titel').textContent.indexOf(t('Letzter Stopp')) !== 0) f.push('keine Bilanz nach dem Stopp');
+      if (!sichtbar($('pit-bil-spiel'))) f.push('Minispiel fehlt in der Bilanz nach dem Stopp');
+      // 6. Vollbild 800 x 370: nichts ragt aus seiner Kachel, kein Wert abgeschnitten.
+      document.body.classList.add('race-fs');
+      document.body.classList.remove('race-turn');
+      if (OMEGA_TEST.cockpitPassung) OMEGA_TEST.cockpitPassung(370, 800);
+      for (const art of ['fahrt', 'arbeit', 'fertig']) {
+        OMEGA_TEST.boxSchau(art, { pflicht: 1, erledigt: 0 });
+        const s = R(scr), ueber = [];
+        scr.querySelectorAll('.pit-row, .pit-mitte, .pit-werte').forEach((k) => {
+          const kr = R(k);
+          if (kr.right > s.right + 1 || kr.bottom > s.bottom + 1) ueber.push(k.id || k.className);
+          k.querySelectorAll('.pr-name, .pr-wert, .pm-stand, .pm-lage, .pm-bil, .pw-zeile > b, .pw-lbl').forEach((x) => {
+            if (!sichtbar(x)) return;
+            const xr = R(x);
+            if (xr.right > kr.right + 1 || xr.bottom > kr.bottom + 1 || xr.left < kr.left - 1) ueber.push((x.id || x.className) + ' ragt raus');
+            else if (x.scrollWidth > x.clientWidth + 1) ueber.push((x.id || x.className) + ' abgeschnitten');
+          });
+        });
+        if (ueber.length) f.push('800x370 ' + art + ': ' + ueber.slice(0, 4).join(', '));
+      }
+      teile.push('800x370 ohne Ueberlauf geprueft');
+      // 7. Andere Ansicht: der alte Boxenschirm, ohne die ACC-Bloecke.
+      setze('omega');
+      if (sichtbar(mitte) || sichtbar(werte)) f.push('ACC-Bloecke in Omega sichtbar');
+      if (!sichtbar(scr.querySelector('.pit-kopf'))) f.push('Kopf in Omega verschwunden');
+    } finally {
+      rammStand.delete(playerCar);
+      playerCar = merkPC;
+      document.body.classList.toggle('race-fs', warFs);
+      document.body.classList.toggle('race-turn', warTurn);
+      OMEGA_TEST.boxSchauZurueck();
+      physEngine.state.speedKmh = merkKmh; throttleY = merkGas;
+      pitSpielReifenZurueck(reifen);
+      updateDamageFuelUI(); updatePitUI();
+      setze(merkView);
+      if (OMEGA_TEST.cockpitPassung) OMEGA_TEST.cockpitPassung();
+      if (merkTab) merkTab.click();
+    }
+    return { ok: !f.length, mass: teile.join(' | ') + (f.length ? ' || ' + f.join('; ') : '') };
+  });
+
+  // ---- Rennen v1.3.78: Ergebnis nach Entwurf A ----
+  //
+  // Nach dem Ziel: "BEENDET" im Kopf (vorher stand dort "laeuft"), das Podest ueber der
+  // Rangliste mit der Strecke daneben, die Spaltenkoepfe, die Strafen-Spalte nur mit einer
+  // Strafe (RAMMER, verpasster Pflichtstopp). Waehrend des Rennens kein Podest, die Strecke
+  // unter dem Diagramm. Und im Vollbild auf 800 x 370 kein Ueberlauf.
+  stAdd('Rennen v1.3.78: Ergebnis nach Entwurf A (BEENDET, Podest + Strecke, Strafen nur mit Daten, live ohne Podest, 800x370)', () => {
+    const sel = $('setting-cockpit');
+    const scr = $('race-ovscreen');
+    if (!sel || !scr || !OMEGA_TEST.rennenSchau) return { ok: false, mass: 'Rennen-Schirm oder Probe fehlt' };
+    if (!(window.innerWidth > 0) || !(window.innerHeight > 0)) return { skip: true, mass: 'kein Fenster' };
+    const f = [], teile = [];
+    const merkView = sel.value;
+    const merkTab = document.querySelector('nav.tabs [data-tab].active');
+    const warFs = document.body.classList.contains('race-fs');
+    const warTurn = document.body.classList.contains('race-turn');
+    const merkReq = racePitRequired, merkDone = racePitDone;
+    const setze = (v) => { sel.value = v; sel.dispatchEvent(new Event('change', { bubbles: true })); };
+    const sichtbar = (el) => !!el && !el.hidden && getComputedStyle(el).display !== 'none'
+      && el.getBoundingClientRect().width > 0;
+    const R = (el) => el.getBoundingClientRect();
+    let probe = null;
+    try {
+      setze('acc');
+      const btn = document.querySelector('[data-tab="race"]');
+      if (btn) btn.click();
+      racePitRequired = 0; racePitDone = 0;
+      // 1. Waehrend des Rennens.
+      const live = OMEGA_TEST.rennenSchau('live', 'SG2R3G2R3');
+      if (!(R(scr).width > 0)) return { skip: true, mass: 'Rennen-Schirm nicht sichtbar' };
+      if (live.lage !== t('läuft')) f.push('live: Kopf "' + live.lage + '"');
+      if (live.podest) f.push('live: Podest sichtbar');
+      if (!sichtbar(scr.querySelector('.ov-kopfz'))) f.push('Spaltenkopf fehlt');
+      if (sichtbar(scr.querySelector('.ov-zeile .ov-strafe'))) f.push('Strafen-Spalte ohne Strafe');
+      const dia = $('ov-diagramm'), karte = $('ov-karte'), tab = $('ov-tab');
+      if (sichtbar(karte) && sichtbar(dia) && R(karte).top < R(dia).bottom - 1) f.push('live: Strecke nicht unter dem Diagramm');
+      if (sichtbar(dia) && R(dia).left < R(tab).right - 1) f.push('live: Diagramm nicht rechts der Rangliste');
+      // 2. Nach dem Ziel, ohne Strafen.
+      const ziel = OMEGA_TEST.rennenSchau('ziel', 'SG2R3G2R3');
+      if (ziel.lage !== t('beendet')) f.push('Ziel: Kopf "' + ziel.lage + '" statt beendet');
+      if (!ziel.podest) f.push('Ziel: kein Podest');
+      const podest = $('ov-podest');
+      if (sichtbar(podest) && R(podest).bottom > R(tab).top + 1) f.push('Podest nicht ueber der Rangliste');
+      if (sichtbar(karte) && sichtbar(podest) && (R(karte).left < R(podest).right - 1 || R(karte).bottom > R(tab).top + 1)) f.push('Strecke nicht neben dem Podest');
+      const p1 = podest.querySelector('.platz-1'), p2 = podest.querySelector('.platz-2');
+      if (p1 && p2 && !(R(p1).height > R(p2).height)) f.push('Platz 1 nicht die hoechste Stufe');
+      if (!sichtbar($('ov-nochmal'))) f.push('Nochmal fehlt');
+      if (sichtbar(scr.querySelector('.ov-zeile .ov-strafe'))) f.push('Ziel: Strafen-Spalte ohne Strafe');
+      // 3. Mit Strafen: RAMMER fuer ein Scheinauto, verpasster Pflichtstopp fuer das eigene.
+      probe = garage.find((c) => c.probe);
+      if (probe) rammStand.set(probe, { rams: 1, offen: 5, verbuesst: 0 });
+      racePitRequired = 1; racePitDone = 0;
+      OMEGA_TEST.rennenSchau('ziel');
+      const strafen = [...scr.querySelectorAll('.ov-zeile:not(.ov-kopfz) .ov-strafe')].map((x) => x.textContent).filter(Boolean);
+      if (!tab.classList.contains('ov-mit-strafe') || !sichtbar(scr.querySelector('.ov-kopfz .ov-strafe'))) f.push('Strafen-Spalte fehlt trotz Strafe');
+      if (!strafen.some((x) => x.indexOf(t('RAMMER')) >= 0)) f.push('kein RAMMER');
+      const soll = '+' + Math.round(racePenaltyMs() / 1000) + ' s';
+      if (!strafen.some((x) => x.indexOf(soll) >= 0)) f.push('verpasster Pflichtstopp fehlt (' + soll + '): ' + strafen.join('/'));
+      teile.push('Strafen: ' + strafen.join(', '));
+      // 4. Vollbild 800 x 370: nichts ragt aus seiner Kachel.
+      document.body.classList.add('race-fs');
+      document.body.classList.remove('race-turn');
+      if (OMEGA_TEST.cockpitPassung) OMEGA_TEST.cockpitPassung(370, 800);
+      for (const art of ['live', 'ziel']) {
+        OMEGA_TEST.rennenSchau(art, 'SG2R3G2R3');
+        const s = R(scr), ueber = [];
+        scr.querySelectorAll(':scope > *').forEach((k) => {
+          if (!sichtbar(k)) return;
+          const kr = R(k);
+          if (kr.right > s.right + 1 || kr.bottom > s.bottom + 1) ueber.push((k.id || k.className) + ' ragt aus dem Schirm');
+          k.querySelectorAll('.platz, .ov-zeit, .ov-luecke, .ov-runden, .ov-strafe, .zeit, .block b').forEach((x) => {
+            if (!sichtbar(x)) return;
+            const xr = R(x);
+            if (xr.right > kr.right + 1 || xr.bottom > kr.bottom + 1) ueber.push((x.className || x.tagName) + ' ragt raus');
+          });
+        });
+        if (ueber.length) f.push('800x370 ' + art + ': ' + ueber.slice(0, 4).join(', '));
+      }
+      teile.push('800x370 ohne Ueberlauf geprueft');
+      // 5. Andere Ansicht: kein Spaltenkopf.
+      setze('omega');
+      if (sichtbar(scr.querySelector('.ov-kopfz'))) f.push('Spaltenkopf in Omega sichtbar');
+    } finally {
+      if (probe) rammStand.delete(probe);
+      racePitRequired = merkReq; racePitDone = merkDone;
+      document.body.classList.toggle('race-fs', warFs);
+      document.body.classList.toggle('race-turn', warTurn);
+      OMEGA_TEST.rennenSchau('aus');
+      setze(merkView);
+      if (OMEGA_TEST.cockpitPassung) OMEGA_TEST.cockpitPassung();
+      if (merkTab) merkTab.click();
+    }
+    return { ok: !f.length, mass: teile.join(' | ') + (f.length ? ' || ' + f.join('; ') : '') };
+  });
+
   stAdd('Boxen-Minigame: Quadrat und Kreis schalten waehrenddessen nicht, Kreuz bricht ab', () => {
     const merk = { modus: pitModus, an: pitLaneEnabled, trig: pitTrigger,
                    kmh: physEngine.state.speedKmh, gang: physEngine.state.currentGear,
