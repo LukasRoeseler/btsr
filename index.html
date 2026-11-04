@@ -96015,7 +96015,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // selbst. Echt sind Fahrgefuehl (applyPreset), Motorklang (#sound-profile), Bahn/Boden
   // (#setting-ontrack), Licht, Wetter und Reifen, damit das Zurueckstellen wirklich geprueft wird.
   // v1.3.31: Rollen-Hinweis, Wahl Bahn/Boden, Licht aus/ein, Regen, Regenreifen, zweiter Stopp, kein WIP.
-  stAdd('Tutorial v1.3.31: Rolle, Bahn/Boden, Tasten, Licht, Arcade→Pacejka, zwei Stopps mit Regenreifen, Motorklang, ≤ 240 s, Menü', async () => {
+  // v1.3.66: nur EIN Stopp (erst Regen, Ruhe bis die Regen-Ansage der App durch ist), Rueckwaertsgang,
+  // Handschaltung. Gang, Rueckwaertsfahrt und "Ansage laeuft" sind Attrappen, die Automatik ist echt.
+  stAdd('Tutorial v1.3.66: Rolle, Bahn/Boden, Tasten, Licht, Rückwärts, Regen erst nach der Ansage, ein Stopp, Handschaltung, ≤ 240 s', async () => {
     const f = [];
     const dauer = {};
     try {
@@ -96042,6 +96044,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const vorher = { regler: JSON.stringify(presetRead()), motor: sel.value, zuletzt: presetZuletzt, box: tutBoxMerken(),
       bahn: bahnCb.checked, licht: headlightsOn, wetter: weather, tyres, wunsch: mischungWunsch };
     let uhr = 0, tab = 'fahren', box = 'off', autoDa = false, verbunden = false, padDa = false, menue = 0, angefordert = 0;
+    let gang = 1, rueck = false, ansage = false, vorwaertsGesetzt = 0;
+    const autoCb = $('setting-autoshift');
     const ein = { gas: 0, bremse: 0, lenk: 0 };
     const gesprochen = [];
     const attrappe = {
@@ -96053,6 +96057,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       boxAnfordern: () => { angefordert++; if (box === 'off') box = 'limited'; },
       boxAbbrechen: () => { if (box === 'limited') box = 'off'; },
       sprechen: (k) => { gesprochen.push(k); return dauer[k] || 2; }, verstummen: () => {},
+      gang: () => gang, rueckFaehrt: () => rueck, ansageBeschaeftigt: () => ansage,
+      vorwaertsSetzen: () => { vorwaertsGesetzt++; if (gang === -1) gang = 1; },
     };
     const takt = (ms) => { for (let x = 0; x < ms && tut.an; x += TUT_TAKT_MS) { uhr += TUT_TAKT_MS; tutTick(); } };
     const bis = (id, ms) => {
@@ -96127,8 +96133,33 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (uhr - ab < 19900) f.push('Arcade nur ' + ((uhr - ab) / 1000).toFixed(1) + ' s');
       if (presetZuletzt !== 'propacejka') f.push('kein Wechsel auf Pacejka (' + presetZuletzt + ')');
       if (!bis('beschleunigung', 10000) || !bis('untersteuern', 20000)) f.push('Beschleunigung/Untersteuern fehlen');
-      // 6) Erster Boxenstopp: tippen, anhalten, Minispiel, fertig.
-      if (!bis('box', 40000)) f.push('kein Boxenschritt');
+      // 6) Rueckwaerts: R einlegen allein genuegt nicht, das Auto muss rueckwaerts fahren; dann vorwaerts.
+      if (!bis('rueckwaerts', 20000)) f.push('kein Rückwärts-Schritt');
+      if ($('tut-taste').textContent !== tutTasteName('downshift')) f.push('Rückwärts-Taste nicht angezeigt');
+      takt(((dauer.rueckwaerts || 2) + 5) * 1000);
+      if (tutSchrittId() !== 'rueckwaerts') f.push('wartet nicht aufs Rückwärtsfahren');
+      gang = -1; takt(500);
+      if (tutSchrittId() !== 'rueckwaerts') f.push('R eingelegt gilt schon als gefahren');
+      rueck = true;
+      if (!bis('vorwaerts', 5000)) f.push('Rückwärtsfahren führt nicht weiter');
+      rueck = false; takt(2000);
+      if (tutSchrittId() !== 'vorwaerts') f.push('wartet nicht aufs Vorwärts');
+      gang = 1;
+      // 7) Erst Regen, dann Stille, solange die Regen-Ansage der App laeuft, dann der eigene Clip.
+      if (!bis('regen', 5000)) f.push('kein Regen-Schritt');
+      if (weather !== 'rain') f.push('Wetter nicht auf Regen');
+      const regenClips = () => gesprochen.filter((k) => k === 'regen').length;
+      ansage = true; takt(2000);
+      if (regenClips()) f.push('Regen-Clip überlagert die Regen-Ansage');
+      ansage = false; takt(300);
+      if (regenClips() !== 1) f.push('Regen-Clip kommt nach der Ansage nicht');
+      if (tut.protokoll.includes('box')) f.push('Boxenstopp vor dem Regen');
+      if (!bis('reifen', 15000)) f.push('kein Reifen-Schritt');
+      takt(((dauer.reifen || 2) + 3) * 1000);
+      if (tutSchrittId() !== 'reifen') f.push('wartet nicht auf die Reifenwahl');
+      for (let k = 0; k < 6 && pitMischungWahl() !== 'regen'; k++) pitMischungWeiter();
+      // 8) Der eine Stopp: tippen, anhalten, Minispiel, fertig.
+      if (!bis('box', 20000)) f.push('kein Boxenschritt nach den Regenreifen');
       takt(1000);
       box = 'limited';
       if (!bis('box_steht', 10000)) f.push('Tippen führt nicht weiter');
@@ -96138,21 +96169,19 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (tutSchrittId() !== 'box_spiel') f.push('wartet nicht aufs Minispiel');
       box = 'off';
       if (!bis('box_fertig', 3000)) f.push('kein Box-fertig');
-      // 7) Regen, Regenreifen waehlen, zweiter Stopp.
-      if (!bis('regen', 10000)) f.push('kein Regen-Schritt');
-      if (weather !== 'rain') f.push('Wetter nicht auf Regen');
-      if (!bis('reifen', 15000)) f.push('kein Reifen-Schritt');
-      takt(((dauer.reifen || 2) + 3) * 1000);
-      if (tutSchrittId() !== 'reifen') f.push('wartet nicht auf die Reifenwahl');
-      for (let k = 0; k < 6 && pitMischungWahl() !== 'regen'; k++) pitMischungWeiter();
-      if (!bis('box2', 5000)) f.push('Regenreifen führen nicht zum zweiten Stopp');
-      box = 'limited';
-      if (!bis('box2_steht', 10000)) f.push('zweiter Stopp: Tippen führt nicht weiter');
-      box = 'servicing';
-      if (!bis('box2_spiel', 3000)) f.push('zweiter Stopp ohne Minispiel');
-      box = 'off';
-      if (!bis('box2_fertig', 3000)) f.push('zweiter Stopp ohne Abschluss');
-      // 8) Motorklang, Abschluss, zurueck ins Menue.
+      // 9) Handschaltung: Automatik aus, einmal hoch, einmal runter, Automatik wieder an.
+      if (!bis('schalten', 10000)) f.push('kein Schalt-Schritt');
+      if (autoCb.checked) f.push('Automatik nicht aus');
+      takt(((dauer.schalten || 2) + 3) * 1000);
+      if (tutSchrittId() !== 'schalten') f.push('wartet nicht aufs Hochschalten');
+      gang = 2;
+      if (!bis('runter', 3000)) f.push('Hochschalten führt nicht weiter');
+      gang = 3; takt(((dauer.runter || 2) + 2) * 1000);
+      if (tutSchrittId() !== 'runter') f.push('Hochschalten gilt als Runterschalten');
+      gang = 2;
+      if (!bis('automatik', 3000)) f.push('Runterschalten führt nicht weiter');
+      if (!autoCb.checked) f.push('Automatik nicht wieder an');
+      // 9b) Motorklang, Abschluss, zurueck ins Menue.
       if (!bis('motor', 10000)) f.push('kein Motorschritt');
       if (sel.value === vorher.motor || !/^mustang/.test(sel.value)) f.push('Motorklang nicht gewechselt (' + sel.value + ')');
       if (!bis('abschluss', 30000)) f.push('kein Abschluss');
@@ -96162,29 +96191,36 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!$('tut-ui').hidden) f.push('Karte bleibt stehen');
       if (tut.protokoll.join(' ') !== weg('boden').join(' ')) f.push('Reihenfolge Boden: ' + tut.protokoll.join(' '));
       zurueck('Ende');
-      // 9) Niemand drueckt, Bahn eingestellt: Wahl bleibt Bahn, Zeitlimits, beide Stopps selbst
-      // ausgeloest, Regenreifen selbst gewaehlt, hoechstens TUT_MAX_S.
+      // 10) Niemand drueckt, Bahn eingestellt, eine Ansage laeuft ohne Ende: Wahl bleibt Bahn,
+      // Zeitlimits, R eingelegt ohne Fahrt (Rueckfall vorwaerts), Regen-Clip nach hoechstens
+      // TUT_RUHE_MAX_S, der Stopp selbst ausgeloest, Regenreifen selbst gewaehlt, hoechstens TUT_MAX_S.
       tutBahnSetzen(true);
-      box = 'off'; menue = 0; angefordert = 0;
+      box = 'off'; menue = 0; angefordert = 0; gang = 1; rueck = false; ansage = true; vorwaertsGesetzt = 0;
+      gesprochen.length = 0;
       tutorialStarten({ umgebung: attrappe, ohneTimer: true });
       const start = uhr;
-      let regenGewaehlt = false;
+      let regenGewaehlt = false, rEingelegt = false;
       for (let x = 0; x < (TUT_MAX_S + 30) * 1000 && tut.an; x += TUT_TAKT_MS) {
         uhr += TUT_TAKT_MS; tutTick();
-        if (tutSchrittId() === 'box2' && pitMischungWahl() === 'regen') regenGewaehlt = true;
+        if (tutSchrittId() === 'box' && pitMischungWahl() === 'regen') regenGewaehlt = true;
+        if (tutSchrittId() === 'rueckwaerts' && !rEingelegt) { rEingelegt = true; gang = -1; }
       }
+      ansage = false;
+      if (!gesprochen.includes('regen')) f.push('Regen-Clip ohne Ende der Ansage nie gesprochen');
+      if (vorwaertsGesetzt !== 1 || gang !== 1) f.push('nach dem Zeitlimit nicht vorwärts eingelegt');
       const lauf = (uhr - start) / 1000;
       if (tut.an) f.push('ohne Eingaben nach ' + lauf.toFixed(0) + ' s nicht fertig');
       else if (lauf > TUT_MAX_S) f.push('ohne Eingaben ' + lauf.toFixed(1) + ' s');
       if (tut.modus !== 'bahn') f.push('ohne Wahl nicht Bahn (' + tut.modus + ')');
       if (!tut.protokoll.includes('arcade') || tut.protokoll.includes('arcade_boden') || !tut.protokoll.includes('modus_bahn')) f.push('Bahn-Ansagen fehlen');
-      if (angefordert !== 2) f.push('Boxenstopps selbst ausgelöst: ' + angefordert);
+      if (angefordert !== 1) f.push('Boxenstopps selbst ausgelöst: ' + angefordert);
       if (!regenGewaehlt) f.push('Regenreifen nicht selbst gewählt');
       if (box !== 'off') f.push('Boxenbegrenzer bleibt an');
-      if (tut.protokoll.includes('box_spiel') || tut.protokoll.includes('box2_fertig')) f.push('Minispiel ohne Stopp');
+      if (tut.protokoll.includes('box_spiel') || tut.protokoll.includes('box_fertig')) f.push('Minispiel ohne Stopp');
+      if (TUT_SCHRITTE.filter((x) => x.warte === 'box_an').length !== 1) f.push('mehr als ein Boxenstopp');
       tutBahnSetzen(vorher.bahn);
       zurueck('Zeitlimit');
-      // 10) Wahl am Pad: Steuerkreuz rechts, Kreuz; das Pad bleibt gesperrt, bis Kreuz los ist.
+      // 11) Wahl am Pad: Steuerkreuz rechts, Kreuz; das Pad bleibt gesperrt, bis Kreuz los ist.
       tutorialStarten({ umgebung: attrappe, ohneTimer: true });
       bis('modus', 15000);
       const pad = (gedr) => ({ mapping: 'standard', axes: [0, 0, 0, 0],
@@ -96197,19 +96233,20 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!konsoleTourPad(pad([0]))) f.push('gehaltenes Kreuz geht nach der Wahl ans Cockpit');
       konsoleTourPad(pad([]));
       if (konsoleTourPad(pad([]))) f.push('Pad bleibt nach der Wahl gesperrt');
-      // 11) Abbruch: wer das Cockpit verlaesst, beendet es; Kreis/Esc im Warten (konsoleZurueck).
+      // 12) Abbruch: wer das Cockpit verlaesst, beendet es; Kreis/Esc im Warten (konsoleZurueck).
       bis('gas', 15000);
       tab = 'fahren';
       takt(300);
       if (tut.an || tut.ende !== 'Cockpit verlassen') f.push('Verlassen bricht nicht ab');
       zurueck('Abbruch');
       if (!/tutAbbrechen/.test(String(konsoleZurueck))) f.push('Kreis/Esc bricht nicht ab');
-      // 12) Projektregeln: kein WIP mehr, EN und ES, keine Gedankenstriche.
+      // 13) Projektregeln: kein WIP mehr, EN und ES, keine Gedankenstriche.
       if (document.querySelector('#k-tutorial-start .wip-tag, #tut-ui .wip-tag, .tut-knopf[data-tour="start"] .wip-tag')) f.push('WIP noch da');
       const texte = [...Object.values(TUT_SPRUCH), ...TUT_SCHRITTE.map((s) => s.titel), ...TUT_SCHRITTE.map((s) => s.zeige).filter(Boolean),
         'Bereit machen', 'Auto: unter FAHREN in der Kachel AUTOS verbinden.', 'Gamepad: einschalten und eine Taste drücken.',
         'Auto: verbunden, aber nicht Spieler 1. Unter FAHREN, AUTOS, GARAGE die Rolle auf Spieler 1 stellen.',
-        'Abbrechen: Kreis oder Esc', 'Beenden: Options oder Esc', 'oder', 'Beenden', 'Mit Bahn', 'Auf dem Boden', 'Licht-Schalter im Cockpit'];
+        'Abbrechen: Kreis oder Esc', 'Beenden: Options oder Esc', 'oder', 'Beenden', 'Mit Bahn', 'Auf dem Boden', 'Licht-Schalter im Cockpit',
+        'Oder im Stand Gas und Bremse zugleich halten.'];
       const fehltUeb = texte.filter((k) => !I18N_EN[k] || !I18N_ES[k]);
       if (fehltUeb.length) f.push('Übersetzung fehlt: ' + fehltUeb.slice(0, 3).join(' | '));
       if ((texte.join(' ') + $('tut-ui').textContent).indexOf(String.fromCharCode(0x2014)) >= 0) f.push('Gedankenstrich');
