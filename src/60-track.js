@@ -4256,7 +4256,9 @@
   function trackIstGeschlossen() {
     if (currentTrackTiles.length < 3) return false;
     if (typeof trackCenterline !== 'function' || typeof trackSchluss !== 'function') return false;
-    try { return trackSchluss(trackCenterline(currentTrackTiles)); } catch (e) { return false; }
+    // v1.3.87: .closed lesen. Hier stand das ganze Ergebnis von trackSchluss() - ein Objekt, also
+    // IMMER wahr: der "Strecke fertig"-Klang beim Schliessen spielte darum nie (warZu war stets wahr).
+    try { return !!trackSchluss(trackCenterline(currentTrackTiles)).closed; } catch (e) { return false; }
   }
   // Befriedigendes Klack (ein bisschen wie bei Legovideospielen): drei schnell ansteigende
   // Toene, der letzte laenger und heller.
@@ -5771,11 +5773,8 @@
     }
     return true;
   }
-  // trackIstGeschlossen() gibt das Ergebnis von trackSchluss() zurueck - ein Objekt, also
-  // immer wahr. Hier wird .closed gelesen.
-  function sekGeschlossen() {
-    try { return trackSchluss(trackCenterline(currentTrackTiles)).closed; } catch (e) { return false; }
-  }
+  // Seit v1.3.87 liefert trackIstGeschlossen() selbst .closed; dieselbe Pruefung.
+  function sekGeschlossen() { return trackIstGeschlossen(); }
   function sekGeaendert() {
     // Neue Grenzen heissen neue Spalten: die bisherigen Sektorzeiten passen nicht mehr.
     if (typeof sektorenNeuAngesetzt === 'function') sektorenNeuAngesetzt();

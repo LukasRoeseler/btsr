@@ -23744,6 +23744,32 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Hauptschirm an, ' + (COCKPIT_SCREENS.length - 1) + ' andere Schirme aus' };
   });
 
+  // v1.3.87: trackIstGeschlossen() gab ein Objekt zurueck (immer wahr), der Fertig-Klang spielte nie.
+  stAdd('Editor v1.3.87: Strecke geschlossen erkannt, Fertig-Klang beim Schliessen', () => {
+    if (typeof trackIstGeschlossen !== 'function' || typeof codeToTrack !== 'function') return { skip: true, mass: 'kein Editor' };
+    const merk = currentTrackTiles, merkKlang = trackFertigKlang, f = [];
+    let klang = 0;
+    try {
+      currentTrackTiles = [{ type: TILE_TYPE.START }, { type: TILE_TYPE.STRAIGHT }];
+      if (trackIstGeschlossen() !== false) f.push('offene Strecke gilt als geschlossen');
+      const oval = codeToTrack(CH_ALLE[0].code).tiles;
+      currentTrackTiles = oval.map((t) => Object.assign({}, t));
+      if (trackIstGeschlossen() !== true) f.push('Oval gilt als offen');
+      // Das letzte Teil fehlt noch, addTile schliesst die Runde: genau ein Fertig-Klang.
+      trackFertigKlang = () => { klang++; };
+      currentTrackTiles = oval.slice(0, -1).map((t) => Object.assign({}, t));
+      trackSel = currentTrackTiles.length - 1;
+      if (trackIstGeschlossen()) f.push('Oval ohne letztes Teil gilt als geschlossen');
+      addTile(oval[oval.length - 1].type);
+      if (!trackIstGeschlossen()) f.push('nach dem letzten Teil nicht geschlossen');
+      if (klang !== 1) f.push(klang + ' Fertig-Klaenge statt 1');
+    } finally {
+      trackFertigKlang = merkKlang; currentTrackTiles = merk;
+      if (typeof refreshTrackPreview === 'function') refreshTrackPreview();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'offen/geschlossen richtig, ein Klang beim Schliessen' };
+  });
+
   // ---- v1.0: Meisterschaft (73-meisterschaft.js) ----
   stAdd('Meisterschaft: Wertung, Punkte, schnellste Runde, Gleichstand', () => {
     const f = [];
