@@ -8050,6 +8050,27 @@
     // sectorHistory gefuellt, renderRaceResults() schreibt die Tabelle ins Dokument. Und
     // wie dort wird der vorige Inhalt zurueckgelegt und nicht neu gezeichnet - ein
     // Messaufruf darf nichts hinterlassen.
+    // v1.3.81, fuer eine Sichtpruefung (laesst die Daten STEHEN): automatische Sektoren auf
+    // einer Strecke aus Code, fuenf Runden mit Sektorzeiten nach Laenge, Runde 3 mit Abflug in
+    // Sektor 2 (ungueltig ab dort). Schreibt Sektorentabelle, Zeitentabelle und Rennen-Schirm.
+    autoSektorSchau(code) {
+      if (code) this.streckeSetzen(code);
+      trackMode = 'on'; sectorCount = 1;
+      const p = autoSektorPlanAktuell();
+      if (!p) return null;
+      raceLapTimes.length = 0; sectorHistory.length = 0;
+      for (let k = 0; k < 5; k++) {
+        const sek = p.laengen.map((l, i) => Math.round(l / p.gesamt * 11500 + ((k * 7 + i * 13) % 9) * 37));
+        const ms = sek.reduce((a, b) => a + b, 0) + (k === 2 ? 2600 : 0);
+        if (k === 2) for (let i = 1; i < sek.length; i++) sek[i] = null;
+        sectorHistory.push(sek);
+        raceLapTimes.push({ lap: k + 1, ms });
+      }
+      renderSectors();
+      renderRaceResults();
+      ovScreenRender();
+      return { n: p.n, kacheln: p.kacheln, teile: p.teile };
+    },
     sektorTabelleProbe(o) {
       const opt = o || {};
       const merkGarage = garage.slice();

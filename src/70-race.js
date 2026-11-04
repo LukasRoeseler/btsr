@@ -3497,21 +3497,26 @@
   // Anzeige "–"); ohne solche Meldung ist der Ort unbekannt und die ganze Runde ohne
   // Sektorzeiten. Die Runde selbst zaehlt wie bisher, und an der Linie wird neu angesetzt.
   // Wie Kontakt-Sektoren: still, ohne Ansage.
-  let autoSekCache = { tiles: null, sig: NaN, an: null, wahl: null, tm: null, plan: null };
+  // Der Plan der GELADENEN Strecke (currentTrackTiles), zwischengespeichert. Die Kennung
+  // liest Typ, Sektoranfang (sg) und Modus (sm) jedes Teils - die Sektoren stehen in den
+  // Teilen (60-track.js, trackSektorModus). Gerufen an der Rundenlinie und beim Zeichnen,
+  // nie je Meldung.
+  let autoSekCache = { tiles: null, sig: NaN, tm: null, plan: null };
   function autoSektorPlanAktuell() {
     const tiles = (typeof currentTrackTiles !== 'undefined' && currentTrackTiles) || [];
     let sig = tiles.length;
-    for (let i = 0; i < tiles.length; i++) sig = (sig * 31 + (tiles[i].type | 0)) | 0;
+    for (let i = 0; i < tiles.length; i++) sig = (sig * 31 + (tiles[i].type | 0) * 2 + (tiles[i].sg ? 1 : 0)) | 0;
+    const m = trackSektorModus(tiles);
+    sig = (sig * 31 + (m === 'auto' ? 1 : m === 'aus' ? 2 : 3)) | 0;
     const c = autoSekCache;
-    if (c.tiles === tiles && c.sig === sig && c.an === autoSektorAn && c.wahl === autoSektorWahl
-        && c.tm === trackMode) return c.plan;
+    if (c.tiles === tiles && c.sig === sig && c.tm === trackMode) return c.plan;
     let plan = null;
-    if (autoSektorAn && trackMode === 'on' && tiles.length >= 4 && trackSektorAnzahl(tiles) <= 1) {
+    if (m !== 'aus' && trackMode === 'on' && tiles.length >= 4 && trackSektorAnzahl(tiles) <= 1) {
       let zu = false;
       try { zu = trackSchluss(trackCenterline(tiles)).closed; } catch (e) { zu = false; }
       if (zu) plan = autoSektorPlanFuer(tiles, true);
     }
-    autoSekCache = { tiles, sig, an: autoSektorAn, wahl: autoSektorWahl, tm: trackMode, plan };
+    autoSekCache = { tiles, sig, tm: trackMode, plan };
     return plan;
   }
   // Die Zahl der Sektoren, die ANGEZEIGT wird: Kontakt-Sektoren (Start/Ziel-Kacheln oder der
@@ -3522,6 +3527,13 @@
     if (z > 1) return z;
     const p = autoSektorPlanAktuell();
     return p ? p.n : 1;
+  }
+  // Die Sektoren der Strecke wurden im Editor neu festgelegt (60-track.js): die bisherigen
+  // Sektorzeiten gehoeren zu anderen Grenzen.
+  function sektorenNeuAngesetzt() {
+    sectorHistory = [];
+    autoSekSync(autoSekSp, null, 0);
+    renderSectors();
   }
   function autoSektorenAktiv() { return sektorZiel() <= 1 && !!autoSektorPlanAktuell(); }
   // Sektorzeit als Text. Automatische Sektoren mit EINER Nachkommastelle weniger als die
@@ -5196,36 +5208,6 @@
           : sectorCount + ' Ueberfahrten je Runde'), 'info');
     }
   });
-
-  // ---- AUTOMATISCHE SEKTOREN: die zwei Optionen (v1.3.81, WIP) ----------------------
-  // Gespeichert wie jede Renneinstellung: beide stehen in einer .opt-row im Reiter
-  // Steuerung, also nimmt die Selbstsicherung (98b-sicherung.js) sie mit.
-  function autoSektorOptionenLesen() {
-    const an = $('auto-sektoren'), zahl = $('auto-sektoren-zahl');
-    if (an) autoSektorAn = !!an.checked;
-    if (zahl) {
-      const w = parseInt(zahl.value, 10);
-      autoSektorWahl = w >= 2 && w <= 10 ? w : 0;
-      zahl.disabled = !autoSektorAn;
-    }
-  }
-  function autoSektorOptionenGeaendert() {
-    autoSektorOptionenLesen();
-    // Neue Grenzen heissen neue Spalten: die alten Sektorzeiten passen nicht mehr dazu.
-    sectorHistory = [];
-    autoSekSync(autoSekSp, null, 0);
-    renderSectors();
-    if (typeof refreshTrackPreview === 'function') {
-      try { refreshTrackPreview(); } catch (e) { /* Editor noch nicht bereit */ }
-    }
-    const p = autoSektorPlanAktuell();
-    log('Automatische Sektoren: ' + (!autoSektorAn ? 'aus'
-        : p ? p.n + ' Sektoren, Grenzen vor Kachel ' + p.kacheln.join(', ')
-        : 'gelten fuer diese Strecke nicht (Bahn-Modus, geschlossene Strecke, eine Start/Ziel-Kachel und mindestens 2 Sektoren noetig)'), 'info');
-  }
-  if ($('auto-sektoren')) $('auto-sektoren').addEventListener('change', autoSektorOptionenGeaendert);
-  if ($('auto-sektoren-zahl')) $('auto-sektoren-zahl').addEventListener('change', autoSektorOptionenGeaendert);
-  autoSektorOptionenLesen();
 
   $('pit-trigger').addEventListener('change', (e) => {
     pitTrigger = e.target.value;
@@ -7432,7 +7414,7 @@
     const schluessel = tiles.length + ':' + (typeof trackToCode === 'function'
       ? trackToCode(tiles) : String(tiles.map(t => t.type)))
       // Die automatischen Sektorgrenzen sind Teil der Zeichnung (v1.3.81).
-      + ':' + (autoSektorAn ? autoSektorWahl : 'x') + trackMode;
+      + ':' + trackSektorModus(tiles) + tiles.map((x) => x.sg ? 1 : 0).join('') + trackMode;
     if (schluessel !== ovKarteSchluessel) {
       const r = renderTrackPreview(tiles, null, { detailed: true, cars: [] });
       host.innerHTML = r.html;
