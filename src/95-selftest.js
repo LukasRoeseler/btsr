@@ -23440,6 +23440,27 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : LAB_STUDIEN.length + ' Studien, alle Coming Soon, nichts gesendet' };
   });
 
+  // v1.3.66 BESTELLT: nach dem virtuellen Fahren steht das Auto-Tempo wieder auf 0 km/h.
+  stAdd('Virtuell v1.3.66: Tempo nach dem Beenden auf 0 km/h', () => {
+    if (typeof virtuellBeenden !== 'function' || typeof VF === 'undefined') return { skip: true, mass: 'kein virtuelles Fahren' };
+    if (VF.aktiv) return { skip: true, mass: 'virtuelle Fahrt laeuft gerade' };
+    const merkTab = typeof kAktiverTab === 'function' ? kAktiverTab() : null;
+    const st = physEngine.state, merkV = st.speedKmh, merkG = st.currentGear;
+    let ok = false, mass = '';
+    try {
+      VF.aktiv = true; VF.studie = true;   // studie: kein Tab-Wechsel am Ende
+      st.speedKmh = 87; st.virtualSpeed = 0.6; st.currentGear = 3;
+      virtuellBeenden();
+      ok = st.speedKmh === 0 && st.virtualSpeed === 0 && st.currentGear === 0 && !VF.aktiv;
+      mass = 'Tempo ' + st.speedKmh + ' km/h, Gang ' + st.currentGear + ', aktiv ' + VF.aktiv;
+    } finally {
+      VF.aktiv = false; VF.studie = false;
+      if (!ok) { st.speedKmh = merkV; st.currentGear = merkG; }
+      if (merkTab && typeof showTab === 'function') showTab(merkTab);
+    }
+    return { ok, mass };
+  });
+
   // ---- v1.0: Meisterschaft (73-meisterschaft.js) ----
   stAdd('Meisterschaft: Wertung, Punkte, schnellste Runde, Gleichstand', () => {
     const f = [];
