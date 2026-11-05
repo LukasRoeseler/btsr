@@ -5669,7 +5669,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.3.92</span></span>
+        <span class="foot-ver">v<span id="app-version">1.3.93</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6944,7 +6944,7 @@
         <li>Boxenstopp: Tanken &#8222;nein&#8220; gilt jetzt. Das Boxen-Minigame (Standard) baute seinen eigenen Plan und tankte immer voll; au&#223;erdem kam eine &#196;nderung in der Boxengasse nicht im Plan an. Reifen: erst beide hinteren, dann beide vorderen R&#228;der; solange gewechselt wird, l&#228;sst sich der Stopp nicht abbrechen. Neuer Schlagschrauber je Radpaar aus einer Aufnahme (Sound Effect by Jun Su from Pixabay, Pixabay-Inhaltslizenz; Quelle in audio/CREDITS.md).</li>
         <li>Reifen: Der Mischungsunterschied ist gr&#246;&#223;er &#8211; Standard 150 % statt 100 % (weich +30 % Grip, hart &#8722;22 %), Regler unter Fahrgef&#252;hl bis 300 %. Neue Renneinstellung &#8222;Weiche Reifen verboten&#8220; (Standard aus).</li>
         <li>Vibration: eigene Kachel im Optionsmen&#252; mit einem Schalter je Ausl&#246;ser &#8211; Schalten, ABS, Aufprall, &#220;bersteuern, Untersteuern, neu Reifenquietschen (leicht, mit der Lautst&#228;rke des Quietschens), neben der Bahn, Boxenstopp, Meldungen, Trigger. Behoben: Im Pacejka-Modus brummte das Pad bei jedem Gasgeben dauerhaft (die Lenkentlastung unter Gas galt als Untersteuern); jetzt nur, wenn die Front wirklich schiebt.</li>
-        <li>NPC-Stufe MAX (WIP): In der Garage gibt es nach &#8222;schnell&#8220; die Stufe MAX. Solche NPCs fahren auf Geraden, in Radius-1-Kurven (60&#176; und kleine 30&#176;) und in Radius-2-Kurven (weite 30&#176;) mit eigenen Tempi aus dem NPC-Men&#252; (Standard 100 %, 52 %, 80 %) und bremsen eine Schiene vor der Kurve oder erst am Kurventeil (Auswahl). Haarnadel, Engstelle, Mindesttempo, Gelb und Einf&#252;hrungsrunde gelten wie f&#252;r alle.</li>
+        <li>NPC-Stufe MAX (WIP): In der Garage gibt es nach &#8222;schnell&#8220; die Stufe MAX. Solche NPCs fahren auf Geraden, in Radius-1-Kurven (60&#176; und kleine 30&#176;) und in Radius-2-Kurven (weite 30&#176;) mit eigenen Tempi aus dem NPC-Men&#252; (Standard 100 %, 52 %, 90 %) und bremsen eine Schiene vor der Kurve oder erst am Kurventeil (Auswahl). Haarnadel, Engstelle, Mindesttempo, Gelb und Einf&#252;hrungsrunde gelten wie f&#252;r alle.</li>
         <li>Automatische Aufstellung: Jedes Auto parkt jetzt mit genau der Einparkfolge des Safety Cars &#8211; gleiche Zeiten und Lenkwerte, f&#252;r die linke Spalte gespiegelt, mit weniger Gas (neuer Regler, Standard 75 %), damit es weiter innen steht. Immer diese Folge, auch auf Kurventeilen; in der Haarnadel parkt weiterhin niemand. Das Log nennt f&#252;r jedes Auto Seite und Gas.</li>
         <li>Reinigungsfahrzeug: Nach der ersten Start/Ziel-&#220;berfahrt f&#228;hrt es je eine volle Runde mittig, links (Querlage 90 %) und rechts (90 %) und h&#228;lt dann an. Die Querlage kommt allein aus dieser Vorgabe, ohne Ideallinie; die Runden werden &#252;ber den gefahrenen Weg gez&#228;hlt.</li>
         <li>Gleich schnell: Das Safety Car f&#228;hrt unter Gelb dasselbe Tempo wie das Feld (Gerade, Kurve und Haarnadel mit denselben Grenzen) &#8211; vorher &#252;berall gleich, also auf der Geraden langsamer und in der Haarnadel schneller. In der Einf&#252;hrungsrunde f&#228;hrt dein Autopilot in Kurven so schnell wie die NPCs (vorher deutlich langsamer), und die Feld-Staffel ist dort aus.</li>
@@ -12216,12 +12216,12 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-max-r1-val">52%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">MAX: Tempo in Radius-2-Kurven <span class="wip-tag">WIP</span><small>Die weite 30-Grad-Kurve (dreifacher Radius). Standard 80&nbsp;%. Haarnadel und Engstelle fahren MAX-NPCs nach den normalen Regeln: H&ouml;chsttempo in der Haarnadel und Mindesttempo gelten weiter.</small></div>
+      <div class="opt-row"><div class="opt-label">MAX: Tempo in Radius-2-Kurven <span class="wip-tag">WIP</span><small>Die weite 30-Grad-Kurve (dreifacher Radius). Standard 90&nbsp;%. Haarnadel und Engstelle fahren MAX-NPCs nach den normalen Regeln: H&ouml;chsttempo in der Haarnadel und Mindesttempo gelten weiter.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-max-r2" min="0.3" max="1" step="0.01" value="0.8">
+          <input type="range" id="ghost-max-r2" min="0.3" max="1" step="0.01" value="0.9">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="ghost-max-r2-val">80%</span>
+          <span class="opt-val" id="ghost-max-r2-val">90%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">MAX: Bremspunkt <span class="wip-tag">WIP</span><small>Wo ein MAX-NPC vom Geradentempo auf das Kurventempo geht: eine Schiene vor der Kurve (Standard) oder erst am Beginn des Kurventeils. Vor der Haarnadel bremsen alle NPCs wie bisher zwei Teile vorher.</small></div>
         <select id="ghost-max-bremspunkt">
@@ -16328,7 +16328,7 @@
     "Eine Schiene vor der Kurve": "One piece before the corner",
     "Wo ein MAX-NPC vom Geradentempo auf das Kurventempo geht: eine Schiene vor der Kurve (Standard) oder erst am Beginn des Kurventeils. Vor der Haarnadel bremsen alle NPCs wie bisher zwei Teile vorher.": "Where a MAX NPC drops from straight speed to corner speed: one piece before the corner (default) or only at the start of the corner piece. Before the hairpin all NPCs brake two pieces early as before.",
     "MAX: Bremspunkt": "MAX: braking point",
-    "Die weite 30-Grad-Kurve (dreifacher Radius). Standard 80 %. Haarnadel und Engstelle fahren MAX-NPCs nach den normalen Regeln: Höchsttempo in der Haarnadel und Mindesttempo gelten weiter.": "The wide 30-degree corner (triple radius). Default 80%. MAX NPCs take the hairpin and chicane by the normal rules: hairpin top speed and minimum speed still apply.",
+    "Die weite 30-Grad-Kurve (dreifacher Radius). Standard 90 %. Haarnadel und Engstelle fahren MAX-NPCs nach den normalen Regeln: Höchsttempo in der Haarnadel und Mindesttempo gelten weiter.": "The wide 30-degree corner (triple radius). Default 90%. MAX NPCs take the hairpin and chicane by the normal rules: hairpin top speed and minimum speed still apply.",
     "MAX: Tempo in Radius-2-Kurven": "MAX: speed in radius-2 corners",
     "Die 60-Grad-Kurve und die kleine 30-Grad-Kurve (gleicher Radius). Standard 52 % – so schnell wie ein NPC der Stufe 65 % mit 20 % Kurvenabzug.": "The 60-degree corner and the small 30-degree corner (same radius). Default 52% – as fast as an NPC on level 65% with 20% corner reduction.",
     "MAX: Tempo in Radius-1-Kurven": "MAX: speed in radius-1 corners",
@@ -16344,7 +16344,7 @@
     "Wie stark sich weich, mittel, hart und Regen unterscheiden. Der Regler bewegt alle Werte zugleich – Grip und Verschleiß – und zwar als Abstand zum Mittelreifen. Bei 0 rechnen alle drei Slicks wie mittel, bei 100 Prozent gilt die Tabelle (weich +20 % Grip und 2,6-facher Verschleiß, hart −15 % und 0,4-facher), darüber ist der Unterschied größer. Standard seit v1.1.42: 150 % (weich +30 % Grip und 3,4-facher Verschleiß, hart −22 % und 0,1-facher), bis 300 %. Steht die Reifensimulation darüber auf aus, fahren ohnehin alle den Mittelreifen, egal was hier steht.": "How much soft, medium, hard and wet differ. The slider moves all values at once – grip and wear – as the distance to the medium tyre. At 0 all three slicks behave like medium, at 100 percent the table applies (soft +20 % grip and 2.6× wear, hard −15 % and 0.4×), above that the difference is larger. Default since v1.1.42: 150 % (soft +30 % grip and 3.4× wear, hard −22 % and 0.1×), up to 300 %. If the tyre simulation above is off, everyone runs the medium tyre anyway, whatever is set here.",
     "An: In diesem Rennen gibt es keine weichen Reifen. Die Reifenwahl im Boxenschirm überspringt „weich“, und wer beim Start weiche Reifen drauf hat, bekommt mittlere – auch Spieler 2 und 3. Aus (Standard): alle Mischungen erlaubt.": "On: there are no soft tyres in this race. The tyre choice on the pit screen skips \"soft\", and anyone on soft tyres at the start gets mediums – players 2 and 3 too. Off (default): all compounds allowed.",
     "Weiche Reifen verboten": "Soft tyres banned",
-    "NPC-Stufe MAX (WIP): In der Garage gibt es nach „schnell“ die Stufe MAX. Solche NPCs fahren auf Geraden, in Radius-1-Kurven (60° und kleine 30°) und in Radius-2-Kurven (weite 30°) mit eigenen Tempi aus dem NPC-Menü (Standard 100 %, 52 %, 80 %) und bremsen eine Schiene vor der Kurve oder erst am Kurventeil (Auswahl). Haarnadel, Engstelle, Mindesttempo, Gelb und Einführungsrunde gelten wie für alle.": "NPC level MAX (WIP): in the garage there is a level MAX after “fast”. Such NPCs drive straights, radius-1 corners (60° and small 30°) and radius-2 corners (wide 30°) at their own speeds from the NPC menu (default 100%, 52%, 80%) and brake one piece before the corner or only at the corner piece (choice). Hairpin, chicane, minimum speed, yellow and formation lap apply as for everyone.",
+    "NPC-Stufe MAX (WIP): In der Garage gibt es nach „schnell“ die Stufe MAX. Solche NPCs fahren auf Geraden, in Radius-1-Kurven (60° und kleine 30°) und in Radius-2-Kurven (weite 30°) mit eigenen Tempi aus dem NPC-Menü (Standard 100 %, 52 %, 90 %) und bremsen eine Schiene vor der Kurve oder erst am Kurventeil (Auswahl). Haarnadel, Engstelle, Mindesttempo, Gelb und Einführungsrunde gelten wie für alle.": "NPC level MAX (WIP): in the garage there is a level MAX after “fast”. Such NPCs drive straights, radius-1 corners (60° and small 30°) and radius-2 corners (wide 30°) at their own speeds from the NPC menu (default 100%, 52%, 90%) and brake one piece before the corner or only at the corner piece (choice). Hairpin, chicane, minimum speed, yellow and formation lap apply as for everyone.",
     "Vibration: eigene Kachel im Optionsmenü mit einem Schalter je Auslöser – Schalten, ABS, Aufprall, Übersteuern, Untersteuern, neu Reifenquietschen (leicht, mit der Lautstärke des Quietschens), neben der Bahn, Boxenstopp, Meldungen, Trigger. Behoben: Im Pacejka-Modus brummte das Pad bei jedem Gasgeben dauerhaft (die Lenkentlastung unter Gas galt als Untersteuern); jetzt nur, wenn die Front wirklich schiebt.": "Vibration: its own tile in the options menu with one switch per trigger – shifting, ABS, impact, oversteer, understeer, new tyre squeal (light, with the loudness of the squeal), off track, pit stop, messages, triggers. Fixed: in Pacejka mode the pad hummed constantly whenever you accelerated (the steering relief under throttle counted as understeer); now only when the front really pushes.",
     "Reifen: Der Mischungsunterschied ist größer – Standard 150 % statt 100 % (weich +30 % Grip, hart −22 %), Regler unter Fahrgefühl bis 300 %. Neue Renneinstellung „Weiche Reifen verboten“ (Standard aus).": "Tyres: the compound difference is larger – default 150% instead of 100% (soft +30% grip, hard −22%), slider under Driving feel up to 300%. New race setting “Soft tyres banned” (default off).",
     "Boxenstopp: Tanken „nein“ gilt jetzt. Das Boxen-Minigame (Standard) baute seinen eigenen Plan und tankte immer voll; außerdem kam eine Änderung in der Boxengasse nicht im Plan an. Reifen: erst beide hinteren, dann beide vorderen Räder; solange gewechselt wird, lässt sich der Stopp nicht abbrechen. Neuer Schlagschrauber je Radpaar aus einer Aufnahme (Sound Effect by Jun Su from Pixabay, Pixabay-Inhaltslizenz; Quelle in audio/CREDITS.md).": "Pit stop: refuelling “no” now applies. The pit minigame (default) built its own plan and always filled up; also a change made in the pit lane did not reach the plan. Tyres: first both rear wheels, then both front ones; while they are being changed the stop cannot be aborted. New impact wrench per wheel pair from a recording (Sound Effect by Jun Su from Pixabay, Pixabay Content License; source in audio/CREDITS.md).",
@@ -55942,6 +55942,10 @@
     const r4 = () => Math.round(rnd() * 10000) / 10000;
     const liste = [];
     let t = mittel * (0.6 + 0.8 * rnd());
+    // Kurzes Zeitrennen: laege das erste Event schon hinter dem Rennende, wird es nach vorn
+    // geholt (30-70 % der Renndauer, mindestens 2 s). Sonst bliebe der Plan in einem kurzen
+    // Rennen leer, und ein eingeschaltetes Event passierte nie.
+    if (t >= gesamt) t = Math.max(2000, gesamt * (0.3 + 0.4 * rnd()));
     while (t < gesamt && liste.length < 300) {
       const art = o.arten[Math.min(o.arten.length - 1, Math.floor(rnd() * o.arten.length))];
       const e = { abMs: Math.round(t), art, dauerMs: art === 'leck' ? 0 : dauer, r1: r4(), r2: r4(), r3: r4() };
@@ -64773,7 +64777,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     haarnadelMax: 0.35,
     // v1.1.42 (WIP): Stufe MAX (ghostMaxTempo) - Gerade, Radius-1-Kurve (60 Grad und kleine 30 Grad),
     // Radius-2-Kurve (weite 30 Grad), Bremspunkt 'schiene' (ein Teil vorher) oder 'teil' (am Kurvenbeginn).
-    maxGerade: 1.0, maxR1: 0.52, maxR2: 0.8, maxBremspunkt: 'schiene',
+    maxGerade: 1.0, maxR1: 0.52, maxR2: 0.9, maxBremspunkt: 'schiene',
     // (v1.2.5 stand hier maxBeschl; seit v1.3.5 faehrt MAX mit den Arcade-Werten, siehe npcMotorWerte.)
     paare: true,        // v1.0.31: Paare links/rechts, Reihe dahinter (ghostPaare); Schalter fuer die Messsonde    // how much of that is given up in a curve
     // 0.5 statt 0. Die Naeherungslogik in ghostAssignBias gab es laengst - gleiche Runde
@@ -91716,12 +91720,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const merkT = currentTrackTiles, merkC = Object.assign({}, ghostCfg);
     try {
       if (!GHOST_TEMPO_STUFEN[GHOST_STUFE_MAX] || !GHOST_TEMPO_STUFEN[GHOST_STUFE_MAX].max) f.push('Stufe MAX fehlt');
-      for (const [id, wert] of [['ghost-max-gerade', 1], ['ghost-max-r1', 0.52], ['ghost-max-r2', 0.8]]) {
+      for (const [id, wert] of [['ghost-max-gerade', 1], ['ghost-max-r1', 0.52], ['ghost-max-r2', 0.9]]) {
         const el = $(id);
         if (!el || Math.abs(parseFloat(el.defaultValue) - wert) > 1e-9) f.push(id + ' fehlt oder Vorgabe nicht ' + wert);
       }
       if (!$('ghost-max-bremspunkt') || $('ghost-max-bremspunkt').value !== 'schiene') f.push('Bremspunkt-Vorgabe nicht eine Schiene vorher');
-      Object.assign(ghostCfg, { maxGerade: 1, maxR1: 0.52, maxR2: 0.8, maxBremspunkt: 'schiene', haarnadelMax: 0.35 });
+      Object.assign(ghostCfg, { maxGerade: 1, maxR1: 0.52, maxR2: 0.9, maxBremspunkt: 'schiene', haarnadelMax: 0.35 });
       // S G G R W G : 0 Start, 1-2 Gerade, 3 Radius-1-Kurve, 4 weite Kurve (Radius 2), 5 Gerade
       currentTrackTiles = [TILE_TYPE.START, TILE_TYPE.STRAIGHT, TILE_TYPE.STRAIGHT, TILE_TYPE.CURVE_RIGHT,
                            TILE_TYPE.WEIT_RIGHT, TILE_TYPE.STRAIGHT].map((type) => ({ type }));
@@ -91731,10 +91735,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       try {
         const v = [0, 1, 2, 3, 4, 5].map((i) => +ghostMaxTempo(auto(i)).toFixed(2));
         // Schiene vorher: Teil 2 schon 0,52 (Kurve folgt), Teil 3 0,52 (weite Kurve folgt: min), Teil 4 0,8.
-        if (v.join(',') !== '1,1,0.52,0.52,0.8,1') f.push('Profil (Schiene vorher) ' + v.join(','));
+        if (v.join(',') !== '1,1,0.52,0.52,0.9,1') f.push('Profil (Schiene vorher) ' + v.join(','));
         ghostCfg.maxBremspunkt = 'teil';
         const w = [0, 1, 2, 3, 4, 5].map((i) => +ghostMaxTempo(auto(i)).toFixed(2));
-        if (w.join(',') !== '1,1,1,0.52,0.8,1') f.push('Profil (am Kurventeil) ' + w.join(','));
+        if (w.join(',') !== '1,1,1,0.52,0.9,1') f.push('Profil (am Kurventeil) ' + w.join(','));
         if (ghostStufeFaktor(auto(1)) !== 1) f.push('ghostStufeFaktor nimmt das MAX-Profil nicht');
         if (ghostStufeFaktor({ role: 'ghost', ghostStufe: 2, tileCode: TILE_TYPE.STRAIGHT, ghost: {} }) === 1) f.push('Stufe schnell faehrt MAX');
       } finally { ortStimmt = merkOrt; }
@@ -91743,7 +91747,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (src.indexOf('ghostIstMax(car) && tight < 2 && !underYellow && !raceFormationLap') < 0) f.push('MAX umgeht Haarnadel, Gelb oder Formation');
       if (ghostStufeAusSpeed(0.95) === GHOST_STUFE_MAX) f.push('alte Werte wandern in MAX');
     } finally { currentTrackTiles = merkT; Object.assign(ghostCfg, merkC); }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gerade 100, R1 52, R2 80, Bremspunkt Schiene/Teil, Haarnadel normal' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gerade 100, R1 52, R2 90, Bremspunkt Schiene/Teil, Haarnadel normal' };
   });
 
   // v1.2.32 BESTELLT: "Pruefe, ob beim NPC-Verhalten klar ist, dass Start/Ziel eine Gerade ist und dort auch z. B.
@@ -109501,6 +109505,30 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       }
     } finally { raceMode = merkMode; raceLimit = merkLimit; }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Abstaende 0,6-1,4 x Mittel, Dauer fest, nur eingeschaltete' };
+  });
+
+  // v1.3.90: In einem KURZEN Zeitrennen konnte der Plan leer bleiben, weil das erste Event
+  // (0,6-1,4 x Haeufigkeit) schon hinter dem Rennende lag - es passierte dann nie etwas.
+  stAdd('Zufallsevents v1.3.90: kurzes Zeitrennen - Plan nicht leer, Event passt ins Rennen', () => {
+    const f = [];
+    const merkMode = raceMode, merkLimit = raceLimit;
+    let s = 4242;
+    const rnd = () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+    let p = null, p2 = null;
+    try {
+      // 4-min-Rennen, 8-min-Haeufigkeit: 0,6 x 8 = 4,8 min liegt hinter dem Rennende.
+      raceMode = 'endurance'; raceLimit = 4;
+      p = zevPlanBauen({ an: true, min: 8, dauerS: 30, arten: ['dreck'], ziele: [] }, rnd);
+      if (!p || !p.liste.length) f.push('Plan leer bei 4-min-Rennen und 8-min-Haeufigkeit');
+      if (p && p.liste.some((e) => e.abMs >= 240000)) f.push('Event nach dem Rennende geplant');
+      if (p && p.liste.length > 3) f.push('zu viele Events fuer ein 4-min-Rennen: ' + p.liste.length);
+      // 2-min-Rennen, 10-min-Haeufigkeit: 0,6 x 10 = 6 min liegt hinter dem Rennende.
+      raceLimit = 2;
+      p2 = zevPlanBauen({ an: true, min: 10, dauerS: 10, arten: ['gelb'], ziele: [] }, rnd);
+      if (!p2 || !p2.liste.length) f.push('Plan leer bei 2-min-Rennen und 10-min-Haeufigkeit');
+      if (p2 && p2.liste.some((e) => e.abMs >= 120000)) f.push('2-min-Event nach dem Rennende');
+    } finally { raceMode = merkMode; raceLimit = merkLimit; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '4-min: ' + (p ? p.liste.length : '?') + ' Events, 2-min: ' + (p2 ? p2.liste.length : '?') + ' Events' };
   });
 
   stAdd('Zufallsevents v1.3.88: Zeitsteuerung an der Rennuhr, Dauer, Ende mit Ansage', () => zevTestUmgebung((u) => {

@@ -95,6 +95,10 @@
     const r4 = () => Math.round(rnd() * 10000) / 10000;
     const liste = [];
     let t = mittel * (0.6 + 0.8 * rnd());
+    // Kurzes Zeitrennen: laege das erste Event schon hinter dem Rennende, wird es nach vorn
+    // geholt (30-70 % der Renndauer, mindestens 2 s). Sonst bliebe der Plan in einem kurzen
+    // Rennen leer, und ein eingeschaltetes Event passierte nie.
+    if (t >= gesamt) t = Math.max(2000, gesamt * (0.3 + 0.4 * rnd()));
     while (t < gesamt && liste.length < 300) {
       const art = o.arten[Math.min(o.arten.length - 1, Math.floor(rnd() * o.arten.length))];
       const e = { abMs: Math.round(t), art, dauerMs: art === 'leck' ? 0 : dauer, r1: r4(), r2: r4(), r3: r4() };

@@ -6104,12 +6104,12 @@
     const merkT = currentTrackTiles, merkC = Object.assign({}, ghostCfg);
     try {
       if (!GHOST_TEMPO_STUFEN[GHOST_STUFE_MAX] || !GHOST_TEMPO_STUFEN[GHOST_STUFE_MAX].max) f.push('Stufe MAX fehlt');
-      for (const [id, wert] of [['ghost-max-gerade', 1], ['ghost-max-r1', 0.52], ['ghost-max-r2', 0.8]]) {
+      for (const [id, wert] of [['ghost-max-gerade', 1], ['ghost-max-r1', 0.52], ['ghost-max-r2', 0.9]]) {
         const el = $(id);
         if (!el || Math.abs(parseFloat(el.defaultValue) - wert) > 1e-9) f.push(id + ' fehlt oder Vorgabe nicht ' + wert);
       }
       if (!$('ghost-max-bremspunkt') || $('ghost-max-bremspunkt').value !== 'schiene') f.push('Bremspunkt-Vorgabe nicht eine Schiene vorher');
-      Object.assign(ghostCfg, { maxGerade: 1, maxR1: 0.52, maxR2: 0.8, maxBremspunkt: 'schiene', haarnadelMax: 0.35 });
+      Object.assign(ghostCfg, { maxGerade: 1, maxR1: 0.52, maxR2: 0.9, maxBremspunkt: 'schiene', haarnadelMax: 0.35 });
       // S G G R W G : 0 Start, 1-2 Gerade, 3 Radius-1-Kurve, 4 weite Kurve (Radius 2), 5 Gerade
       currentTrackTiles = [TILE_TYPE.START, TILE_TYPE.STRAIGHT, TILE_TYPE.STRAIGHT, TILE_TYPE.CURVE_RIGHT,
                            TILE_TYPE.WEIT_RIGHT, TILE_TYPE.STRAIGHT].map((type) => ({ type }));
@@ -6119,10 +6119,10 @@
       try {
         const v = [0, 1, 2, 3, 4, 5].map((i) => +ghostMaxTempo(auto(i)).toFixed(2));
         // Schiene vorher: Teil 2 schon 0,52 (Kurve folgt), Teil 3 0,52 (weite Kurve folgt: min), Teil 4 0,8.
-        if (v.join(',') !== '1,1,0.52,0.52,0.8,1') f.push('Profil (Schiene vorher) ' + v.join(','));
+        if (v.join(',') !== '1,1,0.52,0.52,0.9,1') f.push('Profil (Schiene vorher) ' + v.join(','));
         ghostCfg.maxBremspunkt = 'teil';
         const w = [0, 1, 2, 3, 4, 5].map((i) => +ghostMaxTempo(auto(i)).toFixed(2));
-        if (w.join(',') !== '1,1,1,0.52,0.8,1') f.push('Profil (am Kurventeil) ' + w.join(','));
+        if (w.join(',') !== '1,1,1,0.52,0.9,1') f.push('Profil (am Kurventeil) ' + w.join(','));
         if (ghostStufeFaktor(auto(1)) !== 1) f.push('ghostStufeFaktor nimmt das MAX-Profil nicht');
         if (ghostStufeFaktor({ role: 'ghost', ghostStufe: 2, tileCode: TILE_TYPE.STRAIGHT, ghost: {} }) === 1) f.push('Stufe schnell faehrt MAX');
       } finally { ortStimmt = merkOrt; }
@@ -6131,7 +6131,7 @@
       if (src.indexOf('ghostIstMax(car) && tight < 2 && !underYellow && !raceFormationLap') < 0) f.push('MAX umgeht Haarnadel, Gelb oder Formation');
       if (ghostStufeAusSpeed(0.95) === GHOST_STUFE_MAX) f.push('alte Werte wandern in MAX');
     } finally { currentTrackTiles = merkT; Object.assign(ghostCfg, merkC); }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gerade 100, R1 52, R2 80, Bremspunkt Schiene/Teil, Haarnadel normal' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gerade 100, R1 52, R2 90, Bremspunkt Schiene/Teil, Haarnadel normal' };
   });
 
   // v1.2.32 BESTELLT: "Pruefe, ob beim NPC-Verhalten klar ist, dass Start/Ziel eine Gerade ist und dort auch z. B.
@@ -23889,6 +23889,30 @@
       }
     } finally { raceMode = merkMode; raceLimit = merkLimit; }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Abstaende 0,6-1,4 x Mittel, Dauer fest, nur eingeschaltete' };
+  });
+
+  // v1.3.90: In einem KURZEN Zeitrennen konnte der Plan leer bleiben, weil das erste Event
+  // (0,6-1,4 x Haeufigkeit) schon hinter dem Rennende lag - es passierte dann nie etwas.
+  stAdd('Zufallsevents v1.3.90: kurzes Zeitrennen - Plan nicht leer, Event passt ins Rennen', () => {
+    const f = [];
+    const merkMode = raceMode, merkLimit = raceLimit;
+    let s = 4242;
+    const rnd = () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+    let p = null, p2 = null;
+    try {
+      // 4-min-Rennen, 8-min-Haeufigkeit: 0,6 x 8 = 4,8 min liegt hinter dem Rennende.
+      raceMode = 'endurance'; raceLimit = 4;
+      p = zevPlanBauen({ an: true, min: 8, dauerS: 30, arten: ['dreck'], ziele: [] }, rnd);
+      if (!p || !p.liste.length) f.push('Plan leer bei 4-min-Rennen und 8-min-Haeufigkeit');
+      if (p && p.liste.some((e) => e.abMs >= 240000)) f.push('Event nach dem Rennende geplant');
+      if (p && p.liste.length > 3) f.push('zu viele Events fuer ein 4-min-Rennen: ' + p.liste.length);
+      // 2-min-Rennen, 10-min-Haeufigkeit: 0,6 x 10 = 6 min liegt hinter dem Rennende.
+      raceLimit = 2;
+      p2 = zevPlanBauen({ an: true, min: 10, dauerS: 10, arten: ['gelb'], ziele: [] }, rnd);
+      if (!p2 || !p2.liste.length) f.push('Plan leer bei 2-min-Rennen und 10-min-Haeufigkeit');
+      if (p2 && p2.liste.some((e) => e.abMs >= 120000)) f.push('2-min-Event nach dem Rennende');
+    } finally { raceMode = merkMode; raceLimit = merkLimit; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '4-min: ' + (p ? p.liste.length : '?') + ' Events, 2-min: ' + (p2 ? p2.liste.length : '?') + ' Events' };
   });
 
   stAdd('Zufallsevents v1.3.88: Zeitsteuerung an der Rennuhr, Dauer, Ende mit Ansage', () => zevTestUmgebung((u) => {

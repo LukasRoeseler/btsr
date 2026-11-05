@@ -5669,7 +5669,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.3.92</span></span>
+        <span class="foot-ver">v<span id="app-version">1.3.93</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6944,7 +6944,7 @@
         <li>Boxenstopp: Tanken &#8222;nein&#8220; gilt jetzt. Das Boxen-Minigame (Standard) baute seinen eigenen Plan und tankte immer voll; au&#223;erdem kam eine &#196;nderung in der Boxengasse nicht im Plan an. Reifen: erst beide hinteren, dann beide vorderen R&#228;der; solange gewechselt wird, l&#228;sst sich der Stopp nicht abbrechen. Neuer Schlagschrauber je Radpaar aus einer Aufnahme (Sound Effect by Jun Su from Pixabay, Pixabay-Inhaltslizenz; Quelle in audio/CREDITS.md).</li>
         <li>Reifen: Der Mischungsunterschied ist gr&#246;&#223;er &#8211; Standard 150 % statt 100 % (weich +30 % Grip, hart &#8722;22 %), Regler unter Fahrgef&#252;hl bis 300 %. Neue Renneinstellung &#8222;Weiche Reifen verboten&#8220; (Standard aus).</li>
         <li>Vibration: eigene Kachel im Optionsmen&#252; mit einem Schalter je Ausl&#246;ser &#8211; Schalten, ABS, Aufprall, &#220;bersteuern, Untersteuern, neu Reifenquietschen (leicht, mit der Lautst&#228;rke des Quietschens), neben der Bahn, Boxenstopp, Meldungen, Trigger. Behoben: Im Pacejka-Modus brummte das Pad bei jedem Gasgeben dauerhaft (die Lenkentlastung unter Gas galt als Untersteuern); jetzt nur, wenn die Front wirklich schiebt.</li>
-        <li>NPC-Stufe MAX (WIP): In der Garage gibt es nach &#8222;schnell&#8220; die Stufe MAX. Solche NPCs fahren auf Geraden, in Radius-1-Kurven (60&#176; und kleine 30&#176;) und in Radius-2-Kurven (weite 30&#176;) mit eigenen Tempi aus dem NPC-Men&#252; (Standard 100 %, 52 %, 80 %) und bremsen eine Schiene vor der Kurve oder erst am Kurventeil (Auswahl). Haarnadel, Engstelle, Mindesttempo, Gelb und Einf&#252;hrungsrunde gelten wie f&#252;r alle.</li>
+        <li>NPC-Stufe MAX (WIP): In der Garage gibt es nach &#8222;schnell&#8220; die Stufe MAX. Solche NPCs fahren auf Geraden, in Radius-1-Kurven (60&#176; und kleine 30&#176;) und in Radius-2-Kurven (weite 30&#176;) mit eigenen Tempi aus dem NPC-Men&#252; (Standard 100 %, 52 %, 90 %) und bremsen eine Schiene vor der Kurve oder erst am Kurventeil (Auswahl). Haarnadel, Engstelle, Mindesttempo, Gelb und Einf&#252;hrungsrunde gelten wie f&#252;r alle.</li>
         <li>Automatische Aufstellung: Jedes Auto parkt jetzt mit genau der Einparkfolge des Safety Cars &#8211; gleiche Zeiten und Lenkwerte, f&#252;r die linke Spalte gespiegelt, mit weniger Gas (neuer Regler, Standard 75 %), damit es weiter innen steht. Immer diese Folge, auch auf Kurventeilen; in der Haarnadel parkt weiterhin niemand. Das Log nennt f&#252;r jedes Auto Seite und Gas.</li>
         <li>Reinigungsfahrzeug: Nach der ersten Start/Ziel-&#220;berfahrt f&#228;hrt es je eine volle Runde mittig, links (Querlage 90 %) und rechts (90 %) und h&#228;lt dann an. Die Querlage kommt allein aus dieser Vorgabe, ohne Ideallinie; die Runden werden &#252;ber den gefahrenen Weg gez&#228;hlt.</li>
         <li>Gleich schnell: Das Safety Car f&#228;hrt unter Gelb dasselbe Tempo wie das Feld (Gerade, Kurve und Haarnadel mit denselben Grenzen) &#8211; vorher &#252;berall gleich, also auf der Geraden langsamer und in der Haarnadel schneller. In der Einf&#252;hrungsrunde f&#228;hrt dein Autopilot in Kurven so schnell wie die NPCs (vorher deutlich langsamer), und die Feld-Staffel ist dort aus.</li>
@@ -12216,12 +12216,12 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-max-r1-val">52%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">MAX: Tempo in Radius-2-Kurven <span class="wip-tag">WIP</span><small>Die weite 30-Grad-Kurve (dreifacher Radius). Standard 80&nbsp;%. Haarnadel und Engstelle fahren MAX-NPCs nach den normalen Regeln: H&ouml;chsttempo in der Haarnadel und Mindesttempo gelten weiter.</small></div>
+      <div class="opt-row"><div class="opt-label">MAX: Tempo in Radius-2-Kurven <span class="wip-tag">WIP</span><small>Die weite 30-Grad-Kurve (dreifacher Radius). Standard 90&nbsp;%. Haarnadel und Engstelle fahren MAX-NPCs nach den normalen Regeln: H&ouml;chsttempo in der Haarnadel und Mindesttempo gelten weiter.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-max-r2" min="0.3" max="1" step="0.01" value="0.8">
+          <input type="range" id="ghost-max-r2" min="0.3" max="1" step="0.01" value="0.9">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="ghost-max-r2-val">80%</span>
+          <span class="opt-val" id="ghost-max-r2-val">90%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">MAX: Bremspunkt <span class="wip-tag">WIP</span><small>Wo ein MAX-NPC vom Geradentempo auf das Kurventempo geht: eine Schiene vor der Kurve (Standard) oder erst am Beginn des Kurventeils. Vor der Haarnadel bremsen alle NPCs wie bisher zwei Teile vorher.</small></div>
         <select id="ghost-max-bremspunkt">
