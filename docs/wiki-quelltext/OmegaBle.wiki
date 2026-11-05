@@ -1,4 +1,4 @@
-{{Stand|app=1.2.9|appdatum=26.10.2026}}
+{{Stand|app=1.3.93|appdatum=05.11.2026}}
 '''OmegaBle''' ist ein natives Bluetooth-Plugin der Android-App von [[OmegaSim]]. Es schreibt die Steuerbefehle an die [[Carrera HYBRID]]-Autos auf einem eigenen Java-Thread direkt an die Bluetooth-Schnittstelle von Android, ohne Umweg über den Hauptthread, ersetzt dabei wartende Befehle durch neuere („neuester gewinnt“) und räumt Verbindungen hart auf, die das allgemeine Bluetooth-Plugin der App sonst hängen lässt. OmegaBle ist ein Baustein der Latenzarbeit in der App: Es entstand, weil Nutzer in der APK eine spürbare Verzögerung meldeten, die es im Browser nicht gab. Im Browser gibt es OmegaBle nicht; dort spricht Chrome oder Edge über Web Bluetooth direkt mit dem Auto.
 
 == Auf einen Blick ==
@@ -525,6 +525,8 @@ Anzeige „Brücke 0,8/3 ms“: Ein Befehl braucht von der Seite bis OmegaBle im
 | 1.1.24 || Rückfall nur, wenn gar nichts mehr geschrieben wird; NPC-Sendebudget
 |-
 | 1.2.3 || hartes Schließen (<code>schliessen</code>, <code>alleSchliessen</code>, <code>verwaisteTrennen</code>), 20-s-Grenze, ein Aufbau je Auto, Meldetakt-Überwachung, NPCs schreiben nicht während des Neuverbindens (neue APK nötig)
+|-
+| 1.3.20 || Funkpriorität beim Start (WIP, Schalter „Funkpriorität beim Start“ unter Optionen → System, Standard an): zu Beginn des Countdowns bekommen gesteuerte Autos <code>HIGH</code>, alle anderen <code>BALANCED</code>.
 |}
 
 == Einzelnachweise ==
