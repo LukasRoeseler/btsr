@@ -304,6 +304,8 @@ Erkannt sind ein DualSense (Standardbelegung), ein Xbox-Pad (Standardbelegung) u
 | 1.2.3 || Belegen als Entwurf mit Übernehmen (Options 1&nbsp;s) und Abbrechen, Sperre bis alle Tasten los
 |-
 | 1.2.4 || Fahrgefühl je Spieler (Arcade, Sim+, Pacejka oder wie Spieler 1), eigene Reifenmischung bleibt
+|-
+| 1.3.88 || [[Zufallsevents]] im WLAN: das startende Telefon würfelt den Plan, alle anderen folgen ab derselben Grünzeit.
 |}
 
 == Einzelnachweise ==
