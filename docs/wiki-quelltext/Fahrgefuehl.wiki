@@ -1,4 +1,4 @@
-{{Stand|app=1.2.50|appdatum=30.10.2026}}
+{{Stand|app=1.3.93|appdatum=05.11.2026}}
 [[Datei:OmegaSim-Fahrgefuehl.png|mini|Die Einstellungsseite Fahrgefühl in OmegaSim]]
 Das '''Fahrgefühl''' ist in [[OmegaSim]] der fertige Satz von Reglerwerten, der bestimmt, wie sich ein [[Carrera HYBRID]]-Auto fährt: wie stark es beschleunigt, bremst, lenkt und in der Kurve hält. Es gibt neun solche Sätze (Voreinstellungen oder Presets). Drei davon stehen im '''FAHREN'''-Menü, in der '''Garage''' und am '''Cockpit-Knopf''' – '''Arcade''', '''Sim+''' und '''Pacejka''' – die übrigen sechs liegen unter '''Optionen → Fahrgefühl → Voreinstellungen'''.
 
@@ -10,7 +10,7 @@ Das '''Fahrgefühl''' ist in [[OmegaSim]] der fertige Satz von Reglerwerten, der
 |-
 | Fahrgefühle in FAHREN || Arcade, Sim+, Pacejka
 |-
-| Übrige Fahrgefühle || Pro, GT3, F1, Realismus GT3, Omega, RC (WIP)
+| Übrige Fahrgefühle || Pro, GT3, F1, Realismus GT3, Omega, RC (WIP), Gran Hybrismo (WIP), Assetto Carrera (WIP)
 |-
 | Vorgabe nach Neuinstallation || die Werte im Markup entsprechen dem Fahrgefühl '''Pacejka''' (Steuerungsmodus Pacejka, sonst Pro-Werte)
 |-
@@ -48,6 +48,10 @@ Die übrigen Sätze liegen unter '''Optionen → Fahrgefühl → Voreinstellunge
 | '''Omega''' || Pro, wie es in v0.9 war – eingefroren, bleibt bei künftigen Pro-Änderungen stehen
 |-
 | '''RC (WIP)''' || wie ein Fernsteuerungsauto: Arcade mit allen Reglern am Anschlag, Steuerungsmodus „Aus“ – Gas läuft in 2 s aus, Bremse sofort, zweiter Bremsdruck im Stand = rückwärts
+|-
+| '''Gran Hybrismo (WIP)''' || wie Gran Turismo Sport: viel Grip, weicher Reifenscheitel, kaum Lastwechsel; eine Stabilitätshilfe lenkt einen Ausbrecher ein (Steuerungsmodus Physik).
+|-
+| '''Assetto Carrera (WIP)''' || wie Assetto Corsa Competizione: dynamische Gierregelung und GT3-Abtrieb, ein Lenk-Zuschlag nur während des Lenkens, sonst lenkt die Rest-Gier nach einer Kurve weiter (Steuerungsmodus Physik).
 |}
 
 == Der Steuerungsmodus ==
