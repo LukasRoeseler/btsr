@@ -3459,7 +3459,10 @@
       rawThrottle = ap.throttle;
       rawBrake = ap.brake;
       // Die Lenkung nur, wenn er sie fuehren DARF - siehe `lenkt` in autopilot().
-      if (ap.lenkt) steer = ap.steer;
+      // VIRTUELLE FAHRT: dort deckelt die gelbe Flagge nur das Tempo (Gas und Bremse
+      // bleiben beim Autopiloten), die LENKUNG bleibt beim Fahrer. Beim echten Auto
+      // uebernimmt der Autopilot beides - die normale Gelb-Regel bleibt unangetastet.
+      if (ap.lenkt && !(typeof vfAktiv === 'function' && vfAktiv())) steer = ap.steer;
     }
     physApLenkt = !!(ap && ap.lenkt);
     // Abseits der Bahn gedeckelt, und zwar VOR der Physik. Genau das war der Fehler beim

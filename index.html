@@ -5691,7 +5691,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.3.111</span></span>
+        <span class="foot-ver">v<span id="app-version">1.3.112</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -29099,7 +29099,10 @@
       rawThrottle = ap.throttle;
       rawBrake = ap.brake;
       // Die Lenkung nur, wenn er sie fuehren DARF - siehe `lenkt` in autopilot().
-      if (ap.lenkt) steer = ap.steer;
+      // VIRTUELLE FAHRT: dort deckelt die gelbe Flagge nur das Tempo (Gas und Bremse
+      // bleiben beim Autopiloten), die LENKUNG bleibt beim Fahrer. Beim echten Auto
+      // uebernimmt der Autopilot beides - die normale Gelb-Regel bleibt unangetastet.
+      if (ap.lenkt && !(typeof vfAktiv === 'function' && vfAktiv())) steer = ap.steer;
     }
     physApLenkt = !!(ap && ap.lenkt);
     // Abseits der Bahn gedeckelt, und zwar VOR der Physik. Genau das war der Fehler beim
