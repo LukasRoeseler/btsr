@@ -5691,7 +5691,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.3.109</span></span>
+        <span class="foot-ver">v<span id="app-version">1.3.110</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -42116,7 +42116,7 @@
   // Verfolger -> nah -> Motorhaube -> Verfolger. Nachgefuehrt nach der ZEIT (nicht je Bild): auf einem
   // langsamen Handy lief die Kamera vorher bei weniger Bildern spuerbar hinterher.
   const VF_KAMERAS = [{ id: 'verfolger', name: 'Verfolgerkamera' }, { id: 'nah', name: 'Nahe Verfolgerkamera' }, { id: 'haube', name: 'Motorhaube' },
-                      { id: 'oben', name: 'Von oben (Start/Ziel)' }, { id: 'statisch', name: 'Statisch (Start/Ziel)' },
+                      { id: 'oben', name: 'Von oben (Start/Ziel)' },
                       { id: 'fahrer', name: 'Fahrer am Rand', wip: true }];
   const VF_KAMERA_STORE = 'omegasim-vf-kamera';
   function vfKameraId() {
@@ -42263,7 +42263,7 @@
   // Auto am Rand), also Nahebene 8 und Fernebene 3000: Verhaeltnis 375 statt 6000 bei den anderen
   // Kameras, die Tiefe reicht auch fuer Randstein (0,09 hoch) gegen Fahrbahn.
   const VF_FAHRER_AUGE_CM = 100, VF_FAHRER_ABSTAND_CM = 75, VF_FAHRER_TAU = 0.25, VF_FAHRER_ZOOM_TAU = 0.8;
-  const VF_FAHRER_FOV = 46, VF_FAHRER_FOV_FERN = 28;
+  const VF_FAHRER_FOV = 34, VF_FAHRER_FOV_FERN = 21;
   function vfFahrerOrt(pts, nrm, tiles) {
     const n = pts.length, rand = TRACK_HALF_W + TRACK_KERB_W, abst = VF_FAHRER_ABSTAND_CM * TRACK_UNITS_PER_CM;
     const s = Math.max(0, pts.findIndex((p) => p.tile >= 0 && tiles[p.tile] && tiles[p.tile].type === TILE_TYPE.START));
@@ -42347,7 +42347,7 @@
       return vfDrehAnwenden({ auge, ziel: [VF.x, 1.2, VF.y], fov: 32, nah: 0.3 }, art, D, VF.x, 1.2, VF.y);
     }
     const nah = id === 'nah';
-    const hinten = nah ? 8 : 15, hoehe = nah ? 3.8 : 8, tau = nah ? 0.08 : 0.15;
+    const hinten = nah ? 9 : 15, hoehe = nah ? 3.8 : 8, tau = nah ? 0.08 : 0.15;
     // Gedreht kreist der SOLL-Ort um das Auto; die Nachfuehrung (tau) bleibt dieselbe.
     const zh = nah ? 2.0 : 1.4, vor = nah ? 8 : 12;
     const k = vfDrehAnwenden({ auge: [VF.x - fx * hinten, hoehe, VF.y - fz * hinten], ziel: [VF.x + fx * vor, zh, VF.y + fz * vor] },
