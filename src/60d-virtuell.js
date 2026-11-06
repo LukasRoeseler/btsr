@@ -1300,8 +1300,10 @@
         fetch(pfad + 'auto.json').then((r) => { if (!r.ok) throw new Error('auto.json ' + r.status); return r.json(); }),
         fetch(pfad + 'auto.bin').then((r) => { if (!r.ok) throw new Error('auto.bin ' + r.status); return r.arrayBuffer(); }),
       ]).then(([meta, bin]) => {
-        if (bin.byteLength < meta.indexAb + meta.indizes * 2) throw new Error('auto.bin zu kurz');
-        return { meta, ecken: new Float32Array(bin, 0, meta.ecken * 8), indizes: new Uint16Array(bin, meta.indexAb, meta.indizes) };
+        const breite = meta.indizesTyp === 32 ? 4 : 2;
+        if (bin.byteLength < meta.indexAb + meta.indizes * breite) throw new Error('auto.bin zu kurz');
+        const IA = meta.indizesTyp === 32 ? Uint32Array : Uint16Array;
+        return { meta, ecken: new Float32Array(bin, 0, meta.ecken * 8), indizes: new IA(bin, meta.indexAb, meta.indizes) };
       }).catch((e) => { vfModellLaden[pfad] = null; throw e; });
     }
     return vfModellLaden[pfad];
@@ -1375,7 +1377,7 @@
     const schatten = daten.meta.schatten ? vfTextur(gl, pfad + daten.meta.schatten, [0, 0, 0, 0]) : null;
     // Eine kleine Flaeche fuer Schatten, Lichtkegel und Leuchten (wird je Bild neu beschrieben).
     const quad = gl.createBuffer();
-    return { meta: daten.meta, d: daten.meta.physik, vbo, ibo, tex, schatten, glanz: vfGlanzTextur(gl), quad };
+    return { meta: daten.meta, d: daten.meta.physik, vbo, ibo, tex, schatten, glanz: vfGlanzTextur(gl), quad, indexTyp: daten.meta.indizesTyp || 16 };
   }
   // Naechster Mittellinienpunkt in einem Fenster um den letzten (die Strecke kann sich kreuzen).
   function vfOrt(pts, nrm, x, y, idx) {
@@ -1954,12 +1956,12 @@
       // Wie ein Zuschauer neben der Strecke: sitzt seitlich links neben dem Auto, etwas in der
       // Luft, und schaut immer aufs Auto (verfolgt es mit dem Blick, statt mitzufahren).
       const lx = -fz, lz = fx;               // senkrecht zur Fahrtrichtung ("links")
-      const auge = [VF.x + lx * 9, 4.5, VF.y + lz * 9];
+      const auge = [VF.x + lx * 7.5, 4.0, VF.y + lz * 7.5];
       VF.kam = null;
-      return vfDrehAnwenden({ auge, ziel: [VF.x, 1.2, VF.y], fov: 42, nah: 0.3 }, art, D, VF.x, 1.2, VF.y);
+      return vfDrehAnwenden({ auge, ziel: [VF.x, 1.2, VF.y], fov: 32, nah: 0.3 }, art, D, VF.x, 1.2, VF.y);
     }
     const nah = id === 'nah';
-    const hinten = nah ? 10 : 20, hoehe = nah ? 4.5 : 10, tau = nah ? 0.08 : 0.15;
+    const hinten = nah ? 8 : 15, hoehe = nah ? 3.8 : 8, tau = nah ? 0.08 : 0.15;
     // Gedreht kreist der SOLL-Ort um das Auto; die Nachfuehrung (tau) bleibt dieselbe.
     const zh = nah ? 2.0 : 1.4, vor = nah ? 8 : 12;
     const k = vfDrehAnwenden({ auge: [VF.x - fx * hinten, hoehe, VF.y - fz * hinten], ziel: [VF.x + fx * vor, zh, VF.y + fz * vor] },
@@ -1967,7 +1969,7 @@
     const soll = k.auge;
     const a = 1 - Math.exp(-Math.max(0, dt) / tau);
     VF.kam = VF.kam ? VF.kam.map((q, i) => q + (soll[i] - q) * a) : soll;
-    return { auge: VF.kam, ziel: k.ziel, fov: nah ? 66 : 62, nah: 0.5 };
+    return { auge: VF.kam, ziel: k.ziel, fov: nah ? 58 : 54, nah: 0.5 };
   }
   function vfModellMalen(gl, pv, blick) {
     vfModellZeichnen(gl, pv, blick, VF.modell, VF.tprog, VF.x, VF.y, VF.h, VF.feder, VF.lenkWinkel, VF.raddreh, VF.radModell,
@@ -2004,7 +2006,8 @@
       gl.vertexAttribPointer(T.auv, 2, gl.FLOAT, false, 32, t.ecke0 * 32 + 24);
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, M.ibo);
       gl.bindTexture(gl.TEXTURE_2D, M.tex[t.tex]);
-      gl.drawElements(gl.TRIANGLES, t.indizes, gl.UNSIGNED_SHORT, t.index0 * 2);
+      const iTyp = M.indexTyp === 32 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT;
+      gl.drawElements(gl.TRIANGLES, t.indizes, iTyp, t.index0 * (M.indexTyp === 32 ? 4 : 2));
     };
     const flaeche = (ecken, tx) => {      // ecken: je Ecke x y z u v (Welt)
       const a = [];
@@ -2230,6 +2233,8 @@
     const cv = schicht.querySelector('canvas');
     const gl = cv.getContext('webgl', { antialias: true }) || cv.getContext('experimental-webgl');
     if (!gl) { schicht.remove(); showHudToast(t('Dieses Gerät kann kein WebGL')); return false; }
+    // Grosse Modelle (Porsche, volle Aufloesung) brauchen Uint32-Indizes (>65535 Ecken).
+    gl.indexUint = gl.getExtension('OES_element_index_uint');
     try {
       VF.prog = vfProgramm(gl);
     } catch (e) { schicht.remove(); showHudToast('WebGL: ' + e.message); return false; }

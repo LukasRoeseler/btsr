@@ -79,10 +79,14 @@ WHEEL_METAL_FARBE = (140, 142, 148)
 WHEEL_DISC_FARBE = (70, 70, 75)
 
 # Zielgroesse: Gesamtzahl Dreiecke der Karosserie (ohne Raeder) nach der Vereinfachung.
-ZIEL_DREIECKE = 45000
-# Zielgroessen fuer das (4x wiederverwendete) Rad.
-ZIEL_RAD_TYRE = 1800
-ZIEL_RAD_METAL = 2200
+# BESTELLT (2026-11-06): "Porsche soll aussehen wie der 3D-Render von Sketchfab. Mach eine
+# Ausnahme, wo das auf Mobilgeraeten schlecht laufen darf." Also volle Aufloesung, keine
+# Vereinfachung: ZIEL so gross setzen, dass nichts decimiert wird. Die Indizes laufen dann
+# ueber 65535 Ecken und werden als Uint32 geschrieben (siehe unten).
+ZIEL_DREIECKE = 5000000
+# Zielgroessen fuer das (4x wiederverwendete) Rad (ebenfalls volle Aufloesung).
+ZIEL_RAD_TYRE = 200000
+ZIEL_RAD_METAL = 200000
 
 
 def lade_geometrie(scene):
@@ -395,8 +399,7 @@ def main():
     ecken = np.concatenate(teile['eckenlist'])
     normalen = np.concatenate(teile['normalenlist'])
     uv = np.concatenate(teile['uvlist'])
-    if len(ecken) > 65535:
-        raise SystemExit('zu viele Ecken (%d) fuer Uint16' % len(ecken))
+    # Indizes als Uint32 (das Modell hat mehr als 65535 Ecken; die App liest den Typ aus meta).
     roh = np.zeros((len(ecken), 8), np.float32)
     roh[:, 0:3] = ecken
     roh[:, 3:6] = normalen
@@ -405,7 +408,7 @@ def main():
     pad = (-len(buf)) % 4
     buf += b'\0' * pad
     index_ab = len(buf)
-    buf += np.asarray(teile['indizes'], dtype=np.uint16).tobytes()
+    buf += np.asarray(teile['indizes'], dtype=np.uint32).tobytes()
     if not dry:
         open(os.path.join(OUT, 'auto.bin'), 'wb').write(buf)
 
@@ -454,6 +457,7 @@ def main():
         'lizenz': 'CC BY 4.0 (kevin, sohyalebret); Modell vereinfacht mit tools/porsche_model.py',
         'koordinaten': 'm; +x links, +y oben, +z vorn',
         'ecken': len(ecken), 'indizes': len(teile['indizes']), 'indexAb': index_ab, 'schritt': 32,
+        'indizesTyp': 32,
         'teile': teile['teile'], 'schatten': None, 'lichter': lichter, 'physik': physik,
     }
     if not dry:
@@ -462,8 +466,9 @@ def main():
                   ensure_ascii=False, indent=1)
         open(os.path.join(OUT, 'LIZENZ.txt'), 'w', encoding='utf-8', newline='\n').write(
             'Porsche 911 (992) GT3R.\n\nModell und Texturen: Sketchfab, CC BY 4.0 (Autoren "kevin", '
-            '"sohyalebret").\nUmgewandelt mit tools/porsche_model.py: Innenraum entfernt, Rad '
-            'herausgeloest und normiert, Geometrie vereinfacht (UVs erhalten), Texturen kopiert.\n'
+            '"sohyalebret").\nQuelle: sketchfab.com (porsche-911-992-gt3r), heruntergeladen als FBX.\n'
+            'Umgewandelt mit tools/porsche_model.py: Innenraum entfernt, vorderes linkes Rad '
+            'herausgeloest und normiert, Ecken verschweisst, UVs erhalten, Texturen kopiert.\n'
             'https://creativecommons.org/licenses/by/4.0/\n')
 
     print('--- Teile ---')

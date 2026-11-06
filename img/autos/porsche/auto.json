@@ -4,10 +4,11 @@
  "quelle": "Sketchfab (CC BY 4.0), 992 GT3R",
  "lizenz": "CC BY 4.0 (kevin, sohyalebret); Modell vereinfacht mit tools/porsche_model.py",
  "koordinaten": "m; +x links, +y oben, +z vorn",
- "ecken": 63255,
- "indizes": 148902,
- "indexAb": 2024160,
+ "ecken": 197310,
+ "indizes": 485535,
+ "indexAb": 6313920,
  "schritt": 32,
+ "indizesTyp": 32,
  "teile": [
   {
    "name": "porsche_0",
@@ -15,239 +16,239 @@
    "gruppe": "auto",
    "tex": "ext_glass_headlight.png",
    "ecke0": 0,
-   "ecken": 565,
+   "ecken": 785,
    "index0": 0,
-   "indizes": 3432
+   "indizes": 5352
   },
   {
    "name": "porsche_1",
    "rolle": "karosserie",
    "gruppe": "auto",
    "tex": "body_carbon.png",
-   "ecke0": 565,
-   "ecken": 26734,
-   "index0": 3432,
-   "indizes": 71475
+   "ecke0": 785,
+   "ecken": 86397,
+   "index0": 5352,
+   "indizes": 239421
   },
   {
    "name": "porsche_2",
    "rolle": "karosserie",
    "gruppe": "auto",
    "tex": "solid_2.png",
-   "ecke0": 27299,
-   "ecken": 11098,
-   "index0": 74907,
-   "indizes": 20655
+   "ecke0": 87182,
+   "ecken": 34071,
+   "index0": 244773,
+   "indizes": 69192
   },
   {
    "name": "porsche_3",
    "rolle": "karosserie",
    "gruppe": "auto",
    "tex": "solid_3.png",
-   "ecke0": 38397,
-   "ecken": 2509,
-   "index0": 95562,
-   "indizes": 3816
+   "ecke0": 121253,
+   "ecken": 7699,
+   "index0": 313965,
+   "indizes": 12780
   },
   {
    "name": "porsche_4",
    "rolle": "karosserie",
    "gruppe": "auto",
    "tex": "solid_4.png",
-   "ecke0": 40906,
-   "ecken": 96,
-   "index0": 99378,
-   "indizes": 189
+   "ecke0": 128952,
+   "ecken": 257,
+   "index0": 326745,
+   "indizes": 636
   },
   {
    "name": "porsche_5",
    "rolle": "karosserie",
    "gruppe": "auto",
    "tex": "solid_5.png",
-   "ecke0": 41002,
-   "ecken": 934,
-   "index0": 99567,
-   "indizes": 2229
+   "ecke0": 129209,
+   "ecken": 3205,
+   "index0": 327381,
+   "indizes": 7470
   },
   {
    "name": "porsche_6",
    "rolle": "glas",
    "gruppe": "auto",
    "tex": "solid_6.png",
-   "ecke0": 41936,
-   "ecken": 616,
-   "index0": 101796,
-   "indizes": 1368
+   "ecke0": 132414,
+   "ecken": 2310,
+   "index0": 334851,
+   "indizes": 4578
   },
   {
    "name": "porsche_7",
    "rolle": "karosserie",
    "gruppe": "auto",
    "tex": "solid_7.png",
-   "ecke0": 42552,
-   "ecken": 811,
-   "index0": 103164,
-   "indizes": 1257
+   "ecke0": 134724,
+   "ecken": 2708,
+   "index0": 339429,
+   "indizes": 4206
   },
   {
    "name": "porsche_8",
    "rolle": "scheinwerfer",
    "gruppe": "auto",
    "tex": "solid_8.png",
-   "ecke0": 43363,
-   "ecken": 5095,
-   "index0": 104421,
-   "indizes": 9714
+   "ecke0": 137432,
+   "ecken": 15816,
+   "index0": 343635,
+   "indizes": 32538
   },
   {
    "name": "porsche_9",
    "rolle": "ruecklicht",
    "gruppe": "auto",
    "tex": "solid_9.png",
-   "ecke0": 48458,
-   "ecken": 1629,
-   "index0": 114135,
-   "indizes": 3192
+   "ecke0": 153248,
+   "ecken": 4830,
+   "index0": 376173,
+   "indizes": 10692
   },
   {
    "name": "porsche_10",
    "rolle": "glas",
    "gruppe": "auto",
    "tex": "solid_10.png",
-   "ecke0": 50087,
-   "ecken": 798,
-   "index0": 117327,
-   "indizes": 1056
+   "ecke0": 158078,
+   "ecken": 2345,
+   "index0": 386865,
+   "indizes": 3534
   },
   {
    "name": "porsche_11",
    "rolle": "glas",
    "gruppe": "auto",
    "tex": "solid_11.png",
-   "ecke0": 50885,
-   "ecken": 554,
-   "index0": 118383,
-   "indizes": 1602
+   "ecke0": 160423,
+   "ecken": 1786,
+   "index0": 390399,
+   "indizes": 5370
   },
   {
    "name": "porsche_12",
    "rolle": "karosserie",
    "gruppe": "auto",
    "tex": "solid_12.png",
-   "ecke0": 51439,
-   "ecken": 809,
-   "index0": 119985,
-   "indizes": 2004
+   "ecke0": 162209,
+   "ecken": 2773,
+   "index0": 395769,
+   "indizes": 6714
   },
   {
    "name": "porsche_13",
    "rolle": "karosserie",
    "gruppe": "auto",
    "tex": "solid_13.png",
-   "ecke0": 52248,
-   "ecken": 3105,
-   "index0": 121989,
-   "indizes": 7500
+   "ecke0": 164982,
+   "ecken": 9957,
+   "index0": 402483,
+   "indizes": 25134
   },
   {
    "name": "porsche_14",
    "rolle": "karosserie",
    "gruppe": "auto",
    "tex": "solid_14.png",
-   "ecke0": 55353,
-   "ecken": 43,
-   "index0": 129489,
-   "indizes": 90
+   "ecke0": 174939,
+   "ecken": 49,
+   "index0": 427617,
+   "indizes": 108
   },
   {
    "name": "porsche_15",
    "rolle": "scheinwerferglas",
    "gruppe": "auto",
    "tex": "ext_glass_headlight.png",
-   "ecke0": 55396,
-   "ecken": 260,
-   "index0": 129579,
-   "indizes": 798
+   "ecke0": 174988,
+   "ecken": 783,
+   "index0": 427725,
+   "indizes": 2676
   },
   {
    "name": "porsche_16",
    "rolle": "karosserie",
    "gruppe": "auto",
    "tex": "solid_16.png",
-   "ecke0": 55656,
-   "ecken": 900,
-   "index0": 130377,
-   "indizes": 1851
+   "ecke0": 175771,
+   "ecken": 2634,
+   "index0": 430401,
+   "indizes": 6204
   },
   {
    "name": "porsche_17",
    "rolle": "karosserie",
    "gruppe": "auto",
    "tex": "solid_17.png",
-   "ecke0": 56556,
-   "ecken": 835,
-   "index0": 132228,
-   "indizes": 1995
+   "ecke0": 178405,
+   "ecken": 2372,
+   "index0": 436605,
+   "indizes": 6684
   },
   {
    "name": "porsche_22",
    "rolle": "karosserie",
    "gruppe": "auto",
    "tex": "solid_22.png",
-   "ecke0": 57391,
-   "ecken": 93,
-   "index0": 134223,
-   "indizes": 132
+   "ecke0": 180777,
+   "ecken": 250,
+   "index0": 443289,
+   "indizes": 444
   },
   {
    "name": "porsche_23",
    "rolle": "karosserie",
    "gruppe": "auto",
    "tex": "solid_23.png",
-   "ecke0": 57484,
-   "ecken": 44,
-   "index0": 134355,
-   "indizes": 90
+   "ecke0": 181027,
+   "ecken": 92,
+   "index0": 443733,
+   "indizes": 246
   },
   {
    "name": "porsche_46",
    "rolle": "karosserie",
    "gruppe": "auto",
    "tex": "solid_46.png",
-   "ecke0": 57528,
-   "ecken": 1025,
-   "index0": 134445,
-   "indizes": 1680
+   "ecke0": 181119,
+   "ecken": 3102,
+   "index0": 443979,
+   "indizes": 5628
   },
   {
    "name": "porsche_47",
    "rolle": "scheinwerfer",
    "gruppe": "auto",
    "tex": "lights_aux.png",
-   "ecke0": 58553,
-   "ecken": 321,
-   "index0": 136125,
-   "indizes": 780
+   "ecke0": 184221,
+   "ecken": 1016,
+   "index0": 449607,
+   "indizes": 2610
   },
   {
    "name": "rad_tyre",
    "rolle": "rad",
    "gruppe": "rad",
    "tex": "tyre.png",
-   "ecke0": 58874,
-   "ecken": 1525,
-   "index0": 136905,
-   "indizes": 5400
+   "ecke0": 185237,
+   "ecken": 2394,
+   "index0": 452217,
+   "indizes": 8640
   },
   {
    "name": "rad_metal",
    "rolle": "rad",
    "gruppe": "rad",
    "tex": "wheel_metal.png",
-   "ecke0": 60399,
-   "ecken": 2856,
-   "index0": 142305,
-   "indizes": 6597
+   "ecke0": 187631,
+   "ecken": 9679,
+   "index0": 460857,
+   "indizes": 24678
   }
  ],
  "schatten": null,
