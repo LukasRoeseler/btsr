@@ -79,7 +79,10 @@ WHEEL_METAL_FARBE = (140, 142, 148)
 WHEEL_DISC_FARBE = (70, 70, 75)
 
 # Zielgroesse: Gesamtzahl Dreiecke der Karosserie (ohne Raeder) nach der Vereinfachung.
-ZIEL_DREIECKE = 30000
+ZIEL_DREIECKE = 45000
+# Zielgroessen fuer das (4x wiederverwendete) Rad.
+ZIEL_RAD_TYRE = 1800
+ZIEL_RAD_METAL = 2200
 
 
 def lade_geometrie(scene):
@@ -121,17 +124,34 @@ def weld(ecken, normalen, uv, dreiecke):
 def vereinfachen(ecken, normalen, uv, dreiecke, ziel):
     """Ecken/Dreiecke auf ziel Dreiecke vereinfachen, UVs und Normalen erhalten.
 
-    Zuerst werden doppelte Ecken (Lage+Normale+UV) zusammengefuehrt, dann vereinfacht. Die
-    Stuetzstellen nach der Vereinfachung sind Original-Ecken (die Zusammenfall-Kette wird mit
-    Union-Find aufgeloest), ihre UVs und Normalen bleiben also exakt erhalten. Die Positionen
-    werden nicht auf die optimale QEM-Stelle verschoben - fuer ein Spielmodell unerheblich.
+    Zuerst werden doppelte Ecken (Lage+Normale+UV) zusammengefuehrt, dann wird mit der
+    QEM-Simplifizierung (fast_simplification) vereinfacht. Die Zusammenfall-Kette wird mit
+    replay_simplification abgespielt: die decimierten Punkte liegen dann auf den optimalen
+    QEM-Stellen (glatte Oberflaeche statt zackiger Original-Stuetzstellen). Die Indizierung
+    (indice_mapping) ordnet jeder decimierten Ecke ihre Original-UVs und -Normale zu.
+    Faellt replay aus, wird auf die Union-Find-Rekonstruktion mit Original-Stuetzstellen
+    zurueckgegriffen.
     """
     ecken, normalen, uv, dreiecke = weld(ecken, normalen, uv, dreiecke)
     if len(dreiecke) <= ziel or ziel <= 0:
         return ecken, normalen, uv, dreiecke
-    from fast_simplification import simplify
+    from fast_simplification import simplify, replay_simplification
     pts = np.ascontiguousarray(ecken, dtype=np.float32)
     tris = np.ascontiguousarray(dreiecke, dtype=np.int32)
+    try:
+        _, _, collapses = simplify(pts, tris, target_count=int(ziel), agg=7, return_collapses=True)
+        dec_pts, dec_faces, imap = replay_simplification(pts, tris, collapses)
+        # indice_mapping[i] = j: Original-Ecke i -> decimierte Ecke j (-1 = isoliert, entfernt).
+        # Fuer jede decimierte Ecke die Original-Ecke ermitteln (die zuletzt hineingefallene).
+        valid = imap >= 0
+        dec_orig = np.full(len(dec_pts), -1, dtype=np.int64)
+        dec_orig[imap[valid]] = np.nonzero(valid)[0]
+        if (dec_orig >= 0).all() and len(dec_faces) > 0:
+            return dec_pts.astype(np.float32), normalen[dec_orig], uv[dec_orig], dec_faces.astype(np.int64)
+    except Exception:
+        pass
+    # Fallback: Original-Stuetzstellen beibehalten (Union-Find ueber die Zusammenfall-Kette).
+    from fast_simplification import simplify
     _, _, collapses = simplify(pts, tris, target_count=int(ziel), agg=7, return_collapses=True)
     n = len(ecken)
     parent = np.arange(n, dtype=np.int64)
@@ -259,8 +279,8 @@ def main():
     if rad_tyre is None or rad_metal is None:
         raise SystemExit('kein Rad gefunden')
     # Das Rad ist hochpoly (viele Speichen, flacher Reifen); auf vertretbare Groesse vereinfachen.
-    rad_tyre = vereinfachen(rad_tyre[0], rad_tyre[1], rad_tyre[2], rad_tyre[3], 1200)
-    rad_metal = vereinfachen(rad_metal[0], rad_metal[1], rad_metal[2], rad_metal[3], 1600)
+    rad_tyre = vereinfachen(rad_tyre[0], rad_tyre[1], rad_tyre[2], rad_tyre[3], ZIEL_RAD_TYRE)
+    rad_metal = vereinfachen(rad_metal[0], rad_metal[1], rad_metal[2], rad_metal[3], ZIEL_RAD_METAL)
     # Gemeinsame Normierung aus der Gesamtgroesse beider Teile.
     alle = np.concatenate([rad_tyre[0], rad_metal[0]])
     zentrum = (alle.min(0) + alle.max(0)) / 2.0
