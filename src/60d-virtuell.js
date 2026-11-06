@@ -1983,7 +1983,7 @@
     const g = fs || 1, fez = fe || { z: 0, th: 0, ph: 0 };
     const zSp = d.vorderachse - d.a, boden = (d.reifen.vorn.bodenfreiheit + d.reifen.hinten.bodenfreiheit) / 2;
     // Aufbau: um den Schwerpunkt genickt und gerollt, eingefedert nach unten.
-    const aufbau = vfKette(lage, vfT(0, boden - fez.z * g, zSp), vfT(0, d.schwerpunktHoehe, 0), vfRx((fez.th + (nick || 0)) * g), vfRz(fez.ph * g),
+    const aufbau = vfKette(lage, vfT(0, boden - fez.z * g, zSp), vfT(0, d.schwerpunktHoehe, 0), vfRx((fez.th + (nick || 0)) * g * 0.55), vfRz(fez.ph * g),
       vfT(0, -d.schwerpunktHoehe, -zSp));
     gl.useProgram(T.p);
     gl.uniformMatrix4fv(u.m, false, new Float32Array(pv));

@@ -2645,6 +2645,28 @@
     font-family: 'Times New Roman', Times, serif; display: inline-flex; align-items: center; justify-content: center; }
   .k-tutorial-knopf.k-wiki:hover { background: var(--k-blau); color: var(--k-blau-text); border-color: var(--k-blau); }
 
+  /* Patchnotes-Knopf unten rechts auf dem Startbildschirm (Rechteck mit drei Linien) und das
+     sich oeffnende, scrollbare Fenster mit den letzten drei Versions-Abschnitten. */
+  .home-patchnotes-knopf { position: fixed; right: 14px; bottom: 14px; z-index: 300; width: 46px; height: 40px;
+    background: #14161c; color: var(--k-blau); border: 1px solid var(--k-blau); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .home-patchnotes-knopf:hover { background: var(--k-blau); color: var(--k-blau-text); }
+  .home-patchnotes-knopf svg { width: 22px; height: 22px; }
+  .home-patchnotes-ueber { position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,.66);
+    display: flex; align-items: center; justify-content: center; font-family: var(--k-font); }
+  .home-patchnotes-ueber[hidden] { display: none !important; }
+  .home-patchnotes-fenster { width: min(680px, 94vw); max-height: 82vh; background: #111319;
+    border-top: 4px solid var(--k-blau); display: flex; flex-direction: column; }
+  .home-patchnotes-kopf { display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px; border-bottom: 1px solid #2a2d36; }
+  .home-patchnotes-kopf b { letter-spacing: .12em; text-transform: uppercase; font-size: 15px; }
+  .home-patchnotes-kopf button { background: none; border: none; color: var(--ink); font-size: 22px;
+    line-height: 1; cursor: pointer; }
+  .home-patchnotes-inhalt { overflow-y: auto; padding: 8px 16px 18px; }
+  .home-patchnotes-inhalt h3 { color: var(--k-blau); margin: 14px 0 6px; font-size: 15px; }
+  .home-patchnotes-inhalt ul { padding-left: 20px; line-height: 1.6; margin: 0 0 10px; }
+  .home-patchnotes-inhalt li { margin-bottom: 6px; }
+
   /* Optionszeilen: die angewaehlte Zeile rot hinterlegt wie bei ACC */
   .opt-row.menu-nav-sel { outline: 2px solid #fff; background: rgba(0,163,224,.22); }
 
@@ -5669,11 +5691,24 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.3.93</span></span>
+        <span class="foot-ver">v<span id="app-version">1.3.107</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
         <button id="home-install" hidden>Als App installieren</button>
+      </div>
+    </div>
+    <!-- Patchnotes-Knopf unten rechts: oeffnet die letzten drei Versions-Abschnitte. -->
+    <button type="button" id="home-patchnotes" class="home-patchnotes-knopf" aria-label="Patchnotes anzeigen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <div id="home-patchnotes-ueber" class="home-patchnotes-ueber" hidden>
+      <div class="home-patchnotes-fenster" role="dialog" aria-label="Patchnotes">
+        <div class="home-patchnotes-kopf">
+          <b>Patchnotes</b>
+          <button type="button" id="home-patchnotes-schliessen" aria-label="Schliessen">&times;</button>
+        </div>
+        <div class="home-patchnotes-inhalt" id="home-patchnotes-inhalt"></div>
       </div>
     </div>
   </section>
@@ -42331,7 +42366,7 @@
     const g = fs || 1, fez = fe || { z: 0, th: 0, ph: 0 };
     const zSp = d.vorderachse - d.a, boden = (d.reifen.vorn.bodenfreiheit + d.reifen.hinten.bodenfreiheit) / 2;
     // Aufbau: um den Schwerpunkt genickt und gerollt, eingefedert nach unten.
-    const aufbau = vfKette(lage, vfT(0, boden - fez.z * g, zSp), vfT(0, d.schwerpunktHoehe, 0), vfRx((fez.th + (nick || 0)) * g), vfRz(fez.ph * g),
+    const aufbau = vfKette(lage, vfT(0, boden - fez.z * g, zSp), vfT(0, d.schwerpunktHoehe, 0), vfRx((fez.th + (nick || 0)) * g * 0.55), vfRz(fez.ph * g),
       vfT(0, -d.schwerpunktHoehe, -zSp));
     gl.useProgram(T.p);
     gl.uniformMatrix4fv(u.m, false, new Float32Array(pv));
@@ -59911,10 +59946,11 @@
   }
   function dsAus() { const e = new Uint8Array(11); e[0] = 0x05; return e; }
   // Die 47 Byte, die USB und Bluetooth gemeinsam haben.
-  function dsGemeinsam(links) {
+  function dsGemeinsam(links, rechts) {
     const c = new Uint8Array(47);
-    c[0] = 0x08;                 // nur der linke Trigger
-    c.set(links, 21);
+    c[0] = 0x0C;                 // linker (0x08) + rechter (0x04) Trigger
+    if (rechts) c.set(rechts, 10);
+    if (links) c.set(links, 21);
     return c;
   }
   let dsCrcTab = null;
@@ -59932,8 +59968,8 @@
     return (crc ^ 0xffffffff) >>> 0;
   }
   // Rein, fuer den Selbsttest: die Bytes eines Berichts (ohne Berichtskennung) und die Kennung.
-  function dsBericht(links, bt, folge) {
-    const c = dsGemeinsam(links);
+  function dsBericht(links, rechts, bt, folge) {
+    const c = dsGemeinsam(links, rechts);
     if (!bt) return { id: 0x02, daten: c };
     const d = new Uint8Array(77);
     d[0] = (folge & 0x0f) << 4;
@@ -59945,9 +59981,9 @@
     d[73] = crc & 0xff; d[74] = (crc >>> 8) & 0xff; d[75] = (crc >>> 16) & 0xff; d[76] = (crc >>> 24) & 0xff;
     return { id: 0x31, daten: d };
   }
-  async function dsSenden(links) {
+  async function dsSenden(links, rechts) {
     if (!dsGeraet) return;
-    const b = dsBericht(links, dsBt, dsFolge);
+    const b = dsBericht(links, rechts, dsBt, dsFolge);
     dsFolge = (dsFolge + 1) & 0x0f;
     try { await dsGeraet.sendReport(b.id, b.daten); dsFehler = ''; }
     catch (e) { dsFehler = e.message || String(e); }
@@ -59972,20 +60008,37 @@
       dsBt = (g.collections || []).some((c) => (c.outputReports || []).some((r) => r.reportId === 0x31));
       dsZustand = null;
       dsLageZeigen();
-      await dsSenden(dsAus());
+      await dsSenden(dsAus(), dsAus());
     } catch (e) { dsFehler = e.message || String(e); dsLageZeigen(); }
   }
   // Der linke Trigger ist die Bremse, wenn sie auf Knopf 6 liegt (Vorgabe).
   function dsBremseLinks() {
     return !!(typeof bindings !== 'undefined' && bindings.brake && bindings.brake.type === 'button' && bindings.brake.index === 6);
   }
+  // Der rechte Trigger ist das Gas, wenn es auf Knopf 7 liegt (Vorgabe).
+  function dsGasRechts() {
+    return !!(typeof bindings !== 'undefined' && bindings.throttle && bindings.throttle.type === 'button' && bindings.throttle.index === 7);
+  }
+  // Drehzahl-Feedback auf dem Gaspedal (dezent): nahe der Drehzahlgrenze wird der rechte
+  // Trigger spuerbar fester, mit der Drehzahl zunehmend - ein leiser Hinweis zum Schalten.
+  function dsRechtsStufe() {
+    if (!dsGasRechts() || !physicsEnabled || !physEngine.state) return 0;
+    const st = physEngine.state;
+    if (Math.max(0, st.longUse || 0) <= 0.02) return 0;
+    const frac = Math.max(0, Math.min(1, st.rpmFrac || 0));
+    if (frac < 0.70) return 0;
+    return Math.min(6, 2 + Math.round((frac - 0.70) / 0.30 * 4));
+  }
   function dsTick() {
     if (!dsGeraet) return;
     const absAn = !!($('vib-abs') ? $('vib-abs').checked : true);
-    const soll = absAn && dsBremseLinks() && physicsEnabled && !!(physEngine.state && physEngine.state.absActive) ? 'abs' : 'aus';
-    if (soll === dsZustand) return;
-    dsZustand = soll;
-    dsSenden(soll === 'abs' ? dsVibration(DS_ABS.position, DS_ABS.staerke, DS_ABS.frequenz) : dsAus());
+    const linksAn = absAn && dsBremseLinks() && physicsEnabled && !!(physEngine.state && physEngine.state.absActive);
+    const rechtsStufe = dsRechtsStufe();
+    const schluessel = (linksAn ? 'l' : '-') + (rechtsStufe || 0);
+    if (schluessel === dsZustand) return;
+    dsZustand = schluessel;
+    dsSenden(linksAn ? dsVibration(DS_ABS.position, DS_ABS.staerke, DS_ABS.frequenz) : dsAus(),
+             rechtsStufe ? dsVibration(0, rechtsStufe, 25) : dsAus());
   }
   setInterval(dsTick, 60);
   if ($('ds-verbinden')) $('ds-verbinden').addEventListener('click', dsVerbinden);
@@ -103160,9 +103213,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const f = [];
     const v = dsVibration(2, 6, 28);
     if (v[0] !== 0x26 || v[1] !== 0xfc || v[2] !== 0x03 || v[9] !== 28) f.push('Effekt: ' + Array.from(v).join(','));
-    const u = dsBericht(v, false, 0);
-    if (u.id !== 0x02 || u.daten.length !== 47 || u.daten[0] !== 0x08 || u.daten[21] !== 0x26) f.push('USB-Bericht falsch');
-    const b = dsBericht(v, true, 3);
+    const u = dsBericht(v, dsAus(), false, 0);
+    if (u.id !== 0x02 || u.daten.length !== 47 || u.daten[0] !== 0x0c || u.daten[10] !== 0x05 || u.daten[21] !== 0x26) f.push('USB-Bericht falsch');
+    const b = dsBericht(v, dsAus(), true, 3);
     if (b.id !== 0x31 || b.daten.length !== 77 || b.daten[0] !== 0x30 || b.daten[1] !== 0x10 || b.daten[2 + 21] !== 0x26) f.push('BT-Bericht falsch');
     // CRC-32 der Bekannten: "123456789" -> cbf43926
     if (dsCrc32(new TextEncoder().encode('123456789')) !== 0xcbf43926) f.push('CRC-32 falsch');
@@ -113188,6 +113241,40 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       }
       wort.classList.add('gl-zerlegt');
     });
+  })();
+
+  // ---- PATCHNOTES-KNOPF (unten rechts auf dem Startbildschirm) ----
+  // Oeffnet ein scrollbares Fenster mit den letzten drei Versions-Abschnitten aus #sub-patchnotes.
+  (function patchnotesKnopf() {
+    const knopf = $('home-patchnotes'), ueber = $('home-patchnotes-ueber'), inhalt = $('home-patchnotes-inhalt');
+    if (!knopf || !ueber || !inhalt) return;
+    const quelle = $('sub-patchnotes');
+    const fuellen = () => {
+      if (!quelle) return;
+      inhalt.textContent = '';
+      const abschnitte = [];
+      let el = quelle.firstElementChild;
+      while (el) {
+        if (el.tagName === 'P' && el.classList.contains('muted') && el.querySelector('b')) {
+          const ul = el.nextElementSibling;
+          if (ul && ul.tagName === 'UL' && ul.classList.contains('muted')) abschnitte.push([el, ul]);
+        }
+        el = el.nextElementSibling;
+      }
+      for (const [p, ul] of abschnitte.slice(0, 3)) {
+        const h = document.createElement('h3');
+        h.textContent = 'Version ' + (p.querySelector('b').textContent || '').trim();
+        inhalt.appendChild(h);
+        const kopie = ul.cloneNode(true);
+        kopie.removeAttribute('id');
+        inhalt.appendChild(kopie);
+      }
+    };
+    knopf.addEventListener('click', () => { fuellen(); ueber.hidden = false; });
+    const schliessen = $('home-patchnotes-schliessen');
+    if (schliessen) schliessen.addEventListener('click', () => { ueber.hidden = true; });
+    ueber.addEventListener('click', (e) => { if (e.target === ueber) ueber.hidden = true; });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !ueber.hidden) ueber.hidden = true; });
   })();
   // ============================== SITZUNGSDATEN ==============================
   //

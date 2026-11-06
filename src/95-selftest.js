@@ -17347,9 +17347,9 @@
     const f = [];
     const v = dsVibration(2, 6, 28);
     if (v[0] !== 0x26 || v[1] !== 0xfc || v[2] !== 0x03 || v[9] !== 28) f.push('Effekt: ' + Array.from(v).join(','));
-    const u = dsBericht(v, false, 0);
-    if (u.id !== 0x02 || u.daten.length !== 47 || u.daten[0] !== 0x08 || u.daten[21] !== 0x26) f.push('USB-Bericht falsch');
-    const b = dsBericht(v, true, 3);
+    const u = dsBericht(v, dsAus(), false, 0);
+    if (u.id !== 0x02 || u.daten.length !== 47 || u.daten[0] !== 0x0c || u.daten[10] !== 0x05 || u.daten[21] !== 0x26) f.push('USB-Bericht falsch');
+    const b = dsBericht(v, dsAus(), true, 3);
     if (b.id !== 0x31 || b.daten.length !== 77 || b.daten[0] !== 0x30 || b.daten[1] !== 0x10 || b.daten[2 + 21] !== 0x26) f.push('BT-Bericht falsch');
     // CRC-32 der Bekannten: "123456789" -> cbf43926
     if (dsCrc32(new TextEncoder().encode('123456789')) !== 0xcbf43926) f.push('CRC-32 falsch');

@@ -2645,6 +2645,28 @@
     font-family: 'Times New Roman', Times, serif; display: inline-flex; align-items: center; justify-content: center; }
   .k-tutorial-knopf.k-wiki:hover { background: var(--k-blau); color: var(--k-blau-text); border-color: var(--k-blau); }
 
+  /* Patchnotes-Knopf unten rechts auf dem Startbildschirm (Rechteck mit drei Linien) und das
+     sich oeffnende, scrollbare Fenster mit den letzten drei Versions-Abschnitten. */
+  .home-patchnotes-knopf { position: fixed; right: 14px; bottom: 14px; z-index: 300; width: 46px; height: 40px;
+    background: #14161c; color: var(--k-blau); border: 1px solid var(--k-blau); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .home-patchnotes-knopf:hover { background: var(--k-blau); color: var(--k-blau-text); }
+  .home-patchnotes-knopf svg { width: 22px; height: 22px; }
+  .home-patchnotes-ueber { position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,.66);
+    display: flex; align-items: center; justify-content: center; font-family: var(--k-font); }
+  .home-patchnotes-ueber[hidden] { display: none !important; }
+  .home-patchnotes-fenster { width: min(680px, 94vw); max-height: 82vh; background: #111319;
+    border-top: 4px solid var(--k-blau); display: flex; flex-direction: column; }
+  .home-patchnotes-kopf { display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px; border-bottom: 1px solid #2a2d36; }
+  .home-patchnotes-kopf b { letter-spacing: .12em; text-transform: uppercase; font-size: 15px; }
+  .home-patchnotes-kopf button { background: none; border: none; color: var(--ink); font-size: 22px;
+    line-height: 1; cursor: pointer; }
+  .home-patchnotes-inhalt { overflow-y: auto; padding: 8px 16px 18px; }
+  .home-patchnotes-inhalt h3 { color: var(--k-blau); margin: 14px 0 6px; font-size: 15px; }
+  .home-patchnotes-inhalt ul { padding-left: 20px; line-height: 1.6; margin: 0 0 10px; }
+  .home-patchnotes-inhalt li { margin-bottom: 6px; }
+
   /* Optionszeilen: die angewaehlte Zeile rot hinterlegt wie bei ACC */
   .opt-row.menu-nav-sel { outline: 2px solid #fff; background: rgba(0,163,224,.22); }
 
@@ -5669,11 +5691,24 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.3.93</span></span>
+        <span class="foot-ver">v<span id="app-version">1.3.107</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
         <button id="home-install" hidden>Als App installieren</button>
+      </div>
+    </div>
+    <!-- Patchnotes-Knopf unten rechts: oeffnet die letzten drei Versions-Abschnitte. -->
+    <button type="button" id="home-patchnotes" class="home-patchnotes-knopf" aria-label="Patchnotes anzeigen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <div id="home-patchnotes-ueber" class="home-patchnotes-ueber" hidden>
+      <div class="home-patchnotes-fenster" role="dialog" aria-label="Patchnotes">
+        <div class="home-patchnotes-kopf">
+          <b>Patchnotes</b>
+          <button type="button" id="home-patchnotes-schliessen" aria-label="Schliessen">&times;</button>
+        </div>
+        <div class="home-patchnotes-inhalt" id="home-patchnotes-inhalt"></div>
       </div>
     </div>
   </section>
