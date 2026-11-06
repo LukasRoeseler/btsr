@@ -17816,7 +17816,7 @@
   stAdd('Virtuell v1.2.32: NPCs fahren Stufe 1 mit dem Fahrzeugmodell, Querlage und Neigung in Grenzen', async () => {
     const f = [];
     const vS = vfNpcStufenTempo();
-    const soll = GHOST_TEMPO_STUFEN[1].speed / 0.55 * (ghostCfg.speed || 0.55) * (physEngine.config.topSpeedKmh || 4);
+    const soll = GHOST_TEMPO_STUFEN[1].speed / 0.55 * (ghostCfg.speed || 0.55) * (physEngine.config.topSpeedKmh || 4) * VF_NPC_KALIBRIER;
     if (VF_NPC_STUFE !== 1) f.push('Stufe ' + VF_NPC_STUFE + ' statt 1');
     if (Math.abs(vS - soll) > 1e-9) f.push('Stufentempo ' + vS.toFixed(3) + ' statt ' + soll.toFixed(3));
     if (!(vfNpcStufenTempo(0) < vS && vS < vfNpcStufenTempo(2))) f.push('Stufen nicht geordnet');

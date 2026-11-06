@@ -838,12 +838,12 @@
   // img/autos/v5r/: Modell ohne Innenraum, Rad, Lichtorte und die Fahrzeugdaten aus der .xml. Laengen in
   // Metern, im Auto +x links, +y oben, +z vorn; gezeichnet mal VF_AUTO.L / Laenge (so lang wie der Kasten).
   const VF_AUTO_STORE = 'omegasim-vf-auto';
-  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/' };
+  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', porsche: 'img/autos/porsche/' };
   function vfModellPfad(auto) { return VF_MODELL_PFADE[auto || vfAutoWahl()] || 'img/autos/v5r/'; }
   const VF_FEDER_STORE = 'omegasim-vf-feder';
   const VF_FEDER_WERTE = [1, 2, 3, 5, 8];
   function vfAutoWahl() {
-    try { const v = localStorage.getItem(VF_AUTO_STORE); return (v === 'v5r' || v === 'lynx220' || v === 'fmcgt4' || v === 'boxer96' || v === 'kasten') ? v : 'v5r'; } catch (e) { return 'v5r'; }
+    try { const v = localStorage.getItem(VF_AUTO_STORE); return (v === 'v5r' || v === 'lynx220' || v === 'fmcgt4' || v === 'boxer96' || v === 'porsche' || v === 'kasten') ? v : 'v5r'; } catch (e) { return 'v5r'; }
   }
   // Schaltung (Automatik/Manuell) fuer die virtuelle Fahrt. Manuell schaltet der Fahrer mit I/K.
   const VF_SCHALTUNG_STORE = 'omegasim-vf-schaltung';
@@ -861,7 +861,7 @@
   // Mittellinie mit leichtem Querversatz und drosseln ihr Tempo nach der Kurvigkeit voraus.
   // Seit v1.2.32 mit dem Tempo der Garagenstufe 1 und einem eigenen Fahrzeugmodell (siehe unten).
   const VF_NPC_STORE = 'omegasim-vf-npc';
-  const VF_NPC_POOL = ['v5r', 'fmcgt4', 'boxer96', 'lynx220'];
+  const VF_NPC_POOL = ['v5r', 'fmcgt4', 'boxer96', 'lynx220', 'porsche'];
   // v1.2.32 GEMELDET: "Die NPCs sind außerdem zu schnell und haben eine starke Neigung (sollte
   // auf Stufe 1 sein)." Gemessen auf Balkonia (1.2.31, 8 s Fahrt, drei NPCs):
   //   - Geradentempo 3,2 Modell-km/h (VF_NPC_BASE), mal 1,03 bis 3,3. Das ist 80 % Gas, mehr als
@@ -883,6 +883,15 @@
   const VF_NPC_STUFE = 1;          // Garagenstufe (GHOST_TEMPO_STUFEN): 1 = mittel, wie ein neuer NPC
   const VF_NPC_QUER_MAX = 13.0;    // m/s^2 im GT3-Mass (1,3 g): knapp unter dem eigenen Auto (gemessen 13,1-14,7)
   const VF_NPC_BREMS = 0.8;        // Modell-km/h je s fuer die Bremspunkte: 80 % der gemessenen Vollbremsung
+  // v1.3.94: Kalibrierung nach unten - die virtuellen NPCs waren fuer die meisten zu schnell. 0,85
+  // heisst 15 % langsamer als die Garagenstufe 1 (wie ein frischer, vorsichtiger Fahrer).
+  const VF_NPC_KALIBRIER = 0.85;
+  // v1.3.94 Startaufstellung: ein Feld hinter der Startlinie, zwei Reihen (links/rechts), Abstand
+  // zwischen den Reihen. Die Autos spawnen direkt auf ihren Startplaetzen statt verstreut.
+  const VF_GRID_REIHE = Math.max(2, Math.round((typeof TRACK_SAMPLES_PER_TILE !== 'undefined' ? TRACK_SAMPLES_PER_TILE : 8) * 1.5));
+  function vfGridKachel(start, reihe) {
+    return ((start - reihe * VF_GRID_REIHE) % VF.pts.length + VF.pts.length) % VF.pts.length;
+  }
   // So weit (s) voraus liest der NPC sein Zieltempo: die Bremse wirkt verhaeltnisgleich zum Fehlbetrag,
   // also traf er mit 0,3 s zu spaet ein (gemessen 15,6 m/s^2 statt 13 am Kurveneingang).
   const VF_NPC_VORAUS_S = 0.5;
@@ -937,7 +946,7 @@
     const basis = (typeof ghostCfg !== 'undefined' && ghostCfg.speed) || 0.55;
     const anteil = st && !st.max ? st.speed / 0.55 * basis : basis;
     const top = (physEngine && physEngine.config && physEngine.config.topSpeedKmh) || 4;
-    return Math.max(0.2, Math.min(1, anteil)) * top;
+    return Math.max(0.2, Math.min(1, anteil)) * top * VF_NPC_KALIBRIER;
   }
   // Das Fahrzeugmodell eines NPC: eine eigene, stumme Instanz wie in startGhost() (90-ghosts.js) und
   // 61-simlinie.js - die Abstimmung des eigenen Autos, aber Automatik, ohne Boxenlimiter, ohne Tank-
@@ -1021,6 +1030,18 @@
     const p = B.lauf[j], q = B.lauf[(j + 1) % n];
     return { j, f, x: p.x + (q.x - p.x) * f, y: p.y + (q.y - p.y) * f };
   }
+  // Gelbe Flagge / Einfuehrungsrunde: Zieltempo der NPCs in Modell-km/h deckeln. Die Geister rechnen
+  // unter ghostTick mit Faktoren (yellowFactor, formationPace); hier dasselbe in Modell-km/h.
+  function vfGelbZiel() {
+    const top = (physEngine && physEngine.config && physEngine.config.topSpeedKmh) || 4;
+    const f = (typeof yellowFactor === 'function') ? yellowFactor() : 0.27;
+    return Math.max(0.1, top * f);
+  }
+  function vfFormationZiel() {
+    const top = (physEngine && physEngine.config && physEngine.config.topSpeedKmh) || 4;
+    const f = (typeof formationPace === 'function') ? formationPace() : 0.35;
+    return Math.max(0.1, top * f);
+  }
   // Ein NPC-Schritt (rein, fuer den Selbsttest): Zieltempo aus der Spur ein Stueck voraus, Gas und
   // Bremse wie in 61-simlinie.js auf das eigene Fahrzeugmodell, dann auf der Spur weiter. Liefert die
   // neue Lage und die Groessen zum Zeichnen (Querbeschleunigung ay und Laengsbeschleunigung ax in m/s^2
@@ -1047,10 +1068,15 @@
       // In Teilschritten von hoechstens 50 ms wie vfBild: ein grosser Schritt (Selbsttest 0,5 s) liess
       // das Modell mit Gas 0 in einem Zug von 2,2 auf 1,69 km/h fallen.
       const teile = Math.max(1, Math.ceil(dt / 0.05)), h = dt / teile;
+      const gelb = (typeof flagState !== 'undefined') && flagState !== 'green';
+      const formation = (typeof raceFormationLap !== 'undefined') && raceFormationLap;
       for (let t = 0; t < teile; t++) {
         const v = Math.max(0, e.state.speedKmh || 0);
         const voraus = vfNpcPunkt(B, npc.s + v * K * VF_NPC_VORAUS_S, npc.idx);
-        const ziel = Math.min(B.v[npc.idx], B.v[voraus.j]) * (npc.faktor || 1);
+        let ziel = Math.min(B.v[npc.idx], B.v[voraus.j]) * (npc.faktor || 1);
+        // Gelbe Flagge / Einfuehrungsrunde: Zieltempo deckeln (wie die Geister unter ghostTick).
+        if (gelb) ziel = Math.min(ziel, vfGelbZiel());
+        else if (formation) ziel = Math.min(ziel, vfFormationZiel());
         const fehl = ziel - v;
         const throttle = fehl > 0 ? Math.min(1, fehl / (top * 0.06)) : 0;
         const brake = fehl < -top * 0.01 ? Math.min(1, -fehl / (top * 0.05)) : 0;
@@ -1096,13 +1122,16 @@
     const n = VF.pts.length;
     for (let k = 0; k < nAnzahl; k++) {
       const auto = pool[k];
-      const startIdx = (start + Math.floor(n * (k + 1) / (nAnzahl + 1))) % n;
+      // Startaufstellung: Zeile 1 hinter der Startlinie (k=0,1), Zeile 2 (k=2,3), ...; links/rechts.
+      const reihe = Math.floor((k + 1) / 2);
+      const startIdx = vfGridKachel(start, reihe);
       const npc = {
         auto, modell: null, P: null, idx: startIdx, s: null, kmh: 0, motor: vfNpcMotor(), bahn: null,
-        offset: [3.0, -3.0, 0.0][k] || 0,
+        offset: (k % 2 === 0) ? 3.0 : -3.0,
         faktor: 0.97 + 0.03 * k,
         x: 0, y: 0, h: 0, raddreh: 0, lenkWinkel: 0, ay: 0, ax: 0,
         feder: { z: 0, vz: 0, th: 0, vth: 0, ph: 0, vph: 0 },
+        koLeben: 3, koAus: false, derbyHealth: 100, derbyKills: 0, derbyAus: false,
       };
       vfNpcSteuern(npc, 0, VF.pts, VF.nrm);
       VF.npcs.push(npc);
@@ -1386,6 +1415,11 @@
           // Rundenrennen: nach der Ziel-Lap ist Schluss.
           VF.runden = (VF.runden || 0) + 1;
           if (VF.modus === 'laps' && VF.runden >= VF.limit) vfRennenEnde();
+          // Time Attack: jede gueltige Runde werten (Medaillen, Bestzeit speichern).
+          if (VF.modus === 'bestzeit' && typeof bestzeitRunde === 'function') {
+            const r = bestzeitRunde(VF.letzte, VF.car, VF.tiles);
+            if (r && typeof bestzeitMeldung === 'function') bestzeitMeldung(r, VF.letzte, VF.runden);
+          }
         }
         VF.rundeAb = jetzt;
         VF.splits = [];
@@ -1410,7 +1444,7 @@
     const st = physEngine.state;
     VF.dtBild = dt;
     // Zeitmodi (Endurance, Qualifying): laufen gegen die Rennzeit.
-    if (VF.modus && VF.modus !== 'laps' && VF.modus !== 'practice' && VF.limit) {
+    if (VF.modus && (VF.modus === 'endurance' || VF.modus === 'qualifying') && VF.limit) {
       VF.modusZeit += dt;
       if (VF.modusZeit >= VF.limit * 60) vfRennenEnde();
     }
@@ -1450,6 +1484,8 @@
       }
       vfDynamik(VF.dyn, vVoll, ax, Math.max(0, st.longUse || 0), lenk, dt, mu, VF.P);
       VF.ax = ax; VF.ay = vVoll * VF.dyn.r;
+      // Nickbewegung: beim Bremsen senkt sich die Nase, beim Beschleunigen hebt sie sich (dezent).
+      VF.pitch = Math.max(-0.03, Math.min(0.03, -(VF.ax || 0) * 0.0018));
       // Weg in der Bahnwelt: Tempo des Modellautos, Richtung = Kurs + Schwimmwinkel.
       VF.h += VF.dyn.r * dt * 180 / Math.PI;
       const beta = Math.atan2(VF.dyn.vy, Math.max(0.1, vVoll));
@@ -1514,12 +1550,87 @@
     // NPCs: folgen ihrer Spur mit Stufe-1-Tempo und bremsen vor Kurven (vfNpcSteuern).
     if (VF.npcs && VF.npcBogen) {
       for (const npc of VF.npcs) {
+        if (npc.koAus || npc.derbyAus) continue;
         vfNpcSteuern(npc, dt, VF.pts, VF.nrm);
         if (npc.modell && npc.modell.d && npc.modell.d.reifen) vfFederung(npc.feder, npc.ax || 0, npc.ay || 0, dt, npc.modell.d, 0);
       }
     }
+    // v1.3.94: Kollision, Schaden und Windschatten (dreckige Luft) mit den NPCs.
+    vfVerkehr(dt);
     vfMalen();
     vfHud();
+  }
+  // Kollision mit NPCs: Schaden, Abbremsen, Rumpeln; und Windschatten (dreckige Luft): dicht hinter
+  // einem NPC in der Spur verliert das eigene Auto Grip vorn (wie dirtyAirLevel in 90-ghosts.js).
+  // Seit v1.3.95 wertet die Kollision auch Derby (Health) und NPC-Knockout (Leben) aus.
+  function vfVerkehr(dt) {
+    const h = VF.h * Math.PI / 180;
+    const fwdX = Math.sin(h), fwdY = -Math.cos(h), latX = Math.cos(h), latY = Math.sin(h);
+    let dirty = 0;
+    if (VF.kollisionsBis === undefined) VF.kollisionsBis = 0;
+    const frist = (VF.modus === 'derby' || VF.modus === 'knockout') ? 600 : 1500;
+    const vAbs = Math.abs(physEngine.state.speedKmh || 0);
+    for (const npc of (VF.npcs || [])) {
+      if (npc.koAus || npc.derbyAus) continue;
+      const dx = npc.x - VF.x, dy = npc.y - VF.y;
+      const long = dx * fwdX + dy * fwdY;
+      const lat = dx * latX + dy * latY;
+      if (long > 0 && Math.abs(lat) < 6) {
+        const d = Math.hypot(dx, dy);
+        if (d < 14) dirty = Math.max(dirty, Math.pow(1 - d / 14, 2));
+      }
+      if (rennZeitJetzt() >= VF.kollisionsBis && Math.abs(long) < VF_AUTO.L * 0.6 && Math.abs(lat) < VF_AUTO.B * 0.6) {
+        VF.kollisionsBis = rennZeitJetzt() + frist;
+        physEngine.state.speedKmh *= (VF.modus === 'derby' || VF.modus === 'knockout') ? 0.85 : 0.5;
+        padRumble(0.4, 0.4, 40, 'crash', 1);
+        if (VF.modus === 'derby') vfDerbyTreffer(npc, long, lat, vAbs);
+        else if (VF.modus === 'knockout') vfKnockoutTreffer(npc, vAbs);
+        else { if (typeof damage === 'number') damage = Math.min(100, damage + 10); showHudToast(t('Zusammenstoß')); }
+      }
+    }
+    if (physEngine.state) physEngine.state.dirtyAir += (dirty - (physEngine.state.dirtyAir || 0)) * Math.min(1, (dt || 0) * 4);
+  }
+  // Derby: ein Treffer kostet Health. Stirbt ein Gegner, gibt es einen Kill (Ziel = VF.limit).
+  function vfDerbyTreffer(npc, long, lat, v) {
+    if (v < 0.2) return;                                            // im Stand zaehlt kein Treffer
+    const schaden = Math.abs(lat) > Math.abs(long) ? 20 : 10;       // seitlich 20, frontal 10
+    npc.derbyHealth = Math.max(0, npc.derbyHealth - schaden);
+    VF.derbyHealth = Math.max(0, VF.derbyHealth - Math.ceil(schaden / 2));   // der Angreifer traegt weniger
+    if (npc.derbyHealth <= 0 && !npc.derbyAus) {
+      npc.derbyAus = true; npc.kmh = 0;
+      VF.derbyKills += 1;
+      showHudToast(t('Kill') + ' · ' + VF.derbyKills + (VF.limit > 0 ? '/' + VF.limit : ''));
+      padRumble(0.6, 0.6, 60, 'kill', 1);
+    } else if (VF.derbyHealth <= 0 && !VF.derbyTot) {
+      VF.derbyTot = true;
+      physEngine.state.speedKmh = 0;
+      showHudToast(t('Dein Auto ist aus'));
+    }
+    vfDerbyPruefen();
+  }
+  function vfDerbyPruefen() {
+    const npcsAlive = (VF.npcs || []).some((n) => !n.derbyAus);
+    const playerAlive = !VF.derbyTot && VF.derbyHealth > 0;
+    if (VF.limit > 0 && VF.derbyKills >= VF.limit) vfRennenEnde(t('Derby gewonnen') + ': ' + VF.derbyKills + ' ' + t('Kills'));
+    else if (!npcsAlive && playerAlive) vfRennenEnde(t('Derby gewonnen') + ': letzter auf der Bahn');
+    else if (!playerAlive && npcsAlive) vfRennenEnde(t('Derby verloren'));
+    else if (!playerAlive && !npcsAlive) vfRennenEnde(t('Unentschieden'));
+  }
+  // NPC-Knockout: ein Treffer kostet dem Gegner ein Leben; der Spieler verliert eines neben der Bahn.
+  function vfKnockoutTreffer(npc, v) {
+    if (v < 0.2) return;
+    npc.koLeben = Math.max(0, npc.koLeben - 1);
+    if (npc.koLeben <= 0 && !npc.koAus) {
+      npc.koAus = true; npc.kmh = 0;
+      showHudToast(t('Gegner ausgeknockt') + ' · noch ' + vfKoGeisterZaehlen() + ' ' + t('Gegner'));
+      padRumble(0.5, 0.5, 50, 'ko', 1);
+    } else showHudToast(t('Treffer') + ' · ' + npc.koLeben + ' ' + t('Leben'));
+    vfKnockoutPruefen();
+  }
+  function vfKoGeisterZaehlen() { return (VF.npcs || []).filter((n) => !n.koAus).length; }
+  function vfKnockoutPruefen() {
+    if (!vfKoGeisterZaehlen()) vfRennenEnde(t('Knockout gewonnen') + ': alle ' + t('Gegner') + ' aus');
+    else if (VF.koLeben <= 0) vfRennenEnde(t('Knockout verloren'));
   }
   function vfZuruecksetzen() {
     const p = VF.pts[VF.idx];
@@ -1528,13 +1639,22 @@
     VF.abseits = false;
     VF.dyn = { vy: 0, r: 0 };
     VF.feder = null;
+    if (VF.modus === 'knockout') {
+      VF.koLeben = Math.max(0, VF.koLeben - 1);
+      showHudToast(t('Leben verloren') + ' · ' + VF.koLeben);
+      vfKnockoutPruefen();
+      return;                 // die "zurueck"-Meldung wuerde die Lebensmeldung sonst ersetzen
+    }
     showHudToast(t('Zurück auf die Bahn gesetzt'));
   }
-  function vfRennenEnde() {
+  function vfRennenEnde(ergebnis) {
     if (VF.rennenEnde) return;
     VF.rennenEnde = true;
-    const was = VF.modus === 'laps' ? (Math.min(VF.runden, VF.limit) + ' ' + t('Runden')) : (VF.limit + ' min');
-    showHudToast(t('Rennen beendet') + ': ' + was);
+    const was = ergebnis || (VF.modus === 'laps' ? (Math.min(VF.runden, VF.limit) + ' ' + t('Runden'))
+      : VF.modus === 'derby' ? VF.derbyKills + ' ' + t('Kills')
+      : VF.modus === 'knockout' ? VF.koLeben + ' ' + t('Leben')
+      : (VF.limit + ' min'));
+    showHudToast(ergebnis || (t('Rennen beendet') + ': ' + was));
     rennZeitTimeout(() => { if (VF.aktiv) virtuellBeenden(); }, 1600);
   }
   function vfMalen() {
@@ -1852,18 +1972,18 @@
   function vfModellMalen(gl, pv, blick) {
     vfModellZeichnen(gl, pv, blick, VF.modell, VF.tprog, VF.x, VF.y, VF.h, VF.feder, VF.lenkWinkel, VF.raddreh, VF.radModell,
       (typeof headlightsOn === 'undefined' ? true : !!headlightsOn),
-      !!(physEngine.outputs && physEngine.outputs.lights && physEngine.outputs.lights.brake), vfFederSicht());
+      !!(physEngine.outputs && physEngine.outputs.lights && physEngine.outputs.lights.brake), vfFederSicht(), VF.pitch || 0);
   }
   // Ein Modell an einer Stelle zeichnen. Wird fuer das Spielerauto und fuer jeden NPC benutzt:
   // M ist das gebaute Modell (vfModellBauen), T das Texturprogramm, fe der Federungszustand.
-  function vfModellZeichnen(gl, pv, blick, M, T, x, y, h, fe, lenkWinkel, raddreh, radModell, licht, bremst, fs) {
+  function vfModellZeichnen(gl, pv, blick, M, T, x, y, h, fe, lenkWinkel, raddreh, radModell, licht, bremst, fs, nick) {
     const d = M.d, u = T.u;
     const s = VF_AUTO.L / d.laenge;
     const lage = vfMal(vfLage(x, y, h), vfS(s, s, s));
     const g = fs || 1, fez = fe || { z: 0, th: 0, ph: 0 };
     const zSp = d.vorderachse - d.a, boden = (d.reifen.vorn.bodenfreiheit + d.reifen.hinten.bodenfreiheit) / 2;
     // Aufbau: um den Schwerpunkt genickt und gerollt, eingefedert nach unten.
-    const aufbau = vfKette(lage, vfT(0, boden - fez.z * g, zSp), vfT(0, d.schwerpunktHoehe, 0), vfRx(fez.th * g), vfRz(fez.ph * g),
+    const aufbau = vfKette(lage, vfT(0, boden - fez.z * g, zSp), vfT(0, d.schwerpunktHoehe, 0), vfRx((fez.th + (nick || 0)) * g), vfRz(fez.ph * g),
       vfT(0, -d.schwerpunktHoehe, -zSp));
     gl.useProgram(T.p);
     gl.uniformMatrix4fv(u.m, false, new Float32Array(pv));
@@ -2035,6 +2155,9 @@
       else {
         modusTxt = RACE_MODES[VF.modus].label;
         if (VF.modus === 'laps') modusTxt += ' · ' + Math.min(VF.runden, VF.limit) + '/' + VF.limit;
+        else if (VF.modus === 'derby') modusTxt += ' · ' + VF.derbyHealth + ' HP · ' + VF.derbyKills + (VF.limit > 0 ? '/' + VF.limit : '') + ' ' + t('Kills');
+        else if (VF.modus === 'knockout') modusTxt += ' · ' + VF.koLeben + ' ' + t('Leben');
+        else if (VF.modus === 'bestzeit') modusTxt += ' · ' + vfZeitAcc(VF.beste, 3);
         else modusTxt += ' · ' + vfZeit(Math.floor(VF.modusZeit * 1000 / 100) * 100);
       }
     }
@@ -2099,7 +2222,7 @@
       + '<div class="vf-acc-werte"><div class="vf-acc-wert"><b class="vf-tempo"></b>' + lbl('km/h') + '</div>'
       + '<b class="vf-gang"></b><div class="vf-acc-wert"><b class="vf-rpm"></b>' + lbl('1/min') + '</div></div></div>'
       + '<div class="vf-kachel vf-acc-tank">' + lbl(t('Tank')) + '<b class="vf-tank"></b><i class="vf-tank-bar"><i></i></i></div></div>'
-      + '<div class="vf-knoepfe"><button type="button" data-vf="licht">' + t('Licht') + '</button><button type="button" data-vf="reset">' + t('Zurücksetzen') + '</button>'
+      + '<div class="vf-knoepfe"><button type="button" data-vf="box">' + t('Box') + '</button><button type="button" data-vf="flag">' + t('Gelbe Flagge') + '</button><button type="button" data-vf="licht">' + t('Licht') + '</button><button type="button" data-vf="reset">' + t('Zurücksetzen') + '</button>'
       + '<button type="button" data-vf="zu" aria-label="' + t('Beenden') + '">&#10005;</button></div>'
       + '<span class="vf-kamfrei" hidden data-i18n-skip>' + t('Kamera frei') + ' · R3 / V: ' + t('Standard') + ' <span class="wip-tag">WIP</span></span>'
       + '<span class="vf-wip">' + t('Virtuell') + ' <span class="wip-tag">WIP</span></span>';
@@ -2173,6 +2296,14 @@
       if (!b) return;
       if (b.dataset.vf === 'zu') virtuellBeenden();
       else if (b.dataset.vf === 'reset') vfZuruecksetzen();
+      else if (b.dataset.vf === 'box') {
+        if (VF.modus === 'derby') showHudToast(t('Derby: kein Boxenstopp'));
+        else if (typeof requestPitStop === 'function') { requestPitStop(); if (typeof pitState !== 'undefined' && pitState === 'limited') showHudToast(t('Boxenstopp: anhalten')); }
+      }
+      else if (b.dataset.vf === 'flag') {
+        if (typeof flagState !== 'undefined' && flagState === 'green') { if (typeof setFlag === 'function') setFlag('yellow'); }
+        else if (typeof yellowRestart === 'function') yellowRestart();
+      }
       else if (b.dataset.vf === 'licht') {
         // Dasselbe wie Dreieck im Cockpit: der Schalter im Armaturenbrett bleibt gleich.
         headlightsOn = !headlightsOn;
@@ -2182,17 +2313,36 @@
       }
     });
     VF.dyn = { vy: 0, r: 0 };
-    // Rennmodus: Rundenrennen, Endurance, Qualifying und Training werden uebernommen; andere
-    // Modi gibt es im virtuellen Fahren nicht - Hinweis und Training als Rueckfall.
+    // Rennmodus: Runden, Endurance, Qualifying und Training werden uebernommen; seit v1.3.95 auch
+    // Time Attack (bestzeit), NPC-Knockout und Derby - mit eigener Wertung fuer die virtuellen NPCs
+    // (die Geister-Wertung aus 90-ghosts/90d-challenger greift hier nicht).
     VF.modus = raceMode;
-    if (VF.modus !== 'laps' && VF.modus !== 'endurance' && VF.modus !== 'qualifying' && VF.modus !== 'practice') {
+    if (VF.modus !== 'laps' && VF.modus !== 'endurance' && VF.modus !== 'qualifying' && VF.modus !== 'practice'
+        && VF.modus !== 'bestzeit' && VF.modus !== 'knockout' && VF.modus !== 'derby') {
       showHudToast(t('Rennmodus im virtuellen Fahren nicht verfügbar') + ' – ' + t('Training'));
       VF.modus = 'practice';
     }
-    VF.limit = VF.modus === 'laps' ? Math.max(1, raceLimit) : (VF.modus === 'practice' ? 0 : Math.max(1, raceLimit));
+    const md = (typeof RACE_MODES !== 'undefined') ? RACE_MODES[VF.modus] : null;
+    VF.limit = VF.modus === 'laps' ? Math.max(1, raceLimit)
+             : (md && md.timed) ? Math.max(1, raceLimit)
+             : VF.modus === 'derby' ? Math.max(0, raceLimit)   // 0 = letzter auf der Bahn
+             : 0;
     VF.runden = 0;
     VF.modusZeit = 0;
     VF.rennenEnde = false;
+    VF.kollisionsBis = 0;
+    if (typeof damage === 'number') damage = 0;
+    // Zustand der virtuellen Wertung (derby/knockout): Spieler und NPCs.
+    VF.koLeben = 3;
+    VF.derbyHealth = 100;
+    VF.derbyKills = 0;
+    VF.derbyTot = false;
+    for (const npc of (VF.npcs || [])) {
+      npc.koLeben = 3; npc.koAus = false;
+      npc.derbyHealth = 100; npc.derbyKills = 0; npc.derbyAus = false;
+    }
+    if (VF.modus === 'knockout') showHudToast(t('NPC-Knockout') + ': ' + (VF.npcs ? VF.npcs.length : 0) + ' ' + t('Gegner') + ' · 3 ' + t('Leben'));
+    else if (VF.modus === 'derby') showHudToast(t('Derby') + ': ' + (VF.npcs ? VF.npcs.length : 0) + ' ' + t('Gegner') + ' · ' + t('Health') + ' 100');
     vfMotorsound();
     if (typeof showTab === 'function') showTab('race');
     VF.takt = setInterval(vfPaket, VF_TAKT_MS);
@@ -2211,7 +2361,7 @@
   const VF_MOTOR_GLOBAL = '~global';
   // Standard ist der Vulture V5.R (wie das Auto); "Wie in Optionen" folgt dem globalen Ton (sentinel).
   function vfMotorGewaehlt() {
-    const def = ({ v5r: 'sd_v5r', lynx220: 'sd_lynx', fmcgt4: 'sd_fmc', boxer96: 'sd_boxer' })[vfAutoWahl()] || 'sd_v5r';
+    const def = ({ v5r: 'sd_v5r', lynx220: 'sd_lynx', fmcgt4: 'sd_fmc', boxer96: 'sd_boxer', porsche: 'p992gt3r' })[vfAutoWahl()] || 'sd_v5r';
     try { const v = localStorage.getItem(VF_MOTOR_STORE); return v === null ? def : v; } catch (e) { return def; }
   }
   function vfMotorZiel() { const g = vfMotorGewaehlt(); if (g && g !== VF_MOTOR_GLOBAL) return g; return $('sound-profile') ? $('sound-profile').value : ''; }
@@ -2258,6 +2408,7 @@
     // v1.1.9: welches Auto, und wie deutlich die Federung sichtbar neigt.
     const autos = [{ v: 'v5r', name: 'Vulture V5.R (Speed Dreams)' }, { v: 'lynx220', name: 'Lynx 220 (Jaguar XJ220, Speed Dreams)' },
                    { v: 'fmcgt4', name: 'FMC GT4 (Ford GT40 Mk1, Speed Dreams)' }, { v: 'boxer96', name: 'Boxer 96 (Porsche 911 GT3, Speed Dreams)' },
+                   { v: 'porsche', name: 'Porsche 911 (992) GT3R (Sketchfab)' },
                    { v: 'kasten', name: t('Einfaches Modell') }];
     const ja = Math.max(0, autos.findIndex((a) => a.v === vfAutoWahl()));
     const autoWahl = (dd) => {
