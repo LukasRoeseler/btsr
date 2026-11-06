@@ -121,14 +121,52 @@ def weld(ecken, normalen, uv, dreiecke):
     return ecken[idx], normalen[idx], uv[idx], inv.reshape(-1)[dreiecke]
 
 
+def glatte_normalen(ecken, dreiecke):
+    """Flaechig gewichtete, geglaettete Ecken-Normalen aus der Geometrie.
+
+    Die decimierte Oberflaeche erbt sonst die Normale einer einzelnen Original-Ecke; benachbarte
+    Dreiecke schattieren dann uneinheitlich und die Flaechen wirken facettiert. Diese Funktion
+    mittelt die Flaechentripel (Gewicht = Flaecheninhalt) und liefert glatte, einheitliche
+    Normalen, die zur neuen Geometrie passen.
+    """
+    a = ecken[dreiecke[:, 1]] - ecken[dreiecke[:, 0]]
+    b = ecken[dreiecke[:, 2]] - ecken[dreiecke[:, 0]]
+    n = np.cross(a, b)
+    acc = np.zeros_like(ecken)
+    for i in range(3):
+        np.add.at(acc, dreiecke[:, i], n)
+    ln = np.linalg.norm(acc, axis=1, keepdims=True)
+    out = acc / np.maximum(ln, 1e-9)
+    # Ecken, deren Flaechen sich zu null aufheben (degenerierte Dreiecke), bekommen die
+    # Normale eines nicht-degenerierten Dreiecks, sonst nach oben - sonst erschienen sie schwarz.
+    tot = ln.ravel() < 1e-9
+    if tot.any():
+        flaeche = n / np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-9)
+        rest = tot.copy()
+        for k, face in enumerate(dreiecke):
+            if not np.any(rest[face]):
+                continue
+            if np.linalg.norm(n[k]) < 1e-6:
+                continue
+            fn = flaeche[k]
+            for j in range(3):
+                v = face[j]
+                if rest[v]:
+                    out[v] = fn
+                    rest[v] = False
+        out[rest] = [0, 1, 0]
+    return out
+
+
 def vereinfachen(ecken, normalen, uv, dreiecke, ziel):
-    """Ecken/Dreiecke auf ziel Dreiecke vereinfachen, UVs und Normalen erhalten.
+    """Ecken/Dreiecke auf ziel Dreiecke vereinfachen, UVs erhalten.
 
     Zuerst werden doppelte Ecken (Lage+Normale+UV) zusammengefuehrt, dann wird mit der
     QEM-Simplifizierung (fast_simplification) vereinfacht. Die Zusammenfall-Kette wird mit
     replay_simplification abgespielt: die decimierten Punkte liegen dann auf den optimalen
     QEM-Stellen (glatte Oberflaeche statt zackiger Original-Stuetzstellen). Die Indizierung
-    (indice_mapping) ordnet jeder decimierten Ecke ihre Original-UVs und -Normale zu.
+    (indice_mapping) ordnet jeder decimierten Ecke ihre Original-UVs zu; die Normalen werden
+    danach aus der neuen Geometrie geglaettet, damit keine Facetten sichtbar sind.
     Faellt replay aus, wird auf die Union-Find-Rekonstruktion mit Original-Stuetzstellen
     zurueckgegriffen.
     """
@@ -147,7 +185,8 @@ def vereinfachen(ecken, normalen, uv, dreiecke, ziel):
         dec_orig = np.full(len(dec_pts), -1, dtype=np.int64)
         dec_orig[imap[valid]] = np.nonzero(valid)[0]
         if (dec_orig >= 0).all() and len(dec_faces) > 0:
-            return dec_pts.astype(np.float32), normalen[dec_orig], uv[dec_orig], dec_faces.astype(np.int64)
+            dec_pts = dec_pts.astype(np.float32)
+            return dec_pts, glatte_normalen(dec_pts, dec_faces.astype(np.int64)), uv[dec_orig], dec_faces.astype(np.int64)
     except Exception:
         pass
     # Fallback: Original-Stuetzstellen beibehalten (Union-Find ueber die Zusammenfall-Kette).

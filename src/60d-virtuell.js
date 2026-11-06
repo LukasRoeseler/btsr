@@ -1956,12 +1956,12 @@
       const lx = -fz, lz = fx;               // senkrecht zur Fahrtrichtung ("links")
       const auge = [VF.x + lx * 9, 4.5, VF.y + lz * 9];
       VF.kam = null;
-      return vfDrehAnwenden({ auge, ziel: [VF.x, 1.2, VF.y], fov: 62, nah: 0.3 }, art, D, VF.x, 1.2, VF.y);
+      return vfDrehAnwenden({ auge, ziel: [VF.x, 1.2, VF.y], fov: 42, nah: 0.3 }, art, D, VF.x, 1.2, VF.y);
     }
     const nah = id === 'nah';
-    const hinten = nah ? 15 : 30, hoehe = nah ? 6 : 13, tau = nah ? 0.08 : 0.15;
+    const hinten = nah ? 10 : 20, hoehe = nah ? 4.5 : 10, tau = nah ? 0.08 : 0.15;
     // Gedreht kreist der SOLL-Ort um das Auto; die Nachfuehrung (tau) bleibt dieselbe.
-    const zh = nah ? 2.2 : 1.5, vor = nah ? 10 : 14;
+    const zh = nah ? 2.0 : 1.4, vor = nah ? 8 : 12;
     const k = vfDrehAnwenden({ auge: [VF.x - fx * hinten, hoehe, VF.y - fz * hinten], ziel: [VF.x + fx * vor, zh, VF.y + fz * vor] },
       art, D, VF.x, zh, VF.y);
     const soll = k.auge;
