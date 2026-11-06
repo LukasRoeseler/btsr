@@ -54,14 +54,18 @@ TYRE_MATS = (18, 21)                   # Reifen (Textur)
 METAL_MATS = (19, 20)                  # Felge + Bremsscheibe (einfarbig)
 
 # Materialindex -> Texturdatei (Kopie aus sketchfab/textures). Ohne Eintrag: einfarbig.
+# Material-Texturen. Material 1 ist EXT_Carpaint_Inst (der Karosserielack / die Haupt-Karosserie):
+# das ist die Livery "Lumirank" (1024x1024, bunt), NICHT der dunkle Body_Carbon (256x256, das waere
+# nur eine Carbon-Oberflaeche). Die FBX-Materialnamen (EXT_*, INT_*, MI_Tyre_*, BELT_*) zeigen das.
 TEXTUREN = {
     0: 'ext_glass_headlight.png', 15: 'ext_glass_headlight.png',
-    1: 'body_carbon.png',
+    1: 'livery.png',
     47: 'lights_aux.png',
 }
 TEX_QUELLE = {
     'ext_glass_headlight.png': 'AnyConv.com__ext_glass_headlight.png',
     'body_carbon.png': 'AnyConv.com__Body_Carbon.png',
+    'livery.png': 'AnyConv.com__Lumirank_3_slots_Colour.png',
     'lights_aux.png': 'AnyConv.com__Lights_Aux_Colour.png',
     'tyre.png': 'AnyConv.com__Tyre_Dry_Colour.png',
 }
