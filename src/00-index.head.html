@@ -5726,7 +5726,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.3.130</span></span>
+        <span class="foot-ver">v<span id="app-version">1.3.131</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6967,6 +6967,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.3</span></b></p>
       <ul class="muted" id="patchnotes-13" style="padding-left:20px; line-height:1.7">
+        <li>Kurvenbewusstes Einparken (1.3.130) zur&uuml;ckgenommen: Es stellte bei der automatischen Aufstellung beide Autos schr&auml;g (rund 45&deg; nach rechts) und auf die falsche Seite der Ziellinie. Das Parken ist wieder wie vor 1.3.130, auf einer Kurve also wie bisher leicht schr&auml;g, aber nicht mehr verkippt.</li>
         <li>Zufallsevents (experimentell, Renneinstellungen, ab Werk aus): H&#228;ufigkeit 1 bis 10 min, Dauer 10 bis 120 s, jedes Event einzeln schaltbar. Getroffen wird ein zuf&#228;lliger Sektor, ohne Sektoren die ganze Bahn; der Bereich leuchtet auf der Karte in der Farbe des Events, ein Banner im Cockpit zeigt Event, Ort und Restzeit, und der Sprecher sagt es an. Verschmutzung: Grip wie bei Regen. &#214;lspur: noch weniger Grip, das Heck kommt beim Einlenken, NPCs fahren langsam. Gelbe Flagge im Sektor: h&#246;chstens 80 km/h; wer schneller bleibt, bekommt eine Durchfahrtsstrafe (in die Box, anhalten, nichts wird gemacht; sonst +20 s im Ergebnis). Tr&#252;mmer auf der linken oder rechten Seite eines Teils (Warndreieck auf der Karte): NPCs weichen aus, wer nicht zur freien Seite lenkt, bekommt Schaden. Tank-Leck: ein zuf&#228;lliges Spielerauto verbraucht doppelt bis zum n&#228;chsten Boxenstopp. Gilt f&#252;r alle Spieler im lokalen Mehrspieler; im WLAN w&#252;rfelt das startende Telefon, alle anderen folgen.</li>
         <li>Streckeneditor: Die Pr&#252;fung, ob die Strecke geschlossen ist, war immer &#8222;ja&#8220;; jetzt stimmt sie, und beim Schlie&#223;en der Runde spielt wieder der &#8222;Strecke fertig&#8220;-Klang.</li>
         <li>Sektoren &#252;ber den Streckeneditor (WIP): Der neue Knopf &#8222;Sektoren&#8220; bietet &#8222;Automatisch festlegen&#8220; (Anzahl aus der Teilezahl: 8 Teile keine Sektoren, 15 zwei, 25 drei, h&#246;chstens zehn; gleich lange Abschnitte auf Teilefugen), &#8222;Manuell festlegen&#8220; (Strecke antippen oder mit Steuerkreuz und &#10005; die Teile w&#228;hlen, an denen ein Sektor beginnt, nochmal entfernt, dann &#8222;Fertig&#8220;) und &#8222;Aus&#8220;. Die Grenzen sind d&#252;nne gr&#252;ne Linien, gespeichert mit der Strecke; der Streckencode bleibt gleich. Im Rennen misst jedes Auto die Sektoren &#252;ber seinen Kachelz&#228;hler; verz&#228;hlt es sich (etwa beim Abflug), steht der Sektor auf &#8222;&#8211;&#8220; statt einer falschen Zeit, die Runde z&#228;hlt weiter. Zus&#228;tzliche Start/Ziel-Teile haben weiter Vorrang, im Ausdruck-Modus bleibt der Regler.</li>

@@ -3152,12 +3152,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const h = { at: 0, anpassMs: MANOEVER_ANPASS_MS, vonDrive: a.vonDrive, skript: sk };
       if (t >= MANOEVER_ANPASS_MS + manoeverDauer(sk)) return { lenk: 0, gas: 'halt' };
       const s = skriptSchritt(h, t);
-      // v1.3.130: auf der Kurve die feste Folge um den Kurvenzuschlag ergaenzen (auch fuer das Fahrerauto).
-      return { lenk: randHaltKurveLenk(car, s.lenk, a.ziel), gas: 'skript', drive: s.drive };
+      return { lenk: s.lenk, gas: 'skript', drive: s.drive };
     }
     if (w <= 0 || t >= 2 * ms) return { lenk: 0, gas: 'halt' };
-    // v1.3.130: auf der Kurve den Lenkimpuls um den Kurvenzuschlag ergaenzen.
-    return { lenk: randHaltKurveLenk(car, t < ms ? seite * w : -seite * w, a.ziel), gas: 'fahrt' };
+    return { lenk: t < ms ? seite * w : -seite * w, gas: 'fahrt' };
   }
   function aufstellenSpielerOhneSpur(car) {
     const a = car ? aufstellSpieler.get(car) : null;
@@ -5695,62 +5693,20 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     h.phase = h.radLenk ? 'rad' : 'halt';
     h.at = now;
   }
-  // v1.3.130: Das Parken auf einer Kurve. Die feste Folge (scEin) und der kurze Lenkimpuls
-  // sind fuer die Gerade aufgenommen und ziehen das Auto auf einer Kurve schraeg, weil es
-  // der Bahn nicht folgt. Diese Korrektur liest die Kachel, auf der geparkt wird (Richtung
-  // und Enge), und liefert den Zuschlag zum Lenkwinkel, der das Auto auf der Linie haelt -
-  // derselbe Grundwert wie GHOST_STEER_CURVE im normalen Fahren. Auf der Geraden (Enge 0)
-  // ist er 0, das Parken bleibt wie vorher.
-  // So stark dreht die Korrektur, in Anteilen von GHOST_STEER_CURVE: 0,4 auf einer Kurve
-  // (Enge 1), 0,7 in der Haarnadel/Engstelle (Enge 2). Die Haarnadel ist als Platz zwar
-  // ausgeschlossen, aber das Netz faengt sie trotzdem. Startpunkte fuer das Abstimmen.
-  const RANDHALT_KURVE_GEWICHT = 0.4, RANDHALT_HAARNADEL_GEWICHT = 0.7;
-  function randHaltKurve(car, zielKachel) {
-    const g = car.ghost;
-    const tiles = currentTrackTiles;
-    // Das Safety Car und der Raeumwagen parken bereits gut (vorgegebene Folge); ihre
-    // Kurvenkorrektur bliebe unerprobt. Die Korrektur gilt fuer das Selbst-Einparken der
-    // NPCs (Startaufstellung/Heimweg), das auf Kurven schraeg stand.
-    if (!g || car.role === 'safetycar' || car.role === 'reinig') return 0;
-    if (!tiles || !tiles.length) return 0;
-    // Das Zielteil (Startplatz/Heimweg) ist stabiler als das aktuelle: waehrend der Folge
-    // wandert das Auto in die naechste Kachel, und der Zuschlag wuerde sonst springen.
-    // Ohne Zielteil (Boxenstopp, Randhalt) das aktuelle Teil - dort ist die Korrektur
-    // unerprobt, und die Geraden der Box sind ohnehin eben.
-    const idx = (zielKachel !== undefined && zielKachel !== null) ? zielKachel
-              : (g.aufstellZiel !== undefined && g.aufstellZiel !== null) ? g.aufstellZiel
-              : g.tileIndex;
-    if (idx === null || idx === undefined) return 0;
-    const t = tiles[((idx % tiles.length) + tiles.length) % tiles.length];
-    if (!t) return 0;
-    const tight = tileTightness(t.type);
-    if (tight <= 0) return 0;
-    const dir = ghostTurnOf(t.type);   // -1 links, +1 rechts
-    if (dir === 0) return 0;
-    return dir * GHOST_STEER_CURVE * (tight >= 2 ? RANDHALT_HAARNADEL_GEWICHT : RANDHALT_KURVE_GEWICHT);
-  }
-  // Die feste Folge (oder der Lenkimpuls) um die Kurvenkorrektur ergaenzen.
-  function randHaltKurveLenk(car, lenk, zielKachel) {
-    const k = randHaltKurve(car, zielKachel);
-    return k ? Math.max(-1, Math.min(1, lenk + k)) : lenk;
-  }
   // Die Lenkung am Rad (ohne Spur-Bytes), solange 'rad' oder danach 'halt' laeuft - oder null.
   // v1.0.32: mit gegenMs erst rechts, dann gleich lang links (Raeder wieder gerade), und
   // gehalten wird mit geraden Raedern.
   function randHaltRadLenk(car) {
     const h = car.ghost && car.ghost.randHalt;
     // v1.1.30: eine aufgenommene Folge lenkt selbst; im anschliessenden Halt stehen die Raeder gerade.
-    let w;
-    if (h && h.skript) w = h.phase === 'skript' ? skriptSchritt(h, makroUhr(car.ghost)).lenk : 0;
-    else if (!h || !h.radLenk) return null;
-    else if (h.phase === 'rad') w = h.radLenk;
-    else if (h.phase === 'gegen') w = -h.radLenk;
+    if (h && h.skript) return h.phase === 'skript' ? skriptSchritt(h, makroUhr(car.ghost)).lenk : 0;
+    if (!h || !h.radLenk) return null;
+    if (h.phase === 'rad') return h.radLenk;
+    if (h.phase === 'gegen') return -h.radLenk;
     // Beim Bremsen gerade; im Halt (Safety Car neben der Strecke) leicht nach links, damit es wieder sauber ausfahren kann.
-    else if (h.phase === 'brems') w = h.gegenMs ? 0 : h.radLenk;
-    else if (h.phase === 'halt') w = h.endLenk ? -h.endLenk : (h.gegenMs ? 0 : h.radLenk);
-    else return null;
-    // v1.3.130: auf der Kurve die feste Folge um den Kurvenzuschlag ergaenzen.
-    return randHaltKurveLenk(car, w);
+    if (h.phase === 'brems') return h.gegenMs ? 0 : h.radLenk;
+    if (h.phase === 'halt') return h.endLenk ? -h.endLenk : (h.gegenMs ? 0 : h.radLenk);
+    return null;
   }
   function randHaltTick(car) {
     const g = car.ghost, h = g && g.randHalt;
