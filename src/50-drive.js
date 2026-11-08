@@ -3480,6 +3480,11 @@
     // bevor 70-race.js seine Konstanten angelegt hat (temporale Todeszone beim Laden).
     try {
       if (fruehstartStrafeAktiv(1)) { rawThrottle = 0; rawBrake = Math.max(rawBrake, FRUEHSTART_BREMSE); }
+      // Ampel rot (v1.3.115): Gas gesperrt; wer Gas gibt, bekommt die Fruehstart-Strafe.
+      if (typeof fruehstartGasSperre === 'function' && fruehstartGasSperre(1)) {
+        if (throttleY > 0.05 && typeof fruehstartGasSetzen === 'function') fruehstartGasSetzen(1, true);
+        rawThrottle = 0;
+      }
       // Derby bei 0 % (v0.9.16): das Auto bleibt stehen - vorher wurde nur das Tempo EINMAL auf
       // null gesetzt, danach fuhr es mit dem Gas weiter.
       if (typeof derbyLaeuft !== 'undefined' && derbyLaeuft && derbyTot1) { rawThrottle = 0; rawBrake = 1; }
@@ -3630,6 +3635,11 @@
     if (offtrackGiltFuer(z.nr)) gas = Math.min(gas, OFFTRACK_GAS);
     try {
       if (fruehstartStrafeAktiv(z.nr)) { gas = 0; bremse = Math.max(bremse, FRUEHSTART_BREMSE); }
+      // Ampel rot (v1.3.115): Gas gesperrt; wer Gas gibt, bekommt die Fruehstart-Strafe.
+      if (typeof fruehstartGasSperre === 'function' && fruehstartGasSperre(z.nr)) {
+        if (z.throttle > 0.05 && typeof fruehstartGasSetzen === 'function') fruehstartGasSetzen(z.nr, true);
+        gas = 0;
+      }
       if (typeof derbyLaeuft !== 'undefined' && derbyLaeuft && z.derbyTot) { gas = 0; bremse = 1; }
     } catch (e) { /* beim Laden */ }
     // Und das Rumpeln, an seinen eigenen Pad. Bis v0.6.45 waere es der Pad von Spieler 1

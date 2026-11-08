@@ -5695,7 +5695,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.3.114</span></span>
+        <span class="foot-ver">v<span id="app-version">1.3.115</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -10284,11 +10284,15 @@
           auf der Bahn, und ein Autopilot ohne Querregelung w&uuml;rde es in die
           Bande fahren.</small></div>
         <label class="tgl"><input type="checkbox" id="race-flying"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Fr&uuml;hstart: +5&nbsp;s auf die erste Runde<small>Wer
-          vor Gr&uuml;n losf&auml;hrt, bekommt 5&nbsp;s auf seine erste Runde &ndash; auch
-          Spieler&nbsp;2 und 3 und im WLAN-Mehrspieler. Aus: das Auto wird nach Gr&uuml;n
-          stattdessen 2&nbsp;s lang ausgebremst.</small></div>
-        <label class="tgl"><input type="checkbox" id="race-fruehstart-zeit" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Strafe f&uuml;r Fr&uuml;hstart<span class="wip-tag">WIP</span><small>Wer
+          bei roter Ampel Gas gibt, bekommt die gew&auml;hlte Strafe &ndash; auch Spieler&nbsp;2
+          und 3 und im WLAN-Mehrspieler. W&auml;hrend Rot ist das Gas gesperrt.</small></div>
+        <select id="race-fruehstart-strafe">
+          <option value="pit" selected>Durchfahrt (Boxengasse)</option>
+          <option value="5s">5&nbsp;s Zeitstrafe</option>
+          <option value="extra">Zusatzrunde</option>
+          <option value="keine">Keine</option>
+        </select></div>
       <div class="opt-row"><div class="opt-label">Gelbe Flagge deaktivieren<small>An: Der Knopf
           &bdquo;Gelbe Flagge&ldquo; und das Halten der Boxentaste rufen kein Gelb mehr aus.</small></div>
         <label class="tgl"><input type="checkbox" id="race-gelb-aus"><span></span></label></div>
@@ -16703,6 +16707,8 @@
     "Frühstart Spieler {n}!": "Jump start player {n}!",
     "Frühstart: Strafe": "Jump start: penalty",
     "Frühstart Spieler {n}: Strafe": "Jump start player {n}: penalty",
+    "Zusatzrunde": "Extra lap",
+    "Durchfahrt (Boxengasse)": "Drive-through (pit lane)",
     "Challenges: Einstellungen unter der Streckenkarte, Bestenliste rechts; Modus und Preset schaltet ✕ um. Frühstart bei allen Starts mit Ampel: kein Abbruch mehr, sondern kurz ausgebremst, sobald das Auto nach Grün fährt. Silverbrook-Rennen mit einem Pflichtstopp (Boxen-Minigame, egal wo).": "Challenges: settings below the track map, leaderboard on the right; ✕ switches mode and preset. Jump start on every start with lights: no more abort, instead a short forced braking once the car moves after green. Silverbrook race with one mandatory pit stop (pit minigame, anywhere).",
     "Titel-Glitch je Buchstabe zufällig blau oder rot, oben und unten getrennt. „Abseits“ erscheint jetzt groß in der Mitte des Cockpits. Autos-Kachel zeigt wieder den Namen statt „[object HTMLSpanElement]“. Boxen-Minigame: Tasten stehen 100 ms länger.": "Title glitch randomly blue or red per letter, top and bottom separately. \"Off track\" now appears large in the middle of the cockpit. The cars tile shows the name again instead of \"[object HTMLSpanElement]\". Pit minigame: buttons stay 100 ms longer.",
     "Runde {n}: {a} von {b} Teilen erkannt, zählt nicht": "Lap {n}: {a} of {b} pieces recognised, does not count",
@@ -19673,6 +19679,8 @@
     "Frühstart Spieler {n}!": "¡Salida en falso del jugador {n}!",
     "Frühstart: Strafe": "Salida en falso: penalización",
     "Frühstart Spieler {n}: Strafe": "Salida en falso del jugador {n}: penalización",
+    "Zusatzrunde": "Vuelta extra",
+    "Durchfahrt (Boxengasse)": "Paso por boxes",
     "Runde {n}: {a} von {b} Teilen erkannt, zählt nicht": "Vuelta {n}: {a} de {b} piezas reconocidas, no cuenta",
     "Runde {n} unter der Mindestzeit, zählt nicht": "Vuelta {n} por debajo del tiempo mínimo, no cuenta",
     "Einstellungen geändert, Challenge abgebrochen": "Ajustes cambiados, reto cancelado",
@@ -29131,6 +29139,11 @@
     // bevor 70-race.js seine Konstanten angelegt hat (temporale Todeszone beim Laden).
     try {
       if (fruehstartStrafeAktiv(1)) { rawThrottle = 0; rawBrake = Math.max(rawBrake, FRUEHSTART_BREMSE); }
+      // Ampel rot (v1.3.115): Gas gesperrt; wer Gas gibt, bekommt die Fruehstart-Strafe.
+      if (typeof fruehstartGasSperre === 'function' && fruehstartGasSperre(1)) {
+        if (throttleY > 0.05 && typeof fruehstartGasSetzen === 'function') fruehstartGasSetzen(1, true);
+        rawThrottle = 0;
+      }
       // Derby bei 0 % (v0.9.16): das Auto bleibt stehen - vorher wurde nur das Tempo EINMAL auf
       // null gesetzt, danach fuhr es mit dem Gas weiter.
       if (typeof derbyLaeuft !== 'undefined' && derbyLaeuft && derbyTot1) { rawThrottle = 0; rawBrake = 1; }
@@ -29281,6 +29294,11 @@
     if (offtrackGiltFuer(z.nr)) gas = Math.min(gas, OFFTRACK_GAS);
     try {
       if (fruehstartStrafeAktiv(z.nr)) { gas = 0; bremse = Math.max(bremse, FRUEHSTART_BREMSE); }
+      // Ampel rot (v1.3.115): Gas gesperrt; wer Gas gibt, bekommt die Fruehstart-Strafe.
+      if (typeof fruehstartGasSperre === 'function' && fruehstartGasSperre(z.nr)) {
+        if (z.throttle > 0.05 && typeof fruehstartGasSetzen === 'function') fruehstartGasSetzen(z.nr, true);
+        gas = 0;
+      }
       if (typeof derbyLaeuft !== 'undefined' && derbyLaeuft && z.derbyTot) { gas = 0; bremse = 1; }
     } catch (e) { /* beim Laden */ }
     // Und das Rumpeln, an seinen eigenen Pad. Bis v0.6.45 waere es der Pad von Spieler 1
@@ -44190,21 +44208,47 @@
   }
   function fruehstartReset() {
     if (fruehstartTimer) { clearInterval(fruehstartTimer); fruehstartTimer = null; }
-    FRUEH_SPIELER.forEach((w) => Object.assign(fruehstart[w], { frueh: false, warten: false, bis: 0, zugeschlagen: false }));
+    FRUEH_SPIELER.forEach((w) => Object.assign(fruehstart[w], { frueh: false, warten: false, bis: 0,
+      zugeschlagen: false, gas: false, pit: false, pitGefahren: false, zeit: false, extra: false }));
   }
-  // ---- FRUEHSTART ALS ZEITSTRAFE (v0.9.22) ---------------------------------------------
-  // BESTELLT: "Fruehstart wird mit 5 s Strafe auf die erste Runde geahndet (Toggle in den
-  // Rennoptionen, standardmaessig an; soll im Splitscreen und Multiplayer funktionieren)."
-  // An: die erste Runde jedes Fruehstarters zaehlt 5 s mehr (Spieler 1 bis 3; im WLAN-
-  // Mehrspieler geht die Runde mit der Strafe an den Host). Aus: wie bisher kurz ausbremsen.
+  // ---- FRUEHSTART ALS STRAFE (v1.3.115) ---------------------------------------------
+  // BESTELLT: "Wenn die Ampel an ist, erlaube mir nicht, Gas zu geben. Wer Gas gibt
+  // (Spieler 1, 2, 3, Multiplayer), soll eine Durchfahrtsstrafe bekommen. Fuege dazu eine
+  // Rennoptionen-Option ein (Strafe fuer Fruehstart: pit (Standard), 5 s Zeitstrafe,
+  // Zusatzrunde, keine)." Waehrend Rot ist das Gas gesperrt (50-drive.js); der Versuch wird
+  // am Gas-INPUT erkannt (fruehstartGasSetzen), nicht an der Bewegung.
   const FRUEHSTART_ZEIT_MS = 5000;
-  function fruehstartZeitAn() { const el = $('race-fruehstart-zeit'); return el ? !!el.checked : true; }
+  function fruehstartStrafe() {
+    const el = $('race-fruehstart-strafe');
+    const v = el ? el.value : 'pit';
+    return ['pit', '5s', 'extra', 'keine'].indexOf(v) >= 0 ? v : 'pit';
+  }
+  function fruehstartGasSetzen(w, ja) { const f = fruehstart[w]; if (f) f.gas = !!ja; }
+  function fruehstartGas(w) { const f = fruehstart[w]; return !!(f && f.gas); }
+  // Rot = Countdown beim stehenden Start. Bei fliegendem Start rollt das Feld in Formation.
+  function fruehstartGasSperre(w) { return raceState === 'countdown' && !raceFlying; }
+  function fruehstartAnwenden(w) {
+    const strafe = fruehstartStrafe(), f = fruehstart[w];
+    if (!f) return;
+    if (strafe === '5s') {
+      f.zeit = true;
+      rennEreignisStrafe(w, FRUEHSTART_ZEIT_MS / 1000);
+      showHudToast((w >= 2 ? 'P' + w + ': ' : '') + t('Frühstart') + ' +' + FRUEHSTART_ZEIT_MS / 1000 + ' s');
+    } else if (strafe === 'extra') {
+      f.extra = true;
+      if (w === 1) raceLimit += 1;
+      showHudToast((w >= 2 ? 'P' + w + ': ' : '') + t('Frühstart') + ': ' + t('Zusatzrunde'));
+    } else if (strafe === 'pit') {
+      f.pit = true;
+      showHudToast((w >= 2 ? 'P' + w + ': ' : '') + t('Frühstart') + ': ' + t('Durchfahrt (Boxengasse)'));
+    }
+    log((w >= 2 ? 'P' + w + ': ' : '') + 'Fruehstart: Strafe ' + strafe + '.', 'err');
+  }
   function fruehstartZuschlag(w, rundenIndex) {
     const f = fruehstart[w];
-    if (!f || !f.frueh || f.zugeschlagen || rundenIndex !== 0 || !fruehstartZeitAn()) return 0;
+    if (!f || !f.frueh || f.zugeschlagen || rundenIndex !== 0 || fruehstartStrafe() !== '5s') return 0;
     f.zugeschlagen = true;
     showHudToast((w >= 2 ? 'P' + w + ': ' : '') + t('Frühstart') + ' +' + FRUEHSTART_ZEIT_MS / 1000 + ' s');
-    log((w >= 2 ? 'P' + w + ': ' : '') + 'Fruehstart: +5 s auf die erste Runde.', 'err');
     return FRUEHSTART_ZEIT_MS;
   }
   function fruehstartBeginnen() {
@@ -44214,9 +44258,9 @@
       if (raceState !== 'countdown') return;
       FRUEH_SPIELER.forEach((w) => {
         if (w >= 2 && !(zweiSpieler && zusatzPlatz(w) && zusatzPlatz(w).car)) return;
-        if (!fruehstart[w].frueh && fruehstartTempo(w) > FRUEHSTART_KMH) {
+        if (!fruehstart[w].frueh && fruehstartGas(w)) {
           fruehstart[w].frueh = true;
-          if (fruehstartZeitAn()) rennEreignisStrafe(w, FRUEHSTART_ZEIT_MS / 1000);
+          fruehstartAnwenden(w);
           showHudToast(w >= 2 ? t('Frühstart Spieler {n}!').replace('{n}', w) : t('Frühstart!'));
         }
       });
@@ -44226,19 +44270,12 @@
     if (fruehstartTimer) { clearInterval(fruehstartTimer); fruehstartTimer = null; }
     FRUEH_SPIELER.forEach((w) => { if (fruehstart[w].frueh) fruehstart[w].warten = true; });
   }
-  // Aus dem Fahrtakt: gilt die Strafe fuer Auto w gerade? Startet sie, sobald das Auto nach
-  // Gruen faehrt.
-  function fruehstartStrafeAktiv(w) {
-    const f = fruehstart[w];
-    if (!f || fruehstartZeitAn()) return false;     // Zeitstrafe statt Ausbremsen
-    const jetzt = rennZeitJetzt();
-    if (f.warten && (raceState === 'racing' || raceState === 'finishing') && fruehstartTempo(w) > FRUEHSTART_KMH) {
-      f.warten = false;
-      f.bis = jetzt + FRUEHSTART_STRAFE_MS;
-      showHudToast(w >= 2 ? t('Frühstart Spieler {n}: Strafe').replace('{n}', w) : t('Frühstart: Strafe'));
-    }
-    return jetzt < f.bis;
-  }
+  // Die Durchfahrtsstrafe (Boxengasse) wird beim naechsten Boxenaufenthalt abgeleistet
+  // (leerer Plan, wie der Strafstopp der Zufallsevents).
+  function fruehstartDurchfahrt(w) { const f = fruehstart[w]; return !!(f && f.pit && !f.pitGefahren); }
+  function fruehstartDurchfahrtErledigt(w) { const f = fruehstart[w]; if (f) { f.pit = false; f.pitGefahren = true; } }
+  // Kein Ausbremsen mehr: die Strafe ist die gewaehlte Art.
+  function fruehstartStrafeAktiv(w) { return false; }
   function fruehstartGab(w) { const f = fruehstart[w || 1]; return !!(f && f.frueh); }
 
   function raceClockTick() {
@@ -48480,6 +48517,11 @@
       // v1.3.88 STRAFSTOPP (Durchfahrtsstrafe der Zufallsevents): es wird NICHTS am Auto gemacht -
       // leerer Plan, kein Minispiel, nach ZEV_STRAFE_STAND_S frei (losfahren geht jederzeit).
       pitNurStrafe = zevBoxStopp(1);
+      // v1.3.115: Fruehstart-Durchfahrtsstrafe (leerer Plan, wie der Strafstopp).
+      if (!pitNurStrafe && typeof fruehstartDurchfahrt === 'function' && fruehstartDurchfahrt(1)) {
+        pitNurStrafe = true;
+        fruehstartDurchfahrtErledigt(1);
+      }
       if (pitNurStrafe) pitPlan = { refuel: 0, tyres: false, repair: false };
       else if (pitModus === 'minigame' && !(typeof zusatzAktiv === 'function' && zusatzAktiv().length)) pitSpielStart();
       // The plan was chosen while rolling down the pit lane; only now is it locked in.
@@ -99866,34 +99908,36 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'voll bei 90 %, halber Weg ' + Math.pow(0.5, 2.45).toFixed(2) + ', symmetrisch, Servo stimmt' };
   });
 
-  stAdd('Fruehstart: Ampel laeuft weiter, nach Gruen 2 s kein Gas und Bremse, danach frei', () => {
+  stAdd('Fruehstart: bei roter Ampel ist das Gas gesperrt, fliegender Start nicht', () => {
     const f = [];
-    const merkState = raceState, merkT = physEngine.state.speedKmh, merkNow = Date.now;
-    let jetzt = merkNow.call(Date);
+    const merkState = raceState, merkFlying = raceFlying, merkStrafe = $('race-fruehstart-strafe').value;
     try {
-      Date.now = () => jetzt;
-      $('race-fruehstart-zeit').checked = false;  // v0.9.22: Ausbremsen nur mit Zeitstrafe aus
-      fruehstartReset();
+      raceFlying = false;
       raceState = 'countdown';
-      fruehstart[1].frueh = true;                 // wie vom Waechter im Countdown gesetzt
-      fruehstartGruen();
+      if (!fruehstartGasSperre(1)) f.push('stehender Start im Countdown: keine Sperre');
       raceState = 'racing';
-      physEngine.state.speedKmh = 0;
-      if (fruehstartStrafeAktiv(1)) f.push('Strafe schon vor dem Anfahren');
-      physEngine.state.speedKmh = 10;
-      if (!fruehstartStrafeAktiv(1)) f.push('keine Strafe nach dem Anfahren');
-      jetzt += 1900;
-      if (!fruehstartStrafeAktiv(1)) f.push('Strafe endet vor 2 s');
-      jetzt += 200;
-      if (fruehstartStrafeAktiv(1)) f.push('Strafe laenger als 2 s');
+      if (fruehstartGasSperre(1)) f.push('nach Gruen noch gesperrt');
+      raceState = 'countdown'; raceFlying = true;
+      if (fruehstartGasSperre(1)) f.push('fliegender Start: trotzdem gesperrt');
+      raceFlying = false;
       fruehstartReset();
-      fruehstartGruen();
-      if (fruehstartStrafeAktiv(1)) f.push('Strafe ohne Fruehstart');
+      fruehstartGasSetzen(1, true);
+      if (!fruehstartGas(1)) f.push('Gas-Flag nicht gesetzt');
+      fruehstartReset(); fruehstartGasSetzen(1, false);
+      if (fruehstartGas(1)) f.push('Gas-Flag nach Reset noch gesetzt');
+      $('race-fruehstart-strafe').value = 'pit';
+      fruehstartReset(); fruehstartAnwenden(1);
+      if (!fruehstartDurchfahrt(1)) f.push('Durchfahrt nicht gesetzt');
+      fruehstartDurchfahrtErledigt(1);
+      if (fruehstartDurchfahrt(1)) f.push('Durchfahrt nicht erledigt');
+      $('race-fruehstart-strafe').value = 'keine';
+      fruehstartReset(); fruehstartAnwenden(1);
+      if (fruehstartDurchfahrt(1)) f.push('keine: trotzdem Durchfahrt');
     } finally {
-      Date.now = merkNow; raceState = merkState; physEngine.state.speedKmh = merkT; fruehstartReset();
-      $('race-fruehstart-zeit').checked = true;
+      raceState = merkState; raceFlying = merkFlying; fruehstartReset();
+      $('race-fruehstart-strafe').value = merkStrafe;
     }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Strafe erst nach dem Anfahren, genau 2 s, ohne Fruehstart keine' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Sperre im Countdown (stehend), frei nach Gruen und beim Fliegenden' };
   });
 
   // ---- CHALLENGES (v0.8.30) ----
@@ -107151,24 +107195,23 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Flackern, Aus, Ruckeln, Tank/Reifen aus und zurueck' };
   });
 
-  stAdd('Fruehstart: +5 s auf die erste Runde (P1-P3), Schalter aus = Ausbremsen', () => {
+  stAdd('Fruehstart: +5 s auf die erste Runde (P1-P3), Art aus der Rennoption', () => {
     const f = [];
-    const merk = $('race-fruehstart-zeit').checked;
+    const merk = $('race-fruehstart-strafe').value;
     try {
-      $('race-fruehstart-zeit').checked = true;
+      $('race-fruehstart-strafe').value = '5s';
       fruehstartReset();
       fruehstart[1].frueh = true; fruehstart[3].frueh = true;
-      if (fruehstartStrafeAktiv(1)) f.push('mit Zeitstrafe trotzdem Ausbremsen');
       if (fruehstartZuschlag(1, 1) !== 0) f.push('Zuschlag auf Runde 2');
       if (fruehstartZuschlag(1, 0) !== 5000) f.push('kein Zuschlag auf Runde 1');
       if (fruehstartZuschlag(1, 0) !== 0) f.push('Zuschlag doppelt');
       if (fruehstartZuschlag(3, 0) !== 5000) f.push('Spieler 3 ohne Zuschlag');
       if (fruehstartZuschlag(2, 0) !== 0) f.push('Spieler 2 ohne Fruehstart bestraft');
       fruehstartReset(); fruehstart[1].frueh = true;
-      $('race-fruehstart-zeit').checked = false;
-      if (fruehstartZuschlag(1, 0) !== 0) f.push('Schalter aus: trotzdem Zuschlag');
-    } finally { $('race-fruehstart-zeit').checked = merk; fruehstartReset(); }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'einmal +5 s auf Runde 1, je Spieler, Schalter wirkt' };
+      $('race-fruehstart-strafe').value = 'keine';
+      if (fruehstartZuschlag(1, 0) !== 0) f.push('keine: trotzdem Zuschlag');
+    } finally { $('race-fruehstart-strafe').value = merk; fruehstartReset(); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'einmal +5 s auf Runde 1, je Spieler, Rennoption wirkt' };
   });
 
   stAdd('Menue im Rennen: erst fragen, Rennen laeuft weiter', () => {

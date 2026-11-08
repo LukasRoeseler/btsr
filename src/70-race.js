@@ -500,21 +500,47 @@
   }
   function fruehstartReset() {
     if (fruehstartTimer) { clearInterval(fruehstartTimer); fruehstartTimer = null; }
-    FRUEH_SPIELER.forEach((w) => Object.assign(fruehstart[w], { frueh: false, warten: false, bis: 0, zugeschlagen: false }));
+    FRUEH_SPIELER.forEach((w) => Object.assign(fruehstart[w], { frueh: false, warten: false, bis: 0,
+      zugeschlagen: false, gas: false, pit: false, pitGefahren: false, zeit: false, extra: false }));
   }
-  // ---- FRUEHSTART ALS ZEITSTRAFE (v0.9.22) ---------------------------------------------
-  // BESTELLT: "Fruehstart wird mit 5 s Strafe auf die erste Runde geahndet (Toggle in den
-  // Rennoptionen, standardmaessig an; soll im Splitscreen und Multiplayer funktionieren)."
-  // An: die erste Runde jedes Fruehstarters zaehlt 5 s mehr (Spieler 1 bis 3; im WLAN-
-  // Mehrspieler geht die Runde mit der Strafe an den Host). Aus: wie bisher kurz ausbremsen.
+  // ---- FRUEHSTART ALS STRAFE (v1.3.115) ---------------------------------------------
+  // BESTELLT: "Wenn die Ampel an ist, erlaube mir nicht, Gas zu geben. Wer Gas gibt
+  // (Spieler 1, 2, 3, Multiplayer), soll eine Durchfahrtsstrafe bekommen. Fuege dazu eine
+  // Rennoptionen-Option ein (Strafe fuer Fruehstart: pit (Standard), 5 s Zeitstrafe,
+  // Zusatzrunde, keine)." Waehrend Rot ist das Gas gesperrt (50-drive.js); der Versuch wird
+  // am Gas-INPUT erkannt (fruehstartGasSetzen), nicht an der Bewegung.
   const FRUEHSTART_ZEIT_MS = 5000;
-  function fruehstartZeitAn() { const el = $('race-fruehstart-zeit'); return el ? !!el.checked : true; }
+  function fruehstartStrafe() {
+    const el = $('race-fruehstart-strafe');
+    const v = el ? el.value : 'pit';
+    return ['pit', '5s', 'extra', 'keine'].indexOf(v) >= 0 ? v : 'pit';
+  }
+  function fruehstartGasSetzen(w, ja) { const f = fruehstart[w]; if (f) f.gas = !!ja; }
+  function fruehstartGas(w) { const f = fruehstart[w]; return !!(f && f.gas); }
+  // Rot = Countdown beim stehenden Start. Bei fliegendem Start rollt das Feld in Formation.
+  function fruehstartGasSperre(w) { return raceState === 'countdown' && !raceFlying; }
+  function fruehstartAnwenden(w) {
+    const strafe = fruehstartStrafe(), f = fruehstart[w];
+    if (!f) return;
+    if (strafe === '5s') {
+      f.zeit = true;
+      rennEreignisStrafe(w, FRUEHSTART_ZEIT_MS / 1000);
+      showHudToast((w >= 2 ? 'P' + w + ': ' : '') + t('Frühstart') + ' +' + FRUEHSTART_ZEIT_MS / 1000 + ' s');
+    } else if (strafe === 'extra') {
+      f.extra = true;
+      if (w === 1) raceLimit += 1;
+      showHudToast((w >= 2 ? 'P' + w + ': ' : '') + t('Frühstart') + ': ' + t('Zusatzrunde'));
+    } else if (strafe === 'pit') {
+      f.pit = true;
+      showHudToast((w >= 2 ? 'P' + w + ': ' : '') + t('Frühstart') + ': ' + t('Durchfahrt (Boxengasse)'));
+    }
+    log((w >= 2 ? 'P' + w + ': ' : '') + 'Fruehstart: Strafe ' + strafe + '.', 'err');
+  }
   function fruehstartZuschlag(w, rundenIndex) {
     const f = fruehstart[w];
-    if (!f || !f.frueh || f.zugeschlagen || rundenIndex !== 0 || !fruehstartZeitAn()) return 0;
+    if (!f || !f.frueh || f.zugeschlagen || rundenIndex !== 0 || fruehstartStrafe() !== '5s') return 0;
     f.zugeschlagen = true;
     showHudToast((w >= 2 ? 'P' + w + ': ' : '') + t('Frühstart') + ' +' + FRUEHSTART_ZEIT_MS / 1000 + ' s');
-    log((w >= 2 ? 'P' + w + ': ' : '') + 'Fruehstart: +5 s auf die erste Runde.', 'err');
     return FRUEHSTART_ZEIT_MS;
   }
   function fruehstartBeginnen() {
@@ -524,9 +550,9 @@
       if (raceState !== 'countdown') return;
       FRUEH_SPIELER.forEach((w) => {
         if (w >= 2 && !(zweiSpieler && zusatzPlatz(w) && zusatzPlatz(w).car)) return;
-        if (!fruehstart[w].frueh && fruehstartTempo(w) > FRUEHSTART_KMH) {
+        if (!fruehstart[w].frueh && fruehstartGas(w)) {
           fruehstart[w].frueh = true;
-          if (fruehstartZeitAn()) rennEreignisStrafe(w, FRUEHSTART_ZEIT_MS / 1000);
+          fruehstartAnwenden(w);
           showHudToast(w >= 2 ? t('Frühstart Spieler {n}!').replace('{n}', w) : t('Frühstart!'));
         }
       });
@@ -536,19 +562,12 @@
     if (fruehstartTimer) { clearInterval(fruehstartTimer); fruehstartTimer = null; }
     FRUEH_SPIELER.forEach((w) => { if (fruehstart[w].frueh) fruehstart[w].warten = true; });
   }
-  // Aus dem Fahrtakt: gilt die Strafe fuer Auto w gerade? Startet sie, sobald das Auto nach
-  // Gruen faehrt.
-  function fruehstartStrafeAktiv(w) {
-    const f = fruehstart[w];
-    if (!f || fruehstartZeitAn()) return false;     // Zeitstrafe statt Ausbremsen
-    const jetzt = rennZeitJetzt();
-    if (f.warten && (raceState === 'racing' || raceState === 'finishing') && fruehstartTempo(w) > FRUEHSTART_KMH) {
-      f.warten = false;
-      f.bis = jetzt + FRUEHSTART_STRAFE_MS;
-      showHudToast(w >= 2 ? t('Frühstart Spieler {n}: Strafe').replace('{n}', w) : t('Frühstart: Strafe'));
-    }
-    return jetzt < f.bis;
-  }
+  // Die Durchfahrtsstrafe (Boxengasse) wird beim naechsten Boxenaufenthalt abgeleistet
+  // (leerer Plan, wie der Strafstopp der Zufallsevents).
+  function fruehstartDurchfahrt(w) { const f = fruehstart[w]; return !!(f && f.pit && !f.pitGefahren); }
+  function fruehstartDurchfahrtErledigt(w) { const f = fruehstart[w]; if (f) { f.pit = false; f.pitGefahren = true; } }
+  // Kein Ausbremsen mehr: die Strafe ist die gewaehlte Art.
+  function fruehstartStrafeAktiv(w) { return false; }
   function fruehstartGab(w) { const f = fruehstart[w || 1]; return !!(f && f.frueh); }
 
   function raceClockTick() {
@@ -4790,6 +4809,11 @@
       // v1.3.88 STRAFSTOPP (Durchfahrtsstrafe der Zufallsevents): es wird NICHTS am Auto gemacht -
       // leerer Plan, kein Minispiel, nach ZEV_STRAFE_STAND_S frei (losfahren geht jederzeit).
       pitNurStrafe = zevBoxStopp(1);
+      // v1.3.115: Fruehstart-Durchfahrtsstrafe (leerer Plan, wie der Strafstopp).
+      if (!pitNurStrafe && typeof fruehstartDurchfahrt === 'function' && fruehstartDurchfahrt(1)) {
+        pitNurStrafe = true;
+        fruehstartDurchfahrtErledigt(1);
+      }
       if (pitNurStrafe) pitPlan = { refuel: 0, tyres: false, repair: false };
       else if (pitModus === 'minigame' && !(typeof zusatzAktiv === 'function' && zusatzAktiv().length)) pitSpielStart();
       // The plan was chosen while rolling down the pit lane; only now is it locked in.

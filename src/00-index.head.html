@@ -5695,7 +5695,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.3.114</span></span>
+        <span class="foot-ver">v<span id="app-version">1.3.115</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -10284,11 +10284,15 @@
           auf der Bahn, und ein Autopilot ohne Querregelung w&uuml;rde es in die
           Bande fahren.</small></div>
         <label class="tgl"><input type="checkbox" id="race-flying"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Fr&uuml;hstart: +5&nbsp;s auf die erste Runde<small>Wer
-          vor Gr&uuml;n losf&auml;hrt, bekommt 5&nbsp;s auf seine erste Runde &ndash; auch
-          Spieler&nbsp;2 und 3 und im WLAN-Mehrspieler. Aus: das Auto wird nach Gr&uuml;n
-          stattdessen 2&nbsp;s lang ausgebremst.</small></div>
-        <label class="tgl"><input type="checkbox" id="race-fruehstart-zeit" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Strafe f&uuml;r Fr&uuml;hstart<span class="wip-tag">WIP</span><small>Wer
+          bei roter Ampel Gas gibt, bekommt die gew&auml;hlte Strafe &ndash; auch Spieler&nbsp;2
+          und 3 und im WLAN-Mehrspieler. W&auml;hrend Rot ist das Gas gesperrt.</small></div>
+        <select id="race-fruehstart-strafe">
+          <option value="pit" selected>Durchfahrt (Boxengasse)</option>
+          <option value="5s">5&nbsp;s Zeitstrafe</option>
+          <option value="extra">Zusatzrunde</option>
+          <option value="keine">Keine</option>
+        </select></div>
       <div class="opt-row"><div class="opt-label">Gelbe Flagge deaktivieren<small>An: Der Knopf
           &bdquo;Gelbe Flagge&ldquo; und das Halten der Boxentaste rufen kein Gelb mehr aus.</small></div>
         <label class="tgl"><input type="checkbox" id="race-gelb-aus"><span></span></label></div>
