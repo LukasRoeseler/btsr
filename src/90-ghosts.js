@@ -96,13 +96,12 @@
     // beim Lenken drueckt. Und die Streckenansicht verlaesst das Cockpit - genau der
     // Grund, aus dem L1 sie nicht mehr traegt.
     trackview: { type: 'none', index: -1, label: 'nicht belegt' },
-    // L3 (linken Stick eindruecken) schaltet seit Phase 13 das Vollbild um - im Cockpit
-    // race-fs, im Streckeneditor track-fs (siehe pollGamepad()). BESTELLT. Dieselbe
-    // Sorge wie oben (ein versehentliches Eindruecken beim Lenken) gilt auch hier, ist
-    // aber bewusst in Kauf genommen: anders als eine Aktion WAEHREND der Fahrt ist ein
-    // Vollbildwechsel jederzeit folgenlos rueckgaengig zu machen (derselbe Knopf noch
-    // einmal), und ein Umschalten mitten im Rennen aendert nichts an Tempo oder Kurs.
-    fullscreenToggle: { type: 'button', index: 10, label: 'L3 (linken Stick drücken)' },
+    // L3 (linken Stick eindruecken) sagt seit v1.3.119 den Stand an (L3-Statusansage).
+    // Vorher schaltete L3 das Vollbild um (race-fs/track-fs); das ist seitdem UNBELEGT
+    // und bleibt ueber die Belegung frei zuweisbar. Der Stand (Bestzeit, Restzeit/-runden,
+    // Tank, Schaden, Reifen) wird in den Optionen gewaehlt.
+    status: { type: 'button', index: 10, label: 'L3 (linken Stick drücken)' },
+    fullscreenToggle: { type: 'none', index: -1, label: 'nicht belegt' },
     // Nicht belegt. Das Touchpad wird vom System als Zeiger erkannt, also loest ein Tippen
     // gleichzeitig einen Klick irgendwo in der Seite aus - eine Belegung darauf kaempft mit
     // dem Cursor. Frei zuweisbar bleibt es, nur eben nicht ab Werk.
@@ -122,6 +121,7 @@
     trackview: 'Streckenansicht',
     fullscreenToggle: 'Vollbild umschalten',
     resetcar: 'Auto zurücksetzen',
+    status: 'L3-Statusansage',
   };
 
   // Boxenstopp und Streckenansicht haben die Knoepfe getauscht. Gespeichertes liegt UEBER
@@ -903,6 +903,7 @@
   const prevDpad = { up: false, down: false, left: false, right: false };
   let prevLightFlash = false, prevPitstop = false, prevTrackReadMode = false;
   let prevRaceStart = false, prevTrackView = false, prevResetCar = false;
+  let prevStatus = false;
   let gridPadVorher = false;
 
   function padButtonPressed(pad, index) {
@@ -12703,6 +12704,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         }
       }
       prevFsToggle = fsToggleNow;
+
+      // L3: Statusansage - der Stand (Bestzeit, Restzeit/-runden, Tank, Schaden, Reifen)
+      // wird einmal gebaut und gesprochen (80-sound.js). Flanke wie alles hier: ein Druck,
+      // eine Ansage, kein Nachplappern im Takt.
+      const statusNow = readBindingValue(pad, bindings.status) > BUTTON_CAPTURE_THRESHOLD;
+      if (statusNow && !prevStatus && typeof statusAnsageAusloesen === 'function') {
+        statusAnsageAusloesen();
+      }
+      prevStatus = statusNow;
 
       // Rechter Stick hoch/runter: Bildlauf auf jeder Seite, ausser im Vollbild (Cockpit
       // oder Streckeneditor) - dort soll der Stick nichts tun, weder verstellen noch

@@ -5695,7 +5695,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.3.118</span></span>
+        <span class="foot-ver">v<span id="app-version">1.3.119</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -12152,6 +12152,20 @@
         <label class="tgl"><input type="checkbox" id="setting-announce-pit" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Akku ansagen<small>Einmal, wenn der Akku unter 25&nbsp;% f&auml;llt. Erst nach dem Laden wieder scharf.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-battery"><span></span></label></div>
+      <div class="opt-head">L3-Statusansage</div>
+      <div class="opt-row"><div class="opt-label">L3-Statusansage <span class="wip-tag">WIP</span>
+        <small>Ein Druck auf L3 (linken Stick) sagt den aktuellen Stand an. Inhalt darunter w&auml;hlbar; die Bestzeit ist die Vorgabe.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-status-announce" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Bestzeit ansagen<small>Die beste Rundenzeit des laufenden Rennens bzw. der letzten Messungen.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-status-best" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Restzeit / Restrunden ansagen<small>Noch verbleibende Runden bzw. Zeit bis zum Rennende, je nach Modus.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-status-rest"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Tank ansagen<small>F&uuml;llstand in Litern.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-status-tank"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Schaden ansagen<small>Besch&auml;digung in Prozent.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-status-schaden"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Reifen ansagen<small>Mischung und Zustand des schlechtesten Reifens.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-status-reifen"><span></span></label></div>
     </div>
     <div class="card subpage" id="sub-opt-ghosts">
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
@@ -15669,6 +15683,15 @@
     "Wenn es anfängt zu regnen und wenn es aufhört. Beim Laden wird nichts gesagt, erst beim Wechsel.": "When it starts raining and when it stops. Nothing is said on load, only on a change.",
     "Akku ansagen": "Announce battery",
     "Einmal, wenn der Akku unter 25 % fällt. Erst nach dem Laden wieder scharf.": "Once, when the battery falls below 25 %. Armed again only after charging.",
+    "L3-Statusansage": "L3 status announcement",
+    "Ein Druck auf L3 (linken Stick) sagt den aktuellen Stand an. Inhalt darunter wählbar; die Bestzeit ist die Vorgabe.": "A press on L3 (left stick) tells the current state. The content below is selectable; the best time is the default.",
+    "Bestzeit ansagen": "Announce best lap",
+    "Die beste Rundenzeit des laufenden Rennens bzw. der letzten Messungen.": "The best lap time of the running race or of the latest measurements.",
+    "Restzeit / Restrunden ansagen": "Announce remaining time / laps",
+    "Noch verbleibende Runden bzw. Zeit bis zum Rennende, je nach Modus.": "Remaining laps or time until the end of the race, depending on the mode.",
+    "Füllstand in Litern.": "Level in litres.",
+    "Beschädigung in Prozent.": "Damage in percent.",
+    "Mischung und Zustand des schlechtesten Reifens.": "Compound and condition of the worst tyre.",
     "Akku fast leer": "Battery low",
     "Gaskennlinie": "Throttle curve",
     "Lenkkennlinie": "Steering curve",
@@ -19241,6 +19264,15 @@
     "Akku ansagen": "Anunciar batería",
     "Einmal, wenn der Akku unter 25 % fällt. Erst nach dem Laden wieder scharf.": "Una vez, cuando la batería cae por debajo del 25 %. Solo se rearma tras cargar.",
     "Akku fast leer": "Batería baja",
+    "L3-Statusansage": "Anuncio de estado L3",
+    "Ein Druck auf L3 (linken Stick) sagt den aktuellen Stand an. Inhalt darunter wählbar; die Bestzeit ist die Vorgabe.": "Una pulsación en L3 (palanca izquierda) dice el estado actual. El contenido de abajo es seleccionable; el mejor tiempo es el predeterminado.",
+    "Bestzeit ansagen": "Anunciar mejor vuelta",
+    "Die beste Rundenzeit des laufenden Rennens bzw. der letzten Messungen.": "El mejor tiempo de vuelta de la carrera en curso o de las últimas mediciones.",
+    "Restzeit / Restrunden ansagen": "Anunciar tiempo restante / vueltas restantes",
+    "Noch verbleibende Runden bzw. Zeit bis zum Rennende, je nach Modus.": "Vueltas restantes o tiempo hasta el final de la carrera, según el modo.",
+    "Füllstand in Litern.": "Nivel en litros.",
+    "Beschädigung in Prozent.": "Daños en porcentaje.",
+    "Mischung und Zustand des schlechtesten Reifens.": "Compuesto y estado del neumático más desgastado.",
     "Gaskennlinie": "Curva de gas",
     "Lenkkennlinie": "Curva de dirección",
     "Bremskennlinie": "Curva de freno",
@@ -57780,7 +57812,7 @@
   // Akku: BESTELLT "Akku-Ansage < 25 %" - eine eigene Schwelle, nicht die 10 % oben.
   const AKKU_SCHWELLE = 0.25;
   const AKKU_HYSTERESE = 0.32;
-  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false };
+  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false, status: true };
   const ansageLatch = { damage: false, fuel: false, tyre: false, rain: null, battery: false };
   // JE Auto ein Latch fuer die Akku-Meldung: jedes Auto meldet unter 25 % einmal, erst nach
   // der Erholung wieder scharf. Ein gemeinsames Latch wuerde nur das ERSTE Auto melden.
@@ -57973,13 +58005,95 @@
     ansage('lap', lapSpeechText(ms, istBest));
   }
 
+  // ---- L3-STATUSANSAGE (v1.3.119) ----------------------------------------------------
+  //
+  // BESTELLT: "L3 ansage" - ein Druck auf den linken Stick sagt den aktuellen Stand. Der
+  // Inhalt ist in den Optionen waehlbar (Bestzeit als Vorgabe, Restzeit/-runden, Tank,
+  // Schaden, Reifen). Eine Ansage ist ein Ereignis und keine Flanke: sie wird beim Druck
+  // einmal gebaut und gesprochen, nicht im Takt geprueft.
+  //
+  // Die Inhalte lesen den Stand an DER STELLE, an der der Knopf gedrueckt wird: ein
+  // Zwischenstand in der Runde ist ehrlicher als der letzte vollendete.
+  function statusAn(id) {
+    const el = document.getElementById(id);
+    return !!(el && el.checked);
+  }
+  function statusBestZeit() {
+    const zeiten = (typeof raceLapTimes !== 'undefined' && raceLapTimes.length)
+      ? raceLapTimes.map((l) => l.ms)
+      : ((typeof dashLapTimes !== 'undefined' && dashLapTimes) || []);
+    const ms = zeiten.map((z) => (typeof z === 'number' ? z : (z && z.ms)))
+      .filter((x) => Number.isFinite(x));
+    return ms.length ? Math.min.apply(null, ms) : null;
+  }
+  function statusRest() {
+    const de = lang === 'de';
+    if (typeof raceState === 'undefined' || typeof raceMode === 'undefined') return null;
+    if (raceState !== 'racing' && raceState !== 'finishing') return null;
+    if (raceMode === 'laps') {
+      const gefahren = (typeof raceLapTimes !== 'undefined' ? raceLapTimes.length : 0);
+      const rest = Math.max(0, raceLimit - gefahren);
+      return de ? 'Noch ' + rest + ' Runden' : rest + ' laps to go';
+    }
+    // Zeitlimit gilt bei den timed-Modi und bei Training/Time Attack mit Limit > 0.
+    const zeitlimit = (RACE_MODES[raceMode] && RACE_MODES[raceMode].timed)
+      || (raceLimit > 0 && (raceMode === 'practice' || raceMode === 'bestzeit'));
+    if (zeitlimit && raceStartedAt !== null) {
+      const restMs = Math.max(0, raceLimit * 60000 - (rennZeitJetzt() - raceStartedAt));
+      const s = Math.floor(restMs / 1000), m = Math.floor(s / 60), sec = s % 60;
+      return de ? 'Noch ' + m + ' Minuten ' + sec + ' Sekunden'
+                : m + ' minutes ' + sec + ' seconds to go';
+    }
+    return null;
+  }
+  function statusAnsageText() {
+    const de = lang === 'de';
+    const teile = [];
+    if (statusAn('setting-status-best')) {
+      const best = statusBestZeit();
+      if (best !== null) teile.push(de ? 'Bestzeit ' + formatLapTime(best)
+                                       : 'Best lap ' + formatLapTime(best));
+    }
+    if (statusAn('setting-status-rest')) {
+      const rest = statusRest();
+      if (rest) teile.push(rest);
+    }
+    if (statusAn('setting-status-tank') && typeof fuel === 'number') {
+      teile.push(de ? 'Tank ' + fuelLiters(fuel) + ' Liter'
+                    : 'Fuel ' + fuelLiters(fuel) + ' litres');
+    }
+    if (statusAn('setting-status-schaden') && typeof damage === 'number') {
+      const p = Math.round(Math.max(0, Math.min(100, damage)));
+      teile.push(de ? 'Schaden ' + p + ' Prozent' : 'Damage ' + p + ' percent');
+    }
+    if (statusAn('setting-status-reifen')) {
+      const z = (typeof ansagenZustand === 'function') ? ansagenZustand() : null;
+      const name = (typeof mischungName === 'function' && typeof tyres === 'string')
+        ? mischungName(tyres) : '';
+      const pct = (z && z.tyre !== null && z.tyre !== undefined)
+        ? Math.round(z.tyre * 100) : null;
+      let s = de ? 'Reifen' : 'Tyres';
+      if (name) s += ' ' + name;
+      if (pct !== null) s += (de ? ', ' : ', ') + pct + (de ? ' Prozent' : ' percent');
+      teile.push(s);
+    }
+    return teile.join('. ') + (teile.length ? '.' : '');
+  }
+  function statusAnsageAusloesen() {
+    if (!ansageAn.status || !soundEnabled) return false;
+    const text = statusAnsageText();
+    if (!text) return false;
+    return ansage('status', text);
+  }
+
   // Die fuenf Schalter und der Funkfilter. Alle lesen ihren Anfangswert AUS DEM MARKUP -
   // dasselbe Muster wie bei setting-vibration, wo der fehlende Abgleich schon einmal einen
   // toten Schalter ergeben hat.
   const ANSAGE_KAESTCHEN = { 'setting-announce': 'lap', 'setting-announce-damage': 'damage',
                              'setting-announce-fuel': 'fuel', 'setting-announce-tyre': 'tyre',
                              'setting-announce-rain': 'rain', 'setting-announce-pit': 'pit',
-                             'setting-announce-battery': 'battery' };
+                             'setting-announce-battery': 'battery',
+                             'setting-status-announce': 'status' };
   Object.keys(ANSAGE_KAESTCHEN).forEach((id) => {
     const el = $(id);
     if (!el) return;
@@ -61966,13 +62080,12 @@
     // beim Lenken drueckt. Und die Streckenansicht verlaesst das Cockpit - genau der
     // Grund, aus dem L1 sie nicht mehr traegt.
     trackview: { type: 'none', index: -1, label: 'nicht belegt' },
-    // L3 (linken Stick eindruecken) schaltet seit Phase 13 das Vollbild um - im Cockpit
-    // race-fs, im Streckeneditor track-fs (siehe pollGamepad()). BESTELLT. Dieselbe
-    // Sorge wie oben (ein versehentliches Eindruecken beim Lenken) gilt auch hier, ist
-    // aber bewusst in Kauf genommen: anders als eine Aktion WAEHREND der Fahrt ist ein
-    // Vollbildwechsel jederzeit folgenlos rueckgaengig zu machen (derselbe Knopf noch
-    // einmal), und ein Umschalten mitten im Rennen aendert nichts an Tempo oder Kurs.
-    fullscreenToggle: { type: 'button', index: 10, label: 'L3 (linken Stick drücken)' },
+    // L3 (linken Stick eindruecken) sagt seit v1.3.119 den Stand an (L3-Statusansage).
+    // Vorher schaltete L3 das Vollbild um (race-fs/track-fs); das ist seitdem UNBELEGT
+    // und bleibt ueber die Belegung frei zuweisbar. Der Stand (Bestzeit, Restzeit/-runden,
+    // Tank, Schaden, Reifen) wird in den Optionen gewaehlt.
+    status: { type: 'button', index: 10, label: 'L3 (linken Stick drücken)' },
+    fullscreenToggle: { type: 'none', index: -1, label: 'nicht belegt' },
     // Nicht belegt. Das Touchpad wird vom System als Zeiger erkannt, also loest ein Tippen
     // gleichzeitig einen Klick irgendwo in der Seite aus - eine Belegung darauf kaempft mit
     // dem Cursor. Frei zuweisbar bleibt es, nur eben nicht ab Werk.
@@ -61992,6 +62105,7 @@
     trackview: 'Streckenansicht',
     fullscreenToggle: 'Vollbild umschalten',
     resetcar: 'Auto zurücksetzen',
+    status: 'L3-Statusansage',
   };
 
   // Boxenstopp und Streckenansicht haben die Knoepfe getauscht. Gespeichertes liegt UEBER
@@ -62773,6 +62887,7 @@
   const prevDpad = { up: false, down: false, left: false, right: false };
   let prevLightFlash = false, prevPitstop = false, prevTrackReadMode = false;
   let prevRaceStart = false, prevTrackView = false, prevResetCar = false;
+  let prevStatus = false;
   let gridPadVorher = false;
 
   function padButtonPressed(pad, index) {
@@ -74573,6 +74688,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         }
       }
       prevFsToggle = fsToggleNow;
+
+      // L3: Statusansage - der Stand (Bestzeit, Restzeit/-runden, Tank, Schaden, Reifen)
+      // wird einmal gebaut und gesprochen (80-sound.js). Flanke wie alles hier: ein Druck,
+      // eine Ansage, kein Nachplappern im Takt.
+      const statusNow = readBindingValue(pad, bindings.status) > BUTTON_CAPTURE_THRESHOLD;
+      if (statusNow && !prevStatus && typeof statusAnsageAusloesen === 'function') {
+        statusAnsageAusloesen();
+      }
+      prevStatus = statusNow;
 
       // Rechter Stick hoch/runter: Bildlauf auf jeder Seite, ausser im Vollbild (Cockpit
       // oder Streckeneditor) - dort soll der Stick nichts tun, weder verstellen noch
@@ -88412,6 +88536,49 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                mass: schlecht.length ? schlecht.join('; ') : 'Verbrauch stimmt' };
     } finally {
       raceFuelStartL = m.start; fuel = m.fuel; raceFuelRefuelPct = m.refuel;
+    }
+  });
+
+  // ---- L3-Statusansage: Bestzeit, Rest und Zustand --------------------------------
+  //
+  // statusAnsageText() (80-sound.js) baut den Satz fuer den L3-Druck aus den gewaehlten
+  // Bausteinen. Geprueft werden die beiden reinen Helfer (Bestzeit, Rest) und der
+  // zusammengesetzte Satz mit gesetzten Kaeftchen.
+  stAdd('L3-Statusansage: Bestzeit, Rest und Zustand', () => {
+    if (typeof statusAnsageText !== 'function' || typeof statusBestZeit !== 'function'
+        || typeof statusRest !== 'function') {
+      return { skip: true, mass: 'Statusansage-Funktionen nicht erreichbar' };
+    }
+    const schlecht = [];
+    const m = { state: raceState, mode: raceMode, limit: raceLimit, laps: raceLapTimes,
+                dash: dashLapTimes, fuel: fuel, damage: damage, tyres: tyres };
+    const kaestchen = {};
+    for (const id of ['setting-status-best', 'setting-status-rest', 'setting-status-tank',
+                      'setting-status-schaden', 'setting-status-reifen']) {
+      const el = document.getElementById(id);
+      if (el) { kaestchen[id] = el.checked; el.checked = true; }
+    }
+    try {
+      raceState = 'racing'; raceMode = 'laps'; raceLimit = 10;
+      raceLapTimes = [{ lap: 1, ms: 12000 }, { lap: 2, ms: 11000 }];
+      dashLapTimes = []; fuel = 60; damage = 20; tyres = 'mittel';
+      if (statusBestZeit() !== 11000) schlecht.push('Bestzeit ' + statusBestZeit() + ' statt 11000');
+      if (statusRest() !== 'Noch 8 Runden') schlecht.push('Rest ' + statusRest() + ' statt Noch 8 Runden');
+      const text = statusAnsageText();
+      if (text.indexOf('Bestzeit') < 0) schlecht.push('Bestzeit fehlt');
+      if (text.indexOf('Noch 8 Runden') < 0) schlecht.push('Rest fehlt');
+      if (text.indexOf('Tank 66 Liter') < 0) schlecht.push('Tank fehlt');
+      if (text.indexOf('Schaden 20 Prozent') < 0) schlecht.push('Schaden fehlt');
+      if (text.indexOf('Reifen') < 0) schlecht.push('Reifen fehlt');
+      return { ok: schlecht.length === 0,
+               mass: schlecht.length ? schlecht.join('; ') : text };
+    } finally {
+      raceState = m.state; raceMode = m.mode; raceLimit = m.limit; raceLapTimes = m.laps;
+      dashLapTimes = m.dash; fuel = m.fuel; damage = m.damage; tyres = m.tyres;
+      for (const id of Object.keys(kaestchen)) {
+        const el = document.getElementById(id);
+        if (el) el.checked = kaestchen[id];
+      }
     }
   });
 

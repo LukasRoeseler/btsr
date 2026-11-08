@@ -2239,6 +2239,49 @@
     }
   });
 
+  // ---- L3-Statusansage: Bestzeit, Rest und Zustand --------------------------------
+  //
+  // statusAnsageText() (80-sound.js) baut den Satz fuer den L3-Druck aus den gewaehlten
+  // Bausteinen. Geprueft werden die beiden reinen Helfer (Bestzeit, Rest) und der
+  // zusammengesetzte Satz mit gesetzten Kaeftchen.
+  stAdd('L3-Statusansage: Bestzeit, Rest und Zustand', () => {
+    if (typeof statusAnsageText !== 'function' || typeof statusBestZeit !== 'function'
+        || typeof statusRest !== 'function') {
+      return { skip: true, mass: 'Statusansage-Funktionen nicht erreichbar' };
+    }
+    const schlecht = [];
+    const m = { state: raceState, mode: raceMode, limit: raceLimit, laps: raceLapTimes,
+                dash: dashLapTimes, fuel: fuel, damage: damage, tyres: tyres };
+    const kaestchen = {};
+    for (const id of ['setting-status-best', 'setting-status-rest', 'setting-status-tank',
+                      'setting-status-schaden', 'setting-status-reifen']) {
+      const el = document.getElementById(id);
+      if (el) { kaestchen[id] = el.checked; el.checked = true; }
+    }
+    try {
+      raceState = 'racing'; raceMode = 'laps'; raceLimit = 10;
+      raceLapTimes = [{ lap: 1, ms: 12000 }, { lap: 2, ms: 11000 }];
+      dashLapTimes = []; fuel = 60; damage = 20; tyres = 'mittel';
+      if (statusBestZeit() !== 11000) schlecht.push('Bestzeit ' + statusBestZeit() + ' statt 11000');
+      if (statusRest() !== 'Noch 8 Runden') schlecht.push('Rest ' + statusRest() + ' statt Noch 8 Runden');
+      const text = statusAnsageText();
+      if (text.indexOf('Bestzeit') < 0) schlecht.push('Bestzeit fehlt');
+      if (text.indexOf('Noch 8 Runden') < 0) schlecht.push('Rest fehlt');
+      if (text.indexOf('Tank 66 Liter') < 0) schlecht.push('Tank fehlt');
+      if (text.indexOf('Schaden 20 Prozent') < 0) schlecht.push('Schaden fehlt');
+      if (text.indexOf('Reifen') < 0) schlecht.push('Reifen fehlt');
+      return { ok: schlecht.length === 0,
+               mass: schlecht.length ? schlecht.join('; ') : text };
+    } finally {
+      raceState = m.state; raceMode = m.mode; raceLimit = m.limit; raceLapTimes = m.laps;
+      dashLapTimes = m.dash; fuel = m.fuel; damage = m.damage; tyres = m.tyres;
+      for (const id of Object.keys(kaestchen)) {
+        const el = document.getElementById(id);
+        if (el) el.checked = kaestchen[id];
+      }
+    }
+  });
+
 
 
   // ---- Cockpit-Ansicht: sichtbar verschieden, funktional gleich ----
