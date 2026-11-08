@@ -2033,6 +2033,7 @@
     font-size: clamp(8px, 1.1vw, 11px); letter-spacing: .12em;
     color: var(--gt3-strip-ink); text-transform: uppercase; }
   .schirm-kopf b { color: var(--gt3-tile-ink); letter-spacing: .06em; }
+  .grid-starttyp { font-weight: 700; color: var(--k-blau, #3d8bff); white-space: nowrap; }
   .schirm-fuss { font-size: clamp(8.5px, 1.15vw, 12px); color: var(--gt3-strip-ink);
     letter-spacing: .06em; }
   /* Der Kopf des Boxenschirms traegt links das grosse P. Eine eigene Zeile im Raster
@@ -5694,7 +5695,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.3.113</span></span>
+        <span class="foot-ver">v<span id="app-version">1.3.114</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6472,7 +6473,8 @@
            unabhaengig vom Schirmblaettern: erscheint vor dem Countdown. -->
       <div class="gt3-gridschirm" id="race-gridscreen" hidden>
         <div class="schirm-kopf"><b>Bringe die Autos in Position</b>
-          <span id="grid-kopf-info" data-i18n-skip></span></div>
+          <span id="grid-kopf-info" data-i18n-skip></span>
+          <span id="grid-starttyp" class="grid-starttyp" data-i18n-skip></span></div>
         <div class="grid-bild" id="grid-bild" data-i18n-skip></div>
         <div class="grid-timeattack" id="grid-timeattack" data-i18n-skip hidden></div>
         <p class="grid-hinweis" id="grid-hinweis">Alle Autos stehen auf den Teilen <b>vor</b> Start/Ziel. Erst wenn du Start/Ziel zum ersten Mal &uuml;berf&auml;hrst, beginnt Runde&nbsp;1.</p>
@@ -28650,7 +28652,11 @@
   // v1.2.5 BESTELLT: "Streckenscan-Geschwindigkeit etwas erhoehen (ausser in der Haarnadel), da es sonst zu Fehllesungen
   // kommt." Gerade 0,80 statt 0,67 (Delta 36 statt 30), normale Kurven bleiben bei 0,67 (SCAN_TEMPO_KURVE), die
   // Haarnadel bei 0,47 (Delta 21).
-  const SCAN_TEMPO = 0.80, SCAN_TEMPO_KURVE = 0.67, SCAN_TEMPO_HAARNADEL = 0.47;
+  // v1.3.114 BESTELLT: "Erhoehe die Geschwindigkeit in der Scan-Runde leicht." Das Formationstempo (Basis) ist
+  // um 20 % gestiegen (formationPace, 90-ghosts.js); damit der Scan nur LEICHT schneller wird, sind die Faktoren
+  // hier gegengerechnet: 0,42 * 0,72 = 0,302 statt vorher 0,35 * 0,80 = 0,28 (gut +8 %). Kurve und Haarnadel
+  // behalten ihr Verhaeltnis zur Geraden.
+  const SCAN_TEMPO = 0.72, SCAN_TEMPO_KURVE = 0.60, SCAN_TEMPO_HAARNADEL = 0.42;
   const scanStopp = { car: null, bis: 0 };
   function scanAnhalten(car) { if (car) { scanStopp.car = car; scanStopp.bis = rennZeitJetzt() + 1500; } }
   // ---- GREIFT DER AUTOPILOT GERADE? (v1.0.25) --------------------------------------
@@ -45436,6 +45442,8 @@
     gridBildMalen();
     // v1.0.25: im Meisterschafts-Event steht oben, welches Event und nach welcher Regel aufgestellt wird.
     if ($('grid-kopf-info')) $('grid-kopf-info').textContent = typeof meisterGridInfo === 'function' ? meisterGridInfo() : '';
+    // v1.3.114 BESTELLT: "Starttyp (stehend/fliegend) auf dem Startbildschirm anzeigen."
+    if ($('grid-starttyp')) $('grid-starttyp').textContent = raceFlying ? t('Fliegender Start') : t('Stehend');
     // Time Attack: Medaillenzeiten, bisher Gewonnenes und Bestzeit dieser Strecke.
     const ta = $('grid-timeattack');
     if (ta) {
@@ -64803,7 +64811,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Das Maximum von beiden ist damit keine Bequemlichkeit, sondern die Bedingung dafuer, dass
   // die Einfuehrungsrunde ueberhaupt zu Ende geht.
   function formationPace() {
-    return Math.max(PIT_SPEED_FACTOR, GHOST_READ_MIN);
+    // v1.3.114 BESTELLT: "Geschwindigkeit in der Einfuehrungsrunde bei fliegendem Start ist zu langsam."
+    // Das Formationstempo ist das Tempo der Einfuehrungsrunde. Vorher max(PIT_SPEED_FACTOR, GHOST_READ_MIN)
+    // = 0,35; jetzt 20 % mehr (0,42), damit sich die Einfuehrungsrunde wie eine Rennrunde anfuehlt. Die
+    // Scan-Runde nutzt dieselbe Basis mal scanTempoFaktor - dort wird der Faktor gegenlaeufig leicht
+    // gesenkt (siehe SCAN_TEMPO in 50-drive.js), damit der Scan nur leicht schneller wird.
+    return Math.max(PIT_SPEED_FACTOR, GHOST_READ_MIN) * 1.2;
   }
 
   // ---- AUTOMATISCHE AUFSTELLUNG (v0.9.22, experimentell) ---------------------------------

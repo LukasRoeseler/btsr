@@ -3001,7 +3001,11 @@
   // v1.2.5 BESTELLT: "Streckenscan-Geschwindigkeit etwas erhoehen (ausser in der Haarnadel), da es sonst zu Fehllesungen
   // kommt." Gerade 0,80 statt 0,67 (Delta 36 statt 30), normale Kurven bleiben bei 0,67 (SCAN_TEMPO_KURVE), die
   // Haarnadel bei 0,47 (Delta 21).
-  const SCAN_TEMPO = 0.80, SCAN_TEMPO_KURVE = 0.67, SCAN_TEMPO_HAARNADEL = 0.47;
+  // v1.3.114 BESTELLT: "Erhoehe die Geschwindigkeit in der Scan-Runde leicht." Das Formationstempo (Basis) ist
+  // um 20 % gestiegen (formationPace, 90-ghosts.js); damit der Scan nur LEICHT schneller wird, sind die Faktoren
+  // hier gegengerechnet: 0,42 * 0,72 = 0,302 statt vorher 0,35 * 0,80 = 0,28 (gut +8 %). Kurve und Haarnadel
+  // behalten ihr Verhaeltnis zur Geraden.
+  const SCAN_TEMPO = 0.72, SCAN_TEMPO_KURVE = 0.60, SCAN_TEMPO_HAARNADEL = 0.42;
   const scanStopp = { car: null, bis: 0 };
   function scanAnhalten(car) { if (car) { scanStopp.car = car; scanStopp.bis = rennZeitJetzt() + 1500; } }
   // ---- GREIFT DER AUTOPILOT GERADE? (v1.0.25) --------------------------------------

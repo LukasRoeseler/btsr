@@ -1752,6 +1752,8 @@
     gridBildMalen();
     // v1.0.25: im Meisterschafts-Event steht oben, welches Event und nach welcher Regel aufgestellt wird.
     if ($('grid-kopf-info')) $('grid-kopf-info').textContent = typeof meisterGridInfo === 'function' ? meisterGridInfo() : '';
+    // v1.3.114 BESTELLT: "Starttyp (stehend/fliegend) auf dem Startbildschirm anzeigen."
+    if ($('grid-starttyp')) $('grid-starttyp').textContent = raceFlying ? t('Fliegender Start') : t('Stehend');
     // Time Attack: Medaillenzeiten, bisher Gewonnenes und Bestzeit dieser Strecke.
     const ta = $('grid-timeattack');
     if (ta) {

@@ -3016,7 +3016,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Das Maximum von beiden ist damit keine Bequemlichkeit, sondern die Bedingung dafuer, dass
   // die Einfuehrungsrunde ueberhaupt zu Ende geht.
   function formationPace() {
-    return Math.max(PIT_SPEED_FACTOR, GHOST_READ_MIN);
+    // v1.3.114 BESTELLT: "Geschwindigkeit in der Einfuehrungsrunde bei fliegendem Start ist zu langsam."
+    // Das Formationstempo ist das Tempo der Einfuehrungsrunde. Vorher max(PIT_SPEED_FACTOR, GHOST_READ_MIN)
+    // = 0,35; jetzt 20 % mehr (0,42), damit sich die Einfuehrungsrunde wie eine Rennrunde anfuehlt. Die
+    // Scan-Runde nutzt dieselbe Basis mal scanTempoFaktor - dort wird der Faktor gegenlaeufig leicht
+    // gesenkt (siehe SCAN_TEMPO in 50-drive.js), damit der Scan nur leicht schneller wird.
+    return Math.max(PIT_SPEED_FACTOR, GHOST_READ_MIN) * 1.2;
   }
 
   // ---- AUTOMATISCHE AUFSTELLUNG (v0.9.22, experimentell) ---------------------------------
