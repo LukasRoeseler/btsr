@@ -5726,7 +5726,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.3.129</span></span>
+        <span class="foot-ver">v<span id="app-version">1.3.130</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -21900,10 +21900,6 @@
       // v1.1.26: eine laufende Fahrtenwiedergabe sendet genau das Aufgenommene (siehe runPlayback).
       const mw = typeof macroWiedergabeWert === 'function' ? macroWiedergabeWert() : null;
       if (mw) { steer = mw.steer; throttle = mw.throttle; }
-      // v1.3.128: Nach dem Rennende (auch eines Meisterschafts-Events) bremst das Fahrerauto
-      // zum Stillstand und lenkt in die Mitte. Vorher behielt es den letzten Lenkwinkel und
-      // rollte nur langsam aus.
-      if (typeof raceState !== 'undefined' && raceState === 'finished') { steer = 0; throttle = -1; }
       sendControlValue(steer, throttle);
       spielerZweiSenden();
     } finally {
@@ -21955,8 +21951,6 @@
     let steer = physJetzt ? z.outSteer : z.steer;
     if (!z.rcLage) z.rcLage = rcLageNeu();
     let throttle = physJetzt ? z.outThrottle : rcGas(z.throttle, undefined, z.rcLage);
-    // v1.3.128: wie Auto 1 - nach dem Rennende bremsen und in die Mitte lenken.
-    if (typeof raceState !== 'undefined' && raceState === 'finished') { steer = 0; throttle = -1; }
     // ---- DIE ZWEI GLOBALEN, DIE NICHT IN config STEHEN -----------------------------
     //
     // BESTELLT: "Globale einstellungen gelten für beide autos gleichermaßen."
@@ -29259,11 +29253,6 @@
     const ziel = (typeof dirtyAirLevel === 'function') ? dirtyAirLevel() : 0;
     const ps = physEngine.state;
     ps.dirtyAir += (ziel - ps.dirtyAir) * Math.min(1, dt * 4);
-    // v1.3.128: Nach dem Rennende (auch eines Meisterschafts-Events) bremst das Fahrerauto
-    // zum Stillstand und lenkt in die Mitte - vorher behielt es den letzten Lenkwinkel und
-    // rollte nur langsam aus. Hier in der Physik, damit Modelltempo und ausgehendes Gas
-    // uebereinstimmen (das Auto bekommt die Bremse, nicht nur der Tacho).
-    if (typeof raceState !== 'undefined' && raceState === 'finished') { rawThrottle = 0; rawBrake = 1; steer = 0; }
     const out = physEngine.update({ steering: steer, throttle: rawThrottle, brake: rawBrake,
                                     headlights: headlightsOn, apFaehrt: !!ap }, dt);
     pacejkaRueckmeldung(physEngine, 1);
@@ -29405,8 +29394,6 @@
         padRumble(0.12, 0.34, OFFTRACK_RUMBLE_MS, 'abseits', z.nr);
       }
     }
-    // v1.3.128: wie Auto 1 - nach dem Rennende bremsen und in die Mitte lenken.
-    if (typeof raceState !== 'undefined' && raceState === 'finished') { gas = 0; bremse = 1; lenkung = 0; }
     const out = z.motor.update({ steering: lenkung, throttle: gas,
                                      brake: bremse,
                                      headlights: z.licht }, dt);
@@ -65490,10 +65477,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const h = { at: 0, anpassMs: MANOEVER_ANPASS_MS, vonDrive: a.vonDrive, skript: sk };
       if (t >= MANOEVER_ANPASS_MS + manoeverDauer(sk)) return { lenk: 0, gas: 'halt' };
       const s = skriptSchritt(h, t);
-      return { lenk: s.lenk, gas: 'skript', drive: s.drive };
+      // v1.3.130: auf der Kurve die feste Folge um den Kurvenzuschlag ergaenzen (auch fuer das Fahrerauto).
+      return { lenk: randHaltKurveLenk(car, s.lenk, a.ziel), gas: 'skript', drive: s.drive };
     }
     if (w <= 0 || t >= 2 * ms) return { lenk: 0, gas: 'halt' };
-    return { lenk: t < ms ? seite * w : -seite * w, gas: 'fahrt' };
+    // v1.3.130: auf der Kurve den Lenkimpuls um den Kurvenzuschlag ergaenzen.
+    return { lenk: randHaltKurveLenk(car, t < ms ? seite * w : -seite * w, a.ziel), gas: 'fahrt' };
   }
   function aufstellenSpielerOhneSpur(car) {
     const a = car ? aufstellSpieler.get(car) : null;
@@ -68031,20 +68020,62 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     h.phase = h.radLenk ? 'rad' : 'halt';
     h.at = now;
   }
+  // v1.3.130: Das Parken auf einer Kurve. Die feste Folge (scEin) und der kurze Lenkimpuls
+  // sind fuer die Gerade aufgenommen und ziehen das Auto auf einer Kurve schraeg, weil es
+  // der Bahn nicht folgt. Diese Korrektur liest die Kachel, auf der geparkt wird (Richtung
+  // und Enge), und liefert den Zuschlag zum Lenkwinkel, der das Auto auf der Linie haelt -
+  // derselbe Grundwert wie GHOST_STEER_CURVE im normalen Fahren. Auf der Geraden (Enge 0)
+  // ist er 0, das Parken bleibt wie vorher.
+  // So stark dreht die Korrektur, in Anteilen von GHOST_STEER_CURVE: 0,4 auf einer Kurve
+  // (Enge 1), 0,7 in der Haarnadel/Engstelle (Enge 2). Die Haarnadel ist als Platz zwar
+  // ausgeschlossen, aber das Netz faengt sie trotzdem. Startpunkte fuer das Abstimmen.
+  const RANDHALT_KURVE_GEWICHT = 0.4, RANDHALT_HAARNADEL_GEWICHT = 0.7;
+  function randHaltKurve(car, zielKachel) {
+    const g = car.ghost;
+    const tiles = currentTrackTiles;
+    // Das Safety Car und der Raeumwagen parken bereits gut (vorgegebene Folge); ihre
+    // Kurvenkorrektur bliebe unerprobt. Die Korrektur gilt fuer das Selbst-Einparken der
+    // NPCs (Startaufstellung/Heimweg), das auf Kurven schraeg stand.
+    if (!g || car.role === 'safetycar' || car.role === 'reinig') return 0;
+    if (!tiles || !tiles.length) return 0;
+    // Das Zielteil (Startplatz/Heimweg) ist stabiler als das aktuelle: waehrend der Folge
+    // wandert das Auto in die naechste Kachel, und der Zuschlag wuerde sonst springen.
+    // Ohne Zielteil (Boxenstopp, Randhalt) das aktuelle Teil - dort ist die Korrektur
+    // unerprobt, und die Geraden der Box sind ohnehin eben.
+    const idx = (zielKachel !== undefined && zielKachel !== null) ? zielKachel
+              : (g.aufstellZiel !== undefined && g.aufstellZiel !== null) ? g.aufstellZiel
+              : g.tileIndex;
+    if (idx === null || idx === undefined) return 0;
+    const t = tiles[((idx % tiles.length) + tiles.length) % tiles.length];
+    if (!t) return 0;
+    const tight = tileTightness(t.type);
+    if (tight <= 0) return 0;
+    const dir = ghostTurnOf(t.type);   // -1 links, +1 rechts
+    if (dir === 0) return 0;
+    return dir * GHOST_STEER_CURVE * (tight >= 2 ? RANDHALT_HAARNADEL_GEWICHT : RANDHALT_KURVE_GEWICHT);
+  }
+  // Die feste Folge (oder der Lenkimpuls) um die Kurvenkorrektur ergaenzen.
+  function randHaltKurveLenk(car, lenk, zielKachel) {
+    const k = randHaltKurve(car, zielKachel);
+    return k ? Math.max(-1, Math.min(1, lenk + k)) : lenk;
+  }
   // Die Lenkung am Rad (ohne Spur-Bytes), solange 'rad' oder danach 'halt' laeuft - oder null.
   // v1.0.32: mit gegenMs erst rechts, dann gleich lang links (Raeder wieder gerade), und
   // gehalten wird mit geraden Raedern.
   function randHaltRadLenk(car) {
     const h = car.ghost && car.ghost.randHalt;
     // v1.1.30: eine aufgenommene Folge lenkt selbst; im anschliessenden Halt stehen die Raeder gerade.
-    if (h && h.skript) return h.phase === 'skript' ? skriptSchritt(h, makroUhr(car.ghost)).lenk : 0;
-    if (!h || !h.radLenk) return null;
-    if (h.phase === 'rad') return h.radLenk;
-    if (h.phase === 'gegen') return -h.radLenk;
+    let w;
+    if (h && h.skript) w = h.phase === 'skript' ? skriptSchritt(h, makroUhr(car.ghost)).lenk : 0;
+    else if (!h || !h.radLenk) return null;
+    else if (h.phase === 'rad') w = h.radLenk;
+    else if (h.phase === 'gegen') w = -h.radLenk;
     // Beim Bremsen gerade; im Halt (Safety Car neben der Strecke) leicht nach links, damit es wieder sauber ausfahren kann.
-    if (h.phase === 'brems') return h.gegenMs ? 0 : h.radLenk;
-    if (h.phase === 'halt') return h.endLenk ? -h.endLenk : (h.gegenMs ? 0 : h.radLenk);
-    return null;
+    else if (h.phase === 'brems') w = h.gegenMs ? 0 : h.radLenk;
+    else if (h.phase === 'halt') w = h.endLenk ? -h.endLenk : (h.gegenMs ? 0 : h.radLenk);
+    else return null;
+    // v1.3.130: auf der Kurve die feste Folge um den Kurvenzuschlag ergaenzen.
+    return randHaltKurveLenk(car, w);
   }
   function randHaltTick(car) {
     const g = car.ghost, h = g && g.randHalt;
@@ -112557,6 +112588,47 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       }
     } finally { if (el) el.value = merkV; currentTrackTiles = merkT; }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'scEin Takt fuer Takt, Gas x 0,75, links gespiegelt, kein Platz in der Haarnadel' };
+  });
+
+  // v1.3.130: Kurvenbewusstes Einparken. Die feste Folge (scEin) und der kurze Lenkimpuls sind fuer
+  // die Gerade aufgenommen; auf einer Kurve bekommt die Lenkung einen Zuschlag in Kurvenrichtung
+  // (RANDHALT_KURVE_GEWICHT bzw. RANDHALT_HAARNADEL_GEWICHT von GHOST_STEER_CURVE), der das Auto auf
+  // der Linie haelt. Auf der Geraden 0; Safety Car und Raeumwagen bleiben unveraendert.
+  stAdd('Einparken v1.3.130: Kurvenzuschlag in der Rechts-/Linkskurve und Haarnadel, 0 auf der Geraden, SC unveraendert', () => {
+    const f = [];
+    const merk = { tiles: currentTrackTiles };
+    try {
+      currentTrackTiles = codeToTrack('SRG2L2G2H2').tiles;
+      const idxRechts = currentTrackTiles.findIndex((t) => t.type === TILE_TYPE.CURVE_RIGHT);
+      const idxLinks = currentTrackTiles.findIndex((t) => t.type === TILE_TYPE.CURVE_LEFT);
+      const idxGerade = currentTrackTiles.findIndex((t) => t.type === TILE_TYPE.STRAIGHT);
+      const idxHaar = currentTrackTiles.findIndex((t) => tileTightness(t.type) >= 2);
+      const erwartetKurve = GHOST_STEER_CURVE * RANDHALT_KURVE_GEWICHT;
+      const erwartetHaar = GHOST_STEER_CURVE * RANDHALT_HAARNADEL_GEWICHT;
+      const npc = (idx) => ({ role: 'ghost', ghost: { tileIndex: idx, aufstellZiel: idx } });
+      const sc = (idx) => ({ role: 'safetycar', ghost: { tileIndex: idx, aufstellZiel: idx } });
+      if (idxRechts < 0 || idxLinks < 0 || idxGerade < 0 || idxHaar < 0) { f.push('Strecke nicht aufgebaut'); return { ok: false, mass: f.join(' | ') }; }
+      if (randHaltKurve(npc(idxGerade)) !== 0) f.push('Gerade bekommt Zuschlag: ' + randHaltKurve(npc(idxGerade)));
+      if (Math.abs(randHaltKurve(npc(idxRechts)) - erwartetKurve) > 1e-9) f.push('Rechtskurve: ' + randHaltKurve(npc(idxRechts)));
+      if (Math.abs(randHaltKurve(npc(idxLinks)) + erwartetKurve) > 1e-9) f.push('Linkskurve: ' + randHaltKurve(npc(idxLinks)));
+      if (Math.abs(randHaltKurve(npc(idxHaar)) - erwartetHaar) > 1e-9) f.push('Haarnadel: ' + randHaltKurve(npc(idxHaar)));
+      if (randHaltKurve(sc(idxRechts)) !== 0) f.push('Safety Car bekommt Zuschlag');
+      // Das Zielteil gewinnt ueber das aktuelle: tileIndex auf der Geraden, Ziel auf der Kurve -> Zuschlag.
+      if (Math.abs(randHaltKurve({ role: 'ghost', ghost: { tileIndex: idxGerade, aufstellZiel: idxRechts } }) - erwartetKurve) > 1e-9)
+        f.push('Zielteil wird nicht benutzt');
+      // randHaltKurveLenk mit explizitem Zielteil (Fahrerauto): ergaenzt.
+      if (Math.abs(randHaltKurveLenk({ role: 'ghost', ghost: { tileIndex: idxGerade } }, 0, idxRechts) - erwartetKurve) > 1e-9)
+        f.push('Fahrerauto-Zuschlag fehlt');
+      // Die laufende Folge wird auf der Kurve ergaenzt.
+      const g = { tileIndex: idxRechts, aufstellZiel: idxRechts, makroPhysik: false };
+      const h = { phase: 'skript', at: makroUhr(g) - 100, anpassMs: 0, skript: MANOEVER.scEin };
+      g.randHalt = h;
+      const c = { role: 'ghost', ghost: g };
+      const w = skriptSchritt(h, makroUhr(g)).lenk;
+      const wl = randHaltRadLenk(c);
+      if (!(wl > w)) f.push('Folge nicht ergaenzt: ' + w + ' -> ' + wl);
+    } finally { currentTrackTiles = merk.tiles; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gerade 0, Rechts +, Links -, Haarnadel staerker, SC 0, Zielteil gewinnt, Folge ergaenzt' };
   });
 
   // v1.1.41 BESTELLT: Reinigungsfahrzeug nach der ersten Ueberfahrt je eine volle Runde mittig, links (~90 %),

@@ -25889,6 +25889,47 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'scEin Takt fuer Takt, Gas x 0,75, links gespiegelt, kein Platz in der Haarnadel' };
   });
 
+  // v1.3.130: Kurvenbewusstes Einparken. Die feste Folge (scEin) und der kurze Lenkimpuls sind fuer
+  // die Gerade aufgenommen; auf einer Kurve bekommt die Lenkung einen Zuschlag in Kurvenrichtung
+  // (RANDHALT_KURVE_GEWICHT bzw. RANDHALT_HAARNADEL_GEWICHT von GHOST_STEER_CURVE), der das Auto auf
+  // der Linie haelt. Auf der Geraden 0; Safety Car und Raeumwagen bleiben unveraendert.
+  stAdd('Einparken v1.3.130: Kurvenzuschlag in der Rechts-/Linkskurve und Haarnadel, 0 auf der Geraden, SC unveraendert', () => {
+    const f = [];
+    const merk = { tiles: currentTrackTiles };
+    try {
+      currentTrackTiles = codeToTrack('SRG2L2G2H2').tiles;
+      const idxRechts = currentTrackTiles.findIndex((t) => t.type === TILE_TYPE.CURVE_RIGHT);
+      const idxLinks = currentTrackTiles.findIndex((t) => t.type === TILE_TYPE.CURVE_LEFT);
+      const idxGerade = currentTrackTiles.findIndex((t) => t.type === TILE_TYPE.STRAIGHT);
+      const idxHaar = currentTrackTiles.findIndex((t) => tileTightness(t.type) >= 2);
+      const erwartetKurve = GHOST_STEER_CURVE * RANDHALT_KURVE_GEWICHT;
+      const erwartetHaar = GHOST_STEER_CURVE * RANDHALT_HAARNADEL_GEWICHT;
+      const npc = (idx) => ({ role: 'ghost', ghost: { tileIndex: idx, aufstellZiel: idx } });
+      const sc = (idx) => ({ role: 'safetycar', ghost: { tileIndex: idx, aufstellZiel: idx } });
+      if (idxRechts < 0 || idxLinks < 0 || idxGerade < 0 || idxHaar < 0) { f.push('Strecke nicht aufgebaut'); return { ok: false, mass: f.join(' | ') }; }
+      if (randHaltKurve(npc(idxGerade)) !== 0) f.push('Gerade bekommt Zuschlag: ' + randHaltKurve(npc(idxGerade)));
+      if (Math.abs(randHaltKurve(npc(idxRechts)) - erwartetKurve) > 1e-9) f.push('Rechtskurve: ' + randHaltKurve(npc(idxRechts)));
+      if (Math.abs(randHaltKurve(npc(idxLinks)) + erwartetKurve) > 1e-9) f.push('Linkskurve: ' + randHaltKurve(npc(idxLinks)));
+      if (Math.abs(randHaltKurve(npc(idxHaar)) - erwartetHaar) > 1e-9) f.push('Haarnadel: ' + randHaltKurve(npc(idxHaar)));
+      if (randHaltKurve(sc(idxRechts)) !== 0) f.push('Safety Car bekommt Zuschlag');
+      // Das Zielteil gewinnt ueber das aktuelle: tileIndex auf der Geraden, Ziel auf der Kurve -> Zuschlag.
+      if (Math.abs(randHaltKurve({ role: 'ghost', ghost: { tileIndex: idxGerade, aufstellZiel: idxRechts } }) - erwartetKurve) > 1e-9)
+        f.push('Zielteil wird nicht benutzt');
+      // randHaltKurveLenk mit explizitem Zielteil (Fahrerauto): ergaenzt.
+      if (Math.abs(randHaltKurveLenk({ role: 'ghost', ghost: { tileIndex: idxGerade } }, 0, idxRechts) - erwartetKurve) > 1e-9)
+        f.push('Fahrerauto-Zuschlag fehlt');
+      // Die laufende Folge wird auf der Kurve ergaenzt.
+      const g = { tileIndex: idxRechts, aufstellZiel: idxRechts, makroPhysik: false };
+      const h = { phase: 'skript', at: makroUhr(g) - 100, anpassMs: 0, skript: MANOEVER.scEin };
+      g.randHalt = h;
+      const c = { role: 'ghost', ghost: g };
+      const w = skriptSchritt(h, makroUhr(g)).lenk;
+      const wl = randHaltRadLenk(c);
+      if (!(wl > w)) f.push('Folge nicht ergaenzt: ' + w + ' -> ' + wl);
+    } finally { currentTrackTiles = merk.tiles; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gerade 0, Rechts +, Links -, Haarnadel staerker, SC 0, Zielteil gewinnt, Folge ergaenzt' };
+  });
+
   // v1.1.41 BESTELLT: Reinigungsfahrzeug nach der ersten Ueberfahrt je eine volle Runde mittig, links (~90 %),
   // rechts, dann anhalten - ohne Ideallinie. Und: Safety Car und Einfuehrungsrunde gleich schnell wie das Feld.
   stAdd('Reinigung und gleiches Tempo v1.1.41: Runden mittig/links/rechts ohne Linie, SC und Formation wie das Feld', () => {
