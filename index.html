@@ -5726,7 +5726,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.3.123</span></span>
+        <span class="foot-ver">v<span id="app-version">1.3.124</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6987,6 +6987,7 @@
         <li>Das Fahrgef&#252;hl Gran Accelerato wird zu zwei Modi (WIP): &#8222;Gran Hybrismo&#8220; wie Gran Turismo Sport (viel Grip, weicher Reifenscheitel, kaum Lastwechsel, eine Stabilit&#228;tshilfe lenkt ein ausbrechendes Heck sanft gegen, beim Bremsen bleibt die Lenkung wie mit ABS, die Reifentemperatur wirkt wenig) und &#8222;Assetto Carrera&#8220; wie Assetto Corsa Competizione (leicht bremsen dreht ein, Lupfen l&#228;sst das Heck kommen, Gas schiebt, scharfe Haftgrenze mit Untersteuern beim &#220;berfahren, Reifenfenster: kalt und &#252;berhitzt deutlich weniger Grip, warm am meisten; keine Hilfen). Gespeicherte St&#228;nde mit Gran Accelerato laden als Gran Hybrismo. Behoben: Tempo-Lenkung und Selbstzentrierung kamen nie am Auto an, die Lastempfindlichkeit verst&#228;rkte die Lastwechsel statt sie zu d&#228;mpfen, der Schalter &#8222;&#220;bersteuern&#8220; wurde ignoriert, und beim virtuellen Fahren waren die Reifen nach wenigen Sekunden dauerhaft &#252;berhitzt (jetzt mit Abk&#252;hlung, und das Standardauto hat Abtrieb). NPCs: MAX beschleunigt und bremst wie Arcade, alle anderen Stufen wie Sim+, unabh&#228;ngig von der Abstimmung von Spieler 1; der Regler &#8222;MAX: Beschleunigung&#8220; entf&#228;llt.</li>
         <li>Neue Option &#8222;NPC: Tankort&#8220; (WIP, Optionen &#8594; NPCs): Einparkfolge wie das Safety Car (Standard, wie bisher) oder &#8222;Streckenrand &#252;ber Querlage&#8220; &#8211; der NPC zieht auf dem Boxenteil per Querlage an den rechten Rand, bremst, steht mit Ratsche und zieht per Querlage wieder heraus, ohne Lenkfolge.</li>
         <li>Neue Option &#8222;NPC: maximale Querlage&#8220; (Optionen &#8594; NPCs, Vorgabe 95&nbsp;%): Wie weit ein NPC auf der Aussenseite einer Kurve fahren darf. Das Firmware-Update erlaubt den NPCs, weit aussen zu fahren, sodass sie &ouml;fter abfliegen; 95&nbsp;% sind 5&nbsp;% weniger aussen, 100&nbsp;% die alte, volle Linie. Die Option gilt f&uuml;r die Linie, die die NPCs im Rennen fahren (die Aussenlage im virtuellen Fahren bleibt unver&auml;ndert).</li>
+        <li>Virtuelles Fahren &#8211; Grafik-Feinschliff (Quality): Der Bodenshader rechnet jetzt linear (sRGB-Dekodierung &#8594; Licht &#8594; filmic &#8594; Gamma), der Glanz per Pixel statt per Ecke, die Schattenkarte ist 2048er mit 3&times;3-PCF und begrenzter Tiefe, sodass die Schatten an den R&auml;dern anliegen und die NPCs Schatten werfen; der Blob-Schatten wird zum kleinen Kontaktschatten. Autos bekommen einen Clear-Coat-Glanz auf dem Lack, ein sonnenausgerichtetes Glanzlicht und Scheiben, die bei flachem Blickwinkel spiegelnd werden; sie empfangen ihre eigenen Schatten. Der Himmel wird im Weltraum gerechnet und bleibt beim Umsehen am Horizont. Boden trilinear mit 8-facher Anisotropie, Randsteine/Fahrbahn 4-fach. Farplane auf 1300 (weniger Randstein-Flackern). Konsole-Regler: <code>omegasim-vf-belichtung</code>, <code>-bump-boden</code>, <code>-bump-bahn</code>, <code>-ao-innen</code>, <code>-schatten-bias</code>, <code>-schatten-bias-pixel</code>. Studienmodus: festes Sichtfeld (<code>omegasim-vf-studie-fov</code>), Zoom der Fahrer-Kamera aus (<code>-studie-zoomaus</code>), fester NPC-Seed (<code>-seed</code>) und JSON-Log (<code>-studie</code>, <code>vfStudienLog()</code>).</li>
       </ul>
       <p class="muted"><b><span data-i18n-skip>1.2</span></b></p>
       <ul class="muted" id="patchnotes-12" style="padding-left:20px; line-height:1.7">
@@ -40573,25 +40574,35 @@
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(daten), gl.STATIC_DRAW);
     return { b, n: daten.length / 6 };
   }
-  // Himmel: ein Vollbild-Quad in NDC mit Farbverlauf (oben tiefblau, am Horizont hell). Ersetzt die
-  // bisher flache Clear-Farbe und passt zum Nebel, damit die Strecke am Horizont ins Licht uebergeht.
+  // Himmel: ein Vollbild-Quad in NDC. Der Farbverlauf wird im WELTRAUM gerechnet: fuer jeden Pixel
+  // wird die Blickrichtung aus der Kamera (FOV + Basis) aufgespannt und nach der Welt-y gefaerbt.
+  // Damit bleibt der Horizont beim Umsehen an der Linie, wo der vernebelte Boden aufhoert (v1.3.124).
   function vfProgrammHimmel(gl) {
     const p = gl.createProgram();
     gl.attachShader(p, vfShader(gl, gl.VERTEX_SHADER,
-      'attribute vec3 p; attribute vec3 c; varying vec3 vc;'
-      + 'void main(){ gl_Position = vec4(p, 1.0); vc = c; }'));
+      'attribute vec3 p; varying vec2 vndc;'
+      + 'void main(){ gl_Position = vec4(p, 1.0); vndc = p.xy; }'));
     gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
-      'precision mediump float; varying vec3 vc; void main(){ gl_FragColor = vec4(vc, 1.0); }'));
+      'precision mediump float; varying vec2 vndc;'
+      + 'uniform vec3 auge; uniform vec3 right; uniform vec3 up; uniform vec3 fwd; uniform float tanHalf; uniform float aspect;'
+      + 'void main(){'
+      + ' vec3 dir = normalize(fwd + right * (vndc.x * tanHalf * aspect) + up * (vndc.y * tanHalf));'
+      + ' float h = clamp(dir.y * 1.6 + 0.18, 0.0, 1.0);'
+      + ' vec3 oben = vec3(0.18, 0.36, 0.66), unten = vec3(0.66, 0.78, 0.90);'
+      + ' gl_FragColor = vec4(mix(unten, oben, h), 1.0); }'));
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
-    return { p, ap: gl.getAttribLocation(p, 'p'), ac: gl.getAttribLocation(p, 'c') };
+    return { p, ap: gl.getAttribLocation(p, 'p'),
+             auge: gl.getUniformLocation(p, 'auge'), right: gl.getUniformLocation(p, 'right'),
+             up: gl.getUniformLocation(p, 'up'), fwd: gl.getUniformLocation(p, 'fwd'),
+             tanHalf: gl.getUniformLocation(p, 'tanHalf'), aspect: gl.getUniformLocation(p, 'aspect') };
   }
   function vfHimmel(gl) {
-    const oben = [0.18, 0.36, 0.66], unten = [0.66, 0.78, 0.90];
-    const a = [-1, 1, 0, oben[0], oben[1], oben[2], 1, 1, 0, oben[0], oben[1], oben[2],
-               1, -1, 0, unten[0], unten[1], unten[2], -1, 1, 0, oben[0], oben[1], oben[2],
-               1, -1, 0, unten[0], unten[1], unten[2], -1, -1, 0, unten[0], unten[1], unten[2]];
-    return vfPuffer(gl, a);
+    const a = [-1, 1, 0, 1, 1, 0, 1, -1, 0, -1, 1, 0, 1, -1, 0, -1, -1, 0];
+    const b = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, b);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(a), gl.STATIC_DRAW);
+    return { b, n: 6 };
   }
   function vfHex(hex) {
     const h = String(hex || '#888888').replace('#', '');
@@ -41000,32 +41011,51 @@
   function vfProgrammFlaeche(gl) {
     const p = gl.createProgram();
     gl.attachShader(p, vfShader(gl, gl.VERTEX_SHADER,
-      'attribute vec3 p; attribute vec2 uv; attribute vec3 c; uniform mat4 m; uniform vec3 auge; uniform float glanz;'
-      + 'varying vec2 vuv; varying vec3 vc; varying float vd; varying float vg; varying vec3 vwp;'
-      + 'void main(){ gl_Position = m * vec4(p, 1.0); vuv = uv; vc = c; vd = gl_Position.w; vwp = p;'
-      + ' float e = 1.0 - max(normalize(auge - p).y, 0.0); vg = glanz * e * e * e; }'));
+      'attribute vec3 p; attribute vec2 uv; attribute vec3 c; uniform mat4 m;'
+      + 'varying vec2 vuv; varying vec3 vc; varying float vd; varying vec3 vwp;'
+      + 'void main(){ gl_Position = m * vec4(p, 1.0); vuv = uv; vc = c; vd = gl_Position.w; vwp = p; }'));
     gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
       'precision mediump float;\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nvarying highp vec2 vuv;\n#else\nvarying vec2 vuv;\n#endif\n'
-      + 'varying vec3 vc; varying float vd; varying float vg; varying vec3 vwp;'
+      + 'varying vec3 vc; varying float vd; varying vec3 vwp;'
       + 'uniform sampler2D tx; uniform vec3 nebel; uniform sampler2D sch; uniform mat4 schM; uniform float qual; uniform float schatt;'
+      + 'uniform float belichtung; uniform float bump; uniform float bias; uniform float biasPixel; uniform vec3 auge;'
       + 'vec3 filmic(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }'
       + 'float schTiefe(vec4 v){ return dot(v, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/16581375.0)); }'
-      + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 c = t.rgb * vc + vec3(0.80, 0.86, 0.95) * (vg * t.a);'
+      + 'void main(){'
+      + ' vec4 t = texture2D(tx, vuv); vec3 c;'
+      + ' if (qual > 0.5) {'
+      + '   // LINEARER ARBEITSFLUSS: sRGB dekodieren -> Licht -> filmic -> Gamma.'
+      + '   vec3 lin = pow(t.rgb, vec3(2.2));'
+      + '   vec3 N = vec3(0.0, 1.0, 0.0);'
+      + '   vec3 L = normalize(vec3(0.35, 0.9, 0.25));'
+      + '   float d = max(dot(N, L), 0.0);'
+      + '   vec3 amb = vec3(0.32, 0.32, 0.34);'
+      + '   c = lin * vc * (amb + d * 0.85);'
+      + '   // PER-PIXEL-FRESNEL: Glanz aus dem Blickwinkel (ersetzt den per-Eck-Glanz).'
+      + '   vec3 V = normalize(auge - vwp);'
+      + '   float e = 1.0 - max(dot(V, N), 0.0);'
+      + '   c += vec3(0.80, 0.86, 0.95) * (e * e * e * e) * 0.5 * t.a;'
+      + '   // RELIEF: lokaler Farbverlauf der Textur hebt Fugen und Kratzer leicht hervor.'
+      + '   if (bump > 0.01) { float dU = texture2D(tx, vuv + vec2(1.0/512.0, 0.0)).r - t.r;'
+      + '     c += vec3(dU) * bump * 0.8; }'
+      + '   c = filmic(c * belichtung);'
+      + '   c = pow(c, vec3(1.0/2.2));'
+      + ' } else {'
+      + '   c = t.rgb * vc;'
+      + ' }'
       + ' if (schatt > 0.5) { vec4 sp = schM * vec4(vwp, 1.0); vec3 suv = sp.xyz * 0.5 + 0.5;'
       + '   if (suv.x > 0.0 && suv.x < 1.0 && suv.y > 0.0 && suv.y < 1.0 && suv.z > 0.0 && suv.z <= 1.0) {'
-      + '     float b = suv.z - 0.0015, e = 1.0 / 1024.0, s = 0.0;'
-      + '     s += step(schTiefe(texture2D(sch, suv.xy)), b);'
-      + '     s += step(schTiefe(texture2D(sch, suv.xy + vec2(e, 0.0))), b);'
-      + '     s += step(schTiefe(texture2D(sch, suv.xy + vec2(0.0, e))), b);'
-      + '     s += step(schTiefe(texture2D(sch, suv.xy + vec2(e, e))), b);'
-      + '     c *= mix(1.0, 0.42, (4.0 - s) * 0.25); } }'
-      + ' if (qual > 0.5) c = filmic(c * 1.05);'
+      + '     float b = suv.z - bias, e = biasPixel * 2048.0 / 1024.0, s = 0.0, w = 0.0;'
+      + '     for (int ox = -1; ox <= 1; ox++) for (int oy = -1; oy <= 1; oy++) {'
+      + '       float x = suv.x + float(ox) * e, y = suv.y + float(oy) * e;'
+      + '       if (x >= 0.0 && x <= 1.0 && y >= 0.0 && y <= 1.0) { s += step(schTiefe(texture2D(sch, vec2(x, y))), b); w += 1.0; } }'
+      + '     if (w > 0.0) { float k = s / w; c *= mix(1.0, 0.42, k); } } }'
       + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); c = mix(c, nebel, f);'
       + ' gl_FragColor = vec4(c, 1.0); }'));
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     const u = {};
-    ['m', 'auge', 'glanz', 'tx', 'nebel', 'sch', 'schM', 'qual', 'schatt'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
+    ['m', 'auge', 'tx', 'nebel', 'sch', 'schM', 'qual', 'schatt', 'belichtung', 'bump', 'bias', 'biasPixel'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
     return { p, u, ap: gl.getAttribLocation(p, 'p'), auv: gl.getAttribLocation(p, 'uv'), ac: gl.getAttribLocation(p, 'c') };
   }
   // Ecke: x y z u v r g b (8 Zahlen); Viereck aus vier Ecken [x, y, z, u, v] mit einer Farbe.
@@ -41072,7 +41102,8 @@
         }
         const Ls = accS[accS.length - 1] || 1, nP = Math.max(1, Math.round(Ls / takt)), k0 = Math.floor(rnd() * 4);
         const u0 = (sg > 0 ? 0.5 : 128.5) / VF_RAND_B, u1 = (sg > 0 ? 127.5 : 255.5) / VF_RAND_B, uw = (sg > 0 ? 4 : 132) / VF_RAND_B;
-        const wand = [ct[0] * 0.74, ct[1] * 0.74, ct[2] * 0.76], aussen = [ct[0] * 0.6, ct[1] * 0.6, ct[2] * 0.62];
+        // v1.3.124: AO-Streifen an den Randsteinen (VF_AO_INNEN, kleiner = dunkler).
+        const ao = VF_AO_INNEN, wand = [ct[0] * 0.74 * ao, ct[1] * 0.74 * ao, ct[2] * 0.76 * ao], aussen = [ct[0] * 0.6 * ao, ct[1] * 0.6 * ao, ct[2] * 0.62 * ao];
         for (let i = tl.i0; i <= tl.i1; i++) {
           const j = i - tl.i0, segL = (accS[j + 1] - accS[j]) || 1;
           const va = (k0 + nP * accS[j] / Ls) / 4, vb = (k0 + nP * accS[j + 1] / Ls) / 4;
@@ -41180,8 +41211,9 @@
     const bahn = vfBahnGeometrie(pts, nrm, tiles), boden = vfBodenGeometrie(pts, TB, art);
     return {
       prog, art, pv: new Float32Array(16),
-      txBahn: vfTexturHoch(gl, vfBahnTexturDaten(), false, 1, false), txRand: vfTexturHoch(gl, vfRandTexturDaten(), true, 2, true),
-      txBoden: vfTexturHoch(gl, TB, false, 2, false),
+      // v1.3.124: Boden trilinear mit 8-facher Anisotropie, Randsteine und Fahrbahn mit 4-facher.
+      txBahn: vfTexturHoch(gl, vfBahnTexturDaten(), false, 4, true), txRand: vfTexturHoch(gl, vfRandTexturDaten(), true, 4, true),
+      txBoden: vfTexturHoch(gl, TB, false, 8, true),
       strasse: vfPufferF(gl, bahn.strasse), rand: vfPufferF(gl, bahn.rand), boden: vfPufferF(gl, boden.daten),
     };
   }
@@ -41202,12 +41234,17 @@
     gl.uniform1f(u.schatt, hatSch ? 1 : 0);
     gl.uniformMatrix4fv(u.schM, false, new Float32Array(hatSch ? VF.schM : VF_EINS));
     gl.uniform1i(u.sch, 1);
+    // v1.3.124: Regler (Konsole) fuer Belichtung, Relief und Schatten-Bias. Der Relief-Wert wird je
+    // Flaeche im zeichne-Aufruf gesetzt (Fahrbahn/Rand/Boden unterschiedlich).
+    gl.uniform1f(u.belichtung, VF_BELICHTUNG);
+    gl.uniform1f(u.bias, VF_SCHATTEN_BIAS);
+    gl.uniform1f(u.biasPixel, VF_SCHATTEN_BIAS_PIXEL);
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, VF.schatte ? VF.schatte.tex : null);
     gl.activeTexture(gl.TEXTURE0);
     gl.enableVertexAttribArray(P.ap); gl.enableVertexAttribArray(P.auv); gl.enableVertexAttribArray(P.ac);
-    const zeichne = (pu, tx, glanz) => {
-      gl.uniform1f(u.glanz, glanz);
+    const zeichne = (pu, tx, bump) => {
+      gl.uniform1f(u.bump, VF.grafik ? bump : 0);
       gl.bindTexture(gl.TEXTURE_2D, tx);
       gl.bindBuffer(gl.ARRAY_BUFFER, pu.b);
       gl.vertexAttribPointer(P.ap, 3, gl.FLOAT, false, 32, 0);
@@ -41219,12 +41256,12 @@
     // im Tiefentest weg, bevor sie gerechnet werden. Damit er nirgends durch die Bahn schimmert (auch
     // nicht bei 16-Bit-Tiefe), liegt er 0,5 mm tiefer UND wird per polygonOffset nach hinten geschoben;
     // er schreibt selbst keine Tiefe.
-    zeichne(F.strasse, F.txBahn, 0.16);
-    zeichne(F.rand, F.txRand, 0.10);
+    zeichne(F.strasse, F.txBahn, VF_BUMP_BAHN);
+    zeichne(F.rand, F.txRand, 0);
     gl.depthMask(false);
     gl.enable(gl.POLYGON_OFFSET_FILL);
     gl.polygonOffset(2, 16);
-    zeichne(F.boden, F.txBoden, F.art.glanz);
+    zeichne(F.boden, F.txBoden, VF_BUMP_BODEN);
     gl.disable(gl.POLYGON_OFFSET_FILL);
     gl.depthMask(true);
     gl.disableVertexAttribArray(P.ap); gl.disableVertexAttribArray(P.auv); gl.disableVertexAttribArray(P.ac);
@@ -41453,6 +41490,58 @@
   function vfGrafikSetzen(id) {
     try { localStorage.setItem(VF_GRAFIK_STORE, id); } catch (e) { /* egal */ }
   }
+  // v1.3.124: Grafik-Feinschliff (BESTELLT). Regler (Konsole) fuer die Bildqualitaet im Quality-Modus.
+  // VF_BELICHTUNG: Gesamthelligkeit. VF_BUMP_BODEN/BAHN: Relief-Staerke (0 = aus, wenn der Boden
+  // verrauscht wirkt). VF_AO_INNEN: Dunkelheit neben den Randsteinen (kleiner = dunkler).
+  // VF_SCHATTEN_BIAS_*: Schatten-Bias; erhoehen bei Streifen ("acne"), senken, wenn Schatten abheben.
+  const VF_BELICHTUNG = +((localStorage.getItem('omegasim-vf-belichtung') || 1.0));
+  const VF_BUMP_BODEN = +((localStorage.getItem('omegasim-vf-bump-boden') || 1.0));
+  const VF_BUMP_BAHN = +((localStorage.getItem('omegasim-vf-bump-bahn') || 0.6));
+  const VF_AO_INNEN = +((localStorage.getItem('omegasim-vf-ao-innen') || 0.6));
+  const VF_SCHATTEN_BIAS = +((localStorage.getItem('omegasim-vf-schatten-bias') || 0.0015));
+  const VF_SCHATTEN_BIAS_PIXEL = +((localStorage.getItem('omegasim-vf-schatten-bias-pixel') || 0.0004));
+  // Studienmodus: FOV aus Bildschirm/Abstand, Zoom der Fahrer-Kamera aus, fester NPC-Seed, JSON-Log.
+  // Nur aktiv, wenn der Nutzer die Schluessel in der Konsole setzt (siehe Bestellung).
+  const VF_STUDIE = (() => { try { return localStorage.getItem('omegasim-vf-studie') === '1'; } catch (e) { return false; } })();
+  const VF_STUDIE_FOV = (() => { try { const v = JSON.parse(localStorage.getItem('omegasim-vf-studie-fov') || 'null'); return v && v.bildHoeheCm > 0 ? v : null; } catch (e) { return null; } })();
+  const VF_STUDIE_ZOOM_AUS = (() => { try { return localStorage.getItem('omegasim-vf-studie-zoomaus') === '1'; } catch (e) { return false; } })();
+  const VF_SEED = (() => { try { const v = +localStorage.getItem('omegasim-vf-seed'); return Number.isFinite(v) ? v : null; } catch (e) { return null; } })();
+  let vfStudie = { an: VF_STUDIE, n: 0 };
+  function vfStudieFov() {
+    if (!VF_STUDIE_FOV) return null;
+    const vf = (VF_STUDIE_FOV.bildHoeheCm / VF_STUDIE_FOV.abstandCm);
+    return (2 * Math.atan(vf / 2)) * 180 / Math.PI;
+  }
+  function vfStudieSeed() {
+    if (!VF_SEED) return 4242;
+    return VF_SEED;
+  }
+  function vfStudieLog() {
+    if (!VF_STUDIE || !VF.gl) return;
+    const gl = VF.gl;
+    const a = VF._fpsT ? VF._fpsT.arr.slice() : [];
+    const sort = a.slice().sort((x, y) => x - y);
+    const pct = (p) => sort.length ? sort[Math.min(sort.length - 1, Math.floor(sort.length * p))] : 0;
+    const mittel = a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
+    let gpu = '';
+    try { const d = gl.getExtension('WEBGL_debug_renderer_info'); gpu = d ? String(gl.getParameter(d.UNMASKED_RENDERER_WEBGL) || '') : ''; } catch (e) { gpu = ''; }
+    const log = {
+      grafik: VF.grafik ? 'quality' : 'performance',
+      schattenMap: (VF.schatte && VF.schatte.size) || 0,
+      gpu, tiefeBits: gl.getParameter(gl.DEPTH_BITS),
+      dpr: window.devicePixelRatio || 1,
+      aufloesung: [VF.cv && VF.cv.width, VF.cv && VF.cv.height],
+      fov: VF.kam && VF.kam.fov, seed: vfStudieSeed(),
+      frame: { n: a.length, mittel: +mittel.toFixed(2), p50: +pct(0.5).toFixed(2), p95: +pct(0.95).toFixed(2), p99: +pct(0.99).toFixed(2),
+               ueber20: a.filter((x) => x > 20).length, ueber33: a.filter((x) => x > 33).length }
+    };
+    try { localStorage.setItem('omegasim-vf-studie-log', JSON.stringify(log)); } catch (e) { /* egal */ }
+  }
+  function vfStudienLogLaden() {
+    if (!VF_STUDIE || !VF.gl) return;
+    vfStudie.n++;
+    vfStudieLog();
+  }
   // Bogenlaengen der Mittellinie (geschlossene Schleife): bogen[i] = Laenge bis Punkt i, bogen[n] = Runde.
   function vfNpcBogen(pts) {
     const bogen = [0];
@@ -41639,7 +41728,9 @@
     VF.npcs = [];
     if (nAnzahl <= 0 || !VF.tprog) return;
     const pool = VF_NPC_POOL.slice();
-    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+    // v1.3.124 Studienmodus: fester Seed, damit dieselben NPCs jede Fahrt antreten.
+    const rng = VF_STUDIE ? vfZufall(vfStudieSeed()) : null;
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor((rng ? rng() : Math.random()) * (i + 1)); const t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
     const bogen = vfNpcBogen(VF.pts);
     VF.npcBogen = bogen.bogen; VF.npcRunde = bogen.runde;
     const n = VF.pts.length;
@@ -41785,6 +41876,8 @@
   const vfRy = (a) => { const c = Math.cos(a), s = Math.sin(a); return [c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, 0, 0, 0, 1]; };
   const vfRz = (a) => { const c = Math.cos(a), s = Math.sin(a); return [c, s, 0, 0, -s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]; };
   const vfKette = (...m) => m.reduce((a, b) => vfMal(a, b));
+  const vfNorm = (v) => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
+  const vfKreuz = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
   // Normalenmatrix: invers-transponierte 3x3 (das Rad ist ungleich skaliert und rechts gespiegelt).
   function vfNormalen(w) {
     const a = w[0], b = w[4], c = w[8], d = w[1], e = w[5], f = w[9], g = w[2], h = w[6], i = w[10];
@@ -41804,29 +41897,43 @@
     gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
       'precision mediump float; varying vec2 vuv; varying vec3 vn; varying float vd; varying vec3 vwp;'
       + 'uniform sampler2D tx; uniform vec3 tint; uniform float emis; uniform float alpha; uniform float am; uniform float licht; uniform vec3 nebel;'
-      + 'uniform vec3 auge; uniform float qual;'
+      + 'uniform vec3 auge; uniform float qual; uniform float klar; uniform float glas;'
+      + 'uniform sampler2D sch; uniform mat4 schM; uniform float schatt; uniform float bias;'
       + 'vec3 filmic(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }'
+      + 'float schTiefe(vec4 v){ return dot(v, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/16581375.0)); }'
       + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 N = normalize(vn); vec3 L = normalize(vec3(0.35, 0.9, 0.25));'
       + ' vec3 V = normalize(auge - vwp);'
-      + ' float d = max(dot(N, L), 0.0); float s = pow(max(dot(N, normalize(vec3(0.2, 0.75, -0.6))), 0.0), 24.0);'
+      + ' float d = max(dot(N, L), 0.0); vec3 R = reflect(-L, N);'
+      + ' float s = pow(max(dot(R, V), 0.0), 24.0);'
       + ' vec3 c;'
       + ' if (qual > 0.5) {'
+      + '   vec3 lin = pow(t.rgb, vec3(2.2));'
       + '   vec3 himmel = vec3(0.55, 0.68, 0.90), boden = vec3(0.30, 0.27, 0.23);'
       + '   vec3 amb = mix(boden, himmel, N.y * 0.5 + 0.5);'
       + '   vec3 H = normalize(L + V); float sheen = pow(max(dot(N, H), 0.0), 64.0) * 0.45;'
       + '   float l = mix(1.0, 0.30 + 0.72 * d, licht);'
-      + '   c = t.rgb * tint * (amb * 0.55 + l + emis) + vec3(s * 0.40 * licht + sheen * licht);'
+      + '   c = lin * tint * (amb * 0.55 + l + emis);'
+      + '   // Glanzpunkt auf die Sonne ausgerichtet (v1.3.124)'
+      + '   c += vec3(s * 0.60 * licht + sheen * licht);'
+      + '   // Clear-Coat auf dem Lack: ein zweiter, weicher Glanz (Klar)'
+      + '   c += vec3(0.05, 0.06, 0.07) * klar * pow(max(dot(R, V), 0.0), 6.0) * 1.2;'
+      + '   // Scheibe: spiegelnd und deckender bei flachem Winkel (Fresnel)'
+      + '   float fr = pow(1.0 - max(dot(N, V), 0.0), 5.0);'
+      + '   c += vec3(fr * glas * 0.9);'
+      + '   c = filmic(c * 1.05); c = pow(c, vec3(1.0/2.2));'
       + ' } else {'
       + '   float l = mix(1.0, 0.42 + 0.66 * d, licht);'
       + '   c = t.rgb * tint * (l + emis) + vec3(s * 0.35 * licht);'
       + ' }'
-      + ' if (qual > 0.5) c = filmic(c * 1.05);'
+      + ' if (schatt > 0.5) { vec4 sp = schM * vec4(vwp, 1.0); vec3 suv = sp.xyz * 0.5 + 0.5;'
+      + '   if (suv.x > 0.0 && suv.x < 1.0 && suv.y > 0.0 && suv.y < 1.0 && suv.z > 0.0 && suv.z <= 1.0) {'
+      + '     float b = suv.z - bias; if (schTiefe(texture2D(sch, suv.xy)) < b) c *= 0.55; } }'
       + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); c = mix(c, nebel, f);'
       + ' gl_FragColor = vec4(c, mix(alpha, alpha * t.a, am)); }'));
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     const u = {};
-    ['m', 'w', 'nm', 'tx', 'tint', 'emis', 'alpha', 'am', 'licht', 'nebel', 'auge', 'qual'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
+    ['m', 'w', 'nm', 'tx', 'tint', 'emis', 'alpha', 'am', 'licht', 'nebel', 'auge', 'qual', 'klar', 'glas', 'sch', 'schM', 'schatt', 'bias'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
     return { p, u, ap: gl.getAttribLocation(p, 'p'), an: gl.getAttribLocation(p, 'n'), auv: gl.getAttribLocation(p, 'uv') };
   }
   // ---- Schatten (v1.3.113, nur Quality) ----------------------------------------------------------
@@ -41882,11 +41989,21 @@
     return [v[0] / l, v[1] / l, v[2] / l];
   }
   // Schattenmatrix fuer ein Zentrum: Blick von der Sonne auf das Zentrum, orthografisch um das Zentrum.
+  // v1.3.124: Tiefenbereich auf +-40 verengt (vorher 1..400), damit die Schatten die Raeder beruehren;
+  // Abdeckung auf 80x80 Einheiten erweitert (vorher 24x24), damit auch die NPCs Schatten werfen.
+  // Texel-Snapping: die Licht-Kamera wird auf das Texelraster gerastet, damit die Kanten nicht wabern.
   function vfSchattenMatrix(z) {
-    const sd = vfSonne(), lg = 12;
+    const sd = vfSonne(), lg = 40;
     const aug = [z[0] + sd[0] * 200, z[1] + sd[1] * 200, z[2] + sd[2] * 200];
     const blick = vfBlick(aug, z, [0, 1, 0]);
-    return vfMal(vfOrtho(-lg, lg, -lg, lg, 1, 400), blick);
+    const M = vfMal(vfOrtho(-lg, lg, -lg, lg, -40, 40), blick);
+    const size = (VF.schatte && VF.schatte.size) || 1024;
+    const texel = (2 * lg) / size;
+    // Die Licht-Kamera ist um die Sonnenrichtung gedreht, aber die Projektion linear in x/y -> die
+    // Translation (Licht-Raum) auf das Texelraster rastern, damit die Kanten nicht wabern.
+    M[12] = Math.round(M[12] / texel) * texel;
+    M[13] = Math.round(M[13] / texel) * texel;
+    return M;
   }
   // Ein Modell in die Schattenkarte zeichnen (nur die undurchsichtigen Karosserie- und Radteile).
   function vfModellSchatten(gl, SP, M, x, y, h, fe, lenkWinkel, raddreh, radModell, fs, nick, schM) {
@@ -42331,6 +42448,12 @@
   }
   function vfMalen() {
     const gl = VF.gl, cv = VF.cv;
+    // v1.3.124 Studienmodus: Framezeiten sammeln (mean/p50/p95/p99, ueber 20/33 ms).
+    const __t0 = performance.now();
+    if (!VF._fpsT) VF._fpsT = { last: __t0, arr: [] };
+    VF._fpsT.arr.push(__t0 - VF._fpsT.last);
+    VF._fpsT.last = __t0;
+    if (VF._fpsT.arr.length > 600) VF._fpsT.arr.shift();
     // Handy (Touch): hoechstens 1,25-fache Aufloesung - die Pixelzahl ist auf dem Handy der teuerste Teil.
     // Quality (v1.3.113) darf mehr Pixel: bis 1,5 auf Touch, bis 2 auf Desktop.
     const dpr = Math.min(navigator.maxTouchPoints > 0 ? (VF.grafik ? 1.5 : 1.25) : (VF.grafik ? 2 : 1.5), window.devicePixelRatio || 1);
@@ -42339,20 +42462,32 @@
     gl.viewport(0, 0, w, h);
     gl.clearColor(0.66, 0.78, 0.90, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    // Himmel als Vollbild-Farbverlauf, ganz hinten (Tiefentest aus).
+    // Himmel: Vollbild-Quad, Farbverlauf im WELTRAUM (horizontfolgend beim Umsehen). Ganz hinten.
     if (!VF.himmelProg) { VF.himmelProg = vfProgrammHimmel(gl); VF.himmel = vfHimmel(gl); }
+    const k = vfKamera(VF.dtBild || 0.016);
+    // v1.3.124 Studienmodus: festes Sichtfeld aus Bildschirmgroesse und Sitzabstand.
+    if (VF_STUDIE) { const sf = vfStudieFov(); if (sf) k.fov = sf; }
     gl.disable(gl.DEPTH_TEST);
     gl.useProgram(VF.himmelProg.p);
     gl.bindBuffer(gl.ARRAY_BUFFER, VF.himmel.b);
-    gl.enableVertexAttribArray(VF.himmelProg.ap); gl.enableVertexAttribArray(VF.himmelProg.ac);
-    gl.vertexAttribPointer(VF.himmelProg.ap, 3, gl.FLOAT, false, 24, 0);
-    gl.vertexAttribPointer(VF.himmelProg.ac, 3, gl.FLOAT, false, 24, 12);
+    gl.enableVertexAttribArray(VF.himmelProg.ap);
+    gl.vertexAttribPointer(VF.himmelProg.ap, 3, gl.FLOAT, false, 12, 0);
+    // Kamera-Basis fuer die Weltraum-Blickrichtung (v1.3.124).
+    const fwd = vfNorm([k.ziel[0] - k.auge[0], k.ziel[1] - k.auge[1], k.ziel[2] - k.auge[2]]);
+    const oben = k.oben || [0, 1, 0];
+    const right = vfNorm(vfKreuz(fwd, oben));
+    const up = vfNorm(vfKreuz(right, fwd));
+    gl.uniform3f(VF.himmelProg.auge, k.auge[0], k.auge[1], k.auge[2]);
+    gl.uniform3f(VF.himmelProg.right, right[0], right[1], right[2]);
+    gl.uniform3f(VF.himmelProg.up, up[0], up[1], up[2]);
+    gl.uniform3f(VF.himmelProg.fwd, fwd[0], fwd[1], fwd[2]);
+    gl.uniform1f(VF.himmelProg.tanHalf, Math.tan((k.fov * Math.PI / 180) / 2));
+    gl.uniform1f(VF.himmelProg.aspect, w / Math.max(1, h));
     gl.drawArrays(gl.TRIANGLES, 0, VF.himmel.n);
-    gl.disableVertexAttribArray(VF.himmelProg.ap); gl.disableVertexAttribArray(VF.himmelProg.ac);
+    gl.disableVertexAttribArray(VF.himmelProg.ap);
     gl.enable(gl.DEPTH_TEST);
-    const k = vfKamera(VF.dtBild || 0.016);
     const blick = vfBlick(k.auge, k.ziel, k.oben || [0, 1, 0]);
-    const pv = vfMal(vfPerspektive(k.fov * Math.PI / 180, w / Math.max(1, h), k.nah, k.fern || 3000), blick);
+    const pv = vfMal(vfPerspektive(k.fov * Math.PI / 180, w / Math.max(1, h), k.nah, k.fern || 1300), blick);
     // v1.3.113 Quality: echte Schatten aus der Schattenkarte (Spielerauto + NPCs), vor dem Boden.
     if (VF.grafik && VF.schatte) {
       VF.schM = vfSchattenMatrix([VF.x, 0, VF.y]);
@@ -42585,11 +42720,12 @@
   // Liefert F.k = { auge, ziel, fov, nah, fern } (dieselben Arrays jedes Mal, keine Allokation je Bild).
   function vfFahrerKamera(F, x, y, dt) {
     const o = F.ort, z = F.z;
-    if (!F.k) F.k = { auge: [o.x, o.h, o.y], ziel: [0, 0, 0], fov: VF_FAHRER_FOV, nah: 8, fern: 3000 };
+    if (!F.k) F.k = { auge: [o.x, o.h, o.y], ziel: [0, 0, 0], fov: VF_FAHRER_FOV, nah: 8, fern: 1300 };
     const dx = x - o.x, dz = y - o.y, dy = VF_AUTO.H * 0.5 - o.h, waag = Math.hypot(dx, dz);
     const gier = Math.atan2(dz, dx), nick = Math.atan2(dy, Math.max(1e-6, waag));
     const dist = Math.hypot(waag, dy);
-    const fovZiel = VF_FAHRER_FOV - (VF_FAHRER_FOV - VF_FAHRER_FOV_FERN) * Math.max(0, Math.min(1, (dist - 150) / 300));
+    // v1.3.124 Studienmodus: der Zoom der Fahrer-Kamera laesst sich abschalten (fixes Sichtfeld).
+    const fovZiel = VF_STUDIE_ZOOM_AUS ? VF_FAHRER_FOV : VF_FAHRER_FOV - (VF_FAHRER_FOV - VF_FAHRER_FOV_FERN) * Math.max(0, Math.min(1, (dist - 150) / 300));
     if (z.gier === undefined) { z.gier = gier; z.nick = nick; z.fov = fovZiel; }
     else {
       const a = 1 - Math.exp(-Math.max(0, dt) / VF_FAHRER_TAU), b = 1 - Math.exp(-Math.max(0, dt) / VF_FAHRER_ZOOM_TAU);
@@ -42671,13 +42807,22 @@
     gl.uniform3f(u.auge, auge[0], auge[1], auge[2]);
     gl.uniform1f(u.qual, VF.grafik ? 1 : 0);
     gl.uniform1i(u.tx, 0);
+    // v1.3.124: Selbst-Schatten (Textur-Einheit 1) - die Autos empfangen ihre eigenen Schatten.
+    const hatSch = VF.grafik && VF.schatte && VF.schM;
+    gl.uniform1f(u.schatt, hatSch ? 1 : 0);
+    gl.uniformMatrix4fv(u.schM, false, new Float32Array(hatSch ? VF.schM : VF_EINS));
+    gl.uniform1f(u.bias, VF_SCHATTEN_BIAS);
+    gl.uniform1i(u.sch, 1);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, VF.schatte ? VF.schatte.tex : null);
     gl.activeTexture(gl.TEXTURE0);
     [T.ap, T.an, T.auv].forEach((a) => gl.enableVertexAttribArray(a));
-    const setze = (w, tint, emis, alpha, am, hell) => {
+    const setze = (w, tint, emis, alpha, am, hell, klar, glas) => {
       gl.uniformMatrix4fv(u.w, false, new Float32Array(w));
       gl.uniformMatrix3fv(u.nm, false, new Float32Array(vfNormalen(w)));
       gl.uniform3f(u.tint, tint[0], tint[1], tint[2]); gl.uniform1f(u.emis, emis);
       gl.uniform1f(u.alpha, alpha); gl.uniform1f(u.am, am); gl.uniform1f(u.licht, hell);
+      gl.uniform1f(u.klar, klar || 0); gl.uniform1f(u.glas, glas || 0);
     };
     const teil = (t) => {
       gl.bindBuffer(gl.ARRAY_BUFFER, M.vbo);
@@ -42704,8 +42849,10 @@
     // 1. Schatten unter dem Auto (Boden, nicht mitgeneigt)
     if (M.schatten) {
       gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
-      setze(VF_EINS, [1, 1, 1], 0, 0.75, 1, 0);
-      const hb = d.breite * 0.62, hl = d.laenge * 0.55;
+      // v1.3.124: mit echter Schattenkarte wird der Blob ein kleiner Kontaktschatten direkt am Auto.
+      const kd = hatSch ? 0.5 : 1;
+      setze(VF_EINS, [1, 1, 1], 0, hatSch ? 0.45 : 0.75, 1, 0, 0, 0);
+      const hb = d.breite * 0.62 * kd, hl = d.laenge * 0.55 * kd;
       const q = [[hb, 0.012, hl + zSp, 0, 0], [-hb, 0.012, hl + zSp, 1, 0], [-hb, 0.012, -hl + zSp, 1, 1], [hb, 0.012, -hl + zSp, 0, 1]].map((p) => ort(lage, p).concat(p.slice(3)));
       flaeche([q[0], q[1], q[2], q[0], q[2], q[3]], M.schatten);
       gl.depthMask(true); gl.disable(gl.BLEND);
@@ -42715,7 +42862,8 @@
     M.meta.teile.forEach((t) => {
       if (t.gruppe !== 'auto' || t.rolle === 'glas' || t.rolle === 'scheinwerferglas') return;
       const emis = t.rolle === 'scheinwerfer' ? (licht ? 1.3 : 0) : t.rolle === 'ruecklicht' ? ruecklichtEmis : 0;
-      setze(aufbau, [1, 1, 1], emis, 1, 0, 1);
+      // Lack (Karosserie) bekommt den Clear-Coat-Glanz (klar), Scheiben/Glas dagegen nicht.
+      setze(aufbau, [1, 1, 1], emis, 1, 0, 1, t.rolle === 'lack' ? 0.8 : 0.3, 0);
       teil(t);
     });
     // 3. Raeder: Mitte auf Reifenradius, vorn eingeschlagen, alle drehen; rechts gespiegelt (Muttern aussen)
@@ -42726,7 +42874,7 @@
       const dreh = vfRy(ax === 'vorn' ? -(lenkWinkel || 0) : 0);
       const w = vfKette(lage, vfT(seite * r.spur / 2, r.radius, z), dreh, vfRx(raddreh || 0),
         vfS(seite * r.breite, 2 * r.radius, 2 * r.radius));
-      radTeile.forEach((t) => { setze(w, [1, 1, 1], 0, 1, 0, 1); teil(t); });
+      radTeile.forEach((t) => { setze(w, [1, 1, 1], 0, 1, 0, 1, 0.2, 0); teil(t); });
       if (!radTeile.length) {
         // Fallback: die echten Rad-Teile der Vulture V5.R (mit Reifen-/Felgen-Textur).
         const radM = radModell;
@@ -42736,7 +42884,7 @@
           const xW = seite * Math.max(r.spur / 2, halbW + 0.12 - 0.5 * r.breite);
           const wF = vfKette(lage, vfT(xW, r.radius, z), dreh, vfRx(raddreh || 0),
             vfS(seite * r.breite, 2 * r.radius, 2 * r.radius));
-          setze(wF, [1, 1, 1], 0, 1, 0, 1);
+          setze(wF, [1, 1, 1], 0, 1, 0, 1, 0.2, 0);
           radM.teile.forEach((t) => {
             gl.bindBuffer(gl.ARRAY_BUFFER, radM.vbo);
             gl.vertexAttribPointer(T.ap, 3, gl.FLOAT, false, 32, t.ecke0 * 32);
@@ -42752,8 +42900,8 @@
     // 4. Scheiben und Scheinwerferglas (durchscheinend, getoent)
     gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
     M.meta.teile.forEach((t) => {
-      if (t.rolle === 'glas') { setze(aufbau, [0.18, 0.22, 0.27], 0, 0.86, 0, 1); teil(t); }
-      if (t.rolle === 'scheinwerferglas') { setze(aufbau, [1, 1, 1], licht ? 0.6 : 0, 0.9, 1, 1); teil(t); }
+      if (t.rolle === 'glas') { setze(aufbau, [0.18, 0.22, 0.27], 0, 0.86, 0, 1, 0, 1); teil(t); }
+      if (t.rolle === 'scheinwerferglas') { setze(aufbau, [1, 1, 1], licht ? 0.6 : 0, 0.9, 1, 1, 0, 0.5); teil(t); }
     });
     // 5. Leuchten: Lichtpunkte (zur Kamera gedreht) und vorn der Lichtkegel auf der Bahn
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
@@ -42762,14 +42910,14 @@
       const c = ort(aufbau, p), k = gr * s;
       const e = (a, b) => [c[0] + (rechts[0] * a + oben[0] * b) * k, c[1] + (rechts[1] * a + oben[1] * b) * k, c[2] + (rechts[2] * a + oben[2] * b) * k];
       const q = [e(-1, -1).concat([0, 0]), e(1, -1).concat([1, 0]), e(1, 1).concat([1, 1]), e(-1, 1).concat([0, 1])];
-      setze(VF_EINS, farbe, 0, staerke, 1, 0);
+      setze(VF_EINS, farbe, 0, staerke, 1, 0, 0, 0);
       flaeche([q[0], q[1], q[2], q[0], q[2], q[3]], M.glanz);
     };
     if (licht) {
       const vorn = d.laenge / 2 + zSp;
       const kegel = [[0.9, 0.02, vorn, 0.25, 0.5], [-0.9, 0.02, vorn, 0.75, 0.5], [-3.2, 0.02, vorn + 13, 1, 1], [3.2, 0.02, vorn + 13, 0, 1]]
         .map((p) => ort(lage, p).concat(p.slice(3)));
-      setze(VF_EINS, [1, 0.95, 0.82], 0, 0.30, 1, 0);
+      setze(VF_EINS, [1, 0.95, 0.82], 0, 0.30, 1, 0, 0, 0);
       flaeche([kegel[0], kegel[1], kegel[2], kegel[0], kegel[2], kegel[3]], M.glanz);
       (M.meta.lichter.front && M.meta.lichter.front.length ? M.meta.lichter.front : [[d.breite * 0.35, d.hoehe * 0.5, d.laenge / 2 - 0.15, 0.2], [-d.breite * 0.35, d.hoehe * 0.5, d.laenge / 2 - 0.15, 0.2]])
         .forEach((l) => punkt(l, l[3] * 2.6, [1, 0.96, 0.85], 0.95));
@@ -43030,7 +43178,8 @@
     // Erweiterung bleibt der weiche Blob-Schatten (M.schatten).
     VF.schatte = null; VF.schatteProg = null;
     if (VF.grafik) {
-      try { VF.schatte = vfSchattenBauen(gl, 1024); VF.schatteProg = VF.schatte ? vfProgrammSchatten(gl) : null; } catch (e) { VF.schatte = null; VF.schatteProg = null; }
+      // v1.3.124: 2048er Karte (fällt auf 1024 zurück, wenn der Framebuffer sonst unvollständig bleibt).
+      try { VF.schatte = vfSchattenBauen(gl, 2048) || vfSchattenBauen(gl, 1024); VF.schatteProg = VF.schatte ? vfProgrammSchatten(gl) : null; } catch (e) { VF.schatte = null; VF.schatteProg = null; }
     }
     vfHudBauen(schicht);
     vfDrehNull(); VF.stick = null; VF.tasten = {};
@@ -43374,6 +43523,8 @@
       try { if (kRennenLaeuft()) requestRaceStop(); else challengeAbbrechen(); } catch (e) { /* weiter */ }
       VF.abbruch = false;
     }
+    // v1.3.124 Studienmodus: am Ende der Fahrt den JSON-Log schreiben.
+    if (VF_STUDIE && vfStudie.n > 0) { try { vfStudienLogLaden(); } catch (e) { /* egal */ } }
     VF.aktiv = false;
     VF.npcs = null; VF.npcBogen = null; VF.npcRunde = 0;
     VF.schatte = null; VF.schatteProg = null; VF.grafik = false;
