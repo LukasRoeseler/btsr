@@ -23,6 +23,12 @@
   const VF_MU = 1.0;                // Haftbeiwert auf trockener Bahn (mal gripScale fuer Regen)
   const VF_ABSEITS_BREMSE = 3.0;    // Tempoverlust neben der Bahn je Sekunde (exponentiell)
   const VF_ABSEITS_ZURUECK_MS = 2500;
+  // v1.3.125: Option "Kein Tempoverlust neben der Bahn" (Vorgabe Aus = das Auto bremst wie bisher).
+  // 'aus' schaltet den Tempoverlust ab, das Auto faehrt neben der Bahn ungebremst weiter.
+  const VF_ABSEITS_BREMSE_STORE = 'omegasim-vf-abseits-bremse';
+  function vfAbseitsBremseAn() {
+    try { return localStorage.getItem(VF_ABSEITS_BREMSE_STORE) !== 'aus'; } catch (e) { return true; }
+  }
   const VF_TAKT_MS = 45;            // Paketfolge wie ein echtes Auto
   const VF_AUTO = { L: 9.6, B: 4.4, H: 2.4 };
   const VF = { aktiv: false, car: null, vorherRolle: null, vorherSpieler: null, schicht: null, cv: null, hud: null,
@@ -1841,7 +1847,7 @@
     }
     vfRandsteinTon(kerb, q, kmh);   // v1.3.39: dumpfes Rumpeln, je Bild (billig), blendet selbst aus
     if (ab) {
-      st.speedKmh *= Math.exp(-VF_ABSEITS_BREMSE * dt);
+      if (vfAbseitsBremseAn()) st.speedKmh *= Math.exp(-VF_ABSEITS_BREMSE * dt);
       if (rennZeitJetzt() - VF.abseitsSeit > VF_ABSEITS_ZURUECK_MS) vfZuruecksetzen();
     }
     // NPCs: folgen ihrer Spur mit Stufe-1-Tempo und bremsen vor Kurven (vfNpcSteuern).
@@ -2905,6 +2911,14 @@
       renderGarage();
     };
     rechts.appendChild(garWertZeile(t('Geist folgt meiner Linie'), geistAn ? t('An') : t('Aus'), geistWahl, geistWahl));
+    // Neben der Bahn: Vorgabe bremst der Teppich. Die Option schaltet den Tempoverlust ab, das Auto
+    // faehrt daneben ungebremst weiter (Standard Aus = wie bisher).
+    const abseitsBremse = vfAbseitsBremseAn();
+    const abseitsWahl = () => {
+      try { localStorage.setItem(VF_ABSEITS_BREMSE_STORE, abseitsBremse ? 'aus' : 'an'); } catch (e) { /* egal */ }
+      renderGarage();
+    };
+    rechts.appendChild(garWertZeile(t('Kein Tempoverlust neben der Bahn'), abseitsBremse ? t('Aus') : t('An'), abseitsWahl, abseitsWahl));
     // NPCs: wie viele andere Autos mitfahren (0-3), zufaellige Skins aus den echten Modellen.
     const nNpc = vfNpcAnzahl();
     const npcWahl = (dd) => {

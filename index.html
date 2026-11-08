@@ -5726,7 +5726,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.3.124</span></span>
+        <span class="foot-ver">v<span id="app-version">1.3.125</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6988,6 +6988,7 @@
         <li>Neue Option &#8222;NPC: Tankort&#8220; (WIP, Optionen &#8594; NPCs): Einparkfolge wie das Safety Car (Standard, wie bisher) oder &#8222;Streckenrand &#252;ber Querlage&#8220; &#8211; der NPC zieht auf dem Boxenteil per Querlage an den rechten Rand, bremst, steht mit Ratsche und zieht per Querlage wieder heraus, ohne Lenkfolge.</li>
         <li>Neue Option &#8222;NPC: maximale Querlage&#8220; (Optionen &#8594; NPCs, Vorgabe 95&nbsp;%): Wie weit ein NPC auf der Aussenseite einer Kurve fahren darf. Das Firmware-Update erlaubt den NPCs, weit aussen zu fahren, sodass sie &ouml;fter abfliegen; 95&nbsp;% sind 5&nbsp;% weniger aussen, 100&nbsp;% die alte, volle Linie. Die Option gilt f&uuml;r die Linie, die die NPCs im Rennen fahren (die Aussenlage im virtuellen Fahren bleibt unver&auml;ndert).</li>
         <li>Virtuelles Fahren &#8211; Grafik-Feinschliff (Quality): Der Bodenshader rechnet jetzt linear (sRGB-Dekodierung &#8594; Licht &#8594; filmic &#8594; Gamma), der Glanz per Pixel statt per Ecke, die Schattenkarte ist 2048er mit 3&times;3-PCF und begrenzter Tiefe, sodass die Schatten an den R&auml;dern anliegen und die NPCs Schatten werfen; der Blob-Schatten wird zum kleinen Kontaktschatten. Autos bekommen einen Clear-Coat-Glanz auf dem Lack, ein sonnenausgerichtetes Glanzlicht und Scheiben, die bei flachem Blickwinkel spiegelnd werden; sie empfangen ihre eigenen Schatten. Der Himmel wird im Weltraum gerechnet und bleibt beim Umsehen am Horizont. Boden trilinear mit 8-facher Anisotropie, Randsteine/Fahrbahn 4-fach. Farplane auf 1300 (weniger Randstein-Flackern). Konsole-Regler: <code>omegasim-vf-belichtung</code>, <code>-bump-boden</code>, <code>-bump-bahn</code>, <code>-ao-innen</code>, <code>-schatten-bias</code>, <code>-schatten-bias-pixel</code>. Studienmodus: festes Sichtfeld (<code>omegasim-vf-studie-fov</code>), Zoom der Fahrer-Kamera aus (<code>-studie-zoomaus</code>), fester NPC-Seed (<code>-seed</code>) und JSON-Log (<code>-studie</code>, <code>vfStudienLog()</code>).</li>
+        <li>Virtuelles Fahren &#8211; neue Option &#8222;Kein Tempoverlust neben der Bahn&#8220; (Garage &#8594; Virtuelles Auto, Vorgabe Aus): Standardm&#228;&#223;ig bremst der Teppich das Auto, wenn es die Bahn verl&#228;sst (3,0 km/h je Sekunde, exponentiell). Mit &#8222;An&#8220; f&#228;hrt es neben der Bahn ungebremst weiter &#8211; n&#252;tzlich zum Ausprobieren, ob die Strecke h&#228;lt. Das Zur&uuml;cksetzen nach 2,5&nbsp;s daneben bleibt.</li>
       </ul>
       <p class="muted"><b><span data-i18n-skip>1.2</span></b></p>
       <ul class="muted" id="patchnotes-12" style="padding-left:20px; line-height:1.7">
@@ -15980,6 +15981,7 @@
     "Rennmodus im virtuellen Fahren nicht verfügbar": "Race mode not available in virtual driving",
     "Rennen beendet": "Race finished",
     "Geist folgt meiner Linie": "Spirit follows my line",
+    "Kein Tempoverlust neben der Bahn": "No speed loss off track",
     "NPCs": "NPCs",
     "Handling": "Handling",
     "Grafik": "Graphics",
@@ -19496,6 +19498,7 @@
     "Rennmodus im virtuellen Fahren nicht verfügbar": "Modo de carrera no disponible en la conducción virtual",
     "Rennen beendet": "Carrera terminada",
     "Geist folgt meiner Linie": "Espíritu sigue mi línea",
+    "Kein Tempoverlust neben der Bahn": "Sin pérdida de velocidad fuera de la pista",
     "NPCs": "NPCs",
     "Handling": "Manejo",
     "Grafik": "Gráficos",
@@ -40515,6 +40518,12 @@
   const VF_MU = 1.0;                // Haftbeiwert auf trockener Bahn (mal gripScale fuer Regen)
   const VF_ABSEITS_BREMSE = 3.0;    // Tempoverlust neben der Bahn je Sekunde (exponentiell)
   const VF_ABSEITS_ZURUECK_MS = 2500;
+  // v1.3.125: Option "Kein Tempoverlust neben der Bahn" (Vorgabe Aus = das Auto bremst wie bisher).
+  // 'aus' schaltet den Tempoverlust ab, das Auto faehrt neben der Bahn ungebremst weiter.
+  const VF_ABSEITS_BREMSE_STORE = 'omegasim-vf-abseits-bremse';
+  function vfAbseitsBremseAn() {
+    try { return localStorage.getItem(VF_ABSEITS_BREMSE_STORE) !== 'aus'; } catch (e) { return true; }
+  }
   const VF_TAKT_MS = 45;            // Paketfolge wie ein echtes Auto
   const VF_AUTO = { L: 9.6, B: 4.4, H: 2.4 };
   const VF = { aktiv: false, car: null, vorherRolle: null, vorherSpieler: null, schicht: null, cv: null, hud: null,
@@ -42333,7 +42342,7 @@
     }
     vfRandsteinTon(kerb, q, kmh);   // v1.3.39: dumpfes Rumpeln, je Bild (billig), blendet selbst aus
     if (ab) {
-      st.speedKmh *= Math.exp(-VF_ABSEITS_BREMSE * dt);
+      if (vfAbseitsBremseAn()) st.speedKmh *= Math.exp(-VF_ABSEITS_BREMSE * dt);
       if (rennZeitJetzt() - VF.abseitsSeit > VF_ABSEITS_ZURUECK_MS) vfZuruecksetzen();
     }
     // NPCs: folgen ihrer Spur mit Stufe-1-Tempo und bremsen vor Kurven (vfNpcSteuern).
@@ -43397,6 +43406,14 @@
       renderGarage();
     };
     rechts.appendChild(garWertZeile(t('Geist folgt meiner Linie'), geistAn ? t('An') : t('Aus'), geistWahl, geistWahl));
+    // Neben der Bahn: Vorgabe bremst der Teppich. Die Option schaltet den Tempoverlust ab, das Auto
+    // faehrt daneben ungebremst weiter (Standard Aus = wie bisher).
+    const abseitsBremse = vfAbseitsBremseAn();
+    const abseitsWahl = () => {
+      try { localStorage.setItem(VF_ABSEITS_BREMSE_STORE, abseitsBremse ? 'aus' : 'an'); } catch (e) { /* egal */ }
+      renderGarage();
+    };
+    rechts.appendChild(garWertZeile(t('Kein Tempoverlust neben der Bahn'), abseitsBremse ? t('Aus') : t('An'), abseitsWahl, abseitsWahl));
     // NPCs: wie viele andere Autos mitfahren (0-3), zufaellige Skins aus den echten Modellen.
     const nNpc = vfNpcAnzahl();
     const npcWahl = (dd) => {
