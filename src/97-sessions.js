@@ -141,6 +141,13 @@
       wetter: typeof weather !== 'undefined' ? weather : null,
       simKm: weg.simKm,
       realKm: weg.realKm,
+      // v1.3.118: Verbrauch des Fahrerautos in dieser Sitzung (Liter). Nur wenn die
+      // Tanksimulation an war; sonst null, damit alte Sitzungen und Sim-aus gleichermassen
+      // nichts vortaeuschen. raceFuelBilanz() in 70-race.js kennt Start, Nachfuell- und
+      // Restmenge und rechnet daraus den Verbrauch.
+      verbrauchL: (typeof raceFuelBilanz === 'function'
+                   && typeof fuelSimOn === 'function' && fuelSimOn())
+        ? raceFuelBilanz().consumedL : null,
       autos: autos.map(c => ({
         name: c.name, kennung: c.kennung, rolle: c.role,
         // v1.1.3: Kennung und Farbe des Autos, fuer die Statistik (Foto, Farbe, km je Auto).
@@ -443,7 +450,9 @@
                    + ' &middot; ' + runden + ' Runden'
                    + (beste !== null ? ' &middot; beste ' + sessionFmt(beste) : '')
                    + (s.strecke ? ' &middot; <code>' + s.strecke + '</code>' : '')
-                   + ' &middot; ' + s.simKm.toFixed(1) + ' km</div>');
+                   + ' &middot; ' + s.simKm.toFixed(1) + ' km'
+                   + (s.verbrauchL != null ? ' &middot; ' + s.verbrauchL.toFixed(1) + ' l' : '')
+                   + '</div>');
       }
     }
     host.innerHTML = teile.join('');
@@ -459,7 +468,7 @@
     const z = (x) => String(x === null || x === undefined ? '' : x)
       .replace(/[";\n]/g, ' ');
     const komma = (x) => String(x).replace('.', ',');
-    const zeilen = ['Datum;Zeit;Modus;Strecke;Auto;Kennung;Rolle;Runde;Zeit (s);km sim;m echt'];
+    const zeilen = ['Datum;Zeit;Modus;Strecke;Auto;Kennung;Rolle;Runde;Zeit (s);km sim;m echt;Verbrauch (l)'];
     for (const s of o.sessions) {
       const tag = (s.zeit || '').slice(0, 10);
       const uhr = (s.zeit || '').slice(11, 19);
@@ -467,7 +476,8 @@
         c.laps.forEach((ms, i) => {
           zeilen.push([tag, uhr, z(s.modus), z(s.strecke), z(c.name), z(c.kennung),
                        z(c.rolle), i + 1, komma((ms / 1000).toFixed(3)),
-                       komma(s.simKm.toFixed(3)), komma((s.realKm * 1000).toFixed(1))].join(';'));
+                       komma(s.simKm.toFixed(3)), komma((s.realKm * 1000).toFixed(1)),
+                       komma(s.verbrauchL != null ? s.verbrauchL.toFixed(1) : '')].join(';'));
         });
       }
     }

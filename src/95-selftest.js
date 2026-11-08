@@ -2207,6 +2207,38 @@
     } finally { fuel = gemerkt; }
   });
 
+  // ---- Sitzung: Verbrauch aus Start-, Nachfuell- und Restmenge ----------------------
+  //
+  // raceFuelBilanz() (70-race.js) rechnet den Verbrauch je Sitzung: Startmenge plus alles,
+  // was in der Box nachgefuellt wurde, minus was am Ende noch drin ist. Das ist die Zahl,
+  // die 97-sessions.js als verbrauchL in den Sitzungsdaten ablegt.
+  stAdd('Sitzung: Verbrauch aus Start, Nachfuell- und Restmenge', () => {
+    if (typeof raceFuelBilanz !== 'function') {
+      return { skip: true, mass: 'raceFuelBilanz nicht erreichbar' };
+    }
+    const schlecht = [];
+    const m = { start: raceFuelStartL, fuel: fuel, refuel: raceFuelRefuelPct };
+    try {
+      // Voll starten, nichts nachfuellen, halb leer: 55 l verbraucht.
+      raceFuelStartL = 110; fuel = 50; raceFuelRefuelPct = 0;
+      let b = raceFuelBilanz();
+      if (Math.abs(b.consumedL - 55) > 0.2) schlecht.push('Verbrauch ' + b.consumedL + ' statt 55');
+      // Mit Tanken: 110 starten, 22 l nachfuellen, 50 bleiben -> 77 l verbraucht.
+      raceFuelRefuelPct = 22 / FUEL_TANK_LITERS * 100;
+      b = raceFuelBilanz();
+      if (Math.abs(b.consumedL - 77) > 0.2) schlecht.push('mit Tanken ' + b.consumedL + ' statt 77');
+      if (Math.abs(b.refuelL - 22) > 0.2) schlecht.push('Nachfuellen ' + b.refuelL + ' statt 22');
+      // Nie negativ: nichts gefahren, Tank voll -> 0 l.
+      raceFuelStartL = 110; fuel = 100; raceFuelRefuelPct = 0;
+      b = raceFuelBilanz();
+      if (b.consumedL !== 0) schlecht.push('ohne Fahrt ' + b.consumedL + ' statt 0');
+      return { ok: schlecht.length === 0,
+               mass: schlecht.length ? schlecht.join('; ') : 'Verbrauch stimmt' };
+    } finally {
+      raceFuelStartL = m.start; fuel = m.fuel; raceFuelRefuelPct = m.refuel;
+    }
+  });
+
 
 
   // ---- Cockpit-Ansicht: sichtbar verschieden, funktional gleich ----

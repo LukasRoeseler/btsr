@@ -2138,6 +2138,7 @@
     updateDamageFuelUI();
     racePitDone = 0;
     pitBilanz = null;   // "Letzter Stopp" im Boxenschirm gehoert zum Rennen
+    raceFuelRefuelPct = 0;   // Nachfuellen ueber das Rennen, fuer die Verbrauchs-Statistik
     // v1.0.12 BESTELLT: "Pflichtstopps bitte fuer alle spieler gesteuerten Autos zaehlen."
     if (typeof zusatzPlaetze === 'function') zusatzPlaetze().forEach((z) => { z.pitDone = 0; });
     syncRaceGridOrder();
@@ -4742,6 +4743,20 @@
   const PIT_ERHOL_PRO_FEHLER = 0.3;
   let pitServiceStart = null;
   let pitFuelGained = 0, pitDamageRepaired = 0;
+  // Die Nachfuellmenge UEBER DAS GANZE RENNEN, fuer die Statistik. pitFuelGained wird je
+  // Boxenstopp zurueckgesetzt (setPitState('servicing')) und kennt am Rennende nur den
+  // letzten Stopp; der Verbrauch je Sitzung braucht aber die Summe aller Stopps.
+  let raceFuelRefuelPct = 0;
+  // Was der Tank in dieser Sitzung hergab: Startmenge plus alles, was in der Box
+  // nachgefuellt wurde, minus was am Ende noch drin ist - in Litern (FUEL_TANK_LITERS).
+  function raceFuelBilanz() {
+    const startPct = raceFuelStartL / FUEL_TANK_LITERS * 100;
+    const endPct = Math.max(0, Math.min(100, typeof fuel === 'number' ? fuel : startPct));
+    const consumedPct = Math.max(0, startPct + raceFuelRefuelPct - endPct);
+    const l = (pct) => +(pct / 100 * FUEL_TANK_LITERS).toFixed(1);
+    return { startL: l(startPct), refuelL: l(raceFuelRefuelPct), endL: l(endPct),
+             consumedL: l(consumedPct) };
+  }
   // Bilanz des letzten vollendeten Stopps in diesem Rennen (ACC-Boxenschirm, v1.3.78):
   // gesetzt beim Verlassen der Box (pitBilanzMerken), geleert beim Rennstart.
   let pitBilanz = null;
@@ -4994,7 +5009,7 @@
           setPitLoop('fuel', false);
         } else {
           const addFuel = Math.min(ziel - fuel, PIT_FUEL_PER_SEC * dt);
-          fuel += addFuel; pitFuelGained += addFuel;
+          fuel += addFuel; pitFuelGained += addFuel; raceFuelRefuelPct += addFuel;
           if (fuel >= ziel - 0.05) {
             fuel = ziel; pitDone.refuel = true;
             setPitLoop('fuel', false); pitChimeFuel();
@@ -5162,7 +5177,7 @@
     const anteil = Math.min(1, (pitStandElapsed + sp.bonus) / sp.T);
     if (pl.refuel) {
       const neu = sp.fuel0 + (tankZielNorm(pl.refuel) - sp.fuel0) * anteil;
-      if (neu > fuel) { pitFuelGained += neu - fuel; fuel = neu; }
+      if (neu > fuel) { pitFuelGained += neu - fuel; raceFuelRefuelPct += neu - fuel; fuel = neu; }
     }
     if (pl.repair) {
       const neu = sp.dmg0 * (1 - anteil);
