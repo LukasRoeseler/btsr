@@ -2986,7 +2986,10 @@
   // trennt die Spalten genauso sauber und haelt sie ein.
   //
   // Das Schlaengeln bleibt - es soll nach Reifenwaermen aussehen -, nur kleiner.
-  const GHOST_WEAVE = 0.10;
+  // v1.3.117 BESTELLT: "NPC ausparken ist zu viel gelenkt - etwas schwaecher und kuerzer nach
+  // links und rechts lenken." Die Amplitude runter (0,10 -> 0,07), damit das Abfahren vom
+  // Startplatz weniger weit nach links und rechts ausschert.
+  const GHOST_WEAVE = 0.07;
   // Der Versatz der Zweierkolonne, in derselben Einheit wie das Schlaengeln: ein Anteil des
   // vollen Lenkeinschlags. Etwas kleiner als die Schlaengelamplitude, damit die beiden
   // Bewegungen sich nicht aufheben - zusammen bleiben sie unter 0,4, also weit vom Anschlag.
