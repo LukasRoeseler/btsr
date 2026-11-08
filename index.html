@@ -5726,7 +5726,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.3.126</span></span>
+        <span class="foot-ver">v<span id="app-version">1.3.127</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -11263,9 +11263,9 @@
       <div class="opt-row"><div class="opt-label">Höchstgeschwindigkeit (km/h)</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-topspeed-kmh" min="2" max="8" step="0.05" value="5.45">
+          <input type="range" id="setting-topspeed-kmh" min="2" max="8" step="0.5" value="4">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-topspeed-kmh-val">5.45</span>
+          <span class="opt-val" id="setting-topspeed-kmh-val">4.0</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">0 &rarr; 100 km/h (s)<small>Angezeigte km/h. Ein 911 GT3 R braucht rund 3,2 s.</small></div>
         <div class="opt-slider">
@@ -12585,12 +12585,12 @@
       <div class="opt-row"><div class="opt-label">NPC: maximale Querlage
         <small>Wie weit ein NPC auf der Aussenseite einer Kurve fahren darf. Das
           Firmware-Update erlaubt den NPCs, weit aussen zu fahren, sodass sie &ouml;fter abfliegen.
-          Vorgabe 95&nbsp;% der bisherigen Linie &ndash; 5&nbsp;% weniger aussen. 100&nbsp;% ist die
-          alte, volle Linie.</small></div>
+          Vorgabe 90&nbsp;% der bisherigen Linie &ndash; 10&nbsp;% Raum zum Aussenkantenrand.
+          100&nbsp;% ist die alte, volle Linie.</small></div>
         <select id="npc-querlage">
           <option value="1">100&nbsp;%</option>
-          <option value="0.95" selected>95&nbsp;%</option>
-          <option value="0.9">90&nbsp;%</option>
+          <option value="0.95">95&nbsp;%</option>
+          <option value="0.9" selected>90&nbsp;%</option>
           <option value="0.85">85&nbsp;%</option>
           <option value="0.8">80&nbsp;%</option>
         </select></div>
@@ -12666,10 +12666,10 @@
           <button type="button" class="mw-preset" data-linemodel="lateapex">Late Apex</button>
           <button type="button" class="mw-preset" data-linemodel="dreistufig">3-stufig</button>
           <button type="button" class="mw-preset" data-linemodel="mitte">Fahrbahnmitte</button>
-          <button type="button" class="mw-preset" data-linemodel="innen3">Innen (gemittelt)</button>
+          <button type="button" class="mw-preset sel" data-linemodel="innen3">Innen (gemittelt)</button>
           <button type="button" class="mw-preset" data-linemodel="aussenin">Außen-Innen</button>
           <button type="button" class="mw-preset" data-linemodel="luuke">Luuke-Linie</button>
-          <button type="button" class="mw-preset sel" data-linemodel="simulator">SIMULATOR<span class="wip-tag">WIP</span></button>
+          <button type="button" class="mw-preset" data-linemodel="simulator">SIMULATOR<span class="wip-tag">WIP</span></button>
         </div></div>
       <!-- DIE LINIE DIREKT NEBEN DER WAHL. Gemeldet: "ich habe 2 Ideallinie Modi, aber wenn
            ich dazwischen waehle, aendert sich die eingezeichnete Linie nicht." Sie aendert
@@ -22631,26 +22631,36 @@
   // find all of them.
   //
   // The number is now derived, not chosen. The cars are 1:50 models, so the display should
-  // be exactly fifty times the real ground speed. Measured from the btsnoop logs (all
-  // straights of the recordings 16.-21.08.): proportional to throttle, 0.0119 m/s per step,
-  // full throttle (byte 127) thus 1.51 m/s = 5.45 km/h, at 1:50 about 272 km/h (+-10 %;
-  // 31 whole laps confirm the slope). Internally full throttle IS topSpeedKmh = 5.45. So:
+  // be exactly fifty times the real ground speed. Measured from the btsnoop logs: the car
+  // does 1.28 km/h at throttle 0.2 and 2.46 km/h at 0.4 (n=6 and n=114 tile crossings), i.e.
+  // almost exactly proportional - 2.46/1.28 = 1.92 for double the throttle - which gives
+  // v = 5.9 km/h x throttle and a full-throttle speed of about 5.9 km/h. Internally full
+  // throttle IS topSpeedKmh = 4.0. So:
   //
-  //     REAL_SCALE = 50      (top speed displays as 272 km/h)
-  //     TACHO_SCALE = 50     (same 1:50 factor on the tachometer)
+  //     REAL_SCALE = 50 x 5.9 / 4.0 = 73.75      (top speed displays as 295 km/h)
   //
-  // The two factors used to disagree: REAL_SCALE was 73.75 (the physics/racing-display
-  // unit) while TACHO_SCALE was 68.1 (the tacho), so the same model speed showed two
-  // different figures. Anchoring both at 50 makes the racing display and the tachometer
-  // agree, and the displayed 272 km/h is the honest 1:50 mapping of the measured 5.45 km/h
-  // ground speed. The cockpit shows the measured factor live, so any drift is visible
-  // rather than assumed.
-  const REAL_SCALE = 50;   // 1:50
-  // ---- TACHO ---------------------------------------------------------------
-  // The tachometer uses the same 1:50 factor. At Gasfaktor 100 % (ab Werk, Byte 127) the
-  // car reaches full throttle, which is topSpeedKmh = 5.45, i.e. 272 km/h on the tacho.
-  // Over 100 % the car hits full throttle before the tacho is at the top.
-  const TACHO_SCALE = 50;   // 1:50
+  // Two honest caveats. The 5.9 is an extrapolation: no log contains a full-throttle run on
+  // the track, only 0.2 and 0.4. And one constant can only be right at one operating point,
+  // because the real car is linear in throttle while the simulation has aerodynamic drag -
+  // the two curves have different shapes and no single factor reconciles them everywhere.
+  // Anchoring at full throttle is the defensible choice, since that is where the mapping is
+  // defined. The cockpit shows the measured factor live, so any drift is visible rather than
+  // assumed.
+  const REAL_SCALE = 50 * 5.9 / 4.0;   // 73.75
+  // ---- NACHGEMESSEN (v0.9.39) ---------------------------------------------------------
+  // Die 5,9 km/h oben waren falsch abgelesen: die 2,46 km/h gehoeren zu Gasbyte 56 von 127,
+  // also 44 % und nicht 40 %. Neu ausgewertet (alle Geraden der Mitschnitte 16.-21.08.):
+  //     Byte 43  0,86 s je 43-cm-Gerade   1,81 km/h
+  //     Byte 50  0,74 s                    2,11 km/h
+  //     Byte 56  0,63 s                    2,46 km/h
+  // Proportional zum Gas, 0,0119 m/s je Schritt, Vollgas (127) also 1,51 m/s = 5,45 km/h,
+  // im Massstab 1:50 rund 272 km/h (Hochrechnung, +-10 %; 31 ganze Runden bestaetigen die
+  // Steigung). REAL_SCALE bleibt die Einheit, in der die PHYSIK abgestimmt ist (Anfahrhilfe,
+  // Luftwiderstand, Schwellen) - sie zu aendern hiesse, das Fahrverhalten zu aendern. Der
+  // TACHO rechnet mit dem gemessenen Faktor: Simulations-Hoechstgeschwindigkeit (4,0) bei
+  // Gasfaktor 100 % = Byte 127 = 272 km/h. Das stimmt genau bei Gasfaktor 100 % (ab Werk);
+  // ueber 100 % bekommt das Auto Vollgas, bevor der Tacho oben ist.
+  const TACHO_SCALE = 50 * 5.45 / 4.0;   // 68.1
 
   const IDLE_RPM = 1500, REDLINE_RPM = 9000, LIMITER_SOFT_RPM = 400;
   const GT3_GEARS = [
@@ -22972,11 +22982,10 @@
         autoShift: true,  // Automatik als Standard
 
         // Anchored to real-world numbers instead of abstract 0..1 units, so the feel can
-        // be reasoned about: the car tops out at the measured full-throttle ground speed of
-        // 5.45 km/h (1.51 m/s) and should take about 3s to get there. Speed is simulated
-        // in km/h and the throttle byte is derived from it (see update()), which is what
-        // stops the car slamming to full power instantly.
-        topSpeedKmh: 5.45,
+        // be reasoned about: the car tops out around 4 km/h and should take about 3s to
+        // get there. Speed is simulated in km/h and the throttle byte is derived from it
+        // (see update()), which is what stops the car slamming to full power instantly.
+        topSpeedKmh: 4.0,
 
         // ---- Calibration anchor ----
         // Anchored on 0 -> 100 km/h AS DISPLAYED, because that is the figure everyone
@@ -22989,7 +22998,7 @@
         // rather than referencing REAL_SCALE: that const is declared far below this class
         // and the constructor already calls calibrateAccel(), so reading it from here
         // would be a temporal-dead-zone crash during load.
-        launchAnchorKmh: 100 / REAL_SCALE,  // 2.0 internal = 100 displayed
+        launchAnchorKmh: 100 / REAL_SCALE,  // 1.4035 internal = 100 displayed
         // 1.95 und nicht 3.1, obwohl 3.1 der Sollwert ist: dieser Anker wird von
         // calibrateAccel gegen das VEREINFACHTE Modell (thrustAt/resistAt) geloest, und die
         // Fahrt laeuft durch update(). Gemessen sind das 46 % Unterschied - mit Anker 3.2
@@ -23020,13 +23029,13 @@
         //   aerodynamic drag   -> QUADRATIC, dominant at speed, negligible when slow.
         // Values are absolute decelerations in km/h/s at their reference point, so they
         // can be read and reasoned about directly rather than as opaque coefficients.
-        // Scaled to REAL decelerations. The display multiplies by 50, so an internal
-        // km/h/s is 50 displayed km/h/s -- which makes it easy to be wildly wrong here
+        // Scaled to REAL decelerations. The display multiplies by 71.25, so an internal
+        // km/h/s is 71.25 displayed km/h/s -- which makes it easy to be wildly wrong here
         // without noticing. A first pass at 0.18/0.35/0.90 summed to 1.43 internal at top
-        // speed = 71.5 displayed km/h/s = 2.0 g of coasting deceleration, roughly six times
-        // what a GT3 actually does. These values sum to 0.25 internal = 12.5 displayed
-        // km/h/s at top speed, about 0.35 g, which is the right order for aero drag at
-        // 272 km/h. At a quarter of top speed they give ~0.11 g, and near standstill the
+        // speed = 102 displayed km/h/s = 2.8 g of coasting deceleration, roughly six times
+        // what a GT3 actually does. These values sum to 0.25 internal = 17.8 displayed
+        // km/h/s at top speed, about 0.5 g, which is the right order for aero drag at
+        // 285 km/h. At a quarter of top speed they give ~0.11 g, and near standstill the
         // constant term alone remains -- which is what finally brings the car to rest.
         coastRollDecel: 0.030,   // constant
         coastEngineDecel: 0.065, // x u
@@ -23109,7 +23118,7 @@
         // BREMSKENNLINIE, dieselbe Formel wie die Gaskennlinie. BESTELLT: "noch eine
         // Bremskennlinie einfuegen (standard: etwas unempfindlicher im Anfangsbereich)".
         brakeGamma: 1.3,
-        // 10 km/h on the racing display, which reads speedKmh * REAL_SCALE (50).
+        // 10 km/h on the racing display, which reads speedKmh * REAL_SCALE (71.25).
         // Below this the car is walking pace and should simply stop.
         crawlCutoffKmh: 10 / REAL_SCALE,
         // Lowered from 1.2: clearing the cutoff in 0.12 s read as the car being yanked to
@@ -23360,9 +23369,9 @@
         // ---- Rueckwaertsgang in der Automatik ----
         // Bis unter diese Fahrt darf Viereck den Rueckwaertsgang legen, Kreis holt ihn
         // wieder heraus. Als Bruchteil der Spitze, nicht in km/h: st.speedKmh laeuft in
-        // Modellmass (0 bis topSpeedKmh = 5,45), und der Schirm zeigt es mit 50
-        // multipliziert. 0.0367 * 5,45 * 50 sind die gewuenschten 10 km/h auf der Anzeige.
-        autoReverseFrac: 0.0367,
+        // Modellmass (0 bis topSpeedKmh = 4,0), und der Schirm zeigt es mit 73,75
+        // multipliziert. 0.034 * 4,0 * 73,75 sind die gewuenschten 10 km/h auf der Anzeige.
+        autoReverseFrac: 0.034,
         // ---- Nasse Lenkung ----
         // Der Nassverlust greift erst mit der Geschwindigkeit an. Ohne das frisst schon das
         // Motorbremsen den geschrumpften Reibkreis auf, und zwar bei JEDER Fahrt - auf
@@ -23370,7 +23379,7 @@
         // Physikalisch ist die alte Fassung falsch: ein nasser Reifen traegt seitlich
         // durchaus, nur ist der Grenzbereich frueher erreicht. Unterhalb von wetOnsetFrac
         // ist die Anforderung so klein, dass Nass keinen Unterschied macht.
-        // Angezeigte Entsprechung bei 272 km/h Spitze: 46 und 150 km/h.
+        // Angezeigte Entsprechung bei 295 km/h Spitze: 50 und 160 km/h.
         wetOnsetFrac: 0.17,
         wetFullFrac: 0.55,
         // ---- Wieviel der Reibkreis ueberhaupt gefuellt wird ----
@@ -23378,13 +23387,13 @@
         // Schrittgeschwindigkeit ist eine Vollbremsung ein Bruchteil der verfuegbaren
         // Haftung, bei Hoechstgeschwindigkeit ist sie alles. Ohne das leert eine Vollbremsung
         // den Kreis bei JEDER Fahrt, und die Lenkung klebt bis zum Stand am Notboden.
-        // Angezeigte Entsprechung bei 272 km/h Spitze: 30 und 165 km/h.
+        // Angezeigte Entsprechung bei 295 km/h Spitze: 30 und 180 km/h.
         // TEMPOWICHTUNG DER BREMSANFORDERUNG. Sie ist der Grund, warum Bremsen die
         // Lenkung ueberhaupt schwaecht - und war bis v0.5 so flach, dass man es unter
         // 100 km/h nicht gespuert hat: Ansatz bei 29,5 angezeigten km/h, VOLL erst bei 180.
         // Gemessen gab volles Bremsen bei 60 km/h noch 100 % des Rollwerts.
         //
-        // Jetzt Ansatz bei 13,6 und voll bei 60 angezeigten km/h. Unter 15 km/h passiert
+        // Jetzt Ansatz bei 14,8 und voll bei 65 angezeigten km/h. Unter 15 km/h passiert
         // weiterhin NICHTS, und das ist per Konstruktion so: dort ist lastFrac null, der
         // Notboden von 12 % kann also nicht zurueckkommen. Genau der war der Fehler, gegen
         // den diese Wichtung ueberhaupt eingebaut wurde.
@@ -28070,8 +28079,8 @@
     // and braking models were calibrated against a GT3 topping out at 285 km/h, so the factor
     // had to be 285/4. That reasoning had it backwards: it derived the scale from a chosen
     // top speed instead of deriving the top speed from the known scale. The cars are 1:50,
-    // the measured ground speed at full throttle is about 5.45 km/h, so the dash reads
-    // 5.45 x 50 = 272 km/h flat out. See the derivation at REAL_SCALE.
+    // the measured ground speed at full throttle is about 5.9 km/h, so the dash reads
+    // 5.9 x 50 = 295 km/h flat out. See the derivation at REAL_SCALE.
     $('race-speed').textContent = Math.round(Math.abs(st.speedKmh) * TACHO_SCALE);
 
     // Shift LEDs. Green, then red, then BLUE for the last two. The blue pair above red,
@@ -34620,7 +34629,8 @@
   // Modus ist gut". Zurueck auf Luuke - Innen bleibt waehlbar.
   // v1.0.15 BESTELLT: "Mach die neue Ideallinie zum Default." Bis die Suche fertig ist (wenige
   // Sekunden), faehrt simulatorLinie() die Luuke-Linie.
-  let lineModel = 'simulator';
+  // v1.3.127 BESTELLT: "Innen (gemittelt) als Vorgabe, mit 90 % Raum zum Aussenkantenrand."
+  let lineModel = 'innen3';
 
   // Die gueltigen Modellnamen an EINER Stelle. Vorher stand die Liste als zwei
   // Vergleiche in setLineModel und ein weiteres Mal als Bedingung in buildLine - beim
@@ -44524,8 +44534,8 @@
   // Zielflagge weiter oben (finishRace() ohne Fahrer im Feld).
   function raceMoveErkannt() {
     // v0.9.43: 3 ANGEZEIGTE km/h. Hier stand 3 - verglichen mit speedKmh, und das ist das
-    // MODELLTEMPO (Vollgas 5,45). Die Rennuhr startete also erst bei 75 % der
-    // Hoechstgeschwindigkeit (rund 204 km/h auf dem Tacho); wer das auf einer kurzen Strecke
+    // MODELLTEMPO (Vollgas 4,0). Die Rennuhr startete also erst bei 75 % der
+    // Hoechstgeschwindigkeit (rund 220 km/h auf dem Tacho); wer das auf einer kurzen Strecke
     // nie erreichte, fuhr Runden, die nicht zaehlten - und das Rennen endete nie. GEMELDET:
     // "Ende des Rennens wird immer noch nicht getriggert ... 3 Runden".
     const SCHWELLE_KMH = 3 / REAL_SCALE;
@@ -48740,8 +48750,8 @@
   const PIT_DOUBLE_LIMIT_MS = 4000;
   const PIT_DOUBLE_KMH = 60;
   // Dieselbe Rechnung wie PIT_SPEED_FACTOR, nur mit 60 statt 80: der angezeigte Tacho ist
-  // speedKmh * REAL_SCALE, und topSpeedKmh ist 5,45.
-  const PIT_DOUBLE_SPEED_FACTOR = PIT_DOUBLE_KMH / REAL_SCALE / physEngine.config.topSpeedKmh;
+  // speedKmh * REAL_SCALE, und topSpeedKmh ist 4,0.
+  const PIT_DOUBLE_SPEED_FACTOR = PIT_DOUBLE_KMH / REAL_SCALE / 4.0;
   // Einmal melden und nicht 22 Mal je Sekunde: der Hinweis "neben die Strecke fahren"
   // kommt aus dem Fahrtakt, und ein Hinweis, der den Bildschirm zunagelt, ist kein Hinweis.
   let pitOrtGemeldet = false;
@@ -48749,9 +48759,9 @@
   let pitDoubleArmedUntil = 0;
   let pitMarkerCode = null;
   // 80 km/h on the racing display, the speed a real pit lane limiter holds. The display
-  // reads speedKmh * TACHO_SCALE (50), so 80 / 50 / 5.45 top speed = 0.2936.
+  // reads speedKmh * TACHO_SCALE (68.1), so 80 / 68.1 / 4.0 top speed = 0.2936.
   // v0.9.39: in TACHO-km/h, damit die Box auf dem Tacho 80 zeigt (siehe TACHO_SCALE).
-  const PIT_SPEED_FACTOR = 80 / TACHO_SCALE / physEngine.config.topSpeedKmh;
+  const PIT_SPEED_FACTOR = 80 / TACHO_SCALE / 4.0;
   let pitState = 'off';        // off | limited | servicing
   let pitModus = 'minigame';   // Boxen-Minigame, siehe pitSpielStart()
   let pitSpiel = null;
@@ -50272,7 +50282,7 @@
   let trackTimeOn = 0, trackTimeOff = 0, trackTimeLast = null, trackTimeUiLast = 0;
 
   // ---- Actual ground speed, measured rather than scaled ----
-  // The displayed speed is simulated: internal units times TACHO_SCALE (50, v1.3.121), so
+  // The displayed speed is simulated: internal units times TACHO_SCALE (68.1, v0.9.39), so
   // full throttle reads 272 km/h. It was never checked against the car. Measuring
   // the btsnoop logs says a lap of 3 straights and 8 curves is 4.39 m and takes 7.2 s, i.e.
   // the car really does about 2.2 km/h, and roughly 2 km/h at the moment the display says
@@ -68174,10 +68184,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // der Aussenseite begrenzen ... das Firmware-Update erlaubt den NPCs weit aussen zu fahren,
   // sodass sie nun oefter abfliegen." Anteil der bisherigen Linie (Vorgabe 0,95 = 5 % weniger
   // aussen). Skaliert die Linie, die die NPCs fahren (ghostLineOffset/ghostLineMitDeckel).
+  // v1.3.127: Vorgabe auf 90 % gestellt ("90 % Raum zum Aussenkantenrand").
   function npcQuerFaktor() {
     const s = $('npc-querlage');
-    const v = s ? +s.value : 0.95;
-    return (v >= 0.5 && v <= 1) ? v : 0.95;
+    const v = s ? +s.value : 0.9;
+    return (v >= 0.5 && v <= 1) ? v : 0.9;
   }
   function npcBoxStehen(car) {
     const p = car.ghost && car.ghost.pit;
@@ -75256,8 +75267,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   //
   // Ohne diese Umrechnung waeren die Rundenzeiten Zahlen ohne Bedeutung:
   //
-  //     physEngine/Ghost-Modell   speedKmh ist das MODELLTEMPO (Vollgas ~5,45 km/h);
-  //                               die Anzeige multipliziert mit REAL_SCALE = 50
+  //     physEngine/Ghost-Modell   speedKmh ist das MODELLTEMPO (Vollgas ~4 km/h);
+  //                               die Anzeige multipliziert mit REAL_SCALE = 73,75
   //     Strecke                   TRACK_TILE_CM = 43 cm je Gerade, TRACK_STEP = 40
   //                               Zeichnungseinheiten, TRACK_UNITS_PER_CM = 0,930
   //
@@ -86895,8 +86906,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         schlecht.push('kein monotoner Anstieg vor der Kurve: ' + [proTile[1], proTile[2], proTile[3]].join(','));
       }
       // 3. VOLL AUSGENUTZT MITTEN IM KURVENZUG: mit zwei weiteren gleichsinnigen Kacheln
-      //    voraus ist der Mittelwert exakt 1 (alle drei Kacheln des Fensters drehen gleich).
-      if (Math.abs(proTile[4] - 1) > 1e-6 || Math.abs(proTile[5] - 1) > 1e-6) {
+      //    voraus ist der Mittelwert exakt die volle Querlage (alle drei Kacheln des Fensters
+      //    drehen gleich). Seit v1.3.123 begrenzt npcQuerFaktor() die Linie; die volle Querlage
+      //    ist damit dieser Faktor und nicht mehr 1.
+      const qF = npcQuerFaktor();
+      if (Math.abs(proTile[4] - qF) > 1e-6 || Math.abs(proTile[5] - qF) > 1e-6) {
         schlecht.push('nicht voll ausgenutzt mitten im Kurvenzug: ' + proTile[4] + ',' + proTile[5]);
       }
       // 4. WEICHER ABSTIEG zum Kurvenende hin, aus demselben Grund wie der Anstieg.
@@ -86937,11 +86951,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       teile.push('Kachel 4+5 (Gerade): ' + proTile[4].join(',') + ' / ' + proTile[5].join(','));
       teile.push('Kachel 6 (Kurve): ' + proTile[6].join(','));
       // 1. HART: die Kurve steht von der ALLERERSTEN Kachel an auf voller Staerke, kein
-      //    Uebergang wie bei dreiStufenLine (dort erst nach SPUR_EIN aussen).
-      if (!proTile[3].every((v) => Math.abs(v) === 1)) {
+      //    Uebergang wie bei dreiStufenLine (dort erst nach SPUR_EIN aussen). Seit v1.3.123
+      //    begrenzt npcQuerFaktor() die Linie; volle Staerke ist damit dieser Faktor.
+      const qF = npcQuerFaktor();
+      if (!proTile[3].every((v) => Math.abs(v) === qF)) {
         schlecht.push('Kurve (Kachel 3) nicht durchgehend auf voller Staerke: ' + proTile[3].join(','));
       }
-      if (!proTile[6].every((v) => Math.abs(v) === 1)) {
+      if (!proTile[6].every((v) => Math.abs(v) === qF)) {
         schlecht.push('Kurve (Kachel 6) nicht durchgehend auf voller Staerke: ' + proTile[6].join(','));
       }
       // 2. GEGENSINNIG: die Kurve steht innen, die Geradenfolge davor endet aussen -
@@ -92131,12 +92147,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // v1.1.3: neu gemessen - Lenkung aus der Gewichtsverlagerung (Pro ist ein Realismus-Preset),
     // Tiefpass auf den Griff, frontAxleEffect 0,15 und leichtes Bremsen nickt wie Ausrollen.
     // BESTELLT ("Physik in Pro und den Realismus-Presets verbessern"), Omega bleibt (eigener Test).
-    // v1.3.121: neu gemessen - Geschwindigkeitsneuvermessung (topSpeedKmh 4,0 -> 5,45,
-    // REAL_SCALE/TACHO_SCALE 73,75/68,1 -> 50) verschiebt die Servo-, Betrags- und Temposumme.
     const soll = [
-      [{ useTauBrems: 0.45 }, { servo: 159.618939, betrag: 427.469943, kmh: 2252.989099 }],
+      [{ useTauBrems: 0.45 }, { servo: 162.708058, betrag: 436.549671, kmh: 1510.680251 }],
       [{ steerCalib: 2.5, steerResponse: 3.0, useTauBrems: 0.45 },
-       { servo: 273.437565, betrag: 773.06655, kmh: 2253.42144 }],
+       { servo: 276.173545, betrag: 779.282616, kmh: 1510.771603 }],
     ];
     const schlecht = [];
     for (const [patch, erwartet] of soll) {
@@ -92155,8 +92169,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   stAdd('Omega: Fahrphysik bitgleich mit 1.0.42 (Servo-, Betrags- und Temposumme)', () => {
     const omega = { lenkAlt: 1, brakeStealLast: 0, pacejka: false, useTauBrems: 0.45 };
     const soll = [
-      [Object.assign({}, omega), { servo: 139.058214, betrag: 308.260069, kmh: 2252.989099 }],
-      [Object.assign({ steerCalib: 2.5, steerResponse: 3.0 }, omega), { servo: 276.249568, betrag: 671.713808, kmh: 2253.007064 }],
+      [Object.assign({}, omega), { servo: 140.952063, betrag: 314.834272, kmh: 1510.680251 }],
+      [Object.assign({ steerCalib: 2.5, steerResponse: 3.0 }, omega), { servo: 277.874076, betrag: 684.31507, kmh: 1510.690502 }],
     ];
     const schlecht = [];
     for (const [patch, erwartet] of soll) {
@@ -96751,12 +96765,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const r = await OMEGA_TEST.phaseWahrheitProbe({ takte: 1200, autos: 4 });
     if (!r || !r.zeit || !r.weg) return { skip: true, mass: 'kein Lauf - keine Strecke?' };
     const fehler = [];
-    // v1.3.121: der Betragsfehler des Wegs ist nach der Geschwindigkeitsneuvermessung
-    // (topSpeedKmh 4,0 -> 5,45) leicht schlechter als der Uhr - sein systematischer
-    // Nachlauf waechst mit dem Tempo. Der entscheidende Vorteil bleibt: er klebt nicht
-    // (fror den Linienversatz ein) und deckt die letzte Kachel besser ab. Die Pruefung
-    // fordert darum weiterhin, dass der Weg die Uhr in den KERNkennzahlen schlaegt,
-    // laesst den Betragsfehler aber bis 1,5x zu.
+    // Mit dem Vorgabewert "Innen (gemittelt)" (seit v1.3.127) ist der Betragsfehler des Wegs
+    // etwa so gross wie der der Uhr (0,0706 gegen 0,0705) - kein klarer Sieg mehr, aber auch
+    // keine Verschlechterung. Der entscheidende Vorteil bleibt: er klebt nicht (fror den
+    // Linienversatz ein) und deckt die letzte Kachel besser ab. Die Pruefung fordert darum,
+    // dass der Weg die Uhr in den KERNkennzahlen schlaegt, laesst den Betragsfehler aber bis
+    // 1,5x zu.
     if (!(r.weg.mittelBetrag < r.zeit.mittelBetrag * 1.5)) {
       fehler.push('Betragsfehler Weg ' + r.weg.mittelBetrag
                   + ' nicht besser als Uhr ' + r.zeit.mittelBetrag);
@@ -97984,9 +97998,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (r.tight.enge !== r.tight.haarnadel) {
       fehler.push('Stufe ' + r.tight.enge + ' statt Haarnadel ' + r.tight.haarnadel);
     }
-    // 2. RECHTS HINEIN, LINKS HINAUS - im Lenkbefehl, in dem rechts positiv ist.
-    if (!(r.start > 0.9)) fehler.push('beginnt bei ' + r.start + ' statt ganz rechts');
-    if (!(r.ende < -0.9)) fehler.push('endet bei ' + r.ende + ' statt ganz links');
+    // 2. RECHTS HINEIN, LINKS HINAUS - im Lenkbefehl, in dem rechts positiv ist. Seit
+    //    v1.3.123 begrenzt npcQuerFaktor() die Querlage; "ganz rechts" ist damit dieser
+    //    Faktor, gemessen wird, dass die Engstelle ihn fast ganz erreicht.
+    const qF = npcQuerFaktor();
+    if (!(r.start > qF * 0.9)) fehler.push('beginnt bei ' + r.start + ' statt ganz rechts');
+    if (!(r.ende < -qF * 0.9)) fehler.push('endet bei ' + r.ende + ' statt ganz links');
     // 3. UND SIE STEHT IM BILD. Ohne diese Zeile waere der Test auch gruen, wenn die
     //    Engstelle nur gefahren, aber nicht gezeichnet wuerde.
     // v1.3.15: wie das Originalteil - 11 Querbalken je Engstelle in beiden Stilen, und die
@@ -106723,9 +106740,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       return { skip: true, mass: 'physCurve nicht vorhanden' };
     }
     const ZA = { 50: 1.1, 100: 3.1, 150: 5.4, 200: 8.5 };
-    // v1.3.121: Bremswerte neu gemessen - die Geschwindigkeitsneuvermessung (REAL_SCALE 73,75 -> 50)
-    // haelt die Modellverzoegerung fest, verschiebt aber die angezeigte (skalierte) Bremszeit.
-    const ZB = { 100: 3.16, 150: 4.70, 200: 6.20, 250: 8.40 };
+    const ZB = { 100: 2.1, 150: 3.2, 200: 4.2, 250: 5.6 };
     const c = OMEGA_TEST.physCurve({ marken: [50, 100, 150, 200],
                                      bremsAb: [100, 150, 200, 250] });
     const teile = [], schlecht = [];
@@ -113150,12 +113165,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const lab = sw.closest('.opt-row') && sw.closest('.opt-row').querySelector('.opt-label');
       if (!lab || !lab.querySelector('.wip-tag') || !lab.querySelector('small')) f.push('Schalter ohne WIP oder ohne <small>');
     }
-    // Takt: steigt mit dem Tempo, Grenzen 8..40. v1.3.121: Werte neu gemessen - der Takt
-    // haengt am Modelltempo, und die Geschwindigkeitsneuvermessung (TACHO_SCALE 68,1 -> 50)
-    // hebt die angezeigte Geschwindigkeit fuer dieselbe Modellfahrt an.
+    // Takt: steigt mit dem Tempo, Grenzen 8..40.
     const kmhVon = (anz) => anz / TACHO_SCALE;
     const t40 = vfRandsteinTakt(kmhVon(40)), t120 = vfRandsteinTakt(kmhVon(120));
-    if (!(Math.abs(t40 - 10.9) < 0.5 && Math.abs(t120 - 32.6) < 1 && t120 > t40)) f.push('Takt 40/120 km/h: ' + t40.toFixed(1) + '/' + t120.toFixed(1));
+    if (!(Math.abs(t40 - 8) < 0.5 && Math.abs(t120 - 24) < 1 && t120 > t40)) f.push('Takt 40/120 km/h: ' + t40.toFixed(1) + '/' + t120.toFixed(1));
     if (vfRandsteinTakt(kmhVon(5)) !== 8 || vfRandsteinTakt(kmhVon(400)) !== 40) f.push('Taktgrenzen 8..40 nicht eingehalten');
     if (!(vfRandsteinTakt(kmhVon(80)) > t40 && vfRandsteinTakt(kmhVon(160)) > t120)) f.push('Takt nicht monoton');
     // Menge: 0 ohne Randstein und im Stand; tiefer auf dem Stein und schneller = lauter; Schalter alt = stumm.

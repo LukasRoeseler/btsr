@@ -470,8 +470,8 @@
   // Zielflagge weiter oben (finishRace() ohne Fahrer im Feld).
   function raceMoveErkannt() {
     // v0.9.43: 3 ANGEZEIGTE km/h. Hier stand 3 - verglichen mit speedKmh, und das ist das
-    // MODELLTEMPO (Vollgas 5,45). Die Rennuhr startete also erst bei 75 % der
-    // Hoechstgeschwindigkeit (rund 204 km/h auf dem Tacho); wer das auf einer kurzen Strecke
+    // MODELLTEMPO (Vollgas 4,0). Die Rennuhr startete also erst bei 75 % der
+    // Hoechstgeschwindigkeit (rund 220 km/h auf dem Tacho); wer das auf einer kurzen Strecke
     // nie erreichte, fuhr Runden, die nicht zaehlten - und das Rennen endete nie. GEMELDET:
     // "Ende des Rennens wird immer noch nicht getriggert ... 3 Runden".
     const SCHWELLE_KMH = 3 / REAL_SCALE;
@@ -4686,8 +4686,8 @@
   const PIT_DOUBLE_LIMIT_MS = 4000;
   const PIT_DOUBLE_KMH = 60;
   // Dieselbe Rechnung wie PIT_SPEED_FACTOR, nur mit 60 statt 80: der angezeigte Tacho ist
-  // speedKmh * REAL_SCALE, und topSpeedKmh ist 5,45.
-  const PIT_DOUBLE_SPEED_FACTOR = PIT_DOUBLE_KMH / REAL_SCALE / physEngine.config.topSpeedKmh;
+  // speedKmh * REAL_SCALE, und topSpeedKmh ist 4,0.
+  const PIT_DOUBLE_SPEED_FACTOR = PIT_DOUBLE_KMH / REAL_SCALE / 4.0;
   // Einmal melden und nicht 22 Mal je Sekunde: der Hinweis "neben die Strecke fahren"
   // kommt aus dem Fahrtakt, und ein Hinweis, der den Bildschirm zunagelt, ist kein Hinweis.
   let pitOrtGemeldet = false;
@@ -4695,9 +4695,9 @@
   let pitDoubleArmedUntil = 0;
   let pitMarkerCode = null;
   // 80 km/h on the racing display, the speed a real pit lane limiter holds. The display
-  // reads speedKmh * TACHO_SCALE (50), so 80 / 50 / 5.45 top speed = 0.2936.
+  // reads speedKmh * TACHO_SCALE (68.1), so 80 / 68.1 / 4.0 top speed = 0.2936.
   // v0.9.39: in TACHO-km/h, damit die Box auf dem Tacho 80 zeigt (siehe TACHO_SCALE).
-  const PIT_SPEED_FACTOR = 80 / TACHO_SCALE / physEngine.config.topSpeedKmh;
+  const PIT_SPEED_FACTOR = 80 / TACHO_SCALE / 4.0;
   let pitState = 'off';        // off | limited | servicing
   let pitModus = 'minigame';   // Boxen-Minigame, siehe pitSpielStart()
   let pitSpiel = null;
@@ -6218,7 +6218,7 @@
   let trackTimeOn = 0, trackTimeOff = 0, trackTimeLast = null, trackTimeUiLast = 0;
 
   // ---- Actual ground speed, measured rather than scaled ----
-  // The displayed speed is simulated: internal units times TACHO_SCALE (50, v1.3.121), so
+  // The displayed speed is simulated: internal units times TACHO_SCALE (68.1, v0.9.39), so
   // full throttle reads 272 km/h. It was never checked against the car. Measuring
   // the btsnoop logs says a lap of 3 straights and 8 curves is 4.39 m and takes 7.2 s, i.e.
   // the car really does about 2.2 km/h, and roughly 2 km/h at the moment the display says

@@ -5889,10 +5889,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // der Aussenseite begrenzen ... das Firmware-Update erlaubt den NPCs weit aussen zu fahren,
   // sodass sie nun oefter abfliegen." Anteil der bisherigen Linie (Vorgabe 0,95 = 5 % weniger
   // aussen). Skaliert die Linie, die die NPCs fahren (ghostLineOffset/ghostLineMitDeckel).
+  // v1.3.127: Vorgabe auf 90 % gestellt ("90 % Raum zum Aussenkantenrand").
   function npcQuerFaktor() {
     const s = $('npc-querlage');
-    const v = s ? +s.value : 0.95;
-    return (v >= 0.5 && v <= 1) ? v : 0.95;
+    const v = s ? +s.value : 0.9;
+    return (v >= 0.5 && v <= 1) ? v : 0.9;
   }
   function npcBoxStehen(car) {
     const p = car.ghost && car.ghost.pit;

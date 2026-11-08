@@ -5726,7 +5726,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.3.126</span></span>
+        <span class="foot-ver">v<span id="app-version">1.3.127</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -11263,9 +11263,9 @@
       <div class="opt-row"><div class="opt-label">Höchstgeschwindigkeit (km/h)</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-topspeed-kmh" min="2" max="8" step="0.05" value="5.45">
+          <input type="range" id="setting-topspeed-kmh" min="2" max="8" step="0.5" value="4">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-topspeed-kmh-val">5.45</span>
+          <span class="opt-val" id="setting-topspeed-kmh-val">4.0</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">0 &rarr; 100 km/h (s)<small>Angezeigte km/h. Ein 911 GT3 R braucht rund 3,2 s.</small></div>
         <div class="opt-slider">
@@ -12585,12 +12585,12 @@
       <div class="opt-row"><div class="opt-label">NPC: maximale Querlage
         <small>Wie weit ein NPC auf der Aussenseite einer Kurve fahren darf. Das
           Firmware-Update erlaubt den NPCs, weit aussen zu fahren, sodass sie &ouml;fter abfliegen.
-          Vorgabe 95&nbsp;% der bisherigen Linie &ndash; 5&nbsp;% weniger aussen. 100&nbsp;% ist die
-          alte, volle Linie.</small></div>
+          Vorgabe 90&nbsp;% der bisherigen Linie &ndash; 10&nbsp;% Raum zum Aussenkantenrand.
+          100&nbsp;% ist die alte, volle Linie.</small></div>
         <select id="npc-querlage">
           <option value="1">100&nbsp;%</option>
-          <option value="0.95" selected>95&nbsp;%</option>
-          <option value="0.9">90&nbsp;%</option>
+          <option value="0.95">95&nbsp;%</option>
+          <option value="0.9" selected>90&nbsp;%</option>
           <option value="0.85">85&nbsp;%</option>
           <option value="0.8">80&nbsp;%</option>
         </select></div>
@@ -12666,10 +12666,10 @@
           <button type="button" class="mw-preset" data-linemodel="lateapex">Late Apex</button>
           <button type="button" class="mw-preset" data-linemodel="dreistufig">3-stufig</button>
           <button type="button" class="mw-preset" data-linemodel="mitte">Fahrbahnmitte</button>
-          <button type="button" class="mw-preset" data-linemodel="innen3">Innen (gemittelt)</button>
+          <button type="button" class="mw-preset sel" data-linemodel="innen3">Innen (gemittelt)</button>
           <button type="button" class="mw-preset" data-linemodel="aussenin">Außen-Innen</button>
           <button type="button" class="mw-preset" data-linemodel="luuke">Luuke-Linie</button>
-          <button type="button" class="mw-preset sel" data-linemodel="simulator">SIMULATOR<span class="wip-tag">WIP</span></button>
+          <button type="button" class="mw-preset" data-linemodel="simulator">SIMULATOR<span class="wip-tag">WIP</span></button>
         </div></div>
       <!-- DIE LINIE DIREKT NEBEN DER WAHL. Gemeldet: "ich habe 2 Ideallinie Modi, aber wenn
            ich dazwischen waehle, aendert sich die eingezeichnete Linie nicht." Sie aendert

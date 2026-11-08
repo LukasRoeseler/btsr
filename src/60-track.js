@@ -1671,7 +1671,8 @@
   // Modus ist gut". Zurueck auf Luuke - Innen bleibt waehlbar.
   // v1.0.15 BESTELLT: "Mach die neue Ideallinie zum Default." Bis die Suche fertig ist (wenige
   // Sekunden), faehrt simulatorLinie() die Luuke-Linie.
-  let lineModel = 'simulator';
+  // v1.3.127 BESTELLT: "Innen (gemittelt) als Vorgabe, mit 90 % Raum zum Aussenkantenrand."
+  let lineModel = 'innen3';
 
   // Die gueltigen Modellnamen an EINER Stelle. Vorher stand die Liste als zwei
   // Vergleiche in setLineModel und ein weiteres Mal als Bedingung in buildLine - beim
