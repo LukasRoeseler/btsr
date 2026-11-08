@@ -213,7 +213,7 @@ function communityPost(d) {
       const sh = blattMit(C_BLATT, C_KOPF);
       if (sh.getRange(1, 6).getValue() !== 'preset') sh.getRange(1, 6).setValue('preset');
       const preset = C_PRESETS.indexOf(String(d.preset || '')) >= 0 ? String(d.preset) : 'pro';
-      sh.appendRow([new Date(), id, code, String(d.name || ('Strecke ' + id)).slice(0, 32),
+      sh.appendRow([new Date(), id, code, textSicher(d.name || ('Strecke ' + id), 32),
         String(d.geraet).slice(0, 40), preset]);
       return { ok: true, id: id };
     }
@@ -223,7 +223,7 @@ function communityPost(d) {
       const z = Number(d.zeit_ms);
       if (!isFinite(z) || z < 1000 || z > 3600000) return { ok: false, fehler: 'Zeit unplausibel' };
       const runden = Array.isArray(d.runden_ms) ? d.runden_ms.map(Number).filter((x) => isFinite(x)) : [];
-      blattMit(CZ_BLATT, CZ_KOPF).appendRow([new Date(), id, Math.round(z), String(d.fahrer || '').slice(0, 16),
+      blattMit(CZ_BLATT, CZ_KOPF).appendRow([new Date(), id, Math.round(z), textSicher(d.fahrer, 16),
         String(d.geraet).slice(0, 40), runden.length ? JSON.stringify(runden) : '']);
       // v1.0.21: Spur der schnellsten Runde (die App schickt nur gewertete Runden).
       if (d.spur) {
@@ -342,9 +342,9 @@ function streckenPost(d) {
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
-    stBlatt().appendRow([new Date(), String(d.fahrer || '').slice(0, 16), stSchluessel(code), Math.round(z),
+    stBlatt().appendRow([new Date(), textSicher(d.fahrer, 16), stSchluessel(code), Math.round(z),
       JSON.stringify(r.map(Math.round)), teile.length, String(d.version || '').slice(0, 20), String(d.geraet).slice(0, 40),
-      String(d.auto || '').slice(0, 40), Math.round(quote * 100) / 100, String(d.streckenname || '').slice(0, 32), fg, stCode(teile)]);
+      textSicher(d.auto, 40), Math.round(quote * 100) / 100, textSicher(d.streckenname, 32), fg, stCode(teile)]);
   } finally { lock.releaseLock(); }
   return { ok: true };
 }
@@ -441,11 +441,11 @@ function spurSpeichern(liste, d, rundeMs, minTeilMs) {
     if (String(werte[i][1]) === liste && String(werte[i][2]) === geraet) {
       if (Number(werte[i][4]) <= Math.round(rundeMs)) return '';           // die alte ist schneller
       sh.getRange(i + 1, 1, 1, SP_KOPF.length).setValues([[new Date(), liste, geraet,
-        String(d.fahrer || '').slice(0, 16), Math.round(rundeMs), roh]]);
+        textSicher(d.fahrer, 16), Math.round(rundeMs), roh]]);
       return '';
     }
   }
-  sh.appendRow([new Date(), liste, geraet, String(d.fahrer || '').slice(0, 16), Math.round(rundeMs), roh]);
+  sh.appendRow([new Date(), liste, geraet, textSicher(d.fahrer, 16), Math.round(rundeMs), roh]);
   return '';
 }
 // ?spurliste=<liste>: welche Geraete haben eine Spur (schnellste zuerst). ?spur=<liste>&geraet=<g>:
@@ -496,6 +496,18 @@ const S2_OEFFENTLICH = ['alter', 'geschlecht', 'narq_1', 'narq_2', 'narq_3', 'na
 const S2_MIN_N = 5;
 
 function zahlIn(x, lo, hi) { const n = Number(x); return isFinite(n) && n >= lo && n <= hi ? n : ''; }
+// AUDIT 1.3.120: Formel-Injektion verhindern. Ein fuehrendes =, +, - oder @ (oder Tab/CR) liesse
+// das Sheet die Zelle als Formel rechnen; ein Eingabefeld mit so einem Zeichen wird gekuerzt.
+function textSicher(s, max) {
+  return String(s || '').replace(/^[=+\-@\t\r]/, '').slice(0, max || 200);
+}
+// AUDIT 1.3.120: Der Median der Reaktionszeiten wird auf dem Server neu gerechnet statt dem
+// Telefon geglaubt (dieselbe Politik wie bei den NARQ-Facetten).
+function rtMedianBerechnen(rt) {
+  if (!rt || !rt.length) return '';
+  const s = rt.slice().sort((a, b) => a - b), m = s.length >> 1;
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
 function studiePost(d) {
   if (!d.geraet) return { ok: false, fehler: 'keine Geräte-Kennung' };
   const alter = Number(d.alter);
@@ -521,17 +533,20 @@ function studiePost(d) {
   lock.waitLock(10000);
   try {
     // Die Facettenwerte rechnet der Server selbst nach, statt sie dem Telefon zu glauben.
-    const zeile = [new Date(), String(d.geraet).slice(0, 40), alter, d.geschlecht, String(d.narqVersion || 'S6').slice(0, 8)]
+    // AUDIT 1.3.120: auch rt_median und beste_ms (aus den gewerteten Runden) neu rechnen.
+    const zeile = [new Date(), String(d.geraet).slice(0, 40), alter, d.geschlecht, textSicher(d.narqVersion || 'S6', 8)]
       .concat(narq)
-      .concat([mw(S2_ADM), mw(S2_RIV), selbst, JSON.stringify(rt), Number(d.rt_median) || '',
+      .concat([mw(S2_ADM), mw(S2_RIV), selbst, JSON.stringify(rt), rtMedianBerechnen(rt),
         Math.max(0, Number(d.fruehstarts) || 0), Math.max(0, Number(d.verpasst) || 0),
-        String(d.quelle || '').slice(0, 20), String(d.controller || '').slice(0, 80), String(d.version || '').slice(0, 20),
-        String(d.sprache || '').slice(0, 5),
-        f ? 1 : 0, f && f.gueltig === true ? 1 : 0, f ? String(f.grund || '').slice(0, 60) : '', f ? String(f.preset || '').slice(0, 12) : '',
-        JSON.stringify(runden), f ? zahlIn(f.beste_ms, 500, 600000) : '', f ? zahlIn(f.gesamt_ms, 500, 3600000) : ''])
+        textSicher(d.quelle, 20), textSicher(d.controller, 80), textSicher(d.version, 20),
+        textSicher(d.sprache, 5),
+        f ? 1 : 0, f && f.gueltig === true ? 1 : 0, f ? textSicher(f.grund, 60) : '', f ? textSicher(f.preset, 12) : '',
+        JSON.stringify(runden), f ? (runden.length ? Math.min.apply(null, runden) : zahlIn(f.beste_ms, 500, 600000)) : '',
+        f ? zahlIn(f.gesamt_ms, 500, 3600000) : ''])
       .concat(S2_STIL.map((k) => (f && stil[k] !== null && stil[k] !== undefined) ? zahlIn(stil[k], grenzen[k][0], grenzen[k][1]) : ''))
-      .concat([v ? 1 : 0, v && v.gueltig === true ? 1 : 0, v ? String(v.grund || '').slice(0, 60) : '', JSON.stringify(vRunden),
-        v ? zahlIn(v.beste_ms, 500, 600000) : '', v ? zahlIn(v.gesamt_ms, 500, 3600000) : ''])
+      .concat([v ? 1 : 0, v && v.gueltig === true ? 1 : 0, v ? textSicher(v.grund, 60) : '', JSON.stringify(vRunden),
+        v ? (vRunden.length ? Math.min.apply(null, vRunden) : zahlIn(v.beste_ms, 500, 600000)) : '',
+        v ? zahlIn(v.gesamt_ms, 500, 3600000) : ''])
       .concat(S2_STIL.map((k) => (v && vStil[k] !== null && vStil[k] !== undefined) ? zahlIn(vStil[k], grenzen[k][0], grenzen[k][1]) : ''))
       .concat([f ? (f.spiegel === true ? 1 : 0) : '', v ? (v.spiegel === true ? 1 : 0) : '']);
     const blatt = blattMit(S2_BLATT, S2_KOPF);
@@ -572,14 +587,21 @@ function pearson(paare) {
 }
 function studieMitUeberschaetzung(zeilen) {
   // Selbstueberschaetzung: Selbsteinschaetzung (1-7, als Anteil 0-1) minus Leistungsrang unter allen
-  // gueltigen Fahrten (schnellste beste Runde = 1, langsamste = 0).
+  // gueltigen Fahrten (schnellste beste Runde = 1, langsamste = 0). AUDIT 1.3.120: bei gleicher
+  // Bestzeit der Durchschnittsrang (wie tools/studie_analyse.py), nicht der erste Treffer.
   const mitZeit = zeilen.filter((o) => Number(o.fahrt_gueltig) === 1 && studieZahl(o.beste_ms));
   const sortiert = mitZeit.map((o) => Number(o.beste_ms)).sort((a, b) => a - b);
+  const rangVon = {};
+  sortiert.forEach((v, idx) => {
+    if (rangVon[v] === undefined) rangVon[v] = { sum: idx + 1, n: 1 };
+    else { rangVon[v].sum += idx + 1; rangVon[v].n++; }
+  });
+  Object.keys(rangVon).forEach((v) => { rangVon[v] = rangVon[v].sum / rangVon[v].n; });
   zeilen.forEach((o) => {
     o.ueberschaetzung = null;
     if (Number(o.fahrt_gueltig) !== 1 || !studieZahl(o.beste_ms) || sortiert.length < 2) return;
-    const rang = sortiert.indexOf(Number(o.beste_ms));
-    const leistung = 1 - rang / (sortiert.length - 1);
+    const rang = rangVon[Number(o.beste_ms)];
+    const leistung = 1 - (rang - 1) / (sortiert.length - 1);
     o.ueberschaetzung = (Number(o.selbst) - 1) / 6 - leistung;
   });
   return zeilen;
@@ -619,6 +641,25 @@ function studieDatenOeffentlich() {
     const t = zeilen[i]; zeilen[i] = zeilen[j]; zeilen[j] = t;
   }
   return { ok: true, n: zeilen.length, spalten: S2_OEFFENTLICH, daten: zeilen };
+}
+// AUDIT 1.3.120: Einwilligungstext verspricht "Mit deiner Geraetekennung kannst du die Loeschung
+// verlangen" - dieser Abruf loescht alle Teilnahmen dieses Geraets aus dem Studienblatt. Solange
+// die Daten noch nicht anonymisiert veroeffentlicht sind.
+function studieLoeschen(geraet) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss ? ss.getSheetByName(S2_BLATT) : null;
+  if (!sh) return { ok: false, fehler: 'keine Daten' };
+  const g = String(geraet || '').slice(0, 40);
+  if (!g) return { ok: false, fehler: 'keine Geräte-Kennung' };
+  const werte = sh.getDataRange().getValues();
+  if (!werte.length) return { ok: true, geloescht: 0 };
+  const gi = werte[0].map(String).indexOf('geraet');
+  if (gi < 0) return { ok: false, fehler: 'Spalte fehlt' };
+  let geloescht = 0;
+  for (let i = werte.length - 1; i >= 1; i--) {
+    if (String(werte[i][gi] || '') === g) { sh.deleteRow(i + 1); geloescht++; }
+  }
+  return { ok: true, geloescht: geloescht };
 }
 
 function doPost(e) {
@@ -668,8 +709,8 @@ function doPost(e) {
       if (name === 'preset') return d.preset;
       if (name === 'zeit_ms') return Math.round(d.zeit_ms);
       if (name === 'runden_ms') return JSON.stringify(d.runden_ms || []);
-      if (name === 'auto') return String(d.auto || '').slice(0, 40);
-      if (name === 'fahrer') return String(d.fahrer || '').slice(0, 16);
+      if (name === 'auto') return textSicher(d.auto, 40);
+      if (name === 'fahrer') return textSicher(d.fahrer, 16);
       if (name === 'geraet') return String(d.geraet).slice(0, 40);
       if (name === 'version') return String(d.version || '').slice(0, 20);
       return '';
@@ -746,6 +787,7 @@ function doGet(e) {
   // v1.1.3: Studie nur zusammengefasst oder anonymisiert (siehe studieZusammenfassung).
   if (p.studie === 'zusammenfassung') return antwort(studieZusammenfassung());
   if (p.studie === 'daten') return antwort(studieDatenOeffentlich());
+  if (p.studie === 'loeschen') return antwort(studieLoeschen(String(p.geraet || '')));
   if (p.spurliste || p.spur) return antwort(spurGet(p));
   const sp = spalten();
   const werte = blatt().getDataRange().getValues().slice(1);

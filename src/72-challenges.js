@@ -1507,8 +1507,13 @@
     // v1.1.3: die Studienfahrt geht nur an die Studie (kein Speichern als Challenge-Zeit, kein Upload).
     if (def.studie) {
       chSpiegelSetzen(false);
-      const stil = typeof fahrstilWerte === 'function' ? fahrstilWerte(rundenMs) : null;
-      if (typeof studieFahrtFertig === 'function') studieFahrtFertig(erg, stil);
+      // AUDIT 1.3.120: Nur gewertete Runden (Teilepruefung + Mindestzeit) in die Studienfahrt.
+      // Eine zu schnelle oder abgekuerzte Runde (Teile fehlen) stuerzt die Bestzeit und die
+      // Streuung, obwohl sie nicht zaehlt - und verfaelscht H4 und H5 der Studie.
+      const minMs = chMinRundeMs(def);
+      const valide = rundenMs.filter((ms, i) => (lauf.pruefung ? !!(lauf.pruefung[i] && lauf.pruefung[i].ok) : true) && ms >= minMs);
+      const stil = typeof fahrstilWerte === 'function' ? fahrstilWerte(valide) : null;
+      if (typeof studieFahrtFertig === 'function') studieFahrtFertig(Object.assign({}, erg, { runden: valide }), stil);
       chZeichneDetail();
       return true;
     }
