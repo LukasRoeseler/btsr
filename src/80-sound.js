@@ -716,7 +716,7 @@
   // Akku: BESTELLT "Akku-Ansage < 25 %" - eine eigene Schwelle, nicht die 10 % oben.
   const AKKU_SCHWELLE = 0.25;
   const AKKU_HYSTERESE = 0.32;
-  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false, status: true };
+  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false, status: true, meister: true };
   const ansageLatch = { damage: false, fuel: false, tyre: false, rain: null, battery: false };
   // JE Auto ein Latch fuer die Akku-Meldung: jedes Auto meldet unter 25 % einmal, erst nach
   // der Erholung wieder scharf. Ein gemeinsames Latch wuerde nur das ERSTE Auto melden.
@@ -981,6 +981,15 @@
       if (pct !== null) s += (de ? ', ' : ', ') + pct + (de ? ' Prozent' : ' percent');
       teile.push(s);
     }
+    // v1.3.129: ohne jeden Baustein blieb L3 stumm (kein Inhalt gewaehlt oder noch keine
+    // Daten, etwa vor der ersten Rundenzeit). Damit der Druck immer eine Antwort gibt,
+    // faellt er auf den Stand zurueck.
+    if (!teile.length) {
+      const rs = (typeof raceState !== 'undefined') ? raceState : null;
+      if (rs === 'racing' || rs === 'finishing') teile.push(de ? 'Rennen läuft' : 'Race running');
+      else if (rs === 'finished') teile.push(de ? 'Rennen beendet' : 'Race finished');
+      else teile.push(de ? 'Keine Daten' : 'No data');
+    }
     return teile.join('. ') + (teile.length ? '.' : '');
   }
   function statusAnsageAusloesen() {
@@ -997,6 +1006,7 @@
                              'setting-announce-fuel': 'fuel', 'setting-announce-tyre': 'tyre',
                              'setting-announce-rain': 'rain', 'setting-announce-pit': 'pit',
                              'setting-announce-battery': 'battery',
+                             'setting-announce-meister': 'meister',
                              'setting-status-announce': 'status' };
   Object.keys(ANSAGE_KAESTCHEN).forEach((id) => {
     const el = $(id);

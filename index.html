@@ -5726,7 +5726,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.3.128</span></span>
+        <span class="foot-ver">v<span id="app-version">1.3.129</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -12186,6 +12186,8 @@
         <label class="tgl"><input type="checkbox" id="setting-announce-pit" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Akku ansagen<small>Einmal, wenn der Akku unter 25&nbsp;% f&auml;llt. Erst nach dem Laden wieder scharf.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-battery"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Meisterschaft ansagen<small>Nach jedem Event, welches Event es war und was als N&auml;chstes kommt; nach dem letzten, dass die Meisterschaft vorbei ist und wer gesamt gewonnen hat.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-meister" checked><span></span></label></div>
       <div class="opt-head">L3-Statusansage</div>
       <div class="opt-row"><div class="opt-label">L3-Statusansage <span class="wip-tag">WIP</span>
         <small>Ein Druck auf L3 (linken Stick) sagt den aktuellen Stand an. Inhalt darunter w&auml;hlbar; die Bestzeit ist die Vorgabe.</small></div>
@@ -56242,6 +56244,24 @@
     lauf.fertig = lauf.idx >= meister.plan.events.length;
     meisterSpeichern();
     if (lauf.fertig && meisterMpAndere().length) meisterMpEndstandSenden();
+    // v1.3.129: Ansage am Event-Ende - welches Event es war und was als Naechstes kommt,
+    // bzw. ganz am Ende, dass die Meisterschaft vorbei ist und wer gesamt gewonnen hat.
+    if (typeof ansage === 'function' && !abgebrochen) {
+      const de = lang === 'de';
+      const gesamt = meister.plan.events.length;
+      if (lauf.fertig) {
+        const top = meisterTabelle(lauf)[0];
+        if (top) ansage('meister', (de ? 'Meisterschaft vorbei. Gewonnen hat ' : 'Championship over. ')
+          + top.name + (de ? ' mit ' : ' with ') + top.pkt + (de ? ' Punkten.' : ' points.'));
+        else ansage('meister', de ? 'Meisterschaft vorbei.' : 'Championship over.');
+      } else {
+        const naechstes = meister.plan.events[lauf.idx];
+        const nf = naechstes ? meisterFormat(naechstes) : null;
+        ansage('meister', (de ? 'Event ' : 'Event ') + (idx + 1) + (de ? ' von ' : ' of ') + gesamt
+          + (de ? ' beendet. Nächstes Event: ' : ' finished. Next event: ')
+          + (nf ? nf.name : (de ? '—' : '—')));
+      }
+    }
     // Erst das Rennergebnis sehen lassen, dann den Stand.
     setTimeout(() => meisterOeffnen('stand'), 2500);
   }
@@ -58136,7 +58156,7 @@
   // Akku: BESTELLT "Akku-Ansage < 25 %" - eine eigene Schwelle, nicht die 10 % oben.
   const AKKU_SCHWELLE = 0.25;
   const AKKU_HYSTERESE = 0.32;
-  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false, status: true };
+  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false, status: true, meister: true };
   const ansageLatch = { damage: false, fuel: false, tyre: false, rain: null, battery: false };
   // JE Auto ein Latch fuer die Akku-Meldung: jedes Auto meldet unter 25 % einmal, erst nach
   // der Erholung wieder scharf. Ein gemeinsames Latch wuerde nur das ERSTE Auto melden.
@@ -58401,6 +58421,15 @@
       if (pct !== null) s += (de ? ', ' : ', ') + pct + (de ? ' Prozent' : ' percent');
       teile.push(s);
     }
+    // v1.3.129: ohne jeden Baustein blieb L3 stumm (kein Inhalt gewaehlt oder noch keine
+    // Daten, etwa vor der ersten Rundenzeit). Damit der Druck immer eine Antwort gibt,
+    // faellt er auf den Stand zurueck.
+    if (!teile.length) {
+      const rs = (typeof raceState !== 'undefined') ? raceState : null;
+      if (rs === 'racing' || rs === 'finishing') teile.push(de ? 'Rennen läuft' : 'Race running');
+      else if (rs === 'finished') teile.push(de ? 'Rennen beendet' : 'Race finished');
+      else teile.push(de ? 'Keine Daten' : 'No data');
+    }
     return teile.join('. ') + (teile.length ? '.' : '');
   }
   function statusAnsageAusloesen() {
@@ -58417,6 +58446,7 @@
                              'setting-announce-fuel': 'fuel', 'setting-announce-tyre': 'tyre',
                              'setting-announce-rain': 'rain', 'setting-announce-pit': 'pit',
                              'setting-announce-battery': 'battery',
+                             'setting-announce-meister': 'meister',
                              'setting-status-announce': 'status' };
   Object.keys(ANSAGE_KAESTCHEN).forEach((id) => {
     const el = $(id);
@@ -63134,7 +63164,11 @@
     }
     const btn = pad.buttons[binding.index];
     if (!btn) return 0;
-    return btn.value ?? (btn.pressed ? 1 : 0);
+    // v1.3.129: manche Controller (v.a. Android-WebView) melden L3/R3 als gedrueckt,
+    // aber mit value 0. `value ?? pressed` lasse dann 0 durch und der Druck ginge
+    // verloren - die L3-Statusansage kam nie. Deshalb: gedrueckt zaehlt immer,
+    // value (analog, z.B. Trigger) bleibt sonst erhalten.
+    return (btn.pressed || btn.value > 0) ? (btn.value || 1) : 0;
   }
 
   // Gamepad sampling MUST run on requestAnimationFrame. Chrome refreshes the gamepad

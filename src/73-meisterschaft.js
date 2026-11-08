@@ -460,6 +460,24 @@
     lauf.fertig = lauf.idx >= meister.plan.events.length;
     meisterSpeichern();
     if (lauf.fertig && meisterMpAndere().length) meisterMpEndstandSenden();
+    // v1.3.129: Ansage am Event-Ende - welches Event es war und was als Naechstes kommt,
+    // bzw. ganz am Ende, dass die Meisterschaft vorbei ist und wer gesamt gewonnen hat.
+    if (typeof ansage === 'function' && !abgebrochen) {
+      const de = lang === 'de';
+      const gesamt = meister.plan.events.length;
+      if (lauf.fertig) {
+        const top = meisterTabelle(lauf)[0];
+        if (top) ansage('meister', (de ? 'Meisterschaft vorbei. Gewonnen hat ' : 'Championship over. ')
+          + top.name + (de ? ' mit ' : ' with ') + top.pkt + (de ? ' Punkten.' : ' points.'));
+        else ansage('meister', de ? 'Meisterschaft vorbei.' : 'Championship over.');
+      } else {
+        const naechstes = meister.plan.events[lauf.idx];
+        const nf = naechstes ? meisterFormat(naechstes) : null;
+        ansage('meister', (de ? 'Event ' : 'Event ') + (idx + 1) + (de ? ' von ' : ' of ') + gesamt
+          + (de ? ' beendet. Nächstes Event: ' : ' finished. Next event: ')
+          + (nf ? nf.name : (de ? '—' : '—')));
+      }
+    }
     // Erst das Rennergebnis sehen lassen, dann den Stand.
     setTimeout(() => meisterOeffnen('stand'), 2500);
   }

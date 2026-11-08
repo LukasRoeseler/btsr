@@ -826,7 +826,11 @@
     }
     const btn = pad.buttons[binding.index];
     if (!btn) return 0;
-    return btn.value ?? (btn.pressed ? 1 : 0);
+    // v1.3.129: manche Controller (v.a. Android-WebView) melden L3/R3 als gedrueckt,
+    // aber mit value 0. `value ?? pressed` lasse dann 0 durch und der Druck ginge
+    // verloren - die L3-Statusansage kam nie. Deshalb: gedrueckt zaehlt immer,
+    // value (analog, z.B. Trigger) bleibt sonst erhalten.
+    return (btn.pressed || btn.value > 0) ? (btn.value || 1) : 0;
   }
 
   // Gamepad sampling MUST run on requestAnimationFrame. Chrome refreshes the gamepad
