@@ -906,6 +906,13 @@
   // v1.3.94: Kalibrierung nach unten - die virtuellen NPCs waren fuer die meisten zu schnell. 0,85
   // heisst 15 % langsamer als die Garagenstufe 1 (wie ein frischer, vorsichtiger Fahrer).
   const VF_NPC_KALIBRIER = 0.85;
+  // v1.3.116: maximale NPC-Aussenlage. BESTELLT: "Bei allen NPC-Linien ca. 5 % der Aussenseite
+  // begrenzen ... das Firmware-Update erlaubt den NPCs weit aussen zu fahren, sodass sie nun
+  // oefter abfliegen." Anteil des bisherigen Querversatzes (Vorgabe 0,95 = 5 % weniger aussen).
+  const VF_NPC_AUSSEN_STORE = 'omegasim-vf-npc-aussen';
+  function vfNpcAussen() {
+    try { const v = +localStorage.getItem(VF_NPC_AUSSEN_STORE); return (v >= 0.5 && v <= 1) ? v : 0.95; } catch (e) { return 0.95; }
+  }
   // v1.3.94 Startaufstellung: ein Feld hinter der Startlinie, zwei Reihen (links/rechts), Abstand
   // zwischen den Reihen. Die Autos spawnen direkt auf ihren Startplaetzen statt verstreut.
   const VF_GRID_REIHE = Math.max(2, Math.round((typeof TRACK_SAMPLES_PER_TILE !== 'undefined' ? TRACK_SAMPLES_PER_TILE : 8) * 1.5));
@@ -1158,7 +1165,7 @@
       const startIdx = vfGridKachel(start, reihe);
       const npc = {
         auto, modell: null, P: null, idx: startIdx, s: null, kmh: 0, motor: vfNpcMotor(), bahn: null,
-        offset: (k % 2 === 0) ? 3.0 : -3.0,
+        offset: (k % 2 === 0) ? 3.0 * vfNpcAussen() : -3.0 * vfNpcAussen(),
         faktor: 0.97 + 0.03 * k,
         x: 0, y: 0, h: 0, raddreh: 0, lenkWinkel: 0, ay: 0, ax: 0,
         feder: { z: 0, vz: 0, th: 0, vth: 0, ph: 0, vph: 0 },
@@ -2655,6 +2662,15 @@
       renderGarage();
     };
     rechts.appendChild(garWertZeile(t('NPCs'), nNpc === 0 ? t('Aus') : String(nNpc), () => npcWahl(-1), () => npcWahl(1)));
+    // v1.3.116: maximale NPC-Aussenlage - weniger Querversatz, damit die NPCs nicht so weit aussen fahren.
+    const nAussen = Math.round(vfNpcAussen() * 100);
+    const aussenWahl = (dd) => {
+      try { localStorage.setItem(VF_NPC_AUSSEN_STORE, String(Math.round(Math.max(0.5, Math.min(1, vfNpcAussen() + (dd > 0 ? 0.05 : -0.05))) * 100) / 100)); } catch (e) { /* egal */ }
+      renderGarage();
+    };
+    const aussenZeile = garWertZeile(t('NPC-Außenlage'), nAussen + ' %', () => aussenWahl(-1), () => aussenWahl(1));
+    aussenZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
+    rechts.appendChild(aussenZeile);
     if (autos[ja].v !== 'kasten') {
       const jf = VF_FEDER_WERTE.indexOf(vfFederSicht());
       const federWahl = (dd) => {
