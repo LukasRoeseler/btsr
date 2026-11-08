@@ -2383,6 +2383,105 @@
     }
   }
 
+  // ---- Beruehrungs-Steuerung (Touch, v1.3.122) -----------------------------------------------
+  // BESTELLT: "add touch controls as an option (ideally auto-selected when no gamepad is connected
+  // and user is on mobile - on PC arrows are much better on the keyboard so no touch needed)."
+  // Links lenken (horizontaler Joystick), rechts Gas/Bremse (vertikal: oben Gas, unten Bremse). Beide
+  // schreiben ueber die Schiedsstelle (applySteerInput/applyThrottleInput) mit der eigenen Quelle
+  // SRC.TOUCH - so koennen sich Tastatur, Gamepad und Touch nicht gegenseitig ueberschreiben, und die
+  // Freigabe nach einer Pause (rennPause) gilt fuer alle Quellen gleich.
+  const VF_TOUCH_STORE = 'omegasim-vf-touch';   // 'an'/'aus' = von Hand, sonst automatisch
+  function vfTouchGeraet() {
+    return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  }
+  function vfTouchPadAn() {
+    try { return !!(navigator.getGamepads && Array.from(navigator.getGamepads()).some((p) => p)); }
+    catch (e) { return false; }
+  }
+  // Soll die Beruehrungs-Steuerung sichtbar sein? Automatisch auf Touch-Geraeten ohne Gamepad; ein
+  // manueller Schalter (Knopf "Steuerung") kann das ueberschreiben.
+  function vfTouchSollAn() {
+    if (!vfTouchGeraet()) return false;
+    let manuell = null;
+    try { manuell = localStorage.getItem(VF_TOUCH_STORE); } catch (e) { /* privat */ }
+    if (manuell === 'an') return true;
+    if (manuell === 'aus') return false;
+    return !vfTouchPadAn();
+  }
+  function vfTouchElement() { return VF.schicht ? VF.schicht.querySelector('.vf-touch') : null; }
+  function vfTouchAnzeigen(an) {
+    const el = vfTouchElement();
+    if (el) el.hidden = !an;
+    const kn = VF.schicht ? VF.schicht.querySelector('[data-vf="touch"]') : null;
+    if (kn) kn.classList.toggle('vf-an', an);
+  }
+  function vfTouchAktualisieren() {
+    const kn = VF.schicht ? VF.schicht.querySelector('[data-vf="touch"]') : null;
+    if (kn) kn.hidden = !vfTouchGeraet();   // den Knopf nur auf Touch-Geraeten zeigen
+    vfTouchAnzeigen(vfTouchSollAn());
+  }
+  function vfTouchUmschalten() {
+    const an = vfTouchSollAn();
+    try { localStorage.setItem(VF_TOUCH_STORE, an ? 'aus' : 'an'); } catch (e) { /* privat */ }
+    vfTouchAktualisieren();
+  }
+  // Zeigerzustand je Steuerelement (je ein Zeiger, damit zwei Finger sich nicht stoeren).
+  function vfTouchBauen() {
+    const el = vfTouchElement();
+    if (!el) return;
+    const lenk = el.querySelector('.vf-touch-lenk');
+    const gas = el.querySelector('.vf-touch-gas');
+    if (lenk) {
+      let zeiger = null;
+      const bewegen = (e) => {
+        const rect = lenk.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2, r = rect.width / 2;
+        const dx = Math.max(-1, Math.min(1, (e.clientX - cx) / r));
+        applySteerInput(SRC.TOUCH, dx);
+        const kn = lenk.querySelector('.vf-touch-knauf');
+        if (kn) kn.style.transform = 'translateX(' + (dx * r * 0.55) + 'px)';
+      };
+      const los = (e) => {
+        if (zeiger === null || (e.pointerId !== undefined && e.pointerId !== zeiger)) return;
+        zeiger = null;
+        releaseSteerInput(SRC.TOUCH);
+        const kn = lenk.querySelector('.vf-touch-knauf');
+        if (kn) kn.style.transform = '';
+      };
+      lenk.addEventListener('pointerdown', (e) => { zeiger = e.pointerId; try { lenk.setPointerCapture(e.pointerId); } catch (err) { /* egal */ } bewegen(e); e.preventDefault(); });
+      lenk.addEventListener('pointermove', (e) => { if (zeiger !== null && e.pointerId === zeiger) bewegen(e); });
+      lenk.addEventListener('pointerup', los);
+      lenk.addEventListener('pointercancel', los);
+    }
+    if (gas) {
+      let zeiger = null;
+      const bewegen = (e) => {
+        const rect = gas.getBoundingClientRect();
+        const cy = rect.top + rect.height / 2, r = rect.height / 2;
+        const dy = Math.max(-1, Math.min(1, (e.clientY - cy) / r));
+        applyThrottleInput(SRC.TOUCH, -dy);   // oben = Gas (+), unten = Bremse (-)
+        const kn = gas.querySelector('.vf-touch-knauf');
+        if (kn) kn.style.transform = 'translateY(' + (dy * r * 0.55) + 'px)';
+      };
+      const los = (e) => {
+        if (zeiger === null || (e.pointerId !== undefined && e.pointerId !== zeiger)) return;
+        zeiger = null;
+        releaseThrottleInput(SRC.TOUCH);
+        const kn = gas.querySelector('.vf-touch-knauf');
+        if (kn) kn.style.transform = '';
+      };
+      gas.addEventListener('pointerdown', (e) => { zeiger = e.pointerId; try { gas.setPointerCapture(e.pointerId); } catch (err) { /* egal */ } bewegen(e); e.preventDefault(); });
+      gas.addEventListener('pointermove', (e) => { if (zeiger !== null && e.pointerId === zeiger) bewegen(e); });
+      gas.addEventListener('pointerup', los);
+      gas.addEventListener('pointercancel', los);
+    }
+    vfTouchAktualisieren();
+  }
+  // Aendert sich das Gamepad waehrend der Fahrt (angeschlossen/abgesteckt), zeigt sich die
+  // Beruehrungs-Steuerung neu an bzw. verschwindet.
+  window.addEventListener('gamepadconnected', vfTouchAktualisieren);
+  window.addEventListener('gamepaddisconnected', vfTouchAktualisieren);
+
   // ---- Starten und Beenden ------------------------------------------------------------------
   // opts.tiles: diese Strecke statt der des Editors (die Studie faehrt Homington), opts.studie: die
   // Fahrt gehoert der Studie (beim Beenden nicht in die Garage). true = gestartet.
@@ -2416,10 +2515,12 @@
       + '<div class="vf-acc-werte"><div class="vf-acc-wert"><b class="vf-tempo"></b>' + lbl('km/h') + '</div>'
       + '<b class="vf-gang"></b><div class="vf-acc-wert"><b class="vf-rpm"></b>' + lbl('1/min') + '</div></div></div>'
       + '<div class="vf-kachel vf-acc-tank">' + lbl(t('Tank')) + '<b class="vf-tank"></b><i class="vf-tank-bar"><i></i></i></div></div>'
-      + '<div class="vf-knoepfe"><button type="button" data-vf="box">' + t('Box') + '</button><button type="button" data-vf="flag">' + t('Gelbe Flagge') + '</button><button type="button" data-vf="licht">' + t('Licht') + '</button><button type="button" data-vf="reset">' + t('Zurücksetzen') + '</button>'
+      + '<div class="vf-knoepfe"><button type="button" data-vf="box">' + t('Box') + '</button><button type="button" data-vf="flag">' + t('Gelbe Flagge') + '</button><button type="button" data-vf="licht">' + t('Licht') + '</button><button type="button" data-vf="kam">' + t('Kamera') + '</button><button type="button" data-vf="reset">' + t('Zurücksetzen') + '</button><button type="button" data-vf="touch" hidden>' + t('Steuerung') + '</button>'
       + '<button type="button" data-vf="zu" aria-label="' + t('Beenden') + '">&#10005;</button></div>'
       + '<span class="vf-kamfrei" hidden data-i18n-skip>' + t('Kamera frei') + ' · R3 / V: ' + t('Standard') + ' <span class="wip-tag">WIP</span></span>'
-      + '<span class="vf-wip">' + t('Virtuell') + ' <span class="wip-tag">WIP</span></span>';
+      + '<span class="vf-wip">' + t('Virtuell') + ' <span class="wip-tag">WIP</span></span>'
+      + '<div class="vf-touch" hidden><div class="vf-touch-lenk"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis">' + t('Lenken') + '</span></div>'
+      + '<div class="vf-touch-gas"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis vf-touch-gas-oben">' + t('Gas') + '</span><span class="vf-touch-hinweis vf-touch-gas-unten">' + t('Bremse') + '</span></div></div>';
     document.body.appendChild(schicht);
     const cv = schicht.querySelector('canvas');
     const gl = cv.getContext('webgl', { antialias: true }) || cv.getContext('experimental-webgl');
@@ -2444,6 +2545,7 @@
     }
     vfHudBauen(schicht);
     vfDrehNull(); VF.stick = null; VF.tasten = {};
+    vfTouchBauen();   // v1.3.122: Beruehrungs-Steuerung (Touch), falls Geraet und kein Gamepad
     VF.splits = null; VF.besteSplits = null;
     VF.tiles = tiles;
     VF.pts = trackCenterline(tiles);
@@ -2499,6 +2601,8 @@
       if (!b) return;
       if (b.dataset.vf === 'zu') virtuellBeenden();
       else if (b.dataset.vf === 'reset') vfZuruecksetzen();
+      else if (b.dataset.vf === 'kam') vfKameraWechseln();
+      else if (b.dataset.vf === 'touch') vfTouchUmschalten();
       else if (b.dataset.vf === 'box') {
         if (VF.modus === 'derby') showHudToast(t('Derby: kein Boxenstopp'));
         else if (typeof requestPitStop === 'function') { requestPitStop(); if (typeof pitState !== 'undefined' && pitState === 'limited') showHudToast(t('Boxenstopp: anhalten')); }

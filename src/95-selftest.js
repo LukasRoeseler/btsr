@@ -17836,6 +17836,30 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'm:ss.mmm abgeschnitten, Delta +/-, Reifen/Tank/Drehzahl gesetzt, zweites Bild ohne DOM-Arbeit' };
   });
 
+  // v1.3.122: Kamera- und Steuerungs-Knopf der virtuellen Fahrt, Beruehrungs-Steuerung (Touch).
+  stAdd('Virtuell v1.3.122: Kamera-Knopf, Steuerungs-Knopf und Beruehrungs-Steuerung vorhanden', () => {
+    const f = [];
+    // Der Knoepfe-Bereich der virtuellen Fahrt traegt den Kamera- und den Steuerungs-Knopf.
+    const kasten = document.createElement('div');
+    kasten.innerHTML = '<div class="vf-knoepfe"><button type="button" data-vf="kam"></button><button type="button" data-vf="touch"></button></div>';
+    if (!kasten.querySelector('[data-vf="kam"]')) f.push('Kamera-Knopf fehlt');
+    if (!kasten.querySelector('[data-vf="touch"]')) f.push('Steuerungs-Knopf fehlt');
+    // Die Beruehrungs-Steuerung hat eine eigene Quelle in der Schiedsstelle.
+    if (!SRC || !SRC.TOUCH) f.push('SRC.TOUCH fehlt');
+    if (typeof vfTouchGeraet !== 'function' || typeof vfTouchSollAn !== 'function') f.push('Touch-Funktionen fehlen');
+    try { if (typeof vfTouchGeraet() !== 'boolean' || typeof vfTouchSollAn() !== 'boolean') f.push('Touch-Abfragen liefern kein Boolean'); }
+    catch (e) { f.push('Touch-Abfrage: ' + e.message); }
+    // Aufbauen wirft nicht, und die Steuerung bleibt im Desktop-Kontext verborgen.
+    const el = document.createElement('div');
+    el.className = 'vf-touch';
+    el.innerHTML = '<div class="vf-touch-lenk"><div class="vf-touch-knauf"></div></div><div class="vf-touch-gas"><div class="vf-touch-knauf"></div></div>';
+    document.body.appendChild(el);
+    const vorher = VF.schicht; VF.schicht = el;
+    try { vfTouchBauen(); } catch (e) { f.push('vfTouchBauen: ' + e.message); }
+    finally { VF.schicht = vorher; el.remove(); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Kamera- und Steuerungs-Knopf da, SRC.TOUCH, Booleans ok, Touch-Bauen wirft nicht' };
+  });
+
   stAdd('Virtuell v1.2.32: Kartenauto bleibt unter der 3D-Schicht verborgen, Silhouette an Ort, Skala und Drehung', () => {
     const f = [];
     const r = renderTrackPreview(codeToTrack('SG3R2G3R2').tiles, null, { detailed: true, cars: [] });

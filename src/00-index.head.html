@@ -3894,7 +3894,7 @@
   .vf-tank-bar { display: block; width: 100%; height: .35em; background: rgba(255,255,255,.13); }
   .vf-tank-bar > i { display: block; height: 100%; background: var(--vf-linie); transform-origin: 0 50%; }
   /* Knoepfe oben rechts im selben Stil */
-  .vf-knoepfe { position: absolute; right: max(8px, env(safe-area-inset-right)); top: max(8px, env(safe-area-inset-top)); display: flex; gap: 3px; }
+  .vf-knoepfe { position: absolute; right: max(8px, env(safe-area-inset-right)); top: max(8px, env(safe-area-inset-top)); display: flex; gap: 3px; flex-wrap: wrap; justify-content: flex-end; }
   .vf-knoepfe button { background: var(--vf-bg); color: #f3f4f6; border: 0; border-top: 2px solid var(--vf-linie); border-radius: 0;
     font-family: var(--k-font); font-size: calc(var(--vf-s) * .72); font-weight: 700; text-transform: uppercase; letter-spacing: .12em;
     padding: .55em 1em; min-height: 2.6em; min-width: 2.6em; cursor: pointer; }
@@ -3906,6 +3906,37 @@
   .vf-wip { position: absolute; left: max(8px, env(safe-area-inset-left)); bottom: max(8px, env(safe-area-inset-bottom));
     background: var(--vf-bg); color: var(--vf-dim); font-size: calc(var(--vf-s) * .62); font-weight: 700; text-transform: uppercase;
     letter-spacing: .12em; padding: .3em .6em; }
+  /* v1.3.122: Beruehrungs-Steuerung (Touch) fuer die virtuelle Fahrt. Links lenken, rechts Gas/Bremse -
+     oben Gas, unten Bremse. Beide analog wie Stick und Pedal im Cockpit. Erscheint nur auf Touch-
+     Geraeten ohne Gamepad (siehe vfTouch in 60d-virtuell.js); ueber den Knopf "Steuerung" oben rechts
+     laesst sie sich auch von Hand an-/ausschalten. */
+  .vf-touch { position: absolute; inset: 0; pointer-events: none; }
+  .vf-touch[hidden] { display: none; }
+  .vf-touch-lenk { position: absolute; left: max(12px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom));
+    width: min(34vw, 38vh, 190px); height: min(34vw, 38vh, 190px); border-radius: 50%;
+    background: rgba(8,10,14,.5); border: 2px solid var(--vf-linie); touch-action: none; pointer-events: auto;
+    display: grid; place-items: center; }
+  .vf-touch-lenk::before { content: ""; position: absolute; inset: 50% auto 0 50%; width: 1px; height: 50%;
+    background: rgba(255,255,255,.12); transform: translateX(-50%); }
+  .vf-touch-lenk::after { content: ""; position: absolute; inset: 0 50% 0 auto; width: 50%; height: 1px;
+    background: rgba(255,255,255,.12); transform: translateY(-50%); }
+  .vf-touch-gas { position: absolute; right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom));
+    width: min(20vw, 26vh, 120px); height: min(34vw, 38vh, 190px); border-radius: 12px;
+    background: rgba(8,10,14,.5); border: 2px solid var(--vf-linie); touch-action: none; pointer-events: auto;
+    display: grid; place-items: center; }
+  .vf-touch-gas::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px;
+    background: rgba(255,255,255,.12); transform: translateX(-50%); }
+  .vf-touch-knauf { pointer-events: none; background: var(--vf-linie); opacity: .85; }
+  .vf-touch-lenk .vf-touch-knauf { width: 42%; height: 42%; border-radius: 50%; }
+  .vf-touch-gas .vf-touch-knauf { width: 70%; height: 32%; border-radius: 8px; }
+  .vf-touch-hinweis { position: absolute; pointer-events: none; color: var(--vf-dim); font-size: calc(var(--vf-s) * .52);
+    font-weight: 700; text-transform: uppercase; letter-spacing: .12em; text-align: center; white-space: nowrap; }
+  .vf-touch-lenk .vf-touch-hinweis { left: 50%; bottom: 7%; transform: translateX(-50%); }
+  .vf-touch-gas .vf-touch-hinweis { left: 50%; transform: translateX(-50%); }
+  .vf-touch-gas .vf-touch-gas-oben { top: 4%; }
+  .vf-touch-gas .vf-touch-gas-unten { bottom: 4%; }
+  .vf-touch-gas .vf-touch-knauf { transition: transform .1s linear; }
+  .vf-knoepfe button.vf-an { background: var(--vf-linie); color: var(--k-blau-text, #04070c); }
   /* Hochkant und sehr schmal: Reifen und Tank ruecken naeher, damit der Block in die Breite passt. */
   @media (max-width: 520px) {
     .vf-acc-kern { width: 12em; }
@@ -5695,7 +5726,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.3.121</span></span>
+        <span class="foot-ver">v<span id="app-version">1.3.122</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>

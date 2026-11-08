@@ -3894,7 +3894,7 @@
   .vf-tank-bar { display: block; width: 100%; height: .35em; background: rgba(255,255,255,.13); }
   .vf-tank-bar > i { display: block; height: 100%; background: var(--vf-linie); transform-origin: 0 50%; }
   /* Knoepfe oben rechts im selben Stil */
-  .vf-knoepfe { position: absolute; right: max(8px, env(safe-area-inset-right)); top: max(8px, env(safe-area-inset-top)); display: flex; gap: 3px; }
+  .vf-knoepfe { position: absolute; right: max(8px, env(safe-area-inset-right)); top: max(8px, env(safe-area-inset-top)); display: flex; gap: 3px; flex-wrap: wrap; justify-content: flex-end; }
   .vf-knoepfe button { background: var(--vf-bg); color: #f3f4f6; border: 0; border-top: 2px solid var(--vf-linie); border-radius: 0;
     font-family: var(--k-font); font-size: calc(var(--vf-s) * .72); font-weight: 700; text-transform: uppercase; letter-spacing: .12em;
     padding: .55em 1em; min-height: 2.6em; min-width: 2.6em; cursor: pointer; }
@@ -3906,6 +3906,37 @@
   .vf-wip { position: absolute; left: max(8px, env(safe-area-inset-left)); bottom: max(8px, env(safe-area-inset-bottom));
     background: var(--vf-bg); color: var(--vf-dim); font-size: calc(var(--vf-s) * .62); font-weight: 700; text-transform: uppercase;
     letter-spacing: .12em; padding: .3em .6em; }
+  /* v1.3.122: Beruehrungs-Steuerung (Touch) fuer die virtuelle Fahrt. Links lenken, rechts Gas/Bremse -
+     oben Gas, unten Bremse. Beide analog wie Stick und Pedal im Cockpit. Erscheint nur auf Touch-
+     Geraeten ohne Gamepad (siehe vfTouch in 60d-virtuell.js); ueber den Knopf "Steuerung" oben rechts
+     laesst sie sich auch von Hand an-/ausschalten. */
+  .vf-touch { position: absolute; inset: 0; pointer-events: none; }
+  .vf-touch[hidden] { display: none; }
+  .vf-touch-lenk { position: absolute; left: max(12px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom));
+    width: min(34vw, 38vh, 190px); height: min(34vw, 38vh, 190px); border-radius: 50%;
+    background: rgba(8,10,14,.5); border: 2px solid var(--vf-linie); touch-action: none; pointer-events: auto;
+    display: grid; place-items: center; }
+  .vf-touch-lenk::before { content: ""; position: absolute; inset: 50% auto 0 50%; width: 1px; height: 50%;
+    background: rgba(255,255,255,.12); transform: translateX(-50%); }
+  .vf-touch-lenk::after { content: ""; position: absolute; inset: 0 50% 0 auto; width: 50%; height: 1px;
+    background: rgba(255,255,255,.12); transform: translateY(-50%); }
+  .vf-touch-gas { position: absolute; right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom));
+    width: min(20vw, 26vh, 120px); height: min(34vw, 38vh, 190px); border-radius: 12px;
+    background: rgba(8,10,14,.5); border: 2px solid var(--vf-linie); touch-action: none; pointer-events: auto;
+    display: grid; place-items: center; }
+  .vf-touch-gas::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px;
+    background: rgba(255,255,255,.12); transform: translateX(-50%); }
+  .vf-touch-knauf { pointer-events: none; background: var(--vf-linie); opacity: .85; }
+  .vf-touch-lenk .vf-touch-knauf { width: 42%; height: 42%; border-radius: 50%; }
+  .vf-touch-gas .vf-touch-knauf { width: 70%; height: 32%; border-radius: 8px; }
+  .vf-touch-hinweis { position: absolute; pointer-events: none; color: var(--vf-dim); font-size: calc(var(--vf-s) * .52);
+    font-weight: 700; text-transform: uppercase; letter-spacing: .12em; text-align: center; white-space: nowrap; }
+  .vf-touch-lenk .vf-touch-hinweis { left: 50%; bottom: 7%; transform: translateX(-50%); }
+  .vf-touch-gas .vf-touch-hinweis { left: 50%; transform: translateX(-50%); }
+  .vf-touch-gas .vf-touch-gas-oben { top: 4%; }
+  .vf-touch-gas .vf-touch-gas-unten { bottom: 4%; }
+  .vf-touch-gas .vf-touch-knauf { transition: transform .1s linear; }
+  .vf-knoepfe button.vf-an { background: var(--vf-linie); color: var(--k-blau-text, #04070c); }
   /* Hochkant und sehr schmal: Reifen und Tank ruecken naeher, damit der Block in die Breite passt. */
   @media (max-width: 520px) {
     .vf-acc-kern { width: 12em; }
@@ -5695,7 +5726,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.3.121</span></span>
+        <span class="foot-ver">v<span id="app-version">1.3.122</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -18858,6 +18889,7 @@
     "Kamera frei": "Free camera",
     "Standard": "Default",
     "Kamera: Standardansicht": "Camera: default view",
+    "Kamera": "Camera",
     "Community": "Community",
     "Alle anzeigen": "Show all",
     "Strecken": "Tracks",
@@ -20382,6 +20414,7 @@
     "Kamera frei": "Cámara libre",
     "Standard": "Estándar",
     "Kamera: Standardansicht": "Cámara: vista estándar",
+    "Kamera": "Cámara",
     "Reifen": "Neumáticos",
     "Tank": "Combustible",
     "Community": "Comunidad",
@@ -22069,7 +22102,7 @@
   //
   // Arbitrated PER AXIS because some sources own only one: the mouse stick and the phone
   // tilt steer only, the mouse slider throttles only.
-  const SRC = { KEY: 'key', PAD: 'pad', MOUSE: 'mouse', TILT: 'tilt', MACRO: 'macro' };
+  const SRC = { KEY: 'key', PAD: 'pad', MOUSE: 'mouse', TILT: 'tilt', MACRO: 'macro', TOUCH: 'touch' };
   const INPUT_NEUTRAL_EPS = 0.001;
   const steerClaim = Object.create(null);
   const throttleClaim = Object.create(null);
@@ -42830,6 +42863,105 @@
     }
   }
 
+  // ---- Beruehrungs-Steuerung (Touch, v1.3.122) -----------------------------------------------
+  // BESTELLT: "add touch controls as an option (ideally auto-selected when no gamepad is connected
+  // and user is on mobile - on PC arrows are much better on the keyboard so no touch needed)."
+  // Links lenken (horizontaler Joystick), rechts Gas/Bremse (vertikal: oben Gas, unten Bremse). Beide
+  // schreiben ueber die Schiedsstelle (applySteerInput/applyThrottleInput) mit der eigenen Quelle
+  // SRC.TOUCH - so koennen sich Tastatur, Gamepad und Touch nicht gegenseitig ueberschreiben, und die
+  // Freigabe nach einer Pause (rennPause) gilt fuer alle Quellen gleich.
+  const VF_TOUCH_STORE = 'omegasim-vf-touch';   // 'an'/'aus' = von Hand, sonst automatisch
+  function vfTouchGeraet() {
+    return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  }
+  function vfTouchPadAn() {
+    try { return !!(navigator.getGamepads && Array.from(navigator.getGamepads()).some((p) => p)); }
+    catch (e) { return false; }
+  }
+  // Soll die Beruehrungs-Steuerung sichtbar sein? Automatisch auf Touch-Geraeten ohne Gamepad; ein
+  // manueller Schalter (Knopf "Steuerung") kann das ueberschreiben.
+  function vfTouchSollAn() {
+    if (!vfTouchGeraet()) return false;
+    let manuell = null;
+    try { manuell = localStorage.getItem(VF_TOUCH_STORE); } catch (e) { /* privat */ }
+    if (manuell === 'an') return true;
+    if (manuell === 'aus') return false;
+    return !vfTouchPadAn();
+  }
+  function vfTouchElement() { return VF.schicht ? VF.schicht.querySelector('.vf-touch') : null; }
+  function vfTouchAnzeigen(an) {
+    const el = vfTouchElement();
+    if (el) el.hidden = !an;
+    const kn = VF.schicht ? VF.schicht.querySelector('[data-vf="touch"]') : null;
+    if (kn) kn.classList.toggle('vf-an', an);
+  }
+  function vfTouchAktualisieren() {
+    const kn = VF.schicht ? VF.schicht.querySelector('[data-vf="touch"]') : null;
+    if (kn) kn.hidden = !vfTouchGeraet();   // den Knopf nur auf Touch-Geraeten zeigen
+    vfTouchAnzeigen(vfTouchSollAn());
+  }
+  function vfTouchUmschalten() {
+    const an = vfTouchSollAn();
+    try { localStorage.setItem(VF_TOUCH_STORE, an ? 'aus' : 'an'); } catch (e) { /* privat */ }
+    vfTouchAktualisieren();
+  }
+  // Zeigerzustand je Steuerelement (je ein Zeiger, damit zwei Finger sich nicht stoeren).
+  function vfTouchBauen() {
+    const el = vfTouchElement();
+    if (!el) return;
+    const lenk = el.querySelector('.vf-touch-lenk');
+    const gas = el.querySelector('.vf-touch-gas');
+    if (lenk) {
+      let zeiger = null;
+      const bewegen = (e) => {
+        const rect = lenk.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2, r = rect.width / 2;
+        const dx = Math.max(-1, Math.min(1, (e.clientX - cx) / r));
+        applySteerInput(SRC.TOUCH, dx);
+        const kn = lenk.querySelector('.vf-touch-knauf');
+        if (kn) kn.style.transform = 'translateX(' + (dx * r * 0.55) + 'px)';
+      };
+      const los = (e) => {
+        if (zeiger === null || (e.pointerId !== undefined && e.pointerId !== zeiger)) return;
+        zeiger = null;
+        releaseSteerInput(SRC.TOUCH);
+        const kn = lenk.querySelector('.vf-touch-knauf');
+        if (kn) kn.style.transform = '';
+      };
+      lenk.addEventListener('pointerdown', (e) => { zeiger = e.pointerId; try { lenk.setPointerCapture(e.pointerId); } catch (err) { /* egal */ } bewegen(e); e.preventDefault(); });
+      lenk.addEventListener('pointermove', (e) => { if (zeiger !== null && e.pointerId === zeiger) bewegen(e); });
+      lenk.addEventListener('pointerup', los);
+      lenk.addEventListener('pointercancel', los);
+    }
+    if (gas) {
+      let zeiger = null;
+      const bewegen = (e) => {
+        const rect = gas.getBoundingClientRect();
+        const cy = rect.top + rect.height / 2, r = rect.height / 2;
+        const dy = Math.max(-1, Math.min(1, (e.clientY - cy) / r));
+        applyThrottleInput(SRC.TOUCH, -dy);   // oben = Gas (+), unten = Bremse (-)
+        const kn = gas.querySelector('.vf-touch-knauf');
+        if (kn) kn.style.transform = 'translateY(' + (dy * r * 0.55) + 'px)';
+      };
+      const los = (e) => {
+        if (zeiger === null || (e.pointerId !== undefined && e.pointerId !== zeiger)) return;
+        zeiger = null;
+        releaseThrottleInput(SRC.TOUCH);
+        const kn = gas.querySelector('.vf-touch-knauf');
+        if (kn) kn.style.transform = '';
+      };
+      gas.addEventListener('pointerdown', (e) => { zeiger = e.pointerId; try { gas.setPointerCapture(e.pointerId); } catch (err) { /* egal */ } bewegen(e); e.preventDefault(); });
+      gas.addEventListener('pointermove', (e) => { if (zeiger !== null && e.pointerId === zeiger) bewegen(e); });
+      gas.addEventListener('pointerup', los);
+      gas.addEventListener('pointercancel', los);
+    }
+    vfTouchAktualisieren();
+  }
+  // Aendert sich das Gamepad waehrend der Fahrt (angeschlossen/abgesteckt), zeigt sich die
+  // Beruehrungs-Steuerung neu an bzw. verschwindet.
+  window.addEventListener('gamepadconnected', vfTouchAktualisieren);
+  window.addEventListener('gamepaddisconnected', vfTouchAktualisieren);
+
   // ---- Starten und Beenden ------------------------------------------------------------------
   // opts.tiles: diese Strecke statt der des Editors (die Studie faehrt Homington), opts.studie: die
   // Fahrt gehoert der Studie (beim Beenden nicht in die Garage). true = gestartet.
@@ -42863,10 +42995,12 @@
       + '<div class="vf-acc-werte"><div class="vf-acc-wert"><b class="vf-tempo"></b>' + lbl('km/h') + '</div>'
       + '<b class="vf-gang"></b><div class="vf-acc-wert"><b class="vf-rpm"></b>' + lbl('1/min') + '</div></div></div>'
       + '<div class="vf-kachel vf-acc-tank">' + lbl(t('Tank')) + '<b class="vf-tank"></b><i class="vf-tank-bar"><i></i></i></div></div>'
-      + '<div class="vf-knoepfe"><button type="button" data-vf="box">' + t('Box') + '</button><button type="button" data-vf="flag">' + t('Gelbe Flagge') + '</button><button type="button" data-vf="licht">' + t('Licht') + '</button><button type="button" data-vf="reset">' + t('Zurücksetzen') + '</button>'
+      + '<div class="vf-knoepfe"><button type="button" data-vf="box">' + t('Box') + '</button><button type="button" data-vf="flag">' + t('Gelbe Flagge') + '</button><button type="button" data-vf="licht">' + t('Licht') + '</button><button type="button" data-vf="kam">' + t('Kamera') + '</button><button type="button" data-vf="reset">' + t('Zurücksetzen') + '</button><button type="button" data-vf="touch" hidden>' + t('Steuerung') + '</button>'
       + '<button type="button" data-vf="zu" aria-label="' + t('Beenden') + '">&#10005;</button></div>'
       + '<span class="vf-kamfrei" hidden data-i18n-skip>' + t('Kamera frei') + ' · R3 / V: ' + t('Standard') + ' <span class="wip-tag">WIP</span></span>'
-      + '<span class="vf-wip">' + t('Virtuell') + ' <span class="wip-tag">WIP</span></span>';
+      + '<span class="vf-wip">' + t('Virtuell') + ' <span class="wip-tag">WIP</span></span>'
+      + '<div class="vf-touch" hidden><div class="vf-touch-lenk"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis">' + t('Lenken') + '</span></div>'
+      + '<div class="vf-touch-gas"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis vf-touch-gas-oben">' + t('Gas') + '</span><span class="vf-touch-hinweis vf-touch-gas-unten">' + t('Bremse') + '</span></div></div>';
     document.body.appendChild(schicht);
     const cv = schicht.querySelector('canvas');
     const gl = cv.getContext('webgl', { antialias: true }) || cv.getContext('experimental-webgl');
@@ -42891,6 +43025,7 @@
     }
     vfHudBauen(schicht);
     vfDrehNull(); VF.stick = null; VF.tasten = {};
+    vfTouchBauen();   // v1.3.122: Beruehrungs-Steuerung (Touch), falls Geraet und kein Gamepad
     VF.splits = null; VF.besteSplits = null;
     VF.tiles = tiles;
     VF.pts = trackCenterline(tiles);
@@ -42946,6 +43081,8 @@
       if (!b) return;
       if (b.dataset.vf === 'zu') virtuellBeenden();
       else if (b.dataset.vf === 'reset') vfZuruecksetzen();
+      else if (b.dataset.vf === 'kam') vfKameraWechseln();
+      else if (b.dataset.vf === 'touch') vfTouchUmschalten();
       else if (b.dataset.vf === 'box') {
         if (VF.modus === 'derby') showHudToast(t('Derby: kein Boxenstopp'));
         else if (typeof requestPitStop === 'function') { requestPitStop(); if (typeof pitState !== 'undefined' && pitState === 'limited') showHudToast(t('Boxenstopp: anhalten')); }
@@ -104130,6 +104267,30 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       Object.assign(VF, { ui: merk.ui, rundeAb: merk.rundeAb, letzte: merk.letzte, beste: merk.beste, besteSplits: merk.splits, idx: merk.idx, modus: merk.modus, abseits: merk.abseits });
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'm:ss.mmm abgeschnitten, Delta +/-, Reifen/Tank/Drehzahl gesetzt, zweites Bild ohne DOM-Arbeit' };
+  });
+
+  // v1.3.122: Kamera- und Steuerungs-Knopf der virtuellen Fahrt, Beruehrungs-Steuerung (Touch).
+  stAdd('Virtuell v1.3.122: Kamera-Knopf, Steuerungs-Knopf und Beruehrungs-Steuerung vorhanden', () => {
+    const f = [];
+    // Der Knoepfe-Bereich der virtuellen Fahrt traegt den Kamera- und den Steuerungs-Knopf.
+    const kasten = document.createElement('div');
+    kasten.innerHTML = '<div class="vf-knoepfe"><button type="button" data-vf="kam"></button><button type="button" data-vf="touch"></button></div>';
+    if (!kasten.querySelector('[data-vf="kam"]')) f.push('Kamera-Knopf fehlt');
+    if (!kasten.querySelector('[data-vf="touch"]')) f.push('Steuerungs-Knopf fehlt');
+    // Die Beruehrungs-Steuerung hat eine eigene Quelle in der Schiedsstelle.
+    if (!SRC || !SRC.TOUCH) f.push('SRC.TOUCH fehlt');
+    if (typeof vfTouchGeraet !== 'function' || typeof vfTouchSollAn !== 'function') f.push('Touch-Funktionen fehlen');
+    try { if (typeof vfTouchGeraet() !== 'boolean' || typeof vfTouchSollAn() !== 'boolean') f.push('Touch-Abfragen liefern kein Boolean'); }
+    catch (e) { f.push('Touch-Abfrage: ' + e.message); }
+    // Aufbauen wirft nicht, und die Steuerung bleibt im Desktop-Kontext verborgen.
+    const el = document.createElement('div');
+    el.className = 'vf-touch';
+    el.innerHTML = '<div class="vf-touch-lenk"><div class="vf-touch-knauf"></div></div><div class="vf-touch-gas"><div class="vf-touch-knauf"></div></div>';
+    document.body.appendChild(el);
+    const vorher = VF.schicht; VF.schicht = el;
+    try { vfTouchBauen(); } catch (e) { f.push('vfTouchBauen: ' + e.message); }
+    finally { VF.schicht = vorher; el.remove(); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Kamera- und Steuerungs-Knopf da, SRC.TOUCH, Booleans ok, Touch-Bauen wirft nicht' };
   });
 
   stAdd('Virtuell v1.2.32: Kartenauto bleibt unter der 3D-Schicht verborgen, Silhouette an Ort, Skala und Drehung', () => {
