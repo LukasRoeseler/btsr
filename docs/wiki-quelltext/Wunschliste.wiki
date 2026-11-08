@@ -59,11 +59,25 @@ Die '''Wunschliste''' sammelt Funktionen, die für [[OmegaSim]] gewünscht, aber
 |-
 | Tieferes Schaltgeräusch || in Planung || Ein dumpferes Geräusch beim Runterschalten und für alle Motoren, wie beim Hochschalten des Mustang v2. Vorschläge liegen zum Anhören vor.
 |-
+| Eigene Automodelle im virtuellen Fahren || in Planung || Selbst gebaute 3D-Modelle als Autos im [[Virtuelles Fahren|virtuellen Fahren]], von Luuke42 als glTF/GLB gewünscht. Als erstes Modell fährt der VW Käfer von Gnen54 (CC BY 4.0) in einer Testfassung, siehe [[Onboard-Kamera und Karosserien]].
+|-
 | Live-Gegner über das Internet || zurückgestellt || Ein Gegner fährt in Echtzeit von einem anderen Ort aus mit.
 |-
 | Meisterschaft im WLAN-Mehrspieler || in Planung || Gebaut, aber auf echten Geräten noch nicht getestet.
 |-
 | Firmware-Version auslesen || gewünscht || OmegaSim liest die Firmware-Version der Autos nicht aus; damit ließe sich der Stand jedes Artikels genauer angeben, siehe [[Firmware]].
+|-
+| Reaktive Beleuchtung || gewünscht || Die Lichter der Autos reagieren auf das Geschehen: Bremslicht beim Bremsen, Scheinwerfer an bei Dunkelheit oder im Regen, Blinker beim Einfahren in die Boxengasse. Am Original zeigt die Carrera-HYBRID Licht an.
+|-
+| Physische Ampeln || gewünscht || Echte Startampeln am Tisch, die OmegaSim über Bluetooth ansteuert (Raspberry Pi / Pico), als Ergänzung zur [[Startampel]] im Bild.
+|-
+| Boxengassen-Schranken || gewünscht || Schranken an Ein- und Ausfahrt der Boxengasse, die sich öffnen und schließen – als Streckenteil oder als Zubehör, das OmegaSim steuert.
+|-
+| Einstellungs-Sync || gewünscht || Die Einstellungen (Fahrgefühl, Ansagen, Belegungen) lassen sich über die Projektseite oder eine Datei zwischen Geräten angleichen, damit alle denselben Stand nutzen.
+|-
+| Live-Timing || gewünscht || Rundenzeiten, Sektoren und Abstände mehrerer Autos live anzeigen, auch im WLAN-Mehrspieler – wie ein Timing-Tower an der Strecke.
+|-
+| API || gewünscht || Eine Schnittstelle, über die andere Programme Autos, Sensoren und das Rennen ansprechen und auslesen können – für eigene Auswertungen, Zusatzanzeigen oder Integrationen.
 |}
 
 == In Arbeit (WIP und experimentell) ==
