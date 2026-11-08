@@ -533,36 +533,26 @@
   // find all of them.
   //
   // The number is now derived, not chosen. The cars are 1:50 models, so the display should
-  // be exactly fifty times the real ground speed. Measured from the btsnoop logs: the car
-  // does 1.28 km/h at throttle 0.2 and 2.46 km/h at 0.4 (n=6 and n=114 tile crossings), i.e.
-  // almost exactly proportional - 2.46/1.28 = 1.92 for double the throttle - which gives
-  // v = 5.9 km/h x throttle and a full-throttle speed of about 5.9 km/h. Internally full
-  // throttle IS topSpeedKmh = 4.0. So:
+  // be exactly fifty times the real ground speed. Measured from the btsnoop logs (all
+  // straights of the recordings 16.-21.08.): proportional to throttle, 0.0119 m/s per step,
+  // full throttle (byte 127) thus 1.51 m/s = 5.45 km/h, at 1:50 about 272 km/h (+-10 %;
+  // 31 whole laps confirm the slope). Internally full throttle IS topSpeedKmh = 5.45. So:
   //
-  //     REAL_SCALE = 50 x 5.9 / 4.0 = 73.75      (top speed displays as 295 km/h)
+  //     REAL_SCALE = 50      (top speed displays as 272 km/h)
+  //     TACHO_SCALE = 50     (same 1:50 factor on the tachometer)
   //
-  // Two honest caveats. The 5.9 is an extrapolation: no log contains a full-throttle run on
-  // the track, only 0.2 and 0.4. And one constant can only be right at one operating point,
-  // because the real car is linear in throttle while the simulation has aerodynamic drag -
-  // the two curves have different shapes and no single factor reconciles them everywhere.
-  // Anchoring at full throttle is the defensible choice, since that is where the mapping is
-  // defined. The cockpit shows the measured factor live, so any drift is visible rather than
-  // assumed.
-  const REAL_SCALE = 50 * 5.9 / 4.0;   // 73.75
-  // ---- NACHGEMESSEN (v0.9.39) ---------------------------------------------------------
-  // Die 5,9 km/h oben waren falsch abgelesen: die 2,46 km/h gehoeren zu Gasbyte 56 von 127,
-  // also 44 % und nicht 40 %. Neu ausgewertet (alle Geraden der Mitschnitte 16.-21.08.):
-  //     Byte 43  0,86 s je 43-cm-Gerade   1,81 km/h
-  //     Byte 50  0,74 s                    2,11 km/h
-  //     Byte 56  0,63 s                    2,46 km/h
-  // Proportional zum Gas, 0,0119 m/s je Schritt, Vollgas (127) also 1,51 m/s = 5,45 km/h,
-  // im Massstab 1:50 rund 272 km/h (Hochrechnung, +-10 %; 31 ganze Runden bestaetigen die
-  // Steigung). REAL_SCALE bleibt die Einheit, in der die PHYSIK abgestimmt ist (Anfahrhilfe,
-  // Luftwiderstand, Schwellen) - sie zu aendern hiesse, das Fahrverhalten zu aendern. Der
-  // TACHO rechnet mit dem gemessenen Faktor: Simulations-Hoechstgeschwindigkeit (4,0) bei
-  // Gasfaktor 100 % = Byte 127 = 272 km/h. Das stimmt genau bei Gasfaktor 100 % (ab Werk);
-  // ueber 100 % bekommt das Auto Vollgas, bevor der Tacho oben ist.
-  const TACHO_SCALE = 50 * 5.45 / 4.0;   // 68.1
+  // The two factors used to disagree: REAL_SCALE was 73.75 (the physics/racing-display
+  // unit) while TACHO_SCALE was 68.1 (the tacho), so the same model speed showed two
+  // different figures. Anchoring both at 50 makes the racing display and the tachometer
+  // agree, and the displayed 272 km/h is the honest 1:50 mapping of the measured 5.45 km/h
+  // ground speed. The cockpit shows the measured factor live, so any drift is visible
+  // rather than assumed.
+  const REAL_SCALE = 50;   // 1:50
+  // ---- TACHO ---------------------------------------------------------------
+  // The tachometer uses the same 1:50 factor. At Gasfaktor 100 % (ab Werk, Byte 127) the
+  // car reaches full throttle, which is topSpeedKmh = 5.45, i.e. 272 km/h on the tacho.
+  // Over 100 % the car hits full throttle before the tacho is at the top.
+  const TACHO_SCALE = 50;   // 1:50
 
   const IDLE_RPM = 1500, REDLINE_RPM = 9000, LIMITER_SOFT_RPM = 400;
   const GT3_GEARS = [

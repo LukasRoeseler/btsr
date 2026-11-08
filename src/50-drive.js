@@ -2338,8 +2338,8 @@
     // and braking models were calibrated against a GT3 topping out at 285 km/h, so the factor
     // had to be 285/4. That reasoning had it backwards: it derived the scale from a chosen
     // top speed instead of deriving the top speed from the known scale. The cars are 1:50,
-    // the measured ground speed at full throttle is about 5.9 km/h, so the dash reads
-    // 5.9 x 50 = 295 km/h flat out. See the derivation at REAL_SCALE.
+    // the measured ground speed at full throttle is about 5.45 km/h, so the dash reads
+    // 5.45 x 50 = 272 km/h flat out. See the derivation at REAL_SCALE.
     $('race-speed').textContent = Math.round(Math.abs(st.speedKmh) * TACHO_SCALE);
 
     // Shift LEDs. Green, then red, then BLUE for the last two. The blue pair above red,

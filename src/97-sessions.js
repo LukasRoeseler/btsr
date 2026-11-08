@@ -27,11 +27,14 @@
   // Tachoskala (mal REAL_SCALE) und rechnete selbst noch einmal mal REAL_SCALE - jede
   // gespeicherte Strecke war genau um 73,75 zu gross (seit Block H, 31.08.). Einmalig
   // zurueckgerechnet; kmV: 2 merkt, dass es geschehen ist (auch nach dem Laden einer alten
-  // Sicherung, die das Feld nicht hat, wird korrekt neu gerechnet).
+  // Sicherung, die das Feld nicht hat, wird korrekt neu gerechnet). Der Faktor ist FEST auf
+  // 73,75 und darf NICHT dem heutigen REAL_SCALE folgen: die Daten wurden unter dem alten
+  // Massstab gespeichert, und die Korrektur soll genau diesen Umrechnen.
   const SESSION_KM_V = 2;
+  const SESSION_KM_KORREKTUR = 1 / 73.75;   // der damalige REAL_SCALE, historisch fixiert
   function sessionKmKorrigieren(o) {
     if (o.kmV === SESSION_KM_V) return false;
-    const f = 1 / REAL_SCALE;
+    const f = SESSION_KM_KORREKTUR;
     for (const id of Object.keys(o.cars)) {
       const c = o.cars[id];
       if (typeof c.km === 'number') c.km = +(c.km * f).toFixed(3);

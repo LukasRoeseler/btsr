@@ -30,8 +30,8 @@
   //
   // Ohne diese Umrechnung waeren die Rundenzeiten Zahlen ohne Bedeutung:
   //
-  //     physEngine/Ghost-Modell   speedKmh ist das MODELLTEMPO (Vollgas ~4 km/h);
-  //                               die Anzeige multipliziert mit REAL_SCALE = 73,75
+  //     physEngine/Ghost-Modell   speedKmh ist das MODELLTEMPO (Vollgas ~5,45 km/h);
+  //                               die Anzeige multipliziert mit REAL_SCALE = 50
   //     Strecke                   TRACK_TILE_CM = 43 cm je Gerade, TRACK_STEP = 40
   //                               Zeichnungseinheiten, TRACK_UNITS_PER_CM = 0,930
   //

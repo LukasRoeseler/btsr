@@ -223,10 +223,11 @@
         autoShift: true,  // Automatik als Standard
 
         // Anchored to real-world numbers instead of abstract 0..1 units, so the feel can
-        // be reasoned about: the car tops out around 4 km/h and should take about 3s to
-        // get there. Speed is simulated in km/h and the throttle byte is derived from it
-        // (see update()), which is what stops the car slamming to full power instantly.
-        topSpeedKmh: 4.0,
+        // be reasoned about: the car tops out at the measured full-throttle ground speed of
+        // 5.45 km/h (1.51 m/s) and should take about 3s to get there. Speed is simulated
+        // in km/h and the throttle byte is derived from it (see update()), which is what
+        // stops the car slamming to full power instantly.
+        topSpeedKmh: 5.45,
 
         // ---- Calibration anchor ----
         // Anchored on 0 -> 100 km/h AS DISPLAYED, because that is the figure everyone
@@ -239,7 +240,7 @@
         // rather than referencing REAL_SCALE: that const is declared far below this class
         // and the constructor already calls calibrateAccel(), so reading it from here
         // would be a temporal-dead-zone crash during load.
-        launchAnchorKmh: 100 / REAL_SCALE,  // 1.4035 internal = 100 displayed
+        launchAnchorKmh: 100 / REAL_SCALE,  // 2.0 internal = 100 displayed
         // 1.95 und nicht 3.1, obwohl 3.1 der Sollwert ist: dieser Anker wird von
         // calibrateAccel gegen das VEREINFACHTE Modell (thrustAt/resistAt) geloest, und die
         // Fahrt laeuft durch update(). Gemessen sind das 46 % Unterschied - mit Anker 3.2
@@ -270,13 +271,13 @@
         //   aerodynamic drag   -> QUADRATIC, dominant at speed, negligible when slow.
         // Values are absolute decelerations in km/h/s at their reference point, so they
         // can be read and reasoned about directly rather than as opaque coefficients.
-        // Scaled to REAL decelerations. The display multiplies by 71.25, so an internal
-        // km/h/s is 71.25 displayed km/h/s -- which makes it easy to be wildly wrong here
+        // Scaled to REAL decelerations. The display multiplies by 50, so an internal
+        // km/h/s is 50 displayed km/h/s -- which makes it easy to be wildly wrong here
         // without noticing. A first pass at 0.18/0.35/0.90 summed to 1.43 internal at top
-        // speed = 102 displayed km/h/s = 2.8 g of coasting deceleration, roughly six times
-        // what a GT3 actually does. These values sum to 0.25 internal = 17.8 displayed
-        // km/h/s at top speed, about 0.5 g, which is the right order for aero drag at
-        // 285 km/h. At a quarter of top speed they give ~0.11 g, and near standstill the
+        // speed = 71.5 displayed km/h/s = 2.0 g of coasting deceleration, roughly six times
+        // what a GT3 actually does. These values sum to 0.25 internal = 12.5 displayed
+        // km/h/s at top speed, about 0.35 g, which is the right order for aero drag at
+        // 272 km/h. At a quarter of top speed they give ~0.11 g, and near standstill the
         // constant term alone remains -- which is what finally brings the car to rest.
         coastRollDecel: 0.030,   // constant
         coastEngineDecel: 0.065, // x u
@@ -359,7 +360,7 @@
         // BREMSKENNLINIE, dieselbe Formel wie die Gaskennlinie. BESTELLT: "noch eine
         // Bremskennlinie einfuegen (standard: etwas unempfindlicher im Anfangsbereich)".
         brakeGamma: 1.3,
-        // 10 km/h on the racing display, which reads speedKmh * REAL_SCALE (71.25).
+        // 10 km/h on the racing display, which reads speedKmh * REAL_SCALE (50).
         // Below this the car is walking pace and should simply stop.
         crawlCutoffKmh: 10 / REAL_SCALE,
         // Lowered from 1.2: clearing the cutoff in 0.12 s read as the car being yanked to
@@ -610,9 +611,9 @@
         // ---- Rueckwaertsgang in der Automatik ----
         // Bis unter diese Fahrt darf Viereck den Rueckwaertsgang legen, Kreis holt ihn
         // wieder heraus. Als Bruchteil der Spitze, nicht in km/h: st.speedKmh laeuft in
-        // Modellmass (0 bis topSpeedKmh = 4,0), und der Schirm zeigt es mit 73,75
-        // multipliziert. 0.034 * 4,0 * 73,75 sind die gewuenschten 10 km/h auf der Anzeige.
-        autoReverseFrac: 0.034,
+        // Modellmass (0 bis topSpeedKmh = 5,45), und der Schirm zeigt es mit 50
+        // multipliziert. 0.0367 * 5,45 * 50 sind die gewuenschten 10 km/h auf der Anzeige.
+        autoReverseFrac: 0.0367,
         // ---- Nasse Lenkung ----
         // Der Nassverlust greift erst mit der Geschwindigkeit an. Ohne das frisst schon das
         // Motorbremsen den geschrumpften Reibkreis auf, und zwar bei JEDER Fahrt - auf
@@ -620,7 +621,7 @@
         // Physikalisch ist die alte Fassung falsch: ein nasser Reifen traegt seitlich
         // durchaus, nur ist der Grenzbereich frueher erreicht. Unterhalb von wetOnsetFrac
         // ist die Anforderung so klein, dass Nass keinen Unterschied macht.
-        // Angezeigte Entsprechung bei 295 km/h Spitze: 50 und 160 km/h.
+        // Angezeigte Entsprechung bei 272 km/h Spitze: 46 und 150 km/h.
         wetOnsetFrac: 0.17,
         wetFullFrac: 0.55,
         // ---- Wieviel der Reibkreis ueberhaupt gefuellt wird ----
@@ -628,13 +629,13 @@
         // Schrittgeschwindigkeit ist eine Vollbremsung ein Bruchteil der verfuegbaren
         // Haftung, bei Hoechstgeschwindigkeit ist sie alles. Ohne das leert eine Vollbremsung
         // den Kreis bei JEDER Fahrt, und die Lenkung klebt bis zum Stand am Notboden.
-        // Angezeigte Entsprechung bei 295 km/h Spitze: 30 und 180 km/h.
+        // Angezeigte Entsprechung bei 272 km/h Spitze: 30 und 165 km/h.
         // TEMPOWICHTUNG DER BREMSANFORDERUNG. Sie ist der Grund, warum Bremsen die
         // Lenkung ueberhaupt schwaecht - und war bis v0.5 so flach, dass man es unter
         // 100 km/h nicht gespuert hat: Ansatz bei 29,5 angezeigten km/h, VOLL erst bei 180.
         // Gemessen gab volles Bremsen bei 60 km/h noch 100 % des Rollwerts.
         //
-        // Jetzt Ansatz bei 14,8 und voll bei 65 angezeigten km/h. Unter 15 km/h passiert
+        // Jetzt Ansatz bei 13,6 und voll bei 60 angezeigten km/h. Unter 15 km/h passiert
         // weiterhin NICHTS, und das ist per Konstruktion so: dort ist lastFrac null, der
         // Notboden von 12 % kann also nicht zurueckkommen. Genau der war der Fehler, gegen
         // den diese Wichtung ueberhaupt eingebaut wurde.
