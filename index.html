@@ -5726,7 +5726,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.3.122</span></span>
+        <span class="foot-ver">v<span id="app-version">1.3.123</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6986,6 +6986,7 @@
         <li>Streckeneditor: Die Teileleiste unten und &#8222;Meine Teile&#8220; zeigen die echten Teile, wie der Editor sie zeichnet. Die Boxengasse sieht aus wie das Originalteil (Bucht mit Boxenmarkierungen). Neue Editor-Optionen (WIP): &#8222;Boxengasse erzwingen&#8220; (nur mit Boxengasse in &#8222;Meine Teile&#8220;) und &#8222;Br&#252;cken&#8220; als Anzahl (Standard 0) mit Meldung, wenn es mit den Teilen nicht geht. WLAN-Mehrspieler ist kein eigener Reiter mehr, sondern ein Knopf in der Autos-Kachel mit dem Stand (Host/verbunden). Startschirm: Kn&#246;pfe mit Steuerkreuz, Pfeiltasten oder Maus w&#228;hlen, Starten ist vorgew&#228;hlt und blau, &#10005;/A/Enter startet; unten links dreht ein kleines Streckenteil, solange Updates gepr&#252;ft oder Kl&#228;nge geladen werden.</li>
         <li>Das Fahrgef&#252;hl Gran Accelerato wird zu zwei Modi (WIP): &#8222;Gran Hybrismo&#8220; wie Gran Turismo Sport (viel Grip, weicher Reifenscheitel, kaum Lastwechsel, eine Stabilit&#228;tshilfe lenkt ein ausbrechendes Heck sanft gegen, beim Bremsen bleibt die Lenkung wie mit ABS, die Reifentemperatur wirkt wenig) und &#8222;Assetto Carrera&#8220; wie Assetto Corsa Competizione (leicht bremsen dreht ein, Lupfen l&#228;sst das Heck kommen, Gas schiebt, scharfe Haftgrenze mit Untersteuern beim &#220;berfahren, Reifenfenster: kalt und &#252;berhitzt deutlich weniger Grip, warm am meisten; keine Hilfen). Gespeicherte St&#228;nde mit Gran Accelerato laden als Gran Hybrismo. Behoben: Tempo-Lenkung und Selbstzentrierung kamen nie am Auto an, die Lastempfindlichkeit verst&#228;rkte die Lastwechsel statt sie zu d&#228;mpfen, der Schalter &#8222;&#220;bersteuern&#8220; wurde ignoriert, und beim virtuellen Fahren waren die Reifen nach wenigen Sekunden dauerhaft &#252;berhitzt (jetzt mit Abk&#252;hlung, und das Standardauto hat Abtrieb). NPCs: MAX beschleunigt und bremst wie Arcade, alle anderen Stufen wie Sim+, unabh&#228;ngig von der Abstimmung von Spieler 1; der Regler &#8222;MAX: Beschleunigung&#8220; entf&#228;llt.</li>
         <li>Neue Option &#8222;NPC: Tankort&#8220; (WIP, Optionen &#8594; NPCs): Einparkfolge wie das Safety Car (Standard, wie bisher) oder &#8222;Streckenrand &#252;ber Querlage&#8220; &#8211; der NPC zieht auf dem Boxenteil per Querlage an den rechten Rand, bremst, steht mit Ratsche und zieht per Querlage wieder heraus, ohne Lenkfolge.</li>
+        <li>Neue Option &#8222;NPC: maximale Querlage&#8220; (Optionen &#8594; NPCs, Vorgabe 95&nbsp;%): Wie weit ein NPC auf der Aussenseite einer Kurve fahren darf. Das Firmware-Update erlaubt den NPCs, weit aussen zu fahren, sodass sie &ouml;fter abfliegen; 95&nbsp;% sind 5&nbsp;% weniger aussen, 100&nbsp;% die alte, volle Linie. Die Option gilt f&uuml;r die Linie, die die NPCs im Rennen fahren (die Aussenlage im virtuellen Fahren bleibt unver&auml;ndert).</li>
       </ul>
       <p class="muted"><b><span data-i18n-skip>1.2</span></b></p>
       <ul class="muted" id="patchnotes-12" style="padding-left:20px; line-height:1.7">
@@ -12579,6 +12580,18 @@
           <option value="folge" selected>Einparkfolge (wie Safety Car)</option>
           <option value="rand">Streckenrand &uuml;ber Querlage</option>
         </select></div>
+      <div class="opt-row"><div class="opt-label">NPC: maximale Querlage
+        <small>Wie weit ein NPC auf der Aussenseite einer Kurve fahren darf. Das
+          Firmware-Update erlaubt den NPCs, weit aussen zu fahren, sodass sie &ouml;fter abfliegen.
+          Vorgabe 95&nbsp;% der bisherigen Linie &ndash; 5&nbsp;% weniger aussen. 100&nbsp;% ist die
+          alte, volle Linie.</small></div>
+        <select id="npc-querlage">
+          <option value="1">100&nbsp;%</option>
+          <option value="0.95" selected>95&nbsp;%</option>
+          <option value="0.9">90&nbsp;%</option>
+          <option value="0.85">85&nbsp;%</option>
+          <option value="0.8">80&nbsp;%</option>
+        </select></div>
       <div class="opt-row"><div class="opt-label">NPC: Boxenstopp im freien Fahren
           <small>Ob auch au&szlig;erhalb eines Rennens gepittet wird. Beim Losfahren aus der
           Garage stellt man meist Regler ein, und ein Auto, das dabei zehn Sekunden steht,
@@ -15967,7 +15980,6 @@
     "Rennen beendet": "Race finished",
     "Geist folgt meiner Linie": "Spirit follows my line",
     "NPCs": "NPCs",
-    "NPC-Außenlage": "NPC outer position",
     "Handling": "Handling",
     "Grafik": "Graphics",
     "Performance": "Performance",
@@ -19484,7 +19496,6 @@
     "Rennen beendet": "Carrera terminada",
     "Geist folgt meiner Linie": "Espíritu sigue mi línea",
     "NPCs": "NPCs",
-    "NPC-Außenlage": "Posición exterior de los NPC",
     "Handling": "Manejo",
     "Grafik": "Gráficos",
     "Performance": "Rendimiento",
@@ -40998,14 +41009,15 @@
       + 'varying vec3 vc; varying float vd; varying float vg; varying vec3 vwp;'
       + 'uniform sampler2D tx; uniform vec3 nebel; uniform sampler2D sch; uniform mat4 schM; uniform float qual; uniform float schatt;'
       + 'vec3 filmic(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }'
+      + 'float schTiefe(vec4 v){ return dot(v, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/16581375.0)); }'
       + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 c = t.rgb * vc + vec3(0.80, 0.86, 0.95) * (vg * t.a);'
       + ' if (schatt > 0.5) { vec4 sp = schM * vec4(vwp, 1.0); vec3 suv = sp.xyz * 0.5 + 0.5;'
       + '   if (suv.x > 0.0 && suv.x < 1.0 && suv.y > 0.0 && suv.y < 1.0 && suv.z > 0.0 && suv.z <= 1.0) {'
       + '     float b = suv.z - 0.0015, e = 1.0 / 1024.0, s = 0.0;'
-      + '     s += step(texture2D(sch, suv.xy).r, b);'
-      + '     s += step(texture2D(sch, suv.xy + vec2(e, 0.0)).r, b);'
-      + '     s += step(texture2D(sch, suv.xy + vec2(0.0, e)).r, b);'
-      + '     s += step(texture2D(sch, suv.xy + vec2(e, e)).r, b);'
+      + '     s += step(schTiefe(texture2D(sch, suv.xy)), b);'
+      + '     s += step(schTiefe(texture2D(sch, suv.xy + vec2(e, 0.0))), b);'
+      + '     s += step(schTiefe(texture2D(sch, suv.xy + vec2(0.0, e))), b);'
+      + '     s += step(schTiefe(texture2D(sch, suv.xy + vec2(e, e))), b);'
       + '     c *= mix(1.0, 0.42, (4.0 - s) * 0.25); } }'
       + ' if (qual > 0.5) c = filmic(c * 1.05);'
       + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); c = mix(c, nebel, f);'
@@ -41386,13 +41398,6 @@
   // v1.3.94: Kalibrierung nach unten - die virtuellen NPCs waren fuer die meisten zu schnell. 0,85
   // heisst 15 % langsamer als die Garagenstufe 1 (wie ein frischer, vorsichtiger Fahrer).
   const VF_NPC_KALIBRIER = 0.85;
-  // v1.3.116: maximale NPC-Aussenlage. BESTELLT: "Bei allen NPC-Linien ca. 5 % der Aussenseite
-  // begrenzen ... das Firmware-Update erlaubt den NPCs weit aussen zu fahren, sodass sie nun
-  // oefter abfliegen." Anteil des bisherigen Querversatzes (Vorgabe 0,95 = 5 % weniger aussen).
-  const VF_NPC_AUSSEN_STORE = 'omegasim-vf-npc-aussen';
-  function vfNpcAussen() {
-    try { const v = +localStorage.getItem(VF_NPC_AUSSEN_STORE); return (v >= 0.5 && v <= 1) ? v : 0.95; } catch (e) { return 0.95; }
-  }
   // v1.3.94 Startaufstellung: ein Feld hinter der Startlinie, zwei Reihen (links/rechts), Abstand
   // zwischen den Reihen. Die Autos spawnen direkt auf ihren Startplaetzen statt verstreut.
   const VF_GRID_REIHE = Math.max(2, Math.round((typeof TRACK_SAMPLES_PER_TILE !== 'undefined' ? TRACK_SAMPLES_PER_TILE : 8) * 1.5));
@@ -41645,7 +41650,7 @@
       const startIdx = vfGridKachel(start, reihe);
       const npc = {
         auto, modell: null, P: null, idx: startIdx, s: null, kmh: 0, motor: vfNpcMotor(), bahn: null,
-        offset: (k % 2 === 0) ? 3.0 * vfNpcAussen() : -3.0 * vfNpcAussen(),
+        offset: (k % 2 === 0) ? 3.0 : -3.0,
         faktor: 0.97 + 0.03 * k,
         x: 0, y: 0, h: 0, raddreh: 0, lenkWinkel: 0, ay: 0, ax: 0,
         feder: { z: 0, vz: 0, th: 0, vth: 0, ph: 0, vph: 0 },
@@ -41835,33 +41840,32 @@
     gl.attachShader(p, vfShader(gl, gl.VERTEX_SHADER,
       'attribute vec3 p; uniform mat4 m; void main(){ gl_Position = m * vec4(p, 1.0); }'));
     gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
-      'precision mediump float; void main(){ gl_FragColor = vec4(1.0); }'));
+      'precision mediump float;'
+      + 'vec4 pack(float d){ vec4 r = vec4(d, fract(d*255.0), fract(d*65025.0), fract(d*16581375.0)); r -= r.yzww * vec4(1.0/255.0, 1.0/255.0, 1.0/255.0, 0.0); return r; }'
+      + 'void main(){ gl_FragColor = pack(gl_FragCoord.z); }'));
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     return { p, m: gl.getUniformLocation(p, 'm'), ap: gl.getAttribLocation(p, 'p') };
   }
-  // Schattenkarte (Depth-Textur + Framebuffer) anlegen. Liefert null, wenn das Geraet keine
-  // Depth-Textur kann - dann gibt es eben keine echten Schatten.
+  // Schattenkarte anlegen: die Tiefe wird als Graustufen-Farbe in eine RGBA-Textur geschrieben
+  // (WebGL1 kann Depth-Texturen nicht zuverlaessig abtasten; in eine RGBA-Textur dagegen ja).
+  // Das Tiefen-Renderbuffer dient nur dem Tiefentest beim Zeichnen. Liefert null, wenn das
+  // Framebuffer unvollstaendig bleibt - dann gibt es eben keine echten Schatten.
   function vfSchattenBauen(gl, size) {
-    if (!gl.getExtension('WEBGL_depth_texture')) return null;
     const tex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, tex);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, size, size, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT, null);
-    // Depth-Texturen sind in WebGL1 nicht zuverlaessig filterbar -> NEAREST (PFC weich macht der Shader).
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    // WebGL1 braucht einen Farb-Anhang, sonst ist das Framebuffer nicht vollstaendig.
-    const farbe = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, farbe);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    const rb = gl.createRenderbuffer();
+    gl.bindRenderbuffer(gl.RENDERBUFFER, rb);
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, size, size);
     const fbo = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, farbe, 0);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, tex, 0);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rb);
     const ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     if (!ok) return null;
@@ -41932,7 +41936,12 @@
     const SP = VF.schatteProg;
     gl.bindFramebuffer(gl.FRAMEBUFFER, VF.schatte.fbo);
     gl.viewport(0, 0, VF.schatte.size, VF.schatte.size);
-    gl.clear(gl.DEPTH_BUFFER_BIT);
+    // v1.3.123: Die Tiefe liegt als Graustufen-Farbe in der RGBA-Textur. Fern = 1.0 (weiss) wird
+    // zuverlaessig per clearColor geleert (bei Depth-Texturen auf WebGL1 ging das nicht, und das
+    // ganze Lichtquadrat ums Auto wurde abgedunkelt -> "weisses Quadrat").
+    gl.clearColor(1, 1, 1, 1);
+    gl.clearDepth(1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.useProgram(SP.p);
     if (VF.modell && VF.tprog) {
       vfModellSchatten(gl, SP, VF.modell, VF.x, VF.y, VF.h, VF.feder, VF.lenkWinkel, VF.raddreh, VF.radModell, vfFederSicht(), VF.pitch || 0, VF.schM);
@@ -41942,7 +41951,6 @@
       gl.enableVertexAttribArray(SP.ap);
       gl.vertexAttribPointer(SP.ap, 3, gl.FLOAT, false, 24, 0);
       gl.drawArrays(gl.TRIANGLES, 0, VF.auto.n);
-      gl.disableVertexAttribArray(SP.ap);
     }
     if (VF.npcs && VF.tprog) {
       for (const npc of VF.npcs) {
@@ -41950,6 +41958,7 @@
         vfModellSchatten(gl, SP, npc.modell, npc.x, npc.y, npc.h, npc.feder, npc.lenkWinkel, npc.raddreh, VF.radModell, 1, 0, VF.schM);
       }
     }
+    gl.disableVertexAttribArray(SP.ap);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
   // Daten einmal je Sitzung und Auto holen (fetch: ueber file:// nicht ladbar, dann bleibt der Kasten).
@@ -42389,7 +42398,7 @@
         // Neigung 1x: "Neigung sichtbar" gilt nur fuer das eigene Auto (v1.2.32 GEMELDET: "sollte auf
         // Stufe 1 sein"). Bremslicht, wenn das Fahrzeugmodell des NPC bremst.
         vfModellZeichnen(gl, pv, blick, npc.modell, VF.tprog, npc.x, npc.y, npc.h, npc.feder, npc.lenkWinkel, npc.raddreh, VF.radModell, true,
-          !!(npc.motor && npc.motor.outputs && npc.motor.outputs.lights && npc.motor.outputs.lights.brake), 1, k.auge);
+          !!(npc.motor && npc.motor.outputs && npc.motor.outputs.lights && npc.motor.outputs.lights.brake), 1, 0, k.auge);
       }
     }
   }
@@ -43246,15 +43255,6 @@
       renderGarage();
     };
     rechts.appendChild(garWertZeile(t('NPCs'), nNpc === 0 ? t('Aus') : String(nNpc), () => npcWahl(-1), () => npcWahl(1)));
-    // v1.3.116: maximale NPC-Aussenlage - weniger Querversatz, damit die NPCs nicht so weit aussen fahren.
-    const nAussen = Math.round(vfNpcAussen() * 100);
-    const aussenWahl = (dd) => {
-      try { localStorage.setItem(VF_NPC_AUSSEN_STORE, String(Math.round(Math.max(0.5, Math.min(1, vfNpcAussen() + (dd > 0 ? 0.05 : -0.05))) * 100) / 100)); } catch (e) { /* egal */ }
-      renderGarage();
-    };
-    const aussenZeile = garWertZeile(t('NPC-Außenlage'), nAussen + ' %', () => aussenWahl(-1), () => aussenWahl(1));
-    aussenZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
-    rechts.appendChild(aussenZeile);
     if (autos[ja].v !== 'kasten') {
       const jf = VF_FEDER_WERTE.indexOf(vfFederSicht());
       const federWahl = (dd) => {
@@ -68002,6 +68002,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const s = $('ghost-pit-ort');
     return s && s.value === 'rand' ? 'rand' : 'folge';
   }
+  // v1.3.123: maximale NPC-Querlage (Optionen -> NPCs). BESTELLT: "Bei allen NPC-Linien ca. 5 %
+  // der Aussenseite begrenzen ... das Firmware-Update erlaubt den NPCs weit aussen zu fahren,
+  // sodass sie nun oefter abfliegen." Anteil der bisherigen Linie (Vorgabe 0,95 = 5 % weniger
+  // aussen). Skaliert die Linie, die die NPCs fahren (ghostLineOffset/ghostLineMitDeckel).
+  function npcQuerFaktor() {
+    const s = $('npc-querlage');
+    const v = s ? +s.value : 0.95;
+    return (v >= 0.5 && v <= 1) ? v : 0.95;
+  }
   function npcBoxStehen(car) {
     const p = car.ghost && car.ghost.pit;
     if (!p) return;
@@ -71674,7 +71683,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Skaliert bleibt die Grenze dieselbe (|roh| <= 1, also |Ausgabe| <= cap), aber die Form
     // ueberlebt: gemessen 0,144 Kurvenspanne im Rundenzeitmodell statt 0,000.
     const roh2 = Math.max(-1, Math.min(1, roh * f.push));
-    return roh2 * cap;
+    // v1.3.123: maximale NPC-Querlage begrenzt die Aussenlage (npcQuerFaktor, Vorgabe 0,95).
+    return roh2 * cap * npcQuerFaktor();
   }
 
   // Lernfaktor und Kippwert-Deckel, fuer die zwei Rueckfallquellen. Sie gingen vorher OHNE
@@ -71685,7 +71695,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function ghostLineMitDeckel(car, roh) {
     const f = learnFactors(car);
     const cap = learnSteerCap();
-    return Math.max(-1, Math.min(1, roh * f.push)) * cap;
+    // v1.3.123: maximale NPC-Querlage begrenzt die Aussenlage (npcQuerFaktor, Vorgabe 0,95).
+    return Math.max(-1, Math.min(1, roh * f.push)) * cap * npcQuerFaktor();
   }
 
   // Bremsbedarf an der Stelle, an der das Auto gerade ist: 0 = freie Fahrt, 1 = voll

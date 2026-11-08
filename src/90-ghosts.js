@@ -5885,6 +5885,15 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const s = $('ghost-pit-ort');
     return s && s.value === 'rand' ? 'rand' : 'folge';
   }
+  // v1.3.123: maximale NPC-Querlage (Optionen -> NPCs). BESTELLT: "Bei allen NPC-Linien ca. 5 %
+  // der Aussenseite begrenzen ... das Firmware-Update erlaubt den NPCs weit aussen zu fahren,
+  // sodass sie nun oefter abfliegen." Anteil der bisherigen Linie (Vorgabe 0,95 = 5 % weniger
+  // aussen). Skaliert die Linie, die die NPCs fahren (ghostLineOffset/ghostLineMitDeckel).
+  function npcQuerFaktor() {
+    const s = $('npc-querlage');
+    const v = s ? +s.value : 0.95;
+    return (v >= 0.5 && v <= 1) ? v : 0.95;
+  }
   function npcBoxStehen(car) {
     const p = car.ghost && car.ghost.pit;
     if (!p) return;
@@ -9557,7 +9566,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Skaliert bleibt die Grenze dieselbe (|roh| <= 1, also |Ausgabe| <= cap), aber die Form
     // ueberlebt: gemessen 0,144 Kurvenspanne im Rundenzeitmodell statt 0,000.
     const roh2 = Math.max(-1, Math.min(1, roh * f.push));
-    return roh2 * cap;
+    // v1.3.123: maximale NPC-Querlage begrenzt die Aussenlage (npcQuerFaktor, Vorgabe 0,95).
+    return roh2 * cap * npcQuerFaktor();
   }
 
   // Lernfaktor und Kippwert-Deckel, fuer die zwei Rueckfallquellen. Sie gingen vorher OHNE
@@ -9568,7 +9578,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function ghostLineMitDeckel(car, roh) {
     const f = learnFactors(car);
     const cap = learnSteerCap();
-    return Math.max(-1, Math.min(1, roh * f.push)) * cap;
+    // v1.3.123: maximale NPC-Querlage begrenzt die Aussenlage (npcQuerFaktor, Vorgabe 0,95).
+    return Math.max(-1, Math.min(1, roh * f.push)) * cap * npcQuerFaktor();
   }
 
   // Bremsbedarf an der Stelle, an der das Auto gerade ist: 0 = freie Fahrt, 1 = voll

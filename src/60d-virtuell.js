@@ -518,14 +518,15 @@
       + 'varying vec3 vc; varying float vd; varying float vg; varying vec3 vwp;'
       + 'uniform sampler2D tx; uniform vec3 nebel; uniform sampler2D sch; uniform mat4 schM; uniform float qual; uniform float schatt;'
       + 'vec3 filmic(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }'
+      + 'float schTiefe(vec4 v){ return dot(v, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/16581375.0)); }'
       + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 c = t.rgb * vc + vec3(0.80, 0.86, 0.95) * (vg * t.a);'
       + ' if (schatt > 0.5) { vec4 sp = schM * vec4(vwp, 1.0); vec3 suv = sp.xyz * 0.5 + 0.5;'
       + '   if (suv.x > 0.0 && suv.x < 1.0 && suv.y > 0.0 && suv.y < 1.0 && suv.z > 0.0 && suv.z <= 1.0) {'
       + '     float b = suv.z - 0.0015, e = 1.0 / 1024.0, s = 0.0;'
-      + '     s += step(texture2D(sch, suv.xy).r, b);'
-      + '     s += step(texture2D(sch, suv.xy + vec2(e, 0.0)).r, b);'
-      + '     s += step(texture2D(sch, suv.xy + vec2(0.0, e)).r, b);'
-      + '     s += step(texture2D(sch, suv.xy + vec2(e, e)).r, b);'
+      + '     s += step(schTiefe(texture2D(sch, suv.xy)), b);'
+      + '     s += step(schTiefe(texture2D(sch, suv.xy + vec2(e, 0.0))), b);'
+      + '     s += step(schTiefe(texture2D(sch, suv.xy + vec2(0.0, e))), b);'
+      + '     s += step(schTiefe(texture2D(sch, suv.xy + vec2(e, e))), b);'
       + '     c *= mix(1.0, 0.42, (4.0 - s) * 0.25); } }'
       + ' if (qual > 0.5) c = filmic(c * 1.05);'
       + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); c = mix(c, nebel, f);'
@@ -906,13 +907,6 @@
   // v1.3.94: Kalibrierung nach unten - die virtuellen NPCs waren fuer die meisten zu schnell. 0,85
   // heisst 15 % langsamer als die Garagenstufe 1 (wie ein frischer, vorsichtiger Fahrer).
   const VF_NPC_KALIBRIER = 0.85;
-  // v1.3.116: maximale NPC-Aussenlage. BESTELLT: "Bei allen NPC-Linien ca. 5 % der Aussenseite
-  // begrenzen ... das Firmware-Update erlaubt den NPCs weit aussen zu fahren, sodass sie nun
-  // oefter abfliegen." Anteil des bisherigen Querversatzes (Vorgabe 0,95 = 5 % weniger aussen).
-  const VF_NPC_AUSSEN_STORE = 'omegasim-vf-npc-aussen';
-  function vfNpcAussen() {
-    try { const v = +localStorage.getItem(VF_NPC_AUSSEN_STORE); return (v >= 0.5 && v <= 1) ? v : 0.95; } catch (e) { return 0.95; }
-  }
   // v1.3.94 Startaufstellung: ein Feld hinter der Startlinie, zwei Reihen (links/rechts), Abstand
   // zwischen den Reihen. Die Autos spawnen direkt auf ihren Startplaetzen statt verstreut.
   const VF_GRID_REIHE = Math.max(2, Math.round((typeof TRACK_SAMPLES_PER_TILE !== 'undefined' ? TRACK_SAMPLES_PER_TILE : 8) * 1.5));
@@ -1165,7 +1159,7 @@
       const startIdx = vfGridKachel(start, reihe);
       const npc = {
         auto, modell: null, P: null, idx: startIdx, s: null, kmh: 0, motor: vfNpcMotor(), bahn: null,
-        offset: (k % 2 === 0) ? 3.0 * vfNpcAussen() : -3.0 * vfNpcAussen(),
+        offset: (k % 2 === 0) ? 3.0 : -3.0,
         faktor: 0.97 + 0.03 * k,
         x: 0, y: 0, h: 0, raddreh: 0, lenkWinkel: 0, ay: 0, ax: 0,
         feder: { z: 0, vz: 0, th: 0, vth: 0, ph: 0, vph: 0 },
@@ -1355,33 +1349,32 @@
     gl.attachShader(p, vfShader(gl, gl.VERTEX_SHADER,
       'attribute vec3 p; uniform mat4 m; void main(){ gl_Position = m * vec4(p, 1.0); }'));
     gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
-      'precision mediump float; void main(){ gl_FragColor = vec4(1.0); }'));
+      'precision mediump float;'
+      + 'vec4 pack(float d){ vec4 r = vec4(d, fract(d*255.0), fract(d*65025.0), fract(d*16581375.0)); r -= r.yzww * vec4(1.0/255.0, 1.0/255.0, 1.0/255.0, 0.0); return r; }'
+      + 'void main(){ gl_FragColor = pack(gl_FragCoord.z); }'));
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     return { p, m: gl.getUniformLocation(p, 'm'), ap: gl.getAttribLocation(p, 'p') };
   }
-  // Schattenkarte (Depth-Textur + Framebuffer) anlegen. Liefert null, wenn das Geraet keine
-  // Depth-Textur kann - dann gibt es eben keine echten Schatten.
+  // Schattenkarte anlegen: die Tiefe wird als Graustufen-Farbe in eine RGBA-Textur geschrieben
+  // (WebGL1 kann Depth-Texturen nicht zuverlaessig abtasten; in eine RGBA-Textur dagegen ja).
+  // Das Tiefen-Renderbuffer dient nur dem Tiefentest beim Zeichnen. Liefert null, wenn das
+  // Framebuffer unvollstaendig bleibt - dann gibt es eben keine echten Schatten.
   function vfSchattenBauen(gl, size) {
-    if (!gl.getExtension('WEBGL_depth_texture')) return null;
     const tex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, tex);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, size, size, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT, null);
-    // Depth-Texturen sind in WebGL1 nicht zuverlaessig filterbar -> NEAREST (PFC weich macht der Shader).
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    // WebGL1 braucht einen Farb-Anhang, sonst ist das Framebuffer nicht vollstaendig.
-    const farbe = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, farbe);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    const rb = gl.createRenderbuffer();
+    gl.bindRenderbuffer(gl.RENDERBUFFER, rb);
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, size, size);
     const fbo = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, farbe, 0);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, tex, 0);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rb);
     const ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     if (!ok) return null;
@@ -1452,7 +1445,12 @@
     const SP = VF.schatteProg;
     gl.bindFramebuffer(gl.FRAMEBUFFER, VF.schatte.fbo);
     gl.viewport(0, 0, VF.schatte.size, VF.schatte.size);
-    gl.clear(gl.DEPTH_BUFFER_BIT);
+    // v1.3.123: Die Tiefe liegt als Graustufen-Farbe in der RGBA-Textur. Fern = 1.0 (weiss) wird
+    // zuverlaessig per clearColor geleert (bei Depth-Texturen auf WebGL1 ging das nicht, und das
+    // ganze Lichtquadrat ums Auto wurde abgedunkelt -> "weisses Quadrat").
+    gl.clearColor(1, 1, 1, 1);
+    gl.clearDepth(1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.useProgram(SP.p);
     if (VF.modell && VF.tprog) {
       vfModellSchatten(gl, SP, VF.modell, VF.x, VF.y, VF.h, VF.feder, VF.lenkWinkel, VF.raddreh, VF.radModell, vfFederSicht(), VF.pitch || 0, VF.schM);
@@ -1462,7 +1460,6 @@
       gl.enableVertexAttribArray(SP.ap);
       gl.vertexAttribPointer(SP.ap, 3, gl.FLOAT, false, 24, 0);
       gl.drawArrays(gl.TRIANGLES, 0, VF.auto.n);
-      gl.disableVertexAttribArray(SP.ap);
     }
     if (VF.npcs && VF.tprog) {
       for (const npc of VF.npcs) {
@@ -1470,6 +1467,7 @@
         vfModellSchatten(gl, SP, npc.modell, npc.x, npc.y, npc.h, npc.feder, npc.lenkWinkel, npc.raddreh, VF.radModell, 1, 0, VF.schM);
       }
     }
+    gl.disableVertexAttribArray(SP.ap);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
   // Daten einmal je Sitzung und Auto holen (fetch: ueber file:// nicht ladbar, dann bleibt der Kasten).
@@ -1909,7 +1907,7 @@
         // Neigung 1x: "Neigung sichtbar" gilt nur fuer das eigene Auto (v1.2.32 GEMELDET: "sollte auf
         // Stufe 1 sein"). Bremslicht, wenn das Fahrzeugmodell des NPC bremst.
         vfModellZeichnen(gl, pv, blick, npc.modell, VF.tprog, npc.x, npc.y, npc.h, npc.feder, npc.lenkWinkel, npc.raddreh, VF.radModell, true,
-          !!(npc.motor && npc.motor.outputs && npc.motor.outputs.lights && npc.motor.outputs.lights.brake), 1, k.auge);
+          !!(npc.motor && npc.motor.outputs && npc.motor.outputs.lights && npc.motor.outputs.lights.brake), 1, 0, k.auge);
       }
     }
   }
@@ -2766,15 +2764,6 @@
       renderGarage();
     };
     rechts.appendChild(garWertZeile(t('NPCs'), nNpc === 0 ? t('Aus') : String(nNpc), () => npcWahl(-1), () => npcWahl(1)));
-    // v1.3.116: maximale NPC-Aussenlage - weniger Querversatz, damit die NPCs nicht so weit aussen fahren.
-    const nAussen = Math.round(vfNpcAussen() * 100);
-    const aussenWahl = (dd) => {
-      try { localStorage.setItem(VF_NPC_AUSSEN_STORE, String(Math.round(Math.max(0.5, Math.min(1, vfNpcAussen() + (dd > 0 ? 0.05 : -0.05))) * 100) / 100)); } catch (e) { /* egal */ }
-      renderGarage();
-    };
-    const aussenZeile = garWertZeile(t('NPC-Außenlage'), nAussen + ' %', () => aussenWahl(-1), () => aussenWahl(1));
-    aussenZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
-    rechts.appendChild(aussenZeile);
     if (autos[ja].v !== 'kasten') {
       const jf = VF_FEDER_WERTE.indexOf(vfFederSicht());
       const federWahl = (dd) => {
