@@ -5726,7 +5726,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.3.127</span></span>
+        <span class="foot-ver">v<span id="app-version">1.3.128</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -21898,6 +21898,10 @@
       // v1.1.26: eine laufende Fahrtenwiedergabe sendet genau das Aufgenommene (siehe runPlayback).
       const mw = typeof macroWiedergabeWert === 'function' ? macroWiedergabeWert() : null;
       if (mw) { steer = mw.steer; throttle = mw.throttle; }
+      // v1.3.128: Nach dem Rennende (auch eines Meisterschafts-Events) bremst das Fahrerauto
+      // zum Stillstand und lenkt in die Mitte. Vorher behielt es den letzten Lenkwinkel und
+      // rollte nur langsam aus.
+      if (typeof raceState !== 'undefined' && raceState === 'finished') { steer = 0; throttle = -1; }
       sendControlValue(steer, throttle);
       spielerZweiSenden();
     } finally {
@@ -21949,6 +21953,8 @@
     let steer = physJetzt ? z.outSteer : z.steer;
     if (!z.rcLage) z.rcLage = rcLageNeu();
     let throttle = physJetzt ? z.outThrottle : rcGas(z.throttle, undefined, z.rcLage);
+    // v1.3.128: wie Auto 1 - nach dem Rennende bremsen und in die Mitte lenken.
+    if (typeof raceState !== 'undefined' && raceState === 'finished') { steer = 0; throttle = -1; }
     // ---- DIE ZWEI GLOBALEN, DIE NICHT IN config STEHEN -----------------------------
     //
     // BESTELLT: "Globale einstellungen gelten für beide autos gleichermaßen."
@@ -29251,6 +29257,11 @@
     const ziel = (typeof dirtyAirLevel === 'function') ? dirtyAirLevel() : 0;
     const ps = physEngine.state;
     ps.dirtyAir += (ziel - ps.dirtyAir) * Math.min(1, dt * 4);
+    // v1.3.128: Nach dem Rennende (auch eines Meisterschafts-Events) bremst das Fahrerauto
+    // zum Stillstand und lenkt in die Mitte - vorher behielt es den letzten Lenkwinkel und
+    // rollte nur langsam aus. Hier in der Physik, damit Modelltempo und ausgehendes Gas
+    // uebereinstimmen (das Auto bekommt die Bremse, nicht nur der Tacho).
+    if (typeof raceState !== 'undefined' && raceState === 'finished') { rawThrottle = 0; rawBrake = 1; steer = 0; }
     const out = physEngine.update({ steering: steer, throttle: rawThrottle, brake: rawBrake,
                                     headlights: headlightsOn, apFaehrt: !!ap }, dt);
     pacejkaRueckmeldung(physEngine, 1);
@@ -29392,6 +29403,8 @@
         padRumble(0.12, 0.34, OFFTRACK_RUMBLE_MS, 'abseits', z.nr);
       }
     }
+    // v1.3.128: wie Auto 1 - nach dem Rennende bremsen und in die Mitte lenken.
+    if (typeof raceState !== 'undefined' && raceState === 'finished') { gas = 0; bremse = 1; lenkung = 0; }
     const out = z.motor.update({ steering: lenkung, throttle: gas,
                                      brake: bremse,
                                      headlights: z.licht }, dt);

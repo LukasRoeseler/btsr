@@ -554,6 +554,10 @@
       // v1.1.26: eine laufende Fahrtenwiedergabe sendet genau das Aufgenommene (siehe runPlayback).
       const mw = typeof macroWiedergabeWert === 'function' ? macroWiedergabeWert() : null;
       if (mw) { steer = mw.steer; throttle = mw.throttle; }
+      // v1.3.128: Nach dem Rennende (auch eines Meisterschafts-Events) bremst das Fahrerauto
+      // zum Stillstand und lenkt in die Mitte. Vorher behielt es den letzten Lenkwinkel und
+      // rollte nur langsam aus.
+      if (typeof raceState !== 'undefined' && raceState === 'finished') { steer = 0; throttle = -1; }
       sendControlValue(steer, throttle);
       spielerZweiSenden();
     } finally {
@@ -605,6 +609,8 @@
     let steer = physJetzt ? z.outSteer : z.steer;
     if (!z.rcLage) z.rcLage = rcLageNeu();
     let throttle = physJetzt ? z.outThrottle : rcGas(z.throttle, undefined, z.rcLage);
+    // v1.3.128: wie Auto 1 - nach dem Rennende bremsen und in die Mitte lenken.
+    if (typeof raceState !== 'undefined' && raceState === 'finished') { steer = 0; throttle = -1; }
     // ---- DIE ZWEI GLOBALEN, DIE NICHT IN config STEHEN -----------------------------
     //
     // BESTELLT: "Globale einstellungen gelten für beide autos gleichermaßen."

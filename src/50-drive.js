@@ -3510,6 +3510,11 @@
     const ziel = (typeof dirtyAirLevel === 'function') ? dirtyAirLevel() : 0;
     const ps = physEngine.state;
     ps.dirtyAir += (ziel - ps.dirtyAir) * Math.min(1, dt * 4);
+    // v1.3.128: Nach dem Rennende (auch eines Meisterschafts-Events) bremst das Fahrerauto
+    // zum Stillstand und lenkt in die Mitte - vorher behielt es den letzten Lenkwinkel und
+    // rollte nur langsam aus. Hier in der Physik, damit Modelltempo und ausgehendes Gas
+    // uebereinstimmen (das Auto bekommt die Bremse, nicht nur der Tacho).
+    if (typeof raceState !== 'undefined' && raceState === 'finished') { rawThrottle = 0; rawBrake = 1; steer = 0; }
     const out = physEngine.update({ steering: steer, throttle: rawThrottle, brake: rawBrake,
                                     headlights: headlightsOn, apFaehrt: !!ap }, dt);
     pacejkaRueckmeldung(physEngine, 1);
@@ -3651,6 +3656,8 @@
         padRumble(0.12, 0.34, OFFTRACK_RUMBLE_MS, 'abseits', z.nr);
       }
     }
+    // v1.3.128: wie Auto 1 - nach dem Rennende bremsen und in die Mitte lenken.
+    if (typeof raceState !== 'undefined' && raceState === 'finished') { gas = 0; bremse = 1; lenkung = 0; }
     const out = z.motor.update({ steering: lenkung, throttle: gas,
                                      brake: bremse,
                                      headlights: z.licht }, dt);
