@@ -2267,14 +2267,23 @@
       raceState = 'racing'; raceMode = 'laps'; raceLimit = 10;
       raceLapTimes = [{ lap: 1, ms: 12000 }, { lap: 2, ms: 11000 }];
       dashLapTimes = []; fuel = 60; damage = 20; tyres = 'mittel';
+      // Die Ansage spricht Deutsch oder Englisch (Spanisch nutzt die englische Stimme):
+      // die erwarteten Bausteine folgen der eingestellten Sprache, sonst waere der Test
+      // unter EN/ES rot, ohne dass etwas kaputt ist.
+      const de = lang === 'de';
+      const soll = de
+        ? { best: 'Bestzeit', rest: 'Noch 8 Runden', tank: 'Tank 66 Liter',
+            schaden: 'Schaden 20 Prozent', reifen: 'Reifen' }
+        : { best: 'Best lap', rest: '8 laps to go', tank: 'Fuel 66 litres',
+            schaden: 'Damage 20 percent', reifen: 'Tyres' };
       if (statusBestZeit() !== 11000) schlecht.push('Bestzeit ' + statusBestZeit() + ' statt 11000');
-      if (statusRest() !== 'Noch 8 Runden') schlecht.push('Rest ' + statusRest() + ' statt Noch 8 Runden');
+      if (statusRest() !== soll.rest) schlecht.push('Rest ' + statusRest() + ' statt ' + soll.rest);
       const text = statusAnsageText();
-      if (text.indexOf('Bestzeit') < 0) schlecht.push('Bestzeit fehlt');
-      if (text.indexOf('Noch 8 Runden') < 0) schlecht.push('Rest fehlt');
-      if (text.indexOf('Tank 66 Liter') < 0) schlecht.push('Tank fehlt');
-      if (text.indexOf('Schaden 20 Prozent') < 0) schlecht.push('Schaden fehlt');
-      if (text.indexOf('Reifen') < 0) schlecht.push('Reifen fehlt');
+      if (text.indexOf(soll.best) < 0) schlecht.push('Bestzeit fehlt');
+      if (text.indexOf(soll.rest) < 0) schlecht.push('Rest fehlt');
+      if (text.indexOf(soll.tank) < 0) schlecht.push('Tank fehlt');
+      if (text.indexOf(soll.schaden) < 0) schlecht.push('Schaden fehlt');
+      if (text.indexOf(soll.reifen) < 0) schlecht.push('Reifen fehlt');
       return { ok: schlecht.length === 0,
                mass: schlecht.length ? schlecht.join('; ') : text };
     } finally {
@@ -6618,15 +6627,17 @@
     const src = String(ghostTick);
     if (src.indexOf('(ghostIstMax(car) && tight === 0)) ? 1 : ghostFeldStaffel(car)') < 0) f.push('Staffel bremst MAX auf Geraden');
     if (src.indexOf('if (!ghostIstMax(car)) {') < 0) f.push('Lernfaktor/Streuung drosseln MAX');
-    // Scan: Gerade 0,80, Kurve 0,67, Haarnadel 0,47.
+    // Scan: Gerade 0,72, Kurve 0,60, Haarnadel 0,42. Seit v1.3.114 ist die Basis (formationPace)
+    // um 20 % hoeher; die Faktoren sind gegengerechnet, damit der Scan nur leicht schneller wird
+    // (0,42 x 0,72 = 0,302 statt 0,35 x 0,80 = 0,28). Vorher 0,80/0,67/0,47.
     const s1 = scanTempoFaktor({ tileCode: TILE_TYPE.STRAIGHT }), s2 = scanTempoFaktor({ tileCode: TILE_TYPE.CURVE_RIGHT }),
           s3 = scanTempoFaktor({ tileCode: TILE_TYPE.HAIRPIN });
-    if (s1 !== 0.80 || s2 !== 0.67 || s3 !== 0.47) f.push('Scan-Tempi ' + [s1, s2, s3].join('/'));
+    if (s1 !== 0.72 || s2 !== 0.60 || s3 !== 0.42) f.push('Scan-Tempi ' + [s1, s2, s3].join('/'));
     // Schaltklang: Schalter ab Werk aus (neu), die Mischung bleibt beim Schalten stehen.
     if (!$('setting-schaltklang-alt') || $('setting-schaltklang-alt').defaultChecked) f.push('Schaltklang-Schalter fehlt oder ab Werk alt');
     if (String(updateSampleEngineIn).indexOf('store.schaltMix') < 0) f.push('Schaltklang haelt die Mischung nicht');
     if (!$('setting-npc-klang-alt') || $('setting-npc-klang-alt').defaultChecked) f.push('NPC-Klang-Schalter fehlt oder ab Werk alt');
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'MAX Arcade ohne Schaltpause, Staffel/Lernen aus, Scan 0,80/0,67/0,47, Schaltklang neu, NPC 5200/min' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'MAX Arcade ohne Schaltpause, Staffel/Lernen aus, Scan 0,72/0,60/0,42, Schaltklang neu, NPC 5200/min' };
   });
 
   stAdd('Rennen und Spieler v1.2.4: Renntyp je Sensormodus, Fahrgefuehl je Spieler, Pacejka-Challenges', () => {
@@ -10142,15 +10153,17 @@
     const r = await OMEGA_TEST.phaseWahrheitProbe({ takte: 1200, autos: 4 });
     if (!r || !r.zeit || !r.weg) return { skip: true, mass: 'kein Lauf - keine Strecke?' };
     const fehler = [];
-    // Mit dem Vorgabewert "Innen (gemittelt)" (seit v1.3.127) ist der Betragsfehler des Wegs
-    // etwa so gross wie der der Uhr (0,0706 gegen 0,0705) - kein klarer Sieg mehr, aber auch
-    // keine Verschlechterung. Der entscheidende Vorteil bleibt: er klebt nicht (fror den
-    // Linienversatz ein) und deckt die letzte Kachel besser ab. Die Pruefung fordert darum,
-    // dass der Weg die Uhr in den KERNkennzahlen schlaegt, laesst den Betragsfehler aber bis
-    // 1,5x zu.
-    if (!(r.weg.mittelBetrag < r.zeit.mittelBetrag * 1.5)) {
+    // BETRAGSFEHLER: Mit der Ideallinie "Innen (gemittelt)" als Vorgabe (seit v1.3.127) ist
+    // der Betragsfehler des Wegs etwa so gross wie der der Uhr. Nachgemessen (je 3-5 Laeufe,
+    // Verhaeltnis Weg/Uhr): Simulator-Linie 0,977-0,988, Innen (gemittelt) 0,990-1,006; die
+    // maximale NPC-Querlage (90 % gegen 100 %) aendert daran nichts. Ein strenges "<" waere
+    // damit ein Muenzwurf. Die Pruefung laesst darum hoechstens 3 % Nachteil zu - genug fuer
+    // das Rauschen, aber jede echte Verschlechterung (v1.3.121 waren es 41 %) wird rot. Die
+    // 1,5-fache Lockerung aus v1.3.121 ist zurueckgenommen; die Geschwindigkeitsneuvermessung,
+    // fuer die sie galt, ist es seit v1.3.127 auch.
+    if (!(r.weg.mittelBetrag < r.zeit.mittelBetrag * 1.03)) {
       fehler.push('Betragsfehler Weg ' + r.weg.mittelBetrag
-                  + ' nicht besser als Uhr ' + r.zeit.mittelBetrag);
+                  + ' mehr als 3 % schlechter als Uhr ' + r.zeit.mittelBetrag);
     }
     if (!(r.weg.klebt <= r.zeit.klebt)) {
       fehler.push('Weg klebt ' + r.weg.klebt + ', Uhr nur ' + r.zeit.klebt);
@@ -11378,6 +11391,9 @@
     // 2. RECHTS HINEIN, LINKS HINAUS - im Lenkbefehl, in dem rechts positiv ist. Seit
     //    v1.3.123 begrenzt npcQuerFaktor() die Querlage; "ganz rechts" ist damit dieser
     //    Faktor, gemessen wird, dass die Engstelle ihn fast ganz erreicht.
+    //    Das ist keine Lockerung: ghostLineOffset multipliziert die ganze Linie mit qF, die
+    //    gemessenen +0,93/-0,90 werden also zu +0,93qF/-0,90qF - und qF*0,9 ist genau die
+    //    alte Schwelle 0,9, mit demselben Faktor skaliert (bei qF = 1 identisch).
     const qF = npcQuerFaktor();
     if (!(r.start > qF * 0.9)) fehler.push('beginnt bei ' + r.start + ' statt ganz rechts');
     if (!(r.ende < -qF * 0.9)) fehler.push('endet bei ' + r.ende + ' statt ganz links');
@@ -24005,9 +24021,9 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Abstaende 0,6-1,4 x Mittel, Dauer fest, nur eingeschaltete' };
   });
 
-  // v1.3.90: In einem KURZEN Zeitrennen konnte der Plan leer bleiben, weil das erste Event
+  // v1.3.93: In einem KURZEN Zeitrennen konnte der Plan leer bleiben, weil das erste Event
   // (0,6-1,4 x Haeufigkeit) schon hinter dem Rennende lag - es passierte dann nie etwas.
-  stAdd('Zufallsevents v1.3.90: kurzes Zeitrennen - Plan nicht leer, Event passt ins Rennen', () => {
+  stAdd('Zufallsevents v1.3.93: kurzes Zeitrennen - Plan nicht leer, Event passt ins Rennen', () => {
     const f = [];
     const merkMode = raceMode, merkLimit = raceLimit;
     let s = 4242;
