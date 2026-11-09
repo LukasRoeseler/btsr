@@ -284,10 +284,9 @@
       }
       // 3. VOLL AUSGENUTZT MITTEN IM KURVENZUG: mit zwei weiteren gleichsinnigen Kacheln
       //    voraus ist der Mittelwert exakt die volle Querlage (alle drei Kacheln des Fensters
-      //    drehen gleich). Seit v1.3.123 begrenzt npcQuerFaktor() die Linie; die volle Querlage
-      //    ist damit dieser Faktor und nicht mehr 1.
-      const qF = npcQuerFaktor();
-      if (Math.abs(proTile[4] - qF) > 1e-6 || Math.abs(proTile[5] - qF) > 1e-6) {
+      //    drehen gleich). Die NPC-Querlage (npcQuerFaktor) begrenzt seit v1.3.132 nur die
+      //    AUSSENSEITE; die Linie liegt hier innen und ist damit voll (1).
+      if (Math.abs(proTile[4] - 1) > 1e-6 || Math.abs(proTile[5] - 1) > 1e-6) {
         schlecht.push('nicht voll ausgenutzt mitten im Kurvenzug: ' + proTile[4] + ',' + proTile[5]);
       }
       // 4. WEICHER ABSTIEG zum Kurvenende hin, aus demselben Grund wie der Anstieg.
@@ -328,14 +327,19 @@
       teile.push('Kachel 4+5 (Gerade): ' + proTile[4].join(',') + ' / ' + proTile[5].join(','));
       teile.push('Kachel 6 (Kurve): ' + proTile[6].join(','));
       // 1. HART: die Kurve steht von der ALLERERSTEN Kachel an auf voller Staerke, kein
-      //    Uebergang wie bei dreiStufenLine (dort erst nach SPUR_EIN aussen). Seit v1.3.123
-      //    begrenzt npcQuerFaktor() die Linie; volle Staerke ist damit dieser Faktor.
+      //    Uebergang wie bei dreiStufenLine (dort erst nach SPUR_EIN aussen). Die NPC-Querlage
+      //    (npcQuerFaktor) begrenzt seit v1.3.132 nur die AUSSENSEITE: in der Kurve (innen) voll,
+      //    am Ende der Geraden davor (aussen) hoechstens der Faktor.
       const qF = npcQuerFaktor();
-      if (!proTile[3].every((v) => Math.abs(v) === qF)) {
-        schlecht.push('Kurve (Kachel 3) nicht durchgehend auf voller Staerke: ' + proTile[3].join(','));
+      if (!proTile[3].every((v) => v === 1)) {
+        schlecht.push('Kurve (Kachel 3) innen nicht durchgehend voll: ' + proTile[3].join(','));
       }
-      if (!proTile[6].every((v) => Math.abs(v) === qF)) {
-        schlecht.push('Kurve (Kachel 6) nicht durchgehend auf voller Staerke: ' + proTile[6].join(','));
+      if (!proTile[6].every((v) => v === 1)) {
+        schlecht.push('Kurve (Kachel 6) innen nicht durchgehend voll: ' + proTile[6].join(','));
+      }
+      const aussenMax = Math.max(...proTile[5].map((v) => (v < 0 ? -v : 0)));
+      if (!(aussenMax > 0 && aussenMax <= qF + 1e-3)) {
+        schlecht.push('Gerade vor der Kurve aussen ' + aussenMax + ' statt 0 < x <= ' + qF);
       }
       // 2. GEGENSINNIG: die Kurve steht innen, die Geradenfolge davor endet aussen -
       //    entgegengesetztes Vorzeichen, sonst waere "aussen anfahren" bedeutungslos.
@@ -353,6 +357,38 @@
     }
     return { ok: schlecht.length === 0,
              mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // v1.3.132: NPC-Querlage begrenzt nur die AUSSENSEITE, der Wert kommt aus ghostCfg (kein DOM im Takt).
+  stAdd('NPC-Querlage v1.3.132: aussen begrenzt, innen voll, Wert gecacht', () => {
+    const f = [];
+    const el = $('npc-querlage');
+    const merk = { tiles: currentTrackTiles, wert: el ? el.value : null };
+    try {
+      if (!el) return { ok: false, mass: 'Option npc-querlage fehlt' };
+      el.value = '0.8'; el.dispatchEvent(new Event('change'));
+      if (ghostCfg.npcQuer !== 0.8 || npcQuerFaktor() !== 0.8) f.push('change nicht in ghostCfg (' + ghostCfg.npcQuer + ')');
+      if (String(npcQuerBegrenzen).indexOf('$(') >= 0) f.push('npcQuerBegrenzen liest das DOM');
+      currentTrackTiles = codeToTrack('SG2RG2L').tiles;          // 0 S, 1-2 G, 3 R, 4-5 G, 6 L
+      const auto = (k) => ({ ghost: { tileIndex: k }, tileCode: currentTrackTiles[k].type });
+      // Rechtskurve: innen = rechts (+) voll, aussen = links (-) auf den Faktor.
+      if (npcQuerBegrenzen(auto(3), 1, 0.5) !== 1) f.push('R innen begrenzt: ' + npcQuerBegrenzen(auto(3), 1, 0.5));
+      if (Math.abs(npcQuerBegrenzen(auto(3), -1, 0.5) + 0.8) > 1e-6) f.push('R aussen ' + npcQuerBegrenzen(auto(3), -1, 0.5) + ' statt -0,8');
+      // Linkskurve spiegelbildlich.
+      if (npcQuerBegrenzen(auto(6), -1, 0.5) !== -1) f.push('L innen begrenzt');
+      if (Math.abs(npcQuerBegrenzen(auto(6), 0.5, 0.5) - 0.4) > 1e-6) f.push('L aussen ' + npcQuerBegrenzen(auto(6), 0.5, 0.5) + ' statt 0,4');
+      // Gerade zwischen R und L: Seite laeuft stetig von +1 nach -1, in der Mitte keine Begrenzung.
+      const mitte = npcQuerBegrenzen(auto(4), -1, 1);
+      if (Math.abs(mitte + 1) > 1e-6) f.push('Mitte der Geraden begrenzt: ' + mitte);
+      // Ohne Ort: die gemeldete Kachel entscheidet.
+      if (Math.abs(npcQuerBegrenzen({ ghost: {}, tileCode: TILE_TYPE.CURVE_RIGHT }, -1) + 0.8) > 1e-6) f.push('ohne Ort nicht begrenzt');
+      el.value = '1'; el.dispatchEvent(new Event('change'));
+      if (npcQuerBegrenzen(auto(3), -1, 0.5) !== -1) f.push('100 %: trotzdem begrenzt');
+    } finally {
+      currentTrackTiles = merk.tiles;
+      if (el) { el.value = merk.wert; el.dispatchEvent(new Event('change')); }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'R/L innen 1, aussen x Faktor, Gerade stetig, Wert aus ghostCfg' };
   });
 
   // ---- Luuke-Linie: die fuenf verlaesslichen Beispiele treffen die vorgegebene Querlage ----

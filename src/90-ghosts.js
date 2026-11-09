@@ -3463,6 +3463,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Begruendung dafuer steht bei GHOST_READ_MIN: darunter liest das Auto die gedruckte
     // Strecke nicht mehr.
     speed: 0.55,        // fraction of top speed on a straight
+    // v1.3.132: maximale NPC-Querlage AUSSEN (Option npc-querlage), beim Laden und bei change gelesen
+    // statt je Takt aus dem DOM (npcQuerFaktor/npcQuerBegrenzen).
+    npcQuer: 0.9,
     // 0,15, gefahren ermittelt. 0,35 war zu viel: mit der berichtigten Ratenbegrenzung wirkt
     // der Abschlag jetzt wirklich, und die Haarnadel bekommt ohnehin das Doppelte.
     // 0,20 auf Wunsch (war 0,15). Die Haarnadel bekommt davon das Doppelte, also 40
@@ -5899,13 +5902,67 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
   // v1.3.123: maximale NPC-Querlage (Optionen -> NPCs). BESTELLT: "Bei allen NPC-Linien ca. 5 %
   // der Aussenseite begrenzen ... das Firmware-Update erlaubt den NPCs weit aussen zu fahren,
-  // sodass sie nun oefter abfliegen." Anteil der bisherigen Linie (Vorgabe 0,95 = 5 % weniger
-  // aussen). Skaliert die Linie, die die NPCs fahren (ghostLineOffset/ghostLineMitDeckel).
+  // sodass sie nun oefter abfliegen." Anteil der bisherigen Linie auf der AUSSENSEITE.
   // v1.3.127: Vorgabe auf 90 % gestellt ("90 % Raum zum Aussenkantenrand").
-  function npcQuerFaktor() {
-    const s = $('npc-querlage');
-    const v = s ? +s.value : 0.9;
-    return (v >= 0.5 && v <= 1) ? v : 0.9;
+  // v1.3.132: 1.3.123 skalierte die ganze Linie, also auch die INNENSEITE (Scheitel) - die bleibt jetzt
+  // voll (npcQuerBegrenzen). Der Wert steht in ghostCfg.npcQuer (kein DOM-Lesen im Takt).
+  function npcQuerFaktor() { return ghostCfg.npcQuer; }
+  if ($('npc-querlage')) {
+    const el = $('npc-querlage');
+    const an = () => { const v = +el.value; ghostCfg.npcQuer = (v >= 0.5 && v <= 1) ? v : 0.9; };
+    el.addEventListener('change', an);
+    an();
+  }
+  // Die Kurvenseite an der Stelle des Autos, STETIG (-1 links ... +1 rechts): auf Kurventeilen deren
+  // Richtung, auf Geraden (auch Engstelle, Box) linear von der Kurve davor zur Kurve danach. Stetig,
+  // weil ein Sprung der Seite mitten auf der Geraden die Linie um 10 % springen liesse (Selbsttest
+  // "Ideallinie stetig"); so wirkt die Begrenzung dort, wo die Seite wechselt, gar nicht. Stossen zwei
+  // gegensinnige Kurven aneinander (S, z. B. Haarnadel rechts + links), laeuft die Seite in der
+  // Teilhaelfte zur Fuge auf 0. Je Teil Anfangs-, Mitten- und Endwert, einmal je Strecke gebaut (wie
+  // lineCache, Schluessel = Teile-Array).
+  const npcSeiteCache = { tiles: null, n: 0, an: null, mi: null, ab: null };
+  function npcSeiteBauen(tiles, n) {
+    const an = new Float32Array(n), mi = new Float32Array(n), ab = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const w = ghostTurnOf(tiles[i].type);
+      if (w) {
+        mi[i] = w;
+        an[i] = ghostTurnOf(tiles[(i - 1 + n) % n].type) === -w ? 0 : w;
+        ab[i] = ghostTurnOf(tiles[(i + 1) % n].type) === -w ? 0 : w;
+        continue;
+      }
+      let db = 1, df = 1;
+      while (db < n && !ghostTurnOf(tiles[(i - db + n) % n].type)) db++;
+      while (df < n && !ghostTurnOf(tiles[(i + df) % n].type)) df++;
+      if (db >= n) continue;                          // keine einzige Kurve: Seite 0
+      const va = ghostTurnOf(tiles[(i - db + n) % n].type), vb = ghostTurnOf(tiles[(i + df) % n].type);
+      const L = db + df - 1, pos = db - 1;
+      an[i] = va + (vb - va) * pos / L;
+      ab[i] = va + (vb - va) * (pos + 1) / L;
+      mi[i] = (an[i] + ab[i]) / 2;
+    }
+    const c = npcSeiteCache;
+    c.tiles = tiles; c.n = n; c.an = an; c.mi = mi; c.ab = ab;
+  }
+  function npcKurvenSeite(k, ph) {
+    const tiles = currentTrackTiles, n = tiles ? tiles.length : 0;
+    if (!n || k === null || k === undefined) return 0;
+    if (npcSeiteCache.tiles !== tiles || npcSeiteCache.n !== n) npcSeiteBauen(tiles, n);
+    const c = npcSeiteCache, i = ((k % n) + n) % n, p = ph || 0;
+    return p < 0.5 ? c.an[i] + (c.mi[i] - c.an[i]) * 2 * p : c.mi[i] + (c.ab[i] - c.mi[i]) * (2 * p - 1);
+  }
+  // Querlage v (rechts positiv) auf der Aussenseite der Kurve auf ghostCfg.npcQuer begrenzen, innen voll.
+  // Ohne Ort die gerade gemeldete Kachel. Im Takt: keine Allokation, kein DOM.
+  function npcQuerBegrenzen(car, v, ph) {
+    const f = ghostCfg.npcQuer;
+    if (!(f < 1) || !v) return v;
+    const g = car && car.ghost;
+    let seite = 0;
+    if (g && g.tileIndex !== null && g.tileIndex !== undefined) {
+      seite = npcKurvenSeite(g.tileIndex, ph === undefined ? ghostTilePhase(car) : ph);
+    } else if (car) seite = ghostTurnOf(car.tileCode);
+    if (!(v * seite < 0)) return v;
+    return v * (1 - (1 - f) * Math.min(1, Math.abs(seite)));
   }
   function npcBoxStehen(car) {
     const p = car.ghost && car.ghost.pit;
@@ -9525,7 +9582,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const g = car.ghost;
     if (!lc || !g) return ghostLineMitDeckel(car, ghostLineHeuristic(car)
                                              || ghostLineFromCode(car));
-    const i = ghostLineIndex(lc, g.tileIndex, ghostTilePhase(car));
+    const ph = ghostTilePhase(car);
+    const i = ghostLineIndex(lc, g.tileIndex, ph);
     if (i === null) return ghostLineMitDeckel(car, ghostLineHeuristic(car)
                                              || ghostLineFromCode(car));
     // ---- DER BEZUG IST DIE BAHNBREITE UND NICHT DIE SPANNE DER LINIE ----------------
@@ -9579,8 +9637,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Skaliert bleibt die Grenze dieselbe (|roh| <= 1, also |Ausgabe| <= cap), aber die Form
     // ueberlebt: gemessen 0,144 Kurvenspanne im Rundenzeitmodell statt 0,000.
     const roh2 = Math.max(-1, Math.min(1, roh * f.push));
-    // v1.3.123: maximale NPC-Querlage begrenzt die Aussenlage (npcQuerFaktor, Vorgabe 0,95).
-    return roh2 * cap * npcQuerFaktor();
+    // v1.3.123/1.3.132: maximale NPC-Querlage begrenzt nur die Aussenlage (npcQuerBegrenzen, Vorgabe 0,9).
+    return npcQuerBegrenzen(car, roh2 * cap, ph);
   }
 
   // Lernfaktor und Kippwert-Deckel, fuer die zwei Rueckfallquellen. Sie gingen vorher OHNE
@@ -9591,8 +9649,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function ghostLineMitDeckel(car, roh) {
     const f = learnFactors(car);
     const cap = learnSteerCap();
-    // v1.3.123: maximale NPC-Querlage begrenzt die Aussenlage (npcQuerFaktor, Vorgabe 0,95).
-    return Math.max(-1, Math.min(1, roh * f.push)) * cap * npcQuerFaktor();
+    // v1.3.123/1.3.132: maximale NPC-Querlage begrenzt nur die Aussenlage (npcQuerBegrenzen, Vorgabe 0,9).
+    return npcQuerBegrenzen(car, Math.max(-1, Math.min(1, roh * f.push)) * cap);
   }
 
   // Bremsbedarf an der Stelle, an der das Auto gerade ist: 0 = freie Fahrt, 1 = voll

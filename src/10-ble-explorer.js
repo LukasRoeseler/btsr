@@ -373,6 +373,8 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "NPC: maximale Querlage": "NPC: maximum lateral position",
+    "Wie weit ein NPC auf der Außenseite einer Kurve fahren darf; die Innenseite bleibt voll. Das Firmware-Update erlaubt den NPCs, weit außen zu fahren, sodass sie öfter abfliegen. Vorgabe 90 % der bisherigen Linie – 10 % Raum zum Außenkantenrand. 100 % ist die alte, volle Linie.": "How far an NPC may drive on the outside of a corner; the inside stays full. The firmware update lets NPCs drive far out, so they fly off more often. Default 90 % of the previous line – 10 % room to the outer edge. 100 % is the old, full line.",
     "Strafe für Frühstart": "Jump-start penalty",
     "Wer bei roter Ampel Gas gibt, bekommt die gewählte Strafe – auch Spieler 2 und 3 und im WLAN-Mehrspieler. Während Rot ist das Gas gesperrt. Durchfahrt: beim nächsten Boxenstopp abzuleisten, sonst +20 s im Ergebnis. Zusatzrunde: nur im Rundenrennen eine Runde mehr für diesen Fahrer; in den anderen Rennarten gilt die Durchfahrt. In Challenges immer 5 s Zeitstrafe.": "Whoever touches the throttle on a red light gets the chosen penalty – players 2 and 3 and Wi-Fi multiplayer too. The throttle is locked while the light is red. Drive-through: to be served at the next pit stop, otherwise +20 s in the result. Extra lap: only in a lap race, one more lap for that driver; in the other race types the drive-through applies. In challenges always a 5 s time penalty.",
     "5 s Zeitstrafe": "5 s time penalty",
@@ -4202,6 +4204,8 @@
   // nachzieht. Bewusst KEINE Ansagen (Rundenzeit, Tank, Schaden): dafuer gibt es noch keine
   // spanischen Aufnahmen, und die Sprachausgabe nutzt die englische als Platzhalter.
   const I18N_ES = {
+    "NPC: maximale Querlage": "NPC: posición lateral máxima",
+    "Wie weit ein NPC auf der Außenseite einer Kurve fahren darf; die Innenseite bleibt voll. Das Firmware-Update erlaubt den NPCs, weit außen zu fahren, sodass sie öfter abfliegen. Vorgabe 90 % der bisherigen Linie – 10 % Raum zum Außenkantenrand. 100 % ist die alte, volle Linie.": "Hasta dónde puede ir un NPC por el exterior de una curva; el interior queda completo. La actualización de firmware permite a los NPC ir muy por fuera, por lo que se salen más a menudo. Predeterminado 90 % de la línea anterior – 10 % de margen hasta el borde exterior. 100 % es la línea antigua completa.",
     "Strafe für Frühstart": "Sanción por salida en falso",
     "Wer bei roter Ampel Gas gibt, bekommt die gewählte Strafe – auch Spieler 2 und 3 und im WLAN-Mehrspieler. Während Rot ist das Gas gesperrt. Durchfahrt: beim nächsten Boxenstopp abzuleisten, sonst +20 s im Ergebnis. Zusatzrunde: nur im Rundenrennen eine Runde mehr für diesen Fahrer; in den anderen Rennarten gilt die Durchfahrt. In Challenges immer 5 s Zeitstrafe.": "Quien acelere con el semáforo en rojo recibe la sanción elegida – también los jugadores 2 y 3 y en el multijugador por wifi. Con el rojo el acelerador está bloqueado. Paso por boxes: se cumple en la siguiente parada en boxes; si no, +20 s en el resultado. Vuelta extra: solo en carreras por vueltas, una vuelta más para ese piloto; en los demás tipos de carrera se aplica el paso por boxes. En los desafíos siempre 5 s de sanción.",
     "5 s Zeitstrafe": "5 s de sanción",
