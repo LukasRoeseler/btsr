@@ -125,7 +125,7 @@
       }
       for (const [p, ul] of abschnitte.slice(0, 3)) {
         const h = document.createElement('h3');
-        h.textContent = 'Version ' + (p.querySelector('b').textContent || '').trim();
+        h.textContent = t('Version') + ' ' + (p.querySelector('b').textContent || '').trim();   // im Code gesetzt: durch t()
         inhalt.appendChild(h);
         const kopie = ul.cloneNode(true);
         kopie.removeAttribute('id');

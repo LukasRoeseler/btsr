@@ -17859,27 +17859,48 @@
   });
 
   // v1.3.122: Kamera- und Steuerungs-Knopf der virtuellen Fahrt, Beruehrungs-Steuerung (Touch).
-  stAdd('Virtuell v1.3.122: Kamera-Knopf, Steuerungs-Knopf und Beruehrungs-Steuerung vorhanden', () => {
+  // Bis 1.3.131 legte der Test seine Knoepfe selbst an und prueft damit nichts. Jetzt: eine echte
+  // virtuelle Fahrt starten (synchron, ohne Bild), die Knoepfe der App suchen, Kamera-Knopf druecken,
+  // mit dem Touch-Lenkfeld lenken und loslassen (Quelle SRC.TOUCH in der Schiedsstelle). Kein WIP-Etikett.
+  stAdd('Virtuell v1.3.122: Kamera-Knopf, Steuerungs-Knopf und Beruehrungs-Steuerung wirken', () => {
+    if (typeof virtuellStarten !== 'function' || typeof VF === 'undefined') return { skip: true, mass: 'kein virtuelles Fahren' };
+    if (VF.aktiv) return { skip: true, mass: 'virtuelle Fahrt laeuft gerade' };
+    if (!physicsEnabled) return { skip: true, mass: 'Fahrgefuehl ohne Physik (RC)' };
     const f = [];
-    // Der Knoepfe-Bereich der virtuellen Fahrt traegt den Kamera- und den Steuerungs-Knopf.
-    const kasten = document.createElement('div');
-    kasten.innerHTML = '<div class="vf-knoepfe"><button type="button" data-vf="kam"></button><button type="button" data-vf="touch"></button></div>';
-    if (!kasten.querySelector('[data-vf="kam"]')) f.push('Kamera-Knopf fehlt');
-    if (!kasten.querySelector('[data-vf="touch"]')) f.push('Steuerungs-Knopf fehlt');
-    // Die Beruehrungs-Steuerung hat eine eigene Quelle in der Schiedsstelle.
-    if (!SRC || !SRC.TOUCH) f.push('SRC.TOUCH fehlt');
-    if (typeof vfTouchGeraet !== 'function' || typeof vfTouchSollAn !== 'function') f.push('Touch-Funktionen fehlen');
-    try { if (typeof vfTouchGeraet() !== 'boolean' || typeof vfTouchSollAn() !== 'boolean') f.push('Touch-Abfragen liefern kein Boolean'); }
-    catch (e) { f.push('Touch-Abfrage: ' + e.message); }
-    // Aufbauen wirft nicht, und die Steuerung bleibt im Desktop-Kontext verborgen.
-    const el = document.createElement('div');
-    el.className = 'vf-touch';
-    el.innerHTML = '<div class="vf-touch-lenk"><div class="vf-touch-knauf"></div></div><div class="vf-touch-gas"><div class="vf-touch-knauf"></div></div>';
-    document.body.appendChild(el);
-    const vorher = VF.schicht; VF.schicht = el;
-    try { vfTouchBauen(); } catch (e) { f.push('vfTouchBauen: ' + e.message); }
-    finally { VF.schicht = vorher; el.remove(); }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Kamera- und Steuerungs-Knopf da, SRC.TOUCH, Booleans ok, Touch-Bauen wirft nicht' };
+    const merkTab = typeof kAktiverTab === 'function' ? kAktiverTab() : null;
+    let merkKam = null;
+    try { merkKam = localStorage.getItem(VF_KAMERA_STORE); } catch (e) { /* privat */ }
+    try {
+      if (!virtuellStarten({ tiles: codeToTrack('SG3R2G3R2').tiles, studie: true })) return { skip: true, mass: 'virtuelle Fahrt startet hier nicht (kein WebGL?)' };
+      const sch = VF.schicht;
+      for (const k of ['kam', 'touch', 'box', 'flag', 'licht', 'reset', 'zu']) if (!sch.querySelector('[data-vf="' + k + '"]')) f.push('Knopf ' + k + ' fehlt');
+      for (const sel of ['[data-vf="kam"]', '[data-vf="touch"]', '.vf-touch']) {
+        const el = sch.querySelector(sel);
+        if (el && el.querySelector('.wip-tag')) f.push(sel + ' mit WIP-Etikett');
+      }
+      if (sch.querySelector('[data-vf="touch"]') && sch.querySelector('[data-vf="touch"]').hidden !== !vfTouchGeraet()) f.push('Steuerungs-Knopf sichtbar ohne Touch-Geraet');
+      // Kamera-Knopf schaltet weiter.
+      const k0 = vfKameraId();
+      sch.querySelector('[data-vf="kam"]').click();
+      if (vfKameraId() === k0) f.push('Kamera-Knopf wechselt nicht (' + k0 + ')');
+      // Touch: rechts aussen im Lenkfeld = voll rechts ueber SRC.TOUCH, loslassen = 0.
+      vfTouchAnzeigen(true);
+      const lenk = sch.querySelector('.vf-touch-lenk');
+      const r = lenk.getBoundingClientRect();
+      if (!(r.width > 0)) f.push('Lenkfeld ohne Groesse');
+      else {
+        lenk.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 5, clientX: r.right - 1, clientY: r.top + r.height / 2, bubbles: true }));
+        if (!steerClaim[SRC.TOUCH] || !(steerX > 0.9)) f.push('Touch lenkt nicht: ' + steerX);
+        lenk.dispatchEvent(new PointerEvent('pointerup', { pointerId: 5, bubbles: true }));
+        if (steerClaim[SRC.TOUCH] || steerX !== 0) f.push('Touch laesst nicht los: ' + steerX);
+      }
+    } finally {
+      if (VF.aktiv) { try { virtuellBeenden(); } catch (e) { /* weiter */ } }
+      VF.kamera = null;
+      try { if (merkKam === null) localStorage.removeItem(VF_KAMERA_STORE); else localStorage.setItem(VF_KAMERA_STORE, merkKam); } catch (e) { /* privat */ }
+      if (merkTab && typeof showTab === 'function') showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '7 Knoepfe der App da, ohne WIP, Kamera wechselt, Touch lenkt ueber SRC.TOUCH und laesst los' };
   });
 
   stAdd('Virtuell v1.2.32: Kartenauto bleibt unter der 3D-Schicht verborgen, Silhouette an Ort, Skala und Drehung', () => {
@@ -23849,6 +23870,107 @@
       if (merkTab && typeof showTab === 'function') showTab(merkTab);
     }
     return { ok, mass };
+  });
+
+  // Review nach 1.3.131: die virtuelle Fahrt sickerte ins echte Fahren durch. Der Start loeschte den
+  // echten Schaden, Zusammenstoesse blieben danach stehen, eine virtuell gesetzte gelbe Flagge galt
+  // weiter, und Time Attack wertete jede Runde zweimal (einmal mit der Rundenzahl als Spielernummer).
+  // Echte Fahrt: virtuellStarten/virtuellBeenden synchron, ohne ein einziges Bild dazwischen.
+  stAdd('Virtuell: Schaden, gelbe Flagge und Touch-Eingabe sickern nicht ins echte Fahren', () => {
+    if (typeof virtuellStarten !== 'function' || typeof VF === 'undefined') return { skip: true, mass: 'kein virtuelles Fahren' };
+    if (VF.aktiv) return { skip: true, mass: 'virtuelle Fahrt laeuft gerade' };
+    if (!physicsEnabled) return { skip: true, mass: 'Fahrgefuehl ohne Physik (RC)' };
+    const f = [];
+    const merkTab = typeof kAktiverTab === 'function' ? kAktiverTab() : null;
+    const merk = { damage, flag: flagState, limitYellow, gelbAus: $('race-gelb-aus') ? $('race-gelb-aus').checked : null };
+    let gestartet = false;
+    try {
+      if ($('race-gelb-aus')) $('race-gelb-aus').checked = false;
+      damage = 37;
+      if (flagState !== 'green') gelbBeenden();
+      gestartet = virtuellStarten({ tiles: codeToTrack('SG3R2G3R2').tiles, studie: true });
+      if (!gestartet) return { skip: true, mass: 'virtuelle Fahrt startet hier nicht (kein WebGL?)' };
+      if (damage !== 0) f.push('virtuell nicht heil gestartet: ' + damage);
+      damage = 80;   // wie nach Zusammenstoessen (vfVerkehr)
+      const flagKnopf = VF.schicht.querySelector('[data-vf="flag"]');
+      if (!flagKnopf) f.push('Knopf Gelbe Flagge fehlt');
+      else flagKnopf.click();
+      if (flagState !== 'yellow') f.push('Knopf setzt keine gelbe Flagge (' + flagState + ')');
+      // Gas ueber die Beruehrungs-Steuerung halten und die Fahrt beenden, ohne loszulassen.
+      vfTouchAnzeigen(true);
+      const gas = VF.schicht.querySelector('.vf-touch-gas');
+      const r = gas.getBoundingClientRect();
+      gas.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 7, clientX: r.left + r.width / 2, clientY: r.top + 2, bubbles: true }));
+      if (!throttleClaim[SRC.TOUCH]) f.push('Touch-Gas greift nicht');
+      virtuellBeenden();
+      if (damage !== 37) f.push('Schaden nach dem Beenden ' + damage + ' statt 37');
+      if (flagState !== 'green') f.push('Flagge nach dem Beenden ' + flagState);
+      if (limitYellow !== 1) f.push('Gelb-Grenze bleibt ' + limitYellow);
+      if (throttleClaim[SRC.TOUCH]) f.push('Touch-Gas haengt nach dem Beenden');
+      if (physEngine.state.dirtyAir) f.push('dreckige Luft bleibt ' + physEngine.state.dirtyAir);
+      // Time Attack: die Runde wertet nur 70-race.js (die virtuelle Fahrt ruft bestzeitRunde nicht selbst).
+      if (/bestzeitRunde\(/.test(String(vfPaket))) f.push('vfPaket wertet Time Attack selbst');
+    } finally {
+      if (VF.aktiv) { try { virtuellBeenden(); } catch (e) { /* weiter */ } }
+      damage = merk.damage;
+      if (merk.flag === 'green' && flagState !== 'green') gelbBeenden();
+      if (merk.gelbAus !== null) $('race-gelb-aus').checked = merk.gelbAus;
+      if (merkTab && typeof showTab === 'function') showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'heil gestartet, Schaden 37 zurueck, Gelb aufgehoben, Touch losgelassen' };
+  });
+
+  // Review nach 1.3.131: die Drehzahl-Vibration auf R2 (DualSense) gilt nur in der virtuellen Fahrt.
+  stAdd('DualSense: R2-Vibration nur in der virtuellen Fahrt', () => {
+    if (typeof dsRechtsStufe !== 'function' || typeof VF === 'undefined') return { skip: true, mass: 'kein DualSense-Teil' };
+    if (VF.aktiv) return { skip: true, mass: 'virtuelle Fahrt laeuft gerade' };
+    const st = physEngine.state, merk = { rpm: st.rpmFrac, lu: st.longUse, thr: bindings.throttle, phys: physicsEnabled };
+    try {
+      bindings.throttle = { type: 'button', index: 7 };
+      physicsEnabled = true; st.rpmFrac = 0.97; st.longUse = 1;
+      const echt = dsRechtsStufe();
+      VF.aktiv = true;
+      const virtuell = dsRechtsStufe();
+      VF.aktiv = false;
+      return { ok: echt === 0 && virtuell > 0, mass: 'echt ' + echt + ', virtuell ' + virtuell };
+    } finally {
+      VF.aktiv = false; st.rpmFrac = merk.rpm; st.longUse = merk.lu; bindings.throttle = merk.thr; physicsEnabled = merk.phys;
+    }
+  });
+
+  // Review nach 1.3.131: fehlt auf Deutsch ein Tutorial-Clip, bleibt es still (Text steht da) statt der
+  // Geraetestimme mit en-US; englische Clips spielen nur im englischen Modus.
+  stAdd('Tutorial: Deutsch ohne Clip still, keine Clips der anderen Sprache', () => {
+    if (typeof tutSprechenEcht !== 'function' || !window.speechSynthesis) return { skip: true, mass: 'kein Tutorial oder keine Sprachausgabe' };
+    const ss = window.speechSynthesis, echtSpeak = ss.speak, merkLang = lang, merkTon = soundEnabled, merkSp = tutSprache;
+    const merkBuf = new Map(tutBuffers);
+    let gesprochen = 0;
+    const f = [];
+    try {
+      ss.speak = () => { gesprochen++; };
+      soundEnabled = true;
+      tutBuffers.clear();
+      lang = 'de';
+      const d = tutSprechenEcht('gut');
+      if (gesprochen) f.push('Deutsch ohne Clip spricht die Geraetestimme');
+      if (!(d >= 2)) f.push('Lesedauer ' + d);
+      // Englische Puffer geladen, Sprache Deutsch: kein englischer Clip, sondern still.
+      tutSprache = 'en';
+      tutBuffers.set('gut', { duration: 1 });
+      const vorher = tutQuelle;
+      tutSprechenEcht('gut');
+      if (tutQuelle !== vorher) f.push('englischer Clip im deutschen Modus');
+      if (gesprochen) f.push('Geraetestimme im deutschen Modus');
+      // Englisch ohne Clip: die Geraetestimme darf sprechen.
+      tutBuffers.clear(); lang = 'en';
+      tutSprechenEcht('gut');
+      if (!gesprochen) f.push('Englisch ohne Clip ganz stumm');
+    } finally {
+      tutVerstummen();
+      ss.speak = echtSpeak; lang = merkLang; soundEnabled = merkTon; tutSprache = merkSp;
+      tutBuffers.clear(); merkBuf.forEach((v, k) => tutBuffers.set(k, v));
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'DE still ohne Clip, EN-Puffer nicht im DE-Modus, EN ohne Clip mit Geraetestimme' };
   });
 
   // v1.3.77 GEMELDET: die blaue Radar-Kopflinie (ACC) stach durch die anderen Cockpit-Schirme.
