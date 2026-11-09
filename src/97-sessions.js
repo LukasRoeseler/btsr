@@ -623,7 +623,9 @@
     const zielPlus = imRennen && typeof fruehstartZielPlus === 'function' ? fruehstartZielPlus(1) : 0;
     return { id: mp.id, name: mp.name || 'ohne Namen', laps: Math.max(0, zeiten.length - zielPlus),
              letzte, beste, summe, strafe,
-             abgaenge: (typeof offtrackZaehler !== 'undefined') ? offtrackZaehler : 0 };
+             abgaenge: (typeof offtrackZaehler !== 'undefined') ? offtrackZaehler : 0,
+             // v1.4.33: Abflug eines EIGENEN Autos unter automatischer Gelber Flagge ('' = keiner).
+             gelb: typeof autoGelbMpFeld === 'function' ? autoGelbMpFeld() : '' };
   }
 
   async function mpBerichten() {
@@ -803,6 +805,7 @@
     chSetzen('race-flying', !!plan.fliegend);
     chSetzen('race-pit-required', String(plan.pit || 0));
     if (plan.tank) chSetzen('race-fuel-start', plan.tank);
+    if (plan.autoGelb) chSetzen('race-auto-gelb', plan.autoGelb);
     if (plan.meister && typeof meisterMpUebernehmen === 'function') meisterMpUebernehmen(plan);
     // BESTELLT: "der Host kann die Renneinstellungen (Tempo, Handling, Beschleunigung,
     // Schaden, Reifenverschleiss) auf alle erzwingen, wie es die Arcade/Pro-Presets bei den
@@ -835,6 +838,8 @@
     // Ziel eines Tank-Lecks) und schickt ihn mit wie den Wetterplan; die anderen wuerfeln nicht selbst
     // (startRaceCountdown -> zevRennStart(plan)). null = aus, auch wenn ein Mitspieler sie an hat.
     plan.zev = typeof zevPlanFuerMp === 'function' ? zevPlanFuerMp() : null;
+    // v1.4.33: die automatische Gelbe Flagge gilt fuer alle wie beim startenden Telefon.
+    plan.autoGelb = typeof autoGelbModus === 'function' ? autoGelbModus() : 'aus';
     // BESTELLT: "der Host erzwingt die Renneinstellungen auf allen." Wenn der Schalter an ist,
     // schickt der Host seine eigene aktive Abstimmung (Arcade/Pro/...) als `preset` mit; die
     // Mitglieder wenden sie beim Uebernehmen an (mpRennenUebernehmen).
@@ -1024,6 +1029,7 @@
       mpPosTakt();
       mpZeichnen(d);
       mpEndePruefen(d);
+      if (typeof autoGelbMpPruefen === 'function') autoGelbMpPruefen(d);
       mpZielPruefen(d);
       mpBereitSchirm(d);
       mpSay(t('verbunden') + ', ' + (d.fahrer || []).length + ' '

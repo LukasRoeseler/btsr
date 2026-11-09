@@ -7598,7 +7598,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                      : grund === 'formation' ? 'EINFÜHRUNGSRUNDE · AUTOPILOT'
                      : grund === 'aufstellen' ? 'AUFSTELLUNG · AUTOPILOT'
                      : raceFormationLap ? 'EINFÜHRUNGSRUNDE' : '';
-      el.textContent = flaggenText ? t(flaggenText) : '';
+      // v1.4.33: unter einem automatischen Gelb (74b-autogelb.js) steht dahinter, wer neben der Bahn ist
+      // bzw. wann die Anfahrt kommt. Der Zusatz ist schon uebersetzt; er wird nur bei Aenderung gesetzt.
+      const agText = flagState === 'yellow' && typeof autoGelbBannerText === 'function' ? autoGelbBannerText() : '';
+      el.textContent = flaggenText ? t(flaggenText) + (agText ? ' · ' + agText : '') : '';
       el.style.display = el.textContent ? '' : 'none';
     }
   }
@@ -7607,21 +7610,26 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // beim Start, damit der Moment, ab dem wieder ueberholt werden darf, fuer alle derselbe
   // und sichtbar ist. Echtes FIA/GT3-Muster: 5 rote Lampen je Sekunde (1..5), dann eine
   // zufaellige 1-3 s Pause, dann gehen alle aus = Start (kein Gruen).
+  // v1.4.33: eine Generation je Anfahrt. Die automatische Gelbe Flagge (74b-autogelb.js) kann waehrend
+  // einer Anfahrt wieder Gelb ausrufen und kurz danach erneut anfahren; die Zeitgeber der ERSTEN Anfahrt
+  // pruefen sonst nur flagState === 'restart' und schalteten die zweite zu frueh auf Gruen.
+  let yellowRestartGen = 0;
   function yellowRestart() {
     if (flagState !== 'yellow') return;
     flagState = 'restart';
+    const gen = ++yellowRestartGen;
     updateFlagUi();
     const verzog = 1000 + Math.random() * 2000;
     for (let i = 1; i <= 5; i++) {
       rennZeitTimeout(() => {
-        if (flagState !== 'restart') return;
+        if (flagState !== 'restart' || gen !== yellowRestartGen) return;
         setRaceLights(i);
         ampelTon(440 + (i - 1) * 60, 0.18, 'square', 0.18);
       }, 600 + (i - 1) * 1000);
     }
     // Nach der 5. Lampe (600 + 4*1000 = 4600 ms) die zufaellige Pause, dann alle aus.
     rennZeitTimeout(() => {
-      if (flagState !== 'restart') return;
+      if (flagState !== 'restart' || gen !== yellowRestartGen) return;
       setRaceLights('go');
       ampelTon(880, 0.35, 'square', 0.22);
       setFlag('green');

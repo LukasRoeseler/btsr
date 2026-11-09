@@ -373,6 +373,13 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "Automatische Gelbe Flagge": "Automatic yellow flag",
+    "Meldet ein NPC (oder bei „Bei allen Autos“ auch ein Spielerauto) im Rennen, dass es neben der Bahn ist, ruft die App selbst Gelb aus und sagt an, welches Auto wo verunfallt ist. Alle anderen fahren gedrosselt weiter, Spielerautos im Autopiloten – du kannst also aufstehen und das Auto wieder auf die Bahn stellen (NPCs kurz schütteln). Fährt es danach 3 s lang wieder, startet die Anfahrt-Ampel; sind die Lampen aus, ist Grün, und du fährst wieder selbst. Mehrere Abflüge: erst wenn alle wieder fahren. Nicht in Countdown, Einführungsrunde, Pause, Tutorial und Challenge, und nicht, wenn schon Gelb ist. Spieler gelten erst nach 1 s neben der Bahn als abgeflogen. Im WLAN-Mehrspieler folgen die anderen Telefone.": "If an NPC (or, with “For all cars”, also a player car) reports during the race that it is off the track, the app calls a yellow flag by itself and announces which car crashed where. Everyone else keeps driving at reduced speed, player cars on autopilot – so you can get up and put the car back on the track (shake NPCs briefly). Once it has been driving again for 3 s, the restart lights begin; when the lights go out it is green and you drive yourself again. Several cars off: only when all of them are driving again. Not during the countdown, formation lap, pause, tutorial or challenge, and not when yellow is already out. Players only count as off after 1 s beside the track. In WLAN multiplayer the other phones follow.",
+    "Nur bei NPCs": "Only for NPCs",
+    "Bei allen Autos": "For all cars",
+    "NEBEN DER BAHN": "OFF THE TRACK",
+    "WIEDERANLAUF IN": "RESTART IN",
+    "GELBE FLAGGE": "YELLOW FLAG",
     "NPC: maximale Querlage": "NPC: maximum lateral position",
     "Wie weit ein NPC auf der Außenseite einer Kurve fahren darf; die Innenseite bleibt voll. Das Firmware-Update erlaubt den NPCs, weit außen zu fahren, sodass sie öfter abfliegen. Vorgabe 90 % der bisherigen Linie – 10 % Raum zum Außenkantenrand. 100 % ist die alte, volle Linie.": "How far an NPC may drive on the outside of a corner; the inside stays full. The firmware update lets NPCs drive far out, so they fly off more often. Default 90 % of the previous line – 10 % room to the outer edge. 100 % is the old, full line.",
     "Strafe für Frühstart": "Jump-start penalty",
@@ -4230,6 +4237,13 @@
   // nachzieht. Bewusst KEINE Ansagen (Rundenzeit, Tank, Schaden): dafuer gibt es noch keine
   // spanischen Aufnahmen, und die Sprachausgabe nutzt die englische als Platzhalter.
   const I18N_ES = {
+    "Automatische Gelbe Flagge": "Bandera amarilla automática",
+    "Meldet ein NPC (oder bei „Bei allen Autos“ auch ein Spielerauto) im Rennen, dass es neben der Bahn ist, ruft die App selbst Gelb aus und sagt an, welches Auto wo verunfallt ist. Alle anderen fahren gedrosselt weiter, Spielerautos im Autopiloten – du kannst also aufstehen und das Auto wieder auf die Bahn stellen (NPCs kurz schütteln). Fährt es danach 3 s lang wieder, startet die Anfahrt-Ampel; sind die Lampen aus, ist Grün, und du fährst wieder selbst. Mehrere Abflüge: erst wenn alle wieder fahren. Nicht in Countdown, Einführungsrunde, Pause, Tutorial und Challenge, und nicht, wenn schon Gelb ist. Spieler gelten erst nach 1 s neben der Bahn als abgeflogen. Im WLAN-Mehrspieler folgen die anderen Telefone.": "Si un NPC (o, con «En todos los coches», también un coche de jugador) indica durante la carrera que está fuera de la pista, la app saca la bandera amarilla por sí sola y anuncia qué coche ha tenido un accidente y dónde. Los demás siguen a velocidad reducida, los coches de jugador con piloto automático: así puedes levantarte y volver a poner el coche en la pista (a los NPC, sacudirlos un poco). Cuando vuelve a circular durante 3 s, arranca el semáforo de reanudación; al apagarse las luces es verde y vuelves a conducir tú. Varios fuera: solo cuando todos vuelven a circular. No durante la cuenta atrás, la vuelta de formación, la pausa, el tutorial ni los desafíos, y no si ya hay amarilla. Los jugadores solo cuentan como fuera tras 1 s junto a la pista. En el multijugador WLAN los demás teléfonos siguen.",
+    "Nur bei NPCs": "Solo con NPC",
+    "Bei allen Autos": "En todos los coches",
+    "NEBEN DER BAHN": "FUERA DE LA PISTA",
+    "WIEDERANLAUF IN": "REANUDACIÓN EN",
+    "GELBE FLAGGE": "BANDERA AMARILLA",
     "NPC: maximale Querlage": "NPC: posición lateral máxima",
     "Wie weit ein NPC auf der Außenseite einer Kurve fahren darf; die Innenseite bleibt voll. Das Firmware-Update erlaubt den NPCs, weit außen zu fahren, sodass sie öfter abfliegen. Vorgabe 90 % der bisherigen Linie – 10 % Raum zum Außenkantenrand. 100 % ist die alte, volle Linie.": "Hasta dónde puede ir un NPC por el exterior de una curva; el interior queda completo. La actualización de firmware permite a los NPC ir muy por fuera, por lo que se salen más a menudo. Predeterminado 90 % de la línea anterior – 10 % de margen hasta el borde exterior. 100 % es la línea antigua completa.",
     "Strafe für Frühstart": "Sanción por salida en falso",

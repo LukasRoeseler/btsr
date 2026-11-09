@@ -10341,6 +10341,13 @@
       <div class="opt-row"><div class="opt-label">Gelbe Flagge deaktivieren<small>An: Der Knopf
           &bdquo;Gelbe Flagge&ldquo; und das Halten der Boxentaste rufen kein Gelb mehr aus.</small></div>
         <label class="tgl"><input type="checkbox" id="race-gelb-aus"><span></span></label></div>
+      <!-- v1.4.33 AUTOMATISCHE GELBE FLAGGE (74b-autogelb.js). Vorgabe aus, Erklaerung nur im <small> (i-Popup). -->
+      <div class="opt-row"><div class="opt-label">Automatische Gelbe Flagge<span class="wip-tag">WIP</span><small>Meldet ein NPC (oder bei &bdquo;Bei allen Autos&ldquo; auch ein Spielerauto) im Rennen, dass es neben der Bahn ist, ruft die App selbst Gelb aus und sagt an, welches Auto wo verunfallt ist. Alle anderen fahren gedrosselt weiter, Spielerautos im Autopiloten &ndash; du kannst also aufstehen und das Auto wieder auf die Bahn stellen (NPCs kurz sch&uuml;tteln). F&auml;hrt es danach 3&nbsp;s lang wieder, startet die Anfahrt-Ampel; sind die Lampen aus, ist Gr&uuml;n, und du f&auml;hrst wieder selbst. Mehrere Abfl&uuml;ge: erst wenn alle wieder fahren. Nicht in Countdown, Einf&uuml;hrungsrunde, Pause, Tutorial und Challenge, und nicht, wenn schon Gelb ist. Spieler gelten erst nach 1&nbsp;s neben der Bahn als abgeflogen. Im WLAN-Mehrspieler folgen die anderen Telefone.</small></div>
+        <select id="race-auto-gelb">
+          <option value="aus" selected>Aus</option>
+          <option value="npc">Nur bei NPCs</option>
+          <option value="alle">Bei allen Autos</option>
+        </select></div>
       <div class="opt-row"><div class="opt-label">Weiche Reifen verboten<span class="wip-tag">WIP</span><small>An: In diesem
           Rennen gibt es keine weichen Reifen. Die Reifenwahl im Boxenschirm &uuml;berspringt &bdquo;weich&ldquo;, und wer
           beim Start weiche Reifen drauf hat, bekommt mittlere &ndash; auch Spieler&nbsp;2 und 3. Aus (Standard): alle
