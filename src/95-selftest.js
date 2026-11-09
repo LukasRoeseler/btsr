@@ -1464,6 +1464,84 @@
                              : 'Gang wechselte' };
   });
 
+  // Latenz (WIP): das Malen im Herzschlag (cockpitNachSenden: Cockpit und Beide-Schirm) und die Live-Anzeige
+  // des Rueckwaertsgangs erzwingen kein Layout mehr. Gezaehlt ueber Attrappen-Getter von offsetWidth und
+  // offsetParent waehrend simulierter Takte mit zwei Spalten; dazu die Werte und die Rundenliste.
+  stAdd('Latenz: Malen im Takt ohne erzwungenes Layout - Beide-Schirm, Rundenliste, Live-Anzeige', () => {
+    const f = [];
+    const proto = HTMLElement.prototype;
+    const dW = Object.getOwnPropertyDescriptor(proto, 'offsetWidth'), dP = Object.getOwnPropertyDescriptor(proto, 'offsetParent');
+    let nW = 0, nP = 0;
+    const merk = { laps: raceLapTimes, now: Date.now };
+    const liste = $('race-lap-list');
+    try {
+      Object.defineProperty(proto, 'offsetWidth', { configurable: true, get() { nW++; return dW.get.call(this); } });
+      Object.defineProperty(proto, 'offsetParent', { configurable: true, get() { nP++; return dP.get.call(this); } });
+      // 1. Sechs Takte Beide-Schirm + Cockpit mit wechselnden Werten.
+      let letzt = null;
+      for (let i = 0; i < 6; i++) {
+        const st = Object.assign({}, physEngine.state, { speedKmh: (10 + i * 7) / REAL_SCALE });
+        vglSpalte('vgl1', typeof playerCar !== 'undefined' ? playerCar : null, { state: st }, 50 - i, 10 + i);
+        vglSpalte('vgl2', null, { state: st }, 40, 0);
+        updateRaceScreen(st);
+        letzt = st;
+      }
+      if (nW) f.push(nW + 'x offsetWidth beim Malen');
+      if (nP) f.push(nP + 'x offsetParent beim Malen');
+      const soll = String(Math.round(Math.abs(letzt.speedKmh) * TACHO_SCALE));
+      for (const pre of ['vgl1', 'vgl2']) {
+        const sp = $(pre + '-speed');
+        if (sp && sp.textContent !== soll) f.push(pre + '-speed zeigt ' + sp.textContent + ' statt ' + soll);
+        for (const feld of ['gear', 'name', 'fuel', 'cond', 'tyre', 'brake', 'batt']) {
+          const el = $(pre + '-' + feld);
+          if (el && !el.textContent.trim()) f.push(pre + '-' + feld + ' leer');
+        }
+      }
+      if ($('vgl2-name') && $('vgl2-name').textContent !== 'kein Auto') f.push('vgl2-name: ' + $('vgl2-name').textContent);
+      // 2. Versatz-Animation nur bei Aenderung und nicht fuer laufende Werte, ohne Layout.
+      const probe = document.createElement('span');
+      let anim = 0;
+      probe.animate = () => { anim++; return null; };
+      nW = 0;
+      schreibeWert(probe, '1'); schreibeWert(probe, '1'); schreibeWert(probe, '2', true);
+      if (anim !== 1 || probe.textContent !== '2') f.push('Versatz: ' + anim + ' Animationen, Text ' + probe.textContent);
+      if (nW) f.push('schreibeWert liest offsetWidth');
+      // 3. Live-Anzeige des Rueckwaertsgangs: zehn Aufrufe in derselben Millisekunde lesen hoechstens einmal.
+      let uhr = merk.now() + 60000;
+      Date.now = () => uhr;
+      nP = 0;
+      for (let i = 0; i < 10; i++) gasBremseRueckwaertsPruefen(0, 0);
+      if (nP > 1) f.push('Live-Anzeige liest offsetParent ' + nP + 'x in einer Millisekunde');
+      Date.now = merk.now;
+      // 4. Rundenliste: richtig, und unveraendert kein Neuaufbau.
+      if (liste) {
+        raceLapTimes = [{ lap: 1, ms: 9000 }, { lap: 2, ms: 8500 }];
+        updateRaceScreen(physEngine.state);
+        const li = liste.querySelectorAll('li');
+        if (li.length !== 2) f.push('Rundenliste: ' + li.length + ' Eintraege statt 2');
+        else if (!li[0].querySelector('.gt3-ok') || li[0].textContent.indexOf('2') !== 0) f.push('Rundenliste: Bestzeit/Reihenfolge falsch');
+        const beob = new MutationObserver(() => {});
+        beob.observe(liste, { childList: true, subtree: true, characterData: true });
+        updateRaceScreen(physEngine.state);
+        if (beob.takeRecords().length) f.push('Rundenliste unveraendert neu gebaut');
+        raceLapTimes = raceLapTimes.concat([{ lap: 3, ms: 8200 }]);
+        updateRaceScreen(physEngine.state);
+        beob.disconnect();
+        const li3 = liste.querySelectorAll('li');
+        if (li3.length !== 3 || li3[0].textContent.indexOf('3') !== 0 || !li3[0].querySelector('.gt3-ok')) f.push('neue Runde nicht in der Liste');
+      }
+      // 5. Telemetrie-Speichern nicht mehr im Meldungs-Handler.
+      if (String(teleRunde).indexOf('teleMerkenSpaeter(') < 0) f.push('Telemetrie speichert weiter synchron je Runde');
+    } finally {
+      Object.defineProperty(proto, 'offsetWidth', dW);
+      Object.defineProperty(proto, 'offsetParent', dP);
+      Date.now = merk.now;
+      raceLapTimes = merk.laps;
+      try { updateRaceScreen(physEngine.state); } catch (e) { /* Anzeige */ }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'kein offsetWidth/offsetParent beim Malen, Werte beider Spalten stehen, Versatz per animate(), Rundenliste nur bei Aenderung, Live-Anzeige gedrosselt' };
+  });
+
   // ---- Deckglas und Einschaltrampe fangen keine Tipps ab ----
   //
   // Fast jede Kachel im Cockpit ist antippbar. Eine Scheibe ohne pointer-events: none macht

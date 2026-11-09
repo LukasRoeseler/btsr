@@ -3996,7 +3996,8 @@
   // reicht: schneller kann man einen Punkt auf einer 220-px-Karte nicht unterscheiden.
   setInterval(() => {
     const tab = document.getElementById('tab-track');
-    if (!tab || !tab.offsetParent) return;
+    // Latenz (WIP): erst die Klasse (kein Layout), offsetParent nur bei aktivem Reiter.
+    if (!tab || !tab.classList.contains('active') || !tab.offsetParent) return;
     if (!currentTrackTiles.length) return;
     if (!trackCarMarks().length) return;
     refreshTrackPreview();

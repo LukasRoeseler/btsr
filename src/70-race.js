@@ -3126,7 +3126,11 @@
     renderTileTimeline();
   }
 
-  let tileTlDirty = false;
+  let tileTlDirty = false, tileTlVeraltet = false, tileTlSeite = null;
+  {
+    const knopf = document.querySelector('.tab-btn[data-tab="probe"]');
+    if (knopf) knopf.addEventListener('click', () => { if (tileTlVeraltet) renderTileTimeline(); });
+  }
   function renderTileTimeline() {
     // Gebuendelt zeichnen: bei 20 Paketen je Sekunde waere ein Neuaufbau je Paket reine
     // Verschwendung, und die Zeitleiste soll das Fahren nicht stoeren.
@@ -3136,6 +3140,11 @@
       tileTlDirty = false;
       const host = $('tile-timeline');
       if (!host) return;
+      // Latenz (WIP): die Tabelle steht im Reiter "Probe" - unsichtbar nicht neu bauen (vorher ein innerHTML
+      // je Teilwechsel, auch beim Fahren im Cockpit). Beim Oeffnen des Reiters wird nachgeholt.
+      if (!tileTlSeite) tileTlSeite = host.closest('.tabpage');
+      if (tileTlSeite && !tileTlSeite.classList.contains('active')) { tileTlVeraltet = true; return; }
+      tileTlVeraltet = false;
       if (!tileTimeline.length) {
         host.innerHTML = '<tr><td colspan="4" class="muted">noch nichts</td></tr>';
         return;

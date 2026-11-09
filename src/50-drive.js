@@ -632,14 +632,21 @@
   // einlegt. Geschrieben wird hoechstens alle 150 ms und nur, solange die Seite sichtbar ist
   // (offsetParent), damit der Takt davon nichts merkt. HINWEIS: kein <small> - optInfoEinrichten()
   // (98c-opt-info.js) versteckt jedes <small> in einem Zeilenlabel hinter dem i-Knopf.
-  let gbAufrufe = 0, gbStatusAt = 0;
+  // Latenz (WIP): offsetParent erzwingt ein Layout, und gbStatus laeuft aus dem 30-ms-Tastaturtakt und der
+  // Pad-Abfrage - gemessen 6 % des Hauptfadens (CPU 4x) nur fuer dieses Lesen. Jetzt ZUERST die Uhr, und eine
+  // unsichtbare Anzeige wird hoechstens alle GB_SICHT_MS erneut geprueft.
+  const GB_SICHT_MS = 250;
+  let gbAufrufe = 0, gbStatusAt = 0, gbSichtAt = 0;
   function gbStatus(gasRoh, bremsRoh, kmhAnz, grund) {
-    const el = $('setting-gasbrake-reverse-status');
-    if (!el || !el.offsetParent) return;
     const jetzt = rennZeitJetzt();
     // Springt die Uhr zurueck (jetzt < gbStatusAt), wird trotzdem geschrieben - sonst bliebe die Anzeige
     // stumm, bis die Uhr den alten Zeitpunkt wieder erreicht hat.
     if (jetzt >= gbStatusAt && jetzt - gbStatusAt < 150) return;
+    if (jetzt >= gbSichtAt && jetzt - gbSichtAt < GB_SICHT_MS) return;
+    const el = $('setting-gasbrake-reverse-status');
+    if (!el) return;
+    if (!el.offsetParent) { gbSichtAt = jetzt; return; }
+    gbSichtAt = 0;
     gbStatusAt = jetzt;
     const st = physEngine.state;
     const aus = (typeof physOutThrottle === 'number') ? physOutThrottle : 0;
@@ -2000,11 +2007,13 @@
     // Die Schaltlichter aus SEINER Drehzahl. Dieselbe Funktion wie die grosse Leiste im
     // Cockpit - siehe schaltLampen(), dort steht auch die Farbregel.
     schaltLampen($(pre + '-shift'), st.rpmFrac, st.onLimiter);
-    schreibeWert($(pre + '-speed'), Math.round(Math.abs(st.speedKmh) * TACHO_SCALE));
+    // Latenz (WIP): laufend wechselnde Werte (Tempo, Tank, Temperaturen, Akku) ohne Versatz-Animation -
+    // nur Text bei Aenderung. Der Versatz bleibt bei Werten, die SPRINGEN (Gang, Name, Zustand, Runden).
+    schreibeWert($(pre + '-speed'), Math.round(Math.abs(st.speedKmh) * TACHO_SCALE), true);
     schreibeWert($(pre + '-gear'), gearLabel(st));
     schreibeWert($(pre + '-name'), car ? garageLabel(car) : 'kein Auto');
     // Tank in Litern, wie ueberall sonst in dieser App.
-    schreibeWert($(pre + '-fuel'), fuelLiters(tank) + ' l');
+    schreibeWert($(pre + '-fuel'), fuelLiters(tank) + ' l', true);
     const tb = $(pre + '-fuel-bar');
     if (tb) {
       tb.style.width = Math.max(0, Math.min(100, tank)) + '%';
@@ -2030,7 +2039,7 @@
     const reifen = mittel(st.tyreTemp4) !== null ? mittel(st.tyreTemp4) : (st.tyreTempC || 0);
     const bremse = mittel(st.brakeTemp4) !== null ? mittel(st.brakeTemp4)
       : ((st.brakeTempF || 0) + (st.brakeTempR || 0)) / 2;
-    schreibeWert($(pre + '-tyre'), Math.round(reifen) + '\u00b0');
+    schreibeWert($(pre + '-tyre'), Math.round(reifen) + '\u00b0', true);
     // BESTELLT: "Balken fuer die Reifensimulation, um zu sehen, ob die Reifen verschlissen
     // sind." Restprofil und nicht Temperatur, dieselbe Groesse wie in den vier
     // Reifenfeldern des Hauptcockpits (1 - tyreWear), 100 % heisst neu.
@@ -2040,12 +2049,12 @@
       tyb.style.width = rest + '%';
       tyb.style.background = rest < 30 ? '#ff5252' : rest < 60 ? '#ffb02e' : '#2ee06a';
     }
-    schreibeWert($(pre + '-brake'), Math.round(bremse) + '\u00b0');
+    schreibeWert($(pre + '-brake'), Math.round(bremse) + '\u00b0', true);
     // Der Akku kommt aus Byte 10 des Autos (car.battery, in 90-ghosts.js je Auto gesetzt) -
     // eine gemessene Groesse und keine gerechnete. Ohne Auto oder ohne Meldung: ein Strich,
     // und keine erfundene Zahl.
     const roh = car && car.battery !== undefined && car.battery !== null ? car.battery : null;
-    schreibeWert($(pre + '-batt'), roh === null ? '\u2013' : batteryPercent(roh) + ' %');
+    schreibeWert($(pre + '-batt'), roh === null ? '\u2013' : batteryPercent(roh) + ' %', true);
   }
 
   function p2ScreenRender() {
@@ -2264,17 +2273,26 @@
     schreibeWert($(pre + '-letzte'), ms.length ? formatLapTime(ms[ms.length - 1]) : '\u2013');
     schreibeWert($(pre + '-beste'), ms.length ? formatLapTime(Math.min.apply(null, ms)) : '\u2013');
   }
-  function schreibeWert(el, txt) {
+  // ohneVersatz = true: nur der Text (fuer laufend wechselnde Werte).
+  //
+  // Latenz (WIP): Hier stand `classList.remove; void el.offsetWidth; classList.add` - ein ERZWUNGENES
+  // LAYOUT je geaendertem Wert, und das im Herzschlag (cockpitNachSenden). Mit 2 Spielern malt der
+  // Beide-Schirm je 90 ms bis zu zwanzig Werte: gemessen (CPU 4x) 42 % des Herzschlags in schreibeWert,
+  // und 15-25 % der Sendetakte fielen aus. Jetzt die Web-Animations-API: sie startet bei jedem Aufruf
+  // neu und braucht kein Layout. Rueckfall ohne el.animate: Klasse im naechsten Bild neu setzen.
+  const WERT_VERSATZ = [{ transform: 'translateY(1px)' }, { transform: 'translateY(0)' }];
+  const WERT_VERSATZ_OPT = { duration: 80, easing: 'ease-out' };
+  function schreibeWert(el, txt, ohneVersatz) {
     if (!el) return;
     const neu = String(txt);
     if (el.textContent === neu) return;
     el.textContent = neu;
-    // Die Klasse zweimal in Folge zu setzen startet die Animation nicht neu - sie muss
-    // erst weg sein. Der Neustart des Bildaufbaus (offsetWidth) ist die uebliche und
-    // billigste Art, das zu erzwingen.
+    if (ohneVersatz) return;
+    if (typeof el.animate === 'function') {
+      try { el.animate(WERT_VERSATZ, WERT_VERSATZ_OPT); return; } catch (e) { /* Rueckfall unten */ }
+    }
     el.classList.remove('gt3-tick');
-    void el.offsetWidth;
-    el.classList.add('gt3-tick');
+    requestAnimationFrame(() => el.classList.add('gt3-tick'));
   }
 
   // ---- DIE SCHALTLICHTER, EINE WAHRHEIT FUER JEDE LEISTE ------------------------------
@@ -2563,12 +2581,10 @@
     // ALLE Treffer und nicht der erste: seit v0.5.18 tragen die Zeilen des Boxenschirms
     // dieselben data-pit-Werte, und ein einzahliges querySelector haette dort nie sim-off
     // gesetzt - die Kachel im Streifen waere grau gewesen, die Zeile daneben nicht.
-    for (const el of document.querySelectorAll('[data-pit="refuel"]')) {
-      el.classList.toggle('sim-off', tankAus);
-    }
-    for (const el of document.querySelectorAll('[data-pit="repair"]')) {
-      el.classList.toggle('sim-off', schadenAus);
-    }
+    // Latenz (WIP): die Listen einmal suchen statt bei jedem Malen das ganze Dokument (rund 11000
+    // Knoten) zu durchsuchen - neu nur, wenn ein Element nicht mehr im Dokument steht.
+    for (const el of pitKachelnVon('refuel')) el.classList.toggle('sim-off', tankAus);
+    for (const el of pitKachelnVon('repair')) el.classList.toggle('sim-off', schadenAus);
     const reifenKachel = $('race-tyre-box');
     if (reifenKachel) reifenKachel.classList.toggle('sim-off',
       physEngine.config.tyreEffect <= 0);
@@ -2656,9 +2672,25 @@
       // v1.2.12 BESTELLT: "#X/Y format" statt P3/6.
       if (p) posEl.textContent = '#' + p.pos + '/' + p.von;
     }
-    $('race-lap-list').innerHTML = laps.slice().reverse().slice(0, 10).map(l =>
-      `<li><span>${l.lap}</span><span${l.ms === best ? ' class="gt3-ok"' : ''}>${formatLapTime(l.ms)}</span></li>`
-    ).join('');
+    // Latenz (WIP): nur bei Aenderung neu bauen (vorher bei jedem Malen, alle 90 ms, ein innerHTML).
+    const lapListe = $('race-lap-list');
+    const zuletzt = laps.length ? laps[laps.length - 1] : null;
+    const lapSig = laps.length + ':' + (laps.length ? laps[0].lap + '/' + laps[0].ms : '')
+      + ':' + (zuletzt ? zuletzt.lap + '/' + zuletzt.ms : '') + ':' + best;
+    if (lapListe && lapListe.dataset.sig !== lapSig) {
+      lapListe.dataset.sig = lapSig;
+      lapListe.innerHTML = laps.slice().reverse().slice(0, 10).map(l =>
+        `<li><span>${l.lap}</span><span${l.ms === best ? ' class="gt3-ok"' : ''}>${formatLapTime(l.ms)}</span></li>`
+      ).join('');
+    }
+  }
+  const pitKachelCache = {};
+  function pitKachelnVon(art) {
+    let l = pitKachelCache[art];
+    if (!l || l.some((el) => !el.isConnected)) {
+      l = pitKachelCache[art] = Array.from(document.querySelectorAll('[data-pit="' + art + '"]'));
+    }
+    return l;
   }
 
   // Hier standen sechs setTxt/setSty auf Elemente der entfernten alten Karte
