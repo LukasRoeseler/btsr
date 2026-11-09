@@ -5726,7 +5726,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.4.34</span></span>
+        <span class="foot-ver">v<span id="app-version">1.4.37</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6967,6 +6967,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.4</span></b></p>
       <ul class="muted" id="patchnotes-14" style="padding-left:20px; line-height:1.7">
+        <li>Automatische Gelbe Flagge (WIP, Renneinstellungen; Aus, Nur bei NPCs, Bei allen Autos): Fliegt im Rennen ein Auto ab (NPC: erkannter Abflug, Spielerauto: mindestens 1 s neben der Bahn), kommt Gelb mit Ansage &#8222;Gelbe Flagge. &lt;Auto&gt; hat einen Unfall gebaut&#8220; (mit Sektor, wenn Sektoren aktiv sind). Alle fahren gedrosselt weiter, dein Auto im Autopiloten, sodass du aufstehen und das Auto wieder einsetzen kannst. F&#228;hrt es wieder 3 s lang, startet die Anfahrt-Ampel, danach Gr&#252;n mit Ansage, und der Controller &#252;bernimmt. Im WLAN folgen die anderen Telefone (daf&#252;r braucht es die neue APK bzw. den aktualisierten Host).</li>
         <li>Einf&#252;hrung: Die englische Stimme ist jetzt ljspeech (gemeinfrei, dieselbe Stimme wie die englischen Rennansagen) statt einer Stimme mit ungekl&#228;rter Lizenz.</li>
         <li>Latenz: Die Funkpriorit&#228;t (Spieler schnellstes Verbindungsintervall, NPCs, Safety Car und Reinigungswagen ausgewogen) wird jetzt auch im Training ohne Ampel, beim Losfahren, 5 s nach dem Verbinden und nach einem Rollenwechsel gesetzt; bisher bekamen dort alle Autos, auch die NPCs, das schnellste Intervall. Mit zwei Spielern zeichnet das Cockpit im Sendetakt ohne erzwungene Layout-Berechnungen (gemessen bei gedrosselter CPU: Arbeit je Takt p95 von 35 bis 85 ms auf 9 bis 15 ms, Takt stabil um 50 ms); die Rundenliste wird nur bei &#196;nderung neu gebaut, Telemetrie au&#223;erhalb der Funkverarbeitung gespeichert. Neu unter Optionen &#8594; System: &#8222;Funk je Auto&#8220; (WIP) mit Weg, Z&#228;hlern, Meldeabstand und Funkstufe f&#252;r jedes Auto.</li>
         <li>Einparken und Ausparken verbessert: Das Safety Car (und ein NPC mit Tankort &#8222;Rand&#8220;) z&#228;hlt Radius-2-Kurven, Engstelle und Boxengasse jetzt als freien Platz, beginnt das Einparken fr&#252;her statt das Gas zu drosseln und rechnet den Rollweg mit dem echten Tempo; es soll so auf dem gew&#228;hlten Teil und am Rand stehen. Beim Ein- und Ausparken bekommt das Safety Car kurz die schnellste Funkverbindung. Die Ausparkfolge aus der Box lenkt schw&#228;cher und k&#252;rzer (70 %), das Schl&#228;ngeln in der Einf&#252;hrungsrunde ist wieder wie vorher. Die Randphasen rollen trotz schnellerem Formationstempo denselben Weg. NPC: maximale Querlage (WIP) begrenzt nur noch die Au&#223;enseite der Kurve, innen fahren die NPCs voll. Fr&#252;hstart: Zusatzrunde nur f&#252;r den Bestraften (nur im Rundenrennen), Durchfahrt auch f&#252;r Spieler 2 und 3 und ohne Ableisten +20 s, Gas bei Rot auch im RC-Modus gesperrt, in Challenges immer 5 s. Einmalig wird eine noch gespeicherte H&#246;chstgeschwindigkeit aus 1.3.121 zur&#252;ckgesetzt. Apps Script: Die L&#246;schfunktion ist entfernt und eingesandte Texte sind besser gegen Formeln gesch&#252;tzt (bitte neu bereitstellen).</li>
@@ -10342,6 +10343,13 @@
       <div class="opt-row"><div class="opt-label">Gelbe Flagge deaktivieren<small>An: Der Knopf
           &bdquo;Gelbe Flagge&ldquo; und das Halten der Boxentaste rufen kein Gelb mehr aus.</small></div>
         <label class="tgl"><input type="checkbox" id="race-gelb-aus"><span></span></label></div>
+      <!-- v1.4.33 AUTOMATISCHE GELBE FLAGGE (74b-autogelb.js). Vorgabe aus, Erklaerung nur im <small> (i-Popup). -->
+      <div class="opt-row"><div class="opt-label">Automatische Gelbe Flagge<span class="wip-tag">WIP</span><small>Meldet ein NPC (oder bei &bdquo;Bei allen Autos&ldquo; auch ein Spielerauto) im Rennen, dass es neben der Bahn ist, ruft die App selbst Gelb aus und sagt an, welches Auto wo verunfallt ist. Alle anderen fahren gedrosselt weiter, Spielerautos im Autopiloten &ndash; du kannst also aufstehen und das Auto wieder auf die Bahn stellen (NPCs kurz sch&uuml;tteln). F&auml;hrt es danach 3&nbsp;s lang wieder, startet die Anfahrt-Ampel; sind die Lampen aus, ist Gr&uuml;n, und du f&auml;hrst wieder selbst. Mehrere Abfl&uuml;ge: erst wenn alle wieder fahren. Nicht in Countdown, Einf&uuml;hrungsrunde, Pause, Tutorial und Challenge, und nicht, wenn schon Gelb ist. Spieler gelten erst nach 1&nbsp;s neben der Bahn als abgeflogen. Im WLAN-Mehrspieler folgen die anderen Telefone.</small></div>
+        <select id="race-auto-gelb">
+          <option value="aus" selected>Aus</option>
+          <option value="npc">Nur bei NPCs</option>
+          <option value="alle">Bei allen Autos</option>
+        </select></div>
       <div class="opt-row"><div class="opt-label">Weiche Reifen verboten<span class="wip-tag">WIP</span><small>An: In diesem
           Rennen gibt es keine weichen Reifen. Die Reifenwahl im Boxenschirm &uuml;berspringt &bdquo;weich&ldquo;, und wer
           beim Start weiche Reifen drauf hat, bekommt mittlere &ndash; auch Spieler&nbsp;2 und 3. Aus (Standard): alle
@@ -15205,6 +15213,13 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "Automatische Gelbe Flagge": "Automatic yellow flag",
+    "Meldet ein NPC (oder bei „Bei allen Autos“ auch ein Spielerauto) im Rennen, dass es neben der Bahn ist, ruft die App selbst Gelb aus und sagt an, welches Auto wo verunfallt ist. Alle anderen fahren gedrosselt weiter, Spielerautos im Autopiloten – du kannst also aufstehen und das Auto wieder auf die Bahn stellen (NPCs kurz schütteln). Fährt es danach 3 s lang wieder, startet die Anfahrt-Ampel; sind die Lampen aus, ist Grün, und du fährst wieder selbst. Mehrere Abflüge: erst wenn alle wieder fahren. Nicht in Countdown, Einführungsrunde, Pause, Tutorial und Challenge, und nicht, wenn schon Gelb ist. Spieler gelten erst nach 1 s neben der Bahn als abgeflogen. Im WLAN-Mehrspieler folgen die anderen Telefone.": "If an NPC (or, with “For all cars”, also a player car) reports during the race that it is off the track, the app calls a yellow flag by itself and announces which car crashed where. Everyone else keeps driving at reduced speed, player cars on autopilot – so you can get up and put the car back on the track (shake NPCs briefly). Once it has been driving again for 3 s, the restart lights begin; when the lights go out it is green and you drive yourself again. Several cars off: only when all of them are driving again. Not during the countdown, formation lap, pause, tutorial or challenge, and not when yellow is already out. Players only count as off after 1 s beside the track. In WLAN multiplayer the other phones follow.",
+    "Nur bei NPCs": "Only for NPCs",
+    "Bei allen Autos": "For all cars",
+    "NEBEN DER BAHN": "OFF THE TRACK",
+    "WIEDERANLAUF IN": "RESTART IN",
+    "GELBE FLAGGE": "YELLOW FLAG",
     "NPC: maximale Querlage": "NPC: maximum lateral position",
     "Wie weit ein NPC auf der Außenseite einer Kurve fahren darf; die Innenseite bleibt voll. Das Firmware-Update erlaubt den NPCs, weit außen zu fahren, sodass sie öfter abfliegen. Vorgabe 90 % der bisherigen Linie – 10 % Raum zum Außenkantenrand. 100 % ist die alte, volle Linie.": "How far an NPC may drive on the outside of a corner; the inside stays full. The firmware update lets NPCs drive far out, so they fly off more often. Default 90 % of the previous line – 10 % room to the outer edge. 100 % is the old, full line.",
     "Strafe für Frühstart": "Jump-start penalty",
@@ -16608,6 +16623,7 @@
     "Einparken und Ausparken verbessert: Das Safety Car (und ein NPC mit Tankort „Rand“) zählt Radius-2-Kurven, Engstelle und Boxengasse jetzt als freien Platz, beginnt das Einparken früher statt das Gas zu drosseln und rechnet den Rollweg mit dem echten Tempo; es soll so auf dem gewählten Teil und am Rand stehen. Beim Ein- und Ausparken bekommt das Safety Car kurz die schnellste Funkverbindung. Die Ausparkfolge aus der Box lenkt schwächer und kürzer (70 %), das Schlängeln in der Einführungsrunde ist wieder wie vorher. Die Randphasen rollen trotz schnellerem Formationstempo denselben Weg. NPC: maximale Querlage (WIP) begrenzt nur noch die Außenseite der Kurve, innen fahren die NPCs voll. Frühstart: Zusatzrunde nur für den Bestraften (nur im Rundenrennen), Durchfahrt auch für Spieler 2 und 3 und ohne Ableisten +20 s, Gas bei Rot auch im RC-Modus gesperrt, in Challenges immer 5 s. Einmalig wird eine noch gespeicherte Höchstgeschwindigkeit aus 1.3.121 zurückgesetzt. Apps Script: Die Löschfunktion ist entfernt und eingesandte Texte sind besser gegen Formeln geschützt (bitte neu bereitstellen).": "Parking and leaving the parking spot improved: the safety car (and an NPC with the refuelling spot “edge”) now counts radius-2 curves, the narrow section and the pit lane as free space, starts parking earlier instead of reducing throttle and computes the rolling distance with the real speed, so it should stand on the chosen piece and at the edge. While parking in and out, the safety car briefly gets the fastest radio link. The sequence for leaving the pit steers less and shorter (70 %), and the weaving in the formation lap is back to how it was. The edge phases roll the same distance despite the faster formation pace. NPC: maximum lateral position (WIP) now only limits the outside of a curve; on the inside the NPCs drive fully. Jump start: extra lap only for the penalised driver (lap races only), drive-through also for players 2 and 3 with +20 s if not served, throttle locked at red also in RC mode, always 5 s in challenges. A top speed still saved from 1.3.121 is reset once. Apps Script: the delete function has been removed and submitted texts are better protected against formulas (please redeploy).",
     "Latenz: Die Funkpriorität (Spieler schnellstes Verbindungsintervall, NPCs, Safety Car und Reinigungswagen ausgewogen) wird jetzt auch im Training ohne Ampel, beim Losfahren, 5 s nach dem Verbinden und nach einem Rollenwechsel gesetzt; bisher bekamen dort alle Autos, auch die NPCs, das schnellste Intervall. Mit zwei Spielern zeichnet das Cockpit im Sendetakt ohne erzwungene Layout-Berechnungen (gemessen bei gedrosselter CPU: Arbeit je Takt p95 von 35 bis 85 ms auf 9 bis 15 ms, Takt stabil um 50 ms); die Rundenliste wird nur bei Änderung neu gebaut, Telemetrie außerhalb der Funkverarbeitung gespeichert. Neu unter Optionen → System: „Funk je Auto“ (WIP) mit Weg, Zählern, Meldeabstand und Funkstufe für jedes Auto.": "Latency: the radio priority (players the fastest connection interval, NPCs, safety car and cleaning car balanced) is now also set in practice without start lights, when driving off, 5 s after connecting and after a role change; until now all cars there, NPCs included, got the fastest interval. With two players the cockpit draws in the send cycle without forced layout calculations (measured with a throttled CPU: work per cycle p95 from 35 to 85 ms down to 9 to 15 ms, cycle steady around 50 ms); the lap list is only rebuilt when it changes, and telemetry is saved outside the radio processing. New under Options → System: “Radio per car” (WIP) with path, counters, report interval and radio level for every car.",
     "Einführung: Die englische Stimme ist jetzt ljspeech (gemeinfrei, dieselbe Stimme wie die englischen Rennansagen) statt einer Stimme mit ungeklärter Lizenz.": "Tutorial: the English voice is now ljspeech (public domain, the same voice as the English race announcements) instead of a voice with an unclear license.",
+    "Automatische Gelbe Flagge (WIP, Renneinstellungen; Aus, Nur bei NPCs, Bei allen Autos): Fliegt im Rennen ein Auto ab (NPC: erkannter Abflug, Spielerauto: mindestens 1 s neben der Bahn), kommt Gelb mit Ansage „Gelbe Flagge. <Auto> hat einen Unfall gebaut“ (mit Sektor, wenn Sektoren aktiv sind). Alle fahren gedrosselt weiter, dein Auto im Autopiloten, sodass du aufstehen und das Auto wieder einsetzen kannst. Fährt es wieder 3 s lang, startet die Anfahrt-Ampel, danach Grün mit Ansage, und der Controller übernimmt. Im WLAN folgen die anderen Telefone (dafür braucht es die neue APK bzw. den aktualisierten Host).": "Automatic yellow flag (WIP, race settings; Off, NPCs only, All cars): if a car leaves the track during a race (NPC: detected crash, player car: at least 1 s off the track), the yellow flag comes with the announcement “Yellow flag. <car> has crashed” (with the sector if sectors are active). Everyone keeps driving slowly, your car on autopilot, so you can get up and put the car back. Once it drives for 3 s again, the restart lights begin, then green with an announcement, and the controller takes over. In Wi-Fi the other phones follow (this needs the new APK or the updated host).",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -19063,6 +19079,13 @@
   // nachzieht. Bewusst KEINE Ansagen (Rundenzeit, Tank, Schaden): dafuer gibt es noch keine
   // spanischen Aufnahmen, und die Sprachausgabe nutzt die englische als Platzhalter.
   const I18N_ES = {
+    "Automatische Gelbe Flagge": "Bandera amarilla automática",
+    "Meldet ein NPC (oder bei „Bei allen Autos“ auch ein Spielerauto) im Rennen, dass es neben der Bahn ist, ruft die App selbst Gelb aus und sagt an, welches Auto wo verunfallt ist. Alle anderen fahren gedrosselt weiter, Spielerautos im Autopiloten – du kannst also aufstehen und das Auto wieder auf die Bahn stellen (NPCs kurz schütteln). Fährt es danach 3 s lang wieder, startet die Anfahrt-Ampel; sind die Lampen aus, ist Grün, und du fährst wieder selbst. Mehrere Abflüge: erst wenn alle wieder fahren. Nicht in Countdown, Einführungsrunde, Pause, Tutorial und Challenge, und nicht, wenn schon Gelb ist. Spieler gelten erst nach 1 s neben der Bahn als abgeflogen. Im WLAN-Mehrspieler folgen die anderen Telefone.": "Si un NPC (o, con «En todos los coches», también un coche de jugador) indica durante la carrera que está fuera de la pista, la app saca la bandera amarilla por sí sola y anuncia qué coche ha tenido un accidente y dónde. Los demás siguen a velocidad reducida, los coches de jugador con piloto automático: así puedes levantarte y volver a poner el coche en la pista (a los NPC, sacudirlos un poco). Cuando vuelve a circular durante 3 s, arranca el semáforo de reanudación; al apagarse las luces es verde y vuelves a conducir tú. Varios fuera: solo cuando todos vuelven a circular. No durante la cuenta atrás, la vuelta de formación, la pausa, el tutorial ni los desafíos, y no si ya hay amarilla. Los jugadores solo cuentan como fuera tras 1 s junto a la pista. En el multijugador WLAN los demás teléfonos siguen.",
+    "Nur bei NPCs": "Solo con NPC",
+    "Bei allen Autos": "En todos los coches",
+    "NEBEN DER BAHN": "FUERA DE LA PISTA",
+    "WIEDERANLAUF IN": "REANUDACIÓN EN",
+    "GELBE FLAGGE": "BANDERA AMARILLA",
     "NPC: maximale Querlage": "NPC: posición lateral máxima",
     "Wie weit ein NPC auf der Außenseite einer Kurve fahren darf; die Innenseite bleibt voll. Das Firmware-Update erlaubt den NPCs, weit außen zu fahren, sodass sie öfter abfliegen. Vorgabe 90 % der bisherigen Linie – 10 % Raum zum Außenkantenrand. 100 % ist die alte, volle Linie.": "Hasta dónde puede ir un NPC por el exterior de una curva; el interior queda completo. La actualización de firmware permite a los NPC ir muy por fuera, por lo que se salen más a menudo. Predeterminado 90 % de la línea anterior – 10 % de margen hasta el borde exterior. 100 % es la línea antigua completa.",
     "Strafe für Frühstart": "Sanción por salida en falso",
@@ -57709,6 +57732,331 @@
       karteEreignisSetzen(svg, ovKarteGeo, zev.karte);
     }
   }
+  // ============================== AUTOMATISCHE GELBE FLAGGE (v1.4.33, WIP) ==============================
+  //
+  // BESTELLT: "Option bei Rennoptionen (aus [Default], nur bei NPCs, bei allen Autos): Automatische Gelbe
+  // Flagge; immer dann, wenn ein Auto (oder nur ein NPC) meldet, jenseits der Bahn zu sein. Dann fahren
+  // die Autos weiter (auch mein Spielerauto) und ich kann aufstehen, um den NPC reinzustellen. Wenn der
+  // dann fuer 3 s wieder faehrt, geht die Ampel los, ich kann meinen Controller nehmen, und weiter geht
+  // das Rennen. Das Ganze soll mit Ansagen verbunden sein und Bescheid, wenn gelbe Flagge zu Ende ist."
+  //
+  // ---- WAS HIER NEU IST, und was nicht ----------------------------------------------------------
+  // Die gelbe Flagge selbst ist die vorhandene (setFlag('yellow'), 90-ghosts.js): Tempo gedeckelt, kein
+  // Ueberholen, Spielerautos im Autopiloten - genau das "die Autos fahren weiter, auch meins". Das Ende ist
+  // die vorhandene Anfahrt-Ampel aus Gelb (yellowRestart): fuenf Lampen, aus = Gruen, bis dahin faehrt der
+  // Autopilot (autopilotGrund 'restart'). Neu ist nur, WER sie ausruft und beendet.
+  //
+  // ---- ERKENNUNG: die vorhandenen Abflug-Melder, nichts im Funktakt ---------------------------------
+  // NPC: geparkt mit 'Bahn verlassen' (ghostTick/parkCar, 0,9-1,8 s bestaetigtes 0x00, nach einem
+  //      erfolglosen Rueckweg). Spieler 1-3: die Abseits-Uhr aus offtrackMelden (50-drive.js), mindestens
+  //      AG_SPIELER_EIN_MS durchgehend 0x00. Abgefragt wird in einem eigenen 200-ms-Zeitgeber, der ohne
+  //      Option nach einem Vergleich zurueckkehrt. Im 45-ms-Takt passiert dafuer nichts.
+  //
+  // ---- ENDE: "fuer 3 s wieder faehrt" ----------------------------------------------------------------
+  // Je abgeflogenem Auto: nicht (mehr) geparkt bzw. nicht abseits, gueltiger Code und ein Kachelwechsel
+  // hoechstens AG_KACHEL_FRISCH_MS alt - und das AG_FAEHRT_MS lang ohne Unterbrechung. Weil der letzte
+  // Kachelwechsel nach 3 s juenger als 2 s sein muss, ist das Auto in der Zeit sicher gefahren. Erst wenn
+  // ALLE abgeflogenen Autos so weit sind (und kein anderes Telefon mehr Gelb meldet), startet die Ampel.
+  //
+  // ---- WLAN-Mehrspieler ------------------------------------------------------------------------------
+  // Der Host verteilt nur. Jedes Telefon meldet im Bericht (/mp/report, Feld `gelb`) die Abfluege SEINER
+  // Autos; die anderen sehen es beim naechsten Abruf (/mp/state) und folgen: Gelb an, und wenn das Feld
+  // leer wird, ihre eigene Anfahrt-Ampel. Ein Telefon meldet nie ein fremdes Gelb weiter (sonst hielten
+  // sich zwei Telefone gegenseitig in Gelb). Die Option selbst schickt das startende Telefon im Plan mit.
+  const AG_TAKT_MS = 200;
+  const AG_SPIELER_EIN_MS = 1000;   // Spieler: so lange durchgehend 0x00 = abgeflogen (Fehlalarm-Schwelle)
+  const AG_FAEHRT_MS = 3000;        // so lange muss das abgeflogene Auto wieder fahren
+  const AG_KACHEL_FRISCH_MS = 2000; // letzter Kachelwechsel hoechstens so alt = es faehrt
+  // var: updateFlagUi() (90-ghosts.js) fragt autoGelbBannerText(), und das kann beim Laden frueher passieren.
+  var autoGelb = { phase: 'aus', liste: [], fremd: '', fremdName: '', quittiert: new Set(), banner: '',
+                   ansageLog: [], feld: [], gemeldet: '' };
+
+  // ---- Einstellung ----------------------------------------------------------------------------------
+  function autoGelbModus() {
+    const el = $('race-auto-gelb');
+    const v = el ? el.value : 'aus';
+    return v === 'npc' || v === 'alle' ? v : 'aus';
+  }
+
+  // ---- Wer kommt in Frage --------------------------------------------------------------------------
+  function autoGelbSpielerNr(car) {
+    if (!car) return 0;
+    if (car === playerCar) return 1;
+    return zweiSpieler ? spielerNrVon(car) : 0;
+  }
+  function autoGelbIstNpc(car) { return !!car && car.role === 'ghost'; }
+  function autoGelbFeld(modus) {
+    const l = autoGelb.feld; l.length = 0;
+    const vf = typeof vfAktiv === 'function' && vfAktiv();
+    for (const c of garage) {
+      if (!c) continue;
+      if (autoGelbIstNpc(c)) { if (c.ghost && c.ghost.running) l.push(c); }
+      else if (modus === 'alle' && !vf && autoGelbSpielerNr(c) > 0) l.push(c);
+    }
+    return l;
+  }
+  // Seit wann meldet dieses Spielerauto durchgehend 0x00 (null = nicht abseits). Nur auf der Bahn: im
+  // Ausdruck-Modus steht Byte 12 dauernd auf 0x00.
+  function autoGelbAbseitsSeit(car) {
+    if (trackMode !== 'on') return null;
+    const nr = autoGelbSpielerNr(car);
+    if (nr === 1) return offtrackSeit;
+    if (nr >= 2) { const z = zusatzPlatz(nr); return z && z.abseits ? z.abseits.seit : null; }
+    return null;
+  }
+  function autoGelbIstAb(car, jetzt) {
+    if (autoGelbIstNpc(car)) return car.parked === 'Bahn verlassen';
+    const s = autoGelbAbseitsSeit(car);
+    return s !== null && s !== undefined && jetzt - s >= AG_SPIELER_EIN_MS;
+  }
+  function autoGelbFaehrt(car, jetzt) {
+    if (autoGelbIstNpc(car)) {
+      if (car.parked || !car.ghost || !car.ghost.running) return false;
+    } else {
+      const s = autoGelbAbseitsSeit(car);
+      if (s !== null && s !== undefined) return false;
+    }
+    if (car.tileCode === TILE_OFFTRACK) return false;
+    return !!car.tileAt && jetzt - car.tileAt <= AG_KACHEL_FRISCH_MS;
+  }
+
+  // Wann darf ein NEUES Auto-Gelb beginnen ('' = es darf)?
+  function autoGelbSperre() {
+    if (raceState !== 'racing') return 'rennen';
+    if (raceFormationLap) return 'formation';
+    if (rennPauseAktiv()) return 'pause';
+    if (typeof tutLaeuft === 'function' && tutLaeuft()) return 'tutorial';
+    if (typeof challengeLaeuft === 'function' && challengeLaeuft()) return 'challenge';
+    try { if (typeof st !== 'undefined' && st && st.schritt === 'fahrt-laeuft') return 'studie'; } catch (e) { /* ohne Studie */ }
+    if (gelbDeaktiviert()) return 'gelb-aus';
+    // Schon Gelb von Hand (oder dessen Anfahrt): das gilt, und es wird nichts uebernommen.
+    if (flagState !== 'green' && autoGelb.phase === 'aus') return 'gelb';
+    return '';
+  }
+
+  // ---- Name und Ort fuer Anzeige und Ansage --------------------------------------------------------
+  function autoGelbSektor(car) {
+    try {
+      if (!zevStreckeBekannt()) return 0;
+      const sek = zevSektorKacheln(currentTrackTiles);
+      if (!sek || sek.length < 2) return 0;
+      const ti = car && car.ghost ? car.ghost.tileIndex : null;
+      if (ti === null || ti === undefined) return 0;
+      for (let k = 0; k < sek.length; k++) if (sek[k].indexOf(ti) >= 0) return Math.min(10, k + 1);
+    } catch (e) { /* ohne Sektor */ }
+    return 0;
+  }
+  function autoGelbEintrag(car, jetzt) {
+    const farbe = carColor(car);
+    return { car, seit: jetzt, faehrtSeit: null, name: garageLabel(car), sektor: autoGelbSektor(car),
+             farbeId: farbe && farbe.id !== 'keine' ? farbe.id : 'unbekannt',
+             modellId: carModellWert(car.modellId) || '', nr: autoGelbSpielerNr(car),
+             alias: String(car.alias || '').trim() };
+  }
+  // Der Satz fuer die Geraetestimme. Autoname wie im Rennstand (rennstandText): Fahrername, wenn so
+  // eingestellt, sonst Farbe + Modell (oder Name) + "von Spieler n".
+  function autoGelbText(x, spr) {
+    const de = spr === 'de', L = de ? 'de' : 'en', Z = ZEV_ZAHL[L];
+    let w;
+    if (x.text) w = x.text;
+    else if (x.alias && rennstandNamensart === 'fahrer') w = x.alias;
+    else {
+      const fw = RENNSTAND_FARBWORT[L][x.farbeId] || (de ? 'der' : 'the');
+      w = fw + ' ' + (x.alias || RENNSTAND_MODELLWORT[L][x.modellId] || RENNSTAND_MODELLWORT[L]['']);
+      if (x.nr) w += (de ? ' von Spieler ' : ' driven by player ') + x.nr;
+    }
+    w = w.charAt(0).toUpperCase() + w.slice(1);
+    const k = x.sektor > 0 ? (de ? ' in Sektor ' : ' in sector ') + (Z[x.sektor] || x.sektor) : '';
+    return de ? 'Gelbe Flagge. ' + w + ' hat einen Unfall gebaut' + k + '.'
+              : 'Yellow flag. ' + w + ' has crashed' + k + '.';
+  }
+  // Die Clipfolge, wenn keine Geraetestimme spricht: der vorhandene Zufallsevent-Satz "Gelbe Flagge
+  // [in Sektor X]. Abbremsen auf achtzig." und danach das Auto aus den Rennstand-Bausteinen
+  // ("Der rote BMW von Spieler eins"). Einen Clip "hat einen Unfall gebaut" gibt es nicht.
+  function autoGelbClipFolge(art, x) {
+    if (art === 'ende') return ['z:gruen_' + (x.sektor || 0)];
+    const l = ['z:gelb_' + (x.sektor || 0)];
+    if (!x.text) {
+      l.push('e:farbe_' + x.farbeId, 'e:modell_' + (x.modellId || 'auto'));
+      if (x.nr) l.push('e:spieler' + x.nr);
+    }
+    return l;
+  }
+  function autoGelbStimme() {
+    return typeof rennstandWebSpeechVerfuegbar === 'function' && rennstandWebSpeechVerfuegbar()
+      && rennstandStimmenModus !== 'clips';
+  }
+  // Ueber die Ansagen-Warteschlange (80a) wie die Zufallsevents, etwas hoeher eingereiht (25 statt 22).
+  function autoGelbAnsage(art, x) {
+    const l = autoGelb.ansageLog;
+    l.push(art === 'start' ? 'start:' + (x.text || x.name || '') + ':' + (x.sektor || 0) : 'ende:' + (x.sektor || 0));
+    if (l.length > 30) l.shift();
+    if (typeof soundEnabled === 'undefined' || !soundEnabled) return false;
+    const spr = lang === 'de' ? 'de' : 'en';
+    const spielen = async (gueltig) => {
+      if (art === 'start' && autoGelbStimme()) {
+        if (gueltig()) await ansagenTextSpielen(autoGelbText(x, spr), spr);
+        return;
+      }
+      const z = await zevClipsLaden(spr);
+      const e = art === 'start' && !x.text ? await rennstandClipsLaden(spr, true) : null;
+      if (!gueltig()) return;
+      const satz = Object.assign({}, e || {}, z || {});
+      const folge = autoGelbClipFolge(art, x).map((k) => satz[k]);
+      if (folge.every(Boolean)) await ansagenPufferSpielen(folge, { stadion: true });
+      else if (folge[0]) await ansagenPufferSpielen([folge[0]], { stadion: true });
+      else await ansagenTextSpielen(art === 'start' ? autoGelbText(x, spr) : zevAnsageText('gruen_' + (x.sektor || 0), spr), spr);
+    };
+    const erlaubt = () => soundEnabled;
+    if (typeof ansageWarteschlange !== 'undefined' && !ansageWarteschlange) return ansagenSofort('event-autogelb', spielen, erlaubt);
+    return rennAnsagen.einreihen('event-autogelb', 25, spielen, erlaubt);
+  }
+
+  // ---- Banner (Flaggenstreifen im Cockpit, aus updateFlagUi) ----------------------------------------
+  function autoGelbBannerBauen(jetzt) {
+    if (typeof autoGelb === 'undefined' || !autoGelb || autoGelb.phase !== 'gelb') return '';
+    const l = autoGelb.liste;
+    const ab = l.filter((e) => e.faehrtSeit === null);
+    if (ab.length) {
+      return String(ab[0].name).toUpperCase() + ' ' + t('NEBEN DER BAHN') + (ab.length > 1 ? ' +' + (ab.length - 1) : '');
+    }
+    if (l.length) {
+      const spaet = Math.max.apply(null, l.map((e) => e.faehrtSeit));
+      const s = Math.max(1, Math.ceil((AG_FAEHRT_MS - (jetzt - spaet)) / 1000));
+      return t('WIEDERANLAUF IN') + ' ' + s + ' S';
+    }
+    if (autoGelb.fremd) return String(autoGelb.fremdName || '').toUpperCase() + ' ' + t('NEBEN DER BAHN');
+    return '';
+  }
+  function autoGelbBannerText() {
+    return typeof autoGelb === 'undefined' || !autoGelb ? '' : autoGelb.banner;
+  }
+  function autoGelbBannerSetzen(jetzt) {
+    const txt = autoGelbBannerBauen(jetzt);
+    if (txt === autoGelb.banner) return;
+    autoGelb.banner = txt;
+    updateFlagUi();
+  }
+
+  // ---- WLAN: das eigene Feld im Bericht, die fremden aus dem Abruf ----------------------------------
+  // Form: "<sektor>|<farbeId>|<modellId>|<Name>" des ersten noch abgeflogenen Autos, '' = kein Gelb.
+  function autoGelbMpFeld() {
+    if (autoGelb.phase !== 'gelb' || !autoGelb.liste.length) return '';
+    const e = autoGelb.liste[0];
+    return (e.sektor || 0) + '|' + e.farbeId + '|' + (e.modellId || '') + '|' + String(e.name || '').replace(/\|/g, ' ').slice(0, 40);
+  }
+  function autoGelbMpMelden() {
+    const feld = autoGelbMpFeld();
+    if (feld === autoGelb.gemeldet) return;
+    autoGelb.gemeldet = feld;
+    if (typeof mp !== 'undefined' && mp.an && typeof mpBerichten === 'function') mpBerichten();
+  }
+  // Aus mpHolen (97-sessions.js), also hoechstens alle 1,5-3 s.
+  function autoGelbMpPruefen(d) {
+    let feld = '', name = '';
+    const leute = (d && d.fahrer) || [];
+    for (const f of leute) {
+      if (!f || !f.id || f.id === mp.id || !f.gelb || !mpAktiv(f)) continue;
+      feld = String(f.gelb); name = String(f.name || ''); break;
+    }
+    autoGelb.fremd = feld;
+    autoGelb.fremdName = feld ? (feld.split('|')[3] || name) + (name ? ' (' + name + ')' : '') : '';
+  }
+  function autoGelbFremdInfo() {
+    const p = String(autoGelb.fremd || '').split('|');
+    const k = parseInt(p[0], 10);
+    return { sektor: Number.isFinite(k) && k > 0 && k <= 10 ? k : 0, text: autoGelb.fremdName || p[3] || '?',
+             name: autoGelb.fremdName };
+  }
+
+  // ---- Ablauf --------------------------------------------------------------------------------------
+  function autoGelbZuruecksetzen() {
+    autoGelb.phase = 'aus';
+    autoGelb.liste.length = 0;
+    autoGelb.quittiert.clear();
+    autoGelbMpMelden();
+    if (autoGelb.banner) { autoGelb.banner = ''; updateFlagUi(); }
+  }
+  function autoGelbBeginnen(e) {
+    const war = autoGelb.phase;
+    autoGelb.phase = 'gelb';
+    if (flagState !== 'yellow') setFlag('yellow');
+    showHudToast(t('GELBE FLAGGE') + ': ' + (e.name || e.text || ''));
+    if (war !== 'gelb') log('Automatische Gelbe Flagge: ' + (e.name || e.text) + ' neben der Bahn'
+                            + (e.sektor ? ' (Sektor ' + e.sektor + ')' : '') + '.', 'err');
+    autoGelbAnsage('start', e);
+  }
+  function autoGelbTick() {
+    const modus = autoGelbModus();
+    if (modus === 'aus' && autoGelb.phase === 'aus' && !autoGelb.fremd) return;
+    if (rennPauseAktiv()) return;
+    if (raceState !== 'racing' && raceState !== 'finishing') {
+      if (autoGelb.phase !== 'aus' || autoGelb.quittiert.size) autoGelbZuruecksetzen();
+      autoGelb.fremd = '';
+      return;
+    }
+    if (typeof mp === 'undefined' || !mp.an) autoGelb.fremd = '';
+    const jetzt = rennZeitJetzt();
+    // Von aussen beendet (Knopf "Freigeben", Rennende) oder von Hand wieder Gelb waehrend der Anfahrt:
+    // die Rennleitung von Hand geht vor. Die betroffenen Autos loesen fuer DIESEN Abflug nicht erneut aus.
+    if (autoGelb.phase === 'gelb' && flagState !== 'yellow') {
+      for (const e of autoGelb.liste) autoGelb.quittiert.add(e.car);
+      autoGelb.phase = 'aus'; autoGelb.liste.length = 0;
+      log('Automatische Gelbe Flagge von Hand beendet.', 'info');
+      autoGelbMpMelden();
+    } else if (autoGelb.phase === 'anfahrt') {
+      if (flagState === 'green') {
+        autoGelb.phase = 'aus';
+        autoGelbAnsage('ende', { sektor: autoGelb.endeSektor || 0 });
+        log('Automatische Gelbe Flagge beendet, Gruen.', 'info');
+      } else if (flagState === 'yellow') autoGelb.phase = 'aus';   // von Hand wieder Gelb
+    }
+    // Neue Abfluege.
+    if (modus !== 'aus') {
+      const feld = autoGelbFeld(modus);
+      const sperre = autoGelbSperre();
+      for (const c of feld) {
+        const ab = autoGelbIstAb(c, jetzt);
+        if (autoGelb.quittiert.has(c)) { if (!ab) autoGelb.quittiert.delete(c); continue; }
+        if (!ab || sperre !== '' || autoGelb.liste.some((e) => e.car === c)) continue;
+        const e = autoGelbEintrag(c, jetzt);
+        autoGelb.liste.push(e);
+        autoGelbBeginnen(e);
+      }
+    }
+    // Ein anderes Telefon meldet Gelb.
+    if (autoGelb.fremd && autoGelb.phase !== 'gelb' && autoGelbSperre() === '') {
+      autoGelbBeginnen(autoGelbFremdInfo());
+    }
+    if (autoGelb.phase === 'gelb') {
+      const l = autoGelb.liste;
+      for (let i = l.length - 1; i >= 0; i--) {
+        const c = l[i].car;
+        // Abgemeldet oder als NPC angehalten: kommt nicht zurueck, haelt also auch kein Gelb.
+        if (garage.indexOf(c) < 0 || (autoGelbIstNpc(c) && !(c.ghost && c.ghost.running))) { l.splice(i, 1); continue; }
+        if (autoGelbFaehrt(c, jetzt)) { if (l[i].faehrtSeit === null) l[i].faehrtSeit = jetzt; }
+        else l[i].faehrtSeit = null;
+      }
+      const alleZurueck = l.every((e) => e.faehrtSeit !== null && jetzt - e.faehrtSeit >= AG_FAEHRT_MS);
+      if (alleZurueck && !autoGelb.fremd) {
+        const sek = l.length && l.every((e) => e.sektor === l[0].sektor) ? l[0].sektor : 0;
+        autoGelb.endeSektor = sek;
+        l.length = 0;
+        autoGelb.phase = 'anfahrt';
+        yellowRestart();
+        showHudToast(t('Wiederanlauf'));
+        log('Automatische Gelbe Flagge: alle Autos fahren wieder, Anfahrt-Ampel.', 'info');
+      }
+    }
+    autoGelbMpMelden();
+    autoGelbBannerSetzen(jetzt);
+  }
+  let autoGelbFehlerZuletzt = '';
+  setInterval(() => {
+    try { autoGelbTick(); } catch (e) {
+      if (e.message !== autoGelbFehlerZuletzt) { autoGelbFehlerZuletzt = e.message; log('Automatische Gelbe Flagge: ' + e.message, 'warn'); }
+    }
+  }, AG_TAKT_MS);
   // =========================================================================
   // Der Ton
   // =========================================================================
@@ -70210,7 +70558,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                      : grund === 'formation' ? 'EINFÜHRUNGSRUNDE · AUTOPILOT'
                      : grund === 'aufstellen' ? 'AUFSTELLUNG · AUTOPILOT'
                      : raceFormationLap ? 'EINFÜHRUNGSRUNDE' : '';
-      el.textContent = flaggenText ? t(flaggenText) : '';
+      // v1.4.33: unter einem automatischen Gelb (74b-autogelb.js) steht dahinter, wer neben der Bahn ist
+      // bzw. wann die Anfahrt kommt. Der Zusatz ist schon uebersetzt; er wird nur bei Aenderung gesetzt.
+      const agText = flagState === 'yellow' && typeof autoGelbBannerText === 'function' ? autoGelbBannerText() : '';
+      el.textContent = flaggenText ? t(flaggenText) + (agText ? ' · ' + agText : '') : '';
       el.style.display = el.textContent ? '' : 'none';
     }
   }
@@ -70219,21 +70570,26 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // beim Start, damit der Moment, ab dem wieder ueberholt werden darf, fuer alle derselbe
   // und sichtbar ist. Echtes FIA/GT3-Muster: 5 rote Lampen je Sekunde (1..5), dann eine
   // zufaellige 1-3 s Pause, dann gehen alle aus = Start (kein Gruen).
+  // v1.4.33: eine Generation je Anfahrt. Die automatische Gelbe Flagge (74b-autogelb.js) kann waehrend
+  // einer Anfahrt wieder Gelb ausrufen und kurz danach erneut anfahren; die Zeitgeber der ERSTEN Anfahrt
+  // pruefen sonst nur flagState === 'restart' und schalteten die zweite zu frueh auf Gruen.
+  let yellowRestartGen = 0;
   function yellowRestart() {
     if (flagState !== 'yellow') return;
     flagState = 'restart';
+    const gen = ++yellowRestartGen;
     updateFlagUi();
     const verzog = 1000 + Math.random() * 2000;
     for (let i = 1; i <= 5; i++) {
       rennZeitTimeout(() => {
-        if (flagState !== 'restart') return;
+        if (flagState !== 'restart' || gen !== yellowRestartGen) return;
         setRaceLights(i);
         ampelTon(440 + (i - 1) * 60, 0.18, 'square', 0.18);
       }, 600 + (i - 1) * 1000);
     }
     // Nach der 5. Lampe (600 + 4*1000 = 4600 ms) die zufaellige Pause, dann alle aus.
     rennZeitTimeout(() => {
-      if (flagState !== 'restart') return;
+      if (flagState !== 'restart' || gen !== yellowRestartGen) return;
       setRaceLights('go');
       ampelTon(880, 0.35, 'square', 0.22);
       setFlag('green');
@@ -115136,6 +115492,311 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Meine Strecken und Editor-Ablage tragen Modus und Grenzen, Code gleich, alt = automatisch' };
   });
+
+  // ---- v1.4.33: AUTOMATISCHE GELBE FLAGGE (74b-autogelb.js) ---------------------------------------
+  // Eine Umgebung fuer alle Tests: Rennuhr, Pause, Tutorial, Challenge, setFlag und Anfahrt als
+  // Attrappen, eine leere Garage mit Attrappen-Autos, Ton aus (die Ansagen landen trotzdem im Protokoll).
+  function agTestUmgebung(fn) {
+    const m = { zeit: rennZeitJetzt, pause: rennPauseAktiv, tut: tutLaeuft, ch: challengeLaeuft, gelbAus: gelbDeaktiviert,
+                setFlag, restart: yellowRestart, raceState, raceFormationLap, flagState, playerCar, zweiSpieler,
+                trackMode, tiles: currentTrackTiles, sound: soundEnabled, offSeit: offtrackSeit, mpAn: mp.an,
+                garage: garage.splice(0), wert: $('race-auto-gelb').value };
+    const u = { T: 2000000, flaggen: [], anfahrten: 0, echtRestart: m.restart };
+    rennZeitJetzt = () => u.T; rennPauseAktiv = () => false; tutLaeuft = () => false; challengeLaeuft = () => false;
+    gelbDeaktiviert = () => false;
+    setFlag = (n) => { u.flaggen.push(n); flagState = n; };
+    yellowRestart = () => { if (flagState === 'yellow') { flagState = 'restart'; u.anfahrten++; } };
+    raceState = 'racing'; raceFormationLap = false; flagState = 'green'; soundEnabled = false; trackMode = 'on';
+    zweiSpieler = false; offtrackSeit = null; mp.an = false;
+    u.npc = (alias, farbe) => {
+      const c = { role: 'ghost', alias, colorId: farbe || 'rot', modellId: 'bmw', parked: false, tileCode: 0x02,
+                  tileAt: u.T, tileCount: 1, ghost: { running: true, tileIndex: 0 } };
+      garage.push(c); return c;
+    };
+    playerCar = { role: 'player', alias: 'Spielerauto', colorId: 'blau', modellId: '', tileCode: 0x02, tileAt: u.T,
+                  ghost: { nurOrt: true, tileIndex: 0 } };
+    garage.push(playerCar);
+    // Fahren: jede Sekunde ein Kachelwechsel, 200-ms-Takt wie der Zeitgeber.
+    u.lauf = (ms, fahrend) => {
+      for (let t = 0; t < ms; t += 200) {
+        u.T += 200;
+        if (u.T % 1000 === 0) for (const c of fahrend || []) { c.tileAt = u.T; c.tileCount++; }
+        autoGelbTick();
+      }
+    };
+    autoGelbZuruecksetzen();
+    autoGelb.fremd = ''; autoGelb.ansageLog.length = 0;
+    try { return fn(u); } finally {
+      autoGelbZuruecksetzen(); autoGelb.fremd = ''; autoGelb.ansageLog.length = 0;
+      rennZeitJetzt = m.zeit; rennPauseAktiv = m.pause; tutLaeuft = m.tut; challengeLaeuft = m.ch; gelbDeaktiviert = m.gelbAus;
+      setFlag = m.setFlag; yellowRestart = m.restart;
+      raceState = m.raceState; raceFormationLap = m.raceFormationLap; flagState = m.flagState; playerCar = m.playerCar;
+      zweiSpieler = m.zweiSpieler; trackMode = m.trackMode; currentTrackTiles = m.tiles; soundEnabled = m.sound;
+      offtrackSeit = m.offSeit; mp.an = m.mpAn;
+      garage.length = 0; garage.push(...m.garage);
+      $('race-auto-gelb').value = m.wert;
+      updateFlagUi();
+    }
+  }
+
+  stAdd('Auto-Gelb v1.4.33: Option in den Renneinstellungen, Vorgabe aus, WIP, Erklaerung im small, Sicherung', () => {
+    const f = [];
+    const el = $('race-auto-gelb');
+    if (!el) return { ok: false, mass: '#race-auto-gelb fehlt' };
+    const row = el.closest('.opt-row');
+    if (!row || !row.closest('#tab-control')) f.push('nicht in den Renneinstellungen');
+    const lab = row && row.querySelector('.opt-label');
+    const tag = lab && lab.querySelector('.wip-tag');
+    if (!tag || tag.textContent.trim() !== 'WIP') f.push('ohne WIP-Etikett');
+    if (!lab || !lab.querySelector('small') || lab.querySelector('small').textContent.trim().length < 80) f.push('ohne Erklaerung im small');
+    if (row && row.querySelector(':scope > small, :scope > p')) f.push('Text unter der Zeile');
+    const werte = [...el.options].map((o) => o.value).join(',');
+    if (werte !== 'aus,npc,alle') f.push('Werte ' + werte);
+    const vor = [...el.options].find((o) => o.defaultSelected);
+    if (!vor || vor.value !== 'aus') f.push('Vorgabe nicht aus');
+    if (sicherungRegler().map((x) => x.id).indexOf('race-auto-gelb') < 0) f.push('nicht in der Sicherung');
+    // WLAN: das startende Telefon schickt die Option mit, die anderen uebernehmen sie.
+    const merk = el.value;
+    try {
+      el.value = 'npc';
+      const plan = mpPlanBauen();
+      if (plan.autoGelb !== 'npc') f.push('Plan ohne Option');
+    } finally { el.value = merk; }
+    if (String(mpRennenUebernehmen).indexOf("chSetzen('race-auto-gelb'") < 0) f.push('Mitspieler uebernehmen die Option nicht');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Aus/Nur NPCs/Alle, Vorgabe aus, WIP, Plan traegt sie' };
+  });
+
+  stAdd('Auto-Gelb v1.4.33: NPC-Abflug ruft Gelb aus, Ansage mit Autoname, nur NPCs reagiert nicht auf Spieler', () => agTestUmgebung((u) => {
+    const f = [];
+    const npc = u.npc('Rot 7');
+    // Aus: nichts.
+    $('race-auto-gelb').value = 'aus';
+    npc.parked = 'Bahn verlassen';
+    u.lauf(1000);
+    if (u.flaggen.length) f.push('Gelb trotz Option aus');
+    // Nur NPCs: Spieler daneben -> nichts; NPC geparkt -> Gelb.
+    npc.parked = false;
+    $('race-auto-gelb').value = 'npc';
+    offtrackSeit = u.T;
+    u.lauf(3000);
+    if (u.flaggen.length) f.push('nur NPCs: Spielerabflug loest aus');
+    offtrackSeit = null;
+    npc.parked = 'Bahn verlassen';
+    u.lauf(200);
+    if (u.flaggen.join() !== 'yellow' || flagState !== 'yellow') f.push('NPC-Abflug ohne Gelb: ' + u.flaggen.join());
+    if (autoGelb.phase !== 'gelb') f.push('Phase ' + autoGelb.phase);
+    if (autoGelb.ansageLog.join() !== 'start:Rot 7:0') f.push('Ansage ' + autoGelb.ansageLog.join());
+    const x = autoGelb.liste[0];
+    const merkArt = rennstandNamensart;
+    let txt = '', txtFahrer = '';
+    try {
+      rennstandNamensart = 'auto';
+      txt = autoGelbText(x, 'de');
+      rennstandNamensart = 'fahrer';
+      txtFahrer = autoGelbText(x, 'de');
+    } finally { rennstandNamensart = merkArt; }
+    if (txt !== 'Gelbe Flagge. Der rote Rot 7 hat einen Unfall gebaut.') f.push('Text ' + txt);
+    if (txtFahrer !== 'Gelbe Flagge. Rot 7 hat einen Unfall gebaut.') f.push('Fahrername ' + txtFahrer);
+    const en = autoGelbText(Object.assign({}, x, { alias: '', nr: 2, sektor: 3 }), 'en');
+    if (en !== 'Yellow flag. The red BMW driven by player 2 has crashed in sector three.') f.push('EN ' + en);
+    const clips = autoGelbClipFolge('start', Object.assign({}, x, { nr: 1, sektor: 2 })).join();
+    if (clips !== 'z:gelb_2,e:farbe_rot,e:modell_bmw,e:spieler1') f.push('Clips ' + clips);
+    // Jeder Clip der Folge muss es in den Manifesten geben (zufallsevents.json, rennstand-erweitert.json).
+    if (zevAnsageSchluessel().indexOf('gelb_2') < 0 || zevAnsageSchluessel().indexOf('gruen_0') < 0) f.push('Zufallsevent-Clip fehlt');
+    if (autoGelbBannerText().indexOf('ROT 7') !== 0) f.push('Banner ' + autoGelbBannerText());
+    // Kein zweites Gelb fuer dasselbe Auto.
+    u.lauf(1000);
+    if (u.flaggen.length !== 1 || autoGelb.liste.length !== 1) f.push('doppelt ausgeloest');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'aus: nichts, nur NPCs: Spieler ignoriert, NPC: Gelb + "' + txt + '"' };
+  }));
+
+  stAdd('Auto-Gelb v1.4.33: Spieler erst nach 1 s neben der Bahn (Fehlalarm-Schwelle), mit Sektor', () => agTestUmgebung((u) => {
+    const f = [];
+    $('race-auto-gelb').value = 'alle';
+    // Kurzes 0x00 (0,8 s) und wieder drauf: kein Gelb.
+    offtrackSeit = u.T;
+    u.lauf(800);
+    offtrackSeit = null;
+    u.lauf(400);
+    if (u.flaggen.length) f.push('Gelb nach 0,8 s');
+    // Im Ausdruck-Modus nie (Byte 12 steht dort dauernd auf 0x00).
+    trackMode = 'off'; offtrackSeit = u.T;
+    u.lauf(2000);
+    if (u.flaggen.length) f.push('Gelb im Ausdruck-Modus');
+    trackMode = 'on'; offtrackSeit = null; u.lauf(200);
+    // Mit Sektoren: der Sektor des Autos steht in der Ansage.
+    const tiles = zevTestStrecke();
+    let k = 0;
+    if (tiles) {
+      currentTrackTiles = tiles;
+      const sek = zevSektorKacheln(tiles);
+      if (sek && sek.length > 1) { playerCar.ghost.tileIndex = sek[1][0]; k = 2; }
+    }
+    offtrackSeit = u.T;
+    u.lauf(800);
+    if (u.flaggen.length) f.push('Gelb vor 1 s');
+    u.lauf(400);
+    if (flagState !== 'yellow') f.push('kein Gelb nach 1 s');
+    const log = autoGelb.ansageLog.join();
+    if (log !== 'start:Spielerauto:' + k) f.push('Ansage ' + log + ' (Sektor ' + k + ' erwartet)');
+    if (k && autoGelbText(autoGelb.liste[0], 'de').indexOf('in Sektor zwei') < 0) f.push('Sektor fehlt im Text: ' + autoGelbText(autoGelb.liste[0], 'de'));
+    if (k && autoGelbClipFolge('start', autoGelb.liste[0])[0] !== 'z:gelb_2') f.push('Clip ohne Sektor');
+    if (autoGelb.liste[0] && autoGelb.liste[0].nr !== 1) f.push('Spielernummer ' + autoGelb.liste[0].nr);
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '0,8 s: nichts, Ausdruck: nichts, 1 s: Gelb' + (k ? ' in Sektor 2' : ' (ohne Teststrecke kein Sektor)') };
+  }));
+
+  stAdd('Auto-Gelb v1.4.33: 3 s wieder fahren, dann Anfahrt-Ampel, Gruen mit Ansage', () => agTestUmgebung((u) => {
+    const f = [];
+    $('race-auto-gelb').value = 'npc';
+    const npc = u.npc('Gelb 3', 'gelb');
+    npc.parked = 'Bahn verlassen';
+    u.lauf(200);
+    if (flagState !== 'yellow') return { ok: false, mass: 'kein Gelb' };
+    // Wieder hingestellt und geschuettelt, steht aber noch (kein Kachelwechsel): keine Anfahrt.
+    npc.parked = false; npc.tileAt = u.T - 5000;
+    u.lauf(5000);
+    if (u.anfahrten) f.push('Anfahrt, obwohl das Auto steht');
+    // Faehrt: 2,6 s noch nicht, nach 3 s ja.
+    npc.tileAt = u.T; npc.tileCount++;
+    u.lauf(2600, [npc]);
+    if (u.anfahrten) f.push('Anfahrt vor 3 s');
+    if (autoGelbBannerText().indexOf(t('WIEDERANLAUF IN')) !== 0) f.push('Banner ' + autoGelbBannerText());
+    u.lauf(800, [npc]);
+    if (u.anfahrten !== 1 || flagState !== 'restart' || autoGelb.phase !== 'anfahrt') f.push('keine Anfahrt nach 3 s (' + flagState + ')');
+    // Ampel aus = Gruen: Ansage "Gruene Flagge".
+    flagState = 'green';
+    u.lauf(200, [npc]);
+    if (autoGelb.phase !== 'aus') f.push('Phase nach Gruen ' + autoGelb.phase);
+    if (autoGelb.ansageLog.join() !== 'start:Gelb 3:0,ende:0') f.push('Ansagen ' + autoGelb.ansageLog.join());
+    if (autoGelbClipFolge('ende', { sektor: 0 }).join() !== 'z:gruen_0') f.push('Ende-Clip');
+    // Ein 0x00 unterbricht die 3 s: die Uhr beginnt von vorn.
+    npc.parked = 'Bahn verlassen'; u.lauf(200);
+    npc.parked = false; npc.tileAt = u.T;
+    u.lauf(2000, [npc]);
+    npc.tileCode = TILE_OFFTRACK; u.lauf(200);
+    npc.tileCode = 0x02; npc.tileAt = u.T;
+    u.lauf(2400, [npc]);
+    if (u.anfahrten !== 1) f.push('Unterbrechung nicht beachtet');
+    u.lauf(1000, [npc]);
+    if (u.anfahrten !== 2) f.push('zweite Anfahrt fehlt');
+    // Die echte Anfahrt traegt eine Generation: eine alte Anfahrt schaltet eine neue nicht vorzeitig auf Gruen.
+    if (!/gen !== yellowRestartGen/.test(String(u.echtRestart))) f.push('Anfahrt ohne Generation');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'stehend: Gelb bleibt, 3 s fahren: Ampel, Gruen angesagt, Unterbrechung zaehlt neu' };
+  }));
+
+  stAdd('Auto-Gelb v1.4.33: mehrere Abfluege, Ende erst wenn alle fahren; Abflug in der Anfahrt = wieder Gelb', () => agTestUmgebung((u) => {
+    const f = [];
+    $('race-auto-gelb').value = 'alle';
+    const a = u.npc('A'), b = u.npc('B', 'gruen');
+    a.parked = 'Bahn verlassen'; u.lauf(200);
+    b.parked = 'Bahn verlassen'; u.lauf(200);
+    if (autoGelb.liste.length !== 2 || u.flaggen.length !== 1) f.push('Liste ' + autoGelb.liste.length + ', Flaggen ' + u.flaggen.join());
+    if (autoGelb.ansageLog.length !== 2) f.push('Ansagen ' + autoGelb.ansageLog.join());
+    if (autoGelbBannerText().indexOf('+1') < 0) f.push('Banner ohne +1: ' + autoGelbBannerText());
+    a.parked = false; a.tileAt = u.T;
+    u.lauf(5000, [a]);
+    if (u.anfahrten) f.push('Anfahrt, obwohl B noch steht');
+    b.parked = false; b.tileAt = u.T;
+    u.lauf(3200, [a, b]);
+    if (u.anfahrten !== 1) f.push('keine Anfahrt, als beide fuhren');
+    // Waehrend der Anfahrt fliegt A wieder ab: zurueck auf Gelb.
+    a.parked = 'Bahn verlassen'; u.lauf(200);
+    if (flagState !== 'yellow' || autoGelb.phase !== 'gelb') f.push('Abflug in der Anfahrt ohne Gelb (' + flagState + ')');
+    // Von Hand freigegeben: kein neues Gelb fuer denselben Abflug.
+    flagState = 'restart'; u.lauf(400);
+    if (autoGelb.phase !== 'aus' || flagState !== 'restart') f.push('Freigabe von Hand nicht respektiert');
+    flagState = 'green'; u.lauf(1000);
+    if (flagState !== 'green') f.push('derselbe Abflug loest nach Freigabe erneut aus');
+    a.parked = false; a.tileAt = u.T; u.lauf(400, [a]);
+    a.parked = 'Bahn verlassen'; u.lauf(200);
+    if (flagState !== 'yellow') f.push('neuer Abflug nach Freigabe ohne Gelb');
+    // Ein abgemeldetes Auto haelt kein Gelb fest.
+    garage.splice(garage.indexOf(a), 1);
+    u.lauf(200);
+    if (u.anfahrten !== 2) f.push('abgemeldetes Auto haelt Gelb');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'zwei Abfluege, Anfahrt erst mit beiden, Abflug in der Anfahrt = Gelb, Freigabe von Hand gilt' };
+  }));
+
+  stAdd('Auto-Gelb v1.4.33: nie in Countdown, Einfuehrungsrunde, Pause, Tutorial, Challenge, unter Gelb von Hand', () => agTestUmgebung((u) => {
+    const f = [];
+    $('race-auto-gelb').value = 'alle';
+    const npc = u.npc('X');
+    npc.parked = 'Bahn verlassen';
+    const faelle = [
+      ['Countdown', () => { raceState = 'countdown'; }, () => { raceState = 'racing'; }],
+      ['Einfuehrungsrunde', () => { raceFormationLap = true; }, () => { raceFormationLap = false; }],
+      ['Tutorial', () => { tutLaeuft = () => true; }, () => { tutLaeuft = () => false; }],
+      ['Challenge', () => { challengeLaeuft = () => true; }, () => { challengeLaeuft = () => false; }],
+      ['Gelb deaktiviert', () => { gelbDeaktiviert = () => true; }, () => { gelbDeaktiviert = () => false; }],
+      ['Gelb von Hand', () => { flagState = 'yellow'; }, () => { flagState = 'green'; }],
+    ];
+    for (const [name, an, aus] of faelle) {
+      an(); u.lauf(1000); aus();
+      if (u.flaggen.length || autoGelb.phase !== 'aus') f.push(name + ': ausgeloest');
+      u.flaggen.length = 0; autoGelbZuruecksetzen();
+    }
+    // Pause: der Zeitgeber ruht.
+    rennPauseAktiv = () => true; u.lauf(1000); rennPauseAktiv = () => false;
+    if (u.flaggen.length) f.push('Pause: ausgeloest');
+    // Danach (alles frei) loest derselbe Abflug aus: verschoben, nicht verworfen.
+    u.lauf(200);
+    if (flagState !== 'yellow') f.push('nach den Sperren kein Gelb');
+    // Rennende raeumt auf.
+    raceState = 'finished'; u.lauf(200);
+    if (autoGelb.phase !== 'aus' || autoGelb.liste.length) f.push('Rennende raeumt nicht auf');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : faelle.length + ' Sperren + Pause, danach Gelb, Rennende raeumt auf' };
+  }));
+
+  stAdd('Auto-Gelb v1.4.33: WLAN - eigenes Feld im Bericht, fremdem Gelb folgen, nichts im Funktakt', () => agTestUmgebung((u) => {
+    const f = [];
+    $('race-auto-gelb').value = 'npc';
+    const npc = u.npc('N');
+    npc.parked = 'Bahn verlassen'; u.lauf(200);
+    const feld = autoGelbMpFeld();
+    if (!/^0\|rot\|bmw\|N$/.test(feld)) f.push('Feld ' + feld);
+    if (mpEigenerStand().gelb !== feld) f.push('Bericht ohne Feld');
+    autoGelbZuruecksetzen(); flagState = 'green'; npc.parked = false;
+    if (autoGelbMpFeld() !== '') f.push('Feld nach Ende nicht leer');
+    // Ein anderes Telefon meldet Gelb: folgen, aber nicht selbst weitermelden.
+    const merkId = mp.id, merkBericht = mpBerichten;
+    let berichte = 0;
+    mpBerichten = () => { berichte++; };
+    mp.an = true;
+    try {
+      mp.id = 'ich';
+      autoGelbMpPruefen({ fahrer: [{ id: 'ich', gelb: '' }, { id: 'du', name: 'Anna', alter: 1, gelb: '2|blau||Blauer' }] });
+      u.lauf(200);
+      if (flagState !== 'yellow' || autoGelb.phase !== 'gelb') f.push('fremdes Gelb nicht uebernommen');
+      if (autoGelbMpFeld() !== '') f.push('fremdes Gelb weitergemeldet');
+      if (berichte) f.push('fremdes Gelb loest eigenen Bericht aus');
+      if (!/:2$/.test(autoGelb.ansageLog.join())) f.push('fremde Ansage ohne Sektor: ' + autoGelb.ansageLog.join());
+      u.lauf(5000);
+      if (u.anfahrten) f.push('Anfahrt, obwohl das andere Telefon noch Gelb meldet');
+      autoGelbMpPruefen({ fahrer: [{ id: 'du', name: 'Anna', alter: 1, gelb: '' }] });
+      u.lauf(200);
+      if (u.anfahrten !== 1) f.push('keine Anfahrt nach fremdem Ende');
+      // Veraltete Meldung (Telefon weg) zaehlt nicht.
+      autoGelbMpPruefen({ fahrer: [{ id: 'du', name: 'Anna', alter: 999, gelb: '1|rot||X' }] });
+      if (autoGelb.fremd) f.push('inaktiver Fahrer zaehlt');
+      // Eigener Abflug im Mehrspieler: sofort ein Bericht (nicht erst beim Lebenszeichen).
+      flagState = 'green'; autoGelbZuruecksetzen(); berichte = 0;
+      npc.parked = 'Bahn verlassen'; u.lauf(200);
+      if (berichte !== 1) f.push('eigener Abflug ohne sofortigen Bericht (' + berichte + ')');
+    } finally { mp.id = merkId; mpBerichten = merkBericht; }
+    // Im Funktakt: weder Abseits-Melder noch Meldestrom noch Sendetakt wissen davon.
+    for (const fn of [offtrackMelden, onCarNotify, handleDashboardBytes, ghostTick, sendControlValue]) {
+      if (/autoGelb/.test(String(fn))) f.push(fn.name + ' ruft die automatische Gelbe Flagge');
+    }
+    // Option aus: der Zeitgeber kehrt nach dem ersten Vergleich zurueck (keine Garage-Runde).
+    $('race-auto-gelb').value = 'aus'; mp.an = false; autoGelb.fremd = '';
+    flagState = 'green'; autoGelbZuruecksetzen();
+    const merkFeld = autoGelbFeld;
+    let runden = 0;
+    autoGelbFeld = (m) => { runden++; return merkFeld(m); };
+    try { u.lauf(1000); } finally { autoGelbFeld = merkFeld; }
+    if (runden) f.push('Zeitgeber arbeitet bei Option aus');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Feld ' + feld + ', fremdem Gelb gefolgt und beendet, Funktakt unberuehrt' };
+  }));
   // ============================== HOME ==============================
   // Der Schirm beim Laden, erreichbar ueber das Logo. Die Zahl der Einstellungen wird
   // zur Laufzeit gezaehlt, damit sie nicht veraltet.
@@ -115901,7 +116562,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const zielPlus = imRennen && typeof fruehstartZielPlus === 'function' ? fruehstartZielPlus(1) : 0;
     return { id: mp.id, name: mp.name || 'ohne Namen', laps: Math.max(0, zeiten.length - zielPlus),
              letzte, beste, summe, strafe,
-             abgaenge: (typeof offtrackZaehler !== 'undefined') ? offtrackZaehler : 0 };
+             abgaenge: (typeof offtrackZaehler !== 'undefined') ? offtrackZaehler : 0,
+             // v1.4.33: Abflug eines EIGENEN Autos unter automatischer Gelber Flagge ('' = keiner).
+             gelb: typeof autoGelbMpFeld === 'function' ? autoGelbMpFeld() : '' };
   }
 
   async function mpBerichten() {
@@ -116081,6 +116744,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     chSetzen('race-flying', !!plan.fliegend);
     chSetzen('race-pit-required', String(plan.pit || 0));
     if (plan.tank) chSetzen('race-fuel-start', plan.tank);
+    if (plan.autoGelb) chSetzen('race-auto-gelb', plan.autoGelb);
     if (plan.meister && typeof meisterMpUebernehmen === 'function') meisterMpUebernehmen(plan);
     // BESTELLT: "der Host kann die Renneinstellungen (Tempo, Handling, Beschleunigung,
     // Schaden, Reifenverschleiss) auf alle erzwingen, wie es die Arcade/Pro-Presets bei den
@@ -116113,6 +116777,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Ziel eines Tank-Lecks) und schickt ihn mit wie den Wetterplan; die anderen wuerfeln nicht selbst
     // (startRaceCountdown -> zevRennStart(plan)). null = aus, auch wenn ein Mitspieler sie an hat.
     plan.zev = typeof zevPlanFuerMp === 'function' ? zevPlanFuerMp() : null;
+    // v1.4.33: die automatische Gelbe Flagge gilt fuer alle wie beim startenden Telefon.
+    plan.autoGelb = typeof autoGelbModus === 'function' ? autoGelbModus() : 'aus';
     // BESTELLT: "der Host erzwingt die Renneinstellungen auf allen." Wenn der Schalter an ist,
     // schickt der Host seine eigene aktive Abstimmung (Arcade/Pro/...) als `preset` mit; die
     // Mitglieder wenden sie beim Uebernehmen an (mpRennenUebernehmen).
@@ -116302,6 +116968,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       mpPosTakt();
       mpZeichnen(d);
       mpEndePruefen(d);
+      if (typeof autoGelbMpPruefen === 'function') autoGelbMpPruefen(d);
       mpZielPruefen(d);
       mpBereitSchirm(d);
       mpSay(t('verbunden') + ', ' + (d.fahrer || []).length + ' '
