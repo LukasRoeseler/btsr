@@ -2167,6 +2167,9 @@
     // "beide schadenfrei", gesetzt wurde aber nur Auto 2 - Auto 1 behielt seinen Schaden,
     // und Spieler 3 behielt Tank und Schaden. Jetzt alle Plaetze.
     raceStartZuruecksetzen(fuel);
+    // v1.4.33 (WIP): Setup je Auto (98i-setup.js) - Startmischung und Starttank je Spielerauto, bei
+    // vorgegebenem Fahrgefuehl fuer alle Standard. Einmal je Start, nicht im Sendetakt.
+    if (typeof setupRennstart === 'function') setupRennstart(mpPlan);
     updateDamageFuelUI();
     racePitDone = 0;
     pitBilanz = null;   // "Letzter Stopp" im Boxenschirm gehoert zum Rennen

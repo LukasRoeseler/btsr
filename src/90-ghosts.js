@@ -2206,6 +2206,8 @@
       bb.onclick = () => blinkCar(car);
       zb.appendChild(bb);
       rechts.appendChild(zb);
+      // v1.4.33 (WIP): Setup je Spielerauto (98i-setup.js) - eigenes Fenster mit Reifentyp und Starttank.
+      if (typeof setupGarageZeile === 'function') { const zs = setupGarageZeile(car); if (zs) rechts.appendChild(zs); }
       // Name
       const zn = document.createElement('div');
       zn.className = 'opt-row gk-zeile gar-a-name';
