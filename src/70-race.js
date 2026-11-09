@@ -3078,7 +3078,7 @@
       : raceWxStart === 'wechsel' ? 'wechselhaft' : 'trocken'}`);
     lines.push(`Wetterwechsel;${raceWxStart === 'wechsel' ? 'laufend'
       : raceWxChange ? 'ja' : 'nein'}`);
-    lines.push(`Tank beim Start (l);${raceFuelStartL}`);
+    lines.push(`Tank beim Start (l);${typeof setupStartTankL === 'function' ? setupStartTankL() : raceFuelStartL}`);
     // On/off track goes into the export because it is the one figure that says whether the
     // lap times above describe driving on a track at all.
     lines.push(`Zeit auf der Strecke (s);${num(Math.round(trackTimeOn * 1000))}`);
@@ -4806,7 +4806,8 @@
   // Was der Tank in dieser Sitzung hergab: Startmenge plus alles, was in der Box
   // nachgefuellt wurde, minus was am Ende noch drin ist - in Litern (FUEL_TANK_LITERS).
   function raceFuelBilanz() {
-    const startPct = raceFuelStartL / FUEL_TANK_LITERS * 100;
+    // v1.4.33: mit eigenem Setup (98i-setup.js) startet Auto 1 mit seiner Fuellung.
+    const startPct = (typeof setupStartTankL === 'function' ? setupStartTankL() : raceFuelStartL) / FUEL_TANK_LITERS * 100;
     const endPct = Math.max(0, Math.min(100, typeof fuel === 'number' ? fuel : startPct));
     const consumedPct = Math.max(0, startPct + raceFuelRefuelPct - endPct);
     const l = (pct) => +(pct / 100 * FUEL_TANK_LITERS).toFixed(1);

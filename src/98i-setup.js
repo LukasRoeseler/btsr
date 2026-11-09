@@ -37,6 +37,9 @@
   const SETUP_TANK_MIN = 5;
   let setupFensterAuto = null;         // das Auto, dessen Fenster offen ist
   let setupLaufVorgabe = null;         // Grund der Vereinheitlichung im laufenden Rennen
+  let setupP1StartL = null;            // Starttank von Auto 1 aus seinem Setup (fuer die Tankbilanz)
+  // Die Startfuellung von Auto 1 in Litern: aus dem Setup, sonst die Renneinstellung (raceFuelBilanz).
+  function setupStartTankL() { return setupP1StartL !== null ? setupP1StartL : raceFuelStartL; }
   const setupRateCache = {};
 
   function setupAlle() {
@@ -102,6 +105,7 @@
   function setupRennstart(plan) {
     const grund = setupVorgabeGrund(plan || null);
     setupLaufVorgabe = grund;
+    setupP1StartL = null;
     const out = { grund, spieler: [] };
     const plaetze = [{ nr: 1, car: typeof playerCar !== 'undefined' ? playerCar : null }];
     if (typeof zusatzAktiv === 'function') zusatzAktiv().forEach((z) => plaetze.push({ nr: z.nr, car: z.car }));
@@ -119,7 +123,7 @@
       if (mix) mix = mischungErlaubt(mix);
       if (tankL) {
         const pct = Math.max(0, Math.min(100, tankL / FUEL_TANK_LITERS * 100));
-        if (p.nr === 1) fuel = pct; else tankFuellenVon(zusatzPlatz(p.nr), pct);
+        if (p.nr === 1) { fuel = pct; setupP1StartL = tankL; } else tankFuellenVon(zusatzPlatz(p.nr), pct);
       }
       if (mix) {
         if (p.nr === 1) { if (tyres !== mix) { tyres = mix; surface = true; } }
@@ -235,6 +239,11 @@
     .setup-fenster .opt-row.menu-nav-sel { outline: 2px solid #fff; outline-offset: -2px; }
     .setup-fenster.gesperrt .gk-zeile { opacity: .55; }
     .setup-fenster .setup-knoepfe { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+    .setup-fenster .k-pause-dialog .opt-info-btn { width: 16px; height: 16px; min-height: 16px; padding: 0; margin-left: 6px;
+      text-align: center; justify-content: center; border: 1px solid var(--border); border-radius: 50%; background: var(--panel);
+      color: var(--muted); font: italic 11px/1 Georgia, serif; letter-spacing: 0; text-transform: none; }
+    .setup-fenster .k-pause-dialog .opt-info-btn:hover { color: var(--ink); border-color: var(--muted); background: var(--panel); }
+    .setup-fenster .k-pause-dialog p.setup-strecke, .setup-fenster .k-pause-dialog p.setup-vorgabe:not([hidden]) { display: block; }
     .gar-a-setup .wip-tag { margin-left: 6px; font-size: 9px; vertical-align: 1px; }
     @media (max-height: 420px) {
       .setup-fenster .k-pause-dialog { padding: 8px 14px 10px; gap: 2px; }
@@ -439,7 +448,7 @@
     const merk = { auf: garAufAuto, virt: garVirtuellAuf, tiles: currentTrackTiles, rs: raceState,
                    pc: playerCar, pc2: playerCar2, zs: zweiSpieler, fuel, tyres, tyres2,
                    t2: tankZwei.stand, wunsch: mischungWunsch, lauf: setupLaufVorgabe, ch: chLauf,
-                   drain: fuelDrainPerSec, wx: raceWxStart };
+                   drain: fuelDrainPerSec, wx: raceWxStart, p1L: setupP1StartL };
     const probe = [['player', 'p1'], ['player2', 'p2'], ['ghost', 'npc']].map(([role, id], i) => ({ role,
       device: { id: 'probe-setup-' + id, name: 'Probe' }, alias: 'Setup ' + id, colorId: ['rot', 'blau', 'gelb'][i],
       sim: false, testSenke: [], probe: true }));
@@ -457,7 +466,7 @@
       garAufAuto = merk.auf; garVirtuellAuf = merk.virt; currentTrackTiles = merk.tiles; raceState = merk.rs;
       playerCar = merk.pc; playerCar2 = merk.pc2; zweiSpieler = merk.zs; fuel = merk.fuel;
       tyres2 = merk.tyres2; tankZwei.stand = merk.t2; mischungWunsch = merk.wunsch; setupLaufVorgabe = merk.lauf;
-      chLauf = merk.ch; fuelDrainPerSec = merk.drain; raceWxStart = merk.wx;
+      chLauf = merk.ch; fuelDrainPerSec = merk.drain; raceWxStart = merk.wx; setupP1StartL = merk.p1L;
       tyres = merk.tyres;
       applySurface();
       try { if (roh === null) localStorage.removeItem(SETUP_STORE); else localStorage.setItem(SETUP_STORE, roh); } catch (e) { /* privat */ }
@@ -606,6 +615,7 @@
     if (Math.abs(tankZwei.stand - 30) > 0.01) f.push('P2 Tank ' + tankZwei.stand.toFixed(1) + ' % statt 30');
     if (tyres2 !== 'hart') f.push('P2 Reifen ' + tyres2);
     if (Math.abs(physEngine2.config.tyreWearMix - mischungWert('hart', 'verschleiss')) > 1e-9) f.push('P2-Motor rechnet nicht mit hart');
+    if (raceFuelBilanz().startL !== 55) f.push('Tankbilanz startet mit ' + raceFuelBilanz().startL + ' l statt 55');
     // Ohne eigenes Setup: nichts angefasst.
     setupStandard(probe[0]); setupStandard(probe[1]);
     fuel = 80; tankZwei.stand = 70; tyres = 'hart'; tyres2 = 'regen';
