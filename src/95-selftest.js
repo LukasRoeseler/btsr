@@ -23901,6 +23901,41 @@
     }
   });
 
+  // Review nach 1.3.131: fehlt auf Deutsch ein Tutorial-Clip, bleibt es still (Text steht da) statt der
+  // Geraetestimme mit en-US; englische Clips spielen nur im englischen Modus.
+  stAdd('Tutorial: Deutsch ohne Clip still, keine Clips der anderen Sprache', () => {
+    if (typeof tutSprechenEcht !== 'function' || !window.speechSynthesis) return { skip: true, mass: 'kein Tutorial oder keine Sprachausgabe' };
+    const ss = window.speechSynthesis, echtSpeak = ss.speak, merkLang = lang, merkTon = soundEnabled, merkSp = tutSprache;
+    const merkBuf = new Map(tutBuffers);
+    let gesprochen = 0;
+    const f = [];
+    try {
+      ss.speak = () => { gesprochen++; };
+      soundEnabled = true;
+      tutBuffers.clear();
+      lang = 'de';
+      const d = tutSprechenEcht('gut');
+      if (gesprochen) f.push('Deutsch ohne Clip spricht die Geraetestimme');
+      if (!(d >= 2)) f.push('Lesedauer ' + d);
+      // Englische Puffer geladen, Sprache Deutsch: kein englischer Clip, sondern still.
+      tutSprache = 'en';
+      tutBuffers.set('gut', { duration: 1 });
+      const vorher = tutQuelle;
+      tutSprechenEcht('gut');
+      if (tutQuelle !== vorher) f.push('englischer Clip im deutschen Modus');
+      if (gesprochen) f.push('Geraetestimme im deutschen Modus');
+      // Englisch ohne Clip: die Geraetestimme darf sprechen.
+      tutBuffers.clear(); lang = 'en';
+      tutSprechenEcht('gut');
+      if (!gesprochen) f.push('Englisch ohne Clip ganz stumm');
+    } finally {
+      tutVerstummen();
+      ss.speak = echtSpeak; lang = merkLang; soundEnabled = merkTon; tutSprache = merkSp;
+      tutBuffers.clear(); merkBuf.forEach((v, k) => tutBuffers.set(k, v));
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'DE still ohne Clip, EN-Puffer nicht im DE-Modus, EN ohne Clip mit Geraetestimme' };
+  });
+
   // v1.3.77 GEMELDET: die blaue Radar-Kopflinie (ACC) stach durch die anderen Cockpit-Schirme.
   stAdd('Cockpit v1.3.77: ACC-Radarlinie nur auf dem Hauptschirm', () => {
     const dash = $('race-dash'), box = $('race-wx-box');

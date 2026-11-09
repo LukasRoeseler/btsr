@@ -593,13 +593,17 @@
     const de = TUT_SPRUCH[key] || '';
     tutVerstummen();
     if (typeof soundEnabled !== 'undefined' && !soundEnabled) return tutLesedauer(t(de));
-    // DE und EN (wenn Clips geladen): fertige Aufnahme; sonst speechSynthesis.
+    // DE und EN: fertige Aufnahme, aber nur aus dem Satz der eigenen Sprache (tutSprache) - nach einem
+    // Sprachwechsel lagen bis 1.3.131 noch die Clips der anderen Sprache im Speicher.
     if (lang === 'de' || lang === 'en') {
-      const buf = tutBuffers.get(key);
+      const buf = tutSprache === lang ? tutBuffers.get(key) : null;
       if (buf && audioCtx) {
         const d = tutClipAbspielen(buf);
         if (d !== null) return d;
       }
+      // Deutsch ohne Clip bleibt still wie bis 1.3.92 (der Text steht da): die Geraetestimme las den
+      // deutschen Satz sonst mit en-US-Stimme oder mit einer ganz anderen Stimme als Kerstin vor.
+      if (lang === 'de') return tutLesedauer(de);
     }
     // EN ohne Clip / ES: Geraetestimme, eine weibliche, wenn sie sich am Namen erkennen laesst.
     const text = t(de);

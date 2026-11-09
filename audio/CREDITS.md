@@ -534,7 +534,7 @@ Aus einer eigenen Aufnahme des Autors (Video eines Ford Mustang GT3, nicht Teil 
 
 ## Tutorial-Stimme (v1.3.15, erweitert v1.3.31)
 
-32 Sprachclips (`tutorial_*_de.ogg`, nur Deutsch; seit v1.3.31 auch Rolle, Bahn/Boden, Licht, Regen und Regenreifen; seit v1.3.66 ein Boxenstopp statt zwei, dazu Rueckwaertsgang und Handschaltung), Manifest mit Datei, Dauer und Wortlaut:
+32 Sprachclips je Sprache (`tutorial_*_de.ogg`; seit 1.3.94 auch `tutorial_*_en.ogg`, siehe unten; seit v1.3.31 auch Rolle, Bahn/Boden, Licht, Regen und Regenreifen; seit v1.3.66 ein Boxenstopp statt zwei, dazu Rueckwaertsgang und Handschaltung), Manifest mit Datei, Dauer und Wortlaut:
 `audio/tutorial.json`. Erzeugung: `tools/voice_tutorial.py` (Piper, danach ffmpeg: Stille
 abschneiden, Hochpass 70 Hz, Lautheit auf -16 LUFS, Ogg Vorbis). Kein Funkfilter.
 Piper bekommt je Clip einen eigenen Sprechtext mit Lautschreibung fuer englische Woerter
@@ -547,8 +547,21 @@ UTF-8-Eingabe; vorher wurden die Umlaute unter Windows als Zeichensalat gesproch
 * **Stimme:** `de_DE-kerstin-low` von https://huggingface.co/rhasspy/piper-voices (Modell MIT),
   Datensatz "Kerstin", CC0. Das Modell ist nicht im Repository, nur die erzeugten Clips.
 
-Englisch und Spanisch haben keine eigenen Aufnahmen: dort zeigt die App den uebersetzten Text
-und spricht ihn, wenn vorhanden, mit der Sprachausgabe des Geraets (speechSynthesis).
+* **Englische Stimme (seit 1.3.94):** `en_US-amy-medium` von https://huggingface.co/rhasspy/piper-voices,
+  32 Clips `tutorial_*_en.ogg`, Abschnitt `en` in `audio/tutorial.json` (`en_stimme`). Erzeugung:
+  `tools/voice_tutorial.py --sprache en` (dieselbe Kette wie Deutsch; die englischen Texte stehen nur
+  im Manifest). Das Modell ist nicht im Repository.
+  **Lizenz ungeklaert:** Die Modellkarte (`en/en_US/amy/medium/MODEL_CARD`) nennt keine Lizenz und
+  verweist fuer den Datensatz auf https://github.com/MycroftAI/mimic3-voices (Repository unter
+  CC BY-SA 4.0, eine Stimme "amy" ist dort aber nicht aufgefuehrt). Das Sammel-Repository
+  piper-voices ist als MIT ausgezeichnet. Laut Modellkarte ist Amy von der Stimme "lessac" aus
+  feinabgestimmt; deren Datensatz (Blizzard 2013, Lessac) steht unter einer Lizenz nur fuer
+  Forschungszwecke ohne kommerzielle Nutzung. Ob das auf Amy und ihre Aufnahmen durchschlaegt, ist
+  offen; vor einer weiteren Verbreitung klaeren.
+
+Spanisch hat keine eigenen Aufnahmen: dort zeigt die App den uebersetzten Text und spricht ihn,
+wenn vorhanden, mit der Sprachausgabe des Geraets (speechSynthesis). Englisch ohne Clip ebenso;
+Deutsch ohne Clip bleibt still (der Text steht da).
 Die Nennung "Ford Mustang" bezeichnet nur den gewaehlten Motorklang; keine Beteiligung oder
 Unterstuetzung des Herstellers.
 
