@@ -5726,7 +5726,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.4.37</span></span>
+        <span class="foot-ver">v<span id="app-version">1.4.41</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6967,6 +6967,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.4</span></b></p>
       <ul class="muted" id="patchnotes-14" style="padding-left:20px; line-height:1.7">
+        <li>Setup je Auto (WIP): In der Garage hat jedes Spielerauto einen Knopf &#8222;Setup&#8220;. Im Fenster w&#228;hlst du Reifentyp (weich, mittel, hart, Regen) und Starttank (5 bis 110 l), jeweils mit &#8222;ca. N Runden&#8220; auf der Strecke im Editor; &#8222;Standard&#8220; setzt zur&#252;ck. Das Setup gilt beim n&#228;chsten Start f&#252;r dieses Auto. Im WLAN-Rennen mit vorgegebenem Fahrgef&#252;hl, in Challenges und in Meisterschaften mit festem Fahrgef&#252;hl fahren alle mit dem Standard-Setup.</li>
         <li>Automatische Gelbe Flagge (WIP, Renneinstellungen; Aus, Nur bei NPCs, Bei allen Autos): Fliegt im Rennen ein Auto ab (NPC: erkannter Abflug, Spielerauto: mindestens 1 s neben der Bahn), kommt Gelb mit Ansage &#8222;Gelbe Flagge. &lt;Auto&gt; hat einen Unfall gebaut&#8220; (mit Sektor, wenn Sektoren aktiv sind). Alle fahren gedrosselt weiter, dein Auto im Autopiloten, sodass du aufstehen und das Auto wieder einsetzen kannst. F&#228;hrt es wieder 3 s lang, startet die Anfahrt-Ampel, danach Gr&#252;n mit Ansage, und der Controller &#252;bernimmt. Im WLAN folgen die anderen Telefone (daf&#252;r braucht es die neue APK bzw. den aktualisierten Host).</li>
         <li>Einf&#252;hrung: Die englische Stimme ist jetzt ljspeech (gemeinfrei, dieselbe Stimme wie die englischen Rennansagen) statt einer Stimme mit ungekl&#228;rter Lizenz.</li>
         <li>Latenz: Die Funkpriorit&#228;t (Spieler schnellstes Verbindungsintervall, NPCs, Safety Car und Reinigungswagen ausgewogen) wird jetzt auch im Training ohne Ampel, beim Losfahren, 5 s nach dem Verbinden und nach einem Rollenwechsel gesetzt; bisher bekamen dort alle Autos, auch die NPCs, das schnellste Intervall. Mit zwei Spielern zeichnet das Cockpit im Sendetakt ohne erzwungene Layout-Berechnungen (gemessen bei gedrosselter CPU: Arbeit je Takt p95 von 35 bis 85 ms auf 9 bis 15 ms, Takt stabil um 50 ms); die Rundenliste wird nur bei &#196;nderung neu gebaut, Telemetrie au&#223;erhalb der Funkverarbeitung gespeichert. Neu unter Optionen &#8594; System: &#8222;Funk je Auto&#8220; (WIP) mit Weg, Z&#228;hlern, Meldeabstand und Funkstufe f&#252;r jedes Auto.</li>
