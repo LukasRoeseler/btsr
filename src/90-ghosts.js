@@ -2992,10 +2992,10 @@
   // trennt die Spalten genauso sauber und haelt sie ein.
   //
   // Das Schlaengeln bleibt - es soll nach Reifenwaermen aussehen -, nur kleiner.
-  // v1.3.117 BESTELLT: "NPC ausparken ist zu viel gelenkt - etwas schwaecher und kuerzer nach
-  // links und rechts lenken." Die Amplitude runter (0,10 -> 0,07), damit das Abfahren vom
-  // Startplatz weniger weit nach links und rechts ausschert.
-  const GHOST_WEAVE = 0.07;
+  // v1.3.117 hatte die Amplitude auf 0,07 gesenkt, gemeint war mit "NPC ausparken ist zu viel gelenkt -
+  // etwas schwaecher und kuerzer" aber das Ausparken aus der BOX. v1.3.132: wieder 0,10; geaendert ist
+  // stattdessen die Ausparkfolge (SC_AUS_SKALA, scAusSkript).
+  const GHOST_WEAVE = 0.10;
   // Der Versatz der Zweierkolonne, in derselben Einheit wie das Schlaengeln: ein Anteil des
   // vollen Lenkeinschlags. Etwas kleiner als die Schlaengelamplitude, damit die beiden
   // Bewegungen sich nicht aufheben - zusammen bleiben sie unter 0,4, also weit vom Anschlag.
@@ -5610,9 +5610,16 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     el.addEventListener('input', zeigen);
     zeigen();
   }
+  // v1.3.132 BESTELLT: "NPC ausparken zu viel gelenkt, schwaecher und kuerzer" (gemeint: aus der Box; gilt
+  // ebenso fuer das Safety Car, das dieselbe Folge faehrt). Lenkwerte UND Zeiten der Aufnahme mal
+  // SC_AUS_SKALA: beide Lenkphasen (links heraus, rechts gerade) schrumpfen im selben Verhaeltnis, das
+  // Auto steht am Ende also wieder gerade, schert aber nur etwa halb so weit aus (Lenkung x Dauer). Danach
+  // faehrt es mit Spur-Bytes normal weiter und kommt so auf seine Linie zurueck. Das Gas bleibt wie
+  // aufgenommen (x scAusGas), damit es weiterhin rechtzeitig in Fahrt kommt.
+  const SC_AUS_SKALA = 0.7;
   function scAusSkript() {
     const f = scAusGas();
-    return MANOEVER.scAus.map(([ms, lenk, gas]) => [ms, lenk, Math.min(1, gas * f)]);
+    return MANOEVER.scAus.map(([ms, lenk, gas]) => [Math.round(ms * SC_AUS_SKALA), lenk * SC_AUS_SKALA, Math.min(1, gas * f)]);
   }
   // So lange gleitet das Tempo vom normalen Fahren auf das Tempo der Aufnahme, geradeaus - statt anzuhalten.
   const MANOEVER_ANPASS_MS = 300;

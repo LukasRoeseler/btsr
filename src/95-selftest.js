@@ -25708,7 +25708,7 @@
     if (src.indexOf('Math.min(target, aufstellTempo(car))') >= 0 || src.indexOf('aufstellTempo(car) * abstand') < 0) {
       f.push('Aufstelltempo haengt noch am Renntempo');
     }
-    // Ausparken: jeder Takt = Aufnahme x Faktor, Lenkung und Zeiten unveraendert.
+    // Ausparken: jeder Takt = Aufnahme x Faktor (Gas); seit v1.3.132 Lenkung und Zeiten x SC_AUS_SKALA.
     const el = $('sc-aus-gas'), merkV = el ? el.value : null;
     try {
       if (el) el.value = '1.5';
@@ -25716,7 +25716,8 @@
       if (sk.length !== MANOEVER.scAus.length) f.push('Laenge der Folge');
       for (let i = 0; i < sk.length; i++) {
         const a = MANOEVER.scAus[i], b = sk[i];
-        if (a[0] !== b[0] || a[1] !== b[1] || Math.abs(b[2] - Math.min(1, a[2] * 1.5)) > 1e-12) { f.push('Takt ' + i + ' weicht ab'); break; }
+        if (b[0] !== Math.round(a[0] * SC_AUS_SKALA) || Math.abs(b[1] - a[1] * SC_AUS_SKALA) > 1e-12
+            || Math.abs(b[2] - Math.min(1, a[2] * 1.5)) > 1e-12) { f.push('Takt ' + i + ' weicht ab'); break; }
       }
       // ...und genau das sendet die Folge: skriptSchritt an jedem Aufnahmezeitpunkt.
       const h = { at: 0, anpassMs: 0, vonDrive: 0, skript: sk, lenkFaktor: undefined };
@@ -25726,7 +25727,42 @@
       }
       if (!el || Math.abs(parseFloat(el.defaultValue) - 1.5) > 1e-9) f.push('Regler fehlt oder Vorgabe nicht 1,5');
     } finally { if (el) el.value = merkV; }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Reihen je halbe Kachel, Kurve mit Lenkimpuls, Aufstelltempo fest, Ausparkgas = Aufnahme x 1,5' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Reihen je halbe Kachel, Kurve mit Lenkimpuls, Aufstelltempo fest, Ausparkgas = Aufnahme x 1,5, Lenkung/Zeit x 0,7' };
+  });
+
+  // v1.3.132: Ausparken (Box, Safety Car) schwaecher und kuerzer; das Schlaengeln wieder 0,10.
+  stAdd('Ausparken v1.3.132: Folge schwaecher und kuerzer, endet gerade in Fahrt, Schlaengeln 0,10', () => {
+    const f = [];
+    if (GHOST_WEAVE !== 0.10) f.push('GHOST_WEAVE ' + GHOST_WEAVE + ' statt 0,10');
+    // Kinematik (Fahrradmodell): Tempo ~ Gas, Kursaenderung ~ Lenkung x Tempo. Nur zum VERGLEICHEN.
+    const fahr = (sk) => {
+      let th = 0, y = 0, lenkSumme = 0;
+      for (let i = 1; i < sk.length; i++) {
+        const dt = (sk[i][0] - sk[i - 1][0]) / 1000, l = sk[i - 1][1], v = sk[i - 1][2] * SC_GAS_MPS;
+        lenkSumme += Math.abs(l) * dt; th += l * v / 0.3 * dt; y += v * Math.sin(th) * dt;
+      }
+      return { th, y, lenkSumme, dauer: manoeverDauer(sk) };
+    };
+    const el = $('sc-aus-gas'), merkV = el ? el.value : null;
+    try {
+      if (el) el.value = '1.5';
+      const alt = fahr(MANOEVER.scAus.map(([ms, l, g]) => [ms, l, Math.min(1, g * 1.5)])), neu = fahr(scAusSkript());
+      if (!(neu.lenkSumme < alt.lenkSumme * 0.8)) f.push('Lenk-Summe ' + neu.lenkSumme.toFixed(2) + ' nicht deutlich unter ' + alt.lenkSumme.toFixed(2));
+      if (!(neu.dauer < alt.dauer * 0.8)) f.push('Dauer ' + neu.dauer + ' nicht deutlich unter ' + alt.dauer);
+      if (!(neu.y < 0)) f.push('schert nicht nach links aus (y ' + neu.y.toFixed(3) + ')');
+      if (!(Math.abs(neu.y) < Math.abs(alt.y))) f.push('schert nicht weniger aus');
+      if (!(Math.abs(neu.th) <= Math.abs(alt.th) + 1e-9)) f.push('steht am Ende schraeger (' + neu.th.toFixed(3) + ' rad)');
+      const ende = scAusSkript()[MANOEVER.scAus.length - 1];
+      if (ende[1] !== 0 || !(ende[2] > 0.05)) f.push('endet nicht gerade in Fahrt');
+      // Danach faehrt es weiter (weiter: true) - die Spurfuehrung bringt es auf die Linie zurueck.
+      const sc = { ghost: {} };
+      randHaltStarten(sc, { phase: 'skript', quer: 0, skript: scAusSkript(), anpassMs: 0, vonDrive: 0, weiter: true });
+      sc.ghost.randHalt.at = rennZeitJetzt() - (neu.dauer + 5);
+      randHaltTick(sc);
+      if (sc.ghost.randHalt) f.push('nach der kuerzeren Folge kein Weiterfahren');
+      return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Lenk-Summe ' + alt.lenkSumme.toFixed(2) + ' -> ' + neu.lenkSumme.toFixed(2)
+        + ', Dauer ' + alt.dauer + ' -> ' + neu.dauer + ' ms, Versatz ' + (alt.y * 100).toFixed(1) + ' -> ' + (neu.y * 100).toFixed(1) + ' cm (Modell), gerade in Fahrt' };
+    } finally { if (el) el.value = merkV; }
   });
 
   // v1.1.39 BESTELLT: Gummiband - mit viel Vorsprung Runde fuer Runde langsamer, bis er ueberholt
