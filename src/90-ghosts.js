@@ -830,7 +830,20 @@
     // aber mit value 0. `value ?? pressed` lasse dann 0 durch und der Druck ginge
     // verloren - die L3-Statusansage kam nie. Deshalb: gedrueckt zaehlt immer,
     // value (analog, z.B. Trigger) bleibt sonst erhalten.
-    return (btn.pressed || btn.value > 0) ? (btn.value || 1) : 0;
+    // v1.4.46: aber NICHT bei analogen Triggern (Standardbelegung Knoepfe 6/7, oder ein Knopf, der
+    // schon einmal einen Zwischenwert gemeldet hat). Dort hiesse "gedrueckt mit value 0" Vollgas bzw.
+    // Vollbremsung, obwohl der Trigger in Ruhe ist - beim Trigger ist der Wert die Wahrheit.
+    if (btn.value > 0) {
+      if (btn.value < 1) padAnalogKnoepfe[(pad.index | 0) + ':' + binding.index] = true;
+      return btn.value;
+    }
+    return btn.pressed && !padKnopfAnalog(pad, binding.index) ? 1 : 0;
+  }
+  // Knoepfe, die je einen Zwischenwert (0 < value < 1) gemeldet haben, je Pad: die sind analog.
+  const padAnalogKnoepfe = Object.create(null);
+  function padKnopfAnalog(pad, index) {
+    return (pad.mapping === 'standard' && (index === 6 || index === 7))
+      || !!padAnalogKnoepfe[(pad.index | 0) + ':' + index];
   }
 
   // Gamepad sampling MUST run on requestAnimationFrame. Chrome refreshes the gamepad

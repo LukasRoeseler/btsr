@@ -3170,6 +3170,11 @@
         st.speedKmh = 0;
         return { grund: 'aufstellen', throttle: 0, brake: 1, steer: 0, lenkt: false, radLenk: fo ? fo.lenk : 0 };
       }
+      // v1.4.46: lange neben der Bahn (oder auf dem Ruecken) kein Gas, siehe apLangeAbseits().
+      if (apLangeAbseits(wer || 1)) {
+        regler.at = rennZeitJetzt();
+        return { grund: 'aufstellen', throttle: 0, brake: Math.max(AP_ABSEITS_BREMSE, fahrerBremse), steer: 0, lenkt: false };
+      }
       const vA = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
       const dtS = Math.max(0.01, Math.min(0.25, (rennZeitJetzt() - (regler.at || rennZeitJetzt())) / 1000));
       regler.at = rennZeitJetzt();
@@ -3183,6 +3188,14 @@
     // AUSSETZER RAEUMEN DEN REGLER AUF. Ohne das traegt der I-Anteil ueber das Ende der
     // gelben Phase hinaus und gibt beim naechsten Mal aus dem Stand Gas.
     if (!grund) { autopilotZuruecksetzen(wer); return null; }
+    // v1.4.46 GEMELDET: "Das Auto beschleunigt im Bahn-Modus immer auf ca. 100 km/h (zumindest, wenn
+    // ich es auf den Ruecken lege)." Einfuehrungsrunde und Gelb behielten das Gas auch neben der Bahn
+    // (unten: "GAS UND BREMSE BLEIBEN BEI IHM"), und auf dem Ruecken endet die Einfuehrungsrunde nie -
+    // die Raeder drehten dauerhaft im Formationstempo. Kurzes Abkommen (Haarnadel) bleibt unberuehrt.
+    if (apLangeAbseits(wer || 1)) {
+      regler.at = rennZeitJetzt();
+      return { grund, throttle: 0, brake: Math.max(AP_ABSEITS_BREMSE, fahrerBremse || 0), steer: 0, lenkt: false };
+    }
     // ---- WIE EIN GHOST, UND DAS IST DER BESTELLTE UNTERSCHIED ---------------------
     //
     // GEMELDET: "gelbe Flagge fuer mein Auto auf der Bahn fixen: es gibt nur Gas, sollte
@@ -3364,6 +3377,18 @@
   // Die zwei Fragen von oben, jetzt mit Adressat. Fuer `wer === 1` ist es Wort fuer Wort
   // dieselbe Antwort wie vorher - deshalb rufen die acht vorhandenen Stellen weiter
   // abseitsJetzt() und offtrackGilt() und muessen nicht angefasst werden.
+  // v1.4.46: meldet das Auto seit AP_ABSEITS_STOPP_MS ununterbrochen 0x00 (neben der Bahn, auf dem
+  // Ruecken), gibt der Autopilot (Einfuehrungsrunde, Gelb/Anfahrt, Aufstellung) kein Gas mehr, bis
+  // wieder ein gueltiger Code kommt. Gemessen an derselben Uhr wie das Abseits (offtrackSeit bzw.
+  // abseits.seit je Zusatzspieler), unabhaengig von der einstellbaren Einschaltverzoegerung - kurzes
+  // Abkommen in der Haarnadel (unter 1,5 s) faehrt weiter wie bisher. Nur auf der Bahn.
+  const AP_ABSEITS_STOPP_MS = 1500, AP_ABSEITS_BREMSE = 0.4;
+  function apLangeAbseits(wer) {
+    if (trackMode !== 'on') return false;
+    const zPl = wer >= 2 && typeof zusatzPlatz === 'function' ? zusatzPlatz(wer) : null;
+    const seit = wer >= 2 ? (zPl && zPl.abseits ? zPl.abseits.seit : null) : offtrackSeit;
+    return seit !== null && seit !== undefined && rennZeitJetzt() - seit >= AP_ABSEITS_STOPP_MS;
+  }
   function abseitsJetztFuer(wer) {
     if (wer >= 2) return zusatzPlatz(wer).abseits.aktiv && trackMode === 'on';
     return abseitsJetzt();

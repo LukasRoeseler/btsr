@@ -28406,3 +28406,119 @@
     if (runden) f.push('Zeitgeber arbeitet bei Option aus');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Feld ' + feld + ', fremdem Gelb gefolgt und beendet, Funktakt unberuehrt' };
   }));
+
+  // ---- v1.4.46: KEIN SELBSTBESCHLEUNIGEN IM BAHN-MODUS --------------------------------------------
+  // GEMELDET: "Das Auto beschleunigt im Bahn-Modus immer auf ca. 100 km/h (zumindest, wenn ich es auf den
+  // Ruecken lege)." Auf dem Ruecken meldet es dauerhaft 0x00; der Autopilot (Einfuehrungsrunde, Gelb,
+  // Aufstellung) gab trotzdem Gas im Formationstempo, und die Einfuehrungsrunde endet dort nie.
+  // Die Rennuhr ist eine Attrappe (45-ms-Takte), gemeldet wird ueber offtrackMelden() wie im Meldestrom.
+  function apAbseitsUmgebung(fn) {
+    const m = { zeit: rennZeitJetzt, flag: flagState, tm: trackMode, form: raceFormationLap, st: Object.assign({}, physEngine.state),
+                seit: offtrackSeit, wieder: offtrackWiederSeit, aktiv: offtrackAktiv, zaehler: offtrackZaehler, pc: playerCar };
+    const u = { T: 3000000 };
+    rennZeitJetzt = () => u.T;
+    flagState = 'green'; trackMode = 'on'; raceFormationLap = true;
+    offtrackSeit = null; offtrackWiederSeit = null; offtrackAktiv = false;
+    playerCar = playerCar || { role: 'player', alias: 'Pruefwagen', tileCode: 0x02 };
+    autopilotZuruecksetzen(1);
+    physEngine.state.speedKmh = 0;
+    // n Takte zu 45 ms: Code melden, Autopilot fragen, Fahrphysik mit seiner Ausgabe rechnen.
+    u.takte = (n, code) => {
+      let ap = null;
+      for (let i = 0; i < n; i++) {
+        u.T += 45;
+        offtrackMelden(code === TILE_OFFTRACK);
+        ap = autopilot(0, 1);
+        if (ap) physEngine.update({ steering: 0, throttle: ap.throttle, brake: ap.brake, headlights: false, apFaehrt: true }, 0.045);
+      }
+      return ap;
+    };
+    u.kmh = () => Math.abs(physEngine.state.speedKmh) * TACHO_SCALE;
+    try { return fn(u); } finally {
+      rennZeitJetzt = m.zeit; flagState = m.flag; trackMode = m.tm; raceFormationLap = m.form;
+      Object.assign(physEngine.state, m.st);
+      offtrackSeit = m.seit; offtrackWiederSeit = m.wieder; offtrackAktiv = m.aktiv; offtrackZaehler = m.zaehler;
+      playerCar = m.pc;
+      autopilotZuruecksetzen(1);
+      try { offtrackAnzeige(); } catch (e) { /* egal */ }
+    }
+  }
+  stAdd('Fahren v1.4.46: kein Selbstbeschleunigen im Bahn-Modus (Einfuehrungsrunde, Auto auf dem Ruecken)', () => apAbseitsUmgebung((u) => {
+    const f = [];
+    // 3 s nur 0x00 ab dem Stand: nach 1,5 s kein Gas mehr, das Tempo bleibt nahe 0.
+    const ap = u.takte(67, TILE_OFFTRACK);
+    if (!ap || ap.grund !== 'formation') f.push('Autopilot greift nicht (' + (ap && ap.grund) + ')');
+    else if (!(ap.throttle === 0 && ap.brake > 0)) f.push('gibt nach 3 s neben der Bahn noch Gas ' + ap.throttle.toFixed(2));
+    const nach3 = u.kmh();
+    u.takte(45, TILE_OFFTRACK);
+    if (!(u.kmh() < 15)) f.push('Tempo nach 5 s auf dem Ruecken ' + u.kmh().toFixed(0) + ' km/h');
+    // Gelb: dasselbe.
+    raceFormationLap = false; flagState = 'yellow';
+    const g = u.takte(10, TILE_OFFTRACK);
+    if (!g || g.grund !== 'yellow' || g.throttle !== 0) f.push('Gelb gibt neben der Bahn Gas');
+    // Ausdruck-Modus: 0x00 ist dort normal, die Sperre greift nicht.
+    trackMode = 'off';
+    if (apLangeAbseits(1)) f.push('greift im Ausdruck-Modus');
+    trackMode = 'on';
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'nach 3 s ' + nach3.toFixed(0) + ' km/h, nach 5 s ' + u.kmh().toFixed(0) + ' km/h, Gelb ebenso' };
+  }));
+  stAdd('Fahren v1.4.46: kurzes Abkommen (0,8 s) laesst Gas, nach Rueckkehr faehrt der Autopilot weiter, Spieler 2', () => apAbseitsUmgebung((u) => {
+    const f = [];
+    // Auf der Bahn anfahren, dann 0,8 s 0x00 (Haarnadel): Gas bleibt.
+    u.takte(20, 0x02);
+    const kurz = u.takte(18, TILE_OFFTRACK);
+    if (!kurz || !(kurz.throttle > 0)) f.push('kurzes 0x00 unterbricht das Gas');
+    // Lange daneben, dann zurueck auf die Bahn: wieder Gas.
+    u.takte(50, TILE_OFFTRACK);
+    physEngine.state.speedKmh = 0;
+    const zurueck = u.takte(3, 0x02);
+    if (!zurueck || !(zurueck.throttle > 0)) f.push('nach Rueckkehr kein Gas');
+    // Spieler 2 nach seiner eigenen Abseits-Uhr.
+    const z = zusatzPlatz(2);
+    if (z) {
+      const merk = { car: z.car, seit: z.abseits.seit, v: z.motor.state.speedKmh };
+      try {
+        z.car = z.car || { role: 'player', alias: 'P2', tileCode: 0x00 };
+        z.motor.state.speedKmh = 0;
+        z.abseits.seit = u.T - 2000;
+        const ap2 = autopilot(0, 2);
+        if (!ap2 || ap2.throttle !== 0) f.push('Spieler 2: Gas nach 2 s neben der Bahn');
+        z.abseits.seit = u.T - 500;
+        const ap2k = autopilot(0, 2);
+        if (!ap2k || !(ap2k.throttle > 0)) f.push('Spieler 2: kurzes Abkommen ohne Gas');
+      } finally { z.car = merk.car; z.abseits.seit = merk.seit; z.motor.state.speedKmh = merk.v; autopilotZuruecksetzen(2); }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Haarnadel-Abkommen faehrt weiter, Rueckkehr gibt wieder Gas, Spieler 2 nach eigener Uhr' };
+  }));
+  stAdd('Eingabe v1.4.46: Trigger "gedrueckt mit value 0" ist kein Gas, L3 bleibt ein Druck', () => {
+    const f = [];
+    const pad = (i, knopf, mapping) => {
+      const buttons = [];
+      for (let k = 0; k < 17; k++) buttons.push({ pressed: false, value: 0 });
+      buttons[i] = knopf;
+      return { index: 7, mapping: mapping === undefined ? 'standard' : mapping, buttons, axes: [0, 0, 0, 0] };
+    };
+    const merk = Object.assign({}, padAnalogKnoepfe);
+    try {
+      const gas = readBindingValue(pad(7, { pressed: true, value: 0 }), { type: 'button', index: 7 });
+      if (gas !== 0) f.push('R2 gedrueckt/value 0 gibt ' + gas);
+      const br = readBindingValue(pad(6, { pressed: true, value: 0 }), { type: 'button', index: 6 });
+      if (br !== 0) f.push('L2 gedrueckt/value 0 gibt ' + br);
+      const halb = readBindingValue(pad(7, { pressed: true, value: 0.4 }), { type: 'button', index: 7 });
+      if (Math.abs(halb - 0.4) > 1e-9) f.push('R2 halb gibt ' + halb);
+      const l3 = readBindingValue(pad(10, { pressed: true, value: 0 }), { type: 'button', index: 10 });
+      if (l3 !== 1) f.push('L3 gedrueckt/value 0 gibt ' + l3);
+      // Ohne Standardbelegung: ein Knopf, der schon einmal halb stand, ist analog.
+      readBindingValue(pad(4, { pressed: true, value: 0.3 }, ''), { type: 'button', index: 4 });
+      const a4 = readBindingValue(pad(4, { pressed: true, value: 0 }, ''), { type: 'button', index: 4 });
+      if (a4 !== 0) f.push('analoger Knopf 4 gibt ' + a4);
+      const d5 = readBindingValue(pad(5, { pressed: true, value: 0 }, ''), { type: 'button', index: 5 });
+      if (d5 !== 1) f.push('Knopf 5 ohne Standardbelegung gibt ' + d5);
+      const los = readBindingValue(pad(7, { pressed: false, value: 0 }), { type: 'button', index: 7 });
+      if (los !== 0) f.push('R2 losgelassen gibt ' + los);
+    } finally {
+      for (const k of Object.keys(padAnalogKnoepfe)) delete padAnalogKnoepfe[k];
+      Object.assign(padAnalogKnoepfe, merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'R2/L2 gedrueckt mit value 0 = 0, halb = 0,4, L3 = 1, analog gelernter Knopf = 0' };
+  });
