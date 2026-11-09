@@ -35,9 +35,9 @@ Die '''Wunschliste''' sammelt Funktionen, die für [[OmegaSim]] gewünscht, aber
 |-
 | ACC-Cockpit || gebaut || Cockpit- und Rennschirm im ACC-Stil mit Radar, dicken Balken, Kamera am rechten Stick und Strafen-Spalte (siehe [[OmegaSim]]).
 |-
-| Fahrgefühl Gran Hybrismo / Assetto Carrera || gebaut || zwei neue Fahrgefühle neben Gran Accelerato (siehe [[Fahrgefühl]]).
+| Fahrgefühl Gran Hybrismo / Assetto Carrera || gebaut || zwei neue Fahrgefühle, die Gran Accelerato ersetzen (siehe [[Fahrgefühl]]).
 |-
-| OmegaLabs-Studie || gebaut || Studie mit Fragebogen und Fahr-Challenge auf der Startseite (WIP, siehe [[OmegaSim]]).
+| OmegaLab-Studie || gebaut || Studie mit Fragebogen und Fahr-Challenge, unter Optionen → OmegaLab (WIP, siehe [[OmegaSim]]).
 |-
 | Randstein-Rumpeln || gebaut || Vibration vib-kerb beim Überfahren von Randsteinen im virtuellen Fahren (siehe [[Virtuelles Fahren]]).
 |-
@@ -59,7 +59,7 @@ Die '''Wunschliste''' sammelt Funktionen, die für [[OmegaSim]] gewünscht, aber
 |-
 | Tieferes Schaltgeräusch || in Planung || Ein dumpferes Geräusch beim Runterschalten und für alle Motoren, wie beim Hochschalten des Mustang v2. Vorschläge liegen zum Anhören vor.
 |-
-| Eigene Automodelle im virtuellen Fahren || in Planung || Selbst gebaute 3D-Modelle als Autos im [[Virtuelles Fahren|virtuellen Fahren]], von Luuke42 als glTF/GLB gewünscht. Als erstes Modell fährt der VW Käfer von Gnen54 (CC BY 4.0) in einer Testfassung, siehe [[Onboard-Kamera und Karosserien]].
+| Eigene Automodelle im virtuellen Fahren || in Planung || Selbst gebaute 3D-Modelle als Autos im [[Virtuelles Fahren|virtuellen Fahren]], von Luuke42 als glTF/GLB gewünscht.
 |-
 | Live-Gegner über das Internet || zurückgestellt || Ein Gegner fährt in Echtzeit von einem anderen Ort aus mit.
 |-
@@ -99,7 +99,7 @@ Stand 1.3.93, gesammelt aus allen Etiketten der App.
 |-
 | Safety Car || Parkplatz; Ein- und Ausparken; Gas beim Ausparken; Einpark-Teil
 |-
-| Weitere Seiten || Telemetrie; OmegaLabs (Studie, Testbetrieb); Presets je Menü; Profile; Fahrstil-Statistik
+| Weitere Seiten || Telemetrie; OmegaLab (Studie, Testbetrieb); Presets je Menü; Profile; Fahrstil-Statistik
 |-
 | Strecke || Raum; Raumgestalter; Druckvorlagen (Bahn zum Auslegen, Trapez-Muster); Sektoren; echte Teilebilder; Boxengasse wie das Original
 |-

@@ -2,7 +2,7 @@
 Die '''Zufallsevents''' (in der App unter Renneinstellungen, ''experimentell'', ab Werk aus) lassen im laufenden Rennen ab und zu etwas in einem zufälligen Bereich der Strecke passieren. Der Sprecher sagt es an, im Cockpit steht ein Banner mit Event, Ort und Restzeit, und der Bereich leuchtet auf der Karte des Rennen-Schirms in der Farbe des Ereignisses. Die Ereignisse wirken sich auf das Fahrverhalten und auf die [[NPC-Fahrverhalten|NPCs]] aus.
 
 == Einstellungen ==
-{  class="wikitable"
+{| class="wikitable"
 ! Name in der App !! Werte !! Standard !! Wirkung
 |-
 | Zufallsevents || an/aus || aus || Hauptschalter für die ganze Funktion
@@ -45,7 +45,7 @@ Jedes Auto hat einen Ortungssatz mit <code>tileIndex</code>. Ein Auto ist im Ber
 * Gilt für alle Spieler im lokalen Mehrspieler; im WLAN würfelt das startende Telefon für alle.
 * Seit 1.3.93 wird in einem '''kurzen''' Zeitrennen das erste Event nach vorn geholt (30–70 % der Renndauer, mindestens 2&nbsp;s), falls es sonst hinter dem Rennende läge; vorher konnte der Plan leer bleiben und ein eingeschaltetes Event passierte nie.
 
-* Selbsttests: „Zufallsevents v1.3.88“ und „Zufallsevents v1.3.90: kurzes Zeitrennen“ in <code>src/95-selftest.js</code>.
+* Selbsttests: „Zufallsevents v1.3.88“ und „Zufallsevents v1.3.93: kurzes Zeitrennen“ in <code>src/95-selftest.js</code>.
 
 == Quellen im Code ==
 * <code>src/74-zufallsevents.js</code>: <code>zevPlanBauen()</code>, <code>ZEV_ARTEN</code>, <code>ZEV_FARBE</code>, <code>ZEV_TAKT_MS</code>, <code>ZEV_GELB_*</code>, <code>ZEV_OEL_*</code>, <code>ZEV_TEILE_*</code>

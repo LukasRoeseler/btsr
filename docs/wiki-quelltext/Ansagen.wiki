@@ -31,7 +31,7 @@ Die '''Ansagen''' von [[OmegaSim]] sind gesprochene Meldungen, die während eine
 |-
 | '''Rennereignis''' || Ansage zu einem Rennereignis (Pull Request von Playdater1974, seit 1.3.46) || beim Auftreten eines Rennereignisses
 |-
-| '''Zufallsevents''' || Ansage zu einem [[Zufallsevents|Zufallsevent]] || beim Auftreten eines Zufallsevents (seit 1.3.88)
+| '''Zufallsevents''' || Ansage zu einem [[Zufallsevents|Zufallsevent]] || beim Auftreten eines Zufallsevents (seit 1.3.92)
 |-
 | '''Schaden''' || „Achtung, Schaden kritisch“ || Schadensbalken ≤ 10 %, nach Reparatur wieder scharf
 |-

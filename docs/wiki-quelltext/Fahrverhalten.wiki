@@ -1,4 +1,4 @@
-{{Stand|app=1.2.9|appdatum=26.10.2026}}
+{{Stand|app=1.3.93|appdatum=05.11.2026}}
 [[Datei:OmegaSim-Fahrgefuehl.png|mini|Die Einstellungsseite Fahrgefühl in OmegaSim]]
 Das '''Fahrverhalten''' von [[OmegaSim]] ist die Art, wie die App aus den Eingaben am Controller (Gas, Bremse, Lenkung) die zwei Steuerwerte berechnet, die per [[Bluetooth Low Energy]] an ein [[Carrera HYBRID]]-Auto gehen: einen Gaswert und einen Lenkwert. Dazwischen liegt ein vollständiges Fahrzeugmodell mit Motor, Getriebe, Reibkreis, Gewichtsverlagerung, Reifen- und Bremsentemperatur, einem Einspurmodell und, im Fahrgefühl Pacejka, einer Reifenkennlinie nach der Magic Formula. Das echte Modellauto rutscht, bremst und lenkt dabei mit seiner eigenen [[Firmware]]; was das Modell der App berechnet, wirkt am Auto ausschließlich über diese zwei Bytes. Abgestimmt wird das Fahrverhalten über neun fertige Sätze von Reglerwerten, die '''Fahrgefühle''' (in der App auch Voreinstellungen oder Presets genannt), und über rund 45 einzelne Regler.
 

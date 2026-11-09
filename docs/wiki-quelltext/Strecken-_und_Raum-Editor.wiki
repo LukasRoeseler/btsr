@@ -331,6 +331,13 @@ Der Raum ist das Rechteck „Breite × Tiefe“, geteilt in Zellen von 10 cm (<c
 * Die Anzeige nennt Größe und Bodenfläche: Zahl der Bodenzellen × 0,01 m².
 * Im Editor erscheinen Möbel als rote Flächen im Raumrechteck; das Raster der Karte hat 50-cm-Linien.
 
+=== Sektoren ===
+Seit 1.3.86 (WIP) lassen sich Sektoren im Streckeneditor festlegen. Der Knopf '''Sektoren''' bietet drei Wege:
+* '''Automatisch festlegen''': Die Anzahl folgt aus der Teilezahl (8 Teile keine Sektoren, 15 Teile zwei, 25 Teile drei, höchstens zehn); die Abschnitte sind etwa gleich lang und beginnen an Teilefugen.
+* '''Manuell festlegen''': Strecke antippen oder mit Steuerkreuz und ✕ die Teile wählen, an denen ein Sektor beginnt; ein zweites Antippen entfernt die Grenze wieder, dann '''Fertig'''.
+* '''Aus''': keine Editor-Sektoren.
+Die Grenzen erscheinen als dünne grüne Linien und werden mit der Strecke gespeichert; der Streckencode bleibt gleich. Im Rennen misst jedes Auto die Sektoren über seinen Kachelzähler. Verzählt es sich (etwa nach einem Abflug), steht der Sektor auf „–“ statt einer falschen Zeit, die Runde zählt weiter. Zusätzliche Start/Ziel-Teile haben Vorrang vor den Editor-Sektoren; im Ausdruck-Modus bleibt der Regler „Sektoren“ in den Renneinstellungen. Die [[Zufallsevents]] nutzen die Sektoren als Bereiche.
+
 === Ideallinie ===
 Die Ideallinie ist eine '''Rechnung, keine Messung''': Kein Byte des Autos meldet die Querlage. Sie wird als seitlicher Versatz α<sub>i</sub> je Abtastpunkt beschrieben:
 <pre>

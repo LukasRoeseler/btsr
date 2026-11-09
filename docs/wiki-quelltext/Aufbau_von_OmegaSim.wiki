@@ -1,4 +1,4 @@
-{{Stand|app=1.2.9|appdatum=26.10.2026}}
+{{Stand|app=1.3.93|appdatum=05.11.2026}}
 Der '''Aufbau von OmegaSim''' beschreibt, woraus die App [[OmegaSim]] technisch besteht: in welchen Programmiersprachen sie geschrieben ist, wie aus rund 50 Quelldateien eine einzige auslieferbare HTML-Datei wird, wie dieselbe Datei als installierbare Web-App (PWA) und als Android-App läuft, wie sie sich selbst aktualisiert, wo sie Daten speichert, wie sie übersetzt und geprüft wird und wie der Motorklang entsteht. OmegaSim ist im Kern eine '''Web-Anwendung in JavaScript''', die ohne Server und ohne Installation im Browser läuft und mit dem [[Carrera HYBRID]] über [[Bluetooth Low Energy]] spricht. Die Android-Fassung legt um dieselbe Datei eine dünne Hülle aus Java. Der Quellcode steht unter der MIT-Lizenz.
 
 [[Datei:OmegaSim-Startseite.png|mini|Startseite von OmegaSim]]
