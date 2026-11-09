@@ -5741,7 +5741,7 @@
       <div class="home-patchnotes-fenster" role="dialog" aria-label="Patchnotes">
         <div class="home-patchnotes-kopf">
           <b>Patchnotes</b>
-          <button type="button" id="home-patchnotes-schliessen" aria-label="Schliessen">&times;</button>
+          <button type="button" id="home-patchnotes-schliessen" aria-label="Schließen">&times;</button>
         </div>
         <div class="home-patchnotes-inhalt" id="home-patchnotes-inhalt"></div>
       </div>
@@ -18998,6 +18998,13 @@
     "Woher die 3D-Modelle kommen": "Where the 3D models come from",
     "Die Autos der virtuellen Fahrt stammen aus dem freien Rennspiel Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4 und Boxer 96. Modelle, Texturen und Fahrzeugdaten stehen unter der GNU General Public License, Version 2 oder später. Umgewandelt mit tools/sd_auto.py (Innenraum entfernt, Texturen verkleinert); die Lizenz- und Quellenangabe liegt im Ordner des jeweiligen Autos.": "The cars of the virtual drive come from the free racing game Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4 and Boxer 96. Models, textures and vehicle data are licensed under the GNU General Public License, version 2 or later. Converted with tools/sd_auto.py (interior removed, textures downscaled); the license and source notice is in each car's folder.",
     "Grafik verloren: virtuelle Fahrt beendet": "Graphics lost: virtual drive ended",
+    "Derby gewonnen: letzter auf der Bahn": "Derby won: last one on the track",
+    "Gegner übrig": "Opponents left",
+    "Knockout gewonnen: alle Gegner aus": "Knockout won: all opponents out",
+    "Derby": "Derby",
+    "Patchnotes": "Patch notes",
+    "Patchnotes anzeigen": "Show patch notes",
+    "Version": "Version",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -20540,6 +20547,16 @@
     "Woher die 3D-Modelle kommen": "De dónde vienen los modelos 3D",
     "Die Autos der virtuellen Fahrt stammen aus dem freien Rennspiel Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4 und Boxer 96. Modelle, Texturen und Fahrzeugdaten stehen unter der GNU General Public License, Version 2 oder später. Umgewandelt mit tools/sd_auto.py (Innenraum entfernt, Texturen verkleinert); die Lizenz- und Quellenangabe liegt im Ordner des jeweiligen Autos.": "Los coches de la conducción virtual proceden del juego de carreras libre Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4 y Boxer 96. Modelos, texturas y datos del vehículo están bajo la GNU General Public License, versión 2 o posterior. Convertidos con tools/sd_auto.py (interior eliminado, texturas reducidas); la licencia y la fuente están en la carpeta de cada coche.",
     "Grafik verloren: virtuelle Fahrt beendet": "Gráficos perdidos: conducción virtual terminada",
+    "Derby gewonnen: letzter auf der Bahn": "Derby ganado: el último en pista",
+    "Gegner übrig": "Rivales restantes",
+    "Knockout gewonnen: alle Gegner aus": "Knockout ganado: todos los rivales fuera",
+    "Derby": "Derby",
+    "Erst eine Strecke bauen": "Primero construye una pista",
+    "Losfahren": "Arrancar",
+    "Training": "Entrenamiento",
+    "Patchnotes": "Notas de versión",
+    "Patchnotes anzeigen": "Mostrar notas de versión",
+    "Version": "Versión",
   };
 
   // ============================================================================
@@ -42459,7 +42476,7 @@
     const npcsAlive = (VF.npcs || []).some((n) => !n.derbyAus);
     const playerAlive = !VF.derbyTot && VF.derbyHealth > 0;
     if (VF.limit > 0 && VF.derbyKills >= VF.limit) vfRennenEnde(t('Derby gewonnen') + ': ' + VF.derbyKills + ' ' + t('Kills'));
-    else if (!npcsAlive && playerAlive) vfRennenEnde(t('Derby gewonnen') + ': letzter auf der Bahn');
+    else if (!npcsAlive && playerAlive) vfRennenEnde(t('Derby gewonnen: letzter auf der Bahn'));
     else if (!playerAlive && npcsAlive) vfRennenEnde(t('Derby verloren'));
     else if (!playerAlive && !npcsAlive) vfRennenEnde(t('Unentschieden'));
   }
@@ -42469,14 +42486,14 @@
     npc.koLeben = Math.max(0, npc.koLeben - 1);
     if (npc.koLeben <= 0 && !npc.koAus) {
       npc.koAus = true; npc.kmh = 0;
-      showHudToast(t('Gegner ausgeknockt') + ' · noch ' + vfKoGeisterZaehlen() + ' ' + t('Gegner'));
+      showHudToast(t('Gegner ausgeknockt') + ' · ' + t('Gegner übrig') + ': ' + vfKoGeisterZaehlen());
       padRumble(0.5, 0.5, 50, 'ko', 1);
     } else showHudToast(t('Treffer') + ' · ' + npc.koLeben + ' ' + t('Leben'));
     vfKnockoutPruefen();
   }
   function vfKoGeisterZaehlen() { return (VF.npcs || []).filter((n) => !n.koAus).length; }
   function vfKnockoutPruefen() {
-    if (!vfKoGeisterZaehlen()) vfRennenEnde(t('Knockout gewonnen') + ': alle ' + t('Gegner') + ' aus');
+    if (!vfKoGeisterZaehlen()) vfRennenEnde(t('Knockout gewonnen: alle Gegner aus'));
     else if (VF.koLeben <= 0) vfRennenEnde(t('Knockout verloren'));
   }
   function vfZuruecksetzen() {
@@ -114355,7 +114372,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       }
       for (const [p, ul] of abschnitte.slice(0, 3)) {
         const h = document.createElement('h3');
-        h.textContent = 'Version ' + (p.querySelector('b').textContent || '').trim();
+        h.textContent = t('Version') + ' ' + (p.querySelector('b').textContent || '').trim();   // im Code gesetzt: durch t()
         inhalt.appendChild(h);
         const kopie = ul.cloneNode(true);
         kopie.removeAttribute('id');

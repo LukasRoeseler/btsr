@@ -1941,7 +1941,7 @@
     const npcsAlive = (VF.npcs || []).some((n) => !n.derbyAus);
     const playerAlive = !VF.derbyTot && VF.derbyHealth > 0;
     if (VF.limit > 0 && VF.derbyKills >= VF.limit) vfRennenEnde(t('Derby gewonnen') + ': ' + VF.derbyKills + ' ' + t('Kills'));
-    else if (!npcsAlive && playerAlive) vfRennenEnde(t('Derby gewonnen') + ': letzter auf der Bahn');
+    else if (!npcsAlive && playerAlive) vfRennenEnde(t('Derby gewonnen: letzter auf der Bahn'));
     else if (!playerAlive && npcsAlive) vfRennenEnde(t('Derby verloren'));
     else if (!playerAlive && !npcsAlive) vfRennenEnde(t('Unentschieden'));
   }
@@ -1951,14 +1951,14 @@
     npc.koLeben = Math.max(0, npc.koLeben - 1);
     if (npc.koLeben <= 0 && !npc.koAus) {
       npc.koAus = true; npc.kmh = 0;
-      showHudToast(t('Gegner ausgeknockt') + ' · noch ' + vfKoGeisterZaehlen() + ' ' + t('Gegner'));
+      showHudToast(t('Gegner ausgeknockt') + ' · ' + t('Gegner übrig') + ': ' + vfKoGeisterZaehlen());
       padRumble(0.5, 0.5, 50, 'ko', 1);
     } else showHudToast(t('Treffer') + ' · ' + npc.koLeben + ' ' + t('Leben'));
     vfKnockoutPruefen();
   }
   function vfKoGeisterZaehlen() { return (VF.npcs || []).filter((n) => !n.koAus).length; }
   function vfKnockoutPruefen() {
-    if (!vfKoGeisterZaehlen()) vfRennenEnde(t('Knockout gewonnen') + ': alle ' + t('Gegner') + ' aus');
+    if (!vfKoGeisterZaehlen()) vfRennenEnde(t('Knockout gewonnen: alle Gegner aus'));
     else if (VF.koLeben <= 0) vfRennenEnde(t('Knockout verloren'));
   }
   function vfZuruecksetzen() {
