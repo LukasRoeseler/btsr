@@ -547,17 +547,12 @@ UTF-8-Eingabe; vorher wurden die Umlaute unter Windows als Zeichensalat gesproch
 * **Stimme:** `de_DE-kerstin-low` von https://huggingface.co/rhasspy/piper-voices (Modell MIT),
   Datensatz "Kerstin", CC0. Das Modell ist nicht im Repository, nur die erzeugten Clips.
 
-* **Englische Stimme (seit 1.3.94):** `en_US-amy-medium` von https://huggingface.co/rhasspy/piper-voices,
+* **Englische Stimme (seit 1.3.94, jetzt ljspeech):** `en_US-ljspeech-medium` von https://huggingface.co/rhasspy/piper-voices,
   32 Clips `tutorial_*_en.ogg`, Abschnitt `en` in `audio/tutorial.json` (`en_stimme`). Erzeugung:
   `tools/voice_tutorial.py --sprache en` (dieselbe Kette wie Deutsch; die englischen Texte stehen nur
   im Manifest). Das Modell ist nicht im Repository.
-  **Lizenz ungeklaert:** Die Modellkarte (`en/en_US/amy/medium/MODEL_CARD`) nennt keine Lizenz und
-  verweist fuer den Datensatz auf https://github.com/MycroftAI/mimic3-voices (Repository unter
-  CC BY-SA 4.0, eine Stimme "amy" ist dort aber nicht aufgefuehrt). Das Sammel-Repository
-  piper-voices ist als MIT ausgezeichnet. Laut Modellkarte ist Amy von der Stimme "lessac" aus
-  feinabgestimmt; deren Datensatz (Blizzard 2013, Lessac) steht unter einer Lizenz nur fuer
-  Forschungszwecke ohne kommerzielle Nutzung. Ob das auf Amy und ihre Aufnahmen durchschlaegt, ist
-  offen; vor einer weiteren Verbreitung klaeren.
+  Datensatz LJ Speech, gemeinfrei (https://keithito.com/LJ-Speech-Dataset/), von Grund auf trainiert;
+  dieselbe Stimme wie die englischen Rennansagen (Rundenzeit, Rennstand, Rennereignisse, Zufallsevents).
 
 Spanisch hat keine eigenen Aufnahmen: dort zeigt die App den uebersetzten Text und spricht ihn,
 wenn vorhanden, mit der Sprachausgabe des Geraets (speechSynthesis). Englisch ohne Clip ebenso;

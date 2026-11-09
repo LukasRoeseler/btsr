@@ -25,12 +25,11 @@ Stimme: Piper (piper-tts, im venv), Modell de_DE-kerstin-low von
 huggingface.co/rhasspy/piper-voices (Modell MIT, Datensatz "Kerstin" CC0). Weder das Modell
 noch Roh-WAVs kommen ins Repository, nur die fertigen Ogg-Clips.
 
-Englisch (seit 1.3.94, hier nachgetragen): Stimme en_US-amy-medium aus derselben Sammlung, Clips
+Englisch (seit 1.3.94, hier nachgetragen): Stimme en_US-ljspeech-medium aus derselben Sammlung, Clips
 tutorial_*_en.ogg im Abschnitt "en" von audio/tutorial.json. Die englischen Texte stehen nur dort
 (text/sprech, uebersetzt aus TUT_SPRUCH); --sprache en liest sie von dort und erzeugt die Clips mit
-derselben Kette neu. Mit welchem length_scale die vorhandenen EN-Clips entstanden, ist nicht
-ueberliefert (gleiches Format: 22,05 kHz Mono-Vorbis); TEMPO_EN = 1,0 ist die Modellvorgabe.
-LIZENZ DER AMY-STIMME UNGEKLAERT, siehe audio/CREDITS.md (Tutorial-Stimme).
+derselben Kette neu. TEMPO_EN = 1,0 ist die Modellvorgabe. Das Modell (LJ Speech, gemeinfrei) ist
+dieselbe Stimme wie die englischen Rennansagen, siehe audio/CREDITS.md (Tutorial-Stimme).
 Spanisch: keine Clips. Die App spricht dort ueber speechSynthesis (falls das Geraet eine Stimme
 hat), sonst nur Text; Deutsch ohne Clip bleibt still.
 
@@ -40,7 +39,7 @@ abschneiden, leichtes Hochpassfilter gegen Brummen und eine Lautheitsnormalisier
 
 Aufruf:
   python tools/voice_tutorial.py --python <venv\Scripts\python.exe> --modell <de_DE-kerstin-low.onnx>
-  python tools/voice_tutorial.py --sprache en --python <venv\Scripts\python.exe> --modell <en_US-amy-medium.onnx>
+  python tools/voice_tutorial.py --sprache en --python <venv\Scripts\python.exe> --modell <en_US-ljspeech-medium.onnx>
   python tools/voice_tutorial.py --check
 Benoetigt ffmpeg und ffprobe im PATH.
 """
@@ -57,7 +56,7 @@ REPO = Path(__file__).resolve().parent.parent
 OUT = REPO / 'audio'
 MANIFEST = OUT / 'tutorial.json'
 STIMME = 'de_DE-kerstin-low'
-STIMME_EN = 'en_US-amy-medium'
+STIMME_EN = 'en_US-ljspeech-medium'
 
 # Schluessel = Clipname in der App (TUT_SPRUCH in src/51b-tutorial.js). Keine Gedankenstriche.
 # Anzeigetext; was Piper sprechen soll, steht in SPRECH (fehlt ein Schluessel: derselbe Text).
@@ -264,8 +263,8 @@ def erzeugen(python, modell, nur, sprache='de'):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--python', help='Python mit installiertem piper-tts (z. B. venv\\Scripts\\python.exe)')
-    ap.add_argument('--modell', help='Pfad zu de_DE-kerstin-low.onnx bzw. en_US-amy-medium.onnx (daneben die .onnx.json)')
-    ap.add_argument('--sprache', choices=['de', 'en'], default='de', help='de (Kerstin, Texte hier) oder en (Amy, Texte aus dem Manifest)')
+    ap.add_argument('--modell', help='Pfad zu de_DE-kerstin-low.onnx bzw. en_US-ljspeech-medium.onnx (daneben die .onnx.json)')
+    ap.add_argument('--sprache', choices=['de', 'en'], default='de', help='de (Kerstin, Texte hier) oder en (ljspeech, Texte aus dem Manifest)')
     ap.add_argument('--nur', nargs='*', default=None, help='Nur diese Clips neu erzeugen')
     ap.add_argument('--check', action='store_true', help='Manifest und Clips pruefen')
     args = ap.parse_args()
