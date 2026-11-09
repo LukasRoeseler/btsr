@@ -866,7 +866,7 @@
       if (g.id === 'ballast') {
         const max = MEISTER_BALLAST_KG[meisterGlobalWert('ballast')] || 0;
         h += '<div class="ms-punkte">' + [['Führender', max], ['Mitte', Math.round(max / 2)], ['Letzter', 0], ['1. Event', 0]]
-          .map((x) => '<div>' + msEsc(t(x[0])) + '<b>+' + x[1] + ' kg</b></div>').join('') + '</div>';
+          .map((x) => '<div>' + msEsc(t(x[0])) + '<b>' + (x[1] ? '+' + x[1] : '0') + ' kg</b></div>').join('') + '</div>';
       }
       if (g.id === 'teilnehmer') h += '<p class="ms-info">' + msEsc(t('Alle verbundenen Autos: Spieler 1–3, NPCs und im Mehrspieler die anderen Telefone werden gewertet. Nur Spieler: NPCs fahren als Verkehr mit, bekommen aber keine Punkte. Das Safety Car fährt nie in der Wertung.')) + '</p>';
     } else if (msDetail < 0 && z && z.art === 'los') {
