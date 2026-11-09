@@ -6275,6 +6275,9 @@
   function tileLengthM(type) {
     if (TILE_LEN_M[type] !== undefined) return TILE_LEN_M[type];
     if (type === TILE_TYPE.CURVE_LEFT || type === TILE_TYPE.CURVE_RIGHT) return CURVE_LEN_M;
+    // v1.3.132: die 30-Grad-Teile - weit mit Radius 2 (1,12 m), klein mit dem Radius der 60-Grad-Kurve.
+    if (type === TILE_TYPE.WEIT_LEFT || type === TILE_TYPE.WEIT_RIGHT) return TRACK_R2_CM / 100 * (Math.PI / 6);
+    if (type === TILE_TYPE.KLEIN_LEFT || type === TILE_TYPE.KLEIN_RIGHT) return TRACK_RADIUS_CM / 100 * (Math.PI / 6);
     // v0.9.39: beide Haarnadeln, MIT der geraden Sektion davor (21,9 cm).
     if (type === TILE_TYPE.HAIRPIN || type === TILE_TYPE.HAIRPIN_LEFT) {
       return TRACK_HAIRPIN_RADIUS_CM / 100 * (TRACK_HAIRPIN_DEG * Math.PI / 180)

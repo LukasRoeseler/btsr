@@ -6742,10 +6742,58 @@
       const b = scEinPassend(0);
       if (!(a.faktor < 1) || b.faktor !== 1) f.push('Stauchung falsch (kurz ' + a.faktor.toFixed(2) + ', lang ' + b.faktor.toFixed(2) + ')');
       if (!(a.skript[1][2] < MANOEVER.scEin[1][2])) f.push('Gas der Folge nicht gestaucht');
+      // v1.3.132: weite Kurve, Engstelle, Box zaehlen als frei; die Folge beginnt FRUEHER statt gestaucht
+      // zu werden und endet auf (bzw. vor dem Ende der freien Teile ab) dem Parkteil. Startgas = Einfahrttempo.
+      const v0 = scParkTempo();
+      [['SGWG2', true], ['SW12', false], ['SGKG2', true], ['SEG', false]].forEach(([code, aufTeil]) => {
+        currentTrackTiles = codeToTrack(code).tiles;
+        const p = scEinPassend(0, v0);
+        const frei = Math.max(0.5, p.gerade - EINPARK_RESERVE);
+        if (p.faktor !== 1) f.push(code + ': Gas gestaucht (x ' + p.faktor.toFixed(2) + ', frei ' + p.gerade + '+' + p.vor + ', D ' + p.D.toFixed(2) + ')');
+        if (!(p.ab < 0)) f.push(code + ': nicht frueher ausgeloest (ab ' + p.ab + ')');
+        if (!(p.ende <= (aufTeil ? 1 : frei) + 1e-9)) f.push(code + ': Ende ' + p.ende.toFixed(2) + ' hinter ' + (aufTeil ? 'dem Teil' : 'den freien Teilen'));
+        if (Math.abs(p.ende - p.ab - p.D) > 1e-9) f.push(code + ': Ende passt nicht zu Start + Rollweg');
+      });
+      // Notfall: nichts frei davor, nur Start/Ziel danach -> weiter gestaucht (Untergrenze 0,5).
+      currentTrackTiles = codeToTrack('SRG4R').tiles;
+      if (!(scEinPassend(0, v0).faktor < 1)) f.push('SRG4R ohne Notfall-Stauchung');
+      // Ausloesen: ab Plan-Punkt vor k, bis zum Ende von k nachgeholt, danach nicht mehr.
+      currentTrackTiles = codeToTrack('SGWG2').tiles;                  // 0 S, 1 G, 2 W, 3 G, 4 G
+      const plan = scEinPassend(0, v0), auto = (k) => ({ ghost: { tileIndex: k } });
+      if (einparkAusgeloest(auto(3), 0, plan.ab)) f.push('loest 2 Teile vorher aus (Plan ' + plan.ab.toFixed(2) + ')');
+      if (!einparkAusgeloest(auto(4), 0, plan.ab)) f.push('loest auf dem Teil davor nicht aus');
+      if (!einparkAusgeloest(auto(0), 0, plan.ab)) f.push('verschluckte Kachel davor: auf k nicht nachgeholt');
+      if (einparkAusgeloest(auto(1), 0, plan.ab)) f.push('loest hinter k noch aus');
+      // Rollweg mit echtem Startgas: schneller hinein = weiter.
+      if (!(scRollweg(MANOEVER.scEin, 0.42) > scRollweg(MANOEVER.scEin, 0.3))) f.push('Rollweg ohne Startgas');
+      // NPC-Box: Engstelle zaehlt als Gerade.
+      currentTrackTiles = codeToTrack('SG2RE2G2R').tiles;
+      if (npcBoxNeben(0) !== 4) f.push('NPC-Box nicht auf der Engstelle (' + npcBoxNeben(0) + ')');
+      // Fehlende Kacheltypen.
+      if (kurvenSeite(TILE_TYPE.WEIT_RIGHT) !== 1 || kurvenSeite(TILE_TYPE.KLEIN_LEFT) !== -1) f.push('kurvenSeite ohne 30-Grad-Teile');
+      if (scanLiveCode(TILE_TYPE.WEIT_LEFT) !== TILE_TYPE.WEIT_LEFT || scanLiveCode(TILE_TYPE.KLEIN_RIGHT) !== TILE_TYPE.KLEIN_RIGHT) f.push('scanLiveCode ohne 30-Grad-Teile');
+      if (!(Math.abs(tileLengthM(TILE_TYPE.WEIT_RIGHT) - 0.586) < 0.01 && Math.abs(tileLengthM(TILE_TYPE.KLEIN_LEFT) - 0.194) < 0.01)) f.push('tileLengthM ohne 30-Grad-Teile');
     } finally { currentTrackTiles = merk.tiles; garage.length = 0; merk.garage.forEach((c) => garage.push(c)); }
+    // Funkprioritaet: HOCH beim Ein-/Ausparken, danach AUSGEWOGEN, nur beim Wechsel.
+    {
+      const b = window.OMEGA_BRUECKE = window.OMEGA_BRUECKE || {};
+      const merkP = b.prioritaetSetzen, cb = $('setting-funk-prio'), merkCb = cb ? cb.checked : null;
+      const aufrufe = [];
+      try {
+        if (cb) cb.checked = true;
+        b.prioritaetSetzen = (id, stufe) => { aufrufe.push(stufe); return Promise.resolve({ ok: true }); };
+        const sc = { role: 'safetycar', device: { id: 'probe-sc-prio', gatt: { connected: true } } };
+        funkPrioEinzeln(sc, 'hoch', 'Test'); funkPrioEinzeln(sc, 'hoch', 'Test'); funkPrioEinzeln(sc, 'ausgewogen', 'Test');
+        if (aufrufe.join(',') !== 'hoch,ausgewogen') f.push('Funkprioritaet ' + aufrufe.join(','));
+      } finally {
+        if (merkP) b.prioritaetSetzen = merkP; else delete b.prioritaetSetzen;
+        if (cb) cb.checked = merkCb;
+      }
+      if (String(scParkTick).indexOf("funkPrioEinzeln(car, 'hoch'") < 0 || String(safetyCarFertig).indexOf("'ausgewogen'") < 0) f.push('SC-Einparken setzt die Prioritaet nicht');
+    }
     if (String(pitTick).indexOf("p.phase = 'einparken'") < 0 || String(pitTick).indexOf('scAusSkript()') < 0) f.push('NPC-Box nicht mit Safety-Car-Folgen');
     if (String(npcBoxKlang).indexOf("'repair'") < 0) f.push('keine Ratsche im Stand');
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Haken/Kreuz/nichts, vier im Voraus, mechanisch, NPC-Box neben dem SC, SC-Gas gestaucht' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Haken/Kreuz/nichts, vier im Voraus, mechanisch, NPC-Box neben dem SC, SC-Gas nur im Notfall gestaucht, SGWG2/SW12/SGKG2/SEG frueher ausgeloest und ohne Stauchung, Funkprioritaet beim Parken' };
   });
 
   stAdd('Kopplung, Abgleich und Karte v1.1.45: Trennen bei Fehler, Entwurf bis Uebernehmen, Punkt springt nicht', async () => {
