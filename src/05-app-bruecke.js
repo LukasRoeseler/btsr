@@ -218,6 +218,15 @@
              direkt: !!window.OmegaDirekt, pad: !!window.OmegaPad, neuVersucht: omegaDirektVersucht,
              direktFehler: (l && l.zaehler && l.zaehler.direktFehler) || '' };
   };
+  // Latenz (WIP): dasselbe je Geraet (Optionen > System, "Funk je Auto"). Vorher sah man nur das erste Auto.
+  window.OMEGA_BRUECKE.omegaInfoAuto = (deviceId) => {
+    if (!omegaBleVerfuegbar()) return { weg: 'Plugin', gesperrtMs: 0, zaehler: null };
+    const l = omegaLage.get(deviceId) || omegaLage.get(String(deviceId));
+    if (!l) return { weg: 'Plugin', gesperrtMs: 0, zaehler: null };
+    const rest = l.sperreBis ? Math.max(0, l.sperreBis - performance.now()) : 0;
+    return { weg: !rest && l.bereit ? (omegaDirektBenutzt ? 'OmegaBle direkt' : 'OmegaBle') : 'Plugin',
+             gesperrtMs: rest, zaehler: l.zaehler || null, alt: !!l.alt };
+  };
   // GEMELDET (Xbox- und PS4-Controller): ein gekoppeltes Bluetooth-Gamepad belegt den BLE-
   // Kanal, und die 5-s-Prio-Nachverhandlung eines Autos kann die Verbindung dann abreissen.
   // Diese Pruefung sagt, ob ein Gamepad anliegt. Die Web-Gamepad-API meldet ein Pad erst

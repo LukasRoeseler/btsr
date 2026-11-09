@@ -4215,6 +4215,12 @@
     "Patchnotes": "Patch notes",
     "Patchnotes anzeigen": "Show patch notes",
     "Version": "Version",
+    "Funk je Auto": "Radio per car",
+    "Je verbundenes Auto: Rolle, Schreibweg (OmegaBle direkt, OmegaBle oder Plugin, gesperrt mit Restzeit), die Zähler geschrieben/wiederholt/verworfen der App, der Abstand der Meldungen des Autos (Mittel/95 % der letzten rund 4 s) und die zuletzt gesetzte Funkpriorität. Zum Aufzeichnen, wenn die Latenz schlecht wird: vorher und nachher ein Bildschirmfoto.": "Per connected car: role, write path (OmegaBle direct, OmegaBle or plugin, locked with time left), the app counters written/retried/dropped, the spacing of the car's notifications (mean/95 % of the last ~4 s) and the radio priority set last. For recording when the latency gets bad: take a screenshot before and after.",
+    "gesperrt noch {n} s": "locked for {n} s",
+    "Prio": "Prio",
+    "hoch": "high",
+    "ausgewogen": "balanced",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -5778,6 +5784,15 @@
     "Patchnotes": "Notas de versión",
     "Patchnotes anzeigen": "Mostrar notas de versión",
     "Version": "Versión",
+    "Funk je Auto": "Radio por coche",
+    "Je verbundenes Auto: Rolle, Schreibweg (OmegaBle direkt, OmegaBle oder Plugin, gesperrt mit Restzeit), die Zähler geschrieben/wiederholt/verworfen der App, der Abstand der Meldungen des Autos (Mittel/95 % der letzten rund 4 s) und die zuletzt gesetzte Funkpriorität. Zum Aufzeichnen, wenn die Latenz schlecht wird: vorher und nachher ein Bildschirmfoto.": "Por cada coche conectado: rol, vía de escritura (OmegaBle directo, OmegaBle o plugin, bloqueada con tiempo restante), los contadores de la app escritos/repetidos/descartados, la separación de los avisos del coche (media/95 % de los últimos ~4 s) y la prioridad de radio fijada por última vez. Para registrar cuando la latencia empeora: haz una captura de pantalla antes y después.",
+    "gesperrt noch {n} s": "bloqueada {n} s más",
+    "Prio": "Prio",
+    "hoch": "alta",
+    "ausgewogen": "equilibrada",
+    "keine Autos verbunden": "ningún coche conectado",
+    "Rolle": "Rol",
+    "Safety Car": "Safety car",
   };
 
   // ============================================================================

@@ -2457,6 +2457,7 @@
     // Latenz (WIP): eine neue Verbindung beginnt mit der HIGH-Anfrage der Bruecke - die zuletzt gesetzte
     // Stufe gilt nicht mehr (sonst uebersprang funkPrioEinzeln die Anfrage als "schon gesetzt").
     car.funkPrioStufe = null;
+    car.meldeRingN = 0; car.meldungAt = 0;
     car.notifyHandler = (e) => onCarNotify(car, e);
     await tx.startNotifications();
     tx.addEventListener('characteristicvaluechanged', car.notifyHandler);
@@ -2681,9 +2682,16 @@
   // Verbindung neu aus, und jede Neuverhandlung kann den Funk stocken lassen. Jetzt: erst wenn ein Auto
   // MELDE_LANGSAM_DAUER_MS lang ueber MELDE_LANGSAM_MS liegt, und nur EINMAL je Verbindung (car.rx).
   const MELDE_LANGSAM_MS = 120, MELDE_LANGSAM_DAUER_MS = 5000;
+  // Latenz (WIP): die letzten MELDE_RING_N Abstaende je Auto fuer "Funk je Auto" - ein Ringpuffer fester
+  // Groesse, einmal je Auto angelegt; je Meldung nur ein Eintrag, keine Allokation.
+  const MELDE_RING_N = 64;
   function meldetaktBeobachten(car, jetzt) {
     if (car.meldungAt) {
       const d = Math.min(1000, jetzt - car.meldungAt);
+      if (!car.meldeRing) { car.meldeRing = new Float32Array(MELDE_RING_N); car.meldeRingI = 0; car.meldeRingN = 0; }
+      car.meldeRing[car.meldeRingI] = d;
+      car.meldeRingI = (car.meldeRingI + 1) % MELDE_RING_N;
+      if (car.meldeRingN < MELDE_RING_N) car.meldeRingN++;
       car.meldeAbstand = car.meldeAbstand === undefined ? d : car.meldeAbstand + (d - car.meldeAbstand) * 0.05;
       const b = window.OMEGA_BRUECKE;
       if (car.meldeAbstand > MELDE_LANGSAM_MS) {
@@ -2838,6 +2846,55 @@
     return garVerbindetGerade.has(k) || garage.some((c) => c.device && String(c.device.id) === k);
   }
   if (window.OMEGA_BRUECKE) window.OMEGA_BRUECKE.prioNachVerbindenSelbst = funkPrioNachVerbindenSelbst;
+
+  // ---- FUNK JE AUTO (Latenz, WIP) -------------------------------------------------------------
+  // BESTELLT: je verbundenes Auto eine Zeile unter Optionen > System - Name/Rolle, Weg (direkt, Plugin,
+  // gesperrt mit Restzeit), geschrieben/wiederholt/verworfen, Meldeabstand (Mittel/p95 aus dem Ringpuffer)
+  // und die zuletzt gesetzte Funkprioritaet. Gerechnet nur, wenn die Ansicht offen ist, hoechstens 2x/s.
+  function funkMeldeStat(car) {
+    const n = car && car.meldeRing ? car.meldeRingN : 0;
+    if (!n) return null;
+    const a = Array.prototype.slice.call(car.meldeRing, 0, n).sort((x, y) => x - y);
+    let summe = 0;
+    for (let i = 0; i < n; i++) summe += a[i];
+    return { mittel: summe / n, p95: a[Math.min(n - 1, Math.floor(n * 0.95))], n };
+  }
+  function funkJeAutoZeilen(autosArg) {
+    const b = window.OMEGA_BRUECKE;
+    const autos = (autosArg || garage).filter((c) => c && !c.sim && c.device);
+    if (!autos.length) return t('keine Autos verbunden');
+    return autos.map((car) => {
+      const r = GAR_ROLLEN.find((x) => x.id === car.role);
+      const rolle = r ? t(r.name) : String(car.role || '');
+      let weg;
+      if (b && typeof b.omegaInfoAuto === 'function') {
+        const o = b.omegaInfoAuto(car.device.id) || {};
+        weg = (o.weg || 'Plugin')
+          + (o.gesperrtMs > 0 ? ' (' + t('gesperrt noch {n} s').replace('{n}', Math.ceil(o.gesperrtMs / 1000)) + ')' : '');
+        const z = o.zaehler;
+        if (z) weg += ' \u00b7 ' + z.geschrieben + ' ' + t('geschrieben') + ', ' + z.wiederholt + ' ' + t('wiederholt')
+          + ', ' + z.verworfen + ' ' + t('verworfen');
+      } else {
+        weg = 'Web Bluetooth';
+      }
+      const m = funkMeldeStat(car);
+      const stufe = car.funkPrioStufe === 'hoch' || car.funkPrioStufe === 'ausgewogen' ? t(car.funkPrioStufe)
+        : (car.funkPrioStufe || '\u2013');
+      return garageLabel(car) + ' (' + rolle + '): ' + t('Weg') + ' ' + weg
+        + ' \u00b7 ' + t('Meldungen') + ' ' + (m ? Math.round(m.mittel) + '/' + Math.round(m.p95) + ' ms' : '\u2013')
+        + ' \u00b7 ' + t('Prio') + ' ' + stufe;
+    }).join('\n');
+  }
+  let funkJeAutoSeite = null;
+  setInterval(() => {
+    const el = $('funk-je-auto');
+    if (!el) return;
+    if (!funkJeAutoSeite) funkJeAutoSeite = el.closest('.tabpage');
+    if (funkJeAutoSeite && !funkJeAutoSeite.classList.contains('active')) return;   // ohne Layout
+    if (!el.offsetParent) return;
+    const text = funkJeAutoZeilen();
+    if (el.textContent !== text) el.textContent = text;
+  }, 500);
   function onCarNotify(car, e) {
     const b = notifyBytes(e.target.value);
     if (b.length < 16) return;

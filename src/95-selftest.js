@@ -6663,6 +6663,54 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Training/Losfahren/Verbinden/Rollenwechsel setzen Spieler hoch, NPC/SC ausgewogen; keine blinde HIGH-Nachforderung; Stufe nach Neuverbinden leer; Schalter aus = wie vorher' };
   });
 
+  // Latenz (WIP): Funk je Auto - eine Zeile je verbundenes Auto, Meldeabstand aus einem Ringpuffer fester Groesse.
+  stAdd('Latenz: Funk je Auto - Zeile je Auto mit Rolle, Weg, Zaehlern, Meldeabstand und Prioritaet', () => {
+    const f = [];
+    const merkB = window.OMEGA_BRUECKE;
+    const el = $('funk-je-auto');
+    if (!el) return { ok: false, mass: 'Anzeige #funk-je-auto fehlt' };
+    const zeile = el.closest('.opt-row'), lab = zeile && zeile.querySelector('.opt-label');
+    if (!zeile || !zeile.closest('#sub-opt-system')) f.push('nicht unter Optionen > System');
+    if (!lab || !lab.querySelector('.wip-tag')) f.push('ohne WIP-Kennzeichnung');
+    if (el.closest('small')) f.push('Anzeige steckt im Info-Text');
+    for (const k of ['Funk je Auto', 'gesperrt noch {n} s', 'Prio', 'hoch', 'ausgewogen']) {
+      if (!I18N_EN[k]) f.push('EN fehlt: ' + k);
+      if (!I18N_ES[k]) f.push('ES fehlt: ' + k);
+    }
+    const a = { device: { id: 'st-fja-a', name: 'A' }, alias: 'Alpha', role: 'player', funkPrioStufe: 'hoch' };
+    const n = { device: { id: 'st-fja-n', name: 'N' }, alias: 'Nora', role: 'ghost', funkPrioStufe: 'ausgewogen' };
+    const sim = { device: { id: 'st-fja-s', name: 'S' }, alias: 'Sim', role: 'ghost', sim: true };
+    try {
+      // Ringpuffer: 200 Meldungen alle 60 ms, dann eine Luecke - fester Puffer, die Luecke im p95.
+      for (let i = 0; i < 200; i++) meldetaktBeobachten(a, 1000 + i * 60);
+      const ring = a.meldeRing;
+      if (!(ring instanceof Float32Array) || ring.length !== 64) f.push('kein Ringpuffer fester Groesse');
+      for (let i = 0; i < 10; i++) meldetaktBeobachten(a, 13000 + i * 60 + (i === 5 ? 400 : 0));
+      if (a.meldeRing !== ring) f.push('Ringpuffer neu angelegt');
+      const m = funkMeldeStat(a);
+      if (!m || m.n !== 64 || Math.round(m.mittel) < 60 || Math.round(m.mittel) > 70) f.push('Meldeabstand ' + JSON.stringify(m));
+      window.OMEGA_BRUECKE = Object.assign({}, merkB || {}, {
+        omegaInfoAuto: (id) => (id === 'st-fja-a'
+          ? { weg: 'OmegaBle direkt', gesperrtMs: 0, zaehler: { geschrieben: 120, wiederholt: 3, verworfen: 1 } }
+          : { weg: 'Plugin', gesperrtMs: 24500, zaehler: { geschrieben: 7, wiederholt: 0, verworfen: 9 } }) });
+      const text = funkJeAutoZeilen([a, n, sim]);
+      const z = text.split('\n');
+      if (z.length !== 2) f.push(z.length + ' Zeilen statt 2 (Simulation darf nicht erscheinen)');
+      const z0 = z[0] || '', z1 = z[1] || '';
+      if (z0.indexOf('Alpha') !== 0 || z0.indexOf(t('Spieler 1')) < 0 || z0.indexOf('OmegaBle direkt') < 0 || z0.indexOf('120 ' + t('geschrieben')) < 0
+          || z0.indexOf('3 ' + t('wiederholt')) < 0 || z0.indexOf('1 ' + t('verworfen')) < 0 || z0.indexOf(t('hoch')) < 0 || !/ \d+\/\d+ ms/.test(z0)) f.push('Zeile 1: ' + z0);
+      if (z1.indexOf('Nora') !== 0 || z1.indexOf(t('NPC')) < 0 || z1.indexOf(t('gesperrt noch {n} s').replace('{n}', 25)) < 0
+          || z1.indexOf(t('ausgewogen')) < 0) f.push('Zeile 2: ' + z1);
+      window.OMEGA_BRUECKE = Object.assign({}, merkB || {});
+      delete window.OMEGA_BRUECKE.omegaInfoAuto;
+      if (funkJeAutoZeilen([n]).indexOf('Web Bluetooth') < 0) f.push('ohne Bruecke kein Hinweis auf Web Bluetooth');
+      if (funkJeAutoZeilen([]) !== t('keine Autos verbunden')) f.push('ohne Autos: ' + funkJeAutoZeilen([]));
+    } finally {
+      window.OMEGA_BRUECKE = merkB;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Zeile je Auto mit Rolle, Weg/Sperre, Zaehlern, Meldeabstand (Ring 64) und Prioritaet; EN/ES; WIP unter System' };
+  });
+
   // v1.2.45 BESTELLT: Latenz - Funkprioritaet nur einmal je Verbindung, SIMULATOR-Linie nur im Editor.
   stAdd('Latenz v1.2.45: Prioritaet einmal je Verbindung, SIMULATOR nur im Editor', () => {
     const f = [];
