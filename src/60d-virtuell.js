@@ -901,12 +901,14 @@
   // img/autos/v5r/: Modell ohne Innenraum, Rad, Lichtorte und die Fahrzeugdaten aus der .xml. Laengen in
   // Metern, im Auto +x links, +y oben, +z vorn; gezeichnet mal VF_AUTO.L / Laenge (so lang wie der Kasten).
   const VF_AUTO_STORE = 'omegasim-vf-auto';
-  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', porsche: 'img/autos/porsche/' };
+  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/' };
   function vfModellPfad(auto) { return VF_MODELL_PFADE[auto || vfAutoWahl()] || 'img/autos/v5r/'; }
   const VF_FEDER_STORE = 'omegasim-vf-feder';
   const VF_FEDER_WERTE = [1, 2, 3, 5, 8];
+  // Eine gespeicherte Wahl, die es nicht mehr gibt (z. B. 'porsche', 1.3.103-1.3.131, entfernt), faellt
+  // still auf den Vulture V5.R zurueck - kein 404 beim Laden und kein Absturz.
   function vfAutoWahl() {
-    try { const v = localStorage.getItem(VF_AUTO_STORE); return (v === 'v5r' || v === 'lynx220' || v === 'fmcgt4' || v === 'boxer96' || v === 'porsche' || v === 'kasten') ? v : 'v5r'; } catch (e) { return 'v5r'; }
+    try { const v = localStorage.getItem(VF_AUTO_STORE); return (v === 'kasten' || (v && Object.prototype.hasOwnProperty.call(VF_MODELL_PFADE, v))) ? v : 'v5r'; } catch (e) { return 'v5r'; }
   }
   // Schaltung (Automatik/Manuell) fuer die virtuelle Fahrt. Manuell schaltet der Fahrer mit I/K.
   const VF_SCHALTUNG_STORE = 'omegasim-vf-schaltung';
@@ -924,7 +926,7 @@
   // Mittellinie mit leichtem Querversatz und drosseln ihr Tempo nach der Kurvigkeit voraus.
   // Seit v1.2.32 mit dem Tempo der Garagenstufe 1 und einem eigenen Fahrzeugmodell (siehe unten).
   const VF_NPC_STORE = 'omegasim-vf-npc';
-  const VF_NPC_POOL = ['v5r', 'fmcgt4', 'boxer96', 'lynx220', 'porsche'];
+  const VF_NPC_POOL = ['v5r', 'fmcgt4', 'boxer96', 'lynx220'];
   // v1.2.32 GEMELDET: "Die NPCs sind außerdem zu schnell und haben eine starke Neigung (sollte
   // auf Stufe 1 sein)." Gemessen auf Balkonia (1.2.31, 8 s Fahrt, drei NPCs):
   //   - Geradentempo 3,2 Modell-km/h (VF_NPC_BASE), mal 1,03 bis 3,3. Das ist 80 % Gas, mehr als
@@ -1534,11 +1536,9 @@
     gl.enableVertexAttribArray(SP.ap);
     gl.vertexAttribPointer(SP.ap, 3, gl.FLOAT, false, 32, 0);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, M.ibo);
-    const iTyp = M.indexTyp === 32 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT;
-    const off = (t) => t.index0 * (M.indexTyp === 32 ? 4 : 2);
     M.meta.teile.forEach((t) => {
       if (t.gruppe !== 'auto' || t.rolle === 'glas' || t.rolle === 'scheinwerferglas') return;
-      gl.drawElements(gl.TRIANGLES, t.indizes, iTyp, off(t));
+      gl.drawElements(gl.TRIANGLES, t.indizes, gl.UNSIGNED_SHORT, t.index0 * 2);
     });
     const radTeile = M.meta.teile.filter((t) => t.gruppe === 'rad');
     const halbW = d.breite / 2;
@@ -1548,7 +1548,7 @@
       const w = vfKette(lage, vfT(seite * r.spur / 2, r.radius, z), dreh, vfRx(raddreh || 0), vfS(seite * r.breite, 2 * r.radius, 2 * r.radius));
       gl.uniformMatrix4fv(SP.m, false, new Float32Array(vfMal(schM, w)));
       if (radTeile.length) {
-        radTeile.forEach((t) => gl.drawElements(gl.TRIANGLES, t.indizes, iTyp, off(t)));
+        radTeile.forEach((t) => gl.drawElements(gl.TRIANGLES, t.indizes, gl.UNSIGNED_SHORT, t.index0 * 2));
       } else if (radModell && radModell.teile.length) {
         const xW = seite * Math.max(r.spur / 2, halbW + 0.12 - 0.5 * r.breite);
         const wF = vfKette(lage, vfT(xW, r.radius, z), dreh, vfRx(raddreh || 0), vfS(seite * r.breite, 2 * r.radius, 2 * r.radius));
@@ -1601,10 +1601,8 @@
         fetch(pfad + 'auto.json').then((r) => { if (!r.ok) throw new Error('auto.json ' + r.status); return r.json(); }),
         fetch(pfad + 'auto.bin').then((r) => { if (!r.ok) throw new Error('auto.bin ' + r.status); return r.arrayBuffer(); }),
       ]).then(([meta, bin]) => {
-        const breite = meta.indizesTyp === 32 ? 4 : 2;
-        if (bin.byteLength < meta.indexAb + meta.indizes * breite) throw new Error('auto.bin zu kurz');
-        const IA = meta.indizesTyp === 32 ? Uint32Array : Uint16Array;
-        return { meta, ecken: new Float32Array(bin, 0, meta.ecken * 8), indizes: new IA(bin, meta.indexAb, meta.indizes) };
+        if (bin.byteLength < meta.indexAb + meta.indizes * 2) throw new Error('auto.bin zu kurz');
+        return { meta, ecken: new Float32Array(bin, 0, meta.ecken * 8), indizes: new Uint16Array(bin, meta.indexAb, meta.indizes) };
       }).catch((e) => { vfModellLaden[pfad] = null; throw e; });
     }
     return vfModellLaden[pfad];
@@ -1678,7 +1676,7 @@
     const schatten = daten.meta.schatten ? vfTextur(gl, pfad + daten.meta.schatten, [0, 0, 0, 0]) : null;
     // Eine kleine Flaeche fuer Schatten, Lichtkegel und Leuchten (wird je Bild neu beschrieben).
     const quad = gl.createBuffer();
-    return { meta: daten.meta, d: daten.meta.physik, vbo, ibo, tex, schatten, glanz: vfGlanzTextur(gl), quad, indexTyp: daten.meta.indizesTyp || 16 };
+    return { meta: daten.meta, d: daten.meta.physik, vbo, ibo, tex, schatten, glanz: vfGlanzTextur(gl), quad };
   }
   // Naechster Mittellinienpunkt in einem Fenster um den letzten (die Strecke kann sich kreuzen).
   function vfOrt(pts, nrm, x, y, idx) {
@@ -2345,8 +2343,7 @@
       gl.vertexAttribPointer(T.auv, 2, gl.FLOAT, false, 32, t.ecke0 * 32 + 24);
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, M.ibo);
       gl.bindTexture(gl.TEXTURE_2D, M.tex[t.tex]);
-      const iTyp = M.indexTyp === 32 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT;
-      gl.drawElements(gl.TRIANGLES, t.indizes, iTyp, t.index0 * (M.indexTyp === 32 ? 4 : 2));
+      gl.drawElements(gl.TRIANGLES, t.indizes, gl.UNSIGNED_SHORT, t.index0 * 2);
     };
     const flaeche = (ecken, tx) => {      // ecken: je Ecke x y z u v (Welt)
       const a = [];
@@ -2376,8 +2373,8 @@
     M.meta.teile.forEach((t) => {
       if (t.gruppe !== 'auto' || t.rolle === 'glas' || t.rolle === 'scheinwerferglas') return;
       const emis = t.rolle === 'scheinwerfer' ? (licht ? 1.3 : 0) : t.rolle === 'ruecklicht' ? ruecklichtEmis : 0;
-      // Lack (Karosserie) bekommt den Clear-Coat-Glanz (klar), Scheiben/Glas dagegen nicht.
-      setze(aufbau, [1, 1, 1], emis, 1, 0, 1, t.rolle === 'lack' ? 0.8 : 0.3, 0);
+      // Karosserie mit leichtem Clear-Coat-Glanz (klar, nur Quality), Scheiben/Glas dagegen nicht.
+      setze(aufbau, [1, 1, 1], emis, 1, 0, 1, 0.3, 0);
       teil(t);
     });
     // 3. Raeder: Mitte auf Reifenradius, vorn eingeschlagen, alle drehen; rechts gespiegelt (Muttern aussen)
@@ -2676,8 +2673,6 @@
     const cv = schicht.querySelector('canvas');
     const gl = cv.getContext('webgl', { antialias: true }) || cv.getContext('experimental-webgl');
     if (!gl) { schicht.remove(); showHudToast(t('Dieses Gerät kann kein WebGL')); return false; }
-    // Grosse Modelle (Porsche, volle Aufloesung) brauchen Uint32-Indizes (>65535 Ecken).
-    gl.indexUint = gl.getExtension('OES_element_index_uint');
     try {
       VF.prog = vfProgramm(gl);
     } catch (e) { schicht.remove(); showHudToast('WebGL: ' + e.message); return false; }
@@ -2820,7 +2815,7 @@
   const VF_MOTOR_GLOBAL = '~global';
   // Standard ist der Vulture V5.R (wie das Auto); "Wie in Optionen" folgt dem globalen Ton (sentinel).
   function vfMotorGewaehlt() {
-    const def = ({ v5r: 'sd_v5r', lynx220: 'sd_lynx', fmcgt4: 'sd_fmc', boxer96: 'sd_boxer', porsche: 'p992gt3r' })[vfAutoWahl()] || 'sd_v5r';
+    const def = ({ v5r: 'sd_v5r', lynx220: 'sd_lynx', fmcgt4: 'sd_fmc', boxer96: 'sd_boxer' })[vfAutoWahl()] || 'sd_v5r';
     try { const v = localStorage.getItem(VF_MOTOR_STORE); return v === null ? def : v; } catch (e) { return def; }
   }
   function vfMotorZiel() { const g = vfMotorGewaehlt(); if (g && g !== VF_MOTOR_GLOBAL) return g; return $('sound-profile') ? $('sound-profile').value : ''; }
@@ -2867,7 +2862,6 @@
     // v1.1.9: welches Auto, und wie deutlich die Federung sichtbar neigt.
     const autos = [{ v: 'v5r', name: 'Vulture V5.R (Speed Dreams)' }, { v: 'lynx220', name: 'Lynx 220 (Jaguar XJ220, Speed Dreams)' },
                    { v: 'fmcgt4', name: 'FMC GT4 (Ford GT40 Mk1, Speed Dreams)' }, { v: 'boxer96', name: 'Boxer 96 (Porsche 911 GT3, Speed Dreams)' },
-                   { v: 'porsche', name: 'Porsche 911 (992) GT3R (Sketchfab)' },
                    { v: 'kasten', name: t('Einfaches Modell') }];
     const ja = Math.max(0, autos.findIndex((a) => a.v === vfAutoWahl()));
     const autoWahl = (dd) => {

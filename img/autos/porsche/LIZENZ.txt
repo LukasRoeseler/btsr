@@ -1,6 +1,0 @@
-Porsche 911 (992) GT3R.
-
-Modell und Texturen: Sketchfab, CC BY 4.0 (Autoren "kevin", "sohyalebret").
-Quelle: sketchfab.com (porsche-911-992-gt3r), heruntergeladen als FBX.
-Umgewandelt mit tools/porsche_model.py: Innenraum entfernt, vorderes linkes Rad herausgeloest und normiert, Ecken verschweisst, UVs erhalten, Texturen kopiert.
-https://creativecommons.org/licenses/by/4.0/
