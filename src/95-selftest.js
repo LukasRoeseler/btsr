@@ -25090,6 +25090,210 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Q -> Aufstellung, Fehler gemeldet, 26/18 Punkte, Fuehrender hinten, Zufall fest, Abbruch = 0' };
   });
 
+  // ---- v1.4.33: ERFOLGSBALLAST (73-meisterschaft.js) ----
+  // BESTELLT: "Autos mit mehr Punkten fahren langsamer (fuer NPCs und fuer Spielerauto), kriegen wie bei der DTM
+  // frueher 'mehr Gewicht' ins Auto". Vorgabe aus (WIP), Fuehrender das Hoechstgewicht, Letzter und erstes Event 0.
+  stAdd('Meisterschaft v1.4.33: Erfolgsballast Vorgabe aus (WIP, Erklaerung hinter i), Verteilung nach Punkten', () => {
+    const f = [];
+    const g = MEISTER_GLOBAL.find((x) => x.id === 'ballast');
+    if (!g || !g.wip || !g.info) f.push('Option fehlt oder ohne WIP/Erklaerung');
+    if (meisterPlanVorgabe().global.ballast !== 'aus') f.push('Vorgabe nicht aus');
+    const merk = { m: meister, garage: garage.slice(), store: localStorage.getItem(MEISTER_STORE) };
+    try {
+      garage.length = 0;
+      garage.push({ device: { id: 'stA' }, role: 'ghost', tag: 'A' }, { device: { id: 'stB' }, role: 'ghost', tag: 'B' });
+      meister = { plan: meisterPlanVorgabe(), lauf: null };
+      meister.plan.events = [meisterEventNeu(), meisterEventNeu(), meisterEventNeu()];
+      localStorage.setItem(MEISTER_STORE, JSON.stringify(meister));
+      meisterOeffnen('plan');
+      const zeile = [...document.querySelectorAll('#ms-liste .ms-gz')].find((z) => z.textContent.indexOf(t('Erfolgsballast')) >= 0);
+      if (!zeile) f.push('Zeile fehlt im Planer');
+      else {
+        if (!zeile.querySelector('.opt-label .wip-tag')) f.push('kein WIP-Etikett');
+        if (!zeile.querySelector('.opt-label .opt-info-btn')) f.push('kein i im Kreis');
+        const sm = zeile.querySelector('.opt-label small');
+        if (!sm || !sm.classList.contains('opt-info-versteckt') || !sm.textContent) f.push('Erklaerung nicht versteckt im small');
+        if (zeile.querySelector('.ms-w').textContent !== t('Aus')) f.push('Wert ' + zeile.querySelector('.ms-w').textContent + ' statt Aus');
+      }
+      meisterSchliessen();
+      // Verteilung: linear nach Punkteabstand zum Letzten.
+      const fahrer = { 'c:stA': { name: 'A', pkt: 51, je: [{ pos: 1, pkt: 51 }] }, 'c:stB': { name: 'B', pkt: 30, je: [{ pos: 2, pkt: 30 }] },
+                       'c:stC': { name: 'C', pkt: 9, je: [{ pos: 3, pkt: 9 }] } };
+      const lauf = Object.assign(meisterLaufNeu(), { idx: 1, fahrer });
+      if (Object.keys(meisterBallastFuer(lauf, 1)).length) f.push('Vorgabe aus verteilt Ballast');
+      meister.plan.global.ballast = 'mittel';
+      const kg = meisterBallastFuer(lauf, 1);
+      if (kg['c:stA'] !== 50 || kg['c:stB'] !== 25 || kg['c:stC']) f.push('mittel: ' + JSON.stringify(kg));
+      meister.plan.global.ballast = 'leicht';
+      if (meisterBallastFuer(lauf, 1)['c:stA'] !== 30) f.push('leicht nicht 30 kg');
+      meister.plan.global.ballast = 'stark';
+      if (meisterBallastFuer(lauf, 2)['c:stA'] !== 80) f.push('stark nicht 80 kg');
+      if (Object.keys(meisterBallastFuer(lauf, 0)).length) f.push('erstes Event mit Ballast');
+      const gleich = { 'c:stA': { pkt: 0 }, 'c:stB': { pkt: 0 } };
+      if (Object.keys(meisterBallastFuer(Object.assign(meisterLaufNeu(), { idx: 1, fahrer: gleich }), 1)).length) f.push('gleicher Stand mit Ballast');
+      if (Object.keys(meisterBallastFuer(Object.assign({}, lauf, { fertig: true }), 1)).length) f.push('nach der Meisterschaft mit Ballast');
+      // Zwischenstand und Aufstellung zeigen "+X kg" fuer das naechste Event.
+      meister.plan.global.ballast = 'mittel';
+      meister.lauf = lauf;
+      localStorage.setItem(MEISTER_STORE, JSON.stringify(meister));
+      meisterOeffnen('stand');
+      const stand = ($('ms-liste') || {}).textContent || '', aufst = ($('ms-detail') || {}).textContent || '';
+      if (stand.indexOf('+50 kg') < 0 || stand.indexOf('+25 kg') < 0) f.push('Zwischenstand ohne kg');
+      if (aufst.indexOf('+50 kg') < 0 || aufst.indexOf('+25 kg') < 0) f.push('Aufstellung ohne kg');
+      meisterSchliessen();
+    } finally {
+      meisterSchliessen();
+      meister = merk.m;
+      garage.length = 0; merk.garage.forEach((c) => garage.push(c));
+      try { if (merk.store === null) localStorage.removeItem(MEISTER_STORE); else localStorage.setItem(MEISTER_STORE, merk.store); } catch (e) { /* privat */ }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Vorgabe aus mit WIP und i; 51/30/9 Punkte -> 50/25/0 kg, leicht 30, stark 80, erstes Event 0; Zwischenstand und Aufstellung zeigen +kg' };
+  });
+
+  // Wirkung in Rundenzeit, gemessen: Spieler mit simFahren() als Fahrer am Limit (Kurvengrenze der NPCs, eigene
+  // Beschleunigung und Bremse) auf vier Strecken, NPC in der Rennsimulation (ein NPC, Zufall mit fester Saat).
+  stAdd('Meisterschaft v1.4.33: Erfolgsballast wirkt bei Spieler und NPC gleich (Simulation, 50 kg)', () => {
+    const f = [];
+    const fk = ballastFaktoren(50);
+    const pro = [];
+    for (const code of ['SR3G2R3G', 'SG3R2G3R2', 'SR3GR3GR3G', 'SGGR2GGR2']) {
+      const tiles = (codeToTrack(code) || {}).tiles;
+      const pts = trackCenterline(tiles), nrm = trackNormals(pts, true);
+      const o = { closed: trackSchluss(pts).closed, tiles };
+      const gz = fahrGrenzen();
+      Object.assign(o, { aLat: gz.aLat, aAcc: gz.aAcc, aBrk: gz.aBrk, vMax: gz.vMax });
+      const luuke = buildLine(pts, nrm, Object.assign({}, o, { model: 'luuke' })).alpha;
+      const runde = (m) => {
+        const r = simFahren(luuke, pts, nrm, Object.assign({}, o, { aLat: simKurvenALat(gz), aAcc: 1e9, aBrk: gz.aBrk / m, ballastFaktor: m }));
+        const z = (r.runden || []).slice(1);
+        return z.length ? z.reduce((a, b) => a + b, 0) / z.length : NaN;
+      };
+      const ohne = runde(1), mit = runde(fk.masse);
+      if (!(ohne > 0) || !(mit > 0)) { f.push(code + ': Spielerfahrt ohne Runden'); continue; }
+      pro.push((mit / ohne - 1) * 100);
+    }
+    const spieler = pro.reduce((a, b) => a + b, 0) / Math.max(1, pro.length);
+    const saat = (s) => () => { s = s + 0x6D2B79F5 | 0; let x = Math.imul(s ^ s >>> 15, 1 | s); x = x + Math.imul(x ^ x >>> 7, 61 | x) ^ x; return ((x ^ x >>> 14) >>> 0) / 4294967296; };
+    const merkT = currentTrackTiles, merkR = Math.random, merkN = ($('sim-ghosts') || {}).value;
+    const npcRunde = (tempo) => {
+      Math.random = saat(7);
+      try {
+        currentTrackTiles = codeToTrack('SR3GR3GR3G').tiles; lineCache = null;
+        $('sim-ghosts').value = '2';
+        simStart();
+        const st = simState;
+        if (!st) return NaN;
+        while (st.autos.length > 1) { const b = st.autos.pop(); stopGhost(b.car); }
+        const a = st.autos[0];
+        a.car.ballastTempo = tempo;
+        for (let k = 0; k < 2400 && simAn(); k++) simSchritt(45);
+        simStop('Selbsttest');
+        const z = a.zeiten.slice(1);
+        return z.length ? z.reduce((x, y) => x + y, 0) / z.length : NaN;
+      } finally {
+        Math.random = merkR;
+        if (simAn()) simStop('Selbsttest');
+        currentTrackTiles = merkT; lineCache = null;
+        if ($('sim-ghosts') && merkN !== undefined) $('sim-ghosts').value = merkN;
+      }
+    };
+    const n0 = npcRunde(1), n1 = npcRunde(fk.tempo);
+    const npc = (n1 / n0 - 1) * 100;
+    const txt = 'Spieler +' + spieler.toFixed(2) + ' % (' + pro.map((x) => x.toFixed(2)).join('/') + '), NPC +' + npc.toFixed(2)
+      + ' % (Masse x' + fk.masse.toFixed(2) + ', NPC-Tempo x' + fk.tempo.toFixed(4) + ')';
+    if (!(spieler > 1.5 && spieler < 3.5)) f.push('Spieler nicht 1,5-3,5 %');
+    if (!(npc > 1.5 && npc < 3.5)) f.push('NPC nicht 1,5-3,5 %');
+    if (!(Math.abs(spieler - npc) < 0.6)) f.push('Spieler und NPC weichen mehr als 0,6 Prozentpunkte ab');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') + ' || ' + txt : txt };
+  });
+
+  stAdd('Meisterschaft v1.4.33: Erfolgsballast nach dem Event 0, im Takt nur Multiplikation, gespeichert beim Fortsetzen', () => {
+    const f = [];
+    const merk = { m: meister, garage: garage.slice(), store: localStorage.getItem(MEISTER_STORE), rac: raceAllCars, oeff: meisterOeffnen,
+                   pf: physEngine.state.ballastFaktor, to: window.setTimeout };
+    const el = $('race-ballast');
+    const mpDa = typeof mp !== 'undefined' && mp;
+    const mpId = mpDa ? mp.id : undefined;
+    try {
+      meisterOeffnen = () => {};
+      // Der Zwischenstand oeffnet sich sonst 2,5 s nach dem Werten - nach diesem Test.
+      window.setTimeout = (fn, ms, ...rest) => (ms === 2500 ? 0 : merk.to.call(window, fn, ms, ...rest));
+      garage.length = 0;
+      const sp = { device: { id: 'stP' }, role: 'player', tag: 'P' }, np = { device: { id: 'stN' }, role: 'ghost', tag: 'N' };
+      garage.push(sp, np);
+      meister = { plan: meisterPlanVorgabe(), lauf: null };
+      meister.plan.events = [meisterEventNeu(), meisterEventNeu(), meisterEventNeu()];
+      meister.plan.global.ballast = 'mittel';
+      meister.lauf = Object.assign(meisterLaufNeu(), { idx: 1, fahrer: {
+        'c:stP': { name: 'P', rolle: 'player', pkt: 25, je: [{ pos: 1, pkt: 25 }] },
+        'c:stN': { name: 'N', rolle: 'ghost', pkt: 18, je: [{ pos: 2, pkt: 18 }] },
+        'c:stX': { name: 'X', rolle: 'ghost', pkt: 0, je: [{ pos: 3, pkt: 0 }] } } });
+      // Event-Start wie meisterEventStarten, Rennstart wie startRaceCountdown.
+      meister.lauf.laeuft = { idx: 1, modus: raceMode, seit: Date.now() };
+      meister.lauf.ballast = { idx: 1, kg: meisterBallastFuer(meister.lauf, 1) };
+      meisterBallastRennstart(null);
+      const fp = ballastFaktoren(50), fn = ballastFaktoren(36);
+      if (Math.abs(physEngine.state.ballastFaktor - fp.masse) > 1e-12) f.push('Spieler-Masse ' + physEngine.state.ballastFaktor);
+      if (Math.abs(np.ballastTempo - fn.tempo) > 1e-12) f.push('NPC-Tempo ' + np.ballastTempo);
+      if (!el || el.hidden || el.textContent !== t('Ballast') + ' +50 kg') f.push('Cockpit: ' + (el ? (el.hidden ? 'versteckt' : el.textContent) : 'fehlt'));
+      if (meisterBallastGridText(np) !== ' · +36 kg') f.push('Startschirm: "' + meisterBallastGridText(np) + '"');
+      const info = meisterMpInfo();
+      if (!info || !info.ballast || info.ballast['c:stP'] !== 50) f.push('Mehrspieler-Plan ohne Ballast');
+      // Speicherung: Fortsetzen nach Neustart liest Stufe und Ballast des Events wieder.
+      meisterSpeichern();
+      const gelesen = meisterLesen();
+      if (gelesen.plan.global.ballast !== 'mittel' || !gelesen.lauf.ballast || gelesen.lauf.ballast.kg['c:stP'] !== 50) f.push('nicht gespeichert');
+      localStorage.setItem(MEISTER_STORE, JSON.stringify({ plan: { events: [meisterEventNeu()], global: { punkte: 'f1' } }, lauf: null }));
+      if (meisterLesen().plan.global.ballast !== 'aus') f.push('alter Stand ohne Feld nicht aus');
+      // Nach dem Event: 0.
+      raceAllCars = () => [];
+      meisterWerten(true);
+      if (physEngine.state.ballastFaktor !== 1 || np.ballastTempo !== 1 || sp.ballastKg || (el && !el.hidden)) f.push('nach dem Event nicht 0');
+      // Ausserhalb der Meisterschaft: jeder Rennstart setzt 0.
+      meisterBallastSetzen({ 'c:stP': 80, 'c:stN': 80 });
+      meister.lauf = null;
+      meisterBallastRennstart(null);
+      if (physEngine.state.ballastFaktor !== 1 || np.ballastTempo !== 1) f.push('Rennstart ausserhalb der Meisterschaft mit Ballast');
+      // Mehrspieler, anderes Telefon: der Plan des Leiters traegt den Ballast fuer das eigene Fahrerauto.
+      if (mpDa) {
+        mp.id = 'stTel';
+        meisterBallastRennstart({ meister: { ballast: { 'mp:stTel': 30 } } });
+        if (Math.abs(physEngine.state.ballastFaktor - ballastFaktoren(30).masse) > 1e-12) f.push('Mehrspieler: eigenes Auto ohne Ballast');
+        meisterBallastRennstart({ meister: { fertig: true, ballast: { 'mp:stTel': 30 } } });
+        if (physEngine.state.ballastFaktor !== 1) f.push('Mehrspieler-Endstand mit Ballast');
+      }
+      // Im Takt nur die Multiplikation: Physik und NPC-Takt rufen nichts vom Ballast auf.
+      const upd = CarreraPhysicsEngine.prototype.update.toString();
+      if (!/\)\s*\*\s*st\.ballastFaktor;/.test(upd)) f.push('Physik: Ballast nicht als Faktor auf massFactor');
+      if (/meisterBallast|ballastFaktoren|ballastKg/.test(upd)) f.push('Physik rechnet Ballast im Takt');
+      const gt = ghostTick.toString();
+      if (gt.indexOf('target *= car.ballastTempo || 1') < 0) f.push('NPC-Takt: Ballast nicht als Faktor');
+      if (/meisterBallast|ballastFaktoren|ballastKg/.test(gt)) f.push('NPC-Takt rechnet Ballast');
+      // Ohne Ballast ist die Physik bitgleich (Faktor 1).
+      const fahr = (b) => {
+        const e = new CarreraPhysicsEngine();
+        Object.assign(e.config, physEngine.config, { autoShift: true });
+        e.meldung = () => {}; e.ruck = () => {}; e.schaltTon = () => {};
+        e.state.ballastFaktor = b;
+        for (let k = 0; k < 60; k++) e.update({ throttle: 1, brake: 0, steering: 0, headlights: false }, 0.045);
+        return e.state.speedKmh;
+      };
+      const v1 = fahr(1), v2 = fahr(1), vB = fahr(fp.masse);
+      if (v1 !== v2) f.push('Physik ohne Ballast nicht wiederholbar');
+      if (!(vB < v1)) f.push('mit Ballast nicht langsamer beim Beschleunigen: ' + vB + ' / ' + v1);
+    } finally {
+      window.setTimeout = merk.to;
+      if (mpDa) mp.id = mpId;
+      meisterBallastSetzen(null);
+      physEngine.state.ballastFaktor = merk.pf;
+      meister = merk.m; raceAllCars = merk.rac; meisterOeffnen = merk.oeff;
+      garage.length = 0; merk.garage.forEach((c) => garage.push(c));
+      try { if (merk.store === null) localStorage.removeItem(MEISTER_STORE); else localStorage.setItem(MEISTER_STORE, merk.store); } catch (e) { /* privat */ }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Start: Spieler x' + ballastFaktoren(50).masse.toFixed(2) + ' Masse, NPC x' + ballastFaktoren(36).tempo.toFixed(4)
+      + ' Tempo, Cockpit/Startschirm/Plan; nach dem Event und ausserhalb 0; gespeichert; im Takt nur Faktor' };
+  });
+
   stAdd('Rundenrennen endet mit der Zielrunde, nicht eine Runde spaeter', () => {
     const f = [];
     const merk = { rs: raceState, rm: raceMode, lim: raceLimit, laps: raceLapTimes.slice(), ls: raceLapStart,

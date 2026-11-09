@@ -11176,6 +11176,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Ausdruecklich MULTIPLIKATIV zum Kurvenabzug und nicht als zweiter Deckel: nass ist
       // eine Kurve langsamer als trocken, und beides zusammen ist mehr als jedes einzeln.
       target *= ghostReifenTempo(car);
+      // Erfolgsballast der Meisterschaft (73-meisterschaft.js): ein beim Rennstart gesetzter Faktor, hier nur
+      // die Multiplikation. Nicht unter Gelb - dort fahren alle gleich schnell.
+      if (!underYellow) target *= car.ballastTempo || 1;
       // Zufallsevents (v1.3.88): Gelb im Sektor hoechstens Gelb-Tempo, Oel 60 %. Ohne Event ein Vergleich.
       if (zevAktiv !== null && car.role !== 'safetycar') target = zevNpcTempo(car, target);
       // Einfuehrungsrunde: alle rollen im Formationstempo, was ihr eigener Regler auch

@@ -1694,7 +1694,7 @@
       row.innerHTML = `<span class="grid-pos">${i + 1}.</span>`
         + `<span class="grid-handle" draggable="true" title="Ziehen zum Umsortieren">&#8942;&#8942;</span>`
         + gridAutoBild(car)
-        + `<span class="grid-name">${carDot(car)}${garageLabel(car)} <small class="grid-wo">${wo}</small></span>`
+        + `<span class="grid-name">${carDot(car)}${garageLabel(car)} <small class="grid-wo">${wo}${typeof meisterBallastGridText === 'function' ? meisterBallastGridText(car) : ''}</small></span>`
         + `<span class="grid-move">`
         + `<button data-mv="up" ${i === 0 ? 'disabled' : ''} aria-label="nach vorn">&#9650;</button>`
         + `<button data-mv="down" ${i === cars.length - 1 ? 'disabled' : ''} aria-label="nach hinten">&#9660;</button>`
@@ -2170,6 +2170,8 @@
     // v1.4.33 (WIP): Setup je Auto (98i-setup.js) - Startmischung und Starttank je Spielerauto, bei
     // vorgegebenem Fahrgefuehl fuer alle Standard. Einmal je Start, nicht im Sendetakt.
     if (typeof setupRennstart === 'function') setupRennstart(mpPlan);
+    // v1.4.33: Erfolgsballast der Meisterschaft (73-meisterschaft.js) - bei jedem Start gesetzt, sonst 0.
+    if (typeof meisterBallastRennstart === 'function') meisterBallastRennstart(mpPlan);
     updateDamageFuelUI();
     racePitDone = 0;
     pitBilanz = null;   // "Letzter Stopp" im Boxenschirm gehoert zum Rennen
