@@ -1010,12 +1010,19 @@
   // VF_BELICHTUNG: Gesamthelligkeit. VF_BUMP_BODEN/BAHN: Relief-Staerke (0 = aus, wenn der Boden
   // verrauscht wirkt). VF_AO_INNEN: Dunkelheit neben den Randsteinen (kleiner = dunkler).
   // VF_SCHATTEN_BIAS_*: Schatten-Bias; erhoehen bei Streifen ("acne"), senken, wenn Schatten abheben.
-  const VF_BELICHTUNG = +((localStorage.getItem('omegasim-vf-belichtung') || 1.0));
-  const VF_BUMP_BODEN = +((localStorage.getItem('omegasim-vf-bump-boden') || 1.0));
-  const VF_BUMP_BAHN = +((localStorage.getItem('omegasim-vf-bump-bahn') || 0.6));
-  const VF_AO_INNEN = +((localStorage.getItem('omegasim-vf-ao-innen') || 0.6));
-  const VF_SCHATTEN_BIAS = +((localStorage.getItem('omegasim-vf-schatten-bias') || 0.0015));
-  const VF_SCHATTEN_BIAS_PIXEL = +((localStorage.getItem('omegasim-vf-schatten-bias-pixel') || 0.0004));
+  // Beim Laden gelesen: ohne try warf ein gesperrter Speicher (privater Modus, file:// in manchen
+  // WebViews) hier, mitten im gemeinsamen Skript, und ein Tippfehler in der Konsole ("0,5") wurde NaN
+  // und schwaerzte den ganzen Shader. Ungueltiges faellt auf die Vorgabe zurueck.
+  function vfReglerLesen(schluessel, vorgabe) {
+    try { const v = localStorage.getItem(schluessel); const z = v === null || v === '' ? NaN : +v; return Number.isFinite(z) ? z : vorgabe; }
+    catch (e) { return vorgabe; }
+  }
+  const VF_BELICHTUNG = vfReglerLesen('omegasim-vf-belichtung', 1.0);
+  const VF_BUMP_BODEN = vfReglerLesen('omegasim-vf-bump-boden', 1.0);
+  const VF_BUMP_BAHN = vfReglerLesen('omegasim-vf-bump-bahn', 0.6);
+  const VF_AO_INNEN = vfReglerLesen('omegasim-vf-ao-innen', 0.6);
+  const VF_SCHATTEN_BIAS = vfReglerLesen('omegasim-vf-schatten-bias', 0.0015);
+  const VF_SCHATTEN_BIAS_PIXEL = vfReglerLesen('omegasim-vf-schatten-bias-pixel', 0.0004);
   // Studienmodus: FOV aus Bildschirm/Abstand, Zoom der Fahrer-Kamera aus, fester NPC-Seed, JSON-Log.
   // Nur aktiv, wenn der Nutzer die Schluessel in der Konsole setzt (siehe Bestellung).
   const VF_STUDIE = (() => { try { return localStorage.getItem('omegasim-vf-studie') === '1'; } catch (e) { return false; } })();
@@ -1716,11 +1723,9 @@
           // Rundenrennen: nach der Ziel-Lap ist Schluss.
           VF.runden = (VF.runden || 0) + 1;
           if (VF.modus === 'laps' && VF.runden >= VF.limit) vfRennenEnde();
-          // Time Attack: jede gueltige Runde werten (Medaillen, Bestzeit speichern).
-          if (VF.modus === 'bestzeit' && typeof bestzeitRunde === 'function') {
-            const r = bestzeitRunde(VF.letzte, VF.car, VF.tiles);
-            if (r && typeof bestzeitMeldung === 'function') bestzeitMeldung(r, VF.letzte, VF.runden);
-          }
+          // Time Attack wertet hier NICHT: die Runde laeuft ueber onCarNotify in die Zeitnahme der App,
+          // und 70-race.js ruft dort bestzeitRunde/bestzeitMeldung (bis 1.3.131 doppelt, mit der
+          // Rundenzahl als Spielernummer "P3: ...").
         }
         VF.rundeAb = jetzt;
         VF.splits = [];
@@ -2584,6 +2589,7 @@
       const bewegen = (e) => {
         const rect = lenk.getBoundingClientRect();
         const cx = rect.left + rect.width / 2, r = rect.width / 2;
+        if (!(r > 0)) return;   // verborgen (Groesse 0): sonst 0/0 = NaN als Lenkwert
         const dx = Math.max(-1, Math.min(1, (e.clientX - cx) / r));
         applySteerInput(SRC.TOUCH, dx);
         const kn = lenk.querySelector('.vf-touch-knauf');
@@ -2606,6 +2612,7 @@
       const bewegen = (e) => {
         const rect = gas.getBoundingClientRect();
         const cy = rect.top + rect.height / 2, r = rect.height / 2;
+        if (!(r > 0)) return;
         const dy = Math.max(-1, Math.min(1, (e.clientY - cy) / r));
         applyThrottleInput(SRC.TOUCH, -dy);   // oben = Gas (+), unten = Bremse (-)
         const kn = gas.querySelector('.vf-touch-knauf');
@@ -2785,6 +2792,11 @@
     VF.modusZeit = 0;
     VF.rennenEnde = false;
     VF.kollisionsBis = 0;
+    // Schaden und Flagge gehoeren dem echten Fahren: beim Start merken, die virtuelle Fahrt beginnt
+    // heil, und virtuellBeenden stellt beides wieder her (bis 1.3.131 loeschte der Start den echten
+    // Schaden, und virtuelle Zusammenstoesse blieben danach im Cockpit stehen).
+    VF.schadenVorher = (typeof damage === 'number') ? damage : null;
+    VF.flaggeVorher = (typeof flagState !== 'undefined') ? flagState : null;
     if (typeof damage === 'number') damage = 0;
     // Zustand der virtuellen Wertung (derby/knockout): Spieler und NPCs.
     VF.koLeben = 3;
@@ -3044,6 +3056,23 @@
     VF.aktiv = false;
     VF.npcs = null; VF.npcBogen = null; VF.npcRunde = 0;
     VF.schatte = null; VF.schatteProg = null; VF.grafik = false;
+    // Was die virtuelle Fahrt am echten Fahren veraendert hat, zuruecknehmen: Schaden wie beim Start,
+    // eine hier gesetzte gelbe Flagge (Knopf "Gelbe Flagge") aufheben, gehaltene Touch-Eingaben loslassen
+    // (die Schicht verschwindet, ein pointerup kaeme nie mehr) und keine dreckige Luft mitnehmen.
+    if (VF.schadenVorher !== null && VF.schadenVorher !== undefined && typeof damage === 'number') {
+      damage = VF.schadenVorher;
+      if (typeof updateDamageFuelUI === 'function') { try { updateDamageFuelUI(); } catch (e) { /* egal */ } }
+    }
+    VF.schadenVorher = null;
+    if (VF.flaggeVorher === 'green' && typeof flagState !== 'undefined' && flagState !== 'green') {
+      try {
+        if (typeof gelbBeenden === 'function') gelbBeenden();
+        if (typeof safetyCarHeim === 'function') safetyCarHeim();
+      } catch (e) { /* weiter */ }
+    }
+    VF.flaggeVorher = null;
+    try { releaseInput(SRC.TOUCH); } catch (e) { /* egal */ }
+    if (physEngine && physEngine.state) physEngine.state.dirtyAir = 0;
     document.body.classList.remove('vf-an');
     cancelAnimationFrame(VF.raf);
     clearInterval(VF.takt);

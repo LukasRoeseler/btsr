@@ -23835,6 +23835,54 @@
     return { ok, mass };
   });
 
+  // Review nach 1.3.131: die virtuelle Fahrt sickerte ins echte Fahren durch. Der Start loeschte den
+  // echten Schaden, Zusammenstoesse blieben danach stehen, eine virtuell gesetzte gelbe Flagge galt
+  // weiter, und Time Attack wertete jede Runde zweimal (einmal mit der Rundenzahl als Spielernummer).
+  // Echte Fahrt: virtuellStarten/virtuellBeenden synchron, ohne ein einziges Bild dazwischen.
+  stAdd('Virtuell: Schaden, gelbe Flagge und Touch-Eingabe sickern nicht ins echte Fahren', () => {
+    if (typeof virtuellStarten !== 'function' || typeof VF === 'undefined') return { skip: true, mass: 'kein virtuelles Fahren' };
+    if (VF.aktiv) return { skip: true, mass: 'virtuelle Fahrt laeuft gerade' };
+    if (!physicsEnabled) return { skip: true, mass: 'Fahrgefuehl ohne Physik (RC)' };
+    const f = [];
+    const merkTab = typeof kAktiverTab === 'function' ? kAktiverTab() : null;
+    const merk = { damage, flag: flagState, limitYellow, gelbAus: $('race-gelb-aus') ? $('race-gelb-aus').checked : null };
+    let gestartet = false;
+    try {
+      if ($('race-gelb-aus')) $('race-gelb-aus').checked = false;
+      damage = 37;
+      if (flagState !== 'green') gelbBeenden();
+      gestartet = virtuellStarten({ tiles: codeToTrack('SG3R2G3R2').tiles, studie: true });
+      if (!gestartet) return { skip: true, mass: 'virtuelle Fahrt startet hier nicht (kein WebGL?)' };
+      if (damage !== 0) f.push('virtuell nicht heil gestartet: ' + damage);
+      damage = 80;   // wie nach Zusammenstoessen (vfVerkehr)
+      const flagKnopf = VF.schicht.querySelector('[data-vf="flag"]');
+      if (!flagKnopf) f.push('Knopf Gelbe Flagge fehlt');
+      else flagKnopf.click();
+      if (flagState !== 'yellow') f.push('Knopf setzt keine gelbe Flagge (' + flagState + ')');
+      // Gas ueber die Beruehrungs-Steuerung halten und die Fahrt beenden, ohne loszulassen.
+      vfTouchAnzeigen(true);
+      const gas = VF.schicht.querySelector('.vf-touch-gas');
+      const r = gas.getBoundingClientRect();
+      gas.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 7, clientX: r.left + r.width / 2, clientY: r.top + 2, bubbles: true }));
+      if (!throttleClaim[SRC.TOUCH]) f.push('Touch-Gas greift nicht');
+      virtuellBeenden();
+      if (damage !== 37) f.push('Schaden nach dem Beenden ' + damage + ' statt 37');
+      if (flagState !== 'green') f.push('Flagge nach dem Beenden ' + flagState);
+      if (limitYellow !== 1) f.push('Gelb-Grenze bleibt ' + limitYellow);
+      if (throttleClaim[SRC.TOUCH]) f.push('Touch-Gas haengt nach dem Beenden');
+      if (physEngine.state.dirtyAir) f.push('dreckige Luft bleibt ' + physEngine.state.dirtyAir);
+      // Time Attack: die Runde wertet nur 70-race.js (die virtuelle Fahrt ruft bestzeitRunde nicht selbst).
+      if (/bestzeitRunde\(/.test(String(vfPaket))) f.push('vfPaket wertet Time Attack selbst');
+    } finally {
+      if (VF.aktiv) { try { virtuellBeenden(); } catch (e) { /* weiter */ } }
+      damage = merk.damage;
+      if (merk.flag === 'green' && flagState !== 'green') gelbBeenden();
+      if (merk.gelbAus !== null) $('race-gelb-aus').checked = merk.gelbAus;
+      if (merkTab && typeof showTab === 'function') showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'heil gestartet, Schaden 37 zurueck, Gelb aufgehoben, Touch losgelassen' };
+  });
+
   // v1.3.77 GEMELDET: die blaue Radar-Kopflinie (ACC) stach durch die anderen Cockpit-Schirme.
   stAdd('Cockpit v1.3.77: ACC-Radarlinie nur auf dem Hauptschirm', () => {
     const dash = $('race-dash'), box = $('race-wx-box');
