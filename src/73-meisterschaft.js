@@ -462,24 +462,51 @@
     if (lauf.fertig && meisterMpAndere().length) meisterMpEndstandSenden();
     // v1.3.129: Ansage am Event-Ende - welches Event es war und was als Naechstes kommt,
     // bzw. ganz am Ende, dass die Meisterschaft vorbei ist und wer gesamt gewonnen hat.
+    // Gesprochen wird Deutsch oder Englisch (Spanisch nutzt die englische Stimme), darum
+    // der Formatname aus I18N_EN und nicht ueber t().
     if (typeof ansage === 'function' && !abgebrochen) {
       const de = lang === 'de';
       const gesamt = meister.plan.events.length;
+      let text;
       if (lauf.fertig) {
         const top = meisterTabelle(lauf)[0];
-        if (top) ansage('meister', (de ? 'Meisterschaft vorbei. Gewonnen hat ' : 'Championship over. ')
-          + top.name + (de ? ' mit ' : ' with ') + top.pkt + (de ? ' Punkten.' : ' points.'));
-        else ansage('meister', de ? 'Meisterschaft vorbei.' : 'Championship over.');
+        text = top
+          ? (de ? 'Meisterschaft vorbei. Gewonnen hat ' + top.name + ' mit ' + top.pkt + ' Punkten.'
+                : 'Championship over. Winner: ' + top.name + ' with ' + top.pkt + ' points.')
+          : (de ? 'Meisterschaft vorbei.' : 'Championship over.');
       } else {
         const naechstes = meister.plan.events[lauf.idx];
         const nf = naechstes ? meisterFormat(naechstes) : null;
-        ansage('meister', (de ? 'Event ' : 'Event ') + (idx + 1) + (de ? ' von ' : ' of ') + gesamt
-          + (de ? ' beendet. Nächstes Event: ' : ' finished. Next event: ')
-          + (nf ? nf.name : (de ? '—' : '—')));
+        const nfName = nf ? (de ? nf.name : (I18N_EN[nf.name] || nf.name)) : (de ? 'keins' : 'none');
+        text = de ? 'Event ' + (idx + 1) + ' von ' + gesamt + ' beendet. Nächstes Event: ' + nfName + '.'
+                  : 'Event ' + (idx + 1) + ' of ' + gesamt + ' finished. Next event: ' + nfName + '.';
       }
+      meisterAnsageNachErgebnis(text);
     }
     // Erst das Rennergebnis sehen lassen, dann den Stand.
     setTimeout(() => meisterOeffnen('stand'), 2500);
+  }
+
+  // Die Meisterschaftsansage darf eine laufende oder noch ausstehende Ergebnis-/Rennstandansage
+  // nicht abbrechen. ansage() ohne Warteschlange (ansageSofort) schaltet erst alles still,
+  // auch rennstandAbbrechen() - die Ergebnisansage endete dann mitten im Satz. Deshalb wartet
+  // sie, bis die Ergebnisansage gesprochen (oder gar nicht vorgesehen) ist und nichts mehr
+  // spricht. Mit Warteschlange reiht ansage() danach ein; ohne spricht sie nach der
+  // laufenden. Hoechstens zwei Minuten, dann kommt sie trotzdem.
+  function meisterAnsageNachErgebnis(text) {
+    const bis = Date.now() + 120000;
+    const versuch = () => {
+      // Hat inzwischen das naechste Event begonnen, ist die Ansage ueberholt.
+      if (raceState === 'countdown' || raceState === 'racing' || raceState === 'finishing') return;
+      const ergebnisOffen = typeof rennstandErgebnisErlaubt === 'function'
+        && rennstandErgebnisGeplant && !rennstandErgebnisGesprochen && rennstandErgebnisErlaubt();
+      const spricht = (typeof rennstandBeschaeftigt === 'function' && rennstandBeschaeftigt())
+        || (!ansageWarteschlange && typeof ansagenWarten === 'function' && ansagenWarten())
+        || (!ansageWarteschlange && typeof lapAnsageBeschaeftigt === 'function' && lapAnsageBeschaeftigt());
+      if ((ergebnisOffen || spricht) && Date.now() < bis) { setTimeout(versuch, 250); return; }
+      ansage('meister', text);
+    };
+    versuch();
   }
 
   // ---- MEHRSPIELER --------------------------------------------------------------------------

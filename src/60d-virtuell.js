@@ -2918,7 +2918,9 @@
       try { localStorage.setItem(VF_ABSEITS_BREMSE_STORE, abseitsBremse ? 'aus' : 'an'); } catch (e) { /* egal */ }
       renderGarage();
     };
-    rechts.appendChild(garWertZeile(t('Kein Tempoverlust neben der Bahn'), abseitsBremse ? t('Aus') : t('An'), abseitsWahl, abseitsWahl));
+    const abseitsZeile = garWertZeile(t('Kein Tempoverlust neben der Bahn'), abseitsBremse ? t('Aus') : t('An'), abseitsWahl, abseitsWahl);
+    abseitsZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
+    rechts.appendChild(abseitsZeile);
     // NPCs: wie viele andere Autos mitfahren (0-3), zufaellige Skins aus den echten Modellen.
     const nNpc = vfNpcAnzahl();
     const npcWahl = (dd) => {
