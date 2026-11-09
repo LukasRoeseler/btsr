@@ -2217,6 +2217,10 @@
     // Ein aktiviertes lokales Intro bekommt ebenfalls die Ampel nach der Ansage.
     // CHALLENGE "Beste Runde" laeuft als freies Training, aber MIT Ampel: "Auto muss stehen,
     // dann kommt eine Ampel" (72-challenges.js).
+    // v1.3.15 (WIP, Optionen > System): Funkprioritaet je Rolle, solange alle stehen - gesteuerte
+    // Autos HIGH, NPCs & Co. BALANCED, gestaffelt (funkPrioritaetVorStart, 90-ghosts.js). Latenz (WIP):
+    // VOR dem Training-Ruecksprung, damit auch das Training ohne Ampel die Stufen bekommt.
+    if (typeof funkPrioritaetVorStart === 'function') funkPrioritaetVorStart();
     if (raceMode === 'practice' && !gruenBei && !(typeof challengeLaeuft === 'function' && challengeLaeuft())
         && !rennintroErlaubt(gruenZiel, mpPlan)) {
       raceState = 'racing';
@@ -2250,9 +2254,6 @@
     rennZeitTimeoutStop(raceCountdownTimer); raceCountdownTimer = null;
     ampelPlan = null; ampelSchritt = null; ampelK = 0;
     setRaceLights(0);
-    // v1.3.15 (WIP, Optionen > System): Funkprioritaet je Rolle, solange alle stehen - gesteuerte
-    // Autos HIGH, NPCs & Co. BALANCED, gestaffelt (funkPrioritaetVorStart, 90-ghosts.js).
-    if (typeof funkPrioritaetVorStart === 'function') funkPrioritaetVorStart();
     let ampelGestartet = false;
     const ampelBeginnen = () => {
       if (ampelGestartet || raceState !== 'countdown') return;

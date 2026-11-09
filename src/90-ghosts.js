@@ -1656,6 +1656,8 @@
     const name = role === 'player' ? 'Spieler 1' : zNeu ? 'Spieler ' + zNeu.nr
                : role === 'ghost' ? 'NPC' : role === 'challenger' ? 'Challenger' : role === 'safetycar' ? 'Safety Car' : role === 'reinig' ? 'Reinigungsfahrzeug' : 'keine';
     log(`${garageLabel(car)}: Rolle ${name}`, 'info');
+    // Latenz (WIP): die Funkprioritaet folgt der Rolle - entprellt und nur, solange nichts faehrt.
+    if (typeof funkPrioRolleGeaendert === 'function') funkPrioRolleGeaendert();
   }
 
   // ---- Der Fahrercharakter als Zeile in der Garage --------------------------------
@@ -2383,6 +2385,8 @@
     const player = garage.find(c => c.role === 'player');
     const ghosts = garage.filter(c => c.role === 'ghost');
     if (!player && !ghosts.length) return;
+    // Latenz (WIP): freie Fahrt ohne Ampel - die Prioritaet je Rolle hier, solange noch alle stehen.
+    funkPrioritaetVorStart();
     // KEIN showTab('race') mehr - BESTELLT: wer "Losfahren" drueckt, soll dort bleiben,
     // wo er gerade ist (z.B. um noch weitere Autos einzurichten), nicht automatisch ins
     // Cockpit springen. Wer fahren will, wechselt selbst in den Tab.
@@ -2450,6 +2454,9 @@
     car.rx = rx;
     car.tx = tx;
     rx.verbindungWeg = false;
+    // Latenz (WIP): eine neue Verbindung beginnt mit der HIGH-Anfrage der Bruecke - die zuletzt gesetzte
+    // Stufe gilt nicht mehr (sonst uebersprang funkPrioEinzeln die Anfrage als "schon gesetzt").
+    car.funkPrioStufe = null;
     car.notifyHandler = (e) => onCarNotify(car, e);
     await tx.startNotifications();
     tx.addEventListener('characteristicvaluechanged', car.notifyHandler);
@@ -2493,6 +2500,7 @@
         await verbindeGattSicher(car);
         car.reconnectVersuche = 0;
         log(`${garageLabel(car)} wieder verbunden.`, 'info');
+        funkPrioNachVerbinden(car);
       } catch (e) {
         log(`${garageLabel(car)}: Neu verbinden fehlgeschlagen: ${(e && e.message) || e}`, 'err');
         car.reconnectLaeuft = false;
@@ -2581,6 +2589,7 @@
       if (frei && gemerkt.role !== 'none') setCarRole(car, gemerkt.role);
       else if (!playerCar) setCarRole(car, 'player');
       else setCarRole(car, 'ghost');
+      funkPrioNachVerbinden(car);
       log(`${garageLabel(car)} verbunden (${garage.length} insgesamt)` + (opt && opt.auto ? ' - automatisch beim Start.' : '.'), 'info');
       playStartFx();
     } finally {
@@ -2747,8 +2756,10 @@
   }
   // v1.3.132: EIN Auto auf eine Stufe, nur beim Zustandswechsel (Safety Car: Ein- und Ausparken HOCH, danach
   // AUSGEWOGEN) - nie im Takt. Gleiche Stufe wie zuletzt gesetzt: nichts. Im Browser (ohne Bruecke) nichts.
-  function funkPrioEinzeln(car, stufe, grund) {
-    if (!car || car.sim || car.funkPrioStufe === stufe || !funkPrioAn()) return false;
+  // immer = true: auch bei gleicher gemerkter Stufe anfragen (nach dem Verbinden: Android faellt nach der
+  // Dienstsuche oft auf 30-50 ms zurueck, siehe 05-app-bruecke.js).
+  function funkPrioEinzeln(car, stufe, grund, immer) {
+    if (!car || car.sim || (car.funkPrioStufe === stufe && !immer) || !funkPrioAn()) return false;
     const b = window.OMEGA_BRUECKE;
     if (!b || typeof b.prioritaetSetzen !== 'function') return false;
     if (!(car.device && car.device.id && car.device.gatt && car.device.gatt.connected !== false && !(car.rx && car.rx.verbindungWeg))) return false;
@@ -2762,6 +2773,71 @@
     }, () => {});
     return true;
   }
+  // ---- FUNKPRIORITAET AUCH OHNE AMPEL (Latenz, WIP) ------------------------------------------
+  // GEFRAGT (Latenz mit 2 Spielern + NPCs): "Neu-Priorisierung waehrend Ampel - klappt das auch bei Training?
+  // Da gibt es naemlich keine Ampel." Bis hierher setzte nur der Countdown die Stufen; Training, freie Fahrt
+  // und jedes (Neu-)Verbinden liessen ALLE Autos auf HIGH (die Bruecke fragte 5 s nach dem Verbinden blind
+  // HIGH nach, auch fuer NPCs). Jetzt:
+  //   - Trainingsstart und "Losfahren" in der Garage rufen funkPrioritaetVorStart wie der Countdown,
+  //   - nach dem (Neu-)Verbinden fragt die APP nach FUNK_PRIO_NACH_VERBINDEN_MS die Stufe der Rolle an
+  //     (statt der blinden HIGH-Nachforderung der Bruecke, die dafuer prioNachVerbindenSelbst fragt),
+  //   - ein Rollenwechsel setzt die Stufe entprellt nach, aber nur, solange nichts faehrt.
+  // Schalter "Funkprioritaet beim Start" aus: alles wie vorher (Bruecke fragt HIGH nach, sonst nichts).
+  const FUNK_PRIO_NACH_VERBINDEN_MS = 5000, FUNK_PRIO_ROLLE_MS = 1000;
+  function funkPrioSollStufe(car) { return funkPrioGesteuert(car) ? 'hoch' : 'ausgewogen'; }
+  // Faehrt gerade etwas? Countdown/Rennen, ein laufender NPC (auch freie Fahrt) oder ein rollendes Spielerauto.
+  function funkPrioFahrtLaeuft() {
+    if (typeof raceState !== 'undefined' && (raceState === 'countdown' || raceState === 'racing' || raceState === 'finishing')) return true;
+    if (garage.some((c) => c && c.ghost && c.ghost.running)) return true;
+    try {
+      if (Math.abs(physEngine.state.speedKmh) > 0.01) return true;
+      for (const z of zusatzPlaetze()) if (z.car && z.motor && Math.abs(z.motor.state.speedKmh) > 0.01) return true;
+    } catch (e) { /* beim Laden */ }
+    return false;
+  }
+  // Nach dem (Neu-)Verbinden: die Stufe der Rolle, einmal, nach FUNK_PRIO_NACH_VERBINDEN_MS. Gehoert zum
+  // Verbindungsaufbau (die Bruecke fragte an derselben Stelle immer HIGH nach), auch waehrend eines Rennens.
+  // opt.planen nur fuer den Selbsttest.
+  function funkPrioNachVerbinden(car, opt) {
+    if (!car || car.sim || !funkPrioAn()) return false;
+    const planen = (opt && opt.planen) || ((fn, ms) => setTimeout(fn, ms));
+    const rx = car.rx;
+    car.funkPrioNachVerbindenBis = performance.now() + FUNK_PRIO_NACH_VERBINDEN_MS + 500;
+    planen(() => {
+      car.funkPrioNachVerbindenBis = 0;
+      if (garage.indexOf(car) < 0 || car.rx !== rx) return;   // getrennt oder inzwischen neu verbunden
+      funkPrioEinzeln(car, funkPrioSollStufe(car), 'verbunden', true);
+    }, FUNK_PRIO_NACH_VERBINDEN_MS);
+    return true;
+  }
+  // Rollenwechsel: alle verbundenen Autos auf die Stufe ihrer Rolle (nur geaenderte, siehe funkPrioEinzeln).
+  // Faehrt etwas, bleibt es beim Stand - der naechste Start (Countdown, Training, Losfahren) setzt ohnehin.
+  // Autos im Verbindungsaufbau ueberlaesst es funkPrioNachVerbinden. Rueckgabe: Zahl der Anfragen, -1 = faehrt.
+  function funkPrioRolleAnwenden(opt) {
+    if (!funkPrioAn()) return 0;
+    if (funkPrioFahrtLaeuft()) return -1;
+    const jetzt = performance.now();
+    let n = 0;
+    for (const car of ((opt && opt.autos) || garage)) {
+      if (!car || car.sim || (car.funkPrioNachVerbindenBis && jetzt < car.funkPrioNachVerbindenBis)) continue;
+      if (funkPrioEinzeln(car, funkPrioSollStufe(car), 'Rolle')) n++;
+    }
+    return n;
+  }
+  let funkPrioRolleUhr = null;
+  function funkPrioRolleGeaendert() {
+    if (!funkPrioAn()) return;
+    if (funkPrioRolleUhr) clearTimeout(funkPrioRolleUhr);
+    funkPrioRolleUhr = setTimeout(() => { funkPrioRolleUhr = null; funkPrioRolleAnwenden(); }, FUNK_PRIO_ROLLE_MS);
+  }
+  // Fuer die Bruecke (05-app-bruecke.js): uebernimmt die App die Prioritaet nach dem Verbinden dieses Geraets?
+  // Dann entfaellt dort die blinde HIGH-Nachforderung. Nur fuer Autos der Garage (bzw. im Garagen-Aufbau).
+  function funkPrioNachVerbindenSelbst(id) {
+    if (!funkPrioAn()) return false;
+    const k = String(id);
+    return garVerbindetGerade.has(k) || garage.some((c) => c.device && String(c.device.id) === k);
+  }
+  if (window.OMEGA_BRUECKE) window.OMEGA_BRUECKE.prioNachVerbindenSelbst = funkPrioNachVerbindenSelbst;
   function onCarNotify(car, e) {
     const b = notifyBytes(e.target.value);
     if (b.length < 16) return;

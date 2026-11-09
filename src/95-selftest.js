@@ -6508,6 +6508,83 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Spieler hoch, NPC/Safety Car/Reinigung ausgewogen, 150 ms gestaffelt, Schalter/Methode/Wachfunktion wie bestellt' };
   });
 
+  // Latenz (WIP): Funkprioritaet auch ohne Ampel - Training, Losfahren, (Neu-)Verbinden und Rollenwechsel.
+  // Mit Attrappen-Bruecke und Attrappen-Autos; nichts davon wartet auf echte Zeitgeber.
+  stAdd('Latenz: Funkprioritaet ohne Ampel - Training, Verbinden, Rollenwechsel, keine blinde HIGH-Nachforderung', async () => {
+    const f = [];
+    const merkB = window.OMEGA_BRUECKE;
+    const cb = $('setting-funk-prio');
+    const merkCb = cb ? cb.checked : null;
+    const merkGarage = garage.slice();
+    const merkRace = raceState;
+    const aufrufe = [];
+    const auto = (id, role) => ({ device: { id, name: id, gatt: { connected: true } }, role, rx: {}, alias: id });
+    const sp = auto('st-lp-sp', 'player'), npc = auto('st-lp-npc', 'ghost'), sc = auto('st-lp-sc', 'safetycar');
+    try {
+      if (cb) cb.checked = true;
+      window.OMEGA_BRUECKE = Object.assign({}, merkB || {}, {
+        prioritaetSetzen: (id, stufe) => { aufrufe.push({ id, stufe }); return Promise.resolve({ ok: true }); } });
+      window.OMEGA_BRUECKE.prioNachVerbindenSelbst = funkPrioNachVerbindenSelbst;
+      // 1. Training ohne Ampel: der Aufruf steht VOR dem Training-Ruecksprung, Losfahren ruft ihn auch.
+      const q = String(startRaceCountdown);
+      const iPrio = q.indexOf('funkPrioritaetVorStart()'), iTraining = q.indexOf("raceMode === 'practice' && !gruenBei");
+      if (iPrio < 0 || iTraining < 0 || iPrio > iTraining) f.push('Training ohne Ampel setzt keine Prioritaet');
+      if (String(garageGhostsStarten).indexOf('funkPrioritaetVorStart()') < 0) f.push('Losfahren setzt keine Prioritaet');
+      if (String(setCarRole).indexOf('funkPrioRolleGeaendert()') < 0) f.push('Rollenwechsel setzt keine Prioritaet');
+      // 2. Nach dem Verbinden: Stufe der Rolle nach 5 s, auch wenn dieselbe Stufe schon gemerkt ist.
+      garage.length = 0; garage.push(sp, npc, sc);
+      const geplant = [];
+      const planen = (fn, ms) => geplant.push({ fn, ms });
+      sp.funkPrioStufe = 'hoch';
+      funkPrioNachVerbinden(sp, { planen }); funkPrioNachVerbinden(npc, { planen }); funkPrioNachVerbinden(sc, { planen });
+      if (geplant.some((g) => g.ms !== 5000)) f.push('nach dem Verbinden nicht nach 5 s');
+      geplant.forEach((g) => g.fn());
+      const stufe = (id) => aufrufe.filter((a) => a.id === id).map((a) => a.stufe).join(',');
+      if (stufe('st-lp-sp') !== 'hoch') f.push('Spieler nach Verbinden: ' + stufe('st-lp-sp'));
+      if (stufe('st-lp-npc') !== 'ausgewogen') f.push('NPC nach Verbinden: ' + stufe('st-lp-npc'));
+      if (stufe('st-lp-sc') !== 'ausgewogen') f.push('Safety Car nach Verbinden: ' + stufe('st-lp-sc'));
+      // Inzwischen neu verbunden (anderes rx): die alte Planung feuert nicht.
+      aufrufe.length = 0; geplant.length = 0;
+      funkPrioNachVerbinden(npc, { planen }); npc.rx = {}; geplant.forEach((g) => g.fn());
+      if (aufrufe.length) f.push('alte Planung nach Neuverbinden gefeuert');
+      // 3. Bruecke: keine blinde HIGH-Nachforderung fuer Garagen-Autos, wohl fuer fremde und bei Schalter aus.
+      if (!funkPrioNachVerbindenSelbst('st-lp-npc')) f.push('Bruecke wuerde NPC blind auf HIGH setzen');
+      if (funkPrioNachVerbindenSelbst('st-lp-fremd')) f.push('fremdes Geraet ohne HIGH-Nachforderung');
+      const brueckeQuelle = Array.from(document.scripts).some((x) => x.text.indexOf('b.prioNachVerbindenSelbst(id)) return') >= 0);
+      if (!brueckeQuelle) f.push('Bruecke fragt die App nicht');
+      // 4. funkPrioStufe nach (Neu-)Verbinden zurueckgesetzt.
+      const tx = new EventTarget(); tx.startNotifications = async () => tx;
+      const dienst = { getCharacteristic: async (u) => (String(u).indexOf('0003') >= 0 ? tx : { properties: {} }) };
+      const neu = { device: { id: 'st-lp-neu', gatt: { connect: async () => ({ getPrimaryService: async () => dienst }) } },
+                    funkPrioStufe: 'ausgewogen', role: 'ghost' };
+      await verbindeGatt(neu);
+      if (neu.funkPrioStufe !== null) f.push('funkPrioStufe nach Neuverbinden: ' + neu.funkPrioStufe);
+      try { tx.removeEventListener('characteristicvaluechanged', neu.notifyHandler); } catch (e) { /* egal */ }
+      // 5. Rollenwechsel: nur geaenderte Stufen, nie waehrend einer Fahrt.
+      aufrufe.length = 0;
+      sp.funkPrioStufe = 'hoch'; npc.funkPrioStufe = 'hoch'; sc.funkPrioStufe = 'ausgewogen';
+      sp.funkPrioNachVerbindenBis = 0; npc.funkPrioNachVerbindenBis = 0; sc.funkPrioNachVerbindenBis = 0;
+      raceState = 'racing';
+      if (funkPrioRolleAnwenden({ autos: [sp, npc, sc] }) !== -1 || aufrufe.length) f.push('Rollenwechsel verhandelt waehrend der Fahrt');
+      raceState = 'idle';
+      const n = funkPrioRolleAnwenden({ autos: [sp, npc, sc] });
+      if (n !== 1 || stufe('st-lp-npc') !== 'ausgewogen') f.push('Rollenwechsel: ' + n + ' Anfragen, NPC ' + stufe('st-lp-npc'));
+      // 6. Schalter aus: altes Verhalten.
+      if (cb) {
+        cb.checked = false; aufrufe.length = 0; geplant.length = 0;
+        if (funkPrioNachVerbinden(npc, { planen }) || geplant.length) f.push('Schalter aus: plant trotzdem');
+        if (funkPrioRolleAnwenden({ autos: [sp, npc, sc] }) !== 0) f.push('Schalter aus: Rollenwechsel fragt an');
+        if (funkPrioNachVerbindenSelbst('st-lp-npc')) f.push('Schalter aus: Bruecke fragt nicht mehr HIGH nach');
+      }
+    } finally {
+      window.OMEGA_BRUECKE = merkB;
+      if (cb && merkCb !== null) cb.checked = merkCb;
+      raceState = merkRace;
+      garage.length = 0; merkGarage.forEach((c) => garage.push(c));
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Training/Losfahren/Verbinden/Rollenwechsel setzen Spieler hoch, NPC/SC ausgewogen; keine blinde HIGH-Nachforderung; Stufe nach Neuverbinden leer; Schalter aus = wie vorher' };
+  });
+
   // v1.2.45 BESTELLT: Latenz - Funkprioritaet nur einmal je Verbindung, SIMULATOR-Linie nur im Editor.
   stAdd('Latenz v1.2.45: Prioritaet einmal je Verbindung, SIMULATOR nur im Editor', () => {
     const f = [];

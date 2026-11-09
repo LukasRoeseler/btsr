@@ -467,10 +467,15 @@
       // 30-50 ms zurueck - die 45-ms-Pakete stauten sich. Die Abrisse mit Xbox/PS4-Controller wurden
       // unter Windows gemeldet, wo diese Bruecke gar nicht laeuft. Also wieder immer nachlegen.
       clearTimeout(this._prio);
+      // Latenz (WIP): uebernimmt die App die Stufe je Rolle (Schalter "Funkprioritaet beim Start" an, Auto der
+      // Garage), fragt SIE nach 5 s an (funkPrioNachVerbinden, 90-ghosts.js): Spieler HIGH, NPCs BALANCED.
+      // Sonst wie bisher HIGH. Vorher bekam hier jedes Auto blind HIGH, auch jeder NPC.
       this._prio = setTimeout(() => {
-        if (this.connected) {
-          ruf('requestConnectionPriority', { deviceId: id, connectionPriority: 1 }).catch(() => {});
-        }
+        if (!this.connected) return;
+        const b = window.OMEGA_BRUECKE;
+        try { if (b && typeof b.prioNachVerbindenSelbst === 'function' && b.prioNachVerbindenSelbst(id)) return; }
+        catch (e) { /* dann wie bisher */ }
+        ruf('requestConnectionPriority', { deviceId: id, connectionPriority: 1 }).catch(() => {});
       }, 5000);
       return this;
     }
