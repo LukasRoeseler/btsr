@@ -407,6 +407,14 @@
         + 'In die Box (anhalten, Box aktivieren).', 'err');
     zevBannerMalen(true);
   }
+  // Fruehstart (70-race.js, v1.3.132): dieselbe Durchfahrtsstrafe, ohne Gelb-Ansage. Abgeleistet
+  // ueber zevBoxStopp (Spieler 1 und 2/3), sonst +20 s am Rennende (zevRennende).
+  function zevStrafeDazu(nr) {
+    if (typeof zev === 'undefined' || !zev || !zev.strafe[nr]) return false;
+    zev.strafe[nr].offen += 1;
+    zevBannerMalen(true);
+    return true;
+  }
   function zevStrafeOffen(nr) { return typeof zev !== 'undefined' && zev && zev.strafe[nr] ? zev.strafe[nr].offen : 0; }
   function zevStrafeZeitMs(nr) { return typeof zev !== 'undefined' && zev && zev.strafe[nr] ? zev.strafe[nr].zeitMs : 0; }
   // Beim Beginn eines Boxenstopps (Auto steht in der Box). Ein Tank-Leck ist danach dicht. Rueckgabe:

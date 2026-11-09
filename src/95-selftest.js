@@ -284,10 +284,9 @@
       }
       // 3. VOLL AUSGENUTZT MITTEN IM KURVENZUG: mit zwei weiteren gleichsinnigen Kacheln
       //    voraus ist der Mittelwert exakt die volle Querlage (alle drei Kacheln des Fensters
-      //    drehen gleich). Seit v1.3.123 begrenzt npcQuerFaktor() die Linie; die volle Querlage
-      //    ist damit dieser Faktor und nicht mehr 1.
-      const qF = npcQuerFaktor();
-      if (Math.abs(proTile[4] - qF) > 1e-6 || Math.abs(proTile[5] - qF) > 1e-6) {
+      //    drehen gleich). Die NPC-Querlage (npcQuerFaktor) begrenzt seit v1.3.132 nur die
+      //    AUSSENSEITE; die Linie liegt hier innen und ist damit voll (1).
+      if (Math.abs(proTile[4] - 1) > 1e-6 || Math.abs(proTile[5] - 1) > 1e-6) {
         schlecht.push('nicht voll ausgenutzt mitten im Kurvenzug: ' + proTile[4] + ',' + proTile[5]);
       }
       // 4. WEICHER ABSTIEG zum Kurvenende hin, aus demselben Grund wie der Anstieg.
@@ -328,14 +327,19 @@
       teile.push('Kachel 4+5 (Gerade): ' + proTile[4].join(',') + ' / ' + proTile[5].join(','));
       teile.push('Kachel 6 (Kurve): ' + proTile[6].join(','));
       // 1. HART: die Kurve steht von der ALLERERSTEN Kachel an auf voller Staerke, kein
-      //    Uebergang wie bei dreiStufenLine (dort erst nach SPUR_EIN aussen). Seit v1.3.123
-      //    begrenzt npcQuerFaktor() die Linie; volle Staerke ist damit dieser Faktor.
+      //    Uebergang wie bei dreiStufenLine (dort erst nach SPUR_EIN aussen). Die NPC-Querlage
+      //    (npcQuerFaktor) begrenzt seit v1.3.132 nur die AUSSENSEITE: in der Kurve (innen) voll,
+      //    am Ende der Geraden davor (aussen) hoechstens der Faktor.
       const qF = npcQuerFaktor();
-      if (!proTile[3].every((v) => Math.abs(v) === qF)) {
-        schlecht.push('Kurve (Kachel 3) nicht durchgehend auf voller Staerke: ' + proTile[3].join(','));
+      if (!proTile[3].every((v) => v === 1)) {
+        schlecht.push('Kurve (Kachel 3) innen nicht durchgehend voll: ' + proTile[3].join(','));
       }
-      if (!proTile[6].every((v) => Math.abs(v) === qF)) {
-        schlecht.push('Kurve (Kachel 6) nicht durchgehend auf voller Staerke: ' + proTile[6].join(','));
+      if (!proTile[6].every((v) => v === 1)) {
+        schlecht.push('Kurve (Kachel 6) innen nicht durchgehend voll: ' + proTile[6].join(','));
+      }
+      const aussenMax = Math.max(...proTile[5].map((v) => (v < 0 ? -v : 0)));
+      if (!(aussenMax > 0 && aussenMax <= qF + 1e-3)) {
+        schlecht.push('Gerade vor der Kurve aussen ' + aussenMax + ' statt 0 < x <= ' + qF);
       }
       // 2. GEGENSINNIG: die Kurve steht innen, die Geradenfolge davor endet aussen -
       //    entgegengesetztes Vorzeichen, sonst waere "aussen anfahren" bedeutungslos.
@@ -353,6 +357,38 @@
     }
     return { ok: schlecht.length === 0,
              mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // v1.3.132: NPC-Querlage begrenzt nur die AUSSENSEITE, der Wert kommt aus ghostCfg (kein DOM im Takt).
+  stAdd('NPC-Querlage v1.3.132: aussen begrenzt, innen voll, Wert gecacht', () => {
+    const f = [];
+    const el = $('npc-querlage');
+    const merk = { tiles: currentTrackTiles, wert: el ? el.value : null };
+    try {
+      if (!el) return { ok: false, mass: 'Option npc-querlage fehlt' };
+      el.value = '0.8'; el.dispatchEvent(new Event('change'));
+      if (ghostCfg.npcQuer !== 0.8 || npcQuerFaktor() !== 0.8) f.push('change nicht in ghostCfg (' + ghostCfg.npcQuer + ')');
+      if (String(npcQuerBegrenzen).indexOf('$(') >= 0) f.push('npcQuerBegrenzen liest das DOM');
+      currentTrackTiles = codeToTrack('SG2RG2L').tiles;          // 0 S, 1-2 G, 3 R, 4-5 G, 6 L
+      const auto = (k) => ({ ghost: { tileIndex: k }, tileCode: currentTrackTiles[k].type });
+      // Rechtskurve: innen = rechts (+) voll, aussen = links (-) auf den Faktor.
+      if (npcQuerBegrenzen(auto(3), 1, 0.5) !== 1) f.push('R innen begrenzt: ' + npcQuerBegrenzen(auto(3), 1, 0.5));
+      if (Math.abs(npcQuerBegrenzen(auto(3), -1, 0.5) + 0.8) > 1e-6) f.push('R aussen ' + npcQuerBegrenzen(auto(3), -1, 0.5) + ' statt -0,8');
+      // Linkskurve spiegelbildlich.
+      if (npcQuerBegrenzen(auto(6), -1, 0.5) !== -1) f.push('L innen begrenzt');
+      if (Math.abs(npcQuerBegrenzen(auto(6), 0.5, 0.5) - 0.4) > 1e-6) f.push('L aussen ' + npcQuerBegrenzen(auto(6), 0.5, 0.5) + ' statt 0,4');
+      // Gerade zwischen R und L: Seite laeuft stetig von +1 nach -1, in der Mitte keine Begrenzung.
+      const mitte = npcQuerBegrenzen(auto(4), -1, 1);
+      if (Math.abs(mitte + 1) > 1e-6) f.push('Mitte der Geraden begrenzt: ' + mitte);
+      // Ohne Ort: die gemeldete Kachel entscheidet.
+      if (Math.abs(npcQuerBegrenzen({ ghost: {}, tileCode: TILE_TYPE.CURVE_RIGHT }, -1) + 0.8) > 1e-6) f.push('ohne Ort nicht begrenzt');
+      el.value = '1'; el.dispatchEvent(new Event('change'));
+      if (npcQuerBegrenzen(auto(3), -1, 0.5) !== -1) f.push('100 %: trotzdem begrenzt');
+    } finally {
+      currentTrackTiles = merk.tiles;
+      if (el) { el.value = merk.wert; el.dispatchEvent(new Event('change')); }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'R/L innen 1, aussen x Faktor, Gerade stetig, Wert aus ghostCfg' };
   });
 
   // ---- Luuke-Linie: die fuenf verlaesslichen Beispiele treffen die vorgegebene Querlage ----
@@ -6627,17 +6663,22 @@
     const src = String(ghostTick);
     if (src.indexOf('(ghostIstMax(car) && tight === 0)) ? 1 : ghostFeldStaffel(car)') < 0) f.push('Staffel bremst MAX auf Geraden');
     if (src.indexOf('if (!ghostIstMax(car)) {') < 0) f.push('Lernfaktor/Streuung drosseln MAX');
-    // Scan: Gerade 0,72, Kurve 0,60, Haarnadel 0,42. Seit v1.3.114 ist die Basis (formationPace)
-    // um 20 % hoeher; die Faktoren sind gegengerechnet, damit der Scan nur leicht schneller wird
-    // (0,42 x 0,72 = 0,302 statt 0,35 x 0,80 = 0,28). Vorher 0,80/0,67/0,47.
+    // Scan: seit 1.3.114 Faktoren 0,72/0,60/0,42 auf das hoehere Formationstempo 0,42 - absolut nur LEICHT
+    // schneller als v1.2.5 (0,80/0,67/0,47 auf 0,35): jeder Teiltyp 0 bis 10 % darueber.
     const s1 = scanTempoFaktor({ tileCode: TILE_TYPE.STRAIGHT }), s2 = scanTempoFaktor({ tileCode: TILE_TYPE.CURVE_RIGHT }),
           s3 = scanTempoFaktor({ tileCode: TILE_TYPE.HAIRPIN });
-    if (s1 !== 0.72 || s2 !== 0.60 || s3 !== 0.42) f.push('Scan-Tempi ' + [s1, s2, s3].join('/'));
+    [[s1, 0.80], [s2, 0.67], [s3, 0.47]].forEach(([s, alt]) => {
+      const q = formationPace() * s / (0.35 * alt);
+      if (!(q >= 1 - 1e-9 && q <= 1.10)) f.push('Scan-Tempo ' + s + ' absolut ' + q.toFixed(3) + 'x v1.2.5');
+    });
+    if (!(s1 > s2 && s2 > s3)) f.push('Scan-Tempi nicht Gerade > Kurve > Haarnadel: ' + [s1, s2, s3].join('/'));
+    // Formationstempo 0,42 (global): die Randphasen rollen denselben WEG wie bei 0,35.
+    if (Math.abs(randWegMs(PIT_RAND_MS) * formationPace() - PIT_RAND_MS * 0.35) > 1e-6) f.push('Randphase rollt weiter als bei 0,35');
     // Schaltklang: Schalter ab Werk aus (neu), die Mischung bleibt beim Schalten stehen.
     if (!$('setting-schaltklang-alt') || $('setting-schaltklang-alt').defaultChecked) f.push('Schaltklang-Schalter fehlt oder ab Werk alt');
     if (String(updateSampleEngineIn).indexOf('store.schaltMix') < 0) f.push('Schaltklang haelt die Mischung nicht');
     if (!$('setting-npc-klang-alt') || $('setting-npc-klang-alt').defaultChecked) f.push('NPC-Klang-Schalter fehlt oder ab Werk alt');
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'MAX Arcade ohne Schaltpause, Staffel/Lernen aus, Scan 0,72/0,60/0,42, Schaltklang neu, NPC 5200/min' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'MAX Arcade ohne Schaltpause, Staffel/Lernen aus, Scan 0,72/0,60/0,42 auf 0,42 (+0-10 %), Randweg wie bei 0,35, Schaltklang neu, NPC 5200/min' };
   });
 
   stAdd('Rennen und Spieler v1.2.4: Renntyp je Sensormodus, Fahrgefuehl je Spieler, Pacejka-Challenges', () => {
@@ -6710,10 +6751,58 @@
       const b = scEinPassend(0);
       if (!(a.faktor < 1) || b.faktor !== 1) f.push('Stauchung falsch (kurz ' + a.faktor.toFixed(2) + ', lang ' + b.faktor.toFixed(2) + ')');
       if (!(a.skript[1][2] < MANOEVER.scEin[1][2])) f.push('Gas der Folge nicht gestaucht');
+      // v1.3.132: weite Kurve, Engstelle, Box zaehlen als frei; die Folge beginnt FRUEHER statt gestaucht
+      // zu werden und endet auf (bzw. vor dem Ende der freien Teile ab) dem Parkteil. Startgas = Einfahrttempo.
+      const v0 = scParkTempo();
+      [['SGWG2', true], ['SW12', false], ['SGKG2', true], ['SEG', false]].forEach(([code, aufTeil]) => {
+        currentTrackTiles = codeToTrack(code).tiles;
+        const p = scEinPassend(0, v0);
+        const frei = Math.max(0.5, p.gerade - EINPARK_RESERVE);
+        if (p.faktor !== 1) f.push(code + ': Gas gestaucht (x ' + p.faktor.toFixed(2) + ', frei ' + p.gerade + '+' + p.vor + ', D ' + p.D.toFixed(2) + ')');
+        if (!(p.ab < 0)) f.push(code + ': nicht frueher ausgeloest (ab ' + p.ab + ')');
+        if (!(p.ende <= (aufTeil ? 1 : frei) + 1e-9)) f.push(code + ': Ende ' + p.ende.toFixed(2) + ' hinter ' + (aufTeil ? 'dem Teil' : 'den freien Teilen'));
+        if (Math.abs(p.ende - p.ab - p.D) > 1e-9) f.push(code + ': Ende passt nicht zu Start + Rollweg');
+      });
+      // Notfall: nichts frei davor, nur Start/Ziel danach -> weiter gestaucht (Untergrenze 0,5).
+      currentTrackTiles = codeToTrack('SRG4R').tiles;
+      if (!(scEinPassend(0, v0).faktor < 1)) f.push('SRG4R ohne Notfall-Stauchung');
+      // Ausloesen: ab Plan-Punkt vor k, bis zum Ende von k nachgeholt, danach nicht mehr.
+      currentTrackTiles = codeToTrack('SGWG2').tiles;                  // 0 S, 1 G, 2 W, 3 G, 4 G
+      const plan = scEinPassend(0, v0), auto = (k) => ({ ghost: { tileIndex: k } });
+      if (einparkAusgeloest(auto(3), 0, plan.ab)) f.push('loest 2 Teile vorher aus (Plan ' + plan.ab.toFixed(2) + ')');
+      if (!einparkAusgeloest(auto(4), 0, plan.ab)) f.push('loest auf dem Teil davor nicht aus');
+      if (!einparkAusgeloest(auto(0), 0, plan.ab)) f.push('verschluckte Kachel davor: auf k nicht nachgeholt');
+      if (einparkAusgeloest(auto(1), 0, plan.ab)) f.push('loest hinter k noch aus');
+      // Rollweg mit echtem Startgas: schneller hinein = weiter.
+      if (!(scRollweg(MANOEVER.scEin, 0.42) > scRollweg(MANOEVER.scEin, 0.3))) f.push('Rollweg ohne Startgas');
+      // NPC-Box: Engstelle zaehlt als Gerade.
+      currentTrackTiles = codeToTrack('SG2RE2G2R').tiles;
+      if (npcBoxNeben(0) !== 4) f.push('NPC-Box nicht auf der Engstelle (' + npcBoxNeben(0) + ')');
+      // Fehlende Kacheltypen.
+      if (kurvenSeite(TILE_TYPE.WEIT_RIGHT) !== 1 || kurvenSeite(TILE_TYPE.KLEIN_LEFT) !== -1) f.push('kurvenSeite ohne 30-Grad-Teile');
+      if (scanLiveCode(TILE_TYPE.WEIT_LEFT) !== TILE_TYPE.WEIT_LEFT || scanLiveCode(TILE_TYPE.KLEIN_RIGHT) !== TILE_TYPE.KLEIN_RIGHT) f.push('scanLiveCode ohne 30-Grad-Teile');
+      if (!(Math.abs(tileLengthM(TILE_TYPE.WEIT_RIGHT) - 0.586) < 0.01 && Math.abs(tileLengthM(TILE_TYPE.KLEIN_LEFT) - 0.194) < 0.01)) f.push('tileLengthM ohne 30-Grad-Teile');
     } finally { currentTrackTiles = merk.tiles; garage.length = 0; merk.garage.forEach((c) => garage.push(c)); }
+    // Funkprioritaet: HOCH beim Ein-/Ausparken, danach AUSGEWOGEN, nur beim Wechsel.
+    {
+      const b = window.OMEGA_BRUECKE = window.OMEGA_BRUECKE || {};
+      const merkP = b.prioritaetSetzen, cb = $('setting-funk-prio'), merkCb = cb ? cb.checked : null;
+      const aufrufe = [];
+      try {
+        if (cb) cb.checked = true;
+        b.prioritaetSetzen = (id, stufe) => { aufrufe.push(stufe); return Promise.resolve({ ok: true }); };
+        const sc = { role: 'safetycar', device: { id: 'probe-sc-prio', gatt: { connected: true } } };
+        funkPrioEinzeln(sc, 'hoch', 'Test'); funkPrioEinzeln(sc, 'hoch', 'Test'); funkPrioEinzeln(sc, 'ausgewogen', 'Test');
+        if (aufrufe.join(',') !== 'hoch,ausgewogen') f.push('Funkprioritaet ' + aufrufe.join(','));
+      } finally {
+        if (merkP) b.prioritaetSetzen = merkP; else delete b.prioritaetSetzen;
+        if (cb) cb.checked = merkCb;
+      }
+      if (String(scParkTick).indexOf("funkPrioEinzeln(car, 'hoch'") < 0 || String(safetyCarFertig).indexOf("'ausgewogen'") < 0) f.push('SC-Einparken setzt die Prioritaet nicht');
+    }
     if (String(pitTick).indexOf("p.phase = 'einparken'") < 0 || String(pitTick).indexOf('scAusSkript()') < 0) f.push('NPC-Box nicht mit Safety-Car-Folgen');
     if (String(npcBoxKlang).indexOf("'repair'") < 0) f.push('keine Ratsche im Stand');
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Haken/Kreuz/nichts, vier im Voraus, mechanisch, NPC-Box neben dem SC, SC-Gas gestaucht' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Haken/Kreuz/nichts, vier im Voraus, mechanisch, NPC-Box neben dem SC, SC-Gas nur im Notfall gestaucht, SGWG2/SW12/SGKG2/SEG frueher ausgeloest und ohne Stauchung, Funkprioritaet beim Parken' };
   });
 
   stAdd('Kopplung, Abgleich und Karte v1.1.45: Trennen bei Fehler, Entwurf bis Uebernehmen, Punkt springt nicht', async () => {
@@ -13890,19 +13979,29 @@
       if (!fruehstartGas(1)) f.push('Gas-Flag nicht gesetzt');
       fruehstartReset(); fruehstartGasSetzen(1, false);
       if (fruehstartGas(1)) f.push('Gas-Flag nach Reset noch gesetzt');
+      // Gas-Pruefung im Sendetakt (auch RC-Weg, 20-protocol.js): sperrt und merkt erst ab der Schwelle.
+      raceState = 'countdown'; fruehstartReset();
+      if (!fruehstartGasPruefen(2, 0.03)) f.push('Pruefung sperrt im Countdown nicht');
+      if (fruehstartGas(2)) f.push('Gas unter der Schwelle schon Fruehstart');
+      fruehstartGasPruefen(2, 0.5);
+      if (!fruehstartGas(2)) f.push('Gas ueber der Schwelle nicht gemerkt');
+      raceState = 'racing'; fruehstartReset();
+      if (fruehstartGasPruefen(1, 1)) f.push('Pruefung sperrt nach Gruen');
+      if (fruehstartGas(1)) f.push('nach Gruen als Fruehstart gemerkt');
+      // Durchfahrt = Durchfahrtsstrafe der Zufallsevents, fuer P1 UND P2/P3.
       $('race-fruehstart-strafe').value = 'pit';
-      fruehstartReset(); fruehstartAnwenden(1);
-      if (!fruehstartDurchfahrt(1)) f.push('Durchfahrt nicht gesetzt');
-      fruehstartDurchfahrtErledigt(1);
-      if (fruehstartDurchfahrt(1)) f.push('Durchfahrt nicht erledigt');
+      zevAllesZurueck(); fruehstartReset(); fruehstartAnwenden(1); fruehstartAnwenden(2);
+      if (zevStrafeOffen(1) !== 1) f.push('P1 Durchfahrt nicht offen');
+      if (zevStrafeOffen(2) !== 1) f.push('P2 Durchfahrt nicht offen');
+      if (!zevBoxStopp(2) || zevStrafeOffen(2) !== 0) f.push('P2 Durchfahrt in der Box nicht abgeleistet');
       $('race-fruehstart-strafe').value = 'keine';
-      fruehstartReset(); fruehstartAnwenden(1);
-      if (fruehstartDurchfahrt(1)) f.push('keine: trotzdem Durchfahrt');
+      zevAllesZurueck(); fruehstartReset(); fruehstartAnwenden(1);
+      if (zevStrafeOffen(1)) f.push('keine: trotzdem Durchfahrt');
     } finally {
-      raceState = merkState; raceFlying = merkFlying; fruehstartReset();
+      raceState = merkState; raceFlying = merkFlying; fruehstartReset(); zevAllesZurueck();
       $('race-fruehstart-strafe').value = merkStrafe;
     }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Sperre im Countdown (stehend), frei nach Gruen und beim Fliegenden' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Sperre im Countdown (stehend), frei nach Gruen und beim Fliegenden, Durchfahrt P1/P2 ueber die Box' };
   });
 
   // ---- CHALLENGES (v0.8.30) ----
@@ -21212,6 +21311,7 @@
       $('race-fruehstart-strafe').value = '5s';
       fruehstartReset();
       fruehstart[1].frueh = true; fruehstart[3].frueh = true;
+      fruehstartAnwenden(1); fruehstartAnwenden(3);
       if (fruehstartZuschlag(1, 1) !== 0) f.push('Zuschlag auf Runde 2');
       if (fruehstartZuschlag(1, 0) !== 5000) f.push('kein Zuschlag auf Runde 1');
       if (fruehstartZuschlag(1, 0) !== 0) f.push('Zuschlag doppelt');
@@ -21219,9 +21319,45 @@
       if (fruehstartZuschlag(2, 0) !== 0) f.push('Spieler 2 ohne Fruehstart bestraft');
       fruehstartReset(); fruehstart[1].frueh = true;
       $('race-fruehstart-strafe').value = 'keine';
+      fruehstartAnwenden(1);
       if (fruehstartZuschlag(1, 0) !== 0) f.push('keine: trotzdem Zuschlag');
     } finally { $('race-fruehstart-strafe').value = merk; fruehstartReset(); }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'einmal +5 s auf Runde 1, je Spieler, Rennoption wirkt' };
+  });
+
+  stAdd('Fruehstart v1.3.132: Zusatzrunde je Fahrer (nur Rundenrennen), Challenge = Zeitstrafe', () => {
+    const f = [];
+    const merk = { wert: $('race-fruehstart-strafe').value, mode: raceMode, limit: raceLimit, rs: raceState,
+                   lt: raceLapTimes, ch: challengeLaeuft, start: raceStartedAt };
+    try {
+      $('race-fruehstart-strafe').value = 'extra';
+      raceMode = 'laps'; raceLimit = 5; fruehstartReset(); zevAllesZurueck();
+      fruehstartAnwenden(1);
+      if (raceLimit !== 5) f.push('raceLimit veraendert (' + raceLimit + ')');
+      if (fruehstartZielPlus(1) !== 1) f.push('P1 ohne Zusatzrunde');
+      if (fruehstartZielPlus(2) !== 0) f.push('P2 ohne Fruehstart mit Zusatzrunde');
+      raceState = 'racing'; raceStartedAt = rennZeitJetzt();
+      raceLapTimes = [1, 2, 3, 4, 5].map((i) => ({ lap: i, ms: 10000, crossedAt: i }));
+      const andere = raceAllCars().filter((c) => c.role !== 'player' && (c.laps || []).length >= 5);
+      if (!andere.length && raceLimitReached()) f.push('Flagge schon bei 5 Runden des bestraften P1');
+      raceLapTimes = raceLapTimes.concat([{ lap: 6, ms: 10000, crossedAt: 6 }]);
+      if (!raceLimitReached()) f.push('keine Flagge bei 6 Runden');
+      if (raceLapTarget(2) !== '2 / 6') f.push('Anzeige ' + raceLapTarget(2) + ' statt 2 / 6');
+      // Andere Rennarten: Durchfahrt statt Zusatzrunde.
+      raceMode = 'endurance'; fruehstartReset(); zevAllesZurueck();
+      if (fruehstartStrafe() !== 'pit') f.push('Zeitrennen: ' + fruehstartStrafe() + ' statt pit');
+      fruehstartAnwenden(1);
+      if (fruehstartZielPlus(1) !== 0 || zevStrafeOffen(1) !== 1) f.push('Zeitrennen: keine Durchfahrt');
+      // Challenge: immer Zeitstrafe.
+      challengeLaeuft = () => true;
+      $('race-fruehstart-strafe').value = 'pit';
+      if (fruehstartStrafe() !== '5s') f.push('Challenge: ' + fruehstartStrafe() + ' statt 5s');
+    } finally {
+      challengeLaeuft = merk.ch; $('race-fruehstart-strafe').value = merk.wert; raceMode = merk.mode;
+      raceLimit = merk.limit; raceState = merk.rs; raceLapTimes = merk.lt; raceStartedAt = merk.start;
+      fruehstartReset(); zevAllesZurueck();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'raceLimit bleibt, Ziel P1 = 6 von 5, Zeitrennen = Durchfahrt, Challenge = 5 s' };
   });
 
   stAdd('Menue im Rennen: erst fragen, Rennen laeuft weiter', () => {
@@ -25756,7 +25892,7 @@
     if (src.indexOf('Math.min(target, aufstellTempo(car))') >= 0 || src.indexOf('aufstellTempo(car) * abstand') < 0) {
       f.push('Aufstelltempo haengt noch am Renntempo');
     }
-    // Ausparken: jeder Takt = Aufnahme x Faktor, Lenkung und Zeiten unveraendert.
+    // Ausparken: jeder Takt = Aufnahme x Faktor (Gas); seit v1.3.132 Lenkung und Zeiten x SC_AUS_SKALA.
     const el = $('sc-aus-gas'), merkV = el ? el.value : null;
     try {
       if (el) el.value = '1.5';
@@ -25764,7 +25900,8 @@
       if (sk.length !== MANOEVER.scAus.length) f.push('Laenge der Folge');
       for (let i = 0; i < sk.length; i++) {
         const a = MANOEVER.scAus[i], b = sk[i];
-        if (a[0] !== b[0] || a[1] !== b[1] || Math.abs(b[2] - Math.min(1, a[2] * 1.5)) > 1e-12) { f.push('Takt ' + i + ' weicht ab'); break; }
+        if (b[0] !== Math.round(a[0] * SC_AUS_SKALA) || Math.abs(b[1] - a[1] * SC_AUS_SKALA) > 1e-12
+            || Math.abs(b[2] - Math.min(1, a[2] * 1.5)) > 1e-12) { f.push('Takt ' + i + ' weicht ab'); break; }
       }
       // ...und genau das sendet die Folge: skriptSchritt an jedem Aufnahmezeitpunkt.
       const h = { at: 0, anpassMs: 0, vonDrive: 0, skript: sk, lenkFaktor: undefined };
@@ -25774,7 +25911,42 @@
       }
       if (!el || Math.abs(parseFloat(el.defaultValue) - 1.5) > 1e-9) f.push('Regler fehlt oder Vorgabe nicht 1,5');
     } finally { if (el) el.value = merkV; }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Reihen je halbe Kachel, Kurve mit Lenkimpuls, Aufstelltempo fest, Ausparkgas = Aufnahme x 1,5' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Reihen je halbe Kachel, Kurve mit Lenkimpuls, Aufstelltempo fest, Ausparkgas = Aufnahme x 1,5, Lenkung/Zeit x 0,7' };
+  });
+
+  // v1.3.132: Ausparken (Box, Safety Car) schwaecher und kuerzer; das Schlaengeln wieder 0,10.
+  stAdd('Ausparken v1.3.132: Folge schwaecher und kuerzer, endet gerade in Fahrt, Schlaengeln 0,10', () => {
+    const f = [];
+    if (GHOST_WEAVE !== 0.10) f.push('GHOST_WEAVE ' + GHOST_WEAVE + ' statt 0,10');
+    // Kinematik (Fahrradmodell): Tempo ~ Gas, Kursaenderung ~ Lenkung x Tempo. Nur zum VERGLEICHEN.
+    const fahr = (sk) => {
+      let th = 0, y = 0, lenkSumme = 0;
+      for (let i = 1; i < sk.length; i++) {
+        const dt = (sk[i][0] - sk[i - 1][0]) / 1000, l = sk[i - 1][1], v = sk[i - 1][2] * SC_GAS_MPS;
+        lenkSumme += Math.abs(l) * dt; th += l * v / 0.3 * dt; y += v * Math.sin(th) * dt;
+      }
+      return { th, y, lenkSumme, dauer: manoeverDauer(sk) };
+    };
+    const el = $('sc-aus-gas'), merkV = el ? el.value : null;
+    try {
+      if (el) el.value = '1.5';
+      const alt = fahr(MANOEVER.scAus.map(([ms, l, g]) => [ms, l, Math.min(1, g * 1.5)])), neu = fahr(scAusSkript());
+      if (!(neu.lenkSumme < alt.lenkSumme * 0.8)) f.push('Lenk-Summe ' + neu.lenkSumme.toFixed(2) + ' nicht deutlich unter ' + alt.lenkSumme.toFixed(2));
+      if (!(neu.dauer < alt.dauer * 0.8)) f.push('Dauer ' + neu.dauer + ' nicht deutlich unter ' + alt.dauer);
+      if (!(neu.y < 0)) f.push('schert nicht nach links aus (y ' + neu.y.toFixed(3) + ')');
+      if (!(Math.abs(neu.y) < Math.abs(alt.y))) f.push('schert nicht weniger aus');
+      if (!(Math.abs(neu.th) <= Math.abs(alt.th) + 1e-9)) f.push('steht am Ende schraeger (' + neu.th.toFixed(3) + ' rad)');
+      const ende = scAusSkript()[MANOEVER.scAus.length - 1];
+      if (ende[1] !== 0 || !(ende[2] > 0.05)) f.push('endet nicht gerade in Fahrt');
+      // Danach faehrt es weiter (weiter: true) - die Spurfuehrung bringt es auf die Linie zurueck.
+      const sc = { ghost: {} };
+      randHaltStarten(sc, { phase: 'skript', quer: 0, skript: scAusSkript(), anpassMs: 0, vonDrive: 0, weiter: true });
+      sc.ghost.randHalt.at = rennZeitJetzt() - (neu.dauer + 5);
+      randHaltTick(sc);
+      if (sc.ghost.randHalt) f.push('nach der kuerzeren Folge kein Weiterfahren');
+      return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Lenk-Summe ' + alt.lenkSumme.toFixed(2) + ' -> ' + neu.lenkSumme.toFixed(2)
+        + ', Dauer ' + alt.dauer + ' -> ' + neu.dauer + ' ms, Versatz ' + (alt.y * 100).toFixed(1) + ' -> ' + (neu.y * 100).toFixed(1) + ' cm (Modell), gerade in Fahrt' };
+    } finally { if (el) el.value = merkV; }
   });
 
   // v1.1.39 BESTELLT: Gummiband - mit viel Vorsprung Runde fuer Runde langsamer, bis er ueberholt

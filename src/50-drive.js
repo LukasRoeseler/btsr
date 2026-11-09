@@ -2996,7 +2996,7 @@
   // Kolonnenversatz, Abseits-Antwort. `wer` ist 1, wenn nichts dasteht.
   // v1.1.15 GEMELDET: "Die Geschwindigkeit zum Streckenscan ist am unteren Ende der Mindestgeschwindigkeit.
   // In der Haarnadel ist das Auto gerade so schnell genug, dass es noch Balken und Querlage bestimmen
-  // kann. Schiebe die Mindestgeschwindigkeit leicht ueber das (2-3 %)." Mal formationPace (0,35):
+  // kann. Schiebe die Mindestgeschwindigkeit leicht ueber das (2-3 %)." Mal formationPace (damals 0,35):
   // gerade 0,21 -> 0,235, Haarnadel 0,14 -> 0,165 der Hoechstgeschwindigkeit (je 2,5 Prozentpunkte).
   // v1.2.5 BESTELLT: "Streckenscan-Geschwindigkeit etwas erhoehen (ausser in der Haarnadel), da es sonst zu Fehllesungen
   // kommt." Gerade 0,80 statt 0,67 (Delta 36 statt 30), normale Kurven bleiben bei 0,67 (SCAN_TEMPO_KURVE), die
@@ -3481,10 +3481,7 @@
     try {
       if (fruehstartStrafeAktiv(1)) { rawThrottle = 0; rawBrake = Math.max(rawBrake, FRUEHSTART_BREMSE); }
       // Ampel rot (v1.3.115): Gas gesperrt; wer Gas gibt, bekommt die Fruehstart-Strafe.
-      if (typeof fruehstartGasSperre === 'function' && fruehstartGasSperre(1)) {
-        if (throttleY > 0.05 && typeof fruehstartGasSetzen === 'function') fruehstartGasSetzen(1, true);
-        rawThrottle = 0;
-      }
+      if (fruehstartGasPruefen(1, throttleY)) rawThrottle = 0;
       // Derby bei 0 % (v0.9.16): das Auto bleibt stehen - vorher wurde nur das Tempo EINMAL auf
       // null gesetzt, danach fuhr es mit dem Gas weiter.
       if (typeof derbyLaeuft !== 'undefined' && derbyLaeuft && derbyTot1) { rawThrottle = 0; rawBrake = 1; }
@@ -3636,10 +3633,7 @@
     try {
       if (fruehstartStrafeAktiv(z.nr)) { gas = 0; bremse = Math.max(bremse, FRUEHSTART_BREMSE); }
       // Ampel rot (v1.3.115): Gas gesperrt; wer Gas gibt, bekommt die Fruehstart-Strafe.
-      if (typeof fruehstartGasSperre === 'function' && fruehstartGasSperre(z.nr)) {
-        if (z.throttle > 0.05 && typeof fruehstartGasSetzen === 'function') fruehstartGasSetzen(z.nr, true);
-        gas = 0;
-      }
+      if (fruehstartGasPruefen(z.nr, z.throttle)) gas = 0;
       if (typeof derbyLaeuft !== 'undefined' && derbyLaeuft && z.derbyTot) { gas = 0; bremse = 1; }
     } catch (e) { /* beim Laden */ }
     // Und das Rumpeln, an seinen eigenen Pad. Bis v0.6.45 waere es der Pad von Spieler 1

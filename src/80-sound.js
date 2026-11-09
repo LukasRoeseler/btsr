@@ -936,7 +936,7 @@
     if (raceState !== 'racing' && raceState !== 'finishing') return null;
     if (raceMode === 'laps') {
       const gefahren = (typeof raceLapTimes !== 'undefined' ? raceLapTimes.length : 0);
-      const rest = Math.max(0, raceLimit - gefahren);
+      const rest = Math.max(0, raceLimit + (typeof fruehstartZielPlus === 'function' ? fruehstartZielPlus(1) : 0) - gefahren);
       return de ? 'Noch ' + rest + ' Runden' : rest + ' laps to go';
     }
     // Zeitlimit gilt bei den timed-Modi und bei Training/Time Attack mit Limit > 0.
