@@ -4193,6 +4193,7 @@
     "STRAFSTOPP": "PENALTY STOP",
     "Woher die 3D-Modelle kommen": "Where the 3D models come from",
     "Die Autos der virtuellen Fahrt stammen aus dem freien Rennspiel Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4 und Boxer 96. Modelle, Texturen und Fahrzeugdaten stehen unter der GNU General Public License, Version 2 oder später. Umgewandelt mit tools/sd_auto.py (Innenraum entfernt, Texturen verkleinert); die Lizenz- und Quellenangabe liegt im Ordner des jeweiligen Autos.": "The cars of the virtual drive come from the free racing game Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4 and Boxer 96. Models, textures and vehicle data are licensed under the GNU General Public License, version 2 or later. Converted with tools/sd_auto.py (interior removed, textures downscaled); the license and source notice is in each car's folder.",
+    "Grafik verloren: virtuelle Fahrt beendet": "Graphics lost: virtual drive ended",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -5734,6 +5735,7 @@
     "STRAFSTOPP": "PARADA DE SANCIÓN",
     "Woher die 3D-Modelle kommen": "De dónde vienen los modelos 3D",
     "Die Autos der virtuellen Fahrt stammen aus dem freien Rennspiel Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4 und Boxer 96. Modelle, Texturen und Fahrzeugdaten stehen unter der GNU General Public License, Version 2 oder später. Umgewandelt mit tools/sd_auto.py (Innenraum entfernt, Texturen verkleinert); die Lizenz- und Quellenangabe liegt im Ordner des jeweiligen Autos.": "Los coches de la conducción virtual proceden del juego de carreras libre Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4 y Boxer 96. Modelos, texturas y datos del vehículo están bajo la GNU General Public License, versión 2 o posterior. Convertidos con tools/sd_auto.py (interior eliminado, texturas reducidas); la licencia y la fuente están en la carpeta de cada coche.",
+    "Grafik verloren: virtuelle Fahrt beendet": "Gráficos perdidos: conducción virtual terminada",
   };
 
   // ============================================================================
