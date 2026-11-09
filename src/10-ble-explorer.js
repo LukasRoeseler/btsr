@@ -4222,6 +4222,16 @@
     "Prio": "Prio",
     "hoch": "high",
     "ausgewogen": "balanced",
+    "Erfolgsballast": "Success ballast",
+    "Wie früher die Erfolgsgewichte der DTM: Vor jedem Event bekommt, wer mehr Punkte hat, mehr Gewicht ins Auto. Der Führende trägt das Höchstgewicht der Stufe, der Letzte nichts, dazwischen linear nach dem Punkteabstand; das erste Event fährt ohne. Spielerautos werden in der Fahrphysik schwerer (träger beim Beschleunigen und Bremsen, nicht im Fahrgefühl RC), NPCs fahren entsprechend langsamer; 50 kg kosten im Mittel etwa 2 % Rundenzeit. Nach dem Event und außerhalb der Meisterschaft fährt jeder ohne. Im Mehrspieler bestimmt der Meisterschaftsleiter.": "Like the success weights of the DTM back in the day: before each event, whoever has more points gets more weight in the car. The leader carries the maximum weight of the level, the last nothing, in between linear by the points gap; the first event runs without. Player cars get heavier in the driving physics (more sluggish when accelerating and braking, not with the RC driving feel), NPCs drive correspondingly slower; 50 kg cost about 2 % lap time on average. After the event and outside the championship everyone runs without. In multiplayer the championship leader decides.",
+    "Leicht · bis 30 kg": "Light · up to 30 kg",
+    "Mittel · bis 50 kg": "Medium · up to 50 kg",
+    "Stark · bis 80 kg": "Heavy · up to 80 kg",
+    "Führender": "Leader",
+    "Mitte": "Middle",
+    "Letzter": "Last",
+    "1. Event": "1st event",
+    "Ballast": "Ballast",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -5794,6 +5804,16 @@
     "keine Autos verbunden": "ningún coche conectado",
     "Rolle": "Rol",
     "Safety Car": "Safety car",
+    "Erfolgsballast": "Lastre de éxito",
+    "Wie früher die Erfolgsgewichte der DTM: Vor jedem Event bekommt, wer mehr Punkte hat, mehr Gewicht ins Auto. Der Führende trägt das Höchstgewicht der Stufe, der Letzte nichts, dazwischen linear nach dem Punkteabstand; das erste Event fährt ohne. Spielerautos werden in der Fahrphysik schwerer (träger beim Beschleunigen und Bremsen, nicht im Fahrgefühl RC), NPCs fahren entsprechend langsamer; 50 kg kosten im Mittel etwa 2 % Rundenzeit. Nach dem Event und außerhalb der Meisterschaft fährt jeder ohne. Im Mehrspieler bestimmt der Meisterschaftsleiter.": "Como los pesos de éxito del DTM de antes: antes de cada evento, quien tiene más puntos lleva más peso en el coche. El líder lleva el peso máximo del nivel, el último nada, y en medio de forma lineal según la diferencia de puntos; el primer evento se corre sin lastre. Los coches de los jugadores pesan más en la física de conducción (más lentos al acelerar y al frenar, no con la sensación de conducción RC), los NPC van proporcionalmente más lentos; 50 kg cuestan de media un 2 % de tiempo por vuelta. Después del evento y fuera del campeonato todos corren sin lastre. En multijugador decide el director del campeonato.",
+    "Leicht · bis 30 kg": "Ligero · hasta 30 kg",
+    "Mittel · bis 50 kg": "Medio · hasta 50 kg",
+    "Stark · bis 80 kg": "Fuerte · hasta 80 kg",
+    "Führender": "Líder",
+    "Mitte": "Mitad",
+    "Letzter": "Último",
+    "1. Event": "1.er evento",
+    "Ballast": "Lastre",
   };
 
   // ============================================================================

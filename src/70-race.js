@@ -1694,7 +1694,7 @@
       row.innerHTML = `<span class="grid-pos">${i + 1}.</span>`
         + `<span class="grid-handle" draggable="true" title="Ziehen zum Umsortieren">&#8942;&#8942;</span>`
         + gridAutoBild(car)
-        + `<span class="grid-name">${carDot(car)}${garageLabel(car)} <small class="grid-wo">${wo}</small></span>`
+        + `<span class="grid-name">${carDot(car)}${garageLabel(car)} <small class="grid-wo">${wo}${typeof meisterBallastGridText === 'function' ? meisterBallastGridText(car) : ''}</small></span>`
         + `<span class="grid-move">`
         + `<button data-mv="up" ${i === 0 ? 'disabled' : ''} aria-label="nach vorn">&#9650;</button>`
         + `<button data-mv="down" ${i === cars.length - 1 ? 'disabled' : ''} aria-label="nach hinten">&#9660;</button>`
@@ -2167,6 +2167,8 @@
     // "beide schadenfrei", gesetzt wurde aber nur Auto 2 - Auto 1 behielt seinen Schaden,
     // und Spieler 3 behielt Tank und Schaden. Jetzt alle Plaetze.
     raceStartZuruecksetzen(fuel);
+    // v1.4.33: Erfolgsballast der Meisterschaft (73-meisterschaft.js) - bei jedem Start gesetzt, sonst 0.
+    if (typeof meisterBallastRennstart === 'function') meisterBallastRennstart(mpPlan);
     updateDamageFuelUI();
     racePitDone = 0;
     pitBilanz = null;   // "Letzter Stopp" im Boxenschirm gehoert zum Rennen

@@ -2862,6 +2862,9 @@
   /* v1.1.40: die eigene Position neben "Runde" (raceCockpitPosition, 50-drive.js). */
   .gt3-pos { margin-left: .6em; font-family: var(--gt3-font); font-weight: 700; letter-spacing: .02em;
              font-size: clamp(13px, 2.2vw, 22px); color: var(--gt3-ink, inherit); text-shadow: var(--gt3-glow); vertical-align: -.12em; }
+  /* v1.4.33: Erfolgsballast der Meisterschaft neben "Runde" (meisterBallastCockpit), nur Text. */
+  .gt3-ballast { margin-left: .6em; font-size: .9em; letter-spacing: .04em; color: #ffd166; white-space: nowrap; }
+  body[data-cockpit="acc"] #race-dash .gt3-ballast { margin-left: auto; }
   .gt3-left .gt3-act { min-height: 34px; padding: clamp(3px, .5vw, 5px) 2px;
     font-size: clamp(9px, 1.4vw, 12.5px); }
   .gt3-left .gt3-half .gt3-act svg { width: clamp(13px, 2.6vw, 17px); height: clamp(13px, 2.6vw, 17px); }
@@ -3245,6 +3248,9 @@
   .ms-stand sup { font-size: .65em; color: #c08cff; margin-left: 2px; }
   .ms-band { display: inline-block; width: 5px; height: 1em; vertical-align: middle; margin-right: 6px; }
   .ms-rl { font-size: .7em; padding: 1px 4px; background: #6b5bd6; margin-left: 6px; letter-spacing: .05em; text-transform: uppercase; }
+  /* v1.4.33: Erfolgsballast je Fahrer (Zwischenstand, Aufstellung, Bereitschaftsschirm). */
+  .ms-kg { font-size: .78em; color: #ffd166; margin-left: 6px; letter-spacing: .03em; white-space: nowrap; }
+  .ms-gz .ms-l .wip-tag { margin-left: 4px; text-transform: none; }
   .ms-titel { display: block; font-size: 1.15em; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; }
   .ms-meister { font-size: 1.3em; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; color: #f5c542; padding: 4px 0; }
   .ms-aufst { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; font-size: .9em; margin-top: 3px; direction: rtl; }
@@ -5897,7 +5903,7 @@
       </div>
 
       <div class="gt3-left">
-        <div class="gt3-box"><div class="gt3-lbl">Runde<span class="gt3-pos" id="race-pos" data-i18n-skip hidden></span></div>
+        <div class="gt3-box"><div class="gt3-lbl">Runde<span class="gt3-ballast" id="race-ballast" data-i18n-skip hidden></span><span class="gt3-pos" id="race-pos" data-i18n-skip hidden></span></div>
           <div class="gt3-val" id="race-lap-count">0</div></div>
         <!-- BESTELLT: "Boxenstopp und Gelbe Flagge Knoepfe nebeneinander und so gross wie
              Bahn und Fahrmodus (Pro) und dafuer Rundenzahl und Zeit vergroessern." Dieselbe

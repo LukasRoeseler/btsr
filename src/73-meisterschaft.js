@@ -43,6 +43,11 @@
       ['linear', 'Linear · N … 1']] },
     { id: 'fl', l: 'Schnellste Runde', w: [['ja', '+1 Punkt'], ['nein', 'Keine Punkte']] },
     { id: 'teilnehmer', l: 'Teilnehmer', w: [['alle', 'Alle verbundenen Autos'], ['spieler', 'Nur Spieler (P1–P3)']] },
+    // v1.4.33 BESTELLT: Erfolgsballast wie frueher in der DTM (siehe ERFOLGSBALLAST weiter unten). WIP, Vorgabe aus.
+    // Die Erklaerung steht nur hinter dem i im Kreis (info), nicht unter der Zeile.
+    { id: 'ballast', l: 'Erfolgsballast', wip: true,
+      info: 'Wie früher die Erfolgsgewichte der DTM: Vor jedem Event bekommt, wer mehr Punkte hat, mehr Gewicht ins Auto. Der Führende trägt das Höchstgewicht der Stufe, der Letzte nichts, dazwischen linear nach dem Punkteabstand; das erste Event fährt ohne. Spielerautos werden in der Fahrphysik schwerer (träger beim Beschleunigen und Bremsen, nicht im Fahrgefühl RC), NPCs fahren entsprechend langsamer; 50 kg kosten im Mittel etwa 2 % Rundenzeit. Nach dem Event und außerhalb der Meisterschaft fährt jeder ohne. Im Mehrspieler bestimmt der Meisterschaftsleiter.',
+      w: [['aus', 'Aus'], ['leicht', 'Leicht · bis 30 kg'], ['mittel', 'Mittel · bis 50 kg'], ['stark', 'Stark · bis 80 kg']] },
   ];
   const MEISTER_PUNKTE = { f1: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1], klassisch: [10, 6, 4, 3, 2, 1] };
   const MEISTER_FARBEN = ['#2ee06a', '#ffb02e', '#00a3e0', '#e84bb0', '#9c8cff', '#ff6b4a'];
@@ -57,7 +62,7 @@
         Object.assign(meisterEventNeu(), { format: 'qualifying', umfang: 5 }),
         meisterEventNeu(),
       ],
-      global: { fahrgefuehl: 'garage', start1: 'zufall', punkte: 'f1', fl: 'ja', teilnehmer: 'alle' },
+      global: { fahrgefuehl: 'garage', start1: 'zufall', punkte: 'f1', fl: 'ja', teilnehmer: 'alle', ballast: 'aus' },
     };
   }
   function meisterLesen() {
@@ -213,6 +218,123 @@
     }
     fern.forEach((x) => { if (x.total === null) x.total = 0; });
     return { reihe: meisterMischen(fern, rest, anker, quali).filter((k, i, a) => a.indexOf(k) === i), info, lokal };
+  }
+
+  // ---- ERFOLGSBALLAST (v1.4.33, WIP) -------------------------------------------------------
+  // BESTELLT: "Gewichte in der Meisterschaft: Autos mit mehr Punkten fahren langsamer (fuer NPCs und fuer
+  // Spielerauto), kriegen wie bei der DTM frueher 'mehr Gewicht' ins Auto, damit es spannender wird."
+  //
+  // VERTEILUNG: vor jedem Event aus dem Punktestand. Der Fuehrende traegt das Hoechstgewicht der Stufe, der
+  // Letzte 0 kg, dazwischen linear nach dem Punkteabstand zum Letzten (ganze kg). Das erste Event und jedes
+  // Event, vor dem alle gleich viele Punkte haben, faehrt ohne. Die kg sind nur die Anzeige; gefahren wird
+  // mit zwei Faktoren, die beim Rennstart EINMAL je Auto gesetzt werden (meisterBallastSetzen) - im 45-ms-
+  // Takt bleibt je eine Multiplikation (40-physics.js massFactor, 90-ghosts.js Zieltempo).
+  //
+  // SPIELER: Masse. massFactor = 1 + kg x BALLAST_MASSE_JE_KG, dieselbe Groesse, ueber die das Tankgewicht
+  // wirkt (voller Tank +30 %): Vortrieb und Bremse werden durch sie geteilt, der Fahrwiderstand nicht - das
+  // Auto ist traeger und hat ein wenig weniger Hoechsttempo. 50 kg sind +36 %, etwas mehr als ein voller Tank.
+  // NPCs: ihr Zieltempo mal massFactor^-BALLAST_NPC_EXP.
+  //
+  // KALIBRIERT mit simFahren() (61-simlinie.js, Fahrer am Limit: Kurvengrenze wie die NPCs, eigene
+  // Beschleunigung und Bremse) gegen die Rennsimulation (90b-sim.js, ein NPC Stufe Mittel), je fuenf
+  // Strecken (SR3GLR2GR2G2, SR3G2R3G, SG3R2G3R2, SR3GR3GR3G, SGGR2GGR2). Rundenzeit-Zuschlag Spieler im Mittel
+  // (Spanne): 30 kg +1,5 % (1,0-1,8), 50 kg +2,1 % (1,1-2,8), 80 kg +3,1 % (1,6-4,1). Der Spieler-Zuschlag
+  // waechst etwa wie 7 x ln(massFactor); der NPC-Faktor folgt genau dem (NPC: 30 kg +1,4 %, 50 kg +2,2 %,
+  // 80 kg +3,2 %, unabhaengig von der Strecke). Je mehr Geraden, desto mehr kostet die Masse den Spieler.
+  // Die Hoechstgeschwindigkeit erreicht auf diesen Strecken niemand; ein eigener Deckel darauf aenderte die
+  // Rundenzeit gemessen um 0,00 % und entfiel deshalb.
+  const MEISTER_BALLAST_KG = { aus: 0, leicht: 30, mittel: 50, stark: 80 };
+  const BALLAST_MASSE_JE_KG = 0.0072;
+  const BALLAST_NPC_EXP = 0.07;
+  // fahrer: { key: { pkt } } -> { key: kg } (nur wer Ballast traegt).
+  function meisterBallastVerteilen(fahrer, maxKg) {
+    const keys = Object.keys(fahrer || {});
+    const out = {};
+    if (!(maxKg > 0) || keys.length < 2) return out;
+    const pkt = (k) => (fahrer[k] && fahrer[k].pkt) || 0;
+    let lo = Infinity, hi = -Infinity;
+    keys.forEach((k) => { lo = Math.min(lo, pkt(k)); hi = Math.max(hi, pkt(k)); });
+    if (!(hi > lo)) return out;
+    keys.forEach((k) => { const kg = Math.round(maxKg * (pkt(k) - lo) / (hi - lo)); if (kg > 0) out[k] = kg; });
+    return out;
+  }
+  // Der Ballast fuer Event idx (0-basiert) aus dem Stand von lauf.
+  function meisterBallastFuer(lauf, idx) {
+    const max = MEISTER_BALLAST_KG[meisterGlobalWert('ballast')] || 0;
+    if (!lauf || lauf.fertig || !max || !(idx > 0) || idx >= meister.plan.events.length) return {};
+    return meisterBallastVerteilen(lauf.fahrer, max);
+  }
+  function ballastFaktoren(kg) {
+    const masse = 1 + Math.max(0, kg || 0) * BALLAST_MASSE_JE_KG;
+    return { masse, tempo: Math.pow(masse, -BALLAST_NPC_EXP) };
+  }
+  // kg eines Garagenautos aus einer Karte { 'c:<geraet>' | 'mp:<telefon>': kg }. Das eigene Fahrerauto steht im
+  // Mehrspieler unter dem Telefon (meisterEigenKey), sonst unter dem Geraet.
+  function meisterBallastKgVon(karte, car) {
+    if (!karte || !car || !car.device) return 0;
+    const k = karte['c:' + String(car.device.id)];
+    if (k > 0) return k;
+    if (car.role === 'player' && typeof mp !== 'undefined' && mp && mp.id) {
+      const m = karte['mp:' + mp.id];
+      if (m > 0) return m;
+    }
+    return 0;
+  }
+  // Welche Karte gilt beim Rennstart: das laufende eigene Event, sonst die des Meisterschaftsleiters aus dem
+  // Mehrspieler-Plan. null = kein Meisterschafts-Event, alle ohne.
+  function meisterBallastKarte(mpPlan) {
+    const lauf = meister && meister.lauf;
+    if (lauf && lauf.laeuft && !lauf.fertig) {
+      return lauf.ballast && lauf.ballast.idx === lauf.laeuft.idx ? lauf.ballast.kg || null : null;
+    }
+    const m = mpPlan && mpPlan.meister;
+    return m && !m.fertig && m.ballast && typeof m.ballast === 'object' ? m.ballast : null;
+  }
+  let ballastGesetzt = [];
+  // Setzt die Faktoren (karte null = alle ohne). Nur hier wird gerechnet, nie im Takt.
+  function meisterBallastSetzen(karte) {
+    ballastGesetzt.forEach((x) => {
+      if (x.motor) x.motor.state.ballastFaktor = 1;
+      x.car.ballastTempo = 1; x.car.ballastKg = 0;
+    });
+    ballastGesetzt = [];
+    if (typeof physEngine !== 'undefined' && physEngine) physEngine.state.ballastFaktor = 1;
+    let eigen = 0;
+    if (karte) garage.forEach((c) => {
+      const kg = meisterBallastKgVon(karte, c);
+      if (!kg) return;
+      let motor = null;
+      if (c.role === 'player') motor = physEngine;
+      else if (/^player[2-9]$/.test(c.role || '')) {
+        const z = typeof zusatzPlatzVonRolle === 'function' ? zusatzPlatzVonRolle(c.role) : null;
+        motor = z ? z.motor : null;
+        if (!motor) return;
+      } else if (c.role !== 'ghost') return;
+      const f = ballastFaktoren(kg);
+      if (motor) motor.state.ballastFaktor = f.masse;
+      else c.ballastTempo = f.tempo;
+      c.ballastKg = kg;
+      ballastGesetzt.push({ car: c, motor });
+      if (c.role === 'player') eigen = kg;
+    });
+    meisterBallastCockpit(eigen);
+  }
+  // Aus startRaceCountdown (70-race.js): bei JEDEM Rennstart, ausserhalb der Meisterschaft also immer 0.
+  function meisterBallastRennstart(mpPlan) {
+    meisterBallastSetzen(meisterBallastKarte(mpPlan));
+  }
+  // Cockpit, ACC-Stil: ein kurzer Text neben "Runde", nur bei Aenderung geschrieben.
+  function meisterBallastCockpit(kg) {
+    const el = $('race-ballast');
+    if (!el) return;
+    const txt = kg > 0 ? t('Ballast') + ' +' + kg + ' kg' : '';
+    if (el.textContent !== txt) el.textContent = txt;
+    if (el.hidden !== !txt) el.hidden = !txt;
+  }
+  // Startschirm (raceGridZeilen, 70-race.js): " · +X kg" hinter dem Startplatz.
+  function meisterBallastGridText(car) {
+    const kg = meisterBallastKgVon(meisterBallastKarte(null), car);
+    return kg > 0 ? ' · +' + kg + ' kg' : '';
   }
 
   // ---- STARTAUFSTELLUNG ------------------------------------------------------------------
@@ -373,6 +495,9 @@
     }
     raceGridOrder = meisterStartReiheFest(lauf.idx);
     lauf.laeuft = { idx: lauf.idx, modus: f.modus, seit: Date.now() };
+    // v1.4.33: der Erfolgsballast dieses Events, festgehalten (Fortsetzen, Mehrspieler-Plan, Startschirm).
+    lauf.ballast = { idx: lauf.idx, kg: meisterBallastFuer(lauf, lauf.idx) };
+    meisterBallastSetzen(lauf.ballast.kg);
     meisterSpeichern();
     meisterSchliessen();
     msMeldung(t('Meisterschaft') + ' · ' + t('Event') + ' ' + (lauf.idx + 1) + '/' + meister.plan.events.length);
@@ -390,7 +515,7 @@
   function meisterRennenEnde(regulaer) {
     const lauf = meister.lauf;
     if (!lauf || !lauf.laeuft || lauf.fertig) return false;
-    if (lauf.laeuft.modus !== raceMode || Date.now() - lauf.laeuft.seit > 6 * 3600000) { lauf.laeuft = null; meisterSpeichern(); return false; }
+    if (lauf.laeuft.modus !== raceMode || Date.now() - lauf.laeuft.seit > 6 * 3600000) { lauf.laeuft = null; meisterBallastSetzen(null); meisterSpeichern(); return false; }
     // Ein Training von Hand beenden ist normal (es vergibt keine Punkte), ein Rennen nicht.
     const ev = meister.plan.events[lauf.laeuft.idx];
     if (!regulaer && ev && ev.format === 'training') regulaer = true;
@@ -422,6 +547,7 @@
     const idx = lauf.laeuft.idx, ev = meister.plan.events[idx];
     lauf.laeuft = null;
     lauf.reihe = null;                 // die naechste Startreihe wird neu festgelegt
+    meisterBallastSetzen(null);        // v1.4.33: nach dem Event ohne Ballast
     if (!ev) return;
     const m = meisterFeldMessen(ev);
     if (abgebrochen) { m.reihe = []; m.lokal = []; }
@@ -480,6 +606,12 @@
         const nfName = nf ? (de ? nf.name : (I18N_EN[nf.name] || nf.name)) : (de ? 'keins' : 'none');
         text = de ? 'Event ' + (idx + 1) + ' von ' + gesamt + ' beendet. Nächstes Event: ' + nfName + '.'
                   : 'Event ' + (idx + 1) + ' of ' + gesamt + ' finished. Next event: ' + nfName + '.';
+        // v1.4.33: mit Erfolgsballast, wer am meisten traegt (nur Text, Geraetestimme wie der Rest).
+        const kg = meisterBallastFuer(lauf, lauf.idx), top = meisterTabelle(lauf)[0];
+        if (top && kg[top.key] > 0) {
+          text += de ? ' Erfolgsballast: ' + top.name + ' trägt ' + kg[top.key] + ' Kilo.'
+                     : ' Success ballast: ' + top.name + ' carries ' + kg[top.key] + ' kilos.';
+        }
       }
       meisterAnsageNachErgebnis(text);
     }
@@ -518,7 +650,9 @@
     return {
       id: lauf.id, nr: lauf.laeuft.idx + 1, von: meister.plan.events.length,
       titel: meisterStreckeName(ev.strecke) + ' · ' + t(meisterFormat(ev).name) + ' ' + ev.umfang + ' ' + t(meisterFormat(ev).einheit),
-      strecke: meisterStreckeMp, stand: meisterStandKurz(lauf),
+      strecke: meisterStreckeMp, stand: meisterStandKurz(lauf, lauf.ballast && lauf.ballast.idx === lauf.laeuft.idx ? lauf.ballast.kg : null),
+      // v1.4.33: der Ballast dieses Events; die anderen Telefone setzen ihn beim Rennstart fuer ihr Fahrerauto.
+      ballast: lauf.ballast && lauf.ballast.idx === lauf.laeuft.idx ? lauf.ballast.kg : null,
     };
   }
   function meisterMpPreset() {
@@ -527,8 +661,12 @@
     if (fg === 'p1') return window.__presetActive ? window.__presetActive() : null;
     return fg;
   }
-  function meisterStandKurz(lauf) {
-    return meisterTabelle(lauf).slice(0, 12).map((x) => ({ n: String(x.name || '').slice(0, 24), p: x.pkt }));
+  function meisterStandKurz(lauf, kg) {
+    return meisterTabelle(lauf).slice(0, 12).map((x) => {
+      const s = { n: String(x.name || '').slice(0, 24), p: x.pkt };
+      if (kg && kg[x.key] > 0) s.k = kg[x.key];
+      return s;
+    });
   }
   async function meisterMpEndstandSenden() {
     try {
@@ -556,6 +694,7 @@
       + '</div>' + (m.fertig ? '' : '<div class="ms-mp-titel">' + esc(m.titel || '') + '</div>');
     if (Array.isArray(m.stand) && m.stand.length) {
       h += '<table class="ms-mp-stand">' + m.stand.map((s, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(s.n)
+        + (s.k > 0 ? ' <span class="ms-kg">+' + (s.k | 0) + ' kg</span>' : '')
         + '</td><td>' + (s.p | 0) + '</td></tr>').join('') + '</table>';
     }
     return h;
@@ -666,7 +805,11 @@
           + '<div class="ms-trenner">' + msEsc(t('Für die ganze Meisterschaft')) + '</div>';
       } else if (r.art === 'gl') {
         const g = MEISTER_GLOBAL[r.i];
-        h += '<div class="ms-gz' + sel + '" data-k="' + k + '"><span class="ms-l">' + msEsc(t(g.l)) + '</span>'
+        // v1.4.33: WIP-Etikett und Erklaerung hinter dem i im Kreis (wie .opt-label, 98c-opt-info.js).
+        const zusatz = (g.wip ? ' <span class="wip-tag">WIP</span>' : '')
+          + (g.info ? '<button type="button" class="opt-info-btn" aria-label="' + msEsc(t('Erklärung anzeigen') + ': ' + t(g.l)) + '">i</button>'
+            + '<small class="opt-info-versteckt">' + msEsc(t(g.info)) + '</small>' : '');
+        h += '<div class="ms-gz' + sel + '" data-k="' + k + '"><span class="ms-l opt-label">' + msEsc(t(g.l)) + zusatz + '</span>'
           + msWert(meisterName(g.w, meisterGlobalWert(g.id))) + '</div>';
       } else {
         h += '<button type="button" class="ms-knopf primary' + sel + '" data-k="' + k + '">'
@@ -720,6 +863,11 @@
         for (let p = 0; p < (schema === 'f1' ? 10 : 6); p++) h += '<div>P' + (p + 1) + '<b>' + meisterPunkteFuer(schema, p, 6) + '</b></div>';
         h += '</div><p class="ms-info">' + msEsc(t('Gleichstand: mehr Siege, dann mehr zweite Plätze, dann das letzte Rennen.')) + '</p>';
       }
+      if (g.id === 'ballast') {
+        const max = MEISTER_BALLAST_KG[meisterGlobalWert('ballast')] || 0;
+        h += '<div class="ms-punkte">' + [['Führender', max], ['Mitte', Math.round(max / 2)], ['Letzter', 0], ['1. Event', 0]]
+          .map((x) => '<div>' + msEsc(t(x[0])) + '<b>+' + x[1] + ' kg</b></div>').join('') + '</div>';
+      }
       if (g.id === 'teilnehmer') h += '<p class="ms-info">' + msEsc(t('Alle verbundenen Autos: Spieler 1–3, NPCs und im Mehrspieler die anderen Telefone werden gewertet. Nur Spieler: NPCs fahren als Verkehr mit, bekommen aber keine Punkte. Das Safety Car fährt nie in der Wertung.')) + '</p>';
     } else if (msDetail < 0 && z && z.art === 'los') {
       h += '<h3>' + msEsc(t('Bereit?')) + '</h3>';
@@ -772,6 +920,8 @@
     $('ms-grid').classList.remove('detail-aktiv');
     const tab = meisterTabelle(lauf);
     const n = Math.min(lauf.idx, evs.length);
+    // v1.4.33: der Erfolgsballast fuer das naechste Event, je Fahrer.
+    const kgNaechst = meisterBallastFuer(lauf, lauf.idx);
     const spalten = [];
     for (let i = Math.max(0, n - 4); i < n; i++) spalten.push(i);
     let h = '<div class="ms-trenner">' + msEsc(lauf.fertig ? t('Endstand') : t('Zwischenstand nach Event') + ' ' + n + ' / ' + evs.length) + '</div>';
@@ -782,7 +932,8 @@
         + '<th class="r">' + msEsc(t('Punkte')) + '</th></tr>';
       tab.forEach((x, k) => {
         h += '<tr><td class="pos p' + (k + 1) + '">' + (k + 1) + '</td><td><span class="ms-band" style="background:' + (x.farbe || '#9aa4b8') + '"></span>'
-          + msEsc(x.name) + (x.rolle === 'ghost' ? ' <span class="ms-rl">NPC</span>' : '') + '</td>'
+          + msEsc(x.name) + (x.rolle === 'ghost' ? ' <span class="ms-rl">NPC</span>' : '')
+          + (kgNaechst[x.key] > 0 ? ' <span class="ms-kg">+' + kgNaechst[x.key] + ' kg</span>' : '') + '</td>'
           + spalten.map((i) => {
             const e = x.je[i];
             if (!e) return '<td class="e">–</td>';
@@ -805,8 +956,11 @@
         d += '<span class="ms-info">' + msEsc(t('Startaufstellung')) + ': ' + msEsc(meisterAufstText(lauf.idx)) + '</span>';
         const reihe = meisterStartReiheFest(lauf.idx).map((id) => garage.find((c) => String(c.device.id) === id)).filter(Boolean);
         if (reihe.length)
-          d += '<div class="ms-aufst">' + reihe.map((c, i) => '<div>' + (i + 1) + ' · ' + msEsc(garageLabel(c))
-            + ' <small>' + msEsc(meisterPlatzText(i)) + '</small></div>').join('') + '</div>';
+          d += '<div class="ms-aufst">' + reihe.map((c, i) => {
+            const kg = meisterBallastKgVon(kgNaechst, c);
+            return '<div>' + (i + 1) + ' · ' + msEsc(garageLabel(c)) + (kg ? ' <span class="ms-kg">+' + kg + ' kg</span>' : '')
+              + ' <small>' + msEsc(meisterPlatzText(i)) + '</small></div>';
+          }).join('') + '</div>';
       }
       if (ev.strecke !== 'aktuell' && ev.strecke !== 'frei') d += '<span class="ms-info ms-gelb">' + msEsc(t('Strecke umbauen')) + ': ' + msEsc(ev.strecke) + '</span>';
     } else d += '<span class="ms-titel">' + msEsc(t('Meisterschaft beendet')) + '</span>';
@@ -927,6 +1081,7 @@
     if (fehler) { msMeldung(fehler); return; }
     if (!meister.plan.events.some(meisterIstRennen)) { msMeldung(t('Mindestens ein Event muss Runden oder Endurance sein.')); return; }
     meister.lauf = meisterLaufNeu();
+    meisterBallastSetzen(null);
     meisterSpeichern();
     meisterEventStarten();
   }
@@ -937,7 +1092,7 @@
     else if (a === 'ende') {
       // Zweimal druecken: das erste Mal nur scharf machen (kein nativer Dialog).
       if (Date.now() - msEndeArm < 4000) {
-        meister.lauf.fertig = true; meisterSpeichern(); msStandFokus = 0; msEndeArm = 0; msZeichnen(); return;
+        meister.lauf.fertig = true; meisterBallastSetzen(null); meisterSpeichern(); msStandFokus = 0; msEndeArm = 0; msZeichnen(); return;
       }
       msEndeArm = Date.now();
       msMeldung(t('Nochmal drücken zum Beenden'));
@@ -946,6 +1101,17 @@
   let msEndeArm = 0;
   function msListeKlick(ev) {
     if (msAnsicht !== 'plan') return;
+    // v1.4.33: das i im Kreis oeffnet die Erklaerung (dieselbe Lightbox wie bei den Optionen).
+    const ib = ev.target.closest('.opt-info-btn');
+    if (ib) {
+      ev.stopPropagation();
+      const zk = ib.closest('[data-k]');
+      const zeile = zk ? msZeilen()[+zk.getAttribute('data-k')] : null;
+      const g = zeile && zeile.art === 'gl' ? MEISTER_GLOBAL[zeile.i] : null;
+      const sm = ib.parentElement.querySelector('small');
+      if (g && sm && typeof optInfoOeffnen === 'function') optInfoOeffnen(t(g.l), sm.innerHTML);
+      return;
+    }
     const el = ev.target.closest('[data-k]');
     if (!el) return;
     msDetail = -1; msLoeschenArm = -1;
@@ -970,6 +1136,7 @@
   // Steuerkreuz und Tasten (aus pollGamepad, vor allen anderen Menues). true = verbraucht.
   function meisterPad(pad) {
     if (!msOffen || (typeof konsoleFrageOffen === 'function' && konsoleFrageOffen())) return false;
+    if (typeof optInfoOffen === 'function' && optInfoOffen()) return false;
     let neu = -1;
     for (let i = 0; i < pad.buttons.length; i++) {
       const n = !!(pad.buttons[i] && pad.buttons[i].pressed);
@@ -990,6 +1157,7 @@
   }
   window.addEventListener('keydown', (e) => {
     if (!msOffen || (typeof konsoleFrageOffen === 'function' && konsoleFrageOffen())) return;
+    if (typeof optInfoOffen === 'function' && optInfoOffen()) return;
     const k = e.key;
     if (k === 'ArrowUp') msHoch(-1); else if (k === 'ArrowDown') msHoch(1);
     else if (k === 'ArrowLeft') msLinks(-1); else if (k === 'ArrowRight') msLinks(1);

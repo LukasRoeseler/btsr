@@ -926,6 +926,9 @@
         aquaFactor: 1,
         fuelLoad: 0,      // 0..1, written from outside each tick; 0 keeps the car light
         massFactor: 1,    // >1 = heavier than the calibrated car
+        // Erfolgsballast der Meisterschaft (73-meisterschaft.js): beim Rennstart einmal gesetzt, im Takt nur
+        // eine Multiplikation auf massFactor. 1 = kein Ballast (ausserhalb eines Meisterschafts-Events immer).
+        ballastFaktor: 1,
         tyreTempC: 20,
         // tyreWear bleibt der MITTELWERT aus links und rechts. Alle vorhandenen Leser -
         // der Balken im Cockpit, der Boxenstopp, die Griffrechnung - lesen weiter dieses
@@ -1974,7 +1977,9 @@
         (1 - st.loadFront) / (1 - loadOnPower(cfg))));
 
       // ---- Fuel mass ----
-      st.massFactor = 1 + cfg.fuelWeightEffect * cfg.fuelMassSpan * st.fuelLoad;
+      // Ballast (Meisterschaft) wirkt wie das Tankgewicht: traeger beim Beschleunigen und Bremsen, und weil
+      // der Fahrwiderstand nicht durch die Masse geteilt wird, auch ein wenig weniger Hoechsttempo.
+      st.massFactor = (1 + cfg.fuelWeightEffect * cfg.fuelMassSpan * st.fuelLoad) * st.ballastFaktor;
 
       // ---- Tyre temperature ----
       // Heat comes from the work the tyres are actually doing: cornering load plus
