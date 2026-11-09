@@ -102,9 +102,12 @@
   function dsGasRechts() {
     return !!(typeof bindings !== 'undefined' && bindings.throttle && bindings.throttle.type === 'button' && bindings.throttle.index === 7);
   }
-  // Drehzahl-Feedback auf dem Gaspedal (dezent): nahe der Drehzahlgrenze wird der rechte
-  // Trigger spuerbar fester, mit der Drehzahl zunehmend - ein leiser Hinweis zum Schalten.
+  // Drehzahl-Feedback auf dem Gaspedal (dezent, v1.3.107): nahe der Drehzahlgrenze VIBRIERT der
+  // rechte Trigger (dsVibration, kein fester Widerstand), mit der Drehzahl staerker - ein leiser
+  // Hinweis zum Schalten. Nur in der virtuellen Fahrt: beim echten Fahren schaltet das Auto selbst,
+  // und ein summender Gas-Trigger stoert dort die feine Dosierung (Review nach 1.3.131).
   function dsRechtsStufe() {
+    if (typeof vfAktiv !== 'function' || !vfAktiv()) return 0;
     if (!dsGasRechts() || !physicsEnabled || !physEngine.state) return 0;
     const st = physEngine.state;
     if (Math.max(0, st.longUse || 0) <= 0.02) return 0;

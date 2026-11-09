@@ -23883,6 +23883,24 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'heil gestartet, Schaden 37 zurueck, Gelb aufgehoben, Touch losgelassen' };
   });
 
+  // Review nach 1.3.131: die Drehzahl-Vibration auf R2 (DualSense) gilt nur in der virtuellen Fahrt.
+  stAdd('DualSense: R2-Vibration nur in der virtuellen Fahrt', () => {
+    if (typeof dsRechtsStufe !== 'function' || typeof VF === 'undefined') return { skip: true, mass: 'kein DualSense-Teil' };
+    if (VF.aktiv) return { skip: true, mass: 'virtuelle Fahrt laeuft gerade' };
+    const st = physEngine.state, merk = { rpm: st.rpmFrac, lu: st.longUse, thr: bindings.throttle, phys: physicsEnabled };
+    try {
+      bindings.throttle = { type: 'button', index: 7 };
+      physicsEnabled = true; st.rpmFrac = 0.97; st.longUse = 1;
+      const echt = dsRechtsStufe();
+      VF.aktiv = true;
+      const virtuell = dsRechtsStufe();
+      VF.aktiv = false;
+      return { ok: echt === 0 && virtuell > 0, mass: 'echt ' + echt + ', virtuell ' + virtuell };
+    } finally {
+      VF.aktiv = false; st.rpmFrac = merk.rpm; st.longUse = merk.lu; bindings.throttle = merk.thr; physicsEnabled = merk.phys;
+    }
+  });
+
   // v1.3.77 GEMELDET: die blaue Radar-Kopflinie (ACC) stach durch die anderen Cockpit-Schirme.
   stAdd('Cockpit v1.3.77: ACC-Radarlinie nur auf dem Hauptschirm', () => {
     const dash = $('race-dash'), box = $('race-wx-box');
