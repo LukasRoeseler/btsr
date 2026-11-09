@@ -27897,3 +27897,308 @@
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Meine Strecken und Editor-Ablage tragen Modus und Grenzen, Code gleich, alt = automatisch' };
   });
+
+  // ---- v1.4.33: AUTOMATISCHE GELBE FLAGGE (74b-autogelb.js) ---------------------------------------
+  // Eine Umgebung fuer alle Tests: Rennuhr, Pause, Tutorial, Challenge, setFlag und Anfahrt als
+  // Attrappen, eine leere Garage mit Attrappen-Autos, Ton aus (die Ansagen landen trotzdem im Protokoll).
+  function agTestUmgebung(fn) {
+    const m = { zeit: rennZeitJetzt, pause: rennPauseAktiv, tut: tutLaeuft, ch: challengeLaeuft, gelbAus: gelbDeaktiviert,
+                setFlag, restart: yellowRestart, raceState, raceFormationLap, flagState, playerCar, zweiSpieler,
+                trackMode, tiles: currentTrackTiles, sound: soundEnabled, offSeit: offtrackSeit, mpAn: mp.an,
+                garage: garage.splice(0), wert: $('race-auto-gelb').value };
+    const u = { T: 2000000, flaggen: [], anfahrten: 0, echtRestart: m.restart };
+    rennZeitJetzt = () => u.T; rennPauseAktiv = () => false; tutLaeuft = () => false; challengeLaeuft = () => false;
+    gelbDeaktiviert = () => false;
+    setFlag = (n) => { u.flaggen.push(n); flagState = n; };
+    yellowRestart = () => { if (flagState === 'yellow') { flagState = 'restart'; u.anfahrten++; } };
+    raceState = 'racing'; raceFormationLap = false; flagState = 'green'; soundEnabled = false; trackMode = 'on';
+    zweiSpieler = false; offtrackSeit = null; mp.an = false;
+    u.npc = (alias, farbe) => {
+      const c = { role: 'ghost', alias, colorId: farbe || 'rot', modellId: 'bmw', parked: false, tileCode: 0x02,
+                  tileAt: u.T, tileCount: 1, ghost: { running: true, tileIndex: 0 } };
+      garage.push(c); return c;
+    };
+    playerCar = { role: 'player', alias: 'Spielerauto', colorId: 'blau', modellId: '', tileCode: 0x02, tileAt: u.T,
+                  ghost: { nurOrt: true, tileIndex: 0 } };
+    garage.push(playerCar);
+    // Fahren: jede Sekunde ein Kachelwechsel, 200-ms-Takt wie der Zeitgeber.
+    u.lauf = (ms, fahrend) => {
+      for (let t = 0; t < ms; t += 200) {
+        u.T += 200;
+        if (u.T % 1000 === 0) for (const c of fahrend || []) { c.tileAt = u.T; c.tileCount++; }
+        autoGelbTick();
+      }
+    };
+    autoGelbZuruecksetzen();
+    autoGelb.fremd = ''; autoGelb.ansageLog.length = 0;
+    try { return fn(u); } finally {
+      autoGelbZuruecksetzen(); autoGelb.fremd = ''; autoGelb.ansageLog.length = 0;
+      rennZeitJetzt = m.zeit; rennPauseAktiv = m.pause; tutLaeuft = m.tut; challengeLaeuft = m.ch; gelbDeaktiviert = m.gelbAus;
+      setFlag = m.setFlag; yellowRestart = m.restart;
+      raceState = m.raceState; raceFormationLap = m.raceFormationLap; flagState = m.flagState; playerCar = m.playerCar;
+      zweiSpieler = m.zweiSpieler; trackMode = m.trackMode; currentTrackTiles = m.tiles; soundEnabled = m.sound;
+      offtrackSeit = m.offSeit; mp.an = m.mpAn;
+      garage.length = 0; garage.push(...m.garage);
+      $('race-auto-gelb').value = m.wert;
+      updateFlagUi();
+    }
+  }
+
+  stAdd('Auto-Gelb v1.4.33: Option in den Renneinstellungen, Vorgabe aus, WIP, Erklaerung im small, Sicherung', () => {
+    const f = [];
+    const el = $('race-auto-gelb');
+    if (!el) return { ok: false, mass: '#race-auto-gelb fehlt' };
+    const row = el.closest('.opt-row');
+    if (!row || !row.closest('#tab-control')) f.push('nicht in den Renneinstellungen');
+    const lab = row && row.querySelector('.opt-label');
+    const tag = lab && lab.querySelector('.wip-tag');
+    if (!tag || tag.textContent.trim() !== 'WIP') f.push('ohne WIP-Etikett');
+    if (!lab || !lab.querySelector('small') || lab.querySelector('small').textContent.trim().length < 80) f.push('ohne Erklaerung im small');
+    if (row && row.querySelector(':scope > small, :scope > p')) f.push('Text unter der Zeile');
+    const werte = [...el.options].map((o) => o.value).join(',');
+    if (werte !== 'aus,npc,alle') f.push('Werte ' + werte);
+    const vor = [...el.options].find((o) => o.defaultSelected);
+    if (!vor || vor.value !== 'aus') f.push('Vorgabe nicht aus');
+    if (sicherungRegler().map((x) => x.id).indexOf('race-auto-gelb') < 0) f.push('nicht in der Sicherung');
+    // WLAN: das startende Telefon schickt die Option mit, die anderen uebernehmen sie.
+    const merk = el.value;
+    try {
+      el.value = 'npc';
+      const plan = mpPlanBauen();
+      if (plan.autoGelb !== 'npc') f.push('Plan ohne Option');
+    } finally { el.value = merk; }
+    if (String(mpRennenUebernehmen).indexOf("chSetzen('race-auto-gelb'") < 0) f.push('Mitspieler uebernehmen die Option nicht');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Aus/Nur NPCs/Alle, Vorgabe aus, WIP, Plan traegt sie' };
+  });
+
+  stAdd('Auto-Gelb v1.4.33: NPC-Abflug ruft Gelb aus, Ansage mit Autoname, nur NPCs reagiert nicht auf Spieler', () => agTestUmgebung((u) => {
+    const f = [];
+    const npc = u.npc('Rot 7');
+    // Aus: nichts.
+    $('race-auto-gelb').value = 'aus';
+    npc.parked = 'Bahn verlassen';
+    u.lauf(1000);
+    if (u.flaggen.length) f.push('Gelb trotz Option aus');
+    // Nur NPCs: Spieler daneben -> nichts; NPC geparkt -> Gelb.
+    npc.parked = false;
+    $('race-auto-gelb').value = 'npc';
+    offtrackSeit = u.T;
+    u.lauf(3000);
+    if (u.flaggen.length) f.push('nur NPCs: Spielerabflug loest aus');
+    offtrackSeit = null;
+    npc.parked = 'Bahn verlassen';
+    u.lauf(200);
+    if (u.flaggen.join() !== 'yellow' || flagState !== 'yellow') f.push('NPC-Abflug ohne Gelb: ' + u.flaggen.join());
+    if (autoGelb.phase !== 'gelb') f.push('Phase ' + autoGelb.phase);
+    if (autoGelb.ansageLog.join() !== 'start:Rot 7:0') f.push('Ansage ' + autoGelb.ansageLog.join());
+    const x = autoGelb.liste[0];
+    const merkArt = rennstandNamensart;
+    let txt = '', txtFahrer = '';
+    try {
+      rennstandNamensart = 'auto';
+      txt = autoGelbText(x, 'de');
+      rennstandNamensart = 'fahrer';
+      txtFahrer = autoGelbText(x, 'de');
+    } finally { rennstandNamensart = merkArt; }
+    if (txt !== 'Gelbe Flagge. Der rote Rot 7 hat einen Unfall gebaut.') f.push('Text ' + txt);
+    if (txtFahrer !== 'Gelbe Flagge. Rot 7 hat einen Unfall gebaut.') f.push('Fahrername ' + txtFahrer);
+    const en = autoGelbText(Object.assign({}, x, { alias: '', nr: 2, sektor: 3 }), 'en');
+    if (en !== 'Yellow flag. The red BMW driven by player 2 has crashed in sector three.') f.push('EN ' + en);
+    const clips = autoGelbClipFolge('start', Object.assign({}, x, { nr: 1, sektor: 2 })).join();
+    if (clips !== 'z:gelb_2,e:farbe_rot,e:modell_bmw,e:spieler1') f.push('Clips ' + clips);
+    // Jeder Clip der Folge muss es in den Manifesten geben (zufallsevents.json, rennstand-erweitert.json).
+    if (zevAnsageSchluessel().indexOf('gelb_2') < 0 || zevAnsageSchluessel().indexOf('gruen_0') < 0) f.push('Zufallsevent-Clip fehlt');
+    if (autoGelbBannerText().indexOf('ROT 7') !== 0) f.push('Banner ' + autoGelbBannerText());
+    // Kein zweites Gelb fuer dasselbe Auto.
+    u.lauf(1000);
+    if (u.flaggen.length !== 1 || autoGelb.liste.length !== 1) f.push('doppelt ausgeloest');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'aus: nichts, nur NPCs: Spieler ignoriert, NPC: Gelb + "' + txt + '"' };
+  }));
+
+  stAdd('Auto-Gelb v1.4.33: Spieler erst nach 1 s neben der Bahn (Fehlalarm-Schwelle), mit Sektor', () => agTestUmgebung((u) => {
+    const f = [];
+    $('race-auto-gelb').value = 'alle';
+    // Kurzes 0x00 (0,8 s) und wieder drauf: kein Gelb.
+    offtrackSeit = u.T;
+    u.lauf(800);
+    offtrackSeit = null;
+    u.lauf(400);
+    if (u.flaggen.length) f.push('Gelb nach 0,8 s');
+    // Im Ausdruck-Modus nie (Byte 12 steht dort dauernd auf 0x00).
+    trackMode = 'off'; offtrackSeit = u.T;
+    u.lauf(2000);
+    if (u.flaggen.length) f.push('Gelb im Ausdruck-Modus');
+    trackMode = 'on'; offtrackSeit = null; u.lauf(200);
+    // Mit Sektoren: der Sektor des Autos steht in der Ansage.
+    const tiles = zevTestStrecke();
+    let k = 0;
+    if (tiles) {
+      currentTrackTiles = tiles;
+      const sek = zevSektorKacheln(tiles);
+      if (sek && sek.length > 1) { playerCar.ghost.tileIndex = sek[1][0]; k = 2; }
+    }
+    offtrackSeit = u.T;
+    u.lauf(800);
+    if (u.flaggen.length) f.push('Gelb vor 1 s');
+    u.lauf(400);
+    if (flagState !== 'yellow') f.push('kein Gelb nach 1 s');
+    const log = autoGelb.ansageLog.join();
+    if (log !== 'start:Spielerauto:' + k) f.push('Ansage ' + log + ' (Sektor ' + k + ' erwartet)');
+    if (k && autoGelbText(autoGelb.liste[0], 'de').indexOf('in Sektor zwei') < 0) f.push('Sektor fehlt im Text: ' + autoGelbText(autoGelb.liste[0], 'de'));
+    if (k && autoGelbClipFolge('start', autoGelb.liste[0])[0] !== 'z:gelb_2') f.push('Clip ohne Sektor');
+    if (autoGelb.liste[0] && autoGelb.liste[0].nr !== 1) f.push('Spielernummer ' + autoGelb.liste[0].nr);
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '0,8 s: nichts, Ausdruck: nichts, 1 s: Gelb' + (k ? ' in Sektor 2' : ' (ohne Teststrecke kein Sektor)') };
+  }));
+
+  stAdd('Auto-Gelb v1.4.33: 3 s wieder fahren, dann Anfahrt-Ampel, Gruen mit Ansage', () => agTestUmgebung((u) => {
+    const f = [];
+    $('race-auto-gelb').value = 'npc';
+    const npc = u.npc('Gelb 3', 'gelb');
+    npc.parked = 'Bahn verlassen';
+    u.lauf(200);
+    if (flagState !== 'yellow') return { ok: false, mass: 'kein Gelb' };
+    // Wieder hingestellt und geschuettelt, steht aber noch (kein Kachelwechsel): keine Anfahrt.
+    npc.parked = false; npc.tileAt = u.T - 5000;
+    u.lauf(5000);
+    if (u.anfahrten) f.push('Anfahrt, obwohl das Auto steht');
+    // Faehrt: 2,6 s noch nicht, nach 3 s ja.
+    npc.tileAt = u.T; npc.tileCount++;
+    u.lauf(2600, [npc]);
+    if (u.anfahrten) f.push('Anfahrt vor 3 s');
+    if (autoGelbBannerText().indexOf(t('WIEDERANLAUF IN')) !== 0) f.push('Banner ' + autoGelbBannerText());
+    u.lauf(800, [npc]);
+    if (u.anfahrten !== 1 || flagState !== 'restart' || autoGelb.phase !== 'anfahrt') f.push('keine Anfahrt nach 3 s (' + flagState + ')');
+    // Ampel aus = Gruen: Ansage "Gruene Flagge".
+    flagState = 'green';
+    u.lauf(200, [npc]);
+    if (autoGelb.phase !== 'aus') f.push('Phase nach Gruen ' + autoGelb.phase);
+    if (autoGelb.ansageLog.join() !== 'start:Gelb 3:0,ende:0') f.push('Ansagen ' + autoGelb.ansageLog.join());
+    if (autoGelbClipFolge('ende', { sektor: 0 }).join() !== 'z:gruen_0') f.push('Ende-Clip');
+    // Ein 0x00 unterbricht die 3 s: die Uhr beginnt von vorn.
+    npc.parked = 'Bahn verlassen'; u.lauf(200);
+    npc.parked = false; npc.tileAt = u.T;
+    u.lauf(2000, [npc]);
+    npc.tileCode = TILE_OFFTRACK; u.lauf(200);
+    npc.tileCode = 0x02; npc.tileAt = u.T;
+    u.lauf(2400, [npc]);
+    if (u.anfahrten !== 1) f.push('Unterbrechung nicht beachtet');
+    u.lauf(1000, [npc]);
+    if (u.anfahrten !== 2) f.push('zweite Anfahrt fehlt');
+    // Die echte Anfahrt traegt eine Generation: eine alte Anfahrt schaltet eine neue nicht vorzeitig auf Gruen.
+    if (!/gen !== yellowRestartGen/.test(String(u.echtRestart))) f.push('Anfahrt ohne Generation');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'stehend: Gelb bleibt, 3 s fahren: Ampel, Gruen angesagt, Unterbrechung zaehlt neu' };
+  }));
+
+  stAdd('Auto-Gelb v1.4.33: mehrere Abfluege, Ende erst wenn alle fahren; Abflug in der Anfahrt = wieder Gelb', () => agTestUmgebung((u) => {
+    const f = [];
+    $('race-auto-gelb').value = 'alle';
+    const a = u.npc('A'), b = u.npc('B', 'gruen');
+    a.parked = 'Bahn verlassen'; u.lauf(200);
+    b.parked = 'Bahn verlassen'; u.lauf(200);
+    if (autoGelb.liste.length !== 2 || u.flaggen.length !== 1) f.push('Liste ' + autoGelb.liste.length + ', Flaggen ' + u.flaggen.join());
+    if (autoGelb.ansageLog.length !== 2) f.push('Ansagen ' + autoGelb.ansageLog.join());
+    if (autoGelbBannerText().indexOf('+1') < 0) f.push('Banner ohne +1: ' + autoGelbBannerText());
+    a.parked = false; a.tileAt = u.T;
+    u.lauf(5000, [a]);
+    if (u.anfahrten) f.push('Anfahrt, obwohl B noch steht');
+    b.parked = false; b.tileAt = u.T;
+    u.lauf(3200, [a, b]);
+    if (u.anfahrten !== 1) f.push('keine Anfahrt, als beide fuhren');
+    // Waehrend der Anfahrt fliegt A wieder ab: zurueck auf Gelb.
+    a.parked = 'Bahn verlassen'; u.lauf(200);
+    if (flagState !== 'yellow' || autoGelb.phase !== 'gelb') f.push('Abflug in der Anfahrt ohne Gelb (' + flagState + ')');
+    // Von Hand freigegeben: kein neues Gelb fuer denselben Abflug.
+    flagState = 'restart'; u.lauf(400);
+    if (autoGelb.phase !== 'aus' || flagState !== 'restart') f.push('Freigabe von Hand nicht respektiert');
+    flagState = 'green'; u.lauf(1000);
+    if (flagState !== 'green') f.push('derselbe Abflug loest nach Freigabe erneut aus');
+    a.parked = false; a.tileAt = u.T; u.lauf(400, [a]);
+    a.parked = 'Bahn verlassen'; u.lauf(200);
+    if (flagState !== 'yellow') f.push('neuer Abflug nach Freigabe ohne Gelb');
+    // Ein abgemeldetes Auto haelt kein Gelb fest.
+    garage.splice(garage.indexOf(a), 1);
+    u.lauf(200);
+    if (u.anfahrten !== 2) f.push('abgemeldetes Auto haelt Gelb');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'zwei Abfluege, Anfahrt erst mit beiden, Abflug in der Anfahrt = Gelb, Freigabe von Hand gilt' };
+  }));
+
+  stAdd('Auto-Gelb v1.4.33: nie in Countdown, Einfuehrungsrunde, Pause, Tutorial, Challenge, unter Gelb von Hand', () => agTestUmgebung((u) => {
+    const f = [];
+    $('race-auto-gelb').value = 'alle';
+    const npc = u.npc('X');
+    npc.parked = 'Bahn verlassen';
+    const faelle = [
+      ['Countdown', () => { raceState = 'countdown'; }, () => { raceState = 'racing'; }],
+      ['Einfuehrungsrunde', () => { raceFormationLap = true; }, () => { raceFormationLap = false; }],
+      ['Tutorial', () => { tutLaeuft = () => true; }, () => { tutLaeuft = () => false; }],
+      ['Challenge', () => { challengeLaeuft = () => true; }, () => { challengeLaeuft = () => false; }],
+      ['Gelb deaktiviert', () => { gelbDeaktiviert = () => true; }, () => { gelbDeaktiviert = () => false; }],
+      ['Gelb von Hand', () => { flagState = 'yellow'; }, () => { flagState = 'green'; }],
+    ];
+    for (const [name, an, aus] of faelle) {
+      an(); u.lauf(1000); aus();
+      if (u.flaggen.length || autoGelb.phase !== 'aus') f.push(name + ': ausgeloest');
+      u.flaggen.length = 0; autoGelbZuruecksetzen();
+    }
+    // Pause: der Zeitgeber ruht.
+    rennPauseAktiv = () => true; u.lauf(1000); rennPauseAktiv = () => false;
+    if (u.flaggen.length) f.push('Pause: ausgeloest');
+    // Danach (alles frei) loest derselbe Abflug aus: verschoben, nicht verworfen.
+    u.lauf(200);
+    if (flagState !== 'yellow') f.push('nach den Sperren kein Gelb');
+    // Rennende raeumt auf.
+    raceState = 'finished'; u.lauf(200);
+    if (autoGelb.phase !== 'aus' || autoGelb.liste.length) f.push('Rennende raeumt nicht auf');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : faelle.length + ' Sperren + Pause, danach Gelb, Rennende raeumt auf' };
+  }));
+
+  stAdd('Auto-Gelb v1.4.33: WLAN - eigenes Feld im Bericht, fremdem Gelb folgen, nichts im Funktakt', () => agTestUmgebung((u) => {
+    const f = [];
+    $('race-auto-gelb').value = 'npc';
+    const npc = u.npc('N');
+    npc.parked = 'Bahn verlassen'; u.lauf(200);
+    const feld = autoGelbMpFeld();
+    if (!/^0\|rot\|bmw\|N$/.test(feld)) f.push('Feld ' + feld);
+    if (mpEigenerStand().gelb !== feld) f.push('Bericht ohne Feld');
+    autoGelbZuruecksetzen(); flagState = 'green'; npc.parked = false;
+    if (autoGelbMpFeld() !== '') f.push('Feld nach Ende nicht leer');
+    // Ein anderes Telefon meldet Gelb: folgen, aber nicht selbst weitermelden.
+    const merkId = mp.id, merkBericht = mpBerichten;
+    let berichte = 0;
+    mpBerichten = () => { berichte++; };
+    mp.an = true;
+    try {
+      mp.id = 'ich';
+      autoGelbMpPruefen({ fahrer: [{ id: 'ich', gelb: '' }, { id: 'du', name: 'Anna', alter: 1, gelb: '2|blau||Blauer' }] });
+      u.lauf(200);
+      if (flagState !== 'yellow' || autoGelb.phase !== 'gelb') f.push('fremdes Gelb nicht uebernommen');
+      if (autoGelbMpFeld() !== '') f.push('fremdes Gelb weitergemeldet');
+      if (berichte) f.push('fremdes Gelb loest eigenen Bericht aus');
+      if (!/:2$/.test(autoGelb.ansageLog.join())) f.push('fremde Ansage ohne Sektor: ' + autoGelb.ansageLog.join());
+      u.lauf(5000);
+      if (u.anfahrten) f.push('Anfahrt, obwohl das andere Telefon noch Gelb meldet');
+      autoGelbMpPruefen({ fahrer: [{ id: 'du', name: 'Anna', alter: 1, gelb: '' }] });
+      u.lauf(200);
+      if (u.anfahrten !== 1) f.push('keine Anfahrt nach fremdem Ende');
+      // Veraltete Meldung (Telefon weg) zaehlt nicht.
+      autoGelbMpPruefen({ fahrer: [{ id: 'du', name: 'Anna', alter: 999, gelb: '1|rot||X' }] });
+      if (autoGelb.fremd) f.push('inaktiver Fahrer zaehlt');
+      // Eigener Abflug im Mehrspieler: sofort ein Bericht (nicht erst beim Lebenszeichen).
+      flagState = 'green'; autoGelbZuruecksetzen(); berichte = 0;
+      npc.parked = 'Bahn verlassen'; u.lauf(200);
+      if (berichte !== 1) f.push('eigener Abflug ohne sofortigen Bericht (' + berichte + ')');
+    } finally { mp.id = merkId; mpBerichten = merkBericht; }
+    // Im Funktakt: weder Abseits-Melder noch Meldestrom noch Sendetakt wissen davon.
+    for (const fn of [offtrackMelden, onCarNotify, handleDashboardBytes, ghostTick, sendControlValue]) {
+      if (/autoGelb/.test(String(fn))) f.push(fn.name + ' ruft die automatische Gelbe Flagge');
+    }
+    // Option aus: der Zeitgeber kehrt nach dem ersten Vergleich zurueck (keine Garage-Runde).
+    $('race-auto-gelb').value = 'aus'; mp.an = false; autoGelb.fremd = '';
+    flagState = 'green'; autoGelbZuruecksetzen();
+    const merkFeld = autoGelbFeld;
+    let runden = 0;
+    autoGelbFeld = (m) => { runden++; return merkFeld(m); };
+    try { u.lauf(1000); } finally { autoGelbFeld = merkFeld; }
+    if (runden) f.push('Zeitgeber arbeitet bei Option aus');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Feld ' + feld + ', fremdem Gelb gefolgt und beendet, Funktakt unberuehrt' };
+  }));
