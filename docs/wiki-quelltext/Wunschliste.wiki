@@ -47,6 +47,8 @@ Die '''Wunschliste''' sammelt Funktionen, die für [[OmegaSim]] gewünscht, aber
 |-
 | Challenger mit Seitengewohnheiten || gewünscht || Der Challenger in Time Attack lernt, auf welcher Seite der Spieler über mehrere Runden fährt, und wählt daraus seine Überholstellen.
 |-
+| Fahrmodi wie in der Original-App || gewünscht || Die Fahrmodi der Original-App von Carrera (Gas- und Lenkverhalten, Tempostufen) sollen sich in OmegaSim exakt nachbilden lassen, damit man ohne Umgewöhnen zwischen beiden Apps wechseln kann (siehe [[Original-App]]).
+|-
 | Rennpause || gebaut || Rennen anhalten mit Overlay, Pausentaste am Controller und Wiederanlauf-Ampel (Pull Request von Playdater1974, übernommen seit 1.2.25; siehe [[Rennarten]]).
 |-
 | Rennintro || gebaut || Gesprochene Vorstellung von Modus, Startaufstellung und Wetter vor der Startampel (Pull Request von Playdater1974, übernommen; siehe [[Rennarten]]).
