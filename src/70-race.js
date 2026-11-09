@@ -183,7 +183,7 @@
   // Funktion: bei einem Zeitlimit gibt es keine Zielrundenzahl, und eine hinzuschreiben
   // waere erfunden.
   function raceLapTarget(gefahren) {
-    if (raceMode === 'laps') return gefahren + ' / ' + raceLimit;
+    if (raceMode === 'laps') return gefahren + ' / ' + (raceLimit + fruehstartZielPlus(1));
     if (RACE_MODES[raceMode].timed && raceStartedAt !== null) {
       const restMs = Math.max(0, raceLimit * 60000 - (rennZeitJetzt() - raceStartedAt));
       const s = Math.floor(restMs / 1000);
@@ -201,7 +201,8 @@
     }
     if (!RACE_MODES[raceMode].timed) return false;
     if (raceMode === 'laps') {
-      return raceAllCars().some(c => c.laps.length >= raceLimit);
+      // Je Auto sein Ziel: Fruehstart-Zusatzrunde (v1.3.132) zaehlt nur fuer diesen Fahrer.
+      return raceAllCars().some(c => c.laps.length >= raceLimit + fruehstartZielPlus(spielerPlatzVonRolle(c.role)));
     }
     return raceStartedAt !== null && (rennZeitJetzt() - raceStartedAt) >= raceLimit * 60000;
   }
@@ -501,47 +502,78 @@
   function fruehstartReset() {
     if (fruehstartTimer) { clearInterval(fruehstartTimer); fruehstartTimer = null; }
     FRUEH_SPIELER.forEach((w) => Object.assign(fruehstart[w], { frueh: false, warten: false, bis: 0,
-      zugeschlagen: false, gas: false, pit: false, pitGefahren: false, zeit: false, extra: false }));
+      zugeschlagen: false, gas: false, zeit: false, extra: false, extraGefahren: false }));
   }
-  // ---- FRUEHSTART ALS STRAFE (v1.3.115) ---------------------------------------------
+  // ---- FRUEHSTART ALS STRAFE (v1.3.115, ueberarbeitet 1.3.132) ----------------------
   // BESTELLT: "Wenn die Ampel an ist, erlaube mir nicht, Gas zu geben. Wer Gas gibt
   // (Spieler 1, 2, 3, Multiplayer), soll eine Durchfahrtsstrafe bekommen. Fuege dazu eine
   // Rennoptionen-Option ein (Strafe fuer Fruehstart: pit (Standard), 5 s Zeitstrafe,
-  // Zusatzrunde, keine)." Waehrend Rot ist das Gas gesperrt (50-drive.js); der Versuch wird
-  // am Gas-INPUT erkannt (fruehstartGasSetzen), nicht an der Bewegung.
+  // Zusatzrunde, keine)." Waehrend Rot ist das Gas gesperrt (50-drive.js physicsStep, im
+  // RC-Modus 20-protocol.js); der Versuch wird am Gas-INPUT erkannt (fruehstartGasPruefen),
+  // nicht an der Bewegung.
+  //   pit    die Durchfahrtsstrafe der Zufallsevents (zev.strafe, 74-zufallsevents.js): beim
+  //          naechsten Boxenstopp abgeleistet (leerer Plan, 2 s), fuer Spieler 1 UND 2/3; nicht
+  //          abgeleistet bis Rennende = +20 s in racePenaltyMs/strafeMsVon (Strafen-Spalte "DT").
+  //   5s     +5 s auf die erste Runde (fruehstartZuschlag).
+  //   extra  eine Soll-Runde mehr fuer DIESEN Fahrer (fruehstartZielPlus), nur im Rundenrennen;
+  //          in allen anderen Modi gilt die Durchfahrt (Option dort ausgegraut).
+  // In Challenges gilt immer die Zeitstrafe: dort gibt es weder Strafen-Spalte noch Rundenziel
+  // je Fahrer, eine Durchfahrt liefe ins Leere.
   const FRUEHSTART_ZEIT_MS = 5000;
+  // Gas-Eingabe, ab der ein Fruehstart zaehlt. throttleY/z.throttle kommen schon NACH der Totzone
+  // der Belegung (applyDeadzone mit TRIGGER_DEADZONE, 90-ghosts.js: innerhalb exakt 0, danach von
+  // 0 an neu skaliert); die 5 % sind nur ein Rand gegen ein gestreiftes Touch-Pedal.
+  const FRUEHSTART_GAS_SCHWELLE = 0.05;
   function fruehstartStrafe() {
+    if (typeof challengeLaeuft === 'function' && challengeLaeuft()) return '5s';
     const el = $('race-fruehstart-strafe');
     const v = el ? el.value : 'pit';
+    if (v === 'extra' && raceMode !== 'laps') return 'pit';
     return ['pit', '5s', 'extra', 'keine'].indexOf(v) >= 0 ? v : 'pit';
   }
   function fruehstartGasSetzen(w, ja) { const f = fruehstart[w]; if (f) f.gas = !!ja; }
   function fruehstartGas(w) { const f = fruehstart[w]; return !!(f && f.gas); }
   // Rot = Countdown beim stehenden Start. Bei fliegendem Start rollt das Feld in Formation.
   function fruehstartGasSperre(w) { return raceState === 'countdown' && !raceFlying; }
+  // IM SENDETAKT gerufen (physicsStep, physicsStepVon, im RC-Modus aus dem Herzschlag): true =
+  // Gas sperren. Merkt den Versuch; die Strafe vergibt der 100-ms-Zeitgeber fruehstartBeginnen.
+  // Keine Allokation, kein DOM.
+  function fruehstartGasPruefen(w, gasEingabe) {
+    if (raceState !== 'countdown' || raceFlying) return false;
+    if (gasEingabe > FRUEHSTART_GAS_SCHWELLE) { const f = fruehstart[w]; if (f) f.gas = true; }
+    return true;
+  }
   function fruehstartAnwenden(w) {
     const strafe = fruehstartStrafe(), f = fruehstart[w];
     if (!f) return;
+    const wer = w >= 2 ? 'P' + w + ': ' : '';
     if (strafe === '5s') {
       f.zeit = true;
       rennEreignisStrafe(w, FRUEHSTART_ZEIT_MS / 1000);
-      showHudToast((w >= 2 ? 'P' + w + ': ' : '') + t('Frühstart') + ' +' + FRUEHSTART_ZEIT_MS / 1000 + ' s');
+      showHudToast(wer + t('Frühstart') + ' +' + FRUEHSTART_ZEIT_MS / 1000 + ' s');
     } else if (strafe === 'extra') {
+      // NICHT raceLimit += 1: das verlaengerte das Rennen fuer ALLE und blieb fuer das naechste stehen.
       f.extra = true;
-      if (w === 1) raceLimit += 1;
-      showHudToast((w >= 2 ? 'P' + w + ': ' : '') + t('Frühstart') + ': ' + t('Zusatzrunde'));
+      showHudToast(wer + t('Frühstart') + ': ' + t('Zusatzrunde'));
     } else if (strafe === 'pit') {
-      f.pit = true;
-      showHudToast((w >= 2 ? 'P' + w + ': ' : '') + t('Frühstart') + ': ' + t('Durchfahrt (Boxengasse)'));
+      if (typeof zevStrafeDazu === 'function') zevStrafeDazu(w);
+      showHudToast(wer + t('Frühstart') + ': ' + t('Durchfahrt (Boxengasse)'));
     }
-    log((w >= 2 ? 'P' + w + ': ' : '') + 'Fruehstart: Strafe ' + strafe + '.', 'err');
+    log(wer + 'Fruehstart: Strafe ' + strafe + '.', 'err');
   }
+  // +5 s auf die erste Runde, einmal. Die Meldung kam schon beim Fruehstart (fruehstartAnwenden).
   function fruehstartZuschlag(w, rundenIndex) {
     const f = fruehstart[w];
-    if (!f || !f.frueh || f.zugeschlagen || rundenIndex !== 0 || fruehstartStrafe() !== '5s') return 0;
+    if (!f || !f.zeit || f.zugeschlagen || rundenIndex !== 0) return 0;
     f.zugeschlagen = true;
-    showHudToast((w >= 2 ? 'P' + w + ': ' : '') + t('Frühstart') + ' +' + FRUEHSTART_ZEIT_MS / 1000 + ' s');
     return FRUEHSTART_ZEIT_MS;
+  }
+  // Zusatzrunde: so viele Runden mehr braucht Spieler w bis ins Ziel (0 oder 1). Gelesen von
+  // raceLimitReached (Flagge je Auto), playerLapCrossed (Ziel von Spieler 1), raceLapTarget/
+  // statusRest (Anzeige) und mpEigenerStand (WLAN: gemeldete Runden).
+  function fruehstartZielPlus(w) {
+    const f = fruehstart[w];
+    return f && f.extra && raceMode === 'laps' ? 1 : 0;
   }
   function fruehstartBeginnen() {
     fruehstartReset();
@@ -560,12 +592,12 @@
   }
   function fruehstartGruen() {
     if (fruehstartTimer) { clearInterval(fruehstartTimer); fruehstartTimer = null; }
-    FRUEH_SPIELER.forEach((w) => { if (fruehstart[w].frueh) fruehstart[w].warten = true; });
+    let jemand = false;
+    FRUEH_SPIELER.forEach((w) => { if (fruehstart[w].frueh) { fruehstart[w].warten = true; jemand = true; } });
+    // Das Banner "DURCHFAHRT: BOX" malt zevBannerMalen nur bei 'racing'; der Aufrufer setzt das
+    // gleich nach dieser Funktion.
+    if (jemand && typeof zevBannerMalen === 'function') rennZeitTimeout(() => zevBannerMalen(true), 0);
   }
-  // Die Durchfahrtsstrafe (Boxengasse) wird beim naechsten Boxenaufenthalt abgeleistet
-  // (leerer Plan, wie der Strafstopp der Zufallsevents).
-  function fruehstartDurchfahrt(w) { const f = fruehstart[w]; return !!(f && f.pit && !f.pitGefahren); }
-  function fruehstartDurchfahrtErledigt(w) { const f = fruehstart[w]; if (f) { f.pit = false; f.pitGefahren = true; } }
   // Kein Ausbremsen mehr: die Strafe ist die gewaehlte Art.
   function fruehstartStrafeAktiv(w) { return false; }
   function fruehstartGab(w) { const f = fruehstart[w || 1]; return !!(f && f.frueh); }
@@ -2638,6 +2670,9 @@
     const ohneEnde = raceMode === 'practice' || raceMode === 'bestzeit';
     $('race-limit').disabled = !m.timed && raceMode !== 'derby' && !ohneEnde;
     $('race-limit').min = ohneEnde ? '0' : '1';
+    // Fruehstart-Zusatzrunde gibt es nur im Rundenrennen (sonst gilt Durchfahrt, fruehstartStrafe).
+    const fsExtra = document.querySelector('#race-fruehstart-strafe option[value="extra"]');
+    if (fsExtra) fsExtra.disabled = raceMode !== 'laps';
     // 0.7, not 0.45. On white 0.45 was a legible grey; on black it collapsed to 2.7:1,
     // and this label still has to be readable while it says which unit is NOT in use.
     $('race-limit-label').style.opacity = (m.timed || raceMode === 'derby') ? '' : '0.7';
@@ -3868,8 +3903,16 @@
       // Die Zielrunde schaltete nur auf 'finishing' (raceClockTick), beendet wurde erst bei der
       // NAECHSTEN Ueberfahrt - ein 5-Runden-Rennen ging also ueber 6 Runden. Wer die Zielzahl
       // selbst erreicht, ist im Ziel; die anderen fahren ihre Runde zu Ende (Auslauf/finishing).
-      const zielErreicht = !wasFinishing && raceMode === 'laps' && raceLapTimes.length >= raceLimit;
-      if (wasFinishing || zielErreicht) finishRace();
+      // v1.3.132: mit Fruehstart-Zusatzrunde liegt das eigene Ziel eine Runde weiter; faellt die
+      // Flagge durch einen anderen, faehrt dieser Fahrer noch genau eine Runde (einmal).
+      const zielPlus = fruehstartZielPlus(1);
+      const zielErreicht = !wasFinishing && raceMode === 'laps' && raceLapTimes.length >= raceLimit + zielPlus;
+      let strafRunde = false;
+      if (wasFinishing && zielPlus && !fruehstart[1].extraGefahren && raceLapTimes.length < raceLimit + zielPlus) {
+        fruehstart[1].extraGefahren = true; strafRunde = true;
+        showHudToast(t('Frühstart') + ': ' + t('Zusatzrunde'));
+      }
+      if ((wasFinishing && !strafRunde) || zielErreicht) finishRace();
       // Runde 0, nicht 1: das Feld steht auf der Startgeraden und ueberfaehrt Start/Ziel
       // erst am Ende der ersten Runde. Vor der ersten Ueberfahrt ist also noch keine Runde
       // voll, und raceLapTimes.length ist genau diese Zahl.
@@ -4823,12 +4866,8 @@
       // Spieler-2-Rolle vergeben war - danach gab es das Minispiel auch allein nicht mehr.
       // v1.3.88 STRAFSTOPP (Durchfahrtsstrafe der Zufallsevents): es wird NICHTS am Auto gemacht -
       // leerer Plan, kein Minispiel, nach ZEV_STRAFE_STAND_S frei (losfahren geht jederzeit).
+      // Die Fruehstart-Durchfahrt (v1.3.115) steckt seit 1.3.132 in derselben Zaehlung (zevStrafeDazu).
       pitNurStrafe = zevBoxStopp(1);
-      // v1.3.115: Fruehstart-Durchfahrtsstrafe (leerer Plan, wie der Strafstopp).
-      if (!pitNurStrafe && typeof fruehstartDurchfahrt === 'function' && fruehstartDurchfahrt(1)) {
-        pitNurStrafe = true;
-        fruehstartDurchfahrtErledigt(1);
-      }
       if (pitNurStrafe) pitPlan = { refuel: 0, tyres: false, repair: false };
       else if (pitModus === 'minigame' && !(typeof zusatzAktiv === 'function' && zusatzAktiv().length)) pitSpielStart();
       // The plan was chosen while rolling down the pit lane; only now is it locked in.

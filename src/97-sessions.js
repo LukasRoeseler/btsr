@@ -618,7 +618,10 @@
     // v1.0.12: Gesamtzeit und Strafe fuer verpasste Pflichtstopps (Meisterschaft des Leiters).
     const summe = imRennen ? zeiten.reduce((a, b) => a + b, 0) : null;
     const strafe = imRennen && typeof racePenaltyMs === 'function' ? racePenaltyMs() : null;
-    return { id: mp.id, name: mp.name || 'ohne Namen', laps: zeiten.length,
+    // Fruehstart-Zusatzrunde (v1.3.132): eine Runde weniger melden, solange sie nicht gefahren ist -
+    // die anderen Telefone pruefen das Ziel gegen raceLimit (mpZielPruefen), der Host kennt kein Feld dafuer.
+    const zielPlus = imRennen && typeof fruehstartZielPlus === 'function' ? fruehstartZielPlus(1) : 0;
+    return { id: mp.id, name: mp.name || 'ohne Namen', laps: Math.max(0, zeiten.length - zielPlus),
              letzte, beste, summe, strafe,
              abgaenge: (typeof offtrackZaehler !== 'undefined') ? offtrackZaehler : 0 };
   }

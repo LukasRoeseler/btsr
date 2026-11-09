@@ -13874,19 +13874,29 @@
       if (!fruehstartGas(1)) f.push('Gas-Flag nicht gesetzt');
       fruehstartReset(); fruehstartGasSetzen(1, false);
       if (fruehstartGas(1)) f.push('Gas-Flag nach Reset noch gesetzt');
+      // Gas-Pruefung im Sendetakt (auch RC-Weg, 20-protocol.js): sperrt und merkt erst ab der Schwelle.
+      raceState = 'countdown'; fruehstartReset();
+      if (!fruehstartGasPruefen(2, 0.03)) f.push('Pruefung sperrt im Countdown nicht');
+      if (fruehstartGas(2)) f.push('Gas unter der Schwelle schon Fruehstart');
+      fruehstartGasPruefen(2, 0.5);
+      if (!fruehstartGas(2)) f.push('Gas ueber der Schwelle nicht gemerkt');
+      raceState = 'racing'; fruehstartReset();
+      if (fruehstartGasPruefen(1, 1)) f.push('Pruefung sperrt nach Gruen');
+      if (fruehstartGas(1)) f.push('nach Gruen als Fruehstart gemerkt');
+      // Durchfahrt = Durchfahrtsstrafe der Zufallsevents, fuer P1 UND P2/P3.
       $('race-fruehstart-strafe').value = 'pit';
-      fruehstartReset(); fruehstartAnwenden(1);
-      if (!fruehstartDurchfahrt(1)) f.push('Durchfahrt nicht gesetzt');
-      fruehstartDurchfahrtErledigt(1);
-      if (fruehstartDurchfahrt(1)) f.push('Durchfahrt nicht erledigt');
+      zevAllesZurueck(); fruehstartReset(); fruehstartAnwenden(1); fruehstartAnwenden(2);
+      if (zevStrafeOffen(1) !== 1) f.push('P1 Durchfahrt nicht offen');
+      if (zevStrafeOffen(2) !== 1) f.push('P2 Durchfahrt nicht offen');
+      if (!zevBoxStopp(2) || zevStrafeOffen(2) !== 0) f.push('P2 Durchfahrt in der Box nicht abgeleistet');
       $('race-fruehstart-strafe').value = 'keine';
-      fruehstartReset(); fruehstartAnwenden(1);
-      if (fruehstartDurchfahrt(1)) f.push('keine: trotzdem Durchfahrt');
+      zevAllesZurueck(); fruehstartReset(); fruehstartAnwenden(1);
+      if (zevStrafeOffen(1)) f.push('keine: trotzdem Durchfahrt');
     } finally {
-      raceState = merkState; raceFlying = merkFlying; fruehstartReset();
+      raceState = merkState; raceFlying = merkFlying; fruehstartReset(); zevAllesZurueck();
       $('race-fruehstart-strafe').value = merkStrafe;
     }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Sperre im Countdown (stehend), frei nach Gruen und beim Fliegenden' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Sperre im Countdown (stehend), frei nach Gruen und beim Fliegenden, Durchfahrt P1/P2 ueber die Box' };
   });
 
   // ---- CHALLENGES (v0.8.30) ----
@@ -21175,6 +21185,7 @@
       $('race-fruehstart-strafe').value = '5s';
       fruehstartReset();
       fruehstart[1].frueh = true; fruehstart[3].frueh = true;
+      fruehstartAnwenden(1); fruehstartAnwenden(3);
       if (fruehstartZuschlag(1, 1) !== 0) f.push('Zuschlag auf Runde 2');
       if (fruehstartZuschlag(1, 0) !== 5000) f.push('kein Zuschlag auf Runde 1');
       if (fruehstartZuschlag(1, 0) !== 0) f.push('Zuschlag doppelt');
@@ -21182,9 +21193,45 @@
       if (fruehstartZuschlag(2, 0) !== 0) f.push('Spieler 2 ohne Fruehstart bestraft');
       fruehstartReset(); fruehstart[1].frueh = true;
       $('race-fruehstart-strafe').value = 'keine';
+      fruehstartAnwenden(1);
       if (fruehstartZuschlag(1, 0) !== 0) f.push('keine: trotzdem Zuschlag');
     } finally { $('race-fruehstart-strafe').value = merk; fruehstartReset(); }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'einmal +5 s auf Runde 1, je Spieler, Rennoption wirkt' };
+  });
+
+  stAdd('Fruehstart v1.3.132: Zusatzrunde je Fahrer (nur Rundenrennen), Challenge = Zeitstrafe', () => {
+    const f = [];
+    const merk = { wert: $('race-fruehstart-strafe').value, mode: raceMode, limit: raceLimit, rs: raceState,
+                   lt: raceLapTimes, ch: challengeLaeuft, start: raceStartedAt };
+    try {
+      $('race-fruehstart-strafe').value = 'extra';
+      raceMode = 'laps'; raceLimit = 5; fruehstartReset(); zevAllesZurueck();
+      fruehstartAnwenden(1);
+      if (raceLimit !== 5) f.push('raceLimit veraendert (' + raceLimit + ')');
+      if (fruehstartZielPlus(1) !== 1) f.push('P1 ohne Zusatzrunde');
+      if (fruehstartZielPlus(2) !== 0) f.push('P2 ohne Fruehstart mit Zusatzrunde');
+      raceState = 'racing'; raceStartedAt = rennZeitJetzt();
+      raceLapTimes = [1, 2, 3, 4, 5].map((i) => ({ lap: i, ms: 10000, crossedAt: i }));
+      const andere = raceAllCars().filter((c) => c.role !== 'player' && (c.laps || []).length >= 5);
+      if (!andere.length && raceLimitReached()) f.push('Flagge schon bei 5 Runden des bestraften P1');
+      raceLapTimes = raceLapTimes.concat([{ lap: 6, ms: 10000, crossedAt: 6 }]);
+      if (!raceLimitReached()) f.push('keine Flagge bei 6 Runden');
+      if (raceLapTarget(2) !== '2 / 6') f.push('Anzeige ' + raceLapTarget(2) + ' statt 2 / 6');
+      // Andere Rennarten: Durchfahrt statt Zusatzrunde.
+      raceMode = 'endurance'; fruehstartReset(); zevAllesZurueck();
+      if (fruehstartStrafe() !== 'pit') f.push('Zeitrennen: ' + fruehstartStrafe() + ' statt pit');
+      fruehstartAnwenden(1);
+      if (fruehstartZielPlus(1) !== 0 || zevStrafeOffen(1) !== 1) f.push('Zeitrennen: keine Durchfahrt');
+      // Challenge: immer Zeitstrafe.
+      challengeLaeuft = () => true;
+      $('race-fruehstart-strafe').value = 'pit';
+      if (fruehstartStrafe() !== '5s') f.push('Challenge: ' + fruehstartStrafe() + ' statt 5s');
+    } finally {
+      challengeLaeuft = merk.ch; $('race-fruehstart-strafe').value = merk.wert; raceMode = merk.mode;
+      raceLimit = merk.limit; raceState = merk.rs; raceLapTimes = merk.lt; raceStartedAt = merk.start;
+      fruehstartReset(); zevAllesZurueck();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'raceLimit bleibt, Ziel P1 = 6 von 5, Zeitrennen = Durchfahrt, Challenge = 5 s' };
   });
 
   stAdd('Menue im Rennen: erst fragen, Rennen laeuft weiter', () => {
