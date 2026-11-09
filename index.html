@@ -5726,7 +5726,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.4.26</span></span>
+        <span class="foot-ver">v<span id="app-version">1.4.32</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6967,6 +6967,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.4</span></b></p>
       <ul class="muted" id="patchnotes-14" style="padding-left:20px; line-height:1.7">
+        <li>Latenz: Die Funkpriorit&#228;t (Spieler schnellstes Verbindungsintervall, NPCs, Safety Car und Reinigungswagen ausgewogen) wird jetzt auch im Training ohne Ampel, beim Losfahren, 5 s nach dem Verbinden und nach einem Rollenwechsel gesetzt; bisher bekamen dort alle Autos, auch die NPCs, das schnellste Intervall. Mit zwei Spielern zeichnet das Cockpit im Sendetakt ohne erzwungene Layout-Berechnungen (gemessen bei gedrosselter CPU: Arbeit je Takt p95 von 35 bis 85 ms auf 9 bis 15 ms, Takt stabil um 50 ms); die Rundenliste wird nur bei &#196;nderung neu gebaut, Telemetrie au&#223;erhalb der Funkverarbeitung gespeichert. Neu unter Optionen &#8594; System: &#8222;Funk je Auto&#8220; (WIP) mit Weg, Z&#228;hlern, Meldeabstand und Funkstufe f&#252;r jedes Auto.</li>
         <li>Einparken und Ausparken verbessert: Das Safety Car (und ein NPC mit Tankort &#8222;Rand&#8220;) z&#228;hlt Radius-2-Kurven, Engstelle und Boxengasse jetzt als freien Platz, beginnt das Einparken fr&#252;her statt das Gas zu drosseln und rechnet den Rollweg mit dem echten Tempo; es soll so auf dem gew&#228;hlten Teil und am Rand stehen. Beim Ein- und Ausparken bekommt das Safety Car kurz die schnellste Funkverbindung. Die Ausparkfolge aus der Box lenkt schw&#228;cher und k&#252;rzer (70 %), das Schl&#228;ngeln in der Einf&#252;hrungsrunde ist wieder wie vorher. Die Randphasen rollen trotz schnellerem Formationstempo denselben Weg. NPC: maximale Querlage (WIP) begrenzt nur noch die Au&#223;enseite der Kurve, innen fahren die NPCs voll. Fr&#252;hstart: Zusatzrunde nur f&#252;r den Bestraften (nur im Rundenrennen), Durchfahrt auch f&#252;r Spieler 2 und 3 und ohne Ableisten +20 s, Gas bei Rot auch im RC-Modus gesperrt, in Challenges immer 5 s. Einmalig wird eine noch gespeicherte H&#246;chstgeschwindigkeit aus 1.3.121 zur&#252;ckgesetzt. Apps Script: Die L&#246;schfunktion ist entfernt und eingesandte Texte sind besser gegen Formeln gesch&#252;tzt (bitte neu bereitstellen).</li>
         <li>Virtuelles Fahren aufger&#228;umt: Das Porsche-Modell ist wieder entfernt (die App ist dadurch rund 10 MB kleiner, eine gespeicherte Porsche-Wahl f&#228;llt auf den V5.R zur&#252;ck); die Autos stammen alle aus Speed Dreams (GPL). Schaden und eine im virtuellen Fahren gesetzte gelbe Flagge wirken nach dem Beenden nicht mehr im echten Fahren, Time Attack wertet jede Runde nur einmal. Performance-Grafik wieder wie in 1.3.92 (mit Bodenglanz), Quality mit funktionierenden Schatten; scheitert ein Shader, f&#228;hrt die App mit einfacherer Grafik weiter, und ein Grafikverlust beendet die Fahrt mit Meldung. Die DualSense-Vibration auf R2 gilt nur noch im virtuellen Fahren. Das deutsche Tutorial bleibt ohne Clip still statt mit englischer Ger&#228;testimme. Fehlende &#220;bersetzungen erg&#228;nzt.</li>
         <li>Nachbesserungen zu 1.3.93 bis 1.3.131: Die Meisterschaftsansage (jetzt WIP) wartet, bis die Ergebnisansage gesprochen ist, statt sie abzubrechen, und sagt auf Englisch den Sieger richtig an. &#8222;Kein Tempoverlust neben der Bahn&#8220; ist als WIP gekennzeichnet. Die Patchnotes f&#252;r 1.3.93 bis 1.3.131 sind nachgetragen. Selbsttests wieder streng (Kachelphase), L3-Test in jeder Sprache, fehlende spanische Texte erg&#228;nzt; Wiki berichtigt (Zufallsevents-Tabelle, Abschnitt Sektoren, Fahrgef&#252;hl mit elf S&#228;tzen und den Modi Gran Hybrismo und Assetto Carrera, Versionsangaben).</li>
@@ -13178,11 +13179,13 @@
       <div class="opt-row"><div class="opt-label">Funk-Rundlauf
           <small>Wie lange ein Steuerbefehl bis zur Best&auml;tigung durch das Bluetooth braucht: Mittelwert und 95 % der Befehle. Über 45 ms f&auml;llt jeder zweite Befehl aus dem Takt. H&auml;ngende Befehle gibt der Wachhund nach 300 ms frei. In der App auf einem &auml;lteren Handy hilft oft, &bdquo;Android System WebView&ldquo; im Play Store zu aktualisieren.</small></div>
         <span class="opt-val" id="funk-rundlauf" data-i18n-skip>&ndash;</span></div>
+      <!-- Latenz (WIP): Funk je Auto (funkJeAutoZeilen, 90-ghosts.js; OMEGA_BRUECKE.omegaInfoAuto, 05-app-bruecke.js). -->
+      <div class="opt-row"><div class="opt-label">Funk je Auto<span class="wip-tag">WIP</span><small>Je verbundenes Auto: Rolle, Schreibweg (OmegaBle direkt, OmegaBle oder Plugin, gesperrt mit Restzeit), die Z&auml;hler geschrieben/wiederholt/verworfen der App, der Abstand der Meldungen des Autos (Mittel/95 % der letzten rund 4 s) und die zuletzt gesetzte Funkpriorit&auml;t. Zum Aufzeichnen, wenn die Latenz schlecht wird: vorher und nachher ein Bildschirmfoto.</small><span id="funk-je-auto" style="display:block; margin-top:3px; font-size:12px; white-space:pre-line; color:var(--muted, #8a93a6)" data-i18n-skip>&ndash;</span></div></div>
       <div class="opt-row"><div class="opt-label">Bekannte Autos beim Start verbinden
           <small>Nur in der Android-App: Beim Start verbindet sie nacheinander alle Autos, die schon einmal verbunden waren (mit gemerkter Rolle oder gemerktem Namen) und gerade erreichbar sind. Ein Auto, das mit einem anderen Ger&auml;t verbunden, aus oder au&szlig;er Reichweite ist, wird ausgelassen. Im Browser verlangt Bluetooth f&uuml;r jedes Auto einen Klick.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-autoverbinden" checked><span></span></label></div>
       <!-- v1.3.15 (WIP): Funkprioritaet je Rolle zu Beginn der Startampel (funkPrioritaetVorStart, 90-ghosts.js). -->
-      <div class="opt-row"><div class="opt-label">Funkpriorit&auml;t beim Start<span class="wip-tag">WIP</span><small>Nur in der Android-App: Zu Beginn der Startampel, solange alle Autos stehen, bekommen die gesteuerten Autos (Spieler 1&ndash;3) das schnellste Verbindungsintervall und NPCs, Safety Car und Reinigungswagen ein ausgewogenes. So nehmen die NPCs dem Funk nicht die kurzen Zeitfenster weg, und die gesteuerten Autos reagieren schneller. Die Autos werden nacheinander umgestellt, im Abstand von 0,15 s.</small></div>
+      <div class="opt-row"><div class="opt-label">Funkpriorit&auml;t beim Start<span class="wip-tag">WIP</span><small>Nur in der Android-App: Beim Start einer Fahrt (Startampel, Training, Losfahren), nach dem Verbinden und nach einem Rollenwechsel, solange die Autos stehen, bekommen die gesteuerten Autos (Spieler 1&ndash;3) das schnellste Verbindungsintervall und NPCs, Safety Car und Reinigungswagen ein ausgewogenes. So nehmen die NPCs dem Funk nicht die kurzen Zeitfenster weg, und die gesteuerten Autos reagieren schneller. Die Autos werden nacheinander umgestellt, im Abstand von 0,15 s.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-funk-prio" checked><span></span></label></div>
       <div class="opt-row" id="opt-app-zeile" hidden><div class="opt-label">App &amp; Updates
           <small>Nur in der Android-App: Version, Updates ohne neue APK.</small></div>
@@ -14428,6 +14431,15 @@
              direkt: !!window.OmegaDirekt, pad: !!window.OmegaPad, neuVersucht: omegaDirektVersucht,
              direktFehler: (l && l.zaehler && l.zaehler.direktFehler) || '' };
   };
+  // Latenz (WIP): dasselbe je Geraet (Optionen > System, "Funk je Auto"). Vorher sah man nur das erste Auto.
+  window.OMEGA_BRUECKE.omegaInfoAuto = (deviceId) => {
+    if (!omegaBleVerfuegbar()) return { weg: 'Plugin', gesperrtMs: 0, zaehler: null };
+    const l = omegaLage.get(deviceId) || omegaLage.get(String(deviceId));
+    if (!l) return { weg: 'Plugin', gesperrtMs: 0, zaehler: null };
+    const rest = l.sperreBis ? Math.max(0, l.sperreBis - performance.now()) : 0;
+    return { weg: !rest && l.bereit ? (omegaDirektBenutzt ? 'OmegaBle direkt' : 'OmegaBle') : 'Plugin',
+             gesperrtMs: rest, zaehler: l.zaehler || null, alt: !!l.alt };
+  };
   // GEMELDET (Xbox- und PS4-Controller): ein gekoppeltes Bluetooth-Gamepad belegt den BLE-
   // Kanal, und die 5-s-Prio-Nachverhandlung eines Autos kann die Verbindung dann abreissen.
   // Diese Pruefung sagt, ob ein Gamepad anliegt. Die Web-Gamepad-API meldet ein Pad erst
@@ -14677,10 +14689,15 @@
       // 30-50 ms zurueck - die 45-ms-Pakete stauten sich. Die Abrisse mit Xbox/PS4-Controller wurden
       // unter Windows gemeldet, wo diese Bruecke gar nicht laeuft. Also wieder immer nachlegen.
       clearTimeout(this._prio);
+      // Latenz (WIP): uebernimmt die App die Stufe je Rolle (Schalter "Funkprioritaet beim Start" an, Auto der
+      // Garage), fragt SIE nach 5 s an (funkPrioNachVerbinden, 90-ghosts.js): Spieler HIGH, NPCs BALANCED.
+      // Sonst wie bisher HIGH. Vorher bekam hier jedes Auto blind HIGH, auch jeder NPC.
       this._prio = setTimeout(() => {
-        if (this.connected) {
-          ruf('requestConnectionPriority', { deviceId: id, connectionPriority: 1 }).catch(() => {});
-        }
+        if (!this.connected) return;
+        const b = window.OMEGA_BRUECKE;
+        try { if (b && typeof b.prioNachVerbindenSelbst === 'function' && b.prioNachVerbindenSelbst(id)) return; }
+        catch (e) { /* dann wie bisher */ }
+        ruf('requestConnectionPriority', { deviceId: id, connectionPriority: 1 }).catch(() => {});
       }, 5000);
       return this;
     }
@@ -15238,7 +15255,7 @@
     "Controller": "Controller",
     "Studien zum Fahrverhalten: kurz, freiwillig, mit Medaillen. Im Moment nur zum Testen, ohne Datensammlung.": "Studies on driving behaviour: short, voluntary, with medals. For testing only at the moment, no data collected.",
     "Funkpriorität beim Start": "Radio priority at the start",
-    "Nur in der Android-App: Zu Beginn der Startampel, solange alle Autos stehen, bekommen die gesteuerten Autos (Spieler 1–3) das schnellste Verbindungsintervall und NPCs, Safety Car und Reinigungswagen ein ausgewogenes. So nehmen die NPCs dem Funk nicht die kurzen Zeitfenster weg, und die gesteuerten Autos reagieren schneller. Die Autos werden nacheinander umgestellt, im Abstand von 0,15 s.": "Android app only: at the start of the start lights, while all cars are standing, the controlled cars (players 1–3) get the fastest connection interval and NPCs, safety car and cleaning car a balanced one. That way the NPCs do not take the short radio slots, and the controlled cars respond faster. The cars are switched one after another, 0.15 s apart.",
+    "Nur in der Android-App: Beim Start einer Fahrt (Startampel, Training, Losfahren), nach dem Verbinden und nach einem Rollenwechsel, solange die Autos stehen, bekommen die gesteuerten Autos (Spieler 1–3) das schnellste Verbindungsintervall und NPCs, Safety Car und Reinigungswagen ein ausgewogenes. So nehmen die NPCs dem Funk nicht die kurzen Zeitfenster weg, und die gesteuerten Autos reagieren schneller. Die Autos werden nacheinander umgestellt, im Abstand von 0,15 s.": "Android app only: when a drive starts (start lights, practice, drive off), after connecting and after a role change, while the cars are standing, the controlled cars (players 1–3) get the fastest connection interval and NPCs, safety car and cleaning car a balanced one. That way the NPCs do not take the short radio slots, and the controlled cars respond faster. The cars are switched one after another, 0.15 s apart.",
     "Pause / Fortsetzen": "Pause / Resume",
     "Pause": "Pause",
     "Fortsetzen": "Resume",
@@ -16588,6 +16605,7 @@
     "Nachbesserungen zu 1.3.93 bis 1.3.131: Die Meisterschaftsansage (jetzt WIP) wartet, bis die Ergebnisansage gesprochen ist, statt sie abzubrechen, und sagt auf Englisch den Sieger richtig an. „Kein Tempoverlust neben der Bahn“ ist als WIP gekennzeichnet. Die Patchnotes für 1.3.93 bis 1.3.131 sind nachgetragen. Selbsttests wieder streng (Kachelphase), L3-Test in jeder Sprache, fehlende spanische Texte ergänzt; Wiki berichtigt (Zufallsevents-Tabelle, Abschnitt Sektoren, Fahrgefühl mit elf Sätzen und den Modi Gran Hybrismo und Assetto Carrera, Versionsangaben).": "Follow-up fixes for 1.3.93 to 1.3.131: the championship announcement (now WIP) waits until the result announcement has been spoken instead of cutting it off, and names the winner correctly in English. “No speed loss off the track” is marked WIP. The patch notes for 1.3.93 to 1.3.131 have been added. Self-tests are strict again (tile phase), the L3 test works in every language, missing Spanish texts were added; wiki corrected (random events table, section on sectors, driving feel with eleven sets and the Gran Hybrismo and Assetto Carrera modes, version numbers).",
     "Virtuelles Fahren aufgeräumt: Das Porsche-Modell ist wieder entfernt (die App ist dadurch rund 10 MB kleiner, eine gespeicherte Porsche-Wahl fällt auf den V5.R zurück); die Autos stammen alle aus Speed Dreams (GPL). Schaden und eine im virtuellen Fahren gesetzte gelbe Flagge wirken nach dem Beenden nicht mehr im echten Fahren, Time Attack wertet jede Runde nur einmal. Performance-Grafik wieder wie in 1.3.92 (mit Bodenglanz), Quality mit funktionierenden Schatten; scheitert ein Shader, fährt die App mit einfacherer Grafik weiter, und ein Grafikverlust beendet die Fahrt mit Meldung. Die DualSense-Vibration auf R2 gilt nur noch im virtuellen Fahren. Das deutsche Tutorial bleibt ohne Clip still statt mit englischer Gerätestimme. Fehlende Übersetzungen ergänzt.": "Virtual driving tidied up: the Porsche model has been removed again (the app is about 10 MB smaller; a saved Porsche choice falls back to the V5.R); all cars come from Speed Dreams (GPL). Damage and a yellow flag set in virtual driving no longer carry over into real driving after you end it, and time attack counts each lap only once. Performance graphics are back to 1.3.92 (with floor gloss), Quality has working shadows; if a shader fails, the app keeps driving with simpler graphics, and losing the graphics context ends the drive with a message. The DualSense vibration on R2 now only applies in virtual driving. The German tutorial stays silent without a clip instead of using an English device voice. Missing translations added.",
     "Einparken und Ausparken verbessert: Das Safety Car (und ein NPC mit Tankort „Rand“) zählt Radius-2-Kurven, Engstelle und Boxengasse jetzt als freien Platz, beginnt das Einparken früher statt das Gas zu drosseln und rechnet den Rollweg mit dem echten Tempo; es soll so auf dem gewählten Teil und am Rand stehen. Beim Ein- und Ausparken bekommt das Safety Car kurz die schnellste Funkverbindung. Die Ausparkfolge aus der Box lenkt schwächer und kürzer (70 %), das Schlängeln in der Einführungsrunde ist wieder wie vorher. Die Randphasen rollen trotz schnellerem Formationstempo denselben Weg. NPC: maximale Querlage (WIP) begrenzt nur noch die Außenseite der Kurve, innen fahren die NPCs voll. Frühstart: Zusatzrunde nur für den Bestraften (nur im Rundenrennen), Durchfahrt auch für Spieler 2 und 3 und ohne Ableisten +20 s, Gas bei Rot auch im RC-Modus gesperrt, in Challenges immer 5 s. Einmalig wird eine noch gespeicherte Höchstgeschwindigkeit aus 1.3.121 zurückgesetzt. Apps Script: Die Löschfunktion ist entfernt und eingesandte Texte sind besser gegen Formeln geschützt (bitte neu bereitstellen).": "Parking and leaving the parking spot improved: the safety car (and an NPC with the refuelling spot “edge”) now counts radius-2 curves, the narrow section and the pit lane as free space, starts parking earlier instead of reducing throttle and computes the rolling distance with the real speed, so it should stand on the chosen piece and at the edge. While parking in and out, the safety car briefly gets the fastest radio link. The sequence for leaving the pit steers less and shorter (70 %), and the weaving in the formation lap is back to how it was. The edge phases roll the same distance despite the faster formation pace. NPC: maximum lateral position (WIP) now only limits the outside of a curve; on the inside the NPCs drive fully. Jump start: extra lap only for the penalised driver (lap races only), drive-through also for players 2 and 3 with +20 s if not served, throttle locked at red also in RC mode, always 5 s in challenges. A top speed still saved from 1.3.121 is reset once. Apps Script: the delete function has been removed and submitted texts are better protected against formulas (please redeploy).",
+    "Latenz: Die Funkpriorität (Spieler schnellstes Verbindungsintervall, NPCs, Safety Car und Reinigungswagen ausgewogen) wird jetzt auch im Training ohne Ampel, beim Losfahren, 5 s nach dem Verbinden und nach einem Rollenwechsel gesetzt; bisher bekamen dort alle Autos, auch die NPCs, das schnellste Intervall. Mit zwei Spielern zeichnet das Cockpit im Sendetakt ohne erzwungene Layout-Berechnungen (gemessen bei gedrosselter CPU: Arbeit je Takt p95 von 35 bis 85 ms auf 9 bis 15 ms, Takt stabil um 50 ms); die Rundenliste wird nur bei Änderung neu gebaut, Telemetrie außerhalb der Funkverarbeitung gespeichert. Neu unter Optionen → System: „Funk je Auto“ (WIP) mit Weg, Zählern, Meldeabstand und Funkstufe für jedes Auto.": "Latency: the radio priority (players the fastest connection interval, NPCs, safety car and cleaning car balanced) is now also set in practice without start lights, when driving off, 5 s after connecting and after a role change; until now all cars there, NPCs included, got the fastest interval. With two players the cockpit draws in the send cycle without forced layout calculations (measured with a throttled CPU: work per cycle p95 from 35 to 85 ms down to 9 to 15 ms, cycle steady around 50 ms); the lap list is only rebuilt when it changes, and telemetry is saved outside the radio processing. New under Options → System: “Radio per car” (WIP) with path, counters, report interval and radio level for every car.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -19029,6 +19047,12 @@
     "Patchnotes": "Patch notes",
     "Patchnotes anzeigen": "Show patch notes",
     "Version": "Version",
+    "Funk je Auto": "Radio per car",
+    "Je verbundenes Auto: Rolle, Schreibweg (OmegaBle direkt, OmegaBle oder Plugin, gesperrt mit Restzeit), die Zähler geschrieben/wiederholt/verworfen der App, der Abstand der Meldungen des Autos (Mittel/95 % der letzten rund 4 s) und die zuletzt gesetzte Funkpriorität. Zum Aufzeichnen, wenn die Latenz schlecht wird: vorher und nachher ein Bildschirmfoto.": "Per connected car: role, write path (OmegaBle direct, OmegaBle or plugin, locked with time left), the app counters written/retried/dropped, the spacing of the car's notifications (mean/95 % of the last ~4 s) and the radio priority set last. For recording when the latency gets bad: take a screenshot before and after.",
+    "gesperrt noch {n} s": "locked for {n} s",
+    "Prio": "Prio",
+    "hoch": "high",
+    "ausgewogen": "balanced",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -19092,7 +19116,7 @@
     "Controller": "Mando",
     "Studien zum Fahrverhalten: kurz, freiwillig, mit Medaillen. Im Moment nur zum Testen, ohne Datensammlung.": "Estudios sobre la conducción: cortos, voluntarios, con medallas. Por ahora solo para pruebas, sin recogida de datos.",
     "Funkpriorität beim Start": "Prioridad de radio en la salida",
-    "Nur in der Android-App: Zu Beginn der Startampel, solange alle Autos stehen, bekommen die gesteuerten Autos (Spieler 1–3) das schnellste Verbindungsintervall und NPCs, Safety Car und Reinigungswagen ein ausgewogenes. So nehmen die NPCs dem Funk nicht die kurzen Zeitfenster weg, und die gesteuerten Autos reagieren schneller. Die Autos werden nacheinander umgestellt, im Abstand von 0,15 s.": "Solo en la app de Android: al comenzar el semáforo de salida, mientras todos los coches están parados, los coches controlados (jugadores 1–3) reciben el intervalo de conexión más rápido y los NPC, el coche de seguridad y el coche de limpieza uno equilibrado. Así los NPC no ocupan las ventanas cortas de radio y los coches controlados responden más rápido. Los coches se cambian uno tras otro, con 0,15 s de separación.",
+    "Nur in der Android-App: Beim Start einer Fahrt (Startampel, Training, Losfahren), nach dem Verbinden und nach einem Rollenwechsel, solange die Autos stehen, bekommen die gesteuerten Autos (Spieler 1–3) das schnellste Verbindungsintervall und NPCs, Safety Car und Reinigungswagen ein ausgewogenes. So nehmen die NPCs dem Funk nicht die kurzen Zeitfenster weg, und die gesteuerten Autos reagieren schneller. Die Autos werden nacheinander umgestellt, im Abstand von 0,15 s.": "Solo en la app de Android: al empezar una conducción (semáforo de salida, entrenamiento, salir), tras conectar y tras cambiar de rol, mientras los coches están parados, los coches controlados (jugadores 1–3) reciben el intervalo de conexión más rápido y los NPC, el coche de seguridad y el coche de limpieza uno equilibrado. Así los NPC no ocupan las ventanas cortas de radio y los coches controlados responden más rápido. Los coches se cambian uno tras otro, con 0,15 s de separación.",
     "Pause / Fortsetzen": "Pausa / Continuar",
     "Pause": "Pausa",
     "Fortsetzen": "Continuar",
@@ -20592,6 +20616,15 @@
     "Patchnotes": "Notas de versión",
     "Patchnotes anzeigen": "Mostrar notas de versión",
     "Version": "Versión",
+    "Funk je Auto": "Radio por coche",
+    "Je verbundenes Auto: Rolle, Schreibweg (OmegaBle direkt, OmegaBle oder Plugin, gesperrt mit Restzeit), die Zähler geschrieben/wiederholt/verworfen der App, der Abstand der Meldungen des Autos (Mittel/95 % der letzten rund 4 s) und die zuletzt gesetzte Funkpriorität. Zum Aufzeichnen, wenn die Latenz schlecht wird: vorher und nachher ein Bildschirmfoto.": "Por cada coche conectado: rol, vía de escritura (OmegaBle directo, OmegaBle o plugin, bloqueada con tiempo restante), los contadores de la app escritos/repetidos/descartados, la separación de los avisos del coche (media/95 % de los últimos ~4 s) y la prioridad de radio fijada por última vez. Para registrar cuando la latencia empeora: haz una captura de pantalla antes y después.",
+    "gesperrt noch {n} s": "bloqueada {n} s más",
+    "Prio": "Prio",
+    "hoch": "alta",
+    "ausgewogen": "equilibrada",
+    "keine Autos verbunden": "ningún coche conectado",
+    "Rolle": "Rol",
+    "Safety Car": "Safety car",
   };
 
   // ============================================================================
@@ -26437,14 +26470,21 @@
   // einlegt. Geschrieben wird hoechstens alle 150 ms und nur, solange die Seite sichtbar ist
   // (offsetParent), damit der Takt davon nichts merkt. HINWEIS: kein <small> - optInfoEinrichten()
   // (98c-opt-info.js) versteckt jedes <small> in einem Zeilenlabel hinter dem i-Knopf.
-  let gbAufrufe = 0, gbStatusAt = 0;
+  // Latenz (WIP): offsetParent erzwingt ein Layout, und gbStatus laeuft aus dem 30-ms-Tastaturtakt und der
+  // Pad-Abfrage - gemessen 6 % des Hauptfadens (CPU 4x) nur fuer dieses Lesen. Jetzt ZUERST die Uhr, und eine
+  // unsichtbare Anzeige wird hoechstens alle GB_SICHT_MS erneut geprueft.
+  const GB_SICHT_MS = 250;
+  let gbAufrufe = 0, gbStatusAt = 0, gbSichtAt = 0;
   function gbStatus(gasRoh, bremsRoh, kmhAnz, grund) {
-    const el = $('setting-gasbrake-reverse-status');
-    if (!el || !el.offsetParent) return;
     const jetzt = rennZeitJetzt();
     // Springt die Uhr zurueck (jetzt < gbStatusAt), wird trotzdem geschrieben - sonst bliebe die Anzeige
     // stumm, bis die Uhr den alten Zeitpunkt wieder erreicht hat.
     if (jetzt >= gbStatusAt && jetzt - gbStatusAt < 150) return;
+    if (jetzt >= gbSichtAt && jetzt - gbSichtAt < GB_SICHT_MS) return;
+    const el = $('setting-gasbrake-reverse-status');
+    if (!el) return;
+    if (!el.offsetParent) { gbSichtAt = jetzt; return; }
+    gbSichtAt = 0;
     gbStatusAt = jetzt;
     const st = physEngine.state;
     const aus = (typeof physOutThrottle === 'number') ? physOutThrottle : 0;
@@ -27805,11 +27845,13 @@
     // Die Schaltlichter aus SEINER Drehzahl. Dieselbe Funktion wie die grosse Leiste im
     // Cockpit - siehe schaltLampen(), dort steht auch die Farbregel.
     schaltLampen($(pre + '-shift'), st.rpmFrac, st.onLimiter);
-    schreibeWert($(pre + '-speed'), Math.round(Math.abs(st.speedKmh) * TACHO_SCALE));
+    // Latenz (WIP): laufend wechselnde Werte (Tempo, Tank, Temperaturen, Akku) ohne Versatz-Animation -
+    // nur Text bei Aenderung. Der Versatz bleibt bei Werten, die SPRINGEN (Gang, Name, Zustand, Runden).
+    schreibeWert($(pre + '-speed'), Math.round(Math.abs(st.speedKmh) * TACHO_SCALE), true);
     schreibeWert($(pre + '-gear'), gearLabel(st));
     schreibeWert($(pre + '-name'), car ? garageLabel(car) : 'kein Auto');
     // Tank in Litern, wie ueberall sonst in dieser App.
-    schreibeWert($(pre + '-fuel'), fuelLiters(tank) + ' l');
+    schreibeWert($(pre + '-fuel'), fuelLiters(tank) + ' l', true);
     const tb = $(pre + '-fuel-bar');
     if (tb) {
       tb.style.width = Math.max(0, Math.min(100, tank)) + '%';
@@ -27835,7 +27877,7 @@
     const reifen = mittel(st.tyreTemp4) !== null ? mittel(st.tyreTemp4) : (st.tyreTempC || 0);
     const bremse = mittel(st.brakeTemp4) !== null ? mittel(st.brakeTemp4)
       : ((st.brakeTempF || 0) + (st.brakeTempR || 0)) / 2;
-    schreibeWert($(pre + '-tyre'), Math.round(reifen) + '\u00b0');
+    schreibeWert($(pre + '-tyre'), Math.round(reifen) + '\u00b0', true);
     // BESTELLT: "Balken fuer die Reifensimulation, um zu sehen, ob die Reifen verschlissen
     // sind." Restprofil und nicht Temperatur, dieselbe Groesse wie in den vier
     // Reifenfeldern des Hauptcockpits (1 - tyreWear), 100 % heisst neu.
@@ -27845,12 +27887,12 @@
       tyb.style.width = rest + '%';
       tyb.style.background = rest < 30 ? '#ff5252' : rest < 60 ? '#ffb02e' : '#2ee06a';
     }
-    schreibeWert($(pre + '-brake'), Math.round(bremse) + '\u00b0');
+    schreibeWert($(pre + '-brake'), Math.round(bremse) + '\u00b0', true);
     // Der Akku kommt aus Byte 10 des Autos (car.battery, in 90-ghosts.js je Auto gesetzt) -
     // eine gemessene Groesse und keine gerechnete. Ohne Auto oder ohne Meldung: ein Strich,
     // und keine erfundene Zahl.
     const roh = car && car.battery !== undefined && car.battery !== null ? car.battery : null;
-    schreibeWert($(pre + '-batt'), roh === null ? '\u2013' : batteryPercent(roh) + ' %');
+    schreibeWert($(pre + '-batt'), roh === null ? '\u2013' : batteryPercent(roh) + ' %', true);
   }
 
   function p2ScreenRender() {
@@ -28069,17 +28111,26 @@
     schreibeWert($(pre + '-letzte'), ms.length ? formatLapTime(ms[ms.length - 1]) : '\u2013');
     schreibeWert($(pre + '-beste'), ms.length ? formatLapTime(Math.min.apply(null, ms)) : '\u2013');
   }
-  function schreibeWert(el, txt) {
+  // ohneVersatz = true: nur der Text (fuer laufend wechselnde Werte).
+  //
+  // Latenz (WIP): Hier stand `classList.remove; void el.offsetWidth; classList.add` - ein ERZWUNGENES
+  // LAYOUT je geaendertem Wert, und das im Herzschlag (cockpitNachSenden). Mit 2 Spielern malt der
+  // Beide-Schirm je 90 ms bis zu zwanzig Werte: gemessen (CPU 4x) 42 % des Herzschlags in schreibeWert,
+  // und 15-25 % der Sendetakte fielen aus. Jetzt die Web-Animations-API: sie startet bei jedem Aufruf
+  // neu und braucht kein Layout. Rueckfall ohne el.animate: Klasse im naechsten Bild neu setzen.
+  const WERT_VERSATZ = [{ transform: 'translateY(1px)' }, { transform: 'translateY(0)' }];
+  const WERT_VERSATZ_OPT = { duration: 80, easing: 'ease-out' };
+  function schreibeWert(el, txt, ohneVersatz) {
     if (!el) return;
     const neu = String(txt);
     if (el.textContent === neu) return;
     el.textContent = neu;
-    // Die Klasse zweimal in Folge zu setzen startet die Animation nicht neu - sie muss
-    // erst weg sein. Der Neustart des Bildaufbaus (offsetWidth) ist die uebliche und
-    // billigste Art, das zu erzwingen.
+    if (ohneVersatz) return;
+    if (typeof el.animate === 'function') {
+      try { el.animate(WERT_VERSATZ, WERT_VERSATZ_OPT); return; } catch (e) { /* Rueckfall unten */ }
+    }
     el.classList.remove('gt3-tick');
-    void el.offsetWidth;
-    el.classList.add('gt3-tick');
+    requestAnimationFrame(() => el.classList.add('gt3-tick'));
   }
 
   // ---- DIE SCHALTLICHTER, EINE WAHRHEIT FUER JEDE LEISTE ------------------------------
@@ -28368,12 +28419,10 @@
     // ALLE Treffer und nicht der erste: seit v0.5.18 tragen die Zeilen des Boxenschirms
     // dieselben data-pit-Werte, und ein einzahliges querySelector haette dort nie sim-off
     // gesetzt - die Kachel im Streifen waere grau gewesen, die Zeile daneben nicht.
-    for (const el of document.querySelectorAll('[data-pit="refuel"]')) {
-      el.classList.toggle('sim-off', tankAus);
-    }
-    for (const el of document.querySelectorAll('[data-pit="repair"]')) {
-      el.classList.toggle('sim-off', schadenAus);
-    }
+    // Latenz (WIP): die Listen einmal suchen statt bei jedem Malen das ganze Dokument (rund 11000
+    // Knoten) zu durchsuchen - neu nur, wenn ein Element nicht mehr im Dokument steht.
+    for (const el of pitKachelnVon('refuel')) el.classList.toggle('sim-off', tankAus);
+    for (const el of pitKachelnVon('repair')) el.classList.toggle('sim-off', schadenAus);
     const reifenKachel = $('race-tyre-box');
     if (reifenKachel) reifenKachel.classList.toggle('sim-off',
       physEngine.config.tyreEffect <= 0);
@@ -28461,9 +28510,25 @@
       // v1.2.12 BESTELLT: "#X/Y format" statt P3/6.
       if (p) posEl.textContent = '#' + p.pos + '/' + p.von;
     }
-    $('race-lap-list').innerHTML = laps.slice().reverse().slice(0, 10).map(l =>
-      `<li><span>${l.lap}</span><span${l.ms === best ? ' class="gt3-ok"' : ''}>${formatLapTime(l.ms)}</span></li>`
-    ).join('');
+    // Latenz (WIP): nur bei Aenderung neu bauen (vorher bei jedem Malen, alle 90 ms, ein innerHTML).
+    const lapListe = $('race-lap-list');
+    const zuletzt = laps.length ? laps[laps.length - 1] : null;
+    const lapSig = laps.length + ':' + (laps.length ? laps[0].lap + '/' + laps[0].ms : '')
+      + ':' + (zuletzt ? zuletzt.lap + '/' + zuletzt.ms : '') + ':' + best;
+    if (lapListe && lapListe.dataset.sig !== lapSig) {
+      lapListe.dataset.sig = lapSig;
+      lapListe.innerHTML = laps.slice().reverse().slice(0, 10).map(l =>
+        `<li><span>${l.lap}</span><span${l.ms === best ? ' class="gt3-ok"' : ''}>${formatLapTime(l.ms)}</span></li>`
+      ).join('');
+    }
+  }
+  const pitKachelCache = {};
+  function pitKachelnVon(art) {
+    let l = pitKachelCache[art];
+    if (!l || l.some((el) => !el.isConnected)) {
+      l = pitKachelCache[art] = Array.from(document.querySelectorAll('[data-pit="' + art + '"]'));
+    }
+    return l;
   }
 
   // Hier standen sechs setTxt/setSty auf Elemente der entfernten alten Karte
@@ -37016,7 +37081,8 @@
   // reicht: schneller kann man einen Punkt auf einer 220-px-Karte nicht unterscheiden.
   setInterval(() => {
     const tab = document.getElementById('tab-track');
-    if (!tab || !tab.offsetParent) return;
+    // Latenz (WIP): erst die Klasse (kein Layout), offsetParent nur bei aktivem Reiter.
+    if (!tab || !tab.classList.contains('active') || !tab.offsetParent) return;
     if (!currentTrackTiles.length) return;
     if (!trackCarMarks().length) return;
     refreshTrackPreview();
@@ -46396,6 +46462,10 @@
     // Ein aktiviertes lokales Intro bekommt ebenfalls die Ampel nach der Ansage.
     // CHALLENGE "Beste Runde" laeuft als freies Training, aber MIT Ampel: "Auto muss stehen,
     // dann kommt eine Ampel" (72-challenges.js).
+    // v1.3.15 (WIP, Optionen > System): Funkprioritaet je Rolle, solange alle stehen - gesteuerte
+    // Autos HIGH, NPCs & Co. BALANCED, gestaffelt (funkPrioritaetVorStart, 90-ghosts.js). Latenz (WIP):
+    // VOR dem Training-Ruecksprung, damit auch das Training ohne Ampel die Stufen bekommt.
+    if (typeof funkPrioritaetVorStart === 'function') funkPrioritaetVorStart();
     if (raceMode === 'practice' && !gruenBei && !(typeof challengeLaeuft === 'function' && challengeLaeuft())
         && !rennintroErlaubt(gruenZiel, mpPlan)) {
       raceState = 'racing';
@@ -46429,9 +46499,6 @@
     rennZeitTimeoutStop(raceCountdownTimer); raceCountdownTimer = null;
     ampelPlan = null; ampelSchritt = null; ampelK = 0;
     setRaceLights(0);
-    // v1.3.15 (WIP, Optionen > System): Funkprioritaet je Rolle, solange alle stehen - gesteuerte
-    // Autos HIGH, NPCs & Co. BALANCED, gestaffelt (funkPrioritaetVorStart, 90-ghosts.js).
-    if (typeof funkPrioritaetVorStart === 'function') funkPrioritaetVorStart();
     let ampelGestartet = false;
     const ampelBeginnen = () => {
       if (ampelGestartet || raceState !== 'countdown') return;
@@ -47304,7 +47371,11 @@
     renderTileTimeline();
   }
 
-  let tileTlDirty = false;
+  let tileTlDirty = false, tileTlVeraltet = false, tileTlSeite = null;
+  {
+    const knopf = document.querySelector('.tab-btn[data-tab="probe"]');
+    if (knopf) knopf.addEventListener('click', () => { if (tileTlVeraltet) renderTileTimeline(); });
+  }
   function renderTileTimeline() {
     // Gebuendelt zeichnen: bei 20 Paketen je Sekunde waere ein Neuaufbau je Paket reine
     // Verschwendung, und die Zeitleiste soll das Fahren nicht stoeren.
@@ -47314,6 +47385,11 @@
       tileTlDirty = false;
       const host = $('tile-timeline');
       if (!host) return;
+      // Latenz (WIP): die Tabelle steht im Reiter "Probe" - unsichtbar nicht neu bauen (vorher ein innerHTML
+      // je Teilwechsel, auch beim Fahren im Cockpit). Beim Oeffnen des Reiters wird nachgeholt.
+      if (!tileTlSeite) tileTlSeite = host.closest('.tabpage');
+      if (tileTlSeite && !tileTlSeite.classList.contains('active')) { tileTlVeraltet = true; return; }
+      tileTlVeraltet = false;
       if (!tileTimeline.length) {
         host.innerHTML = '<tr><td colspan="4" class="muted">noch nichts</td></tr>';
         return;
@@ -52484,7 +52560,10 @@
     spur.runde = i + 1;
     spur.auto = typeof playerCar !== 'undefined' && playerCar ? garageLabel(playerCar) : '';
     if (i >= 0) teleRennSpuren[i] = spur;
-    if (gewertet) teleMerken(spur, typeof playerCar !== 'undefined' ? playerCar : null);
+    // Latenz (WIP): das Speichern (JSON lesen und schreiben, bis einige 100 KB) lief bisher synchron im
+    // Meldungs-Handler (playerLapCrossed aus handleDashboardBytes) - jetzt im naechsten Durchgang. Wer vorher
+    // liest (teleLesen), bekommt das Ausstehende zuerst geschrieben.
+    if (gewertet) teleMerkenSpaeter(spur, typeof playerCar !== 'undefined' ? playerCar : null);
     return spur;
   }
 
@@ -52505,7 +52584,19 @@
     return { v: 1, code: sp.code, n: sp.n, ms: sp.ms, teile: sp.teile.slice(), proben: pr };
   }
 
+  var teleAusstehend = [];
+  function teleMerkenSpaeter(spur, car) {
+    teleAusstehend.push([spur, car, currentTrackTiles, teleFahrtId]);
+    if (teleAusstehend.length === 1) setTimeout(teleAusstehendSchreiben, 0);
+  }
+  function teleAusstehendSchreiben() {
+    if (!teleAusstehend.length) return;
+    const liste = teleAusstehend;
+    teleAusstehend = [];
+    for (const x of liste) teleMerken(x[0], x[1], x[2], x[3]);
+  }
   function teleLesen() {
+    if (teleAusstehend.length) teleAusstehendSchreiben();
     try { return JSON.parse(localStorage.getItem(TELE_STORE) || '{}') || {}; } catch (e) { return {}; }
   }
   function teleSchreiben(d) {
@@ -52526,8 +52617,10 @@
   }
   function teleWer(car) { return car && car.device ? String(car.device.id) : 'spieler1'; }
   // Beste und letzte Spur je Strecke (gespiegelt = gleich, wie Time Attack) und Fahrer.
-  function teleMerken(spur, car) {
-    const tiles = currentTrackTiles;
+  // tilesArg/fahrtArg: Stand beim Rundenende (teleMerkenSpaeter); ohne Angabe der aktuelle.
+  function teleMerken(spur, car, tilesArg, fahrtArg) {
+    const tiles = tilesArg || currentTrackTiles;
+    const fahrtId = fahrtArg === undefined ? teleFahrtId : fahrtArg;
     const d = teleLesen();
     const k = bestzeitSchluessel(tiles);
     const e = d[k] || (d[k] = { fahrer: {} });
@@ -52538,7 +52631,7 @@
     // waren nur diese zwei. Jetzt dazu ALLE gewerteten Runden der letzten Fahrt auf dieser
     // Strecke (f.fahrt), mit ausgeduennten Proben; die Fahrten anderer Strecken werden dabei
     // geloescht - der Speicher reicht nicht fuer alle Runden aller Strecken.
-    if (!f.fahrt || f.fahrt.id !== teleFahrtId) f.fahrt = { id: teleFahrtId, runden: [] };
+    if (!f.fahrt || f.fahrt.id !== fahrtId) f.fahrt = { id: fahrtId, runden: [] };
     f.fahrt.runden.push(teleDuenn(spur, TELE_UPLOAD_PROBEN));
     if (f.fahrt.runden.length > TELE_FAHRT_MAX) f.fahrt.runden.shift();
     Object.keys(d).forEach((x) => {
@@ -64173,6 +64266,8 @@
     const name = role === 'player' ? 'Spieler 1' : zNeu ? 'Spieler ' + zNeu.nr
                : role === 'ghost' ? 'NPC' : role === 'challenger' ? 'Challenger' : role === 'safetycar' ? 'Safety Car' : role === 'reinig' ? 'Reinigungsfahrzeug' : 'keine';
     log(`${garageLabel(car)}: Rolle ${name}`, 'info');
+    // Latenz (WIP): die Funkprioritaet folgt der Rolle - entprellt und nur, solange nichts faehrt.
+    if (typeof funkPrioRolleGeaendert === 'function') funkPrioRolleGeaendert();
   }
 
   // ---- Der Fahrercharakter als Zeile in der Garage --------------------------------
@@ -64900,6 +64995,8 @@
     const player = garage.find(c => c.role === 'player');
     const ghosts = garage.filter(c => c.role === 'ghost');
     if (!player && !ghosts.length) return;
+    // Latenz (WIP): freie Fahrt ohne Ampel - die Prioritaet je Rolle hier, solange noch alle stehen.
+    funkPrioritaetVorStart();
     // KEIN showTab('race') mehr - BESTELLT: wer "Losfahren" drueckt, soll dort bleiben,
     // wo er gerade ist (z.B. um noch weitere Autos einzurichten), nicht automatisch ins
     // Cockpit springen. Wer fahren will, wechselt selbst in den Tab.
@@ -64967,6 +65064,10 @@
     car.rx = rx;
     car.tx = tx;
     rx.verbindungWeg = false;
+    // Latenz (WIP): eine neue Verbindung beginnt mit der HIGH-Anfrage der Bruecke - die zuletzt gesetzte
+    // Stufe gilt nicht mehr (sonst uebersprang funkPrioEinzeln die Anfrage als "schon gesetzt").
+    car.funkPrioStufe = null;
+    car.meldeRingN = 0; car.meldungAt = 0;
     car.notifyHandler = (e) => onCarNotify(car, e);
     await tx.startNotifications();
     tx.addEventListener('characteristicvaluechanged', car.notifyHandler);
@@ -65010,6 +65111,7 @@
         await verbindeGattSicher(car);
         car.reconnectVersuche = 0;
         log(`${garageLabel(car)} wieder verbunden.`, 'info');
+        funkPrioNachVerbinden(car);
       } catch (e) {
         log(`${garageLabel(car)}: Neu verbinden fehlgeschlagen: ${(e && e.message) || e}`, 'err');
         car.reconnectLaeuft = false;
@@ -65098,6 +65200,7 @@
       if (frei && gemerkt.role !== 'none') setCarRole(car, gemerkt.role);
       else if (!playerCar) setCarRole(car, 'player');
       else setCarRole(car, 'ghost');
+      funkPrioNachVerbinden(car);
       log(`${garageLabel(car)} verbunden (${garage.length} insgesamt)` + (opt && opt.auto ? ' - automatisch beim Start.' : '.'), 'info');
       playStartFx();
     } finally {
@@ -65189,9 +65292,16 @@
   // Verbindung neu aus, und jede Neuverhandlung kann den Funk stocken lassen. Jetzt: erst wenn ein Auto
   // MELDE_LANGSAM_DAUER_MS lang ueber MELDE_LANGSAM_MS liegt, und nur EINMAL je Verbindung (car.rx).
   const MELDE_LANGSAM_MS = 120, MELDE_LANGSAM_DAUER_MS = 5000;
+  // Latenz (WIP): die letzten MELDE_RING_N Abstaende je Auto fuer "Funk je Auto" - ein Ringpuffer fester
+  // Groesse, einmal je Auto angelegt; je Meldung nur ein Eintrag, keine Allokation.
+  const MELDE_RING_N = 64;
   function meldetaktBeobachten(car, jetzt) {
     if (car.meldungAt) {
       const d = Math.min(1000, jetzt - car.meldungAt);
+      if (!car.meldeRing) { car.meldeRing = new Float32Array(MELDE_RING_N); car.meldeRingI = 0; car.meldeRingN = 0; }
+      car.meldeRing[car.meldeRingI] = d;
+      car.meldeRingI = (car.meldeRingI + 1) % MELDE_RING_N;
+      if (car.meldeRingN < MELDE_RING_N) car.meldeRingN++;
       car.meldeAbstand = car.meldeAbstand === undefined ? d : car.meldeAbstand + (d - car.meldeAbstand) * 0.05;
       const b = window.OMEGA_BRUECKE;
       if (car.meldeAbstand > MELDE_LANGSAM_MS) {
@@ -65264,8 +65374,10 @@
   }
   // v1.3.132: EIN Auto auf eine Stufe, nur beim Zustandswechsel (Safety Car: Ein- und Ausparken HOCH, danach
   // AUSGEWOGEN) - nie im Takt. Gleiche Stufe wie zuletzt gesetzt: nichts. Im Browser (ohne Bruecke) nichts.
-  function funkPrioEinzeln(car, stufe, grund) {
-    if (!car || car.sim || car.funkPrioStufe === stufe || !funkPrioAn()) return false;
+  // immer = true: auch bei gleicher gemerkter Stufe anfragen (nach dem Verbinden: Android faellt nach der
+  // Dienstsuche oft auf 30-50 ms zurueck, siehe 05-app-bruecke.js).
+  function funkPrioEinzeln(car, stufe, grund, immer) {
+    if (!car || car.sim || (car.funkPrioStufe === stufe && !immer) || !funkPrioAn()) return false;
     const b = window.OMEGA_BRUECKE;
     if (!b || typeof b.prioritaetSetzen !== 'function') return false;
     if (!(car.device && car.device.id && car.device.gatt && car.device.gatt.connected !== false && !(car.rx && car.rx.verbindungWeg))) return false;
@@ -65279,6 +65391,120 @@
     }, () => {});
     return true;
   }
+  // ---- FUNKPRIORITAET AUCH OHNE AMPEL (Latenz, WIP) ------------------------------------------
+  // GEFRAGT (Latenz mit 2 Spielern + NPCs): "Neu-Priorisierung waehrend Ampel - klappt das auch bei Training?
+  // Da gibt es naemlich keine Ampel." Bis hierher setzte nur der Countdown die Stufen; Training, freie Fahrt
+  // und jedes (Neu-)Verbinden liessen ALLE Autos auf HIGH (die Bruecke fragte 5 s nach dem Verbinden blind
+  // HIGH nach, auch fuer NPCs). Jetzt:
+  //   - Trainingsstart und "Losfahren" in der Garage rufen funkPrioritaetVorStart wie der Countdown,
+  //   - nach dem (Neu-)Verbinden fragt die APP nach FUNK_PRIO_NACH_VERBINDEN_MS die Stufe der Rolle an
+  //     (statt der blinden HIGH-Nachforderung der Bruecke, die dafuer prioNachVerbindenSelbst fragt),
+  //   - ein Rollenwechsel setzt die Stufe entprellt nach, aber nur, solange nichts faehrt.
+  // Schalter "Funkprioritaet beim Start" aus: alles wie vorher (Bruecke fragt HIGH nach, sonst nichts).
+  const FUNK_PRIO_NACH_VERBINDEN_MS = 5000, FUNK_PRIO_ROLLE_MS = 1000;
+  function funkPrioSollStufe(car) { return funkPrioGesteuert(car) ? 'hoch' : 'ausgewogen'; }
+  // Faehrt gerade etwas? Countdown/Rennen, ein laufender NPC (auch freie Fahrt) oder ein rollendes Spielerauto.
+  function funkPrioFahrtLaeuft() {
+    if (typeof raceState !== 'undefined' && (raceState === 'countdown' || raceState === 'racing' || raceState === 'finishing')) return true;
+    if (garage.some((c) => c && c.ghost && c.ghost.running)) return true;
+    try {
+      if (Math.abs(physEngine.state.speedKmh) > 0.01) return true;
+      for (const z of zusatzPlaetze()) if (z.car && z.motor && Math.abs(z.motor.state.speedKmh) > 0.01) return true;
+    } catch (e) { /* beim Laden */ }
+    return false;
+  }
+  // Nach dem (Neu-)Verbinden: die Stufe der Rolle, einmal, nach FUNK_PRIO_NACH_VERBINDEN_MS. Gehoert zum
+  // Verbindungsaufbau (die Bruecke fragte an derselben Stelle immer HIGH nach), auch waehrend eines Rennens.
+  // opt.planen nur fuer den Selbsttest.
+  function funkPrioNachVerbinden(car, opt) {
+    if (!car || car.sim || !funkPrioAn()) return false;
+    const planen = (opt && opt.planen) || ((fn, ms) => setTimeout(fn, ms));
+    const rx = car.rx;
+    car.funkPrioNachVerbindenBis = performance.now() + FUNK_PRIO_NACH_VERBINDEN_MS + 500;
+    planen(() => {
+      car.funkPrioNachVerbindenBis = 0;
+      if (garage.indexOf(car) < 0 || car.rx !== rx) return;   // getrennt oder inzwischen neu verbunden
+      funkPrioEinzeln(car, funkPrioSollStufe(car), 'verbunden', true);
+    }, FUNK_PRIO_NACH_VERBINDEN_MS);
+    return true;
+  }
+  // Rollenwechsel: alle verbundenen Autos auf die Stufe ihrer Rolle (nur geaenderte, siehe funkPrioEinzeln).
+  // Faehrt etwas, bleibt es beim Stand - der naechste Start (Countdown, Training, Losfahren) setzt ohnehin.
+  // Autos im Verbindungsaufbau ueberlaesst es funkPrioNachVerbinden. Rueckgabe: Zahl der Anfragen, -1 = faehrt.
+  function funkPrioRolleAnwenden(opt) {
+    if (!funkPrioAn()) return 0;
+    if (funkPrioFahrtLaeuft()) return -1;
+    const jetzt = performance.now();
+    let n = 0;
+    for (const car of ((opt && opt.autos) || garage)) {
+      if (!car || car.sim || (car.funkPrioNachVerbindenBis && jetzt < car.funkPrioNachVerbindenBis)) continue;
+      if (funkPrioEinzeln(car, funkPrioSollStufe(car), 'Rolle')) n++;
+    }
+    return n;
+  }
+  let funkPrioRolleUhr = null;
+  function funkPrioRolleGeaendert() {
+    if (!funkPrioAn()) return;
+    if (funkPrioRolleUhr) clearTimeout(funkPrioRolleUhr);
+    funkPrioRolleUhr = setTimeout(() => { funkPrioRolleUhr = null; funkPrioRolleAnwenden(); }, FUNK_PRIO_ROLLE_MS);
+  }
+  // Fuer die Bruecke (05-app-bruecke.js): uebernimmt die App die Prioritaet nach dem Verbinden dieses Geraets?
+  // Dann entfaellt dort die blinde HIGH-Nachforderung. Nur fuer Autos der Garage (bzw. im Garagen-Aufbau).
+  function funkPrioNachVerbindenSelbst(id) {
+    if (!funkPrioAn()) return false;
+    const k = String(id);
+    return garVerbindetGerade.has(k) || garage.some((c) => c.device && String(c.device.id) === k);
+  }
+  if (window.OMEGA_BRUECKE) window.OMEGA_BRUECKE.prioNachVerbindenSelbst = funkPrioNachVerbindenSelbst;
+
+  // ---- FUNK JE AUTO (Latenz, WIP) -------------------------------------------------------------
+  // BESTELLT: je verbundenes Auto eine Zeile unter Optionen > System - Name/Rolle, Weg (direkt, Plugin,
+  // gesperrt mit Restzeit), geschrieben/wiederholt/verworfen, Meldeabstand (Mittel/p95 aus dem Ringpuffer)
+  // und die zuletzt gesetzte Funkprioritaet. Gerechnet nur, wenn die Ansicht offen ist, hoechstens 2x/s.
+  function funkMeldeStat(car) {
+    const n = car && car.meldeRing ? car.meldeRingN : 0;
+    if (!n) return null;
+    const a = Array.prototype.slice.call(car.meldeRing, 0, n).sort((x, y) => x - y);
+    let summe = 0;
+    for (let i = 0; i < n; i++) summe += a[i];
+    return { mittel: summe / n, p95: a[Math.min(n - 1, Math.floor(n * 0.95))], n };
+  }
+  function funkJeAutoZeilen(autosArg) {
+    const b = window.OMEGA_BRUECKE;
+    const autos = (autosArg || garage).filter((c) => c && !c.sim && c.device);
+    if (!autos.length) return t('keine Autos verbunden');
+    return autos.map((car) => {
+      const r = GAR_ROLLEN.find((x) => x.id === car.role);
+      const rolle = r ? t(r.name) : String(car.role || '');
+      let weg;
+      if (b && typeof b.omegaInfoAuto === 'function') {
+        const o = b.omegaInfoAuto(car.device.id) || {};
+        weg = (o.weg || 'Plugin')
+          + (o.gesperrtMs > 0 ? ' (' + t('gesperrt noch {n} s').replace('{n}', Math.ceil(o.gesperrtMs / 1000)) + ')' : '');
+        const z = o.zaehler;
+        if (z) weg += ' \u00b7 ' + z.geschrieben + ' ' + t('geschrieben') + ', ' + z.wiederholt + ' ' + t('wiederholt')
+          + ', ' + z.verworfen + ' ' + t('verworfen');
+      } else {
+        weg = 'Web Bluetooth';
+      }
+      const m = funkMeldeStat(car);
+      const stufe = car.funkPrioStufe === 'hoch' || car.funkPrioStufe === 'ausgewogen' ? t(car.funkPrioStufe)
+        : (car.funkPrioStufe || '\u2013');
+      return garageLabel(car) + ' (' + rolle + '): ' + t('Weg') + ' ' + weg
+        + ' \u00b7 ' + t('Meldungen') + ' ' + (m ? Math.round(m.mittel) + '/' + Math.round(m.p95) + ' ms' : '\u2013')
+        + ' \u00b7 ' + t('Prio') + ' ' + stufe;
+    }).join('\n');
+  }
+  let funkJeAutoSeite = null;
+  setInterval(() => {
+    const el = $('funk-je-auto');
+    if (!el) return;
+    if (!funkJeAutoSeite) funkJeAutoSeite = el.closest('.tabpage');
+    if (funkJeAutoSeite && !funkJeAutoSeite.classList.contains('active')) return;   // ohne Layout
+    if (!el.offsetParent) return;
+    const text = funkJeAutoZeilen();
+    if (el.textContent !== text) el.textContent = text;
+  }, 500);
   function onCarNotify(car, e) {
     const b = notifyBytes(e.target.value);
     if (b.length < 16) return;
@@ -88475,6 +88701,84 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                              : 'Gang wechselte' };
   });
 
+  // Latenz (WIP): das Malen im Herzschlag (cockpitNachSenden: Cockpit und Beide-Schirm) und die Live-Anzeige
+  // des Rueckwaertsgangs erzwingen kein Layout mehr. Gezaehlt ueber Attrappen-Getter von offsetWidth und
+  // offsetParent waehrend simulierter Takte mit zwei Spalten; dazu die Werte und die Rundenliste.
+  stAdd('Latenz: Malen im Takt ohne erzwungenes Layout - Beide-Schirm, Rundenliste, Live-Anzeige', () => {
+    const f = [];
+    const proto = HTMLElement.prototype;
+    const dW = Object.getOwnPropertyDescriptor(proto, 'offsetWidth'), dP = Object.getOwnPropertyDescriptor(proto, 'offsetParent');
+    let nW = 0, nP = 0;
+    const merk = { laps: raceLapTimes, now: Date.now };
+    const liste = $('race-lap-list');
+    try {
+      Object.defineProperty(proto, 'offsetWidth', { configurable: true, get() { nW++; return dW.get.call(this); } });
+      Object.defineProperty(proto, 'offsetParent', { configurable: true, get() { nP++; return dP.get.call(this); } });
+      // 1. Sechs Takte Beide-Schirm + Cockpit mit wechselnden Werten.
+      let letzt = null;
+      for (let i = 0; i < 6; i++) {
+        const st = Object.assign({}, physEngine.state, { speedKmh: (10 + i * 7) / REAL_SCALE });
+        vglSpalte('vgl1', typeof playerCar !== 'undefined' ? playerCar : null, { state: st }, 50 - i, 10 + i);
+        vglSpalte('vgl2', null, { state: st }, 40, 0);
+        updateRaceScreen(st);
+        letzt = st;
+      }
+      if (nW) f.push(nW + 'x offsetWidth beim Malen');
+      if (nP) f.push(nP + 'x offsetParent beim Malen');
+      const soll = String(Math.round(Math.abs(letzt.speedKmh) * TACHO_SCALE));
+      for (const pre of ['vgl1', 'vgl2']) {
+        const sp = $(pre + '-speed');
+        if (sp && sp.textContent !== soll) f.push(pre + '-speed zeigt ' + sp.textContent + ' statt ' + soll);
+        for (const feld of ['gear', 'name', 'fuel', 'cond', 'tyre', 'brake', 'batt']) {
+          const el = $(pre + '-' + feld);
+          if (el && !el.textContent.trim()) f.push(pre + '-' + feld + ' leer');
+        }
+      }
+      if ($('vgl2-name') && $('vgl2-name').textContent !== 'kein Auto') f.push('vgl2-name: ' + $('vgl2-name').textContent);
+      // 2. Versatz-Animation nur bei Aenderung und nicht fuer laufende Werte, ohne Layout.
+      const probe = document.createElement('span');
+      let anim = 0;
+      probe.animate = () => { anim++; return null; };
+      nW = 0;
+      schreibeWert(probe, '1'); schreibeWert(probe, '1'); schreibeWert(probe, '2', true);
+      if (anim !== 1 || probe.textContent !== '2') f.push('Versatz: ' + anim + ' Animationen, Text ' + probe.textContent);
+      if (nW) f.push('schreibeWert liest offsetWidth');
+      // 3. Live-Anzeige des Rueckwaertsgangs: zehn Aufrufe in derselben Millisekunde lesen hoechstens einmal.
+      let uhr = merk.now() + 60000;
+      Date.now = () => uhr;
+      nP = 0;
+      for (let i = 0; i < 10; i++) gasBremseRueckwaertsPruefen(0, 0);
+      if (nP > 1) f.push('Live-Anzeige liest offsetParent ' + nP + 'x in einer Millisekunde');
+      Date.now = merk.now;
+      // 4. Rundenliste: richtig, und unveraendert kein Neuaufbau.
+      if (liste) {
+        raceLapTimes = [{ lap: 1, ms: 9000 }, { lap: 2, ms: 8500 }];
+        updateRaceScreen(physEngine.state);
+        const li = liste.querySelectorAll('li');
+        if (li.length !== 2) f.push('Rundenliste: ' + li.length + ' Eintraege statt 2');
+        else if (!li[0].querySelector('.gt3-ok') || li[0].textContent.indexOf('2') !== 0) f.push('Rundenliste: Bestzeit/Reihenfolge falsch');
+        const beob = new MutationObserver(() => {});
+        beob.observe(liste, { childList: true, subtree: true, characterData: true });
+        updateRaceScreen(physEngine.state);
+        if (beob.takeRecords().length) f.push('Rundenliste unveraendert neu gebaut');
+        raceLapTimes = raceLapTimes.concat([{ lap: 3, ms: 8200 }]);
+        updateRaceScreen(physEngine.state);
+        beob.disconnect();
+        const li3 = liste.querySelectorAll('li');
+        if (li3.length !== 3 || li3[0].textContent.indexOf('3') !== 0 || !li3[0].querySelector('.gt3-ok')) f.push('neue Runde nicht in der Liste');
+      }
+      // 5. Telemetrie-Speichern nicht mehr im Meldungs-Handler.
+      if (String(teleRunde).indexOf('teleMerkenSpaeter(') < 0) f.push('Telemetrie speichert weiter synchron je Runde');
+    } finally {
+      Object.defineProperty(proto, 'offsetWidth', dW);
+      Object.defineProperty(proto, 'offsetParent', dP);
+      Date.now = merk.now;
+      raceLapTimes = merk.laps;
+      try { updateRaceScreen(physEngine.state); } catch (e) { /* Anzeige */ }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'kein offsetWidth/offsetParent beim Malen, Werte beider Spalten stehen, Versatz per animate(), Rundenliste nur bei Aenderung, Live-Anzeige gedrosselt' };
+  });
+
   // ---- Deckglas und Einschaltrampe fangen keine Tipps ab ----
   //
   // Fast jede Kachel im Cockpit ist antippbar. Eine Scheibe ohne pointer-events: none macht
@@ -93517,6 +93821,131 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (cb && merkCb !== null) cb.checked = merkCb;
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Spieler hoch, NPC/Safety Car/Reinigung ausgewogen, 150 ms gestaffelt, Schalter/Methode/Wachfunktion wie bestellt' };
+  });
+
+  // Latenz (WIP): Funkprioritaet auch ohne Ampel - Training, Losfahren, (Neu-)Verbinden und Rollenwechsel.
+  // Mit Attrappen-Bruecke und Attrappen-Autos; nichts davon wartet auf echte Zeitgeber.
+  stAdd('Latenz: Funkprioritaet ohne Ampel - Training, Verbinden, Rollenwechsel, keine blinde HIGH-Nachforderung', async () => {
+    const f = [];
+    const merkB = window.OMEGA_BRUECKE;
+    const cb = $('setting-funk-prio');
+    const merkCb = cb ? cb.checked : null;
+    const merkGarage = garage.slice();
+    const merkRace = raceState;
+    const aufrufe = [];
+    const auto = (id, role) => ({ device: { id, name: id, gatt: { connected: true } }, role, rx: {}, alias: id });
+    const sp = auto('st-lp-sp', 'player'), npc = auto('st-lp-npc', 'ghost'), sc = auto('st-lp-sc', 'safetycar');
+    try {
+      if (cb) cb.checked = true;
+      window.OMEGA_BRUECKE = Object.assign({}, merkB || {}, {
+        prioritaetSetzen: (id, stufe) => { aufrufe.push({ id, stufe }); return Promise.resolve({ ok: true }); } });
+      window.OMEGA_BRUECKE.prioNachVerbindenSelbst = funkPrioNachVerbindenSelbst;
+      // 1. Training ohne Ampel: der Aufruf steht VOR dem Training-Ruecksprung, Losfahren ruft ihn auch.
+      const q = String(startRaceCountdown);
+      const iPrio = q.indexOf('funkPrioritaetVorStart()'), iTraining = q.indexOf("raceMode === 'practice' && !gruenBei");
+      if (iPrio < 0 || iTraining < 0 || iPrio > iTraining) f.push('Training ohne Ampel setzt keine Prioritaet');
+      if (String(garageGhostsStarten).indexOf('funkPrioritaetVorStart()') < 0) f.push('Losfahren setzt keine Prioritaet');
+      if (String(setCarRole).indexOf('funkPrioRolleGeaendert()') < 0) f.push('Rollenwechsel setzt keine Prioritaet');
+      // 2. Nach dem Verbinden: Stufe der Rolle nach 5 s, auch wenn dieselbe Stufe schon gemerkt ist.
+      garage.length = 0; garage.push(sp, npc, sc);
+      const geplant = [];
+      const planen = (fn, ms) => geplant.push({ fn, ms });
+      sp.funkPrioStufe = 'hoch';
+      funkPrioNachVerbinden(sp, { planen }); funkPrioNachVerbinden(npc, { planen }); funkPrioNachVerbinden(sc, { planen });
+      if (geplant.some((g) => g.ms !== 5000)) f.push('nach dem Verbinden nicht nach 5 s');
+      geplant.forEach((g) => g.fn());
+      const stufe = (id) => aufrufe.filter((a) => a.id === id).map((a) => a.stufe).join(',');
+      if (stufe('st-lp-sp') !== 'hoch') f.push('Spieler nach Verbinden: ' + stufe('st-lp-sp'));
+      if (stufe('st-lp-npc') !== 'ausgewogen') f.push('NPC nach Verbinden: ' + stufe('st-lp-npc'));
+      if (stufe('st-lp-sc') !== 'ausgewogen') f.push('Safety Car nach Verbinden: ' + stufe('st-lp-sc'));
+      // Inzwischen neu verbunden (anderes rx): die alte Planung feuert nicht.
+      aufrufe.length = 0; geplant.length = 0;
+      funkPrioNachVerbinden(npc, { planen }); npc.rx = {}; geplant.forEach((g) => g.fn());
+      if (aufrufe.length) f.push('alte Planung nach Neuverbinden gefeuert');
+      // 3. Bruecke: keine blinde HIGH-Nachforderung fuer Garagen-Autos, wohl fuer fremde und bei Schalter aus.
+      if (!funkPrioNachVerbindenSelbst('st-lp-npc')) f.push('Bruecke wuerde NPC blind auf HIGH setzen');
+      if (funkPrioNachVerbindenSelbst('st-lp-fremd')) f.push('fremdes Geraet ohne HIGH-Nachforderung');
+      const brueckeQuelle = Array.from(document.scripts).some((x) => x.text.indexOf('b.prioNachVerbindenSelbst(id)) return') >= 0);
+      if (!brueckeQuelle) f.push('Bruecke fragt die App nicht');
+      // 4. funkPrioStufe nach (Neu-)Verbinden zurueckgesetzt.
+      const tx = new EventTarget(); tx.startNotifications = async () => tx;
+      const dienst = { getCharacteristic: async (u) => (String(u).indexOf('0003') >= 0 ? tx : { properties: {} }) };
+      const neu = { device: { id: 'st-lp-neu', gatt: { connect: async () => ({ getPrimaryService: async () => dienst }) } },
+                    funkPrioStufe: 'ausgewogen', role: 'ghost' };
+      await verbindeGatt(neu);
+      if (neu.funkPrioStufe !== null) f.push('funkPrioStufe nach Neuverbinden: ' + neu.funkPrioStufe);
+      try { tx.removeEventListener('characteristicvaluechanged', neu.notifyHandler); } catch (e) { /* egal */ }
+      // 5. Rollenwechsel: nur geaenderte Stufen, nie waehrend einer Fahrt.
+      aufrufe.length = 0;
+      sp.funkPrioStufe = 'hoch'; npc.funkPrioStufe = 'hoch'; sc.funkPrioStufe = 'ausgewogen';
+      sp.funkPrioNachVerbindenBis = 0; npc.funkPrioNachVerbindenBis = 0; sc.funkPrioNachVerbindenBis = 0;
+      raceState = 'racing';
+      if (funkPrioRolleAnwenden({ autos: [sp, npc, sc] }) !== -1 || aufrufe.length) f.push('Rollenwechsel verhandelt waehrend der Fahrt');
+      raceState = 'idle';
+      const n = funkPrioRolleAnwenden({ autos: [sp, npc, sc] });
+      if (n !== 1 || stufe('st-lp-npc') !== 'ausgewogen') f.push('Rollenwechsel: ' + n + ' Anfragen, NPC ' + stufe('st-lp-npc'));
+      // 6. Schalter aus: altes Verhalten.
+      if (cb) {
+        cb.checked = false; aufrufe.length = 0; geplant.length = 0;
+        if (funkPrioNachVerbinden(npc, { planen }) || geplant.length) f.push('Schalter aus: plant trotzdem');
+        if (funkPrioRolleAnwenden({ autos: [sp, npc, sc] }) !== 0) f.push('Schalter aus: Rollenwechsel fragt an');
+        if (funkPrioNachVerbindenSelbst('st-lp-npc')) f.push('Schalter aus: Bruecke fragt nicht mehr HIGH nach');
+      }
+    } finally {
+      window.OMEGA_BRUECKE = merkB;
+      if (cb && merkCb !== null) cb.checked = merkCb;
+      raceState = merkRace;
+      garage.length = 0; merkGarage.forEach((c) => garage.push(c));
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Training/Losfahren/Verbinden/Rollenwechsel setzen Spieler hoch, NPC/SC ausgewogen; keine blinde HIGH-Nachforderung; Stufe nach Neuverbinden leer; Schalter aus = wie vorher' };
+  });
+
+  // Latenz (WIP): Funk je Auto - eine Zeile je verbundenes Auto, Meldeabstand aus einem Ringpuffer fester Groesse.
+  stAdd('Latenz: Funk je Auto - Zeile je Auto mit Rolle, Weg, Zaehlern, Meldeabstand und Prioritaet', () => {
+    const f = [];
+    const merkB = window.OMEGA_BRUECKE;
+    const el = $('funk-je-auto');
+    if (!el) return { ok: false, mass: 'Anzeige #funk-je-auto fehlt' };
+    const zeile = el.closest('.opt-row'), lab = zeile && zeile.querySelector('.opt-label');
+    if (!zeile || !zeile.closest('#sub-opt-system')) f.push('nicht unter Optionen > System');
+    if (!lab || !lab.querySelector('.wip-tag')) f.push('ohne WIP-Kennzeichnung');
+    if (el.closest('small')) f.push('Anzeige steckt im Info-Text');
+    for (const k of ['Funk je Auto', 'gesperrt noch {n} s', 'Prio', 'hoch', 'ausgewogen']) {
+      if (!I18N_EN[k]) f.push('EN fehlt: ' + k);
+      if (!I18N_ES[k]) f.push('ES fehlt: ' + k);
+    }
+    const a = { device: { id: 'st-fja-a', name: 'A' }, alias: 'Alpha', role: 'player', funkPrioStufe: 'hoch' };
+    const n = { device: { id: 'st-fja-n', name: 'N' }, alias: 'Nora', role: 'ghost', funkPrioStufe: 'ausgewogen' };
+    const sim = { device: { id: 'st-fja-s', name: 'S' }, alias: 'Sim', role: 'ghost', sim: true };
+    try {
+      // Ringpuffer: 200 Meldungen alle 60 ms, dann eine Luecke - fester Puffer, die Luecke im p95.
+      for (let i = 0; i < 200; i++) meldetaktBeobachten(a, 1000 + i * 60);
+      const ring = a.meldeRing;
+      if (!(ring instanceof Float32Array) || ring.length !== 64) f.push('kein Ringpuffer fester Groesse');
+      for (let i = 0; i < 10; i++) meldetaktBeobachten(a, 13000 + i * 60 + (i === 5 ? 400 : 0));
+      if (a.meldeRing !== ring) f.push('Ringpuffer neu angelegt');
+      const m = funkMeldeStat(a);
+      if (!m || m.n !== 64 || Math.round(m.mittel) < 60 || Math.round(m.mittel) > 70) f.push('Meldeabstand ' + JSON.stringify(m));
+      window.OMEGA_BRUECKE = Object.assign({}, merkB || {}, {
+        omegaInfoAuto: (id) => (id === 'st-fja-a'
+          ? { weg: 'OmegaBle direkt', gesperrtMs: 0, zaehler: { geschrieben: 120, wiederholt: 3, verworfen: 1 } }
+          : { weg: 'Plugin', gesperrtMs: 24500, zaehler: { geschrieben: 7, wiederholt: 0, verworfen: 9 } }) });
+      const text = funkJeAutoZeilen([a, n, sim]);
+      const z = text.split('\n');
+      if (z.length !== 2) f.push(z.length + ' Zeilen statt 2 (Simulation darf nicht erscheinen)');
+      const z0 = z[0] || '', z1 = z[1] || '';
+      if (z0.indexOf('Alpha') !== 0 || z0.indexOf(t('Spieler 1')) < 0 || z0.indexOf('OmegaBle direkt') < 0 || z0.indexOf('120 ' + t('geschrieben')) < 0
+          || z0.indexOf('3 ' + t('wiederholt')) < 0 || z0.indexOf('1 ' + t('verworfen')) < 0 || z0.indexOf(t('hoch')) < 0 || !/ \d+\/\d+ ms/.test(z0)) f.push('Zeile 1: ' + z0);
+      if (z1.indexOf('Nora') !== 0 || z1.indexOf(t('NPC')) < 0 || z1.indexOf(t('gesperrt noch {n} s').replace('{n}', 25)) < 0
+          || z1.indexOf(t('ausgewogen')) < 0) f.push('Zeile 2: ' + z1);
+      window.OMEGA_BRUECKE = Object.assign({}, merkB || {});
+      delete window.OMEGA_BRUECKE.omegaInfoAuto;
+      if (funkJeAutoZeilen([n]).indexOf('Web Bluetooth') < 0) f.push('ohne Bruecke kein Hinweis auf Web Bluetooth');
+      if (funkJeAutoZeilen([]) !== t('keine Autos verbunden')) f.push('ohne Autos: ' + funkJeAutoZeilen([]));
+    } finally {
+      window.OMEGA_BRUECKE = merkB;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Zeile je Auto mit Rolle, Weg/Sperre, Zaehlern, Meldeabstand (Ring 64) und Prioritaet; EN/ES; WIP unter System' };
   });
 
   // v1.2.45 BESTELLT: Latenz - Funkprioritaet nur einmal je Verbindung, SIMULATOR-Linie nur im Editor.
