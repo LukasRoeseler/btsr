@@ -2962,7 +2962,8 @@
   // GEMELDET: "Das Ganze in 2 Spalten und mit gedrosselter Geschwindigkeit."
   //
   // Die Zaehlung und die Drosselung stimmten - nachgemessen: die Runde endet bei der
-  // zweiten Ueberfahrt irgendeines Autos, und das Feld rollt auf formationPace() = 0,35.
+  // zweiten Ueberfahrt irgendeines Autos, und das Feld rollt auf formationPace() (damals 0,35, seit
+  // 1.3.114 0,42).
   // Die SPALTEN gab es nur in der Formel:
   //
   //     Schlaengeln 0,22 gegen Spaltenversatz 0,16
@@ -5056,6 +5057,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Autos beim Pitten. Lass es die letzten 2 s vor dem Stehenbleiben maximal weit rechts
   // fahren." Dieselben 2 s jetzt auch hier, statt einer Sekunde.
   const PIT_RAND_MS = 2000;
+  // v1.3.132: PIT_RAND_MS und SC_RAND_MS sind beim Formationstempo 0,35 abgestimmt. Seit 1.3.114 rollt
+  // das Feld mit 0,42 (formationPace, bewusst global), und eine Randphase ist eine ZEIT - sie rollte
+  // also 20 % weiter (2 s: ~2,5 statt ~3 Teile) und das Auto stand hinter seinem Platz. Die Dauer wird
+  // im Verhaeltnis gekuerzt, damit der WEG bleibt; die Querlage schafft die Bahnbreite in 500 ms
+  // (PIT_RAUS_MS), 1,67 s reichen also weiter.
+  const RAND_BEZUG_TEMPO = 0.35;
+  function randWegMs(ms) { return ms * Math.min(1, RAND_BEZUG_TEMPO / formationPace()); }
   const PIT_RAND_MAX_MS = 3500;    // Sicherheitsgrenze, sonst fuehrt ein Hänger ewig
   const PIT_RAND_TARGET = 0.95;    // Querlage, ab der "am Rand" gilt (Test verlangt 0.95)
   // Und die Bremse laeuft hoch statt zu schlagen. Bestellt: "relativ abrupt bremsen [...]
@@ -5817,7 +5825,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // schnelles faehrt nach dem Erreichen die restliche Mindestzeit am Rand weiter.
       const seit = now - p.at;
       const amRand = (g.querSoll || 0) >= PIT_RAND_TARGET;
-      if ((seit >= PIT_RAND_MS && amRand) || seit >= PIT_RAND_MAX_MS) {
+      if ((seit >= randWegMs(PIT_RAND_MS) && amRand) || seit >= PIT_RAND_MAX_MS) {
         p.phase = 'halt'; p.at = now;
         log(garageLabel(car) + ': am Rand, bremst ab.', 'info');
       }
@@ -6553,11 +6561,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
   // BESTELLT (Test am Tisch): \"Das Auto ist bei der Boxeneinfahrt zu schnell. Kann die Geschwindigkeit
   // schon beim Reinfahren reduziert werden?\" Vorher: bis zwei Kacheln vor der Ausfahrt das normale
-  // NPC-Tempo, dann erst das feste Formationstempo (40 %) - und die Bremsung braucht Weg. Jetzt
+  // NPC-Tempo, dann erst das feste Formationstempo (damals 40 %) - und die Bremsung braucht Weg. Jetzt
   // stellbar: ab wie vielen Kacheln vor der Ausfahrt (sc-einfahrt-kacheln, Vorgabe 2 wie bisher)
-  // und mit welchem Tempo (sc-einfahrt-tempo, 35-100 %, Vorgabe 40 % = formationPace). Unter 35 %
-  // liest das Auto die Bahn nicht mehr (GHOST_READ_MIN) - die Kachelzaehlung, die die Ausfahrt
-  // ausloest, bliebe aus; darum der Boden.
+  // und mit welchem Tempo (sc-einfahrt-tempo, heute 30-100 %, Vorgabe 30 %; NICHT formationPace, das
+  // seit 1.3.114 bei 0,42 liegt). Der Boden ist SC_EINFAHRT_MIN (darunter liest das Auto die Bahn
+  // nicht mehr sicher, die Kachelzaehlung fuer die Ausfahrt bliebe aus).
   // Untergrenze fuer Einfahrt- und Heimtempo: SC_MIN_TEMPO (0,30) - das Safety Car faehrt unter Gelb schon
   // damit und liest die Bahn dabei noch. (Als eigene Konstante, weil die Regler beim Laden initialisiert
   // werden, bevor SC_MIN_TEMPO weiter unten deklariert ist.)
@@ -6923,7 +6931,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     if (!g.scHeim) return;
     g.scHeim = false;
-    randHaltStarten(sc, { quer: FINISH_RAND, randMs: SC_RAND_MS, radLenk: SC_RAD_LENK * einparkStaerke(), radMs: einparkMs(), gegenMs: einparkMs(), fertig: safetyCarFertig });
+    randHaltStarten(sc, { quer: FINISH_RAND, randMs: randWegMs(SC_RAND_MS), radLenk: SC_RAD_LENK * einparkStaerke(), radMs: einparkMs(), gegenMs: einparkMs(), fertig: safetyCarFertig });
     log(garageLabel(sc) + ': Safety Car faehrt rechts ran.', 'info');
   }
   // ---- DIE ERSTE RUNDE (v1.0.37) -----------------------------------------------------------

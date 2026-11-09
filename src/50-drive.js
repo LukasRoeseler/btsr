@@ -2996,7 +2996,7 @@
   // Kolonnenversatz, Abseits-Antwort. `wer` ist 1, wenn nichts dasteht.
   // v1.1.15 GEMELDET: "Die Geschwindigkeit zum Streckenscan ist am unteren Ende der Mindestgeschwindigkeit.
   // In der Haarnadel ist das Auto gerade so schnell genug, dass es noch Balken und Querlage bestimmen
-  // kann. Schiebe die Mindestgeschwindigkeit leicht ueber das (2-3 %)." Mal formationPace (0,35):
+  // kann. Schiebe die Mindestgeschwindigkeit leicht ueber das (2-3 %)." Mal formationPace (damals 0,35):
   // gerade 0,21 -> 0,235, Haarnadel 0,14 -> 0,165 der Hoechstgeschwindigkeit (je 2,5 Prozentpunkte).
   // v1.2.5 BESTELLT: "Streckenscan-Geschwindigkeit etwas erhoehen (ausser in der Haarnadel), da es sonst zu Fehllesungen
   // kommt." Gerade 0,80 statt 0,67 (Delta 36 statt 30), normale Kurven bleiben bei 0,67 (SCAN_TEMPO_KURVE), die

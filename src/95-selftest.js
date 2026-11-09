@@ -6618,15 +6618,22 @@
     const src = String(ghostTick);
     if (src.indexOf('(ghostIstMax(car) && tight === 0)) ? 1 : ghostFeldStaffel(car)') < 0) f.push('Staffel bremst MAX auf Geraden');
     if (src.indexOf('if (!ghostIstMax(car)) {') < 0) f.push('Lernfaktor/Streuung drosseln MAX');
-    // Scan: Gerade 0,80, Kurve 0,67, Haarnadel 0,47.
+    // Scan: seit 1.3.114 Faktoren 0,72/0,60/0,42 auf das hoehere Formationstempo 0,42 - absolut nur LEICHT
+    // schneller als v1.2.5 (0,80/0,67/0,47 auf 0,35): jeder Teiltyp 0 bis 10 % darueber.
     const s1 = scanTempoFaktor({ tileCode: TILE_TYPE.STRAIGHT }), s2 = scanTempoFaktor({ tileCode: TILE_TYPE.CURVE_RIGHT }),
           s3 = scanTempoFaktor({ tileCode: TILE_TYPE.HAIRPIN });
-    if (s1 !== 0.80 || s2 !== 0.67 || s3 !== 0.47) f.push('Scan-Tempi ' + [s1, s2, s3].join('/'));
+    [[s1, 0.80], [s2, 0.67], [s3, 0.47]].forEach(([s, alt]) => {
+      const q = formationPace() * s / (0.35 * alt);
+      if (!(q >= 1 - 1e-9 && q <= 1.10)) f.push('Scan-Tempo ' + s + ' absolut ' + q.toFixed(3) + 'x v1.2.5');
+    });
+    if (!(s1 > s2 && s2 > s3)) f.push('Scan-Tempi nicht Gerade > Kurve > Haarnadel: ' + [s1, s2, s3].join('/'));
+    // Formationstempo 0,42 (global): die Randphasen rollen denselben WEG wie bei 0,35.
+    if (Math.abs(randWegMs(PIT_RAND_MS) * formationPace() - PIT_RAND_MS * 0.35) > 1e-6) f.push('Randphase rollt weiter als bei 0,35');
     // Schaltklang: Schalter ab Werk aus (neu), die Mischung bleibt beim Schalten stehen.
     if (!$('setting-schaltklang-alt') || $('setting-schaltklang-alt').defaultChecked) f.push('Schaltklang-Schalter fehlt oder ab Werk alt');
     if (String(updateSampleEngineIn).indexOf('store.schaltMix') < 0) f.push('Schaltklang haelt die Mischung nicht');
     if (!$('setting-npc-klang-alt') || $('setting-npc-klang-alt').defaultChecked) f.push('NPC-Klang-Schalter fehlt oder ab Werk alt');
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'MAX Arcade ohne Schaltpause, Staffel/Lernen aus, Scan 0,80/0,67/0,47, Schaltklang neu, NPC 5200/min' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'MAX Arcade ohne Schaltpause, Staffel/Lernen aus, Scan 0,72/0,60/0,42 auf 0,42 (+0-10 %), Randweg wie bei 0,35, Schaltklang neu, NPC 5200/min' };
   });
 
   stAdd('Rennen und Spieler v1.2.4: Renntyp je Sensormodus, Fahrgefuehl je Spieler, Pacejka-Challenges', () => {
