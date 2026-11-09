@@ -939,7 +939,7 @@
   function vfModellPfad(auto) { return VF_MODELL_PFADE[auto || vfAutoWahl()] || 'img/autos/v5r/'; }
   const VF_FEDER_STORE = 'omegasim-vf-feder';
   const VF_FEDER_WERTE = [1, 2, 3, 5, 8];
-  // Eine gespeicherte Wahl, die es nicht mehr gibt (z. B. 'porsche', 1.3.103-1.3.131, entfernt), faellt
+  // Eine gespeicherte Wahl, die es nicht mehr gibt (z. B. 'porsche', 1.3.94-1.3.131, entfernt), faellt
   // still auf den Vulture V5.R zurueck - kein 404 beim Laden und kein Absturz.
   function vfAutoWahl() {
     try { const v = localStorage.getItem(VF_AUTO_STORE); return (v === 'kasten' || (v && Object.prototype.hasOwnProperty.call(VF_MODELL_PFADE, v))) ? v : 'v5r'; } catch (e) { return 'v5r'; }
@@ -1057,13 +1057,13 @@
   const VF_AO_INNEN = vfReglerLesen('omegasim-vf-ao-innen', 0.6);
   const VF_SCHATTEN_BIAS = vfReglerLesen('omegasim-vf-schatten-bias', 0.0015);
   const VF_SCHATTEN_BIAS_PIXEL = vfReglerLesen('omegasim-vf-schatten-bias-pixel', 0.0004);
-  // Studienmodus: FOV aus Bildschirm/Abstand, Zoom der Fahrer-Kamera aus, fester NPC-Seed, JSON-Log.
-  // Nur aktiv, wenn der Nutzer die Schluessel in der Konsole setzt (siehe Bestellung).
+  // Studienmodus: FOV aus Bildschirm/Abstand, Zoom der Fahrer-Kamera aus, fester NPC-Seed. Nur aktiv,
+  // wenn der Nutzer die Schluessel in der Konsole setzt (siehe Bestellung). Das JSON-Log (Bildzeiten)
+  // ist entfernt: es lief nie (sein Zaehler stieg nur in ihm selbst) und kostete je Bild ein shift().
   const VF_STUDIE = (() => { try { return localStorage.getItem('omegasim-vf-studie') === '1'; } catch (e) { return false; } })();
   const VF_STUDIE_FOV = (() => { try { const v = JSON.parse(localStorage.getItem('omegasim-vf-studie-fov') || 'null'); return v && v.bildHoeheCm > 0 ? v : null; } catch (e) { return null; } })();
   const VF_STUDIE_ZOOM_AUS = (() => { try { return localStorage.getItem('omegasim-vf-studie-zoomaus') === '1'; } catch (e) { return false; } })();
   const VF_SEED = (() => { try { const v = +localStorage.getItem('omegasim-vf-seed'); return Number.isFinite(v) ? v : null; } catch (e) { return null; } })();
-  let vfStudie = { an: VF_STUDIE, n: 0 };
   function vfStudieFov() {
     if (!VF_STUDIE_FOV) return null;
     const vf = (VF_STUDIE_FOV.bildHoeheCm / VF_STUDIE_FOV.abstandCm);
@@ -1072,32 +1072,6 @@
   function vfStudieSeed() {
     if (!VF_SEED) return 4242;
     return VF_SEED;
-  }
-  function vfStudieLog() {
-    if (!VF_STUDIE || !VF.gl) return;
-    const gl = VF.gl;
-    const a = VF._fpsT ? VF._fpsT.arr.slice() : [];
-    const sort = a.slice().sort((x, y) => x - y);
-    const pct = (p) => sort.length ? sort[Math.min(sort.length - 1, Math.floor(sort.length * p))] : 0;
-    const mittel = a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
-    let gpu = '';
-    try { const d = gl.getExtension('WEBGL_debug_renderer_info'); gpu = d ? String(gl.getParameter(d.UNMASKED_RENDERER_WEBGL) || '') : ''; } catch (e) { gpu = ''; }
-    const log = {
-      grafik: VF.grafik ? 'quality' : 'performance',
-      schattenMap: (VF.schatte && VF.schatte.size) || 0,
-      gpu, tiefeBits: gl.getParameter(gl.DEPTH_BITS),
-      dpr: window.devicePixelRatio || 1,
-      aufloesung: [VF.cv && VF.cv.width, VF.cv && VF.cv.height],
-      fov: VF.kam && VF.kam.fov, seed: vfStudieSeed(),
-      frame: { n: a.length, mittel: +mittel.toFixed(2), p50: +pct(0.5).toFixed(2), p95: +pct(0.95).toFixed(2), p99: +pct(0.99).toFixed(2),
-               ueber20: a.filter((x) => x > 20).length, ueber33: a.filter((x) => x > 33).length }
-    };
-    try { localStorage.setItem('omegasim-vf-studie-log', JSON.stringify(log)); } catch (e) { /* egal */ }
-  }
-  function vfStudienLogLaden() {
-    if (!VF_STUDIE || !VF.gl) return;
-    vfStudie.n++;
-    vfStudieLog();
   }
   // Bogenlaengen der Mittellinie (geschlossene Schleife): bogen[i] = Laenge bis Punkt i, bogen[n] = Runde.
   function vfNpcBogen(pts) {
@@ -2128,7 +2102,7 @@
   // BESTELLT: "Erlaube mir, im virtuellen Fahren mit dem rechten Stick die Kamera um das Auto herum zu
   // drehen (bzw. in eine andere Richtung einfach). Wenn ich den rechten Stick dann reindruecke, soll die
   // Kamera wieder die Standardansicht haben."
-  // ZWEI ARTEN: Verfolger, nah und statisch kreisen UM das Auto (waagrecht ganz herum, senkrecht
+  // ZWEI ARTEN: Verfolger und nah kreisen UM das Auto (waagrecht ganz herum, senkrecht
   // -10..+60 Grad zur Standardhoehe), von oben dreht das Bild und neigt sich bis 60 Grad. Motorhaube und
   // "Fahrer am Rand" drehen den BLICK (umsehen, senkrecht +-35 Grad). Stick rechts = Blick nach rechts,
   // Stick hoch = Blick nach oben (die kreisenden Kameras sinken dafuer), wie in den meisten Spielen.
@@ -2248,13 +2222,12 @@
   // BLICK: Gier- und Nickwinkel laufen dem Auto mit einer Zeitkonstante nach (nach der Zeit, nicht je
   // Bild: auf einem langsamen Handy folgt der Blick genauso schnell). Das Ziel ist das Auto, nicht ein
   // geglaetteter Punkt - so dreht der Kopf auch bei einer Vorbeifahrt dicht vorm Fahrer gleichmaessig.
-  // SICHTFELD: 46 Grad senkrecht (bei 2:1 im Querformat gut 80 Grad waagrecht, etwa das, was ein Mensch
-  // ohne Kopfdrehen bequem ueberblickt). Ist das Auto weit weg, zoomt es sanft bis 28 Grad: ein 10-cm-
-  // Auto in 4 m Abstand waere sonst nur 1,5 Grad gross, ein paar Pixel; der Mensch "schaut genauer
-  // hin". Mehr als 1,7-fach nicht, sonst wirkt es wie ein Fernglas.
+  // SICHTFELD: seit 1.3.110 34 Grad senkrecht (vorher 46, bei 2:1 im Querformat gut 80 Grad waagrecht).
+  // Ist das Auto weit weg, zoomt es sanft bis 21 Grad (vorher 28): ein 10-cm-Auto in 4 m Abstand waere
+  // sonst nur ein paar Pixel; der Mensch "schaut genauer hin". Gut 1,6-fach, mehr wirkt wie ein Fernglas.
   // NAH/FERN: das naechste sichtbare Ding ist mehr als 90 Einheiten entfernt (Boden unter dem Blick,
-  // Auto am Rand), also Nahebene 8 und Fernebene 3000: Verhaeltnis 375 statt 6000 bei den anderen
-  // Kameras, die Tiefe reicht auch fuer Randstein (0,09 hoch) gegen Fahrbahn.
+  // Auto am Rand), also Nahebene 8 und Fernebene 1300 (seit 1.3.124, vorher 3000; der Nebel ist bei
+  // 1150 voll): Verhaeltnis 162, die Tiefe reicht auch fuer Randstein (0,09 hoch) gegen Fahrbahn.
   const VF_FAHRER_AUGE_CM = 100, VF_FAHRER_ABSTAND_CM = 75, VF_FAHRER_TAU = 0.25, VF_FAHRER_ZOOM_TAU = 0.8;
   const VF_FAHRER_FOV = 34, VF_FAHRER_FOV_FERN = 21;
   function vfFahrerOrt(pts, nrm, tiles) {
@@ -2331,14 +2304,6 @@
       const auge = [VF.x, 85, VF.y];
       VF.kam = null;
       return { auge, ziel: [VF.x, 0, VF.y], oben, fov: 62, nah: 0.5 };
-    }
-    if (id === 'statisch') {
-      // Wie ein Zuschauer neben der Strecke: sitzt seitlich links neben dem Auto, etwas in der
-      // Luft, und schaut immer aufs Auto (verfolgt es mit dem Blick, statt mitzufahren).
-      const lx = -fz, lz = fx;               // senkrecht zur Fahrtrichtung ("links")
-      const auge = [VF.x + lx * 7.5, 4.0, VF.y + lz * 7.5];
-      VF.kam = null;
-      return vfDrehAnwenden({ auge, ziel: [VF.x, 1.2, VF.y], fov: 32, nah: 0.3 }, art, D, VF.x, 1.2, VF.y);
     }
     const nah = id === 'nah';
     const hinten = nah ? 9 : 15, hoehe = nah ? 3.8 : 8, tau = nah ? 0.08 : 0.15;
@@ -3116,8 +3081,6 @@
       try { if (kRennenLaeuft()) requestRaceStop(); else challengeAbbrechen(); } catch (e) { /* weiter */ }
       VF.abbruch = false;
     }
-    // v1.3.124 Studienmodus: am Ende der Fahrt den JSON-Log schreiben.
-    if (VF_STUDIE && vfStudie.n > 0) { try { vfStudienLogLaden(); } catch (e) { /* egal */ } }
     VF.aktiv = false;
     VF.npcs = null; VF.npcBogen = null; VF.npcRunde = 0;
     VF.schatte = null; VF.schatteProg = null; VF.grafik = false;

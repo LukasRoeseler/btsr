@@ -17843,27 +17843,48 @@
   });
 
   // v1.3.122: Kamera- und Steuerungs-Knopf der virtuellen Fahrt, Beruehrungs-Steuerung (Touch).
-  stAdd('Virtuell v1.3.122: Kamera-Knopf, Steuerungs-Knopf und Beruehrungs-Steuerung vorhanden', () => {
+  // Bis 1.3.131 legte der Test seine Knoepfe selbst an und prueft damit nichts. Jetzt: eine echte
+  // virtuelle Fahrt starten (synchron, ohne Bild), die Knoepfe der App suchen, Kamera-Knopf druecken,
+  // mit dem Touch-Lenkfeld lenken und loslassen (Quelle SRC.TOUCH in der Schiedsstelle). Kein WIP-Etikett.
+  stAdd('Virtuell v1.3.122: Kamera-Knopf, Steuerungs-Knopf und Beruehrungs-Steuerung wirken', () => {
+    if (typeof virtuellStarten !== 'function' || typeof VF === 'undefined') return { skip: true, mass: 'kein virtuelles Fahren' };
+    if (VF.aktiv) return { skip: true, mass: 'virtuelle Fahrt laeuft gerade' };
+    if (!physicsEnabled) return { skip: true, mass: 'Fahrgefuehl ohne Physik (RC)' };
     const f = [];
-    // Der Knoepfe-Bereich der virtuellen Fahrt traegt den Kamera- und den Steuerungs-Knopf.
-    const kasten = document.createElement('div');
-    kasten.innerHTML = '<div class="vf-knoepfe"><button type="button" data-vf="kam"></button><button type="button" data-vf="touch"></button></div>';
-    if (!kasten.querySelector('[data-vf="kam"]')) f.push('Kamera-Knopf fehlt');
-    if (!kasten.querySelector('[data-vf="touch"]')) f.push('Steuerungs-Knopf fehlt');
-    // Die Beruehrungs-Steuerung hat eine eigene Quelle in der Schiedsstelle.
-    if (!SRC || !SRC.TOUCH) f.push('SRC.TOUCH fehlt');
-    if (typeof vfTouchGeraet !== 'function' || typeof vfTouchSollAn !== 'function') f.push('Touch-Funktionen fehlen');
-    try { if (typeof vfTouchGeraet() !== 'boolean' || typeof vfTouchSollAn() !== 'boolean') f.push('Touch-Abfragen liefern kein Boolean'); }
-    catch (e) { f.push('Touch-Abfrage: ' + e.message); }
-    // Aufbauen wirft nicht, und die Steuerung bleibt im Desktop-Kontext verborgen.
-    const el = document.createElement('div');
-    el.className = 'vf-touch';
-    el.innerHTML = '<div class="vf-touch-lenk"><div class="vf-touch-knauf"></div></div><div class="vf-touch-gas"><div class="vf-touch-knauf"></div></div>';
-    document.body.appendChild(el);
-    const vorher = VF.schicht; VF.schicht = el;
-    try { vfTouchBauen(); } catch (e) { f.push('vfTouchBauen: ' + e.message); }
-    finally { VF.schicht = vorher; el.remove(); }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Kamera- und Steuerungs-Knopf da, SRC.TOUCH, Booleans ok, Touch-Bauen wirft nicht' };
+    const merkTab = typeof kAktiverTab === 'function' ? kAktiverTab() : null;
+    let merkKam = null;
+    try { merkKam = localStorage.getItem(VF_KAMERA_STORE); } catch (e) { /* privat */ }
+    try {
+      if (!virtuellStarten({ tiles: codeToTrack('SG3R2G3R2').tiles, studie: true })) return { skip: true, mass: 'virtuelle Fahrt startet hier nicht (kein WebGL?)' };
+      const sch = VF.schicht;
+      for (const k of ['kam', 'touch', 'box', 'flag', 'licht', 'reset', 'zu']) if (!sch.querySelector('[data-vf="' + k + '"]')) f.push('Knopf ' + k + ' fehlt');
+      for (const sel of ['[data-vf="kam"]', '[data-vf="touch"]', '.vf-touch']) {
+        const el = sch.querySelector(sel);
+        if (el && el.querySelector('.wip-tag')) f.push(sel + ' mit WIP-Etikett');
+      }
+      if (sch.querySelector('[data-vf="touch"]') && sch.querySelector('[data-vf="touch"]').hidden !== !vfTouchGeraet()) f.push('Steuerungs-Knopf sichtbar ohne Touch-Geraet');
+      // Kamera-Knopf schaltet weiter.
+      const k0 = vfKameraId();
+      sch.querySelector('[data-vf="kam"]').click();
+      if (vfKameraId() === k0) f.push('Kamera-Knopf wechselt nicht (' + k0 + ')');
+      // Touch: rechts aussen im Lenkfeld = voll rechts ueber SRC.TOUCH, loslassen = 0.
+      vfTouchAnzeigen(true);
+      const lenk = sch.querySelector('.vf-touch-lenk');
+      const r = lenk.getBoundingClientRect();
+      if (!(r.width > 0)) f.push('Lenkfeld ohne Groesse');
+      else {
+        lenk.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 5, clientX: r.right - 1, clientY: r.top + r.height / 2, bubbles: true }));
+        if (!steerClaim[SRC.TOUCH] || !(steerX > 0.9)) f.push('Touch lenkt nicht: ' + steerX);
+        lenk.dispatchEvent(new PointerEvent('pointerup', { pointerId: 5, bubbles: true }));
+        if (steerClaim[SRC.TOUCH] || steerX !== 0) f.push('Touch laesst nicht los: ' + steerX);
+      }
+    } finally {
+      if (VF.aktiv) { try { virtuellBeenden(); } catch (e) { /* weiter */ } }
+      VF.kamera = null;
+      try { if (merkKam === null) localStorage.removeItem(VF_KAMERA_STORE); else localStorage.setItem(VF_KAMERA_STORE, merkKam); } catch (e) { /* privat */ }
+      if (merkTab && typeof showTab === 'function') showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '7 Knoepfe der App da, ohne WIP, Kamera wechselt, Touch lenkt ueber SRC.TOUCH und laesst los' };
   });
 
   stAdd('Virtuell v1.2.32: Kartenauto bleibt unter der 3D-Schicht verborgen, Silhouette an Ort, Skala und Drehung', () => {
