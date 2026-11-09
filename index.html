@@ -5732,7 +5732,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.4.45</span></span>
+        <span class="foot-ver">v<span id="app-version">1.4.47</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6973,6 +6973,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.4</span></b></p>
       <ul class="muted" id="patchnotes-14" style="padding-left:20px; line-height:1.7">
+        <li>Behoben: Im Bahn-Modus beschleunigte ein Auto, das neben der Bahn oder auf dem R&#252;cken lag, unter dem Autopiloten (Einf&#252;hrungsrunde, Gelb, Aufstellung) auf rund 100 km/h. Jetzt gibt der Autopilot nach 1,5 s am St&#252;ck neben der Bahn kein Gas mehr und bremst leicht, bis das Auto wieder auf der Bahn ist; kurzes Abkommen, etwa in der Haarnadel, bleibt wie bisher. Au&#223;erdem z&#228;hlen die Gas- und Bremstrigger nicht mehr als voll gedr&#252;ckt, wenn ein Gamepad sie als gedr&#252;ckt mit Wert 0 meldet (L3 funktioniert weiter).</li>
         <li>Erfolgsballast in der Meisterschaft (WIP, im Planer unter &#8222;F&#252;r die ganze Meisterschaft&#8220;; Aus, Leicht bis 30 kg, Mittel bis 50 kg, Stark bis 80 kg): Vor jedem Event bekommt der Punktef&#252;hrende den meisten Ballast, der Letzte keinen, im ersten Event niemand. Spielerautos werden dadurch tr&#228;ger beim Beschleunigen und Bremsen, NPCs etwas langsamer, beides im Mittel gleich stark (50 kg kosten rund 2 % Rundenzeit). Der Ballast steht als &#8222;+X kg&#8220; im Zwischenstand, in der Startaufstellung und im Cockpit; im Mehrspieler gibt ihn das leitende Telefon vor.</li>
         <li>Setup je Auto (WIP): In der Garage hat jedes Spielerauto einen Knopf &#8222;Setup&#8220;. Im Fenster w&#228;hlst du Reifentyp (weich, mittel, hart, Regen) und Starttank (5 bis 110 l), jeweils mit &#8222;ca. N Runden&#8220; auf der Strecke im Editor; &#8222;Standard&#8220; setzt zur&#252;ck. Das Setup gilt beim n&#228;chsten Start f&#252;r dieses Auto. Im WLAN-Rennen mit vorgegebenem Fahrgef&#252;hl, in Challenges und in Meisterschaften mit festem Fahrgef&#252;hl fahren alle mit dem Standard-Setup.</li>
         <li>Automatische Gelbe Flagge (WIP, Renneinstellungen; Aus, Nur bei NPCs, Bei allen Autos): Fliegt im Rennen ein Auto ab (NPC: erkannter Abflug, Spielerauto: mindestens 1 s neben der Bahn), kommt Gelb mit Ansage &#8222;Gelbe Flagge. &lt;Auto&gt; hat einen Unfall gebaut&#8220; (mit Sektor, wenn Sektoren aktiv sind). Alle fahren gedrosselt weiter, dein Auto im Autopiloten, sodass du aufstehen und das Auto wieder einsetzen kannst. F&#228;hrt es wieder 3 s lang, startet die Anfahrt-Ampel, danach Gr&#252;n mit Ansage, und der Controller &#252;bernimmt. Im WLAN folgen die anderen Telefone (daf&#252;r braucht es die neue APK bzw. den aktualisierten Host).</li>
@@ -16649,6 +16650,7 @@
     "über {n} Runden": "over {n} laps",
     "Setup je Auto (WIP): In der Garage hat jedes Spielerauto einen Knopf „Setup“. Im Fenster wählst du Reifentyp (weich, mittel, hart, Regen) und Starttank (5 bis 110 l), jeweils mit „ca. N Runden“ auf der Strecke im Editor; „Standard“ setzt zurück. Das Setup gilt beim nächsten Start für dieses Auto. Im WLAN-Rennen mit vorgegebenem Fahrgefühl, in Challenges und in Meisterschaften mit festem Fahrgefühl fahren alle mit dem Standard-Setup.": "Setup per car (WIP): in the garage every player car has a “Setup” button. In the window you choose the tyre type (soft, medium, hard, rain) and starting fuel (5 to 110 l), each with “approx. N laps” on the track in the editor; “Default” resets. The setup applies to this car at the next start. In Wi-Fi races with a set driving feel, in challenges and in championships with a fixed driving feel everyone uses the default setup.",
     "Erfolgsballast in der Meisterschaft (WIP, im Planer unter „Für die ganze Meisterschaft“; Aus, Leicht bis 30 kg, Mittel bis 50 kg, Stark bis 80 kg): Vor jedem Event bekommt der Punkteführende den meisten Ballast, der Letzte keinen, im ersten Event niemand. Spielerautos werden dadurch träger beim Beschleunigen und Bremsen, NPCs etwas langsamer, beides im Mittel gleich stark (50 kg kosten rund 2 % Rundenzeit). Der Ballast steht als „+X kg“ im Zwischenstand, in der Startaufstellung und im Cockpit; im Mehrspieler gibt ihn das leitende Telefon vor.": "Success ballast in the championship (WIP, in the planner under “For the whole championship”; Off, Light up to 30 kg, Medium up to 50 kg, Heavy up to 80 kg): before each event the points leader gets the most ballast, the last driver none, and nobody in the first event. Player cars become slower to accelerate and brake, NPCs a little slower, both equally strong on average (50 kg cost about 2 % lap time). The ballast is shown as “+X kg” in the standings, on the starting grid and in the cockpit; in multiplayer the leading phone sets it.",
+    "Behoben: Im Bahn-Modus beschleunigte ein Auto, das neben der Bahn oder auf dem Rücken lag, unter dem Autopiloten (Einführungsrunde, Gelb, Aufstellung) auf rund 100 km/h. Jetzt gibt der Autopilot nach 1,5 s am Stück neben der Bahn kein Gas mehr und bremst leicht, bis das Auto wieder auf der Bahn ist; kurzes Abkommen, etwa in der Haarnadel, bleibt wie bisher. Außerdem zählen die Gas- und Bremstrigger nicht mehr als voll gedrückt, wenn ein Gamepad sie als gedrückt mit Wert 0 meldet (L3 funktioniert weiter).": "Fixed: in track mode a car lying off the track or on its back accelerated to about 100 km/h under the autopilot (formation lap, yellow, grid setup). Now the autopilot gives no throttle after 1.5 s in a row off the track and brakes lightly until the car is back on the track; a short excursion, for example in the hairpin, stays as before. Also, the throttle and brake triggers no longer count as fully pressed when a gamepad reports them as pressed with value 0 (L3 still works).",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -29099,6 +29101,11 @@
         st.speedKmh = 0;
         return { grund: 'aufstellen', throttle: 0, brake: 1, steer: 0, lenkt: false, radLenk: fo ? fo.lenk : 0 };
       }
+      // v1.4.46: lange neben der Bahn (oder auf dem Ruecken) kein Gas, siehe apLangeAbseits().
+      if (apLangeAbseits(wer || 1)) {
+        regler.at = rennZeitJetzt();
+        return { grund: 'aufstellen', throttle: 0, brake: Math.max(AP_ABSEITS_BREMSE, fahrerBremse), steer: 0, lenkt: false };
+      }
       const vA = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
       const dtS = Math.max(0.01, Math.min(0.25, (rennZeitJetzt() - (regler.at || rennZeitJetzt())) / 1000));
       regler.at = rennZeitJetzt();
@@ -29112,6 +29119,14 @@
     // AUSSETZER RAEUMEN DEN REGLER AUF. Ohne das traegt der I-Anteil ueber das Ende der
     // gelben Phase hinaus und gibt beim naechsten Mal aus dem Stand Gas.
     if (!grund) { autopilotZuruecksetzen(wer); return null; }
+    // v1.4.46 GEMELDET: "Das Auto beschleunigt im Bahn-Modus immer auf ca. 100 km/h (zumindest, wenn
+    // ich es auf den Ruecken lege)." Einfuehrungsrunde und Gelb behielten das Gas auch neben der Bahn
+    // (unten: "GAS UND BREMSE BLEIBEN BEI IHM"), und auf dem Ruecken endet die Einfuehrungsrunde nie -
+    // die Raeder drehten dauerhaft im Formationstempo. Kurzes Abkommen (Haarnadel) bleibt unberuehrt.
+    if (apLangeAbseits(wer || 1)) {
+      regler.at = rennZeitJetzt();
+      return { grund, throttle: 0, brake: Math.max(AP_ABSEITS_BREMSE, fahrerBremse || 0), steer: 0, lenkt: false };
+    }
     // ---- WIE EIN GHOST, UND DAS IST DER BESTELLTE UNTERSCHIED ---------------------
     //
     // GEMELDET: "gelbe Flagge fuer mein Auto auf der Bahn fixen: es gibt nur Gas, sollte
@@ -29293,6 +29308,18 @@
   // Die zwei Fragen von oben, jetzt mit Adressat. Fuer `wer === 1` ist es Wort fuer Wort
   // dieselbe Antwort wie vorher - deshalb rufen die acht vorhandenen Stellen weiter
   // abseitsJetzt() und offtrackGilt() und muessen nicht angefasst werden.
+  // v1.4.46: meldet das Auto seit AP_ABSEITS_STOPP_MS ununterbrochen 0x00 (neben der Bahn, auf dem
+  // Ruecken), gibt der Autopilot (Einfuehrungsrunde, Gelb/Anfahrt, Aufstellung) kein Gas mehr, bis
+  // wieder ein gueltiger Code kommt. Gemessen an derselben Uhr wie das Abseits (offtrackSeit bzw.
+  // abseits.seit je Zusatzspieler), unabhaengig von der einstellbaren Einschaltverzoegerung - kurzes
+  // Abkommen in der Haarnadel (unter 1,5 s) faehrt weiter wie bisher. Nur auf der Bahn.
+  const AP_ABSEITS_STOPP_MS = 1500, AP_ABSEITS_BREMSE = 0.4;
+  function apLangeAbseits(wer) {
+    if (trackMode !== 'on') return false;
+    const zPl = wer >= 2 && typeof zusatzPlatz === 'function' ? zusatzPlatz(wer) : null;
+    const seit = wer >= 2 ? (zPl && zPl.abseits ? zPl.abseits.seit : null) : offtrackSeit;
+    return seit !== null && seit !== undefined && rennZeitJetzt() - seit >= AP_ABSEITS_STOPP_MS;
+  }
   function abseitsJetztFuer(wer) {
     if (wer >= 2) return zusatzPlatz(wer).abseits.aktiv && trackMode === 'on';
     return abseitsJetzt();
@@ -64036,7 +64063,20 @@
     // aber mit value 0. `value ?? pressed` lasse dann 0 durch und der Druck ginge
     // verloren - die L3-Statusansage kam nie. Deshalb: gedrueckt zaehlt immer,
     // value (analog, z.B. Trigger) bleibt sonst erhalten.
-    return (btn.pressed || btn.value > 0) ? (btn.value || 1) : 0;
+    // v1.4.46: aber NICHT bei analogen Triggern (Standardbelegung Knoepfe 6/7, oder ein Knopf, der
+    // schon einmal einen Zwischenwert gemeldet hat). Dort hiesse "gedrueckt mit value 0" Vollgas bzw.
+    // Vollbremsung, obwohl der Trigger in Ruhe ist - beim Trigger ist der Wert die Wahrheit.
+    if (btn.value > 0) {
+      if (btn.value < 1) padAnalogKnoepfe[(pad.index | 0) + ':' + binding.index] = true;
+      return btn.value;
+    }
+    return btn.pressed && !padKnopfAnalog(pad, binding.index) ? 1 : 0;
+  }
+  // Knoepfe, die je einen Zwischenwert (0 < value < 1) gemeldet haben, je Pad: die sind analog.
+  const padAnalogKnoepfe = Object.create(null);
+  function padKnopfAnalog(pad, index) {
+    return (pad.mapping === 'standard' && (index === 6 || index === 7))
+      || !!padAnalogKnoepfe[(pad.index | 0) + ':' + index];
   }
 
   // Gamepad sampling MUST run on requestAnimationFrame. Chrome refreshes the gamepad
@@ -116252,6 +116292,122 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (runden) f.push('Zeitgeber arbeitet bei Option aus');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Feld ' + feld + ', fremdem Gelb gefolgt und beendet, Funktakt unberuehrt' };
   }));
+
+  // ---- v1.4.46: KEIN SELBSTBESCHLEUNIGEN IM BAHN-MODUS --------------------------------------------
+  // GEMELDET: "Das Auto beschleunigt im Bahn-Modus immer auf ca. 100 km/h (zumindest, wenn ich es auf den
+  // Ruecken lege)." Auf dem Ruecken meldet es dauerhaft 0x00; der Autopilot (Einfuehrungsrunde, Gelb,
+  // Aufstellung) gab trotzdem Gas im Formationstempo, und die Einfuehrungsrunde endet dort nie.
+  // Die Rennuhr ist eine Attrappe (45-ms-Takte), gemeldet wird ueber offtrackMelden() wie im Meldestrom.
+  function apAbseitsUmgebung(fn) {
+    const m = { zeit: rennZeitJetzt, flag: flagState, tm: trackMode, form: raceFormationLap, st: Object.assign({}, physEngine.state),
+                seit: offtrackSeit, wieder: offtrackWiederSeit, aktiv: offtrackAktiv, zaehler: offtrackZaehler, pc: playerCar };
+    const u = { T: 3000000 };
+    rennZeitJetzt = () => u.T;
+    flagState = 'green'; trackMode = 'on'; raceFormationLap = true;
+    offtrackSeit = null; offtrackWiederSeit = null; offtrackAktiv = false;
+    playerCar = playerCar || { role: 'player', alias: 'Pruefwagen', tileCode: 0x02 };
+    autopilotZuruecksetzen(1);
+    physEngine.state.speedKmh = 0;
+    // n Takte zu 45 ms: Code melden, Autopilot fragen, Fahrphysik mit seiner Ausgabe rechnen.
+    u.takte = (n, code) => {
+      let ap = null;
+      for (let i = 0; i < n; i++) {
+        u.T += 45;
+        offtrackMelden(code === TILE_OFFTRACK);
+        ap = autopilot(0, 1);
+        if (ap) physEngine.update({ steering: 0, throttle: ap.throttle, brake: ap.brake, headlights: false, apFaehrt: true }, 0.045);
+      }
+      return ap;
+    };
+    u.kmh = () => Math.abs(physEngine.state.speedKmh) * TACHO_SCALE;
+    try { return fn(u); } finally {
+      rennZeitJetzt = m.zeit; flagState = m.flag; trackMode = m.tm; raceFormationLap = m.form;
+      Object.assign(physEngine.state, m.st);
+      offtrackSeit = m.seit; offtrackWiederSeit = m.wieder; offtrackAktiv = m.aktiv; offtrackZaehler = m.zaehler;
+      playerCar = m.pc;
+      autopilotZuruecksetzen(1);
+      try { offtrackAnzeige(); } catch (e) { /* egal */ }
+    }
+  }
+  stAdd('Fahren v1.4.46: kein Selbstbeschleunigen im Bahn-Modus (Einfuehrungsrunde, Auto auf dem Ruecken)', () => apAbseitsUmgebung((u) => {
+    const f = [];
+    // 3 s nur 0x00 ab dem Stand: nach 1,5 s kein Gas mehr, das Tempo bleibt nahe 0.
+    const ap = u.takte(67, TILE_OFFTRACK);
+    if (!ap || ap.grund !== 'formation') f.push('Autopilot greift nicht (' + (ap && ap.grund) + ')');
+    else if (!(ap.throttle === 0 && ap.brake > 0)) f.push('gibt nach 3 s neben der Bahn noch Gas ' + ap.throttle.toFixed(2));
+    const nach3 = u.kmh();
+    u.takte(45, TILE_OFFTRACK);
+    if (!(u.kmh() < 15)) f.push('Tempo nach 5 s auf dem Ruecken ' + u.kmh().toFixed(0) + ' km/h');
+    // Gelb: dasselbe.
+    raceFormationLap = false; flagState = 'yellow';
+    const g = u.takte(10, TILE_OFFTRACK);
+    if (!g || g.grund !== 'yellow' || g.throttle !== 0) f.push('Gelb gibt neben der Bahn Gas');
+    // Ausdruck-Modus: 0x00 ist dort normal, die Sperre greift nicht.
+    trackMode = 'off';
+    if (apLangeAbseits(1)) f.push('greift im Ausdruck-Modus');
+    trackMode = 'on';
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'nach 3 s ' + nach3.toFixed(0) + ' km/h, nach 5 s ' + u.kmh().toFixed(0) + ' km/h, Gelb ebenso' };
+  }));
+  stAdd('Fahren v1.4.46: kurzes Abkommen (0,8 s) laesst Gas, nach Rueckkehr faehrt der Autopilot weiter, Spieler 2', () => apAbseitsUmgebung((u) => {
+    const f = [];
+    // Auf der Bahn anfahren, dann 0,8 s 0x00 (Haarnadel): Gas bleibt.
+    u.takte(20, 0x02);
+    const kurz = u.takte(18, TILE_OFFTRACK);
+    if (!kurz || !(kurz.throttle > 0)) f.push('kurzes 0x00 unterbricht das Gas');
+    // Lange daneben, dann zurueck auf die Bahn: wieder Gas.
+    u.takte(50, TILE_OFFTRACK);
+    physEngine.state.speedKmh = 0;
+    const zurueck = u.takte(3, 0x02);
+    if (!zurueck || !(zurueck.throttle > 0)) f.push('nach Rueckkehr kein Gas');
+    // Spieler 2 nach seiner eigenen Abseits-Uhr.
+    const z = zusatzPlatz(2);
+    if (z) {
+      const merk = { car: z.car, seit: z.abseits.seit, v: z.motor.state.speedKmh };
+      try {
+        z.car = z.car || { role: 'player', alias: 'P2', tileCode: 0x00 };
+        z.motor.state.speedKmh = 0;
+        z.abseits.seit = u.T - 2000;
+        const ap2 = autopilot(0, 2);
+        if (!ap2 || ap2.throttle !== 0) f.push('Spieler 2: Gas nach 2 s neben der Bahn');
+        z.abseits.seit = u.T - 500;
+        const ap2k = autopilot(0, 2);
+        if (!ap2k || !(ap2k.throttle > 0)) f.push('Spieler 2: kurzes Abkommen ohne Gas');
+      } finally { z.car = merk.car; z.abseits.seit = merk.seit; z.motor.state.speedKmh = merk.v; autopilotZuruecksetzen(2); }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Haarnadel-Abkommen faehrt weiter, Rueckkehr gibt wieder Gas, Spieler 2 nach eigener Uhr' };
+  }));
+  stAdd('Eingabe v1.4.46: Trigger "gedrueckt mit value 0" ist kein Gas, L3 bleibt ein Druck', () => {
+    const f = [];
+    const pad = (i, knopf, mapping) => {
+      const buttons = [];
+      for (let k = 0; k < 17; k++) buttons.push({ pressed: false, value: 0 });
+      buttons[i] = knopf;
+      return { index: 7, mapping: mapping === undefined ? 'standard' : mapping, buttons, axes: [0, 0, 0, 0] };
+    };
+    const merk = Object.assign({}, padAnalogKnoepfe);
+    try {
+      const gas = readBindingValue(pad(7, { pressed: true, value: 0 }), { type: 'button', index: 7 });
+      if (gas !== 0) f.push('R2 gedrueckt/value 0 gibt ' + gas);
+      const br = readBindingValue(pad(6, { pressed: true, value: 0 }), { type: 'button', index: 6 });
+      if (br !== 0) f.push('L2 gedrueckt/value 0 gibt ' + br);
+      const halb = readBindingValue(pad(7, { pressed: true, value: 0.4 }), { type: 'button', index: 7 });
+      if (Math.abs(halb - 0.4) > 1e-9) f.push('R2 halb gibt ' + halb);
+      const l3 = readBindingValue(pad(10, { pressed: true, value: 0 }), { type: 'button', index: 10 });
+      if (l3 !== 1) f.push('L3 gedrueckt/value 0 gibt ' + l3);
+      // Ohne Standardbelegung: ein Knopf, der schon einmal halb stand, ist analog.
+      readBindingValue(pad(4, { pressed: true, value: 0.3 }, ''), { type: 'button', index: 4 });
+      const a4 = readBindingValue(pad(4, { pressed: true, value: 0 }, ''), { type: 'button', index: 4 });
+      if (a4 !== 0) f.push('analoger Knopf 4 gibt ' + a4);
+      const d5 = readBindingValue(pad(5, { pressed: true, value: 0 }, ''), { type: 'button', index: 5 });
+      if (d5 !== 1) f.push('Knopf 5 ohne Standardbelegung gibt ' + d5);
+      const los = readBindingValue(pad(7, { pressed: false, value: 0 }), { type: 'button', index: 7 });
+      if (los !== 0) f.push('R2 losgelassen gibt ' + los);
+    } finally {
+      for (const k of Object.keys(padAnalogKnoepfe)) delete padAnalogKnoepfe[k];
+      Object.assign(padAnalogKnoepfe, merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'R2/L2 gedrueckt mit value 0 = 0, halb = 0,4, L3 = 1, analog gelernter Knopf = 0' };
+  });
   // ============================== HOME ==============================
   // Der Schirm beim Laden, erreichbar ueber das Logo. Die Zahl der Einstellungen wird
   // zur Laufzeit gezaehlt, damit sie nicht veraltet.
