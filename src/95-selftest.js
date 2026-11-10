@@ -28414,8 +28414,10 @@
   // Die Rennuhr ist eine Attrappe (45-ms-Takte), gemeldet wird ueber offtrackMelden() wie im Meldestrom.
   function apAbseitsUmgebung(fn) {
     const m = { zeit: rennZeitJetzt, flag: flagState, tm: trackMode, form: raceFormationLap, st: Object.assign({}, physEngine.state),
-                seit: offtrackSeit, wieder: offtrackWiederSeit, aktiv: offtrackAktiv, zaehler: offtrackZaehler, pc: playerCar };
+                seit: offtrackSeit, wieder: offtrackWiederSeit, aktiv: offtrackAktiv, zaehler: offtrackZaehler, pc: playerCar,
+                gnade: abseitsGnadeBis };
     const u = { T: 3000000 };
+    abseitsGnadeBis = 0;
     rennZeitJetzt = () => u.T;
     flagState = 'green'; trackMode = 'on'; raceFormationLap = true;
     offtrackSeit = null; offtrackWiederSeit = null; offtrackAktiv = false;
@@ -28438,7 +28440,7 @@
       rennZeitJetzt = m.zeit; flagState = m.flag; trackMode = m.tm; raceFormationLap = m.form;
       Object.assign(physEngine.state, m.st);
       offtrackSeit = m.seit; offtrackWiederSeit = m.wieder; offtrackAktiv = m.aktiv; offtrackZaehler = m.zaehler;
-      playerCar = m.pc;
+      playerCar = m.pc; abseitsGnadeBis = m.gnade;
       autopilotZuruecksetzen(1);
       try { offtrackAnzeige(); } catch (e) { /* egal */ }
     }
@@ -28522,3 +28524,186 @@
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'R2/L2 gedrueckt mit value 0 = 0, halb = 0,4, L3 = 1, analog gelernter Knopf = 0' };
   });
+
+  // ---- v1.4.48: RENNSTART MIT ALTEM ABSEITS, LESEART-WECHSEL, GELB NEBEN DER BAHN ---------------------
+  stAdd('Fahren v1.4.48: altes Abseits zaehlt die ersten 2 s nach dem Start nicht (Gas, Anzeige, Auto-Gelb)', () => apAbseitsUmgebung((u) => {
+    const f = [];
+    const merk = { agWert: $('race-auto-gelb').value, rs: raceState, eff: offtrackEffekt, ein: offtrackEinMs,
+                   z2: zusatzPlatz(2) ? Object.assign({}, zusatzPlatz(2).abseits) : null };
+    try {
+      raceFormationLap = false; raceState = 'racing'; offtrackEffekt = true; offtrackEinMs = 1000;
+      $('race-auto-gelb').value = 'alle';
+      // Vorrennen: das Auto lag lange neben der Bahn, die Uhr laeuft, Abseits gilt.
+      offtrackSeit = u.T - 20000; offtrackAktiv = true;
+      if (zusatzPlatz(2)) Object.assign(zusatzPlatz(2).abseits, { seit: u.T - 20000, aktiv: true });
+      // Die beiden Startstellen rufen die Gnade.
+      if (!/abseitsStartGnade\(\)/.test(String(raceGreen))) f.push('raceGreen ruft abseitsStartGnade nicht');
+      if (!/abseitsStartGnade\(\)/.test(String(startRaceCountdown))) f.push('startRaceCountdown ruft abseitsStartGnade nicht');
+      abseitsStartGnade();
+      if (zusatzPlatz(2) && (zusatzPlatz(2).abseits.aktiv || zusatzPlatz(2).abseits.seit !== null)) f.push('Spieler 2: altes Abseits bleibt');
+      // 1,9 s nach Gruen meldet das stehende Auto weiter 0x00.
+      for (let t = 0; t < 1900; t += 45) {
+        u.T += 45; offtrackMelden(true);
+        if (offtrackGilt() || abseitsJetzt()) { f.push('gilt nach ' + t + ' ms als abseits (Gasdeckel)'); break; }
+      }
+      const el = $('gt3-offtrack');
+      if (el && el.style.display === 'block') f.push('Abseits-Anzeige in der Startgnade');
+      if (autoGelbIstAb(playerCar, u.T)) f.push('Auto-Gelb sieht das Auto als abgeflogen');
+      if (autoGelbSperre() !== 'start') f.push('Auto-Gelb nicht gesperrt: ' + autoGelbSperre());
+      if (apLangeAbseits(1) || apGelbAbseits(1)) f.push('Autopilot-Abseitsbremse in der Startgnade');
+      // Nach 2 s: die normale Logik. 0x00 weiter -> nach der Entprellung (1 s) abseits.
+      u.T += 200; offtrackMelden(true);
+      if (abseitsJetzt()) f.push('sofort nach der Gnade abseits, ohne Entprellung');
+      u.T += 1050; offtrackMelden(true);
+      if (!abseitsJetzt() || !offtrackGilt()) f.push('nach Gnade + 1 s 0x00 nicht abseits');
+      if (autoGelbSperre() === 'start') f.push('Auto-Gelb nach 2 s noch gesperrt');
+      if (!autoGelbIstAb(playerCar, u.T)) f.push('Auto-Gelb sieht den Abflug nach der Gnade nicht');
+    } finally {
+      $('race-auto-gelb').value = merk.agWert; raceState = merk.rs; offtrackEffekt = merk.eff; offtrackEinMs = merk.ein;
+      if (merk.z2) Object.assign(zusatzPlatz(2).abseits, merk.z2);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '1,9 s 0x00 nach Gruen: kein Gasdeckel, keine Anzeige, kein Auto-Gelb; danach normal nach 1 s' };
+  }));
+  stAdd('Fahren v1.4.48: Wechsel Ausdruck -> Bahn mit Auto auf dem Boden faehrt nicht los, auf der Bahn schon', () => apAbseitsUmgebung((u) => {
+    const f = [];
+    const cb = $('setting-ontrack');
+    if (!cb) return { ok: false, mass: 'setting-ontrack fehlt' };
+    const merk = { cb: cb.checked, pc: playerCar };
+    try {
+      // Training mit fliegendem Start im Ausdruck-Modus: die Einfuehrungsrunde ruht dort (kein Autopilot).
+      playerCar = { role: 'player', alias: 'Boden', tileCode: 0xff, lastCodeAt: u.T - 5000, lastCode: 0x02 };
+      raceFormationLap = true;
+      cb.checked = false; applyScanMode();
+      u.takte(20, 0xff);
+      if (autopilotGrund() !== null) f.push('Autopilot im Ausdruck-Modus');
+      // Wechsel auf Bahn. Der Boden liefert nichts Gueltiges (0xff): vorher fuhr das Auto sofort los.
+      cb.checked = true; applyScanMode();
+      if (!playerCar.bahnCodeFehlt) f.push('Wechsel merkt sich nichts');
+      let max = 0;
+      for (let i = 0; i < 40; i++) { const ap = u.takte(1, 0xff); max = Math.max(max, ap ? ap.throttle : 0); }
+      if (max > 0) f.push('0xff auf dem Boden: Gas ' + max.toFixed(2));
+      // Ebenso mit 0x00 ab dem Wechsel (ohne den 1,5-s-Anlauf von apLangeAbseits).
+      offtrackSeit = null;
+      max = 0;
+      for (let i = 0; i < 30; i++) { const ap = u.takte(1, TILE_OFFTRACK); max = Math.max(max, ap ? ap.throttle : 0); }
+      if (max > 0) f.push('0x00 auf dem Boden: Gas ' + max.toFixed(2) + ' (Anlauf)');
+      if (!(u.kmh() < 1)) f.push('Auto rollt: ' + u.kmh().toFixed(0) + ' km/h');
+      // Auf die Bahn gestellt: ein gueltiger Code durch den echten Meldeweg, dann faehrt der Autopilot.
+      const paket = new Array(19).fill(0); paket[11] = 7; paket[12] = 0x02; paket[14] = 0x22;
+      const vorbei = playerCar;
+      OMEGA_TEST.feedNotify(paket, { car: { device: { id: 'st-boden-npc' }, role: 'ghost', tileCode: 0xff, bahnCodeFehlt: true } });
+      if (vorbei.bahnCodeFehlt === false) f.push('fremdes Auto hebt die Sperre auf');
+      playerCar.lastCode = 0x02;
+      const merkHd = handleDashboardBytes; handleDashboardBytes = () => {};
+      try { OMEGA_TEST.feedNotify(paket, { car: playerCar }); } finally { handleDashboardBytes = merkHd; }
+      if (playerCar.bahnCodeFehlt) f.push('gueltiger Code hebt die Sperre nicht auf');
+      const ap = u.takte(3, 0x02);
+      if (!ap || ap.grund !== 'formation' || !(ap.throttle > 0)) f.push('mit gueltigem Code kein Gas');
+      // Ein Rennstart hebt die Sperre auf (stehende Autos melden oft keinen Code).
+      cb.checked = false; applyScanMode(); cb.checked = true; applyScanMode();
+      if (!playerCar.bahnCodeFehlt) f.push('zweiter Wechsel setzt die Sperre nicht');
+      abseitsStartGnade();
+      if (playerCar.bahnCodeFehlt || apBahnCodeFehlt(1)) f.push('Rennstart hebt die Sperre nicht auf');
+    } finally {
+      cb.checked = merk.cb; applyScanMode();
+      playerCar = merk.pc;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Boden (0xff/0x00): kein Gas, steht; gueltiger Code: Einfuehrungsrunde faehrt; Rennstart hebt Sperre auf' };
+  }));
+  stAdd('Fahren v1.4.48: unter Gelb gibt ein Auto neben der Bahn kein Gas (0,5 s, Kurve 1,5 s), NPC bleibt geparkt', () => apAbseitsUmgebung((u) => {
+    const f = [];
+    raceFormationLap = false; flagState = 'yellow';
+    const pc = playerCar;
+    const merkLc = { lc: pc.lastCode, lca: pc.lastCodeAt };
+    try {
+      // Gerade: 0,3 s 0x00 -> Gas bleibt; 0,6 s -> kein Gas.
+      pc.lastCode = 0x02; u.takte(10, 0x02);
+      physEngine.state.speedKmh = 0;
+      const kurz = u.takte(7, TILE_OFFTRACK);
+      if (!kurz || !(kurz.throttle > 0)) f.push('Gerade: 0,3 s 0x00 nimmt das Gas');
+      const lang = u.takte(7, TILE_OFFTRACK);
+      if (!lang || lang.throttle !== 0) f.push('Gerade: nach 0,6 s 0x00 noch Gas');
+      // Haarnadel: 0,9 s 0x00 -> Gas bleibt (langsames Auto liest dort 0x00), nach 1,6 s keins.
+      u.takte(5, 0x02); pc.lastCode = TILE_TYPE.HAIRPIN;
+      physEngine.state.speedKmh = 0;
+      const hn = u.takte(20, TILE_OFFTRACK);
+      if (!hn || !(hn.throttle > 0)) f.push('Haarnadel: 0,9 s 0x00 nimmt das Gas');
+      const hl = u.takte(16, TILE_OFFTRACK);
+      if (!hl || hl.throttle !== 0) f.push('Haarnadel: nach 1,6 s 0x00 noch Gas');
+      // Startgnade geht vor: altes 0x00 zaehlt die ersten 2 s nicht.
+      abseitsStartGnade();
+      physEngine.state.speedKmh = 0;
+      const gn = u.takte(20, TILE_OFFTRACK);
+      if (!gn || !(gn.throttle > 0)) f.push('Startgnade: Gelb nimmt das Gas');
+      abseitsGnadeBis = 0;
+    } finally { pc.lastCode = merkLc.lc; pc.lastCodeAt = merkLc.lca; }
+    // NPC: geparkt neben der Bahn bleibt er unter Gelb stehen.
+    const merkG = { garage: garage.splice(0, garage.length), rs: raceState };
+    const npc = OMEGA_TEST.attrappeGhost('GelbNPC');
+    try {
+      raceState = 'racing';
+      garage.push(npc);
+      npc.ghost.freeRun = true; npc.ghost.gnadeBis = 0; npc.tileCode = 0x00; npc.parked = 'Bahn verlassen';
+      let gas = 0;
+      for (let i = 0; i < 20; i++) {
+        u.T += 45; npc.testSenke.length = 0; npc.ghost.lastTick = 0; ghostTick(npc);
+        const p = npc.testSenke[npc.testSenke.length - 1];
+        if (p) gas = Math.max(gas, p.throttle);
+      }
+      if (gas > 0) f.push('geparkter NPC bekommt unter Gelb Gas ' + gas.toFixed(2));
+      if (npc.parked !== 'Bahn verlassen') f.push('NPC unter Gelb entparkt: ' + npc.parked);
+    } finally {
+      npc.parked = null; stopGhost(npc);
+      garage.splice(0, garage.length); garage.push(...merkG.garage); raceState = merkG.rs;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gerade 0,3 s Gas / 0,6 s kein Gas, Haarnadel 0,9 s Gas / 1,6 s kein Gas, Startgnade faehrt, geparkter NPC steht' };
+  }));
+  // Derselbe Fall durch den echten Meldeweg, wie er gemeldet wurde: verbundenes Auto (Attrappe, die
+  // Pakete schickt), freies Training, automatische Gelbe Flagge "bei allen Autos", Auto auf dem Boden.
+  // Ohne verbundenes Auto passierte nichts, weil erst die Meldungen (0x00) die Abseits-Uhr laufen liessen.
+  stAdd('Fahren v1.4.48: verbundenes Auto auf dem Boden, Training, Ausdruck -> Bahn: Auto-Gelb ja, Gas nein', () => apAbseitsUmgebung((u) => {
+    const f = [];
+    const cb = $('setting-ontrack');
+    if (!cb) return { ok: false, mass: 'setting-ontrack fehlt' };
+    const merk = { cb: cb.checked, pc: playerCar, garage: garage.splice(0), rs: raceState, ag: $('race-auto-gelb').value,
+                   setFlag, restart: yellowRestart, zaehler: offtrackZaehler };
+    const auto = { device: { id: 'st-boden', name: 'Boden' }, role: 'player', rx: null, tx: null, tileCode: 0xff,
+                   tileCount: null, lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null };
+    let gelbAb = null, maxGas = 0, k = 0;
+    const takt = (code) => {
+      u.T += 45; k = (k + 1) & 0xff;
+      const p = new Array(19).fill(0); p[11] = 3; p[12] = code; p[14] = 0x22;
+      OMEGA_TEST.feedNotify(p, { car: auto });
+      if (k % 4 === 0) autoGelbTick();
+      const ap = autopilot(0, 1);
+      if (ap) { maxGas = Math.max(maxGas, ap.throttle); physEngine.update({ steering: 0, throttle: ap.throttle, brake: ap.brake, headlights: false, apFaehrt: true }, 0.045); }
+    };
+    try {
+      setFlag = (n) => { flagState = n; if (n === 'yellow' && gelbAb === null) gelbAb = u.T; };
+      yellowRestart = () => {};
+      playerCar = auto; garage.push(auto);
+      raceState = 'racing'; raceFormationLap = false; $('race-auto-gelb').value = 'alle';
+      autoGelbZuruecksetzen();
+      cb.checked = false; applyScanMode();
+      for (let i = 0; i < 60; i++) takt(0x00);
+      if (offtrackSeit !== null) f.push('Abseits-Uhr laeuft im Ausdruck-Modus');
+      if (offtrackZaehler !== merk.zaehler) f.push('Ausdruck-Modus zaehlt Abfluege');
+      cb.checked = true; applyScanMode();
+      for (let i = 0; i < 80; i++) takt(0x00);
+      if (gelbAb === null) f.push('Auto-Gelb sieht das Auto neben der Bahn nicht');
+      if (maxGas > 0) f.push('Autopilot gibt Gas ' + maxGas.toFixed(2));
+      if (!(u.kmh() < 1)) f.push('Auto faehrt los: ' + u.kmh().toFixed(0) + ' km/h');
+      // Auf die Bahn gestellt: gueltige Codes, das Auto ist zurueck - der Autopilot faehrt unter Gelb wieder.
+      physEngine.state.speedKmh = 0; maxGas = 0;
+      for (let i = 0; i < 10; i++) takt(0x02);
+      if (flagState === 'yellow' && !(maxGas > 0)) f.push('auf der Bahn faehrt der Gelb-Autopilot nicht');
+    } finally {
+      setFlag = merk.setFlag; yellowRestart = merk.restart;
+      autoGelbZuruecksetzen();
+      cb.checked = merk.cb; applyScanMode();
+      playerCar = merk.pc; garage.length = 0; garage.push(...merk.garage);
+      raceState = merk.rs; $('race-auto-gelb').value = merk.ag; offtrackZaehler = merk.zaehler;
+      try { updateFlagUi(); } catch (e) { /* egal */ }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Ausdruck: keine Abseits-Uhr; Bahn: Auto-Gelb nach ' + (gelbAb === null ? '-' : 'Wechsel') + ', kein Gas, steht; auf der Bahn faehrt Gelb' };
+  }));

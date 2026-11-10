@@ -90,6 +90,8 @@
   function autoGelbSperre() {
     if (raceState !== 'racing') return 'rennen';
     if (raceFormationLap) return 'formation';
+    // v1.4.48 BESTELLT: "die gelbe Flagge sollte nicht automatisch direkt mit Rennbeginn getriggert werden."
+    if (typeof abseitsInStartGnade === 'function' && abseitsInStartGnade()) return 'start';
     if (rennPauseAktiv()) return 'pause';
     if (typeof tutLaeuft === 'function' && tutLaeuft()) return 'tutorial';
     if (typeof challengeLaeuft === 'function' && challengeLaeuft()) return 'challenge';

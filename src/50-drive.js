@@ -48,9 +48,21 @@
   // Eine Stelle fuer die Leseart, zwei Bedienelemente darauf: der Schalter in den Optionen
   // und der Knopf im Cockpit. Zwei Orte mit eigener Logik waeren zwei Orte, die
   // auseinanderlaufen - der Knopf setzt deshalb den Schalter und nichts sonst.
+  // v1.4.48: beim Wechsel Ausdruck -> Bahn bekommt jedes Fahrerauto die Marke bahnCodeFehlt; bis es
+  // danach einen gueltigen Bahncode meldet (onCarNotify loescht sie), gibt der Autopilot ihm kein Gas
+  // (apBahnCodeFehlt). Je Auto und nicht als globale Zeit: ein Auto, das erst spaeter verbunden wird,
+  // hat mit dem Wechsel nichts zu tun.
+  function bahnCodeSperre(an) {
+    try {
+      const autos = [playerCar].concat(typeof zusatzPlaetze === 'function' ? zusatzPlaetze().map((z) => z.car) : []);
+      for (const c of autos) if (c) c.bahnCodeFehlt = !!an;
+    } catch (e) { /* beim Laden: die Garage ist noch nicht da */ }
+  }
   function applyScanMode() {
     const rail = $('setting-ontrack') ? $('setting-ontrack').checked : true;
+    const vorherModus = trackMode;
     trackMode = rail ? 'on' : 'off';
+    if (vorherModus === 'off' && trackMode === 'on') bahnCodeSperre(true);
     // Sofort in lightBits eintragen. Die Fahrschleife setzt es ohnehin jeden Takt neu
     // zusammen, aber bis dahin waere der Zustand widerspruechlich: trackMode schon
     // umgeschaltet, das gesendete Byte noch alt. Nur die zwei Modusbits werden angefasst,
@@ -3171,7 +3183,8 @@
         return { grund: 'aufstellen', throttle: 0, brake: 1, steer: 0, lenkt: false, radLenk: fo ? fo.lenk : 0 };
       }
       // v1.4.46: lange neben der Bahn (oder auf dem Ruecken) kein Gas, siehe apLangeAbseits().
-      if (apLangeAbseits(wer || 1)) {
+      // v1.4.48: auch nicht, solange nach einem Wechsel Ausdruck -> Bahn kein Bahncode kam (apBahnCodeFehlt).
+      if (apLangeAbseits(wer || 1) || apBahnCodeFehlt(wer || 1)) {
         regler.at = rennZeitJetzt();
         return { grund: 'aufstellen', throttle: 0, brake: Math.max(AP_ABSEITS_BREMSE, fahrerBremse), steer: 0, lenkt: false };
       }
@@ -3192,7 +3205,11 @@
     // ich es auf den Ruecken lege)." Einfuehrungsrunde und Gelb behielten das Gas auch neben der Bahn
     // (unten: "GAS UND BREMSE BLEIBEN BEI IHM"), und auf dem Ruecken endet die Einfuehrungsrunde nie -
     // die Raeder drehten dauerhaft im Formationstempo. Kurzes Abkommen (Haarnadel) bleibt unberuehrt.
-    if (apLangeAbseits(wer || 1)) {
+    // v1.4.48 GEMELDET: "Wenn ich das Auto auf den Boden stelle und freies Training mache und dann von
+    // Ausdruck zu Bahn wechsele, faehrt es von selbst los." Und: "Bei Gelb sollen die Autos, die nicht auf
+    // der Bahn sind, natuerlich auch nicht fahren!" Unter Gelb/Anfahrt also schon nach der kurzen
+    // Entprellung apGelbAbseits(); nach einem Leseart-Wechsel erst mit einem gueltigen Bahncode.
+    if (apLangeAbseits(wer || 1) || apBahnCodeFehlt(wer || 1) || (grund === 'yellow' && apGelbAbseits(wer || 1))) {
       regler.at = rennZeitJetzt();
       return { grund, throttle: 0, brake: Math.max(AP_ABSEITS_BREMSE, fahrerBremse || 0), steer: 0, lenkt: false };
     }
@@ -3340,6 +3357,14 @@
   // 90-ghosts.js (Auto 2), also je Paket. `wer` ist 1, wenn nichts dasteht.
   function offtrackMelden(abseits, wer) {
     const jetzt = rennZeitJetzt();
+    // v1.4.48: die ersten START_ABSEITS_GNADE_MS eines Rennens zaehlt 0x00 nicht (abseitsStartGnade).
+    if (abseits && jetzt < abseitsGnadeBis) abseits = false;
+    // v1.4.48: und im Ausdruck-Modus nie. Dort steht Byte 12 praktisch immer auf 0x00 (Sensor fuer die
+    // Schiene aus), und die Uhr lief trotzdem: beim Wechsel auf Bahn galt das Auto damit sofort als seit
+    // Minuten neben der Bahn. GEMELDET: "freies Training, dann von Ausdruck zu Bahn wechseln, faehrt es
+    // von selbst los" - die automatische Gelbe Flagge sprang im selben Augenblick an, und ihr Autopilot
+    // gab Gas. Ausserdem zaehlte jedes Paket im Ausdruck-Modus als Abflug (offtrackZaehler, Knockout).
+    if (abseits && trackMode !== 'on') abseits = false;
     if (wer >= 2) {
       const a = zusatzPlatz(wer).abseits;
       if (abseits) {
@@ -3383,11 +3408,74 @@
   // abseits.seit je Zusatzspieler), unabhaengig von der einstellbaren Einschaltverzoegerung - kurzes
   // Abkommen in der Haarnadel (unter 1,5 s) faehrt weiter wie bisher. Nur auf der Bahn.
   const AP_ABSEITS_STOPP_MS = 1500, AP_ABSEITS_BREMSE = 0.4;
-  function apLangeAbseits(wer) {
-    if (trackMode !== 'on') return false;
+  function apAbseitsSeit(wer) {
     const zPl = wer >= 2 && typeof zusatzPlatz === 'function' ? zusatzPlatz(wer) : null;
     const seit = wer >= 2 ? (zPl && zPl.abseits ? zPl.abseits.seit : null) : offtrackSeit;
-    return seit !== null && seit !== undefined && rennZeitJetzt() - seit >= AP_ABSEITS_STOPP_MS;
+    return seit === undefined ? null : seit;
+  }
+  function apLangeAbseits(wer) {
+    if (trackMode !== 'on') return false;
+    const seit = apAbseitsSeit(wer);
+    return seit !== null && rennZeitJetzt() - seit >= AP_ABSEITS_STOPP_MS;
+  }
+  // v1.4.48 BESTELLT: "Bei Gelb sollen die Autos, die nicht auf der Bahn sind, natuerlich auch nicht
+  // fahren!" Unter Gelb/Anfahrt reichen AP_GELB_ABSEITS_MS durchgehend 0x00, wenn der letzte gueltige
+  // Code eine Gerade war: das Gelb-Tempo liegt ueber der Leseschwelle (gelbZielFuer, mindestens
+  // GHOST_READ_MIN), auf der Geraden liest das Auto dort jede Kachel, und 0,5 s sind gut zehn Meldungen
+  // ohne Code. War der letzte Code eine Kurve oder Haarnadel, liest ein langsames Auto dort auch AUF der
+  // Bahn bis ueber eine Sekunde 0x00 (die NPCs warten deshalb 1,2 bzw. 1,8 s, GHOST_OFFTRACK_KURVE_MS/
+  // _HAARNADEL_MS) - dort gilt weiter AP_ABSEITS_STOPP_MS, damit das Gas in der Haarnadel nicht abstirbt.
+  const AP_GELB_ABSEITS_MS = 500;
+  function apGelbAbseits(wer) {
+    if (trackMode !== 'on') return false;
+    const seit = apAbseitsSeit(wer);
+    if (seit === null) return false;
+    const car = wer >= 2 ? (typeof zusatzPlatz === 'function' && zusatzPlatz(wer) ? zusatzPlatz(wer).car : null) : playerCar;
+    const kurve = car && car.lastCode !== undefined && car.lastCode !== null && typeof ghostTileInfo === 'function'
+      ? ghostTileInfo(car.lastCode).curve : 0;
+    return rennZeitJetzt() - seit >= (kurve >= 1 ? AP_ABSEITS_STOPP_MS : AP_GELB_ABSEITS_MS);
+  }
+  // v1.4.48: nach einem Wechsel Ausdruck -> Bahn (bahnCodeSperre, applyScanMode) gibt der Autopilot erst Gas,
+  // wenn das Auto seitdem einen gueltigen Bahncode gemeldet hat (onCarNotify loescht car.bahnCodeFehlt
+  // bei allem ausser 0x00/0xff). Auf dem Boden kommt keiner, also faehrt es nicht los - auch nicht die
+  // 1,5 s, die apLangeAbseits() sonst braucht, und auch nicht, wenn es dort 0xff statt 0x00 meldet.
+  // Ein Rennstart (abseitsStartGnade) und die automatische Aufstellung heben die Sperre auf: dort stehen
+  // die Autos absichtlich auf der Bahn, und ein stehendes Auto meldet oft keinen Code.
+  function apBahnCodeFehlt(wer) {
+    if (trackMode !== 'on') return false;
+    const car = wer >= 2 ? (typeof zusatzPlatz === 'function' && zusatzPlatz(wer) ? zusatzPlatz(wer).car : null) : playerCar;
+    return !!(car && car.bahnCodeFehlt);
+  }
+  // ---- RENNSTART: ALTES ABSEITS ZAEHLT NICHT (v1.4.48) ------------------------------------------
+  // GEMELDET: "Autos sollten die ersten 2 s eines Rennens toleriert werden, wenn sie noch von einem
+  // Vorrennen oder so als 'neben der Bahn' registriert sind ... mein Auto faehrt langsamer los, weil es
+  // noch 'neben der Strecke' anzeigt, obwohl ich es auf die Strecke gestellt habe." Der Abseits-Zustand
+  // ist eine Uhr je Auto, die nur Meldungen zuruecksetzen: ein Auto, das hochgehoben und hingestellt
+  // wurde und im Stand weiter 0x00 meldet (oder nichts Neues), trug das Abseits ins naechste Rennen -
+  // samt Gasdeckel (OFFTRACK_GAS), Anzeige und Auto-Gelb. Beim Countdown und beim Gruen wird es deshalb
+  // fuer alle Fahrerautos geloescht, und START_ABSEITS_GNADE_MS lang zaehlt 0x00 nicht (offtrackMelden).
+  // Danach gilt die normale Logik: wer dann noch 0x00 meldet, ist nach der Entprellung abseits.
+  const START_ABSEITS_GNADE_MS = 2000;
+  var abseitsGnadeBis = 0;   // var: offtrackMelden() steht weiter oben
+  function abseitsInStartGnade() { return rennZeitJetzt() < abseitsGnadeBis; }
+  function abseitsStartGnade() {
+    const jetzt = rennZeitJetzt();
+    abseitsGnadeBis = jetzt + START_ABSEITS_GNADE_MS;
+    bahnCodeSperre(false);
+    offtrackSeit = null; offtrackWiederSeit = null; offtrackAktiv = false;
+    if (typeof zusatzPlaetze === 'function') {
+      for (const z of zusatzPlaetze()) if (z && z.abseits) { z.abseits.seit = null; z.abseits.wiederSeit = null; z.abseits.aktiv = false; }
+    }
+    // NPCs: die laufende Abflug-Bestaetigung vergessen und dieselbe Frist; geparkte hebt startGhost() auf.
+    if (typeof garage !== 'undefined') {
+      for (const c of garage) {
+        const g = c && c.ghost;
+        if (!g || c.parked || g.nurOrt) continue;
+        g.offSince = 0;
+        g.gnadeBis = Math.max(g.gnadeBis || 0, jetzt + START_ABSEITS_GNADE_MS);
+      }
+    }
+    try { offtrackAnzeige(); } catch (e) { /* beim Laden */ }
   }
   function abseitsJetztFuer(wer) {
     if (wer >= 2) return zusatzPlatz(wer).abseits.aktiv && trackMode === 'on';

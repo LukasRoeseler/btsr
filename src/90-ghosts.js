@@ -2951,6 +2951,8 @@
     // last-seen-code timestamp — otherwise a car sitting beside the track looks alive.
     if (code !== 0xff && code !== TILE_OFFTRACK) {
       car.lastCodeAt = rennZeitJetzt();
+      // v1.4.48: ein gueltiger Code nach dem Wechsel Ausdruck -> Bahn hebt die Autopilot-Sperre auf (apBahnCodeFehlt).
+      if (car.bahnCodeFehlt) car.bahnCodeFehlt = false;
       // v0.9.64: der letzte GUELTIGE Code. Der Abgangsmelder braucht ihn als Gegenprobe:
       // war der zuletzt gelesene Code eine Kurve/Haarnadel, liest der Ghost dort 0x00, weil
       // er (unter der Leseschwelle) langsam ist - nicht, weil er neben der Bahn liegt.
@@ -3332,6 +3334,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (n < 3) { showHudToast(t('Erst eine Strecke laden')); return 0; }
     let zahl = 0;
     aufstellSpieler.clear();
+    // v1.4.48: die Aufstellung ist gewollt, die Autos stehen auf der Bahn - keine Bahncode-Sperre (apBahnCodeFehlt).
+    if (typeof bahnCodeSperre === 'function') bahnCodeSperre(false);
     // v1.0.29 GEMELDET: "Ein NPC ist bei der automatischen Aufstellung nicht losgefahren, bleibt
     // einfach stehen, Lichter schwarz. Der andere ist sehr schoen an seine Stelle gefahren."
     // Der Platz kam aus raceGridOrder, und die wird erst beim Start abgeglichen. Ein Auto, das

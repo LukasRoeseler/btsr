@@ -2105,6 +2105,8 @@
     // Rennuhr = Wanduhr ab hier (siehe rennUhrNullen in 15-pause.js): die Mehrspieler-Zielzeit
     // gruenZiel ist Wanduhr und wird unten direkt gegen rennZeitJetzt() gelegt.
     rennUhrNullen();
+    // v1.4.48: altes Abseits (Vorrennen, hochgehoben) zaehlt am Start nicht (abseitsStartGnade, 50-drive.js).
+    if (typeof abseitsStartGnade === 'function') abseitsStartGnade();
     rennintroAbbrechen();
     const introStartToken = ++rennintroStartGeneration;
     bestzeitVorherMerken();
@@ -2328,6 +2330,8 @@
     zevGruen();
     fruehstartGruen();
     rammReset();
+    // v1.4.48: die ersten 2 s nach Gruen gilt kein Auto als neben der Bahn (abseitsStartGnade, 50-drive.js).
+    if (typeof abseitsStartGnade === 'function') abseitsStartGnade();
     // FRISCH ZAEHLEN. Ohne das traegt ein zweites Rennen die Ueberfahrten des ersten mit
     // sich, und dann ist die Einfuehrungsrunde beim naechsten Start sofort vorbei.
     formationZaehler = new Map();
