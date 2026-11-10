@@ -5732,7 +5732,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.4.51</span></span>
+        <span class="foot-ver">v<span id="app-version">1.4.53</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6973,6 +6973,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.4</span></b></p>
       <ul class="muted" id="patchnotes-14" style="padding-left:20px; line-height:1.7">
+        <li>Unter Gelb und nach dem Wechsel von Ausdruck auf Bahn f&#228;hrt ein stehendes Fahrerauto wieder an, sobald du es auf die Bahn stellst und kurz sch&#252;ttelst (Gyro, dieselbe Erkennung wie beim Wiedereinsetzen der NPCs), auch wenn es im Stand noch keinen Code liest. Ohne Sch&#252;tteln bleibt ein Auto neben der Bahn stehen; die automatische Gelbe Flagge z&#228;hlt das Sch&#252;tteln als Wiederaufnahme.</li>
         <li>Behoben: Ein Auto, das auf dem Boden stand, fuhr nach dem Wechsel von Ausdruck auf Bahn von selbst los. Im Ausdruck-Modus z&#228;hlte die App die Meldungen &#8222;kein Code&#8220; als neben der Bahn; nach dem Wechsel galt das Auto sofort als lange abgeflogen, und unter dem Autopiloten (etwa nach einer automatischen Gelben Flagge oder in der Einf&#252;hrungsrunde) bekam es Gas. Jetzt z&#228;hlt &#8222;neben der Bahn&#8220; nur im Bahn-Modus, und nach dem Wechsel gibt der Autopilot einem Auto erst Gas, wenn es einen g&#252;ltigen Bahncode gelesen hat. Unter Gelb f&#228;hrt ein Auto neben der Bahn nicht mehr (nach 0,5 s, in Kurven nach 1,5 s); ein abgeflogener NPC bleibt stehen. Beim Start gelten alle Autos 2 s lang als auf der Bahn, auch wenn sie noch vom Vorrennen als neben der Bahn gemeldet sind: kein gedrosseltes Losfahren, keine automatische Gelbe Flagge direkt beim Start.</li>
         <li>Behoben: Im Bahn-Modus beschleunigte ein Auto, das neben der Bahn oder auf dem R&#252;cken lag, unter dem Autopiloten (Einf&#252;hrungsrunde, Gelb, Aufstellung) auf rund 100 km/h. Jetzt gibt der Autopilot nach 1,5 s am St&#252;ck neben der Bahn kein Gas mehr und bremst leicht, bis das Auto wieder auf der Bahn ist; kurzes Abkommen, etwa in der Haarnadel, bleibt wie bisher. Au&#223;erdem z&#228;hlen die Gas- und Bremstrigger nicht mehr als voll gedr&#252;ckt, wenn ein Gamepad sie als gedr&#252;ckt mit Wert 0 meldet (L3 funktioniert weiter).</li>
         <li>Erfolgsballast in der Meisterschaft (WIP, im Planer unter &#8222;F&#252;r die ganze Meisterschaft&#8220;; Aus, Leicht bis 30 kg, Mittel bis 50 kg, Stark bis 80 kg): Vor jedem Event bekommt der Punktef&#252;hrende den meisten Ballast, der Letzte keinen, im ersten Event niemand. Spielerautos werden dadurch tr&#228;ger beim Beschleunigen und Bremsen, NPCs etwas langsamer, beides im Mittel gleich stark (50 kg kosten rund 2 % Rundenzeit). Der Ballast steht als &#8222;+X kg&#8220; im Zwischenstand, in der Startaufstellung und im Cockpit; im Mehrspieler gibt ihn das leitende Telefon vor.</li>
@@ -16653,6 +16654,7 @@
     "Erfolgsballast in der Meisterschaft (WIP, im Planer unter „Für die ganze Meisterschaft“; Aus, Leicht bis 30 kg, Mittel bis 50 kg, Stark bis 80 kg): Vor jedem Event bekommt der Punkteführende den meisten Ballast, der Letzte keinen, im ersten Event niemand. Spielerautos werden dadurch träger beim Beschleunigen und Bremsen, NPCs etwas langsamer, beides im Mittel gleich stark (50 kg kosten rund 2 % Rundenzeit). Der Ballast steht als „+X kg“ im Zwischenstand, in der Startaufstellung und im Cockpit; im Mehrspieler gibt ihn das leitende Telefon vor.": "Success ballast in the championship (WIP, in the planner under “For the whole championship”; Off, Light up to 30 kg, Medium up to 50 kg, Heavy up to 80 kg): before each event the points leader gets the most ballast, the last driver none, and nobody in the first event. Player cars become slower to accelerate and brake, NPCs a little slower, both equally strong on average (50 kg cost about 2 % lap time). The ballast is shown as “+X kg” in the standings, on the starting grid and in the cockpit; in multiplayer the leading phone sets it.",
     "Behoben: Im Bahn-Modus beschleunigte ein Auto, das neben der Bahn oder auf dem Rücken lag, unter dem Autopiloten (Einführungsrunde, Gelb, Aufstellung) auf rund 100 km/h. Jetzt gibt der Autopilot nach 1,5 s am Stück neben der Bahn kein Gas mehr und bremst leicht, bis das Auto wieder auf der Bahn ist; kurzes Abkommen, etwa in der Haarnadel, bleibt wie bisher. Außerdem zählen die Gas- und Bremstrigger nicht mehr als voll gedrückt, wenn ein Gamepad sie als gedrückt mit Wert 0 meldet (L3 funktioniert weiter).": "Fixed: in track mode a car lying off the track or on its back accelerated to about 100 km/h under the autopilot (formation lap, yellow, grid setup). Now the autopilot gives no throttle after 1.5 s in a row off the track and brakes lightly until the car is back on the track; a short excursion, for example in the hairpin, stays as before. Also, the throttle and brake triggers no longer count as fully pressed when a gamepad reports them as pressed with value 0 (L3 still works).",
     "Behoben: Ein Auto, das auf dem Boden stand, fuhr nach dem Wechsel von Ausdruck auf Bahn von selbst los. Im Ausdruck-Modus zählte die App die Meldungen „kein Code“ als neben der Bahn; nach dem Wechsel galt das Auto sofort als lange abgeflogen, und unter dem Autopiloten (etwa nach einer automatischen Gelben Flagge oder in der Einführungsrunde) bekam es Gas. Jetzt zählt „neben der Bahn“ nur im Bahn-Modus, und nach dem Wechsel gibt der Autopilot einem Auto erst Gas, wenn es einen gültigen Bahncode gelesen hat. Unter Gelb fährt ein Auto neben der Bahn nicht mehr (nach 0,5 s, in Kurven nach 1,5 s); ein abgeflogener NPC bleibt stehen. Beim Start gelten alle Autos 2 s lang als auf der Bahn, auch wenn sie noch vom Vorrennen als neben der Bahn gemeldet sind: kein gedrosseltes Losfahren, keine automatische Gelbe Flagge direkt beim Start.": "Fixed: a car standing on the floor drove off by itself after switching from print mode to track mode. In print mode the app counted the reports “no code” as off the track; after the switch the car immediately counted as long gone, and under the autopilot (for example after an automatic yellow flag or in the formation lap) it got throttle. Now “off the track” only counts in track mode, and after the switch the autopilot only gives a car throttle once it has read a valid track code. Under yellow a car off the track no longer drives (after 0.5 s, in curves after 1.5 s); a crashed NPC stays put. At the start all cars count as on the track for 2 s, even if they are still reported off the track from an earlier race: no throttled getaway, no automatic yellow flag right at the start.",
+    "Unter Gelb und nach dem Wechsel von Ausdruck auf Bahn fährt ein stehendes Fahrerauto wieder an, sobald du es auf die Bahn stellst und kurz schüttelst (Gyro, dieselbe Erkennung wie beim Wiedereinsetzen der NPCs), auch wenn es im Stand noch keinen Code liest. Ohne Schütteln bleibt ein Auto neben der Bahn stehen; die automatische Gelbe Flagge zählt das Schütteln als Wiederaufnahme.": "Under yellow and after switching from print to track mode a stationary player car starts again as soon as you put it on the track and shake it briefly (gyro, the same detection as for putting NPCs back), even if it does not read a code while standing. Without shaking a car off the track stays put; the automatic yellow flag counts the shake as resuming.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -29292,6 +29294,8 @@
     const jetzt = rennZeitJetzt();
     // v1.4.48: die ersten START_ABSEITS_GNADE_MS eines Rennens zaehlt 0x00 nicht (abseitsStartGnade).
     if (abseits && jetzt < abseitsGnadeBis) abseits = false;
+    // v1.4.52: nach dem Schuetteln (spielerGeschuettelt) dieselbe Nachsicht je Auto, damit es anfahren kann.
+    if (abseits && jetzt < (wer >= 2 ? (zusatzPlatz(wer).abseits.gnadeBis || 0) : schuettelGnadeBis1)) abseits = false;
     // v1.4.48: und im Ausdruck-Modus nie. Dort steht Byte 12 praktisch immer auf 0x00 (Sensor fuer die
     // Schiene aus), und die Uhr lief trotzdem: beim Wechsel auf Bahn galt das Auto damit sofort als seit
     // Minuten neben der Bahn. GEMELDET: "freies Training, dann von Ausdruck zu Bahn wechseln, faehrt es
@@ -29391,6 +29395,50 @@
   const START_ABSEITS_GNADE_MS = 2000;
   var abseitsGnadeBis = 0;   // var: offtrackMelden() steht weiter oben
   function abseitsInStartGnade() { return rennZeitJetzt() < abseitsGnadeBis; }
+
+  // ---- SCHUETTELN STELLT EIN FAHRERAUTO WIEDER AUF DIE BAHN (v1.4.52) ----------------------------------
+  // GEMELDET (zu 1.4.51): "Bleibt ein Auto unter Gelb auf der Geraden stehen und meldet im Stand 'kein
+  // Code', gibt der Autopilot ihm erst wieder Gas, wenn es einen Code liest - nein. Es sollte wie sonst
+  // auch so funktionieren, dass es losfaehrt, sobald ich es auf die Bahn stelle und 'schuettele', weil
+  // dabei der Gyro ausschlaegt." Wie das Entparken der NPCs: shakeNotify() (90-ghosts.js) hoert bei einem
+  // Fahrerauto genau dann zu, wenn es fuer den Autopiloten als neben der Bahn gilt
+  // (spielerSchuettelBereit) - dieselbe Lernphase, derselbe Ruhewert, dieselbe Schwelle. Ein Auto, das
+  // faehrt (auch ueber Randsteine), ist nie in diesem Zustand, und ein abgeflogenes, das still liegt,
+  // erreicht die Schwelle nicht, solange es niemand anhebt.
+  // Ausgeloest: die Bahncode-Sperre faellt, die Abseits-Uhr beginnt neu, und SCHUETTEL_ANFAHR_MS lang
+  // zaehlt 0x00 nicht (das Auto steht noch und liest im Stand nichts). Danach gilt die normale Logik:
+  // 0,5 s (Gerade) bzw. 1,5 s (Kurve) 0x00, und es steht wieder.
+  const SCHUETTEL_ANFAHR_MS = 1500;
+  var schuettelGnadeBis1 = 0;   // var: offtrackMelden() steht weiter oben
+  function spielerSchuettelNr(car) {
+    if (!car) return 0;
+    if (car === playerCar) return 1;
+    return typeof zweiSpieler !== 'undefined' && zweiSpieler && typeof spielerNrVon === 'function'
+      ? Math.max(0, spielerNrVon(car) | 0) : 0;
+  }
+  // Die Spielernummer, wenn dieses Auto gerade per Schuetteln "aufgehoben" werden kann, sonst 0.
+  function spielerSchuettelBereit(car) {
+    if (trackMode !== 'on') return 0;
+    const nr = spielerSchuettelNr(car);
+    if (nr < 1) return 0;
+    if (car.bahnCodeFehlt) return nr;
+    const seit = apAbseitsSeit(nr);
+    return seit !== null && rennZeitJetzt() - seit >= AP_GELB_ABSEITS_MS ? nr : 0;
+  }
+  function spielerGeschuettelt(nr, car) {
+    const jetzt = rennZeitJetzt();
+    car.bahnCodeFehlt = false;
+    car.schuettelAt = jetzt;
+    if (nr >= 2) {
+      const a = zusatzPlatz(nr).abseits;
+      a.seit = null; a.wiederSeit = null; a.aktiv = false; a.gnadeBis = jetzt + SCHUETTEL_ANFAHR_MS;
+    } else {
+      offtrackSeit = null; offtrackWiederSeit = null; offtrackAktiv = false;
+      schuettelGnadeBis1 = jetzt + SCHUETTEL_ANFAHR_MS;
+      try { offtrackAnzeige(); } catch (e) { /* egal */ }
+    }
+    log((nr >= 2 ? 'Spieler ' + nr : 'Spieler 1') + ': geschuettelt, wieder auf der Bahn - der Autopilot faehrt an.', 'info');
+  }
   function abseitsStartGnade() {
     const jetzt = rennZeitJetzt();
     abseitsGnadeBis = jetzt + START_ABSEITS_GNADE_MS;
@@ -58182,6 +58230,9 @@
     } else {
       const s = autoGelbAbseitsSeit(car);
       if (s !== null && s !== undefined) return false;
+      // v1.4.52: Schuetteln zaehlt als Wiederaufnahme (spielerGeschuettelt, 50-drive.js): das Auto steht
+      // noch und liest im Stand nichts, faehrt aber an. Danach muss es Kacheln melden wie jedes andere.
+      if (car.schuettelAt && jetzt - car.schuettelAt <= AG_KACHEL_FRISCH_MS) return true;
     }
     if (car.tileCode === TILE_OFFTRACK) return false;
     return !!car.tileAt && jetzt - car.tileAt <= AG_KACHEL_FRISCH_MS;
@@ -68061,7 +68112,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     sh.p1 = v1; sh.p3 = v3;
     if (sh.win.length < SHAKE_WIN) return;
 
-    if (!car.parked) { sh.quiet = []; sh.base = null; sh.parkedAt = 0; return; }
+    // v1.4.52: ein Fahrerauto, das fuer den Autopiloten neben der Bahn steht, hoert genauso zu wie ein
+    // geparkter NPC (spielerSchuettelBereit, 50-drive.js).
+    const spielerNr = car.parked ? 0 : (typeof spielerSchuettelBereit === 'function' ? spielerSchuettelBereit(car) : 0);
+    if (!car.parked && !spielerNr) { sh.quiet = []; sh.base = null; sh.parkedAt = 0; return; }
     if (!sh.parkedAt) sh.parkedAt = rennZeitJetzt();
 
     // ---- DER RUHEWERT IST DAS MINIMUM, NICHT DER MEDIAN DER ERSTEN 1,2 SEKUNDEN ----
@@ -68106,7 +68160,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                          Math.max(shakeFloor, sh.base * shakeFactor));
     car.shakeValue = sh.sum;
     car.shakeThreshold = thr;
-    if (sh.sum >= thr) unparkCar(car, 'geruettelt');
+    if (sh.sum >= thr) {
+      if (car.parked) unparkCar(car, 'geruettelt');
+      else { spielerGeschuettelt(spielerNr, car); sh.parkedAt = 0; sh.base = null; }
+    }
   }
 
   // ---- Anhalten und wieder losfahren ----
@@ -116692,6 +116749,90 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       try { updateFlagUi(); } catch (e) { /* egal */ }
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Ausdruck: keine Abseits-Uhr; Bahn: Auto-Gelb nach ' + (gelbAb === null ? '-' : 'Wechsel') + ', kein Gas, steht; auf der Bahn faehrt Gelb' };
+  }));
+
+  // ---- v1.4.52: SCHUETTELN STELLT EIN FAHRERAUTO WIEDER AUF DIE BAHN -----------------------------------
+  // GEMELDET: "Es sollte wie sonst auch so funktionieren, dass es losfaehrt, sobald ich es auf die Bahn
+  // stelle und 'schuettele', weil dabei der Gyro ausschlaegt." Die Attrappe schickt Pakete durch den echten
+  // Meldeweg (onCarNotify -> shakeNotify, handleDashboardBytes -> offtrackMelden), mit Gyro in Byte 1/3.
+  function schuettelUmgebung(u, auto) {
+    const merk = { pc: playerCar, dmg: damage, g1: schuettelGnadeBis1 };
+    playerCar = auto;
+    let k = 0;
+    const r = {
+      maxGas: 0, ap: null,
+      // n Takte: Code, Gyro (+-g im Wechsel), Autopilot, Fahrphysik.
+      takte(n, code, g) {
+        r.maxGas = 0;
+        for (let i = 0; i < n; i++) {
+          u.T += 45; k = (k + 1) & 0xff;
+          const a = (k % 2 ? 1 : -1) * (g || 2);
+          const p = new Array(19).fill(0); p[1] = a & 0xff; p[3] = (-a) & 0xff; p[11] = 9; p[12] = code; p[14] = 0x22;
+          OMEGA_TEST.feedNotify(p, { car: auto });
+          r.ap = autopilot(0, 1);
+          if (r.ap) {
+            r.maxGas = Math.max(r.maxGas, r.ap.throttle);
+            physEngine.update({ steering: 0, throttle: r.ap.throttle, brake: r.ap.brake, headlights: false, apFaehrt: true }, 0.045);
+          }
+        }
+        return r.ap;
+      },
+      zurueck() { playerCar = merk.pc; damage = merk.dmg; schuettelGnadeBis1 = merk.g1; },
+    };
+    return r;
+  }
+  const schuettelAuto = (id) => ({ device: { id, name: 'Schuettel' }, role: 'player', rx: null, tx: null, tileCode: 0xff,
+                                   tileCount: null, lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null });
+  stAdd('Fahren v1.4.52: Spieler unter Gelb neben der Bahn steht, nach Schuetteln faehrt er im Gelb-Tempo an', () => apAbseitsUmgebung((u) => {
+    const f = [];
+    const s = schuettelUmgebung(u, schuettelAuto('st-sch-gelb'));
+    try {
+      raceFormationLap = false; flagState = 'yellow';
+      s.takte(20, 0x02);
+      if (!(s.maxGas > 0)) f.push('auf der Bahn kein Gelb-Gas');
+      // Abgeflogen, liegt (0x00, Gyro ruhig): steht.
+      s.takte(60, TILE_OFFTRACK);
+      s.takte(40, TILE_OFFTRACK);
+      if (s.maxGas > 0) f.push('neben der Bahn Gas ' + s.maxGas.toFixed(2));
+      if (!(u.kmh() < 1)) f.push('steht nicht: ' + u.kmh().toFixed(0) + ' km/h');
+      // Leises Rauschen (liegt, nicht angehoben) gibt es nicht frei.
+      s.takte(40, TILE_OFFTRACK, 3);
+      if (s.maxGas > 0) f.push('leises Rauschen gibt frei');
+      // Geschuettelt: Gas, obwohl weiter 0x00.
+      s.takte(16, TILE_OFFTRACK, 60);
+      if (!playerCar.schuettelAt) f.push('Schuetteln nicht erkannt');
+      if (!autoGelbFaehrt(playerCar, u.T)) f.push('Auto-Gelb zaehlt Schuetteln nicht als Wiederaufnahme');
+      const an = s.takte(10, TILE_OFFTRACK);
+      if (!an || an.grund !== 'yellow' || !(s.maxGas > 0)) f.push('nach Schuetteln kein Gas (' + (an && an.grund) + ')');
+      // Liegt es weiter auf dem Boden, steht es nach Anfahrfrist + 0,5 s wieder.
+      s.takte(50, TILE_OFFTRACK);
+      const nach = s.takte(5, TILE_OFFTRACK);
+      if (!nach || nach.throttle !== 0) f.push('nach dem Schuetteln auf dem Boden dauerhaft Gas');
+      if (autoGelbFaehrt(playerCar, u.T)) f.push('Auto-Gelb haelt den Boden fuer Fahrt');
+    } finally { s.zurueck(); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'neben der Bahn steht, Rauschen bleibt, Schuetteln faehrt an (Gelb, Auto-Gelb), Boden steht danach wieder' };
+  }));
+  stAdd('Fahren v1.4.52: nach Ausdruck -> Bahn startet Schuetteln die Einfuehrungsrunde, ohne Schuetteln kein Gas', () => apAbseitsUmgebung((u) => {
+    const f = [];
+    const cb = $('setting-ontrack');
+    if (!cb) return { ok: false, mass: 'setting-ontrack fehlt' };
+    const merkCb = cb.checked;
+    const s = schuettelUmgebung(u, schuettelAuto('st-sch-form'));
+    try {
+      raceFormationLap = true;
+      cb.checked = false; applyScanMode();
+      s.takte(10, 0x00);
+      cb.checked = true; applyScanMode();
+      // Auf der Bahn, steht, meldet im Stand 0x00: ohne Schuetteln kein Gas.
+      s.takte(40, TILE_OFFTRACK);
+      if (s.maxGas > 0) f.push('ohne Schuetteln Gas ' + s.maxGas.toFixed(2));
+      if (!playerCar.bahnCodeFehlt) f.push('Bahncode-Sperre fehlt');
+      s.takte(16, TILE_OFFTRACK, 60);
+      if (playerCar.bahnCodeFehlt) f.push('Schuetteln hebt die Bahncode-Sperre nicht auf');
+      const an = s.takte(10, TILE_OFFTRACK);
+      if (!an || an.grund !== 'formation' || !(s.maxGas > 0)) f.push('Einfuehrungsrunde faehrt nach Schuetteln nicht an');
+    } finally { s.zurueck(); cb.checked = merkCb; applyScanMode(); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Stand auf der Bahn ohne Schuetteln: kein Gas; Schuetteln: Einfuehrungsrunde faehrt an' };
   }));
   // ============================== HOME ==============================
   // Der Schirm beim Laden, erreichbar ueber das Logo. Die Zahl der Einstellungen wird

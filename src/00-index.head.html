@@ -5732,7 +5732,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.4.51</span></span>
+        <span class="foot-ver">v<span id="app-version">1.4.53</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6973,6 +6973,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.4</span></b></p>
       <ul class="muted" id="patchnotes-14" style="padding-left:20px; line-height:1.7">
+        <li>Unter Gelb und nach dem Wechsel von Ausdruck auf Bahn f&#228;hrt ein stehendes Fahrerauto wieder an, sobald du es auf die Bahn stellst und kurz sch&#252;ttelst (Gyro, dieselbe Erkennung wie beim Wiedereinsetzen der NPCs), auch wenn es im Stand noch keinen Code liest. Ohne Sch&#252;tteln bleibt ein Auto neben der Bahn stehen; die automatische Gelbe Flagge z&#228;hlt das Sch&#252;tteln als Wiederaufnahme.</li>
         <li>Behoben: Ein Auto, das auf dem Boden stand, fuhr nach dem Wechsel von Ausdruck auf Bahn von selbst los. Im Ausdruck-Modus z&#228;hlte die App die Meldungen &#8222;kein Code&#8220; als neben der Bahn; nach dem Wechsel galt das Auto sofort als lange abgeflogen, und unter dem Autopiloten (etwa nach einer automatischen Gelben Flagge oder in der Einf&#252;hrungsrunde) bekam es Gas. Jetzt z&#228;hlt &#8222;neben der Bahn&#8220; nur im Bahn-Modus, und nach dem Wechsel gibt der Autopilot einem Auto erst Gas, wenn es einen g&#252;ltigen Bahncode gelesen hat. Unter Gelb f&#228;hrt ein Auto neben der Bahn nicht mehr (nach 0,5 s, in Kurven nach 1,5 s); ein abgeflogener NPC bleibt stehen. Beim Start gelten alle Autos 2 s lang als auf der Bahn, auch wenn sie noch vom Vorrennen als neben der Bahn gemeldet sind: kein gedrosseltes Losfahren, keine automatische Gelbe Flagge direkt beim Start.</li>
         <li>Behoben: Im Bahn-Modus beschleunigte ein Auto, das neben der Bahn oder auf dem R&#252;cken lag, unter dem Autopiloten (Einf&#252;hrungsrunde, Gelb, Aufstellung) auf rund 100 km/h. Jetzt gibt der Autopilot nach 1,5 s am St&#252;ck neben der Bahn kein Gas mehr und bremst leicht, bis das Auto wieder auf der Bahn ist; kurzes Abkommen, etwa in der Haarnadel, bleibt wie bisher. Au&#223;erdem z&#228;hlen die Gas- und Bremstrigger nicht mehr als voll gedr&#252;ckt, wenn ein Gamepad sie als gedr&#252;ckt mit Wert 0 meldet (L3 funktioniert weiter).</li>
         <li>Erfolgsballast in der Meisterschaft (WIP, im Planer unter &#8222;F&#252;r die ganze Meisterschaft&#8220;; Aus, Leicht bis 30 kg, Mittel bis 50 kg, Stark bis 80 kg): Vor jedem Event bekommt der Punktef&#252;hrende den meisten Ballast, der Letzte keinen, im ersten Event niemand. Spielerautos werden dadurch tr&#228;ger beim Beschleunigen und Bremsen, NPCs etwas langsamer, beides im Mittel gleich stark (50 kg kosten rund 2 % Rundenzeit). Der Ballast steht als &#8222;+X kg&#8220; im Zwischenstand, in der Startaufstellung und im Cockpit; im Mehrspieler gibt ihn das leitende Telefon vor.</li>
