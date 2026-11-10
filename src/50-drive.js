@@ -3359,6 +3359,8 @@
     const jetzt = rennZeitJetzt();
     // v1.4.48: die ersten START_ABSEITS_GNADE_MS eines Rennens zaehlt 0x00 nicht (abseitsStartGnade).
     if (abseits && jetzt < abseitsGnadeBis) abseits = false;
+    // v1.4.52: nach dem Schuetteln (spielerGeschuettelt) dieselbe Nachsicht je Auto, damit es anfahren kann.
+    if (abseits && jetzt < (wer >= 2 ? (zusatzPlatz(wer).abseits.gnadeBis || 0) : schuettelGnadeBis1)) abseits = false;
     // v1.4.48: und im Ausdruck-Modus nie. Dort steht Byte 12 praktisch immer auf 0x00 (Sensor fuer die
     // Schiene aus), und die Uhr lief trotzdem: beim Wechsel auf Bahn galt das Auto damit sofort als seit
     // Minuten neben der Bahn. GEMELDET: "freies Training, dann von Ausdruck zu Bahn wechseln, faehrt es
@@ -3458,6 +3460,50 @@
   const START_ABSEITS_GNADE_MS = 2000;
   var abseitsGnadeBis = 0;   // var: offtrackMelden() steht weiter oben
   function abseitsInStartGnade() { return rennZeitJetzt() < abseitsGnadeBis; }
+
+  // ---- SCHUETTELN STELLT EIN FAHRERAUTO WIEDER AUF DIE BAHN (v1.4.52) ----------------------------------
+  // GEMELDET (zu 1.4.51): "Bleibt ein Auto unter Gelb auf der Geraden stehen und meldet im Stand 'kein
+  // Code', gibt der Autopilot ihm erst wieder Gas, wenn es einen Code liest - nein. Es sollte wie sonst
+  // auch so funktionieren, dass es losfaehrt, sobald ich es auf die Bahn stelle und 'schuettele', weil
+  // dabei der Gyro ausschlaegt." Wie das Entparken der NPCs: shakeNotify() (90-ghosts.js) hoert bei einem
+  // Fahrerauto genau dann zu, wenn es fuer den Autopiloten als neben der Bahn gilt
+  // (spielerSchuettelBereit) - dieselbe Lernphase, derselbe Ruhewert, dieselbe Schwelle. Ein Auto, das
+  // faehrt (auch ueber Randsteine), ist nie in diesem Zustand, und ein abgeflogenes, das still liegt,
+  // erreicht die Schwelle nicht, solange es niemand anhebt.
+  // Ausgeloest: die Bahncode-Sperre faellt, die Abseits-Uhr beginnt neu, und SCHUETTEL_ANFAHR_MS lang
+  // zaehlt 0x00 nicht (das Auto steht noch und liest im Stand nichts). Danach gilt die normale Logik:
+  // 0,5 s (Gerade) bzw. 1,5 s (Kurve) 0x00, und es steht wieder.
+  const SCHUETTEL_ANFAHR_MS = 1500;
+  var schuettelGnadeBis1 = 0;   // var: offtrackMelden() steht weiter oben
+  function spielerSchuettelNr(car) {
+    if (!car) return 0;
+    if (car === playerCar) return 1;
+    return typeof zweiSpieler !== 'undefined' && zweiSpieler && typeof spielerNrVon === 'function'
+      ? Math.max(0, spielerNrVon(car) | 0) : 0;
+  }
+  // Die Spielernummer, wenn dieses Auto gerade per Schuetteln "aufgehoben" werden kann, sonst 0.
+  function spielerSchuettelBereit(car) {
+    if (trackMode !== 'on') return 0;
+    const nr = spielerSchuettelNr(car);
+    if (nr < 1) return 0;
+    if (car.bahnCodeFehlt) return nr;
+    const seit = apAbseitsSeit(nr);
+    return seit !== null && rennZeitJetzt() - seit >= AP_GELB_ABSEITS_MS ? nr : 0;
+  }
+  function spielerGeschuettelt(nr, car) {
+    const jetzt = rennZeitJetzt();
+    car.bahnCodeFehlt = false;
+    car.schuettelAt = jetzt;
+    if (nr >= 2) {
+      const a = zusatzPlatz(nr).abseits;
+      a.seit = null; a.wiederSeit = null; a.aktiv = false; a.gnadeBis = jetzt + SCHUETTEL_ANFAHR_MS;
+    } else {
+      offtrackSeit = null; offtrackWiederSeit = null; offtrackAktiv = false;
+      schuettelGnadeBis1 = jetzt + SCHUETTEL_ANFAHR_MS;
+      try { offtrackAnzeige(); } catch (e) { /* egal */ }
+    }
+    log((nr >= 2 ? 'Spieler ' + nr : 'Spieler 1') + ': geschuettelt, wieder auf der Bahn - der Autopilot faehrt an.', 'info');
+  }
   function abseitsStartGnade() {
     const jetzt = rennZeitJetzt();
     abseitsGnadeBis = jetzt + START_ABSEITS_GNADE_MS;

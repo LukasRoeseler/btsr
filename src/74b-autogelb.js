@@ -81,6 +81,9 @@
     } else {
       const s = autoGelbAbseitsSeit(car);
       if (s !== null && s !== undefined) return false;
+      // v1.4.52: Schuetteln zaehlt als Wiederaufnahme (spielerGeschuettelt, 50-drive.js): das Auto steht
+      // noch und liest im Stand nichts, faehrt aber an. Danach muss es Kacheln melden wie jedes andere.
+      if (car.schuettelAt && jetzt - car.schuettelAt <= AG_KACHEL_FRISCH_MS) return true;
     }
     if (car.tileCode === TILE_OFFTRACK) return false;
     return !!car.tileAt && jetzt - car.tileAt <= AG_KACHEL_FRISCH_MS;

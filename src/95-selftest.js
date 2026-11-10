@@ -28707,3 +28707,87 @@
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Ausdruck: keine Abseits-Uhr; Bahn: Auto-Gelb nach ' + (gelbAb === null ? '-' : 'Wechsel') + ', kein Gas, steht; auf der Bahn faehrt Gelb' };
   }));
+
+  // ---- v1.4.52: SCHUETTELN STELLT EIN FAHRERAUTO WIEDER AUF DIE BAHN -----------------------------------
+  // GEMELDET: "Es sollte wie sonst auch so funktionieren, dass es losfaehrt, sobald ich es auf die Bahn
+  // stelle und 'schuettele', weil dabei der Gyro ausschlaegt." Die Attrappe schickt Pakete durch den echten
+  // Meldeweg (onCarNotify -> shakeNotify, handleDashboardBytes -> offtrackMelden), mit Gyro in Byte 1/3.
+  function schuettelUmgebung(u, auto) {
+    const merk = { pc: playerCar, dmg: damage, g1: schuettelGnadeBis1 };
+    playerCar = auto;
+    let k = 0;
+    const r = {
+      maxGas: 0, ap: null,
+      // n Takte: Code, Gyro (+-g im Wechsel), Autopilot, Fahrphysik.
+      takte(n, code, g) {
+        r.maxGas = 0;
+        for (let i = 0; i < n; i++) {
+          u.T += 45; k = (k + 1) & 0xff;
+          const a = (k % 2 ? 1 : -1) * (g || 2);
+          const p = new Array(19).fill(0); p[1] = a & 0xff; p[3] = (-a) & 0xff; p[11] = 9; p[12] = code; p[14] = 0x22;
+          OMEGA_TEST.feedNotify(p, { car: auto });
+          r.ap = autopilot(0, 1);
+          if (r.ap) {
+            r.maxGas = Math.max(r.maxGas, r.ap.throttle);
+            physEngine.update({ steering: 0, throttle: r.ap.throttle, brake: r.ap.brake, headlights: false, apFaehrt: true }, 0.045);
+          }
+        }
+        return r.ap;
+      },
+      zurueck() { playerCar = merk.pc; damage = merk.dmg; schuettelGnadeBis1 = merk.g1; },
+    };
+    return r;
+  }
+  const schuettelAuto = (id) => ({ device: { id, name: 'Schuettel' }, role: 'player', rx: null, tx: null, tileCode: 0xff,
+                                   tileCount: null, lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null });
+  stAdd('Fahren v1.4.52: Spieler unter Gelb neben der Bahn steht, nach Schuetteln faehrt er im Gelb-Tempo an', () => apAbseitsUmgebung((u) => {
+    const f = [];
+    const s = schuettelUmgebung(u, schuettelAuto('st-sch-gelb'));
+    try {
+      raceFormationLap = false; flagState = 'yellow';
+      s.takte(20, 0x02);
+      if (!(s.maxGas > 0)) f.push('auf der Bahn kein Gelb-Gas');
+      // Abgeflogen, liegt (0x00, Gyro ruhig): steht.
+      s.takte(60, TILE_OFFTRACK);
+      s.takte(40, TILE_OFFTRACK);
+      if (s.maxGas > 0) f.push('neben der Bahn Gas ' + s.maxGas.toFixed(2));
+      if (!(u.kmh() < 1)) f.push('steht nicht: ' + u.kmh().toFixed(0) + ' km/h');
+      // Leises Rauschen (liegt, nicht angehoben) gibt es nicht frei.
+      s.takte(40, TILE_OFFTRACK, 3);
+      if (s.maxGas > 0) f.push('leises Rauschen gibt frei');
+      // Geschuettelt: Gas, obwohl weiter 0x00.
+      s.takte(16, TILE_OFFTRACK, 60);
+      if (!playerCar.schuettelAt) f.push('Schuetteln nicht erkannt');
+      if (!autoGelbFaehrt(playerCar, u.T)) f.push('Auto-Gelb zaehlt Schuetteln nicht als Wiederaufnahme');
+      const an = s.takte(10, TILE_OFFTRACK);
+      if (!an || an.grund !== 'yellow' || !(s.maxGas > 0)) f.push('nach Schuetteln kein Gas (' + (an && an.grund) + ')');
+      // Liegt es weiter auf dem Boden, steht es nach Anfahrfrist + 0,5 s wieder.
+      s.takte(50, TILE_OFFTRACK);
+      const nach = s.takte(5, TILE_OFFTRACK);
+      if (!nach || nach.throttle !== 0) f.push('nach dem Schuetteln auf dem Boden dauerhaft Gas');
+      if (autoGelbFaehrt(playerCar, u.T)) f.push('Auto-Gelb haelt den Boden fuer Fahrt');
+    } finally { s.zurueck(); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'neben der Bahn steht, Rauschen bleibt, Schuetteln faehrt an (Gelb, Auto-Gelb), Boden steht danach wieder' };
+  }));
+  stAdd('Fahren v1.4.52: nach Ausdruck -> Bahn startet Schuetteln die Einfuehrungsrunde, ohne Schuetteln kein Gas', () => apAbseitsUmgebung((u) => {
+    const f = [];
+    const cb = $('setting-ontrack');
+    if (!cb) return { ok: false, mass: 'setting-ontrack fehlt' };
+    const merkCb = cb.checked;
+    const s = schuettelUmgebung(u, schuettelAuto('st-sch-form'));
+    try {
+      raceFormationLap = true;
+      cb.checked = false; applyScanMode();
+      s.takte(10, 0x00);
+      cb.checked = true; applyScanMode();
+      // Auf der Bahn, steht, meldet im Stand 0x00: ohne Schuetteln kein Gas.
+      s.takte(40, TILE_OFFTRACK);
+      if (s.maxGas > 0) f.push('ohne Schuetteln Gas ' + s.maxGas.toFixed(2));
+      if (!playerCar.bahnCodeFehlt) f.push('Bahncode-Sperre fehlt');
+      s.takte(16, TILE_OFFTRACK, 60);
+      if (playerCar.bahnCodeFehlt) f.push('Schuetteln hebt die Bahncode-Sperre nicht auf');
+      const an = s.takte(10, TILE_OFFTRACK);
+      if (!an || an.grund !== 'formation' || !(s.maxGas > 0)) f.push('Einfuehrungsrunde faehrt nach Schuetteln nicht an');
+    } finally { s.zurueck(); cb.checked = merkCb; applyScanMode(); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Stand auf der Bahn ohne Schuetteln: kein Gas; Schuetteln: Einfuehrungsrunde faehrt an' };
+  }));

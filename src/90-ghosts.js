@@ -4732,7 +4732,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     sh.p1 = v1; sh.p3 = v3;
     if (sh.win.length < SHAKE_WIN) return;
 
-    if (!car.parked) { sh.quiet = []; sh.base = null; sh.parkedAt = 0; return; }
+    // v1.4.52: ein Fahrerauto, das fuer den Autopiloten neben der Bahn steht, hoert genauso zu wie ein
+    // geparkter NPC (spielerSchuettelBereit, 50-drive.js).
+    const spielerNr = car.parked ? 0 : (typeof spielerSchuettelBereit === 'function' ? spielerSchuettelBereit(car) : 0);
+    if (!car.parked && !spielerNr) { sh.quiet = []; sh.base = null; sh.parkedAt = 0; return; }
     if (!sh.parkedAt) sh.parkedAt = rennZeitJetzt();
 
     // ---- DER RUHEWERT IST DAS MINIMUM, NICHT DER MEDIAN DER ERSTEN 1,2 SEKUNDEN ----
@@ -4777,7 +4780,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                          Math.max(shakeFloor, sh.base * shakeFactor));
     car.shakeValue = sh.sum;
     car.shakeThreshold = thr;
-    if (sh.sum >= thr) unparkCar(car, 'geruettelt');
+    if (sh.sum >= thr) {
+      if (car.parked) unparkCar(car, 'geruettelt');
+      else { spielerGeschuettelt(spielerNr, car); sh.parkedAt = 0; sh.base = null; }
+    }
   }
 
   // ---- Anhalten und wieder losfahren ----
