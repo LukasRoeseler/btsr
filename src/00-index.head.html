@@ -3173,6 +3173,26 @@
   .studie-rt[data-zustand="frueh"] { background: #b3263f; }
   .studie-rt[data-zustand="gut"] { background: #1d4f8a; }
   /* ---- MEISTERSCHAFT (73-meisterschaft.js), nach mockup/meisterschaft.html ---- */
+  /* v1.4.54 (WIP): Event-Intro, ACC-Stil - ein schraeges dunkles Band mit blauer Kante faehrt ein, steht,
+     faehrt aus. Nur transform/opacity (Compositor), keine Bedienung, darunter bleibt alles erreichbar. */
+  .meister-intro:not([hidden]) { position: fixed; inset: 0; z-index: 5100; display: flex; align-items: center;
+    justify-content: center; pointer-events: none; overflow: hidden; }
+  .meister-intro .mi-band { width: min(92vw, 760px); padding: 14px 26px 16px 30px; background: rgba(8,11,17,.94);
+    border-left: 8px solid #00a3e0; box-shadow: 0 10px 40px rgba(0,0,0,.6); transform: translateX(-120vw) skewX(-12deg);
+    opacity: 0; color: #eef0f4; text-transform: uppercase; }
+  .meister-intro.an .mi-band { animation: mi-ein 3.2s cubic-bezier(.2,.8,.2,1) forwards; }
+  .meister-intro .mi-band > div { transform: skewX(12deg); }
+  .mi-kopf { color: #00a3e0; font-weight: 900; letter-spacing: .18em; font-size: clamp(11px, 1.6vw, 15px); }
+  .mi-titel { font-weight: 900; letter-spacing: .05em; font-size: clamp(22px, 4.6vw, 46px); line-height: 1.1; margin: 2px 0 4px; }
+  .mi-zeile { color: #c9d1dc; letter-spacing: .1em; font-size: clamp(11px, 1.8vw, 17px); }
+  .mi-extra { color: #ffd166; letter-spacing: .08em; font-size: clamp(10px, 1.5vw, 14px); margin-top: 3px; }
+  .mi-extra:empty { display: none; }
+  @keyframes mi-ein {
+    0% { transform: translateX(-120vw) skewX(-12deg); opacity: 0; }
+    14% { transform: translateX(0) skewX(-12deg); opacity: 1; }
+    84% { transform: translateX(0) skewX(-12deg); opacity: 1; }
+    100% { transform: translateX(120vw) skewX(-12deg); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .meister-intro.an .mi-band { animation-duration: 3.2s; animation-timing-function: steps(1, end); } }
   .meister-schirm:not([hidden]) { position: fixed; inset: 0; z-index: 390; display: flex; flex-direction: column;
     background: #0c0e14 url(img/meisterschaft-bg.jpg) center/cover; color: #eef0f4;
     font-family: "Bahnschrift SemiCondensed", "Bahnschrift", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
@@ -12220,6 +12240,18 @@
       <div class="opt-row"><div class="opt-label">Meisterschaft ansagen <span class="wip-tag">WIP</span>
         <small>Nach jedem Event, welches Event es war und was als N&auml;chstes kommt; nach dem letzten, dass die Meisterschaft vorbei ist und wer gesamt gewonnen hat.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-meister" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Meisterschaft: Willkommen <span class="wip-tag">WIP</span>
+        <small>Vor dem ersten Event: &bdquo;Willkommen zur Meisterschaft&ldquo; mit der Zahl der Events.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-meister-willkommen" data-preset-skip checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Meisterschaft: Event-Intro <span class="wip-tag">WIP</span>
+        <small>Beim Start jedes Events: welches Event, Format, Umfang, Wetter und ob Erfolgsballast gilt. Die kurze Einblendung mit vorbeifahrenden Autos kommt immer.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-meister-intro" data-preset-skip checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Meisterschaft: Sieger je Rennen <span class="wip-tag">WIP</span>
+        <small>Nach jedem Rennen mit Punkten: wer es gewonnen hat. Nach der Ergebnisansage, nie hinein.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-meister-sieger" data-preset-skip checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Meisterschaft: Abschluss <span class="wip-tag">WIP</span>
+        <small>Nach dem letzten Event die Fanfare und der Meister mit seinen Punkten (statt des Satzes &bdquo;Meisterschaft vorbei&ldquo;).</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-meister-abschluss" data-preset-skip checked><span></span></label></div>
       <div class="opt-head">L3-Statusansage</div>
       <div class="opt-row"><div class="opt-label">L3-Statusansage <span class="wip-tag">WIP</span>
         <small>Ein Druck auf L3 (linken Stick) sagt den aktuellen Stand an. Inhalt darunter w&auml;hlbar; die Bestzeit ist die Vorgabe.</small></div>
@@ -14176,6 +14208,11 @@
        meldet sich bereit; der Initiator startet, sobald alle anderen bereit sind. -->
   <!-- MEISTERSCHAFT (73-meisterschaft.js): Planer und Zwischenstand, ueber allem ausser den Dialogen.
        Der Inhalt entsteht im Code und wird dort mit t() uebersetzt. -->
+  <!-- v1.4.54 (WIP): Event-Intro der Meisterschaft, 3 s im ACC-Stil, ueber allem, ohne Bedienung. -->
+  <div class="meister-intro" id="meister-intro" data-i18n-skip aria-live="polite" hidden>
+    <div class="mi-band"><div class="mi-kopf" id="mi-kopf"></div><div class="mi-titel" id="mi-titel"></div>
+      <div class="mi-zeile" id="mi-zeile"></div><div class="mi-extra" id="mi-extra"></div></div>
+  </div>
   <div class="meister-schirm" id="meister-schirm" data-i18n-skip hidden>
     <!-- v1.0.22 GEMELDET: "Aus dem Meisterschaftsmenue komme ich nicht raus, weil das Kreuz oben rechts
          hinter dem Tab ist." Das Kreuz steht jetzt links vorn, gross, und die Zurueck-Taste schliesst auch. -->
