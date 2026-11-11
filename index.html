@@ -5732,7 +5732,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.4.53</span></span>
+        <span class="foot-ver">v<span id="app-version">1.4.60</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6973,6 +6973,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.4</span></b></p>
       <ul class="muted" id="patchnotes-14" style="padding-left:20px; line-height:1.7">
+        <li>Einparken neu abgestimmt: Safety Car und NPC-Box parken etwas weiter innen (etwa ein Viertel weniger zum Rand) und lenken am Ende l&#228;nger gegen, damit sie gerade stehen. Beim Tankort &#8222;Streckenrand &#252;ber Querlage&#8220; ebenfalls weniger weit an den Rand. NPCs fahren in Kurven innen nicht mehr ganz bis an die Kante (h&#246;chstens 95 %), damit sie dort seltener abfliegen.</li>
         <li>Unter Gelb und nach dem Wechsel von Ausdruck auf Bahn f&#228;hrt ein stehendes Fahrerauto wieder an, sobald du es auf die Bahn stellst und kurz sch&#252;ttelst (Gyro, dieselbe Erkennung wie beim Wiedereinsetzen der NPCs), auch wenn es im Stand noch keinen Code liest. Ohne Sch&#252;tteln bleibt ein Auto neben der Bahn stehen; die automatische Gelbe Flagge z&#228;hlt das Sch&#252;tteln als Wiederaufnahme.</li>
         <li>Behoben: Ein Auto, das auf dem Boden stand, fuhr nach dem Wechsel von Ausdruck auf Bahn von selbst los. Im Ausdruck-Modus z&#228;hlte die App die Meldungen &#8222;kein Code&#8220; als neben der Bahn; nach dem Wechsel galt das Auto sofort als lange abgeflogen, und unter dem Autopiloten (etwa nach einer automatischen Gelben Flagge oder in der Einf&#252;hrungsrunde) bekam es Gas. Jetzt z&#228;hlt &#8222;neben der Bahn&#8220; nur im Bahn-Modus, und nach dem Wechsel gibt der Autopilot einem Auto erst Gas, wenn es einen g&#252;ltigen Bahncode gelesen hat. Unter Gelb f&#228;hrt ein Auto neben der Bahn nicht mehr (nach 0,5 s, in Kurven nach 1,5 s); ein abgeflogener NPC bleibt stehen. Beim Start gelten alle Autos 2 s lang als auf der Bahn, auch wenn sie noch vom Vorrennen als neben der Bahn gemeldet sind: kein gedrosseltes Losfahren, keine automatische Gelbe Flagge direkt beim Start.</li>
         <li>Behoben: Im Bahn-Modus beschleunigte ein Auto, das neben der Bahn oder auf dem R&#252;cken lag, unter dem Autopiloten (Einf&#252;hrungsrunde, Gelb, Aufstellung) auf rund 100 km/h. Jetzt gibt der Autopilot nach 1,5 s am St&#252;ck neben der Bahn kein Gas mehr und bremst leicht, bis das Auto wieder auf der Bahn ist; kurzes Abkommen, etwa in der Haarnadel, bleibt wie bisher. Au&#223;erdem z&#228;hlen die Gas- und Bremstrigger nicht mehr als voll gedr&#252;ckt, wenn ein Gamepad sie als gedr&#252;ckt mit Wert 0 meldet (L3 funktioniert weiter).</li>
@@ -16655,6 +16656,7 @@
     "Behoben: Im Bahn-Modus beschleunigte ein Auto, das neben der Bahn oder auf dem Rücken lag, unter dem Autopiloten (Einführungsrunde, Gelb, Aufstellung) auf rund 100 km/h. Jetzt gibt der Autopilot nach 1,5 s am Stück neben der Bahn kein Gas mehr und bremst leicht, bis das Auto wieder auf der Bahn ist; kurzes Abkommen, etwa in der Haarnadel, bleibt wie bisher. Außerdem zählen die Gas- und Bremstrigger nicht mehr als voll gedrückt, wenn ein Gamepad sie als gedrückt mit Wert 0 meldet (L3 funktioniert weiter).": "Fixed: in track mode a car lying off the track or on its back accelerated to about 100 km/h under the autopilot (formation lap, yellow, grid setup). Now the autopilot gives no throttle after 1.5 s in a row off the track and brakes lightly until the car is back on the track; a short excursion, for example in the hairpin, stays as before. Also, the throttle and brake triggers no longer count as fully pressed when a gamepad reports them as pressed with value 0 (L3 still works).",
     "Behoben: Ein Auto, das auf dem Boden stand, fuhr nach dem Wechsel von Ausdruck auf Bahn von selbst los. Im Ausdruck-Modus zählte die App die Meldungen „kein Code“ als neben der Bahn; nach dem Wechsel galt das Auto sofort als lange abgeflogen, und unter dem Autopiloten (etwa nach einer automatischen Gelben Flagge oder in der Einführungsrunde) bekam es Gas. Jetzt zählt „neben der Bahn“ nur im Bahn-Modus, und nach dem Wechsel gibt der Autopilot einem Auto erst Gas, wenn es einen gültigen Bahncode gelesen hat. Unter Gelb fährt ein Auto neben der Bahn nicht mehr (nach 0,5 s, in Kurven nach 1,5 s); ein abgeflogener NPC bleibt stehen. Beim Start gelten alle Autos 2 s lang als auf der Bahn, auch wenn sie noch vom Vorrennen als neben der Bahn gemeldet sind: kein gedrosseltes Losfahren, keine automatische Gelbe Flagge direkt beim Start.": "Fixed: a car standing on the floor drove off by itself after switching from print mode to track mode. In print mode the app counted the reports “no code” as off the track; after the switch the car immediately counted as long gone, and under the autopilot (for example after an automatic yellow flag or in the formation lap) it got throttle. Now “off the track” only counts in track mode, and after the switch the autopilot only gives a car throttle once it has read a valid track code. Under yellow a car off the track no longer drives (after 0.5 s, in curves after 1.5 s); a crashed NPC stays put. At the start all cars count as on the track for 2 s, even if they are still reported off the track from an earlier race: no throttled getaway, no automatic yellow flag right at the start.",
     "Unter Gelb und nach dem Wechsel von Ausdruck auf Bahn fährt ein stehendes Fahrerauto wieder an, sobald du es auf die Bahn stellst und kurz schüttelst (Gyro, dieselbe Erkennung wie beim Wiedereinsetzen der NPCs), auch wenn es im Stand noch keinen Code liest. Ohne Schütteln bleibt ein Auto neben der Bahn stehen; die automatische Gelbe Flagge zählt das Schütteln als Wiederaufnahme.": "Under yellow and after switching from print to track mode a stationary player car starts again as soon as you put it on the track and shake it briefly (gyro, the same detection as for putting NPCs back), even if it does not read a code while standing. Without shaking a car off the track stays put; the automatic yellow flag counts the shake as resuming.",
+    "Einparken neu abgestimmt: Safety Car und NPC-Box parken etwas weiter innen (etwa ein Viertel weniger zum Rand) und lenken am Ende länger gegen, damit sie gerade stehen. Beim Tankort „Streckenrand über Querlage“ ebenfalls weniger weit an den Rand. NPCs fahren in Kurven innen nicht mehr ganz bis an die Kante (höchstens 95 %), damit sie dort seltener abfliegen.": "Parking retuned: the safety car and the NPC pit box park a little further in (about a quarter less towards the edge) and counter-steer longer at the end so they stand straight. The fuel spot “track edge via lateral position” also stays further from the edge. NPCs no longer go all the way to the inner edge in corners (at most 95 %), so they fly off there less often.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -68115,7 +68117,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // v1.4.52: ein Fahrerauto, das fuer den Autopiloten neben der Bahn steht, hoert genauso zu wie ein
     // geparkter NPC (spielerSchuettelBereit, 50-drive.js).
     const spielerNr = car.parked ? 0 : (typeof spielerSchuettelBereit === 'function' ? spielerSchuettelBereit(car) : 0);
-    if (!car.parked && !spielerNr) { sh.quiet = []; sh.base = null; sh.parkedAt = 0; return; }
+    // v1.4.54 (Latenz): je Meldung jedes fahrenden Autos stand hier "sh.quiet = []" - eine Allokation fuer ein
+    // Feld, das niemand liest. Jetzt nur zuruecksetzen, wenn es etwas zurueckzusetzen gibt.
+    if (!car.parked && !spielerNr) { if (sh.base !== null || sh.parkedAt) { sh.base = null; sh.parkedAt = 0; } return; }
     if (!sh.parkedAt) sh.parkedAt = rennZeitJetzt();
 
     // ---- DER RUHEWERT IST DAS MINIMUM, NICHT DER MEDIAN DER ERSTEN 1,2 SEKUNDEN ----
@@ -68548,6 +68552,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Zieltempo 0, Querlage +1. Damit stimmt er in der Simulation und auf dem Teppich, und die
   // Quertraegheit blendet den Versatz von selbst weich ein - bei querTempo 2,0 in rund 0,5 s.
   const PIT_RAND = 1.0;          // voller Versatz nach RECHTS (Byte 7 positiv = rechts)
+  // v1.4.54 GEMELDET (1.4.53): "Einparken zu nah am Rand." Der Tankort "Streckenrand ueber Querlage"
+  // (npcTankort 'rand') zog mit voller Querlage bis an die Kante. Jetzt 75 % davon, also rund ein Viertel
+  // weniger Querweg - dieselbe Groessenordnung wie die kalibrierte Einparkfolge (SC_EIN_RECHTS, -24 %).
+  // Gerade steht das Auto dort von selbst: die Querlage fuehrt die Firmware an der Spur, ohne Radeinschlag.
+  const PIT_RAND_ORT = 0.75;
+  function pitRandQuer(p) { return p && p.ort === 'rand' ? PIT_RAND_ORT : PIT_RAND; }
   // ---- DIE BREMSPHASE IST EINE ZEIT UND KEINE SCHWELLE -------------------------------
   //
   // ZWEI ANLAEUFE HABEN DAS FALSCH GEMACHT, und die Messung sagt warum. Erst stand hier
@@ -68830,9 +68840,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!amPlatz && pitVorbeiNoetig(car)) return PIT_VORBEI;
     if (p.phase === 'raus') {
       const f = Math.max(0, 1 - (rennZeitJetzt() - p.at) / PIT_RAUS_MS);
-      return PIT_RAND * f;
+      return pitRandQuer(p) * f;
     }
-    return PIT_RAND;
+    return pitRandQuer(p);
   }
 
   // Das Zieltempo, das der Boxenstopp verlangt, oder null. formationPace() ist genau der
@@ -69159,6 +69169,20 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // gefahren im Ausdruck-Modus mit einem anderen Auto; im Rennen faehrt das Safety Car auf der Bahn, und
   // dort kommt es damit spaeter in Fahrt. Darum ein Faktor auf das Gas der Ausparkfolge (Regler im
   // Safety-Car-Menue, Vorgabe 1,5); die Lenkung und die Zeiten bleiben genau die der Aufnahme.
+  // ---- EINPARKEN KALIBRIERT (v1.4.54) -------------------------------------------------------
+  // GEMELDET (Test am Geraet, 1.4.53): "Einparken zu nah am Rand und Gegenlenken zu wenig -> kalibrieren."
+  // Gilt fuer das Safety Car (scEinPassend) und die NPC-Box mit Einparkfolge (pitTick); die Aufstellung
+  // faehrt weiter die Aufnahme selbst (aufstellSkript, eigener Gasregler). Im 2D-Modell (Einspurmodell,
+  // auf die Aufnahme "Mitte -> Randstreifen = 12,5 cm" kalibriert, Startgas 0,30 bzw. 0,42 gleich):
+  //   Aufnahme:      Querversatz 12,6 cm, Endkurs +3,3 Grad (zum Rand hin schraeg)
+  //   kalibriert:    Querversatz  9,6 cm (-24 %), Endkurs -0,8 Grad (parallel), Rollweg +0,04 Teile
+  // SC_EIN_RECHTS: Faktor auf den Rechtseinschlag (Lenkwerte > 0) - weniger Kurswinkel, also weniger Querweg.
+  // SC_EIN_GEGEN_MS: der zweite Gegenlenk-Block (voll links, ab 1080 ms der Aufnahme) haelt so viel laenger,
+  // alles ab SC_EIN_GEGEN_ENDE rueckt um diese Zeit nach hinten. Voll eingeschlagen ist er schon, staerker
+  // geht nur laenger. Einmal beim Laden gebaut, im Takt nichts zu rechnen.
+  const SC_EIN_RECHTS = 0.88, SC_EIN_GEGEN_MS = 40, SC_EIN_GEGEN_ENDE = 1212;
+  const SC_EIN_FOLGE = MANOEVER.scEin.map(([ms, lenk, gas]) =>
+    [ms >= SC_EIN_GEGEN_ENDE ? ms + SC_EIN_GEGEN_MS : ms, lenk > 0 ? lenk * SC_EIN_RECHTS : lenk, gas]);
   const SC_AUS_GAS_VORGABE = 1.5;
   function scAusGas() { return einparkWert('sc-aus-gas', SC_AUS_GAS_VORGABE, 1, 3); }
   if ($('sc-aus-gas')) {
@@ -69377,7 +69401,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       }
       if (g.tileIndex === pk) {
         p.phase = 'einparken'; p.at = now;
-        const sk = MANOEVER.scEin;
+        const sk = SC_EIN_FOLGE;
         randHaltStarten(car, { phase: 'skript', quer: 0, skript: sk, anpassMs: MANOEVER_ANPASS_MS,
           vonDrive: letztesGas(car, sk[0][2]), haltMs: 500, sofort: true, ohneStopp: true,
           fertig: (c) => npcBoxStehen(c) });
@@ -69391,7 +69415,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // langsames Auto (kleines tempoAnteil) erreicht die Breite erst spaeter; ein
       // schnelles faehrt nach dem Erreichen die restliche Mindestzeit am Rand weiter.
       const seit = now - p.at;
-      const amRand = (g.querSoll || 0) >= PIT_RAND_TARGET;
+      // v1.4.54: relativ zur verlangten Querlage (PIT_RAND_ORT), sonst waere 0,95 nie erreicht.
+      const amRand = (g.querSoll || 0) >= pitRandQuer(p) * PIT_RAND_TARGET;
       if ((seit >= randWegMs(PIT_RAND_MS) && amRand) || seit >= PIT_RAND_MAX_MS) {
         p.phase = 'halt'; p.at = now;
         log(garageLabel(car) + ': am Rand, bremst ab.', 'info');
@@ -69517,16 +69542,27 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
   // Querlage v (rechts positiv) auf der Aussenseite der Kurve auf ghostCfg.npcQuer begrenzen, innen voll.
   // Ohne Ort die gerade gemeldete Kachel. Im Takt: keine Allokation, kein DOM.
+  // v1.4.54: auch die INNENSEITE nicht ganz bis an die Kante. GEMELDET (1.4.53, 1 Spieler + 1 NPC): "NPC flog ab."
+  // Gemessen (headless, Vorgabe innen3, Kippwert-Deckel 1): die Linie liegt in Kurven auf bis zu 17 % der Runde
+  // bei Querlage 1,0 innen, also an der Innenkante (Querlage 1,0 = Rand, wie PIT_RAND). Ein kleiner Ueberschwinger
+  // des Bordreglers und der Sensor liest innen neben der Bahn. Jetzt hoechstens NPC_INNEN_MAX, gewichtet mit der
+  // stetigen Kurvenseite wie die Aussenseite (bei Seite 0 keine Grenze, also auch hier kein Sprung).
+  const NPC_INNEN_MAX = 0.95;
   function npcQuerBegrenzen(car, v, ph) {
+    if (!v) return v;
     const f = ghostCfg.npcQuer;
-    if (!(f < 1) || !v) return v;
     const g = car && car.ghost;
     let seite = 0;
     if (g && g.tileIndex !== null && g.tileIndex !== undefined) {
       seite = npcKurvenSeite(g.tileIndex, ph === undefined ? ghostTilePhase(car) : ph);
     } else if (car) seite = ghostTurnOf(car.tileCode);
-    if (!(v * seite < 0)) return v;
-    return v * (1 - (1 - f) * Math.min(1, Math.abs(seite)));
+    const s = Math.min(1, Math.abs(seite));
+    if (v * seite > 0) {
+      const max = 1 - (1 - NPC_INNEN_MAX) * s;
+      return v > max ? max : (v < -max ? -max : v);
+    }
+    if (!(f < 1) || !(v * seite < 0)) return v;
+    return v * (1 - (1 - f) * s);
   }
   function npcBoxStehen(car) {
     const p = car.ghost && car.ghost.pit;
@@ -70485,7 +70521,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   //   nicht reicht, wird das Gas gestaucht - als Notfall-Untergrenze (hoechstens auf die Haelfte).
   const EINPARK_RESERVE = 0.2;
   function scEinPassend(k, vonDrive) {
-    const sk = MANOEVER.scEin;
+    const sk = SC_EIN_FOLGE;
     const gerade = scGeradenAb(k);
     const vor = einparkFreiZaehlen(k, -1, EINPARK_VORLAUF_MAX);
     const D = scRollweg(sk, vonDrive);
@@ -88328,8 +88364,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // 3. VOLL AUSGENUTZT MITTEN IM KURVENZUG: mit zwei weiteren gleichsinnigen Kacheln
       //    voraus ist der Mittelwert exakt die volle Querlage (alle drei Kacheln des Fensters
       //    drehen gleich). Die NPC-Querlage (npcQuerFaktor) begrenzt seit v1.3.132 nur die
-      //    AUSSENSEITE; die Linie liegt hier innen und ist damit voll (1).
-      if (Math.abs(proTile[4] - 1) > 1e-6 || Math.abs(proTile[5] - 1) > 1e-6) {
+      //    AUSSENSEITE; die Linie liegt hier innen und ist damit voll - seit v1.4.54 bis NPC_INNEN_MAX
+      //    (nicht ganz an die Innenkante).
+      if (Math.abs(proTile[4] - NPC_INNEN_MAX) > 1e-3 || Math.abs(proTile[5] - NPC_INNEN_MAX) > 1e-3) {
         schlecht.push('nicht voll ausgenutzt mitten im Kurvenzug: ' + proTile[4] + ',' + proTile[5]);
       }
       // 4. WEICHER ABSTIEG zum Kurvenende hin, aus demselben Grund wie der Anstieg.
@@ -88372,12 +88409,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // 1. HART: die Kurve steht von der ALLERERSTEN Kachel an auf voller Staerke, kein
       //    Uebergang wie bei dreiStufenLine (dort erst nach SPUR_EIN aussen). Die NPC-Querlage
       //    (npcQuerFaktor) begrenzt seit v1.3.132 nur die AUSSENSEITE: in der Kurve (innen) voll,
-      //    am Ende der Geraden davor (aussen) hoechstens der Faktor.
+      //    am Ende der Geraden davor (aussen) hoechstens der Faktor. Seit v1.4.54 heisst "voll" innen
+      //    NPC_INNEN_MAX (nicht ganz an die Innenkante).
       const qF = npcQuerFaktor();
-      if (!proTile[3].every((v) => v === 1)) {
+      const voll = (v) => Math.abs(v - NPC_INNEN_MAX) <= 1e-3;
+      if (!proTile[3].every(voll)) {
         schlecht.push('Kurve (Kachel 3) innen nicht durchgehend voll: ' + proTile[3].join(','));
       }
-      if (!proTile[6].every((v) => v === 1)) {
+      if (!proTile[6].every(voll)) {
         schlecht.push('Kurve (Kachel 6) innen nicht durchgehend voll: ' + proTile[6].join(','));
       }
       const aussenMax = Math.max(...proTile[5].map((v) => (v < 0 ? -v : 0)));
@@ -88403,7 +88442,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   });
 
   // v1.3.132: NPC-Querlage begrenzt nur die AUSSENSEITE, der Wert kommt aus ghostCfg (kein DOM im Takt).
-  stAdd('NPC-Querlage v1.3.132: aussen begrenzt, innen voll, Wert gecacht', () => {
+  stAdd('NPC-Querlage v1.3.132/1.4.54: aussen begrenzt, innen hoechstens NPC_INNEN_MAX, Wert gecacht', () => {
     const f = [];
     const el = $('npc-querlage');
     const merk = { tiles: currentTrackTiles, wert: el ? el.value : null };
@@ -88414,11 +88453,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (String(npcQuerBegrenzen).indexOf('$(') >= 0) f.push('npcQuerBegrenzen liest das DOM');
       currentTrackTiles = codeToTrack('SG2RG2L').tiles;          // 0 S, 1-2 G, 3 R, 4-5 G, 6 L
       const auto = (k) => ({ ghost: { tileIndex: k }, tileCode: currentTrackTiles[k].type });
-      // Rechtskurve: innen = rechts (+) voll, aussen = links (-) auf den Faktor.
-      if (npcQuerBegrenzen(auto(3), 1, 0.5) !== 1) f.push('R innen begrenzt: ' + npcQuerBegrenzen(auto(3), 1, 0.5));
+      // Rechtskurve: innen = rechts (+) bis NPC_INNEN_MAX (v1.4.54, nicht an die Innenkante), aussen = links (-) auf den Faktor.
+      if (!(NPC_INNEN_MAX >= 0.9 && NPC_INNEN_MAX < 1)) f.push('NPC_INNEN_MAX ' + NPC_INNEN_MAX);
+      if (Math.abs(npcQuerBegrenzen(auto(3), 1, 0.5) - NPC_INNEN_MAX) > 1e-9) f.push('R innen ' + npcQuerBegrenzen(auto(3), 1, 0.5) + ' statt NPC_INNEN_MAX');
+      if (npcQuerBegrenzen(auto(3), 0.6, 0.5) !== 0.6) f.push('R innen unter der Grenze veraendert');
       if (Math.abs(npcQuerBegrenzen(auto(3), -1, 0.5) + 0.8) > 1e-6) f.push('R aussen ' + npcQuerBegrenzen(auto(3), -1, 0.5) + ' statt -0,8');
       // Linkskurve spiegelbildlich.
-      if (npcQuerBegrenzen(auto(6), -1, 0.5) !== -1) f.push('L innen begrenzt');
+      if (Math.abs(npcQuerBegrenzen(auto(6), -1, 0.5) + NPC_INNEN_MAX) > 1e-9) f.push('L innen ' + npcQuerBegrenzen(auto(6), -1, 0.5));
       if (Math.abs(npcQuerBegrenzen(auto(6), 0.5, 0.5) - 0.4) > 1e-6) f.push('L aussen ' + npcQuerBegrenzen(auto(6), 0.5, 0.5) + ' statt 0,4');
       // Gerade zwischen R und L: Seite laeuft stetig von +1 nach -1, in der Mitte keine Begrenzung.
       const mitte = npcQuerBegrenzen(auto(4), -1, 1);
@@ -88427,11 +88468,19 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (Math.abs(npcQuerBegrenzen({ ghost: {}, tileCode: TILE_TYPE.CURVE_RIGHT }, -1) + 0.8) > 1e-6) f.push('ohne Ort nicht begrenzt');
       el.value = '1'; el.dispatchEvent(new Event('change'));
       if (npcQuerBegrenzen(auto(3), -1, 0.5) !== -1) f.push('100 %: trotzdem begrenzt');
+      // Stetig: ueber die Gerade zwischen R und L (Seite +1 -> -1) springt die Grenze nirgends.
+      let vor = null, sprung = 0;
+      for (const k of [3, 4, 5, 6]) for (let s = 0; s <= 20; s++) {
+        const w = npcQuerBegrenzen(auto(k), 1, s / 20);
+        if (vor !== null) sprung = Math.max(sprung, Math.abs(w - vor));
+        vor = w;
+      }
+      if (sprung > 0.03) f.push('Grenze springt um ' + sprung.toFixed(3));
     } finally {
       currentTrackTiles = merk.tiles;
       if (el) { el.value = merk.wert; el.dispatchEvent(new Event('change')); }
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'R/L innen 1, aussen x Faktor, Gerade stetig, Wert aus ghostCfg' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'R/L innen ' + NPC_INNEN_MAX + ', aussen x Faktor, Gerade stetig, Wert aus ghostCfg' };
   });
 
   // ---- Luuke-Linie: die fuenf verlaesslichen Beispiele treffen die vorgegebene Querlage ----
@@ -94531,7 +94580,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const p = car.ghost.pit;
       pitTick(car);
       if (p.phase !== 'rand' || p.ort !== 'rand' || car.ghost.randHalt) f.push('faehrt nicht per Querlage an den Rand (' + p.phase + ')');
-      if (pitQuer(car) !== PIT_RAND) f.push('Querlage nicht am rechten Rand');
+      if (pitQuer(car) !== PIT_RAND_ORT) f.push("Querlage nicht PIT_RAND_ORT (" + pitQuer(car) + ")");
       p.at = rennZeitJetzt() - PIT_RAND_MAX_MS - 1; pitTick(car);
       if (p.phase !== 'halt') f.push('haelt nicht an (' + p.phase + ')');
       p.at = rennZeitJetzt() - PIT_BREMS_MS - 1; pitTick(car);
@@ -94965,6 +95014,46 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Korrektur nach 1.2.66: Gran Accelerato wird genauso durchgereicht.
     if (String(chAnwenden).indexOf("pm === 'pacejka' || GRAN_MODI.includes(pm) ? pm : 'physik'") < 0) f.push('Challenge erzwingt weiter Physik (Pacejka/Gran/Assetto)');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bahn ohne Derby, Ausdruck ohne Time Attack, Spieler 2 eigenes Preset, Pacejka-Challenges' };
+  });
+
+  // v1.4.54 GEMELDET: "Einparken zu nah am Rand und Gegenlenken zu wenig -> kalibrieren." Dasselbe grobe
+  // 2D-Einspurmodell wie bei der Abstimmung (Tempo = Gas x 1,51 m/s x 1,7, Gierrate = Tempo x Lenkung / 0,592 m,
+  // Servo 40 ms): die kalibrierte Folge endet 15-30 % weniger weit rechts als die Aufnahme und parallel zur Bahn.
+  stAdd('Einparken v1.4.54: weniger weit zum Rand, am Ende parallel (Modell), SC und NPC-Box mit der kalibrierten Folge', () => {
+    const f = [];
+    const modell = (sk, von) => {
+      let y = 0, h = 0, lenk = 0;
+      const dauer = MANOEVER_ANPASS_MS + manoeverDauer(sk), dt = 5;
+      for (let t = 0; t <= dauer + 50; t += dt) {
+        let l, g;
+        if (t < MANOEVER_ANPASS_MS) { l = 0; g = von + (sk[0][2] - von) * t / MANOEVER_ANPASS_MS; }
+        else { const w = manoeverWert(sk, t - MANOEVER_ANPASS_MS); l = w[1]; g = w[2]; }
+        lenk += (l - lenk) * (1 - Math.exp(-dt / 40));
+        const v = g * 1.51 * 1.7;
+        h += v * lenk / 0.592 * dt / 1000;
+        y += v * Math.sin(h) * dt / 1000;
+      }
+      return { quer: y * 100, kurs: h * 180 / Math.PI };
+    };
+    const zeilen = [];
+    for (const von of [0.30, 0.42]) {
+      const alt = modell(MANOEVER.scEin, von), neu = modell(SC_EIN_FOLGE, von);
+      const anteil = neu.quer / alt.quer;
+      zeilen.push(von.toFixed(2) + ': ' + alt.quer.toFixed(1) + ' cm/' + alt.kurs.toFixed(1) + ' Grad -> ' + neu.quer.toFixed(1) + ' cm/' + neu.kurs.toFixed(1) + ' Grad');
+      if (!(alt.kurs > 2)) f.push('Modell: Aufnahme endet nicht schraeg zum Rand (' + alt.kurs.toFixed(1) + ')');
+      if (!(anteil >= 0.70 && anteil <= 0.85)) f.push('Querversatz ' + Math.round(anteil * 100) + ' % der Aufnahme (Ziel 70-85 %)');
+      if (!(Math.abs(neu.kurs) <= 1.5)) f.push('Endkurs ' + neu.kurs.toFixed(1) + ' Grad (Ziel +-1,5)');
+    }
+    if (SC_EIN_FOLGE.length !== MANOEVER.scEin.length || manoeverDauer(SC_EIN_FOLGE) !== manoeverDauer(MANOEVER.scEin) + SC_EIN_GEGEN_MS) f.push('Folge nicht aus der Aufnahme abgeleitet');
+    if (SC_EIN_FOLGE.some((p, i) => p[2] !== MANOEVER.scEin[i][2])) f.push('Gas der Folge veraendert');
+    const merk = currentTrackTiles;
+    try {
+      currentTrackTiles = codeToTrack('SG4RG4').tiles;
+      if (scEinPassend(0, scParkTempo()).skript !== SC_EIN_FOLGE) f.push('Safety Car ohne kalibrierte Folge');
+    } finally { currentTrackTiles = merk; }
+    if (String(pitTick).indexOf('const sk = SC_EIN_FOLGE') < 0) f.push('NPC-Box ohne kalibrierte Folge');
+    if (!(PIT_RAND_ORT >= 0.7 && PIT_RAND_ORT <= 0.8) || pitRandQuer({ ort: 'rand' }) !== PIT_RAND_ORT || pitRandQuer({ ort: 'folge' }) !== PIT_RAND) f.push('Tankort Rand: Querlage ' + PIT_RAND_ORT);
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : zeilen.join('; ') + '; Tankort Rand Querlage ' + PIT_RAND_ORT };
   });
 
   stAdd('Boxen v1.2.4: Minigame-Haken nur bei richtig, mechanische Signale, NPC-Box wie Safety Car, SC-Parken passt', () => {
@@ -103552,7 +103641,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const P = r.jePhase;
     const echt = r.folge.filter(Boolean);
     if (echt.join('>') !== 'anfahrt>einparken>stand>raus') fehler.push('Folge ' + echt.join('>'));
-    const soll = (MANOEVER_ANPASS_MS + manoeverDauer(MANOEVER.scEin) + 500) / 45;
+    const soll = (MANOEVER_ANPASS_MS + manoeverDauer(SC_EIN_FOLGE) + 500) / 45;
     if (!P.einparken || !(Math.abs(P.einparken.takte - soll) <= 12)) fehler.push('Einparken ' + (P.einparken ? P.einparken.takte : '?') + ' Takte, erwartet rund ' + Math.round(soll));
     if (!(P.stand && P.stand.dunkel > 0)) fehler.push('kein Blinken im Stand');
     if (r.geparkt) fehler.push('parkt sich waehrend des Stopps selbst');

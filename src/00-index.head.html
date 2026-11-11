@@ -5732,7 +5732,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.4.53</span></span>
+        <span class="foot-ver">v<span id="app-version">1.4.60</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6973,6 +6973,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.4</span></b></p>
       <ul class="muted" id="patchnotes-14" style="padding-left:20px; line-height:1.7">
+        <li>Einparken neu abgestimmt: Safety Car und NPC-Box parken etwas weiter innen (etwa ein Viertel weniger zum Rand) und lenken am Ende l&#228;nger gegen, damit sie gerade stehen. Beim Tankort &#8222;Streckenrand &#252;ber Querlage&#8220; ebenfalls weniger weit an den Rand. NPCs fahren in Kurven innen nicht mehr ganz bis an die Kante (h&#246;chstens 95 %), damit sie dort seltener abfliegen.</li>
         <li>Unter Gelb und nach dem Wechsel von Ausdruck auf Bahn f&#228;hrt ein stehendes Fahrerauto wieder an, sobald du es auf die Bahn stellst und kurz sch&#252;ttelst (Gyro, dieselbe Erkennung wie beim Wiedereinsetzen der NPCs), auch wenn es im Stand noch keinen Code liest. Ohne Sch&#252;tteln bleibt ein Auto neben der Bahn stehen; die automatische Gelbe Flagge z&#228;hlt das Sch&#252;tteln als Wiederaufnahme.</li>
         <li>Behoben: Ein Auto, das auf dem Boden stand, fuhr nach dem Wechsel von Ausdruck auf Bahn von selbst los. Im Ausdruck-Modus z&#228;hlte die App die Meldungen &#8222;kein Code&#8220; als neben der Bahn; nach dem Wechsel galt das Auto sofort als lange abgeflogen, und unter dem Autopiloten (etwa nach einer automatischen Gelben Flagge oder in der Einf&#252;hrungsrunde) bekam es Gas. Jetzt z&#228;hlt &#8222;neben der Bahn&#8220; nur im Bahn-Modus, und nach dem Wechsel gibt der Autopilot einem Auto erst Gas, wenn es einen g&#252;ltigen Bahncode gelesen hat. Unter Gelb f&#228;hrt ein Auto neben der Bahn nicht mehr (nach 0,5 s, in Kurven nach 1,5 s); ein abgeflogener NPC bleibt stehen. Beim Start gelten alle Autos 2 s lang als auf der Bahn, auch wenn sie noch vom Vorrennen als neben der Bahn gemeldet sind: kein gedrosseltes Losfahren, keine automatische Gelbe Flagge direkt beim Start.</li>
         <li>Behoben: Im Bahn-Modus beschleunigte ein Auto, das neben der Bahn oder auf dem R&#252;cken lag, unter dem Autopiloten (Einf&#252;hrungsrunde, Gelb, Aufstellung) auf rund 100 km/h. Jetzt gibt der Autopilot nach 1,5 s am St&#252;ck neben der Bahn kein Gas mehr und bremst leicht, bis das Auto wieder auf der Bahn ist; kurzes Abkommen, etwa in der Haarnadel, bleibt wie bisher. Au&#223;erdem z&#228;hlen die Gas- und Bremstrigger nicht mehr als voll gedr&#252;ckt, wenn ein Gamepad sie als gedr&#252;ckt mit Wert 0 meldet (L3 funktioniert weiter).</li>
