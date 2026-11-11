@@ -25143,6 +25143,274 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Q -> Aufstellung, Fehler gemeldet, 26/18 Punkte, Fuehrender hinten, Zufall fest, Abbruch = 0' };
   });
 
+  // ---- v1.4.54: MEISTERSCHAFT, WER GEWINNT (Wertung mit echten Rundenfunktionen) ----
+  // GEMELDET: "Entweder beim NPC wird eine Runde nicht gezaehlt, oder Spieler 1 gewinnt immer, auch wenn er auf
+  // Platz 2 steht." Nachgestellt mit playerLapCrossed/carLapCrossed und einer gestellten Uhr:
+  //   A  beide stehen hinter der Linie (erste Ueberfahrt nach einer ganzen Runde), der NPC ist schneller
+  //   B  der NPC startet weiter hinten, Spieler 1 ist zuerst im Ziel, der NPC hat die kleinere Rundensumme
+  //   C  Spieler 1 gewinnt, der NPC kommt danach ins Ziel: seine Auslaufrunde zaehlt, der Sieger faehrt keine Extrarunde
+  stAdd('Meisterschaft v1.4.54: Wertung - NPC-Runden gezaehlt, Sieger wer zuerst im Ziel ist', () => {
+    const f = [], m = [];
+    const merk = { rs: raceState, rm: raceMode, lim: raceLimit, laps: raceLapTimes.slice(), ls: raceLapStart, rsa: raceStartedAt,
+                   dl: dashLapStart, dt: dashLapTimes.slice(), form: raceFormationLap, aw: raceAwaitingMove, fly: raceFlying,
+                   tiles: currentTrackTiles, tm: trackMode, sc: sectorCount, ev: raceLapEvents.slice(), gr: raceGreenAt,
+                   az: raceAnlaufZaehler, dc: dashLastTileCounter, garage: garage.slice(), pc: playerCar,
+                   vl: typeof raceVorlaufMs !== 'undefined' ? raceVorlaufMs : 0,
+                   status: $('race-status') ? $('race-status').textContent : '', now: Date.now };
+    const echt = { fin: finishRace, sp: speakLap, ch: playLapChime, rr: rennstandRunde, ls: learnSettle, fg: finishGhost, af: ghostAuslaufFertig };
+    let uhr = 0, ende = 0;
+    const lauf = (fahrten, auslaufNach) => {
+      // fahrten: [{ wer: 'P'|'N', t: ms seit Gruen, z: Kachelzaehler }] in zeitlicher Reihenfolge
+      const n = currentTrackTiles.length;
+      const P = { device: { id: 'stP' }, role: 'player', tag: 'P' };
+      const N = { device: { id: 'stN' }, role: 'ghost', tag: 'N', ghost: { running: true }, tileCount: 0 };
+      garage.length = 0; garage.push(P, N); playerCar = P;
+      garage.forEach((c) => { c.race = { laps: [], lapStart: null, pending: null, seen: 0, lastActed: 0, lastCount: null }; });
+      raceLapTimes = []; raceLapEvents = []; sectorHistory = []; ende = 0;
+      raceMode = 'laps'; raceLimit = 3; raceFlying = false; raceFormationLap = false;
+      sectorCount = 1; sectorReset();
+      const T0 = 5000000; uhr = T0;
+      raceState = 'racing'; raceGreenAt = T0; raceLapStart = null; raceAwaitingMove = true; raceAnlaufZaehler = null;
+      dashLastTileCounter = 0; dashLapStart = null;
+      if (typeof rennAnlaufSetzen === 'function') rennAnlaufSetzen(T0);
+      // Spieler 1 rollt nach 300 ms los (wie raceClockTick bei der ersten Bewegung).
+      uhr = T0 + 300; raceAwaitingMove = false; raceLapStart = uhr; raceStartedAt = uhr; raceAnlaufZaehler = 0;
+      if (typeof raceVorlaufMs !== 'undefined') raceVorlaufMs = 300;
+      for (const x of fahrten) {
+        uhr = T0 + x.t;
+        if (x.wer === 'P') { dashLastTileCounter = x.z & 0xff; playerLapCrossed(); }
+        else { N.tileCount = x.z & 0xff; N.race.lapZaehler = x.z & 0xff; carLapCrossed(N); }
+        if (raceState === 'racing' && raceLimitReached()) raceState = 'finishing';   // wie raceClockTick
+        if (ende && auslaufNach && !auslaufNach.done) {
+          // Zielflagge: wie finishRace (Uhren anhalten, NPC laeuft aus)
+          auslaufNach.done = true;
+          if (typeof rennUhrenAnhalten === 'function') rennUhrenAnhalten(true);
+          else garage.forEach((c) => { if (c.race) c.race.lapStart = null; });
+          N.ghost.auslauf = true; raceState = 'finished';
+        }
+      }
+      const feld = meisterFeldMessen({ format: 'runden' });
+      return { reihe: feld.reihe, nP: P.race && raceLapTimes.length, nN: N.race.laps.length };
+    };
+    try {
+      Date.now = () => uhr;
+      finishRace = () => { ende++; raceState = 'finished'; };
+      speakLap = () => {}; playLapChime = () => {}; rennstandRunde = () => {}; learnSettle = () => {};
+      finishGhost = () => {}; ghostAuslaufFertig = () => {};
+      currentTrackTiles = codeToTrack('SG4R4G4').tiles; trackMode = 'on';
+      const n = currentTrackTiles.length;
+      // A: hinter der Linie, NPC je Runde 0,5 s schneller
+      const a = lauf([{ wer: 'N', t: 10000, z: n }, { wer: 'P', t: 10500, z: n }, { wer: 'N', t: 20000, z: 2 * n },
+                      { wer: 'P', t: 20500, z: 2 * n }, { wer: 'N', t: 30000, z: 3 * n }, { wer: 'P', t: 30500, z: 3 * n }]);
+      m.push('A ' + a.reihe.join('>') + ' (P ' + a.nP + ', N ' + a.nN + ')');
+      if (a.nN !== 3) f.push('A: NPC hat ' + a.nN + ' statt 3 Runden (erste Ueberfahrt nach ganzer Runde nicht gezaehlt)');
+      if (a.reihe[0] !== 'c:stN') f.push('A: Sieger ' + a.reihe[0] + ' statt NPC');
+      // B: NPC startet hinten (Linie nach 2 s), Spieler 1 zuerst im Ziel, NPC mit kleinerer Rundensumme
+      const b = lauf([{ wer: 'P', t: 500, z: 1 }, { wer: 'N', t: 2000, z: 1 }, { wer: 'P', t: 10600, z: n + 1 },
+                      { wer: 'N', t: 11800, z: n + 1 }, { wer: 'P', t: 20700, z: 2 * n + 1 }, { wer: 'N', t: 21600, z: 2 * n + 1 },
+                      { wer: 'P', t: 31000, z: 3 * n + 1 }, { wer: 'N', t: 31400, z: 3 * n + 1 }], {});
+      m.push('B ' + b.reihe.join('>') + ' (P ' + b.nP + ', N ' + b.nN + ')');
+      if (b.reihe[0] !== 'c:stP') f.push('B: Sieger ' + b.reihe[0] + ' statt Spieler 1 (zuerst im Ziel)');
+      if (b.nN !== 3) f.push('B: NPC-Auslaufrunde nicht gezaehlt (' + b.nN + ' statt 3)');
+      // C: NPC gewinnt, Spieler 1 kommt danach - der Sieger bekommt im Auslauf keine vierte Runde
+      const c = lauf([{ wer: 'N', t: 10000, z: n }, { wer: 'P', t: 10500, z: n }, { wer: 'N', t: 20000, z: 2 * n },
+                      { wer: 'P', t: 20500, z: 2 * n }, { wer: 'N', t: 30000, z: 3 * n }, { wer: 'P', t: 30500, z: 3 * n },
+                      { wer: 'N', t: 40000, z: 4 * n }], {});
+      m.push('C ' + c.reihe.join('>') + ' (P ' + c.nP + ', N ' + c.nN + ')');
+      if (c.nN !== 3) f.push('C: Sieger-NPC hat nach dem Auslauf ' + c.nN + ' statt 3 Runden');
+      if (c.reihe[0] !== 'c:stN') f.push('C: Sieger ' + c.reihe[0] + ' statt NPC');
+    } catch (e) {
+      f.push('Fehler: ' + e.message);
+    } finally {
+      Date.now = merk.now;
+      finishRace = echt.fin; speakLap = echt.sp; playLapChime = echt.ch; rennstandRunde = echt.rr; learnSettle = echt.ls;
+      finishGhost = echt.fg; ghostAuslaufFertig = echt.af;
+      raceState = merk.rs; raceMode = merk.rm; raceLimit = merk.lim; raceLapTimes = merk.laps; raceLapStart = merk.ls;
+      raceStartedAt = merk.rsa; dashLapStart = merk.dl; dashLapTimes = merk.dt; raceFormationLap = merk.form;
+      raceAwaitingMove = merk.aw; raceFlying = merk.fly; currentTrackTiles = merk.tiles; trackMode = merk.tm;
+      sectorCount = merk.sc; raceLapEvents = merk.ev; raceGreenAt = merk.gr; raceAnlaufZaehler = merk.az;
+      dashLastTileCounter = merk.dc; playerCar = merk.pc; sectorHistory = []; sectorReset();
+      if (typeof raceVorlaufMs !== 'undefined') raceVorlaufMs = merk.vl;
+      garage.length = 0; merk.garage.forEach((x) => garage.push(x));
+      if ($('race-status')) $('race-status').textContent = merk.status;
+    }
+    return { ok: !f.length, mass: (f.length ? f.join(' | ') + ' || ' : '') + m.join(', ') };
+  });
+
+  // ---- v1.4.54: MEISTERSCHAFT, PRAESENTATION (WIP) ----
+  stAdd('Meisterschaft v1.4.54: Ansage-Schalter Willkommen/Intro/Sieger/Abschluss (WIP, Vorgabe an)', () => {
+    const f = [];
+    for (const [art, id] of Object.entries(MEISTER_ANSAGE_SCHALTER)) {
+      const el = $(id);
+      if (!el) { f.push(id + ' fehlt'); continue; }
+      if (!el.defaultChecked) f.push(id + ' Vorgabe nicht an');
+      if (!el.hasAttribute('data-preset-skip')) f.push(id + ' ohne data-preset-skip');
+      const label = el.closest('.opt-row') && el.closest('.opt-row').querySelector('.opt-label');
+      if (!label || !label.querySelector('.wip-tag')) f.push(id + ' ohne WIP');
+      if (!label || !label.querySelector('small')) f.push(id + ' ohne Erklaerung im small');
+      if (meisterAnsageAn[art] !== el.checked) f.push(art + ' nicht gespiegelt');
+    }
+    // Unter "Meisterschaft ansagen" (dieselbe Gruppe, direkt dahinter).
+    const haupt = $('setting-announce-meister'), erst = $('setting-announce-meister-willkommen');
+    if (haupt && erst && haupt.closest('.opt-row').nextElementSibling !== erst.closest('.opt-row')) f.push('nicht direkt unter "Meisterschaft ansagen"');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '4 Schalter unter "Meisterschaft ansagen", an, WIP, Erklaerung im small, ohne Voreinstellungen' };
+  });
+
+  stAdd('Meisterschaft v1.4.54: Event-Intro erscheint und verschwindet (3,2 s)', () => {
+    const f = [];
+    const merk = { m: meister, vs: meisterVorbeiSpielen };
+    let ton = 0;
+    try {
+      meisterVorbeiSpielen = () => { ton++; return 3; };
+      meister = { plan: meisterPlanVorgabe(), lauf: null };
+      meister.plan.events = [meisterEventNeu(), Object.assign(meisterEventNeu(), { wetter: 'rain', umfang: 12 }), meisterEventNeu()];
+      meister.lauf = Object.assign(meisterLaufNeu(), { idx: 1, fahrer: { 'c:a': { name: 'Alpha', pkt: 25 } } });
+      meister.lauf.ballast = { idx: 1, kg: { 'c:a': 50 } };
+      if (!meisterIntroZeigen(1)) f.push('Intro zeigt nichts');
+      const el = $('meister-intro');
+      if (!el || el.hidden || !el.classList.contains('an')) f.push('nicht sichtbar');
+      const kopf = ($('mi-kopf') || {}).textContent || '', zeile = ($('mi-zeile') || {}).textContent || '', extra = ($('mi-extra') || {}).textContent || '';
+      if (kopf.indexOf('2 / 3') < 0) f.push('Kopf "' + kopf + '"');
+      if (zeile.indexOf('12') < 0 || zeile.indexOf(t('Regen')) < 0) f.push('Zeile "' + zeile + '"');
+      if (extra.indexOf('Alpha') < 0 || extra.indexOf('+50 kg') < 0) f.push('Ballast "' + extra + '"');
+      if (ton !== 1) f.push('Vorbeifahrt ' + ton + '-mal');
+      const band = el && el.querySelector('.mi-band');
+      const cs = band ? getComputedStyle(band) : null;
+      if (!cs || cs.animationName !== 'mi-ein' || Math.abs(parseFloat(cs.animationDuration) - MEISTER_INTRO_MS / 1000) > 0.01) f.push('Animation ' + (cs ? cs.animationName + ' ' + cs.animationDuration : '?'));
+      if (!(MEISTER_INTRO_MS >= 2000 && MEISTER_INTRO_MS <= 4000)) f.push('Dauer ' + MEISTER_INTRO_MS);
+      if (meisterIntroTimer === null) f.push('kein Ende geplant');
+      if (getComputedStyle(el).pointerEvents !== 'none') f.push('faengt Klicks ab');
+      meisterIntroSchliessen();
+      if (!el.hidden || el.classList.contains('an')) f.push('verschwindet nicht');
+    } finally {
+      meisterIntroSchliessen();
+      meister = merk.m; meisterVorbeiSpielen = merk.vs;
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Band faehrt ein, Event 2/3, Format/Umfang/Wetter, Ballast, Vorbeifahrt, nach 3,2 s weg' };
+  });
+
+  stAdd('Meisterschaft v1.4.54: Ansagen mit richtigen Texten und Bausteinen (Attrappe)', async () => {
+    const f = [];
+    const T = (art, d, spr) => meisterAnsageTeile(art, d, spr);
+    const pruef = (name, ist, text, folge) => {
+      if (!ist) { f.push(name + ': nichts'); return; }
+      if (ist.text !== text) f.push(name + ': "' + ist.text + '" statt "' + text + '"');
+      if (folge !== undefined && JSON.stringify(ist.folge) !== JSON.stringify(folge)) f.push(name + ': ' + JSON.stringify(ist.folge));
+    };
+    pruef('Willkommen', T('willkommen', { n: 6 }, 'de'), 'Willkommen zur Meisterschaft. 6 Events stehen an.', ['m:willkommen', 'n:6', 'm:events_an']);
+    pruef('Welcome', T('willkommen', { n: 6 }, 'en'), 'Welcome to the championship. 6 events lie ahead.');
+    pruef('Willkommen 1', T('willkommen', { n: 1 }, 'de'), 'Willkommen zur Meisterschaft. Ein Event steht an.', ['m:willkommen', 'm:event_einer']);
+    const ev = Object.assign(meisterEventNeu(), { format: 'runden', umfang: 15, wetter: 'rain' });
+    pruef('Intro', T('intro', { nr: 3, von: 6, ev, ballast: true }, 'de'), 'Event 3 von 6. Rennen über 15 Runden. Bei Regen. Mit Erfolgsballast.',
+      ['m:event', 'n:3', 'm:von', 'n:6', 'm:format_runden', 'n:15', 'm:umfang_runden', 'm:wetter_regen', 'm:ballast']);
+    pruef('Intro Quali', T('intro', { nr: 1, von: 2, ev: Object.assign(meisterEventNeu(), { format: 'qualifying', umfang: 1 }) }, 'en'),
+      'Event 1 of 2. Qualifying. One minute.', ['m:event', 'n:1', 'm:von', 'n:2', 'm:format_qualifying', 'm:umfang_eine_minute']);
+    const rot = { key: 'c:p', name: 'P', rolle: 'player', farbeId: 'rot', modellId: 'porsche911', alias: '' };
+    pruef('Sieger', T('sieger', { nr: 3, x: rot }, 'de'), 'Sieger von Event 3: der rote Porsche Neun Elf von Spieler 1.',
+      ['m:sieger_event', 'n:3', 'e:farbe_rot', 'e:modell_porsche911', 'e:spieler1']);
+    const npc = { key: 'c:n', name: 'N', rolle: 'ghost', farbeId: 'blau', modellId: '', alias: '' };
+    pruef('Meister', T('abschluss', { x: npc, pkt: 75 }, 'de'), 'Meister ist der blaue Wagen mit 75 Punkten.',
+      ['m:meister_ist', 'e:farbe_blau', 'e:modell_auto', 'm:mit', 'v:number_75', 'm:punkten']);
+    const name = T('sieger', { nr: 2, x: Object.assign({}, npc, { alias: 'Max' }) }, 'en');
+    pruef('eigener Name', name, 'Winner of event 2: Max.', null);
+    // Bausteine = Manifest der Clips (tools/voice_meisterschaft.py)
+    try {
+      const m = await (await fetch('audio/meisterschaft.json', { cache: 'no-store' })).json();
+      for (const k of Object.keys(MEISTER_CLIP_TEXT)) {
+        if (!m.de[k] || !m.en[k]) f.push('Clip fehlt im Manifest: ' + k);
+        else if (m.texte.de[k] !== MEISTER_CLIP_TEXT[k][0] || m.texte.en[k] !== MEISTER_CLIP_TEXT[k][1]) f.push('Wortlaut ' + k + ' weicht ab');
+      }
+      if (Object.keys(m.de).length !== Object.keys(MEISTER_CLIP_TEXT).length) f.push('Manifest hat ' + Object.keys(m.de).length + ' Bausteine');
+    } catch (e) { f.push('Manifest nicht lesbar: ' + e.message); }
+    // Ueber die Ansagen-Warteschlange, je Art eigener Name; aus = keine Ansage.
+    const merk = { ein: rennAnsagen.einreihen, so: soundEnabled, an: Object.assign({}, meisterAnsageAn), q: ansageWarteschlange };
+    const reihe = [];
+    try {
+      rennAnsagen.einreihen = (art, prio) => { reihe.push(art + '/' + prio); return true; };
+      soundEnabled = true; ansageWarteschlange = true;
+      meisterAnsagen('willkommen', { n: 4 });
+      meisterAnsageAn.intro = false;
+      if (meisterAnsagen('intro', { nr: 1, von: 4, ev })) f.push('Intro trotz Schalter aus');
+      if (reihe.join() !== 'meister-willkommen/16') f.push('Schlange: ' + reihe.join());
+    } finally {
+      rennAnsagen.einreihen = merk.ein; soundEnabled = merk.so; ansageWarteschlange = merk.q; Object.assign(meisterAnsageAn, merk.an);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Willkommen/Intro/Sieger/Meister DE+EN, Bausteine = Manifest, Schlange je Art, Schalter aus = still' };
+  });
+
+  stAdd('Meisterschaft v1.4.54: Sieger je Rennen und Abschluss mit Fanfare und Gesamtsieger', () => {
+    const f = [];
+    const merk = { m: meister, garage: garage.slice(), store: localStorage.getItem(MEISTER_STORE), rac: raceAllCars, oeff: meisterOeffnen,
+                   rm: raceMode, ein: rennAnsagen.einreihen, so: soundEnabled, q: ansageWarteschlange, an: ansage,
+                   to: window.setTimeout, schalter: Object.assign({}, meisterAnsageAn), lg: meisterAnsageLog.length };
+    const alt = [], reihe = [];
+    try {
+      meisterOeffnen = () => {};
+      window.setTimeout = (fn, ms, ...rest) => (ms === 2500 ? 0 : merk.to.call(window, fn, ms, ...rest));
+      rennAnsagen.einreihen = (art) => { reihe.push(art); return true; };
+      ansage = (art, text) => { alt.push(art + ':' + text); return true; };
+      soundEnabled = true; ansageWarteschlange = true;
+      Object.keys(meisterAnsageAn).forEach((k) => { meisterAnsageAn[k] = true; });
+      garage.length = 0;
+      garage.push({ device: { id: 'a' }, role: 'ghost', tag: 'A' }, { device: { id: 'b' }, role: 'player', tag: 'B' });
+      raceAllCars = () => [{ name: 'A', role: 'ghost', id: 'a', farbe: '#f00', farbeId: 'rot', modellId: 'ferrari', alias: '', laps: [{ ms: 900 }, { ms: 900 }, { ms: 900 }] },
+                           { name: 'B', role: 'player', id: 'b', farbe: '#00f', farbeId: 'blau', modellId: 'audi', alias: '', laps: [{ ms: 1000 }, { ms: 1000 }] }];
+      meister = { plan: meisterPlanVorgabe(), lauf: null };
+      meister.plan.events = [meisterEventNeu(), meisterEventNeu()];
+      meister.lauf = Object.assign(meisterLaufNeu(), { laeuft: { idx: 0, modus: raceMode, seit: Date.now() }, idx: 0 });
+      meisterWerten();
+      const log1 = meisterAnsageLog.slice(merk.lg);
+      const s1 = log1.find((x) => x.art === 'sieger');
+      if (!s1 || s1.text.indexOf(meisterClipWort('sieger_event', lang === 'de' ? 'de' : 'en') + ' 1') !== 0 || s1.folge.indexOf('e:modell_ferrari') < 0) f.push('Sieger Event 1: ' + JSON.stringify(s1));
+      if (log1.some((x) => x.art === 'abschluss')) f.push('Abschluss schon nach Event 1');
+      if (!alt.length) f.push('Event-Ende-Ansage fehlt');
+      // Letztes Event: B gewinnt, A hat die schnellste Runde und bleibt Gesamtsieger (26 + 19 = 45 gegen 18 + 25 = 43).
+      raceAllCars = () => [{ name: 'A', role: 'ghost', id: 'a', farbe: '#f00', farbeId: 'rot', modellId: 'ferrari', alias: '', laps: [{ ms: 1000 }, { ms: 980 }] },
+                           { name: 'B', role: 'player', id: 'b', farbe: '#00f', farbeId: 'blau', modellId: 'audi', alias: '', laps: [{ ms: 990 }, { ms: 985 }] }];
+      meister.lauf.laeuft = { idx: 1, modus: raceMode, seit: Date.now() };
+      alt.length = 0;
+      meisterWerten();
+      const log2 = meisterAnsageLog.slice(merk.lg + log1.length);
+      const s2 = log2.find((x) => x.art === 'sieger'), ab = log2.find((x) => x.art === 'abschluss');
+      if (!s2 || s2.folge.indexOf('e:modell_audi') < 0 || s2.folge.indexOf('e:spieler1') < 0) f.push('Sieger Event 2: ' + JSON.stringify(s2));
+      const top = meisterTabelle(meister.lauf)[0];
+      if (!top || top.key !== 'c:a') f.push('Gesamtsieger ' + (top && top.key));
+      if (!ab || !ab.fanfare || ab.folge.indexOf('e:modell_ferrari') < 0 || ab.text.indexOf(' ' + top.pkt + ' ') < 0) f.push('Abschluss: ' + JSON.stringify(ab));
+      if (alt.length) f.push('"Meisterschaft vorbei" trotz Abschluss: ' + alt.join());
+      if (reihe.join() !== 'meister-sieger,meister-sieger,meister-abschluss') f.push('Schlange: ' + reihe.join());
+    } finally {
+      window.setTimeout = merk.to; rennAnsagen.einreihen = merk.ein; soundEnabled = merk.so; ansageWarteschlange = merk.q; ansage = merk.an;
+      Object.assign(meisterAnsageAn, merk.schalter);
+      meister = merk.m; raceAllCars = merk.rac; meisterOeffnen = merk.oeff; raceMode = merk.rm;
+      garage.length = 0; merk.garage.forEach((c) => garage.push(c));
+      try { if (merk.store === null) localStorage.removeItem(MEISTER_STORE); else localStorage.setItem(MEISTER_STORE, merk.store); } catch (e) { /* privat */ }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Sieger je Rennen (Farbe+Modell+Spieler), Abschluss mit Fanfare und Gesamtsieger, ersetzt "Meisterschaft vorbei"' };
+  });
+
+  stAdd('Meisterschaft v1.4.54: Vorbeifahrt mit Doppler baut ihre Knoten nur einmal', () => {
+    const f = [];
+    const merk = { k: meisterVorbei, n: meisterVorbeiBauten };
+    try {
+      if (typeof OfflineAudioContext === 'undefined') return { ok: true, mass: 'kein OfflineAudioContext', skip: true };
+      const ctx = new OfflineAudioContext(2, 44100 * 4, 44100);
+      const b = ctx.createBuffer(1, 22050, 44100);
+      const vor = meisterVorbeiBauten;
+      const n1 = meisterVorbeiSpielen({ ctx, puffer: [b], laut: 0.5 });
+      const n2 = meisterVorbeiSpielen({ ctx, puffer: [b], laut: 0.5 });
+      if (n1 !== MEISTER_VORBEI.length || n2 !== MEISTER_VORBEI.length) f.push('Vorbeifahrten ' + n1 + '/' + n2);
+      if (meisterVorbeiBauten - vor !== 1) f.push('Knoten ' + (meisterVorbeiBauten - vor) + '-mal gebaut');
+      if (!meisterVorbei || meisterVorbei.ctx !== ctx || meisterVorbei.spuren.length !== MEISTER_VORBEI.length) f.push('Kette falsch');
+      const kv = meisterVorbeiKurvenBauen();
+      if (!(kv.rate[0] > 1.08 && kv.rate[kv.rate.length - 1] < 0.92)) f.push('Doppler ' + kv.rate[0].toFixed(3) + ' -> ' + kv.rate[kv.rate.length - 1].toFixed(3));
+      const mitte = kv.laut[Math.floor(kv.laut.length / 2)];
+      if (!(mitte > kv.laut[2] * 3 && kv.laut[0] === 0)) f.push('Lautstaerke nicht am lautesten beim Vorbeifahren');
+      if (!(kv.pan[0] < -0.9 && kv.pan[kv.pan.length - 1] > 0.9)) f.push('Wanderung links-rechts fehlt');
+      if (meisterVorbeiSpielen({ ctx, puffer: [b], laut: 0 }) !== 0) f.push('Motorregler 0 spielt trotzdem');
+    } finally { meisterVorbei = merk.k; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '3 Vorbeifahrten, Knoten einmal, Doppler +13/-11 %, Lautstaerke und Panorama nach Abstand' };
+  });
+
   // ---- v1.4.33: ERFOLGSBALLAST (73-meisterschaft.js) ----
   // BESTELLT: "Autos mit mehr Punkten fahren langsamer (fuer NPCs und fuer Spielerauto), kriegen wie bei der DTM
   // frueher 'mehr Gewicht' ins Auto". Vorgabe aus (WIP), Fuehrender das Hoechstgewicht, Letzter und erstes Event 0.

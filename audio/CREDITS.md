@@ -582,3 +582,14 @@ Format (22,05 kHz Mono-Vorbis) wie die Rennereignis-Clips; keine Nutzerstimme un
 kein Onlinedienst. 91 Saetze je Sprache (Verschmutzung, Oelspur, Gelbe Flagge,
 Truemmer links/rechts je Sektor 1-10 oder ganze Bahn, Durchfahrtsstrafe und
 Tank-Leck je Spieler).
+
+## Meisterschafts-Ansagen
+
+`meister_*.ogg` (Manifest `meisterschaft.json`) werden lokal mit
+`tools/voice_meisterschaft.py` erzeugt: Piper (MIT) mit denselben Stimmen wie die
+Zahlen-, Rennereignis- und Zufallsevent-Clips, `de_DE-thorsten-medium` (Datensatz
+Thorsten-Voice, CC0) und `en_US-ljspeech-medium` (Datensatz LJ Speech, gemeinfrei).
+Dieselbe Nachbearbeitung (Funkfilter ohne Knacken aus `voice_zahlen.py`) und dasselbe
+Format wie die Rennereignis-Clips; keine Nutzerstimme und kein Onlinedienst.
+21 feste Bausteine je Sprache (Willkommen, Event-Intro, Sieger, Meister); Zahlen und
+Autonamen setzt die App aus den vorhandenen Zahlen- und Rennstand-Clips zusammen.

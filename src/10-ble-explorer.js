@@ -4262,6 +4262,15 @@
     "Letzter": "Last",
     "1. Event": "1st event",
     "Ballast": "Ballast",
+    "Meisterschaft: Willkommen": "Championship: welcome",
+    "Vor dem ersten Event: „Willkommen zur Meisterschaft“ mit der Zahl der Events.": "Before the first event: “Welcome to the championship” with the number of events.",
+    "Meisterschaft: Event-Intro": "Championship: event intro",
+    "Beim Start jedes Events: welches Event, Format, Umfang, Wetter und ob Erfolgsballast gilt. Die kurze Einblendung mit vorbeifahrenden Autos kommt immer.": "At the start of each event: which event, format, length, weather and whether success ballast applies. The short overlay with passing cars always appears.",
+    "Meisterschaft: Sieger je Rennen": "Championship: winner of each race",
+    "Nach jedem Rennen mit Punkten: wer es gewonnen hat. Nach der Ergebnisansage, nie hinein.": "After each race with points: who won it. After the result announcement, never into it.",
+    "Meisterschaft: Abschluss": "Championship: finale",
+    "Nach dem letzten Event die Fanfare und der Meister mit seinen Punkten (statt des Satzes „Meisterschaft vorbei“).": "After the last event the fanfare and the champion with their points (instead of the sentence “Championship over”).",
+    "Erfolgsballast: {n} +{kg} kg": "Success ballast: {n} +{kg} kg",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -5867,6 +5876,15 @@
     "Letzter": "Último",
     "1. Event": "1.er evento",
     "Ballast": "Lastre",
+    "Meisterschaft: Willkommen": "Campeonato: bienvenida",
+    "Vor dem ersten Event: „Willkommen zur Meisterschaft“ mit der Zahl der Events.": "Antes del primer evento: «Bienvenidos al campeonato» con el número de eventos.",
+    "Meisterschaft: Event-Intro": "Campeonato: intro del evento",
+    "Beim Start jedes Events: welches Event, Format, Umfang, Wetter und ob Erfolgsballast gilt. Die kurze Einblendung mit vorbeifahrenden Autos kommt immer.": "Al empezar cada evento: qué evento, formato, duración, tiempo y si hay lastre de éxito. La breve animación con coches pasando aparece siempre.",
+    "Meisterschaft: Sieger je Rennen": "Campeonato: ganador de cada carrera",
+    "Nach jedem Rennen mit Punkten: wer es gewonnen hat. Nach der Ergebnisansage, nie hinein.": "Tras cada carrera con puntos: quién la ganó. Después del anuncio de resultados, nunca dentro.",
+    "Meisterschaft: Abschluss": "Campeonato: final",
+    "Nach dem letzten Event die Fanfare und der Meister mit seinen Punkten (statt des Satzes „Meisterschaft vorbei“).": "Tras el último evento, la fanfarria y el campeón con sus puntos (en lugar de la frase «Campeonato terminado»).",
+    "Erfolgsballast: {n} +{kg} kg": "Lastre de éxito: {n} +{kg} kg",
   };
 
   // ============================================================================

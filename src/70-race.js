@@ -177,6 +177,11 @@
   let raceStartedAt = null;
   // Zeitpunkt von Gruen (stehender Start). Die Reihenstaffel der Ghosts zaehlt davon.
   let raceGreenAt = null;
+  // v1.4.54: Zeit von Gruen bis zum Beginn der ersten gewerteten Runde von Spieler 1 (Reaktion, Anlauf bis
+  // zur Linie). Die anderen Autos tragen sie in car.race.vorlauf. Die Wertung (Ergebnis, Uebersicht,
+  // Meisterschaft) rechnet Vorlauf + Rundensumme = Zeit seit Gruen bis zur letzten Ueberfahrt, damit bei
+  // gleicher Rundenzahl gewinnt, wer zuerst ueber die Linie kam - und nicht, wer weiter hinten losfuhr.
+  let raceVorlaufMs = 0;
   let raceClockTimer = null;
 
   // Was in der Rundenkachel steht. Drei Faelle, und der dritte ist der Grund fuer diese
@@ -614,6 +619,7 @@
       raceAwaitingMove = false;
       raceLapStart = rennZeitJetzt();
       raceStartedAt = rennZeitJetzt();
+      raceVorlaufMs = raceGreenAt !== null ? Math.max(0, raceLapStart - raceGreenAt) : 0;
       // Die Kachel, auf der das Auto beim Start steht: eine Ziellinie darauf ist keine Runde.
       dashLapZaehler = dashLastTileCounter;
       raceAnlaufZaehler = trackMode === 'on' ? dashLastTileCounter : null;
@@ -757,6 +763,8 @@
       if (now - r.lastActed < TILE_REPEAT_BLOCK_MS) return;
       r.lastActed = now;
       if (trackMode !== 'off' && r.lapZaehler !== null && b[11] === r.lapZaehler) {
+        // v1.4.54: steht das Auto beim Start auf Start/Ziel, beginnt Runde 1 hier (Vorlauf bis hierher).
+        if (r.anlauf && r.lapStart !== null) r.vorlauf = Math.max(0, now - r.anlauf.seit);
         if (r.lapStart !== null) r.lapStart = now;
         if (r.sek && r.sek.start !== null) r.sek.start = now;
         if (r.as && r.as.z !== null && r.as.i === 0) r.as.start = now;
@@ -809,11 +817,14 @@
     // ersten (dem Stehenbleiben mitten auf der Bahn).
     if (raceState === 'finished' && car.ghost && car.ghost.auslauf) {
       car.ghost.auslauf = false;
-      if (car !== playerCar) autoSekAutoRunde(r, now, r.lapStart !== null);
-      if (r.lapStart !== null) {
+      // v1.4.54: im Rundenrennen nur, wer die Zielrunde noch nicht hat (der Sieger faehrt keine Extrarunde).
+      const zielSchon = raceMode === 'laps' && r.laps.length >= raceLimit + fruehstartZielPlus(spielerPlatzVonRolle(car.role));
+      if (car !== playerCar) autoSekAutoRunde(r, now, r.lapStart !== null && !zielSchon);
+      if (r.lapStart !== null && !zielSchon) {
         r.laps.push({ lap: r.laps.length + 1, ms: now - r.lapStart, off: r.offLap || 0, crossedAt: now });
       }
       r.lapStart = null;
+      r.anlauf = null;
       finishGhost(car);
       ghostAuslaufFertig();
       return;
@@ -832,6 +843,28 @@
       if (car !== playerCar) autoSekAutoRunde(r, now, false);
       formationUeberfahrt(String(car.device.id));
       return;
+    }
+    // v1.4.54 GEMELDET: "Meisterschaft hat einen Bug: Entweder beim NPC wird eine Runde nicht gezaehlt, oder
+    // Spieler 1 gewinnt immer, auch wenn er auf Platz 2 steht." Ursache: Spieler 1 entscheidet bei seiner
+    // ersten Ueberfahrt, ob sie Anlauf war (weniger als eine halbe Strecke seit dem Start, playerLapCrossed)
+    // oder schon eine ganze Runde. Hier stand lapStart beim Start auf null, die erste Ueberfahrt eines NPCs
+    // (und von Spieler 2/3) zaehlte deshalb NIE - wer hinter der Linie stand (Auslauf des letzten Events,
+    // Ausdruck-Modus, von Hand hingestellt), verlor eine ganze Runde und Spieler 1 gewann mit einer Runde mehr.
+    // Jetzt dieselbe Regel: lapStart ab Gruen (rennAnlaufSetzen), und die erste Ueberfahrt ist Anlauf nur
+    // bei weniger als einer halben Strecke (Kachelzaehler) bzw. ohne Zaehler unter rundeMinMs().
+    if (r.anlauf) {
+      const a = r.anlauf;
+      r.anlauf = null;
+      const nK = currentTrackTiles ? currentTrackTiles.length : 0;
+      const z = r.lapZaehler !== null && r.lapZaehler !== undefined ? r.lapZaehler : car.tileCount;
+      const mitZaehler = trackMode === 'on' && nK >= 3 && a.zaehler !== null && typeof z === 'number';
+      if (mitZaehler ? ((z - a.zaehler) & 0xff) < nK / 2 : now - a.seit < rundeMinMs()) {
+        if (car !== playerCar) autoSekAutoRunde(r, now, false);
+        // Mit Zaehler beginnt Runde 1 an der Linie (wie Spieler 1, v1.0.36), die Zeit bis hierher ist Vorlauf;
+        // ohne laeuft die Uhr weiter.
+        if (mitZaehler) { r.vorlauf = Math.max(0, now - a.seit); r.lapStart = now; }
+        return;
+      }
     }
     // ---- SEKTOREN JE AUTO ------------------------------------------------------
     //
@@ -970,6 +1003,10 @@
                                    laps: (c.role === 'player' && raceLapTimes.length)
                                      ? raceLapTimes
                                      : (c.race && c.race.laps) || [],
+                                   // v1.4.54: Gruen bis Beginn der ersten Runde (siehe raceVorlaufMs).
+                                   vorlauf: (c.role === 'player' && raceLapTimes.length)
+                                     ? raceVorlaufMs
+                                     : (c.race && c.race.vorlauf) || 0,
                                    // Sektorzeiten je vollendete Runde: Spielerauto aus
                                    // sectorHistory, alle anderen aus car.race.sek.
                                    sektoren: c.role === 'player'
@@ -979,7 +1016,7 @@
       // Ohne Garage gibt es kein Geraet und damit keine Farbe: dann bleibt das Feld leer,
       // statt eine zu erfinden.
       out.unshift({ name: 'Spielerauto', role: 'player', farbe: null, kennung: null,
-                    laps: raceLapTimes, sektoren: sectorHistory });
+                    laps: raceLapTimes, sektoren: sectorHistory, vorlauf: raceVorlaufMs });
     }
     return out;
   }
@@ -1300,9 +1337,10 @@
     // Ranking depends on the mode. Endurance and Runden: most laps, then quickest to get
     // there. Qualifying: the single fastest lap, nothing else.
     const scored = cars.map(c => ({ c, st: raceStats(c.laps) }));
+    // v1.4.54: bei gleicher Rundenzahl die Zeit seit Gruen (Vorlauf + Summe), also wer zuerst ueber die Linie kam.
     scored.sort((a, b) => raceMode === 'qualifying'
       ? a.st.best - b.st.best
-      : (b.st.n - a.st.n) || (a.st.total - b.st.total));
+      : (b.st.n - a.st.n) || ((a.st.total + (a.c.vorlauf || 0)) - (b.st.total + (b.c.vorlauf || 0))));
 
     const fastest = Math.min(...scored.map(x => x.st.best));
     $('race-results-body').innerHTML = scored.map((x, i) => {
@@ -2320,6 +2358,21 @@
     return true;
   }
 
+  // v1.4.54: beim Gruen (stehender Start) laeuft die Uhr aller anderen Autos ab jetzt, ihre erste Ueberfahrt
+  // entscheidet carLapCrossed() wie bei Spieler 1 (Anlauf oder ganze Runde). Beim fliegenden Start setzt
+  // endFormationLap() die Uhren, dort gibt es keinen Anlauf.
+  function rennAnlaufSetzen(jetzt) {
+    raceVorlaufMs = 0;
+    garage.forEach((c) => {
+      if (!c.race) return;
+      c.race.vorlauf = 0;
+      c.race.anlauf = null;
+      if (raceFlying || c === playerCar) return;
+      c.race.lapStart = jetzt;
+      c.race.anlauf = { seit: jetzt, zaehler: typeof c.tileCount === 'number' ? c.tileCount : null };
+    });
+  }
+
   // Alles, was beim Gruen passiert. Eine Funktion, zwei Aufrufer: der Countdown und das
   // freie Training, das ihn ueberspringt.
   function raceGreen() {
@@ -2343,6 +2396,7 @@
     raceLapStart = null;
     raceAwaitingMove = true;
     raceAnlaufZaehler = null;
+    rennAnlaufSetzen(rennZeitJetzt());
     // In einer Challenge faehrt man allein: keine Ghosts.
     const imChallenge = typeof challengeLaeuft === 'function' && challengeLaeuft();
     if (!imChallenge) launchGhosts();   // green means green for everyone
@@ -2458,6 +2512,17 @@
 
   // `auslaufen` = die Ghosts duerfen ihre angefangene Runde zu Ende fahren. Vorgabe ja;
   // requestRaceStop() uebergibt ausdruecklich false.
+  // v1.4.54: die Uhren beim Rennende anhalten - ausser bei NPCs, die ihre Runde noch zu Ende fahren. Hier
+  // wurden ALLE auf null gesetzt, und carLapCrossed() wertet die Auslaufrunde nur mit laufender Uhr: die
+  // letzte Runde eines NPCs, der nach Spieler 1 ueber die Linie kam, fehlte im Ergebnis (das Ziel dort sagt
+  // ausdruecklich "Die Runde wird noch GEWERTET").
+  function rennUhrenAnhalten(willAuslaufen) {
+    garage.forEach((c) => {
+      if (!c.race) return;
+      const rollt = willAuslaufen && c.role === 'ghost' && c.ghost && !c.parked && !c.ghost.finish;
+      if (!rollt) c.race.lapStart = null;
+    });
+  }
   function finishRace(auslaufen) {
     rennPauseBeenden();
     if (raceState === 'finished') return; // Ergebnisansage nur einmal planen.
@@ -2494,7 +2559,7 @@
     raceLapStart = null;
     raceAwaitingMove = false;
     dashLapStart = null;
-    garage.forEach(c => { if (c.race) c.race.lapStart = null; });
+    rennUhrenAnhalten(auslaufen !== false);
     // Whatever happened, the formation lap is over and its speed limit goes with it.
     if (raceFormationLap) {
       raceFormationLap = false;
@@ -3818,6 +3883,7 @@
     if ((raceState === 'racing' || raceState === 'finishing') && raceAwaitingMove && !raceFormationLap) {
       raceAwaitingMove = false;
       raceLapStart = now; raceStartedAt = now;
+      raceVorlaufMs = raceGreenAt !== null ? Math.max(0, now - raceGreenAt) : 0;
       if (dashLapStart !== null) dashLapStart = now;
       autoSekSync(autoSekSp, dashLapZaehler, now);
       return false;
@@ -3854,6 +3920,7 @@
       if (nK >= 3 && gefahren < nK / 2) {
         log('Startlinie nach ' + gefahren + ' Kacheln: Anlauf, Runde 1 beginnt jetzt.', 'info');
         raceLapStart = now;
+        raceVorlaufMs = raceGreenAt !== null ? Math.max(0, now - raceGreenAt) : raceVorlaufMs;
         if (dashLapStart !== null) dashLapStart = now;
         autoSekSync(autoSekSp, dashLapZaehler, now);
         return false;
@@ -7460,7 +7527,8 @@
     // Rennens und das Ergebnis danach nicht verschiedene Sieger nennen.
     const mit = cars.map((c) => {
       const ms = c.laps.map((l) => l.ms);
-      return { c, n: ms.length, summe: ms.reduce((a, b) => a + b, 0),
+      // v1.4.54: summe ab Gruen (Vorlauf + Runden), damit Uebersicht, Ergebnis und Meisterschaft denselben Platz nennen.
+      return { c, n: ms.length, summe: ms.reduce((a, b) => a + b, 0) + (ms.length ? (c.vorlauf || 0) : 0),
                letzte: ms.length ? ms[ms.length - 1] : null,
                beste: ms.length ? Math.min.apply(null, ms) : null };
     });
