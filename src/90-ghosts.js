@@ -4735,7 +4735,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // v1.4.52: ein Fahrerauto, das fuer den Autopiloten neben der Bahn steht, hoert genauso zu wie ein
     // geparkter NPC (spielerSchuettelBereit, 50-drive.js).
     const spielerNr = car.parked ? 0 : (typeof spielerSchuettelBereit === 'function' ? spielerSchuettelBereit(car) : 0);
-    if (!car.parked && !spielerNr) { sh.quiet = []; sh.base = null; sh.parkedAt = 0; return; }
+    // v1.4.54 (Latenz): je Meldung jedes fahrenden Autos stand hier "sh.quiet = []" - eine Allokation fuer ein
+    // Feld, das niemand liest. Jetzt nur zuruecksetzen, wenn es etwas zurueckzusetzen gibt.
+    if (!car.parked && !spielerNr) { if (sh.base !== null || sh.parkedAt) { sh.base = null; sh.parkedAt = 0; } return; }
     if (!sh.parkedAt) sh.parkedAt = rennZeitJetzt();
 
     // ---- DER RUHEWERT IST DAS MINIMUM, NICHT DER MEDIAN DER ERSTEN 1,2 SEKUNDEN ----
@@ -5168,6 +5170,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // Zieltempo 0, Querlage +1. Damit stimmt er in der Simulation und auf dem Teppich, und die
   // Quertraegheit blendet den Versatz von selbst weich ein - bei querTempo 2,0 in rund 0,5 s.
   const PIT_RAND = 1.0;          // voller Versatz nach RECHTS (Byte 7 positiv = rechts)
+  // v1.4.54 GEMELDET (1.4.53): "Einparken zu nah am Rand." Der Tankort "Streckenrand ueber Querlage"
+  // (npcTankort 'rand') zog mit voller Querlage bis an die Kante. Jetzt 75 % davon, also rund ein Viertel
+  // weniger Querweg - dieselbe Groessenordnung wie die kalibrierte Einparkfolge (SC_EIN_RECHTS, -24 %).
+  // Gerade steht das Auto dort von selbst: die Querlage fuehrt die Firmware an der Spur, ohne Radeinschlag.
+  const PIT_RAND_ORT = 0.75;
+  function pitRandQuer(p) { return p && p.ort === 'rand' ? PIT_RAND_ORT : PIT_RAND; }
   // ---- DIE BREMSPHASE IST EINE ZEIT UND KEINE SCHWELLE -------------------------------
   //
   // ZWEI ANLAEUFE HABEN DAS FALSCH GEMACHT, und die Messung sagt warum. Erst stand hier
@@ -5450,9 +5458,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!amPlatz && pitVorbeiNoetig(car)) return PIT_VORBEI;
     if (p.phase === 'raus') {
       const f = Math.max(0, 1 - (rennZeitJetzt() - p.at) / PIT_RAUS_MS);
-      return PIT_RAND * f;
+      return pitRandQuer(p) * f;
     }
-    return PIT_RAND;
+    return pitRandQuer(p);
   }
 
   // Das Zieltempo, das der Boxenstopp verlangt, oder null. formationPace() ist genau der
@@ -5779,6 +5787,20 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // gefahren im Ausdruck-Modus mit einem anderen Auto; im Rennen faehrt das Safety Car auf der Bahn, und
   // dort kommt es damit spaeter in Fahrt. Darum ein Faktor auf das Gas der Ausparkfolge (Regler im
   // Safety-Car-Menue, Vorgabe 1,5); die Lenkung und die Zeiten bleiben genau die der Aufnahme.
+  // ---- EINPARKEN KALIBRIERT (v1.4.54) -------------------------------------------------------
+  // GEMELDET (Test am Geraet, 1.4.53): "Einparken zu nah am Rand und Gegenlenken zu wenig -> kalibrieren."
+  // Gilt fuer das Safety Car (scEinPassend) und die NPC-Box mit Einparkfolge (pitTick); die Aufstellung
+  // faehrt weiter die Aufnahme selbst (aufstellSkript, eigener Gasregler). Im 2D-Modell (Einspurmodell,
+  // auf die Aufnahme "Mitte -> Randstreifen = 12,5 cm" kalibriert, Startgas 0,30 bzw. 0,42 gleich):
+  //   Aufnahme:      Querversatz 12,6 cm, Endkurs +3,3 Grad (zum Rand hin schraeg)
+  //   kalibriert:    Querversatz  9,6 cm (-24 %), Endkurs -0,8 Grad (parallel), Rollweg +0,04 Teile
+  // SC_EIN_RECHTS: Faktor auf den Rechtseinschlag (Lenkwerte > 0) - weniger Kurswinkel, also weniger Querweg.
+  // SC_EIN_GEGEN_MS: der zweite Gegenlenk-Block (voll links, ab 1080 ms der Aufnahme) haelt so viel laenger,
+  // alles ab SC_EIN_GEGEN_ENDE rueckt um diese Zeit nach hinten. Voll eingeschlagen ist er schon, staerker
+  // geht nur laenger. Einmal beim Laden gebaut, im Takt nichts zu rechnen.
+  const SC_EIN_RECHTS = 0.88, SC_EIN_GEGEN_MS = 40, SC_EIN_GEGEN_ENDE = 1212;
+  const SC_EIN_FOLGE = MANOEVER.scEin.map(([ms, lenk, gas]) =>
+    [ms >= SC_EIN_GEGEN_ENDE ? ms + SC_EIN_GEGEN_MS : ms, lenk > 0 ? lenk * SC_EIN_RECHTS : lenk, gas]);
   const SC_AUS_GAS_VORGABE = 1.5;
   function scAusGas() { return einparkWert('sc-aus-gas', SC_AUS_GAS_VORGABE, 1, 3); }
   if ($('sc-aus-gas')) {
@@ -5997,7 +6019,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       }
       if (g.tileIndex === pk) {
         p.phase = 'einparken'; p.at = now;
-        const sk = MANOEVER.scEin;
+        const sk = SC_EIN_FOLGE;
         randHaltStarten(car, { phase: 'skript', quer: 0, skript: sk, anpassMs: MANOEVER_ANPASS_MS,
           vonDrive: letztesGas(car, sk[0][2]), haltMs: 500, sofort: true, ohneStopp: true,
           fertig: (c) => npcBoxStehen(c) });
@@ -6011,7 +6033,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // langsames Auto (kleines tempoAnteil) erreicht die Breite erst spaeter; ein
       // schnelles faehrt nach dem Erreichen die restliche Mindestzeit am Rand weiter.
       const seit = now - p.at;
-      const amRand = (g.querSoll || 0) >= PIT_RAND_TARGET;
+      // v1.4.54: relativ zur verlangten Querlage (PIT_RAND_ORT), sonst waere 0,95 nie erreicht.
+      const amRand = (g.querSoll || 0) >= pitRandQuer(p) * PIT_RAND_TARGET;
       if ((seit >= randWegMs(PIT_RAND_MS) && amRand) || seit >= PIT_RAND_MAX_MS) {
         p.phase = 'halt'; p.at = now;
         log(garageLabel(car) + ': am Rand, bremst ab.', 'info');
@@ -6137,16 +6160,27 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
   // Querlage v (rechts positiv) auf der Aussenseite der Kurve auf ghostCfg.npcQuer begrenzen, innen voll.
   // Ohne Ort die gerade gemeldete Kachel. Im Takt: keine Allokation, kein DOM.
+  // v1.4.54: auch die INNENSEITE nicht ganz bis an die Kante. GEMELDET (1.4.53, 1 Spieler + 1 NPC): "NPC flog ab."
+  // Gemessen (headless, Vorgabe innen3, Kippwert-Deckel 1): die Linie liegt in Kurven auf bis zu 17 % der Runde
+  // bei Querlage 1,0 innen, also an der Innenkante (Querlage 1,0 = Rand, wie PIT_RAND). Ein kleiner Ueberschwinger
+  // des Bordreglers und der Sensor liest innen neben der Bahn. Jetzt hoechstens NPC_INNEN_MAX, gewichtet mit der
+  // stetigen Kurvenseite wie die Aussenseite (bei Seite 0 keine Grenze, also auch hier kein Sprung).
+  const NPC_INNEN_MAX = 0.95;
   function npcQuerBegrenzen(car, v, ph) {
+    if (!v) return v;
     const f = ghostCfg.npcQuer;
-    if (!(f < 1) || !v) return v;
     const g = car && car.ghost;
     let seite = 0;
     if (g && g.tileIndex !== null && g.tileIndex !== undefined) {
       seite = npcKurvenSeite(g.tileIndex, ph === undefined ? ghostTilePhase(car) : ph);
     } else if (car) seite = ghostTurnOf(car.tileCode);
-    if (!(v * seite < 0)) return v;
-    return v * (1 - (1 - f) * Math.min(1, Math.abs(seite)));
+    const s = Math.min(1, Math.abs(seite));
+    if (v * seite > 0) {
+      const max = 1 - (1 - NPC_INNEN_MAX) * s;
+      return v > max ? max : (v < -max ? -max : v);
+    }
+    if (!(f < 1) || !(v * seite < 0)) return v;
+    return v * (1 - (1 - f) * s);
   }
   function npcBoxStehen(car) {
     const p = car.ghost && car.ghost.pit;
@@ -7105,7 +7139,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   //   nicht reicht, wird das Gas gestaucht - als Notfall-Untergrenze (hoechstens auf die Haelfte).
   const EINPARK_RESERVE = 0.2;
   function scEinPassend(k, vonDrive) {
-    const sk = MANOEVER.scEin;
+    const sk = SC_EIN_FOLGE;
     const gerade = scGeradenAb(k);
     const vor = einparkFreiZaehlen(k, -1, EINPARK_VORLAUF_MAX);
     const D = scRollweg(sk, vonDrive);

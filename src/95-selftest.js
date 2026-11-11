@@ -285,8 +285,9 @@
       // 3. VOLL AUSGENUTZT MITTEN IM KURVENZUG: mit zwei weiteren gleichsinnigen Kacheln
       //    voraus ist der Mittelwert exakt die volle Querlage (alle drei Kacheln des Fensters
       //    drehen gleich). Die NPC-Querlage (npcQuerFaktor) begrenzt seit v1.3.132 nur die
-      //    AUSSENSEITE; die Linie liegt hier innen und ist damit voll (1).
-      if (Math.abs(proTile[4] - 1) > 1e-6 || Math.abs(proTile[5] - 1) > 1e-6) {
+      //    AUSSENSEITE; die Linie liegt hier innen und ist damit voll - seit v1.4.54 bis NPC_INNEN_MAX
+      //    (nicht ganz an die Innenkante).
+      if (Math.abs(proTile[4] - NPC_INNEN_MAX) > 1e-3 || Math.abs(proTile[5] - NPC_INNEN_MAX) > 1e-3) {
         schlecht.push('nicht voll ausgenutzt mitten im Kurvenzug: ' + proTile[4] + ',' + proTile[5]);
       }
       // 4. WEICHER ABSTIEG zum Kurvenende hin, aus demselben Grund wie der Anstieg.
@@ -329,12 +330,14 @@
       // 1. HART: die Kurve steht von der ALLERERSTEN Kachel an auf voller Staerke, kein
       //    Uebergang wie bei dreiStufenLine (dort erst nach SPUR_EIN aussen). Die NPC-Querlage
       //    (npcQuerFaktor) begrenzt seit v1.3.132 nur die AUSSENSEITE: in der Kurve (innen) voll,
-      //    am Ende der Geraden davor (aussen) hoechstens der Faktor.
+      //    am Ende der Geraden davor (aussen) hoechstens der Faktor. Seit v1.4.54 heisst "voll" innen
+      //    NPC_INNEN_MAX (nicht ganz an die Innenkante).
       const qF = npcQuerFaktor();
-      if (!proTile[3].every((v) => v === 1)) {
+      const voll = (v) => Math.abs(v - NPC_INNEN_MAX) <= 1e-3;
+      if (!proTile[3].every(voll)) {
         schlecht.push('Kurve (Kachel 3) innen nicht durchgehend voll: ' + proTile[3].join(','));
       }
-      if (!proTile[6].every((v) => v === 1)) {
+      if (!proTile[6].every(voll)) {
         schlecht.push('Kurve (Kachel 6) innen nicht durchgehend voll: ' + proTile[6].join(','));
       }
       const aussenMax = Math.max(...proTile[5].map((v) => (v < 0 ? -v : 0)));
@@ -360,7 +363,7 @@
   });
 
   // v1.3.132: NPC-Querlage begrenzt nur die AUSSENSEITE, der Wert kommt aus ghostCfg (kein DOM im Takt).
-  stAdd('NPC-Querlage v1.3.132: aussen begrenzt, innen voll, Wert gecacht', () => {
+  stAdd('NPC-Querlage v1.3.132/1.4.54: aussen begrenzt, innen hoechstens NPC_INNEN_MAX, Wert gecacht', () => {
     const f = [];
     const el = $('npc-querlage');
     const merk = { tiles: currentTrackTiles, wert: el ? el.value : null };
@@ -371,11 +374,13 @@
       if (String(npcQuerBegrenzen).indexOf('$(') >= 0) f.push('npcQuerBegrenzen liest das DOM');
       currentTrackTiles = codeToTrack('SG2RG2L').tiles;          // 0 S, 1-2 G, 3 R, 4-5 G, 6 L
       const auto = (k) => ({ ghost: { tileIndex: k }, tileCode: currentTrackTiles[k].type });
-      // Rechtskurve: innen = rechts (+) voll, aussen = links (-) auf den Faktor.
-      if (npcQuerBegrenzen(auto(3), 1, 0.5) !== 1) f.push('R innen begrenzt: ' + npcQuerBegrenzen(auto(3), 1, 0.5));
+      // Rechtskurve: innen = rechts (+) bis NPC_INNEN_MAX (v1.4.54, nicht an die Innenkante), aussen = links (-) auf den Faktor.
+      if (!(NPC_INNEN_MAX >= 0.9 && NPC_INNEN_MAX < 1)) f.push('NPC_INNEN_MAX ' + NPC_INNEN_MAX);
+      if (Math.abs(npcQuerBegrenzen(auto(3), 1, 0.5) - NPC_INNEN_MAX) > 1e-9) f.push('R innen ' + npcQuerBegrenzen(auto(3), 1, 0.5) + ' statt NPC_INNEN_MAX');
+      if (npcQuerBegrenzen(auto(3), 0.6, 0.5) !== 0.6) f.push('R innen unter der Grenze veraendert');
       if (Math.abs(npcQuerBegrenzen(auto(3), -1, 0.5) + 0.8) > 1e-6) f.push('R aussen ' + npcQuerBegrenzen(auto(3), -1, 0.5) + ' statt -0,8');
       // Linkskurve spiegelbildlich.
-      if (npcQuerBegrenzen(auto(6), -1, 0.5) !== -1) f.push('L innen begrenzt');
+      if (Math.abs(npcQuerBegrenzen(auto(6), -1, 0.5) + NPC_INNEN_MAX) > 1e-9) f.push('L innen ' + npcQuerBegrenzen(auto(6), -1, 0.5));
       if (Math.abs(npcQuerBegrenzen(auto(6), 0.5, 0.5) - 0.4) > 1e-6) f.push('L aussen ' + npcQuerBegrenzen(auto(6), 0.5, 0.5) + ' statt 0,4');
       // Gerade zwischen R und L: Seite laeuft stetig von +1 nach -1, in der Mitte keine Begrenzung.
       const mitte = npcQuerBegrenzen(auto(4), -1, 1);
@@ -384,11 +389,19 @@
       if (Math.abs(npcQuerBegrenzen({ ghost: {}, tileCode: TILE_TYPE.CURVE_RIGHT }, -1) + 0.8) > 1e-6) f.push('ohne Ort nicht begrenzt');
       el.value = '1'; el.dispatchEvent(new Event('change'));
       if (npcQuerBegrenzen(auto(3), -1, 0.5) !== -1) f.push('100 %: trotzdem begrenzt');
+      // Stetig: ueber die Gerade zwischen R und L (Seite +1 -> -1) springt die Grenze nirgends.
+      let vor = null, sprung = 0;
+      for (const k of [3, 4, 5, 6]) for (let s = 0; s <= 20; s++) {
+        const w = npcQuerBegrenzen(auto(k), 1, s / 20);
+        if (vor !== null) sprung = Math.max(sprung, Math.abs(w - vor));
+        vor = w;
+      }
+      if (sprung > 0.03) f.push('Grenze springt um ' + sprung.toFixed(3));
     } finally {
       currentTrackTiles = merk.tiles;
       if (el) { el.value = merk.wert; el.dispatchEvent(new Event('change')); }
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'R/L innen 1, aussen x Faktor, Gerade stetig, Wert aus ghostCfg' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'R/L innen ' + NPC_INNEN_MAX + ', aussen x Faktor, Gerade stetig, Wert aus ghostCfg' };
   });
 
   // ---- Luuke-Linie: die fuenf verlaesslichen Beispiele treffen die vorgegebene Querlage ----
@@ -6488,7 +6501,7 @@
       const p = car.ghost.pit;
       pitTick(car);
       if (p.phase !== 'rand' || p.ort !== 'rand' || car.ghost.randHalt) f.push('faehrt nicht per Querlage an den Rand (' + p.phase + ')');
-      if (pitQuer(car) !== PIT_RAND) f.push('Querlage nicht am rechten Rand');
+      if (pitQuer(car) !== PIT_RAND_ORT) f.push("Querlage nicht PIT_RAND_ORT (" + pitQuer(car) + ")");
       p.at = rennZeitJetzt() - PIT_RAND_MAX_MS - 1; pitTick(car);
       if (p.phase !== 'halt') f.push('haelt nicht an (' + p.phase + ')');
       p.at = rennZeitJetzt() - PIT_BREMS_MS - 1; pitTick(car);
@@ -6922,6 +6935,46 @@
     // Korrektur nach 1.2.66: Gran Accelerato wird genauso durchgereicht.
     if (String(chAnwenden).indexOf("pm === 'pacejka' || GRAN_MODI.includes(pm) ? pm : 'physik'") < 0) f.push('Challenge erzwingt weiter Physik (Pacejka/Gran/Assetto)');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bahn ohne Derby, Ausdruck ohne Time Attack, Spieler 2 eigenes Preset, Pacejka-Challenges' };
+  });
+
+  // v1.4.54 GEMELDET: "Einparken zu nah am Rand und Gegenlenken zu wenig -> kalibrieren." Dasselbe grobe
+  // 2D-Einspurmodell wie bei der Abstimmung (Tempo = Gas x 1,51 m/s x 1,7, Gierrate = Tempo x Lenkung / 0,592 m,
+  // Servo 40 ms): die kalibrierte Folge endet 15-30 % weniger weit rechts als die Aufnahme und parallel zur Bahn.
+  stAdd('Einparken v1.4.54: weniger weit zum Rand, am Ende parallel (Modell), SC und NPC-Box mit der kalibrierten Folge', () => {
+    const f = [];
+    const modell = (sk, von) => {
+      let y = 0, h = 0, lenk = 0;
+      const dauer = MANOEVER_ANPASS_MS + manoeverDauer(sk), dt = 5;
+      for (let t = 0; t <= dauer + 50; t += dt) {
+        let l, g;
+        if (t < MANOEVER_ANPASS_MS) { l = 0; g = von + (sk[0][2] - von) * t / MANOEVER_ANPASS_MS; }
+        else { const w = manoeverWert(sk, t - MANOEVER_ANPASS_MS); l = w[1]; g = w[2]; }
+        lenk += (l - lenk) * (1 - Math.exp(-dt / 40));
+        const v = g * 1.51 * 1.7;
+        h += v * lenk / 0.592 * dt / 1000;
+        y += v * Math.sin(h) * dt / 1000;
+      }
+      return { quer: y * 100, kurs: h * 180 / Math.PI };
+    };
+    const zeilen = [];
+    for (const von of [0.30, 0.42]) {
+      const alt = modell(MANOEVER.scEin, von), neu = modell(SC_EIN_FOLGE, von);
+      const anteil = neu.quer / alt.quer;
+      zeilen.push(von.toFixed(2) + ': ' + alt.quer.toFixed(1) + ' cm/' + alt.kurs.toFixed(1) + ' Grad -> ' + neu.quer.toFixed(1) + ' cm/' + neu.kurs.toFixed(1) + ' Grad');
+      if (!(alt.kurs > 2)) f.push('Modell: Aufnahme endet nicht schraeg zum Rand (' + alt.kurs.toFixed(1) + ')');
+      if (!(anteil >= 0.70 && anteil <= 0.85)) f.push('Querversatz ' + Math.round(anteil * 100) + ' % der Aufnahme (Ziel 70-85 %)');
+      if (!(Math.abs(neu.kurs) <= 1.5)) f.push('Endkurs ' + neu.kurs.toFixed(1) + ' Grad (Ziel +-1,5)');
+    }
+    if (SC_EIN_FOLGE.length !== MANOEVER.scEin.length || manoeverDauer(SC_EIN_FOLGE) !== manoeverDauer(MANOEVER.scEin) + SC_EIN_GEGEN_MS) f.push('Folge nicht aus der Aufnahme abgeleitet');
+    if (SC_EIN_FOLGE.some((p, i) => p[2] !== MANOEVER.scEin[i][2])) f.push('Gas der Folge veraendert');
+    const merk = currentTrackTiles;
+    try {
+      currentTrackTiles = codeToTrack('SG4RG4').tiles;
+      if (scEinPassend(0, scParkTempo()).skript !== SC_EIN_FOLGE) f.push('Safety Car ohne kalibrierte Folge');
+    } finally { currentTrackTiles = merk; }
+    if (String(pitTick).indexOf('const sk = SC_EIN_FOLGE') < 0) f.push('NPC-Box ohne kalibrierte Folge');
+    if (!(PIT_RAND_ORT >= 0.7 && PIT_RAND_ORT <= 0.8) || pitRandQuer({ ort: 'rand' }) !== PIT_RAND_ORT || pitRandQuer({ ort: 'folge' }) !== PIT_RAND) f.push('Tankort Rand: Querlage ' + PIT_RAND_ORT);
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : zeilen.join('; ') + '; Tankort Rand Querlage ' + PIT_RAND_ORT };
   });
 
   stAdd('Boxen v1.2.4: Minigame-Haken nur bei richtig, mechanische Signale, NPC-Box wie Safety Car, SC-Parken passt', () => {
@@ -15509,7 +15562,7 @@
     const P = r.jePhase;
     const echt = r.folge.filter(Boolean);
     if (echt.join('>') !== 'anfahrt>einparken>stand>raus') fehler.push('Folge ' + echt.join('>'));
-    const soll = (MANOEVER_ANPASS_MS + manoeverDauer(MANOEVER.scEin) + 500) / 45;
+    const soll = (MANOEVER_ANPASS_MS + manoeverDauer(SC_EIN_FOLGE) + 500) / 45;
     if (!P.einparken || !(Math.abs(P.einparken.takte - soll) <= 12)) fehler.push('Einparken ' + (P.einparken ? P.einparken.takte : '?') + ' Takte, erwartet rund ' + Math.round(soll));
     if (!(P.stand && P.stand.dunkel > 0)) fehler.push('kein Blinken im Stand');
     if (r.geparkt) fehler.push('parkt sich waehrend des Stopps selbst');
