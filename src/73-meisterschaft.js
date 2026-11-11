@@ -184,7 +184,8 @@
     const info = {};
     const lokal = raceAllCars().filter((c) => meisterDarfMit(c.role)).map((c) => {
       const ms = (c.laps || []).map((l) => l.ms);
-      let total = ms.reduce((a, b) => a + b, 0);
+      // v1.4.54: ab Gruen (Vorlauf bis zur ersten Runde), wie Ergebnis und Uebersicht.
+      let total = ms.reduce((a, b) => a + b, 0) + (ms.length ? (c.vorlauf || 0) : 0);
       // Verpasste Pflichtstopps: fuer jedes gesteuerte Auto (Spieler 1-3), v1.0.12.
       const platz = typeof spielerPlatzVonRolle === 'function' ? spielerPlatzVonRolle(c.role) : 0;
       if (platz && typeof strafeMsVon === 'function') total += strafeMsVon(platz);

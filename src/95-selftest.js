@@ -25090,6 +25090,100 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Q -> Aufstellung, Fehler gemeldet, 26/18 Punkte, Fuehrender hinten, Zufall fest, Abbruch = 0' };
   });
 
+  // ---- v1.4.54: MEISTERSCHAFT, WER GEWINNT (Wertung mit echten Rundenfunktionen) ----
+  // GEMELDET: "Entweder beim NPC wird eine Runde nicht gezaehlt, oder Spieler 1 gewinnt immer, auch wenn er auf
+  // Platz 2 steht." Nachgestellt mit playerLapCrossed/carLapCrossed und einer gestellten Uhr:
+  //   A  beide stehen hinter der Linie (erste Ueberfahrt nach einer ganzen Runde), der NPC ist schneller
+  //   B  der NPC startet weiter hinten, Spieler 1 ist zuerst im Ziel, der NPC hat die kleinere Rundensumme
+  //   C  Spieler 1 gewinnt, der NPC kommt danach ins Ziel: seine Auslaufrunde zaehlt, der Sieger faehrt keine Extrarunde
+  stAdd('Meisterschaft v1.4.54: Wertung - NPC-Runden gezaehlt, Sieger wer zuerst im Ziel ist', () => {
+    const f = [], m = [];
+    const merk = { rs: raceState, rm: raceMode, lim: raceLimit, laps: raceLapTimes.slice(), ls: raceLapStart, rsa: raceStartedAt,
+                   dl: dashLapStart, dt: dashLapTimes.slice(), form: raceFormationLap, aw: raceAwaitingMove, fly: raceFlying,
+                   tiles: currentTrackTiles, tm: trackMode, sc: sectorCount, ev: raceLapEvents.slice(), gr: raceGreenAt,
+                   az: raceAnlaufZaehler, dc: dashLastTileCounter, garage: garage.slice(), pc: playerCar,
+                   vl: typeof raceVorlaufMs !== 'undefined' ? raceVorlaufMs : 0,
+                   status: $('race-status') ? $('race-status').textContent : '', now: Date.now };
+    const echt = { fin: finishRace, sp: speakLap, ch: playLapChime, rr: rennstandRunde, ls: learnSettle, fg: finishGhost, af: ghostAuslaufFertig };
+    let uhr = 0, ende = 0;
+    const lauf = (fahrten, auslaufNach) => {
+      // fahrten: [{ wer: 'P'|'N', t: ms seit Gruen, z: Kachelzaehler }] in zeitlicher Reihenfolge
+      const n = currentTrackTiles.length;
+      const P = { device: { id: 'stP' }, role: 'player', tag: 'P' };
+      const N = { device: { id: 'stN' }, role: 'ghost', tag: 'N', ghost: { running: true }, tileCount: 0 };
+      garage.length = 0; garage.push(P, N); playerCar = P;
+      garage.forEach((c) => { c.race = { laps: [], lapStart: null, pending: null, seen: 0, lastActed: 0, lastCount: null }; });
+      raceLapTimes = []; raceLapEvents = []; sectorHistory = []; ende = 0;
+      raceMode = 'laps'; raceLimit = 3; raceFlying = false; raceFormationLap = false;
+      sectorCount = 1; sectorReset();
+      const T0 = 5000000; uhr = T0;
+      raceState = 'racing'; raceGreenAt = T0; raceLapStart = null; raceAwaitingMove = true; raceAnlaufZaehler = null;
+      dashLastTileCounter = 0; dashLapStart = null;
+      if (typeof rennAnlaufSetzen === 'function') rennAnlaufSetzen(T0);
+      // Spieler 1 rollt nach 300 ms los (wie raceClockTick bei der ersten Bewegung).
+      uhr = T0 + 300; raceAwaitingMove = false; raceLapStart = uhr; raceStartedAt = uhr; raceAnlaufZaehler = 0;
+      if (typeof raceVorlaufMs !== 'undefined') raceVorlaufMs = 300;
+      for (const x of fahrten) {
+        uhr = T0 + x.t;
+        if (x.wer === 'P') { dashLastTileCounter = x.z & 0xff; playerLapCrossed(); }
+        else { N.tileCount = x.z & 0xff; N.race.lapZaehler = x.z & 0xff; carLapCrossed(N); }
+        if (raceState === 'racing' && raceLimitReached()) raceState = 'finishing';   // wie raceClockTick
+        if (ende && auslaufNach && !auslaufNach.done) {
+          // Zielflagge: wie finishRace (Uhren anhalten, NPC laeuft aus)
+          auslaufNach.done = true;
+          if (typeof rennUhrenAnhalten === 'function') rennUhrenAnhalten(true);
+          else garage.forEach((c) => { if (c.race) c.race.lapStart = null; });
+          N.ghost.auslauf = true; raceState = 'finished';
+        }
+      }
+      const feld = meisterFeldMessen({ format: 'runden' });
+      return { reihe: feld.reihe, nP: P.race && raceLapTimes.length, nN: N.race.laps.length };
+    };
+    try {
+      Date.now = () => uhr;
+      finishRace = () => { ende++; raceState = 'finished'; };
+      speakLap = () => {}; playLapChime = () => {}; rennstandRunde = () => {}; learnSettle = () => {};
+      finishGhost = () => {}; ghostAuslaufFertig = () => {};
+      currentTrackTiles = codeToTrack('SG4R4G4').tiles; trackMode = 'on';
+      const n = currentTrackTiles.length;
+      // A: hinter der Linie, NPC je Runde 0,5 s schneller
+      const a = lauf([{ wer: 'N', t: 10000, z: n }, { wer: 'P', t: 10500, z: n }, { wer: 'N', t: 20000, z: 2 * n },
+                      { wer: 'P', t: 20500, z: 2 * n }, { wer: 'N', t: 30000, z: 3 * n }, { wer: 'P', t: 30500, z: 3 * n }]);
+      m.push('A ' + a.reihe.join('>') + ' (P ' + a.nP + ', N ' + a.nN + ')');
+      if (a.nN !== 3) f.push('A: NPC hat ' + a.nN + ' statt 3 Runden (erste Ueberfahrt nach ganzer Runde nicht gezaehlt)');
+      if (a.reihe[0] !== 'c:stN') f.push('A: Sieger ' + a.reihe[0] + ' statt NPC');
+      // B: NPC startet hinten (Linie nach 2 s), Spieler 1 zuerst im Ziel, NPC mit kleinerer Rundensumme
+      const b = lauf([{ wer: 'P', t: 500, z: 1 }, { wer: 'N', t: 2000, z: 1 }, { wer: 'P', t: 10600, z: n + 1 },
+                      { wer: 'N', t: 11800, z: n + 1 }, { wer: 'P', t: 20700, z: 2 * n + 1 }, { wer: 'N', t: 21600, z: 2 * n + 1 },
+                      { wer: 'P', t: 31000, z: 3 * n + 1 }, { wer: 'N', t: 31400, z: 3 * n + 1 }], {});
+      m.push('B ' + b.reihe.join('>') + ' (P ' + b.nP + ', N ' + b.nN + ')');
+      if (b.reihe[0] !== 'c:stP') f.push('B: Sieger ' + b.reihe[0] + ' statt Spieler 1 (zuerst im Ziel)');
+      if (b.nN !== 3) f.push('B: NPC-Auslaufrunde nicht gezaehlt (' + b.nN + ' statt 3)');
+      // C: NPC gewinnt, Spieler 1 kommt danach - der Sieger bekommt im Auslauf keine vierte Runde
+      const c = lauf([{ wer: 'N', t: 10000, z: n }, { wer: 'P', t: 10500, z: n }, { wer: 'N', t: 20000, z: 2 * n },
+                      { wer: 'P', t: 20500, z: 2 * n }, { wer: 'N', t: 30000, z: 3 * n }, { wer: 'P', t: 30500, z: 3 * n },
+                      { wer: 'N', t: 40000, z: 4 * n }], {});
+      m.push('C ' + c.reihe.join('>') + ' (P ' + c.nP + ', N ' + c.nN + ')');
+      if (c.nN !== 3) f.push('C: Sieger-NPC hat nach dem Auslauf ' + c.nN + ' statt 3 Runden');
+      if (c.reihe[0] !== 'c:stN') f.push('C: Sieger ' + c.reihe[0] + ' statt NPC');
+    } catch (e) {
+      f.push('Fehler: ' + e.message);
+    } finally {
+      Date.now = merk.now;
+      finishRace = echt.fin; speakLap = echt.sp; playLapChime = echt.ch; rennstandRunde = echt.rr; learnSettle = echt.ls;
+      finishGhost = echt.fg; ghostAuslaufFertig = echt.af;
+      raceState = merk.rs; raceMode = merk.rm; raceLimit = merk.lim; raceLapTimes = merk.laps; raceLapStart = merk.ls;
+      raceStartedAt = merk.rsa; dashLapStart = merk.dl; dashLapTimes = merk.dt; raceFormationLap = merk.form;
+      raceAwaitingMove = merk.aw; raceFlying = merk.fly; currentTrackTiles = merk.tiles; trackMode = merk.tm;
+      sectorCount = merk.sc; raceLapEvents = merk.ev; raceGreenAt = merk.gr; raceAnlaufZaehler = merk.az;
+      dashLastTileCounter = merk.dc; playerCar = merk.pc; sectorHistory = []; sectorReset();
+      if (typeof raceVorlaufMs !== 'undefined') raceVorlaufMs = merk.vl;
+      garage.length = 0; merk.garage.forEach((x) => garage.push(x));
+      if ($('race-status')) $('race-status').textContent = merk.status;
+    }
+    return { ok: !f.length, mass: (f.length ? f.join(' | ') + ' || ' : '') + m.join(', ') };
+  });
+
   // ---- v1.4.33: ERFOLGSBALLAST (73-meisterschaft.js) ----
   // BESTELLT: "Autos mit mehr Punkten fahren langsamer (fuer NPCs und fuer Spielerauto), kriegen wie bei der DTM
   // frueher 'mehr Gewicht' ins Auto". Vorgabe aus (WIP), Fuehrender das Hoechstgewicht, Letzter und erstes Event 0.

@@ -616,7 +616,8 @@
     const beste = zeiten.length ? Math.min.apply(null, zeiten) / 1000 : null;
     const letzte = zeiten.length ? zeiten[zeiten.length - 1] / 1000 : null;
     // v1.0.12: Gesamtzeit und Strafe fuer verpasste Pflichtstopps (Meisterschaft des Leiters).
-    const summe = imRennen ? zeiten.reduce((a, b) => a + b, 0) : null;
+    // v1.4.54: ab Gruen (Vorlauf bis zur ersten Runde), wie die lokale Wertung.
+    const summe = imRennen ? zeiten.reduce((a, b) => a + b, 0) + (zeiten.length && typeof raceVorlaufMs === 'number' ? raceVorlaufMs : 0) : null;
     const strafe = imRennen && typeof racePenaltyMs === 'function' ? racePenaltyMs() : null;
     // Fruehstart-Zusatzrunde (v1.3.132): eine Runde weniger melden, solange sie nicht gefahren ist -
     // die anderen Telefone pruefen das Ziel gegen raceLimit (mpZielPruefen), der Host kennt kein Feld dafuer.
