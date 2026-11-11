@@ -11936,6 +11936,10 @@
       kStapel = [];
       showTab('home');
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'x', bubbles: true }));
+      // v1.4.65: die Taste auch wieder loslassen. Ohne keyup lief das Flaggen-Halten weiter
+      // und setzte eine Sekunde spaeter in einem fremden Test Gelb (Zwei-Spieler- und
+      // NPC-Tests rot, Auto 2 mit NaN).
+      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'x', bubbles: true }));
       if (kAktiverTab() !== 'fahren') f.push('Taste auf dem Titel fuehrt nach ' + kAktiverTab() + ' statt nach Fahren');
       konsoleReiterSchritt(1);
       if (kAktiverTab() !== 'challenges') f.push('R1 im Fahren-Schirm fuehrt nach ' + kAktiverTab());
@@ -11967,6 +11971,7 @@
       if (!$('sub-mp-pc').contains($('mp-rows'))) f.push('Rangliste fehlt beim Weg ueber den PC');
       if ((konsoleReiterInnen() || []).length !== 2) f.push('Mehrspieler: zweite Leiste hat nicht 2 Wege');
     } finally {
+      flagHoldRelease(false);
       showSubpage('');
       kStapel = merkStapel;
       if (merk) showTab(merk);
@@ -26385,6 +26390,11 @@
         // konnte nicht bis zu seinem Urteil kommen.
         r = { ok: false, mass: 'Ausnahme: ' + (e && e.message ? e.message : String(e)) };
       }
+      // v1.4.65: ein Test, der x/Enter oder den Flaggenknopf drueckt und nicht loslaesst,
+      // liess das Flaggen-Halten weiterlaufen; eine Sekunde spaeter setzte es mitten in einem
+      // fremden Test Gelb (danach Zwei-Spieler- und NPC-Tests rot, Auto 2 mit NaN). Ohne
+      // Wirkung, wenn nichts gehalten wird.
+      flagHoldRelease(false);
       const urteil = r.skip ? ['?', 'st-skip'] : r.ok ? ['ok', 'st-ok'] : ['FEHLER', 'st-bad'];
       if (r.skip) offen++; else if (r.ok) gut++; else schlecht++;
       const tr = rows.children[i];
