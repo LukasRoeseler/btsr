@@ -6463,7 +6463,8 @@
       const dt = Math.max(0, Math.min(0.5, (now - fuelLastTickTime) / 1000));
       const fuelBefore = fuel;
       // zevVerbrauch: 2 bei einem Tank-Leck (Zufallsevents), sonst 1 - ein Array-Zugriff je Takt.
-      fuel = Math.max(0, fuel - Math.abs(throttle) * dt * fuelDrainPerSec * zevVerbrauch[1]);
+      // v1.4.54: setupVerbrauch = Motorkennfeld aus dem Setup (98i-setup.js), sonst 1.
+      fuel = Math.max(0, fuel - Math.abs(throttle) * dt * fuelDrainPerSec * zevVerbrauch[1] * (physEngine.state.setupVerbrauch || 1));
       // Edge-triggered: without this it would rumble again on every 45ms heartbeat.
       if (fuelBefore > 0 && fuel <= 0) {
         padRumble(0.2, 0.12, 160, 'meldung');
@@ -6499,7 +6500,7 @@
       // dieselbe Sache - und ungleiche Regeln waeren schlimmer als keine, das ist die
       // Zusage, unter der dieser Modus gebaut ist.
       z.tank.stand = Math.max(0, z.tank.stand
-                                   - Math.abs(throttle) * dt * fuelDrainPerSec * zevVerbrauch[z.nr]);
+                                   - Math.abs(throttle) * dt * fuelDrainPerSec * zevVerbrauch[z.nr] * (z.motor.state.setupVerbrauch || 1));
       // Flankengetriggert, wie bei Auto 1: ohne das brummte es in jedem 45-ms-Takt neu.
       if (vorher > 0 && z.tank.stand <= 0) {
         padRumble(0.2, 0.12, 160, 'meldung', z.nr);
