@@ -1464,11 +1464,29 @@
   const WX_REGEN_MIN_MS = 30000;
   const WX_REGEN_MAX_MS = 90000;
   let wxWechselAt = null;
+  // Wetter mit Startwert (v1.5.x): ein fester Seed (Konsole: omegasim-wx-seed) macht den Wetterplan
+  // reproduzierbar - dieselbe Strecke, dasselbe Wetter. Seed 0 = zufaellig wie bisher. mulberry32 wie in
+  // 60d-virtuell.js (vfZufall), damit es derselbe Zahlenstrom ist.
+  let wxSeed = (() => { try { const v = +localStorage.getItem('omegasim-wx-seed'); return Number.isFinite(v) && v > 0 ? v : 0; } catch (e) { return 0; } })();
+  let wxRng = null;
+  function wxZufall() {
+    if (!wxSeed) return Math.random();
+    if (!wxRng) {
+      let a = wxSeed >>> 0;
+      wxRng = () => {
+        a = (a + 0x6D2B79F5) >>> 0;
+        let t = Math.imul(a ^ (a >>> 15), a | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    return wxRng();
+  }
 
   function wxWechselPlanen(nass) {
     const min = nass ? WX_REGEN_MIN_MS : WX_TROCKEN_MIN_MS;
     const max = nass ? WX_REGEN_MAX_MS : WX_TROCKEN_MAX_MS;
-    wxWechselAt = rennZeitJetzt() + min + Math.random() * (max - min);
+    wxWechselAt = rennZeitJetzt() + min + wxZufall() * (max - min);
   }
 
   // Ein eigener Takt, unabhaengig vom Rennen. Der Aufruf aus raceClockTick() bleibt, er
@@ -1502,7 +1520,7 @@
       while (t < total && liste.length < 200) {
         const min = nass ? WX_REGEN_MIN_MS : WX_TROCKEN_MIN_MS;
         const max = nass ? WX_REGEN_MAX_MS : WX_TROCKEN_MAX_MS;
-        let d = min + Math.random() * (max - min);
+        let d = min + wxZufall() * (max - min);
         if (erste && zeitRennen) d = Math.min(d, raceLimit * 60000 * 0.5);
         erste = false;
         t += d;
@@ -1511,7 +1529,7 @@
       }
     } else if (raceWxChange) {
       const total = zeitRennen ? raceLimit * 60000 : 5 * 60000;
-      liste.push({ abMs: Math.round(total * (0.35 + Math.random() * 0.3)), wetter: raceWxStart === 'rain' ? 'dry' : 'rain' });
+      liste.push({ abMs: Math.round(total * (0.35 + wxZufall() * 0.3)), wetter: raceWxStart === 'rain' ? 'dry' : 'rain' });
     }
     return liste;
   }
@@ -4217,11 +4235,11 @@
         // DOPPELTE GROESSE, wie gewuenscht. Und bei den Regenformen ist sie zugleich das
         // Mittel gegen Luecken: zwei Formen im Abstand 0,18 mit Radius um 0,25 ueberlappen
         // sich sicher.
-        basis: (regen ? 0.2 : 0.17) + Math.random() * (regen ? 0.15 : 0.11),
-        l: regen ? -WX_AUS - i * WX_ABSTAND : Math.random() * 2 - 1,
-        quer: (Math.random() * 2 - 1) * (regen ? 0.7 : 1.0),
-        tempo: regen ? WX_REGEN_V : 0.055 + Math.random() * 0.05,
-        deck: regen ? 1 : 0.09 + Math.random() * 0.07,
+        basis: (regen ? 0.2 : 0.17) + wxZufall() * (regen ? 0.15 : 0.11),
+        l: regen ? -WX_AUS - i * WX_ABSTAND : wxZufall() * 2 - 1,
+        quer: (wxZufall() * 2 - 1) * (regen ? 0.7 : 1.0),
+        tempo: regen ? WX_REGEN_V : 0.055 + wxZufall() * 0.05,
+        deck: regen ? 1 : 0.09 + wxZufall() * 0.07,
         // Regenformen ziehen nur, wenn sie geschickt wurden. Ohne dieses Flag stehen sie
         // vor dem ersten Klick im Bild - genau der gemeldete Fehler.
         aktiv: !regen,
@@ -4507,10 +4525,12 @@
               farbe: '#f7d117', name: 'mittel' },
     hart:   { griff: 0.85, nass: 0.45, verschleiss: 0.4, aqua: true,
               farbe: '#f2f4f8', name: 'hart' },
+    inter:  { griff: 0.92, nass: 0.62, verschleiss: 0.7, aqua: false,
+              farbe: '#27c28b', name: 'Zwischenreifen' },
     regen:  { griff: 0.88, nass: 0.80, verschleiss: 1.0, aqua: false,
               farbe: '#2f6fd0', name: 'Regen' },
   };
-  const MISCHUNG_FOLGE = ['weich', 'mittel', 'hart', 'regen'];
+  const MISCHUNG_FOLGE = ['weich', 'mittel', 'hart', 'inter', 'regen'];
 
   // Wie stark sich die Mischungen unterscheiden. 0 = alle rechnen wie mittel, 1 = die
   // Tabelle, 2 = doppelt. EINE Interpolation gegen mittel bewegt alle Werte zugleich -

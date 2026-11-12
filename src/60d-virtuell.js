@@ -91,20 +91,40 @@
   // Himmel: ein Vollbild-Quad in NDC. Der Farbverlauf wird im WELTRAUM gerechnet und bleibt beim
   // Umsehen am Horizont (v1.3.124). Die (ungenormte) Blickrichtung ist im Bild linear - sie wird je
   // ECKE aufgespannt und interpoliert; im Pixel bleibt nur Normieren und Mischen. Die Kamerabasis kommt
-  // als Zahlen (uniform3f), ohne Arrays je Bild.
+  // als Zahlen (uniform3f), ohne Arrays je Bild. Seit v1.5.x (Quality): Sonnenscheibe und -glanz,
+  // Tageszeit-Verlauf (Horizont/Zenit als uniform), Sterne bei Nacht.
   function vfProgrammHimmel(gl) {
     const p = gl.createProgram();
     gl.attachShader(p, vfShader(gl, gl.VERTEX_SHADER,
       'attribute vec3 p; uniform vec3 right; uniform vec3 up; uniform vec3 fwd; uniform vec2 halb; varying vec3 vdir;'
       + 'void main(){ gl_Position = vec4(p, 1.0); vdir = fwd + right * (p.x * halb.x) + up * (p.y * halb.y); }'));
     gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
-      'precision mediump float; varying vec3 vdir;'
-      + 'void main(){ float h = clamp(vdir.y * inversesqrt(dot(vdir, vdir)) * 1.6 + 0.18, 0.0, 1.0);'
-      + ' gl_FragColor = vec4(mix(vec3(0.66, 0.78, 0.90), vec3(0.18, 0.36, 0.66), h), 1.0); }'));
+      'precision mediump float;\n' + VF_HP
+      + 'varying vec3 vdir;'
+      + 'uniform vec3 sonne; uniform vec3 horiz; uniform vec3 zenit; uniform vec3 sonneFarbe; uniform float stern;'
+      + 'void main(){'
+      + ' vec3 V = normalize(vdir);'
+      + ' float h = clamp(V.y * 1.6 + 0.18, 0.0, 1.0);'
+      + ' vec3 c = mix(horiz, zenit, h);'
+      // Sonnenscheibe und -glanz um die Sonnenrichtung (nur ueber dem Horizont sichtbar).
+      + ' float sd = dot(V, sonne);'
+      + ' float disc = smoothstep(0.99925, 0.99970, sd);'
+      + ' float glow = pow(max(sd, 0.0), 180.0) * 0.55 + pow(max(sd, 0.0), 14.0) * 0.28;'
+      + ' c += sonneFarbe * (disc * 1.4 + glow) * clamp(sonne.y * 3.0, 0.0, 1.0);'
+      // Sterne: Zellen auf der Himmelskugel, die meisten leer (nur jede ~600ste leuchtet).
+      + ' if (stern > 0.01) {'
+      + '   HP vec3 d = normalize(vdir);'
+      + '   HP vec3 zelle = floor(d * 42.0);'
+      + '   float hsh = fract(sin(dot(zelle, vec3(12.9898, 78.233, 37.719))) * 43758.5453);'
+      + '   float m = step(0.9982, hsh) * max(d.y, 0.0);'
+      + '   c += vec3(m) * stern; }'
+      + ' gl_FragColor = vec4(c, 1.0); }'));
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     return { p, ap: gl.getAttribLocation(p, 'p'), right: gl.getUniformLocation(p, 'right'),
-             up: gl.getUniformLocation(p, 'up'), fwd: gl.getUniformLocation(p, 'fwd'), halb: gl.getUniformLocation(p, 'halb') };
+             up: gl.getUniformLocation(p, 'up'), fwd: gl.getUniformLocation(p, 'fwd'), halb: gl.getUniformLocation(p, 'halb'),
+             sonne: gl.getUniformLocation(p, 'sonne'), horiz: gl.getUniformLocation(p, 'horiz'),
+             zenit: gl.getUniformLocation(p, 'zenit'), sonneFarbe: gl.getUniformLocation(p, 'sonneFarbe'), stern: gl.getUniformLocation(p, 'stern') };
   }
   function vfHimmel(gl) {
     const a = [-1, 1, 0, 1, 1, 0, 1, -1, 0, -1, 1, 0, 1, -1, 0, -1, -1, 0];
@@ -549,12 +569,13 @@
         'precision mediump float;\n' + VF_HP
         + 'varying HP vec2 vuv; varying HP vec3 vsp; varying vec3 vc; varying float vd; varying vec3 vv;'
         + 'uniform sampler2D tx; uniform vec3 nebel; uniform sampler2D sch; uniform float schatt; uniform float glanz;'
+        + 'uniform vec3 sonne; uniform float sonneStaerke;'
         + 'uniform float belichtung; uniform float bump; uniform HP float bias; uniform HP float biasPixel;'
         + 'vec3 filmic(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }'
         + 'HP float schTiefe(HP vec4 v){ return dot(v, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/16581375.0)); }'
         + 'void main(){'
         + ' vec4 t = texture2D(tx, vuv);'
-        + ' vec3 c = pow(t.rgb, vec3(2.2)) * vc * (vec3(0.32, 0.32, 0.34) + 0.85 * 0.9022);'
+        + ' vec3 c = pow(t.rgb, vec3(2.2)) * vc * (vec3(0.32, 0.32, 0.34) + 0.85 * max(sonne.y, 0.0) * sonneStaerke);'
         + ' float e = 1.0 - max(normalize(vv).y, 0.0); c += vec3(0.80, 0.86, 0.95) * (glanz * e * e * e * t.a);'
         + ' if (bump > 0.01) { float dU = texture2D(tx, vuv + vec2(1.0/512.0, 0.0)).r - t.r; c += vec3(dU) * bump * 0.8; }'
         // max(0): das Relief zieht an dunklen Fugen unter 0, und filmic(x < 0) kippt einzelne Kanaele
@@ -570,7 +591,7 @@
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     const u = {};
-    ['m', 'auge', 'glanz', 'tx', 'nebel', 'sch', 'schM', 'schatt', 'belichtung', 'bump', 'bias', 'biasPixel'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
+    ['m', 'auge', 'glanz', 'tx', 'nebel', 'sch', 'schM', 'schatt', 'belichtung', 'bump', 'bias', 'biasPixel', 'sonne', 'sonneStaerke'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
     return { p, u, qual: !!qual, ap: gl.getAttribLocation(p, 'p'), auv: gl.getAttribLocation(p, 'uv'), ac: gl.getAttribLocation(p, 'c') };
   }
   // Letzter Rueckfall, wenn kein Flaechenshader kompiliert: das einfache Eckfarben-Programm (VF.prog)
@@ -757,7 +778,7 @@
     gl.useProgram(P.p);
     for (let i = 0; i < 16; i++) F.pv[i] = pv[i];
     gl.uniformMatrix4fv(u.m, false, F.pv);
-    gl.uniform3f(u.nebel, 0.66, 0.78, 0.90);
+    gl.uniform3f(u.nebel, VF.nebel ? VF.nebel[0] : 0.66, VF.nebel ? VF.nebel[1] : 0.78, VF.nebel ? VF.nebel[2] : 0.90);
     if (P.einfach) {
       gl.uniformMatrix4fv(u.w, false, VF_EINS);
       gl.uniform1f(u.alf, 1.0);
@@ -775,6 +796,8 @@
       gl.uniform1f(u.belichtung, VF_BELICHTUNG);
       gl.uniform1f(u.bias, VF_SCHATTEN_BIAS);
       gl.uniform1f(u.biasPixel, VF_SCHATTEN_BIAS_PIXEL);
+      gl.uniform3f(u.sonne, VF.sonne[0], VF.sonne[1], VF.sonne[2]);
+      gl.uniform1f(u.sonneStaerke, VF.sonneStaerke === undefined ? 1 : VF.sonneStaerke);
       gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D, VF.schatte ? VF.schatte.tex : null);
       gl.activeTexture(gl.TEXTURE0);
@@ -795,7 +818,7 @@
     // im Tiefentest weg, bevor sie gerechnet werden. Damit er nirgends durch die Bahn schimmert (auch
     // nicht bei 16-Bit-Tiefe), liegt er 0,5 mm tiefer UND wird per polygonOffset nach hinten geschoben;
     // er schreibt selbst keine Tiefe. Glanz je Flaeche wie 1.3.92, der Boden nach seiner Art.
-    zeichne(F.strasse, F.txBahn, 0.16, VF_BUMP_BAHN);
+    zeichne(F.strasse, F.txBahn, VF.regen ? 0.55 : 0.16, VF_BUMP_BAHN);
     zeichne(F.rand, F.txRand, 0.10, 0);
     gl.depthMask(false);
     gl.enable(gl.POLYGON_OFFSET_FILL);
@@ -854,6 +877,22 @@
   }
   const VF_EINS = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
   const VF_OBEN = [0, 1, 0], VF_WEISS = [1, 1, 1], VF_GLAS_TINT = [0.18, 0.22, 0.27];
+  // Frustum (v1.5.x): ist ein Weltpunkt in der Kamera? marge > 1 laesst Randobjekte stehen. Der
+  // Punkt wird durch proj*view geschoben (Spaltenmajor wie uniformMatrix4fv) und in NDC geprueft.
+  function vfImSicht(pv, x, y, z, marge) {
+    const w = pv[3] * x + pv[7] * y + pv[11] * z + pv[15];
+    if (w <= 0.0001) return false;
+    const cx = (pv[0] * x + pv[4] * y + pv[8] * z + pv[12]) / w;
+    const cy = (pv[1] * x + pv[5] * y + pv[9] * z + pv[13]) / w;
+    const m = marge || 1.5;
+    return cx > -m && cx < m && cy > -m && cy < m;
+  }
+  // LOD (v1.5.x): ferne Autos verlieren den Glanz (envStaerke), das spart Shader-Arbeit und haelt
+  // den Blick aufs vordere Feld. Entfernung in Weltmetern (das Modell ist mit VF_AUTO.L skaliert).
+  function vfNpcLod(auge, x, y) {
+    const d = Math.hypot(x - auge[0], y - auge[2]);
+    return d > 30 ? 0.4 : 1;
+  }
 
   // ---- Fahren (rein, fuer den Selbsttest ohne Bild) -------------------------------------------
   // Ein Schritt: Tempo (ECHTE km/h des Modellautos, wie physEngine.state.speedKmh - die Anzeige ist
@@ -950,6 +989,16 @@
   // Geist: eine Kopie des Autos, die nach der ersten Runde die aufgezeichnete Linie abfaehrt.
   const VF_GEIST_STORE = 'omegasim-vf-geist';
   function vfGeistAn() { try { return localStorage.getItem(VF_GEIST_STORE) !== 'aus'; } catch (e) { return true; } }
+  // Geist-Linie (v1.5.x): die aufgezeichnete Linie laesst sich speichern, teilen und wieder fahren.
+  // Format: [[x, y, h, t], ...] (Weltkoordinaten, Kurs, Zeit in Sekunden). Der Speicher ist grosszuegig
+  // bemessen (eine Runde der Laengenstrecke passt), deshalb JSON mit Begrenzung auf rund 20000 Punkte.
+  const VF_GEIST_LINIE_STORE = 'omegasim-vf-geist-linie';
+  function vfGeistLinieSpeichern(a) {
+    try { localStorage.setItem(VF_GEIST_LINIE_STORE, JSON.stringify(a.length > 20000 ? a.slice(0, 20000) : a)); } catch (e) { /* privat */ }
+  }
+  function vfGeistLinieLaden() {
+    try { const v = JSON.parse(localStorage.getItem(VF_GEIST_LINIE_STORE) || 'null'); return Array.isArray(v) && v.length > 1 ? v : null; } catch (e) { return null; }
+  }
   // Die echte Neigung eines GT1 ist klein (0,5 Grad Rollen bei 1,5 g) und bei Modellgroesse unsichtbar.
   // Der Faktor vergroessert nur den AUSSCHLAG; Federraten, Daempfer und Zeitverhalten bleiben die echten.
   function vfFederSicht() {
@@ -961,6 +1010,8 @@
   // Seit v1.2.32 mit dem Tempo der Garagenstufe 1 und einem eigenen Fahrzeugmodell (siehe unten).
   const VF_NPC_STORE = 'omegasim-vf-npc';
   const VF_NPC_POOL = ['v5r', 'fmcgt4', 'boxer96', 'lynx220'];
+  // Lackfarben der NPCs (v1.5.x): jeder Gegner bekommt eine andere Karosseriefarbe.
+  const VF_LACK_FARBEN = [[0.85, 0.12, 0.10], [0.10, 0.25, 0.85], [0.95, 0.65, 0.08], [0.12, 0.60, 0.30], [0.92, 0.92, 0.94], [0.25, 0.25, 0.28], [0.55, 0.10, 0.70]];
   // v1.2.32 GEMELDET: "Die NPCs sind außerdem zu schnell und haben eine starke Neigung (sollte
   // auf Stufe 1 sein)." Gemessen auf Balkonia (1.2.31, 8 s Fahrt, drei NPCs):
   //   - Geradentempo 3,2 Modell-km/h (VF_NPC_BASE), mal 1,03 bis 3,3. Das ist 80 % Gas, mehr als
@@ -1040,6 +1091,37 @@
   function vfGrafikSetzen(id) {
     try { localStorage.setItem(VF_GRAFIK_STORE, id); } catch (e) { /* egal */ }
   }
+  // Tageszeit der virtuellen Fahrt (v1.5.x): Sonnenrichtung und Himmelsstimmung je Zeit. Nur im
+  // Quality-Modus sichtbar (Performance behaelt die alte Beleuchtung fuer schwache Handys). Mittag ist
+  // die bisherige Standardsonne (0.35, 0.9, 0.25), damit der Bestand unveraendert aussieht.
+  const VF_TAGESZEIT_STORE = 'omegasim-vf-tageszeit';
+  const VF_TAGESZEIT_MODI = [
+    { id: 'morgen', name: 'Morgen' },
+    { id: 'mittag', name: 'Mittag' },
+    { id: 'abend', name: 'Abend' },
+    { id: 'nacht', name: 'Nacht' },
+  ];
+  function vfTageszeit() {
+    try { const v = localStorage.getItem(VF_TAGESZEIT_STORE); return VF_TAGESZEIT_MODI.some((m) => m.id === v) ? v : 'mittag'; }
+    catch (e) { return 'mittag'; }
+  }
+  function vfTageszeitSetzen(id) { try { localStorage.setItem(VF_TAGESZEIT_STORE, id); } catch (e) { /* egal */ } }
+  // Licht je Tageszeit: sonne = Richtung (normalisiert, vom Licht weg), farbe = Lichtfarbe, starke = Anteil
+  // des Sonnenlichts, horiz/zenit = Himmelsverlauf, nebel = Nebel-/Dunstfarbe, stern = Sterne (0..1).
+  const VF_TAGESZEIT_LICHT = {
+    morgen: { sonne: [0.62, 0.30, -0.33], farbe: [1.00, 0.66, 0.38], starke: 0.85, horiz: [0.99, 0.68, 0.44], zenit: [0.30, 0.44, 0.72], nebel: [0.93, 0.74, 0.58], stern: 0.0 },
+    mittag: { sonne: [0.35, 0.90, 0.25], farbe: [1.00, 0.98, 0.92], starke: 1.00, horiz: [0.72, 0.82, 0.94], zenit: [0.18, 0.36, 0.66], nebel: [0.66, 0.78, 0.90], stern: 0.0 },
+    abend: { sonne: [-0.62, 0.26, 0.35], farbe: [1.00, 0.52, 0.22], starke: 0.85, horiz: [0.99, 0.50, 0.26], zenit: [0.28, 0.34, 0.60], nebel: [0.87, 0.58, 0.42], stern: 0.0 },
+    nacht: { sonne: [0.20, -0.45, 0.12], farbe: [0.55, 0.65, 0.85], starke: 0.30, horiz: [0.10, 0.12, 0.19], zenit: [0.02, 0.03, 0.08], nebel: [0.05, 0.06, 0.10], stern: 1.0 },
+  };
+  function vfTageszeitLicht() { return VF_TAGESZEIT_LICHT[vfTageszeit()] || VF_TAGESZEIT_LICHT.mittag; }
+  // Regen (v1.5.x): visuelle Nasse der Bahn (Glanz) plus fallende Streifen im Nachbild. Nur Quality;
+  // die Performance-Stufe bleibt trocken und leicht.
+  const VF_REGEN_STORE = 'omegasim-vf-regen';
+  function vfRegenAn() {
+    try { return localStorage.getItem(VF_REGEN_STORE) === 'an'; } catch (e) { return false; }
+  }
+  function vfRegenSetzen(an) { try { localStorage.setItem(VF_REGEN_STORE, an ? 'an' : 'aus'); } catch (e) { /* egal */ } }
   // v1.3.124: Grafik-Feinschliff (BESTELLT). Regler (Konsole) fuer die Bildqualitaet im Quality-Modus.
   // VF_BELICHTUNG: Gesamthelligkeit. VF_BUMP_BODEN/BAHN: Relief-Staerke (0 = aus, wenn der Boden
   // verrauscht wirkt). VF_AO_INNEN: Dunkelheit neben den Randsteinen (kleiner = dunkler).
@@ -1274,6 +1356,7 @@
         auto, modell: null, P: null, idx: startIdx, s: null, kmh: 0, motor: vfNpcMotor(), bahn: null,
         offset: (k % 2 === 0) ? 3.0 : -3.0,
         faktor: 0.97 + 0.03 * k,
+        lack: VF_LACK_FARBEN[k % VF_LACK_FARBEN.length],
         x: 0, y: 0, h: 0, raddreh: 0, lenkWinkel: 0, ay: 0, ax: 0,
         feder: { z: 0, vz: 0, th: 0, vth: 0, ph: 0, vph: 0 },
         koLeben: 3, koAus: false, derbyHealth: 100, derbyKills: 0, derbyAus: false,
@@ -1445,15 +1528,21 @@
         + 'varying vec2 vuv; varying vec3 vn; varying float vd; varying vec3 vv; varying HP vec3 vsp;'
         + 'uniform sampler2D tx; uniform vec3 tint; uniform float emis; uniform float alpha; uniform float am; uniform float licht; uniform vec3 nebel;'
         + 'uniform float klar; uniform float glas; uniform sampler2D sch; uniform float schatt; uniform HP float bias;'
+        + 'uniform vec3 sonne; uniform float sonneStaerke;'
+        + 'uniform vec3 horiz; uniform vec3 zenit; uniform float envStaerke;'
         + 'vec3 filmic(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }'
         + 'HP float schTiefe(HP vec4 v){ return dot(v, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/16581375.0)); }'
-        + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 N = normalize(vn); vec3 L = normalize(vec3(0.35, 0.9, 0.25));'
+        + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 N = normalize(vn); vec3 L = normalize(sonne);'
         + ' vec3 V = normalize(vv); float d = max(dot(N, L), 0.0); vec3 R = reflect(-L, N); float rv = max(dot(R, V), 0.0);'
         + ' vec3 amb = mix(vec3(0.30, 0.27, 0.23), vec3(0.55, 0.68, 0.90), N.y * 0.5 + 0.5);'
         + ' float sheen = pow(max(dot(N, normalize(L + V)), 0.0), 64.0) * 0.45;'
-        + ' float l = mix(1.0, 0.30 + 0.72 * d, licht);'
+        + ' float l = mix(1.0, 0.30 + 0.72 * d * sonneStaerke, licht);'
         + ' vec3 c = pow(t.rgb, vec3(2.2)) * tint * (amb * 0.55 + l + emis);'
-        + ' c += vec3(pow(rv, 24.0) * 0.60 * licht + sheen * licht);'
+        + ' c += vec3(pow(rv, 24.0) * 0.60 * licht * sonneStaerke + sheen * licht * sonneStaerke);'
+        // Umgebungsreflexion: die Karosserie spiegelt den Himmel (der vom Tageslicht abhaengt), stark
+        // bei streifendem Blick (Fresnel) - so wirkt der Lack wie eine polierte Oberflaeche.
+        + ' vec3 Re = reflect(-V, N); vec3 envc = mix(horiz, zenit, clamp(Re.y * 1.6 + 0.18, 0.0, 1.0));'
+        + ' c += envc * envStaerke * pow(1.0 - max(dot(N, V), 0.0), 5.0);'
         + ' c += vec3(0.05, 0.06, 0.07) * klar * pow(rv, 6.0) * 1.2;'
         + ' c += vec3(pow(1.0 - max(dot(N, V), 0.0), 5.0) * glas * 0.9);'
         + ' c = pow(filmic(c * 1.05), vec3(1.0/2.2));'
@@ -1465,7 +1554,7 @@
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     const u = {};
-    ['m', 'w', 'nm', 'tx', 'tint', 'emis', 'alpha', 'am', 'licht', 'nebel', 'auge', 'klar', 'glas', 'sch', 'schM', 'schatt', 'bias'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
+    ['m', 'w', 'nm', 'tx', 'tint', 'emis', 'alpha', 'am', 'licht', 'nebel', 'auge', 'klar', 'glas', 'sch', 'schM', 'schatt', 'bias', 'sonne', 'sonneStaerke', 'horiz', 'zenit', 'envStaerke'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
     // Feste Zwischenspeicher fuer die Matrizen je Teil (keine Float32Array je Teil und Bild).
     return { p, u, qual: !!qual, f16: new Float32Array(16), f9: new Float32Array(9), pv: new Float32Array(16), schM: new Float32Array(16),
              ap: gl.getAttribLocation(p, 'p'), an: gl.getAttribLocation(p, 'n'), auv: gl.getAttribLocation(p, 'uv') };
@@ -1519,8 +1608,10 @@
     return [2 / (r - l), 0, 0, 0, 0, 2 / (t - b), 0, 0, 0, 0, -2 / (f - n), 0,
             -(r + l) / (r - l), -(t + b) / (t - b), -(f + n) / (f - n), 1];
   }
-  // Sonnenrichtung (vom Licht weg, wie im Autoshader beleuchtet): normalize(0.35, 0.9, 0.25).
+  // Sonnenrichtung (vom Licht weg, wie im Autoshader beleuchtet): normalize(0.35, 0.9, 0.25). Mit einer
+  // gewaehlten Tageszeit (Quality) kommt die Richtung aus VF.sonne; ohne bleibt die Standardsonne.
   function vfSonne() {
+    if (VF.sonne) return VF.sonne;
     const v = [0.35, 0.9, 0.25], l = Math.hypot(v[0], v[1], v[2]);
     return [v[0] / l, v[1] / l, v[2] / l];
   }
@@ -1617,7 +1708,152 @@
     gl.disableVertexAttribArray(SP.ap);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
+  // ---- Nachbearbeitung (v1.5.x, nur Quality): Bloom + AgX-Tonemapping ---------------------------
+  // BESTELLT: "So schoen wie moeglich" fuer den Quality-Modus. Die Szene wird zuerst in ein
+  // Framebuffer gerendert (statt direkt auf den Schirm), dann im Nachbild: helle Stellen (Sonne,
+  // Scheinwerfer, Lichter) werden abgeschnitten und weichgezeichnet (Bloom, auf halber Aufloesung),
+  // addiert, und das Ganze durch ein AgX-artiges Tonemapping mit leichtem Kontrast/Saettigung gefuehrt.
+  // Die Performance-Stufe zeichnet direkt wie bisher. Scheitert das Framebuffer, faellt die Fahrt
+  // automatisch auf den Direktweg zurueck (VF.nach = null).
+  function vfProgrammNach(gl, art) {
+    const p = gl.createProgram();
+    gl.attachShader(p, vfShader(gl, gl.VERTEX_SHADER,
+      'attribute vec3 p; varying vec2 vuv;'
+      + 'void main(){ gl_Position = vec4(p, 1.0); vuv = p.xy * 0.5 + 0.5; }'));
+    let fs, unis;
+    if (art === 'hell') {
+      // Helldurchgang: Pixel ueber der Schwelle abschneiden und nach Luminanz drosseln (halbe Aufloesung).
+      fs = 'precision mediump float; varying vec2 vuv; uniform sampler2D szene; uniform float schwelle;'
+        + 'void main(){ vec3 c = texture2D(szene, vuv).rgb; float l = dot(c, vec3(0.2126, 0.7152, 0.0722));'
+        + ' gl_FragColor = vec4(max(c - vec3(schwelle), 0.0) / (1.0 + l), 1.0); }';
+      unis = ['szene', 'schwelle'];
+    } else if (art === 'blur') {
+      // Weichzeichnung: 9 Abtastpunkte auf einer Linie (waagrecht oder senkrecht), Gewichte einer Gausskurve.
+      fs = 'precision mediump float; varying vec2 vuv; uniform sampler2D tx; uniform vec2 richtung;'
+        + 'void main(){ vec2 t = richtung * 0.5;'
+        + ' vec3 c = texture2D(tx, vuv).rgb * 0.227027;'
+        + ' c += (texture2D(tx, vuv + t * 1.3846).rgb + texture2D(tx, vuv - t * 1.3846).rgb) * 0.3162162;'
+        + ' c += (texture2D(tx, vuv + t * 3.2308).rgb + texture2D(tx, vuv - t * 3.2308).rgb) * 0.0702703;'
+        + ' gl_FragColor = vec4(c, 1.0); }';
+      unis = ['tx', 'richtung'];
+    } else {
+      // Schlussbild: Szene + weichgezeichneter Bloom, AgX-artige Kurve, Kontrast/Saettigung, Vignette,
+      // und (bei Regen) fallende Streifen im Bildvordergrund.
+      fs = 'precision mediump float; varying vec2 vuv; uniform sampler2D szene; uniform sampler2D bloom;'
+        + 'uniform float bloomStaerke; uniform float belichtung; uniform float kontrast; uniform float saettigung;'
+        + 'uniform float zeit; uniform float regen;'
+        + 'void main(){'
+        + ' vec3 c = texture2D(szene, vuv).rgb * belichtung;'
+        + ' c += texture2D(bloom, vuv).rgb * bloomStaerke;'
+        // AgX-artige Kurve: weiche Schulter (die hellen Spitzen laufen weich aus), leicht anheben.
+        + ' c = (c * (1.18 * c + 0.06)) / (c * (1.15 * c + 0.52) + 0.10);'
+        + ' float l = dot(c, vec3(0.2126, 0.7152, 0.0722));'
+        + ' c = mix(vec3(l), c, saettigung);'
+        + ' c = (c - 0.5) * kontrast + 0.5;'
+        + ' if (regen > 0.001) {'
+        + '   vec2 p = vuv * vec2(9.0, 34.0);'
+        + '   float yi = floor(p.y);'
+        + '   float r = fract(sin(dot(vec2(floor(p.x), yi), vec2(12.9898, 78.233))) * 43758.5453);'
+        + '   float fy = fract(p.y - zeit * (16.0 + r * 22.0));'
+        + '   float drop = step(0.975, fract(p.x)) * smoothstep(0.0, 0.12, fy) * (1.0 - smoothstep(0.12, 1.0, fy));'
+        + '   c += vec3(0.85, 0.9, 1.0) * drop * regen * 0.35; }'
+        + ' float d = distance(vuv, vec2(0.5)); c *= 1.0 - 0.32 * d * d;'
+        + ' gl_FragColor = vec4(max(c, 0.0), 1.0); }';
+      unis = ['szene', 'bloom', 'bloomStaerke', 'belichtung', 'kontrast', 'saettigung', 'zeit', 'regen'];
+    }
+    gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    const u = { ap: gl.getAttribLocation(p, 'p') };
+    unis.forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
+    return { p, u, art };
+  }
+  // Ein Farb-Framebuffer (Textur + Tiefe) in der Groesse w x h. Liefert null, wenn das Framebuffer
+  // unvollstaendig bleibt (dann keine Nachbearbeitung).
+  function vfFbo(gl, w, h) {
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    const rb = gl.createRenderbuffer();
+    gl.bindRenderbuffer(gl.RENDERBUFFER, rb);
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, w, h);
+    const fbo = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rb);
+    const ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    if (!ok) return null;
+    return { fbo, tex, w, h };
+  }
+  // Nachbearbeitung einmal je Fahrt einrichten (Quality). Die Szene wird in VF.nach.szene gerendert,
+  // der Bloom in zwei halb-aufloesende Texturen (Ping-Pong).
+  function vfNachBauen(gl, w, h) {
+    const hw = Math.max(2, w >> 1), hh = Math.max(2, h >> 1);
+    const szene = vfFbo(gl, w, h), hell = vfFbo(gl, hw, hh), weich = vfFbo(gl, hw, hh);
+    if (!szene || !hell || !weich) return null;
+    try {
+      return { szene, hell, weich, hw, hh, w, h,
+               pHell: vfProgrammNach(gl, 'hell'), pBlur: vfProgrammNach(gl, 'blur'), pFinal: vfProgrammNach(gl, 'final'),
+               quad: vfHimmel(gl) };
+    } catch (e) { return null; }
+  }
   // Daten einmal je Sitzung und Auto holen (fetch: ueber file:// nicht ladbar, dann bleibt der Kasten).
+  // Der Nachbild-Durchgang: Szene -> hell (Threshold, halbe Aufloesung) -> weichzeichnen (Ping-Pong) ->
+  // Schlussbild auf den Schirm. Nur Quality; der Direktweg bleibt unberuehrt.
+  function vfNachMalen(gl, N, w, h) {
+    gl.disable(gl.DEPTH_TEST);
+    gl.disable(gl.BLEND);
+    gl.bindBuffer(gl.ARRAY_BUFFER, N.quad.b);
+    gl.enableVertexAttribArray(N.pHell.u.ap);
+    // 1. Helldurchgang: Szene -> hell.
+    gl.bindFramebuffer(gl.FRAMEBUFFER, N.hell.fbo);
+    gl.viewport(0, 0, N.hw, N.hh);
+    gl.useProgram(N.pHell.p);
+    gl.uniform1i(N.pHell.u.szene, 0);
+    gl.uniform1f(N.pHell.u.schwelle, 0.80);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, N.szene.tex);
+    gl.vertexAttribPointer(N.pHell.u.ap, 3, gl.FLOAT, false, 12, 0);
+    gl.drawArrays(gl.TRIANGLES, 0, N.quad.n);
+    // 2. Weichzeichnen: waagrecht hell->weich, dann senkrecht weich->hell (Ping-Pong).
+    gl.useProgram(N.pBlur.p);
+    gl.uniform1i(N.pBlur.u.tx, 0);
+    gl.vertexAttribPointer(N.pBlur.u.ap, 3, gl.FLOAT, false, 12, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, N.weich.fbo);
+    gl.uniform2f(N.pBlur.u.richtung, 1.0 / N.hw, 0.0);
+    gl.bindTexture(gl.TEXTURE_2D, N.hell.tex);
+    gl.drawArrays(gl.TRIANGLES, 0, N.quad.n);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, N.hell.fbo);
+    gl.uniform2f(N.pBlur.u.richtung, 0.0, 1.0 / N.hh);
+    gl.bindTexture(gl.TEXTURE_2D, N.weich.tex);
+    gl.drawArrays(gl.TRIANGLES, 0, N.quad.n);
+    // 3. Schlussbild: Szene + Bloom -> Schirm.
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, w, h);
+    gl.useProgram(N.pFinal.p);
+    gl.uniform1i(N.pFinal.u.szene, 0);
+    gl.uniform1i(N.pFinal.u.bloom, 1);
+    gl.uniform1f(N.pFinal.u.bloomStaerke, 0.70);
+    gl.uniform1f(N.pFinal.u.belichtung, VF_BELICHTUNG);
+    gl.uniform1f(N.pFinal.u.kontrast, 1.05);
+    gl.uniform1f(N.pFinal.u.saettigung, 1.05);
+    gl.uniform1f(N.pFinal.u.zeit, (performance.now() || 0) / 1000);
+    gl.uniform1f(N.pFinal.u.regen, VF.regen ? 1 : 0);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, N.szene.tex);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, N.hell.tex);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.vertexAttribPointer(N.pFinal.u.ap, 3, gl.FLOAT, false, 12, 0);
+    gl.drawArrays(gl.TRIANGLES, 0, N.quad.n);
+    gl.disableVertexAttribArray(N.pFinal.u.ap);
+    gl.enable(gl.DEPTH_TEST);
+  }
   let vfModellLaden = {};
   function vfModellDaten(pfad) {
     pfad = pfad || vfModellPfad();
@@ -1742,7 +1978,11 @@
           // Delta (HUD): die Zwischenzeiten der besten Runde je Punkt der Mittellinie.
           if (VF.beste === null || VF.letzte < VF.beste) { VF.beste = VF.letzte; VF.besteSplits = VF.splits; }
           // Nach der ersten Runde beginnt der Geist, die aufgezeichnete Linie abzufahren.
-          if (VF.geist && !VF.geist.aktiv) { VF.geist.aktiv = true; VF.geist.zeit = 0; VF.geist.i = 0; }
+          if (VF.geist && !VF.geist.aktiv) {
+            VF.geist.aktiv = true; VF.geist.zeit = 0; VF.geist.i = 0;
+            // v1.5.x: die Linie speichern, damit sie auch nach dem Beenden wieder gefahren werden kann.
+            if (VF.geist.aufzeichnung.length > 1) vfGeistLinieSpeichern(VF.geist.aufzeichnung);
+          }
           // Rundenrennen: nach der Ziel-Lap ist Schluss.
           VF.runden = (VF.runden || 0) + 1;
           if (VF.modus === 'laps' && VF.runden >= VF.limit) vfRennenEnde();
@@ -1994,8 +2234,18 @@
     const dpr = Math.min(navigator.maxTouchPoints > 0 ? (VF.grafik ? 1.5 : 1.25) : (VF.grafik ? 2 : 1.5), window.devicePixelRatio || 1);
     const w = Math.round(cv.clientWidth * dpr), h = Math.round(cv.clientHeight * dpr);
     if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
-    gl.viewport(0, 0, w, h);
-    gl.clearColor(0.66, 0.78, 0.90, 1);
+    // v1.5.x Quality: Nachbearbeitung (Bloom + AgX) - die Szene zuerst in ein Framebuffer, danach auf den
+    // Schirm. Bei Groessenwechsel das Framebuffer neu anlegen; scheitert es, bleibt der Direktweg.
+    if (VF.grafik && VF.nach && (VF.nach.w !== w || VF.nach.h !== h)) VF.nach = null;
+    if (VF.grafik && !VF.nach) { try { VF.nach = vfNachBauen(gl, w, h); } catch (e) { VF.nach = null; } }
+    const nach = (VF.grafik && VF.nach) ? VF.nach : null;
+    if (nach) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, nach.szene.fbo);
+      gl.viewport(0, 0, nach.szene.w, nach.szene.h);
+    } else {
+      gl.viewport(0, 0, w, h);
+    }
+    gl.clearColor(VF.horiz ? VF.horiz[0] : 0.66, VF.horiz ? VF.horiz[1] : 0.78, VF.horiz ? VF.horiz[2] : 0.90, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     // Himmel: Vollbild-Quad, Farbverlauf im WELTRAUM (horizontfolgend beim Umsehen). Ganz hinten.
     if (!VF.himmelProg) { VF.himmelProg = vfProgrammHimmel(gl); VF.himmel = vfHimmel(gl); }
@@ -2020,6 +2270,11 @@
       gl.uniform3f(VF.himmelProg.up, ux, uy, uz);
       gl.uniform3f(VF.himmelProg.fwd, fx, fy, fz);
       gl.uniform2f(VF.himmelProg.halb, th * w / Math.max(1, h), th);
+      gl.uniform3f(VF.himmelProg.sonne, VF.sonne[0], VF.sonne[1], VF.sonne[2]);
+      gl.uniform3f(VF.himmelProg.horiz, VF.horiz[0], VF.horiz[1], VF.horiz[2]);
+      gl.uniform3f(VF.himmelProg.zenit, VF.zenit[0], VF.zenit[1], VF.zenit[2]);
+      gl.uniform3f(VF.himmelProg.sonneFarbe, VF.sonneFarbe[0], VF.sonneFarbe[1], VF.sonneFarbe[2]);
+      gl.uniform1f(VF.himmelProg.stern, VF.stern || 0);
     }
     gl.drawArrays(gl.TRIANGLES, 0, VF.himmel.n);
     gl.disableVertexAttribArray(VF.himmelProg.ap);
@@ -2030,8 +2285,8 @@
     if (VF.grafik && VF.schatte && VF.schatteProg) {
       VF.schM = vfSchattenMatrix([VF.x, 0, VF.y]);
       vfSchattenPass(gl);
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-      gl.viewport(0, 0, w, h);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, nach ? nach.szene.fbo : null);
+      gl.viewport(0, 0, nach ? nach.szene.w : w, nach ? nach.szene.h : h);
     }
     // v1.3.39: Boden, Fahrbahn und Randsteine mit Texturen (vorher Eckfarben in VF.bahn).
     vfFlaechenMalen(gl, pv, k.auge);
@@ -2041,7 +2296,7 @@
     const L = VF.loc;
     for (let i = 0; i < 16; i++) L.pv[i] = pv[i];
     gl.uniformMatrix4fv(L.m, false, L.pv);
-    gl.uniform3f(L.nebel, 0.66, 0.78, 0.90);
+    gl.uniform3f(L.nebel, VF.nebel ? VF.nebel[0] : 0.66, VF.nebel ? VF.nebel[1] : 0.78, VF.nebel ? VF.nebel[2] : 0.90);
     gl.uniform1f(L.alf, 1.0);
     const zeichne = (pu, welt) => {
       for (let i = 0; i < 16; i++) L.w16[i] = welt[i];
@@ -2053,13 +2308,16 @@
       gl.drawArrays(gl.TRIANGLES, 0, pu.n);
     };
     if (VF.geist && VF.geist.aktiv) {
-      if (!VF.geistAuto) VF.geistAuto = vfAutoBauen(gl, [0.45, 0.75, 1.0]);
-      gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-      gl.uniform1f(L.alf, 0.45);
-      zeichne(VF.geistAuto, vfLage(VF.geist.x, VF.geist.y, VF.geist.h));
-      gl.uniform1f(L.alf, 1.0);
-      gl.disable(gl.BLEND);
-      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+      // v1.5.x: Frustum - der Geist ist nur zu zeichnen, wenn er in der Kamera steht.
+      if (vfImSicht(pv, VF.geist.x, 0.6, VF.geist.y)) {
+        if (!VF.geistAuto) VF.geistAuto = vfAutoBauen(gl, [0.45, 0.75, 1.0]);
+        gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        gl.uniform1f(L.alf, 0.45);
+        zeichne(VF.geistAuto, vfLage(VF.geist.x, VF.geist.y, VF.geist.h));
+        gl.uniform1f(L.alf, 1.0);
+        gl.disable(gl.BLEND);
+        gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+      }
     }
     if (VF.modell && VF.tprog) vfModellMalen(gl, pv, blick, k.auge);
     else {
@@ -2070,12 +2328,17 @@
     if (VF.npcs && VF.tprog) {
       for (const npc of VF.npcs) {
         if (!npc.modell) continue;
+        // v1.5.x: NPCs hinter der Kamera oder weit draussen auslassen (Frustum), ferne mit weniger Glanz (LOD).
+        if (!vfImSicht(pv, npc.x, 0.6, npc.y)) continue;
+        const lod = vfNpcLod(k.auge, npc.x, npc.y);
         // Neigung 1x: "Neigung sichtbar" gilt nur fuer das eigene Auto (v1.2.32 GEMELDET: "sollte auf
         // Stufe 1 sein"). Bremslicht, wenn das Fahrzeugmodell des NPC bremst.
         vfModellZeichnen(gl, pv, blick, npc.modell, VF.tprog, npc.x, npc.y, npc.h, npc.feder, npc.lenkWinkel, npc.raddreh, VF.radModell, true,
-          !!(npc.motor && npc.motor.outputs && npc.motor.outputs.lights && npc.motor.outputs.lights.brake), 1, 0, k.auge);
+          !!(npc.motor && npc.motor.outputs && npc.motor.outputs.lights && npc.motor.outputs.lights.brake), 1, 0, k.auge, npc.lack, npc.ay, lod);
       }
     }
+    // v1.5.x Quality: Nachbild (Bloom + AgX) auf den Schirm, statt direkt gerendert.
+    if (nach) vfNachMalen(gl, nach, w, h);
   }
   // ---- Kamera (v1.1.11) --------------------------------------------------------------------
   // BESTELLT: "Wenn ich den rechten Stick reindruecke im virtuellen Fahren, aendere die Kamera zu
@@ -2084,6 +2347,7 @@
   // langsamen Handy lief die Kamera vorher bei weniger Bildern spuerbar hinterher.
   const VF_KAMERAS = [{ id: 'verfolger', name: 'Verfolgerkamera' }, { id: 'nah', name: 'Nahe Verfolgerkamera' }, { id: 'haube', name: 'Motorhaube' },
                       { id: 'oben', name: 'Von oben (Start/Ziel)' },
+                      { id: 'tv', name: 'TV-Kamera' },
                       { id: 'fahrer', name: 'Fahrer am Rand', wip: true }];
   const VF_KAMERA_STORE = 'omegasim-vf-kamera';
   function vfKameraId() {
@@ -2305,6 +2569,17 @@
       VF.kam = null;
       return { auge, ziel: [VF.x, 0, VF.y], oben, fov: 62, nah: 0.5 };
     }
+    if (id === 'tv') {
+      // TV-Kamera (v1.5.x): hoch und seitlich, wie eine Uebertragungskamera, die dem Auto folgt.
+      // Sie bleibt immer auf der Aussenseite der Kurve (rechts der Fahrtrichtung) und faengt das Auto
+      // mit weiter Sicht ein. Blick und Position laufen dem Auto mit einer Zeitkonstante nach.
+      const r = VF.h * Math.PI / 180, sx = Math.cos(r), sz = Math.sin(r);
+      const seit = 18, hoehe = 22, hinten = 9;
+      const soll = [VF.x - fx * hinten + sx * seit, hoehe, VF.y - fz * hinten + sz * seit];
+      const a = 1 - Math.exp(-Math.max(0, dt) / 0.30);
+      VF.kam = VF.kam ? VF.kam.map((q, i) => q + (soll[i] - q) * a) : soll;
+      return { auge: VF.kam, ziel: [VF.x + fx * 10, 1.6, VF.y + fz * 10], fov: 60, nah: 0.5 };
+    }
     const nah = id === 'nah';
     const hinten = nah ? 9 : 15, hoehe = nah ? 3.8 : 8, tau = nah ? 0.08 : 0.15;
     // Gedreht kreist der SOLL-Ort um das Auto; die Nachfuehrung (tau) bleibt dieselbe.
@@ -2317,13 +2592,14 @@
     return { auge: VF.kam, ziel: k.ziel, fov: nah ? 58 : 54, nah: 0.5 };
   }
   function vfModellMalen(gl, pv, blick, auge) {
+    const lack = (typeof carColor === 'function' && VF.car) ? vfHex(carColor(VF.car).hex) : null;
     vfModellZeichnen(gl, pv, blick, VF.modell, VF.tprog, VF.x, VF.y, VF.h, VF.feder, VF.lenkWinkel, VF.raddreh, VF.radModell,
       (typeof headlightsOn === 'undefined' ? true : !!headlightsOn),
-      !!(physEngine.outputs && physEngine.outputs.lights && physEngine.outputs.lights.brake), vfFederSicht(), VF.pitch || 0, auge);
+      !!(physEngine.outputs && physEngine.outputs.lights && physEngine.outputs.lights.brake), vfFederSicht(), VF.pitch || 0, auge, lack, VF.ay);
   }
   // Ein Modell an einer Stelle zeichnen. Wird fuer das Spielerauto und fuer jeden NPC benutzt:
   // M ist das gebaute Modell (vfModellBauen), T das Texturprogramm, fe der Federungszustand.
-  function vfModellZeichnen(gl, pv, blick, M, T, x, y, h, fe, lenkWinkel, raddreh, radModell, licht, bremst, fs, nick, auge) {
+  function vfModellZeichnen(gl, pv, blick, M, T, x, y, h, fe, lenkWinkel, raddreh, radModell, licht, bremst, fs, nick, auge, lack, ay, lod) {
     const d = M.d, u = T.u;
     const s = VF_AUTO.L / d.laenge;
     const lage = vfMal(vfLage(x, y, h), vfS(s, s, s));
@@ -2335,7 +2611,7 @@
     gl.useProgram(T.p);
     for (let i = 0; i < 16; i++) T.pv[i] = pv[i];
     gl.uniformMatrix4fv(u.m, false, T.pv);
-    gl.uniform3f(u.nebel, 0.66, 0.78, 0.90);
+    gl.uniform3f(u.nebel, VF.nebel ? VF.nebel[0] : 0.66, VF.nebel ? VF.nebel[1] : 0.78, VF.nebel ? VF.nebel[2] : 0.90);
     gl.uniform1i(u.tx, 0);
     // v1.3.124 (nur Quality): Blickpunkt fuer den Glanz und Selbst-Schatten aus der Schattenkarte
     // (Textur-Einheit 1) - die Autos empfangen ihre eigenen Schatten.
@@ -2347,6 +2623,11 @@
       else gl.uniformMatrix4fv(u.schM, false, VF_EINS);
       gl.uniform1f(u.bias, VF_SCHATTEN_BIAS);
       gl.uniform1i(u.sch, 1);
+      gl.uniform3f(u.sonne, VF.sonne[0], VF.sonne[1], VF.sonne[2]);
+      gl.uniform1f(u.sonneStaerke, VF.sonneStaerke === undefined ? 1 : VF.sonneStaerke);
+      gl.uniform3f(u.horiz, VF.horiz[0], VF.horiz[1], VF.horiz[2]);
+      gl.uniform3f(u.zenit, VF.zenit[0], VF.zenit[1], VF.zenit[2]);
+      gl.uniform1f(u.envStaerke, 0.35 * (lod === undefined ? 1 : lod));
       gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D, VF.schatte ? VF.schatte.tex : null);
       gl.activeTexture(gl.TEXTURE0);
@@ -2392,24 +2673,46 @@
       const hb = d.breite * 0.62 * kd, hl = d.laenge * 0.55 * kd;
       const q = [[hb, 0.012, hl + zSp, 0, 0], [-hb, 0.012, hl + zSp, 1, 0], [-hb, 0.012, -hl + zSp, 1, 1], [hb, 0.012, -hl + zSp, 0, 1]].map((p) => ort(lage, p).concat(p.slice(3)));
       flaeche([q[0], q[1], q[2], q[0], q[2], q[3]], M.schatten);
+      // v1.5.x Kontaktschatten je Rad: ohne Schattenkarte (Performance) ein enger, dunkler Fleck
+      // direkt unterm Reifen, der das Auto am Boden verankert.
+      if (!hatSch) {
+        setze(VF_EINS, [1, 1, 1], 0, 0.35, 1, 0, 0, 0);
+        [[1, 'vorn', d.vorderachse], [-1, 'vorn', d.vorderachse], [1, 'hinten', d.hinterachse], [-1, 'hinten', d.hinterachse]].forEach(([seite, ax, z]) => {
+          const r = d.reifen[ax];
+          const cx = seite * r.spur / 2, hr = r.radius * 0.6, hw = r.breite * 0.62;
+          const wq = [[cx + hw, 0.011, z + hr, 0, 0], [cx - hw, 0.011, z + hr, 1, 0], [cx - hw, 0.011, z - hr, 1, 1], [cx + hw, 0.011, z - hr, 0, 1]].map((p) => ort(lage, p).concat(p.slice(3)));
+          flaeche([wq[0], wq[1], wq[2], wq[0], wq[2], wq[3]], M.schatten);
+        });
+      }
       gl.depthMask(true); gl.disable(gl.BLEND);
     }
     // 2. Aufbau, undurchsichtige Teile; Scheinwerfer und Ruecklicht leuchten selbst
+    // Lack (v1.5.x): die Karosserie wird mit der Fahrzeugfarbe getoent (dezent, 45 %) - die Texturen der
+    // Modelle behalten ihre Details, aber jede Fahrzeugfarbe sieht anders aus.
+    const lackTint = lack ? [1 - (1 - lack[0]) * 0.45, 1 - (1 - lack[1]) * 0.45, 1 - (1 - lack[2]) * 0.45] : VF_WEISS;
     const ruecklichtEmis = bremst ? 1.7 : (licht ? 0.55 : 0);
     for (const t of M.aufbauTeile) {
       const emis = t.rolle === 'scheinwerfer' ? (licht ? 1.3 : 0) : t.rolle === 'ruecklicht' ? ruecklichtEmis : 0;
       // Karosserie mit leichtem Clear-Coat-Glanz (klar, nur Quality), Scheiben/Glas dagegen nicht.
-      setze(aufbau, VF_WEISS, emis, 1, 0, 1, 0.3, 0);
+      setze(aufbau, lackTint, emis, 1, 0, 1, 0.3, 0);
       teil(t);
     }
     // 3. Raeder: Mitte auf Reifenradius, vorn eingeschlagen, alle drehen; rechts gespiegelt (Muttern aussen)
+    // v1.5.x Reifenverformung: in der Kurve stuetzt sich das aeussere Rad ab und wird flacher (Seitenlast
+    // laedt es), das innere entlastet sich. ay ist die Querbeschleunigung in m/s² (Seite = Vorzeichen).
     const radTeile = M.radTeile;
     const halbW = d.breite / 2;
+    const ayG = Math.max(0, Math.min(1, Math.abs(ay || 0) / 12));   // 0..1, ~1,2 g Vollast
+    const ayS = Math.sign(ay || 0);                                // +1 Linkskurve, -1 Rechtskurve
     [[1, 'vorn', d.vorderachse], [-1, 'vorn', d.vorderachse], [1, 'hinten', d.hinterachse], [-1, 'hinten', d.hinterachse]].forEach(([seite, ax, z]) => {
       const r = d.reifen[ax];
+      // Aeussere Seite (Seite > 0 bei Linkskurve) staucht sich, die innere hebt leicht an.
+      const ausser = seite * ayS;
+      const stauch = 1 - (0.10 * ayG) * (ausser > 0 ? 1 : 0.3);
+      const ry = r.radius * stauch;
       const dreh = vfRy(ax === 'vorn' ? -(lenkWinkel || 0) : 0);
-      const w = vfKette(lage, vfT(seite * r.spur / 2, r.radius, z), dreh, vfRx(raddreh || 0),
-        vfS(seite * r.breite, 2 * r.radius, 2 * r.radius));
+      const w = vfKette(lage, vfT(seite * r.spur / 2, ry, z), dreh, vfRx(raddreh || 0),
+        vfS(seite * r.breite, 2 * ry, 2 * r.radius));
       radTeile.forEach((t) => { setze(w, [1, 1, 1], 0, 1, 0, 1, 0.2, 0); teil(t); });
       if (!radTeile.length) {
         // Fallback: die echten Rad-Teile der Vulture V5.R (mit Reifen-/Felgen-Textur).
@@ -2418,8 +2721,8 @@
           // Das Rad so weit nach aussen, dass es neben der Karosserie sichtbar bleibt (manche Modelle
           // haben eine schmalere Spur und wuerden das Rad sonst verstecken).
           const xW = seite * Math.max(r.spur / 2, halbW + 0.12 - 0.5 * r.breite);
-          const wF = vfKette(lage, vfT(xW, r.radius, z), dreh, vfRx(raddreh || 0),
-            vfS(seite * r.breite, 2 * r.radius, 2 * r.radius));
+          const wF = vfKette(lage, vfT(xW, ry, z), dreh, vfRx(raddreh || 0),
+            vfS(seite * r.breite, 2 * ry, 2 * r.radius));
           setze(wF, [1, 1, 1], 0, 1, 0, 1, 0.2, 0);
           radM.teile.forEach((t) => {
             gl.bindBuffer(gl.ARRAY_BUFFER, radM.vbo);
@@ -2710,13 +3013,23 @@
     try {
       VF.prog = vfProgramm(gl);
     } catch (e) { schicht.remove(); showHudToast('WebGL: ' + e.message); return false; }
-    VF.loc = null; VF.lenkIst = 0; VF.kam = null; VF.himmelProg = null; VF.himmel = null;
+    VF.loc = null; VF.lenkIst = 0; VF.kam = null; VF.himmelProg = null; VF.himmel = null; VF.nach = null;
     // Die Seite unter der 3D-Schicht ruht (kein Neuzeichnen); Startaufstellung, Ampel und Meldungen
     // kommen per CSS darueber (body.vf-an).
     document.body.classList.add('vf-an');
     gl.enable(gl.DEPTH_TEST);
     VF.gl = gl; VF.cv = cv; VF.schicht = schicht; VF.hud = schicht.querySelector('.vf-hud');
     VF.grafik = vfGrafikQual();   // v1.3.113: einmal je Fahrt, damit kein localStorage je Bild
+    // Tageszeit (v1.5.x): Sonnenrichtung, Himmelsfarben und Nebel einmal je Fahrt festhalten. Die
+    // Performance-Stufe behaelt ihre alte Beleuchtung; das Himmelsbild wechselt aber immer mit.
+    {
+      const L = vfTageszeitLicht();
+      const l = Math.hypot(L.sonne[0], L.sonne[1], L.sonne[2]) || 1;
+      VF.sonne = [L.sonne[0] / l, L.sonne[1] / l, L.sonne[2] / l];
+      VF.sonneFarbe = L.farbe; VF.sonneStaerke = L.starke;
+      VF.horiz = L.horiz; VF.zenit = L.zenit; VF.nebel = L.nebel; VF.stern = L.stern;
+    }
+    VF.regen = vfRegenAn();
     // v1.3.113 Quality: echte Schattenkarte (Depth-Textur) aus Richtung der Sonne. Ohne die
     // Erweiterung bleibt der weiche Blob-Schatten (M.schatten).
     VF.schatte = null; VF.schatteProg = null;
@@ -2940,6 +3253,23 @@
     const grafikZeile = garWertZeile(t('Grafik'), t(vfGrafik() === 'perf' ? 'Performance' : 'Quality'), gWahl, gWahl);
     grafikZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
     rechts.appendChild(grafikZeile);
+    // Tageszeit (v1.5.x): Sonnenrichtung und Himmelsstimmung. Nur im Quality-Modus wirkt die Beleuchtung
+    // mit; das Himmelsbild wechselt immer. Standard Mittag = die bisherige Sonne.
+    const tzId = vfTageszeit();
+    const tzWahl = (dd) => {
+      const i = Math.max(0, VF_TAGESZEIT_MODI.findIndex((m) => m.id === tzId));
+      vfTageszeitSetzen(VF_TAGESZEIT_MODI[(i + dd + VF_TAGESZEIT_MODI.length) % VF_TAGESZEIT_MODI.length].id);
+      renderGarage();
+    };
+    const tzZeile = garWertZeile(t('Tageszeit'), t(VF_TAGESZEIT_LICHT[tzId] ? VF_TAGESZEIT_MODI.find((m) => m.id === tzId).name : 'Mittag'), () => tzWahl(-1), () => tzWahl(1));
+    tzZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
+    rechts.appendChild(tzZeile);
+    // Regen (v1.5.x): nasse Bahn (Glanz) und fallende Streifen im Quality-Modus.
+    const regenAn = vfRegenAn();
+    const regenWahl = () => { vfRegenSetzen(!regenAn); renderGarage(); };
+    const regenZeile = garWertZeile(t('Regen'), regenAn ? t('An') : t('Aus'), regenWahl, regenWahl);
+    regenZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
+    rechts.appendChild(regenZeile);
     // Geist: eine Kopie faehrt nach der ersten Runde die aufgezeichnete Linie ab (Standard an).
     const geistAn = vfGeistAn();
     const geistWahl = () => {
@@ -2947,6 +3277,49 @@
       renderGarage();
     };
     rechts.appendChild(garWertZeile(t('Geist folgt meiner Linie'), geistAn ? t('An') : t('Aus'), geistWahl, geistWahl));
+    // Geist-Linie teilen und wieder laden (v1.5.x): die aufgezeichnete Linie als Datei exportieren und
+    // eine fremde Linie einlesen (JSON [[x,y,h,t], ...]). Eingelesen faehrt der Geist sie sofort ab.
+    {
+      const zeile = document.createElement('div');
+      zeile.className = 'gar-a-aktion';
+      const exp = document.createElement('button');
+      exp.type = 'button';
+      exp.className = 'sec';
+      exp.textContent = t('Linie exportieren');
+      exp.onclick = () => {
+        const a = VF.geist && VF.geist.aufzeichnung ? VF.geist.aufzeichnung : vfGeistLinieLaden();
+        if (!a || a.length < 2) { showHudToast(t('Noch keine Linie aufgezeichnet')); return; }
+        const blob = new Blob([JSON.stringify(a)], { type: 'application/json' });
+        const u = URL.createObjectURL(blob);
+        const x = document.createElement('a');
+        x.href = u; x.download = 'omegasim-geist-linie.json'; x.click();
+        URL.revokeObjectURL(u);
+      };
+      const imp = document.createElement('button');
+      imp.type = 'button';
+      imp.className = 'sec';
+      imp.textContent = t('Linie einlesen');
+      const inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = 'application/json'; inp.hidden = true;
+      inp.onchange = () => {
+        const f = inp.files && inp.files[0];
+        if (!f) return;
+        const rd = new FileReader();
+        rd.onload = () => {
+          try {
+            const a = JSON.parse(rd.result);
+            if (!Array.isArray(a) || a.length < 2) throw new Error('zu kurz');
+            vfGeistLinieSpeichern(a);
+            if (VF.geist) { VF.geist.aufzeichnung = a; VF.geist.aktiv = true; VF.geist.zeit = 0; VF.geist.i = 0; }
+            showHudToast(t('Linie geladen – der Geist fährt sie'));
+          } catch (e) { showHudToast(t('Linie nicht lesbar')); }
+        };
+        rd.readAsText(f);
+      };
+      imp.onclick = () => inp.click();
+      zeile.appendChild(exp); zeile.appendChild(imp); zeile.appendChild(inp);
+      rechts.appendChild(zeile);
+    }
     // Neben der Bahn: Vorgabe bremst der Teppich. Die Option schaltet den Tempoverlust ab, das Auto
     // faehrt daneben ungebremst weiter (Standard Aus = wie bisher).
     const abseitsBremse = vfAbseitsBremseAn();

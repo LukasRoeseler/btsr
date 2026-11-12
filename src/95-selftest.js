@@ -6292,7 +6292,7 @@
         weichVerbotAnwenden();
         if (tyres !== 'mittel' || mischungWunsch !== 'mittel') f.push('weich bleibt drauf: ' + tyres + '/' + mischungWunsch);
         el.checked = false;
-        if (mischungNaechste('hart') !== 'regen' || mischungNaechste('regen') !== 'weich') f.push('ohne Verbot fehlt weich in der Folge');
+        if (mischungNaechste('hart') !== 'inter' || mischungNaechste('inter') !== 'regen' || mischungNaechste('regen') !== 'weich') f.push('ohne Verbot fehlt weich in der Folge');
       }
       // Mischungsunterschied: Vorgabe 150 %, Regler bis 300 %, harte Reifen nie negativ.
       const r = $('setting-tyre-mix');

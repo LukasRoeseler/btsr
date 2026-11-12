@@ -1665,6 +1665,7 @@
   body[data-tyre-mix="mittel"] .gt3-t4 { --mix-farbe: #f7d117; }
   body[data-tyre-mix="hart"] .gt3-t4 { --mix-farbe: #f2f4f8; }
   body[data-tyre-mix="regen"] .gt3-t4 { --mix-farbe: #2f6fd0; }
+  body[data-tyre-mix="inter"] .gt3-t4 { --mix-farbe: #27c28b; }
   /* Die Fuellung waechst von UNTEN, wie ein Vorrat. Dieselbe Richtung wie Tank und Schaden:
      drei Anzeigen, die gleich leerlaufen, liest man mit einem Blick. */
   .gt3-t4 > b { position: absolute; left: 0; right: 0; bottom: 0; height: 0;
@@ -5752,7 +5753,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.4.67</span></span>
+        <span class="foot-ver">v<span id="app-version">1.4.68</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6993,6 +6994,10 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.4</span></b></p>
       <ul class="muted" id="patchnotes-14" style="padding-left:20px; line-height:1.7">
+        <li>Virtuelles Fahren (Quality, Garage &#8594; Virtuelles Auto &#8594; Grafik): Die Szene ist deutlich sch&#246;ner. Neu sind eine Tageszeit mit Sonne, Horizont und Sternen (Morgen, Mittag, Abend, Nacht, in der Garage w&#228;hlbar), Bloom und ein AgX-Tonemapping mit Vignette als Nachbearbeitung, Umgebungsreflexionen im Lack, ein Regen-Schalter mit nassem Glanz der Bahn und Regenstreifen im Bild, eine Livery-Einf&#228;rbung der Karosserie je Fahrzeugfarbe, eine TV-Kamera, Reifenverformung in Kurven (das &#228;u&#223;ere Rad staucht sich) und Kontaktschatten unter den R&#228;dern sowie Frustum-Culling und LOD f&#252;r ferne NPCs. Scheitert die Nachbearbeitung (etwa ohne Framebuffer), f&#228;hrt die App mit dem direkten Bild weiter.</li>
+        <li>Reifenmischung: Neu ist der Zwischenreifen zwischen Slick und Regenreifen &#8211; etwas weniger Grip im Trockenen als der Mittelreifen, mehr als Slicks im Nassen, ohne Aufschwimmen; in der Boxenwahl zwischen hart und Regen.</li>
+        <li>Wetter: Ein fester Startwert (Konsole: omegasim-wx-seed) macht den Wetterplan reproduzierbar &#8211; dieselbe Strecke, dasselbe Wetter.</li>
+        <li>Virtuelles Fahren: Der Geist speichert die aufgezeichnete Linie und l&#228;sst sie exportieren (JSON) und wieder einlesen; eingelesen f&#228;hrt der Geist sie sofort ab (Linie exportieren / Linie einlesen in der Garage).</li>
         <li>Setup je Auto (WIP): neu sind Bremsbalance, ABS, TC, Motorkennfeld, Heckfl&#252;gel und Reifendruck, jeweils mit Erkl&#228;rung im &#9432; und einer Zeile, was die Einstellung bewirkt. Was im gew&#228;hlten Fahrgef&#252;hl nicht wirkt, ist ausgegraut. Das Motorkennfeld &#228;ndert auch den Verbrauch und die Tank-Rundenangabe. W&#228;hrend die Reifenrunden berechnet werden, dreht sich das Streckenteil als Ladesymbol, und das Fenster bleibt bedienbar. Bei vorgegebenem Fahrgef&#252;hl fahren alle mit Standard.</li>
         <li>Meisterschaft: Behoben, dass ein NPC, der hinter der Startlinie losfuhr, eine Runde zu wenig bekam und Spieler 1 deshalb gewann; auch die Auslaufrunde nach der Zielflagge z&#228;hlt jetzt. Bei gleicher Rundenzahl gewinnt, wer zuerst &#252;ber die Linie kommt (Ergebnis, &#220;bersicht und Meisterschaft gleich). Neu (WIP): kurze Einblendung je Event mit vorbeifahrenden Autos, Ansagen &#8222;Willkommen zur Meisterschaft&#8220; mit Anzahl der Events, Event-Intro, Sieger je Rennen und am Ende Fanfare mit dem Meister; einzeln schaltbar unter Optionen &gt; Ansagen.</li>
         <li>Einparken neu abgestimmt: Safety Car und NPC-Box parken etwas weiter innen (etwa ein Viertel weniger zum Rand) und lenken am Ende l&#228;nger gegen, damit sie gerade stehen. Beim Tankort &#8222;Streckenrand &#252;ber Querlage&#8220; ebenfalls weniger weit an den Rand. NPCs fahren in Kurven innen nicht mehr ganz bis an die Kante (h&#246;chstens 95 %), damit sie dort seltener abfliegen.</li>
