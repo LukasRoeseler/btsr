@@ -569,6 +569,10 @@
         granAbs: 0,              // ABS-Gefuehl: so viel Einschlag bleibt beim Bremsen am Limit mindestens
         granTempEinfluss: 1,     // wie stark der Reifenzustand (tyreGrip) auf die Haftgrenze wirkt
         granTempOpt: 0,          // Griff-Zuschlag im warmen Fenster um tyreOptimalC (Glocke, +-12 Grad)
+        // 9-Knoten-Reifenmodell (v1.5.x): Temperatur quer ueber die Laufflaeche je Rad. Ab Werk
+        // aus (0), damit das kalibrierte Vier-Rad-Modell unveraendert bleibt; wer es einschaltet,
+        // bekommt den feineren Griff aus der Reifenform (Mitte heiss, Rand kuehl).
+        tyreTemp9: 0,
 
         // ---- Longitudinal weight transfer ----
         // Under braking the mass pitches onto the front axle, under power onto the rear.
@@ -952,6 +956,11 @@
         tyreWear4: [0, 0, 0, 0],
         tyreTemp4: [20, 20, 20, 20],
         load4: [1, 1, 1, 1],       // Radlast, 1 = Mittel
+        // 9 Tread-Knoten je Rad (v1.5.x): Temperatur quer ueber die Laufflaeche. Die Mitte
+        // (Index 4) heizt mehr als die Raender; die Griffrechnung nutzt die Form, nicht nur
+        // den Mittelwert. Gedeckelt ueber cfg.tyreTemp9, ab Werk aus - wer es nicht einschaltet,
+        // behaelt das alte Vier-Rad-Modell bitgleich.
+        tyreTemp9: null,           // 4 x 9, erst bei cfg.tyreTemp9 angelegt
         // Der REINE Seitenanteil, ebenfalls 1 im Mittel und ohne die Achsaufteilung. Die
         // Bremsscheiben brauchen genau ihn: ihre Achsaufteilung kommt aus der Bremsbalance,
         // und beides zu multiplizieren hiesse, die Vorderachse zweimal zu bevorzugen.
@@ -2036,6 +2045,14 @@
       // Die Kuehlung ist fuer alle vier dieselbe - sie haengt an der Umgebung und nicht am
       // Rad.
       const asymAn4 = cfg.tyreAsymEffect > 0;
+      if (cfg.tyreTemp9 > 0 && !st.tyreTemp9) {
+        st.tyreTemp9 = [];
+        for (let i = 0; i < 4; i++) {
+          const a = [];
+          for (let n = 0; n < 9; n++) a.push(st.tyreTemp4[i]);
+          st.tyreTemp9.push(a);
+        }
+      }
       for (let i = 0; i < 4; i++) {
         const last = asymAn4 ? st.load4[i] : 1;
         st.tyreTemp4[i] += (cfg.tyreHeatRate * pHeat * Math.max(1, cfg.tyreEffect)
@@ -2043,6 +2060,18 @@
                             - cfg.tyreCoolRate * (st.tyreTemp4[i] - cfg.tyreAmbientC) / span)
                            * dt;
         st.tyreTemp4[i] = Math.max(cfg.tyreAmbientC, st.tyreTemp4[i]);
+        // 9-Knoten-Form (v1.5.x): die Mitte der Laufflaeche heizt mehr als die Raender
+        // (Walkarbeit), die Kuehlung ist fuer alle gleich. tyreTemp4 bleibt der Eckwert.
+        if (cfg.tyreTemp9 > 0 && st.tyreTemp9) {
+          const n9 = st.tyreTemp9[i];
+          for (let n = 0; n < 9; n++) {
+            const d = Math.abs(n - 4) / 4;          // 0 Mitte, 1 Rand
+            const waerme = 1 - 0.35 * d * d;        // Mitte heizt mehr
+            n9[n] += (cfg.tyreHeatRate * pHeat * Math.max(1, cfg.tyreEffect) * work * last * waerme
+                      - cfg.tyreCoolRate * (n9[n] - cfg.tyreAmbientC) / span) * dt;
+            n9[n] = Math.max(cfg.tyreAmbientC, n9[n]);
+          }
+        }
       }
       // tyreTempC BLEIBT der Mittelwert. Alle vorhandenen Leser - Griffrechnung,
       // Boxenstopp, die Selbsttests - haengen daran, und ein zweiter Weg zur Temperatur
@@ -2097,6 +2126,16 @@
         const over = Math.min(1, (st.tyreTempC - cfg.tyreOptimalC)
                                  / (cfg.tyreOverheatC - cfg.tyreOptimalC));
         tGrip *= 1 - cfg.tyreHotPenalty * over * over;
+      }
+      // 9-Knoten-Form (v1.5.x): heisse Mitte mit kuehlem Rand ("Peaky") gibt etwas mehr Griff,
+      // ein flaches Profil weniger. Der Faktor ist klein und nur aktiv, wenn das Modell an ist.
+      if (cfg.tyreTemp9 > 0 && st.tyreTemp9) {
+        let sh9 = 0;
+        for (let i = 0; i < 4; i++) {
+          const n9 = st.tyreTemp9[i];
+          sh9 += Math.max(-1, Math.min(1, (n9[4] - (n9[0] + n9[8]) / 2) / span));
+        }
+        tGrip *= 1 + cfg.tyreTemp9 * 0.05 * (sh9 / 4);
       }
       tGrip *= 1 - cfg.tyreWearPenalty * st.tyreWear;
       // Eine kleine Einbusse fuer JEDE Abweichung von der Referenz, nach oben wie nach

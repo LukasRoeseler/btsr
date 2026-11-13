@@ -3357,6 +3357,15 @@
     border-bottom: 1px solid rgba(255,255,255,.06); }
   .gk-w { display: flex; align-items: center; gap: 6px; font-weight: 800; }
   .gk-w > button:not(.gar-speed-reset) { background: none; border: 0; color: var(--k-blau); padding: 2px 6px; min-height: 0; }
+  /* Vorschau des gewaehlten Autos (Silhouette) und die Lackfarben-Palette der virtuellen Fahrt. */
+  .vf-vorschau { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; padding: 6px 4px;
+    border-bottom: 1px solid rgba(255,255,255,.06); }
+  .vf-vorschau-bild { display: block; width: 100%; max-height: 120px; object-fit: contain; mix-blend-mode: screen;
+    filter: drop-shadow(0 0 6px rgba(0,0,0,.5)); }
+  .vf-lack-palette { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+  .vf-lack { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255,255,255,.25);
+    cursor: pointer; padding: 0; min-height: 0; }
+  .vf-lack.aktiv { border-color: var(--k-blau); box-shadow: 0 0 0 2px rgba(0,163,224,.35); }
   .gk-hinweis { color: var(--muted); font-size: 12px; padding: 4px; }
   .gk-aufzeile .gar-speed { padding: 3px 4px; }
   /* Zwischenueberschrift fuer Kachelgruppen (Optionen: Einstellungen / Info). */
