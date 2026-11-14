@@ -131,6 +131,13 @@
     // auch Geister haben Health.
     derby:      { label: 'Demolition Derby', unit: 'Kills', timed: false,
                   hint: 'Experimentell: rammen, Health 0-100, Sieg nach Kills.' },
+    // BESTELLT: "Omega Overdrive" - ein Arcade-Rennmodus im Stil von Mario Kart, nur auf
+    // der Bahn. Feste Fahrdynamik (Arcade, ~100 km/h, schneller Antritt, optional
+    // Selbstlenken), Nitro auf Kreis (Anzeige wie ein Tank, laedt sich in einer Rundezeit
+    // auf), Power-ups beim Ueberfahren der Start/Ziel-Linie, Schaden ohne Boxenstopp
+    // (kaputtes Auto faehrt 3 s langsam und repariert sich dann selbst). Als WIP markiert.
+    overdrive:  { label: 'Omega Overdrive', unit: 'Runden', timed: true,
+                  hint: 'WIP: Arcade-Rennen mit Nitro und Power-ups. Nur auf der Bahn.' },
   };
   let raceMode = 'practice';
   let raceLimit = 0;              // minutes, or laps in 'laps' mode; Training: 0 = ohne Ende
@@ -188,7 +195,7 @@
   // Funktion: bei einem Zeitlimit gibt es keine Zielrundenzahl, und eine hinzuschreiben
   // waere erfunden.
   function raceLapTarget(gefahren) {
-    if (raceMode === 'laps') return gefahren + ' / ' + (raceLimit + fruehstartZielPlus(1));
+    if (raceMode === 'laps' || raceMode === 'overdrive') return gefahren + ' / ' + (raceLimit + fruehstartZielPlus(1));
     if (RACE_MODES[raceMode].timed && raceStartedAt !== null) {
       const restMs = Math.max(0, raceLimit * 60000 - (rennZeitJetzt() - raceStartedAt));
       const s = Math.floor(restMs / 1000);
@@ -205,7 +212,7 @@
       return raceLimit > 0 && raceStartedAt !== null && (rennZeitJetzt() - raceStartedAt) >= raceLimit * 60000;
     }
     if (!RACE_MODES[raceMode].timed) return false;
-    if (raceMode === 'laps') {
+    if (raceMode === 'laps' || raceMode === 'overdrive') {
       // Je Auto sein Ziel: Fruehstart-Zusatzrunde (v1.3.132) zaehlt nur fuer diesen Fahrer.
       return raceAllCars().some(c => c.laps.length >= raceLimit + fruehstartZielPlus(spielerPlatzVonRolle(c.role)));
     }
@@ -533,7 +540,7 @@
     if (typeof challengeLaeuft === 'function' && challengeLaeuft()) return '5s';
     const el = $('race-fruehstart-strafe');
     const v = el ? el.value : 'pit';
-    if (v === 'extra' && raceMode !== 'laps') return 'pit';
+    if (v === 'extra' && raceMode !== 'laps' && raceMode !== 'overdrive') return 'pit';
     return ['pit', '5s', 'extra', 'keine'].indexOf(v) >= 0 ? v : 'pit';
   }
   function fruehstartGasSetzen(w, ja) { const f = fruehstart[w]; if (f) f.gas = !!ja; }
@@ -578,7 +585,7 @@
   // statusRest (Anzeige) und mpEigenerStand (WLAN: gemeldete Runden).
   function fruehstartZielPlus(w) {
     const f = fruehstart[w];
-    return f && f.extra && raceMode === 'laps' ? 1 : 0;
+    return f && f.extra && (raceMode === 'laps' || raceMode === 'overdrive') ? 1 : 0;
   }
   function fruehstartBeginnen() {
     fruehstartReset();
@@ -633,7 +640,7 @@
       if (!RACE_MODES[raceMode].timed) {
         const up = rennZeitJetzt() - raceStartedAt;
         el.textContent = formatLapTime(up) + ' gefahren';
-      } else if (raceMode === 'laps') {
+      } else if (raceMode === 'laps' || raceMode === 'overdrive') {
         const best = Math.max(0, ...raceAllCars().map(c => c.laps.length));
         el.textContent = `Runde ${best} / ${raceLimit}`;   // best = vollendete Runden
       } else {
@@ -818,7 +825,8 @@
     if (raceState === 'finished' && car.ghost && car.ghost.auslauf) {
       car.ghost.auslauf = false;
       // v1.4.54: im Rundenrennen nur, wer die Zielrunde noch nicht hat (der Sieger faehrt keine Extrarunde).
-      const zielSchon = raceMode === 'laps' && r.laps.length >= raceLimit + fruehstartZielPlus(spielerPlatzVonRolle(car.role));
+      const zielSchon = (raceMode === 'laps' || raceMode === 'overdrive')
+        && r.laps.length >= raceLimit + fruehstartZielPlus(spielerPlatzVonRolle(car.role));
       if (car !== playerCar) autoSekAutoRunde(r, now, r.lapStart !== null && !zielSchon);
       if (r.lapStart !== null && !zielSchon) {
         r.laps.push({ lap: r.laps.length + 1, ms: now - r.lapStart, off: r.offLap || 0, crossedAt: now });
@@ -896,6 +904,9 @@
       const nrSp = spielerNrVon(car);
       const ms = now - r.lapStart + (nrSp >= 2 ? fruehstartZuschlag(nrSp, r.laps.length) : 0), offs = r.offLap || 0;
       r.laps.push({ lap: r.laps.length + 1, ms, off: offs, crossedAt: now });
+      // OMEGA OVERDRIVE (WIP): auch Spieler 2/3 bekommen beim Ueberfahren der Linie ein
+      // Power-up zugewiesen (wie Spieler 1 in playerLapCrossed).
+      if (nrSp >= 2 && typeof overdriveLap === 'function') overdriveLap(nrSp);
       // v0.10.6: Bestzeit-Modus - auch Spieler 2/3 sammeln Zeiten und Medaillen.
       if (raceMode === 'bestzeit' && spielerNrVon(car) >= 2 && ms >= rundeMinMs()) {
         bestzeitMeldung(bestzeitRunde(ms, car), ms, spielerNrVon(car));
@@ -1427,13 +1438,13 @@
       wxWechselPlanen(false);
       // In einem Zeitrennen faellt der erste Schauer sicher hinein: spaetestens bei der
       // Haelfte der Renndauer.
-      if (RACE_MODES[raceMode].timed && raceMode !== 'laps') {
+      if (RACE_MODES[raceMode].timed && raceMode !== 'laps' && raceMode !== 'overdrive') {
         wxWechselAt = Math.min(wxWechselAt, rennZeitJetzt() + raceLimit * 60000 * 0.5);
       }
       return;
     }
     if (!raceWxChange) return;
-    const total = RACE_MODES[raceMode].timed && raceMode !== 'laps'
+    const total = RACE_MODES[raceMode].timed && raceMode !== 'laps' && raceMode !== 'overdrive'
       ? raceLimit * 60000
       : 5 * 60000;   // practice / lap races: assume a five-minute window
     raceWxSwitchAt = rennZeitJetzt() + total * (0.35 + Math.random() * 0.3);
@@ -1513,7 +1524,7 @@
   let mpWetter = null;   // { gruen, liste: [{ abMs, wetter }], i }
   function wetterPlanBauen() {
     const liste = [];
-    const zeitRennen = RACE_MODES[raceMode].timed && raceMode !== 'laps';
+    const zeitRennen = RACE_MODES[raceMode].timed && raceMode !== 'laps' && raceMode !== 'overdrive';
     if (raceWxStart === 'wechsel') {
       const total = zeitRennen ? raceLimit * 60000 : 2 * 3600000;
       let t = 0, nass = false, erste = true;
@@ -2408,6 +2419,8 @@
     zevGruen();
     fruehstartGruen();
     rammReset();
+    // OMEGA OVERDRIVE (WIP): Arcade-Fahrgefuehl, Nitro und Power-ups beim Gruen aktivieren.
+    if (typeof overdriveRennenStart === 'function') overdriveRennenStart();
     // v1.4.48: die ersten 2 s nach Gruen gilt kein Auto als neben der Bahn (abseitsStartGnade, 50-drive.js).
     if (typeof abseitsStartGnade === 'function') abseitsStartGnade();
     // FRISCH ZAEHLEN. Ohne das traegt ein zweites Rennen die Ueberfahrten des ersten mit
@@ -2682,6 +2695,8 @@
     if (typeof meisterRennenEnde === 'function') meisterRennenEnde(willAuslaufen);
     // Online-Streckenzeiten (72c-strecken-online.js): nicht fuer Challenges, die haben eigene Listen.
     if (typeof skSitzungEnde === 'function' && !(typeof challengeLaeuft === 'function' && challengeLaeuft())) skSitzungEnde();
+    // OMEGA OVERDRIVE (WIP): Arcade-Fahrgefuehl und HUD zuruecknehmen.
+    if (typeof overdriveRennenEnde === 'function') overdriveRennenEnde();
     if (typeof challengeRennenEnde === 'function' && challengeRennenEnde(willAuslaufen)) { /* erledigt */ }
     else if (typeof konsoleRennenBeendet === 'function') konsoleRennenBeendet();
     else {
@@ -2775,10 +2790,13 @@
     $('race-limit').min = ohneEnde ? '0' : '1';
     // Fruehstart-Zusatzrunde gibt es nur im Rundenrennen (sonst gilt Durchfahrt, fruehstartStrafe).
     const fsExtra = document.querySelector('#race-fruehstart-strafe option[value="extra"]');
-    if (fsExtra) fsExtra.disabled = raceMode !== 'laps';
+    if (fsExtra) fsExtra.disabled = raceMode !== 'laps' && raceMode !== 'overdrive';
     // 0.7, not 0.45. On white 0.45 was a legible grey; on black it collapsed to 2.7:1,
     // and this label still has to be readable while it says which unit is NOT in use.
     $('race-limit-label').style.opacity = (m.timed || raceMode === 'derby') ? '' : '0.7';
+    // OMEGA OVERDRIVE (WIP): Selbstlenk-Option nur im Overdrive-Modus anzeigen.
+    const odRow = document.getElementById('od-selbstlenken-row');
+    if (odRow) odRow.style.display = raceMode === 'overdrive' ? '' : 'none';
   }
   // Kacheln und Wetterknoepfe schreiben in das versteckte Auswahlfeld und loesen change
   // aus. Damit gibt es weiter genau EINE Stelle, die auf eine Aenderung reagiert, und die
@@ -2788,6 +2806,8 @@
   // kein Demolition Derby, und wenn ich frei fahre, kein Time Attack." Ein verbotener Typ verschwindet aus Kacheln,
   // Liste und dem Durchschalten auf FAHREN; war er gewaehlt, faellt die Wahl auf Training zurueck.
   function renntypErlaubt(modus) {
+    // Omega Overdrive nur auf der Bahn (braucht Streckenteile fuer Nitro/Power-ups).
+    if (modus === 'overdrive') return trackMode === 'on';
     return trackMode === 'on' ? modus !== 'derby' : modus !== 'bestzeit';
   }
   function renntypenFiltern() {
@@ -2848,7 +2868,7 @@
     raceMode = e.target.value;
     // Sensible default per mode rather than carrying a minute count over into a lap count.
     // DERBY (v0.8.126): das Limit ist das KILLS-ZIEL, Voreinstellung 1.
-    raceLimit = raceMode === 'laps' ? 10 : (raceMode === 'derby' ? 1
+    raceLimit = raceMode === 'laps' || raceMode === 'overdrive' ? 10 : (raceMode === 'derby' ? 1
       : ((raceMode === 'practice' || raceMode === 'bestzeit') ? 0 : 2));
     $('race-limit').value = raceLimit;
     applyRaceModeUi();
@@ -2922,7 +2942,8 @@
   }
   $('race-act-start').onclick = toggleRace;
 
-  $('race-act-pit').onclick = () => { requestPitStop(); updateRaceActButtons(); };
+  $('race-act-pit').onclick = () => { requestPitStop();     updateRaceActButtons();
+  };
   // Der KNOPF loest direkt aus, ein Tipp reicht.
   //
   // Hier stand vorher dieselbe Halten-Geste wie auf der Taste X, und die Begruendung war der
@@ -3988,6 +4009,8 @@
       const besteBisher = plausibel.length
         ? Math.min.apply(null, plausibel.map(l => l.ms)) : Infinity;
       raceLapTimes.push({ lap: raceLapTimes.length + 1, ms: rundeMs, crossedAt: now });
+      // OMEGA OVERDRIVE (WIP): beim Ueberfahren der Start/Ziel-Linie ein Power-up zuweisen.
+      if (typeof overdriveLap === 'function') overdriveLap();
       // Challenge: Runde gegen die Strecke pruefen. Liefert true, wenn die Runde NICHT zaehlt
       // (Strecke nicht erkannt oder zu schnell) - dann tiefer Ton statt des hellen Rundenklangs.
       const challengeUngueltig = typeof challengeRundeFertig === 'function'
@@ -4020,7 +4043,8 @@
       // v1.3.132: mit Fruehstart-Zusatzrunde liegt das eigene Ziel eine Runde weiter; faellt die
       // Flagge durch einen anderen, faehrt dieser Fahrer noch genau eine Runde (einmal).
       const zielPlus = fruehstartZielPlus(1);
-      const zielErreicht = !wasFinishing && raceMode === 'laps' && raceLapTimes.length >= raceLimit + zielPlus;
+      const zielErreicht = !wasFinishing && (raceMode === 'laps' || raceMode === 'overdrive')
+        && raceLapTimes.length >= raceLimit + zielPlus;
       let strafRunde = false;
       if (wasFinishing && zielPlus && !fruehstart[1].extraGefahren && raceLapTimes.length < raceLimit + zielPlus) {
         fruehstart[1].extraGefahren = true; strafRunde = true;
@@ -6096,7 +6120,11 @@
       return;
     }
     const schadenAn = crashSchadenAn();
-    if (schadenAn) {
+    // OMEGA OVERDRIVE (WIP): Destroyer schuetzt den Spieler beim Rammen - kein Schaden, das
+    // Ziel wird komplett kaputt gemacht (faehrt 3 s langsam).
+    const odDestroyer = (typeof overdriveDestroyer === 'function' && !zwei) ? overdriveDestroyer(wer) : false;
+    if (odDestroyer && typeof overdriveDestroyerTreffer === 'function') overdriveDestroyerTreffer();
+    if (schadenAn && !odDestroyer) {
       if (zwei) zPl.schaden.wert = Math.min(100, zPl.schaden.wert + 100 / crashesToTotal);
       else damage = Math.min(100, damage + 100 / crashesToTotal);
     }
@@ -6243,6 +6271,13 @@
       const ph = now % 1100;
       brake = (ph < 90) || (ph >= 200 && ph < 290);
     }
+    // OMEGA OVERDRIVE (WIP): waehrend Boost schnell blinken, Power-up-Effekte signalisieren.
+    try {
+      if (typeof overdriveLampen === 'function') {
+        const od = overdriveLampen(head, brake);
+        if (od) { head = od.head; brake = od.brake; }
+      }
+    } catch (e) { /* beim Laden */ }
     lightBits = trackModeBit() | (head ? LIGHT_HEAD : 0) | (brake ? LIGHT_BRAKE : 0);
     return { head, brake };
   }
@@ -6297,6 +6332,8 @@
   // Auto macht bei der Lichthupe kein Geraeusch, das hier ist eine Rueckmeldung fuer den
   // Fahrer und keine Simulation.
   function playFlashSound() {
+    // OMEGA OVERDRIVE (WIP): die Lichthupe hat immer Pupsgeraeusch.
+    try { if (typeof overdriveFart === 'function' && overdriveFart()) return; } catch (e) { /* beim Laden */ }
     const sel = $('flash-sound');
     const kind = sel ? sel.value : 'none';
     if (kind === 'none' || !audioCtx || !soundEnabled) return;
@@ -7420,7 +7457,7 @@
   // erhoehen - und links/rechts kann den Schirm weiterblaettern, solange nichts angewaehlt
   // ist.
   let raceScreenLimitArmed = false;
-  const RACE_MODE_ORDER = ['practice', 'endurance', 'qualifying', 'laps', 'knockout', 'derby', 'bestzeit'];
+  const RACE_MODE_ORDER = ['practice', 'endurance', 'qualifying', 'laps', 'knockout', 'derby', 'bestzeit', 'overdrive'];
 
   // NUR WENN DAS COCKPIT AUCH ZU SEHEN IST. cockpitScreen bleibt beim Tabwechsel stehen -
   // ohne diese Bedingung schluckte der Schirm auf JEDEM Tab die Pfeiltasten, und Fahren

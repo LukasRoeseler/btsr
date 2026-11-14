@@ -15433,13 +15433,14 @@
       fehler.push('Vorgabe ist ' + r.startMix + ', aufgezogen war hart');
     }
     // 2. REIFEN DURCHSCHALTEN, und die Folge schliesst sich. Eine Folge, die stehenbleibt,
-    //    waere eine Sackgasse - man kaeme nie zur ersten Mischung zurueck.
-    const vier = r.mixFolge.slice(0, 4);
-    if (new Set(vier).size !== 4) {
+    //    waere eine Sackgasse - man kaeme nie zur ersten Mischung zurueck. Seit dem
+    //    Zwischenreifen sind es FUENF Mischungen, also fuenf verschiedene.
+    const vier = r.mixFolge.slice(0, 5);
+    if (new Set(vier).size !== 5) {
       fehler.push('nur ' + new Set(vier).size + ' verschiedene Mischungen: '
                   + vier.join('>'));
     }
-    if (r.mixFolge[4] !== r.mixFolge[0]) {
+    if (r.mixFolge[5] !== r.mixFolge[0]) {
       fehler.push('Folge schliesst nicht: ' + r.mixFolge.join('>'));
     }
     // 3. TANKMENGE DURCHSCHALTEN, dieselben drei Stufen wie im Boxenmenue. Ein eigener

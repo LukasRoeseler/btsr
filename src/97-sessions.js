@@ -746,7 +746,7 @@
   // seine eigenen Autos; die Runden der anderen stehen in der Rangliste des Hosts. Hat dort
   // jemand das Ziel, gilt hier "letzte Runde" - die naechste Ueberfahrt beendet das Rennen.
   function mpZielPruefen(d) {
-    if (!mp.an || !mp.rennenId || raceState !== 'racing' || raceMode !== 'laps') return;
+    if (!mp.an || !mp.rennenId || raceState !== 'racing' || (raceMode !== 'laps' && raceMode !== 'overdrive')) return;
     const andere = ((d && d.fahrer) || []).filter((f) => f.id && f.id !== mp.id && mpAktiv(f));
     const fertig = andere.find((f) => (f.laps || 0) >= raceLimit);
     if (!fertig) return;

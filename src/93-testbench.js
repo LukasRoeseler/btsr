@@ -7936,8 +7936,10 @@
         const start = pitKachelStand();
 
         // Reifen durchschalten, einmal rundherum plus einen Schritt.
+        // Seit dem Zwischenreifen sind es FUENF Mischungen, also sechs Schritte bis zum
+        // Ausgangspunkt zurueck (fuenf verschiedene plus einer, der schliesst).
         const mixFolge = [];
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 6; i++) {
           mixFolge.push(pitKachelStand().mix);
           pitMischungWeiter();
         }

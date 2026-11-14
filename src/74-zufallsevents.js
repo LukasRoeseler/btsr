@@ -89,7 +89,7 @@
   function zevPlanBauen(o, zufall) {
     const rnd = typeof zufall === 'function' ? zufall : Math.random;
     if (!o || !o.an || !o.arten || !o.arten.length) return null;
-    const zeitRennen = RACE_MODES[raceMode] && RACE_MODES[raceMode].timed && raceMode !== 'laps' && raceLimit > 0;
+    const zeitRennen = RACE_MODES[raceMode] && RACE_MODES[raceMode].timed && raceMode !== 'laps' && raceMode !== 'overdrive' && raceLimit > 0;
     const gesamt = zeitRennen ? raceLimit * 60000 : 3 * 3600000;
     const mittel = o.min * 60000, dauer = o.dauerS * 1000;
     const r4 = () => Math.round(rnd() * 10000) / 10000;
