@@ -1924,26 +1924,53 @@
   // Ein Zylinderrad (Richtung der Achse = x): Radius 0.5, Breite 1, mit normalen und UVs. Wird je
   // Rad mit vfS(seite*r.breite, 2*ry, 2*r.radius) skaliert und mit vfRx(raddreh) gedreht.
   function vfRadZylinderBauen(gl) {
-    const n = 16, a = [];
+    // Ein solides Rad: Laufflaeche (Zylinder, Radius 0.5, Breite 1) plus zwei Endkappen (Felge).
+    // Die Endkappen machen das Rad auch von der Seite sichtbar - ein offener Schlauch wirkt wie
+    // ein dünner Stab und wirft genau so einen Schatten.
+    const n = 16, a = [], idx = [];
+    // Laufflaeche: je Stufe zwei Ecken (x = -0.5 und +0.5), Normale radial.
     for (let i = 0; i <= n; i++) {
       const th = i / n * Math.PI * 2, ca = Math.cos(th) * 0.5, sa = Math.sin(th) * 0.5;
       for (const x of [-0.5, 0.5]) a.push(x, ca, sa, 0, ca * 2, sa * 2, i / n, x < 0 ? 0 : 1);
     }
-    const ecken = new Float32Array(a);
-    const idx = [];
+    const ecken = a;
     for (let i = 0; i < n; i++) {
       const b = i * 2;
       idx.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
     }
+    // Endkappen (Felge): ein Mittelpunkt und ein Ring je Seite. Jede Kappe ein eigenes Dreiecksnetz,
+    // damit die Textur (Felge) nicht verzerrt. UV zentriert, Normalen +/-x.
+    const kappen = [];
+    for (const x of [-0.5, 0.5]) {
+      const mitte = ecken.length;
+      ecken.push(x, 0, 0, x < 0 ? -1 : 1, 0, 0, 0.5, 0.5);
+      const ring = [];
+      for (let i = 0; i < n; i++) {
+        const th = i / n * Math.PI * 2, ca = Math.cos(th) * 0.5, sa = Math.sin(th) * 0.5;
+        ring.push(ecken.length);
+        ecken.push(x, ca, sa, x < 0 ? -1 : 1, 0, 0, 0.5 + ca, 0.5 + sa);
+      }
+      kappen.push({ mitte, ring });
+    }
+    for (const { mitte, ring } of kappen) {
+      for (let i = 0; i < n; i++) {
+        const r0 = ring[i], r1 = ring[(i + 1) % n];
+        idx.push(mitte, r0, r1);
+      }
+    }
+    const eckenF = new Float32Array(ecken);
     const indizes = new Uint16Array(idx);
     const vbo = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-    gl.bufferData(gl.ARRAY_BUFFER, ecken, gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, eckenF, gl.STATIC_DRAW);
     const ibo = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indizes, gl.STATIC_DRAW);
-    const tex = { tyre: vfTextur(gl, 'img/autos/v5r/tyre.jpg') };
-    return { vbo, ibo, teile: [{ ecke0: 0, index0: 0, indizes: indizes.length, tex: 'tyre' }], tex };
+    const tex = { tyre: vfTextur(gl, 'img/autos/v5r/tyre.jpg'), rim: vfTextur(gl, 'img/autos/v5r/rim.jpg') };
+    // Teil 0 = Laufflaeche, Teil 1 = Endkappen (Felge). Die Kappen beginnen nach der Laufflaeche.
+    const lauf = idx.length;
+    return { vbo, ibo, teile: [{ ecke0: 0, index0: 0, indizes: lauf, tex: 'tyre' },
+                               { ecke0: 0, index0: lauf, indizes: idx.length - lauf, tex: 'rim' }], tex };
   }
   function vfRadModellBauen(gl) {
     if (vfRadModell) return vfRadModell;
@@ -2207,6 +2234,30 @@
   // Kollision mit NPCs: Schaden, Abbremsen, Rumpeln; und Windschatten (dreckige Luft): dicht hinter
   // einem NPC in der Spur verliert das eigene Auto Grip vorn (wie dirtyAirLevel in 90-ghosts.js).
   // Seit v1.3.95 wertet die Kollision auch Derby (Health) und NPC-Knockout (Leben) aus.
+  // v1.5.x Kollision: statt eines festen, zu grossen Kastens im Spieler-Koordinatensystem eine
+  // orientierte Box (SAT) mit den echten Modellmassen je Auto - getroffen wird dort, wo sich die
+  // 3D-Modelle tatsaechlich beruehren (der Kasten war bis zu 20 % zu lang/breit und schlug zu frueh).
+  function vfHalb(autoModell) {
+    const d = autoModell && autoModell.d;
+    if (!d) return { l: VF_AUTO.L / 2, w: VF_AUTO.B / 2 };   // Kasten-Fallback
+    const s = VF_AUTO.L / d.laenge;
+    return { l: VF_AUTO.L / 2, w: d.breite * s / 2 };
+  }
+  function vfObb(x0, y0, h0, l0, w0, x1, y1, h1, l1, w1) {
+    // Zwei orientierte Rechtecke (Mitte x/y, Kurs h in Grad, halbe Laenge/Breite) auf Ueberlappung.
+    const h0r = h0 * Math.PI / 180, h1r = h1 * Math.PI / 180;
+    const u0 = [Math.sin(h0r), -Math.cos(h0r)], v0 = [Math.cos(h0r), Math.sin(h0r)];
+    const u1 = [Math.sin(h1r), -Math.cos(h1r)], v1 = [Math.cos(h1r), Math.sin(h1r)];
+    const dx = x1 - x0, dy = y1 - y0;
+    const achsen = [u0, v0, u1, v1];
+    for (const a of achsen) {
+      const p0 = l0 * Math.abs(u0[0] * a[0] + u0[1] * a[1]) + w0 * Math.abs(v0[0] * a[0] + v0[1] * a[1]);
+      const p1 = l1 * Math.abs(u1[0] * a[0] + u1[1] * a[1]) + w1 * Math.abs(v1[0] * a[0] + v1[1] * a[1]);
+      const dist = Math.abs(dx * a[0] + dy * a[1]);
+      if (dist > p0 + p1) return false;
+    }
+    return true;
+  }
   function vfVerkehr(dt) {
     const h = VF.h * Math.PI / 180;
     const fwdX = Math.sin(h), fwdY = -Math.cos(h), latX = Math.cos(h), latY = Math.sin(h);
@@ -2214,6 +2265,7 @@
     if (VF.kollisionsBis === undefined) VF.kollisionsBis = 0;
     const frist = (VF.modus === 'derby' || VF.modus === 'knockout') ? 600 : 1500;
     const vAbs = Math.abs(physEngine.state.speedKmh || 0);
+    const halbP = vfHalb(VF.modell);
     for (const npc of (VF.npcs || [])) {
       if (npc.koAus || npc.derbyAus) continue;
       const dx = npc.x - VF.x, dy = npc.y - VF.y;
@@ -2223,7 +2275,8 @@
         const d = Math.hypot(dx, dy);
         if (d < 14) dirty = Math.max(dirty, Math.pow(1 - d / 14, 2));
       }
-      if (rennZeitJetzt() >= VF.kollisionsBis && Math.abs(long) < VF_AUTO.L * 0.6 && Math.abs(lat) < VF_AUTO.B * 0.6) {
+      const halbN = vfHalb(npc.modell);
+      if (rennZeitJetzt() >= VF.kollisionsBis && vfObb(VF.x, VF.y, VF.h, halbP.l, halbP.w, npc.x, npc.y, npc.h, halbN.l, halbN.w)) {
         VF.kollisionsBis = rennZeitJetzt() + frist;
         physEngine.state.speedKmh *= (VF.modus === 'derby' || VF.modus === 'knockout') ? 0.85 : 0.5;
         padRumble(0.4, 0.4, 40, 'crash', 1);
@@ -3310,16 +3363,16 @@
       renderGarage();
     };
     rechts.appendChild(garWertZeile(t('Auto'), autos[ja].name, () => autoWahl(-1), () => autoWahl(1)));
-    // Vorschau des gewaehlten Autos (die Silhouette aus dem Modellordner, transparent). Der Kasten
-    // hat kein Bild - dort erscheint eine kurze Texthinweis. Bild nicht anzeigen, wenn der Eintrag
-    // gerade aktiv ist (die eigentliche Fahrt ist dann schon auf der Strecke).
+    // Vorschau des gewaehlten Autos (ein gerendertes Bild auf grauem Boden aus dem Modellordner).
+    // Der Kasten hat kein Bild - dort erscheint eine kurze Texthinweis. Bild nicht anzeigen, wenn der
+    // Eintrag gerade aktiv ist (die eigentliche Fahrt ist dann schon auf der Strecke).
     if (autos[ja].v !== 'kasten') {
       const vorschau = document.createElement('div');
       vorschau.className = 'opt-row opt-breit gar-a-aktion vf-vorschau';
       const img = document.createElement('img');
       img.className = 'vf-vorschau-bild';
       img.alt = autos[ja].name;
-      img.src = vfModellPfad(autos[ja].v) + 'shadow.png';
+      img.src = vfModellPfad(autos[ja].v) + 'vorschau.png';
       img.onerror = () => { vorschau.remove(); };
       vorschau.appendChild(img);
       rechts.appendChild(vorschau);

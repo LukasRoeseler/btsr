@@ -2321,6 +2321,13 @@
     const ampelBeginnen = () => {
       if (ampelGestartet || raceState !== 'countdown') return;
       ampelGestartet = true;
+      // Fliegender Start: kein stehender Countdown. Das Feld rollt sofort in Formation,
+      // die Ampel steht auf Rot (raceGreen) und geht beim ersten Auto ueber die Linie auf
+      // Gruen (endFormationLap -> setRaceLights('go')).
+      if (raceFlying) {
+        raceGreen();
+        return;
+      }
       $('race-status').textContent = 'Countdown…';
       // Zufaellige 1-3 s Pause vor dem Start; im Mehrspieler gibt der Host sie im Plan vor,
       // damit alle gleichzeitig losfahren (sonst wuerde jedes Telefon anders wuerfeln).
@@ -2450,6 +2457,9 @@
       // Der Flaggenstreifen haengt sonst nur an Flaggenwechseln, und die Einfuehrungsrunde
       // ist keiner - ohne diesen Aufruf faehrt das Auto von selbst und nichts sagt es.
       updateFlagUi();
+      // Fliegender Start: die Ampel steht auf Rot, solange das Feld in Formation rollt.
+      // endFormationLap() macht daraus beim ersten Auto ueber der Linie Gruen ('go').
+      setRaceLights(5);
       showHudToast(t('Einführungsrunde'));
     }
     // KEIN SPRUNG MEHR ZUR UEBERSICHT bei Gruen (v0.8.24, vom Nutzer bestaetigt: "alles so
