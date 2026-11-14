@@ -63,7 +63,7 @@
     odSelbstlenken = cb.checked;
     cb.addEventListener('change', (e) => {
       odSelbstlenken = !!e.target.checked;
-      showHudToast('Selbstlenken ' + (odSelbstlenken ? 'an' : 'aus'));
+      showHudToast(t(odSelbstlenken ? 'Selbstlenken an' : 'Selbstlenken aus'));
     });
   }
 
@@ -124,7 +124,7 @@
     odVorherLicht = (typeof headlightsOn !== 'undefined') ? headlightsOn : null;
     try { headlightsOn = true; } catch (e) { /* */ }
     overdriveHudZeigen(true);
-    showHudToast('Omega Overdrive: Nitro auf Kreis, Power-up auf Dreieck');
+    showHudToast(t('Omega Overdrive: Nitro auf Kreis, Power-up auf Dreieck'));
   }
 
   function overdriveRennenEnde() {
@@ -194,7 +194,7 @@
     if (!z.kaputt && typeof schaden === 'number' && schaden >= 100) {
       z.kaputt = true;
       z.kaputtBis = jetztZeit + 3000;
-      showHudToast('Kaputt – 3 s langsam');
+      showHudToast(t('Kaputt – 3 s langsam'));
     }
     // Die Decke setzen: Boost hebt sie an, Kaputt senkt sie, sonst der Setup-Wert.
     const basis = odVorherSetupVmax || 1;
@@ -204,7 +204,7 @@
         if (n >= 2 && typeof zusatzPlatz === 'function' && zusatzPlatz(n)) zusatzPlatz(n).schaden.wert = 0;
         else damage = 0;
         if (typeof updateDamageFuelUI === 'function') updateDamageFuelUI();
-        showHudToast('Repariert – weiter!');
+        showHudToast(t('Repariert – weiter!'));
       } else {
         st.setupVmax = basis * OD_KAPUTT_F;
       }
@@ -234,7 +234,7 @@
       z.nitro = Math.max(0, z.nitro - dauer);
       return true;
     }
-    showHudToast('Nitro leer');
+    showHudToast(t('Nitro leer'));
     return true;
   }
 
@@ -247,20 +247,20 @@
     if (pu === 'destroyer') {
       z.powerupBis = jetztZeit + 5000;
       z.powerup = null;
-      showHudToast('Destroyer aktiv: 5 s rammen ohne Schaden');
+      showHudToast(t('Destroyer aktiv: 5 s rammen ohne Schaden'));
     } else if (pu === 'superboost') {
       z.superboostBis = jetztZeit + 5000;
       z.powerup = null;
-      showHudToast('Superboost: 5 s unbegrenzter Nitro');
+      showHudToast(t('Superboost: 5 s unbegrenzter Nitro'));
     } else if (pu === 'gewitter') {
       z.gewitterBis = jetztZeit + 5000;
       z.powerup = null;
-      showHudToast('Gewitter: alle werden langsamer (5 s)');
+      showHudToast(t('Gewitter: alle werden langsamer (5 s)'));
     } else if (pu === 'emp') {
       z.empAn = true;
       z.powerup = null;
       overdriveEmp();
-      showHudToast('EMP-Blaster ausgeloest');
+      showHudToast(t('EMP-Blaster ausgeloest'));
     }
     return true;
   }
@@ -272,22 +272,34 @@
     if (z.powerup) return;                     // schon eins gehalten
     z.powerup = OD_POWERUPS[Math.floor(Math.random() * OD_POWERUPS.length)];
     overdriveBling();
-    showHudToast('Power-up: ' + t(odPowerupLabel(z.powerup)));
+    showHudToast(t('Power-up: ') + odPowerupLabel(z.powerup));
     overdriveHudMalen(nr || 1);
   }
 
   function odPowerupLabel(pu) {
-    return { destroyer: 'Destroyer', superboost: 'Superboost', gewitter: 'Gewitter', emp: 'EMP-Blaster' }[pu] || pu;
+    const name = { destroyer: 'Destroyer', superboost: 'Superboost', gewitter: 'Gewitter', emp: 'EMP-Blaster' }[pu] || pu;
+    return t(name);
+  }
+
+  // Der eigene Streckenteil aus der ORTUNG (ghostTick/ghostOrt), nicht aus dem Zaehler.
+  // playerCar.tileCount ist ein Firmware-Zaehlerbyte, das bei 256 ueberlaeuft und nicht an
+  // der Startlinie bei 0 beginnt - modulo Streckenlaenge ergaebe das einen falschen Teil.
+  // Die Ortung liefert dagegen immer einen Index in [0, nTiles) auf dem Teil, auf dem das
+  // Auto gerade steht (playerCar.ghost.tileIndex).
+  function overdriveEigenerTeil() {
+    const pc = (typeof playerCar !== 'undefined') ? playerCar : null;
+    if (!pc || !pc.ghost) return -1;
+    const gi = pc.ghost.tileIndex;
+    if (gi === null || gi === undefined) return -1;
+    const nTiles = (currentTrackTiles && currentTrackTiles.length) || 0;
+    if (nTiles <= 0) return -1;
+    return ((gi % nTiles) + nTiles) % nTiles;
   }
 
   // ---- EMP: Autos auf demselben Streckenteil (davor/dahinter/mit) kurz stehen lassen ----
-  // Der eigene Streckenteil ist ein INDEX in [0, nTiles), kein Zaehler. playerCar.tileCount
-  // ist ein Zaehler, der beim Durchfahren weiterlaeuft - modulo nTiles wird daraus die
-  // aktuelle Kachel. So bleibt der Blaster ein Naeheffekt, ohne den Rest zu treffen.
   function overdriveEmp() {
     const nTiles = (currentTrackTiles && currentTrackTiles.length) || 1;
-    const pTile = (typeof playerCar !== 'undefined' && playerCar && typeof playerCar.tileCount === 'number')
-      ? playerCar.tileCount % nTiles : -1;
+    const pTile = overdriveEigenerTeil();
     if (pTile < 0) return;
     // "vor/hinter/mit mir": der eigene Streckenteil und die beiden Nachbarn (Rundkurs, also
     // modulo). So bleibt der Blaster ein Naeheffekt, ohne den Rest des Feldes zu treffen.
@@ -337,8 +349,7 @@
     // Nur wenn wirklich ein Gegner in der Naehe ist (gleicher oder benachbarter Teil),
     // wird getroffen - ein Crash ohne Gegner (Bande) trifft niemanden.
     const nTiles = (currentTrackTiles && currentTrackTiles.length) || 1;
-    const pTile = (typeof playerCar !== 'undefined' && playerCar && typeof playerCar.tileCount === 'number')
-      ? playerCar.tileCount % nTiles : -1;
+    const pTile = overdriveEigenerTeil();
     if (pTile < 0) return;
     let best = null, bestD = Infinity;
     for (const c of (typeof garage !== 'undefined' ? garage : [])) {
@@ -354,7 +365,7 @@
     }
     if (best && bestD <= 2) {
       best.ghost.odKaputtBis = rennZeitJetzt() + 3000;
-      showHudToast('Destroyer: ' + (best.name || 'Auto') + ' kaputt');
+      showHudToast(t('Destroyer: {n} kaputt').replace('{n}', t(best.name || 'Auto')));
     }
   }
 
