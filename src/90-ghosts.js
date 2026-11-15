@@ -11337,10 +11337,6 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const scVorlaufRand = g.randHalt && g.randHalt.nominal && g.randHalt.phase === 'rand' && g.randHalt.tempoAb && g.scRest > g.randHalt.tempoAb;
       if (car.role === 'safetycar' && !scAufstellung && ((g.scHeim && !g.randHalt) || scVorlaufRand)) target = Math.max(SC_EINFAHRT_MIN, Math.min(target, scHeimTempo()));
       target = ghostHaarnadelDeckel(car, target, Math.max(tight, here));
-      // OMEGA OVERDRIVE (WIP): Gewitter verlangsamt alle ausser dem Spieler, EMP stoppt.
-      try {
-        if (typeof overdriveGhostZiel === 'function') target = overdriveGhostZiel(car, target);
-      } catch (e) { /* beim Laden */ }
       const pz = pitZiel(car);
       if (pz !== null) {
         // Anfahrt neben der Strecke: das Einfahrtstempo ist eine OBERGRENZE, und in Kurven gilt dieselbe
@@ -12787,18 +12783,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     z.throttle = gbUeber !== null ? gbUeber : gas - bremse;
     // Schalten, flankengetriggert wie bei Spieler 1. Ohne das koennte ein Spieler 2 mit
     // Handschaltung nicht schalten - und die Handschaltung ist eine Einstellung, die fuer
-    // beide gilt. OMEGA OVERDRIVE: Kreis ist Nitro statt Hochschalten (wie bei Spieler 1).
+    // beide gilt.
     const abNow = readBindingValue(pad, z.bindings.downshift) > BUTTON_CAPTURE_THRESHOLD;
     const aufNow = readBindingValue(pad, z.bindings.upshift) > BUTTON_CAPTURE_THRESHOLD;
     if (abNow && !pv.down && physicsEnabled && !z.motor.state.isShifting) {
       z.motor.triggerShift(-1);
     }
-    if (aufNow && !pv.up) {
-      if (typeof overdriveAktiv === 'function' && overdriveAktiv()) {
-        if (typeof overdriveBoostTaste === 'function') overdriveBoostTaste(z.nr);
-      } else if (physicsEnabled && !z.motor.state.isShifting) {
-        z.motor.triggerShift(1);
-      }
+    if (aufNow && !pv.up && physicsEnabled && !z.motor.state.isShifting) {
+      z.motor.triggerShift(1);
     }
     pv.down = abNow; pv.up = aufNow;
 
@@ -12825,13 +12817,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Mitziehen: #dash-head-toggle gehoert allein Auto 1.
     const headNow2 = readBindingValue(pad, z.bindings.headlights) > BUTTON_CAPTURE_THRESHOLD;
     if (headNow2 && !pv.head) {
-      // OMEGA OVERDRIVE: Dreieck aktiviert das Power-up statt Licht umzuschalten.
-      if (typeof overdriveAktiv === 'function' && overdriveAktiv()) {
-        if (typeof overdrivePowerupTaste === 'function') overdrivePowerupTaste(z.nr);
-      } else {
-        z.licht = !z.licht;
-        showHudToast('P' + z.nr + ': ' + (z.licht ? t('Licht an') : t('Licht aus')));
-      }
+      z.licht = !z.licht;
+      showHudToast('P' + z.nr + ': ' + (z.licht ? t('Licht an') : t('Licht aus')));
     }
     pv.head = headNow2;
 
@@ -13028,10 +13015,6 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (headNow && !prevHeadlights && trackEditorPad('rotate')) {
         // consumed by the editor
       } else if (headNow && !prevHeadlights
-                 && typeof overdriveAktiv === 'function' && overdriveAktiv()) {
-        // OMEGA OVERDRIVE (WIP): Dreieck aktiviert das Power-up; das Licht ist immer an.
-        if (typeof overdrivePowerupTaste === 'function') overdrivePowerupTaste();
-      } else if (headNow && !prevHeadlights
                  && document.querySelector('.tabpage.active') === $('tab-race')) {
         headlightsOn = !headlightsOn;
         const cb = $('dash-head-toggle');
@@ -13182,26 +13165,21 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         }
       }
       if (upshiftNow && !prevUpshift) {
-        // OMEGA OVERDRIVE (WIP): Kreis ist Nitro statt Hochschalten. NUR waehrend eines
-        // laufenden Overdrive-Rennens (overdriveAktiv()) - in den Menues bleibt Kreis wie
-        // bestellt "zurueck" (siehe den Kommentar unten).
-        if (typeof overdriveAktiv === 'function' && overdriveAktiv()) {
-          if (typeof overdriveBoostTaste === 'function') overdriveBoostTaste();
-        } else if (optInfoOffen()) {
+        // BESTELLT: "erlaube mir Kreistaste zu druecken, um aus den sub-menues
+        // zurueckzugehen, aktuell bleibe ich dabei manchmal stecken." showSubpage('') ist
+        // dieselbe Funktion, die auch der sichtbare .subpage-back-Knopf ruft - Kreis tut
+        // das jetzt direkt, wozu man sonst erst zur ersten Zeile hochnavigieren und
+        // "Waehlen" druecken musste. Nach demselben Muster wie optInfoOffen() oben: erst
+        // pruefen (kein Tab-race-Sonderfall noetig, dort gibt es nie ein offenes .subpage).
+        // ACC-Menue: Kreis ist in jedem Menue "zurueck", eine Ebene (Unterseite, Stapel,
+        // Eltern). Im Streckeneditor-Vollbild bleibt er Rueckgaengig, im Cockpit Hochschalten.
+        if (optInfoOffen()) {
           optInfoSchliessen();
         } else if (trackEditorPad('undo')) {
           /* vom Editor verbraucht */
         } else if (pitSpielTaste('kreis')) {
           /* Boxen-Minigame: Kreis gehoert dem Spiel */
         } else if (konsoleMenue()) {
-          // BESTELLT: "erlaube mir Kreistaste zu druecken, um aus den sub-menues
-          // zurueckzugehen, aktuell bleibe ich dabei manchmal stecken." showSubpage('') ist
-          // dieselbe Funktion, die auch der sichtbare .subpage-back-Knopf ruft - Kreis tut
-          // das jetzt direkt, wozu man sonst erst zur ersten Zeile hochnavigieren und
-          // "Waehlen" druecken musste. Nach demselben Muster wie optInfoOffen() oben: erst
-          // pruefen (kein Tab-race-Sonderfall noetig, dort gibt es nie ein offenes .subpage).
-          // ACC-Menue: Kreis ist in jedem Menue "zurueck", eine Ebene (Unterseite, Stapel,
-          // Eltern). Im Streckeneditor-Vollbild bleibt er Rueckgaengig, im Cockpit Hochschalten.
           konsoleZurueck();
         } else if (physicsEnabled && !physEngine.state.isShifting) {
           physEngine.triggerShift(1);

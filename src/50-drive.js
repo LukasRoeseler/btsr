@@ -2754,7 +2754,7 @@
   // v1.2.12: Time Attack ebenso nach Bestzeit (gefragt: "Auch dort, nach Bestzeit").
   function raceCockpitPosition() {
     if (raceState !== 'racing' && raceState !== 'finished') return null;
-    if (raceMode !== 'laps' && raceMode !== 'overdrive' && raceMode !== 'endurance' && raceMode !== 'qualifying' && raceMode !== 'bestzeit') return null;
+    if (raceMode !== 'laps' && raceMode !== 'endurance' && raceMode !== 'qualifying' && raceMode !== 'bestzeit') return null;
     let reihe;
     if (raceMode === 'qualifying' || raceMode === 'bestzeit') {
       const ortVon = (c) => (typeof c.ort === 'number' ? c.ort : -Infinity);
@@ -3698,13 +3698,6 @@
     const ziel = (typeof dirtyAirLevel === 'function') ? dirtyAirLevel() : 0;
     const ps = physEngine.state;
     ps.dirtyAir += (ziel - ps.dirtyAir) * Math.min(1, dt * 4);
-    // OMEGA OVERDRIVE (WIP): Nitro-Nachladen, Boost-Deckel, Power-up- und Reparatur-Takt.
-    try {
-      if (typeof overdrivePhysik === 'function') {
-        const od = overdrivePhysik(performance.now());
-        if (od && typeof od.throttle === 'number') rawThrottle = od.throttle;
-      }
-    } catch (e) { /* beim Laden */ }
     const out = physEngine.update({ steering: steer, throttle: rawThrottle, brake: rawBrake,
                                     headlights: headlightsOn, apFaehrt: !!ap }, dt);
     pacejkaRueckmeldung(physEngine, 1);
@@ -3843,11 +3836,6 @@
         padRumble(0.12, 0.34, OFFTRACK_RUMBLE_MS, 'abseits', z.nr);
       }
     }
-    // OMEGA OVERDRIVE (WIP): Nitro-/Power-up-Takt auch fuer Spieler 2/3. Greift nur in die
-    // Tempo-Obergrenze (setupVmax), nie ins Gas - die Sicherungen bleiben wirksam.
-    try {
-      if (typeof overdrivePhysik === 'function') overdrivePhysik(performance.now(), z.nr);
-    } catch (e) { /* beim Laden */ }
     const out = z.motor.update({ steering: lenkung, throttle: gas,
                                      brake: bremse,
                                      headlights: z.licht }, dt);

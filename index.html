@@ -241,8 +241,6 @@
     background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/rennoptionen-laps.jpg) center / cover; }
   .mode-tile.kachelbild.bestzeit {
     background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/rennoptionen-bestzeit.jpg) center / cover; }
-  .mode-tile.kachelbild.overdrive {
-    background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/rennoptionen-overdrive.jpg) center / cover; }
   .mode-tile.kachelbild:hover, .mode-tile.kachelbild.sel { color: #fff; background-color: transparent; }
   .mode-tile.kachelbild.sel { border-color: var(--bad); box-shadow: inset 3px 0 0 var(--bad); }
   .wx-pick { display: flex; gap: 6px; }
@@ -1496,33 +1494,6 @@
      und hoeher. Reihenfolge: Tank, Schaden, Reifen, Akku, Licht, Radar, Boxenwahl, G-Plot. */
   .gt3-strip { grid-area: strip; display: grid; gap: clamp(3px, .7vw, 8px);
     grid-template-columns: .6fr .6fr 1fr 1fr .8fr 2.6fr 1fr 1fr; }
-  /* ---- OMEGA OVERDRIVE HUD (WIP) ----------------------------------------------------
-     Spielerisches HUD wie in einem Arcade-Rennen: oben ein Nitro-Tank mit Flamme, daneben
-     das gehaltene Power-up mit "Dreieck aktivieren". Nur im Overdrive-Modus sichtbar. */
-  .od-hud { position: absolute; top: 6px; right: 8px; z-index: 40; display: flex;
-    gap: 8px; align-items: stretch; pointer-events: none; }
-  /* Wenn das HUD versteckt ist, sind auch seine Kinder weg - sonst zaehlt der Kontrasttest
-     die Kindelemente (z. B. od-pu-ico) trotz des hidden-Attributs am Wurzelknoten. */
-  #od-hud[hidden], #od-hud[hidden] * { display: none !important; }
-  .od-tank { display: flex; flex-direction: column; gap: 3px; align-items: center;
-    background: rgba(6,10,18,.72); border: 1px solid rgba(255,255,255,.14);
-    border-radius: 8px; padding: 5px 8px; min-width: 88px; color: #ffd83d; }
-  .od-tank svg { width: 18px; height: 18px; }
-  .od-tank-stand { font-size: 10px; font-weight: 700; letter-spacing: .08em;
-    text-transform: uppercase; color: #cfd6e2; }
-  .od-tank-bar { width: 64px; height: 8px; border-radius: 4px; overflow: hidden;
-    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.12); }
-  .od-tank-bar > i { display: block; height: 100%; width: 0;
-    background: linear-gradient(90deg,#ffb02e,#ff5f2e); transition: width .12s linear; }
-  .od-hud.boost .od-tank { border-color: #ff5f2e; box-shadow: 0 0 10px rgba(255,95,46,.6); }
-  .od-pu { display: flex; flex-direction: column; gap: 2px; align-items: center;
-    background: rgba(6,10,18,.72); border: 1px solid rgba(255,255,255,.14);
-    border-radius: 8px; padding: 5px 10px; color: #eef2f7; }
-  .od-pu-ico { font-size: 20px; line-height: 1; }
-  .od-pu-txt { font-size: 10px; font-weight: 700; letter-spacing: .06em;
-    text-transform: uppercase; }
-  .od-pu-taste { font-size: 9px; color: #9aa5b7; }
-  body[data-cockpit="acc"] .od-hud { display: none; }
   /* Hoeher nur, wo Platz ist: im Vollbild und auf niedrigen Schirmen rechnet cockpitPassung()
      sonst einen kleineren Massstab fuer das ganze Cockpit (Selbsttest "Cockpit passt im Vollbild"). */
   @media (max-width: 560px) {
@@ -1694,7 +1665,6 @@
   body[data-tyre-mix="mittel"] .gt3-t4 { --mix-farbe: #f7d117; }
   body[data-tyre-mix="hart"] .gt3-t4 { --mix-farbe: #f2f4f8; }
   body[data-tyre-mix="regen"] .gt3-t4 { --mix-farbe: #2f6fd0; }
-  body[data-tyre-mix="inter"] .gt3-t4 { --mix-farbe: #27c28b; }
   /* Die Fuellung waechst von UNTEN, wie ein Vorrat. Dieselbe Richtung wie Tank und Schaden:
      drei Anzeigen, die gleich leerlaufen, liest man mit einem Blick. */
   .gt3-t4 > b { position: absolute; left: 0; right: 0; bottom: 0; height: 0;
@@ -2137,14 +2107,13 @@
   .pit-t4-feld .gt3-t4 { aspect-ratio: 1 / 1.5; --mix-linie: 2px; }
   /* Die vier Mischungen. Gleich breit, die geltende umrahmt - ein Rahmen und keine
      Aufhellung, weil weiss und gelb sich nicht aufhellen lassen. */
-  .pit-mix-feld { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px;               
+  .pit-mix-feld { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px;
     width: clamp(48px, 11vw, 84px); justify-self: end; }
   .pit-mix-feld > i { display: block; height: clamp(9px, 1.8vw, 14px); border-radius: 2px;
     box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .5); }
   .pit-mix-feld > i[data-mix="weich"] { background: #e5261e; }
   .pit-mix-feld > i[data-mix="mittel"] { background: #f7d117; }
   .pit-mix-feld > i[data-mix="hart"] { background: #f2f4f8; }
-  .pit-mix-feld > i[data-mix="inter"] { background: #27c28b; }
   .pit-mix-feld > i[data-mix="regen"] { background: #2f6fd0; }
   .pit-mix-feld > i.an { outline: 2px solid var(--gt3-tile-ink); outline-offset: 1px; }
   /* DIE MARKIERUNG ALS OUTLINE, nicht als Rahmen: sie malt AUSSERHALB des Innenrings, den
@@ -5333,8 +5302,7 @@
   body[data-cockpit="acc"] #race-dash #race-pitscreen > .pit-row .pr-wert {
     font-family: var(--k-font); font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
     font-size: clamp(8.5px, 1.1vw, 13px); font-size: clamp(8.5px, 2.8cqh, 13px);
-    line-height: 1; padding: .34em .7em .28em; width: 9.5em; text-align: center;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    line-height: 1; padding: .34em .7em .28em; min-width: 5.4em; text-align: center;
     color: #eef2f7; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .3); }
   body[data-cockpit="acc"] #race-dash #race-pitscreen > .pit-row.pr-ja .pr-wert {
     background: var(--good); color: #04130a; box-shadow: none; }
@@ -5793,7 +5761,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.4.79</span></span>
+        <span class="foot-ver">v<span id="app-version">1.4.80</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5917,20 +5885,6 @@
     </svg>
     <div class="gt3" id="race-dash">
       <div class="race-rain" aria-hidden="true"><i></i><i></i><i></i></div>
-      <!-- OMEGA OVERDRIVE (WIP): spielerisches HUD ueber dem Cockpit. Nitro-Tank und das
-           aktuelle Power-up, nur im Overdrive-Modus sichtbar. -->
-      <div class="od-hud" id="od-hud" hidden>
-        <div class="od-tank" id="od-tank" title="Nitro: Kreis zum Boost. Laedt sich in einer Rundenzeit auf.">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 3c3 3 5 6 5 9a5 5 0 0 1-10 0c0-3 2-6 5-9z"/></svg>
-          <div class="od-tank-stand" id="od-tank-stand">Nitro</div>
-          <div class="od-tank-bar"><i id="od-tank-bar"></i></div></div>
-        <div class="od-pu" id="od-pu" hidden>
-          <div class="od-pu-ico" id="od-pu-ico">&#9670;</div>
-          <div class="od-pu-txt" id="od-pu-txt">Power-up</div>
-          <div class="od-pu-taste">&#9651; aktivieren</div></div>
-      </div>
       <!-- BLAETTERN OHNE GAMEPAD, oben LINKS und gegenueber den Vollbildknoepfen: so
            liegt in jeder Ecke eine Sache, und man greift nicht daneben.
 
@@ -6298,7 +6252,7 @@
                  ist umrahmt; mit der Waehltaste schaltet man durch. -->
             <span class="pit-mix-feld">
               <i data-mix="weich"></i><i data-mix="mittel"></i>
-              <i data-mix="hart"></i><i data-mix="inter"></i><i data-mix="regen"></i>
+              <i data-mix="hart"></i><i data-mix="regen"></i>
             </span>
             <span class="pr-wert" id="pit-wert-mix" data-i18n-skip>&ndash;</span></span></div>
         <div class="pit-row pit-tile" id="pit-row-refuel" data-pit="refuel">
@@ -7048,9 +7002,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.4</span></b></p>
       <ul class="muted" id="patchnotes-14" style="padding-left:20px; line-height:1.7">
-        <li data-i18n-skip>Omega Overdrive (experimentell, nur auf der Bahn, Renntyp in den Renneinstellungen): Arcade-Rennen im Stil von Mario Kart &#8211; festes Fahrgef&#252;hl (~100 km/h, schneller Antritt, optionales Selbstlenken), Nitro auf Kreis (Tank, l&#228;dt sich in einer Rundenzeit auf), Power-ups beim &#220;berfahren der Start/Ziel-Linie (Destroyer, Superboost, Gewitter, EMP-Blaster) und Schaden ohne Boxenstopp (kaputtes Auto f&#228;hrt 3 s langsam und repariert sich selbst). Behoben: Nach dem Rennen blieb die Tempo-Obergrenze auf 1,45 stehen, wenn das Rennen im Nitro-Boost endete, und der Setup-Wert (Motorkennfeld, Heckfl&#252;gel) wurde im Rennen &#252;berschrieben. Der Boost gab auch Gas, wenn niemand Gas gab &#8211; jetzt hebt er nur die Tempo-Obergrenze und respektiert die Sicherungen (kein Gas neben der Bahn, Autopilot unter Gelb, Fr&#252;hstart-Sperre, totes Auto im Derby). Kreis und Dreieck waren schon in den Men&#252;s umbelegt, sobald Overdrive als Renntyp gew&#228;hlt war &#8211; jetzt nur noch w&#228;hrend des laufenden Rennens. Die manuelle Schaltung und die Tempo-Obergrenze kommen nach dem Rennen zur&#252;ck, der Nitro-Tank startet im zweiten Rennen wieder leer, im Cockpit wird die Position angezeigt, und Overdrive z&#228;hlt jetzt wie ein Rundenrennen (Wetter, Zufallsevents, Fr&#252;hstart-Zusatzrunde, WLAN-Mehrspieler, Restrunden-Ansage). Destroyer und EMP treffen nur Gegner auf demselben oder benachbarten Streckenteil. Selbstlenken wirkt auch, wenn das Auto in der Garage eine eigene Fahrhilfe hat. Spieler 2 und 3 bekommen Nitro und Power-ups. Neu: EMP und Destroyer treffen jetzt wirklich nur Gegner auf demselben oder benachbarten Streckenteil &#8211; vorher rechneten sie den eigenen Teil aus dem Kachelz&auml;hler, der bei 256 &#252;berl&auml;uft und nicht an der Startlinie beginnt, und stoppten dadurch zuf&auml;llige oder weit entfernte NPCs. Selbstlenken ist ab Werk aus. Die Overdrive-Meldungen (Nitro leer, Kaputt, Power-ups, Selbstlenken) laufen jetzt &#252;ber die &#220;bersetzung.</li>
         <li>Virtuelles Fahren (Quality, Garage &#8594; Virtuelles Auto &#8594; Grafik): Die Szene ist deutlich sch&#246;ner. Neu sind eine Tageszeit mit Sonne, Horizont und Sternen (Morgen, Mittag, Abend, Nacht, in der Garage w&#228;hlbar), Bloom und ein AgX-Tonemapping mit Vignette als Nachbearbeitung, Umgebungsreflexionen im Lack, ein Regen-Schalter mit nassem Glanz der Bahn und Regenstreifen im Bild, eine Livery-Einf&#228;rbung der Karosserie je Fahrzeugfarbe, eine TV-Kamera, Reifenverformung in Kurven (das &#228;u&#223;ere Rad staucht sich) und Kontaktschatten unter den R&#228;dern sowie Frustum-Culling und LOD f&#252;r ferne NPCs. Scheitert die Nachbearbeitung (etwa ohne Framebuffer), f&#228;hrt die App mit dem direkten Bild weiter.</li>
-        <li>Reifenmischung: Neu ist der Zwischenreifen zwischen Slick und Regenreifen &#8211; etwas weniger Grip im Trockenen als der Mittelreifen, mehr als Slicks im Nassen, ohne Aufschwimmen; in der Boxenwahl zwischen hart und Regen.</li>
         <li>Wetter: Ein fester Startwert (Konsole: omegasim-wx-seed) macht den Wetterplan reproduzierbar &#8211; dieselbe Strecke, dasselbe Wetter.</li>
         <li>Virtuelles Fahren: Der Geist speichert die aufgezeichnete Linie und l&#228;sst sie exportieren (JSON) und wieder einlesen; eingelesen f&#228;hrt der Geist sie sofort ab (Linie exportieren / Linie einlesen in der Garage).</li>
         <li>Setup je Auto (WIP): neu sind Bremsbalance, ABS, TC, Motorkennfeld, Heckfl&#252;gel und Reifendruck, jeweils mit Erkl&#228;rung im &#9432; und einer Zeile, was die Einstellung bewirkt. Was im gew&#228;hlten Fahrgef&#252;hl nicht wirkt, ist ausgegraut. Das Motorkennfeld &#228;ndert auch den Verbrauch und die Tank-Rundenangabe. W&#228;hrend die Reifenrunden berechnet werden, dreht sich das Streckenteil als Ladesymbol, und das Fenster bleibt bedienbar. Bei vorgegebenem Fahrgef&#252;hl fahren alle mit Standard.</li>
@@ -10364,11 +10316,6 @@
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="9" cy="9" r="3"/><circle cx="15" cy="15" r="3"/><path d="M9 12v9M15 12V3"/>
           </svg><b>Demolition Derby</b><span class="wip-tag">experimentell</span></button>
-        <button type="button" class="mode-tile kachelbild overdrive" data-mode="overdrive">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M13 2L4 14h6l-1 8 9-12h-6z"/><circle cx="13" cy="2" r="0.6"/>
-          </svg><b>Omega Overdrive</b><span class="wip-tag">WIP</span></button>
       </div>
       <select id="race-mode" hidden style="display:none">
         <option value="practice" selected>Training</option>
@@ -10378,7 +10325,6 @@
         <option value="endurance">Endurance</option>
         <option value="knockout">NPC Knockout</option>
         <option value="derby">Demolition Derby</option>
-        <option value="overdrive">Omega Overdrive</option>
       </select></div>
       <p class="muted" id="race-mode-hint" style="font-size:11.5px; margin:8px 0 0 0"></p>
 
@@ -10388,14 +10334,6 @@
       <div class="opt-row"><div class="opt-label"><span id="race-limit-label">Minuten</span>
           <small>Beim Training und bei Bestzeit: 0 hei&szlig;t ohne Ende.</small></div>
         <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="race-limit" value="0" min="0" max="120" step="1" style="width:84px"><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
-      <!-- OMEGA OVERDRIVE (experimentell): optionale Selbstlenkung. Nur im Overdrive-Modus sichtbar.
-           Hinweistexte nur deutsch (experimenteller Modus), deshalb data-i18n-skip. -->
-      <div class="opt-row" id="od-selbstlenken-row" style="display:none" data-i18n-skip>
-        <div class="opt-label">Selbstlenken
-          <span class="wip-tag">experimentell</span>
-          <small>Omega Overdrive: Das Auto h&auml;lt sich selbst auf der Bahn (Ideallinie statt
-          eigener Lenkung). In Overdrive steht das Licht immer an.</small></div>
-        <input type="checkbox" id="od-selbstlenken"></div>
       <div class="opt-row"><div class="opt-label">Sektoren
           <span class="wip-tag">experimentell</span>
           <small>&Uuml;berfahrten je Runde. <b>Im Bahn-Modus</b> (Editor) bestimmt die Strecke
@@ -16805,7 +16743,6 @@
     "Leistung": "Power",
     "Setup je Auto (WIP): neu sind Bremsbalance, ABS, TC, Motorkennfeld, Heckflügel und Reifendruck, jeweils mit Erklärung im ⓘ und einer Zeile, was die Einstellung bewirkt. Was im gewählten Fahrgefühl nicht wirkt, ist ausgegraut. Das Motorkennfeld ändert auch den Verbrauch und die Tank-Rundenangabe. Während die Reifenrunden berechnet werden, dreht sich das Streckenteil als Ladesymbol, und das Fenster bleibt bedienbar. Bei vorgegebenem Fahrgefühl fahren alle mit Standard.": "Setup per car (WIP): new are brake balance, ABS, TC, engine map, rear wing and tyre pressure, each with an explanation in the ⓘ and a line showing what the setting does. Settings that have no effect in the chosen driving feel are greyed out. The engine map also changes consumption and the fuel lap figure. While the tyre laps are calculated, the track piece spins as a loading symbol and the window stays usable. With a set driving feel everyone uses the default.",
     "Virtuelles Fahren (Quality, Garage → Virtuelles Auto → Grafik): Die Szene ist deutlich schöner. Neu sind eine Tageszeit mit Sonne, Horizont und Sternen (Morgen, Mittag, Abend, Nacht, in der Garage wählbar), Bloom und ein AgX-Tonemapping mit Vignette als Nachbearbeitung, Umgebungsreflexionen im Lack, ein Regen-Schalter mit nassem Glanz der Bahn und Regenstreifen im Bild, eine Livery-Einfärbung der Karosserie je Fahrzeugfarbe, eine TV-Kamera, Reifenverformung in Kurven (das äußere Rad staucht sich) und Kontaktschatten unter den Rädern sowie Frustum-Culling und LOD für ferne NPCs. Scheitert die Nachbearbeitung (etwa ohne Framebuffer), fährt die App mit dem direkten Bild weiter.": "Virtual driving (Quality, Garage → Virtual car → Graphics): the scene is noticeably prettier. New are a time of day with sun, horizon and stars (morning, noon, evening, night, selectable in the garage), bloom and an AgX tone map with vignette as post-processing, environment reflections in the paint, a rain switch with wet gloss on the track and rain streaks on screen, a livery tint of the body per car colour, a TV camera, tyre deformation in corners (the outer tyre flattens) and contact shadows under the wheels as well as frustum culling and LOD for distant NPCs. If the post-processing fails (for example without a framebuffer), the app continues with the direct image.",
-    "Reifenmischung: Neu ist der Zwischenreifen zwischen Slick und Regenreifen – etwas weniger Grip im Trockenen als der Mittelreifen, mehr als Slicks im Nassen, ohne Aufschwimmen; in der Boxenwahl zwischen hart und Regen.": "Tyre compound: new is the intermediate tyre between slick and rain – a bit less grip on a dry track than the medium, more than slicks in the wet, without aquaplaning; in the pit choice between hard and rain.",
     "Wetter: Ein fester Startwert (Konsole: omegasim-wx-seed) macht den Wetterplan reproduzierbar – dieselbe Strecke, dasselbe Wetter.": "Weather: a fixed seed (console: omegasim-wx-seed) makes the weather plan reproducible – same track, same weather.",
     "Virtuelles Fahren: Der Geist speichert die aufgezeichnete Linie und lässt sie exportieren (JSON) und wieder einlesen; eingelesen fährt der Geist sie sofort ab (Linie exportieren / Linie einlesen in der Garage).": "Virtual driving: the ghost saves the recorded line and lets you export it (JSON) and import it again; once imported the ghost drives it immediately (Export line / Import line in the garage).",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
@@ -19274,22 +19211,6 @@
     "Meisterschaft: Abschluss": "Championship: finale",
     "Nach dem letzten Event die Fanfare und der Meister mit seinen Punkten (statt des Satzes „Meisterschaft vorbei“).": "After the last event the fanfare and the champion with their points (instead of the sentence “Championship over”).",
     "Erfolgsballast: {n} +{kg} kg": "Success ballast: {n} +{kg} kg",
-    "Selbstlenken an": "Self-steering on",
-    "Selbstlenken aus": "Self-steering off",
-    "Omega Overdrive: Nitro auf Kreis, Power-up auf Dreieck": "Omega Overdrive: nitro on Circle, power-up on Triangle",
-    "Kaputt – 3 s langsam": "Broken – slow for 3 s",
-    "Repariert – weiter!": "Repaired – carry on!",
-    "Nitro leer": "Nitro empty",
-    "Destroyer aktiv: 5 s rammen ohne Schaden": "Destroyer active: ram without damage for 5 s",
-    "Superboost: 5 s unbegrenzter Nitro": "Superboost: unlimited nitro for 5 s",
-    "Gewitter: alle werden langsamer (5 s)": "Thunderstorm: everyone slows down (5 s)",
-    "EMP-Blaster ausgeloest": "EMP blaster fired",
-    "Power-up: ": "Power-up: ",
-    "Destroyer: {n} kaputt": "Destroyer: {n} broken",
-    "Destroyer": "Destroyer",
-    "Superboost": "Superboost",
-    "Gewitter": "Thunderstorm",
-    "EMP-Blaster": "EMP blaster",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -20937,22 +20858,6 @@
     "Bezugsdruck": "presión de referencia",
     "Sparen": "Ahorro",
     "Leistung": "Potencia",
-    "Selbstlenken an": "Autodirección activada",
-    "Selbstlenken aus": "Autodirección desactivada",
-    "Omega Overdrive: Nitro auf Kreis, Power-up auf Dreieck": "Omega Overdrive: nitro en Círculo, power-up en Triángulo",
-    "Kaputt – 3 s langsam": "Roto – lento durante 3 s",
-    "Repariert – weiter!": "Reparado – ¡adelante!",
-    "Nitro leer": "Nitro vacío",
-    "Destroyer aktiv: 5 s rammen ohne Schaden": "Destroyer activo: embiste sin daño durante 5 s",
-    "Superboost: 5 s unbegrenzter Nitro": "Superboost: nitro ilimitado durante 5 s",
-    "Gewitter: alle werden langsamer (5 s)": "Tormenta: todos van más lentos (5 s)",
-    "EMP-Blaster ausgeloest": "Blaster EMP disparado",
-    "Power-up: ": "Power-up: ",
-    "Destroyer: {n} kaputt": "Destroyer: {n} roto",
-    "Destroyer": "Destroyer",
-    "Superboost": "Superboost",
-    "Gewitter": "Tormenta",
-    "EMP-Blaster": "Blaster EMP",
   };
 
   // ============================================================================
@@ -28994,7 +28899,7 @@
   // v1.2.12: Time Attack ebenso nach Bestzeit (gefragt: "Auch dort, nach Bestzeit").
   function raceCockpitPosition() {
     if (raceState !== 'racing' && raceState !== 'finished') return null;
-    if (raceMode !== 'laps' && raceMode !== 'overdrive' && raceMode !== 'endurance' && raceMode !== 'qualifying' && raceMode !== 'bestzeit') return null;
+    if (raceMode !== 'laps' && raceMode !== 'endurance' && raceMode !== 'qualifying' && raceMode !== 'bestzeit') return null;
     let reihe;
     if (raceMode === 'qualifying' || raceMode === 'bestzeit') {
       const ortVon = (c) => (typeof c.ort === 'number' ? c.ort : -Infinity);
@@ -29938,13 +29843,6 @@
     const ziel = (typeof dirtyAirLevel === 'function') ? dirtyAirLevel() : 0;
     const ps = physEngine.state;
     ps.dirtyAir += (ziel - ps.dirtyAir) * Math.min(1, dt * 4);
-    // OMEGA OVERDRIVE (WIP): Nitro-Nachladen, Boost-Deckel, Power-up- und Reparatur-Takt.
-    try {
-      if (typeof overdrivePhysik === 'function') {
-        const od = overdrivePhysik(performance.now());
-        if (od && typeof od.throttle === 'number') rawThrottle = od.throttle;
-      }
-    } catch (e) { /* beim Laden */ }
     const out = physEngine.update({ steering: steer, throttle: rawThrottle, brake: rawBrake,
                                     headlights: headlightsOn, apFaehrt: !!ap }, dt);
     pacejkaRueckmeldung(physEngine, 1);
@@ -30083,11 +29981,6 @@
         padRumble(0.12, 0.34, OFFTRACK_RUMBLE_MS, 'abseits', z.nr);
       }
     }
-    // OMEGA OVERDRIVE (WIP): Nitro-/Power-up-Takt auch fuer Spieler 2/3. Greift nur in die
-    // Tempo-Obergrenze (setupVmax), nie ins Gas - die Sicherungen bleiben wirksam.
-    try {
-      if (typeof overdrivePhysik === 'function') overdrivePhysik(performance.now(), z.nr);
-    } catch (e) { /* beim Laden */ }
     const out = z.motor.update({ steering: lenkung, throttle: gas,
                                      brake: bremse,
                                      headlights: z.licht }, dt);
@@ -32129,8 +32022,7 @@
     // Rennoptionen-Kachel wechselt mit dem Rennmodus das Bild (BESTELLT v0.8.53).
     const rmBild = { practice: 'rennoptionen-practice', endurance: 'rennoptionen-endurance',
                      qualifying: 'rennoptionen-qualifying', laps: 'rennoptionen-laps',
-                     knockout: 'knockout', derby: 'derby', bestzeit: 'rennoptionen-bestzeit',
-                     overdrive: 'rennoptionen-overdrive' }[rm.value];
+                     knockout: 'knockout', derby: 'derby', bestzeit: 'rennoptionen-bestzeit' }[rm.value];
     const rb = $('fa-renn-bild');
     if (rb && rmBild && rb.dataset.bild !== rmBild) {
       rb.style.backgroundImage = 'url(img/' + rmBild + '.jpg)';
@@ -45513,13 +45405,6 @@
     // auch Geister haben Health.
     derby:      { label: 'Demolition Derby', unit: 'Kills', timed: false,
                   hint: 'Experimentell: rammen, Health 0-100, Sieg nach Kills.' },
-    // BESTELLT: "Omega Overdrive" - ein Arcade-Rennmodus im Stil von Mario Kart, nur auf
-    // der Bahn. Feste Fahrdynamik (Arcade, ~100 km/h, schneller Antritt, optional
-    // Selbstlenken), Nitro auf Kreis (Anzeige wie ein Tank, laedt sich in einer Rundezeit
-    // auf), Power-ups beim Ueberfahren der Start/Ziel-Linie, Schaden ohne Boxenstopp
-    // (kaputtes Auto faehrt 3 s langsam und repariert sich dann selbst). Als WIP markiert.
-    overdrive:  { label: 'Omega Overdrive', unit: 'Runden', timed: true,
-                  hint: 'WIP: Arcade-Rennen mit Nitro und Power-ups. Nur auf der Bahn.' },
   };
   let raceMode = 'practice';
   let raceLimit = 0;              // minutes, or laps in 'laps' mode; Training: 0 = ohne Ende
@@ -45577,7 +45462,7 @@
   // Funktion: bei einem Zeitlimit gibt es keine Zielrundenzahl, und eine hinzuschreiben
   // waere erfunden.
   function raceLapTarget(gefahren) {
-    if (raceMode === 'laps' || raceMode === 'overdrive') return gefahren + ' / ' + (raceLimit + fruehstartZielPlus(1));
+    if (raceMode === 'laps') return gefahren + ' / ' + (raceLimit + fruehstartZielPlus(1));
     if (RACE_MODES[raceMode].timed && raceStartedAt !== null) {
       const restMs = Math.max(0, raceLimit * 60000 - (rennZeitJetzt() - raceStartedAt));
       const s = Math.floor(restMs / 1000);
@@ -45594,7 +45479,7 @@
       return raceLimit > 0 && raceStartedAt !== null && (rennZeitJetzt() - raceStartedAt) >= raceLimit * 60000;
     }
     if (!RACE_MODES[raceMode].timed) return false;
-    if (raceMode === 'laps' || raceMode === 'overdrive') {
+    if (raceMode === 'laps') {
       // Je Auto sein Ziel: Fruehstart-Zusatzrunde (v1.3.132) zaehlt nur fuer diesen Fahrer.
       return raceAllCars().some(c => c.laps.length >= raceLimit + fruehstartZielPlus(spielerPlatzVonRolle(c.role)));
     }
@@ -45922,7 +45807,7 @@
     if (typeof challengeLaeuft === 'function' && challengeLaeuft()) return '5s';
     const el = $('race-fruehstart-strafe');
     const v = el ? el.value : 'pit';
-    if (v === 'extra' && raceMode !== 'laps' && raceMode !== 'overdrive') return 'pit';
+    if (v === 'extra' && raceMode !== 'laps') return 'pit';
     return ['pit', '5s', 'extra', 'keine'].indexOf(v) >= 0 ? v : 'pit';
   }
   function fruehstartGasSetzen(w, ja) { const f = fruehstart[w]; if (f) f.gas = !!ja; }
@@ -45967,7 +45852,7 @@
   // statusRest (Anzeige) und mpEigenerStand (WLAN: gemeldete Runden).
   function fruehstartZielPlus(w) {
     const f = fruehstart[w];
-    return f && f.extra && (raceMode === 'laps' || raceMode === 'overdrive') ? 1 : 0;
+    return f && f.extra && raceMode === 'laps' ? 1 : 0;
   }
   function fruehstartBeginnen() {
     fruehstartReset();
@@ -46022,7 +45907,7 @@
       if (!RACE_MODES[raceMode].timed) {
         const up = rennZeitJetzt() - raceStartedAt;
         el.textContent = formatLapTime(up) + ' gefahren';
-      } else if (raceMode === 'laps' || raceMode === 'overdrive') {
+      } else if (raceMode === 'laps') {
         const best = Math.max(0, ...raceAllCars().map(c => c.laps.length));
         el.textContent = `Runde ${best} / ${raceLimit}`;   // best = vollendete Runden
       } else {
@@ -46207,8 +46092,7 @@
     if (raceState === 'finished' && car.ghost && car.ghost.auslauf) {
       car.ghost.auslauf = false;
       // v1.4.54: im Rundenrennen nur, wer die Zielrunde noch nicht hat (der Sieger faehrt keine Extrarunde).
-      const zielSchon = (raceMode === 'laps' || raceMode === 'overdrive')
-        && r.laps.length >= raceLimit + fruehstartZielPlus(spielerPlatzVonRolle(car.role));
+      const zielSchon = raceMode === 'laps' && r.laps.length >= raceLimit + fruehstartZielPlus(spielerPlatzVonRolle(car.role));
       if (car !== playerCar) autoSekAutoRunde(r, now, r.lapStart !== null && !zielSchon);
       if (r.lapStart !== null && !zielSchon) {
         r.laps.push({ lap: r.laps.length + 1, ms: now - r.lapStart, off: r.offLap || 0, crossedAt: now });
@@ -46286,9 +46170,6 @@
       const nrSp = spielerNrVon(car);
       const ms = now - r.lapStart + (nrSp >= 2 ? fruehstartZuschlag(nrSp, r.laps.length) : 0), offs = r.offLap || 0;
       r.laps.push({ lap: r.laps.length + 1, ms, off: offs, crossedAt: now });
-      // OMEGA OVERDRIVE (WIP): auch Spieler 2/3 bekommen beim Ueberfahren der Linie ein
-      // Power-up zugewiesen (wie Spieler 1 in playerLapCrossed).
-      if (nrSp >= 2 && typeof overdriveLap === 'function') overdriveLap(nrSp);
       // v0.10.6: Bestzeit-Modus - auch Spieler 2/3 sammeln Zeiten und Medaillen.
       if (raceMode === 'bestzeit' && spielerNrVon(car) >= 2 && ms >= rundeMinMs()) {
         bestzeitMeldung(bestzeitRunde(ms, car), ms, spielerNrVon(car));
@@ -46820,13 +46701,13 @@
       wxWechselPlanen(false);
       // In einem Zeitrennen faellt der erste Schauer sicher hinein: spaetestens bei der
       // Haelfte der Renndauer.
-      if (RACE_MODES[raceMode].timed && raceMode !== 'laps' && raceMode !== 'overdrive') {
+      if (RACE_MODES[raceMode].timed && raceMode !== 'laps') {
         wxWechselAt = Math.min(wxWechselAt, rennZeitJetzt() + raceLimit * 60000 * 0.5);
       }
       return;
     }
     if (!raceWxChange) return;
-    const total = RACE_MODES[raceMode].timed && raceMode !== 'laps' && raceMode !== 'overdrive'
+    const total = RACE_MODES[raceMode].timed && raceMode !== 'laps'
       ? raceLimit * 60000
       : 5 * 60000;   // practice / lap races: assume a five-minute window
     raceWxSwitchAt = rennZeitJetzt() + total * (0.35 + Math.random() * 0.3);
@@ -46906,7 +46787,7 @@
   let mpWetter = null;   // { gruen, liste: [{ abMs, wetter }], i }
   function wetterPlanBauen() {
     const liste = [];
-    const zeitRennen = RACE_MODES[raceMode].timed && raceMode !== 'laps' && raceMode !== 'overdrive';
+    const zeitRennen = RACE_MODES[raceMode].timed && raceMode !== 'laps';
     if (raceWxStart === 'wechsel') {
       const total = zeitRennen ? raceLimit * 60000 : 2 * 3600000;
       let t = 0, nass = false, erste = true;
@@ -47801,8 +47682,6 @@
     zevGruen();
     fruehstartGruen();
     rammReset();
-    // OMEGA OVERDRIVE (WIP): Arcade-Fahrgefuehl, Nitro und Power-ups beim Gruen aktivieren.
-    if (typeof overdriveRennenStart === 'function') overdriveRennenStart();
     // v1.4.48: die ersten 2 s nach Gruen gilt kein Auto als neben der Bahn (abseitsStartGnade, 50-drive.js).
     if (typeof abseitsStartGnade === 'function') abseitsStartGnade();
     // FRISCH ZAEHLEN. Ohne das traegt ein zweites Rennen die Ueberfahrten des ersten mit
@@ -48077,8 +47956,6 @@
     if (typeof meisterRennenEnde === 'function') meisterRennenEnde(willAuslaufen);
     // Online-Streckenzeiten (72c-strecken-online.js): nicht fuer Challenges, die haben eigene Listen.
     if (typeof skSitzungEnde === 'function' && !(typeof challengeLaeuft === 'function' && challengeLaeuft())) skSitzungEnde();
-    // OMEGA OVERDRIVE (WIP): Arcade-Fahrgefuehl und HUD zuruecknehmen.
-    if (typeof overdriveRennenEnde === 'function') overdriveRennenEnde();
     if (typeof challengeRennenEnde === 'function' && challengeRennenEnde(willAuslaufen)) { /* erledigt */ }
     else if (typeof konsoleRennenBeendet === 'function') konsoleRennenBeendet();
     else {
@@ -48172,13 +48049,10 @@
     $('race-limit').min = ohneEnde ? '0' : '1';
     // Fruehstart-Zusatzrunde gibt es nur im Rundenrennen (sonst gilt Durchfahrt, fruehstartStrafe).
     const fsExtra = document.querySelector('#race-fruehstart-strafe option[value="extra"]');
-    if (fsExtra) fsExtra.disabled = raceMode !== 'laps' && raceMode !== 'overdrive';
+    if (fsExtra) fsExtra.disabled = raceMode !== 'laps';
     // 0.7, not 0.45. On white 0.45 was a legible grey; on black it collapsed to 2.7:1,
     // and this label still has to be readable while it says which unit is NOT in use.
     $('race-limit-label').style.opacity = (m.timed || raceMode === 'derby') ? '' : '0.7';
-    // OMEGA OVERDRIVE (WIP): Selbstlenk-Option nur im Overdrive-Modus anzeigen.
-    const odRow = document.getElementById('od-selbstlenken-row');
-    if (odRow) odRow.style.display = raceMode === 'overdrive' ? '' : 'none';
   }
   // Kacheln und Wetterknoepfe schreiben in das versteckte Auswahlfeld und loesen change
   // aus. Damit gibt es weiter genau EINE Stelle, die auf eine Aenderung reagiert, und die
@@ -48188,8 +48062,6 @@
   // kein Demolition Derby, und wenn ich frei fahre, kein Time Attack." Ein verbotener Typ verschwindet aus Kacheln,
   // Liste und dem Durchschalten auf FAHREN; war er gewaehlt, faellt die Wahl auf Training zurueck.
   function renntypErlaubt(modus) {
-    // Omega Overdrive nur auf der Bahn (braucht Streckenteile fuer Nitro/Power-ups).
-    if (modus === 'overdrive') return trackMode === 'on';
     return trackMode === 'on' ? modus !== 'derby' : modus !== 'bestzeit';
   }
   function renntypenFiltern() {
@@ -48250,7 +48122,7 @@
     raceMode = e.target.value;
     // Sensible default per mode rather than carrying a minute count over into a lap count.
     // DERBY (v0.8.126): das Limit ist das KILLS-ZIEL, Voreinstellung 1.
-    raceLimit = raceMode === 'laps' || raceMode === 'overdrive' ? 10 : (raceMode === 'derby' ? 1
+    raceLimit = raceMode === 'laps' ? 10 : (raceMode === 'derby' ? 1
       : ((raceMode === 'practice' || raceMode === 'bestzeit') ? 0 : 2));
     $('race-limit').value = raceLimit;
     applyRaceModeUi();
@@ -48324,8 +48196,7 @@
   }
   $('race-act-start').onclick = toggleRace;
 
-  $('race-act-pit').onclick = () => { requestPitStop();     updateRaceActButtons();
-  };
+  $('race-act-pit').onclick = () => { requestPitStop(); updateRaceActButtons(); };
   // Der KNOPF loest direkt aus, ein Tipp reicht.
   //
   // Hier stand vorher dieselbe Halten-Geste wie auf der Taste X, und die Begruendung war der
@@ -49391,8 +49262,6 @@
       const besteBisher = plausibel.length
         ? Math.min.apply(null, plausibel.map(l => l.ms)) : Infinity;
       raceLapTimes.push({ lap: raceLapTimes.length + 1, ms: rundeMs, crossedAt: now });
-      // OMEGA OVERDRIVE (WIP): beim Ueberfahren der Start/Ziel-Linie ein Power-up zuweisen.
-      if (typeof overdriveLap === 'function') overdriveLap();
       // Challenge: Runde gegen die Strecke pruefen. Liefert true, wenn die Runde NICHT zaehlt
       // (Strecke nicht erkannt oder zu schnell) - dann tiefer Ton statt des hellen Rundenklangs.
       const challengeUngueltig = typeof challengeRundeFertig === 'function'
@@ -49425,8 +49294,7 @@
       // v1.3.132: mit Fruehstart-Zusatzrunde liegt das eigene Ziel eine Runde weiter; faellt die
       // Flagge durch einen anderen, faehrt dieser Fahrer noch genau eine Runde (einmal).
       const zielPlus = fruehstartZielPlus(1);
-      const zielErreicht = !wasFinishing && (raceMode === 'laps' || raceMode === 'overdrive')
-        && raceLapTimes.length >= raceLimit + zielPlus;
+      const zielErreicht = !wasFinishing && raceMode === 'laps' && raceLapTimes.length >= raceLimit + zielPlus;
       let strafRunde = false;
       if (wasFinishing && zielPlus && !fruehstart[1].extraGefahren && raceLapTimes.length < raceLimit + zielPlus) {
         fruehstart[1].extraGefahren = true; strafRunde = true;
@@ -49941,12 +49809,10 @@
               farbe: '#f7d117', name: 'mittel' },
     hart:   { griff: 0.85, nass: 0.45, verschleiss: 0.4, aqua: true,
               farbe: '#f2f4f8', name: 'hart' },
-    inter:  { griff: 0.92, nass: 0.62, verschleiss: 0.7, aqua: false,
-              farbe: '#27c28b', name: 'Zwischenreifen' },
     regen:  { griff: 0.88, nass: 0.80, verschleiss: 1.0, aqua: false,
               farbe: '#2f6fd0', name: 'Regen' },
   };
-  const MISCHUNG_FOLGE = ['weich', 'mittel', 'hart', 'inter', 'regen'];
+  const MISCHUNG_FOLGE = ['weich', 'mittel', 'hart', 'regen'];
 
   // Wie stark sich die Mischungen unterscheiden. 0 = alle rechnen wie mittel, 1 = die
   // Tabelle, 2 = doppelt. EINE Interpolation gegen mittel bewegt alle Werte zugleich -
@@ -51502,11 +51368,7 @@
       return;
     }
     const schadenAn = crashSchadenAn();
-    // OMEGA OVERDRIVE (WIP): Destroyer schuetzt den Spieler beim Rammen - kein Schaden, das
-    // Ziel wird komplett kaputt gemacht (faehrt 3 s langsam).
-    const odDestroyer = (typeof overdriveDestroyer === 'function' && !zwei) ? overdriveDestroyer(wer) : false;
-    if (odDestroyer && typeof overdriveDestroyerTreffer === 'function') overdriveDestroyerTreffer();
-    if (schadenAn && !odDestroyer) {
+    if (schadenAn) {
       if (zwei) zPl.schaden.wert = Math.min(100, zPl.schaden.wert + 100 / crashesToTotal);
       else damage = Math.min(100, damage + 100 / crashesToTotal);
     }
@@ -51653,13 +51515,6 @@
       const ph = now % 1100;
       brake = (ph < 90) || (ph >= 200 && ph < 290);
     }
-    // OMEGA OVERDRIVE (WIP): waehrend Boost schnell blinken, Power-up-Effekte signalisieren.
-    try {
-      if (typeof overdriveLampen === 'function') {
-        const od = overdriveLampen(head, brake);
-        if (od) { head = od.head; brake = od.brake; }
-      }
-    } catch (e) { /* beim Laden */ }
     lightBits = trackModeBit() | (head ? LIGHT_HEAD : 0) | (brake ? LIGHT_BRAKE : 0);
     return { head, brake };
   }
@@ -51714,8 +51569,6 @@
   // Auto macht bei der Lichthupe kein Geraeusch, das hier ist eine Rueckmeldung fuer den
   // Fahrer und keine Simulation.
   function playFlashSound() {
-    // OMEGA OVERDRIVE (WIP): die Lichthupe hat immer Pupsgeraeusch.
-    try { if (typeof overdriveFart === 'function' && overdriveFart()) return; } catch (e) { /* beim Laden */ }
     const sel = $('flash-sound');
     const kind = sel ? sel.value : 'none';
     if (kind === 'none' || !audioCtx || !soundEnabled) return;
@@ -52839,7 +52692,7 @@
   // erhoehen - und links/rechts kann den Schirm weiterblaettern, solange nichts angewaehlt
   // ist.
   let raceScreenLimitArmed = false;
-  const RACE_MODE_ORDER = ['practice', 'endurance', 'qualifying', 'laps', 'knockout', 'derby', 'bestzeit', 'overdrive'];
+  const RACE_MODE_ORDER = ['practice', 'endurance', 'qualifying', 'laps', 'knockout', 'derby', 'bestzeit'];
 
   // NUR WENN DAS COCKPIT AUCH ZU SEHEN IST. cockpitScreen bleibt beim Tabwechsel stehen -
   // ohne diese Bedingung schluckte der Schirm auf JEDEM Tab die Pfeiltasten, und Fahren
@@ -53984,478 +53837,6 @@
     el.textContent = teleDeltaText(d);
     el.className = 'gt3-delta ' + (d <= 0 ? 'schneller' : 'langsamer');
   }
-  // ====================================================================================
-  // OMEGA OVERDRIVE (WIP)
-  // ====================================================================================
-  // Arcade-Rennmodus im Stil von Mario Kart, nur auf der Bahn (trackMode === 'on'). Das
-  // Fahrgefuehl wird fuer die Dauer des Rennens ueberschrieben: Arcade-Lenkung, reduziertes
-  // Tempo (~100 km/h), schneller Antritt, optional Selbstlenken. Dazu Nitro auf Kreis
-  // (Anzeige wie ein Tank, laedt sich in einer Rundenzeit auf) und Power-ups, die beim
-  // Ueberfahren der Start/Ziel-Linie zugewiesen werden. Schaden bleibt, aber ohne
-  // Boxenstopp: ein kaputtes Auto faehrt 3 s langsam und repariert sich danach selbst.
-  //
-  // WICHTIG: Der Modus laeuft mit dem ECHTEN Auto auf der Bahn. Die Funktionen hier sind
-  // Funktionsdeklarationen in derselben IIFE, also von frueheren Dateien (70-race.js,
-  // 50-drive.js, 90-ghosts.js) zur Laufzeit aufrufbar - nur die Top-Level-Variablen dieses
-  // Moduls stehen erst ab dieser Datei (temporale Todeszone beachten: Aufrufe nur zur
-  // Laufzeit, nie beim Laden).
-
-  // ---- Zustand ----
-  // Je Spieler ein eigener Zustand (Platz 1, 2, 3). Die Werte, die nur von der Strecke
-  // abhaengen (Tankgroesse, Rundenzeit) sind global, weil alle Spieler dieselbe Strecke
-  // fahren. odAktiv ist global: das Rennen laeuft fuer alle gleich.
-  let odAktiv = false;             // Overdrive-Rennen laeuft gerade
-  let odNitroMax = 1;              // Tankkapazitaet in Sekunden Boost (aus der Strecke)
-  let odLapTimeS = 60;             // geschaetzte Rundenzeit in Sekunden (Ladezeit des Tanks)
-  let odSelbstlenken = false;      // Option: Auto haelt sich selbst auf der Bahn
-  let odVorherKonfig = null;       // gespeicherte physEngine.config fuer die Ruecknahme
-  let odVorherSetupVmax = 1;       // gespeicherter setupVmax (Motorkennfeld/Heckfluegel)
-  let odVorherFahrhilfe = null;    // gespeicherte fahrhilfeModus fuer die Ruecknahme
-  let odVorherCarFahrhilfe = null; // gespeichertes playerCar.fahrhilfe fuer die Ruecknahme
-  let odVorherSound = null;        // gespeichertes soundProfile fuer die Ruecknahme
-  let odVorherLicht = null;        // gespeicherter headlightsOn fuer die Ruecknahme
-  let odTankBar = null, odTankStand = null, odTankBox = null, odPuBox = null, odPuIco = null, odPuTxt = null;
-  const OD_POWERUPS = ['destroyer', 'superboost', 'gewitter', 'emp'];
-  const OD_BOOST_F = 1.45;         // Deckel-Multiplikator beim Boost
-  const OD_KAPUTT_F = 0.35;        // Deckel-Multiplikator im 3-s-Langsam-Modus
-  const odZustand = {};            // nr -> { nitro, boostBis, boostAn, powerup, ... }
-  function odZ(nr) {
-    const n = nr || 1;
-    if (!odZustand[n]) odZustand[n] = {
-      nitro: 0, boostBis: 0, boostAn: false, powerup: null, powerupBis: 0,
-      superboostBis: 0, gewitterBis: 0, empAn: false, kaputtBis: 0, kaputt: false, letzterTakt: 0,
-    };
-    return odZustand[n];
-  }
-
-  function overdriveAktiv() {
-    // Nur waehrend eines LAUFENDEN Overdrive-Rennens sind Kreis/Dreieck umbelegt. Sobald der
-    // Modus nur gewaehlt ist (Menues), bleiben die Tasten wie gewohnt: Kreis = zurueck,
-    // Dreieck = Licht/Info. Das war der Fehler: overdriveAktiv() meldete schon die AUSWAHL.
-    return odAktiv;
-  }
-  // Ob die Selbstlenk-Option (oder die globale Fahrhilfe) das Auto von selbst lenken laesst.
-  function overdriveSelbstlenkt() {
-    if (!odAktiv) return false;
-    if (odSelbstlenken) return true;
-    try { return fahrhilfeModusVon(playerCar) === 'voll'; } catch (e) { return false; }
-  }
-
-  // Selbstlenk-Kasten (nur im Overdrive-Modus sichtbar). Aus dem Markup lesen und in
-  // odSelbstlenken uebernehmen; wirkt wie die globale Fahrhilfe auf 'voll'.
-  function overdriveSelbstlenkInit() {
-    const cb = document.getElementById('od-selbstlenken');
-    if (!cb) return;
-    odSelbstlenken = cb.checked;
-    cb.addEventListener('change', (e) => {
-      odSelbstlenken = !!e.target.checked;
-      showHudToast(t(odSelbstlenken ? 'Selbstlenken an' : 'Selbstlenken aus'));
-    });
-  }
-
-  // ---- Start / Ende des Rennens ----
-  function overdriveRennenStart() {
-    odAktiv = true;
-    // Tankgroesse: 0,1 s Boost je Bahnteil, also 1 s bei 10 Teilen.
-    const n = (typeof currentTrackTiles !== 'undefined' && currentTrackTiles) ? currentTrackTiles.length : 10;
-    odNitroMax = Math.max(0.1, 0.1 * n);
-    // Geschaetzte Rundenzeit aus der Streckenlaenge bei ~65 km/h Mittel. Sie bestimmt die
-    // Ladezeit: voller Tank in genau einer Runde.
-    try {
-      const m = (typeof trackLaengeM === 'function' && currentTrackTiles) ? trackLaengeM(currentTrackTiles) : 0;
-      odLapTimeS = m > 0 ? m / (65 / 3.6) : Math.max(20, n * 4);
-    } catch (e) { odLapTimeS = Math.max(20, n * 4); }
-    // Je Spieler den Zustand zuruecksetzen - auch die Nachlade-Uhr (letzterTakt), sonst
-    // springt der Tank im zweiten Rennen sofort auf voll (das dt waere die Pause dazwischen).
-    for (const nr of [1, 2, 3]) {
-      const z = odZ(nr);
-      z.nitro = 0; z.boostBis = 0; z.boostAn = false; z.powerup = null; z.powerupBis = 0;
-      z.superboostBis = 0; z.gewitterBis = 0; z.empAn = false; z.kaputtBis = 0; z.kaputt = false;
-      z.letzterTakt = 0;
-    }
-    // Selbstlenken: die Fahrhilfe auf 'voll' stellen (Auto haelt sich selbst auf der Bahn).
-    // Die Ruecknahme passiert in overdriveRennenEnde, zusammen mit dem Fahrgefuehl. WICHTIG:
-    // fahrhilfeModusVon() liest VORRANGIG car.fahrhilfe - hat das Auto in der Garage eine
-    // eigene Fahrhilfe, muss auch die umgestellt werden, sonst bleibt das Selbstlenken wirkungslos.
-    odVorherFahrhilfe = (typeof fahrhilfeModus !== 'undefined') ? fahrhilfeModus : null;
-    odVorherCarFahrhilfe = (typeof playerCar !== 'undefined' && playerCar) ? playerCar.fahrhilfe : null;
-    if (odSelbstlenken) {
-      try { fahrhilfeModus = 'voll'; } catch (e) { /* */ }
-      try { if (typeof playerCar !== 'undefined' && playerCar) playerCar.fahrhilfe = 'voll'; } catch (e) { /* */ }
-    }
-    // Fahrgefuehl ueberschreiben und die alten Werte merken.
-    if (typeof physEngine !== 'undefined') {
-      const c = physEngine.config;
-      odVorherKonfig = {
-        topSpeedKmh: c.topSpeedKmh, accelerationFactor: c.accelerationFactor,
-        steerResponse: c.steerResponse, steerExpo: c.steerExpo, speedSteerReduction: c.speedSteerReduction,
-        autoShift: c.autoShift,
-      };
-      odVorherSetupVmax = (typeof physEngine.state !== 'undefined' && physEngine.state.setupVmax) || 1;
-      // ~100 km/h als Anzeige (TACHO_SCALE ~68,1), damit der Tacho auch wirklich 100 zeigt.
-      c.topSpeedKmh = 100 / TACHO_SCALE;
-      c.accelerationFactor = 1.7;               // schneller Antritt
-      c.steerResponse = 3.6;                    // arcade: direkter
-      c.steerExpo = 1.0;
-      c.speedSteerReduction = 0.12;             // bleibt auch bei Tempo lenkbar
-      physEngine.config.autoShift = true;       // ohne Gangschaltung
-    }
-    // Lustiger Arcade-Motorsound (siehe SOUND_PROFILES.fun in 80-sound.js).
-    odVorherSound = (typeof soundProfile !== 'undefined') ? soundProfile : null;
-    try { if (typeof SOUND_PROFILES !== 'undefined' && engineOsc) {
-      soundProfile = SOUND_PROFILES.fun;
-      engineOsc.type = soundProfile.wave;
-    } } catch (e) { /* */ }
-    // Licht ist in Overdrive immer an (Dreieck aktiviert stattdessen das Power-up).
-    odVorherLicht = (typeof headlightsOn !== 'undefined') ? headlightsOn : null;
-    try { headlightsOn = true; } catch (e) { /* */ }
-    overdriveHudZeigen(true);
-    showHudToast(t('Omega Overdrive: Nitro auf Kreis, Power-up auf Dreieck'));
-  }
-
-  function overdriveRennenEnde() {
-    odAktiv = false;
-    for (const nr of [1, 2, 3]) {
-      const z = odZ(nr);
-      z.boostAn = false; z.powerup = null; z.superboostBis = 0; z.gewitterBis = 0;
-      z.empAn = false; z.kaputt = false; z.letzterTakt = 0;
-    }
-    // Selbstlenken zuruecknehmen.
-    if (odVorherFahrhilfe !== null) { try { fahrhilfeModus = odVorherFahrhilfe; } catch (e) { /* */ } }
-    if (odVorherCarFahrhilfe !== null) { try { if (typeof playerCar !== 'undefined' && playerCar) playerCar.fahrhilfe = odVorherCarFahrhilfe; } catch (e) { /* */ } }
-    odVorherFahrhilfe = null; odVorherCarFahrhilfe = null;
-    // Fahrgefuehl zuruecknehmen - auch die Tempo-Obergrenze (setupVmax) aus dem Setup. Ohne
-    // das bliebe 1,45 stehen, wenn das Rennen mitten im Boost endet.
-    if (odVorherKonfig && typeof physEngine !== 'undefined') {
-      const c = physEngine.config;
-      Object.assign(c, odVorherKonfig);
-      if (typeof physEngine.state !== 'undefined') physEngine.state.setupVmax = odVorherSetupVmax;
-      odVorherKonfig = null;
-    }
-    // Motorsound zuruecknehmen.
-    if (odVorherSound !== null) { try { soundProfile = odVorherSound; if (engineOsc) engineOsc.type = soundProfile.wave; } catch (e) { /* */ } }
-    odVorherSound = null;
-    // Licht zuruecknehmen.
-    if (odVorherLicht !== null) { try { headlightsOn = odVorherLicht; } catch (e) { /* */ } }
-    odVorherLicht = null;
-    overdriveHudZeigen(false);
-  }
-
-  // ---- Fahrphysik-Takt (aus physicsStep) ----
-  // Wird vor physEngine.update() gerufen. Rueckgabewert: null. Overdrive greift NICHT ins
-  // Gas ein - es hebt oder senkt nur die Tempo-Obergrenze (setupVmax). So bleiben die
-  // Sicherungen aus 1.4.47 bis 1.4.53 wirksam: kein Gas neben der Bahn, Autopilot unter
-  // Gelb, Fruehstart-Sperre, totes Auto im Derby. Der Boost wirkt, indem er die Decke
-  // anhebt - wer Gas gibt, wird schneller, wer nicht, bleibt langsam.
-  function overdrivePhysik(jetzt, nr) {
-    if (!odAktiv) return null;
-    const n = nr || 1;
-    const z = odZ(n);
-    if (!z.letzterTakt) z.letzterTakt = jetzt;
-    const dt = Math.max(0, (jetzt - z.letzterTakt) / 1000);
-    z.letzterTakt = jetzt;
-    const st = (n >= 2 && typeof zusatzPlatz === 'function' && zusatzPlatz(n))
-      ? zusatzPlatz(n).motor.state : physEngine.state;
-    const schaden = (n >= 2 && typeof zusatzPlatz === 'function' && zusatzPlatz(n))
-      ? zusatzPlatz(n).schaden.wert : damage;
-
-    // Nitro nachladen (voller Tank in einer Rundenzeit), solange nicht geboostet wird.
-    if (!z.boostAn) z.nitro = Math.min(odNitroMax, z.nitro + (odNitroMax / odLapTimeS) * dt);
-
-    const jetztZeit = rennZeitJetzt();
-    // Boost laeuft noch? Superboost hebt die Zeitgrenze auf.
-    if (z.boostBis > 0) {
-      if (z.boostBis <= jetztZeit && z.superboostBis <= jetztZeit) { z.boostAn = false; z.boostBis = 0; }
-    }
-
-    // Power-up-Timer und Effekte ablaufen lassen (vor den Rueckgaben, damit sie auch beim
-    // Boost getaktet werden).
-    if (z.powerupBis > 0 && z.powerupBis <= jetztZeit) { z.powerupBis = 0; z.powerup = null; }
-    if (z.superboostBis > 0 && z.superboostBis <= jetztZeit) z.superboostBis = 0;
-    if (z.gewitterBis > 0 && z.gewitterBis <= jetztZeit) z.gewitterBis = 0;
-
-    // Eigenes Auto kaputt: 3 s langsam, danach automatisch repariert.
-    // Schaden bleibt also, aber ohne Boxenstopp - wer auf 100 % kommt, faehrt 3 s langsam
-    // und wird dann von selbst wieder heil gesetzt.
-    if (!z.kaputt && typeof schaden === 'number' && schaden >= 100) {
-      z.kaputt = true;
-      z.kaputtBis = jetztZeit + 3000;
-      showHudToast(t('Kaputt – 3 s langsam'));
-    }
-    // Die Decke setzen: Boost hebt sie an, Kaputt senkt sie, sonst der Setup-Wert.
-    const basis = odVorherSetupVmax || 1;
-    if (z.kaputt) {
-      if (jetztZeit >= z.kaputtBis) {
-        z.kaputt = false;
-        if (n >= 2 && typeof zusatzPlatz === 'function' && zusatzPlatz(n)) zusatzPlatz(n).schaden.wert = 0;
-        else damage = 0;
-        if (typeof updateDamageFuelUI === 'function') updateDamageFuelUI();
-        showHudToast(t('Repariert – weiter!'));
-      } else {
-        st.setupVmax = basis * OD_KAPUTT_F;
-      }
-    } else if (z.boostAn && (z.boostBis > jetztZeit || z.superboostBis > jetztZeit)) {
-      st.setupVmax = basis * OD_BOOST_F;
-    } else {
-      st.setupVmax = basis;
-    }
-
-    overdriveHudMalen(n);
-    return null;
-  }
-
-  // ---- Nitro (Kreis) ----
-  function overdriveBoostTaste(nr) {
-    if (!odAktiv) return false;
-    const z = odZ(nr || 1);
-    const jetztZeit = rennZeitJetzt();
-    // Unbegrenzt waehrend des Superboost-Fensters.
-    if (z.superboostBis > jetztZeit) { z.boostAn = true; z.boostBis = jetztZeit + 60000; return true; }
-    if (z.nitro > 0.01) {
-      // Der Tank ist ein Vorrat an Boost-Sekunden (max 0,1 s je Bahnteil). Ein Druck
-      // gibt bis zu 1 s Boost, verbraucht aber nur so viel, wie der Tank hergibt.
-      const dauer = Math.min(1, z.nitro);
-      z.boostAn = true;
-      z.boostBis = jetztZeit + dauer * 1000;
-      z.nitro = Math.max(0, z.nitro - dauer);
-      return true;
-    }
-    showHudToast(t('Nitro leer'));
-    return true;
-  }
-
-  // ---- Power-up aktivieren (Dreieck) ----
-  function overdrivePowerupTaste(nr) {
-    const z = odZ(nr || 1);
-    if (!odAktiv || !z.powerup) return false;
-    const jetztZeit = rennZeitJetzt();
-    const pu = z.powerup;
-    if (pu === 'destroyer') {
-      z.powerupBis = jetztZeit + 5000;
-      z.powerup = null;
-      showHudToast(t('Destroyer aktiv: 5 s rammen ohne Schaden'));
-    } else if (pu === 'superboost') {
-      z.superboostBis = jetztZeit + 5000;
-      z.powerup = null;
-      showHudToast(t('Superboost: 5 s unbegrenzter Nitro'));
-    } else if (pu === 'gewitter') {
-      z.gewitterBis = jetztZeit + 5000;
-      z.powerup = null;
-      showHudToast(t('Gewitter: alle werden langsamer (5 s)'));
-    } else if (pu === 'emp') {
-      z.empAn = true;
-      z.powerup = null;
-      overdriveEmp();
-      showHudToast(t('EMP-Blaster ausgeloest'));
-    }
-    return true;
-  }
-
-  // ---- Power-up beim Ueberfahren der Start/Ziel-Linie zuweisen ----
-  function overdriveLap(nr) {
-    if (!odAktiv) return;
-    const z = odZ(nr || 1);
-    if (z.powerup) return;                     // schon eins gehalten
-    z.powerup = OD_POWERUPS[Math.floor(Math.random() * OD_POWERUPS.length)];
-    overdriveBling();
-    showHudToast(t('Power-up: ') + odPowerupLabel(z.powerup));
-    overdriveHudMalen(nr || 1);
-  }
-
-  function odPowerupLabel(pu) {
-    const name = { destroyer: 'Destroyer', superboost: 'Superboost', gewitter: 'Gewitter', emp: 'EMP-Blaster' }[pu] || pu;
-    return t(name);
-  }
-
-  // Der eigene Streckenteil aus der ORTUNG (ghostTick/ghostOrt), nicht aus dem Zaehler.
-  // playerCar.tileCount ist ein Firmware-Zaehlerbyte, das bei 256 ueberlaeuft und nicht an
-  // der Startlinie bei 0 beginnt - modulo Streckenlaenge ergaebe das einen falschen Teil.
-  // Die Ortung liefert dagegen immer einen Index in [0, nTiles) auf dem Teil, auf dem das
-  // Auto gerade steht (playerCar.ghost.tileIndex).
-  function overdriveEigenerTeil() {
-    const pc = (typeof playerCar !== 'undefined') ? playerCar : null;
-    if (!pc || !pc.ghost) return -1;
-    const gi = pc.ghost.tileIndex;
-    if (gi === null || gi === undefined) return -1;
-    const nTiles = (currentTrackTiles && currentTrackTiles.length) || 0;
-    if (nTiles <= 0) return -1;
-    return ((gi % nTiles) + nTiles) % nTiles;
-  }
-
-  // ---- EMP: Autos auf demselben Streckenteil (davor/dahinter/mit) kurz stehen lassen ----
-  function overdriveEmp() {
-    const nTiles = (currentTrackTiles && currentTrackTiles.length) || 1;
-    const pTile = overdriveEigenerTeil();
-    if (pTile < 0) return;
-    // "vor/hinter/mit mir": der eigene Streckenteil und die beiden Nachbarn (Rundkurs, also
-    // modulo). So bleibt der Blaster ein Naeheffekt, ohne den Rest des Feldes zu treffen.
-    const ziel = new Set([pTile, (pTile + 1) % nTiles, (pTile - 1 + nTiles) % nTiles]);
-    for (const c of (typeof garage !== 'undefined' ? garage : [])) {
-      if (!c || !c.ghost || !c.ghost.running) continue;
-      const g = c.ghost;
-      if (g.tileIndex === null || g.tileIndex === undefined) continue;
-      if (ziel.has(((g.tileIndex % nTiles) + nTiles) % nTiles)) {
-        g.odStoppBis = rennZeitJetzt() + 2500;
-      }
-    }
-  }
-
-  // ---- Effekt auf ein Ghost-Zieltempo (aus ghostTick) ----
-  // Rueckgabewert: angepasstes Zieltempo, oder das unveraenderte.
-  // Gewitter und EMP sind je SPIELER aktiv; ein Effekt eines beliebigen Spielers gilt fuer
-  // alle Geister (ausser den Spieler selbst). Der kaputt-Zustand haengt am Ghost.
-  function overdriveGhostZiel(car, target) {
-    if (!odAktiv || !car || !car.ghost) return target;
-    const g = car.ghost;
-    const jetztZeit = rennZeitJetzt();
-    // Kaputt (Destroyer-Treffer): 3 s langsam.
-    if (g.odKaputtBis && g.odKaputtBis > jetztZeit) return target * 0.3;
-    // EMP: stehen bleiben.
-    if (g.odStoppBis && g.odStoppBis > jetztZeit) return 0;
-    // Gewitter: alle ausser dem Spieler langsamer. Jeder aktive Spieler-Effekt zaehlt.
-    for (const nr of [1, 2, 3]) {
-      const z = odZ(nr);
-      if (z.gewitterBis > jetztZeit && car !== playerCar) return target * 0.35;
-    }
-    return target;
-  }
-
-  // ---- Destroyer: beim Rammen kein Schaden, Ziel komplett kaputt ----
-  function overdriveDestroyer(wer) {
-    if (!odAktiv) return false;
-    const z = odZ(1);
-    if (z.powerupBis <= rennZeitJetzt()) return false;
-    // Nur den Spieler schuetzen.
-    if (wer && wer >= 2) return false;
-    return true;
-  }
-  function overdriveDestroyerTreffer() {
-    // Das anvisierte (naechste) Ghost-Auto kaputt machen: 3 s langsam. Die Distanz wird
-    // ueber den STECKENTEIL (Index 0..nTiles) gemessen, nicht ueber den tileCount-Zaehler.
-    // Nur wenn wirklich ein Gegner in der Naehe ist (gleicher oder benachbarter Teil),
-    // wird getroffen - ein Crash ohne Gegner (Bande) trifft niemanden.
-    const nTiles = (currentTrackTiles && currentTrackTiles.length) || 1;
-    const pTile = overdriveEigenerTeil();
-    if (pTile < 0) return;
-    let best = null, bestD = Infinity;
-    for (const c of (typeof garage !== 'undefined' ? garage : [])) {
-      if (!c || !c.ghost || !c.ghost.running) continue;
-      if (c === playerCar) continue;
-      const gi = c.ghost.tileIndex;
-      if (gi === null || gi === undefined) continue;
-      // Kreisrunde Distanz: 0 = derselbe Teil, nTiles-1 und 1 sind beide Nachbarn.
-      const gt = ((gi % nTiles) + nTiles) % nTiles;
-      let d = Math.abs(gt - pTile);
-      d = Math.min(d, nTiles - d);
-      if (d < bestD) { bestD = d; best = c; }
-    }
-    if (best && bestD <= 2) {
-      best.ghost.odKaputtBis = rennZeitJetzt() + 3000;
-      showHudToast(t('Destroyer: {n} kaputt').replace('{n}', t(best.name || 'Auto')));
-    }
-  }
-
-  // ---- Lichter: waehrend Boost schnell blinken, Kaputt/Effekte signalisieren ----
-  function overdriveLampen(head, brake, nr) {
-    if (!odAktiv) return null;
-    const z = odZ(nr || 1);
-    const jetztZeit = rennZeitJetzt();
-    // Boost: schnelles Blinken.
-    if (z.boostAn && (z.boostBis > jetztZeit || z.superboostBis > jetztZeit)) {
-      const an = Math.floor(jetztZeit / 120) % 2 === 0;
-      return { head: an, brake: an };
-    }
-    // Gewitter: Licht kurz aus, damit man den Effekt sieht.
-    if (z.gewitterBis > jetztZeit) {
-      const an = Math.floor(jetztZeit / 500) % 2 === 0;
-      return { head: an, brake };
-    }
-    // Destroyer: schnelles Blinken beider.
-    if (z.powerupBis > jetztZeit && z.powerup === null && overdriveDestroyerAktiv(nr || 1)) {
-      const an = Math.floor(jetztZeit / 200) % 2 === 0;
-      return { head: an, brake: an };
-    }
-    return null;
-  }
-  function overdriveDestroyerAktiv(nr) {
-    const z = odZ(nr || 1);
-    return z.powerupBis > rennZeitJetzt() && z.powerup === null;
-  }
-
-  // ---- Lichthupe: immer Pups ----
-  // Ein Pups aus zwei kurzen, tiefen, rauen Toenen (Arcade-Witz, keine Simulation). Es gibt
-  // keine Aufnahme dafuer, also wird er hier mit dem WebAudio-Oszillator gebaut: ein
-  // Saegezahn, der schnell im Grundton wackelt, klingt nach einem "Bratzeln" statt nach
-  // einer Hupe.
-  function overdriveFart() {
-    if (!odAktiv) return false;
-    if (typeof audioCtx === 'undefined' || !audioCtx || !soundEnabled) return false;
-    try {
-      const t0 = audioCtx.currentTime;
-      // Zwei nacheinander: ein kurzes tiefes "b...", eine Pause, dann ein laengeres "bbb".
-      for (const [off, dur, freq] of [[0, 0.12, 95], [0.16, 0.22, 78]]) {
-        const osc = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(freq, t0 + off);
-        // Der Ton "zittert" - das macht das Pups-Geraeusch (oder das eines laufenden
-        // Verbrennungsmotors im Leerlauf, desselben Tricks bedient sich der Motor).
-        osc.frequency.linearRampToValueAtTime(freq * 0.7, t0 + off + dur);
-        g.gain.setValueAtTime(0.0001, t0 + off);
-        g.gain.exponentialRampToValueAtTime(0.28, t0 + off + 0.02);
-        g.gain.exponentialRampToValueAtTime(0.0001, t0 + off + dur);
-        osc.connect(g).connect(audioCtx.destination);
-        osc.start(t0 + off);
-        osc.stop(t0 + off + dur + 0.02);
-      }
-      return true;
-    } catch (e) { return false; }
-  }
-
-  // ---- Bling-Bling (Power-up) ----
-  function overdriveBling() {
-    playTone(1046, 0.09, 'square', 0.16);
-    setTimeout(() => playTone(1568, 0.14, 'square', 0.16), 70);
-  }
-
-  // ---- HUD ----
-  function overdriveHudZeigen(an) {
-    const hud = document.getElementById('od-hud');
-    if (hud) hud.hidden = !an;
-    if (an) {
-      odTankBox = document.getElementById('od-tank');
-      odTankStand = document.getElementById('od-tank-stand');
-      odTankBar = document.getElementById('od-tank-bar');
-      odPuBox = document.getElementById('od-pu');
-      odPuIco = document.getElementById('od-pu-ico');
-      odPuTxt = document.getElementById('od-pu-txt');
-    }
-  }
-  function overdriveHudMalen(nr) {
-    if (!odAktiv) return;
-    const z = odZ(nr || 1);
-    if (!odTankBar) overdriveHudZeigen(true);
-    const proz = odNitroMax > 0 ? Math.round(z.nitro / odNitroMax * 100) : 0;
-    if (odTankBar) odTankBar.style.width = Math.max(0, Math.min(100, proz)) + '%';
-    if (odTankStand) odTankStand.textContent = (z.boostAn ? 'Boost' : 'Nitro') + ' ' + proz + '%';
-    const hud = document.getElementById('od-hud');
-    if (hud) hud.classList.toggle('boost', z.boostAn);
-    if (odPuBox) {
-      if (z.powerup) {
-        odPuBox.hidden = false;
-        const sym = { destroyer: '\u25C6', superboost: '\u25B2', gewitter: '\u2602', emp: '\u25C8' }[z.powerup] || '\u25C6';
-        if (odPuIco) odPuIco.textContent = sym;
-        if (odPuTxt) odPuTxt.textContent = odPowerupLabel(z.powerup);
-      } else {
-        odPuBox.hidden = true;
-      }
-    }
-  }
-
-  // Beim Laden: Selbstlenk-Kasten einmal verdrahten. Das Markup steht vor dem Skript,
-  // also ist das Element vorhanden. Die Verarbeitung ist defensiv, falls das Markup sich
-  // aendert (z. B. bei einem Umzug des Kastens in eine andere Seite).
-  try { overdriveSelbstlenkInit(); } catch (e) { /* */ }
 
   // ============================== CRASH-ARTEN UND RAMMEN (v0.9.21) ==============================
   //
@@ -59354,7 +58735,7 @@
   function zevPlanBauen(o, zufall) {
     const rnd = typeof zufall === 'function' ? zufall : Math.random;
     if (!o || !o.an || !o.arten || !o.arten.length) return null;
-    const zeitRennen = RACE_MODES[raceMode] && RACE_MODES[raceMode].timed && raceMode !== 'laps' && raceMode !== 'overdrive' && raceLimit > 0;
+    const zeitRennen = RACE_MODES[raceMode] && RACE_MODES[raceMode].timed && raceMode !== 'laps' && raceLimit > 0;
     const gesamt = zeitRennen ? raceLimit * 60000 : 3 * 3600000;
     const mittel = o.min * 60000, dauer = o.dauerS * 1000;
     const r4 = () => Math.round(rnd() * 10000) / 10000;
@@ -60373,10 +59754,6 @@
     v10:   { wave: 'sawtooth', baseFreq: 110, freqSpan: 520, gainBase: 0.02, gainSpan: 0.11 },
     ev:    { wave: 'sine',     baseFreq: 180, freqSpan: 900, gainBase: 0.01, gainSpan: 0.09 },
     turbo: { wave: 'square',   baseFreq: 60,  freqSpan: 240, gainBase: 0.02, gainSpan: 0.12 },
-    // OMEGA OVERDRIVE (WIP): "lustiger" Motorsound ohne Gangschaltung, wie ein Arcade-/Kart-
-    // Motor. Ein hoher Quadratwellen-Klang mit flachem Frequenzhub, damit es quietschig und
-    // spielerisch klingt statt nach einem V8. Dieser Profilname taucht nicht im Menue auf.
-    fun:   { wave: 'triangle', baseFreq: 220, freqSpan: 520, gainBase: 0.03, gainSpan: 0.10 },
   };
   let soundProfile = SOUND_PROFILES.v8;
 
@@ -61224,7 +60601,7 @@
     const de = lang === 'de';
     if (typeof raceState === 'undefined' || typeof raceMode === 'undefined') return null;
     if (raceState !== 'racing' && raceState !== 'finishing') return null;
-    if (raceMode === 'laps' || raceMode === 'overdrive') {
+    if (raceMode === 'laps') {
       const gefahren = (typeof raceLapTimes !== 'undefined' ? raceLapTimes.length : 0);
       const rest = Math.max(0, raceLimit + (typeof fruehstartZielPlus === 'function' ? fruehstartZielPlus(1) : 0) - gefahren);
       return de ? 'Noch ' + rest + ' Runden' : rest + ' laps to go';
@@ -64876,18 +64253,13 @@
   }
 
   function rennintroFolge(modus, limit, wetter, pflichtstopps = 0, aufstellung = []) {
-    // OMEGA OVERDRIVE (WIP): es gibt keine eigene Ansage-Aufnahme "modus_overdrive" im
-    // Manifest. Der Modus ist ein Rundenrennen, also sagt das Intro "Runden" - dieselbe
-    // Aufnahme wie beim Modus 'laps'. So bleibt der Selbsttest (jede erzeugte i:-Zeile muss
-    // im Manifest stehen) gruen, und das Intro faengt trotzdem etwas Sinnvolles an.
-    const introModus = modus === 'overdrive' ? 'laps' : modus;
-    const folge = ['i:willkommen', 'i:modus_' + introModus];
+    const folge = ['i:willkommen', 'i:modus_' + modus];
     const n = Number.isFinite(limit) ? Math.max(0, Math.round(limit)) : 0;
-    if (introModus === 'laps' && n > 0) {
+    if (modus === 'laps' && n > 0) {
       folge.push('i:distanz');
       if (n === 1) folge.push('i:runde');
       else folge.push(...rennstandZahlFolge(n), 'i:runden');
-    } else if (['practice', 'bestzeit', 'qualifying', 'endurance'].includes(introModus)) {
+    } else if (['practice', 'bestzeit', 'qualifying', 'endurance'].includes(modus)) {
       if (n > 0) {
         folge.push('i:zeitlimit');
         if (n === 1) folge.push('i:minute');
@@ -76533,10 +75905,6 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       const scVorlaufRand = g.randHalt && g.randHalt.nominal && g.randHalt.phase === 'rand' && g.randHalt.tempoAb && g.scRest > g.randHalt.tempoAb;
       if (car.role === 'safetycar' && !scAufstellung && ((g.scHeim && !g.randHalt) || scVorlaufRand)) target = Math.max(SC_EINFAHRT_MIN, Math.min(target, scHeimTempo()));
       target = ghostHaarnadelDeckel(car, target, Math.max(tight, here));
-      // OMEGA OVERDRIVE (WIP): Gewitter verlangsamt alle ausser dem Spieler, EMP stoppt.
-      try {
-        if (typeof overdriveGhostZiel === 'function') target = overdriveGhostZiel(car, target);
-      } catch (e) { /* beim Laden */ }
       const pz = pitZiel(car);
       if (pz !== null) {
         // Anfahrt neben der Strecke: das Einfahrtstempo ist eine OBERGRENZE, und in Kurven gilt dieselbe
@@ -77983,18 +77351,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     z.throttle = gbUeber !== null ? gbUeber : gas - bremse;
     // Schalten, flankengetriggert wie bei Spieler 1. Ohne das koennte ein Spieler 2 mit
     // Handschaltung nicht schalten - und die Handschaltung ist eine Einstellung, die fuer
-    // beide gilt. OMEGA OVERDRIVE: Kreis ist Nitro statt Hochschalten (wie bei Spieler 1).
+    // beide gilt.
     const abNow = readBindingValue(pad, z.bindings.downshift) > BUTTON_CAPTURE_THRESHOLD;
     const aufNow = readBindingValue(pad, z.bindings.upshift) > BUTTON_CAPTURE_THRESHOLD;
     if (abNow && !pv.down && physicsEnabled && !z.motor.state.isShifting) {
       z.motor.triggerShift(-1);
     }
-    if (aufNow && !pv.up) {
-      if (typeof overdriveAktiv === 'function' && overdriveAktiv()) {
-        if (typeof overdriveBoostTaste === 'function') overdriveBoostTaste(z.nr);
-      } else if (physicsEnabled && !z.motor.state.isShifting) {
-        z.motor.triggerShift(1);
-      }
+    if (aufNow && !pv.up && physicsEnabled && !z.motor.state.isShifting) {
+      z.motor.triggerShift(1);
     }
     pv.down = abNow; pv.up = aufNow;
 
@@ -78021,13 +77385,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Mitziehen: #dash-head-toggle gehoert allein Auto 1.
     const headNow2 = readBindingValue(pad, z.bindings.headlights) > BUTTON_CAPTURE_THRESHOLD;
     if (headNow2 && !pv.head) {
-      // OMEGA OVERDRIVE: Dreieck aktiviert das Power-up statt Licht umzuschalten.
-      if (typeof overdriveAktiv === 'function' && overdriveAktiv()) {
-        if (typeof overdrivePowerupTaste === 'function') overdrivePowerupTaste(z.nr);
-      } else {
-        z.licht = !z.licht;
-        showHudToast('P' + z.nr + ': ' + (z.licht ? t('Licht an') : t('Licht aus')));
-      }
+      z.licht = !z.licht;
+      showHudToast('P' + z.nr + ': ' + (z.licht ? t('Licht an') : t('Licht aus')));
     }
     pv.head = headNow2;
 
@@ -78224,10 +77583,6 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (headNow && !prevHeadlights && trackEditorPad('rotate')) {
         // consumed by the editor
       } else if (headNow && !prevHeadlights
-                 && typeof overdriveAktiv === 'function' && overdriveAktiv()) {
-        // OMEGA OVERDRIVE (WIP): Dreieck aktiviert das Power-up; das Licht ist immer an.
-        if (typeof overdrivePowerupTaste === 'function') overdrivePowerupTaste();
-      } else if (headNow && !prevHeadlights
                  && document.querySelector('.tabpage.active') === $('tab-race')) {
         headlightsOn = !headlightsOn;
         const cb = $('dash-head-toggle');
@@ -78378,26 +77733,21 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         }
       }
       if (upshiftNow && !prevUpshift) {
-        // OMEGA OVERDRIVE (WIP): Kreis ist Nitro statt Hochschalten. NUR waehrend eines
-        // laufenden Overdrive-Rennens (overdriveAktiv()) - in den Menues bleibt Kreis wie
-        // bestellt "zurueck" (siehe den Kommentar unten).
-        if (typeof overdriveAktiv === 'function' && overdriveAktiv()) {
-          if (typeof overdriveBoostTaste === 'function') overdriveBoostTaste();
-        } else if (optInfoOffen()) {
+        // BESTELLT: "erlaube mir Kreistaste zu druecken, um aus den sub-menues
+        // zurueckzugehen, aktuell bleibe ich dabei manchmal stecken." showSubpage('') ist
+        // dieselbe Funktion, die auch der sichtbare .subpage-back-Knopf ruft - Kreis tut
+        // das jetzt direkt, wozu man sonst erst zur ersten Zeile hochnavigieren und
+        // "Waehlen" druecken musste. Nach demselben Muster wie optInfoOffen() oben: erst
+        // pruefen (kein Tab-race-Sonderfall noetig, dort gibt es nie ein offenes .subpage).
+        // ACC-Menue: Kreis ist in jedem Menue "zurueck", eine Ebene (Unterseite, Stapel,
+        // Eltern). Im Streckeneditor-Vollbild bleibt er Rueckgaengig, im Cockpit Hochschalten.
+        if (optInfoOffen()) {
           optInfoSchliessen();
         } else if (trackEditorPad('undo')) {
           /* vom Editor verbraucht */
         } else if (pitSpielTaste('kreis')) {
           /* Boxen-Minigame: Kreis gehoert dem Spiel */
         } else if (konsoleMenue()) {
-          // BESTELLT: "erlaube mir Kreistaste zu druecken, um aus den sub-menues
-          // zurueckzugehen, aktuell bleibe ich dabei manchmal stecken." showSubpage('') ist
-          // dieselbe Funktion, die auch der sichtbare .subpage-back-Knopf ruft - Kreis tut
-          // das jetzt direkt, wozu man sonst erst zur ersten Zeile hochnavigieren und
-          // "Waehlen" druecken musste. Nach demselben Muster wie optInfoOffen() oben: erst
-          // pruefen (kein Tab-race-Sonderfall noetig, dort gibt es nie ein offenes .subpage).
-          // ACC-Menue: Kreis ist in jedem Menue "zurueck", eine Ebene (Unterseite, Stapel,
-          // Eltern). Im Streckeneditor-Vollbild bleibt er Rueckgaengig, im Cockpit Hochschalten.
           konsoleZurueck();
         } else if (physicsEnabled && !physEngine.state.isShifting) {
           physEngine.triggerShift(1);
@@ -88093,10 +87443,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         const start = pitKachelStand();
 
         // Reifen durchschalten, einmal rundherum plus einen Schritt.
-        // Seit dem Zwischenreifen sind es FUENF Mischungen, also sechs Schritte bis zum
-        // Ausgangspunkt zurueck (fuenf verschiedene plus einer, der schliesst).
         const mixFolge = [];
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 5; i++) {
           mixFolge.push(pitKachelStand().mix);
           pitMischungWeiter();
         }
@@ -96209,7 +95557,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         weichVerbotAnwenden();
         if (tyres !== 'mittel' || mischungWunsch !== 'mittel') f.push('weich bleibt drauf: ' + tyres + '/' + mischungWunsch);
         el.checked = false;
-        if (mischungNaechste('hart') !== 'inter' || mischungNaechste('inter') !== 'regen' || mischungNaechste('regen') !== 'weich') f.push('ohne Verbot fehlt weich in der Folge');
+        if (mischungNaechste('hart') !== 'regen' || mischungNaechste('regen') !== 'weich') f.push('ohne Verbot fehlt weich in der Folge');
       }
       // Mischungsunterschied: Vorgabe 150 %, Regler bis 300 %, harte Reifen nie negativ.
       const r = $('setting-tyre-mix');
@@ -105350,14 +104698,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       fehler.push('Vorgabe ist ' + r.startMix + ', aufgezogen war hart');
     }
     // 2. REIFEN DURCHSCHALTEN, und die Folge schliesst sich. Eine Folge, die stehenbleibt,
-    //    waere eine Sackgasse - man kaeme nie zur ersten Mischung zurueck. Seit dem
-    //    Zwischenreifen sind es FUENF Mischungen, also fuenf verschiedene.
-    const vier = r.mixFolge.slice(0, 5);
-    if (new Set(vier).size !== 5) {
+    //    waere eine Sackgasse - man kaeme nie zur ersten Mischung zurueck.
+    const vier = r.mixFolge.slice(0, 4);
+    if (new Set(vier).size !== 4) {
       fehler.push('nur ' + new Set(vier).size + ' verschiedene Mischungen: '
                   + vier.join('>'));
     }
-    if (r.mixFolge[5] !== r.mixFolge[0]) {
+    if (r.mixFolge[4] !== r.mixFolge[0]) {
       fehler.push('Folge schliesst nicht: ' + r.mixFolge.join('>'));
     }
     // 3. TANKMENGE DURCHSCHALTEN, dieselben drei Stufen wie im Boxenmenue. Ein eigener
@@ -119928,7 +119275,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   // seine eigenen Autos; die Runden der anderen stehen in der Rangliste des Hosts. Hat dort
   // jemand das Ziel, gilt hier "letzte Runde" - die naechste Ueberfahrt beendet das Rennen.
   function mpZielPruefen(d) {
-    if (!mp.an || !mp.rennenId || raceState !== 'racing' || (raceMode !== 'laps' && raceMode !== 'overdrive')) return;
+    if (!mp.an || !mp.rennenId || raceState !== 'racing' || raceMode !== 'laps') return;
     const andere = ((d && d.fahrer) || []).filter((f) => f.id && f.id !== mp.id && mpAktiv(f));
     const fertig = andere.find((f) => (f.laps || 0) >= raceLimit);
     if (!fertig) return;

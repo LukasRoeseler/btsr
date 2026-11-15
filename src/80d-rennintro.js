@@ -52,18 +52,13 @@
   }
 
   function rennintroFolge(modus, limit, wetter, pflichtstopps = 0, aufstellung = []) {
-    // OMEGA OVERDRIVE (WIP): es gibt keine eigene Ansage-Aufnahme "modus_overdrive" im
-    // Manifest. Der Modus ist ein Rundenrennen, also sagt das Intro "Runden" - dieselbe
-    // Aufnahme wie beim Modus 'laps'. So bleibt der Selbsttest (jede erzeugte i:-Zeile muss
-    // im Manifest stehen) gruen, und das Intro faengt trotzdem etwas Sinnvolles an.
-    const introModus = modus === 'overdrive' ? 'laps' : modus;
-    const folge = ['i:willkommen', 'i:modus_' + introModus];
+    const folge = ['i:willkommen', 'i:modus_' + modus];
     const n = Number.isFinite(limit) ? Math.max(0, Math.round(limit)) : 0;
-    if (introModus === 'laps' && n > 0) {
+    if (modus === 'laps' && n > 0) {
       folge.push('i:distanz');
       if (n === 1) folge.push('i:runde');
       else folge.push(...rennstandZahlFolge(n), 'i:runden');
-    } else if (['practice', 'bestzeit', 'qualifying', 'endurance'].includes(introModus)) {
+    } else if (['practice', 'bestzeit', 'qualifying', 'endurance'].includes(modus)) {
       if (n > 0) {
         folge.push('i:zeitlimit');
         if (n === 1) folge.push('i:minute');

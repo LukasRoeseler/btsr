@@ -241,8 +241,6 @@
     background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/rennoptionen-laps.jpg) center / cover; }
   .mode-tile.kachelbild.bestzeit {
     background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/rennoptionen-bestzeit.jpg) center / cover; }
-  .mode-tile.kachelbild.overdrive {
-    background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/rennoptionen-overdrive.jpg) center / cover; }
   .mode-tile.kachelbild:hover, .mode-tile.kachelbild.sel { color: #fff; background-color: transparent; }
   .mode-tile.kachelbild.sel { border-color: var(--bad); box-shadow: inset 3px 0 0 var(--bad); }
   .wx-pick { display: flex; gap: 6px; }
@@ -1496,33 +1494,6 @@
      und hoeher. Reihenfolge: Tank, Schaden, Reifen, Akku, Licht, Radar, Boxenwahl, G-Plot. */
   .gt3-strip { grid-area: strip; display: grid; gap: clamp(3px, .7vw, 8px);
     grid-template-columns: .6fr .6fr 1fr 1fr .8fr 2.6fr 1fr 1fr; }
-  /* ---- OMEGA OVERDRIVE HUD (WIP) ----------------------------------------------------
-     Spielerisches HUD wie in einem Arcade-Rennen: oben ein Nitro-Tank mit Flamme, daneben
-     das gehaltene Power-up mit "Dreieck aktivieren". Nur im Overdrive-Modus sichtbar. */
-  .od-hud { position: absolute; top: 6px; right: 8px; z-index: 40; display: flex;
-    gap: 8px; align-items: stretch; pointer-events: none; }
-  /* Wenn das HUD versteckt ist, sind auch seine Kinder weg - sonst zaehlt der Kontrasttest
-     die Kindelemente (z. B. od-pu-ico) trotz des hidden-Attributs am Wurzelknoten. */
-  #od-hud[hidden], #od-hud[hidden] * { display: none !important; }
-  .od-tank { display: flex; flex-direction: column; gap: 3px; align-items: center;
-    background: rgba(6,10,18,.72); border: 1px solid rgba(255,255,255,.14);
-    border-radius: 8px; padding: 5px 8px; min-width: 88px; color: #ffd83d; }
-  .od-tank svg { width: 18px; height: 18px; }
-  .od-tank-stand { font-size: 10px; font-weight: 700; letter-spacing: .08em;
-    text-transform: uppercase; color: #cfd6e2; }
-  .od-tank-bar { width: 64px; height: 8px; border-radius: 4px; overflow: hidden;
-    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.12); }
-  .od-tank-bar > i { display: block; height: 100%; width: 0;
-    background: linear-gradient(90deg,#ffb02e,#ff5f2e); transition: width .12s linear; }
-  .od-hud.boost .od-tank { border-color: #ff5f2e; box-shadow: 0 0 10px rgba(255,95,46,.6); }
-  .od-pu { display: flex; flex-direction: column; gap: 2px; align-items: center;
-    background: rgba(6,10,18,.72); border: 1px solid rgba(255,255,255,.14);
-    border-radius: 8px; padding: 5px 10px; color: #eef2f7; }
-  .od-pu-ico { font-size: 20px; line-height: 1; }
-  .od-pu-txt { font-size: 10px; font-weight: 700; letter-spacing: .06em;
-    text-transform: uppercase; }
-  .od-pu-taste { font-size: 9px; color: #9aa5b7; }
-  body[data-cockpit="acc"] .od-hud { display: none; }
   /* Hoeher nur, wo Platz ist: im Vollbild und auf niedrigen Schirmen rechnet cockpitPassung()
      sonst einen kleineren Massstab fuer das ganze Cockpit (Selbsttest "Cockpit passt im Vollbild"). */
   @media (max-width: 560px) {
@@ -1694,7 +1665,6 @@
   body[data-tyre-mix="mittel"] .gt3-t4 { --mix-farbe: #f7d117; }
   body[data-tyre-mix="hart"] .gt3-t4 { --mix-farbe: #f2f4f8; }
   body[data-tyre-mix="regen"] .gt3-t4 { --mix-farbe: #2f6fd0; }
-  body[data-tyre-mix="inter"] .gt3-t4 { --mix-farbe: #27c28b; }
   /* Die Fuellung waechst von UNTEN, wie ein Vorrat. Dieselbe Richtung wie Tank und Schaden:
      drei Anzeigen, die gleich leerlaufen, liest man mit einem Blick. */
   .gt3-t4 > b { position: absolute; left: 0; right: 0; bottom: 0; height: 0;
@@ -2137,14 +2107,13 @@
   .pit-t4-feld .gt3-t4 { aspect-ratio: 1 / 1.5; --mix-linie: 2px; }
   /* Die vier Mischungen. Gleich breit, die geltende umrahmt - ein Rahmen und keine
      Aufhellung, weil weiss und gelb sich nicht aufhellen lassen. */
-  .pit-mix-feld { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px;               
+  .pit-mix-feld { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px;
     width: clamp(48px, 11vw, 84px); justify-self: end; }
   .pit-mix-feld > i { display: block; height: clamp(9px, 1.8vw, 14px); border-radius: 2px;
     box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .5); }
   .pit-mix-feld > i[data-mix="weich"] { background: #e5261e; }
   .pit-mix-feld > i[data-mix="mittel"] { background: #f7d117; }
   .pit-mix-feld > i[data-mix="hart"] { background: #f2f4f8; }
-  .pit-mix-feld > i[data-mix="inter"] { background: #27c28b; }
   .pit-mix-feld > i[data-mix="regen"] { background: #2f6fd0; }
   .pit-mix-feld > i.an { outline: 2px solid var(--gt3-tile-ink); outline-offset: 1px; }
   /* DIE MARKIERUNG ALS OUTLINE, nicht als Rahmen: sie malt AUSSERHALB des Innenrings, den
@@ -5333,8 +5302,7 @@
   body[data-cockpit="acc"] #race-dash #race-pitscreen > .pit-row .pr-wert {
     font-family: var(--k-font); font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
     font-size: clamp(8.5px, 1.1vw, 13px); font-size: clamp(8.5px, 2.8cqh, 13px);
-    line-height: 1; padding: .34em .7em .28em; width: 9.5em; text-align: center;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    line-height: 1; padding: .34em .7em .28em; min-width: 5.4em; text-align: center;
     color: #eef2f7; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .3); }
   body[data-cockpit="acc"] #race-dash #race-pitscreen > .pit-row.pr-ja .pr-wert {
     background: var(--good); color: #04130a; box-shadow: none; }
@@ -5793,7 +5761,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.4.79</span></span>
+        <span class="foot-ver">v<span id="app-version">1.4.80</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5917,20 +5885,6 @@
     </svg>
     <div class="gt3" id="race-dash">
       <div class="race-rain" aria-hidden="true"><i></i><i></i><i></i></div>
-      <!-- OMEGA OVERDRIVE (WIP): spielerisches HUD ueber dem Cockpit. Nitro-Tank und das
-           aktuelle Power-up, nur im Overdrive-Modus sichtbar. -->
-      <div class="od-hud" id="od-hud" hidden>
-        <div class="od-tank" id="od-tank" title="Nitro: Kreis zum Boost. Laedt sich in einer Rundenzeit auf.">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 3c3 3 5 6 5 9a5 5 0 0 1-10 0c0-3 2-6 5-9z"/></svg>
-          <div class="od-tank-stand" id="od-tank-stand">Nitro</div>
-          <div class="od-tank-bar"><i id="od-tank-bar"></i></div></div>
-        <div class="od-pu" id="od-pu" hidden>
-          <div class="od-pu-ico" id="od-pu-ico">&#9670;</div>
-          <div class="od-pu-txt" id="od-pu-txt">Power-up</div>
-          <div class="od-pu-taste">&#9651; aktivieren</div></div>
-      </div>
       <!-- BLAETTERN OHNE GAMEPAD, oben LINKS und gegenueber den Vollbildknoepfen: so
            liegt in jeder Ecke eine Sache, und man greift nicht daneben.
 
@@ -6298,7 +6252,7 @@
                  ist umrahmt; mit der Waehltaste schaltet man durch. -->
             <span class="pit-mix-feld">
               <i data-mix="weich"></i><i data-mix="mittel"></i>
-              <i data-mix="hart"></i><i data-mix="inter"></i><i data-mix="regen"></i>
+              <i data-mix="hart"></i><i data-mix="regen"></i>
             </span>
             <span class="pr-wert" id="pit-wert-mix" data-i18n-skip>&ndash;</span></span></div>
         <div class="pit-row pit-tile" id="pit-row-refuel" data-pit="refuel">
@@ -7048,9 +7002,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.4</span></b></p>
       <ul class="muted" id="patchnotes-14" style="padding-left:20px; line-height:1.7">
-        <li data-i18n-skip>Omega Overdrive (experimentell, nur auf der Bahn, Renntyp in den Renneinstellungen): Arcade-Rennen im Stil von Mario Kart &#8211; festes Fahrgef&#252;hl (~100 km/h, schneller Antritt, optionales Selbstlenken), Nitro auf Kreis (Tank, l&#228;dt sich in einer Rundenzeit auf), Power-ups beim &#220;berfahren der Start/Ziel-Linie (Destroyer, Superboost, Gewitter, EMP-Blaster) und Schaden ohne Boxenstopp (kaputtes Auto f&#228;hrt 3 s langsam und repariert sich selbst). Behoben: Nach dem Rennen blieb die Tempo-Obergrenze auf 1,45 stehen, wenn das Rennen im Nitro-Boost endete, und der Setup-Wert (Motorkennfeld, Heckfl&#252;gel) wurde im Rennen &#252;berschrieben. Der Boost gab auch Gas, wenn niemand Gas gab &#8211; jetzt hebt er nur die Tempo-Obergrenze und respektiert die Sicherungen (kein Gas neben der Bahn, Autopilot unter Gelb, Fr&#252;hstart-Sperre, totes Auto im Derby). Kreis und Dreieck waren schon in den Men&#252;s umbelegt, sobald Overdrive als Renntyp gew&#228;hlt war &#8211; jetzt nur noch w&#228;hrend des laufenden Rennens. Die manuelle Schaltung und die Tempo-Obergrenze kommen nach dem Rennen zur&#252;ck, der Nitro-Tank startet im zweiten Rennen wieder leer, im Cockpit wird die Position angezeigt, und Overdrive z&#228;hlt jetzt wie ein Rundenrennen (Wetter, Zufallsevents, Fr&#252;hstart-Zusatzrunde, WLAN-Mehrspieler, Restrunden-Ansage). Destroyer und EMP treffen nur Gegner auf demselben oder benachbarten Streckenteil. Selbstlenken wirkt auch, wenn das Auto in der Garage eine eigene Fahrhilfe hat. Spieler 2 und 3 bekommen Nitro und Power-ups. Neu: EMP und Destroyer treffen jetzt wirklich nur Gegner auf demselben oder benachbarten Streckenteil &#8211; vorher rechneten sie den eigenen Teil aus dem Kachelz&auml;hler, der bei 256 &#252;berl&auml;uft und nicht an der Startlinie beginnt, und stoppten dadurch zuf&auml;llige oder weit entfernte NPCs. Selbstlenken ist ab Werk aus. Die Overdrive-Meldungen (Nitro leer, Kaputt, Power-ups, Selbstlenken) laufen jetzt &#252;ber die &#220;bersetzung.</li>
         <li>Virtuelles Fahren (Quality, Garage &#8594; Virtuelles Auto &#8594; Grafik): Die Szene ist deutlich sch&#246;ner. Neu sind eine Tageszeit mit Sonne, Horizont und Sternen (Morgen, Mittag, Abend, Nacht, in der Garage w&#228;hlbar), Bloom und ein AgX-Tonemapping mit Vignette als Nachbearbeitung, Umgebungsreflexionen im Lack, ein Regen-Schalter mit nassem Glanz der Bahn und Regenstreifen im Bild, eine Livery-Einf&#228;rbung der Karosserie je Fahrzeugfarbe, eine TV-Kamera, Reifenverformung in Kurven (das &#228;u&#223;ere Rad staucht sich) und Kontaktschatten unter den R&#228;dern sowie Frustum-Culling und LOD f&#252;r ferne NPCs. Scheitert die Nachbearbeitung (etwa ohne Framebuffer), f&#228;hrt die App mit dem direkten Bild weiter.</li>
-        <li>Reifenmischung: Neu ist der Zwischenreifen zwischen Slick und Regenreifen &#8211; etwas weniger Grip im Trockenen als der Mittelreifen, mehr als Slicks im Nassen, ohne Aufschwimmen; in der Boxenwahl zwischen hart und Regen.</li>
         <li>Wetter: Ein fester Startwert (Konsole: omegasim-wx-seed) macht den Wetterplan reproduzierbar &#8211; dieselbe Strecke, dasselbe Wetter.</li>
         <li>Virtuelles Fahren: Der Geist speichert die aufgezeichnete Linie und l&#228;sst sie exportieren (JSON) und wieder einlesen; eingelesen f&#228;hrt der Geist sie sofort ab (Linie exportieren / Linie einlesen in der Garage).</li>
         <li>Setup je Auto (WIP): neu sind Bremsbalance, ABS, TC, Motorkennfeld, Heckfl&#252;gel und Reifendruck, jeweils mit Erkl&#228;rung im &#9432; und einer Zeile, was die Einstellung bewirkt. Was im gew&#228;hlten Fahrgef&#252;hl nicht wirkt, ist ausgegraut. Das Motorkennfeld &#228;ndert auch den Verbrauch und die Tank-Rundenangabe. W&#228;hrend die Reifenrunden berechnet werden, dreht sich das Streckenteil als Ladesymbol, und das Fenster bleibt bedienbar. Bei vorgegebenem Fahrgef&#252;hl fahren alle mit Standard.</li>
@@ -10364,11 +10316,6 @@
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="9" cy="9" r="3"/><circle cx="15" cy="15" r="3"/><path d="M9 12v9M15 12V3"/>
           </svg><b>Demolition Derby</b><span class="wip-tag">experimentell</span></button>
-        <button type="button" class="mode-tile kachelbild overdrive" data-mode="overdrive">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M13 2L4 14h6l-1 8 9-12h-6z"/><circle cx="13" cy="2" r="0.6"/>
-          </svg><b>Omega Overdrive</b><span class="wip-tag">WIP</span></button>
       </div>
       <select id="race-mode" hidden style="display:none">
         <option value="practice" selected>Training</option>
@@ -10378,7 +10325,6 @@
         <option value="endurance">Endurance</option>
         <option value="knockout">NPC Knockout</option>
         <option value="derby">Demolition Derby</option>
-        <option value="overdrive">Omega Overdrive</option>
       </select></div>
       <p class="muted" id="race-mode-hint" style="font-size:11.5px; margin:8px 0 0 0"></p>
 
@@ -10388,14 +10334,6 @@
       <div class="opt-row"><div class="opt-label"><span id="race-limit-label">Minuten</span>
           <small>Beim Training und bei Bestzeit: 0 hei&szlig;t ohne Ende.</small></div>
         <span class="num-steuer"><button class="num-minus" type="button" aria-label="Minus eins">&#8722;</button><input type="number" id="race-limit" value="0" min="0" max="120" step="1" style="width:84px"><button class="num-plus" type="button" aria-label="Plus eins">+</button></span></div>
-      <!-- OMEGA OVERDRIVE (experimentell): optionale Selbstlenkung. Nur im Overdrive-Modus sichtbar.
-           Hinweistexte nur deutsch (experimenteller Modus), deshalb data-i18n-skip. -->
-      <div class="opt-row" id="od-selbstlenken-row" style="display:none" data-i18n-skip>
-        <div class="opt-label">Selbstlenken
-          <span class="wip-tag">experimentell</span>
-          <small>Omega Overdrive: Das Auto h&auml;lt sich selbst auf der Bahn (Ideallinie statt
-          eigener Lenkung). In Overdrive steht das Licht immer an.</small></div>
-        <input type="checkbox" id="od-selbstlenken"></div>
       <div class="opt-row"><div class="opt-label">Sektoren
           <span class="wip-tag">experimentell</span>
           <small>&Uuml;berfahrten je Runde. <b>Im Bahn-Modus</b> (Editor) bestimmt die Strecke

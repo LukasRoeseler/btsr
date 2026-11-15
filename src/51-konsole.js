@@ -803,8 +803,7 @@
     // Rennoptionen-Kachel wechselt mit dem Rennmodus das Bild (BESTELLT v0.8.53).
     const rmBild = { practice: 'rennoptionen-practice', endurance: 'rennoptionen-endurance',
                      qualifying: 'rennoptionen-qualifying', laps: 'rennoptionen-laps',
-                     knockout: 'knockout', derby: 'derby', bestzeit: 'rennoptionen-bestzeit',
-                     overdrive: 'rennoptionen-overdrive' }[rm.value];
+                     knockout: 'knockout', derby: 'derby', bestzeit: 'rennoptionen-bestzeit' }[rm.value];
     const rb = $('fa-renn-bild');
     if (rb && rmBild && rb.dataset.bild !== rmBild) {
       rb.style.backgroundImage = 'url(img/' + rmBild + '.jpg)';

@@ -87,10 +87,6 @@
     v10:   { wave: 'sawtooth', baseFreq: 110, freqSpan: 520, gainBase: 0.02, gainSpan: 0.11 },
     ev:    { wave: 'sine',     baseFreq: 180, freqSpan: 900, gainBase: 0.01, gainSpan: 0.09 },
     turbo: { wave: 'square',   baseFreq: 60,  freqSpan: 240, gainBase: 0.02, gainSpan: 0.12 },
-    // OMEGA OVERDRIVE (WIP): "lustiger" Motorsound ohne Gangschaltung, wie ein Arcade-/Kart-
-    // Motor. Ein hoher Quadratwellen-Klang mit flachem Frequenzhub, damit es quietschig und
-    // spielerisch klingt statt nach einem V8. Dieser Profilname taucht nicht im Menue auf.
-    fun:   { wave: 'triangle', baseFreq: 220, freqSpan: 520, gainBase: 0.03, gainSpan: 0.10 },
   };
   let soundProfile = SOUND_PROFILES.v8;
 
@@ -938,7 +934,7 @@
     const de = lang === 'de';
     if (typeof raceState === 'undefined' || typeof raceMode === 'undefined') return null;
     if (raceState !== 'racing' && raceState !== 'finishing') return null;
-    if (raceMode === 'laps' || raceMode === 'overdrive') {
+    if (raceMode === 'laps') {
       const gefahren = (typeof raceLapTimes !== 'undefined' ? raceLapTimes.length : 0);
       const rest = Math.max(0, raceLimit + (typeof fruehstartZielPlus === 'function' ? fruehstartZielPlus(1) : 0) - gefahren);
       return de ? 'Noch ' + rest + ' Runden' : rest + ' laps to go';
