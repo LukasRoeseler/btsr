@@ -26265,6 +26265,40 @@
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
 
+  // v1.5.32: Cockpit-Ansicht Mokamit (Digital Dash aus Hybrid-Dash, MIT).
+  stAdd('Cockpit v1.5.32: Ansicht Mokamit im Cockpit-Menue, nur auf dem Haupt-Schirm, liest das Standard-Cockpit', () => {
+    const f = [];
+    const sel = $('setting-cockpit'), dash = $('race-dash');
+    if (!sel || !dash) return { skip: true, mass: 'Cockpit fehlt' };
+    if (!Array.from(sel.options).some((o) => o.value === 'mokamit')) f.push('Option mokamit fehlt');
+    const merk = { cp: document.body.getAttribute('data-cockpit'), sc: dash.dataset.screen, kmh: $('race-speed').textContent, wahl: sel.value };
+    try {
+      document.body.setAttribute('data-cockpit', 'mokamit');
+      dash.dataset.screen = 'main';
+      if (!mokamitSichtbar()) f.push('auf dem Haupt-Schirm nicht sichtbar');
+      dash.dataset.screen = 'pit';
+      if (mokamitSichtbar()) f.push('auf dem Boxen-Schirm sichtbar');
+      dash.dataset.screen = 'main';
+      document.body.setAttribute('data-cockpit', 'acc');
+      if (mokamitSichtbar()) f.push('bei ACC sichtbar');
+      document.body.setAttribute('data-cockpit', 'mokamit');
+      const el = hdCockpitBauen();
+      if (!el || el.id !== 'hd-cockpit') f.push('Aufbau fehlt');
+      $('race-speed').textContent = '123';
+      hdCockpitMalen();
+      const k = $('hd-cp-kmh');
+      if (!k) f.push('kein Tempofeld');
+      else if (dash.offsetParent && k.textContent !== '123') f.push('Tempo nicht uebernommen: ' + k.textContent);
+      // Die Knoepfe druecken die Standardknoepfe (dieselben Regeln).
+      if (!$('hd-cp-box-knopf') || !$('hd-cp-flagge-knopf')) f.push('Knoepfe fehlen');
+    } finally {
+      if (merk.cp === null) document.body.removeAttribute('data-cockpit'); else document.body.setAttribute('data-cockpit', merk.cp);
+      dash.dataset.screen = merk.sc || 'main';
+      $('race-speed').textContent = merk.kmh;
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'waehlbar, nur Haupt-Schirm, liest race-speed, Knoepfe vorhanden' };
+  });
+
   // v1.5.29: DualSense-Trigger wie bei LibreCorsa.
   stAdd('DualSense v1.5.29: Bremse mit Widerstand und ABS-Vibration, Gas mit Schlupf/TC, Halten 150 ms', () => {
     const f = [];
