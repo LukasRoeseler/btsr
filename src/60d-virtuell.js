@@ -1912,6 +1912,55 @@
   // Kollision mit NPCs: Schaden, Abbremsen, Rumpeln; und Windschatten (dreckige Luft): dicht hinter
   // einem NPC in der Spur verliert das eigene Auto Grip vorn (wie dirtyAirLevel in 90-ghosts.js).
   // Seit v1.3.95 wertet die Kollision auch Derby (Health) und NPC-Knockout (Leben) aus.
+  // ---- KOLLISION NACH ART VON LIBRECORSA (v1.5.11, WIP) --------------------------------------------------
+  // BESTELLT: "virtuelles Fahren: Kollisionen wie in LibreCorsa". Bis 1.5.10 war es ein Kasten-Test ohne Wirkung auf
+  // die Lage: das Tempo wurde halbiert, die Autos blieben ineinander stecken (Treffer nach Treffer alle 1,5 s).
+  // Jetzt: (1) zwei gedrehte Kaesten (SAT) mit den echten Massen, (2) ein Stoss mit Impuls: aus der Annaeherung
+  // entlang der Kontaktnormalen folgt eine Tempoaenderung, ein Seitenstoss (dyn.vy) und ein Giermoment (dyn.r) - ein
+  // Treffer vorn dreht die Nase weg, einer hinten schiebt sie herum -, (3) Auseinanderschieben: das eigene Auto
+  // wird bis zur Beruehrung herausgesetzt (die NPCs fahren auf der Schiene und bleiben, wo sie sind), (4) Schaden
+  // nach Aufprallstaerke statt pauschal 10. Der NPC verliert etwas Tempo. Eine Wand gibt es im virtuellen Fahren
+  // nicht (neben der Bahn wirkt die Abseitsbremse), dafuer ist hier nichts zu tun.
+  const VF_STOSS_E = 0.25;            // Rueckfederung: 0 = klebt, 1 = voll elastisch
+  const VF_STOSS_M = 0.6;             // Anteil des Impulses, den das eigene Auto aufnimmt (der NPC auf der Schiene ist "schwerer")
+  const VF_KASTEN = 0.92;             // die Kaesten sind etwas kleiner als das gezeichnete Auto (Spiegel, Spoiler)
+  // Zwei gleich grosse gedrehte Kaesten (Mittelpunkt, Kurs in Grad, Laenge L, Breite B). Rueckgabe: null oder
+  // { pen, nx, ny }: Eindringtiefe und Normale, die vom ZWEITEN Kasten zum ERSTEN zeigt (in Streckeneinheiten).
+  function vfKontakt(ax, ay, ah, bx, by, bh, L, B) {
+    const hl = L * 0.5 * VF_KASTEN, hb = B * 0.5 * VF_KASTEN;
+    const ra = ah * Math.PI / 180, rb = bh * Math.PI / 180;
+    const fa = [Math.sin(ra), -Math.cos(ra)], la = [Math.cos(ra), Math.sin(ra)];
+    const fb = [Math.sin(rb), -Math.cos(rb)], lb = [Math.cos(rb), Math.sin(rb)];
+    const dx = bx - ax, dy = by - ay;
+    let best = Infinity, bnx = 0, bny = 0;
+    for (const a of [fa, la, fb, lb]) {
+      const ext = (f, l) => hl * Math.abs(f[0] * a[0] + f[1] * a[1]) + hb * Math.abs(l[0] * a[0] + l[1] * a[1]);
+      const abstand = dx * a[0] + dy * a[1];
+      const ueber = ext(fa, la) + ext(fb, lb) - Math.abs(abstand);
+      if (ueber <= 0) return null;
+      if (ueber < best) { best = ueber; const sg = abstand > 0 ? -1 : 1; bnx = a[0] * sg; bny = a[1] * sg; }
+    }
+    return { pen: best, nx: bnx, ny: bny };
+  }
+  // Der Stoss selbst, rein gerechnet: eigenes Auto (Tempo kmhP, Kurs hP), NPC (kmhN, hN), Normale n vom NPC zum
+  // eigenen Auto, vorn = Treffer in der vorderen Haelfte. Rueckgabe: neues Tempo, Seitenstoss und Giermoment des
+  // eigenen Autos (Einheiten der Fahrdynamik: m/s und rad/s eines GT3) und die Annaeherung vn in m/s.
+  function vfStossRechnen(kmhP, hP, kmhN, hN, nx, ny, vorn) {
+    const k = 100 * TRACK_UNITS_PER_CM / 3.6, c = REAL_SCALE / (100 * TRACK_UNITS_PER_CM);
+    const rp = hP * Math.PI / 180, rn = hN * Math.PI / 180;
+    const fp = [Math.sin(rp), -Math.cos(rp)], lp = [Math.cos(rp), Math.sin(rp)];
+    const vp = [fp[0] * kmhP * k, fp[1] * kmhP * k], vn2 = [Math.sin(rn) * kmhN * k, -Math.cos(rn) * kmhN * k];
+    const vn = -((vp[0] - vn2[0]) * nx + (vp[1] - vn2[1]) * ny);   // > 0: sie nahern sich
+    if (!(vn > 0.02 * k)) return { kmhNeu: kmhP, dvy: 0, dr: 0, vnMs: 0 };
+    const j = (1 + VF_STOSS_E) * vn * VF_STOSS_M;
+    const dvx = nx * j, dvy = ny * j;
+    const vfx = vp[0] + dvx, vfy = vp[1] + dvy;
+    const dLong = (dvx * fp[0] + dvy * fp[1]), dLat = (dvx * lp[0] + dvy * lp[1]);
+    const kmhNeu = (vfx * fp[0] + vfy * fp[1]) / k;
+    const seite = vorn ? 1 : -1;
+    const dr = Math.max(-0.9, Math.min(0.9, dLat * c * seite * 0.02));
+    return { kmhNeu: kmhNeu, dvy: Math.max(-12, Math.min(12, dLat * c)), dr: dr, vnMs: vn * c, dLong: dLong };
+  }
   function vfVerkehr(dt) {
     const h = VF.h * Math.PI / 180;
     const fwdX = Math.sin(h), fwdY = -Math.cos(h), latX = Math.cos(h), latY = Math.sin(h);
@@ -1928,13 +1977,35 @@
         const d = Math.hypot(dx, dy);
         if (d < 14) dirty = Math.max(dirty, Math.pow(1 - d / 14, 2));
       }
-      if (rennZeitJetzt() >= VF.kollisionsBis && Math.abs(long) < VF_AUTO.L * 0.6 && Math.abs(lat) < VF_AUTO.B * 0.6) {
+      // Grobe Vorauswahl, dann der Kastentest.
+      if (Math.abs(long) > VF_AUTO.L * 1.6 || Math.abs(lat) > VF_AUTO.L * 1.6) { npc.kontakt = false; continue; }
+      const k = vfKontakt(VF.x, VF.y, VF.h, npc.x, npc.y, npc.h, VF_AUTO.L, VF_AUTO.B);
+      if (!k) { npc.kontakt = false; continue; }
+      // Auseinanderschieben: jedes Bild, solange sie sich durchdringen.
+      VF.x += k.nx * k.pen; VF.y += k.ny * k.pen;
+      const neuerKontakt = !npc.kontakt;
+      npc.kontakt = true;
+      if (neuerKontakt && physEngine.state.speedKmh > 0) {
+        const st = vfStossRechnen(physEngine.state.speedKmh, VF.h, npc.kmh || 0, npc.h, k.nx, k.ny, long > 0);
+        if (st.vnMs > 0) {
+          physEngine.state.speedKmh = Math.max(0, st.kmhNeu);
+          if (!VF.dyn) VF.dyn = { vy: 0, r: 0 };
+          VF.dyn.vy += st.dvy; VF.dyn.r += st.dr;
+          if (npc.motor && npc.motor.state) npc.motor.state.speedKmh = Math.max(0, (npc.motor.state.speedKmh || 0) * (1 - Math.min(0.3, st.vnMs * 0.012)));
+          padRumble(Math.min(1, 0.2 + st.vnMs * 0.03), Math.min(1, 0.2 + st.vnMs * 0.03), 40, 'crash', 1);
+          npc.stossMs = st.vnMs;
+        }
+      }
+      if (rennZeitJetzt() >= VF.kollisionsBis && neuerKontakt) {
         VF.kollisionsBis = rennZeitJetzt() + frist;
-        physEngine.state.speedKmh *= (VF.modus === 'derby' || VF.modus === 'knockout') ? 0.85 : 0.5;
-        padRumble(0.4, 0.4, 40, 'crash', 1);
+        const ms = npc.stossMs || 0;
         if (VF.modus === 'derby') vfDerbyTreffer(npc, long, lat, vAbs);
         else if (VF.modus === 'knockout') vfKnockoutTreffer(npc, vAbs);
-        else { if (typeof damage === 'number') damage = Math.min(100, damage + 10); showHudToast(t('Zusammenstoß')); }
+        else {
+          // Schaden nach Aufprallstaerke (m/s eines GT3): leichtes Anstupsen 3 %, harter Aufprall bis 30 %.
+          if (typeof damage === 'number') damage = Math.min(100, damage + Math.min(30, 3 + ms * 0.9));
+          showHudToast(t('Zusammenstoß'));
+        }
       }
     }
     if (physEngine.state) physEngine.state.dirtyAir += (dirty - (physEngine.state.dirtyAir || 0)) * Math.min(1, (dt || 0) * 4);

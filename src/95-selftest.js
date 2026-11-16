@@ -26463,6 +26463,64 @@
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
 
+  // v1.5.11: Kollision im virtuellen Fahren mit gedrehten Kaesten und Impuls.
+  stAdd('Virtuell v1.5.11: Kastenkontakt, Stoss mit Impuls und Giermoment', () => {
+    const f = [];
+    const L = VF_AUTO.L, B = VF_AUTO.B;
+    // 1. Kontakt: Kurs 0 = nach "oben" (x gleich, y kleiner). NPC genau vor dem Auto.
+    const weit = vfKontakt(0, 0, 0, 0, -L * 1.2, 0, L, B);
+    if (weit) f.push('Autos mit Luft dazwischen beruehren sich');
+    const nah = vfKontakt(0, 0, 0, 0, -L * 0.8, 0, L, B);
+    if (!nah) f.push('ueberlappende Autos beruehren sich nicht');
+    else {
+      const soll = L * VF_KASTEN - L * 0.8;
+      if (Math.abs(nah.pen - soll) > 1e-6) f.push('Eindringtiefe ' + nah.pen.toFixed(3) + ' statt ' + soll.toFixed(3));
+      if (!(nah.ny > 0.99 && Math.abs(nah.nx) < 1e-6)) f.push('Normale vorn nicht nach hinten: ' + nah.nx.toFixed(2) + ',' + nah.ny.toFixed(2));
+      // Der erste Kasten wird um pen entlang n herausgesetzt: danach beruehren sie sich nicht mehr.
+      const draussen = vfKontakt(nah.nx * (nah.pen + 1e-6), nah.ny * (nah.pen + 1e-6), 0, 0, -L * 0.8, 0, L, B);
+      if (draussen) f.push('nach dem Auseinanderschieben noch Kontakt');
+    }
+    // Seitlich versetzt, ohne Beruehrung in der Breite.
+    if (vfKontakt(0, 0, 0, B * 1.2, 0, 0, L, B)) f.push('nebeneinander mit Luft beruehren sich');
+    // Seitenkontakt: Normale zeigt zur Seite.
+    const seit = vfKontakt(0, 0, 0, B * 0.8, 0, 0, L, B);
+    if (!seit || !(Math.abs(seit.nx) > 0.99)) f.push('Seitenkontakt ohne seitliche Normale');
+    // Gedreht: ein Kasten im 45-Grad-Winkel schneidet dort, wo die achsenparallelen Kaesten sich nicht schneiden wuerden.
+    const diag = vfKontakt(0, 0, 0, L * 0.62, -L * 0.62, 45, L, B);
+    const diagAchs = vfKontakt(0, 0, 0, L * 0.62, -L * 0.62, 0, L, B);
+    if (!diag) f.push('gedrehter Kasten schneidet nicht');
+    if (diagAchs) f.push('Gegenprobe: ungedreht waere es frei');
+    // Vertauscht gibt dieselbe Tiefe mit umgekehrter Normale.
+    const a = vfKontakt(0, 0, 10, 3, -8, 30, L, B), b = vfKontakt(3, -8, 30, 0, 0, 10, L, B);
+    if (!a || !b) f.push('vertauscht: Kontakt fehlt'); else if (Math.abs(a.pen - b.pen) > 1e-9 || a.nx * b.nx + a.ny * b.ny > -0.999) f.push('vertauscht nicht symmetrisch');
+    // 2. Stoss: frontal auf einen stehenden NPC.
+    const frontal = vfStossRechnen(60, 0, 0, 0, 0, 1, true);          // n zeigt vom NPC (vorn) nach hinten
+    if (!(frontal.kmhNeu < 60 && frontal.kmhNeu >= 0)) f.push('frontal: Tempo ' + frontal.kmhNeu);
+    if (!(frontal.vnMs > 0)) f.push('frontal: keine Annaeherung');
+    if (Math.abs(frontal.dvy) > 1e-6) f.push('frontal: Seitenstoss ' + frontal.dvy);
+    // Auffahren auf einen schnelleren NPC: kein Stoss.
+    const weg = vfStossRechnen(40, 0, 80, 0, 0, 1, true);
+    if (weg.vnMs !== 0 || weg.kmhNeu !== 40) f.push('Auto entfernt sich, aber Stoss');
+    // Hart gegen weich: der Aufprall bei 120 ist deutlich haerter als bei 30.
+    const hart = vfStossRechnen(120, 0, 0, 0, 0, 1, true), weich = vfStossRechnen(30, 0, 0, 0, 0, 1, true);
+    if (!(hart.vnMs > 3 * weich.vnMs)) f.push('Aufprallstaerke waechst nicht mit dem Tempo');
+    // Seitenstoss: NPC links daneben (x = -), n zeigt vom NPC zum Auto = nach rechts (+x): das Auto wird nach rechts geschoben.
+    const seitlich = vfStossRechnen(60, 0, 60, 0.0, 1, 0, true);
+    // beide fahren gleich schnell nach oben: keine Annaeherung entlang n -> kein Stoss
+    if (seitlich.vnMs !== 0) f.push('parallel fahrend: Stoss');
+    const schraeg = vfStossRechnen(60, 0, 0, 90, 1, 0, true);         // NPC steht quer? Kurs 90, Tempo 0: Auto faehrt "nach oben", n nach rechts: keine Annaeherung
+    if (schraeg.vnMs !== 0) f.push('Stoss ohne Annaeherung entlang der Normalen');
+    // Vorn links angestossen (n zeigt nach rechts-hinten): Nase wird nach rechts gedreht (dr > 0), hinten umgekehrt.
+    const nvl = Math.SQRT1_2;
+    const vornTreffer = vfStossRechnen(60, 0, 0, 0, nvl, nvl, true), hintenTreffer = vfStossRechnen(60, 0, 0, 0, nvl, nvl, false);
+    if (!(vornTreffer.dr > 0 && vornTreffer.dvy > 0)) f.push('Treffer vorn links: dr ' + vornTreffer.dr.toFixed(3) + ', dvy ' + vornTreffer.dvy.toFixed(2));
+    if (!(hintenTreffer.dr < 0)) f.push('Treffer hinten: dr nicht umgekehrt');
+    if (!(Math.abs(vornTreffer.dr) <= 0.9 && Math.abs(vornTreffer.dvy) <= 12)) f.push('Giermoment oder Seitenstoss unbegrenzt');
+    // Der Stoss nimmt Tempo, aber das Auto bleibt nie rueckwaerts im Spiel (der Aufrufer klemmt auf 0): kmhNeu endlich.
+    if (![frontal, hart, vornTreffer].every((x) => isFinite(x.kmhNeu))) f.push('kmhNeu nicht endlich');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Kasten mit Normale und Tiefe, Stoss: frontal ' + frontal.kmhNeu.toFixed(1) + ' km/h von 60, Giermoment vorn ' + vornTreffer.dr.toFixed(2) + ' rad/s' };
+  });
+
   // v1.5.10: Lackfarbe und Vorschaubilder des virtuellen Fahrens (WIP).
   stAdd('Virtuell v1.5.10: Lackfarbe umfaerbt nur die Karosserie, Vorschaubild je Auto und Farbe', async () => {
     const f = [];
