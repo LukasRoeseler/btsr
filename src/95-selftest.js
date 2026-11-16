@@ -5743,62 +5743,7 @@
   // ---- Korrektur nach 1.2.66: Gran-Werte haengen am MODUS, nicht am Preset ----
   // Vorher leitete setzeGran() sie aus presetAktiv() ab: direkt im Auswahlfeld "Gran" gewaehlt gab
   // es keine Gierregelung, und ein verstellter Regler oder das Laden schaltete sie ab.
-  stAdd('Gran Hybrismo: Werte nach Moduswahl, Reglerzug und Laden (am Modus, nicht am Preset)', () => {
-    const f = [];
-    const sel = $('phys-mode');
-    if (!sel || typeof GRAN_AN === 'undefined') return { skip: true, mass: 'phys-mode/GRAN_AN fehlt' };
-    const merk = presetRead();
-    const c = physEngine.config;
-    const granAn = (wo) => {
-      if (!c.gran || !c.pacejka) f.push(wo + ': gran/pacejka aus');
-      for (const k of Object.keys(GRAN_AN)) if (c[k] !== GRAN_AN[k]) { f.push(wo + ': ' + k + ' ' + c[k]); break; }
-    };
-    try {
-      // 1) Direkt im Auswahlfeld gewaehlt (ohne Preset-Knopf).
-      presetSet('phys-mode', 'physik');
-      presetSet('phys-mode', 'gran');
-      granAn('Auswahlfeld');
-      if (!physicsEnabled) f.push('Gran ohne Physik');
-      // 2) Einen Regler verstellen (dann ist kein Preset mehr "aktiv") und die alten Aufrufer laufen lassen.
-      const sc = $('setting-steer-calib');
-      presetSet('setting-steer-calib', Math.abs(parseFloat(sc.value) - 1.35) < 1e-9 ? 1.4 : 1.35);
-      setzeBrakeStealLast(); setzeGran();
-      granAn('nach Reglerzug');
-      // 3) Laden: das Feld steht schon auf 'gran' (kein change), die Sicherung ruft setzeGran().
-      granWerteSetzen(c, false);
-      sel.value = 'gran';
-      setzeGran();
-      granAn('nach Laden');
-      // 4) Wechsel weg von Gran schaltet alles ab.
-      presetSet('phys-mode', 'pacejka');
-      if (c.gran || c.granYawFeed !== 0 || c.granAeroK !== 0) f.push('nach Wechsel auf Pacejka noch Gran-Werte');
-      if (!c.pacejka) f.push('Pacejka aus');
-    } finally {
-      for (const [id, val] of Object.entries(merk)) presetSet(id, val);
-      setzeBrakeStealLast(); setzeGran();
-    }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Auswahlfeld, Reglerzug und Laden: Gierregelung bleibt an, Wechsel schaltet sie ab' };
-  });
 
-  stAdd('Gran Hybrismo: Spieler 2 faehrt mit Physik und eigener Gierregelung', () => {
-    const f = [];
-    if (typeof spielerPhysikAn !== 'function' || !window.__presetSchnappschuss) return { skip: true, mass: 'spielerPhysikAn fehlt' };
-    if (!spielerPhysikAn({ motor: { config: { physModus: 'gran' } } })) f.push('Modus gran gilt nicht als Physik');
-    if (!spielerPhysikAn({ motor: { config: { physModus: 'pacejka' } } })) f.push('Modus pacejka gilt nicht als Physik');
-    if (spielerPhysikAn({ motor: { config: { physModus: 'aus' } } })) f.push('RC gilt als Physik');
-    const vorher = { gran: physEngine.config.gran, modus: $('phys-mode').value };
-    if (window.__presetSchnappLeeren) window.__presetSchnappLeeren();
-    const snap = window.__presetSchnappschuss('gran');
-    if (!snap) f.push('kein Schnappschuss');
-    else {
-      if (snap.modus !== 'gran') f.push('Schnappschuss-Modus ' + snap.modus);
-      if (!snap.config.gran || !snap.config.pacejka) f.push('Schnappschuss ohne gran/pacejka');
-      if (snap.config.granYawFeed !== GRAN_AN.granYawFeed || snap.config.granAeroK !== GRAN_AN.granAeroK) f.push('Schnappschuss ohne Gran-Werte');
-    }
-    if (physEngine.config.gran !== vorher.gran || $('phys-mode').value !== vorher.modus) f.push('Spieler 1 wurde vom Schnappschuss veraendert');
-    if (window.__presetSchnappLeeren) window.__presetSchnappLeeren();
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'gran rechnet mit Physik, Schnappschuss traegt die Gran-Werte, Spieler 1 unberuehrt' };
-  });
 
   // ---- Korrektur nach 1.2.66 (BESTELLT: Latenz): NPC-Folgen reichen nur GEAENDERTE Befehle durch ----
   // 1.2.50 liess in Einpark-/Haltefolgen jeden Takt am Verwerfen vorbei, und writeInFlight fiel,
@@ -6011,139 +5956,10 @@
     return Math.abs(brems.servo) / Math.max(1e-6, Math.abs(roll.servo));
   }
 
-  stAdd('Fahrgefuehl v1.3.5: Gran Hybrismo stabiler als Assetto Carrera (Grenzgrip, Gier beim Lupfen)', () => {
-    const f = [];
-    if (!window.__presetValues('gran') || !window.__presetValues('acc')) return { ok: false, mass: 'Presets gran/acc fehlen' };
-    const gH = fgGrenze('gran', 85), gA = fgGrenze('acc', 85), gP = fgGrenze('propacejka', 85);
-    if (!(gH > gA + 10)) f.push('Grenzgrip Hybrismo ' + gH + ' nicht ueber Assetto ' + gA);
-    if (!(gH > gP + 20)) f.push('Hybrismo ' + gH + ' nicht deutlich ueber Pacejka ' + gP);
-    const lH = fgLupfen('gran'), lA = fgLupfen('acc');
-    if (!(lA.gier > lH.gier + 0.2)) f.push('Lupfen: Assetto ' + lA.gier.toFixed(2) + ' nicht deutlich ueber Hybrismo ' + lH.gier.toFixed(2));
-    if (!(lH.gier < 1.15)) f.push('Hybrismo dreht beim Lupfen ein: ' + lH.gier.toFixed(2));
-    if (!(lA.ueber > 0.05)) f.push('Assetto: beim Lupfen kommt das Heck nicht (' + lA.ueber.toFixed(2) + ')');
-    if (lA.leistung) f.push('Lupfen als Leistungsuebersteuern gemeldet');
-    return { ok: !f.length, mass: f.length ? f.join(' | ')
-      : 'Grenztempo Hybrismo ' + gH + ', Assetto ' + gA + ', Pacejka ' + gP + ' km/h; Lupfen Gier x' + lH.gier.toFixed(2)
-        + ' gegen x' + lA.gier.toFixed(2) + ' (Heck ' + lA.ueber.toFixed(2) + ')' };
-  });
 
-  stAdd('Fahrgefuehl v1.3.5: Assetto Carrera mit Reifenfenster, Trail-Braking-Gier, Untersteuern beim Ueberfahren', () => {
-    const f = [];
-    const aK = fgGrenze('acc', 20), aW = fgGrenze('acc', 85), aH = fgGrenze('acc', 118);
-    const hK = fgGrenze('gran', 20), hW = fgGrenze('gran', 85), hH = fgGrenze('gran', 118);
-    if (!(aW > aK + 30)) f.push('Assetto kalt ' + aK + ' nicht deutlich unter warm ' + aW);
-    if (!(aW > aH + 30)) f.push('Assetto ueberhitzt ' + aH + ' nicht deutlich unter warm ' + aW);
-    const spA = aW - Math.min(aK, aH), spH = hW - Math.min(hK, hH);
-    if (!(spH < spA / 2)) f.push('Hybrismo-Temperatureinfluss ' + spH + ' nicht klein gegen Assetto ' + spA);
-    const tA = fgTrail('acc'), tH = fgTrail('gran');
-    if (!(tA > 1.05 && tA > tH + 0.03)) f.push('Trail-Braking: Assetto x' + tA.toFixed(3) + ', Hybrismo x' + tH.toFixed(3));
-    const uA = fgFahre(fgMotor('acc'), [{ takte: 30, kmh: 290, gas: 0.4, lenk: 1 }], 85)[0];
-    const uH = fgFahre(fgMotor('gran'), [{ takte: 30, kmh: 290, gas: 0.4, lenk: 1 }], 85)[0];
-    if (!(uA.servo < uH.servo - 0.05 && uA.uV > 1.2)) f.push('Ueberfahren: Assetto Servo ' + uA.servo.toFixed(2) + ' (vorn ' + uA.uV.toFixed(2) + '), Hybrismo ' + uH.servo.toFixed(2));
-    return { ok: !f.length, mass: f.length ? f.join(' | ')
-      : 'Grenztempo Assetto kalt/warm/heiss ' + aK + '/' + aW + '/' + aH + ', Hybrismo ' + hK + '/' + hW + '/' + hH
-        + '; Trail x' + tA.toFixed(2) + ' gegen x' + tH.toFixed(2) + '; 290 km/h Servo ' + uA.servo.toFixed(2) + ' gegen ' + uH.servo.toFixed(2) };
-  });
 
-  stAdd('Fahrgefuehl v1.3.5: granStep-Korrekturen (Tempo-Lenkung und Zentrierung am Servo, degressive Last, Schalter Uebersteuern)', () => {
-    const f = [];
-    // Tempo-Lenkung wirkt am uebertragenen Winkel.
-    const s0 = fgFahre(fgMotor('gran', { granLenkTempo: 0 }), [{ takte: 25, kmh: 200, gas: 0.2, lenk: 0.6 }], 85)[0].servo;
-    const s1 = fgFahre(fgMotor('gran', { granLenkTempo: 1 }), [{ takte: 25, kmh: 200, gas: 0.2, lenk: 0.6 }], 85)[0].servo;
-    if (!(s1 < s0 * 0.85)) f.push('Tempo-Lenkung nicht am Servo (' + s0.toFixed(3) + ' -> ' + s1.toFixed(3) + ')');
-    // Selbstzentrierung wirkt am Servo: Stick los, zwei Takte spaeter.
-    const z = (zf) => fgFahre(fgMotor('gran', { granZentrier: zf }), [{ takte: 30, kmh: 150, gas: 0.3, lenk: 0.8 }, { takte: 1, kmh: 150, gas: 0.3, lenk: 0 }], 85)[1].servo;
-    const z0 = z(0), z1 = z(0.3);
-    if (!(Math.abs(z1) < Math.abs(z0) * 0.8)) f.push('Zentrierung nicht am Servo (' + z0.toFixed(3) + ' / ' + z1.toFixed(3) + ')');
-    // Degressive Lastempfindlichkeit: unter Bremsen ist hinten entlastet; mit k behaelt es mehr Griff.
-    const hk = (k) => fgFahre(fgMotor('acc', { granLastEmpf: k }), [{ takte: 25, kmh: 150, bremse: 0.6, lenk: 1 }], 85)[0].uH;
-    const h0 = hk(0), h3 = hk(0.3);
-    if (!(h3 < h0)) f.push('Lastempfindlichkeit nicht degressiv (hinten ' + h0.toFixed(3) + ' -> ' + h3.toFixed(3) + ')');
-    // Schalter Uebersteuern: Hybrismo ohne Schalter kein Heck, mit Schalter schon.
-    const vg = [{ takte: 30, kmh: 150, gas: 1, lenk: 0.8 }];
-    const hAus = fgFahre(fgMotor('gran', { pacejkaUebersteuern: false }), vg, 85)[0];
-    const hAn = fgFahre(fgMotor('gran', { pacejkaUebersteuern: true }), vg, 85)[0];
-    if (hAus.maxUeber !== 0) f.push('Hybrismo ohne Schalter: Heck ' + hAus.maxUeber.toFixed(2));
-    if (!(hAn.maxUeber > 0)) f.push('Hybrismo mit Schalter: kein Heck');
-    // Assetto: Heck im Modus, aber ohne Schalter haelt der Rutsch nicht ohne Stick.
-    const a = fgFahre(fgMotor('acc', { pacejkaUebersteuern: false }), [vg[0], { takte: 16, kmh: 150, gas: 1, lenk: 0 }], 85);
-    if (!(a[0].maxUeber > 0.05)) f.push('Assetto: Heck kommt unter Vollgas nicht (' + a[0].maxUeber.toFixed(2) + ')');
-    if (!(a[1].ueber < 0.02 && Math.abs(a[1].servo) < 0.05)) f.push('Assetto ohne Schalter lenkt ohne Stick weiter (' + a[1].ueber.toFixed(2) + ', Servo ' + a[1].servo.toFixed(2) + ')');
-    return { ok: !f.length, mass: f.length ? f.join(' | ')
-      : 'Tempo-Lenkung ' + s0.toFixed(2) + ' -> ' + s1.toFixed(2) + ', Zentrierung ' + z0.toFixed(2) + ' -> ' + z1.toFixed(2)
-        + ', hinten unter Bremse ' + h0.toFixed(2) + ' -> ' + h3.toFixed(2) + ', Schalter wirkt, kein Halten ohne Schalter' };
-  });
 
-  stAdd('Fahrgefuehl v1.3.5: Alias "Gran Accelerato" laedt, Assetto Carrera ueberall wie Gran (WIP, Physik, Listen)', () => {
-    const f = [];
-    const sel = $('phys-mode');
-    const merk = presetRead();
-    const merkZ = presetZuletzt;
-    let merkZS = null;
-    try { merkZS = localStorage.getItem(PRESET_ZULETZT_STORE); } catch (e) { /* privat */ }
-    try {
-      applyPreset('Gran Accelerato');
-      if (presetAktiv() !== 'gran' || sel.value !== 'gran' || physEngine.config.granArt !== 'gran') f.push('Preset-Alias: ' + presetAktiv() + '/' + sel.value);
-      presetSet('phys-mode', 'physik');
-      if (presetPruefen({ 'phys-mode': 'Gran Accelerato' }).bad.length) f.push('Sicherung mit "Gran Accelerato" gilt als unbrauchbar');
-      presetSet('phys-mode', 'Gran Accelerato');
-      if (sel.value !== 'gran' || !physEngine.config.gran || physEngine.config.granArt !== 'gran') f.push('Modus-Alias: ' + sel.value);
-      presetSet('phys-mode', 'acc');
-      if (!physicsEnabled || !physEngine.config.pacejka || physEngine.config.granArt !== 'acc' || physEngine2.config.granArt !== 'acc') f.push('acc: Physik/Pacejka/Werte fehlen');
-      for (const k of Object.keys(GRAN_WERTE.acc)) if (physEngine.config[k] !== GRAN_WERTE.acc[k]) { f.push('acc-Wert ' + k); break; }
-    } finally {
-      for (const [id, val] of Object.entries(merk)) presetSet(id, val);
-      setzeBrakeStealLast(); setzeGran();
-      presetZuletzt = merkZ;
-      try { if (merkZS === null) localStorage.removeItem(PRESET_ZULETZT_STORE); else localStorage.setItem(PRESET_ZULETZT_STORE, merkZS); } catch (e) { /* privat */ }
-    }
-    if (!physModusIstPhysik('acc') || !spielerPhysikAn({ motor: { config: { physModus: 'acc' } } })) f.push('acc gilt nicht als Physik');
-    const oG = sel.querySelector('option[value="gran"]'), oA = sel.querySelector('option[value="acc"]');
-    if (!oG || oG.textContent.trim() !== 'Gran Hybrismo (WIP)') f.push('Option gran: ' + (oG && oG.textContent));
-    if (!oA || oA.textContent.trim() !== 'Assetto Carrera (WIP)') f.push('Option acc fehlt');
-    if (!PRESETS.gran.wip || !PRESETS.acc.wip || PRESETS.gran.label !== 'Gran Hybrismo' || PRESETS.acc.label !== 'Assetto Carrera') f.push('Labels/WIP');
-    const knopfAcc = document.getElementById('preset-' + 'acc');   // gebaut aus PRESETS (renderPresetButtons)
-    if (!knopfAcc || !knopfAcc.querySelector('.wip-tag')) f.push('Preset-Knopf Assetto ohne WIP');
-    if (!PRESETS_BREMSSTEAL_LAST.includes('acc')) f.push('acc fehlt im Bremssteal');
-    if (String(chAnwenden).indexOf('GRAN_MODI.includes(pm)') < 0) f.push('Challenges reichen acc nicht durch');
-    const fg = MEISTER_GLOBAL.find((g) => g.id === 'fahrgefuehl');
-    if (!fg || !fg.w.some((w) => w[0] === 'acc') || !fg.w.some((w) => w[0] === 'gran')) f.push('Meisterschaft ohne gran/acc');
-    if (!VF_HANDLING_MODI.some((m) => m.id === 'acc') || vfHandlingName('gran') !== t('Gran Hybrismo')) f.push('Virtuell: Handling-Modi');
-    if (String(startGhost).indexOf('granWerteSetzen(e.config, false)') < 0) f.push('NPCs rechnen granStep');
-    if (window.__presetSchnappLeeren) window.__presetSchnappLeeren();
-    const snap = window.__presetSchnappschuss('acc');
-    if (!snap || snap.modus !== 'acc' || snap.config.granArt !== 'acc') f.push('Schnappschuss acc');
-    if (window.__presetSchnappLeeren) window.__presetSchnappLeeren();
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gran Accelerato laedt als Gran Hybrismo, acc in Auswahl, Presets, Spielern, Challenges, Meisterschaft, Virtuell' };
-  });
 
-  stAdd('Fahrgefuehl v1.3.5: virtuelles Fahren - Reifentemperatur im Gleichgewicht, Abtrieb, zwei Profile', () => {
-    const f = [];
-    // Zuegig fahren (40 m/s, 7 m/s^2) bringt die Reifen ins Fenster, Dauerangriff ueberhitzt, Bummeln kuehlt.
-    let T = 0;
-    for (let i = 0; i < 3600; i++) T = vfReifenTemp(T, 40, 7, 1 / 60);
-    if (!(T > 0.5 && T < 0.7)) f.push('zuegig: ' + T.toFixed(2) + ' nicht im Fenster');
-    let Th = T;
-    for (let i = 0; i < 3600; i++) Th = vfReifenTemp(Th, 60, 14, 1 / 60);
-    if (!(Th > 0.8)) f.push('Angriff ueberhitzt nicht (' + Th.toFixed(2) + ')');
-    let Tk = Th;
-    for (let i = 0; i < 3600; i++) Tk = vfReifenTemp(Tk, 10, 0, 1 / 60);
-    if (!(Tk < 0.3)) f.push('kuehlt nicht ab (' + Tk.toFixed(2) + ')');
-    const gA = [0, 0.575, Th].map((x) => vfReifenGriff(x, 'acc')), gH = [0, 0.575, Th].map((x) => vfReifenGriff(x, 'gran'));
-    if (!(gA[1] > gA[0] + 0.1 && gA[1] > gA[2] + 0.05)) f.push('Assetto-Fenster ' + gA.map((x) => x.toFixed(2)).join('/'));
-    if (!((gH[1] - Math.min(gH[0], gH[2])) < (gA[1] - Math.min(gA[0], gA[2])) / 2)) f.push('Hybrismo-Temperatur zu stark');
-    let merk = null;
-    try { merk = localStorage.getItem(VF_HANDLING_STORE); } catch (e) { /* privat */ }
-    try {
-      vfHandlingSetzen('gran'); const pH = vfHandlingProfil(VF_GT3);
-      vfHandlingSetzen('acc'); const pA = vfHandlingProfil(VF_GT3);
-      if (!(pH.kV > 0 && pH.kH > 0 && pA.kV > 0 && pA.kH > 0)) f.push('Standardauto ohne Abtrieb');
-      if (!(pH.muH > pA.muH && pH.yawDamp > pA.yawDamp && pA.h > pH.h)) f.push('Profile nicht Hybrismo griffig/gedaempft, Assetto Lastwechsel');
-    } finally { if (merk === null) { try { localStorage.removeItem(VF_HANDLING_STORE); } catch (e) { /* privat */ } vfHandlingCache = null; } else vfHandlingSetzen(merk); }
-    return { ok: !f.length, mass: f.length ? f.join(' | ')
-      : 'zuegig ' + T.toFixed(2) + ', Angriff ' + Th.toFixed(2) + ', Bummeln ' + Tk.toFixed(2) + '; Assetto-Griff kalt/warm/heiss '
-        + gA.map((x) => x.toFixed(2)).join('/') + ', Hybrismo ' + gH.map((x) => x.toFixed(2)).join('/') };
-  });
 
   // ---- v1.3.5 BESTELLT: "MAX-NPC: schnellere Beschleunigung und bessere Bremsen, naemlich Arcade. Ansonsten
   // sollen NPCs mit Sim+-Beschleunigungs- und Bremsparametern fahren." ----
@@ -22592,10 +22408,10 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Auslaufen 2 s, Bremse bis Stillstand, Rueckwaerts erst beim neuen Druck' };
   });
 
-  stAdd('Abstimmungen: FAHREN zeigt Arcade, Sim+, Pacejka, Gran Hybrismo, Assetto Carrera; Lenkeinschlag erreichbar ausser Realismus GT3', () => {
+  stAdd('Abstimmungen: FAHREN zeigt Arcade, Sim+, Pacejka, LibreCorsa; Lenkeinschlag erreichbar ausser Realismus GT3', () => {
     const f = [];
     const fahren = window.__presetKeysFahren ? window.__presetKeysFahren() : [];
-    if (fahren.join(',') !== 'arcade,simplus,propacejka,gran,acc') f.push('FAHREN: ' + fahren.join(','));
+    if (fahren.join(',') !== 'arcade,simplus,propacejka,librecorsa') f.push('FAHREN: ' + fahren.join(','));
     for (const k of ['arcade', 'simplus', 'gt3', 'f1']) {
       const v = window.__presetValues(k) || {};
       const resp = v['phys-steerresp'] === undefined ? 3 : v['phys-steerresp'];
@@ -26462,6 +26278,49 @@
   }
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
+
+  // v1.5.25: LibreCorsa fuer echte Autos; Gran Hybrismo und Assetto Carrera sind entfernt (ihre Tests mit ihnen).
+  stAdd('Fahrgefuehl v1.5.25: LibreCorsa (Preset, Modus, Uebersteuern schaltbar), Gran/Assetto laden als LibreCorsa', () => {
+    const f = [];
+    const sel = $('phys-mode');
+    if (!sel) return { skip: true, mass: 'phys-mode fehlt' };
+    const merk = presetRead();
+    const c = physEngine.config;
+    try {
+      // Preset und Modus.
+      if (!PRESETS.librecorsa || PRESETS.librecorsa.v['phys-mode'] !== 'librecorsa') f.push('Preset librecorsa fehlt');
+      if (PRESETS.gran || PRESETS.acc) f.push('Gran/Assetto noch als Preset');
+      if (!PRESETS_FAHREN.includes('librecorsa') || PRESETS_FAHREN.includes('gran') || PRESETS_FAHREN.includes('acc')) f.push('FAHREN-Liste: ' + PRESETS_FAHREN.join(','));
+      presetSet('phys-mode', 'librecorsa');
+      if (c.granArt !== 'librecorsa' || !c.gran || !c.pacejka) f.push('Modus setzt die Werte nicht: ' + c.granArt);
+      if (c.granHeck !== 0) f.push('Heck kommt von selbst (granHeck ' + c.granHeck + ')');
+      if (!(c.granAeroK > GRAN_WERTE.acc.granAeroK)) f.push('kein Abtrieb ueber Assetto');
+      if (!(c.granAbs > 0)) f.push('ohne ABS-Lenkung');
+      // Gespeicherte Staende mit den entfernten Modi fahren als LibreCorsa.
+      for (const alt of ['gran', 'acc', 'Gran Hybrismo', 'Assetto Carrera']) {
+        presetSet('phys-mode', 'physik');
+        presetSet('phys-mode', alt); physModusAnwenden(false);
+        if (sel.value !== 'librecorsa' || c.granArt !== 'librecorsa') f.push(alt + ' -> ' + sel.value + '/' + c.granArt);
+      }
+      for (const alt of ['gran', 'acc', 'Gran Hybrismo', 'Assetto Carrera', 'Gran Accelerato']) {
+        if (PRESET_ALIAS[alt] !== 'librecorsa') f.push('Preset-Alias ' + alt + ' -> ' + PRESET_ALIAS[alt]);
+      }
+      // Virtuell: die Handling-Liste ohne Gran/Assetto, eine gespeicherte Wahl faehrt als LibreCorsa GT3.
+      if (VF_HANDLING_MODI.some((m) => m.id === 'gran' || m.id === 'acc')) f.push('virtuell noch Gran/Assetto');
+      const merkH = vfHandling();
+      try {
+        vfHandlingSetzen('gran'); if (vfHandling() !== 'librecorsa') f.push('virtuell gran -> ' + vfHandling());
+      } finally { vfHandlingSetzen(merkH); }
+      // Uebersteuern ist schaltbar und ab Werk aus.
+      if (PRESETS.librecorsa.v['setting-pac-ueber'] !== false) f.push('Uebersteuern im Preset nicht aus');
+      // Online-Liste kennt den Modus.
+      if (typeof SK_FAHRGEFUEHLE !== 'undefined' && !SK_FAHRGEFUEHLE.includes('librecorsa')) f.push('Online-Liste ohne librecorsa');
+    } finally {
+      for (const id of Object.keys(merk)) presetSet(id, merk[id]);
+      physModusAnwenden(false);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Preset und Modus LibreCorsa, Heck nur mit Schalter, Gran/Assetto laden als LibreCorsa (Feld, Alias, virtuell)' };
+  });
 
   // v1.5.22: Fahrgefuehl LibreCorsa GT3 im virtuellen Fahren, gemessen wie das Vorbild (stationaere Kreisfahrt).
   stAdd('Virtuell v1.5.22: LibreCorsa GT3 trifft die Quer-g des Vorbilds und den Untersteuergradienten', () => {

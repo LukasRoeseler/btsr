@@ -322,7 +322,7 @@
         + 'greifen sie am besten. Das Heck kommt nur mit dem Schalter „Übersteuern“ (Vorgabe aus).',
     v: Object.assign({}, PRESETS.pro.v, { 'phys-mode': 'librecorsa',
       'phys-steerresp': 3.2, 'setting-steer-calib': 2.6, 'setting-brake-steal': 0.8,
-      'phys-accel': 1.08, 'setting-brakepower': 1.7, 'setting-tyre-blankets': false, 'setting-pac-ueber': false }),
+      'phys-accel': 1.1, 'setting-brakepower': 1.7, 'setting-tyre-blankets': false, 'setting-pac-ueber': false }),
   };
   // ---- OMEGA (v1.0.36): Pro, EINGEFROREN -------------------------------------------------
   // BESTELLT: "'Omega'-Fahrgefuehlmodus ergaenzen: so wie das Pro, was so lange bitgleich
