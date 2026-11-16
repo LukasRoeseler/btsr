@@ -1908,6 +1908,34 @@
   #race-dash[data-screen="auto2"] #race-p2screen,
   #race-dash[data-screen="renneinstellungen"] #race-settingsscreen,
   #race-dash[data-screen="uebersicht"] #race-ovscreen { display: grid; }
+  /* ---- Onboard-Kamera (75-onboard.js) ----
+     Das Bild fuellt den Schirm ohne Abschneiden (contain): ein FPV-Empfaenger liefert 4:3,
+     und abgeschnittene Raender waeren genau die Kurve, die man sehen will. */
+  #race-dash[data-screen="onboard"] #race-onboardscreen { display: block; }
+  #race-onboardscreen { padding: 0; background: #000; color: #fff; }
+  #race-onboardscreen video { position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: contain; background: #000; }
+  #race-onboardscreen img { position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: contain; background: #000; }
+  #race-onboardscreen img[hidden], #race-onboardscreen video[hidden] { display: none; }
+  #race-onboardscreen.gedreht video, #race-onboardscreen.gedreht img { transform: rotate(180deg); }
+  /* v1.5: Anzeige im Stil des virtuellen Fahrens (dieselben .vf-Kacheln). */
+  .onb-vf { position: absolute; inset: 0; pointer-events: none;
+    --vf-s: clamp(10px, calc(.9vw + 1vh), 18px); --vf-bg: rgba(8,10,14,.8); --vf-linie: var(--k-blau, #00a3e0);
+    --vf-dim: var(--k-dim, #a3acbd); font-family: var(--k-font); }
+  .onb-vf .vf-hud { left: clamp(6px, 1.2vw, 14px); top: clamp(6px, 1.2vw, 14px); width: 10.5em; }
+  .onb-vf .vf-acc { bottom: clamp(6px, 1.2vw, 14px); }
+  .onb-vf .onb-kern { width: 12em; }
+  #race-onboardscreen.gelb { box-shadow: inset 0 0 0 6px #ffd400; }
+  .onb-leer { position: absolute; inset: 0; display: flex; align-items: center;
+    justify-content: center; text-align: center; padding: 16px; color: #a3acbd;
+    font-size: clamp(13px, 1.8vw, 18px); }
+  .onb-leer[hidden] { display: none; }
+  .onb-rec { position: absolute; right: clamp(6px, 1.2vw, 14px); bottom: clamp(6px, 1.2vw, 14px);
+    padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,.35);
+    background: rgba(0,0,0,.62); color: #fff; font-weight: 700;
+    font-size: clamp(12px, 1.5vw, 16px); font-variant-numeric: tabular-nums; }
+  .onb-rec.an { background: #d81b2c; border-color: #ff6b74; }
   /* ---- DER VERGLEICHSSCHIRM ------------------------------------------------------
      ZWEI SPALTEN NEBENEINANDER, auch auf dem Telefon. Untereinander waere es kein
      Vergleich mehr, sondern zweimal dieselbe Liste - und der ganze Zweck dieses Schirms
@@ -5827,7 +5855,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.38</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.41</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6392,6 +6420,33 @@
         <!-- NOCHMAL nach dem Rennen (Kreuz oder antippen): dasselbe Rennen, dieselben
              Einstellungen. Nur sichtbar, wenn ein Rennen beendet ist. -->
         <button type="button" id="ov-nochmal" class="ov-nochmal" hidden>✕ Nochmal</button>
+      </div>
+
+      <!-- ONBOARD-KAMERA (75-onboard.js): Livebild aus dem Auto, z. B. FPV-Mikrokamera mit
+           USB-Empfaenger. Darueber Runde, Zeit und km/h; der Knopf unten rechts nimmt auf. -->
+      <div class="gt3-schirm" id="race-onboardscreen">
+        <video id="onboard-video" autoplay muted playsinline></video>
+        <img id="onboard-bild" alt="" hidden>
+        <div class="onb-leer" id="onboard-leer">Keine Kamera. Garage &rarr; Onboard-Kamera.</div>
+        <!-- Zeiten oben links und Tempo/Gang/Tank unten Mitte: dieselben Kacheln wie beim virtuellen
+             Fahren (.vf-hud, .vf-acc), gelesen aus den Cockpit-Feldern (onbWerte). -->
+        <div class="onb-vf">
+          <div class="vf-hud vf-kachel" data-i18n-skip>
+            <div class="vf-modus" id="onb-pos"></div>
+            <div class="vf-z vf-z-akt"><span class="vf-lbl" id="onb-l-runde">Runde</span><b id="onb-runde">0</b></div>
+            <div class="vf-z"><span class="vf-lbl" id="onb-l-zeit">Zeit</span><span id="onb-zeit">&ndash;</span></div>
+            <div class="vf-z"><span class="vf-lbl" id="onb-l-letzte">Letzte</span><span id="onb-letzte">&ndash;</span></div>
+            <div class="vf-z"><span class="vf-lbl" id="onb-l-beste">Beste</span><span id="onb-beste">&ndash;</span></div>
+          </div>
+          <div class="vf-acc" data-i18n-skip>
+            <div class="vf-kachel vf-acc-kern onb-kern"><div class="vf-acc-werte">
+              <div class="vf-acc-wert"><b id="onb-kmh">0</b><span class="vf-lbl">km/h</span></div>
+              <b class="vf-gang" id="onb-gang">N</b>
+              <div class="vf-acc-wert"><b id="onb-tank">&ndash;</b><span class="vf-lbl" id="onb-l-tank">Tank</span></div>
+            </div></div>
+          </div>
+        </div>
+        <button type="button" class="onb-rec" id="onboard-rec" data-i18n-skip>&#9679; Aufnahme</button>
       </div>
 
       <!-- ---- RENNEINSTELLUNGEN ALS EIGENER COCKPIT-SCHIRM --------------------------
@@ -7073,6 +7128,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Onboard-Kamera (WIP): Livebild aus dem Auto als Cockpit-Schirm &#8222;Onboard&#8220;, mit Aufnahme als Video (Grundlage: gnen54s Zweig onboard, danke). Eingeschaltet wird sie in der Garage unter &#8222;Onboard-Kamera&#8220;. Quelle ist eine USB-Kamera bzw. ein FPV-Empf&#228;nger oder neu eine M5Stack Timer Camera im WLAN (MJPEG, Adresse eintragen). Die Anzeige im Bild ist im Stil des virtuellen Fahrens: Zeiten oben links, Tempo, Gang und Tank unten in der Mitte. Auf der https-Webseite l&#228;dt das WLAN-Bild nicht, in der App und &#252;ber Start OmegaSim.bat schon. Video speichern in der App braucht die neue APK.</li>
         <li>Safety Car: Ist an Start/Ziel zu wenig Platz zum Einparken (Kurve direkt vor und nach einer kurzen Startgeraden), parkt es auf dem n&#228;chsten Teil, wo der Platz reicht, bevorzugt bis drei Teile vor Start/Ziel und nie in einer Kurve; das Live-Log nennt das Teil. Ein ausdr&#252;cklich gew&#228;hltes Teil bleibt, mit Hinweis, wenn der Platz nicht reicht. Dazu: K&#228;fer-Name und Boxster-H&#246;rproben &#252;bersetzt.</li>
         <li>Neue Cockpit-Ansicht &#8222;Mokamit: Digital Dash&#8220; (WIP, Optionen &gt; Allgemein &gt; Cockpit-Ansicht): die Kachel-Tafel aus Hybrid-Dash von Mo Kamit (MIT-Lizenz) mit Status, Fahrhilfe-Chips, Akku, Position, Tank, Neben der Bahn, Tempo, Gang, Reifen, Rundenzeiten, Zustand, Gas- und Bremsbalken sowie Kn&#246;pfen f&#252;r Boxenstopp, Gelbe Flagge, Licht und Wetter. Sie liegt &#252;ber dem Haupt-Schirm des Cockpits und liest dessen Werte; die Kn&#246;pfe dr&#252;cken die normalen Kn&#246;pfe, es gelten also dieselben Regeln. Texte auf Deutsch, Englisch und Spanisch.</li>
         <li>DualSense am PC (WIP): Die adaptiven Trigger verhalten sich jetzt wie bei LibreCorsa. Der linke Trigger ist die Bremse: ein Widerstand, der nach unten fester wird; regelt das ABS, vibriert er, blockiert ein Rad, vibriert er langsamer. Der rechte ist das Gas: leichter Widerstand, drehen die Hinterr&#228;der durch oder regelt die Traktionskontrolle, vibriert er. Nahe der Haftgrenze summen beide leicht. Ein Effekt bleibt 0,15 s stehen, damit er nicht flackert. Der Drehzahl-Hinweis am Gas-Trigger entf&#228;llt.</li>
@@ -10054,6 +10110,31 @@
       <button class="goto-tab" id="gar-to-cockpit" data-tab="race"
               style="margin-bottom:10px">Zum Cockpit &rarr;</button>
       <div id="gar-list"></div>
+      <!-- v1.5 (WIP) ONBOARD-KAMERA (75-onboard.js): die Optionen. Sie stehen in der Garage rechts, wenn
+           links "Onboard-Kamera" offen ist (renderGarage haengt #onboard-optionen dort ein und vorher
+           wieder hierher zurueck). Grundlage: gnen54s Zweig "onboard" (USB-Empfaenger als Webcam);
+           neu die M5Stack Timer Camera als MJPEG-Strom im WLAN. -->
+      <div id="onboard-halter" hidden>
+        <div id="onboard-optionen">
+          <div class="opt-row"><div class="opt-label">Onboard-Kamera <span class="wip-tag">WIP</span>
+              <small>Livebild einer Kamera im Auto. Im Cockpit als eigener Schirm &bdquo;Onboard&ldquo; mit Zeiten oben links und Tempo, Gang und Tank unten in der Mitte, wie beim virtuellen Fahren. Aufnahme mit dem Knopf im Bild oder der W&auml;hltaste (X).</small>
+              <div id="onboard-status" class="muted" style="font-size:12px;margin-top:4px" data-i18n-skip>Aus.</div></div>
+            <button type="button" id="onboard-an">Einschalten</button></div>
+          <div class="opt-row"><div class="opt-label">Quelle<small>USB: ein Empf&auml;nger oder eine Kamera, die sich wie eine Webcam meldet (z.&nbsp;B. FPV-Mikrokamera mit USB-Empf&auml;nger). WLAN: M5Stack Timer Camera oder eine andere ESP32-Kamera mit MJPEG-Strom, Anleitung im Projekt unter tools/onboard.</small></div>
+            <select id="onboard-art" data-preset-skip><option value="usb">USB-Kamera</option><option value="m5">M5Stack Timer Camera (WLAN)</option></select></div>
+          <div class="opt-row" id="onboard-zeile-usb"><div class="opt-label">Kamera<small>Die Namen stehen hier, sobald die Kamera einmal erlaubt wurde.</small></div>
+            <select id="onboard-quelle" data-preset-skip><option value="">Standard</option></select></div>
+          <div class="opt-row" id="onboard-zeile-m5" hidden><div class="opt-label">Adresse der Kamera<small>Die IP-Adresse aus dem Router oder dem seriellen Monitor, z.&nbsp;B. 192.168.1.50. Ohne Pfad wird /stream angeh&auml;ngt. Die Webseite &uuml;ber https darf kein http-Bild laden: in der Android-App und &uuml;ber &bdquo;Start OmegaSim.bat&ldquo; geht es.</small>
+              <div id="onboard-m5-hinweis" class="gar-warnung" hidden data-i18n-skip></div></div>
+            <input type="text" id="onboard-m5-adresse" inputmode="url" autocomplete="off" spellcheck="false" placeholder="192.168.1.50" data-preset-skip style="max-width:14em"></div>
+          <div class="opt-row"><div class="opt-label">Bild um 180&deg; drehen<small>Wenn die Kamera kopf&uuml;ber im Auto sitzt.</small></div>
+            <label class="tgl"><input type="checkbox" id="onboard-drehen" data-preset-skip><span></span></label></div>
+          <div class="opt-row"><div class="opt-label">Beim Start Onboard-Bild zeigen<small>Mit dem Countdown schaltet das Cockpit auf den Schirm &bdquo;Onboard&ldquo;.</small></div>
+            <label class="tgl"><input type="checkbox" id="onboard-beim-start" checked data-preset-skip><span></span></label></div>
+          <div class="opt-row"><div class="opt-label">Rennen automatisch aufnehmen<small>Vom Countdown bis kurz nach dem Ziel, mit Zeiten, km/h und Ampel im Bild. Ein abgebrochener Start wird nicht gespeichert.</small></div>
+            <label class="tgl"><input type="checkbox" id="onboard-auto-rec" data-preset-skip><span></span></label></div>
+        </div>
+      </div>
       <!-- Abstimmung direkt hier waehlbar, sobald ein Auto gesteuert wird. Dieselbe
            Funktion wie in den Optionen, deshalb ziehen die Regler dort automatisch nach. -->
       <div id="gar-preset" style="display:none; margin-top:14px; padding-top:12px;
@@ -17020,6 +17101,7 @@
     "Porsche Boxster 986: 2,5 l Boxer-6 (WIP)": "Porsche Boxster 986: 2.5 l flat-6 (WIP)",
     "vollständig synthetisiert, nicht nach Gehör geprüft": "fully synthesised, not checked by ear",
     "Safety Car: Ist an Start/Ziel zu wenig Platz zum Einparken (Kurve direkt vor und nach einer kurzen Startgeraden), parkt es auf dem nächsten Teil, wo der Platz reicht, bevorzugt bis drei Teile vor Start/Ziel und nie in einer Kurve; das Live-Log nennt das Teil. Ein ausdrücklich gewähltes Teil bleibt, mit Hinweis, wenn der Platz nicht reicht. Dazu: Käfer-Name und Boxster-Hörproben übersetzt.": "Safety car: if there is too little room to park at start/finish (a corner right before and after a short start straight), it parks on the next piece with enough room, preferably up to three pieces before start/finish and never in a corner; the live log names the piece. An explicitly chosen piece stays, with a note if the room is not enough. Also: Beetle name and Boxster sound samples translated.",
+    "Onboard-Kamera (WIP): Livebild aus dem Auto als Cockpit-Schirm „Onboard“, mit Aufnahme als Video (Grundlage: gnen54s Zweig onboard, danke). Eingeschaltet wird sie in der Garage unter „Onboard-Kamera“. Quelle ist eine USB-Kamera bzw. ein FPV-Empfänger oder neu eine M5Stack Timer Camera im WLAN (MJPEG, Adresse eintragen). Die Anzeige im Bild ist im Stil des virtuellen Fahrens: Zeiten oben links, Tempo, Gang und Tank unten in der Mitte. Auf der https-Webseite lädt das WLAN-Bild nicht, in der App und über Start OmegaSim.bat schon. Video speichern in der App braucht die neue APK.": "Onboard camera (WIP): live picture from the car as the cockpit screen “Onboard”, with recording as video (based on gnen54's onboard branch, thanks). Turn it on in the Garage under “Onboard camera”. The source is a USB camera or FPV receiver, or new: an M5Stack Timer Camera over Wi-Fi (MJPEG, enter its address). The overlay looks like virtual driving: times at the top left, speed, gear and fuel at the bottom centre. On the https website the Wi-Fi picture does not load; in the app and via Start OmegaSim.bat it does. Saving videos in the app needs the new APK.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -19487,6 +19569,43 @@
     "Meisterschaft: Abschluss": "Championship: finale",
     "Nach dem letzten Event die Fanfare und der Meister mit seinen Punkten (statt des Satzes „Meisterschaft vorbei“).": "After the last event the fanfare and the champion with their points (instead of the sentence “Championship over”).",
     "Erfolgsballast: {n} +{kg} kg": "Success ballast: {n} +{kg} kg",
+    // Onboard-Kamera (75-onboard.js)
+    "Livebild einer Kamera im Auto. Im Cockpit als eigener Schirm „Onboard“ mit Zeiten oben links und Tempo, Gang und Tank unten in der Mitte, wie beim virtuellen Fahren. Aufnahme mit dem Knopf im Bild oder der Wähltaste (X).": "Live picture from a camera in the car. In the cockpit as its own screen “Onboard” with times at the top left and speed, gear and fuel at the bottom centre, like in virtual driving. Record with the button in the picture or the select button (X).",
+    "USB: ein Empfänger oder eine Kamera, die sich wie eine Webcam meldet (z. B. FPV-Mikrokamera mit USB-Empfänger). WLAN: M5Stack Timer Camera oder eine andere ESP32-Kamera mit MJPEG-Strom, Anleitung im Projekt unter tools/onboard.": "USB: a receiver or a camera that shows up as a webcam (e.g. an FPV micro camera with a USB receiver). Wi-Fi: M5Stack Timer Camera or another ESP32 camera with an MJPEG stream, instructions in the project under tools/onboard.",
+    "USB-Kamera": "USB camera",
+    "M5Stack Timer Camera (WLAN)": "M5Stack Timer Camera (Wi-Fi)",
+    "Adresse der Kamera": "Camera address",
+    "Die IP-Adresse aus dem Router oder dem seriellen Monitor, z. B. 192.168.1.50. Ohne Pfad wird /stream angehängt. Die Webseite über https darf kein http-Bild laden: in der Android-App und über „Start OmegaSim.bat“ geht es.": "The IP address from the router or the serial monitor, e.g. 192.168.1.50. Without a path, /stream is added. The website over https may not load an http picture: it works in the Android app and via “Start OmegaSim.bat”.",
+    "Vom Countdown bis kurz nach dem Ziel, mit Zeiten, km/h und Ampel im Bild. Ein abgebrochener Start wird nicht gespeichert.": "From the countdown until shortly after the finish, with times, km/h and start lights in the picture. An aborted start is not saved.",
+    "Keine Kamera. Garage → Onboard-Kamera.": "No camera. Garage → Onboard camera.",
+    "Diese Seite läuft über https und darf das http-Bild der Kamera nicht laden. In der Android-App oder über „Start OmegaSim.bat“ geht es.": "This page runs over https and may not load the camera's http picture. It works in the Android app or via “Start OmegaSim.bat”.",
+    "Erst die Adresse der Kamera eintragen.": "Enter the camera address first.",
+    "Kamera nicht erreichbar: {u}": "Camera not reachable: {u}",
+    "ohne Aufnahme (CORS)": "no recording (CORS)",
+    "Aufnahme braucht CORS in der Kamera-Firmware (tools/onboard).": "Recording needs CORS in the camera firmware (tools/onboard).",
+    "Onboard-Kamera": "Onboard camera",
+    "Einschalten": "Turn on",
+    "Ausschalten": "Turn off",
+    "Die Namen stehen hier, sobald die Kamera einmal erlaubt wurde.": "The names appear here once the camera has been allowed.",
+    "Bild um 180° drehen": "Rotate picture by 180°",
+    "Wenn die Kamera kopfüber im Auto sitzt.": "If the camera sits upside down in the car.",
+    "Beim Start Onboard-Bild zeigen": "Show onboard picture at the start",
+    "Mit dem Countdown schaltet das Cockpit auf den Schirm „Onboard“.": "With the countdown, the cockpit switches to the “Onboard” screen.",
+    "Rennen automatisch aufnehmen": "Record races automatically",
+    "Onboard": "Onboard",
+    "Aus.": "Off.",
+    "An: {n}": "On: {n}",
+    "Kamera nicht gefunden.": "Camera not found.",
+    "Kamera nicht erlaubt.": "Camera not allowed.",
+    "Kamera getrennt.": "Camera disconnected.",
+    "Dieser Browser kann keine Kamera.": "This browser has no camera access.",
+    "Dieser Browser kann nicht aufnehmen.": "This browser cannot record.",
+    "Aufnahme ging nicht": "Recording failed",
+    "Aufnahme läuft": "Recording",
+    "Video wird gespeichert …": "Saving video …",
+    "Video gespeichert": "Video saved",
+    "Video speichern braucht die neue APK": "Saving videos needs the new APK",
+    "Aufnahme nach 15 min beendet": "Recording stopped after 15 min",
   };
 
   // Spanisches Woerterbuch. Gleiche Schluessel (der deutsche Text) wie I18N_EN, aber nur die
@@ -21183,6 +21302,44 @@
     "Bezugsdruck": "presión de referencia",
     "Sparen": "Ahorro",
     "Leistung": "Potencia",
+    // Onboard-Kamera (75-onboard.js)
+    "Livebild einer Kamera im Auto. Im Cockpit als eigener Schirm „Onboard“ mit Zeiten oben links und Tempo, Gang und Tank unten in der Mitte, wie beim virtuellen Fahren. Aufnahme mit dem Knopf im Bild oder der Wähltaste (X).": "Imagen en directo de una cámara en el coche. En la cabina como pantalla propia «Onboard» con los tiempos arriba a la izquierda y velocidad, marcha y combustible abajo en el centro, como en la conducción virtual. Graba con el botón en la imagen o con el botón de selección (X).",
+    "USB: ein Empfänger oder eine Kamera, die sich wie eine Webcam meldet (z. B. FPV-Mikrokamera mit USB-Empfänger). WLAN: M5Stack Timer Camera oder eine andere ESP32-Kamera mit MJPEG-Strom, Anleitung im Projekt unter tools/onboard.": "USB: un receptor o una cámara que aparece como webcam (p. ej. una microcámara FPV con receptor USB). Wi-Fi: M5Stack Timer Camera u otra cámara ESP32 con flujo MJPEG, instrucciones en el proyecto en tools/onboard.",
+    "USB-Kamera": "Cámara USB",
+    "M5Stack Timer Camera (WLAN)": "M5Stack Timer Camera (Wi-Fi)",
+    "Adresse der Kamera": "Dirección de la cámara",
+    "Die IP-Adresse aus dem Router oder dem seriellen Monitor, z. B. 192.168.1.50. Ohne Pfad wird /stream angehängt. Die Webseite über https darf kein http-Bild laden: in der Android-App und über „Start OmegaSim.bat“ geht es.": "La dirección IP del router o del monitor serie, p. ej. 192.168.1.50. Sin ruta se añade /stream. La web por https no puede cargar una imagen http: funciona en la app de Android y con «Start OmegaSim.bat».",
+    "Vom Countdown bis kurz nach dem Ziel, mit Zeiten, km/h und Ampel im Bild. Ein abgebrochener Start wird nicht gespeichert.": "Desde la cuenta atrás hasta poco después de la meta, con tiempos, km/h y semáforo en la imagen. Una salida cancelada no se guarda.",
+    "Keine Kamera. Garage → Onboard-Kamera.": "Sin cámara. Garaje → Cámara a bordo.",
+    "Diese Seite läuft über https und darf das http-Bild der Kamera nicht laden. In der Android-App oder über „Start OmegaSim.bat“ geht es.": "Esta página funciona por https y no puede cargar la imagen http de la cámara. Funciona en la app de Android o con «Start OmegaSim.bat».",
+    "Erst die Adresse der Kamera eintragen.": "Primero introduce la dirección de la cámara.",
+    "Kamera nicht erreichbar: {u}": "Cámara no accesible: {u}",
+    "ohne Aufnahme (CORS)": "sin grabación (CORS)",
+    "Aufnahme braucht CORS in der Kamera-Firmware (tools/onboard).": "La grabación necesita CORS en el firmware de la cámara (tools/onboard).",
+    "Onboard-Kamera": "Cámara a bordo",
+    "Einschalten": "Encender",
+    "Ausschalten": "Apagar",
+    "Die Namen stehen hier, sobald die Kamera einmal erlaubt wurde.": "Los nombres aparecen aquí cuando se haya permitido la cámara.",
+    "Bild um 180° drehen": "Girar la imagen 180°",
+    "Wenn die Kamera kopfüber im Auto sitzt.": "Si la cámara está montada al revés en el coche.",
+    "Beim Start Onboard-Bild zeigen": "Mostrar la imagen a bordo en la salida",
+    "Mit dem Countdown schaltet das Cockpit auf den Schirm „Onboard“.": "Con la cuenta atrás, la cabina cambia a la pantalla «Onboard».",
+    "Rennen automatisch aufnehmen": "Grabar carreras automáticamente",
+    "Onboard": "A bordo",
+    "Aus.": "Apagada.",
+    "An: {n}": "Encendida: {n}",
+    "Kamera nicht gefunden.": "Cámara no encontrada.",
+    "Kamera nicht erlaubt.": "Cámara no permitida.",
+    "Kamera getrennt.": "Cámara desconectada.",
+    "Dieser Browser kann keine Kamera.": "Este navegador no tiene acceso a la cámara.",
+    "Dieser Browser kann nicht aufnehmen.": "Este navegador no puede grabar.",
+    "Aufnahme ging nicht": "La grabación falló",
+    "Aufnahme läuft": "Grabando",
+    "Video wird gespeichert …": "Guardando vídeo …",
+    "Video gespeichert": "Vídeo guardado",
+    "Video speichern braucht die neue APK": "Guardar vídeos requiere el nuevo APK",
+    "Aufnahme nach 15 min beendet": "Grabación detenida tras 15 min",
+    "Zeit": "Tiempo",
   };
 
   // ============================================================================
@@ -27717,6 +27874,11 @@
     { id: 'uebersicht', name: 'Rennen',
       waehlen: () => ovNochmal(),
       malen: () => ovScreenRender() },
+    // Onboard-Kamera (75-onboard.js): Livebild aus dem Auto. Blaetterbar nur, solange die
+    // Kamera an ist (cockpitScreenGilt); die Waehltaste startet und stoppt die Aufnahme.
+    { id: 'onboard', name: 'Onboard',
+      waehlen: () => onboardWaehlen(),
+      malen: () => onboardMalen() },
   ];
   let cockpitScreen = 0;
 
@@ -27778,6 +27940,8 @@
   // Zahlen stehen bleiben - schlimmer als ein Schirm, den es nicht gibt.
   function cockpitScreenGilt(s) {
     if (!s) return false;
+    // Den Onboard-Schirm gibt es nur mit Kamera. typeof, weil 75-onboard.js spaeter steht.
+    if (s.id === 'onboard') return typeof onboardAktiv === 'function' && onboardAktiv();
     // Seit dem Cockpit-Umbau ist die Beide-Ansicht der morph(t)e Standardschirm (main)
     // selbst und kein eigener Schirm mehr - es gibt keinen Schirm mehr mit einer Sperre.
     return true;
@@ -27812,11 +27976,15 @@
   function cockpitPunkteMalen() {
     const host = $('race-screen-dots');
     if (!host) return;
-    if (host.children.length !== COCKPIT_SCREENS.length) {
-      host.innerHTML = COCKPIT_SCREENS.map(() => '<i></i>').join('');
+    // Nur die BLAETTERBAREN Schirme bekommen einen Punkt: der Onboard-Schirm ohne Kamera
+    // waere sonst ein Punkt, den man nie erreicht.
+    const sichtbar = [];
+    COCKPIT_SCREENS.forEach((s, i) => { if (cockpitScreenGilt(s) || i === cockpitScreen) sichtbar.push(i); });
+    if (host.children.length !== sichtbar.length) {
+      host.innerHTML = sichtbar.map(() => '<i></i>').join('');
     }
-    for (let i = 0; i < host.children.length; i++) {
-      host.children[i].classList.toggle('an', i === cockpitScreen);
+    for (let k = 0; k < host.children.length; k++) {
+      host.children[k].classList.toggle('an', sichtbar[k] === cockpitScreen);
     }
   }
 
@@ -59909,6 +60077,765 @@
       if (e.message !== autoGelbFehlerZuletzt) { autoGelbFehlerZuletzt = e.message; log('Automatische Gelbe Flagge: ' + e.message, 'warn'); }
     }
   }, AG_TAKT_MS);
+  // ============================== ONBOARD-KAMERA (FPV im Auto) ==============================
+  //
+  // BESTELLT: "kostenguenstig mit einem Carrera Hybrid Fahrzeug Streckenvideos erstellen,
+  // Ausgabe moeglichst auf einem Bildschirm" - und als schoenste Fassung: "das Bild in
+  // OmegaSim". Im Auto sitzt eine analoge FPV-Mikrokamera (5,8 GHz, Kamera + Sender in
+  // einem, 3-5 g, eigener 1S-Akku), am Tablet/PC ein USB-Empfaenger (UVC). Der meldet sich
+  // wie eine WEBCAM - also braucht es hier nichts als getUserMedia, keine eigene Hardware-
+  // Schnittstelle wie bei der Startampel.
+  //
+  //   Garage -> Onboard-Kamera (v1.5)         Einschalten, Quelle (USB oder WLAN), Bild drehen
+  //   (bei gnen54 unter Optionen -> AddOn; OmegaSim hat keine AddOn-Seite)
+  //   Cockpit, Schirm "Onboard"               Livebild mit Runde, Zeit, km/h
+  //   Aufnahme (Knopf oder Waehltaste X)      Video MIT Anzeige (Runde, Zeit, km/h, Ampel,
+  //                                           Gelbe Flagge), gespeichert als MP4/WebM
+  //   "Rennen automatisch aufnehmen"          vom Countdown bis kurz nach dem Ziel
+  //
+  // DIE AUFNAHME LAEUFT UEBER EIN CANVAS und nicht direkt am Kamerastrom: nur so kommen
+  // Rundenzeit und Ampel ins Video. Der Kamerastrom selbst wird nie veraendert.
+  //
+  // v1.5 (WIP) ZWEITE QUELLE: M5Stack Timer Camera (ESP32 mit PSRAM) oder eine andere ESP32-Kamera
+  // im WLAN, die ein MJPEG-Bild liefert (http://<adresse>/stream). Ein <img> zeigt den Strom; der
+  // Rest (Schirm, Anzeige, Aufnahme) ist derselbe. Aufnehmen geht nur, wenn die Kamera CORS erlaubt
+  // (Access-Control-Allow-Origin), sonst waere das Canvas "verschmutzt". Die Webseite ueber https darf
+  // kein http-Bild laden; in der Android-App (allowMixedContent) und ueber localhost geht es.
+  // Firmware-Hinweise: tools/onboard/README.md.
+  //
+  // ZUSTAND IN EINEM var, und das ist Absicht. 50-drive.js fragt beim Laden ueber
+  // cockpitScreenGilt() -> onboardAktiv(), ob der Schirm blaetterbar ist - VOR dieser Datei.
+  // Ein let/const hier stuende dann noch in der temporalen Todeszone, und der Lesezugriff
+  // braeche die ganze IIFE ab (siehe tools/build.py). Ein var ist schon da, nur leer.
+  var onbZ = null;
+  function onbZustand() {
+    if (!onbZ) {
+      onbZ = { stream: null, an: false, fehler: '', rec: null, wache: null,
+               zuletzt: 'idle', malTakt: 0, einst: null,
+               m5: null, m5Cors: false, m5Neu: 0 };
+    }
+    return onbZ;
+  }
+
+  const ONB_STORE = 'omegasim-onboard';
+  const ONB_VORGABE = { an: false, quelle: '', quelleName: '', drehen: false,
+                        beimStart: true, autoRec: false, art: 'usb', m5: '' };
+  // Wie lange eine Adresse fuer das erste Bild Zeit hat, und der Abstand der Neuversuche nach einem Abriss.
+  const ONB_M5_WARTE_MS = 6000;
+  const ONB_M5_NEU_MS = 4000;
+  // Obergrenze einer Aufnahme: der Puffer liegt bis zum Speichern im Speicher des Tablets.
+  // 15 min bei 3 Mbit/s sind rund 340 MB - mehr will man einem Tablet nicht zumuten.
+  const ONB_MAX_MS = 15 * 60 * 1000;
+  const ONB_BITRATE = 3000000;
+  // Nach dem Ziel noch so lange weiter aufnehmen (Auslaufen, Zieldurchfahrt im Bild).
+  const ONB_NACHLAUF_MS = 3000;
+
+  function onbEinst() {
+    const z = onbZustand();
+    if (!z.einst) {
+      z.einst = Object.assign({}, ONB_VORGABE);
+      try {
+        const s = JSON.parse(localStorage.getItem(ONB_STORE) || 'null');
+        if (s && typeof s === 'object') Object.assign(z.einst, s);
+      } catch (e) { /* privat oder kaputt: Vorgabe */ }
+    }
+    return z.einst;
+  }
+  function onbSpeichern() {
+    try { localStorage.setItem(ONB_STORE, JSON.stringify(onbEinst())); } catch (e) { /* privat */ }
+  }
+
+  // Fuer 50-drive.js: den Schirm "Onboard" gibt es nur, solange ein Bild da ist.
+  function onboardAktiv() {
+    const z = onbZ;
+    if (!z) return false;
+    if (z.m5) {
+      const img = $('onboard-bild');
+      return !!(img && img.naturalWidth > 0);
+    }
+    if (!z.stream) return false;
+    const tr = z.stream.getVideoTracks()[0];
+    return !!(tr && tr.readyState === 'live');
+  }
+
+  // ---- WLAN-Kamera (M5Stack Timer Camera, ESP32) ----
+  function onbApp() {
+    const C = window.Capacitor;
+    return !!(C && C.isNativePlatform && C.isNativePlatform());
+  }
+  // "192.168.1.50" -> http://192.168.1.50/stream; mit Pfad oder Schema bleibt es, wie es ist.
+  function onbM5Url(adr) {
+    let a = String(adr || '').trim();
+    if (!a) return '';
+    if (!/^https?:[/][/]/i.test(a)) a = 'http://' + a;
+    try {
+      const u = new URL(a);
+      if (u.pathname === '/' || u.pathname === '') u.pathname = '/stream';
+      return u.href;
+    } catch (e) { return ''; }
+  }
+  // Die Kandidaten: die Adresse selbst; ohne Port und Pfad zusaetzlich Port 81 (so streamt das
+  // Arduino-Beispiel CameraWebServer).
+  function onbM5Kandidaten(adr) {
+    const url = onbM5Url(adr);
+    if (!url) return [];
+    const liste = [url];
+    const roh = String(adr || '').trim().replace(/^https?:[/][/]/i, '');
+    if (!/[:/]/.test(roh)) {
+      try { const u = new URL(url); u.port = '81'; liste.push(u.href); } catch (e) { /* nur die eine */ }
+    }
+    return liste;
+  }
+  // https-Seite und http-Bild: der Browser laedt es nicht (gemischte Inhalte). App und localhost duerfen.
+  function onbM5Gesperrt(url) {
+    if (onbApp() || !/^http:/i.test(url)) return false;
+    return location.protocol === 'https:' && !/^(localhost|127[.]0[.]0[.]1|\[::1\])$/.test(location.hostname);
+  }
+  function onbM5Hinweis() {
+    const h = $('onboard-m5-hinweis');
+    if (!h) return;
+    const url = onbM5Url(onbEinst().m5);
+    const gesperrt = onbEinst().art === 'm5' && (url ? onbM5Gesperrt(url) : onbM5Gesperrt('http://x/'));
+    h.hidden = !gesperrt;
+    if (gesperrt) h.textContent = t('Diese Seite läuft über https und darf das http-Bild der Kamera nicht laden. In der Android-App oder über „Start OmegaSim.bat“ geht es.');
+  }
+  // Ein Versuch: das erste Bild abwarten (naturalWidth), Fehler oder Zeitablauf heisst: naechster Kandidat.
+  function onbM5Versuch(img, url, cors) {
+    return new Promise((ja) => {
+      let fertig = false;
+      const ende = (ok) => { if (fertig) return; fertig = true; clearInterval(takt); clearTimeout(uhr); img.onerror = null; ja(ok); };
+      img.onerror = () => ende(false);
+      if (cors) img.crossOrigin = 'anonymous'; else img.removeAttribute('crossorigin');
+      img.src = url;
+      const takt = setInterval(() => { if (img.naturalWidth > 0) ende(true); }, 150);
+      const uhr = setTimeout(() => ende(false), ONB_M5_WARTE_MS);
+    });
+  }
+  async function onbM5Starten() {
+    const z = onbZustand();
+    const e = onbEinst();
+    const img = $('onboard-bild');
+    const kand = onbM5Kandidaten(e.m5);
+    if (!img) return false;
+    if (!kand.length) { z.fehler = t('Erst die Adresse der Kamera eintragen.'); onbStatus(); return false; }
+    if (onbM5Gesperrt(kand[0])) {
+      z.fehler = t('Diese Seite läuft über https und darf das http-Bild der Kamera nicht laden. In der Android-App oder über „Start OmegaSim.bat“ geht es.');
+      onbStatus(); return false;
+    }
+    onbStatus(t('Suche …'));
+    const lauf = ++z.m5Neu;
+    // Zuerst mit CORS (dann geht auch die Aufnahme), danach ohne (nur Bild).
+    for (const cors of [true, false]) {
+      for (const url of kand) {
+        if (lauf !== z.m5Neu || !e.an) return false;
+        z.m5 = { url, cors };
+        if (await onbM5Versuch(img, url, cors)) {
+          z.m5Cors = cors;
+          img.hidden = false;
+          const v = $('onboard-video'); if (v) v.hidden = true;
+          img.onerror = () => {
+            if (!z.m5 || z.m5.url !== url) return;
+            log('Onboard-Kamera (WLAN) getrennt.', 'err');
+            z.fehler = t('Kamera getrennt.');
+            onbStoppen(true);
+            // Von selbst weiter versuchen, solange sie eingeschaltet ist (Akku im Auto gewechselt).
+            setTimeout(() => { if (onbEinst().an && onbEinst().art === 'm5' && !onboardAktiv()) onbStarten(); }, ONB_M5_NEU_MS);
+          };
+          log('Onboard-Kamera (WLAN) an: ' + url + (cors ? '' : ' (ohne CORS, keine Aufnahme)'), 'info');
+          onbBildDrehen();
+          onbWacheStellen();
+          if (typeof cockpitPunkteMalen === 'function') cockpitPunkteMalen();
+          onbStatus();
+          return true;
+        }
+      }
+    }
+    z.m5 = null;
+    img.removeAttribute('src');
+    z.fehler = t('Kamera nicht erreichbar: {u}').replace('{u}', kand[0]);
+    log('Onboard-Kamera (WLAN): ' + z.fehler, 'err');
+    onbStatus();
+    return false;
+  }
+
+  function onbStatus(text) {
+    const z = onbZustand();
+    const s = $('onboard-status');
+    if (s) {
+      let zeile;
+      if (text) zeile = text;
+      else if (onboardAktiv() && z.m5) {
+        const img = $('onboard-bild');
+        zeile = t('An: {n}').replace('{n}', 'WLAN ' + z.m5.url.replace(/^https?:[/][/]/i, ''))
+          + ' · ' + img.naturalWidth + '×' + img.naturalHeight + (z.m5Cors ? '' : ' · ' + t('ohne Aufnahme (CORS)'));
+      } else if (onboardAktiv()) {
+        const tr = z.stream.getVideoTracks()[0];
+        const v = $('onboard-video');
+        const gr = v && v.videoWidth ? ' · ' + v.videoWidth + '×' + v.videoHeight : '';
+        zeile = t('An: {n}').replace('{n}', (tr && tr.label) || t('Kamera')) + gr;
+      } else if (z.fehler) zeile = '⚠ ' + z.fehler;
+      else zeile = onbEinst().an ? t('Kamera nicht gefunden.') : t('Aus.');
+      s.textContent = zeile;
+    }
+    const b = $('onboard-an');
+    if (b) b.textContent = onbEinst().an ? t('Ausschalten') : t('Einschalten');
+    const leer = $('onboard-leer');
+    if (leer) leer.hidden = onboardAktiv();
+    const art = onbEinst().art === 'm5' ? 'm5' : 'usb';
+    const zu = $('onboard-zeile-usb'), zm = $('onboard-zeile-m5');
+    if (zu) zu.hidden = art !== 'usb';
+    if (zm) zm.hidden = art !== 'm5';
+    onbM5Hinweis();
+  }
+
+  // Die Auswahlliste. Namen gibt der Browser erst heraus, wenn die Kamera einmal erlaubt
+  // wurde - vorher steht nur "Standard" drin.
+  async function onbQuellenFuellen() {
+    const sel = $('onboard-quelle');
+    if (!sel || !navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+    let geraete = [];
+    try { geraete = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'videoinput'); }
+    catch (e) { return; }
+    const e = onbEinst();
+    sel.innerHTML = '';
+    const std = document.createElement('option');
+    std.value = ''; std.textContent = t('Standard');
+    sel.appendChild(std);
+    geraete.forEach((d, i) => {
+      if (!d.deviceId) return;
+      const o = document.createElement('option');
+      o.value = d.deviceId;
+      o.textContent = d.label || (t('Kamera') + ' ' + (i + 1));
+      sel.appendChild(o);
+    });
+    sel.value = [...sel.options].some((o) => o.value === e.quelle) ? e.quelle : '';
+  }
+
+  // Die gewaehlte Kamera wiederfinden. Die deviceId bleibt je Seite gleich, solange die
+  // Erlaubnis besteht; nach dem Loeschen der Website-Daten aendert sie sich - dann hilft
+  // der gemerkte Name (der USB-Empfaenger heisst immer gleich).
+  async function onbQuelleSuchen() {
+    const e = onbEinst();
+    if (!e.quelle && !e.quelleName) return '';
+    try {
+      const liste = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'videoinput');
+      if (liste.some((d) => d.deviceId === e.quelle)) return e.quelle;
+      const nachName = liste.find((d) => d.label && d.label === e.quelleName);
+      if (nachName) return nachName.deviceId;
+    } catch (err) { /* dann eben die gemerkte */ }
+    return e.quelle;
+  }
+
+  function onbStoppen() {
+    const z = onbZustand();
+    if (z.rec) onbAufnahmeStopp(false);
+    if (z.stream) z.stream.getTracks().forEach((tr) => { try { tr.stop(); } catch (e) { /* weg */ } });
+    z.stream = null;
+    const v = $('onboard-video');
+    if (v) { v.srcObject = null; v.hidden = false; }
+    z.m5Neu++;
+    if (z.m5) {
+      z.m5 = null;
+      const img = $('onboard-bild');
+      // Erst den Fehler-Haken weg, dann die Quelle: sonst meldete das Leeren einen Abriss.
+      if (img) { img.onerror = null; img.removeAttribute('src'); img.hidden = true; }
+    }
+    onbWacheStellen();
+    if (typeof cockpitScreenIst === 'function' && cockpitScreenIst().id === 'onboard') cockpitScreenZu('main');
+    if (typeof cockpitPunkteMalen === 'function') cockpitPunkteMalen();
+    onbStatus();
+  }
+
+  async function onbStarten() {
+    const z = onbZustand();
+    z.fehler = '';
+    if (onbEinst().art === 'm5') {
+      if (z.stream || z.m5) onbStoppen();
+      return onbM5Starten();
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      z.fehler = t('Dieser Browser kann keine Kamera.');
+      onbStatus();
+      return false;
+    }
+    if (z.stream) onbStoppen();
+    onbStatus(t('Suche …'));
+    const id = await onbQuelleSuchen();
+    const video = { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } };
+    let stream = null;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: id ? Object.assign({ deviceId: { exact: id } }, video) : video, audio: false });
+    } catch (err) {
+      // Die gemerkte Kamera ist nicht da (Empfaenger abgesteckt): nicht still die Kamera des
+      // Tablets nehmen - das Bild zeigte dann den Fahrer statt der Strecke.
+      z.fehler = (err && err.name === 'NotAllowedError') ? t('Kamera nicht erlaubt.')
+        : (err && (err.name === 'NotFoundError' || err.name === 'OverconstrainedError'))
+          ? t('Kamera nicht gefunden.') : ((err && err.message) || String(err));
+      log('Onboard-Kamera: ' + z.fehler, 'err');
+      onbStatus();
+      return false;
+    }
+    z.stream = stream;
+    const tr = stream.getVideoTracks()[0];
+    if (tr) {
+      const e = onbEinst();
+      const st = tr.getSettings ? tr.getSettings() : {};
+      if (st.deviceId) { e.quelle = st.deviceId; e.quelleName = tr.label || e.quelleName; onbSpeichern(); }
+      tr.addEventListener('ended', () => {
+        if (z.stream !== stream) return;
+        log('Onboard-Kamera getrennt.', 'err');
+        z.fehler = t('Kamera getrennt.');
+        onbStoppen();
+      });
+    }
+    const v = $('onboard-video');
+    if (v) {
+      v.hidden = false;
+      v.srcObject = stream;
+      v.onloadedmetadata = () => onbStatus();
+      try { await v.play(); } catch (e) { /* stumm und autoplay: spielt trotzdem */ }
+    }
+    log('Onboard-Kamera an: ' + ((tr && tr.label) || '?'), 'info');
+    onbBildDrehen();
+    onbQuellenFuellen();
+    onbWacheStellen();
+    if (typeof cockpitPunkteMalen === 'function') cockpitPunkteMalen();
+    onbStatus();
+    return true;
+  }
+
+  function onbBildDrehen() {
+    const s = $('race-onboardscreen');
+    if (s) s.classList.toggle('gedreht', !!onbEinst().drehen);
+  }
+
+  // ---- Die Anzeige im Bild ----
+  //
+  // GELESEN AUS DEM COCKPIT und nicht neu gerechnet: Runde, Zeit und Tempo stehen dort
+  // schon, auch wenn der Onboard-Schirm sie verdeckt. Eine zweite Rechnung koennte nur
+  // auseinanderlaufen.
+  function onbWerte() {
+    const txt = (id) => { const el = $(id); return el ? el.textContent.trim() : ''; };
+    const lampen = [0, 0, 0, 0, 0];
+    const gantry = $('race-gantry');
+    const gantryAn = !!(gantry && gantry.classList.contains('on'));
+    if (gantryAn) {
+      gantry.querySelectorAll('.gantry-lamp[data-col]').forEach((l) => {
+        const c = +l.dataset.col - 1;
+        if (c < 0 || c > 4) return;
+        if (l.classList.contains('red')) lampen[c] = 1;
+        else if (l.classList.contains('green') && !lampen[c]) lampen[c] = 2;
+      });
+    }
+    let gelb = false;
+    try { gelb = typeof flagState !== 'undefined' && flagState !== 'green'; } catch (e) { /* noch nicht da */ }
+    const posEl = $('race-pos');
+    return { runde: txt('race-lap-count') || '0', zeit: txt('race-lap-now') || '–',
+             letzte: txt('race-lap-last') || '–',
+             beste: txt('race-lap-best') || '–', kmh: txt('race-speed') || '0',
+             gang: txt('race-gear-n') || 'N', tank: txt('race-fuel') || '–',
+             pos: posEl && !posEl.hidden ? posEl.textContent.trim() : '',
+             gantryAn, lampen, gelb };
+  }
+
+  function onbHudMalen() {
+    const w = onbWerte();
+    const set = (id, v) => { const el = $(id); if (el && el.textContent !== v) el.textContent = v; };
+    set('onb-runde', w.runde);
+    set('onb-zeit', w.zeit);
+    set('onb-letzte', w.letzte);
+    set('onb-beste', w.beste);
+    set('onb-kmh', w.kmh);
+    set('onb-gang', w.gang);
+    set('onb-tank', w.tank);
+    set('onb-pos', w.pos);
+    // Die Beschriftungen in der eingestellten Sprache (die Kacheln selbst sind data-i18n-skip).
+    set('onb-l-runde', t('Runde')); set('onb-l-zeit', t('Zeit')); set('onb-l-letzte', t('Letzte'));
+    set('onb-l-beste', t('Beste')); set('onb-l-tank', t('Tank'));
+    const s = $('race-onboardscreen');
+    if (s) s.classList.toggle('gelb', w.gelb);
+  }
+
+  // Ein Bild in die Aufnahme: Kamera, darueber die Anzeige.
+  // Die Bildquelle (Video vom USB-Empfaenger oder das MJPEG-Bild der WLAN-Kamera) mit Groesse.
+  function onbQuelleBild() {
+    const z = onbZustand();
+    if (z.m5) {
+      const img = $('onboard-bild');
+      return img && img.naturalWidth > 0 ? { el: img, w: img.naturalWidth, h: img.naturalHeight } : null;
+    }
+    const v = $('onboard-video');
+    return v && v.readyState >= 2 ? { el: v, w: v.videoWidth || 640, h: v.videoHeight || 480 } : null;
+  }
+  function onbCanvasMalen(rec) {
+    const q = onbQuelleBild();
+    const c = rec.canvas, g = rec.ctx;
+    const W = c.width, H = c.height;
+    g.save();
+    g.fillStyle = '#000';
+    g.fillRect(0, 0, W, H);
+    if (q) {
+      if (onbEinst().drehen) { g.translate(W, H); g.rotate(Math.PI); }
+      try { g.drawImage(q.el, 0, 0, W, H); } catch (e) { /* Bild gerade weg */ }
+    }
+    g.restore();
+    const w = onbWerte();
+    const u = H / 720;   // alles in "Punkten bei 720 Zeilen"
+    // Gelbe Flagge: Rahmen ums ganze Bild.
+    if (w.gelb) {
+      g.lineWidth = 14 * u; g.strokeStyle = '#ffd400';
+      g.strokeRect(7 * u, 7 * u, W - 14 * u, H - 14 * u);
+    }
+    // v1.5: Kacheln wie beim virtuellen Fahren (60d-virtuell.js .vf-hud/.vf-acc): fast schwarz,
+    // schmale blaue Linie oben, kleine gesperrte Beschriftung, grosse Zahlen.
+    const BLAU = '#00a3e0', GRUND = 'rgba(8,10,14,.8)', DIM = '#a3acbd';
+    const kachel = (x, y, bw, bh) => {
+      g.fillStyle = GRUND; g.fillRect(x, y, bw, bh);
+      g.fillStyle = BLAU; g.fillRect(x, y, bw, 3 * u);
+    };
+    const lbl = (txt, x, y, ausr) => {
+      g.textAlign = ausr; g.textBaseline = 'middle'; g.fillStyle = DIM;
+      g.font = '600 ' + Math.round(15 * u) + 'px system-ui, sans-serif';
+      g.fillText(String(txt).toUpperCase(), x, y);
+    };
+    const wert = (txt, x, y, ausr, gr) => {
+      g.textAlign = ausr; g.textBaseline = 'middle'; g.fillStyle = '#f3f4f6';
+      g.font = '700 ' + Math.round(gr * u) + 'px system-ui, sans-serif';
+      g.fillText(String(txt), x, y);
+    };
+    // Zeiten oben links.
+    const zx = 18 * u, zy = 18 * u, zb = 300 * u;
+    const zeilen = [[t('Runde'), w.runde, 40], [t('Zeit'), w.zeit, 26], [t('Letzte'), w.letzte, 26], [t('Beste'), w.beste, 26]];
+    const zh = (w.pos ? 34 * u : 0) + 58 * u + 3 * 40 * u + 10 * u;
+    kachel(zx, zy, zb, zh);
+    let y = zy + 3 * u;
+    if (w.pos) {
+      g.fillStyle = BLAU; g.fillRect(zx, y, zb, 30 * u);
+      g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillStyle = '#04070c';
+      g.font = '700 ' + Math.round(16 * u) + 'px system-ui, sans-serif';
+      g.fillText(w.pos.toUpperCase(), zx + 14 * u, y + 15 * u);
+      y += 34 * u;
+    }
+    zeilen.forEach(([l, v2, gr], i) => {
+      const hz = i === 0 ? 58 * u : 40 * u;
+      lbl(l, zx + 14 * u, y + hz / 2, 'left');
+      wert(v2, zx + zb - 14 * u, y + hz / 2, 'right', gr);
+      y += hz;
+    });
+    // Tempo | Gang | Tank unten Mitte.
+    const kb = 380 * u, kh = 96 * u, kx = W / 2 - kb / 2, ky = H - kh - 18 * u;
+    kachel(kx, ky, kb, kh);
+    wert(w.kmh, kx + kb * 0.2, ky + kh * 0.45, 'center', 40);
+    lbl('km/h', kx + kb * 0.2, ky + kh * 0.8, 'center');
+    g.fillStyle = 'rgba(255,255,255,.05)'; g.fillRect(kx + kb / 2 - 38 * u, ky + 10 * u, 76 * u, kh - 20 * u);
+    g.fillStyle = BLAU; g.fillRect(kx + kb / 2 - 38 * u, ky + kh - 12 * u, 76 * u, 2 * u);
+    wert(w.gang, kx + kb / 2, ky + kh * 0.5, 'center', 64);
+    wert(w.tank, kx + kb * 0.8, ky + kh * 0.45, 'center', 30);
+    lbl(t('Tank'), kx + kb * 0.8, ky + kh * 0.8, 'center');
+    // Ampel oben in der Mitte, solange sie im Cockpit steht.
+    if (w.gantryAn) {
+      const r = 15 * u, abst = 40 * u, x0 = W / 2 - 2 * abst;
+      g.fillStyle = 'rgba(5,7,10,.85)';
+      g.fillRect(x0 - 28 * u, 0, 4 * abst + 56 * u, 50 * u);
+      for (let i = 0; i < 5; i++) {
+        g.beginPath();
+        g.arc(x0 + i * abst, 24 * u, r, 0, Math.PI * 2);
+        g.fillStyle = w.lampen[i] === 1 ? '#ff2d3a' : w.lampen[i] === 2 ? '#2fe06a' : '#20232b';
+        g.fill();
+      }
+    }
+    // Kennung oben rechts, klein.
+    g.textAlign = 'right'; g.textBaseline = 'top';
+    g.font = '700 ' + Math.round(20 * u) + 'px system-ui, sans-serif';
+    g.fillStyle = 'rgba(255,255,255,.55)';
+    g.fillText('OmegaSim', W - 22 * u, 18 * u);
+  }
+
+  // ---- Aufnahme ----
+  function onbMime() {
+    if (typeof MediaRecorder === 'undefined') return null;
+    // MP4 zuerst: das spielt jedes Handy und jede Schnittsoftware ab (Chrome kann es seit
+    // Version 126). Sonst WebM.
+    // NUR MIT H.264: ein MP4 mit VP9 drin (das liefert 'video/mp4' allein in Chromium ohne
+    // H.264) spielen viele Handys nicht ab - dann lieber ehrlich WebM.
+    const kandidaten = ['video/mp4;codecs=avc1.42E01F', 'video/mp4;codecs=avc1',
+                        'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+    for (const k of kandidaten) {
+      try { if (MediaRecorder.isTypeSupported(k)) return k; } catch (e) { /* weiter */ }
+    }
+    return '';
+  }
+
+  function onbAufnahmeStart(auto) {
+    const z = onbZustand();
+    if (z.rec || !onboardAktiv()) return false;
+    const mime = onbMime();
+    const q = onbQuelleBild();
+    if (mime === null || !q) { showHudToast(t('Dieser Browser kann nicht aufnehmen.')); return false; }
+    if (z.m5 && !z.m5Cors) { showHudToast(t('Aufnahme braucht CORS in der Kamera-Firmware (tools/onboard).')); return false; }
+    const vw = q.w || 640, vh = q.h || 480;
+    const H = 720, W = Math.round((H * vw / vh) / 2) * 2;
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const rec = { canvas, ctx: canvas.getContext('2d'), teile: [], mime: mime || 'video/webm',
+                  auto: !!auto, gefahren: false, beginn: Date.now(), stoppTimer: null,
+                  verwerfen: false, rekorder: null };
+    onbCanvasMalen(rec);
+    let strom;
+    try {
+      strom = canvas.captureStream(30);
+      rec.rekorder = new MediaRecorder(strom, mime ? { mimeType: mime, videoBitsPerSecond: ONB_BITRATE }
+                                                   : { videoBitsPerSecond: ONB_BITRATE });
+    } catch (e) {
+      showHudToast(t('Aufnahme ging nicht') + ': ' + e.message);
+      return false;
+    }
+    rec.rekorder.ondataavailable = (ev) => { if (ev.data && ev.data.size) rec.teile.push(ev.data); };
+    rec.rekorder.onstop = () => {
+      strom.getTracks().forEach((tr) => tr.stop());
+      if (rec.verwerfen || !rec.teile.length) { log('Onboard-Aufnahme verworfen.', 'info'); return; }
+      const blob = new Blob(rec.teile, { type: rec.mime.split(';')[0] });
+      onbVideoSpeichern(blob, rec);
+    };
+    rec.rekorder.start(1000);
+    z.rec = rec;
+    log('Onboard-Aufnahme laeuft (' + W + '×' + H + ', ' + (mime || 'Standard') + ').', 'info');
+    showHudToast(t('Aufnahme läuft'));
+    onbRecKnopf();
+    onbWacheStellen();
+    return true;
+  }
+
+  // speichern=false: verwerfen (abgebrochener Start, Kamera weg vor dem Rennen).
+  function onbAufnahmeStopp(speichern) {
+    const z = onbZustand();
+    const rec = z.rec;
+    if (!rec) return;
+    z.rec = null;
+    clearTimeout(rec.stoppTimer);
+    rec.verwerfen = speichern === false && rec.auto && !rec.gefahren;
+    try { if (rec.rekorder.state !== 'inactive') rec.rekorder.stop(); } catch (e) { /* schon aus */ }
+    onbRecKnopf();
+    onbWacheStellen();
+  }
+  function onbAufnahmeUmschalten() {
+    const z = onbZustand();
+    if (z.rec) onbAufnahmeStopp(true);
+    else onbAufnahmeStart(false);
+  }
+
+  function onbRecKnopf() {
+    const z = onbZustand();
+    const b = $('onboard-rec');
+    if (!b) return;
+    b.classList.toggle('an', !!z.rec);
+    if (z.rec) {
+      const s = Math.floor((Date.now() - z.rec.beginn) / 1000);
+      b.textContent = '■ ' + Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+    } else {
+      b.textContent = '● ' + t('Aufnahme');
+    }
+  }
+
+  function onbDateiName(rec) {
+    const d = new Date(rec.beginn);
+    const zz = (n) => String(n).padStart(2, '0');
+    const ext = rec.mime.indexOf('mp4') >= 0 ? 'mp4' : 'webm';
+    return { name: 'OmegaSim-Onboard-' + d.getFullYear() + '-' + zz(d.getMonth() + 1) + '-' + zz(d.getDate())
+                   + '-' + zz(d.getHours()) + zz(d.getMinutes()) + zz(d.getSeconds()), ext };
+  }
+
+  function onbBlobBase64(blob) {
+    return new Promise((ja, nein) => {
+      const r = new FileReader();
+      r.onload = () => ja(String(r.result).split(',')[1] || '');
+      r.onerror = () => nein(r.error || new Error('lesen'));
+      r.readAsDataURL(blob);
+    });
+  }
+
+  // Speichern. Im Browser als Download; in der Android-App schreibt die App selbst nach
+  // Filme/OmegaSim (die WebView laedt keine Blob-Downloads, siehe 60c-streckenbild.js).
+  // In Stuecken, damit kein 300-MB-Text auf einmal ueber die Bruecke muss.
+  async function onbVideoSpeichern(blob, rec) {
+    const { name, ext } = onbDateiName(rec);
+    const mb = (blob.size / 1048576).toFixed(1);
+    const C = window.Capacitor;
+    if (C && C.isNativePlatform && C.isNativePlatform() && C.isPluginAvailable && C.isPluginAvailable('OmegaSicherung')) {
+      showHudToast(t('Video wird gespeichert …'));
+      try {
+        const STUECK = 3 * 1024 * 1024;   // durch 3 teilbar: jedes Stueck ist eigenes Base64
+        for (let pos = 0; pos < blob.size; pos += STUECK) {
+          const b64 = await onbBlobBase64(blob.slice(pos, pos + STUECK));
+          await C.nativePromise('OmegaSicherung', 'videoTeil', { name: name + '.' + ext, base64: b64, erster: pos === 0 });
+        }
+        const r = await C.nativePromise('OmegaSicherung', 'videoFertig', { name: name + '.' + ext, mime: rec.mime.split(';')[0] });
+        showHudToast(t('Video gespeichert') + ': ' + ((r && r.ort) || ''));
+        log('Onboard-Video gespeichert: ' + (r && r.ort) + ' (' + mb + ' MB)', 'ok');
+      } catch (e) {
+        showHudToast(t('Video speichern braucht die neue APK'));
+        log('Onboard-Video: ' + ((e && e.message) || e), 'err');
+      }
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name + '.' + ext;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    showHudToast(t('Video gespeichert'));
+    log('Onboard-Video: ' + name + '.' + ext + ' (' + mb + ' MB)', 'ok');
+  }
+
+  // ---- Takt: Anzeige, Aufnahme, Rennablauf ----
+  //
+  // NUR SOLANGE DIE KAMERA AN IST. Ohne Kamera kostet dieses Modul nichts.
+  function onbWacheStellen() {
+    const z = onbZustand();
+    const noetig = onboardAktiv() || !!z.rec;
+    if (noetig && !z.wache) {
+      z.zuletzt = z.testZustand || ((typeof raceState !== 'undefined') ? raceState : 'idle');
+      z.wache = setInterval(() => onbWache(), 250);
+      const bild = () => {
+        if (!z.wache) { z.malTakt = 0; return; }
+        if (z.rec) onbCanvasMalen(z.rec);
+        if (typeof cockpitScreenIst === 'function' && cockpitScreenIst().id === 'onboard') onbHudMalen();
+        z.malTakt = requestAnimationFrame(bild);
+      };
+      z.malTakt = requestAnimationFrame(bild);
+    } else if (!noetig && z.wache) {
+      clearInterval(z.wache); z.wache = null;
+      if (z.malTakt) cancelAnimationFrame(z.malTakt);
+      z.malTakt = 0;
+    }
+  }
+
+  // zustandTest: nur fuer den Selbsttest (OMEGA_TEST.onboardWache), sonst raceState.
+  function onbWache(zustandTest) {
+    const z = onbZustand();
+    const e = onbEinst();
+    if (z.rec) {
+      onbRecKnopf();
+      if (Date.now() - z.rec.beginn > ONB_MAX_MS) {
+        showHudToast(t('Aufnahme nach 15 min beendet'));
+        onbAufnahmeStopp(true);
+      }
+    }
+    // Der Selbsttest gibt den Rennzustand vor, bis er null schickt - sonst saehe der Takt
+    // dazwischen das echte 'idle' und braeche die Testaufnahme ab.
+    if (zustandTest !== undefined) z.testZustand = zustandTest;
+    const jetzt = z.testZustand ? z.testZustand
+      : (typeof raceState !== 'undefined') ? raceState : 'idle';
+    const vorher = z.zuletzt;
+    if (jetzt === vorher) return;
+    z.zuletzt = jetzt;
+    if (jetzt === 'countdown') {
+      if (e.beimStart && onboardAktiv() && typeof cockpitScreenZu === 'function') cockpitScreenZu('onboard');
+      if (e.autoRec && !z.rec) onbAufnahmeStart(true);
+    }
+    if ((jetzt === 'racing' || jetzt === 'finishing') && z.rec) z.rec.gefahren = true;
+    if (z.rec && z.rec.auto) {
+      if (jetzt === 'finished') {
+        const rec = z.rec;
+        clearTimeout(rec.stoppTimer);
+        rec.stoppTimer = setTimeout(() => { if (z.rec === rec) onbAufnahmeStopp(true); }, ONB_NACHLAUF_MS);
+      } else if (jetzt === 'idle') {
+        // Abgebrochen. Vor dem Losfahren (Fruehstart, Abbruch im Countdown): verwerfen,
+        // es ist kein Rennen drauf. Waehrend des Rennens abgebrochen: behalten.
+        onbAufnahmeStopp(z.rec.gefahren);
+      }
+    }
+  }
+
+  // Waehltaste (X) auf dem Onboard-Schirm: Aufnahme an/aus.
+  function onboardWaehlen() {
+    if (!onboardAktiv()) return false;
+    onbAufnahmeUmschalten();
+    return true;
+  }
+  function onboardMalen() { onbHudMalen(); onbRecKnopf(); onbStatus(); }
+
+  // ---- Bedienung in der Garage (Onboard-Kamera) ----
+  if ($('onboard-an')) {
+    $('onboard-an').addEventListener('click', async () => {
+      const e = onbEinst();
+      if (e.an) { e.an = false; onbSpeichern(); onbStoppen(); return; }
+      e.an = true; onbSpeichern();
+      await onbStarten();
+    });
+  }
+  if ($('onboard-quelle')) {
+    $('onboard-quelle').addEventListener('change', (ev) => {
+      const e = onbEinst();
+      const o = ev.target.selectedOptions[0];
+      e.quelle = ev.target.value;
+      e.quelleName = ev.target.value && o ? o.textContent : '';
+      onbSpeichern();
+      if (e.an) onbStarten();
+    });
+  }
+  [['onboard-drehen', 'drehen'], ['onboard-beim-start', 'beimStart'], ['onboard-auto-rec', 'autoRec']]
+    .forEach(([id, k]) => {
+      const el = $(id);
+      if (!el) return;
+      el.checked = !!onbEinst()[k];
+      el.addEventListener('change', () => {
+        onbEinst()[k] = !!el.checked;
+        onbSpeichern();
+        if (k === 'drehen') onbBildDrehen();
+      });
+    });
+  if ($('onboard-rec')) $('onboard-rec').addEventListener('click', onbAufnahmeUmschalten);
+  if ($('onboard-art')) {
+    $('onboard-art').value = onbEinst().art === 'm5' ? 'm5' : 'usb';
+    $('onboard-art').addEventListener('change', (ev) => {
+      const e = onbEinst();
+      e.art = ev.target.value === 'm5' ? 'm5' : 'usb';
+      onbSpeichern();
+      onbZustand().fehler = '';
+      if (e.an) onbStarten(); else onbStatus();
+    });
+  }
+  if ($('onboard-m5-adresse')) {
+    $('onboard-m5-adresse').value = onbEinst().m5 || '';
+    $('onboard-m5-adresse').addEventListener('change', (ev) => {
+      const e = onbEinst();
+      e.m5 = String(ev.target.value || '').trim();
+      onbSpeichern();
+      onbZustand().fehler = '';
+      if (e.an && e.art === 'm5') onbStarten(); else onbStatus();
+    });
+  }
+
+  // Empfaenger wieder eingesteckt: von selbst weiter.
+  if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+    navigator.mediaDevices.addEventListener('devicechange', () => {
+      onbQuellenFuellen();
+      if (onbEinst().an && onbEinst().art !== 'm5' && !onboardAktiv()) onbStarten();
+    });
+  }
+
+  // Beim Laden: war die Kamera an und ist sie schon erlaubt, gleich wieder einschalten -
+  // ohne Nachfrage. Sonst wartet sie auf den Knopf (kein Kamera-Dialog beim App-Start).
+  (async () => {
+    onbBildDrehen();
+    onbRecKnopf();
+    onbStatus();
+    if (!onbEinst().an) return;
+    // WLAN-Kamera: keine Erlaubnis noetig, gleich verbinden.
+    if (onbEinst().art === 'm5') { onbStarten(); return; }
+    if (!navigator.mediaDevices) return;
+    let erlaubt = false;
+    try {
+      const p = await navigator.permissions.query({ name: 'camera' });
+      erlaubt = p.state === 'granted';
+    } catch (e) { /* die App-WebView kennt die Abfrage nicht */ }
+    if (erlaubt) { onbStarten(); return; }
+    // Nur fuer diese Sitzung aus (nicht gespeichert): der Knopf zeigt "Einschalten".
+    onbEinst().an = false;
+    onbStatus();
+  })();
   // ============================== COCKPIT-ANSICHT "MOKAMIT" (v1.5.32, WIP) ==============================
   // BESTELLT: "Implementiere aus dem aus 1.3.xx geforkten Hybrid-Dash-4.0 (mokamit.github.io) folgende Features:
   // ... Cockpit-Ansicht 'Mokamit' erlauben, ich will es aber nicht im Screen togglen, sondern im Menue, in dem ich den
@@ -66931,6 +67858,8 @@
   // v1.1.3 BESTELLT: "Wenn ich virtuell klicke, dann sollen rechts noch Optionen kommen." true = rechts
   // stehen die Optionen der virtuellen Fahrt (60d-virtuell.js) statt eines Autos.
   let garVirtuellAuf = false;
+  // v1.5 (WIP): rechts die Optionen der Onboard-Kamera (75-onboard.js) statt eines Autos.
+  let garKameraAuf = false;
   let garFotoFuer = null;
   function garageFarbeSetzen(car, id) {
     car.colorId = id;
@@ -67316,6 +68245,8 @@
     // und danach wiederherstellen (bei kuerzerem Inhalt so weit unten wie moeglich).
     const scrollMerk = { l: garScrollStand.l, r: garScrollStand.r, vorfahren: [] };
     for (let p = list.parentElement; p; p = p.parentElement) if (p.scrollTop) scrollMerk.vorfahren.push([p, p.scrollTop]);
+    const onbOpt = $('onboard-optionen'), onbHalter = $('onboard-halter');
+    if (onbOpt && onbHalter && onbOpt.parentElement !== onbHalter) onbHalter.appendChild(onbOpt);
     list.innerHTML = '';
     list.classList.remove('gar-karten');
     list.classList.add('gar-a');
@@ -67336,7 +68267,7 @@
       // v1.1.11 BESTELLT: "Das rechte soll automatisch gewaehlt werden, wenn ich ein Auto markiert habe
       // und X druecke, wie bei der Meisterschaft." Vor dem Sprung wird das markierte Auto gewaehlt.
       row._vorSprung = () => {
-        if (garAufAuto !== car || garVirtuellAuf) { garAufAuto = car; garVirtuellAuf = false; renderGarage(); }
+        if (garAufAuto !== car || garVirtuellAuf || garKameraAuf) { garAufAuto = car; garVirtuellAuf = false; garKameraAuf = false; renderGarage(); }
       };
       const f = carColor(car);
       const foto = autoFoto(car);
@@ -67361,7 +68292,7 @@
       // Ein Tipp auf die Zeile waehlt das Auto fuer die rechte Seite.
       row.onclick = (e) => {
         if (e.target.closest('button, input, select')) return;
-        if (garAufAuto !== car || garVirtuellAuf) { garAufAuto = car; garVirtuellAuf = false; renderGarage(); }
+        if (garAufAuto !== car || garVirtuellAuf || garKameraAuf) { garAufAuto = car; garVirtuellAuf = false; garKameraAuf = false; renderGarage(); }
       };
       // v1.1.25 BESTELLT: "Zeige in der Garage links je Auto die Rolle an, aber mach, dass ich sie rechts
       // ganz oben einstelle." Links steht die Rolle nur noch als Etikett; eingestellt wird sie rechts in der
@@ -67393,13 +68324,36 @@
     virtKnopf.innerHTML = t('Virtuell fahren') + ' <span class="wip-tag">WIP</span>';
     virtKnopf.setAttribute('aria-pressed', garVirtuellAuf ? 'true' : 'false');
     if (garVirtuellAuf) virtKnopf.classList.add('primary');
-    virtKnopf.onclick = () => { garVirtuellAuf = true; renderGarage(); };
+    virtKnopf.onclick = () => { garVirtuellAuf = true; garKameraAuf = false; renderGarage(); };
     virt.appendChild(virtKnopf);
     links.appendChild(virt);
+    // v1.5 (WIP) BESTELLT: die Onboard-Kamera "in der Garage verbinden". Wie "Virtuell fahren": links
+    // die Zeile, rechts die Optionen (#onboard-optionen aus dem Halter in 00-index.head.html).
+    if ($('onboard-optionen')) {
+      const kam = document.createElement('div');
+      kam.className = 'opt-row opt-breit gar-a-aktion gar-a-kamera' + (garKameraAuf ? ' gk-auf' : '');
+      kam.dataset.xSprung = '.gar-a-rechts .opt-row';
+      kam._vorSprung = () => { if (!garKameraAuf) { garKameraAuf = true; garVirtuellAuf = false; renderGarage(); } };
+      const kamKnopf = document.createElement('button');
+      kamKnopf.type = 'button';
+      kamKnopf.innerHTML = t('Onboard-Kamera') + ' <span class="wip-tag">WIP</span>';
+      kamKnopf.setAttribute('aria-pressed', garKameraAuf ? 'true' : 'false');
+      if (garKameraAuf) kamKnopf.classList.add('primary');
+      kamKnopf.onclick = () => { garKameraAuf = true; garVirtuellAuf = false; renderGarage(); };
+      kam.appendChild(kamKnopf);
+      links.appendChild(kam);
+    }
     // Rechte Seite: das gewaehlte Auto, oder die Optionen der virtuellen Fahrt.
-    const car = garVirtuellAuf ? null : garAufAuto;
+    const car = (garVirtuellAuf || garKameraAuf) ? null : garAufAuto;
     if (garVirtuellAuf && typeof vfGarageOptionen === 'function') {
       vfGarageOptionen(rechts);
+    } else if (garKameraAuf && onbOpt) {
+      const kopf = document.createElement('h3');
+      kopf.className = 'gar-a-titel';
+      kopf.textContent = t('Onboard-Kamera');
+      rechts.appendChild(kopf);
+      rechts.appendChild(onbOpt);
+      if (typeof onboardMalen === 'function') onboardMalen();
     } else if (car) {
       const kopf = document.createElement('h3');
       kopf.className = 'gar-a-titel';
@@ -67515,13 +68469,13 @@
         const k = fr.findIndex((r) => r.id === car.role);
         const n = fr[((k < 0 ? fr.length - 1 : k) + +b.dataset.d + fr.length) % fr.length];
         garAufAuto = car;
-        garVirtuellAuf = false;
+        garVirtuellAuf = false; garKameraAuf = false;
         setCarRole(car, n.id);
       };
     });
     z.querySelector('select.gk-rolle-wahl').addEventListener('change', (e) => {
       garAufAuto = car;
-      garVirtuellAuf = false;
+      garVirtuellAuf = false; garKameraAuf = false;
       setCarRole(car, e.target.value);
     });
     return z;
@@ -81840,6 +82794,13 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     },
     schirmStep(d) { cockpitScreenStep(d); return cockpitScreenIst().id; },
     schirmZu(id) { cockpitScreenZu(id); return cockpitScreenIst().id; },
+    // Onboard-Kamera (75-onboard.js): Zustand lesen und den Rennablauf nachstellen.
+    onboardLage() {
+      const z = onbZustand();
+      return { aktiv: onboardAktiv(), rec: !!z.rec, auto: !!(z.rec && z.rec.auto),
+               gefahren: !!(z.rec && z.rec.gefahren), einst: Object.assign({}, onbEinst()) };
+    },
+    onboardWache(zustand) { onbWache(zustand); return this.onboardLage(); },
     // Und der Weg, den das Steuerkreuz wirklich nimmt - nicht nur die Registry.
     schirmPad(dir) { return pitScreenPad(dir); },
     // ---- HAT SPIELER 2 DIESELBEN KNOEPFE WIE SPIELER 1? -----------------------------
@@ -93223,6 +94184,73 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     return { ok: schlecht.length === 0,
              mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Onboard-Schirm nur mit Kamera ----
+  //
+  // Ohne Kamera darf "Onboard" weder blaetterbar sein noch einen Punkt bekommen: ein Punkt,
+  // den man nie erreicht, sieht aus wie ein kaputter Schirm. Mit Kamera umgekehrt.
+  // v1.5 (WIP): Onboard-Kamera in der Garage, zweite Quelle WLAN (M5Stack Timer Camera), Anzeige wie beim
+  // virtuellen Fahren. Ohne echte Kamera: Adressen, Garage-Zeile, Anzeige und ein Bild fuer die Aufnahme.
+  stAdd('Onboard-Kamera v1.5: Garage-Zeile, WLAN-Adresse, Anzeige im VF-Stil', () => {
+    const f = [];
+    if (typeof onbM5Url !== 'function') return { skip: true, mass: '75-onboard.js fehlt' };
+    // Adressen.
+    if (onbM5Url('192.168.1.50') !== 'http://192.168.1.50/stream') f.push('IP -> ' + onbM5Url('192.168.1.50'));
+    if (onbM5Url('http://cam.local:8080/mjpeg') !== 'http://cam.local:8080/mjpeg') f.push('volle Adresse veraendert');
+    if (onbM5Url('') !== '') f.push('leere Adresse');
+    const k = onbM5Kandidaten('192.168.1.50');
+    if (k.length !== 2 || k[1] !== 'http://192.168.1.50:81/stream') f.push('Kandidaten: ' + k.join(' '));
+    if (onbM5Kandidaten('192.168.1.50:80').length !== 1) f.push('mit Port trotzdem Port 81 versucht');
+    if (location.protocol === 'http:' && onbM5Gesperrt('http://192.168.1.50/stream')) f.push('ueber http gesperrt');
+    if (onbM5Gesperrt('https://cam/stream')) f.push('https-Bild gesperrt');
+    // Garage: rechts die Optionen, danach wieder im Halter.
+    const merk = { auf: garAufAuto, virt: garVirtuellAuf, kam: garKameraAuf };
+    try {
+      garVirtuellAuf = false; garKameraAuf = true; renderGarage();
+      const opt = $('onboard-optionen');
+      if (!opt || !opt.closest('.gar-a-rechts')) f.push('Optionen nicht rechts in der Garage');
+      const zeile = document.querySelector('#gar-list .gar-a-kamera button');
+      if (!zeile || zeile.getAttribute('aria-pressed') !== 'true') f.push('Garage-Zeile fehlt oder nicht gedrueckt');
+      if (!zeile || !zeile.querySelector('.wip-tag')) f.push('Garage-Zeile ohne WIP');
+      const sel = $('onboard-art');
+      if (!sel || [...sel.options].map((o) => o.value).join(',') !== 'usb,m5') f.push('Quelle-Wahl');
+      garKameraAuf = false; renderGarage();
+      if (!$('onboard-optionen') || $('onboard-optionen').parentElement !== $('onboard-halter')) f.push('Optionen nicht zurueck im Halter');
+      if ($('onboard-an') && !$('onboard-an').isConnected) f.push('Knopf verloren');
+    } finally {
+      garAufAuto = merk.auf; garVirtuellAuf = merk.virt; garKameraAuf = merk.kam; renderGarage();
+    }
+    // Anzeige: Kacheln wie beim virtuellen Fahren, gefuellt aus dem Cockpit.
+    const schirm = $('race-onboardscreen');
+    if (!schirm || !schirm.querySelector('.vf-hud.vf-kachel') || !schirm.querySelector('.vf-acc .vf-gang')) f.push('VF-Kacheln fehlen');
+    const merkG = $('race-gear-n') ? $('race-gear-n').textContent : null;
+    try {
+      if ($('race-gear-n')) $('race-gear-n').textContent = '3';
+      onbHudMalen();
+      if ($('onb-gang') && $('onb-gang').textContent !== '3') f.push('Gang nicht uebernommen: ' + $('onb-gang').textContent);
+      if (!$('onb-l-beste') || !$('onb-l-beste').textContent) f.push('Beschriftung leer');
+    } finally { if (merkG !== null) $('race-gear-n').textContent = merkG; }
+    // Ein Aufnahmebild ohne Quelle malt ohne Fehler (schwarz mit Anzeige).
+    try {
+      const c = document.createElement('canvas'); c.width = 1280; c.height = 720;
+      onbCanvasMalen({ canvas: c, ctx: c.getContext('2d') });
+      const px = c.getContext('2d').getImageData(640, 720 - 60, 1, 1).data;
+      if (px[0] + px[1] + px[2] === 0 && px[3] === 255) { /* Kachel ist dunkel, aber nicht reines Schwarz */ f.push('Tacho-Kachel fehlt im Video'); }
+    } catch (e) { f.push('Aufnahmebild: ' + e.message); }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'IP -> /stream (+ Port 81), Garage-Zeile mit Optionen rechts, Kacheln im VF-Stil, Aufnahmebild malt' };
+  });
+
+  stAdd('Onboard-Schirm: nur mit Kamera blaetterbar, ein Punkt je Schirm', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.onboardLage) return { skip: true, mass: 'Pruefhaken fehlt' };
+    const blaetter = OMEGA_TEST.schirmListeBlaetterbar();
+    const aktiv = OMEGA_TEST.onboardLage().aktiv;
+    const drin = blaetter.indexOf('onboard') >= 0;
+    cockpitPunkteMalen();
+    const punkte = document.querySelectorAll('#race-screen-dots i').length;
+    const ok = drin === aktiv && punkte === blaetter.length;
+    return { ok, mass: 'Kamera ' + (aktiv ? 'an' : 'aus') + ', Onboard ' + (drin ? 'blaetterbar' : 'nicht blaetterbar')
+                       + ', ' + punkte + ' Punkte fuer ' + blaetter.length + ' Schirme' };
   });
 
   // ---- Der Boxenschirm deckt die Instrumente und nicht die Lichter ----
