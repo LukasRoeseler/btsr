@@ -1961,6 +1961,32 @@
     const dr = Math.max(-0.9, Math.min(0.9, dLat * c * seite * 0.02));
     return { kmhNeu: kmhNeu, dvy: Math.max(-12, Math.min(12, dLat * c)), dr: dr, vnMs: vn * c, dLong: dLong };
   }
+  // v1.5.16: der Schalter "Schaden bei Zusammenstoessen" (Optionen) gilt auch virtuell.
+  function vfSchadenAn() { return typeof crashSchadenAn !== 'function' || crashSchadenAn(); }
+  // v1.5.16 BESTELLT: "virtuelles Fahren: hierfuer sollen die aktuellen Renneinstellungen auch gelten". Renntyp und
+  // Limit galten schon; jetzt auch das Startwetter (Regen mit nassem Griff, wie beim echten Fahren binaer), und
+  // was virtuell (noch) nicht geht, sagt der Start einmal an, statt es still zu uebergehen.
+  function vfRennEinstellungen() {
+    const fehlt = [];
+    const wx = $('race-wx-start') ? $('race-wx-start').value : 'dry';
+    VF.wetterVorher = typeof weather !== 'undefined' ? weather : null;
+    if (wx === 'rain' && typeof setWeather === 'function') setWeather('rain');
+    else if (wx === 'wechsel') fehlt.push(t('wechselhaftes Wetter'));
+    if ($('race-flying') && $('race-flying').checked) fehlt.push(t('fliegender Start'));
+    if ($('race-pit-required') && +$('race-pit-required').value > 0) fehlt.push(t('Pflichtboxenstopps'));
+    if ($('race-zev') && $('race-zev').checked) fehlt.push(t('Zufallsevents'));
+    if ($('race-auto-gelb') && $('race-auto-gelb').value && $('race-auto-gelb').value !== 'aus') fehlt.push(t('automatische Gelbe Flagge'));
+    if (fehlt.length) {
+      const text = t('Im virtuellen Fahren nicht verfügbar: {l}').replace('{l}', fehlt.join(', '));
+      showHudToast(text);
+      if (typeof log === 'function') log(text, 'info');
+    }
+    return fehlt;
+  }
+  function vfRennEinstellungenZurueck() {
+    if (VF.wetterVorher && typeof setWeather === 'function' && typeof weather !== 'undefined' && weather !== VF.wetterVorher) setWeather(VF.wetterVorher);
+    VF.wetterVorher = null;
+  }
   function vfVerkehr(dt) {
     const h = VF.h * Math.PI / 180;
     const fwdX = Math.sin(h), fwdY = -Math.cos(h), latX = Math.cos(h), latY = Math.sin(h);
@@ -2003,7 +2029,7 @@
         else if (VF.modus === 'knockout') vfKnockoutTreffer(npc, vAbs);
         else {
           // Schaden nach Aufprallstaerke (m/s eines GT3): leichtes Anstupsen 3 %, harter Aufprall bis 30 %.
-          if (typeof damage === 'number') damage = Math.min(100, damage + Math.min(30, 3 + ms * 0.9));
+          if (typeof damage === 'number' && vfSchadenAn()) damage = Math.min(100, damage + Math.min(30, 3 + ms * 0.9));
           showHudToast(t('Zusammenstoß'));
         }
       }
@@ -2925,6 +2951,7 @@
     VF.schadenVorher = (typeof damage === 'number') ? damage : null;
     VF.flaggeVorher = (typeof flagState !== 'undefined') ? flagState : null;
     if (typeof damage === 'number') damage = 0;
+    vfRennEinstellungen();
     // Zustand der virtuellen Wertung (derby/knockout): Spieler und NPCs.
     VF.koLeben = 3;
     VF.derbyHealth = 100;
@@ -3225,6 +3252,7 @@
       if (typeof updateDamageFuelUI === 'function') { try { updateDamageFuelUI(); } catch (e) { /* egal */ } }
     }
     VF.schadenVorher = null;
+    vfRennEinstellungenZurueck();
     if (VF.flaggeVorher === 'green' && typeof flagState !== 'undefined' && flagState !== 'green') {
       try {
         if (typeof gelbBeenden === 'function') gelbBeenden();

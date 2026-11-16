@@ -26463,6 +26463,50 @@
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
 
+  // v1.5.16: Renneinstellungen im virtuellen Fahren.
+  stAdd('Virtuell v1.5.16: Startwetter aus den Renneinstellungen, nicht Verfuegbares wird genannt, Schaden-Schalter', () => {
+    const f = [];
+    const el = (id) => $(id);
+    const merk = { wx: el('race-wx-start') && el('race-wx-start').value, fly: el('race-flying') && el('race-flying').checked,
+                   pit: el('race-pit-required') && el('race-pit-required').value, zev: el('race-zev') && el('race-zev').checked,
+                   wetter: weather, front: wxFront, frontTo: wxFrontTo, schaden: el('setting-crash-schaden') && el('setting-crash-schaden').checked };
+    try {
+      // Regen als Startwetter: das Wetter wird Regen, beim Beenden wieder wie vorher.
+      setWeather('dry'); wxFront = -1; wxFrontTo = -1;
+      el('race-wx-start').value = 'rain';
+      if (el('race-flying')) el('race-flying').checked = false;
+      if (el('race-pit-required')) el('race-pit-required').value = '0';
+      if (el('race-zev')) el('race-zev').checked = false;
+      const l1 = vfRennEinstellungen();
+      if (weather !== 'rain') f.push('Startwetter Regen nicht gesetzt (' + weather + ')');
+      if (l1.length) f.push('Meldung ohne Grund: ' + l1.join(', '));
+      vfRennEinstellungenZurueck();
+      if (weather !== 'dry') f.push('Wetter nach dem Beenden nicht zurueck (' + weather + ')');
+      // Was virtuell nicht geht, wird genannt.
+      el('race-wx-start').value = 'wechsel';
+      if (el('race-flying')) el('race-flying').checked = true;
+      if (el('race-pit-required')) el('race-pit-required').value = '1';
+      const l2 = vfRennEinstellungen();
+      for (const w of ['wechselhaftes Wetter', 'fliegender Start', 'Pflichtboxenstopps']) if (l2.indexOf(t(w)) < 0) f.push(w + ' nicht genannt');
+      vfRennEinstellungenZurueck();
+      // Schaden-Schalter (Optionen) gilt auch virtuell.
+      if (el('setting-crash-schaden')) {
+        el('setting-crash-schaden').checked = false;
+        if (vfSchadenAn()) f.push('Schaden aus, aber virtuell an');
+        el('setting-crash-schaden').checked = true;
+        if (!vfSchadenAn()) f.push('Schaden an, aber virtuell aus');
+      }
+    } finally {
+      if (el('race-wx-start')) el('race-wx-start').value = merk.wx;
+      if (el('race-flying')) el('race-flying').checked = merk.fly;
+      if (el('race-pit-required')) el('race-pit-required').value = merk.pit;
+      if (el('race-zev')) el('race-zev').checked = merk.zev;
+      if (el('setting-crash-schaden')) el('setting-crash-schaden').checked = merk.schaden;
+      setWeather(merk.wetter); wxFront = merk.front; wxFrontTo = merk.frontTo;
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Regen als Startwetter und zurueck, wechselhaft/fliegend/Pflichtstopps genannt, Schaden-Schalter wirkt' };
+  });
+
   // v1.5.11: Kollision im virtuellen Fahren mit gedrehten Kaesten und Impuls.
   stAdd('Virtuell v1.5.11: Kastenkontakt, Stoss mit Impuls und Giermoment', () => {
     const f = [];
